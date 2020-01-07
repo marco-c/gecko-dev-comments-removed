@@ -8887,7 +8887,8 @@ nsContentUtils::StorageAllowedForWindow(nsPIDOMWindowInner* aWindow)
 {
   if (nsIDocument* document = aWindow->GetExtantDoc()) {
     nsCOMPtr<nsIPrincipal> principal = document->NodePrincipal();
-    return InternalStorageAllowedForPrincipal(principal, aWindow, nullptr);
+    return InternalStorageAllowedForPrincipal(principal, aWindow, nullptr,
+                                              nullptr);
   }
 
   return StorageAccess::eDeny;
@@ -8901,7 +8902,8 @@ nsContentUtils::StorageAllowedForDocument(nsIDocument* aDoc)
 
   if (nsPIDOMWindowInner* inner = aDoc->GetInnerWindow()) {
     nsCOMPtr<nsIPrincipal> principal = aDoc->NodePrincipal();
-    return InternalStorageAllowedForPrincipal(principal, inner, nullptr);
+    return InternalStorageAllowedForPrincipal(principal, inner, nullptr,
+                                              nullptr);
   }
 
   return StorageAccess::eDeny;
@@ -8917,14 +8919,33 @@ nsContentUtils::StorageAllowedForNewWindow(nsIPrincipal* aPrincipal,
   MOZ_ASSERT(aURI);
   
 
-  return InternalStorageAllowedForPrincipal(aPrincipal, aParent, aURI);
+  return InternalStorageAllowedForPrincipal(aPrincipal, aParent, aURI, nullptr);
+}
+
+
+nsContentUtils::StorageAccess
+nsContentUtils::StorageAllowedForChannel(nsIChannel* aChannel)
+{
+  MOZ_DIAGNOSTIC_ASSERT(sSecurityManager);
+  MOZ_DIAGNOSTIC_ASSERT(aChannel);
+
+  nsCOMPtr<nsIPrincipal> principal;
+  Unused << sSecurityManager->GetChannelResultPrincipal(aChannel,
+                                                        getter_AddRefs(principal));
+  NS_ENSURE_TRUE(principal, nsContentUtils::StorageAccess::eDeny);
+
+  nsContentUtils::StorageAccess result =
+    InternalStorageAllowedForPrincipal(principal, nullptr, nullptr, aChannel);
+
+  return result;
 }
 
 
 nsContentUtils::StorageAccess
 nsContentUtils::StorageAllowedForPrincipal(nsIPrincipal* aPrincipal)
 {
-  return InternalStorageAllowedForPrincipal(aPrincipal, nullptr, nullptr);
+  return InternalStorageAllowedForPrincipal(aPrincipal, nullptr, nullptr,
+                                            nullptr);
 }
 
 
@@ -8984,7 +9005,8 @@ nsContentUtils::GetCookieBehaviorForPrincipal(nsIPrincipal* aPrincipal,
 nsContentUtils::StorageAccess
 nsContentUtils::InternalStorageAllowedForPrincipal(nsIPrincipal* aPrincipal,
                                                    nsPIDOMWindowInner* aWindow,
-                                                   nsIURI* aURI)
+                                                   nsIURI* aURI,
+                                                   nsIChannel* aChannel)
 {
   MOZ_ASSERT(aPrincipal);
 
@@ -9071,16 +9093,40 @@ nsContentUtils::InternalStorageAllowedForPrincipal(nsIPrincipal* aPrincipal,
     return StorageAccess::eDeny;
   }
 
-  
-  if (aWindow && (behavior == nsICookieService::BEHAVIOR_REJECT_FOREIGN ||
-                  behavior == nsICookieService::BEHAVIOR_LIMIT_FOREIGN)) {
-    nsCOMPtr<mozIThirdPartyUtil> thirdPartyUtil =
-      do_GetService(THIRDPARTYUTIL_CONTRACTID);
-    MOZ_ASSERT(thirdPartyUtil);
+  if (behavior == nsICookieService::BEHAVIOR_REJECT_FOREIGN ||
+      behavior == nsICookieService::BEHAVIOR_LIMIT_FOREIGN) {
 
-    bool thirdPartyWindow = false;
-    if (NS_SUCCEEDED(thirdPartyUtil->IsThirdPartyWindow(
-          aWindow->GetOuterWindow(), aURI, &thirdPartyWindow)) && thirdPartyWindow) {
+    
+    bool thirdParty = false;
+
+    MOZ_ASSERT(!aWindow || !aChannel,
+               "A window and channel should not both be provided.");
+
+    if (aWindow) {
+      nsCOMPtr<mozIThirdPartyUtil> thirdPartyUtil =
+        do_GetService(THIRDPARTYUTIL_CONTRACTID);
+      MOZ_ASSERT(thirdPartyUtil);
+
+      Unused << thirdPartyUtil->IsThirdPartyWindow(aWindow->GetOuterWindow(),
+                                                   aURI,
+                                                   &thirdParty);
+    }
+
+    if (aChannel) {
+      nsCOMPtr<mozIThirdPartyUtil> thirdPartyUtil =
+        do_GetService(THIRDPARTYUTIL_CONTRACTID);
+      MOZ_ASSERT(thirdPartyUtil);
+
+      
+      
+      
+      
+      Unused << thirdPartyUtil->IsThirdPartyChannel(aChannel,
+                                                    nullptr,
+                                                    &thirdParty);
+    }
+
+    if (thirdParty) {
       
       
       

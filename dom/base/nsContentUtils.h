@@ -2960,6 +2960,13 @@ public:
 
 
 
+  static StorageAccess StorageAllowedForChannel(nsIChannel* aChannel);
+
+  
+
+
+
+
   static StorageAccess StorageAllowedForPrincipal(nsIPrincipal* aPrincipal);
 
   
@@ -3338,9 +3345,12 @@ private:
 
 
 
+
+
   static StorageAccess InternalStorageAllowedForPrincipal(nsIPrincipal* aPrincipal,
                                                           nsPIDOMWindowInner* aWindow,
-                                                          nsIURI* aURI);
+                                                          nsIURI* aURI,
+                                                          nsIChannel* aChannel);
 
   static nsINode* GetCommonAncestorHelper(nsINode* aNode1, nsINode* aNode2);
   static nsIContent* GetCommonFlattenedTreeAncestorHelper(nsIContent* aContent1,
