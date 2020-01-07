@@ -26,6 +26,7 @@
 
 class nsCycleCollectionTraversalCallback;
 class nsIPrincipal;
+class nsPIDOMWindowInner;
 
 namespace mozilla {
 class DOMEventTargetHelper;
@@ -48,8 +49,12 @@ class nsIGlobalObject : public nsISupports,
   bool mIsDying;
 
 protected:
+
+  bool mIsInnerWindow;
+
   nsIGlobalObject()
    : mIsDying(false)
+   , mIsInnerWindow(false)
   {}
 
 public:
@@ -130,6 +135,8 @@ public:
   virtual RefPtr<mozilla::dom::ServiceWorkerRegistration>
   GetOrCreateServiceWorkerRegistration(const mozilla::dom::ServiceWorkerRegistrationDescriptor& aDescriptor);
 
+  
+  nsPIDOMWindowInner* AsInnerWindow();
 protected:
   virtual ~nsIGlobalObject();
 
