@@ -32,8 +32,8 @@ add_task(async function() {
 
   
   
-  ok(!findElement(dbg, "editorFooter"), "Footer is hidden");
+  ok(!findElement(dbg, "prettyPrintButton"), "Pretty Print Button is hidden");
 
   await selectSource(dbg, "math.min.js");
-  ok(findElement(dbg, "editorFooter"), "Footer is hidden");
+  ok(findElement(dbg, "prettyPrintButton"), "Pretty Print Button is visible");
 });

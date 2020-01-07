@@ -4,7 +4,11 @@
 function assertBpInGutter(dbg, lineNumber) {
   const el = findElement(dbg, "breakpoint");
   const bpLineNumber = +el.querySelector(".CodeMirror-linenumber").innerText;
-  is(bpLineNumber, lineNumber, "Breakpoint is on the correct line in the gutter");
+  is(
+    bpLineNumber,
+    lineNumber,
+    "Breakpoint is on the correct line in the gutter"
+  );
 }
 
 
@@ -38,4 +42,12 @@ add_task(async function() {
 
   await waitForPaused(dbg);
   assertPausedLocation(dbg);
+
+  
+  ok(findElement(dbg, "sourceMapLink"), "Sourcemap link in original source");
+  await selectSource(dbg, "main.min.js");
+  ok(
+    !findElement(dbg, "sourceMapLink"),
+    "No Sourcemap link exists in generated source"
+  );
 });
