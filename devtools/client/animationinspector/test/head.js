@@ -26,8 +26,12 @@ registerCleanupFunction(async function() {
 });
 
 
+Services.prefs.setBoolPref("devtools.new-animationinspector.enabled", false);
+
+
 
 registerCleanupFunction(() => {
+  Services.prefs.clearUserPref("devtools.new-animationinspector.enabled");
   Services.prefs.clearUserPref("devtools.debugger.log");
 });
 
