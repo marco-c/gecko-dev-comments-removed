@@ -576,7 +576,12 @@ Toolbox.prototype = {
 
       this.emit("ready");
       this._resolveIsOpen();
-    }.bind(this))().catch(console.error);
+    }.bind(this))().catch(e => {
+      console.error("Exception while opening the toolbox", String(e), e);
+      
+      
+      dump(e.stack + "\n");
+    });
   },
 
   
