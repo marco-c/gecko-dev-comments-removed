@@ -2,6 +2,8 @@
 
 
 
+
+
 #include "mozilla/net/DNS.h"
 
 #include "mozilla/Assertions.h"
@@ -296,6 +298,7 @@ AddrInfo::AddrInfo(const char *host, const PRAddrInfo *prAddrInfo,
   : mHostName(nullptr)
   , mCanonicalName(nullptr)
   , ttl(NO_TTL_DATA)
+  , mFromTRR(false)
 {
   MOZ_ASSERT(prAddrInfo, "Cannot construct AddrInfo with a null prAddrInfo pointer!");
   const uint32_t nameCollisionAddr = htonl(0x7f003535); 
@@ -319,8 +322,38 @@ AddrInfo::AddrInfo(const char *host, const char *cname)
   : mHostName(nullptr)
   , mCanonicalName(nullptr)
   , ttl(NO_TTL_DATA)
+  , mFromTRR(false)
 {
   Init(host, cname);
+}
+
+AddrInfo::AddrInfo(const char *host, unsigned int aTRR)
+  : mHostName(nullptr)
+  , mCanonicalName(nullptr)
+  , ttl(NO_TTL_DATA)
+  , mFromTRR(aTRR)
+{
+  Init(host, nullptr);
+}
+
+
+AddrInfo::AddrInfo(const AddrInfo *src)
+{
+  mHostName = nullptr;
+  if (src->mHostName) {
+    mHostName = strdup(src->mHostName);
+  }
+  mCanonicalName = nullptr;
+  if (src->mCanonicalName) {
+    mCanonicalName = strdup(src->mCanonicalName);
+  }
+  ttl = src->ttl;
+  mFromTRR = src->mFromTRR;
+
+  for (auto element = src->mAddresses.getFirst(); element;
+       element = element->getNext()) {
+    AddAddress(new NetAddrElement(*element));
+  }
 }
 
 AddrInfo::~AddrInfo()

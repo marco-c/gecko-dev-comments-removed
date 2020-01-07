@@ -12,10 +12,8 @@
 
 #if defined(XP_WIN)
 #define DNSQUERY_AVAILABLE 1
-#define TTL_AVAILABLE 1
 #else
-#define DNSQUERY_AVAILABLE 0
-#define TTL_AVAILABLE 0
+#undef DNSQUERY_AVAILABLE
 #endif
 
 namespace mozilla {

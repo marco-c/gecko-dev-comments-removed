@@ -15,19 +15,30 @@
 #include "nsISupportsImpl.h"
 #include "nsIDNSListener.h"
 #include "nsIDNSService.h"
-#include "nsString.h"
 #include "nsTArray.h"
 #include "GetAddrInfo.h"
 #include "mozilla/net/DNS.h"
 #include "mozilla/net/DashboardTypes.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
 #include "nsRefPtrHashtable.h"
 
 class nsHostResolver;
-class nsHostRecord;
 class nsResolveHostCallback;
+namespace mozilla { namespace net {
+class TRR;
+enum ResolverMode {
+  MODE_NATIVEONLY, 
+  MODE_PARALLEL,   
+  MODE_TRRFIRST,   
+  MODE_TRRONLY,    
+  MODE_SHADOW      
+};
+} }
+
+extern mozilla::Atomic<bool, mozilla::Relaxed> gNativeIsLocalhost;
 
 #define MAX_RESOLVER_THREADS_FOR_ANY_PRIORITY  3
 #define MAX_RESOLVER_THREADS_FOR_HIGH_PRIORITY 5
@@ -41,15 +52,17 @@ struct nsHostKey
     const nsCString host;
     uint16_t flags;
     uint16_t af;
+    bool     pb;
     const nsCString netInterface;
     const nsCString originSuffix;
 
     nsHostKey(const nsACString& host, uint16_t flags,
-              uint16_t af, const nsACString& netInterface,
+              uint16_t af, bool pb, const nsACString& netInterface,
               const nsACString& originSuffix)
         : host(host)
         , flags(flags)
         , af(af)
+        , pb(pb)
         , netInterface(netInterface)
         , originSuffix(originSuffix) {
     }
@@ -115,6 +128,12 @@ public:
     mozilla::TimeStamp mGraceStart;
 
     
+    mozilla::TimeStamp mTrrStart;
+    mozilla::TimeStamp mNativeStart;
+    mozilla::TimeDuration mTrrDuration;
+    mozilla::TimeDuration mNativeDuration;
+
+    
     
     void SetExpiration(const mozilla::TimeStamp& now, unsigned int valid,
                        unsigned int grace);
@@ -139,6 +158,11 @@ public:
 
     bool RemoveOrRefresh(); 
                             
+    bool IsTRR() { return mTRRUsed; }
+    void ResolveComplete();
+    void Cancel();
+
+    mozilla::net::ResolverMode mResolverMode;
 
 private:
     friend class nsHostResolver;
@@ -146,17 +170,27 @@ private:
     explicit nsHostRecord(const nsHostKey& key);
     mozilla::LinkedList<RefPtr<nsResolveHostCallback>> mCallbacks;
 
-    bool    resolving; 
-
-
-
-    bool    onQueue;  
+    int     mResolving;  
+    bool    mNative;     
+                         
+                         
+    int     mTRRSuccess; 
+    bool    mTRRUsed;    
+    bool    mNativeUsed;
+    int     mNativeSuccess; 
+    nsAutoPtr<mozilla::net::AddrInfo> mFirstTRR; 
+    bool    onQueue; 
     bool    usingAnyThread; 
     bool    mDoomed; 
-
-#if TTL_AVAILABLE
+    bool    mDidCallbacks;
     bool    mGetTtl;
-#endif
+
+    enum {
+        INIT, STARTED, OK, FAILED
+    } mTrrAUsed, mTrrAAAAUsed;
+
+    RefPtr<mozilla::net::TRR> mTrrA;
+    RefPtr<mozilla::net::TRR> mTrrAAAA;
 
     
     
@@ -224,19 +258,43 @@ protected:
     virtual ~nsResolveHostCallback() = default;
 };
 
+class AHostResolver
+{
+public:
+    AHostResolver() {}
+    virtual ~AHostResolver() {}
+    NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
+
+     enum LookupStatus {
+        LOOKUP_OK,
+        LOOKUP_RESOLVEAGAIN,
+    };
+
+    virtual LookupStatus CompleteLookup(nsHostRecord *, nsresult, mozilla::net::AddrInfo *, bool pb) = 0;
+    virtual nsresult GetHostRecord(const char *host,
+                                   uint16_t flags, uint16_t af, bool pb,
+                                   const nsCString &netInterface,
+                                   const nsCString &originSuffix,
+                                   nsHostRecord **result)
+    {
+        return NS_ERROR_FAILURE;
+    }
+    virtual nsresult TrrLookup_unlocked(nsHostRecord *, mozilla::net::TRR *pushedTRR = nullptr)
+    {
+        return NS_ERROR_FAILURE;
+    }
+};
 
 
 
-class nsHostResolver
+
+class nsHostResolver : public nsISupports, public AHostResolver
 {
     typedef mozilla::CondVar CondVar;
     typedef mozilla::Mutex Mutex;
 
 public:
-    
-
-
-    NS_INLINE_DECL_THREADSAFE_REFCOUNTING(nsHostResolver)
+    NS_DECL_THREADSAFE_ISUPPORTS
 
     
 
@@ -310,7 +368,8 @@ public:
         
         RES_OFFLINE = nsIDNSService::RESOLVE_OFFLINE,
         
-        RES_ALLOW_NAME_COLLISION = nsIDNSService::RESOLVE_ALLOW_NAME_COLLISION
+        RES_ALLOW_NAME_COLLISION = nsIDNSService::RESOLVE_ALLOW_NAME_COLLISION,
+        RES_DISABLE_TRR = nsIDNSService::RESOLVE_DISABLE_TRR
     };
 
     size_t SizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
@@ -320,22 +379,30 @@ public:
 
     void FlushCache();
 
+    LookupStatus CompleteLookup(nsHostRecord *, nsresult, mozilla::net::AddrInfo *, bool pb) override;
+    nsresult GetHostRecord(const char *host,
+                           uint16_t flags, uint16_t af, bool pb,
+                           const nsCString &netInterface,
+                           const nsCString &originSuffix,
+                           nsHostRecord **result) override;
+    nsresult TrrLookup_unlocked(nsHostRecord *, mozilla::net::TRR *pushedTRR = nullptr) override;
+
 private:
    explicit nsHostResolver(uint32_t maxCacheEntries,
                            uint32_t defaultCacheEntryLifetime,
                            uint32_t defaultGracePeriod);
-   ~nsHostResolver();
+   virtual ~nsHostResolver();
 
     nsresult Init();
-    nsresult IssueLookup(nsHostRecord *);
+    void AssertOnQ(nsHostRecord *, PRCList *);
+    mozilla::net::ResolverMode Mode();
+    nsresult NativeLookup(nsHostRecord *);
+    nsresult TrrLookup(nsHostRecord *, mozilla::net::TRR *pushedTRR = nullptr);
+
+    
+    nsresult NameLookup(nsHostRecord *);
     bool     GetHostToLookup(nsHostRecord **m);
 
-    enum LookupStatus {
-      LOOKUP_OK,
-      LOOKUP_RESOLVEAGAIN,
-    };
-
-    LookupStatus CompleteLookup(nsHostRecord *, nsresult, mozilla::net::AddrInfo *);
     void     DeQueue(PRCList &aQ, nsHostRecord **aResult);
     void     ClearPendingQueue(PRCList *aPendingQueue);
     nsresult ConditionallyCreateThread(nsHostRecord *rec);

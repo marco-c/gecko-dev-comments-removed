@@ -380,6 +380,10 @@ private:
     
     uint32_t                        mTransactionCaps;
 
+    
+    
+    uint32_t                        mDefaultTimeoutFactor;
+
     bool                            mResponseTimeoutEnabled;
 
     

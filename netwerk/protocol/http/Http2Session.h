@@ -154,7 +154,7 @@ public:
 
   
   
-  const static int32_t  kEmergencyWindowThreshold = 256 * 1024;
+  const static int32_t  kEmergencyWindowThreshold = 96 * 1024;
   const static uint32_t kMinimumToAck = 4 * 1024 * 1024;
 
   

@@ -2093,6 +2093,10 @@ pref("network.dns.get-ttl", true);
 
 
 
+pref("network.dns.native-is-localhost", false);
+
+
+
 pref("network.dnsCacheExpirationGracePeriod", 60);
 
 
@@ -5403,6 +5407,30 @@ pref("network.captive-portal-service.maxInterval", 1500000);
 
 pref("network.captive-portal-service.backoffFactor", "5.0");
 pref("network.captive-portal-service.enabled", false);
+
+
+
+pref("network.trr.mode", 0);
+
+pref("network.trr.uri", "");
+
+pref("network.trr.credentials", "");
+
+pref("network.trr.wait-for-portal", true);
+
+pref("network.trr.allow-rfc1918", false);
+
+pref("network.trr.useGET", false);
+
+
+pref("network.trr.confirmationNS", "example.com");
+
+
+pref("network.trr.bootstrapAddress", "");
+
+pref("network.trr.blacklist-duration", 259200);
+
+pref("network.trr.request-timeout", 3000);
 
 pref("captivedetect.canonicalURL", "http://detectportal.firefox.com/success.txt");
 pref("captivedetect.canonicalContent", "success\n");
