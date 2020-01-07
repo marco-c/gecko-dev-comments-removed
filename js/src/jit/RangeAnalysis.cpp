@@ -1802,16 +1802,6 @@ MLoadUnboxedScalar::computeRange(TempAllocator& alloc)
 }
 
 void
-MLoadTypedArrayElementStatic::computeRange(TempAllocator& alloc)
-{
-    
-    
-    MOZ_ASSERT(someTypedArray_->as<TypedArrayObject>().type() != Scalar::Uint32);
-
-    setRange(GetTypedArrayRange(alloc, someTypedArray_->as<TypedArrayObject>().type()));
-}
-
-void
 MArrayLength::computeRange(TempAllocator& alloc)
 {
     
@@ -2673,18 +2663,6 @@ MToDouble::truncate()
 }
 
 bool
-MLoadTypedArrayElementStatic::needTruncation(TruncateKind kind)
-{
-    
-    
-    
-    if (kind == Truncate)
-        setInfallible();
-
-    return false;
-}
-
-bool
 MLimitedTruncate::needTruncation(TruncateKind kind)
 {
     setTruncateKind(kind);
@@ -2802,13 +2780,6 @@ MStoreTypedArrayElementHole::operandTruncateKind(size_t index) const
 {
     
     return index == 3 && isIntegerWrite() ? Truncate : NoTruncate;
-}
-
-MDefinition::TruncateKind
-MStoreTypedArrayElementStatic::operandTruncateKind(size_t index) const
-{
-    
-    return index == 1 && isIntegerWrite() ? Truncate : NoTruncate;
 }
 
 MDefinition::TruncateKind
@@ -3265,36 +3236,6 @@ MLoadElementHole::collectRangeInfoPreTrunc()
     if (indexRange.isFiniteNonNegative()) {
         needsNegativeIntCheck_ = false;
         setNotGuard();
-    }
-}
-
-void
-MLoadTypedArrayElementStatic::collectRangeInfoPreTrunc()
-{
-    Range range(ptr());
-
-    if (range.hasInt32LowerBound() && range.hasInt32UpperBound()) {
-        int64_t offset = this->offset();
-        int64_t lower = range.lower() + offset;
-        int64_t upper = range.upper() + offset;
-        int64_t length = this->length();
-        if (lower >= 0 && upper < length)
-            setNeedsBoundsCheck(false);
-    }
-}
-
-void
-MStoreTypedArrayElementStatic::collectRangeInfoPreTrunc()
-{
-    Range range(ptr());
-
-    if (range.hasInt32LowerBound() && range.hasInt32UpperBound()) {
-        int64_t offset = this->offset();
-        int64_t lower = range.lower() + offset;
-        int64_t upper = range.upper() + offset;
-        int64_t length = this->length();
-        if (lower >= 0 && upper < length)
-            setNeedsBoundsCheck(false);
     }
 }
 

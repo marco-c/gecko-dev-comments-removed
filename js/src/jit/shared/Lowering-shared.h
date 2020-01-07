@@ -290,11 +290,6 @@ class LIRGeneratorShared
     static bool allowTypedElementHoleCheck() {
         return false;
     }
-
-    
-    static bool allowStaticTypedArrayAccesses() {
-        return false;
-    }
 };
 
 } 
