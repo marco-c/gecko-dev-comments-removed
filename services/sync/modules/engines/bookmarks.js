@@ -334,7 +334,7 @@ BaseBookmarksEngine.prototype = {
       if (existingSyncID) {
         this._log.debug("Migrating existing sync ID ${existingSyncID} from " +
                         "prefs", { existingSyncID });
-        await PlacesSyncUtils.bookmarks.ensureCurrentSyncId(existingSyncID);
+        await this._ensureCurrentSyncID(existingSyncID);
       }
       if (migrateLastSync) {
         let existingLastSync = await super.getLastSync();
@@ -349,16 +349,22 @@ BaseBookmarksEngine.prototype = {
     this._migratedSyncMetadata = true;
   },
 
+  
+  
+  _ensureCurrentSyncID(newSyncID) {
+    return PlacesSyncUtils.bookmarks.ensureCurrentSyncId(newSyncID);
+  },
+
   async ensureCurrentSyncID(newSyncID) {
     let shouldWipeRemote = await PlacesSyncUtils.bookmarks.shouldWipeRemote();
     if (!shouldWipeRemote) {
       this._log.debug("Checking if server sync ID ${newSyncID} matches " +
                       "existing", { newSyncID });
-      await PlacesSyncUtils.bookmarks.ensureCurrentSyncId(newSyncID);
+      await this._ensureCurrentSyncID(newSyncID);
       
       
       
-      super.setSyncIDPref(newSyncID);
+      await super.ensureCurrentSyncID(newSyncID);
       return newSyncID;
     }
     
@@ -380,12 +386,8 @@ BaseBookmarksEngine.prototype = {
   async resetLocalSyncID() {
     let newSyncID = await PlacesSyncUtils.bookmarks.resetSyncId();
     this._log.debug("Assigned new sync ID ${newSyncID}", { newSyncID });
-    super.setSyncIDPref(newSyncID); 
+    await super.ensureCurrentSyncID(newSyncID); 
     return newSyncID;
-  },
-
-  setSyncIDPref(syncID) {
-    throw new Error("Use ensureCurrentSyncID or resetLocalSyncID");
   },
 
   async _syncFinish() {
@@ -422,6 +424,10 @@ BaseBookmarksEngine.prototype = {
     this._noteDeletedId(id);
   },
 
+  
+  
+  
+  
   async _resetClient() {
     await super._resetClient();
     await PlacesSyncUtils.bookmarks.reset();
@@ -782,14 +788,20 @@ BufferedBookmarksEngine.prototype = {
     await super._syncStartup();
   },
 
+  async _ensureCurrentSyncID(newSyncID) {
+    await super._ensureCurrentSyncID(newSyncID);
+    let buf = await this._store.ensureOpenMirror();
+    await buf.ensureCurrentSyncId(newSyncID);
+  },
+
   async getSyncID() {
     return PlacesSyncUtils.bookmarks.getSyncId();
   },
 
   async resetLocalSyncID() {
-    let buf = await this._store.ensureOpenMirror();
-    await buf.reset();
     let newSyncID = await super.resetLocalSyncID();
+    let buf = await this._store.ensureOpenMirror();
+    await buf.ensureCurrentSyncId(newSyncID);
     return newSyncID;
   },
 

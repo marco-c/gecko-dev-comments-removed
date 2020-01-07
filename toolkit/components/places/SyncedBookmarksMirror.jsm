@@ -209,13 +209,13 @@ class SyncedBookmarksMirror {
     
     
     
-    let rows = await this.db.execute(`
+    let rows = await this.db.executeCached(`
       SELECT MAX(
         IFNULL((SELECT MAX(serverModified) - 1000 FROM items), 0),
         IFNULL((SELECT CAST(value AS INTEGER) FROM meta
                 WHERE key = :modifiedKey), 0)
       ) AS highWaterMark`,
-      { modifiedKey: SyncedBookmarksMirror.META.MODIFIED });
+      { modifiedKey: SyncedBookmarksMirror.META_KEY.LAST_MODIFIED });
     let highWaterMark = rows[0].getResultByName("highWaterMark");
     return highWaterMark / 1000;
   }
@@ -234,10 +234,63 @@ class SyncedBookmarksMirror {
     }
     await this.db.executeBeforeShutdown(
       "SyncedBookmarksMirror: setCollectionLastModified",
-      db => db.execute(`
+      db => db.executeCached(`
         REPLACE INTO meta(key, value)
         VALUES(:modifiedKey, :lastModified)`,
-        { modifiedKey: SyncedBookmarksMirror.META.MODIFIED, lastModified })
+        { modifiedKey: SyncedBookmarksMirror.META_KEY.LAST_MODIFIED,
+          lastModified })
+    );
+  }
+
+  
+
+
+
+
+
+
+  async getSyncId() {
+    let rows = await this.db.executeCached(`
+      SELECT value FROM meta WHERE key = :syncIdKey`,
+      { syncIdKey: SyncedBookmarksMirror.META_KEY.SYNC_ID });
+    return rows.length ? rows[0].getResultByName("value") : "";
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async ensureCurrentSyncId(newSyncId) {
+    if (!newSyncId || typeof newSyncId != "string") {
+      throw new TypeError("Invalid new bookmarks sync ID");
+    }
+    let existingSyncId = await this.getSyncId();
+    if (existingSyncId == newSyncId) {
+      MirrorLog.trace("Sync ID up-to-date in mirror", { existingSyncId });
+      return;
+    }
+    MirrorLog.info("Sync ID changed from ${existingSyncId} to " +
+                   "${newSyncId}; resetting mirror",
+                   { existingSyncId, newSyncId });
+    await this.db.executeBeforeShutdown(
+      "SyncedBookmarksMirror: ensureCurrentSyncId",
+      db => db.executeTransaction(async function() {
+        await resetMirror(db);
+        await db.execute(`
+          REPLACE INTO meta(key, value)
+          VALUES(:syncIdKey, :newSyncId)`,
+          { syncIdKey: SyncedBookmarksMirror.META_KEY.SYNC_ID, newSyncId });
+      })
     );
   }
 
@@ -480,18 +533,7 @@ class SyncedBookmarksMirror {
   async reset() {
     await this.db.executeBeforeShutdown(
       "SyncedBookmarksMirror: reset",
-      async function(db) {
-        await db.executeTransaction(async function() {
-          await db.execute(`DELETE FROM meta`);
-          await db.execute(`DELETE FROM structure`);
-          await db.execute(`DELETE FROM items`);
-          await db.execute(`DELETE FROM urls`);
-
-          
-          
-          await createMirrorRoots(db);
-        });
-      }
+      db => db.executeTransaction(() => resetMirror(db))
     );
   }
 
@@ -1899,8 +1941,9 @@ SyncedBookmarksMirror.KIND = {
 };
 
 
-SyncedBookmarksMirror.META = {
-  MODIFIED: 1,
+SyncedBookmarksMirror.META_KEY = {
+  LAST_MODIFIED: "collection/lastModified",
+  SYNC_ID: "collection/syncId",
 };
 
 
@@ -1946,9 +1989,8 @@ async function initializeMirrorDatabase(db) {
   
   
   await db.execute(`CREATE TABLE mirror.meta(
-    key INTEGER PRIMARY KEY,
+    key TEXT PRIMARY KEY,
     value NOT NULL
-    CHECK(key = ${SyncedBookmarksMirror.META.MODIFIED})
   )`);
 
   await db.execute(`CREATE TABLE mirror.items(
@@ -2617,6 +2659,17 @@ async function initializeTempMirrorEntities(db) {
                               ON DELETE CASCADE,
     position INTEGER NOT NULL
   ) WITHOUT ROWID`);
+}
+
+async function resetMirror(db) {
+  await db.execute(`DELETE FROM meta`);
+  await db.execute(`DELETE FROM structure`);
+  await db.execute(`DELETE FROM items`);
+  await db.execute(`DELETE FROM urls`);
+
+  
+  
+  await createMirrorRoots(db);
 }
 
 
