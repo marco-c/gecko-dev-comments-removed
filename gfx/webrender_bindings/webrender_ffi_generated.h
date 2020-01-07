@@ -976,12 +976,6 @@ const VecU8 *wr_add_ref_arc(const ArcVecU8 *aArc)
 WR_FUNC;
 
 WR_INLINE
-void wr_api_capture(DocumentHandle *aDh,
-                    const char *aPath,
-                    uint32_t aBitsRaw)
-WR_FUNC;
-
-WR_INLINE
 void wr_api_clone(DocumentHandle *aDh,
                   DocumentHandle **aOutHandle)
 WR_FUNC;
