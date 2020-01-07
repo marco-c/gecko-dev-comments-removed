@@ -13,9 +13,8 @@
 #include "mozilla/StyleBackendType.h"
 #include "mozilla/CORSMode.h"
 #include "mozilla/ServoUtils.h"
-
 #include "nsICSSLoaderObserver.h"
-#include "nsIDOMCSSStyleSheet.h"
+#include "nsIDOMStyleSheet.h"
 #include "nsWrapperCache.h"
 
 class nsIDocument;
@@ -46,7 +45,7 @@ class Rule;
 
 
 
-class StyleSheet : public nsIDOMCSSStyleSheet
+class StyleSheet : public nsIDOMStyleSheet
                  , public nsICSSLoaderObserver
                  , public nsWrapperCache
 {
@@ -62,7 +61,7 @@ protected:
 public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_AMBIGUOUS(StyleSheet,
-                                                         nsIDOMCSSStyleSheet)
+                                                         nsIDOMStyleSheet)
 
   
 
@@ -247,12 +246,6 @@ public:
   NS_IMETHOD GetHref(nsAString& aHref) final;
   NS_IMETHOD GetTitle(nsAString& aTitle) final;
   NS_IMETHOD GetMedia(nsIDOMMediaList** aMedia) final;
-
-  
-  NS_IMETHOD GetCssRules(nsIDOMCSSRuleList** aCssRules) final;
-  NS_IMETHOD InsertRule(const nsAString& aRule, uint32_t aIndex,
-                      uint32_t* aReturn) final;
-  NS_IMETHOD DeleteRule(uint32_t aIndex) final;
 
   
   
