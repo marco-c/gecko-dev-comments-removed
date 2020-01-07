@@ -357,27 +357,68 @@ function ReadTests() {
                     getService(Components.interfaces.nsIPrefBranch);
 
         
-        try {
-            var manifests = JSON.parse(prefs.getCharPref("reftest.manifests"));
-            g.urlsFilterRegex = manifests[null];
-        } catch(e) {
-            logger.error("Unable to find reftest.manifests pref. Please ensure your profile is setup properly");
+
+
+
+
+
+
+
+
+
+
+
+
+        let manifests = prefs.getCharPref("reftest.manifests", null);
+        let dumpTests = prefs.getCharPref("reftest.manifests.dumpTests", null);
+        let testList = prefs.getCharPref("reftest.tests", null);
+
+        if ((testList && manifests) || !(testList || manifests)) {
+            logger.error("Exactly one of reftest.manifests or reftest.tests must be specified.");
             DoneTests();
         }
 
-        var globalFilter = manifests.hasOwnProperty("") ? new RegExp(manifests[""]) : null;
-        var manifestURLs = Object.keys(manifests);
+        if (testList) {
+            let promise = OS.File.read(testList).then(function onSuccess(array) {
+                let decoder = new TextDecoder();
+                g.urls = JSON.parse(decoder.decode(array)).map(CreateUrls);
+                StartTests();
+            });
+        } else if (manifests) {
+            
+            manifests = JSON.parse(manifests);
+            g.urlsFilterRegex = manifests[null];
 
-        
-        
-        manifestURLs.sort(function(a,b) {return a.length - b.length})
-        manifestURLs.forEach(function(manifestURL) {
-            logger.info("Reading manifest " + manifestURL);
-            var filter = manifests[manifestURL] ? new RegExp(manifests[manifestURL]) : null;
-            ReadTopManifest(manifestURL, [globalFilter, filter, false]);
-        });
+            var globalFilter = manifests.hasOwnProperty("") ? new RegExp(manifests[""]) : null;
+            var manifestURLs = Object.keys(manifests);
 
-        StartTests();
+            
+            
+            manifestURLs.sort(function(a,b) {return a.length - b.length})
+            manifestURLs.forEach(function(manifestURL) {
+                logger.info("Reading manifest " + manifestURL);
+                var filter = manifests[manifestURL] ? new RegExp(manifests[manifestURL]) : null;
+                ReadTopManifest(manifestURL, [globalFilter, filter, false]);
+            });
+
+            if (dumpTests) {
+                let encoder = new TextEncoder();
+                let tests = encoder.encode(JSON.stringify(g.urls));
+                OS.File.writeAtomic(dumpTests, tests, {flush: true}).then(
+                  function onSuccess() {
+                    DoneTests();
+                  },
+                  function onFailure(reason) {
+                    logger.error("failed to write test data: " + reason);
+                    DoneTests();
+                  }
+                )
+            } else {
+                g.manageSuite = true;
+                g.urls = g.urls.map(CreateUrls);
+                StartTests();
+            }
+        }
     } catch(e) {
         ++g.testResults.Exception;
         logger.error("EXCEPTION: " + e);
@@ -461,7 +502,7 @@ function StartTests()
             g.urls = g.urls.slice(start, end);
         }
 
-        if (g.startAfter === undefined && !g.suiteStarted) {
+        if (g.manageSuite && g.startAfter === undefined && !g.suiteStarted) {
             var ids = g.urls.map(function(obj) {
                 return obj.identifier;
             });
@@ -737,8 +778,12 @@ function StartCurrentURI(aURLTargetType)
 
 function DoneTests()
 {
-    logger.suiteEnd({'results': g.testResults});
-    g.suiteStarted = false
+    if (g.manageSuite) {
+        g.suiteStarted = false
+        logger.suiteEnd({'results': g.testResults});
+    } else {
+        logger._logData('results', {results: g.testResults});
+    }
     logger.info("Slowest test took " + g.slowestTestTime + "ms (" + g.slowestTestURL + ")");
     logger.info("Total canvas count = " + g.recycledCanvases.length);
     if (g.failedUseWidgetLayers) {
