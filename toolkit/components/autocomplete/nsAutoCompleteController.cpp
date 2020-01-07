@@ -1529,8 +1529,20 @@ nsAutoCompleteController::CompleteDefaultIndex(int32_t aResultIndex)
   nsAutoString resultValue;
   if (NS_SUCCEEDED(GetDefaultCompleteValue(aResultIndex, true, resultValue))) {
     CompleteValue(resultValue);
-
     mDefaultIndexCompleted = true;
+  } else {
+    
+    
+    
+    
+    nsAutoString inputValue;
+    input->GetTextValue(inputValue);
+    if (!inputValue.Equals(mSearchString)) {
+      SetValueOfInputTo(mSearchString,
+                        nsIAutoCompleteInput::TEXTVALUE_REASON_REVERT);
+      input->SelectTextRange(mSearchString.Length(), mSearchString.Length());
+    }
+    mPlaceholderCompletionString.Truncate();
   }
 
   return NS_OK;
