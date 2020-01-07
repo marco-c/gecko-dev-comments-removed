@@ -16,18 +16,6 @@
 #include <stdint.h>
 #include "mozilla/Assertions.h"
 
-
-
-
-
-
-
-
-
-
-
-
-struct XPTHeader;
 struct XPTInterfaceDirectoryEntry;
 struct XPTInterfaceDescriptor;
 struct XPTConstDescriptor;
@@ -36,35 +24,12 @@ struct XPTParamDescriptor;
 struct XPTTypeDescriptor;
 struct XPTTypeDescriptorPrefix;
 
-
-
-
 struct XPTHeader {
-  
-  
-  
-
-  
-  uint8_t mMajorVersion;
-  
   uint16_t mNumInterfaces;
-  
   const XPTInterfaceDirectoryEntry* mInterfaceDirectory;
-  
+
+  static const XPTHeader kHeader;
 };
-
-
-
-
-
-
-
-
-
-
-
-#define XPT_MAJOR_INCOMPATIBLE_VERSION 0x02
-
 
 
 
@@ -77,11 +42,6 @@ struct XPTInterfaceDirectoryEntry {
 
   nsID mIID;
   const char* mName;
-
-  
-  
-  
-
   const XPTInterfaceDescriptor* mInterfaceDescriptor;
 };
 
@@ -106,8 +66,6 @@ struct XPTInterfaceDescriptor {
   
 
 
-
-
   const XPTMethodDescriptor* mMethodDescriptors;
   const XPTConstDescriptor* mConstDescriptors;
   const XPTTypeDescriptor* mAdditionalTypes;
@@ -115,26 +73,8 @@ struct XPTInterfaceDescriptor {
   uint16_t mNumMethods;
   uint16_t mNumConstants;
   uint8_t mFlags;
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   uint8_t mNumAdditionalTypes;
 };
-
 
 
 
@@ -241,14 +181,12 @@ struct XPTTypeDescriptor {
 
 
 
-
-
 union XPTConstValue {
   int16_t i16;
   uint16_t ui16;
   int32_t i32;
   uint32_t ui32;
-}; 
+};
 
 struct XPTConstDescriptor {
   const char* Name() const {
@@ -272,7 +210,6 @@ struct XPTParamDescriptor {
 
 
 
-
 struct XPTMethodDescriptor {
   const char* Name() const {
     return mName;
@@ -283,7 +220,6 @@ struct XPTMethodDescriptor {
 
   const char* mName;
   const XPTParamDescriptor* mParams;
-  
   uint8_t mFlags;
   uint8_t mNumArgs;
 };
