@@ -95,14 +95,13 @@ add_task(async function() {
     ]
   );
 
-  
-  
   await breakpointScopes(
     dbg,
     "this-arguments-bindings",
     { line: 8, column: 6 },
     [
       "arrow",
+      ["<this>", '"this-value"'],
       ["argArrow", '"arrow-arg"'],
       "Block",
       "arrow()",
@@ -116,8 +115,6 @@ add_task(async function() {
     ]
   );
 
-  
-  
   await breakpointScopes(dbg, "imported-bindings", { line: 20, column: 2 }, [
     "Module",
     ["aDefault", '"a-default"'],
