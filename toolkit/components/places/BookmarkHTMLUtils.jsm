@@ -83,9 +83,6 @@ const MICROSEC_PER_SEC = 1000000;
 
 const EXPORT_INDENT = "    "; 
 
-
-var serialNumber = 0;
-
 function base64EncodeString(aString) {
   let stream = Cc["@mozilla.org/io/string-input-stream;1"]
                  .createInstance(Ci.nsIStringInputStream);
@@ -755,62 +752,6 @@ BookmarkImporter.prototype = {
 
   _appendText: function appendText(str) {
     this._curFrame.previousText += str;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  _setFaviconForURI: function setFaviconForURI(aPageURI, aIconURI, aData) {
-    
-    
-    if (aIconURI) {
-      if (aIconURI.schemeIs("chrome")) {
-        PlacesUtils.favicons.setAndFetchFaviconForPage(aPageURI, aIconURI, false,
-                                                       PlacesUtils.favicons.FAVICON_LOAD_NON_PRIVATE, null,
-                                                       Services.scriptSecurityManager.getSystemPrincipal());
-
-        return;
-      }
-    }
-
-    
-    
-    if (aData.length <= 5) {
-      return;
-    }
-
-    let faviconURI;
-    if (aIconURI) {
-      faviconURI = aIconURI;
-    } else {
-      
-      
-      
-      let faviconSpec = "http://www.mozilla.org/2005/made-up-favicon/"
-                      + serialNumber
-                      + "-"
-                      + new Date().getTime();
-      faviconURI = NetUtil.newURI(faviconSpec);
-      serialNumber++;
-    }
-
-    
-    
-    
-    PlacesUtils.favicons.replaceFaviconDataFromDataURL(faviconURI, aData, 0,
-                                                       Services.scriptSecurityManager.getSystemPrincipal());
-    PlacesUtils.favicons.setAndFetchFaviconForPage(aPageURI, faviconURI, false,
-                                                   PlacesUtils.favicons.FAVICON_LOAD_NON_PRIVATE, null,
-                                                   Services.scriptSecurityManager.getSystemPrincipal());
   },
 
   
