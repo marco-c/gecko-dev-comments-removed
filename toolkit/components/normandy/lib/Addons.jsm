@@ -51,16 +51,6 @@ var Addons = {
 
 
 
-  async getAll(addonId) {
-    const addons = await AddonManager.getAllAddons();
-    return addons.map(this.serializeForSandbox.bind(this));
-  },
-
-  
-
-
-
-
 
 
 
