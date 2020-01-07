@@ -7425,7 +7425,7 @@ nsGlobalWindowInner::PromiseDocumentFlushed(PromiseDocumentFlushedCallback& aCal
   UniquePtr<PromiseDocumentFlushedResolver> flushResolver(
     new PromiseDocumentFlushedResolver(resultPromise, aCallback));
 
-  if (!shell->NeedFlush(FlushType::Style)) {
+  if (!shell->NeedStyleFlush() && !shell->NeedLayoutFlush()) {
     flushResolver->Call();
     return resultPromise.forget();
   }
@@ -7520,7 +7520,8 @@ nsGlobalWindowInner::DidRefresh()
   nsIPresShell* shell = mDoc->GetShell();
   MOZ_ASSERT(shell);
 
-  if (shell->NeedStyleFlush() || shell->HasPendingReflow()) {
+  if (shell->NeedStyleFlush() || shell->NeedLayoutFlush()) {
+    
     
     
     
