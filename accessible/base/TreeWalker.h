@@ -29,7 +29,8 @@ public:
     
     eWalkCache = 1,
     
-    eWalkContextTree = 2 | eWalkCache
+    eWalkContextTree = 2 | eWalkCache,
+    eScoped = 4
   };
 
   
