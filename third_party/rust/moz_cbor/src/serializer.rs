@@ -104,6 +104,9 @@ fn encode_null(output: &mut Vec<u8>) {
 
 impl CborType {
     
+    
+    
+    
     pub fn serialize(&self) -> Vec<u8> {
         let mut bytes: Vec<u8> = Vec::new();
         match *self {

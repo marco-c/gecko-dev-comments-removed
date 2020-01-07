@@ -8,9 +8,13 @@ use {CborError, CborType};
 pub const MAX_ARRAY_SIZE: usize = 134_217_728;
 
 
+const MAX_NESTED_DEPTH: usize = 256;
+
+
 #[derive(Debug)]
 struct DecoderCursor<'a> {
     cursor: Cursor<&'a [u8]>,
+    depth: usize,
 }
 
 
@@ -121,8 +125,12 @@ impl<'a> DecoderCursor<'a> {
 
     
     pub fn decode_item(&mut self) -> Result<CborType, CborError> {
+        if self.depth > MAX_NESTED_DEPTH {
+            return Err(CborError::MalformedInput);
+        }
+        self.depth += 1;
         let major_type = self.peek_byte()? >> 5;
-        match major_type {
+        let result = match major_type {
             0 => {
                 let value = self.read_int()?;
                 Ok(CborType::Integer(value))
@@ -138,13 +146,20 @@ impl<'a> DecoderCursor<'a> {
             }
             7 => self.read_null(),
             _ => Err(CborError::UnsupportedType),
-        }
+        };
+        self.depth -= 1;
+        result
     }
 }
 
 
+
+
 pub fn decode(bytes: &[u8]) -> Result<CborType, CborError> {
-    let mut decoder_cursor = DecoderCursor { cursor: Cursor::new(bytes) };
+    let mut decoder_cursor = DecoderCursor {
+        cursor: Cursor::new(bytes),
+        depth: 0,
+    };
     decoder_cursor.decode_item()
     
 }
