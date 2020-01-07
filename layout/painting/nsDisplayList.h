@@ -840,6 +840,9 @@ public:
 
   bool IsInSubdocument() { return mPresShellStates.Length() > 1; }
 
+  void SetBuiltOverlayScrollbars(bool aOverlayScrollbars) { mBuiltOverlayScrollbars = aOverlayScrollbars; }
+  bool BuiltOverlayScrollbars() { return mBuiltOverlayScrollbars; }
+
   
 
 
@@ -2010,6 +2013,7 @@ private:
   bool                           mInInvalidSubtree;
   bool                           mBuildCompositorHitTestInfo;
   bool                           mLessEventRegionItems;
+  bool                           mBuiltOverlayScrollbars;
 };
 
 class nsDisplayItem;
