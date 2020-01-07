@@ -5,7 +5,7 @@
 
 
 
-use attr::{AttrSelectorOperation, NamespaceConstraint, CaseSensitivity};
+use attr::{AttrSelectorOperation, CaseSensitivity, NamespaceConstraint};
 use matching::{ElementSelectorFlags, MatchingContext};
 use parser::SelectorImpl;
 use servo_arc::NonZeroPtrMut;

@@ -18,9 +18,7 @@ pub struct Time {
 impl Time {
     
     pub fn from_seconds(seconds: CSSFloat) -> Self {
-        Time {
-            seconds: seconds,
-        }
+        Time { seconds: seconds }
     }
 
     

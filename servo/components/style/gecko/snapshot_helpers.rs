@@ -11,13 +11,14 @@ use string_cache::Atom;
 
 
 
-pub type ClassOrClassList<T> = unsafe extern fn (T, *mut *mut nsAtom, *mut *mut *mut nsAtom) -> u32;
+pub type ClassOrClassList<T> =
+    unsafe extern "C" fn(T, *mut *mut nsAtom, *mut *mut *mut nsAtom) -> u32;
 
 
 
 
 
-pub type HasClass<T> = unsafe extern fn (T, *mut nsAtom, bool) -> bool;
+pub type HasClass<T> = unsafe extern "C" fn(T, *mut nsAtom, bool) -> bool;
 
 
 
@@ -38,28 +39,23 @@ pub fn has_class<T>(
 
 
 
-
-pub fn each_class<F, T>(
-    item: T,
-    mut callback: F,
-    getter: ClassOrClassList<T>,
-)
+pub fn each_class<F, T>(item: T, mut callback: F, getter: ClassOrClassList<T>)
 where
-    F: FnMut(&Atom)
+    F: FnMut(&Atom),
 {
     unsafe {
         let mut class: *mut nsAtom = ptr::null_mut();
         let mut list: *mut *mut nsAtom = ptr::null_mut();
         let length = getter(item, &mut class, &mut list);
         match length {
-            0 => {}
+            0 => {},
             1 => Atom::with(class, callback),
             n => {
                 let classes = slice::from_raw_parts(list, n as usize);
                 for c in classes {
                     Atom::with(*c, &mut callback)
                 }
-            }
+            },
         }
     }
 }

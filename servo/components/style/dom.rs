@@ -7,11 +7,13 @@
 #![allow(unsafe_code)]
 #![deny(missing_docs)]
 
-use {Atom, Namespace, LocalName, WeakAtom};
+use {Atom, LocalName, Namespace, WeakAtom};
 use applicable_declarations::ApplicableDeclarationBlock;
 use atomic_refcell::{AtomicRef, AtomicRefCell, AtomicRefMut};
-#[cfg(feature = "gecko")] use context::PostAnimationTasks;
-#[cfg(feature = "gecko")] use context::UpdateAnimationsTasks;
+#[cfg(feature = "gecko")]
+use context::PostAnimationTasks;
+#[cfg(feature = "gecko")]
+use context::UpdateAnimationsTasks;
 use data::ElementData;
 use element_state::ElementState;
 use font_metrics::FontMetricsProvider;
@@ -77,7 +79,7 @@ where
             let n = self.0.next()?;
             
             if n.is_text_node() || n.is_element() {
-                return Some(n)
+                return Some(n);
             }
         }
     }
@@ -87,7 +89,7 @@ where
 pub struct DomChildren<N>(Option<N>);
 impl<N> Iterator for DomChildren<N>
 where
-    N: TNode
+    N: TNode,
 {
     type Item = N;
 
@@ -106,7 +108,7 @@ pub struct DomDescendants<N> {
 
 impl<N> Iterator for DomDescendants<N>
 where
-    N: TNode
+    N: TNode,
 {
     type Item = N;
 
@@ -119,7 +121,7 @@ where
 }
 
 
-pub trait TDocument : Sized + Copy + Clone {
+pub trait TDocument: Sized + Copy + Clone {
     
     type ConcreteNode: TNode<ConcreteDocument = Self>;
 
@@ -147,7 +149,7 @@ pub trait TDocument : Sized + Copy + Clone {
 
 
 
-pub trait TNode : Sized + Copy + Clone + Debug + NodeInfo + PartialEq {
+pub trait TNode: Sized + Copy + Clone + Debug + NodeInfo + PartialEq {
     
     type ConcreteElement: TElement<ConcreteNode = Self>;
 
@@ -278,12 +280,13 @@ impl<N: TNode> Debug for ShowSubtreeDataAndPrimaryValues<N> {
 fn fmt_with_data<N: TNode>(f: &mut fmt::Formatter, n: N) -> fmt::Result {
     if let Some(el) = n.as_element() {
         write!(
-            f, "{:?} dd={} aodd={} data={:?}",
+            f,
+            "{:?} dd={} aodd={} data={:?}",
             el,
             el.has_dirty_descendants(),
             el.has_animation_only_dirty_descendants(),
             el.borrow_data(),
-       )
+        )
     } else {
         write!(f, "{:?}", n)
     }
@@ -296,15 +299,19 @@ fn fmt_with_data_and_primary_values<N: TNode>(f: &mut fmt::Formatter, n: N) -> f
         let aodd = el.has_animation_only_dirty_descendants();
         let data = el.borrow_data();
         let values = data.as_ref().and_then(|d| d.styles.get_primary());
-        write!(f, "{:?} dd={} aodd={} data={:?} values={:?}", el, dd, aodd, &data, values)
+        write!(
+            f,
+            "{:?} dd={} aodd={} data={:?} values={:?}",
+            el, dd, aodd, &data, values
+        )
     } else {
         write!(f, "{:?}", n)
     }
 }
 
-fn fmt_subtree<F, N: TNode>(f: &mut fmt::Formatter, stringify: &F, n: N, indent: u32)
-                            -> fmt::Result
-    where F: Fn(&mut fmt::Formatter, N) -> fmt::Result
+fn fmt_subtree<F, N: TNode>(f: &mut fmt::Formatter, stringify: &F, n: N, indent: u32) -> fmt::Result
+where
+    F: Fn(&mut fmt::Formatter, N) -> fmt::Result,
 {
     for _ in 0..indent {
         write!(f, "  ")?;
@@ -321,7 +328,7 @@ fn fmt_subtree<F, N: TNode>(f: &mut fmt::Formatter, stringify: &F, n: N, indent:
 }
 
 
-pub trait TShadowRoot : Sized + Copy + Clone + PartialEq {
+pub trait TShadowRoot: Sized + Copy + Clone + PartialEq {
     
     type ConcreteNode: TNode<ConcreteShadowRoot = Self>;
 
@@ -338,15 +345,8 @@ pub trait TShadowRoot : Sized + Copy + Clone + PartialEq {
 }
 
 
-pub trait TElement
-    : Eq
-    + PartialEq
-    + Debug
-    + Hash
-    + Sized
-    + Copy
-    + Clone
-    + SelectorsElement<Impl = SelectorImpl>
+pub trait TElement:
+    Eq + PartialEq + Debug + Hash + Sized + Copy + Clone + SelectorsElement<Impl = SelectorImpl>
 {
     
     type ConcreteNode: TNode<ConcreteElement = Self>;
@@ -371,12 +371,16 @@ pub trait TElement
     
     
     
-    fn owner_doc_matches_for_testing(&self, _: &Device) -> bool { true }
+    fn owner_doc_matches_for_testing(&self, _: &Device) -> bool {
+        true
+    }
 
     
     
     
-    fn matches_user_and_author_rules(&self) -> bool { true }
+    fn matches_user_and_author_rules(&self) -> bool {
+        true
+    }
 
     
     fn depth(&self) -> usize {
@@ -424,7 +428,8 @@ pub trait TElement
     fn each_anonymous_content_child<F>(&self, _f: F)
     where
         F: FnMut(Self),
-    {}
+    {
+    }
 
     
     fn is_html_element(&self) -> bool;
@@ -445,8 +450,7 @@ pub trait TElement
 
     
     
-    fn unset_dirty_style_attribute(&self) {
-    }
+    fn unset_dirty_style_attribute(&self) {}
 
     
     fn smil_override(&self) -> Option<ArcBorrow<Locked<PropertyDeclarationBlock>>> {
@@ -458,7 +462,7 @@ pub trait TElement
     
     fn animation_rules(&self) -> AnimationRules {
         if !self.may_have_animations() {
-            return AnimationRules(None, None)
+            return AnimationRules(None, None);
         }
 
         AnimationRules(self.animation_rule(), self.transition_rule())
@@ -484,7 +488,9 @@ pub trait TElement
     fn id(&self) -> Option<&WeakAtom>;
 
     
-    fn each_class<F>(&self, callback: F) where F: FnMut(&Atom);
+    fn each_class<F>(&self, callback: F)
+    where
+        F: FnMut(&Atom);
 
     
     
@@ -492,11 +498,7 @@ pub trait TElement
     
     
     
-    fn may_generate_pseudo(
-        &self,
-        pseudo: &PseudoElement,
-        _primary_style: &ComputedValues,
-    ) -> bool {
+    fn may_generate_pseudo(&self, pseudo: &PseudoElement, _primary_style: &ComputedValues) -> bool {
         
         
 
@@ -505,8 +507,10 @@ pub trait TElement
         
         
         
-        debug_assert!(pseudo.is_eager(),
-                      "Someone called may_generate_pseudo with a non-eager pseudo.");
+        debug_assert!(
+            pseudo.is_eager(),
+            "Someone called may_generate_pseudo with a non-eager pseudo."
+        );
         true
     }
 
@@ -542,8 +546,7 @@ pub trait TElement
             
             
             
-            return data.has_styles() &&
-                   !data.hint.has_animation_hint_or_recascade();
+            return data.has_styles() && !data.hint.has_animation_hint_or_recascade();
         }
 
         if self.has_snapshot() && !self.handled_snapshot() {
@@ -595,13 +598,42 @@ pub trait TElement
     
     
     
-    unsafe fn set_animation_only_dirty_descendants(&self) {
+    unsafe fn set_animation_only_dirty_descendants(&self) {}
+
+    
+    
+    
+    unsafe fn unset_animation_only_dirty_descendants(&self) {}
+
+    
+    
+    
+    
+    
+    unsafe fn clear_descendant_bits(&self) {
+        self.unset_dirty_descendants();
     }
 
     
     
     
-    unsafe fn unset_animation_only_dirty_descendants(&self) {
+    
+    
+    unsafe fn clear_dirty_bits(&self) {
+        self.unset_dirty_descendants();
+    }
+
+    
+    
+    
+    fn is_visited_link(&self) -> bool {
+        false
+    }
+
+    
+    
+    fn is_native_anonymous(&self) -> bool {
+        false
     }
 
     
@@ -609,35 +641,14 @@ pub trait TElement
     
     
     
-    unsafe fn clear_descendant_bits(&self) { self.unset_dirty_descendants(); }
-
     
     
     
     
     
-    unsafe fn clear_dirty_bits(&self) { self.unset_dirty_descendants(); }
-
-    
-    
-    
-    fn is_visited_link(&self) -> bool { false }
-
-    
-    
-    fn is_native_anonymous(&self) -> bool { false }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn implemented_pseudo_element(&self) -> Option<PseudoElement> { None }
+    fn implemented_pseudo_element(&self) -> Option<PseudoElement> {
+        None
+    }
 
     
     
@@ -692,13 +703,17 @@ pub trait TElement
     
     
     
-    fn may_have_animations(&self) -> bool { false }
+    fn may_have_animations(&self) -> bool {
+        false
+    }
 
     
     #[cfg(feature = "gecko")]
-    fn update_animations(&self,
-                         before_change_style: Option<Arc<ComputedValues>>,
-                         tasks: UpdateAnimationsTasks);
+    fn update_animations(
+        &self,
+        before_change_style: Option<Arc<ComputedValues>>,
+        tasks: UpdateAnimationsTasks,
+    );
 
     
     #[cfg(feature = "gecko")]
@@ -722,7 +737,7 @@ pub trait TElement
             Some(d) => d,
             None => return false,
         };
-        return data.hint.has_animation_hint()
+        return data.hint.has_animation_hint();
     }
 
     
@@ -740,7 +755,9 @@ pub trait TElement
     fn containing_shadow(&self) -> Option<<Self::ConcreteNode as TNode>::ConcreteShadowRoot>;
 
     
-    fn has_same_xbl_proto_binding_as(&self, _other: Self) -> bool { true }
+    fn has_same_xbl_proto_binding_as(&self, _other: Self) -> bool {
+        true
+    }
 
     
     
@@ -826,7 +843,7 @@ pub trait TElement
     fn might_need_transitions_update(
         &self,
         old_values: Option<&ComputedValues>,
-        new_values: &ComputedValues
+        new_values: &ComputedValues,
     ) -> bool;
 
     
@@ -837,7 +854,7 @@ pub trait TElement
     fn needs_transitions_update(
         &self,
         before_change_style: &ComputedValues,
-        after_change_style: &ComputedValues
+        after_change_style: &ComputedValues,
     ) -> bool;
 
     
@@ -852,7 +869,7 @@ pub trait TElement
     fn match_element_lang(
         &self,
         override_lang: Option<Option<AttrValue>>,
-        value: &PseudoClassStringArg
+        value: &PseudoClassStringArg,
     ) -> bool;
 
     
@@ -865,8 +882,7 @@ pub trait TElement
         &self,
         visited_handling: VisitedHandlingMode,
         hints: &mut V,
-    )
-    where
+    ) where
         V: Push<ApplicableDeclarationBlock>;
 }
 

@@ -13,7 +13,8 @@ pub mod bindings {
 
 
 
-#[allow(dead_code, improper_ctypes, non_camel_case_types, non_snake_case, non_upper_case_globals, missing_docs)]
+#[allow(dead_code, improper_ctypes, non_camel_case_types, non_snake_case, non_upper_case_globals,
+        missing_docs)]
 pub mod structs {
     include!(concat!(env!("OUT_DIR"), "/gecko/structs.rs"));
 }

@@ -57,8 +57,7 @@ impl GeckoRestyleDamage {
                 &mut reset_only,
             )
         };
-        if reset_only &&
-           old_style.custom_properties() != new_style.custom_properties() {
+        if reset_only && old_style.custom_properties() != new_style.custom_properties() {
             
             
             

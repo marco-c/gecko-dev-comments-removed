@@ -6,9 +6,9 @@
 
 use context::QuirksMode;
 use cssparser::{Parser, SourceLocation, UnicodeRange};
-use error_reporting::{ParseErrorReporter, ContextualParseError};
+use error_reporting::{ContextualParseError, ParseErrorReporter};
 use style_traits::{OneOrMoreSeparated, ParseError, ParsingMode, Separator};
-use stylesheets::{CssRuleType, Origin, UrlExtraData, Namespaces};
+use stylesheets::{CssRuleType, Namespaces, Origin, UrlExtraData};
 
 
 #[cfg(feature = "gecko")]
@@ -116,12 +116,14 @@ impl<'a> ParserContext<'a> {
     
     #[inline]
     pub fn in_page_rule(&self) -> bool {
-        self.rule_type.map_or(false, |rule_type| rule_type == CssRuleType::Page)
+        self.rule_type
+            .map_or(false, |rule_type| rule_type == CssRuleType::Page)
     }
 
     
     pub fn rule_type(&self) -> CssRuleType {
-        self.rule_type.expect("Rule type expected, but none was found.")
+        self.rule_type
+            .expect("Rule type expected, but none was found.")
     }
 
     
@@ -130,15 +132,16 @@ impl<'a> ParserContext<'a> {
         context: &ParserErrorContext<R>,
         location: SourceLocation,
         error: ContextualParseError,
-    )
-    where
+    ) where
         R: ParseErrorReporter,
     {
         let location = SourceLocation {
             line: location.line,
             column: location.column,
         };
-        context.error_reporter.report_error(self.url_data, location, error)
+        context
+            .error_reporter
+            .report_error(self.url_data, location, error)
     }
 
     
@@ -151,7 +154,7 @@ impl<'a> ParserContext<'a> {
 
 
 
-pub trait Parse : Sized {
+pub trait Parse: Sized {
     
     
     
@@ -166,15 +169,19 @@ where
     T: Parse + OneOrMoreSeparated,
     <T as OneOrMoreSeparated>::S: Separator,
 {
-    fn parse<'i, 't>(context: &ParserContext, input: &mut Parser<'i, 't>)
-                     -> Result<Self, ParseError<'i>> {
+    fn parse<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Self, ParseError<'i>> {
         <T as OneOrMoreSeparated>::S::parse(input, |i| T::parse(context, i))
     }
 }
 
 impl Parse for UnicodeRange {
-    fn parse<'i, 't>(_context: &ParserContext, input: &mut Parser<'i, 't>)
-                     -> Result<Self, ParseError<'i>> {
+    fn parse<'i, 't>(
+        _context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Self, ParseError<'i>> {
         UnicodeRange::parse(input).map_err(|e| e.into())
     }
 }

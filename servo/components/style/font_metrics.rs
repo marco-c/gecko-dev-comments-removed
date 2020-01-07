@@ -40,8 +40,14 @@ pub trait FontMetricsProvider {
     
     
     
-    fn query(&self, _font: &Font, _font_size: Au, _wm: WritingMode,
-             _in_media_query: bool, _device: &Device) -> FontMetricsQueryResult {
+    fn query(
+        &self,
+        _font: &Font,
+        _font_size: Au,
+        _wm: WritingMode,
+        _in_media_query: bool,
+        _device: &Device,
+    ) -> FontMetricsQueryResult {
         FontMetricsQueryResult::NotAvailable
     }
 
@@ -49,7 +55,9 @@ pub trait FontMetricsProvider {
     fn get_size(&self, font_name: &Atom, font_family: u8) -> Au;
 
     
-    fn create_from(context: &SharedStyleContext) -> Self where Self: Sized;
+    fn create_from(context: &SharedStyleContext) -> Self
+    where
+        Self: Sized;
 }
 
 

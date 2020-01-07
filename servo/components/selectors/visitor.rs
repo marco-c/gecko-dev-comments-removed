@@ -38,9 +38,7 @@ pub trait SelectorVisitor {
     
     
     
-    fn visit_complex_selector(&mut self,
-                              _combinator_to_right: Option<Combinator>)
-                              -> bool {
+    fn visit_complex_selector(&mut self, _combinator_to_right: Option<Combinator>) -> bool {
         true
     }
 }

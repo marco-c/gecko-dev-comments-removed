@@ -18,7 +18,6 @@ use stylist::CascadeData;
 
 
 
-
 pub struct AuthorStyles<S>
 where
     S: StylesheetInDocument + PartialEq + 'static,
@@ -57,27 +56,20 @@ where
         device: &Device,
         quirks_mode: QuirksMode,
         guard: &SharedRwLockReadGuard,
-    )
-    where
+    ) where
         E: TElement,
         S: ToMediaListKey,
     {
-        let flusher = self.stylesheets.flush::<E>(
-             None,
-             None,
-        );
+        let flusher = self.stylesheets
+            .flush::<E>( None,  None);
 
         if flusher.sheets.dirty() {
             self.quirks_mode = quirks_mode;
         }
 
         
-        let _ = self.data.rebuild(
-            device,
-            quirks_mode,
-            flusher.sheets,
-            guard,
-        );
+        let _ = self.data
+            .rebuild(device, quirks_mode, flusher.sheets, guard);
     }
 }
 

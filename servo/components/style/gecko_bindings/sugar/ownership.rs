@@ -11,7 +11,7 @@ use std::ops::{Deref, DerefMut};
 use std::ptr;
 
 
-pub unsafe trait HasFFI : Sized + 'static {
+pub unsafe trait HasFFI: Sized + 'static {
     
     
     
@@ -20,7 +20,7 @@ pub unsafe trait HasFFI : Sized + 'static {
 
 
 
-pub unsafe trait HasSimpleFFI : HasFFI {
+pub unsafe trait HasSimpleFFI: HasFFI {
     #[inline]
     
     
@@ -57,7 +57,7 @@ pub unsafe trait HasSimpleFFI : HasFFI {
 
 
 
-pub unsafe trait HasBoxFFI : HasSimpleFFI {
+pub unsafe trait HasBoxFFI: HasSimpleFFI {
     #[inline]
     
     
@@ -73,7 +73,7 @@ pub unsafe trait HasBoxFFI : HasSimpleFFI {
 
 
 
-pub unsafe trait HasArcFFI : HasFFI {
+pub unsafe trait HasArcFFI: HasFFI {
     
     
     
@@ -109,9 +109,7 @@ pub unsafe trait HasArcFFI : HasFFI {
     
     
     fn as_arc<'a>(ptr: &'a &Self::FFIType) -> &'a RawOffsetArc<Self> {
-        unsafe {
-            transmute::<&&Self::FFIType, &RawOffsetArc<Self>>(ptr)
-        }
+        unsafe { transmute::<&&Self::FFIType, &RawOffsetArc<Self>>(ptr) }
     }
 
     #[inline]
@@ -119,9 +117,7 @@ pub unsafe trait HasArcFFI : HasFFI {
     
     
     fn arc_as_borrowed<'a>(arc: &'a RawOffsetArc<Self>) -> &'a &Self::FFIType {
-        unsafe {
-            transmute::<&RawOffsetArc<Self>, &&Self::FFIType>(arc)
-        }
+        unsafe { transmute::<&RawOffsetArc<Self>, &&Self::FFIType>(arc) }
     }
 
     #[inline]
@@ -165,7 +161,8 @@ impl<GeckoType> Strong<GeckoType> {
     
     
     pub fn into_arc<ServoType>(self) -> RawOffsetArc<ServoType>
-        where ServoType: HasArcFFI<FFIType = GeckoType>,
+    where
+        ServoType: HasArcFFI<FFIType = GeckoType>,
     {
         self.into_arc_opt().unwrap()
     }
@@ -177,7 +174,8 @@ impl<GeckoType> Strong<GeckoType> {
     
     
     pub fn into_arc_opt<ServoType>(self) -> Option<RawOffsetArc<ServoType>>
-        where ServoType: HasArcFFI<FFIType = GeckoType>,
+    where
+        ServoType: HasArcFFI<FFIType = GeckoType>,
     {
         if self.is_null() {
             None
@@ -194,7 +192,8 @@ impl<GeckoType> Strong<GeckoType> {
     
     
     pub fn as_arc_opt<ServoType>(&self) -> Option<&RawOffsetArc<ServoType>>
-        where ServoType: HasArcFFI<FFIType = GeckoType>,
+    where
+        ServoType: HasArcFFI<FFIType = GeckoType>,
     {
         if self.is_null() {
             None
@@ -271,7 +270,8 @@ pub struct Owned<GeckoType> {
 impl<GeckoType> Owned<GeckoType> {
     
     pub fn into_box<ServoType>(self) -> Box<ServoType>
-        where ServoType: HasBoxFFI<FFIType = GeckoType>,
+    where
+        ServoType: HasBoxFFI<FFIType = GeckoType>,
     {
         unsafe { transmute(self) }
     }
@@ -313,7 +313,8 @@ impl<GeckoType> OwnedOrNull<GeckoType> {
 
     
     pub fn into_box_opt<ServoType>(self) -> Option<Box<ServoType>>
-        where ServoType: HasBoxFFI<FFIType = GeckoType>,
+    where
+        ServoType: HasBoxFFI<FFIType = GeckoType>,
     {
         if self.is_null() {
             None

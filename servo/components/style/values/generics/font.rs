@@ -5,7 +5,7 @@
 
 
 use app_units::Au;
-use byteorder::{ReadBytesExt, BigEndian};
+use byteorder::{BigEndian, ReadBytesExt};
 use cssparser::Parser;
 use num_traits::One;
 use parser::{Parse, ParserContext};
@@ -92,7 +92,9 @@ impl<T: Parse> Parse for FontSettings<T> {
         }
 
         Ok(FontSettings(
-            input.parse_comma_separated(|i| T::parse(context, i))?.into_boxed_slice()
+            input
+                .parse_comma_separated(|i| T::parse(context, i))?
+                .into_boxed_slice(),
         ))
     }
 }
@@ -130,7 +132,7 @@ impl Parse for FontTag {
 
         
         if tag.len() != 4 || tag.as_bytes().iter().any(|c| *c < b' ' || *c > b'~') {
-            return Err(location.new_custom_error(StyleParseErrorKind::UnspecifiedError))
+            return Err(location.new_custom_error(StyleParseErrorKind::UnspecifiedError));
         }
 
         let mut raw = Cursor::new(tag.as_bytes());
@@ -138,8 +140,8 @@ impl Parse for FontTag {
     }
 }
 
-#[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug, MallocSizeOf)]
-#[derive(PartialEq, ToAnimatedValue, ToAnimatedZero, ToCss)]
+#[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug, MallocSizeOf, PartialEq,
+         ToAnimatedValue, ToAnimatedZero, ToCss)]
 
 pub struct KeywordInfo<Length> {
     
@@ -176,8 +178,8 @@ where
 }
 
 
-#[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug, MallocSizeOf)]
-#[derive(PartialEq, ToAnimatedValue, ToAnimatedZero)]
+#[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug, MallocSizeOf, PartialEq,
+         ToAnimatedValue, ToAnimatedZero)]
 #[allow(missing_docs)]
 pub enum KeywordSize {
     XXSmall,

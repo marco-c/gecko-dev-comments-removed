@@ -61,10 +61,7 @@ malloc_size_of_is_0!(ServoRestyleDamage);
 impl ServoRestyleDamage {
     
     
-    pub fn compute_style_difference(
-        old: &ComputedValues,
-        new: &ComputedValues,
-    ) -> StyleDifference {
+    pub fn compute_style_difference(old: &ComputedValues, new: &ComputedValues) -> StyleDifference {
         let damage = compute_damage(old, new);
         let change = if damage.is_empty() {
             StyleChange::Unchanged
@@ -84,9 +81,9 @@ impl ServoRestyleDamage {
     
     pub fn rebuild_and_reflow() -> ServoRestyleDamage {
         ServoRestyleDamage::REPAINT | ServoRestyleDamage::REPOSITION |
-        ServoRestyleDamage::STORE_OVERFLOW | ServoRestyleDamage::BUBBLE_ISIZES |
-        ServoRestyleDamage::REFLOW_OUT_OF_FLOW | ServoRestyleDamage::REFLOW |
-        ServoRestyleDamage::RECONSTRUCT_FLOW
+            ServoRestyleDamage::STORE_OVERFLOW | ServoRestyleDamage::BUBBLE_ISIZES |
+            ServoRestyleDamage::REFLOW_OUT_OF_FLOW | ServoRestyleDamage::REFLOW |
+            ServoRestyleDamage::RECONSTRUCT_FLOW
     }
 
     
@@ -99,28 +96,35 @@ impl ServoRestyleDamage {
     pub fn damage_for_parent(self, child_is_absolutely_positioned: bool) -> ServoRestyleDamage {
         if child_is_absolutely_positioned {
             self & (ServoRestyleDamage::REPAINT | ServoRestyleDamage::REPOSITION |
-                    ServoRestyleDamage::STORE_OVERFLOW | ServoRestyleDamage::REFLOW_OUT_OF_FLOW |
-                    ServoRestyleDamage::RESOLVE_GENERATED_CONTENT)
+                ServoRestyleDamage::STORE_OVERFLOW |
+                ServoRestyleDamage::REFLOW_OUT_OF_FLOW |
+                ServoRestyleDamage::RESOLVE_GENERATED_CONTENT)
         } else {
             self & (ServoRestyleDamage::REPAINT | ServoRestyleDamage::REPOSITION |
-                    ServoRestyleDamage::STORE_OVERFLOW | ServoRestyleDamage::REFLOW |
-                    ServoRestyleDamage::REFLOW_OUT_OF_FLOW | ServoRestyleDamage::RESOLVE_GENERATED_CONTENT)
+                ServoRestyleDamage::STORE_OVERFLOW |
+                ServoRestyleDamage::REFLOW |
+                ServoRestyleDamage::REFLOW_OUT_OF_FLOW |
+                ServoRestyleDamage::RESOLVE_GENERATED_CONTENT)
         }
     }
 
     
     
-    pub fn damage_for_child(self,
-                            parent_is_absolutely_positioned: bool,
-                            child_is_absolutely_positioned: bool)
-                            -> ServoRestyleDamage {
-        match (parent_is_absolutely_positioned, child_is_absolutely_positioned) {
+    pub fn damage_for_child(
+        self,
+        parent_is_absolutely_positioned: bool,
+        child_is_absolutely_positioned: bool,
+    ) -> ServoRestyleDamage {
+        match (
+            parent_is_absolutely_positioned,
+            child_is_absolutely_positioned,
+        ) {
             (false, true) => {
                 
                 
                 
                 self & (ServoRestyleDamage::REPAINT | ServoRestyleDamage::REPOSITION)
-            }
+            },
             (true, false) => {
                 
                 
@@ -129,11 +133,12 @@ impl ServoRestyleDamage {
                 } else {
                     self
                 }
-            }
+            },
             _ => {
                 
-                self & (ServoRestyleDamage::REPAINT | ServoRestyleDamage::REPOSITION | ServoRestyleDamage::REFLOW)
-            }
+                self & (ServoRestyleDamage::REPAINT | ServoRestyleDamage::REPOSITION |
+                    ServoRestyleDamage::REFLOW)
+            },
         }
     }
 }
@@ -148,20 +153,25 @@ impl fmt::Display for ServoRestyleDamage {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         let mut first_elem = true;
 
-        let to_iter =
-            [ (ServoRestyleDamage::REPAINT, "Repaint")
-            , (ServoRestyleDamage::REPOSITION, "Reposition")
-            , (ServoRestyleDamage::STORE_OVERFLOW, "StoreOverflow")
-            , (ServoRestyleDamage::BUBBLE_ISIZES, "BubbleISizes")
-            , (ServoRestyleDamage::REFLOW_OUT_OF_FLOW, "ReflowOutOfFlow")
-            , (ServoRestyleDamage::REFLOW, "Reflow")
-            , (ServoRestyleDamage::RESOLVE_GENERATED_CONTENT, "ResolveGeneratedContent")
-            , (ServoRestyleDamage::RECONSTRUCT_FLOW, "ReconstructFlow")
-            ];
+        let to_iter = [
+            (ServoRestyleDamage::REPAINT, "Repaint"),
+            (ServoRestyleDamage::REPOSITION, "Reposition"),
+            (ServoRestyleDamage::STORE_OVERFLOW, "StoreOverflow"),
+            (ServoRestyleDamage::BUBBLE_ISIZES, "BubbleISizes"),
+            (ServoRestyleDamage::REFLOW_OUT_OF_FLOW, "ReflowOutOfFlow"),
+            (ServoRestyleDamage::REFLOW, "Reflow"),
+            (
+                ServoRestyleDamage::RESOLVE_GENERATED_CONTENT,
+                "ResolveGeneratedContent",
+            ),
+            (ServoRestyleDamage::RECONSTRUCT_FLOW, "ReconstructFlow"),
+        ];
 
         for &(damage, damage_str) in &to_iter {
             if self.contains(damage) {
-                if !first_elem { write!(f, " | ")?; }
+                if !first_elem {
+                    write!(f, " | ")?;
+                }
                 write!(f, "{}", damage_str)?;
                 first_elem = false;
             }
@@ -181,27 +191,59 @@ fn compute_damage(old: &ComputedValues, new: &ComputedValues) -> ServoRestyleDam
     
     
 
-    restyle_damage_rebuild_and_reflow!(old, new, damage,
-            [ServoRestyleDamage::REPAINT, ServoRestyleDamage::REPOSITION,
-            ServoRestyleDamage::STORE_OVERFLOW, ServoRestyleDamage::BUBBLE_ISIZES,
-            ServoRestyleDamage::REFLOW_OUT_OF_FLOW, ServoRestyleDamage::REFLOW,
-            ServoRestyleDamage::RECONSTRUCT_FLOW]) ||
+    restyle_damage_rebuild_and_reflow!(
+        old,
+        new,
+        damage,
+        [
+            ServoRestyleDamage::REPAINT,
+            ServoRestyleDamage::REPOSITION,
+            ServoRestyleDamage::STORE_OVERFLOW,
+            ServoRestyleDamage::BUBBLE_ISIZES,
+            ServoRestyleDamage::REFLOW_OUT_OF_FLOW,
+            ServoRestyleDamage::REFLOW,
+            ServoRestyleDamage::RECONSTRUCT_FLOW
+        ]
+    ) ||
         (new.get_box().display == Display::Inline &&
-         restyle_damage_rebuild_and_reflow_inline!(old, new, damage,
-            [ServoRestyleDamage::REPAINT, ServoRestyleDamage::REPOSITION,
-            ServoRestyleDamage::STORE_OVERFLOW, ServoRestyleDamage::BUBBLE_ISIZES,
-            ServoRestyleDamage::REFLOW_OUT_OF_FLOW, ServoRestyleDamage::REFLOW,
-            ServoRestyleDamage::RECONSTRUCT_FLOW])) ||
-    restyle_damage_reflow!(old, new, damage,
-            [ServoRestyleDamage::REPAINT, ServoRestyleDamage::REPOSITION,
-            ServoRestyleDamage::STORE_OVERFLOW, ServoRestyleDamage::BUBBLE_ISIZES,
-            ServoRestyleDamage::REFLOW_OUT_OF_FLOW, ServoRestyleDamage::REFLOW]) ||
-    restyle_damage_reflow_out_of_flow!(old, new, damage,
-            [ServoRestyleDamage::REPAINT, ServoRestyleDamage::REPOSITION,
-            ServoRestyleDamage::STORE_OVERFLOW, ServoRestyleDamage::REFLOW_OUT_OF_FLOW]) ||
-    restyle_damage_repaint!(old, new, damage,
-            [ServoRestyleDamage::REPAINT]);
-
+            restyle_damage_rebuild_and_reflow_inline!(
+                old,
+                new,
+                damage,
+                [
+                    ServoRestyleDamage::REPAINT,
+                    ServoRestyleDamage::REPOSITION,
+                    ServoRestyleDamage::STORE_OVERFLOW,
+                    ServoRestyleDamage::BUBBLE_ISIZES,
+                    ServoRestyleDamage::REFLOW_OUT_OF_FLOW,
+                    ServoRestyleDamage::REFLOW,
+                    ServoRestyleDamage::RECONSTRUCT_FLOW
+                ]
+            )) ||
+        restyle_damage_reflow!(
+            old,
+            new,
+            damage,
+            [
+                ServoRestyleDamage::REPAINT,
+                ServoRestyleDamage::REPOSITION,
+                ServoRestyleDamage::STORE_OVERFLOW,
+                ServoRestyleDamage::BUBBLE_ISIZES,
+                ServoRestyleDamage::REFLOW_OUT_OF_FLOW,
+                ServoRestyleDamage::REFLOW
+            ]
+        ) ||
+        restyle_damage_reflow_out_of_flow!(
+            old,
+            new,
+            damage,
+            [
+                ServoRestyleDamage::REPAINT,
+                ServoRestyleDamage::REPOSITION,
+                ServoRestyleDamage::STORE_OVERFLOW,
+                ServoRestyleDamage::REFLOW_OUT_OF_FLOW
+            ]
+        ) || restyle_damage_repaint!(old, new, damage, [ServoRestyleDamage::REPAINT]);
 
     
     

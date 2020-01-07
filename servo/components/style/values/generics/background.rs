@@ -5,15 +5,15 @@
 
 
 
-#[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug)]
-#[derive(MallocSizeOf, PartialEq, ToComputedValue, ToCss)]
+#[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug, MallocSizeOf, PartialEq,
+         ToComputedValue, ToCss)]
 pub enum BackgroundSize<LengthOrPercentageOrAuto> {
     
     Explicit {
         
         width: LengthOrPercentageOrAuto,
         
-        height: LengthOrPercentageOrAuto
+        height: LengthOrPercentageOrAuto,
     },
     
     #[animation(error)]

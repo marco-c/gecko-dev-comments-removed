@@ -9,33 +9,31 @@
 
 use std::fmt::{self, Write};
 use style_traits::{CssWriter, ToCss};
-use values::computed::{LengthOrPercentage, Image};
+use values::computed::{Image, LengthOrPercentage};
 use values::computed::url::ComputedUrl;
-use values::generics::basic_shape::{BasicShape as GenericBasicShape};
-use values::generics::basic_shape::{Circle as GenericCircle, ClippingShape as GenericClippingShape};
-use values::generics::basic_shape::{Ellipse as GenericEllipse, FloatAreaShape as GenericFloatAreaShape};
-use values::generics::basic_shape::{InsetRect as GenericInsetRect, ShapeRadius as GenericShapeRadius};
+use values::generics::basic_shape as generic;
 
 
-pub type ClippingShape = GenericClippingShape<BasicShape, ComputedUrl>;
+pub type ClippingShape = generic::ClippingShape<BasicShape, ComputedUrl>;
 
 
-pub type FloatAreaShape = GenericFloatAreaShape<BasicShape, Image>;
+pub type FloatAreaShape = generic::FloatAreaShape<BasicShape, Image>;
 
 
-pub type BasicShape = GenericBasicShape<LengthOrPercentage, LengthOrPercentage, LengthOrPercentage>;
+pub type BasicShape =
+    generic::BasicShape<LengthOrPercentage, LengthOrPercentage, LengthOrPercentage>;
 
 
-pub type InsetRect = GenericInsetRect<LengthOrPercentage>;
+pub type InsetRect = generic::InsetRect<LengthOrPercentage>;
 
 
-pub type Circle = GenericCircle<LengthOrPercentage, LengthOrPercentage, LengthOrPercentage>;
+pub type Circle = generic::Circle<LengthOrPercentage, LengthOrPercentage, LengthOrPercentage>;
 
 
-pub type Ellipse = GenericEllipse<LengthOrPercentage, LengthOrPercentage, LengthOrPercentage>;
+pub type Ellipse = generic::Ellipse<LengthOrPercentage, LengthOrPercentage, LengthOrPercentage>;
 
 
-pub type ShapeRadius = GenericShapeRadius<LengthOrPercentage>;
+pub type ShapeRadius = generic::ShapeRadius<LengthOrPercentage>;
 
 impl ToCss for Circle {
     fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result

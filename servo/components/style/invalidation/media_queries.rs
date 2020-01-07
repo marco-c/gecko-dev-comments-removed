@@ -35,7 +35,7 @@ impl MediaListKey {
 
 
 
-pub trait ToMediaListKey : Sized {
+pub trait ToMediaListKey: Sized {
     
     
     #[allow(unsafe_code)]
@@ -73,14 +73,16 @@ impl EffectiveMediaQueryResults {
     
     
     pub fn was_effective<T>(&self, item: &T) -> bool
-        where T: ToMediaListKey,
+    where
+        T: ToMediaListKey,
     {
         self.set.contains(&item.to_media_list_key())
     }
 
     
     pub fn saw_effective<T>(&mut self, item: &T)
-        where T: ToMediaListKey,
+    where
+        T: ToMediaListKey,
     {
         
         
@@ -97,19 +99,12 @@ impl NestedRuleIterationCondition for PotentiallyEffectiveMediaRules {
         _: &SharedRwLockReadGuard,
         _: &Device,
         _: QuirksMode,
-        _: &ImportRule)
-        -> bool
-    {
+        _: &ImportRule,
+    ) -> bool {
         true
     }
 
-    fn process_media(
-        _: &SharedRwLockReadGuard,
-        _: &Device,
-        _: QuirksMode,
-        _: &MediaRule)
-        -> bool
-    {
+    fn process_media(_: &SharedRwLockReadGuard, _: &Device, _: QuirksMode, _: &MediaRule) -> bool {
         true
     }
 
@@ -118,9 +113,8 @@ impl NestedRuleIterationCondition for PotentiallyEffectiveMediaRules {
         guard: &SharedRwLockReadGuard,
         device: &Device,
         quirks_mode: QuirksMode,
-        rule: &DocumentRule)
-        -> bool
-    {
+        rule: &DocumentRule,
+    ) -> bool {
         use stylesheets::EffectiveRules;
         EffectiveRules::process_document(guard, device, quirks_mode, rule)
     }
@@ -130,9 +124,8 @@ impl NestedRuleIterationCondition for PotentiallyEffectiveMediaRules {
         guard: &SharedRwLockReadGuard,
         device: &Device,
         quirks_mode: QuirksMode,
-        rule: &SupportsRule)
-        -> bool
-    {
+        rule: &SupportsRule,
+    ) -> bool {
         use stylesheets::EffectiveRules;
         EffectiveRules::process_supports(guard, device, quirks_mode, rule)
     }

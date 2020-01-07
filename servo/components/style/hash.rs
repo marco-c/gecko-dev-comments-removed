@@ -18,7 +18,6 @@ pub use hashglobe::hash_set::HashSet;
 pub use hashglobe::fake::{HashMap, HashSet};
 
 
-
 pub mod map {
     #[cfg(feature = "gecko")]
     pub use hashglobe::hash_map::{Entry, Iter};

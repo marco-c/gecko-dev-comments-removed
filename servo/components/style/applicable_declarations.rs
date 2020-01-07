@@ -9,7 +9,7 @@ use rule_tree::{CascadeLevel, StyleSource};
 use servo_arc::Arc;
 use shared_lock::Locked;
 use smallvec::SmallVec;
-use std::fmt::{Debug, self};
+use std::fmt::{self, Debug};
 use std::mem;
 
 
@@ -89,9 +89,10 @@ impl ApplicableDeclarationBlock {
     
     
     #[inline]
-    pub fn from_declarations(declarations: Arc<Locked<PropertyDeclarationBlock>>,
-                             level: CascadeLevel)
-                             -> Self {
+    pub fn from_declarations(
+        declarations: Arc<Locked<PropertyDeclarationBlock>>,
+        level: CascadeLevel,
+    ) -> Self {
         ApplicableDeclarationBlock {
             source: StyleSource::Declarations(declarations),
             order_and_level: SourceOrderAndCascadeLevel::new(0, level),
@@ -101,16 +102,12 @@ impl ApplicableDeclarationBlock {
 
     
     #[inline]
-    pub fn new(source: StyleSource,
-               order: u32,
-               level: CascadeLevel,
-               specificity: u32) -> Self {
+    pub fn new(source: StyleSource, order: u32, level: CascadeLevel, specificity: u32) -> Self {
         ApplicableDeclarationBlock {
             source: source,
             order_and_level: SourceOrderAndCascadeLevel::new(order, level),
             specificity: specificity,
         }
-
     }
 
     

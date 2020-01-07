@@ -10,7 +10,7 @@ use cssparser::{Parser as CssParser, ParserInput};
 use selectors::parser::SelectorList;
 use std::fmt::{self, Debug, Write};
 use style_traits::{CssWriter, ParseError, ToCss};
-use stylesheets::{Origin, Namespaces, UrlExtraData};
+use stylesheets::{Namespaces, Origin, UrlExtraData};
 
 
 
@@ -51,8 +51,9 @@ impl<'a> SelectorParser<'a> {
     
     
     
-    pub fn parse_author_origin_no_namespace(input: &str)
-                                            -> Result<SelectorList<SelectorImpl>, ParseError> {
+    pub fn parse_author_origin_no_namespace(
+        input: &str,
+    ) -> Result<SelectorList<SelectorImpl>, ParseError> {
         let namespaces = Namespaces::default();
         let parser = SelectorParser {
             stylesheet_origin: Origin::Author,
@@ -71,8 +72,7 @@ impl<'a> SelectorParser<'a> {
     
     
     pub fn chrome_rules_enabled(&self) -> bool {
-        self.url_data.map_or(false, |d| d.is_chrome()) ||
-            self.stylesheet_origin == Origin::User
+        self.url_data.map_or(false, |d| d.is_chrome()) || self.stylesheet_origin == Origin::User
     }
 }
 
@@ -154,11 +154,7 @@ impl<T> PerPseudoElementMap<T> {
     }
 
     
-    pub fn get_or_insert_with<F>(
-        &mut self,
-        pseudo: &PseudoElement,
-        f: F,
-    ) -> &mut T
+    pub fn get_or_insert_with<F>(&mut self, pseudo: &PseudoElement, f: F) -> &mut T
     where
         F: FnOnce() -> T,
     {
@@ -201,7 +197,10 @@ impl Direction {
 }
 
 impl ToCss for Direction {
-    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result where W: Write {
+    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
+    where
+        W: Write,
+    {
         let dir_str = match *self {
             Direction::Rtl => "rtl",
             Direction::Ltr => "ltr",
