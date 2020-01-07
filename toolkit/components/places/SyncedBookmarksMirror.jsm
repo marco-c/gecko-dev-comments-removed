@@ -617,7 +617,7 @@ class SyncedBookmarksMirror {
     }
     if (guid == PlacesUtils.bookmarks.rootGuid) {
       
-      MirrorLog.warn("Ignoring Places root record", record.cleartext);
+      MirrorLog.warn("Ignoring Places root record", record);
       this.recordTelemetryEvent("mirror", "ignore", "folder",
                                 { why: "root" });
       return;
@@ -657,6 +657,18 @@ class SyncedBookmarksMirror {
           { childGuid, parentGuid: guid, position });
       }
     }
+    
+    
+    
+    
+    
+    let parentGuid = validateGuid(record.parentid);
+    if (parentGuid == PlacesUtils.bookmarks.rootGuid) {
+        await this.db.executeCached(`
+          INSERT OR IGNORE INTO structure(guid, parentGuid, position)
+          VALUES(:guid, :parentGuid, -1)`,
+          { guid, parentGuid });
+      }
   }
 
   async storeRemoteLivemark(record, { needsMerge }) {
@@ -913,6 +925,13 @@ class SyncedBookmarksMirror {
     
     
     
+    
+    
+    
+    
+    
+    
+    
     let itemRows = await this.db.execute(`
       SELECT v.guid, IFNULL(s.parentGuid, :unfiledGuid) AS parentGuid,
              IFNULL(s.position, -1) AS position, v.serverModified, v.kind,
@@ -920,10 +939,12 @@ class SyncedBookmarksMirror {
       FROM items v
       LEFT JOIN structure s ON s.guid = v.guid
       WHERE NOT v.isDeleted AND
-            v.guid <> :rootGuid
+            v.guid <> :rootGuid AND
+            (s.parentGuid IS NOT NULL OR v.kind <> :queryKind)
       ORDER BY parentGuid, position = -1, position, v.guid`,
       { rootGuid: PlacesUtils.bookmarks.rootGuid,
-        unfiledGuid: PlacesUtils.bookmarks.unfiledGuid });
+        unfiledGuid: PlacesUtils.bookmarks.unfiledGuid,
+        queryKind: SyncedBookmarksMirror.KIND.QUERY });
 
     let pseudoTree = new Map();
     for await (let row of yieldingIterator(itemRows)) {
@@ -1991,6 +2012,8 @@ async function initializeMirrorDatabase(db) {
 
 
 
+
+
 async function createMirrorRoots(db) {
   const syncableRoots = [{
     guid: PlacesUtils.bookmarks.rootGuid,
@@ -2917,11 +2940,6 @@ class BookmarkNode {
     return new BookmarkNode(guid, age, kind, needsMerge);
   }
 
-  isRoot() {
-    return this.guid == PlacesUtils.bookmarks.rootGuid ||
-           PlacesUtils.bookmarks.userContentRoots.includes(this.guid);
-  }
-
   isFolder() {
     return this.kind == SyncedBookmarksMirror.KIND.FOLDER;
   }
@@ -3105,12 +3123,17 @@ class BookmarkTree {
     this.deletedGuids.add(guid);
   }
 
-  * guids() {
-    for (let [guid, node] of this.byGuid) {
-      if (node == this.root) {
-        continue;
+  * syncableGuids() {
+    let nodesToWalk = PlacesUtils.bookmarks.userContentRoots.map(guid => {
+      let node = this.byGuid.get(guid);
+      return node ? node.children : [];
+    });
+    while (nodesToWalk.length) {
+      let childNodes = nodesToWalk.pop();
+      for (let node of childNodes) {
+        yield node.guid;
+        nodesToWalk.push(node.children);
       }
-      yield guid;
     }
     for (let guid of this.deletedGuids) {
       yield guid;
@@ -3314,10 +3337,15 @@ class BookmarkMerger {
   }
 
   async merge() {
-    let localRoot = this.localTree.nodeForGuid(PlacesUtils.bookmarks.rootGuid);
-    let remoteRoot = this.remoteTree.nodeForGuid(PlacesUtils.bookmarks.rootGuid);
-    let mergedRoot = await this.mergeNode(PlacesUtils.bookmarks.rootGuid, localRoot,
-                                          remoteRoot);
+    let mergedRoot = new MergedBookmarkNode(PlacesUtils.bookmarks.rootGuid,
+      BookmarkNode.root(), null, BookmarkMergeState.local);
+    for (let guid of PlacesUtils.bookmarks.userContentRoots) {
+      let localSyncableRoot = this.localTree.nodeForGuid(guid);
+      let remoteSyncableRoot = this.remoteTree.nodeForGuid(guid);
+      let mergedSyncableRoot = await this.mergeNode(guid, localSyncableRoot,
+                                                    remoteSyncableRoot);
+      mergedRoot.mergedChildren.push(mergedSyncableRoot);
+    }
 
     
     
@@ -3337,7 +3365,7 @@ class BookmarkMerger {
   }
 
   async subsumes(tree) {
-    for await (let guid of Async.yieldingIterator(tree.guids())) {
+    for await (let guid of Async.yieldingIterator(tree.syncableGuids())) {
       if (!this.mentions(guid)) {
         return false;
       }
