@@ -394,11 +394,6 @@ private:
     void MaybeFinishOffThreadDecode();
     void DoFinishOffThreadDecode();
 
-    
-    
-    
-    JSObject* CompilationScope(JSContext* cx);
-
     size_t ShallowHeapSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf)
     {
         return (mallocSizeOf(this) + mScripts.ShallowSizeOfExcludingThis(mallocSizeOf) +
