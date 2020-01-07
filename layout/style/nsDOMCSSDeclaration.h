@@ -170,41 +170,8 @@ protected:
   
   
   
-  
-  
-  struct CSSParsingEnvironment {
-    nsIURI* MOZ_UNSAFE_REF("user of CSSParsingEnviroment must hold an owning "
-                           "reference; reference counting here has unacceptable "
-                           "performance overhead (see bug 649163)") mSheetURI;
-    nsCOMPtr<nsIURI> mBaseURI;
-    nsIPrincipal* MOZ_UNSAFE_REF("user of CSSParsingEnviroment must hold an owning "
-                                 "reference; reference counting here has unacceptable "
-                                 "performance overhead (see bug 649163)") mPrincipal;
-    mozilla::css::Loader* MOZ_UNSAFE_REF("user of CSSParsingEnviroment must hold an owning "
-                                         "reference; reference counting here has unacceptable "
-                                         "performance overhead (see bug 649163)") mCSSLoader;
-  };
-
-  
-  
-  
-  
-  
-  virtual void GetCSSParsingEnvironment(CSSParsingEnvironment& aCSSParseEnv,
-                                        nsIPrincipal* aSubjectPrincipal = nullptr) = 0;
-
-  
-  
-  
-  
-  
   virtual ServoCSSParsingEnvironment
   GetServoCSSParsingEnvironment(nsIPrincipal* aSubjectPrincipal = nullptr) const = 0;
-
-  
-  
-  static void GetCSSParsingEnvironmentForRule(mozilla::css::Rule* aRule,
-                                              CSSParsingEnvironment& aCSSParseEnv);
 
   
   
