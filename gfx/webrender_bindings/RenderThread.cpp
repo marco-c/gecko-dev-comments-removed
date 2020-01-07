@@ -97,6 +97,8 @@ RenderThread::ShutDown()
 #endif
 }
 
+extern void ClearAllBlobImageResources();
+
 void
 RenderThread::ShutDownTask(layers::SynchronousTask* aTask)
 {
@@ -106,6 +108,8 @@ RenderThread::ShutDownTask(layers::SynchronousTask* aTask)
   
   
   layers::SharedSurfacesParent::Shutdown();
+
+  ClearAllBlobImageResources();
 }
 
 
