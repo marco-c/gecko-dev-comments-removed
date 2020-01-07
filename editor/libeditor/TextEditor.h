@@ -22,7 +22,6 @@ class nsISelectionController;
 class nsITransferable;
 
 namespace mozilla {
-
 class AutoEditInitRulesTrigger;
 enum class EditAction : int32_t;
 
@@ -85,40 +84,11 @@ public:
   virtual bool CanPasteTransferable(nsITransferable* aTransferable);
 
   
-  virtual nsresult RemoveAttributeOrEquivalent(
-                     Element* aElement,
-                     nsAtom* aAttribute,
-                     bool aSuppressTransaction) override;
-  virtual nsresult SetAttributeOrEquivalent(Element* aElement,
-                                            nsAtom* aAttribute,
-                                            const nsAString& aValue,
-                                            bool aSuppressTransaction) override;
-  using EditorBase::RemoveAttributeOrEquivalent;
-  using EditorBase::SetAttributeOrEquivalent;
-
   virtual nsresult Init(nsIDocument& aDoc, Element* aRoot,
                         nsISelectionController* aSelCon, uint32_t aFlags,
                         const nsAString& aValue) override;
 
   nsresult DocumentIsEmpty(bool* aIsEmpty);
-
-  
-
-
-
-  virtual nsresult StartOperation(EditAction opID,
-                                  nsIEditor::EDirection aDirection) override;
-
-  
-
-
-
-  virtual nsresult EndOperation() override;
-
-  
-
-
-  virtual nsresult SelectEntireDocument(Selection* aSelection) override;
 
   virtual nsresult HandleKeyPressEvent(
                      WidgetKeyboardEvent* aKeyboardEvent) override;
@@ -126,43 +96,6 @@ public:
   virtual dom::EventTarget* GetDOMEventTarget() override;
 
   virtual already_AddRefed<nsIContent> GetInputEventTargetContent() override;
-
-  
-
-
-
-
-
-
-
-
-  nsresult DeleteSelectionAsAction(EDirection aDirection,
-                                   EStripWrappers aStripWrappers);
-
-  
-
-
-
-
-
-
-
-  virtual nsresult
-  DeleteSelectionWithTransaction(EDirection aAction,
-                                 EStripWrappers aStripWrappers);
-
-  
-
-
-
-
-  nsresult OnInputText(const nsAString& aStringToInsert);
-
-  
-
-
-
-  nsresult OnInputParagraphSeparator();
 
   
 
@@ -180,39 +113,10 @@ public:
 
 
 
-  nsresult InsertParagraphSeparatorAsAction();
-
-  nsresult InsertTextAt(const nsAString& aStringToInsert,
-                        nsINode* aDestinationNode,
-                        int32_t aDestOffset,
-                        bool aDoDeleteSelection);
-
-  virtual nsresult InsertFromDataTransfer(dom::DataTransfer* aDataTransfer,
-                                          int32_t aIndex,
-                                          nsIDocument* aSourceDoc,
-                                          nsINode* aDestinationNode,
-                                          int32_t aDestOffset,
-                                          bool aDoDeleteSelection) override;
-
-  virtual nsresult InsertFromDrop(dom::DragEvent* aDropEvent) override;
-
-  
 
 
-
-
-  nsresult ExtendSelectionForDelete(Selection* aSelection,
-                                    nsIEditor::EDirection* aAction);
-
-  
-
-
-
-
-  bool IsSafeToInsertData(nsIDocument* aSourceDoc);
-
-  static void GetDefaultEditorPrefs(int32_t& aNewLineHandling,
-                                    int32_t& aCaretStyle);
+  nsresult DeleteSelectionAsAction(EDirection aDirection,
+                                   EStripWrappers aStripWrappers);
 
   
 
@@ -228,6 +132,12 @@ public:
 
 
   nsresult SetText(const nsAString& aString);
+
+  
+
+
+
+  nsresult OnInputParagraphSeparator();
 
   
 
@@ -252,17 +162,32 @@ public:
 
   void OnCompositionEnd(WidgetCompositionEvent& aCompositionEndEvent);
 
-protected:
-  virtual ~TextEditor();
+protected: 
+  
+  virtual nsresult RemoveAttributeOrEquivalent(
+                     Element* aElement,
+                     nsAtom* aAttribute,
+                     bool aSuppressTransaction) override;
+  virtual nsresult SetAttributeOrEquivalent(Element* aElement,
+                                            nsAtom* aAttribute,
+                                            const nsAString& aValue,
+                                            bool aSuppressTransaction) override;
+  using EditorBase::RemoveAttributeOrEquivalent;
+  using EditorBase::SetAttributeOrEquivalent;
 
-  NS_IMETHOD InitRules();
-  void BeginEditorInit();
-  nsresult EndEditorInit();
+  virtual nsresult InsertFromDrop(dom::DragEvent* aDropEvent) override;
 
-  already_AddRefed<nsIDocumentEncoder> GetAndInitDocEncoder(
-                                         const nsAString& aFormatType,
-                                         uint32_t aFlags,
-                                         const nsACString& aCharset);
+  
+
+
+
+
+
+
+
+  virtual nsresult
+  DeleteSelectionWithTransaction(EDirection aAction,
+                                 EStripWrappers aStripWrappers);
 
   
 
@@ -291,7 +216,86 @@ protected:
 
 
 
-  NS_IMETHOD PrepareTransferable(nsITransferable** transferable);
+
+  nsresult ExtendSelectionForDelete(Selection* aSelection,
+                                    nsIEditor::EDirection* aAction);
+
+  static void GetDefaultEditorPrefs(int32_t& aNewLineHandling,
+                                    int32_t& aCaretStyle);
+
+protected: 
+  
+
+
+
+  virtual nsresult StartOperation(EditAction opID,
+                                  nsIEditor::EDirection aDirection) override;
+
+  
+
+
+
+  virtual nsresult EndOperation() override;
+
+  void BeginEditorInit();
+  nsresult EndEditorInit();
+
+protected: 
+  virtual ~TextEditor();
+
+  
+
+
+  virtual nsresult SelectEntireDocument(Selection* aSelection) override;
+
+  
+
+
+
+
+  nsresult OnInputText(const nsAString& aStringToInsert);
+
+  
+
+
+
+
+
+
+  nsresult InsertParagraphSeparatorAsAction();
+
+  nsresult InsertTextAt(const nsAString& aStringToInsert,
+                        nsINode* aDestinationNode,
+                        int32_t aDestOffset,
+                        bool aDoDeleteSelection);
+
+  virtual nsresult InsertFromDataTransfer(dom::DataTransfer* aDataTransfer,
+                                          int32_t aIndex,
+                                          nsIDocument* aSourceDoc,
+                                          nsINode* aDestinationNode,
+                                          int32_t aDestOffset,
+                                          bool aDoDeleteSelection) override;
+
+  
+
+
+
+
+  bool IsSafeToInsertData(nsIDocument* aSourceDoc);
+
+  virtual nsresult InitRules();
+
+  already_AddRefed<nsIDocumentEncoder> GetAndInitDocEncoder(
+                                         const nsAString& aFormatType,
+                                         uint32_t aFlags,
+                                         const nsACString& aCharset);
+
+  
+
+
+
+  virtual nsresult PrepareTransferable(nsITransferable** transferable);
+
   nsresult InsertTextFromTransferable(nsITransferable* transferable);
 
   
@@ -354,7 +358,6 @@ protected:
   int32_t mCaretStyle;
 
   friend class AutoEditInitRulesTrigger;
-  friend class HTMLEditRules;
   friend class TextEditRules;
 };
 
