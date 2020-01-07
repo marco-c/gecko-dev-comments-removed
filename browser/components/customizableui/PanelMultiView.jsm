@@ -96,8 +96,6 @@ ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.defineModuleGetter(this, "AppConstants",
   "resource://gre/modules/AppConstants.jsm");
-ChromeUtils.defineModuleGetter(this, "BrowserUtils",
-  "resource://gre/modules/BrowserUtils.jsm");
 ChromeUtils.defineModuleGetter(this, "CustomizableUI",
   "resource:///modules/CustomizableUI.jsm");
 
@@ -716,6 +714,10 @@ var PanelMultiView = class extends this.AssociatedToNode {
     let oldPanelMultiViewNode = nextPanelView.node.panelMultiView;
     if (oldPanelMultiViewNode) {
       PanelMultiView.forNode(oldPanelMultiViewNode).hidePopup();
+      
+      
+      
+      await this.window.promiseDocumentFlushed(() => {});
     }
 
     if (!(await this._openView(nextPanelView))) {
@@ -850,10 +852,6 @@ var PanelMultiView = class extends this.AssociatedToNode {
 
     
     
-    
-    previousViewNode.setAttribute("in-transition", true);
-    
-    
     let olderView = reverse ? nextPanelView : prevPanelView;
     this._viewContainer.style.minHeight = olderView.knownHeight + "px";
     this._viewContainer.style.height = prevPanelView.knownHeight + "px";
@@ -869,7 +867,7 @@ var PanelMultiView = class extends this.AssociatedToNode {
       
       viewRect = { width: nextPanelView.knownWidth,
                    height: nextPanelView.knownHeight };
-      viewNode.setAttribute("in-transition", true);
+      nextPanelView.visible = true;
     } else if (viewNode.customRectGetter) {
       
       
@@ -880,12 +878,13 @@ var PanelMultiView = class extends this.AssociatedToNode {
       if (header && header.classList.contains("panel-header")) {
         viewRect.height += this._dwu.getBoundsWithoutFlushing(header).height;
       }
-      viewNode.setAttribute("in-transition", true);
+      nextPanelView.visible = true;
+      nextPanelView.descriptionHeightWorkaround();
     } else {
       let oldSibling = viewNode.nextSibling || null;
       this._offscreenViewStack.style.minHeight = olderView.knownHeight + "px";
       this._offscreenViewStack.appendChild(viewNode);
-      viewNode.setAttribute("in-transition", true);
+      nextPanelView.visible = true;
 
       
       
@@ -970,8 +969,6 @@ var PanelMultiView = class extends this.AssociatedToNode {
     
     if (nextPanelView.node.panelMultiView == this.node) {
       prevPanelView.visible = false;
-      nextPanelView.visible = true;
-      nextPanelView.descriptionHeightWorkaround();
     }
 
     
@@ -1002,9 +999,6 @@ var PanelMultiView = class extends this.AssociatedToNode {
 
     
     
-    previousViewNode.removeAttribute("in-transition");
-    viewNode.removeAttribute("in-transition");
-
     if (anchor)
       anchor.removeAttribute("open");
 
