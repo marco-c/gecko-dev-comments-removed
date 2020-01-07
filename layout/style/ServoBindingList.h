@@ -87,7 +87,8 @@ SERVO_BINDING_FUNC(Servo_StyleSet_RebuildCachedData, void,
 
 
 SERVO_BINDING_FUNC(Servo_StyleSet_MediumFeaturesChanged, uint8_t,
-                   RawServoStyleSetBorrowed set, bool* viewport_units_used)
+                   RawServoStyleSetBorrowed set, bool* viewport_units_used,
+                   bool may_affect_default_style)
 
 
 

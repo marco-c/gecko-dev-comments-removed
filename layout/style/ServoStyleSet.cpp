@@ -291,6 +291,18 @@ ServoStyleSet::MediumFeaturesChanged(MediaFeatureChangeReason aReason)
   return nsRestyleHint(0);
 }
 
+static const MediaFeatureChangeReason kMediaFeaturesAffectingDefaultStyle =
+  
+  MediaFeatureChangeReason::ZoomChange |
+  
+  
+  MediaFeatureChangeReason::MinFontSizeChange |
+  
+  
+  
+  
+  MediaFeatureChangeReason::ResolutionChange;
+
 bool
 ServoStyleSet::MediumFeaturesChangedRules(
   bool* aViewportUnitsUsed,
@@ -298,8 +310,12 @@ ServoStyleSet::MediumFeaturesChangedRules(
 {
   MOZ_ASSERT(aViewportUnitsUsed);
 
+  bool mayAffectDefaultStyle =
+    bool(aReason & kMediaFeaturesAffectingDefaultStyle);
+
   const OriginFlags rulesChanged = static_cast<OriginFlags>(
-    Servo_StyleSet_MediumFeaturesChanged(mRawSet.get(), aViewportUnitsUsed));
+    Servo_StyleSet_MediumFeaturesChanged(
+      mRawSet.get(), aViewportUnitsUsed, mayAffectDefaultStyle));
 
   if (rulesChanged != OriginFlags(0)) {
     MarkOriginsDirty(rulesChanged);
