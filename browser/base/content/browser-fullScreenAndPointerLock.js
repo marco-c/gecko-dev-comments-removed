@@ -460,8 +460,6 @@ var FullScreen = {
     }
 
     
-    gBrowser.tabContainer.addEventListener("TabOpen", this.exitDomFullScreen);
-    gBrowser.tabContainer.addEventListener("TabClose", this.exitDomFullScreen);
     gBrowser.tabContainer.addEventListener("TabSelect", this.exitDomFullScreen);
 
     
@@ -484,8 +482,6 @@ var FullScreen = {
           .broadcastAsyncMessage("DOMFullscreen:CleanUp");
 
     PointerlockFsWarning.close();
-    gBrowser.tabContainer.removeEventListener("TabOpen", this.exitDomFullScreen);
-    gBrowser.tabContainer.removeEventListener("TabClose", this.exitDomFullScreen);
     gBrowser.tabContainer.removeEventListener("TabSelect", this.exitDomFullScreen);
     window.removeEventListener("activate", this);
 
