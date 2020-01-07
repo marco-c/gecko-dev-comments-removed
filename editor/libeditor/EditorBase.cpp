@@ -1469,42 +1469,57 @@ EditorBase::CreateNode(nsAtom* aTag,
 }
 
 NS_IMETHODIMP
-EditorBase::InsertNode(nsIDOMNode* aNode,
-                       nsIDOMNode* aParent,
-                       int32_t aPosition)
+EditorBase::InsertNode(nsIDOMNode* aNodeToInsert,
+                       nsIDOMNode* aContainer,
+                       int32_t aOffset)
 {
-  nsCOMPtr<nsIContent> node = do_QueryInterface(aNode);
-  nsCOMPtr<nsINode> parent = do_QueryInterface(aParent);
-  NS_ENSURE_TRUE(node && parent, NS_ERROR_NULL_POINTER);
-
-  return InsertNode(*node, *parent, aPosition);
+  nsCOMPtr<nsIContent> contentToInsert = do_QueryInterface(aNodeToInsert);
+  if (NS_WARN_IF(!contentToInsert)) {
+    return NS_ERROR_NULL_POINTER;
+  }
+  nsCOMPtr<nsINode> container = do_QueryInterface(aContainer);
+  if (NS_WARN_IF(!container)) {
+    return NS_ERROR_NULL_POINTER;
+  }
+  int32_t offset =
+    aOffset < 0 ? static_cast<int32_t>(container->Length()) :
+                  std::min(aOffset, static_cast<int32_t>(container->Length()));
+  return InsertNode(*contentToInsert, EditorRawDOMPoint(container, offset));
 }
 
 nsresult
-EditorBase::InsertNode(nsIContent& aNode,
-                       nsINode& aParent,
-                       int32_t aPosition)
+EditorBase::InsertNode(nsIContent& aContentToInsert,
+                       const EditorRawDOMPoint& aPointToInsert)
 {
+  if (NS_WARN_IF(!aPointToInsert.IsSet())) {
+    return NS_ERROR_INVALID_ARG;
+  }
+  MOZ_ASSERT(aPointToInsert.IsSetAndValid());
+
   AutoRules beginRulesSniffing(this, EditAction::insertNode, nsIEditor::eNext);
 
   {
     AutoActionListenerArray listeners(mActionListeners);
     for (auto& listener : listeners) {
-      listener->WillInsertNode(aNode.AsDOMNode(), aParent.AsDOMNode(),
-                               aPosition);
+      listener->WillInsertNode(aContentToInsert.AsDOMNode(),
+                               aPointToInsert.Container()->AsDOMNode(),
+                               aPointToInsert.Offset());
     }
   }
 
   RefPtr<InsertNodeTransaction> transaction =
-    CreateTxnForInsertNode(aNode, aParent, aPosition);
+    CreateTxnForInsertNode(aContentToInsert, aPointToInsert);
   nsresult rv = DoTransaction(transaction);
 
-  mRangeUpdater.SelAdjInsertNode(&aParent, aPosition);
+  mRangeUpdater.SelAdjInsertNode(aPointToInsert.Container(),
+                                 aPointToInsert.Offset());
 
   {
     AutoActionListenerArray listeners(mActionListeners);
     for (auto& listener : listeners) {
-      listener->DidInsertNode(aNode.AsDOMNode(), aParent.AsDOMNode(), aPosition,
+      listener->DidInsertNode(aContentToInsert.AsDOMNode(),
+                              aPointToInsert.Container()->AsDOMNode(),
+                              aPointToInsert.Offset(),
                               rv);
     }
   }
@@ -1694,51 +1709,67 @@ EditorBase::ReplaceContainer(Element* aOldContainer,
 {
   MOZ_ASSERT(aOldContainer && aNodeType);
 
-  nsCOMPtr<nsIContent> parent = aOldContainer->GetParent();
-  NS_ENSURE_TRUE(parent, nullptr);
+  EditorDOMPoint atOldContainer(aOldContainer);
+  if (NS_WARN_IF(!atOldContainer.IsSet())) {
+    return nullptr;
+  }
 
-  int32_t offset = parent->IndexOf(aOldContainer);
-
-  
-  nsCOMPtr<Element> ret = CreateHTMLContent(aNodeType);
-  NS_ENSURE_TRUE(ret, nullptr);
+  RefPtr<Element> newContainer = CreateHTMLContent(aNodeType);
+  if (NS_WARN_IF(!newContainer)) {
+    return nullptr;
+  }
 
   
   if (aAttribute && aValue && aAttribute != nsGkAtoms::_empty) {
-    nsresult rv = ret->SetAttr(kNameSpaceID_None, aAttribute, *aValue, true);
-    NS_ENSURE_SUCCESS(rv, nullptr);
+    nsresult rv =
+      newContainer->SetAttr(kNameSpaceID_None, aAttribute, *aValue, true);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return nullptr;
+    }
   }
   if (aCloneAttributes == eCloneAttributes) {
-    CloneAttributes(ret, aOldContainer);
+    CloneAttributes(newContainer, aOldContainer);
   }
 
   
   
   
   AutoReplaceContainerSelNotify selStateNotify(mRangeUpdater, aOldContainer,
-                                               ret);
+                                               newContainer);
   {
     AutoTransactionsConserveSelection conserveSelection(this);
+    
     while (aOldContainer->HasChildren()) {
       nsCOMPtr<nsIContent> child = aOldContainer->GetFirstChild();
 
       nsresult rv = DeleteNode(child);
-      NS_ENSURE_SUCCESS(rv, nullptr);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return nullptr;
+      }
 
-      rv = InsertNode(*child, *ret, -1);
-      NS_ENSURE_SUCCESS(rv, nullptr);
+      rv = InsertNode(*child, EditorRawDOMPoint(newContainer,
+                                                newContainer->Length()));
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return nullptr;
+      }
     }
   }
 
   
-  nsresult rv = InsertNode(*ret, *parent, offset);
-  NS_ENSURE_SUCCESS(rv, nullptr);
+  NS_WARNING_ASSERTION(atOldContainer.IsSetAndValid(),
+    "The old container might be moved by mutation observer");
+  nsresult rv = InsertNode(*newContainer, atOldContainer.AsRaw());
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return nullptr;
+  }
 
   
   rv = DeleteNode(aOldContainer);
-  NS_ENSURE_SUCCESS(rv, nullptr);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return nullptr;
+  }
 
-  return ret.forget();
+  return newContainer.forget();
 }
 
 
@@ -1750,25 +1781,33 @@ EditorBase::RemoveContainer(nsIContent* aNode)
 {
   MOZ_ASSERT(aNode);
 
-  nsCOMPtr<nsINode> parent = aNode->GetParentNode();
-  NS_ENSURE_STATE(parent);
-
-  int32_t offset = parent->IndexOf(aNode);
-
-  
-  uint32_t nodeOrigLen = aNode->GetChildCount();
+  EditorDOMPoint pointToInsertChildren(aNode);
+  if (NS_WARN_IF(!pointToInsertChildren.IsSet())) {
+    return NS_ERROR_FAILURE;
+  }
 
   
-  AutoRemoveContainerSelNotify selNotify(mRangeUpdater, aNode, parent,
-                                         offset, nodeOrigLen);
+  AutoRemoveContainerSelNotify selNotify(mRangeUpdater, aNode,
+                                         pointToInsertChildren.Container(),
+                                         pointToInsertChildren.Offset(),
+                                         aNode->GetChildCount());
 
+  
   while (aNode->HasChildren()) {
     nsCOMPtr<nsIContent> child = aNode->GetLastChild();
     nsresult rv = DeleteNode(child);
-    NS_ENSURE_SUCCESS(rv, rv);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
 
-    rv = InsertNode(*child, *parent, offset);
-    NS_ENSURE_SUCCESS(rv, rv);
+    
+    
+    
+    rv = InsertNode(*child, EditorRawDOMPoint(pointToInsertChildren.Container(),
+                                              pointToInsertChildren.Offset()));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
   }
 
   return DeleteNode(aNode);
@@ -1788,19 +1827,30 @@ EditorBase::InsertContainerAbove(nsIContent* aNode,
 {
   MOZ_ASSERT(aNode && aNodeType);
 
-  nsCOMPtr<nsIContent> parent = aNode->GetParent();
-  NS_ENSURE_TRUE(parent, nullptr);
-  int32_t offset = parent->IndexOf(aNode);
+  EditorDOMPoint pointToInsertNewContainer(aNode);
+  if (NS_WARN_IF(!pointToInsertNewContainer.IsSet())) {
+    return nullptr;
+  }
+  
+  
+  
+  DebugOnly<bool> advanced = pointToInsertNewContainer.AdvanceOffset();
+  NS_WARNING_ASSERTION(advanced,
+    "Failed to advance offset to after aNode");
 
   
-  nsCOMPtr<Element> newContent = CreateHTMLContent(aNodeType);
-  NS_ENSURE_TRUE(newContent, nullptr);
+  RefPtr<Element> newContainer = CreateHTMLContent(aNodeType);
+  if (NS_WARN_IF(!newContainer)) {
+    return nullptr;
+  }
 
   
   if (aAttribute && aValue && aAttribute != nsGkAtoms::_empty) {
     nsresult rv =
-      newContent->SetAttr(kNameSpaceID_None, aAttribute, *aValue, true);
-    NS_ENSURE_SUCCESS(rv, nullptr);
+      newContainer->SetAttr(kNameSpaceID_None, aAttribute, *aValue, true);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return nullptr;
+    }
   }
 
   
@@ -1808,19 +1858,25 @@ EditorBase::InsertContainerAbove(nsIContent* aNode,
 
   
   nsresult rv = DeleteNode(aNode);
-  NS_ENSURE_SUCCESS(rv, nullptr);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return nullptr;
+  }
 
   {
     AutoTransactionsConserveSelection conserveSelection(this);
-    rv = InsertNode(*aNode, *newContent, 0);
-    NS_ENSURE_SUCCESS(rv, nullptr);
+    rv = InsertNode(*aNode, EditorRawDOMPoint(newContainer, 0));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return nullptr;
+    }
   }
 
   
-  rv = InsertNode(*newContent, *parent, offset);
-  NS_ENSURE_SUCCESS(rv, nullptr);
+  rv = InsertNode(*newContainer, pointToInsertNewContainer.AsRaw());
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return nullptr;
+  }
 
-  return newContent.forget();
+  return newContainer.forget();
 }
 
 
@@ -1864,9 +1920,15 @@ EditorBase::MoveNode(nsIContent* aNode,
   nsCOMPtr<nsINode> kungFuDeathGrip = aNode;
 
   nsresult rv = DeleteNode(aNode);
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 
-  return InsertNode(*aNode, *aParent, aOffset);
+  rv = InsertNode(*aNode, EditorRawDOMPoint(aParent, aOffset));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  return NS_OK;
 }
 
 void
@@ -2665,8 +2727,7 @@ EditorBase::InsertTextImpl(nsIDocument& aDocument,
       RefPtr<nsTextNode> newNode =
         EditorBase::CreateTextNode(aDocument, EmptyString());
       
-      nsresult rv = InsertNode(*newNode, *pointToInsert.Container(),
-                               pointToInsert.Offset());
+      nsresult rv = InsertNode(*newNode, pointToInsert);
       NS_ENSURE_SUCCESS(rv, rv);
       pointToInsert.Set(newNode, 0);
       newOffset = lengthToInsert;
@@ -2707,8 +2768,7 @@ EditorBase::InsertTextImpl(nsIDocument& aDocument,
   RefPtr<nsTextNode> newNode =
     EditorBase::CreateTextNode(aDocument, aStringToInsert);
   
-  nsresult rv = InsertNode(*newNode, *pointToInsert.Container(),
-                           pointToInsert.Offset());
+  nsresult rv = InsertNode(*newNode, pointToInsert);
   NS_ENSURE_SUCCESS(rv, rv);
   if (aPointAfterInsertedString) {
     aPointAfterInsertedString->Set(newNode, lengthToInsert.value());
@@ -4622,15 +4682,10 @@ EditorBase::CreateTxnForCreateElement(nsAtom& aTag,
 
 already_AddRefed<InsertNodeTransaction>
 EditorBase::CreateTxnForInsertNode(nsIContent& aNode,
-                                   nsINode& aParent,
-                                   int32_t aPosition)
+                                   const EditorRawDOMPoint& aPointToInsert)
 {
-  int32_t offset =
-    aPosition < 0 ? static_cast<int32_t>(aParent.Length()) :
-                    std::min(aPosition, static_cast<int32_t>(aParent.Length()));
   RefPtr<InsertNodeTransaction> transaction =
-    new InsertNodeTransaction(*this, aNode,
-                              EditorRawDOMPoint(&aParent, offset));
+    new InsertNodeTransaction(*this, aNode, aPointToInsert);
   return transaction.forget();
 }
 

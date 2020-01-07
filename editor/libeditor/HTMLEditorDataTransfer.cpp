@@ -125,21 +125,39 @@ HTMLEditor::LoadHTML(const nsAString& aInputString)
     NS_ENSURE_TRUE(range, NS_ERROR_NULL_POINTER);
 
     
-    nsCOMPtr<nsIDOMDocumentFragment> docfrag;
-    rv = range->CreateContextualFragment(aInputString, getter_AddRefs(docfrag));
-    NS_ENSURE_SUCCESS(rv, rv);
-    
-    nsCOMPtr<nsINode> parent = range->GetStartContainer();
-    NS_ENSURE_TRUE(parent, NS_ERROR_NULL_POINTER);
-    uint32_t childOffset = range->StartOffset();
+    ErrorResult error;
+    RefPtr<DocumentFragment> documentFragment =
+      range->CreateContextualFragment(aInputString, error);
+    if (NS_WARN_IF(error.Failed())) {
+      return error.StealNSResult();
+    }
 
-    nsCOMPtr<nsIDOMNode> nodeToInsert;
-    docfrag->GetFirstChild(getter_AddRefs(nodeToInsert));
-    while (nodeToInsert) {
-      rv = InsertNode(nodeToInsert, GetAsDOMNode(parent),
-                      static_cast<int32_t>(childOffset++));
-      NS_ENSURE_SUCCESS(rv, rv);
-      docfrag->GetFirstChild(getter_AddRefs(nodeToInsert));
+    
+    EditorDOMPoint pointToInsert(range->StartRef());
+    
+    
+    
+    
+    Unused << pointToInsert.Offset();
+    for (nsCOMPtr<nsIContent> contentToInsert =
+           documentFragment->GetFirstChild();
+         contentToInsert;
+         contentToInsert = documentFragment->GetFirstChild()) {
+      rv = InsertNode(*contentToInsert, pointToInsert.AsRaw());
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
+      
+      
+      
+      
+      pointToInsert.Set(pointToInsert.Container(), pointToInsert.Offset() + 1);
+      if (NS_WARN_IF(!pointToInsert.Offset())) {
+        
+        
+        pointToInsert.Set(pointToInsert.Container(),
+                          pointToInsert.Container()->Length());
+      }
     }
   }
 

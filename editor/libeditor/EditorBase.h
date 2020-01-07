@@ -346,7 +346,21 @@ public:
 
 
   nsresult DeleteNode(nsINode* aNode);
-  nsresult InsertNode(nsIContent& aNode, nsINode& aParent, int32_t aPosition);
+
+  
+
+
+
+
+
+
+
+
+
+
+  nsresult InsertNode(nsIContent& aContentToInsert,
+                      const EditorRawDOMPoint& aPointToInsert);
+
   enum ECloneAttributes { eDontCloneAttributes, eCloneAttributes };
   already_AddRefed<Element> ReplaceContainer(Element* aOldContainer,
                                              nsAtom* aNodeType,
@@ -540,9 +554,19 @@ protected:
   
 
 
+
+
+
+
+
+
+
+
+
+
   already_AddRefed<InsertNodeTransaction>
-    CreateTxnForInsertNode(nsIContent& aNode, nsINode& aParent,
-                           int32_t aOffset);
+    CreateTxnForInsertNode(nsIContent& aContentToInsert,
+                           const EditorRawDOMPoint& aPointToInsert);
 
   
 
