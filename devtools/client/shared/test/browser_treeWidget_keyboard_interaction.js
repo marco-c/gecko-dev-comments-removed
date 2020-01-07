@@ -91,9 +91,12 @@ async function testKeyboardInteraction(tree, win) {
   info("clicking on first top level item");
   let node = tree.root.children.firstChild.firstChild;
   event = defer();
+  
+  
+  let clicked = once(node, "click");
   tree.once("select", pass);
   click(node);
-  await event.promise;
+  await Promise.all([event.promise, clicked]);
   node = tree.root.children.firstChild.nextSibling.firstChild;
   
   ok(!node.classList.contains("theme-selected"), "Node should not have selected class");
