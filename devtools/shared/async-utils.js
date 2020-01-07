@@ -13,8 +13,6 @@
 
 
 
-var {Task} = require("devtools/shared/task");
-
 
 
 

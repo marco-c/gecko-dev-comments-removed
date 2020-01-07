@@ -74,7 +74,7 @@ Object.defineProperty(discovery.device, "name", {
   }
 });
 
-add_task(function* () {
+add_task(async function () {
   
   deepEqual(discovery.getRemoteDevicesWithService("devtools"), []);
   deepEqual(discovery.getRemoteDevicesWithService("penguins"), []);
@@ -91,14 +91,14 @@ add_task(function* () {
   deepEqual(discovery.getRemoteDevicesWithService("devtools"), []);
   deepEqual(discovery.getRemoteDevicesWithService("penguins"), []);
 
-  yield scanForChange("devtools", "added");
+  await scanForChange("devtools", "added");
 
   
   deepEqual(discovery.getRemoteDevicesWithService("devtools"), ["test-device"]);
   deepEqual(discovery.getRemoteDevicesWithService("penguins"), []);
 
   discovery.addService("penguins", { tux: true });
-  yield scanForChange("penguins", "added");
+  await scanForChange("penguins", "added");
 
   deepEqual(discovery.getRemoteDevicesWithService("devtools"), ["test-device"]);
   deepEqual(discovery.getRemoteDevicesWithService("penguins"), ["test-device"]);
@@ -110,20 +110,20 @@ add_task(function* () {
             { tux: true, host: "localhost" });
 
   discovery.removeService("devtools");
-  yield scanForChange("devtools", "removed");
+  await scanForChange("devtools", "removed");
 
   discovery.addService("penguins", { tux: false });
-  yield scanForChange("penguins", "updated");
+  await scanForChange("penguins", "updated");
 
   
-  yield scanForNoChange("penguins", "removed");
+  await scanForNoChange("penguins", "removed");
 
   
   
   gTestTransports = {};
 
   discovery.removeService("penguins");
-  yield scanForChange("penguins", "removed");
+  await scanForChange("penguins", "removed");
 });
 
 function scanForChange(service, changeType) {

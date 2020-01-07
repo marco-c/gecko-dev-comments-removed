@@ -3,7 +3,7 @@
 
 
 
-add_task(function* () {
+add_task(async function () {
   const worker = new ChromeWorker("resource://test/heap-snapshot-worker.js");
   worker.postMessage({});
 
@@ -17,7 +17,7 @@ add_task(function* () {
     assertionCount++;
   };
 
-  yield waitForDone(worker);
+  await waitForDone(worker);
 
   ok(assertionCount > 0);
   worker.terminate();

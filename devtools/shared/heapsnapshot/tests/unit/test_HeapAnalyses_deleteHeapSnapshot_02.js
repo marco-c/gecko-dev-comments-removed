@@ -4,12 +4,12 @@
 
 
 
-add_task(function* () {
+add_task(async function () {
   const client = new HeapAnalysesClient();
 
   let threw = false;
   try {
-    yield client.deleteHeapSnapshot("path-does-not-exist");
+    await client.deleteHeapSnapshot("path-does-not-exist");
   } catch (_) {
     threw = true;
   }

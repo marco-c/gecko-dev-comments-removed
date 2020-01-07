@@ -7,7 +7,6 @@ const { Cu } = require("chrome");
 const { Front, FrontClassWithSpec, custom, preEvent } = require("devtools/shared/protocol");
 const { PerformanceRecordingFront } = require("devtools/shared/fronts/performance-recording");
 const { performanceSpec } = require("devtools/shared/specs/performance");
-const { Task } = require("devtools/shared/task");
 
 loader.lazyRequireGetter(this, "PerformanceIO",
   "devtools/client/performance/modules/io");
@@ -29,13 +28,13 @@ const PerformanceFront = FrontClassWithSpec(performanceSpec, {
 
 
 
-  connect: custom(Task.async(function* () {
-    let systemClient = yield getSystemInfo();
-    let { traits } = yield this._connect({ systemClient });
+  connect: custom(async function () {
+    let systemClient = await getSystemInfo();
+    let { traits } = await this._connect({ systemClient });
     this._traits = traits;
 
     return this._traits;
-  }), {
+  }, {
     impl: "_connect"
   }),
 

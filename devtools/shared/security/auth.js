@@ -17,7 +17,6 @@ loader.lazyRequireGetter(this, "cert",
   "devtools/shared/security/cert");
 loader.lazyRequireGetter(this, "asyncStorage",
   "devtools/shared/async-storage");
-const { Task } = require("devtools/shared/task");
 
 
 
@@ -343,14 +342,14 @@ OOBCert.Client.prototype = {
     };
 
     transport.hooks = {
-      onPacket: Task.async(function* (packet) {
+      onPacket: async (packet) => {
         closeDialog();
         let { authResult } = packet;
         switch (authResult) {
           case AuthenticationResult.PENDING:
             
             
-            oobData = yield this._createOOB();
+            oobData = await this._createOOB();
             activeSendDialog = this.sendOOB({
               host,
               port,
@@ -382,7 +381,7 @@ OOBCert.Client.prototype = {
             transport.close(new Error("Invalid auth result: " + authResult));
             break;
         }
-      }.bind(this)),
+      },
       onClosed(reason) {
         closeDialog();
         
@@ -398,13 +397,13 @@ OOBCert.Client.prototype = {
 
 
 
-  _createOOB: Task.async(function* () {
-    let clientCert = yield cert.local.getOrCreate();
+  async _createOOB() {
+    let clientCert = await cert.local.getOrCreate();
     return {
       sha256: clientCert.sha256Fingerprint,
       k: this._createRandom()
     };
-  }),
+  },
 
   _createRandom() {
     
@@ -511,11 +510,11 @@ OOBCert.Server.prototype = {
 
 
 
-  authenticate: Task.async(function* ({ client, server, transport }) {
+  async authenticate({ client, server, transport }) {
     
     
     const storageKey = `devtools.auth.${this.mode}.approved-clients`;
-    let approvedClients = (yield asyncStorage.getItem(storageKey)) || {};
+    let approvedClients = (await asyncStorage.getItem(storageKey)) || {};
     
     
     if (approvedClients[client.cert.sha256]) {
@@ -536,7 +535,7 @@ OOBCert.Server.prototype = {
     
     
     
-    let authResult = yield this.allowConnection({
+    let authResult = await this.allowConnection({
       authentication: this.mode,
       client,
       server
@@ -553,7 +552,7 @@ OOBCert.Server.prototype = {
     }
 
     
-    let oob = yield this.receiveOOB();
+    let oob = await this.receiveOOB();
     if (!oob) {
       dumpn("Invalid OOB data received");
       return AuthenticationResult.DENY;
@@ -583,7 +582,7 @@ OOBCert.Server.prototype = {
     
     if (authResult === AuthenticationResult.ALLOW_PERSIST) {
       approvedClients[client.cert.sha256] = true;
-      yield asyncStorage.setItem(storageKey, approvedClients);
+      await asyncStorage.setItem(storageKey, approvedClients);
     }
 
     
@@ -592,7 +591,7 @@ OOBCert.Server.prototype = {
     
     
     return authResult;
-  }),
+  },
 
   
 

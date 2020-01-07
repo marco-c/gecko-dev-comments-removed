@@ -14,7 +14,6 @@ const {
   styleRuleSpec
 } = require("devtools/shared/specs/styles");
 const promise = require("promise");
-const { Task } = require("devtools/shared/task");
 
 loader.lazyRequireGetter(this, "RuleRewriter",
   "devtools/shared/css/parsing-utils", true);
@@ -56,17 +55,17 @@ const PageStyleFront = FrontClassWithSpec(pageStyleSpec, {
     impl: "_getMatchedSelectors"
   }),
 
-  getApplied: custom(Task.async(function* (node, options = {}) {
+  getApplied: custom(async function (node, options = {}) {
     
     
     
     
     if (!this._form.traits || !this._form.traits.getAppliedCreatesStyleCache) {
-      yield this.getLayout(node);
+      await this.getLayout(node);
     }
-    let ret = yield this._getApplied(node, options);
+    let ret = await this._getApplied(node, options);
     return ret.entries;
-  }), {
+  }, {
     impl: "_getApplied"
   }),
 
@@ -253,24 +252,24 @@ const StyleRuleFront = FrontClassWithSpec(styleRuleSpec, {
       });
   },
 
-  modifySelector: custom(Task.async(function* (node, value) {
+  modifySelector: custom(async function (node, value) {
     let response;
     if (this.supportsModifySelectorUnmatched) {
       
       if (this.canSetRuleText) {
-        response = yield this.modifySelector2(node, value, true);
+        response = await this.modifySelector2(node, value, true);
       } else {
-        response = yield this.modifySelector2(node, value);
+        response = await this.modifySelector2(node, value);
       }
     } else {
-      response = yield this._modifySelector(value);
+      response = await this._modifySelector(value);
     }
 
     if (response.ruleProps) {
       response.ruleProps = response.ruleProps.entries[0];
     }
     return response;
-  }), {
+  }, {
     impl: "_modifySelector"
   }),
 

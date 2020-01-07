@@ -13,7 +13,6 @@ const {
   animationPlayerSpec,
   animationsSpec
 } = require("devtools/shared/specs/animation");
-const { Task } = require("devtools/shared/task");
 
 const AnimationPlayerFront = FrontClassWithSpec(animationPlayerSpec, {
   initialize: function (conn, form, detail, ctx) {
@@ -88,12 +87,12 @@ const AnimationPlayerFront = FrontClassWithSpec(animationPlayerSpec, {
 
 
 
-  refreshState: Task.async(function* () {
-    let data = yield this.getCurrentState();
+  async refreshState() {
+    let data = await this.getCurrentState();
     if (this.currentStateHasChanged) {
       this.state = data;
     }
-  }),
+  },
 
   
 
