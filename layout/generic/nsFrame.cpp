@@ -5676,8 +5676,15 @@ nsFrame::ComputeSize(gfxContext*         aRenderingContext,
     auto& mainAxisCoord = (flexMainAxis == eLogicalAxisInline
                            ? inlineStyleCoord : blockStyleCoord);
 
+    
+    
+    
+    
+    
+    
     if (nsFlexContainerFrame::IsUsedFlexBasisContent(flexBasis,
-                                                     mainAxisCoord)) {
+                                                     mainAxisCoord) &&
+        MOZ_LIKELY(!IsTableWrapperFrame())) {
       static const nsStyleCoord maxContStyleCoord(NS_STYLE_WIDTH_MAX_CONTENT,
                                                   eStyleUnit_Enumerated);
       mainAxisCoord = &maxContStyleCoord;
