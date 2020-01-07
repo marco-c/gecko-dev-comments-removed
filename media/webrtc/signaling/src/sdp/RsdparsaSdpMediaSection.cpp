@@ -59,7 +59,7 @@ RsdparsaSdpMediaSection::GetPort() const
 void
 RsdparsaSdpMediaSection::SetPort(unsigned int port)
 {
-  
+  sdp_set_media_port(mSection, port);
 }
 
 unsigned int
@@ -232,4 +232,3 @@ RsdparsaSdpMediaSection::LoadConnection()
 }
 
 } 
-
