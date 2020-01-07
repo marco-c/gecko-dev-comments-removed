@@ -38,7 +38,6 @@ const PLATFORM_VERSION = "1.9.2";
 const APP_VERSION = "1";
 const APP_ID = "xpcshell@tests.mozilla.org";
 const APP_NAME = "XPCShell";
-const APP_HOTFIX_VERSION = "2.3.4a";
 
 const DISTRIBUTION_ID = "distributor-id";
 const DISTRIBUTION_VERSION = "4.5.6b";
@@ -393,8 +392,6 @@ function checkBuildSection(data) {
 
   
   Assert.ok(checkString(data.build.architecture));
-  Assert.ok(checkString(data.build.hotfixVersion));
-  Assert.equal(data.build.hotfixVersion, APP_HOTFIX_VERSION);
 
   if (gIsMac) {
     let macUtils = Cc["@mozilla.org/xpcom/mac-utils;1"].getService(Ci.nsIMacUtils);
@@ -909,9 +906,6 @@ add_task(async function setup() {
   gDataRoot = gHttpRoot + "data/";
   gHttpServer.registerDirectory("/data/", do_get_cwd());
   registerCleanupFunction(() => gHttpServer.stop(() => {}));
-
-  
-  Preferences.set("extensions.hotfix.lastVersion", APP_HOTFIX_VERSION);
 
   
   Preferences.set("extensions.allow-non-mpc-extensions", true);
