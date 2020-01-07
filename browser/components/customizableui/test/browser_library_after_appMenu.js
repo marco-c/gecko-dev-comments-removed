@@ -8,7 +8,7 @@
 
 
 add_task(async function test_library_after_appMenu() {
-  await PanelUI.show();
+  await gCUITestUtils.openMainMenu();
 
   
   let libraryView = document.getElementById("appMenu-libraryView");
