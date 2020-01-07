@@ -333,46 +333,23 @@ SVGAElement::IntrinsicState() const
 }
 
 nsresult
-SVGAElement::SetAttr(int32_t aNameSpaceID, nsAtom* aName,
-                     nsAtom* aPrefix, const nsAString& aValue,
-                     nsIPrincipal* aSubjectPrincipal,
-                     bool aNotify)
+SVGAElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
+                          const nsAttrValue* aValue,
+                          const nsAttrValue* aOldValue,
+                          nsIPrincipal* aMaybeScriptedPrincipal,
+                          bool aNotify)
 {
-  nsresult rv = SVGAElementBase::SetAttr(aNameSpaceID, aName, aPrefix,
-                                         aValue, aSubjectPrincipal, aNotify);
-
-  
-  
-  
-  
-  
   if (aName == nsGkAtoms::href &&
       (aNameSpaceID == kNameSpaceID_XLink ||
        aNameSpaceID == kNameSpaceID_None)) {
-    Link::ResetLinkState(!!aNotify, true);
+    
+    
+    
+    Link::ResetLinkState(aNotify, aValue || Link::ElementHasHref());
   }
 
-  return rv;
-}
-
-nsresult
-SVGAElement::UnsetAttr(int32_t aNameSpaceID, nsAtom* aAttr,
-                       bool aNotify)
-{
-  nsresult rv = nsSVGElement::UnsetAttr(aNameSpaceID, aAttr, aNotify);
-
-  
-  
-  
-  
-  
-  if (aAttr == nsGkAtoms::href &&
-      (aNameSpaceID == kNameSpaceID_XLink ||
-       aNameSpaceID == kNameSpaceID_None)) {
-    Link::ResetLinkState(!!aNotify, Link::ElementHasHref());
-  }
-
-  return rv;
+  return SVGAElementBase::AfterSetAttr(aNameSpaceID, aName, aValue, aOldValue,
+                                       aMaybeScriptedPrincipal, aNotify);
 }
 
 
