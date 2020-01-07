@@ -497,7 +497,9 @@ public:
       MOZ_ASSERT(mOffset.isSome());
       MOZ_ASSERT(!mChild);
       if (NS_WARN_IF(!mOffset.value()) ||
-          NS_WARN_IF(mOffset.value() >= mParent->Length())) {
+          NS_WARN_IF(mOffset.value() > mParent->Length())) {
+        
+        
         
         return false;
       }
