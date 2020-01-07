@@ -6965,10 +6965,13 @@ GCRuntime::resetIncrementalGC(gc::AbortReason reason, AutoTraceSession& session)
 
 namespace {
 
-class AutoGCSlice {
+
+
+
+class AutoDisableBarriers {
   public:
-    explicit AutoGCSlice(JSRuntime* rt);
-    ~AutoGCSlice();
+    explicit AutoDisableBarriers(JSRuntime* rt);
+    ~AutoDisableBarriers();
 
   private:
     JSRuntime* runtime;
@@ -6977,7 +6980,7 @@ class AutoGCSlice {
 
 } 
 
-AutoGCSlice::AutoGCSlice(JSRuntime* rt)
+AutoDisableBarriers::AutoDisableBarriers(JSRuntime* rt)
   : runtime(rt)
 {
     for (GCZonesIter zone(rt); !zone.done(); zone.next()) {
@@ -6995,7 +6998,7 @@ AutoGCSlice::AutoGCSlice(JSRuntime* rt)
     }
 }
 
-AutoGCSlice::~AutoGCSlice()
+AutoDisableBarriers::~AutoDisableBarriers()
 {
     
     for (ZonesIter zone(runtime, WithAtoms); !zone.done(); zone.next()) {
@@ -7052,7 +7055,7 @@ GCRuntime::incrementalCollectSlice(SliceBudget& budget, JS::gcreason::Reason rea
     if (isIncrementalGCInProgress() && !atomsZone->isCollecting())
         session.maybeLock.reset();
 
-    AutoGCSlice slice(rt);
+    AutoDisableBarriers disableBarriers(rt);
 
     bool destroyingRuntime = (reason == JS::gcreason::DESTROY_RUNTIME);
 
