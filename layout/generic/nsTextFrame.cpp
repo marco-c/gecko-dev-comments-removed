@@ -66,7 +66,8 @@
 #include "nsLineBreaker.h"
 #include "nsIFrameInlines.h"
 #include "mozilla/intl/WordBreaker.h"
-#include "mozilla/ServoStyleSet.h"
+#include "mozilla/StyleSetHandle.h"
+#include "mozilla/StyleSetHandleInlines.h"
 #include "mozilla/layers/LayersMessages.h"
 #include "mozilla/layers/WebRenderLayerManager.h"
 #include "mozilla/layers/WebRenderBridgeChild.h"
@@ -7656,9 +7657,8 @@ nsTextFrame::SetSelectedRange(uint32_t aStart, uint32_t aEnd, bool aSelected,
       bool didHaveOverflowingSelection =
         (f->GetStateBits() & TEXT_SELECTION_UNDERLINE_OVERFLOWED) != 0;
       nsRect r(nsPoint(0, 0), GetSize());
-      bool willHaveOverflowingSelection =
-        aSelected && f->CombineSelectionUnderlineRect(presContext, r);
-      if (didHaveOverflowingSelection || willHaveOverflowingSelection) {
+      if (didHaveOverflowingSelection ||
+          (aSelected && f->CombineSelectionUnderlineRect(presContext, r))) {
         presContext->PresShell()->FrameNeedsReflow(f,
                                                    nsIPresShell::eStyleChange,
                                                    NS_FRAME_IS_DIRTY);
