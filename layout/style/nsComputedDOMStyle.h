@@ -374,8 +374,6 @@ private:
   already_AddRefed<CSSValue> DoGetZIndex();
 
   
-  already_AddRefed<CSSValue> DoGetListStyleImage();
-  already_AddRefed<CSSValue> DoGetListStyleType();
   already_AddRefed<CSSValue> DoGetImageRegion();
 
   
