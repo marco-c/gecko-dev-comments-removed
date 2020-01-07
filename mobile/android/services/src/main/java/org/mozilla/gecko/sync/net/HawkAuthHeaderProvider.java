@@ -20,7 +20,6 @@ import javax.crypto.spec.SecretKeySpec;
 import org.mozilla.apache.commons.codec.binary.Base64;
 import org.mozilla.gecko.background.common.log.Logger;
 import org.mozilla.gecko.sync.Utils;
-import org.mozilla.gecko.util.StringUtils;
 
 import ch.boye.httpclientandroidlib.Header;
 import ch.boye.httpclientandroidlib.HttpEntity;
@@ -152,7 +151,7 @@ public class HawkAuthHeaderProvider implements AuthHeaderProvider {
     String app = null;
     String dlg = null;
     String requestString = getRequestString(request, "header", timestamp, nonce, payloadHash, extra, app, dlg);
-    String macString = getSignature(requestString.getBytes(StringUtils.UTF_8), this.key);
+    String macString = getSignature(requestString.getBytes("UTF-8"), this.key);
 
     StringBuilder sb = new StringBuilder();
     sb.append("Hawk id=\"");
@@ -195,8 +194,9 @@ public class HawkAuthHeaderProvider implements AuthHeaderProvider {
 
 
 
+
   protected static String getPayloadHashString(HttpRequestBase request)
-      throws NoSuchAlgorithmException, IOException, IllegalArgumentException {
+      throws UnsupportedEncodingException, NoSuchAlgorithmException, IOException, IllegalArgumentException {
     final boolean shouldComputePayloadHash = request instanceof HttpEntityEnclosingRequest;
     if (!shouldComputePayloadHash) {
       Logger.debug(LOG_TAG, "Not computing payload verification hash for non-enclosing request.");
@@ -278,14 +278,14 @@ public class HawkAuthHeaderProvider implements AuthHeaderProvider {
 
 
 
-  protected static byte[] getPayloadHash(HttpEntity entity) throws IOException, NoSuchAlgorithmException {
+  protected static byte[] getPayloadHash(HttpEntity entity) throws UnsupportedEncodingException, IOException, NoSuchAlgorithmException {
     if (!entity.isRepeatable()) {
       throw new IllegalArgumentException("entity must be repeatable");
     }
     final MessageDigest digest = MessageDigest.getInstance("SHA-256");
-    digest.update(("hawk." + HAWK_HEADER_VERSION + ".payload\n").getBytes(StringUtils.UTF_8));
-    digest.update(getBaseContentType(entity.getContentType()).getBytes(StringUtils.UTF_8));
-    digest.update("\n".getBytes(StringUtils.UTF_8));
+    digest.update(("hawk." + HAWK_HEADER_VERSION + ".payload\n").getBytes("UTF-8"));
+    digest.update(getBaseContentType(entity.getContentType()).getBytes("UTF-8"));
+    digest.update("\n".getBytes("UTF-8"));
     InputStream stream = entity.getContent();
     try {
       int numRead;
@@ -295,7 +295,7 @@ public class HawkAuthHeaderProvider implements AuthHeaderProvider {
           digest.update(buffer, 0, numRead);
         }
       }
-      digest.update("\n".getBytes(StringUtils.UTF_8)); 
+      digest.update("\n".getBytes("UTF-8")); 
       return digest.digest();
     } finally {
       stream.close();

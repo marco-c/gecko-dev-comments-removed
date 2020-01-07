@@ -7,6 +7,7 @@ package org.mozilla.gecko.sync;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.URLDecoder;
@@ -127,8 +128,10 @@ public class Utils {
 
 
 
-  public static byte[] decodeBase64(String base64) {
-    return Base64.decodeBase64(base64.getBytes(StringUtils.UTF_8));
+
+
+  public static byte[] decodeBase64(String base64) throws UnsupportedEncodingException {
+    return Base64.decodeBase64(base64.getBytes("UTF-8"));
   }
 
   public static byte[] decodeFriendlyBase32(String base32) {
@@ -199,8 +202,8 @@ public class Utils {
   }
 
   protected static byte[] sha1(final String utf8)
-      throws NoSuchAlgorithmException {
-    final byte[] bytes = utf8.getBytes(StringUtils.UTF_8);
+      throws NoSuchAlgorithmException, UnsupportedEncodingException {
+    final byte[] bytes = utf8.getBytes("UTF-8");
     try {
       return NativeCrypto.sha1(bytes);
     } catch (final LinkageError e) {
@@ -210,12 +213,12 @@ public class Utils {
       Logger.warn(LOG_TAG, "Got throwable stretching password using native sha1 implementation; " +
           "ignoring and using Java implementation.", e);
       final MessageDigest sha1 = MessageDigest.getInstance("SHA-1");
-      return sha1.digest(utf8.getBytes(StringUtils.UTF_8));
+      return sha1.digest(utf8.getBytes("UTF-8"));
     }
   }
 
   protected static String sha1Base32(final String utf8)
-      throws NoSuchAlgorithmException {
+      throws NoSuchAlgorithmException, UnsupportedEncodingException {
     return new Base32().encodeAsString(sha1(utf8)).toLowerCase(Locale.US);
   }
 
@@ -228,7 +231,8 @@ public class Utils {
 
 
 
-  public static String usernameFromAccount(final String account) throws NoSuchAlgorithmException {
+
+  public static String usernameFromAccount(final String account) throws NoSuchAlgorithmException, UnsupportedEncodingException {
     if (account == null || account.equals("")) {
       throw new IllegalArgumentException("No account name provided.");
     }
@@ -249,8 +253,9 @@ public class Utils {
 
 
 
+
   public static String getPrefsPath(final String product, final String accountKey, final String serverURL, final String profile, final long version)
-      throws NoSuchAlgorithmException {
+      throws NoSuchAlgorithmException, UnsupportedEncodingException {
     final String encodedAccount = sha1Base32(serverURL + ":" + usernameFromAccount(accountKey));
 
     if (version <= 0) {
@@ -510,13 +515,13 @@ public class Utils {
 
 
 
-  public static String decodeUTF8(final String in) {
+  public static String decodeUTF8(final String in) throws UnsupportedEncodingException {
     final int length = in.length();
     final byte[] asciiBytes = new byte[length];
     for (int i = 0; i < length; ++i) {
       asciiBytes[i] = (byte) in.codePointAt(i);
     }
-    return new String(asciiBytes, StringUtils.UTF_8);
+    return new String(asciiBytes, "UTF-8");
   }
 
   
