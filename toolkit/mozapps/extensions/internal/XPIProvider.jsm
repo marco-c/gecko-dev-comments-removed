@@ -812,6 +812,11 @@ function isUsableAddon(aAddon) {
   }
 
   
+  if (aAddon.brokenManifest) {
+    return false;
+  }
+
+  
   
   
   
