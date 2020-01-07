@@ -126,6 +126,17 @@ add_task(async function clickWithPrefSet() {
   });
   await promise;
 
+  
+  for (let button of [0, 1]) {
+    await BrowserTestUtils.withNewTab({gBrowser}, async (tab) => {
+      promise = waitForLoad(gBrowser.selectedBrowser, TEST_PAGES[1]);
+      EventUtils.synthesizeMouseAtCenter(gBookmarkElements[1], {
+        button
+      });
+      await promise;
+    });
+  }
+
   await SpecialPowers.popPrefEnv();
 });
 
