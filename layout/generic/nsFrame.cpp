@@ -5675,8 +5675,21 @@ nsFrame::ComputeSize(gfxContext*         aRenderingContext,
     const nsStyleCoord* flexBasis = &(stylePos->mFlexBasis);
     if (flexBasis->GetUnit() != eStyleUnit_Auto) {
       
-      (flexMainAxis == eLogicalAxisInline ?
-       inlineStyleCoord : blockStyleCoord) = flexBasis;
+      
+      auto& mainAxisCoord = (flexMainAxis == eLogicalAxisInline
+                             ? inlineStyleCoord : blockStyleCoord);
+      if (flexBasis->GetUnit() == eStyleUnit_Enumerated &&
+          flexBasis->GetIntValue() == NS_STYLE_FLEX_BASIS_CONTENT) {
+        
+        
+        
+        static const nsStyleCoord autoStyleCoord(eStyleUnit_Auto);
+        mainAxisCoord = &autoStyleCoord;
+      } else {
+        
+        
+        mainAxisCoord = flexBasis;
+      }
     }
   }
 
@@ -5917,8 +5930,22 @@ nsFrame::ComputeSizeWithIntrinsicDimensions(gfxContext*          aRenderingConte
       const nsStyleCoord* flexBasis = &(stylePos->mFlexBasis);
       if (flexBasis->GetUnit() != eStyleUnit_Auto) {
         
-        (flexMainAxis == eLogicalAxisInline ?
-         inlineStyleCoord : blockStyleCoord) = flexBasis;
+        
+        auto& mainAxisCoord = (flexMainAxis == eLogicalAxisInline
+                               ? inlineStyleCoord : blockStyleCoord);
+
+        if (flexBasis->GetUnit() == eStyleUnit_Enumerated &&
+            flexBasis->GetIntValue() == NS_STYLE_FLEX_BASIS_CONTENT) {
+          
+          
+          
+          static const nsStyleCoord autoStyleCoord(eStyleUnit_Auto);
+          mainAxisCoord = &autoStyleCoord;
+        } else {
+          
+          
+          mainAxisCoord = flexBasis;
+        }
       }
     }
   }

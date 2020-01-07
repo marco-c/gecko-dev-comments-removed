@@ -13,6 +13,7 @@
 #include "nsAbsoluteContainingBlock.h"
 #include "nsAttrValue.h"
 #include "nsAttrValueInlines.h"
+#include "nsFlexContainerFrame.h"
 #include "nsIDocument.h"
 #include "nsPresContext.h"
 #include "nsRect.h"
@@ -847,7 +848,17 @@ nsContainerFrame::ComputeAutoSize(gfxContext*         aRenderingContext,
   
   if ((aFlags & ComputeSizeFlags::eShrinkWrap) || IsFrameOfType(eReplaced)) {
     
-    if (StylePosition()->ISize(aWM).GetUnit() == eStyleUnit_Auto) {
+    
+    
+    
+    
+    
+    const nsStylePosition* pos = StylePosition();
+    if (pos->ISize(aWM).GetUnit() == eStyleUnit_Auto ||
+        (pos->mFlexBasis.GetUnit() == eStyleUnit_Enumerated &&
+         pos->mFlexBasis.GetIntValue() == NS_STYLE_FLEX_BASIS_CONTENT &&
+         IsFlexItem() &&
+         nsFlexContainerFrame::IsItemInlineAxisMainAxis(this))) {
       result.ISize(aWM) = ShrinkWidthToFit(aRenderingContext, availBased, aFlags);
     }
   } else {
