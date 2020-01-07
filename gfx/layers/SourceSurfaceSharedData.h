@@ -128,6 +128,7 @@ public:
     , mStride(0)
     , mMapCount(0)
     , mHandleCount(0)
+    , mInvalidations(0)
     , mFormat(SurfaceFormat::UNKNOWN)
     , mClosed(false)
     , mFinalized(false)
@@ -251,6 +252,25 @@ public:
   
 
 
+  int32_t Invalidations() const override
+  {
+    MutexAutoLock lock(mMutex);
+    return mInvalidations;
+  }
+
+  
+
+
+  void Invalidate() override
+  {
+    MutexAutoLock lock(mMutex);
+    ++mInvalidations;
+    MOZ_ASSERT(mInvalidations >= 0);
+  }
+
+  
+
+
 
   class MOZ_STACK_CLASS HandleLock final {
   public:
@@ -314,6 +334,7 @@ private:
   int32_t mStride;
   int32_t mMapCount;
   int32_t mHandleCount;
+  int32_t mInvalidations;
   IntSize mSize;
   RefPtr<SharedMemoryBasic> mBuf;
   RefPtr<SharedMemoryBasic> mOldBuf;

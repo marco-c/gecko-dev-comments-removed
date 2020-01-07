@@ -558,6 +558,18 @@ public:
     return true;
   }
 
+  
+
+
+  virtual int32_t Invalidations() const {
+    return -1;
+  }
+
+  
+
+
+  virtual void Invalidate() { }
+
 protected:
   bool mIsMapped;
 };
