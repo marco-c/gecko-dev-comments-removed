@@ -102,29 +102,6 @@ function checkUnmodifiedForm(formNum) {
 
 
 
-function doKey(aKey, modifier) {
-  var keyName = "DOM_VK_" + aKey.toUpperCase();
-  var key = KeyEvent[keyName];
-
-  
-  if (!modifier)
-    modifier = null;
-
-  
-  var wutils = SpecialPowers.wrap(window).
-               QueryInterface(SpecialPowers.Ci.nsIInterfaceRequestor).
-               getInterface(SpecialPowers.Ci.nsIDOMWindowUtils);
-
-  if (wutils.sendKeyEvent("keydown", key, 0, modifier)) {
-    wutils.sendKeyEvent("keypress", key, 0, modifier);
-  }
-  wutils.sendKeyEvent("keyup", key, 0, modifier);
-}
-
-
-
-
-
 
 
 function commonInit(selfFilling) {

@@ -45,26 +45,6 @@ function $_(formNum, name) {
   return element;
 }
 
-
-
-function doKey(aKey, modifier) {
-  let keyName = "DOM_VK_" + aKey.toUpperCase();
-  let key = SpecialPowers.Ci.nsIDOMKeyEvent[keyName];
-
-  
-  if (!modifier) {
-    modifier = null;
-  }
-
-  
-  let wutils = SpecialPowers.getDOMWindowUtils(window);
-
-  if (wutils.sendKeyEvent("keydown", key, 0, modifier)) {
-    wutils.sendKeyEvent("keypress", key, 0, modifier);
-  }
-  wutils.sendKeyEvent("keyup", key, 0, modifier);
-}
-
 function registerPopupShownListener(listener) {
   if (gPopupShownListener) {
     ok(false, "got too many popupshownlisteners");

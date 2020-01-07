@@ -2,6 +2,7 @@
 
 
 
+
 "use strict";
 
 let formFillChromeScript;
@@ -118,7 +119,7 @@ function triggerAutofillAndCheckProfile(profile) {
     promises.push(checkFieldAutofilled);
   }
   
-  doKey("return");
+  synthesizeKey("KEY_Enter", {code: "Enter"});
 
   return Promise.all(promises);
 }
@@ -242,10 +243,10 @@ function initPopupListener() {
 
 async function triggerPopupAndHoverItem(fieldSelector, selectIndex) {
   await focusAndWaitForFieldsIdentified(fieldSelector);
-  doKey("down");
+  synthesizeKey("KEY_ArrowDown", {code: "ArrowDown"});
   await expectPopup();
   for (let i = 0; i <= selectIndex; i++) {
-    doKey("down");
+    synthesizeKey("KEY_ArrowDown", {code: "ArrowDown"});
   }
   await notifySelectedIndex(selectIndex);
 }
