@@ -12,6 +12,7 @@
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/StructuredCloneTags.h"
 #include "mozilla/dom/WorkerPrivate.h"
+#include "mozilla/dom/WorkerRef.h"
 #include "mozilla/dom/WorkerRunnable.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Swizzle.h"
@@ -1219,7 +1220,6 @@ AsyncFulfillImageBitmapPromise(Promise* aPromise, ImageBitmap* aImageBitmap)
 }
 
 class CreateImageBitmapFromBlobRunnable;
-class CreateImageBitmapFromBlobHolder;
 
 class CreateImageBitmapFromBlob final : public CancelableRunnable
                                       , public imgIContainerCallback
@@ -1301,7 +1301,7 @@ private:
 
   
   
-  UniquePtr<CreateImageBitmapFromBlobHolder> mWorkerHolder;
+  RefPtr<ThreadSafeWorkerRef> mWorkerRef;
 
   
   RefPtr<Promise> mPromise;
@@ -1346,39 +1346,6 @@ private:
   RefPtr<CreateImageBitmapFromBlob> mTask;
   RefPtr<layers::Image> mImage;
   nsresult mStatus;
-};
-
-
-
-class CreateImageBitmapFromBlobHolder final : public WorkerHolder
-{
-public:
-  CreateImageBitmapFromBlobHolder(WorkerPrivate* aWorkerPrivate,
-                                  CreateImageBitmapFromBlob* aTask)
-    : WorkerHolder("CreateImageBitmapFromBlobHolder")
-    , mWorkerPrivate(aWorkerPrivate)
-    , mTask(aTask)
-    , mNotified(false)
-  {}
-
-  bool Notify(WorkerStatus aStatus) override
-  {
-    if (!mNotified) {
-      mNotified = true;
-      mTask->WorkerShuttingDown();
-    }
-    return true;
-  }
-
-  WorkerPrivate* GetWorkerPrivate() const
-  {
-    return mWorkerPrivate;
-  }
-
-private:
-  WorkerPrivate* mWorkerPrivate;
-  RefPtr<CreateImageBitmapFromBlob> mTask;
-  bool mNotified;
 };
 
 static void
@@ -2209,14 +2176,16 @@ CreateImageBitmapFromBlob::Create(Promise* aPromise,
   WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
   MOZ_ASSERT(workerPrivate);
 
-  UniquePtr<CreateImageBitmapFromBlobHolder> holder(
-    new CreateImageBitmapFromBlobHolder(workerPrivate, task));
-
-  if (!holder->HoldWorker(workerPrivate, Terminating)) {
+  RefPtr<StrongWorkerRef> workerRef =
+    StrongWorkerRef::Create(workerPrivate, "CreateImageBitmapFromBlob",
+                            [task]() {
+      task->WorkerShuttingDown();
+    });
+  if (NS_WARN_IF(!workerRef)) {
     return nullptr;
   }
 
-  task->mWorkerHolder = std::move(holder);
+  task->mWorkerRef = new ThreadSafeWorkerRef(workerRef);
   return task.forget();
 }
 
@@ -2339,13 +2308,13 @@ CreateImageBitmapFromBlob::DecodeAndCropBlobCompletedMainThread(layers::Image* a
   if (!IsCurrentThread()) {
     MutexAutoLock lock(mMutex);
 
-    if (!mWorkerHolder) {
+    if (!mWorkerRef) {
       
       return;
     }
 
     RefPtr<CreateImageBitmapFromBlobRunnable> r =
-      new CreateImageBitmapFromBlobRunnable(mWorkerHolder->GetWorkerPrivate(),
+      new CreateImageBitmapFromBlobRunnable(mWorkerRef->Private(),
                                             this, aImage, aStatus);
     r->Dispatch();
     return;
@@ -2368,7 +2337,7 @@ CreateImageBitmapFromBlob::DecodeAndCropBlobCompletedOwningThread(layers::Image*
   
   auto raii = MakeScopeExit([&] {
     
-    mWorkerHolder = nullptr;
+    mWorkerRef = nullptr;
 
     mPromise = nullptr;
     mGlobalObject = nullptr;
@@ -2409,7 +2378,7 @@ CreateImageBitmapFromBlob::WorkerShuttingDown()
   MutexAutoLock lock(mMutex);
 
   
-  mWorkerHolder = nullptr;
+  mWorkerRef = nullptr;
   mPromise = nullptr;
   mGlobalObject = nullptr;
 }
