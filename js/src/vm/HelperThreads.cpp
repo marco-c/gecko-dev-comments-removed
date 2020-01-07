@@ -1497,7 +1497,7 @@ LeaveParseTaskZone(JSRuntime* rt, ParseTask* task)
 {
     
     
-    rt->clearUsedByHelperThread(task->parseGlobal->zone());
+    rt->clearUsedByHelperThread(task->parseGlobal->zoneFromAnyThread());
 }
 
 ParseTask*

@@ -914,11 +914,12 @@ js::CurrentThreadCanAccessRuntime(const JSRuntime* rt)
 bool
 js::CurrentThreadCanAccessZone(Zone* zone)
 {
-    if (CurrentThreadCanAccessRuntime(zone->runtime_))
-        return true;
+    
+    if (zone->usedByHelperThread())
+        return zone->group()->ownedByCurrentThread();
 
     
-    return zone->usedByHelperThread() && zone->group()->ownedByCurrentThread();
+    return CurrentThreadCanAccessRuntime(zone->runtime_);
 }
 
 #ifdef DEBUG
