@@ -70,8 +70,7 @@ OuterDocAccessible::ChildAtPoint(int32_t aX, int32_t aY,
                                  EWhichChildAtPoint aWhichChild)
 {
   nsIntRect docRect = Bounds();
-  if (aX < docRect.x || aX >= docRect.x + docRect.width ||
-      aY < docRect.y || aY >= docRect.y + docRect.height)
+  if (!docRect.Contains(aX, aY))
     return nullptr;
 
   

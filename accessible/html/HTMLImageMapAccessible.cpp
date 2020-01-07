@@ -222,7 +222,6 @@ HTMLAreaAccessible::RelativeBounds(nsIFrame** aBoundingFrame) const
   
   
   *aBoundingFrame = frame;
-  bounds.width -= bounds.x;
-  bounds.height -= bounds.y;
+  bounds.SizeTo(bounds.Width() - bounds.X(), bounds.Height() - bounds.Y());
   return bounds;
 }

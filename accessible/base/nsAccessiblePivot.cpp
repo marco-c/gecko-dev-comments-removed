@@ -586,8 +586,7 @@ nsAccessiblePivot::MoveToPoint(nsIAccessibleTraversalRule* aRule,
       nsIntRect childRect = child->Bounds();
       
       
-      if (aX >= childRect.x && aX < childRect.x + childRect.width &&
-          aY >= childRect.y && aY < childRect.y + childRect.height)
+      if (childRect.Contains(aX, aY))
         match = child;
     }
 

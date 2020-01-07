@@ -87,8 +87,8 @@ HTMLLIAccessible::Bounds() const
 
   nsIntRect bulletRect = mBullet->Bounds();
 
-  rect.width += rect.x - bulletRect.x;
-  rect.x = bulletRect.x; 
+  
+  rect.SetLeftEdge(bulletRect.X());
   return rect;
 }
 

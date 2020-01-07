@@ -62,16 +62,16 @@ ia2AccessibleComponent::get_locationInParent(long* aX, long* aY)
   
   
   if (!acc->Parent()) {
-    *aX = rect.x;
-    *aY = rect.y;
+    *aX = rect.X();
+    *aY = rect.Y();
     return S_OK;
   }
 
   
   
   nsIntRect parentRect = acc->Parent()->Bounds();
-  *aX = rect.x - parentRect.x;
-  *aY = rect.y - parentRect.y;
+  *aX = rect.X() - parentRect.X();
+  *aY = rect.Y() - parentRect.Y();
   return S_OK;
 }
 
