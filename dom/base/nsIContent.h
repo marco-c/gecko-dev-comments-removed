@@ -240,7 +240,15 @@ public:
 
 
 
-  inline bool IsInAnonymousSubtree() const;
+  bool IsInAnonymousSubtree() const
+  {
+    NS_ASSERTION(!IsInNativeAnonymousSubtree() || GetBindingParent() ||
+                 (!IsInUncomposedDoc() &&
+                  static_cast<nsIContent*>(SubtreeRoot())->IsInNativeAnonymousSubtree()),
+                 "Must have binding parent when in native anonymous subtree which is in document.\n"
+                 "Native anonymous subtree which is not in document must have native anonymous root.");
+    return IsInNativeAnonymousSubtree() || (!IsInShadowTree() && GetBindingParent() != nullptr);
+  }
 
   
 
