@@ -24,14 +24,13 @@ const Promise = require("Promise");
 
 const CANVAS_ACTOR_RECORDING_ATTEMPT = flags.testing ? 500 : 5000;
 
-
 ChromeUtils.defineModuleGetter(this, "FileUtils",
   "resource://gre/modules/FileUtils.jsm");
 
 ChromeUtils.defineModuleGetter(this, "NetUtil",
   "resource://gre/modules/NetUtil.jsm");
 
-XPCOMUtils.defineLazyGetter(this, "NetworkHelper", function () {
+XPCOMUtils.defineLazyGetter(this, "NetworkHelper", function() {
   return require("devtools/shared/webconsole/network-helper");
 });
 
@@ -127,7 +126,7 @@ var EventsHandler = {
   
 
 
-  initialize: function () {
+  initialize: function() {
     
     
     
@@ -141,14 +140,14 @@ var EventsHandler = {
   
 
 
-  destroy: function () {
+  destroy: function() {
     gTarget.off("will-navigate", this._onTabWillNavigate);
   },
 
   
 
 
-  _onTabWillNavigate: function () {
+  _onTabWillNavigate: function() {
     
     SnapshotsListView.empty();
     CallsListView.empty();

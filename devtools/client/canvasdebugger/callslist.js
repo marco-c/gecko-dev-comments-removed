@@ -13,7 +13,7 @@ var CallsListView = extend(WidgetMethods, {
   
 
 
-  initialize: function () {
+  initialize: function() {
     this.widget = new SideMenuWidget($("#calls-list"));
     this._searchbox = $("#calls-searchbox");
     this._filmstrip = $("#snapshot-filmstrip");
@@ -33,7 +33,7 @@ var CallsListView = extend(WidgetMethods, {
   
 
 
-  destroy: function () {
+  destroy: function() {
     this.widget.removeEventListener("select", this._onSelect);
     this._searchbox.removeEventListener("input", this._onSearch);
     this._filmstrip.removeEventListener("wheel", this._onScroll);
@@ -45,7 +45,7 @@ var CallsListView = extend(WidgetMethods, {
 
 
 
-  showCalls: function (functionCalls) {
+  showCalls: function(functionCalls) {
     this.empty();
 
     for (let i = 0, len = functionCalls.length; i < len; i++) {
@@ -138,7 +138,7 @@ var CallsListView = extend(WidgetMethods, {
 
 
 
-  showScreenshot: function (screenshot) {
+  showScreenshot: function(screenshot) {
     let { index, width, height, scaling, flipped, pixels } = screenshot;
 
     let screenshotNode = $("#screenshot-image");
@@ -161,7 +161,7 @@ var CallsListView = extend(WidgetMethods, {
 
 
 
-  showThumbnails: function (thumbnails) {
+  showThumbnails: function(thumbnails) {
     while (this._filmstrip.hasChildNodes()) {
       this._filmstrip.firstChild.remove();
     }
@@ -179,7 +179,7 @@ var CallsListView = extend(WidgetMethods, {
 
 
 
-  appendThumbnail: function (thumbnail) {
+  appendThumbnail: function(thumbnail) {
     let { index, width, height, flipped, pixels } = thumbnail;
 
     let thumbnailNode = document.createElementNS(HTML_NS, "canvas");
@@ -230,7 +230,7 @@ var CallsListView = extend(WidgetMethods, {
   
 
 
-  _onSelect: function ({ detail: callItem }) {
+  _onSelect: function({ detail: callItem }) {
     if (!callItem) {
       return;
     }
@@ -271,7 +271,7 @@ var CallsListView = extend(WidgetMethods, {
   
 
 
-  _onSearch: function (e) {
+  _onSearch: function(e) {
     let lowerCaseSearchToken = this._searchbox.value.toLowerCase();
 
     this.filterContents(e => {
@@ -291,7 +291,7 @@ var CallsListView = extend(WidgetMethods, {
   
 
 
-  _onScroll: function (e) {
+  _onScroll: function(e) {
     this._filmstrip.scrollLeft += e.deltaX;
   },
 
@@ -299,7 +299,7 @@ var CallsListView = extend(WidgetMethods, {
 
 
 
-  _onExpand: function (e) {
+  _onExpand: function(e) {
     let callItem = this.getItemForElement(e.target);
     let view = $(".call-item-view", callItem.target);
 
@@ -316,11 +316,10 @@ var CallsListView = extend(WidgetMethods, {
         return;
       }
       
-      else {
-        view.setAttribute("call-stack-expanded", !isExpanded);
-        $(".call-item-stack", view).hidden = isExpanded;
-        return;
-      }
+
+      view.setAttribute("call-stack-expanded", !isExpanded);
+      $(".call-item-stack", view).hidden = isExpanded;
+      return;
     }
 
     let list = document.createElement("vbox");
@@ -383,7 +382,7 @@ var CallsListView = extend(WidgetMethods, {
 
 
 
-  _onStackFileClick: function (e, { file, line }) {
+  _onStackFileClick: function(e, { file, line }) {
     this._viewSourceInDebugger(file, line);
   },
 
@@ -393,14 +392,14 @@ var CallsListView = extend(WidgetMethods, {
 
 
 
-  _onThumbnailClick: function (e, index) {
+  _onThumbnailClick: function(e, index) {
     this.selectedIndex = index;
   },
 
   
 
 
-  _onResume: function () {
+  _onResume: function() {
     
     let drawCall = getNextDrawCall(this.items, this.selectedItem);
     if (drawCall) {
@@ -415,14 +414,14 @@ var CallsListView = extend(WidgetMethods, {
   
 
 
-  _onStepOver: function () {
+  _onStepOver: function() {
     this.selectedIndex++;
   },
 
   
 
 
-  _onStepIn: function () {
+  _onStepIn: function() {
     if (this.selectedIndex == -1) {
       this._onResume();
       return;
@@ -435,14 +434,14 @@ var CallsListView = extend(WidgetMethods, {
   
 
 
-  _onStepOut: function () {
+  _onStepOut: function() {
     this.selectedIndex = this.itemCount - 1;
   },
 
   
 
 
-  _viewSourceInDebugger: function (file, line) {
+  _viewSourceInDebugger: function(file, line) {
     gToolbox.viewSourceInDebugger(file, line).then(success => {
       if (success) {
         window.emit(EVENTS.SOURCE_SHOWN_IN_JS_DEBUGGER);
