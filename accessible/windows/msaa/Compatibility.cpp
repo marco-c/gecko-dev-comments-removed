@@ -40,32 +40,53 @@ static const wchar_t* ConsumerStringMap[CONSUMERS_ENUM_LEN+1] = {
   L"\0"
 };
 
-
-
-
 bool
-IsModuleVersionLessThan(HMODULE aModuleHandle, DWORD aMajor, DWORD aMinor)
+Compatibility::IsModuleVersionLessThan(HMODULE aModuleHandle,
+                                       unsigned long long aVersion)
 {
-  wchar_t fileName[MAX_PATH];
-  ::GetModuleFileNameW(aModuleHandle, fileName, MAX_PATH);
+  
+  
+  DWORD fnSize = MAX_PATH;
+  UniquePtr<wchar_t[]> fileName;
+  while (true) {
+    fileName = MakeUnique<wchar_t[]>(fnSize);
+    DWORD retLen = ::GetModuleFileNameW(aModuleHandle, fileName.get(), fnSize);
+    MOZ_ASSERT(retLen != 0);
+    if (retLen == 0) {
+      return true;
+    }
+    if (retLen == fnSize &&
+        ::GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
+      
+      fnSize *= 2;
+    }
+    break; 
+  }
 
-  DWORD dummy = 0;
-  DWORD length = ::GetFileVersionInfoSizeW(fileName, &dummy);
+  
+  DWORD length = ::GetFileVersionInfoSizeW(fileName.get(), nullptr);
+  if (length == 0) {
+    return true;
+  }
 
-  LPBYTE versionInfo = new BYTE[length];
-  ::GetFileVersionInfoW(fileName, 0, length, versionInfo);
+  auto versionInfo = MakeUnique<unsigned char[]>(length);
+  if (!::GetFileVersionInfoW(fileName.get(), 0, length, versionInfo.get())) {
+    return true;
+  }
 
   UINT uLen;
   VS_FIXEDFILEINFO* fixedFileInfo = nullptr;
-  ::VerQueryValueW(versionInfo, L"\\", (LPVOID*)&fixedFileInfo, &uLen);
-  DWORD dwFileVersionMS = fixedFileInfo->dwFileVersionMS;
-  DWORD dwFileVersionLS = fixedFileInfo->dwFileVersionLS;
-  delete [] versionInfo;
+  if (!::VerQueryValueW(versionInfo.get(), L"\\", (LPVOID*)&fixedFileInfo,
+      &uLen)) {
+    return true;
+  }
 
-  DWORD dwLeftMost = HIWORD(dwFileVersionMS);
-  DWORD dwSecondRight = HIWORD(dwFileVersionLS);
-  return (dwLeftMost < aMajor ||
-    (dwLeftMost == aMajor && dwSecondRight < aMinor));
+  
+  unsigned long long version =
+    ((unsigned long long)fixedFileInfo->dwFileVersionMS) << 32 |
+    ((unsigned long long)fixedFileInfo->dwFileVersionLS);
+
+  return version < aVersion;
 }
 
 
@@ -166,9 +187,11 @@ uint32_t Compatibility::sConsumers = Compatibility::UNKNOWN;
 Compatibility::InitConsumers()
 {
   HMODULE jawsHandle = ::GetModuleHandleW(L"jhook");
-  if (jawsHandle)
-    sConsumers |= (IsModuleVersionLessThan(jawsHandle, 19, 0)) ?
-                   OLDJAWS : JAWS;
+  if (jawsHandle) {
+    sConsumers |=
+      IsModuleVersionLessThan(jawsHandle, MAKE_FILE_VERSION(19, 0, 0, 0)) ?
+      OLDJAWS : JAWS;
+  }
 
   if (::GetModuleHandleW(L"gwm32inc"))
     sConsumers |= WE;

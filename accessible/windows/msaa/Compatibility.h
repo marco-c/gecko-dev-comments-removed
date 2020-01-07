@@ -67,6 +67,16 @@ public:
 
   static bool HasKnownNonUiaConsumer();
 
+  
+
+
+
+
+
+
+  static bool IsModuleVersionLessThan(HMODULE aModuleHandle,
+                                      unsigned long long aVersion);
+
 private:
   Compatibility();
   Compatibility(const Compatibility&);
@@ -100,5 +110,11 @@ private:
 
 } 
 } 
+
+
+
+
+#define MAKE_FILE_VERSION(a,b,c,d)\
+  ((a##ULL << 48) + (b##ULL << 32) + (c##ULL << 16) + d##ULL)
 
 #endif
