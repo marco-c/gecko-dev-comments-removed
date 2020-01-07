@@ -1,9 +1,6 @@
-if (this.document === undefined) {
-  importScripts("/common/utils.js");
-  importScripts("/resources/testharness.js");
-  importScripts("../resources/utils.js");
-  importScripts("/common/get-host-info.sub.js");
-}
+
+
+
 
 function testReferrerAfterRedirection(desc, redirectUrl, redirectLocation, referrerPolicy, redirectReferrerPolicy, expectedReferrer) {
   var url = redirectUrl;
