@@ -7,7 +7,6 @@
 const {Ci} = require("chrome");
 const Services = require("Services");
 const defer = require("devtools/shared/defer");
-const {Task} = require("devtools/shared/task");
 const protocol = require("devtools/shared/protocol");
 const {LongStringActor} = require("devtools/server/actors/string");
 const {fetch} = require("devtools/shared/DevToolsUtils");
@@ -404,7 +403,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
 
 
-  fetchStylesheet: Task.async(function* (href) {
+  async fetchStylesheet(href) {
     
     let result = this.fetchStylesheetFromNetworkMonitor(href);
     if (result) {
@@ -431,7 +430,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
     }
 
     try {
-      result = yield fetch(this.href, options);
+      result = await fetch(this.href, options);
     } catch (e) {
       
       
@@ -439,11 +438,11 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
         ` using system principal instead.`);
       options.window = undefined;
       options.principal = undefined;
-      result = yield fetch(this.href, options);
+      result = await fetch(this.href, options);
     }
 
     return result;
-  }),
+  },
 
   
 
@@ -725,15 +724,15 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
 
 
 
-  getStyleSheets: Task.async(function* () {
+  async getStyleSheets() {
     let actors = [];
 
     for (let win of this.parentActor.windows) {
-      let sheets = yield this._addStyleSheets(win);
+      let sheets = await this._addStyleSheets(win);
       actors = actors.concat(sheets);
     }
     return actors;
-  }),
+  },
 
   
 
@@ -782,7 +781,7 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
 
 
   _addStyleSheets: function (win) {
-    return Task.spawn(function* () {
+    return (async function () {
       let doc = win.document;
       
       
@@ -802,11 +801,11 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
         actors.push(actor);
 
         
-        let imports = yield this._getImported(doc, actor);
+        let imports = await this._getImported(doc, actor);
         actors = actors.concat(imports);
       }
       return actors;
-    }.bind(this));
+    }.bind(this))();
   },
 
   
@@ -820,8 +819,8 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
 
 
   _getImported: function (doc, styleSheet) {
-    return Task.spawn(function* () {
-      let rules = yield styleSheet.getCSSRules();
+    return (async function () {
+      let rules = await styleSheet.getCSSRules();
       let imported = [];
 
       for (let i = 0; i < rules.length; i++) {
@@ -841,7 +840,7 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
           imported.push(actor);
 
           
-          let children = yield this._getImported(doc, actor);
+          let children = await this._getImported(doc, actor);
           imported = imported.concat(children);
         } else if (rule.type != CSSRule.CHARSET_RULE) {
           
@@ -850,7 +849,7 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
       }
 
       return imported;
-    }.bind(this));
+    }.bind(this))();
   },
 
   

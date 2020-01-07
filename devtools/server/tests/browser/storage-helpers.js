@@ -13,11 +13,11 @@
 
 
 
-function* openTabAndSetupStorage(url) {
-  let content = yield addTab(url);
+async function openTabAndSetupStorage(url) {
+  let content = await addTab(url);
 
   
-  yield ContentTask.spawn(gBrowser.selectedBrowser, null, function* () {
+  await ContentTask.spawn(gBrowser.selectedBrowser, null, async function () {
     
 
 
@@ -45,14 +45,14 @@ function* openTabAndSetupStorage(url) {
     let windows = getAllWindows(content);
     for (let win of windows) {
       if (win.setup) {
-        yield win.setup();
+        await win.setup();
       }
     }
   });
 }
 
-function* clearStorage() {
-  yield ContentTask.spawn(gBrowser.selectedBrowser, null, function* () {
+async function clearStorage() {
+  await ContentTask.spawn(gBrowser.selectedBrowser, null, async function () {
     
 
 
@@ -80,7 +80,7 @@ function* clearStorage() {
     let windows = getAllWindows(content);
     for (let win of windows) {
       if (win.clear) {
-        yield win.clear();
+        await win.clear();
       }
     }
   });

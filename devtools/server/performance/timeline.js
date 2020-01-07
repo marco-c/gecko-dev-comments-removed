@@ -24,7 +24,6 @@ const { Ci, Cu } = require("chrome");
 
 
 
-loader.lazyRequireGetter(this, "Task", "devtools/shared/task", true);
 loader.lazyRequireGetter(this, "Memory", "devtools/server/performance/memory", true);
 loader.lazyRequireGetter(this, "Framerate", "devtools/server/performance/framerate", true);
 loader.lazyRequireGetter(this, "StackFrameCache", "devtools/server/actors/utils/stack", true);
@@ -205,7 +204,7 @@ Timeline.prototype = {
 
 
 
-  start: Task.async(function* ({
+  async start({
     withMarkers,
     withTicks,
     withMemory,
@@ -257,12 +256,12 @@ Timeline.prototype = {
 
     this._pullTimelineData();
     return startTime;
-  }),
+  },
 
   
 
 
-  stop: Task.async(function* () {
+  async stop() {
     let docShells = this.docShells;
     if (!docShells.length) {
       return -1;
@@ -308,7 +307,7 @@ Timeline.prototype = {
     clearTimeout(this._dataPullTimeout);
 
     return endTime;
-  }),
+  },
 
   
 

@@ -4,7 +4,6 @@
 "use strict";
 
 const { Cu } = require("chrome");
-const { Task } = require("devtools/shared/task");
 
 loader.lazyRequireGetter(this, "Services");
 loader.lazyRequireGetter(this, "EventEmitter", "devtools/shared/event-emitter");
@@ -163,7 +162,7 @@ PerformanceRecorder.prototype = {
 
 
 
-  _onConsoleProfileStart: Task.async(function* ({ profileLabel, currentTime }) {
+  async _onConsoleProfileStart({ profileLabel, currentTime }) {
     let recordings = this._recordings;
 
     
@@ -175,11 +174,11 @@ PerformanceRecorder.prototype = {
     
     this.emit("console-profile-start");
 
-    yield this.startRecording(Object.assign({}, getPerformanceRecordingPrefs(), {
+    await this.startRecording(Object.assign({}, getPerformanceRecordingPrefs(), {
       console: true,
       label: profileLabel
     }));
-  }),
+  },
 
   
 
@@ -190,7 +189,7 @@ PerformanceRecorder.prototype = {
 
 
 
-  _onConsoleProfileEnd: Task.async(function* (data) {
+  async _onConsoleProfileEnd(data) {
     
     
     if (!data) {
@@ -221,8 +220,8 @@ PerformanceRecorder.prototype = {
       return;
     }
 
-    yield this.stopRecording(model);
-  }),
+    await this.stopRecording(model);
+  },
 
  
 
@@ -310,15 +309,15 @@ PerformanceRecorder.prototype = {
 
 
 
-  startRecording: Task.async(function* (options) {
+  async startRecording(options) {
     let profilerStart, timelineStart, memoryStart;
 
-    profilerStart = Task.spawn(function* () {
-      let data = yield this._profiler.isActive();
+    profilerStart = (async function () {
+      let data = await this._profiler.isActive();
       if (data.isActive) {
         return data;
       }
-      let startData = yield this._profiler.start(
+      let startData = await this._profiler.start(
         mapRecordingOptions("profiler", options)
       );
 
@@ -329,7 +328,7 @@ PerformanceRecorder.prototype = {
         startData.currentTime = 0;
       }
       return startData;
-    }.bind(this));
+    }.bind(this))();
 
     
     
@@ -347,7 +346,7 @@ PerformanceRecorder.prototype = {
       memoryStart = this._memory.startRecordingAllocations(recordingOptions);
     }
 
-    let [profilerStartData, timelineStartData, memoryStartData] = yield Promise.all([
+    let [profilerStartData, timelineStartData, memoryStartData] = await Promise.all([
       profilerStart, timelineStart, memoryStart
     ]);
 
@@ -365,14 +364,14 @@ PerformanceRecorder.prototype = {
     data.totalSize = profilerStartData.totalSize;
 
     data.systemClient = this._systemClient;
-    data.systemHost = yield getSystemInfo();
+    data.systemHost = await getSystemInfo();
 
     let model = new PerformanceRecordingActor(this.conn, options, data);
     this._recordings.push(model);
 
     this.emit("recording-started", model);
     return model;
-  }),
+  },
 
   
 
@@ -383,7 +382,7 @@ PerformanceRecorder.prototype = {
 
 
 
-  stopRecording: Task.async(function* (model) {
+  async stopRecording(model) {
     
     
     
@@ -431,7 +430,7 @@ PerformanceRecorder.prototype = {
 
     this.emit("recording-stopped", model, recordingData);
     return model;
-  }),
+  },
 
   
 

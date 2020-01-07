@@ -10,29 +10,29 @@
 
 const {TimelineFront} = require("devtools/shared/fronts/timeline");
 
-add_task(function* () {
-  yield addTab(MAIN_DOMAIN + "timeline-iframe-parent.html");
+add_task(async function () {
+  await addTab(MAIN_DOMAIN + "timeline-iframe-parent.html");
 
   initDebuggerServer();
   let client = new DebuggerClient(DebuggerServer.connectPipe());
-  let form = yield connectDebuggerClient(client);
+  let form = await connectDebuggerClient(client);
   let front = TimelineFront(client, form);
 
   info("Start timeline marker recording");
-  yield front.start({ withMarkers: true });
+  await front.start({ withMarkers: true });
 
   
   
   for (let i = 0; i < 3; i++) {
     
-    yield wait(300);
-    let markers = yield once(front, "markers");
+    await wait(300);
+    let markers = await once(front, "markers");
     ok(markers.length, "Markers were received for operations in the child frame");
   }
 
   info("Stop timeline marker recording");
-  yield front.stop();
-  yield client.close();
+  await front.stop();
+  await client.close();
   gBrowser.removeCurrentTab();
 });
 

@@ -5,7 +5,6 @@
 "use strict";
 
 const { Cc, CC } = require("chrome");
-const { Task } = require("devtools/shared/task");
 const { executeSoon } = require("devtools/shared/DevToolsUtils");
 const { delimitedRead } = require("devtools/shared/transport/stream-utils");
 const CryptoHash = CC("@mozilla.org/security/hash;1", "nsICryptoHash", "initWithString");
@@ -80,12 +79,12 @@ function writeString(output, data) {
 
 
 
-const readHttpRequest = Task.async(function* (input) {
+const readHttpRequest = async function (input) {
   let requestLine = "";
   let headers = new Map();
 
   while (true) {
-    let line = yield readLine(input);
+    let line = await readLine(input);
     if (line.length == 0) {
       break;
     }
@@ -105,7 +104,7 @@ const readHttpRequest = Task.async(function* (input) {
   }
 
   return { requestLine, headers };
-});
+};
 
 
 
@@ -165,16 +164,16 @@ function computeKey(key) {
 
 
 
-const serverHandshake = Task.async(function* (input, output) {
+const serverHandshake = async function (input, output) {
   
-  let request = yield readHttpRequest(input);
+  let request = await readHttpRequest(input);
 
   try {
     
     let { acceptKey } = processRequest(request);
 
     
-    yield writeHttpResponse(output, [
+    await writeHttpResponse(output, [
       "HTTP/1.1 101 Switching Protocols",
       "Upgrade: websocket",
       "Connection: Upgrade",
@@ -182,10 +181,10 @@ const serverHandshake = Task.async(function* (input, output) {
     ]);
   } catch (error) {
     
-    yield writeHttpResponse(output, [ "HTTP/1.1 400 Bad Request" ]);
+    await writeHttpResponse(output, [ "HTTP/1.1 400 Bad Request" ]);
     throw error;
   }
-});
+};
 
 
 
@@ -193,8 +192,8 @@ const serverHandshake = Task.async(function* (input, output) {
 
 
 
-const accept = Task.async(function* (transport, input, output) {
-  yield serverHandshake(input, output);
+const accept = async function (transport, input, output) {
+  await serverHandshake(input, output);
 
   let transportProvider = {
     setListener(upgradeListener) {
@@ -215,6 +214,6 @@ const accept = Task.async(function* (transport, input, output) {
     socket.onopen = () => resolve(socket);
     socket.onerror = err => reject(err);
   });
-});
+};
 
 exports.accept = accept;
