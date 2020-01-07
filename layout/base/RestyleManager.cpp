@@ -1373,10 +1373,6 @@ RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList)
     }
   }
 
-  
-  
-  frameConstructor->BeginUpdate();
-
   bool didUpdateCursor = false;
 
   for (size_t i = 0; i < aChangeList.Length(); ++i) {
@@ -1721,8 +1717,6 @@ RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList)
       }
     }
   }
-
-  frameConstructor->EndUpdate();
 
 #ifdef DEBUG
   

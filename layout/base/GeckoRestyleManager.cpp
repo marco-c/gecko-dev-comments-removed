@@ -637,10 +637,6 @@ GeckoRestyleManager::ProcessPendingRestyles()
 void
 GeckoRestyleManager::BeginProcessingRestyles(RestyleTracker& aRestyleTracker)
 {
-  
-  
-  PresContext()->FrameConstructor()->BeginUpdate();
-
   mInStyleRefresh = true;
 
   if (ShouldStartRebuildAllFor(aRestyleTracker)) {
@@ -665,8 +661,6 @@ GeckoRestyleManager::EndProcessingRestyles()
   if (mInRebuildAllStyleData) {
     FinishRebuildAllStyleData();
   }
-
-  PresContext()->FrameConstructor()->EndUpdate();
 
 #ifdef DEBUG
   PresContext()->PresShell()->VerifyStyleTree();
