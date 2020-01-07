@@ -22,6 +22,7 @@
 
 class nsFrameSelection;
 class nsIContent;
+class nsIDocument;
 class nsIPresShell;
 struct nsPoint;
 
@@ -105,8 +106,8 @@ public:
 
   
   MOZ_CAN_RUN_SCRIPT
-  virtual nsresult OnSelectionChanged(nsIDOMDocument* aDoc,
-                                      nsISelection* aSel,
+  virtual nsresult OnSelectionChanged(nsIDocument* aDoc,
+                                      dom::Selection* aSel,
                                       int16_t aReason);
   
   MOZ_CAN_RUN_SCRIPT

@@ -108,9 +108,7 @@ public:
   Element* GetSelectionContainer();
 
   
-  NS_IMETHOD NotifySelectionChanged(nsIDOMDocument* aDOMDocument,
-                                    nsISelection* aSelection,
-                                    int16_t aReason) override;
+  NS_DECL_NSISELECTIONLISTENER
 
   
   virtual nsresult Init(nsIDocument& aDoc, Element* aRoot,

@@ -14,10 +14,9 @@
 #include "nsCOMPtr.h"
 #include "nsContentUtils.h"
 #include "nsIDocument.h"
-#include "nsIDOMDocument.h"
 #include "nsFrameSelection.h"
 #include "nsRange.h"
-#include "Selection.h"
+#include "mozilla/dom/Selection.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -81,12 +80,10 @@ NS_IMPL_CYCLE_COLLECTING_ADDREF(SelectionChangeListener)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(SelectionChangeListener)
 
 NS_IMETHODIMP
-SelectionChangeListener::NotifySelectionChanged(nsIDOMDocument* aDoc,
-                                                nsISelection* aSel, int16_t aReason)
+SelectionChangeListener::NotifySelectionChanged(nsIDocument* aDoc,
+                                                Selection* aSel, int16_t aReason)
 {
-  RefPtr<Selection> sel = aSel->AsSelection();
-
-  nsIDocument* doc = sel->GetParentObject();
+  nsIDocument* doc = aSel->GetParentObject();
   if (!(doc && nsContentUtils::IsSystemPrincipal(doc->NodePrincipal())) &&
       !nsFrameSelection::sSelectionEventsEnabled) {
     return NS_OK;
@@ -94,11 +91,12 @@ SelectionChangeListener::NotifySelectionChanged(nsIDOMDocument* aDoc,
 
   
   
-  if (mOldRanges.Length() == sel->RangeCount() && !sel->IsBlockingSelectionChangeEvents()) {
+  if (mOldRanges.Length() == aSel->RangeCount() &&
+      !aSel->IsBlockingSelectionChangeEvents()) {
     bool changed = false;
 
     for (size_t i = 0; i < mOldRanges.Length(); i++) {
-      if (!mOldRanges[i].Equals(sel->GetRangeAt(i))) {
+      if (!mOldRanges[i].Equals(aSel->GetRangeAt(i))) {
         changed = true;
         break;
       }
@@ -111,8 +109,8 @@ SelectionChangeListener::NotifySelectionChanged(nsIDOMDocument* aDoc,
 
   
   mOldRanges.ClearAndRetainStorage();
-  for (size_t i = 0; i < sel->RangeCount(); i++) {
-    mOldRanges.AppendElement(RawRangeData(sel->GetRangeAt(i)));
+  for (size_t i = 0; i < aSel->RangeCount(); i++) {
+    mOldRanges.AppendElement(RawRangeData(aSel->GetRangeAt(i)));
   }
 
   if (doc) {
@@ -125,7 +123,7 @@ SelectionChangeListener::NotifySelectionChanged(nsIDOMDocument* aDoc,
   
   
   
-  if (sel->IsBlockingSelectionChangeEvents()) {
+  if (aSel->IsBlockingSelectionChangeEvents()) {
     return NS_OK;
   }
 
@@ -141,7 +139,7 @@ SelectionChangeListener::NotifySelectionChanged(nsIDOMDocument* aDoc,
     
     
     
-    if (const nsFrameSelection* fs = sel->GetFrameSelection()) {
+    if (const nsFrameSelection* fs = aSel->GetFrameSelection()) {
       if (nsCOMPtr<nsIContent> root = fs->GetLimiter()) {
         while (root && root->IsInNativeAnonymousSubtree()) {
           root = root->GetParent();
@@ -153,8 +151,7 @@ SelectionChangeListener::NotifySelectionChanged(nsIDOMDocument* aDoc,
 
     
     if (!target) {
-      nsCOMPtr<nsIDocument> doc = do_QueryInterface(aDoc);
-      target = doc.forget();
+      target = aDoc;
     }
 
     if (target) {
@@ -163,7 +160,7 @@ SelectionChangeListener::NotifySelectionChanged(nsIDOMDocument* aDoc,
       asyncDispatcher->PostDOMEvent();
     }
   } else {
-    if (const nsFrameSelection* fs = sel->GetFrameSelection()) {
+    if (const nsFrameSelection* fs = aSel->GetFrameSelection()) {
       if (nsCOMPtr<nsIContent> root = fs->GetLimiter()) {
         if (root->IsInNativeAnonymousSubtree()) {
           return NS_OK;
@@ -171,10 +168,9 @@ SelectionChangeListener::NotifySelectionChanged(nsIDOMDocument* aDoc,
       }
     }
 
-    nsCOMPtr<nsIDocument> doc = do_QueryInterface(aDoc);
-    if (doc) {
+    if (aDoc) {
       RefPtr<AsyncEventDispatcher> asyncDispatcher =
-        new AsyncEventDispatcher(doc, eSelectionChange, false);
+        new AsyncEventDispatcher(aDoc, eSelectionChange, false);
       asyncDispatcher->PostDOMEvent();
     }
   }
