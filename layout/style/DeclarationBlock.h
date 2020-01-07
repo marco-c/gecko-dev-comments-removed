@@ -28,19 +28,6 @@ class Rule;
 
 class DeclarationBlock final
 {
-public:
-  explicit DeclarationBlock(
-    already_AddRefed<RawServoDeclarationBlock> aRaw)
-    : mRaw(aRaw)
-    , mImmutable(false)
-    , mIsDirty(false)
-  {
-    mContainer.mRaw = 0;
-  }
-
-  DeclarationBlock()
-    : DeclarationBlock(Servo_DeclarationBlock_CreateEmpty().Consume()) {}
-
   DeclarationBlock(const DeclarationBlock& aCopy)
     : mRaw(Servo_DeclarationBlock_Clone(aCopy.mRaw).Consume())
     , mImmutable(false)
@@ -49,9 +36,22 @@ public:
     mContainer.mRaw = 0;
   }
 
+public:
+  explicit DeclarationBlock(already_AddRefed<RawServoDeclarationBlock> aRaw)
+    : mRaw(aRaw)
+    , mImmutable(false)
+    , mIsDirty(false)
+  {
+    mContainer.mRaw = 0;
+  }
+
+  DeclarationBlock()
+    : DeclarationBlock(Servo_DeclarationBlock_CreateEmpty().Consume())
+  { }
+
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(DeclarationBlock)
 
-  inline already_AddRefed<DeclarationBlock> Clone() const
+  already_AddRefed<DeclarationBlock> Clone() const
   {
     return do_AddRef(new DeclarationBlock(*this));
   }
@@ -59,19 +59,17 @@ public:
   
 
 
-  bool IsMutable() const {
-    return !mImmutable;
-  }
+  bool IsMutable() const { return !mImmutable; }
 
   
 
 
-  void AssertMutable() const {
+  void AssertMutable() const
+  {
     MOZ_ASSERT(IsMutable(), "someone forgot to call EnsureMutable");
   }
 
   
-
 
 
   void SetImmutable() { mImmutable = true; }
@@ -94,10 +92,13 @@ public:
   
 
 
-  inline already_AddRefed<DeclarationBlock>
-  EnsureMutable()
+  already_AddRefed<DeclarationBlock> EnsureMutable()
   {
     if (!IsDirty()) {
+      
+      
+      
+      
       
       
       
@@ -109,23 +110,27 @@ public:
     if (!IsMutable()) {
       return Clone();
     }
+
     return do_AddRef(this);
   }
 
-  void SetOwningRule(css::Rule* aRule) {
+  void SetOwningRule(css::Rule* aRule)
+  {
     MOZ_ASSERT(!mContainer.mOwningRule || !aRule,
                "should never overwrite one rule with another");
     mContainer.mOwningRule = aRule;
   }
 
-  css::Rule* GetOwningRule() const {
+  css::Rule* GetOwningRule() const
+  {
     if (mContainer.mRaw & 0x1) {
       return nullptr;
     }
     return mContainer.mOwningRule;
   }
 
-  void SetHTMLCSSStyleSheet(nsHTMLCSSStyleSheet* aHTMLCSSStyleSheet) {
+  void SetHTMLCSSStyleSheet(nsHTMLCSSStyleSheet* aHTMLCSSStyleSheet)
+  {
     MOZ_ASSERT(!mContainer.mHTMLCSSStyleSheet || !aHTMLCSSStyleSheet,
                "should never overwrite one sheet with another");
     mContainer.mHTMLCSSStyleSheet = aHTMLCSSStyleSheet;
@@ -134,7 +139,8 @@ public:
     }
   }
 
-  nsHTMLCSSStyleSheet* GetHTMLCSSStyleSheet() const {
+  nsHTMLCSSStyleSheet* GetHTMLCSSStyleSheet() const
+  {
     if (!(mContainer.mRaw & 0x1)) {
       return nullptr;
     }
@@ -167,23 +173,24 @@ public:
     return reinterpret_cast<const RawServoDeclarationBlockStrong*>(&mRaw);
   }
 
-  void ToString(nsAString& aResult) const {
+  void ToString(nsAString& aResult) const
+  {
     Servo_DeclarationBlock_GetCssText(mRaw, &aResult);
   }
 
-  uint32_t Count() const {
+  uint32_t Count() const
+  {
     return Servo_DeclarationBlock_Count(mRaw);
   }
 
-  bool GetNthProperty(uint32_t aIndex, nsAString& aReturn) const {
+  bool GetNthProperty(uint32_t aIndex, nsAString& aReturn) const
+  {
     aReturn.Truncate();
     return Servo_DeclarationBlock_GetNthProperty(mRaw, aIndex, &aReturn);
   }
 
-  void GetPropertyValue(const nsAString& aProperty,
-                        nsAString& aValue) const;
-  void GetPropertyValueByID(nsCSSPropertyID aPropID,
-                            nsAString& aValue) const;
+  void GetPropertyValue(const nsAString& aProperty, nsAString& aValue) const;
+  void GetPropertyValueByID(nsCSSPropertyID aPropID, nsAString& aValue) const;
   bool GetPropertyIsImportant(const nsAString& aProperty) const;
   
   bool RemoveProperty(const nsAString& aProperty);
