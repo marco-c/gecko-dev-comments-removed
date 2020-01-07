@@ -8183,7 +8183,7 @@ nsCSSFrameConstructor::ContentRemoved(nsIContent* aChild,
     
     if (aOldNextSibling && aFlags == REMOVE_CONTENT &&
         GetParentType(parentType) == eTypeBlock) {
-      MOZ_ASSERT(aChild->GetParent(),
+      MOZ_ASSERT(aChild->GetParentNode(),
                  "How did we have a sibling without a parent?");
       
       
