@@ -4703,10 +4703,15 @@ void
 nsHttpConnectionMgr::
 nsHalfOpenSocket::SetFastOpenStatus(uint8_t tfoStatus)
 {
+    MOZ_ASSERT(OnSocketThread(), "not on socket thread");
     MOZ_ASSERT(mFastOpenInProgress);
+
     mFastOpenStatus = tfoStatus;
     mConnectionNegotiatingFastOpen->SetFastOpenStatus(tfoStatus);
-    mConnectionNegotiatingFastOpen->Transaction()->SetFastOpenStatus(tfoStatus);
+    if (mConnectionNegotiatingFastOpen->Transaction()) {
+        
+        mConnectionNegotiatingFastOpen->Transaction()->SetFastOpenStatus(tfoStatus);
+    }
 }
 
 void
