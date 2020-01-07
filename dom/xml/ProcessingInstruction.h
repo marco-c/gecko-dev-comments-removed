@@ -8,7 +8,7 @@
 #define mozilla_dom_ProcessingInstruction_h
 
 #include "mozilla/Attributes.h"
-#include "nsIDOMProcessingInstruction.h"
+#include "nsIDOMCharacterData.h"
 #include "nsGenericDOMDataNode.h"
 #include "nsAString.h"
 
@@ -16,7 +16,7 @@ namespace mozilla {
 namespace dom {
 
 class ProcessingInstruction : public nsGenericDOMDataNode,
-                              public nsIDOMProcessingInstruction
+                              public nsIDOMCharacterData
 {
 public:
   ProcessingInstruction(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
@@ -28,9 +28,6 @@ public:
   
   NS_FORWARD_NSIDOMCHARACTERDATA(nsGenericDOMDataNode::)
   using nsGenericDOMDataNode::SetData; 
-
-  
-  NS_DECL_NSIDOMPROCESSINGINSTRUCTION
 
   
   virtual bool IsNodeOfType(uint32_t aFlags) const override;
@@ -46,7 +43,7 @@ public:
   virtual nsIDOMNode* AsDOMNode() override { return this; }
 
   
-  void GetTarget(nsString& aTarget)
+  void GetTarget(nsAString& aTarget)
   {
     aTarget = NodeName();
   }
