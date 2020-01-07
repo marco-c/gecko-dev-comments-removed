@@ -1324,21 +1324,23 @@ nsSMILTimedElement::SetBeginOrEndSpec(const nsAString& aSpec,
     return NS_ERROR_FAILURE;
   }
 
-  nsresult rv = NS_OK;
-  while (tokenizer.hasMoreTokens() && NS_SUCCEEDED(rv)) {
+  bool hadFailure = false;
+  while (tokenizer.hasMoreTokens()) {
     nsAutoPtr<nsSMILTimeValueSpec>
       spec(new nsSMILTimeValueSpec(*this, aIsBegin));
-    rv = spec->SetSpec(tokenizer.nextToken(), aContextNode);
+    nsresult rv = spec->SetSpec(tokenizer.nextToken(), aContextNode);
     if (NS_SUCCEEDED(rv)) {
       timeSpecsList.AppendElement(spec.forget());
+    } else {
+      hadFailure = true;
     }
   }
 
-  if (NS_FAILED(rv)) {
-    ClearSpecs(timeSpecsList, instances, aRemove);
-  }
-
-  return rv;
+  
+  
+  
+  
+  return hadFailure ? NS_ERROR_FAILURE : NS_OK;
 }
 
 namespace
