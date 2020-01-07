@@ -3042,7 +3042,7 @@ SVGTextDrawPathCallbacks::StrokeGeometry()
         RefPtr<Path> path = mContext.GetPath();
         SVGContentUtils::AutoStrokeOptions strokeOptions;
         SVGContentUtils::GetStrokeOptions(&strokeOptions, svgOwner,
-                                          mFrame->Style(),
+                                          mFrame->StyleContext(),
                                            nullptr);
         DrawOptions drawOptions;
         drawOptions.mAntialiasMode =
@@ -3154,9 +3154,9 @@ NS_QUERYFRAME_TAIL_INHERITING(nsSVGDisplayContainerFrame)
 
 
 nsIFrame*
-NS_NewSVGTextFrame(nsIPresShell* aPresShell, ComputedStyle* aStyle)
+NS_NewSVGTextFrame(nsIPresShell* aPresShell, nsStyleContext* aContext)
 {
-  return new (aPresShell) SVGTextFrame(aStyle);
+  return new (aPresShell) SVGTextFrame(aContext);
 }
 
 NS_IMPL_FRAMEARENA_HELPERS(SVGTextFrame)
@@ -3227,7 +3227,7 @@ SVGTextFrame::AttributeChanged(int32_t aNameSpaceID,
 }
 
 void
-SVGTextFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle)
+SVGTextFrame::DidSetStyleContext(nsStyleContext* aOldStyleContext)
 {
   if (mState & NS_FRAME_IS_NONDISPLAY) {
     
@@ -3381,7 +3381,8 @@ SVGTextFrame::HandleAttributeChangeInDescendant(Element* aElement,
 {
   if (aElement->IsSVGElement(nsGkAtoms::textPath)) {
     if (aNameSpaceID == kNameSpaceID_None &&
-        aAttribute == nsGkAtoms::startOffset) {
+        (aAttribute == nsGkAtoms::startOffset ||
+         aAttribute == nsGkAtoms::side_)) {
       NotifyGlyphMetricsChange();
     } else if ((aNameSpaceID == kNameSpaceID_XLink ||
                 aNameSpaceID == kNameSpaceID_None) &&
@@ -5092,7 +5093,10 @@ SVGTextFrame::DoTextPathLayout()
       continue;
     }
 
-    nsIContent* textPath = textPathFrame->GetContent();
+    dom::SVGTextPathElement* textPath =
+      static_cast<dom::SVGTextPathElement*>(textPathFrame->GetContent());
+    RefPtr<SVGAnimatedEnumeration> sideEnum = textPath->Side();
+    uint16_t side = sideEnum->AnimVal();
 
     gfxFloat offset = GetStartOffset(textPathFrame);
     Float pathLength = path->ComputeLength();
@@ -5113,7 +5117,13 @@ SVGTextFrame::DoTextPathLayout()
 
       
       Point tangent; 
-      Point pt = path->ComputePointAtLength(Float(midx), &tangent);
+      Point pt;
+      if (side == TEXTPATH_SIDETYPE_RIGHT) {
+        pt = path->ComputePointAtLength(Float(pathLength - midx), &tangent);
+        tangent = -tangent;
+      } else {
+        pt = path->ComputePointAtLength(Float(midx), &tangent);
+      }
       Float rotation = vertical ? atan2f(-tangent.x, tangent.y)
                                 : atan2f(tangent.y, tangent.x);
       Point normal(-tangent.y, tangent.x); 
