@@ -436,6 +436,12 @@ protected:
                           const mozilla::LogicalPoint& aContentBoxOrigin,
                           const nsSize& aContainerSize);
 
+  
+
+
+  nscoord IntrinsicISize(gfxContext* aRenderingContext,
+                         nsLayoutUtils::IntrinsicISizeType aType);
+
   nscoord mBaselineFromLastReflow;
   
   nscoord mLastBaselineFromLastReflow;
