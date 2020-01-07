@@ -866,9 +866,8 @@ nsContextMenu.prototype = {
 
   
   viewPartialSource(aContext) {
-    let inWindow = !Services.prefs.getBoolPref("view_source.tab");
     let {browser} = this;
-    let openSelectionFn = inWindow ? null : function() {
+    let openSelectionFn = function() {
       let tabBrowser = gBrowser;
       
       

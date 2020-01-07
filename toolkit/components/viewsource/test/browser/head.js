@@ -5,94 +5,29 @@
 ChromeUtils.import("resource://gre/modules/PromiseUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Preferences.jsm", this);
 
-const WINDOW_TYPE = "navigator:view-source";
-
-function openViewSourceWindow(aURI, aCallback) {
-  let viewSourceWindow = openDialog("chrome://global/content/viewSource.xul", null, null, aURI);
-  viewSourceWindow.addEventListener("pageshow", function pageShowHandler(event) {
-    
-    if (event.target.location == "view-source:" + aURI) {
-      info("View source window opened: " + event.target.location);
-      viewSourceWindow.removeEventListener("pageshow", pageShowHandler);
-      aCallback(viewSourceWindow);
-    }
-  });
-}
-
-function loadViewSourceWindow(URL) {
-  return new Promise((resolve) => {
-    openViewSourceWindow(URL, resolve);
-  });
-}
-
-function closeViewSourceWindow(aWindow, aCallback) {
-  return new Promise(resolve => {
-    Services.wm.addListener({
-      onCloseWindow() {
-        Services.wm.removeListener(this);
-        if (aCallback) {
-          executeSoon(aCallback);
-        }
-        resolve();
-      }
-    });
-    aWindow.close();
-  });
-}
-
-function testViewSourceWindow(aURI, aTestCallback, aCloseCallback) {
-  openViewSourceWindow(aURI, function(aWindow) {
-    aTestCallback(aWindow);
-    closeViewSourceWindow(aWindow, aCloseCallback);
-  });
-}
 
 
 
 
 
 
-
-async function waitForViewSourceTabOrWindow(open) {
+async function waitForViewSourceTab(open) {
   let sourceLoadedPromise;
-  let tabOrWindowPromise;
-  if (Services.prefs.getBoolPref("view_source.tab")) {
-    tabOrWindowPromise = new Promise(resolve => {
-      gBrowser.tabContainer.addEventListener("TabOpen", event => {
-        let tab = event.target;
-        sourceLoadedPromise = waitForSourceLoaded(tab);
-        resolve(tab);
-      }, { once: true });
-    });
-  } else {
-    tabOrWindowPromise = new Promise(resolve => {
-      let windowListener = {
-        onOpenWindow(xulWindow) {
-          let win = xulWindow.QueryInterface(Ci.nsIInterfaceRequestor)
-              .getInterface(Ci.nsIDOMWindow);
-          win.addEventListener("load", function() {
-            if (win.document.documentElement.getAttribute("windowtype") !=
-                WINDOW_TYPE) {
-              return;
-            }
-            
-            sourceLoadedPromise = waitForSourceLoaded(win);
-            resolve(win);
-            Services.wm.removeListener(windowListener);
-          }, {once: true});
-        },
-        onCloseWindow() {},
-      };
-      Services.wm.addListener(windowListener);
-    });
-  }
+  let tabPromise;
+
+  tabPromise = new Promise(resolve => {
+    gBrowser.tabContainer.addEventListener("TabOpen", event => {
+      let tab = event.target;
+      sourceLoadedPromise = waitForSourceLoaded(tab);
+      resolve(tab);
+    }, { once: true });
+  });
 
   await open();
 
-  let tabOrWindow = await tabOrWindowPromise;
+  let tab = await tabPromise;
   await sourceLoadedPromise;
-
-  return tabOrWindow;
+  return tab;
 }
 
 
@@ -101,9 +36,33 @@ async function waitForViewSourceTabOrWindow(open) {
 
 
 
-function openViewSource(browser) {
-  return waitForViewSourceTabOrWindow(() => {
+function openViewSourceForBrowser(browser) {
+  return waitForViewSourceTab(() => {
     window.BrowserViewSource(browser);
+  });
+}
+
+
+
+
+
+
+
+async function openViewSource() {
+  let contentAreaContextMenuPopup =
+    document.getElementById("contentAreaContextMenu");
+  let popupShownPromise =
+    BrowserTestUtils.waitForEvent(contentAreaContextMenuPopup, "popupshown");
+  await BrowserTestUtils.synthesizeMouseAtCenter("body",
+          { type: "contextmenu", button: 2 }, gBrowser.selectedBrowser);
+  await popupShownPromise;
+
+  return waitForViewSourceTab(async () => {
+    let popupHiddenPromise =
+        BrowserTestUtils.waitForEvent(contentAreaContextMenuPopup, "popuphidden");
+    let item = document.getElementById("context-viewsource");
+    EventUtils.synthesizeMouseAtCenter(item, {});
+    await popupHiddenPromise;
   });
 }
 
@@ -125,7 +84,7 @@ async function openViewPartialSource(aCSSSelector) {
           { type: "contextmenu", button: 2 }, gBrowser.selectedBrowser);
   await popupShownPromise;
 
-  return waitForViewSourceTabOrWindow(async () => {
+  return waitForViewSourceTab(async () => {
     let popupHiddenPromise =
         BrowserTestUtils.waitForEvent(contentAreaContextMenuPopup, "popuphidden");
     let item = document.getElementById("context-viewpartialsource-selection");
@@ -156,7 +115,7 @@ async function openViewFrameSourceTab(aCSSSelector) {
   EventUtils.synthesizeMouseAtCenter(frameContextMenu, {});
   await popupShownPromise;
 
-  return waitForViewSourceTabOrWindow(async () => {
+  return waitForViewSourceTab(async () => {
     let popupHiddenPromise =
         BrowserTestUtils.waitForEvent(frameContextMenu, "popuphidden");
     let item = document.getElementById("context-viewframesource");
@@ -165,21 +124,13 @@ async function openViewFrameSourceTab(aCSSSelector) {
   });
 }
 
-registerCleanupFunction(function() {
-  var windows = Services.wm.getEnumerator(WINDOW_TYPE);
-  ok(!windows.hasMoreElements(), "No remaining view source windows still open");
-  while (windows.hasMoreElements())
-    windows.getNext().close();
-});
 
 
 
 
-
-function waitForSourceLoaded(tabOrWindow) {
+function waitForSourceLoaded(tab) {
   return new Promise(resolve => {
-    let mm = tabOrWindow.messageManager ||
-             tabOrWindow.linkedBrowser.messageManager;
+    let mm = tab.linkedBrowser.messageManager;
     mm.addMessageListener("ViewSource:SourceLoaded", function sourceLoaded() {
       mm.removeMessageListener("ViewSource:SourceLoaded", sourceLoaded);
       setTimeout(resolve, 0);
@@ -208,6 +159,22 @@ async function openDocumentSelect(aURI, aCSSSelector) {
   });
 
   return openViewPartialSource(aCSSSelector);
+}
+
+
+
+
+
+
+
+
+async function openDocument(aURI) {
+  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, aURI);
+  registerCleanupFunction(function() {
+    gBrowser.removeTab(tab);
+  });
+
+  return openViewSource();
 }
 
 function pushPrefs(...aPrefs) {

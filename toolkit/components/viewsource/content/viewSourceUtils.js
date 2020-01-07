@@ -15,8 +15,6 @@
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.defineModuleGetter(this, "ViewSourceBrowser",
   "resource://gre/modules/ViewSourceBrowser.jsm");
-ChromeUtils.defineModuleGetter(this, "Deprecated",
-  "resource://gre/modules/Deprecated.jsm");
 ChromeUtils.defineModuleGetter(this, "PrivateBrowsingUtils",
   "resource://gre/modules/PrivateBrowsingUtils.jsm");
 ChromeUtils.defineModuleGetter(this, "Services",
@@ -46,25 +44,33 @@ var gViewSourceUtils = {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-  viewSource(aArgsOrURL, aPageDescriptor, aDocument, aLineNumber) {
+  viewSource(aArgs) {
     if (Services.prefs.getBoolPref("view_source.editor.external")) {
-      this.openInExternalEditor(aArgsOrURL, aPageDescriptor, aDocument, aLineNumber);
-    } else {
-      this._openInInternalViewer(aArgsOrURL, aPageDescriptor, aDocument, aLineNumber);
+      this.openInExternalEditor(aArgs);
+      return;
     }
+    
+    let browserWin = Services.wm.getMostRecentWindow("navigator:browser");
+    if (browserWin && browserWin.BrowserViewSourceOfDocument) {
+      browserWin.BrowserViewSourceOfDocument(aArgs);
+      return;
+    }
+    
+    let utils = this;
+    Services.ww.registerNotification(function onOpen(subj, topic) {
+      if (subj.document.documentURI !== "about:blank" ||
+          topic !== "domwindowopened") {
+        return;
+      }
+      Services.ww.unregisterNotification(onOpen);
+      let win = subj.QueryInterface(Components.interfaces.nsIInterfaceRequestor)
+                    .getInterface(Components.interfaces.nsIDOMWindow);
+      win.addEventListener("load", () => {
+        aArgs.viewSourceBrowser = win.gBrowser.selectedTab.linkedBrowser;
+        utils.viewSourceInBrowser(aArgs);
+      }, { once: true });
+    });
+    window.top.openUILinkIn("about:blank", "current");
   },
 
   
@@ -108,7 +114,6 @@ var gViewSourceUtils = {
 
 
 
-
   viewPartialSourceInBrowser(aViewSourceInBrowser, aTarget, aGetBrowserFn) {
     let mm = aViewSourceInBrowser.messageManager;
     mm.addMessageListener("ViewSource:GetSelectionDone", function gotSelection(message) {
@@ -117,53 +122,12 @@ var gViewSourceUtils = {
       if (!message.data)
         return;
 
-      let browserToOpenIn = aGetBrowserFn ? aGetBrowserFn() : null;
-      if (browserToOpenIn) {
-        let viewSourceBrowser = new ViewSourceBrowser(browserToOpenIn);
-        viewSourceBrowser.loadViewSourceFromSelection(message.data.uri, message.data.drawSelection,
+      let viewSourceBrowser = new ViewSourceBrowser(aGetBrowserFn());
+      viewSourceBrowser.loadViewSourceFromSelection(message.data.uri, message.data.drawSelection,
                                                       message.data.baseURI);
-      } else {
-        window.openDialog("chrome://global/content/viewPartialSource.xul",
-                          "_blank", "all,dialog=no",
-                          {
-                            URI: message.data.uri,
-                            drawSelection: message.data.drawSelection,
-                            baseURI: message.data.baseURI,
-                            partial: true,
-                          });
-      }
     });
 
     mm.sendAsyncMessage("ViewSource:GetSelection", { }, { target: aTarget });
-  },
-
-  
-  _openInInternalViewer(aArgsOrURL, aPageDescriptor, aDocument, aLineNumber) {
-    
-    var charset = null;
-    var isForcedCharset = false;
-    if (aDocument) {
-      if (Components.utils.isCrossProcessWrapper(aDocument)) {
-        throw new Error("View Source cannot accept a CPOW as a document.");
-      }
-
-      charset = "charset=" + aDocument.characterSet;
-      try {
-        isForcedCharset =
-          aDocument.defaultView
-                   .QueryInterface(Components.interfaces.nsIInterfaceRequestor)
-                   .getInterface(Components.interfaces.nsIDOMWindowUtils)
-                   .docCharsetIsForced;
-      } catch (ex) {
-      }
-    }
-    Services.telemetry
-            .getHistogramById("VIEW_SOURCE_IN_WINDOW_OPENED_BOOLEAN")
-            .add(true);
-    openDialog("chrome://global/content/viewSource.xul",
-               "_blank",
-               "all,dialog=no",
-               aArgsOrURL, charset, aPageDescriptor, aLineNumber, isForcedCharset);
   },
 
   buildEditorArgs(aPath, aLineNumber) {
@@ -206,58 +170,23 @@ var gViewSourceUtils = {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  openInExternalEditor(aArgsOrURL, aPageDescriptor, aDocument,
-                                 aLineNumber, aCallBack) {
+  openInExternalEditor(aArgs, aCallBack) {
     let data;
-    if (typeof aArgsOrURL == "string") {
-      Deprecated.warning("The arguments you're passing to " +
-                         "openInExternalEditor are using an out-of-date API.",
-                         "https://developer.mozilla.org/en-US/Add-ons/" +
-                         "Code_snippets/View_Source_for_XUL_Applications");
-      if (Components.utils.isCrossProcessWrapper(aDocument)) {
-        throw new Error("View Source cannot accept a CPOW as a document.");
-      }
-      data = {
-        url: aArgsOrURL,
-        pageDescriptor: aPageDescriptor,
-        doc: aDocument,
-        lineNumber: aLineNumber,
-        isPrivate: false,
+    let { URL, browser, lineNumber } = aArgs;
+    data = {
+      url: URL,
+      lineNumber,
+      isPrivate: false,
+    };
+    if (browser) {
+      data.doc = {
+        characterSet: browser.characterSet,
+        contentType: browser.documentContentType,
+        title: browser.contentTitle,
       };
-      if (aDocument) {
-          data.isPrivate =
-            PrivateBrowsingUtils.isWindowPrivate(aDocument.defaultView);
-      }
-    } else {
-      let { URL, browser, lineNumber } = aArgsOrURL;
-      data = {
-        url: URL,
-        lineNumber,
-        isPrivate: false,
-      };
-      if (browser) {
-        data.doc = {
-          characterSet: browser.characterSet,
-          contentType: browser.documentContentType,
-          title: browser.contentTitle,
-        };
-        data.isPrivate = PrivateBrowsingUtils.isBrowserPrivate(browser);
-      }
+      data.isPrivate = PrivateBrowsingUtils.isBrowserPrivate(browser);
     }
+
 
     try {
       var editor = this.getExternalViewSourceEditor();
@@ -333,23 +262,11 @@ var gViewSourceUtils = {
   },
 
   
-  internalViewerFallback(result, data) {
-    if (!result) {
-      this._openInInternalViewer(data.url, data.pageDescriptor, data.doc, data.lineNumber);
-    }
-  },
-
-  
   handleCallBack(aCallBack, result, data) {
     Services.telemetry
             .getHistogramById("VIEW_SOURCE_EXTERNAL_RESULT_BOOLEAN")
             .add(result);
-    
-    if (aCallBack === undefined) {
-      this.internalViewerFallback(result, data);
-    } else if (aCallBack) {
-      aCallBack(result, data);
-    }
+    aCallBack(result, data);
   },
 
   

@@ -170,16 +170,9 @@ exports.viewSourceInScratchpad = Task.async(function* (sourceURL, sourceLine) {
 
 
 exports.viewSource = Task.async(function* (toolbox, sourceURL, sourceLine) {
-  
-  
-  let browserWin = Services.wm.getMostRecentWindow(gDevTools.chromeWindowType);
-  if (browserWin && browserWin.BrowserViewSourceOfDocument) {
-    return browserWin.BrowserViewSourceOfDocument({
-      URL: sourceURL,
-      lineNumber: sourceLine
-    });
-  }
   let utils = toolbox.gViewSourceUtils;
-  utils.viewSource(sourceURL, null, toolbox.doc, sourceLine || 0);
-  return null;
+  utils.viewSource({
+    URL: sourceURL,
+    lineNumber: sourceLine || 0,
+  });
 });

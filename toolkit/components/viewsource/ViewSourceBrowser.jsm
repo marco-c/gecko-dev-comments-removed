@@ -30,10 +30,6 @@ var gKnownBrowsers = new WeakSet();
 
 
 
-
-
-
-
 this.ViewSourceBrowser = function ViewSourceBrowser(aBrowser) {
   this._browser = aBrowser;
   this.init();
@@ -78,12 +74,7 @@ ViewSourceBrowser.prototype = {
     });
 
     
-    
-    
-    
-    if (this._browser) {
-      this.loadFrameScript();
-    }
+    this.loadFrameScript();
   },
 
   
@@ -157,7 +148,6 @@ ViewSourceBrowser.prototype = {
   },
 
   
-
 
 
 

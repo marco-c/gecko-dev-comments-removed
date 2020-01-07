@@ -2576,58 +2576,53 @@ function BrowserViewSourceOfDocument(aArgsOrDocument) {
   }
 
   let viewInternal = () => {
-    let inTab = Services.prefs.getBoolPref("view_source.tab");
-    if (inTab) {
-      let tabBrowser = gBrowser;
-      let preferredRemoteType;
-      if (args.browser) {
-        preferredRemoteType = args.browser.remoteType;
-      } else {
-        if (!tabBrowser) {
-          throw new Error("BrowserViewSourceOfDocument should be passed the " +
-                          "subject browser if called from a window without " +
-                          "gBrowser defined.");
-        }
-        
-        
-        
-        
-        
-        preferredRemoteType =
-          E10SUtils.getRemoteTypeForURI(args.URL, gMultiProcessBrowser);
-      }
-
-      
-      if (!tabBrowser || !window.toolbar.visible) {
-        
-        let browserWindow = RecentWindow.getMostRecentBrowserWindow();
-        tabBrowser = browserWindow.gBrowser;
-      }
-
-      
-      
-      
-      
-      
-      let tab = tabBrowser.loadOneTab("about:blank", {
-        relatedToCurrent: true,
-        inBackground: false,
-        preferredRemoteType,
-        sameProcessAsFrameLoader: args.browser ? args.browser.frameLoader : null,
-        triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
-      });
-      args.viewSourceBrowser = tabBrowser.getBrowserForTab(tab);
-      top.gViewSourceUtils.viewSourceInBrowser(args);
+    let tabBrowser = gBrowser;
+    let preferredRemoteType;
+    if (args.browser) {
+      preferredRemoteType = args.browser.remoteType;
     } else {
-      top.gViewSourceUtils.viewSource(args);
+      if (!tabBrowser) {
+        throw new Error("BrowserViewSourceOfDocument should be passed the " +
+                        "subject browser if called from a window without " +
+                        "gBrowser defined.");
+      }
+      
+      
+      
+      
+      
+      preferredRemoteType =
+        E10SUtils.getRemoteTypeForURI(args.URL, gMultiProcessBrowser);
     }
+
+    
+    if (!tabBrowser || !window.toolbar.visible) {
+      
+      let browserWindow = RecentWindow.getMostRecentBrowserWindow();
+      tabBrowser = browserWindow.gBrowser;
+    }
+
+    
+    
+    
+    
+    
+    let tab = tabBrowser.loadOneTab("about:blank", {
+      relatedToCurrent: true,
+      inBackground: false,
+      preferredRemoteType,
+      sameProcessAsFrameLoader: args.browser ? args.browser.frameLoader : null,
+      triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+    });
+    args.viewSourceBrowser = tabBrowser.getBrowserForTab(tab);
+    top.gViewSourceUtils.viewSourceInBrowser(args);
   };
 
   
   
   if (Services.prefs.getBoolPref("view_source.editor.external")) {
     top.gViewSourceUtils
-       .openInExternalEditor(args, null, null, null, result => {
+       .openInExternalEditor(args, result => {
       if (!result) {
         viewInternal();
       }
@@ -4487,8 +4482,7 @@ var XULBrowserWindow = {
           if (location.scheme == "keyword" && aWebProgress.isTopLevel)
             gBrowser.userTypedValue = null;
 
-          canViewSource = !Services.prefs.getBoolPref("view_source.tab") ||
-                          location.scheme != "view-source";
+          canViewSource = location.scheme != "view-source";
 
           if (location.spec != "about:blank") {
             switch (aStatus) {
