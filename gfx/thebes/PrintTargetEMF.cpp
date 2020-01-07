@@ -6,6 +6,7 @@
 #include "PrintTargetEMF.h"
 #include "nsAnonymousTemporaryFile.h"
 #include "nsIFile.h"
+#include "nsNativeCharsetUtils.h"
 #include "mozilla/widget/PDFiumProcessParent.h"
 #include "mozilla/widget/PDFiumParent.h"
 #include "mozilla/widget/WindowsEMF.h"
@@ -101,7 +102,15 @@ PrintTargetEMF::BeginPage()
   NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
 
   nsAutoCString filePath;
+#ifdef XP_WIN
+  
+  
+  nsAutoString filePathU;
+  mPDFFileForOnePage->GetPath(filePathU);
+  NS_CopyUnicodeToNative(filePathU, filePath);
+#else
   mPDFFileForOnePage->GetNativePath(filePath);
+#endif
   auto  stream = MakeUnique<SkFILEWStream>(filePath.get());
 
   
