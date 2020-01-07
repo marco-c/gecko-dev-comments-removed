@@ -896,12 +896,6 @@ double
 js::math_sin_uncached(double x)
 {
     AutoUnsafeCallWithABI unsafe;
-#ifdef _WIN64
-    
-    
-    if (IsNegativeZero(x))
-        return -0.0;
-#endif
     return sin(x);
 }
 
