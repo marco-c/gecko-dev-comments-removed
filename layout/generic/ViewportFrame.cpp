@@ -184,7 +184,19 @@ ViewportFrame::BuildDisplayListForTopLayer(nsDisplayListBuilder* aBuilder,
   if (nsCanvasFrame* canvasFrame = shell->GetCanvasFrame()) {
     if (Element* container = canvasFrame->GetCustomContentContainer()) {
       if (nsIFrame* frame = container->GetPrimaryFrame()) {
-        BuildDisplayListForTopLayerFrame(aBuilder, frame, aList);
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if (frame->StyleDisplay()->mTopLayer != NS_STYLE_TOP_LAYER_NONE) {
+          BuildDisplayListForTopLayerFrame(aBuilder, frame, aList);
+        }
       }
     }
   }
