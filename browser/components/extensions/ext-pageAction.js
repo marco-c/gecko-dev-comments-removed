@@ -191,8 +191,7 @@ this.pageAction = class extends ExtensionAPI {
   
   
   
-  
-  isShown(tab, ignoreCache = false) {
+  isShown(tab) {
     let tabData = this.tabContext.get(tab);
 
     
@@ -201,7 +200,7 @@ this.pageAction = class extends ExtensionAPI {
     }
 
     
-    if (ignoreCache || tabData.patternMatching === undefined) {
+    if (tabData.patternMatching === undefined) {
       let uri = tab.linkedBrowser.currentURI;
       tabData.patternMatching = tabData.showMatches.matches(uri) && !tabData.hideMatches.matches(uri);
     }
@@ -284,19 +283,38 @@ this.pageAction = class extends ExtensionAPI {
     }
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
   handleLocationChange(eventType, tab, fromBrowse) {
-    
-    
-    
-    
     if (fromBrowse === true) {
+      
       this.tabContext.clear(tab);
+    } else if (fromBrowse === false) {
+      
+      let tabData = this.tabContext.get(tab);
+      if (tabData.patternMatching !== undefined) {
+        tabData.patternMatching = undefined;
+      }
     }
 
-    
-    
-    this.isShown(tab, fromBrowse !== undefined);
-    this.updateButton(tab.ownerGlobal);
+    if (tab.selected) {
+      
+      
+      this.isShown(tab);
+      this.updateButton(tab.ownerGlobal);
+    }
   }
 
   getAPI(context) {

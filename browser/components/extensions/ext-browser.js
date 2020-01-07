@@ -141,12 +141,10 @@ global.TabContext = class extends EventEmitter {
 
   onLocationChange(browser, webProgress, request, locationURI, flags) {
     let gBrowser = browser.ownerGlobal.gBrowser;
-    if (browser === gBrowser.selectedBrowser) {
-      let tab = gBrowser.getTabForBrowser(browser);
-      
-      let fromBrowse = !(flags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT);
-      this.emit("location-change", tab, fromBrowse);
-    }
+    let tab = gBrowser.getTabForBrowser(browser);
+    
+    let fromBrowse = !(flags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT);
+    this.emit("location-change", tab, fromBrowse);
   }
 
   shutdown() {

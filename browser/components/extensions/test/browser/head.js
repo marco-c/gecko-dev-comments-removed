@@ -28,6 +28,7 @@
 
 
 
+
 const {PromiseTestUtils} = ChromeUtils.import("resource://testing-common/PromiseTestUtils.jsm", {});
 PromiseTestUtils.whitelistRejectionsGlobally(/Message manager disconnected/);
 PromiseTestUtils.whitelistRejectionsGlobally(/No matching message handler/);
@@ -499,4 +500,18 @@ function* BrowserWindowIterator() {
       yield currentWindow;
     }
   }
+}
+
+async function locationChange(tab, url, task) {
+  let locationChanged = BrowserTestUtils.waitForLocationChange(gBrowser, url);
+  await ContentTask.spawn(tab.linkedBrowser, url, task);
+  return locationChanged;
+}
+
+function navigateTab(tab, url) {
+  return locationChange(tab, url, (url) => { content.location.href = url; });
+}
+
+function historyPushState(tab, url) {
+  return locationChange(tab, url, (url) => { content.history.pushState(null, null, url); });
 }
