@@ -21,10 +21,7 @@ add_task(async function() {
       input.focus();
     });
 
-    await BrowserTestUtils.synthesizeComposition({
-      type: "compositionstart",
-      data: ""
-    }, browser);
+    
     await BrowserTestUtils.synthesizeCompositionChange({
       composition: {
         string: "x",

@@ -1469,6 +1469,8 @@ function _guessKeyNameFromKeyCode(aKeyCode, aWindow = window)
       return "Meta";
     case KeyboardEvent.DOM_VK_ALTGR:
       return "AltGraph";
+    case KeyboardEvent.DOM_VK_PROCESSKEY:
+      return "Process";
     case KeyboardEvent.DOM_VK_ATTN:
       return "Attn";
     case KeyboardEvent.DOM_VK_CRSEL:
@@ -1781,6 +1783,13 @@ function _createKeyboardEventDictionary(aKey, aKeyEvent, aWindow = window) {
   if (locationIsDefined && aKeyEvent.location === 0) {
     result.flags |= _EU_Ci.nsITextInputProcessor.KEY_KEEP_KEY_LOCATION_STANDARD;
   }
+  if (aKeyEvent.doNotMarkKeydownAsProcessed) {
+    result.flags |=
+      _EU_Ci.nsITextInputProcessor.KEY_DONT_MARK_KEYDOWN_AS_PROCESSED;
+  }
+  if (aKeyEvent.markKeyupAsProcessed) {
+    result.flags |= _EU_Ci.nsITextInputProcessor.KEY_MARK_KEYUP_AS_PROCESSED;
+  }
   result.dictionary = {
     key: keyName,
     code: code,
@@ -1900,6 +1909,31 @@ function _emulateToInactivateModifiers(aTIP, aModifiers, aWindow = window)
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function synthesizeComposition(aEvent, aWindow = window, aCallback)
 {
   var TIP = _getTIP(aWindow, aCallback);
@@ -1909,15 +1943,20 @@ function synthesizeComposition(aEvent, aWindow = window, aCallback)
   var KeyboardEvent = _getKeyboardEvent(aWindow);
   var modifiers = _emulateToActivateModifiers(TIP, aEvent.key, aWindow);
   var ret = false;
-  var keyEventDict =
-    "key" in aEvent ?
-      _createKeyboardEventDictionary(aEvent.key.key, aEvent.key, aWindow) :
-      { dictionary: null, flags: 0 };
-  var keyEvent = 
-    "key" in aEvent ?
-      new KeyboardEvent(aEvent.type === "keydown" ? "keydown" : "",
-                        keyEventDict.dictionary) :
-      null;
+  var keyEventDict = {dictionary: null, flags: 0};
+  var keyEvent = null;
+  if (aEvent.key && typeof aEvent.key.key === "string") {
+    keyEventDict =
+      _createKeyboardEventDictionary(aEvent.key.key, aEvent.key, aWindow);
+    keyEvent = new KeyboardEvent(aEvent.key.type === "keydown" ?
+                                   "keydown" :
+                                   aEvent.key.type === "keyup" ?
+                                     "keyup" : "",
+                                 keyEventDict.dictionary)
+  } else if (aEvent.key === undefined) {
+    keyEventDict = _createKeyboardEventDictionary("KEY_Process", {}, aWindow);
+    keyEvent = new KeyboardEvent("", keyEventDict.dictionary)
+  }
   try {
     switch (aEvent.type) {
       case "compositionstart":
@@ -1935,6 +1974,21 @@ function synthesizeComposition(aEvent, aWindow = window, aCallback)
     _emulateToInactivateModifiers(TIP, modifiers, aWindow);
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -2025,15 +2079,20 @@ function synthesizeCompositionChange(aEvent, aWindow = window, aCallback)
 
   var modifiers = _emulateToActivateModifiers(TIP, aEvent.key, aWindow);
   try {
-    var keyEventDict =
-      "key" in aEvent ?
-        _createKeyboardEventDictionary(aEvent.key.key, aEvent.key, aWindow) :
-        { dictionary: null, flags: 0 };
-    var keyEvent = 
-      "key" in aEvent ?
-        new KeyboardEvent(aEvent.type === "keydown" ? "keydown" : "",
-                          keyEventDict.dictionary) :
-        null;
+    var keyEventDict = {dictionary: null, flags: 0};
+    var keyEvent = null;
+    if (aEvent.key && typeof aEvent.key.key === "string") {
+      keyEventDict =
+        _createKeyboardEventDictionary(aEvent.key.key, aEvent.key, aWindow);
+      keyEvent = new KeyboardEvent(aEvent.key.type === "keydown" ?
+                                     "keydown" :
+                                     aEvent.key.type === "keyup" ?
+                                       "keyup" : "",
+                                   keyEventDict.dictionary)
+    } else if (aEvent.key === undefined) {
+      keyEventDict = _createKeyboardEventDictionary("KEY_Process", {}, aWindow);
+      keyEvent = new KeyboardEvent("", keyEventDict.dictionary)
+    }
     TIP.flushPendingComposition(keyEvent, keyEventDict.flags);
   } finally {
     _emulateToInactivateModifiers(TIP, modifiers, aWindow);

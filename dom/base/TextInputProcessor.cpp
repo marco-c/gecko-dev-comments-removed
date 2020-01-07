@@ -482,7 +482,8 @@ TextInputProcessor::IsValidEventTypeForComposition(
                       const WidgetKeyboardEvent& aKeyboardEvent) const
 {
   
-  if (aKeyboardEvent.mMessage == eKeyDown) {
+  if (aKeyboardEvent.mMessage == eKeyDown ||
+      aKeyboardEvent.mMessage == eKeyUp) {
     return true;
   }
   if (aKeyboardEvent.mMessage == eUnidentifiedEvent &&
@@ -508,6 +509,12 @@ TextInputProcessor::MaybeDispatchKeydownForComposition(
   }
 
   if (!aKeyboardEvent) {
+    return result;
+  }
+
+  
+  
+  if (aKeyboardEvent->mMessage == eKeyUp) {
     return result;
   }
 
@@ -1126,6 +1133,12 @@ TextInputProcessor::KeydownInternal(const WidgetKeyboardEvent& aKeyboardEvent,
   }
   keyEvent.mModifiers = GetActiveModifiers();
 
+  if (!aAllowToDispatchKeypress &&
+      !(aKeyFlags & KEY_DONT_MARK_KEYDOWN_AS_PROCESSED)) {
+    keyEvent.mKeyCode = NS_VK_PROCESSKEY;
+    keyEvent.mKeyNameIndex = KEY_NAME_INDEX_Process;
+  }
+
   RefPtr<TextEventDispatcher> kungFuDeathGrip(mDispatcher);
   rv = IsValidStateForComposition();
   if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -1205,6 +1218,11 @@ TextInputProcessor::KeyupInternal(const WidgetKeyboardEvent& aKeyboardEvent,
     return NS_ERROR_INVALID_ARG;
   }
   keyEvent.mModifiers = GetActiveModifiers();
+
+  if (aKeyFlags & KEY_MARK_KEYUP_AS_PROCESSED) {
+    keyEvent.mKeyCode = NS_VK_PROCESSKEY;
+    keyEvent.mKeyNameIndex = KEY_NAME_INDEX_Process;
+  }
 
   RefPtr<TextEventDispatcher> kungFuDeathGrip(mDispatcher);
   rv = IsValidStateForComposition();
