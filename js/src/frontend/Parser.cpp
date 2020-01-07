@@ -3262,16 +3262,6 @@ Parser<FullParseHandler, CharT>::skipLazyInnerFunction(ParseNode* funcNode, uint
     if (!tokenStream.advance(fun->lazyScript()->end()))
         return false;
 
-    if (allowExpressionClosures()) {
-        
-        
-        
-        if (kind == Statement && funbox->isExprBody()) {
-            if (!matchOrInsertSemicolon())
-                return false;
-        }
-    }
-
     
     if (tryAnnexB && !pc->innermostScope()->addPossibleAnnexBFunctionBox(pc, funbox))
         return false;
@@ -3785,23 +3775,8 @@ GeneralParser<ParseHandler, CharT>::functionFormalParametersAndBody(InHandling i
     uint32_t openedPos = 0;
     if (tt != TokenKind::Lc) {
         if (kind != Arrow) {
-            if (funbox->isGenerator() || funbox->isAsync() || kind == Method ||
-                kind == GetterNoExpressionClosure || kind == SetterNoExpressionClosure ||
-                IsConstructorKind(kind) || kind == PrimaryExpression)
-            {
-                error(JSMSG_CURLY_BEFORE_BODY);
-                return false;
-            }
-
-            if (allowExpressionClosures()) {
-                this->addTelemetry(DeprecatedLanguageExtension::ExpressionClosure);
-                if (!warnOnceAboutExprClosure())
-                    return false;
-                handler.noteExpressionClosure(pn);
-            } else {
-                error(JSMSG_CURLY_BEFORE_BODY);
-                return false;
-            }
+            error(JSMSG_CURLY_BEFORE_BODY);
+            return false;
         }
 
         anyChars.ungetToken();
@@ -3863,7 +3838,7 @@ GeneralParser<ParseHandler, CharT>::functionFormalParametersAndBody(InHandling i
                                                               JSMSG_CURLY_OPENED, openedPos));
         funbox->setEnd(anyChars);
     } else {
-        MOZ_ASSERT_IF(!allowExpressionClosures(), kind == Arrow);
+        MOZ_ASSERT(kind == Arrow);
 
         if (anyChars.hadError())
             return false;

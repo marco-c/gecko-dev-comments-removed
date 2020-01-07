@@ -340,9 +340,6 @@ class ParserBase
 
     bool hasValidSimpleStrictParameterNames();
 
-    bool allowExpressionClosures() const {
-        return options().expressionClosuresOption;
-    }
     
 
 
@@ -705,7 +702,6 @@ class GeneralParser
     using Base::isValidSimpleAssignmentTarget;
     using Base::pc;
     using Base::usedNames;
-    using Base::allowExpressionClosures;
 
   private:
     using Base::checkAndMarkSuperScope;
@@ -1408,7 +1404,6 @@ class Parser<FullParseHandler, CharT> final
     using Base::pos;
     using Base::ss;
     using Base::tokenStream;
-    using Base::allowExpressionClosures;
 
   private:
     using Base::alloc;
