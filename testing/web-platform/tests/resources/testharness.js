@@ -1247,6 +1247,13 @@
     }
     expose(assert_readonly, "assert_readonly");
 
+    
+
+
+
+
+
+
     function assert_throws(code, func, description)
     {
         try {
