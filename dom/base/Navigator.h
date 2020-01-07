@@ -65,6 +65,8 @@ class NavigatorUserMediaSuccessCallback;
 class NavigatorUserMediaErrorCallback;
 class MozGetUserMediaDevicesSuccessCallback;
 
+struct MIDIOptions;
+
 namespace network {
 class Connection;
 } 
@@ -178,6 +180,7 @@ public:
   bool IsWebVRContentPresenting() const;
   void RequestVRPresentation(VRDisplay& aDisplay);
   nsINetworkProperties* GetNetworkProperties();
+  already_AddRefed<Promise> RequestMIDIAccess(const MIDIOptions& aOptions, ErrorResult& aRv);
 
   Presentation* GetPresentation(ErrorResult& aRv);
 
