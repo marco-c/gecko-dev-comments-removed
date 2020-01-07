@@ -24,7 +24,6 @@
 class nsIContent;
 class nsIDocShellTreeItem;
 class nsPIDOMWindowOuter;
-class nsIMessageBroadcaster;
 
 namespace mozilla {
 namespace dom {
@@ -177,12 +176,6 @@ protected:
 
 
   void EnsureCurrentWidgetFocused();
-
-  
-
-
-
-  void ActivateOrDeactivateChildren(nsIMessageBroadcaster* aManager, bool aActive);
 
   
 

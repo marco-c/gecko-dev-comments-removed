@@ -82,7 +82,6 @@ class nsIInterfaceRequestor;
 class nsIIOService;
 class nsILoadInfo;
 class nsILoadGroup;
-class nsIMessageBroadcaster;
 class nsNameSpaceManager;
 class nsIObserver;
 class nsIParser;
@@ -129,6 +128,7 @@ class EventListenerManager;
 class HTMLEditor;
 
 namespace dom {
+class ChromeMessageBroadcaster;
 struct CustomElementDefinition;
 class DocumentFragment;
 class Element;
@@ -710,7 +710,7 @@ public:
 
 
 
-  static bool IsCustomElementName(nsAtom* aName, uint32_t aNameSpaceID);
+  static bool IsCustomElementName(nsAtom* aName);
 
   static nsresult CheckQName(const nsAString& aQualifiedName,
                              bool aNamespaceAware = true,
@@ -3343,7 +3343,7 @@ private:
                                                                       mozilla::dom::AutocompleteInfo& aInfo,
                                                                       bool aGrantAllValidValue = false);
 
-  static bool CallOnAllRemoteChildren(nsIMessageBroadcaster* aManager,
+  static bool CallOnAllRemoteChildren(mozilla::dom::ChromeMessageBroadcaster* aManager,
                                       CallOnRemoteChildFunction aCallback,
                                       void* aArg);
 
