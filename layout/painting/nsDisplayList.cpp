@@ -977,6 +977,7 @@ nsDisplayListBuilder::nsDisplayListBuilder(nsIFrame* aReferenceFrame,
     : mReferenceFrame(aReferenceFrame),
       mIgnoreScrollFrame(nullptr),
       mLayerEventRegions(nullptr),
+      mCompositorHitTestInfo(nullptr),
       mCurrentTableItem(nullptr),
       mCurrentActiveScrolledRoot(nullptr),
       mCurrentContainerASR(nullptr),
@@ -1034,6 +1035,8 @@ nsDisplayListBuilder::nsDisplayListBuilder(nsIFrame* aReferenceFrame,
   mBuildCompositorHitTestInfo = mAsyncPanZoomEnabled && IsForPainting() &&
     (useWRHitTest || gfxPrefs::SimpleEventRegionItems());
 
+  mLessEventRegionItems = gfxPrefs::LessEventRegionItems();
+
   nsPresContext* pc = aReferenceFrame->PresContext();
   nsIPresShell *shell = pc->PresShell();
   if (pc->IsRenderingOnlySelection()) {
@@ -1070,6 +1073,9 @@ nsDisplayListBuilder::EndFrame()
   FreeClipChains();
   FreeTemporaryItems();
   nsCSSRendering::EndFrameTreesLocked();
+
+  MOZ_ASSERT(!mLayerEventRegions);
+  MOZ_ASSERT(!mCompositorHitTestInfo);
 }
 
 void
@@ -2198,6 +2204,80 @@ nsDisplayListBuilder::AppendNewScrollInfoItemForHoisting(nsDisplayScrollInfoLaye
   MOZ_ASSERT(ShouldBuildScrollInfoItemsForHoisting());
   MOZ_ASSERT(mScrollInfoItemsForHoisting);
   mScrollInfoItemsForHoisting->AppendToTop(aScrollInfoItem);
+}
+
+static nsRect
+GetFrameArea(const nsDisplayListBuilder* aBuilder, const nsIFrame* aFrame)
+{
+  nsRect area;
+
+  nsIScrollableFrame* scrollFrame = nsLayoutUtils::GetScrollableFrameFor(aFrame);
+  if (scrollFrame) {
+    
+    
+    
+    
+    
+    area = aFrame->GetScrollableOverflowRect();
+  } else {
+    area = nsRect(nsPoint(0, 0), aFrame->GetSize());
+  }
+
+  if (!area.IsEmpty()) {
+    return area + aBuilder->ToReferenceFrame(aFrame);
+  }
+
+  return area;
+}
+
+void
+nsDisplayListBuilder::BuildCompositorHitTestInfoIfNeeded(nsIFrame* aFrame,
+                                                         nsDisplayList* aList,
+                                                         const bool aBuildNew)
+{
+  MOZ_ASSERT(aFrame);
+  MOZ_ASSERT(aList);
+
+  if (!BuildCompositorHitTestInfo()) {
+    return;
+  }
+
+  CompositorHitTestInfo info = aFrame->GetCompositorHitTestInfo(this);
+  if (!ShouldBuildCompositorHitTestInfo(aFrame, info, aBuildNew)) {
+    
+    
+    return;
+  }
+
+  nsDisplayCompositorHitTestInfo* item =
+    new (this) nsDisplayCompositorHitTestInfo(this, aFrame, info);
+
+  SetCompositorHitTestInfo(item);
+  aList->AppendToTop(item);
+}
+
+bool
+nsDisplayListBuilder::ShouldBuildCompositorHitTestInfo(const nsIFrame* aFrame,
+                                                       const CompositorHitTestInfo& aInfo,
+                                                       const bool aBuildNew) const
+{
+  MOZ_ASSERT(mBuildCompositorHitTestInfo);
+
+  if (aInfo == CompositorHitTestInfo::eInvisibleToHitTest) {
+    return false;
+  }
+
+  if (!mCompositorHitTestInfo || !mLessEventRegionItems || aBuildNew) {
+    return true;
+  }
+
+  if (mCompositorHitTestInfo->HitTestInfo() != aInfo) {
+    
+    return true;
+  }
+
+  
+  return !mCompositorHitTestInfo->Area().Contains(GetFrameArea(this, aFrame));
 }
 
 bool
@@ -5025,24 +5105,7 @@ nsDisplayCompositorHitTestInfo::nsDisplayCompositorHitTestInfo(nsDisplayListBuil
   if (aArea.isSome()) {
     mArea = *aArea;
   } else {
-    nsIScrollableFrame* scrollFrame = nsLayoutUtils::GetScrollableFrameFor(mFrame);
-    if (scrollFrame) {
-      
-      
-      
-      
-      
-      mArea = mFrame->GetScrollableOverflowRect();
-    } else {
-      mArea = nsRect(nsPoint(0, 0), mFrame->GetSize());
-    }
-
-    
-    
-    
-    
-    
-    mArea += aBuilder->ToReferenceFrame(mFrame);
+    mArea = GetFrameArea(aBuilder, aFrame);
   }
 }
 
@@ -5124,29 +5187,12 @@ nsDisplayLayerEventRegions::AddFrame(nsDisplayListBuilder* aBuilder,
 
   
   
-  nsRect borderBox;
-
-  nsIScrollableFrame* scrollFrame = nsLayoutUtils::GetScrollableFrameFor(aFrame);
-  if (scrollFrame) {
-    
-    
-    
-    
-    
-    borderBox = aFrame->GetScrollableOverflowRect();
-  } else {
-    borderBox = nsRect(nsPoint(0, 0), aFrame->GetSize());
-  }
-  if (borderBox.IsEmpty()) {
-    return;
-  }
+  nsRect borderBox = GetFrameArea(aBuilder, aFrame);
 
   if (aFrame != mFrame &&
       aBuilder->IsRetainingDisplayList()) {
     aFrame->AddDisplayItem(this);
   }
-
-  borderBox += aBuilder->ToReferenceFrame(aFrame);
 
   bool borderBoxHasRoundedCorners = false;
 
