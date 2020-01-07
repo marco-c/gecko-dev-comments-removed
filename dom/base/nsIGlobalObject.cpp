@@ -141,7 +141,7 @@ nsIGlobalObject::RemoveEventTargetObject(DOMEventTargetHelper* aObject)
 }
 
 void
-nsIGlobalObject::ForEachEventTargetObject(const std::function<void(DOMEventTargetHelper*)>& aFunc) const
+nsIGlobalObject::ForEachEventTargetObject(const std::function<void(DOMEventTargetHelper*, bool* aDoneOut)>& aFunc) const
 {
   
   
@@ -152,15 +152,19 @@ nsIGlobalObject::ForEachEventTargetObject(const std::function<void(DOMEventTarge
   }
 
   
+  bool done = false;
   for (auto target : targetList) {
-    aFunc(target);
+    aFunc(target, &done);
+    if (done) {
+      break;
+    }
   }
 }
 
 void
 nsIGlobalObject::DisconnectEventTargetObjects()
 {
-  ForEachEventTargetObject([&] (DOMEventTargetHelper* aTarget) {
+  ForEachEventTargetObject([&] (DOMEventTargetHelper* aTarget, bool* aDoneOut) {
     aTarget->DisconnectFromOwner();
 
     
