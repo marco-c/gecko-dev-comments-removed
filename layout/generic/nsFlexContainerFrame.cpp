@@ -1875,8 +1875,6 @@ FlexItem::FlexItem(ReflowInput& aFlexItemReflowInput,
   
   
   
-  
-  
   if (!IsBlockAxisCrossAxis()) {
     if (mAlignSelf == NS_STYLE_ALIGN_BASELINE) {
       mAlignSelf = NS_STYLE_ALIGN_FLEX_START;
