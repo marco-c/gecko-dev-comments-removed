@@ -21,18 +21,8 @@ add_task(async function() {
       input.focus();
     });
 
-    
-    await BrowserTestUtils.synthesizeCompositionChange({
-      composition: {
-        string: "x",
-        clauses: [
-          { length: 1, attr: Ci.nsITextInputProcessor.ATTR_RAW_CLAUSE }
-        ]
-      },
-      caret: { start: 1, length: 0 }
-    }, browser);
-
-    await ContentTask.spawn(browser, null, async function() {
+    info("Setting up the mutation observer before synthesizing composition");
+    let mutationPromise = ContentTask.spawn(browser, null, async function() {
       let searchController = content.wrappedJSObject.gContentSearchController;
 
       
@@ -62,6 +52,20 @@ add_task(async function() {
       
       searchController.selectedIndex = 1;
     });
+
+    
+    await BrowserTestUtils.synthesizeCompositionChange({
+      composition: {
+        string: "x",
+        clauses: [
+          { length: 1, attr: Ci.nsITextInputProcessor.ATTR_RAW_CLAUSE }
+        ]
+      },
+      caret: { start: 1, length: 0 }
+    }, browser);
+
+    info("Waiting for search suggestion table unhidden");
+    await mutationPromise;
 
     
     let expectedURL = Services.search.currentEngine
