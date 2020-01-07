@@ -689,7 +689,13 @@ TileClient::GetBackBuffer(CompositableClient& aCompositable,
         mFrontBufferOnWhite && !mFrontBufferOnWhite->IsReadLocked()))) {
     
     
-    DiscardBackBuffer();
+    
+    
+    
+    
+    if (!gfxPrefs::LayersTileRetainBackBuffer()) {
+      DiscardBackBuffer();
+    }
     Flip();
   } else {
     if (!mBackBuffer || mBackBuffer->IsReadLocked()) {
