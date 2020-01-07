@@ -154,7 +154,7 @@ struct cubeb_stream {
   cubeb_state_callback state_callback;
 
   cubeb_resampler * resampler;
-  unsigned int inputrate;
+  unsigned int user_output_rate;
   unsigned int output_configured_rate;
   unsigned int latency_frames;
   int64_t lastPosition;
@@ -784,66 +784,6 @@ opensl_get_max_channel_count(cubeb * ctx, uint32_t * max_channels)
   return CUBEB_OK;
 }
 
-static int
-opensl_get_preferred_sample_rate(cubeb * ctx, uint32_t * rate)
-{
-  
-
-
-  int r;
-  void * libmedia;
-  uint32_t (*get_primary_output_samplingrate)();
-  uint32_t (*get_output_samplingrate)(int * samplingRate, int streamType);
-
-  libmedia = dlopen("libmedia.so", RTLD_LAZY);
-  if (!libmedia) {
-    return CUBEB_ERROR;
-  }
-
-  
-  get_primary_output_samplingrate =
-    dlsym(libmedia, "_ZN7android11AudioSystem28getPrimaryOutputSamplingRateEv");
-  if (!get_primary_output_samplingrate) {
-    
-
-
-    get_output_samplingrate =
-      dlsym(libmedia, "_ZN7android11AudioSystem21getOutputSamplingRateEPj19audio_stream_type_t");
-    if (!get_output_samplingrate) {
-      
-      get_output_samplingrate =
-        dlsym(libmedia, "_ZN7android11AudioSystem21getOutputSamplingRateEPii");
-      if (!get_output_samplingrate) {
-        dlclose(libmedia);
-        return CUBEB_ERROR;
-      }
-    }
-  }
-
-  if (get_primary_output_samplingrate) {
-    *rate = get_primary_output_samplingrate();
-  } else {
-    
-    r = get_output_samplingrate((int *) rate, AUDIO_STREAM_TYPE_MUSIC);
-    if (r) {
-      dlclose(libmedia);
-      return CUBEB_ERROR;
-    }
-  }
-
-  dlclose(libmedia);
-
-  
-
-
-
-  if (*rate == 0) {
-    return CUBEB_ERROR;
-  }
-
-  return CUBEB_OK;
-}
-
 static void
 opensl_destroy(cubeb * ctx)
 {
@@ -941,11 +881,7 @@ opensl_configure_capture(cubeb_stream * stm, cubeb_stream_params * params)
     } else  {
       
       
-      r = opensl_get_preferred_sample_rate(stm->context, &stm->input_device_rate);
-      if (r != CUBEB_OK) {
-        
-        stm->input_device_rate = DEFAULT_SAMPLE_RATE;
-      }
+      stm->input_device_rate = DEFAULT_SAMPLE_RATE;
     }
     lDataFormat.samplesPerSec = stm->input_device_rate * 1000;
     res = (*stm->context->eng)->CreateAudioRecorder(stm->context->eng,
@@ -1056,7 +992,7 @@ opensl_configure_playback(cubeb_stream * stm, cubeb_stream_params * params) {
   assert(stm);
   assert(params);
 
-  stm->inputrate = params->rate;
+  stm->user_output_rate = params->rate;
   stm->framesize = params->channels * sizeof(int16_t);
   stm->lastPosition = -1;
   stm->lastPositionTimeStamp = 0;
@@ -1093,7 +1029,7 @@ opensl_configure_playback(cubeb_stream * stm, cubeb_stream_params * params) {
 #endif
   assert(NELEMS(ids) == NELEMS(req));
 
-  uint32_t preferred_sampling_rate = stm->inputrate;
+  uint32_t preferred_sampling_rate = stm->user_output_rate;
   SLresult res = SL_RESULT_CONTENT_UNSUPPORTED;
   if (preferred_sampling_rate) {
     res = (*stm->context->eng)->CreateAudioPlayer(stm->context->eng,
@@ -1106,12 +1042,9 @@ opensl_configure_playback(cubeb_stream * stm, cubeb_stream_params * params) {
   }
 
   
-  if (res == SL_RESULT_CONTENT_UNSUPPORTED) {
-    if (opensl_get_preferred_sample_rate(stm->context, &preferred_sampling_rate)) {
-      
-      preferred_sampling_rate = DEFAULT_SAMPLE_RATE;
-    }
-
+  if (res == SL_RESULT_CONTENT_UNSUPPORTED &&
+        preferred_sampling_rate != DEFAULT_SAMPLE_RATE) {
+    preferred_sampling_rate = DEFAULT_SAMPLE_RATE;
     format.samplesPerSec = preferred_sampling_rate * 1000;
     res = (*stm->context->eng)->CreateAudioPlayer(stm->context->eng,
                                                   &stm->playerObj,
@@ -1550,7 +1483,7 @@ opensl_stream_get_position(cubeb_stream * stm, uint64_t * position)
     stm->lastPosition = msec;
   }
 
-  samplerate = stm->inputrate;
+  samplerate = stm->user_output_rate;
 
   r = stm->context->get_output_latency(&mixer_latency, AUDIO_STREAM_TYPE_MUSIC);
   if (r) {
@@ -1558,7 +1491,7 @@ opensl_stream_get_position(cubeb_stream * stm, uint64_t * position)
   }
 
   pthread_mutex_lock(&stm->mutex);
-  int64_t maximum_position = stm->written * (int64_t)stm->inputrate / stm->output_configured_rate;
+  int64_t maximum_position = stm->written * (int64_t)stm->user_output_rate / stm->output_configured_rate;
   pthread_mutex_unlock(&stm->mutex);
   assert(maximum_position >= 0);
 
@@ -1617,7 +1550,7 @@ static struct cubeb_ops const opensl_ops = {
   .get_backend_id = opensl_get_backend_id,
   .get_max_channel_count = opensl_get_max_channel_count,
   .get_min_latency = NULL,
-  .get_preferred_sample_rate = opensl_get_preferred_sample_rate,
+  .get_preferred_sample_rate = NULL,
   .get_preferred_channel_layout = NULL,
   .enumerate_devices = NULL,
   .device_collection_destroy = NULL,
