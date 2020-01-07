@@ -1579,7 +1579,7 @@ function getShapeToggleActive(node) {
     
     if (node.classList.contains("ruleview-computed") ||
         node.classList.contains("ruleview-property")) {
-      return node.querySelector(".ruleview-shape.active");
+      return node.querySelector(".ruleview-shapeswatch.active");
     }
     node = node.parentNode;
   }

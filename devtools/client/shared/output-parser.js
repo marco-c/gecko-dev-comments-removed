@@ -617,14 +617,16 @@ OutputParser.prototype = {
     let container = this._createNode("span", {});
 
     let toggle = this._createNode("span", {
-      class: options.shapeClass
+      class: options.shapeSwatchClass
     });
 
     for (let { prefix, coordParser } of shapeTypes) {
       if (shape.includes(prefix)) {
         let coordsBegin = prefix.length;
         let coordsEnd = shape.lastIndexOf(")");
-        let valContainer = this._createNode("span", {});
+        let valContainer = this._createNode("span", {
+          class: options.shapeClass
+        });
 
         container.appendChild(toggle);
 
@@ -1535,6 +1537,8 @@ OutputParser.prototype = {
 
 
 
+
+
   _mergeOptions: function (overrides) {
     let defaults = {
       defaultColorType: true,
@@ -1548,6 +1552,7 @@ OutputParser.prototype = {
       flexClass: "",
       gridClass: "",
       shapeClass: "",
+      shapeSwatchClass: "",
       supportsColor: false,
       urlClass: "",
       fontFamilyClass: "",
