@@ -242,12 +242,46 @@ public:
 
   Nullable<TimeDuration> GetCurrentOrPendingStartTime() const;
 
+
   
 
 
 
 
-  TimeDuration StartTimeFromReadyTime(const TimeDuration& aReadyTime) const;
+
+
+
+
+  static TimeDuration CurrentTimeFromTimelineTime(
+    const TimeDuration& aTimelineTime,
+    const TimeDuration& aStartTime,
+    float aPlaybackRate)
+  {
+    return (aTimelineTime - aStartTime).MultDouble(aPlaybackRate);
+  }
+
+  
+
+
+
+
+
+
+
+
+  static TimeDuration StartTimeFromTimelineTime(
+    const TimeDuration& aTimelineTime,
+    const TimeDuration& aCurrentTime,
+    float aPlaybackRate)
+  {
+    TimeDuration result = aTimelineTime;
+    if (aPlaybackRate == 0) {
+      return result;
+    }
+
+    result -= aCurrentTime.MultDouble(1.0 / aPlaybackRate);
+    return result;
+  }
 
   
 
