@@ -189,12 +189,6 @@ private:
   bool IsEditorComposing() const;
 
   
-
-
-
-  static nsIContent* GetChildNode(nsINode* aParent, int32_t aOffset);
-
-  
   
   void BeginDocumentUpdate();
   void EndDocumentUpdate();
