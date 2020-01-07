@@ -8174,7 +8174,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 
 
 
-const vendored = {
+const vendored = exports.vendored = {
   classnames: _classnames2.default,
   "devtools-components": devtoolsComponents,
   "devtools-config": devtoolsConfig,
@@ -8210,7 +8210,6 @@ const vendored = {
 
 
 
-exports.vendored = vendored;
 
  }),
 

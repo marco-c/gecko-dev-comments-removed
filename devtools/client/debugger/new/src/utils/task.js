@@ -15,7 +15,7 @@ Object.defineProperty(exports, "__esModule", {
 
 
 
-const Task = {
+const Task = exports.Task = {
   
   async: function (task) {
     return function () {
@@ -50,4 +50,3 @@ const Task = {
     });
   }
 };
-exports.Task = Task;

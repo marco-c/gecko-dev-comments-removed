@@ -3,6 +3,10 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.handleError = handleError;
+exports.promisify = promisify;
+exports.endTruncateStr = endTruncateStr;
+exports.waitForMs = waitForMs;
 
 
 
@@ -55,8 +59,3 @@ function endTruncateStr(str, size) {
 function waitForMs(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
-
-exports.handleError = handleError;
-exports.promisify = promisify;
-exports.endTruncateStr = endTruncateStr;
-exports.waitForMs = waitForMs;

@@ -3,6 +3,11 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.basename = basename;
+exports.dirname = dirname;
+exports.isURL = isURL;
+exports.isAbsolute = isAbsolute;
+exports.join = join;
 
 
 
@@ -27,9 +32,3 @@ function isAbsolute(str) {
 function join(base, dir) {
   return `${base}/${dir}`;
 }
-
-exports.basename = basename;
-exports.dirname = dirname;
-exports.isURL = isURL;
-exports.isAbsolute = isAbsolute;
-exports.join = join;
