@@ -38,6 +38,13 @@
 
 
 
+
+
+
+
+
+
+
 const UAOverrides = [
 
   
@@ -49,6 +56,7 @@ const UAOverrides = [
 
   {
     baseDomain: "schub.io",
+    applications: ["firefox", "fennec"],
     uriMatcher: (uri) => uri.includes("webcompat-ua-dummy.schub.io"),
     uaTransformer: (originalUA) => {
       let prefix = originalUA.substr(0, originalUA.indexOf(")") + 1);
