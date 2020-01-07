@@ -190,8 +190,11 @@ class ScalarType:
                                   '.\nSee: {}'.format(BASE_DOC_URL))
 
         
+        
+        
+        
         expires = definition.get('expires')
-        if not utils.validate_expiration_version(expires):
+        if not utils.validate_expiration_version(expires) and self._strict_type_checks:
             raise ParserError('{} - invalid expires: {}.\nSee: {}#required-fields'
                               .format(self._name, expires, BASE_DOC_URL))
 

@@ -206,6 +206,9 @@ class EventData:
                               % (self.identifier))
 
         
+        
+        
+        
         expiry_version = definition.get('expiry_version', 'never')
         if not utils.validate_expiration_version(expiry_version) and self._strict_type_checks:
             raise ParserError('{}: invalid expiry_version: {}.'
