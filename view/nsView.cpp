@@ -333,6 +333,7 @@ void nsView::DoResetWidgetBounds(bool aMoveOnly,
     
   } else {
     newBounds = CalcWidgetBounds(type);
+    invisiblePopup = newBounds.IsEmpty();
   }
 
   bool curVisibility = widget->IsVisible();
