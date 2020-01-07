@@ -60,7 +60,7 @@ use style::computed_values::overflow_x::T as StyleOverflow;
 use style::computed_values::pointer_events::T as PointerEvents;
 use style::computed_values::position::T as StylePosition;
 use style::computed_values::visibility::T as Visibility;
-use style::logical_geometry::{LogicalMargin, LogicalPoint, LogicalRect, LogicalSize, WritingMode};
+use style::logical_geometry::{LogicalMargin, LogicalPoint, LogicalRect};
 use style::properties::ComputedValues;
 use style::properties::style_structs;
 use style::servo::restyle_damage::ServoRestyleDamage;
@@ -533,6 +533,18 @@ pub trait FragmentDisplayListBuilding {
 
     
     
+    fn build_display_list_for_background_if_applicable_with_background(
+        &self,
+        state: &mut DisplayListBuildState,
+        style: &ComputedValues,
+        background: &style_structs::Background,
+        background_color: RGBA,
+        display_list_section: DisplayListSection,
+        absolute_bounds: &Rect<Au>,
+    );
+
+    
+    
     
     
     fn compute_background_placement(
@@ -640,16 +652,22 @@ pub trait FragmentDisplayListBuilding {
     
     
     
-    
-    
-    
-    
     fn build_display_list(
         &mut self,
         state: &mut DisplayListBuildState,
-        stacking_relative_flow_origin: &Vector2D<Au>,
-        relative_containing_block_size: &LogicalSize<Au>,
-        relative_containing_block_mode: WritingMode,
+        stacking_relative_border_box: Rect<Au>,
+        border_painting_mode: BorderPaintingMode,
+        display_list_section: DisplayListSection,
+        clip: &Rect<Au>,
+    );
+
+    
+    
+    
+    fn build_display_list_no_damage(
+        &self,
+        state: &mut DisplayListBuildState,
+        stacking_relative_border_box: Rect<Au>,
         border_painting_mode: BorderPaintingMode,
         display_list_section: DisplayListSection,
         clip: &Rect<Au>,
@@ -689,7 +707,7 @@ pub trait FragmentDisplayListBuilding {
 
     
     fn build_fragment_type_specific_display_items(
-        &mut self,
+        &self,
         state: &mut DisplayListBuildState,
         stacking_relative_border_box: &Rect<Au>,
         clip: &Rect<Au>,
@@ -930,12 +948,27 @@ impl FragmentDisplayListBuilding for Fragment {
         display_list_section: DisplayListSection,
         absolute_bounds: &Rect<Au>,
     ) {
-        
-        
-        
-        
         let background = style.get_background();
         let background_color = style.resolve_color(background.background_color);
+        
+        
+        self.build_display_list_for_background_if_applicable_with_background(
+            state, style, background, background_color, display_list_section, absolute_bounds)
+    }
+
+    fn build_display_list_for_background_if_applicable_with_background(
+        &self,
+        state: &mut DisplayListBuildState,
+        style: &ComputedValues,
+        background: &style_structs::Background,
+        background_color: RGBA,
+        display_list_section: DisplayListSection,
+        absolute_bounds: &Rect<Au>,
+    ) {
+        
+        
+        
+        
 
         
         
@@ -1694,31 +1727,31 @@ impl FragmentDisplayListBuilding for Fragment {
     fn build_display_list(
         &mut self,
         state: &mut DisplayListBuildState,
-        stacking_relative_flow_origin: &Vector2D<Au>,
-        relative_containing_block_size: &LogicalSize<Au>,
-        relative_containing_block_mode: WritingMode,
+        stacking_relative_border_box: Rect<Au>,
         border_painting_mode: BorderPaintingMode,
         display_list_section: DisplayListSection,
         clip: &Rect<Au>,
     ) {
         self.restyle_damage.remove(ServoRestyleDamage::REPAINT);
+        self.build_display_list_no_damage(state, stacking_relative_border_box,
+                                border_painting_mode, display_list_section, clip)
+    }
+
+    fn build_display_list_no_damage(
+        &self,
+        state: &mut DisplayListBuildState,
+        stacking_relative_border_box: Rect<Au>,
+        border_painting_mode: BorderPaintingMode,
+        display_list_section: DisplayListSection,
+        clip: &Rect<Au>,
+    ) {
         if self.style().get_inheritedbox().visibility != Visibility::Visible {
             return;
         }
 
-        
-        
-        
-        let stacking_relative_border_box = self.stacking_relative_border_box(
-            stacking_relative_flow_origin,
-            relative_containing_block_size,
-            relative_containing_block_mode,
-            CoordinateSystem::Own,
-        );
-
         debug!(
-            "Fragment::build_display_list at rel={:?}, abs={:?}, flow origin={:?}: {:?}",
-            self.border_box, stacking_relative_border_box, stacking_relative_flow_origin, self
+            "Fragment::build_display_list at rel={:?}, abs={:?}: {:?}",
+            self.border_box, stacking_relative_border_box, self
         );
 
         
@@ -1830,7 +1863,7 @@ impl FragmentDisplayListBuilding for Fragment {
     }
 
     fn build_fragment_type_specific_display_items(
-        &mut self,
+        &self,
         state: &mut DisplayListBuildState,
         stacking_relative_border_box: &Rect<Au>,
         clip: &Rect<Au>,
@@ -1954,7 +1987,7 @@ impl FragmentDisplayListBuilding for Fragment {
                     state.add_display_item(item);
                 }
             },
-            SpecificFragmentInfo::Image(ref mut image_fragment) => {
+            SpecificFragmentInfo::Image(ref image_fragment) => {
                 
                 if let Some(ref image) = image_fragment.image {
                     let base = state.create_base_display_item(
@@ -2320,6 +2353,16 @@ pub trait BlockFlowDisplayListBuilding {
         state: &mut DisplayListBuildState,
         border_painting_mode: BorderPaintingMode,
     );
+    fn build_display_list_for_block_no_damage(
+        &self,
+        state: &mut DisplayListBuildState,
+        border_painting_mode: BorderPaintingMode,
+    );
+    fn build_display_list_for_background_if_applicable_with_background(
+        &self,
+        state: &mut DisplayListBuildState,
+        background: &style_structs::Background,
+        background_color: RGBA);
 
     fn block_stacking_context_type(
         &self,
@@ -2858,38 +2901,20 @@ impl BlockFlowDisplayListBuilding for BlockFlow {
         self.base.collect_stacking_contexts_for_children(state);
     }
 
-    fn build_display_list_for_block(
-        &mut self,
+    fn build_display_list_for_block_no_damage(
+        &self,
         state: &mut DisplayListBuildState,
         border_painting_mode: BorderPaintingMode,
     ) {
-        let background_border_section = if self.base.flags.is_float() {
-            DisplayListSection::BackgroundAndBorders
-        } else if self.base
-            .flags
-            .contains(FlowFlags::IS_ABSOLUTELY_POSITIONED)
-        {
-            if self.fragment.establishes_stacking_context() {
-                DisplayListSection::BackgroundAndBorders
-            } else {
-                DisplayListSection::BlockBackgroundsAndBorders
-            }
-        } else {
-            DisplayListSection::BlockBackgroundsAndBorders
-        };
+        let background_border_section = self.background_border_section();
 
         state.processing_scrolling_overflow_element = self.has_scrolling_overflow();
-
+        let stacking_relative_border_box =
+            self.base.stacking_relative_border_box_for_display_list(&self.fragment);
         
-        self.fragment.build_display_list(
+        self.fragment.build_display_list_no_damage(
             state,
-            &self.base.stacking_relative_position,
-            &self.base
-                .early_absolute_position_info
-                .relative_containing_block_size,
-            self.base
-                .early_absolute_position_info
-                .relative_containing_block_mode,
+            stacking_relative_border_box,
             border_painting_mode,
             background_border_section,
             &self.base.clip,
@@ -2899,6 +2924,31 @@ impl BlockFlowDisplayListBuilding for BlockFlow {
             .build_display_items_for_debugging_tint(state, self.fragment.node);
 
         state.processing_scrolling_overflow_element = false;
+    }
+
+    fn build_display_list_for_block(
+        &mut self,
+        state: &mut DisplayListBuildState,
+        border_painting_mode: BorderPaintingMode,
+    ) {
+        self.fragment.restyle_damage.remove(ServoRestyleDamage::REPAINT);
+        self.build_display_list_for_block_no_damage(state, border_painting_mode);
+    }
+
+    fn build_display_list_for_background_if_applicable_with_background(
+        &self,
+        state: &mut DisplayListBuildState,
+        background: &style_structs::Background,
+        background_color: RGBA) {
+        let stacking_relative_border_box =
+            self.base.stacking_relative_border_box_for_display_list(&self.fragment);
+        let background_border_section = self.background_border_section();
+
+        self.fragment.build_display_list_for_background_if_applicable_with_background(
+            state, self.fragment.style(), background, background_color,
+            background_border_section, &stacking_relative_border_box
+        )
+
     }
 
     #[inline]
@@ -2992,15 +3042,11 @@ impl InlineFlowDisplayListBuilding for InlineFlow {
         index: usize,
     ) {
         let fragment = self.fragments.fragments.get_mut(index).unwrap();
+        let stacking_relative_border_box =
+            self.base.stacking_relative_border_box_for_display_list(fragment);
         fragment.build_display_list(
             state,
-            &self.base.stacking_relative_position,
-            &self.base
-                .early_absolute_position_info
-                .relative_containing_block_size,
-            self.base
-                .early_absolute_position_info
-                .relative_containing_block_mode,
+            stacking_relative_border_box,
             BorderPaintingMode::Separate,
             DisplayListSection::Content,
             &self.base.clip,
@@ -3052,17 +3098,11 @@ impl ListItemFlowDisplayListBuilding for ListItemFlow {
     fn build_display_list_for_list_item(&mut self, state: &mut DisplayListBuildState) {
         
         for marker in &mut self.marker_fragments {
+            let stacking_relative_border_box =
+                self.block_flow.base.stacking_relative_border_box_for_display_list(marker);
             marker.build_display_list(
                 state,
-                &self.block_flow.base.stacking_relative_position,
-                &self.block_flow
-                    .base
-                    .early_absolute_position_info
-                    .relative_containing_block_size,
-                self.block_flow
-                    .base
-                    .early_absolute_position_info
-                    .relative_containing_block_mode,
+                stacking_relative_border_box,
                 BorderPaintingMode::Separate,
                 DisplayListSection::Content,
                 &self.block_flow.base.clip,

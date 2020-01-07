@@ -14,20 +14,21 @@ use display_list::{BlockFlowDisplayListBuilding, BorderPaintingMode};
 use display_list::{DisplayListBuildState, StackingContextCollectionFlags, StackingContextCollectionState};
 use euclid::Point2D;
 use flow::{BaseFlow, EarlyAbsolutePositionInfo, Flow, FlowClass, ImmutableFlowUtils, GetBaseFlow, OpaqueFlow};
-use flow_list::MutFlowListIterator;
+use flow_list::{FlowListIterator, MutFlowListIterator};
 use fragment::{Fragment, FragmentBorderBoxIterator, Overflow};
 use gfx_traits::print_tree::PrintTree;
 use layout_debug;
 use model::{IntrinsicISizes, IntrinsicISizesContribution, MaybeAuto};
-use std::cmp;
-use std::fmt;
+use std::{cmp, fmt};
 use style::computed_values::{border_collapse, border_spacing, table_layout};
 use style::context::SharedStyleContext;
 use style::logical_geometry::LogicalSize;
 use style::properties::ComputedValues;
+use style::properties::style_structs::Background;
 use style::servo::restyle_damage::ServoRestyleDamage;
 use style::values::CSSFloat;
 use style::values::computed::LengthOrPercentageOrAuto;
+use table_cell::TableCellFlow;
 use table_row::{self, CellIntrinsicInlineSize, CollapsedBorder, CollapsedBorderProvenance};
 use table_row::TableRowFlow;
 use table_wrapper::TableLayout;
@@ -202,6 +203,37 @@ impl TableFlow {
             return Au(0);
         }
         self.spacing().horizontal() * (num_columns as i32 + 1)
+    }
+
+    fn column_styles(&self) -> Vec<ColumnStyle> {
+        let mut styles = vec![];
+        for group in self.block_flow.base.child_iter()
+                       .filter(|kid| kid.is_table_colgroup()) {
+            
+            
+            let group = group.as_table_colgroup();
+            let colgroup_style = group.fragment.as_ref()
+                                      .map(|f| f.style());
+
+            
+            
+            
+            if group.cols.is_empty() {
+                let span = group.fragment.as_ref()
+                                .map(|f| f.column_span()).unwrap_or(1);
+                styles.push(ColumnStyle { span, colgroup_style, col_style: None });
+            } else {
+                for col in &group.cols {
+                    
+                    styles.push(ColumnStyle {
+                        span: col.column_span(),
+                        colgroup_style: colgroup_style,
+                        col_style: Some(col.style()),
+                    })
+                }
+            }
+        }
+        styles
     }
 }
 
@@ -497,6 +529,11 @@ impl Flow for TableFlow {
         };
 
         self.block_flow.build_display_list_for_block(state, border_painting_mode);
+
+        let iter = TableCellStyleIterator::new(&self);
+        for mut style in iter {
+            style.build_display_list(state)
+        }
     }
 
     fn collect_stacking_contexts(&mut self, state: &mut StackingContextCollectionState) {
@@ -527,6 +564,20 @@ impl Flow for TableFlow {
     fn print_extra_flow_children(&self, print_tree: &mut PrintTree) {
         self.block_flow.print_extra_flow_children(print_tree);
     }
+}
+
+#[derive(Debug)]
+
+
+
+
+
+
+
+struct ColumnStyle<'table> {
+    span: u32,
+    colgroup_style: Option<&'table ComputedValues>,
+    col_style: Option<&'table ComputedValues>,
 }
 
 impl fmt::Debug for TableFlow {
@@ -826,17 +877,103 @@ enum NextBlockCollapsedBorders<'a> {
 }
 
 
-struct TableRowIterator<'a> {
-    kids: MutFlowListIterator<'a>,
-    grandkids: Option<MutFlowListIterator<'a>>,
+
+struct TableRowAndGroupIterator<'a> {
+    kids: FlowListIterator<'a>,
+    group: Option<(&'a Fragment, FlowListIterator<'a>)>
 }
+
+impl<'a> TableRowAndGroupIterator<'a> {
+    fn new(base: &'a BaseFlow) -> Self {
+        TableRowAndGroupIterator {
+            kids: base.child_iter(),
+            group: None,
+        }
+    }
+}
+
+impl<'a> Iterator for TableRowAndGroupIterator<'a> {
+    type Item = (Option<&'a Fragment>, &'a TableRowFlow);
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        
+        if let Some(ref mut group) = self.group {
+            if let Some(grandkid) = group.1.next() {
+                return Some((Some(group.0), grandkid.as_table_row()))
+            }
+        }
+        
+        self.group = None;
+        match self.kids.next() {
+            Some(kid) => {
+                if kid.is_table_rowgroup() {
+                    let mut rowgroup = kid.as_table_rowgroup();
+                    let iter = rowgroup.block_flow.base.child_iter();
+                    self.group = Some((&rowgroup.block_flow.fragment, iter));
+                    self.next()
+                } else if kid.is_table_row() {
+                    Some((None, kid.as_table_row()))
+                } else {
+                    self.next() 
+                }
+            }
+            None => None
+        }
+    }
+}
+
+
+
+struct MutTableRowAndGroupIterator<'a> {
+    kids: MutFlowListIterator<'a>,
+    group: Option<(&'a Fragment, MutFlowListIterator<'a>)>
+}
+
+impl<'a> MutTableRowAndGroupIterator<'a> {
+    fn new(base: &'a mut BaseFlow) -> Self {
+        MutTableRowAndGroupIterator {
+            kids: base.child_iter_mut(),
+            group: None,
+        }
+    }
+}
+
+impl<'a> Iterator for MutTableRowAndGroupIterator<'a> {
+    type Item = (Option<&'a Fragment>, &'a mut TableRowFlow);
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        
+        if let Some(ref mut group) = self.group {
+            if let Some(grandkid) = group.1.next() {
+                return Some((Some(group.0), grandkid.as_mut_table_row()))
+            }
+        }
+        
+        self.group = None;
+        match self.kids.next() {
+            Some(kid) => {
+                if kid.is_table_rowgroup() {
+                    let mut rowgroup = kid.as_mut_table_rowgroup();
+                    let iter = rowgroup.block_flow.base.child_iter_mut();
+                    self.group = Some((&rowgroup.block_flow.fragment, iter));
+                    self.next()
+                } else if kid.is_table_row() {
+                    Some((None, kid.as_mut_table_row()))
+                } else {
+                    self.next() 
+                }
+            }
+            None => None
+        }
+    }
+}
+
+
+struct TableRowIterator<'a>(MutTableRowAndGroupIterator<'a>);
 
 impl<'a> TableRowIterator<'a> {
     fn new(base: &'a mut BaseFlow) -> Self {
-        TableRowIterator {
-            kids: base.child_iter_mut(),
-            grandkids: None,
-        }
+        TableRowIterator(MutTableRowAndGroupIterator::new(base))
     }
 }
 
@@ -844,26 +981,211 @@ impl<'a> Iterator for TableRowIterator<'a> {
     type Item = &'a mut TableRowFlow;
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
-        
-        if let Some(ref mut grandkids) = self.grandkids {
-            if let Some(grandkid) = grandkids.next() {
-                return Some(grandkid.as_mut_table_row())
-            }
+        self.0.next().map(|n| n.1)
+    }
+}
+
+
+
+
+
+
+struct TableCellStyleIterator<'table> {
+    column_styles: Vec<ColumnStyle<'table>>,
+    row_iterator: TableRowAndGroupIterator<'table>,
+    row_info: Option<TableCellStyleIteratorRowInfo<'table>>,
+    column_index: TableCellColumnIndexData,
+
+}
+
+struct TableCellStyleIteratorRowInfo<'table> {
+    row: &'table TableRowFlow,
+    rowgroup: Option<&'table Fragment>,
+    cell_iterator: FlowListIterator<'table>,
+}
+
+impl<'table> TableCellStyleIterator<'table> {
+    fn new(table: &'table TableFlow) -> Self {
+        let column_styles = table.column_styles();
+        let mut row_iterator = TableRowAndGroupIterator::new(&table.block_flow.base);
+        let row_info = if let Some((group, row)) = row_iterator.next() {
+            Some(TableCellStyleIteratorRowInfo {
+                row: &row,
+                rowgroup: group,
+                cell_iterator: row.block_flow.base.child_iter()
+            })
+        } else {
+            None
+        };
+        TableCellStyleIterator {
+            column_styles, row_iterator, row_info,
+            column_index: Default::default(),
         }
-        
-        self.grandkids = None;
-        match self.kids.next() {
-            Some(kid) => {
-                if kid.is_table_rowgroup() {
-                    self.grandkids = Some(kid.mut_base().child_iter_mut());
-                    self.next()
-                } else if kid.is_table_row() {
-                    Some(kid.as_mut_table_row())
+    }
+}
+
+struct TableCellStyleInfo<'table> {
+    cell: &'table TableCellFlow,
+    colgroup_style: Option<&'table ComputedValues>,
+    col_style: Option<&'table ComputedValues>,
+    rowgroup_style: Option<&'table ComputedValues>,
+    row_style: &'table ComputedValues,
+}
+
+struct TableCellColumnIndexData {
+    
+    pub absolute: u32,
+    
+    
+    pub relative: u32,
+    
+    
+    pub relative_offset: u32,
+}
+
+impl Default for TableCellColumnIndexData {
+    fn default() -> Self {
+        TableCellColumnIndexData {
+            absolute: 0,
+            relative: 0,
+            relative_offset: 0,
+        }
+    }
+}
+
+impl TableCellColumnIndexData {
+    
+    
+    
+    
+    fn advance(&mut self, amount: u32, column_styles: &[ColumnStyle]) {
+        self.absolute += amount;
+        self.relative_offset += amount;
+        if let Some(mut current_col) =
+            column_styles.get(self.relative as usize) {
+            while self.relative_offset >= current_col.span {
+                
+                self.relative += 1;
+                self.relative_offset -= current_col.span;
+                if let Some(column_style) =
+                    column_styles.get(self.relative as usize) {
+                    current_col = column_style;
                 } else {
-                    self.next() 
+                    
+                    
+                    break;
                 }
             }
-            None => None
         }
+    }
+}
+
+impl<'table> Iterator for TableCellStyleIterator<'table> {
+    type Item = TableCellStyleInfo<'table>;
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        
+        
+        if let Some(mut row_info) = self.row_info.take() {
+            if let Some(rowspan) = row_info.row.incoming_rowspan.get(self.column_index.absolute as usize) {
+                
+                if *rowspan > 1 {
+                    self.column_index.advance(1, &self.column_styles);
+                    
+                    self.row_info = Some(row_info);
+                    
+                    return self.next();
+                }
+            }
+            if let Some(cell) = row_info.cell_iterator.next() {
+                let rowgroup_style = row_info.rowgroup.map(|r| r.style());
+                let row_style = row_info.row.block_flow.fragment.style();
+                let cell = cell.as_table_cell();
+                let (col_style, colgroup_style) = if let Some(column_style) =
+                        self.column_styles.get(self.column_index.relative as usize) {
+                    let styles = (column_style.col_style.clone(), column_style.colgroup_style.clone());
+                    self.column_index.advance(cell.column_span, &self.column_styles);
+
+                    styles
+                } else {
+                    (None, None)
+                };
+                
+                self.row_info = Some(row_info);
+                return Some(TableCellStyleInfo {
+                    cell,
+                    colgroup_style,
+                    col_style,
+                    rowgroup_style,
+                    row_style,
+                })
+            } else {
+                
+                if let Some((group, row)) = self.row_iterator.next() {
+                    self.row_info = Some(TableCellStyleIteratorRowInfo {
+                        row: &row,
+                        rowgroup: group,
+                        cell_iterator: row.block_flow.base.child_iter()
+                    });
+                    self.column_index = Default::default();
+                    self.next()
+                } else {
+                    
+                    
+                    None
+                }
+            }
+        } else {
+            
+            None
+        }
+    }
+}
+
+impl<'table> TableCellStyleInfo<'table> {
+    fn build_display_list(&self, mut state: &mut DisplayListBuildState) {
+        use style::computed_values::visibility::T as Visibility;
+
+        if !self.cell.visible || self.cell.block_flow.fragment.style()
+                                     .get_inheritedbox().visibility != Visibility::Visible {
+            return
+        }
+        let border_painting_mode = match self.cell.block_flow
+                                             .fragment
+                                             .style
+                                             .get_inheritedtable()
+                                             .border_collapse {
+            border_collapse::T::Separate => BorderPaintingMode::Separate,
+            border_collapse::T::Collapse => BorderPaintingMode::Collapse(&self.cell.collapsed_borders),
+        };
+        {
+            let cell_flow = &self.cell.block_flow;
+            let initial = ComputedValues::initial_values();
+
+            let build_dl = |sty: &ComputedValues, state: &mut &mut DisplayListBuildState| {
+                let background = sty.get_background();
+                
+                if background as *const Background == initial.get_background() as *const _ {
+                    return;
+                }
+                let background_color = sty.resolve_color(background.background_color);
+                cell_flow.build_display_list_for_background_if_applicable_with_background(
+                    state, background, background_color
+                );
+            };
+
+            if let Some(ref sty) = self.colgroup_style {
+                build_dl(&sty, &mut state);
+            }
+            if let Some(ref sty) = self.col_style {
+                build_dl(&sty, &mut state);
+            }
+            if let Some(ref sty) = self.rowgroup_style {
+                build_dl(sty, &mut state);
+            }
+            build_dl(self.row_style, &mut state);
+        }
+        
+        self.cell.block_flow.build_display_list_for_block_no_damage(state, border_painting_mode)
     }
 }

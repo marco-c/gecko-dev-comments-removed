@@ -1410,6 +1410,16 @@ impl Fragment {
 
     
     
+    
+    pub fn column_span(&self) -> u32 {
+        match self.specific {
+            SpecificFragmentInfo::TableColumn(col_fragment) => max(col_fragment.span, 1),
+            _ => panic!("non-table-column fragment inside table column?!"),
+        }
+    }
+
+    
+    
     pub fn can_split(&self) -> bool {
         self.is_scanned_text_fragment() && self.white_space().allow_wrap()
     }
