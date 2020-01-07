@@ -7,10 +7,6 @@
 
 
 
-#ifdef STYLE_STRUCT
-#error Sorry nsPresArenaObjectList.h needs to use STYLE_STRUCT!
-#endif
-
 
 
 PRES_ARENA_OBJECT(GeckoComputedStyle)
@@ -29,8 +25,3 @@ PRES_ARENA_OBJECT(nsCallbackEventRequest)
 PRES_ARENA_OBJECT(nsIntervalSet_Interval)
 PRES_ARENA_OBJECT(CellData)
 PRES_ARENA_OBJECT(BCCellData)
-
-#define STYLE_STRUCT(name_) \
-  PRES_ARENA_OBJECT(nsStyle##name_)
-#include "nsStyleStructList.h"
-#undef STYLE_STRUCT
