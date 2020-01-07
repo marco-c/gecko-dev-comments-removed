@@ -14,23 +14,38 @@
 
 mozilla::detail::MutexImpl::MutexImpl()
 {
-  InitializeSRWLock(&platformData()->lock);
+  
+  const static DWORD LockSpinCount = 1500;
+
+#if defined(RELEASE_OR_BETA)
+  
+  
+  
+  DWORD flags = CRITICAL_SECTION_NO_DEBUG_INFO;
+#else
+  DWORD flags = 0;
+#endif 
+
+  BOOL r = InitializeCriticalSectionEx(&platformData()->criticalSection,
+                                       LockSpinCount, flags);
+  MOZ_RELEASE_ASSERT(r);
 }
 
 mozilla::detail::MutexImpl::~MutexImpl()
 {
+  DeleteCriticalSection(&platformData()->criticalSection);
 }
 
 void
 mozilla::detail::MutexImpl::lock()
 {
-  AcquireSRWLockExclusive(&platformData()->lock);
+  EnterCriticalSection(&platformData()->criticalSection);
 }
 
 void
 mozilla::detail::MutexImpl::unlock()
 {
-  ReleaseSRWLockExclusive(&platformData()->lock);
+  LeaveCriticalSection(&platformData()->criticalSection);
 }
 
 mozilla::detail::MutexImpl::PlatformData*
