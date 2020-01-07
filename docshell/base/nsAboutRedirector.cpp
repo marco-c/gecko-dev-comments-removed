@@ -29,6 +29,7 @@ struct RedirEntry
 
 
 
+
 static const RedirEntry kRedirMap[] = {
   { "about", "chrome://global/content/aboutAbout.xhtml", 0 },
   {
