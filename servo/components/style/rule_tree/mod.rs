@@ -12,7 +12,7 @@ use gecko::selector_parser::PseudoElement;
 #[cfg(feature = "gecko")]
 use malloc_size_of::{MallocSizeOf, MallocSizeOfOps};
 use properties::{Importance, LonghandIdSet, PropertyDeclarationBlock};
-use servo_arc::{Arc, ArcBorrow, NonZeroPtrMut};
+use servo_arc::{Arc, ArcBorrow, ArcUnion, ArcUnionBorrow, NonZeroPtrMut};
 use shared_lock::{Locked, SharedRwLockReadGuard, StylesheetGuards};
 use smallvec::SmallVec;
 use std::io::{self, Write};
@@ -89,40 +89,27 @@ impl MallocSizeOf for RuleTree {
 
 
 #[derive(Clone, Debug)]
-pub enum StyleSource {
-    
-    Style(Arc<Locked<StyleRule>>),
-    
-    Declarations(Arc<Locked<PropertyDeclarationBlock>>),
-    
-    
-    None,
-}
+pub struct StyleSource(ArcUnion<Locked<StyleRule>, Locked<PropertyDeclarationBlock>>);
 
 impl PartialEq for StyleSource {
     fn eq(&self, other: &Self) -> bool {
-        self.ptr_equals(other)
+        ArcUnion::ptr_eq(&self.0, &other.0)
     }
 }
 
 impl StyleSource {
-    #[inline]
-    fn ptr_equals(&self, other: &Self) -> bool {
-        use self::StyleSource::*;
-        match (self, other) {
-            (&Style(ref one), &Style(ref other)) => Arc::ptr_eq(one, other),
-            (&Declarations(ref one), &Declarations(ref other)) => Arc::ptr_eq(one, other),
-            (&None, _) | (_, &None) => {
-                panic!("Should not check for equality between null StyleSource objects")
-            },
-            _ => false,
-        }
+    
+    pub fn from_rule(rule: Arc<Locked<StyleRule>>) -> Self {
+        StyleSource(ArcUnion::from_first(rule))
+    }
+
+    
+    pub fn from_declarations(decls: Arc<Locked<PropertyDeclarationBlock>>) -> Self {
+        StyleSource(ArcUnion::from_second(decls))
     }
 
     fn dump<W: Write>(&self, guard: &SharedRwLockReadGuard, writer: &mut W) {
-        use self::StyleSource::*;
-
-        if let Style(ref rule) = *self {
+        if let Some(ref rule) = self.0.as_first() {
             let rule = rule.read_with(guard);
             let _ = write!(writer, "{:?}", rule.selectors);
         }
@@ -134,20 +121,31 @@ impl StyleSource {
     
     #[inline]
     pub fn read<'a>(&'a self, guard: &'a SharedRwLockReadGuard) -> &'a PropertyDeclarationBlock {
-        let block = match *self {
-            StyleSource::Style(ref rule) => &rule.read_with(guard).block,
-            StyleSource::Declarations(ref block) => block,
-            StyleSource::None => panic!("Cannot call read on StyleSource::None"),
+        let block: &Locked<PropertyDeclarationBlock> = match self.0.borrow() {
+            ArcUnionBorrow::First(ref rule) => &rule.get().read_with(guard).block,
+            ArcUnionBorrow::Second(ref block) => block.get(),
         };
         block.read_with(guard)
     }
 
     
-    pub fn is_some(&self) -> bool {
-        match *self {
-            StyleSource::None => false,
-            _ => true,
-        }
+    pub fn is_rule(&self) -> bool {
+        self.0.is_first()
+    }
+
+    
+    pub fn is_declarations(&self) -> bool {
+        self.0.is_second()
+    }
+
+    
+    pub fn as_rule(&self) -> Option<ArcBorrow<Locked<StyleRule>>> {
+        self.0.as_first()
+    }
+
+    
+    pub fn as_declarations(&self) -> Option<ArcBorrow<Locked<PropertyDeclarationBlock>>> {
+        self.0.as_second()
     }
 }
 
@@ -248,11 +246,12 @@ impl RuleTree {
                             last_cascade_order = shadow_cascade_order;
                             important_inner_shadow.push(SmallVec::new());
                         }
-                        important_inner_shadow.last_mut().unwrap().push(source.clone())
-                    }
-                    SameTreeAuthorNormal => {
-                        important_same_tree.push(source.clone())
+                        important_inner_shadow
+                            .last_mut()
+                            .unwrap()
+                            .push(source.clone())
                     },
+                    SameTreeAuthorNormal => important_same_tree.push(source.clone()),
                     UANormal => important_ua.push(source.clone()),
                     UserNormal => important_user.push(source.clone()),
                     StyleAttributeNormal => {
@@ -391,7 +390,10 @@ impl RuleTree {
         
         let mut children = SmallVec::<[_; 10]>::new();
         while current.get().level > level {
-            children.push((current.get().source.clone(), current.get().level));
+            children.push((
+                current.get().source.as_ref().unwrap().clone(),
+                current.get().level,
+            ));
             current = current.parent().unwrap().clone();
         }
 
@@ -418,13 +420,14 @@ impl RuleTree {
                 
                 
                 
-                let is_here_already = match current.get().source {
-                    StyleSource::Declarations(ref already_here) => {
-                        pdb.with_arc(|arc| Arc::ptr_eq(arc, already_here))
-                    },
-                    _ => unreachable!("Replacing non-declarations style?"),
-                };
-
+                let current_decls = current
+                    .get()
+                    .source
+                    .as_ref()
+                    .unwrap()
+                    .as_declarations()
+                    .expect("Replacing non-declarations style?");
+                let is_here_already = ArcBorrow::ptr_eq(&pdb, &current_decls);
                 if is_here_already {
                     debug!("Picking the fast path in rule replacement");
                     return None;
@@ -447,7 +450,7 @@ impl RuleTree {
                 if pdb.read_with(level.guard(guards)).any_important() {
                     current = current.ensure_child(
                         self.root.downgrade(),
-                        StyleSource::Declarations(pdb.clone_arc()),
+                        StyleSource::from_declarations(pdb.clone_arc()),
                         level,
                     );
                 }
@@ -455,7 +458,7 @@ impl RuleTree {
                 if pdb.read_with(level.guard(guards)).any_normal() {
                     current = current.ensure_child(
                         self.root.downgrade(),
-                        StyleSource::Declarations(pdb.clone_arc()),
+                        StyleSource::from_declarations(pdb.clone_arc()),
                         level,
                     );
                 }
@@ -491,7 +494,10 @@ impl RuleTree {
         let mut children = SmallVec::<[_; 10]>::new();
         for node in iter {
             if !node.cascade_level().is_animation() {
-                children.push((node.get().source.clone(), node.cascade_level()));
+                children.push((
+                    node.get().source.as_ref().unwrap().clone(),
+                    node.cascade_level(),
+                ));
             }
             last = node;
         }
@@ -689,7 +695,9 @@ pub struct RuleNode {
 
     
     
-    source: StyleSource,
+    
+    
+    source: Option<StyleSource>,
 
     
     level: CascadeLevel,
@@ -775,7 +783,7 @@ impl RuleNode {
         RuleNode {
             root: Some(root),
             parent: Some(parent),
-            source: source,
+            source: Some(source),
             level: level,
             refcount: AtomicUsize::new(1),
             first_child: AtomicPtr::new(ptr::null_mut()),
@@ -789,7 +797,7 @@ impl RuleNode {
         RuleNode {
             root: None,
             parent: None,
-            source: StyleSource::None,
+            source: None,
             level: CascadeLevel::UANormal,
             refcount: AtomicUsize::new(1),
             first_child: AtomicPtr::new(ptr::null_mut()),
@@ -884,7 +892,10 @@ impl RuleNode {
         }
 
         if self.source.is_some() {
-            self.source.dump(self.level.guard(guards), writer);
+            self.source
+                .as_ref()
+                .unwrap()
+                .dump(self.level.guard(guards), writer);
         } else {
             if indent != 0 {
                 warn!("How has this happened?");
@@ -986,7 +997,7 @@ impl StrongRuleNode {
         
         for child in self.get().iter_children() {
             let child_node = unsafe { &*child.ptr() };
-            if child_node.level == level && child_node.source.ptr_equals(&source) {
+            if child_node.level == level && child_node.source.as_ref().unwrap() == &source {
                 return child.upgrade();
             }
             last = Some(child);
@@ -1026,7 +1037,7 @@ impl StrongRuleNode {
                 
                 next = WeakRuleNode::from_ptr(existing);
 
-                if unsafe { &*next.ptr() }.source.ptr_equals(&source) {
+                if unsafe { &*next.ptr() }.source.as_ref().unwrap() == &source {
                     
                     
                     return next.upgrade();
@@ -1054,8 +1065,8 @@ impl StrongRuleNode {
     
     
     
-    pub fn style_source(&self) -> &StyleSource {
-        &self.get().source
+    pub fn style_source(&self) -> Option<&StyleSource> {
+        self.get().source.as_ref()
     }
 
     
@@ -1317,6 +1328,8 @@ impl StrongRuleNode {
                 let source = node.style_source();
                 let declarations = if source.is_some() {
                     source
+                        .as_ref()
+                        .unwrap()
                         .read(node.cascade_level().guard(guards))
                         .declaration_importance_iter()
                 } else {
@@ -1444,7 +1457,7 @@ impl StrongRuleNode {
             .take_while(|node| node.cascade_level() > CascadeLevel::Animations);
         let mut result = (LonghandIdSet::new(), false);
         for node in iter {
-            let style = node.style_source();
+            let style = node.style_source().unwrap();
             for (decl, important) in style
                 .read(node.cascade_level().guard(guards))
                 .declaration_importance_iter()
@@ -1463,33 +1476,6 @@ impl StrongRuleNode {
             }
         }
         result
-    }
-
-    
-    
-    fn get_animation_style(&self) -> &Arc<Locked<PropertyDeclarationBlock>> {
-        debug_assert!(
-            self.cascade_level().is_animation(),
-            "The cascade level should be an animation level"
-        );
-        match *self.style_source() {
-            StyleSource::Declarations(ref block) => block,
-            StyleSource::Style(_) => unreachable!("animating style should not be a style rule"),
-            StyleSource::None => unreachable!("animating style should not be none"),
-        }
-    }
-
-    
-    pub fn get_smil_animation_rule(&self) -> Option<&Arc<Locked<PropertyDeclarationBlock>>> {
-        if cfg!(feature = "servo") {
-            
-            return None;
-        }
-
-        self.self_and_ancestors()
-            .take_while(|node| node.cascade_level() >= CascadeLevel::SMILOverride)
-            .find(|node| node.cascade_level() == CascadeLevel::SMILOverride)
-            .map(|node| node.get_animation_style())
     }
 }
 
