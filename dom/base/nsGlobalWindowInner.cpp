@@ -4475,17 +4475,21 @@ nsGlobalWindowInner::GetOwnerGlobalForBindings()
   return nsPIDOMWindowOuter::GetFromCurrentInner(this);
 }
 
-NS_IMETHODIMP
-nsGlobalWindowInner::DispatchEvent(nsIDOMEvent* aEvent, bool* aRetVal)
+bool
+nsGlobalWindowInner::DispatchEvent(Event& aEvent,
+                                   CallerType aCallerType,
+                                   ErrorResult& aRv)
 {
   if (!IsCurrentInnerWindow()) {
     NS_WARNING("DispatchEvent called on non-current inner window, dropping. "
                "Please check the window in the caller instead.");
-    return NS_ERROR_FAILURE;
+    aRv.Throw(NS_ERROR_FAILURE);
+    return false;
   }
 
   if (!mDoc) {
-    return NS_ERROR_FAILURE;
+    aRv.Throw(NS_ERROR_FAILURE);
+    return false;
   }
 
   
@@ -4493,10 +4497,12 @@ nsGlobalWindowInner::DispatchEvent(nsIDOMEvent* aEvent, bool* aRetVal)
 
   nsEventStatus status = nsEventStatus_eIgnore;
   nsresult rv = EventDispatcher::DispatchDOMEvent(ToSupports(this), nullptr,
-                                                  aEvent, presContext, &status);
-
-  *aRetVal = (status != nsEventStatus_eConsumeNoDefault);
-  return rv;
+                                                  &aEvent, presContext, &status);
+  bool retval = !aEvent.DefaultPrevented(aCallerType);
+  if (NS_FAILED(rv)) {
+    aRv.Throw(rv);
+  }
+  return retval;
 }
 
 NS_IMETHODIMP
@@ -4884,8 +4890,9 @@ nsGlobalWindowInner::FireHashchange(const nsAString &aOldURL,
 
   event->SetTrusted(true);
 
-  bool dummy;
-  return DispatchEvent(event, &dummy);
+  ErrorResult rv;
+  DispatchEvent(*event, rv);
+  return rv.StealNSResult();
 }
 
 nsresult
@@ -4929,8 +4936,9 @@ nsGlobalWindowInner::DispatchSyncPopState()
   event->SetTrusted(true);
   event->SetTarget(this);
 
-  bool dummy; 
-  return DispatchEvent(event, &dummy);
+  ErrorResult err;
+  DispatchEvent(*event, err);
+  return err.StealNSResult();
 }
 
 
@@ -5964,8 +5972,9 @@ nsGlobalWindowInner::Observe(nsISupports* aSubject, const char* aTopic,
     event->InitEvent(NS_LITERAL_STRING("languagechange"), false, false);
     event->SetTrusted(true);
 
-    bool dummy;
-    return DispatchEvent(event, &dummy);
+    ErrorResult rv;
+    DispatchEvent(*event, rv);
+    return rv.StealNSResult();
   }
 
   NS_WARNING("unrecognized topic in nsGlobalWindowInner::Observe");
@@ -6063,8 +6072,7 @@ nsGlobalWindowInner::ObserveStorageNotification(StorageEvent* aEvent,
     internalEvent->mFlags.mOnlyChromeDispatch = true;
   }
 
-  bool defaultActionEnabled;
-  DispatchEvent(clonedEvent, &defaultActionEnabled);
+  DispatchEvent(*clonedEvent);
 }
 
 already_AddRefed<StorageEvent>
@@ -7163,12 +7171,11 @@ nsGlobalWindowInner::DispatchVRDisplayActivate(uint32_t aDisplayID,
       
       
       event->SetTrusted(true);
-      bool defaultActionEnabled;
       
       
       
       display->StartHandlingVRNavigationEvent();
-      Unused << DispatchEvent(event, &defaultActionEnabled);
+      DispatchEvent(*event);
       display->StopHandlingVRNavigationEvent();
       
       
@@ -7202,8 +7209,7 @@ nsGlobalWindowInner::DispatchVRDisplayDeactivate(uint32_t aDisplayID,
                                     NS_LITERAL_STRING("vrdisplaydeactivate"),
                                     init);
       event->SetTrusted(true);
-      bool defaultActionEnabled;
-      Unused << DispatchEvent(event, &defaultActionEnabled);
+      DispatchEvent(*event);
       
       
       return;
@@ -7233,8 +7239,7 @@ nsGlobalWindowInner::DispatchVRDisplayConnect(uint32_t aDisplayID)
                                     NS_LITERAL_STRING("vrdisplayconnect"),
                                     init);
       event->SetTrusted(true);
-      bool defaultActionEnabled;
-      Unused << DispatchEvent(event, &defaultActionEnabled);
+      DispatchEvent(*event);
       
       
       return;
@@ -7264,8 +7269,7 @@ nsGlobalWindowInner::DispatchVRDisplayDisconnect(uint32_t aDisplayID)
                                     NS_LITERAL_STRING("vrdisplaydisconnect"),
                                     init);
       event->SetTrusted(true);
-      bool defaultActionEnabled;
-      Unused << DispatchEvent(event, &defaultActionEnabled);
+      DispatchEvent(*event);
       
       
       return;
@@ -7294,8 +7298,7 @@ nsGlobalWindowInner::DispatchVRDisplayPresentChange(uint32_t aDisplayID)
                                     NS_LITERAL_STRING("vrdisplaypresentchange"),
                                     init);
       event->SetTrusted(true);
-      bool defaultActionEnabled;
-      Unused << DispatchEvent(event, &defaultActionEnabled);
+      DispatchEvent(*event);
       
       
       return;

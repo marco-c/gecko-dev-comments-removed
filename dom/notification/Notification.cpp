@@ -1301,8 +1301,7 @@ Notification::DispatchNotificationClickEvent()
 
   event->SetTrusted(true);
   WantsPopupControlCheck popupControlCheck(event);
-  bool dummy;
-  target->DispatchEvent(event, &dummy);
+  target->DispatchEvent(*event);
   
   
   
@@ -1317,9 +1316,7 @@ Notification::DispatchClickEvent()
   event->InitEvent(NS_LITERAL_STRING("click"), false, true);
   event->SetTrusted(true);
   WantsPopupControlCheck popupControlCheck(event);
-  bool doDefaultAction = true;
-  DispatchEvent(event, &doDefaultAction);
-  return doDefaultAction;
+  return DispatchEvent(*event, CallerType::System, IgnoreErrors());
 }
 
 

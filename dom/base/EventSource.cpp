@@ -1524,9 +1524,9 @@ EventSourceImpl::DispatchAllMessageEvents()
                             Sequence<OwningNonNull<MessagePort>>());
     event->SetTrusted(true);
 
-    bool dummy;
-    rv = mEventSource->DispatchEvent(static_cast<Event*>(event), &dummy);
-    if (NS_FAILED(rv)) {
+    IgnoredErrorResult err;
+    mEventSource->DispatchEvent(*event, err);
+    if (err.Failed()) {
       NS_WARNING("Failed to dispatch the message event!!!");
       return;
     }
@@ -1946,8 +1946,9 @@ EventSource::CreateAndDispatchSimpleEvent(const nsAString& aName)
   
   event->InitEvent(aName, false, false);
   event->SetTrusted(true);
-  bool dummy;
-  return DispatchEvent(event, &dummy);
+  ErrorResult rv;
+  DispatchEvent(*event, rv);
+  return rv.StealNSResult();
 }
 
  already_AddRefed<EventSource>

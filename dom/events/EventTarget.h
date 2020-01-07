@@ -45,11 +45,15 @@ class EventTarget : public nsIDOMEventTarget,
 public:
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_EVENTTARGET_IID)
 
+  static EventTarget* From(nsIDOMEventTarget* aTarget)
+  {
+    return static_cast<EventTarget*>(aTarget);
+  }
+
   
   static already_AddRefed<EventTarget> Constructor(const GlobalObject& aGlobal,
                                                    ErrorResult& aRv);
   using nsIDOMEventTarget::AddEventListener;
-  using nsIDOMEventTarget::DispatchEvent;
   virtual void AddEventListener(const nsAString& aType,
                                 EventListener* aCallback,
                                 const AddEventListenerOptionsOrBoolean& aOptions,
@@ -75,7 +79,23 @@ public:
                                  nsIDOMEventListener* aListener,
                                  bool aUseCapture);
 
-  bool DispatchEvent(Event& aEvent, CallerType aCallerType, ErrorResult& aRv);
+  
+
+
+  virtual bool DispatchEvent(Event& aEvent, CallerType aCallerType,
+                             ErrorResult& aRv) = 0;
+
+  
+
+
+
+  void DispatchEvent(Event& aEvent);
+
+  
+
+
+
+  void DispatchEvent(Event& aEvent, ErrorResult& aRv);
 
   nsIGlobalObject* GetParentObject() const
   {

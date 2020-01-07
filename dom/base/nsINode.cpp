@@ -1139,8 +1139,8 @@ nsINode::ConvertPointFromNode(const DOMPointInit& aPoint,
                                        aCallerType, aRv);
 }
 
-nsresult
-nsINode::DispatchEvent(nsIDOMEvent *aEvent, bool* aRetVal)
+bool
+nsINode::DispatchEvent(Event& aEvent, CallerType aCallerType, ErrorResult& aRv)
 {
   
   
@@ -1148,8 +1148,7 @@ nsINode::DispatchEvent(nsIDOMEvent *aEvent, bool* aRetVal)
 
   
   if (!document) {
-    *aRetVal = true;
-    return NS_OK;
+    return true;
   }
 
   
@@ -1157,9 +1156,12 @@ nsINode::DispatchEvent(nsIDOMEvent *aEvent, bool* aRetVal)
 
   nsEventStatus status = nsEventStatus_eIgnore;
   nsresult rv =
-    EventDispatcher::DispatchDOMEvent(this, nullptr, aEvent, context, &status);
-  *aRetVal = (status != nsEventStatus_eConsumeNoDefault);
-  return rv;
+    EventDispatcher::DispatchDOMEvent(this, nullptr, &aEvent, context, &status);
+  bool retval = !aEvent.DefaultPrevented(aCallerType);
+  if (NS_FAILED(rv)) {
+    aRv.Throw(rv);
+  }
+  return retval;
 }
 
 nsresult
