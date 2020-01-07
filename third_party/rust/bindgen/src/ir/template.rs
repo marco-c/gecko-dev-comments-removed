@@ -109,17 +109,12 @@ pub trait TemplateParameters {
     
     
     fn self_template_params(&self, ctx: &BindgenContext)
-        -> Option<Vec<TypeId>>;
+        -> Vec<TypeId>;
 
     
     
-    
-    
-    
-    
-    
-    fn num_self_template_params(&self, ctx: &BindgenContext) -> Option<usize> {
-        self.self_template_params(ctx).map(|params| params.len())
+    fn num_self_template_params(&self, ctx: &BindgenContext) -> usize {
+        self.self_template_params(ctx).len()
     }
 
     
@@ -136,30 +131,20 @@ pub trait TemplateParameters {
     
     
     
-    fn all_template_params(&self, ctx: &BindgenContext) -> Option<Vec<TypeId>>
+    fn all_template_params(&self, ctx: &BindgenContext) -> Vec<TypeId>
     where
         Self: ItemAncestors,
     {
-        let each_self_params: Vec<Vec<_>> = self.ancestors(ctx)
-            .filter_map(|id| id.self_template_params(ctx))
-            .collect();
-        if each_self_params.is_empty() {
-            None
-        } else {
-            Some(
-                each_self_params
-                    .into_iter()
-                    .rev()
-                    .flat_map(|params| params)
-                    .collect(),
-            )
-        }
+        let ancestors: Vec<_> = self.ancestors(ctx).collect();
+        ancestors.into_iter().rev().flat_map(|id| {
+            id.self_template_params(ctx).into_iter()
+        }).collect()
     }
 
     
     
     
-    fn used_template_params(&self, ctx: &BindgenContext) -> Option<Vec<TypeId>>
+    fn used_template_params(&self, ctx: &BindgenContext) -> Vec<TypeId>
     where
         Self: AsRef<ItemId>,
     {
@@ -169,14 +154,10 @@ pub trait TemplateParameters {
         );
 
         let id = *self.as_ref();
-        ctx.resolve_item(id).all_template_params(ctx).map(
-            |all_params| {
-                all_params
+        ctx.resolve_item(id).all_template_params(ctx)
                     .into_iter()
                     .filter(|p| ctx.uses_template_parameter(id, *p))
                     .collect()
-            },
-        )
     }
 }
 

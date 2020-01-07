@@ -204,8 +204,10 @@ pub fn all_edges(_: &BindgenContext, _: Edge) -> bool {
 
 
 
-pub fn no_edges(_: &BindgenContext, _: Edge) -> bool {
-    false
+
+
+pub fn only_inner_type_edges(_: &BindgenContext, edge: Edge) -> bool {
+    edge.kind == EdgeKind::InnerType
 }
 
 

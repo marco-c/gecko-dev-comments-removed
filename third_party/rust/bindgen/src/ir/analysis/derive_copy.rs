@@ -234,7 +234,7 @@ impl<'ctx> MonotoneFramework for CannotDeriveCopy<'ctx> {
                 }
 
                 if info.kind() == CompKind::Union {
-                    if !self.ctx.options().rust_features().untagged_union() {
+                    if !self.ctx.options().rust_features().untagged_union {
                         
                         
                         
@@ -246,8 +246,8 @@ impl<'ctx> MonotoneFramework for CannotDeriveCopy<'ctx> {
                     }
 
                     
-                    if info.self_template_params(self.ctx).is_some() ||
-                        item.used_template_params(self.ctx).is_some()
+                    if !info.self_template_params(self.ctx).is_empty() ||
+                        !item.all_template_params(self.ctx).is_empty()
                     {
                         trace!(
                             "    comp cannot derive copy because issue 36640"

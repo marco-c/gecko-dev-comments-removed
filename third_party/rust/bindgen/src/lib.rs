@@ -4,6 +4,9 @@
 
 
 
+
+
+
 #![deny(missing_docs)]
 #![deny(warnings)]
 #![deny(unused_extern_crates)]
@@ -23,6 +26,7 @@ extern crate lazy_static;
 extern crate peeking_take_while;
 #[macro_use]
 extern crate quote;
+extern crate proc_macro2;
 extern crate regex;
 extern crate which;
 
@@ -79,8 +83,10 @@ use ir::context::{BindgenContext, ItemId};
 use ir::item::Item;
 use parse::{ClangItemParser, ParseError};
 use regex_set::RegexSet;
+pub use codegen::EnumVariation;
 
 use std::borrow::Cow;
+use std::collections::HashMap;
 use std::fs::{File, OpenOptions};
 use std::io::{self, Write};
 use std::iter;
@@ -155,6 +161,23 @@ impl Default for CodegenConfig {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[derive(Debug, Default)]
 pub struct Builder {
     options: BindgenOptions,
@@ -180,6 +203,16 @@ impl Builder {
 
         output_vector.push("--rust-target".into());
         output_vector.push(self.options.rust_target.into());
+
+        if self.options.default_enum_style != Default::default() {
+            output_vector.push("--default-enum-variant=".into());
+            output_vector.push(match self.options.default_enum_style {
+                codegen::EnumVariation::Rust => "rust",
+                codegen::EnumVariation::Bitfield => "bitfield",
+                codegen::EnumVariation::Consts => "consts",
+                codegen::EnumVariation::ModuleConsts => "moduleconsts",
+            }.into())
+        }
 
         self.options
             .bitfield_enums
@@ -215,6 +248,20 @@ impl Builder {
             .iter()
             .map(|item| {
                 output_vector.push("--constified-enum-module".into());
+                output_vector.push(
+                    item.trim_left_matches("^")
+                        .trim_right_matches("$")
+                        .into(),
+                );
+            })
+            .count();
+
+        self.options
+            .constified_enums
+            .get_items()
+            .iter()
+            .map(|item| {
+                output_vector.push("--constified-enum".into());
                 output_vector.push(
                     item.trim_left_matches("^")
                         .trim_right_matches("$")
@@ -326,19 +373,6 @@ impl Builder {
             output_vector.push("--disable-name-namespacing".into());
         }
 
-        self.options
-            .links
-            .iter()
-            .map(|&(ref item, _)| {
-                output_vector.push("--framework".into());
-                output_vector.push(
-                    item.trim_left_matches("^")
-                        .trim_right_matches("$")
-                        .into(),
-                );
-            })
-            .count();
-
         if !self.options.codegen_config.functions {
             output_vector.push("--ignore-functions".into());
         }
@@ -372,19 +406,6 @@ impl Builder {
             output_vector.push("--ignore-methods".into());
         }
 
-        self.options
-            .links
-            .iter()
-            .map(|&(ref item, _)| {
-                output_vector.push("--clang-args".into());
-                output_vector.push(
-                    item.trim_left_matches("^")
-                        .trim_right_matches("$")
-                        .into(),
-                );
-            })
-            .count();
-
         if !self.options.convert_floats {
             output_vector.push("--no-convert-floats".into());
         }
@@ -412,19 +433,6 @@ impl Builder {
             .iter()
             .map(|item| {
                 output_vector.push("--raw-line".into());
-                output_vector.push(
-                    item.trim_left_matches("^")
-                        .trim_right_matches("$")
-                        .into(),
-                );
-            })
-            .count();
-
-        self.options
-            .links
-            .iter()
-            .map(|&(ref item, _)| {
-                output_vector.push("--static".into());
                 output_vector.push(
                     item.trim_left_matches("^")
                         .trim_right_matches("$")
@@ -601,6 +609,12 @@ impl Builder {
     }
 
     
+    pub fn disable_untagged_union(mut self) -> Self {
+        self.options.rust_features.untagged_union = false;
+        self
+    }
+
+    
     pub fn emit_ir_graphviz<T: Into<String>>(mut self, path: T) -> Builder {
         let path = path.into();
         self.options.emit_ir_graphviz = Some(path);
@@ -740,6 +754,11 @@ impl Builder {
         self.whitelist_var(arg)
     }
 
+    
+    pub fn default_enum_style(mut self, arg: codegen::EnumVariation) -> Builder {
+        self.options.default_enum_style = arg;
+        self
+    }
 
     
     
@@ -768,6 +787,13 @@ impl Builder {
 
     
     
+    pub fn constified_enum<T: AsRef<str>>(mut self, arg: T) -> Builder {
+        self.options.constified_enums.insert(arg);
+        self
+    }
+
+    
+    
     
     
     
@@ -778,8 +804,37 @@ impl Builder {
 
     
     
-    pub fn raw_line<T: Into<String>>(mut self, arg: T) -> Builder {
+    pub fn raw_line<T: Into<String>>(mut self, arg: T) -> Self {
         self.options.raw_lines.push(arg.into());
+        self
+    }
+
+    
+    pub fn module_raw_line<T, U>(mut self, mod_: T, line: U) -> Self
+    where
+        T: Into<String>,
+        U: Into<String>,
+    {
+        self.options
+            .module_lines
+            .entry(mod_.into())
+            .or_insert_with(Vec::new)
+            .push(line.into());
+        self
+    }
+
+    
+    pub fn module_raw_lines<T, I>(mut self, mod_: T, lines: I) -> Self
+    where
+        T: Into<String>,
+        I: IntoIterator,
+        I::Item: Into<String>,
+    {
+        self.options
+            .module_lines
+            .entry(mod_.into())
+            .or_insert_with(Vec::new)
+            .extend(lines.into_iter().map(Into::into));
         self
     }
 
@@ -798,26 +853,6 @@ impl Builder {
         for arg in iter {
             self = self.clang_arg(arg.as_ref())
         }
-        self
-    }
-
-    
-    pub fn link<T: Into<String>>(mut self, library: T) -> Builder {
-        self.options.links.push((library.into(), LinkType::Default));
-        self
-    }
-
-    
-    pub fn link_static<T: Into<String>>(mut self, library: T) -> Builder {
-        self.options.links.push((library.into(), LinkType::Static));
-        self
-    }
-
-    
-    pub fn link_framework<T: Into<String>>(mut self, library: T) -> Builder {
-        self.options.links.push(
-            (library.into(), LinkType::Framework),
-        );
         self
     }
 
@@ -1243,6 +1278,9 @@ struct BindgenOptions {
     whitelisted_vars: RegexSet,
 
     
+    default_enum_style: codegen::EnumVariation,
+
+    
     bitfield_enums: RegexSet,
 
     
@@ -1252,10 +1290,10 @@ struct BindgenOptions {
     constified_enum_modules: RegexSet,
 
     
-    builtins: bool,
+    constified_enums: RegexSet,
 
     
-    links: Vec<(String, LinkType)>,
+    builtins: bool,
 
     
     emit_ast: bool,
@@ -1336,7 +1374,13 @@ struct BindgenOptions {
     convert_floats: bool,
 
     
+    
     raw_lines: Vec<String>,
+
+    
+    
+    
+    module_lines: HashMap<String, Vec<String>>,
 
     
     clang_args: Vec<String>,
@@ -1423,6 +1467,7 @@ impl BindgenOptions {
         self.blacklisted_types.build();
         self.opaque_types.build();
         self.bitfield_enums.build();
+        self.constified_enums.build();
         self.constified_enum_modules.build();
         self.rustified_enums.build();
         self.no_partialeq_types.build();
@@ -1457,11 +1502,12 @@ impl Default for BindgenOptions {
             whitelisted_types: Default::default(),
             whitelisted_functions: Default::default(),
             whitelisted_vars: Default::default(),
+            default_enum_style: Default::default(),
             bitfield_enums: Default::default(),
             rustified_enums: Default::default(),
+            constified_enums: Default::default(),
             constified_enum_modules: Default::default(),
             builtins: false,
-            links: vec![],
             emit_ast: false,
             emit_ir: false,
             emit_ir_graphviz: None,
@@ -1484,6 +1530,7 @@ impl Default for BindgenOptions {
             msvc_mangling: false,
             convert_floats: true,
             raw_lines: vec![],
+            module_lines: HashMap::default(),
             clang_args: vec![],
             input_header: None,
             input_unsaved_files: vec![],
@@ -1504,19 +1551,6 @@ impl Default for BindgenOptions {
             no_hash_types: Default::default(),
         }
     }
-}
-
-
-
-
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum LinkType {
-    
-    Default,
-    
-    Static,
-    
-    Framework,
 }
 
 fn ensure_libclang_is_loaded() {
@@ -1696,7 +1730,7 @@ impl Bindings {
             writer.write("\n".as_bytes())?;
         }
 
-        let bindings = self.module.as_str().to_string();
+        let bindings = self.module.to_string();
 
         match self.rustfmt_generated_string(&bindings) {
             Ok(rustfmt_bindings) => {
@@ -1704,7 +1738,7 @@ impl Bindings {
             },
             Err(err) => {
                 eprintln!("{:?}", err);
-                writer.write(bindings.as_str().as_bytes())?;
+                writer.write(bindings.as_bytes())?;
             },
         }
         Ok(())
