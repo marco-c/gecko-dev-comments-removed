@@ -7401,7 +7401,7 @@ nsTextFrame::GetSelectionStatus(int16_t* aSelectionFlags)
 }
 
 bool
-nsTextFrame::IsVisibleInSelection(nsISelection* aSelection)
+nsTextFrame::IsVisibleInSelection(Selection* aSelection)
 {
   
   if (!GetContent()->IsSelectionDescendant())

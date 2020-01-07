@@ -614,10 +614,7 @@ DragDataProducer::Produce(DataTransfer* aDataTransfer,
 
   if (isChromeShell && textControl) {
     
-    bool selectionContainsTarget = false;
-    nsCOMPtr<nsIDOMNode> targetNode = do_QueryInterface(mSelectionTargetNode);
-    selection->ContainsNode(targetNode, false, &selectionContainsTarget);
-    if (!selectionContainsTarget)
+    if (!selection->ContainsNode(*mSelectionTargetNode, false, IgnoreErrors()))
       return NS_OK;
 
     selection.swap(*aSelection);
@@ -956,14 +953,8 @@ DragDataProducer::GetDraggableSelectionData(Selection* inSelection,
   *outImageOrLinkNode = nullptr;
   *outDragSelectedText = false;
 
-  bool selectionContainsTarget = false;
-
   if (!inSelection->IsCollapsed()) {
-    nsCOMPtr<nsIDOMNode> realTargetNode = do_QueryInterface(inRealTargetNode);
-    inSelection->ContainsNode(realTargetNode, false,
-                              &selectionContainsTarget);
-
-    if (selectionContainsTarget) {
+    if (inSelection->ContainsNode(*inRealTargetNode, false, IgnoreErrors())) {
       
       nsINode* selectionStart = inSelection->GetAnchorNode();
       nsINode* selectionEnd = inSelection->GetFocusNode();

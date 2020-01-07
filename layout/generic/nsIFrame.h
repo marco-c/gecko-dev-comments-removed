@@ -114,6 +114,10 @@ class Layer;
 class LayerManager;
 } 
 
+namespace dom {
+class Selection;
+} 
+
 } 
 
 
@@ -3491,7 +3495,7 @@ public:
 
 
 
-  virtual bool IsVisibleInSelection(nsISelection* aSelection);
+  virtual bool IsVisibleInSelection(mozilla::dom::Selection* aSelection);
 
   
 

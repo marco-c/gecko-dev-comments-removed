@@ -283,6 +283,12 @@ public:
 
   void Stringify(nsAString& aResult);
 
+  
+
+
+
+
+
   bool ContainsNode(nsINode& aNode, bool aPartlyContained, mozilla::ErrorResult& aRv);
 
   
