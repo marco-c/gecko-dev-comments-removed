@@ -246,14 +246,14 @@
 #include "mozilla/dom/FontFaceSet.h"
 #include "gfxPrefs.h"
 #include "nsISupportsPrimitives.h"
-#include "mozilla/ServoStyleSet.h"
+#include "mozilla/StyleSetHandle.h"
+#include "mozilla/StyleSetHandleInlines.h"
 #include "mozilla/StyleSheet.h"
 #include "mozilla/StyleSheetInlines.h"
 #include "mozilla/dom/SVGSVGElement.h"
 #include "mozilla/dom/DocGroup.h"
 #include "mozilla/dom/TabGroup.h"
 #ifdef MOZ_XUL
-#include "mozilla/dom/ContainerBoxObject.h"
 #include "mozilla/dom/ListBoxObject.h"
 #include "mozilla/dom/MenuBoxObject.h"
 #include "mozilla/dom/PopupBoxObject.h"
@@ -2456,7 +2456,7 @@ nsIDocument::RemoveDocStyleSheetsFromStyleSets()
     if (sheet->IsApplicable()) {
       nsCOMPtr<nsIPresShell> shell = GetShell();
       if (shell) {
-        shell->StyleSet()->RemoveDocStyleSheet(sheet->AsServo());
+        shell->StyleSet()->RemoveDocStyleSheet(sheet);
       }
     }
     
@@ -2475,7 +2475,7 @@ nsIDocument::RemoveStyleSheetsFromStyleSets(
     if (sheet->IsApplicable()) {
       nsCOMPtr<nsIPresShell> shell = GetShell();
       if (shell) {
-        shell->StyleSet()->RemoveStyleSheet(aType, sheet->AsServo());
+        shell->StyleSet()->RemoveStyleSheet(aType, sheet);
       }
     }
     
@@ -2537,18 +2537,18 @@ nsIDocument::ResetStylesheetsToURI(nsIURI* aURI)
 }
 
 static void
-AppendSheetsToStyleSet(ServoStyleSet* aStyleSet,
+AppendSheetsToStyleSet(StyleSetHandle aStyleSet,
                        const nsTArray<RefPtr<StyleSheet>>& aSheets,
                        SheetType aType)
 {
   for (StyleSheet* sheet : Reversed(aSheets)) {
-    aStyleSet->AppendStyleSheet(aType, sheet->AsServo());
+    aStyleSet->AppendStyleSheet(aType, sheet);
   }
 }
 
 
 void
-nsIDocument::FillStyleSet(ServoStyleSet* aStyleSet)
+nsIDocument::FillStyleSet(StyleSetHandle aStyleSet)
 {
   NS_PRECONDITION(aStyleSet, "Must have a style set");
   NS_PRECONDITION(aStyleSet->SheetCount(SheetType::Doc) == 0,
@@ -2558,7 +2558,7 @@ nsIDocument::FillStyleSet(ServoStyleSet* aStyleSet)
 
   for (StyleSheet* sheet : Reversed(mStyleSheets)) {
     if (sheet->IsApplicable()) {
-      aStyleSet->AddDocStyleSheet(sheet->AsServo(), this);
+      aStyleSet->AddDocStyleSheet(sheet, this);
     }
   }
 
@@ -2566,14 +2566,14 @@ nsIDocument::FillStyleSet(ServoStyleSet* aStyleSet)
     nsTArray<RefPtr<StyleSheet>>& sheets =
       *sheetService->AuthorStyleSheets();
     for (StyleSheet* sheet : sheets) {
-      aStyleSet->AppendStyleSheet(SheetType::Doc, sheet->AsServo());
+      aStyleSet->AppendStyleSheet(SheetType::Doc, sheet);
     }
   }
 
   
   for (StyleSheet* sheet : Reversed(mOnDemandBuiltInUASheets)) {
     if (sheet->IsApplicable()) {
-      aStyleSet->PrependStyleSheet(SheetType::Agent, sheet->AsServo());
+      aStyleSet->PrependStyleSheet(SheetType::Agent, sheet);
     }
   }
 
@@ -3877,19 +3877,19 @@ AssertNoStaleServoDataIn(const nsINode& aSubtreeRoot)
 already_AddRefed<nsIPresShell>
 nsIDocument::CreateShell(nsPresContext* aContext,
                          nsViewManager* aViewManager,
-                         UniquePtr<ServoStyleSet> aStyleSet)
+                         StyleSetHandle aStyleSet)
 {
   NS_ASSERTION(!mPresShell, "We have a presshell already!");
 
   NS_ENSURE_FALSE(GetBFCacheEntry(), nullptr);
 
-  FillStyleSet(aStyleSet.get());
+  FillStyleSet(aStyleSet);
   AssertNoStaleServoDataIn(static_cast<nsINode&>(*this));
 
   RefPtr<PresShell> shell = new PresShell;
   
   mPresShell = shell;
-  shell->Init(this, aContext, aViewManager, Move(aStyleSet));
+  shell->Init(this, aContext, aViewManager, aStyleSet);
 
   
   nsCOMPtr<nsIDocShell> docShell(mDocumentContainer);
@@ -4310,7 +4310,7 @@ nsIDocument::AddOnDemandBuiltInUASheet(StyleSheet* aSheet)
       
       
       
-      shell->StyleSet()->PrependStyleSheet(SheetType::Agent, aSheet->AsServo());
+      shell->StyleSet()->PrependStyleSheet(SheetType::Agent, aSheet);
     }
   }
 
@@ -4322,7 +4322,7 @@ nsIDocument::AddStyleSheetToStyleSets(StyleSheet* aSheet)
 {
   nsCOMPtr<nsIPresShell> shell = GetShell();
   if (shell) {
-    shell->StyleSet()->AddDocStyleSheet(aSheet->AsServo(), this);
+    shell->StyleSet()->AddDocStyleSheet(aSheet, this);
   }
 }
 
@@ -4389,7 +4389,7 @@ nsIDocument::RemoveStyleSheetFromStyleSets(StyleSheet* aSheet)
 {
   nsCOMPtr<nsIPresShell> shell = GetShell();
   if (shell) {
-    shell->StyleSet()->RemoveDocStyleSheet(aSheet->AsServo());
+    shell->StyleSet()->RemoveDocStyleSheet(aSheet);
   }
 }
 
@@ -4610,7 +4610,7 @@ nsIDocument::AddAdditionalStyleSheet(additionalSheetType aType, StyleSheet* aShe
   nsCOMPtr<nsIPresShell> shell = GetShell();
   if (shell) {
     SheetType type = ConvertAdditionalSheetType(aType);
-    shell->StyleSet()->AppendStyleSheet(type, aSheet->AsServo());
+    shell->StyleSet()->AppendStyleSheet(type, aSheet);
   }
 
   
@@ -4638,7 +4638,7 @@ nsIDocument::RemoveAdditionalStyleSheet(additionalSheetType aType, nsIURI* aShee
       nsCOMPtr<nsIPresShell> shell = GetShell();
       if (shell) {
         SheetType type = ConvertAdditionalSheetType(aType);
-        shell->StyleSet()->RemoveStyleSheet(type, sheetRef->AsServo());
+        shell->StyleSet()->RemoveStyleSheet(type, sheetRef);
       }
     }
 
@@ -6493,11 +6493,7 @@ nsIDocument::GetBoxObjectFor(Element* aElement, ErrorResult& aRv)
   RefPtr<nsAtom> tag = BindingManager()->ResolveTag(aElement, &namespaceID);
 #ifdef MOZ_XUL
   if (namespaceID == kNameSpaceID_XUL) {
-    if (tag == nsGkAtoms::browser ||
-        tag == nsGkAtoms::editor ||
-        tag == nsGkAtoms::iframe) {
-      boxObject = new ContainerBoxObject();
-    } else if (tag == nsGkAtoms::menu) {
+    if (tag == nsGkAtoms::menu) {
       boxObject = new MenuBoxObject();
     } else if (tag == nsGkAtoms::popup ||
                tag == nsGkAtoms::menupopup ||

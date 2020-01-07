@@ -76,7 +76,7 @@ nsMenuBarListener::nsMenuBarListener(nsMenuBarFrame* aMenuBarFrame,
                   NS_LITERAL_STRING("MozDOMFullscreen:Entered"), this, false);
 
   
-  RefPtr<EventTarget> topWindowEventTarget =
+  RefPtr<dom::EventTarget> topWindowEventTarget =
     nsContentUtils::GetWindowRoot(aMenuBarContent->GetComposedDoc());
   mTopWindowEventTarget = topWindowEventTarget.get();
 
