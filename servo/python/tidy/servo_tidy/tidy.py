@@ -30,11 +30,14 @@ wpt = os.path.join(topdir, "tests", "wpt")
 def wpt_path(*args):
     return os.path.join(wpt, *args)
 
-sys.path.append(wpt_path("web-platform-tests", "tools", "wptrunner", "wptrunner"))
-from wptmanifest import parser, node
-
 CONFIG_FILE_PATH = os.path.join(".", "servo-tidy.toml")
 WPT_MANIFEST_PATH = wpt_path("include.ini")
+
+
+
+if os.path.isfile(WPT_MANIFEST_PATH):
+    sys.path.append(wpt_path("web-platform-tests", "tools", "wptrunner", "wptrunner"))
+    from wptmanifest import parser, node
 
 
 config = {
@@ -1166,7 +1169,10 @@ def scan(only_changed_files=False, progress=True, stylo=False):
     
     config_errors = check_config_file(CONFIG_FILE_PATH)
     
-    manifest_errors = check_manifest_dirs(WPT_MANIFEST_PATH)
+    if os.path.isfile(WPT_MANIFEST_PATH):
+        manifest_errors = check_manifest_dirs(WPT_MANIFEST_PATH)
+    else:
+        manifest_errors = ()
     
     directory_errors = check_directory_files(config['check_ext'])
     
