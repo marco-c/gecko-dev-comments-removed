@@ -106,7 +106,8 @@ select.playback-rate-selector.devtools-button:not(:empty):not(:disabled):not(.ch
   z-index: 2;
 }
 
-.current-time-scrubber-area::before {
+.current-time-scrubber-area:dir(ltr)::before,
+.current-time-scrubber-area:dir(rtl)::after {
   content: "";
   cursor: col-resize;
   height: var(--devtools-toolbar-height);
@@ -114,6 +115,11 @@ select.playback-rate-selector.devtools-button:not(:empty):not(:disabled):not(.ch
   position: absolute;
   
   width: calc(100% + 1px);
+}
+
+.current-time-scrubber-area:dir(rtl)::after {
+  
+  margin-inline-start: -1px;
 }
 
 .indication-bar.current-time-scrubber {
