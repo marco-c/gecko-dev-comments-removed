@@ -27,7 +27,8 @@ add_connection_test("symantec-not-whitelisted-after-cutoff.example.com",
 
 
 add_connection_test("symantec-not-whitelisted-before-cutoff.example.com",
-                    SEC_ERROR_UNKNOWN_ISSUER, null, null);
+                    MOZILLA_PKIX_ERROR_ADDITIONAL_POLICY_CONSTRAINT_FAILED,
+                    null, null);
 
 
 add_test(function() {
