@@ -88,5 +88,6 @@ var AndroidLog = {
 
 if (typeof Components == "undefined") {
   
+  
   module.exports = AndroidLog;
 }
