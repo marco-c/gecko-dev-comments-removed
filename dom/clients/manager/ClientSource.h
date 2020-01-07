@@ -101,6 +101,13 @@ public:
   
   
   
+  void
+  WorkerSyncPing(mozilla::dom::workers::WorkerPrivate* aWorkerPrivate);
+
+  
+  
+  
+  
   
   
   

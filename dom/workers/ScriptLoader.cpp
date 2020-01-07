@@ -570,6 +570,7 @@ class ScriptLoaderRunnable final : public nsIRunnable,
   nsCOMPtr<nsIEventTarget> mSyncLoopTarget;
   nsTArray<ScriptLoadInfo> mLoadInfos;
   RefPtr<CacheCreator> mCacheCreator;
+  Maybe<ServiceWorkerDescriptor> mController;
   bool mIsMainScript;
   WorkerScriptType mWorkerScriptType;
   bool mCanceled;
@@ -1215,6 +1216,10 @@ private:
       if (parent) {
         
         mWorkerPrivate->SetXHRParamsAllowed(parent->XHRParamsAllowed());
+      }
+
+      if (chanLoadInfo) {
+        mController = chanLoadInfo->GetController();
       }
     }
 
@@ -1984,6 +1989,9 @@ ScriptExecutorRunnable::WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate)
     
     
     if (mIsWorkerScript) {
+      if (mScriptLoader.mController.isSome()) {
+        aWorkerPrivate->Control(mScriptLoader.mController.ref());
+      }
       aWorkerPrivate->ExecutionReady();
     }
 

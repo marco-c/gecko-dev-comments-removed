@@ -37,6 +37,8 @@
 #include "mozilla/SystemGroup.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/dom/BindingUtils.h"
+#include "mozilla/dom/ClientHandle.h"
+#include "mozilla/dom/ClientManager.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/ErrorEvent.h"
 #include "mozilla/dom/Headers.h"
@@ -2324,7 +2326,7 @@ ServiceWorkerManager::MaybeCheckNavigationUpdate(nsIDocument* aDoc)
   }
 }
 
-void
+RefPtr<GenericPromise>
 ServiceWorkerManager::StartControllingADocument(ServiceWorkerRegistrationInfo* aRegistration,
                                                 nsIDocument* aDoc,
                                                 const nsAString& aDocumentId)
@@ -2337,12 +2339,34 @@ ServiceWorkerManager::StartControllingADocument(ServiceWorkerRegistrationInfo* a
   MOZ_DIAGNOSTIC_ASSERT(storageAllowed == nsContentUtils::StorageAccess::eAllow);
 #endif 
 
+  RefPtr<GenericPromise> ref = GenericPromise::CreateAndResolve(true, __func__);
+
   aRegistration->StartControllingADocument();
   mControlledDocuments.Put(aDoc, aRegistration);
   if (!aDocumentId.IsEmpty()) {
     aDoc->SetId(aDocumentId);
   }
+
+  
+  
+  
+  
+  ServiceWorkerInfo* activeWorker = aRegistration->GetActive();
+  nsPIDOMWindowInner* innerWindow = aDoc->GetInnerWindow();
+  if (activeWorker && innerWindow) {
+    Maybe<ClientInfo> clientInfo = innerWindow->GetClientInfo();
+    if (clientInfo.isSome()) {
+      RefPtr<ClientHandle> clientHandle =
+        ClientManager::CreateHandle(clientInfo.ref(),
+                                    SystemGroup::EventTargetFor(TaskCategory::Other));
+      if (clientHandle) {
+        ref = Move(clientHandle->Control(activeWorker->Descriptor()));
+      }
+    }
+  }
+
   Telemetry::Accumulate(Telemetry::SERVICE_WORKER_CONTROLLED_DOCUMENTS, 1);
+  return Move(ref);
 }
 
 void
@@ -2651,6 +2675,48 @@ ServiceWorkerManager::DispatchFetchEvent(const OriginAttributes& aOriginAttribut
     if (!serviceWorker) {
       aRv.Throw(NS_ERROR_FAILURE);
       return;
+    }
+
+    
+    
+    nsCOMPtr<nsILoadInfo> loadInfo = internalChannel->GetLoadInfo();
+    if (loadInfo) {
+      Maybe<ClientInfo> clientInfo = loadInfo->GetReservedClientInfo();
+
+      
+      
+      
+      
+      if (clientInfo.isNothing()) {
+        clientInfo = loadInfo->GetInitialClientInfo();
+
+        
+        
+        
+        
+        
+        
+        
+        
+      }
+
+      if (clientInfo.isSome()) {
+        
+        
+        
+        RefPtr<ClientHandle> clientHandle =
+          ClientManager::CreateHandle(clientInfo.ref(),
+                                      SystemGroup::EventTargetFor(TaskCategory::Other));
+        if (clientHandle) {
+          clientHandle->Control(serviceWorker->Descriptor());
+        }
+      }
+
+      
+      
+      
+      
+      loadInfo->SetController(serviceWorker->Descriptor());
     }
 
     AddNavigationInterception(serviceWorker->Scope(), aChannel);

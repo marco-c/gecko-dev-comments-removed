@@ -1790,6 +1790,13 @@ nsGlobalWindowInner::EnsureClientSource()
   
   
   
+  
+  
+  
+  
+  
+  
+  
   if (!mClientSource) {
     mClientSource = ClientManager::CreateSource(ClientType::Window,
                                                 EventTargetFor(TaskCategory::Other),
@@ -1798,6 +1805,17 @@ nsGlobalWindowInner::EnsureClientSource()
       return NS_ERROR_FAILURE;
     }
     newClientSource = true;
+  }
+
+  
+  
+  
+  
+  if (loadInfo) {
+    const Maybe<ServiceWorkerDescriptor> controller = loadInfo->GetController();
+    if (controller.isSome()) {
+      mClientSource->SetController(controller.ref());
+    }
   }
 
   
@@ -2280,6 +2298,12 @@ Maybe<ClientInfo>
 nsPIDOMWindowInner::GetClientInfo() const
 {
   return Move(nsGlobalWindowInner::Cast(this)->GetClientInfo());
+}
+
+Maybe<ServiceWorkerDescriptor>
+nsPIDOMWindowInner::GetController() const
+{
+  return Move(nsGlobalWindowInner::Cast(this)->GetController());
 }
 
 void
@@ -6116,6 +6140,17 @@ nsGlobalWindowInner::GetClientInfo() const
     clientInfo.emplace(mClientSource->Info());
   }
   return Move(clientInfo);
+}
+
+Maybe<ServiceWorkerDescriptor>
+nsGlobalWindowInner::GetController() const
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  Maybe<ServiceWorkerDescriptor> controller;
+  if (mClientSource) {
+    controller = mClientSource->GetController();
+  }
+  return Move(controller);
 }
 
 nsresult

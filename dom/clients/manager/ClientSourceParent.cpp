@@ -20,6 +20,7 @@
 namespace mozilla {
 namespace dom {
 
+using mozilla::ipc::AssertIsOnBackgroundThread;
 using mozilla::ipc::BackgroundParent;
 using mozilla::ipc::IPCResult;
 using mozilla::ipc::PrincipalInfo;
@@ -80,6 +81,15 @@ ClientSourceParent::KillInvalidChild()
   
   nsCOMPtr<nsIRunnable> r = new KillContentParentRunnable(Move(process));
   MOZ_ALWAYS_SUCCEEDS(SystemGroup::Dispatch(TaskCategory::Other, r.forget()));
+}
+
+mozilla::ipc::IPCResult
+ClientSourceParent::RecvWorkerSyncPing()
+{
+  AssertIsOnBackgroundThread();
+  
+  
+  return IPC_OK();
 }
 
 IPCResult

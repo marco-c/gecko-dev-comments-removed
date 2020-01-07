@@ -5333,6 +5333,29 @@ WorkerPrivate::EnsureClientSource()
     mClientSource->Freeze();
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (Type() != WorkerTypeService && !IsChromeWorker()) {
+    mClientSource->WorkerSyncPing(this);
+  }
+
   return true;
 }
 
@@ -5342,6 +5365,16 @@ WorkerPrivate::GetClientInfo() const
   AssertIsOnWorkerThread();
   MOZ_DIAGNOSTIC_ASSERT(mClientSource);
   return mClientSource->Info();
+}
+
+void
+WorkerPrivate::Control(const ServiceWorkerDescriptor& aServiceWorker)
+{
+  AssertIsOnWorkerThread();
+  MOZ_DIAGNOSTIC_ASSERT(mClientSource);
+  MOZ_DIAGNOSTIC_ASSERT(!IsChromeWorker());
+  MOZ_DIAGNOSTIC_ASSERT(Type() != WorkerTypeService);
+  mClientSource->SetController(aServiceWorker);
 }
 
 void
