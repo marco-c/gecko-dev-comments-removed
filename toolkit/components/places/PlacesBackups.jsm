@@ -215,13 +215,11 @@ this.PlacesBackups = {
 
 
 
-
   getDateForFile: function PB_getDateForFile(aBackupFile) {
-    let filename = (aBackupFile instanceof Ci.nsIFile) ? aBackupFile.leafName
-                                                       : OS.Path.basename(aBackupFile);
+    let filename = OS.Path.basename(aBackupFile);
     let matches = filename.match(filenamesRegex);
     if (!matches)
-      throw ("Invalid backup file name: " + filename);
+      throw new Error(`Invalid backup file name: ${filename}`);
     return new Date(matches[1].replace(/-/g, "/"));
   },
 

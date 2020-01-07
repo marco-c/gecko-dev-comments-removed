@@ -13,8 +13,6 @@ ChromeUtils.defineModuleGetter(this, "NetUtil",
   "resource://gre/modules/NetUtil.jsm");
 ChromeUtils.defineModuleGetter(this, "PlacesBackups",
   "resource://gre/modules/PlacesBackups.jsm");
-ChromeUtils.defineModuleGetter(this, "Deprecated",
-  "resource://gre/modules/Deprecated.jsm");
 
 XPCOMUtils.defineLazyGetter(this, "gTextDecoder", () => new TextDecoder());
 XPCOMUtils.defineLazyGetter(this, "gTextEncoder", () => new TextEncoder());
@@ -79,34 +77,24 @@ this.BookmarkJSONUtils = Object.freeze({
 
 
 
+  async importFromFile(aFilePath, aReplace) {
+    notifyObservers(PlacesUtils.TOPIC_BOOKMARKS_RESTORE_BEGIN, aReplace);
+    try {
+      if (!(await OS.File.exists(aFilePath)))
+        throw new Error("Cannot restore from nonexisting json file");
 
-  importFromFile: function BJU_importFromFile(aFilePath, aReplace) {
-    if (aFilePath instanceof Ci.nsIFile) {
-      Deprecated.warning("Passing an nsIFile to BookmarksJSONUtils.importFromFile " +
-                         "is deprecated. Please use an OS.File path string instead.",
-                         "https://developer.mozilla.org/docs/JavaScript_OS.File");
-      aFilePath = aFilePath.path;
-    }
-
-    return (async function() {
-      notifyObservers(PlacesUtils.TOPIC_BOOKMARKS_RESTORE_BEGIN, aReplace);
-      try {
-        if (!(await OS.File.exists(aFilePath)))
-          throw new Error("Cannot restore from nonexisting json file");
-
-        let importer = new BookmarkImporter(aReplace);
-        if (aFilePath.endsWith("jsonlz4")) {
-          await importer.importFromCompressedFile(aFilePath);
-        } else {
-          await importer.importFromURL(OS.Path.toFileURI(aFilePath));
-        }
-        notifyObservers(PlacesUtils.TOPIC_BOOKMARKS_RESTORE_SUCCESS, aReplace);
-      } catch (ex) {
-        Cu.reportError("Failed to restore bookmarks from " + aFilePath + ": " + ex);
-        notifyObservers(PlacesUtils.TOPIC_BOOKMARKS_RESTORE_FAILED, aReplace);
-        throw ex;
+      let importer = new BookmarkImporter(aReplace);
+      if (aFilePath.endsWith("jsonlz4")) {
+        await importer.importFromCompressedFile(aFilePath);
+      } else {
+        await importer.importFromURL(OS.Path.toFileURI(aFilePath));
       }
-    })();
+      notifyObservers(PlacesUtils.TOPIC_BOOKMARKS_RESTORE_SUCCESS, aReplace);
+    } catch (ex) {
+      Cu.reportError("Failed to restore bookmarks from " + aFilePath + ": " + ex);
+      notifyObservers(PlacesUtils.TOPIC_BOOKMARKS_RESTORE_FAILED, aReplace);
+      throw ex;
+    }
   },
 
   
@@ -126,45 +114,36 @@ this.BookmarkJSONUtils = Object.freeze({
 
 
 
-
-  exportToFile: function BJU_exportToFile(aFilePath, aOptions = {}) {
-    if (aFilePath instanceof Ci.nsIFile) {
-      Deprecated.warning("Passing an nsIFile to BookmarksJSONUtils.exportToFile " +
-                         "is deprecated. Please use an OS.File path string instead.",
-                         "https://developer.mozilla.org/docs/JavaScript_OS.File");
-      aFilePath = aFilePath.path;
+  async exportToFile(aFilePath, aOptions = {}) {
+    let [bookmarks, count] = await PlacesBackups.getBookmarksTree();
+    let startTime = Date.now();
+    let jsonString = JSON.stringify(bookmarks);
+    
+    try {
+      Services.telemetry
+              .getHistogramById("PLACES_BACKUPS_TOJSON_MS")
+              .add(Date.now() - startTime);
+    } catch (ex) {
+      Components.utils.reportError("Unable to report telemetry.");
     }
-    return (async function() {
-      let [bookmarks, count] = await PlacesBackups.getBookmarksTree();
-      let startTime = Date.now();
-      let jsonString = JSON.stringify(bookmarks);
-      
-      try {
-        Services.telemetry
-                .getHistogramById("PLACES_BACKUPS_TOJSON_MS")
-                .add(Date.now() - startTime);
-      } catch (ex) {
-        Components.utils.reportError("Unable to report telemetry.");
-      }
 
-      let hash = generateHash(jsonString);
+    let hash = generateHash(jsonString);
 
-      if (hash === aOptions.failIfHashIs) {
-        let e = new Error("Hash conflict");
-        e.becauseSameHash = true;
-        throw e;
-      }
+    if (hash === aOptions.failIfHashIs) {
+      let e = new Error("Hash conflict");
+      e.becauseSameHash = true;
+      throw e;
+    }
 
-      
-      
-      
-      let writeOptions = { tmpPath: OS.Path.join(aFilePath + ".tmp") };
-      if (aOptions.compress)
-        writeOptions.compression = "lz4";
+    
+    
+    
+    let writeOptions = { tmpPath: OS.Path.join(aFilePath + ".tmp") };
+    if (aOptions.compress)
+      writeOptions.compression = "lz4";
 
-      await OS.File.writeAtomic(aFilePath, jsonString, writeOptions);
-      return { count, hash };
-    })();
+    await OS.File.writeAtomic(aFilePath, jsonString, writeOptions);
+    return { count, hash };
   }
 });
 
