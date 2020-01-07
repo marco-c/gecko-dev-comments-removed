@@ -12905,8 +12905,10 @@ nsCSSFrameConstructor::FrameConstructionItem::
       
       return true;
     }
-    if (!(mFCData->mBits & FCDATA_DISALLOW_OUT_OF_FLOW) &&
-        aState.GetGeometricParent(mStyleContext->StyleDisplay(), nullptr)) {
+    if (mIsPopup ||
+        (!(mFCData->mBits & FCDATA_DISALLOW_OUT_OF_FLOW) &&
+         aState.GetGeometricParent(mStyleContext->StyleDisplay(), nullptr))) {
+      
       
       
       
