@@ -842,17 +842,6 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
     void fireOnGarbageCollectionHook(JSContext* cx,
                                      const JS::dbg::GarbageCollectionEvent::Ptr& gcData);
 
-    
-
-
-
-    MOZ_MUST_USE bool getFrameWithIter(JSContext* cx, AbstractFramePtr frame,
-                                       const FrameIter* maybeIter,
-                                       MutableHandleValue vp);
-    MOZ_MUST_USE bool getFrameWithIter(JSContext* cx, AbstractFramePtr frame,
-                                       const FrameIter* maybeIter,
-                                       MutableHandleDebuggerFrame result);
-
     inline Breakpoint* firstBreakpoint() const;
 
     static MOZ_MUST_USE bool replaceFrameGuts(JSContext* cx, AbstractFramePtr from,
@@ -1058,25 +1047,11 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
 
 
 
-    MOZ_MUST_USE bool getFrame(JSContext* cx, AbstractFramePtr frame, MutableHandleValue vp) {
-        return getFrameWithIter(cx, frame, nullptr, vp);
-    }
-
-    
-
-
-
-
-
-
 
     MOZ_MUST_USE bool getFrame(JSContext* cx, const FrameIter& iter,
-                               MutableHandleValue vp) {
-        return getFrameWithIter(cx, iter.abstractFramePtr(), &iter, vp);
-    }
+                               MutableHandleValue vp);
     MOZ_MUST_USE bool getFrame(JSContext* cx, const FrameIter& iter,
                                MutableHandleDebuggerFrame result);
-
 
     
 
@@ -1354,8 +1329,8 @@ class DebuggerFrame : public NativeObject
     static const Class class_;
 
     static NativeObject* initClass(JSContext* cx, HandleObject dbgCtor, HandleObject objProto);
-    static DebuggerFrame* create(JSContext* cx, HandleObject proto, AbstractFramePtr referent,
-                                 const FrameIter* maybeIter, HandleNativeObject debugger);
+    static DebuggerFrame* create(JSContext* cx, HandleObject proto, const FrameIter& iter,
+                                 HandleNativeObject debugger);
 
     static MOZ_MUST_USE bool getArguments(JSContext* cx, HandleDebuggerFrame frame,
                                           MutableHandleDebuggerArguments result);
