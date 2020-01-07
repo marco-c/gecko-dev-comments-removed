@@ -10,6 +10,8 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/Variant.h"
 
+#include "jsutil.h"
+
 #include "gc/DeletePolicy.h"
 #include "gc/Heap.h"
 #include "gc/Policy.h"
@@ -157,6 +159,15 @@ class TrailingNamesArray
     }
 
   public:
+    
+    
+    TrailingNamesArray() = delete;
+
+    explicit TrailingNamesArray(size_t nameCount) {
+        if (nameCount)
+            JS_POISON(&data_, 0xCC, sizeof(BindingName) * nameCount, MemCheckKind::MakeUndefined);
+    }
+
     BindingName* start() { return reinterpret_cast<BindingName*>(ptr()); }
 
     BindingName& operator[](size_t i) { return start()[i]; }
@@ -412,16 +423,19 @@ class LexicalScope : public Scope
         
         
         
-        uint32_t constStart;
-        uint32_t length;
+        uint32_t constStart = 0;
+        uint32_t length = 0;
 
         
         
-        uint32_t nextFrameSlot;
+        uint32_t nextFrameSlot = 0;
 
         
         
         TrailingNamesArray trailingNames;
+
+        explicit Data(size_t nameCount) : trailingNames(nameCount) {}
+        Data() = delete;
 
         void trace(JSTracer* trc);
     };
@@ -514,11 +528,11 @@ class FunctionScope : public Scope
         
         
         
-        GCPtrFunction canonicalFunction;
+        GCPtrFunction canonicalFunction = {};
 
         
         
-        bool hasParameterExprs;
+        bool hasParameterExprs = false;
 
         
         
@@ -533,17 +547,20 @@ class FunctionScope : public Scope
         
         
         
-        uint16_t nonPositionalFormalStart;
-        uint16_t varStart;
-        uint32_t length;
+        uint16_t nonPositionalFormalStart = 0;
+        uint16_t varStart = 0;
+        uint32_t length = 0;
 
         
         
-        uint32_t nextFrameSlot;
+        uint32_t nextFrameSlot = 0;
 
         
         
         TrailingNamesArray trailingNames;
+
+        explicit Data(size_t nameCount) : trailingNames(nameCount) {}
+        Data() = delete;
 
         void trace(JSTracer* trc);
         Zone* zone() const;
@@ -637,15 +654,18 @@ class VarScope : public Scope
     struct Data
     {
         
-        uint32_t length;
+        uint32_t length = 0;
 
         
         
-        uint32_t nextFrameSlot;
+        uint32_t nextFrameSlot = 0;
 
         
         
         TrailingNamesArray trailingNames;
+
+        explicit Data(size_t nameCount) : trailingNames(nameCount) {}
+        Data() = delete;
 
         void trace(JSTracer* trc);
     };
@@ -732,14 +752,17 @@ class GlobalScope : public Scope
         
         
         
-        uint32_t varStart;
-        uint32_t letStart;
-        uint32_t constStart;
-        uint32_t length;
+        uint32_t varStart = 0;
+        uint32_t letStart = 0;
+        uint32_t constStart = 0;
+        uint32_t length = 0;
 
         
         
         TrailingNamesArray trailingNames;
+
+        explicit Data(size_t nameCount) : trailingNames(nameCount) {}
+        Data() = delete;
 
         void trace(JSTracer* trc);
     };
@@ -835,16 +858,19 @@ class EvalScope : public Scope
         
         
         
-        uint32_t varStart;
-        uint32_t length;
+        uint32_t varStart = 0;
+        uint32_t length = 0;
 
         
         
-        uint32_t nextFrameSlot;
+        uint32_t nextFrameSlot = 0;
 
         
         
         TrailingNamesArray trailingNames;
+
+        explicit Data(size_t nameCount) : trailingNames(nameCount) {}
+        Data() = delete;
 
         void trace(JSTracer* trc);
     };
@@ -931,7 +957,7 @@ class ModuleScope : public Scope
     struct Data
     {
         
-        GCPtr<ModuleObject*> module;
+        GCPtr<ModuleObject*> module = {};
 
         
         
@@ -939,18 +965,21 @@ class ModuleScope : public Scope
         
         
         
-        uint32_t varStart;
-        uint32_t letStart;
-        uint32_t constStart;
-        uint32_t length;
+        uint32_t varStart = 0;
+        uint32_t letStart = 0;
+        uint32_t constStart = 0;
+        uint32_t length = 0;
 
         
         
-        uint32_t nextFrameSlot;
+        uint32_t nextFrameSlot = 0;
 
         
         
         TrailingNamesArray trailingNames;
+
+        explicit Data(size_t nameCount) : trailingNames(nameCount) {}
+        Data() = delete;
 
         void trace(JSTracer* trc);
         Zone* zone() const;
@@ -1003,15 +1032,18 @@ class WasmInstanceScope : public Scope
   public:
     struct Data
     {
-        uint32_t memoriesStart;
-        uint32_t globalsStart;
-        uint32_t length;
-        uint32_t nextFrameSlot;
+        uint32_t memoriesStart = 0;
+        uint32_t globalsStart = 0;
+        uint32_t length = 0;
+        uint32_t nextFrameSlot = 0;
 
         
-        GCPtr<WasmInstanceObject*> instance;
+        GCPtr<WasmInstanceObject*> instance = {};
 
         TrailingNamesArray trailingNames;
+
+        explicit Data(size_t nameCount) : trailingNames(nameCount) {}
+        Data() = delete;
 
         void trace(JSTracer* trc);
     };
@@ -1063,11 +1095,14 @@ class WasmFunctionScope : public Scope
   public:
     struct Data
     {
-        uint32_t length;
-        uint32_t nextFrameSlot;
-        uint32_t funcIndex;
+        uint32_t length = 0;
+        uint32_t nextFrameSlot = 0;
+        uint32_t funcIndex = 0;
 
         TrailingNamesArray trailingNames;
+
+        explicit Data(size_t nameCount) : trailingNames(nameCount) {}
+        Data() = delete;
 
         void trace(JSTracer* trc);
     };

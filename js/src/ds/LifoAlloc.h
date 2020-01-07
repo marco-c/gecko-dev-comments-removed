@@ -16,6 +16,8 @@
 #include "mozilla/TemplateLib.h"
 #include "mozilla/TypeTraits.h"
 
+#include <new>
+
 
 
 
@@ -591,6 +593,20 @@ class LifoAlloc
             JS_OOM_POSSIBLY_FAIL();
 #endif
         return allocImpl(n);
+    }
+
+    template<typename T, typename... Args>
+    MOZ_ALWAYS_INLINE T*
+    allocInSize(size_t n, Args&&... args)
+    {
+        MOZ_ASSERT(n >= sizeof(T), "must request enough space to store a T");
+        static_assert(alignof(T) <= detail::LIFO_ALLOC_ALIGN,
+                      "LifoAlloc must provide enough alignment to store T");
+        void* ptr = alloc(n);
+        if (!ptr)
+            return nullptr;
+
+        return new (ptr) T(mozilla::Forward<Args>(args)...);
     }
 
     MOZ_ALWAYS_INLINE
