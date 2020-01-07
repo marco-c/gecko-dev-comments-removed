@@ -1113,9 +1113,9 @@ public:
 
 
 
-  void DisableEncodingMenu()
+  void EnableEncodingMenu()
   {
-    mEncodingMenuDisabled = true;
+    mEncodingMenuDisabled = false;
   }
 
   

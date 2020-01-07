@@ -3677,6 +3677,7 @@ nsIDocument::SetDocumentCharacterSet(NotNull<const Encoding*> aEncoding)
 {
   if (mCharacterSet != aEncoding) {
     mCharacterSet = aEncoding;
+    mEncodingMenuDisabled = aEncoding == UTF_8_ENCODING;
 
     if (nsPresContext* context = GetPresContext()) {
       context->DispatchCharSetChange(aEncoding);
@@ -7465,7 +7466,7 @@ nsDocument::GetExistingListenerManager() const
   return mListenerManager;
 }
 
-void
+nsresult
 nsDocument::GetEventTargetParent(EventChainPreVisitor& aVisitor)
 {
   if (mDocGroup && aVisitor.mEvent->mMessage != eVoidEvent &&
@@ -7484,6 +7485,7 @@ nsDocument::GetEventTargetParent(EventChainPreVisitor& aVisitor)
     aVisitor.SetParentTarget(
       window ? window->GetTargetForEventTargetChain() : nullptr, false);
   }
+  return NS_OK;
 }
 
 already_AddRefed<Event>
