@@ -136,8 +136,7 @@ public:
 
 
 
-
-  virtual already_AddRefed<DrawTarget> GetReferenceDrawTarget(DrawEventRecorder* aRecorder);
+  virtual already_AddRefed<DrawTarget> GetReferenceDrawTarget();
 
   
 
@@ -170,18 +169,10 @@ protected:
   cairo_surface_t* mCairoSurface;
   RefPtr<DrawTarget> mRefDT; 
 
-  
-  
-  
-  
-  RefPtr<DrawTarget> mRecordingRefDT;
-
   IntSize mSize;
   bool mIsFinished;
 #ifdef DEBUG
   bool mHasActivePage;
-  
-  DrawEventRecorder* mRecorder;
 #endif
 
   PageDoneCallback mPageDoneCallback;
