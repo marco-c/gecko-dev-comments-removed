@@ -20,48 +20,46 @@ var server;
 
 
 
-var tags = ['A', 'ABBR', 'ACRONYM', 'ADDRESS', 'APPLET', 'AREA', 'B', 'BASE',
-            'BASEFONT', 'BDO', 'BIG', 'BLOCKQUOTE', 'BODY', 'BR', 'BUTTON',
-            'CAPTION', 'CENTER', 'CITE', 'CODE', 'COL', 'COLGROUP', 'DD',
-            'DEL', 'DFN', 'DIR', 'DIV', 'DL', 'DT', 'EM', 'FIELDSET', 'FONT',
-            'FORM', 'FRAME', 'FRAMESET', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6',
-            'HEAD', 'HR', 'HTML', 'I', 'IFRAME', 'IMG', 'INPUT', 'INS',
-            'ISINDEX', 'KBD', 'LABEL', 'LEGEND', 'LI', 'LINK', 'MAP', 'MENU',
-            'META', 'NOFRAMES', 'NOSCRIPT', 'OBJECT', 'OL', 'OPTGROUP',
-            'OPTION', 'P', 'PARAM', 'PRE', 'Q', 'S', 'SAMP', 'SCRIPT',
-            'SELECT', 'SMALL', 'SPAN', 'STRIKE', 'STRONG', 'STYLE', 'SUB',
-            'SUP', 'TABLE', 'TBODY', 'TD', 'TEXTAREA', 'TFOOT', 'TH', 'THEAD',
-            'TITLE', 'TR', 'TT', 'U', 'UL', 'VAR'];
+var tags = ["A", "ABBR", "ACRONYM", "ADDRESS", "APPLET", "AREA", "B", "BASE",
+            "BASEFONT", "BDO", "BIG", "BLOCKQUOTE", "BODY", "BR", "BUTTON",
+            "CAPTION", "CENTER", "CITE", "CODE", "COL", "COLGROUP", "DD",
+            "DEL", "DFN", "DIR", "DIV", "DL", "DT", "EM", "FIELDSET", "FONT",
+            "FORM", "FRAME", "FRAMESET", "H1", "H2", "H3", "H4", "H5", "H6",
+            "HEAD", "HR", "HTML", "I", "IFRAME", "IMG", "INPUT", "INS",
+            "ISINDEX", "KBD", "LABEL", "LEGEND", "LI", "LINK", "MAP", "MENU",
+            "META", "NOFRAMES", "NOSCRIPT", "OBJECT", "OL", "OPTGROUP",
+            "OPTION", "P", "PARAM", "PRE", "Q", "S", "SAMP", "SCRIPT",
+            "SELECT", "SMALL", "SPAN", "STRIKE", "STRONG", "STYLE", "SUB",
+            "SUP", "TABLE", "TBODY", "TD", "TEXTAREA", "TFOOT", "TH", "THEAD",
+            "TITLE", "TR", "TT", "U", "UL", "VAR"];
 
 
 
 
 
 
-function makeTagFunc(tagName)
-{
-  return function (attrs )
-  {
+function makeTagFunc(tagName) {
+  return function(attrs ) {
     var startChildren = 0;
     var response = "";
 
     
     response += "<" + tagName;
     
-    if (attrs && typeof attrs == 'object') {
+    if (attrs && typeof attrs == "object") {
       startChildren = 1;
 
       for (let key in attrs) {
         const value = attrs[key];
         var val = "" + value;
-        response += " " + key + '="' + val.replace('"','&quot;') + '"';
+        response += " " + key + '="' + val.replace('"', "&quot;") + '"';
       }
     }
     response += ">";
 
     
     for (var i = startChildren; i < arguments.length; i++) {
-      if (typeof arguments[i] == 'function') {
+      if (typeof arguments[i] == "function") {
         response += arguments[i]();
       } else {
         response += arguments[i];
@@ -71,7 +69,7 @@ function makeTagFunc(tagName)
     
     response += "</" + tagName + ">\n";
     return response;
-  }
+  };
 }
 
 function makeTags() {
@@ -84,21 +82,19 @@ function makeTags() {
 var _quitting = false;
 
 
-function serverStopped()
-{
+function serverStopped() {
   _quitting = true;
 }
 
 
-if (this["nsHttpServer"]) {
+if (this.nsHttpServer) {
   
   
   
   runServer();
 
   
-  if (_quitting)
-  {
+  if (_quitting) {
     dumpn("HTTP server stopped, all pending requests complete");
     quit(0);
   }
@@ -117,8 +113,7 @@ var SERVER_PORT;
 
 
 
-function runServer()
-{
+function runServer() {
   serverBasePath = __LOCATION__.parent;
   server = createMochitestServer(serverBasePath);
 
@@ -128,10 +123,10 @@ function runServer()
     if (_SERVER_ADDR == "localhost") {
       gServerAddress = _SERVER_ADDR;
     } else {
-      var quads = _SERVER_ADDR.split('.');
+      var quads = _SERVER_ADDR.split(".");
       if (quads.length == 4) {
         var invalid = false;
-        for (var i=0; i < 4; i++) {
+        for (var i = 0; i < 4; i++) {
           if (quads[i] < 0 || quads[i] > 255)
             invalid = true;
         }
@@ -206,8 +201,7 @@ function runServer()
 }
 
 
-function createMochitestServer(serverBasePath)
-{
+function createMochitestServer(serverBasePath) {
   var server = new nsHttpServer();
 
   server.registerDirectory("/", serverBasePath);
@@ -229,15 +223,14 @@ function createMochitestServer(serverBasePath)
 
   var serverRoot =
     {
-      getFile: function getFile(path)
-      {
+      getFile: function getFile(path) {
         var file = serverBasePath.clone().QueryInterface(Ci.nsIFile);
         path.split("/").forEach(function(p) {
           file.appendRelativePath(p);
         });
         return file;
       },
-      QueryInterface: function(aIID) { return this; }
+      QueryInterface(aIID) { return this; }
     };
 
   server.setObjectState("SERVER_ROOT", serverRoot);
@@ -252,8 +245,7 @@ function createMochitestServer(serverBasePath)
 
 
 
-function processLocations(server)
-{
+function processLocations(server) {
   var serverLocations = serverBasePath.clone();
   serverLocations.append("server-locations.txt");
 
@@ -283,8 +275,7 @@ function processLocations(server)
   var line = {};
   var lineno = 0;
   var seenPrimary = false;
-  do
-  {
+  do {
     var more = lis.readLine(line);
     lineno++;
 
@@ -297,12 +288,9 @@ function processLocations(server)
       throw new Error("Syntax error in server-locations.txt, line " + lineno);
 
     var [, scheme, host, port, options] = match;
-    if (options)
-    {
-      if (options.split(",").includes("primary"))
-      {
-        if (seenPrimary)
-        {
+    if (options) {
+      if (options.split(",").includes("primary")) {
+        if (seenPrimary) {
           throw new Error("Multiple primary locations in server-locations.txt, " +
                           "line " + lineno);
         }
@@ -321,8 +309,7 @@ function processLocations(server)
 
 
 
-function serverShutdown(metadata, response)
-{
+function serverShutdown(metadata, response) {
   response.setStatusLine("1.1", 200, "OK");
   response.setHeader("Content-type", "text/plain", false);
 
@@ -334,8 +321,7 @@ function serverShutdown(metadata, response)
 }
 
 
-function serverDebug(metadata, response)
-{
+function serverDebug(metadata, response) {
   response.setStatusLine(metadata.httpVersion, 400, "Bad debugging level");
   if (metadata.queryString.length !== 1)
     return;
@@ -374,8 +360,7 @@ function serverDebug(metadata, response)
 
 
 
-function* dirIter(dir)
-{
+function* dirIter(dir) {
   var en = dir.directoryEntries;
   while (en.hasMoreElements()) {
     var file = en.getNext();
@@ -387,8 +372,7 @@ function* dirIter(dir)
 
 
 
-function list(requestPath, directory, recurse)
-{
+function list(requestPath, directory, recurse) {
   var count = 0;
   var path = requestPath;
   if (path.charAt(path.length - 1) != "/") {
@@ -427,11 +411,9 @@ function list(requestPath, directory, recurse)
     if (recurse && file.isDirectory()) {
       [links[key], childCount] = list(key, file, recurse);
       count += childCount;
-    } else {
-      if (file.leafName.charAt(0) != '.') {
-        links[key] = {'test': {'url': key, 'expected': 'pass'}};
+    } else if (file.leafName.charAt(0) != ".") {
+        links[key] = {"test": {"url": key, "expected": "pass"}};
       }
-    }
   }
 
   return [links, count];
@@ -442,8 +424,7 @@ function list(requestPath, directory, recurse)
 
 
 
-function isTest(filename, pattern)
-{
+function isTest(filename, pattern) {
   if (pattern)
     return pattern.test(filename);
 
@@ -452,7 +433,7 @@ function isTest(filename, pattern)
   var testPrefix = typeof(_TEST_PREFIX) == "string" ? _TEST_PREFIX : "test_";
   var testPattern = new RegExp("^" + testPrefix);
 
-  var pathPieces = filename.split('/');
+  var pathPieces = filename.split("/");
 
   return testPattern.test(pathPieces[pathPieces.length - 1]) &&
          !filename.includes(".js") &&
@@ -463,8 +444,7 @@ function isTest(filename, pattern)
 
 
 
-function linksToListItems(links)
-{
+function linksToListItems(links) {
   var response = "";
   var children = "";
   for (let link in links) {
@@ -487,8 +467,8 @@ function linksToListItems(links)
     if ((bug_title == null) || (bug_num == null)) {
       response += LI({class: classVal}, A({href: link}, link), children);
     } else {
-      var bug_url = "https://bugzilla.mozilla.org/show_bug.cgi?id="+bug_num;
-      response += LI({class: classVal}, A({href: link}, link), " - ", A({href: bug_url}, "Bug "+bug_num), children);
+      var bug_url = "https://bugzilla.mozilla.org/show_bug.cgi?id=" + bug_num;
+      response += LI({class: classVal}, A({href: link}, link), " - ", A({href: bug_url}, "Bug " + bug_num), children);
     }
 
   }
@@ -498,18 +478,17 @@ function linksToListItems(links)
 
 
 
-function linksToTableRows(links, recursionLevel)
-{
+function linksToTableRows(links, recursionLevel) {
   var response = "";
   for (let link in links) {
     const value = links[link];
-    var classVal = (!isTest(link) && ((value instanceof Object) && ('test' in value)))
+    var classVal = (!isTest(link) && ((value instanceof Object) && ("test" in value)))
       ? "non-test invisible"
       : "";
 
     var spacer = "padding-left: " + (10 * recursionLevel) + "px";
 
-    if ((value instanceof Object) && !('test' in value)) {
+    if ((value instanceof Object) && !("test" in value)) {
       response += TR({class: "dir", id: "tr-" + link },
                      TD({colspan: "3"}, "&#160;"),
                      TD({style: spacer},
@@ -546,21 +525,20 @@ function linksToTableRows(links, recursionLevel)
 function arrayOfTestFiles(linkArray, fileArray, testPattern) {
   for (let link in linkArray) {
     const value = linkArray[link];
-    if ((value instanceof Object) && !('test' in value)) {
+    if ((value instanceof Object) && !("test" in value)) {
       arrayOfTestFiles(value, fileArray, testPattern);
     } else if (isTest(link, testPattern) && (value instanceof Object)) {
-      fileArray.push(value['test'])
+      fileArray.push(value.test);
     }
   }
 }
 
 
 
-function jsonArrayOfTestFiles(links)
-{
+function jsonArrayOfTestFiles(links) {
   var testFiles = [];
   arrayOfTestFiles(links, testFiles);
-  testFiles = testFiles.map(function(file) { return '"' + file['url'] + '"'; });
+  testFiles = testFiles.map(function(file) { return '"' + file.url + '"'; });
 
   return "[" + testFiles.join(",\n") + "]";
 }
@@ -568,8 +546,7 @@ function jsonArrayOfTestFiles(links)
 
 
 
-function regularListing(metadata, response)
-{
+function regularListing(metadata, response) {
   var [links, count] = list(metadata.path,
                             metadata.getProperty("directory"),
                             false);
@@ -591,8 +568,7 @@ function regularListing(metadata, response)
 
 
 
-function convertManifestToTestLinks(root, manifest)
-{
+function convertManifestToTestLinks(root, manifest) {
   ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
 
   var manifestFile = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
@@ -605,7 +581,7 @@ function convertManifestToTestLinks(root, manifest)
   var manifestObj = JSON.parse(NetUtil.readInputStreamToString(manifestStream,
                                                                manifestStream.available()));
   var paths = manifestObj.tests;
-  var pathPrefix = '/' + root + '/'
+  var pathPrefix = "/" + root + "/";
   return [paths.reduce(function(t, p) { t[pathPrefix + p.path] = true; return t; }, {}),
           paths.length];
 }
@@ -613,8 +589,7 @@ function convertManifestToTestLinks(root, manifest)
 
 
 
-function nestedTest(metadata, response)
-{
+function nestedTest(metadata, response) {
   response.setStatusLine("1.1", 200, "OK");
   response.setHeader("Content-type", "text/html;charset=utf-8", false);
   response.write(
@@ -639,22 +614,21 @@ function nestedTest(metadata, response)
 
 
 
-function testListing(metadata, response)
-{
+function testListing(metadata, response) {
   var links = {};
   var count = 0;
-  if (!metadata.queryString.includes('manifestFile')) {
+  if (!metadata.queryString.includes("manifestFile")) {
     [links, count] = list(metadata.path,
                           metadata.getProperty("directory"),
                           true);
   } else if (typeof(Components) != undefined) {
     var manifest = metadata.queryString.match(/manifestFile=([^&]+)/)[1];
 
-    [links, count] = convertManifestToTestLinks(metadata.path.split('/')[1],
+    [links, count] = convertManifestToTestLinks(metadata.path.split("/")[1],
                                                 manifest);
   }
 
-  var table_class = metadata.queryString.indexOf("hideResultsTable=1") > -1 ? "invisible": "";
+  var table_class = metadata.queryString.indexOf("hideResultsTable=1") > -1 ? "invisible" : "";
 
   let testname = (metadata.queryString.indexOf("testname=") > -1)
                  ? metadata.queryString.match(/testname=([^&]+)/)[1]
@@ -697,15 +671,15 @@ function testListing(metadata, response)
             P({style: "float: right;"},
             SMALL(
               "Based on the ",
-              A({href:"http://www.mochikit.com/"}, "MochiKit"),
+              A({href: "http://www.mochikit.com/"}, "MochiKit"),
               " unit tests."
             )
           ),
           DIV({class: "status"},
             H1({id: "indicator"}, "Status"),
-            H2({id: "pass"}, "Passed: ", SPAN({id: "pass-count"},"0")),
-            H2({id: "fail"}, "Failed: ", SPAN({id: "fail-count"},"0")),
-            H2({id: "fail"}, "Todo: ", SPAN({id: "todo-count"},"0"))
+            H2({id: "pass"}, "Passed: ", SPAN({id: "pass-count"}, "0")),
+            H2({id: "fail"}, "Failed: ", SPAN({id: "fail-count"}, "0")),
+            H2({id: "fail"}, "Todo: ", SPAN({id: "todo-count"}, "0"))
           ),
           DIV({class: "clear"}),
           DIV({id: "current-test"},
@@ -746,8 +720,7 @@ function testListing(metadata, response)
 
 
 
-function defaultDirHandler(metadata, response)
-{
+function defaultDirHandler(metadata, response) {
   response.setStatusLine("1.1", 200, "OK");
   response.setHeader("Content-type", "text/html;charset=utf-8", false);
   try {

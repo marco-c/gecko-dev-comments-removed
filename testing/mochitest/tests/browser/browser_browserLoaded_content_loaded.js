@@ -1,6 +1,6 @@
 
 
-'use strict';
+"use strict";
 
 function isDOMLoaded(browser) {
   return ContentTask.spawn(browser, null, async function() {
@@ -12,7 +12,7 @@ function isDOMLoaded(browser) {
 
 
 add_task(async function() {
-  let tab = BrowserTestUtils.addTab(gBrowser, 'http://example.com');
+  let tab = BrowserTestUtils.addTab(gBrowser, "http://example.com");
   let browser = tab.linkedBrowser;
   await BrowserTestUtils.browserLoaded(browser);
   await isDOMLoaded(browser);
@@ -31,12 +31,12 @@ add_task(async function() {
   let browsers = tabURLs.map(u => BrowserTestUtils.addTab(gBrowser, u).linkedBrowser);
 
   
-  await Promise.all((function*() {
+  await Promise.all((function* () {
     for (let b of browsers) {
       yield BrowserTestUtils.browserLoaded(b);
     }
   })());
-  let expected = 'Expected all promised browsers to have loaded.';
+  let expected = "Expected all promised browsers to have loaded.";
   for (const browser of browsers) {
     await isDOMLoaded(browser);
   }

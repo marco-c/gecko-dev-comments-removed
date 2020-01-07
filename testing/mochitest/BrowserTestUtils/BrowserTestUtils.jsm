@@ -97,7 +97,7 @@ var BrowserTestUtils = {
       options = {
         gBrowser: Services.wm.getMostRecentWindow("navigator:browser").gBrowser,
         url: options
-      }
+      };
     }
     let tab = await BrowserTestUtils.openNewForegroundTab(options);
     let originalWindow = tab.ownerGlobal;
@@ -187,12 +187,11 @@ var BrowserTestUtils = {
       }
 
       promises = [
-        BrowserTestUtils.switchTab(tabbrowser, function () {
+        BrowserTestUtils.switchTab(tabbrowser, function() {
           if (typeof opening == "function") {
             opening();
             tab = tabbrowser.selectedTab;
-          }
-          else {
+          } else {
             tabbrowser.selectedTab = tab = tabbrowser.addTab(opening);
           }
         })
@@ -235,8 +234,7 @@ var BrowserTestUtils = {
 
     if (typeof tab == "function") {
       tab();
-    }
-    else {
+    } else {
       tabbrowser.selectedTab = tab;
     }
     return promise;
@@ -267,11 +265,11 @@ var BrowserTestUtils = {
 
 
 
-  browserLoaded(browser, includeSubFrames=false, wantLoad=null,
-                maybeErrorPage=false) {
+  browserLoaded(browser, includeSubFrames = false, wantLoad = null,
+                maybeErrorPage = false) {
     
     if (includeSubFrames && typeof includeSubFrames != "boolean") {
-      throw("The second argument to browserLoaded should be a boolean.");
+      throw ("The second argument to browserLoaded should be a boolean.");
     }
 
     
@@ -286,10 +284,10 @@ var BrowserTestUtils = {
         return true;
       } else if (typeof(wantLoad) == "function") {
         return wantLoad(url);
-      } else {
+      }
         
         return wantLoad == url;
-      }
+
     }
 
     return new Promise(resolve => {
@@ -338,7 +336,7 @@ var BrowserTestUtils = {
 
       let selectedBrowser = win.gBrowser.selectedBrowser;
       return msg.target == selectedBrowser &&
-             (aboutBlank || selectedBrowser.currentURI.spec != "about:blank")
+             (aboutBlank || selectedBrowser.currentURI.spec != "about:blank");
     });
   },
 
@@ -359,7 +357,7 @@ var BrowserTestUtils = {
 
 
 
-  browserStopped(browser, expectedURI, checkAborts=false) {
+  browserStopped(browser, expectedURI, checkAborts = false) {
     return new Promise(resolve => {
       const kDocStopFlags = Ci.nsIWebProgressListener.STATE_IS_NETWORK |
                             Ci.nsIWebProgressListener.STATE_STOP;
@@ -377,7 +375,7 @@ var BrowserTestUtils = {
               BrowserTestUtils._webProgressListeners.delete(wpl);
               resolve();
             }
-          };
+          }
         },
         onSecurityChange() {},
         onStatusChange() {},
@@ -665,7 +663,7 @@ var BrowserTestUtils = {
 
 
 
-  async openNewBrowserWindow(options={}) {
+  async openNewBrowserWindow(options = {}) {
     let argString = Cc["@mozilla.org/supports-string;1"].
                     createInstance(Ci.nsISupportsString);
     argString.data = "";
@@ -751,7 +749,7 @@ var BrowserTestUtils = {
 
 
 
-  windowClosed(win)  {
+  windowClosed(win) {
     let domWinClosedPromise = BrowserTestUtils.domWindowClosed(win);
     let promises = [domWinClosedPromise];
     let winType = win.document.documentElement.getAttribute("windowtype");
@@ -763,7 +761,7 @@ var BrowserTestUtils = {
         
         browserSet.forEach((browser) => {
           win.gBrowser._insertBrowser(win.gBrowser.getTabForBrowser(browser));
-        })
+        });
         let mm = win.getGroupMessageManager("browsers");
 
         mm.addMessageListener("SessionStore:update", function onMessage(msg) {
@@ -1103,8 +1101,7 @@ var BrowserTestUtils = {
 
 
 
-  synthesizeMouse(target, offsetX, offsetY, event, browser)
-  {
+  synthesizeMouse(target, offsetX, offsetY, event, browser) {
     return new Promise((resolve, reject) => {
       let mm = browser.messageManager;
       mm.addMessageListener("Test:SynthesizeMouseDone", function mouseMsg(message) {
@@ -1127,7 +1124,7 @@ var BrowserTestUtils = {
       }
 
       mm.sendAsyncMessage("Test:SynthesizeMouse",
-                          {target, targetFn, x: offsetX, y: offsetY, event: event},
+                          {target, targetFn, x: offsetX, y: offsetY, event},
                           {object: cpowObject});
     });
   },
@@ -1157,8 +1154,7 @@ var BrowserTestUtils = {
 
 
 
-  synthesizeMouseAtCenter(target, event, browser)
-  {
+  synthesizeMouseAtCenter(target, event, browser) {
     
     event.centered = true;
     return BrowserTestUtils.synthesizeMouse(target, 0, 0, event, browser);
@@ -1169,8 +1165,7 @@ var BrowserTestUtils = {
 
 
 
-  synthesizeMouseAtPoint(offsetX, offsetY, event, browser)
-  {
+  synthesizeMouseAtPoint(offsetX, offsetY, event, browser) {
     return BrowserTestUtils.synthesizeMouse(null, offsetX, offsetY, event, browser);
   },
 
@@ -1216,8 +1211,8 @@ var BrowserTestUtils = {
 
 
 
-  async crashBrowser(browser, shouldShowTabCrashPage=true,
-                     shouldClearMinidumps=true) {
+  async crashBrowser(browser, shouldShowTabCrashPage = true,
+                     shouldClearMinidumps = true) {
     let extra = {};
     let KeyValueParser = {};
     if (AppConstants.MOZ_CRASHREPORTER) {
@@ -1234,7 +1229,7 @@ var BrowserTestUtils = {
 
 
     function getMinidumpDirectory() {
-      let dir = Services.dirsvc.get('ProfD', Ci.nsIFile);
+      let dir = Services.dirsvc.get("ProfD", Ci.nsIFile);
       dir.append("minidumps");
       return dir;
     }
@@ -1267,12 +1262,12 @@ var BrowserTestUtils = {
         privateNoteIntentionalCrash();
         let zero = new ctypes.intptr_t(8);
         let badptr = ctypes.cast(zero, ctypes.PointerType(ctypes.int32_t));
-        badptr.contents
+        badptr.contents;
       };
 
       dump("\nEt tu, Brute?\n");
       dies();
-    }
+    };
 
     let expectedPromises = [];
 
@@ -1293,7 +1288,7 @@ var BrowserTestUtils = {
 
         let dumpID;
         if (AppConstants.MOZ_CRASHREPORTER) {
-          dumpID = subject.getPropertyAsAString('dumpID');
+          dumpID = subject.getPropertyAsAString("dumpID");
           if (!dumpID) {
             return reject("dumpID was not present despite crash reporting " +
                           "being enabled");
@@ -1307,25 +1302,25 @@ var BrowserTestUtils = {
                                                 .then(() => {
             let minidumpDirectory = getMinidumpDirectory();
             let extrafile = minidumpDirectory.clone();
-            extrafile.append(dumpID + '.extra');
+            extrafile.append(dumpID + ".extra");
             if (extrafile.exists()) {
               dump(`\nNo .extra file for dumpID: ${dumpID}\n`);
               if (AppConstants.MOZ_CRASHREPORTER) {
                 extra = KeyValueParser.parseKeyValuePairsFromFile(extrafile);
               } else {
-                dump('\nCrashReporter not enabled - will not return any extra data\n');
+                dump("\nCrashReporter not enabled - will not return any extra data\n");
               }
             }
 
             if (shouldClearMinidumps) {
-              removeFile(minidumpDirectory, dumpID + '.dmp');
-              removeFile(minidumpDirectory, dumpID + '.extra');
+              removeFile(minidumpDirectory, dumpID + ".dmp");
+              removeFile(minidumpDirectory, dumpID + ".extra");
             }
           });
         }
 
         removalPromise.then(() => {
-          Services.obs.removeObserver(observer, 'ipc:content-shutdown');
+          Services.obs.removeObserver(observer, "ipc:content-shutdown");
           dump("\nCrash cleaned up\n");
           
           
@@ -1334,7 +1329,7 @@ var BrowserTestUtils = {
         });
       };
 
-      Services.obs.addObserver(observer, 'ipc:content-shutdown');
+      Services.obs.addObserver(observer, "ipc:content-shutdown");
     });
 
     expectedPromises.push(crashCleanupPromise);
@@ -1387,7 +1382,7 @@ var BrowserTestUtils = {
             (value && element.getAttribute(attr) === value)) {
           resolve();
           mut.disconnect();
-          return;
+
         }
       });
 
@@ -1423,8 +1418,8 @@ var BrowserTestUtils = {
       });
 
       mm.sendAsyncMessage("Test:SendChar", {
-        char: char,
-        seq: seq
+        char,
+        seq
       });
     });
   },
@@ -1597,7 +1592,7 @@ var BrowserTestUtils = {
         addEventListener("MozAfterPaint", function onPaint() {
           removeEventListener("MozAfterPaint", onPaint);
           resolve();
-        })
+        });
       });
     });
   },
@@ -1673,7 +1668,7 @@ var BrowserTestUtils = {
 
 
   async promiseAlertDialogOpen(buttonAction,
-                               uri="chrome://global/content/commonDialog.xul",
+                               uri = "chrome://global/content/commonDialog.xul",
                                func) {
     let win = await this.domWindowOpened(null, async win => {
       
@@ -1709,7 +1704,7 @@ var BrowserTestUtils = {
 
 
   async promiseAlertDialog(buttonAction,
-                           uri="chrome://global/content/commonDialog.xul",
+                           uri = "chrome://global/content/commonDialog.xul",
                            func) {
     let win = await this.promiseAlertDialogOpen(buttonAction, uri, func);
     return this.windowClosed(win);

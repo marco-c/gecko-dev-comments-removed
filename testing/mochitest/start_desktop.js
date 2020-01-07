@@ -2,8 +2,8 @@
 
 
 
-const flavor  = __webDriverArguments[0]["flavor"];
-const url = __webDriverArguments[0]["testUrl"];
+const flavor  = __webDriverArguments[0].flavor;
+const url = __webDriverArguments[0].testUrl;
 
 let wm = Cc["@mozilla.org/appshell/window-mediator;1"]
           .getService(Ci.nsIWindowMediator);
@@ -11,5 +11,5 @@ let win = wm.getMostRecentWindow("navigator:browser");
 
 
 
-let ev = new CustomEvent('mochitest-load', {'detail': [flavor, url]});
+let ev = new CustomEvent("mochitest-load", {"detail": [flavor, url]});
 win.dispatchEvent(ev);

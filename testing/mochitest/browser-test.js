@@ -15,7 +15,7 @@ const SIMPLETEST_OVERRIDES =
   ["ok", "is", "isnot", "todo", "todo_is", "todo_isnot", "info", "expectAssertions", "requestCompleteLog"];
 
 
-if (Services.appinfo.OS == 'Android') {
+if (Services.appinfo.OS == "Android") {
   window.addEventListener("load", function() {
     window.addEventListener("MozAfterPaint", function() {
       setTimeout(testInit, 0);
@@ -29,17 +29,17 @@ var TabDestroyObserver = {
   outstanding: new Set(),
   promiseResolver: null,
 
-  init: function() {
+  init() {
     Services.obs.addObserver(this, "message-manager-close");
     Services.obs.addObserver(this, "message-manager-disconnect");
   },
 
-  destroy: function() {
+  destroy() {
     Services.obs.removeObserver(this, "message-manager-close");
     Services.obs.removeObserver(this, "message-manager-disconnect");
   },
 
-  observe: function(subject, topic, data) {
+  observe(subject, topic, data) {
     if (topic == "message-manager-close") {
       this.outstanding.add(subject);
     } else if (topic == "message-manager-disconnect") {
@@ -50,7 +50,7 @@ var TabDestroyObserver = {
     }
   },
 
-  wait: function() {
+  wait() {
     if (!this.outstanding.size) {
       return Promise.resolve();
     }
@@ -230,7 +230,7 @@ function takeInstrumentation() {
       namespaceURI: element.namespaceURI,
       localName: element.localName,
       binding: (binding && binding != "none") ? binding : null,
-    }
+    };
   }
 
   
@@ -676,8 +676,7 @@ Tester.prototype = {
           if (isGenerator(result)) {
             this.SimpleTest.ok(false, "Cleanup function returned a generator");
           }
-        }
-        catch (ex) {
+        } catch (ex) {
           this.currentTest.addResult(new testResult({
             name: "Cleanup function threw an exception",
             ex,
@@ -717,7 +716,7 @@ Tester.prototype = {
       this.PromiseTestUtils.assertNoUncaughtRejections();
       this.PromiseTestUtils.assertNoMoreExpectedRejections();
 
-      Object.keys(window).forEach(function (prop) {
+      Object.keys(window).forEach(function(prop) {
         if (parseInt(prop) == prop) {
           
           
@@ -839,8 +838,7 @@ Tester.prototype = {
       
       if (Cc["@mozilla.org/xre/runtime;1"]
           .getService(Ci.nsIXULRuntime)
-          .processType == Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT)
-      {
+          .processType == Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT) {
         this.MemoryStats.dump(this.currentTestIndex,
                               this.currentTest.path,
                               gConfig.dumpOutputDirectory,
@@ -1090,7 +1088,7 @@ Tester.prototype = {
                 }));
                 
                 return;
-              } else {
+              }
                 currentTest.addResult(new testResult({
                   name: "Uncaught exception",
                   pass: this.SimpleTest.isExpectingUncaughtException(),
@@ -1098,7 +1096,7 @@ Tester.prototype = {
                   stack: (typeof ex == "object" && "stack" in ex) ? ex.stack : null,
                   allowFailure: currentTest.allowFailure,
                 }));
-              }
+
             }
             PromiseTestUtils.assertNoUncaughtRejections();
             this.SimpleTest.info("Leaving test " + task.name);
@@ -1129,8 +1127,7 @@ Tester.prototype = {
     
     if (this.currentTest.scope.__done) {
       this.nextTest();
-    }
-    else {
+    } else {
       var self = this;
       var timeoutExpires = Date.now() + gTimeoutSeconds * 1000;
       var waitUntilAtLeast = timeoutExpires - 1000;
@@ -1178,7 +1175,7 @@ Tester.prototype = {
     }
   },
 
-  QueryInterface: function(aIID) {
+  QueryInterface(aIID) {
     if (aIID.equals(Ci.nsIConsoleListener) ||
         aIID.equals(Ci.nsISupports))
       return this;
@@ -1257,6 +1254,7 @@ function testResult({ name, pass, todo, ex, stack, allowFailure }) {
   if (gConfig.debugOnFailure) {
     
     
+    
     debugger;
   }
 }
@@ -1310,7 +1308,7 @@ function testScope(aTester, aTest, expected) {
 
   this.executeSoon = function test_executeSoon(func) {
     Services.tm.dispatchToMainThread({
-      run: function() {
+      run() {
         func();
       }
     });
@@ -1384,7 +1382,7 @@ function testScope(aTester, aTest, expected) {
     self.__tester.structuredLogger.deactivateBuffering();
     self.registerCleanupFunction(function() {
       self.__tester.structuredLogger.activateBuffering();
-    })
+    });
   };
 
   
@@ -1479,7 +1477,7 @@ testScope.prototype = {
 
 
 
-  add_task: function(aFunction) {
+  add_task(aFunction) {
     if (!this.__tasks) {
       this.waitForExplicitFinish();
       this.__tasks = [];

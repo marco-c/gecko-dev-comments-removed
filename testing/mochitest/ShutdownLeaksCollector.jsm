@@ -13,7 +13,7 @@ var EXPORTED_SYMBOLS = ["ContentCollector"];
 
 
 var ContentCollector = {
-  init: function() {
+  init() {
       let processType = Cc["@mozilla.org/xre/app-info;1"].getService(Ci.nsIXULRuntime).processType;
       if (processType == Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT) {
         
@@ -23,7 +23,7 @@ var ContentCollector = {
     Services.cpmm.addMessageListener("browser-test:collect-request", this);
   },
 
-  receiveMessage: function(aMessage) {
+  receiveMessage(aMessage) {
     switch (aMessage.name) {
       case "browser-test:collect-request":
         Services.obs.notifyObservers(null, "memory-pressure", "heap-minimize");
@@ -45,7 +45,7 @@ var ContentCollector = {
           setTimeout(() => {
             shutdownCleanup(() => {
               this.finish();
-            })
+            });
           }, 1000);
         });
 

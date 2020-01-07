@@ -59,16 +59,14 @@ function getChromeDir(resolvedURI) {
 
 
 function getRootDirectory(path, chromeURI) {
-  if (chromeURI === undefined)
-  {
+  if (chromeURI === undefined) {
     chromeURI = getChromeURI(path);
   }
   var myURL = chromeURI.QueryInterface(Ci.nsIURL);
   var mydir = myURL.directory;
 
-  if (mydir.match('/$') != '/')
-  {
-    mydir += '/';
+  if (mydir.match("/$") != "/") {
+    mydir += "/";
   }
 
   return chromeURI.prePath + mydir;
@@ -126,17 +124,17 @@ function extractJarToTmp(jar) {
 
   
   var filepath = "";
-  var parts = jar.JAREntry.split('/');
-  for (var i =0; i < parts.length - 1; i++) {
-    if (parts[i] != '') {
-      filepath += parts[i] + '/';
+  var parts = jar.JAREntry.split("/");
+  for (var i = 0; i < parts.length - 1; i++) {
+    if (parts[i] != "") {
+      filepath += parts[i] + "/";
     }
   }
 
   
 
 
-  var dirs = zReader.findEntries(filepath + '*/');
+  var dirs = zReader.findEntries(filepath + "*/");
   while (dirs.hasMore()) {
     var targetDir = buildRelativePath(dirs.getNext(), tmpdir, filepath);
     
@@ -150,7 +148,7 @@ function extractJarToTmp(jar) {
   var files = zReader.findEntries(filepath + "*");
   while (files.hasMore()) {
     var fname = files.getNext();
-    if (fname.substr(-1) != '/') {
+    if (fname.substr(-1) != "/") {
       var targetFile = buildRelativePath(fname, tmpdir, filepath);
       zReader.extract(fname, targetFile);
     }
@@ -183,7 +181,7 @@ function getTestFilePath(path) {
   }
   
   path.split("/")
-      .forEach(function (p) {
+      .forEach(function(p) {
         if (p == "..") {
           file = file.parent;
         } else if (p != ".") {
@@ -197,14 +195,13 @@ function getTestFilePath(path) {
 
 
 
-function buildRelativePath(jarentryname, destdir, basepath)
-{
-  var baseParts = basepath.split('/');
-  if (baseParts[baseParts.length-1] == '') {
+function buildRelativePath(jarentryname, destdir, basepath) {
+  var baseParts = basepath.split("/");
+  if (baseParts[baseParts.length - 1] == "") {
     baseParts.pop();
   }
 
-  var parts = jarentryname.split('/');
+  var parts = jarentryname.split("/");
 
   var targetFile = Cc["@mozilla.org/file/local;1"]
                    .createInstance(Ci.nsIFile);
@@ -238,7 +235,7 @@ function readConfig(filename) {
 }
 
 function getTestList(params, callback) {
-  var baseurl = 'chrome://mochitests/content';
+  var baseurl = "chrome://mochitests/content";
   if (window.parseQueryString) {
     params = parseQueryString(location.search.substring(1), true);
   }
@@ -258,5 +255,5 @@ function getTestList(params, callback) {
   }
   params = config;
   getTestManifest("http://mochi.test:8888/" + params.manifestFile, params, callback);
-  return;
+
 }
