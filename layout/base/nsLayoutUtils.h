@@ -2585,15 +2585,6 @@ public:
 
 
   static bool ShouldUseStylo(nsIPrincipal* aPrincipal);
-
-  
-
-
-
-
-
-
-  static bool IsInStyloBlocklist(nsIPrincipal* aPrincipal);
 #else
   static bool ShouldUseStylo(nsIPrincipal* aPrincipal) {
     return false;
@@ -3119,8 +3110,6 @@ private:
   static bool sTextCombineUprightDigitsEnabled;
 #ifdef MOZ_STYLO
   static bool sStyloEnabled;
-  static bool sStyloBlocklistEnabled;
-  static nsTArray<nsCString>* sStyloBlocklist;
 #endif
   static uint32_t sIdlePeriodDeadlineLimit;
   static uint32_t sQuiescentFramesBeforeIdlePeriod;
