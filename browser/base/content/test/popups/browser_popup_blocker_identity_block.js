@@ -55,6 +55,12 @@ add_task(async function check_blocked_popup_indicator() {
   document.getElementById("identity-icon").click();
   await openIdentityPopup();
   await BrowserTestUtils.waitForCondition(() => document.getElementById("blocked-popup-indicator-item") !== null);
+
+  
+  let menulist = document.getElementById("identity-popup-popup-menulist");
+  Assert.equal(menulist.value, "0");
+  Assert.equal(menulist.label, "Block");
+
   await closeIdentityPopup();
 
   
