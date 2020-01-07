@@ -744,7 +744,9 @@ if (Services.prefs.getBoolPref("identity.fxaccounts.enabled")) {
       
       
       item.addEventListener("click", e => {
-        doc.defaultView.openWebLinkIn(tabInfo.url, e);
+        doc.defaultView.openUILink(tabInfo.url, e, {
+          triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({})
+        });
         if (doc.defaultView.whereToOpenLink(e) != "current") {
           e.preventDefault();
           e.stopPropagation();
