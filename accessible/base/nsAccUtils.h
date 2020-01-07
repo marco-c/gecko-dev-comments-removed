@@ -65,13 +65,13 @@ public:
   
 
 
-  static int32_t GetDefaultLevel(Accessible* aAcc);
+  static int32_t GetDefaultLevel(const Accessible* aAcc);
 
   
 
 
 
-  static int32_t GetARIAOrDefaultLevel(Accessible* aAccessible);
+  static int32_t GetARIAOrDefaultLevel(const Accessible* aAccessible);
 
   
 
