@@ -9,7 +9,6 @@
 
 #include <bitset>
 #include "nsAutoPtr.h"
-#include "nsIXMLHttpRequest.h"
 #include "nsISupportsUtils.h"
 #include "nsIURI.h"
 #include "nsIHttpChannel.h"
@@ -162,7 +161,6 @@ class nsXHRParseEndListener;
 
 
 class XMLHttpRequestMainThread final : public XMLHttpRequest,
-                                       public nsIXMLHttpRequest,
                                        public nsIStreamListener,
                                        public nsIChannelEventSink,
                                        public nsIProgressEventSink,
@@ -233,11 +231,6 @@ public:
   NS_DECL_ISUPPORTS_INHERITED
 
   
-  NS_DECL_NSIXMLHTTPREQUEST
-
-  NS_FORWARD_NSIXMLHTTPREQUESTEVENTTARGET(XMLHttpRequestEventTarget::)
-
-  
   NS_DECL_NSISTREAMLISTENER
 
   
@@ -291,10 +284,7 @@ public:
 
   virtual void
   SetRequestHeader(const nsACString& aName, const nsACString& aValue,
-                   ErrorResult& aRv) override
-  {
-    aRv = SetRequestHeader(aName, aValue);
-  }
+                   ErrorResult& aRv) override;
 
   virtual uint32_t
   Timeout() const override
@@ -434,6 +424,9 @@ public:
   virtual bool
   MozBackgroundRequest() const override;
 
+  nsresult
+  SetMozBackgroundRequest(bool aMozBackgroundRequest);
+
   virtual void
   SetMozBackgroundRequest(bool aMozBackgroundRequest, ErrorResult& aRv) override;
 
@@ -481,11 +474,10 @@ public:
                              int64_t aLoaded, int64_t aTotal);
 
   
-  nsresult Init();
-
-  nsresult init(nsIPrincipal* principal,
-                nsPIDOMWindowInner* globalObject,
-                nsIURI* baseURI);
+  nsresult Init(nsIPrincipal* aPrincipal,
+                nsIGlobalObject* aGlobalObject,
+                nsIURI* aBaseURI,
+                nsILoadGroup* aLoadGroup);
 
   void SetRequestObserver(nsIRequestObserver* aObserver);
 
