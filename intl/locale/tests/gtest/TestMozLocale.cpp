@@ -63,6 +63,13 @@ TEST(Intl_Locale_Locale, MatchesRange) {
   ASSERT_TRUE(loc.Matches(loc3, true, true));
 }
 
+TEST(Intl_Locale_Locale, Variants) {
+  Locale loc = Locale("en-US-UniFon-BasicEng");
+
+  
+  ASSERT_TRUE(loc.AsString().Equals("en-US-basiceng-unifon"));
+}
+
 TEST(Intl_Locale_Locale, PrivateUse) {
   Locale loc = Locale("x-test");
 
@@ -85,7 +92,8 @@ TEST(Intl_Locale_Locale, PrivateUse) {
   ASSERT_TRUE(loc2.AsString().Equals("fr-x-test"));
 
   
-  Locale loc3 = Locale("fr-x-foo-bar-baz");
+  
+  Locale loc3 = Locale("fr-x-foo-bAr-BaZ");
 
   ASSERT_TRUE(loc3.IsValid());
   ASSERT_TRUE(loc3.AsString().Equals("fr-x-foo-bar-baz"));
