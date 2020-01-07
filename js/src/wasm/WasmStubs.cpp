@@ -233,6 +233,17 @@ static const LiveRegisterSet NonVolatileRegs =
                     FloatRegisterSet(FloatRegisters::NonVolatileMask
                                      | (1ULL << FloatRegisters::d15)
                                      | (1ULL << FloatRegisters::s31)));
+#elif defined(JS_CODEGEN_ARM64)
+
+
+
+
+static const LiveRegisterSet NonVolatileRegs =
+    LiveRegisterSet(GeneralRegisterSet((Registers::NonVolatileMask &
+                                        ~(uint32_t(1) << Registers::lr)) |
+                                       (uint32_t(1) << Registers::x16)),
+                    FloatRegisterSet(FloatRegisters::NonVolatileMask |
+                                     FloatRegisters::NonAllocatableMask));
 #else
 static const LiveRegisterSet NonVolatileRegs =
     LiveRegisterSet(GeneralRegisterSet(Registers::NonVolatileMask),
@@ -245,7 +256,53 @@ static const unsigned NonVolatileRegsPushSize = 0;
 static const unsigned NonVolatileRegsPushSize = NonVolatileRegs.gprs().size() * sizeof(intptr_t) +
                                                 NonVolatileRegs.fpus().getPushSizeInBytes();
 #endif
+
+#if defined(JS_CODEGEN_ARM64)
+
+static const unsigned FramePushedBeforeAlign = NonVolatileRegsPushSize + 2 * sizeof(void*);
+#else
 static const unsigned FramePushedBeforeAlign = NonVolatileRegsPushSize + sizeof(void*);
+#endif
+
+static void
+AssertExpectedSP(const MacroAssembler& masm)
+{
+#ifdef JS_CODEGEN_ARM64
+    MOZ_ASSERT(sp.Is(masm.GetStackPointer64()));
+#endif
+}
+
+static void
+WasmPush(MacroAssembler& masm, Register r)
+{
+#ifdef JS_CODEGEN_ARM64
+    
+    masm.reserveStack(16);
+    masm.storePtr(r, Address(masm.getStackPointer(), 0));
+#else
+    masm.Push(r);
+#endif
+}
+
+static void
+WasmPop(MacroAssembler& masm, Register r)
+{
+#ifdef JS_CODEGEN_ARM64
+    
+    masm.loadPtr(Address(masm.getStackPointer(), 0), r);
+    masm.freeStack(16);
+#else
+    masm.Pop(r);
+#endif
+}
+
+static void
+MoveSPForJitABI(MacroAssembler& masm)
+{
+#ifdef JS_CODEGEN_ARM64
+    masm.moveStackPtrTo(PseudoStackPointer);
+#endif
+}
 
 static void
 CallFuncExport(MacroAssembler& masm, const FuncExport& fe, const Maybe<ImmPtr>& funcPtr)
@@ -265,13 +322,22 @@ static bool
 GenerateInterpEntry(MacroAssembler& masm, const FuncExport& fe, const Maybe<ImmPtr>& funcPtr,
                     Offsets* offsets)
 {
+    AssertExpectedSP(masm);
     masm.haltingAlign(CodeAlignment);
 
     offsets->begin = masm.currentOffset();
 
     
 #ifdef JS_USE_LINK_REGISTER
+# if defined(JS_CODEGEN_ARM)
     masm.pushReturnAddress();
+# elif defined(JS_CODEGEN_ARM64)
+    
+    
+    WasmPush(masm, lr);
+# else
+#   MOZ_CRASH("Implement this");
+# endif
 #endif
 
     
@@ -307,7 +373,7 @@ GenerateInterpEntry(MacroAssembler& masm, const FuncExport& fe, const Maybe<ImmP
         masm.loadPtr(Address(masm.getStackPointer(), argBase + arg.offsetFromArgBase()), WasmTlsReg);
 
     
-    masm.Push(argv);
+    WasmPush(masm, argv);
 
     
     
@@ -316,9 +382,13 @@ GenerateInterpEntry(MacroAssembler& masm, const FuncExport& fe, const Maybe<ImmP
 
     
     
+#ifdef JS_CODEGEN_ARM64
+    static_assert(WasmStackAlignment == 16, "ARM64 SP alignment");
+#else
     masm.moveStackPtrTo(scratch);
     masm.andToStackPtr(Imm32(~(WasmStackAlignment - 1)));
     masm.Push(scratch);
+#endif
 
     
     unsigned argDecrement = StackDecrementForCall(WasmStackAlignment,
@@ -344,12 +414,16 @@ GenerateInterpEntry(MacroAssembler& masm, const FuncExport& fe, const Maybe<ImmP
     masm.freeStack(argDecrement);
 
     
+#ifdef JS_CODEGEN_ARM64
+    static_assert(WasmStackAlignment == 16, "ARM64 SP alignment");
+#else
     masm.PopStackPtr();
+#endif
     MOZ_ASSERT(masm.framePushed() == 0);
     masm.setFramePushed(FramePushedBeforeAlign);
 
     
-    masm.Pop(argv);
+    WasmPop(masm, argv);
 
     
     StoreABIReturn(masm, fe, argv);
@@ -376,7 +450,13 @@ GenerateInterpEntry(MacroAssembler& masm, const FuncExport& fe, const Maybe<ImmP
     masm.PopRegsInMask(NonVolatileRegs);
     MOZ_ASSERT(masm.framePushed() == 0);
 
+#if defined(JS_CODEGEN_ARM64)
+    masm.setFramePushed(16);
+    WasmPop(masm, lr);
+    masm.abiret();
+#else
     masm.ret();
+#endif
 
     return FinishOffsets(masm, offsets);
 }
@@ -402,6 +482,8 @@ CallSymbolicAddress(MacroAssembler& masm, bool isAbsolute, SymbolicAddress sym)
 static void
 GenerateJitEntryLoadTls(MacroAssembler& masm, unsigned frameSize)
 {
+    AssertExpectedSP(masm);
+
     
     unsigned offset = frameSize + JitFrameLayout::offsetOfCalleeToken();
     masm.loadFunctionFromCalleeToken(Address(masm.getStackPointer(), offset), ScratchIonEntry);
@@ -421,14 +503,17 @@ GenerateJitEntryLoadTls(MacroAssembler& masm, unsigned frameSize)
 static void
 GenerateJitEntryThrow(MacroAssembler& masm, unsigned frameSize)
 {
+    AssertExpectedSP(masm);
+
     MOZ_ASSERT(masm.framePushed() == frameSize);
 
     GenerateJitEntryLoadTls(masm, frameSize);
 
     masm.freeStack(frameSize);
+    MoveSPForJitABI(masm);
 
     masm.loadPtr(Address(WasmTlsReg, offsetof(TlsData, cx)), ScratchIonEntry);
-    masm.enterFakeExitFrame(ScratchIonEntry, ScratchIonEntry, ExitFrameType::WasmJitEntry);
+    masm.enterFakeExitFrameForWasm(ScratchIonEntry, ScratchIonEntry, ExitFrameType::WasmJitEntry);
 
     masm.loadPtr(Address(WasmTlsReg, offsetof(TlsData, instance)), ScratchIonEntry);
     masm.loadPtr(Address(ScratchIonEntry, Instance::offsetOfJSJitExceptionHandler()),
@@ -437,10 +522,17 @@ GenerateJitEntryThrow(MacroAssembler& masm, unsigned frameSize)
 }
 
 
+
+
+
+
+
 static bool
 GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex, const FuncExport& fe,
                  const Maybe<ImmPtr>& funcPtr, Offsets* offsets)
 {
+    AssertExpectedSP(masm);
+
     RegisterOrSP sp = masm.getStackPointer();
 
     GenerateJitEntryPrologue(masm, offsets);
@@ -681,7 +773,14 @@ GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex, const FuncExport&
     }
 
     MOZ_ASSERT(masm.framePushed() == 0);
+#ifdef JS_CODEGEN_ARM64
+    masm.loadPtr(Address(sp, 0), lr);
+    masm.addToStackPtr(Imm32(8));
+    masm.moveStackPtrTo(PseudoStackPointer);
+    masm.abiret();
+#else
     masm.ret();
+#endif
 
     
     if (fe.sig().args().length()) {
@@ -861,6 +960,7 @@ static bool
 GenerateImportFunction(jit::MacroAssembler& masm, const FuncImport& fi, SigIdDesc sigId,
                        FuncOffsets* offsets)
 {
+    AssertExpectedSP(masm);
     masm.setFramePushed(0);
 
     unsigned framePushed = StackDecrementForCall(masm, WasmStackAlignment, fi.sig().args());
@@ -885,6 +985,7 @@ GenerateImportFunction(jit::MacroAssembler& masm, const FuncImport& fi, SigIdDes
 
     
     CallSiteDesc desc(CallSiteDesc::Dynamic);
+    MoveSPForJitABI(masm);
     masm.wasmCallImport(desc, CalleeDesc::import(fi.tlsDataOffset()));
 
     
@@ -932,6 +1033,7 @@ static bool
 GenerateImportInterpExit(MacroAssembler& masm, const FuncImport& fi, uint32_t funcImportIndex,
                          Label* throwLabel, CallableOffsets* offsets)
 {
+    AssertExpectedSP(masm);
     masm.setFramePushed(0);
 
     
@@ -1056,6 +1158,7 @@ static bool
 GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi, Label* throwLabel,
                       JitExitOffsets* offsets)
 {
+    AssertExpectedSP(masm);
     masm.setFramePushed(0);
 
     
@@ -1065,18 +1168,25 @@ GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi, Label* throwLa
     
     
     static_assert(WasmStackAlignment >= JitStackAlignment, "subsumes");
-    unsigned sizeOfRetAddr = sizeof(void*);
-    unsigned sizeOfPreFrame = WasmToJSJitFrameLayout::Size() - sizeOfRetAddr;
-    unsigned sizeOfThisAndArgs = (1 + fi.sig().args().length()) * sizeof(Value);
-    unsigned totalJitFrameBytes = sizeOfRetAddr + sizeOfPreFrame + sizeOfThisAndArgs;
-    unsigned jitFramePushed = StackDecrementForCall(masm, JitStackAlignment, totalJitFrameBytes) -
-                              sizeOfRetAddr;
-    unsigned sizeOfThisAndArgsAndPadding = jitFramePushed - sizeOfPreFrame;
-
-    GenerateJitExitPrologue(masm, jitFramePushed, offsets);
+    const unsigned sizeOfRetAddr = sizeof(void*);
+    const unsigned sizeOfPreFrame = WasmToJSJitFrameLayout::Size() - sizeOfRetAddr;
+    const unsigned sizeOfThisAndArgs = (1 + fi.sig().args().length()) * sizeof(Value);
+    const unsigned totalJitFrameBytes = sizeOfRetAddr + sizeOfPreFrame + sizeOfThisAndArgs;
+    const unsigned jitFramePushed = StackDecrementForCall(masm, JitStackAlignment, totalJitFrameBytes) -
+                                    sizeOfRetAddr;
+    const unsigned sizeOfThisAndArgsAndPadding = jitFramePushed - sizeOfPreFrame;
 
     
-    size_t argOffset = 0;
+#ifdef JS_CODEGEN_ARM64
+    const unsigned frameAlignExtra = sizeof(void*);
+#else
+    const unsigned frameAlignExtra = 0;
+#endif
+
+    GenerateJitExitPrologue(masm, jitFramePushed + frameAlignExtra, offsets);
+
+    
+    size_t argOffset = frameAlignExtra;
     uint32_t descriptor = MakeFrameDescriptor(sizeOfThisAndArgsAndPadding, JitFrame_WasmToJSJit,
                                               WasmToJSJitFrameLayout::Size());
     masm.storePtr(ImmWord(uintptr_t(descriptor)), Address(masm.getStackPointer(), argOffset));
@@ -1097,7 +1207,7 @@ GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi, Label* throwLa
     unsigned argc = fi.sig().args().length();
     masm.storePtr(ImmWord(uintptr_t(argc)), Address(masm.getStackPointer(), argOffset));
     argOffset += sizeof(size_t);
-    MOZ_ASSERT(argOffset == sizeOfPreFrame);
+    MOZ_ASSERT(argOffset == sizeOfPreFrame + frameAlignExtra);
 
     
     masm.storeValue(UndefinedValue(), Address(masm.getStackPointer(), argOffset));
@@ -1107,7 +1217,7 @@ GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi, Label* throwLa
     unsigned offsetToCallerStackArgs = jitFramePushed + sizeof(Frame);
     FillArgumentArray(masm, fi.sig().args(), argOffset, offsetToCallerStackArgs, scratch, ToValue(true));
     argOffset += fi.sig().args().length() * sizeof(Value);
-    MOZ_ASSERT(argOffset == sizeOfThisAndArgs + sizeOfPreFrame);
+    MOZ_ASSERT(argOffset == sizeOfThisAndArgs + sizeOfPreFrame + frameAlignExtra);
 
     
     masm.load16ZeroExtend(Address(callee, JSFunction::offsetOfNargs()), scratch);
@@ -1121,8 +1231,17 @@ GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi, Label* throwLa
     Label rejoinBeforeCall;
     masm.bind(&rejoinBeforeCall);
 
-    AssertStackAlignment(masm, JitStackAlignment, sizeOfRetAddr);
+    AssertStackAlignment(masm, JitStackAlignment, sizeOfRetAddr + frameAlignExtra);
+#ifdef JS_CODEGEN_ARM64
+    
+    masm.addToStackPtr(Imm32(8));
+#endif
+    MoveSPForJitABI(masm);
     masm.callJitNoProfiler(callee);
+#ifdef JS_CODEGEN_ARM64
+    
+    masm.subFromStackPtr(Imm32(8));
+#endif
 
     
     
@@ -1137,7 +1256,7 @@ GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi, Label* throwLa
     
     
     offsets->untrustedFPStart = masm.currentOffset();
-    AssertStackAlignment(masm, JitStackAlignment, sizeOfRetAddr);
+    AssertStackAlignment(masm, JitStackAlignment, sizeOfRetAddr + frameAlignExtra);
 
     masm.loadWasmTlsRegFromFrame();
     masm.moveStackPtrTo(FramePointer);
@@ -1149,7 +1268,12 @@ GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi, Label* throwLa
     
     
     static_assert(ABIStackAlignment <= JitStackAlignment, "subsumes");
+#ifdef JS_CODEGEN_ARM64
+    
+    static_assert(sizeOfRetAddr == frameAlignExtra, "ARM64 SP alignment");
+#else
     masm.reserveStack(sizeOfRetAddr);
+#endif
     unsigned nativeFramePushed = masm.framePushed();
     AssertStackAlignment(masm, ABIStackAlignment);
 
@@ -1303,6 +1427,7 @@ bool
 wasm::GenerateBuiltinThunk(MacroAssembler& masm, ABIFunctionType abiType, ExitReason exitReason,
                            void* funcPtr, CallableOffsets* offsets)
 {
+    AssertExpectedSP(masm);
     masm.setFramePushed(0);
 
     ABIFunctionArgs args(abiType);
@@ -1336,6 +1461,7 @@ wasm::GenerateBuiltinThunk(MacroAssembler& masm, ABIFunctionType abiType, ExitRe
     }
 
     AssertStackAlignment(masm, ABIStackAlignment);
+    MoveSPForJitABI(masm);
     masm.call(ImmPtr(funcPtr, ImmPtr::NoCheckToken()));
 
 #if defined(JS_CODEGEN_X86)
@@ -1365,6 +1491,7 @@ wasm::GenerateBuiltinThunk(MacroAssembler& masm, ABIFunctionType abiType, ExitRe
 static bool
 GenerateTrapExit(MacroAssembler& masm, Label* throwLabel, Offsets* offsets)
 {
+    AssertExpectedSP(masm);
     masm.haltingAlign(CodeAlignment);
 
     offsets->begin = masm.currentOffset();
@@ -1390,6 +1517,7 @@ GenerateTrapExit(MacroAssembler& masm, Label* throwLabel, Offsets* offsets)
 static bool
 GenerateOldTrapExit(MacroAssembler& masm, Trap trap, Label* throwLabel, CallableOffsets* offsets)
 {
+    AssertExpectedSP(masm);
     masm.haltingAlign(CodeAlignment);
 
     masm.setFramePushed(0);
@@ -1431,6 +1559,7 @@ static bool
 GenerateGenericMemoryAccessTrap(MacroAssembler& masm, SymbolicAddress reporter, Label* throwLabel,
                                 Offsets* offsets)
 {
+    AssertExpectedSP(masm);
     masm.haltingAlign(CodeAlignment);
 
     offsets->begin = masm.currentOffset();
@@ -1476,6 +1605,11 @@ static const LiveRegisterSet AllUserRegsExceptSP(
                                               (uint32_t(1) << Registers::zero))),
     FloatRegisterSet(FloatRegisters::AllDoubleMask));
 static_assert(!SupportsSimd, "high lanes of SIMD registers need to be saved too.");
+#elif defined(JS_CODEGEN_ARM64)
+static const LiveRegisterSet AllRegsExceptSPLR(
+    GeneralRegisterSet(Registers::AllMask & ~((uint32_t(1) << Registers::StackPointer) |
+                                              (uint32_t(1) << Registers::lr))),
+    FloatRegisterSet(FloatRegisters::AllMask));
 #else
 static const LiveRegisterSet AllRegsExceptSP(
     GeneralRegisterSet(Registers::AllMask & ~(uint32_t(1) << Registers::StackPointer)),
@@ -1492,6 +1626,7 @@ static const LiveRegisterSet AllRegsExceptSP(
 static bool
 GenerateInterruptExit(MacroAssembler& masm, Label* throwLabel, Offsets* offsets)
 {
+    AssertExpectedSP(masm);
     masm.haltingAlign(CodeAlignment);
 
     offsets->begin = masm.currentOffset();
@@ -1629,7 +1764,65 @@ GenerateInterruptExit(MacroAssembler& masm, Label* throwLabel, Offsets* offsets)
     MOZ_ASSERT(masm.framePushed() == 0);
     masm.ret();
 #elif defined(JS_CODEGEN_ARM64)
-    MOZ_CRASH();
+    
+    static constexpr unsigned SAVE_AREA = 16;
+    static constexpr unsigned LR_OFFSET = 0;
+    static constexpr unsigned PC_OFFSET = 8;
+    masm.subFromStackPtr(Imm32(SAVE_AREA));
+
+    uint32_t oldFramePushed = masm.framePushed();
+
+    
+    
+    masm.setFramePushed(0);
+
+    
+    
+    masm.Str(ARMRegister(lr, 64), vixl::MemOperand(sp, LR_OFFSET));
+
+    
+    masm.PushRegsInMask(AllRegsExceptSPLR);
+
+    MOZ_ASSERT(masm.framePushed() % 16 == 0);
+
+    
+    
+    masm.Mrs(x20, vixl::NZCV);
+    masm.Mrs(x21, vixl::FPCR);
+    masm.Mov(x22, sp);
+
+    
+    static_assert(ABIStackAlignment == 16, "ARM64 SP alignment");
+
+    
+    masm.assertStackAlignment(ABIStackAlignment);
+    masm.call(SymbolicAddress::HandleExecutionInterrupt);
+
+    
+    
+    masm.branchTestPtr(Assembler::Zero, ReturnReg, ReturnReg, throwLabel);
+
+    
+    
+    masm.Mov(sp, x22);
+    masm.Str(ARMRegister(ReturnReg, 64), vixl::MemOperand(sp, masm.framePushed() + PC_OFFSET));
+
+    
+    
+    masm.Msr(vixl::FPCR, x21);
+    masm.Msr(vixl::NZCV, x20);
+    masm.PopRegsInMask(AllRegsExceptSPLR);
+    masm.Ldr(ARMRegister(lr, 64), vixl::MemOperand(sp, LR_OFFSET));
+
+    
+    MOZ_ASSERT(masm.framePushed() == 0);
+
+    masm.setFramePushed(oldFramePushed);
+
+    
+    masm.loadPtr(Address(masm.getStackPointer(), PC_OFFSET), PseudoStackPointer);
+    masm.addToStackPtr(Imm32(SAVE_AREA));
+    masm.Ret(PseudoStackPointer64);
 #elif defined (JS_CODEGEN_NONE)
     MOZ_CRASH();
 #else
@@ -1647,6 +1840,7 @@ GenerateInterruptExit(MacroAssembler& masm, Label* throwLabel, Offsets* offsets)
 static bool
 GenerateThrowStub(MacroAssembler& masm, Label* throwLabel, Offsets* offsets)
 {
+    AssertExpectedSP(masm);
     masm.haltingAlign(CodeAlignment);
 
     masm.bind(throwLabel);
@@ -1666,7 +1860,13 @@ GenerateThrowStub(MacroAssembler& masm, Label* throwLabel, Offsets* offsets)
     masm.call(SymbolicAddress::HandleThrow);
     masm.moveToStackPtr(ReturnReg);
     masm.move32(Imm32(FailFP), FramePointer);
+#ifdef JS_CODEGEN_ARM64
+    masm.loadPtr(Address(ReturnReg, 0), lr);
+    masm.addToStackPtr(Imm32(8));
+    masm.abiret();
+#else
     masm.ret();
+#endif
 
     return FinishOffsets(masm, offsets);
 }
@@ -1681,8 +1881,8 @@ static const LiveRegisterSet AllAllocatableRegs = LiveRegisterSet(
 static bool
 GenerateDebugTrapStub(MacroAssembler& masm, Label* throwLabel, CallableOffsets* offsets)
 {
+    AssertExpectedSP(masm);
     masm.haltingAlign(CodeAlignment);
-
     masm.setFramePushed(0);
 
     GenerateExitPrologue(masm, 0, ExitReason::Fixed::DebugTrap, offsets);
@@ -1694,11 +1894,16 @@ GenerateDebugTrapStub(MacroAssembler& masm, Label* throwLabel, CallableOffsets* 
 
     
     
+#ifdef JS_CODEGEN_ARM64
+    
+    static_assert(ABIStackAlignment == 16, "ARM64 SP alignment");
+#else
     Register scratch = ABINonArgReturnReg0;
     masm.moveStackPtrTo(scratch);
     masm.subFromStackPtr(Imm32(sizeof(intptr_t)));
     masm.andToStackPtr(Imm32(~(ABIStackAlignment - 1)));
     masm.storePtr(scratch, Address(masm.getStackPointer(), 0));
+#endif
 
     if (ShadowStackSpace)
         masm.subFromStackPtr(Imm32(ShadowStackSpace));
@@ -1709,8 +1914,10 @@ GenerateDebugTrapStub(MacroAssembler& masm, Label* throwLabel, CallableOffsets* 
 
     if (ShadowStackSpace)
         masm.addToStackPtr(Imm32(ShadowStackSpace));
+#ifndef JS_CODEGEN_ARM64
     masm.Pop(scratch);
     masm.moveToStackPtr(scratch);
+#endif
 
     masm.setFramePushed(framePushed);
     masm.PopRegsInMask(AllAllocatableRegs);

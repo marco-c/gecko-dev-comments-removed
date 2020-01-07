@@ -581,12 +581,6 @@ MacroAssembler::Pop(const ValueOperand& val)
     adjustFrame(-1 * int64_t(sizeof(int64_t)));
 }
 
-void
-MacroAssembler::PopStackPtr()
-{
-    MOZ_CRASH("NYI");
-}
-
 
 
 
@@ -1386,6 +1380,28 @@ MacroAssembler::wasmStoreI64(const wasm::MemoryAccessDesc& access, Register64 va
                              Register memoryBase, Register ptr, Register ptrScratch)
 {
     wasmStoreImpl(access, AnyRegister(), value, memoryBase, ptr, ptrScratch);
+}
+
+void
+MacroAssembler::enterFakeExitFrameForWasm(Register cxreg, Register scratch, ExitFrameType type)
+{
+    
+    
+    
+
+    linkExitFrame(cxreg, scratch);
+
+    MOZ_ASSERT(sp.Is(GetStackPointer64()));
+
+    const ARMRegister tmp(scratch, 64);
+
+    vixl::UseScratchRegisterScope temps(this);
+    const ARMRegister tmp2 = temps.AcquireX();
+
+    Sub(sp, sp, 8);
+    Mov(tmp, sp);           
+    Mov(tmp2, int32_t(type));
+    Str(tmp2, vixl::MemOperand(tmp, 0));
 }
 
 

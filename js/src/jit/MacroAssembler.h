@@ -385,6 +385,9 @@ class MacroAssembler : public MacroAssemblerSpecific
         m_buffer.id = 0;
 #elif defined(JS_CODEGEN_ARM64)
         initWithAllocator();
+        
+        
+        SetStackPointer64(sp);
         armbuffer_.id = 0;
 #endif
     }
@@ -485,7 +488,7 @@ class MacroAssembler : public MacroAssemblerSpecific
     void Pop(FloatRegister t) PER_SHARED_ARCH;
     void Pop(const ValueOperand& val) PER_SHARED_ARCH;
     void PopFlags() DEFINED_ON(x86_shared);
-    void PopStackPtr() PER_SHARED_ARCH;
+    void PopStackPtr() DEFINED_ON(arm, mips_shared, x86_shared);
     void popRooted(VMFunction::RootType rootType, Register cellReg, const ValueOperand& valueReg);
 
     
@@ -537,6 +540,7 @@ class MacroAssembler : public MacroAssemblerSpecific
     void callAndPushReturnAddress(Register reg) DEFINED_ON(x86_shared);
     void callAndPushReturnAddress(Label* label) DEFINED_ON(x86_shared);
 
+    
     void pushReturnAddress() DEFINED_ON(mips_shared, arm, arm64);
     void popReturnAddress() DEFINED_ON(mips_shared, arm, arm64);
 
@@ -1666,6 +1670,11 @@ class MacroAssembler : public MacroAssemblerSpecific
     
     
     void wasmEmitOldTrapOutOfLineCode();
+
+    
+    
+    void enterFakeExitFrameForWasm(Register cxreg, Register scratch, ExitFrameType type)
+        PER_SHARED_ARCH;
 
   public:
     
