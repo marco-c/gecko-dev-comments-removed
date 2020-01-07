@@ -217,24 +217,20 @@ gfxPlatformGtk::GetCommonFallbackFonts(uint32_t aCh, uint32_t aNextCh,
                                        Script aRunScript,
                                        nsTArray<const char*>& aFontList)
 {
-    if (aNextCh == 0xfe0fu) {
-      
-      aFontList.AppendElement(kFontEmojiOneMozilla);
+    EmojiPresentation emoji = GetEmojiPresentation(aCh);
+    if (emoji != EmojiPresentation::TextOnly) {
+        if (aNextCh == kVariationSelector16 ||
+           (aNextCh != kVariationSelector15 &&
+            emoji == EmojiPresentation::EmojiDefault)) {
+            
+            aFontList.AppendElement(kFontEmojiOneMozilla);
+        }
     }
 
     aFontList.AppendElement(kFontDejaVuSerif);
     aFontList.AppendElement(kFontFreeSerif);
     aFontList.AppendElement(kFontDejaVuSans);
     aFontList.AppendElement(kFontFreeSans);
-
-    if (!IS_IN_BMP(aCh)) {
-        uint32_t p = aCh >> 16;
-        if (p == 1) { 
-            if (aNextCh != 0xfe0fu && aNextCh != 0xfe0eu) {
-                aFontList.AppendElement(kFontEmojiOneMozilla);
-            }
-        }
-    }
 
     
     

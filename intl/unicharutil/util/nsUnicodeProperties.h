@@ -52,6 +52,9 @@ enum EmojiPresentation {
   EmojiDefault = 2
 };
 
+const uint32_t kVariationSelector15 = 0xFE0E; 
+const uint32_t kVariationSelector16 = 0xFE0F; 
+
 extern const hb_unicode_general_category_t sICUtoHBcategory[];
 
 inline uint32_t
