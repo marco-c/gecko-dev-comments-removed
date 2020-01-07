@@ -1256,28 +1256,6 @@ this.PlacesUtils = {
   
 
 
-  getBookmarksForURI:
-  function PU_getBookmarksForURI(aURI) {
-    return this.bookmarks.getBookmarkIdsForURI(aURI);
-  },
-
-  
-
-
-
-
-
-
-
-  getMostRecentBookmarkForURI:
-  function PU_getMostRecentBookmarkForURI(aURI) {
-    let bmkIds = this.bookmarks.getBookmarkIdsForURI(aURI);
-    return bmkIds.length ? bmkIds[0] : -1;
-  },
-
-  
-
-
 
 
 
