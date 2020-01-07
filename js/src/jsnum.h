@@ -48,18 +48,6 @@ FinishRuntimeNumberState(JSRuntime* rt);
 extern JSObject*
 InitNumberClass(JSContext* cx, HandleObject obj);
 
-} 
-
-
-
-
-extern const char js_isNaN_str[];
-extern const char js_isFinite_str[];
-extern const char js_parseFloat_str[];
-extern const char js_parseInt_str[];
-
-namespace js {
-
 
 
 
