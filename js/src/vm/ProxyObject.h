@@ -19,10 +19,6 @@ namespace js {
 
 
 
-
-
-
-
 class ProxyObject : public ShapedObject
 {
     
@@ -131,6 +127,11 @@ class ProxyObject : public ShapedObject
     static void traceEdgeToTarget(JSTracer* trc, ProxyObject* obj);
 
     void nuke();
+
+    
+    
+    
+    static const Class proxyClass;
 };
 
 inline bool
