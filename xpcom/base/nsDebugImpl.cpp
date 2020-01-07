@@ -221,6 +221,12 @@ nsDebugImpl::SetMultiprocessMode(const char* aDesc)
   sMultiprocessDescription = aDesc;
 }
 
+ const char *
+nsDebugImpl::GetMultiprocessMode()
+{
+  return sMultiprocessDescription;
+}
+
 
 
 
