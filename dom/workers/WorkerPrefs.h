@@ -21,7 +21,6 @@
 
 
 
-WORKER_SIMPLE_PREF("dom.serviceWorkers.testing.enabled", ServiceWorkersTestingEnabled, SERVICEWORKERS_TESTING_ENABLED)
 WORKER_SIMPLE_PREF("dom.storageManager.enabled", StorageManagerEnabled, STORAGEMANAGER_ENABLED)
 WORKER_SIMPLE_PREF("dom.promise_rejection_events.enabled", PromiseRejectionEventsEnabled, PROMISE_REJECTION_EVENTS_ENABLED)
 WORKER_SIMPLE_PREF("dom.push.enabled", PushEnabled, PUSH_ENABLED)

@@ -48,6 +48,9 @@ public:
   
   static bool ServiceWorkersEnabled();
   static bool ServiceWorkersEnabled(JSContext* aCx, JSObject* aObj);
+
+  
+  static bool ServiceWorkersTestingEnabled();
 };
 
 } 
