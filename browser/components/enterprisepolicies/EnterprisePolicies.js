@@ -369,12 +369,18 @@ class JSONPoliciesProvider {
   }
 
   _getConfigurationFile() {
-    let configFile = Services.dirsvc.get("XREAppDist", Ci.nsIFile);
-    configFile.append(POLICIES_FILENAME);
+    let configFile = null;
+    try {
+      configFile = Services.dirsvc.get("XREAppDist", Ci.nsIFile);
+      configFile.append(POLICIES_FILENAME);
+    } catch (ex) {
+      
+      
+    }
 
     let alternatePath = Services.prefs.getStringPref(PREF_ALTERNATE_PATH, "");
 
-    if (alternatePath && !configFile.exists()) {
+    if (alternatePath && (!configFile || !configFile.exists())) {
       
       
       
