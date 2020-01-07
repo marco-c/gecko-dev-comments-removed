@@ -7,7 +7,7 @@
 
 "use strict";
 
-function onNewMessage(aEvent, aNewMessages) {
+function onNewMessage(aNewMessages) {
   for (let msg of aNewMessages) {
     
     if (msg.node.textContent.includes("FAIL_TEST")) {
@@ -119,7 +119,7 @@ add_task(function* () {
 
   let deferred = defer();
 
-  let onFetch = (aEvent, aVar) => {
+  let onFetch = (aVar) => {
     
     if (aVar._variablesView != hud.jsterm._variablesView) {
       return;

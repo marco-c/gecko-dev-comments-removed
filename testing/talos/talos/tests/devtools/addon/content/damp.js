@@ -352,7 +352,7 @@ Damp.prototype = {
 
     
     let allMessagesReceived = new Promise(resolve => {
-      function receiveMessages(e, messages) {
+      function receiveMessages(messages) {
         for (let m of messages) {
           if (m.node.textContent.includes("damp " + TOTAL_MESSAGES)) {
             webconsole.hud.ui.off("new-messages", receiveMessages);
@@ -444,7 +444,7 @@ Damp.prototype = {
 
     
     let onMessageReceived = new Promise(resolve => {
-      function receiveMessages(e, messages) {
+      function receiveMessages(messages) {
         for (let m of messages) {
           resolve(m);
         }
