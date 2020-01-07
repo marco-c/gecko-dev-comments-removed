@@ -2021,27 +2021,6 @@ NS_IMETHODIMP XPCWrappedNative::GetJSObjectPrototype(JSObject * *aJSObjectProtot
     return NS_OK;
 }
 
-nsIPrincipal*
-XPCWrappedNative::GetObjectPrincipal() const
-{
-    nsIPrincipal* principal = GetScope()->GetPrincipal();
-#ifdef DEBUG
-    
-    
-    
-    nsCOMPtr<nsIScriptObjectPrincipal> objPrin(do_QueryInterface(mIdentity));
-    if (objPrin) {
-        bool equal;
-        if (!principal)
-            equal = !objPrin->GetPrincipal();
-        else
-            principal->Equals(objPrin->GetPrincipal(), &equal);
-        MOZ_ASSERT(equal, "Principal mismatch.  Expect bad things to happen");
-    }
-#endif
-    return principal;
-}
-
 NS_IMETHODIMP XPCWrappedNative::FindInterfaceWithMember(HandleId name,
                                                         nsIInterfaceInfo * *_retval)
 {
