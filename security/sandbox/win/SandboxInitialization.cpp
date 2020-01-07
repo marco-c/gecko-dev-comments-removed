@@ -83,7 +83,7 @@ EnableHandleCloseMonitoring()
 static bool
 ShouldDisableHandleVerifier()
 {
-#if defined(_X86_) && (defined(NIGHTLY_BUILD) || defined(DEBUG))
+#if defined(_X86_) && (defined(EARLY_BETA_OR_EARLIER) || defined(DEBUG))
   
   
   
