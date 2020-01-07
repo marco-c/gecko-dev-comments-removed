@@ -127,6 +127,16 @@ FlattenedChildIterator::Init(bool aIgnoreXBL)
     return;
   }
 
+  
+  
+  if (mParent->IsElement()) {
+    if (ShadowRoot* shadow = mParent->AsElement()->GetShadowRoot()) {
+      mParent = shadow;
+      mXBLInvolved = true;
+      return;
+    }
+  }
+
   nsXBLBinding* binding =
     mParent->OwnerDoc()->BindingManager()->GetBindingWithContent(mParent);
 
@@ -136,6 +146,8 @@ FlattenedChildIterator::Init(bool aIgnoreXBL)
     mXBLInvolved = true;
   }
 
+  
+  
   
   
   
