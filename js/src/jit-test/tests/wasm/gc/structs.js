@@ -71,15 +71,6 @@ assertEq(ins.x2(8), Math.PI)
 
 
 
-var txt = wasmBinaryToText(bin);
-var re = /\(type\s+\$[a-z0-9]+\s+\(struct/gm;
-assertEq(Array.isArray(re.exec(txt)), true);
-assertEq(Array.isArray(re.exec(txt)), true);
-assertEq(Array.isArray(re.exec(txt)), true);
-assertEq(Array.isArray(re.exec(txt)), false);
-
-
-
 wasmEvalText(`
 (module
  (type $s (struct (field i32))))

@@ -9,7 +9,6 @@ if (!wasmDebuggingIsSupported())
 
 
 
-
 function getAllOffsets(wast) {
   var sandbox = newGlobal('');
   var dbg = new Debugger();
