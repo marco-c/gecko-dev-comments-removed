@@ -1241,6 +1241,17 @@ HyperTextAccessible::TextBounds(int32_t aStartOffset, int32_t aEndOffset,
     return nsIntRect();
   }
 
+  if (CharacterCount() == 0) {
+    nsPresContext* presContext = mDoc->PresContext();
+    
+    return GetFrame()->GetScreenRectInAppUnits().
+      ToNearestPixels(presContext->AppUnitsPerDevPixel());
+  }
+
+  if (startOffset == endOffset) {
+    NS_ERROR("Wrong in offset");
+    return nsIntRect();
+  }
 
   int32_t childIdx = GetChildIndexAtOffset(startOffset);
   if (childIdx == -1)
