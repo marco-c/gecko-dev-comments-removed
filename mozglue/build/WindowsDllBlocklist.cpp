@@ -268,6 +268,10 @@ static const DllBlockInfo sWindowsDllBlocklist[] = {
   
   { "gdkbfltdll64.dll", MAKE_VERSION(1, 0, 14141, 240) },
 
+  
+  { "dbroverlayiconnotbackuped.dll", MAKE_VERSION(1, 8, 0, 9) },
+  { "dbroverlayiconbackuped.dll", MAKE_VERSION(1, 8, 0, 9) },
+
   { nullptr, 0 }
 };
 
