@@ -120,13 +120,6 @@ types.getType = function(type) {
 
 
 
-function isIterator(v) {
-  return v && typeof v === "object" && Symbol.iterator in v && !Array.isArray(v);
-}
-
-
-
-
 
 function identityWrite(v) {
   if (v === undefined) {
@@ -134,7 +127,7 @@ function identityWrite(v) {
   }
   
   
-  if (isIterator(v)) {
+  if (v && typeof v.next === "function") {
     return [...v];
   }
   return v;
@@ -223,13 +216,13 @@ types.addArrayType = function(subtype) {
   return types.addType(name, {
     category: "array",
     read: (v, ctx) => {
-      if (isIterator(v)) {
+      if (v && typeof v.next === "function") {
         v = [...v];
       }
       return v.map(i => subtype.read(i, ctx));
     },
     write: (v, ctx) => {
-      if (isIterator(v)) {
+      if (v && typeof v.next === "function") {
         v = [...v];
       }
       return v.map(i => subtype.write(i, ctx));
