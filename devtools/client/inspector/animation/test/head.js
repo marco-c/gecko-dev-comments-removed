@@ -298,6 +298,19 @@ const getDurationAndRate = function(animationInspector, panel, pixels) {
 
 
 
+const selectAnimationInspector = async function(inspector) {
+  await inspector.toolbox.selectTool("inspector");
+  const onUpdated = inspector.once("inspector-updated");
+  inspector.sidebar.select("newanimationinspector");
+  await onUpdated;
+  await waitForRendering(inspector.animationinspector);
+};
+
+
+
+
+
+
 
 
 
