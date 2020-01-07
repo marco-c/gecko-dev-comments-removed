@@ -6,6 +6,9 @@
 
 "use strict";
 
+const { getUnicodeUrl, getUnicodeUrlPath, getUnicodeHostname } =
+  require("devtools/client/shared/unicode-url");
+
 const {
   UPDATE_PROPS,
 } = require("devtools/client/netmonitor/src/constants");
@@ -126,22 +129,6 @@ function writeHeaderText(headers) {
 
 
 
-
-function decodeUnicodeUrl(string) {
-  try {
-    return decodeURIComponent(string);
-  } catch (err) {
-    
-  }
-  return string;
-}
-
-
-
-
-
-
-
 function decodeUnicodeBase64(string) {
   try {
     return decodeURIComponent(atob(string));
@@ -175,7 +162,7 @@ function getAbbreviatedMimeType(mimeType) {
 
 function getUrlBaseName(url) {
   const pathname = (new URL(url)).pathname;
-  return decodeUnicodeUrl(
+  return getUnicodeUrlPath(
     pathname.replace(/\S*\//, "") || pathname || "/");
 }
 
@@ -196,7 +183,7 @@ function getUrlQuery(url) {
 
 
 function getUrlBaseNameWithQuery(url) {
-  return getUrlBaseName(url) + decodeUnicodeUrl((new URL(url)).search);
+  return getUrlBaseName(url) + getUnicodeUrlPath((new URL(url)).search);
 }
 
 
@@ -206,7 +193,7 @@ function getUrlBaseNameWithQuery(url) {
 
 
 function getUrlHostName(url) {
-  return decodeUnicodeUrl((new URL(url)).hostname);
+  return new URL(url).hostname;
 }
 
 
@@ -216,7 +203,7 @@ function getUrlHostName(url) {
 
 
 function getUrlHost(url) {
-  return decodeUnicodeUrl((new URL(url)).host);
+  return new URL(url).host;
 }
 
 
@@ -237,8 +224,21 @@ function getUrlDetails(url) {
   let baseNameWithQuery = getUrlBaseNameWithQuery(url);
   let host = getUrlHost(url);
   let hostname = getUrlHostName(url);
-  let unicodeUrl = decodeUnicodeUrl(url);
+  let unicodeUrl = getUnicodeUrl(url);
   let scheme = getUrlScheme(url);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  const unicodeHostname = getUnicodeHostname(hostname);
+  if (unicodeHostname !== hostname) {
+    host = host.replace(hostname, unicodeHostname);
+  }
 
   
   
@@ -277,8 +277,8 @@ function parseQueryString(query) {
   return query.replace(/^[?&]/, "").split("&").map(e => {
     let param = e.split("=");
     return {
-      name: param[0] ? decodeUnicodeUrl(param[0]) : "",
-      value: param[1] ? decodeUnicodeUrl(param[1]) : "",
+      name: param[0] ? getUnicodeUrlPath(param[0]) : "",
+      value: param[1] ? getUnicodeUrlPath(param[1]) : "",
     };
   });
 }
@@ -297,8 +297,8 @@ function parseFormData(sections) {
   return sections.replace(/^&/, "").split("&").map(e => {
     let param = e.split("=");
     return {
-      name: param[0] ? decodeUnicodeUrl(param[0]) : "",
-      value: param[1] ? decodeUnicodeUrl(param[1]) : "",
+      name: param[0] ? getUnicodeUrlPath(param[0]) : "",
+      value: param[1] ? getUnicodeUrlPath(param[1]) : "",
     };
   });
 }
@@ -491,7 +491,6 @@ module.exports = {
   fetchNetworkUpdatePacket,
   formDataURI,
   writeHeaderText,
-  decodeUnicodeUrl,
   getAbbreviatedMimeType,
   getEndTime,
   getFormattedProtocol,
