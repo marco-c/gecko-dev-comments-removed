@@ -231,12 +231,6 @@ nsSVGElement::Init()
 
 
 
-NS_IMPL_ISUPPORTS_INHERITED(nsSVGElement, nsSVGElementBase,
-                            nsIDOMNode)
-
-
-
-
 
 
 
@@ -2404,7 +2398,7 @@ nsSVGElement::WillChangeStringList(bool aIsConditionalProcessingAttribute,
 {
   nsAtom* name;
   if (aIsConditionalProcessingAttribute) {
-    nsCOMPtr<SVGTests> tests(do_QueryInterface(static_cast<nsIDOMNode*>(this)));
+    nsCOMPtr<SVGTests> tests(do_QueryInterface(this));
     name = tests->GetAttrName(aAttrEnum);
   } else {
     name = *GetStringListInfo().mStringListInfo[aAttrEnum].mName;

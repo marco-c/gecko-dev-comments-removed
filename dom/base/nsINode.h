@@ -11,7 +11,6 @@
 #include "mozilla/UniquePtr.h"
 #include "nsCOMPtr.h"               
 #include "nsGkAtoms.h"              
-#include "nsIDOMNode.h"
 #include "mozilla/dom/NodeInfo.h"            
 #include "nsIVariant.h"             
 #include "nsIWeakReference.h"

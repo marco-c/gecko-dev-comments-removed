@@ -1,13 +1,13 @@
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/*
 
+  The base XUL element class and associates.
 
-
-
-
-
-
-
-
+*/
 
 #ifndef nsXULElement_h__
 #define nsXULElement_h__
@@ -18,7 +18,6 @@
 #include "nsAtom.h"
 #include "mozilla/dom/NodeInfo.h"
 #include "nsIControllers.h"
-#include "nsIDOMNode.h"
 #include "nsIDOMXULMultSelectCntrlEl.h"
 #include "nsIURI.h"
 #include "nsLayoutCID.h"
@@ -47,19 +46,19 @@ class EventChainPreVisitor;
 class EventListenerManager;
 namespace css {
 class StyleRule;
-} 
+} // namespace css
 namespace dom {
 class BoxObject;
 class HTMLIFrameElement;
 enum class CallerType : uint32_t;
-} 
-} 
+} // namespace dom
+} // namespace mozilla
 
 namespace JS {
 class SourceBufferHolder;
-} 
+} // namespace JS
 
-
+////////////////////////////////////////////////////////////////////////
 
 #ifdef XUL_PROTOTYPE_ATTRIBUTE_METERING
 #define XUL_PROTOTYPE_ATTRIBUTE_METER(counter) (nsXULPrototypeAttribute::counter++)
@@ -68,17 +67,17 @@ class SourceBufferHolder;
 #endif
 
 
+/**
 
+  A prototype attribute for an nsXULPrototypeElement.
 
-
-
-
+ */
 
 class nsXULPrototypeAttribute
 {
 public:
     nsXULPrototypeAttribute()
-        : mName(nsGkAtoms::id)  
+        : mName(nsGkAtoms::id)  // XXX this is a hack, but names have to have a value
     {
         XUL_PROTOTYPE_ATTRIBUTE_METER(gNumAttributes);
         MOZ_COUNT_CTOR(nsXULPrototypeAttribute);
@@ -96,16 +95,16 @@ public:
     static uint32_t   gNumCacheHits;
     static uint32_t   gNumCacheSets;
     static uint32_t   gNumCacheFills;
-#endif 
+#endif /* !XUL_PROTOTYPE_ATTRIBUTE_METERING */
 };
 
 
+/**
 
+  A prototype content model element that holds the "primordial" values
+  that have been parsed from the original XUL document.
 
-
-
-
-
+ */
 
 class nsXULPrototypeNode
 {
@@ -122,14 +121,14 @@ public:
                                  nsIURI* aDocumentURI,
                                  const nsTArray<RefPtr<mozilla::dom::NodeInfo>> *aNodeInfos) = 0;
 
-    
-
-
-
-
-
-
-
+    /**
+     * The prototype document must call ReleaseSubtree when it is going
+     * away.  This makes the parents through the tree stop owning their
+     * children, whether or not the parent's reference count is zero.
+     * Individual elements may still own individual prototypes, but
+     * those prototypes no longer remember their children to allow them
+     * to be constructed.
+     */
     virtual void ReleaseSubtree() { }
 
     NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_NATIVE_CLASS(nsXULPrototypeNode)
@@ -182,7 +181,7 @@ public:
 
     void Unlink();
 
-    
+    // Trace all scripts held by this element and its children.
     void TraceAllScripts(JSTracer* aTrc);
 
     nsPrototypeArray         mChildren;
@@ -193,15 +192,15 @@ public:
     uint32_t                 mHasIdAttribute:1;
     uint32_t                 mHasClassAttribute:1;
     uint32_t                 mHasStyleAttribute:1;
-    nsXULPrototypeAttribute* mAttributes;         
+    nsXULPrototypeAttribute* mAttributes;         // [OWNER]
     RefPtr<nsAtom>           mIsAtom;
 };
 
 namespace mozilla {
 namespace dom {
 class XULDocument;
-} 
-} 
+} // namespace dom
+} // namespace mozilla
 
 class nsXULPrototypeScript : public nsXULPrototypeNode
 {
@@ -237,7 +236,7 @@ public:
 
     bool HasScriptObject()
     {
-        
+        // Conversion to bool doesn't trigger mScriptObject's read barrier.
         return mScriptObject;
     }
 
@@ -262,7 +261,7 @@ public:
     uint32_t                 mLineNo;
     bool                     mSrcLoading;
     bool                     mOutOfLine;
-    mozilla::dom::XULDocument* mSrcLoadWaiters;   
+    mozilla::dom::XULDocument* mSrcLoadWaiters;   // [OWNER] but not COMPtr
 private:
     JS::Heap<JSScript*>      mScriptObject;
 };
@@ -314,17 +313,17 @@ public:
     nsString                 mData;
 };
 
+////////////////////////////////////////////////////////////////////////
 
+/**
 
+  The XUL element.
 
-
-
-
-
+ */
 
 #define XUL_ELEMENT_FLAG_BIT(n_) NODE_FLAG_BIT(ELEMENT_TYPE_SPECIFIC_BITS_OFFSET + (n_))
 
-
+// XUL element specific bits
 enum {
   XUL_ELEMENT_HAS_CONTENTMENU_LISTENER =  XUL_ELEMENT_FLAG_BIT(0),
   XUL_ELEMENT_HAS_POPUP_LISTENER =        XUL_ELEMENT_FLAG_BIT(1)
@@ -334,11 +333,10 @@ ASSERT_NODE_FLAGS_SPACE(ELEMENT_TYPE_SPECIFIC_BITS_OFFSET + 2);
 
 #undef XUL_ELEMENT_FLAG_BIT
 
-class nsXULElement : public nsStyledElement,
-                     public nsIDOMNode
+class nsXULElement : public nsStyledElement
 {
 protected:
-    
+    // Use Construct to construct elements instead of this constructor.
     explicit nsXULElement(already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo);
 
 public:
@@ -352,20 +350,20 @@ public:
                         bool aIsRoot,
                         mozilla::dom::Element** aResult);
 
-    
+    // This is the constructor for nsXULElements.
     static nsXULElement* Construct(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
 
     NS_IMPL_FROMNODE(nsXULElement, kNameSpaceID_XUL)
 
-    
+    // nsISupports
     NS_DECL_ISUPPORTS_INHERITED
     NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(nsXULElement, nsStyledElement)
 
-    
+    // nsINode
     void GetEventTargetParent(mozilla::EventChainPreVisitor& aVisitor) override;
     virtual nsresult PreHandleEvent(
                        mozilla::EventChainVisitor& aVisitor) override;
-    
+    // nsIContent
     virtual nsresult BindToTree(nsIDocument* aDocument, nsIContent* aParent,
                                 nsIContent* aBindingParent,
                                 bool aCompileEventHandlers) override;
@@ -405,9 +403,9 @@ public:
 
     virtual void RecompileScriptEventListeners() override;
 
-    
-    
-    
+    // This function should ONLY be used by BindToTree implementations.
+    // The function exists solely because XUL elements store the binding
+    // parent as a member instead of in the slots, as Element does.
     void SetXULBindingParent(nsIContent* aBindingParent)
     {
       mBindingParent = aBindingParent;
@@ -434,7 +432,7 @@ public:
         }
     }
 
-    
+    // WebIDL API
     void GetAlign(DOMString& aValue) const
     {
         GetXULAttr(nsGkAtoms::align, aValue);
@@ -620,8 +618,8 @@ public:
         SetXULBoolAttr(nsGkAtoms::allowevents, aAllowEvents);
     }
     nsIControllers* GetControllers(mozilla::ErrorResult& rv);
-    
-    
+    // Note: this can only fail if the do_CreateInstance for the boxobject
+    // contact fails for some reason.
     already_AddRefed<mozilla::dom::BoxObject> GetBoxObject(mozilla::ErrorResult& rv);
     void Click(mozilla::dom::CallerType aCallerType);
     void DoCommand();
@@ -633,7 +631,7 @@ public:
                                const nsAString& aAttribute,
                                const nsAString& aValue,
                                mozilla::ErrorResult& rv);
-    
+    // Style() inherited from nsStyledElement
     already_AddRefed<nsFrameLoader> GetFrameLoader();
     void InternalSetFrameLoader(nsFrameLoader* aNewFrameLoader);
     void SwapFrameLoaders(mozilla::dom::HTMLIFrameElement& aOtherLoaderOwner,
@@ -645,7 +643,7 @@ public:
 
     nsINode* GetScopeChainParent() const override
     {
-        
+        // For XUL, the parent is the parent element, if any
         Element* parent = GetParentElement();
         return parent ? parent : nsStyledElement::GetScopeChainParent();
     }
@@ -653,28 +651,28 @@ public:
 protected:
     ~nsXULElement();
 
-    
+    // This can be removed if EnsureContentsGenerated dies.
     friend class nsNSElementTearoff;
 
-    
+    // Implementation methods
     nsresult EnsureContentsGenerated(void) const;
 
-    
+    // Helper routine that crawls a parent chain looking for a tree element.
     NS_IMETHOD GetParentTree(nsIDOMXULMultiSelectControlElement** aTreeElement);
 
     nsresult AddPopupListener(nsAtom* aName);
 
     void LoadSrc();
 
-    
-
-
-
+    /**
+     * The nearest enclosing content node with a binding
+     * that created us.
+     */
     nsCOMPtr<nsIContent> mBindingParent;
 
-    
-
-
+    /**
+     * Abandon our prototype linkage, and copy all attributes locally
+     */
     nsresult MakeHeavyweight(nsXULPrototypeElement* aPrototype);
 
     virtual nsresult BeforeSetAttr(int32_t aNamespaceID, nsAtom* aName,
@@ -698,16 +696,16 @@ protected:
       GetEventListenerManagerForAttr(nsAtom* aAttrName,
                                      bool* aDefer) override;
 
-    
-
-
+    /**
+     * Add a listener for the specified attribute, if appropriate.
+     */
     void AddListenerFor(const nsAttrName& aName,
                         bool aCompileEventHandlers);
     void MaybeAddPopupListener(nsAtom* aLocalName);
 
     nsIWidget* GetWindowWidget();
 
-    
+    // attribute setters for widget
     nsresult HideWindowChrome(bool aShouldHide);
     void SetChromeMargins(const nsAttrValue* aValue);
     void ResetChromeMargins();
@@ -722,8 +720,8 @@ protected:
     void AddTooltipSupport();
     void RemoveTooltipSupport();
 
-    
-    
+    // Internal accessor. This shadows the 'Slots', and returns
+    // appropriate value.
     nsIControllers *Controllers() {
       nsExtendedDOMSlots* slots = GetExistingExtendedDOMSlots();
       return slots ? slots->mControllers.get() : nullptr;
@@ -763,4 +761,4 @@ protected:
                                 nsAutoString& aCommand);
 };
 
-#endif 
+#endif // nsXULElement_h__

@@ -24,7 +24,6 @@
 #include "nsISupportsImpl.h"
 #include "nsStyledElement.h"
 #include "nsSVGClass.h"
-#include "nsIDOMNode.h"
 #include "SVGContentUtils.h"
 #include "gfxMatrix.h"
 
@@ -66,7 +65,6 @@ struct nsSVGEnumMapping;
 typedef nsStyledElement nsSVGElementBase;
 
 class nsSVGElement : public nsSVGElementBase    
-                   , public nsIDOMNode
 {
 protected:
   explicit nsSVGElement(already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo);
@@ -91,7 +89,7 @@ public:
   typedef mozilla::SVGStringList SVGStringList;
 
   
-  NS_DECL_ISUPPORTS_INHERITED
+  NS_INLINE_DECL_REFCOUNTING_INHERITED(nsSVGElement, nsSVGElementBase)
 
   void DidAnimateClass();
 

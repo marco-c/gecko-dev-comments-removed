@@ -1,21 +1,19 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef mozilla_dom_CDATASection_h
 #define mozilla_dom_CDATASection_h
 
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/Text.h"
-#include "nsIDOMNode.h"
 
 namespace mozilla {
 namespace dom {
 
-class CDATASection final : public Text,
-                           public nsIDOMNode
+class CDATASection final : public Text
 {
 private:
   void Init()
@@ -41,10 +39,10 @@ public:
     Init();
   }
 
-  
-  NS_DECL_ISUPPORTS_INHERITED
+  // nsISupports
+  NS_INLINE_DECL_REFCOUNTING_INHERITED(CDATASection, Text)
 
-  
+  // nsINode
   virtual bool IsNodeOfType(uint32_t aFlags) const override;
 
   virtual already_AddRefed<CharacterData>
@@ -60,7 +58,7 @@ protected:
   virtual JSObject* WrapNode(JSContext *aCx, JS::Handle<JSObject*> aGivenProto) override;
 };
 
-} 
-} 
+} // namespace dom
+} // namespace mozilla
 
-#endif 
+#endif // mozilla_dom_CDATASection_h

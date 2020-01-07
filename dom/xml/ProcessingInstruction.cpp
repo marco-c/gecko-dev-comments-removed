@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsGkAtoms.h"
 #include "nsUnicharUtils.h"
@@ -55,16 +55,16 @@ ProcessingInstruction::ProcessingInstruction(already_AddRefed<mozilla::dom::Node
 
   SetTextInternal(0, mText.GetLength(),
                   aData.BeginReading(), aData.Length(),
-                  false);  
+                  false);  // Don't notify (bug 420429).
 }
 
 ProcessingInstruction::~ProcessingInstruction()
 {
 }
 
-
-
-NS_IMPL_ISUPPORTS_INHERITED(ProcessingInstruction, CharacterData, nsIDOMNode)
+// If you add nsIStyleSheetLinkingElement here, make sure we actually
+// implement the nsStyleLinkElement methods.
+NS_IMPL_ISUPPORTS_INHERITED0(ProcessingInstruction, CharacterData)
 
 JSObject*
 ProcessingInstruction::WrapNode(JSContext *aCx, JS::Handle<JSObject*> aGivenProto)
@@ -125,5 +125,5 @@ ProcessingInstruction::DumpContent(FILE* out, int32_t aIndent,
 }
 #endif
 
-} 
-} 
+} // namespace dom
+} // namespace mozilla

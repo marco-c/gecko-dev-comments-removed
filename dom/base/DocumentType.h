@@ -14,7 +14,6 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/CharacterData.h"
 #include "nsCOMPtr.h"
-#include "nsIDOMNode.h"
 #include "nsIContent.h"
 #include "nsString.h"
 
@@ -26,8 +25,7 @@ namespace dom {
 
 
 
-class DocumentType final : public CharacterData,
-                           public nsIDOMNode
+class DocumentType final : public CharacterData
 {
 public:
   DocumentType(already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo,
@@ -36,10 +34,7 @@ public:
                const nsAString& aInternalSubset);
 
   
-  NS_DECL_ISUPPORTS_INHERITED
-
-  
-  
+  NS_INLINE_DECL_REFCOUNTING_INHERITED(DocumentType, CharacterData)
 
   
   virtual bool IsNodeOfType(uint32_t aFlags) const override;

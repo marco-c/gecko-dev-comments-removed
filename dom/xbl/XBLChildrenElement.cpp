@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/dom/XBLChildrenElement.h"
 #include "nsCharSeparatedTokenizer.h"
@@ -15,10 +15,6 @@ namespace dom {
 XBLChildrenElement::~XBLChildrenElement()
 {
 }
-
-NS_IMPL_ISUPPORTS_INHERITED(XBLChildrenElement,
-                            Element,
-                            nsIDOMNode)
 
 NS_IMPL_ELEMENT_CLONE(XBLChildrenElement)
 
@@ -46,12 +42,12 @@ XBLChildrenElement::BeforeSetAttr(int32_t aNamespaceID, nsAtom* aName,
 void
 XBLChildrenElement::DoRemoveDefaultContent(bool aNotify)
 {
-  
+  // Default content is going away, need to tell layout about it first.
   MOZ_ASSERT(HasChildren(), "Why bothering?");
   MOZ_ASSERT(GetParentElement());
 
-  
-  
+  // We don't want to do this from frame construction while setting up the
+  // binding initially.
   if (aNotify) {
     Element* parent = GetParentElement();
     if (nsIDocument* doc = parent->GetComposedDoc()) {
@@ -70,8 +66,8 @@ XBLChildrenElement::DoRemoveDefaultContent(bool aNotify)
   }
 }
 
-} 
-} 
+} // namespace dom
+} // namespace mozilla
 
 using namespace mozilla::dom;
 

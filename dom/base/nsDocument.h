@@ -21,7 +21,6 @@
 #include "nsWeakPtr.h"
 #include "nsTArray.h"
 #include "nsIdentifierMapEntry.h"
-#include "nsIDOMNode.h"
 #include "nsStubDocumentObserver.h"
 #include "nsIScriptGlobalObject.h"
 #include "nsIContent.h"
@@ -130,7 +129,6 @@ private:
 
 
 class nsDocument : public nsIDocument,
-                   public nsIDOMNode,
                    public nsSupportsWeakReference,
                    public nsIScriptObjectPrincipal,
                    public nsIRadioGroupContainer,
