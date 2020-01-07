@@ -1030,6 +1030,8 @@ gfxFontEntry::SetupVariationRanges()
             
             
             
+            
+            
             if (axis.mMinValue >= 0.0f && axis.mMaxValue <= 1000.0f &&
                 
                 
@@ -1041,6 +1043,8 @@ gfxFontEntry::SetupVariationRanges()
                 mWeightRange =
                     WeightRange(FontWeight(std::max(1.0f, axis.mMinValue)),
                                 FontWeight(axis.mMaxValue));
+            } else {
+                mRangeFlags |= RangeFlags::eNonCSSWeight;
             }
             break;
 
@@ -1053,6 +1057,8 @@ gfxFontEntry::SetupVariationRanges()
                 mStretchRange =
                     StretchRange(FontStretch(axis.mMinValue),
                                  FontStretch(axis.mMaxValue));
+            } else {
+                mRangeFlags |= RangeFlags::eNonCSSStretch;
             }
             break;
 
@@ -1117,17 +1123,29 @@ gfxFontEntry::GetVariationsForStyle(nsTArray<gfxFontVariation>& aResult,
     
     
     
-    float weight = (IsUserFont() && (mRangeFlags & RangeFlags::eAutoWeight))
-                   ? aStyle.weight.ToFloat()
-                   : Weight().Clamp(aStyle.weight).ToFloat();
-    aResult.AppendElement(gfxFontVariation{HB_TAG('w','g','h','t'),
-                                           weight});
 
-    float stretch = (IsUserFont() && (mRangeFlags & RangeFlags::eAutoStretch))
-                    ? aStyle.stretch.Percentage()
-                    : Stretch().Clamp(aStyle.stretch).Percentage();
-    aResult.AppendElement(gfxFontVariation{HB_TAG('w','d','t','h'),
-                                           stretch});
+    
+    
+    
+    
+
+    if (!(mRangeFlags & RangeFlags::eNonCSSWeight)) {
+        float weight =
+            (IsUserFont() && (mRangeFlags & RangeFlags::eAutoWeight))
+                ? aStyle.weight.ToFloat()
+                : Weight().Clamp(aStyle.weight).ToFloat();
+        aResult.AppendElement(gfxFontVariation{HB_TAG('w','g','h','t'),
+                                               weight});
+    }
+
+    if (!(mRangeFlags & RangeFlags::eNonCSSStretch)) {
+        float stretch =
+            (IsUserFont() && (mRangeFlags & RangeFlags::eAutoStretch))
+                ? aStyle.stretch.Percentage()
+                : Stretch().Clamp(aStyle.stretch).Percentage();
+        aResult.AppendElement(gfxFontVariation{HB_TAG('w','d','t','h'),
+                                               stretch});
+    }
 
     if (SlantStyle().Min().IsOblique()) {
         

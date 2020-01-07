@@ -439,7 +439,13 @@ public:
         
         
         
-        eBoldVariableWeight = (1 << 3)
+        eBoldVariableWeight = (1 << 3),
+        
+        
+        
+        
+        eNonCSSWeight   = (1 << 4),
+        eNonCSSStretch  = (1 << 5)
     };
     RangeFlags       mRangeFlags = RangeFlags::eNoFlags;
 
