@@ -10,49 +10,49 @@ var {Toolbox} = require("devtools/client/framework/toolbox");
 var toolbox = null;
 
 function test() {
-  Task.spawn(function* () {
+  (async function() {
     const URL = "data:text/plain;charset=UTF-8,Nothing to see here, move along";
 
     const TOOL_ID_1 = "jsdebugger";
     const TOOL_ID_2 = "webconsole";
-    yield addTab(URL);
+    await addTab(URL);
 
     const target = TargetFactory.forTab(gBrowser.selectedTab);
-    toolbox = yield gDevTools.showToolbox(target, TOOL_ID_1, Toolbox.HostType.BOTTOM);
+    toolbox = await gDevTools.showToolbox(target, TOOL_ID_1, Toolbox.HostType.BOTTOM);
 
     
-    yield toolbox.selectTool(TOOL_ID_2);
+    await toolbox.selectTool(TOOL_ID_2);
     
-    yield highlightTab(TOOL_ID_1);
+    await highlightTab(TOOL_ID_1);
     
-    yield checkHighlighted(TOOL_ID_1);
+    await checkHighlighted(TOOL_ID_1);
     
-    yield toolbox.selectTool(TOOL_ID_1);
+    await toolbox.selectTool(TOOL_ID_1);
     
     
-    yield checkNoHighlightWhenSelected(TOOL_ID_1);
+    await checkNoHighlightWhenSelected(TOOL_ID_1);
     
-    yield toolbox.selectTool(TOOL_ID_2);
+    await toolbox.selectTool(TOOL_ID_2);
     
-    yield checkHighlighted(TOOL_ID_1);
+    await checkHighlighted(TOOL_ID_1);
     
-    yield highlightTab(TOOL_ID_2);
+    await highlightTab(TOOL_ID_2);
     
-    yield checkHighlighted(TOOL_ID_1);
+    await checkHighlighted(TOOL_ID_1);
     
-    yield checkNoHighlightWhenSelected(TOOL_ID_2);
+    await checkNoHighlightWhenSelected(TOOL_ID_2);
     
-    yield toolbox.selectTool(TOOL_ID_1);
+    await toolbox.selectTool(TOOL_ID_1);
     
-    yield checkHighlighted(TOOL_ID_2);
+    await checkHighlighted(TOOL_ID_2);
     
-    yield unhighlightTab(TOOL_ID_2);
+    await unhighlightTab(TOOL_ID_2);
     
-    yield checkNoHighlight(TOOL_ID_2);
+    await checkNoHighlight(TOOL_ID_2);
     
-    yield unhighlightTab(TOOL_ID_1);
+    await unhighlightTab(TOOL_ID_1);
     
-    yield checkNoHighlight(TOOL_ID_1);
+    await checkNoHighlight(TOOL_ID_1);
 
     
     executeSoon(() => {
@@ -62,7 +62,7 @@ function test() {
         finish();
       });
     });
-  })
+  })()
   .catch(error => {
     ok(false, "There was an error running the test.");
   });

@@ -11,9 +11,9 @@ requestLongerTimeout(2);
 
 loadHelperScript("helper_disable_cache.js");
 
-add_task(function* () {
+add_task(async function() {
   
-  yield pushPref("network.http.rcwn.enabled", false);
+  await pushPref("network.http.rcwn.enabled", false);
 
   
   registerCleanupFunction(() => {
@@ -23,15 +23,15 @@ add_task(function* () {
 
   
   for (let tab of tabs) {
-    yield initTab(tab, tab.startToolbox);
+    await initTab(tab, tab.startToolbox);
   }
 
   
-  yield checkCacheStateForAllTabs([true, true, true, true]);
+  await checkCacheStateForAllTabs([true, true, true, true]);
 
   
-  yield setDisableCacheCheckboxChecked(tabs[0], true);
-  yield checkCacheStateForAllTabs([false, false, true, true]);
+  await setDisableCacheCheckboxChecked(tabs[0], true);
+  await checkCacheStateForAllTabs([false, false, true, true]);
 
-  yield finishUp();
+  await finishUp();
 });

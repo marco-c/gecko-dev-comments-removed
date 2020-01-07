@@ -5,7 +5,6 @@
 "use strict";
 
 var Services = require("Services");
-var {Task} = require("devtools/shared/task");
 var EventEmitter = require("devtools/shared/event-emitter");
 var Telemetry = require("devtools/client/shared/telemetry");
 
@@ -110,7 +109,7 @@ ToolSidebar.prototype = {
 
 
 
-  addAllTabsMenu: function () {
+  addAllTabsMenu: function() {
     if (this._allTabsBtn) {
       return;
     }
@@ -156,7 +155,7 @@ ToolSidebar.prototype = {
     }
   },
 
-  removeAllTabsMenu: function () {
+  removeAllTabsMenu: function() {
     if (!this._allTabsBtn) {
       return;
     }
@@ -173,18 +172,18 @@ ToolSidebar.prototype = {
     this._allTabsBtn = null;
   },
 
-  _onTabBoxOverflow: function () {
+  _onTabBoxOverflow: function() {
     this._allTabsBtn.removeAttribute("hidden");
   },
 
-  _onTabBoxUnderflow: function () {
+  _onTabBoxUnderflow: function() {
     this._allTabsBtn.setAttribute("hidden", "true");
   },
 
   
 
 
-  _addItemToAllTabsMenu: function (id, tab, options) {
+  _addItemToAllTabsMenu: function(id, tab, options) {
     if (!this._allTabsBtn) {
       return;
     }
@@ -229,7 +228,7 @@ ToolSidebar.prototype = {
 
 
 
-  addTab: function (id, url, options = {}) {
+  addTab: function(id, url, options = {}) {
     let iframe = this._panelDoc.createElementNS(XULNS, "iframe");
     iframe.className = "iframe-" + id;
     iframe.setAttribute("flex", "1");
@@ -305,7 +304,7 @@ ToolSidebar.prototype = {
   
 
 
-  addExistingTabs: function () {
+  addExistingTabs: function() {
     let knownTabs = [...this._tabs.values()];
 
     for (let tab of this._tabbox.tabs.querySelectorAll("tab")) {
@@ -335,7 +334,7 @@ ToolSidebar.prototype = {
 
 
 
-  removeTab: Task.async(function* (tabId, tabPanelId) {
+  async removeTab(tabId, tabPanelId) {
     
     let tab = this.getTab(tabId);
     if (!tab) {
@@ -344,7 +343,7 @@ ToolSidebar.prototype = {
 
     let win = this.getWindowForTab(tabId);
     if (win && ("destroy" in win)) {
-      yield win.destroy();
+      await win.destroy();
     }
 
     tab.remove();
@@ -357,14 +356,14 @@ ToolSidebar.prototype = {
 
     this._tabs.delete(tabId);
     this.emit("tab-unregistered", tabId);
-  }),
+  },
 
   
 
 
 
 
-  toggleTab: function (isVisible, id) {
+  toggleTab: function(isVisible, id) {
     
     let tab = this.getTab(id);
     if (!tab) {
@@ -381,7 +380,7 @@ ToolSidebar.prototype = {
   
 
 
-  select: function (id) {
+  select: function(id) {
     let tab = this.getTab(id);
     if (tab) {
       this._tabbox.selectedTab = tab;
@@ -394,7 +393,7 @@ ToolSidebar.prototype = {
 
 
 
-  _selectTabSoon: function (id) {
+  _selectTabSoon: function(id) {
     this._panelDoc.defaultView.setTimeout(() => {
       this.select(id);
     }, 0);
@@ -403,7 +402,7 @@ ToolSidebar.prototype = {
   
 
 
-  getCurrentTabID: function () {
+  getCurrentTabID: function() {
     let currentID = null;
     for (let [id, tab] of this._tabs) {
       if (this._tabbox.tabs.selectedItem == tab) {
@@ -419,7 +418,7 @@ ToolSidebar.prototype = {
 
 
 
-  getTabPanel: function (id) {
+  getTabPanel: function(id) {
     
     
     return this._tabbox.tabpanels.querySelector("#" + this.TABPANEL_ID_PREFIX + id + ", #" + id);
@@ -430,7 +429,7 @@ ToolSidebar.prototype = {
 
 
 
-  getTab: function (id) {
+  getTab: function(id) {
     
     return this._tabs && this._tabs.get(id);
   },
@@ -438,7 +437,7 @@ ToolSidebar.prototype = {
   
 
 
-  handleEvent: function (event) {
+  handleEvent: function(event) {
     if (event.type !== "select" || this._destroyed) {
       return;
     }
@@ -484,7 +483,7 @@ ToolSidebar.prototype = {
   
 
 
-  toggle: function () {
+  toggle: function() {
     if (this._tabbox.hasAttribute("hidden")) {
       this.show();
     } else {
@@ -498,7 +497,7 @@ ToolSidebar.prototype = {
 
 
 
-  show: function (id) {
+  show: function(id) {
     if (this._width) {
       this._tabbox.width = this._width;
     }
@@ -522,7 +521,7 @@ ToolSidebar.prototype = {
   
 
 
-  hide: function () {
+  hide: function() {
     Services.prefs.setIntPref("devtools.toolsidebar-width." + this._uid, this._tabbox.width);
     this._tabbox.setAttribute("hidden", "true");
     this._panelDoc.activeElement.blur();
@@ -533,7 +532,7 @@ ToolSidebar.prototype = {
   
 
 
-  getWindowForTab: function (id) {
+  getWindowForTab: function(id) {
     if (!this._tabs.has(id)) {
       return null;
     }
@@ -549,7 +548,7 @@ ToolSidebar.prototype = {
   
 
 
-  destroy: Task.async(function* () {
+  async destroy() {
     if (this._destroyed) {
       return;
     }
@@ -570,7 +569,7 @@ ToolSidebar.prototype = {
       let panel = this._tabbox.tabpanels.firstChild;
       let win = panel.firstChild.contentWindow;
       if (win && ("destroy" in win)) {
-        yield win.destroy();
+        await win.destroy();
       }
       panel.remove();
     }
@@ -589,5 +588,5 @@ ToolSidebar.prototype = {
     this._tabbox = null;
     this._panelDoc = null;
     this._toolPanel = null;
-  })
+  }
 };

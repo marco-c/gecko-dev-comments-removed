@@ -20,8 +20,8 @@ const { fetch } = require("devtools/shared/DevToolsUtils");
 const debuggerHeadURL = CHROME_URL_ROOT + "../../debugger/new/test/mochitest/head.js";
 const testScriptURL = CHROME_URL_ROOT + "test_browser_toolbox_debugger.js";
 
-add_task(function* runTest() {
-  yield new Promise(done => {
+add_task(async function runTest() {
+  await new Promise(done => {
     let options = {"set": [
       ["devtools.debugger.prompt-connection", false],
       ["devtools.debugger.remote-enabled", true],
@@ -48,7 +48,7 @@ add_task(function* runTest() {
   
   
   let testUrl = `http://mozilla.org/browser-toolbox-test-${id}.js`;
-  Cu.evalInSandbox("(" + function () {
+  Cu.evalInSandbox("(" + function() {
     this.plop = function plop() {
       return 1;
     };
@@ -63,7 +63,7 @@ add_task(function* runTest() {
               .getService(Ci.nsIEnvironment);
   
   
-  let testHead = (function () {
+  let testHead = (function() {
     const info = msg => dump(msg + "\n");
     const is = (a, b, description) => {
       let msg = "'" + JSON.stringify(a) + "' is equal to '" + JSON.stringify(b) + "'";
@@ -96,7 +96,6 @@ add_task(function* runTest() {
 
     const registerCleanupFunction = () => {};
 
-    const { Task } = ChromeUtils.import("resource://gre/modules/Task.jsm", {});
     const { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
     const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm", {});
 
@@ -109,7 +108,7 @@ add_task(function* runTest() {
         return Promise.resolve(true);
       }
       return new Promise(resolve => {
-        setTimeout(function () {
+        setTimeout(function() {
           waitUntil(predicate, interval).then(() => resolve(true));
         }, interval);
       });
@@ -119,7 +118,7 @@ add_task(function* runTest() {
   
 
   
-  let { content } = yield fetch(debuggerHeadURL);
+  let { content } = await fetch(debuggerHeadURL);
   let debuggerHead = content;
   
   
@@ -127,9 +126,9 @@ add_task(function* runTest() {
 
   
   
-  let testScript = (yield fetch(testScriptURL)).content;
+  let testScript = (await fetch(testScriptURL)).content;
   let source =
-    "try { let testUrl = \""+testUrl+"\";" + testHead + debuggerHead + testScript + "} catch (e) {" +
+    "try { let testUrl = \"" + testUrl + "\";" + testHead + debuggerHead + testScript + "} catch (e) {" +
     "  dump('Exception: '+ e + ' at ' + e.fileName + ':' + " +
     "       e.lineNumber + '\\nStack: ' + e.stack + '\\n');" +
     "}";
@@ -142,7 +141,7 @@ add_task(function* runTest() {
   
   
   let closePromise;
-  yield new Promise(onRun => {
+  await new Promise(onRun => {
     closePromise = new Promise(onClose => {
       info("Opening the browser toolbox\n");
       BrowserToolboxProcess.init(onClose, onRun);
@@ -150,7 +149,7 @@ add_task(function* runTest() {
   });
   ok(true, "Browser toolbox started\n");
 
-  yield closePromise;
+  await closePromise;
   ok(true, "Browser toolbox process just closed");
 
   clearInterval(interval);

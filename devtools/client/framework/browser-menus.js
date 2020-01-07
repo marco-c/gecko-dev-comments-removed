@@ -74,7 +74,7 @@ function createToolMenuElements(toolDefinition, doc) {
     return;
   }
 
-  let oncommand = function (id, event) {
+  let oncommand = function(id, event) {
     let window = event.target.ownerDocument.defaultView;
     gDevToolsBrowser.selectToolCommand(window.gBrowser, id, window.performance.now());
   }.bind(null, id);
@@ -253,7 +253,7 @@ function removeTopLevelItems(doc) {
 
 
 
-exports.addMenus = function (doc) {
+exports.addMenus = function(doc) {
   addTopLevelItems(doc);
 
   addAllToolsToMenu(doc);
@@ -265,7 +265,7 @@ exports.addMenus = function (doc) {
 
 
 
-exports.removeMenus = function (doc) {
+exports.removeMenus = function(doc) {
   
   
   removeTopLevelItems(doc);

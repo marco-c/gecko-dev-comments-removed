@@ -51,7 +51,7 @@ function SourceMapURLService(toolbox, sourceMapService) {
 
 
 
-SourceMapURLService.prototype._getLoadingPromise = function () {
+SourceMapURLService.prototype._getLoadingPromise = function() {
   if (!this._loadingPromise) {
     let styleSheetsLoadingPromise = null;
     this._stylesheetsFront = this._toolbox.initStyleSheetsFront();
@@ -84,7 +84,7 @@ SourceMapURLService.prototype._getLoadingPromise = function () {
 
 
 
-SourceMapURLService.prototype.reset = function () {
+SourceMapURLService.prototype.reset = function() {
   this._sourceMapService.clearSourceMaps();
   this._urls.clear();
   this._subscriptions.clear();
@@ -96,7 +96,7 @@ SourceMapURLService.prototype.reset = function () {
 
 
 
-SourceMapURLService.prototype.destroy = function () {
+SourceMapURLService.prototype.destroy = function() {
   this.reset();
   this._target.off("source-updated", this._onSourceUpdated);
   this._target.off("will-navigate", this.reset);
@@ -110,7 +110,7 @@ SourceMapURLService.prototype.destroy = function () {
 
 
 
-SourceMapURLService.prototype._onSourceUpdated = function (sourceEvent) {
+SourceMapURLService.prototype._onSourceUpdated = function(sourceEvent) {
   
   if (!this._urls) {
     return;
@@ -132,7 +132,7 @@ SourceMapURLService.prototype._onSourceUpdated = function (sourceEvent) {
 
 
 
-SourceMapURLService.prototype._onNewStyleSheet = function (sheet) {
+SourceMapURLService.prototype._onNewStyleSheet = function(sheet) {
   
   if (!this._urls) {
     return;
@@ -154,7 +154,7 @@ SourceMapURLService.prototype._onNewStyleSheet = function (sheet) {
 
 
 
-SourceMapURLService.prototype.sourceMapChanged = function (id, newUrl) {
+SourceMapURLService.prototype.sourceMapChanged = function(id, newUrl) {
   if (!this._urls) {
     return;
   }
@@ -195,7 +195,7 @@ SourceMapURLService.prototype.sourceMapChanged = function (id, newUrl) {
 
 
 
-SourceMapURLService.prototype.originalPositionFor = async function (url, line, column) {
+SourceMapURLService.prototype.originalPositionFor = async function(url, line, column) {
   
   await this._getLoadingPromise();
 
@@ -230,7 +230,7 @@ SourceMapURLService.prototype.originalPositionFor = async function (url, line, c
 
 
 
-SourceMapURLService.prototype._callOneCallback = async function (subscriptionEntry,
+SourceMapURLService.prototype._callOneCallback = async function(subscriptionEntry,
                                                                  callback) {
   
   if (!this._prefValue) {
@@ -275,7 +275,7 @@ SourceMapURLService.prototype._callOneCallback = async function (subscriptionEnt
 
 
 
-SourceMapURLService.prototype.subscribe = function (url, line, column, callback) {
+SourceMapURLService.prototype.subscribe = function(url, line, column, callback) {
   if (!this._subscriptions) {
     return;
   }
@@ -312,7 +312,7 @@ SourceMapURLService.prototype.subscribe = function (url, line, column, callback)
 
 
 
-SourceMapURLService.prototype.unsubscribe = function (url, line, column, callback) {
+SourceMapURLService.prototype.unsubscribe = function(url, line, column, callback) {
   if (!this._subscriptions) {
     return;
   }
@@ -334,7 +334,7 @@ SourceMapURLService.prototype.unsubscribe = function (url, line, column, callbac
 
 
 
-SourceMapURLService.prototype._onPrefChanged = function () {
+SourceMapURLService.prototype._onPrefChanged = function() {
   if (!this._subscriptions) {
     return;
   }

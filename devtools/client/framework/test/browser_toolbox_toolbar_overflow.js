@@ -9,7 +9,7 @@
 
 let { Toolbox } = require("devtools/client/framework/toolbox");
 
-add_task(async function () {
+add_task(async function() {
   let tab = await addTab("about:blank");
 
   info("Open devtools on the Inspector in a separate window");

@@ -8,26 +8,26 @@
 
 
 
-add_task(function* () {
+add_task(async function() {
   
   
   
   let isTesting = flags.testing;
   flags.testing = false;
 
-  let tab = yield addTab(URL_ROOT + "doc_viewsource.html");
+  let tab = await addTab(URL_ROOT + "doc_viewsource.html");
   let target = TargetFactory.forTab(tab);
-  let toolbox = yield gDevTools.showToolbox(target, "styleeditor");
+  let toolbox = await gDevTools.showToolbox(target, "styleeditor");
   let panel = toolbox.getPanel("styleeditor");
 
   is(panel.UI.editors.length, 1, "correct number of editors opened");
 
-  let monitor = yield toolbox.selectTool("netmonitor");
+  let monitor = await toolbox.selectTool("netmonitor");
   let { store, windowRequire } = monitor.panelWin;
 
   is(store.getState().requests.requests.size, 0, "No network requests appear in the network panel");
 
-  yield gDevTools.closeToolbox(target);
+  await gDevTools.closeToolbox(target);
   tab = target = toolbox = panel = null;
   gBrowser.removeCurrentTab();
   flags.testing = isTesting;
