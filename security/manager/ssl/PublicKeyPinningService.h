@@ -8,6 +8,7 @@
 #include "CertVerifier.h"
 #include "ScopedNSSTypes.h"
 #include "cert.h"
+#include "nsNSSCertificate.h"
 #include "nsString.h"
 #include "nsTArray.h"
 #include "pkix/Time.h"
@@ -33,7 +34,7 @@ public:
 
 
 
-  static nsresult ChainHasValidPins(const UniqueCERTCertList& certList,
+  static nsresult ChainHasValidPins(const RefPtr<nsNSSCertList>& certList,
                                     const char* hostname,
                                     mozilla::pkix::Time time,
                                     bool enforceTestMode,
@@ -45,7 +46,7 @@ public:
 
 
 
-  static nsresult ChainMatchesPinset(const UniqueCERTCertList& certList,
+  static nsresult ChainMatchesPinset(const RefPtr<nsNSSCertList>& certList,
                                      const nsTArray<nsCString>& aSHA256keys,
                               bool& chainMatchesPinset);
 
