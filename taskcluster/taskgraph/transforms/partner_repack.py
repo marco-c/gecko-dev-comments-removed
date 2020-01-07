@@ -9,15 +9,55 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.schema import resolve_keyed_by
+from taskgraph.util.scriptworker import get_release_config
+from taskgraph.util.partners import check_if_partners_enabled
 
 
 transforms = TransformSequence()
+
+transforms.add(check_if_partners_enabled)
 
 
 @transforms.add
 def resolve_properties(config, tasks):
     for task in tasks:
-        for property in ("repack_manifests_url", ):
-            property = "worker.properties.{}".format(property)
+        for property in ("REPACK_MANIFESTS_URL", ):
+            property = "worker.env.{}".format(property)
             resolve_keyed_by(task, property, property, **config.params)
-            yield task
+
+        if task['worker']['env']['REPACK_MANIFESTS_URL'].startswith('git@'):
+            task.setdefault('scopes', []).append(
+                'secrets:get:project/releng/gecko/build/level-{level}/partner-github-ssh'.format(
+                    **config.params
+                )
+            )
+
+        yield task
+
+
+@transforms.add
+def make_label(config, tasks):
+    for task in tasks:
+        task['label'] = "{}-{}".format(config.kind, task['name'])
+        yield task
+
+
+@transforms.add
+def add_command_arguments(config, tasks):
+    release_config = get_release_config(config)
+    for task in tasks:
+        
+        task['run']['options'] = [
+            'version={}'.format(release_config['version']),
+            'build-number={}'.format(release_config['build_number']),
+            'platform={}'.format(task['attributes']['build_platform'].split('-')[0]),
+        ]
+
+        
+        
+        
+        task['worker']['env']['UPSTREAM_TASKIDS'] = {
+            'task-reference': ' '.join(['<{}>'.format(dep) for dep in task['dependencies']])
+        }
+
+        yield task

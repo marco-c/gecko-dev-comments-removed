@@ -54,7 +54,7 @@ def generic_worker_add_artifacts(config, job, taskdesc):
     
     
     
-    add_artifacts(config, job, taskdesc, path=r'public/build')
+    add_artifacts(config, job, taskdesc, path=get_artifact_prefix(taskdesc))
 
 
 def docker_worker_add_gecko_vcs_env_vars(config, job, taskdesc):
