@@ -362,6 +362,10 @@ bool
 nsTextFragment::Append(const char16_t* aBuffer, uint32_t aLength,
                        bool aUpdateBidi, bool aForce2b)
 {
+  if (!aLength) {
+    return true;
+  }
+
   
   
   if (mState.mLength == 0) {
