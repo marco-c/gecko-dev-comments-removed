@@ -4,7 +4,6 @@
 
 
 
-const {Cc, Ci, Cu} = require("chrome");
 const Services = require("Services");
 const defer = require("devtools/shared/defer");
 

@@ -5,6 +5,8 @@
 
 
 
+
+
 "use strict";
 
 addMessageListener("devtools:sw-test:register", function(msg) {

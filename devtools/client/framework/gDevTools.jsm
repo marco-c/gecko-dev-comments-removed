@@ -15,8 +15,6 @@
 
 this.EXPORTED_SYMBOLS = [ "gDevTools", "gDevToolsBrowser" ];
 
-const { loader } = ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
-
 
 
 

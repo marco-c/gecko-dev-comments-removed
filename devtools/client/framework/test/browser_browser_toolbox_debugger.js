@@ -63,6 +63,7 @@ add_task(async function runTest() {
               .getService(Ci.nsIEnvironment);
   
   
+  
   let testHead = (function() {
     const info = msg => dump(msg + "\n");
     const is = (a, b, description) => {
@@ -118,7 +119,7 @@ add_task(async function runTest() {
   }).toSource().replace(/^\(function\(\) \{|\}\)$/g, "");
   
   
-
+  
   
   let { content } = await fetch(debuggerHeadURL);
   let debuggerHead = content;

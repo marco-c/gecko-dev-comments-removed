@@ -16,7 +16,6 @@ module.exports = {
     
     
     "files": [
-      "client/framework/test/**",
       "client/scratchpad/**",
       "server/tests/mochitest/**",
       "shared/tests/unit/**",
@@ -30,7 +29,6 @@ module.exports = {
     ],
     "rules": {
       "no-return-assign": "off",
-      "no-unused-vars": "off",
     }
   }, {
     "files": [

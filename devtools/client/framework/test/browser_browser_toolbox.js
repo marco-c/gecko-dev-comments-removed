@@ -38,6 +38,7 @@ add_task(async function() {
   
   
   let env = Cc["@mozilla.org/process/environment;1"].getService(Ci.nsIEnvironment);
+  
   let testScript = function() {
     toolbox.selectTool("webconsole")
       .then(console => {
