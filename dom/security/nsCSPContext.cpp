@@ -885,7 +885,7 @@ StripURIForReporting(nsIURI* aURI,
 
 nsresult
 nsCSPContext::GatherSecurityPolicyViolationEventData(
-  nsISupports* aBlockedContentSource,
+  nsIURI* aBlockedURI,
   nsIURI* aOriginalURI,
   nsAString& aViolatedDirective,
   uint32_t aViolatedPolicyIndex,
@@ -909,23 +909,9 @@ nsCSPContext::GatherSecurityPolicyViolationEventData(
   aViolationEventInit.mReferrer = mReferrer;
 
   
-  if (aBlockedContentSource) {
+  if (aBlockedURI) {
     nsAutoCString reportBlockedURI;
-    nsCOMPtr<nsIURI> uri = do_QueryInterface(aBlockedContentSource);
-    
-    if (uri) {
-      StripURIForReporting(uri, mSelfURI, reportBlockedURI);
-    } else {
-      nsCOMPtr<nsISupportsCString> cstr = do_QueryInterface(aBlockedContentSource);
-      if (cstr) {
-        cstr->GetData(reportBlockedURI);
-      }
-    }
-    if (reportBlockedURI.IsEmpty()) {
-      
-      
-      NS_WARNING("No blocked URI (null aBlockedContentSource) for CSP violation report.");
-    }
+    StripURIForReporting(aBlockedURI, mSelfURI, reportBlockedURI);
     aViolationEventInit.mBlockedURI = NS_ConvertUTF8toUTF16(reportBlockedURI);
   }
 
@@ -1254,8 +1240,10 @@ class CSPReportSenderRunnable final : public Runnable
 
       
       mozilla::dom::SecurityPolicyViolationEventInit init;
+      
+      nsCOMPtr<nsIURI> blockedURI = do_QueryInterface(mBlockedContentSource);
       rv = mCSPContext->GatherSecurityPolicyViolationEventData(
-        mBlockedContentSource, mOriginalURI,
+        blockedURI, mOriginalURI,
         mViolatedDirective, mViolatedPolicyIndex,
         mSourceFile, mScriptSample, mLineNum,
         init);
@@ -1273,8 +1261,6 @@ class CSPReportSenderRunnable final : public Runnable
       mCSPContext->SendReports(init, mViolatedPolicyIndex);
 
       
-      
-      nsCOMPtr<nsIURI> blockedURI = do_QueryInterface(mBlockedContentSource);
       
       nsCOMPtr<nsISupportsCString> blockedString = do_QueryInterface(mBlockedContentSource);
 
