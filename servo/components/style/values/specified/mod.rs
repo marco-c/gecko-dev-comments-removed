@@ -550,12 +550,6 @@ pub type GridLine = GenericGridLine<Integer>;
 
 pub type GridTemplateComponent = GenericGridTemplateComponent<LengthOrPercentage, Integer>;
 
-
-pub type LengthOrPercentageOrNumber = Either<Number, LengthOrPercentage>;
-
-
-pub type NonNegativeLengthOrPercentageOrNumber = Either<NonNegativeNumber, NonNegativeLengthOrPercentage>;
-
 #[derive(Clone, Debug, MallocSizeOf, PartialEq)]
 
 pub struct ClipRect {
