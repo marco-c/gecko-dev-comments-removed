@@ -99,6 +99,14 @@ VARCACHE_PREF(
 
 
 
+VARCACHE_PREF(
+  "dom.mutation-events.cssom.disabled",
+   dom_mutation_events_cssom_disabled,
+  bool, true
+)
+
+
+
 
 
 #ifdef RELEASE_OR_BETA
