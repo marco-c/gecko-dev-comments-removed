@@ -162,6 +162,11 @@ public:
 private:
   
   
+  bool RepopulateMap();
+
+private:
+  
+  
   
   WebRenderLayerManager* MOZ_NON_OWNING_REF mManager;
 
@@ -270,7 +275,8 @@ struct ParamTraits<mozilla::layers::WebRenderScrollData>
         && ReadParam(aMsg, aIter, &aResult->mLayerScrollData)
         && ReadParam(aMsg, aIter, &aResult->mFocusTarget)
         && ReadParam(aMsg, aIter, &aResult->mIsFirstPaint)
-        && ReadParam(aMsg, aIter, &aResult->mPaintSequenceNumber);
+        && ReadParam(aMsg, aIter, &aResult->mPaintSequenceNumber)
+        && aResult->RepopulateMap();
   }
 };
 
