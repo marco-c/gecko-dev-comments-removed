@@ -32,11 +32,6 @@ public:
   
   
   
-  virtual nsresult Close() = 0;
-
-  
-  
-  
   virtual void ThrottleReadahead(bool bThrottle) {}
 
   
