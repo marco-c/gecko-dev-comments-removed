@@ -56,7 +56,7 @@ ShadowRoot::ShadowRoot(Element* aElement, bool aClosed,
                        already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
                        nsXBLPrototypeBinding* aProtoBinding)
   : DocumentFragment(aNodeInfo)
-  , StyleScope(*this)
+  , DocumentOrShadowRoot(*this)
   , mProtoBinding(aProtoBinding)
   , mInsertionPointChanged(false)
   , mIsComposedDocParticipant(false)
@@ -241,7 +241,7 @@ ShadowRoot::InsertSheet(StyleSheet* aSheet,
 
   linkingElement->SetStyleSheet(aSheet); 
 
-  MOZ_DIAGNOSTIC_ASSERT(mProtoBinding->SheetCount() == StyleScope::SheetCount());
+  MOZ_DIAGNOSTIC_ASSERT(mProtoBinding->SheetCount() == DocumentOrShadowRoot::SheetCount());
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
   
   
@@ -279,7 +279,7 @@ void
 ShadowRoot::RemoveSheet(StyleSheet* aSheet)
 {
   mProtoBinding->RemoveStyleSheet(aSheet);
-  StyleScope::RemoveSheet(*aSheet);
+  DocumentOrShadowRoot::RemoveSheet(*aSheet);
 
   if (aSheet->IsApplicable()) {
     StyleSheetChanged();
