@@ -9,8 +9,8 @@
 
 
 
-#ifndef __xpt_struct_h__
-#define __xpt_struct_h__
+#ifndef xpt_struct_h
+#define xpt_struct_h
 
 #include "xpt_arena.h"
 #include "nsID.h"
@@ -40,17 +40,17 @@ struct XPTTypeDescriptorPrefix;
 
 
 struct XPTHeader {
-    
-    
-    
+  
+  
+  
 
-    
-    uint8_t                     major_version;
-    uint8_t                     minor_version;
-    uint16_t                    num_interfaces;
-    
-    XPTInterfaceDirectoryEntry  *interface_directory;
-    
+  
+  uint8_t major_version;
+  uint8_t minor_version;
+  uint16_t num_interfaces;
+  
+  XPTInterfaceDirectoryEntry* interface_directory;
+  
 };
 
 #define XPT_MAGIC "XPCOM\nTypeLib\r\n\032"
@@ -58,6 +58,7 @@ struct XPTHeader {
 #define XPT_MAGIC_STRING "XPCOM\\nTypeLib\\r\\n\\032"
 #define XPT_MAJOR_VERSION 0x01
 #define XPT_MINOR_VERSION 0x02
+
 
 
 
@@ -77,14 +78,14 @@ struct XPTHeader {
 
 
 struct XPTInterfaceDirectoryEntry {
-    nsID                   iid;
-    char                   *name;
+  nsID iid;
+  char* name;
 
-    
-    
-    
+  
+  
+  
 
-    XPTInterfaceDescriptor *interface_descriptor;
+  XPTInterfaceDescriptor* interface_descriptor;
 };
 
 
@@ -92,24 +93,20 @@ struct XPTInterfaceDirectoryEntry {
 
 
 struct XPTInterfaceDescriptor {
-    
-
-
-
-    XPTMethodDescriptor     *method_descriptors;
-    XPTConstDescriptor      *const_descriptors;
-    XPTTypeDescriptor       *additional_types;
-    uint16_t                parent_interface;
-    uint16_t                num_methods;
-    uint16_t                num_constants;
-    uint8_t                 flags;
-
-    
+  
 
 
 
 
+  XPTMethodDescriptor* method_descriptors;
+  XPTConstDescriptor* const_descriptors;
+  XPTTypeDescriptor* additional_types;
+  uint16_t parent_interface;
+  uint16_t num_methods;
+  uint16_t num_constants;
+  uint8_t flags;
 
+  
 
 
 
@@ -119,14 +116,20 @@ struct XPTInterfaceDescriptor {
 
 
 
-    uint8_t                 num_additional_types;
+
+
+
+
+
+
+  uint8_t num_additional_types;
 };
 
-#define XPT_ID_SCRIPTABLE           0x80
-#define XPT_ID_FUNCTION             0x40
-#define XPT_ID_BUILTINCLASS         0x20
+#define XPT_ID_SCRIPTABLE                   0x80
+#define XPT_ID_FUNCTION                     0x40
+#define XPT_ID_BUILTINCLASS                 0x20
 #define XPT_ID_MAIN_PROCESS_SCRIPTABLE_ONLY 0x10
-#define XPT_ID_FLAGMASK             0xf0
+#define XPT_ID_FLAGMASK                     0xf0
 
 #define XPT_ID_IS_SCRIPTABLE(flags) (!!(flags & XPT_ID_SCRIPTABLE))
 #define XPT_ID_IS_FUNCTION(flags) (!!(flags & XPT_ID_FUNCTION))
@@ -152,83 +155,83 @@ struct XPTInterfaceDescriptor {
 
 
 struct XPTTypeDescriptorPrefix {
-    uint8_t flags;
+  uint8_t flags;
 };
 
 
 
-#define XPT_TDP_FLAGMASK         0xe0
-#define XPT_TDP_TAGMASK          (~XPT_TDP_FLAGMASK)
-#define XPT_TDP_TAG(tdp)         ((tdp).flags & XPT_TDP_TAGMASK)
+#define XPT_TDP_FLAGMASK 0xe0
+#define XPT_TDP_TAGMASK (~XPT_TDP_FLAGMASK)
+#define XPT_TDP_TAG(tdp) ((tdp).flags & XPT_TDP_TAGMASK)
 
 
 
 
 
 enum XPTTypeDescriptorTags {
-    TD_INT8              = 0,
-    TD_INT16             = 1,
-    TD_INT32             = 2,
-    TD_INT64             = 3,
-    TD_UINT8             = 4,
-    TD_UINT16            = 5,
-    TD_UINT32            = 6,
-    TD_UINT64            = 7,
-    TD_FLOAT             = 8,
-    TD_DOUBLE            = 9,
-    TD_BOOL              = 10,
-    TD_CHAR              = 11,
-    TD_WCHAR             = 12,
-    TD_VOID              = 13,
-    TD_PNSIID            = 14,
-    TD_DOMSTRING         = 15,
-    TD_PSTRING           = 16,
-    TD_PWSTRING          = 17,
-    TD_INTERFACE_TYPE    = 18,
-    TD_INTERFACE_IS_TYPE = 19,
-    TD_ARRAY             = 20,
-    TD_PSTRING_SIZE_IS   = 21,
-    TD_PWSTRING_SIZE_IS  = 22,
-    TD_UTF8STRING        = 23,
-    TD_CSTRING           = 24,
-    TD_ASTRING           = 25,
-    TD_JSVAL             = 26
+  TD_INT8              = 0,
+  TD_INT16             = 1,
+  TD_INT32             = 2,
+  TD_INT64             = 3,
+  TD_UINT8             = 4,
+  TD_UINT16            = 5,
+  TD_UINT32            = 6,
+  TD_UINT64            = 7,
+  TD_FLOAT             = 8,
+  TD_DOUBLE            = 9,
+  TD_BOOL              = 10,
+  TD_CHAR              = 11,
+  TD_WCHAR             = 12,
+  TD_VOID              = 13,
+  TD_PNSIID            = 14,
+  TD_DOMSTRING         = 15,
+  TD_PSTRING           = 16,
+  TD_PWSTRING          = 17,
+  TD_INTERFACE_TYPE    = 18,
+  TD_INTERFACE_IS_TYPE = 19,
+  TD_ARRAY             = 20,
+  TD_PSTRING_SIZE_IS   = 21,
+  TD_PWSTRING_SIZE_IS  = 22,
+  TD_UTF8STRING        = 23,
+  TD_CSTRING           = 24,
+  TD_ASTRING           = 25,
+  TD_JSVAL             = 26
 };
 
 struct XPTTypeDescriptor {
-    XPTTypeDescriptorPrefix prefix;
+  XPTTypeDescriptorPrefix prefix;
+
+  
+  
+  union {
+    
+    struct {
+      uint8_t argnum;
+    } interface_is;
 
     
+    struct {
+      uint8_t argnum;
+      
+    } pstring_is;
+
     
-    union {
-        
-        struct {
-            uint8_t argnum;
-        } interface_is;
+    struct {
+      uint8_t argnum;
+      
+      uint8_t additional_type;    
+                                  
+    } array;
 
-        
-        struct {
-            uint8_t argnum;
-            
-        } pstring_is;
-
-        
-        struct {
-            uint8_t argnum;
-            
-            uint8_t additional_type;    
-                                        
-        } array;
-
-        
-        struct {
-            
-            
-            
-            uint8_t iface_hi8;
-            uint8_t iface_lo8;
-        } iface;
-    } u;
+    
+    struct {
+      
+      
+      
+      uint8_t iface_hi8;
+      uint8_t iface_lo8;
+    } iface;
+  } u;
 };
 
 
@@ -242,16 +245,16 @@ struct XPTTypeDescriptor {
 
 
 union XPTConstValue {
-    int16_t   i16;
-    uint16_t  ui16;
-    int32_t   i32;
-    uint32_t  ui32;
+  int16_t i16;
+  uint16_t ui16;
+  int32_t i32;
+  uint32_t ui32;
 }; 
 
 struct XPTConstDescriptor {
-    char                *name;
-    XPTTypeDescriptor   type;
-    union XPTConstValue value;
+  char* name;
+  XPTTypeDescriptor type;
+  union XPTConstValue value;
 };
 
 
@@ -259,8 +262,8 @@ struct XPTConstDescriptor {
 
 
 struct XPTParamDescriptor {
-    uint8_t           flags;
-    XPTTypeDescriptor type;
+  uint8_t flags;
+  XPTTypeDescriptor type;
 };
 
 
@@ -272,8 +275,8 @@ struct XPTParamDescriptor {
 #define XPT_PD_OPTIONAL 0x04
 #define XPT_PD_FLAGMASK 0xfc
 
-#define XPT_PD_IS_IN(flags)     (flags & XPT_PD_IN)
-#define XPT_PD_IS_OUT(flags)    (flags & XPT_PD_OUT)
+#define XPT_PD_IS_IN(flags) (flags & XPT_PD_IN)
+#define XPT_PD_IS_OUT(flags) (flags & XPT_PD_OUT)
 #define XPT_PD_IS_RETVAL(flags) (flags & XPT_PD_RETVAL)
 #define XPT_PD_IS_SHARED(flags) (flags & XPT_PD_SHARED)
 #define XPT_PD_IS_DIPPER(flags) (flags & XPT_PD_DIPPER)
@@ -284,11 +287,11 @@ struct XPTParamDescriptor {
 
 
 struct XPTMethodDescriptor {
-    char                *name;
-    XPTParamDescriptor  *params;
-    
-    uint8_t             flags;
-    uint8_t             num_args;
+  char* name;
+  XPTParamDescriptor* params;
+  
+  uint8_t flags;
+  uint8_t num_args;
 };
 
 
@@ -300,12 +303,12 @@ struct XPTMethodDescriptor {
 #define XPT_MD_CONTEXT  0x02
 #define XPT_MD_FLAGMASK 0xfe
 
-#define XPT_MD_IS_GETTER(flags)      (flags & XPT_MD_GETTER)
-#define XPT_MD_IS_SETTER(flags)      (flags & XPT_MD_SETTER)
-#define XPT_MD_IS_NOTXPCOM(flags)    (flags & XPT_MD_NOTXPCOM)
-#define XPT_MD_IS_HIDDEN(flags)      (flags & XPT_MD_HIDDEN)
+#define XPT_MD_IS_GETTER(flags) (flags & XPT_MD_GETTER)
+#define XPT_MD_IS_SETTER(flags) (flags & XPT_MD_SETTER)
+#define XPT_MD_IS_NOTXPCOM(flags) (flags & XPT_MD_NOTXPCOM)
+#define XPT_MD_IS_HIDDEN(flags) (flags & XPT_MD_HIDDEN)
 #define XPT_MD_WANTS_OPT_ARGC(flags) (flags & XPT_MD_OPT_ARGC)
-#define XPT_MD_WANTS_CONTEXT(flags)  (flags & XPT_MD_CONTEXT)
+#define XPT_MD_WANTS_CONTEXT(flags) (flags & XPT_MD_CONTEXT)
 
 
 
@@ -329,9 +332,10 @@ struct XPTMethodDescriptor {
 
 
 
-#define XPT_ANN_LAST                    0x80
-#define XPT_ANN_IS_LAST(flags)          (flags & XPT_ANN_LAST)
-#define XPT_ANN_PRIVATE                 0x40
-#define XPT_ANN_IS_PRIVATE(flags)       (flags & XPT_ANN_PRIVATE)
+#define XPT_ANN_LAST    0x80
+#define XPT_ANN_PRIVATE 0x40
+
+#define XPT_ANN_IS_LAST(flags) (flags & XPT_ANN_LAST)
+#define XPT_ANN_IS_PRIVATE(flags)(flags & XPT_ANN_PRIVATE)
 
 #endif 
