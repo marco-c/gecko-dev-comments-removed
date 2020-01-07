@@ -151,6 +151,7 @@
 #endif
 
 using namespace mozilla;
+using mozilla::profiler::detail::RacyFeatures;
 
 LazyLogModule gProfilerLog("prof");
 
@@ -599,50 +600,6 @@ uint32_t ActivePS::sNextGeneration = 0;
 
 
 static PSMutex gPSMutex;
-
-
-
-
-
-class RacyFeatures
-{
-public:
-  static void SetActive(uint32_t aFeatures)
-  {
-    sActiveAndFeatures = Active | aFeatures;
-  }
-
-  static void SetInactive() { sActiveAndFeatures = 0; }
-
-  static bool IsActive() { return uint32_t(sActiveAndFeatures) & Active; }
-
-  static bool IsActiveWithFeature(uint32_t aFeature)
-  {
-    uint32_t af = sActiveAndFeatures;  
-    return (af & Active) && (af & aFeature);
-  }
-
-  static bool IsActiveWithoutPrivacy()
-  {
-    uint32_t af = sActiveAndFeatures;  
-    return (af & Active) && !(af & ProfilerFeature::Privacy);
-  }
-
-private:
-  static const uint32_t Active = 1u << 31;
-
-  
-  #define NO_OVERLAP(n_, str_, Name_) \
-    static_assert(ProfilerFeature::Name_ != Active, "bad Active value");
-
-  PROFILER_FOR_EACH_FEATURE(NO_OVERLAP);
-
-  #undef NO_OVERLAP
-
-  
-  
-  static Atomic<uint32_t> sActiveAndFeatures;
-};
 
 Atomic<uint32_t> RacyFeatures::sActiveAndFeatures(0);
 
@@ -3069,17 +3026,6 @@ profiler_feature_active(uint32_t aFeature)
 
   
   return RacyFeatures::IsActiveWithFeature(aFeature);
-}
-
-bool
-profiler_is_active()
-{
-  
-
-  MOZ_RELEASE_ASSERT(CorePS::Exists());
-
-  
-  return RacyFeatures::IsActive();
 }
 
 void
