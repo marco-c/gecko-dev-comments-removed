@@ -77,21 +77,9 @@ async function performRequestAndWait(tab, monitor) {
 
 
 async function performPausedRequest(connector, tab, monitor) {
-  let wait = waitForWebConsoleNetworkEvent(connector);
+  let wait = connector.connector.webConsoleClient.once("networkEvent");
   await ContentTask.spawn(tab.linkedBrowser, SIMPLE_SJS, async function(url) {
     await content.wrappedJSObject.performRequests(url);
   });
   await wait;
-}
-
-
-
-
-
-function waitForWebConsoleNetworkEvent(connector) {
-  return new Promise(resolve => {
-    connector.connector.webConsoleClient.once("networkEvent", (type, networkInfo) => {
-      resolve();
-    });
-  });
 }

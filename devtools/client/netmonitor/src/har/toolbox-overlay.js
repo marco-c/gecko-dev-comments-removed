@@ -49,7 +49,7 @@ ToolboxOverlay.prototype = {
   
 
 
-  onDestroy: function(eventId, toolbox) {
+  onDestroy: function(toolbox) {
     this.destroyAutomation();
   },
 
