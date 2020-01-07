@@ -273,7 +273,7 @@ DevToolsStartup.prototype = {
     if (Services.prefs.getBoolPref(TOOLBAR_VISIBLE_PREF, false)) {
       
       
-      this.initDevTools();
+      this.initDevTools("DeveloperToolbar");
     }
 
     
@@ -612,18 +612,7 @@ DevToolsStartup.prototype = {
       return null;
     }
 
-    if (reason && !this.recorded) {
-      
-      
-      
-      try {
-        Services.telemetry.getHistogramById("DEVTOOLS_ENTRY_POINT")
-                          .add(reason);
-      } catch (e) {
-        dump("DevTools telemetry entry point failed: " + e + "\n");
-      }
-      this.recorded = true;
-    }
+    this.sendEntryPointTelemetry(reason);
 
     this.initialized = true;
     let { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
@@ -750,6 +739,8 @@ DevToolsStartup.prototype = {
       Services.obs.addObserver(observe, "devtools-thread-resumed");
     }
 
+    this.sendEntryPointTelemetry("CommandLine");
+
     const { BrowserToolboxProcess } = ChromeUtils.import("resource://devtools/client/framework/ToolboxProcess.jsm", {});
     BrowserToolboxProcess.init();
 
@@ -831,6 +822,21 @@ DevToolsStartup.prototype = {
 
     if (cmdLine.state == Ci.nsICommandLine.STATE_REMOTE_AUTO) {
       cmdLine.preventDefault = true;
+    }
+  },
+
+  sendEntryPointTelemetry(reason) {
+    if (reason && !this.recorded) {
+      
+      
+      
+      try {
+        Services.telemetry.getHistogramById("DEVTOOLS_ENTRY_POINT")
+                          .add(reason);
+      } catch (e) {
+        dump("DevTools telemetry entry point failed: " + e + "\n");
+      }
+      this.recorded = true;
     }
   },
 
