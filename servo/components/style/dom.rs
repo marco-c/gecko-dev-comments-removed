@@ -420,12 +420,6 @@ pub trait TElement
     fn is_html_element(&self) -> bool;
 
     
-    fn is_html_slot_element(&self) -> bool {
-        self.get_local_name() == &*local_name!("slot") &&
-        self.is_html_element()
-    }
-
-    
     fn slotted_nodes(&self) -> &[Self::ConcreteNode] {
         &[]
     }
