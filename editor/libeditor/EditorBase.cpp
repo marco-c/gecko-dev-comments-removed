@@ -1453,45 +1453,50 @@ EditorBase::CreateNode(nsAtom* aTag,
   MOZ_ASSERT(aTag);
   MOZ_ASSERT(aPointToInsert.IsSetAndValid());
 
-  EditorRawDOMPoint pointToInsert(aPointToInsert);
-
   
   
   
-  int32_t offset = static_cast<int32_t>(pointToInsert.Offset());
+  Unused << aPointToInsert.Offset();
 
   AutoRules beginRulesSniffing(this, EditAction::createNode, nsIEditor::eNext);
 
-  nsCOMPtr<Element> ret;
+  RefPtr<Element> newElement;
 
   RefPtr<CreateElementTransaction> transaction =
-    CreateElementTransaction::Create(*this, *aTag, pointToInsert);
+    CreateElementTransaction::Create(*this, *aTag, aPointToInsert);
   nsresult rv = DoTransaction(transaction);
-  if (NS_SUCCEEDED(rv)) {
-    ret = transaction->GetNewNode();
-    MOZ_ASSERT(ret);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
     
-    
-    
-    pointToInsert.Set(ret, offset);
-  }
+    mRangeUpdater.SelAdjCreateNode(aPointToInsert);
+  } else {
+    newElement = transaction->GetNewNode();
+    MOZ_ASSERT(newElement);
 
-  mRangeUpdater.SelAdjCreateNode(pointToInsert.AsRaw());
+    
+    
+    
+    
+    
+    
+    mRangeUpdater.SelAdjCreateNode(
+                    EditorRawDOMPoint(aPointToInsert.GetContainer(),
+                                      aPointToInsert.Offset()));
+  }
 
   if (mRules && mRules->AsHTMLEditRules()) {
     RefPtr<HTMLEditRules> htmlEditRules = mRules->AsHTMLEditRules();
-    htmlEditRules->DidCreateNode(ret);
+    htmlEditRules->DidCreateNode(newElement);
   }
 
   if (!mActionListeners.IsEmpty()) {
     AutoActionListenerArray listeners(mActionListeners);
     for (auto& listener : listeners) {
       listener->DidCreateNode(nsDependentAtomString(aTag),
-                              GetAsDOMNode(ret), rv);
+                              GetAsDOMNode(newElement), rv);
     }
   }
 
-  return ret.forget();
+  return newElement.forget();
 }
 
 NS_IMETHODIMP
