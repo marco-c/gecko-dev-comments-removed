@@ -4208,7 +4208,9 @@ SearchService.prototype = {
       if (sendSubmissionURL) {
         let uri = engine._getURLOfType("text/html")
                         .getSubmission("", engine, "searchbar").uri;
-        uri.userPass = ""; 
+        uri = uri.mutate()
+                 .setUserPass("") 
+                 .finalize();
         result.submissionURL = uri.spec;
       }
     }

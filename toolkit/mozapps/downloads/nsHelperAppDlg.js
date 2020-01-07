@@ -592,9 +592,11 @@ nsUnknownContentTypeDialog.prototype = {
 
     if (!pathString) {
       
-      var tmpurl = url.clone(); 
+      var tmpurl = url; 
       try {
-        tmpurl.userPass = "";
+        tmpurl = tmpurl.mutate()
+                       .setUserPass("")
+                       .finalize();
       } catch (ex) {}
       pathString = tmpurl.prePath;
     }

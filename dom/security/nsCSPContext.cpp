@@ -30,6 +30,7 @@
 #include "nsIStringStream.h"
 #include "nsISupportsPrimitives.h"
 #include "nsIUploadChannel.h"
+#include "nsIURIMutator.h"
 #include "nsIScriptError.h"
 #include "nsIWebNavigation.h"
 #include "nsMimeTypes.h"
@@ -1455,12 +1456,17 @@ nsCSPContext::PermitsAncestry(nsIDocShell* aDocShell, bool* outPermitsAncestry)
 
     if (currentURI) {
       
-      rv = currentURI->CloneIgnoringRef(getter_AddRefs(uriClone));
-      NS_ENSURE_SUCCESS(rv, rv);
+      rv = NS_MutateURI(currentURI)
+             .SetRef(EmptyCString())
+             .SetUserPass(EmptyCString())
+             .Finalize(uriClone);
 
       
       
-      uriClone->SetUserPass(EmptyCString());
+      if (NS_FAILED(rv)) {
+        rv = currentURI->CloneIgnoringRef(getter_AddRefs(uriClone));
+        NS_ENSURE_SUCCESS(rv, rv);
+      }
 
       if (CSPCONTEXTLOGENABLED()) {
         CSPCONTEXTLOG(("nsCSPContext::PermitsAncestry, found ancestor: %s",

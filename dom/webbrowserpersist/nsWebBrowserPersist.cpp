@@ -2582,7 +2582,9 @@ nsWebBrowserPersist::URIData::GetLocalURI(nsIURI *targetBaseURI, nsCString& aSpe
     }
 
     
-    fileAsURI->SetUserPass(EmptyCString());
+    Unused << NS_MutateURI(fileAsURI)
+                .SetUserPass(EmptyCString())
+                .Finalize(fileAsURI);
 
     
     

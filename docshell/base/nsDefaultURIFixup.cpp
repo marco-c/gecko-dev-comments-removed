@@ -17,12 +17,14 @@
 #endif
 
 #include "nsIURIFixup.h"
+#include "nsIURIMutator.h"
 #include "nsDefaultURIFixup.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/ipc/IPCStreamUtils.h"
 #include "mozilla/ipc/URIUtils.h"
 #include "mozilla/Tokenizer.h"
+#include "mozilla/Unused.h"
 #include "nsIObserverService.h"
 #include "nsXULAppAPI.h"
 
@@ -74,13 +76,14 @@ nsDefaultURIFixup::CreateExposableURI(nsIURI* aURI, nsIURI** aReturn)
     NS_ENSURE_SUCCESS(rv, rv);
   } else {
     
-    nsresult rv = aURI->Clone(getter_AddRefs(uri));
-    NS_ENSURE_SUCCESS(rv, rv);
+    uri = aURI;
   }
 
   
   if (Preferences::GetBool("browser.fixup.hide_user_pass", true)) {
-    uri->SetUserPass(EmptyCString());
+    Unused << NS_MutateURI(uri)
+                .SetUserPass(EmptyCString())
+                .Finalize(uri);
   }
 
   uri.forget(aReturn);

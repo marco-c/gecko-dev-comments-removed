@@ -4673,10 +4673,12 @@ var XULBrowserWindow = {
       this.asyncUpdateUI();
 
     if (AppConstants.MOZ_CRASHREPORTER && aLocationURI) {
-      let uri = aLocationURI.clone();
+      let uri = aLocationURI;
       try {
         
-        uri.userPass = "";
+        uri = aLocationURI.mutate()
+                          .setUserPass("")
+                          .finalize();
       } catch (ex) {  }
 
       try {
