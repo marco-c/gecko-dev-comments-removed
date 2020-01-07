@@ -4,33 +4,31 @@
 
 
 <head>
-  <title>Test for Bug 717433</title>
+  <title>Test for Bug 678842</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
   <link rel="stylesheet" href="/tests/SimpleTest/test.css">
 </head>
 <body>
-<a target="_blank" href="https://bugzilla.mozilla.org/show_bug.cgi?id=717433">Mozilla Bug 717433</a>
+<a target="_blank" href="https://bugzilla.mozilla.org/show_bug.cgi?id=678842">Mozilla Bug 678842</a>
 <p id="display"></p>
 <iframe id="content"></iframe>
-
+  
 </div>
 <pre id="test">
 <script class="testbody" type="text/javascript">
 
-/** Test for Bug 717433 **/
+/** Test for Bug 678842 **/
 SimpleTest.waitForExplicitFinish();
 var content = document.getElementById('content');
-// Load a subframe containing an editor with language "en". At first
-// load, it will set the dictionary to en-GB or en-US. We set the other one.
-// At second load, it will return the current dictionary. We can check that the
-// dictionary is correctly remembered between loads.
+// load a subframe containing an editor with a defined unknown lang. At first
+// load, it will set dictionary to en-US. At second load, it will return current
+// dictionary. So, we can check, dictionary is correctly remembered between
+// loads.
 
 var firstLoad = true;
-var expected = "";
 var script;
 
 var loadListener = function(evt) {
-
   if (firstLoad) {
     script = SpecialPowers.loadChromeScript(function() {
       var dir = Cc["@mozilla.org/file/directory_service;1"]
@@ -38,14 +36,14 @@ var loadListener = function(evt) {
                   .get("CurWorkD", Ci.nsIFile);
       dir.append("tests");
       dir.append("editor");
-      dir.append("composer");
-      dir.append("test");
+      dir.append("spellchecker");
+      dir.append("tests");
 
       var hunspell = Cc["@mozilla.org/spellchecker/engine;1"]
                        .getService(Ci.mozISpellCheckingEngine);
 
       // Install en-GB dictionary.
-      var en_GB = dir.clone();
+      en_GB = dir.clone();
       en_GB.append("en-GB");
       hunspell.addDirectory(en_GB);
 
@@ -70,22 +68,22 @@ var loadListener = function(evt) {
       var currentDictonary = spellchecker.GetCurrentDictionary();
     } catch(e) {}
 
+    if (!currentDictonary) {
+      spellchecker.SetCurrentDictionary('en-US');
+    }
+
     if (firstLoad) {
       firstLoad = false;
 
-      // First time around, we get a random dictionary based on the language "en".
-      if (currentDictonary == "en-GB") {
-        spellchecker.SetCurrentDictionary("en-US");
-        expected = "en-US";
-      } else if (currentDictonary == "en-US") {
-        spellchecker.SetCurrentDictionary("en-GB");
-        expected = "en-GB";
-      } else {
-        is(true, false, "Neither en-US nor en-GB are current");
-      }
-      content.src = 'http://mochi.test:8888/tests/editor/composer/test/bug717433_subframe.html?firstload=false';
+       // First time around, the dictionary defaults to the locale.
+      is (currentDictonary, "en-US", "unexpected lang " + currentDictonary + " instead of en-US");
+
+      // Select en-GB.
+      spellchecker.SetCurrentDictionary("en-GB");
+
+      content.src = 'http://mochi.test:8888/tests/editor/spellchecker/tests/bug678842_subframe.html?firstload=false';
     } else {
-      is(currentDictonary, expected, expected + " expected");
+      is (currentDictonary, "en-GB", "unexpected lang " + currentDictonary + " instead of en-GB");
       content.removeEventListener('load', loadListener);
 
       // Remove the fake en-GB dictionary again, since it's otherwise picked up by later tests.
@@ -100,7 +98,7 @@ var loadListener = function(evt) {
 
 content.addEventListener('load', loadListener);
 
-content.src = 'http://mochi.test:8888/tests/editor/composer/test/bug717433_subframe.html?firstload=true';
+content.src = 'http://mochi.test:8888/tests/editor/spellchecker/tests/bug678842_subframe.html?firstload=true';
 
 </script>
 </pre>
