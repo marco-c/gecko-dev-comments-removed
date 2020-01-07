@@ -381,7 +381,9 @@ class AndroidEmulatorTest(TestingMixin, EmulatorMixin, BaseScript, MozbaseMixin)
         if self.app_name is None:
             
             
-            if 'geckoview' in self.installer_path:
+            if 'androidTest' in self.installer_path:
+                self.app_name = 'org.mozilla.geckoview.test'
+            elif 'geckoview' in self.installer_path:
                 self.app_name = 'org.mozilla.geckoview_example'
         if self.app_name is None:
             

@@ -449,17 +449,20 @@ class ADBAndroid(ADBDevice):
                                 wait=wait, fail_if_running=fail_if_running,
                                 timeout=timeout)
 
-    def launch_geckoview_example(self, app_name, intent="android.intent.action.Main",
-                                 moz_env=None, extra_args=None, url=None, e10s=False,
-                                 wait=True, fail_if_running=True, timeout=None):
-        """Convenience method to launch geckoview_example on Android with various
-        debugging arguments
+    def launch_activity(self, app_name, activity_name=None,
+                        intent="android.intent.action.Main",
+                        moz_env=None, extra_args=None, url=None, e10s=False,
+                        wait=True, fail_if_running=True, timeout=None):
+        """Convenience method to launch an application on Android with various
+        debugging arguments; convenient for geckoview apps.
 
         :param str app_name: Name of application (e.g.
-            `org.mozilla.geckoview_example`)
+            `org.mozilla.geckoview_example` or `org.mozilla.geckoview.test`)
+        :param str activity_name: Activity name, like `GeckoViewActivity`, or
+            `TestRunnerActivity`.
         :param str intent: Intent to launch application.
         :type moz_env: str or None
-        :param extra_args: Extra arguments to be parsed by fennec.
+        :param extra_args: Extra arguments to be parsed by the app.
         :type extra_args: str or None
         :param url: URL to open
         :type url: str or None
@@ -492,7 +495,7 @@ class ADBAndroid(ADBDevice):
             extras['args'] = " ".join(extra_args)
         extras['use_multiprocess'] = e10s
         self.launch_application(app_name,
-                                "%s.GeckoViewActivity" % app_name,
+                                "%s.%s" % (app_name, activity_name),
                                 intent, url=url, extras=extras,
                                 wait=wait, fail_if_running=fail_if_running,
                                 timeout=timeout)
