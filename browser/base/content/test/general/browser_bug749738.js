@@ -6,25 +6,24 @@
 
 const DUMMY_PAGE = "http://example.org/browser/browser/base/content/test/general/dummy_page.html";
 
+function test() {
+  waitForExplicitFinish();
 
+  let tab = BrowserTestUtils.addTab(gBrowser);
+  gBrowser.selectedTab = tab;
 
-
-
-
-add_task(async function test_bug749738() {
-  
-  await gFindBarPromise;
-
-  await BrowserTestUtils.withNewTab(DUMMY_PAGE, async function() {
-    await gFindBarPromise;
+  BrowserTestUtils.loadURI(tab.linkedBrowser, DUMMY_PAGE);
+  BrowserTestUtils.browserLoaded(tab.linkedBrowser).then(() => {
     gFindBar.onFindCommand();
     EventUtils.sendString("Dummy");
-  });
+    gBrowser.removeTab(tab);
 
-  try {
-    gFindBar.close();
-    ok(true, "findbar.close should not throw an exception");
-  } catch (e) {
-    ok(false, "findbar.close threw exception: " + e);
-  }
-});
+    try {
+      gFindBar.close();
+      ok(true, "findbar.close should not throw an exception");
+    } catch (e) {
+      ok(false, "findbar.close threw exception: " + e);
+    }
+    finish();
+  });
+}

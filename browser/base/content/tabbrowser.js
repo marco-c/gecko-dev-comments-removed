@@ -484,54 +484,20 @@ window._gBrowser = {
     return (aTab || this.selectedTab)._findBar != undefined;
   },
 
-  
+  getFindBar(aTab) {
+    if (!aTab)
+      aTab = this.selectedTab;
 
+    if (aTab._findBar)
+      return aTab._findBar;
 
-  getCachedFindBar(aTab = this.selectedTab) {
-    return aTab._findBar;
-  },
-
-  
-
-
-
-  async getFindBar(aTab = this.selectedTab) {
-    let findBar = this.getCachedFindBar(aTab);
-    if (findBar) {
-      return findBar;
-    }
-
-    
-    if (!aTab._pendingFindBar) {
-      aTab._pendingFindBar = this._createFindBar(aTab);
-    }
-    return aTab._pendingFindBar;
-  },
-
-  
-
-
-
-
-
-  async _createFindBar(aTab, aForce = false) {
     let findBar = document.createElementNS(this._XUL_NS, "findbar");
     let browser = this.getBrowserForTab(aTab);
     let browserContainer = this.getBrowserContainer(browser);
     browserContainer.appendChild(findBar);
 
-    if (aForce) {
-      
-      
-      findBar.clientTop;
-    } else {
-      await new Promise(r => requestAnimationFrame(r));
-      if (window.closed || aTab.closing) {
-        delete aTab._pendingFindBar;
-        return null;
-      }
-    }
-    delete aTab._pendingFindBar;
+    
+    findBar.clientTop;
 
     findBar.browser = browser;
     findBar._findField.value = this._lastFindValue;
@@ -1161,7 +1127,7 @@ window._gBrowser = {
     oldBrowser._urlbarFocused = (gURLBar && gURLBar.focused);
 
     if (this.isFindBarInitialized(oldTab)) {
-      let findBar = this.getCachedFindBar(oldTab);
+      let findBar = this.getFindBar(oldTab);
       oldTab._findBarFocused = (!findBar.hidden &&
         findBar._findField.getAttribute("focused") == "true");
     }
@@ -1736,7 +1702,7 @@ window._gBrowser = {
 
     
     if (this.isFindBarInitialized(tab)) {
-      this.getCachedFindBar(tab).browser = aBrowser;
+      this.getFindBar(tab).browser = aBrowser;
     }
 
     evt = document.createEvent("Events");
@@ -3145,17 +3111,10 @@ window._gBrowser = {
     let otherFindBar = aOtherTab._findBar;
     if (otherFindBar &&
         otherFindBar.findMode == otherFindBar.FIND_NORMAL) {
-      let oldValue = otherFindBar._findField.value;
-      let wasHidden = otherFindBar.hidden;
-      let ourFindBarPromise = this.getFindBar(aOurTab);
-      ourFindBarPromise.then(ourFindBar => {
-        if (!ourFindBar) {
-          return;
-        }
-        ourFindBar._findField.value = oldValue;
-        if (!wasHidden)
-          ourFindBar.onFindCommand();
-      });
+      let ourFindBar = this.getFindBar(aOurTab);
+      ourFindBar._findField.value = otherFindBar._findField.value;
+      if (!otherFindBar.hidden)
+        ourFindBar.onFindCommand();
     }
 
     
@@ -3862,13 +3821,7 @@ window._gBrowser = {
           }
           if (shouldFastFind) {
             
-            
-            
-
-            
-            this._createFindBar(tab, true);
-            
-            this.getCachedFindBar().receiveMessage(aMessage);
+            return this.getFindBar(tab).receiveMessage(aMessage);
           }
         }
         break;
@@ -4566,7 +4519,7 @@ class TabProgressListener {
       }
 
       if (gBrowser.isFindBarInitialized(this.mTab)) {
-        let findBar = gBrowser.getCachedFindBar(this.mTab);
+        let findBar = gBrowser.getFindBar(this.mTab);
 
         
         if (findBar.findMode != findBar.FIND_NORMAL) {

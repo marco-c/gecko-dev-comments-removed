@@ -48,6 +48,29 @@ XPCOMUtils.defineLazyServiceGetter(Svc, "mime",
                                    "@mozilla.org/mime;1",
                                    "nsIMIMEService");
 
+function getContainingBrowser(domWindow) {
+  return domWindow.QueryInterface(Ci.nsIInterfaceRequestor)
+                  .getInterface(Ci.nsIWebNavigation)
+                  .QueryInterface(Ci.nsIDocShell)
+                  .chromeEventHandler;
+}
+
+function getFindBar(domWindow) {
+  if (PdfjsContentUtils.isRemote) {
+    throw new Error("FindBar is not accessible from the content process.");
+  }
+  try {
+    var browser = getContainingBrowser(domWindow);
+    var tabbrowser = browser.getTabBrowser();
+    var tab = tabbrowser.getTabForBrowser(browser);
+    return tabbrowser.getFindBar(tab);
+  } catch (e) {
+    
+    
+    return null;
+  }
+}
+
 function getBoolPref(pref, def) {
   try {
     return Services.prefs.getBoolPref(pref);
@@ -312,7 +335,18 @@ class ChromeActions {
 
   supportsIntegratedFind() {
     
-    return this.domWindow.frameElement === null;
+    if (this.domWindow.frameElement !== null) {
+      return false;
+    }
+
+    
+    if (PdfjsContentUtils.isRemote) {
+      return true;
+    }
+
+    
+    var findBar = getFindBar(this.domWindow);
+    return !!findBar && ("updateControlState" in findBar);
   }
 
   supportsDocumentFonts() {
