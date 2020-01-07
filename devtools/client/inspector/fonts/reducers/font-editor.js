@@ -5,6 +5,7 @@
 "use strict";
 
 const { getStr } = require("../utils/l10n");
+const { parseFontVariationAxes } = require("../utils/font-utils");
 
 const {
   APPLY_FONT_VARIATION_INSTANCE,
@@ -70,22 +71,7 @@ let reducers = {
   },
 
   [UPDATE_EDITOR_STATE](state, { fonts, properties }) {
-    let axes = {};
-
-    if (properties["font-variation-settings"] !== "normal") {
-      
-      
-      axes = properties["font-variation-settings"]
-        .split(",")
-        .reduce((acc, pair) => {
-          
-          pair = pair.split(/["']/).filter(part => part.trim() !== "");
-          const tag = pair[0].trim();
-          const value = pair[1].trim();
-          acc[tag] = value;
-          return acc;
-        }, {});
-    }
+    let axes = parseFontVariationAxes(properties["font-variation-settings"]);
 
     
     

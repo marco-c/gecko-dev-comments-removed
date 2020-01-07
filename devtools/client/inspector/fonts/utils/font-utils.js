@@ -40,4 +40,39 @@ module.exports = {
     const match = value.match(/\D+?$/);
     return match && match.length ? match[0] : null;
   },
+
+  
+
+
+
+
+
+
+
+
+
+
+  parseFontVariationAxes(string) {
+    let axes = {};
+    let keywords = ["initial", "normal", "inherit", "unset"];
+
+    if (keywords.includes(string.trim())) {
+      return axes;
+    }
+
+    
+    
+    axes = string
+      .split(",")
+      .reduce((acc, pair) => {
+        
+        pair = pair.split(/["']/).filter(part => part.trim() !== "");
+        const tag = pair[0].trim();
+        const value = pair[1].trim();
+        acc[tag] = value;
+        return acc;
+      }, {});
+
+    return axes;
+  }
 };
