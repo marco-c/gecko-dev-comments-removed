@@ -27,6 +27,16 @@ public:
                      bool aIsFileContent = false);
   ~ContentProcessHost();
 
+  
+  
+  
+  
+  bool Launch(StringVector aExtraOpts);
+
+  
+  void OnProcessHandleReady(ProcessHandle aProcessHandle) override;
+  void OnProcessLaunchError() override;
+
 private:
   DISALLOW_COPY_AND_ASSIGN(ContentProcessHost);
 
