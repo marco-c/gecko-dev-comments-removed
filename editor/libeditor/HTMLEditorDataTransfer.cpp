@@ -295,7 +295,7 @@ HTMLEditor::DoInsertHTMLWithContext(const nsAString& aInputString,
   
   
   bool cellSelectionMode = false;
-  nsCOMPtr<nsIDOMElement> cell;
+  RefPtr<Element> cell;
   rv = GetFirstSelectedCell(nullptr, getter_AddRefs(cell));
   if (NS_SUCCEEDED(rv) && cell) {
     cellSelectionMode = true;

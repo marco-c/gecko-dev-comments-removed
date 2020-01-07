@@ -2211,7 +2211,7 @@ HTMLEditRules::WillDeleteSelection(Selection* aSelection,
   }
 
   
-  nsCOMPtr<nsIDOMElement> cell;
+  RefPtr<Element> cell;
   NS_ENSURE_STATE(mHTMLEditor);
   nsresult rv =
     mHTMLEditor->GetFirstSelectedCell(nullptr, getter_AddRefs(cell));

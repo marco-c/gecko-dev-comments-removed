@@ -1451,15 +1451,15 @@ public:
 
 
 
-  nsresult CreateRange(nsIDOMNode* aStartContainer, int32_t aStartOffset,
-                       nsIDOMNode* aEndContainer, int32_t aEndOffset,
+  nsresult CreateRange(nsINode* aStartContainer, int32_t aStartOffset,
+                       nsINode* aEndContainer, int32_t aEndOffset,
                        nsRange** aRange);
 
   
 
 
 
-  nsresult AppendNodeToSelectionAsRange(nsIDOMNode *aNode);
+  nsresult AppendNodeToSelectionAsRange(nsINode* aNode);
 
   
 
