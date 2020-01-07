@@ -428,7 +428,7 @@ where
 
             
             stylist.push_applicable_declarations(
-                &self.element,
+                self.element,
                 implemented_pseudo.as_ref(),
                 self.element.style_attribute(),
                 self.element.get_smil_override(),
@@ -502,7 +502,7 @@ where
         
         
         stylist.push_applicable_declarations(
-            &self.element,
+            self.element,
             Some(pseudo_element),
             None,
             None,

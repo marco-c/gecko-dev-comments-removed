@@ -155,8 +155,8 @@ impl SelectorMap<Rule> {
     
     pub fn get_all_matching_rules<E, F>(
         &self,
-        element: &E,
-        rule_hash_target: &E,
+        element: E,
+        rule_hash_target: E,
         matching_rules_list: &mut ApplicableDeclarationList,
         context: &mut MatchingContext<E::Impl>,
         quirks_mode: QuirksMode,
@@ -217,7 +217,7 @@ impl SelectorMap<Rule> {
 
     
     fn get_matching_rules<E, F>(
-        element: &E,
+        element: E,
         rules: &[Rule],
         matching_rules: &mut ApplicableDeclarationList,
         context: &mut MatchingContext<E::Impl>,
@@ -232,7 +232,7 @@ impl SelectorMap<Rule> {
             if matches_selector(&rule.selector,
                                 0,
                                 Some(&rule.hashes),
-                                element,
+                                &element,
                                 context,
                                 flags_setter) {
                 matching_rules.push(
