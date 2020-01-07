@@ -131,17 +131,17 @@ ffi_type_heap! {
 impl StreamRef {
     
     pub fn start(&self) -> Result<()> {
-        unsafe { try_call!(ffi::cubeb_stream_start(self.as_ptr())) }
+        unsafe { call!(ffi::cubeb_stream_start(self.as_ptr())) }
     }
 
     
     pub fn stop(&self) -> Result<()> {
-        unsafe { try_call!(ffi::cubeb_stream_stop(self.as_ptr())) }
+        unsafe { call!(ffi::cubeb_stream_stop(self.as_ptr())) }
     }
 
     
     pub fn reset_default_device(&self) -> Result<()> {
-        unsafe { try_call!(ffi::cubeb_stream_reset_default_device(self.as_ptr())) }
+        unsafe { call!(ffi::cubeb_stream_reset_default_device(self.as_ptr())) }
     }
 
     
@@ -166,7 +166,7 @@ impl StreamRef {
 
     
     pub fn set_volume(&self, volume: f32) -> Result<()> {
-        unsafe { try_call!(ffi::cubeb_stream_set_volume(self.as_ptr(), volume)) }
+        unsafe { call!(ffi::cubeb_stream_set_volume(self.as_ptr(), volume)) }
     }
 
     
@@ -177,7 +177,7 @@ impl StreamRef {
     
     
     pub fn set_panning(&self, panning: f32) -> Result<()> {
-        unsafe { try_call!(ffi::cubeb_stream_set_panning(self.as_ptr(), panning)) }
+        unsafe { call!(ffi::cubeb_stream_set_panning(self.as_ptr(), panning)) }
     }
 
     
@@ -195,7 +195,7 @@ impl StreamRef {
     
     pub fn device_destroy(&self, device: DeviceRef) -> Result<()> {
         unsafe {
-            try_call!(ffi::cubeb_stream_device_destroy(
+            call!(ffi::cubeb_stream_device_destroy(
                 self.as_ptr(),
                 device.as_ptr()
             ))
@@ -208,7 +208,7 @@ impl StreamRef {
         callback: ffi::cubeb_device_changed_callback,
     ) -> Result<()> {
         unsafe {
-            try_call!(ffi::cubeb_stream_register_device_changed_callback(
+            call!(ffi::cubeb_stream_register_device_changed_callback(
                 self.as_ptr(),
                 callback
             ))
