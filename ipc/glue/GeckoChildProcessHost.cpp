@@ -25,7 +25,9 @@
 
 #if defined(MOZ_CONTENT_SANDBOX)
 #include "mozilla/SandboxSettings.h"
+#if defined(XP_MACOSX)
 #include "nsAppDirectoryServiceDefs.h"
+#endif
 #endif
 
 #include "nsExceptionHandler.h"
@@ -278,18 +280,6 @@ GeckoChildProcessHost::PrepareLaunch()
   mEnableSandboxLogging = mEnableSandboxLogging
                           || !!PR_GetEnv("MOZ_SANDBOX_LOGGING");
 #endif
-#elif defined(XP_LINUX)
-#if defined(MOZ_CONTENT_SANDBOX)
-  
-  if (ShouldHaveDirectoryService()) {
-    nsCOMPtr<nsIFile> contentTempDir;
-    nsresult rv = NS_GetSpecialDirectory(NS_APP_CONTENT_PROCESS_TEMP_DIR,
-                                         getter_AddRefs(contentTempDir));
-    if (NS_SUCCEEDED(rv)) {
-      contentTempDir->GetNativePath(mTmpDirName);
-    }
-  }
-#endif
 #endif
 }
 
@@ -515,22 +505,6 @@ GeckoChildProcessHost::PerformAsyncLaunch(std::vector<std::string> aExtraOpts)
     mLaunchOptions->env_map[ENVIRONMENT_LITERAL("RUST_LOG")]
         = ENVIRONMENT_STRING(childRustLog);
   }
-
-#if defined(XP_LINUX) && defined(MOZ_CONTENT_SANDBOX)
-  if (!mTmpDirName.IsEmpty()) {
-    
-    
-    mLaunchOptions->env_map[ENVIRONMENT_LITERAL("TMPDIR")] =
-      ENVIRONMENT_STRING(mTmpDirName);
-    mLaunchOptions->env_map[ENVIRONMENT_LITERAL("XDG_CACHE_HOME")] =
-      ENVIRONMENT_STRING(mTmpDirName);
-    mLaunchOptions->env_map[ENVIRONMENT_LITERAL("XDG_CACHE_DIR")] =
-      ENVIRONMENT_STRING(mTmpDirName);
-    
-    mLaunchOptions->env_map[ENVIRONMENT_LITERAL("MESA_GLSL_CACHE_DIR")] =
-      ENVIRONMENT_STRING(mTmpDirName);
-  }
-#endif
 
   return PerformAsyncLaunchInternal(aExtraOpts);
 }

@@ -193,11 +193,6 @@ private:
   
   std::queue<IPC::Message> mQueue;
 
-  
-#if defined(OS_LINUX)
-  nsCString mTmpDirName;
-#endif
-
   static uint32_t sNextUniqueID;
 
   static bool sRunSelfAsContentProc;
