@@ -107,12 +107,6 @@ class ZoneGroup
     }
 #endif
 
-  private:
-    
-    ZoneGroupData<mozilla::LinkedList<js::Debugger>> debuggerList_;
-  public:
-    mozilla::LinkedList<js::Debugger>& debuggerList() { return debuggerList_.ref(); }
-
     
     
     

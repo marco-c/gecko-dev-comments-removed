@@ -452,6 +452,12 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
 
   private:
     
+    js::ActiveThreadData<mozilla::LinkedList<js::Debugger>> debuggerList_;
+  public:
+    mozilla::LinkedList<js::Debugger>& debuggerList() { return debuggerList_.ref(); }
+
+  private:
+    
 
 
 
