@@ -735,9 +735,7 @@ nsFocusManager::WindowRaised(mozIDOMWindowProxy* aWindow)
       return NS_ERROR_FAILURE;
     }
 
-    if (!sTestMode) {
-      baseWindow->SetVisibility(true);
-    }
+    baseWindow->SetVisibility(true);
   }
 
   
