@@ -7,7 +7,7 @@
 
 
 
-use super::{UnknownUnit, Angle};
+use super::{UnknownUnit, Radians};
 use num::{One, Zero};
 use point::TypedPoint2D;
 use vector::{TypedVector2D, vec2};
@@ -249,7 +249,7 @@ where T: Copy + Clone +
     }
 
     
-    pub fn create_rotation(theta: Angle<T>) -> Self {
+    pub fn create_rotation(theta: Radians<T>) -> Self {
         let _0 = Zero::zero();
         let cos = theta.get().cos();
         let sin = theta.get().sin();
@@ -262,13 +262,13 @@ where T: Copy + Clone +
 
     
     #[cfg_attr(feature = "unstable", must_use)]
-    pub fn post_rotate(&self, theta: Angle<T>) -> Self {
+    pub fn post_rotate(&self, theta: Radians<T>) -> Self {
         self.post_mul(&TypedTransform2D::create_rotation(theta))
     }
 
     
     #[cfg_attr(feature = "unstable", must_use)]
-    pub fn pre_rotate(&self, theta: Angle<T>) -> Self {
+    pub fn pre_rotate(&self, theta: Radians<T>) -> Self {
         self.pre_mul(&TypedTransform2D::create_rotation(theta))
     }
 
@@ -394,13 +394,13 @@ mod test {
     use super::*;
     use approxeq::ApproxEq;
     use point::Point2D;
-    use Angle;
+    use Radians;
 
     use std::f32::consts::FRAC_PI_2;
 
     type Mat = Transform2D<f32>;
 
-    fn rad(v: f32) -> Angle<f32> { Angle::radians(v) }
+    fn rad(v: f32) -> Radians<f32> { Radians::new(v) }
 
     #[test]
     pub fn test_translation() {
