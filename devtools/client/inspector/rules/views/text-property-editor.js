@@ -28,6 +28,7 @@ const BEZIER_SWATCH_CLASS = "ruleview-bezierswatch";
 const FILTER_SWATCH_CLASS = "ruleview-filterswatch";
 const ANGLE_SWATCH_CLASS = "ruleview-angleswatch";
 const INSET_POINT_TYPES = ["top", "right", "bottom", "left"];
+const FONT_FAMILY_CLASS = "ruleview-font-family";
 
 
 
@@ -39,6 +40,21 @@ const ACTIONABLE_ELEMENTS_SELECTORS = [
   `.${FILTER_SWATCH_CLASS}`,
   `.${ANGLE_SWATCH_CLASS}`,
   "a"
+];
+
+
+
+
+
+
+
+const GENERIC_FONT_FAMILIES = [
+  "serif",
+  "sans-serif",
+  "cursive",
+  "fantasy",
+  "monospace",
+  "system-ui"
 ];
 
 
@@ -365,6 +381,7 @@ TextPropertyEditor.prototype = {
       shapeClass: "ruleview-shape",
       defaultColorType: !propDirty,
       urlClass: "theme-link",
+      fontFamilyClass: FONT_FAMILY_CLASS,
       baseURI: this.sheetHref,
       unmatchedVariableClass: "ruleview-unmatched-variable",
       matchedVariableClass: "ruleview-variable",
@@ -375,6 +392,39 @@ TextPropertyEditor.prototype = {
     this.valueSpan.appendChild(frag);
 
     this.ruleView.emit("property-value-updated", this.valueSpan);
+
+    
+    
+    let fontFamilySpans = this.valueSpan.querySelectorAll("." + FONT_FAMILY_CLASS);
+    if (fontFamilySpans.length && this.prop.enabled && !this.prop.overridden) {
+      this.rule.elementStyle.getUsedFontFamilies().then(families => {
+        const usedFontFamilies = families.map(font => font.toLowerCase());
+        let foundMatchingFamily = false;
+        let firstGenericSpan = null;
+
+        for (let span of fontFamilySpans) {
+          const authoredFont = span.textContent.toLowerCase();
+
+          if (!firstGenericSpan && GENERIC_FONT_FAMILIES.includes(authoredFont)) {
+            firstGenericSpan = span;
+          }
+
+          if (usedFontFamilies.includes(authoredFont)) {
+            span.classList.add("used-font");
+            foundMatchingFamily = true;
+            
+            
+            break;
+          }
+        }
+
+        if (!foundMatchingFamily && firstGenericSpan) {
+          firstGenericSpan.classList.add("used-font");
+        }
+
+        this.ruleView.emit("font-highlighted", this.valueSpan);
+      }).catch(e => console.error("Could not get the list of font families", e));
+    }
 
     
     this._colorSwatchSpans =

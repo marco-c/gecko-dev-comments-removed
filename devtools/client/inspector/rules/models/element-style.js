@@ -140,6 +140,26 @@ ElementStyle.prototype = {
   
 
 
+
+
+
+  getUsedFontFamilies: function () {
+    return new Promise((resolve, reject) => {
+      this.ruleView.styleWindow.requestIdleCallback(async () => {
+        try {
+          let fonts = await this.pageStyle.getUsedFontFaces(
+            this.element, { includePreviews: false });
+          resolve(fonts.map(font => font.CSSFamilyName));
+        } catch (e) {
+          reject(e);
+        }
+      });
+    });
+  },
+
+  
+
+
   _sortRulesForPseudoElement: function () {
     this.rules = this.rules.sort((a, b) => {
       return (a.pseudoElement || "z") > (b.pseudoElement || "z");
