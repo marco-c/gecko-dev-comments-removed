@@ -326,7 +326,16 @@ protected:
                         const nsAString* aBulletType,
                         bool* aCancel, bool* aHandled,
                         const nsAString* aItemType = nullptr);
-  nsresult WillRemoveList(bool aOrdered, bool* aCancel, bool* aHandled);
+
+  
+
+
+
+
+
+
+
+  MOZ_MUST_USE nsresult WillRemoveList(bool* aCancel, bool* aHandled);
 
   
 
