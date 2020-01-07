@@ -151,6 +151,44 @@ struct Zone : public JS::shadow::Zone,
     MOZ_MUST_USE bool init(bool isSystem);
     void destroy(js::FreeOp *fop);
 
+  private:
+    enum class HelperThreadUse : uint32_t {
+        None,
+        Pending,
+        Active
+    };
+    mozilla::Atomic<HelperThreadUse> helperThreadUse_;
+
+    
+    
+    js::UnprotectedData<JSContext*> helperThreadOwnerContext_;
+
+  public:
+    bool ownedByCurrentHelperThread();
+    void setHelperThreadOwnerContext(JSContext* cx);
+
+    
+    bool createdForHelperThread() const {
+        return helperThreadUse_ != HelperThreadUse::None;
+    }
+    
+    bool usedByHelperThread() {
+        MOZ_ASSERT_IF(isAtomsZone(), helperThreadUse_ == HelperThreadUse::None);
+        return helperThreadUse_ == HelperThreadUse::Active;
+    }
+    void setCreatedForHelperThread() {
+        MOZ_ASSERT(helperThreadUse_ == HelperThreadUse::None);
+        helperThreadUse_ = HelperThreadUse::Pending;
+    }
+    void setUsedByHelperThread() {
+        MOZ_ASSERT(helperThreadUse_ == HelperThreadUse::Pending);
+        helperThreadUse_ = HelperThreadUse::Active;
+    }
+    void clearUsedByHelperThread() {
+        MOZ_ASSERT(helperThreadUse_ != HelperThreadUse::None);
+        helperThreadUse_ = HelperThreadUse::None;
+    }
+
     void findOutgoingEdges(js::gc::ZoneComponentFinder& finder);
 
     void discardJitCode(js::FreeOp* fop, bool discardBaselineCode = true);
@@ -512,48 +550,6 @@ struct Zone : public JS::shadow::Zone,
     js::ZoneData<void*> data;
 
     js::ZoneData<bool> isSystem;
-
-  private:
-    
-    
-    js::UnprotectedData<JSContext*> helperThreadOwnerContext_;
-
-  public:
-    bool ownedByCurrentHelperThread();
-    void setHelperThreadOwnerContext(JSContext* cx);
-
-  private:
-    enum class HelperThreadUse : uint32_t
-    {
-        None,
-        Pending,
-        Active
-    };
-
-    mozilla::Atomic<HelperThreadUse> helperThreadUse;
-
-  public:
-    
-    bool createdForHelperThread() const {
-        return helperThreadUse != HelperThreadUse::None;
-    }
-    
-    bool usedByHelperThread() {
-        MOZ_ASSERT_IF(isAtomsZone(), helperThreadUse == HelperThreadUse::None);
-        return helperThreadUse == HelperThreadUse::Active;
-    }
-    void setCreatedForHelperThread() {
-        MOZ_ASSERT(helperThreadUse == HelperThreadUse::None);
-        helperThreadUse = HelperThreadUse::Pending;
-    }
-    void setUsedByHelperThread() {
-        MOZ_ASSERT(helperThreadUse == HelperThreadUse::Pending);
-        helperThreadUse = HelperThreadUse::Active;
-    }
-    void clearUsedByHelperThread() {
-        MOZ_ASSERT(helperThreadUse != HelperThreadUse::None);
-        helperThreadUse = HelperThreadUse::None;
-    }
 
 #ifdef DEBUG
     js::ZoneData<unsigned> gcLastSweepGroupIndex;
