@@ -7452,28 +7452,68 @@ nsGlobalWindowInner::PromiseDocumentFlushed(PromiseDocumentFlushedCallback& aCal
   return resultPromise.forget();
 }
 
+template<bool call>
+void
+nsGlobalWindowInner::CallOrCancelDocumentFlushedResolvers()
+{
+  MOZ_ASSERT(!mIteratingDocumentFlushedResolvers);
+
+  while (true) {
+    {
+      
+      
+      
+      nsAutoMicroTask mt;
+
+      mIteratingDocumentFlushedResolvers = true;
+      for (const auto& documentFlushedResolver : mDocumentFlushedResolvers) {
+        if (call) {
+          documentFlushedResolver->Call();
+        } else {
+          documentFlushedResolver->Cancel();
+        }
+      }
+      mDocumentFlushedResolvers.Clear();
+      mIteratingDocumentFlushedResolvers = false;
+    }
+
+    
+    
+
+    
+    if (!mDocumentFlushedResolvers.Length()) {
+      break;
+    }
+
+    
+    
+    
+    if (mDoc) {
+      nsIPresShell* shell = mDoc->GetShell();
+      if (shell) {
+        (void) shell->AddPostRefreshObserver(this);
+        break;
+      }
+    }
+
+    
+    
+    
+    
+    
+  }
+}
+
 void
 nsGlobalWindowInner::CallDocumentFlushedResolvers()
 {
-  MOZ_ASSERT(!mIteratingDocumentFlushedResolvers);
-  mIteratingDocumentFlushedResolvers = true;
-  for (const auto& documentFlushedResolver : mDocumentFlushedResolvers) {
-    documentFlushedResolver->Call();
-  }
-  mDocumentFlushedResolvers.Clear();
-  mIteratingDocumentFlushedResolvers = false;
+  CallOrCancelDocumentFlushedResolvers<true>();
 }
 
 void
 nsGlobalWindowInner::CancelDocumentFlushedResolvers()
 {
-  MOZ_ASSERT(!mIteratingDocumentFlushedResolvers);
-  mIteratingDocumentFlushedResolvers = true;
-  for (const auto& documentFlushedResolver : mDocumentFlushedResolvers) {
-    documentFlushedResolver->Cancel();
-  }
-  mDocumentFlushedResolvers.Clear();
-  mIteratingDocumentFlushedResolvers = false;
+  CallOrCancelDocumentFlushedResolvers<false>();
 }
 
 void

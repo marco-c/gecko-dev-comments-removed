@@ -1281,6 +1281,12 @@ private:
     mChromeFields.mGroupMessageManagers.Clear();
   }
 
+  
+  
+  
+  template<bool call>
+  void CallOrCancelDocumentFlushedResolvers();
+
   void CallDocumentFlushedResolvers();
   void CancelDocumentFlushedResolvers();
 
