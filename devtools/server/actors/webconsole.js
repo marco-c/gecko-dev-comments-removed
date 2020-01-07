@@ -22,7 +22,6 @@ loader.lazyRequireGetter(this, "NetworkMonitor", "devtools/shared/webconsole/net
 loader.lazyRequireGetter(this, "NetworkMonitorChild", "devtools/shared/webconsole/network-monitor", true);
 loader.lazyRequireGetter(this, "ConsoleProgressListener", "devtools/shared/webconsole/network-monitor", true);
 loader.lazyRequireGetter(this, "StackTraceCollector", "devtools/shared/webconsole/network-monitor", true);
-loader.lazyRequireGetter(this, "ServerLoggingListener", "devtools/shared/webconsole/server-logger", true);
 loader.lazyRequireGetter(this, "JSPropertyProvider", "devtools/shared/webconsole/js-property-provider", true);
 loader.lazyRequireGetter(this, "Parser", "resource://devtools/shared/Parser.jsm", true);
 loader.lazyRequireGetter(this, "NetUtil", "resource://gre/modules/NetUtil.jsm", true);
@@ -372,10 +371,6 @@ WebConsoleActor.prototype =
       this.consoleReflowListener.destroy();
       this.consoleReflowListener = null;
     }
-    if (this.serverLoggingListener) {
-      this.serverLoggingListener.destroy();
-      this.serverLoggingListener = null;
-    }
     if (this.contentProcessListener) {
       this.contentProcessListener.destroy();
       this.contentProcessListener = null;
@@ -672,17 +667,6 @@ WebConsoleActor.prototype =
           }
           startedListeners.push(listener);
           break;
-        case "ServerLogging":
-          
-          if (isWorker) {
-            break;
-          }
-          if (!this.serverLoggingListener) {
-            this.serverLoggingListener =
-              new ServerLoggingListener(this.window, this);
-          }
-          startedListeners.push(listener);
-          break;
         case "ContentProcessMessages":
           
           if (isWorker) {
@@ -732,7 +716,7 @@ WebConsoleActor.prototype =
     
     let toDetach = request.listeners ||
       ["PageError", "ConsoleAPI", "NetworkActivity",
-       "FileActivity", "ServerLogging", "ContentProcessMessages"];
+       "FileActivity", "ContentProcessMessages"];
 
     while (toDetach.length > 0) {
       let listener = toDetach.shift();
@@ -778,13 +762,6 @@ WebConsoleActor.prototype =
           if (this.consoleReflowListener) {
             this.consoleReflowListener.destroy();
             this.consoleReflowListener = null;
-          }
-          stoppedListeners.push(listener);
-          break;
-        case "ServerLogging":
-          if (this.serverLoggingListener) {
-            this.serverLoggingListener.destroy();
-            this.serverLoggingListener = null;
           }
           stoppedListeners.push(listener);
           break;
@@ -1794,39 +1771,6 @@ WebConsoleActor.prototype =
       sourceURL: reflowInfo.sourceURL,
       sourceLine: reflowInfo.sourceLine,
       functionName: reflowInfo.functionName
-    };
-
-    this.conn.send(packet);
-  },
-
-  
-
-
-
-
-
-
-
-  onServerLogCall: function(message) {
-    
-    
-    let msg = Cu.cloneInto(message, this.window);
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    msg = this.prepareConsoleMessageForRemote(msg, false);
-
-    let packet = {
-      from: this.actorID,
-      type: "serverLogCall",
-      message: msg,
     };
 
     this.conn.send(packet);
