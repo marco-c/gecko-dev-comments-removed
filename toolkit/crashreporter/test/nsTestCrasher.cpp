@@ -110,12 +110,18 @@ GetWin64CFITestMap() {
   return ret;
 }
 
-void ReserveStack() {
+
+
+
+void MOZ_NEVER_INLINE ReserveStack() {
   
-  uint8_t* p = (uint8_t*)alloca(1024000);
   
-  mozilla::Unused << (int)(uint64_t)p;
-}
+  static const size_t elements = (1024000 / sizeof(FILETIME)) + 1;
+  FILETIME stackmem[elements];
+  ::GetSystemTimeAsFileTime(&stackmem[0]);
+  ::GetSystemTimeAsFileTime(&stackmem[elements - 1]);
+ }
+
 
 #endif 
 
@@ -162,13 +168,13 @@ void Crash(int16_t how)
   case CRASH_X64CFI_SAVE_XMM128:
   case CRASH_X64CFI_SAVE_XMM128_FAR:
   case CRASH_X64CFI_EPILOG: {
-    ReserveStack();
     auto m = GetWin64CFITestMap();
     if (m.find(how) == m.end()) {
       break;
     }
     auto pfnTest = m[how];
     auto pfnLauncher = m[CRASH_X64CFI_LAUNCHER];
+    ReserveStack();
     pfnLauncher(0, pfnTest);
     break;
   }
