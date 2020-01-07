@@ -715,7 +715,11 @@ MergeChildLoadInfoForwarder(const ChildLoadInfoForwarderArgs& aForwarderArgs,
   }
 
   if (reservedClientInfo.isSome()) {
-    aLoadInfo->SetReservedClientInfo(reservedClientInfo.ref());
+    
+    
+    
+    
+    aLoadInfo->OverrideReservedClientInfoInParent(reservedClientInfo.ref());
   } else if (initialClientInfo.isSome()) {
     aLoadInfo->SetInitialClientInfo(initialClientInfo.ref());
   }

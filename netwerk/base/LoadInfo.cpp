@@ -1326,6 +1326,17 @@ LoadInfo::SetReservedClientInfo(const ClientInfo& aClientInfo)
   mReservedClientInfo.emplace(aClientInfo);
 }
 
+void
+LoadInfo::OverrideReservedClientInfoInParent(const ClientInfo& aClientInfo)
+{
+  
+  MOZ_ASSERT(XRE_GetProcessType() == GeckoProcessType_Default);
+
+  mInitialClientInfo.reset();
+  mReservedClientInfo.reset();
+  mReservedClientInfo.emplace(aClientInfo);
+}
+
 const Maybe<ClientInfo>&
 LoadInfo::GetReservedClientInfo()
 {
