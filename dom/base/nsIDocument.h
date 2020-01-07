@@ -1202,17 +1202,6 @@ public:
   
 
 
-
-
-
-
-
-  void UpdateViewportOverflowType(nscoord aScrolledWidth,
-                                  nscoord aScrollportWidth);
-
-  
-
-
   virtual bool WillIgnoreCharsetOverride() {
     return true;
   }
@@ -4282,37 +4271,13 @@ protected:
   
   uint32_t mUpdateNestLevel;
 
-  enum ViewportType : uint8_t {
+  enum ViewportType {
     DisplayWidthHeight,
     Specified,
     Unknown
   };
 
   ViewportType mViewportType;
-
-  
-  
-  
-  
-  enum class ViewportOverflowType : uint8_t {
-    
-    
-    
-    NoOverflow,
-
-    
-    
-
-    
-    Desktop,
-    
-    
-    
-    ButNotMinScaleSize,
-    
-    MinScaleSize,
-  };
-  ViewportOverflowType mViewportOverflowType;
 
   PLDHashTable* mSubDocuments;
 
