@@ -1,11 +1,11 @@
-/* Any copyright is dedicated to the Public Domain.
- * http://creativecommons.org/publicdomain/zero/1.0/ */
 
-// Tests that the source tree works.
+
+
+
 
 async function waitForSourceCount(dbg, i) {
-  // We are forced to wait until the DOM nodes appear because the
-  // source tree batches its rendering.
+  
+  
   await waitUntil(() => {
     return findAllElements(dbg, "sourceNodes").length === i;
   });
@@ -24,11 +24,28 @@ function getLabel(dbg, index) {
 
 add_task(async function() {
   const dbg = await initDebugger("doc-sources.html");
+  const { selectors: { getSelectedSource, getExpandedState }, getState } = dbg;
+
+  await waitForSources(dbg, "nested-source");
+  await selectSource(dbg, "nested-source");
+
+  const expanded = getExpandedState(getState());
+
+  ok(
+    expanded.has(
+      `example.com/browser/devtools/client/debugger/new/test/mochitest/examples/nested/nested/`
+    ),
+    "Nodes in path are automatically expanded"
+  );
+});
+
+add_task(async function() {
+  const dbg = await initDebugger("doc-sources.html");
   const { selectors: { getSelectedSource }, getState } = dbg;
 
   await waitForSources(dbg, "simple1", "simple2", "nested-source", "long.js");
 
-  // Expand nodes and make sure more sources appear.
+  
   await assertSourceCount(dbg, 2);
   await clickElement(dbg, "sourceDirectoryLabel", 2);
 
@@ -41,7 +58,7 @@ add_task(async function() {
   await selected;
   await waitForSelectedSource(dbg);
 
-  // Ensure the source file clicked is now focused
+  
   await waitForElementWithSelector(dbg, ".sources-list .focused");
 
   const focusedNode = findElementWithSelector(dbg, ".sources-list .focused");
@@ -56,7 +73,7 @@ add_task(async function() {
 
   await waitForSelectedSource(dbg, "nested-source");
 
-  // Make sure new sources appear in the list.
+  
   ContentTask.spawn(gBrowser.selectedBrowser, null, function() {
     const script = content.document.createElement("script");
     script.src = "math.min.js";
