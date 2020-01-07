@@ -649,11 +649,10 @@ nsDocShell::GetInterface(const nsIID& aIID, void** aSink)
     *aSink = GetTabChild().take();
     return *aSink ? NS_OK : NS_ERROR_FAILURE;
   } else if (aIID.Equals(NS_GET_IID(nsIContentFrameMessageManager))) {
-    nsCOMPtr<nsITabChild> tabChild =
-      do_GetInterface(static_cast<nsIDocShell*>(this));
+    RefPtr<TabChild> tabChild = TabChild::GetFrom(this);
     nsCOMPtr<nsIContentFrameMessageManager> mm;
     if (tabChild) {
-      tabChild->GetMessageManager(getter_AddRefs(mm));
+      mm = tabChild->GetMessageManager();
     } else {
       if (nsPIDOMWindowOuter* win = GetWindow()) {
         mm = do_QueryInterface(win->GetParentTarget());
@@ -9643,9 +9642,9 @@ nsDocShell::InternalLoad(nsIURI* aURI,
     
     const int where = (aWindowTarget.IsEmpty() || targetDocShell)
                       ? nsIBrowserDOMWindow::OPEN_CURRENTWINDOW
-                      : nsIBrowserDOMWindow::OPEN_NEW;
+                      : nsIBrowserDOMWindow::OPEN_NEWWINDOW;
 
-    if (where == nsIBrowserDOMWindow::OPEN_NEW && isDocumentAuxSandboxed) {
+    if (where == nsIBrowserDOMWindow::OPEN_NEWWINDOW && isDocumentAuxSandboxed) {
       return NS_ERROR_DOM_INVALID_ACCESS_ERR;
     }
 
