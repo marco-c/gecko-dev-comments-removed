@@ -516,7 +516,7 @@ private:
   const UniquePtr<webrtc::AudioProcessing> mAudioProcessing;
 
   
-  nsAutoPtr<AudioPacketizer<AudioDataValue, AudioDataValue>> mPacketizer;
+  nsAutoPtr<AudioPacketizer<AudioDataValue, float>> mPacketizer;
   ScopedCustomReleasePtr<webrtc::VoEExternalMedia> mVoERenderListener;
 
   
@@ -549,7 +549,8 @@ private:
   MediaEnginePrefs mLastPrefs;
 
   AlignedFloatBuffer mInputBuffer;
-  AlignedFloatBuffer mInputDownmixBuffer;
+  AlignedFloatBuffer mDeinterleavedBuffer;
+  AlignedAudioBuffer mInputDownmixBuffer;
 };
 
 class MediaEngineWebRTC : public MediaEngine
