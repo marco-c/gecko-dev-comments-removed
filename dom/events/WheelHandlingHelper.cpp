@@ -6,6 +6,8 @@
 
 #include "WheelHandlingHelper.h"
 
+#include <utility>                      
+
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/EventStateManager.h"
 #include "mozilla/MouseEvents.h"
@@ -635,6 +637,73 @@ void WheelDeltaHorizontalizer::CancelHorizontalization()
 WheelDeltaHorizontalizer::~WheelDeltaHorizontalizer()
 {
   CancelHorizontalization();
+}
+
+
+
+
+
+bool
+AutoDirWheelDeltaAdjuster::ShouldBeAdjusted()
+{
+  
+  
+  
+  if (mCheckedIfShouldBeAdjusted) {
+    return mShouldBeAdjusted;
+  }
+  mCheckedIfShouldBeAdjusted = true;
+
+  
+  
+  
+  
+  
+  
+  
+  if ((mDeltaX && mDeltaY) || (!mDeltaX && !mDeltaY)) {
+    return false;
+  }
+  if (mDeltaX) {
+    if (CanScrollAlongXAxis()) {
+      return false;
+    }
+    if (IsHorizontalContentRightToLeft()) {
+      mShouldBeAdjusted = mDeltaX > 0 ? CanScrollUpwards()
+                                      : CanScrollDownwards();
+    } else {
+      mShouldBeAdjusted = mDeltaX < 0 ? CanScrollUpwards()
+                                      : CanScrollDownwards();
+    }
+    return mShouldBeAdjusted;
+  }
+  MOZ_ASSERT(0 != mDeltaY);
+  if (CanScrollAlongYAxis()) {
+    return false;
+  }
+  if (IsHorizontalContentRightToLeft()) {
+    mShouldBeAdjusted = mDeltaY > 0 ? CanScrollLeftwards()
+                                    : CanScrollRightwards();
+  } else {
+    mShouldBeAdjusted = mDeltaY < 0 ? CanScrollLeftwards()
+                                    : CanScrollRightwards();
+  }
+  return mShouldBeAdjusted;
+}
+
+void
+AutoDirWheelDeltaAdjuster::Adjust()
+{
+  if (!ShouldBeAdjusted()) {
+    return;
+  }
+  std::swap(mDeltaX, mDeltaY);
+  if (IsHorizontalContentRightToLeft()) {
+    mDeltaX *= -1;
+    mDeltaY *= -1;
+  }
+  mShouldBeAdjusted = false;
+  OnAdjusted();
 }
 
 } 
