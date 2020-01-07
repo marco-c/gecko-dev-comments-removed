@@ -1495,8 +1495,6 @@ nsXULTemplateQueryProcessorRDF::CompileSimpleQuery(nsRDFQuery* aQuery,
             return rv;
     }
 
-    bool hasContainerTest = false;
-
     TestNode* prevnode = mSimpleRuleMemberTest;
 
     
@@ -1524,11 +1522,6 @@ nsXULTemplateQueryProcessorRDF::CompileSimpleQuery(nsRDFQuery* aQuery,
 
         if (name->Equals(nsGkAtoms::iscontainer, kNameSpaceID_None) ||
             name->Equals(nsGkAtoms::isempty, kNameSpaceID_None)) {
-            
-            
-            
-            if (hasContainerTest)
-                continue;
 
             nsRDFConInstanceTestNode::Test iscontainer =
                 nsRDFConInstanceTestNode::eDontCare;
