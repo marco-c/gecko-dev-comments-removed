@@ -2941,13 +2941,6 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
       hasOverrideDirtyRect = true;
     }
   }
-  
-  
-  
-  if (aBuilder->IsRetainingDisplayList() && BuiltBlendContainer()) {
-    dirtyRect = visibleRect;
-    aBuilder->MarkFrameModifiedDuringBuilding(this);
-  }
 
   bool usingFilter = StyleEffects()->HasFilters();
   bool usingMask = nsSVGIntegrationUtils::UsingMaskOrClipPathForFrame(this);
@@ -3109,42 +3102,17 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
     
     
     
-
     
     
     
-    if (aBuilder->ContainsBlendMode() != BuiltBlendContainer() &&
+    
+    
+    if (aBuilder->ContainsBlendMode() &&
         aBuilder->IsRetainingDisplayList()) {
-      SetBuiltBlendContainer(aBuilder->ContainsBlendMode());
-
-      
-      
       if (!aBuilder->GetDirtyRect().Contains(aBuilder->GetVisibleRect())) {
-        aBuilder->MarkCurrentFrameModifiedDuringBuilding();
-        set.DeleteAll(aBuilder);
-
-        if (eventRegions) {
-          eventRegions->Destroy(aBuilder);
-          eventRegions = MakeDisplayItem<nsDisplayLayerEventRegions>(aBuilder, this);
-          eventRegions->AddFrame(aBuilder, this);
-          aBuilder->SetLayerEventRegions(eventRegions);
-        }
-
-        aBuilder->BuildCompositorHitTestInfoIfNeeded(this,
-                                                     set.BorderBackground(),
-                                                     true);
-
-        
-        
-        
-        if (!GetParent()) {
-          aBuilder->ClearFixedBackgroundDisplayData();
-        }
-
-        MarkAbsoluteFramesForDisplayList(aBuilder);
-        aBuilder->Check();
-        BuildDisplayList(aBuilder, set);
-        aBuilder->Check();
+        aBuilder->SetPartialBuildFailed(true);
+      } else {
+        aBuilder->SetDisablePartialUpdates(true);
       }
     }
 
