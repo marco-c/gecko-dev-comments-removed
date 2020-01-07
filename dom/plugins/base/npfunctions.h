@@ -269,4 +269,18 @@ NP_EXPORT(NPError)     NP_GetValue(void *future, NPPVariable aVariable, void *aV
 #endif
 #endif
 
+
+
+#if defined(XP_WIN)
+#define NS_NPAPIPLUGIN_CALLBACK(_type, _name) _type (__stdcall * _name)
+#else
+#define NS_NPAPIPLUGIN_CALLBACK(_type, _name) _type (* _name)
+#endif
+
+
+typedef NS_NPAPIPLUGIN_CALLBACK(NPError, NP_GETENTRYPOINTS) (NPPluginFuncs* pCallbacks);
+typedef NS_NPAPIPLUGIN_CALLBACK(NPError, NP_PLUGININIT) (const NPNetscapeFuncs* pCallbacks);
+typedef NS_NPAPIPLUGIN_CALLBACK(NPError, NP_PLUGINUNIXINIT) (const NPNetscapeFuncs* pCallbacks, NPPluginFuncs* fCallbacks);
+typedef NS_NPAPIPLUGIN_CALLBACK(NPError, NP_PLUGINSHUTDOWN) (void);
+
 #endif
