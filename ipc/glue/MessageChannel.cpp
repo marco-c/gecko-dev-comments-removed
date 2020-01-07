@@ -533,7 +533,8 @@ MessageChannel::MessageChannel(const char* aName,
     mFlags(REQUIRE_DEFAULT),
     mPeerPidSet(false),
     mPeerPid(-1),
-    mIsPostponingSends(false)
+    mIsPostponingSends(false),
+    mBuildIDsConfirmedMatch(false)
 {
     MOZ_COUNT_CTOR(ipc::MessageChannel);
 
@@ -1000,29 +1001,38 @@ MessageChannel::RejectPendingResponsesForActor(ActorIdType aActorId)
   }
 }
 
-class BuildIDMessage : public IPC::Message
+class BuildIDsMatchMessage : public IPC::Message
 {
 public:
-    BuildIDMessage()
-        : IPC::Message(MSG_ROUTING_NONE, BUILD_ID_MESSAGE_TYPE)
+    BuildIDsMatchMessage()
+        : IPC::Message(MSG_ROUTING_NONE, BUILD_IDS_MATCH_MESSAGE_TYPE)
     {
     }
     void Log(const std::string& aPrefix, FILE* aOutf) const
     {
-        fputs("(special `Build ID' message)", aOutf);
+        fputs("(special `Build IDs match' message)", aOutf);
     }
 };
 
 
 
 
-void
-MessageChannel::SendBuildID()
+
+bool
+MessageChannel::SendBuildIDsMatchMessage(const char* aParentBuildID)
 {
     MOZ_ASSERT(!XRE_IsParentProcess());
-    nsAutoPtr<BuildIDMessage> msg(new BuildIDMessage());
-    nsCString buildID(mozilla::PlatformBuildID());
-    IPC::WriteParam(msg, buildID);
+
+    nsCString parentBuildID(aParentBuildID);
+    nsCString childBuildID(mozilla::PlatformBuildID());
+
+    if (parentBuildID != childBuildID) {
+        
+        
+        return false;
+    }
+
+    nsAutoPtr<BuildIDsMatchMessage> msg(new BuildIDsMatchMessage());
 
     MOZ_RELEASE_ASSERT(!msg->is_sync());
     MOZ_RELEASE_ASSERT(msg->nested_level() != IPC::Message::NESTED_INSIDE_SYNC);
@@ -1034,9 +1044,10 @@ MessageChannel::SendBuildID()
     MonitorAutoLock lock(*mMonitor);
     if (!Connected()) {
         ReportConnectionError("MessageChannel", msg);
-        return;
+        return false;
     }
     mLink->SendMessage(msg.forget());
+    return true;
 }
 
 class CancelMessage : public IPC::Message
@@ -1054,22 +1065,6 @@ public:
         fputs("(special `Cancel' message)", aOutf);
     }
 };
-
-MOZ_NEVER_INLINE static void
-CheckChildProcessBuildID(const IPC::Message& aMsg)
-{
-    MOZ_ASSERT(XRE_IsParentProcess());
-    nsCString childBuildID;
-    PickleIterator msgIter(aMsg);
-    MOZ_ALWAYS_TRUE(IPC::ReadParam(&aMsg, &msgIter, &childBuildID));
-    aMsg.EndRead(msgIter);
-
-    nsCString parentBuildID(mozilla::PlatformBuildID());
-
-    
-    
-    MOZ_RELEASE_ASSERT(parentBuildID == childBuildID);
-}
 
 bool
 MessageChannel::MaybeInterceptSpecialIOMessage(const Message& aMsg)
@@ -1092,9 +1087,9 @@ MessageChannel::MaybeInterceptSpecialIOMessage(const Message& aMsg)
             CancelTransaction(aMsg.transaction_id());
             NotifyWorkerThread();
             return true;
-        } else if (BUILD_ID_MESSAGE_TYPE == aMsg.type()) {
-            IPC_LOG("Build ID message");
-            CheckChildProcessBuildID(aMsg);
+        } else if (BUILD_IDS_MATCH_MESSAGE_TYPE == aMsg.type()) {
+            IPC_LOG("Build IDs match message");
+            mBuildIDsConfirmedMatch = true;
             return true;
         }
     }

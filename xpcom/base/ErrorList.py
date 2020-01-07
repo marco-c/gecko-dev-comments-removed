@@ -868,6 +868,9 @@ with modules["CONTENT"]:
     errors["NS_ERROR_XBL_BLOCKED"] = FAILURE(15)
     
     errors["NS_ERROR_CONTENT_CRASHED"] = FAILURE(16)
+    
+    
+    errors["NS_ERROR_BUILDID_MISMATCH"] = FAILURE(17)
 
     
     errors["NS_HTML_STYLE_PROPERTY_NOT_THERE"] = SUCCESS(2)

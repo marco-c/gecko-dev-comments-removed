@@ -238,7 +238,8 @@ private:
         gUnresolvedResponses++;
     }
 
-    void SendBuildID();
+    bool SendBuildIDsMatchMessage(const char* aParentBuildI);
+    bool DoBuildIDsMatch() { return mBuildIDsConfirmedMatch; }
 
     
     
@@ -854,6 +855,8 @@ private:
     
     bool mIsPostponingSends;
     std::vector<UniquePtr<Message>> mPostponedSends;
+
+    bool mBuildIDsConfirmedMatch;
 };
 
 void

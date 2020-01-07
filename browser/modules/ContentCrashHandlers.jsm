@@ -229,9 +229,13 @@ var TabCrashHandler = {
 
     let sentBrowser = false;
     for (let weakBrowser of browserQueue) {
-      let browser = weakBrowser.get();
+      let browser = weakBrowser.browser.get();
       if (browser) {
-        this.sendToTabCrashedPage(browser);
+        if (weakBrowser.restartRequired) {
+          this.sendToRestartRequiredPage(browser);
+        } else {
+          this.sendToTabCrashedPage(browser);
+        }
         sentBrowser = true;
       }
     }
@@ -247,7 +251,9 @@ var TabCrashHandler = {
 
 
 
-  onSelectedBrowserCrash(browser) {
+
+
+  onSelectedBrowserCrash(browser, restartRequired) {
     if (!browser.isRemoteBrowser) {
       Cu.reportError("Selected crashed browser is not remote.");
       return;
@@ -269,7 +275,8 @@ var TabCrashHandler = {
     
     
     
-    browserQueue.push(Cu.getWeakReference(browser));
+    browserQueue.push({browser: Cu.getWeakReference(browser),
+                       restartRequired});
   },
 
   
@@ -310,6 +317,18 @@ var TabCrashHandler = {
     }
 
     return false;
+  },
+
+  sendToRestartRequiredPage(browser) {
+    let title = browser.contentTitle;
+    let uri = browser.currentURI;
+    let gBrowser = browser.ownerGlobal.gBrowser;
+    let tab = gBrowser.getTabForBrowser(browser);
+    
+    gBrowser.updateBrowserRemoteness(browser, false);
+
+    browser.docShell.displayLoadError(Cr.NS_ERROR_BUILDID_MISMATCH, uri, null);
+    tab.setAttribute("crashed", true);
   },
 
   
