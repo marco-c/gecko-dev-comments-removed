@@ -34,6 +34,7 @@
 #include "nsClassHashtable.h"
 #include "mozilla/CORSMode.h"
 #include "mozilla/dom/DispatcherTrait.h"
+#include "mozilla/dom/StyleScope.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/NotNull.h"
 #include "mozilla/SegmentedVector.h"
@@ -212,6 +213,7 @@ class nsContentList;
 
 
 class nsIDocument : public nsINode,
+                    public mozilla::dom::StyleScope,
                     public mozilla::dom::DispatcherTrait
 {
   typedef mozilla::dom::GlobalObject GlobalObject;
@@ -1322,40 +1324,25 @@ public:
 
   virtual void EnsureOnDemandBuiltInUASheet(mozilla::StyleSheet* aSheet) = 0;
 
-  
+  nsINode& AsNode() final
+  {
+    return *this;
+  }
 
-
-
-
-
-  virtual int32_t GetNumberOfStyleSheets() const = 0;
-
-  
-
-
-
-
-
-  virtual mozilla::StyleSheet* GetStyleSheetAt(int32_t aIndex) const = 0;
+  mozilla::dom::StyleSheetList* StyleSheets()
+  {
+    return &StyleScope::EnsureDOMStyleSheets();
+  }
 
   
-
 
 
 
 
 
   virtual void InsertStyleSheetAt(mozilla::StyleSheet* aSheet,
-                                  int32_t aIndex) = 0;
+                                  size_t aIndex) = 0;
 
-  
-
-
-
-
-
-  virtual int32_t GetIndexOfStyleSheet(
-      const mozilla::StyleSheet* aSheet) const = 0;
 
   
 
@@ -1412,7 +1399,7 @@ public:
 
   template<typename T>
   size_t FindDocStyleSheetInsertionPoint(const nsTArray<T>& aDocSheets,
-                                         mozilla::StyleSheet* aSheet);
+                                         const mozilla::StyleSheet& aSheet);
 
   
 
@@ -2984,7 +2971,6 @@ public:
     return mVisibilityState;
   }
 #endif
-  virtual mozilla::dom::StyleSheetList* StyleSheets() = 0;
   void GetSelectedStyleSheetSet(nsAString& aSheetSet);
   virtual void SetSelectedStyleSheetSet(const nsAString& aSheetSet) = 0;
   virtual void GetLastStyleSheetSet(nsString& aSheetSet) = 0;

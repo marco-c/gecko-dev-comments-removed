@@ -1,0 +1,27 @@
+
+
+
+
+
+
+#include "StyleScope.h"
+#include "mozilla/dom/StyleSheetList.h"
+
+namespace mozilla {
+namespace dom {
+
+StyleScope::~StyleScope()
+{
+}
+
+StyleSheetList&
+StyleScope::EnsureDOMStyleSheets()
+{
+  if (!mDOMStyleSheets) {
+    mDOMStyleSheets = new StyleSheetList(*this);
+  }
+  return *mDOMStyleSheets;
+}
+
+}
+}
