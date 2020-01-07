@@ -1807,23 +1807,90 @@ class MOZ_STACK_CLASS TryEmitter
     }
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class MOZ_STACK_CLASS IfThenElseEmitter
 {
     BytecodeEmitter* bce_;
+
     JumpList jumpAroundThen_;
     JumpList jumpsAroundElse_;
+
+    
     unsigned noteIndex_;
+
+    
+    
+    
+    
     int32_t thenDepth_;
+
 #ifdef DEBUG
+    
     int32_t pushed_;
     bool calculatedPushed_;
 #endif
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     enum State {
+        
         Start,
+
+        
         If,
+
+        
         Cond,
+
+        
         IfElse,
+
+        
         Else,
+
+        
         End
     };
     State state_;
@@ -1869,6 +1936,17 @@ class MOZ_STACK_CLASS IfThenElseEmitter
 #endif
         state_ = nextState;
         return true;
+    }
+
+    void calculateOrCheckPushed() {
+#ifdef DEBUG
+        if (!calculatedPushed_) {
+            pushed_ = bce_->stackDepth - thenDepth_;
+            calculatedPushed_ = true;
+        } else {
+            MOZ_ASSERT(pushed_ == bce_->stackDepth - thenDepth_);
+        }
+#endif
     }
 
   public:
@@ -1935,22 +2013,17 @@ class MOZ_STACK_CLASS IfThenElseEmitter
         return true;
     }
 
-    void calculateOrCheckPushed() {
 #ifdef DEBUG
-        if (!calculatedPushed_) {
-            pushed_ = bce_->stackDepth - thenDepth_;
-            calculatedPushed_ = true;
-        } else {
-            MOZ_ASSERT(pushed_ == bce_->stackDepth - thenDepth_);
-        }
-#endif
-    }
-
-#ifdef DEBUG
+    
+    
+    
     int32_t pushed() const {
         return pushed_;
     }
 
+    
+    
+    
     int32_t popped() const {
         return -pushed_;
     }
