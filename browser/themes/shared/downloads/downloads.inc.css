@@ -26,11 +26,8 @@
 }
 
 #emptyDownloads {
-  padding: 16px 25px;
+  padding: 16px 16px;
   margin: 0;
-  
-
-  text-align: center;
 }
 
 .downloadsPanelFooter {
