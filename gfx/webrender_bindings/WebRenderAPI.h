@@ -150,7 +150,8 @@ public:
   void UpdateDynamicProperties(const nsTArray<wr::WrOpacityProperty>& aOpacityArray,
                                const nsTArray<wr::WrTransformProperty>& aTransformArray);
 
-  void SetWindowParameters(LayoutDeviceIntSize size);
+  void SetWindowParameters(const LayoutDeviceIntSize& aWindowSize,
+                           const LayoutDeviceIntRect& aDocRect);
 
   void UpdateResources(ResourceUpdateQueue& aUpdates);
 
@@ -174,6 +175,8 @@ public:
   static already_AddRefed<WebRenderAPI> Create(layers::CompositorBridgeParentBase* aBridge,
                                                RefPtr<widget::CompositorWidget>&& aWidget,
                                                LayoutDeviceIntSize aSize);
+
+  already_AddRefed<WebRenderAPI> CreateDocument(LayoutDeviceIntSize aSize, int8_t aLayerIndex);
 
   
   static void InitExternalLogHandler();
@@ -224,7 +227,17 @@ protected:
   uint32_t mMaxTextureSize;
   bool mUseANGLE;
   layers::SyncHandle mSyncHandle;
+
+  
+  
+  
+  
+  
+  
+  
+  
   RefPtr<wr::WebRenderAPI> mRootApi;
+  RefPtr<wr::WebRenderAPI> mRootDocumentApi;
 
   friend class DisplayListBuilder;
   friend class layers::WebRenderBridgeParent;
