@@ -2,8 +2,13 @@
 
 "use strict";
 
-const requireHacker = require("require-hacker");
 
+const Enzyme = require("enzyme");
+const Adapter = require("enzyme-adapter-react-16");
+Enzyme.configure({ adapter: new Adapter() });
+
+
+const requireHacker = require("require-hacker");
 requireHacker.global_hook("default", path => {
   switch (path) {
     

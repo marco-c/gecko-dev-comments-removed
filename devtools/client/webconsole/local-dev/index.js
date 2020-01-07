@@ -12,13 +12,6 @@ const { EventEmitter } = require("devtools-modules");
 const { Services: { appinfo, pref } } = require("devtools-modules");
 const { bootstrap } = require("devtools-launchpad");
 
-try {
-  const Perf = require("react-addons-perf");
-  window.Perf = Perf;
-} catch (e) {
-  
-}
-
 EventEmitter.decorate(window);
 
 require("../../themes/widgets.css");
