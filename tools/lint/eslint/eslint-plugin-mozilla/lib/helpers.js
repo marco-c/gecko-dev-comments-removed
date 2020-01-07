@@ -300,7 +300,7 @@ module.exports = {
     for (let reg of callExpressionDefinitions) {
       let match = source.match(reg);
       if (match) {
-        return [{ name: match[1], writable: true }];
+        return [{ name: match[1], writable: true, explicit: true }];
       }
     }
 
@@ -308,7 +308,7 @@ module.exports = {
         node.expression.arguments[1] &&
         node.expression.arguments[1].type === "ObjectExpression") {
       return node.expression.arguments[1].properties
-                 .map(p => ({ name: p.type === "Property" && p.key.name, writable: true }))
+                 .map(p => ({ name: p.type === "Property" && p.key.name, writable: true, explicit: true }))
                  .filter(g => g.name);
     }
 
@@ -317,7 +317,7 @@ module.exports = {
         node.expression.callee.property.name == "defineLazyScriptGetter") {
       
       
-      return node.expression.arguments[1].elements.map(n => ({ name: n.value, writable: true }));
+      return node.expression.arguments[1].elements.map(n => ({ name: n.value, writable: true, explicit: true }));
     }
 
     return [];
@@ -334,12 +334,18 @@ module.exports = {
 
 
 
-  addVarToScope(name, scope, writable) {
+
+
+  addVarToScope(name, scope, writable, node) {
     scope.__defineGeneric(name, scope.set, scope.variables, null, null);
 
     let variable = scope.set.get(name);
     variable.eslintExplicitGlobal = false;
     variable.writeable = writable;
+    if (node) {
+      variable.defs.push({node, name: {name}});
+      variable.identifiers.push(node);
+    }
 
     
     while (scope.type != "global") {
@@ -368,8 +374,10 @@ module.exports = {
 
 
 
-  addGlobals(globalVars, scope) {
-    globalVars.forEach(v => this.addVarToScope(v.name, scope, v.writable));
+
+
+  addGlobals(globalVars, scope, node) {
+    globalVars.forEach(v => this.addVarToScope(v.name, scope, v.writable, v.explicit && node));
   },
 
   
