@@ -1279,8 +1279,6 @@ var interfaceNamesInGlobalScope =
 
     {name: "XULLabeledControlElement", xbl: true},
 
-    {name: "XULPopupElement", xbl: true},
-
     {name: "XULTemplateBuilder", xbl: true},
 
     {name: "XULTreeBuilder", xbl: true},
