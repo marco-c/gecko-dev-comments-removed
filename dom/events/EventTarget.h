@@ -65,6 +65,14 @@ public:
   void RemoveEventListener(const nsAString& aType,
                            nsIDOMEventListener* aListener,
                            bool aUseCapture);
+  
+
+
+
+  void RemoveSystemEventListener(const nsAString& aType,
+                                 nsIDOMEventListener* aListener,
+                                 bool aUseCapture);
+
   bool DispatchEvent(Event& aEvent, CallerType aCallerType, ErrorResult& aRv);
 
   nsIGlobalObject* GetParentObject() const
