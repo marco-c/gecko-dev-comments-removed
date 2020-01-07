@@ -10,6 +10,10 @@
 
 const { createEnum } = require("devtools/client/shared/enum");
 
+const {
+  CHANGE_NETWORK_THROTTLING,
+} = require("devtools/client/shared/components/throttling/actions");
+
 createEnum([
 
   
@@ -34,7 +38,7 @@ createEnum([
   "CHANGE_DISPLAY_PIXEL_RATIO",
 
   
-  "CHANGE_NETWORK_THROTTLING",
+  CHANGE_NETWORK_THROTTLING,
 
   
   

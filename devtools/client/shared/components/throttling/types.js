@@ -1,0 +1,17 @@
+
+
+
+
+"use strict";
+
+const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+
+
+
+
+exports.networkThrottling = {
+  
+  enabled: PropTypes.bool,
+  
+  profile: PropTypes.string,
+};

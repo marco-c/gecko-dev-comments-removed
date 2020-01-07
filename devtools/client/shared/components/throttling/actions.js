@@ -1,0 +1,22 @@
+
+
+
+
+"use strict";
+
+const actionTypes = {
+  CHANGE_NETWORK_THROTTLING: "CHANGE_NETWORK_THROTTLING",
+};
+
+function changeNetworkThrottling(enabled, profile) {
+  return {
+    type: actionTypes.CHANGE_NETWORK_THROTTLING,
+    enabled,
+    profile,
+  };
+}
+
+module.exports = {
+  ...actionTypes,
+  changeNetworkThrottling,
+};
