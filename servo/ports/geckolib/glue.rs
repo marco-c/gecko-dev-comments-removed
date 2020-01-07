@@ -125,7 +125,7 @@ use style::gecko_bindings::sugar::ownership::{HasSimpleFFI, Strong};
 use style::gecko_bindings::sugar::refptr::RefPtr;
 use style::gecko_properties;
 use style::invalidation::element::restyle_hints;
-use style::media_queries::MediaList;
+use style::media_queries::{MediaList, parse_media_query_list};
 use style::parser::{Parse, ParserContext, self};
 use style::properties::{ComputedValues, DeclarationSource, Importance};
 use style::properties::{LonghandId, LonghandIdSet, PropertyDeclarationBlock, PropertyId};
@@ -1134,15 +1134,19 @@ pub extern "C" fn Servo_Element_IsPrimaryStyleReusedViaRuleNode(element: RawGeck
     data.flags.contains(data::ElementDataFlags::PRIMARY_STYLE_REUSED_VIA_RULE_NODE)
 }
 
-#[no_mangle]
-pub extern "C" fn Servo_StyleSheet_Empty(mode: SheetParsingMode) -> RawServoStyleSheetContentsStrong {
-    let global_style_data = &*GLOBAL_STYLE_DATA;
-    let origin = match mode {
+fn mode_to_origin(mode: SheetParsingMode) -> Origin {
+    match mode {
         SheetParsingMode::eAuthorSheetFeatures => Origin::Author,
         SheetParsingMode::eUserSheetFeatures => Origin::User,
         SheetParsingMode::eAgentSheetFeatures => Origin::UserAgent,
         SheetParsingMode::eSafeAgentSheetFeatures => Origin::UserAgent,
-    };
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn Servo_StyleSheet_Empty(mode: SheetParsingMode) -> RawServoStyleSheetContentsStrong {
+    let global_style_data = &*GLOBAL_STYLE_DATA;
+    let origin = mode_to_origin(mode);
     let shared_lock = &global_style_data.shared_lock;
     Arc::new(
         StylesheetContents::from_str(
@@ -1156,15 +1160,6 @@ pub extern "C" fn Servo_StyleSheet_Empty(mode: SheetParsingMode) -> RawServoStyl
             0
         )
     ).into_strong()
-}
-
-fn mode_to_origin(mode: SheetParsingMode) -> Origin {
-    match mode {
-        SheetParsingMode::eAuthorSheetFeatures => Origin::Author,
-        SheetParsingMode::eUserSheetFeatures => Origin::User,
-        SheetParsingMode::eAgentSheetFeatures => Origin::UserAgent,
-        SheetParsingMode::eSafeAgentSheetFeatures => Origin::UserAgent,
-    }
 }
 
 
@@ -3760,7 +3755,7 @@ pub unsafe extern "C" fn Servo_MediaList_SetText(
     );
 
     write_locked_arc(list, |list: &mut MediaList| {
-        *list = MediaList::parse(
+        *list = parse_media_query_list(
             &context,
             &mut parser,
             &NullReporter,
