@@ -493,7 +493,9 @@ public:
 
 private:
   
-  void RemoveCallback() ;
+  void RemoveMixerCallback();
+  
+  void AddMixerCallback();
   
 
 
@@ -574,7 +576,10 @@ private:
   
   AutoTArray<StreamAndPromiseForOperation, 1> mPromisesForOperation;
   
-  bool mAddedMixer;
+
+
+
+  Atomic<bool> mAddedMixer;
 
   
 
