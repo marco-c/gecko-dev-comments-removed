@@ -51,6 +51,9 @@ public:
   int GetPageCount() const { return mPDFiumEngine->GetPageCount(mPDFDoc); }
 
   
+
+
+
   bool DrawPage(HDC aPrinterDC, unsigned int aPageIndex,
                 int aPageWidth, int aPageHeight);
 
