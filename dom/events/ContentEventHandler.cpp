@@ -309,11 +309,11 @@ ContentEventHandler::InitRootContent(Selection* aNormalSelection)
   }
 
   
-  if (NS_WARN_IF(startNode->GetUncomposedDoc() != mPresShell->GetDocument())) {
+  if (NS_WARN_IF(startNode->GetComposedDoc() != mPresShell->GetDocument())) {
     return NS_ERROR_FAILURE;
   }
 
-  NS_ASSERTION(startNode->GetUncomposedDoc() == endNode->GetUncomposedDoc(),
+  NS_ASSERTION(startNode->GetComposedDoc() == endNode->GetComposedDoc(),
                "firstNormalSelectionRange crosses the document boundary");
 
   mRootContent = startNode->GetSelectionRootContent(mPresShell);
