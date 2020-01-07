@@ -294,8 +294,12 @@ var BrowserPageActions = {
 
 
 
+
+
+
+
   panelAnchorNodeForAction(action, event) {
-    if (event && event.target.closest("panel")) {
+    if (event && event.target.closest("panel") == this.panelNode) {
       return this.mainButtonNode;
     }
 
