@@ -310,7 +310,22 @@ MediaEngineRemoteVideoSource::Start(const RefPtr<const AllocationHandle>& aHandl
 
   NS_DispatchToMainThread(NS_NewRunnableFunction(
       "MediaEngineRemoteVideoSource::SetLastCapability",
-      [settings = mSettings, cap = mCapability]() mutable {
+      [settings = mSettings, source = mMediaSource, cap = mCapability]() mutable {
+    switch (source) {
+      case dom::MediaSourceEnum::Screen:
+      case dom::MediaSourceEnum::Window:
+      case dom::MediaSourceEnum::Application:
+        
+        
+        
+        
+        cap.width = std::min(cap.width >> 16, cap.width & 0xffff);
+        cap.height = std::min(cap.height >> 16, cap.height & 0xffff);
+        break;
+      default:
+        break;
+    }
+
     settings->mWidth.Value() = cap.width;
     settings->mHeight.Value() = cap.height;
     settings->mFrameRate.Value() = cap.maxFPS;
@@ -494,6 +509,7 @@ MediaEngineRemoteVideoSource::DeliverFrame(uint8_t* aBuffer,
   {
     MutexAutoLock lock(mMutex);
     MOZ_ASSERT(mState == kStarted);
+    
     req_max_width = mCapability.width & 0xffff;
     req_max_height = mCapability.height & 0xffff;
     req_ideal_width = (mCapability.width >> 16) & 0xffff;
@@ -822,6 +838,7 @@ MediaEngineRemoteVideoSource::ChooseCapability(
     case MediaSourceEnum::Window:
     case MediaSourceEnum::Application: {
       FlattenedConstraints c(aConstraints);
+      
       
       
       
