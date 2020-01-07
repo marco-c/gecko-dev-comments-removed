@@ -22,6 +22,8 @@ const BinaryInput = CC("@mozilla.org/binaryinputstream;1",
 const BufferStream = CC("@mozilla.org/io/arraybuffer-input-stream;1",
                        "nsIArrayBufferInputStream", "setData");
 
+const kCSP = "default-src 'none' ; script-src resource:; ";
+
 
 loader.lazyGetter(this, "jsonViewStrings", () => {
   return Services.strings.createBundle(
@@ -84,8 +86,8 @@ Converter.prototype = {
     
     try {
       request.QueryInterface(Ci.nsIHttpChannel);
-      request.setResponseHeader("Content-Security-Policy",
-        "default-src 'none' ; script-src resource:; ", false);
+      request.setResponseHeader("Content-Security-Policy", kCSP, false);
+      request.setResponseHeader("Content-Security-Policy-Report-Only", "", false);
     } catch (ex) {
       
     }
@@ -248,6 +250,10 @@ function initialHTML(doc) {
       "dir": Services.locale.isAppLocaleRTL ? "rtl" : "ltr"
     }, [
       element("head", {}, [
+        element("meta", {
+          "http-equiv": "Content-Security-Policy",
+          content: kCSP,
+        }),
         element("link", {
           rel: "stylesheet",
           type: "text/css",
