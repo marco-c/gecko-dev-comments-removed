@@ -143,7 +143,7 @@ GCRuntime::tryNewNurseryString(JSContext* cx, size_t thingSize, AllocKind kind)
     MOZ_ASSERT(!cx->isNurseryAllocSuppressed());
     MOZ_ASSERT(!IsAtomsCompartment(cx->compartment()));
 
-    Cell* cell = cx->nursery().allocateString(cx, cx->zone(), thingSize, kind);
+    Cell* cell = cx->nursery().allocateString(cx->zone(), thingSize, kind);
     if (cell)
         return static_cast<JSString*>(cell);
 
@@ -152,7 +152,7 @@ GCRuntime::tryNewNurseryString(JSContext* cx, size_t thingSize, AllocKind kind)
 
         
         if (cx->nursery().isEnabled()) {
-            cell = cx->nursery().allocateString(cx, cx->zone(), thingSize, kind);
+            cell = cx->nursery().allocateString(cx->zone(), thingSize, kind);
             MOZ_ASSERT(cell);
             return static_cast<JSString*>(cell);
         }
@@ -242,7 +242,7 @@ GCRuntime::tryNewTenuredThing(JSContext* cx, AllocKind kind, size_t thingSize)
         
         
         
-        t = reinterpret_cast<T*>(refillFreeListFromAnyThread(cx, kind, thingSize));
+        t = reinterpret_cast<T*>(refillFreeListFromAnyThread(cx, kind));
 
         if (MOZ_UNLIKELY(!t && allowGC && !cx->helperThread())) {
             
@@ -362,18 +362,18 @@ GCRuntime::startBackgroundAllocTaskIfIdle()
 }
 
  TenuredCell*
-GCRuntime::refillFreeListFromAnyThread(JSContext* cx, AllocKind thingKind, size_t thingSize)
+GCRuntime::refillFreeListFromAnyThread(JSContext* cx, AllocKind thingKind)
 {
     cx->arenas()->checkEmptyFreeList(thingKind);
 
     if (!cx->helperThread())
-        return refillFreeListFromActiveCooperatingThread(cx, thingKind, thingSize);
+        return refillFreeListFromActiveCooperatingThread(cx, thingKind);
 
     return refillFreeListFromHelperThread(cx, thingKind);
 }
 
  TenuredCell*
-GCRuntime::refillFreeListFromActiveCooperatingThread(JSContext* cx, AllocKind thingKind, size_t thingSize)
+GCRuntime::refillFreeListFromActiveCooperatingThread(JSContext* cx, AllocKind thingKind)
 {
     
     
@@ -690,7 +690,7 @@ Chunk::init(JSRuntime* rt)
 
 
 
-    decommitAllArenas(rt);
+    decommitAllArenas();
 
     
     info.init();
@@ -699,7 +699,7 @@ Chunk::init(JSRuntime* rt)
     
 }
 
-void Chunk::decommitAllArenas(JSRuntime* rt)
+void Chunk::decommitAllArenas()
 {
     decommittedArenas.clear(true);
     MarkPagesUnused(&arenas[0], ArenasPerChunk * ArenaSize);

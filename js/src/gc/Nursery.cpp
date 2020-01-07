@@ -326,7 +326,7 @@ js::Nursery::allocateObject(JSContext* cx, size_t size, size_t nDynamicSlots, co
 }
 
 Cell*
-js::Nursery::allocateString(JSContext* cx, Zone* zone, size_t size, AllocKind kind)
+js::Nursery::allocateString(Zone* zone, size_t size, AllocKind kind)
 {
     
     MOZ_ASSERT(size >= sizeof(RelocationOverlay));
