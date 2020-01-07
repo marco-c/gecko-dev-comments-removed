@@ -42,6 +42,8 @@ def generate_symbols_file(output, *args):
 
     symbols = [s.strip() for s in pp.out.getvalue().splitlines() if s.strip()]
 
+    libname, ext = os.path.splitext(os.path.basename(output.name))
+
     if buildconfig.substs['OS_TARGET'] == 'WINNT':
         
         
@@ -66,7 +68,6 @@ def generate_symbols_file(output, *args):
         
         
         
-        libname, ext = os.path.splitext(os.path.basename(output.name))
         assert ext == '.def'
         output.write('LIBRARY %s\nEXPORTS\n  %s\n'
                      % (libname, '\n  '.join(symbols)))
@@ -81,8 +82,8 @@ def generate_symbols_file(output, *args):
         
         
         
-        output.write('{\nglobal:\n  %s;\nlocal:\n  *;\n};'
-                     % ';\n  '.join(symbols))
+        output.write('%s {\nglobal:\n  %s;\nlocal:\n  *;\n};'
+                     % (libname, ';\n  '.join(symbols)))
     elif buildconfig.substs['OS_TARGET'] == 'Darwin':
         
         
