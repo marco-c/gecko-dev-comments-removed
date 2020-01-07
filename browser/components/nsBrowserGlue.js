@@ -67,6 +67,10 @@ ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
   
   win.stop();
 
+  let { TelemetryTimestamps } =
+    ChromeUtils.import("resource://gre/modules/TelemetryTimestamps.jsm", {});
+  TelemetryTimestamps.add("blankWindowShown");
+
   
   docElt.setAttribute("windowtype", "navigator:blank");
 })();
