@@ -146,6 +146,7 @@ ErrorReporter::ErrorReporter(const StyleSheet* aSheet,
 
 ErrorReporter::~ErrorReporter()
 {
+  MOZ_ASSERT(NS_IsMainThread());
   
   
   
