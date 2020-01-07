@@ -80,7 +80,7 @@ private:
   nsresult AddStringsToDataTransfer(nsIContent* aDragNode,
                                     DataTransfer* aDataTransfer);
   nsresult GetImageData(imgIContainer* aImage, imgIRequest* aRequest);
-  static nsresult GetDraggableSelectionData(nsISelection* inSelection,
+  static nsresult GetDraggableSelectionData(Selection* inSelection,
                                             nsIContent* inRealTargetNode,
                                             nsIContent **outImageOrLinkNode,
                                             bool* outDragSelectedText);
@@ -944,7 +944,7 @@ DragDataProducer::AddStringsToDataTransfer(nsIContent* aDragNode,
 
 
 nsresult
-DragDataProducer::GetDraggableSelectionData(nsISelection* inSelection,
+DragDataProducer::GetDraggableSelectionData(Selection* inSelection,
                                             nsIContent* inRealTargetNode,
                                             nsIContent **outImageOrLinkNode,
                                             bool* outDragSelectedText)
@@ -967,25 +967,21 @@ DragDataProducer::GetDraggableSelectionData(nsISelection* inSelection,
 
     if (selectionContainsTarget) {
       
-      nsCOMPtr<nsIDOMNode> selectionStart;
-      inSelection->GetAnchorNode(getter_AddRefs(selectionStart));
-
-      nsCOMPtr<nsIDOMNode> selectionEnd;
-      inSelection->GetFocusNode(getter_AddRefs(selectionEnd));
+      nsINode* selectionStart = inSelection->GetAnchorNode();
+      nsINode* selectionEnd = inSelection->GetFocusNode();
 
       
       
       
       if (selectionStart == selectionEnd) {
-        nsCOMPtr<nsIContent> selStartContent = do_QueryInterface(selectionStart);
+        nsCOMPtr<nsIContent> selStartContent = nsIContent::FromNodeOrNull(selectionStart);
         if (selStartContent && selStartContent->HasChildNodes()) {
           
-          int32_t anchorOffset, focusOffset;
-          inSelection->GetAnchorOffset(&anchorOffset);
-          inSelection->GetFocusOffset(&focusOffset);
-          if (abs(anchorOffset - focusOffset) == 1) {
-            int32_t childOffset =
-              (anchorOffset < focusOffset) ? anchorOffset : focusOffset;
+          uint32_t anchorOffset = inSelection->AnchorOffset();
+          uint32_t focusOffset = inSelection->FocusOffset();
+          if (anchorOffset == focusOffset + 1 ||
+              focusOffset == anchorOffset + 1) {
+            uint32_t childOffset = std::min(anchorOffset, focusOffset);
             nsIContent *childContent =
               selStartContent->GetChildAt_Deprecated(childOffset);
             

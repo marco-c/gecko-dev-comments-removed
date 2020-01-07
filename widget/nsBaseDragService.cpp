@@ -337,8 +337,8 @@ nsBaseDragService::InvokeDragSessionWithSelection(Selection* aSelection,
   
   
   
-  nsCOMPtr<nsIDOMNode> node;
-  aSelection->GetFocusNode(getter_AddRefs(node));
+  nsCOMPtr<nsIDOMNode> node = aSelection->GetFocusNode() ?
+    aSelection->GetFocusNode()->AsDOMNode() : nullptr;
 
   nsresult rv = InvokeDragSession(node, aPrincipalURISpec,
                                   aTransferableArray,
