@@ -522,4 +522,20 @@ void ThrowBadResult(nsresult result, XPCCallContext& ccx)
 
 
 
+inline void
+xpc::CleanupValue(const nsXPTType& aType,
+                  void* aValue,
+                  uint32_t aArrayLen)
+{
+    
+    
+    
+    if (aType.IsArithmetic() || (aType.HasPointerRepr() && !*(void**)aValue)) {
+        return;
+    }
+    xpc::InnerCleanupValue(aType, aValue, aArrayLen);
+}
+
+
+
 #endif 

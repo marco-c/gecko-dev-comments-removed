@@ -1799,31 +1799,19 @@ private:
         {if (b) mDescriptors[i/32] |= (1 << (i%32));
          else mDescriptors[i/32] &= ~(1 << (i%32));}
 
-    bool GetArraySizeFromParam(JSContext* cx,
-                               const nsXPTMethodInfo* method,
-                               const nsXPTParamInfo& param,
-                               uint16_t methodIndex,
-                               uint8_t paramIndex,
+    bool GetArraySizeFromParam(const nsXPTMethodInfo* method,
+                               const nsXPTType& type,
                                nsXPTCMiniVariant* params,
                                uint32_t* result) const;
 
-    bool GetInterfaceTypeFromParam(JSContext* cx,
-                                   const nsXPTMethodInfo* method,
-                                   const nsXPTParamInfo& param,
-                                   uint16_t methodIndex,
+    bool GetInterfaceTypeFromParam(const nsXPTMethodInfo* method,
                                    const nsXPTType& type,
                                    nsXPTCMiniVariant* params,
                                    nsID* result) const;
 
-    static void CleanupPointerArray(const nsXPTType& datum_type,
-                                    uint32_t array_count,
-                                    void** arrayp);
-
-    static void CleanupPointerTypeObject(const nsXPTType& type,
-                                         void** pp);
-
-    void CleanupOutparams(JSContext* cx, uint16_t methodIndex, const nsXPTMethodInfo* info,
-                          nsXPTCMiniVariant* nativeParams, bool inOutOnly, uint8_t n) const;
+    void CleanupOutparams(const nsXPTMethodInfo* info,
+                          nsXPTCMiniVariant* nativeParams,
+                          bool inOutOnly, uint8_t n) const;
 
 private:
     XPCJSRuntime* mRuntime;
@@ -3108,6 +3096,39 @@ bool IsOutObject(JSContext* cx, JSObject* obj);
 nsresult HasInstance(JSContext* cx, JS::HandleObject objArg, const nsID* iid, bool* bp);
 
 nsIPrincipal* GetObjectPrincipal(JSObject* obj);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+inline void CleanupValue(const nsXPTType& aType,
+                         void* aValue,
+                         uint32_t aArrayLen = 0);
+
+
+void InnerCleanupValue(const nsXPTType& aType,
+                       void* aValue,
+                       uint32_t aArrayLen);
 
 } 
 
