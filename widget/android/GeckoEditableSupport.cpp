@@ -669,7 +669,6 @@ GeckoEditableSupport::OnKeyEvent(int32_t aAction, int32_t aKeyCode,
 
 
 
-
 void
 GeckoEditableSupport::SendIMEDummyKeyEvent(nsIWidget* aWidget, EventMessage msg)
 {
@@ -678,7 +677,12 @@ GeckoEditableSupport::SendIMEDummyKeyEvent(nsIWidget* aWidget, EventMessage msg)
 
     WidgetKeyboardEvent event(true, msg, aWidget);
     event.mTime = PR_Now() / 1000;
-    MOZ_ASSERT(event.mKeyCode == 0);
+    
+    
+    
+    
+    event.mKeyCode = NS_VK_PROCESSKEY;
+    event.mKeyNameIndex = KEY_NAME_INDEX_Process;
     NS_ENSURE_SUCCESS_VOID(BeginInputTransaction(mDispatcher));
     mDispatcher->DispatchKeyboardEvent(msg, event, status);
 }
@@ -1027,12 +1031,19 @@ GeckoEditableSupport::OnImeReplaceText(int32_t aStart, int32_t aEnd,
         AddIMETextChange(dummyChange);
     }
 
+    
+    
+    
+#ifndef EARLY_BETA_OR_EARLIER
     if (mInputContext.mMayBeIMEUnaware) {
+#endif
         SendIMEDummyKeyEvent(widget, eKeyDown);
         if (!mDispatcher || widget->Destroyed()) {
             return;
         }
+#ifndef EARLY_BETA_OR_EARLIER
     }
+#endif 
 
     if (composing) {
         mDispatcher->SetPendingComposition(string, mIMERanges);
@@ -1046,10 +1057,18 @@ GeckoEditableSupport::OnImeReplaceText(int32_t aStart, int32_t aEnd,
         return;
     }
 
+    
+    
+    
+    
+#ifndef EARLY_BETA_OR_EARLIER
     if (mInputContext.mMayBeIMEUnaware) {
+#endif
         SendIMEDummyKeyEvent(widget, eKeyUp);
         
+#ifndef EARLY_BETA_OR_EARLIER
     }
+#endif 
 }
 
 void
