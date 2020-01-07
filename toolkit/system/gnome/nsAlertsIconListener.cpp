@@ -65,6 +65,19 @@ GetPixbufFromImgRequest(imgIRequest* aRequest)
     return nullptr;
   }
 
+  int32_t width = 0, height = 0;
+  const int32_t kBytesPerPixel = 4;
+  
+  
+  
+  const int32_t kMaxImageBytes = 64*1024*1024 - 256;
+  image->GetWidth(&width);
+  image->GetHeight(&height);
+  if (width * height * kBytesPerPixel > kMaxImageBytes) {
+    
+    return nullptr;
+  }
+
   nsCOMPtr<nsIImageToPixbuf> imgToPixbuf =
     do_GetService("@mozilla.org/widget/image-to-gdk-pixbuf;1");
 
