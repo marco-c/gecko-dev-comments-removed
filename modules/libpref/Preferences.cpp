@@ -678,7 +678,7 @@ public:
                            PrefValue aValue,
                            bool aIsSticky,
                            bool aIsLocked,
-                           bool aFromFile,
+                           bool aFromInit,
                            bool* aValueChanged)
   {
     
@@ -695,7 +695,7 @@ public:
       if (!ValueMatches(PrefValueKind::Default, aType, aValue)) {
         mDefaultValue.Replace(Type(), aType, aValue);
         mHasDefaultValue = true;
-        if (!aFromFile) {
+        if (!aFromInit) {
           mHasChangedSinceInit = true;
         }
         if (aIsSticky) {
@@ -713,7 +713,7 @@ public:
 
   nsresult SetUserValue(PrefType aType,
                         PrefValue aValue,
-                        bool aFromFile,
+                        bool aFromInit,
                         bool* aValueChanged)
   {
     
@@ -726,7 +726,7 @@ public:
     
     
     if (ValueMatches(PrefValueKind::Default, aType, aValue) && !mIsSticky &&
-        !aFromFile) {
+        !aFromInit) {
       if (mHasUserValue) {
         ClearUserValue();
         if (!IsLocked()) {
@@ -740,7 +740,7 @@ public:
       mUserValue.Replace(Type(), aType, aValue);
       SetType(aType); 
       mHasUserValue = true;
-      if (!aFromFile) {
+      if (!aFromInit) {
         mHasChangedSinceInit = true;
       }
       if (!IsLocked()) {
@@ -1151,7 +1151,7 @@ pref_SetPref(const char* aPrefName,
              PrefValue aValue,
              bool aIsSticky,
              bool aIsLocked,
-             bool aFromFile)
+             bool aFromInit)
 {
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -1174,10 +1174,10 @@ pref_SetPref(const char* aPrefName,
   nsresult rv;
   if (aKind == PrefValueKind::Default) {
     rv = pref->SetDefaultValue(
-      aType, aValue, aIsSticky, aIsLocked, aFromFile, &valueChanged);
+      aType, aValue, aIsSticky, aIsLocked, aFromInit, &valueChanged);
   } else {
     MOZ_ASSERT(!aIsLocked); 
-    rv = pref->SetUserValue(aType, aValue, aFromFile, &valueChanged);
+    rv = pref->SetUserValue(aType, aValue, aFromInit, &valueChanged);
   }
   if (NS_FAILED(rv)) {
     NS_WARNING(
