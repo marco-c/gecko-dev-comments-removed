@@ -43,9 +43,8 @@ class nsRange;
 
 namespace mozilla {
 class AutoSelectionSetterAfterTableEdit;
-class HTMLEditorEventListener;
+class EmptyEditableFunctor;
 class ResizerSelectionListener;
-class TypeInState;
 enum class EditAction : int32_t;
 struct PropItem;
 template<class T> class OwningNonNull;
@@ -74,64 +73,9 @@ class HTMLEditor final : public TextEditor
                        , public nsICSSLoaderObserver
                        , public nsStubMutationObserver
 {
-private:
-  enum BlockTransformationType
-  {
-    eNoOp,
-    eReplaceParent = 1,
-    eInsertParent = 2
-  };
-
-  const char16_t kNBSP = 160;
-
 public:
-  enum ResizingRequestID
-  {
-    kX      = 0,
-    kY      = 1,
-    kWidth  = 2,
-    kHeight = 3
-  };
-
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(HTMLEditor, TextEditor)
-
-  HTMLEditor();
-
-  bool GetReturnInParagraphCreatesNewParagraph();
-  Element* GetSelectionContainer();
-
-  
-  NS_DECL_NSISELECTIONLISTENER
-
-  
-  virtual nsresult Init(nsIDocument& aDoc, Element* aRoot,
-                        nsISelectionController* aSelCon, uint32_t aFlags,
-                        const nsAString& aValue) override;
-  NS_IMETHOD BeginningOfDocument() override;
-  virtual nsresult HandleKeyPressEvent(
-                     WidgetKeyboardEvent* aKeyboardEvent) override;
-  virtual nsIContent* GetFocusedContent() override;
-  virtual already_AddRefed<nsIContent> GetFocusedContentForIME() override;
-  virtual bool IsActiveInDOMWindow() override;
-  virtual dom::EventTarget* GetDOMEventTarget() override;
-  virtual Element* GetEditorRoot() override;
-  virtual already_AddRefed<nsIContent> FindSelectionRoot(
-                                         nsINode *aNode) override;
-  virtual bool IsAcceptableInputEvent(WidgetGUIEvent* aGUIEvent) override;
-  virtual already_AddRefed<nsIContent> GetInputEventTargetContent() override;
-  using EditorBase::IsEditable;
-  virtual nsresult RemoveAttributeOrEquivalent(
-                     Element* aElement,
-                     nsAtom* aAttribute,
-                     bool aSuppressTransaction) override;
-  virtual nsresult SetAttributeOrEquivalent(Element* aElement,
-                                            nsAtom* aAttribute,
-                                            const nsAString& aValue,
-                                            bool aSuppressTransaction) override;
-  using EditorBase::RemoveAttributeOrEquivalent;
-  using EditorBase::SetAttributeOrEquivalent;
-  virtual bool CanPasteTransferable(nsITransferable* aTransferable) override;
 
   
   NS_DECL_NSIMUTATIONOBSERVER_CONTENTAPPENDED
@@ -151,13 +95,6 @@ public:
   NS_DECL_NSIHTMLINLINETABLEEDITOR
 
   
-  nsresult LoadHTML(const nsAString& aInputString);
-
-  nsresult GetCSSBackgroundColorState(bool* aMixed, nsAString& aOutColor,
-                                      bool aBlockLevel);
-  nsresult GetHTMLBackgroundColorState(bool* aMixed, nsAString& outColor);
-
-  
   NS_DECL_NSIEDITORSTYLESHEETS
 
   
@@ -166,59 +103,90 @@ public:
   
   NS_DECL_NSITABLEEDITOR
 
-  nsresult GetLastCellInRow(nsINode* aRowNode,
-                            nsINode** aCellNode);
-
-  nsresult GetCellFromRange(nsRange* aRange, Element** aCell);
+  
+  NS_DECL_NSISELECTIONLISTENER
 
   
+  NS_IMETHOD StyleSheetLoaded(StyleSheet* aSheet,
+                              bool aWasAlternate, nsresult aStatus) override;
 
-  
+  HTMLEditor();
 
-
-
-  nsresult SetCSSBackgroundColorWithTransaction(const nsAString& aColor);
-  nsresult SetHTMLBackgroundColorWithTransaction(const nsAString& aColor);
-
-  
-
-
-
-
-  static Element* GetBlockNodeParent(nsINode* aNode,
-                                     nsINode* aAncestorLimiter = nullptr);
-  
-
-
-
-
-  static Element* GetBlock(nsINode& aNode,
-                           nsINode* aAncestorLimiter = nullptr);
-
-  void IsNextCharInNodeWhitespace(nsIContent* aContent,
-                                  int32_t aOffset,
-                                  bool* outIsSpace,
-                                  bool* outIsNBSP,
-                                  nsIContent** outNode = nullptr,
-                                  int32_t* outOffset = 0);
-  void IsPrevCharInNodeWhitespace(nsIContent* aContent,
-                                  int32_t aOffset,
-                                  bool* outIsSpace,
-                                  bool* outIsNBSP,
-                                  nsIContent** outNode = nullptr,
-                                  int32_t* outOffset = 0);
-
-  
-  virtual nsresult EndUpdateViewBatch() override;
+  nsHTMLDocument* GetHTMLDocument() const;
 
   virtual void PreDestroy(bool aDestroyingFrames) override;
 
+  bool GetReturnInParagraphCreatesNewParagraph();
+  Element* GetSelectionContainer();
+
+  
+  virtual nsresult Init(nsIDocument& aDoc, Element* aRoot,
+                        nsISelectionController* aSelCon, uint32_t aFlags,
+                        const nsAString& aValue) override;
+  NS_IMETHOD BeginningOfDocument() override;
+  NS_IMETHOD SetFlags(uint32_t aFlags) override;
+
+  NS_IMETHOD Paste(int32_t aSelectionType) override;
+  NS_IMETHOD CanPaste(int32_t aSelectionType, bool* aCanPaste) override;
+
+  NS_IMETHOD PasteTransferable(nsITransferable* aTransferable) override;
+
+  NS_IMETHOD DeleteNode(nsIDOMNode* aNode) override;
+
+  NS_IMETHOD SelectAll() override;
+
+  NS_IMETHOD DebugUnitTests(int32_t* outNumTests,
+                            int32_t* outNumTestsFailed) override;
+
+  virtual nsresult HandleKeyPressEvent(
+                     WidgetKeyboardEvent* aKeyboardEvent) override;
+  virtual nsIContent* GetFocusedContent() override;
+  virtual already_AddRefed<nsIContent> GetFocusedContentForIME() override;
+  virtual bool IsActiveInDOMWindow() override;
+  virtual dom::EventTarget* GetDOMEventTarget() override;
+  virtual already_AddRefed<nsIContent> FindSelectionRoot(
+                                         nsINode *aNode) override;
+  virtual bool IsAcceptableInputEvent(WidgetGUIEvent* aGUIEvent) override;
+  virtual already_AddRefed<nsIContent> GetInputEventTargetContent() override;
   virtual nsresult GetPreferredIMEState(widget::IMEState* aState) override;
 
   
 
 
-  static bool NodeIsBlockStatic(const nsINode* aElement);
+
+
+
+  virtual bool CanPasteTransferable(nsITransferable* aTransferable) override;
+
+  
+
+
+
+  nsresult OnInputLineBreak();
+
+  
+
+
+
+
+
+
+  nsresult OnMouseDown(int32_t aX, int32_t aY, Element* aTarget,
+                       dom::Event* aMouseEvent);
+
+  
+
+
+
+
+
+  nsresult OnMouseUp(int32_t aX, int32_t aY, Element* aTarget);
+
+  
+
+
+
+  nsresult OnMouseMove(dom::MouseEvent* aMouseEvent);
 
   
   bool AbsolutePositioningEnabled() const
@@ -250,16 +218,6 @@ public:
 
 
 
-
-
-  nsresult SetPositionToAbsoluteOrStatic(Element& aElement,
-                                         bool aEnabled);
-
-  
-
-
-
-
   int32_t GetZIndex(Element& aElement);
 
   
@@ -267,16 +225,6 @@ public:
 
 
   nsresult AddZIndex(int32_t aChange);
-
-  
-
-
-
-
-
-
-  nsresult RelativeChangeElementZIndex(Element& aElement, int32_t aChange,
-                                       int32_t* aReturn);
 
   nsresult SetInlineProperty(nsAtom* aProperty,
                              nsAtom* aAttribute,
@@ -310,65 +258,26 @@ public:
     mComposerCommandsUpdater = aComposerCommandsUpdater;
   }
 
-protected:
-  virtual ~HTMLEditor();
-
-  using EditorBase::IsBlockNode;
-  virtual bool IsBlockNode(nsINode *aNode) override;
-
-  virtual void
-  InitializeSelectionAncestorLimit(Selection& aSelection,
-                                   nsIContent& aAncestorLimit) override;
-
-public:
-  
-  NS_IMETHOD SetFlags(uint32_t aFlags) override;
-
-  NS_IMETHOD Paste(int32_t aSelectionType) override;
-  NS_IMETHOD CanPaste(int32_t aSelectionType, bool* aCanPaste) override;
-
-  NS_IMETHOD PasteTransferable(nsITransferable* aTransferable) override;
-
-  NS_IMETHOD DebugUnitTests(int32_t* outNumTests,
-                            int32_t* outNumTestsFailed) override;
+  ParagraphSeparator GetDefaultParagraphSeparator() const
+  {
+    return mDefaultParagraphSeparator;
+  }
+  void SetDefaultParagraphSeparator(ParagraphSeparator aSep)
+  {
+    mDefaultParagraphSeparator = aSep;
+  }
 
   
 
 
 
-  virtual nsresult StartOperation(EditAction opID,
-                                  nsIEditor::EDirection aDirection) override;
 
-  
+  nsresult DoInlineTableEditingAction(const Element& aUIAnonymousElement);
 
+  already_AddRefed<Element>
+  GetElementOrParentByTagName(const nsAString& aTagName, nsINode* aNode);
 
-
-  virtual nsresult EndOperation() override;
-
-  
-
-
-  virtual bool TagCanContainTag(nsAtom& aParentTag,
-                                nsAtom& aChildTag) const override;
-
-  
-
-
-  virtual bool IsContainer(nsINode* aNode) override;
-
-  
-
-
-  virtual nsresult SelectEntireDocument(Selection* aSelection) override;
-
-  
-
-
-  nsresult CollapseAdjacentTextNodes(nsRange* aRange);
-
-  virtual bool AreNodesSameType(nsIContent* aNode1,
-                                nsIContent* aNode2) override;
-
+protected: 
   
 
 
@@ -389,8 +298,6 @@ public:
 
 
   nsresult DeleteNodeWithTransaction(nsINode& aNode);
-
-  NS_IMETHOD DeleteNode(nsIDOMNode* aNode) override;
 
   
 
@@ -413,44 +320,6 @@ public:
                             const EditorRawDOMPoint& aPointToInsert,
                             EditorRawDOMPoint* aPointAfterInsertedString =
                               nullptr) override;
-
-  virtual bool IsModifiableNode(nsINode* aNode) override;
-
-  NS_IMETHOD SelectAll() override;
-
-  
-  NS_IMETHOD StyleSheetLoaded(StyleSheet* aSheet,
-                              bool aWasAlternate, nsresult aStatus) override;
-
-  
-
-
-
-  nsresult OnInputLineBreak();
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  template<typename PT, typename CT>
-  EditorDOMPoint
-  InsertNodeIntoProperAncestorWithTransaction(
-    nsIContent& aNode,
-    const EditorDOMPointBase<PT, CT>& aPointToInsert,
-    SplitAtEdges aSplitAtEdges);
 
   
 
@@ -477,8 +346,98 @@ public:
 
 
 
-  void CollapseSelectionToDeepestNonTableFirstChild(Selection* aSelection,
-                                                    nsINode* aNode);
+  nsresult RemoveBlockContainerWithTransaction(Element& aElement);
+
+  virtual Element* GetEditorRoot() override;
+  using EditorBase::IsEditable;
+  virtual nsresult RemoveAttributeOrEquivalent(
+                     Element* aElement,
+                     nsAtom* aAttribute,
+                     bool aSuppressTransaction) override;
+  virtual nsresult SetAttributeOrEquivalent(Element* aElement,
+                                            nsAtom* aAttribute,
+                                            const nsAString& aValue,
+                                            bool aSuppressTransaction) override;
+  using EditorBase::RemoveAttributeOrEquivalent;
+  using EditorBase::SetAttributeOrEquivalent;
+
+  
+
+
+
+
+  static Element* GetBlockNodeParent(nsINode* aNode,
+                                     nsINode* aAncestorLimiter = nullptr);
+
+  
+
+
+
+
+  static Element* GetBlock(nsINode& aNode,
+                           nsINode* aAncestorLimiter = nullptr);
+
+  void IsNextCharInNodeWhitespace(nsIContent* aContent,
+                                  int32_t aOffset,
+                                  bool* outIsSpace,
+                                  bool* outIsNBSP,
+                                  nsIContent** outNode = nullptr,
+                                  int32_t* outOffset = 0);
+  void IsPrevCharInNodeWhitespace(nsIContent* aContent,
+                                  int32_t aOffset,
+                                  bool* outIsSpace,
+                                  bool* outIsNBSP,
+                                  nsIContent** outNode = nullptr,
+                                  int32_t* outOffset = 0);
+
+  
+
+
+  static bool NodeIsBlockStatic(const nsINode* aElement);
+
+  
+
+
+
+
+
+
+  nsresult SetPositionToAbsoluteOrStatic(Element& aElement,
+                                         bool aEnabled);
+
+  
+
+
+
+
+
+
+  nsresult RelativeChangeElementZIndex(Element& aElement, int32_t aChange,
+                                       int32_t* aReturn);
+
+  virtual bool IsBlockNode(nsINode *aNode) override;
+  using EditorBase::IsBlockNode;
+
+  virtual bool IsModifiableNode(nsINode* aNode) override;
+
+  
+
+
+  virtual bool TagCanContainTag(nsAtom& aParentTag,
+                                nsAtom& aChildTag) const override;
+
+  
+
+
+  virtual bool IsContainer(nsINode* aNode) override;
+
+  
+
+
+  nsresult CollapseAdjacentTextNodes(nsRange* aRange);
+
+  virtual bool AreNodesSameType(nsIContent* aNode1,
+                                nsIContent* aNode2) override;
 
   
 
@@ -507,25 +466,6 @@ public:
                            bool aSafeToAskFrames,
                            bool* aSeenBR);
 
-  
-
-
-  bool EnableExistingStyleSheet(const nsAString& aURL);
-
-  
-
-
-  StyleSheet* GetStyleSheetForURL(const nsAString& aURL);
-  void GetURLForStyleSheet(StyleSheet* aStyleSheet,
-                           nsAString& aURL);
-
-  
-
-
-  nsresult AddNewStyleSheetToList(const nsAString &aURL,
-                                  StyleSheet* aStyleSheet);
-  nsresult RemoveStyleSheetFromList(const nsAString &aURL);
-
   bool IsCSSEnabled() const
   {
     
@@ -540,232 +480,6 @@ public:
            (1 == attrCount &&
             !aElement->GetAttrNameAt(0)->Equals(nsGkAtoms::mozdirty));
   }
-
-  ParagraphSeparator GetDefaultParagraphSeparator() const
-  {
-    return mDefaultParagraphSeparator;
-  }
-  void SetDefaultParagraphSeparator(ParagraphSeparator aSep)
-  {
-    mDefaultParagraphSeparator = aSep;
-  }
-
-  
-
-
-
-
-
-
-  nsresult OnMouseDown(int32_t aX, int32_t aY, Element* aTarget,
-                       dom::Event* aMouseEvent);
-
-  
-
-
-
-
-
-  nsresult OnMouseUp(int32_t aX, int32_t aY, Element* aTarget);
-
-  
-
-
-
-  nsresult OnMouseMove(dom::MouseEvent* aMouseEvent);
-
-  
-
-
-
-
-  nsresult DoInlineTableEditingAction(const Element& aUIAnonymousElement);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  nsresult
-  MaybeCollapseSelectionAtFirstEditableNode(
-    bool aIgnoreIfSelectionInEditingHost);
-
-  nsHTMLDocument* GetHTMLDocument() const;
-
-protected:
-  class BlobReader final : public nsIEditorBlobListener
-  {
-  public:
-    BlobReader(dom::BlobImpl* aBlob, HTMLEditor* aHTMLEditor,
-               bool aIsSafe, nsIDocument* aSourceDoc,
-               nsINode* aDestinationNode, int32_t aDestOffset,
-               bool aDoDeleteSelection);
-
-    NS_DECL_ISUPPORTS
-    NS_DECL_NSIEDITORBLOBLISTENER
-
-  private:
-    ~BlobReader()
-    {
-    }
-
-    RefPtr<dom::BlobImpl> mBlob;
-    RefPtr<HTMLEditor> mHTMLEditor;
-    bool mIsSafe;
-    nsCOMPtr<nsIDocument> mSourceDoc;
-    nsCOMPtr<nsINode> mDestinationNode;
-    int32_t mDestOffset;
-    bool mDoDeleteSelection;
-  };
-
-  virtual nsresult InitRules() override;
-
-  virtual void CreateEventListeners() override;
-  virtual nsresult InstallEventListeners() override;
-  virtual void RemoveEventListeners() override;
-
-  bool ShouldReplaceRootElement();
-  void NotifyRootChanged();
-  Element* GetBodyElement();
-
-  
-
-
-
-
-  already_AddRefed<nsINode> GetFocusedNode();
-
-  
-
-
-  bool SetCaretInTableCell(dom::Element* aElement);
-
-  nsresult TabInTable(bool inIsShift, bool* outHandled);
-
-  
-
-
-
-
-  nsresult InsertBrElementAtSelectionWithTransaction();
-
-  
-
-  
-
-
-
-
-
-  nsresult InsertCell(Element* aCell, int32_t aRowSpan,
-                      int32_t aColSpan, bool aAfter, bool aIsHeader,
-                      Element** aNewCell);
-
-  
-
-
-  nsresult DeleteRow(Element* aTable, int32_t aRowIndex);
-  nsresult DeleteColumn(Element* aTable, int32_t aColIndex);
-  nsresult DeleteCellContents(Element* aCell);
-
-  
-
-
-  nsresult MergeCells(RefPtr<Element> aTargetCell,
-                      RefPtr<Element> aCellToMerge,
-                      bool aDeleteCellToMerge);
-
-  nsresult DeleteTable2(Element* aTable, Selection* aSelection);
-  nsresult SetColSpan(Element* aCell, int32_t aColSpan);
-  nsresult SetRowSpan(Element* aCell, int32_t aRowSpan);
-
-  
-
-
-  nsTableWrapperFrame* GetTableFrame(Element* aTable);
-
-  
-
-
-
-
-  int32_t GetNumberOfCellsInRow(Element* aTable, int32_t rowIndex);
-
-  
-
-
-  bool AllCellsInRowSelected(Element* aTable, int32_t aRowIndex,
-                             int32_t aNumberOfColumns);
-  bool AllCellsInColumnSelected(Element* aTable, int32_t aColIndex,
-                                int32_t aNumberOfRows);
-
-  bool IsEmptyCell(Element* aCell);
-
-  
-
-
-
-
-
-
-
-
-  nsresult GetCellContext(Selection** aSelection, Element** aTable,
-                          Element** aCell, nsINode** aCellParent,
-                          int32_t* aCellOffset, int32_t* aRowIndex,
-                          int32_t* aColIndex);
-
-  nsresult GetCellSpansAt(Element* aTable, int32_t aRowIndex,
-                          int32_t aColIndex, int32_t& aActualRowSpan,
-                          int32_t& aActualColSpan);
-
-  nsresult SplitCellIntoColumns(Element* aTable, int32_t aRowIndex,
-                                int32_t aColIndex, int32_t aColSpanLeft,
-                                int32_t aColSpanRight,
-                                Element** aNewCell);
-
-  nsresult SplitCellIntoRows(Element* aTable, int32_t aRowIndex,
-                             int32_t aColIndex, int32_t aRowSpanAbove,
-                             int32_t aRowSpanBelow, Element** aNewCell);
-
-  nsresult CopyCellBackgroundColor(Element* aDestCell,
-                                   Element* aSourceCell);
-
-  
-
-
-  nsresult FixBadRowSpan(Element* aTable, int32_t aRowIndex,
-                         int32_t& aNewRowCount);
-  nsresult FixBadColSpan(Element* aTable, int32_t aColIndex,
-                         int32_t& aNewColCount);
-
-  
-
-
-
-  nsresult SetSelectionAtDocumentStart(Selection* aSelection);
-
-  
-
-  static Element* GetEnclosingTable(nsINode* aNode);
-  static nsIDOMNode* GetEnclosingTable(nsIDOMNode* aNode);
 
   
 
@@ -792,87 +506,7 @@ protected:
                                   const nsAString* aValue,
                                   nsAString* outValue = nullptr);
 
-  
-  nsresult PasteAsPlaintextQuotation(int32_t aSelectionType);
-
-  
-
-
-
-
-
-
-
-
-  nsresult InsertAsPlaintextQuotation(const nsAString& aQuotedText,
-                                      bool aAddCites,
-                                      nsIDOMNode** aNodeInserted);
-
-  nsresult InsertObject(const nsACString& aType, nsISupports* aObject,
-                        bool aIsSafe,
-                        nsIDocument* aSourceDoc,
-                        nsINode* aDestinationNode,
-                        int32_t aDestOffset,
-                        bool aDoDeleteSelection);
-
-  
-  
-  virtual nsresult PrepareTransferable(nsITransferable** transferable) override;
-  nsresult PrepareHTMLTransferable(nsITransferable** transferable);
-  nsresult InsertFromTransferable(nsITransferable* transferable,
-                                    nsIDocument* aSourceDoc,
-                                    const nsAString& aContextStr,
-                                    const nsAString& aInfoStr,
-                                    bool havePrivateHTMLFlavor,
-                                    bool aDoDeleteSelection);
-  virtual nsresult InsertFromDataTransfer(dom::DataTransfer* aDataTransfer,
-                                          int32_t aIndex,
-                                          nsIDocument* aSourceDoc,
-                                          nsINode* aDestinationNode,
-                                          int32_t aDestOffset,
-                                          bool aDoDeleteSelection) override;
-  bool HavePrivateHTMLFlavor(nsIClipboard* clipboard );
-  nsresult ParseCFHTML(nsCString& aCfhtml, char16_t** aStuffToPaste,
-                       char16_t** aCfcontext);
-
   bool IsInLink(nsINode* aNode, nsCOMPtr<nsINode>* outLink = nullptr);
-  nsresult StripFormattingNodes(nsIContent& aNode, bool aOnlyList = false);
-  nsresult CreateDOMFragmentFromPaste(const nsAString& aInputString,
-                                      const nsAString& aContextStr,
-                                      const nsAString& aInfoStr,
-                                      nsCOMPtr<nsINode>* outFragNode,
-                                      nsCOMPtr<nsINode>* outStartNode,
-                                      nsCOMPtr<nsINode>* outEndNode,
-                                      int32_t* outStartOffset,
-                                      int32_t* outEndOffset,
-                                      bool aTrustedInput);
-  nsresult ParseFragment(const nsAString& aStr, nsAtom* aContextLocalName,
-                         nsIDocument* aTargetDoc,
-                         dom::DocumentFragment** aFragment, bool aTrustedInput);
-  void CreateListOfNodesToPaste(dom::DocumentFragment& aFragment,
-                                nsTArray<OwningNonNull<nsINode>>& outNodeList,
-                                nsINode* aStartContainer,
-                                int32_t aStartOffset,
-                                nsINode* aEndContainer,
-                                int32_t aEndOffset);
-  nsresult CreateTagStack(nsTArray<nsString>& aTagStack,
-                          nsIDOMNode* aNode);
-  enum class StartOrEnd { start, end };
-  void GetListAndTableParents(StartOrEnd aStartOrEnd,
-                              nsTArray<OwningNonNull<nsINode>>& aNodeList,
-                              nsTArray<OwningNonNull<Element>>& outArray);
-  int32_t DiscoverPartialListsAndTables(
-            nsTArray<OwningNonNull<nsINode>>& aPasteNodes,
-            nsTArray<OwningNonNull<Element>>& aListsAndTables);
-  nsINode* ScanForListAndTableStructure(
-             StartOrEnd aStartOrEnd,
-             nsTArray<OwningNonNull<nsINode>>& aNodes,
-             Element& aListOrTable);
-  void ReplaceOrphanedStructure(
-         StartOrEnd aStartOrEnd,
-         nsTArray<OwningNonNull<nsINode>>& aNodeArray,
-         nsTArray<OwningNonNull<Element>>& aListAndTableArray,
-         int32_t aHighWaterMark);
 
   
 
@@ -882,95 +516,22 @@ protected:
   
 
 
-
-
-
-
-
-
-
-
-  EditorRawDOMPoint
-  GetBetterInsertionPointFor(nsINode& aNodeToInsert,
-                             const EditorRawDOMPoint& aPointToInsert);
-
-  
-
-
-
-
-
-
-  nsresult MakeDefinitionListItemWithTransaction(nsAtom& aTagName);
-
-  
-
-
-
-
-
-
-  nsresult InsertBasicBlockWithTransaction(nsAtom& aTagName);
-
-  
-
-
   enum class FontSize { incr, decr };
-  nsresult RelativeFontChange(FontSize aDir);
-
-  
-
-
   nsresult RelativeFontChangeOnTextNode(FontSize aDir,
                                         Text& aTextNode,
                                         int32_t aStartOffset,
                                         int32_t aEndOffset);
-  nsresult RelativeFontChangeOnNode(int32_t aSizeChange, nsIContent* aNode);
-  nsresult RelativeFontChangeHelper(int32_t aSizeChange, nsINode* aNode);
 
-  
-
-
-  nsresult SetInlinePropertyOnTextNode(Text& aData,
-                                       int32_t aStartOffset,
-                                       int32_t aEndOffset,
-                                       nsAtom& aProperty,
-                                       nsAtom* aAttribute,
-                                       const nsAString& aValue);
   nsresult SetInlinePropertyOnNode(nsIContent& aNode,
                                    nsAtom& aProperty,
                                    nsAtom* aAttribute,
                                    const nsAString& aValue);
 
-  nsresult PromoteInlineRange(nsRange& aRange);
-  nsresult PromoteRangeIfStartsOrEndsInNamedAnchor(nsRange& aRange);
-  nsresult SplitStyleAboveRange(nsRange* aRange,
-                                nsAtom* aProperty,
-                                nsAtom* aAttribute);
   nsresult SplitStyleAbovePoint(nsCOMPtr<nsINode>* aNode, int32_t* aOffset,
                                 nsAtom* aProperty,
                                 nsAtom* aAttribute,
                                 nsIContent** aOutLeftNode = nullptr,
                                 nsIContent** aOutRightNode = nullptr);
-  nsresult RemoveStyleInside(nsIContent& aNode,
-                             nsAtom* aProperty,
-                             nsAtom* aAttribute,
-                             const bool aChildrenOnly = false);
-
-  bool NodeIsProperty(nsINode& aNode);
-  bool IsAtFrontOfNode(nsINode& aNode, int32_t aOffset);
-  bool IsAtEndOfNode(nsINode& aNode, int32_t aOffset);
-  bool IsOnlyAttribute(const Element* aElement, nsAtom* aAttribute);
-
-  
-
-
-
-
-
-
-
-  nsresult RemoveBlockContainerWithTransaction(Element& aElement);
 
   nsIContent* GetPriorHTMLSibling(nsINode* aNode);
 
@@ -1148,6 +709,443 @@ protected:
                                  bool* aAny,
                                  bool* aAll,
                                  nsAString* outValue);
+
+  nsresult ClearStyle(nsCOMPtr<nsINode>* aNode, int32_t* aOffset,
+                      nsAtom* aProperty, nsAtom* aAttribute);
+
+  nsresult SetPositionToAbsolute(Element& aElement);
+  nsresult SetPositionToStatic(Element& aElement);
+
+protected: 
+  
+
+
+
+  virtual nsresult StartOperation(EditAction opID,
+                                  nsIEditor::EDirection aDirection) override;
+
+  
+
+
+
+  virtual nsresult EndOperation() override;
+
+  virtual nsresult EndUpdateViewBatch() override;
+
+protected: 
+  virtual ~HTMLEditor();
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  template<typename PT, typename CT>
+  EditorDOMPoint
+  InsertNodeIntoProperAncestorWithTransaction(
+    nsIContent& aNode,
+    const EditorDOMPointBase<PT, CT>& aPointToInsert,
+    SplitAtEdges aSplitAtEdges);
+
+  
+
+
+
+
+  nsresult InsertBrElementAtSelectionWithTransaction();
+
+  
+
+
+
+  nsresult RemoveStyleSheetWithTransaction(const nsAString& aURL);
+
+  nsresult LoadHTML(const nsAString& aInputString);
+
+  nsresult GetCSSBackgroundColorState(bool* aMixed, nsAString& aOutColor,
+                                      bool aBlockLevel);
+  nsresult GetHTMLBackgroundColorState(bool* aMixed, nsAString& outColor);
+
+  nsresult GetLastCellInRow(nsINode* aRowNode,
+                            nsINode** aCellNode);
+
+  nsresult GetCellFromRange(nsRange* aRange, Element** aCell);
+
+  
+
+
+
+  nsresult SetCSSBackgroundColorWithTransaction(const nsAString& aColor);
+  nsresult SetHTMLBackgroundColorWithTransaction(const nsAString& aColor);
+
+  virtual void
+  InitializeSelectionAncestorLimit(Selection& aSelection,
+                                   nsIContent& aAncestorLimit) override;
+
+  
+
+
+  virtual nsresult SelectEntireDocument(Selection* aSelection) override;
+
+  
+
+
+
+
+
+
+
+  void CollapseSelectionToDeepestNonTableFirstChild(Selection* aSelection,
+                                                    nsINode* aNode);
+
+  
+
+
+  bool EnableExistingStyleSheet(const nsAString& aURL);
+
+  
+
+
+  StyleSheet* GetStyleSheetForURL(const nsAString& aURL);
+  void GetURLForStyleSheet(StyleSheet* aStyleSheet,
+                           nsAString& aURL);
+
+  
+
+
+  nsresult AddNewStyleSheetToList(const nsAString &aURL,
+                                  StyleSheet* aStyleSheet);
+  nsresult RemoveStyleSheetFromList(const nsAString &aURL);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  nsresult
+  MaybeCollapseSelectionAtFirstEditableNode(
+    bool aIgnoreIfSelectionInEditingHost);
+
+  class BlobReader final : public nsIEditorBlobListener
+  {
+  public:
+    BlobReader(dom::BlobImpl* aBlob, HTMLEditor* aHTMLEditor,
+               bool aIsSafe, nsIDocument* aSourceDoc,
+               nsINode* aDestinationNode, int32_t aDestOffset,
+               bool aDoDeleteSelection);
+
+    NS_DECL_ISUPPORTS
+    NS_DECL_NSIEDITORBLOBLISTENER
+
+  private:
+    ~BlobReader()
+    {
+    }
+
+    RefPtr<dom::BlobImpl> mBlob;
+    RefPtr<HTMLEditor> mHTMLEditor;
+    bool mIsSafe;
+    nsCOMPtr<nsIDocument> mSourceDoc;
+    nsCOMPtr<nsINode> mDestinationNode;
+    int32_t mDestOffset;
+    bool mDoDeleteSelection;
+  };
+
+  virtual nsresult InitRules() override;
+
+  virtual void CreateEventListeners() override;
+  virtual nsresult InstallEventListeners() override;
+  virtual void RemoveEventListeners() override;
+
+  bool ShouldReplaceRootElement();
+  void NotifyRootChanged();
+  Element* GetBodyElement();
+
+  
+
+
+
+
+  already_AddRefed<nsINode> GetFocusedNode();
+
+  
+
+
+  bool SetCaretInTableCell(dom::Element* aElement);
+
+  nsresult TabInTable(bool inIsShift, bool* outHandled);
+
+  
+
+
+
+
+
+  nsresult InsertCell(Element* aCell, int32_t aRowSpan,
+                      int32_t aColSpan, bool aAfter, bool aIsHeader,
+                      Element** aNewCell);
+
+  
+
+
+  nsresult DeleteRow(Element* aTable, int32_t aRowIndex);
+  nsresult DeleteColumn(Element* aTable, int32_t aColIndex);
+  nsresult DeleteCellContents(Element* aCell);
+
+  
+
+
+  nsresult MergeCells(RefPtr<Element> aTargetCell,
+                      RefPtr<Element> aCellToMerge,
+                      bool aDeleteCellToMerge);
+
+  nsresult DeleteTable2(Element* aTable, Selection* aSelection);
+  nsresult SetColSpan(Element* aCell, int32_t aColSpan);
+  nsresult SetRowSpan(Element* aCell, int32_t aRowSpan);
+
+  
+
+
+  nsTableWrapperFrame* GetTableFrame(Element* aTable);
+
+  
+
+
+
+
+  int32_t GetNumberOfCellsInRow(Element* aTable, int32_t rowIndex);
+
+  
+
+
+  bool AllCellsInRowSelected(Element* aTable, int32_t aRowIndex,
+                             int32_t aNumberOfColumns);
+  bool AllCellsInColumnSelected(Element* aTable, int32_t aColIndex,
+                                int32_t aNumberOfRows);
+
+  bool IsEmptyCell(Element* aCell);
+
+  
+
+
+
+
+
+
+
+
+  nsresult GetCellContext(Selection** aSelection, Element** aTable,
+                          Element** aCell, nsINode** aCellParent,
+                          int32_t* aCellOffset, int32_t* aRowIndex,
+                          int32_t* aColIndex);
+
+  nsresult GetCellSpansAt(Element* aTable, int32_t aRowIndex,
+                          int32_t aColIndex, int32_t& aActualRowSpan,
+                          int32_t& aActualColSpan);
+
+  nsresult SplitCellIntoColumns(Element* aTable, int32_t aRowIndex,
+                                int32_t aColIndex, int32_t aColSpanLeft,
+                                int32_t aColSpanRight,
+                                Element** aNewCell);
+
+  nsresult SplitCellIntoRows(Element* aTable, int32_t aRowIndex,
+                             int32_t aColIndex, int32_t aRowSpanAbove,
+                             int32_t aRowSpanBelow, Element** aNewCell);
+
+  nsresult CopyCellBackgroundColor(Element* aDestCell,
+                                   Element* aSourceCell);
+
+  
+
+
+  nsresult FixBadRowSpan(Element* aTable, int32_t aRowIndex,
+                         int32_t& aNewRowCount);
+  nsresult FixBadColSpan(Element* aTable, int32_t aColIndex,
+                         int32_t& aNewColCount);
+
+  
+
+
+
+  nsresult SetSelectionAtDocumentStart(Selection* aSelection);
+
+  static Element* GetEnclosingTable(nsINode* aNode);
+  static nsIDOMNode* GetEnclosingTable(nsIDOMNode* aNode);
+
+  
+  nsresult PasteAsPlaintextQuotation(int32_t aSelectionType);
+
+  
+
+
+
+
+
+
+
+
+  nsresult InsertAsPlaintextQuotation(const nsAString& aQuotedText,
+                                      bool aAddCites,
+                                      nsIDOMNode** aNodeInserted);
+
+  nsresult InsertObject(const nsACString& aType, nsISupports* aObject,
+                        bool aIsSafe,
+                        nsIDocument* aSourceDoc,
+                        nsINode* aDestinationNode,
+                        int32_t aDestOffset,
+                        bool aDoDeleteSelection);
+
+  
+  
+  virtual nsresult PrepareTransferable(nsITransferable** transferable) override;
+  nsresult PrepareHTMLTransferable(nsITransferable** transferable);
+  nsresult InsertFromTransferable(nsITransferable* transferable,
+                                    nsIDocument* aSourceDoc,
+                                    const nsAString& aContextStr,
+                                    const nsAString& aInfoStr,
+                                    bool havePrivateHTMLFlavor,
+                                    bool aDoDeleteSelection);
+  virtual nsresult InsertFromDataTransfer(dom::DataTransfer* aDataTransfer,
+                                          int32_t aIndex,
+                                          nsIDocument* aSourceDoc,
+                                          nsINode* aDestinationNode,
+                                          int32_t aDestOffset,
+                                          bool aDoDeleteSelection) override;
+  bool HavePrivateHTMLFlavor(nsIClipboard* clipboard );
+  nsresult ParseCFHTML(nsCString& aCfhtml, char16_t** aStuffToPaste,
+                       char16_t** aCfcontext);
+
+  nsresult StripFormattingNodes(nsIContent& aNode, bool aOnlyList = false);
+  nsresult CreateDOMFragmentFromPaste(const nsAString& aInputString,
+                                      const nsAString& aContextStr,
+                                      const nsAString& aInfoStr,
+                                      nsCOMPtr<nsINode>* outFragNode,
+                                      nsCOMPtr<nsINode>* outStartNode,
+                                      nsCOMPtr<nsINode>* outEndNode,
+                                      int32_t* outStartOffset,
+                                      int32_t* outEndOffset,
+                                      bool aTrustedInput);
+  nsresult ParseFragment(const nsAString& aStr, nsAtom* aContextLocalName,
+                         nsIDocument* aTargetDoc,
+                         dom::DocumentFragment** aFragment, bool aTrustedInput);
+  void CreateListOfNodesToPaste(dom::DocumentFragment& aFragment,
+                                nsTArray<OwningNonNull<nsINode>>& outNodeList,
+                                nsINode* aStartContainer,
+                                int32_t aStartOffset,
+                                nsINode* aEndContainer,
+                                int32_t aEndOffset);
+  enum class StartOrEnd { start, end };
+  void GetListAndTableParents(StartOrEnd aStartOrEnd,
+                              nsTArray<OwningNonNull<nsINode>>& aNodeList,
+                              nsTArray<OwningNonNull<Element>>& outArray);
+  int32_t DiscoverPartialListsAndTables(
+            nsTArray<OwningNonNull<nsINode>>& aPasteNodes,
+            nsTArray<OwningNonNull<Element>>& aListsAndTables);
+  nsINode* ScanForListAndTableStructure(
+             StartOrEnd aStartOrEnd,
+             nsTArray<OwningNonNull<nsINode>>& aNodes,
+             Element& aListOrTable);
+  void ReplaceOrphanedStructure(
+         StartOrEnd aStartOrEnd,
+         nsTArray<OwningNonNull<nsINode>>& aNodeArray,
+         nsTArray<OwningNonNull<Element>>& aListAndTableArray,
+         int32_t aHighWaterMark);
+
+  
+
+
+
+
+
+
+
+
+
+
+  EditorRawDOMPoint
+  GetBetterInsertionPointFor(nsINode& aNodeToInsert,
+                             const EditorRawDOMPoint& aPointToInsert);
+
+  
+
+
+
+
+
+
+  nsresult MakeDefinitionListItemWithTransaction(nsAtom& aTagName);
+
+  
+
+
+
+
+
+
+  nsresult InsertBasicBlockWithTransaction(nsAtom& aTagName);
+
+  
+
+
+  nsresult RelativeFontChange(FontSize aDir);
+
+  nsresult RelativeFontChangeOnNode(int32_t aSizeChange, nsIContent* aNode);
+  nsresult RelativeFontChangeHelper(int32_t aSizeChange, nsINode* aNode);
+
+  
+
+
+  nsresult SetInlinePropertyOnTextNode(Text& aData,
+                                       int32_t aStartOffset,
+                                       int32_t aEndOffset,
+                                       nsAtom& aProperty,
+                                       nsAtom* aAttribute,
+                                       const nsAString& aValue);
+
+  nsresult PromoteInlineRange(nsRange& aRange);
+  nsresult PromoteRangeIfStartsOrEndsInNamedAnchor(nsRange& aRange);
+  nsresult SplitStyleAboveRange(nsRange* aRange,
+                                nsAtom* aProperty,
+                                nsAtom* aAttribute);
+  nsresult RemoveStyleInside(nsIContent& aNode,
+                             nsAtom* aProperty,
+                             nsAtom* aAttribute,
+                             const bool aChildrenOnly = false);
+
+  bool NodeIsProperty(nsINode& aNode);
+  bool IsAtFrontOfNode(nsINode& aNode, int32_t aOffset);
+  bool IsAtEndOfNode(nsINode& aNode, int32_t aOffset);
+  bool IsOnlyAttribute(const Element* aElement, nsAtom* aAttribute);
+
   bool HasStyleOrIdOrClass(Element* aElement);
   nsresult RemoveElementIfNoStyleOrIdOrClass(Element& aElement);
 
@@ -1178,9 +1176,6 @@ protected:
                                    bool aDeleteSelection,
                                    bool aTrustedInput,
                                    bool aClearStyle = true);
-
-  nsresult ClearStyle(nsCOMPtr<nsINode>* aNode, int32_t* aOffset,
-                      nsAtom* aProperty, nsAtom* aAttribute);
 
   
 
@@ -1221,33 +1216,6 @@ protected:
 
   already_AddRefed<dom::Element> GetSelectedElement(const nsAString& aTagName);
 
-  
-
-
-
-  nsresult RemoveStyleSheetWithTransaction(const nsAString& aURL);
-
-protected:
-  RefPtr<TypeInState> mTypeInState;
-  RefPtr<ComposerCommandsUpdater> mComposerCommandsUpdater;
-
-  bool mCRInParagraphCreatesParagraph;
-
-  bool mCSSAware;
-  UniquePtr<CSSEditUtils> mCSSEditUtils;
-
-  
-  int32_t  mSelectedCellIndex;
-
-  nsString mLastStyleSheetURL;
-  nsString mLastOverrideStyleSheetURL;
-
-  
-  nsTArray<nsString> mStyleSheetURLs;
-  nsTArray<RefPtr<StyleSheet>> mStyleSheets;
-
-protected:
-  
   void RemoveListenerAndDeleteRef(const nsAString& aEvent,
                                   nsIDOMEventListener* aListener,
                                   bool aUseCapture,
@@ -1274,6 +1242,148 @@ protected:
   bool IsInObservedSubtree(nsIContent* aChild);
 
   void UpdateRootElement();
+
+  nsresult SetAllResizersPosition();
+
+  
+
+
+
+  nsresult ShowResizers(Element& aResizedElement);
+
+  ManualNACPtr CreateResizer(int16_t aLocation, nsIContent& aParentContent);
+  void SetAnonymousElementPosition(int32_t aX, int32_t aY,
+                                   Element* aResizer);
+
+  ManualNACPtr CreateShadow(nsIContent& aParentContent,
+                            Element& aOriginalObject);
+  nsresult SetShadowPosition(Element* aShadow, Element* aOriginalObject,
+                             int32_t aOriginalObjectX,
+                             int32_t aOriginalObjectY);
+
+  ManualNACPtr CreateResizingInfo(nsIContent& aParentContent);
+  nsresult SetResizingInfoPosition(int32_t aX, int32_t aY,
+                                   int32_t aW, int32_t aH);
+
+  enum class ResizeAt
+  {
+    eX,
+    eY,
+    eWidth,
+    eHeight,
+  };
+  int32_t GetNewResizingIncrement(int32_t aX, int32_t aY,
+                                  ResizeAt aResizeAt);
+
+  nsresult StartResizing(Element* aHandle);
+  int32_t GetNewResizingX(int32_t aX, int32_t aY);
+  int32_t GetNewResizingY(int32_t aX, int32_t aY);
+  int32_t GetNewResizingWidth(int32_t aX, int32_t aY);
+  int32_t GetNewResizingHeight(int32_t aX, int32_t aY);
+  void HideShadowAndInfo();
+  void SetFinalSize(int32_t aX, int32_t aY);
+  void SetResizeIncrements(int32_t aX, int32_t aY, int32_t aW, int32_t aH,
+                           bool aPreserveRatio);
+  void HideAnonymousEditingUIs();
+
+  
+
+
+
+
+  void SetZIndex(Element& aElement, int32_t aZorder);
+
+  
+
+
+
+
+
+
+  nsresult ShowGrabber(Element& aElement);
+
+  
+
+
+  void HideGrabber();
+
+  ManualNACPtr CreateGrabber(nsIContent& aParentContent);
+  nsresult StartMoving();
+  nsresult SetFinalPosition(int32_t aX, int32_t aY);
+  void AddPositioningOffset(int32_t& aX, int32_t& aY);
+  void SnapToGrid(int32_t& newX, int32_t& newY);
+  nsresult GrabberClicked();
+  nsresult EndMoving();
+  nsresult GetTemporaryStyleForFocusedPositionedElement(Element& aElement,
+                                                        nsAString& aReturn);
+
+  
+
+
+
+  nsresult ShowInlineTableEditingUI(Element* aCell);
+
+  
+
+
+  nsresult HideInlineTableEditingUI();
+
+  
+
+
+
+  bool IsEmptyTextNode(nsINode& aNode);
+
+  bool IsSimpleModifiableNode(nsIContent* aContent,
+                              nsAtom* aProperty,
+                              nsAtom* aAttribute,
+                              const nsAString* aValue);
+  nsresult SetInlinePropertyOnNodeImpl(nsIContent& aNode,
+                                       nsAtom& aProperty,
+                                       nsAtom* aAttribute,
+                                       const nsAString& aValue);
+  typedef enum { eInserted, eAppended } InsertedOrAppended;
+  void DoContentInserted(nsIContent* aChild, InsertedOrAppended);
+  
+  
+  already_AddRefed<Element> CreateElementWithDefaults(
+                              const nsAString& aTagName);
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  ManualNACPtr CreateAnonymousElement(nsAtom* aTag,
+                                      nsIContent& aParentContent,
+                                      const nsAString& aAnonClass,
+                                      bool aIsCreatedHidden);
+protected:
+  RefPtr<TypeInState> mTypeInState;
+  RefPtr<ComposerCommandsUpdater> mComposerCommandsUpdater;
+
+  bool mCRInParagraphCreatesParagraph;
+
+  bool mCSSAware;
+  UniquePtr<CSSEditUtils> mCSSEditUtils;
+
+  
+  int32_t  mSelectedCellIndex;
+
+  nsString mLastStyleSheetURL;
+  nsString mLastOverrideStyleSheetURL;
+
+  
+  nsTArray<nsString> mStyleSheetURLs;
+  nsTArray<RefPtr<StyleSheet>> mStyleSheets;
 
   
   
@@ -1348,40 +1458,6 @@ protected:
   int8_t  mInfoXIncrement;
   int8_t  mInfoYIncrement;
 
-  nsresult SetAllResizersPosition();
-
-  
-
-
-
-  nsresult ShowResizers(Element& aResizedElement);
-
-  ManualNACPtr CreateResizer(int16_t aLocation, nsIContent& aParentContent);
-  void SetAnonymousElementPosition(int32_t aX, int32_t aY,
-                                   Element* aResizer);
-
-  ManualNACPtr CreateShadow(nsIContent& aParentContent,
-                            Element& aOriginalObject);
-  nsresult SetShadowPosition(Element* aShadow, Element* aOriginalObject,
-                             int32_t aOriginalObjectX,
-                             int32_t aOriginalObjectY);
-
-  ManualNACPtr CreateResizingInfo(nsIContent& aParentContent);
-  nsresult SetResizingInfoPosition(int32_t aX, int32_t aY,
-                                   int32_t aW, int32_t aH);
-
-  int32_t GetNewResizingIncrement(int32_t aX, int32_t aY, int32_t aID);
-  nsresult StartResizing(Element* aHandle);
-  int32_t GetNewResizingX(int32_t aX, int32_t aY);
-  int32_t GetNewResizingY(int32_t aX, int32_t aY);
-  int32_t GetNewResizingWidth(int32_t aX, int32_t aY);
-  int32_t GetNewResizingHeight(int32_t aX, int32_t aY);
-  void HideShadowAndInfo();
-  void SetFinalSize(int32_t aX, int32_t aY);
-  void SetResizeIncrements(int32_t aX, int32_t aY, int32_t aW, int32_t aH,
-                           bool aPreserveRatio);
-  void HideAnonymousEditingUIs();
-
   
   int32_t mPositionedObjectX;
   int32_t mPositionedObjectY;
@@ -1399,40 +1475,6 @@ protected:
 
   int32_t mGridSize;
 
-  nsresult SetPositionToAbsolute(Element& aElement);
-  nsresult SetPositionToStatic(Element& aElement);
-
-  
-
-
-
-
-  void SetZIndex(Element& aElement, int32_t aZorder);
-
-  
-
-
-
-
-
-
-  nsresult ShowGrabber(Element& aElement);
-
-  
-
-
-  void HideGrabber();
-
-  ManualNACPtr CreateGrabber(nsIContent& aParentContent);
-  nsresult StartMoving();
-  nsresult SetFinalPosition(int32_t aX, int32_t aY);
-  void AddPositioningOffset(int32_t& aX, int32_t& aY);
-  void SnapToGrid(int32_t& newX, int32_t& newY);
-  nsresult GrabberClicked();
-  nsresult EndMoving();
-  nsresult GetTemporaryStyleForFocusedPositionedElement(Element& aElement,
-                                                        nsAString& aReturn);
-
   
   RefPtr<Element> mInlineEditedCell;
 
@@ -1444,17 +1486,6 @@ protected:
   ManualNACPtr mRemoveRowButton;
   ManualNACPtr mAddRowAfterButton;
 
-  
-
-
-
-  nsresult ShowInlineTableEditingUI(Element* aCell);
-
-  
-
-
-  nsresult HideInlineTableEditingUI();
-
   void AddMouseClickListener(Element* aElement);
   void RemoveMouseClickListener(Element* aElement);
 
@@ -1462,52 +1493,11 @@ protected:
 
   ParagraphSeparator mDefaultParagraphSeparator;
 
-public:
   friend class AutoSelectionSetterAfterTableEdit;
-  friend class HTMLEditorEventListener;
+  friend class CSSEditUtils;
+  friend class EmptyEditableFunctor;
   friend class HTMLEditRules;
-  friend class TextEditRules;
   friend class WSRunObject;
-
-private:
-  
-
-
-
-  bool IsEmptyTextNode(nsINode& aNode);
-
-  bool IsSimpleModifiableNode(nsIContent* aContent,
-                              nsAtom* aProperty,
-                              nsAtom* aAttribute,
-                              const nsAString* aValue);
-  nsresult SetInlinePropertyOnNodeImpl(nsIContent& aNode,
-                                       nsAtom& aProperty,
-                                       nsAtom* aAttribute,
-                                       const nsAString& aValue);
-  typedef enum { eInserted, eAppended } InsertedOrAppended;
-  void DoContentInserted(nsIContent* aChild, InsertedOrAppended);
-  already_AddRefed<Element> GetElementOrParentByTagName(
-                              const nsAString& aTagName, nsINode* aNode);
-  already_AddRefed<Element> CreateElementWithDefaults(
-                              const nsAString& aTagName);
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  ManualNACPtr CreateAnonymousElement(nsAtom* aTag,
-                                      nsIContent& aParentContent,
-                                      const nsAString& aAnonClass,
-                                      bool aIsCreatedHidden);
 };
 
 } 
