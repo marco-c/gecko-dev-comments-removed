@@ -6,6 +6,7 @@
 
 #include "mozilla/dom/WebAuthnTransactionParent.h"
 #include "mozilla/dom/U2FTokenManager.h"
+#include "mozilla/ipc/PBackgroundParent.h"
 #include "mozilla/ipc/BackgroundParent.h"
 
 namespace mozilla {
@@ -40,12 +41,40 @@ WebAuthnTransactionParent::RecvRequestCancel(const uint64_t& aTransactionId)
   return IPC_OK();
 }
 
+mozilla::ipc::IPCResult
+WebAuthnTransactionParent::RecvDestroyMe()
+{
+  AssertIsOnBackgroundThread();
+
+  
+  
+
+  
+  
+
+  
+  IProtocol* mgr = Manager();
+  if (!Send__delete__(this)) {
+    return IPC_FAIL_NO_REASON(mgr);
+  }
+
+  return IPC_OK();
+}
+
 void
 WebAuthnTransactionParent::ActorDestroy(ActorDestroyReason aWhy)
 {
   AssertIsOnBackgroundThread();
+
+  
+  
   U2FTokenManager* mgr = U2FTokenManager::Get();
-  mgr->MaybeClearTransaction(this);
+
+  
+  if (mgr) {
+    mgr->MaybeClearTransaction(this);
+  }
 }
+
 }
 }
