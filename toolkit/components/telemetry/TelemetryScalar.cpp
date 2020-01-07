@@ -1122,11 +1122,9 @@ internal_CanRecordForScalarID(const StaticMutexAutoLock& lock,
 
 
 
-
-
 ScalarResult
 internal_CanRecordScalar(const StaticMutexAutoLock& lock, const ScalarKey& aId,
-                         bool aKeyed, bool aForce = false)
+                         bool aKeyed)
 {
   
   if (internal_IsKeyedScalar(lock, aId) != aKeyed) {
@@ -1140,7 +1138,7 @@ internal_CanRecordScalar(const StaticMutexAutoLock& lock, const ScalarKey& aId,
   }
 
   
-  if (!aForce && !internal_CanRecordProcess(lock, aId)) {
+  if (!internal_CanRecordProcess(lock, aId)) {
     return ScalarResult::CannotRecordInProcess;
   }
 
@@ -1429,7 +1427,7 @@ internal_UpdateScalar(const StaticMutexAutoLock& lock, const nsACString& aName,
            ScalarResult::NotInitialized : ScalarResult::UnknownScalar;
   }
 
-  ScalarResult sr = internal_CanRecordScalar(lock, uniqueId, false, aForce);
+  ScalarResult sr = internal_CanRecordScalar(lock, uniqueId, false);
   if (sr != ScalarResult::Ok) {
     if (sr == ScalarResult::CannotRecordDataset) {
       return ScalarResult::Ok;
@@ -1607,7 +1605,7 @@ internal_UpdateKeyedScalar(const StaticMutexAutoLock& lock,
            ScalarResult::NotInitialized : ScalarResult::UnknownScalar;
   }
 
-  ScalarResult sr = internal_CanRecordScalar(lock, uniqueId, true, aForce);
+  ScalarResult sr = internal_CanRecordScalar(lock, uniqueId, true);
   if (sr != ScalarResult::Ok) {
     if (sr == ScalarResult::CannotRecordDataset) {
       return ScalarResult::Ok;

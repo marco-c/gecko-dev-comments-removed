@@ -7,6 +7,59 @@ ChromeUtils.import("resource://gre/modules/PromiseUtils.jsm", this);
 ChromeUtils.import("resource://gre/modules/Services.jsm", this);
 ChromeUtils.import("resource://testing-common/ContentTaskUtils.jsm", this);
 
+const Telemetry = Services.telemetry;
+const TelemetryGeckoView = Cc["@mozilla.org/telemetry/geckoview-testing;1"]
+                             .createInstance(Ci.nsITelemetryGeckoViewTesting);
+
+
+
+
+
+
+
+async function run_in_child(aFileName) {
+  const PREF_GECKOVIEW_MODE = "toolkit.telemetry.isGeckoViewMode";
+  
+  
+  
+  
+  const currentValue = Services.prefs.getBoolPref(PREF_GECKOVIEW_MODE, false);
+  Services.prefs.setBoolPref(PREF_GECKOVIEW_MODE, false);
+  await run_test_in_child(aFileName);
+  Services.prefs.setBoolPref(PREF_GECKOVIEW_MODE, currentValue);
+}
+
+
+
+
+
+function waitGeckoViewLoadComplete() {
+  return new Promise(resolve => {
+    Services.obs.addObserver(function observe() {
+      Services.obs.removeObserver(observe, "internal-telemetry-geckoview-load-complete");
+      resolve();
+    }, "internal-telemetry-geckoview-load-complete");
+  });
+}
+
+
+
+
+
+
+
+
+async function waitForSnapshotData(aHistogramName, aProcessName, aKeyed) {
+  await ContentTaskUtils.waitForCondition(() => {
+    const data = aKeyed
+      ? Telemetry.snapshotKeyedHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN, false)
+      : Telemetry.snapshotHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN, false);
+
+    return (aProcessName in data)
+           && (aHistogramName in data[aProcessName]);
+  });
+}
+
 add_task(async function setup() {
   
   let profileDir = do_get_profile(true);
@@ -37,8 +90,8 @@ add_task(async function test_persistContentHistograms() {
   await run_in_child("test_GeckoView_content_histograms.js");
 
   
-  await waitForHistogramSnapshotData("TELEMETRY_TEST_MULTIPRODUCT", "content", false );
-  await waitForHistogramSnapshotData("TELEMETRY_TEST_KEYED_COUNT", "content", true );
+  await waitForSnapshotData("TELEMETRY_TEST_MULTIPRODUCT", "content", false );
+  await waitForSnapshotData("TELEMETRY_TEST_KEYED_COUNT", "content", true );
 
   
   TelemetryGeckoView.forcePersist();
