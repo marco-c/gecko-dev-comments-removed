@@ -277,8 +277,9 @@ SandboxLaunchPrepare(GeckoProcessType aType,
       
       
       
-      static const bool isDisplayLocal = IsDisplayLocal();
-      if (isDisplayLocal) {
+      static const bool canCloneNet =
+        IsDisplayLocal() && !PR_GetEnv("RENDERDOC_CAPTUREOPTS");
+      if (canCloneNet) {
         flags |= CLONE_NEWNET;
       }
     }
