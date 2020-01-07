@@ -2138,7 +2138,7 @@ nsCookieService::SetCookieStringCommon(nsIURI *aHostURI,
   nsDependentCString cookieString(aCookieHeader);
   nsDependentCString serverTime(aServerTime ? aServerTime : "");
   SetCookieStringInternal(aHostURI, isForeign, cookieString,
-                          serverTime, aFromHttp, attrs, aChannel);
+                          serverTime, aFromHttp, false, attrs, aChannel);
   return NS_OK;
 }
 
@@ -2148,6 +2148,7 @@ nsCookieService::SetCookieStringInternal(nsIURI                 *aHostURI,
                                          nsDependentCString     &aCookieHeader,
                                          const nsCString        &aServerTime,
                                          bool                    aFromHttp,
+                                         bool                    aFromChild,
                                          const OriginAttributes &aOriginAttrs,
                                          nsIChannel             *aChannel)
 {
@@ -2215,7 +2216,7 @@ nsCookieService::SetCookieStringInternal(nsIURI                 *aHostURI,
 
   
   while (SetCookieInternal(aHostURI, key, requireHostMatch, cookieStatus,
-                           aCookieHeader, serverTime, aFromHttp, aChannel)) {
+                           aCookieHeader, serverTime, aFromHttp, aFromChild, aChannel)) {
     
     if (!aFromHttp)
       break;
@@ -2298,7 +2299,8 @@ void
 nsCookieService::NotifyChanged(nsISupports     *aSubject,
                                const char16_t *aData,
                                bool aOldCookieIsSession,
-                               bool aFromHttp)
+                               bool aFromHttp,
+                               bool aFromChild)
 {
   const char* topic = mDBState == mPrivateDBState ?
       "private-cookie-changed" : "cookie-changed";
@@ -2309,6 +2311,9 @@ nsCookieService::NotifyChanged(nsISupports     *aSubject,
   
   os->NotifyObservers(aSubject, topic, aData);
 
+  if (!aFromChild) {
+    os->NotifyObservers(aSubject, "non-js-cookie-changed", aData);
+  }
   
   
   
@@ -3482,12 +3487,26 @@ nsCookieService::CanSetCookie(nsIURI*             aHostURI,
   if ((aCookieAttributes.sameSite != nsICookie2::SAMESITE_UNSET) &&
       aThirdPartyUtil &&
       IsSameSiteEnabled()) {
-    bool isThirdParty = false;
-    aThirdPartyUtil->IsThirdPartyChannel(aChannel, aHostURI, &isThirdParty);
-    if (isThirdParty) {
-      COOKIE_LOGFAILURE(SET_COOKIE, aHostURI, savedCookieHeader,
-                        "failed the samesite tests");
-      return newCookie;
+
+    
+    bool addonAllowsLoad = false;
+    if (aChannel) {
+      nsCOMPtr<nsIURI> channelURI;
+      NS_GetFinalChannelURI(aChannel, getter_AddRefs(channelURI));
+      nsCOMPtr<nsILoadInfo> loadInfo = aChannel->GetLoadInfo();
+      addonAllowsLoad = loadInfo &&
+        BasePrincipal::Cast(loadInfo->TriggeringPrincipal())->
+          AddonAllowsLoad(channelURI);
+    }
+
+    if (!addonAllowsLoad) {
+      bool isThirdParty = false;
+      nsresult rv = aThirdPartyUtil->IsThirdPartyChannel(aChannel, aHostURI, &isThirdParty);
+      if (NS_FAILED(rv) || isThirdParty) {
+        COOKIE_LOGFAILURE(SET_COOKIE, aHostURI, savedCookieHeader,
+                          "failed the samesite tests");
+        return newCookie;
+      }
     }
   }
 
@@ -3505,6 +3524,7 @@ nsCookieService::SetCookieInternal(nsIURI                        *aHostURI,
                                    nsDependentCString            &aCookieHeader,
                                    int64_t                        aServerTime,
                                    bool                           aFromHttp,
+                                   bool                           aFromChild,
                                    nsIChannel                    *aChannel)
 {
   NS_ASSERTION(aHostURI, "null host!");
@@ -3562,7 +3582,7 @@ nsCookieService::SetCookieInternal(nsIURI                        *aHostURI,
   
   
   AddInternal(aKey, cookie, PR_Now(), aHostURI, savedCookieHeader.get(),
-              aFromHttp);
+              aFromHttp, aFromChild);
   return newCookie;
 }
 
@@ -3577,7 +3597,8 @@ nsCookieService::AddInternal(const nsCookieKey &aKey,
                              int64_t            aCurrentTimeInUsec,
                              nsIURI            *aHostURI,
                              const char        *aCookieHeader,
-                             bool               aFromHttp)
+                             bool               aFromHttp,
+                             bool               aFromChild)
 {
   MOZ_ASSERT(mInitializedDBStates);
   MOZ_ASSERT(mInitializedDBConn);
@@ -3695,7 +3716,7 @@ nsCookieService::AddInternal(const nsCookieKey &aKey,
       if (aCookie->Expiry() <= currentTime) {
         COOKIE_LOGFAILURE(SET_COOKIE, aHostURI, aCookieHeader,
           "previously stored cookie was deleted");
-        NotifyChanged(oldCookie, u"deleted", oldCookieIsSession, aFromHttp);
+        NotifyChanged(oldCookie, u"deleted", oldCookieIsSession, aFromHttp, aFromChild);
         return;
       }
 
@@ -3769,7 +3790,7 @@ nsCookieService::AddInternal(const nsCookieKey &aKey,
     NotifyChanged(purgedList, u"batch-deleted");
   }
 
-  NotifyChanged(aCookie, foundCookie ? u"changed" : u"added", oldCookieIsSession, aFromHttp);
+  NotifyChanged(aCookie, foundCookie ? u"changed" : u"added", oldCookieIsSession, aFromHttp, aFromChild);
 }
 
 
