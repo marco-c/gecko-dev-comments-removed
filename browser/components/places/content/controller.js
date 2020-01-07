@@ -707,23 +707,14 @@ PlacesController.prototype = {
     if (!ip)
       throw Cr.NS_ERROR_NOT_AVAILABLE;
 
-    let performed =
+    let bookmarkGuid =
       PlacesUIUtils.showBookmarkDialog({ action: "add",
                                          type: aType,
                                          defaultInsertionPoint: ip,
                                          hiddenRows: [ "folderPicker" ]
                                        }, window.top);
-    if (performed) {
-      
-      
-      
-      
-      let insertedNode = await PlacesUtils.bookmarks.fetch({
-        parentGuid: ip.guid,
-        index: await ip.getIndex()
-      });
-
-      this._view.selectItems([insertedNode.guid], false);
+    if (bookmarkGuid) {
+      this._view.selectItems([bookmarkGuid], false);
     }
   },
 

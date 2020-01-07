@@ -289,16 +289,16 @@ var PlacesUIUtils = {
 
     aParentWindow.openDialog(dialogURL, "", features, aInfo);
 
-    let performed = ("performed" in aInfo && aInfo.performed);
+    let bookmarkGuid = ("bookmarkGuid" in aInfo && aInfo.bookmarkGuid) || undefined;
 
     batchBlockingDeferred.resolve();
 
-    if (!performed &&
+    if (!bookmarkGuid &&
         topUndoEntry != PlacesTransactions.topUndoEntry) {
       PlacesTransactions.undo().catch(Cu.reportError);
     }
 
-    return performed;
+    return bookmarkGuid;
   },
 
   
