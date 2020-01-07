@@ -196,6 +196,9 @@ nsSimpleNestedURI::Mutate(nsIURIMutator** aMutator)
     if (NS_FAILED(rv)) {
         return rv;
     }
+    
+    
+    mutator->ResetMutable();
     mutator.forget(aMutator);
     return NS_OK;
 }

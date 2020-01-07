@@ -75,18 +75,19 @@ nsViewSourceHandler::NewURI(const nsACString &aSpec,
 
     
     
-    nsSimpleNestedURI* ourURI = new nsSimpleNestedURI(innerURI);
-    nsCOMPtr<nsIURI> uri = ourURI;
-    if (!uri)
-        return NS_ERROR_OUT_OF_MEMORY;
+    RefPtr<nsSimpleNestedURI> ourURI = new nsSimpleNestedURI(innerURI);
 
-    rv = ourURI->SetSpec(asciiSpec);
-    if (NS_FAILED(rv))
+    nsCOMPtr<nsIURI> uri;
+    rv = NS_MutateURI(ourURI)
+           .SetSpec(asciiSpec)
+           .Finalize(uri);
+    if (NS_FAILED(rv)) {
         return rv;
+    }
 
     
     
-    ourURI->SetMutable(false);
+    NS_TryToSetImmutable(uri);
 
     uri.swap(*aResult);
     return rv;
