@@ -87,6 +87,11 @@ public:
 
   void GetStack(HangStack& aStack, nsACString& aRunnableName, bool aStackWalk);
 
+  
+
+
+  int GetThreadId() const { return mThreadId; }
+
 protected:
   
 
