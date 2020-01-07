@@ -28,6 +28,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   ExtensionUtils: "resource://gre/modules/ExtensionUtils.jsm",
   FileUtils: "resource://gre/modules/FileUtils.jsm",
   OS: "resource://gre/modules/osfile.jsm",
+  PermissionsUtils: "resource://gre/modules/PermissionsUtils.jsm",
   Services: "resource://gre/modules/Services.jsm",
 
   Blocklist: "resource://gre/modules/Blocklist.jsm",
@@ -35,6 +36,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   UpdateChecker: "resource://gre/modules/addons/XPIInstall.jsm",
   XPIInstall: "resource://gre/modules/addons/XPIInstall.jsm",
   XPIInternal: "resource://gre/modules/addons/XPIProvider.jsm",
+  XPIProvider: "resource://gre/modules/addons/XPIProvider.jsm",
   verifyBundleSignedState: "resource://gre/modules/addons/XPIInstall.jsm",
 });
 
@@ -48,19 +50,11 @@ const {nsIBlocklistService} = Ci;
 
 
 
-
-
-
-
 for (let sym of [
   "BOOTSTRAP_REASONS",
   "DB_SCHEMA",
-  "SIGNED_TYPES",
-  "XPIProvider",
   "XPIStates",
-  "isTheme",
   "isWebExtension",
-  "recordAddonTelemetry",
 ]) {
   XPCOMUtils.defineLazyGetter(this, sym, () => XPIInternal[sym]);
 }
@@ -88,6 +82,7 @@ const PREF_DB_SCHEMA                  = "extensions.databaseSchema";
 const PREF_EM_AUTO_DISABLED_SCOPES    = "extensions.autoDisableScopes";
 const PREF_EM_EXTENSION_FORMAT        = "extensions.";
 const PREF_PENDING_OPERATIONS         = "extensions.pendingOperations";
+const PREF_XPI_PERMISSIONS_BRANCH     = "xpinstall.";
 const PREF_XPI_SIGNATURES_DEV_ROOT    = "xpinstall.signatures.dev-root";
 
 const TOOLKIT_ID                      = "toolkit@mozilla.org";
@@ -135,6 +130,22 @@ const PROP_JSON_FIELDS = ["id", "syncGUID", "version", "type",
 
 const LEGACY_TYPES = new Set([
   "extension",
+]);
+
+
+
+const TYPE_ALIASES = {
+  "webextension": "extension",
+  "webextension-dictionary": "dictionary",
+  "webextension-langpack": "locale",
+  "webextension-theme": "theme",
+};
+
+const SIGNED_TYPES = new Set([
+  "extension",
+  "webextension",
+  "webextension-langpack",
+  "webextension-theme",
 ]);
 
 
@@ -193,6 +204,46 @@ async function getRepositoryAddon(aAddon) {
     aAddon._repositoryAddon = await AddonRepository.getCachedAddonByID(aAddon.id);
   }
   return aAddon;
+}
+
+
+
+
+
+
+
+
+
+function isTheme(type) {
+  return type == "theme" || TYPE_ALIASES[type] == "theme";
+}
+
+
+
+
+
+
+
+
+
+
+function getAllAliasesForTypes(aTypes) {
+  if (!aTypes)
+    return null;
+
+  let types = new Set(aTypes);
+  for (let [alias, type] of Object.entries(TYPE_ALIASES)) {
+    
+    if (types.has(type)) {
+      types.add(alias);
+    } else {
+      
+      
+      types.delete(alias);
+    }
+  }
+
+  return types;
 }
 
 
@@ -667,7 +718,7 @@ AddonWrapper = class {
   }
 
   get type() {
-    return XPIInternal.getExternalType(addonFor(this).type);
+    return XPIDatabase.getExternalType(addonFor(this).type);
   }
 
   get isWebExtension() {
@@ -1680,6 +1731,15 @@ this.XPIDatabase = {
 
 
 
+  importPermissions() {
+    PermissionsUtils.importFromPrefs(PREF_XPI_PERMISSIONS_BRANCH,
+                                     XPIInternal.XPI_PERMISSION);
+  },
+
+  
+
+
+
 
 
 
@@ -1706,6 +1766,23 @@ this.XPIDatabase = {
       }
     }
   },
+
+  
+
+
+
+
+
+
+
+  getExternalType(aType) {
+    if (aType in TYPE_ALIASES)
+      return TYPE_ALIASES[aType];
+    return aType;
+  },
+
+  isTheme,
+  SIGNED_TYPES,
 
   
 
@@ -1801,8 +1878,7 @@ this.XPIDatabase = {
 
   getVisibleAddons(aTypes) {
     return this.getAddonList(aAddon => (aAddon.visible &&
-                                        (!aTypes || (aTypes.length == 0) ||
-                                         (aTypes.indexOf(aAddon.type) > -1))));
+                                        (!aTypes || aTypes.has(aAddon.type))));
   },
 
   
@@ -1838,18 +1914,7 @@ this.XPIDatabase = {
     return this.getAddonList(
         aAddon => (aAddon.visible &&
                    aAddon.pendingUninstall &&
-                   (!aTypes || (aTypes.length == 0) || (aTypes.indexOf(aAddon.type) > -1))));
-  },
-
-  
-
-
-
-
-
-
-  getAddonBySyncGUID(aGUID) {
-    return this.getAddon(aAddon => aAddon.syncGUID == aGUID);
+                   (!aTypes || aTypes.has(aAddon.type))));
   },
 
   
@@ -1867,6 +1932,61 @@ this.XPIDatabase = {
     return _filterDB(this.addonDB, aAddon => true);
   },
 
+  
+
+
+
+
+
+
+  async getAddonByID(aId) {
+    let aAddon = await this.getVisibleAddonForID(aId);
+    return aAddon ? aAddon.wrapper : null;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  syncGetAddonByID(aId) {
+    let aAddon = this.syncGetVisibleAddonForID(aId);
+    return aAddon ? aAddon.wrapper : null;
+  },
+
+  
+
+
+
+
+
+
+  async getAddonBySyncGUID(aGUID) {
+    let addon = await this.getAddon(aAddon => aAddon.syncGUID == aGUID);
+    return addon ? addon.wrapper : null;
+  },
+
+  
+
+
+
+
+
+
+  async getAddonsByTypes(aTypes) {
+    let addons = await this.getVisibleAddons(getAllAliasesForTypes(aTypes));
+    return addons.map(a => a.wrapper);
+  },
 
   
 
@@ -2173,6 +2293,7 @@ this.XPIDatabase = {
           XPIProvider.runPhase);
       this.syncLoadDB(true);
     }
+
     logger.debug("Updating add-on states");
     for (let [, addon] of this.addonDB) {
       let newActive = (addon.visible && !addon.disabled && !addon.pendingUninstall);
@@ -2181,6 +2302,8 @@ this.XPIDatabase = {
         this.saveChanges();
       }
     }
+
+    Services.prefs.setBoolPref(PREF_PENDING_OPERATIONS, false);
   },
 
   
@@ -2298,6 +2421,32 @@ this.XPIDatabase = {
     }
 
     return isDisabled;
+  },
+
+  
+
+
+  updateAddonAppDisabledStates() {
+    for (let addon of this.getAddons()) {
+      this.updateAddonDisabledState(addon);
+    }
+  },
+
+  
+
+
+  async updateAddonRepositoryData() {
+    let addons = await this.getVisibleAddons(null);
+    logger.debug("updateAddonRepositoryData found " + addons.length + " visible add-ons");
+
+    await Promise.all(addons.map(addon =>
+      AddonRepository.getCachedAddonByID(addon.id).then(aRepoAddon => {
+        if (aRepoAddon || AddonRepository.getCompatibilityOverridesSync(addon.id)) {
+          logger.debug("updateAddonRepositoryData got info for " + addon.id);
+          addon._repositoryAddon = aRepoAddon;
+          this.updateAddonDisabledState(addon);
+        }
+      })));
   },
 
   

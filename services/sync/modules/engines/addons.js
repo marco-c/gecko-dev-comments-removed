@@ -738,16 +738,7 @@ class AddonValidator extends CollectionValidator {
   }
 
   async getClientItems() {
-    const installed = await AddonManager.getAllAddons();
-    const addonsWithPendingOperation = await AddonManager.getAddonsWithOperationsByTypes(["extension", "theme"]);
-    
-    
-    let all = new Map(installed.map(addon => [addon.id, addon]));
-    for (let addon of addonsWithPendingOperation) {
-      all.set(addon.id, addon);
-    }
-    
-    return [...all.values()];
+    return AddonManager.getAllAddons();
   }
 
   normalizeClientItem(item) {

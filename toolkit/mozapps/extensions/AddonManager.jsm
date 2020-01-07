@@ -2337,37 +2337,6 @@ var AddonManagerInternal = {
 
 
 
-
-  getAddonsWithOperationsByTypes(aTypes) {
-    if (!gStarted)
-      throw Components.Exception("AddonManager is not initialized",
-                                 Cr.NS_ERROR_NOT_INITIALIZED);
-
-    if (aTypes && !Array.isArray(aTypes))
-      throw Components.Exception("aTypes must be an array or null",
-                                 Cr.NS_ERROR_INVALID_ARG);
-
-    return (async () => {
-      let addons = [];
-
-      for (let provider of this.providers) {
-        let providerAddons = await promiseCallProvider(
-          provider, "getAddonsWithOperationsByTypes", aTypes);
-
-        if (providerAddons)
-          addons.push(...providerAddons);
-      }
-
-      return addons;
-    })();
-  },
-
-  
-
-
-
-
-
   addManagerListener(aListener) {
     if (!aListener || typeof aListener != "object")
       throw Components.Exception("aListener must be an AddonManagerListener object",
@@ -3387,10 +3356,6 @@ var AddonManager = {
 
   getAddonsByIDs(aIDs) {
     return AddonManagerInternal.getAddonsByIDs(aIDs);
-  },
-
-  getAddonsWithOperationsByTypes(aTypes) {
-    return AddonManagerInternal.getAddonsWithOperationsByTypes(aTypes);
   },
 
   getAddonsByTypes(aTypes) {

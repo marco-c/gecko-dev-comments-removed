@@ -26,14 +26,12 @@ ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/AddonManager.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
-  AddonRepository: "resource://gre/modules/addons/AddonRepository.jsm",
   AppConstants: "resource://gre/modules/AppConstants.jsm",
   AsyncShutdown: "resource://gre/modules/AsyncShutdown.jsm",
   Dictionary: "resource://gre/modules/Extension.jsm",
   Extension: "resource://gre/modules/Extension.jsm",
   Langpack: "resource://gre/modules/Extension.jsm",
   FileUtils: "resource://gre/modules/FileUtils.jsm",
-  PermissionsUtils: "resource://gre/modules/PermissionsUtils.jsm",
   OS: "resource://gre/modules/osfile.jsm",
   ConsoleAPI: "resource://gre/modules/Console.jsm",
   JSONFile: "resource://gre/modules/JSONFile.jsm",
@@ -62,7 +60,6 @@ const PREF_EM_STARTUP_SCAN_SCOPES     = "extensions.startupScanScopes";
 
 const PREF_XPI_SIGNATURES_REQUIRED    = "xpinstall.signatures.required";
 const PREF_LANGPACK_SIGNATURES        = "extensions.langpacks.signatures.required";
-const PREF_XPI_PERMISSIONS_BRANCH     = "xpinstall.";
 const PREF_INSTALL_DISTRO_ADDONS      = "extensions.installDistroAddons";
 const PREF_BRANCH_INSTALLED_ADDON     = "extensions.installedDistroAddon.";
 const PREF_SYSTEM_ADDON_SET           = "extensions.systemAddonSet";
@@ -81,7 +78,6 @@ const DIR_STAGE                       = "staged";
 const DIR_TRASH                       = "trash";
 
 const FILE_XPI_STATES                 = "addonStartup.json.lz4";
-const FILE_DATABASE                   = "extensions.json";
 
 const KEY_PROFILEDIR                  = "ProfD";
 const KEY_ADDON_APP_DIR               = "XREAddonAppDir";
@@ -107,11 +103,9 @@ const STARTUP_MTIME_SCOPES = [KEY_APP_GLOBAL,
 const NOTIFICATION_FLUSH_PERMISSIONS  = "flush-pending-permissions";
 const XPI_PERMISSION                  = "install";
 
-const TOOLKIT_ID                      = "toolkit@mozilla.org";
-
 const XPI_SIGNATURE_CHECK_PERIOD      = 24 * 60 * 60;
 
-XPCOMUtils.defineConstant(this, "DB_SCHEMA", 26);
+const DB_SCHEMA = 26;
 
 const NOTIFICATION_TOOLBOX_CONNECTION_CHANGE      = "toolbox-connection-change";
 
@@ -137,22 +131,6 @@ const BOOTSTRAP_REASONS = {
   ADDON_UPGRADE: 7,
   ADDON_DOWNGRADE: 8
 };
-
-
-
-const TYPE_ALIASES = {
-  "webextension": "extension",
-  "webextension-dictionary": "dictionary",
-  "webextension-langpack": "locale",
-  "webextension-theme": "theme",
-};
-
-const SIGNED_TYPES = new Set([
-  "extension",
-  "webextension",
-  "webextension-langpack",
-  "webextension-theme",
-]);
 
 const ALL_EXTERNAL_TYPES = new Set([
   "dictionary",
@@ -273,18 +251,6 @@ function isWebExtension(type) {
 
 
 
-function isTheme(type) {
-  return type == "theme" || TYPE_ALIASES[type] == "theme";
-}
-
-
-
-
-
-
-
-
-
 
 
 
@@ -326,60 +292,18 @@ function getExpectedID(file) {
 
 
 function canRunInSafeMode(aAddon) {
-  
-  
-  
-
-  
-  
   let location = aAddon.location || null;
   if (!location) {
     return false;
   }
 
-  return location.isTemporary || location.isSystem;
-}
-
-
-
-
-
-
-
-
-
-function getExternalType(aType) {
-  if (aType in TYPE_ALIASES)
-    return TYPE_ALIASES[aType];
-  return aType;
-}
-
-
-
-
-
-
-
-
-
-
-function getAllAliasesForTypes(aTypes) {
-  if (!aTypes)
-    return null;
+  
+  
+  
 
   
-  let typeset = new Set(aTypes);
-
-  for (let alias of Object.keys(TYPE_ALIASES)) {
-    
-    typeset.delete(alias);
-
-    
-    if (typeset.has(TYPE_ALIASES[alias]))
-      typeset.add(alias);
-  }
-
-  return [...typeset];
+  
+  return location.isTemporary || location.isSystem;
 }
 
 
@@ -2026,34 +1950,6 @@ var XPIProvider = {
     this._telemetryDetails[aId][aName] = aValue;
   },
 
-  
-  _inProgress: [],
-
-  doing(aCancellable) {
-    this._inProgress.push(aCancellable);
-  },
-
-  done(aCancellable) {
-    let i = this._inProgress.indexOf(aCancellable);
-    if (i != -1) {
-      this._inProgress.splice(i, 1);
-      return true;
-    }
-    return false;
-  },
-
-  cancelAll() {
-    
-    while (this._inProgress.length > 0) {
-      let c = this._inProgress.shift();
-      try {
-        c.cancel();
-      } catch (e) {
-        logger.warn("Cancel failed", e);
-      }
-    }
-  },
-
   setupInstallLocations(aAppChanged) {
     function DirectoryLoc(aName, aScope, aKey, aPaths, aLocked) {
       try {
@@ -2321,11 +2217,11 @@ var XPIProvider = {
   async shutdown() {
     logger.debug("shutdown");
 
-    
-    this.cancelAll();
-
     this.activeAddons.clear();
     this.allAppGlobal = true;
+
+    
+    XPIInstall.cancelAll();
 
     for (let install of XPIInstall.installs) {
       if (install.onShutdown()) {
@@ -2389,13 +2285,7 @@ var XPIProvider = {
 
   addAddonsToCrashReporter() {
     if (!(Services.appinfo instanceof Ci.nsICrashReporter) ||
-        !AppConstants.MOZ_CRASHREPORTER) {
-      return;
-    }
-
-    
-    
-    if (Services.appinfo.inSafeMode) {
+        Services.appinfo.inSafeMode) {
       return;
     }
 
@@ -2532,15 +2422,6 @@ var XPIProvider = {
     return addons;
   },
 
-  
-
-
-
-  importPermissions() {
-    PermissionsUtils.importFromPrefs(PREF_XPI_PERMISSIONS_BRANCH,
-                                     XPI_PERMISSION);
-  },
-
   getDependentAddons(aAddon) {
     return Array.from(XPIDatabase.getAddons())
                 .filter(addon => addon.dependencies.includes(aAddon.id));
@@ -2605,26 +2486,16 @@ var XPIProvider = {
       }
     }
 
-    let haveAnyAddons = (XPIStates.size > 0);
-
     
     if (DB_SCHEMA != Services.prefs.getIntPref(PREF_DB_SCHEMA, 0)) {
       
       
-      if (!haveAnyAddons) {
+      if (!XPIStates.size) {
         logger.debug("Empty XPI database, setting schema version preference to " + DB_SCHEMA);
         Services.prefs.setIntPref(PREF_DB_SCHEMA, DB_SCHEMA);
       } else {
         updateReasons.push("schemaChanged");
       }
-    }
-
-    
-    
-    
-    let dbFile = FileUtils.getFile(KEY_PROFILEDIR, [FILE_DATABASE], true);
-    if (!dbFile.exists() && haveAnyAddons) {
-      updateReasons.push("needNewDatabase");
     }
 
     
@@ -2649,7 +2520,7 @@ var XPIProvider = {
       
       
       if (extensionListChanged || hasPendingChanges) {
-        this._updateActiveAddons();
+        XPIDatabase.updateActiveAddons();
         return true;
       }
 
@@ -2659,12 +2530,6 @@ var XPIProvider = {
     }
 
     return false;
-  },
-
-  _updateActiveAddons() {
-    logger.debug("Updating database with changes to installed add-ons");
-    XPIDatabase.updateActiveAddons();
-    Services.prefs.setBoolPref(PREF_PENDING_OPERATIONS, false);
   },
 
   
@@ -2679,7 +2544,7 @@ var XPIProvider = {
       
       await XPIDatabase.asyncLoadDB(false);
       XPIDatabaseReconcile.processFileChanges({}, false);
-      this._updateActiveAddons();
+      XPIDatabase.updateActiveAddons();
     }
 
     let addons = await Promise.all(
@@ -2738,7 +2603,7 @@ var XPIProvider = {
    getAddonByInstanceID(aInstanceID) {
      let id = this.getAddonIDByInstanceID(aInstanceID);
      if (id) {
-       return this.syncGetAddonByID(id);
+       return XPIDatabase.syncGetAddonByID(id);
      }
 
      return null;
@@ -2758,53 +2623,11 @@ var XPIProvider = {
      return null;
    },
 
-  
-
-
-
-
-
-
-  async getAddonByID(aId) {
-    let aAddon = await XPIDatabase.getVisibleAddonForID(aId);
-    return aAddon ? aAddon.wrapper : null;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  syncGetAddonByID(aId) {
-    let aAddon = XPIDatabase.syncGetVisibleAddonForID(aId);
-    return aAddon ? aAddon.wrapper : null;
-  },
-
-  
-
-
-
-
-
-
   async getAddonsByTypes(aTypes) {
-    let typesToGet = getAllAliasesForTypes(aTypes);
-    if (typesToGet && !typesToGet.some(type => ALL_EXTERNAL_TYPES.has(type))) {
+    if (aTypes && !aTypes.some(type => ALL_EXTERNAL_TYPES.has(type))) {
       return [];
     }
-
-    let addons = await XPIDatabase.getVisibleAddons(typesToGet);
-    return addons.map(a => a.wrapper);
+    return XPIDatabase.getAddonsByTypes(aTypes);
   },
 
   
@@ -2817,7 +2640,7 @@ var XPIProvider = {
   async getActiveAddons(aTypes) {
     
     if (this.isDBLoaded) {
-      let addons = await this.getAddonsByTypes(aTypes);
+      let addons = await XPIProvider.getAddonsByTypes(aTypes);
       return {
         addons: addons.filter(addon => addon.isActive),
         fullData: true,
@@ -2854,70 +2677,6 @@ var XPIProvider = {
     return {addons: result, fullData: false};
   },
 
-
-  
-
-
-
-
-
-
-  async getAddonBySyncGUID(aGUID) {
-    let addon = await XPIDatabase.getAddonBySyncGUID(aGUID);
-    return addon ? addon.wrapper : null;
-  },
-
-  
-
-
-
-
-
-
-  async getAddonsWithOperationsByTypes(aTypes) {
-    let typesToGet = getAllAliasesForTypes(aTypes);
-
-    let aAddons = await XPIDatabase.getVisibleAddonsWithPendingOperations(typesToGet);
-    let results = aAddons.map(a => a.wrapper);
-    for (let install of XPIInstall.installs) {
-      if (install.state == AddonManager.STATE_INSTALLED &&
-          !(install.addon.inDatabase))
-        results.push(install.addon.wrapper);
-    }
-    return results;
-  },
-
-  addonChanged(id, type) {
-    XPIDatabase.addonChanged(id, type);
-  },
-
-  
-
-
-  updateAddonAppDisabledStates() {
-    let addons = XPIDatabase.getAddons();
-    for (let addon of addons) {
-      XPIDatabase.updateAddonDisabledState(addon);
-    }
-  },
-
-  
-
-
-  async updateAddonRepositoryData() {
-    let addons = await XPIDatabase.getVisibleAddons(null);
-    logger.debug("updateAddonRepositoryData found " + addons.length + " visible add-ons");
-
-    await Promise.all(addons.map(addon =>
-      AddonRepository.getCachedAddonByID(addon.id).then(aRepoAddon => {
-        if (aRepoAddon || AddonRepository.getCompatibilityOverridesSync(addon.id)) {
-          logger.debug("updateAddonRepositoryData got info for " + addon.id);
-          addon._repositoryAddon = aRepoAddon;
-          XPIDatabase.updateAddonDisabledState(addon);
-        }
-      })));
-  },
-
   onDebugConnectionChange({what, connection}) {
     if (what != "opened")
       return;
@@ -2934,22 +2693,23 @@ var XPIProvider = {
 
 
   observe(aSubject, aTopic, aData) {
-    if (aTopic == NOTIFICATION_FLUSH_PERMISSIONS) {
+    switch (aTopic) {
+    case NOTIFICATION_FLUSH_PERMISSIONS:
       if (!aData || aData == XPI_PERMISSION) {
-        this.importPermissions();
+        XPIDatabase.importPermissions();
       }
-      return;
-    } else if (aTopic == NOTIFICATION_TOOLBOX_CONNECTION_CHANGE) {
-      this.onDebugConnectionChange(aSubject.wrappedJSObject);
-      return;
-    }
+      break;
 
-    if (aTopic == "nsPref:changed") {
+    case NOTIFICATION_TOOLBOX_CONNECTION_CHANGE:
+      this.onDebugConnectionChange(aSubject.wrappedJSObject);
+      break;
+
+    case "nsPref:changed":
       switch (aData) {
       case PREF_XPI_SIGNATURES_REQUIRED:
       case PREF_LANGPACK_SIGNATURES:
       case PREF_ALLOW_LEGACY:
-        this.updateAddonAppDisabledStates();
+        XPIDatabase.updateAddonAppDisabledStates();
         break;
       }
     }
@@ -2964,6 +2724,13 @@ for (let meth of ["getInstallForFile", "getInstallForURL", "getInstallsByTypes",
   };
 }
 
+for (let meth of ["addonChanged", "getAddonByID", "getAddonBySyncGUID",
+                  "updateAddonRepositoryData", "updateAddonAppDisabledStates"]) {
+  XPIProvider[meth] = function() {
+    return XPIDatabase[meth](...arguments);
+  };
+}
+
 var XPIInternal = {
   BOOTSTRAP_REASONS,
   BootstrapScope,
@@ -2972,19 +2739,14 @@ var XPIInternal = {
   KEY_APP_SYSTEM_DEFAULTS,
   PREF_BRANCH_INSTALLED_ADDON,
   PREF_SYSTEM_ADDON_SET,
-  SIGNED_TYPES,
   SystemAddonLocation,
   TEMPORARY_ADDON_SUFFIX,
-  TOOLKIT_ID,
   TemporaryInstallLocation,
-  XPIProvider,
   XPIStates,
   XPI_PERMISSION,
   awaitPromise,
   canRunInSafeMode,
-  getExternalType,
   getURIForResourceInFile,
-  isTheme,
   isWebExtension,
   isXPI,
   iterDirectory,

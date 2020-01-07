@@ -914,21 +914,6 @@ MockProvider.prototype = {
 
 
 
-  async getAddonsWithOperationsByTypes(aTypes, aCallback) {
-    var addons = this.addons.filter(function(aAddon) {
-      if (aTypes && aTypes.length > 0 && !aTypes.includes(aAddon.type))
-        return false;
-      return aAddon.pendingOperations != 0;
-    });
-    return addons;
-  },
-
-  
-
-
-
-
-
   async getInstallsByTypes(aTypes) {
     var installs = this.installs.filter(function(aInstall) {
       

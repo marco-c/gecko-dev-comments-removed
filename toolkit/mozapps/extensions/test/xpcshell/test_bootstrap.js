@@ -274,9 +274,6 @@ add_task(async function test_1() {
 
   let dir = do_get_addon_root_uri(profileDir, ID1);
   equal(b1.getResourceURI("bootstrap.js").spec, dir + "bootstrap.js");
-
-  let list = await AddonManager.getAddonsWithOperationsByTypes(null);
-  equal(list.length, 0);
 });
 
 
@@ -1191,9 +1188,6 @@ add_task(async function test_23() {
 
   let dir = do_get_addon_root_uri(profileDir, ID1);
   equal(b1.getResourceURI("bootstrap.js").spec, dir + "bootstrap.js");
-
-  let list = await AddonManager.getAddonsWithOperationsByTypes(null);
-  equal(list.length, 0);
 
   await promiseRestartManager();
 

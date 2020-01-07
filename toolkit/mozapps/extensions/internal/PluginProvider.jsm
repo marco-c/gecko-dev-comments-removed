@@ -128,16 +128,6 @@ var PluginProvider = {
 
 
 
-  async getAddonsWithOperationsByTypes(aTypes) {
-    return [];
-  },
-
-  
-
-
-
-
-
   getInstallsByTypes(aTypes) {
     return [];
   },
