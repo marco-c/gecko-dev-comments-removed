@@ -26,7 +26,7 @@ use rule_tree::{CascadeLevel, RuleTree, StrongRuleNode, StyleSource};
 use selector_map::{PrecomputedHashMap, SelectorMap, SelectorMapEntry};
 use selector_parser::{SelectorImpl, PerPseudoElementMap, PseudoElement};
 use selectors::NthIndexCache;
-use selectors::attr::NamespaceConstraint;
+use selectors::attr::{CaseSensitivity, NamespaceConstraint};
 use selectors::bloom::{BloomFilter, NonCountingBloomFilter};
 use selectors::matching::{ElementSelectorFlags, matches_selector, MatchingContext, MatchingMode};
 use selectors::matching::VisitedHandlingMode;
@@ -1405,6 +1405,13 @@ impl Stylist {
     where
         E: TElement,
     {
+        
+        
+        match self.quirks_mode().classes_and_ids_case_sensitivity() {
+            CaseSensitivity::AsciiCaseInsensitive => return true,
+            CaseSensitivity::CaseSensitive => {}
+        }
+
         let hash = id.get_hash();
         for (data, _) in self.cascade_data.iter_origins() {
             if data.mapped_ids.might_contain_hash(hash) {
