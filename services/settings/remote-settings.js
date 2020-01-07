@@ -12,7 +12,7 @@ var EXPORTED_SYMBOLS = [
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm", {});
-Cu.importGlobalProperties(["fetch"]);
+Cu.importGlobalProperties(["fetch", "indexedDB"]);
 
 ChromeUtils.defineModuleGetter(this, "Kinto",
                                "resource://services-common/kinto-offline-client.js");
@@ -179,6 +179,21 @@ async function fetchLatestChanges(url, lastEtag) {
 }
 
 
+
+
+async function loadDumpFile(filename) {
+  
+  const { components: folderFile } = OS.Path.split(filename);
+  const fileURI = `resource://app/defaults/settings/${folderFile.join("/")}`;
+  const response = await fetch(fileURI);
+  if (!response.ok) {
+    throw new Error(`Could not read from '${fileURI}'`);
+  }
+  
+  return response.json();
+}
+
+
 class RemoteSettingsClient {
 
   constructor(collectionName, { bucketName, signerName, filterFunc = jexlFilterFunc, lastCheckTimePref }) {
@@ -275,8 +290,8 @@ class RemoteSettingsClient {
     
     if (timestamp == null) {
       try {
-         const { data } = await this._loadDumpFile();
-         await c.loadDump(data);
+        const { data } = await loadDumpFile(this.filename);
+        await c.loadDump(data);
       } catch (e) {
         
         Cu.reportError(e);
@@ -326,7 +341,7 @@ class RemoteSettingsClient {
       
       if (!collectionLastModified && loadDump) {
         try {
-          const initialData = await this._loadDumpFile();
+          const initialData = await loadDumpFile(this.filename);
           await collection.loadDump(initialData.data);
           collectionLastModified = await collection.db.getLastModified();
         } catch (e) {
@@ -462,21 +477,6 @@ class RemoteSettingsClient {
     }
   }
 
-  
-
-
-  async _loadDumpFile() {
-    
-    const { components: folderFile } = OS.Path.split(this.filename);
-    const fileURI = `resource://app/defaults/settings/${folderFile.join("/")}`;
-    const response = await fetch(fileURI);
-    if (!response.ok) {
-      throw new Error(`Could not read from '${fileURI}'`);
-    }
-    
-    return response.json();
-  }
-
   async _validateCollectionSignature(remote, payload, collection, options = {}) {
     const {ignoreLocal} = options;
     
@@ -536,6 +536,50 @@ class RemoteSettingsClient {
     const dataPromises = data.map(e => this.filterFunc(e, environment));
     const results = await Promise.all(dataPromises);
     return results.filter(v => !!v);
+  }
+}
+
+
+
+
+
+
+
+
+async function databaseExists(bucket, collection) {
+  
+  
+  const dbname = `${bucket}/${collection}`;
+  try {
+    await new Promise((resolve, reject) => {
+      const request = indexedDB.open(dbname, 1);
+      request.onupgradeneeded = event => {
+        event.target.transaction.abort();
+        reject(event.target.error);
+      };
+      request.onerror = event => reject(event.target.error);
+      request.onsuccess = event => resolve(event.target.result);
+    });
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+
+
+
+
+
+
+
+async function hasLocalDump(bucket, collection) {
+  const filename = OS.Path.join(bucket, `${collection}.json`);
+  try {
+    await loadDumpFile(filename);
+    return true;
+  } catch (e) {
+    return false;
   }
 }
 
@@ -632,20 +676,44 @@ function remoteSettingsFunction() {
     
     let firstError;
     for (const change of changes) {
-      const {bucket, collection, last_modified: lastModified} = change;
-      const key = `${bucket}/${collection}`;
-      if (!_clients.has(key)) {
+      const {bucket: bucketName, collection, last_modified: lastModified} = change;
+      const key = `${bucketName}/${collection}`;
+
+      let client;
+      
+      
+      if (_clients.has(key)) {
+        client = _clients.get(key);
+        
+        
+        if (client.bucketName != bucketName) {
+          continue;
+        }
+
+      
+      
+      
+      
+      } else if (bucketName == mainBucket && (await databaseExists(bucketName, collection) ||
+                                              await hasLocalDump(bucketName, collection))) {
+        client = new RemoteSettingsClient(collection, {bucketName, signerName: defaultSigner});
+
+      
+      
+      
+      
+      } else {
         continue;
       }
-      const client = _clients.get(key);
-      if (client.bucketName != bucket) {
-        continue;
-      }
+
+      
+      
       try {
         await client.maybeSync(lastModified, serverTimeMillis, {loadDump});
       } catch (e) {
         if (!firstError) {
           firstError = e;
+          firstError.details = change;
         }
       }
     }
