@@ -8,19 +8,6 @@ config = {
     "hg_l10n_base": "https://hg.mozilla.org/l10n-central",
 
     
-    "repos": [{
-        "vcs": "hg",
-        "repo": "https://hg.mozilla.org/build/tools",
-        "branch": "default",
-        "dest": "tools",
-    }, {
-        "vcs": "hg",
-        "repo": "https://hg.mozilla.org/releases/mozilla-beta",
-        "revision": "%(revision)s",
-        "dest": "mozilla-beta",
-        "clone_upstream_url": "https://hg.mozilla.org/mozilla-unified",
-    }],
-    
     'purge_minsize': 12,
     'is_automation': True,
 }
