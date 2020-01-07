@@ -57,7 +57,7 @@ nsViewSourceChannel::Init(nsIURI* uri)
       return rv;
 
     
-    if (scheme.LowerCaseEqualsLiteral("javascript")) {
+    if (scheme.EqualsLiteral("javascript")) {
       NS_WARNING("blocking view-source:javascript:");
       return NS_ERROR_INVALID_ARG;
     }

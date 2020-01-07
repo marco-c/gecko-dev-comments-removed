@@ -162,7 +162,7 @@ nsDefaultURIFixup::GetFixupURIInfo(const nsACString& aStringURI,
   
   
 
-  if (scheme.LowerCaseEqualsLiteral("view-source")) {
+  if (scheme.EqualsLiteral("view-source")) {
     nsCOMPtr<nsIURIFixupInfo> uriInfo;
     
     
@@ -177,7 +177,7 @@ nsDefaultURIFixup::GetFixupURIInfo(const nsACString& aStringURI,
     innerURIString.Trim(" ");
     nsAutoCString innerScheme;
     ioService->ExtractScheme(innerURIString, innerScheme);
-    if (innerScheme.LowerCaseEqualsLiteral("view-source")) {
+    if (innerScheme.EqualsLiteral("view-source")) {
       return NS_ERROR_FAILURE;
     }
 
@@ -233,47 +233,47 @@ nsDefaultURIFixup::GetFixupURIInfo(const nsACString& aStringURI,
   if (sFixTypos && (aFixupFlags & FIXUP_FLAG_FIX_SCHEME_TYPOS)) {
     
     if (scheme.IsEmpty() ||
-        scheme.LowerCaseEqualsLiteral("http") ||
-        scheme.LowerCaseEqualsLiteral("https") ||
-        scheme.LowerCaseEqualsLiteral("ftp") ||
-        scheme.LowerCaseEqualsLiteral("file")) {
+        scheme.EqualsLiteral("http") ||
+        scheme.EqualsLiteral("https") ||
+        scheme.EqualsLiteral("ftp") ||
+        scheme.EqualsLiteral("file")) {
       
-    } else if (scheme.LowerCaseEqualsLiteral("ttp")) {
-      
-      uriString.ReplaceLiteral(0, 3, "http");
-      scheme.AssignLiteral("http");
-      info->mFixupChangedProtocol = true;
-    } else if (scheme.LowerCaseEqualsLiteral("htp")) {
+    } else if (scheme.EqualsLiteral("ttp")) {
       
       uriString.ReplaceLiteral(0, 3, "http");
       scheme.AssignLiteral("http");
       info->mFixupChangedProtocol = true;
-    } else if (scheme.LowerCaseEqualsLiteral("ttps")) {
+    } else if (scheme.EqualsLiteral("htp")) {
+      
+      uriString.ReplaceLiteral(0, 3, "http");
+      scheme.AssignLiteral("http");
+      info->mFixupChangedProtocol = true;
+    } else if (scheme.EqualsLiteral("ttps")) {
       
       uriString.ReplaceLiteral(0, 4, "https");
       scheme.AssignLiteral("https");
       info->mFixupChangedProtocol = true;
-    } else if (scheme.LowerCaseEqualsLiteral("tps")) {
+    } else if (scheme.EqualsLiteral("tps")) {
       
       uriString.ReplaceLiteral(0, 3, "https");
       scheme.AssignLiteral("https");
       info->mFixupChangedProtocol = true;
-    } else if (scheme.LowerCaseEqualsLiteral("ps")) {
+    } else if (scheme.EqualsLiteral("ps")) {
       
       uriString.ReplaceLiteral(0, 2, "https");
       scheme.AssignLiteral("https");
       info->mFixupChangedProtocol = true;
-    } else if (scheme.LowerCaseEqualsLiteral("htps")) {
+    } else if (scheme.EqualsLiteral("htps")) {
       
       uriString.ReplaceLiteral(0, 4, "https");
       scheme.AssignLiteral("https");
       info->mFixupChangedProtocol = true;
-    } else if (scheme.LowerCaseEqualsLiteral("ile")) {
+    } else if (scheme.EqualsLiteral("ile")) {
       
       uriString.ReplaceLiteral(0, 3, "file");
       scheme.AssignLiteral("file");
       info->mFixupChangedProtocol = true;
-    } else if (scheme.LowerCaseEqualsLiteral("le")) {
+    } else if (scheme.EqualsLiteral("le")) {
       
       uriString.ReplaceLiteral(0, 2, "file");
       scheme.AssignLiteral("file");
