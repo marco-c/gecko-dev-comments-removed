@@ -11,9 +11,7 @@ config = {
     
     'default_actions': [
         'clobber',
-        'checkout-sources',
         'build',
-        'sendchange',
     ],
     "buildbot_json_path": "buildprops.json",
     'app_ini_path': '%(obj_dir)s/dist/bin/application.ini',
@@ -24,7 +22,6 @@ config = {
     
     'debug_build': True,
     
-    'enable_unittest_sendchange': True,
     'perfherder_extra_options': ['artifact'],
     
 

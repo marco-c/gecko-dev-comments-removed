@@ -3,10 +3,7 @@ import os
 config = {
     'default_actions': [
         'clobber',
-        'checkout-sources',
         'build',
-        'upload-files',
-        'sendchange',
         'update',  
     ],
     'stage_platform': 'macosx64-noopt-debug',

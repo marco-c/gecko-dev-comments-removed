@@ -3,16 +3,12 @@ import os
 config = {
     'default_actions': [
         'clobber',
-        'checkout-sources',
         'build',
-        'upload-files',
-        'sendchange',
         'update',  
     ],
     'stage_platform': 'macosx64-searchfox-debug',
     'debug_build': True,
     'enable_signing': False,
-    'enable_unittest_sendchange': False,
     'perfherder_extra_options': ['static-analysis'],
     
     'env': {

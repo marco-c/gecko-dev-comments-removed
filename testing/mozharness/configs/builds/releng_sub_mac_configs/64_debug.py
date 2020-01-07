@@ -3,16 +3,12 @@ import os
 config = {
     'default_actions': [
         'clobber',
-        'checkout-sources',
         'build',
-        'upload-files',
-        'sendchange',
         'check-test',
         'update',  
     ],
     'stage_platform': 'macosx64-debug',
     'debug_build': True,
-    'enable_unittest_sendchange': False,
     
     'env': {
         'MOZBUILD_STATE_PATH': os.path.join(os.getcwd(), '.mozbuild'),
