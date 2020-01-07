@@ -37,7 +37,6 @@ public:
     NS_DECL_NSIHTTPAUTHENTICATORCALLBACK
 
     nsHttpChannelAuthProvider();
-    static void InitializePrefs();
 private:
     virtual ~nsHttpChannelAuthProvider();
 
@@ -182,12 +181,6 @@ private:
 
     RefPtr<nsHttpHandler>           mHttpHandler;  
 
-    
-    
-    
-    static uint32_t                   sAuthAllowPref;
-    static bool                       sImgCrossOriginAuthAllowPref;
-    static bool                       sNonWebContentTriggeredAuthAllow;
     nsCOMPtr<nsICancelable>           mGenerateCredentialsCancelable;
 };
 

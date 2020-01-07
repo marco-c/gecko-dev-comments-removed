@@ -11,7 +11,8 @@
 
 
 
-pref("preferences.allow.omt-write", true);
+
+
 
 pref("keyword.enabled", false);
 pref("general.useragent.compatMode.firefox", false);
@@ -2255,26 +2256,6 @@ pref("network.automatic-ntlm-auth.trusted-uris", "");
 
 
 pref("network.generic-ntlm-auth.workstation", "WORKSTATION");
-
-
-
-
-
-
-
-pref("network.auth.subresource-http-auth-allow", 2);
-
-
-
-
-
-
-pref("network.auth.subresource-img-cross-origin-http-auth-allow", false);
-
-
-
-
-pref("network.auth.non-web-content-triggered-resources-http-auth-allow", false);
 
 
 
