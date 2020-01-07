@@ -408,7 +408,7 @@ def set_defaults(config, tests):
             test.setdefault('e10s', True)
 
         
-        if test['test-platform'].startswith('linux') and test['suite'] != 'talos':
+        if test['test-platform'].startswith('linux') and test['suite'] not in ['talos', 'raptor']:
             test.setdefault('allow-software-gl-layers', True)
         else:
             test['allow-software-gl-layers'] = False
@@ -595,7 +595,6 @@ def set_tier(config, tests):
                                          'windows10-64-pgo/opt',
                                          'windows10-64-devedition/opt',
                                          'windows10-64-nightly/opt',
-                                         'windows10-64-asan/opt',
                                          'macosx64/opt',
                                          'macosx64/debug',
                                          'macosx64-nightly/opt',
