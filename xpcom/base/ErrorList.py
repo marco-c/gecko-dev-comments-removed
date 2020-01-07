@@ -474,11 +474,6 @@ with modules["LAYOUT"]:
     errors["NS_OK_PARSE_SHEET"] = SUCCESS(1)
     
     errors["NS_POSITION_BEFORE_TABLE"] = SUCCESS(3)
-    
-    
-    errors["NS_STATE_PROPERTY_EXISTS"] = errors["NS_OK"]
-    
-    errors["NS_STATE_PROPERTY_NOT_THERE"] = SUCCESS(5)
 
 
 
