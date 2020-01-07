@@ -866,23 +866,13 @@ impl PropertyDeclarationBlock {
                 };
 
                 
-                
-                
-                if shorthand.flags().contains(PropertyFlags::SHORTHAND_ALIAS_PROPERTY) {
-                    append_serialization::<Cloned<slice::Iter< _>>, _>(
-                         dest,
-                         &property,
-                         value,
-                         importance,
-                         &mut is_first_serialization)?;
-                } else {
-                    append_serialization::<Cloned<slice::Iter< _>>, _>(
-                         dest,
-                         &shorthand,
-                         value,
-                         importance,
-                         &mut is_first_serialization)?;
-                }
+                append_serialization::<Cloned<slice::Iter< _>>, _>(
+                    dest,
+                    &shorthand,
+                    value,
+                    importance,
+                    &mut is_first_serialization,
+                )?;
 
                 for current_longhand in &current_longhands {
                     
