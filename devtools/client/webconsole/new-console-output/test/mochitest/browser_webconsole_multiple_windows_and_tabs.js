@@ -10,91 +10,77 @@
 
 const TEST_URI = "data:text/html;charset=utf-8,Web Console test for bug 595350";
 
-var win1 = window, win2;
-var openTabs = [];
-var loadedTabCount = 0;
-
-function test() {
+add_task(async function () {
   requestLongerTimeout(3);
 
-  
-  addTabs(win1);
+  const win1 = window;
 
-  
-  win2 = OpenBrowserWindow();
-  win2.addEventListener("load", onWindowLoad, true);
-}
+  info("Add test tabs in first window");
+  let tab1 = await addTab(TEST_URI, {window: win1});
+  let tab2 = await addTab(TEST_URI, {window: win1});
+  info("Test tabs added in first window");
 
-function onWindowLoad(aEvent) {
-  win2.removeEventListener(aEvent.type, onWindowLoad, true);
-
-  
-  addTabs(win2);
-}
-
-function addTabs(aWindow) {
-  for (let i = 0; i < 2; i++) {
-    let tab = aWindow.gBrowser.addTab(TEST_URI);
-    openTabs.push(tab);
-
-    tab.linkedBrowser.addEventListener("load", function onLoad(aEvent) {
-      tab.linkedBrowser.removeEventListener(aEvent.type, onLoad, true);
-
-      loadedTabCount++;
-      info("tabs loaded: " + loadedTabCount);
-      if (loadedTabCount >= 4) {
-        executeSoon(openConsoles);
-      }
-    }, true);
-  }
-}
-
-function openConsoles() {
-  function open(i) {
-    let tab = openTabs[i];
-    openConsole(tab).then(function (hud) {
-      ok(hud, "HUD is open for tab " + i);
-      let window = hud.target.tab.linkedBrowser.contentWindow;
-      window.console.log("message for tab " + i);
-
-      if (i >= openTabs.length - 1) {
-        
-        executeSoon(closeConsoles);
-      }
-      else {
-        executeSoon(() => open(i + 1));
-      }
-    });
-  }
-
-  
-  open(0);
-}
-
-function closeConsoles() {
-  let consolesClosed = 0;
-
-  function onWebConsoleClose(aSubject, aTopic) {
-    if (aTopic == "web-console-destroyed") {
-      consolesClosed++;
-      info("consoles destroyed: " + consolesClosed);
-      if (consolesClosed == 4) {
-        
-        executeSoon(finishTest);
-      }
-    }
-  }
-
-  Services.obs.addObserver(onWebConsoleClose, "web-console-destroyed");
-
-  registerCleanupFunction(() => {
-    Services.obs.removeObserver(onWebConsoleClose, "web-console-destroyed");
+  info("Open a second window");
+  const win2 = OpenBrowserWindow();
+  await new Promise(r => {
+    win2.addEventListener("load", r, {capture: true, once: true});
   });
 
+  info("Add test tabs in second window");
+  let tab3 = await addTab(TEST_URI, {window: win2});
+  let tab4 = await addTab(TEST_URI, {window: win2});
+
+  info("Opening console in each test tab");
+  let tabs = [tab1, tab2, tab3, tab4];
+  for (let tab of tabs) {
+    
+    let hud = await openConsole(tab);
+    let tabWindow = hud.target.tab.linkedBrowser.contentWindow;
+    let message = "message for tab " + tabs.indexOf(tab);
+
+    
+    let onMessage = waitForMessage(hud, message);
+    tabWindow.console.log(message);
+    await onMessage;
+  }
+
+  let onConsolesDestroyed = waitForNEvents("web-console-destroyed", 4);
+
+  info("Close the second window");
   win2.close();
 
-  win1.gBrowser.removeTab(openTabs[0]);
-  win1.gBrowser.removeTab(openTabs[1]);
+  info("Close the test tabs in the first window");
+  win1.gBrowser.removeTab(tab1);
+  win1.gBrowser.removeTab(tab2);
 
-  openTabs = win1 = win2 = null;
+  info("Wait for 4 web-console-destroyed events");
+  await onConsolesDestroyed;
+
+  ok(true, "Received web-console-destroyed for each console opened");
+});
+
+
+
+
+function waitForNEvents(expectedTopic, times) {
+  return new Promise(resolve => {
+    let count = 0;
+
+    function onEvent(subject, topic) {
+      if (topic !== expectedTopic) {
+        return;
+      }
+
+      count++;
+      info(`Received ${expectedTopic} ${count} time(s).`);
+      if (count == times) {
+        resolve();
+      }
+    }
+
+    registerCleanupFunction(() => {
+      Services.obs.removeObserver(onEvent, expectedTopic);
+    });
+    Services.obs.addObserver(onEvent, expectedTopic);
+  });
 }
