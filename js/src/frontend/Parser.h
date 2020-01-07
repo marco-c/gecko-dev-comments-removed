@@ -467,16 +467,31 @@ class MOZ_STACK_CLASS PerHandlerParser
     
     
     
-    
-    
     void* internalSyntaxParser_;
 
+  private:
+    
+    
+    
+    PerHandlerParser(JSContext* cx, LifoAlloc& alloc, const ReadOnlyCompileOptions& options,
+                     bool foldConstants, UsedNameTracker& usedNames, LazyScript* lazyOuterFunction,
+                     ScriptSourceObject* sourceObject, ParseGoal parseGoal,
+                     void* internalSyntaxParser);
+
   protected:
+    template<typename CharT>
     PerHandlerParser(JSContext* cx, LifoAlloc& alloc, const ReadOnlyCompileOptions& options,
                      bool foldConstants, UsedNameTracker& usedNames,
-                     LazyScript* lazyOuterFunction,
-                     ScriptSourceObject* sourceObject,
-                     ParseGoal parseGoal);
+                     GeneralParser<SyntaxParseHandler, CharT>* syntaxParser,
+                     LazyScript* lazyOuterFunction, ScriptSourceObject* sourceObject,
+                     ParseGoal parseGoal)
+      : PerHandlerParser(cx, alloc, options, foldConstants, usedNames, lazyOuterFunction,
+                         sourceObject, parseGoal,
+                         
+                         
+                         
+                         static_cast<void*>(options.extraWarningsOption ? nullptr : syntaxParser))
+    {}
 
     static Node null() { return ParseHandler::null(); }
 
@@ -858,18 +873,9 @@ class MOZ_STACK_CLASS GeneralParser
         void transferErrorsTo(PossibleError* other);
     };
 
-  private:
-    
-    
-    using Base::internalSyntaxParser_;
-
   protected:
     SyntaxParser* getSyntaxParser() const {
-        return reinterpret_cast<SyntaxParser*>(internalSyntaxParser_);
-    }
-
-    void setSyntaxParser(SyntaxParser* syntaxParser) {
-        internalSyntaxParser_ = syntaxParser;
+        return reinterpret_cast<SyntaxParser*>(Base::internalSyntaxParser_);
     }
 
   public:
@@ -1446,7 +1452,6 @@ class MOZ_STACK_CLASS Parser<FullParseHandler, CharT> final
     using Base::abortIfSyntaxParser;
     using Base::disableSyntaxParser;
     using Base::getSyntaxParser;
-    using Base::setSyntaxParser;
 
   public:
     
