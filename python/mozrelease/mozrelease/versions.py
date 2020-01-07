@@ -1,10 +1,46 @@
 from __future__ import absolute_import
 
-from distutils.version import StrictVersion
+from distutils.version import StrictVersion, LooseVersion
 import re
 
 
-class ModernMozillaVersion(StrictVersion):
+class MozillaVersionCompareMixin():
+    def __cmp__(self, other):
+        has_esr = set()
+        if isinstance(other, LooseModernMozillaVersion) and str(other).endswith('esr'):
+            
+            
+            has_esr.add('other')
+            other = MozillaVersion(str(other)[:-3])  
+        if isinstance(self, LooseModernMozillaVersion) and str(self).endswith('esr'):
+            
+            
+            has_esr.add('self')
+            self = MozillaVersion(str(self)[:-3])  
+        if isinstance(other, LooseModernMozillaVersion) or \
+                isinstance(self, LooseModernMozillaVersion):
+            
+            
+            val = LooseVersion.__cmp__(
+                    LooseModernMozillaVersion(str(self)),
+                    LooseModernMozillaVersion(str(other)))
+        else:
+            
+            val = StrictVersion.__cmp__(self, other)
+        if has_esr.isdisjoint(set(['other', 'self'])) or \
+                has_esr.issuperset(set(['other', 'self'])):
+            
+            return val
+        elif val is not 0:
+            
+            
+            return val
+        elif 'other' in has_esr:
+            return -1  
+        return 1  
+
+
+class ModernMozillaVersion(MozillaVersionCompareMixin, StrictVersion):
     """A version class that is slightly less restrictive than StrictVersion.
        Instead of just allowing "a" or "b" as prerelease tags, it allows any
        alpha. This allows us to support the once-shipped "3.6.3plugin1" and
@@ -13,7 +49,7 @@ class ModernMozillaVersion(StrictVersion):
                                 ([a-zA-Z]+(\d+))?$""", re.VERBOSE)
 
 
-class AncientMozillaVersion(StrictVersion):
+class AncientMozillaVersion(MozillaVersionCompareMixin, StrictVersion):
     """A version class that is slightly less restrictive than StrictVersion.
        Instead of just allowing "a" or "b" as prerelease tags, it allows any
        alpha. This allows us to support the once-shipped "3.6.3plugin1" and
@@ -24,6 +60,16 @@ class AncientMozillaVersion(StrictVersion):
                                 ([a-zA-Z]+(\d+))?$""", re.VERBOSE)
 
 
+class LooseModernMozillaVersion(MozillaVersionCompareMixin, LooseVersion):
+    """A version class that is more restrictive than LooseVersion.
+       This class reduces the valid strings to "esr", "a", "b" and "rc" in order
+       to support esr. StrictVersion requires a trailing number after all strings."""
+    component_re = re.compile(r'(\d+ | a | b | rc | esr | \.)', re.VERBOSE)
+
+    def __repr__(self):
+        return "LooseModernMozillaVersion ('%s')" % str(self)
+
+
 def MozillaVersion(version):
     try:
         return ModernMozillaVersion(version)
@@ -32,6 +78,10 @@ def MozillaVersion(version):
     try:
         if version.count('.') == 3:
             return AncientMozillaVersion(version)
+    except ValueError:
+        pass
+    try:
+        return LooseModernMozillaVersion(version)
     except ValueError:
         pass
     raise ValueError("Version number %s is invalid." % version)
