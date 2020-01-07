@@ -18,10 +18,12 @@ const { updateSidebarSize } = require("./actions/sidebar");
 const { isAllAnimationEqual } = require("./utils/utils");
 
 class AnimationInspector {
-  constructor(inspector) {
+  constructor(inspector, win) {
     this.inspector = inspector;
+    this.win = win;
 
     this.getNodeFromActor = this.getNodeFromActor.bind(this);
+    this.simulateAnimation = this.simulateAnimation.bind(this);
     this.toggleElementPicker = this.toggleElementPicker.bind(this);
     this.update = this.update.bind(this);
     this.onElementPickerStarted = this.onElementPickerStarted.bind(this);
@@ -48,6 +50,7 @@ class AnimationInspector {
     const {
       emit: emitEventForTest,
       getNodeFromActor,
+      simulateAnimation,
       toggleElementPicker,
     } = this;
 
@@ -67,6 +70,7 @@ class AnimationInspector {
           onHideBoxModelHighlighter,
           onShowBoxModelHighlighterForNode,
           setSelectedNode,
+          simulateAnimation,
           toggleElementPicker,
         }
       )
@@ -87,7 +91,18 @@ class AnimationInspector {
     this.inspector.toolbox.off("picker-started", this.onElementPickerStarted);
     this.inspector.toolbox.off("picker-stopped", this.onElementPickerStopped);
 
+    if (this.simulatedAnimation) {
+      this.simulatedAnimation.cancel();
+      this.simulatedAnimation = null;
+    }
+
+    if (this.simulatedElement) {
+      this.simulatedElement.remove();
+      this.simulatedElement = null;
+    }
+
     this.inspector = null;
+    this.win = null;
   }
 
   
@@ -137,6 +152,48 @@ class AnimationInspector {
     return this.inspector && this.inspector.toolbox && this.inspector.sidebar &&
            this.inspector.toolbox.currentToolId === "inspector" &&
            this.inspector.sidebar.getCurrentTabID() === "newanimationinspector";
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  simulateAnimation(keyframes, effectTiming, isElementNeeded) {
+    let targetEl = null;
+
+    if (isElementNeeded) {
+      if (!this.simulatedElement) {
+        this.simulatedElement = this.win.document.createElement("div");
+        this.win.document.documentElement.appendChild(this.simulatedElement);
+      } else {
+        
+        this.simulatedElement.style.cssText = "";
+      }
+
+      targetEl = this.simulatedElement;
+    }
+
+    if (!this.simulatedAnimation) {
+      this.simulatedAnimation = new this.win.Animation();
+    }
+
+    this.simulatedAnimation.effect =
+      new this.win.KeyframeEffect(targetEl, keyframes, effectTiming);
+
+    return this.simulatedAnimation;
   }
 
   toggleElementPicker() {
