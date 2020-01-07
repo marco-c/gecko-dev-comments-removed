@@ -3399,10 +3399,15 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
     
     
     
+    
+    
+    
+    
     const ActiveScrolledRoot* fixedASR =
       ActiveScrolledRoot::PickAncestor(containerItemASR, aBuilder->CurrentActiveScrolledRoot());
     resultList.AppendToTop(
-        MakeDisplayItem<nsDisplayFixedPosition>(aBuilder, this, &resultList, fixedASR));
+        MakeDisplayItem<nsDisplayFixedPosition>(aBuilder, this, &resultList,
+          fixedASR, containerItemASR));
     if (aCreatedContainerItem) {
       *aCreatedContainerItem = true;
     }
