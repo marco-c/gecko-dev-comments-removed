@@ -62,7 +62,9 @@ ShmSegmentsWriter::Write(Range<uint8_t> aBytes)
         MOZ_ASSERT(mSmallAllocs.Length() == currAllocLen);
         return layers::OffsetRange(0, start, 0);
       }
-      continue;
+      
+      
+      MOZ_ASSERT(dstCursor < (mSmallAllocs.Length() * mChunkSize));
     }
 
     const size_t dstMaxOffset = mChunkSize * mSmallAllocs.Length();
