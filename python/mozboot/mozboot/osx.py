@@ -327,27 +327,27 @@ class OSXBootstrapper(BaseBootstrapper):
         return self._ensure_homebrew_packages(casks, extra_brew_args=['cask'])
 
     def ensure_homebrew_system_packages(self):
-        
-        
-        
-        
         packages = [
-            'autoconf@2.13',
-            'git',
-            'gnu-tar',
-            'llvm',
-            'mercurial',
-            'node',
+            
+            
+            
+            
             'python',
             'python3',
-            'terminal-notifier',
+            'mercurial',
+            'git',
+            'autoconf@2.13',
+            'gnu-tar',
             'watchman',
+            'terminal-notifier',
+            'node',
         ]
         self._ensure_homebrew_packages(packages)
 
     def ensure_homebrew_browser_packages(self, artifact_mode=False):
         
         packages = [
+            'llvm',
             'yasm',
         ]
         self._ensure_homebrew_packages(packages)
