@@ -172,12 +172,12 @@ var MigrationWizard = {
     
     var sourceProfiles = this.spinResolve(this._migrator.getSourceProfiles());
     if (this._skipImportSourcePage) {
-      this._wiz.currentPage.next = "homePageImport";
+      this._wiz.currentPage.next = "migrating";
     } else if (sourceProfiles && sourceProfiles.length > 1) {
       this._wiz.currentPage.next = "selectProfile";
     } else {
       if (this._autoMigrate)
-        this._wiz.currentPage.next = "homePageImport";
+        this._wiz.currentPage.next = "migrating";
       else
         this._wiz.currentPage.next = "importItems";
 
@@ -233,7 +233,7 @@ var MigrationWizard = {
 
     
     if (this._autoMigrate)
-      this._wiz.currentPage.next = "homePageImport";
+      this._wiz.currentPage.next = "migrating";
   },
 
   
@@ -286,65 +286,6 @@ var MigrationWizard = {
     }
 
     this._wiz.canAdvance = oneChecked;
-  },
-
-  
-  onHomePageMigrationPageShow() {
-    
-    if (!this._autoMigrate) {
-      this._wiz.advance();
-      return;
-    }
-
-    var brandBundle = document.getElementById("brandBundle");
-    var pageTitle, pageDesc, mainStr;
-    
-    
-    try {
-      pageTitle = brandBundle.getString("homePageMigrationPageTitle");
-      pageDesc = brandBundle.getString("homePageMigrationDescription");
-      mainStr = brandBundle.getString("homePageSingleStartMain");
-    } catch (e) {
-      this._wiz.advance();
-      return;
-    }
-
-    document.getElementById("homePageImport").setAttribute("label", pageTitle);
-    document.getElementById("homePageImportDesc").setAttribute("value", pageDesc);
-
-    this._wiz._adjustWizardHeader();
-
-    var singleStart = document.getElementById("homePageSingleStart");
-    singleStart.setAttribute("label", mainStr);
-    singleStart.setAttribute("value", "DEFAULT");
-
-    var appName = MigrationUtils.getBrowserName(this._source);
-
-    
-    this.spinResolve(this._migrator.getMigrateData(this._selectedProfile, this._autoMigrate));
-
-    var oldHomePageURL = null;
-
-    if (oldHomePageURL && appName) {
-      var oldHomePageLabel =
-        brandBundle.getFormattedString("homePageImport", [appName]);
-      var oldHomePage = document.getElementById("oldHomePage");
-      oldHomePage.setAttribute("label", oldHomePageLabel);
-      oldHomePage.setAttribute("value", oldHomePageURL);
-      oldHomePage.removeAttribute("hidden");
-    } else {
-      
-      this._wiz.advance();
-    }
-  },
-
-  onHomePageMigrationPageAdvanced() {
-    
-    try {
-      var radioGroup = document.getElementById("homePageRadiogroup");
-
-      this._newHomePage = radioGroup.selectedItem.value;
-    } catch (ex) {}
   },
 
   
@@ -432,27 +373,6 @@ var MigrationWizard = {
           }
         }
         if (this._autoMigrate) {
-          let hasImportedHomepage = !!(this._newHomePage && this._newHomePage != "DEFAULT");
-          Services.telemetry.getKeyedHistogramById("FX_MIGRATION_IMPORTED_HOMEPAGE")
-                            .add(this._source, hasImportedHomepage);
-          if (this._newHomePage) {
-            try {
-              
-              if (this._newHomePage == "DEFAULT") {
-                Services.prefs.clearUserPref("browser.startup.homepage");
-              } else {
-                Services.prefs.setStringPref("browser.startup.homepage",
-                                             this._newHomePage);
-              }
-
-              var prefFile = Services.dirsvc.get("ProfDS", Components.interfaces.nsIFile);
-              prefFile.append("prefs.js");
-              Services.prefs.savePrefFile(prefFile);
-            } catch (ex) {
-              dump(ex);
-            }
-          }
-
           
           this._wiz.canAdvance = true;
           this._wiz.advance();
