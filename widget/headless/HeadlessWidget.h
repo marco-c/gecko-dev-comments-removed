@@ -106,7 +106,7 @@ public:
     
     return NS_OK;
   }
-  virtual nsresult SetNonClientMargins(LayoutDeviceIntMargin &margins) {
+  virtual nsresult SetNonClientMargins(LayoutDeviceIntMargin &margins) override {
     
     return NS_OK;
   }
