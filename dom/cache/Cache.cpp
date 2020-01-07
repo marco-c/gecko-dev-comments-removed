@@ -17,7 +17,6 @@
 #include "mozilla/dom/cache/CacheChild.h"
 #include "mozilla/dom/cache/CacheWorkerHolder.h"
 #include "mozilla/dom/cache/ReadStream.h"
-#include "mozilla/dom/DOMPreferences.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/Unused.h"
@@ -516,6 +515,29 @@ Cache::Keys(JSContext* aCx, const Optional<RequestOrUSVString>& aRequest,
   }
 
   return ExecuteOp(args, aRv);
+}
+
+
+bool
+Cache::PrefEnabled(JSContext* aCx, JSObject* aObj)
+{
+  using mozilla::dom::workers::WorkerPrivate;
+  using mozilla::dom::workers::GetWorkerPrivateFromContext;
+
+  
+  if (NS_IsMainThread()) {
+    bool enabled = false;
+    Preferences::GetBool("dom.caches.enabled", &enabled);
+    return enabled;
+  }
+
+  
+  WorkerPrivate* workerPrivate = GetWorkerPrivateFromContext(aCx);
+  if (!workerPrivate) {
+    return false;
+  }
+
+  return workerPrivate->DOMCachesEnabled();
 }
 
 nsISupports*
