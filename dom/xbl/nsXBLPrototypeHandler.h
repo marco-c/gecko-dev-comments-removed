@@ -21,7 +21,6 @@
 class nsIDOMEvent;
 class nsIContent;
 class nsIDOMUIEvent;
-class nsIDOMKeyEvent;
 class nsIDOMMouseEvent;
 class nsIObjectInputStream;
 class nsIObjectOutputStream;
@@ -34,6 +33,7 @@ struct IgnoreModifierState;
 namespace dom {
 class AutoJSAPI;
 class EventTarget;
+class KeyboardEvent;
 } 
 
 namespace layers {
@@ -113,7 +113,7 @@ public:
   }
 
   
-  bool KeyEventMatched(nsIDOMKeyEvent* aKeyEvent,
+  bool KeyEventMatched(mozilla::dom::KeyboardEvent* aKeyEvent,
                        uint32_t aCharCode,
                        const IgnoreModifierState& aIgnoreModifierState);
 

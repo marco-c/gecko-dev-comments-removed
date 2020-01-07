@@ -14,7 +14,6 @@
 
 class nsAtom;
 class nsIDOMElement;
-class nsIDOMKeyEvent;
 class nsXBLPrototypeHandler;
 
 namespace mozilla {
@@ -24,6 +23,7 @@ struct IgnoreModifierState;
 namespace dom {
 class Element;
 class EventTarget;
+class KeyboardEvent;
 } 
 } 
 
@@ -32,6 +32,7 @@ class nsXBLWindowKeyHandler : public nsIDOMEventListener
   typedef mozilla::EventListenerManager EventListenerManager;
   typedef mozilla::IgnoreModifierState IgnoreModifierState;
   typedef mozilla::layers::KeyboardMap KeyboardMap;
+  typedef mozilla::dom::KeyboardEvent KeyboardEvent;
 
 public:
   nsXBLWindowKeyHandler(nsIDOMElement* aElement, mozilla::dom::EventTarget* aTarget);
@@ -49,10 +50,10 @@ public:
 protected:
   virtual ~nsXBLWindowKeyHandler();
 
-  nsresult WalkHandlers(nsIDOMKeyEvent* aKeyEvent, nsAtom* aEventType);
+  nsresult WalkHandlers(KeyboardEvent* aKeyEvent, nsAtom* aEventType);
 
   
-  bool WalkHandlersInternal(nsIDOMKeyEvent* aKeyEvent,
+  bool WalkHandlersInternal(KeyboardEvent* aKeyEvent,
                             nsAtom* aEventType,
                             nsXBLPrototypeHandler* aHandler,
                             bool aExecute,
@@ -60,7 +61,7 @@ protected:
 
   
   
-  bool WalkHandlersAndExecute(nsIDOMKeyEvent* aKeyEvent, nsAtom* aEventType,
+  bool WalkHandlersAndExecute(KeyboardEvent* aKeyEvent, nsAtom* aEventType,
                               nsXBLPrototypeHandler* aHandler,
                               uint32_t aCharCode,
                               const IgnoreModifierState& aIgnoreModifierState,
@@ -68,14 +69,14 @@ protected:
                               bool* aOutReservedForChrome = nullptr);
 
   
-  void HandleEventOnCaptureInDefaultEventGroup(nsIDOMKeyEvent* aEvent);
+  void HandleEventOnCaptureInDefaultEventGroup(KeyboardEvent* aEvent);
   
-  void HandleEventOnCaptureInSystemEventGroup(nsIDOMKeyEvent* aEvent);
+  void HandleEventOnCaptureInSystemEventGroup(KeyboardEvent* aEvent);
 
   
   
   
-  bool HasHandlerForEvent(nsIDOMKeyEvent* aEvent,
+  bool HasHandlerForEvent(KeyboardEvent* aEvent,
                           bool* aOutReservedForChrome = nullptr);
 
   

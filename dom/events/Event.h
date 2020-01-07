@@ -35,6 +35,7 @@ class EventMessageAutoOverride;
 
 
 class ExtendableEvent;
+class KeyboardEvent;
 class TimeEvent;
 class WantsPopupControlCheck;
 #define GENERATED_EVENT(EventClass_) class EventClass_;
@@ -115,6 +116,12 @@ public:
 
   
   virtual BeforeUnloadEvent* AsBeforeUnloadEvent()
+  {
+    return nullptr;
+  }
+
+  
+  virtual KeyboardEvent* AsKeyboardEvent()
   {
     return nullptr;
   }
