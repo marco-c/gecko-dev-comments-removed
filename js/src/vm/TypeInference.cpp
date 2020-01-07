@@ -4546,7 +4546,7 @@ JSScript::sweepTypes(const js::AutoSweepTypeScript& sweep, AutoClearTypeInferenc
 
         
         
-        hasFreezeConstraints_ = false;
+        bitFields_.hasFreezeConstraints_ = false;
 
         return;
     }
@@ -4561,7 +4561,7 @@ JSScript::sweepTypes(const js::AutoSweepTypeScript& sweep, AutoClearTypeInferenc
     if (oom->hadOOM()) {
         
         
-        hasFreezeConstraints_ = false;
+        bitFields_.hasFreezeConstraints_ = false;
     }
 }
 
