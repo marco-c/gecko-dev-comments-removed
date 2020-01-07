@@ -54,7 +54,6 @@ function resolveDateTimeFormatInternals(lazyDateTimeFormatData) {
     var internalProps = std_Object_create(null);
 
     
-    
     var DateTimeFormat = dateTimeFormatInternalProperties;
 
     
@@ -82,6 +81,7 @@ function resolveDateTimeFormatInternals(lazyDateTimeFormatData) {
     
     var formatOpt = lazyDateTimeFormatData.formatOpt;
 
+    
     
     
     
@@ -118,7 +118,6 @@ function resolveDateTimeFormatInternals(lazyDateTimeFormatData) {
     
     internalProps.pattern = pattern;
 
-    
     internalProps.boundFormat = undefined;
 
     
@@ -356,8 +355,21 @@ function InitializeDateTimeFormat(dateTimeFormat, thisValue, locales, options, m
     localeOpt.localeMatcher = localeMatcher;
 
     
+    var hr12  = GetOption(options, "hour12", "boolean", undefined, undefined);
+
+    
     var hc = GetOption(options, "hourCycle", "string", ["h11", "h12", "h23", "h24"], undefined);
+
+    
+    if (hr12 !== undefined) {
+        
+        hc = null;
+    }
+
+    
     localeOpt.hc = hc;
+
+    
 
     
     var tz = options.timeZone;
@@ -425,8 +437,6 @@ function InitializeDateTimeFormat(dateTimeFormat, thisValue, locales, options, m
     
 
     
-    var hr12  = GetOption(options, "hour12", "boolean", undefined, undefined);
-
     
     if (hr12 !== undefined)
         formatOpt.hour12 = hr12;
@@ -437,6 +447,7 @@ function InitializeDateTimeFormat(dateTimeFormat, thisValue, locales, options, m
     
     initializeIntlObject(dateTimeFormat, "DateTimeFormat", lazyDateTimeFormatData);
 
+    
     if (dateTimeFormat !== thisValue && IsObject(thisValue) &&
         thisValue instanceof GetDateTimeFormatConstructor())
     {
@@ -446,6 +457,7 @@ function InitializeDateTimeFormat(dateTimeFormat, thisValue, locales, options, m
         return thisValue;
     }
 
+    
     return dateTimeFormat;
 }
 
