@@ -564,7 +564,12 @@ static bool clip_to_limit(const SkRegion& orig, SkRegion* reduced) {
 
 
 
-static const double kConservativeRoundBias = 0.5 + 0.5 / SK_FDot6One;
+
+
+
+
+
+static const double kConservativeRoundBias = 0.5 + 1.5 / SK_FDot6One;
 
 
 
