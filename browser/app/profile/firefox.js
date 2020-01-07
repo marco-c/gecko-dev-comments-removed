@@ -1111,12 +1111,6 @@ pref("dom.ipc.plugins.sandbox-level.default", 0);
 
 
 
-
-
-
-
-
-
 pref("security.sandbox.content.level", 4);
 pref("security.sandbox.content.write_path_whitelist", "");
 pref("security.sandbox.content.read_path_whitelist", "");
@@ -1135,8 +1129,6 @@ pref("security.sandbox.content.tempDirSuffix", "");
 
 #if defined(XP_WIN) || defined(XP_MACOSX)
 pref("security.sandbox.logging.enabled", false);
-#else
-pref("security.sandbox.logging.enabled", true);
 #endif
 #endif
 
