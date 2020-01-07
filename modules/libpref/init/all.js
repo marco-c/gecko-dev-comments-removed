@@ -566,6 +566,9 @@ pref("media.navigator.mediadatadecoder_enabled", false);
 
 pref("dom.webaudio.enabled", true);
 
+
+pref("dom.webdriver.enabled", true);
+
 #if !defined(ANDROID)
 pref("media.getusermedia.screensharing.enabled", true);
 #endif
