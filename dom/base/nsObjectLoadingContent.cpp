@@ -1577,6 +1577,19 @@ nsObjectLoadingContent::UpdateObjectParameters()
   
   
   
+
+
+  if (caps & eFallbackIfClassIDPresent) {
+    nsAutoString classIDAttr;
+    thisElement->GetAttr(kNameSpaceID_None, nsGkAtoms::classid, classIDAttr);
+    
+    
+    if (!classIDAttr.IsEmpty()) {
+      newMime.Truncate();
+      stateInvalid = true;
+    }
+  }
+
   
   
   

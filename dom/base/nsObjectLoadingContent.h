@@ -301,10 +301,12 @@ class nsObjectLoadingContent : public nsImageLoadingContent
       eSupportImages       = 1u << 0, 
       eSupportPlugins      = 1u << 1, 
       eSupportDocuments    = 1u << 2, 
-                                        
-                                        
-      eSupportClassID      = 1u << 3, 
                                       
+                                      
+
+      
+      
+      eFallbackIfClassIDPresent = 1u << 3,
 
       
       
