@@ -6,7 +6,6 @@
 
 use {Parser, ToCss, BasicParseError};
 use std::char;
-use std::cmp;
 use std::fmt;
 use tokenizer::Token;
 
@@ -166,32 +165,9 @@ impl fmt::Debug for UnicodeRange {
 
 impl ToCss for UnicodeRange {
     fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
-        dest.write_str("U+")?;
-
-        
-        let bits = cmp::min(self.start.trailing_zeros(), (!self.end).trailing_zeros());
-
-        let question_marks = bits / 4;
-
-        
-        let bits = question_marks * 4;
-
-        let truncated_start = self.start >> bits;
-        let truncated_end = self.end >> bits;
-        if truncated_start == truncated_end {
-            
-            
-            if truncated_start != 0 {
-                write!(dest, "{:X}", truncated_start)?;
-            }
-            for _ in 0..question_marks {
-                dest.write_str("?")?;
-            }
-        } else {
-            write!(dest, "{:X}", self.start)?;
-            if self.end != self.start {
-                write!(dest, "-{:X}", self.end)?;
-            }
+        write!(dest, "U+{:X}", self.start)?;
+        if self.end != self.start {
+            write!(dest, "-{:X}", self.end)?;
         }
         Ok(())
     }
