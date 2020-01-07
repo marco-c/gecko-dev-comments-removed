@@ -321,6 +321,12 @@ EditorSpellCheck::~EditorSpellCheck()
   mSpellChecker = nullptr;
 }
 
+mozSpellChecker*
+EditorSpellCheck::GetSpellChecker()
+{
+  return mSpellChecker;
+}
+
 
 
 

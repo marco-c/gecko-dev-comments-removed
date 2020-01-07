@@ -50,6 +50,8 @@ public:
   
   NS_DECL_NSIEDITORSPELLCHECK
 
+  mozSpellChecker* GetSpellChecker();
+
 protected:
   virtual ~EditorSpellCheck();
 
