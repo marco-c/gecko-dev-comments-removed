@@ -18,6 +18,23 @@
 
 
 
+struct PartialThreadProfile final
+{
+  PartialThreadProfile(mozilla::UniquePtr<char[]>&& aSamplesJSON,
+                       mozilla::UniquePtr<char[]>&& aMarkersJSON,
+                       mozilla::UniquePtr<UniqueStacks>&& aUniqueStacks)
+    : mSamplesJSON(mozilla::Move(aSamplesJSON))
+    , mMarkersJSON(mozilla::Move(aMarkersJSON))
+    , mUniqueStacks(mozilla::Move(aUniqueStacks))
+  {}
+
+  mozilla::UniquePtr<char[]> mSamplesJSON;
+  mozilla::UniquePtr<char[]> mMarkersJSON;
+  mozilla::UniquePtr<UniqueStacks> mUniqueStacks;
+};
+
+
+
 
 
 
@@ -49,8 +66,6 @@ public:
   {
     mResponsiveness.reset();
     mLastSample = mozilla::Nothing();
-    MOZ_ASSERT(!mBufferPositionWhenReceivedJSContext,
-               "JSContext should have been cleared before the thread was unregistered");
     mUnregisterTime = TimeStamp::Now();
     mBufferPositionWhenUnregistered = mozilla::Some(aBufferPosition);
   }
@@ -65,6 +80,12 @@ public:
 
   
   
+  void FlushSamplesAndMarkers(JSContext* aCx,
+                              const mozilla::TimeStamp& aProcessStartTime,
+                              ProfileBuffer& aBuffer);
+
+  
+  
   ThreadResponsiveness* GetThreadResponsiveness()
   {
     ThreadResponsiveness* responsiveness = mResponsiveness.ptrOr(nullptr);
@@ -72,17 +93,6 @@ public:
   }
 
   const RefPtr<ThreadInfo> Info() const { return mThreadInfo; }
-
-  void NotifyReceivedJSContext(uint64_t aCurrentBufferPosition)
-  {
-    mBufferPositionWhenReceivedJSContext = mozilla::Some(aCurrentBufferPosition);
-  }
-
-  
-  
-  void NotifyAboutToLoseJSContext(JSContext* aCx,
-                                  const TimeStamp& aProcessStartTime,
-                                  ProfileBuffer& aBuffer);
 
 private:
   
@@ -96,7 +106,7 @@ private:
   
   
   
-  UniquePtr<JITFrameInfo> mJITFrameInfoForPreviousJSContexts;
+  UniquePtr<PartialThreadProfile> mPartialProfile;
 
   
   
@@ -110,9 +120,6 @@ private:
   
   
   mozilla::Maybe<uint64_t> mLastSample;
-
-  
-  mozilla::Maybe<uint64_t> mBufferPositionWhenReceivedJSContext;
 
   
   
@@ -129,6 +136,9 @@ StreamSamplesAndMarkers(const char* aName, int aThreadId,
                         const TimeStamp& aRegisterTime,
                         const TimeStamp& aUnregisterTime,
                         double aSinceTime,
+                        JSContext* aContext,
+                        UniquePtr<char[]>&& aPartialSamplesJSON,
+                        UniquePtr<char[]>&& aPartialMarkersJSON,
                         UniqueStacks& aUniqueStacks);
 
 #endif  

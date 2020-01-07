@@ -35,22 +35,20 @@ ProfiledThreadData::StreamJSON(const ProfileBuffer& aBuffer, JSContext* aCx,
                                SpliceableJSONWriter& aWriter,
                                const TimeStamp& aProcessStartTime, double aSinceTime)
 {
-  if (mJITFrameInfoForPreviousJSContexts &&
-      mJITFrameInfoForPreviousJSContexts->HasExpired(aBuffer.mRangeStart)) {
-    mJITFrameInfoForPreviousJSContexts = nullptr;
+  UniquePtr<PartialThreadProfile> partialProfile = Move(mPartialProfile);
+
+  UniquePtr<UniqueStacks> uniqueStacks = partialProfile
+    ? Move(partialProfile->mUniqueStacks)
+    : MakeUnique<UniqueStacks>();
+
+  uniqueStacks->AdvanceStreamingGeneration();
+
+  UniquePtr<char[]> partialSamplesJSON;
+  UniquePtr<char[]> partialMarkersJSON;
+  if (partialProfile) {
+    partialSamplesJSON = Move(partialProfile->mSamplesJSON);
+    partialMarkersJSON = Move(partialProfile->mMarkersJSON);
   }
-
-  
-  
-  JITFrameInfo jitFrameInfo = mJITFrameInfoForPreviousJSContexts
-    ? JITFrameInfo(*mJITFrameInfoForPreviousJSContexts) : JITFrameInfo();
-
-  if (aCx && mBufferPositionWhenReceivedJSContext) {
-    aBuffer.AddJITInfoForRange(*mBufferPositionWhenReceivedJSContext,
-      mThreadInfo->ThreadId(), aCx, jitFrameInfo);
-  }
-
-  UniqueStacks uniqueStacks(Move(jitFrameInfo));
 
   aWriter.Start();
   {
@@ -58,7 +56,10 @@ ProfiledThreadData::StreamJSON(const ProfileBuffer& aBuffer, JSContext* aCx,
                             aBuffer, aWriter,
                             aProcessStartTime,
                             mThreadInfo->RegisterTime(), mUnregisterTime,
-                            aSinceTime, uniqueStacks);
+                            aSinceTime, aCx,
+                            Move(partialSamplesJSON),
+                            Move(partialMarkersJSON),
+                            *uniqueStacks);
 
     aWriter.StartObjectProperty("stackTable");
     {
@@ -70,7 +71,7 @@ ProfiledThreadData::StreamJSON(const ProfileBuffer& aBuffer, JSContext* aCx,
 
       aWriter.StartArrayProperty("data");
       {
-        uniqueStacks.SpliceStackTableElements(aWriter);
+        uniqueStacks->SpliceStackTableElements(aWriter);
       }
       aWriter.EndArray();
     }
@@ -89,7 +90,7 @@ ProfiledThreadData::StreamJSON(const ProfileBuffer& aBuffer, JSContext* aCx,
 
       aWriter.StartArrayProperty("data");
       {
-        uniqueStacks.SpliceFrameTableElements(aWriter);
+        uniqueStacks->SpliceFrameTableElements(aWriter);
       }
       aWriter.EndArray();
     }
@@ -97,7 +98,7 @@ ProfiledThreadData::StreamJSON(const ProfileBuffer& aBuffer, JSContext* aCx,
 
     aWriter.StartArrayProperty("stringTable");
     {
-      uniqueStacks.mUniqueStrings->SpliceStringTableElements(aWriter);
+      uniqueStacks->mUniqueStrings.SpliceStringTableElements(aWriter);
     }
     aWriter.EndArray();
   }
@@ -114,6 +115,9 @@ StreamSamplesAndMarkers(const char* aName,
                         const TimeStamp& aRegisterTime,
                         const TimeStamp& aUnregisterTime,
                         double aSinceTime,
+                        JSContext* aContext,
+                        UniquePtr<char[]>&& aPartialSamplesJSON,
+                        UniquePtr<char[]>&& aPartialMarkersJSON,
                         UniqueStacks& aUniqueStacks)
 {
   aWriter.StringProperty("processType",
@@ -150,8 +154,15 @@ StreamSamplesAndMarkers(const char* aName,
 
     aWriter.StartArrayProperty("data");
     {
+      if (aPartialSamplesJSON) {
+        
+        
+        
+        MOZ_ASSERT(aSinceTime == 0);
+        aWriter.Splice(aPartialSamplesJSON.get());
+      }
       aBuffer.StreamSamplesToJSON(aWriter, aThreadId, aSinceTime,
-                                  aUniqueStacks);
+                                  aContext, aUniqueStacks);
     }
     aWriter.EndArray();
   }
@@ -168,6 +179,10 @@ StreamSamplesAndMarkers(const char* aName,
 
     aWriter.StartArrayProperty("data");
     {
+      if (aPartialMarkersJSON) {
+        MOZ_ASSERT(aSinceTime == 0);
+        aWriter.Splice(aPartialMarkersJSON.get());
+      }
       aBuffer.StreamMarkersToJSON(aWriter, aThreadId, aProcessStartTime,
                                   aSinceTime, aUniqueStacks);
     }
@@ -177,27 +192,94 @@ StreamSamplesAndMarkers(const char* aName,
 }
 
 void
-ProfiledThreadData::NotifyAboutToLoseJSContext(JSContext* aContext,
-                                               const TimeStamp& aProcessStartTime,
-                                               ProfileBuffer& aBuffer)
+ProfiledThreadData::FlushSamplesAndMarkers(JSContext* aCx,
+                                           const TimeStamp& aProcessStartTime,
+                                           ProfileBuffer& aBuffer)
 {
-  if (!mBufferPositionWhenReceivedJSContext) {
-    return;
+  
+  
+  MOZ_ASSERT(aCx);
+
+  
+  
+  
+  
+  
+  
+  
+  UniquePtr<UniqueStacks> uniqueStacks = mPartialProfile
+    ? Move(mPartialProfile->mUniqueStacks)
+    : MakeUnique<UniqueStacks>();
+
+  uniqueStacks->AdvanceStreamingGeneration();
+
+  UniquePtr<char[]> samplesJSON;
+  UniquePtr<char[]> markersJSON;
+
+  {
+    SpliceableChunkedJSONWriter b;
+    b.StartBareList();
+    bool haveSamples = false;
+    {
+      if (mPartialProfile && mPartialProfile->mSamplesJSON) {
+        b.Splice(mPartialProfile->mSamplesJSON.get());
+        haveSamples = true;
+      }
+
+      
+      
+      
+      bool streamedNewSamples =
+        aBuffer.StreamSamplesToJSON(b, mThreadInfo->ThreadId(),
+                                     0,
+                                    aCx, *uniqueStacks);
+      haveSamples = haveSamples || streamedNewSamples;
+    }
+    b.EndBareList();
+
+    
+    
+    
+    
+    if (haveSamples) {
+      samplesJSON = b.WriteFunc()->CopyData();
+    }
   }
 
-  MOZ_RELEASE_ASSERT(aContext);
+  {
+    SpliceableChunkedJSONWriter b;
+    b.StartBareList();
+    bool haveMarkers = false;
+    {
+      if (mPartialProfile && mPartialProfile->mMarkersJSON) {
+        b.Splice(mPartialProfile->mMarkersJSON.get());
+        haveMarkers = true;
+      }
 
-  if (mJITFrameInfoForPreviousJSContexts &&
-      mJITFrameInfoForPreviousJSContexts->HasExpired(aBuffer.mRangeStart)) {
-    mJITFrameInfoForPreviousJSContexts = nullptr;
+      
+      
+      
+      bool streamedNewMarkers =
+        aBuffer.StreamMarkersToJSON(b, mThreadInfo->ThreadId(),
+                                    aProcessStartTime,
+                                     0, *uniqueStacks);
+      haveMarkers = haveMarkers || streamedNewMarkers;
+    }
+    b.EndBareList();
+
+    
+    
+    
+    
+    if (haveMarkers) {
+      markersJSON = b.WriteFunc()->CopyData();
+    }
   }
 
-  UniquePtr<JITFrameInfo> jitFrameInfo = mJITFrameInfoForPreviousJSContexts
-    ? Move(mJITFrameInfoForPreviousJSContexts) : MakeUnique<JITFrameInfo>();
+  mPartialProfile = MakeUnique<PartialThreadProfile>(
+    Move(samplesJSON), Move(markersJSON), Move(uniqueStacks));
 
-  aBuffer.AddJITInfoForRange(*mBufferPositionWhenReceivedJSContext,
-     mThreadInfo->ThreadId(), aContext, *jitFrameInfo);
-
-  mJITFrameInfoForPreviousJSContexts = Move(jitFrameInfo);
-  mBufferPositionWhenReceivedJSContext = Nothing();
+  
+  
+  aBuffer.Reset();
 }

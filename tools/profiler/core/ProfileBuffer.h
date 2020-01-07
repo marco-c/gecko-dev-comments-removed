@@ -50,26 +50,10 @@ public:
   
   static const size_t kMaxFrameKeyLength = 512;
 
-  
-  
-  
-  void AddJITInfoForRange(uint64_t aRangeStart,
-                          int aThreadId, JSContext* aContext,
-                          JITFrameInfo& aJITFrameInfo) const;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  void StreamSamplesToJSON(SpliceableJSONWriter& aWriter, int aThreadId,
-                           double aSinceTime,
+  bool StreamSamplesToJSON(SpliceableJSONWriter& aWriter, int aThreadId,
+                           double aSinceTime, JSContext* cx,
                            UniqueStacks& aUniqueStacks) const;
-
-  void StreamMarkersToJSON(SpliceableJSONWriter& aWriter, int aThreadId,
+  bool StreamMarkersToJSON(SpliceableJSONWriter& aWriter, int aThreadId,
                            const mozilla::TimeStamp& aProcessStartTime,
                            double aSinceTime,
                            UniqueStacks& aUniqueStacks) const;
@@ -88,6 +72,7 @@ public:
 
   
   void DeleteExpiredStoredMarkers();
+  void Reset();
 
   
   ProfileBufferEntry& GetEntry(uint64_t aPosition) const
