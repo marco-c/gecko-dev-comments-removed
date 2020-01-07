@@ -615,7 +615,8 @@ class LifoAlloc
     
     void steal(LifoAlloc* other) {
         MOZ_ASSERT(!other->markCount);
-        MOZ_ASSERT(chunks_.empty());
+        MOZ_DIAGNOSTIC_ASSERT(unused_.empty());
+        MOZ_DIAGNOSTIC_ASSERT(chunks_.empty());
 
         
         
