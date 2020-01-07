@@ -569,7 +569,7 @@ protected:
 
   bool CopyBufferProvider(layers::PersistentBufferProvider& aOld,
                           gfx::DrawTarget& aTarget,
-                          const gfx::IntRect& aCopyRect);
+                          gfx::IntRect aCopyRect);
 
   
 
@@ -733,9 +733,9 @@ protected:
 
   void DrawDirectlyToCanvas(const nsLayoutUtils::DirectDrawInfo& aImage,
                             mozilla::gfx::Rect* aBounds,
-                            mozilla::gfx::Rect aDest, 
-                            mozilla::gfx::Rect aSrc,  
-                            const gfx::IntSize& aImgSize);
+                            mozilla::gfx::Rect aDest,
+                            mozilla::gfx::Rect aSrc,
+                            gfx::IntSize aImgSize);
 
   nsString& GetFont()
   {
