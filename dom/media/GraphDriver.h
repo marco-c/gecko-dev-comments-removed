@@ -489,10 +489,6 @@ public:
 
   void CompleteAudioContextOperations(AsyncCubebOperation aOperation);
 
-  
-
-  SharedThreadPool* GetInitShutdownThread();
-
 private:
   
   void RemoveCallback() ;
@@ -513,6 +509,12 @@ private:
 
 
   void FallbackToSystemClockDriver();
+
+  
+  bool OnCubebOperationThread()
+  {
+    return mInitShutdownThread->IsOnCurrentThreadInfallible();
+  }
 
   
   uint32_t mOutputChannels;
@@ -566,7 +568,7 @@ private:
 
   
 
-  RefPtr<SharedThreadPool> mInitShutdownThread;
+  const RefPtr<SharedThreadPool> mInitShutdownThread;
   
   AutoTArray<StreamAndPromiseForOperation, 1> mPromisesForOperation;
   
@@ -603,11 +605,7 @@ public:
 
   nsresult Dispatch(uint32_t aFlags = NS_DISPATCH_NORMAL)
   {
-    SharedThreadPool* threadPool = mDriver->GetInitShutdownThread();
-    if (!threadPool) {
-      return NS_ERROR_FAILURE;
-    }
-    return threadPool->Dispatch(this, aFlags);
+    return mDriver->mInitShutdownThread->Dispatch(this, aFlags);
   }
 
 protected:
