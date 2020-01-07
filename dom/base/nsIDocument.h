@@ -1668,13 +1668,13 @@ public:
 
 
 
-  virtual void AddObserver(nsIDocumentObserver* aObserver) = 0;
+  void AddObserver(nsIDocumentObserver* aObserver);
 
   
 
 
 
-  virtual bool RemoveObserver(nsIDocumentObserver* aObserver) = 0;
+  bool RemoveObserver(nsIDocumentObserver* aObserver);
 
   
   
@@ -3560,6 +3560,9 @@ protected:
   bool mAllowUnsafeHTML : 1;
 
   
+  bool mInDestructor:1;
+
+  
   enum { eScopedStyle_Unknown, eScopedStyle_Disabled, eScopedStyle_Enabled };
   unsigned int mIsScopedStyleEnabled : 2;
 
@@ -3706,6 +3709,9 @@ protected:
 
   
   mozilla::LinkedList<mozilla::dom::MediaQueryList> mDOMMediaQueryLists;
+
+  
+  nsTObserverArray<nsIDocumentObserver*> mObservers;
 
   
   std::bitset<mozilla::eUseCounter_Count> mUseCounters;

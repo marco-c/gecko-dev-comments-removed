@@ -491,19 +491,6 @@ public:
   virtual void RemoveFromNameTable(Element* aElement, nsAtom* aName) override;
 
   
-
-
-
-
-  virtual void AddObserver(nsIDocumentObserver* aObserver) override;
-
-  
-
-
-
-  virtual bool RemoveObserver(nsIDocumentObserver* aObserver) override;
-
-  
   
   virtual void BeginUpdate(nsUpdateType aUpdateType) override;
   virtual void EndUpdate(nsUpdateType aUpdateType) override;
@@ -1097,9 +1084,6 @@ protected:
   nsTArray<RefPtr<mozilla::StyleSheet>> mAdditionalSheets[AdditionalSheetTypeCount];
 
   
-  nsTObserverArray<nsIDocumentObserver*> mObservers;
-
-  
   nsTHashtable<nsPtrHashKey<mozilla::dom::DOMIntersectionObserver>>
     mIntersectionObservers;
 
@@ -1140,8 +1124,6 @@ public:
 
   
   bool mIsGoingAway:1;
-  
-  bool mInDestructor:1;
 
   
   
