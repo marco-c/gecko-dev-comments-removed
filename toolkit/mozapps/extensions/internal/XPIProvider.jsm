@@ -524,7 +524,6 @@ function getDirectoryEntries(aDir, aSortEntries) {
 
 
 const JSON_FIELDS = Object.freeze([
-  "bootstrapped",
   "changed",
   "dependencies",
   "enabled",
@@ -554,7 +553,6 @@ class XPIState {
 
     
     this.type = "extension";
-    this.bootstrapped = false;
 
     for (let prop of JSON_FIELDS) {
       if (prop in saved) {
@@ -596,7 +594,6 @@ class XPIState {
     };
 
     if (bootstrapped) {
-      data.bootstrapped = true;
       data.enabled = true;
       data.path = descriptorToPath(bootstrapped.descriptor, location.dir);
 
@@ -663,12 +660,10 @@ class XPIState {
     if (this.type != "extension") {
       json.type = this.type;
     }
-    if (this.bootstrapped) {
-      json.bootstrapped = true;
-      json.dependencies = this.dependencies;
-      json.runInSafeMode = this.runInSafeMode;
-      json.hasEmbeddedWebExtension = this.hasEmbeddedWebExtension;
-    }
+    json.dependencies = this.dependencies;
+    json.runInSafeMode = this.runInSafeMode;
+    json.hasEmbeddedWebExtension = this.hasEmbeddedWebExtension;
+
     if (this.startupData) {
       json.startupData = this.startupData;
     }
@@ -740,12 +735,9 @@ class XPIState {
 
     this.telemetryKey = this.getTelemetryKey();
 
-    this.bootstrapped = !!aDBAddon.bootstrap;
-    if (this.bootstrapped) {
-      this.hasEmbeddedWebExtension = aDBAddon.hasEmbeddedWebExtension;
-      this.dependencies = aDBAddon.dependencies;
-      this.runInSafeMode = canRunInSafeMode(aDBAddon);
-    }
+    this.hasEmbeddedWebExtension = aDBAddon.hasEmbeddedWebExtension;
+    this.dependencies = aDBAddon.dependencies;
+    this.runInSafeMode = canRunInSafeMode(aDBAddon);
 
     if (aUpdated || mustGetMod) {
       this.getModTime(this.file, aDBAddon.id);
@@ -1191,17 +1183,6 @@ var XPIStates = {
   
 
 
-  * bootstrappedAddons() {
-    for (let addon of this.enabledAddons()) {
-      if (addon.bootstrapped) {
-        yield addon;
-      }
-    }
-  },
-
-  
-
-
 
 
 
@@ -1344,7 +1325,7 @@ var XPIProvider = {
     }
 
     
-    let list = Array.from(XPIStates.bootstrappedAddons());
+    let list = Array.from(XPIStates.enabledAddons());
     list.sort((a, b) => compare(a.id, b.id));
 
     let addons = {};
