@@ -41,17 +41,13 @@ pub struct CssUrl {
 impl CssUrl {
     
     
-    
-    pub fn parse_from_string<'a>(
-        url: String,
-        context: &ParserContext,
-    ) -> Result<Self, ParseError<'a>> {
+    pub fn parse_from_string(url: String, context: &ParserContext) -> Self {
         let serialization = Arc::new(url);
         let resolved = context.url_data.join(&serialization).ok();
-        Ok(CssUrl {
+        CssUrl {
             original: Some(serialization),
             resolved: resolved,
-        })
+        }
     }
 
     
@@ -110,7 +106,7 @@ impl Parse for CssUrl {
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
         let url = input.expect_url()?;
-        Self::parse_from_string(url.as_ref().to_owned(), context)
+        Ok(Self::parse_from_string(url.as_ref().to_owned(), context))
     }
 }
 
