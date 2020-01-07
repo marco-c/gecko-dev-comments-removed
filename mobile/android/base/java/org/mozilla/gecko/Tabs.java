@@ -13,6 +13,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import android.content.SharedPreferences;
+import android.support.annotation.CheckResult;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
@@ -390,6 +391,7 @@ public class Tabs implements BundleEventListener {
 
 
 
+    @CheckResult
     @Nullable
     public Tab getSelectedTab() {
         return mSelectedTab;
