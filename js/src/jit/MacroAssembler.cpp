@@ -1369,17 +1369,41 @@ MacroAssembler::compareStrings(JSOp op, Register left, Register right, Register 
 void
 MacroAssembler::loadStringChars(Register str, Register dest)
 {
-    Label isInline, done;
-    branchTest32(Assembler::NonZero, Address(str, JSString::offsetOfFlags()),
-                 Imm32(JSString::INLINE_CHARS_BIT), &isInline);
+    MOZ_ASSERT(str != dest);
 
-    loadPtr(Address(str, JSString::offsetOfNonInlineChars()), dest);
-    jump(&done);
+    
+    
+    if (JitOptions.spectreStringMitigations) {
+        movePtr(ImmWord(0), dest);
+        test32MovePtr(Assembler::Zero,
+                      Address(str, JSString::offsetOfFlags()), Imm32(JSString::LINEAR_BIT),
+                      dest, str);
+    }
 
-    bind(&isInline);
+    
     computeEffectiveAddress(Address(str, JSInlineString::offsetOfInlineStorage()), dest);
 
-    bind(&done);
+    
+    
+    test32LoadPtr(Assembler::Zero,
+                  Address(str, JSString::offsetOfFlags()), Imm32(JSString::INLINE_CHARS_BIT),
+                  Address(str, JSString::offsetOfNonInlineChars()), dest);
+}
+
+void
+MacroAssembler::loadRopeLeftChild(Register str, Register dest)
+{
+    MOZ_ASSERT(str != dest);
+
+    if (JitOptions.spectreStringMitigations) {
+        
+        movePtr(ImmWord(0), dest);
+        test32LoadPtr(Assembler::Zero,
+                      Address(str, JSString::offsetOfFlags()), Imm32(JSString::LINEAR_BIT),
+                      Address(str, JSRope::offsetOfLeft()), dest);
+    } else {
+        loadPtr(Address(str, JSRope::offsetOfLeft()), dest);
+    }
 }
 
 void
@@ -1397,8 +1421,7 @@ MacroAssembler::loadStringChar(Register str, Register index, Register output, Re
     Label notRope;
     branchIfNotRope(str, &notRope);
 
-    
-    loadPtr(Address(str, JSRope::offsetOfLeft()), output);
+    loadRopeLeftChild(str, output);
 
     
     
@@ -1409,18 +1432,17 @@ MacroAssembler::loadStringChar(Register str, Register index, Register output, Re
 
     bind(&notRope);
 
+    loadStringChars(output, scratch);
+
     Label isLatin1, done;
     
     
     branchLatin1String(output, &isLatin1);
-
-    loadStringChars(output, output);
-    load16ZeroExtend(BaseIndex(output, index, TimesTwo), output);
+    load16ZeroExtend(BaseIndex(scratch, index, TimesTwo), output);
     jump(&done);
 
     bind(&isLatin1);
-    loadStringChars(output, output);
-    load8ZeroExtend(BaseIndex(output, index, TimesOne), output);
+    load8ZeroExtend(BaseIndex(scratch, index, TimesOne), output);
 
     bind(&done);
 }
