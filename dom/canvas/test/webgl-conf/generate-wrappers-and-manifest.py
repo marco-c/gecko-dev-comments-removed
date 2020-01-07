@@ -34,6 +34,7 @@ EXTRA_SUPPORT_FILES = [
 ACCEPTABLE_ERRATA_KEYS = set([
     'fail-if',
     'skip-if',
+    'subsuite',
 ])
 
 def ChooseSubsuite(name):
@@ -407,11 +408,14 @@ def WriteManifest(wrapperPathStrList, supportPathStrList):
         errataLines = []
 
         subsuite = ChooseSubsuite(wrapperPathStr)
-        errataLines.append('subsuite = ' + subsuite)
+        if subsuite:
+            errataLines.append('subsuite = {}'.format(subsuite))
+        else:
+            errataLines.append('skip-if = 1')
 
         if wrapperPathStr in errataMap:
             assert subsuite
-            errataLines += errataMap[wrapperPathStr]
+            errataLines = errataMap[wrapperPathStr]
             del errataMap[wrapperPathStr]
 
         manifestTestLineList += errataLines
