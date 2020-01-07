@@ -118,6 +118,10 @@
 #include "GeckoTaskTracer.h"
 #endif
 
+#ifdef MOZ_GECKO_PROFILER
+#include "ProfilerMarkerPayload.h"
+#endif
+
 namespace mozilla { namespace net {
 
 namespace {
@@ -387,6 +391,28 @@ nsHttpChannel::Init(nsIURI *uri,
                                         proxyResolveFlags, proxyURI, channelId);
     if (NS_FAILED(rv))
         return rv;
+
+#ifdef MOZ_GECKO_PROFILER
+    mLastStatusReported = TimeStamp::Now(); 
+    if (profiler_is_active()) {
+        
+        nsAutoCString spec;
+        if (uri) {
+            uri->GetAsciiSpec(spec);
+        }
+        
+        int32_t id = static_cast<int32_t>(channelId & 0xFFFFFFFF);
+        char name[64];
+        SprintfLiteral(name, "Load: %d", id);
+        rv = NS_OK; 
+        profiler_add_marker(name,
+                            MakeUnique<NetworkMarkerPayload>(id,
+                                                             PromiseFlatCString(spec).get(),
+                                                             rv, 
+                                                             mLastStatusReported,
+                                                             mLastStatusReported));
+    }
+#endif
 
     LOG(("nsHttpChannel::Init [this=%p]\n", this));
 
@@ -7715,6 +7741,24 @@ nsHttpChannel::OnTransportStatus(nsITransport *trans, nsresult status,
             }
         }
     }
+
+#ifdef MOZ_GECKO_PROFILER
+    if (profiler_is_active()) {
+        
+        mozilla::TimeStamp now = TimeStamp::Now();
+        
+        int32_t id = static_cast<int32_t>(mChannelId & 0xFFFFFFFF);
+        char name[64];
+        SprintfLiteral(name, "Load: %d", id);
+        profiler_add_marker(name,
+                            MakeUnique<NetworkMarkerPayload>(static_cast<int64_t>(mChannelId),
+                                                             nullptr,
+                                                             status,
+                                                             mLastStatusReported,
+                                                             now));
+        mLastStatusReported = now;
+    }
+#endif
 
     
     if (mProgressSink && NS_SUCCEEDED(mStatus) && mIsPending) {

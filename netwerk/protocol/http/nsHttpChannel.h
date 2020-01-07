@@ -547,6 +547,10 @@ private:
     
     mozilla::TimeStamp                mSuspendTimestamp;
     mozilla::TimeStamp                mOnCacheEntryCheckTimestamp;
+#ifdef MOZ_GECKO_PROFILER
+    
+    mozilla::TimeStamp                mLastStatusReported;
+#endif
     
     
     uint32_t                          mSuspendTotalTime;
