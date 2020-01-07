@@ -2198,6 +2198,34 @@ js::CloneSelfHostingIntrinsic(JSContext* cx, HandleFunction fun)
     return clone;
 }
 
+static JSAtom*
+SymbolToFunctionName(JSContext* cx, JS::Symbol* symbol, FunctionPrefixKind prefixKind)
+{
+    
+    JSAtom* desc = symbol->description();
+
+    
+    if (!desc && prefixKind == FunctionPrefixKind::None)
+        return cx->names().empty;
+
+    
+    StringBuffer sb(cx);
+    if (prefixKind == FunctionPrefixKind::Get) {
+        if (!sb.append("get "))
+            return nullptr;
+    } else if (prefixKind == FunctionPrefixKind::Set) {
+        if (!sb.append("set "))
+            return nullptr;
+    }
+
+    
+    if (desc) {
+        
+        if (!sb.append('[') || !sb.append(desc) || !sb.append(']'))
+            return nullptr;
+    }
+    return sb.finishAtom();
+}
 
 
 
@@ -2220,32 +2248,8 @@ js::IdToFunctionName(JSContext* cx, HandleId id,
     
 
     
-    if (JSID_IS_SYMBOL(id)) {
-        
-        RootedAtom desc(cx, JSID_TO_SYMBOL(id)->description());
-
-        
-        if (!desc && prefixKind == FunctionPrefixKind::None)
-            return cx->names().empty;
-
-        
-        StringBuffer sb(cx);
-        if (prefixKind == FunctionPrefixKind::Get) {
-            if (!sb.append("get "))
-                return nullptr;
-        } else if (prefixKind == FunctionPrefixKind::Set) {
-            if (!sb.append("set "))
-                return nullptr;
-        }
-
-        
-        if (desc) {
-            
-            if (!sb.append('[') || !sb.append(desc) || !sb.append(']'))
-                return nullptr;
-        }
-        return sb.finishAtom();
-    }
+    if (JSID_IS_SYMBOL(id))
+        return SymbolToFunctionName(cx, JSID_TO_SYMBOL(id), prefixKind);
 
     RootedValue idv(cx, IdToValue(id));
     RootedAtom name(cx, ToAtom<CanGC>(cx, idv));
@@ -2284,23 +2288,22 @@ js::SetFunctionNameIfNoOwnName(JSContext* cx, HandleFunction fun, HandleValue na
 
     if (fun->isClassConstructor()) {
         
-        RootedId nameId(cx, NameToId(cx->names().name));
-        bool result;
-        if (!HasOwnProperty(cx, fun, nameId, &result))
-            return false;
-
-        if (result)
+        if (fun->contains(cx, cx->names().name))
             return true;
     } else {
         
         MOZ_ASSERT(!fun->containsPure(cx->names().name));
     }
 
-    RootedId id(cx);
-    if (!ValueToId<CanGC>(cx, name, &id))
-        return false;
-
-    RootedAtom funNameAtom(cx, IdToFunctionName(cx, id, prefixKind));
+    JSAtom* funNameAtom;
+    if (name.isSymbol()) {
+        funNameAtom = SymbolToFunctionName(cx, name.toSymbol(), prefixKind);
+    } else {
+        RootedAtom nameAtom(cx, ToAtom<CanGC>(cx, name));
+        if (!nameAtom)
+            return false;
+        funNameAtom = NameToFunctionName(cx, nameAtom, prefixKind);
+    }
     if (!funNameAtom)
         return false;
 
