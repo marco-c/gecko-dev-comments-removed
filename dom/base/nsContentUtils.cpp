@@ -5450,17 +5450,7 @@ nsContentUtils::IsInSameAnonymousTree(const nsINode* aNode,
     return aContent->GetBindingParent() == nullptr;
   }
 
-  const nsIContent* nodeAsContent = static_cast<const nsIContent*>(aNode);
-
-  
-  
-  
-  if (aNode->IsInShadowTree()) {
-    return nodeAsContent->GetContainingShadow() ==
-      aContent->GetContainingShadow();
-  }
-
-  return nodeAsContent->GetBindingParent() == aContent->GetBindingParent();
+  return aNode->AsContent()->GetBindingParent() == aContent->GetBindingParent();
 }
 
 
