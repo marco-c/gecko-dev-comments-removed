@@ -453,11 +453,6 @@ union MOZ_NON_PARAM alignas(8) Value
         asBits_ = bitsFromTagAndPayload(JSVAL_TAG_INT32, uint32_t(i));
     }
 
-    int32_t& getInt32Ref() {
-        MOZ_ASSERT(isInt32());
-        return s_.payload_.i32_;
-    }
-
     void setDouble(double d) {
         
         
@@ -467,11 +462,6 @@ union MOZ_NON_PARAM alignas(8) Value
 
     void setNaN() {
         setDouble(GenericNaN());
-    }
-
-    double& getDoubleRef() {
-        MOZ_ASSERT(isDouble());
-        return asDouble_;
     }
 
     void setString(JSString* str) {
