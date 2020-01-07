@@ -27,6 +27,7 @@ class nsIParser;
 namespace mozilla {
 namespace dom {
 class NodeInfo;
+class ProcessingInstruction;
 } 
 } 
 
@@ -145,13 +146,13 @@ protected:
   }
 
   
-  virtual nsresult ProcessStyleLink(nsIContent* aElement,
-                                    const nsAString& aHref,
-                                    bool aAlternate,
-                                    const nsAString& aTitle,
-                                    const nsAString& aType,
-                                    const nsAString& aMedia,
-                                    const nsAString& aReferrerPolicy) override;
+  virtual nsresult ProcessStyleLinkFromHeader(
+    const nsAString& aHref,
+    bool aAlternate,
+    const nsAString& aTitle,
+    const nsAString& aType,
+    const nsAString& aMedia,
+    const nsAString& aReferrerPolicy) override;
 
   
   
@@ -160,7 +161,7 @@ protected:
   
   
   virtual nsresult MaybeProcessXSLTLink(
-    nsIContent* aProcessingInstruction,
+    mozilla::dom::ProcessingInstruction* aProcessingInstruction,
     const nsAString& aHref,
     bool aAlternate,
     const nsAString& aTitle,
