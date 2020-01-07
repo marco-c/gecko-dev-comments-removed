@@ -171,20 +171,9 @@ HTMLScriptElement::SetText(const nsAString& aValue, ErrorResult& aRv)
 
 
 bool
-HTMLScriptElement::GetScriptType(nsAString& aType)
+HTMLScriptElement::GetScriptType(nsAString& type)
 {
-  nsAutoString type;
-  if (!GetAttr(kNameSpaceID_None, nsGkAtoms::type, type)) {
-    return false;
-  }
-
-  
-  
-  static const char kASCIIWhitespace[] = "\t\n\f\r ";
-  type.Trim(kASCIIWhitespace);
-
-  aType.Assign(type);
-  return true;
+  return GetAttr(kNameSpaceID_None, nsGkAtoms::type, type);
 }
 
 void
