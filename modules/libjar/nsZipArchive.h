@@ -160,7 +160,7 @@ public:
 
 
 
-  nsresult ExtractFile(nsZipItem * zipEntry, const char *outname, PRFileDesc * outFD);
+  nsresult ExtractFile(nsZipItem * zipEntry, nsIFile* outFile, PRFileDesc * outFD);
 
   
 
