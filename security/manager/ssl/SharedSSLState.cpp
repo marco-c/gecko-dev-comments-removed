@@ -123,6 +123,7 @@ SharedSSLState::SharedSSLState(uint32_t aTlsFlags)
 , mSocketCreated(false)
 , mOCSPStaplingEnabled(false)
 , mOCSPMustStapleEnabled(false)
+, mSignedCertTimestampsEnabled(false)
 {
   mIOLayerHelpers.Init();
   if (!aTlsFlags) { 
