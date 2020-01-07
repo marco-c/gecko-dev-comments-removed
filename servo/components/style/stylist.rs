@@ -1292,6 +1292,10 @@ impl Stylist {
             if let Some(map) = stylist.cascade_data.author.borrow_for_pseudo(pseudo_element) {
                 
                 
+                
+                
+                
+                
                 let mut matching_context = MatchingContext::new(
                     context.matching_mode,
                     context.bloom_filter,
