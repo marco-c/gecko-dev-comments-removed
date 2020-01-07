@@ -755,6 +755,10 @@ BackgroundFileSaver::NotifySaveComplete()
 
   if (mObserver) {
     (void)mObserver->OnSaveComplete(this, status);
+    
+    
+    
+    mObserver = nullptr;
   }
 
   
