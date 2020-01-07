@@ -15,6 +15,8 @@
 #include "nsDependentSubstring.h"
 #include "nsReadableUtils.h"
 
+#include <new>
+
 
 #ifndef MOZ_STRING_WITH_OBSOLETE_API
 #define MOZ_STRING_WITH_OBSOLETE_API 1
@@ -151,5 +153,11 @@ private:
 #include "nsDependentString.h"
 #include "nsLiteralString.h"
 #include "nsPromiseFlatString.h"
+
+
+#include "nsMemory.h"
+#include <string.h>
+#include <stdio.h>
+#include "plhash.h"
 
 #endif 

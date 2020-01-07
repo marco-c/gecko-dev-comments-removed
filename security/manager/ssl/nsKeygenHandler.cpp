@@ -19,7 +19,6 @@
 #include "nsITokenDialogs.h"
 #include "nsKeygenHandlerContent.h"
 #include "nsKeygenThread.h"
-#include "nsMemory.h"
 #include "nsNSSComponent.h" 
 #include "nsNSSHelper.h"
 #include "nsReadableUtils.h"
