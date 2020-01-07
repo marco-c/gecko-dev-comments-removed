@@ -44,7 +44,7 @@ add_connection_test("symantec-not-whitelisted-before-cutoff.example.com",
 add_test(function() {
   clearSessionCache();
   Services.prefs.setIntPref("security.pki.distrust_ca_policy",
-               2);
+               0b10);
   run_next_test();
 });
 
@@ -60,7 +60,7 @@ add_connection_test("symantec-not-whitelisted-after-cutoff.example.com",
 add_test(function() {
   clearSessionCache();
   Services.prefs.setIntPref("security.pki.distrust_ca_policy",
-                             0);
+                             0b00);
   run_next_test();
 });
 
@@ -96,7 +96,7 @@ add_task(async function() {
 
   
   Services.prefs.setIntPref("security.pki.distrust_ca_policy",
-                             1);
+                             0b01);
 
   
   const VALIDATION_TIME = 1518739200;
@@ -106,8 +106,23 @@ add_task(async function() {
 
   
   Services.prefs.setIntPref("security.pki.distrust_ca_policy",
-                             2);
+                             0b10);
 
   await checkCertErrorGenericAtTime(certDB, whitelistedCert, PRErrorCodeSuccess,
                                     certificateUsageSSLServer, VALIDATION_TIME);
 });
+
+
+add_test(function() {
+  clearSessionCache();
+  Services.prefs.setIntPref("security.pki.distrust_ca_policy",
+                             0b1111);
+  run_next_test();
+});
+
+add_connection_test("symantec-not-whitelisted-before-cutoff.example.com",
+                    MOZILLA_PKIX_ERROR_ADDITIONAL_POLICY_CONSTRAINT_FAILED,
+                    null, null);
+
+add_connection_test("symantec-not-whitelisted-after-cutoff.example.com",
+                    PRErrorCodeSuccess, null, shouldBeImminentlyDistrusted);

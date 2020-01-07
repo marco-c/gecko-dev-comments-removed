@@ -63,11 +63,16 @@ enum class SHA1ModeResult {
 
 
 
-enum class DistrustedCAPolicy : uint32_t {
-  Permit = 0,
-  DistrustSymantecRoots = 1,
-  DistrustSymantecRootsRegardlessOfDate = 2,
+enum DistrustedCAPolicy : uint32_t {
+  Permit = 0b0000,
+  DistrustSymantecRoots = 0b0001,
+  DistrustSymantecRootsRegardlessOfDate = 0b0010,
 };
+MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(DistrustedCAPolicy)
+
+
+
+const uint32_t DistrustedCAPolicyMaxAllowedValueMask = 0b0011;
 
 enum class NetscapeStepUpPolicy : uint32_t;
 

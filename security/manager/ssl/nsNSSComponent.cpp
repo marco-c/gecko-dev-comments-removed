@@ -563,6 +563,17 @@ nsNSSComponent::MaybeImportFamilySafetyRoot(PCCERT_CONTEXT certificate,
           ("subject name is '%s'", subjectName.get()));
   if (kMicrosoftFamilySafetyCN.Equals(subjectName.get())) {
     wasFamilySafetyRoot = true;
+    CERTCertTrust trust = {
+      CERTDB_TRUSTED_CA | CERTDB_VALID_CA | CERTDB_USER,
+      0,
+      0
+    };
+    if (ChangeCertTrustWithPossibleAuthentication(nssCertificate, trust,
+                                                  nullptr) != SECSuccess) {
+      MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
+              ("couldn't trust certificate for TLS server auth"));
+      return NS_ERROR_FAILURE;
+    }
     MOZ_ASSERT(!mFamilySafetyRoot);
     mFamilySafetyRoot = Move(nssCertificate);
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("added Family Safety root"));
@@ -653,6 +664,8 @@ nsNSSComponent::UnloadFamilySafetyRoot()
   mFamilySafetyRoot = nullptr;
 }
 
+#endif 
+
 
 
 
@@ -669,6 +682,8 @@ const char* kFamilySafetyModePref = "security.family_safety.mode";
 void
 nsNSSComponent::MaybeEnableFamilySafetyCompatibility()
 {
+#ifdef XP_WIN
+  UnloadFamilySafetyRoot();
   if (!(IsWin8Point1OrLater() && !IsWin10OrLater())) {
     return;
   }
@@ -695,8 +710,10 @@ nsNSSComponent::MaybeEnableFamilySafetyCompatibility()
               ("failed to load Family Safety root"));
     }
   }
+#endif 
 }
 
+#ifdef XP_WIN
 
 
 
@@ -749,9 +766,8 @@ CertIsTrustAnchorForTLSServerAuth(PCCERT_CONTEXT certificate)
 }
 
 void
-nsNSSComponent::UnloadEnterpriseRoots()
+nsNSSComponent::UnloadEnterpriseRoots(const MutexAutoLock& )
 {
-  MutexAutoLock lock(mMutex);
   MOZ_ASSERT(NS_IsMainThread());
   if (!NS_IsMainThread()) {
     return;
@@ -814,17 +830,20 @@ nsNSSComponent::GetEnterpriseRoots(nsIX509CertList** enterpriseRoots)
   enterpriseRootsCertList.forget(enterpriseRoots);
   return NS_OK;
 }
+#endif 
 
 static const char* kEnterpriseRootModePref = "security.enterprise_roots.enabled";
 
 void
 nsNSSComponent::MaybeImportEnterpriseRoots()
 {
+#ifdef XP_WIN
   MutexAutoLock lock(mMutex);
   MOZ_ASSERT(NS_IsMainThread());
   if (!NS_IsMainThread()) {
     return;
   }
+  UnloadEnterpriseRoots(lock);
   bool importEnterpriseRoots = Preferences::GetBool(kEnterpriseRootModePref,
                                                     false);
   if (!importEnterpriseRoots) {
@@ -844,8 +863,10 @@ nsNSSComponent::MaybeImportEnterpriseRoots()
                                    lock);
   ImportEnterpriseRootsForLocation(CERT_SYSTEM_STORE_LOCAL_MACHINE_ENTERPRISE,
                                    lock);
+#endif 
 }
 
+#ifdef XP_WIN
 
 
 
@@ -888,6 +909,11 @@ nsNSSComponent::ImportEnterpriseRootsForLocation(
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("failed to open enterprise root store"));
     return;
   }
+  CERTCertTrust trust = {
+    CERTDB_TRUSTED_CA | CERTDB_VALID_CA | CERTDB_USER,
+    0,
+    0
+  };
   PCCERT_CONTEXT certificate = nullptr;
   uint32_t numImported = 0;
   while ((certificate = CertFindCertificateInStore(enterpriseRootStore.get(),
@@ -923,47 +949,17 @@ nsNSSComponent::ImportEnterpriseRootsForLocation(
       MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("couldn't add cert to list"));
       continue;
     }
+    if (ChangeCertTrustWithPossibleAuthentication(nssCertificate, trust,
+                                                  nullptr) != SECSuccess) {
+      MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
+              ("couldn't trust certificate for TLS server auth"));
+    }
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("Imported '%s'", subjectName.get()));
     numImported++;
     
     Unused << nssCertificate.release();
   }
   MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("imported %u roots", numImported));
-}
-
-NS_IMETHODIMP
-nsNSSComponent::TrustLoaded3rdPartyRoots()
-{
-  MutexAutoLock lock(mMutex);
-
-  CERTCertTrust trust = {
-    CERTDB_TRUSTED_CA | CERTDB_VALID_CA | CERTDB_USER,
-    0,
-    0
-  };
-  if (mEnterpriseRoots) {
-    for (CERTCertListNode* n = CERT_LIST_HEAD(mEnterpriseRoots.get());
-         !CERT_LIST_END(n, mEnterpriseRoots.get()); n = CERT_LIST_NEXT(n)) {
-      if (!n || !n->cert) {
-        MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-                ("library failure: CERTCertListNode null or lacks cert"));
-        continue;
-      }
-      UniqueCERTCertificate cert(CERT_DupCertificate(n->cert));
-      if (ChangeCertTrustWithPossibleAuthentication(cert, trust, nullptr)
-            != SECSuccess) {
-        MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-                ("couldn't trust enterprise certificate for TLS server auth"));
-      }
-    }
-  }
-  if (mFamilySafetyRoot &&
-      ChangeCertTrustWithPossibleAuthentication(mFamilySafetyRoot, trust,
-                                                nullptr) != SECSuccess) {
-    MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-            ("couldn't trust family safety certificate for TLS server auth"));
-  }
-  return NS_OK;
 }
 #endif 
 
@@ -1688,14 +1684,10 @@ void nsNSSComponent::setValidationOptions(bool isInitialSetting)
     static_cast<DistrustedCAPolicy>
       (Preferences::GetUint("security.pki.distrust_ca_policy",
                             static_cast<uint32_t>(defaultCAPolicyMode)));
-  switch(distrustedCAPolicy) {
-    case DistrustedCAPolicy::Permit:
-    case DistrustedCAPolicy::DistrustSymantecRoots:
-    case DistrustedCAPolicy::DistrustSymantecRootsRegardlessOfDate:
-      break;
-    default:
-      distrustedCAPolicy = defaultCAPolicyMode;
-      break;
+  
+  
+  if (distrustedCAPolicy & ~DistrustedCAPolicyMaxAllowedValueMask) {
+    distrustedCAPolicy = defaultCAPolicyMode;
   }
 
   CertVerifier::OcspDownloadConfig odc;
@@ -2097,16 +2089,8 @@ nsNSSComponent::InitializeNSS()
 
   DisableMD5();
 
-#ifdef XP_WIN
-  
-  
-  
-  
-  
-  
   MaybeEnableFamilySafetyCompatibility();
   MaybeImportEnterpriseRoots();
-#endif 
 
   ConfigureTLSSessionIdentifiers();
 
@@ -2204,14 +2188,6 @@ nsNSSComponent::InitializeNSS()
 
     mNSSInitialized = true;
   }
-
-#ifdef XP_WIN
-  nsCOMPtr<nsINSSComponent> handle(this);
-  NS_DispatchToCurrentThread(NS_NewRunnableFunction("nsNSSComponent::TrustLoaded3rdPartyRoots",
-  [handle]() {
-    MOZ_ALWAYS_SUCCEEDS(handle->TrustLoaded3rdPartyRoots());
-  }));
-#endif 
 
   RefPtr<LoadLoadableRootsTask> loadLoadableRootsTask(
     new LoadLoadableRootsTask(this));
@@ -2366,27 +2342,15 @@ nsNSSComponent::Observe(nsISupports* aSubject, const char* aTopic,
       Preferences::GetString("security.test.built_in_root_hash",
                              mTestBuiltInRootHash);
 #endif
-#ifdef XP_WIN
     } else if (prefName.Equals(kFamilySafetyModePref)) {
-      
-      
-      UnloadFamilySafetyRoot();
       MaybeEnableFamilySafetyCompatibility();
-      TrustLoaded3rdPartyRoots();
-#endif
     } else if (prefName.EqualsLiteral("security.content.signature.root_hash")) {
       MutexAutoLock lock(mMutex);
       mContentSigningRootHash.Truncate();
       Preferences::GetString("security.content.signature.root_hash",
                              mContentSigningRootHash);
-#ifdef XP_WIN
     } else if (prefName.Equals(kEnterpriseRootModePref)) {
-      
-      
-      UnloadEnterpriseRoots();
       MaybeImportEnterpriseRoots();
-      TrustLoaded3rdPartyRoots();
-#endif
     } else if (prefName.EqualsLiteral("security.pki.mitm_canary_issuer")) {
       MutexAutoLock lock(mMutex);
       mMitmCanaryIssuer.Truncate();
