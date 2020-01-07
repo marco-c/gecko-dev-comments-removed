@@ -8,6 +8,7 @@
 %filter substitution
 %define navbarTabsShadowSize 1px
 %define themeTransition background-color 0.1s cubic-bezier(.17,.67,.83,.67)
+%define lwtPopupBrighttextLinkColor #45a1ff
 
 :root {
   
@@ -24,7 +25,7 @@
 
 
 :root[lwt-popup-brighttext] panel .text-link {
-  color: #45a1ff;
+  color: @lwtPopupBrighttextLinkColor@;
 }
 
 
