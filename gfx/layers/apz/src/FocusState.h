@@ -157,6 +157,8 @@ private:
   
   
   bool mFocusHasKeyEventListeners;
+  
+  bool mReceivedUpdate;
 
   
   uint64_t mFocusLayersId;
