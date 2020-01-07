@@ -680,6 +680,7 @@ static nsresult AppendImagePromise(nsITransferable* aTransferable,
   NS_ENSURE_SUCCESS(rv, rv);
 
   aTransferable->SetRequestingPrincipal(node->NodePrincipal());
+  aTransferable->SetContentPolicyType(nsIContentPolicy::TYPE_INTERNAL_IMAGE);
 
   
   return aTransferable->AddDataFlavor(kFilePromiseMime);

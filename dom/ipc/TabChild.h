@@ -257,7 +257,6 @@ class TabChild final : public TabChildBase,
   typedef mozilla::layout::RenderFrameChild RenderFrameChild;
   typedef mozilla::layers::APZEventState APZEventState;
   typedef mozilla::layers::SetAllowedTouchBehaviorCallback SetAllowedTouchBehaviorCallback;
-  typedef mozilla::layers::TouchBehaviorFlags TouchBehaviorFlags;
 
 public:
   
@@ -456,7 +455,8 @@ public:
   virtual mozilla::ipc::IPCResult
   RecvPasteTransferable(const IPCDataTransfer& aDataTransfer,
                         const bool& aIsPrivateData,
-                        const IPC::Principal& aRequestingPrincipal) override;
+                        const IPC::Principal& aRequestingPrincipal,
+                        const uint32_t& aContentPolicyType) override;
 
   virtual mozilla::ipc::IPCResult
   RecvActivateFrameEvent(const nsString& aType, const bool& aCapture) override;
