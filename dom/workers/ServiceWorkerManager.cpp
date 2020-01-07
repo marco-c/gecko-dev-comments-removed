@@ -1993,6 +1993,25 @@ ServiceWorkerManager::PrincipalToScopeKey(nsIPrincipal* aPrincipal,
   return NS_OK;
 }
 
+ nsresult
+ServiceWorkerManager::PrincipalInfoToScopeKey(const PrincipalInfo& aPrincipalInfo,
+                                              nsACString& aKey)
+{
+  if (aPrincipalInfo.type() != PrincipalInfo::TContentPrincipalInfo) {
+    return NS_ERROR_FAILURE;
+  }
+
+  auto content = aPrincipalInfo.get_ContentPrincipalInfo();
+
+  nsAutoCString suffix;
+  content.attrs().CreateSuffix(suffix);
+
+  aKey = content.originNoSuffix();
+  aKey.Append(suffix);
+
+  return NS_OK;
+}
+
  void
 ServiceWorkerManager::AddScopeAndRegistration(const nsACString& aScope,
                                               ServiceWorkerRegistrationInfo* aInfo)
@@ -2438,38 +2457,53 @@ public:
 } 
 
 void
-ServiceWorkerManager::DispatchFetchEvent(const OriginAttributes& aOriginAttributes,
-                                         nsIDocument* aDoc,
-                                         nsIInterceptedChannel* aChannel,
-                                         bool aIsReload,
-                                         bool aIsSubresourceLoad,
+ServiceWorkerManager::DispatchFetchEvent(nsIInterceptedChannel* aChannel,
                                          ErrorResult& aRv)
 {
   MOZ_ASSERT(aChannel);
   AssertIsOnMainThread();
 
-  RefPtr<ServiceWorkerInfo> serviceWorker;
+  nsCOMPtr<nsIChannel> internalChannel;
+  aRv = aChannel->GetChannel(getter_AddRefs(internalChannel));
+  if (NS_WARN_IF(aRv.Failed())) {
+    return;
+  }
+
   nsCOMPtr<nsILoadGroup> loadGroup;
+  aRv = internalChannel->GetLoadGroup(getter_AddRefs(loadGroup));
+  if (NS_WARN_IF(aRv.Failed())) {
+    return;
+  }
 
-  if (aIsSubresourceLoad) {
-    MOZ_ASSERT(aDoc);
+  nsCOMPtr<nsILoadInfo> loadInfo = internalChannel->GetLoadInfo();
+  if (NS_WARN_IF(!loadInfo)) {
+    aRv.Throw(NS_ERROR_UNEXPECTED);
+    return;
+  }
 
-    serviceWorker = GetActiveWorkerInfoForDocument(aDoc);
-    if (!serviceWorker) {
+  RefPtr<ServiceWorkerInfo> serviceWorker;
+
+  if (!nsContentUtils::IsNonSubresourceRequest(internalChannel)) {
+    const Maybe<ServiceWorkerDescriptor>& controller = loadInfo->GetController();
+    if (NS_WARN_IF(controller.isNothing())) {
       aRv.Throw(NS_ERROR_FAILURE);
       return;
     }
 
-    loadGroup = aDoc->GetDocumentLoadGroup();
-  } else {
-    nsCOMPtr<nsIChannel> internalChannel;
-    aRv = aChannel->GetChannel(getter_AddRefs(internalChannel));
-    if (NS_WARN_IF(aRv.Failed())) {
+    RefPtr<ServiceWorkerRegistrationInfo> registration =
+      GetRegistration(controller.ref().PrincipalInfo(), controller.ref().Scope());
+    if (NS_WARN_IF(!registration)) {
+      aRv.Throw(NS_ERROR_FAILURE);
       return;
     }
 
-    internalChannel->GetLoadGroup(getter_AddRefs(loadGroup));
-
+    serviceWorker = registration->GetActive();
+    if (NS_WARN_IF(!serviceWorker) ||
+        NS_WARN_IF(serviceWorker->Descriptor().Id() != controller.ref().Id())) {
+      aRv.Throw(NS_ERROR_FAILURE);
+      return;
+    }
+  } else {
     nsCOMPtr<nsIURI> uri;
     aRv = aChannel->GetSecureUpgradedChannelURI(getter_AddRefs(uri));
     if (NS_WARN_IF(aRv.Failed())) {
@@ -2478,12 +2512,12 @@ ServiceWorkerManager::DispatchFetchEvent(const OriginAttributes& aOriginAttribut
 
     
     nsCOMPtr<nsIPrincipal> principal =
-      BasePrincipal::CreateCodebasePrincipal(uri, aOriginAttributes);
+      BasePrincipal::CreateCodebasePrincipal(uri,
+                                             loadInfo->GetOriginAttributes());
 
     RefPtr<ServiceWorkerRegistrationInfo> registration =
       GetServiceWorkerRegistrationInfo(principal, uri);
-    if (!registration) {
-      NS_WARNING("No registration found when dispatching the fetch event");
+    if (NS_WARN_IF(!registration)) {
       aRv.Throw(NS_ERROR_FAILURE);
       return;
     }
@@ -2493,58 +2527,52 @@ ServiceWorkerManager::DispatchFetchEvent(const OriginAttributes& aOriginAttribut
     
     
     serviceWorker = registration->GetActive();
-    if (!serviceWorker) {
+    if (NS_WARN_IF(!serviceWorker)) {
       aRv.Throw(NS_ERROR_FAILURE);
       return;
     }
 
     
     
-    nsCOMPtr<nsILoadInfo> loadInfo = internalChannel->GetLoadInfo();
-    if (loadInfo) {
-      Maybe<ClientInfo> clientInfo = loadInfo->GetReservedClientInfo();
+    Maybe<ClientInfo> clientInfo = loadInfo->GetReservedClientInfo();
+
+    
+    
+    
+    
+    if (clientInfo.isNothing()) {
+      clientInfo = loadInfo->GetInitialClientInfo();
 
       
       
       
       
-      if (clientInfo.isNothing()) {
-        clientInfo = loadInfo->GetInitialClientInfo();
-
-        
-        
-        
-        
-        
-        
-        
-        
-      }
-
-      if (clientInfo.isSome()) {
-        
-        
-        
-        StartControllingClient(clientInfo.ref(), registration);
-      }
-
       
       
       
       
-      loadInfo->SetController(serviceWorker->Descriptor());
     }
-  }
 
-  if (NS_WARN_IF(aRv.Failed())) {
-    return;
+    if (clientInfo.isSome()) {
+      
+      
+      
+      StartControllingClient(clientInfo.ref(), registration);
+    }
+
+    
+    
+    
+    
+    loadInfo->SetController(serviceWorker->Descriptor());
   }
 
   MOZ_DIAGNOSTIC_ASSERT(serviceWorker);
 
   nsCOMPtr<nsIRunnable> continueRunnable =
     new ContinueDispatchFetchEventRunnable(serviceWorker->WorkerPrivate(),
-                                           aChannel, loadGroup, aIsReload);
+                                           aChannel, loadGroup,
+                                           loadInfo->GetIsDocshellReload());
 
   
   
@@ -2556,13 +2584,7 @@ ServiceWorkerManager::DispatchFetchEvent(const OriginAttributes& aOriginAttribut
                                                             continueRunnable));
     });
 
-  nsCOMPtr<nsIChannel> innerChannel;
-  aRv = aChannel->GetChannel(getter_AddRefs(innerChannel));
-  if (NS_WARN_IF(aRv.Failed())) {
-    return;
-  }
-
-  nsCOMPtr<nsIUploadChannel2> uploadChannel = do_QueryInterface(innerChannel);
+  nsCOMPtr<nsIUploadChannel2> uploadChannel = do_QueryInterface(internalChannel);
 
   
   if (!uploadChannel) {
@@ -3085,6 +3107,19 @@ ServiceWorkerManager::GetRegistration(nsIPrincipal* aPrincipal,
 
   nsAutoCString scopeKey;
   nsresult rv = PrincipalToScopeKey(aPrincipal, scopeKey);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return nullptr;
+  }
+
+  return GetRegistration(scopeKey, aScope);
+}
+
+already_AddRefed<ServiceWorkerRegistrationInfo>
+ServiceWorkerManager::GetRegistration(const PrincipalInfo& aPrincipalInfo,
+                                      const nsACString& aScope) const
+{
+  nsAutoCString scopeKey;
+  nsresult rv = PrincipalInfoToScopeKey(aPrincipalInfo, scopeKey);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return nullptr;
   }
