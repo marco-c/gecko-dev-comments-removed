@@ -8,7 +8,7 @@ requestLongerTimeout(2);
 
 
 
-const {findOptimalTimeInterval, TimeScale} = require("devtools/client/animationinspector/utils");
+const {findOptimalTimeInterval, TimeScale} = require("devtools/client/inspector/animation-old/utils");
 
 
 
