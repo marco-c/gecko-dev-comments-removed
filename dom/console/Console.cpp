@@ -2544,14 +2544,7 @@ Console::MonotonicTimer(JSContext* aCx, MethodName aMethodName,
   }
 
   if (NS_IsMainThread()) {
-    double duration = (TimeStamp::Now() - mCreationTimeStamp).ToMilliseconds();
-
-    
-    
-    
-    const double maxResolutionMs = 0.005;
-    *aTimeStamp = nsRFPService::ReduceTimePrecisionAsMSecs(
-      floor(duration / maxResolutionMs) * maxResolutionMs);
+    *aTimeStamp = (TimeStamp::Now() - mCreationTimeStamp).ToMilliseconds();
     return true;
   }
 
