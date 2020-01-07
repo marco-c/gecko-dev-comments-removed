@@ -544,10 +544,6 @@ class Tab extends TabBase {
     return this.nativeTab.getActive();
   }
 
-  get highlighted() {
-    return this.nativeTab.getActive();
-  }
-
   get selected() {
     return this.nativeTab.getActive();
   }
@@ -692,9 +688,24 @@ class Window extends WindowBase {
   }
 
   get activeTab() {
-    let {tabManager} = this.extension;
+    let {BrowserApp} = this.window;
+    let {selectedTab} = BrowserApp;
 
-    return tabManager.getWrapper(this.window.BrowserApp.selectedTab);
+    
+    
+    if (selectedTab === tabTracker.extensionPopupTab) {
+      selectedTab = BrowserApp.getTabForId(selectedTab.parentId);
+    }
+
+    let {tabManager} = this.extension;
+    return tabManager.getWrapper(selectedTab);
+  }
+
+  getTabAtIndex(index) {
+    let nativeTab = this.window.BrowserApp.tabs[index];
+    if (nativeTab) {
+      return this.extension.tabManager.getWrapper(nativeTab);
+    }
   }
 }
 
