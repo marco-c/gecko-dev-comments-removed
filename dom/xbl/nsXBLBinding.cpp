@@ -106,6 +106,7 @@ nsXBLBinding::nsXBLBinding(nsXBLPrototypeBinding* aBinding)
   , mUsingContentXBLScope(false)
   , mIsShadowRootBinding(false)
   , mPrototypeBinding(aBinding)
+  , mBoundElement(nullptr)
 {
   NS_ASSERTION(mPrototypeBinding, "Must have a prototype binding!");
   
@@ -118,7 +119,8 @@ nsXBLBinding::nsXBLBinding(ShadowRoot* aShadowRoot, nsXBLPrototypeBinding* aBind
     mUsingContentXBLScope(false),
     mIsShadowRootBinding(true),
     mPrototypeBinding(aBinding),
-    mContent(aShadowRoot)
+    mContent(aShadowRoot),
+    mBoundElement(nullptr)
 {
   NS_ASSERTION(mPrototypeBinding, "Must have a prototype binding!");
   
