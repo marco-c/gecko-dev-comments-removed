@@ -116,7 +116,6 @@ using namespace mozilla::widget;
 #include "mozilla/layers/CompositorThread.h"
 
 #ifdef MOZ_X11
-#include "GLContextGLX.h" 
 #include "GtkCompositorWidget.h"
 #include "gfxXlibSurface.h"
 #include "WindowSurfaceX11Image.h"
@@ -140,7 +139,6 @@ using namespace mozilla::gfx;
 using namespace mozilla::widget;
 using namespace mozilla::layers;
 using mozilla::gl::GLContext;
-using mozilla::gl::GLContextGLX;
 
 
 
@@ -3642,29 +3640,11 @@ nsWindow::Create(nsIWidget* aParent,
         if (Preferences::GetBool("mozilla.widget.use-argb-visuals", false))
             useAlphaVisual = true;
 
-        bool useWebRender = gfx::gfxVars::UseWebRender() &&
-            AllowWebRenderForThisWindow();
-
         
         
         
-        if (mIsX11Display && useWebRender) {
-            auto display =
-                GDK_DISPLAY_XDISPLAY(gtk_widget_get_display(mShell));
-            auto screen = gtk_widget_get_screen(mShell);
-            int screenNumber = GDK_SCREEN_XNUMBER(screen);
-            int visualId = 0;
-
-            if (GLContextGLX::FindVisual(display, screenNumber,
-                                         useWebRender, useAlphaVisual,
-                                         &visualId)) {
-                
-                
-                gtk_widget_set_visual(mShell,
-                                      gdk_x11_screen_lookup_visual(screen,
-                                                                   visualId));
-            }
-        } else if (useAlphaVisual) {
+        
+        if (useAlphaVisual) {
             GdkScreen *screen = gtk_widget_get_screen(mShell);
             if (gdk_screen_is_composited(screen)) {
                 GdkVisual *visual = gdk_screen_get_rgba_visual(screen);
