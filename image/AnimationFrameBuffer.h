@@ -63,7 +63,7 @@ public:
 
 
 
-  DrawableFrameRef Get(size_t aFrame);
+  imgFrame* Get(size_t aFrame);
 
   
 

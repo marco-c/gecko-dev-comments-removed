@@ -351,12 +351,6 @@ private:
                              TimeStamp aTime);
 
   
-
-
-  RawAccessFrameRef GetRawFrame(DrawableSurface& aFrames,
-                                uint32_t aFrameNum) const;
-
-  
   Maybe<FrameTimeout> GetTimeoutForFrame(AnimationState& aState,
                                          DrawableSurface& aFrames,
                                          uint32_t aFrameNum) const;

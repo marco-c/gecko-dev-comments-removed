@@ -57,6 +57,7 @@ public:
 
 protected:
   DrawableFrameRef DrawableRef(size_t aFrame) override;
+  RawAccessFrameRef RawAccessRef(size_t aFrame) override;
 
   
   

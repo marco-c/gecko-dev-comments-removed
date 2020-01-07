@@ -176,18 +176,18 @@ AnimationFrameBuffer::MarkComplete()
   return mPending > 0;
 }
 
-DrawableFrameRef
+imgFrame*
 AnimationFrameBuffer::Get(size_t aFrame)
 {
   
   if (mFrames.IsEmpty()) {
     MOZ_ASSERT_UNREACHABLE("Calling Get() when we have no frames");
-    return DrawableFrameRef();
+    return nullptr;
   }
 
   
   if (aFrame >= mFrames.Length()) {
-    return DrawableFrameRef();
+    return nullptr;
   }
 
   
@@ -195,13 +195,13 @@ AnimationFrameBuffer::Get(size_t aFrame)
   
   if (!mFrames[aFrame]) {
     MOZ_ASSERT(MayDiscard());
-    return DrawableFrameRef();
+    return nullptr;
   }
 
   
   
   MOZ_ASSERT(aFrame == 0 || mAdvance == 0);
-  return mFrames[aFrame]->DrawableRef();
+  return mFrames[aFrame].get();
 }
 
 bool

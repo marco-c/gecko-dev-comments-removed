@@ -306,13 +306,14 @@ FrameAnimator::AdvanceFrame(AnimationState& aState,
   
   
   MOZ_ASSERT(nextFrameIndex < aState.KnownFrameCount());
-  RawAccessFrameRef nextFrame = GetRawFrame(aFrames, nextFrameIndex);
+  RawAccessFrameRef nextFrame = aFrames.RawAccessRef(nextFrameIndex);
 
   
   
   
   
-  if (!nextFrame || !nextFrame->IsFinished()) {
+  
+  if (!nextFrame) {
     
     
     
@@ -330,7 +331,7 @@ FrameAnimator::AdvanceFrame(AnimationState& aState,
     ret.mDirtyRect = aState.FirstFrameRefreshArea();
   } else {
     MOZ_ASSERT(nextFrameIndex == currentFrameIndex + 1);
-    RawAccessFrameRef currentFrame = GetRawFrame(aFrames, currentFrameIndex);
+    RawAccessFrameRef currentFrame = aFrames.RawAccessRef(currentFrameIndex);
 
     
     if (!DoBlend(currentFrame, nextFrame, nextFrameIndex, &ret.mDirtyRect)) {
@@ -555,7 +556,7 @@ FrameAnimator::GetTimeoutForFrame(AnimationState& aState,
                                   DrawableSurface& aFrames,
                                   uint32_t aFrameNum) const
 {
-  RawAccessFrameRef frame = GetRawFrame(aFrames, aFrameNum);
+  RawAccessFrameRef frame = aFrames.RawAccessRef(aFrameNum);
   if (frame) {
     return Some(frame->GetTimeout());
   }
@@ -609,19 +610,6 @@ FrameAnimator::CollectSizeOfCompositingSurfaces(
                                        aCounters,
                                        aMallocSizeOf);
   }
-}
-
-RawAccessFrameRef
-FrameAnimator::GetRawFrame(DrawableSurface& aFrames, uint32_t aFrameNum) const
-{
-  
-  
-  
-  if (NS_FAILED(aFrames.Seek(aFrameNum))) {
-    return RawAccessFrameRef();  
-  }
-
-  return aFrames->RawAccessRef();
 }
 
 
