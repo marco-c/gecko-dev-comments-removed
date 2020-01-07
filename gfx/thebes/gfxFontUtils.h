@@ -26,6 +26,8 @@
 
 typedef struct hb_blob_t hb_blob_t;
 
+struct gfxFontVariationInstance;
+
 class gfxSparseBitSet {
 private:
     enum { BLOCK_SIZE = 32 };   
@@ -999,6 +1001,15 @@ public:
                                     const mozilla::gfx::Color& aDefaultColor,
                                     nsTArray<uint16_t> &aGlyphs,
                                     nsTArray<mozilla::gfx::Color> &aColors);
+
+    
+    
+    
+    
+    
+    static void
+    GetVariationInstances(gfxFontEntry* aFontEntry,
+                          nsTArray<gfxFontVariationInstance>& aInstances);
 
 protected:
     friend struct MacCharsetMappingComparator;
