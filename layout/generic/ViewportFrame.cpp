@@ -425,18 +425,19 @@ ViewportFrame::ComputeCustomOverflow(nsOverflowAreas& aOverflowAreas)
 void
 ViewportFrame::UpdateStyle(ServoRestyleState& aRestyleState)
 {
-  nsAtom* pseudo = Style()->GetPseudo();
-  RefPtr<ComputedStyle> newContext =
+  ComputedStyle* oldStyle = Style();
+  nsAtom* pseudo = oldStyle->GetPseudo();
+  RefPtr<ComputedStyle> newStyle =
     aRestyleState.StyleSet().ResolveInheritingAnonymousBoxStyle(pseudo, nullptr);
 
   
   
   
   
-  newContext->ResolveSameStructsAs(Style());
+  newStyle->ResolveSameStructsAs(oldStyle);
 
   MOZ_ASSERT(!GetNextContinuation(), "Viewport has continuations?");
-  SetComputedStyle(newContext);
+  SetComputedStyle(newStyle);
 
   UpdateStyleOfOwnedAnonBoxes(aRestyleState);
 }
