@@ -28,13 +28,13 @@ public:
         {*(uint8_t*)this = prefix;}
 
     nsXPTType& operator=(uint8_t val)
-        {flags = val; return *this;}
+        {mFlags = val; return *this;}
 
     nsXPTType& operator=(const nsXPTType& other)
-        {flags = other.flags; return *this;}
+        {mFlags = other.mFlags; return *this;}
 
     operator uint8_t() const
-        {return flags;}
+        {return mFlags;}
 
     
     
@@ -44,7 +44,7 @@ public:
     
     
     bool IsArithmetic() const
-        {return flags <= T_WCHAR;}
+        {return mFlags <= T_WCHAR;}
 
     
     
