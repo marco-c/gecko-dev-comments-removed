@@ -889,9 +889,3 @@ menulist[indicator=true] > menupopup menuitem[indicator=true]:not([image]) > .me
 .no-results-message[query*=🔥🦊] > .no-results-container {
   visibility: hidden;
 }
-
-
-
-.proxy-port-input {
-  width: calc(5ch + 22px); 
-}
