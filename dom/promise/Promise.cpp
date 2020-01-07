@@ -646,11 +646,8 @@ PromiseWorkerProxy::~PromiseWorkerProxy()
 void
 PromiseWorkerProxy::CleanProperties()
 {
-#ifdef DEBUG
-  WorkerPrivate* worker = GetCurrentThreadWorkerPrivate();
-  MOZ_ASSERT(worker);
-  worker->AssertIsOnWorkerThread();
-#endif
+  MOZ_ASSERT(IsCurrentThreadRunningWorker());
+
   
   
   mCleanedUp = true;
@@ -699,11 +696,7 @@ PromiseWorkerProxy::GetWorkerPrivate() const
 Promise*
 PromiseWorkerProxy::WorkerPromise() const
 {
-#ifdef DEBUG
-  WorkerPrivate* worker = GetCurrentThreadWorkerPrivate();
-  MOZ_ASSERT(worker);
-  worker->AssertIsOnWorkerThread();
-#endif
+  MOZ_ASSERT(IsCurrentThreadRunningWorker());
   MOZ_ASSERT(mWorkerPromise);
   return mWorkerPromise;
 }
