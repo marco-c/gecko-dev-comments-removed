@@ -264,6 +264,49 @@ gfxFontconfigFontEntry::Clone() const
     return new gfxFontconfigFontEntry(Name(), mFontPattern, mIgnoreFcCharmap);
 }
 
+static FcPattern*
+CreatePatternForFace(FT_Face aFace)
+{
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    FcPattern* pattern =
+        FcFreeTypeQueryFace(aFace, ToFcChar8Ptr(""), 0, nullptr);
+    
+    if (!pattern) {
+        pattern = FcPatternCreate();
+    }
+    FcPatternDel(pattern, FC_FILE);
+    FcPatternDel(pattern, FC_INDEX);
+
+    
+    
+    FcPatternAddFTFace(pattern, FC_FT_FACE, aFace);
+
+    return pattern;
+}
+
+static FT_Face
+CreateFaceForPattern(FcPattern* aPattern)
+{
+    FcChar8 *filename;
+    if (FcPatternGetString(aPattern, FC_FILE, 0, &filename) != FcResultMatch) {
+        return nullptr;
+    }
+    int index;
+    if (FcPatternGetInteger(aPattern, FC_INDEX, 0, &index) != FcResultMatch) {
+        index = 0; 
+    }
+    return Factory::NewFTFace(nullptr, ToCharPtr(filename), index);
+}
+
 gfxFontconfigFontEntry::gfxFontconfigFontEntry(const nsAString& aFaceName,
                                                uint16_t aWeight,
                                                int16_t aStretch,
@@ -281,27 +324,7 @@ gfxFontconfigFontEntry::gfxFontconfigFontEntry(const nsAString& aFaceName,
     mStretch = aStretch;
     mIsDataUserFont = true;
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    mFontPattern = FcFreeTypeQueryFace(mFTFace, ToFcChar8Ptr(""), 0, nullptr);
-    
-    if (!mFontPattern) {
-        mFontPattern = FcPatternCreate();
-    }
-    FcPatternDel(mFontPattern, FC_FILE);
-    FcPatternDel(mFontPattern, FC_INDEX);
-
-    
-    
-    FcPatternAddFTFace(mFontPattern, FC_FT_FACE, mFTFace);
+    mFontPattern = CreatePatternForFace(mFTFace);
 
     mUserFontData = new FTUserFontData(mFTFace, mFontData);
 }
@@ -907,25 +930,22 @@ gfxFontconfigFontEntry::CreateFontInstance(const gfxFontStyle *aFontStyle,
         
         
         if (mFontData) {
+            
+            
             face = Factory::NewFTFaceFromData(nullptr, mFontData, mLength, 0);
-            fontPattern = FcFreeTypeQueryFace(face, ToFcChar8Ptr(""), 0, nullptr);
-            if (!fontPattern) {
-                fontPattern = FcPatternCreate();
-            }
-            FcPatternDel(fontPattern, FC_FILE);
-            FcPatternDel(fontPattern, FC_INDEX);
-            FcPatternAddFTFace(fontPattern, FC_FT_FACE, face);
+            fontPattern = CreatePatternForFace(face);
         } else {
-            FcChar8 *filename;
-            if (FcPatternGetString(mFontPattern, FC_FILE, 0, &filename) == FcResultMatch) {
-                int index;
-                if (FcPatternGetInteger(mFontPattern, FC_INDEX, 0, &index) != FcResultMatch) {
-                    index = 0; 
-                }
-                face = Factory::NewFTFace(nullptr, ToCharPtr(filename), index);
-            }
+            
+            
             fontPattern = FcPatternDuplicate(mFontPattern);
-            FcPatternAddFTFace(fontPattern, FC_FT_FACE, face);
+            face = CreateFaceForPattern(fontPattern);
+            if (face) {
+                FcPatternAddFTFace(fontPattern, FC_FT_FACE, face);
+            } else {
+                
+                
+                face = mFTFace;
+            }
         }
     }
 
@@ -979,15 +999,7 @@ gfxFontconfigFontEntry::GetFTFace()
 {
     if (!mFTFaceInitialized) {
         mFTFaceInitialized = true;
-        FcChar8 *filename;
-        if (FcPatternGetString(mFontPattern, FC_FILE, 0, &filename) != FcResultMatch) {
-            return nullptr;
-        }
-        int index;
-        if (FcPatternGetInteger(mFontPattern, FC_INDEX, 0, &index) != FcResultMatch) {
-            index = 0; 
-        }
-        mFTFace = Factory::NewFTFace(nullptr, ToCharPtr(filename), index);
+        mFTFace = CreateFaceForPattern(mFontPattern);
     }
     return mFTFace;
 }
