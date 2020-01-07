@@ -798,8 +798,7 @@ var PlacesUtils = {
     else if (PlacesUtils.nodeIsTagQuery(aNode)) {
       
       
-      var queries = aNode.getQueries();
-      var folders = queries[0].getFolders();
+      let folders = aNode.query.getFolders();
       return folders[0];
     }
     return aNode.itemId;

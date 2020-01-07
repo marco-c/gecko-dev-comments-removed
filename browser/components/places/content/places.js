@@ -395,13 +395,6 @@ var PlacesOrganizer = {
     return PlacesUtils.asQuery(ContentArea.currentView.result.root).queryOptions;
   },
 
-  
-
-
-
-  getCurrentQueries: function PO_getCurrentQueries() {
-    return PlacesUtils.asQuery(ContentArea.currentView.result.root).getQueries();
-  },
 
   
 
