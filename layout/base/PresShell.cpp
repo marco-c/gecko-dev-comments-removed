@@ -560,6 +560,8 @@ public:
   {
     MOZ_ASSERT(aEvent);
     if (!aTargetContent || aEvent->mClass != ePointerEventClass) {
+      
+      mTargetContent = nullptr;
       return;
     }
     MOZ_ASSERT(aShell);
@@ -4298,7 +4300,20 @@ PresShell::CharacterDataChanged(nsIDocument* aDocument,
 
   nsAutoCauseReflowNotifier crNotifier(this);
 
-  mPresContext->RestyleManager()->CharacterDataChanged(aContent, aInfo);
+  
+  
+  
+  nsIContent *container = aContent->GetParent();
+  uint32_t selectorFlags =
+    container ? (container->GetFlags() & NODE_ALL_SELECTOR_FLAGS) : 0;
+  if (selectorFlags != 0 && !aContent->IsRootOfAnonymousSubtree()) {
+    Element* element = container->AsElement();
+    if (aInfo.mAppend && !aContent->GetNextSibling())
+      mPresContext->RestyleManager()->RestyleForAppend(element, aContent);
+    else
+      mPresContext->RestyleManager()->RestyleForInsertOrChange(element, aContent);
+  }
+
   mFrameConstructor->CharacterDataChanged(aContent, aInfo);
   VERIFY_STYLE_TREE;
 }
