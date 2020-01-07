@@ -650,24 +650,16 @@ CustomElementRegistry::GetDocGroup() const
 
 
 void
-CustomElementRegistry::Define(const nsAString& aName,
+CustomElementRegistry::Define(JSContext* aCx,
+                              const nsAString& aName,
                               Function& aFunctionConstructor,
                               const ElementDefinitionOptions& aOptions,
                               ErrorResult& aRv)
 {
-  aRv.MightThrowJSException();
-
-  AutoJSAPI jsapi;
-  if (NS_WARN_IF(!jsapi.Init(mWindow))) {
-    aRv.Throw(NS_ERROR_FAILURE);
-    return;
-  }
-
-  JSContext *cx = jsapi.cx();
   
   
   
-  JS::Rooted<JSObject*> constructor(cx, aFunctionConstructor.CallableOrNull());
+  JS::Rooted<JSObject*> constructor(aCx, aFunctionConstructor.CallableOrNull());
 
   
 
@@ -675,7 +667,7 @@ CustomElementRegistry::Define(const nsAString& aName,
 
   
   
-  JS::Rooted<JSObject*> constructorUnwrapped(cx, js::CheckedUnwrap(constructor));
+  JS::Rooted<JSObject*> constructorUnwrapped(aCx, js::CheckedUnwrap(constructor));
   if (!constructorUnwrapped) {
     
     
@@ -763,7 +755,7 @@ CustomElementRegistry::Define(const nsAString& aName,
     return;
   }
 
-  JS::Rooted<JS::Value> constructorPrototype(cx);
+  JS::Rooted<JS::Value> constructorPrototype(aCx);
   nsAutoPtr<LifecycleCallbacks> callbacksHolder(new LifecycleCallbacks());
   nsTArray<RefPtr<nsAtom>> observedAttributes;
   { 
@@ -776,12 +768,12 @@ CustomElementRegistry::Define(const nsAString& aName,
       
 
 
-      JSAutoRealm ar(cx, constructor);
+      JSAutoRealm ar(aCx, constructor);
       
       
       
-      if (!JS_GetProperty(cx, constructor, "prototype", &constructorPrototype)) {
-        aRv.StealExceptionFromJSContext(cx);
+      if (!JS_GetProperty(aCx, constructor, "prototype", &constructorPrototype)) {
+        aRv.NoteJSContextException(aCx);
         return;
       }
 
@@ -795,7 +787,7 @@ CustomElementRegistry::Define(const nsAString& aName,
     } 
 
     JS::Rooted<JSObject*> constructorProtoUnwrapped(
-      cx, js::CheckedUnwrap(&constructorPrototype.toObject()));
+      aCx, js::CheckedUnwrap(&constructorPrototype.toObject()));
     if (!constructorProtoUnwrapped) {
       
       
@@ -804,7 +796,7 @@ CustomElementRegistry::Define(const nsAString& aName,
     }
 
     { 
-      JSAutoRealm ar(cx, constructorProtoUnwrapped);
+      JSAutoRealm ar(aCx, constructorProtoUnwrapped);
 
       
 
@@ -821,9 +813,9 @@ CustomElementRegistry::Define(const nsAString& aName,
 
       
       
-      JS::RootedValue rootedv(cx, JS::ObjectValue(*constructorProtoUnwrapped));
-      if (!JS_WrapValue(cx, &rootedv) || !callbacksHolder->Init(cx, rootedv)) {
-        aRv.StealExceptionFromJSContext(cx);
+      JS::RootedValue rootedv(aCx, JS::ObjectValue(*constructorProtoUnwrapped));
+      if (!JS_WrapValue(aCx, &rootedv) || !callbacksHolder->Init(aCx, rootedv)) {
+        aRv.NoteJSContextException(aCx);
         return;
       }
 
@@ -840,12 +832,12 @@ CustomElementRegistry::Define(const nsAString& aName,
 
       if (callbacksHolder->mAttributeChangedCallback.WasPassed()) {
         
-        JSAutoRealm ar(cx, constructor);
-        JS::Rooted<JS::Value> observedAttributesIterable(cx);
+        JSAutoRealm ar(aCx, constructor);
+        JS::Rooted<JS::Value> observedAttributesIterable(aCx);
 
-        if (!JS_GetProperty(cx, constructor, "observedAttributes",
+        if (!JS_GetProperty(aCx, constructor, "observedAttributes",
                             &observedAttributesIterable)) {
-          aRv.StealExceptionFromJSContext(cx);
+          aRv.NoteJSContextException(aCx);
           return;
         }
 
@@ -855,9 +847,9 @@ CustomElementRegistry::Define(const nsAString& aName,
             return;
           }
 
-          JS::ForOfIterator iter(cx);
+          JS::ForOfIterator iter(aCx);
           if (!iter.init(observedAttributesIterable, JS::ForOfIterator::AllowNonIterable)) {
-            aRv.StealExceptionFromJSContext(cx);
+            aRv.NoteJSContextException(aCx);
             return;
           }
 
@@ -866,11 +858,11 @@ CustomElementRegistry::Define(const nsAString& aName,
             return;
           }
 
-          JS::Rooted<JS::Value> attribute(cx);
+          JS::Rooted<JS::Value> attribute(aCx);
           while (true) {
             bool done;
             if (!iter.next(&attribute, &done)) {
-              aRv.StealExceptionFromJSContext(cx);
+              aRv.NoteJSContextException(aCx);
               return;
             }
             if (done) {
@@ -878,8 +870,8 @@ CustomElementRegistry::Define(const nsAString& aName,
             }
 
             nsAutoString attrStr;
-            if (!ConvertJSValueToString(cx, attribute, eStringify, eStringify, attrStr)) {
-              aRv.StealExceptionFromJSContext(cx);
+            if (!ConvertJSValueToString(aCx, attribute, eStringify, eStringify, attrStr)) {
+              aRv.NoteJSContextException(aCx);
               return;
             }
 
