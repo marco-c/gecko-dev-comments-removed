@@ -15,6 +15,8 @@ use values::generics::text::LineHeight as GenericLineHeight;
 use values::generics::text::Spacing;
 use values::specified::text::{TextOverflowSide, TextDecorationLine};
 
+pub use values::specified::TextAlignKeyword as TextAlign;
+
 
 pub type InitialLetter = GenericInitialLetter<CSSFloat, CSSInteger>;
 
