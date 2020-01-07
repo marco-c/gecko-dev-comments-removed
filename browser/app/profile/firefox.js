@@ -987,6 +987,9 @@ pref("browser.security.newcerterrorpage.enabled", false);
 pref("browser.privatebrowsing.autostart", false);
 
 
+pref("browser.bookmarks.editDialog.showForNewBookmarks", true);
+
+
 
 pref("browser.bookmarks.editDialog.firstEditField", "namePicker");
 
