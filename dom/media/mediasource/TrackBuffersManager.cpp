@@ -111,6 +111,7 @@ TrackBuffersManager::TrackBuffersManager(MediaSourceDecoder* aParentDecoder,
   : mInputBuffer(new MediaByteBuffer)
   , mBufferFull(false)
   , mFirstInitializationSegmentReceived(false)
+  , mChangeTypeReceived(false)
   , mNewMediaSegmentStarted(false)
   , mActiveTrack(false)
   , mType(aType)
@@ -280,6 +281,14 @@ TrackBuffersManager::ProcessTasks()
       ShutdownDemuxers();
       ResetTaskQueue();
       return;
+    case Type::ChangeType:
+      MOZ_RELEASE_ASSERT(!mCurrentTask);
+      mType = task->As<ChangeTypeTask>()->mType;
+      mChangeTypeReceived = true;
+      mInitData = nullptr;
+      CompleteResetParserState();
+      CreateDemuxerforMIMEType();
+      break;
     default:
       NS_WARNING("Invalid Task");
   }
@@ -385,6 +394,15 @@ TrackBuffersManager::EvictData(const TimeUnit& aPlaybackTime, int64_t aSize)
   return result;
 }
 
+void
+TrackBuffersManager::ChangeType(const MediaContainerType& aType)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  QueueTask(new ChangeTypeTask(aType));
+}
+
+
 TimeIntervals
 TrackBuffersManager::Buffered() const
 {
@@ -478,7 +496,10 @@ TrackBuffersManager::CompleteResetParserState()
   
   
   
-  if (mFirstInitializationSegmentReceived) {
+  
+  
+  
+  if (mFirstInitializationSegmentReceived && !mChangeTypeReceived) {
     MOZ_ASSERT(mInitData && mInitData->Length(), "we must have an init segment");
     
     CreateDemuxerforMIMEType();
@@ -486,8 +507,10 @@ TrackBuffersManager::CompleteResetParserState()
     
     mInputBuffer = new MediaByteBuffer;
     mInputBuffer->AppendElements(*mInitData);
+    RecreateParser(true);
+  } else {
+    RecreateParser(false);
   }
-  RecreateParser(true);
 }
 
 int64_t
@@ -721,7 +744,7 @@ TrackBuffersManager::SegmentParserLoop()
       MediaResult haveInitSegment = mParser->IsInitSegmentPresent(mInputBuffer);
       if (NS_SUCCEEDED(haveInitSegment)) {
         SetAppendState(AppendState::PARSING_INIT_SEGMENT);
-        if (mFirstInitializationSegmentReceived) {
+        if (mFirstInitializationSegmentReceived && !mChangeTypeReceived) {
           
           RecreateParser(false);
         }
@@ -773,7 +796,11 @@ TrackBuffersManager::SegmentParserLoop()
     }
     if (mSourceBufferAttributes->GetAppendState() == AppendState::PARSING_MEDIA_SEGMENT) {
       
-      if (!mFirstInitializationSegmentReceived) {
+      
+      
+      
+      
+      if (!mFirstInitializationSegmentReceived || mChangeTypeReceived) {
         RejectAppend(NS_ERROR_FAILURE, __func__);
         return;
       }
@@ -1108,11 +1135,15 @@ TrackBuffersManager::OnDemuxerInitDone(const MediaResult& aResult)
   if (mFirstInitializationSegmentReceived) {
     if (numVideos != mVideoTracks.mNumTracks ||
         numAudios != mAudioTracks.mNumTracks ||
-        (numVideos && info.mVideo.mMimeType != mVideoTracks.mInfo->mMimeType) ||
-        (numAudios && info.mAudio.mMimeType != mAudioTracks.mInfo->mMimeType)) {
+        (!mChangeTypeReceived &&
+         ((numVideos &&
+           info.mVideo.mMimeType != mVideoTracks.mInfo->mMimeType) ||
+          (numAudios &&
+           info.mAudio.mMimeType != mAudioTracks.mInfo->mMimeType)))) {
       RejectAppend(NS_ERROR_FAILURE, __func__);
       return;
     }
+    
     
     
     
@@ -1213,6 +1244,9 @@ TrackBuffersManager::OnDemuxerInitDone(const MediaResult& aResult)
     mAudioTracks.mLastInfo = new TrackInfoSharedPtr(info.mAudio, streamID);
     mVideoTracks.mLastInfo = new TrackInfoSharedPtr(info.mVideo, streamID);
   }
+
+  
+  mChangeTypeReceived = false;
 
   UniquePtr<EncryptionInfo> crypto = mInputDemuxer->GetCrypto();
   if (crypto && crypto->IsEncrypted()) {

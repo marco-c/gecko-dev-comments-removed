@@ -116,6 +116,9 @@ public:
   EvictDataResult EvictData(const media::TimeUnit& aPlaybackTime, int64_t aSize);
 
   
+  void ChangeType(const MediaContainerType& aType);
+
+  
   
   
   media::TimeIntervals Buffered() const;
@@ -205,10 +208,11 @@ private:
   
   Atomic<bool> mBufferFull;
   bool mFirstInitializationSegmentReceived;
+  bool mChangeTypeReceived;
   
   bool mNewMediaSegmentStarted;
   bool mActiveTrack;
-  const MediaContainerType mType;
+  MediaContainerType mType;
 
   
   
