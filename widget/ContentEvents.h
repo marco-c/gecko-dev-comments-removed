@@ -212,9 +212,6 @@ public:
     return result;
   }
 
-  
-  nsCOMPtr<dom::EventTarget> mRelatedTarget;
-
   bool mFromRaise;
   bool mIsRefocus;
 
@@ -222,7 +219,6 @@ public:
   {
     AssignUIEventData(aEvent, aCopyTargets);
 
-    mRelatedTarget = aCopyTargets ? aEvent.mRelatedTarget : nullptr;
     mFromRaise = aEvent.mFromRaise;
     mIsRefocus = aEvent.mIsRefocus;
   }

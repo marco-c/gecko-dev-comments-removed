@@ -592,6 +592,9 @@ public:
   nsCOMPtr<dom::EventTarget> mCurrentTarget;
   nsCOMPtr<dom::EventTarget> mOriginalTarget;
 
+  
+  nsCOMPtr<dom::EventTarget> mRelatedTarget;
+
   nsTArray<EventTargetChainItem>* mPath;
 
   dom::EventTarget* GetDOMEventTarget() const;
@@ -612,6 +615,7 @@ public:
     mTarget = aCopyTargets ? aEvent.mTarget : nullptr;
     mCurrentTarget = aCopyTargets ? aEvent.mCurrentTarget : nullptr;
     mOriginalTarget = aCopyTargets ? aEvent.mOriginalTarget : nullptr;
+    mRelatedTarget = aCopyTargets ? aEvent.mRelatedTarget : nullptr;
   }
 
   
