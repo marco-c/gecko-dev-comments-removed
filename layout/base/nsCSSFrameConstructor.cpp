@@ -2599,12 +2599,7 @@ nsCSSFrameConstructor::ConstructDocElementFrame(Element*                 aDocEle
       mDocument->BindingManager()->AddToAttachedQueue(binding);
     }
 
-    if (resolveStyle || styleContext->IsServo()) {
-      
-      
-      
-      
-      
+    if (resolveStyle) {
       
       
       
@@ -5906,16 +5901,18 @@ nsCSSFrameConstructor::AddFrameConstructionItemsInternal(nsFrameConstructorState
         aState.AddPendingBinding(newPendingBinding.forget());
       }
 
-      
-      
-      
-      if (styleContext->IsServo()) {
-        styleContext =
-          mPresShell->StyleSet()->AsServo()->ResolveServoStyle(aContent->AsElement());
-      } else if (resolveStyle) {
-        styleContext =
-          ResolveStyleContext(styleContext->AsGecko()->GetParent(),
-                              aContent, &aState);
+      if (resolveStyle) {
+        
+        
+        
+        if (styleContext->IsServo()) {
+          styleContext =
+            mPresShell->StyleSet()->AsServo()->ResolveServoStyle(aContent->AsElement());
+        } else {
+          styleContext =
+            ResolveStyleContext(styleContext->AsGecko()->GetParent(),
+                                aContent, &aState);
+        }
       }
 
       display = styleContext->StyleDisplay();

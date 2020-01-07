@@ -246,7 +246,16 @@ public:
 
 
 
-  static void ClearServoDataFromSubtree(Element* aElement);
+  enum class IncludeRoot {
+    Yes,
+    No,
+  };
+
+  
+
+
+
+  static void ClearServoDataFromSubtree(Element*, IncludeRoot = IncludeRoot::Yes);
 
   
 

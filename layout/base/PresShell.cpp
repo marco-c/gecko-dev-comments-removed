@@ -2963,14 +2963,8 @@ PresShell::DestroyFramesForAndRestyle(Element* aElement)
       
       
       
-      StyleChildrenIterator iter(aElement);
-      for (nsIContent* child = iter.GetNextChild();
-           child;
-           child = iter.GetNextChild()) {
-        if (child->IsElement()) {
-          ServoRestyleManager::ClearServoDataFromSubtree(child->AsElement());
-        }
-      }
+      ServoRestyleManager::ClearServoDataFromSubtree(
+          aElement, ServoRestyleManager::IncludeRoot::No);
     } else {
       
       
