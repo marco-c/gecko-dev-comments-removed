@@ -631,6 +631,13 @@ public:
   
   already_AddRefed<Promise> MozRequestDebugInfo(ErrorResult& aRv);
 
+  
+  static void MozEnableDebugLog(const GlobalObject&);
+
+  
+  
+  already_AddRefed<Promise> MozRequestDebugLog(ErrorResult& aRv);
+
   already_AddRefed<Promise> MozDumpDebugInfo();
 
   
