@@ -262,25 +262,6 @@ assertSameCompartment(JSContext* cx,
 
 STATIC_PRECONDITION_ASSUME(ubound(args.argv_) >= argc)
 MOZ_ALWAYS_INLINE bool
-CallJSNative(JSContext* cx, Native native, const CallArgs& args)
-{
-    if (!CheckRecursionLimit(cx))
-        return false;
-
-#ifdef DEBUG
-    bool alreadyThrowing = cx->isExceptionPending();
-#endif
-    assertSameCompartment(cx, args);
-    bool ok = native(cx, args.length(), args.base());
-    if (ok) {
-        assertSameCompartment(cx, args.rval());
-        MOZ_ASSERT_IF(!alreadyThrowing, !cx->isExceptionPending());
-    }
-    return ok;
-}
-
-STATIC_PRECONDITION_ASSUME(ubound(args.argv_) >= argc)
-MOZ_ALWAYS_INLINE bool
 CallNativeImpl(JSContext* cx, NativeImpl impl, const CallArgs& args)
 {
 #ifdef DEBUG
@@ -293,42 +274,6 @@ CallNativeImpl(JSContext* cx, NativeImpl impl, const CallArgs& args)
         MOZ_ASSERT_IF(!alreadyThrowing, !cx->isExceptionPending());
     }
     return ok;
-}
-
-STATIC_PRECONDITION(ubound(args.argv_) >= argc)
-MOZ_ALWAYS_INLINE bool
-CallJSNativeConstructor(JSContext* cx, Native native, const CallArgs& args)
-{
-#ifdef DEBUG
-    RootedObject callee(cx, &args.callee());
-#endif
-
-    MOZ_ASSERT(args.thisv().isMagic());
-    if (!CallJSNative(cx, native, args))
-        return false;
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    MOZ_ASSERT_IF(native != js::proxy_Construct &&
-                  (!callee->is<JSFunction>() || callee->as<JSFunction>().native() != obj_construct),
-                  args.rval().isObject() && callee != &args.rval().toObject());
-
-    return true;
 }
 
 MOZ_ALWAYS_INLINE bool
