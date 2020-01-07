@@ -4299,9 +4299,10 @@ CanvasRenderingContext2D::DrawOrMeasureText(const nsAString& aRawText,
   MOZ_ASSERT(!presShell->IsDestroying(),
              "GetCurrentFontStyle() should have returned null if the presshell is being destroyed");
 
+  nsPresContext* presContext = presShell->GetPresContext();
+
   
-  currentFontStyle->
-    SetUserFontSet(presShell->GetPresContext()->GetUserFontSet());
+  currentFontStyle->SetUserFontSet(presContext->GetUserFontSet());
 
   if (currentFontStyle->GetStyle()->size == 0.0F) {
     if (aWidth) {
@@ -4320,6 +4321,7 @@ CanvasRenderingContext2D::DrawOrMeasureText(const nsAString& aRawText,
   
   processor.mTextRunFlags = canvasStyle
     ? nsLayoutUtils::GetTextRunFlagsForStyle(canvasStyle,
+                                             presContext,
                                              canvasStyle->StyleFont(),
                                              canvasStyle->StyleText(),
                                              0)

@@ -5636,9 +5636,13 @@ nsComputedDOMStyle::GetLineHeightCoord(nscoord& aCoord)
     }
   }
 
+  nsPresContext* presContext = mPresShell->GetPresContext();
+
   
   
-  aCoord = ReflowInput::CalcLineHeight(mContent, mComputedStyle,
+  aCoord = ReflowInput::CalcLineHeight(mContent,
+                                       mComputedStyle,
+                                       presContext,
                                        blockHeight, 1.0f);
 
   
@@ -5647,7 +5651,7 @@ nsComputedDOMStyle::GetLineHeightCoord(nscoord& aCoord)
   const nsStyleFont* font = StyleFont();
   float fCoord = float(aCoord);
   if (font->mAllowZoom) {
-    fCoord /= mPresShell->GetPresContext()->EffectiveTextZoom();
+    fCoord /= presContext->EffectiveTextZoom();
   }
   if (font->mFont.size != font->mSize) {
     fCoord = fCoord * (float(font->mSize) / float(font->mFont.size));
