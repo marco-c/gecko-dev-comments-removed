@@ -13,6 +13,7 @@ const { createFactory, createElement } = require("devtools/client/shared/vendor/
 const { Provider } = require("devtools/client/shared/vendor/react-redux");
 const { throttle } = require("devtools/shared/throttle");
 const { debounce } = require("devtools/shared/debounce");
+const { ELEMENT_STYLE } = require("devtools/shared/specs/styles");
 
 const FontsApp = createFactory(require("./components/FontsApp"));
 
@@ -161,23 +162,11 @@ class FontInspector {
 
 
 
-
   getFontProperties() {
     let properties = {};
 
-    
     for (let prop of FONT_PROPERTIES) {
       properties[prop] = this.nodeComputedStyle[prop].value;
-    }
-
-    
-    for (let rule of this.ruleView.rules) {
-      for (let textProp of rule.textProps) {
-        if (FONT_PROPERTIES.includes(textProp.name) && textProp.enabled &&
-            !textProp.overridden) {
-          properties[textProp.name] = textProp.value;
-        }
-      }
     }
 
     return properties;
@@ -343,6 +332,8 @@ class FontInspector {
   }
 
   
+
+
 
 
   isPanelVisible() {
@@ -539,6 +530,8 @@ class FontInspector {
 
 
 
+
+
   async refreshFontEditor() {
     
     if (!Services.prefs.getBoolPref(PREF_FONT_EDITOR)) {
@@ -561,6 +554,13 @@ class FontInspector {
     this.nodeComputedStyle = await this.pageStyle.getComputed(node, {
       filterProperties: FONT_PROPERTIES
     });
+    
+    
+    this.writers.clear();
+    this.textProperties.clear();
+    
+    this.selectedRule =
+      this.ruleView.rules.find(rule => rule.style.type === ELEMENT_STYLE);
     const fontEditor = this.store.getState().fontEditor;
     const properties = this.getFontProperties();
 
@@ -594,14 +594,7 @@ class FontInspector {
     let { fontOptions } = this.store.getState();
     let { previewText } = fontOptions;
 
-    
-    
-    let isElementOrTextNode = this.inspector.selection.isElementNode() ||
-                              this.inspector.selection.isTextNode();
-    if (!node ||
-        !this.isPanelVisible() ||
-        !this.inspector.selection.isConnected() ||
-        !isElementOrTextNode) {
+    if (!this.isSelectedNodeValid() || !this.isPanelVisible()) {
       this.store.dispatch(updateFonts(fonts, otherFonts));
       return;
     }
