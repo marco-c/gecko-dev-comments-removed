@@ -62,8 +62,8 @@ pref("browser.cache.memory.max_entry_size",  5120);
 
 
 
-pref("browser.cache.disk.max_chunks_memory_usage", 10240);
-pref("browser.cache.disk.max_priority_chunks_memory_usage", 10240);
+pref("browser.cache.disk.max_chunks_memory_usage", 40960);
+pref("browser.cache.disk.max_priority_chunks_memory_usage", 40960);
 
 pref("browser.cache.disk_cache_ssl",        true);
 
