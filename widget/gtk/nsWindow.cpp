@@ -3434,6 +3434,7 @@ nsWindow::OnDPIChanged()
       
       presShell->ThemeChanged();
     }
+    mWidgetListener->UIResolutionChanged();
   }
 }
 
