@@ -117,11 +117,7 @@ LoadInfo::LoadInfo(nsIPrincipal* aLoadingPrincipal,
     
     
     
-    nsCOMPtr<nsPIDOMWindowInner> contextInner =
-      aLoadingContext->OwnerDoc()->GetInnerWindow();
-    if (contextInner) {
-      mClientInfo = contextInner->GetClientInfo();
-    }
+    mClientInfo = aLoadingContext->OwnerDoc()->GetClientInfo();
 
     nsCOMPtr<nsPIDOMWindowOuter> contextOuter = aLoadingContext->OwnerDoc()->GetWindow();
     if (contextOuter) {
