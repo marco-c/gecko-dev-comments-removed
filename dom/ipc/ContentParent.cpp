@@ -528,7 +528,7 @@ ScriptableCPInfo::GetTabCount(int32_t* aTabCount)
 }
 
 NS_IMETHODIMP
-ScriptableCPInfo::GetMessageManager(nsISupports** aMessenger)
+ScriptableCPInfo::GetMessageManager(nsIMessageSender** aMessenger)
 {
   *aMessenger = nullptr;
   if (!mContentParent) {
@@ -2013,8 +2013,7 @@ ContentParent::LaunchSubprocess(ProcessPriority aInitialPriority )
 
   
   base::SharedMemory shm;
-  if (!shm.Create("",  false,  false,
-                  prefs.Length())) {
+  if (!shm.Create(prefs.Length())) {
     NS_ERROR("failed to create shared memory in the parent");
     MarkAsDead();
     return false;

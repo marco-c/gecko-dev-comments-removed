@@ -62,22 +62,7 @@ class SharedMemory {
 
   
   
-  
-  
-  
-  
-  bool Create(const std::string& name, bool read_only, bool open_existing,
-              size_t size);
-
-  
-  
-  bool Delete(const std::wstring& name);
-
-  
-  
-  
-  
-  bool Open(const std::wstring& name, bool read_only);
+  bool Create(size_t size);
 
   
   
@@ -140,17 +125,11 @@ class SharedMemory {
   }
 
  private:
-#if defined(OS_POSIX)
-  bool CreateOrOpen(const std::wstring &name, int posix_flags, size_t size);
-  bool FilenameForMemoryName(const std::wstring &memname,
-                             std::wstring *filename);
-#endif
   bool ShareToProcessCommon(ProcessId target_pid,
                             SharedMemoryHandle* new_handle,
                             bool close_self);
 
 #if defined(OS_WIN)
-  std::wstring       name_;
   HANDLE             mapped_file_;
 #elif defined(OS_POSIX)
   int                mapped_file_;

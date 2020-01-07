@@ -56,72 +56,6 @@ SharedMemoryHandle SharedMemory::NULLHandle() {
   return SharedMemoryHandle();
 }
 
-bool SharedMemory::Create(const std::string &cname, bool read_only,
-                          bool open_existing, size_t size) {
-  read_only_ = read_only;
-
-  std::wstring name = UTF8ToWide(cname);
-
-  int posix_flags = 0;
-  posix_flags |= read_only ? O_RDONLY : O_RDWR;
-  if (!open_existing || mapped_file_ <= 0)
-    posix_flags |= O_CREAT;
-
-  if (!CreateOrOpen(name, posix_flags, size))
-    return false;
-
-  max_size_ = size;
-  return true;
-}
-
-
-
-
-bool SharedMemory::Delete(const std::wstring& name) {
-  std::wstring mem_filename;
-  if (FilenameForMemoryName(name, &mem_filename) == false)
-    return false;
-
-  FilePath path(WideToUTF8(mem_filename));
-  if (file_util::PathExists(path)) {
-    return file_util::Delete(path);
-  }
-
-  
-  return true;
-}
-
-bool SharedMemory::Open(const std::wstring &name, bool read_only) {
-  read_only_ = read_only;
-
-  int posix_flags = 0;
-  posix_flags |= read_only ? O_RDONLY : O_RDWR;
-
-  return CreateOrOpen(name, posix_flags, 0);
-}
-
-
-
-
-bool SharedMemory::FilenameForMemoryName(const std::wstring &memname,
-                                         std::wstring *filename) {
-  std::wstring mem_filename;
-
-  
-  
-  DCHECK(memname.find_first_of(L"/") == std::string::npos);
-  DCHECK(memname.find_first_of(L"\0") == std::string::npos);
-
-  FilePath temp_dir;
-  if (file_util::GetShmemTempDir(&temp_dir) == false)
-    return false;
-
-  mem_filename = UTF8ToWide(temp_dir.value());
-  file_util::AppendToPath(&mem_filename, L"com.google.chrome.shmem." + memname);
-  *filename = mem_filename;
-  return true;
-}
-
 namespace {
 
 
@@ -138,54 +72,22 @@ typedef mozilla::UniquePtr<FILE, ScopedFILEClose> ScopedFILE;
 
 }
 
+bool SharedMemory::Create(size_t size) {
+  read_only_ = false;
 
-
-
-
-
-
-bool SharedMemory::CreateOrOpen(const std::wstring &name,
-                                int posix_flags, size_t size) {
+  DCHECK(size > 0);
   DCHECK(mapped_file_ == -1);
 
   ScopedFILE file_closer;
   FILE *fp;
 
-  if (name == L"") {
-    
-    DCHECK(posix_flags & (O_RDWR | O_WRONLY));
+  FilePath path;
+  fp = file_util::CreateAndOpenTemporaryShmemFile(&path);
 
-    FilePath path;
-    fp = file_util::CreateAndOpenTemporaryShmemFile(&path);
-
-    
-    
-    
-    file_util::Delete(path);
-  } else {
-    std::wstring mem_filename;
-    if (FilenameForMemoryName(name, &mem_filename) == false)
-      return false;
-
-    std::string mode;
-    switch (posix_flags) {
-      case (O_RDWR | O_CREAT):
-        
-        mode = "a+";
-        break;
-      case O_RDWR:
-        mode = "r+";
-        break;
-      case O_RDONLY:
-        mode = "r";
-        break;
-      default:
-        NOTIMPLEMENTED();
-        break;
-    }
-
-    fp = file_util::OpenFile(mem_filename, mode.c_str());
-  }
+  
+  
+  
+  file_util::Delete(path);
 
   if (fp == NULL)
     return false;
@@ -194,19 +96,15 @@ bool SharedMemory::CreateOrOpen(const std::wstring &name,
   
   
   
-  if (size && (posix_flags & (O_RDWR | O_CREAT))) {
-    
-    struct stat stat;
-    if (fstat(fileno(fp), &stat) != 0)
-      return false;
-    size_t current_size = stat.st_size;
-    if (current_size != size) {
-      if (ftruncate(fileno(fp), size) != 0)
-        return false;
-      if (fseeko(fp, size, SEEK_SET) != 0)
-        return false;
-    }
-  }
+  
+  
+  
+  
+  if (ftruncate(fileno(fp), size) != 0)
+    return false;
+  
+  if (fseeko(fp, size, SEEK_SET) != 0)
+    return false;
 
   mapped_file_ = dup(fileno(fp));
   DCHECK(mapped_file_ >= 0);
@@ -216,6 +114,7 @@ bool SharedMemory::CreateOrOpen(const std::wstring &name,
     NOTREACHED();
   inode_ = st.st_ino;
 
+  max_size_ = size;
   return true;
 }
 
