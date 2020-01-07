@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+class OptionTestProcessor extends AudioWorkletProcessor {
+  constructor(nodeOptions) {
+    super();
+    this.port.postMessage(nodeOptions);
+  }
+
+  process() {
+    return true;
+  }
+}
+
+registerProcessor('option-test-processor', OptionTestProcessor);
