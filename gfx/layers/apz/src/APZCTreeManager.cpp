@@ -3191,18 +3191,15 @@ APZCTreeManager::ComputeTransformForScrollThumb(
     const Matrix4x4& contentTransform = aScrollableContentTransform;
     Matrix4x4 contentUntransform = contentTransform.Inverse();
 
-    AsyncTransformComponentMatrix asyncCompensation =
-        ViewAs<AsyncTransformComponentMatrix>(
-            contentTransform
-          * asyncUntransform
-          * contentUntransform);
-
-    compensation = compensation * asyncCompensation;
+    compensation *= ViewAs<AsyncTransformComponentMatrix>(
+                        contentTransform
+                      * asyncUntransform
+                      * contentUntransform);
 
     
     
     if (aOutClipTransform) {
-      *aOutClipTransform = asyncCompensation;
+      *aOutClipTransform = compensation;
     }
   }
   transform = transform * compensation;
