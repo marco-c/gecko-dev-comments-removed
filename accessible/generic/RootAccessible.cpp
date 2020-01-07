@@ -282,7 +282,10 @@ RootAccessible::ProcessDOMEvent(nsIDOMEvent* aDOMEvent)
 
   DocAccessible* targetDocument = GetAccService()->
     GetDocAccessible(origTargetNode->OwnerDoc());
-  NS_ASSERTION(targetDocument, "No document while accessible is in document?!");
+  if (!targetDocument) {
+    
+    return;
+  }
 
   Accessible* accessible =
     targetDocument->GetAccessibleOrContainer(origTargetNode);
