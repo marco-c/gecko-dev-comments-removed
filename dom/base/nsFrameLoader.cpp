@@ -921,7 +921,7 @@ bool
 nsFrameLoader::ShowRemoteFrame(const ScreenIntSize& size,
                                nsSubDocumentFrame *aFrame)
 {
-  AUTO_PROFILER_LABEL("nsFrameLoader::ShowRemoteFrame", GRAPHICS);
+  AUTO_PROFILER_LABEL("nsFrameLoader::ShowRemoteFrame", OTHER);
   NS_ASSERTION(IsRemoteFrame(), "ShowRemote only makes sense on remote frames.");
 
   if (!mRemoteBrowser && !TryRemoteBrowser()) {
@@ -2239,13 +2239,13 @@ nsFrameLoader::MaybeCreateDocShell()
     
     ancestorPrincipals = doc->AncestorPrincipals();
     ancestorPrincipals.InsertElementAt(0, doc->NodePrincipal());
-    nsDocShell::Cast(mDocShell)->SetAncestorPrincipals(std::move(ancestorPrincipals));
+    nsDocShell::Cast(mDocShell)->SetAncestorPrincipals(Move(ancestorPrincipals));
 
     
     nsTArray<uint64_t> ancestorOuterWindowIDs;
     ancestorOuterWindowIDs = doc->AncestorOuterWindowIDs();
     ancestorOuterWindowIDs.InsertElementAt(0, win->WindowID());
-    nsDocShell::Cast(mDocShell)->SetAncestorOuterWindowIDs(std::move(ancestorOuterWindowIDs));
+    nsDocShell::Cast(mDocShell)->SetAncestorOuterWindowIDs(Move(ancestorOuterWindowIDs));
   }
 
   ReallyLoadFrameScripts();
@@ -2947,7 +2947,7 @@ nsFrameLoader::EnsureMessageManager()
     parentManager = nsFrameMessageManager::GetGlobalMessageManager();
   }
 
-  mMessageManager = new ChromeMessageSender(parentManager);
+  mMessageManager = new ChromeMessageSender(nullptr, parentManager);
   if (!IsRemoteFrame()) {
     nsresult rv = MaybeCreateDocShell();
     if (NS_FAILED(rv)) {
@@ -3388,7 +3388,7 @@ nsFrameLoader::PopulateUserContextIdFromAttribute(OriginAttributes& aAttr)
   return NS_OK;
 }
 
-ProcessMessageManager*
+ChromeMessageSender*
 nsFrameLoader::GetProcessMessageManager() const
 {
   return mRemoteBrowser ? mRemoteBrowser->Manager()->GetMessageManager()

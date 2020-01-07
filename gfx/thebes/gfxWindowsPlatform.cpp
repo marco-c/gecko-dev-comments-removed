@@ -451,7 +451,7 @@ gfxWindowsPlatform::GetBackendPrefs() const
       data.mContentDefault = BackendType::DIRECT2D1_1;
     }
   }
-  return std::move(data);
+  return mozilla::Move(data);
 }
 
 void
@@ -469,7 +469,7 @@ gfxWindowsPlatform::UpdateBackendPrefs()
       data.mContentDefault = BackendType::SKIA;
     }
   }
-  InitBackendPrefs(std::move(data));
+  InitBackendPrefs(mozilla::Move(data));
 }
 
 bool
@@ -899,7 +899,7 @@ void
 gfxWindowsPlatform::SchedulePaintIfDeviceReset()
 {
   AUTO_PROFILER_LABEL("gfxWindowsPlatform::SchedulePaintIfDeviceReset",
-                      GRAPHICS);
+                      OTHER);
 
   DeviceResetReason resetReason = DeviceResetReason::OK;
   if (!DidRenderingDeviceReset(&resetReason)) {
