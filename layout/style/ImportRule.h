@@ -39,12 +39,8 @@ private:
   ImportRule(const ImportRule& aCopy);
   ~ImportRule();
 public:
-  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(ImportRule, Rule)
   NS_DECL_ISUPPORTS_INHERITED
-
-  
-  using dom::CSSImportRule::GetStyleSheet;
-  using dom::CSSImportRule::GetMedia;
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(ImportRule, Rule)
 
   
 #ifdef DEBUG
@@ -57,10 +53,8 @@ public:
   virtual size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const override;
 
   
-  NS_IMETHOD GetHref(nsAString& aHref) final;
-
-  
   void GetCssTextImpl(nsAString& aCssText) const override;
+  void GetHref(nsAString& aHref) const final;
   dom::MediaList* GetMedia() const final;
   StyleSheet* GetStyleSheet() const final;
 

@@ -8,20 +8,17 @@
 #define mozilla_dom_CSSImportRule_h
 
 #include "mozilla/css/Rule.h"
-#include "nsIDOMCSSImportRule.h"
 
 namespace mozilla {
 namespace dom {
 
 class CSSImportRule : public css::Rule
-                    , public nsIDOMCSSImportRule
 {
 protected:
   using Rule::Rule;
   virtual ~CSSImportRule() {}
 
 public:
-  NS_DECL_ISUPPORTS_INHERITED
   bool IsCCLeaf() const final;
 
   int32_t GetType() const final { return css::Rule::IMPORT_RULE; }
@@ -31,12 +28,8 @@ public:
     const override = 0;
 
   
-  NS_IMETHOD GetMedia(nsIDOMMediaList** aMedia) final;
-  NS_IMETHOD GetStyleSheet(nsIDOMCSSStyleSheet** aStyleSheet) final;
-
-  
   uint16_t Type() const final { return nsIDOMCSSRule::IMPORT_RULE; }
-  
+  virtual void GetHref(nsAString& aHref) const = 0;
   virtual dom::MediaList* GetMedia() const = 0;
   virtual StyleSheet* GetStyleSheet() const = 0;
 

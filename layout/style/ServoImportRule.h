@@ -26,10 +26,6 @@ public:
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(ServoImportRule, dom::CSSImportRule)
 
-  
-  using dom::CSSImportRule::GetStyleSheet;
-  using dom::CSSImportRule::GetMedia;
-
 #ifdef DEBUG
   void List(FILE* out = stdout, int32_t aIndent = 0) const final;
 #endif
@@ -37,10 +33,8 @@ public:
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const final;
 
   
-  NS_IMETHOD GetHref(nsAString& aHref) final;
-
-  
   void GetCssTextImpl(nsAString& aCssText) const override;
+  void GetHref(nsAString& aHref) const final;
   dom::MediaList* GetMedia() const final;
   StyleSheet* GetStyleSheet() const final;
 
