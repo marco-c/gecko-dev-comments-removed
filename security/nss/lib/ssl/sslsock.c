@@ -53,34 +53,35 @@ static const sslSocketOps ssl_secure_ops = {
 
 
 static sslOptions ssl_defaults = {
-    { siBuffer, NULL, 0 }, 
-    PR_TRUE,               
-    PR_FALSE,              
-    PR_FALSE,              
-    2,                     
-    PR_FALSE,              
-    PR_FALSE,              
-    PR_FALSE,              
-    PR_FALSE,              
-    PR_TRUE,               
-    PR_FALSE,              
-    PR_FALSE,              
-    PR_FALSE,              
-    2,                     
-    PR_FALSE,              
-    PR_FALSE,              
-    PR_TRUE,               
-    PR_FALSE,              
-    PR_FALSE,              
-    PR_TRUE,               
-    PR_TRUE,               
-    PR_FALSE,              
-    PR_TRUE,               
-    PR_FALSE,              
-    PR_FALSE,              
-    PR_FALSE,              
-    PR_FALSE,              
-    PR_FALSE               
+    .nextProtoNego = { siBuffer, NULL, 0 },
+    .maxEarlyDataSize = 1 << 16,
+    .useSecurity = PR_TRUE,
+    .useSocks = PR_FALSE,
+    .requestCertificate = PR_FALSE,
+    .requireCertificate = SSL_REQUIRE_FIRST_HANDSHAKE,
+    .handshakeAsClient = PR_FALSE,
+    .handshakeAsServer = PR_FALSE,
+    .noCache = PR_FALSE,
+    .fdx = PR_FALSE,
+    .detectRollBack = PR_TRUE,
+    .noLocks = PR_FALSE,
+    .enableSessionTickets = PR_FALSE,
+    .enableDeflate = PR_FALSE,
+    .enableRenegotiation = SSL_RENEGOTIATE_REQUIRES_XTN,
+    .requireSafeNegotiation = PR_FALSE,
+    .enableFalseStart = PR_FALSE,
+    .cbcRandomIV = PR_TRUE,
+    .enableOCSPStapling = PR_FALSE,
+    .enableNPN = PR_FALSE,
+    .enableALPN = PR_TRUE,
+    .reuseServerECDHEKey = PR_TRUE,
+    .enableFallbackSCSV = PR_FALSE,
+    .enableServerDhe = PR_TRUE,
+    .enableExtendedMS = PR_FALSE,
+    .enableSignedCertTimestamps = PR_FALSE,
+    .requireDHENamedGroups = PR_FALSE,
+    .enable0RttData = PR_FALSE,
+    .enableTls13CompatMode = PR_FALSE
 };
 
 
@@ -1249,6 +1250,18 @@ SSL_OptionSetDefault(PRInt32 which, PRIntn val)
             PORT_SetError(SEC_ERROR_INVALID_ARGS);
             return SECFailure;
     }
+    return SECSuccess;
+}
+
+SECStatus
+SSLExp_SetMaxEarlyDataSize(PRFileDesc *fd, PRUint32 size)
+{
+    sslSocket *ss = ssl_FindSocket(fd);
+    if (!ss) {
+        return SECFailure; 
+    }
+
+    ss->opt.maxEarlyDataSize = size;
     return SECSuccess;
 }
 
@@ -3932,6 +3945,7 @@ struct {
     EXP(InstallExtensionHooks),
     EXP(KeyUpdate),
     EXP(SendSessionTicket),
+    EXP(SetMaxEarlyDataSize),
     EXP(SetupAntiReplay),
     EXP(SetResumptionTokenCallback),
     EXP(SetResumptionToken),

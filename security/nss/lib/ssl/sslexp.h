@@ -446,6 +446,14 @@ typedef SECStatus(PR_CALLBACK *SSLResumptionTokenCallback)(
 
 
 
+
+#define SSL_SetMaxEarlyDataSize(fd, size)                    \
+    SSL_EXPERIMENTAL_API("SSL_SetMaxEarlyDataSize",          \
+                         (PRFileDesc * _fd, PRUint32 _size), \
+                         (fd, size))
+
+
+
 #define SSL_UseAltServerHelloType(fd, enable) SSL_DEPRECATED_EXPERIMENTAL_API
 
 SEC_END_PROTOS
