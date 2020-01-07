@@ -2901,7 +2901,7 @@ var SessionStoreInternal = {
     
     
     aTab.removeAttribute("crashed");
-    browser.loadURI("about:blank");
+    browser.loadURI("about:blank", null, null);
 
     let data = TabState.collect(aTab);
     this.restoreTab(aTab, data, {

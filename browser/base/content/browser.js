@@ -1021,7 +1021,7 @@ function handleUriInChrome(aBrowser, aUri) {
 
 
 
-function _loadURI(browser, uri, params = {}) {
+function _loadURIWithFlags(browser, uri, params) {
   let tab = gBrowser.getTabForBrowser(browser);
   
   if (tab) {
@@ -1031,15 +1031,12 @@ function _loadURI(browser, uri, params = {}) {
   if (!uri) {
     uri = "about:blank";
   }
-
-  let {
-    flags = Ci.nsIWebNavigation.LOAD_FLAGS_NONE,
-    referrerURI,
-    referrerPolicy = Ci.nsIHttpChannel.REFERRER_POLICY_UNSET,
-    triggeringPrincipal,
-    postData,
-    userContextId,
-  } = params || {};
+  let triggeringPrincipal = params.triggeringPrincipal || null;
+  let flags = params.flags || 0;
+  let referrer = params.referrerURI;
+  let referrerPolicy = ("referrerPolicy" in params ? params.referrerPolicy :
+                        Ci.nsIHttpChannel.REFERRER_POLICY_UNSET);
+  let postData = params.postData;
 
   let currentRemoteType = browser.remoteType;
   let requiredRemoteType;
@@ -1085,12 +1082,12 @@ function _loadURI(browser, uri, params = {}) {
   }
   try {
     if (!mustChangeProcess) {
-      if (userContextId) {
-        browser.webNavigation.setOriginAttributesBeforeLoading({ userContextId });
+      if (params.userContextId) {
+        browser.webNavigation.setOriginAttributesBeforeLoading({ userContextId: params.userContextId });
       }
 
       browser.webNavigation.loadURIWithOptions(uri, flags,
-                                               referrerURI, referrerPolicy,
+                                               referrer, referrerPolicy,
                                                postData, null, null, triggeringPrincipal);
     } else {
       
@@ -1109,15 +1106,15 @@ function _loadURI(browser, uri, params = {}) {
           ? gSerializationHelper.serializeToString(triggeringPrincipal)
           : null,
         flags,
-        referrer: referrerURI ? referrerURI.spec : null,
+        referrer: referrer ? referrer.spec : null,
         referrerPolicy,
         remoteType: requiredRemoteType,
         postData,
         newFrameloader,
       };
 
-      if (userContextId) {
-        loadParams.userContextId = userContextId;
+      if (params.userContextId) {
+        loadParams.userContextId = params.userContextId;
       }
 
       LoadInOtherProcess(browser, loadParams);
@@ -1132,11 +1129,11 @@ function _loadURI(browser, uri, params = {}) {
       Cu.reportError(e);
       gBrowser.updateBrowserRemotenessByURL(browser, uri);
 
-      if (userContextId) {
-        browser.webNavigation.setOriginAttributesBeforeLoading({ userContextId: userContextId });
+      if (params.userContextId) {
+        browser.webNavigation.setOriginAttributesBeforeLoading({ userContextId: params.userContextId });
       }
 
-      browser.webNavigation.loadURIWithOptions(uri, flags, referrerURI, referrerPolicy,
+      browser.webNavigation.loadURIWithOptions(uri, flags, referrer, referrerPolicy,
                                                postData, null, null, triggeringPrincipal);
     } else {
       throw e;
@@ -3174,9 +3171,9 @@ var BrowserOnClick = {
     
     
     
-    gBrowser.loadURI(gBrowser.currentURI.spec, {
-      flags: Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CLASSIFIER,
-    });
+    gBrowser.loadURIWithFlags(gBrowser.currentURI.spec,
+                              Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CLASSIFIER,
+                              null, null, null);
 
     Services.perms.add(gBrowser.currentURI, "safe-browsing",
                        Ci.nsIPermissionManager.ALLOW_ACTION,
@@ -3299,7 +3296,7 @@ function BrowserReloadWithFlags(reloadFlags) {
     
     
     
-    gBrowser.loadURI(url, { flags: reloadFlags });
+    gBrowser.loadURIWithFlags(url, reloadFlags);
     return;
   }
 
@@ -5343,8 +5340,8 @@ nsBrowserAccess.prototype = {
           let loadflags = isExternal ?
                             Ci.nsIWebNavigation.LOAD_FLAGS_FROM_EXTERNAL :
                             Ci.nsIWebNavigation.LOAD_FLAGS_NONE;
-          gBrowser.loadURI(aURI.spec, {
-            triggeringPrincipal: aTriggeringPrincipal,
+          gBrowser.loadURIWithFlags(aURI.spec, {
+            aTriggeringPrincipal,
             flags: loadflags,
             referrerURI: referrer,
             referrerPolicy,

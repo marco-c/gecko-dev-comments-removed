@@ -239,9 +239,9 @@ var ContentSearch = {
       
       
       this._reply(msg, "Blur");
-      browser.loadURI(submission.uri.spec, {
-        postData: submission.postData
-      });
+      browser.loadURIWithFlags(submission.uri.spec,
+                               Ci.nsIWebNavigation.LOAD_FLAGS_NONE, null, null,
+                               submission.postData);
     } else {
       let params = {
         postData: submission.postData,
