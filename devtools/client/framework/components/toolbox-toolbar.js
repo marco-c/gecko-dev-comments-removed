@@ -72,6 +72,8 @@ class ToolboxToolbar extends Component {
       L10N: PropTypes.object,
       
       toolbox: PropTypes.object,
+      
+      onTabsOrderUpdated: PropTypes.func.isRequired,
     };
   }
 
