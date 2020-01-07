@@ -1020,7 +1020,12 @@ enum Role {
 
   EDITCOMBOBOX = 174,
 
-  LAST_ROLE = EDITCOMBOBOX
+  
+
+
+  BLOCKQUOTE = 175,
+
+  LAST_ROLE = BLOCKQUOTE
 };
 
 } 

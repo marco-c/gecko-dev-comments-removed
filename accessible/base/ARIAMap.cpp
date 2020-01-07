@@ -89,6 +89,15 @@ static const nsRoleMapEntry sWAIRoleMaps[] =
     kNoReqStates
   },
   { 
+    &nsGkAtoms::blockquote,
+    roles::BLOCKQUOTE,
+    kUseMapRole,
+    eNoValue,
+    eNoAction,
+    eNoLiveAttr,
+    kGenericAccType,
+  },
+  { 
     &nsGkAtoms::button,
     roles::PUSHBUTTON,
     kUseMapRole,
@@ -98,6 +107,15 @@ static const nsRoleMapEntry sWAIRoleMaps[] =
     eButton,
     kNoReqStates
     
+  },
+  { 
+    &nsGkAtoms::caption,
+    roles::CAPTION,
+    kUseMapRole,
+    eNoValue,
+    eNoAction,
+    eNoLiveAttr,
+    kGenericAccType,
   },
   { 
     &nsGkAtoms::cell,
@@ -896,6 +914,15 @@ static const nsRoleMapEntry sWAIRoleMaps[] =
     kNoReqStates,
     eARIASelectable,
     eARIACheckedMixed
+  },
+  { 
+    &nsGkAtoms::paragraph,
+    roles::PARAGRAPH,
+    kUseMapRole,
+    eNoValue,
+    eNoAction,
+    eNoLiveAttr,
+    kGenericAccType,
   },
   { 
     &nsGkAtoms::presentation,
