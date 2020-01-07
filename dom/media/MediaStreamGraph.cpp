@@ -32,6 +32,7 @@
 #include "mozilla/Unused.h"
 #include "mtransport/runnable_utils.h"
 #include "VideoUtils.h"
+#include "Tracing.h"
 
 #include "webaudio/blink/DenormalDisabler.h"
 #include "webaudio/blink/HRTFDatabaseLoader.h"
@@ -68,6 +69,8 @@ MediaStreamGraphImpl::~MediaStreamGraphImpl()
              "All streams should have been destroyed by messages from the main thread");
   LOG(LogLevel::Debug, ("MediaStreamGraph %p destroyed", this));
   LOG(LogLevel::Debug, ("MediaStreamGraphImpl::~MediaStreamGraphImpl"));
+
+  mTraceLogger.Stop();
 }
 
 void
@@ -243,7 +246,7 @@ MediaStreamGraphImpl::ProcessChunkMetadataForInterval(MediaStream* aStream,
     if (chunk->IsNull() || offset < aStart) {
       continue;
     }
-    const PrincipalHandle& principalHandle = chunk->GetPrincipalHandle();
+    PrincipalHandle principalHandle = chunk->GetPrincipalHandle();
     if (principalHandle != aSegment.GetLastPrincipalHandle()) {
       aSegment.SetLastPrincipalHandle(principalHandle);
       LOG(LogLevel::Debug,
@@ -332,31 +335,30 @@ namespace {
 } 
 
 bool
-MediaStreamGraphImpl::AudioTrackPresent()
+MediaStreamGraphImpl::AudioTrackPresent(bool& aNeedsAEC)
 {
   MOZ_ASSERT(OnGraphThreadOrNotRunning());
 
   bool audioTrackPresent = false;
-  for (MediaStream* stream : mStreams) {
+  for (uint32_t i = 0; i < mStreams.Length() && audioTrackPresent == false; ++i) {
+    MediaStream* stream = mStreams[i];
+    SourceMediaStream* source = stream->AsSourceStream();
+#ifdef MOZ_WEBRTC
+    if (source && source->NeedsMixing()) {
+      aNeedsAEC = true;
+    }
+#endif
+    
     if (stream->AsAudioNodeStream()) {
       audioTrackPresent = true;
-      break;
+    } else {
+      for (StreamTracks::TrackIter tracks(stream->GetStreamTracks(), MediaSegment::AUDIO);
+           !tracks.IsEnded(); tracks.Next()) {
+        audioTrackPresent = true;
+      }
     }
-
-    if (!StreamTracks::TrackIter(
-            stream->GetStreamTracks(),
-            MediaSegment::AUDIO
-          ).IsEnded()) {
-      audioTrackPresent = true;
-      break;
-    }
-
-    if (SourceMediaStream* source = stream->AsSourceStream()) {
+    if (source) {
       audioTrackPresent = source->HasPendingAudioTrack();
-    }
-
-    if (audioTrackPresent) {
-      break;
     }
   }
 
@@ -366,6 +368,9 @@ MediaStreamGraphImpl::AudioTrackPresent()
   if (!audioTrackPresent && mInputDeviceUsers.Count() != 0) {
     NS_WARNING("No audio tracks, but full-duplex audio is enabled!!!!!");
     audioTrackPresent = true;
+#ifdef MOZ_WEBRTC
+    aNeedsAEC = true;
+#endif
   }
 
   return audioTrackPresent;
@@ -375,7 +380,8 @@ void
 MediaStreamGraphImpl::UpdateStreamOrder()
 {
   MOZ_ASSERT(OnGraphThreadOrNotRunning());
-  bool audioTrackPresent = AudioTrackPresent();
+  bool shouldAEC = false;
+  bool audioTrackPresent = AudioTrackPresent(shouldAEC);
 
   
   
@@ -892,7 +898,8 @@ MediaStreamGraphImpl::CloseAudioInputImpl(AudioDataListener *aListener)
   mAudioInputs.RemoveElement(aListener);
 
   
-  bool audioTrackPresent = AudioTrackPresent();
+  bool shouldAEC = false;
+  bool audioTrackPresent = AudioTrackPresent(shouldAEC);
 
   MonitorAutoLock mon(mMonitor);
   if (LifecycleStateRef() == LIFECYCLE_RUNNING) {
@@ -1122,6 +1129,7 @@ MediaStreamGraphImpl::RunMessageAfterProcessing(UniquePtr<ControlMessage> aMessa
 void
 MediaStreamGraphImpl::RunMessagesInQueue()
 {
+  TRACE_AUDIO_CALLBACK(mTraceLogger);
   MOZ_ASSERT(OnGraphThread());
   
   
@@ -1139,6 +1147,7 @@ MediaStreamGraphImpl::RunMessagesInQueue()
 void
 MediaStreamGraphImpl::UpdateGraph(GraphTime aEndBlockingDecisions)
 {
+  TRACE_AUDIO_CALLBACK(mTraceLogger);
   MOZ_ASSERT(OnGraphThread());
   MOZ_ASSERT(aEndBlockingDecisions >= mProcessedTime);
   
@@ -1234,6 +1243,7 @@ MediaStreamGraphImpl::UpdateGraph(GraphTime aEndBlockingDecisions)
 void
 MediaStreamGraphImpl::Process()
 {
+  TRACE_AUDIO_CALLBACK(mTraceLogger);
   MOZ_ASSERT(OnGraphThread());
   
   bool allBlockedForever = true;
@@ -1338,6 +1348,7 @@ MediaStreamGraphImpl::UpdateMainThreadState()
 bool
 MediaStreamGraphImpl::OneIteration(GraphTime aStateEnd)
 {
+  TRACE_AUDIO_CALLBACK(mTraceLogger);
   
   
   
@@ -1544,6 +1555,7 @@ public:
   }
   NS_IMETHOD Run() override
   {
+    TRACE(static_cast<MediaStreamGraphImpl*>(mGraph)->TraceLogger());
     if (mGraph) {
       mGraph->RunInStableState(mSourceIsMSG);
     }
@@ -2765,6 +2777,7 @@ SourceMediaStream::PullNewData(
   StreamTime aDesiredUpToTime,
   nsTArray<RefPtr<SourceMediaStream::NotifyPullPromise>>& aPromises)
 {
+  TRACE_AUDIO_CALLBACK(GraphImpl()->TraceLogger());
   MutexAutoLock lock(mMutex);
   if (!mPullEnabled || mFinished) {
     return false;
@@ -3601,6 +3614,7 @@ MediaStreamGraphImpl::MediaStreamGraphImpl(GraphDriverType aDriverRequested,
   , mLatencyLog(AsyncLatencyLogger::Get())
   , mAbstractMainThread(aMainThread)
   , mThreadPool(GetMediaThreadPool(MediaThreadType::MSG_CONTROL))
+  , mTraceLogger("MSGTracing")
   , mSelfRef(this)
   , mOutputChannels(std::min<uint32_t>(8, CubebUtils::MaxNumberOfChannels()))
 #ifdef DEBUG
@@ -3614,6 +3628,10 @@ MediaStreamGraphImpl::MediaStreamGraphImpl(GraphDriverType aDriverRequested,
     } else {
       mDriver = new SystemClockDriver(this);
     }
+
+    
+    mTraceLogger.Start();
+    mTraceLogger.Log("[");
   } else {
     mDriver = new OfflineClockDriver(this, MEDIA_GRAPH_TARGET_PERIOD_MS);
   }
@@ -4144,7 +4162,8 @@ MediaStreamGraphImpl::ApplyAudioContextOperationImpl(
   
   
   if (aOperation != AudioContextOperation::Resume) {
-    bool audioTrackPresent = AudioTrackPresent();
+    bool shouldAEC = false;
+    bool audioTrackPresent = AudioTrackPresent(shouldAEC);
 
     if (!audioTrackPresent && CurrentDriver()->AsAudioCallbackDriver()) {
       CurrentDriver()->AsAudioCallbackDriver()->
