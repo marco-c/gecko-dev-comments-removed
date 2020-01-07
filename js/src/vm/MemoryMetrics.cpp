@@ -461,7 +461,7 @@ StatsCellCallback(JSRuntime* rt, void* data, void* thing, JS::TraceKind traceKin
     switch (traceKind) {
       case JS::TraceKind::Object: {
         JSObject* obj = static_cast<JSObject*>(thing);
-        RealmStats& realmStats = obj->maybeCCWRealm()->realmStats();
+        RealmStats& realmStats = obj->realm()->realmStats();
         JS::ClassInfo info;        
         info.objectsGCHeap += thingSize;
 

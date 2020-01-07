@@ -162,6 +162,7 @@ class JSObject : public js::gc::Cell
 
     JS::Compartment* compartment() const { return group_->compartment(); }
     JS::Compartment* maybeCompartment() const { return compartment(); }
+    JS::Realm* realm() const { return group_->realm(); }
 
     inline js::Shape* maybeShape() const;
     inline js::Shape* ensureShape(JSContext* cx);
@@ -434,24 +435,6 @@ class JSObject : public js::gc::Cell
     
     
     inline js::GlobalObject& nonCCWGlobal() const;
-
-    JS::Realm* nonCCWRealm() const {
-        MOZ_ASSERT(!js::IsCrossCompartmentWrapper(this));
-        return group_->realm();
-    }
-
-    
-    
-    
-    JS::Realm* maybeCCWRealm() const {
-        return group_->realm();
-    }
-
-    
-    
-    JS::Realm* deprecatedRealm() const {
-        return group_->realm();
-    }
 
     
 

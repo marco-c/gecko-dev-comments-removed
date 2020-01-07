@@ -89,14 +89,6 @@ typedef HashSet<ReadBarrieredGlobalObject,
                 MovableCellHasher<ReadBarrieredGlobalObject>,
                 ZoneAllocPolicy> WeakGlobalObjectSet;
 
-#ifdef DEBUG
-extern void
-CheckDebuggeeThing(JSScript* script, bool invisibleOk);
-
-extern void
-CheckDebuggeeThing(JSObject* obj, bool invisibleOk);
-#endif
-
 
 
 
@@ -169,9 +161,9 @@ class DebuggerWeakMap : private WeakMap<HeapPtr<UnbarrieredKey>, HeapPtr<JSObjec
     template<typename KeyInput, typename ValueInput>
     bool relookupOrAdd(AddPtr& p, const KeyInput& k, const ValueInput& v) {
         MOZ_ASSERT(v->compartment() == this->compartment);
-#ifdef DEBUG
-        CheckDebuggeeThing(k, InvisibleKeysOk);
-#endif
+        MOZ_ASSERT(!k->realm()->creationOptions().mergeable());
+        MOZ_ASSERT_IF(!InvisibleKeysOk,
+                      !k->realm()->creationOptions().invisibleToDebugger());
         MOZ_ASSERT(!Base::has(k));
         if (!incZoneCount(k->zone()))
             return false;
