@@ -50,20 +50,44 @@ struct nsFont {
   typedef mozilla::FontWeight FontWeight;
 
   
+  
   mozilla::FontFamilyList fontlist;
 
   
-  
-  bool systemFont = false;
+  nsTArray<gfxFontFeature> fontFeatureSettings;
 
   
-  uint8_t variantCaps = NS_FONT_VARIANT_CAPS_NORMAL;
-  uint8_t variantNumeric = NS_FONT_VARIANT_NUMERIC_NORMAL;
-  uint8_t variantPosition = NS_FONT_VARIANT_POSITION_NORMAL;
-  uint8_t variantWidth = NS_FONT_VARIANT_WIDTH_NORMAL;
+  nsTArray<gfxFontVariation> fontVariationSettings;
 
-  uint16_t variantLigatures = NS_FONT_VARIANT_LIGATURES_NORMAL;
-  uint16_t variantEastAsian = NS_FONT_VARIANT_EAST_ASIAN_NORMAL;
+  
+  nsTArray<gfxAlternateValue> alternateValues;
+
+  
+  RefPtr<gfxFontFeatureValueSet> featureValueLookup;
+
+  
+  nscoord size = 0;
+
+  
+  
+  
+  
+  float sizeAdjust = -1.0f;
+
+  
+  
+  nscolor fontSmoothingBackgroundColor = NS_RGBA(0,0,0,0);
+
+  
+  
+  
+  uint32_t languageOverride = 0;
+
+  
+  
+  FontSlantStyle style = FontSlantStyle::Normal();
+  FontWeight weight = FontWeight::Normal();
+  FontStretch stretch = FontStretch::Normal();
 
   
   
@@ -73,15 +97,16 @@ struct nsFont {
   uint16_t variantAlternates = NS_FONT_VARIANT_ALTERNATES_NORMAL;
 
   
+  uint16_t variantLigatures = NS_FONT_VARIANT_LIGATURES_NORMAL;
+  uint16_t variantEastAsian = NS_FONT_VARIANT_EAST_ASIAN_NORMAL;
+
+  uint8_t variantCaps = NS_FONT_VARIANT_CAPS_NORMAL;
+  uint8_t variantNumeric = NS_FONT_VARIANT_NUMERIC_NORMAL;
+  uint8_t variantPosition = NS_FONT_VARIANT_POSITION_NORMAL;
+  uint8_t variantWidth = NS_FONT_VARIANT_WIDTH_NORMAL;
+
+  
   uint8_t smoothing = NS_FONT_SMOOTHING_AUTO;
-
-  
-  
-  nscolor fontSmoothingBackgroundColor = NS_RGBA(0,0,0,0);
-
-  FontSlantStyle style = FontSlantStyle::Normal();
-  FontWeight weight = FontWeight::Normal();
-  FontStretch stretch = FontStretch::Normal();
 
   
   uint8_t kerning = NS_FONT_KERNING_AUTO;
@@ -94,30 +119,8 @@ struct nsFont {
   uint8_t synthesis = NS_FONT_SYNTHESIS_WEIGHT | NS_FONT_SYNTHESIS_STYLE;
 
   
-  nscoord size = 0;
-
   
-  
-  
-  
-  float sizeAdjust = -1.0f;
-
-  
-  nsTArray<gfxAlternateValue> alternateValues;
-
-  
-  RefPtr<gfxFontFeatureValueSet> featureValueLookup;
-
-  
-  nsTArray<gfxFontFeature> fontFeatureSettings;
-
-  
-  nsTArray<gfxFontVariation> fontVariationSettings;
-
-  
-  
-  
-  uint32_t languageOverride = 0;
+  bool systemFont = false;
 
   
   nsFont(const mozilla::FontFamilyList& aFontlist, nscoord aSize);
