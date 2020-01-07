@@ -1626,7 +1626,13 @@ var SessionStoreInternal = {
           const observeTopic = topic => {
             let deferred = PromiseUtils.defer();
             const cleanup = () => Services.obs.removeObserver(deferred.resolve, topic);
-            Services.obs.addObserver(deferred.resolve, topic);
+            Services.obs.addObserver(subject => {
+              
+              subject.QueryInterface(Ci.nsIPropertyBag2);
+              if (!(topic == "ipc:content-shutdown" && !subject.get("abnormal"))) {
+                deferred.resolve();
+              }
+            }, topic);
             deferred.promise.then(cleanup, cleanup);
             return deferred;
           };
