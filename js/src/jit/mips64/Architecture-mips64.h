@@ -84,9 +84,6 @@ class FloatRegisters : public FloatRegistersMIPSShared
           (1U << FloatRegisters::f23)
         ) * Spread;
 
-    
-    static const SetType TempMask = VolatileMask & ~NonAllocatableMask;
-
     static const SetType AllocatableMask = AllMask & ~NonAllocatableMask;
 };
 

@@ -193,9 +193,6 @@ class Registers {
         AllMask & ~VolatileMask & ~(1 << X86Encoding::rsp);
 
     static const SetType AllocatableMask = AllMask & ~NonAllocatableMask;
-
-    
-    static const SetType TempMask = VolatileMask & ~NonAllocatableMask;
 };
 
 typedef Registers::SetType PackedRegisterMask;

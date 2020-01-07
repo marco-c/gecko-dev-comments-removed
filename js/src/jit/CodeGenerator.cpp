@@ -5078,9 +5078,6 @@ void
 CodeGenerator::generateArgumentsChecks(bool bailout)
 {
     
-    static const uint32_t EntryTempMask = Registers::TempMask & ~(1 << OsrFrameReg.code());
-
-    
     
     
     
@@ -5089,7 +5086,7 @@ CodeGenerator::generateArgumentsChecks(bool bailout)
     MResumePoint* rp = mir.entryResumePoint();
 
     
-    Register temp = AllocatableGeneralRegisterSet(EntryTempMask).getAny();
+    Register temp = AllocatableGeneralRegisterSet(GeneralRegisterSet::All()).getAny();
 
     const CompileInfo& info = gen->info();
 

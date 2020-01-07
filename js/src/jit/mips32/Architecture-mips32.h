@@ -97,9 +97,6 @@ class FloatRegisters : public FloatRegistersMIPSShared
         ((SetType(1) << (FloatRegisters::f16 >> 1)) |
          (SetType(1) << (FloatRegisters::f18 >> 1))) * ((1 << TotalSingle) + 1);
 
-    
-    static const SetType TempMask = VolatileMask & ~NonAllocatableMask;
-
     static const SetType AllocatableMask = AllMask & ~NonAllocatableMask;
 };
 

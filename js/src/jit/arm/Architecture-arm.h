@@ -152,9 +152,6 @@ class Registers
         (1 << Registers::pc);
 
     
-    static const SetType TempMask = VolatileMask & ~NonAllocatableMask;
-
-    
     static const SetType JSCallMask =
         (1 << Registers::r2) |
         (1 << Registers::r3);
@@ -361,9 +358,6 @@ class FloatRegisters
     static const SetType NonAllocatableMask = ((1ULL << d15)) |
                                                (1ULL << s30) |
                                                (1ULL << s31);
-
-    
-    static const SetType TempMask = VolatileMask & ~NonAllocatableMask;
 
     static const SetType AllocatableMask = AllMask & ~NonAllocatableMask;
 };
