@@ -34,7 +34,7 @@ config = {
         
         'SCCACHE_DISABLE': '1',
         
-        'PATH': '/usr/local/bin:/usr/lib64/ccache:/bin:\
+        'PATH': '/usr/local/bin:/bin:\
 /usr/bin:/usr/local/sbin:/usr/sbin:/sbin',
         
     },
