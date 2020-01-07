@@ -412,9 +412,6 @@ public:
     
     
     eUseUserSpaceOfUseElement = 1 << 9,
-    
-    
-    eDoNotClipToBBoxOfContentInsideClipPath = 1 << 10,
   };
   
 
