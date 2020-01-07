@@ -1842,7 +1842,7 @@ CacheIRCompiler::emitLoadStringCharResult()
     
     masm.boundsCheck32ForLoad(index, Address(str, JSString::offsetOfLength()), scratch1,
                               failure->label());
-    masm.loadStringChar(str, index, scratch1, failure->label());
+    masm.loadStringChar(str, index, scratch1, scratch2, failure->label());
 
     
     masm.boundsCheck32PowerOfTwo(scratch1, StaticStrings::UNIT_STATIC_LIMIT, failure->label());
