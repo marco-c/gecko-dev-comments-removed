@@ -2,6 +2,8 @@
 
 "use strict";
 
+PromiseTestUtils.whitelistRejectionsGlobally(/Message manager disconnected/);
+
 ChromeUtils.import("resource://testing-common/MockRegistrar.jsm");
 
 let idleService = {
