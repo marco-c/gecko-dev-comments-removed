@@ -571,8 +571,16 @@ listcell[type="checkbox"] {
   -moz-binding: url("chrome://global/content/bindings/listbox.xml#listitem-iconic");
 }
 
+listitem[type="checkbox"].listitem-iconic {
+  -moz-binding: url("chrome://global/content/bindings/listbox.xml#listitem-checkbox-iconic");
+}
+
 .listcell-iconic {
   -moz-binding: url("chrome://global/content/bindings/listbox.xml#listcell-iconic");
+}
+
+listcell[type="checkbox"].listcell-iconic {
+  -moz-binding: url("chrome://global/content/bindings/listbox.xml#listcell-checkbox-iconic");
 }
 
 listbox {
@@ -799,23 +807,8 @@ textbox[type="autocomplete"] {
   -moz-binding: url("chrome://global/content/bindings/autocomplete.xml#autocomplete");
 }
 
-panel[type="autocomplete"] {
-  -moz-binding: url("chrome://global/content/bindings/autocomplete.xml#autocomplete-result-popup");
-}
-
 panel[type="autocomplete-richlistbox"] {
   -moz-binding: url("chrome://global/content/bindings/autocomplete.xml#autocomplete-rich-result-popup");
-}
-
-
-
-.autocomplete-tree {
-  -moz-binding: url("chrome://global/content/bindings/autocomplete.xml#autocomplete-tree");
-  -moz-user-focus: ignore;
-}
-
-.autocomplete-treebody {
-  -moz-binding: url("chrome://global/content/bindings/autocomplete.xml#autocomplete-treebody");
 }
 
 .autocomplete-richlistbox {
@@ -833,17 +826,7 @@ panel[type="autocomplete-richlistbox"] {
   overflow: -moz-hidden-unscrollable;
 }
 
-.autocomplete-treerows {
-  -moz-binding: url("chrome://global/content/bindings/autocomplete.xml#autocomplete-treerows");
-}
-
 %endif
-
-
-
-popup[type="autocomplete"][hidden="true"] {
-  visibility: hidden;
-}
 
 
 
