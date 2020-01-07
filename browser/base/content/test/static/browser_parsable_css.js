@@ -106,9 +106,6 @@ let whitelist = [
   {propName: "--positionDurationBox-width-long",
    isFromDevTools: false},
   
-  {propName: "--rule-flex-toggle-color",
-   isFromDevTools: true},
-  
   {propName: "--theme-search-overlays-semitransparent",
    isFromDevTools: true},
   
