@@ -81,13 +81,22 @@ async function crashBackgroundTabs(tabs) {
     Assert.ok(tab.linkedBrowser.isRemoteBrowser, "tab is remote");
   }
 
+  let remotenessChangePromises = tabs.map((t) => {
+    return BrowserTestUtils.waitForEvent(t, "TabRemotenessChange");
+  });
+
+  let tabsRevived = tabs.map((t) => {
+    return promiseTabRestoring(t);
+  });
+
   await BrowserTestUtils.crashBrowser(tabs[0].linkedBrowser, false);
+  await Promise.all(remotenessChangePromises);
+  await Promise.all(tabsRevived);
 
   
   
   for (let tab of tabs) {
-    Assert.ok(!tab.linkedPanel, "The tab should be initially discarded.");
-    Assert.ok(tab.linkedBrowser.isRemoteBrowser, "tab is still remote");
+    Assert.ok(!tab.linkedBrowser.isRemoteBrowser, "tab is not remote");
     Assert.ok(!tab.linkedBrowser.hasAttribute("crashed"), "tab is not crashed");
     Assert.ok(tab.hasAttribute("pending"), "tab is pending");
   }
@@ -117,9 +126,9 @@ add_task(async function test_background_crash_simple() {
 
     
     let tabCrashedPagePromise =
-      BrowserTestUtils.waitForEvent(window,
-                                    "AboutTabCrashedReady",
-                                    false, null, true);
+      BrowserTestUtils.waitForContentEvent(tab1.linkedBrowser,
+                                           "AboutTabCrashedReady",
+                                           false, null, true);
     await BrowserTestUtils.switchTab(gBrowser, tab1);
     await tabCrashedPagePromise;
 
