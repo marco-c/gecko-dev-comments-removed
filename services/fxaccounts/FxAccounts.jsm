@@ -1582,6 +1582,10 @@ FxAccountsInternal.prototype = {
 
 
 
+
+
+
+
   getSignedInUserProfile() {
     let currentState = this.currentAccountState;
     return this.profile.getProfile().then(
