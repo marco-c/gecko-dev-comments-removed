@@ -46,6 +46,7 @@
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/ProcessingInstruction.h"
 #include "mozilla/dom/ShadowRoot.h"
+#include "mozilla/dom/Text.h"
 #include "nsLayoutUtils.h"
 #include "mozilla/ScopeExit.h"
 
@@ -1599,7 +1600,7 @@ nsHTMLCopyEncoder::GetPromotedPoint(Endpoint aWhere, nsIDOMNode *aNode, int32_t 
   {
     
     nsCOMPtr<nsINode> t = do_QueryInterface(aNode);
-    if (IsTextNode(t))
+    if (auto nodeAsText = t->GetAsText())
     {
       
       if (offset >  0)
@@ -1607,9 +1608,8 @@ nsHTMLCopyEncoder::GetPromotedPoint(Endpoint aWhere, nsIDOMNode *aNode, int32_t 
         
         
         
-        nsCOMPtr<nsIDOMCharacterData> nodeAsText = do_QueryInterface(aNode);
         nsAutoString text;
-        nodeAsText->SubstringData(0, offset, text);
+        nodeAsText->SubstringData(0, offset, text, IgnoreErrors());
         text.CompressWhitespace();
         if (!text.IsEmpty())
           return NS_OK;
@@ -1675,7 +1675,7 @@ nsHTMLCopyEncoder::GetPromotedPoint(Endpoint aWhere, nsIDOMNode *aNode, int32_t 
   {
     
     nsCOMPtr<nsINode> n = do_QueryInterface(aNode);
-    if (IsTextNode(n))
+    if (auto nodeAsText = n->GetAsText())
     {
       
       uint32_t len = n->Length();
@@ -1684,9 +1684,8 @@ nsHTMLCopyEncoder::GetPromotedPoint(Endpoint aWhere, nsIDOMNode *aNode, int32_t 
         
         
         
-        nsCOMPtr<nsIDOMCharacterData> nodeAsText = do_QueryInterface(aNode);
         nsAutoString text;
-        nodeAsText->SubstringData(offset, len-offset, text);
+        nodeAsText->SubstringData(offset, len-offset, text, IgnoreErrors());
         text.CompressWhitespace();
         if (!text.IsEmpty())
           return NS_OK;
