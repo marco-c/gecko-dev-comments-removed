@@ -455,9 +455,6 @@ protected:
     
     
     bool mIsIMInAsyncKeyHandlingMode;
-    
-    
-    bool mIsKeySnooped;
 
     
     
@@ -629,8 +626,7 @@ protected:
 
 
 
-
-    bool MaybeDispatchKeyEventAsProcessedByIME(EventMessage aFollowingEvent);
+    bool MaybeDispatchKeyEventAsProcessedByIME();
 
     
 
