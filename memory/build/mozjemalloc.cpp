@@ -538,9 +538,20 @@ static void*
 base_alloc(size_t aSize);
 
 
-static Atomic<bool> malloc_initialized(false);
+#if defined(_MSC_VER) && !defined(__clang__)
 
-static StaticMutex gInitLock;
+
+
+
+
+
+
+static bool malloc_initialized;
+#else
+static Atomic<bool> malloc_initialized;
+#endif
+
+static StaticMutex gInitLock = { STATIC_MUTEX_INIT };
 
 
 
