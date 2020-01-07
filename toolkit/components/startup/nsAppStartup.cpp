@@ -27,6 +27,8 @@
 #include "nsAutoPtr.h"
 #include "nsString.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/ResultExtensions.h"
+#include "mozilla/Unused.h"
 #include "GeckoProfiler.h"
 
 #include "prprf.h"
@@ -922,6 +924,16 @@ nsAppStartup::TrackStartupCrashBegin(bool *aIsSafeModeNecessary)
   return rv;
 }
 
+static nsresult
+RemoveIncompleteStartupFile()
+{
+  nsCOMPtr<nsIFile> file;
+  MOZ_TRY(NS_GetSpecialDirectory(NS_APP_USER_PROFILE_LOCAL_50_DIR, getter_AddRefs(file)));
+
+  MOZ_TRY_VAR(file, mozilla::startup::GetIncompleteStartupFile(file));
+  return file->Remove(false);
+}
+
 NS_IMETHODIMP
 nsAppStartup::TrackStartupCrashEnd()
 {
@@ -936,6 +948,10 @@ nsAppStartup::TrackStartupCrashEnd()
   mStartupCrashTrackingEnded = true;
 
   StartupTimeline::Record(StartupTimeline::STARTUP_CRASH_DETECTION_END);
+
+  
+  
+  Unused << NS_WARN_IF(NS_FAILED(RemoveIncompleteStartupFile()));
 
   
   
