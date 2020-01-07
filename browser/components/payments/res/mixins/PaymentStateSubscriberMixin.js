@@ -15,8 +15,19 @@ export let requestStore = new PaymentsStore({
   changesPrevented: false,
   completionState: "initial",
   orderDetailsShowing: false,
+  "basic-card-page": {
+    guid: null,
+    
+  },
+  "address-page": {
+    guid: null,
+    title: "",
+  },
+  "payment-summary": {
+  },
   page: {
     id: "payment-summary",
+    previousId: null,
     
     
   },
