@@ -1431,8 +1431,8 @@ async function getTransactionsForTransferItems(items, insertionIndex,
     
     
     if (!doCopy && !canMoveUnwrappedNode(item)) {
-      Components.utils.reportError("Tried to move an unmovable Places " +
-                                  "node, reverting to a copy operation.");
+      Cu.reportError("Tried to move an unmovable Places " +
+                     "node, reverting to a copy operation.");
       doCopy = true;
     }
     transactions.push(
