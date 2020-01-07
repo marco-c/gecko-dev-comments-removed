@@ -885,7 +885,7 @@ EffectCompositor::PreTraverseInSubtree(ServoTraversalFlags aFlags,
       
       
       
-      mPresContext->RestyleManager()->AsServo()->
+      mPresContext->RestyleManager()->
         PostRestyleEventForAnimations(target.mElement,
                                       target.mPseudoType,
                                       cascadeLevel == CascadeLevel::Transitions
@@ -967,7 +967,7 @@ EffectCompositor::PreTraverse(dom::Element* aElement,
       continue;
     }
 
-    mPresContext->RestyleManager()->AsServo()->
+    mPresContext->RestyleManager()->
       PostRestyleEventForAnimations(aElement,
                                     aPseudoType,
                                     cascadeLevel == CascadeLevel::Transitions

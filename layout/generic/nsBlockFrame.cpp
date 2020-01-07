@@ -7542,7 +7542,7 @@ nsBlockFrame::UpdatePseudoElementStyles(ServoRestyleState& aRestyleState)
     
     
     
-    ServoRestyleManager* manager = PresContext()->RestyleManager()->AsServo();
+    RestyleManager* manager = PresContext()->RestyleManager();
     for (nsIFrame* kid : firstLineFrame->PrincipalChildList()) {
       manager->ReparentComputedStyle(kid);
     }

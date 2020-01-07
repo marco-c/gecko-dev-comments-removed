@@ -151,8 +151,7 @@ DocumentNeedsRestyle(
   
   
   
-  ServoRestyleManager* restyleManager =
-    presContext->RestyleManager()->AsServo();
+  RestyleManager* restyleManager = presContext->RestyleManager();
   restyleManager->ProcessAllPendingAttributeAndStateInvalidations();
 
   if (!presContext->EffectCompositor()->HasPendingStyleUpdates() &&
