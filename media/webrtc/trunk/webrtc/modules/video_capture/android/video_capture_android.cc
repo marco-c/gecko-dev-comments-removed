@@ -116,7 +116,10 @@ int32_t VideoCaptureAndroid::OnIncomingFrame(uint8_t* videoFrame,
                                              size_t videoFrameLength,
                                              int32_t degrees,
                                              int64_t captureTime) {
-  if (!_captureStarted)
+  
+  
+  
+  if (!CaptureStarted())
     return 0;
 
   VideoRotation current_rotation =
