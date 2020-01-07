@@ -10,9 +10,11 @@
 #ifndef mozilla_css_ImageLoader_h___
 #define mozilla_css_ImageLoader_h___
 
-#include "CORSMode.h"
+#include "mozilla/CORSMode.h"
 #include "nsClassHashtable.h"
 #include "nsHashKeys.h"
+#include "nsIFrame.h"
+#include "nsIReflowCallback.h"
 #include "nsTArray.h"
 #include "imgIRequest.h"
 #include "imgINotificationObserver.h"
@@ -33,6 +35,14 @@ struct ImageValue;
 class ImageLoader final : public imgINotificationObserver
 {
 public:
+  
+  
+  typedef uint32_t FrameFlags;
+  enum {
+    REQUEST_REQUIRES_REFLOW    = 1u << 0,
+    REQUEST_HAS_BLOCKED_ONLOAD = 1u << 1
+  };
+
   typedef mozilla::css::ImageValue Image;
 
   explicit ImageLoader(nsIDocument* aDocument)
@@ -51,7 +61,8 @@ public:
   void DeregisterCSSImage(Image* aImage);
 
   void AssociateRequestToFrame(imgIRequest* aRequest,
-                               nsIFrame* aFrame);
+                               nsIFrame* aFrame,
+                               FrameFlags aFlags);
 
   void DisassociateRequestFromFrame(imgIRequest* aRequest,
                                     nsIFrame* aFrame);
@@ -73,16 +84,32 @@ public:
   void FlushUseCounters();
 
 private:
+  
+  
+  struct ImageReflowCallback final : public nsIReflowCallback
+  {
+    RefPtr<ImageLoader> mLoader;
+    WeakFrame mFrame;
+    nsCOMPtr<imgIRequest> const mRequest;
+
+    ImageReflowCallback(ImageLoader* aLoader,
+                        nsIFrame* aFrame,
+                        imgIRequest* aRequest)
+    : mLoader(aLoader)
+    , mFrame(aFrame)
+    , mRequest(aRequest)
+    {}
+
+    bool ReflowFinished() override;
+    void ReflowCallbackCanceled() override;
+  };
+
   ~ImageLoader() {}
 
   
   
   
   
-
-  
-  
-  typedef uint32_t FrameFlags;
 
   struct FrameWithFlags {
     FrameWithFlags(nsIFrame* aFrame)
@@ -122,6 +149,9 @@ private:
   nsPresContext* GetPresContext();
 
   void DoRedraw(FrameSet* aFrameSet, bool aForcePaint);
+  void UnblockOnloadIfNeeded(nsIFrame* aFrame, imgIRequest* aRequest);
+  void RequestReflowIfNeeded(FrameSet* aFrameSet, imgIRequest* aRequest);
+  void RequestReflowOnFrame(nsIFrame* aFrame, imgIRequest* aRequest);
 
   nsresult OnSizeAvailable(imgIRequest* aRequest, imgIContainer* aImage);
   nsresult OnFrameComplete(imgIRequest* aRequest);

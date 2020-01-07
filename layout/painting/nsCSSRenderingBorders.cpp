@@ -3486,7 +3486,7 @@ nsCSSBorderImageRenderer::CreateBorderImageRenderer(nsPresContext* aPresContext,
   
   
   
-  aForFrame->AssociateImage(aStyleBorder.mBorderImageSource, aPresContext);
+  aForFrame->AssociateImage(aStyleBorder.mBorderImageSource, aPresContext, 0);
 
   nsCSSBorderImageRenderer renderer(aForFrame, aBorderArea,
                                     aStyleBorder, aSkipSides, imgRenderer);
