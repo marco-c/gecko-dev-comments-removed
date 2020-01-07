@@ -746,7 +746,7 @@ class ObjectRealm
 
 } 
 
-class JS::Realm : public JSCompartment
+class JS::Realm : private JSCompartment
 {
     const JS::RealmCreationOptions creationOptions_;
     JS::RealmBehaviors behaviors_;
@@ -903,6 +903,24 @@ class JS::Realm : public JSCompartment
                                 size_t* jitRealm,
                                 size_t* privateData,
                                 size_t* scriptCountsMapArg);
+
+    JS::Zone* zone() {
+        return zone_;
+    }
+    const JS::Zone* zone() const {
+        return zone_;
+    }
+
+    JSRuntime* runtimeFromMainThread() const {
+        MOZ_ASSERT(js::CurrentThreadCanAccessRuntime(runtime_));
+        return runtime_;
+    }
+
+    
+    
+    JSRuntime* runtimeFromAnyThread() const {
+        return runtime_;
+    }
 
     const JS::RealmCreationOptions& creationOptions() const { return creationOptions_; }
     JS::RealmBehaviors& behaviors() { return behaviors_; }
