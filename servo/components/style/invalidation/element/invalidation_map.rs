@@ -63,6 +63,25 @@ pub struct Dependency {
     pub selector_offset: usize,
 }
 
+
+#[derive(Debug, Eq, PartialEq)]
+pub enum DependencyInvalidationKind {
+    
+    Element,
+    
+    
+    
+    
+    ElementAndDescendants,
+    
+    Descendants,
+    
+    
+    Siblings,
+    
+    SlottedElements,
+}
+
 impl Dependency {
     
     
@@ -77,27 +96,18 @@ impl Dependency {
     }
 
     
-    
-    
-    
-    
-    
-    
-    pub fn affects_self(&self) -> bool {
-        matches!(self.combinator(), None | Some(Combinator::PseudoElement))
-    }
-
-    
-    pub fn affects_descendants(&self) -> bool {
-        matches!(self.combinator(), Some(Combinator::PseudoElement) |
-                                    Some(Combinator::Child) |
-                                    Some(Combinator::Descendant))
-    }
-
-    
-    pub fn affects_later_siblings(&self) -> bool {
-        matches!(self.combinator(), Some(Combinator::NextSibling) |
-                                    Some(Combinator::LaterSibling))
+    pub fn invalidation_kind(&self) -> DependencyInvalidationKind {
+        match self.combinator() {
+            None => DependencyInvalidationKind::Element,
+            Some(Combinator::Child) |
+            Some(Combinator::Descendant) => DependencyInvalidationKind::Descendants,
+            Some(Combinator::LaterSibling) |
+            Some(Combinator::NextSibling) => DependencyInvalidationKind::Siblings,
+            
+            
+            Some(Combinator::PseudoElement) => DependencyInvalidationKind::ElementAndDescendants,
+            Some(Combinator::SlotAssignment) => DependencyInvalidationKind::SlottedElements,
+        }
     }
 }
 

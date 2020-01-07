@@ -668,6 +668,17 @@ impl<E: TElement> StyleSharingCache<E> {
             return None;
         }
 
+        
+        
+        
+        
+        
+        
+        if target.element.assigned_slot() != candidate.element.assigned_slot() {
+            trace!("Miss: Different style scopes");
+            return None;
+        }
+
         if *target.get_local_name() != *candidate.element.get_local_name() {
             trace!("Miss: Local Name");
             return None;

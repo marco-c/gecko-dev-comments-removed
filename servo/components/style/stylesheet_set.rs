@@ -133,6 +133,7 @@ where
 }
 
 
+#[derive(Clone, Copy, Debug)]
 pub enum SheetRebuildKind {
     
     Full,

@@ -31,7 +31,7 @@ use std::fmt;
 use std::fmt::Debug;
 use std::hash::Hash;
 use std::ops::Deref;
-use stylist::Stylist;
+use stylist::{StyleRuleCascadeData, Stylist};
 use traversal_flags::TraversalFlags;
 
 
@@ -417,6 +417,20 @@ pub trait TElement
     {}
 
     
+    fn is_html_element(&self) -> bool;
+
+    
+    fn is_html_slot_element(&self) -> bool {
+        self.get_local_name() == &*local_name!("slot") &&
+        self.is_html_element()
+    }
+
+    
+    fn slotted_nodes(&self) -> &[Self::ConcreteNode] {
+        &[]
+    }
+
+    
     
     fn closest_non_native_anonymous_ancestor(&self) -> Option<Self> {
         unreachable!("Servo doesn't know about NAC");
@@ -758,6 +772,41 @@ pub trait TElement
         F: FnMut(AtomicRef<'a, Stylist>),
     {
         false
+    }
+
+    
+    
+    
+    
+    fn each_applicable_non_document_style_rule_data<'a, F>(&self, mut f: F) -> bool
+    where
+        Self: 'a,
+        F: FnMut(AtomicRef<'a, StyleRuleCascadeData>, QuirksMode),
+    {
+        let cut_off_inheritance = self.each_xbl_stylist(|stylist| {
+            let quirks_mode = stylist.quirks_mode();
+            f(
+                AtomicRef::map(stylist, |stylist| stylist.normal_author_cascade_data()),
+                quirks_mode,
+            )
+        });
+
+        let mut current = self.assigned_slot();
+        while let Some(slot) = current {
+            slot.each_xbl_stylist(|stylist| {
+                let quirks_mode = stylist.quirks_mode();
+                if stylist.slotted_author_cascade_data().is_some() {
+                    f(
+                        AtomicRef::map(stylist, |stylist| stylist.slotted_author_cascade_data().unwrap()),
+                        quirks_mode,
+                    )
+                }
+            });
+
+            current = slot.assigned_slot();
+        }
+
+        cut_off_inheritance
     }
 
     

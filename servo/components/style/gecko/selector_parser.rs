@@ -6,7 +6,7 @@
 
 use cssparser::{BasicParseError, BasicParseErrorKind, Parser, ToCss, Token, CowRcStr, SourceLocation};
 use element_state::{DocumentState, ElementState};
-use gecko_bindings::structs::CSSPseudoClassType;
+use gecko_bindings::structs::{self, CSSPseudoClassType};
 use gecko_bindings::structs::RawServoSelectorList;
 use gecko_bindings::sugar::ownership::{HasBoxFFI, HasFFI, HasSimpleFFI};
 use selector_parser::{Direction, SelectorParser};
@@ -332,6 +332,13 @@ impl<'a> SelectorParser<'a> {
 impl<'a, 'i> ::selectors::Parser<'i> for SelectorParser<'a> {
     type Impl = SelectorImpl;
     type Error = StyleParseErrorKind<'i>;
+
+    fn parse_slotted(&self) -> bool {
+        
+        
+        
+        unsafe { structs::nsContentUtils_sIsWebComponentsEnabled }
+    }
 
     fn pseudo_element_allows_single_colon(name: &str) -> bool {
         
