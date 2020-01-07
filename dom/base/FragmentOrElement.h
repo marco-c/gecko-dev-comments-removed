@@ -215,12 +215,6 @@ public:
 
 
     RefPtr<CustomElementData> mCustomElementData;
-
-    
-
-
-    nsCOMPtr<nsISupports> mFrameLoaderOrOpener;
-
   };
 
   class nsDOMSlots : public nsIContent::nsContentSlots
