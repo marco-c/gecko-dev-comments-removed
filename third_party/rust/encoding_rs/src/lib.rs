@@ -8,7 +8,7 @@
 
 
 #![cfg_attr(feature = "cargo-clippy", allow(doc_markdown, inline_always, new_ret_no_self))]
-#![doc(html_root_url = "https://docs.rs/encoding_rs/0.7.2")]
+#![doc(html_root_url = "https://docs.rs/encoding_rs/0.8.0")]
 
 
 
@@ -495,60 +495,241 @@
 
 
 
-#![cfg_attr(feature = "simd-accel", feature(cfg_target_feature, platform_intrinsics, core_intrinsics))]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#![cfg_attr(
+    feature = "simd-accel", feature(cfg_target_feature, platform_intrinsics, core_intrinsics)
+)]
 
 #[macro_use]
 extern crate cfg_if;
 
-#[cfg(all(feature = "simd-accel", any(target_feature = "sse2", all(target_endian = "little", target_arch = "aarch64"))))]
+#[cfg(
+    all(
+        feature = "simd-accel",
+        any(
+            target_feature = "sse2",
+            all(target_endian = "little", target_arch = "aarch64"),
+            all(target_endian = "little", target_feature = "neon")
+        )
+    )
+)]
 extern crate simd;
 
 #[cfg(feature = "serde")]
 extern crate serde;
 
-#[cfg(all(test,feature = "serde"))]
-extern crate serde_json;
-#[cfg(all(test,feature = "serde"))]
+#[cfg(all(test, feature = "serde"))]
 extern crate bincode;
-#[cfg(all(test,feature = "serde"))]
+#[cfg(all(test, feature = "serde"))]
 #[macro_use]
 extern crate serde_derive;
+#[cfg(all(test, feature = "serde"))]
+extern crate serde_json;
 
 #[macro_use]
 mod macros;
 
-#[cfg(all(feature = "simd-accel", any(target_feature = "sse2", all(target_endian = "little", target_arch = "aarch64"))))]
+#[cfg(
+    all(
+        feature = "simd-accel",
+        any(
+            target_feature = "sse2",
+            all(target_endian = "little", target_arch = "aarch64"),
+            all(target_endian = "little", target_feature = "neon")
+        )
+    )
+)]
 mod simd_funcs;
 
-#[cfg(any(all(feature = "simd-accel", target_feature = "sse2"), all(target_endian = "little", target_arch = "aarch64"), all(target_endian = "little", target_arch = "arm")))]
+#[cfg(
+    any(
+        all(feature = "simd-accel", target_feature = "sse2"),
+        all(target_endian = "little", target_arch = "aarch64"),
+        all(target_endian = "little", target_arch = "arm")
+    )
+)]
 mod utf_8_core;
 
 #[cfg(test)]
 mod testing;
 
-mod single_byte;
-mod utf_8;
-mod gb18030;
 mod big5;
 mod euc_jp;
-mod iso_2022_jp;
-mod shift_jis;
 mod euc_kr;
+mod gb18030;
+mod iso_2022_jp;
 mod replacement;
-mod x_user_defined;
+mod shift_jis;
+mod single_byte;
 mod utf_16;
+mod utf_8;
+mod x_user_defined;
 
 mod ascii;
-mod handles;
 mod data;
+mod handles;
 mod variant;
 
 pub mod mem;
 
-use variant::*;
-use utf_8::utf8_valid_up_to;
 use ascii::ascii_valid_up_to;
 use ascii::iso_2022_jp_ascii_valid_up_to;
+use utf_8::utf8_valid_up_to;
+use variant::*;
 
 use std::borrow::Cow;
 use std::cmp::Ordering;
@@ -556,9 +737,9 @@ use std::hash::Hash;
 use std::hash::Hasher;
 
 #[cfg(feature = "serde")]
-use serde::{Serialize, Serializer, Deserialize, Deserializer};
-#[cfg(feature = "serde")]
 use serde::de::Visitor;
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 
 
@@ -595,6 +776,23 @@ pub static BIG5_INIT: Encoding = Encoding {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 pub static BIG5: &'static Encoding = &BIG5_INIT;
 
 
@@ -613,6 +811,19 @@ pub static EUC_JP_INIT: Encoding = Encoding {
     name: "EUC-JP",
     variant: VariantEncoding::EucJp,
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -645,6 +856,17 @@ pub static EUC_KR_INIT: Encoding = Encoding {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 pub static EUC_KR: &'static Encoding = &EUC_KR_INIT;
 
 
@@ -663,6 +885,23 @@ pub static GBK_INIT: Encoding = Encoding {
     name: "GBK",
     variant: VariantEncoding::Gbk,
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -695,6 +934,15 @@ pub static IBM866_INIT: Encoding = Encoding {
 
 
 
+
+
+
+
+
+
+
+
+
 pub static IBM866: &'static Encoding = &IBM866_INIT;
 
 
@@ -713,6 +961,17 @@ pub static ISO_2022_JP_INIT: Encoding = Encoding {
     name: "ISO-2022-JP",
     variant: VariantEncoding::Iso2022Jp,
 };
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -745,6 +1004,15 @@ pub static ISO_8859_10_INIT: Encoding = Encoding {
 
 
 
+
+
+
+
+
+
+
+
+
 pub static ISO_8859_10: &'static Encoding = &ISO_8859_10_INIT;
 
 
@@ -763,6 +1031,15 @@ pub static ISO_8859_13_INIT: Encoding = Encoding {
     name: "ISO-8859-13",
     variant: VariantEncoding::SingleByte(data::ISO_8859_13_DATA),
 };
+
+
+
+
+
+
+
+
+
 
 
 
@@ -795,6 +1072,15 @@ pub static ISO_8859_14_INIT: Encoding = Encoding {
 
 
 
+
+
+
+
+
+
+
+
+
 pub static ISO_8859_14: &'static Encoding = &ISO_8859_14_INIT;
 
 
@@ -813,6 +1099,14 @@ pub static ISO_8859_15_INIT: Encoding = Encoding {
     name: "ISO-8859-15",
     variant: VariantEncoding::SingleByte(data::ISO_8859_15_DATA),
 };
+
+
+
+
+
+
+
+
 
 
 
@@ -845,6 +1139,15 @@ pub static ISO_8859_16_INIT: Encoding = Encoding {
 
 
 
+
+
+
+
+
+
+
+
+
 pub static ISO_8859_16: &'static Encoding = &ISO_8859_16_INIT;
 
 
@@ -863,6 +1166,13 @@ pub static ISO_8859_2_INIT: Encoding = Encoding {
     name: "ISO-8859-2",
     variant: VariantEncoding::SingleByte(data::ISO_8859_2_DATA),
 };
+
+
+
+
+
+
+
 
 
 
@@ -895,6 +1205,13 @@ pub static ISO_8859_3_INIT: Encoding = Encoding {
 
 
 
+
+
+
+
+
+
+
 pub static ISO_8859_3: &'static Encoding = &ISO_8859_3_INIT;
 
 
@@ -913,6 +1230,13 @@ pub static ISO_8859_4_INIT: Encoding = Encoding {
     name: "ISO-8859-4",
     variant: VariantEncoding::SingleByte(data::ISO_8859_4_DATA),
 };
+
+
+
+
+
+
+
 
 
 
@@ -945,6 +1269,13 @@ pub static ISO_8859_5_INIT: Encoding = Encoding {
 
 
 
+
+
+
+
+
+
+
 pub static ISO_8859_5: &'static Encoding = &ISO_8859_5_INIT;
 
 
@@ -963,6 +1294,14 @@ pub static ISO_8859_6_INIT: Encoding = Encoding {
     name: "ISO-8859-6",
     variant: VariantEncoding::SingleByte(data::ISO_8859_6_DATA),
 };
+
+
+
+
+
+
+
+
 
 
 
@@ -995,6 +1334,18 @@ pub static ISO_8859_7_INIT: Encoding = Encoding {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 pub static ISO_8859_7: &'static Encoding = &ISO_8859_7_INIT;
 
 
@@ -1013,6 +1364,16 @@ pub static ISO_8859_8_INIT: Encoding = Encoding {
     name: "ISO-8859-8",
     variant: VariantEncoding::SingleByte(data::ISO_8859_8_DATA),
 };
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1045,6 +1406,16 @@ pub static ISO_8859_8_I_INIT: Encoding = Encoding {
 
 
 
+
+
+
+
+
+
+
+
+
+
 pub static ISO_8859_8_I: &'static Encoding = &ISO_8859_8_I_INIT;
 
 
@@ -1063,6 +1434,13 @@ pub static KOI8_R_INIT: Encoding = Encoding {
     name: "KOI8-R",
     variant: VariantEncoding::SingleByte(data::KOI8_R_DATA),
 };
+
+
+
+
+
+
+
 
 
 
@@ -1095,6 +1473,13 @@ pub static KOI8_U_INIT: Encoding = Encoding {
 
 
 
+
+
+
+
+
+
+
 pub static KOI8_U: &'static Encoding = &KOI8_U_INIT;
 
 
@@ -1113,6 +1498,15 @@ pub static SHIFT_JIS_INIT: Encoding = Encoding {
     name: "Shift_JIS",
     variant: VariantEncoding::ShiftJis,
 };
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1145,6 +1539,15 @@ pub static UTF_16BE_INIT: Encoding = Encoding {
 
 
 
+
+
+
+
+
+
+
+
+
 pub static UTF_16BE: &'static Encoding = &UTF_16BE_INIT;
 
 
@@ -1163,6 +1566,15 @@ pub static UTF_16LE_INIT: Encoding = Encoding {
     name: "UTF-16LE",
     variant: VariantEncoding::Utf16Le,
 };
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1195,6 +1607,12 @@ pub static UTF_8_INIT: Encoding = Encoding {
 
 
 
+
+
+
+
+
+
 pub static UTF_8: &'static Encoding = &UTF_8_INIT;
 
 
@@ -1213,6 +1631,16 @@ pub static GB18030_INIT: Encoding = Encoding {
     name: "gb18030",
     variant: VariantEncoding::Gb18030,
 };
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1245,6 +1673,14 @@ pub static MACINTOSH_INIT: Encoding = Encoding {
 
 
 
+
+
+
+
+
+
+
+
 pub static MACINTOSH: &'static Encoding = &MACINTOSH_INIT;
 
 
@@ -1263,6 +1699,17 @@ pub static REPLACEMENT_INIT: Encoding = Encoding {
     name: "replacement",
     variant: VariantEncoding::Replacement,
 };
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1295,6 +1742,13 @@ pub static WINDOWS_1250_INIT: Encoding = Encoding {
 
 
 
+
+
+
+
+
+
+
 pub static WINDOWS_1250: &'static Encoding = &WINDOWS_1250_INIT;
 
 
@@ -1313,6 +1767,13 @@ pub static WINDOWS_1251_INIT: Encoding = Encoding {
     name: "windows-1251",
     variant: VariantEncoding::SingleByte(data::WINDOWS_1251_DATA),
 };
+
+
+
+
+
+
+
 
 
 
@@ -1345,6 +1806,14 @@ pub static WINDOWS_1252_INIT: Encoding = Encoding {
 
 
 
+
+
+
+
+
+
+
+
 pub static WINDOWS_1252: &'static Encoding = &WINDOWS_1252_INIT;
 
 
@@ -1363,6 +1832,15 @@ pub static WINDOWS_1253_INIT: Encoding = Encoding {
     name: "windows-1253",
     variant: VariantEncoding::SingleByte(data::WINDOWS_1253_DATA),
 };
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1395,6 +1873,14 @@ pub static WINDOWS_1254_INIT: Encoding = Encoding {
 
 
 
+
+
+
+
+
+
+
+
 pub static WINDOWS_1254: &'static Encoding = &WINDOWS_1254_INIT;
 
 
@@ -1413,6 +1899,15 @@ pub static WINDOWS_1255_INIT: Encoding = Encoding {
     name: "windows-1255",
     variant: VariantEncoding::SingleByte(data::WINDOWS_1255_DATA),
 };
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1445,6 +1940,13 @@ pub static WINDOWS_1256_INIT: Encoding = Encoding {
 
 
 
+
+
+
+
+
+
+
 pub static WINDOWS_1256: &'static Encoding = &WINDOWS_1256_INIT;
 
 
@@ -1463,6 +1965,14 @@ pub static WINDOWS_1257_INIT: Encoding = Encoding {
     name: "windows-1257",
     variant: VariantEncoding::SingleByte(data::WINDOWS_1257_DATA),
 };
+
+
+
+
+
+
+
+
 
 
 
@@ -1495,6 +2005,18 @@ pub static WINDOWS_1258_INIT: Encoding = Encoding {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 pub static WINDOWS_1258: &'static Encoding = &WINDOWS_1258_INIT;
 
 
@@ -1513,6 +2035,14 @@ pub static WINDOWS_874_INIT: Encoding = Encoding {
     name: "windows-874",
     variant: VariantEncoding::SingleByte(data::WINDOWS_874_DATA),
 };
+
+
+
+
+
+
+
+
 
 
 
@@ -1545,6 +2075,13 @@ pub static X_MAC_CYRILLIC_INIT: Encoding = Encoding {
 
 
 
+
+
+
+
+
+
+
 pub static X_MAC_CYRILLIC: &'static Encoding = &X_MAC_CYRILLIC_INIT;
 
 
@@ -1570,447 +2107,458 @@ pub static X_USER_DEFINED_INIT: Encoding = Encoding {
 
 
 
+
+
+
+
+
+
+
 pub static X_USER_DEFINED: &'static Encoding = &X_USER_DEFINED_INIT;
 
-static LABELS_SORTED: [&'static str; 219] = ["l1",
-                                             "l2",
-                                             "l3",
-                                             "l4",
-                                             "l5",
-                                             "l6",
-                                             "l9",
-                                             "866",
-                                             "mac",
-                                             "koi",
-                                             "gbk",
-                                             "big5",
-                                             "utf8",
-                                             "koi8",
-                                             "sjis",
-                                             "ms932",
-                                             "cp866",
-                                             "utf-8",
-                                             "cp819",
-                                             "ascii",
-                                             "x-gbk",
-                                             "greek",
-                                             "cp1250",
-                                             "cp1251",
-                                             "latin1",
-                                             "gb2312",
-                                             "cp1252",
-                                             "latin2",
-                                             "cp1253",
-                                             "latin3",
-                                             "cp1254",
-                                             "latin4",
-                                             "cp1255",
-                                             "csbig5",
-                                             "latin5",
-                                             "utf-16",
-                                             "cp1256",
-                                             "ibm866",
-                                             "latin6",
-                                             "cp1257",
-                                             "cp1258",
-                                             "greek8",
-                                             "ibm819",
-                                             "arabic",
-                                             "visual",
-                                             "korean",
-                                             "euc-jp",
-                                             "koi8-r",
-                                             "koi8_r",
-                                             "euc-kr",
-                                             "x-sjis",
-                                             "koi8-u",
-                                             "hebrew",
-                                             "tis-620",
-                                             "gb18030",
-                                             "ksc5601",
-                                             "gb_2312",
-                                             "dos-874",
-                                             "cn-big5",
-                                             "chinese",
-                                             "logical",
-                                             "cskoi8r",
-                                             "cseuckr",
-                                             "koi8-ru",
-                                             "x-cp1250",
-                                             "ksc_5601",
-                                             "x-cp1251",
-                                             "iso88591",
-                                             "csgb2312",
-                                             "x-cp1252",
-                                             "iso88592",
-                                             "x-cp1253",
-                                             "iso88593",
-                                             "ecma-114",
-                                             "x-cp1254",
-                                             "iso88594",
-                                             "x-cp1255",
-                                             "iso88595",
-                                             "x-x-big5",
-                                             "x-cp1256",
-                                             "csibm866",
-                                             "iso88596",
-                                             "x-cp1257",
-                                             "iso88597",
-                                             "asmo-708",
-                                             "ecma-118",
-                                             "elot_928",
-                                             "x-cp1258",
-                                             "iso88598",
-                                             "iso88599",
-                                             "cyrillic",
-                                             "utf-16be",
-                                             "utf-16le",
-                                             "us-ascii",
-                                             "ms_kanji",
-                                             "x-euc-jp",
-                                             "iso885910",
-                                             "iso8859-1",
-                                             "iso885911",
-                                             "iso8859-2",
-                                             "iso8859-3",
-                                             "iso885913",
-                                             "iso8859-4",
-                                             "iso885914",
-                                             "iso8859-5",
-                                             "iso885915",
-                                             "iso8859-6",
-                                             "iso8859-7",
-                                             "iso8859-8",
-                                             "iso-ir-58",
-                                             "iso8859-9",
-                                             "macintosh",
-                                             "shift-jis",
-                                             "shift_jis",
-                                             "iso-ir-100",
-                                             "iso8859-10",
-                                             "iso-ir-110",
-                                             "gb_2312-80",
-                                             "iso-8859-1",
-                                             "iso_8859-1",
-                                             "iso-ir-101",
-                                             "iso8859-11",
-                                             "iso-8859-2",
-                                             "iso_8859-2",
-                                             "hz-gb-2312",
-                                             "iso-8859-3",
-                                             "iso_8859-3",
-                                             "iso8859-13",
-                                             "iso-8859-4",
-                                             "iso_8859-4",
-                                             "iso8859-14",
-                                             "iso-ir-144",
-                                             "iso-8859-5",
-                                             "iso_8859-5",
-                                             "iso8859-15",
-                                             "iso-8859-6",
-                                             "iso_8859-6",
-                                             "iso-ir-126",
-                                             "iso-8859-7",
-                                             "iso_8859-7",
-                                             "iso-ir-127",
-                                             "iso-ir-157",
-                                             "iso-8859-8",
-                                             "iso_8859-8",
-                                             "iso-ir-138",
-                                             "iso-ir-148",
-                                             "iso-8859-9",
-                                             "iso_8859-9",
-                                             "iso-ir-109",
-                                             "iso-ir-149",
-                                             "big5-hkscs",
-                                             "csshiftjis",
-                                             "iso-8859-10",
-                                             "iso-8859-11",
-                                             "csisolatin1",
-                                             "csisolatin2",
-                                             "iso-8859-13",
-                                             "csisolatin3",
-                                             "iso-8859-14",
-                                             "windows-874",
-                                             "csisolatin4",
-                                             "iso-8859-15",
-                                             "iso_8859-15",
-                                             "csisolatin5",
-                                             "iso-8859-16",
-                                             "csisolatin6",
-                                             "windows-949",
-                                             "csisolatin9",
-                                             "csiso88596e",
-                                             "csiso88598e",
-                                             "csmacintosh",
-                                             "csiso88596i",
-                                             "csiso88598i",
-                                             "windows-31j",
-                                             "x-mac-roman",
-                                             "iso-2022-cn",
-                                             "iso-2022-jp",
-                                             "csiso2022jp",
-                                             "iso-2022-kr",
-                                             "csiso2022kr",
-                                             "replacement",
-                                             "windows-1250",
-                                             "windows-1251",
-                                             "windows-1252",
-                                             "windows-1253",
-                                             "windows-1254",
-                                             "windows-1255",
-                                             "windows-1256",
-                                             "windows-1257",
-                                             "windows-1258",
-                                             "iso-8859-6-e",
-                                             "iso-8859-8-e",
-                                             "iso-8859-6-i",
-                                             "iso-8859-8-i",
-                                             "sun_eu_greek",
-                                             "csksc56011987",
-                                             "ks_c_5601-1987",
-                                             "ansi_x3.4-1968",
-                                             "ks_c_5601-1989",
-                                             "x-mac-cyrillic",
-                                             "x-user-defined",
-                                             "csiso58gb231280",
-                                             "iso_8859-1:1987",
-                                             "iso_8859-2:1987",
-                                             "iso_8859-6:1987",
-                                             "iso_8859-7:1987",
-                                             "iso_8859-3:1988",
-                                             "iso_8859-4:1988",
-                                             "iso_8859-5:1988",
-                                             "iso_8859-8:1988",
-                                             "iso_8859-9:1989",
-                                             "csisolatingreek",
-                                             "x-mac-ukrainian",
-                                             "iso-2022-cn-ext",
-                                             "csisolatinarabic",
-                                             "csisolatinhebrew",
-                                             "unicode-1-1-utf-8",
-                                             "csisolatincyrillic",
-                                             "cseucpkdfmtjapanese"];
+static LABELS_SORTED: [&'static str; 219] = [
+    "l1",
+    "l2",
+    "l3",
+    "l4",
+    "l5",
+    "l6",
+    "l9",
+    "866",
+    "mac",
+    "koi",
+    "gbk",
+    "big5",
+    "utf8",
+    "koi8",
+    "sjis",
+    "ms932",
+    "cp866",
+    "utf-8",
+    "cp819",
+    "ascii",
+    "x-gbk",
+    "greek",
+    "cp1250",
+    "cp1251",
+    "latin1",
+    "gb2312",
+    "cp1252",
+    "latin2",
+    "cp1253",
+    "latin3",
+    "cp1254",
+    "latin4",
+    "cp1255",
+    "csbig5",
+    "latin5",
+    "utf-16",
+    "cp1256",
+    "ibm866",
+    "latin6",
+    "cp1257",
+    "cp1258",
+    "greek8",
+    "ibm819",
+    "arabic",
+    "visual",
+    "korean",
+    "euc-jp",
+    "koi8-r",
+    "koi8_r",
+    "euc-kr",
+    "x-sjis",
+    "koi8-u",
+    "hebrew",
+    "tis-620",
+    "gb18030",
+    "ksc5601",
+    "gb_2312",
+    "dos-874",
+    "cn-big5",
+    "chinese",
+    "logical",
+    "cskoi8r",
+    "cseuckr",
+    "koi8-ru",
+    "x-cp1250",
+    "ksc_5601",
+    "x-cp1251",
+    "iso88591",
+    "csgb2312",
+    "x-cp1252",
+    "iso88592",
+    "x-cp1253",
+    "iso88593",
+    "ecma-114",
+    "x-cp1254",
+    "iso88594",
+    "x-cp1255",
+    "iso88595",
+    "x-x-big5",
+    "x-cp1256",
+    "csibm866",
+    "iso88596",
+    "x-cp1257",
+    "iso88597",
+    "asmo-708",
+    "ecma-118",
+    "elot_928",
+    "x-cp1258",
+    "iso88598",
+    "iso88599",
+    "cyrillic",
+    "utf-16be",
+    "utf-16le",
+    "us-ascii",
+    "ms_kanji",
+    "x-euc-jp",
+    "iso885910",
+    "iso8859-1",
+    "iso885911",
+    "iso8859-2",
+    "iso8859-3",
+    "iso885913",
+    "iso8859-4",
+    "iso885914",
+    "iso8859-5",
+    "iso885915",
+    "iso8859-6",
+    "iso8859-7",
+    "iso8859-8",
+    "iso-ir-58",
+    "iso8859-9",
+    "macintosh",
+    "shift-jis",
+    "shift_jis",
+    "iso-ir-100",
+    "iso8859-10",
+    "iso-ir-110",
+    "gb_2312-80",
+    "iso-8859-1",
+    "iso_8859-1",
+    "iso-ir-101",
+    "iso8859-11",
+    "iso-8859-2",
+    "iso_8859-2",
+    "hz-gb-2312",
+    "iso-8859-3",
+    "iso_8859-3",
+    "iso8859-13",
+    "iso-8859-4",
+    "iso_8859-4",
+    "iso8859-14",
+    "iso-ir-144",
+    "iso-8859-5",
+    "iso_8859-5",
+    "iso8859-15",
+    "iso-8859-6",
+    "iso_8859-6",
+    "iso-ir-126",
+    "iso-8859-7",
+    "iso_8859-7",
+    "iso-ir-127",
+    "iso-ir-157",
+    "iso-8859-8",
+    "iso_8859-8",
+    "iso-ir-138",
+    "iso-ir-148",
+    "iso-8859-9",
+    "iso_8859-9",
+    "iso-ir-109",
+    "iso-ir-149",
+    "big5-hkscs",
+    "csshiftjis",
+    "iso-8859-10",
+    "iso-8859-11",
+    "csisolatin1",
+    "csisolatin2",
+    "iso-8859-13",
+    "csisolatin3",
+    "iso-8859-14",
+    "windows-874",
+    "csisolatin4",
+    "iso-8859-15",
+    "iso_8859-15",
+    "csisolatin5",
+    "iso-8859-16",
+    "csisolatin6",
+    "windows-949",
+    "csisolatin9",
+    "csiso88596e",
+    "csiso88598e",
+    "csmacintosh",
+    "csiso88596i",
+    "csiso88598i",
+    "windows-31j",
+    "x-mac-roman",
+    "iso-2022-cn",
+    "iso-2022-jp",
+    "csiso2022jp",
+    "iso-2022-kr",
+    "csiso2022kr",
+    "replacement",
+    "windows-1250",
+    "windows-1251",
+    "windows-1252",
+    "windows-1253",
+    "windows-1254",
+    "windows-1255",
+    "windows-1256",
+    "windows-1257",
+    "windows-1258",
+    "iso-8859-6-e",
+    "iso-8859-8-e",
+    "iso-8859-6-i",
+    "iso-8859-8-i",
+    "sun_eu_greek",
+    "csksc56011987",
+    "ks_c_5601-1987",
+    "ansi_x3.4-1968",
+    "ks_c_5601-1989",
+    "x-mac-cyrillic",
+    "x-user-defined",
+    "csiso58gb231280",
+    "iso_8859-1:1987",
+    "iso_8859-2:1987",
+    "iso_8859-6:1987",
+    "iso_8859-7:1987",
+    "iso_8859-3:1988",
+    "iso_8859-4:1988",
+    "iso_8859-5:1988",
+    "iso_8859-8:1988",
+    "iso_8859-9:1989",
+    "csisolatingreek",
+    "x-mac-ukrainian",
+    "iso-2022-cn-ext",
+    "csisolatinarabic",
+    "csisolatinhebrew",
+    "unicode-1-1-utf-8",
+    "csisolatincyrillic",
+    "cseucpkdfmtjapanese",
+];
 
-static ENCODINGS_IN_LABEL_SORT: [&'static Encoding; 219] = [&WINDOWS_1252_INIT,
-                                                            &ISO_8859_2_INIT,
-                                                            &ISO_8859_3_INIT,
-                                                            &ISO_8859_4_INIT,
-                                                            &WINDOWS_1254_INIT,
-                                                            &ISO_8859_10_INIT,
-                                                            &ISO_8859_15_INIT,
-                                                            &IBM866_INIT,
-                                                            &MACINTOSH_INIT,
-                                                            &KOI8_R_INIT,
-                                                            &GBK_INIT,
-                                                            &BIG5_INIT,
-                                                            &UTF_8_INIT,
-                                                            &KOI8_R_INIT,
-                                                            &SHIFT_JIS_INIT,
-                                                            &SHIFT_JIS_INIT,
-                                                            &IBM866_INIT,
-                                                            &UTF_8_INIT,
-                                                            &WINDOWS_1252_INIT,
-                                                            &WINDOWS_1252_INIT,
-                                                            &GBK_INIT,
-                                                            &ISO_8859_7_INIT,
-                                                            &WINDOWS_1250_INIT,
-                                                            &WINDOWS_1251_INIT,
-                                                            &WINDOWS_1252_INIT,
-                                                            &GBK_INIT,
-                                                            &WINDOWS_1252_INIT,
-                                                            &ISO_8859_2_INIT,
-                                                            &WINDOWS_1253_INIT,
-                                                            &ISO_8859_3_INIT,
-                                                            &WINDOWS_1254_INIT,
-                                                            &ISO_8859_4_INIT,
-                                                            &WINDOWS_1255_INIT,
-                                                            &BIG5_INIT,
-                                                            &WINDOWS_1254_INIT,
-                                                            &UTF_16LE_INIT,
-                                                            &WINDOWS_1256_INIT,
-                                                            &IBM866_INIT,
-                                                            &ISO_8859_10_INIT,
-                                                            &WINDOWS_1257_INIT,
-                                                            &WINDOWS_1258_INIT,
-                                                            &ISO_8859_7_INIT,
-                                                            &WINDOWS_1252_INIT,
-                                                            &ISO_8859_6_INIT,
-                                                            &ISO_8859_8_INIT,
-                                                            &EUC_KR_INIT,
-                                                            &EUC_JP_INIT,
-                                                            &KOI8_R_INIT,
-                                                            &KOI8_R_INIT,
-                                                            &EUC_KR_INIT,
-                                                            &SHIFT_JIS_INIT,
-                                                            &KOI8_U_INIT,
-                                                            &ISO_8859_8_INIT,
-                                                            &WINDOWS_874_INIT,
-                                                            &GB18030_INIT,
-                                                            &EUC_KR_INIT,
-                                                            &GBK_INIT,
-                                                            &WINDOWS_874_INIT,
-                                                            &BIG5_INIT,
-                                                            &GBK_INIT,
-                                                            &ISO_8859_8_I_INIT,
-                                                            &KOI8_R_INIT,
-                                                            &EUC_KR_INIT,
-                                                            &KOI8_U_INIT,
-                                                            &WINDOWS_1250_INIT,
-                                                            &EUC_KR_INIT,
-                                                            &WINDOWS_1251_INIT,
-                                                            &WINDOWS_1252_INIT,
-                                                            &GBK_INIT,
-                                                            &WINDOWS_1252_INIT,
-                                                            &ISO_8859_2_INIT,
-                                                            &WINDOWS_1253_INIT,
-                                                            &ISO_8859_3_INIT,
-                                                            &ISO_8859_6_INIT,
-                                                            &WINDOWS_1254_INIT,
-                                                            &ISO_8859_4_INIT,
-                                                            &WINDOWS_1255_INIT,
-                                                            &ISO_8859_5_INIT,
-                                                            &BIG5_INIT,
-                                                            &WINDOWS_1256_INIT,
-                                                            &IBM866_INIT,
-                                                            &ISO_8859_6_INIT,
-                                                            &WINDOWS_1257_INIT,
-                                                            &ISO_8859_7_INIT,
-                                                            &ISO_8859_6_INIT,
-                                                            &ISO_8859_7_INIT,
-                                                            &ISO_8859_7_INIT,
-                                                            &WINDOWS_1258_INIT,
-                                                            &ISO_8859_8_INIT,
-                                                            &WINDOWS_1254_INIT,
-                                                            &ISO_8859_5_INIT,
-                                                            &UTF_16BE_INIT,
-                                                            &UTF_16LE_INIT,
-                                                            &WINDOWS_1252_INIT,
-                                                            &SHIFT_JIS_INIT,
-                                                            &EUC_JP_INIT,
-                                                            &ISO_8859_10_INIT,
-                                                            &WINDOWS_1252_INIT,
-                                                            &WINDOWS_874_INIT,
-                                                            &ISO_8859_2_INIT,
-                                                            &ISO_8859_3_INIT,
-                                                            &ISO_8859_13_INIT,
-                                                            &ISO_8859_4_INIT,
-                                                            &ISO_8859_14_INIT,
-                                                            &ISO_8859_5_INIT,
-                                                            &ISO_8859_15_INIT,
-                                                            &ISO_8859_6_INIT,
-                                                            &ISO_8859_7_INIT,
-                                                            &ISO_8859_8_INIT,
-                                                            &GBK_INIT,
-                                                            &WINDOWS_1254_INIT,
-                                                            &MACINTOSH_INIT,
-                                                            &SHIFT_JIS_INIT,
-                                                            &SHIFT_JIS_INIT,
-                                                            &WINDOWS_1252_INIT,
-                                                            &ISO_8859_10_INIT,
-                                                            &ISO_8859_4_INIT,
-                                                            &GBK_INIT,
-                                                            &WINDOWS_1252_INIT,
-                                                            &WINDOWS_1252_INIT,
-                                                            &ISO_8859_2_INIT,
-                                                            &WINDOWS_874_INIT,
-                                                            &ISO_8859_2_INIT,
-                                                            &ISO_8859_2_INIT,
-                                                            &REPLACEMENT_INIT,
-                                                            &ISO_8859_3_INIT,
-                                                            &ISO_8859_3_INIT,
-                                                            &ISO_8859_13_INIT,
-                                                            &ISO_8859_4_INIT,
-                                                            &ISO_8859_4_INIT,
-                                                            &ISO_8859_14_INIT,
-                                                            &ISO_8859_5_INIT,
-                                                            &ISO_8859_5_INIT,
-                                                            &ISO_8859_5_INIT,
-                                                            &ISO_8859_15_INIT,
-                                                            &ISO_8859_6_INIT,
-                                                            &ISO_8859_6_INIT,
-                                                            &ISO_8859_7_INIT,
-                                                            &ISO_8859_7_INIT,
-                                                            &ISO_8859_7_INIT,
-                                                            &ISO_8859_6_INIT,
-                                                            &ISO_8859_10_INIT,
-                                                            &ISO_8859_8_INIT,
-                                                            &ISO_8859_8_INIT,
-                                                            &ISO_8859_8_INIT,
-                                                            &WINDOWS_1254_INIT,
-                                                            &WINDOWS_1254_INIT,
-                                                            &WINDOWS_1254_INIT,
-                                                            &ISO_8859_3_INIT,
-                                                            &EUC_KR_INIT,
-                                                            &BIG5_INIT,
-                                                            &SHIFT_JIS_INIT,
-                                                            &ISO_8859_10_INIT,
-                                                            &WINDOWS_874_INIT,
-                                                            &WINDOWS_1252_INIT,
-                                                            &ISO_8859_2_INIT,
-                                                            &ISO_8859_13_INIT,
-                                                            &ISO_8859_3_INIT,
-                                                            &ISO_8859_14_INIT,
-                                                            &WINDOWS_874_INIT,
-                                                            &ISO_8859_4_INIT,
-                                                            &ISO_8859_15_INIT,
-                                                            &ISO_8859_15_INIT,
-                                                            &WINDOWS_1254_INIT,
-                                                            &ISO_8859_16_INIT,
-                                                            &ISO_8859_10_INIT,
-                                                            &EUC_KR_INIT,
-                                                            &ISO_8859_15_INIT,
-                                                            &ISO_8859_6_INIT,
-                                                            &ISO_8859_8_INIT,
-                                                            &MACINTOSH_INIT,
-                                                            &ISO_8859_6_INIT,
-                                                            &ISO_8859_8_I_INIT,
-                                                            &SHIFT_JIS_INIT,
-                                                            &MACINTOSH_INIT,
-                                                            &REPLACEMENT_INIT,
-                                                            &ISO_2022_JP_INIT,
-                                                            &ISO_2022_JP_INIT,
-                                                            &REPLACEMENT_INIT,
-                                                            &REPLACEMENT_INIT,
-                                                            &REPLACEMENT_INIT,
-                                                            &WINDOWS_1250_INIT,
-                                                            &WINDOWS_1251_INIT,
-                                                            &WINDOWS_1252_INIT,
-                                                            &WINDOWS_1253_INIT,
-                                                            &WINDOWS_1254_INIT,
-                                                            &WINDOWS_1255_INIT,
-                                                            &WINDOWS_1256_INIT,
-                                                            &WINDOWS_1257_INIT,
-                                                            &WINDOWS_1258_INIT,
-                                                            &ISO_8859_6_INIT,
-                                                            &ISO_8859_8_INIT,
-                                                            &ISO_8859_6_INIT,
-                                                            &ISO_8859_8_I_INIT,
-                                                            &ISO_8859_7_INIT,
-                                                            &EUC_KR_INIT,
-                                                            &EUC_KR_INIT,
-                                                            &WINDOWS_1252_INIT,
-                                                            &EUC_KR_INIT,
-                                                            &X_MAC_CYRILLIC_INIT,
-                                                            &X_USER_DEFINED_INIT,
-                                                            &GBK_INIT,
-                                                            &WINDOWS_1252_INIT,
-                                                            &ISO_8859_2_INIT,
-                                                            &ISO_8859_6_INIT,
-                                                            &ISO_8859_7_INIT,
-                                                            &ISO_8859_3_INIT,
-                                                            &ISO_8859_4_INIT,
-                                                            &ISO_8859_5_INIT,
-                                                            &ISO_8859_8_INIT,
-                                                            &WINDOWS_1254_INIT,
-                                                            &ISO_8859_7_INIT,
-                                                            &X_MAC_CYRILLIC_INIT,
-                                                            &REPLACEMENT_INIT,
-                                                            &ISO_8859_6_INIT,
-                                                            &ISO_8859_8_INIT,
-                                                            &UTF_8_INIT,
-                                                            &ISO_8859_5_INIT,
-                                                            &EUC_JP_INIT];
+static ENCODINGS_IN_LABEL_SORT: [&'static Encoding; 219] = [
+    &WINDOWS_1252_INIT,
+    &ISO_8859_2_INIT,
+    &ISO_8859_3_INIT,
+    &ISO_8859_4_INIT,
+    &WINDOWS_1254_INIT,
+    &ISO_8859_10_INIT,
+    &ISO_8859_15_INIT,
+    &IBM866_INIT,
+    &MACINTOSH_INIT,
+    &KOI8_R_INIT,
+    &GBK_INIT,
+    &BIG5_INIT,
+    &UTF_8_INIT,
+    &KOI8_R_INIT,
+    &SHIFT_JIS_INIT,
+    &SHIFT_JIS_INIT,
+    &IBM866_INIT,
+    &UTF_8_INIT,
+    &WINDOWS_1252_INIT,
+    &WINDOWS_1252_INIT,
+    &GBK_INIT,
+    &ISO_8859_7_INIT,
+    &WINDOWS_1250_INIT,
+    &WINDOWS_1251_INIT,
+    &WINDOWS_1252_INIT,
+    &GBK_INIT,
+    &WINDOWS_1252_INIT,
+    &ISO_8859_2_INIT,
+    &WINDOWS_1253_INIT,
+    &ISO_8859_3_INIT,
+    &WINDOWS_1254_INIT,
+    &ISO_8859_4_INIT,
+    &WINDOWS_1255_INIT,
+    &BIG5_INIT,
+    &WINDOWS_1254_INIT,
+    &UTF_16LE_INIT,
+    &WINDOWS_1256_INIT,
+    &IBM866_INIT,
+    &ISO_8859_10_INIT,
+    &WINDOWS_1257_INIT,
+    &WINDOWS_1258_INIT,
+    &ISO_8859_7_INIT,
+    &WINDOWS_1252_INIT,
+    &ISO_8859_6_INIT,
+    &ISO_8859_8_INIT,
+    &EUC_KR_INIT,
+    &EUC_JP_INIT,
+    &KOI8_R_INIT,
+    &KOI8_R_INIT,
+    &EUC_KR_INIT,
+    &SHIFT_JIS_INIT,
+    &KOI8_U_INIT,
+    &ISO_8859_8_INIT,
+    &WINDOWS_874_INIT,
+    &GB18030_INIT,
+    &EUC_KR_INIT,
+    &GBK_INIT,
+    &WINDOWS_874_INIT,
+    &BIG5_INIT,
+    &GBK_INIT,
+    &ISO_8859_8_I_INIT,
+    &KOI8_R_INIT,
+    &EUC_KR_INIT,
+    &KOI8_U_INIT,
+    &WINDOWS_1250_INIT,
+    &EUC_KR_INIT,
+    &WINDOWS_1251_INIT,
+    &WINDOWS_1252_INIT,
+    &GBK_INIT,
+    &WINDOWS_1252_INIT,
+    &ISO_8859_2_INIT,
+    &WINDOWS_1253_INIT,
+    &ISO_8859_3_INIT,
+    &ISO_8859_6_INIT,
+    &WINDOWS_1254_INIT,
+    &ISO_8859_4_INIT,
+    &WINDOWS_1255_INIT,
+    &ISO_8859_5_INIT,
+    &BIG5_INIT,
+    &WINDOWS_1256_INIT,
+    &IBM866_INIT,
+    &ISO_8859_6_INIT,
+    &WINDOWS_1257_INIT,
+    &ISO_8859_7_INIT,
+    &ISO_8859_6_INIT,
+    &ISO_8859_7_INIT,
+    &ISO_8859_7_INIT,
+    &WINDOWS_1258_INIT,
+    &ISO_8859_8_INIT,
+    &WINDOWS_1254_INIT,
+    &ISO_8859_5_INIT,
+    &UTF_16BE_INIT,
+    &UTF_16LE_INIT,
+    &WINDOWS_1252_INIT,
+    &SHIFT_JIS_INIT,
+    &EUC_JP_INIT,
+    &ISO_8859_10_INIT,
+    &WINDOWS_1252_INIT,
+    &WINDOWS_874_INIT,
+    &ISO_8859_2_INIT,
+    &ISO_8859_3_INIT,
+    &ISO_8859_13_INIT,
+    &ISO_8859_4_INIT,
+    &ISO_8859_14_INIT,
+    &ISO_8859_5_INIT,
+    &ISO_8859_15_INIT,
+    &ISO_8859_6_INIT,
+    &ISO_8859_7_INIT,
+    &ISO_8859_8_INIT,
+    &GBK_INIT,
+    &WINDOWS_1254_INIT,
+    &MACINTOSH_INIT,
+    &SHIFT_JIS_INIT,
+    &SHIFT_JIS_INIT,
+    &WINDOWS_1252_INIT,
+    &ISO_8859_10_INIT,
+    &ISO_8859_4_INIT,
+    &GBK_INIT,
+    &WINDOWS_1252_INIT,
+    &WINDOWS_1252_INIT,
+    &ISO_8859_2_INIT,
+    &WINDOWS_874_INIT,
+    &ISO_8859_2_INIT,
+    &ISO_8859_2_INIT,
+    &REPLACEMENT_INIT,
+    &ISO_8859_3_INIT,
+    &ISO_8859_3_INIT,
+    &ISO_8859_13_INIT,
+    &ISO_8859_4_INIT,
+    &ISO_8859_4_INIT,
+    &ISO_8859_14_INIT,
+    &ISO_8859_5_INIT,
+    &ISO_8859_5_INIT,
+    &ISO_8859_5_INIT,
+    &ISO_8859_15_INIT,
+    &ISO_8859_6_INIT,
+    &ISO_8859_6_INIT,
+    &ISO_8859_7_INIT,
+    &ISO_8859_7_INIT,
+    &ISO_8859_7_INIT,
+    &ISO_8859_6_INIT,
+    &ISO_8859_10_INIT,
+    &ISO_8859_8_INIT,
+    &ISO_8859_8_INIT,
+    &ISO_8859_8_INIT,
+    &WINDOWS_1254_INIT,
+    &WINDOWS_1254_INIT,
+    &WINDOWS_1254_INIT,
+    &ISO_8859_3_INIT,
+    &EUC_KR_INIT,
+    &BIG5_INIT,
+    &SHIFT_JIS_INIT,
+    &ISO_8859_10_INIT,
+    &WINDOWS_874_INIT,
+    &WINDOWS_1252_INIT,
+    &ISO_8859_2_INIT,
+    &ISO_8859_13_INIT,
+    &ISO_8859_3_INIT,
+    &ISO_8859_14_INIT,
+    &WINDOWS_874_INIT,
+    &ISO_8859_4_INIT,
+    &ISO_8859_15_INIT,
+    &ISO_8859_15_INIT,
+    &WINDOWS_1254_INIT,
+    &ISO_8859_16_INIT,
+    &ISO_8859_10_INIT,
+    &EUC_KR_INIT,
+    &ISO_8859_15_INIT,
+    &ISO_8859_6_INIT,
+    &ISO_8859_8_INIT,
+    &MACINTOSH_INIT,
+    &ISO_8859_6_INIT,
+    &ISO_8859_8_I_INIT,
+    &SHIFT_JIS_INIT,
+    &MACINTOSH_INIT,
+    &REPLACEMENT_INIT,
+    &ISO_2022_JP_INIT,
+    &ISO_2022_JP_INIT,
+    &REPLACEMENT_INIT,
+    &REPLACEMENT_INIT,
+    &REPLACEMENT_INIT,
+    &WINDOWS_1250_INIT,
+    &WINDOWS_1251_INIT,
+    &WINDOWS_1252_INIT,
+    &WINDOWS_1253_INIT,
+    &WINDOWS_1254_INIT,
+    &WINDOWS_1255_INIT,
+    &WINDOWS_1256_INIT,
+    &WINDOWS_1257_INIT,
+    &WINDOWS_1258_INIT,
+    &ISO_8859_6_INIT,
+    &ISO_8859_8_INIT,
+    &ISO_8859_6_INIT,
+    &ISO_8859_8_I_INIT,
+    &ISO_8859_7_INIT,
+    &EUC_KR_INIT,
+    &EUC_KR_INIT,
+    &WINDOWS_1252_INIT,
+    &EUC_KR_INIT,
+    &X_MAC_CYRILLIC_INIT,
+    &X_USER_DEFINED_INIT,
+    &GBK_INIT,
+    &WINDOWS_1252_INIT,
+    &ISO_8859_2_INIT,
+    &ISO_8859_6_INIT,
+    &ISO_8859_7_INIT,
+    &ISO_8859_3_INIT,
+    &ISO_8859_4_INIT,
+    &ISO_8859_5_INIT,
+    &ISO_8859_8_INIT,
+    &WINDOWS_1254_INIT,
+    &ISO_8859_7_INIT,
+    &X_MAC_CYRILLIC_INIT,
+    &REPLACEMENT_INIT,
+    &ISO_8859_6_INIT,
+    &ISO_8859_8_INIT,
+    &UTF_8_INIT,
+    &ISO_8859_5_INIT,
+    &EUC_JP_INIT,
+];
 
 
 
@@ -2174,7 +2722,6 @@ impl Encoding {
                     }
                 }
             }
-
         }
         
         loop {
@@ -2194,21 +2741,18 @@ impl Encoding {
                     }
                 }
             }
-
         }
         let candidate = &trimmed[..trimmed_pos];
-        match LABELS_SORTED.binary_search_by(
-            |probe| {
-                let bytes = probe.as_bytes();
-                let c = bytes.len().cmp(&candidate.len());
-                if c != Ordering::Equal {
-                    return c;
-                }
-                let probe_iter = bytes.iter().rev();
-                let candidate_iter = candidate.iter().rev();
-                probe_iter.cmp(candidate_iter)
+        match LABELS_SORTED.binary_search_by(|probe| {
+            let bytes = probe.as_bytes();
+            let c = bytes.len().cmp(&candidate.len());
+            if c != Ordering::Equal {
+                return c;
             }
-        ) {
+            let probe_iter = bytes.iter().rev();
+            let candidate_iter = candidate.iter().rev();
+            probe_iter.cmp(candidate_iter)
+        }) {
             Ok(i) => Some(ENCODINGS_IN_LABEL_SORT[i]),
             Err(_) => None,
         }
@@ -2396,8 +2940,9 @@ impl Encoding {
     pub fn decode_with_bom_removal<'a>(&'static self, bytes: &'a [u8]) -> (Cow<'a, str>, bool) {
         let without_bom = if self == UTF_8 && bytes.starts_with(b"\xEF\xBB\xBF") {
             &bytes[3..]
-        } else if (self == UTF_16LE && bytes.starts_with(b"\xFF\xFE")) ||
-                  (self == UTF_16BE && bytes.starts_with(b"\xFE\xFF")) {
+        } else if (self == UTF_16LE && bytes.starts_with(b"\xFF\xFE"))
+            || (self == UTF_16BE && bytes.starts_with(b"\xFE\xFF"))
+        {
             &bytes[2..]
         } else {
             bytes
@@ -2453,21 +2998,16 @@ impl Encoding {
             }
             let decoder = self.new_decoder_without_bom_handling();
 
-            let rounded_without_replacement =
-                checked_next_power_of_two(
-                    checked_add(
-                        valid_up_to,
-                        decoder
-                            .max_utf8_buffer_length_without_replacement(bytes.len() - valid_up_to),
-                    )
-                );
+            let rounded_without_replacement = checked_next_power_of_two(checked_add(
+                valid_up_to,
+                decoder.max_utf8_buffer_length_without_replacement(bytes.len() - valid_up_to),
+            ));
             let with_replacement = checked_add(
                 valid_up_to,
                 decoder.max_utf8_buffer_length(bytes.len() - valid_up_to),
             );
             let mut string = String::with_capacity(
-                checked_min(rounded_without_replacement, with_replacement)
-                    .unwrap()
+                checked_min(rounded_without_replacement, with_replacement).unwrap(),
             );
             unsafe {
                 let vec = string.as_mut_vec();
@@ -2477,10 +3017,9 @@ impl Encoding {
             (decoder, string, valid_up_to)
         } else {
             let decoder = self.new_decoder_without_bom_handling();
-            let rounded_without_replacement =
-                checked_next_power_of_two(
-                    decoder.max_utf8_buffer_length_without_replacement(bytes.len()),
-                );
+            let rounded_without_replacement = checked_next_power_of_two(
+                decoder.max_utf8_buffer_length_without_replacement(bytes.len()),
+            );
             let with_replacement = decoder.max_utf8_buffer_length(bytes.len());
             let string = String::with_capacity(
                 checked_min(rounded_without_replacement, with_replacement).unwrap(),
@@ -2539,9 +3078,10 @@ impl Encoding {
     
     
     
-    pub fn decode_without_bom_handling_and_without_replacement<'a>(&'static self,
-                                                                   bytes: &'a [u8])
-                                                                   -> Option<Cow<'a, str>> {
+    pub fn decode_without_bom_handling_and_without_replacement<'a>(
+        &'static self,
+        bytes: &'a [u8],
+    ) -> Option<Cow<'a, str>> {
         if self == UTF_8 {
             let valid_up_to = utf8_valid_up_to(bytes);
             if valid_up_to == bytes.len() {
@@ -2564,11 +3104,8 @@ impl Encoding {
             let mut string = String::with_capacity(
                 checked_add(
                     valid_up_to,
-                    decoder.max_utf8_buffer_length_without_replacement(
-                        bytes.len() - valid_up_to,
-                    ),
-                )
-                        .unwrap()
+                    decoder.max_utf8_buffer_length_without_replacement(bytes.len() - valid_up_to),
+                ).unwrap(),
             );
             unsafe {
                 let vec = string.as_mut_vec();
@@ -2581,7 +3118,7 @@ impl Encoding {
             let string = String::with_capacity(
                 decoder
                     .max_utf8_buffer_length_without_replacement(bytes.len())
-                    .unwrap()
+                    .unwrap(),
             );
             (decoder, string, bytes)
         };
@@ -2654,12 +3191,9 @@ impl Encoding {
         let mut vec: Vec<u8> = Vec::with_capacity(
             (checked_add(
                 valid_up_to,
-                encoder.max_buffer_length_from_utf8_if_no_unmappables(
-                    string.len() - valid_up_to,
-                ),
-            ))
-                    .unwrap()
-                    .next_power_of_two()
+                encoder.max_buffer_length_from_utf8_if_no_unmappables(string.len() - valid_up_to),
+            )).unwrap()
+                .next_power_of_two(),
         );
         unsafe {
             vec.set_len(valid_up_to);
@@ -2680,10 +3214,8 @@ impl Encoding {
                 CoderResult::OutputFull => {
                     
                     
-                    let needed =
-                        encoder.max_buffer_length_from_utf8_if_no_unmappables(
-                            string.len() - total_read,
-                        );
+                    let needed = encoder
+                        .max_buffer_length_from_utf8_if_no_unmappables(string.len() - total_read);
                     let rounded = (checked_add(vec.capacity(), needed))
                         .unwrap()
                         .next_power_of_two();
@@ -2812,7 +3344,8 @@ impl std::fmt::Debug for Encoding {
 impl Serialize for Encoding {
     #[inline]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where S: Serializer
+    where
+        S: Serializer,
     {
         serializer.serialize_str(self.name)
     }
@@ -2830,7 +3363,8 @@ impl<'de> Visitor<'de> for EncodingVisitor {
     }
 
     fn visit_str<E>(self, value: &str) -> Result<&'static Encoding, E>
-        where E: serde::de::Error
+    where
+        E: serde::de::Error,
     {
         if let Some(enc) = Encoding::for_label(value.as_bytes()) {
             Ok(enc)
@@ -2843,7 +3377,8 @@ impl<'de> Visitor<'de> for EncodingVisitor {
 #[cfg(feature = "serde")]
 impl<'de> Deserialize<'de> for &'static Encoding {
     fn deserialize<D>(deserializer: D) -> Result<&'static Encoding, D::Error>
-        where D: Deserializer<'de>
+    where
+        D: Deserializer<'de>,
     {
         deserializer.deserialize_str(EncodingVisitor)
     }
@@ -3095,20 +3630,17 @@ impl Decoder {
         
         
         match self.life_cycle {
-            DecoderLifeCycle::Converting |
-            DecoderLifeCycle::AtUtf8Start |
-            DecoderLifeCycle::AtUtf16LeStart |
-            DecoderLifeCycle::AtUtf16BeStart => {
+            DecoderLifeCycle::Converting
+            | DecoderLifeCycle::AtUtf8Start
+            | DecoderLifeCycle::AtUtf16LeStart
+            | DecoderLifeCycle::AtUtf16BeStart => {
                 return self.variant.max_utf8_buffer_length(byte_length)
             }
             DecoderLifeCycle::AtStart => {
                 if let Some(utf8_bom) = checked_add(3, byte_length.checked_mul(3)) {
                     if let Some(utf16_bom) = checked_add(
                         1,
-                        checked_mul(
-                            3,
-                            checked_div(byte_length.checked_add(1), 2),
-                        ),
+                        checked_mul(3, checked_div(byte_length.checked_add(1), 2)),
                     ) {
                         let utf_bom = std::cmp::max(utf8_bom, utf16_bom);
                         let encoding = self.encoding();
@@ -3116,16 +3648,15 @@ impl Decoder {
                             
                             
                             return Some(utf_bom);
-                        } else if let Some(non_bom) = self.variant.max_utf8_buffer_length(
-                            byte_length,
-                        ) {
+                        } else if let Some(non_bom) =
+                            self.variant.max_utf8_buffer_length(byte_length)
+                        {
                             return Some(std::cmp::max(utf_bom, non_bom));
                         }
                     }
                 }
             }
-            DecoderLifeCycle::SeenUtf8First |
-            DecoderLifeCycle::SeenUtf8Second => {
+            DecoderLifeCycle::SeenUtf8First | DecoderLifeCycle::SeenUtf8Second => {
                 
                 
                 
@@ -3139,7 +3670,6 @@ impl Decoder {
                             return Some(utf8_bom);
                         } else if let Some(non_bom) = self.variant.max_utf8_buffer_length(sum) {
                             return Some(std::cmp::max(utf8_bom, non_bom));
-
                         }
                     }
                 }
@@ -3149,21 +3679,16 @@ impl Decoder {
                     return self.variant.max_utf8_buffer_length(sum);
                 }
             }
-            DecoderLifeCycle::SeenUtf16LeFirst |
-            DecoderLifeCycle::SeenUtf16BeFirst => {
+            DecoderLifeCycle::SeenUtf16LeFirst | DecoderLifeCycle::SeenUtf16BeFirst => {
                 
                 
                 
                 
                 
                 if let Some(sum) = byte_length.checked_add(2) {
-                    if let Some(utf16_bom) = checked_add(
-                        1,
-                        checked_mul(
-                            3,
-                            checked_div(sum.checked_add(1), 2),
-                        ),
-                    ) {
+                    if let Some(utf16_bom) =
+                        checked_add(1, checked_mul(3, checked_div(sum.checked_add(1), 2)))
+                    {
                         let encoding = self.encoding();
                         if encoding == UTF_16LE || encoding == UTF_16BE {
                             
@@ -3195,21 +3720,19 @@ impl Decoder {
         
         
         match self.life_cycle {
-            DecoderLifeCycle::Converting |
-            DecoderLifeCycle::AtUtf8Start |
-            DecoderLifeCycle::AtUtf16LeStart |
-            DecoderLifeCycle::AtUtf16BeStart => {
-                return self.variant
-                           .max_utf8_buffer_length_without_replacement(byte_length)
+            DecoderLifeCycle::Converting
+            | DecoderLifeCycle::AtUtf8Start
+            | DecoderLifeCycle::AtUtf16LeStart
+            | DecoderLifeCycle::AtUtf16BeStart => {
+                return self
+                    .variant
+                    .max_utf8_buffer_length_without_replacement(byte_length)
             }
             DecoderLifeCycle::AtStart => {
                 if let Some(utf8_bom) = byte_length.checked_add(3) {
                     if let Some(utf16_bom) = checked_add(
                         1,
-                        checked_mul(
-                            3,
-                            checked_div(byte_length.checked_add(1), 2),
-                        ),
+                        checked_mul(3, checked_div(byte_length.checked_add(1), 2)),
                     ) {
                         let utf_bom = std::cmp::max(utf8_bom, utf16_bom);
                         let encoding = self.encoding();
@@ -3217,16 +3740,16 @@ impl Decoder {
                             
                             
                             return Some(utf_bom);
-                        } else if let Some(non_bom) =
-                            self.variant
-                                .max_utf8_buffer_length_without_replacement(byte_length) {
+                        } else if let Some(non_bom) = self
+                            .variant
+                            .max_utf8_buffer_length_without_replacement(byte_length)
+                        {
                             return Some(std::cmp::max(utf_bom, non_bom));
                         }
                     }
                 }
             }
-            DecoderLifeCycle::SeenUtf8First |
-            DecoderLifeCycle::SeenUtf8Second => {
+            DecoderLifeCycle::SeenUtf8First | DecoderLifeCycle::SeenUtf8Second => {
                 
                 
                 
@@ -3239,7 +3762,8 @@ impl Decoder {
                             
                             return Some(utf8_bom);
                         } else if let Some(non_bom) =
-                            self.variant.max_utf8_buffer_length_without_replacement(sum) {
+                            self.variant.max_utf8_buffer_length_without_replacement(sum)
+                        {
                             return Some(std::cmp::max(utf8_bom, non_bom));
                         }
                     }
@@ -3250,28 +3774,24 @@ impl Decoder {
                     return self.variant.max_utf8_buffer_length_without_replacement(sum);
                 }
             }
-            DecoderLifeCycle::SeenUtf16LeFirst |
-            DecoderLifeCycle::SeenUtf16BeFirst => {
+            DecoderLifeCycle::SeenUtf16LeFirst | DecoderLifeCycle::SeenUtf16BeFirst => {
                 
                 
                 
                 
                 
                 if let Some(sum) = byte_length.checked_add(2) {
-                    if let Some(utf16_bom) = checked_add(
-                        1,
-                        checked_mul(
-                            3,
-                            checked_div(sum.checked_add(1), 2),
-                        ),
-                    ) {
+                    if let Some(utf16_bom) =
+                        checked_add(1, checked_mul(3, checked_div(sum.checked_add(1), 2)))
+                    {
                         let encoding = self.encoding();
                         if encoding == UTF_16LE || encoding == UTF_16BE {
                             
                             
                             return Some(utf16_bom);
                         } else if let Some(non_bom) =
-                            self.variant.max_utf8_buffer_length_without_replacement(sum) {
+                            self.variant.max_utf8_buffer_length_without_replacement(sum)
+                        {
                             return Some(std::cmp::max(utf16_bom, non_bom));
                         }
                     }
@@ -3289,11 +3809,12 @@ impl Decoder {
     
     
     
-    pub fn decode_to_utf8(&mut self,
-                          src: &[u8],
-                          dst: &mut [u8],
-                          last: bool)
-                          -> (CoderResult, usize, usize, bool) {
+    pub fn decode_to_utf8(
+        &mut self,
+        src: &[u8],
+        dst: &mut [u8],
+        last: bool,
+    ) -> (CoderResult, usize, usize, bool) {
         let mut had_errors = false;
         let mut total_read = 0usize;
         let mut total_written = 0usize;
@@ -3307,10 +3828,20 @@ impl Decoder {
             total_written += written;
             match result {
                 DecoderResult::InputEmpty => {
-                    return (CoderResult::InputEmpty, total_read, total_written, had_errors);
+                    return (
+                        CoderResult::InputEmpty,
+                        total_read,
+                        total_written,
+                        had_errors,
+                    );
                 }
                 DecoderResult::OutputFull => {
-                    return (CoderResult::OutputFull, total_read, total_written, had_errors);
+                    return (
+                        CoderResult::OutputFull,
+                        total_read,
+                        total_written,
+                        had_errors,
+                    );
                 }
                 DecoderResult::Malformed(_, _) => {
                     had_errors = true;
@@ -3341,11 +3872,12 @@ impl Decoder {
     
     
     
-    pub fn decode_to_str(&mut self,
-                         src: &[u8],
-                         dst: &mut str,
-                         last: bool)
-                         -> (CoderResult, usize, usize, bool) {
+    pub fn decode_to_str(
+        &mut self,
+        src: &[u8],
+        dst: &mut str,
+        last: bool,
+    ) -> (CoderResult, usize, usize, bool) {
         let bytes: &mut [u8] = unsafe { std::mem::transmute(dst) };
         let (result, read, written, replaced) = self.decode_to_utf8(src, bytes, last);
         let len = bytes.len();
@@ -3354,7 +3886,7 @@ impl Decoder {
         
         
         if self.encoding != UTF_8 {
-            let max = std::cmp::min(len, trail + ascii::STRIDE_SIZE);
+            let max = std::cmp::min(len, trail + ascii::MAX_STRIDE_SIZE);
             while trail < max {
                 bytes[trail] = 0;
                 trail += 1;
@@ -3384,11 +3916,12 @@ impl Decoder {
     
     
     
-    pub fn decode_to_string(&mut self,
-                            src: &[u8],
-                            dst: &mut String,
-                            last: bool)
-                            -> (CoderResult, usize, bool) {
+    pub fn decode_to_string(
+        &mut self,
+        src: &[u8],
+        dst: &mut String,
+        last: bool,
+    ) -> (CoderResult, usize, bool) {
         unsafe {
             let vec = dst.as_mut_vec();
             let old_len = vec.len();
@@ -3429,11 +3962,12 @@ impl Decoder {
     
     
     
-    pub fn decode_to_str_without_replacement(&mut self,
-                                             src: &[u8],
-                                             dst: &mut str,
-                                             last: bool)
-                                             -> (DecoderResult, usize, usize) {
+    pub fn decode_to_str_without_replacement(
+        &mut self,
+        src: &[u8],
+        dst: &mut str,
+        last: bool,
+    ) -> (DecoderResult, usize, usize) {
         let bytes: &mut [u8] = unsafe { std::mem::transmute(dst) };
         let (result, read, written) = self.decode_to_utf8_without_replacement(src, bytes, last);
         let len = bytes.len();
@@ -3442,7 +3976,7 @@ impl Decoder {
         
         
         if self.encoding != UTF_8 {
-            let max = std::cmp::min(len, trail + ascii::STRIDE_SIZE);
+            let max = std::cmp::min(len, trail + ascii::MAX_STRIDE_SIZE);
             while trail < max {
                 bytes[trail] = 0;
                 trail += 1;
@@ -3470,11 +4004,12 @@ impl Decoder {
     
     
     
-    pub fn decode_to_string_without_replacement(&mut self,
-                                                src: &[u8],
-                                                dst: &mut String,
-                                                last: bool)
-                                                -> (DecoderResult, usize) {
+    pub fn decode_to_string_without_replacement(
+        &mut self,
+        src: &[u8],
+        dst: &mut String,
+        last: bool,
+    ) -> (DecoderResult, usize) {
         unsafe {
             let vec = dst.as_mut_vec();
             let old_len = vec.len();
@@ -3503,34 +4038,32 @@ impl Decoder {
         
         
         match self.life_cycle {
-            DecoderLifeCycle::Converting |
-            DecoderLifeCycle::AtUtf8Start |
-            DecoderLifeCycle::AtUtf16LeStart |
-            DecoderLifeCycle::AtUtf16BeStart => {
+            DecoderLifeCycle::Converting
+            | DecoderLifeCycle::AtUtf8Start
+            | DecoderLifeCycle::AtUtf16LeStart
+            | DecoderLifeCycle::AtUtf16BeStart => {
                 return self.variant.max_utf16_buffer_length(byte_length)
             }
             DecoderLifeCycle::AtStart => {
                 if let Some(utf8_bom) = byte_length.checked_add(1) {
-                    if let Some(utf16_bom) = checked_add(
-                        1,
-                        checked_div(byte_length.checked_add(1), 2),
-                    ) {
+                    if let Some(utf16_bom) =
+                        checked_add(1, checked_div(byte_length.checked_add(1), 2))
+                    {
                         let utf_bom = std::cmp::max(utf8_bom, utf16_bom);
                         let encoding = self.encoding();
                         if encoding == UTF_8 || encoding == UTF_16LE || encoding == UTF_16BE {
                             
                             
                             return Some(utf_bom);
-                        } else if let Some(non_bom) = self.variant.max_utf16_buffer_length(
-                            byte_length,
-                        ) {
+                        } else if let Some(non_bom) =
+                            self.variant.max_utf16_buffer_length(byte_length)
+                        {
                             return Some(std::cmp::max(utf_bom, non_bom));
                         }
                     }
                 }
             }
-            DecoderLifeCycle::SeenUtf8First |
-            DecoderLifeCycle::SeenUtf8Second => {
+            DecoderLifeCycle::SeenUtf8First | DecoderLifeCycle::SeenUtf8Second => {
                 
                 
                 
@@ -3553,8 +4086,7 @@ impl Decoder {
                     return self.variant.max_utf16_buffer_length(sum);
                 }
             }
-            DecoderLifeCycle::SeenUtf16LeFirst |
-            DecoderLifeCycle::SeenUtf16BeFirst => {
+            DecoderLifeCycle::SeenUtf16LeFirst | DecoderLifeCycle::SeenUtf16BeFirst => {
                 
                 
                 
@@ -3585,11 +4117,12 @@ impl Decoder {
     
     
     
-    pub fn decode_to_utf16(&mut self,
-                           src: &[u8],
-                           dst: &mut [u16],
-                           last: bool)
-                           -> (CoderResult, usize, usize, bool) {
+    pub fn decode_to_utf16(
+        &mut self,
+        src: &[u8],
+        dst: &mut [u16],
+        last: bool,
+    ) -> (CoderResult, usize, usize, bool) {
         let mut had_errors = false;
         let mut total_read = 0usize;
         let mut total_written = 0usize;
@@ -3603,10 +4136,20 @@ impl Decoder {
             total_written += written;
             match result {
                 DecoderResult::InputEmpty => {
-                    return (CoderResult::InputEmpty, total_read, total_written, had_errors);
+                    return (
+                        CoderResult::InputEmpty,
+                        total_read,
+                        total_written,
+                        had_errors,
+                    );
                 }
                 DecoderResult::OutputFull => {
-                    return (CoderResult::OutputFull, total_read, total_written, had_errors);
+                    return (
+                        CoderResult::OutputFull,
+                        total_read,
+                        total_written,
+                        had_errors,
+                    );
                 }
                 DecoderResult::Malformed(_, _) => {
                     had_errors = true;
@@ -3814,9 +4357,10 @@ impl Encoder {
     
     
     
-    pub fn max_buffer_length_from_utf8_if_no_unmappables(&self,
-                                                         byte_length: usize)
-                                                         -> Option<usize> {
+    pub fn max_buffer_length_from_utf8_if_no_unmappables(
+        &self,
+        byte_length: usize,
+    ) -> Option<usize> {
         checked_add(
             if self.encoding().can_encode_everything() {
                 0
@@ -3835,9 +4379,10 @@ impl Encoder {
     
     
     
-    pub fn max_buffer_length_from_utf8_without_replacement(&self,
-                                                           byte_length: usize)
-                                                           -> Option<usize> {
+    pub fn max_buffer_length_from_utf8_without_replacement(
+        &self,
+        byte_length: usize,
+    ) -> Option<usize> {
         self.variant
             .max_buffer_length_from_utf8_without_replacement(byte_length)
     }
@@ -3849,11 +4394,12 @@ impl Encoder {
     
     
     
-    pub fn encode_from_utf8(&mut self,
-                            src: &str,
-                            dst: &mut [u8],
-                            last: bool)
-                            -> (CoderResult, usize, usize, bool) {
+    pub fn encode_from_utf8(
+        &mut self,
+        src: &str,
+        dst: &mut [u8],
+        last: bool,
+    ) -> (CoderResult, usize, usize, bool) {
         let dst_len = dst.len();
         let effective_dst_len = if self.encoding().can_encode_everything() {
             dst_len
@@ -3879,10 +4425,20 @@ impl Encoder {
             total_written += written;
             match result {
                 EncoderResult::InputEmpty => {
-                    return (CoderResult::InputEmpty, total_read, total_written, had_unmappables);
+                    return (
+                        CoderResult::InputEmpty,
+                        total_read,
+                        total_written,
+                        had_unmappables,
+                    );
                 }
                 EncoderResult::OutputFull => {
-                    return (CoderResult::OutputFull, total_read, total_written, had_unmappables);
+                    return (
+                        CoderResult::OutputFull,
+                        total_read,
+                        total_written,
+                        had_unmappables,
+                    );
                 }
                 EncoderResult::Unmappable(unmappable) => {
                     had_unmappables = true;
@@ -3894,15 +4450,19 @@ impl Encoder {
                     total_written += write_ncr(unmappable, &mut dst[total_written..]);
                     if total_written >= effective_dst_len {
                         if total_read == src.len() && !(last && self.has_pending_state()) {
-                            return (CoderResult::InputEmpty,
-                                    total_read,
-                                    total_written,
-                                    had_unmappables);
-                        }
-                        return (CoderResult::OutputFull,
+                            return (
+                                CoderResult::InputEmpty,
                                 total_read,
                                 total_written,
-                                had_unmappables);
+                                had_unmappables,
+                            );
+                        }
+                        return (
+                            CoderResult::OutputFull,
+                            total_read,
+                            total_written,
+                            had_unmappables,
+                        );
                     }
                 }
             }
@@ -3916,11 +4476,12 @@ impl Encoder {
     
     
     
-    pub fn encode_from_utf8_to_vec(&mut self,
-                                   src: &str,
-                                   dst: &mut Vec<u8>,
-                                   last: bool)
-                                   -> (CoderResult, usize, bool) {
+    pub fn encode_from_utf8_to_vec(
+        &mut self,
+        src: &str,
+        dst: &mut Vec<u8>,
+        last: bool,
+    ) -> (CoderResult, usize, bool) {
         unsafe {
             let old_len = dst.len();
             let capacity = dst.capacity();
@@ -3938,11 +4499,12 @@ impl Encoder {
     
     
     
-    pub fn encode_from_utf8_without_replacement(&mut self,
-                                                src: &str,
-                                                dst: &mut [u8],
-                                                last: bool)
-                                                -> (EncoderResult, usize, usize) {
+    pub fn encode_from_utf8_without_replacement(
+        &mut self,
+        src: &str,
+        dst: &mut [u8],
+        last: bool,
+    ) -> (EncoderResult, usize, usize) {
         self.variant.encode_from_utf8_raw(src, dst, last)
     }
 
@@ -3952,11 +4514,12 @@ impl Encoder {
     
     
     
-    pub fn encode_from_utf8_to_vec_without_replacement(&mut self,
-                                                       src: &str,
-                                                       dst: &mut Vec<u8>,
-                                                       last: bool)
-                                                       -> (EncoderResult, usize) {
+    pub fn encode_from_utf8_to_vec_without_replacement(
+        &mut self,
+        src: &str,
+        dst: &mut Vec<u8>,
+        last: bool,
+    ) -> (EncoderResult, usize) {
         unsafe {
             let old_len = dst.len();
             let capacity = dst.capacity();
@@ -3977,9 +4540,10 @@ impl Encoder {
     
     
     
-    pub fn max_buffer_length_from_utf16_if_no_unmappables(&self,
-                                                          u16_length: usize)
-                                                          -> Option<usize> {
+    pub fn max_buffer_length_from_utf16_if_no_unmappables(
+        &self,
+        u16_length: usize,
+    ) -> Option<usize> {
         checked_add(
             if self.encoding().can_encode_everything() {
                 0
@@ -3998,9 +4562,10 @@ impl Encoder {
     
     
     
-    pub fn max_buffer_length_from_utf16_without_replacement(&self,
-                                                            u16_length: usize)
-                                                            -> Option<usize> {
+    pub fn max_buffer_length_from_utf16_without_replacement(
+        &self,
+        u16_length: usize,
+    ) -> Option<usize> {
         self.variant
             .max_buffer_length_from_utf16_without_replacement(u16_length)
     }
@@ -4012,11 +4577,12 @@ impl Encoder {
     
     
     
-    pub fn encode_from_utf16(&mut self,
-                             src: &[u16],
-                             dst: &mut [u8],
-                             last: bool)
-                             -> (CoderResult, usize, usize, bool) {
+    pub fn encode_from_utf16(
+        &mut self,
+        src: &[u16],
+        dst: &mut [u8],
+        last: bool,
+    ) -> (CoderResult, usize, usize, bool) {
         let dst_len = dst.len();
         let effective_dst_len = if self.encoding().can_encode_everything() {
             dst_len
@@ -4042,10 +4608,20 @@ impl Encoder {
             total_written += written;
             match result {
                 EncoderResult::InputEmpty => {
-                    return (CoderResult::InputEmpty, total_read, total_written, had_unmappables);
+                    return (
+                        CoderResult::InputEmpty,
+                        total_read,
+                        total_written,
+                        had_unmappables,
+                    );
                 }
                 EncoderResult::OutputFull => {
-                    return (CoderResult::OutputFull, total_read, total_written, had_unmappables);
+                    return (
+                        CoderResult::OutputFull,
+                        total_read,
+                        total_written,
+                        had_unmappables,
+                    );
                 }
                 EncoderResult::Unmappable(unmappable) => {
                     had_unmappables = true;
@@ -4063,15 +4639,19 @@ impl Encoder {
                     total_written += write_ncr(unmappable, &mut dst[total_written..]);
                     if total_written >= effective_dst_len {
                         if total_read == src.len() && !(last && self.has_pending_state()) {
-                            return (CoderResult::InputEmpty,
-                                    total_read,
-                                    total_written,
-                                    had_unmappables);
-                        }
-                        return (CoderResult::OutputFull,
+                            return (
+                                CoderResult::InputEmpty,
                                 total_read,
                                 total_written,
-                                had_unmappables);
+                                had_unmappables,
+                            );
+                        }
+                        return (
+                            CoderResult::OutputFull,
+                            total_read,
+                            total_written,
+                            had_unmappables,
+                        );
                     }
                 }
             }
@@ -4084,11 +4664,12 @@ impl Encoder {
     
     
     
-    pub fn encode_from_utf16_without_replacement(&mut self,
-                                                 src: &[u16],
-                                                 dst: &mut [u8],
-                                                 last: bool)
-                                                 -> (EncoderResult, usize, usize) {
+    pub fn encode_from_utf16_without_replacement(
+        &mut self,
+        src: &[u16],
+        dst: &mut [u8],
+        last: bool,
+    ) -> (EncoderResult, usize, usize) {
         self.variant.encode_from_utf16_raw(src, dst, last)
     }
 }
@@ -4234,11 +4815,13 @@ mod tests {
     use super::*;
     use std::borrow::Cow;
 
-    fn sniff_to_utf16(initial_encoding: &'static Encoding,
-                      expected_encoding: &'static Encoding,
-                      bytes: &[u8],
-                      expect: &[u16],
-                      breaks: &[usize]) {
+    fn sniff_to_utf16(
+        initial_encoding: &'static Encoding,
+        expected_encoding: &'static Encoding,
+        bytes: &[u8],
+        expect: &[u16],
+        breaks: &[usize],
+    ) {
         let mut decoder = initial_encoding.new_decoder();
 
         let mut dest: Vec<u16> =
@@ -4569,8 +5152,8 @@ mod tests {
 
     #[test]
     fn test_decode_bomful_valid_utf8_as_windows_1257_to_cow_with_bom_removal() {
-        let (cow, had_errors) = WINDOWS_1257
-            .decode_with_bom_removal(b"\xEF\xBB\xBF\xE2\x82\xAC\xC3\xA4");
+        let (cow, had_errors) =
+            WINDOWS_1257.decode_with_bom_removal(b"\xEF\xBB\xBF\xE2\x82\xAC\xC3\xA4");
         match cow {
             Cow::Borrowed(_) => unreachable!(),
             Cow::Owned(s) => {
@@ -4582,7 +5165,6 @@ mod tests {
         }
         assert!(!had_errors);
     }
-
 
     #[test]
     fn test_decode_valid_windows_1257_to_cow_with_bom_removal() {
@@ -4687,14 +5269,12 @@ mod tests {
         match UTF_8.decode_without_bom_handling_and_without_replacement(
             b"\xEF\xBB\xBF\xE2\x82\xAC\xC3\xA4",
         ) {
-            Some(cow) => {
-                match cow {
-                    Cow::Borrowed(s) => {
-                        assert_eq!(s, "\u{FEFF}\u{20AC}\u{00E4}");
-                    }
-                    Cow::Owned(_) => unreachable!(),
+            Some(cow) => match cow {
+                Cow::Borrowed(s) => {
+                    assert_eq!(s, "\u{FEFF}\u{20AC}\u{00E4}");
                 }
-            }
+                Cow::Owned(_) => unreachable!(),
+            },
             None => unreachable!(),
         }
     }
@@ -4704,7 +5284,7 @@ mod tests {
         assert!(
             UTF_8
                 .decode_without_bom_handling_and_without_replacement(
-                    b"\xEF\xBB\xBF\xE2\x82\xAC\x80\xC3\xA4",
+                    b"\xEF\xBB\xBF\xE2\x82\xAC\x80\xC3\xA4"
                 )
                 .is_none()
         );
@@ -4713,14 +5293,12 @@ mod tests {
     #[test]
     fn test_decode_valid_windows_1257_to_cow_without_bom_handling_and_without_replacement() {
         match WINDOWS_1257.decode_without_bom_handling_and_without_replacement(b"abc\x80\xE4") {
-            Some(cow) => {
-                match cow {
-                    Cow::Borrowed(_) => unreachable!(),
-                    Cow::Owned(s) => {
-                        assert_eq!(s, "abc\u{20AC}\u{00E4}");
-                    }
+            Some(cow) => match cow {
+                Cow::Borrowed(_) => unreachable!(),
+                Cow::Owned(s) => {
+                    assert_eq!(s, "abc\u{20AC}\u{00E4}");
                 }
-            }
+            },
             None => unreachable!(),
         }
     }
@@ -4737,14 +5315,12 @@ mod tests {
     #[test]
     fn test_decode_ascii_only_windows_1257_to_cow_without_bom_handling_and_without_replacement() {
         match WINDOWS_1257.decode_without_bom_handling_and_without_replacement(b"abc") {
-            Some(cow) => {
-                match cow {
-                    Cow::Borrowed(s) => {
-                        assert_eq!(s, "abc");
-                    }
-                    Cow::Owned(_) => unreachable!(),
+            Some(cow) => match cow {
+                Cow::Borrowed(s) => {
+                    assert_eq!(s, "abc");
                 }
-            }
+                Cow::Owned(_) => unreachable!(),
+            },
             None => unreachable!(),
         }
     }
@@ -4897,8 +5473,8 @@ mod tests {
         let mut dst = [0u8; 18];
         {
             let mut encoder = ISO_2022_JP.new_encoder();
-            let (result, _, _, _) = encoder
-                .encode_from_utf8("\u{A5}\u{1F4A9}", &mut dst[..], false);
+            let (result, _, _, _) =
+                encoder.encode_from_utf8("\u{A5}\u{1F4A9}", &mut dst[..], false);
             assert_eq!(result, CoderResult::InputEmpty);
         }
         {
@@ -4917,7 +5493,6 @@ mod tests {
             assert_eq!(result, CoderResult::InputEmpty);
         }
     }
-
 
     #[test]
     fn test_too_short_buffer_with_iso_2022_jp_ascii_from_utf16() {
@@ -5008,8 +5583,8 @@ mod tests {
         let mut dst = [0u8; 17];
         {
             let mut encoder = ISO_2022_JP.new_encoder();
-            let (result, _, _, _) = encoder
-                .encode_from_utf8("\u{3041}\u{FFFF}", &mut dst[..], true);
+            let (result, _, _, _) =
+                encoder.encode_from_utf8("\u{3041}\u{FFFF}", &mut dst[..], true);
             assert_eq!(result, CoderResult::OutputFull);
         }
     }

@@ -7,7 +7,7 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/encoding_c/0.8.0")]
+#![doc(html_root_url = "https://docs.rs/encoding_c/0.9.0")]
 
 
 
