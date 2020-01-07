@@ -592,6 +592,12 @@ DebugFrame::alignmentStaticAsserts()
                   "Aligned by ABI before pushing DebugFrame");
     static_assert((offsetof(DebugFrame, frame_) + sizeof(Frame)) % Alignment == 0,
                   "Aligned after pushing DebugFrame");
+#ifdef JS_CODEGEN_ARM64
+    
+    
+    
+    static_assert(sizeof(DebugFrame) % 16 == 0, "ARM64 SP alignment");
+#endif
 }
 
 GlobalObject*

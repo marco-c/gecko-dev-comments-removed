@@ -1885,11 +1885,15 @@ struct Frame
     
     TlsData* tls;
 
-#if defined(JS_CODEGEN_MIPS32)
+#if defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_ARM64)
+    
+    
+    
     
     
     uintptr_t padding_;
 #endif
+
     
     
     void* returnAddress;
@@ -1898,6 +1902,10 @@ struct Frame
 
     Instance* instance() const { return tls->instance; }
 };
+
+#if defined(JS_CODEGEN_ARM64)
+static_assert(sizeof(Frame) % 16 == 0, "frame size");
+#endif
 
 
 

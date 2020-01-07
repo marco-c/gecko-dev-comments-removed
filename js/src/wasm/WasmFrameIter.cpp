@@ -289,13 +289,21 @@ static const unsigned SetFP = 16;
 static const unsigned PoppedFP = 4;
 static const unsigned PoppedTLSReg = 0;
 #elif defined(JS_CODEGEN_ARM64)
+
+
+
+
 static const unsigned BeforePushRetAddr = 0;
-static const unsigned PushedRetAddr = 0;
-static const unsigned PushedTLS = 1;
-static const unsigned PushedFP = 1;
-static const unsigned SetFP = 0;
-static const unsigned PoppedFP = 0;
-static const unsigned PoppedTLSReg = 0;
+static const unsigned PushedRetAddr = 8;
+static const unsigned PushedTLS = 12;
+static const unsigned PushedFP = 16;
+static const unsigned SetFP = 20;
+static const unsigned PoppedFP = 8;
+static const unsigned PoppedTLSReg = 4;
+static_assert(BeforePushRetAddr == 0, "Required by StartUnwinding");
+static_assert(PushedFP > PushedRetAddr, "Required by StartUnwinding");
+static_assert(PushedFP > PushedTLS, "Required by StartUnwinding");
+static_assert(PoppedFP > PoppedTLSReg, "Required by StartUnwinding");
 #elif defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
 static const unsigned PushedRetAddr = 8;
 static const unsigned PushedTLS = 12;
@@ -359,6 +367,7 @@ GenerateCallablePrologue(MacroAssembler& masm, uint32_t* entry)
     
     
 #if defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
+    {
         *entry = masm.currentOffset();
 
         masm.subFromStackPtr(Imm32(sizeof(Frame)));
@@ -370,6 +379,26 @@ GenerateCallablePrologue(MacroAssembler& masm, uint32_t* entry)
         MOZ_ASSERT_IF(!masm.oom(), PushedFP == masm.currentOffset() - *entry);
         masm.moveStackPtrTo(FramePointer);
         MOZ_ASSERT_IF(!masm.oom(), SetFP == masm.currentOffset() - *entry);
+    }
+#elif defined(JS_CODEGEN_ARM64)
+    {
+        
+        MOZ_ASSERT(masm.GetStackPointer64().code() == sp.code());
+
+        AutoForbidPools afp(&masm,  5);
+
+        *entry = masm.currentOffset();
+
+        masm.Sub(sp, sp, sizeof(Frame));
+        masm.Str(ARMRegister(lr, 64), MemOperand(sp, offsetof(Frame, returnAddress)));
+        MOZ_ASSERT_IF(!masm.oom(), PushedRetAddr == masm.currentOffset() - *entry);
+        masm.Str(ARMRegister(WasmTlsReg, 64), MemOperand(sp, offsetof(Frame, tls)));
+        MOZ_ASSERT_IF(!masm.oom(), PushedTLS == masm.currentOffset() - *entry);
+        masm.Str(ARMRegister(FramePointer, 64), MemOperand(sp, offsetof(Frame, callerFP)));
+        MOZ_ASSERT_IF(!masm.oom(), PushedFP == masm.currentOffset() - *entry);
+        masm.Mov(ARMRegister(FramePointer, 64), sp);
+        MOZ_ASSERT_IF(!masm.oom(), SetFP == masm.currentOffset() - *entry);
+    }
 #else
     {
 # if defined(JS_CODEGEN_ARM)
@@ -419,6 +448,25 @@ GenerateCallableEpilogue(MacroAssembler& masm, unsigned framePushed, ExitReason 
     *ret = masm.currentOffset();
     masm.as_jr(ra);
     masm.addToStackPtr(Imm32(sizeof(Frame)));
+
+#elif defined(JS_CODEGEN_ARM64)
+
+    
+    MOZ_ASSERT(masm.GetStackPointer64().code() == sp.code());
+
+    AutoForbidPools afp(&masm,  5);
+
+    masm.Ldr(ARMRegister(FramePointer, 64), MemOperand(sp, offsetof(Frame, callerFP)));
+    poppedFP = masm.currentOffset();
+
+    masm.Ldr(ARMRegister(WasmTlsReg, 64), MemOperand(sp, offsetof(Frame, tls)));
+    poppedTlsReg = masm.currentOffset();
+
+    masm.Ldr(ARMRegister(lr, 64), MemOperand(sp, offsetof(Frame, returnAddress)));
+    *ret = masm.currentOffset();
+
+    masm.Add(sp, sp, sizeof(Frame));
+    masm.Ret(ARMRegister(lr, 64));
 
 #else
     
@@ -637,6 +685,14 @@ wasm::GenerateJitEntryPrologue(MacroAssembler& masm, Offsets* offsets)
 #elif defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
         offsets->begin = masm.currentOffset();
         masm.push(ra);
+#elif defined(JS_CODEGEN_ARM64)
+        AutoForbidPools afp(&masm,  3);
+        offsets->begin = masm.currentOffset();
+        MOZ_ASSERT(BeforePushRetAddr == 0);
+        
+        masm.Sub(sp, sp, 8);
+        masm.storePtr(lr, Address(masm.getStackPointer(), 0));
+        masm.adjustFrame(8);
 #else
         
         offsets->begin = masm.currentOffset();
@@ -849,7 +905,20 @@ js::wasm::StartUnwinding(const RegisterState& registers, UnwindState* unwindStat
             fixedFP = fp;
             AssertMatchesCallSite(fixedPC, fixedFP);
         } else
-#elif defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_ARM64)
+#elif defined(JS_CODEGEN_ARM64)
+        if (offsetFromEntry < PushedFP || codeRange->isThunk()) {
+            
+            
+            
+            
+            
+            
+            
+            fixedPC = (uint8_t*) registers.lr;
+            fixedFP = fp;
+            AssertMatchesCallSite(fixedPC, fixedFP);
+        } else
+#elif defined(JS_CODEGEN_ARM)
         if (offsetFromEntry == BeforePushRetAddr || codeRange->isThunk()) {
             
             fixedPC = (uint8_t*) registers.lr;
@@ -884,6 +953,15 @@ js::wasm::StartUnwinding(const RegisterState& registers, UnwindState* unwindStat
             
             
             MOZ_ASSERT(fp == reinterpret_cast<Frame*>(sp)->callerFP);
+            fixedPC = reinterpret_cast<Frame*>(sp)->returnAddress;
+            fixedFP = fp;
+            AssertMatchesCallSite(fixedPC, fixedFP);
+#elif defined(JS_CODEGEN_ARM64)
+        
+        
+        } else if (offsetInCode >= codeRange->ret() - PoppedFP &&
+                   offsetInCode <= codeRange->ret())
+        {
             fixedPC = reinterpret_cast<Frame*>(sp)->returnAddress;
             fixedFP = fp;
             AssertMatchesCallSite(fixedPC, fixedFP);
@@ -940,7 +1018,8 @@ js::wasm::StartUnwinding(const RegisterState& registers, UnwindState* unwindStat
         
         
         
-#if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
+#if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_ARM64) || \
+    defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
         if (offsetFromEntry < PushedRetAddr) {
             
             
