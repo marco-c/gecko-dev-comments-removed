@@ -151,16 +151,22 @@ add_task(async function test_scheme_and_www() {
 
     [
     "www.",
-    "www.",
-    "www.",
-      []
+    "www.ooops-https-www.com/",
+    "https://www.ooops-https-www.com/",
+      [
+        ["www.ooops-https-www.com/", "https://www.ooops-https-www.com"],
+        "HTTP://www.ooops-HTTP-www.com/",
+        "https://www.bar.com/",
+      ]
     ],
 
     [
     "http://www.",
-    "http://www.",
-    "http://www.",
-      []
+    "http://www.ooops-http-www.com/",
+    "http://www.ooops-http-www.com/",
+      [
+        ["http://www.ooops-http-www.com/", "www.ooops-http-www.com"],
+      ]
     ],
 
     [
@@ -173,25 +179,24 @@ add_task(async function test_scheme_and_www() {
     [
     "ww",
     "www.ooops-https-www.com/",
-    "https://www.ooops-https-www.com/", 
+    "https://www.ooops-https-www.com/",
       [
-      ["https://www.ooops-https-www.com/", "https://www.ooops-https-www.com"],
-      "HTTP://www.ooops-HTTP-www.com/",
-      ["https://foo.com/", "Title with www", ["preloaded-top-site"]],
-      "https://www.bar.com/",
+        ["www.ooops-https-www.com/", "https://www.ooops-https-www.com"],
+        "HTTP://www.ooops-HTTP-www.com/",
+        ["https://foo.com/", "Title with www", ["preloaded-top-site"]],
+        "https://www.bar.com/",
       ]
     ],
 
     [
     "ooops",
-    "ooops-https.com/",
-    "https://ooops-https.com/", 
+    "ooops-https-www.com/",
+    "https://www.ooops-https-www.com/",
       [
-       
-      ["https://ooops-https.com/", "https://ooops-https.com"],
-      "https://www.ooops-https-www.com/",
-      "HTTP://ooops-HTTP.com/",
-      "HTTP://www.ooops-HTTP-www.com/",
+        ["ooops-https-www.com/", "https://www.ooops-https-www.com"],
+        "https://ooops-https.com/",
+        "HTTP://ooops-HTTP.com/",
+        "HTTP://www.ooops-HTTP-www.com/",
       ]
     ],
 
@@ -200,10 +205,8 @@ add_task(async function test_scheme_and_www() {
     "www.ooops-https-www.com/",
     "https://www.ooops-https-www.com/",
       [
-      ["https://www.ooops-https-www.com/", "https://www.ooops-https-www.com"],
-      "HTTP://www.ooops-HTTP-www.com/",
-      "https://ooops-https.com/",
-      "HTTP://ooops-HTTP.com/",
+        ["www.ooops-https-www.com/", "https://www.ooops-https-www.com"],
+        "HTTP://www.ooops-HTTP-www.com/",
       ]
     ],
 
@@ -212,27 +215,24 @@ add_task(async function test_scheme_and_www() {
     "ooops-https-www.com/",
     "https://www.ooops-https-www.com/",
       [
-      ["https://www.ooops-https-www.com/", "https://www.ooops-https-www.com"],
+        ["ooops-https-www.com/", "https://www.ooops-https-www.com"],
       ]
     ],
 
     [
     "www.ooops-https.",
-    "www.ooops-https.com/",
-    "https://www.ooops-https.com/",
-      [
-      ["https://www.ooops-https.com/", "https://www.ooops-https.com"],
-      "https://ooops-https.com/", 
-      ]
+    "www.ooops-https.",
+    "www.ooops-https.",
+      []
     ],
 
     [
     "https://ooops",
-    "https://ooops-https.com/",
-    "https://ooops-https.com/",
+    "https://ooops-https-www.com/",
+    "https://www.ooops-https-www.com/",
       [
-      ["https://ooops-https.com/", "https://ooops-https.com"],
-      "https://www.ooops-https-www.com/",
+        ["https://ooops-https-www.com/", "https://www.ooops-https-www.com"],
+        "https://ooops-https.com/",
       ]
     ],
 
@@ -241,19 +241,15 @@ add_task(async function test_scheme_and_www() {
     "https://www.ooops-https-www.com/",
     "https://www.ooops-https-www.com/",
       [
-      ["https://www.ooops-https-www.com/", "https://www.ooops-https-www.com"],
-      "https://ooops-https.com/",
+        ["https://www.ooops-https-www.com/", "https://www.ooops-https-www.com"],
       ]
     ],
 
     [
     "http://www.ooops-http.",
-    "http://www.ooops-http.com/",
-    "http://www.ooops-http.com/",
-      [
-      ["HTTP://www.ooops-HTTP.com/", "www.ooops-http.com"],
-      "HTTP://ooops-HTTP.com/",
-      ]
+    "http://www.ooops-http.",
+    "http://www.ooops-http.",
+      []
     ],
 
     [
@@ -267,8 +263,8 @@ add_task(async function test_scheme_and_www() {
   function toMatch(entry, index) {
     if (Array.isArray(entry)) {
       return {
-        uri: NetUtil.newURI(entry[0]),
-        title: entry[1],
+        value: entry[0],
+        comment: entry[1],
         style: entry[2] || ["autofill", "heuristic", "preloaded-top-site"],
       };
     }
@@ -316,5 +312,25 @@ add_task(async function test_data_file() {
     completed: uri.spec,
   });
 
+  await cleanup();
+});
+
+add_task(async function test_partial_scheme() {
+  
+  autocompleteObject.populatePreloadedSiteStorage([
+    ["http://www.ttt.com/", "Test"],
+  ]);
+  await check_autocomplete({
+    search: "tt",
+    autofilled: "ttt.com/",
+    completed: "http://www.ttt.com/",
+    matches: [
+      {
+        value: "ttt.com/",
+        comment: "www.ttt.com",
+        style: ["autofill", "heuristic", "preloaded-top-site"],
+      },
+    ],
+  });
   await cleanup();
 });

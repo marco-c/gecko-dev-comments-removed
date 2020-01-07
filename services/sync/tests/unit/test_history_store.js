@@ -166,7 +166,7 @@ add_task(async function test_invalid_records() {
     );
     
     
-    await db.execute("DELETE FROM moz_updatehostsinsert_temp");
+    await db.executeCached("DELETE FROM moz_updateoriginsinsert_temp");
     
     await db.execute(
       "INSERT INTO moz_historyvisits "

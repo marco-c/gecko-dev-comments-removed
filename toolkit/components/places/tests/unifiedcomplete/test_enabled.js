@@ -1,6 +1,8 @@
 add_task(async function test_enabled() {
   
   
+  Services.prefs.setBoolPref("browser.urlbar.autoFill", false);
+
   let uri = NetUtil.newURI("http://url/0");
   await PlacesTestUtils.addVisits([ { uri, title: "title" } ]);
 
