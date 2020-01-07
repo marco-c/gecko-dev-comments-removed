@@ -1651,11 +1651,6 @@ toolbar#nav-bar {
 
         
         
-        if options.flavor == 'browser':
-            del browserEnv["MOZ_CRASHREPORTER_SHUTDOWN"]
-
-        
-        
         browserEnv["XPCOM_DEBUG_BREAK"] = "stack"
 
         
