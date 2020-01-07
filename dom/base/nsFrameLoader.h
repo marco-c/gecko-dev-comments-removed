@@ -38,6 +38,10 @@ class AutoResetInFrameSwap;
 class nsITabParent;
 class nsIDocShellTreeItem;
 class nsIDocShellTreeOwner;
+class nsILoadContext;
+class nsIMessageSender;
+class nsIPrintSettings;
+class nsIWebProgressListener;
 
 namespace mozilla {
 
@@ -71,10 +75,7 @@ typedef struct _GtkWidget GtkWidget;
   { 0x297fd0ea, 0x1b4a, 0x4c9a,                                 \
       { 0xa4, 0x04, 0xe5, 0x8b, 0xe8, 0x95, 0x10, 0x50 } }
 
-
-
-class nsFrameLoader final : public nsIFrameLoader,
-                            public nsIWebBrowserPersistable,
+class nsFrameLoader final : public nsIWebBrowserPersistable,
                             public nsStubMutationObserver,
                             public mozilla::dom::ipc::MessageManagerCallback,
                             public nsWrapperCache
@@ -94,8 +95,8 @@ public:
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_FRAMELOADER_IID)
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_AMBIGUOUS(nsFrameLoader, nsIFrameLoader)
-  NS_DECL_NSIFRAMELOADER
+  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_AMBIGUOUS(nsFrameLoader,
+                                                         nsIWebBrowserPersistable)
   NS_DECL_NSIMUTATIONOBSERVER_ATTRIBUTECHANGED
   NS_DECL_NSIWEBBROWSERPERSISTABLE
   nsresult CheckForRecursiveLoad(nsIURI* aURI);
@@ -105,7 +106,7 @@ public:
   void DestroyComplete();
   nsIDocShell* GetExistingDocShell() { return mDocShell; }
   mozilla::dom::EventTarget* GetTabChildGlobalAsEventTarget();
-  nsresult CreateStaticClone(nsIFrameLoader* aDest);
+  nsresult CreateStaticClone(nsFrameLoader* aDest);
   nsresult UpdatePositionAndSize(nsSubDocumentFrame *aIFrame);
 
   
@@ -245,8 +246,6 @@ public:
 
 
   void Hide();
-
-  nsresult CloneForStatic(nsIFrameLoader* aOriginal);
 
   
   
@@ -518,7 +517,7 @@ NS_DEFINE_STATIC_IID_ACCESSOR(nsFrameLoader, NS_FRAMELOADER_IID)
 inline nsISupports*
 ToSupports(nsFrameLoader* aFrameLoader)
 {
-  return static_cast<nsIFrameLoader*>(aFrameLoader);
+  return static_cast<nsIWebBrowserPersistable*>(aFrameLoader);
 }
 
 #endif
