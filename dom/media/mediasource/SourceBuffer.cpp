@@ -375,6 +375,29 @@ SourceBuffer::ChangeType(const nsAString& aType, ErrorResult& aRv)
 {
   MOZ_ASSERT(NS_IsMainThread());
 
+  
+  
+  if (aType.IsEmpty()) {
+    aRv.Throw(NS_ERROR_DOM_TYPE_ERR);
+    return;
+  }
+
+  
+  
+  
+  
+  
+  if (!IsAttached() || mUpdating) {
+    DDLOG(DDLogCategory::API, "ChangeType", NS_ERROR_DOM_INVALID_STATE_ERR);
+    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
+    return;
+  }
+
+  
+  
+  
+  
+  
   DecoderDoctorDiagnostics diagnostics;
   nsresult rv = MediaSource::IsTypeSupported(aType, &diagnostics);
   diagnostics.StoreFormatDiagnostics(mMediaSource->GetOwner()
@@ -389,31 +412,41 @@ SourceBuffer::ChangeType(const nsAString& aType, ErrorResult& aRv)
     aRv.Throw(rv);
     return;
   }
-  if (!mMediaSource->GetDecoder() ||
-      mMediaSource->GetDecoder()->OwnerHasError()) {
-    MSE_DEBUG("HTMLMediaElement.error is not null");
-    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
-    return;
-  }
-  if (!IsAttached() || mUpdating) {
-    DDLOG(DDLogCategory::API, "ChangeType", NS_ERROR_DOM_INVALID_STATE_ERR);
-    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
-    return;
-  }
 
+  
+  
+  
+  
+  
   MOZ_ASSERT(mMediaSource->ReadyState() != MediaSourceReadyState::Closed);
   if (mMediaSource->ReadyState() == MediaSourceReadyState::Ended) {
     mMediaSource->SetReadyState(MediaSourceReadyState::Open);
   }
-  if (mCurrentAttributes.GetAppendState() == AppendState::PARSING_MEDIA_SEGMENT){
-    DDLOG(DDLogCategory::API, "ChangeType", NS_ERROR_DOM_INVALID_STATE_ERR);
-    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
-    return;
-  }
   Maybe<MediaContainerType> containerType = MakeMediaContainerType(aType);
   MOZ_ASSERT(containerType);
   mType = *containerType;
+  
   ResetParserState();
+
+  
+  
+  
+  if (mType.Type() == MEDIAMIMETYPE("audio/mpeg") ||
+      mType.Type() == MEDIAMIMETYPE("audio/aac")) {
+    mCurrentAttributes.mGenerateTimestamps = true;
+    
+    
+    
+    ErrorResult dummy;
+    SetMode(SourceBufferAppendMode::Sequence, dummy);
+  } else {
+    mCurrentAttributes.mGenerateTimestamps = false;
+    
+    
+    
+  }
+
+  
   mTrackBuffersManager->ChangeType(mType);
 }
 
