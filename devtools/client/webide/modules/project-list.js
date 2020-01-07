@@ -42,7 +42,6 @@ ProjectList.prototype = {
     
     switch (what) {
       case "project-removed":
-      case "runtime-apps-icons":
       case "runtime-targets":
       case "connection":
         this.update(details);

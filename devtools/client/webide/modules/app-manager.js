@@ -13,7 +13,6 @@ const {AppProjects} = require("devtools/client/webide/modules/app-projects");
 const TabStore = require("devtools/client/webide/modules/tab-store");
 const {AppValidator} = require("devtools/client/webide/modules/app-validator");
 const {ConnectionManager, Connection} = require("devtools/shared/client/connection-manager");
-const {AppActorFront} = require("devtools/shared/apps/app-actor-front");
 const {getDeviceFront} = require("devtools/shared/fronts/device");
 const {getPreferenceFront} = require("devtools/shared/fronts/preference");
 const {Task} = require("devtools/shared/task");
@@ -55,8 +54,6 @@ var AppManager = exports.AppManager = {
     RuntimeScanners.enable();
     this._rebuildRuntimeList();
 
-    this.onInstallProgress = this.onInstallProgress.bind(this);
-
     this._telemetry = new Telemetry();
   },
 
@@ -83,12 +80,6 @@ var AppManager = exports.AppManager = {
   },
 
   
-
-
-
-
-
-
 
 
 
@@ -160,38 +151,12 @@ var AppManager = exports.AppManager = {
     }
 
     if (!this.connected) {
-      if (this._appsFront) {
-        this._appsFront.off("install-progress", this.onInstallProgress);
-        this._appsFront.unwatchApps();
-        this._appsFront = null;
-      }
       this._listTabsResponse = null;
     } else {
       this.connection.client.listTabs().then((response) => {
-        if (response.webappsActor) {
-          let front = new AppActorFront(this.connection.client,
-                                        response);
-          front.on("install-progress", this.onInstallProgress);
-          front.watchApps(() => this.checkIfProjectIsRunning())
-          .then(() => {
-            
-            
-            
-            this._appsFront = front;
-            this._listTabsResponse = response;
-            this._recordRuntimeInfo();
-            this.update("runtime-global-actors");
-          })
-          .then(() => {
-            this.checkIfProjectIsRunning();
-            this.update("runtime-targets", { type: "apps" });
-            front.fetchIcons().then(() => this.update("runtime-apps-icons"));
-          });
-        } else {
-          this._listTabsResponse = response;
-          this._recordRuntimeInfo();
-          this.update("runtime-global-actors");
-        }
+        this._listTabsResponse = response;
+        this._recordRuntimeInfo();
+        this.update("runtime-global-actors");
       });
     }
 
@@ -209,10 +174,6 @@ var AppManager = exports.AppManager = {
     } else {
       return new Map();
     }
-  },
-
-  onInstallProgress: function (event, details) {
-    this.update("install-progress", details);
   },
 
   isProjectRunning: function () {
