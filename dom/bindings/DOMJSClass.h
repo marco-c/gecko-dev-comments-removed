@@ -61,8 +61,9 @@ namespace dom {
 inline bool
 IsSecureContextOrObjectIsFromSecureContext(JSContext* aCx, JSObject* aObj)
 {
-  return JS::RealmCreationOptionsRef(js::GetContextCompartment(aCx)).secureContext() ||
-         JS::RealmCreationOptionsRef(js::GetObjectCompartment(aObj)).secureContext();
+  MOZ_ASSERT(!js::IsWrapper(aObj));
+  return JS::GetIsSecureContext(js::GetContextRealm(aCx)) ||
+         JS::GetIsSecureContext(js::GetNonCCWObjectRealm(aObj));
 }
 
 typedef bool
