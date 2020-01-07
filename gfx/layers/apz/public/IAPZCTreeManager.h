@@ -11,7 +11,7 @@
 
 #include "FrameMetrics.h"               
 #include "mozilla/EventForwards.h"      
-#include "mozilla/layers/LayersTypes.h"    
+#include "mozilla/layers/APZUtils.h"    
 #include "nsTArrayForwardDeclare.h"     
 #include "nsISupportsImpl.h"            
 #include "Units.h"                      
