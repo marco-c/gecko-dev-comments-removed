@@ -19,20 +19,8 @@ function debug(aMsg) {
 
 
 class GeckoViewSelectionAction extends GeckoViewModule {
-  init() {
-  }
-
-  register() {
-    debug("register");
+  onEnable() {
+    debug("onEnable");
     this.registerContent("chrome://geckoview/content/GeckoViewSelectionActionContent.js");
-  }
-
-  unregister() {
-    debug("unregister");
-  }
-
-  
-  receiveMessage(aMsg) {
-    debug("receiveMessage " + aMsg.name);
   }
 }

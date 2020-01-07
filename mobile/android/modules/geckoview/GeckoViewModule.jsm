@@ -53,25 +53,38 @@ class GeckoViewModule {
       }, "GeckoView:Unregister"
     );
 
-    this.init();
+    this.onInit();
     this.onSettingsUpdate();
   }
 
   
-  init() {}
+  onInit() {}
 
   
   onSettingsUpdate() {}
+
+  
+  onEnable() {}
+
+  
+  onDisable() {}
 
   _register() {
     if (this.isRegistered) {
       return;
     }
-    this.register();
+    this.onEnable();
     this.isRegistered = true;
   }
 
-  register() {}
+  _unregister() {
+    if (!this.isRegistered) {
+      return;
+    }
+    this._eventProxy.unregisterListener();
+    this.onDisable();
+    this.isRegistered = false;
+  }
 
   registerContent(aUri) {
     if (this._isContentLoaded) {
@@ -97,17 +110,6 @@ class GeckoViewModule {
   registerListener(aEventList) {
     this._eventProxy.registerListener(aEventList);
   }
-
-  _unregister() {
-    if (!this.isRegistered) {
-      return;
-    }
-    this._eventProxy.unregisterListener();
-    this.unregister();
-    this.isRegistered = false;
-  }
-
-  unregister() {}
 
   get settings() {
     let view = this.window.arguments[0].QueryInterface(Ci.nsIAndroidView);

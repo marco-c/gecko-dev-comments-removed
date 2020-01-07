@@ -19,7 +19,7 @@ XPCOMUtils.defineLazyGetter(this, "dump", () =>
 
 
 class GeckoViewTab extends GeckoViewModule {
-  init() {
+  onInit() {
     this.browser.tab = { id: 0, browser: this.browser };
 
     this.window.gBrowser = this.window.BrowserApp = {

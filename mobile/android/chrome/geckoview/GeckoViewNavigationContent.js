@@ -21,14 +21,14 @@ function debug(aMsg) {
 
 
 class GeckoViewNavigationContent extends GeckoViewContentModule {
-  register() {
-    debug("register");
+  onEnable() {
+    debug("onEnable");
 
     docShell.loadURIDelegate = this;
   }
 
-  unregister() {
-    debug("unregister");
+  onDisable() {
+    debug("onDisable");
 
     docShell.loadURIDelegate = null;
   }
