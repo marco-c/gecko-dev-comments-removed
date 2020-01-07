@@ -12,18 +12,14 @@
 
 TEST(ThreadProfile, Initialization) {
   int tid = 1000;
-  nsCOMPtr<nsIThread> mainThread;
-  NS_GetMainThread(getter_AddRefs(mainThread));
-  ThreadInfo info("testThread", tid, true, mainThread, nullptr);
+  ThreadInfo info("testThread", tid, true, nullptr);
   info.StartProfiling();
 }
 
 
 TEST(ThreadProfile, InsertOneEntry) {
   int tid = 1000;
-  nsCOMPtr<nsIThread> mainThread;
-  NS_GetMainThread(getter_AddRefs(mainThread));
-  ThreadInfo info("testThread", tid, true, mainThread, nullptr);
+  ThreadInfo info("testThread", tid, true, nullptr);
   auto pb = MakeUnique<ProfileBuffer>(10);
   pb->AddEntry(ProfileBufferEntry::Time(123.1));
   ASSERT_TRUE(pb->mEntries != nullptr);
@@ -34,9 +30,7 @@ TEST(ThreadProfile, InsertOneEntry) {
 
 TEST(ThreadProfile, InsertEntriesNoWrap) {
   int tid = 1000;
-  nsCOMPtr<nsIThread> mainThread;
-  NS_GetMainThread(getter_AddRefs(mainThread));
-  ThreadInfo info("testThread", tid, true, mainThread, nullptr);
+  ThreadInfo info("testThread", tid, true, nullptr);
   auto pb = MakeUnique<ProfileBuffer>(100);
   int test_size = 50;
   for (int i = 0; i < test_size; i++) {
@@ -57,9 +51,7 @@ TEST(ThreadProfile, InsertEntriesWrap) {
   
   int entries = 24;
   int buffer_size = entries + 1;
-  nsCOMPtr<nsIThread> mainThread;
-  NS_GetMainThread(getter_AddRefs(mainThread));
-  ThreadInfo info("testThread", tid, true, mainThread, nullptr);
+  ThreadInfo info("testThread", tid, true, nullptr);
   auto pb = MakeUnique<ProfileBuffer>(buffer_size);
   int test_size = 43;
   for (int i = 0; i < test_size; i++) {

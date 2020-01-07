@@ -372,14 +372,7 @@ do_GetMainThread()
 
 
 
-
 extern nsIThread* NS_GetCurrentThread();
-
-
-
-
-
-extern nsIThread* NS_GetCurrentThreadNoCreate();
 
 
 
