@@ -287,8 +287,7 @@ this.PanelMultiView = class {
 
     
     
-    ["_mainView", "ignoreMutations", "showingSubView",
-     "_panelViews"].forEach(property => {
+    ["_mainView", "ignoreMutations", "showingSubView"].forEach(property => {
       Object.defineProperty(this.node, property, {
         enumerable: true,
         get: () => this[property],
@@ -355,12 +354,6 @@ this.PanelMultiView = class {
       if (subview.nodeName != "children")
         this._panelViewCache.appendChild(subview);
     }
-  }
-
-  _placeSubView(viewNode) {
-    this._viewStack.appendChild(viewNode);
-    if (!this.panelViews.includes(viewNode))
-      this.panelViews.push(viewNode);
   }
 
   _setHeader(viewNode, titleText) {
@@ -434,7 +427,7 @@ this.PanelMultiView = class {
 
 
   hideAllViewsExcept(theOne = null) {
-    for (let panelview of this._panelViews) {
+    for (let panelview of this.panelViews) {
       
       if (panelview == theOne || !this.node || panelview.panelMultiView != this.node)
         continue;
@@ -464,13 +457,16 @@ this.PanelMultiView = class {
       if (!viewNode) {
         viewNode = this.document.getElementById(aViewId);
         if (viewNode) {
-          this._placeSubView(viewNode);
+          this._viewStack.appendChild(viewNode);
         } else {
           throw new Error(`Subview ${aViewId} doesn't exist!`);
         }
       } else if (viewNode.parentNode == this._panelViewCache) {
-        this._placeSubView(viewNode);
+        this._viewStack.appendChild(viewNode);
       }
+
+      if (!this.panelViews.includes(viewNode))
+        this.panelViews.push(viewNode);
 
       viewNode.panelMultiView = this.node;
 
@@ -867,7 +863,7 @@ this.PanelMultiView = class {
         break;
       case "popupshowing": {
         this.node.setAttribute("panelopen", "true");
-        if (this.panelViews && !this.node.hasAttribute("disablekeynav")) {
+        if (!this.node.hasAttribute("disablekeynav")) {
           this.window.addEventListener("keydown", this);
           this._panel.addEventListener("mousemove", this);
         }
