@@ -304,6 +304,7 @@ nsWaylandDisplay::nsWaylandDisplay(wl_display *aDisplay)
   : mThreadId(PR_GetCurrentThread())
   
   
+  
   , mFormat(gfx::SurfaceFormat::B8G8R8A8)
   , mShm(nullptr)
   , mDisplay(aDisplay)
@@ -535,11 +536,9 @@ WindowBackBuffer::SetImageDataFromBackBuffer(
 }
 
 already_AddRefed<gfx::DrawTarget>
-WindowBackBuffer::Lock(const LayoutDeviceIntRegion& aRegion)
+WindowBackBuffer::Lock()
 {
-  gfx::IntRect bounds = aRegion.GetBounds().ToUnknownRect();
-  gfx::IntSize lockSize(bounds.XMost(), bounds.YMost());
-
+  gfx::IntSize lockSize(mWidth, mHeight);
   return gfxPlatform::CreateDrawTargetForData(static_cast<unsigned char*>(mShmPool.GetImageData()),
                                               lockSize,
                                               BUFFER_BPP * mWidth,
@@ -565,6 +564,7 @@ WindowSurfaceWayland::WindowSurfaceWayland(nsWindow *aWindow)
   , mFrameCallback(nullptr)
   , mFrameCallbackSurface(nullptr)
   , mDisplayThreadMessageLoop(MessageLoop::current())
+  , mDirectWlBufferDraw(true)
   , mDelayedCommit(false)
   , mFullScreenDamage(false)
   , mIsMainThread(NS_IsMainThread())
@@ -603,7 +603,7 @@ WindowSurfaceWayland::UpdateScaleFactor()
 }
 
 WindowBackBuffer*
-WindowSurfaceWayland::GetBufferToDraw(int aWidth, int aHeight)
+WindowSurfaceWayland::GetFrontBufferToDraw(int aWidth, int aHeight)
 {
   if (!mFrontBuffer) {
     mFrontBuffer = new WindowBackBuffer(mWaylandDisplay, aWidth, aHeight);
@@ -652,21 +652,118 @@ WindowSurfaceWayland::GetBufferToDraw(int aWidth, int aHeight)
 }
 
 already_AddRefed<gfx::DrawTarget>
+WindowSurfaceWayland::LockFrontBuffer(int aWidth, int aHeight)
+{
+  WindowBackBuffer* buffer = GetFrontBufferToDraw(aWidth, aHeight);
+  if (buffer) {
+    return buffer->Lock();
+  }
+
+  NS_WARNING("WindowSurfaceWayland::LockFrontBuffer(): No buffer available");
+  return nullptr;
+}
+
+already_AddRefed<gfx::DrawTarget>
+WindowSurfaceWayland::LockImageSurface(const gfx::IntSize& aLockSize)
+{
+  if (!mImageSurface || mImageSurface->CairoStatus() ||
+      !(aLockSize <= mImageSurface->GetSize())) {
+    mImageSurface = new gfxImageSurface(aLockSize,
+        SurfaceFormatToImageFormat(mWaylandDisplay->GetSurfaceFormat()));
+    if (mImageSurface->CairoStatus()) {
+      return nullptr;
+    }
+  }
+
+  return gfxPlatform::CreateDrawTargetForData(mImageSurface->Data(),
+                                              mImageSurface->GetSize(),
+                                              mImageSurface->Stride(),
+                                              mWaylandDisplay->GetSurfaceFormat());
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+already_AddRefed<gfx::DrawTarget>
 WindowSurfaceWayland::Lock(const LayoutDeviceIntRegion& aRegion)
 {
   MOZ_ASSERT(mIsMainThread == NS_IsMainThread());
 
+  LayoutDeviceIntRect screenRect = mWindow->GetBounds();
+  gfx::IntRect bounds = aRegion.GetBounds().ToUnknownRect();
+  gfx::IntSize lockSize(bounds.XMost(), bounds.YMost());
+
   
-  
-  LayoutDeviceIntRect rect = mWindow->GetBounds();
-  WindowBackBuffer* buffer = GetBufferToDraw(rect.width,
-                                             rect.height);
-  if (!buffer) {
-    NS_WARNING("No drawing buffer available");
-    return nullptr;
+  mDirectWlBufferDraw = (aRegion.GetNumRects() == 1 &&
+                         bounds.x == 0 && bounds.y == 0 &&
+                         lockSize.width == screenRect.width &&
+                         lockSize.height == screenRect.height);
+
+  if (mDirectWlBufferDraw) {
+    RefPtr<gfx::DrawTarget> dt = LockFrontBuffer(screenRect.width,
+                                                 screenRect.height);
+    if (dt) {
+      return dt.forget();
+    }
+
+    
+    
+    mDirectWlBufferDraw = false;
   }
 
-  return buffer->Lock(aRegion);
+  return LockImageSurface(lockSize);
+}
+
+bool
+WindowSurfaceWayland::CommitImageSurface(const LayoutDeviceIntRegion& aRegion)
+{
+  MOZ_ASSERT(!mDirectWlBufferDraw);
+
+  LayoutDeviceIntRect screenRect = mWindow->GetBounds();
+  gfx::IntRect bounds = aRegion.GetBounds().ToUnknownRect();
+
+  gfx::Rect rect(bounds);
+  if (rect.IsEmpty()) {
+    return false;
+  }
+
+  RefPtr<gfx::DrawTarget> dt = LockFrontBuffer(screenRect.width,
+                                               screenRect.height);
+  RefPtr<gfx::SourceSurface> surf =
+    gfx::Factory::CreateSourceSurfaceForCairoSurface(mImageSurface->CairoSurface(),
+                                                     mImageSurface->GetSize(),
+                                                     mImageSurface->Format());
+  if (!dt || !surf) {
+    return false;
+  }
+
+  uint32_t numRects = aRegion.GetNumRects();
+  if (numRects != 1) {
+    AutoTArray<IntRect, 32> rects;
+    rects.SetCapacity(numRects);
+    for (auto iter = aRegion.RectIter(); !iter.Done(); iter.Next()) {
+      rects.AppendElement(iter.Get().ToUnknownRect());
+    }
+    dt->PushDeviceSpaceClipRects(rects.Elements(), rects.Length());
+  }
+
+  dt->DrawSurface(surf, rect, rect);
+
+  if (numRects != 1) {
+    dt->PopClip();
+  }
+
+  return true;
 }
 
 void
@@ -677,10 +774,16 @@ WindowSurfaceWayland::Commit(const LayoutDeviceIntRegion& aInvalidRegion)
   wl_surface* waylandSurface = mWindow->GetWaylandSurface();
   if (!waylandSurface) {
     
+    NS_WARNING("WindowSurfaceWayland::Commit(): parent wl_surface is already hidden/deleted.");
     return;
   }
   wl_proxy_set_queue((struct wl_proxy *)waylandSurface,
                      mWaylandDisplay->GetEventQueue());
+
+  if (!mDirectWlBufferDraw) {
+    
+    CommitImageSurface(aInvalidRegion);
+  }
 
   if (mFullScreenDamage) {
     LayoutDeviceIntRect rect = mWindow->GetBounds();
@@ -735,7 +838,7 @@ WindowSurfaceWayland::FrameCallbackHandler()
     wl_surface* waylandSurface = mWindow->GetWaylandSurface();
     if (!waylandSurface) {
       
-      NS_WARNING("No drawing buffer available");
+      NS_WARNING("WindowSurfaceWayland::FrameCallbackHandler(): parent wl_surface is already hidden/deleted.");
       return;
     }
     wl_proxy_set_queue((struct wl_proxy *)waylandSurface,
