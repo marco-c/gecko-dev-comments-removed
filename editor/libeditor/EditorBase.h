@@ -660,8 +660,6 @@ public:
 
   void OnFocus(dom::EventTarget* aFocusEventTarget);
 
-  virtual nsresult InsertFromDrop(dom::DragEvent* aDropEvent) = 0;
-
   
 
 

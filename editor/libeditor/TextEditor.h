@@ -172,6 +172,12 @@ public:
 
   void OnCompositionEnd(WidgetCompositionEvent& aCompositionEndEvent);
 
+  
+
+
+
+  nsresult OnDrop(dom::DragEvent* aDropEvent);
+
 protected: 
   
 
@@ -193,8 +199,6 @@ protected:
                                             bool aSuppressTransaction) override;
   using EditorBase::RemoveAttributeOrEquivalent;
   using EditorBase::SetAttributeOrEquivalent;
-
-  virtual nsresult InsertFromDrop(dom::DragEvent* aDropEvent) override;
 
   
 
