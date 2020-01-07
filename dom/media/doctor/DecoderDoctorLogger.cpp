@@ -21,6 +21,16 @@ namespace mozilla {
 
 static DDMediaLogs* sMediaLogs;
 
+ void
+DecoderDoctorLogger::Init()
+{
+  MOZ_ASSERT(static_cast<LogState>(sLogState) == scDisabled);
+  if (MOZ_LOG_TEST(sDecoderDoctorLoggerLog, LogLevel::Error) ||
+      MOZ_LOG_TEST(sDecoderDoctorLoggerEndLog, LogLevel::Error)) {
+    EnableLogging();
+  }
+}
+
 
 
 struct DDLogShutdowner

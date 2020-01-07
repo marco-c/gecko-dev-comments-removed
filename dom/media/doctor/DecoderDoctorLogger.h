@@ -39,6 +39,10 @@ class DecoderDoctorLogger
 public:
   
   
+  static void Init();
+
+  
+  
   static inline bool IsDDLoggingEnabled()
   {
     return MOZ_UNLIKELY(static_cast<LogState>(sLogState) == scEnabled);
