@@ -30,8 +30,23 @@ public:
     
     static void Shutdown();
 
+    
+    
+    
+    enum FeatureFlags : uint8_t {
+        kDefaultFeatures  = 0x00,
+        
+        
+        kDisableLigatures = 0x01,
+        kAddSmallCaps     = 0x02,
+        kIndicFeatures    = 0x04,
+
+        
+        kMaxFontInstances = 8
+    };
+
 protected:
-    CTFontRef mCTFont;
+    CTFontRef mCTFont[kMaxFontInstances];
 
     
     CFDictionaryRef mAttributesDictLTR;
@@ -49,27 +64,15 @@ protected:
     CFDictionaryRef CreateAttrDictWithoutDirection();
 
     static CTFontDescriptorRef
-    CreateFontFeaturesDescriptor(const std::pair<SInt16,SInt16> aFeatures[],
+    CreateFontFeaturesDescriptor(const std::pair<SInt16,SInt16>* aFeatures,
                                  size_t aCount);
 
-    static CTFontDescriptorRef GetDefaultFeaturesDescriptor();
-    static CTFontDescriptorRef GetSmallCapsDescriptor();
-    static CTFontDescriptorRef GetDisableLigaturesDescriptor();
-    static CTFontDescriptorRef GetSmallCapDisableLigDescriptor();
-    static CTFontDescriptorRef GetIndicFeaturesDescriptor();
-    static CTFontDescriptorRef GetIndicDisableLigaturesDescriptor();
+    static CTFontDescriptorRef GetFeaturesDescriptor(FeatureFlags aFeatureFlags);
 
     
-    static CTFontDescriptorRef    sDefaultFeaturesDescriptor;
-    static CTFontDescriptorRef    sSmallCapsDescriptor;
-
-    
-    static CTFontDescriptorRef    sDisableLigaturesDescriptor;
-    static CTFontDescriptorRef    sSmallCapDisableLigDescriptor;
-
-    
-    static CTFontDescriptorRef    sIndicFeaturesDescriptor;
-    static CTFontDescriptorRef    sIndicDisableLigaturesDescriptor;
+    static CTFontDescriptorRef sFeaturesDescriptor[kMaxFontInstances];
 };
+
+MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(gfxCoreTextShaper::FeatureFlags)
 
 #endif 
