@@ -36,6 +36,7 @@
 # include "js/Proxy.h" 
 #endif
 #include "js/UniquePtr.h"
+#include "js/Utility.h"
 #include "js/Vector.h"
 #include "threading/Thread.h"
 #include "vm/Caches.h"
@@ -528,7 +529,7 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
     js::MainThreadData<const JSLocaleCallbacks*> localeCallbacks;
 
     
-    js::MainThreadData<char*> defaultLocale;
+    js::MainThreadData<js::UniqueChars> defaultLocale;
 
     
     js::MainThreadOrIonCompileData<bool> profilingScripts;

@@ -692,7 +692,7 @@ struct ParseTask : public mozilla::LinkedListElement<ParseTask>, public JS::OffT
 
     
     
-    Vector<CompileError*, 0, SystemAllocPolicy> errors;
+    Vector<UniquePtr<CompileError>, 0, SystemAllocPolicy> errors;
     bool overRecursed;
     bool outOfMemory;
 
