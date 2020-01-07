@@ -7,6 +7,7 @@
 #include "mozilla/dom/CredentialsContainer.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/WebAuthnManager.h"
+#include "nsContentUtils.h"
 
 namespace mozilla {
 namespace dom {
@@ -18,6 +19,63 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(CredentialsContainer)
   NS_WRAPPERCACHE_INTERFACE_MAP_ENTRY
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
+
+already_AddRefed<Promise>
+CreateAndReject(nsPIDOMWindowInner* aParent, ErrorResult& aRv)
+{
+  MOZ_ASSERT(aParent);
+
+  nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(aParent);
+  if (NS_WARN_IF(!global)) {
+    aRv.Throw(NS_ERROR_FAILURE);
+    return nullptr;
+  }
+
+  RefPtr<Promise> promise = Promise::Create(global, aRv);
+  if (NS_WARN_IF(aRv.Failed())) {
+    return nullptr;
+  }
+
+  promise->MaybeReject(NS_ERROR_DOM_NOT_ALLOWED_ERR);
+  return promise.forget();
+}
+
+bool
+IsSameOriginWithAncestors(nsPIDOMWindowInner* aParent)
+{
+  
+  
+  
+  
+  MOZ_ASSERT(aParent);
+
+  if (aParent->IsTopInnerWindow()) {
+    
+    return true;
+  }
+
+  
+  
+  nsINode* node = nsContentUtils::GetCrossDocParentNode(aParent->GetExtantDoc());
+  if (NS_WARN_IF(!node)) {
+    
+    return false;
+  }
+
+  
+  
+  do {
+    nsresult rv = nsContentUtils::CheckSameOrigin(aParent->GetExtantDoc(), node);
+    if (NS_FAILED(rv)) {
+      
+      return false;
+    }
+
+    node = nsContentUtils::GetCrossDocParentNode(node);
+  } while (node);
+
+  return true;
+}
 
 CredentialsContainer::CredentialsContainer(nsPIDOMWindowInner* aParent) :
   mParent(aParent)
@@ -45,22 +103,42 @@ CredentialsContainer::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenPro
 }
 
 already_AddRefed<Promise>
-CredentialsContainer::Get(const CredentialRequestOptions& aOptions)
+CredentialsContainer::Get(const CredentialRequestOptions& aOptions,
+                          ErrorResult& aRv)
 {
+  if (!IsSameOriginWithAncestors(mParent)) {
+    return CreateAndReject(mParent, aRv);
+  }
+
+  
+
   EnsureWebAuthnManager();
   return mManager->GetAssertion(aOptions.mPublicKey, aOptions.mSignal);
 }
 
 already_AddRefed<Promise>
-CredentialsContainer::Create(const CredentialCreationOptions& aOptions)
+CredentialsContainer::Create(const CredentialCreationOptions& aOptions,
+                             ErrorResult& aRv)
 {
+  if (!IsSameOriginWithAncestors(mParent)) {
+    return CreateAndReject(mParent, aRv);
+  }
+
+  
+
   EnsureWebAuthnManager();
   return mManager->MakeCredential(aOptions.mPublicKey, aOptions.mSignal);
 }
 
 already_AddRefed<Promise>
-CredentialsContainer::Store(const Credential& aCredential)
+CredentialsContainer::Store(const Credential& aCredential, ErrorResult& aRv)
 {
+  if (!IsSameOriginWithAncestors(mParent)) {
+    return CreateAndReject(mParent, aRv);
+  }
+
+  
+
   EnsureWebAuthnManager();
   return mManager->Store(aCredential);
 }
