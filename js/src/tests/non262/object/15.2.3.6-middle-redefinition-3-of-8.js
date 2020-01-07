@@ -1,0 +1,6 @@
+
+
+
+
+loadRelativeToScript("defineProperty-setup.js");
+runNonTerminalPropertyPresentTestsFraction(3, 8);

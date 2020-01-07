@@ -1,0 +1,6 @@
+
+
+
+
+loadRelativeToScript("defineProperty-setup.js");
+runDictionaryPropertyPresentTestsFraction(11, 32);
