@@ -20,12 +20,10 @@ config = {
     "hg_l10n_tag": "default",
 
     
-    "update_mar_dir": "dist\\update",  
     "application_ini": "application.ini",
     "local_mar_tool_dir": "dist\\host\\bin",
     "mar": "mar.exe",
     "mbsdiff": "mbsdiff.exe",
-    "localized_mar": "firefox-%(version)s.%(locale)s.win32.complete.mar",
 
     
     "enable_mozmake": True,
