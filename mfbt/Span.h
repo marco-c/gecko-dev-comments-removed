@@ -841,7 +841,8 @@ private:
       : ExtentType(ext)
       
       
-      , data_(elements ? elements : reinterpret_cast<pointer>(0x1))
+      
+      , data_(elements ? elements : reinterpret_cast<pointer>(alignof(element_type)))
     {
       const size_t extentSize = ExtentType::size();
       MOZ_RELEASE_ASSERT(
