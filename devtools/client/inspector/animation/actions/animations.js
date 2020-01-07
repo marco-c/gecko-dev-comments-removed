@@ -4,7 +4,11 @@
 
 "use strict";
 
-const { UPDATE_ANIMATIONS } = require("./index");
+const {
+  UPDATE_ANIMATIONS,
+  UPDATE_ELEMENT_PICKER_ENABLED,
+  UPDATE_SIDEBAR_SIZE
+} = require("./index");
 
 module.exports = {
   
@@ -14,6 +18,26 @@ module.exports = {
     return {
       type: UPDATE_ANIMATIONS,
       animations,
+    };
+  },
+
+  
+
+
+  updateElementPickerEnabled(elementPickerEnabled) {
+    return {
+      type: UPDATE_ELEMENT_PICKER_ENABLED,
+      elementPickerEnabled,
+    };
+  },
+
+  
+
+
+  updateSidebarSize(sidebarSize) {
+    return {
+      type: UPDATE_SIDEBAR_SIZE,
+      sidebarSize,
     };
   }
 };
