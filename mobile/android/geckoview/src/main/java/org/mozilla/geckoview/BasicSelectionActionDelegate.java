@@ -15,6 +15,7 @@ import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.os.Build;
+import android.support.annotation.NonNull;
 import android.util.Log;
 import android.view.ActionMode;
 import android.view.Menu;
@@ -24,8 +25,23 @@ import android.view.View;
 import java.util.Arrays;
 import java.util.List;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 public class BasicSelectionActionDelegate implements ActionMode.Callback,
-                                             GeckoSession.SelectionActionDelegate {
+                                                     GeckoSession.SelectionActionDelegate {
     private static final String LOGTAG = "GeckoBasicSelectionAction";
 
     protected static final String ACTION_PROCESS_TEXT = Intent.ACTION_PROCESS_TEXT;
@@ -80,11 +96,12 @@ public class BasicSelectionActionDelegate implements ActionMode.Callback,
         }
     }
 
-    public BasicSelectionActionDelegate(final Activity activity) {
+    public BasicSelectionActionDelegate(final @NonNull Activity activity) {
         this(activity, Build.VERSION.SDK_INT >= 23);
     }
 
-    public BasicSelectionActionDelegate(final Activity activity, final boolean useFloatingToolbar) {
+    public BasicSelectionActionDelegate(final @NonNull Activity activity,
+                                        final boolean useFloatingToolbar) {
         mActivity = activity;
         mUseFloatingToolbar = useFloatingToolbar;
         mExternalActionsEnabled = true;
@@ -118,7 +135,7 @@ public class BasicSelectionActionDelegate implements ActionMode.Callback,
 
 
 
-    protected String[] getAllActions() {
+    protected @NonNull String[] getAllActions() {
         return mUseFloatingToolbar ? FLOATING_TOOLBAR_ACTIONS
                                    : FIXED_TOOLBAR_ACTIONS;
     }
@@ -130,7 +147,7 @@ public class BasicSelectionActionDelegate implements ActionMode.Callback,
 
 
 
-    protected boolean isActionAvailable(final String id) {
+    protected boolean isActionAvailable(final @NonNull String id) {
         if (mExternalActionsEnabled && !mSelection.text.isEmpty() &&
                 ACTION_PROCESS_TEXT.equals(id)) {
             final PackageManager pm = mActivity.getPackageManager();
@@ -147,7 +164,7 @@ public class BasicSelectionActionDelegate implements ActionMode.Callback,
 
 
 
-    protected void prepareAction(final String id, final MenuItem item) {
+    protected void prepareAction(final @NonNull String id, final @NonNull MenuItem item) {
         switch (id) {
             case ACTION_CUT:
                 item.setTitle(android.R.string.cut);
@@ -173,7 +190,7 @@ public class BasicSelectionActionDelegate implements ActionMode.Callback,
 
 
 
-    protected boolean performAction(final String id, final MenuItem item) {
+    protected boolean performAction(final @NonNull String id, final @NonNull MenuItem item) {
         if (ACTION_PROCESS_TEXT.equals(id)) {
             try {
                 mActivity.startActivity(item.getIntent());
@@ -199,6 +216,9 @@ public class BasicSelectionActionDelegate implements ActionMode.Callback,
         }
         return true;
     }
+
+    
+
 
     protected void clearSelection() {
         if (mResponse != null) {
