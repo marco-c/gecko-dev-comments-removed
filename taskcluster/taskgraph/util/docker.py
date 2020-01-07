@@ -6,15 +6,12 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import hashlib
 import os
-import re
 import shutil
 import subprocess
 import tarfile
 import tempfile
-import yaml
 
 from mozbuild.util import memoize
-from mozpack.files import GeneratedFile
 from mozpack.archive import (
     create_tar_gz_from_files,
 )
@@ -52,7 +49,7 @@ def docker_image(name, by_tag=False):
     return '{}/{}:{}'.format(registry, name, tag)
 
 
-def generate_context_hash(topsrcdir, image_path, image_name, args=None):
+def generate_context_hash(topsrcdir, image_path, image_name):
     """Generates a sha256 hash for context directory used to build an image."""
 
     
@@ -60,12 +57,12 @@ def generate_context_hash(topsrcdir, image_path, image_name, args=None):
     fd, p = tempfile.mkstemp()
     os.close(fd)
     try:
-        return create_context_tar(topsrcdir, image_path, p, image_name, args)
+        return create_context_tar(topsrcdir, image_path, p, image_name)
     finally:
         os.unlink(p)
 
 
-def create_context_tar(topsrcdir, context_dir, out_path, prefix, args=None):
+def create_context_tar(topsrcdir, context_dir, out_path, prefix):
     """Create a context tarball.
 
     A directory ``context_dir`` containing a Dockerfile will be assembled into
@@ -81,15 +78,9 @@ def create_context_tar(topsrcdir, context_dir, out_path, prefix, args=None):
     path ``topsrcdir/``. If an entry is a directory, we add all files
     under that directory.
 
-    If a line in the Dockerfile has the form ``# %ARG <name>``, occurrences of
-    the string ``$<name>`` in subsequent lines are replaced with the value
-    found in the ``args`` argument. Exception: this doesn't apply to VOLUME
-    definitions.
-
     Returns the SHA-256 hex digest of the created archive.
     """
     archive_files = {}
-    replace = []
 
     for root, dirs, files in os.walk(context_dir):
         for f in files:
@@ -99,22 +90,9 @@ def create_context_tar(topsrcdir, context_dir, out_path, prefix, args=None):
             archive_files[archive_path] = source_path
 
     
-    content = []
     with open(os.path.join(context_dir, 'Dockerfile'), 'rb') as fh:
         for line in fh:
-            if line.startswith('# %ARG'):
-                p = line[len('# %ARG '):].strip()
-                if not args or p not in args:
-                    raise Exception('missing argument: {}'.format(p))
-                replace.append((re.compile(r'\${}\b'.format(p)),
-                                args[p].encode('ascii')))
-                continue
-
-            for regexp, s in replace:
-                line = re.sub(regexp, s, line)
-
-            content.append(line)
-
+            line = line.rstrip()
             if not line.startswith('# %include'):
                 continue
 
@@ -140,9 +118,6 @@ def create_context_tar(topsrcdir, context_dir, out_path, prefix, args=None):
             else:
                 archive_path = os.path.join(prefix, 'topsrcdir', p)
                 archive_files[archive_path] = fs_path
-
-    archive_files[os.path.join(prefix, 'Dockerfile')] = \
-        GeneratedFile(b''.join(content))
 
     with open(out_path, 'wb') as fh:
         create_tar_gz_from_files(fh, archive_files, '%s.tar.gz' % prefix)
@@ -192,36 +167,13 @@ def build_from_context(docker_bin, context_path, prefix, tag=None):
 
 
 @memoize
-def image_paths():
-    """Return a map of image name to paths containing their Dockerfile.
-    """
-    with open(os.path.join(GECKO, 'taskcluster', 'ci', 'docker-image',
-                           'kind.yml')) as fh:
-        config = yaml.load(fh)
-        return {
-            k: os.path.join(IMAGE_DIR, v.get('definition', k))
-            for k, v in config['jobs'].items()
-        }
-
-
-def image_path(name):
-    paths = image_paths()
-    if name in paths:
-        return paths[name]
-    return os.path.join(IMAGE_DIR, name)
-
-
-@memoize
 def parse_volumes(image):
     """Parse VOLUME entries from a Dockerfile for an image."""
     volumes = set()
 
-    path = image_path(image)
-
-    with open(os.path.join(path, 'Dockerfile'), 'rb') as fh:
+    with open(os.path.join(IMAGE_DIR, image, 'Dockerfile'), 'rb') as fh:
         for line in fh:
             line = line.strip()
-            
             if not line.startswith(b'VOLUME '):
                 continue
 
