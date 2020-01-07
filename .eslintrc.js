@@ -52,7 +52,6 @@ module.exports = {
     
     
     "files": [
-      "devtools/client/inspector/extensions/test/head_devtools_inspector_sidebar.js",
       "storage/test/unit/**",
     ],
     "rules": {
