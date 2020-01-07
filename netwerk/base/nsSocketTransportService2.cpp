@@ -1067,7 +1067,12 @@ nsSocketTransportService::Run()
     
     NS_ProcessPendingEvents(mRawThread);
 
+    
+    
+    
     psm::StopSSLServerCertVerificationThreads();
+    NS_ProcessPendingEvents(mRawThread);
+
     gSocketThread = nullptr;
 
     SOCKET_LOG(("STS thread exit\n"));
