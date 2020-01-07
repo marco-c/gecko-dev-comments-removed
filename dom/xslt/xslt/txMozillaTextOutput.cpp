@@ -1,14 +1,13 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "txMozillaTextOutput.h"
 #include "nsContentCID.h"
 #include "nsIContent.h"
 #include "nsIDocument.h"
 #include "nsIDOMDocument.h"
-#include "nsIDOMDocumentFragment.h"
 #include "nsIDocumentTransformer.h"
 #include "nsCharsetSource.h"
 #include "nsIPrincipal.h"
@@ -19,6 +18,7 @@
 #include "mozilla/Encoding.h"
 #include "nsTextNode.h"
 #include "nsNameSpaceManager.h"
+#include "mozilla/dom/DocumentFragment.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -29,10 +29,10 @@ txMozillaTextOutput::txMozillaTextOutput(nsITransformObserver* aObserver)
     mObserver = do_GetWeakReference(aObserver);
 }
 
-txMozillaTextOutput::txMozillaTextOutput(nsIDOMDocumentFragment* aDest)
+txMozillaTextOutput::txMozillaTextOutput(DocumentFragment* aDest)
 {
     MOZ_COUNT_CTOR(txMozillaTextOutput);
-    mTextParent = do_QueryInterface(aDest);
+    mTextParent = aDest;
     mDocument = mTextParent->OwnerDoc();
 }
 
@@ -82,7 +82,7 @@ txMozillaTextOutput::endDocument(nsresult aResult)
     nsresult rv = mTextParent->AppendChildTo(text, true);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    
+    // This should really be handled by nsIDocument::EndLoad
     if (mObserver) {
         MOZ_ASSERT(mDocument->GetReadyStateEnum() ==
                    nsIDocument::READYSTATE_LOADING, "Bad readyState");
@@ -125,27 +125,27 @@ nsresult
 txMozillaTextOutput::createResultDocument(nsIDocument* aSourceDocument,
                                           bool aLoadedAsData)
 {
-    
+    /*
+     * Create an XHTML document to hold the text.
+     *
+     * <html>
+     *   <head />
+     *   <body>
+     *     <pre id="transformiixResult"> * The text comes here * </pre>
+     *   <body>
+     * </html>
+     *
+     * Except if we are transforming into a non-displayed document we create
+     * the following DOM
+     *
+     * <transformiix:result> * The text comes here * </transformiix:result>
+     */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
+    // Create the document
     nsresult rv = NS_NewXMLDocument(getter_AddRefs(mDocument),
                                     aLoadedAsData);
     NS_ENSURE_SUCCESS(rv, rv);
-    
+    // This should really be handled by nsIDocument::BeginLoad
     MOZ_ASSERT(mDocument->GetReadyStateEnum() ==
                nsIDocument::READYSTATE_UNINITIALIZED, "Bad readyState");
     mDocument->SetReadyStateInternal(nsIDocument::READYSTATE_LOADING);
@@ -156,13 +156,13 @@ txMozillaTextOutput::createResultDocument(nsIDocument* aSourceDocument,
 
     NS_ASSERTION(mDocument, "Need document");
 
-    
+    // Reset and set up document
     URIUtils::ResetWithSource(mDocument, aSourceDocument);
-    
-    
+    // Only do this after resetting the document to ensure we have the
+    // correct principal.
     mDocument->SetScriptHandlingObject(sgo);
 
-    
+    // Set the charset
     if (!mOutputFormat.mEncoding.IsEmpty()) {
         const Encoding* encoding = Encoding::ForLabel(mOutputFormat.mEncoding);
         if (encoding) {
@@ -171,17 +171,17 @@ txMozillaTextOutput::createResultDocument(nsIDocument* aSourceDocument,
         }
     }
 
-    
+    // Notify the contentsink that the document is created
     nsCOMPtr<nsITransformObserver> observer = do_QueryReferent(mObserver);
     if (observer) {
         rv = observer->OnDocumentCreated(mDocument);
         NS_ENSURE_SUCCESS(rv, rv);
     }
 
-    
+    // Create the content
 
-    
-    
+    // When transforming into a non-displayed document (i.e. when there is no
+    // observer) we only create a transformiix:result root element.
     if (!observer) {
         int32_t namespaceID;
         rv = nsContentUtils::NameSpaceManager()->

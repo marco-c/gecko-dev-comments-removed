@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "txMozillaXSLTProcessor.h"
 #include "nsContentCID.h"
@@ -11,7 +11,6 @@
 #include "nsIDOMElement.h"
 #include "nsIDocument.h"
 #include "nsIDOMDocument.h"
-#include "nsIDOMDocumentFragment.h"
 #include "nsIDOMNodeList.h"
 #include "nsIIOService.h"
 #include "nsILoadGroup.h"
@@ -44,9 +43,9 @@ using namespace mozilla::dom;
 
 static NS_DEFINE_CID(kXMLDocumentCID, NS_XMLDOCUMENT_CID);
 
-
-
-
+/**
+ * Output Handler Factories
+ */
 class txToDocHandlerFactory : public txAOutputHandlerFactory
 {
 public:
@@ -71,7 +70,7 @@ private:
 class txToFragmentHandlerFactory : public txAOutputHandlerFactory
 {
 public:
-    explicit txToFragmentHandlerFactory(nsIDOMDocumentFragment* aFragment)
+    explicit txToFragmentHandlerFactory(DocumentFragment* aFragment)
         : mFragment(aFragment)
     {
     }
@@ -79,7 +78,7 @@ public:
     TX_DECL_TXAOUTPUTHANDLERFACTORY
 
 private:
-    nsCOMPtr<nsIDOMDocumentFragment> mFragment;
+    RefPtr<DocumentFragment> mFragment;
 };
 
 nsresult
@@ -191,8 +190,7 @@ txToFragmentHandlerFactory::createHandlerWith(txOutputFormat* aFormat,
         {
             txOutputFormat format;
             format.merge(*aFormat);
-            nsCOMPtr<nsINode> node = do_QueryInterface(mFragment);
-            nsCOMPtr<nsIDocument> doc = node->OwnerDoc();
+            nsCOMPtr<nsIDocument> doc = mFragment->OwnerDoc();
 
             if (doc->IsHTMLDocument()) {
                 format.mMethod = eHTMLOutput;
@@ -323,9 +321,9 @@ ImplCycleCollectionTraverse(nsCycleCollectionTraversalCallback& aCallback,
     }
 }
 
-
-
-
+/**
+ * txMozillaXSLTProcessor
+ */
 
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(txMozillaXSLTProcessor,
                                       mOwner, mEmbeddedStylesheetRoot,
@@ -411,7 +409,7 @@ public:
     {
     }
 
-    
+    // txIParseContext
     nsresult resolveNamespacePrefix(nsAtom* aPrefix, int32_t& aID) override
     {
         aID = mResolver->lookupNamespace(aPrefix);
@@ -431,7 +429,7 @@ public:
     {
     }
 
-    
+    // txIEvalContext
     nsresult getVariable(int32_t aNamespace, nsAtom* aLName,
                          txAExprResult*& aResult) override
     {
@@ -485,14 +483,14 @@ txMozillaXSLTProcessor::AddXSLTParam(const nsString& aName,
     nsresult rv = NS_OK;
 
     if (aSelect.IsVoid() == aValue.IsVoid()) {
-        
+        // Ignore if neither or both are specified
         return NS_ERROR_FAILURE;
     }
 
     RefPtr<txAExprResult> value;
     if (!aSelect.IsVoid()) {
 
-        
+        // Set up context
         nsAutoPtr<txXPathNode> contextNode(
           txXPathNativeNode::createXPathNode(aContext));
         NS_ENSURE_TRUE(contextNode, NS_ERROR_OUT_OF_MEMORY);
@@ -504,13 +502,13 @@ txMozillaXSLTProcessor::AddXSLTParam(const nsString& aName,
         txXSLTParamContext paramContext(&mParamNamespaceMap, *contextNode,
                                         mRecycler);
 
-        
+        // Parse
         nsAutoPtr<Expr> expr;
         rv = txExprParser::createExpr(aSelect, &paramContext,
                                       getter_Transfers(expr));
         NS_ENSURE_SUCCESS(rv, rv);
 
-        
+        // Evaluate
         rv = expr->evaluate(&paramContext, getter_AddRefs(value));
         NS_ENSURE_SUCCESS(rv, rv);
     }
@@ -572,8 +570,8 @@ txMozillaXSLTProcessor::DoTransform()
     mSource->OwnerDoc()->BlockOnload();
     nsresult rv = NS_DispatchToCurrentThread(event);
     if (NS_FAILED(rv)) {
-        
-        
+        // XXX Maybe we should just display the source document in this case?
+        //     Also, set up context information, see bug 204655.
         reportError(rv, nullptr, nullptr);
     }
 
@@ -584,7 +582,7 @@ void
 txMozillaXSLTProcessor::ImportStylesheet(nsINode& aStyle,
                                          mozilla::ErrorResult& aRv)
 {
-    
+    // We don't support importing multiple stylesheets yet.
     if (NS_WARN_IF(mStylesheetDocument || mStylesheet)) {
         aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
         return;
@@ -603,7 +601,7 @@ txMozillaXSLTProcessor::ImportStylesheet(nsINode& aStyle,
 
     nsresult rv = TX_CompileStylesheet(&aStyle, this,
                                        getter_AddRefs(mStylesheet));
-    
+    // XXX set up exception context, bug 204658
     if (NS_WARN_IF(NS_FAILED(rv))) {
         aRv.Throw(rv);
         return;
@@ -659,16 +657,16 @@ txMozillaXSLTProcessor::TransformToDoc(nsIDocument **aResult,
 
     txExecutionState es(mStylesheet, IsLoadDisabled());
 
-    
+    // XXX Need to add error observers
 
-    
+    // If aResult is non-null, we're a data document
     txToDocHandlerFactory handlerFactory(&es, mSource->OwnerDoc(), mObserver,
                                          aCreateDataDocument);
     es.mOutputHandlerFactory = &handlerFactory;
 
     nsresult rv = es.init(*sourceNode, &mVariables);
 
-    
+    // Process root of XML source document
     if (NS_SUCCEEDED(rv)) {
         rv = txXSLTProcessor::execute(es);
     }
@@ -692,7 +690,7 @@ txMozillaXSLTProcessor::TransformToDoc(nsIDocument **aResult,
         }
     }
     else if (mObserver) {
-        
+        // XXX set up context information, bug 204655
         reportError(rv, nullptr, nullptr);
     }
 
@@ -731,7 +729,7 @@ txMozillaXSLTProcessor::TransformToFragment(nsINode& aSource,
 
     txExecutionState es(mStylesheet, IsLoadDisabled());
 
-    
+    // XXX Need to add error observers
 
     RefPtr<DocumentFragment> frag = aOutput.CreateDocumentFragment();
     txToFragmentHandlerFactory handlerFactory(frag);
@@ -739,11 +737,11 @@ txMozillaXSLTProcessor::TransformToFragment(nsINode& aSource,
 
     rv = es.init(*sourceNode, &mVariables);
 
-    
+    // Process root of XML source document
     if (NS_SUCCEEDED(rv)) {
         rv = txXSLTProcessor::execute(es);
     }
-    
+    // XXX setup exception context, bug 204658
     nsresult endRv = es.end(rv);
     if (NS_SUCCEEDED(rv)) {
       rv = endRv;
@@ -769,7 +767,7 @@ txMozillaXSLTProcessor::SetParameter(const nsAString& aNamespaceURI,
     uint16_t dataType;
     value->GetDataType(&dataType);
     switch (dataType) {
-        
+        // Number
         case nsIDataType::VTYPE_INT8:
         case nsIDataType::VTYPE_INT16:
         case nsIDataType::VTYPE_INT32:
@@ -781,10 +779,10 @@ txMozillaXSLTProcessor::SetParameter(const nsAString& aNamespaceURI,
         case nsIDataType::VTYPE_FLOAT:
         case nsIDataType::VTYPE_DOUBLE:
 
-        
+        // Boolean
         case nsIDataType::VTYPE_BOOL:
 
-        
+        // String
         case nsIDataType::VTYPE_CHAR:
         case nsIDataType::VTYPE_WCHAR:
         case nsIDataType::VTYPE_DOMSTRING:
@@ -799,7 +797,7 @@ txMozillaXSLTProcessor::SetParameter(const nsAString& aNamespaceURI,
             break;
         }
 
-        
+        // Nodeset
         case nsIDataType::VTYPE_INTERFACE:
         case nsIDataType::VTYPE_INTERFACE_IS:
         {
@@ -807,7 +805,7 @@ txMozillaXSLTProcessor::SetParameter(const nsAString& aNamespaceURI,
             nsresult rv = value->GetAsISupports(getter_AddRefs(supports));
             NS_ENSURE_SUCCESS(rv, rv);
 
-            nsCOMPtr<nsIDOMNode> node = do_QueryInterface(supports);
+            nsCOMPtr<nsINode> node = do_QueryInterface(supports);
             if (node) {
                 if (!nsContentUtils::CanCallerAccess(node)) {
                     return NS_ERROR_DOM_SECURITY_ERR;
@@ -840,8 +838,8 @@ txMozillaXSLTProcessor::SetParameter(const nsAString& aNamespaceURI,
                     }
                 }
 
-                
-                
+                // Clone the XPathResult so that mutations don't affect this
+                // variable.
                 nsCOMPtr<nsIXPathResult> clone;
                 rv = xpathResult->Clone(getter_AddRefs(clone));
                 NS_ENSURE_SUCCESS(rv, rv);
@@ -870,14 +868,14 @@ txMozillaXSLTProcessor::SetParameter(const nsAString& aNamespaceURI,
                 break;
             }
 
-            
+            // Random JS Objects will be converted to a string.
             nsCOMPtr<nsIXPConnectJSObjectHolder> holder =
                 do_QueryInterface(supports);
             if (holder) {
                 break;
             }
 
-            
+            // We don't know how to handle this type of param.
             return NS_ERROR_ILLEGAL_VALUE;
         }
 
@@ -894,7 +892,7 @@ txMozillaXSLTProcessor::SetParameter(const nsAString& aNamespaceURI,
                 type != nsIDataType::VTYPE_INTERFACE_IS) {
                 free(array);
 
-                
+                // We only support arrays of DOM nodes.
                 return NS_ERROR_ILLEGAL_VALUE;
             }
 
@@ -910,7 +908,7 @@ txMozillaXSLTProcessor::SetParameter(const nsAString& aNamespaceURI,
                          NS_ERROR_DOM_SECURITY_ERR;
                 }
                 else {
-                    
+                    // We only support arrays of DOM nodes.
                     rv = NS_ERROR_ILLEGAL_VALUE;
                 }
 
@@ -1044,8 +1042,8 @@ txMozillaXSLTProcessor::LoadStyleSheet(nsIURI* aUri,
 
     nsresult rv = TX_LoadSheet(aUri, this, aLoaderDocument, refpol);
     if (NS_FAILED(rv) && mObserver) {
-        
-        
+        // This is most likely a network or security error, just
+        // use the uri as context.
         nsAutoCString spec;
         aUri->GetSpec(spec);
         CopyUTF8toUTF16(spec, mSourceText);
@@ -1253,7 +1251,7 @@ txMozillaXSLTProcessor::ContentRemoved(nsIContent* aChild,
     mStylesheet = nullptr;
 }
 
- JSObject*
+/* virtual */ JSObject*
 txMozillaXSLTProcessor::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto)
 {
     return XSLTProcessorBinding::Wrap(aCx, this, aGivenProto);
@@ -1265,7 +1263,7 @@ txMozillaXSLTProcessor::GetDocGroup() const
     return mStylesheetDocument ? mStylesheetDocument->GetDocGroup() : nullptr;
 }
 
- already_AddRefed<txMozillaXSLTProcessor>
+/* static */ already_AddRefed<txMozillaXSLTProcessor>
 txMozillaXSLTProcessor::Constructor(const GlobalObject& aGlobal,
                                     mozilla::ErrorResult& aRv)
 {
@@ -1290,7 +1288,7 @@ txMozillaXSLTProcessor::SetParameter(JSContext* aCx,
     aRv = SetParameter(aNamespaceURI, aLocalName, val);
 }
 
-
+/* static*/
 nsresult
 txMozillaXSLTProcessor::Startup()
 {
@@ -1308,7 +1306,7 @@ txMozillaXSLTProcessor::Startup()
     return NS_OK;
 }
 
-
+/* static*/
 void
 txMozillaXSLTProcessor::Shutdown()
 {
@@ -1321,7 +1319,7 @@ txMozillaXSLTProcessor::Shutdown()
     }
 }
 
-
+/* static*/
 nsresult
 txVariable::Convert(nsIVariant *aValue, txAExprResult** aResult)
 {
@@ -1330,7 +1328,7 @@ txVariable::Convert(nsIVariant *aValue, txAExprResult** aResult)
     uint16_t dataType;
     aValue->GetDataType(&dataType);
     switch (dataType) {
-        
+        // Number
         case nsIDataType::VTYPE_INT8:
         case nsIDataType::VTYPE_INT16:
         case nsIDataType::VTYPE_INT32:
@@ -1352,7 +1350,7 @@ txVariable::Convert(nsIVariant *aValue, txAExprResult** aResult)
             return NS_OK;
         }
 
-        
+        // Boolean
         case nsIDataType::VTYPE_BOOL:
         {
             bool value;
@@ -1365,7 +1363,7 @@ txVariable::Convert(nsIVariant *aValue, txAExprResult** aResult)
             return NS_OK;
         }
 
-        
+        // String
         case nsIDataType::VTYPE_CHAR:
         case nsIDataType::VTYPE_WCHAR:
         case nsIDataType::VTYPE_DOMSTRING:
@@ -1387,7 +1385,7 @@ txVariable::Convert(nsIVariant *aValue, txAExprResult** aResult)
             return NS_OK;
         }
 
-        
+        // Nodeset
         case nsIDataType::VTYPE_INTERFACE:
         case nsIDataType::VTYPE_INTERFACE_IS:
         {
@@ -1395,7 +1393,7 @@ txVariable::Convert(nsIVariant *aValue, txAExprResult** aResult)
             nsresult rv = aValue->GetAsISupports(getter_AddRefs(supports));
             NS_ENSURE_SUCCESS(rv, rv);
 
-            nsCOMPtr<nsIDOMNode> node = do_QueryInterface(supports);
+            nsCOMPtr<nsINode> node = do_QueryInterface(supports);
             if (node) {
                 nsAutoPtr<txXPathNode> xpathNode(txXPathNativeNode::createXPathNode(node));
                 if (!xpathNode) {
@@ -1442,7 +1440,7 @@ txVariable::Convert(nsIVariant *aValue, txAExprResult** aResult)
                 return NS_OK;
             }
 
-            
+            // Convert random JS Objects to a string.
             nsCOMPtr<nsIXPConnectJSObjectHolder> holder =
                 do_QueryInterface(supports);
             if (holder) {
@@ -1493,7 +1491,7 @@ txVariable::Convert(nsIVariant *aValue, txAExprResult** aResult)
             uint32_t i;
             for (i = 0; i < count; ++i) {
                 nsISupports *supports = values[i];
-                nsCOMPtr<nsIDOMNode> node = do_QueryInterface(supports);
+                nsCOMPtr<nsINode> node = do_QueryInterface(supports);
                 NS_ASSERTION(node, "Huh, we checked this in SetParameter?");
 
                 nsAutoPtr<txXPathNode> xpathNode(

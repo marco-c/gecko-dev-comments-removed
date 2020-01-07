@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef txXPathTreeWalker_h__
 #define txXPathTreeWalker_h__
@@ -95,12 +95,6 @@ class txXPathNativeNode
 public:
     static txXPathNode* createXPathNode(nsINode* aNode,
                                         bool aKeepRootAlive = false);
-    static txXPathNode* createXPathNode(nsIDOMNode* aNode,
-                                        bool aKeepRootAlive = false)
-    {
-        nsCOMPtr<nsINode> node = do_QueryInterface(aNode);
-        return createXPathNode(node, aKeepRootAlive);
-    }
     static txXPathNode* createXPathNode(nsIContent* aContent,
                                         bool aKeepRootAlive = false);
     static txXPathNode* createXPathNode(nsIDOMDocument* aDocument);
@@ -179,7 +173,7 @@ txXPathTreeWalker::isOnNode(const txXPathNode& aNode) const
     return (mPosition == aNode);
 }
 
-
+/* static */
 inline int32_t
 txXPathNodeUtils::getUniqueIdentifier(const txXPathNode& aNode)
 {
@@ -188,14 +182,14 @@ txXPathNodeUtils::getUniqueIdentifier(const txXPathNode& aNode)
     return NS_PTR_TO_INT32(aNode.mNode);
 }
 
-
+/* static */
 inline void
 txXPathNodeUtils::release(txXPathNode* aNode)
 {
     NS_RELEASE(aNode->mNode);
 }
 
-
+/* static */
 inline bool
 txXPathNodeUtils::localNameEquals(const txXPathNode& aNode,
                                   nsAtom* aLocalName)
@@ -210,14 +204,14 @@ txXPathNodeUtils::localNameEquals(const txXPathNode& aNode,
     return localName == aLocalName;
 }
 
-
+/* static */
 inline bool
 txXPathNodeUtils::isRoot(const txXPathNode& aNode)
 {
     return !aNode.isAttribute() && !aNode.mNode->GetParentNode();
 }
 
-
+/* static */
 inline bool
 txXPathNodeUtils::isElement(const txXPathNode& aNode)
 {
@@ -226,14 +220,14 @@ txXPathNodeUtils::isElement(const txXPathNode& aNode)
 }
 
 
-
+/* static */
 inline bool
 txXPathNodeUtils::isAttribute(const txXPathNode& aNode)
 {
     return aNode.isAttribute();
 }
 
-
+/* static */
 inline bool
 txXPathNodeUtils::isProcessingInstruction(const txXPathNode& aNode)
 {
@@ -241,7 +235,7 @@ txXPathNodeUtils::isProcessingInstruction(const txXPathNode& aNode)
            aNode.Content()->IsNodeOfType(nsINode::ePROCESSING_INSTRUCTION);
 }
 
-
+/* static */
 inline bool
 txXPathNodeUtils::isComment(const txXPathNode& aNode)
 {
@@ -249,7 +243,7 @@ txXPathNodeUtils::isComment(const txXPathNode& aNode)
            aNode.Content()->IsNodeOfType(nsINode::eCOMMENT);
 }
 
-
+/* static */
 inline bool
 txXPathNodeUtils::isText(const txXPathNode& aNode)
 {
@@ -257,4 +251,4 @@ txXPathNodeUtils::isText(const txXPathNode& aNode)
            aNode.Content()->IsText();
 }
 
-#endif 
+#endif /* txXPathTreeWalker_h__ */

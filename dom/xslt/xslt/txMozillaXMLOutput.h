@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef TRANSFRMX_MOZILLA_XML_OUTPUT_H
 #define TRANSFRMX_MOZILLA_XML_OUTPUT_H
@@ -19,11 +19,16 @@
 class nsIContent;
 class nsIDOMDocument;
 class nsAtom;
-class nsIDOMDocumentFragment;
 class nsITransformObserver;
 class nsNodeInfoManager;
 class nsIDocument;
 class nsINode;
+
+namespace mozilla {
+namespace dom {
+class DocumentFragment;
+} // namespace dom
+} // namespace mozilla
 
 class txTransformNotifier final : public nsIScriptLoaderObserver,
                                   public nsICSSLoaderObserver
@@ -34,7 +39,7 @@ public:
     NS_DECL_ISUPPORTS
     NS_DECL_NSISCRIPTLOADEROBSERVER
 
-    
+    // nsICSSLoaderObserver
     NS_IMETHOD StyleSheetLoaded(mozilla::StyleSheet* aSheet,
                                 bool aWasAlternate,
                                 nsresult aStatus) override;
@@ -63,7 +68,7 @@ public:
     txMozillaXMLOutput(txOutputFormat* aFormat,
                        nsITransformObserver* aObserver);
     txMozillaXMLOutput(txOutputFormat* aFormat,
-                       nsIDOMDocumentFragment* aFragment,
+                       mozilla::dom::DocumentFragment* aFragment,
                        bool aNoFixup);
     ~txMozillaXMLOutput();
 
@@ -90,11 +95,11 @@ private:
                                   int32_t aNsID);
 
     nsCOMPtr<nsIDocument> mDocument;
-    nsCOMPtr<nsINode> mCurrentNode;     
-                                        
-                                        
-                                        
-                                        
+    nsCOMPtr<nsINode> mCurrentNode;     // This is updated once an element is
+                                        // 'closed' (i.e. once we're done
+                                        // adding attributes to it).
+                                        // until then the opened element is
+                                        // kept in mOpenedElement
     nsCOMPtr<mozilla::dom::Element> mOpenedElement;
     RefPtr<nsNodeInfoManager> mNodeInfoManager;
 
@@ -109,9 +114,9 @@ private:
 
     txStack mTableStateStack;
     enum TableState {
-        NORMAL,      
-        TABLE,       
-        ADDED_TBODY  
+        NORMAL,      // An element needing no special treatment
+        TABLE,       // A HTML table element
+        ADDED_TBODY  // An inserted tbody not coming from the stylesheet
     };
     TableState mTableState;
 
@@ -123,7 +128,7 @@ private:
 
     bool mOpenedElementIsHTML;
 
-    
+    // Set to true when we know there's a root content in our document.
     bool mRootContentCreated;
 
     bool mNoFixup;
