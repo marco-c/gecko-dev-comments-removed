@@ -1209,6 +1209,8 @@ public:
   
   void StartPendingAnimations(const TimeStamp& aReadyTime);
 
+  void ClearCompositorAnimations();
+
   
 
 
