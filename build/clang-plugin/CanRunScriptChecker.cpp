@@ -229,7 +229,7 @@ void CanRunScriptChecker::check(const MatchFinder::MatchResult &Result) {
   
   
   if (InvalidArg) {
-    diag(CallRange.getBegin(), ErrorInvalidArg, DiagnosticIDs::Error)
+    diag(InvalidArg->getExprLoc(), ErrorInvalidArg, DiagnosticIDs::Error)
         << CallRange;
   }
 
