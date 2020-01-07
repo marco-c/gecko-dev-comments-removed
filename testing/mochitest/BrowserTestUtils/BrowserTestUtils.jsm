@@ -263,7 +263,12 @@ var BrowserTestUtils = {
 
 
 
-  browserLoaded(browser, includeSubFrames=false, wantLoad=null) {
+
+
+
+
+  browserLoaded(browser, includeSubFrames=false, wantLoad=null,
+                maybeErrorPage=false) {
     
     if (includeSubFrames && typeof includeSubFrames != "boolean") {
       throw("The second argument to browserLoaded should be a boolean.");
@@ -289,11 +294,17 @@ var BrowserTestUtils = {
 
     return new Promise(resolve => {
       let mm = browser.ownerGlobal.messageManager;
-      mm.addMessageListener("browser-test-utils:loadEvent", function onLoad(msg) {
+      let eventName = maybeErrorPage
+          ? "browser-test-utils:DOMContentLoadedEvent"
+          : "browser-test-utils:loadEvent";
+      mm.addMessageListener(eventName, function onLoad(msg) {
+        
+        
         if (msg.target == browser && (!msg.data.subframe || includeSubFrames) &&
-            isWanted(msg.data.url)) {
-          mm.removeMessageListener("browser-test-utils:loadEvent", onLoad);
-          resolve(msg.data.url);
+            isWanted(maybeErrorPage
+                     ? msg.data.visibleURL : msg.data.internalURL)) {
+          mm.removeMessageListener(eventName, onLoad);
+          resolve(msg.data.internalURL);
         }
       });
     });
@@ -493,10 +504,12 @@ var BrowserTestUtils = {
 
 
 
+
   waitForNewWindow(aParams = {}) {
     let {
       url = null,
       anyWindow = false,
+      maybeErrorPage = false,
     } = aParams;
 
     if (anyWindow && !url) {
@@ -536,7 +549,7 @@ var BrowserTestUtils = {
             await this.waitForEvent(browser, "XULFrameLoaderCreated");
           }
 
-          let loadPromise = this.browserLoaded(browser, false, url);
+          let loadPromise = this.browserLoaded(browser, false, url, maybeErrorPage);
           promises.push(loadPromise);
         }
 
