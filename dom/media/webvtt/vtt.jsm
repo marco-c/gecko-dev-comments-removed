@@ -28,8 +28,7 @@ this.EXPORTED_SYMBOLS = ["WebVTT"];
 
 
 ChromeUtils.import('resource://gre/modules/Services.jsm');
-const { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
-const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 (function(global) {
 
@@ -275,8 +274,8 @@ const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
     consumeCueSettings(input, cue);
   }
 
-  function onlyContainsWhiteSpaces(input) {
-    return /^[ \f\n\r\t]+$/.test(input);
+  function emptyOrOnlyContainsWhiteSpaces(input) {
+    return input == "" || /^[ \f\n\r\t]+$/.test(input);
   }
 
   function containsTimeDirectionSymbol(input) {
@@ -1127,6 +1126,8 @@ const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
   WebVTT.Parser = function(window, decoder) {
     this.window = window;
     this.state = "INITIAL";
+    this.substate = "";
+    this.substatebuffer = "";
     this.buffer = "";
     this.decoder = decoder || new TextDecoder("utf8");
     this.regionList = [];
@@ -1143,20 +1144,19 @@ const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
       }
     },
     parse: function (data) {
-      var self = this;
-
       
       
       
       if (data) {
         
-        self.buffer += self.decoder.decode(data, {stream: true});
+        this.buffer += this.decoder.decode(data, {stream: true});
       }
 
-      function collectNextLine() {
-        var buffer = self.buffer;
+      
+      while (/\r\n|\n|\r/.test(this.buffer)) {
+        var buffer = this.buffer;
         var pos = 0;
-        while (pos < buffer.length && buffer[pos] !== '\r' && buffer[pos] !== '\n') {
+        while (buffer[pos] !== '\r' && buffer[pos] !== '\n') {
           ++pos;
         }
         var line = buffer.substr(0, pos);
@@ -1167,15 +1167,20 @@ const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
         if (buffer[pos] === '\n') {
           ++pos;
         }
-        self.buffer = buffer.substr(pos);
+        this.buffer = buffer.substr(pos);
+
         
         line = line.replace(/[\u0000]/g, "\uFFFD");
 
-        if (/^NOTE($|[ \t])/.test(line)) {
-          line = null;
+        if (!/^NOTE($|[ \t])/.test(line)) {
+          this.parseLine(line);
         }
-        return line;
       }
+
+      return this;
+    },
+    parseLine: function(line) {
+      var self = this;
 
       function createCueIfNeeded() {
         if (!self.cue) {
@@ -1282,8 +1287,7 @@ const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
 
       
       
-      function parseSignatureMayThrow(input) {
-        let signature = collectNextLine();
+      function parseSignatureMayThrow(signature) {
         if (!/^WEBVTT([ \t].*)?$/.test(signature)) {
           throw new ParsingError(ParsingError.Errors.BadSignature);
         } else {
@@ -1312,116 +1316,115 @@ const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
       
       
       
-      function parseHeader() {
-        let line = null;
-        while (self.buffer && self.state === "HEADER") {
-          line = collectNextLine();
-          var tempStr = "";
+      function parseHeader(line) {
+        if (!self.substate && /^REGION|^STYLE/.test(line)) {
+          self.substate = /^REGION/.test(line) ? "REGION" : "STYLE";
+          return false;
+        }
+
+        if (self.substate === "REGION" || self.substate === "STYLE") {
+          if (maybeIsTimeStampFormat(line) ||
+              emptyOrOnlyContainsWhiteSpaces(line) ||
+              containsTimeDirectionSymbol(line)) {
+            parseRegionOrStyle(self.substatebuffer);
+            self.substatebuffer = "";
+            self.substate = null;
+
+            
+            return parseHeader(line);
+          }
+
           if (/^REGION|^STYLE/.test(line)) {
+            
+            
+            parseRegionOrStyle(self.substatebuffer);
+            self.substatebuffer = "";
             self.substate = /^REGION/.test(line) ? "REGION" : "STYLE";
-
-            while (true) {
-              line = collectNextLine();
-              if (!line || maybeIsTimeStampFormat(line) || onlyContainsWhiteSpaces(line) || containsTimeDirectionSymbol(line)) {
-                
-                parseRegionOrStyle(tempStr);
-                break;
-              } else if (/^REGION|^STYLE/.test(line)) {
-                
-                
-                parseRegionOrStyle(tempStr);
-                self.substate = /^REGION/.test(line) ? "REGION" : "STYLE";
-                tempStr = "";
-              } else {
-                tempStr = tempStr + " " + line;
-              }
-            }
+            return false;
           }
 
-          if (!line || onlyContainsWhiteSpaces(line)) {
-            
-            continue;
-          } else if (maybeIsTimeStampFormat(line)) {
-            self.state = "CUE";
-            break;
-          } else if (containsTimeDirectionSymbol(line)) {
-            
-            break;
-          } else {
-            
-            break;
-          }
-        } 
+          
+          
+          self.substatebuffer += " " + line;
+          return false;
+        }
+
+        if (emptyOrOnlyContainsWhiteSpaces(line)) {
+          
+          return false;
+        }
+
+        if (maybeIsTimeStampFormat(line)) {
+          self.state = "CUE";
+          
+          return true;
+        }
 
         
-        if (self.state === "HEADER") {
-          self.state = "ID";
-        }
-        return line;
+        self.state = "ID";
+        return true;
       }
 
-      
       try {
+        
         if (self.state === "INITIAL") {
-          parseSignatureMayThrow();
+          parseSignatureMayThrow(line);
+          return;
         }
 
-        var line;
         if (self.state === "HEADER") {
-          line = parseHeader();
+          
+          
+          if (!parseHeader(line)) {
+            return;
+          }
         }
 
-        var nextIteration = false;
-        while (nextIteration || self.buffer) {
-          nextIteration = false;
-          if (!line) {
-            
-            
-            if (!/\r\n|\n|\r/.test(self.buffer)) {
-              return this;
-            }
-            line = collectNextLine();
+        if (self.state === "ID") {
+          
+          if (line == "") {
+            return;
           }
 
-          switch (self.state) {
-          case "ID":
-            
-            
-            if (!line || !parseCueIdentifier(line)) {
-              nextIteration = true;
-              continue;
-            }
-            break;
-          case "CUE":
-            parseCueMayThrow(line);
-            break;
-          case "CUETEXT":
-            
-            if (!line || containsTimeDirectionSymbol(line)) {
-              
-              self.oncue && self.oncue(self.cue);
-              self.cue = null;
-              self.state = "ID";
-              
-              nextIteration = true;
-              continue;
-            }
-            if (self.cue.text) {
-              self.cue.text += "\n";
-            }
-            self.cue.text += line;
-            break;
-          case "BADCUE": 
-            
-            self.state = "ID";
-            if (line) { 
-              continue;
-            }
-            break;
+          
+          if (!parseCueIdentifier(line)) {
+            return self.parseLine(line);
           }
+          return;
+        }
+
+        if (self.state === "CUE") {
+          parseCueMayThrow(line);
+          return;
+        }
+
+        if (self.state === "CUETEXT") {
           
+          if (emptyOrOnlyContainsWhiteSpaces(line) ||
+              containsTimeDirectionSymbol(line)) {
+            
+            self.oncue && self.oncue(self.cue);
+            self.cue = null;
+            self.state = "ID";
+
+            if (emptyOrOnlyContainsWhiteSpaces(line)) {
+              return;
+            }
+
+            
+            return self.parseLine(line);
+          }
+          if (self.cue.text) {
+            self.cue.text += "\n";
+          }
+          self.cue.text += line;
+          return;
+        }
+
+        if (self.state === "BADCUE") {
           
-          line = null;
+          self.state = "ID";
+          return self.parseLine(line);
         }
       } catch (e) {
         self.reportOrThrowError(e);
@@ -1442,17 +1445,8 @@ const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
       try {
         
         self.buffer += self.decoder.decode();
-        
-        if (self.cue || self.state === "HEADER") {
-          self.buffer += "\n\n";
-          self.parse();
-        }
-        
-        
-        
-        if (self.state === "INITIAL") {
-          throw new ParsingError(ParsingError.Errors.BadSignature);
-        }
+        self.buffer += "\n\n";
+        self.parse();
       } catch(e) {
         self.reportOrThrowError(e);
       }
