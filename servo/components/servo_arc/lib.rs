@@ -83,6 +83,7 @@ const MAX_REFCOUNT: usize = (isize::MAX) as usize;
 
 
 
+
 pub struct NonZeroPtrMut<T: ?Sized + 'static>(&'static mut T);
 impl<T: ?Sized> NonZeroPtrMut<T> {
     pub fn new(ptr: *mut T) -> Self {

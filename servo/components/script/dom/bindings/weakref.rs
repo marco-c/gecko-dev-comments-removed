@@ -18,10 +18,10 @@ use js::jsapi::{JSTracer, JS_GetReservedSlot, JS_SetReservedSlot};
 use js::jsval::PrivateValue;
 use libc::c_void;
 use malloc_size_of::{MallocSizeOf, MallocSizeOfOps};
-use nonzero::NonZero;
 use std::cell::{Cell, UnsafeCell};
 use std::mem;
 use std::ops::{Deref, DerefMut, Drop};
+use std::ptr;
 
 
 
@@ -30,9 +30,10 @@ use std::ops::{Deref, DerefMut, Drop};
 pub const DOM_WEAK_SLOT: u32 = 1;
 
 
+#[allow(unrooted_must_root)]
 #[allow_unrooted_interior]
 pub struct WeakRef<T: WeakReferenceable> {
-    ptr: NonZero<*mut WeakBox<T>>,
+    ptr: ptr::NonNull<WeakBox<T>>,
 }
 
 
@@ -42,7 +43,7 @@ pub struct WeakBox<T: WeakReferenceable> {
     
     pub count: Cell<usize>,
     
-    pub value: Cell<Option<NonZero<*const T>>>,
+    pub value: Cell<Option<ptr::NonNull<T>>>,
 }
 
 
@@ -58,7 +59,7 @@ pub trait WeakReferenceable: DomObject + Sized {
                 trace!("Creating new WeakBox holder for {:p}.", self);
                 ptr = Box::into_raw(Box::new(WeakBox {
                     count: Cell::new(1),
-                    value: Cell::new(Some(NonZero::new_unchecked(self))),
+                    value: Cell::new(Some(ptr::NonNull::from(self))),
                 }));
                 JS_SetReservedSlot(object, DOM_WEAK_SLOT, PrivateValue(ptr as *const c_void));
             }
@@ -70,7 +71,7 @@ pub trait WeakReferenceable: DomObject + Sized {
                    new_count);
             box_.count.set(new_count);
             WeakRef {
-                ptr: NonZero::new_unchecked(ptr),
+                ptr: ptr::NonNull::new_unchecked(ptr),
             }
         }
     }
@@ -86,21 +87,21 @@ impl<T: WeakReferenceable> WeakRef<T> {
 
     
     pub fn root(&self) -> Option<DomRoot<T>> {
-        unsafe { &*self.ptr.get() }.value.get().map(|ptr| unsafe {
-            DomRoot::from_ref(&*ptr.get())
+        unsafe { &*self.ptr.as_ptr() }.value.get().map(|ptr| unsafe {
+            DomRoot::from_ref(&*ptr.as_ptr())
         })
     }
 
     
     pub fn is_alive(&self) -> bool {
-        unsafe { &*self.ptr.get() }.value.get().is_some()
+        unsafe { &*self.ptr.as_ptr() }.value.get().is_some()
     }
 }
 
 impl<T: WeakReferenceable> Clone for WeakRef<T> {
     fn clone(&self) -> WeakRef<T> {
         unsafe {
-            let box_ = &*self.ptr.get();
+            let box_ = &*self.ptr.as_ptr();
             let new_count = box_.count.get() + 1;
             box_.count.set(new_count);
             WeakRef {
@@ -119,7 +120,8 @@ impl<T: WeakReferenceable> MallocSizeOf for WeakRef<T> {
 impl<T: WeakReferenceable> PartialEq for WeakRef<T> {
    fn eq(&self, other: &Self) -> bool {
         unsafe {
-            (*self.ptr.get()).value.get() == (*other.ptr.get()).value.get()
+            (*self.ptr.as_ptr()).value.get().map(ptr::NonNull::as_ptr) ==
+            (*other.ptr.as_ptr()).value.get().map(ptr::NonNull::as_ptr)
         }
     }
 }
@@ -127,8 +129,8 @@ impl<T: WeakReferenceable> PartialEq for WeakRef<T> {
 impl<T: WeakReferenceable> PartialEq<T> for WeakRef<T> {
     fn eq(&self, other: &T) -> bool {
         unsafe {
-            match (*self.ptr.get()).value.get() {
-                Some(ptr) => ptr.get() == other,
+            match self.ptr.as_ref().value.get() {
+                Some(ptr) => ptr::eq(ptr.as_ptr(), other),
                 None => false,
             }
         }
@@ -145,7 +147,7 @@ impl<T: WeakReferenceable> Drop for WeakRef<T> {
     fn drop(&mut self) {
         unsafe {
             let (count, value) = {
-                let weak_box = &*self.ptr.get();
+                let weak_box = &*self.ptr.as_ptr();
                 assert!(weak_box.count.get() > 0);
                 let count = weak_box.count.get() - 1;
                 weak_box.count.set(count);
@@ -153,7 +155,7 @@ impl<T: WeakReferenceable> Drop for WeakRef<T> {
             };
             if count == 0 {
                 assert!(value.is_none());
-                mem::drop(Box::from_raw(self.ptr.get()));
+                mem::drop(Box::from_raw(self.ptr.as_ptr()));
             }
         }
     }

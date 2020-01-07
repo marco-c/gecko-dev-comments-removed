@@ -1,5 +1,6 @@
 use std::marker::PhantomData;
 
+
 pub struct NonZeroPtr<T: 'static>(&'static T);
 
 impl<T: 'static> NonZeroPtr<T> {
