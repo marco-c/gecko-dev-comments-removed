@@ -422,20 +422,6 @@ var getAttributesFromEditor = Task.async(function* (selector, inspector) {
 
 
 
-function* waitForMultipleChildrenUpdates(inspector) {
-  
-  
-  if (inspector.markup._queuedChildUpdates &&
-      inspector.markup._queuedChildUpdates.size) {
-    yield waitForChildrenUpdated(inspector);
-    return yield waitForMultipleChildrenUpdates(inspector);
-  }
-  return undefined;
-}
-
-
-
-
 
 
 
