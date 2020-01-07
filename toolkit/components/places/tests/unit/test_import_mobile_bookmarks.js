@@ -131,13 +131,9 @@ add_task(async function test_restore_mobile_bookmarks_folder() {
     }],
   }, "Should restore mobile bookmark folder contents into mobile root");
 
-  
-  
-  
-  
   let queryById = await PlacesUtils.bookmarks.fetch("XF4yRP6bTuil");
-  equal(queryById.url.href, "place:folder=" + PlacesUtils.mobileFolderId,
-    "Should rewrite mobile query to point to root ID");
+  equal(queryById.url.href, `place:parent=${PlacesUtils.bookmarks.mobileGuid}`,
+    "Should rewrite mobile query to point to root GUID");
 
   await PlacesUtils.bookmarks.eraseEverything();
 });

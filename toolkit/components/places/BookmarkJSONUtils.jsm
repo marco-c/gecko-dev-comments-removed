@@ -16,6 +16,17 @@ ChromeUtils.defineModuleGetter(this, "PlacesBackups",
 
 
 
+const OLD_BOOKMARK_QUERY_TRANSLATIONS = {
+  "PLACES_ROOT": PlacesUtils.bookmarks.rootGuid,
+  "BOOKMARKS_MENU": PlacesUtils.bookmarks.menuGuid,
+  "TAGS": PlacesUtils.bookmarks.tagsGuid,
+  "UNFILED_BOOKMARKS": PlacesUtils.bookmarks.unfiledGuid,
+  "TOOLBAR": PlacesUtils.bookmarks.toolbarGuid,
+  "MOBILE_BOOKMARKS": PlacesUtils.bookmarks.mobileGuid,
+};
+
+
+
 
 
 
@@ -229,7 +240,6 @@ BookmarkImporter.prototype = {
     }
 
     let folderIdToGuidMap = {};
-    let searchGuids = [];
 
     
     
@@ -242,10 +252,9 @@ BookmarkImporter.prototype = {
       node.source = this._source;
 
       
-      let [folders, searches] = translateTreeTypes(node);
+      let folders = translateTreeTypes(node);
 
       folderIdToGuidMap = Object.assign(folderIdToGuidMap, folders);
-      searchGuids = searchGuids.concat(searches);
     }
 
     
@@ -261,6 +270,8 @@ BookmarkImporter.prototype = {
         continue;
       }
 
+      fixupSearchQueries(node, folderIdToGuidMap);
+
       await PlacesUtils.bookmarks.insertTree(node, { fixupOrSkipInvalidEntries: true });
 
       
@@ -268,16 +279,6 @@ BookmarkImporter.prototype = {
         insertFaviconsForTree(node);
       } catch (ex) {
         Cu.reportError(`Failed to insert favicons: ${ex}`);
-      }
-    }
-
-    
-    
-    for (let guid of searchGuids) {
-      let searchBookmark = await PlacesUtils.bookmarks.fetch(guid);
-      let url = await fixupQuery(searchBookmark.url, folderIdToGuidMap);
-      if (url != searchBookmark.url) {
-        await PlacesUtils.bookmarks.update({ guid, url, source: this._source });
       }
     }
   },
@@ -295,33 +296,51 @@ function notifyObservers(topic, replace) {
 
 
 
-
-
-
-async function fixupQuery(aQueryURI, aFolderIdMap) {
-  const reGlobal = /folder=([0-9]+)/g;
-  const re = /([0-9]+)/;
-
-  
-  
-  
-  let uri = aQueryURI.href;
-  let found = uri.match(reGlobal);
-  if (!found) {
-    return uri;
+function fixupSearchQueries(aNode, aFolderIdMap) {
+  if (aNode.url && aNode.url.startsWith("place:")) {
+    aNode.url = fixupQuery(aNode.url, aFolderIdMap);
   }
-
-  let queryFolderGuids = [];
-  for (let folderString of found) {
-    let existingFolderId = folderString.match(re)[0];
-    queryFolderGuids.push(aFolderIdMap[existingFolderId]);
+  if (aNode.children) {
+    for (let child of aNode.children) {
+      fixupSearchQueries(child, aFolderIdMap);
+    }
   }
+}
 
-  let newFolderIds = await PlacesUtils.promiseManyItemIds(queryFolderGuids);
-  let convert = function(str, p1) {
-    return "folder=" + newFolderIds.get(aFolderIdMap[p1]);
+
+
+
+
+
+
+
+
+
+
+
+function fixupQuery(aQueryURL, aFolderIdMap) {
+  let invalid = false;
+  let convert = function(str, existingFolderId) {
+    let guid;
+    if (Object.keys(OLD_BOOKMARK_QUERY_TRANSLATIONS).includes(existingFolderId)) {
+      guid = OLD_BOOKMARK_QUERY_TRANSLATIONS[existingFolderId];
+    } else {
+      guid = aFolderIdMap[existingFolderId];
+      if (!guid) {
+        invalid = true;
+        return `invalidOldParentId=${existingFolderId}`;
+      }
+    }
+    return `parent=${guid}`;
   };
-  return uri.replace(reGlobal, convert);
+
+  let url = aQueryURL.replace(/folder=([A-Za-z0-9_]+)/g, convert);
+  if (invalid) {
+    
+    
+    url += "&excludeItems=1";
+  }
+  return url;
 }
 
 
@@ -360,7 +379,6 @@ function fixupRootFolderGuid(node) {
 
 function translateTreeTypes(node) {
   let folderIdToGuidMap = {};
-  let searchGuids = [];
 
   
   if (node.uri) {
@@ -389,11 +407,6 @@ function translateTreeTypes(node) {
       break;
     case PlacesUtils.TYPE_X_MOZ_PLACE:
       node.type = PlacesUtils.bookmarks.TYPE_BOOKMARK;
-
-      if (node.url && node.url.substr(0, 6) == "place:") {
-        searchGuids.push(node.guid);
-      }
-
       break;
     case PlacesUtils.TYPE_X_MOZ_PLACE_SEPARATOR:
       node.type = PlacesUtils.bookmarks.TYPE_SEPARATOR;
@@ -440,7 +453,7 @@ function translateTreeTypes(node) {
 
   
   if (!node.children) {
-    return [folderIdToGuidMap, searchGuids];
+    return folderIdToGuidMap;
   }
 
   
@@ -450,12 +463,11 @@ function translateTreeTypes(node) {
 
   
   for (let child of node.children) {
-    let [folders, searches] = translateTreeTypes(child);
+    let folders = translateTreeTypes(child);
     folderIdToGuidMap = Object.assign(folderIdToGuidMap, folders);
-    searchGuids = searchGuids.concat(searches);
   }
 
-  return [folderIdToGuidMap, searchGuids];
+  return folderIdToGuidMap;
 }
 
 
