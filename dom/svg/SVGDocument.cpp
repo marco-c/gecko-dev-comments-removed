@@ -51,23 +51,6 @@ SVGDocument::InsertChildBefore(nsIContent* aKid, nsIContent* aBeforeThis,
 }
 
 nsresult
-SVGDocument::InsertChildAt_Deprecated(nsIContent* aKid, uint32_t aIndex,
-                                      bool aNotify)
-{
-  if (aKid->IsElement() && !aKid->IsSVGElement()) {
-    
-    
-    
-    
-    
-    
-    EnsureNonSVGUserAgentStyleSheetsLoaded();
-  }
-
-  return XMLDocument::InsertChildAt_Deprecated(aKid, aIndex, aNotify);
-}
-
-nsresult
 SVGDocument::Clone(mozilla::dom::NodeInfo *aNodeInfo, nsINode **aResult,
                    bool aPreallocateChildren) const
 {

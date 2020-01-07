@@ -533,7 +533,7 @@ nsINode::GetNodeValueInternal(nsAString& aNodeValue)
 nsINode*
 nsINode::RemoveChild(nsINode& aOldChild, ErrorResult& aError)
 {
-  if (IsCharacterData()) {
+  if (!aOldChild.IsContent()) {
     
     aError.Throw(NS_ERROR_DOM_NOT_FOUND_ERR);
     return nullptr;
@@ -543,14 +543,16 @@ nsINode::RemoveChild(nsINode& aOldChild, ErrorResult& aError)
     nsContentUtils::MaybeFireNodeRemoved(&aOldChild, this);
   }
 
-  int32_t index = ComputeIndexOf(&aOldChild);
-  if (index == -1) {
+  
+  
+  if (aOldChild.AsContent()->IsRootOfAnonymousSubtree() ||
+      aOldChild.GetParentNode() != this) {
     
     aError.Throw(NS_ERROR_DOM_NOT_FOUND_ERR);
     return nullptr;
   }
 
-  RemoveChildAt_Deprecated(index, true);
+  RemoveChildNode(aOldChild.AsContent(), true);
   return &aOldChild;
 }
 
@@ -640,7 +642,7 @@ nsINode::Normalize()
                  "Should always have a parent unless "
                  "mutation events messed us up");
     if (parent) {
-      parent->RemoveChildAt_Deprecated(parent->ComputeIndexOf(node), true);
+      parent->RemoveChildNode(node, true);
     }
   }
 }
@@ -1997,11 +1999,12 @@ nsINode::ReplaceOrInsertBefore(bool aReplace, nsINode* aNewChild,
   }
 
   
-  nsINode* nodeToInsertBefore;
+  nsIContent* nodeToInsertBefore;
   if (aReplace) {
     nodeToInsertBefore = aRefChild->GetNextSibling();
   } else {
-    nodeToInsertBefore = aRefChild;
+    
+    nodeToInsertBefore = aRefChild ? aRefChild->AsContent() : nullptr;
   }
   if (nodeToInsertBefore == aNewChild) {
     
@@ -2015,14 +2018,6 @@ nsINode::ReplaceOrInsertBefore(bool aReplace, nsINode* aNewChild,
   nsIContent* newContent = aNewChild->AsContent();
   nsCOMPtr<nsINode> oldParent = newContent->GetParentNode();
   if (oldParent) {
-    int32_t removeIndex = oldParent->ComputeIndexOf(newContent);
-    if (removeIndex < 0) {
-      
-      NS_ERROR("How come our flags didn't catch this?");
-      aError.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
-      return nullptr;
-    }
-
     
     nsCOMPtr<nsINode> kungFuDeathGrip = nodeToInsertBefore;
 
@@ -2034,11 +2029,14 @@ nsINode::ReplaceOrInsertBefore(bool aReplace, nsINode* aNewChild,
     {
       mozAutoDocUpdate batch(newContent->GetComposedDoc(), true);
       nsAutoMutationBatch mb(oldParent, true, true);
-      oldParent->RemoveChildAt_Deprecated(removeIndex, true);
+      
+      nsIContent* previous = aNewChild->GetPreviousSibling();
+      nsIContent* next = aNewChild->GetNextSibling();
+      oldParent->RemoveChildNode(aNewChild->AsContent(), true);
       if (nsAutoMutationBatch::GetCurrentBatch() == &mb) {
         mb.RemovalDone();
-        mb.SetPrevSibling(oldParent->GetChildAt_Deprecated(removeIndex - 1));
-        mb.SetNextSibling(oldParent->GetChildAt_Deprecated(removeIndex));
+        mb.SetPrevSibling(previous);
+        mb.SetNextSibling(next);
       }
     }
 
@@ -2077,7 +2075,7 @@ nsINode::ReplaceOrInsertBefore(bool aReplace, nsINode* aNewChild,
         if (aReplace) {
           nodeToInsertBefore = aRefChild->GetNextSibling();
         } else {
-          nodeToInsertBefore = aRefChild;
+          nodeToInsertBefore = aRefChild ? aRefChild->AsContent() : nullptr;
         }
       }
     }
@@ -2112,8 +2110,8 @@ nsINode::ReplaceOrInsertBefore(bool aReplace, nsINode* aNewChild,
       mozAutoDocUpdate batch(newContent->GetComposedDoc(), true);
       nsAutoMutationBatch mb(newContent, false, true);
 
-      for (uint32_t i = count; i > 0;) {
-        newContent->RemoveChildAt_Deprecated(--i, true);
+      while (newContent->HasChildren()) {
+        newContent->RemoveChildNode(newContent->GetLastChild(), true);
       }
     }
 
@@ -2151,7 +2149,8 @@ nsINode::ReplaceOrInsertBefore(bool aReplace, nsINode* aNewChild,
       if (aReplace) {
         nodeToInsertBefore = aRefChild->GetNextSibling();
       } else {
-        nodeToInsertBefore = aRefChild;
+        
+        nodeToInsertBefore = aRefChild ? aRefChild->AsContent() : nullptr;
       }
 
       
@@ -2183,23 +2182,6 @@ nsINode::ReplaceOrInsertBefore(bool aReplace, nsINode* aNewChild,
   nsAutoMutationBatch mb;
 
   
-  
-  
-  
-  int32_t insPos;
-  if (nodeToInsertBefore) {
-    insPos = ComputeIndexOf(nodeToInsertBefore);
-    if (insPos < 0) {
-      
-      aError.Throw(NS_ERROR_DOM_NOT_FOUND_ERR);
-      return nullptr;
-    }
-  }
-  else {
-    insPos = GetChildCount();
-  }
-
-  
   if (aReplace && aRefChild != aNewChild) {
     mb.Init(this, true, true);
 
@@ -2208,11 +2190,11 @@ nsINode::ReplaceOrInsertBefore(bool aReplace, nsINode* aNewChild,
     NS_ASSERTION(aRefChild->GetNextSibling() == nodeToInsertBefore,
                  "Unexpected nodeToInsertBefore");
 
-    
-    
-    NS_ASSERTION(insPos >= 1, "insPos too small");
-    RemoveChildAt_Deprecated(insPos-1, true);
-    --insPos;
+    nsIContent* toBeRemoved = nodeToInsertBefore ?
+      nodeToInsertBefore->GetPreviousSibling() : GetLastChild();
+    MOZ_ASSERT(toBeRemoved);
+
+    RemoveChildNode(toBeRemoved, true);
   }
 
   
@@ -2246,8 +2228,9 @@ nsINode::ReplaceOrInsertBefore(bool aReplace, nsINode* aNewChild,
     nsAutoMutationBatch* mutationBatch = nsAutoMutationBatch::GetCurrentBatch();
     if (mutationBatch) {
       mutationBatch->RemovalDone();
-      mutationBatch->SetPrevSibling(GetChildAt_Deprecated(insPos - 1));
-      mutationBatch->SetNextSibling(GetChildAt_Deprecated(insPos));
+      mutationBatch->SetPrevSibling(nodeToInsertBefore ?
+        nodeToInsertBefore->GetPreviousSibling() : GetLastChild());
+      mutationBatch->SetNextSibling(nodeToInsertBefore);
     }
 
     uint32_t count = fragChildren->Length();
@@ -2255,16 +2238,16 @@ nsINode::ReplaceOrInsertBefore(bool aReplace, nsINode* aNewChild,
       return result;
     }
 
-    bool appending = !IsDocument() && uint32_t(insPos) == GetChildCount();
+    bool appending = !IsDocument() && !nodeToInsertBefore;
     nsIContent* firstInsertedContent = fragChildren->ElementAt(0);
 
     
     
-    for (uint32_t i = 0; i < count; ++i, ++insPos) {
+    for (uint32_t i = 0; i < count; ++i) {
       
       
-      aError = InsertChildAt_Deprecated(fragChildren->ElementAt(i), insPos,
-                                        !appending);
+      aError = InsertChildBefore(fragChildren->ElementAt(i), nodeToInsertBefore,
+                                 !appending);
       if (aError.Failed()) {
         
         if (appending && i != 0) {
@@ -2300,13 +2283,13 @@ nsINode::ReplaceOrInsertBefore(bool aReplace, nsINode* aNewChild,
     
     
     
-
     if (nsAutoMutationBatch::GetCurrentBatch() == &mb) {
       mb.RemovalDone();
-      mb.SetPrevSibling(GetChildAt_Deprecated(insPos - 1));
-      mb.SetNextSibling(GetChildAt_Deprecated(insPos));
+      mb.SetPrevSibling(nodeToInsertBefore ?
+                        nodeToInsertBefore->GetPreviousSibling() : GetLastChild());
+      mb.SetNextSibling(nodeToInsertBefore);
     }
-    aError = InsertChildAt_Deprecated(newContent, insPos, true);
+    aError = InsertChildBefore(newContent, nodeToInsertBefore, true);
     if (aError.Failed()) {
       return nullptr;
     }

@@ -839,49 +839,10 @@ public:
 
 
 
-
-
-  virtual nsresult InsertChildAt_Deprecated(nsIContent* aKid, uint32_t aIndex,
-                                            bool aNotify) = 0;
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   nsresult AppendChildTo(nsIContent* aKid, bool aNotify)
   {
-    return InsertChildAt_Deprecated(aKid, GetChildCount(), aNotify);
+    return InsertChildBefore(aKid, nullptr, aNotify);
   }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  virtual void RemoveChildAt_Deprecated(uint32_t aIndex, bool aNotify) = 0;
 
   
 
