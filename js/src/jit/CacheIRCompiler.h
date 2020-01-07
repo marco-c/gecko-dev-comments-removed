@@ -23,6 +23,7 @@ namespace jit {
     _(GuardType)                          \
     _(GuardClass)                         \
     _(GuardIsNativeFunction)              \
+    _(GuardIsNativeObject)                \
     _(GuardIsProxy)                       \
     _(GuardNotDOMProxy)                   \
     _(GuardSpecificInt32Immediate)        \
@@ -62,6 +63,7 @@ namespace jit {
     _(Breakpoint)                         \
     _(MegamorphicLoadSlotByValueResult)   \
     _(MegamorphicHasPropResult)           \
+    _(CallObjectHasSparseElementResult)   \
     _(WrapResult)
 
 
