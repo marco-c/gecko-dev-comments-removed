@@ -598,12 +598,9 @@ async _consoleOpenWithCachedMessagesTest() {
     });
 
     
-    let start = performance.now();
+    let test = this.runTest("inspector.layout.open");
     await this.openToolbox("inspector");
-    this._results.push({
-      name: "inspector.layout.open",
-      value: performance.now() - start
-    });
+    test.done();
 
     await this.closeToolbox();
 
