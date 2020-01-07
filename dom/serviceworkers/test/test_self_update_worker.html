@@ -4,6 +4,19 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 <head>
   <title>Test for Bug 1432846</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -47,7 +60,6 @@ add_task(async function test_update() {
   }
 
   await SpecialPowers.pushPrefEnv({"set": [
-    ["dom.serviceWorkers.idle_timeout", 0],
     ["dom.serviceWorkers.update_delay", 30000],
     ["dom.serviceWorkers.idle_extended_timeout", 299999]]});
 
@@ -60,7 +72,10 @@ add_task(async function test_update() {
     { scope: "./test_self_update_worker.html?random=" + Date.now()})
     .then(function(registration) {
       worker = registration.installing;
-      return waitForState(worker, 'activated', registration);
+      // We can't wait for 'activated' here, since it's possible for
+      // the update process to kill the worker before it activates.
+      // See: https://github.com/w3c/ServiceWorker/issues/1285
+      return waitForState(worker, 'activating', registration);
     });
 
   // We need to wait a reasonable time to give the self updating worker a chance
