@@ -192,7 +192,7 @@ nsCSSProps::AddRefTable(void)
       #undef CSS_PROP_SHORTHAND
 
       #define CSS_PROP_ALIAS(aliasname_, aliasid_, propid_, aliasmethod_, pref_)    \
-        OBSERVE_PROP(pref_, eCSSPropertyAlias_##aliasmethod_)
+        OBSERVE_PROP(pref_, eCSSPropertyAlias_##aliasid_)
       #include "nsCSSPropAliasList.h"
       #undef CSS_PROP_ALIAS
 
@@ -759,7 +759,7 @@ const KTableEntry nsCSSProps::kCaptionSideKTable[] = {
   { eCSSKeyword_UNKNOWN,              -1 }
 };
 
-const KTableEntry nsCSSProps::kClearKTable[] = {
+KTableEntry nsCSSProps::kClearKTable[] = {
   { eCSSKeyword_none, StyleClear::None },
   { eCSSKeyword_left, StyleClear::Left },
   { eCSSKeyword_right, StyleClear::Right },
@@ -1191,7 +1191,7 @@ const KTableEntry nsCSSProps::kHyphensKTable[] = {
   { eCSSKeyword_UNKNOWN, -1 }
 };
 
-const KTableEntry nsCSSProps::kFloatKTable[] = {
+KTableEntry nsCSSProps::kFloatKTable[] = {
   { eCSSKeyword_none, StyleFloat::None },
   { eCSSKeyword_left, StyleFloat::Left },
   { eCSSKeyword_right, StyleFloat::Right },
