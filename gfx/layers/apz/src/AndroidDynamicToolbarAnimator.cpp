@@ -40,7 +40,7 @@ namespace mozilla {
 namespace layers {
 
 AndroidDynamicToolbarAnimator::AndroidDynamicToolbarAnimator(APZCTreeManager* aApz)
-  : mRootLayerTreeId(0)
+  : mRootLayerTreeId{0}
   , mApz(aApz)
   
   , mToolbarState(eToolbarVisible)
@@ -81,7 +81,7 @@ AndroidDynamicToolbarAnimator::AndroidDynamicToolbarAnimator(APZCTreeManager* aA
 {}
 
 void
-AndroidDynamicToolbarAnimator::Initialize(uint64_t aRootLayerTreeId)
+AndroidDynamicToolbarAnimator::Initialize(LayersId aRootLayerTreeId)
 {
   MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
   mRootLayerTreeId = aRootLayerTreeId;
@@ -744,7 +744,7 @@ void
 AndroidDynamicToolbarAnimator::PostMessage(int32_t aMessage) {
   
   
-  if (mRootLayerTreeId == 0) {
+  if (!mRootLayerTreeId.IsValid()) {
     QueueMessage(aMessage);
     return;
   }
@@ -1175,7 +1175,7 @@ AndroidDynamicToolbarAnimator::QueueMessage(int32_t aMessage)
 
   
   
-  if (mRootLayerTreeId != 0) {
+  if (mRootLayerTreeId.IsValid()) {
     PostMessage(aMessage);
     return;
   }

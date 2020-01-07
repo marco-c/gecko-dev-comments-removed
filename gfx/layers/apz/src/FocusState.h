@@ -95,14 +95,14 @@ public:
 
 
 
-  void Update(uint64_t aRootLayerTreeId,
-              uint64_t aOriginatingLayersId,
+  void Update(LayersId aRootLayerTreeId,
+              LayersId aOriginatingLayersId,
               const FocusTarget& aTarget);
 
   
 
 
-  void RemoveFocusTarget(uint64_t aLayersId);
+  void RemoveFocusTarget(LayersId aLayersId);
 
   
 
@@ -142,7 +142,10 @@ private:
   mutable Mutex mMutex;
 
   
-  std::unordered_map<uint64_t, FocusTarget> mFocusTree;
+  std::unordered_map<LayersId,
+                     FocusTarget,
+                     LayersId::HashFn,
+                     LayersId::EqualFn> mFocusTree;
 
   
   
@@ -161,7 +164,7 @@ private:
   bool mReceivedUpdate;
 
   
-  uint64_t mFocusLayersId;
+  LayersId mFocusLayersId;
   
   
   

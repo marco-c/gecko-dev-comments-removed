@@ -16,6 +16,7 @@
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/ipc/TaskFactory.h"
 #include "mozilla/ipc/Transport.h"
+#include "mozilla/layers/LayersTypes.h"
 #include "mozilla/webrender/WebRenderTypes.h"
 #include "nsIObserverService.h"
 #include "nsThreadUtils.h"
@@ -68,6 +69,7 @@ class GPUProcessManager final : public GPUProcessHost::Listener
   typedef layers::CompositorUpdateObserver CompositorUpdateObserver;
   typedef layers::IAPZCTreeManager IAPZCTreeManager;
   typedef layers::LayerManager LayerManager;
+  typedef layers::LayersId LayersId;
   typedef layers::PCompositorBridgeChild PCompositorBridgeChild;
   typedef layers::PCompositorManagerChild PCompositorManagerChild;
   typedef layers::PImageBridgeChild PImageBridgeChild;
@@ -109,21 +111,21 @@ public:
 
   
   
-  void MapLayerTreeId(uint64_t aLayersId, base::ProcessId aOwningId);
+  void MapLayerTreeId(LayersId aLayersId, base::ProcessId aOwningId);
 
   
   
   
-  void UnmapLayerTreeId(uint64_t aLayersId, base::ProcessId aOwningId);
+  void UnmapLayerTreeId(LayersId aLayersId, base::ProcessId aOwningId);
 
   
-  bool IsLayerTreeIdMapped(uint64_t aLayersId, base::ProcessId aRequestingId);
+  bool IsLayerTreeIdMapped(LayersId aLayersId, base::ProcessId aRequestingId);
 
   
   
   
   
-  uint64_t AllocateLayerTreeId();
+  LayersId AllocateLayerTreeId();
 
   
   
@@ -137,7 +139,7 @@ public:
   bool AllocateAndConnectLayerTreeId(
     PCompositorBridgeChild* aCompositorBridge,
     base::ProcessId aOtherPid,
-    uint64_t* aOutLayersId,
+    LayersId* aOutLayersId,
     CompositorOptions* aOutCompositorOptions);
 
   
@@ -230,13 +232,13 @@ private:
   void EnsureVRManager();
 
 #if defined(MOZ_WIDGET_ANDROID)
-  already_AddRefed<UiCompositorControllerChild> CreateUiCompositorController(nsBaseWidget* aWidget, const uint64_t aId);
+  already_AddRefed<UiCompositorControllerChild> CreateUiCompositorController(nsBaseWidget* aWidget, const LayersId aId);
 #endif 
 
   RefPtr<CompositorSession> CreateRemoteSession(
     nsBaseWidget* aWidget,
     LayerManager* aLayerManager,
-    const uint64_t& aRootLayerTreeId,
+    const LayersId& aRootLayerTreeId,
     CSSToLayoutDeviceScale aScale,
     const CompositorOptions& aOptions,
     bool aUseExternalSurfaceSize,

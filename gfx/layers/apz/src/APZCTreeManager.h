@@ -18,6 +18,7 @@
 #include "mozilla/layers/APZInputBridge.h" 
 #include "mozilla/layers/APZTestData.h" 
 #include "mozilla/layers/IAPZCTreeManager.h" 
+#include "mozilla/layers/LayersTypes.h"
 #include "mozilla/layers/KeyboardMap.h" 
 #include "mozilla/RecursiveMutex.h"     
 #include "mozilla/RefPtr.h"             
@@ -113,7 +114,7 @@ class APZCTreeManager : public IAPZCTreeManager
   struct TreeBuildingState;
 
 public:
-  explicit APZCTreeManager(uint64_t aRootLayersId);
+  explicit APZCTreeManager(LayersId aRootLayersId);
 
   
 
@@ -123,7 +124,7 @@ public:
 
 
 
-  void NotifyLayerTreeAdopted(uint64_t aLayersId,
+  void NotifyLayerTreeAdopted(LayersId aLayersId,
                               const RefPtr<APZCTreeManager>& aOldTreeManager);
 
   
@@ -133,7 +134,7 @@ public:
 
 
 
-  void NotifyLayerTreeRemoved(uint64_t aLayersId);
+  void NotifyLayerTreeRemoved(LayersId aLayersId);
 
   
 
@@ -145,8 +146,8 @@ public:
 
 
 
-  void UpdateFocusState(uint64_t aRootLayerTreeId,
-                        uint64_t aOriginatingLayersId,
+  void UpdateFocusState(LayersId aRootLayerTreeId,
+                        LayersId aOriginatingLayersId,
                         const FocusTarget& aFocusTarget);
 
   
@@ -170,10 +171,10 @@ public:
 
 
 
-  void UpdateHitTestingTree(uint64_t aRootLayerTreeId,
+  void UpdateHitTestingTree(LayersId aRootLayerTreeId,
                             Layer* aRoot,
                             bool aIsFirstPaint,
-                            uint64_t aOriginatingLayersId,
+                            LayersId aOriginatingLayersId,
                             uint32_t aPaintSequenceNumber);
 
   
@@ -182,10 +183,10 @@ public:
 
 
 
-  void UpdateHitTestingTree(uint64_t aRootLayerTreeId,
+  void UpdateHitTestingTree(LayersId aRootLayerTreeId,
                             const WebRenderScrollData& aScrollData,
                             bool aIsFirstPaint,
-                            uint64_t aOriginatingLayersId,
+                            LayersId aOriginatingLayersId,
                             uint32_t aPaintSequenceNumber);
 
   
@@ -208,7 +209,7 @@ public:
 
 
 
-  void FlushApzRepaints(uint64_t aLayersId);
+  void FlushApzRepaints(LayersId aLayersId);
 
   
 
@@ -488,7 +489,7 @@ public:
       LayoutDeviceIntPoint aRefPoint,
       EventMessage aEventMessage) override;
 
-  bool GetAPZTestData(uint64_t aLayersId, APZTestData* aOutData);
+  bool GetAPZTestData(LayersId aLayersId, APZTestData* aOutData);
 
   
 
@@ -527,7 +528,7 @@ protected:
   virtual ~APZCTreeManager();
 
   
-  virtual AsyncPanZoomController* NewAPZCInstance(uint64_t aLayersId,
+  virtual AsyncPanZoomController* NewAPZCInstance(LayersId aLayersId,
                                                   GeckoContentController* aController);
 public:
   
@@ -544,7 +545,7 @@ public:
   already_AddRefed<AsyncPanZoomController> GetTargetAPZC(const ScreenPoint& aPoint,
                                                          gfx::CompositorHitTestInfo* aOutHitResult,
                                                          RefPtr<HitTestingTreeNode>* aOutScrollbarNode = nullptr);
-  already_AddRefed<AsyncPanZoomController> GetTargetAPZC(const uint64_t& aLayersId,
+  already_AddRefed<AsyncPanZoomController> GetTargetAPZC(const LayersId& aLayersId,
                                                          const FrameMetrics::ViewID& aScrollId);
   ScreenToParentLayerMatrix4x4 GetScreenToApzcTransform(const AsyncPanZoomController *aApzc) const;
   ParentLayerToScreenMatrix4x4 GetApzcToGeckoTransform(const AsyncPanZoomController *aApzc) const;
@@ -562,10 +563,10 @@ private:
 
   
   template<class ScrollNode>
-  void UpdateHitTestingTreeImpl(uint64_t aRootLayerTreeId,
+  void UpdateHitTestingTreeImpl(LayersId aRootLayerTreeId,
                                 const ScrollNode& aRoot,
                                 bool aIsFirstPaint,
-                                uint64_t aOriginatingLayersId,
+                                LayersId aOriginatingLayersId,
                                 uint32_t aPaintSequenceNumber);
 
   void AttachNodeToTree(HitTestingTreeNode* aNode,
@@ -585,8 +586,8 @@ private:
   already_AddRefed<AsyncPanZoomController> GetAPZCAtPointWR(const ScreenPoint& aHitTestPoint,
                                                             gfx::CompositorHitTestInfo* aOutHitResult,
                                                             HitTestingTreeNode** aOutScrollbarNode);
-  AsyncPanZoomController* FindRootApzcForLayersId(uint64_t aLayersId) const;
-  AsyncPanZoomController* FindRootContentApzcForLayersId(uint64_t aLayersId) const;
+  AsyncPanZoomController* FindRootApzcForLayersId(LayersId aLayersId) const;
+  AsyncPanZoomController* FindRootContentApzcForLayersId(LayersId aLayersId) const;
   AsyncPanZoomController* FindRootContentOrRootApzc() const;
   already_AddRefed<AsyncPanZoomController> GetMultitouchTarget(AsyncPanZoomController* aApzc1, AsyncPanZoomController* aApzc2) const;
   already_AddRefed<AsyncPanZoomController> CommonAncestor(AsyncPanZoomController* aApzc1, AsyncPanZoomController* aApzc2) const;
@@ -653,11 +654,11 @@ private:
 
   already_AddRefed<HitTestingTreeNode> RecycleOrCreateNode(TreeBuildingState& aState,
                                                            AsyncPanZoomController* aApzc,
-                                                           uint64_t aLayersId);
+                                                           LayersId aLayersId);
   template<class ScrollNode>
   HitTestingTreeNode* PrepareNodeForLayer(const ScrollNode& aLayer,
                                           const FrameMetrics& aMetrics,
-                                          uint64_t aLayersId,
+                                          LayersId aLayersId,
                                           const AncestorTransform& aAncestorTransform,
                                           HitTestingTreeNode* aParent,
                                           HitTestingTreeNode* aNextSibling,
@@ -678,7 +679,7 @@ private:
   already_AddRefed<wr::WebRenderAPI> GetWebRenderAPI() const;
 
   
-  already_AddRefed<GeckoContentController> GetContentController(uint64_t aLayersId) const;
+  already_AddRefed<GeckoContentController> GetContentController(LayersId aLayersId) const;
 
 protected:
   
@@ -688,7 +689,7 @@ protected:
 
 private:
   
-  uint64_t mRootLayersId;
+  LayersId mRootLayersId;
 
   
 
@@ -750,7 +751,10 @@ private:
 
   
   
-  std::unordered_map<uint64_t, UniquePtr<APZTestData>> mTestData;
+  std::unordered_map<LayersId,
+                     UniquePtr<APZTestData>,
+                     LayersId::HashFn,
+                     LayersId::EqualFn> mTestData;
   mutable mozilla::Mutex mTestDataLock;
 
   

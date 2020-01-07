@@ -39,8 +39,6 @@ public:
     }
   };
 
-  typedef uint64_t RefLayerId;
-
   
   
   struct NoFocusTarget {
@@ -70,7 +68,7 @@ public:
   
   bool mFocusHasKeyEventListeners;
 
-  mozilla::Variant<RefLayerId, ScrollTargets, NoFocusTarget> mData;
+  mozilla::Variant<LayersId, ScrollTargets, NoFocusTarget> mData;
 };
 
 } 

@@ -53,7 +53,7 @@ class AndroidDynamicToolbarAnimator {
 public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(AndroidDynamicToolbarAnimator);
   explicit AndroidDynamicToolbarAnimator(APZCTreeManager* aApz);
-  void Initialize(uint64_t aRootLayerTreeId);
+  void Initialize(LayersId aRootLayerTreeId);
   void ClearTreeManager();
   
   
@@ -168,7 +168,7 @@ protected:
   void QueueMessage(int32_t aMessage);
 
   
-  uint64_t mRootLayerTreeId;
+  LayersId mRootLayerTreeId;
   MOZ_NON_OWNING_REF APZCTreeManager* mApz;
 
   

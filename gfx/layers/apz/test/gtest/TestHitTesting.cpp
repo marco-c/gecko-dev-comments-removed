@@ -107,7 +107,7 @@ TEST_F(APZHitTestingTester, HitTesting1) {
   SCOPED_GFX_PREF(WebRenderHitTest, bool, false);
 
   CreateHitTesting1LayerTree();
-  ScopedLayerTreeRegistration registration(manager, 0, root, mcc);
+  ScopedLayerTreeRegistration registration(manager, LayersId{0}, root, mcc);
 
   
   RefPtr<AsyncPanZoomController> hit = GetTargetAPZC(ScreenPoint(20, 20));
@@ -120,7 +120,7 @@ TEST_F(APZHitTestingTester, HitTesting1) {
 
   
   SetScrollableFrameMetrics(root, FrameMetrics::START_SCROLL_ID);
-  manager->UpdateHitTestingTree(0, root, false, 0, paintSequenceNumber++);
+  manager->UpdateHitTestingTree(LayersId{0}, root, false, LayersId{0}, paintSequenceNumber++);
   hit = GetTargetAPZC(ScreenPoint(15, 15));
   EXPECT_EQ(ApzcOf(root), hit.get());
   
@@ -129,7 +129,7 @@ TEST_F(APZHitTestingTester, HitTesting1) {
 
   
   SetScrollableFrameMetrics(layers[3], FrameMetrics::START_SCROLL_ID + 1);
-  manager->UpdateHitTestingTree(0, root, false, 0, paintSequenceNumber++);
+  manager->UpdateHitTestingTree(LayersId{0}, root, false, LayersId{0}, paintSequenceNumber++);
   EXPECT_NE(ApzcOf(root), ApzcOf(layers[3]));
   hit = GetTargetAPZC(ScreenPoint(25, 25));
   EXPECT_EQ(ApzcOf(layers[3]), hit.get());
@@ -144,7 +144,7 @@ TEST_F(APZHitTestingTester, HitTesting1) {
 
   
   SetScrollableFrameMetrics(layers[4], FrameMetrics::START_SCROLL_ID + 2);
-  manager->UpdateHitTestingTree(0, root, false, 0, paintSequenceNumber++);
+  manager->UpdateHitTestingTree(LayersId{0}, root, false, LayersId{0}, paintSequenceNumber++);
   hit = GetTargetAPZC(ScreenPoint(15, 15));
   EXPECT_EQ(ApzcOf(layers[4]), hit.get());
   
@@ -175,9 +175,9 @@ TEST_F(APZHitTestingTester, HitTesting2) {
   SCOPED_GFX_PREF(APZVelocityBias, float, 0.0); 
 
   CreateHitTesting2LayerTree();
-  ScopedLayerTreeRegistration registration(manager, 0, root, mcc);
+  ScopedLayerTreeRegistration registration(manager, LayersId{0}, root, mcc);
 
-  manager->UpdateHitTestingTree(0, root, false, 0, 0);
+  manager->UpdateHitTestingTree(LayersId{0}, root, false, LayersId{0}, 0);
 
   
   
@@ -299,9 +299,9 @@ TEST_F(APZHitTestingTester, HitTesting3) {
   SetScrollableFrameMetrics(root, FrameMetrics::START_SCROLL_ID, CSSRect(0, 0, 200, 200));
   SetScrollableFrameMetrics(layers[1], FrameMetrics::START_SCROLL_ID + 1, CSSRect(0, 0, 50, 50));
 
-  ScopedLayerTreeRegistration registration(manager, 0, root, mcc);
+  ScopedLayerTreeRegistration registration(manager, LayersId{0}, root, mcc);
 
-  manager->UpdateHitTestingTree(0, root, false, 0, 0);
+  manager->UpdateHitTestingTree(LayersId{0}, root, false, LayersId{0}, 0);
 
   RefPtr<AsyncPanZoomController> hit = GetTargetAPZC(ScreenPoint(75, 75));
   EXPECT_EQ(ApzcOf(layers[1]), hit.get());
@@ -311,8 +311,8 @@ TEST_F(APZHitTestingTester, ComplexMultiLayerTree) {
   SCOPED_GFX_PREF(WebRenderHitTest, bool, false);
 
   CreateComplexMultiLayerTree();
-  ScopedLayerTreeRegistration registration(manager, 0, root, mcc);
-  manager->UpdateHitTestingTree(0, root, false, 0, 0);
+  ScopedLayerTreeRegistration registration(manager, LayersId{0}, root, mcc);
+  manager->UpdateHitTestingTree(LayersId{0}, root, false, LayersId{0}, 0);
 
   
 
@@ -401,8 +401,8 @@ TEST_F(APZHitTestingTester, TestRepaintFlushOnNewInputBlock) {
   
 
   CreateSimpleScrollingLayer();
-  ScopedLayerTreeRegistration registration(manager, 0, root, mcc);
-  manager->UpdateHitTestingTree(0, root, false, 0, 0);
+  ScopedLayerTreeRegistration registration(manager, LayersId{0}, root, mcc);
+  manager->UpdateHitTestingTree(LayersId{0}, root, false, LayersId{0}, 0);
   TestAsyncPanZoomController* apzcroot = ApzcOf(root);
 
   
@@ -466,8 +466,8 @@ TEST_F(APZHitTestingTester, TestRepaintFlushOnWheelEvents) {
   
 
   CreateSimpleScrollingLayer();
-  ScopedLayerTreeRegistration registration(manager, 0, root, mcc);
-  manager->UpdateHitTestingTree(0, root, false, 0, 0);
+  ScopedLayerTreeRegistration registration(manager, LayersId{0}, root, mcc);
+  manager->UpdateHitTestingTree(LayersId{0}, root, false, LayersId{0}, 0);
   TestAsyncPanZoomController* apzcroot = ApzcOf(root);
 
   EXPECT_CALL(*mcc, RequestContentRepaint(_)).Times(AtLeast(3));
@@ -494,8 +494,8 @@ TEST_F(APZHitTestingTester, TestRepaintFlushOnWheelEvents) {
 TEST_F(APZHitTestingTester, TestForceDisableApz) {
   CreateSimpleScrollingLayer();
   DisableApzOn(root);
-  ScopedLayerTreeRegistration registration(manager, 0, root, mcc);
-  manager->UpdateHitTestingTree(0, root, false, 0, 0);
+  ScopedLayerTreeRegistration registration(manager, LayersId{0}, root, mcc);
+  manager->UpdateHitTestingTree(LayersId{0}, root, false, LayersId{0}, 0);
   TestAsyncPanZoomController* apzcroot = ApzcOf(root);
 
   ScreenPoint origin(100, 50);
@@ -535,8 +535,8 @@ TEST_F(APZHitTestingTester, TestForceDisableApz) {
 
 TEST_F(APZHitTestingTester, Bug1148350) {
   CreateBug1148350LayerTree();
-  ScopedLayerTreeRegistration registration(manager, 0, root, mcc);
-  manager->UpdateHitTestingTree(0, root, false, 0, 0);
+  ScopedLayerTreeRegistration registration(manager, LayersId{0}, root, mcc);
+  manager->UpdateHitTestingTree(LayersId{0}, root, false, LayersId{0}, 0);
 
   MockFunction<void(std::string checkPointName)> check;
   {
@@ -560,7 +560,7 @@ TEST_F(APZHitTestingTester, Bug1148350) {
 
   layers[0]->SetVisibleRegion(LayerIntRegion(LayerIntRect(0,50,200,150)));
   layers[0]->SetBaseTransform(Matrix4x4::Translation(0, 50, 0));
-  manager->UpdateHitTestingTree(0, root, false, 0, 0);
+  manager->UpdateHitTestingTree(LayersId{0}, root, false, LayersId{0}, 0);
 
   TouchUp(manager, ScreenIntPoint(100, 100), mcc->Time());
   mcc->RunThroughDelayedTasks();
@@ -598,8 +598,8 @@ TEST_F(APZHitTestingTester, HitTestingRespectsScrollClip_Bug1257288) {
   SetEventRegionsBasedOnBottommostMetrics(layers[2]);
 
   
-  ScopedLayerTreeRegistration registration(manager, 0, root, mcc);
-  manager->UpdateHitTestingTree(0, root, false, 0, 0);
+  ScopedLayerTreeRegistration registration(manager, LayersId{0}, root, mcc);
+  manager->UpdateHitTestingTree(LayersId{0}, root, false, LayersId{0}, 0);
 
   
   

@@ -2636,9 +2636,9 @@ public:
 
 
 
-  void SetReferentId(uint64_t aId)
+  void SetReferentId(LayersId aId)
   {
-    MOZ_ASSERT(aId != 0);
+    MOZ_ASSERT(aId.IsValid());
     if (mId != aId) {
       MOZ_LAYERS_LOG_IF_SHADOWABLE(this, ("Layer::Mutated(%p) ReferentId", this));
       mId = aId;
@@ -2700,7 +2700,7 @@ public:
   
   virtual RefLayer* AsRefLayer() override { return this; }
 
-  virtual uint64_t GetReferentId() { return mId; }
+  virtual LayersId GetReferentId() { return mId; }
 
   
 
@@ -2712,7 +2712,7 @@ public:
 protected:
   RefLayer(LayerManager* aManager, void* aImplData)
     : ContainerLayer(aManager, aImplData)
-    , mId(0)
+    , mId{0}
     , mEventRegionsOverride(EventRegionsOverride::NoOverride)
   {}
 
@@ -2721,7 +2721,7 @@ protected:
   virtual void DumpPacket(layerscope::LayersPacket* aPacket, const void* aParent) override;
 
   
-  uint64_t mId;
+  LayersId mId;
   EventRegionsOverride mEventRegionsOverride;
 };
 

@@ -44,25 +44,25 @@ public:
 
 
 
-  void Map(uint64_t aLayersId, base::ProcessId aProcessId);
+  void Map(LayersId aLayersId, base::ProcessId aProcessId);
 
   
 
 
-  void Unmap(uint64_t aLayersId, base::ProcessId aProcessId);
+  void Unmap(LayersId aLayersId, base::ProcessId aProcessId);
 
   
 
 
-  bool IsMapped(uint64_t aLayersId, base::ProcessId aProcessId);
+  bool IsMapped(LayersId aLayersId, base::ProcessId aProcessId);
 
-  void Iterate(const std::function<void(uint64_t aLayersId, base::ProcessId aProcessId)>& aCallback);
+  void Iterate(const std::function<void(LayersId aLayersId, base::ProcessId aProcessId)>& aCallback);
 
 private:
   LayerTreeOwnerTracker();
 
   mozilla::Mutex mLayerIdsLock;
-  std::map<uint64_t, base::ProcessId> mLayerIds;
+  std::map<LayersId, base::ProcessId> mLayerIds;
 };
 
 } 
