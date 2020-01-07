@@ -135,7 +135,6 @@ private:
   
   void UpdateVideoExtmap(const JsepTrackNegotiatedDetails& aDetails,
                          bool aSending);
-  void StartReceiveStream();
   void Stop();
 
   const std::string mPCHandle;
