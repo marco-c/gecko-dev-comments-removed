@@ -6,8 +6,12 @@
 
 
 
-
 add_task(async function () {
+  
+  
+  await pushPref("devtools.netmonitor.visibleColumns",
+    '["status", "contentSize", "waterfall"]');
+
   let { tab, monitor } = await initNetMonitor(CUSTOM_GET_URL);
   info("Starting test... ");
 
