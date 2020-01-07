@@ -496,9 +496,9 @@ var AddonUpdateChecker = {
 
 
 
-  getNewestCompatibleUpdate(aUpdates, aAppVersion, aPlatformVersion,
-                                      aIgnoreMaxVersion, aIgnoreStrictCompat,
-                                      aCompatOverrides) {
+  async getNewestCompatibleUpdate(aUpdates, aAppVersion, aPlatformVersion,
+                                  aIgnoreMaxVersion, aIgnoreStrictCompat,
+                                  aCompatOverrides) {
     if (!aAppVersion)
       aAppVersion = Services.appinfo.version;
     if (!aPlatformVersion)
@@ -508,7 +508,7 @@ var AddonUpdateChecker = {
     for (let update of aUpdates) {
       if (!update.updateURL)
         continue;
-      let state = Services.blocklist.getAddonBlocklistState(update, aAppVersion, aPlatformVersion);
+      let state = await Services.blocklist.getAddonBlocklistState(update, aAppVersion, aPlatformVersion);
       if (state != Ci.nsIBlocklistService.STATE_NOT_BLOCKED)
         continue;
       if ((newest == null || (Services.vc.compare(newest.version, update.version) < 0)) &&
