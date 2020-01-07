@@ -1517,14 +1517,13 @@ HTMLEditor::GetBetterInsertionPointFor(nsINode& aNodeToInsert,
 }
 
 NS_IMETHODIMP
-HTMLEditor::InsertElementAtSelection(nsIDOMElement* aElement,
+HTMLEditor::InsertElementAtSelection(Element* aElement,
                                      bool aDeleteSelection)
 {
   
   RefPtr<TextEditRules> rules(mRules);
 
-  nsCOMPtr<Element> element = do_QueryInterface(aElement);
-  NS_ENSURE_TRUE(element, NS_ERROR_NULL_POINTER);
+  NS_ENSURE_TRUE(aElement, NS_ERROR_NULL_POINTER);
 
   CommitComposition();
   AutoPlaceholderBatch beginBatching(this);
@@ -1546,7 +1545,7 @@ HTMLEditor::InsertElementAtSelection(nsIDOMElement* aElement,
 
   if (!handled) {
     if (aDeleteSelection) {
-      if (!IsBlockNode(element)) {
+      if (!IsBlockNode(aElement)) {
         
         
         
@@ -1567,7 +1566,7 @@ HTMLEditor::InsertElementAtSelection(nsIDOMElement* aElement,
       
       
       
-      if (HTMLEditUtils::IsNamedAnchor(element)) {
+      if (HTMLEditUtils::IsNamedAnchor(aElement)) {
         selection->CollapseToStart();
       } else {
         selection->CollapseToEnd();
@@ -1578,14 +1577,14 @@ HTMLEditor::InsertElementAtSelection(nsIDOMElement* aElement,
       EditorRawDOMPoint atAnchor(selection->AnchorRef());
       
       EditorRawDOMPoint pointToInsert =
-        GetBetterInsertionPointFor(*element, atAnchor);
+        GetBetterInsertionPointFor(*aElement, atAnchor);
       if (NS_WARN_IF(!pointToInsert.IsSet())) {
         return NS_ERROR_FAILURE;
       }
 
       EditorDOMPoint insertedPoint =
         InsertNodeIntoProperAncestorWithTransaction(
-          *element, pointToInsert, SplitAtEdges::eAllowToCreateEmptyContainer);
+          *aElement, pointToInsert, SplitAtEdges::eAllowToCreateEmptyContainer);
       if (NS_WARN_IF(!insertedPoint.IsSet())) {
         return NS_ERROR_FAILURE;
       }
@@ -1597,8 +1596,8 @@ HTMLEditor::InsertElementAtSelection(nsIDOMElement* aElement,
       }
       
       
-      if (HTMLEditUtils::IsTable(element) &&
-          IsLastEditableChild(element)) {
+      if (HTMLEditUtils::IsTable(aElement) &&
+          IsLastEditableChild(aElement)) {
         DebugOnly<bool> advanced = insertedPoint.AdvanceOffset();
         NS_WARNING_ASSERTION(advanced,
           "Failed to advance offset from inserted point");
@@ -1684,24 +1683,21 @@ HTMLEditor::InsertNodeIntoProperAncestorWithTransaction(
 }
 
 NS_IMETHODIMP
-HTMLEditor::SelectElement(nsIDOMElement* aElement)
+HTMLEditor::SelectElement(Element* aElement)
 {
-  nsCOMPtr<Element> element = do_QueryInterface(aElement);
-  NS_ENSURE_STATE(element || !aElement);
-
   
-  if (!IsDescendantOfEditorRoot(element)) {
+  if (!IsDescendantOfEditorRoot(aElement)) {
     return NS_ERROR_NULL_POINTER;
   }
 
   RefPtr<Selection> selection = GetSelection();
   NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
-  nsINode* parent = element->GetParentNode();
+  nsINode* parent = aElement->GetParentNode();
   if (NS_WARN_IF(!parent)) {
     return NS_ERROR_FAILURE;
   }
 
-  int32_t offsetInParent = parent->ComputeIndexOf(element);
+  int32_t offsetInParent = parent->ComputeIndexOf(aElement);
 
   
   nsresult rv = selection->Collapse(parent, offsetInParent);
@@ -1713,22 +1709,19 @@ HTMLEditor::SelectElement(nsIDOMElement* aElement)
 }
 
 NS_IMETHODIMP
-HTMLEditor::SetCaretAfterElement(nsIDOMElement* aElement)
+HTMLEditor::SetCaretAfterElement(Element* aElement)
 {
-  nsCOMPtr<Element> element = do_QueryInterface(aElement);
-  NS_ENSURE_STATE(element || !aElement);
-
   
-  if (!aElement || !IsDescendantOfEditorRoot(element)) {
+  if (!aElement || !IsDescendantOfEditorRoot(aElement)) {
     return NS_ERROR_NULL_POINTER;
   }
 
   RefPtr<Selection> selection = GetSelection();
   NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
-  nsCOMPtr<nsINode> parent = element->GetParentNode();
+  nsCOMPtr<nsINode> parent = aElement->GetParentNode();
   NS_ENSURE_TRUE(parent, NS_ERROR_NULL_POINTER);
   
-  EditorRawDOMPoint afterElement(element);
+  EditorRawDOMPoint afterElement(aElement);
   if (NS_WARN_IF(!afterElement.AdvanceOffset())) {
     return NS_ERROR_FAILURE;
   }
@@ -2700,21 +2693,20 @@ HTMLEditor::CreateElementWithDefaults(const nsAString& aTagName)
 
 NS_IMETHODIMP
 HTMLEditor::CreateElementWithDefaults(const nsAString& aTagName,
-                                      nsIDOMElement** aReturn)
+                                      Element** aReturn)
 {
   NS_ENSURE_TRUE(!aTagName.IsEmpty() && aReturn, NS_ERROR_NULL_POINTER);
   *aReturn = nullptr;
 
   nsCOMPtr<Element> newElement = CreateElementWithDefaults(aTagName);
-  nsCOMPtr<nsIDOMElement> ret = do_QueryInterface(newElement);
-  NS_ENSURE_TRUE(ret, NS_ERROR_FAILURE);
+  NS_ENSURE_TRUE(newElement, NS_ERROR_FAILURE);
 
-  ret.forget(aReturn);
+  newElement.forget(aReturn);
   return NS_OK;
 }
 
 NS_IMETHODIMP
-HTMLEditor::InsertLinkAroundSelection(nsIDOMElement* aAnchorElement)
+HTMLEditor::InsertLinkAroundSelection(Element* aAnchorElement)
 {
   NS_ENSURE_TRUE(aAnchorElement, NS_ERROR_NULL_POINTER);
 
@@ -2729,8 +2721,8 @@ HTMLEditor::InsertLinkAroundSelection(nsIDOMElement* aAnchorElement)
 
 
   
-  nsCOMPtr<nsIContent> content = do_QueryInterface(aAnchorElement);
-  RefPtr<HTMLAnchorElement> anchor = HTMLAnchorElement::FromNodeOrNull(content);
+  RefPtr<HTMLAnchorElement> anchor =
+    HTMLAnchorElement::FromNodeOrNull(aAnchorElement);
   if (!anchor) {
     return NS_OK;
   }
@@ -3634,16 +3626,15 @@ HTMLEditor::IsTextPropertySetByContent(nsINode* aNode,
 }
 
 bool
-HTMLEditor::SetCaretInTableCell(nsIDOMElement* aElement)
+HTMLEditor::SetCaretInTableCell(Element* aElement)
 {
-  nsCOMPtr<dom::Element> element = do_QueryInterface(aElement);
-  if (!element || !element->IsHTMLElement() ||
-      !HTMLEditUtils::IsTableElement(element) ||
-      !IsDescendantOfEditorRoot(element)) {
+  if (!aElement || !aElement->IsHTMLElement() ||
+      !HTMLEditUtils::IsTableElement(aElement) ||
+      !IsDescendantOfEditorRoot(aElement)) {
     return false;
   }
 
-  nsIContent* node = element;
+  nsIContent* node = aElement;
   while (node->HasChildren()) {
     node = node->GetFirstChild();
   }
@@ -4687,11 +4678,9 @@ HTMLEditor::EndUpdateViewBatch()
 }
 
 NS_IMETHODIMP
-HTMLEditor::GetSelectionContainer(nsIDOMElement** aReturn)
+HTMLEditor::GetSelectionContainer(Element** aReturn)
 {
-  nsCOMPtr<nsIDOMElement> container =
-    static_cast<nsIDOMElement*>(GetAsDOMNode(GetSelectionContainer()));
-  NS_ENSURE_TRUE(container, NS_ERROR_FAILURE);
+  RefPtr<Element> container = GetSelectionContainer();
   container.forget(aReturn);
   return NS_OK;
 }
@@ -4753,12 +4742,11 @@ HTMLEditor::GetSelectionContainer()
 }
 
 NS_IMETHODIMP
-HTMLEditor::IsAnonymousElement(nsIDOMElement* aElement,
+HTMLEditor::IsAnonymousElement(Element* aElement,
                                bool* aReturn)
 {
   NS_ENSURE_TRUE(aElement, NS_ERROR_NULL_POINTER);
-  nsCOMPtr<nsIContent> content = do_QueryInterface(aElement);
-  *aReturn = content->IsRootOfNativeAnonymousSubtree();
+  *aReturn = aElement->IsRootOfNativeAnonymousSubtree();
   return NS_OK;
 }
 
