@@ -92,7 +92,7 @@
 
   function tab() {
     // Send tab key events.
-    synthesizeKey("KEY_Tab", {code: "Tab", shiftKey: activateShift});
+    synthesizeKey("KEY_Tab", {shiftKey: activateShift});
     if (shouldStop) {
       // Did focus handling succeed
       is(forwardFocusArray.length, 0,

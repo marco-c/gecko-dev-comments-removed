@@ -203,7 +203,7 @@ function testOptionColors(index, item, menulist) {
 
   
   
-  EventUtils.synthesizeKey("KEY_ArrowDown", { code: "ArrowDown" });
+  EventUtils.synthesizeKey("KEY_ArrowDown", {});
 
   if (expected.end) {
     return;

@@ -177,7 +177,7 @@ function dismissPrompt(ui, action) {
     case "ESC":
       
       let browserWin = Services.wm.getMostRecentWindow("navigator:browser");
-      EventUtils.synthesizeKey("KEY_Escape", { code: "Escape" }, browserWin);
+      EventUtils.synthesizeKey("KEY_Escape", {}, browserWin);
       break;
     case "pollOK":
       

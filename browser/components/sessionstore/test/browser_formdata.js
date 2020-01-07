@@ -114,7 +114,7 @@ add_task(async function test_nested() {
   await promiseBrowserLoaded(browser);
 
   
-  await BrowserTestUtils.synthesizeKey("m", {code: "KeyM"}, browser);
+  await BrowserTestUtils.synthesizeKey("m", {}, browser);
 
   
   await promiseRemoveTab(tab);
@@ -151,7 +151,7 @@ add_task(async function test_design_mode() {
   await promiseBrowserLoaded(browser);
 
   
-  await BrowserTestUtils.synthesizeKey("m", {code: "KeyM"}, browser);
+  await BrowserTestUtils.synthesizeKey("m", {}, browser);
 
   
   await promiseRemoveTab(tab);

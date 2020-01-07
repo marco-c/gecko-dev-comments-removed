@@ -122,10 +122,7 @@ add_task(async function() {
   
   let keydownPromises = promiseEvent("keydown");
   await keydownPromises[0];
-  EventUtils.synthesizeKey("KEY_ArrowDown", {
-    type: "keydown",
-    code: "ArrowDown",
-  });
+  EventUtils.synthesizeKey("KEY_ArrowDown", {type: "keydown"});
   await keydownPromises[1];
 
   
