@@ -6,7 +6,7 @@
 
 
 
-Services.scriptloader.loadSubScript("chrome://mochitests/content/browser/devtools/client/shared/test/shared-head.js", this);
+Services.scriptloader.loadSubScript("chrome://mochitests/content/browser/devtools/client/framework/test/shared-head.js", this);
 
 const EventEmitter = require("devtools/shared/old-event-emitter");
 
@@ -156,16 +156,14 @@ function checkHostType(toolbox, hostType, previousHostType) {
 
 function createScript(url) {
   info(`Creating script: ${url}`);
-  
-  
-  loadFrameScriptUtils();
+  let mm = getFrameScript();
   let command = `
     let script = document.createElement("script");
     script.setAttribute("src", "${url}");
     document.body.appendChild(script);
     null;
   `;
-  return evalInDebuggee(command);
+  return evalInDebuggee(mm, command);
 }
 
 

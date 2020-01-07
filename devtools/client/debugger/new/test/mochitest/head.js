@@ -34,7 +34,7 @@
 
 
 Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/devtools/client/shared/test/shared-head.js",
+  "chrome://mochitests/content/browser/devtools/client/framework/test/shared-head.js",
   this
 );
 var { Toolbox } = require("devtools/client/framework/toolbox");

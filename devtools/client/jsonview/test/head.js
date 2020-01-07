@@ -66,7 +66,7 @@ async function addJsonViewTab(url, {
   })]);
 
   
-  loadFrameScriptUtils();
+  getFrameScript();
   let rootDir = getRootDirectory(gTestPath);
 
   
