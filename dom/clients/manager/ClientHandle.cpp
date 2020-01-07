@@ -57,6 +57,8 @@ ClientHandle::StartOp(const ClientOpConstructorArgs& aArgs)
       
       return;
     }
+  }, [promise] {
+    promise->Reject(NS_ERROR_DOM_INVALID_STATE_ERR, __func__);
   });
 
   RefPtr<ClientOpPromise> ref = promise.get();
