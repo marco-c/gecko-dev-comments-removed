@@ -75,7 +75,49 @@ struct MOZ_TEMPORARY_CLASS MOZ_MUST_USE_TYPE MOZ_NON_AUTOABLE already_AddRefed
   already_AddRefed(const already_AddRefed<T>& aOther) = delete;
   already_AddRefed<T>& operator=(const already_AddRefed<T>& aOther) = delete;
 
-  already_AddRefed(already_AddRefed<T>&& aOther) : mRawPtr(aOther.take()) {}
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  already_AddRefed(already_AddRefed<T>&& aOther)
+#ifdef DEBUG
+    : mRawPtr(aOther.take()) {}
+#else
+    = default;
+#endif
 
   already_AddRefed<T>& operator=(already_AddRefed<T>&& aOther)
   {
@@ -103,7 +145,12 @@ struct MOZ_TEMPORARY_CLASS MOZ_MUST_USE_TYPE MOZ_NON_AUTOABLE already_AddRefed
   template <typename U>
   MOZ_IMPLICIT already_AddRefed(already_AddRefed<U>&& aOther) : mRawPtr(aOther.take()) {}
 
-  ~already_AddRefed() { MOZ_ASSERT(!mRawPtr); }
+  ~already_AddRefed()
+#ifdef DEBUG
+     { MOZ_ASSERT(!mRawPtr); }
+#else
+     = default;
+#endif
 
   
   
