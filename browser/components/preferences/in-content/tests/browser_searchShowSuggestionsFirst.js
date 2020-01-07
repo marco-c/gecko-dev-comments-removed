@@ -7,8 +7,6 @@ const CHECKBOX_ID = "showSearchSuggestionsFirstCheckbox";
 
 
 add_task(async function openWithSearchSuggestionsShownFirst() {
-  await SpecialPowers.pushPrefEnv({set: [["browser.urlbar.suggest.searches", true]]});
-
   
   
   Assert.equal(Services.prefs.getCharPref(PREF_NAME, ""), "",
