@@ -191,8 +191,12 @@ var GCTelemetry = {
   },
 
   observe(subject, topic, arg) {
-    let data = JSON.parse(arg);
+    this.observeRaw(JSON.parse(arg));
+  },
 
+  
+  
+  observeRaw(data) {
     limitSize(data);
 
     if (Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_DEFAULT) {
