@@ -206,22 +206,6 @@ public:
   nsRadioGroupStruct* GetRadioGroup(const nsAString& aName) const;
   nsRadioGroupStruct* GetOrCreateRadioGroup(const nsAString& aName);
 
-  enum class UseCounterReportKind {
-    
-    
-    
-    eDefault,
-
-    
-    
-    
-    eIncludeExternalResources,
-  };
-
-  void ReportUseCounters(UseCounterReportKind aKind = UseCounterReportKind::eDefault);
-
-  bool IsSynthesized();
-
   
   static bool IsShadowDOMEnabled(JSContext* aCx, JSObject* aObject);
   

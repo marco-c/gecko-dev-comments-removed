@@ -3488,6 +3488,22 @@ public:
 
   bool DidFireDOMContentLoaded() const { return mDidFireDOMContentLoaded; }
 
+  bool IsSynthesized();
+
+  enum class UseCounterReportKind {
+    
+    
+    
+    eDefault,
+
+    
+    
+    
+    eIncludeExternalResources,
+  };
+
+  void ReportUseCounters(UseCounterReportKind aKind = UseCounterReportKind::eDefault);
+
   void SetDocumentUseCounter(mozilla::UseCounter aUseCounter)
   {
     if (!mUseCounters[aUseCounter]) {
