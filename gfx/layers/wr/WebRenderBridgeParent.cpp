@@ -1264,14 +1264,7 @@ WebRenderBridgeParent::HoldPendingTransactionId(uint32_t aWrEpoch,
                                                 const TimeStamp& aTxnStartTime,
                                                 const TimeStamp& aFwdTime)
 {
-  
-  
-  
-  MOZ_ASSERT(aTransactionId == 1 || aTransactionId > LastPendingTransactionId());
-  
-  if (aTransactionId == 1) {
-    FlushPendingTransactionIds();
-  }
+  MOZ_ASSERT(aTransactionId > LastPendingTransactionId());
   mPendingTransactionIds.push(PendingTransactionId(wr::NewEpoch(aWrEpoch), aTransactionId, aTxnStartTime, aFwdTime));
 }
 

@@ -563,6 +563,26 @@ WebRenderLayerManager::GetTextureFactoryIdentifier()
 }
 
 void
+WebRenderLayerManager::SetTransactionIdAllocator(TransactionIdAllocator* aAllocator)
+{
+  
+  
+  
+  if (mTransactionIdAllocator && (aAllocator != mTransactionIdAllocator)) {
+    mTransactionIdAllocator->ClearPendingTransactions();
+
+    
+    
+    
+    if (aAllocator) {
+      aAllocator->ResetInitialTransactionId(mTransactionIdAllocator->LastTransactionId());
+    }
+  }
+
+  mTransactionIdAllocator = aAllocator;
+}
+
+void
 WebRenderLayerManager::AddDidCompositeObserver(DidCompositeObserver* aObserver)
 {
   if (!mDidCompositeObservers.Contains(aObserver)) {
