@@ -5,6 +5,7 @@
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+  GeckoViewTelemetryController: "resource://gre/modules/GeckoViewTelemetryController.jsm",
   GeckoViewUtils: "resource://gre/modules/GeckoViewUtils.jsm",
   Services: "resource://gre/modules/Services.jsm",
 });
@@ -69,6 +70,11 @@ GeckoViewStartup.prototype = {
             "ContentPrefs:RemoveObserverForName",
           ],
         });
+
+        
+        
+        
+        GeckoViewTelemetryController.setup();
         break;
       }
     }
