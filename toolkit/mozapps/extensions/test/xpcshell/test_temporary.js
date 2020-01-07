@@ -172,6 +172,14 @@ add_task(async function() {
 
       let target;
       if (!packed) {
+        
+        
+        
+        
+        if (!AppConstants.MOZ_ALLOW_LEGACY_EXTENSIONS) {
+          continue;
+        }
+
         target = tempdir.clone();
         target.append(ID);
 
@@ -362,6 +370,11 @@ add_task(async function test_samefile() {
 
 
 add_task(async function() {
+  
+  if (!AppConstants.MOZ_ALLOW_LEGACY_EXTENSIONS) {
+    return;
+  }
+
   await promiseInstallAllFiles([do_get_addon("test_bootstrap1_1")], true);
 
   BootstrapMonitor.checkAddonInstalled(ID, "1.0");
@@ -464,6 +477,11 @@ add_task(async function() {
 
 
 add_task(async function() {
+  
+  if (!AppConstants.MOZ_ALLOW_LEGACY_EXTENSIONS) {
+    return;
+  }
+
   const tempdir = gTmpD.clone();
 
   await promiseWriteInstallRDFToDir(sampleRDFManifest, tempdir, "bootstrap1@tests.mozilla.org", "bootstrap.js");
@@ -515,6 +533,11 @@ add_task(async function() {
 
 
 add_task(async function() {
+  
+  if (!AppConstants.MOZ_ALLOW_LEGACY_EXTENSIONS) {
+    return;
+  }
+
   const tempdir = gTmpD.clone();
 
   await promiseWriteInstallRDFToDir(sampleRDFManifest, tempdir, "bootstrap1@tests.mozilla.org", "bootstrap.js");
@@ -564,6 +587,11 @@ add_task(async function() {
 
 
 add_task(async function() {
+  
+  if (!AppConstants.MOZ_ALLOW_LEGACY_EXTENSIONS) {
+    return;
+  }
+
   const tempdir = gTmpD.clone();
 
   await promiseWriteInstallRDFToDir(sampleRDFManifest, tempdir, "bootstrap1@tests.mozilla.org", "bootstrap.js");
@@ -621,6 +649,11 @@ add_task(async function() {
 
 
 add_task(async function() {
+  
+  if (!AppConstants.MOZ_ALLOW_LEGACY_EXTENSIONS) {
+    return;
+  }
+
   await promiseInstallAllFiles([do_get_addon("test_bootstrap1_1")], true);
 
   BootstrapMonitor.checkAddonInstalled(ID, "1.0");

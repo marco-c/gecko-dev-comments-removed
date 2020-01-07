@@ -76,6 +76,10 @@ function promiseWriteRelativePointer(aId, aName) {
 add_task(async function setup() {
   ok(TEST_UNPACKED, "Pointer files only work with unpacked directories");
 
+  
+  
+  Services.prefs.setBoolPref(PREF_XPI_SIGNATURES_REQUIRED, false);
+
   createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "1");
 });
 
