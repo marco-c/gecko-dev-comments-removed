@@ -87,6 +87,7 @@ ServiceWorkerRegistrationInfo::ServiceWorkerRegistrationInfo(
   : mPrincipal(aPrincipal)
   , mDescriptor(aPrincipal, aScope, aUpdateViaCache)
   , mControlledClientsCounter(0)
+  , mDelayMultiplier(0)
   , mUpdateState(NoUpdate)
   , mCreationTime(PR_Now())
   , mCreationTimeStamp(TimeStamp::Now())
@@ -707,6 +708,26 @@ const ServiceWorkerRegistrationDescriptor&
 ServiceWorkerRegistrationInfo::Descriptor() const
 {
   return mDescriptor;
+}
+
+uint32_t
+ServiceWorkerRegistrationInfo::GetUpdateDelay()
+{
+  uint32_t delay = Preferences::GetInt("dom.serviceWorkers.update_delay",
+                                       1000);
+  
+  
+  if (mDelayMultiplier >= INT_MAX / (delay ? delay : 1)) {
+    return INT_MAX;
+  }
+
+  delay *= mDelayMultiplier;
+
+  if (!mControlledClientsCounter && mDelayMultiplier < (INT_MAX / 30)) {
+    mDelayMultiplier = (mDelayMultiplier ? mDelayMultiplier : 1) * 30;
+  }
+
+  return delay;
 }
 
 } 
