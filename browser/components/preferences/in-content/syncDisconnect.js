@@ -2,8 +2,19 @@
 
 
 
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+
+XPCOMUtils.defineLazyModuleGetters(this, {
+  SyncDisconnect: "resource://services-sync/SyncDisconnect.jsm",
+});
+
 let gSyncDisconnectDialog = {
   init() {
+    if (SyncDisconnect.promiseDisconnectFinished) {
+      
+      
+      this.waitForCompletion(SyncDisconnect.promiseDisconnectFinished);
+    }
   },
 
   
@@ -17,9 +28,13 @@ let gSyncDisconnectDialog = {
   },
 
   accept(event) {
+    let options = {
+      sanitizeSyncData: document.getElementById("deleteRemoteSyncData").checked,
+      sanitizeBrowserData: document.getElementById("deleteRemoteOtherData").checked,
+    };
+
     
-    
-    this.waitForCompletion(Promise.resolve());
+    this.waitForCompletion(SyncDisconnect.disconnect(options));
   },
 
   waitForCompletion(promiseComplete) {
