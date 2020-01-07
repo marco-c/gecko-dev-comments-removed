@@ -1281,6 +1281,7 @@ var Search = {
 
   
   blacklist: [
+    "chrome-hangs-section",
     "raw-payload-section"
   ],
 
