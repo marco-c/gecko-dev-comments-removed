@@ -121,6 +121,11 @@ class AsyncTabSwitcher {
     
     this._processing = false;
 
+    
+    
+    
+    this._loadTimerClearedBy = "none",
+
     this._useDumpForLogging = false;
     this._logInit = false;
 
@@ -452,6 +457,18 @@ class AsyncTabSwitcher {
     }
   }
 
+  maybeClearLoadTimer(caller) {
+    if (this.loadingTab) {
+      this._loadTimerClearedBy = caller;
+      this.loadingTab = null;
+      if (this.loadTimer) {
+        this.clearTimer(this.loadTimer);
+        this.loadTimer = null;
+      }
+    }
+  }
+
+
   
   loadRequestedTab() {
     this.assert(!this.loadTimer);
@@ -515,9 +532,7 @@ class AsyncTabSwitcher {
       this.spinnerTab = null;
     }
     if (this.loadingTab && !this.loadingTab.linkedBrowser) {
-      this.loadingTab = null;
-      this.clearTimer(this.loadTimer);
-      this.loadTimer = null;
+      this.maybeClearLoadTimer("preActions");
     }
   }
 
@@ -541,11 +556,7 @@ class AsyncTabSwitcher {
     
     
     if (!this.requestedTab.linkedBrowser.isRemoteBrowser) {
-      this.loadingTab = null;
-      if (this.loadTimer) {
-        this.clearTimer(this.loadTimer);
-        this.loadTimer = null;
-      }
+      this.maybeClearLoadTimer("postActions");
     }
 
     
@@ -653,8 +664,7 @@ class AsyncTabSwitcher {
   onLoadTimeout() {
     this.logState("onLoadTimeout");
     this.preActions();
-    this.loadTimer = null;
-    this.loadingTab = null;
+    this.maybeClearLoadTimer("onLoadTimeout");
     this.postActions();
   }
 
@@ -676,9 +686,7 @@ class AsyncTabSwitcher {
     this.unwarmTab(tab);
 
     if (this.loadingTab === tab) {
-      this.clearTimer(this.loadTimer);
-      this.loadTimer = null;
-      this.loadingTab = null;
+      this.maybeClearLoadTimer("onLayersReady");
     }
   }
 
@@ -744,11 +752,7 @@ class AsyncTabSwitcher {
           this.setTabState(tab, this.STATE_UNLOADING);
         }
       }
-      if (this.loadTimer) {
-        this.clearTimer(this.loadTimer);
-        this.loadTimer = null;
-      }
-      this.loadingTab = null;
+      this.maybeClearLoadTimer("onSizeModeOrOcc");
     } else {
       
       
@@ -783,16 +787,12 @@ class AsyncTabSwitcher {
     
     
 
-    if (this.loadTimer) {
-      
-      
-      
-      
-      
-      this.clearTimer(this.loadTimer);
-      this.loadTimer = null;
-    }
-    this.loadingTab = null;
+    
+    
+    
+    
+    
+    this.maybeClearLoadTimer("onEndSwapDocShells");
 
     let { state: otherState } = this.swapMap.get(otherBrowser);
 
@@ -1007,6 +1007,9 @@ class AsyncTabSwitcher {
     
     TelemetryStopwatch.start("FX_TAB_SWITCH_SPINNER_VISIBLE_LONG_MS", this.window);
     this.addMarker("AsyncTabSwitch:SpinnerShown");
+    Services.telemetry
+      .getHistogramById("FX_TAB_SWITCH_SPINNER_VISIBLE_TRIGGER")
+      .add(this._loadTimerClearedBy);
   }
 
   spinnerHidden() {
@@ -1017,6 +1020,7 @@ class AsyncTabSwitcher {
     TelemetryStopwatch.finish("FX_TAB_SWITCH_SPINNER_VISIBLE_LONG_MS", this.window);
     this.addMarker("AsyncTabSwitch:SpinnerHidden");
     
+    this._loadTimerClearedBy = "none";
   }
 
   addMarker(marker) {
