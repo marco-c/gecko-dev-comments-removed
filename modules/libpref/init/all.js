@@ -1416,12 +1416,6 @@ pref("privacy.resistFingerprinting", false);
 
 
 
-
-
-pref("privacy.resistFingerprinting.autoDeclineNoUserInputCanvasPrompts", true);
-
-
-
 pref("privacy.reduceTimerPrecision", true);
 
 pref("privacy.resistFingerprinting.reduceTimerPrecision.microseconds", 2000);
@@ -5187,7 +5181,6 @@ pref("dom.streams.enabled", false);
 
 
 pref("dom.push.enabled", false);
-pref("dom.push.alwaysConnect", false);
 
 pref("dom.push.loglevel", "error");
 
@@ -6012,3 +6005,8 @@ pref("layers.omtp.paint-workers", 1);
 #endif
 pref("layers.omtp.release-capture-on-main-thread", false);
 pref("layers.omtp.dump-capture", false);
+
+
+
+
+pref("general.document_open_conversion_depth_limit", 20);
