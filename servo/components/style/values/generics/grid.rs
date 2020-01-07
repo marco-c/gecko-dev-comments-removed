@@ -566,15 +566,13 @@ impl<L: ToCss, I: ToCss> ToCss for TrackList<L, I> {
 
 
 
-#[derive(Clone, Debug, Default, MallocSizeOf, PartialEq)]
+#[derive(Clone, Debug, Default, MallocSizeOf, PartialEq, ToComputedValue)]
 pub struct LineNameList {
     
     pub names: Box<[Box<[CustomIdent]>]>,
     
     pub fill_idx: Option<u32>,
 }
-
-trivial_to_computed_value!(LineNameList);
 
 impl Parse for LineNameList {
     fn parse<'i, 't>(context: &ParserContext, input: &mut Parser<'i, 't>) -> Result<Self, ParseError<'i>> {

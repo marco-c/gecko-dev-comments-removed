@@ -18,7 +18,7 @@ pub type ClippingShape<BasicShape, Url> = ShapeSource<BasicShape, GeometryBox, U
 
 
 #[allow(missing_docs)]
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToCss)]
+#[derive(Animate, Clone, Copy, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToCss)]
 pub enum GeometryBox {
     FillBox,
     StrokeBox,
@@ -32,7 +32,7 @@ pub type FloatAreaShape<BasicShape, Image> = ShapeSource<BasicShape, ShapeBox, I
 
 #[allow(missing_docs)]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
-#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, Parse, PartialEq)]
+#[derive(Animate, Clone, Copy, Debug, Eq, MallocSizeOf, Parse, PartialEq)]
 #[derive(ToComputedValue, ToCss)]
 pub enum ShapeBox {
     MarginBox,
@@ -49,7 +49,6 @@ pub enum ShapeSource<BasicShape, ReferenceBox, ImageOrUrl> {
     ImageOrUrl(ImageOrUrl),
     Shape(
         BasicShape,
-        #[animation(constant)]
         Option<ReferenceBox>,
     ),
     #[animation(error)]
