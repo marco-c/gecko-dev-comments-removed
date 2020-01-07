@@ -328,6 +328,11 @@ public:
   void AddContext(CycleCollectedJSContext* aContext);
   void RemoveContext(CycleCollectedJSContext* aContext);
 
+#ifdef NIGHTLY_BUILD
+  bool GetRecentDevError(JSContext* aContext, JS::MutableHandle<JS::Value> aError);
+  void ClearRecentDevError();
+#endif 
+
 private:
   LinkedList<CycleCollectedJSContext> mContexts;
 
@@ -372,6 +377,37 @@ private:
 #ifdef DEBUG
   bool mShutdownCalled;
 #endif
+
+#ifdef NIGHTLY_BUILD
+  
+  
+
+  struct ErrorInterceptor final : public JSErrorInterceptor {
+    virtual void interceptError(JSContext* cx, const JS::Value& val) override;
+    void Shutdown(JSRuntime* rt);
+
+    
+    
+    
+    
+    struct ErrorDetails {
+      nsString mFilename;
+      nsString mMessage;
+      nsString mStack;
+      JSExnType mType;
+      uint32_t mLine;
+      uint32_t mColumn;
+    };
+
+    
+    
+    
+    Maybe<ErrorDetails> mThrownError;
+  };
+  ErrorInterceptor mErrorInterceptor;
+
+#endif 
+
 };
 
 void TraceScriptHolder(nsISupports* aHolder, JSTracer* aTracer);
