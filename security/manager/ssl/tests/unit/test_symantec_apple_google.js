@@ -22,6 +22,15 @@ const certDB = Cc["@mozilla.org/security/x509certdb;1"]
 add_tls_server_setup("SymantecSanctionsServer", "test_symantec_apple_google");
 
 
+
+
+add_test(function() {
+  addCertFromFile(certDB, "test_symantec_apple_google/intermediate-whitelisted.pem", ",,");
+  addCertFromFile(certDB, "test_symantec_apple_google/intermediate-other.pem", ",,");
+  run_next_test();
+});
+
+
 add_connection_test("symantec-not-whitelisted-after-cutoff.example.com",
                     PRErrorCodeSuccess, null, shouldBeImminentlyDistrusted);
 
@@ -46,6 +55,17 @@ add_test(function() {
   Services.prefs.clearUserPref("security.pki.distrust_ca_policy");
   run_next_test();
 });
+
+
+
+add_test(function() {
+  addCertFromFile(certDB, "test_symantec_apple_google/intermediate-other-crossigned.pem", ",,");
+  run_next_test();
+});
+
+add_connection_test("symantec-not-whitelisted-before-cutoff.example.com",
+                    MOZILLA_PKIX_ERROR_ADDITIONAL_POLICY_CONSTRAINT_FAILED,
+                    null, null);
 
 
 

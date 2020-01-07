@@ -731,6 +731,15 @@ CertVerifier::VerifyCert(CERTCertificate* cert, SECCertificateUsage usage,
                                             CertPolicyId::anyPolicy,
                                             stapledOCSPResponse,
                                             ocspStaplingStatus);
+          if (rv != Success && !IsFatalError(rv) &&
+              rv != Result::ERROR_REVOKED_CERTIFICATE &&
+              trustDomain.GetIsErrorDueToDistrustedCAPolicy()) {
+            
+            
+            
+            
+            rv = Result::ERROR_ADDITIONAL_POLICY_CONSTRAINT_FAILED;
+          }
           if (rv == Success &&
               sha1ModeConfigurations[j] == SHA1Mode::ImportedRoot) {
             bool isBuiltInRoot = false;
