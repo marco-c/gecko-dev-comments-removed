@@ -329,15 +329,17 @@ public:
   bool IsRowOriented() const { return mIsRowOriented; }
   bool IsColumnOriented() const { return !mIsRowOriented; }
 
-  nscoord GetMainComponent(const nsSize& aSize) const {
-    return GET_MAIN_COMPONENT(*this, aSize.width, aSize.height);
+  
+  nscoord GetMainComponent(const LogicalSize& aSize) const {
+    return IsRowOriented() ? aSize.ISize(mWM) : aSize.BSize(mWM);
   }
   int32_t GetMainComponent(const LayoutDeviceIntSize& aIntSize) const {
     return GET_MAIN_COMPONENT(*this, aIntSize.width, aIntSize.height);
   }
 
-  nscoord GetCrossComponent(const nsSize& aSize) const {
-    return GET_CROSS_COMPONENT(*this, aSize.width, aSize.height);
+  
+  nscoord GetCrossComponent(const LogicalSize& aSize) const {
+    return IsRowOriented() ? aSize.BSize(mWM) : aSize.ISize(mWM);
   }
   int32_t GetCrossComponent(const LayoutDeviceIntSize& aIntSize) const {
     return GET_CROSS_COMPONENT(*this, aIntSize.width, aIntSize.height);
@@ -620,8 +622,10 @@ public:
     return mFlexShrink * mFlexBaseSize;
   }
 
-  const nsSize& IntrinsicRatio() const { return mIntrinsicRatio; }
-  bool HasIntrinsicRatio() const { return mIntrinsicRatio != nsSize(); }
+  
+  
+  const LogicalSize& IntrinsicRatio() const { return mIntrinsicRatio; }
+  bool HasIntrinsicRatio() const { return !mIntrinsicRatio.IsAllZero(); }
 
   
   
@@ -816,7 +820,7 @@ protected:
   nsIFrame* const mFrame; 
   const float mFlexGrow;
   const float mFlexShrink;
-  const nsSize mIntrinsicRatio;
+  const LogicalSize mIntrinsicRatio;
   const nsMargin mBorderPadding;
   nsMargin mMargin; 
 
@@ -1404,20 +1408,17 @@ CrossSizeToUseWithRatio(const FlexItem& aFlexItem,
 
 
 
+
 static nscoord
 MainSizeFromAspectRatio(nscoord aCrossSize,
-                        const nsSize& aIntrinsicRatio,
+                        const LogicalSize& aIntrinsicRatio,
                         const FlexboxAxisTracker& aAxisTracker)
 {
   MOZ_ASSERT(aAxisTracker.GetCrossComponent(aIntrinsicRatio) != 0,
              "Invalid ratio; will divide by 0! Caller should've checked...");
-
-  if (aAxisTracker.IsCrossAxisHorizontal()) {
-    
-    return NSCoordMulDiv(aCrossSize, aIntrinsicRatio.height, aIntrinsicRatio.width);
-  }
-  
-  return NSCoordMulDiv(aCrossSize, aIntrinsicRatio.width, aIntrinsicRatio.height);
+  return NSCoordMulDiv(aCrossSize,
+                       aAxisTracker.GetMainComponent(aIntrinsicRatio),
+                       aAxisTracker.GetCrossComponent(aIntrinsicRatio));
 }
 
 
@@ -1799,7 +1800,8 @@ FlexItem::FlexItem(ReflowInput& aFlexItemReflowInput,
   : mFrame(aFlexItemReflowInput.mFrame),
     mFlexGrow(aFlexGrow),
     mFlexShrink(aFlexShrink),
-    mIntrinsicRatio(mFrame->GetIntrinsicRatio()),
+    
+    mIntrinsicRatio(aAxisTracker.GetWritingMode(), mFrame->GetIntrinsicRatio()),
     mBorderPadding(aFlexItemReflowInput.ComputedPhysicalBorderPadding()),
     mMargin(aFlexItemReflowInput.ComputedPhysicalMargin()),
     mMainMinSize(aMainMinSize),
@@ -1895,7 +1897,7 @@ FlexItem::FlexItem(nsIFrame* aChildFrame, nscoord aCrossSize,
   : mFrame(aChildFrame),
     mFlexGrow(0.0f),
     mFlexShrink(0.0f),
-    mIntrinsicRatio(),
+    mIntrinsicRatio(aContainerWM),
     
     
     mFlexBaseSize(0),
