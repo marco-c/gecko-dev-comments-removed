@@ -1355,13 +1355,46 @@ nsHTMLDocument::Open(JSContext* cx,
 
   
   
+  nsCOMPtr<nsIDocShell> curDocShell = GetDocShell();
+  nsCOMPtr<nsIDocShellTreeItem> parent;
+  if (curDocShell) {
+    curDocShell->GetSameTypeParent(getter_AddRefs(parent));
+  }
+  
+  
+  
+  
+  nsContentPolicyType policyType;
+  if (!parent) {
+    policyType = nsIContentPolicy::TYPE_DOCUMENT;
+  } else {
+    Element* requestingElement = nullptr;
+    nsPIDOMWindowInner* window = GetInnerWindow();
+    if (window) {
+      nsPIDOMWindowOuter* outer =
+        nsPIDOMWindowOuter::GetFromCurrentInner(window);
+      if (outer) {
+        nsGlobalWindowOuter* win = nsGlobalWindowOuter::Cast(outer);
+        requestingElement = win->AsOuter()->GetFrameElementInternal();
+      }
+    }
+    if (requestingElement) {
+      policyType = requestingElement->IsHTMLElement(nsGkAtoms::iframe) ?
+        nsIContentPolicy::TYPE_INTERNAL_IFRAME : nsIContentPolicy::TYPE_INTERNAL_FRAME;
+    } else {
+      
+      
+      policyType = nsIContentPolicy::TYPE_INTERNAL_IFRAME;
+    }
+  }
+
   nsCOMPtr<nsIChannel> channel;
   nsCOMPtr<nsILoadGroup> group = do_QueryReferent(mDocumentLoadGroup);
   aError = NS_NewChannel(getter_AddRefs(channel),
                          uri,
                          callerDoc,
                          nsILoadInfo::SEC_FORCE_INHERIT_PRINCIPAL,
-                         nsIContentPolicy::TYPE_OTHER,
+                         policyType,
                          nullptr, 
                          group);
 
