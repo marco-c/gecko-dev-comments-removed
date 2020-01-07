@@ -8,6 +8,7 @@
 
 #include "mozilla/EditAction.h"
 #include "mozilla/EditorDOMPoint.h"
+#include "mozilla/EditorUtils.h"
 #include "mozilla/HTMLEditor.h" 
 #include "mozilla/TextEditor.h"
 #include "nsCOMPtr.h"
@@ -211,14 +212,23 @@ protected:
 
 
 
+
   template<typename PT, typename CT>
-  already_AddRefed<Element>
+  CreateElementResult
   CreateBR(const EditorDOMPointBase<PT, CT>& aPointToInsert)
   {
-    return CreateBRInternal(aPointToInsert, false);
+    CreateElementResult ret = CreateBRInternal(aPointToInsert, false);
+#ifdef DEBUG
+    
+    if (!CanHandleEditAction()) {
+      MOZ_ASSERT(ret.Rv() == NS_ERROR_EDITOR_DESTROYED);
+    }
+#endif 
+    return ret;
   }
 
   
+
 
 
 
@@ -226,25 +236,18 @@ protected:
 
 
   template<typename PT, typename CT>
-  already_AddRefed<Element>
+  CreateElementResult
   CreateMozBR(const EditorDOMPointBase<PT, CT>& aPointToInsert)
   {
-    return CreateBRInternal(aPointToInsert, true);
+    CreateElementResult ret = CreateBRInternal(aPointToInsert, true);
+#ifdef DEBUG
+    
+    if (!CanHandleEditAction()) {
+      MOZ_ASSERT(ret.Rv() == NS_ERROR_EDITOR_DESTROYED);
+    }
+#endif 
+    return ret;
   }
-
-  
-
-
-
-
-
-
-
-
-
-  already_AddRefed<Element>
-  CreateBRInternal(const EditorRawDOMPoint& aPointToInsert,
-                   bool aCreateMozBR);
 
   void UndefineCaretBidiLevel();
 
@@ -266,6 +269,22 @@ protected:
 
 private:
   TextEditor* MOZ_NON_OWNING_REF mTextEditor;
+
+  
+
+
+
+
+
+
+
+
+
+
+  template<typename PT, typename CT>
+  CreateElementResult
+  CreateBRInternal(const EditorDOMPointBase<PT, CT>& aPointToInsert,
+                   bool aCreateMozBR);
 
 protected:
   
