@@ -26,7 +26,6 @@
 #include "mozilla/ServoStyleSet.h"
 #include "mozilla/StyleAnimationValue.h"
 #include "mozilla/TypeTraits.h" 
-#include "nsComputedDOMStyle.h" 
 #include "nsContentUtils.h"
 #include "nsCSSPseudoElements.h"
 #include "nsCSSPropertyIDSet.h"
@@ -263,7 +262,7 @@ EffectCompositor::RequestRestyle(dom::Element* aElement,
 
   
   
-  if (!nsComputedDOMStyle::GetPresShellForContent(aElement)) {
+  if (!nsContentUtils::GetPresShellForContent(aElement)) {
     return;
   }
 
@@ -491,7 +490,7 @@ EffectCompositor::GetServoAnimationRule(
   MOZ_ASSERT(mPresContext && mPresContext->IsDynamic(),
              "Should not be in print preview");
   
-  MOZ_ASSERT(nsComputedDOMStyle::GetPresShellForContent(aElement),
+  MOZ_ASSERT(nsContentUtils::GetPresShellForContent(aElement),
              "Should not be trying to run animations on elements in documents"
              " without a pres shell (e.g. XMLHttpRequest documents)");
 
@@ -980,7 +979,7 @@ EffectCompositor::PreTraverseInSubtree(ServoTraversalFlags aFlags,
 {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(mPresContext->RestyleManager()->IsServo());
-  MOZ_ASSERT(!aRoot || nsComputedDOMStyle::GetPresShellForContent(aRoot),
+  MOZ_ASSERT(!aRoot || nsContentUtils::GetPresShellForContent(aRoot),
              "Traversal root, if provided, should be bound to a display "
              "document");
 
@@ -1027,7 +1026,7 @@ EffectCompositor::PreTraverseInSubtree(ServoTraversalFlags aFlags,
     
     
     
-    if (!nsComputedDOMStyle::GetPresShellForContent(target.mElement)) {
+    if (!nsContentUtils::GetPresShellForContent(target.mElement)) {
       return returnTarget;
     }
 
@@ -1133,7 +1132,7 @@ EffectCompositor::PreTraverse(dom::Element* aElement,
   
   
   
-  if (!nsComputedDOMStyle::GetPresShellForContent(aElement)) {
+  if (!nsContentUtils::GetPresShellForContent(aElement)) {
     return false;
   }
 

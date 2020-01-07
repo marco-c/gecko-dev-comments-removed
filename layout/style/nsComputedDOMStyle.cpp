@@ -503,7 +503,8 @@ nsComputedDOMStyle::GetStyleContext(Element* aElement,
   
   
   
-  nsCOMPtr<nsIPresShell> presShell = GetPresShellForContent(aElement);
+  nsCOMPtr<nsIPresShell> presShell =
+    nsContentUtils::GetPresShellForContent(aElement);
   if (!presShell) {
     presShell = aPresShell;
     if (!presShell)
@@ -675,7 +676,8 @@ nsComputedDOMStyle::DoGetStyleContextNoFlush(Element* aElement,
   
   
   
-  nsIPresShell *presShell = GetPresShellForContent(aElement);
+  nsIPresShell *presShell =
+    nsContentUtils::GetPresShellForContent(aElement);
   bool inDocWithShell = true;
   if (!presShell) {
     inDocWithShell = false;
@@ -836,17 +838,6 @@ nsComputedDOMStyle::GetAdjustedValuesForBoxSizing()
 }
 
 
-nsIPresShell*
-nsComputedDOMStyle::GetPresShellForContent(const nsIContent* aContent)
-{
-  nsIDocument* composedDoc = aContent->GetComposedDoc();
-  if (!composedDoc)
-    return nullptr;
-
-  return composedDoc->GetShell();
-}
-
-
 
 
 DeclarationBlock*
@@ -963,7 +954,8 @@ nsComputedDOMStyle::UpdateCurrentStyleSources(bool aNeedsLayoutFlush)
   mFlushedPendingReflows = aNeedsLayoutFlush;
 #endif
 
-  nsCOMPtr<nsIPresShell> presShellForContent = GetPresShellForContent(mContent);
+  nsCOMPtr<nsIPresShell> presShellForContent =
+    nsContentUtils::GetPresShellForContent(mContent);
   if (presShellForContent && presShellForContent != document->GetShell()) {
     presShellForContent->FlushPendingNotifications(FlushType::Style);
   }

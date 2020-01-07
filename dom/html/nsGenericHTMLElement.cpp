@@ -3075,7 +3075,7 @@ nsGenericHTMLElement::GetInnerText(mozilla::dom::DOMString& aValue,
                                    mozilla::ErrorResult& aError)
 {
   if (!GetPrimaryFrame(FlushType::Layout)) {
-    nsIPresShell* presShell = nsComputedDOMStyle::GetPresShellForContent(this);
+    nsIPresShell* presShell = nsContentUtils::GetPresShellForContent(this);
     
     
     if (!presShell || !presShell->DidInitialize() ||
