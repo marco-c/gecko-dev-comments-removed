@@ -35,4 +35,17 @@ class MozDeck extends XULElement {
 
 customElements.define("deck", MozDeck);
 
+class MozDropmarker extends XULElement {
+  connectedCallback() {
+    
+    if (!this.firstChild) {
+      let image = document.createElement("image");
+      image.classList.add("dropmarker-icon");
+      this.appendChild(image);
+    }
+  }
+}
+
+customElements.define("dropmarker", MozDropmarker);
+
 }
