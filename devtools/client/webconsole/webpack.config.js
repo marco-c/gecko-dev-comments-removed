@@ -41,6 +41,8 @@ let webpackConfig = {
           "rewrite-browser-require",
           
           "rewrite-lazy-require",
+          
+          "rewrite-lazy-getter",
         ],
       }
     ]
@@ -142,11 +144,11 @@ webpackConfig.plugins = mappings.map(([regex, res]) =>
   new NormalModuleReplacementPlugin(regex, res));
 
 const basePath = path.join(__dirname, "../../").replace(/\\/g, "\\\\");
-const baseName = path.basename(__dirname);
 
 let config = toolboxConfig(webpackConfig, getConfig(), {
   
-  babelExcludes: new RegExp(`^${basePath}(.(?!${baseName}))*$`)
+  babelExcludes: new RegExp(`^${basePath}(.(?!(webconsole|netmonitor)))*$`),
+  disablePostCSS: true,
 });
 
 
