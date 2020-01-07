@@ -37,21 +37,6 @@ public:
   
   virtual nsresult SuspendMessageDiversion() = 0;
   virtual nsresult ResumeMessageDiversion() = 0;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  virtual nsresult CancelDiversion() = 0;
 };
 
 } 

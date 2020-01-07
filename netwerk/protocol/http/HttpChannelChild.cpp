@@ -615,6 +615,8 @@ HttpChannelChild::OnStartRequest(const nsresult& channelStatus,
   DoOnStartRequest(this, mListenerContext);
 }
 
+namespace {
+
 class SyntheticDiversionListener final : public nsIStreamListener
 {
   RefPtr<HttpChannelChild> mChannel;
@@ -641,10 +643,7 @@ public:
   OnStopRequest(nsIRequest* aRequest, nsISupports* aContext,
                 nsresult aStatus) override
   {
-    if (mChannel->mIPCOpen) {
-      mChannel->SendDivertOnStopRequest(aStatus);
-      mChannel->SendDivertComplete();
-    }
+    mChannel->SendDivertOnStopRequest(aStatus);
     return NS_OK;
   }
 
@@ -653,11 +652,6 @@ public:
                   nsIInputStream* aInputStream, uint64_t aOffset,
                   uint32_t aCount) override
   {
-    if (!mChannel->mIPCOpen) {
-      aRequest->Cancel(NS_ERROR_ABORT);
-      return NS_ERROR_ABORT;
-    }
-
     nsAutoCString data;
     nsresult rv = NS_ConsumeStream(aInputStream, aCount, data);
     if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -673,6 +667,8 @@ public:
 };
 
 NS_IMPL_ISUPPORTS(SyntheticDiversionListener, nsIStreamListener);
+
+} 
 
 void
 HttpChannelChild::DoOnStartRequest(nsIRequest* aRequest, nsISupports* aContext)
@@ -1886,11 +1882,7 @@ HttpChannelChild::FlushedForDiversion()
   
   mFlushedForDiversion = true;
 
-  
-  
-  if (!mSynthesizedResponse) {
-    SendDivertComplete();
-  }
+  SendDivertComplete();
 }
 
 void
@@ -3872,21 +3864,6 @@ mozilla::ipc::IPCResult
 HttpChannelChild::RecvAttachStreamFilter(Endpoint<extensions::PStreamFilterParent>&& aEndpoint)
 {
   extensions::StreamFilterParent::Attach(this, Move(aEndpoint));
-  return IPC_OK();
-}
-
-mozilla::ipc::IPCResult
-HttpChannelChild::RecvCancelDiversion()
-{
-  MOZ_ASSERT(NS_IsMainThread());
-
-  
-  
-  
-  
-  
-  
-  Cancel(NS_ERROR_ABORT);
   return IPC_OK();
 }
 

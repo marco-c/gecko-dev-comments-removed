@@ -34,10 +34,7 @@ public:
   {
     if (!mWasNotified) {
       mWasNotified = true;
-      
-      
-      
-      mReader->CloseAndRelease(nullptr, NS_ERROR_DOM_INVALID_STATE_ERR);
+      mReader->CloseAndRelease(NS_ERROR_DOM_INVALID_STATE_ERR);
     }
 
     return true;
@@ -127,17 +124,11 @@ FetchStreamReader::FetchStreamReader(nsIGlobalObject* aGlobal)
 
 FetchStreamReader::~FetchStreamReader()
 {
-  CloseAndRelease(nullptr, NS_BASE_STREAM_CLOSED);
+  CloseAndRelease(NS_BASE_STREAM_CLOSED);
 }
 
-
-
-
-
-
-
 void
-FetchStreamReader::CloseAndRelease(JSContext* aCx, nsresult aStatus)
+FetchStreamReader::CloseAndRelease(nsresult aStatus)
 {
   NS_ASSERT_OWNINGTHREAD(FetchStreamReader);
 
@@ -147,22 +138,6 @@ FetchStreamReader::CloseAndRelease(JSContext* aCx, nsresult aStatus)
   }
 
   RefPtr<FetchStreamReader> kungFuDeathGrip = this;
-
-  if (aCx) {
-    MOZ_ASSERT(mReader);
-
-    RefPtr<DOMException> error = DOMException::Create(aStatus);
-
-    JS::Rooted<JS::Value> errorValue(aCx);
-    if (ToJSValue(aCx, error, &errorValue)) {
-      JS::Rooted<JSObject*> reader(aCx, mReader);
-      
-      
-      
-      
-      JS::ReadableStreamReaderCancel(aCx, reader, errorValue);
-    }
-  }
 
   mStreamClosed = true;
 
@@ -191,7 +166,7 @@ FetchStreamReader::StartConsuming(JSContext* aCx,
                                                            JS::ReadableStreamReaderMode::Default));
   if (!reader) {
     aRv.StealExceptionFromJSContext(aCx);
-    CloseAndRelease(aCx, NS_ERROR_DOM_INVALID_STATE_ERR);
+    CloseAndRelease(NS_ERROR_DOM_INVALID_STATE_ERR);
     return;
   }
 
@@ -231,14 +206,14 @@ FetchStreamReader::OnOutputStreamReady(nsIAsyncOutputStream* aStream)
                                                                     reader));
   if (NS_WARN_IF(!promise)) {
     
-    CloseAndRelease(aes.cx(), NS_ERROR_DOM_INVALID_STATE_ERR);
+    CloseAndRelease(NS_ERROR_DOM_INVALID_STATE_ERR);
     return NS_ERROR_FAILURE;
   }
 
   RefPtr<Promise> domPromise = Promise::CreateFromExisting(mGlobal, promise);
   if (NS_WARN_IF(!domPromise)) {
     
-    CloseAndRelease(aes.cx(), NS_ERROR_DOM_INVALID_STATE_ERR);
+    CloseAndRelease(NS_ERROR_DOM_INVALID_STATE_ERR);
     return NS_ERROR_FAILURE;
   }
 
@@ -265,13 +240,13 @@ FetchStreamReader::ResolvedCallback(JSContext* aCx,
   FetchReadableStreamReadDataDone valueDone;
   if (!valueDone.Init(aCx, aValue)) {
     JS_ClearPendingException(aCx);
-    CloseAndRelease(aCx, NS_ERROR_DOM_INVALID_STATE_ERR);
+    CloseAndRelease(NS_ERROR_DOM_INVALID_STATE_ERR);
     return;
   }
 
   if (valueDone.mDone) {
     
-    CloseAndRelease(aCx, NS_BASE_STREAM_CLOSED);
+    CloseAndRelease(NS_BASE_STREAM_CLOSED);
     return;
   }
 
@@ -279,7 +254,7 @@ FetchStreamReader::ResolvedCallback(JSContext* aCx,
     new FetchReadableStreamReadDataArray);
   if (!value->Init(aCx, aValue) || !value->mValue.WasPassed()) {
     JS_ClearPendingException(aCx);
-    CloseAndRelease(aCx, NS_ERROR_DOM_INVALID_STATE_ERR);
+    CloseAndRelease(NS_ERROR_DOM_INVALID_STATE_ERR);
     return;
   }
 
@@ -299,12 +274,7 @@ FetchStreamReader::ResolvedCallback(JSContext* aCx,
   mBufferOffset = 0;
   mBufferRemaining = len;
 
-  nsresult rv = WriteBuffer();
-  if (NS_FAILED(rv)) {
-    
-    
-    CloseAndRelease(aCx, NS_ERROR_DOM_ABORT_ERR);
-  }
+  WriteBuffer();
 }
 
 nsresult
@@ -326,6 +296,7 @@ FetchStreamReader::WriteBuffer()
     }
 
     if (NS_WARN_IF(NS_FAILED(rv))) {
+      CloseAndRelease(rv);
       return rv;
     }
 
@@ -341,6 +312,7 @@ FetchStreamReader::WriteBuffer()
 
   nsresult rv = mPipeOut->AsyncWait(this, 0, 0, mOwningEventTarget);
   if (NS_WARN_IF(NS_FAILED(rv))) {
+    CloseAndRelease(rv);
     return rv;
   }
 
@@ -352,7 +324,7 @@ FetchStreamReader::RejectedCallback(JSContext* aCx,
                                     JS::Handle<JS::Value> aValue)
 {
   ReportErrorToConsole(aCx, aValue);
-  CloseAndRelease(aCx, NS_ERROR_FAILURE);
+  CloseAndRelease(NS_ERROR_FAILURE);
 }
 
 void

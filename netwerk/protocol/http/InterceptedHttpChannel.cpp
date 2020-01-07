@@ -32,7 +32,6 @@ InterceptedHttpChannel::InterceptedHttpChannel(PRTime aCreationTime,
   , mResumeStartPos(0)
   , mSynthesizedOrReset(Invalid)
   , mCallingStatusAndProgress(false)
-  , mDiverting(false)
 {
   
   
@@ -499,15 +498,6 @@ InterceptedHttpChannel::Cancel(nsresult aStatus)
   MOZ_DIAGNOSTIC_ASSERT(NS_FAILED(aStatus));
   if (NS_SUCCEEDED(mStatus)) {
     mStatus = aStatus;
-  }
-
-  
-  
-  
-  
-  if (mDiverting) {
-    Unused << mParentChannel->CancelDiversion();
-    
   }
 
   if (mPump) {
@@ -1123,7 +1113,6 @@ InterceptedHttpChannel::MessageDiversionStarted(ADivertableParentChannel* aParen
 {
   MOZ_ASSERT(!mParentChannel);
   mParentChannel = aParentChannel;
-  mDiverting = true;
   uint32_t suspendCount = mSuspendCount;
   while(suspendCount--) {
     mParentChannel->SuspendMessageDiversion();
@@ -1136,7 +1125,6 @@ InterceptedHttpChannel::MessageDiversionStop()
 {
   MOZ_ASSERT(mParentChannel);
   mParentChannel = nullptr;
-  mDiverting = false;
   return NS_OK;
 }
 

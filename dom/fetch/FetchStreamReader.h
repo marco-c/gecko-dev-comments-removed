@@ -40,12 +40,8 @@ public:
   void
   RejectedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue) override;
 
-  
-  
-  
-  
   void
-  CloseAndRelease(JSContext* aCx, nsresult aStatus);
+  CloseAndRelease(nsresult aStatus);
 
   void
   StartConsuming(JSContext* aCx,

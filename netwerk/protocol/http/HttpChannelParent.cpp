@@ -2011,16 +2011,6 @@ HttpChannelParent::ResumeMessageDiversion()
   return NS_OK;
 }
 
-nsresult
-HttpChannelParent::CancelDiversion()
-{
-  LOG(("HttpChannelParent::CancelDiversion [this=%p]", this));
-  if (!mIPCClosed) {
-    Unused << SendCancelDiversion();
-  }
-  return NS_OK;
-}
-
 
 nsresult
 HttpChannelParent::ResumeForDiversion()

@@ -1087,37 +1087,25 @@ FetchDriver::OnDataAvailable(nsIRequest* aRequest,
     }
   }
 
-  
-  
-  uint32_t aRead = 0;
+  uint32_t aRead;
   MOZ_ASSERT(mResponse);
   MOZ_ASSERT(mPipeOutputStream);
 
   
   
-  nsresult rv;
   if (mResponse->Type() != ResponseType::Opaque &&
       ShouldCheckSRI(mRequest, mResponse)) {
     MOZ_ASSERT(mSRIDataVerifier);
 
     SRIVerifierAndOutputHolder holder(mSRIDataVerifier, mPipeOutputStream);
-    rv = aInputStream->ReadSegments(CopySegmentToStreamAndSRI,
-                                    &holder, aCount, &aRead);
-  } else {
-    rv = aInputStream->ReadSegments(NS_CopySegmentToStream,
-                                    mPipeOutputStream,
-                                    aCount, &aRead);
+    nsresult rv = aInputStream->ReadSegments(CopySegmentToStreamAndSRI,
+                                             &holder, aCount, &aRead);
+    return rv;
   }
 
-  
-  
-  
-  
-  
-  
-  if (aRead == 0 && aCount != 0) {
-    return NS_BASE_STREAM_CLOSED;
-  }
+  nsresult rv = aInputStream->ReadSegments(NS_CopySegmentToStream,
+                                           mPipeOutputStream,
+                                           aCount, &aRead);
   return rv;
 }
 
