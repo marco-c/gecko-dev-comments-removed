@@ -125,7 +125,8 @@ private:
   
   void IssueSingleInsertNofications(nsIContent* aContainer,
                                     nsIContent* aStartChild,
-                                    nsIContent* aEndChild);
+                                    nsIContent* aEndChild,
+                                    InsertionKind);
 
   
 
@@ -173,7 +174,8 @@ private:
 
   InsertionPoint GetRangeInsertionPoint(nsIContent* aContainer,
                                         nsIContent* aStartChild,
-                                        nsIContent* aEndChild);
+                                        nsIContent* aEndChild,
+                                        InsertionKind);
 
   
   bool MaybeRecreateForFrameset(nsIFrame* aParentFrame,

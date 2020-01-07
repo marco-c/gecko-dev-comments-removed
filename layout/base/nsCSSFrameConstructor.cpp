@@ -6839,9 +6839,9 @@ nsCSSFrameConstructor::CheckBitsForLazyFrameConstruction(nsIContent* aParent)
       content->GetPrimaryFrame()->IsLeaf()) {
     noPrimaryFrame = needsFrameBitSet = false;
   }
-  NS_ASSERTION(!noPrimaryFrame, "Ancestors of nodes with frames to be "
+  MOZ_ASSERT(!noPrimaryFrame, "Ancestors of nodes with frames to be "
     "constructed lazily should have frames");
-  NS_ASSERTION(!needsFrameBitSet, "Ancestors of nodes with frames to be "
+  MOZ_ASSERT(!needsFrameBitSet, "Ancestors of nodes with frames to be "
     "constructed lazily should not have NEEDS_FRAME bit set");
 }
 #endif
@@ -6886,6 +6886,10 @@ nsCSSFrameConstructor::MaybeConstructLazily(Operation aOperation,
 
   if (Servo_Element_IsDisplayNone(parent)) {
     
+    
+    
+    
+    
     return true;
   }
 
@@ -6920,7 +6924,8 @@ nsCSSFrameConstructor::MaybeConstructLazily(Operation aOperation,
 void
 nsCSSFrameConstructor::IssueSingleInsertNofications(nsIContent* aContainer,
                                                     nsIContent* aStartChild,
-                                                    nsIContent* aEndChild)
+                                                    nsIContent* aEndChild,
+                                                    InsertionKind aInsertionKind)
 {
   for (nsIContent* child = aStartChild;
        child != aEndChild;
@@ -6931,7 +6936,7 @@ nsCSSFrameConstructor::IssueSingleInsertNofications(nsIContent* aContainer,
 
     
     ContentRangeInserted(aContainer, child, child->GetNextSibling(),
-                         mTempFrameTreeState, InsertionKind::Sync);
+                         mTempFrameTreeState, aInsertionKind);
   }
 }
 
@@ -6960,7 +6965,8 @@ nsCSSFrameConstructor::InsertionPoint::IsMultiple() const
 nsCSSFrameConstructor::InsertionPoint
 nsCSSFrameConstructor::GetRangeInsertionPoint(nsIContent* aContainer,
                                               nsIContent* aStartChild,
-                                              nsIContent* aEndChild)
+                                              nsIContent* aEndChild,
+                                              InsertionKind aInsertionKind)
 {
   MOZ_ASSERT(aStartChild);
 
@@ -6968,7 +6974,8 @@ nsCSSFrameConstructor::GetRangeInsertionPoint(nsIContent* aContainer,
   
   
   if (aContainer->GetShadowRoot() || aContainer->GetXBLBinding()) {
-    IssueSingleInsertNofications(aContainer, aStartChild, aEndChild);
+    IssueSingleInsertNofications(
+      aContainer, aStartChild, aEndChild, aInsertionKind);
     return { };
   }
 
@@ -6987,7 +6994,8 @@ nsCSSFrameConstructor::GetRangeInsertionPoint(nsIContent* aContainer,
   
   InsertionPoint ip = GetInsertionPoint(aStartChild);
   if (ip.IsMultiple()) {
-    IssueSingleInsertNofications(aContainer, aStartChild, aEndChild);
+    IssueSingleInsertNofications(
+      aContainer, aStartChild, aEndChild, aInsertionKind);
     return { };
   }
 
@@ -7098,9 +7106,12 @@ nsCSSFrameConstructor::ContentAppended(nsIContent* aContainer,
   }
 #endif
 
-  
-  if (!GetContentInsertionFrameFor(aContainer) &&
-      !aContainer->IsActiveChildrenElement()) {
+  LAYOUT_PHASE_TEMP_EXIT();
+  InsertionPoint insertion =
+    GetRangeInsertionPoint(aContainer, aFirstNewContent, nullptr, aInsertionKind);
+  nsContainerFrame*& parentFrame = insertion.mParentFrame;
+  LAYOUT_PHASE_TEMP_REENTER();
+  if (!parentFrame) {
     
     
     
@@ -7122,15 +7133,6 @@ nsCSSFrameConstructor::ContentAppended(nsIContent* aContainer,
   
   if (aInsertionKind == InsertionKind::Async) {
     StyleNewChildRange(aFirstNewContent, nullptr);
-  }
-
-  LAYOUT_PHASE_TEMP_EXIT();
-  InsertionPoint insertion =
-    GetRangeInsertionPoint(aContainer, aFirstNewContent, nullptr);
-  nsContainerFrame*& parentFrame = insertion.mParentFrame;
-  LAYOUT_PHASE_TEMP_REENTER();
-  if (!parentFrame) {
-    return;
   }
 
   LAYOUT_PHASE_TEMP_EXIT();
@@ -7504,7 +7506,8 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
       
       
       LAYOUT_PHASE_TEMP_EXIT();
-      IssueSingleInsertNofications(aContainer, aStartChild, aEndChild);
+      IssueSingleInsertNofications(
+        aContainer, aStartChild, aEndChild, InsertionKind::Sync);
       LAYOUT_PHASE_TEMP_REENTER();
       return;
     }
@@ -7555,12 +7558,21 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
     return;
   }
 
-  nsContainerFrame* parentFrame = GetContentInsertionFrameFor(aContainer);
-  
-  
-  
-  if (!parentFrame &&
-      !(aContainer->IsActiveChildrenElement() || aContainer->IsShadowRoot())) {
+  InsertionPoint insertion;
+  if (isSingleInsert) {
+    
+    
+    
+    insertion = GetInsertionPoint(aStartChild);
+  } else {
+    
+    
+    LAYOUT_PHASE_TEMP_EXIT();
+    insertion = GetRangeInsertionPoint(aContainer, aStartChild, aEndChild, aInsertionKind);
+    LAYOUT_PHASE_TEMP_REENTER();
+  }
+
+  if (!insertion.mParentFrame) {
     
     
     
@@ -7570,13 +7582,6 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
     }
     return;
   }
-
-  MOZ_ASSERT_IF(aContainer->IsShadowRoot(), !parentFrame);
-
-  
-  NS_ASSERTION(!parentFrame || parentFrame->GetContent() == aContainer ||
-               IsDisplayContents(aContainer),
-               "New XBL code is possibly wrong!");
 
   if (aInsertionKind == InsertionKind::Async &&
       MaybeConstructLazily(CONTENTINSERT, aStartChild)) {
@@ -7588,24 +7593,6 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
   
   styleNewChildRangeEagerly();
 
-  InsertionPoint insertion;
-  if (isSingleInsert) {
-    
-    
-    
-    insertion = GetInsertionPoint(aStartChild);
-  } else {
-    
-    
-    LAYOUT_PHASE_TEMP_EXIT();
-    insertion = GetRangeInsertionPoint(aContainer, aStartChild, aEndChild);
-    LAYOUT_PHASE_TEMP_REENTER();
-  }
-
-  if (!insertion.mParentFrame) {
-    return;
-  }
-
   bool isAppend, isRangeInsertSafe;
   nsIFrame* prevSibling = GetInsertionPrevSibling(&insertion, aStartChild,
                                                   &isAppend, &isRangeInsertSafe);
@@ -7614,7 +7601,8 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
   if (!isSingleInsert && !isRangeInsertSafe) {
     
     LAYOUT_PHASE_TEMP_EXIT();
-    IssueSingleInsertNofications(aContainer, aStartChild, aEndChild);
+    IssueSingleInsertNofications(
+        aContainer, aStartChild, aEndChild, InsertionKind::Sync);
     LAYOUT_PHASE_TEMP_REENTER();
     return;
   }
@@ -7746,7 +7734,8 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
 
         
         LAYOUT_PHASE_TEMP_EXIT();
-        IssueSingleInsertNofications(aContainer, aStartChild, aEndChild);
+        IssueSingleInsertNofications(
+          aContainer, aStartChild, aEndChild, InsertionKind::Sync);
         LAYOUT_PHASE_TEMP_REENTER();
         return;
       }
