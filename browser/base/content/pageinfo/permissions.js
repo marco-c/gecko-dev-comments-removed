@@ -64,6 +64,27 @@ function initRow(aPartId) {
   let defaultState = SitePermissions.getDefault(aPartId);
 
   
+  
+  if (aPartId == "cookie") {
+    state = Services.perms.testPermissionFromPrincipal(gPermPrincipal, "cookie");
+
+    if (state == SitePermissions.UNKNOWN) {
+      checkbox.checked = true;
+      command.setAttribute("disabled", "true");
+      
+      
+      let radioGroup = document.getElementById("cookieRadioGroup");
+      radioGroup.selectedItem = null;
+    } else {
+      checkbox.checked = false;
+      command.removeAttribute("disabled");
+    }
+
+    setRadioState(aPartId, state);
+    return;
+  }
+
+  
   if (aPartId.startsWith("plugin") && state == SitePermissions.PROMPT_HIDE) {
     defaultState == SitePermissions.UNKNOWN ? state = defaultState : state = SitePermissions.PROMPT;
   }
@@ -146,8 +167,6 @@ function onCheckboxClick(aPartId) {
   if (checkbox.checked) {
     SitePermissions.remove(gPermURI, aPartId);
     command.setAttribute("disabled", "true");
-    var perm = SitePermissions.getDefault(aPartId);
-    setRadioState(aPartId, perm);
   } else {
     onRadioClick(aPartId);
     command.removeAttribute("disabled");
@@ -156,7 +175,7 @@ function onCheckboxClick(aPartId) {
 
 function onRadioClick(aPartId) {
   var radioGroup = document.getElementById(aPartId + "RadioGroup");
-  var id = radioGroup.selectedItem.id;
+  var id = radioGroup.selectedItem ? radioGroup.selectedItem.id : "#1";
   var permission = parseInt(id.split("#")[1]);
   SitePermissions.set(gPermURI, aPartId, permission);
 }
