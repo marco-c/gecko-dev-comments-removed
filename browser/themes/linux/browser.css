@@ -660,7 +660,7 @@ notification[value="translation"] menulist > .menulist-dropmarker {
   
   :root[sizemode="normal"][chromehidden~="menubar"] #TabsToolbar,
   :root[sizemode="normal"] #toolbar-menubar[autohide="true"][inactive] + #TabsToolbar {
-    margin-top: var(--space-above-tabbar);
+    padding-top: var(--space-above-tabbar);
   }
 
   
@@ -668,7 +668,7 @@ notification[value="translation"] menulist > .menulist-dropmarker {
   :root[sizemode="normal"][chromehidden~="menubar"] #TabsToolbar > .accessibility-indicator,
   :root[sizemode="normal"] #toolbar-menubar[autohide="true"][inactive] + #TabsToolbar > .private-browsing-indicator,
   :root[sizemode="normal"] #toolbar-menubar[autohide="true"][inactive] + #TabsToolbar > .accessibility-indicator {
-    margin-top: calc(-1 * var(--space-above-tabbar));
+    padding-top: calc(-1 * var(--space-above-tabbar));
   }
 
   
