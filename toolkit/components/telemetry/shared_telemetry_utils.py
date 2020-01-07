@@ -15,7 +15,7 @@ import sys
 
 KNOWN_PROCESS_FLAGS = {
     'all': 'All',
-    'all_children': 'AllChildren',
+    'all_childs': 'AllChilds',
     'main': 'Main',
     'content': 'Content',
     'gpu': 'Gpu',
