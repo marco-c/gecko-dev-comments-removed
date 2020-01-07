@@ -220,6 +220,7 @@ SandboxLaunchPrepare(GeckoProcessType aType,
     
 
     if (level >= 4) {
+      canChroot = true;
       
       
       
