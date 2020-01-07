@@ -36,36 +36,104 @@
 #include <gdk/gdkwayland.h>
 #include <errno.h>
 
-void
-nsRetrievalContextWayland::ResetMIMETypeList(void)
-{
-  mTargetMIMETypes.Clear();
-}
+#include "wayland/gtk-primary-selection-client-protocol.h"
 
 void
-nsRetrievalContextWayland::AddMIMEType(const char *aMimeType)
+DataOffer::AddMIMEType(const char *aMimeType)
 {
-  GdkAtom atom = gdk_atom_intern(aMimeType, FALSE);
-  mTargetMIMETypes.AppendElement(atom);
+    GdkAtom atom = gdk_atom_intern(aMimeType, FALSE);
+    mTargetMIMETypes.AppendElement(atom);
 }
 
-void
-nsRetrievalContextWayland::SetDataOffer(wl_data_offer *aDataOffer)
+GdkAtom*
+DataOffer::GetTargets(int* aTargetNum)
 {
-    if(mDataOffer) {
-        wl_data_offer_destroy(mDataOffer);
+    int length = mTargetMIMETypes.Length();
+    if (!length) {
+        *aTargetNum = 0;
+        return nullptr;
     }
-    mDataOffer = aDataOffer;
+
+    GdkAtom* targetList = reinterpret_cast<GdkAtom*>(
+        g_malloc(sizeof(GdkAtom)*length));
+    for (int32_t j = 0; j < length; j++) {
+        targetList[j] = mTargetMIMETypes[j];
+    }
+
+    *aTargetNum = length;
+    return targetList;
 }
 
-static void
-data_device_selection (void                  *data,
-                       struct wl_data_device *wl_data_device,
-                       struct wl_data_offer  *offer)
+char*
+DataOffer::GetData(wl_display* aDisplay, const char* aMimeType,
+                   uint32_t* aContentLength)
 {
-    nsRetrievalContextWayland *context =
-        static_cast<nsRetrievalContextWayland*>(data);
-    context->SetDataOffer(offer);
+    int pipe_fd[2];
+    if (pipe(pipe_fd) == -1)
+        return nullptr;
+
+    if (!RequestDataTransfer(aMimeType, pipe_fd[1])) {
+        NS_WARNING("DataOffer::RequestDataTransfer() failed!");
+        close(pipe_fd[0]);
+        close(pipe_fd[1]);
+        return nullptr;
+    }
+
+    close(pipe_fd[1]);
+    wl_display_flush(aDisplay);
+
+    struct pollfd fds;
+    fds.fd = pipe_fd[0];
+    fds.events = POLLIN;
+
+    
+    int ret = poll(&fds, 1, kClipboardTimeout / 1000);
+    if (!ret || ret == -1) {
+        close(pipe_fd[0]);
+        return nullptr;
+    }
+
+    GIOChannel *channel = g_io_channel_unix_new(pipe_fd[0]);
+    GError* error = nullptr;
+    char* clipboardData;
+
+    g_io_channel_set_encoding(channel, nullptr, &error);
+    if (!error) {
+        gsize length = 0;
+        g_io_channel_read_to_end(channel, &clipboardData, &length, &error);
+        if (length == 0) {
+            
+            
+            
+            
+            g_free((void *)clipboardData);
+            clipboardData = nullptr;
+        }
+        *aContentLength = length;
+    }
+
+    if (error) {
+        NS_WARNING(
+            nsPrintfCString("Unexpected error when reading clipboard data: %s",
+                            error->message).get());
+        g_error_free(error);
+    }
+
+    g_io_channel_unref(channel);
+    close(pipe_fd[0]);
+
+    return clipboardData;
+}
+
+bool
+WaylandDataOffer::RequestDataTransfer(const char* aMimeType, int fd)
+{
+    if (mWaylandDataOffer) {
+        wl_data_offer_receive(mWaylandDataOffer, aMimeType, fd);
+        return true;
+    }
+
+    return false;
 }
 
 static void
@@ -73,9 +141,8 @@ data_offer_offer (void                 *data,
                   struct wl_data_offer *wl_data_offer,
                   const char           *type)
 {
-  nsRetrievalContextWayland *context =
-      static_cast<nsRetrievalContextWayland*>(data);
-  context->AddMIMEType(type);
+    auto *offer = static_cast<DataOffer*>(data);
+    offer->AddMIMEType(type);
 }
 
 static void
@@ -92,11 +159,141 @@ data_offer_action(void *data,
 {
 }
 
+
+
+
+
+
+
 static const struct wl_data_offer_listener data_offer_listener = {
     data_offer_offer,
     data_offer_source_actions,
     data_offer_action
 };
+
+WaylandDataOffer::WaylandDataOffer(wl_data_offer* aWaylandDataOffer)
+  : mWaylandDataOffer(aWaylandDataOffer)
+{
+    wl_data_offer_add_listener(mWaylandDataOffer, &data_offer_listener, this);
+}
+
+WaylandDataOffer::~WaylandDataOffer(void)
+{
+    if(mWaylandDataOffer) {
+        wl_data_offer_destroy(mWaylandDataOffer);
+    }
+}
+
+bool
+PrimaryDataOffer::RequestDataTransfer(const char* aMimeType, int fd)
+{
+    if (mPrimaryDataOffer) {
+        gtk_primary_selection_offer_receive(mPrimaryDataOffer, aMimeType, fd);
+        return true;
+    }
+    return false;
+}
+
+static void
+primary_data_offer(void *data,
+                   gtk_primary_selection_offer *gtk_primary_selection_offer,
+                   const char *mime_type)
+{
+    auto *offer = static_cast<DataOffer*>(data);
+    offer->AddMIMEType(mime_type);
+}
+
+
+
+
+
+
+static const struct gtk_primary_selection_offer_listener
+primary_selection_offer_listener = {
+    primary_data_offer
+};
+
+PrimaryDataOffer::PrimaryDataOffer(gtk_primary_selection_offer* aPrimaryDataOffer)
+  : mPrimaryDataOffer(aPrimaryDataOffer)
+{
+    gtk_primary_selection_offer_add_listener(aPrimaryDataOffer,
+        &primary_selection_offer_listener, this);
+}
+
+PrimaryDataOffer::~PrimaryDataOffer(void)
+{
+    if(mPrimaryDataOffer) {
+        gtk_primary_selection_offer_destroy(mPrimaryDataOffer);
+    }
+}
+
+void
+nsRetrievalContextWayland::RegisterDataOffer(wl_data_offer *aWaylandDataOffer)
+{
+  DataOffer* dataOffer =
+      static_cast<DataOffer*>(g_hash_table_lookup(mActiveOffers,
+                                                  aWaylandDataOffer));
+  if (!dataOffer) {
+      dataOffer = new WaylandDataOffer(aWaylandDataOffer);
+      g_hash_table_insert(mActiveOffers, aWaylandDataOffer, dataOffer);
+  }
+}
+
+void
+nsRetrievalContextWayland::RegisterDataOffer(
+    gtk_primary_selection_offer *aPrimaryDataOffer)
+{
+  DataOffer* dataOffer =
+      static_cast<DataOffer*>(g_hash_table_lookup(mActiveOffers,
+                                                  aPrimaryDataOffer));
+  if (!dataOffer) {
+      dataOffer = new PrimaryDataOffer(aPrimaryDataOffer);
+      g_hash_table_insert(mActiveOffers, aPrimaryDataOffer, dataOffer);
+  }
+}
+
+void
+nsRetrievalContextWayland::SetClipboardDataOffer(wl_data_offer *aWaylandDataOffer)
+{
+    DataOffer* dataOffer =
+        static_cast<DataOffer*>(g_hash_table_lookup(mActiveOffers,
+                                                    aWaylandDataOffer));
+    NS_ASSERTION(dataOffer, "We're missing clipboard data offer!");
+    if (dataOffer) {
+        g_hash_table_remove(mActiveOffers, aWaylandDataOffer);
+        mClipboardOffer = dataOffer;
+    }
+}
+
+void
+nsRetrievalContextWayland::SetPrimaryDataOffer(
+      gtk_primary_selection_offer *aPrimaryDataOffer)
+{
+    if (aPrimaryDataOffer == nullptr) {
+        
+        mPrimaryOffer = nullptr;
+    } else {
+        DataOffer* dataOffer =
+            static_cast<DataOffer*>(g_hash_table_lookup(mActiveOffers,
+                                                        aPrimaryDataOffer));
+        NS_ASSERTION(dataOffer, "We're missing primary data offer!");
+        if (dataOffer) {
+            g_hash_table_remove(mActiveOffers, aPrimaryDataOffer);
+            mPrimaryOffer = dataOffer;
+        }
+    }
+}
+
+void
+nsRetrievalContextWayland::ClearDataOffers(void)
+{
+    if (mClipboardOffer)
+        mClipboardOffer = nullptr;
+    if (mPrimaryOffer)
+        mPrimaryOffer = nullptr;
+}
+
+
 
 static void
 data_device_data_offer (void                  *data,
@@ -105,11 +302,20 @@ data_device_data_offer (void                  *data,
 {
     nsRetrievalContextWayland *context =
         static_cast<nsRetrievalContextWayland*>(data);
-
-    
-    context->ResetMIMETypeList();
-    wl_data_offer_add_listener (offer, &data_offer_listener, data);
+    context->RegisterDataOffer(offer);
 }
+
+
+static void
+data_device_selection (void                  *data,
+                       struct wl_data_device *wl_data_device,
+                       struct wl_data_offer  *offer)
+{
+    nsRetrievalContextWayland *context =
+        static_cast<nsRetrievalContextWayland*>(data);
+    context->SetClipboardDataOffer(offer);
+}
+
 
 static void
 data_device_enter (void                  *data,
@@ -143,6 +349,26 @@ data_device_drop (void                  *data,
 {
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 static const struct wl_data_device_listener data_device_listener = {
     data_device_data_offer,
     data_device_enter,
@@ -151,6 +377,39 @@ static const struct wl_data_device_listener data_device_listener = {
     data_device_drop,
     data_device_selection
 };
+
+static void
+primary_selection_data_offer (void                                *data,
+                              struct gtk_primary_selection_device *gtk_primary_selection_device,
+                              struct gtk_primary_selection_offer  *gtk_primary_offer)
+{
+    
+    nsRetrievalContextWayland *context =
+        static_cast<nsRetrievalContextWayland*>(data);
+    context->RegisterDataOffer(gtk_primary_offer);
+}
+
+static void
+primary_selection_selection (void                                *data,
+                             struct gtk_primary_selection_device *gtk_primary_selection_device,
+                             struct gtk_primary_selection_offer  *gtk_primary_offer)
+{
+    nsRetrievalContextWayland *context =
+        static_cast<nsRetrievalContextWayland*>(data);
+    context->SetPrimaryDataOffer(gtk_primary_offer);
+}
+
+static const struct
+gtk_primary_selection_device_listener primary_selection_device_listener = {
+    primary_selection_data_offer,
+    primary_selection_selection,
+};
+
+bool
+nsRetrievalContextWayland::HasSelectionSupport(void)
+{
+    return mPrimarySelectionDataDeviceManager != nullptr;
+}
 
 static void
 keyboard_handle_keymap(void *data, struct wl_keyboard *keyboard,
@@ -173,8 +432,7 @@ keyboard_handle_leave(void *data, struct wl_keyboard *keyboard,
     nsRetrievalContextWayland *context =
         static_cast<nsRetrievalContextWayland*>(data);
 
-    context->ResetMIMETypeList();
-    context->SetDataOffer(nullptr);
+    context->ClearDataOffers();
 }
 
 static void
@@ -233,17 +491,27 @@ nsRetrievalContextWayland::InitDataDeviceManager(wl_registry *registry,
                                                  uint32_t id,
                                                  uint32_t version)
 {
-  int data_device_manager_version = MIN (version, 3);
-  mDataDeviceManager = (wl_data_device_manager *)wl_registry_bind(registry, id,
-      &wl_data_device_manager_interface, data_device_manager_version);
+    int data_device_manager_version = MIN (version, 3);
+    mDataDeviceManager = (wl_data_device_manager *)wl_registry_bind(registry, id,
+        &wl_data_device_manager_interface, data_device_manager_version);
 }
 
-void nsRetrievalContextWayland::InitSeat(wl_registry *registry,
-                                         uint32_t id, uint32_t version,
-                                         void *data)
+void
+nsRetrievalContextWayland::InitPrimarySelectionDataDeviceManager(
+  wl_registry *registry, uint32_t id)
 {
-  mSeat = (wl_seat*)wl_registry_bind(registry, id, &wl_seat_interface, 1);
-  wl_seat_add_listener(mSeat, &seat_listener, data);
+    mPrimarySelectionDataDeviceManager =
+        (gtk_primary_selection_device_manager *)wl_registry_bind(registry, id,
+            &gtk_primary_selection_device_manager_interface, 1);
+}
+
+void
+nsRetrievalContextWayland::InitSeat(wl_registry *registry,
+                                    uint32_t id, uint32_t version,
+                                    void *data)
+{
+    mSeat = (wl_seat*)wl_registry_bind(registry, id, &wl_seat_interface, 1);
+    wl_seat_add_listener(mSeat, &seat_listener, data);
 }
 
 static void
@@ -253,14 +521,16 @@ gdk_registry_handle_global(void               *data,
                            const char         *interface,
                            uint32_t            version)
 {
-  nsRetrievalContextWayland *context =
-      static_cast<nsRetrievalContextWayland*>(data);
+    nsRetrievalContextWayland *context =
+        static_cast<nsRetrievalContextWayland*>(data);
 
-  if (strcmp (interface, "wl_data_device_manager") == 0) {
-    context->InitDataDeviceManager(registry, id, version);
-  } else if (strcmp(interface, "wl_seat") == 0) {
-    context->InitSeat(registry, id, version, data);
-  }
+    if (strcmp (interface, "wl_data_device_manager") == 0) {
+        context->InitDataDeviceManager(registry, id, version);
+    } else if (strcmp(interface, "wl_seat") == 0) {
+        context->InitSeat(registry, id, version, data);
+    } else if (strcmp (interface, "gtk_primary_selection_device_manager") == 0) {
+        context->InitPrimarySelectionDataDeviceManager(registry, id);
+    }
 }
 
 static void
@@ -279,16 +549,15 @@ nsRetrievalContextWayland::nsRetrievalContextWayland(void)
   : mInitialized(false)
   , mSeat(nullptr)
   , mDataDeviceManager(nullptr)
-  , mDataOffer(nullptr)
+  , mPrimarySelectionDataDeviceManager(nullptr)
   , mKeyboard(nullptr)
+  , mActiveOffers(g_hash_table_new(NULL, NULL))
+  , mClipboardOffer(nullptr)
+  , mPrimaryOffer(nullptr)
   , mClipboardRequestNumber(0)
   , mClipboardData(nullptr)
   , mClipboardDataLength(0)
 {
-    const gchar* charset;
-    g_get_charset(&charset);
-    mTextPlainLocale = g_strdup_printf("text/plain;charset=%s", charset);
-
     
     static auto sGdkWaylandDisplayGetWlDisplay =
         (wl_display *(*)(GdkDisplay *))
@@ -317,32 +586,38 @@ nsRetrievalContextWayland::nsRetrievalContextWayland(void)
     wl_display_roundtrip(mDisplay);
     wl_display_roundtrip(mDisplay);
 
+    if (mPrimarySelectionDataDeviceManager) {
+        gtk_primary_selection_device *primaryDataDevice =
+            gtk_primary_selection_device_manager_get_device(mPrimarySelectionDataDeviceManager,
+                                                            mSeat);
+        gtk_primary_selection_device_add_listener(primaryDataDevice,
+            &primary_selection_device_listener, this);
+    }
+
     mInitialized = true;
 }
 
 nsRetrievalContextWayland::~nsRetrievalContextWayland(void)
 {
-    g_free(mTextPlainLocale);
+    g_hash_table_destroy(mActiveOffers);
 }
 
 GdkAtom*
 nsRetrievalContextWayland::GetTargets(int32_t aWhichClipboard,
                                       int* aTargetNum)
 {
-    int length = mTargetMIMETypes.Length();
-    if (!length) {
-        *aTargetNum = 0;
-        return nullptr;
+    if (GetSelectionAtom(aWhichClipboard) == GDK_SELECTION_CLIPBOARD) {
+        if (mClipboardOffer) {
+            return mClipboardOffer->GetTargets(aTargetNum);
+        }
+    } else {
+        if (mPrimaryOffer) {
+            return mPrimaryOffer->GetTargets(aTargetNum);
+        }
     }
 
-    GdkAtom* targetList = reinterpret_cast<GdkAtom*>(
-        g_malloc(sizeof(GdkAtom)*length));
-    for (int32_t j = 0; j < length; j++) {
-        targetList[j] = mTargetMIMETypes[j];
-    }
-
-    *aTargetNum = length;
-    return targetList;
+    *aTargetNum = 0;
+    return nullptr;
 }
 
 struct FastTrackClipboard
@@ -406,66 +681,17 @@ nsRetrievalContextWayland::GetClipboardData(const char* aMimeType,
             wayland_clipboard_contents_received,
             new FastTrackClipboard(mClipboardRequestNumber, this));
     } else {
-        
-
-
-        if (selection == GDK_SELECTION_PRIMARY)
-             return nullptr;
-
-        NS_ASSERTION(mDataOffer, "Requested data without valid data offer!");
-
-        if (!mDataOffer) {
+        DataOffer* dataOffer = (selection == GDK_SELECTION_PRIMARY) ?
+                                  mPrimaryOffer : mClipboardOffer;
+        if (!dataOffer) {
             
             
-            
-            return nullptr;
-        }
-
-        int pipe_fd[2];
-        if (pipe(pipe_fd) == -1)
-            return nullptr;
-
-        wl_data_offer_receive(mDataOffer, aMimeType, pipe_fd[1]);
-        close(pipe_fd[1]);
-        wl_display_flush(mDisplay);
-
-        struct pollfd fds;
-        fds.fd = pipe_fd[0];
-        fds.events = POLLIN;
-
-        
-        int ret = poll(&fds, 1, kClipboardTimeout / 1000);
-        if (!ret || ret == -1) {
-            close(pipe_fd[0]);
-            return nullptr;
-        }
-
-        GIOChannel *channel = g_io_channel_unix_new(pipe_fd[0]);
-        GError* error = nullptr;
-
-        g_io_channel_set_encoding(channel, nullptr, &error);
-        if (!error) {
-            gsize length = 0;
-            g_io_channel_read_to_end(channel, &mClipboardData, &length, &error);
-            mClipboardDataLength = length;
-        }
-
-        if (error) {
-            NS_WARNING(
-                nsPrintfCString("Unexpected error when reading clipboard data: %s",
-                                error->message).get());
-            g_error_free(error);
-        }
-
-        g_io_channel_unref(channel);
-        close(pipe_fd[0]);
-
-        
-        
-        
-        
-        if (mClipboardData && mClipboardDataLength == 0) {
-            ReleaseClipboardData(mClipboardData);
+            NS_WARNING("Requested data without valid DataOffer!");
+            mClipboardData = nullptr;
+            mClipboardDataLength = 0;
+        } else {
+            mClipboardData = dataOffer->GetData(mDisplay,
+                aMimeType, &mClipboardDataLength);
         }
     }
 

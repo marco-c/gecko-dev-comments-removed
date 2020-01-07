@@ -37,6 +37,9 @@
 using namespace mozilla;
 
 
+const int kClipboardTimeout = 500000;
+
+
 void
 clipboard_get_cb(GtkClipboard *aGtkClipboard,
                  GtkSelectionData *aSelectionData,
@@ -66,16 +69,8 @@ GetSelectionAtom(int32_t aWhichClipboard)
     return GDK_SELECTION_PRIMARY;
 }
 
-
-const int nsRetrievalContext::kClipboardTimeout = 500000;
-
 nsClipboard::nsClipboard()
 {
-  nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
-  if (os) {
-      os->AddObserver(this, "quit-application", false);
-      os->AddObserver(this, "xpcom-shutdown", false);
-  }
 }
 
 nsClipboard::~nsClipboard()
@@ -95,14 +90,25 @@ NS_IMPL_ISUPPORTS(nsClipboard, nsIClipboard)
 nsresult
 nsClipboard::Init(void)
 {
+    GdkDisplay *display = gdk_display_get_default();
+
     
-    if (GDK_IS_X11_DISPLAY(gdk_display_get_default())) {
+    
+    if (!display || GDK_IS_X11_DISPLAY(display)) {
         mContext = new nsRetrievalContextX11();
 #if defined(MOZ_WAYLAND)
     } else {
         mContext = new nsRetrievalContextWayland();
 #endif
     }
+    NS_ASSERTION(mContext, "Missing nsRetrievalContext for nsClipboard!");
+
+    nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
+    if (os) {
+        os->AddObserver(this, "quit-application", false);
+        os->AddObserver(this, "xpcom-shutdown", false);
+    }
+
     return NS_OK;
 }
 
@@ -430,9 +436,7 @@ nsClipboard::HasDataMatchingFlavors(const char** aFlavorList, uint32_t aLength,
 NS_IMETHODIMP
 nsClipboard::SupportsSelectionClipboard(bool *_retval)
 {
-    
-    
-    *_retval = GDK_IS_X11_DISPLAY(gdk_display_get_default());
+    *_retval = mContext->HasSelectionSupport();
     return NS_OK;
 }
 
