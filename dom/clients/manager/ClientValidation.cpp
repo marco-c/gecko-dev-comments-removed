@@ -49,12 +49,10 @@ ClientIsValidPrincipalInfo(const PrincipalInfo& aPrincipalInfo)
       NS_ENSURE_SUCCESS(rv, false);
 
       nsAutoCString originOrigin;
-      rv = originURL->GetOrigin(originOrigin);
-      NS_ENSURE_SUCCESS(rv, false);
+      originURL->Origin(originOrigin);
 
       nsAutoCString specOrigin;
-      rv = specURL->GetOrigin(specOrigin);
-      NS_ENSURE_SUCCESS(rv, false);
+      specURL->Origin(specOrigin);
 
       
       
@@ -101,12 +99,10 @@ ClientIsValidCreationURL(const PrincipalInfo& aPrincipalInfo,
       NS_ENSURE_SUCCESS(rv, false);
 
       nsAutoCString origin;
-      rv = url->GetOrigin(origin);
-      NS_ENSURE_SUCCESS(rv, false);
+      url->Origin(origin);
 
       nsAutoCString principalOrigin;
-      rv = principalURL->GetOrigin(principalOrigin);
-      NS_ENSURE_SUCCESS(rv, false);
+      principalURL->Origin(principalOrigin);
 
       
       
@@ -114,9 +110,7 @@ ClientIsValidCreationURL(const PrincipalInfo& aPrincipalInfo,
         return true;
       }
 
-      nsAutoCString scheme;
-      rv = url->GetScheme(scheme);
-      NS_ENSURE_SUCCESS(rv, false);
+      nsDependentCSubstring scheme = url->Scheme();
 
       
       if (scheme.LowerCaseEqualsLiteral("javascript")) {
@@ -130,10 +124,6 @@ ClientIsValidCreationURL(const PrincipalInfo& aPrincipalInfo,
         return true;
       }
 
-      nsAutoCString principalScheme;
-      rv = principalURL->GetScheme(principalScheme);
-      NS_ENSURE_SUCCESS(rv, false);
-
       
       
       
@@ -142,9 +132,7 @@ ClientIsValidCreationURL(const PrincipalInfo& aPrincipalInfo,
     }
     case PrincipalInfo::TSystemPrincipalInfo:
     {
-      nsAutoCString scheme;
-      rv = url->GetScheme(scheme);
-      NS_ENSURE_SUCCESS(rv, false);
+      nsDependentCSubstring scheme = url->Scheme();
 
       
       

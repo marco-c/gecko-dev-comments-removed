@@ -54,12 +54,18 @@ public:
   nsDependentCSubstring Password() const {
     return mozurl_password(this);
   }
+  
+  
   nsDependentCSubstring Host() const {
     return mozurl_host(this);
   }
+  
   int32_t Port() const {
     return mozurl_port(this);
   }
+  
+  
+  
   nsDependentCSubstring HostPort() const {
     return mozurl_host_port(this);
   }
@@ -91,58 +97,6 @@ public:
   }
   nsresult GetRelative(const MozURL* aOther, nsACString* aRelative) const {
     return mozurl_relative(this, aOther, aRelative);
-  }
-
-  
-  nsresult GetScheme(nsACString& aScheme) const {
-    aScheme.Assign(Scheme());
-    return NS_OK;
-  }
-  nsresult GetSpec(nsACString& aSpec) const {
-    aSpec.Assign(Spec());
-    return NS_OK;
-  }
-  nsresult GetUsername(nsACString& aUser) const {
-    aUser.Assign(Username());
-    return NS_OK;
-  }
-  nsresult GetPassword(nsACString& aPassword) const {
-    aPassword.Assign(Password());
-    return NS_OK;
-  }
-  
-  
-  nsresult GetHostname(nsACString& aHost) const {
-    aHost.Assign(Host());
-    return NS_OK;
-  }
-  
-  
-  
-  nsresult GetHostPort(nsACString& aHostPort) const {
-    aHostPort.Assign(HostPort());
-    return NS_OK;
-  }
-  
-  nsresult GetPort(int32_t* aPort) const {
-    *aPort = Port();
-    return NS_OK;
-  }
-  nsresult GetFilePath(nsACString& aPath) const {
-    aPath.Assign(FilePath());
-    return NS_OK;
-  }
-  nsresult GetQuery(nsACString& aQuery) const {
-    aQuery.Assign(Query());
-    return NS_OK;
-  }
-  nsresult GetRef(nsACString& aRef) const {
-    aRef.Assign(Ref());
-    return NS_OK;
-  }
-  nsresult GetOrigin(nsACString& aOrigin) const {
-    Origin(aOrigin);
-    return NS_OK;
   }
 
   class MOZ_STACK_CLASS Mutator
