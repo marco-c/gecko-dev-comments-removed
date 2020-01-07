@@ -112,7 +112,7 @@ function NetworkEventMessage({
     ? dom.a({ className: "status", onClick: toggle }, statusInfo)
     : null;
 
-  const messageBody = [method, xhr, requestUrl, statusBody];
+  const messageBody = [xhr, method, requestUrl, statusBody];
 
   
   
