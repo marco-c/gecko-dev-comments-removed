@@ -13357,7 +13357,7 @@ CodeGenerator::visitFinishBoundFunctionInit(LFinishBoundFunctionInit* lir)
     {
         
         
-        masm.branchTest32(Assembler::Zero, temp1,
+        masm.branchTest32(Assembler::NonZero, temp1,
                           Imm32(JSFunction::HAS_BOUND_FUNCTION_NAME_PREFIX), slowPath);
 
         
