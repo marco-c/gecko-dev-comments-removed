@@ -650,9 +650,7 @@ ContainerLayerComposite::~ContainerLayerComposite()
   
   
   
-  while (mFirstChild) {
-    RemoveChild(mFirstChild);
-  }
+  RemoveAllChildren();
 }
 
 void
