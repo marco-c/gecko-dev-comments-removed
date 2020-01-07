@@ -575,12 +575,9 @@ public:
   }
 
   
-  static void HandleMutations(mozilla::AutoSlowOperation& aAso)
-  {
-    if (sScheduledMutationObservers) {
-      HandleMutationsInternal(aAso);
-    }
-  }
+  static void QueueMutationObserverMicroTask();
+
+  static void HandleMutations(mozilla::AutoSlowOperation& aAso);
 
   static bool AllScheduledMutationObserversAreSuppressed()
   {
