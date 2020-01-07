@@ -26,13 +26,6 @@ namespace layers {
 
 
 
-static const uint32_t MAX_TAP_TIME = 300;
-
-
-
-
-
-
 
 static const float PINCH_START_THRESHOLD = 35.0f;
 
@@ -663,7 +656,7 @@ void GestureEventListener::CreateMaxTapTimeoutTask()
   mMaxTapTimeoutTask = task;
   mAsyncPanZoomController->PostDelayedTask(
     task.forget(),
-    MAX_TAP_TIME);
+    gfxPrefs::APZMaxTapTime());
 }
 
 } 

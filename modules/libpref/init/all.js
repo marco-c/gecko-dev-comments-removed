@@ -737,6 +737,7 @@ pref("apz.keyboard.passive-listeners", true);
 pref("apz.keyboard.enabled", false);
 pref("apz.keyboard.passive-listeners", false);
 #endif
+pref("apz.max_tap_time", 300);
 pref("apz.max_velocity_inches_per_ms", "-1.0");
 pref("apz.max_velocity_queue_size", 5);
 pref("apz.min_skate_speed", "1.0");
@@ -1801,13 +1802,6 @@ pref("network.http.tls-handshake-timeout", 30);
 
 
 
-
-
-pref("network.http.fallback-connection-timeout", 5);
-
-
-
-
 pref("network.http.network-changed.timeout", 5);
 
 
@@ -2285,7 +2279,7 @@ pref("network.auth.private-browsing-sso", false);
 
 
 pref("network.http.throttle.enable", true);
-pref("network.http.throttle.version", 2);
+pref("network.http.throttle.version", 1);
 
 
 pref("network.http.throttle.suspend-for", 900);
