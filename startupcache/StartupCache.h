@@ -114,7 +114,7 @@ public:
   nsresult GetBuffer(const char* id, UniquePtr<char[]>* outbuf, uint32_t* length);
 
   
-  nsresult PutBuffer(const char* id, const char* inbuf, uint32_t length);
+  nsresult PutBuffer(const char* id, UniquePtr<char[]>&& inbuf, uint32_t length);
 
   
   void InvalidateCache();
