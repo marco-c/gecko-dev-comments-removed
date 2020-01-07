@@ -285,6 +285,11 @@ ChannelMediaResource::OnStartRequest(nsIRequest* aRequest,
   
   
   UpdatePrincipal();
+  if (owner->HasError()) {
+    
+    CloseChannel();
+    return NS_OK;
+  }
 
   mCacheStream.NotifyDataStarted(mLoadID, startOffset, seekable, length);
   mIsTransportSeekable = seekable;

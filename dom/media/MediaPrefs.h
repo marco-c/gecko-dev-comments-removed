@@ -200,6 +200,7 @@ private:
 
   
   DECL_MEDIA_PREF("media.seamless-looping",                   SeamlessLooping, bool, true);
+
 public:
   
   static MediaPrefs& GetSingleton();
