@@ -135,6 +135,7 @@ class CompositorD3D11;
 class BasicCompositor;
 class TextureReadLock;
 struct GPUStats;
+class AsyncReadbackBuffer;
 
 enum SurfaceInitMode
 {
@@ -261,6 +262,23 @@ public:
   CreateRenderTargetFromSource(const gfx::IntRect& aRect,
                                const CompositingRenderTarget* aSource,
                                const gfx::IntPoint& aSourcePoint) = 0;
+
+  
+
+
+
+
+
+
+  virtual bool
+  ReadbackRenderTarget(CompositingRenderTarget* aSource,
+                       AsyncReadbackBuffer* aDest) { return false; }
+
+  
+
+
+  virtual already_AddRefed<AsyncReadbackBuffer>
+  CreateAsyncReadbackBuffer(const gfx::IntSize& aSize) { return nullptr; }
 
   
 
@@ -624,6 +642,22 @@ BlendOpIsMixBlendMode(gfx::CompositionOp aOp)
     return false;
   }
 }
+
+class AsyncReadbackBuffer
+{
+public:
+  NS_INLINE_DECL_REFCOUNTING(AsyncReadbackBuffer)
+
+  gfx::IntSize GetSize() const { return mSize; }
+  virtual bool MapAndCopyInto(gfx::DataSourceSurface* aSurface,
+                              const gfx::IntSize& aReadSize) const=0;
+
+protected:
+  explicit AsyncReadbackBuffer(const gfx::IntSize& aSize) : mSize(aSize) {}
+  virtual ~AsyncReadbackBuffer() {}
+
+  gfx::IntSize mSize;
+};
 
 struct TexturedVertex
 {
