@@ -97,6 +97,16 @@ void SaveSettings()
 
 void SendReport()
 {
+#ifdef MOZ_ENABLE_GCONF
+  LoadProxyinfo();
+#endif
+
+  
+  gSendThreadID = g_thread_create(SendThread, nullptr, TRUE, nullptr);
+}
+
+void DisableGUIAndSendReport()
+{
   
   gtk_widget_set_sensitive(gSubmitReportCheck, FALSE);
   gtk_widget_set_sensitive(gViewReportButton, FALSE);
@@ -112,13 +122,7 @@ void SendReport()
   gtk_label_set_text(GTK_LABEL(gProgressLabel),
                      gStrings[ST_REPORTDURINGSUBMIT].c_str());
 
-#ifdef MOZ_ENABLE_GCONF
-  LoadProxyinfo();
-#endif
-
-  
-  GError* err;
-  gSendThreadID = g_thread_create(SendThread, nullptr, TRUE, &err);
+  SendReport();
 }
 
 static void ShowReportInfo(GtkTextView* viewReportTextView)
@@ -390,6 +394,12 @@ bool UIShowCrashUI(const StringTable& files,
   gRestartArgs = restartArgs;
   if (gQueryParameters.find("URL") != gQueryParameters.end())
     gURLParameter = gQueryParameters["URL"];
+
+  if (gAutoSubmit) {
+    SendReport();
+    CloseApp(nullptr);
+    return true;
+  }
 
   gWindow = gtk_window_new(GTK_WINDOW_TOPLEVEL);
   gtk_window_set_title(GTK_WINDOW(gWindow),
