@@ -52,7 +52,8 @@ public:
 
   
   bool OnStopRequest(const nsresult& aChannelStatus,
-                     const ResourceTimingStruct& aTiming);
+                     const ResourceTimingStruct& aTiming,
+                     const nsHttpHeaderArray& aResponseTrailers);
 
   
   bool OnProgress(const int64_t& aProgress,
