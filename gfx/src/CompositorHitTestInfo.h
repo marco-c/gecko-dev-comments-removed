@@ -48,7 +48,13 @@ enum class CompositorHitTestInfo : uint16_t {
 
   
   
-  ALL_BITS = (1 << 9) - 1,
+  
+  
+  eRequiresTargetConfirmation = 1 << 9,
+
+  
+  
+  ALL_BITS = (1 << 10) - 1,
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(CompositorHitTestInfo)

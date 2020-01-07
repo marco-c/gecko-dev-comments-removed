@@ -112,6 +112,7 @@ private:
 private:
   RefPtr<AsyncPanZoomController> mTargetApzc;
   TargetConfirmationState mTargetConfirmed;
+  bool mRequiresTargetConfirmation;
   const uint64_t mBlockId;
 
   
