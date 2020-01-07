@@ -561,37 +561,37 @@ void* ExceptionHandler::WaitForMessage(void* exception_handler_class) {
           self->SuspendThreads();
 
 #if USE_PROTECTED_ALLOCATIONS
-        if (gBreakpadAllocator)
-          gBreakpadAllocator->Unprotect();
+          if (gBreakpadAllocator)
+            gBreakpadAllocator->Unprotect();
 #endif
 
-        int subcode = 0;
-        if (receive.exception == EXC_BAD_ACCESS && receive.code_count > 1)
-          subcode = receive.code[1];
+          int subcode = 0;
+          if (receive.exception == EXC_BAD_ACCESS && receive.code_count > 1)
+            subcode = receive.code[1];
 
-        
-        self->WriteMinidumpWithException(receive.exception, receive.code[0],
-                                         subcode, NULL, receive.thread.name,
-                                         true, false);
+          
+          self->WriteMinidumpWithException(receive.exception, receive.code[0],
+                                           subcode, NULL, receive.thread.name,
+                                           true, false);
 
 #if USE_PROTECTED_ALLOCATIONS
-        
-        
-        
-        if (gBreakpadAllocator)
-          gBreakpadAllocator->Unprotect();
+          
+          
+          
+          if (gBreakpadAllocator)
+            gBreakpadAllocator->Unprotect();
 #endif
 
-        self->UninstallHandler(true);
+          self->UninstallHandler(true);
 
 #if USE_PROTECTED_ALLOCATIONS
-        if (gBreakpadAllocator)
-          gBreakpadAllocator->Protect();
+          if (gBreakpadAllocator)
+            gBreakpadAllocator->Protect();
 #endif
-        
-        
-        
-        self->ResumeThreads();
+          
+          
+          
+          self->ResumeThreads();
         }
 
         
