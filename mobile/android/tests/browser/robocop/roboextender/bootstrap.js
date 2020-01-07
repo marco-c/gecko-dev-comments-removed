@@ -30,14 +30,11 @@ var windowListener = {
 };
 
 function startup(aData, aReason) {
-  let wm = Cc["@mozilla.org/appshell/window-mediator;1"].getService(Ci.nsIWindowMediator);
-
   
-  wm.addListener(windowListener);
+  Services.wm.addListener(windowListener);
   EventDispatcher.instance.registerListener(function(event, data, callback) {
       dump("Robocop:Quit received -- requesting quit");
-      let appStartup = Cc["@mozilla.org/toolkit/app-startup;1"].getService(Ci.nsIAppStartup);
-      appStartup.quit(Ci.nsIAppStartup.eForceQuit);
+      Services.startup.quit(Ci.nsIAppStartup.eForceQuit);
   }, "Robocop:Quit");
 }
 
@@ -45,12 +42,9 @@ function shutdown(aData, aReason) {
   
   if (aReason == APP_SHUTDOWN) return;
 
-  let wm = Cc["@mozilla.org/appshell/window-mediator;1"].getService(Ci.nsIWindowMediator);
-
   
-  wm.removeListener(windowListener);
+  Services.wm.removeListener(windowListener);
 }
 
 function install(aData, aReason) { }
 function uninstall(aData, aReason) { }
-
