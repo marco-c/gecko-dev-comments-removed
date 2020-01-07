@@ -210,6 +210,13 @@ public:
     return AlignmentOffset() * 2;
   }
 
+  void PopFront(size_t aSize)
+  {
+    MOZ_ASSERT(mLength >= aSize);
+    PodMove(mData, mData + aSize, mLength - aSize);
+    mLength -= aSize;
+  }
+
 private:
   static size_t AlignmentOffset()
   {
@@ -637,6 +644,8 @@ public:
   bool Replace(const uint8_t* aData, size_t aSize);
   
   void Clear();
+  
+  void PopFront(size_t aSize);
 
 private:
   friend class MediaRawData;
