@@ -397,8 +397,10 @@ class MOZ_NON_PARAM alignas(8) Value
         
         
         
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
         JSObject* testObj = &obj;
         MOZ_DIAGNOSTIC_ASSERT(testObj != nullptr);
+#endif
 
 #if defined(JS_PUNBOX64)
         
