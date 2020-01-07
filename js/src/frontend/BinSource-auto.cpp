@@ -4567,7 +4567,7 @@ BinASTParser<Tok>::parseInterfaceEagerFunctionDeclaration(const size_t start, co
 
 
 #if defined(DEBUG)
-    const BinField expected_fields[7] = { BinField::IsAsync, BinField::IsGenerator, BinField::ParameterScope, BinField::BodyScope, BinField::Name, BinField::Params, BinField::Body };
+    const BinField expected_fields[7] = { BinField::IsAsync, BinField::IsGenerator, BinField::Name, BinField::ParameterScope, BinField::BodyScope, BinField::Params, BinField::Body };
     MOZ_TRY(tokenizer_->checkFields(kind, fields, expected_fields));
 #endif 
 
@@ -4582,12 +4582,17 @@ BinASTParser<Tok>::parseInterfaceEagerFunctionDeclaration(const size_t start, co
     BINJS_MOZ_TRY_DECL(isGenerator, tokenizer_->readBool());
 
 
+
+
+    BINJS_MOZ_TRY_DECL(name, parseBindingIdentifier());
+
+
     BINJS_MOZ_TRY_DECL(funbox, buildFunctionBox(
         isGenerator ? GeneratorKind::Generator
                     : GeneratorKind::NotGenerator,
         isAsync ? FunctionAsyncKind::AsyncFunction
                 : FunctionAsyncKind::SyncFunction,
-        syntax));
+        syntax, name));
 
     
     BinParseContext funpc(cx_, this, funbox,  nullptr);
@@ -4604,11 +4609,6 @@ BinASTParser<Tok>::parseInterfaceEagerFunctionDeclaration(const size_t start, co
 
 
     MOZ_TRY(parseOptionalAssertedVarScope());
-
-
-
-
-    BINJS_MOZ_TRY_DECL(name, parseBindingIdentifier());
 
 
 
@@ -4663,7 +4663,7 @@ BinASTParser<Tok>::parseInterfaceEagerFunctionExpression(const size_t start, con
 
 
 #if defined(DEBUG)
-    const BinField expected_fields[7] = { BinField::IsAsync, BinField::IsGenerator, BinField::ParameterScope, BinField::BodyScope, BinField::Name, BinField::Params, BinField::Body };
+    const BinField expected_fields[7] = { BinField::IsAsync, BinField::IsGenerator, BinField::Name, BinField::ParameterScope, BinField::BodyScope, BinField::Params, BinField::Body };
     MOZ_TRY(tokenizer_->checkFields(kind, fields, expected_fields));
 #endif 
 
@@ -4678,12 +4678,17 @@ BinASTParser<Tok>::parseInterfaceEagerFunctionExpression(const size_t start, con
     BINJS_MOZ_TRY_DECL(isGenerator, tokenizer_->readBool());
 
 
+
+
+    BINJS_MOZ_TRY_DECL(name, parseOptionalBindingIdentifier());
+
+
     BINJS_MOZ_TRY_DECL(funbox, buildFunctionBox(
         isGenerator ? GeneratorKind::Generator
                     : GeneratorKind::NotGenerator,
         isAsync ? FunctionAsyncKind::AsyncFunction
                 : FunctionAsyncKind::SyncFunction,
-        syntax));
+        syntax, name));
 
     
     BinParseContext funpc(cx_, this, funbox,  nullptr);
@@ -4700,11 +4705,6 @@ BinASTParser<Tok>::parseInterfaceEagerFunctionExpression(const size_t start, con
 
 
     MOZ_TRY(parseOptionalAssertedVarScope());
-
-
-
-
-    BINJS_MOZ_TRY_DECL(name, parseOptionalBindingIdentifier());
 
 
 
@@ -4773,7 +4773,7 @@ BinASTParser<Tok>::parseInterfaceEagerGetter(const size_t start, const BinKind k
     BINJS_MOZ_TRY_DECL(funbox, buildFunctionBox(
         GeneratorKind::NotGenerator,
         FunctionAsyncKind::SyncFunction,
-        FunctionSyntaxKind::Getter));
+        FunctionSyntaxKind::Getter, name));
 
     
     BinParseContext funpc(cx_, this, funbox,  nullptr);
@@ -4829,7 +4829,7 @@ BinASTParser<Tok>::parseInterfaceEagerMethod(const size_t start, const BinKind k
 
 
 #if defined(DEBUG)
-    const BinField expected_fields[7] = { BinField::IsAsync, BinField::IsGenerator, BinField::ParameterScope, BinField::BodyScope, BinField::Name, BinField::Params, BinField::Body };
+    const BinField expected_fields[7] = { BinField::IsAsync, BinField::IsGenerator, BinField::Name, BinField::ParameterScope, BinField::BodyScope, BinField::Params, BinField::Body };
     MOZ_TRY(tokenizer_->checkFields(kind, fields, expected_fields));
 #endif 
 
@@ -4844,12 +4844,17 @@ BinASTParser<Tok>::parseInterfaceEagerMethod(const size_t start, const BinKind k
     BINJS_MOZ_TRY_DECL(isGenerator, tokenizer_->readBool());
 
 
+
+
+    BINJS_MOZ_TRY_DECL(name, parsePropertyName());
+
+
     BINJS_MOZ_TRY_DECL(funbox, buildFunctionBox(
         isGenerator ? GeneratorKind::Generator
                     : GeneratorKind::NotGenerator,
         isAsync ? FunctionAsyncKind::AsyncFunction
                 : FunctionAsyncKind::SyncFunction,
-        syntax));
+        syntax, name));
 
     
     BinParseContext funpc(cx_, this, funbox,  nullptr);
@@ -4866,11 +4871,6 @@ BinASTParser<Tok>::parseInterfaceEagerMethod(const size_t start, const BinKind k
 
 
     MOZ_TRY(parseOptionalAssertedVarScope());
-
-
-
-
-    BINJS_MOZ_TRY_DECL(name, parsePropertyName());
 
 
 
@@ -4922,9 +4922,14 @@ BinASTParser<Tok>::parseInterfaceEagerSetter(const size_t start, const BinKind k
 
 
 #if defined(DEBUG)
-    const BinField expected_fields[5] = { BinField::ParameterScope, BinField::BodyScope, BinField::Name, BinField::Param, BinField::Body };
+    const BinField expected_fields[5] = { BinField::Name, BinField::ParameterScope, BinField::BodyScope, BinField::Param, BinField::Body };
     MOZ_TRY(tokenizer_->checkFields(kind, fields, expected_fields));
 #endif 
+
+
+
+
+    BINJS_MOZ_TRY_DECL(name, parsePropertyName());
 
 
 
@@ -4939,18 +4944,13 @@ BinASTParser<Tok>::parseInterfaceEagerSetter(const size_t start, const BinKind k
 
 
 
-    BINJS_MOZ_TRY_DECL(name, parsePropertyName());
-
-
-
-
     BINJS_MOZ_TRY_DECL(param, parseParameter());
 
 
     BINJS_MOZ_TRY_DECL(funbox, buildFunctionBox(
         GeneratorKind::NotGenerator,
         FunctionAsyncKind::SyncFunction,
-        FunctionSyntaxKind::Setter));
+        FunctionSyntaxKind::Setter, name));
 
     
     BinParseContext funpc(cx_, this, funbox,  nullptr);
