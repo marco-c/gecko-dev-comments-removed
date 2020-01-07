@@ -25,6 +25,7 @@ const GECKOVIEW_MESSAGE = {
   PREVIOUS: "GeckoView:AccessibilityPrevious",
   SCROLL_BACKWARD: "GeckoView:AccessibilityScrollBackward",
   SCROLL_FORWARD: "GeckoView:AccessibilityScrollForward",
+  EXPLORE_BY_TOUCH: "GeckoView:AccessibilityExploreByTouch"
 };
 
 var AccessFu = {
@@ -282,7 +283,7 @@ var AccessFu = {
         this.Input.activateCurrent(data);
         break;
       case GECKOVIEW_MESSAGE.LONG_PRESS:
-        this.Input.sendContextMenuMessage();
+        
         break;
       case GECKOVIEW_MESSAGE.SCROLL_FORWARD:
         this.Input.androidScroll("forward");
@@ -298,6 +299,9 @@ var AccessFu = {
         break;
       case GECKOVIEW_MESSAGE.BY_GRANULARITY:
         this.Input.moveByGranularity(data);
+        break;
+      case GECKOVIEW_MESSAGE.EXPLORE_BY_TOUCH:
+        this.Input.moveToPoint("Simple", ...data.coordinates);
         break;
     }
   },
@@ -379,26 +383,15 @@ var AccessFu = {
 
 
 
-
-
-  adjustContentBounds(aJsonBounds, aBrowser, aToCSSPixels) {
+  screenToClientBounds(aJsonBounds) {
       let bounds = new Rect(aJsonBounds.left, aJsonBounds.top,
                             aJsonBounds.right - aJsonBounds.left,
                             aJsonBounds.bottom - aJsonBounds.top);
       let win = Utils.win;
       let dpr = win.devicePixelRatio;
-      let offset = { left: -win.mozInnerScreenX, top: -win.mozInnerScreenY };
 
-      
-      
-      bounds = bounds.translate(offset.left * dpr, offset.top * dpr);
-
-      
-      
-      if (aToCSSPixels) {
-        bounds = bounds.scale(1 / dpr, 1 / dpr);
-      }
-
+      bounds = bounds.scale(1 / dpr, 1 / dpr);
+      bounds = bounds.translate(-win.mozInnerScreenX, -win.mozInnerScreenY);
       return bounds.expandToIntegers();
     }
 };
@@ -517,7 +510,7 @@ var Output = {
         }
 
         let padding = aDetail.padding;
-        let r = AccessFu.adjustContentBounds(aDetail.bounds, aBrowser, true);
+        let r = AccessFu.screenToClientBounds(aDetail.bounds);
 
         
         highlightBox.classList.remove("show");
@@ -546,10 +539,6 @@ var Output = {
 
     for (let androidEvent of aDetails) {
       androidEvent.type = "GeckoView:AccessibilityEvent";
-      if (androidEvent.bounds) {
-        androidEvent.bounds = AccessFu.adjustContentBounds(
-          androidEvent.bounds, aBrowser);
-      }
 
       switch (androidEvent.eventType) {
         case ANDROID_VIEW_TEXT_CHANGED:
@@ -837,11 +826,6 @@ var Input = {
                         {offset, activateIfKey: aActivateIfKey});
   },
 
-  sendContextMenuMessage: function sendContextMenuMessage() {
-    let mm = Utils.getMessageManager(Utils.CurrentBrowser);
-    mm.sendAsyncMessage("AccessFu:ContextMenu", {});
-  },
-
   setEditState: function setEditState(aEditState) {
     Logger.debug(() => { return ["setEditState", JSON.stringify(aEditState)]; });
     this.editState = aEditState;
@@ -862,8 +846,7 @@ var Input = {
   doScroll: function doScroll(aDetails) {
     let horizontal = aDetails.horizontal;
     let page = aDetails.page;
-    let p = AccessFu.adjustContentBounds(
-      aDetails.bounds, Utils.CurrentBrowser, true).center();
+    let p = AccessFu.screenToClientBounds(aDetails.bounds).center();
     Utils.winUtils.sendWheelEvent(p.x, p.y,
       horizontal ? page : 0, horizontal ? 0 : page, 0,
       Utils.win.WheelEvent.DOM_DELTA_PAGE, 0, 0, 0, 0);
