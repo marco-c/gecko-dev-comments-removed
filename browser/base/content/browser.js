@@ -222,6 +222,8 @@ XPCOMUtils.defineLazyGetter(this, "Win7Features", function() {
   return null;
 });
 
+const nsIWebNavigation = Ci.nsIWebNavigation;
+
 var gBrowser;
 var gLastValidURLStr = "";
 var gInPrintPreviewMode = false;
@@ -1193,7 +1195,7 @@ var gBrowserInit = {
     gBrowser.init();
 
     window.QueryInterface(Ci.nsIInterfaceRequestor)
-          .getInterface(Ci.nsIWebNavigation)
+          .getInterface(nsIWebNavigation)
           .QueryInterface(Ci.nsIDocShellTreeItem).treeOwner
           .QueryInterface(Ci.nsIInterfaceRequestor)
           .getInterface(Ci.nsIXULWindow)
@@ -2172,8 +2174,9 @@ function BrowserHandleShiftBackspace() {
 }
 
 function BrowserStop() {
+  const stopFlags = nsIWebNavigation.STOP_ALL;
   maybeRecordAbandonmentTelemetry(gBrowser.selectedTab, "stop");
-  gBrowser.webNavigation.stop(Ci.nsIWebNavigation.STOP_ALL);
+  gBrowser.webNavigation.stop(stopFlags);
 }
 
 function BrowserReloadOrDuplicate(aEvent) {
@@ -2199,14 +2202,13 @@ function BrowserReload() {
     
     return BrowserReloadSkipCache();
   }
-  const reloadFlags = Ci.nsIWebNavigation.LOAD_FLAGS_NONE;
+  const reloadFlags = nsIWebNavigation.LOAD_FLAGS_NONE;
   BrowserReloadWithFlags(reloadFlags);
 }
 
 function BrowserReloadSkipCache() {
   
-  const reloadFlags = Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_PROXY |
-                      Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CACHE;
+  const reloadFlags = nsIWebNavigation.LOAD_FLAGS_BYPASS_PROXY | nsIWebNavigation.LOAD_FLAGS_BYPASS_CACHE;
   BrowserReloadWithFlags(reloadFlags);
 }
 
@@ -3151,7 +3153,7 @@ var BrowserOnClick = {
     
     
     gBrowser.loadURIWithFlags(gBrowser.currentURI.spec,
-                              Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CLASSIFIER,
+                              nsIWebNavigation.LOAD_FLAGS_BYPASS_CLASSIFIER,
                               null, null, null);
 
     Services.perms.add(gBrowser.currentURI, "safe-browsing",
@@ -5144,6 +5146,7 @@ var TabsProgressListener = {
     
     if (aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT) {
       
+      
       aBrowser.messageManager.sendAsyncMessage("Reader:PushState", {
         isArticle: aBrowser.isArticle,
       });
@@ -5319,11 +5322,11 @@ nsBrowserAccess.prototype = {
                             Ci.nsIWebNavigation.LOAD_FLAGS_FROM_EXTERNAL :
                             Ci.nsIWebNavigation.LOAD_FLAGS_NONE;
           gBrowser.loadURIWithFlags(aURI.spec, {
-            aTriggeringPrincipal,
-            flags: loadflags,
-            referrerURI: referrer,
-            referrerPolicy,
-          });
+                                    aTriggeringPrincipal,
+                                    flags: loadflags,
+                                    referrerURI: referrer,
+                                    referrerPolicy,
+                                    });
         }
         if (!Services.prefs.getBoolPref("browser.tabs.loadDivertedInBackground"))
           window.focus();
@@ -6203,7 +6206,7 @@ function BrowserSetForcedCharacterSet(aCharset) {
 }
 
 function BrowserCharsetReload() {
-  BrowserReloadWithFlags(Ci.nsIWebNavigation.LOAD_FLAGS_CHARSET_CHANGE);
+  BrowserReloadWithFlags(nsIWebNavigation.LOAD_FLAGS_CHARSET_CHANGE);
 }
 
 function UpdateCurrentCharset(target) {
