@@ -13,6 +13,7 @@
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Move.h"
+#include "mozilla/ScopeExit.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/TimeStamp.h"
@@ -2696,7 +2697,16 @@ MessageChannel::Close()
     AssertWorkerThread();
 
     {
-        MonitorAutoLock lock(*mMonitor);
+        
+        
+        
+        mMonitor->Lock();
+
+        
+        RefPtr<RefCountedMonitor> monitor(mMonitor);
+        auto exit = MakeScopeExit([m = Move(monitor)] () {
+          m->Unlock();
+        });
 
         if (ChannelError == mChannelState || ChannelTimeout == mChannelState) {
             
@@ -2705,7 +2715,8 @@ MessageChannel::Close()
             
             
             if (mListener) {
-                MonitorAutoUnlock unlock(*mMonitor);
+                exit.release(); 
+                mMonitor->Unlock();
                 NotifyMaybeChannelError();
             }
             return;
