@@ -176,7 +176,7 @@ Client::Focus(ErrorResult& aRv)
   
   
   RefPtr<WorkerHolderToken> token =
-    WorkerHolderToken::Create(GetCurrentThreadWorkerPrivate(), Terminating);
+    WorkerHolderToken::Create(GetCurrentThreadWorkerPrivate(), Closing);
 
   EnsureHandle();
   RefPtr<ClientStatePromise> innerPromise = mHandle->Focus();

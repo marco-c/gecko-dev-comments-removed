@@ -8,7 +8,6 @@
 
 #include "js/MemoryMetrics.h"
 #include "MessageEventRunnable.h"
-#include "mozilla/ScopeExit.h"
 #include "mozilla/dom/ClientManager.h"
 #include "mozilla/dom/ClientSource.h"
 #include "mozilla/dom/ClientState.h"
@@ -977,93 +976,6 @@ public:
   virtual bool Notify(WorkerStatus aStatus) override { return true; }
 };
 
-
-
-
-
-class CancelingOnParentRunnable final : public WorkerRunnable
-{
-public:
-  explicit CancelingOnParentRunnable(WorkerPrivate* aWorkerPrivate)
-    : WorkerRunnable(aWorkerPrivate, ParentThreadUnchangedBusyCount)
-  {}
-
-  bool
-  WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override
-  {
-    aWorkerPrivate->Cancel();
-    return true;
-  }
-};
-
-
-class CancelingWithTimeoutOnParentRunnable final : public WorkerControlRunnable
-{
-public:
-  explicit CancelingWithTimeoutOnParentRunnable(WorkerPrivate* aWorkerPrivate)
-    : WorkerControlRunnable(aWorkerPrivate, ParentThreadUnchangedBusyCount)
-  {}
-
-  bool
-  WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override
-  {
-    aWorkerPrivate->AssertIsOnParentThread();
-    aWorkerPrivate->StartCancelingTimer();
-    return true;
-  }
-};
-
-class CancelingTimerCallback final : public nsITimerCallback
-{
-public:
-  NS_DECL_ISUPPORTS
-
-  explicit CancelingTimerCallback(WorkerPrivate* aWorkerPrivate)
-    : mWorkerPrivate(aWorkerPrivate)
-  {}
-
-  NS_IMETHOD
-  Notify(nsITimer* aTimer) override
-  {
-    mWorkerPrivate->AssertIsOnParentThread();
-    mWorkerPrivate->Cancel();
-    return NS_OK;
-  }
-
-private:
-  ~CancelingTimerCallback() = default;
-
-  
-  
-  WorkerPrivate* mWorkerPrivate;
-};
-
-NS_IMPL_ISUPPORTS(CancelingTimerCallback, nsITimerCallback)
-
-
-class CancelingRunnable final : public Runnable
-{
-public:
-  CancelingRunnable()
-    : Runnable("CancelingRunnable")
-  {}
-
-  NS_IMETHOD
-  Run() override
-  {
-    WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
-    MOZ_ASSERT(workerPrivate);
-    workerPrivate->AssertIsOnWorkerThread();
-
-    
-    RefPtr<CancelingOnParentRunnable> r =
-      new CancelingOnParentRunnable(workerPrivate);
-    r->Dispatch();
-
-    return NS_OK;
-  }
-};
-
 } 
 
 class WorkerPrivate::EventTarget final : public nsISerialEventTarget
@@ -1824,12 +1736,6 @@ WorkerPrivate::NotifyPrivate(WorkerStatus aStatus)
 
   
   mQueuedRunnables.Clear();
-
-  
-  if (mCancelingTimer) {
-    mCancelingTimer->Cancel();
-    mCancelingTimer = nullptr;
-  }
 
   RefPtr<NotifyRunnable> runnable = new NotifyRunnable(this, aStatus);
   return runnable->Dispatch();
@@ -3703,13 +3609,6 @@ WorkerPrivate::InterruptCallback(JSContext* aCx)
   return true;
 }
 
-void
-WorkerPrivate::CloseInternal()
-{
-  AssertIsOnWorkerThread();
-  NotifyInternal(Closing);
-}
-
 bool
 WorkerPrivate::IsOnCurrentThread()
 {
@@ -4580,23 +4479,7 @@ WorkerPrivate::NotifyInternal(WorkerStatus aStatus)
   }
 
   
-  
   if (aStatus == Closing) {
-    if (mSyncLoopStack.IsEmpty()) {
-      
-      
-      
-      
-      RefPtr<CancelingRunnable> r = new CancelingRunnable();
-      mThread->nsThread::Dispatch(r.forget(), NS_DISPATCH_NORMAL);
-
-      
-      
-      
-      RefPtr<CancelingWithTimeoutOnParentRunnable> rr =
-        new CancelingWithTimeoutOnParentRunnable(this);
-      rr->Dispatch();
-    }
     return true;
   }
 
@@ -4961,48 +4844,6 @@ WorkerPrivate::RescheduleTimeoutTimer(JSContext* aCx)
   }
 
   return true;
-}
-
-void
-WorkerPrivate::StartCancelingTimer()
-{
-  AssertIsOnParentThread();
-
-  auto errorCleanup = MakeScopeExit([&] {
-    mCancelingTimer = nullptr;
-  });
-
-  MOZ_ASSERT(!mCancelingTimer);
-
-  if (WorkerPrivate* parent = GetParent()) {
-    mCancelingTimer = NS_NewTimer(parent->ControlEventTarget());
-  } else {
-    mCancelingTimer = NS_NewTimer();
-  }
-
-  if (NS_WARN_IF(!mCancelingTimer)) {
-    return;
-  }
-
-  
-  {
-    MutexAutoLock lock(mMutex);
-    if (ParentStatus() >= Terminating) {
-      return;
-    }
-  }
-
-  uint32_t cancelingTimeoutMillis = DOMPrefs::WorkerCancelingTimeoutMillis();
-
-  RefPtr<CancelingTimerCallback> callback = new CancelingTimerCallback(this);
-  nsresult rv = mCancelingTimer->InitWithCallback(callback,
-                                                  cancelingTimeoutMillis,
-                                                  nsITimer::TYPE_ONE_SHOT);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return;
-  }
-
-  errorCleanup.release();
 }
 
 void

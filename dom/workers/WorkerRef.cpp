@@ -70,10 +70,6 @@ public:
   {
     MOZ_ASSERT(mWorkerRef);
 
-    if (aStatus < Canceling) {
-      return true;
-    }
-
     
     RefPtr<WorkerRef> workerRef;
     workerRef = mWorkerRef;
@@ -132,7 +128,7 @@ WeakWorkerRef::Create(WorkerPrivate* aWorkerPrivate,
   
   UniquePtr<Holder> holder(new Holder("WeakWorkerRef::Holder", ref,
                                       WorkerHolder::AllowIdleShutdownStart));
-  if (NS_WARN_IF(!holder->HoldWorker(aWorkerPrivate, Canceling))) {
+  if (NS_WARN_IF(!holder->HoldWorker(aWorkerPrivate, Closing))) {
     return nullptr;
   }
 
@@ -186,7 +182,7 @@ StrongWorkerRef::Create(WorkerPrivate* aWorkerPrivate,
   
   UniquePtr<Holder> holder(new Holder(aName, ref,
                                       WorkerHolder::PreventIdleShutdownStart));
-  if (NS_WARN_IF(!holder->HoldWorker(aWorkerPrivate, Canceling))) {
+  if (NS_WARN_IF(!holder->HoldWorker(aWorkerPrivate, Closing))) {
     return nullptr;
   }
 
