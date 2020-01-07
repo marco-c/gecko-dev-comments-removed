@@ -287,6 +287,11 @@ static_assert((CSS_PROPERTY_PARSE_PROPERTY_MASK &
 
 
 
+#define CSS_PROPERTY_LOAD_USE_CORS                (1U<<31)
+
+
+
+
 enum nsStyleAnimType {
   
   

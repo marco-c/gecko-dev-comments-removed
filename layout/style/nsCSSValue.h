@@ -984,7 +984,8 @@ public:
   void AdoptListValue(mozilla::UniquePtr<nsCSSValueList> aValue);
   void AdoptPairListValue(mozilla::UniquePtr<nsCSSValuePairList> aValue);
 
-  void StartImageLoad(nsIDocument* aDocument) const;  
+  void StartImageLoad(nsIDocument* aDocument,
+                      mozilla::CORSMode aCORSMode) const;  
 
   
   Array* InitFunction(nsCSSKeyword aFunctionId, uint32_t aNumArgs);
