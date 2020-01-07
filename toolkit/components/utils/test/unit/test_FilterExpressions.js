@@ -1,13 +1,16 @@
 "use strict";
 
-ChromeUtils.import("resource://normandy/lib/FilterExpressions.jsm", this);
+ChromeUtils.import("resource://gre/modules/Services.jsm");
+
+ChromeUtils.defineModuleGetter(this, "FilterExpressions",
+                               "resource://gre/modules/components-utils/FilterExpressions.jsm");
 
 
 add_task(async function() {
   let val;
   
   val = await FilterExpressions.eval("2+2");
-  is(val, 4, "basic expression works");
+  equal(val, 4, "basic expression works");
 
   
   val = await FilterExpressions.eval(`
@@ -15,11 +18,11 @@ add_task(async function() {
     +
     2
   `);
-  is(val, 4, "multiline expression works");
+  equal(val, 4, "multiline expression works");
 
   
   val = await FilterExpressions.eval("first + second + 3", {first: 1, second: 2});
-  is(val, 6, "context is available to filter expressions");
+  equal(val, 6, "context is available to filter expressions");
 });
 
 
@@ -28,7 +31,7 @@ add_task(async function() {
   
   val = await FilterExpressions.eval('"2016-04-22"|date');
   const d = new Date(Date.UTC(2016, 3, 22)); 
-  is(val.toString(), d.toString(), "Date transform works");
+  equal(val.toString(), d.toString(), "Date transform works");
 
   
   const context = {someTime: Date.UTC(2016, 0, 1)};
@@ -66,7 +69,9 @@ add_task(async function() {
 add_task(async function() {
   let val;
   
-  await SpecialPowers.pushPrefEnv({set: [["normandy.test.value", 3]]});
+  Services.prefs.setIntPref("normandy.test.value", 3);
+  registerCleanupFunction(() => Services.prefs.clearUserPref("normandy.test.value"));
+
   val = await FilterExpressions.eval('"normandy.test.value"|preferenceValue == 3');
   ok(val, "preferenceValue expression compares against preference values");
   val = await FilterExpressions.eval('"normandy.test.value"|preferenceValue == "test"');
@@ -118,7 +123,7 @@ add_task(async function testKeys() {
   context = {ctxObject: Object.create({fooProto: 7})};
   context.ctxObject.baz = 8;
   context.ctxObject.biff = 5;
-  is(
+  equal(
     await FilterExpressions.eval("ctxObject.fooProto", context),
     7,
     "Prototype properties are accessible via property access",
@@ -131,12 +136,12 @@ add_task(async function testKeys() {
   );
 
   
-  is(
+  equal(
     await FilterExpressions.eval("ctxObject|keys", {ctxObject: 45}),
     undefined,
     "keys returns undefined for numbers",
   );
-  is(
+  equal(
     await FilterExpressions.eval("ctxObject|keys", {ctxObject: null}),
     undefined,
     "keys returns undefined for null",
@@ -150,7 +155,7 @@ add_task(async function testKeys() {
     }
   }};
   await FilterExpressions.eval("ctxObject.ping == 0 || ctxObject.ping == 1", context);
-  is(pong, 2, "Properties are not reifed");
+  equal(pong, 2, "Properties are not reifed");
 });
 
 
@@ -180,17 +185,17 @@ add_task(async function testIntersect() {
   );
 
   
-  is(
+  equal(
     await FilterExpressions.eval("5 intersect 7"),
     undefined,
     "intersect returns undefined for numbers",
   );
-  is(
+  equal(
     await FilterExpressions.eval("val intersect other", {val: null, other: null}),
     undefined,
     "intersect returns undefined for null",
   );
-  is(
+  equal(
     await FilterExpressions.eval("5 intersect [1, 2, 5]"),
     undefined,
     "intersect returns undefined if only one operand is a list",

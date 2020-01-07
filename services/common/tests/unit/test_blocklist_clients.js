@@ -246,12 +246,6 @@ add_task(async function test_sync_event_data_is_filtered_for_target() {
 add_task(clear_state);
 
 add_task(async function test_entries_are_filtered_when_jexl_filters_is_present() {
-  if (IS_ANDROID) {
-    
-    
-    return;
-  }
-
   const records = [{
       willMatch: true,
     }, {
