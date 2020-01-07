@@ -980,7 +980,8 @@ Realm::getOrCreateIterResultTemplateObject(JSContext* cx)
 
     
     Rooted<TaggedProto> proto(cx, templateObject->taggedProto());
-    RootedObjectGroup group(cx, ObjectGroupRealm::makeGroup(cx, templateObject->getClass(),
+    RootedObjectGroup group(cx, ObjectGroupRealm::makeGroup(cx, templateObject->realm(),
+                                                            templateObject->getClass(),
                                                             proto));
     if (!group)
         return iterResultTemplate_; 
