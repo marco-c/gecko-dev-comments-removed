@@ -1642,7 +1642,7 @@ HTMLEditor::PasteAsCitedQuotation(const nsAString& aCitation,
 
 
 
-NS_IMETHODIMP
+nsresult
 HTMLEditor::PasteAsPlaintextQuotation(int32_t aSelectionType)
 {
   
@@ -1799,7 +1799,7 @@ HTMLEditor::InsertAsQuotation(const nsAString& aQuotedText,
 
 
 
-NS_IMETHODIMP
+nsresult
 HTMLEditor::InsertAsPlaintextQuotation(const nsAString& aQuotedText,
                                        bool aAddCites,
                                        nsIDOMNode** aNodeInserted)

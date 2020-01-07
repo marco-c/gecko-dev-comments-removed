@@ -157,7 +157,7 @@ public:
 
   nsresult GetCSSBackgroundColorState(bool* aMixed, nsAString& aOutColor,
                                       bool aBlockLevel);
-  NS_IMETHOD GetHTMLBackgroundColorState(bool* aMixed, nsAString& outColor);
+  nsresult GetHTMLBackgroundColorState(bool* aMixed, nsAString& outColor);
 
   
   NS_DECL_NSIEDITORSTYLESHEETS
@@ -538,27 +538,27 @@ protected:
 
 
 
-  NS_IMETHOD InsertCell(nsIDOMElement* aCell, int32_t aRowSpan,
-                        int32_t aColSpan, bool aAfter, bool aIsHeader,
-                        nsIDOMElement** aNewCell);
+  nsresult InsertCell(nsIDOMElement* aCell, int32_t aRowSpan,
+                      int32_t aColSpan, bool aAfter, bool aIsHeader,
+                      nsIDOMElement** aNewCell);
 
   
 
 
-  NS_IMETHOD DeleteRow(nsIDOMElement* aTable, int32_t aRowIndex);
-  NS_IMETHOD DeleteColumn(nsIDOMElement* aTable, int32_t aColIndex);
-  NS_IMETHOD DeleteCellContents(nsIDOMElement* aCell);
+  nsresult DeleteRow(nsIDOMElement* aTable, int32_t aRowIndex);
+  nsresult DeleteColumn(nsIDOMElement* aTable, int32_t aColIndex);
+  nsresult DeleteCellContents(nsIDOMElement* aCell);
 
   
 
 
-  NS_IMETHOD MergeCells(nsCOMPtr<nsIDOMElement> aTargetCell,
-                        nsCOMPtr<nsIDOMElement> aCellToMerge,
-                        bool aDeleteCellToMerge);
+  nsresult MergeCells(nsCOMPtr<nsIDOMElement> aTargetCell,
+                      nsCOMPtr<nsIDOMElement> aCellToMerge,
+                      bool aDeleteCellToMerge);
 
   nsresult DeleteTable2(nsIDOMElement* aTable, Selection* aSelection);
-  NS_IMETHOD SetColSpan(nsIDOMElement* aCell, int32_t aColSpan);
-  NS_IMETHOD SetRowSpan(nsIDOMElement* aCell, int32_t aRowSpan);
+  nsresult SetColSpan(nsIDOMElement* aCell, int32_t aColSpan);
+  nsresult SetRowSpan(nsIDOMElement* aCell, int32_t aRowSpan);
 
   
 
@@ -596,18 +596,18 @@ protected:
                           int32_t* aCellOffset, int32_t* aRowIndex,
                           int32_t* aColIndex);
 
-  NS_IMETHOD GetCellSpansAt(nsIDOMElement* aTable, int32_t aRowIndex,
-                            int32_t aColIndex, int32_t& aActualRowSpan,
-                            int32_t& aActualColSpan);
+  nsresult GetCellSpansAt(nsIDOMElement* aTable, int32_t aRowIndex,
+                          int32_t aColIndex, int32_t& aActualRowSpan,
+                          int32_t& aActualColSpan);
 
-  NS_IMETHOD SplitCellIntoColumns(nsIDOMElement* aTable, int32_t aRowIndex,
-                                  int32_t aColIndex, int32_t aColSpanLeft,
-                                  int32_t aColSpanRight,
-                                  nsIDOMElement** aNewCell);
+  nsresult SplitCellIntoColumns(nsIDOMElement* aTable, int32_t aRowIndex,
+                                int32_t aColIndex, int32_t aColSpanLeft,
+                                int32_t aColSpanRight,
+                                nsIDOMElement** aNewCell);
 
-  NS_IMETHOD SplitCellIntoRows(nsIDOMElement* aTable, int32_t aRowIndex,
-                               int32_t aColIndex, int32_t aRowSpanAbove,
-                               int32_t aRowSpanBelow, nsIDOMElement** aNewCell);
+  nsresult SplitCellIntoRows(nsIDOMElement* aTable, int32_t aRowIndex,
+                             int32_t aColIndex, int32_t aRowSpanAbove,
+                             int32_t aRowSpanBelow, nsIDOMElement** aNewCell);
 
   nsresult CopyCellBackgroundColor(nsIDOMElement* destCell,
                                    nsIDOMElement* sourceCell);
@@ -615,10 +615,10 @@ protected:
   
 
 
-  NS_IMETHOD FixBadRowSpan(nsIDOMElement* aTable, int32_t aRowIndex,
-                           int32_t& aNewRowCount);
-  NS_IMETHOD FixBadColSpan(nsIDOMElement* aTable, int32_t aColIndex,
-                           int32_t& aNewColCount);
+  nsresult FixBadRowSpan(nsIDOMElement* aTable, int32_t aRowIndex,
+                         int32_t& aNewRowCount);
+  nsresult FixBadColSpan(nsIDOMElement* aTable, int32_t aColIndex,
+                         int32_t& aNewColCount);
 
   
 
@@ -660,7 +660,7 @@ protected:
                                   nsAString* outValue = nullptr);
 
   
-  NS_IMETHOD PasteAsPlaintextQuotation(int32_t aSelectionType);
+  nsresult PasteAsPlaintextQuotation(int32_t aSelectionType);
 
   
 
@@ -671,9 +671,9 @@ protected:
 
 
 
-  NS_IMETHOD InsertAsPlaintextQuotation(const nsAString& aQuotedText,
-                                        bool aAddCites,
-                                        nsIDOMNode** aNodeInserted);
+  nsresult InsertAsPlaintextQuotation(const nsAString& aQuotedText,
+                                      bool aAddCites,
+                                      nsIDOMNode** aNodeInserted);
 
   nsresult InsertObject(const nsACString& aType, nsISupports* aObject,
                         bool aIsSafe,
