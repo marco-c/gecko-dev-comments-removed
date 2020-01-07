@@ -56,6 +56,17 @@
 
 #define CSS_PSEUDO_ELEMENT_IS_FLEX_OR_GRID_ITEM        (1<<7)
 
+
+
+class nsICSSPseudoElement : public nsStaticAtom
+{
+public:
+  constexpr nsICSSPseudoElement(const char16_t* aStr, uint32_t aLength,
+                                uint32_t aStringOffset)
+    : nsStaticAtom(aStr, aLength, aStringOffset)
+  {}
+};
+
 namespace mozilla {
 
 
@@ -88,10 +99,15 @@ struct CSSPseudoElementAtoms
   #include "nsCSSPseudoElementList.h"
   #undef CSS_PSEUDO_ELEMENT
 
-  #define CSS_PSEUDO_ELEMENT(name_, value_, flags_) \
-    NS_STATIC_ATOM_DECL_ATOM(name_)
-  #include "nsCSSPseudoElementList.h"
-  #undef CSS_PSEUDO_ELEMENT
+  enum class Atoms {
+    #define CSS_PSEUDO_ELEMENT(name_, value_, flags_) \
+      NS_STATIC_ATOM_ENUM(name_)
+    #include "nsCSSPseudoElementList.h"
+    #undef CSS_PSEUDO_ELEMENT
+    AtomsCount
+  };
+
+  const nsICSSPseudoElement mAtoms[static_cast<size_t>(Atoms::AtomsCount)];
 };
 
 extern const CSSPseudoElementAtoms gCSSPseudoElementAtoms;
@@ -99,10 +115,6 @@ extern const CSSPseudoElementAtoms gCSSPseudoElementAtoms;
 } 
 
 } 
-
-
-
-class nsICSSPseudoElement : public nsAtom {};
 
 class nsCSSPseudoElements
 {
@@ -124,10 +136,16 @@ public:
     return PseudoElementHasFlags(aType, CSS_PSEUDO_ELEMENT_IS_CSS2);
   }
 
-#define CSS_PSEUDO_ELEMENT(name_, value_, flags_) \
-  NS_STATIC_ATOM_SUBCLASS_DECL_PTR(nsICSSPseudoElement, name_)
-#include "nsCSSPseudoElementList.h"
-#undef CSS_PSEUDO_ELEMENT
+private:
+  static const nsStaticAtom* const sAtoms;
+  static constexpr size_t sAtomsLen =
+    mozilla::ArrayLength(mozilla::detail::gCSSPseudoElementAtoms.mAtoms);
+
+public:
+  #define CSS_PSEUDO_ELEMENT(name_, value_, flags_) \
+    NS_STATIC_ATOM_DECL_PTR(nsICSSPseudoElement, name_);
+  #include "nsCSSPseudoElementList.h"
+  #undef CSS_PSEUDO_ELEMENT
 
   static Type GetPseudoType(nsAtom* aAtom, EnabledState aEnabledState);
 

@@ -24,33 +24,28 @@ extern constexpr CSSPseudoElementAtoms gCSSPseudoElementAtoms = {
     NS_STATIC_ATOM_INIT_STRING(value_)
   #include "nsCSSPseudoElementList.h"
   #undef CSS_PSEUDO_ELEMENT
-
-  #define CSS_PSEUDO_ELEMENT(name_, value_, flags_) \
-    NS_STATIC_ATOM_INIT_ATOM(CSSPseudoElementAtoms, name_, value_)
-  #include "nsCSSPseudoElementList.h"
-  #undef CSS_PSEUDO_ELEMENT
+  {
+    #define CSS_PSEUDO_ELEMENT(name_, value_, flags_) \
+      NS_STATIC_ATOM_INIT_ATOM( \
+        nsICSSPseudoElement, CSSPseudoElementAtoms, name_, value_)
+    #include "nsCSSPseudoElementList.h"
+    #undef CSS_PSEUDO_ELEMENT
+  }
 };
 MOZ_POP_DISABLE_INTEGRAL_CONSTANT_OVERFLOW_WARNING
 
 } 
 } 
 
+const nsStaticAtom* const nsCSSPseudoElements::sAtoms =
+  mozilla::detail::gCSSPseudoElementAtoms.mAtoms;
+
 #define CSS_PSEUDO_ELEMENT(name_, value_, flags_) \
-  NS_STATIC_ATOM_SUBCLASS_DEFN_PTR( \
-    nsICSSPseudoElement, nsCSSPseudoElements, name_)
+  NS_STATIC_ATOM_DEFN_PTR( \
+    nsICSSPseudoElement, mozilla::detail::CSSPseudoElementAtoms, \
+    mozilla::detail::gCSSPseudoElementAtoms, nsCSSPseudoElements, name_);
 #include "nsCSSPseudoElementList.h"
 #undef CSS_PSEUDO_ELEMENT
-
-
-static const nsStaticAtomSetup sCSSPseudoElementAtomSetup[] = {
-  #define CSS_PSEUDO_ELEMENT(name_, value_, flags_) \
-    NS_STATIC_ATOM_SUBCLASS_SETUP( \
-      detail::gCSSPseudoElementAtoms, nsCSSPseudoElements, name_)
-  #include "nsCSSPseudoElementList.h"
-  #undef CSS_PSEUDO_ELEMENT
-};
-
-
 
 
  const uint32_t
@@ -63,12 +58,12 @@ nsCSSPseudoElements::kPseudoElementFlags[] = {
 
 void nsCSSPseudoElements::RegisterStaticAtoms()
 {
-  NS_RegisterStaticAtoms(sCSSPseudoElementAtomSetup);
+  NS_RegisterStaticAtoms(sAtoms, sAtomsLen);
 }
 
 bool nsCSSPseudoElements::IsPseudoElement(nsAtom *aAtom)
 {
-  return nsStaticAtomUtils::IsMember(aAtom, sCSSPseudoElementAtomSetup);
+  return nsStaticAtomUtils::IsMember(aAtom, sAtoms, sAtomsLen);
 }
 
  bool
@@ -94,8 +89,7 @@ nsCSSPseudoElements::IsCSS2PseudoElement(nsAtom *aAtom)
  CSSPseudoElementType
 nsCSSPseudoElements::GetPseudoType(nsAtom *aAtom, EnabledState aEnabledState)
 {
-  Maybe<uint32_t> index =
-    nsStaticAtomUtils::Lookup(aAtom, sCSSPseudoElementAtomSetup);
+  Maybe<uint32_t> index = nsStaticAtomUtils::Lookup(aAtom, sAtoms, sAtomsLen);
   if (index.isSome()) {
     auto type = static_cast<Type>(*index);
     
@@ -125,9 +119,9 @@ nsCSSPseudoElements::GetPseudoType(nsAtom *aAtom, EnabledState aEnabledState)
  nsAtom*
 nsCSSPseudoElements::GetPseudoAtom(Type aType)
 {
-  NS_ASSERTION(aType < Type::Count, "Unexpected type");
-  return *sCSSPseudoElementAtomSetup[
-    static_cast<CSSPseudoElementTypeBase>(aType)].mAtomp;
+  MOZ_ASSERT(aType < Type::Count, "Unexpected type");
+  return const_cast<nsStaticAtom*>(
+    &sAtoms[static_cast<CSSPseudoElementTypeBase>(aType)]);
 }
 
  already_AddRefed<nsAtom>

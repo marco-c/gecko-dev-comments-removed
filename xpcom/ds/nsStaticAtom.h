@@ -9,7 +9,58 @@
 
 #include <stdint.h>
 #include "nsAtom.h"
+#include "mozilla/ArrayUtils.h"
 #include "mozilla/Maybe.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -149,19 +200,15 @@
   const char16_t name_##_string[sizeof(value_)];
 
 
-
-#define NS_STATIC_ATOM_DECL_ATOM(name_) \
-  const nsStaticAtom name_##_atom;
-
+#define NS_STATIC_ATOM_ENUM(name_) \
+  name_,
 
 
-#define NS_STATIC_ATOM_DECL_PTR(name_) \
-  static nsStaticAtom* name_;
 
 
-#define NS_STATIC_ATOM_SUBCLASS_DECL_PTR(type_, name_) \
+
+#define NS_STATIC_ATOM_DECL_PTR(type_, name_) \
   static type_* name_;
-
 
 
 #define NS_STATIC_ATOM_INIT_STRING(value_) \
@@ -173,75 +220,42 @@
 
 
 
-#define NS_STATIC_ATOM_INIT_ATOM(class_, name_, value_) \
-  nsStaticAtom(u"" value_, \
-               sizeof(value_) - 1, \
-               offsetof(class_, name_##_atom) - \
-               offsetof(class_, name_##_string)),
+#define NS_STATIC_ATOM_INIT_ATOM(type_, detailClass_, name_, value_) \
+  type_(u"" value_, \
+        sizeof(value_) - 1, \
+        offsetof(detailClass_, \
+                 mAtoms[static_cast<size_t>(detailClass_::Atoms::name_)]) - \
+        offsetof(detailClass_, name_##_string)),
 
 
 
-#define NS_STATIC_ATOM_DEFN_PTR(class_, name_) \
-  nsStaticAtom* class_::name_;
+#define NS_STATIC_ATOM_DEFN_PTR(type_, detailClass_, detailObj_, class_, name_) \
+  type_* class_::name_ = const_cast<type_*>( \
+    &detailObj_.mAtoms[static_cast<size_t>(detailClass_::Atoms::name_)]);
 
 
-#define NS_STATIC_ATOM_SUBCLASS_DEFN_PTR(type_, class_, name_) \
-  type_* class_::name_;
-
-
-#define NS_STATIC_ATOM_SETUP(detailObj_, class_, name_) \
-  { &detailObj_.name_##_atom, &class_::name_ },
-
-
-#define NS_STATIC_ATOM_SUBCLASS_SETUP(detailObj_, class_, name_) \
-  { &detailObj_.name_##_atom, \
-    reinterpret_cast<nsStaticAtom**>(&class_::name_) },
-
-
-
-struct nsStaticAtomSetup
-{
-  const nsStaticAtom* const mAtom;
-  nsStaticAtom** const mAtomp;
-};
-
-
-template<uint32_t N>
 void
-NS_RegisterStaticAtoms(const nsStaticAtomSetup (&aSetup)[N])
-{
-  extern void RegisterStaticAtoms(const nsStaticAtomSetup* aSetup,
-                                  uint32_t aCount);
-  RegisterStaticAtoms(aSetup, N);
-}
+NS_RegisterStaticAtoms(const nsStaticAtom* aAtoms, size_t aAtomsLen);
 
 
 class nsStaticAtomUtils {
 public:
-  template<uint32_t N>
-  static mozilla::Maybe<uint32_t> Lookup(nsAtom *aAtom,
-                                         const nsStaticAtomSetup (&aSetup)[N])
-  {
-    return Lookup(aAtom, aSetup, N);
-  }
-
-  template<uint32_t N>
-  static bool IsMember(nsAtom *aAtom, const nsStaticAtomSetup (&aSetup)[N])
-  {
-    return Lookup(aAtom, aSetup, N).isSome();
-  }
-
-private:
   static mozilla::Maybe<uint32_t> Lookup(nsAtom* aAtom,
-                                         const nsStaticAtomSetup* aSetup,
+                                         const nsStaticAtom* aAtoms,
                                          uint32_t aCount)
   {
     for (uint32_t i = 0; i < aCount; i++) {
-      if (aAtom == *(aSetup[i].mAtomp)) {
+      if (aAtom == &aAtoms[i]) {
         return mozilla::Some(i);
       }
     }
     return mozilla::Nothing();
+  }
+
+  static bool IsMember(nsAtom* aAtom, const nsStaticAtom* aAtoms,
+                       uint32_t aCount)
+  {
+    return Lookup(aAtom, aAtoms, aCount).isSome();
   }
 };
 
