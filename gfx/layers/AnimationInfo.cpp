@@ -178,12 +178,21 @@ AnimationInfo::HasTransformAnimation() const
 AnimationInfo::GetGenerationFromFrame(nsIFrame* aFrame,
                                       DisplayItemType aDisplayItemKey)
 {
+  MOZ_ASSERT(!(aFrame->GetStateBits() & NS_FRAME_PART_OF_IBSPLIT) ||
+             nsLayoutUtils::IsFirstContinuationOrIBSplitSibling(aFrame));
+
   layers::Layer* layer =
     FrameLayerBuilder::GetDedicatedLayer(aFrame, aDisplayItemKey);
   if (layer) {
     return Some(layer->GetAnimationInfo().GetAnimationGeneration());
   }
 
+  
+  
+  
+  if (nsLayoutUtils::IsFirstContinuationOrIBSplitSibling(aFrame)) {
+    aFrame = nsLayoutUtils::LastContinuationOrIBSplitSibling(aFrame);
+  }
   RefPtr<WebRenderAnimationData> animationData =
       GetWebRenderUserData<WebRenderAnimationData>(aFrame, (uint32_t)aDisplayItemKey);
   if (animationData) {

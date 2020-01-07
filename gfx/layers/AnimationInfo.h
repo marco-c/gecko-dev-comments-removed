@@ -65,6 +65,8 @@ public:
   bool HasOpacityAnimation() const;
   bool HasTransformAnimation() const;
 
+  
+  
   static Maybe<uint64_t> GetGenerationFromFrame(nsIFrame* aFrame,
                                                 DisplayItemType aDisplayItemKey);
 
