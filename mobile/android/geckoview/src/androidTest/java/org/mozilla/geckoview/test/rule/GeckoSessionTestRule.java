@@ -751,7 +751,7 @@ public class GeckoSessionTestRule extends UiThreadTestRule {
             loopUntilIdle( 0);
         }
 
-        session.openWindow(mInstrumentation.getTargetContext());
+        session.open(mInstrumentation.getTargetContext());
 
         if (!e10s) {
             return;
@@ -801,7 +801,7 @@ public class GeckoSessionTestRule extends UiThreadTestRule {
 
     protected void cleanupSession(final GeckoSession session) {
         if (session.isOpen()) {
-            session.closeWindow();
+            session.close();
         }
     }
 
