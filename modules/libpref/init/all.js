@@ -3110,12 +3110,6 @@ pref("input_event_queue.default_duration_per_event", 1);
 
 pref("input_event_queue.count_for_prediction", 9);
 
-
-
-
-
-pref("hangmonitor.timeout", 0);
-
 pref("plugins.load_appdir_plugins", false);
 
 pref("plugins.click_to_play", false);

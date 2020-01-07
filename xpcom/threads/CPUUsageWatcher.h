@@ -10,6 +10,7 @@
 #include <stdint.h>
 
 #include "mozilla/HangAnnotations.h"
+#include "mozilla/BackgroundHangMonitor.h"
 
 
 
@@ -31,13 +32,13 @@ enum CPUUsageWatcherError : uint8_t
 };
 
 class CPUUsageHangAnnotator
-  : public HangMonitor::Annotator
+  : public BackgroundHangAnnotator
 {
 public:
 };
 
 class CPUUsageWatcher
-  : public HangMonitor::Annotator
+  : public BackgroundHangAnnotator
 {
 public:
 #ifdef CPU_USAGE_WATCHER_ACTIVE
@@ -61,7 +62,7 @@ public:
   
   Result<Ok, CPUUsageWatcherError> CollectCPUUsage();
 
-  void AnnotateHang(HangMonitor::HangAnnotations& aAnnotations) final;
+  void AnnotateHang(BackgroundHangAnnotations& aAnnotations) final;
 private:
 #ifdef CPU_USAGE_WATCHER_ACTIVE
   bool mInitialized;

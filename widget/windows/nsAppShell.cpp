@@ -15,7 +15,7 @@
 #include "nsString.h"
 #include "WinIMEHandler.h"
 #include "mozilla/widget/AudioSession.h"
-#include "mozilla/HangMonitor.h"
+#include "mozilla/BackgroundHangMonitor.h"
 #include "nsIDOMWakeLockListener.h"
 #include "nsIPowerManagerService.h"
 #include "mozilla/StaticPtr.h"
@@ -529,9 +529,7 @@ nsAppShell::ProcessNextNativeEvent(bool mayWait)
       } else {
         
         
-        mozilla::HangMonitor::NotifyActivity(
-          uiMessage ? mozilla::HangMonitor::kUIActivity :
-                      mozilla::HangMonitor::kActivityNoUIAVail);
+        mozilla::BackgroundHangMonitor().NotifyActivity();
 
         if (msg.message >= WM_KEYFIRST && msg.message <= WM_KEYLAST &&
             IMEHandler::ProcessRawKeyMessage(msg)) {
@@ -552,7 +550,7 @@ nsAppShell::ProcessNextNativeEvent(bool mayWait)
       }
     } else if (mayWait) {
       
-      mozilla::HangMonitor::Suspend();
+      mozilla::BackgroundHangMonitor().NotifyWait();
       {
         AUTO_PROFILER_LABEL("nsAppShell::ProcessNextNativeEvent::Wait", IDLE);
         AUTO_PROFILER_THREAD_SLEEP;

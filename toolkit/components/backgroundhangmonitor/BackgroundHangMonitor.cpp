@@ -202,9 +202,9 @@ public:
   
   HangStack mHangStack;
   
-  HangMonitor::HangAnnotations mAnnotations;
+  BackgroundHangAnnotations mAnnotations;
   
-  HangMonitor::Observer::Annotators mAnnotators;
+  BackgroundHangAnnotators mAnnotators;
   
   nsCString mRunnableName;
   
@@ -488,12 +488,6 @@ BackgroundHangThread::ReportHang(TimeDuration aHangTime)
   
   
 
-  nsTArray<HangAnnotation> annotations;
-  for (auto& annotation : mAnnotations) {
-    HangAnnotation annot(annotation.mName, annotation.mValue);
-    annotations.AppendElement(std::move(annot));
-  }
-
   HangDetails hangDetails(
     aHangTime,
     nsDependentCString(XRE_ChildProcessTypeToString(XRE_GetProcessType())),
@@ -501,7 +495,7 @@ BackgroundHangThread::ReportHang(TimeDuration aHangTime)
     mThreadName,
     mRunnableName,
     std::move(mHangStack),
-    std::move(annotations)
+    std::move(mAnnotations)
   );
 
   
@@ -767,7 +761,7 @@ BackgroundHangMonitor::NotifyWait()
 }
 
 bool
-BackgroundHangMonitor::RegisterAnnotator(HangMonitor::Annotator& aAnnotator)
+BackgroundHangMonitor::RegisterAnnotator(BackgroundHangAnnotator& aAnnotator)
 {
 #ifdef MOZ_ENABLE_BACKGROUND_HANG_MONITOR
   BackgroundHangThread* thisThread = BackgroundHangThread::FindThread();
@@ -781,7 +775,7 @@ BackgroundHangMonitor::RegisterAnnotator(HangMonitor::Annotator& aAnnotator)
 }
 
 bool
-BackgroundHangMonitor::UnregisterAnnotator(HangMonitor::Annotator& aAnnotator)
+BackgroundHangMonitor::UnregisterAnnotator(BackgroundHangAnnotator& aAnnotator)
 {
 #ifdef MOZ_ENABLE_BACKGROUND_HANG_MONITOR
   BackgroundHangThread* thisThread = BackgroundHangThread::FindThread();
