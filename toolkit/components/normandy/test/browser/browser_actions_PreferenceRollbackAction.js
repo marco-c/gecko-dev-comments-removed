@@ -129,12 +129,7 @@ decorate_task(
     await action.runRecipe(recipe);
     await action.finalize();
 
-    Assert.deepEqual(
-      sendEventStub.args,
-      [["unenrollFailed", "preference_rollback", "missing-rollout", {reason: "rollout missing"}]],
-      "an unenrollFailure event should be sent",
-    );
-    
+    Assert.deepEqual(sendEventStub.args, [], "an unenrollFailure event should not be sent");
     Assert.deepEqual(
       reportRecipeStub.args,
       [[recipe.id, Uptake.RECIPE_SUCCESS]],
