@@ -2448,6 +2448,20 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
            !IsInternalTableStyleExceptCell();
   }
 
+  bool IsContainSize() const {
+    
+    
+    
+    
+    
+    
+    
+    return (NS_STYLE_CONTAIN_SIZE & mContain) &&
+           !IsInternalRubyDisplayType() &&
+           (mozilla::StyleDisplay::Table != mDisplay) &&
+           !IsInnerTableStyle();
+  }
+
   
 
   bool HasTransformStyle() const {
