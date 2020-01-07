@@ -82,6 +82,26 @@ async function openNewTabAndConsole(url, clearJstermHistory = true) {
 
 
 
+function logAllStoreChanges(hud) {
+  const store = hud.ui.newConsoleOutput.getStore();
+  
+  
+  store.subscribe(() => {
+    const messages = [...store.getState().messages.messagesById.values()];
+    const debugMessages = messages.map(({id, type, parameters, messageText}) => {
+      return {id, type, parameters, messageText};
+    });
+    info("messages : " + JSON.stringify(debugMessages));
+  });
+}
+
+
+
+
+
+
+
+
 
 
 function waitForMessages({ hud, messages }) {
