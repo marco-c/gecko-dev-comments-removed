@@ -84,7 +84,8 @@
 
 KEY_MAP_WIN     (Alt, VK_MENU)
 KEY_MAP_WIN     (Alt, VK_LMENU)
-KEY_MAP_WIN     (Alt, VK_RMENU)
+KEY_MAP_WIN     (Alt, VK_RMENU) 
+                                
 KEY_MAP_COCOA   (Alt, kVK_Option)
 KEY_MAP_COCOA   (Alt, kVK_RightOption)
 KEY_MAP_GTK     (Alt, GDK_Alt_L)
