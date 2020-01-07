@@ -424,11 +424,50 @@ class ExtensionData {
   }
 
   
+
+
+
+
+
+
+  get manifestPermissions() {
+    if (this.type !== "extension") {
+      return null;
+    }
+
+    let permissions = new Set();
+    let origins = new Set();
+    for (let perm of this.manifest.permissions || []) {
+      let type = classifyPermission(perm);
+      if (type.origin) {
+        origins.add(perm);
+      } else if (!type.api) {
+        permissions.add(perm);
+      }
+    }
+
+    if (this.manifest.devtools_page) {
+      permissions.add("devtools");
+    }
+
+    for (let entry of this.manifest.content_scripts || []) {
+      for (let origin of entry.matches) {
+        origins.add(origin);
+      }
+    }
+
+    return {
+      permissions: Array.from(permissions),
+      origins: Array.from(origins),
+    };
+  }
+
   
-  
-  
-  
-  get userPermissions() {
+
+
+
+
+  get activePermissions() {
     if (this.type !== "extension") {
       return null;
     }
@@ -438,11 +477,6 @@ class ExtensionData {
       apis: [...this.apiNames],
     };
 
-    if (Array.isArray(this.manifest.content_scripts)) {
-      for (let entry of this.manifest.content_scripts) {
-        result.origins.push(...entry.matches);
-      }
-    }
     const EXP_PATTERN = /^experiments\.\w+/;
     result.permissions = [...this.permissions]
       .filter(p => !result.origins.includes(p) && !EXP_PATTERN.test(p));
@@ -542,10 +576,6 @@ class ExtensionData {
     };
 
     if (this.type === "extension") {
-      if (this.manifest.devtools_page) {
-        permissions.add("devtools");
-      }
-
       for (let perm of manifest.permissions) {
         if (perm === "geckoProfiler" && !this.isPrivileged) {
           const acceptedExtensions = Services.prefs.getStringPref("extensions.geckoProfiler.acceptedExtensionIds", "");
@@ -633,9 +663,6 @@ class ExtensionData {
     } else if (this.type == "langpack") {
       
       
-      
-
-      
       const platform = AppConstants.platform;
       const chromeEntries = [];
       for (const [language, entry] of Object.entries(manifest.languages)) {
@@ -650,39 +677,7 @@ class ExtensionData {
         }
       }
 
-
-      
-      const productCodeName = AppConstants.MOZ_BUILD_APP.replace("/", "-");
-
-      
-      
-      
-      const langpackId =
-        `langpack-${manifest.langpack_id}-${productCodeName}`;
-
-
-      
-      const l10nRegistrySources = {};
-
-      
-      
-      const entries = await this.readDirectory("localization");
-      if (entries.length > 0) {
-        l10nRegistrySources.toolkit = "";
-      }
-
-      
-      if (manifest.sources) {
-        for (const [sourceName, {base_path}] of Object.entries(manifest.sources)) {
-          l10nRegistrySources[sourceName] = base_path;
-        }
-      }
-
-      
-      const languages = Object.keys(manifest.languages);
-
-
-      this.startupData = {chromeEntries, langpackId, l10nRegistrySources, languages};
+      this.startupData = {chromeEntries};
     }
 
     if (schemaPromises.size) {
@@ -1808,9 +1803,41 @@ class Langpack extends ExtensionData {
       });
   }
 
+  async _parseManifest() {
+    let data = await super.parseManifest();
+
+    const productCodeName = AppConstants.MOZ_BUILD_APP.replace("/", "-");
+
+    
+    
+    
+    data.langpackId =
+      `langpack-${data.manifest.langpack_id}-${productCodeName}`;
+
+    const l10nRegistrySources = {};
+
+    
+    
+    const entries = await this.readDirectory("localization");
+    if (entries.length > 0) {
+      l10nRegistrySources.toolkit = "";
+    }
+
+    
+    if (data.manifest.sources) {
+      for (const [sourceName, {base_path}] of Object.entries(data.manifest.sources)) {
+        l10nRegistrySources[sourceName] = base_path;
+      }
+    }
+
+    data.l10nRegistrySources = l10nRegistrySources;
+
+    return data;
+  }
+
   parseManifest() {
     return StartupCache.manifests.get(this.manifestCacheKey,
-                                      () => super.parseManifest());
+                                      () => this._parseManifest());
   }
 
   async startup(reason) {
@@ -1821,16 +1848,18 @@ class Langpack extends ExtensionData {
         aomStartup.registerChrome(manifestURI, this.startupData.chromeEntries);
     }
 
-    const langpackId = this.startupData.langpackId;
-    const l10nRegistrySources = this.startupData.l10nRegistrySources;
+    const data = await this.parseManifest();
+    this.langpackId = data.langpackId;
+    this.l10nRegistrySources = data.l10nRegistrySources;
 
-    resourceProtocol.setSubstitution(langpackId, this.rootURI);
+    const languages = Object.keys(data.manifest.languages);
+    resourceProtocol.setSubstitution(this.langpackId, this.rootURI);
 
-    for (const [sourceName, basePath] of Object.entries(l10nRegistrySources)) {
+    for (const [sourceName, basePath] of Object.entries(this.l10nRegistrySources)) {
       L10nRegistry.registerSource(new FileSource(
-        `${sourceName}-${langpackId}`,
-        this.startupData.languages,
-        `resource://${langpackId}/${basePath}localization/{locale}/`
+        `${sourceName}-${this.langpackId}`,
+        languages,
+        `resource://${this.langpackId}/${basePath}localization/{locale}/`
       ));
     }
 
@@ -1839,14 +1868,14 @@ class Langpack extends ExtensionData {
   }
 
   async shutdown(reason) {
-    for (const sourceName of Object.keys(this.startupData.l10nRegistrySources)) {
-      L10nRegistry.removeSource(`${sourceName}-${this.startupData.langpackId}`);
+    for (const sourceName of Object.keys(this.l10nRegistrySources)) {
+      L10nRegistry.removeSource(`${sourceName}-${this.langpackId}`);
     }
     if (this.chromeRegistryHandle) {
       this.chromeRegistryHandle.destruct();
       this.chromeRegistryHandle = null;
     }
 
-    resourceProtocol.setSubstitution(this.startupData.langpackId, null);
+    resourceProtocol.setSubstitution(this.langpackId, null);
   }
 }
