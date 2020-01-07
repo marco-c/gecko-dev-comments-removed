@@ -640,6 +640,7 @@ class AndroidEmulatorTest(BlobUploadMixin, TestingMixin, EmulatorMixin, VCSMixin
                    'shell', 'cat', '/proc/cpuinfo']
             out, _ = self._run_with_timeout(30, cmd, quiet=True)
             f.write(out)
+            cpuinfo = out
 
             f.write('\n\nEmulator /proc/meminfo:\n')
             cmd = [self.adb_path, '-s', self.emulator['device_id'],
@@ -652,6 +653,21 @@ class AndroidEmulatorTest(BlobUploadMixin, TestingMixin, EmulatorMixin, VCSMixin
                    'shell', 'ps']
             out, _ = self._run_with_timeout(30, cmd, quiet=True)
             f.write(out)
+
+        
+        
+        
+        
+        
+        
+        for line in cpuinfo.split('\n'):
+            m = re.match("BogoMIPS.*: (\d*)", line)
+            if m:
+                bogomips = int(m.group(1))
+                if bogomips < 250:
+                    self.fatal('INFRA-ERROR: insufficient Android bogomips (%d < 250)' % bogomips,
+                               EXIT_STATUS_DICT[TBPL_RETRY])
+                break
 
     def verify_emulator(self):
         '''
