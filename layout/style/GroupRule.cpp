@@ -18,66 +18,20 @@ using namespace mozilla::dom;
 namespace mozilla {
 namespace css {
 
-#define CALL_INNER(inner_, call_)               \
-  ((inner_).is<DummyGroupRuleRules>()           \
-    ? (inner_).as<DummyGroupRuleRules>().call_  \
-    : (inner_).as<ServoGroupRuleRules>().call_)
-
-
-
-
-
-
-ServoGroupRuleRules::~ServoGroupRuleRules()
-{
-  if (mRuleList) {
-    mRuleList->DropReference();
-  }
-}
-
-#ifdef DEBUG
-void
-ServoGroupRuleRules::List(FILE* out, int32_t aIndent) const
-{
-  
-}
-#endif
-
-size_t
-ServoGroupRuleRules::SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
-{
-  
-  return 0;
-}
-
-
-
-
-
-GroupRule::GroupRule(uint32_t aLineNumber, uint32_t aColumnNumber)
-  : Rule(aLineNumber, aColumnNumber)
-  , mInner(DummyGroupRuleRules())
-{
-}
-
 GroupRule::GroupRule(already_AddRefed<ServoCssRules> aRules,
                      uint32_t aLineNumber, uint32_t aColumnNumber)
   : Rule(aLineNumber, aColumnNumber)
-  , mInner(ServoGroupRuleRules(Move(aRules)))
+  , mRuleList(new ServoCSSRuleList(Move(aRules), nullptr))
 {
-  mInner.as<ServoGroupRuleRules>().SetParentRule(this);
-}
-
-GroupRule::GroupRule(const GroupRule& aCopy)
-  : Rule(aCopy)
-  , mInner(aCopy.mInner)
-{
-  CALL_INNER(mInner, SetParentRule(this));
+  mRuleList->SetParentRule(this);
 }
 
 GroupRule::~GroupRule()
 {
   MOZ_ASSERT(!mSheet, "SetStyleSheet should have been called");
+  if (mRuleList) {
+    mRuleList->DropReference();
+  }
 }
 
 NS_IMPL_ADDREF_INHERITED(GroupRule, Rule)
@@ -96,22 +50,33 @@ GroupRule::IsCCLeaf() const
 NS_IMPL_CYCLE_COLLECTION_CLASS(GroupRule)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(GroupRule, Rule)
-  CALL_INNER(tmp->mInner, SetParentRule(nullptr));
-  
-  
-  
-  
-  
-  
-  if (tmp->GetStyleSheet()) {
-    CALL_INNER(tmp->mInner, SetStyleSheet(nullptr));
+  if (tmp->mRuleList) {
+    tmp->mRuleList->SetParentRule(nullptr);
+    
+    
+    
+    
+    
+    
+    if (tmp->GetStyleSheet()) {
+      tmp->mRuleList->SetStyleSheet(nullptr);
+    }
+    tmp->mRuleList->DropReference();
+    tmp->mRuleList = nullptr;
   }
-  CALL_INNER(tmp->mInner, Clear());
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(GroupRule, Rule)
-  CALL_INNER(tmp->mInner, Traverse(cb));
+  ImplCycleCollectionTraverse(cb, tmp->mRuleList, "mRuleList");
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
+
+#ifdef DEBUG
+void
+GroupRule::List(FILE* out, int32_t aIndent) const
+{
+  
+}
+#endif
 
  void
 GroupRule::SetStyleSheet(StyleSheet* aSheet)
@@ -121,16 +86,11 @@ GroupRule::SetStyleSheet(StyleSheet* aSheet)
   
   
   if (aSheet != GetStyleSheet()) {
-    CALL_INNER(mInner, SetStyleSheet(aSheet));
+    if (mRuleList) {
+      mRuleList->SetStyleSheet(aSheet);
+    }
     Rule::SetStyleSheet(aSheet);
   }
-}
-
-
-CSSRuleList*
-GroupRule::CssRules()
-{
-  return CALL_INNER(mInner, CssRules(this));
 }
 
 uint32_t
@@ -181,7 +141,12 @@ GroupRule::DeleteRule(uint32_t aIndex, ErrorResult& aRv)
   }
 }
 
-#undef CALL_INNER
+size_t
+GroupRule::SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
+{
+  
+  return 0;
+}
 
 } 
 } 
