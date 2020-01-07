@@ -1541,11 +1541,12 @@ function getComments(ast) {
 
 function getSpecifiers(specifiers) {
   if (!specifiers) {
-    return null;
+    return [];
   }
 
   return specifiers.map(specifier => specifier.local && specifier.local.name);
 }
+
 
 function extractSymbol(path, symbols) {
   if ((0, _helpers.isVariable)(path)) {
@@ -1600,9 +1601,18 @@ function extractSymbol(path, symbols) {
     symbols.memberExpressions.push({
       name: path.node.property.name,
       location: { start, end },
-      expressionLocation: path.node.loc,
       expression: getSnippet(path),
       computed: path.node.computed
+    });
+  }
+
+  if ((t.isStringLiteral(path) || t.isNumericLiteral(path)) && t.isMemberExpression(path.parentPath)) {
+    
+    const { start, end } = path.node.loc;
+    symbols.literals.push({
+      name: path.node.value,
+      location: { start, end },
+      expression: getSnippet(path.parentPath)
     });
   }
 
@@ -1648,7 +1658,6 @@ function extractSymbol(path, symbols) {
     symbols.identifiers.push({
       name: "this",
       location: { start, end },
-      expressionLocation: path.node.loc,
       expression: "this"
     });
   }
@@ -1659,6 +1668,7 @@ function extractSymbol(path, symbols) {
     if (t.isArrayPattern(node)) {
       return;
     }
+
     symbols.identifiers.push({
       name: node.name,
       expression: node.name,
@@ -1666,6 +1676,7 @@ function extractSymbol(path, symbols) {
     });
   }
 }
+
 
 function extractSymbols(sourceId) {
   const symbols = {
@@ -1678,6 +1689,7 @@ function extractSymbols(sourceId) {
     identifiers: [],
     classes: [],
     imports: [],
+    literals: [],
     hasJsx: false,
     hasTypes: false
   };
@@ -1701,7 +1713,7 @@ function extractSymbols(sourceId) {
   return symbols;
 }
 
-function extendSnippet(name, expression, path = null, prevPath = null) {
+function extendSnippet(name, expression, path, prevPath) {
   const computed = path && path.node.computed;
   const prevComputed = prevPath && prevPath.node.computed;
   const prevArray = t.isArrayExpression(prevPath);
@@ -1787,7 +1799,7 @@ function getArraySnippet(path, prevPath, expression) {
   return getSnippet(nextPath, nextPrevPath, extendedExpression);
 }
 
-function getSnippet(path, prevPath = null, expression = "") {
+function getSnippet(path, prevPath, expression = "") {
   if (!path) {
     return expression;
   }
@@ -1846,6 +1858,8 @@ function getSnippet(path, prevPath = null, expression = "") {
 
     return getArraySnippet(path, prevPath, expression);
   }
+
+  return "";
 }
 
 function clearSymbols() {
@@ -20963,6 +20977,10 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.default = createSimplePath;
+
+
+
+
 function createSimplePath(ancestors) {
   if (ancestors.length === 0) {
     return null;
@@ -20971,9 +20989,7 @@ function createSimplePath(ancestors) {
   
   
   return new SimplePath(ancestors.slice());
-} 
-
-
+}
 
 
 
@@ -21221,7 +21237,9 @@ function onEnter(node, ancestors, state) {
 
   if (t.isProgram(node)) {
     const lastStatement = node.body[node.body.length - 1];
-    addPoint(state, lastStatement.loc.end);
+    if (lastStatement) {
+      addPoint(state, lastStatement.loc.end);
+    }
   }
 }
 
