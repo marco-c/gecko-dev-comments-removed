@@ -278,7 +278,7 @@ static void
 GetComputedTimingDictionary(const ComputedTiming& aComputedTiming,
                             const Nullable<TimeDuration>& aLocalTime,
                             const TimingParams& aTiming,
-                            ComputedTimingProperties& aRetVal)
+                            ComputedEffectTiming& aRetVal)
 {
   
   aRetVal.mDelay = aTiming.Delay().ToMilliseconds();
@@ -311,8 +311,7 @@ GetComputedTimingDictionary(const ComputedTiming& aComputedTiming,
 }
 
 void
-AnimationEffect::GetComputedTimingAsDict(
-  ComputedTimingProperties& aRetVal) const
+AnimationEffect::GetComputedTimingAsDict(ComputedEffectTiming& aRetVal) const
 {
   double playbackRate = mAnimation ? mAnimation->PlaybackRate() : 1;
   const Nullable<TimeDuration> currentTime = GetLocalTime();
