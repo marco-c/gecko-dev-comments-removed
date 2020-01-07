@@ -4737,7 +4737,7 @@ private:
     }
   }
 
-  friend void MergeLayerEventRegions(nsDisplayItem*, nsDisplayItem*);
+  friend bool MergeLayerEventRegions(nsDisplayItem*, nsDisplayItem*);
 
   
   
