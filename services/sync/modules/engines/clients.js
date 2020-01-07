@@ -919,7 +919,14 @@ ClientEngine.prototype = {
 
 
 
-  _handleDisplayURIs: function _handleDisplayURIs(uris) {
+
+  _handleDisplayURIs(uris) {
+    uris.forEach(uri => {
+      uri.sender = {
+        id: uri.clientId,
+        name: this.getClientName(uri.clientId)
+      };
+    });
     Svc.Obs.notify("weave:engine:clients:display-uris", uris);
   },
 

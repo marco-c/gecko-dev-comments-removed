@@ -1273,7 +1273,11 @@ pref("browser.newtabpage.enabled", true);
 
 pref("browser.newtabpage.activity-stream.prerender", true);
 #ifndef RELEASE_OR_BETA
+#ifdef MOZILLA_OFFICIAL
 pref("browser.newtabpage.activity-stream.debug", false);
+#else
+pref("browser.newtabpage.activity-stream.debug", true);
+#endif
 #endif
 
 pref("browser.library.activity-stream.enabled", true);
@@ -1427,6 +1431,9 @@ pref("identity.fxaccounts.migrateToDevEdition", true);
 #else
 pref("identity.fxaccounts.migrateToDevEdition", false);
 #endif
+
+
+pref("identity.fxaccounts.messages.enabled", false);
 
 
 #ifdef MOZ_WIDGET_GTK

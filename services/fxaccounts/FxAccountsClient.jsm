@@ -409,6 +409,7 @@ this.FxAccountsClient.prototype = {
       body.pushPublicKey = options.pushPublicKey;
       body.pushAuthKey = options.pushAuthKey;
     }
+    body.capabilities = options.capabilities;
 
     return this._request(path, "POST", creds, body);
   },
@@ -455,6 +456,51 @@ this.FxAccountsClient.prototype = {
 
 
 
+  getMessages(sessionTokenHex, {index, limit}) {
+    const params = new URLSearchParams();
+    if (index != undefined) {
+      params.set("index", index);
+    }
+    if (limit != undefined) {
+      params.set("limit", limit);
+    }
+    const path = `/account/device/messages?${params.toString()}`;
+    return this._request(path, "GET",
+      deriveHawkCredentials(sessionTokenHex, "sessionToken"));
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  sendMessage(sessionTokenHex, topic, to, data) {
+    const body = {
+      topic,
+      to,
+      data
+    };
+    return this._request("/account/devices/messages", "POST",
+      deriveHawkCredentials(sessionTokenHex, "sessionToken"), body);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -483,6 +529,7 @@ this.FxAccountsClient.prototype = {
       body.pushPublicKey = options.pushPublicKey;
       body.pushAuthKey = options.pushAuthKey;
     }
+    body.capabilities = options.capabilities;
 
     return this._request(path, "POST", creds, body);
   },
