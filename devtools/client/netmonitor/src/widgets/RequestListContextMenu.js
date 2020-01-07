@@ -70,8 +70,8 @@ class RequestListContextMenu {
 
     copySubmenu.push({
       id: "request-list-context-copy-post-data",
-      label: L10N.getStr("netmonitor.context.copyPostData"),
-      accesskey: L10N.getStr("netmonitor.context.copyPostData.accesskey"),
+      label: L10N.getFormatStr("netmonitor.context.copyRequestData", method),
+      accesskey: L10N.getStr("netmonitor.context.copyRequestData.accesskey"),
       
       
       visible: !!(selectedRequest && (requestPostDataAvailable || requestPostData)),
