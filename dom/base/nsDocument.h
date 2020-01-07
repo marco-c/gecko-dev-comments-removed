@@ -878,8 +878,6 @@ public:
   
   already_AddRefed<nsSimpleContentList> BlockedTrackingNodes() const;
 
-  static bool IsUnprefixedFullscreenEnabled(JSContext* aCx, JSObject* aObject);
-
   
   
   bool FullscreenElementReadyCheck(Element* aElement, bool aWasCallerChrome);
@@ -903,11 +901,10 @@ public:
   void FullScreenStackPop();
 
   
-  Element* FullScreenStackTop();
+  Element* FullScreenStackTop() override;
 
   
   bool FullscreenEnabled(mozilla::dom::CallerType aCallerType) override;
-  Element* GetFullscreenElement() override;
 
   virtual bool AllowPaymentRequest() const override;
   virtual void SetAllowPaymentRequest(bool aIsAllowPaymentRequest) override;

@@ -8750,7 +8750,7 @@ nsDocument::OnPageHide(bool aPersisted,
   EnumerateActivityObservers(NotifyActivityChanged, nullptr);
 
   ClearPendingFullscreenRequests(this);
-  if (GetFullscreenElement()) {
+  if (FullScreenStackTop()) {
     
     
     
@@ -10552,7 +10552,7 @@ nsIDocument::AsyncExitFullscreen(nsIDocument* aDoc)
 static bool
 CountFullscreenSubDocuments(nsIDocument* aDoc, void* aData)
 {
-  if (aDoc->GetFullscreenElement()) {
+  if (aDoc->FullScreenStackTop()) {
     uint32_t* count = static_cast<uint32_t*>(aData);
     (*count)++;
   }
@@ -10572,7 +10572,7 @@ nsDocument::IsFullscreenLeaf()
 {
   
   
-  if (!GetFullscreenElement()) {
+  if (!FullScreenStackTop()) {
     return false;
   }
   return CountFullscreenSubDocuments(this) == 0;
@@ -10581,11 +10581,11 @@ nsDocument::IsFullscreenLeaf()
 static bool
 ResetFullScreen(nsIDocument* aDocument, void* aData)
 {
-  if (aDocument->GetFullscreenElement()) {
+  if (aDocument->FullScreenStackTop()) {
     NS_ASSERTION(CountFullscreenSubDocuments(aDocument) <= 1,
         "Should have at most 1 fullscreen subdocument.");
     static_cast<nsDocument*>(aDocument)->CleanupFullscreenState();
-    NS_ASSERTION(!aDocument->GetFullscreenElement(),
+    NS_ASSERTION(!aDocument->FullScreenStackTop(),
                  "Should reset full-screen");
     auto changed = reinterpret_cast<nsCOMArray<nsIDocument>*>(aData);
     changed->AppendElement(aDocument);
@@ -10636,7 +10636,7 @@ nsIDocument::ExitFullscreenInDocTree(nsIDocument* aMaybeNotARootDoc)
   UnlockPointer();
 
   nsCOMPtr<nsIDocument> root = aMaybeNotARootDoc->GetFullscreenRoot();
-  if (!root || !root->GetFullscreenElement()) {
+  if (!root || !root->FullScreenStackTop()) {
     
     
     
@@ -10665,7 +10665,7 @@ nsIDocument::ExitFullscreenInDocTree(nsIDocument* aMaybeNotARootDoc)
     DispatchFullScreenChange(changed[changed.Length() - i - 1]);
   }
 
-  NS_ASSERTION(!root->GetFullscreenElement(),
+  NS_ASSERTION(!root->FullScreenStackTop(),
     "Fullscreen root should no longer be a fullscreen doc...");
 
   
@@ -10682,7 +10682,7 @@ GetFullscreenLeaf(nsIDocument* aDoc, void* aData)
     nsIDocument** result = static_cast<nsIDocument**>(aData);
     *result = aDoc;
     return false;
-  } else if (aDoc->GetFullscreenElement()) {
+  } else if (aDoc->FullScreenStackTop()) {
     aDoc->EnumerateSubDocuments(GetFullscreenLeaf, aData);
   }
   return true;
@@ -10701,7 +10701,7 @@ GetFullscreenLeaf(nsIDocument* aDoc)
   nsIDocument* root = nsContentUtils::GetRootDocument(aDoc);
   
   
-  if (!root->GetFullscreenElement()) {
+  if (!root->FullScreenStackTop()) {
     return nullptr;
   }
   GetFullscreenLeaf(root, &leaf);
@@ -10711,10 +10711,10 @@ GetFullscreenLeaf(nsIDocument* aDoc)
 void
 nsDocument::RestorePreviousFullScreenState()
 {
-  NS_ASSERTION(!GetFullscreenElement() || !FullscreenRoots::IsEmpty(),
+  NS_ASSERTION(!FullScreenStackTop() || !FullscreenRoots::IsEmpty(),
     "Should have at least 1 fullscreen root when fullscreen!");
 
-  if (!GetFullscreenElement() || !GetWindow() || FullscreenRoots::IsEmpty()) {
+  if (!FullScreenStackTop() || !GetWindow() || FullscreenRoots::IsEmpty()) {
     return;
   }
 
@@ -10893,7 +10893,7 @@ nsDocument::FullScreenStackPush(Element* aElement)
   }
   EventStateManager::SetFullScreenState(aElement, true);
   mFullScreenStack.AppendElement(do_GetWeakReference(aElement));
-  NS_ASSERTION(GetFullscreenElement() == aElement, "Should match");
+  NS_ASSERTION(FullScreenStackTop() == aElement, "Should match");
   UpdateViewportScrollbarOverrideForFullscreen(this);
   return true;
 }
@@ -10941,7 +10941,7 @@ nsDocument::FullScreenStackTop()
   uint32_t last = mFullScreenStack.Length() - 1;
   nsCOMPtr<Element> element(do_QueryReferent(mFullScreenStack[last]));
   NS_ASSERTION(element, "Should have full-screen element!");
-  NS_ASSERTION(element->IsInUncomposedDoc(), "Full-screen element should be in doc");
+  NS_ASSERTION(element->IsInComposedDoc(), "Full-screen element should be in doc");
   NS_ASSERTION(element->OwnerDoc() == this, "Full-screen element should be in this doc");
   return element;
 }
@@ -11019,7 +11019,7 @@ nsresult nsDocument::RemoteFrameFullscreenReverted()
 }
 
  bool
-nsDocument::IsUnprefixedFullscreenEnabled(JSContext* aCx, JSObject* aObject)
+nsIDocument::IsUnprefixedFullscreenEnabled(JSContext* aCx, JSObject* aObject)
 {
   MOZ_ASSERT(NS_IsMainThread());
   return nsContentUtils::IsSystemCaller(aCx) ||
@@ -11066,10 +11066,10 @@ nsDocument::FullscreenElementReadyCheck(Element* aElement,
 {
   NS_ASSERTION(aElement,
     "Must pass non-null element to nsDocument::RequestFullScreen");
-  if (!aElement || aElement == GetFullscreenElement()) {
+  if (!aElement || aElement == FullScreenStackTop()) {
     return false;
   }
-  if (!aElement->IsInUncomposedDoc()) {
+  if (!aElement->IsInComposedDoc()) {
     DispatchFullscreenError("FullscreenDeniedNotInDocument");
     return false;
   }
@@ -11093,8 +11093,11 @@ nsDocument::FullscreenElementReadyCheck(Element* aElement,
     DispatchFullscreenError("FullscreenDeniedSubDocFullScreen");
     return false;
   }
-  if (GetFullscreenElement() &&
-      !nsContentUtils::ContentIsDescendantOf(aElement, GetFullscreenElement())) {
+  
+  
+  if (FullScreenStackTop() &&
+      !nsContentUtils::ContentIsHostIncludingDescendantOf(aElement,
+                                                          FullScreenStackTop())) {
     
     
     DispatchFullscreenError("FullscreenDeniedNotDescendant");
@@ -11443,16 +11446,6 @@ nsDocument::ApplyFullscreen(const FullscreenRequest& aRequest)
     DispatchFullScreenChange(changed[changed.Length() - i - 1]);
   }
   return true;
-}
-
-Element*
-nsDocument::GetFullscreenElement()
-{
-  Element* element = FullScreenStackTop();
-  NS_ASSERTION(!element ||
-               element->State().HasState(NS_EVENT_STATE_FULL_SCREEN),
-    "Fullscreen element should have fullscreen styles applied");
-  return element;
 }
 
 bool
