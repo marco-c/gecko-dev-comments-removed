@@ -19,6 +19,7 @@ function debug(aMsg) {
   
 }
 
+
 class GeckoViewNavigationContent extends GeckoViewContentModule {
   register() {
     debug("register");
