@@ -3219,6 +3219,24 @@ nsFocusManager::IsHostOrSlot(nsIContent* aContent)
          aContent->IsHTMLElement(nsGkAtoms::slot); 
 }
 
+int32_t
+nsFocusManager::HostOrSlotTabIndexValue(nsIContent* aContent)
+{
+  MOZ_ASSERT(IsHostOrSlot(aContent));
+
+  const nsAttrValue* attrVal =
+    aContent->AsElement()->GetParsedAttr(nsGkAtoms::tabindex);
+  if (!attrVal) {
+    return 0;
+  }
+
+  if (attrVal->Type() == nsAttrValue::eInteger) {
+    return attrVal->GetIntegerValue();
+  }
+
+  return -1;
+}
+
 nsIContent*
 nsFocusManager::GetNextTabbableContentInScope(nsIContent* aOwner,
                                               nsIContent* aStartContent,
@@ -3330,7 +3348,7 @@ nsFocusManager::GetNextTabbableContentInAncestorScopes(
       MOZ_ASSERT(owner->GetShadowRoot());
 
       *aStartContent = owner;
-      owner->IsFocusable(aCurrentTabIndex);
+      *aCurrentTabIndex = HostOrSlotTabIndexValue(owner);
       break;
     }
 
@@ -3496,6 +3514,29 @@ nsFocusManager::GetNextTabbableContent(nsIPresShell* aPresShell,
             if (NS_SUCCEEDED(rv) && *aResultContent) {
               return rv;
             }
+          }
+        }
+      }
+
+      
+      
+      
+      
+      
+      
+      
+      if (currentContent && nsDocument::IsShadowDOMEnabled(currentContent) &&
+          IsHostOrSlot(currentContent)) {
+        int32_t tabIndex = HostOrSlotTabIndexValue(currentContent);
+        if (tabIndex >= 0 &&
+            (aIgnoreTabIndex || aCurrentTabIndex == tabIndex)) {
+          nsIContent* contentToFocus =
+            GetNextTabbableContentInScope(currentContent, currentContent, aForward,
+                                          aForward ? 1 : 0, aIgnoreTabIndex,
+                                          true );
+          if (contentToFocus) {
+            NS_ADDREF(*aResultContent = contentToFocus);
+            return NS_OK;
           }
         }
       }

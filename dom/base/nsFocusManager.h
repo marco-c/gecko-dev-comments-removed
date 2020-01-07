@@ -448,6 +448,13 @@ protected:
 
 
 
+  int32_t HostOrSlotTabIndexValue(nsIContent* aContent);
+
+  
+
+
+
+
 
 
 
