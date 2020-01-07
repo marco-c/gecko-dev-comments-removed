@@ -26,10 +26,8 @@ async function testModeMenuitem(mode, modePref) {
      "Normal mode menuitem should be active by default");
 
   
-  
-  let mouseoverPromise = BrowserTestUtils.waitForEvent(item, "mouseover");
   EventUtils.synthesizeMouseAtCenter(item, { type: "mouseover" });
-  await mouseoverPromise;
+  await BrowserTestUtils.waitForAttribute("uidensity", win, mode);
 
   is(win.getAttribute("uidensity"), mode,
      `UI Density should be set to ${mode} on ${mode} menuitem hover`);
