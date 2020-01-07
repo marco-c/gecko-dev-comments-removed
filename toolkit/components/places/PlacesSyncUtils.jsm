@@ -75,7 +75,7 @@ XPCOMUtils.defineLazyGetter(this, "ROOTS", () =>
   Object.keys(ROOT_RECORD_ID_TO_GUID)
 );
 
-const HistorySyncUtils = PlacesSyncUtils.history = Object.freeze({
+PlacesSyncUtils.history = Object.freeze({
   
 
 
@@ -610,11 +610,8 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
 
             
             
-            let deleteParams = updateParams.map(({ guid }) => ({ guid }));
-            await db.executeCached(`
-              DELETE FROM moz_bookmarks_deleted
-              WHERE guid = :guid`,
-              deleteParams);
+            let tombstoneGuidsToRemove = updateParams.map(({ guid }) => guid);
+            await removeTombstones(db, tombstoneGuidsToRemove);
           });
         }
 
