@@ -2885,6 +2885,9 @@ namespace binding_detail {
 
 
 
+
+
+
 struct NormalThisPolicy
 {
   
@@ -2900,12 +2903,35 @@ struct NormalThisPolicy
     return aArgs.thisv().isObject();
   }
 
+  static MOZ_ALWAYS_INLINE JSObject* ExtractThisObject(const JS::CallArgs& aArgs)
+  {
+    return &aArgs.thisv().toObject();
+  }
+
   static bool HandleInvalidThis(JSContext* aCx, JS::CallArgs& aArgs,
                                 bool aSecurityError,
                                 prototypes::ID aProtoId)
   {
     return ThrowInvalidThis(aCx, aArgs, aSecurityError, aProtoId);
   }
+};
+
+struct MaybeGlobalThisPolicy : public NormalThisPolicy
+{
+  static MOZ_ALWAYS_INLINE bool HasValidThisValue(const JS::CallArgs& aArgs)
+  {
+    
+    return aArgs.thisv().isObject() || aArgs.thisv().isNullOrUndefined();
+  }
+
+  static MOZ_ALWAYS_INLINE JSObject* ExtractThisObject(const JS::CallArgs& aArgs)
+  {
+    return aArgs.thisv().isObject() ?
+      &aArgs.thisv().toObject() :
+      js::GetGlobalForObjectCrossCompartment(&aArgs.callee());
+  }
+
+  
 };
 
 
@@ -2958,7 +2984,7 @@ GenericGetter(JSContext* cx, unsigned argc, JS::Value* vp)
     bool ok = ThisPolicy::HandleInvalidThis(cx, args, false, protoID);
     return ExceptionPolicy::HandleException(cx, args, info, ok);
   }
-  JS::Rooted<JSObject*> obj(cx, &args.thisv().toObject());
+  JS::Rooted<JSObject*> obj(cx, ThisPolicy::ExtractThisObject(args));
 
   
   
@@ -2996,6 +3022,12 @@ GenericGetter<NormalThisPolicy, ThrowExceptions>(
   JSContext* cx, unsigned argc, JS::Value* vp);
 template bool
 GenericGetter<NormalThisPolicy, ConvertExceptionsToPromises>(
+  JSContext* cx, unsigned argc, JS::Value* vp);
+template bool
+GenericGetter<MaybeGlobalThisPolicy, ThrowExceptions>(
+  JSContext* cx, unsigned argc, JS::Value* vp);
+template bool
+GenericGetter<MaybeGlobalThisPolicy, ConvertExceptionsToPromises>(
   JSContext* cx, unsigned argc, JS::Value* vp);
 
 } 

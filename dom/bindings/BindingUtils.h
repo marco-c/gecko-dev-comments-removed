@@ -3247,6 +3247,10 @@ GenericGetter(JSContext* cx, unsigned argc, JS::Value* vp);
 struct NormalThisPolicy;
 
 
+
+struct MaybeGlobalThisPolicy;
+
+
 struct ThrowExceptions;
 
 
