@@ -122,12 +122,10 @@ FontFaceSet::FontFaceSet(nsPIDOMWindowInner* aWindow, nsIDocument* aDocument)
 {
   MOZ_ASSERT(mDocument, "We should get a valid document from the caller!");
 
-  nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(aWindow);
-
   
   
   
-  if (global && PrefEnabled()) {
+  if (aWindow && PrefEnabled()) {
     mResolveLazilyCreatedReadyPromise = true;
   }
 
