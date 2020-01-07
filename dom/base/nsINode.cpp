@@ -2438,12 +2438,8 @@ struct SelectorMatchInfo {
 
 
 
-
-template<bool onlyFirstMatch, class T>
-inline static void
-FindMatchingElementsWithId(const nsAString& aId, nsINode* aRoot,
-                           SelectorMatchInfo* aMatchInfo,
-                           T& aList)
+inline static Element*
+FindMatchingElementWithId(const nsAString& aId, nsINode* aRoot)
 {
   MOZ_ASSERT(aRoot->IsInUncomposedDoc(),
              "Don't call me if the root is not in the document");
@@ -2457,7 +2453,7 @@ FindMatchingElementsWithId(const nsAString& aId, nsINode* aRoot,
   const nsTArray<Element*>* elements = aRoot->OwnerDoc()->GetAllElementsForId(aId);
   if (!elements) {
     
-    return;
+    return nullptr;
   }
 
   
@@ -2469,30 +2465,11 @@ FindMatchingElementsWithId(const nsAString& aId, nsINode* aRoot,
            nsContentUtils::ContentIsDescendantOf(element, aRoot))) {
       
       
-      if (!aMatchInfo
-      ) {
-        aList.AppendElement(element);
-        if (onlyFirstMatch) {
-          return;
-        }
-      }
+      return element;
     }
   }
+  return nullptr;
 }
-
-
-struct ElementHolder {
-  ElementHolder() : mElement(nullptr) {}
-  void AppendElement(Element* aElement) {
-    MOZ_ASSERT(!mElement, "Should only get one element");
-    mElement = aElement;
-  }
-  void SetCapacity(uint32_t aCapacity) { MOZ_CRASH("Don't call me!"); }
-  uint32_t Length() { return 0; }
-  Element* ElementAt(uint32_t aIndex) { return nullptr; }
-
-  Element* mElement;
-};
 
 Element*
 nsINode::QuerySelector(const nsAString& aSelector, ErrorResult& aResult)
@@ -2526,9 +2503,7 @@ nsINode::GetElementById(const nsAString& aId)
   MOZ_ASSERT(IsElement() || IsDocumentFragment(),
              "Bogus this object for GetElementById call");
   if (IsInUncomposedDoc()) {
-    ElementHolder holder;
-    FindMatchingElementsWithId<true>(aId, this, nullptr, holder);
-    return holder.mElement;
+    return FindMatchingElementWithId(aId, this);
   }
 
   for (nsIContent* kid = GetFirstChild(); kid; kid = kid->GetNextNode(this)) {
