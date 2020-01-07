@@ -424,7 +424,8 @@ public:
   
   
   
-  void GetMouseLocation(nsIDOMNode** aNode, int32_t* aOffset);
+  nsINode* GetMouseLocationParent();
+  int32_t MouseLocationOffset();
 
   
 
@@ -832,7 +833,7 @@ protected:
   nsCOMPtr<nsIWidget> mWidget;
 
   
-  nsCOMPtr<nsIDOMNode> mRangeParent;
+  nsCOMPtr<nsINode> mRangeParent;
   int32_t mRangeOffset;
   
   

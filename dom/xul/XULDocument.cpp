@@ -1375,46 +1375,25 @@ XULDocument::SetPopupNode(nsINode* aNode)
 
 
 
-NS_IMETHODIMP
-XULDocument::GetPopupRangeParent(nsIDOMNode** aRangeParent)
-{
-    NS_ENSURE_ARG_POINTER(aRangeParent);
-    *aRangeParent = nullptr;
-
-    nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
-    if (!pm)
-        return NS_ERROR_FAILURE;
-
-    int32_t offset;
-    pm->GetMouseLocation(aRangeParent, &offset);
-
-    if (*aRangeParent && !nsContentUtils::CanCallerAccess(*aRangeParent)) {
-        NS_RELEASE(*aRangeParent);
-        return NS_ERROR_DOM_SECURITY_ERR;
-    }
-
-    return NS_OK;
-}
-
-already_AddRefed<nsINode>
+nsINode*
 XULDocument::GetPopupRangeParent(ErrorResult& aRv)
 {
-    nsCOMPtr<nsIDOMNode> node;
-    aRv = GetPopupRangeParent(getter_AddRefs(node));
-    nsCOMPtr<nsINode> retval(do_QueryInterface(node));
-    return retval.forget();
+    nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
+    if (!pm) {
+        aRv.Throw(NS_ERROR_FAILURE);
+        return nullptr;
+    }
+
+    nsINode* rangeParent = pm->GetMouseLocationParent();
+    if (rangeParent && !nsContentUtils::CanCallerAccess(rangeParent)) {
+        aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
+        return nullptr;
+    }
+
+    return rangeParent;
 }
 
 
-
-
-NS_IMETHODIMP
-XULDocument::GetPopupRangeOffset(int32_t* aRangeOffset)
-{
-    ErrorResult rv;
-    *aRangeOffset = GetPopupRangeOffset(rv);
-    return rv.StealNSResult();
-}
 
 int32_t
 XULDocument::GetPopupRangeOffset(ErrorResult& aRv)
@@ -1425,15 +1404,13 @@ XULDocument::GetPopupRangeOffset(ErrorResult& aRv)
         return 0;
     }
 
-    int32_t offset;
-    nsCOMPtr<nsIDOMNode> parent;
-    pm->GetMouseLocation(getter_AddRefs(parent), &offset);
-
-    if (parent && !nsContentUtils::CanCallerAccess(parent)) {
+    nsINode* rangeParent = pm->GetMouseLocationParent();
+    if (rangeParent && !nsContentUtils::CanCallerAccess(rangeParent)) {
         aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
         return 0;
     }
-    return offset;
+
+    return pm->MouseLocationOffset();
 }
 
 NS_IMETHODIMP
