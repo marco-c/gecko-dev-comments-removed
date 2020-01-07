@@ -11359,6 +11359,20 @@ nsDocShell::ScrollToAnchor(bool aCurHasRef, bool aNewHasRef,
                              nsIPresShell::SCROLL_SMOOTH_AUTO);
     }
 
+    if (NS_FAILED(rv)) {
+      char* str = ToNewCString(aNewHash);
+      if (!str) {
+        return NS_ERROR_OUT_OF_MEMORY;
+      }
+      nsUnescape(str);
+      NS_ConvertUTF8toUTF16 utf16Str(str);
+      if (!utf16Str.IsEmpty()) {
+        rv = shell->GoToAnchor(utf16Str, scroll,
+                               nsIPresShell::SCROLL_SMOOTH_AUTO);
+      }
+      free(str);
+    }
+
     
     
     if (NS_FAILED(rv)) {
