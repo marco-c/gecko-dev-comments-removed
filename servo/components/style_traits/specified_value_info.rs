@@ -24,12 +24,24 @@ pub mod CssType {
 }
 
 
+pub type KeywordsCollectFn<'a> = &'a mut FnMut(&[&'static str]);
+
+
 pub trait SpecifiedValueInfo {
     
     
     
     
     const SUPPORTED_TYPES: u8 = 0;
+
+    
+    
+    
+    
+    
+    
+    
+    fn collect_completion_keywords(_f: KeywordsCollectFn) {}
 }
 
 impl SpecifiedValueInfo for bool {}
@@ -44,16 +56,25 @@ impl SpecifiedValueInfo for String {}
 
 impl<T: SpecifiedValueInfo + ?Sized> SpecifiedValueInfo for Box<T> {
     const SUPPORTED_TYPES: u8 = T::SUPPORTED_TYPES;
+    fn collect_completion_keywords(f: KeywordsCollectFn) {
+        T::collect_completion_keywords(f);
+    }
 }
 
 impl<T: SpecifiedValueInfo> SpecifiedValueInfo for [T] {
     const SUPPORTED_TYPES: u8 = T::SUPPORTED_TYPES;
+    fn collect_completion_keywords(f: KeywordsCollectFn) {
+        T::collect_completion_keywords(f);
+    }
 }
 
 macro_rules! impl_generic_specified_value_info {
     ($ty:ident<$param:ident>) => {
         impl<$param: SpecifiedValueInfo> SpecifiedValueInfo for $ty<$param> {
             const SUPPORTED_TYPES: u8 = $param::SUPPORTED_TYPES;
+            fn collect_completion_keywords(f: KeywordsCollectFn) {
+                $param::collect_completion_keywords(f);
+            }
         }
     }
 }
@@ -68,4 +89,9 @@ where
     T2: SpecifiedValueInfo,
 {
     const SUPPORTED_TYPES: u8 = T1::SUPPORTED_TYPES | T2::SUPPORTED_TYPES;
+
+    fn collect_completion_keywords(f: KeywordsCollectFn) {
+        T1::collect_completion_keywords(f);
+        T2::collect_completion_keywords(f);
+    }
 }
