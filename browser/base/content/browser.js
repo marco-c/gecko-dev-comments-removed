@@ -4739,7 +4739,6 @@ var XULBrowserWindow = {
   
   onStateChange(aWebProgress, aRequest, aStateFlags, aStatus) {
     const nsIWebProgressListener = Ci.nsIWebProgressListener;
-    const nsIChannel = Ci.nsIChannel;
 
     let browser = gBrowser.selectedBrowser;
 
@@ -4772,7 +4771,7 @@ var XULBrowserWindow = {
         let location;
         let canViewSource = true;
         
-        if (aRequest instanceof nsIChannel || "URI" in aRequest) {
+        if (aRequest instanceof Ci.nsIChannel || "URI" in aRequest) {
           location = aRequest.URI;
 
           
@@ -6196,7 +6195,8 @@ function contentAreaClick(event, isPanelClick) {
                                          uri: makeURI(href),
                                          title: linkNode.getAttribute("title"),
                                          loadBookmarkInSidebar: true,
-                                         hiddenRows: [ "location",
+                                         hiddenRows: [ "description",
+                                                       "location",
                                                        "keyword" ]
                                        }, window);
       event.preventDefault();
@@ -7337,10 +7337,12 @@ function AddKeywordForSearchField() {
                                        type: "bookmark",
                                        uri: makeURI(bookmarkData.spec),
                                        title,
+                                       description: bookmarkData.description,
                                        keyword: "",
                                        postData: bookmarkData.postData,
                                        charSet: bookmarkData.charset,
                                        hiddenRows: [ "location",
+                                                     "description",
                                                      "tags",
                                                      "loadInSidebar" ]
                                      }, window);
