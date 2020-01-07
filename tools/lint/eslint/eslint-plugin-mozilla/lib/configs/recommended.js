@@ -171,6 +171,7 @@ module.exports = {
     
     "no-array-constructor": "error",
 
+    
     "no-caller": "error",
 
     
