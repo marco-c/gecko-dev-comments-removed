@@ -1475,6 +1475,7 @@ class NativeObject : public ShapedObject
     
     
     inline js::GlobalObject& global() const;
+    JS::Realm* realm() const { return JSObject::realm(); }
 
     
     static size_t offsetOfElements() { return offsetof(NativeObject, elements_); }
