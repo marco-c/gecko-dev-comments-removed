@@ -1155,8 +1155,6 @@ WebGLTexture::TexStorage(const char* funcName, TexTarget target, GLsizei levels,
     
     
 
-    mContext->gl->MakeCurrent();
-
     GLenum error = DoTexStorage(mContext->gl, target.get(), levels, sizedFormat, width,
                                 height, depth);
 
@@ -1269,9 +1267,6 @@ WebGLTexture::TexImage(const char* funcName, TexImageTarget target, GLint level,
     
     
 
-    MOZ_ALWAYS_TRUE( mContext->gl->MakeCurrent() );
-    MOZ_ASSERT(mContext->gl->IsCurrent());
-
     
     
 
@@ -1362,8 +1357,6 @@ WebGLTexture::TexSubImage(const char* funcName, TexImageTarget target, GLint lev
 
     
     
-
-    mContext->gl->MakeCurrent();
 
     bool uploadWillInitialize;
     if (!EnsureImageDataInitializedForUpload(this, funcName, target, level, xOffset,
@@ -1496,7 +1489,6 @@ WebGLTexture::CompressedTexImage(const char* funcName, TexImageTarget target, GL
     
     
 
-    mContext->gl->MakeCurrent();
     const ScopedLazyBind bindPBO(mContext->gl, LOCAL_GL_PIXEL_UNPACK_BUFFER,
                                  mContext->mBoundPixelUnpackBuffer);
 
@@ -1638,8 +1630,6 @@ WebGLTexture::CompressedTexSubImage(const char* funcName, TexImageTarget target,
 
     
     
-
-    mContext->gl->MakeCurrent();
 
     bool uploadWillInitialize;
     if (!EnsureImageDataInitializedForUpload(this, funcName, target, level, xOffset,
@@ -2165,7 +2155,6 @@ WebGLTexture::CopyTexImage2D(TexImageTarget target, GLint level, GLenum internal
     
     
 
-    mContext->gl->MakeCurrent();
     mContext->OnBeforeReadCall();
 
     const bool isSubImage = false;
@@ -2245,7 +2234,6 @@ WebGLTexture::CopyTexSubImage(const char* funcName, TexImageTarget target, GLint
     
     
 
-    mContext->gl->MakeCurrent();
     mContext->OnBeforeReadCall();
 
     bool uploadWillInitialize;

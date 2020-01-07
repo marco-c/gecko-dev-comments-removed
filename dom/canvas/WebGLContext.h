@@ -1710,8 +1710,6 @@ protected:
     void Invalidate();
     void DestroyResourcesAndContext();
 
-    void MakeContextCurrent() const { } 
-
     
 
     bool ConvertImage(size_t width, size_t height, size_t srcStride,

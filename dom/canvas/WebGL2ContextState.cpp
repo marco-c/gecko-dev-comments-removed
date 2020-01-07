@@ -27,8 +27,6 @@ WebGL2Context::GetParameter(JSContext* cx, GLenum pname, ErrorResult& rv)
   if (IsContextLost())
     return JS::NullValue();
 
-  MakeContextCurrent();
-
   switch (pname) {
     
     case LOCAL_GL_RASTERIZER_DISCARD:

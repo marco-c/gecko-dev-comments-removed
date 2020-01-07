@@ -21,7 +21,6 @@ WebGLExtensionSRGB::WebGLExtensionSRGB(WebGLContext* webgl)
     if (!gl->IsGLES()) {
         
         
-        gl->MakeCurrent();
         gl->fEnable(LOCAL_GL_FRAMEBUFFER_SRGB_EXT);
     }
 
