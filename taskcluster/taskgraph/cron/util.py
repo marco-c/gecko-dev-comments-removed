@@ -25,8 +25,8 @@ def match_utc(params, hour=None, minute=None):
     return True
 
 
-def calculate_head_rev(options):
+def calculate_head_rev(root):
     
     
     
-    return subprocess.check_output(['hg', 'log', '-r', '.', '-T', '{node}'])
+    return subprocess.check_output(['hg', 'log', '-r', '.', '-T', '{node}'], cwd=root)
