@@ -50,6 +50,11 @@ class Redirection;
 class CachePage;
 class AutoLockSimulator;
 
+
+
+
+typedef void (*SingleStepCallback)(void* arg, Simulator* sim, void* pc);
+
 const intptr_t kPointerAlignment = 4;
 const intptr_t kPointerAlignmentMask = kPointerAlignment - 1;
 
@@ -201,6 +206,9 @@ class Simulator {
 
     template <typename T>
     T get_pc_as() const { return reinterpret_cast<T>(get_pc()); }
+
+    void enable_single_stepping(SingleStepCallback cb, void* arg);
+    void disable_single_stepping();
 
     
     uintptr_t stackLimit() const;
@@ -362,6 +370,11 @@ class Simulator {
     
     SimInstruction* break_pc_;
     Instr break_instr_;
+
+    
+    bool single_stepping_;
+    SingleStepCallback single_step_callback_;
+    void* single_step_callback_arg_;
 
     
     

@@ -23,7 +23,7 @@
 #include "vm/Monitor.h"
 
 
-#if defined(JS_SIMULATOR_ARM) || defined(JS_SIMULATOR_MIPS64)
+#if defined(JS_SIMULATOR_ARM) || defined(JS_SIMULATOR_MIPS64) || defined(JS_SIMULATOR_MIPS32)
 # define SINGLESTEP_PROFILING
 #endif
 
