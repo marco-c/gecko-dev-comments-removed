@@ -2593,6 +2593,13 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
   RefPtr<nsCSSValueSharedList> mSpecifiedRotate; 
   RefPtr<nsCSSValueSharedList> mSpecifiedTranslate; 
   RefPtr<nsCSSValueSharedList> mSpecifiedScale; 
+
+  
+  
+  
+  
+  RefPtr<nsCSSValueSharedList> mCombinedTransform;
+
   nsStyleCoord mTransformOrigin[3]; 
   nsStyleCoord mChildPerspective; 
   nsStyleCoord mPerspectiveOrigin[2]; 
@@ -2860,6 +2867,18 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
   inline bool IsFixedPosContainingBlockForAppropriateFrame(
                 StyleContextLike* aStyleContext) const;
 
+  
+
+
+  already_AddRefed<nsCSSValueSharedList> GetCombinedTransform() const {
+    if (mCombinedTransform) {
+      return do_AddRef(mCombinedTransform);
+    }
+
+    
+    return mSpecifiedTransform ? do_AddRef(mSpecifiedTransform) : nullptr;
+  }
+
 private:
   
   
@@ -2869,7 +2888,7 @@ private:
   template<class StyleContextLike>
   inline bool HasFixedPosContainingBlockStyleInternal(
                 StyleContextLike* aStyleContext) const;
-
+  void GenerateCombinedTransform();
 public:
   
   
