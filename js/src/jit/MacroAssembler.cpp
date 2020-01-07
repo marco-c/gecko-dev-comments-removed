@@ -38,6 +38,46 @@ using JS::ToInt32;
 
 using mozilla::CheckedUint32;
 
+template <typename T>
+static void
+EmitTypeCheck(MacroAssembler& masm, Assembler::Condition cond, const T& src, TypeSet::Type type,
+              Label* label)
+{
+    if (type.isAnyObject()) {
+        masm.branchTestObject(cond, src, label);
+        return;
+    }
+    switch (type.primitive()) {
+      case JSVAL_TYPE_DOUBLE:
+        
+        masm.branchTestNumber(cond, src, label);
+        break;
+      case JSVAL_TYPE_INT32:
+        masm.branchTestInt32(cond, src, label);
+        break;
+      case JSVAL_TYPE_BOOLEAN:
+        masm.branchTestBoolean(cond, src, label);
+        break;
+      case JSVAL_TYPE_STRING:
+        masm.branchTestString(cond, src, label);
+        break;
+      case JSVAL_TYPE_SYMBOL:
+        masm.branchTestSymbol(cond, src, label);
+        break;
+      case JSVAL_TYPE_NULL:
+        masm.branchTestNull(cond, src, label);
+        break;
+      case JSVAL_TYPE_UNDEFINED:
+        masm.branchTestUndefined(cond, src, label);
+        break;
+      case JSVAL_TYPE_MAGIC:
+        masm.branchTestMagic(cond, src, label);
+        break;
+      default:
+        MOZ_CRASH("Unexpected type");
+    }
+}
+
 template <typename Source> void
 MacroAssembler::guardTypeSet(const Source& address, const TypeSet* types, BarrierKind kind,
                              Register scratch, Label* miss)
@@ -64,40 +104,47 @@ MacroAssembler::guardTypeSet(const Source& address, const TypeSet* types, Barrie
         tests[0] = TypeSet::DoubleType();
     }
 
+    unsigned numBranches = 0;
+    for (size_t i = 0; i < mozilla::ArrayLength(tests); i++) {
+        if (types->hasType(tests[i]))
+            numBranches++;
+    }
+
+    if (!types->unknownObject() && types->getObjectCount() > 0)
+        numBranches++;
+
+    if (numBranches == 0) {
+        MOZ_ASSERT(types->empty());
+        jump(miss);
+        return;
+    }
+
     Register tag = extractTag(address, scratch);
 
     
-    BranchType lastBranch;
     for (size_t i = 0; i < mozilla::ArrayLength(tests); i++) {
         if (!types->hasType(tests[i]))
             continue;
 
-        if (lastBranch.isInitialized())
-            lastBranch.emit(*this);
-        lastBranch = BranchType(Equal, tag, tests[i], &matched);
+        if (--numBranches > 0)
+            EmitTypeCheck(*this, Equal, tag, tests[i], &matched);
+        else
+            EmitTypeCheck(*this, NotEqual, tag, tests[i], miss);
     }
 
     
-    if (types->hasType(TypeSet::AnyObjectType()) || !types->getObjectCount()) {
-        if (!lastBranch.isInitialized()) {
-            jump(miss);
-            return;
-        }
-
-        lastBranch.invertCondition();
-        lastBranch.relink(miss);
-        lastBranch.emit(*this);
-
+    if (numBranches == 0) {
+        MOZ_ASSERT(types->unknownObject() || types->getObjectCount() == 0);
         bind(&matched);
         return;
     }
 
-    if (lastBranch.isInitialized())
-        lastBranch.emit(*this);
-
     
     MOZ_ASSERT(scratch != InvalidReg);
+
+    MOZ_ASSERT(numBranches == 1);
     branchTestObject(NotEqual, tag, miss);
+
     if (kind != BarrierKind::TypeTagOnly) {
         Register obj = extractObject(address, scratch);
         guardObjectType(obj, types, scratch, miss);
@@ -174,59 +221,59 @@ MacroAssembler::guardObjectType(Register obj, const TypeSet* types,
     
     Label matched;
 
-    BranchGCPtr lastBranch;
-    MOZ_ASSERT(!lastBranch.isInitialized());
+    bool hasSingletons = false;
     bool hasObjectGroups = false;
+    unsigned numBranches = 0;
+
     unsigned count = types->getObjectCount();
     for (unsigned i = 0; i < count; i++) {
-        if (!types->getSingletonNoBarrier(i)) {
-            hasObjectGroups = hasObjectGroups || types->getGroupNoBarrier(i);
-            continue;
+        if (types->getGroupNoBarrier(i)) {
+            hasObjectGroups = true;
+            numBranches++;
+        } else if (types->getSingletonNoBarrier(i)) {
+            hasSingletons = true;
+            numBranches++;
         }
+    }
 
-        if (lastBranch.isInitialized()) {
-            comment("emit GC pointer checks");
-            lastBranch.emit(*this);
+    if (numBranches == 0) {
+        jump(miss);
+        return;
+    }
+
+    if (hasSingletons) {
+        for (unsigned i = 0; i < count; i++) {
+            JSObject* singleton = types->getSingletonNoBarrier(i);
+            if (!singleton)
+                continue;
+
+            if (--numBranches > 0)
+                branchPtr(Equal, obj, ImmGCPtr(singleton), &matched);
+            else
+                branchPtr(NotEqual, obj, ImmGCPtr(singleton), miss);
         }
-
-        JSObject* object = types->getSingletonNoBarrier(i);
-        lastBranch = BranchGCPtr(Equal, obj, ImmGCPtr(object), &matched);
     }
 
     if (hasObjectGroups) {
         comment("has object groups");
-        
-        
-        
-        
-        if (lastBranch.isInitialized())
-            lastBranch.emit(*this);
-        lastBranch = BranchGCPtr();
 
         
         
         loadPtr(Address(obj, JSObject::offsetOfGroup()), scratch);
 
         for (unsigned i = 0; i < count; i++) {
-            if (!types->getGroupNoBarrier(i))
+            ObjectGroup* group = types->getGroupNoBarrier(i);
+            if (!group)
                 continue;
 
-            if (lastBranch.isInitialized())
-                lastBranch.emit(*this);
-
-            ObjectGroup* group = types->getGroupNoBarrier(i);
-            lastBranch = BranchGCPtr(Equal, scratch, ImmGCPtr(group), &matched);
+            if (--numBranches > 0)
+                branchPtr(Equal, scratch, ImmGCPtr(group), &matched);
+            else
+                branchPtr(NotEqual, scratch, ImmGCPtr(group), miss);
         }
     }
 
-    if (!lastBranch.isInitialized()) {
-        jump(miss);
-        return;
-    }
-
-    lastBranch.invertCondition();
-    lastBranch.relink(miss);
-    lastBranch.emit(*this);
+    MOZ_ASSERT(numBranches == 0);
 
     bind(&matched);
 }
@@ -3467,29 +3514,6 @@ void
 MacroAssembler::loadWasmTlsRegFromFrame(Register dest)
 {
     loadPtr(Address(getStackPointer(), framePushed() + offsetof(wasm::Frame, tls)), dest);
-}
-
-void
-MacroAssembler::BranchType::emit(MacroAssembler& masm)
-{
-    MOZ_ASSERT(isInitialized());
-    MIRType mirType = MIRType::None;
-
-    if (type_.isPrimitive()) {
-        if (type_.isMagicArguments())
-            mirType = MIRType::MagicOptimizedArguments;
-        else
-            mirType = MIRTypeFromValueType(type_.primitive());
-    } else if (type_.isAnyObject()) {
-        mirType = MIRType::Object;
-    } else {
-        MOZ_CRASH("Unknown conversion to mirtype");
-    }
-
-    if (mirType == MIRType::Double)
-        masm.branchTestNumber(cond(), reg(), jump());
-    else
-        masm.branchTestMIRType(cond(), reg(), mirType, jump());
 }
 
 void
