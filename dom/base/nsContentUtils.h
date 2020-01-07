@@ -1865,13 +1865,9 @@ public:
 
 
 
-
-
-
   static void TriggerLink(nsIContent *aContent, nsPresContext *aPresContext,
                           nsIURI *aLinkURI, const nsString& aTargetSpec,
-                          bool aClick, bool aIsUserTriggered,
-                          bool aIsTrusted);
+                          bool aClick, bool aIsTrusted);
 
   
 
