@@ -875,7 +875,7 @@ def build_docker_worker_payload(config, task, task_def):
         else:
             suffix = ''
 
-        skip_untrusted = config.params['project'] == 'try' or level == 1
+        skip_untrusted = config.params.is_try() or level == 1
 
         for cache in worker['caches']:
             
@@ -1559,19 +1559,6 @@ def build_task(config, tasks):
             'attributes': attributes,
             'optimization': task.get('optimization', None),
         }
-
-
-@transforms.add
-def chain_of_trust(config, tasks):
-    for task in tasks:
-        if task['task'].get('payload', {}).get('features', {}).get('chainOfTrust'):
-            image = task.get('dependencies', {}).get('docker-image')
-            if image:
-                cot = task['task'].setdefault('extra', {}).setdefault('chainOfTrust', {})
-                cot.setdefault('inputs', {})['docker-image'] = {
-                    'task-reference': '<docker-image>'
-                }
-        yield task
 
 
 @transforms.add
