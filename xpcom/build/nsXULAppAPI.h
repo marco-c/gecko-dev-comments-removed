@@ -447,9 +447,6 @@ XRE_API(bool,
 XRE_API(bool,
         XRE_IsGPUProcess, ())
 
-XRE_API(bool,
-        XRE_IsPluginProcess, ())
-
 
 
 
