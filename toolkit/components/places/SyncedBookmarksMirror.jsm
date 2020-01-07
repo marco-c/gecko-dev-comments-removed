@@ -398,9 +398,13 @@ class SyncedBookmarksMirror {
       MirrorLog.debug("Building complete merged tree");
       let merger = new BookmarkMerger(localTree, newLocalContents,
                                       remoteTree, newRemoteContents);
-      let mergedRoot = await merger.merge();
-      for (let { value, extra } of merger.telemetryEvents) {
-        this.recordTelemetryEvent("mirror", "merge", value, extra);
+      let mergedRoot;
+      try {
+        mergedRoot = await merger.merge();
+      } finally {
+        for (let { value, extra } of merger.telemetryEvents) {
+          this.recordTelemetryEvent("mirror", "merge", value, extra);
+        }
       }
 
       if (MirrorLog.level <= Log.Level.Trace) {
@@ -514,8 +518,8 @@ class SyncedBookmarksMirror {
 
     let url = validateURL(record.bmkUri);
     if (!url) {
-      MirrorLog.trace("Ignoring bookmark ${guid} with invalid URL ${url}",
-                      { guid, url: record.bmkUri });
+      MirrorLog.warn("Ignoring bookmark ${guid} with invalid URL ${url}",
+                     { guid, url: record.bmkUri });
       this.recordTelemetryEvent("mirror", "ignore", "bookmark",
                                 { why: "url" });
       return;
@@ -571,8 +575,8 @@ class SyncedBookmarksMirror {
 
     let url = validateURL(record.bmkUri);
     if (!url) {
-      MirrorLog.trace("Ignoring query ${guid} with invalid URL ${url}",
-                      { guid, url: record.bmkUri });
+      MirrorLog.warn("Ignoring query ${guid} with invalid URL ${url}",
+                     { guid, url: record.bmkUri });
       this.recordTelemetryEvent("mirror", "ignore", "query",
                                 { why: "url" });
       return;
@@ -666,8 +670,8 @@ class SyncedBookmarksMirror {
 
     let feedURL = validateURL(record.feedUri);
     if (!feedURL) {
-      MirrorLog.trace("Ignoring livemark ${guid} with invalid feed URL ${url}",
-                      { guid, url: record.feedUri });
+      MirrorLog.warn("Ignoring livemark ${guid} with invalid feed URL ${url}",
+                     { guid, url: record.feedUri });
       this.recordTelemetryEvent("mirror", "ignore", "livemark",
                                 { why: "feed" });
       return;
@@ -2942,6 +2946,45 @@ class BookmarkNode {
 
 
 
+
+
+  hasCompatibleKind(remoteNode) {
+    if (this.kind == remoteNode.kind) {
+      return true;
+    }
+    
+    
+    
+    if ((this.kind == SyncedBookmarksMirror.KIND.BOOKMARK &&
+         remoteNode.kind == SyncedBookmarksMirror.KIND.QUERY) ||
+        (this.kind == SyncedBookmarksMirror.KIND.QUERY &&
+         remoteNode.kind == SyncedBookmarksMirror.KIND.BOOKMARK)) {
+      return true;
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (this.kind == SyncedBookmarksMirror.KIND.FOLDER &&
+        remoteNode.kind == SyncedBookmarksMirror.KIND.LIVEMARK) {
+      return true;
+    }
+    return false;
+  }
+
+  
+
+
+
+
+
+
   toASCIITreeString(prefix = "") {
     if (!this.isFolder()) {
       return prefix + "- " + this.toString();
@@ -3395,6 +3438,17 @@ class BookmarkMerger {
     let mergedNode = new MergedBookmarkNode(mergedGuid, localNode, remoteNode,
                                             mergeState);
 
+    if (!localNode.hasCompatibleKind(remoteNode)) {
+      MirrorLog.error("Merging local ${localNode} and remote ${remoteNode} " +
+                      "with different kinds", { localNode, remoteNode });
+      this.telemetryEvents.push({
+        value: "kind-mismatch",
+        extra: { local: "" + localNode.kind, remote: "" + remoteNode.kind },
+      });
+      throw new SyncedBookmarksMirror.ConsistencyError(
+        "Can't merge different item kinds");
+    }
+
     if (localNode.isFolder()) {
       if (remoteNode.isFolder()) {
         
@@ -3404,41 +3458,13 @@ class BookmarkMerger {
         await this.mergeChildListsIntoMergedNode(mergedNode, localNode, remoteNode);
         return mergedNode;
       }
-
-      if (remoteNode.kind == SyncedBookmarksMirror.KIND.LIVEMARK) {
-        
-        
-        
-        
-        
-        
-        
-        MirrorLog.trace("Merging local folder ${localNode} and remote " +
-                        "livemark ${remoteNode}", { localNode, remoteNode });
-        this.telemetryEvents.push({
-          value: "kind",
-          extra: { local: "folder", remote: "folder" },
-        });
-        return mergedNode;
-      }
-
-      MirrorLog.error("Merging local folder ${localNode} and remote " +
-                      "non-folder ${remoteNode}", { localNode, remoteNode });
-      throw new SyncedBookmarksMirror.ConsistencyError(
-        "Can't merge folder and non-folder");
-    }
-
-    if (localNode.kind == remoteNode.kind) {
       
-      MirrorLog.trace("Merging non-folders ${localNode} and ${remoteNode}",
-                      { localNode, remoteNode });
-      return mergedNode;
     }
-
-    MirrorLog.error("Merging local ${localNode} and remote ${remoteNode} " +
-                    "with different kinds", { localNode, remoteNode });
-    throw new SyncedBookmarksMirror.ConsistencyError(
-      "Can't merge different item kinds");
+    
+    
+    MirrorLog.trace("Merging non-folders ${localNode} and ${remoteNode}",
+                    { localNode, remoteNode });
+    return mergedNode;
   }
 
   
