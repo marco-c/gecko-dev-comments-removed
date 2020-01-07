@@ -2345,7 +2345,6 @@ HTMLEditor::GetSelectedElement(const nsAString& aTagName,
   RefPtr<Selection> selection = GetSelection();
   NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
 
-  bool bNodeFound = false;
   bool isCollapsed = selection->Collapsed();
 
   nsAutoString domTagName;
@@ -2356,7 +2355,6 @@ HTMLEditor::GetSelectedElement(const nsAString& aTagName,
   bool isLinkTag = IsLinkTag(TagName);
   bool isNamedAnchorTag = IsNamedAnchorTag(TagName);
 
-  nsCOMPtr<nsIDOMElement> selectedElement;
   RefPtr<nsRange> range = selection->GetRangeAt(0);
   NS_ENSURE_STATE(range);
 
@@ -2378,119 +2376,119 @@ HTMLEditor::GetSelectedElement(const nsAString& aTagName,
       if (anyTag || (TagName == domTagName) ||
           (isLinkTag && HTMLEditUtils::IsLink(selectedNode)) ||
           (isNamedAnchorTag && HTMLEditUtils::IsNamedAnchor(selectedNode))) {
-        bNodeFound = true;
-        selectedElement = do_QueryInterface(selectedNode);
+        selectedNode.forget(aReturn);
+        return NS_OK;
       }
     }
   }
 
-  if (!bNodeFound) {
-    if (isLinkTag) {
+  bool bNodeFound = false;
+  nsCOMPtr<nsIDOMElement> selectedElement;
+  if (isLinkTag) {
+    
+    
+    
+    const RangeBoundary& anchor = selection->AnchorRef();
+    const RangeBoundary& focus = selection->FocusRef();
+    
+    if (anchor.IsSet()) {
+      nsCOMPtr<nsIDOMElement> parentLinkOfAnchor;
+      nsresult rv =
+        GetElementOrParentByTagName(NS_LITERAL_STRING("href"),
+                                    anchor.Container()->AsDOMNode(),
+                                    getter_AddRefs(parentLinkOfAnchor));
       
-      
-      
-      const RangeBoundary& anchor = selection->AnchorRef();
-      const RangeBoundary& focus = selection->FocusRef();
-      
-      if (anchor.IsSet()) {
-        nsCOMPtr<nsIDOMElement> parentLinkOfAnchor;
-        nsresult rv =
-          GetElementOrParentByTagName(NS_LITERAL_STRING("href"),
-                                      anchor.Container()->AsDOMNode(),
-                                      getter_AddRefs(parentLinkOfAnchor));
-        
-        if (NS_SUCCEEDED(rv) && parentLinkOfAnchor) {
-          if (isCollapsed) {
-            
+      if (NS_SUCCEEDED(rv) && parentLinkOfAnchor) {
+        if (isCollapsed) {
+          
+          bNodeFound = true;
+        } else if (focus.IsSet()) {
+          
+          nsCOMPtr<nsIDOMElement> parentLinkOfFocus;
+          rv = GetElementOrParentByTagName(NS_LITERAL_STRING("href"),
+                                           focus.Container()->AsDOMNode(),
+                                           getter_AddRefs(parentLinkOfFocus));
+          if (NS_SUCCEEDED(rv) && parentLinkOfFocus == parentLinkOfAnchor) {
             bNodeFound = true;
-          } else if (focus.IsSet()) {
-            
-            nsCOMPtr<nsIDOMElement> parentLinkOfFocus;
-            rv = GetElementOrParentByTagName(NS_LITERAL_STRING("href"),
-                                             focus.Container()->AsDOMNode(),
-                                             getter_AddRefs(parentLinkOfFocus));
-            if (NS_SUCCEEDED(rv) && parentLinkOfFocus == parentLinkOfAnchor) {
-              bNodeFound = true;
-            }
           }
+        }
 
+        
+        if (bNodeFound) {
           
-          if (bNodeFound) {
-            
-            parentLinkOfAnchor.forget(aReturn);
-            return NS_OK;
-          }
-        } else if (anchor.GetChildAtOffset() && focus.GetChildAtOffset()) {
-          
-          if (HTMLEditUtils::IsLink(anchor.GetChildAtOffset()) &&
-              anchor.Container() == focus.Container() &&
-              focus.GetChildAtOffset() ==
-                anchor.GetChildAtOffset()->GetNextSibling()) {
-            selectedElement = do_QueryInterface(anchor.GetChildAtOffset());
-            bNodeFound = true;
-          }
+          parentLinkOfAnchor.forget(aReturn);
+          return NS_OK;
+        }
+      } else if (anchor.GetChildAtOffset() && focus.GetChildAtOffset()) {
+        
+        if (HTMLEditUtils::IsLink(anchor.GetChildAtOffset()) &&
+            anchor.Container() == focus.Container() &&
+            focus.GetChildAtOffset() ==
+              anchor.GetChildAtOffset()->GetNextSibling()) {
+          selectedElement = do_QueryInterface(anchor.GetChildAtOffset());
+          bNodeFound = true;
         }
       }
     }
+  }
 
-    if (!isCollapsed) {
-      RefPtr<nsRange> currange = selection->GetRangeAt(0);
-      if (currange) {
-        nsresult rv;
-        nsCOMPtr<nsIContentIterator> iter =
-          do_CreateInstance("@mozilla.org/content/post-content-iterator;1",
-                            &rv);
-        NS_ENSURE_SUCCESS(rv, rv);
+  if (!isCollapsed) {
+    RefPtr<nsRange> currange = selection->GetRangeAt(0);
+    if (currange) {
+      nsresult rv;
+      nsCOMPtr<nsIContentIterator> iter =
+        do_CreateInstance("@mozilla.org/content/post-content-iterator;1",
+                          &rv);
+      NS_ENSURE_SUCCESS(rv, rv);
 
-        iter->Init(currange);
+      iter->Init(currange);
+      
+      while (!iter->IsDone()) {
         
-        while (!iter->IsDone()) {
+        
+        
+        nsINode* currentNode = iter->GetCurrentNode();
+        selectedElement = do_QueryInterface(currentNode);
+        if (selectedElement) {
           
           
-          
-          nsINode* currentNode = iter->GetCurrentNode();
-          selectedElement = do_QueryInterface(currentNode);
-          if (selectedElement) {
-            
-            
-            if (bNodeFound) {
-              bNodeFound = false;
-              break;
-            }
-
-            domTagName = currentNode->NodeName();
-            ToLowerCase(domTagName);
-
-            if (anyTag) {
-              
-              selectedElement->GetTagName(TagName);
-              ToLowerCase(TagName);
-              anyTag = false;
-            }
-
-            
-            
-            nsCOMPtr<nsIDOMNode> selectedNode = do_QueryInterface(selectedElement);
-            if ((isLinkTag &&
-                 HTMLEditUtils::IsLink(selectedNode)) ||
-                (isNamedAnchorTag &&
-                 HTMLEditUtils::IsNamedAnchor(selectedNode))) {
-              bNodeFound = true;
-            } else if (TagName == domTagName) { 
-              bNodeFound = true;
-            }
-            if (!bNodeFound) {
-              
-              break;
-            }
+          if (bNodeFound) {
+            bNodeFound = false;
+            break;
           }
-          iter->Next();
+
+          domTagName = currentNode->NodeName();
+          ToLowerCase(domTagName);
+
+          if (anyTag) {
+            
+            selectedElement->GetTagName(TagName);
+            ToLowerCase(TagName);
+            anyTag = false;
+          }
+
+          
+          
+          nsCOMPtr<nsIDOMNode> selectedNode = do_QueryInterface(selectedElement);
+          if ((isLinkTag &&
+               HTMLEditUtils::IsLink(selectedNode)) ||
+              (isNamedAnchorTag &&
+               HTMLEditUtils::IsNamedAnchor(selectedNode))) {
+            bNodeFound = true;
+          } else if (TagName == domTagName) { 
+            bNodeFound = true;
+          }
+          if (!bNodeFound) {
+            
+            break;
+          }
         }
-      } else {
-        
-        isCollapsed = true;
-        NS_WARNING("isCollapsed was FALSE, but no elements found in selection\n");
+        iter->Next();
       }
+    } else {
+      
+      isCollapsed = true;
+      NS_WARNING("isCollapsed was FALSE, but no elements found in selection\n");
     }
   }
 
