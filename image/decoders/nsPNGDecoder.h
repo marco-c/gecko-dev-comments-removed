@@ -25,6 +25,8 @@ public:
   
   bool IsValidICOResource() const override;
 
+  DecoderType GetType() const override { return DecoderType::PNG; }
+
 protected:
   nsresult InitInternal() override;
   nsresult FinishInternal() override;
