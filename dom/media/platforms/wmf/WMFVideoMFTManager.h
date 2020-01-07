@@ -88,6 +88,7 @@ private:
   
   const VideoInfo mVideoInfo;
   const gfx::IntSize mImageSize;
+  gfx::IntSize mDecodedImageSize;
   uint32_t mVideoStride;
   YUVColorSpace mYUVColorSpace;
 
