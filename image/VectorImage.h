@@ -101,12 +101,20 @@ private:
                                const Maybe<SVGImageContext>& aSVGContext,
                                uint32_t aFlags);
 
-  already_AddRefed<SourceSurface>
-    DrawInternal(const SVGDrawingParameters& aParams, bool aContextPaint);
+  
+  already_AddRefed<gfxDrawable>
+    CreateSVGDrawable(const SVGDrawingParameters& aParams);
 
+  
+  
   already_AddRefed<SourceSurface>
-    CreateSurfaceAndShow(const SVGDrawingParameters& aParams,
-                         gfx::BackendType aBackend);
+    CreateSurface(const SVGDrawingParameters& aParams,
+                  gfxDrawable* aSVGDrawable,
+                  bool& aWillCache);
+
+  
+  
+  void SendFrameComplete(bool aDidCache, uint32_t aFlags);
 
   void Show(gfxDrawable* aDrawable, const SVGDrawingParameters& aParams);
 
