@@ -250,9 +250,6 @@ class IndexedDB {
 
 
 
-
-
-
   static open(dbName, options, onupgradeneeded = null) {
     let request = indexedDB.open(dbName, options);
 
