@@ -2,19 +2,15 @@
 
 
 
-
 'use strict';
 
 (function() {
-  var mojomId = 'device/usb/public/interfaces/device_manager.mojom';
+  var mojomId = 'device/usb/public/mojom/device_manager.mojom';
   if (mojo.internal.isMojomLoaded(mojomId)) {
     console.warn('The following mojom is loaded multiple times: ' + mojomId);
     return;
   }
   mojo.internal.markMojomLoaded(mojomId);
-
-  
-  
   var bindings = mojo;
   var associatedBindings = mojo;
   var codec = mojo.internal;
@@ -25,13 +21,13 @@
       mojo.internal.exposeNamespace('device.mojom');
   if (mojo.config.autoLoadMojomDeps) {
     mojo.internal.loadMojomIfNecessary(
-        'device/usb/public/interfaces/device.mojom', 'device.mojom.js');
+        'device/usb/public/mojom/device.mojom', 'device.mojom.js');
   }
   var string16$ =
       mojo.internal.exposeNamespace('mojo.common.mojom');
   if (mojo.config.autoLoadMojomDeps) {
     mojo.internal.loadMojomIfNecessary(
-        'mojo/common/string16.mojom', '../../../../mojo/common/string16.mojom.js');
+        'mojo/public/mojom/base/string16.mojom', '../../../../mojo/public/mojom/base/string16.mojom.js');
   }
 
 
@@ -86,7 +82,6 @@
 
 
 
-    
     
     err = messageValidator.validateStructPointer(offset + codec.kStructHeaderSize + 8, string16$.String16, true);
     if (err !== validator.validationError.NONE)
@@ -166,7 +161,6 @@
 
 
     
-    
     err = messageValidator.validateArrayPointer(offset + codec.kStructHeaderSize + 0, 8, new codec.PointerTo(UsbDeviceFilter), false, [0], 0);
     if (err !== validator.validationError.NONE)
         return err;
@@ -222,7 +216,6 @@
 
 
     
-    
     err = messageValidator.validateStructPointer(offset + codec.kStructHeaderSize + 0, UsbEnumerationOptions, true);
     if (err !== validator.validationError.NONE)
         return err;
@@ -277,7 +270,6 @@
         return err;
 
 
-    
     
     err = messageValidator.validateArrayPointer(offset + codec.kStructHeaderSize + 0, 8, new codec.PointerTo(device$.UsbDeviceInfo), false, [0], 0);
     if (err !== validator.validationError.NONE)
@@ -335,13 +327,11 @@
 
 
     
-    
     err = messageValidator.validateStringPointer(offset + codec.kStructHeaderSize + 0, false)
     if (err !== validator.validationError.NONE)
         return err;
 
 
-    
     
     err = messageValidator.validateInterfaceRequest(offset + codec.kStructHeaderSize + 8, false)
     if (err !== validator.validationError.NONE)
@@ -408,7 +398,6 @@
 
 
     
-    
     err = messageValidator.validateInterface(offset + codec.kStructHeaderSize + 0, false);
     if (err !== validator.validationError.NONE)
         return err;
@@ -464,7 +453,6 @@
 
 
     
-    
     err = messageValidator.validateStructPointer(offset + codec.kStructHeaderSize + 0, device$.UsbDeviceInfo, false);
     if (err !== validator.validationError.NONE)
         return err;
@@ -519,7 +507,6 @@
         return err;
 
 
-    
     
     err = messageValidator.validateStructPointer(offset + codec.kStructHeaderSize + 0, device$.UsbDeviceInfo, false);
     if (err !== validator.validationError.NONE)
