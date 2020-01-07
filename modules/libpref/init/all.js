@@ -666,6 +666,11 @@ pref("media.cubeb.logging_level", "");
 
 #ifdef XP_LINUX
 pref("media.cubeb.sandbox", true);
+
+
+pref("media.audioipc.pool_size", 1);
+
+pref("media.audioipc.stack_size", 65536);
 #else
 pref("media.cubeb.sandbox", false);
 #endif
