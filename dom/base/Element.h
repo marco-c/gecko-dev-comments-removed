@@ -361,7 +361,7 @@ public:
 
 
 
-  nsDOMCSSAttributeDeclaration* GetSMILOverrideStyle();
+  nsDOMCSSAttributeDeclaration* SMILOverrideStyle();
 
   
 

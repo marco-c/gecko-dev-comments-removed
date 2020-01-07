@@ -107,17 +107,14 @@ nsresult
 nsSMILCSSProperty::SetAnimValue(const nsSMILValue& aValue)
 {
   NS_ENSURE_TRUE(IsPropertyAnimatable(mPropID), NS_ERROR_FAILURE);
-  return mElement->GetSMILOverrideStyle()->SetSMILValue(mPropID, aValue);
+  return mElement->SMILOverrideStyle()->SetSMILValue(mPropID, aValue);
 }
 
 void
 nsSMILCSSProperty::ClearAnimValue()
 {
   
-  nsDOMCSSAttributeDeclaration* overrideDecl = mElement->GetSMILOverrideStyle();
-  if (overrideDecl) {
-    overrideDecl->SetPropertyValue(mPropID, EmptyString(), nullptr);
-  }
+  mElement->SMILOverrideStyle()->SetPropertyValue(mPropID, EmptyString(), nullptr);
 }
 
 
