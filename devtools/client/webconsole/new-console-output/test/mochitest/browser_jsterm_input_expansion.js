@@ -7,40 +7,32 @@
 
 
 
-const TEST_URI = "http://example.com/browser/devtools/client/webconsole/" +
-                 "test/test-console.html";
+const TEST_URI = "data:text/html;charset=utf-8,Test for jsterm multine input";
 
-add_task(function* () {
-  yield loadTab(TEST_URI);
+add_task(async function () {
+  let hud = await openNewTabAndConsole(TEST_URI);
 
-  let hud = yield openConsole();
-
-  testInputExpansion(hud);
-});
-
-function testInputExpansion(hud) {
   let input = hud.jsterm.inputNode;
 
+  info("Focus the jsterm input");
   input.focus();
-
-  is(input.getAttribute("multiline"), "true", "multiline is enabled");
 
   let ordinaryHeight = input.clientHeight;
 
   
   input.value = "hello\nworld\n";
+
+  
   let length = input.value.length;
   input.selectionEnd = length;
   input.selectionStart = length;
-  
-  
+
+  info("Type 'd' in jsterm to trigger height change for the input");
   EventUtils.synthesizeKey("d", {});
   ok(input.clientHeight > ordinaryHeight, "the input expanded");
 
-  
+  info("Erase the value and test if the inputNode shrinks again");
   input.value = "";
   EventUtils.synthesizeKey("d", {});
   is(input.clientHeight, ordinaryHeight, "the input's height is normal again");
-
-  input = length = null;
-}
+});
