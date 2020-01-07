@@ -7,6 +7,8 @@
 #include <atk/atk.h>
 #include "AccessibleWrap.h"
 
+#include <type_traits>
+
 
 
 
@@ -39,7 +41,6 @@ enum EStateMapEntryType {
   kMapDirectly,
   kMapOpposite,   
   kNoStateChange, 
-  kNoSuchState
 };
 
 const AtkStateType kNone = ATK_STATE_INVALID;
@@ -47,16 +48,6 @@ const AtkStateType kNone = ATK_STATE_INVALID;
 struct AtkStateMap {
   AtkStateType atkState;
   EStateMapEntryType stateMapEntryType;
-
-  static int32_t GetStateIndexFor(uint64_t aState)
-  {
-    int32_t stateIndex = -1;
-    while (aState > 0) {
-      ++ stateIndex;
-      aState >>= 1;
-    }
-    return stateIndex;  
-  }
 };
 
 
@@ -110,6 +101,10 @@ static const AtkStateMap gAtkStateMap[] = {
   { ATK_STATE_SENSITIVE,                      kMapDirectly },   
   { ATK_STATE_EXPANDABLE,                     kMapDirectly },   
   { kNone,                                    kMapDirectly },   
-  { ATK_STATE_ACTIVE,                         kMapDirectly },   
-  { kNone,                                    kNoSuchState },   
+  { ATK_STATE_ACTIVE,                         kMapDirectly }    
 };
+
+static const auto gAtkStateMapLen = std::extent<decltype(gAtkStateMap)>::value;
+
+static_assert(((uint64_t) 0x1) << (gAtkStateMapLen - 1) == mozilla::a11y::states::LAST_ENTRY,
+              "ATK states map is out of sync with internal states");

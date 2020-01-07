@@ -283,6 +283,11 @@ namespace states {
 
   const uint64_t CURRENT = ((uint64_t) 0x1) << 48;
 
+  
+
+
+  const uint64_t LAST_ENTRY = CURRENT;
+
 } 
 } 
 } 
