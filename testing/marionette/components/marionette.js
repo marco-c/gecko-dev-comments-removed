@@ -151,21 +151,10 @@ class MarionetteComponent {
     log.level = prefs.logLevel;
 
     this.enabled = env.exists(ENV_ENABLED);
-    if (this.enabled) {
-      log.info(`Enabled via ${ENV_ENABLED}`);
-    }
   }
 
   get running() {
     return this.server && this.server.alive;
-  }
-
-  
-  handle(cmdLine) {
-    if (!this.enabled && cmdLine.handleFlag("marionette", false)) {
-      this.enabled = true;
-      log.debug("Enabled via flag");
-    }
   }
 
   observe(subject, topic) {
@@ -185,7 +174,10 @@ class MarionetteComponent {
       
       case "command-line-startup":
         Services.obs.removeObserver(this, topic);
-        this.handle(subject);
+
+        if (!this.enabled && subject.handleFlag("marionette", false)) {
+          this.enabled = true;
+        }
 
         
         
