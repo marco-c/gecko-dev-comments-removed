@@ -83,9 +83,9 @@ public:
                      nsIDocument* aDocument,
                      StyleType aStyleType);
 
-  virtual nsINode *GetParentObject() override
+  nsINode* GetParentObject() override
   {
-    return mContent;
+    return mElement;
   }
 
   static already_AddRefed<mozilla::ComputedStyle>
@@ -720,7 +720,7 @@ private:
   
   
   nsWeakPtr mDocumentWeak;
-  nsCOMPtr<nsIContent> mContent;
+  RefPtr<mozilla::dom::Element> mElement;
 
   
 

@@ -332,7 +332,7 @@ nsComputedDOMStyle::nsComputedDOMStyle(dom::Element* aElement,
   
   
   mDocumentWeak = do_GetWeakReference(aDocument);
-  mContent = aElement;
+  mElement = aElement;
   mPseudo = nsCSSPseudoElements::GetPseudoAtom(aPseudoElt);
 }
 
@@ -345,12 +345,12 @@ NS_IMPL_CYCLE_COLLECTION_CLASS(nsComputedDOMStyle)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(nsComputedDOMStyle)
   tmp->ClearComputedStyle();  
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mContent)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mElement)
   NS_IMPL_CYCLE_COLLECTION_UNLINK_PRESERVED_WRAPPER
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(nsComputedDOMStyle)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mContent)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mElement)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTION_TRACE_WRAPPERCACHE(nsComputedDOMStyle)
@@ -802,7 +802,7 @@ nsComputedDOMStyle::ClearComputedStyle()
 {
   if (mResolvedComputedStyle) {
     mResolvedComputedStyle = false;
-    mContent->RemoveMutationObserver(this);
+    mElement->RemoveMutationObserver(this);
   }
   mComputedStyle = nullptr;
 }
@@ -813,7 +813,7 @@ nsComputedDOMStyle::SetResolvedComputedStyle(RefPtr<ComputedStyle>&& aContext,
 {
   if (!mResolvedComputedStyle) {
     mResolvedComputedStyle = true;
-    mContent->AddMutationObserver(this);
+    mElement->AddMutationObserver(this);
   }
   mComputedStyle = aContext;
   mComputedStyleGeneration = aGeneration;
@@ -839,10 +839,10 @@ nsComputedDOMStyle::NeedsToFlush(nsIDocument* aDocument) const
   
   
   
-  if (aDocument != mContent->OwnerDoc()) {
+  if (aDocument != mElement->OwnerDoc()) {
     return true;
   }
-  if (DocumentNeedsRestyle(aDocument, mContent->AsElement(), mPseudo)) {
+  if (DocumentNeedsRestyle(aDocument, mElement, mPseudo)) {
     return true;
   }
   
@@ -888,7 +888,7 @@ nsComputedDOMStyle::UpdateCurrentStyleSources(bool aNeedsLayoutFlush)
 #endif
 
   nsCOMPtr<nsIPresShell> presShellForContent =
-    nsContentUtils::GetPresShellForContent(mContent);
+    nsContentUtils::GetPresShellForContent(mElement);
   if (presShellForContent && presShellForContent->GetDocument() != document) {
     presShellForContent->GetDocument()->FlushPendingNotifications(FlushType::Style);
     if (presShellForContent->IsDestroying()) {
@@ -920,8 +920,8 @@ nsComputedDOMStyle::UpdateCurrentStyleSources(bool aNeedsLayoutFlush)
     
     
     
-    if (mComputedStyleGeneration == currentGeneration
-        && mContent->IsInComposedDoc()) {
+    if (mComputedStyleGeneration == currentGeneration &&
+        mElement->IsInComposedDoc()) {
       
       return;
     }
@@ -932,18 +932,18 @@ nsComputedDOMStyle::UpdateCurrentStyleSources(bool aNeedsLayoutFlush)
   
   
   
-  if (mStyleType == eAll && !mContent->IsHTMLElement(nsGkAtoms::area)) {
+  if (mStyleType == eAll && !mElement->IsHTMLElement(nsGkAtoms::area)) {
     mOuterFrame = nullptr;
 
     if (!mPseudo) {
-      mOuterFrame = mContent->GetPrimaryFrame();
+      mOuterFrame = mElement->GetPrimaryFrame();
     } else if (mPseudo == nsCSSPseudoElements::before ||
                mPseudo == nsCSSPseudoElements::after) {
       nsAtom* property = mPseudo == nsCSSPseudoElements::before
                             ? nsGkAtoms::beforePseudoProperty
                             : nsGkAtoms::afterPseudoProperty;
 
-      auto* pseudo = static_cast<Element*>(mContent->GetProperty(property));
+      auto* pseudo = static_cast<Element*>(mElement->GetProperty(property));
       mOuterFrame = pseudo ? pseudo->GetPrimaryFrame() : nullptr;
     }
 
@@ -969,7 +969,7 @@ nsComputedDOMStyle::UpdateCurrentStyleSources(bool aNeedsLayoutFlush)
     
     RefPtr<ComputedStyle> resolvedComputedStyle =
       DoGetComputedStyleNoFlush(
-          mContent->AsElement(),
+          mElement,
           mPseudo,
           presShellForContent ? presShellForContent.get() : mPresShell,
           mStyleType);
@@ -5697,7 +5697,7 @@ nsComputedDOMStyle::GetLineHeightCoord(nscoord& aCoord)
 
   
   
-  aCoord = ReflowInput::CalcLineHeight(mContent,
+  aCoord = ReflowInput::CalcLineHeight(mElement,
                                        mComputedStyle,
                                        presContext,
                                        blockHeight, 1.0f);
@@ -7176,7 +7176,7 @@ MarkComputedStyleMapDirty(const char* aPref, void* aData)
 void
 nsComputedDOMStyle::ParentChainChanged(nsIContent* aContent)
 {
-  NS_ASSERTION(mContent == aContent, "didn't we register mContent?");
+  NS_ASSERTION(mElement == aContent, "didn't we register mElement?");
   NS_ASSERTION(mResolvedComputedStyle,
                "should have only registered an observer when "
                "mResolvedComputedStyle is true");
