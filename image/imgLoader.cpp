@@ -2940,7 +2940,10 @@ imgCacheValidator::imgCacheValidator(nsProgressNotificationProxy* progress,
 imgCacheValidator::~imgCacheValidator()
 {
   if (mRequest) {
-    mRequest->SetValidator(nullptr);
+    
+    
+    
+    UpdateProxies( true,  false);
   }
 }
 
@@ -2961,8 +2964,23 @@ imgCacheValidator::RemoveProxy(imgRequestProxy* aProxy)
 }
 
 void
-imgCacheValidator::UpdateProxies()
+imgCacheValidator::UpdateProxies(bool aCancelRequest, bool aSyncNotify)
 {
+  MOZ_ASSERT(mRequest);
+
+  
+  
+  mRequest->SetValidator(nullptr);
+  mRequest = nullptr;
+
+  
+  
+  
+  if (aCancelRequest) {
+    MOZ_ASSERT(mNewRequest);
+    mNewRequest->CancelAndAbort(NS_BINDING_ABORTED);
+  }
+
   
   
   
@@ -2985,10 +3003,19 @@ imgCacheValidator::UpdateProxies()
     proxy->ClearValidating();
   }
 
+  mNewRequest = nullptr;
+  mNewEntry = nullptr;
+
   for (auto& proxy : proxies) {
-    
-    
-    proxy->SyncNotifyListener();
+    if (aSyncNotify) {
+      
+      
+      proxy->SyncNotifyListener();
+    } else {
+      
+      
+      proxy->NotifyListener();
+    }
   }
 }
 
@@ -3031,18 +3058,12 @@ imgCacheValidator::OnStartRequest(nsIRequest* aRequest, nsISupports* ctxt)
     if (isFromCache && sameURI) {
       
       aRequest->Cancel(NS_BINDING_ABORTED);
+      mNewRequest = nullptr;
 
       
       
       mRequest->SetLoadId(context);
-      mRequest->SetValidator(nullptr);
-
-      mRequest = nullptr;
-
-      mNewRequest = nullptr;
-      mNewEntry = nullptr;
-
-      UpdateProxies();
+      UpdateProxies( false,  true);
       return NS_OK;
     }
   }
@@ -3070,17 +3091,13 @@ imgCacheValidator::OnStartRequest(nsIRequest* aRequest, nsISupports* ctxt)
   mRequest->RemoveFromCache();
 
   
-  
-  mRequest->SetValidator(nullptr);
-  mRequest = nullptr;
-
-  
   nsCOMPtr<nsIURI> originalURI;
   channel->GetOriginalURI(getter_AddRefs(originalURI));
   nsresult rv =
     mNewRequest->Init(originalURI, uri, mHadInsecureRedirect, aRequest, channel,
                       mNewEntry, context, triggeringPrincipal, corsmode, refpol);
   if (NS_FAILED(rv)) {
+    UpdateProxies( true,  true);
     return rv;
   }
 
@@ -3090,11 +3107,7 @@ imgCacheValidator::OnStartRequest(nsIRequest* aRequest, nsISupports* ctxt)
   
   
   mImgLoader->PutIntoCache(mNewRequest->CacheKey(), mNewEntry);
-
-  UpdateProxies();
-  mNewRequest = nullptr;
-  mNewEntry = nullptr;
-
+  UpdateProxies( false,  true);
   return mDestListener->OnStartRequest(aRequest, ctxt);
 }
 
