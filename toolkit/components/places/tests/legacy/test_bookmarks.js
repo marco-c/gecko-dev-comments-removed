@@ -278,7 +278,6 @@ add_task(async function test_bookmarks() {
                               bs.DEFAULT_INDEX);
   bs.insertBookmark(tmpFolder, uri("http://foo9.com/"), bs.DEFAULT_INDEX, "");
   bs.createFolder(tmpFolder, "subfolder", bs.DEFAULT_INDEX);
-  bs.insertSeparator(tmpFolder, bs.DEFAULT_INDEX);
   
   let options = hs.getNewQueryOptions();
   let query = hs.getNewQuery();
@@ -287,7 +286,7 @@ add_task(async function test_bookmarks() {
     let result = hs.executeQuery(query, options);
     let rootNode = result.root;
     rootNode.containerOpen = true;
-    Assert.equal(rootNode.childCount, 3);
+    Assert.equal(rootNode.childCount, 2);
     rootNode.containerOpen = false;
   } catch (ex) {
     do_throw("test removeFolderChildren() - querying for children failed: " + ex);
@@ -533,9 +532,6 @@ function testSimpleFolderResult() {
   Assert.ok(beforeInsert > 0);
 
   
-  let sep = bs.insertSeparator(parent, bs.DEFAULT_INDEX);
-
-  
   let item = bs.insertBookmark(parent, uri("about:blank"),
                                bs.DEFAULT_INDEX, "");
   bs.setItemTitle(item, "test bookmark");
@@ -554,24 +550,19 @@ function testSimpleFolderResult() {
   let result = hs.executeQuery(query, options);
   let rootNode = result.root;
   rootNode.containerOpen = true;
-  Assert.equal(rootNode.childCount, 4);
+  Assert.equal(rootNode.childCount, 3);
 
   let node = rootNode.getChild(0);
-  Assert.ok(node.dateAdded > 0);
-  Assert.equal(node.lastModified, node.dateAdded);
-  Assert.equal(node.itemId, sep);
-  Assert.equal(node.title, "");
-  node = rootNode.getChild(1);
   Assert.equal(node.itemId, item);
   Assert.ok(node.dateAdded > 0);
   Assert.ok(node.lastModified > 0);
   Assert.equal(node.title, "test bookmark");
-  node = rootNode.getChild(2);
+  node = rootNode.getChild(1);
   Assert.equal(node.itemId, folder);
   Assert.equal(node.title, "test folder");
   Assert.ok(node.dateAdded > 0);
   Assert.ok(node.lastModified > 0);
-  node = rootNode.getChild(3);
+  node = rootNode.getChild(2);
   Assert.equal(node.itemId, folderLongName);
   Assert.equal(node.title, longName.substring(0, TITLE_LENGTH_MAX));
   Assert.ok(node.dateAdded > 0);
@@ -583,7 +574,7 @@ function testSimpleFolderResult() {
   Assert.equal(bookmarksObserver._itemChangedProperty, "title");
   Assert.equal(bookmarksObserver._itemChangedValue, longName.substring(0, TITLE_LENGTH_MAX));
 
-  node = rootNode.getChild(3);
+  node = rootNode.getChild(2);
   Assert.equal(node.title, longName.substring(0, TITLE_LENGTH_MAX));
 
   rootNode.containerOpen = false;
