@@ -203,12 +203,12 @@ imgFrame::imgFrame()
   : mMonitor("imgFrame")
   , mDecoded(0, 0, 0, 0)
   , mLockCount(0)
-  , mTimeout(FrameTimeout::FromRawMilliseconds(100))
-  , mDisposalMethod(DisposalMethod::NOT_SPECIFIED)
-  , mBlendMethod(BlendMethod::OVER)
   , mAborted(false)
   , mFinished(false)
   , mOptimizable(false)
+  , mTimeout(FrameTimeout::FromRawMilliseconds(100))
+  , mDisposalMethod(DisposalMethod::NOT_SPECIFIED)
+  , mBlendMethod(BlendMethod::OVER)
   , mPalettedImageData(nullptr)
   , mPaletteDepth(0)
   , mNonPremult(false)
@@ -234,7 +234,7 @@ imgFrame::InitForDecoder(const nsIntSize& aImageSize,
                          SurfaceFormat aFormat,
                          uint8_t aPaletteDepth ,
                          bool aNonPremult ,
-                         bool aIsAnimated )
+                         const Maybe<AnimationParams>& aAnimParams )
 {
   
   
@@ -246,6 +246,15 @@ imgFrame::InitForDecoder(const nsIntSize& aImageSize,
 
   mImageSize = aImageSize;
   mFrameRect = aRect;
+
+  if (aAnimParams) {
+    mBlendRect = aAnimParams->mBlendRect;
+    mTimeout = aAnimParams->mTimeout;
+    mBlendMethod = aAnimParams->mBlendMethod;
+    mDisposalMethod = aAnimParams->mDisposalMethod;
+  } else {
+    mBlendRect = aRect;
+  }
 
   
   
@@ -284,7 +293,8 @@ imgFrame::InitForDecoder(const nsIntSize& aImageSize,
   } else {
     MOZ_ASSERT(!mLockedSurface, "Called imgFrame::InitForDecoder() twice?");
 
-    mRawSurface = AllocateBufferForImage(mFrameRect.Size(), mFormat, aIsAnimated);
+    bool postFirstFrame = aAnimParams && aAnimParams->mFrameNum > 0;
+    mRawSurface = AllocateBufferForImage(mFrameRect.Size(), mFormat, postFirstFrame);
     if (!mRawSurface) {
       mAborted = true;
       return NS_ERROR_OUT_OF_MEMORY;
@@ -627,20 +637,11 @@ imgFrame::ImageUpdatedInternal(const nsIntRect& aUpdateRect)
 
 void
 imgFrame::Finish(Opacity aFrameOpacity ,
-                 DisposalMethod aDisposalMethod ,
-                 FrameTimeout aTimeout
-                   ,
-                 BlendMethod aBlendMethod ,
-                 const Maybe<IntRect>& aBlendRect ,
                  bool aFinalize )
 {
   MonitorAutoLock lock(mMonitor);
   MOZ_ASSERT(mLockCount > 0, "Image data should be locked");
 
-  mDisposalMethod = aDisposalMethod;
-  mTimeout = aTimeout;
-  mBlendMethod = aBlendMethod;
-  mBlendRect = aBlendRect;
   ImageUpdatedInternal(GetRect());
 
   if (aFinalize) {
@@ -883,7 +884,7 @@ imgFrame::GetAnimationData() const
   bool hasAlpha = mFormat == SurfaceFormat::B8G8R8A8;
 
   return AnimationData(data, PaletteDataLength(), mTimeout, GetRect(),
-                       mBlendMethod, mBlendRect, mDisposalMethod, hasAlpha);
+                       mBlendMethod, Some(mBlendRect), mDisposalMethod, hasAlpha);
 }
 
 void

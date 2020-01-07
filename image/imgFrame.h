@@ -11,7 +11,7 @@
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/Move.h"
-#include "FrameTimeout.h"
+#include "AnimationParams.h"
 #include "gfxDrawable.h"
 #include "imgIContainer.h"
 #include "MainThreadUtils.h"
@@ -23,24 +23,6 @@ namespace image {
 class ImageRegion;
 class DrawableFrameRef;
 class RawAccessFrameRef;
-
-enum class BlendMethod : int8_t {
-  
-  
-  SOURCE,
-
-  
-  
-  OVER
-};
-
-enum class DisposalMethod : int8_t {
-  CLEAR_ALL = -1,  
-  NOT_SPECIFIED,   
-  KEEP,            
-  CLEAR,           
-  RESTORE_PREVIOUS 
-};
 
 enum class Opacity : uint8_t {
   FULLY_OPAQUE,
@@ -112,13 +94,17 @@ public:
                           SurfaceFormat aFormat,
                           uint8_t aPaletteDepth = 0,
                           bool aNonPremult = false,
-                          bool aIsAnimated = false);
+                          const Maybe<AnimationParams>& aAnimParams = Nothing());
 
   nsresult InitForAnimator(const nsIntSize& aSize,
                            SurfaceFormat aFormat)
   {
-    return InitForDecoder(aSize, nsIntRect(0, 0, aSize.width, aSize.height),
-                          aFormat, 0, false, true);
+    nsIntRect frameRect(0, 0, aSize.width, aSize.height);
+    AnimationParams animParams { frameRect, FrameTimeout::Forever(),
+                                  1, BlendMethod::OVER,
+                                 DisposalMethod::NOT_SPECIFIED };
+    return InitForDecoder(aSize, frameRect,
+                          aFormat, 0, false, Some(animParams));
   }
 
 
@@ -173,21 +159,7 @@ public:
 
 
 
-
-
-
-
-
-
-
-
-
-
   void Finish(Opacity aFrameOpacity = Opacity::SOME_TRANSPARENCY,
-              DisposalMethod aDisposalMethod = DisposalMethod::KEEP,
-              FrameTimeout aTimeout = FrameTimeout::FromRawMilliseconds(0),
-              BlendMethod aBlendMethod = BlendMethod::OVER,
-              const Maybe<IntRect>& aBlendRect = Nothing(),
               bool aFinalize = true);
 
   
@@ -227,9 +199,15 @@ public:
 
   uint32_t GetBytesPerPixel() const { return GetIsPaletted() ? 1 : 4; }
 
-  IntSize GetImageSize() const { return mImageSize; }
-  IntRect GetRect() const { return mFrameRect; }
+  const IntSize& GetImageSize() const { return mImageSize; }
+  const IntRect& GetRect() const { return mFrameRect; }
   IntSize GetSize() const { return mFrameRect.Size(); }
+  const IntRect& GetBlendRect() const { return mBlendRect; }
+  IntRect GetBoundedBlendRect() const { return mBlendRect.Intersect(mFrameRect); }
+  FrameTimeout GetTimeout() const { return mTimeout; }
+  BlendMethod GetBlendMethod() const { return mBlendMethod; }
+  DisposalMethod GetDisposalMethod() const { return mDisposalMethod; }
+  bool FormatHasAlpha() const { return mFormat == SurfaceFormat::B8G8R8A8; }
   void GetImageData(uint8_t** aData, uint32_t* length) const;
   uint8_t* GetImageData() const;
 
@@ -327,14 +305,6 @@ private:
   
   int32_t mLockCount;
 
-  
-  FrameTimeout mTimeout;
-
-  DisposalMethod mDisposalMethod;
-  BlendMethod    mBlendMethod;
-  Maybe<IntRect> mBlendRect;
-  SurfaceFormat  mFormat;
-
   bool mAborted;
   bool mFinished;
   bool mOptimizable;
@@ -346,6 +316,14 @@ private:
 
   IntSize      mImageSize;
   IntRect      mFrameRect;
+  IntRect      mBlendRect;
+
+  
+  FrameTimeout mTimeout;
+
+  DisposalMethod mDisposalMethod;
+  BlendMethod    mBlendMethod;
+  SurfaceFormat  mFormat;
 
   
   
