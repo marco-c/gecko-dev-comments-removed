@@ -380,7 +380,7 @@ bool ParsePrivateDictData(
       case 7:  
       case 8:  
       case 9:  
-        if (operands.empty() || (operands.size() % 2) != 0) {
+        if ((operands.size() % 2) != 0) {
           return OTS_FAILURE();
         }
         break;
