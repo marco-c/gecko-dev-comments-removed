@@ -130,7 +130,10 @@ private:
     bool mReliable; 
   };
   
-  PlaybackRateInfo ComputePlaybackRate();
+  static PlaybackRateInfo ComputePlaybackRate(
+    const MediaChannelStatistics& aStats,
+    BaseMediaResource* aResource,
+    double aDuration);
 
   
   
