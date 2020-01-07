@@ -240,16 +240,15 @@ WebRenderLayerManager::EndTransaction(DrawPaintedLayerCallback aCallback,
 void
 WebRenderLayerManager::EndTransactionWithoutLayer(nsDisplayList* aDisplayList,
                                                   nsDisplayListBuilder* aDisplayListBuilder,
-                                                  const nsTArray<wr::WrFilterOp>& aFilters)
+                                                  const nsTArray<wr::WrFilterOp>& aFilters,
+                                                  WebRenderBackgroundData* aBackground)
 {
-  MOZ_ASSERT(aDisplayList && aDisplayListBuilder);
-
   AUTO_PROFILER_TRACING("Paint", "RenderLayers");
 
 #if DUMP_LISTS
   
   
-  if (XRE_IsContentProcess()) nsFrame::PrintDisplayList(aDisplayListBuilder, *aDisplayList);
+  if (XRE_IsContentProcess() && aDisplayList) nsFrame::PrintDisplayList(aDisplayListBuilder, *aDisplayList);
 #endif
 
 #ifdef XP_WIN
@@ -266,7 +265,9 @@ WebRenderLayerManager::EndTransactionWithoutLayer(nsDisplayList* aDisplayList,
   wr::DisplayListBuilder builder(WrBridge()->GetPipeline(), contentSize, mLastDisplayListSize);
   wr::IpcResourceUpdateQueue resourceUpdates(WrBridge());
 
-  { 
+  if (aDisplayList) {
+    MOZ_ASSERT(aDisplayListBuilder && !aBackground);
+    
     
     PaintTelemetry::AutoRecord record(PaintTelemetry::Metric::Layerization);
 
@@ -277,6 +278,10 @@ WebRenderLayerManager::EndTransactionWithoutLayer(nsDisplayList* aDisplayList,
                                                     mScrollData,
                                                     contentSize,
                                                     aFilters);
+  } else {
+    
+    MOZ_ASSERT(!aDisplayListBuilder && aBackground);
+    aBackground->AddWebRenderCommands(builder);
   }
 
   DiscardCompositorAnimations();
