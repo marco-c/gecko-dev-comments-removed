@@ -722,11 +722,18 @@ nsBindingManager::EnumerateBoundContentBindings(
     return true;
   }
 
+  nsTHashtable<nsPtrHashKey<nsXBLBinding>> bindings;
   for (auto iter = mBoundContentSet->Iter(); !iter.Done(); iter.Next()) {
     nsIContent* boundContent = iter.Get()->GetKey();
     for (nsXBLBinding* binding = boundContent->GetXBLBinding();
          binding;
          binding = binding->GetBaseBinding()) {
+      
+      
+      
+      if (!bindings.EnsureInserted(binding)) {
+        break;
+      }
       if (!aCallback(binding)) {
         return false;
       }
