@@ -15,7 +15,35 @@ const { createEnum } = require("devtools/client/shared/enum");
 
 
 
+exports.loadableState = createEnum([
+  "INITIALIZED",
+  "LOADING",
+  "LOADED",
+  "ERROR",
+]);
+
+
+
+
+
+
 exports.location = PropTypes.string;
+
+
+
+
+exports.reloadConditions = {
+
+  
+  touchSimulation: PropTypes.bool,
+
+  
+  userAgent: PropTypes.bool,
+
+  
+  state: PropTypes.oneOf(Object.keys(exports.loadableState)),
+
+};
 
 
 
@@ -49,16 +77,6 @@ const device = {
   displayed: PropTypes.bool,
 
 };
-
-
-
-
-exports.loadableState = createEnum([
-  "INITIALIZED",
-  "LOADING",
-  "LOADED",
-  "ERROR",
-]);
 
 
 
