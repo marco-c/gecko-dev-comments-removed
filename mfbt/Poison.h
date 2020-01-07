@@ -67,29 +67,15 @@ namespace mozilla {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-class CorruptionCanary {
+class CorruptionCanaryForStatics {
 public:
-  constexpr CorruptionCanary()
+  constexpr CorruptionCanaryForStatics()
     : mValue(kCanarySet)
   {
   }
 
-  ~CorruptionCanary() {
-    Check();
-    mValue = mozPoisonValue();
-  }
+  
+  ~CorruptionCanaryForStatics() = default;
 
   void Check() const {
     if (mValue != kCanarySet) {
@@ -97,9 +83,38 @@ public:
     }
   }
 
+protected:
+  uintptr_t mValue;
+
 private:
   static const uintptr_t kCanarySet = 0x0f0b0f0b;
-  uintptr_t mValue;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class CorruptionCanary : public CorruptionCanaryForStatics {
+public:
+  constexpr CorruptionCanary() = default;
+
+  ~CorruptionCanary() {
+    Check();
+    mValue = mozPoisonValue();
+  }
 };
 
 } 
