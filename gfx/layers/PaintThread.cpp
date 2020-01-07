@@ -138,12 +138,9 @@ PaintThread::CalculatePaintWorkerCount()
   int32_t workerCount = gfxPrefs::LayersOMTPPaintWorkers();
 
   
+  
   if (workerCount < 1) {
-    workerCount = std::max((cpuCores * 3) / 4, 1);
-
-    if (workerCount > 32) {
-      workerCount = 32;
-    }
+    workerCount = std::min(std::max((cpuCores * 3) / 4, 1), 4);
   }
 
   return workerCount;
