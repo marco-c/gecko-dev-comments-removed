@@ -126,9 +126,6 @@ protected:
   SharedMutex mMutex;
   mozilla::CondVar mCondVar;
 
-  
-  nsTArray<RefPtr<WorkerRunnable>> mPreStartRunnables;
-
 protected:
   WorkerPrivateParent(WorkerPrivate* aParent,
                       const nsAString& aScriptURL, bool aIsChromeWorker,
@@ -405,6 +402,9 @@ class WorkerPrivate : public WorkerPrivateParent<WorkerPrivate>
 
   
   nsTArray<nsCOMPtr<nsIRunnable>> mQueuedRunnables;
+
+  
+  nsTArray<RefPtr<WorkerRunnable>> mPreStartRunnables;
 
   
   
