@@ -454,6 +454,14 @@ IDBFactory::Open(JSContext* aCx,
   if (!IsChrome() &&
       aOptions.mStorage.WasPassed()) {
 
+    if (mWindow && mWindow->GetExtantDoc()) {
+      mWindow->GetExtantDoc()->WarnOnceAbout(nsIDocument::eIDBOpenDBOptions_StorageType);
+    } else if (!NS_IsMainThread()) {
+      
+      
+      WorkerPrivate::ReportErrorToConsole("IDBOpenDBOptions_StorageType");
+    }
+
     bool ignore = false;
     
     if (NS_IsMainThread()) {
