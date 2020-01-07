@@ -691,9 +691,6 @@ nsDocumentViewer::InitPresentationStuff(bool aDoInitialReflow)
     return NS_ERROR_FAILURE;
   }
 
-  
-  mPresShell->StyleSet()->EndUpdate();
-
   if (aDoInitialReflow) {
     
     
@@ -2315,8 +2312,6 @@ nsDocumentViewer::CreateStyleSet(nsIDocument* aDocument)
 
   UniquePtr<ServoStyleSet> styleSet = MakeUnique<ServoStyleSet>();
 
-  styleSet->BeginUpdate();
-
   
 
   if (aDocument->IsBeingUsedAsImage()) {
@@ -2327,8 +2322,6 @@ nsDocumentViewer::CreateStyleSet(nsIDocument* aDocument)
     
     
     
-    
-
     
     return styleSet;
   }
@@ -2436,7 +2429,6 @@ nsDocumentViewer::CreateStyleSet(nsIDocument* aDocument)
     }
   }
 
-  
   return styleSet;
 }
 
