@@ -296,7 +296,7 @@ Sampler::Disable(PSLockRef aLock)
 template<typename Func>
 void
 Sampler::SuspendAndSampleAndResumeThread(PSLockRef aLock,
-                                         const ThreadInfo& aThreadInfo,
+                                         const RegisteredThread& aRegisteredThread,
                                          const Func& aProcessRegs)
 {
   
@@ -306,7 +306,7 @@ Sampler::SuspendAndSampleAndResumeThread(PSLockRef aLock,
   if (mSamplerTid == -1) {
     mSamplerTid = gettid();
   }
-  int sampleeTid = aThreadInfo.ThreadId();
+  int sampleeTid = aRegisteredThread.Info()->ThreadId();
   MOZ_RELEASE_ASSERT(sampleeTid != mSamplerTid);
 
   
