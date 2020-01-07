@@ -40,7 +40,7 @@ add_task(async function() {
 
     
     let newUniq = r();
-    ss.setCustomTabValue(gBrowser.tabs[1], "uniq", newUniq);
+    ss.setTabValue(gBrowser.tabs[1], "uniq", newUniq);
     let tabState = JSON.parse(ss.getTabState(gBrowser.tabs[1]));
     is(tabState.extData.uniq, newUniq,
        "(overwriting) new data is stored in extData");
@@ -52,13 +52,13 @@ add_task(async function() {
 
     
     let stillUniq = r();
-    ss.setCustomTabValue(gBrowser.tabs[3], "stillUniq", stillUniq);
+    ss.setTabValue(gBrowser.tabs[3], "stillUniq", stillUniq);
     tabState = JSON.parse(ss.getTabState(gBrowser.tabs[3]));
     is(tabState.extData.stillUniq, stillUniq,
        "(adding) new data is stored in extData");
 
     
-    ss.deleteCustomTabValue(gBrowser.tabs[4], "uniq");
+    ss.deleteTabValue(gBrowser.tabs[4], "uniq");
     tabState = JSON.parse(ss.getTabState(gBrowser.tabs[4]));
     
     
@@ -71,7 +71,7 @@ add_task(async function() {
 
     
     let newUniq2 = r();
-    ss.setCustomTabValue(gBrowser.tabs[5], "uniq", newUniq2);
+    ss.setTabValue(gBrowser.tabs[5], "uniq", newUniq2);
     tabState = JSON.parse(ss.getTabState(gBrowser.tabs[5]));
     is(tabState.extData.uniq, newUniq2,
        "(creating) new data is stored in extData where there was none");
