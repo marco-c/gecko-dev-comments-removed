@@ -37,14 +37,8 @@ public:
 
   static nsXREDirProvider* GetSingleton();
 
-  nsresult GetUserProfilesRootDir(nsIFile** aResult,
-                                  const nsACString* aProfileName,
-                                  const nsACString* aAppName,
-                                  const nsACString* aVendorName);
-  nsresult GetUserProfilesLocalDir(nsIFile** aResult,
-                                   const nsACString* aProfileName,
-                                   const nsACString* aAppName,
-                                   const nsACString* aVendorName);
+  nsresult GetUserProfilesRootDir(nsIFile** aResult);
+  nsresult GetUserProfilesLocalDir(nsIFile** aResult);
 
   
   
@@ -57,18 +51,14 @@ public:
   void DoShutdown();
 
   static nsresult GetUserAppDataDirectory(nsIFile* *aFile) {
-    return GetUserDataDirectory(aFile, false, nullptr, nullptr, nullptr);
+    return GetUserDataDirectory(aFile, false);
   }
   static nsresult GetUserLocalDataDirectory(nsIFile* *aFile) {
-    return GetUserDataDirectory(aFile, true, nullptr, nullptr, nullptr);
+    return GetUserDataDirectory(aFile, true);
   }
 
   
-  
-  static nsresult GetUserDataDirectory(nsIFile** aFile, bool aLocal,
-                                       const nsACString* aProfileName,
-                                       const nsACString* aAppName,
-                                       const nsACString* aVendorName);
+  static nsresult GetUserDataDirectory(nsIFile** aFile, bool aLocal);
 
   
   nsIFile* GetGREDir() { return mGREDir; }
@@ -112,11 +102,7 @@ protected:
 
   
   
-  static nsresult AppendProfilePath(nsIFile* aFile,
-                                    const nsACString* aProfileName,
-                                    const nsACString* aAppName,
-                                    const nsACString* aVendorName,
-                                    bool aLocal);
+  static nsresult AppendProfilePath(nsIFile* aFile, bool aLocal);
 
   static nsresult AppendSysUserExtensionPath(nsIFile* aFile);
   static nsresult AppendSysUserExtensionsDevPath(nsIFile* aFile);
