@@ -144,6 +144,14 @@ enum reflectStatus {
   REFLECT_FAILURE
 };
 
+
+
+struct HistogramSnapshotData {
+  nsTArray<Histogram::Sample> mBucketRanges;
+  nsTArray<Histogram::Count> mBucketCounts;
+  int64_t mSampleSum; 
+};
+
 class KeyedHistogram {
 public:
   KeyedHistogram(HistogramID id, const HistogramInfo& info);
@@ -621,6 +629,100 @@ internal_HistogramAdd(Histogram& histogram,
 
 
 namespace {
+
+
+
+
+
+
+
+
+
+nsresult
+internal_GetHistogramAndSamples(const StaticMutexAutoLock& aLock,
+                                const Histogram *h,
+                                HistogramSnapshotData& aSnapshot)
+{
+  MOZ_ASSERT(h);
+
+  
+  const size_t bucketCount = h->bucket_count();
+  for (size_t i = 0; i < bucketCount; i++) {
+    if (!aSnapshot.mBucketRanges.AppendElement(h->ranges(i))) {
+      return NS_ERROR_FAILURE;
+    }
+  }
+
+  
+  Histogram::SampleSet ss;
+  h->SnapshotSample(&ss);
+
+  
+  for (size_t i = 0; i < bucketCount; i++) {
+    if (!aSnapshot.mBucketCounts.AppendElement(ss.counts(i))) {
+      return NS_ERROR_FAILURE;
+    }
+  }
+
+  
+  
+  aSnapshot.mSampleSum = ss.sum();
+  return NS_OK;
+}
+
+nsresult
+internal_ReflectHistogramAndSamples(JSContext *cx,
+                                    JS::Handle<JSObject*> obj,
+                                    const HistogramInfo& aHistogramInfo,
+                                    const HistogramSnapshotData& aSnapshot)
+{
+  if (!(JS_DefineProperty(cx, obj, "min",
+                          aHistogramInfo.min, JSPROP_ENUMERATE)
+        && JS_DefineProperty(cx, obj, "max",
+                             aHistogramInfo.max, JSPROP_ENUMERATE)
+        && JS_DefineProperty(cx, obj, "histogram_type",
+                             aHistogramInfo.histogramType, JSPROP_ENUMERATE)
+        && JS_DefineProperty(cx, obj, "sum",
+                             double(aSnapshot.mSampleSum), JSPROP_ENUMERATE))) {
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  
+  
+  const size_t count = aSnapshot.mBucketCounts.Length();
+  MOZ_ASSERT(count == aSnapshot.mBucketRanges.Length(),
+             "The number of buckets and the number of counts must match.");
+
+  
+  JS::Rooted<JSObject*> rarray(cx, JS_NewArrayObject(cx, count));
+  if (!rarray
+      || !JS_DefineProperty(cx, obj, "ranges", rarray, JSPROP_ENUMERATE)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  for (size_t i = 0; i < count; i++) {
+    if (!JS_DefineElement(cx, rarray, i, aSnapshot.mBucketRanges[i], JSPROP_ENUMERATE)) {
+      return NS_ERROR_FAILURE;
+    }
+  }
+
+  JS::Rooted<JSObject*> counts_array(cx, JS_NewArrayObject(cx, count));
+  if (!counts_array
+      || !JS_DefineProperty(cx, obj, "counts", counts_array, JSPROP_ENUMERATE)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  for (size_t i = 0; i < count; i++) {
+    if (!JS_DefineElement(cx, counts_array, i, aSnapshot.mBucketCounts[i], JSPROP_ENUMERATE)) {
+      return NS_ERROR_FAILURE;
+    }
+  }
+
+  return NS_OK;
+}
 
 bool
 internal_FillRanges(JSContext *cx, JS::Handle<JSObject*> array, Histogram *h)
@@ -1228,8 +1330,7 @@ internal_JSHistogram_Snapshot(JSContext *cx, unsigned argc, JS::Value *vp)
   MOZ_ASSERT(data);
   HistogramID id = data->histogramId;
 
-  Histogram* h = nullptr;
-  Histogram::SampleSet ss;
+  HistogramSnapshotData dataSnapshot;
   {
     StaticMutexAutoLock locker(gTelemetryHistogramMutex);
     MOZ_ASSERT(internal_IsHistogramEnumId(id));
@@ -1237,11 +1338,12 @@ internal_JSHistogram_Snapshot(JSContext *cx, unsigned argc, JS::Value *vp)
     
     
     
-    h = internal_GetHistogramById(id, ProcessID::Parent);
+    Histogram* h = internal_GetHistogramById(id, ProcessID::Parent);
     
     
-    MOZ_ASSERT(h);
-    h->SnapshotSample(&ss);
+    if (NS_FAILED(internal_GetHistogramAndSamples(locker, h, dataSnapshot))) {
+      return false;
+    }
   }
 
   JS::Rooted<JSObject*> snapshot(cx, JS_NewPlainObject(cx));
@@ -1249,18 +1351,14 @@ internal_JSHistogram_Snapshot(JSContext *cx, unsigned argc, JS::Value *vp)
     return false;
   }
 
-  reflectStatus status = internal_ReflectHistogramAndSamples(cx, snapshot, h, ss);
-
-  switch (status) {
-  case REFLECT_FAILURE:
+  if (NS_FAILED(internal_ReflectHistogramAndSamples(cx,
+                                                    snapshot,
+                                                    gHistogramInfos[id],
+                                                    dataSnapshot))) {
     return false;
-  case REFLECT_OK:
-    args.rval().setObject(*snapshot);
-    return true;
-  default:
-    MOZ_ASSERT_UNREACHABLE("Unhandled reflection status.");
   }
 
+  args.rval().setObject(*snapshot);
   return true;
 }
 
@@ -2140,14 +2238,12 @@ TelemetryHistogram::CreateHistogramSnapshots(JSContext* aCx,
 
   
   
-  struct MOZ_NON_MEMMOVABLE HistogramProcessInfo {
-    Histogram* h;
-    Histogram::SampleSet ss;
-    size_t index;
+  struct HistogramProcessInfo {
+    HistogramSnapshotData data;
+    HistogramID histogramID;
   };
 
-  mozilla::Vector<mozilla::Vector<HistogramProcessInfo>>
-    processHistArray;
+  mozilla::Vector<mozilla::Vector<HistogramProcessInfo>> processHistArray;
   {
     if (!processHistArray.resize(static_cast<uint32_t>(ProcessID::Count))) {
       return NS_ERROR_OUT_OF_MEMORY;
@@ -2182,9 +2278,12 @@ TelemetryHistogram::CreateHistogramSnapshots(JSContext* aCx,
           continue;
         }
 
-        Histogram::SampleSet ss;
-        h->SnapshotSample(&ss);
-        if (!hArray.emplaceBack(HistogramProcessInfo{h, ss, i})) {
+        HistogramSnapshotData snapshotData;
+        if (NS_FAILED(internal_GetHistogramAndSamples(locker, h, snapshotData))) {
+          continue;
+        }
+
+        if (!hArray.emplaceBack(HistogramProcessInfo{snapshotData, id})) {
           return NS_ERROR_OUT_OF_MEMORY;
         }
 
@@ -2210,26 +2309,23 @@ TelemetryHistogram::CreateHistogramSnapshots(JSContext* aCx,
     const mozilla::Vector<HistogramProcessInfo>& hArray = processHistArray[process];
     for (size_t i = 0; i < hArray.length(); ++i) {
       const HistogramProcessInfo& hData = hArray[i];
-      uint32_t histogramIndex = hData.index;
-
-      HistogramID id = HistogramID(histogramIndex);
+      HistogramID id = hData.histogramID;
 
       JS::Rooted<JSObject*> hobj(aCx, JS_NewPlainObject(aCx));
       if (!hobj) {
         return NS_ERROR_FAILURE;
       }
 
-      Histogram* h = hData.h;
-      reflectStatus status =  internal_ReflectHistogramAndSamples(aCx, hobj, h,
-                                                                  hData.ss);
-      switch (status) {
-      case REFLECT_FAILURE:
+      if (NS_FAILED(internal_ReflectHistogramAndSamples(aCx,
+                                                        hobj,
+                                                        gHistogramInfos[id],
+                                                        hData.data))) {
         return NS_ERROR_FAILURE;
-      case REFLECT_OK:
-        if (!JS_DefineProperty(aCx, processObject, gHistogramInfos[id].name(),
-                               hobj, JSPROP_ENUMERATE)) {
+      }
+
+      if (!JS_DefineProperty(aCx, processObject, gHistogramInfos[id].name(),
+                             hobj, JSPROP_ENUMERATE)) {
           return NS_ERROR_FAILURE;
-        }
       }
     }
   }
