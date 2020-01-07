@@ -142,6 +142,18 @@ public:
   static MediaManager* GetIfExists();
   static void StartupInit();
   static void PostTask(already_AddRefed<Runnable> task);
+
+  
+
+
+
+
+
+
+  template<typename MozPromiseType, typename FunctionType>
+  static RefPtr<MozPromiseType>
+  PostTask(const char* aName, FunctionType&& aFunction);
+
 #ifdef DEBUG
   static bool IsInMediaThread();
 #endif
