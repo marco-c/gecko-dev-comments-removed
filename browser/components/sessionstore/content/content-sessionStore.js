@@ -33,6 +33,8 @@ ChromeUtils.import("resource:///modules/sessionstore/ContentRestore.jsm", this);
 XPCOMUtils.defineLazyGetter(this, "gContentRestore",
                             () => { return new ContentRestore(this); });
 
+ChromeUtils.defineModuleGetter(this, "Utils",
+  "resource://gre/modules/sessionstore/Utils.jsm");
 const ssu = Cc["@mozilla.org/browser/sessionstore/utils;1"]
               .getService(Ci.nsISessionStoreUtils);
 
@@ -59,25 +61,8 @@ const global = this;
 
 
 function mapFrameTree(callback) {
-  return (function map(frame, cb) {
-    
-    let obj = cb(frame) || {};
-    let children = [];
-
-    
-    ssu.forEachNonDynamicChildFrame(frame, (subframe, index) => {
-      let result = map(subframe, cb);
-      if (result && Object.keys(result).length) {
-        children[index] = result;
-      }
-    });
-
-    if (children.length) {
-      obj.children = children;
-    }
-
-    return Object.keys(obj).length ? obj : null;
-  })(content, callback);
+  let [data] = Utils.mapFrameTree(content, callback);
+  return data;
 }
 
 
