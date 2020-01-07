@@ -303,10 +303,6 @@ impl SelfAlignment {
     pub fn is_valid_on_both_axes(&self) -> bool {
         match self.0.value() {
             
-            AlignFlags::BASELINE |
-            AlignFlags::LAST_BASELINE => false,
-
-            
             AlignFlags::LEFT |
             AlignFlags::RIGHT => false,
 
@@ -326,10 +322,11 @@ impl SelfAlignment {
         axis: AxisDirection,
     ) -> Result<Self, ParseError<'i>> {
         
-        if axis == AxisDirection::Block {
-            if let Ok(value) = input.try(parse_baseline) {
-                return Ok(SelfAlignment(value));
-            }
+        
+        
+        
+        if let Ok(value) = input.try(parse_baseline) {
+            return Ok(SelfAlignment(value));
         }
 
         
