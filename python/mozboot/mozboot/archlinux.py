@@ -23,6 +23,7 @@ class ArchlinuxBootstrapper(StyloInstall, BaseBootstrapper):
         'nodejs',
         'python2',
         'python2-setuptools',
+        'python',  
         'unzip',
         'zip',
     ]
