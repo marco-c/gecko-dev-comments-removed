@@ -82,8 +82,22 @@ ChannelSplitterNode::Create(AudioContext& aAudioContext,
   RefPtr<ChannelSplitterNode> audioNode =
     new ChannelSplitterNode(&aAudioContext, aOptions.mNumberOfOutputs);
 
-  audioNode->Initialize(aOptions, aRv);
-  if (NS_WARN_IF(aRv.Failed())) {
+  
+  
+  
+  if (aOptions.mChannelCount.WasPassed() &&
+      aOptions.mChannelCount.Value() != audioNode->ChannelCount()) {
+    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
+    return nullptr;
+  }
+  if (aOptions.mChannelInterpretation.WasPassed() &&
+      aOptions.mChannelInterpretation.Value() != audioNode->ChannelInterpretationValue()) {
+    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
+    return nullptr;
+  }
+  if (aOptions.mChannelCountMode.WasPassed() &&
+      aOptions.mChannelCountMode.Value() != audioNode->ChannelCountModeValue()) {
+    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return nullptr;
   }
 
