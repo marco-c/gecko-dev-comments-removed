@@ -125,9 +125,12 @@ public:
   Reject(nsIGlobalObject* aGlobal, JSContext* aCx,
          JS::Handle<JS::Value> aValue, ErrorResult& aRv);
 
+  
+  
+  
   static already_AddRefed<Promise>
-  All(const GlobalObject& aGlobal,
-      const nsTArray<RefPtr<Promise>>& aPromiseList, ErrorResult& aRv);
+  All(JSContext* aCx, const nsTArray<RefPtr<Promise>>& aPromiseList,
+      ErrorResult& aRv);
 
   void
   Then(JSContext* aCx,
