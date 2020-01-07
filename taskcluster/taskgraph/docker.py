@@ -8,10 +8,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import json
 import os
-import subprocess
 import tarfile
-import tempfile
-import which
 from io import BytesIO
 
 from taskgraph.util import docker
@@ -81,26 +78,9 @@ def build_image(name, args=None):
 
     tag = docker.docker_image(name, by_tag=True)
 
-    docker_bin = which.which('docker')
-
-    
-    try:
-        subprocess.check_output([docker_bin, '--version'])
-    except subprocess.CalledProcessError:
-        raise Exception('Docker server is unresponsive. Run `docker ps` and '
-                        'check that Docker is running')
-
-    
-    
-    
-    
-    fd, context_path = tempfile.mkstemp()
-    os.close(fd)
-    try:
-        docker.create_context_tar(GECKO, image_dir, context_path, name, args)
-        docker.build_from_context(docker_bin, context_path, name, tag)
-    finally:
-        os.unlink(context_path)
+    buf = BytesIO()
+    docker.stream_context_tar(GECKO, image_dir, buf, '', args)
+    docker.post_to_docker(buf.getvalue(), '/build', nocache=1, t=tag)
 
     print('Successfully built %s and tagged with %s' % (name, tag))
 
