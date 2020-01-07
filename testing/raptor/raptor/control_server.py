@@ -9,6 +9,7 @@ from __future__ import absolute_import
 import BaseHTTPServer
 import json
 import os
+import socket
 import threading
 
 from mozlog import get_proxy_logger
@@ -69,11 +70,18 @@ class RaptorControlServer():
         self.raptor_venv = os.path.join(os.getcwd(), 'raptor-venv')
         self.server = None
         self._server_thread = None
+        self.port = None
 
     def start(self):
         config_dir = os.path.join(here, 'tests')
         os.chdir(config_dir)
-        server_address = ('', 8000)
+
+        
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.bind(('', 0))
+        self.port = sock.getsockname()[1]
+        sock.close()
+        server_address = ('', self.port)
 
         server_class = BaseHTTPServer.HTTPServer
         handler_class = MyHandler
@@ -83,7 +91,7 @@ class RaptorControlServer():
         self._server_thread = threading.Thread(target=httpd.serve_forever)
         self._server_thread.setDaemon(True)  
         self._server_thread.start()
-        LOG.info("raptor control server running on port 8000...")
+        LOG.info("raptor control server running on port %d..." % self.port)
         self.server = httpd
 
     def stop(self):
