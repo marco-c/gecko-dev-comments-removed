@@ -352,7 +352,7 @@ public:
 
 
 
-  virtual void MaybeQueueCancelEvent(StickyTimeDuration aActiveTime) {};
+  virtual void MaybeQueueCancelEvent(const StickyTimeDuration& aActiveTime) {};
 
 protected:
   void SilentlySetCurrentTime(const TimeDuration& aNewCurrentTime);
