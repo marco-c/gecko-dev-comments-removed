@@ -127,6 +127,17 @@ public class GeckoSession extends LayerSession
                 "GeckoView:OnNewSession"
             }
         ) {
+            
+            private int convertGeckoTarget(int geckoTarget) {
+                switch (geckoTarget) {
+                    case 0: 
+                    case 1: 
+                        return NavigationDelegate.TARGET_WINDOW_CURRENT;
+                    default: 
+                        return NavigationDelegate.TARGET_WINDOW_NEW;
+                }
+            }
+
             @Override
             public void handleMessage(final NavigationDelegate delegate,
                                       final String event,
@@ -141,9 +152,7 @@ public class GeckoSession extends LayerSession
                                             message.getBoolean("canGoForward"));
                 } else if ("GeckoView:OnLoadUri".equals(event)) {
                     final String uri = message.getString("uri");
-                    final NavigationDelegate.TargetWindow where =
-                        NavigationDelegate.TargetWindow.forGeckoValue(
-                            message.getInt("where"));
+                    final int where = convertGeckoTarget(message.getInt("where"));
                     final boolean result =
                         delegate.onLoadUri(GeckoSession.this, uri, where);
                     callback.sendSuccess(result);
@@ -1399,38 +1408,9 @@ public class GeckoSession extends LayerSession
 
         void onCanGoForward(GeckoSession session, boolean canGoForward);
 
-        enum TargetWindow {
-            DEFAULT(0),
-            CURRENT(1),
-            NEW(2);
-
-            private static final TargetWindow[] sValues = TargetWindow.values();
-            private int mValue;
-
-            private TargetWindow(int value) {
-                mValue = value;
-            }
-
-            public static TargetWindow forValue(int value) {
-                return sValues[value];
-            }
-
-            public static TargetWindow forGeckoValue(int value) {
-                
-                
-                
-                
-                
-                final TargetWindow[] sMap = {
-                    DEFAULT,
-                    CURRENT,
-                    NEW,
-                    NEW,
-                    NEW
-                };
-                return sMap[value];
-            }
-        }
+        public static final int TARGET_WINDOW_NONE = 0;
+        public static final int TARGET_WINDOW_CURRENT = 1;
+        public static final int TARGET_WINDOW_NEW = 2;
 
         
 
@@ -1441,7 +1421,8 @@ public class GeckoSession extends LayerSession
 
 
 
-        boolean onLoadUri(GeckoSession session, String uri, TargetWindow where);
+
+        boolean onLoadUri(GeckoSession session, String uri, int target);
 
         
 
