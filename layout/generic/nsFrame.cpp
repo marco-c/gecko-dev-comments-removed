@@ -7224,6 +7224,13 @@ nsIFrame::InvalidateLayer(DisplayItemType aDisplayItemKey,
   InvalidateRenderingObservers(displayRoot, this);
 
   
+  if ((aFlags & UPDATE_IS_ASYNC) &&
+      WebRenderUserData::SupportsAsyncUpdate(this)) {
+    
+    return nullptr;
+  }
+
+  
   
   if ((aFlags & UPDATE_IS_ASYNC) && layer && layer->SupportsAsyncUpdate()) {
     return layer;
