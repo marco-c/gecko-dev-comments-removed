@@ -95,9 +95,9 @@ ThreadInfo::StreamJSON(const ProfileBuffer& aBuffer,
                             mFirstSavedStreamedSampleTime,
                             mSavedStreamedMarkers.get(),
                             *mUniqueStacks);
-    mSavedStreamedSamples.reset();
+    mSavedStreamedSamples = nullptr;
     mFirstSavedStreamedSampleTime = 0.0;
-    mSavedStreamedMarkers.reset();
+    mSavedStreamedMarkers = nullptr;
 
     aWriter.StartObjectProperty("stackTable");
     {
@@ -258,24 +258,64 @@ ThreadInfo::FlushSamplesAndMarkers(const TimeStamp& aProcessStartTime,
   {
     SpliceableChunkedJSONWriter b;
     b.StartBareList();
+    bool haveSamples = false;
     {
-      aBuffer.StreamSamplesToJSON(b, ThreadId(),  0,
-                                  &mFirstSavedStreamedSampleTime,
-                                  mContext, *mUniqueStacks);
+      if (mSavedStreamedSamples) {
+        b.Splice(mSavedStreamedSamples.get());
+        haveSamples = true;
+      }
+
+      
+      
+      
+      bool streamedNewSamples =
+        aBuffer.StreamSamplesToJSON(b, ThreadId(),  0,
+                                    &mFirstSavedStreamedSampleTime,
+                                    mContext, *mUniqueStacks);
+      haveSamples = haveSamples || streamedNewSamples;
     }
     b.EndBareList();
-    mSavedStreamedSamples = b.WriteFunc()->CopyData();
+
+    
+    
+    
+    
+    if (haveSamples) {
+      mSavedStreamedSamples = b.WriteFunc()->CopyData();
+    } else {
+      mSavedStreamedSamples = nullptr;
+    }
   }
 
   {
     SpliceableChunkedJSONWriter b;
     b.StartBareList();
+    bool haveMarkers = false;
     {
-      aBuffer.StreamMarkersToJSON(b, ThreadId(), aProcessStartTime,
-                                   0, *mUniqueStacks);
+      if (mSavedStreamedMarkers) {
+        b.Splice(mSavedStreamedMarkers.get());
+        haveMarkers = true;
+      }
+
+      
+      
+      
+      bool streamedNewMarkers =
+        aBuffer.StreamMarkersToJSON(b, ThreadId(), aProcessStartTime,
+                                     0, *mUniqueStacks);
+      haveMarkers = haveMarkers || streamedNewMarkers;
     }
     b.EndBareList();
-    mSavedStreamedMarkers = b.WriteFunc()->CopyData();
+
+    
+    
+    
+    
+    if (haveMarkers) {
+      mSavedStreamedMarkers = b.WriteFunc()->CopyData();
+    } else {
+      mSavedStreamedMarkers = nullptr;
+    }
   }
 
   
