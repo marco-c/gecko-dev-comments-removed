@@ -1098,6 +1098,7 @@ CompositorBridgeParent::AllocPAPZCTreeManagerParent(const LayersId& aLayersId)
   MOZ_ASSERT(mOptions.UseAPZ());
   
   MOZ_ASSERT(mApzcTreeManager);
+  MOZ_ASSERT(mApzSampler);
   
   MOZ_ASSERT(!aLayersId.IsValid());
 
@@ -1105,7 +1106,7 @@ CompositorBridgeParent::AllocPAPZCTreeManagerParent(const LayersId& aLayersId)
   CompositorBridgeParent::LayerTreeState& state = sIndirectLayerTrees[mRootLayerTreeID];
   MOZ_ASSERT(state.mParent.get() == this);
   MOZ_ASSERT(!state.mApzcTreeManagerParent);
-  state.mApzcTreeManagerParent = new APZCTreeManagerParent(mRootLayerTreeID, mApzcTreeManager);
+  state.mApzcTreeManagerParent = new APZCTreeManagerParent(mRootLayerTreeID, mApzcTreeManager, mApzSampler);
 
   return state.mApzcTreeManagerParent;
 }
@@ -1124,8 +1125,9 @@ CompositorBridgeParent::AllocateAPZCTreeManagerParent(const MonitorAutoLock& aPr
 {
   MOZ_ASSERT(aState.mParent == this);
   MOZ_ASSERT(mApzcTreeManager);
+  MOZ_ASSERT(mApzSampler);
   MOZ_ASSERT(!aState.mApzcTreeManagerParent);
-  aState.mApzcTreeManagerParent = new APZCTreeManagerParent(aLayersId, mApzcTreeManager);
+  aState.mApzcTreeManagerParent = new APZCTreeManagerParent(aLayersId, mApzcTreeManager, mApzSampler);
 }
 
 PAPZParent*
@@ -1727,7 +1729,7 @@ CompositorBridgeParent::RecvAdoptChild(const LayersId& child)
   if (mApzSampler) {
     if (parent) {
       MOZ_ASSERT(mApzcTreeManager);
-      parent->ChildAdopted(mApzcTreeManager);
+      parent->ChildAdopted(mApzcTreeManager, mApzSampler);
     }
     mApzSampler->NotifyLayerTreeAdopted(child, oldApzSampler);
   }

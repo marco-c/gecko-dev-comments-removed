@@ -19,6 +19,7 @@
 #include "mozilla/ipc/Transport.h"      
 #include "mozilla/layers/AnimationHelper.h" 
 #include "mozilla/layers/APZCTreeManagerParent.h"  
+#include "mozilla/layers/APZSampler.h"  
 #include "mozilla/layers/AsyncCompositionManager.h"
 #include "mozilla/layers/CompositorOptions.h"
 #include "mozilla/layers/CompositorThread.h"
@@ -133,8 +134,9 @@ CrossProcessCompositorBridgeParent::AllocPAPZCTreeManagerParent(const LayersId& 
     
     
     RefPtr<APZCTreeManager> temp = new APZCTreeManager(LayersId{0});
-    temp->ClearTree();
-    return new APZCTreeManagerParent(aLayersId, temp);
+    RefPtr<APZSampler> tempSampler = new APZSampler(temp);
+    tempSampler->ClearTree();
+    return new APZCTreeManagerParent(aLayersId, temp, tempSampler);
   }
 
   state.mParent->AllocateAPZCTreeManagerParent(lock, aLayersId, state);

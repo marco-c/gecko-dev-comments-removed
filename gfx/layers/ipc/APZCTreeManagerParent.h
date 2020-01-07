@@ -13,13 +13,16 @@ namespace mozilla {
 namespace layers {
 
 class APZCTreeManager;
+class APZSampler;
 
 class APZCTreeManagerParent
     : public PAPZCTreeManagerParent
 {
 public:
 
-  explicit APZCTreeManagerParent(LayersId aLayersId, RefPtr<APZCTreeManager> aAPZCTreeManager);
+  APZCTreeManagerParent(LayersId aLayersId,
+                        RefPtr<APZCTreeManager> aAPZCTreeManager,
+                        RefPtr<APZSampler> mAPZSampler);
   virtual ~APZCTreeManagerParent();
 
   LayersId GetLayersId() const { return mLayersId; }
@@ -28,7 +31,8 @@ public:
 
 
 
-  void ChildAdopted(RefPtr<APZCTreeManager> aAPZCTreeManager);
+  void ChildAdopted(RefPtr<APZCTreeManager> aAPZCTreeManager,
+                    RefPtr<APZSampler> aAPZSampler);
 
   mozilla::ipc::IPCResult
   RecvSetKeyboardMap(const KeyboardMap& aKeyboardMap) override;
@@ -84,6 +88,7 @@ public:
 private:
   LayersId mLayersId;
   RefPtr<APZCTreeManager> mTreeManager;
+  RefPtr<APZSampler> mSampler;
 };
 
 } 
