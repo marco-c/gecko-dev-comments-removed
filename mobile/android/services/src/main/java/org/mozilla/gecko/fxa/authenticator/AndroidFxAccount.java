@@ -111,6 +111,13 @@ public class AndroidFxAccount {
   private static final String ACCOUNT_KEY_DEVICE_PUSH_REGISTRATION_ERROR_TIME = "devicePushRegistrationErrorTime";
 
   
+  
+  
+  
+  
+  private static final String ACCOUNT_KEY_HASHED_FXA_UID = "hashedFxAUID";
+
+  
   private static final String PROFILE_OAUTH_TOKEN_TYPE = "oauth::profile";
 
   
@@ -1036,6 +1043,14 @@ public class AndroidFxAccount {
 
   public synchronized void resetDevicePushRegistrationError() {
     setDevicePushRegistrationError(0L, 0l);
+  }
+
+  public synchronized void setCachedHashedFxAUID(final String newHashedFxAUID) {
+    accountManager.setUserData(account, ACCOUNT_KEY_HASHED_FXA_UID, newHashedFxAUID);
+  }
+
+  public synchronized String getCachedHashedFxAUID() {
+    return accountManager.getUserData(account, ACCOUNT_KEY_HASHED_FXA_UID);
   }
 
   @SuppressLint("ParcelCreator") 

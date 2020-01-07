@@ -3,16 +3,19 @@
 
 package org.mozilla.gecko.telemetry.pingbuilders;
 
+import android.os.Bundle;
 import android.os.Parcel;
 import android.os.Parcelable;
 
 import org.json.JSONException;
 import org.json.simple.JSONArray;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mozilla.gecko.background.testhelpers.TestRunner;
 import org.mozilla.gecko.sync.ExtendedJSONObject;
+import org.mozilla.gecko.sync.telemetry.TelemetryContract;
 import org.mozilla.gecko.telemetry.TelemetryOutgoingPing;
 import org.mozilla.gecko.telemetry.TelemetryPing;
 import org.mozilla.gecko.telemetry.stores.TelemetryJSONFilePingStore;
@@ -132,15 +135,12 @@ public class TelemetrySyncPingBundleBuilderTest {
         
         
         
-        
-        
         ExtendedJSONObject payload = outgoingPing.getPayload().getObject("payload");
-        assertEquals(6, payload.keySet().size());
+        assertEquals(5, payload.keySet().size());
         assertEquals("schedule", payload.getString("why"));
         assertEquals(Integer.valueOf(1), payload.getIntegerSafely("version"));
         assertEquals(payload.getString("uid"), "uid-1");
         assertEquals(payload.getString("deviceID"), "device-id-1");
-        assertEquals(0, payload.getArray("syncs").size());
         
         ExtendedJSONObject os = payload.getObject("os");
         assertEquals(3, os.keySet().size());
@@ -187,6 +187,31 @@ public class TelemetrySyncPingBundleBuilderTest {
         assertEquals(2, syncs.size());
         assertSync((ExtendedJSONObject) syncs.get(0), 123L, true);
         assertSync((ExtendedJSONObject) syncs.get(1), 321L, false);
+
+        
+        Bundle event = new Bundle();
+        event.putLong(TelemetryContract.KEY_EVENT_TIMESTAMP, 123456L);
+        event.putString(TelemetryContract.KEY_EVENT_CATEGORY, "sync");
+        event.putString(TelemetryContract.KEY_EVENT_OBJECT, "object");
+        event.putString(TelemetryContract.KEY_EVENT_METHOD, "method");
+        event.putString(TelemetryContract.KEY_EVENT_VALUE, "value");
+        Bundle extra = new Bundle();
+        extra.putString("extra-key", "extra-value");
+        event.putBundle(TelemetryContract.KEY_EVENT_EXTRA, extra);
+        eventPings.storePing(new TelemetrySyncEventPingBuilder()
+                .fromEventTelemetry(event)
+                .build()
+        );
+        builder.setSyncEventStore(eventPings);
+
+        
+        outgoingPing = builder.build();
+        JSONArray events = outgoingPing.getPayload()
+                .getObject("payload")
+                .getArray("events");
+        assertEquals(1, events.size());
+        Assert.assertEquals("[[123456,\"sync\",\"method\",\"object\",\"value\",{\"extra-key\":\"extra-value\"}]]",
+                events.toJSONString());
     }
 
     private void assertSync(ExtendedJSONObject sync, long took, boolean restarted) throws JSONException {
