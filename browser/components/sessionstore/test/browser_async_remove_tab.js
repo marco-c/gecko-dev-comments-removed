@@ -7,7 +7,7 @@ async function createTabWithRandomValue(url) {
 
   
   let r = `rand-${Math.random()}`;
-  ss.setTabValue(tab, "foobar", r);
+  ss.setCustomTabValue(tab, "foobar", r);
 
   
   await TabStateFlusher.flush(browser);
