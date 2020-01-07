@@ -289,8 +289,10 @@ CompositorVsyncScheduler::Composite(TimeStamp aVsyncTimestamp)
 }
 
 void
-CompositorVsyncScheduler::OnForceComposeToTarget()
+CompositorVsyncScheduler::ForceComposeToTarget(gfx::DrawTarget* aTarget, const IntRect* aRect)
 {
+  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
+
   
 
 
@@ -301,15 +303,13 @@ CompositorVsyncScheduler::OnForceComposeToTarget()
 
 
 
-  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
-  mVsyncNotificationsSkipped = 0;
-}
 
-void
-CompositorVsyncScheduler::ForceComposeToTarget(gfx::DrawTarget* aTarget, const IntRect* aRect)
-{
-  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
-  OnForceComposeToTarget();
+
+
+
+
+  mVsyncNotificationsSkipped = 0;
+
   mLastCompose = TimeStamp::Now();
   ComposeToTarget(aTarget, aRect);
 }
