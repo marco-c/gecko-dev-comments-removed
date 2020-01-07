@@ -3403,39 +3403,43 @@ GCRuntime::sweepBackgroundThings(ZoneList& zones, LifoAlloc& freeBlocks)
     if (zones.isEmpty())
         return;
 
-    
-    Arena* emptyArenas = nullptr;
     FreeOp fop(nullptr);
-    for (unsigned phase = 0 ; phase < ArrayLength(BackgroundFinalizePhases) ; ++phase) {
-        for (Zone* zone = zones.front(); zone; zone = zone->nextZone()) {
-            for (auto kind : BackgroundFinalizePhases[phase].kinds) {
+
+    
+    
+    while (!zones.isEmpty()) {
+        Zone* zone = zones.removeFront();
+        Arena* emptyArenas = nullptr;
+
+        
+        
+        for (auto phase : BackgroundFinalizePhases) {
+            for (auto kind : phase.kinds) {
                 Arena* arenas = zone->arenas.arenaListsToSweep(kind);
                 MOZ_RELEASE_ASSERT(uintptr_t(arenas) != uintptr_t(-1));
                 if (arenas)
                     ArenaLists::backgroundFinalize(&fop, arenas, &emptyArenas);
             }
         }
-    }
 
-    AutoLockGC lock(rt);
+        AutoLockGC lock(rt);
 
-    
-    
-    static const size_t LockReleasePeriod = 32;
-    size_t releaseCount = 0;
-    Arena* next;
-    for (Arena* arena = emptyArenas; arena; arena = next) {
-        next = arena->next;
-        rt->gc.releaseArena(arena, lock);
-        releaseCount++;
-        if (releaseCount % LockReleasePeriod == 0) {
-            lock.unlock();
-            lock.lock();
+        
+        
+        
+        static const size_t LockReleasePeriod = 32;
+        size_t releaseCount = 0;
+        Arena* next;
+        for (Arena* arena = emptyArenas; arena; arena = next) {
+            next = arena->next;
+            rt->gc.releaseArena(arena, lock);
+            releaseCount++;
+            if (releaseCount % LockReleasePeriod == 0) {
+                lock.unlock();
+                lock.lock();
+            }
         }
     }
-
-    while (!zones.isEmpty())
-        zones.removeFront();
 }
 
 void
@@ -5649,9 +5653,20 @@ GCRuntime::endSweepingSweepGroup(FreeOp* fop, SliceBudget& budget)
     }
 
     
+
+
+
+    bool sweepAtomsZone = false;
     ZoneList zones;
-    for (SweepGroupZonesIter zone(rt); !zone.done(); zone.next())
-        zones.append(zone);
+    for (SweepGroupZonesIter zone(rt); !zone.done(); zone.next()) {
+        if (zone->isAtomsZone())
+            sweepAtomsZone = true;
+        else
+            zones.append(zone);
+    }
+    if (sweepAtomsZone)
+        zones.append(atomsZone);
+
     if (sweepOnBackgroundThread)
         queueZonesForBackgroundSweep(zones);
     else
