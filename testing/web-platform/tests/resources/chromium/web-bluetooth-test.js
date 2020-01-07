@@ -377,4 +377,12 @@ class FakeRemoteGATTDescriptor {
   }
 }
 
-navigator.bluetooth.test = new FakeBluetooth();
+
+
+try {
+  navigator.bluetooth.test = new FakeBluetooth();
+} catch {
+    throw 'Web Bluetooth Test API is not implemented on this ' +
+        'environment. See the bluetooth README at ' +
+        'https://github.com/w3c/web-platform-tests/blob/master/bluetooth/README.md#web-bluetooth-testing';
+}

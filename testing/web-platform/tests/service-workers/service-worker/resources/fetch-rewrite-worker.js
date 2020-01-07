@@ -1,3 +1,11 @@
+
+
+
+
+
+
+
+
 function get_query_params(url) {
   var search = (new URL(url)).search;
   if (!search) {
@@ -125,6 +133,7 @@ self.addEventListener('fetch', function(event) {
             }
           }
 
+          
           if (params['cache']) {
             var cacheName = "cached-fetches-" + performance.now() + "-" +
                             event.request.url;
