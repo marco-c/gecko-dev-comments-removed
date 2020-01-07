@@ -992,7 +992,7 @@ nsHttpChannel::SetupTransaction()
     }
 
     
-    if (NS_EscapeURL(path.get(), path.Length(), esc_OnlyNonASCII | esc_Spaces, buf)) {
+    if (NS_EscapeURL(path.get(), path.Length(), esc_OnlyNonASCII, buf)) {
         requestURI = &buf;
     } else {
         requestURI = &path;
@@ -5503,7 +5503,7 @@ nsHttpChannel::AsyncProcessRedirection(uint32_t redirectType)
 
     
     nsAutoCString locationBuf;
-    if (NS_EscapeURL(location.get(), -1, esc_OnlyNonASCII | esc_Spaces, locationBuf))
+    if (NS_EscapeURL(location.get(), -1, esc_OnlyNonASCII, locationBuf))
         location = locationBuf;
 
     mRedirectType = redirectType;
