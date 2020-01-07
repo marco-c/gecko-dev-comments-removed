@@ -33,6 +33,8 @@ class GeckoInstance(object):
         "apz.content_response_timeout": 60000,
 
         
+        
+        "datareporting.healthreport.about.reportUrl": "http://%(server)s/dummy/abouthealthreport/",
         "datareporting.healthreport.documentServerURI": "http://%(server)s/dummy/healthreport/",
 
         
