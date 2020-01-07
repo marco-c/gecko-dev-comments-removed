@@ -158,6 +158,12 @@ class JUnitTestRunner(MochitestDesktop):
         e10s = 'true' if self.options.e10s else 'false'
         cmd = cmd + " -e use_multiprocess %s" % e10s
         
+        shards = self.options.totalChunks
+        shard = self.options.thisChunk
+        if shards is not None and shard is not None:
+            shard -= 1  
+            cmd = cmd + " -e numShards %d -e shardIndex %d" % (shards, shard)
+        
         for f in test_filters:
             
             cmd = cmd + " -e class %s" % f
@@ -365,6 +371,18 @@ class JunitArgumentParser(argparse.ArgumentParser):
                           dest="utilityPath",
                           default=None,
                           help="Path to directory containing host utility programs.")
+        self.add_argument("--total-chunks",
+                          action="store",
+                          type=int,
+                          dest="totalChunks",
+                          default=None,
+                          help="Total number of chunks to split tests into.")
+        self.add_argument("--this-chunk",
+                          action="store",
+                          type=int,
+                          dest="thisChunk",
+                          default=None,
+                          help="If running tests by chunks, the chunk number to run.")
         
         self.add_argument("--certificate-path",
                           action="store",
