@@ -6,7 +6,8 @@
 
 
 #[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug, MallocSizeOf,
-         PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss)]
+         PartialEq, SpecifiedValueInfo, ToAnimatedValue, ToAnimatedZero,
+         ToComputedValue, ToCss)]
 pub enum BackgroundSize<LengthOrPercentageOrAuto> {
     
     Explicit {

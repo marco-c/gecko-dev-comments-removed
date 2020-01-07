@@ -202,14 +202,13 @@ pub enum SVGLength<LengthType> {
 }
 
 
-#[derive(Clone, ComputeSquaredDistance, Debug, MallocSizeOf, PartialEq,
+#[derive(Clone, Debug, MallocSizeOf, PartialEq,
          SpecifiedValueInfo, ToAnimatedValue, ToComputedValue, ToCss)]
 pub enum SVGStrokeDashArray<LengthType> {
     
     #[css(comma)]
     Values(
         #[css(if_empty = "none", iterable)]
-        #[distance(field_bound)]
         Vec<LengthType>,
     ),
     
