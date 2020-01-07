@@ -139,6 +139,8 @@ pref("dom.indexedDB.logging.details", true);
 
 pref("dom.indexedDB.logging.profiler-marks", false);
 
+pref("dom.indexedDB.storageOption.enabled", false);
+
 
 pref("dom.fileHandle.enabled", true);
 
