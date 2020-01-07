@@ -14256,27 +14256,24 @@ nsDocShell::ShouldPrepareForIntercept(nsIURI* aURI, nsIChannel* aChannel,
 {
   *aShouldIntercept = false;
 
+  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->GetLoadInfo();
+  if (!loadInfo) {
+    return NS_OK;
+  }
+
   
   
   
   
   if (!nsContentUtils::IsNonSubresourceRequest(aChannel)) {
-    nsCOMPtr<nsIDocument> doc = GetDocument();
-    if (!doc) {
-      return NS_ERROR_NOT_AVAILABLE;
-    }
-
-    ErrorResult rv;
-    *aShouldIntercept = doc->GetController().isSome();
-    if (NS_WARN_IF(rv.Failed())) {
-      return rv.StealNSResult();
-    }
-
+    const Maybe<ServiceWorkerDescriptor>& controller = loadInfo->GetController();
+    *aShouldIntercept = controller.isSome();
     return NS_OK;
   }
 
   nsCOMPtr<nsIPrincipal> principal =
-    BasePrincipal::CreateCodebasePrincipal(aURI, mOriginAttributes);
+    BasePrincipal::CreateCodebasePrincipal(aURI,
+                                           loadInfo->GetOriginAttributes());
 
   
   
