@@ -4,8 +4,8 @@
 
 
 
-#ifndef jsmath_h
-#define jsmath_h
+#ifndef builtin_Math_h
+#define builtin_Math_h
 
 #include "mozilla/MemoryReporting.h"
 
