@@ -101,16 +101,6 @@ class ClientChannelHelper final : public nsIInterfaceRequestor
           newLoadInfo->SetInitialClientInfo(initialClientInfo.ref());
         }
       }
-
-      
-      
-      if (oldLoadInfo != newLoadInfo &&
-          aFlags & nsIChannelEventSink::REDIRECT_INTERNAL) {
-        const Maybe<ServiceWorkerDescriptor>& controller = oldLoadInfo->GetController();
-        if (controller.isSome()) {
-          newLoadInfo->SetController(controller.ref());
-        }
-      }
     }
 
     
@@ -132,6 +122,20 @@ class ClientChannelHelper final : public nsIInterfaceRequestor
                                                    mEventTarget, principal);
 
       newLoadInfo->GiveReservedClientSource(Move(reservedClient));
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (!(aFlags & nsIChannelEventSink::REDIRECT_INTERNAL)) {
+      newLoadInfo->ClearController();
     }
 
     nsCOMPtr<nsIChannelEventSink> outerSink = do_GetInterface(mOuter);

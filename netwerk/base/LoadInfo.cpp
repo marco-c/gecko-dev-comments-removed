@@ -320,7 +320,7 @@ LoadInfo::LoadInfo(const LoadInfo& rhs)
   
   
   
-  
+  , mController(rhs.mController)
   , mLoadingContext(rhs.mLoadingContext)
   , mContextForTopLevelLoad(rhs.mContextForTopLevelLoad)
   , mSecurityFlags(rhs.mSecurityFlags)
@@ -1251,6 +1251,12 @@ void
 LoadInfo::SetController(const ServiceWorkerDescriptor& aServiceWorker)
 {
   mController.emplace(aServiceWorker);
+}
+
+void
+LoadInfo::ClearController()
+{
+  mController.reset();
 }
 
 const Maybe<ServiceWorkerDescriptor>&
