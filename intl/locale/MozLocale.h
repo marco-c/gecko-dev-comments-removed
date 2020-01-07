@@ -51,6 +51,17 @@ namespace intl {
 
 class Locale {
   public:
+    
+
+
+
+
+
+
+
+
+
+
     explicit Locale(const nsACString& aLocale);
     explicit Locale(const char* aLocale)
       : Locale(nsDependentCString(aLocale))
@@ -61,21 +72,68 @@ class Locale {
     const nsACString& GetRegion() const;
     const nsTArray<nsCString>& GetVariants() const;
 
+    
+
+
+
     bool IsValid() const {
       return mIsValid;
     }
 
+    
+
+
     const nsCString AsString() const;
 
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     bool Matches(const Locale& aOther, bool aThisRange, bool aOtherRange) const;
+
+    
+
+
+
+
+
+
+
     bool AddLikelySubtags();
+
+    
+
+
     void ClearVariants();
+
+    
+
+
     void ClearRegion();
 
     
+
+
+
     void Invalidate() {
       mIsValid = false;
     }
+
+    
+
 
     bool operator== (const Locale& aOther) {
       
