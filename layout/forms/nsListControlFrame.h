@@ -35,6 +35,7 @@ class nsListEventListener;
 
 namespace mozilla {
 namespace dom {
+class Event;
 class HTMLOptionElement;
 class HTMLOptionsCollection;
 } 
@@ -160,12 +161,12 @@ public:
 
 
 
-  nsresult MouseDown(nsIDOMEvent* aMouseEvent);
-  nsresult MouseUp(nsIDOMEvent* aMouseEvent);
-  nsresult MouseMove(nsIDOMEvent* aMouseEvent);
-  nsresult DragMove(nsIDOMEvent* aMouseEvent);
-  nsresult KeyDown(nsIDOMEvent* aKeyEvent);
-  nsresult KeyPress(nsIDOMEvent* aKeyEvent);
+  nsresult MouseDown(mozilla::dom::Event* aMouseEvent);
+  nsresult MouseUp(mozilla::dom::Event* aMouseEvent);
+  nsresult MouseMove(mozilla::dom::Event* aMouseEvent);
+  nsresult DragMove(mozilla::dom::Event* aMouseEvent);
+  nsresult KeyDown(mozilla::dom::Event* aKeyEvent);
+  nsresult KeyPress(mozilla::dom::Event* aKeyEvent);
 
   
 
@@ -272,7 +273,7 @@ protected:
 
 
 
-  void DropDownToggleKey(nsIDOMEvent* aKeyEvent);
+  void DropDownToggleKey(mozilla::dom::Event* aKeyEvent);
 
   nsresult   IsOptionDisabled(int32_t anIndex, bool &aIsDisabled);
   
@@ -294,13 +295,13 @@ protected:
 
 
 
-  bool       IgnoreMouseEventForSelection(nsIDOMEvent* aEvent);
+  bool       IgnoreMouseEventForSelection(mozilla::dom::Event* aEvent);
 
   
 
 
 
-  void       UpdateInListState(nsIDOMEvent* aEvent);
+  void       UpdateInListState(mozilla::dom::Event* aEvent);
   void       AdjustIndexForDisabledOpt(int32_t aStartIndex, int32_t &anNewIndex,
                                        int32_t aNumOptions, int32_t aDoAdjustInc, int32_t aDoAdjustIncNext);
 
@@ -319,10 +320,11 @@ protected:
 
 
 
-  nsresult GetIndexFromDOMEvent(nsIDOMEvent* aMouseEvent, int32_t& aCurIndex);
+  nsresult GetIndexFromDOMEvent(mozilla::dom::Event* aMouseEvent,
+                                int32_t& aCurIndex);
 
   bool     CheckIfAllFramesHere();
-  bool     IsLeftButton(nsIDOMEvent* aMouseEvent);
+  bool     IsLeftButton(mozilla::dom::Event* aMouseEvent);
 
   
   nscoord  CalcFallbackRowBSize(float aFontSizeInflation);
@@ -365,7 +367,8 @@ protected:
   
 
 
-  bool     HandleListSelection(nsIDOMEvent * aDOMEvent, int32_t selectedIndex);
+  bool     HandleListSelection(mozilla::dom::Event * aDOMEvent,
+                               int32_t selectedIndex);
   void     InitSelectionRange(int32_t aClickedIndex);
   void     PostHandleKeyEvent(int32_t aNewIndex, uint32_t aCharCode,
                               bool aIsShift, bool aIsControlOrMeta);
