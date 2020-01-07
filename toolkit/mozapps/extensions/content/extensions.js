@@ -1808,9 +1808,9 @@ var gCategories = {
     AddonManager.addTypeListener(this);
 
     
-    try {
-      this.node.value = Services.prefs.getCharPref(PREF_UI_LASTCATEGORY);
-    } catch (e) { }
+    
+    this.node.value = gViewDefault;
+    this.node.value = Services.prefs.getStringPref(PREF_UI_LASTCATEGORY, "");
 
     
     
