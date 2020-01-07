@@ -346,9 +346,15 @@ function getTestName() {
 }
 
 function getCurrentPageShortName() {
+  
+  
   var pageName = pages[pageIndex].url.spec;
   let parts = pageName.split("/");
   if (parts.length > 5) {
+    if (parts[5].indexOf("?" != -1)) {
+      
+      return parts[5].split("?")[0];
+    }
     return parts[5];
   }
   return "page_" + pageIndex;
