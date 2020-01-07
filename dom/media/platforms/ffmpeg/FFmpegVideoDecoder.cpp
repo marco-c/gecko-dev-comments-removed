@@ -166,7 +166,7 @@ FFmpegVideoDecoder<LIBAV_VER>::InitCodecContext()
   }
 
   if (mLowLatency) {
-    mCodecContext->flags |= CODEC_FLAG_LOW_DELAY;
+    mCodecContext->flags |= AV_CODEC_FLAG_LOW_DELAY;
     
     
     mCodecContext->thread_type = FF_THREAD_SLICE;
