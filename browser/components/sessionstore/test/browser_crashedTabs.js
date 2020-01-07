@@ -361,7 +361,7 @@ add_task(async function test_close_tab_after_crash() {
   
   await BrowserTestUtils.crashBrowser(browser);
 
-  let promise = promiseEvent(gBrowser.tabContainer, "TabClose");
+  let promise = BrowserTestUtils.waitForEvent(gBrowser.tabContainer, "TabClose");
 
   
   clickButton(browser, "closeTab");
