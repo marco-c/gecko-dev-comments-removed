@@ -119,8 +119,7 @@ public:
   }
 
   static already_AddRefed<DataTransfer>
-  Constructor(const GlobalObject& aGlobal, const nsAString& aEventType,
-              bool aIsExternal, ErrorResult& aRv);
+  Constructor(const GlobalObject& aGlobal, ErrorResult& aRv);
 
   
 
