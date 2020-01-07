@@ -159,7 +159,11 @@ class SplitBox extends Component {
     if (this.state.vert) {
       
       
-      if (document.dir === "rtl") {
+      const doc = node.ownerDocument;
+
+      
+      
+      if (doc.dir === "rtl") {
         endPanelControl = !endPanelControl;
       }
 
