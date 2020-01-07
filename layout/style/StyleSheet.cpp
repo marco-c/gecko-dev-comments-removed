@@ -80,11 +80,7 @@ StyleSheet::LastRelease()
   MOZ_ASSERT(mInner->mSheets.Contains(this), "Our mInner should include us.");
 
   UnparentChildren();
-  if (IsGecko()) {
-    MOZ_CRASH("old style system disabled");
-  } else {
-    AsServo()->LastRelease();
-  }
+  AsServo()->LastRelease();
 
   mInner->RemoveSheet(this);
   mInner = nullptr;
@@ -397,14 +393,10 @@ StyleSheet::EnsureUniqueInner()
   mInner->RemoveSheet(this);
   mInner = clone;
 
-  if (IsGecko()) {
-    MOZ_CRASH("old style system disabled");
-  } else {
-    
-    
-    
-    AsServo()->BuildChildListAfterInnerClone();
-  }
+  
+  
+  
+  AsServo()->BuildChildListAfterInnerClone();
 
   
   
@@ -425,10 +417,7 @@ StyleSheet::AppendAllChildSheets(nsTArray<StyleSheet*>& aArray)
 
 
 #define FORWARD_INTERNAL(method_, args_) \
-  if (IsServo()) { \
-    return AsServo()->method_ args_; \
-  } \
-  MOZ_CRASH("old style system disabled");
+  return AsServo()->method_ args_;
 
 dom::CSSRuleList*
 StyleSheet::GetCssRules(nsIPrincipal& aSubjectPrincipal,
@@ -604,12 +593,8 @@ StyleSheet::InsertRuleIntoGroup(const nsAString& aRule,
 
   WillDirty();
 
-  nsresult result;
-  if (IsGecko()) {
-    MOZ_CRASH("old style system disabled");
-  } else {
-    result = AsServo()->InsertRuleIntoGroupInternal(aRule, aGroup, aIndex);
-  }
+  nsresult result =
+    AsServo()->InsertRuleIntoGroupInternal(aRule, aGroup, aIndex);
   NS_ENSURE_SUCCESS(result, result);
   RuleAdded(*aGroup->GetStyleRuleAt(aIndex));
 

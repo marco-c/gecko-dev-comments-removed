@@ -311,27 +311,26 @@ EffectCompositor::PostRestyleForAnimation(dom::Element* aElement,
                                         eRestyle_CSSTransitions :
                                         eRestyle_CSSAnimations;
 
-  if (mPresContext->StyleSet()->IsServo()) {
-    MOZ_ASSERT(NS_IsMainThread(),
-               "Restyle request during restyling should be requested only on "
-               "the main-thread. e.g. after the parallel traversal");
-    if (ServoStyleSet::IsInServoTraversal() || mIsInPreTraverse) {
-      MOZ_ASSERT(hint == eRestyle_CSSAnimations ||
-                 hint == eRestyle_CSSTransitions);
+  MOZ_ASSERT(NS_IsMainThread(),
+             "Restyle request during restyling should be requested only on "
+             "the main-thread. e.g. after the parallel traversal");
+  if (ServoStyleSet::IsInServoTraversal() || mIsInPreTraverse) {
+    MOZ_ASSERT(hint == eRestyle_CSSAnimations ||
+               hint == eRestyle_CSSTransitions);
 
-      
-      
-      
-      
-      
-      
-      
-      
-      return;
-    } else {
-      MOZ_ASSERT(!mPresContext->RestyleManager()->IsInStyleRefresh());
-    }
+    
+    
+    
+    
+    
+    
+    
+    
+    return;
   }
+
+  MOZ_ASSERT(!mPresContext->RestyleManager()->IsInStyleRefresh());
+
   mPresContext->PresShell()->RestyleForAnimation(element, hint);
 }
 
@@ -812,7 +811,6 @@ EffectCompositor::PreTraverseInSubtree(ServoTraversalFlags aFlags,
                                        Element* aRoot)
 {
   MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(mPresContext->RestyleManager()->IsServo());
   MOZ_ASSERT(!aRoot || nsContentUtils::GetPresShellForContent(aRoot),
              "Traversal root, if provided, should be bound to a display "
              "document");
@@ -961,7 +959,6 @@ EffectCompositor::PreTraverse(dom::Element* aElement,
                               CSSPseudoElementType aPseudoType)
 {
   MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(mPresContext->RestyleManager()->IsServo());
 
   
   

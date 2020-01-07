@@ -374,7 +374,7 @@ RestyleManager::ContentRemoved(nsINode* aContainer,
 {
   
   
-  if (IsServo() && aOldChild->IsElement()) {
+  if (aOldChild->IsElement()) {
     ServoRestyleManager::ClearServoDataFromSubtree(aOldChild->AsElement());
   }
 
@@ -629,13 +629,9 @@ static bool gInApplyRenderingChangeToTree = false;
 void
 RestyleManager::DebugVerifyStyleTree(nsIFrame* aFrame)
 {
-  if (IsServo()) {
-    
-    
-    
-    return;
-  }
-  MOZ_CRASH("old style system disabled");
+  
+  
+  
 }
 
 #endif 
@@ -1750,14 +1746,9 @@ RestyleManager::IncrementAnimationGeneration()
   
   
   
-  if (IsGecko()) {
-    MOZ_CRASH("old style system disabled");
-  } else {
-    if (mInStyleRefresh) {
-      return;
-    }
+  if (!mInStyleRefresh) {
+    ++mAnimationGeneration;
   }
-  ++mAnimationGeneration;
 }
 
  void
