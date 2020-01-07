@@ -449,7 +449,6 @@ public:
     mShouldPaintOnContentSide(false),
     mDTCRequiresTargetConfirmation(false),
     mImage(nullptr),
-    mCommonClipCount(-1),
     mNewChildLayersIndex(-1)
   {}
 
@@ -664,21 +663,7 @@ public:
   
 
 
-
-
-
-  int32_t mCommonClipCount;
-  
-
-
   int32_t mNewChildLayersIndex;
-  
-
-
-
-
-
-  void UpdateCommonClipCount(const DisplayItemClip& aCurrentClip);
   
 
 
@@ -1386,11 +1371,7 @@ protected:
 
 
 
-
-
-
-  uint32_t SetupMaskLayer(Layer *aLayer, const DisplayItemClip& aClip,
-                          uint32_t aRoundedRectClipCount = UINT32_MAX);
+  void SetupMaskLayer(Layer *aLayer, const DisplayItemClip& aClip);
 
   
 
@@ -1410,8 +1391,7 @@ protected:
 
   already_AddRefed<Layer> CreateMaskLayer(
     Layer *aLayer, const DisplayItemClip& aClip,
-    const Maybe<size_t>& aForAncestorMaskLayer,
-    uint32_t aRoundedRectClipCount = UINT32_MAX);
+    const Maybe<size_t>& aForAncestorMaskLayer);
 
   
 
@@ -1498,8 +1478,6 @@ class PaintedDisplayItemLayerUserData : public LayerUserData
 {
 public:
   PaintedDisplayItemLayerUserData() :
-    mMaskClipCount(0),
-    mLastCommonClipCount(0),
     mForcedBackgroundColor(NS_RGBA(0,0,0,0)),
     mXScale(1.f), mYScale(1.f),
     mAppUnitsPerDevPixel(0),
@@ -1510,19 +1488,6 @@ public:
     mHasExplicitLastPaintOffset(false) {}
 
   NS_INLINE_DECL_REFCOUNTING(PaintedDisplayItemLayerUserData);
-
-  
-
-
-
-
-  uint32_t mMaskClipCount;
-
-  
-
-
-
-  uint32_t mLastCommonClipCount;
 
   
 
@@ -1640,7 +1605,6 @@ struct MaskLayerUserData : public LayerUserData
     , mAppUnitsPerDevPixel(-1)
   { }
   MaskLayerUserData(const DisplayItemClip& aClip,
-                    uint32_t aRoundedRectClipCount,
                     int32_t aAppUnitsPerDevPixel,
                     const ContainerLayerParameters& aParams)
     : mScaleX(aParams.mXScale)
@@ -1648,7 +1612,7 @@ struct MaskLayerUserData : public LayerUserData
     , mOffset(aParams.mOffset)
     , mAppUnitsPerDevPixel(aAppUnitsPerDevPixel)
   {
-    aClip.AppendRoundedRects(&mRoundedClipRects, aRoundedRectClipCount);
+    aClip.AppendRoundedRects(&mRoundedClipRects);
   }
 
   void operator=(MaskLayerUserData&& aOther)
@@ -2500,7 +2464,6 @@ ContainerState::PreparePaintedLayerForUse(PaintedLayer* aLayer,
 
   aData->mLastPaintOffset = GetTranslationForPaintedLayer(aLayer);
   aData->mHasExplicitLastPaintOffset = true;
-  aData->mLastCommonClipCount = aData->mMaskClipCount;
 
   
   
@@ -2761,18 +2724,6 @@ PaintedLayerDataNode::FindOpaqueBackgroundColorInParentNode() const
   }
   
   return mTree.UniformBackgroundColor();
-}
-
-void
-PaintedLayerData::UpdateCommonClipCount(
-    const DisplayItemClip& aCurrentClip)
-{
-  if (mCommonClipCount >= 0) {
-    mCommonClipCount = mItemClip.GetCommonRoundedRectCount(aCurrentClip, mCommonClipCount);
-  } else {
-    
-    mCommonClipCount = aCurrentClip.GetRoundedRectCount();
-  }
 }
 
 bool
@@ -3361,22 +3312,6 @@ void ContainerState::FinishPaintedLayerData(PaintedLayerData& aData, FindOpaqueB
       data->mLayer->InvalidateWholeLayer();
     }
     userData->mForcedBackgroundColor = backgroundColor;
-
-    
-    
-    
-    uint32_t commonClipCount;
-    commonClipCount = std::max(0, data->mCommonClipCount);
-
-    
-    
-    
-    if (commonClipCount < userData->mMaskClipCount) {
-      PaintedLayer* painted = layer->AsPaintedLayer();
-      painted->InvalidateWholeLayer();
-    }
-
-    userData->mMaskClipCount = SetupMaskLayer(layer, data->mItemClip, commonClipCount);
   } else {
     
     SetupMaskLayer(layer, data->mItemClip);
@@ -4019,8 +3954,7 @@ ContainerState::SetupMaskLayerForScrolledClip(Layer* aLayer,
 {
   if (aClip.GetRoundedRectCount() > 0) {
     Maybe<size_t> maskLayerIndex = Some(aLayer->GetAncestorMaskLayerCount());
-    if (RefPtr<Layer> maskLayer = CreateMaskLayer(aLayer, aClip, maskLayerIndex,
-                                                  aClip.GetRoundedRectCount())) {
+    if (RefPtr<Layer> maskLayer = CreateMaskLayer(aLayer, aClip, maskLayerIndex)) {
       aLayer->AddAncestorMaskLayer(maskLayer);
       return maskLayerIndex;
     }
@@ -4687,11 +4621,6 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
           static_cast<nsDisplayCompositorHitTestInfo*>(item);
         paintedLayerData->AccumulateHitTestInfo(this, hitTestInfo);
       } else {
-        
-        
-        if (mManager->IsWidgetLayerManager()) {
-          paintedLayerData->UpdateCommonClipCount(itemClip);
-        }
         paintedLayerData->Accumulate(this, item, itemVisibleRect, itemClip, layerState, aList);
 
         if (!paintedLayerData->mLayer) {
@@ -4820,11 +4749,9 @@ FrameLayerBuilder::ComputeGeometryChangeForItem(DisplayItemData* aData)
     if (!combined.IsEmpty() || aData->mLayerState == LAYER_INACTIVE) {
       geometry = item->AllocateGeometry(mDisplayListBuilder);
     }
-    aData->mClip.AddOffsetAndComputeDifference(layerData->mMaskClipCount,
-                                               shift, aData->mGeometry->ComputeInvalidationRegion(),
-                                               clip, layerData->mLastCommonClipCount,
-                                               geometry ? geometry->ComputeInvalidationRegion() :
-                                                          aData->mGeometry->ComputeInvalidationRegion(),
+    aData->mClip.AddOffsetAndComputeDifference(shift, aData->mGeometry->ComputeInvalidationRegion(),
+                                               clip, geometry ? geometry->ComputeInvalidationRegion() :
+                                                                aData->mGeometry->ComputeInvalidationRegion(),
                                                &combined);
 
     
@@ -5308,7 +5235,7 @@ ContainerState::SetupScrollingMetadata(NewLayerEntry* aEntry)
       
       Maybe<size_t> nextIndex = Some(maskLayers.Length());
       RefPtr<Layer> maskLayer =
-        CreateMaskLayer(aEntry->mLayer, *clip, nextIndex, clip->GetRoundedRectCount());
+        CreateMaskLayer(aEntry->mLayer, *clip, nextIndex);
       if (maskLayer) {
         MOZ_ASSERT(metadata->HasScrollClip());
         metadata->ScrollClip().SetMaskLayerIndex(nextIndex);
@@ -6034,8 +5961,7 @@ FrameLayerBuilder::PaintItems(nsTArray<AssignedDisplayItem>& aItems,
                               nsDisplayListBuilder* aBuilder,
                               nsPresContext* aPresContext,
                               const nsIntPoint& aOffset,
-                              float aXScale, float aYScale,
-                              int32_t aCommonClipCount)
+                              float aXScale, float aYScale)
 {
   DrawTarget& aDrawTarget = *aContext->GetDrawTarget();
 
@@ -6084,9 +6010,7 @@ FrameLayerBuilder::PaintItems(nsTArray<AssignedDisplayItem>& aItems,
       if (currentClipIsSetInContext) {
         currentClip = *clip;
         aContext->Save();
-        NS_ASSERTION(aCommonClipCount < 100,
-          "Maybe you really do have more than a hundred clipping rounded rects, or maybe something has gone wrong.");
-        currentClip.ApplyTo(aContext, aPresContext->AppUnitsPerDevPixel(), aCommonClipCount);
+        currentClip.ApplyTo(aContext, aPresContext->AppUnitsPerDevPixel());
         aContext->NewPath();
       }
     }
@@ -6249,8 +6173,7 @@ FrameLayerBuilder::DrawPaintedLayer(PaintedLayer* aLayer,
 
       layerBuilder->PaintItems(userData->mItems, iterRect, aContext,
                                builder, presContext,
-                               offset, userData->mXScale, userData->mYScale,
-                               userData->mMaskClipCount);
+                               offset, userData->mXScale, userData->mYScale);
       if (gfxPrefs::GfxLoggingPaintedPixelCountEnabled()) {
         aLayer->Manager()->AddPaintedPixelCount(iterRect.Area());
       }
@@ -6265,8 +6188,7 @@ FrameLayerBuilder::DrawPaintedLayer(PaintedLayer* aLayer,
 
     layerBuilder->PaintItems(userData->mItems, aRegionToDraw.GetBounds(), aContext,
                              builder, presContext,
-                             offset, userData->mXScale, userData->mYScale,
-                             userData->mMaskClipCount);
+                             offset, userData->mXScale, userData->mYScale);
     if (gfxPrefs::GfxLoggingPaintedPixelCountEnabled()) {
       aLayer->Manager()->AddPaintedPixelCount(
         aRegionToDraw.GetBounds().Area());
@@ -6343,26 +6265,23 @@ CalculateBounds(const nsTArray<DisplayItemClip::RoundedRect>& aRects, int32_t aA
   return gfx::Rect(bounds.ToNearestPixels(aAppUnitsPerDevPixel));
 }
 
-uint32_t
+void
 ContainerState::SetupMaskLayer(Layer *aLayer,
-                               const DisplayItemClip& aClip,
-                               uint32_t aRoundedRectClipCount)
+                               const DisplayItemClip& aClip)
 {
   
-  if (aClip.GetRoundedRectCount() == 0 ||
-      aRoundedRectClipCount == 0) {
-    return 0;
+  if (aClip.GetRoundedRectCount() == 0) {
+    return;
   }
 
   RefPtr<Layer> maskLayer =
-    CreateMaskLayer(aLayer, aClip, Nothing(), aRoundedRectClipCount);
+    CreateMaskLayer(aLayer, aClip, Nothing());
 
   if (!maskLayer) {
-    return 0;
+    return;
   }
 
   aLayer->SetMaskLayer(maskLayer);
-  return aRoundedRectClipCount;
 }
 
 static MaskLayerUserData*
@@ -6387,8 +6306,7 @@ SetMaskLayerUserData(Layer* aMaskLayer)
 already_AddRefed<Layer>
 ContainerState::CreateMaskLayer(Layer *aLayer,
                                const DisplayItemClip& aClip,
-                               const Maybe<size_t>& aForAncestorMaskLayer,
-                               uint32_t aRoundedRectClipCount)
+                               const Maybe<size_t>& aForAncestorMaskLayer)
 {
   
   
@@ -6405,7 +6323,7 @@ ContainerState::CreateMaskLayer(Layer *aLayer,
   MaskLayerUserData* userData = GetMaskLayerUserData(maskLayer.get());
 
   int32_t A2D = mContainerFrame->PresContext()->AppUnitsPerDevPixel();
-  MaskLayerUserData newData(aClip, aRoundedRectClipCount, A2D, mParameters);
+  MaskLayerUserData newData(aClip, A2D, mParameters);
   if (*userData == newData) {
     return maskLayer.forget();
   }
@@ -6485,9 +6403,7 @@ ContainerState::CreateMaskLayer(Layer *aLayer,
     
     aClip.FillIntersectionOfRoundedRectClips(context,
                                              Color(1.f, 1.f, 1.f, 1.f),
-                                             newData.mAppUnitsPerDevPixel,
-                                             0,
-                                             aRoundedRectClipCount);
+                                             newData.mAppUnitsPerDevPixel);
 
     
     MOZ_ASSERT(aLayer->Manager() == mManager);
