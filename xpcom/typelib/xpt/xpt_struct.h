@@ -12,6 +12,7 @@
 #define __xpt_struct_h__
 
 #include "xpt_arena.h"
+#include "nsID.h"
 #include <stdint.h>
 
 
@@ -33,22 +34,6 @@ struct XPTMethodDescriptor;
 struct XPTParamDescriptor;
 struct XPTTypeDescriptor;
 struct XPTTypeDescriptorPrefix;
-
-#ifndef nsID_h__
-
-
-
-
-
-struct nsID {
-    uint32_t m0;
-    uint16_t m1;
-    uint16_t m2;
-    uint8_t  m3[8];
-};
-
-typedef struct nsID nsID;
-#endif
 
 
 
