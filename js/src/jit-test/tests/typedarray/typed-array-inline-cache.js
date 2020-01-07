@@ -41,11 +41,12 @@ function test_with_no_protochain(a) {
 
 function test_with_protochain(a) {
     var a = new Int32Array(1000).fill(1);
-    
-    a[1012] = "1012";
-    a["-0"]   = "-0";
-    a[-10]  = "-10";
     warmup(a);
+    
+    Object.prototype["-0"] = "value";
+    Object.prototype[-1]   = "value";
+    Object.prototype[-10]  = "value";
+    Object.prototype[1012] = "value";
     check_assertions(a);
 }
 
