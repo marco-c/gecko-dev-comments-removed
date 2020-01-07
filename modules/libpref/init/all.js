@@ -1430,8 +1430,6 @@ pref("privacy.reduceTimerPrecision", true);
 
 pref("privacy.resistFingerprinting.reduceTimerPrecision.microseconds", 2000);
 
-pref("privacy.resistFingerprinting.reduceTimerPrecision.jitter", true);
-
 
 #ifdef NIGHTLY_BUILD
 pref("privacy.trackingprotection.lower_network_priority", true);

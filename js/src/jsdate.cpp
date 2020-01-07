@@ -64,11 +64,6 @@ using JS::ToInteger;
 
 static Atomic<uint32_t, Relaxed> sResolutionUsec;
 
-static Atomic<bool, Relaxed> sJitter;
-
-static Atomic<JS::ReduceMicrosecondTimePrecisionCallback, Relaxed> sReduceMicrosecondTimePrecisionCallback;
-
-
 
 
 
@@ -410,16 +405,9 @@ JS::DayWithinYear(double time, double year)
 }
 
 JS_PUBLIC_API(void)
-JS::SetReduceMicrosecondTimePrecisionCallback(JS::ReduceMicrosecondTimePrecisionCallback callback)
-{
-    sReduceMicrosecondTimePrecisionCallback = callback;
-}
-
-JS_PUBLIC_API(void)
-JS::SetTimeResolutionUsec(uint32_t resolution, bool jitter)
+JS::SetTimeResolutionUsec(uint32_t resolution)
 {
     sResolutionUsec = resolution;
-    sJitter = jitter;
 }
 
 
@@ -1308,11 +1296,9 @@ static ClippedTime
 NowAsMillis()
 {
     double now = PRMJ_Now();
-    if (sReduceMicrosecondTimePrecisionCallback)
-        now = sReduceMicrosecondTimePrecisionCallback(now);
-    else if (sResolutionUsec)
+    if (sResolutionUsec) {
         now = floor(now / sResolutionUsec) * sResolutionUsec;
-
+    }
     return TimeClip(now / PRMJ_USEC_PER_MSEC);
 }
 
