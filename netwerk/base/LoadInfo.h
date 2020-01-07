@@ -160,6 +160,7 @@ private:
   friend class mozilla::dom::XMLHttpRequestMainThread;
 
   
+  
   nsCOMPtr<nsIPrincipal>           mLoadingPrincipal;
   nsCOMPtr<nsIPrincipal>           mTriggeringPrincipal;
   nsCOMPtr<nsIPrincipal>           mPrincipalToInherit;
