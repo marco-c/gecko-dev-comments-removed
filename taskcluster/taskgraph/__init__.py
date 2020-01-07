@@ -8,6 +8,9 @@ import os
 
 GECKO = os.path.realpath(os.path.join(__file__, '..', '..', '..'))
 
+APP_VERSION_PATH = os.path.join(GECKO, "browser", "config", "version.txt")
+VERSION_PATH = os.path.join(GECKO, "browser", "config", "version_display.txt")
+
 
 
 

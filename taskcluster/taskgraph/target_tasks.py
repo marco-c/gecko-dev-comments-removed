@@ -343,10 +343,6 @@ def target_tasks_promote_firefox(full_task_graph, parameters, graph_config):
                 task.attributes.get('shipping_phase') == 'promote':
             return True
 
-        
-        
-        
-
     return [l for l, t in full_task_graph.tasks.iteritems() if filter(t)]
 
 
@@ -365,11 +361,6 @@ def target_tasks_push_firefox(full_task_graph, parameters, graph_config):
         if task.attributes.get('shipping_product') == 'firefox' and \
                 task.attributes.get('shipping_phase') == 'push':
             return True
-        
-        
-        
-        
-        
 
     return [l for l, t in full_task_graph.tasks.iteritems() if filter(t)]
 
@@ -389,11 +380,6 @@ def target_tasks_ship_firefox(full_task_graph, parameters, graph_config):
         if task.attributes.get('shipping_product') == 'firefox' and \
                 task.attributes.get('shipping_phase') == 'ship':
             return True
-        
-        
-        
-        
-        
 
     return [l for l, t in full_task_graph.tasks.iteritems() if filter(t)]
 
@@ -431,11 +417,6 @@ def target_tasks_promote_devedition(full_task_graph, parameters, graph_config):
                 task.attributes.get('shipping_phase') == 'promote':
             return True
 
-        
-        
-        
-        
-
     return [l for l, t in full_task_graph.tasks.iteritems() if filter(t)]
 
 
@@ -454,11 +435,6 @@ def target_tasks_push_devedition(full_task_graph, parameters, graph_config):
         if task.attributes.get('shipping_product') == 'devedition' and \
                 task.attributes.get('shipping_phase') == 'push':
             return True
-        
-        
-        
-        
-        
 
     return [l for l, t in full_task_graph.tasks.iteritems() if filter(t)]
 
@@ -478,11 +454,6 @@ def target_tasks_ship_devedition(full_task_graph, parameters, graph_config):
         if task.attributes.get('shipping_product') == 'devedition' and \
                 task.attributes.get('shipping_phase') == 'ship':
             return True
-        
-        
-        
-        
-        
 
     return [l for l, t in full_task_graph.tasks.iteritems() if filter(t)]
 
