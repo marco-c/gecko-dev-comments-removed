@@ -11,7 +11,7 @@ use LayoutControlMsg;
 use LoadData;
 use WorkerGlobalScopeInit;
 use WorkerScriptLoadOrigin;
-use canvas_traits::canvas::CanvasMsg;
+use canvas_traits::canvas::{CanvasMsg, CanvasId};
 use devtools_traits::{ScriptToDevtoolsControlMsg, WorkerId};
 use euclid::{Size2D, TypedSize2D};
 use gfx_traits::Epoch;
@@ -79,7 +79,7 @@ pub enum ScriptMsg {
     ChangeRunningAnimationsState(AnimationState),
     
     
-    CreateCanvasPaintThread(Size2D<i32>, IpcSender<IpcSender<CanvasMsg>>),
+    CreateCanvasPaintThread(Size2D<i32>, IpcSender<(IpcSender<CanvasMsg>, CanvasId)>),
     
     Focus,
     
