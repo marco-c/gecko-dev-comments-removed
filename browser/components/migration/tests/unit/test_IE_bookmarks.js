@@ -1,9 +1,9 @@
 "use strict";
 
 add_task(async function() {
-  let migrator = MigrationUtils.getMigrator("ie");
+  let migrator = await MigrationUtils.getMigrator("ie");
   
-  Assert.ok(migrator.sourceExists);
+  Assert.ok(await migrator.isSourceAvailable());
 
   
   

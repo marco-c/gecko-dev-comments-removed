@@ -30,9 +30,9 @@ updateAppInfo();
 
 
 
-function promiseMigration(migrator, resourceType, aProfile = null) {
+async function promiseMigration(migrator, resourceType, aProfile = null) {
   
-  let availableSources = migrator.getMigrateData(aProfile, false);
+  let availableSources = await migrator.getMigrateData(aProfile, false);
   Assert.ok((availableSources & resourceType) > 0, "Resource supported by migrator");
 
   return new Promise(resolve => {

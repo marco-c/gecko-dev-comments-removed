@@ -3,9 +3,9 @@
 add_task(async function() {
   registerFakePath("ULibDir", do_get_file("Library/"));
 
-  let migrator = MigrationUtils.getMigrator("safari");
+  let migrator = await MigrationUtils.getMigrator("safari");
   
-  Assert.ok(migrator.sourceExists);
+  Assert.ok(await migrator.isSourceAvailable());
 
   
   
