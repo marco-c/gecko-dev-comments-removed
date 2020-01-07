@@ -59,7 +59,9 @@
 #include "WorkerScope.h"
 #include "WorkerThread.h"
 
+#ifdef DEBUG
 #include "nsThreadManager.h"
+#endif
 
 #ifdef XP_WIN
 #undef PostMessage
@@ -86,6 +88,9 @@ TimeoutsLog()
   return sWorkerTimeoutsLog;
 }
 
+#ifdef LOG
+#undef LOG
+#endif
 #define LOG(log, _args) MOZ_LOG(log, LogLevel::Debug, _args);
 
 namespace mozilla {
@@ -2614,6 +2619,9 @@ WorkerPrivate::WorkerPrivate(WorkerPrivate* aParent,
   , mIsSecureContext(false)
   , mDebuggerRegistered(false)
   , mIsInAutomation(false)
+#ifndef RELEASE_OR_BETA
+  , mPerformanceCounter(nullptr)
+#endif
 {
   MOZ_ASSERT_IF(!IsDedicatedWorker(), NS_IsMainThread());
   mLoadInfo.StealFrom(aLoadInfo);
@@ -5198,8 +5206,10 @@ WorkerPrivate::CreateDebuggerGlobalScope(JSContext* aCx)
   return mDebuggerScope;
 }
 
-bool
-WorkerPrivate::IsOnWorkerThread() const
+#ifdef DEBUG
+
+void
+WorkerPrivate::AssertIsOnWorkerThread() const
 {
   
   
@@ -5216,15 +5226,10 @@ WorkerPrivate::IsOnWorkerThread() const
 
   bool current;
   rv = thread->IsOnCurrentThread(&current);
-  return NS_SUCCEEDED(rv) && current;
+  MOZ_ASSERT(NS_SUCCEEDED(rv));
+  MOZ_ASSERT(current, "Wrong thread!");
 }
 
-#ifdef DEBUG
-void
-WorkerPrivate::AssertIsOnWorkerThread() const
-{
-  MOZ_ASSERT(IsOnWorkerThread());
-}
 #endif 
 
 void
@@ -5239,6 +5244,20 @@ WorkerPrivate::DumpCrashInformation(nsACString& aString)
     aString.Append(holder->Name());
   }
 }
+
+#ifndef RELEASE_OR_BETA
+PerformanceCounter*
+WorkerPrivate::GetPerformanceCounter()
+{
+  AssertIsOnWorkerThread();
+
+  if (!mPerformanceCounter) {
+    mPerformanceCounter = new PerformanceCounter(NS_ConvertUTF16toUTF8(mWorkerName));
+  }
+
+  return mPerformanceCounter;
+}
+#endif
 
 PerformanceStorage*
 WorkerPrivate::GetPerformanceStorage()

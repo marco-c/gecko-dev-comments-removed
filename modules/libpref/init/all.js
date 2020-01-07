@@ -197,6 +197,9 @@ pref("dom.performance.enable_user_timing_logging", false);
 pref("dom.performance.enable_notify_performance_timing", false);
 
 
+pref("dom.performance.enable_scheduler_timing", false);
+
+
 pref("dom.permissions.revoke.enable", false);
 
 
@@ -4765,7 +4768,7 @@ pref("image.mem.animated.use_heap", false);
 
 
 
-pref("image.mem.shared", 1);
+pref("image.mem.shared", 2);
 
 
 pref("image.mem.allow_locking_in_content_processes", true);
@@ -5358,8 +5361,6 @@ pref("dom.vr.enabled", false);
 pref("dom.vr.autoactivate.enabled", false);
 
 pref("dom.vr.controller_trigger_threshold", "0.1");
-
-pref("dom.vr.external.enabled", false);
 
 
 
