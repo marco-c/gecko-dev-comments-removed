@@ -145,6 +145,13 @@ function getPostUpdateOverridePage(defaultOverridePage) {
   if (actions.includes("silent") || !actions.includes("showURL"))
     return "";
 
+  
+  
+  
+  if (!Services.policies.isAllowed("postUpdateCustomPage")) {
+    return defaultOverridePage;
+  }
+
   return update.getProperty("openURL") || defaultOverridePage;
 }
 

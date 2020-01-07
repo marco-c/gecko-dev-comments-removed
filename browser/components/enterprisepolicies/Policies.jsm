@@ -508,6 +508,17 @@ var Policies = {
     }
   },
 
+  "OverridePostUpdatePage": {
+    onProfileAfterChange(manager, param) {
+      let url = param ? param.spec : "";
+      setAndLockPref("startup.homepage_override_url", url);
+      
+      
+      
+      manager.disallowFeature("postUpdateCustomPage");
+    }
+  },
+
   "PopupBlocking": {
     onBeforeUIStartup(manager, param) {
       addAllowDenyPermissions("popup", param.Allow, null);
