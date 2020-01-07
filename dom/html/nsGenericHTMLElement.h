@@ -9,7 +9,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/EventForwards.h"
 #include "nsMappedAttributeElement.h"
-#include "nsIDOMHTMLElement.h"
+#include "nsIDOMElement.h"
 #include "nsNameSpaceManager.h"  
 #include "nsIFormControl.h"
 #include "nsGkAtoms.h"
@@ -47,7 +47,7 @@ typedef nsMappedAttributeElement nsGenericHTMLElementBase;
 
 
 class nsGenericHTMLElement : public nsGenericHTMLElementBase,
-                             public nsIDOMHTMLElement
+                             public nsIDOMElement
 {
 public:
   using Element::SetTabIndex;
