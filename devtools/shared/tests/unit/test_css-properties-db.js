@@ -36,11 +36,6 @@ function run_test() {
             "The pseudo elements match on the client and platform. " +
             propertiesErrorMessage);
 
-  let prefs = InspectorUtils.getCSSPropertyPrefs();
-  deepEqual(PREFERENCES, prefs.map(({name, pref}) => [name, pref]),
-            "The preferences match on the client and platform. " +
-            propertiesErrorMessage);
-
   
 
 
@@ -53,6 +48,13 @@ function run_test() {
     const platformProperty = platformProperties[propertyName];
     const clientProperty = CSS_PROPERTIES[propertyName];
     const deepEqual = isJsonDeepEqual(platformProperty, clientProperty);
+
+    
+    
+    
+    if (propertyName === "all") {
+      continue;
+    }
 
     if (deepEqual) {
       ok(true, `The static database and platform match for "${propertyName}".`);

@@ -247,12 +247,6 @@ public:
   }
 
 public:
-  struct PropertyPref
-  {
-    nsCSSPropertyID mPropID;
-    const char* mPref;
-  };
-  static const PropertyPref kPropertyPrefTable[];
 
 
 
