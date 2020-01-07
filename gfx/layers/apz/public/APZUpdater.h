@@ -15,6 +15,7 @@
 #include "mozilla/layers/APZTestData.h"
 #include "mozilla/layers/WebRenderScrollData.h"
 #include "mozilla/StaticMutex.h"
+#include "mozilla/StaticPtr.h"
 #include "mozilla/webrender/WebRenderTypes.h"
 #include "nsThreadUtils.h"
 #include "Units.h"
@@ -185,8 +186,11 @@ private:
   
   
   
+  
+  
+  
   static StaticMutex sWindowIdLock;
-  static std::unordered_map<uint64_t, APZUpdater*> sWindowIdMap;
+  static StaticAutoPtr<std::unordered_map<uint64_t, APZUpdater*>> sWindowIdMap;
   Maybe<wr::WrWindowId> mWindowId;
 
   

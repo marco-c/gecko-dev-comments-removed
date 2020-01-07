@@ -12,6 +12,7 @@
 #include "base/platform_thread.h" 
 #include "mozilla/layers/AsyncCompositionManager.h" 
 #include "mozilla/StaticMutex.h"
+#include "mozilla/StaticPtr.h"
 #include "nsTArray.h"
 #include "Units.h"
 
@@ -111,8 +112,11 @@ private:
   
   
   
+  
+  
+  
   static StaticMutex sWindowIdLock;
-  static std::unordered_map<uint64_t, APZSampler*> sWindowIdMap;
+  static StaticAutoPtr<std::unordered_map<uint64_t, APZSampler*>> sWindowIdMap;
   Maybe<wr::WrWindowId> mWindowId;
 
   
