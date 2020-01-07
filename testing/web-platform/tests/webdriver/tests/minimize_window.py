@@ -10,6 +10,11 @@ def minimize(session):
     return session.transport.send("POST", "session/%s/window/minimize" % session.session_id)
 
 
+def is_fullscreen(session):
+    
+    
+    return session.execute_script("return !!(window.fullScreen || document.webkitIsFullScreen)")
+
 
 
 
@@ -135,11 +140,11 @@ def test_fully_exit_fullscreen(session):
 
     """
     session.window.fullscreen()
-    assert session.execute_script("return window.fullScreen") is True
+    assert is_fullscreen(session) is True
 
     response = minimize(session)
     assert_success(response)
-    assert session.execute_script("return window.fullScreen") is False
+    assert is_fullscreen(session) is False
     assert session.execute_script("return document.hidden") is True
 
 

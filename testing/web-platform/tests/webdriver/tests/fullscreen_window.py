@@ -16,6 +16,12 @@ def fullscreen(session):
     return session.transport.send("POST", "session/%s/window/fullscreen" % session.session_id)
 
 
+def is_fullscreen(session):
+    
+    
+    return session.execute_script("return !!(window.fullScreen || document.webkitIsFullScreen)")
+
+
 
 
 
@@ -134,11 +140,6 @@ def test_handle_prompt_missing_value(session, create_dialog):
     assert_dialog_handled(session, "dismiss #3")
     assert read_global(session, "dismiss3") == None
 
-
-def is_fullscreen(session):
-    
-    
-    return session.execute_script("return !!(window.fullScreen || document.webkitIsFullScreen)")
 
 def test_fullscreen(session):
     """

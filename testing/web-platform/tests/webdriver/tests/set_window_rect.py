@@ -13,6 +13,11 @@ alert_doc = inline("<script>window.alert()</script>")
 def set_window_rect(session, rect):
     return session.transport.send("POST", "session/%s/window/rect" % session.session_id, rect)
 
+def is_fullscreen(session):
+    
+    
+    return session.execute_script("return !!(window.fullScreen || document.webkitIsFullScreen)")
+
 
 
 
@@ -293,14 +298,14 @@ def test_fully_exit_fullscreen(session):
       3. Exit fullscreen document.
     """
     session.window.fullscreen()
-    assert session.execute_script("return window.fullScreen") is True
+    assert is_fullscreen(session) is True
 
     response = set_window_rect(session, {"width": 400, "height": 400})
     value = assert_success(response)
     assert value["width"] == 400
     assert value["height"] == 400
 
-    assert session.execute_script("return window.fullScreen") is False
+    assert is_fullscreen(session) is False
 
 
 def test_restore_from_minimized(session):
