@@ -10,6 +10,15 @@ function pushPrefs(...prefs) {
   return SpecialPowers.pushPrefEnv({set: prefs});
 }
 
+async function setDefaultTopSites() {
+  
+  await pushPrefs(["browser.newtabpage.activity-stream.default.sites",
+  "https://www.youtube.com/,https://www.facebook.com/,https://www.amazon.com/,https://www.reddit.com/,https://www.wikipedia.org/,https://twitter.com/"]);
+  
+  await pushPrefs(["browser.newtabpage.activity-stream.feeds.topsites", false]);
+  await pushPrefs(["browser.newtabpage.activity-stream.feeds.topsites", true]);
+}
+
 async function clearHistoryAndBookmarks() { 
   await PlacesUtils.bookmarks.eraseEverything();
   await PlacesUtils.history.clear();
@@ -61,6 +70,31 @@ async function addHighlightsBookmarks(count) {
 
 
 
+function addContentHelpers() {
+  const {document} = content;
+  Object.assign(content, {
+    
+
+
+
+
+
+    openContextMenuAndGetOptions(selector) {
+      const item = document.querySelector(selector);
+      const contextButton = item.querySelector(".context-menu-button");
+      contextButton.click();
+
+      const contextMenu = item.querySelector(".context-menu");
+      const contextMenuList = contextMenu.querySelector(".context-menu-list");
+      return [...contextMenuList.getElementsByClassName("context-menu-item")];
+    }
+  });
+}
+
+
+
+
+
 
 
 
@@ -103,6 +137,9 @@ function test_newtab(testInfo) {
     
     let browser = tab.linkedBrowser;
     await waitForPreloaded(browser);
+
+    
+    ContentTask.spawn(browser, {}, addContentHelpers);
 
     
     await BrowserTestUtils.waitForCondition(() => ContentTask.spawn(browser, {},

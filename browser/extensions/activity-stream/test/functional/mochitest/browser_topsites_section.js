@@ -17,13 +17,7 @@ test_newtab(
 
 
 test_newtab({
-  async before({pushPrefs}) {
-    
-    await pushPrefs(["browser.newtabpage.activity-stream.default.sites", "https://www.youtube.com/,https://www.facebook.com/,https://www.amazon.com/,https://www.reddit.com/,https://www.wikipedia.org/,https://twitter.com/"]);
-    
-    await pushPrefs(["browser.newtabpage.activity-stream.feeds.topsites", false]);
-    await pushPrefs(["browser.newtabpage.activity-stream.feeds.topsites", true]);
-  },
+  before: setDefaultTopSites,
   
   test: async function topsites_pin_unpin() {
     await ContentTaskUtils.waitForCondition(() => content.document.querySelector(".top-site-icon"),
