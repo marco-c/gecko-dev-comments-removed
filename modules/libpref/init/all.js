@@ -4735,6 +4735,14 @@ pref("image.mem.animated.discardable", true);
 
 
 
+#if defined(ANDROID)
+pref("image.mem.animated.use_heap", true);
+#else
+pref("image.mem.animated.use_heap", false);
+#endif
+
+
+
 pref("image.mem.shared", 2);
 
 
@@ -4763,6 +4771,14 @@ pref("image.mem.surfacecache.size_factor", 4);
 
 
 pref("image.mem.surfacecache.discard_factor", 1);
+
+
+
+#if defined(ANDROID)
+pref("image.mem.volatile.min_threshold_kb", 100);
+#else
+pref("image.mem.volatile.min_threshold_kb", -1);
+#endif
 
 
 

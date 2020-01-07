@@ -19,16 +19,13 @@
 #include "MainThreadUtils.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/gfx/Tools.h"
+#include "mozilla/gfx/SourceSurfaceRawData.h"
 #include "mozilla/layers/SourceSurfaceSharedData.h"
 #include "mozilla/layers/SourceSurfaceVolatileData.h"
 #include "mozilla/Likely.h"
 #include "mozilla/MemoryReporting.h"
 #include "nsMargin.h"
 #include "nsThreadUtils.h"
-
-#ifdef ANDROID
-#define ANIMATED_FRAMES_USE_HEAP
-#endif
 
 namespace mozilla {
 
@@ -80,6 +77,33 @@ CreateLockedSurface(DataSourceSurface *aSurface,
   return nullptr;
 }
 
+static bool
+ShouldUseHeap(const IntSize& aSize,
+              int32_t aStride,
+              bool aIsAnimated)
+{
+  
+  
+  
+  
+  
+
+  
+  
+  if (aIsAnimated && gfxPrefs::ImageMemAnimatedUseHeap()) {
+    return true;
+  }
+
+  
+  
+  int32_t bufferSize = (aStride * aSize.width) / 1024;
+  if (bufferSize < gfxPrefs::ImageMemVolatileMinThresholdKB()) {
+    return true;
+  }
+
+  return false;
+}
+
 static already_AddRefed<DataSourceSurface>
 AllocateBufferForImage(const IntSize& size,
                        SurfaceFormat format,
@@ -87,19 +111,13 @@ AllocateBufferForImage(const IntSize& size,
 {
   int32_t stride = VolatileSurfaceStride(size, format);
 
-#ifdef ANIMATED_FRAMES_USE_HEAP
-  if (aIsAnimated) {
-    
-    
-    
-    
-    
-    
-    
-    return Factory::CreateDataSourceSurfaceWithStride(size, format,
-                                                      stride, false);
+  if (ShouldUseHeap(size, stride, aIsAnimated)) {
+    RefPtr<SourceSurfaceAlignedRawData> newSurf =
+      new SourceSurfaceAlignedRawData();
+    if (newSurf->Init(size, format, false, 0, stride)) {
+      return newSurf.forget();
+    }
   }
-#endif
 
   if (!aIsAnimated && gfxVars::GetUseWebRenderOrDefault()
                    && gfxPrefs::ImageMemShared()) {
