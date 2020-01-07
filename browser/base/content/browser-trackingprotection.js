@@ -74,6 +74,11 @@ var TrackingProtection = {
     }
   },
 
+  hideIdentityPopupAndReload() {
+    document.getElementById("identity-popup").hidePopup();
+    BrowserReload();
+  },
+
   openPreferences(origin) {
     openPreferences("privacy-trackingprotection", { origin });
   },
@@ -215,10 +220,7 @@ var TrackingProtection = {
     
     this.eventsHistogramAdd(1);
 
-    
-    document.getElementById("identity-popup").hidePopup();
-
-    BrowserReload();
+    this.hideIdentityPopupAndReload();
   },
 
   enableForCurrentPage() {
@@ -244,10 +246,7 @@ var TrackingProtection = {
     
     this.eventsHistogramAdd(2);
 
-    
-    document.getElementById("identity-popup").hidePopup();
-
-    BrowserReload();
+    this.hideIdentityPopupAndReload();
   },
 
   dontShowIntroPanelAgain() {
