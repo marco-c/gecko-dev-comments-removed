@@ -32,8 +32,7 @@ add_task(function* () {
       newValue: ["html", "css"],
       
       
-      validateValue: () => getState().filters.requestFilterTypes
-        .entrySeq().toArray()
+      validateValue: () => Object.entries(getState().filters.requestFilterTypes)
         .filter(([type, check]) => check)
         .map(([type, check]) => type),
       

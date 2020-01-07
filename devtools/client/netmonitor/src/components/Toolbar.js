@@ -161,7 +161,7 @@ class Toolbar extends Component {
     } = this.props;
 
     
-    let buttons = requestFilterTypes.entrySeq().toArray().map(([type, checked]) => {
+    let buttons = Object.entries(requestFilterTypes).map(([type, checked]) => {
       let classList = ["devtools-button", `requests-list-filter-${type}-button`];
       checked && classList.push("checked");
 
