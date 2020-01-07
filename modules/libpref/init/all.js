@@ -22,7 +22,6 @@
 pref("preferences.allow.omt-write", true);
 
 pref("keyword.enabled", false);
-pref("general.useragent.locale", "chrome://global/locale/intl.properties");
 pref("general.useragent.compatMode.firefox", false);
 
 
@@ -2295,7 +2294,6 @@ pref("intl.charset.fallback.override",      "");
 pref("intl.charset.fallback.tld",           true);
 pref("intl.charset.fallback.utf8_for_file", false);
 pref("intl.ellipsis",                       "chrome://global-platform/locale/intl.properties");
-pref("intl.locale.matchOS",                 false);
 
 
 
