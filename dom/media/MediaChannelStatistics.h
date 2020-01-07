@@ -6,6 +6,8 @@
 #if !defined(MediaChannelStatistics_h_)
 #define MediaChannelStatistics_h_
 
+#include "mozilla/TimeStamp.h"
+
 namespace mozilla {
 
 
