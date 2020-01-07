@@ -1,8 +1,8 @@
-/* -*- Mode: c++; c-basic-offset: 4; tab-width: 4; indent-tabs-mode: nil; -*-
- * vim: set sw=4 ts=4 expandtab:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include <android/log.h>
 #include <android/native_window.h>
@@ -81,7 +81,7 @@ using mozilla::Unused;
 #include "imgIEncoder.h"
 
 #include "nsString.h"
-#include "GeckoProfiler.h" // For AUTO_PROFILER_LABEL
+#include "GeckoProfiler.h" 
 #include "nsIXULRuntime.h"
 #include "nsPrintfCString.h"
 
@@ -103,14 +103,14 @@ NS_IMPL_ISUPPORTS_INHERITED0(nsWindow, nsBaseWidget)
 #include "mozilla/Services.h"
 #include "nsThreadUtils.h"
 
-// All the toplevel windows that have been created; these are in
-// stacking order, so the window at gTopLevelWindows[0] is the topmost
-// one.
+
+
+
 static nsTArray<nsWindow*> gTopLevelWindows;
 
 static bool sFailedToCreateGLContext = false;
 
-// Multitouch swipe thresholds in inches
+
 static const double SWIPE_MAX_PINCH_DELTA_INCHES = 0.4;
 static const double SWIPE_MIN_DISTANCE_INCHES = 0.6;
 
@@ -120,7 +120,7 @@ class nsWindow::WindowEvent : public Runnable
     bool IsStaleCall()
     {
         if (IsStatic) {
-            // Static calls are never stale.
+            
             return false;
         }
 
@@ -130,11 +130,11 @@ class nsWindow::WindowEvent : public Runnable
                 jni::GetNativeHandle(env, mInstance.Get()));
         MOZ_CATCH_JNI_EXCEPTION(env);
 
-        // The call is stale if the nsWindow has been destroyed on the
-        // Gecko side, but the Java object is still attached to it through
-        // a weak pointer. Stale calls should be discarded. Note that it's
-        // an error if natives is nullptr here; we return false but the
-        // native call will throw an error.
+        
+        
+        
+        
+        
         return natives && !natives->get();
     }
 
@@ -189,7 +189,7 @@ namespace {
         }
         return false;
     }
-} // namespace
+} 
 
 template<class Impl>
 template<class Instance, typename... Args> void
@@ -203,7 +203,7 @@ nsWindow::NativePtr<Impl>::Attach(Instance aInstance, nsWindow* aWindow,
             this, aWindow, mozilla::Forward<Args>(aArgs)...);
     mImpl = impl;
 
-    // CallAttachNative transfers ownership of impl.
+    
     CallAttachNative<Instance, Impl>(aInstance, impl);
 }
 
@@ -256,13 +256,6 @@ public:
     template<typename Functor>
     static void OnNativeCall(Functor&& aCall)
     {
-        if (aCall.IsTarget(&Open) && NS_IsMainThread()) {
-            // Gecko state probably just switched to PROFILE_READY, and the
-            // event loop is not running yet. Skip the event loop here so we
-            // can get a head start on opening our window.
-            return aCall();
-        }
-
         NS_DispatchToMainThread(new WindowEvent<Functor>(mozilla::Move(aCall)));
     }
 
@@ -278,14 +271,14 @@ public:
 
     using Base::DisposeNative;
 
-    /**
-     * GeckoView methods
-     */
+    
+
+
 private:
     nsCOMPtr<nsPIDOMWindowOuter> mDOMWindow;
 
 public:
-    // Create and attach a window.
+    
     static void Open(const jni::Class::LocalRef& aCls,
                      GeckoSession::Window::Param aWindow,
                      jni::Object::Param aCompositor,
@@ -295,26 +288,26 @@ public:
                      int32_t aScreenId,
                      bool aPrivateMode);
 
-    // Close and destroy the nsWindow.
+    
     void Close();
 
-    // Transfer this nsWindow to new GeckoSession objects.
+    
     void Transfer(const GeckoSession::Window::LocalRef& inst,
                   jni::Object::Param aCompositor,
                   jni::Object::Param aDispatcher,
                   jni::Object::Param aSettings);
 
-    // Reattach this nsWindow to a new GeckoView.
+    
     void Attach(const GeckoSession::Window::LocalRef& inst,
                 jni::Object::Param aView);
 
     void EnableEventDispatcher();
 };
 
-/**
- * NativePanZoomController handles its native calls on the UI thread, so make
- * it separate from GeckoViewSupport.
- */
+
+
+
+
 class nsWindow::NPZCSupport final
     : public NativePanZoomController::Natives<NPZCSupport>
 {
@@ -347,7 +340,7 @@ class nsWindow::NPZCSupport final
                     NativePanZoomController::LocalRef(env, mNPZC));
 
             if (!npzcSupport || !npzcSupport->mWindow) {
-                // We already shut down.
+                
                 env->ExceptionClear();
                 return;
             }
@@ -366,7 +359,7 @@ class nsWindow::NPZCSupport final
     template<typename Lambda>
     void PostInputEvent(Lambda&& aLambda)
     {
-        // Use priority queue for input events.
+        
         nsAppShell::PostEvent(MakeUnique<InputEvent<Lambda>>(
                 this, mozilla::Move(aLambda)));
     }
@@ -398,37 +391,37 @@ public:
 
     void OnDetach()
     {
-        // There are several considerations when shutting down NPZC. 1) The
-        // Gecko thread may destroy NPZC at any time when nsWindow closes. 2)
-        // There may be pending events on the Gecko thread when NPZC is
-        // destroyed. 3) mWindow may not be available when the pending event
-        // runs. 4) The UI thread may destroy NPZC at any time when GeckoView
-        // is destroyed. 5) The UI thread may destroy NPZC at the same time as
-        // Gecko thread trying to destroy NPZC. 6) There may be pending calls
-        // on the UI thread when NPZC is destroyed. 7) mWindow may have been
-        // cleared on the Gecko thread when the pending call happens on the UI
-        // thread.
-        //
-        // 1) happens through OnDetach, which first notifies the UI
-        // thread through Destroy; Destroy then calls DisposeNative, which
-        // finally disposes the native instance back on the Gecko thread. Using
-        // Destroy to indirectly call DisposeNative here also solves 5), by
-        // making everything go through the UI thread, avoiding contention.
-        //
-        // 2) and 3) are solved by clearing mWindow, which signals to the
-        // pending event that we had shut down. In that case the event bails
-        // and does not touch mWindow.
-        //
-        // 4) happens through DisposeNative directly. OnDetach is not
-        // called.
-        //
-        // 6) is solved by keeping a destroyed flag in the Java NPZC instance,
-        // and only make a pending call if the destroyed flag is not set.
-        //
-        // 7) is solved by taking a lock whenever mWindow is modified on the
-        // Gecko thread or accessed on the UI thread. That way, we don't
-        // release mWindow until the UI thread is done using it, thus avoiding
-        // the race condition.
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
 
         typedef NativePanZoomController::GlobalRef NPZCRef;
         auto callDestroy = [] (const NPZCRef& npzc) {
@@ -663,8 +656,8 @@ public:
                 break;
             case sdk::MotionEvent::ACTION_UP:
             case sdk::MotionEvent::ACTION_POINTER_UP:
-                // for pointer-up events we only want the data from
-                // the one pointer that went up
+                
+                
                 type = MultiTouchInput::MULTITOUCH_END;
                 startIndex = aActionIndex;
                 endIndex = aActionIndex + 1;
@@ -698,8 +691,8 @@ public:
         for (size_t i = startIndex; i < endIndex; i++) {
 
             float orien = orientation[i] * 180.0f / M_PI;
-            // w3c touchevents spec does not allow orientations == 90
-            // this shifts it to -90, which will be shifted to zero below
+            
+            
             if (orien >= 90.0) {
                 orien -= 180.0f;
             }
@@ -707,13 +700,13 @@ public:
             nsIntPoint point = nsIntPoint(int32_t(floorf(x[i])),
                                           int32_t(floorf(y[i])));
 
-            // w3c touchevent radii are given with an orientation between 0 and
-            // 90. The radii are found by removing the orientation and
-            // measuring the x and y radii of the resulting ellipse. For
-            // Android orientations >= 0 and < 90, use the y radius as the
-            // major radius, and x as the minor radius. However, for an
-            // orientation < 0, we have to shift the orientation by adding 90,
-            // and reverse which radius is major and minor.
+            
+            
+            
+            
+            
+            
+            
             gfx::Size radius;
             if (orien < 0.0f) {
                 orien += 90.0f;
@@ -738,7 +731,7 @@ public:
             return true;
         }
 
-        // Dispatch APZ input event on Gecko thread.
+        
         PostInputEvent([input, guid, blockId, status] (nsWindow* window) {
             WidgetTouchEvent touchEvent = input.ToWidgetTouchEvent(window);
             window->ProcessUntransformedAPZEvent(&touchEvent, guid,
@@ -767,15 +760,15 @@ nsWindow::AndroidView::GetSettings(JSContext* aCx, JS::MutableHandleValue aOut)
         return NS_OK;
     }
 
-    // Lock to prevent races with UI thread.
+    
     auto lock = mSettings.Lock();
     return widget::EventDispatcher::UnboxBundle(aCx, mSettings, aOut);
 }
 
-/**
- * Compositor has some unique requirements for its native calls, so make it
- * separate from GeckoViewSupport.
- */
+
+
+
+
 class nsWindow::LayerViewSupport final
     : public LayerSession::Compositor::Natives<LayerViewSupport>
 {
@@ -786,9 +779,9 @@ class nsWindow::LayerViewSupport final
     Atomic<bool, ReleaseAcquire> mCompositorPaused;
     jni::Object::GlobalRef mSurface;
 
-    // In order to use Event::HasSameTypeAs in PostTo(), we cannot make
-    // LayerViewEvent a template because each template instantiation is
-    // a different type. So implement LayerViewEvent as a ProxyEvent.
+    
+    
+    
     class LayerViewEvent final : public nsAppShell::ProxyEvent
     {
         using Event = nsAppShell::Event;
@@ -805,8 +798,8 @@ class nsWindow::LayerViewSupport final
 
         void PostTo(LinkedList<Event>& queue) override
         {
-            // Give priority to compositor events, but keep in order with
-            // existing compositor events.
+            
+            
             nsAppShell::Event* event = queue.getFirst();
             while (event && event->HasSameTypeAs(this)) {
                 event = event->getNext();
@@ -826,7 +819,7 @@ public:
     static void OnNativeCall(Functor&& aCall)
     {
         if (aCall.IsTarget(&LayerViewSupport::CreateCompositor)) {
-            // This call is blocking.
+            
             nsAppShell::SyncRunEvent(nsAppShell::LambdaEvent<Functor>(
                     mozilla::Move(aCall)), &LayerViewEvent::MakeEvent);
             return;
@@ -893,15 +886,15 @@ private:
         return child.forget();
     }
 
-    /**
-     * Compositor methods
-     */
+    
+
+
 public:
     void AttachNPZC(jni::Object::Param aNPZC)
     {
         MOZ_ASSERT(NS_IsMainThread());
         if (!mWindow) {
-            return; // Already shut down.
+            return; 
         }
 
         MOZ_ASSERT(aNPZC);
@@ -923,10 +916,10 @@ public:
     {
         MOZ_ASSERT(NS_IsMainThread());
         if (!mWindow) {
-            return; // Already shut down.
+            return; 
         }
 
-        mWindow->Resize(aLeft, aTop, aWidth, aHeight, /* repaint */ false);
+        mWindow->Resize(aLeft, aTop, aWidth, aHeight,  false);
     }
 
     void CreateCompositor(int32_t aWidth, int32_t aHeight,
@@ -934,7 +927,7 @@ public:
     {
         MOZ_ASSERT(NS_IsMainThread());
         if (!mWindow) {
-            return; // Already shut down.
+            return; 
         }
 
         mSurface = aSurface;
@@ -996,21 +989,21 @@ public:
 
                 if (!lvs || !lvs->mWindow) {
                     env->ExceptionClear();
-                    return; // Already shut down.
+                    return; 
                 }
 
-                // When we get here, the compositor has already been told to
-                // resume. This means it's now safe for layer updates to occur.
-                // Since we might have prevented one or more draw events from
-                // occurring while the compositor was paused, we need to
-                // schedule a draw event now.
+                
+                
+                
+                
+                
                 if (!lvs->mCompositorPaused) {
                     lvs->mWindow->RedrawAll();
                 }
             }
         };
 
-        // Use priority queue for timing-sensitive event.
+        
         nsAppShell::PostEvent(MakeUnique<LayerViewEvent>(
                 MakeUnique<OnResumedEvent>(aObj)));
     }
@@ -1113,7 +1106,7 @@ public:
         auto pixels = mozilla::jni::IntArray::New(aMem.get<int>(), aMem.Size<int>());
         mCompositor->RecvScreenPixels(aSize.width, aSize.height, pixels);
 
-        // Pixels have been copied, so Dealloc Shmem
+        
         if (RefPtr<UiCompositorControllerChild> child = GetUiCompositorControllerChild()) {
             child->DeallocPixelBuffer(aMem);
         }
@@ -1145,7 +1138,7 @@ public:
 template<> const char
 nsWindow::NativePtr<nsWindow::LayerViewSupport>::sName[] = "LayerViewSupport";
 
-/* PresentationMediaPlayerManager native calls access inner nsWindow functionality so PMPMSupport is a child class of nsWindow */
+
 class nsWindow::PMPMSupport final
     : public PresentationMediaPlayerManager::Natives<PMPMSupport>
 {
@@ -1162,7 +1155,7 @@ class nsWindow::PMPMSupport final
 
         LayerViewSupport* const lvs = LayerViewSupport::FromNative(compositor);
         if (!lvs) {
-            // There is a pending exception whenever FromNative returns nullptr.
+            
             compositor.Env()->ExceptionClear();
         }
         return lvs;
@@ -1205,8 +1198,8 @@ public:
         }
 
         if (sSurface) {
-            // Destroy the EGL surface! The compositor is paused so it should
-            // be okay to destroy the surface here.
+            
+            
             mozilla::gl::GLContextProvider::DestroyEGLSurface(sSurface);
             sSurface = nullptr;
         }
@@ -1233,7 +1226,7 @@ EGLSurface nsWindow::PMPMSupport::sSurface;
 
 nsWindow::GeckoViewSupport::~GeckoViewSupport()
 {
-    // Disassociate our GeckoEditable instance with our native object.
+    
     MOZ_ASSERT(window.mEditableSupport && window.mEditable);
     window.mEditableSupport.Detach();
     window.mEditable->OnViewChange(nullptr);
@@ -1248,7 +1241,7 @@ nsWindow::GeckoViewSupport::~GeckoViewSupport()
     }
 }
 
-/* static */ void
+ void
 nsWindow::GeckoViewSupport::Open(const jni::Class::LocalRef& aCls,
                                  GeckoSession::Window::Param aWindow,
                                  jni::Object::Param aCompositor,
@@ -1275,7 +1268,7 @@ nsWindow::GeckoViewSupport::Open(const jni::Class::LocalRef& aCls,
         }
     }
 
-    // Prepare an nsIAndroidView to pass as argument to the window.
+    
     RefPtr<AndroidView> androidView = new AndroidView();
     androidView->mEventDispatcher->Attach(
             java::EventDispatcher::Ref::From(aDispatcher), nullptr);
@@ -1298,18 +1291,18 @@ nsWindow::GeckoViewSupport::Open(const jni::Class::LocalRef& aCls,
     const auto window = static_cast<nsWindow*>(widget.get());
     window->SetScreenId(aScreenId);
 
-    // Attach a new GeckoView support object to the new window.
+    
     GeckoSession::Window::LocalRef sessionWindow(aCls.Env(), aWindow);
     window->mGeckoViewSupport =
             mozilla::MakeUnique<GeckoViewSupport>(window, sessionWindow);
     window->mGeckoViewSupport->mDOMWindow = pdomWindow;
     window->mAndroidView = androidView;
 
-    // Attach other session support objects.
+    
     window->mGeckoViewSupport->Transfer(
             sessionWindow, aCompositor, aDispatcher, aSettings);
 
-    // Attach a new GeckoEditable support object to the new window.
+    
     auto editable = GeckoEditable::New();
     auto editableChild = GeckoEditableChild::New(editable);
     editable->SetDefaultEditableChild(editableChild);
@@ -1320,8 +1313,8 @@ nsWindow::GeckoViewSupport::Open(const jni::Class::LocalRef& aCls,
         nsCOMPtr<nsIXULWindow> xulWindow(
                 window->mWidgetListener->GetXULWindow());
         if (xulWindow) {
-            // Our window is not intrinsically sized, so tell nsXULWindow to
-            // not set a size for us.
+            
+            
             xulWindow->SetIntrinsicallySized(false);
         }
     }
@@ -1375,7 +1368,7 @@ nsWindow::GeckoViewSupport::Transfer(const GeckoSession::Window::LocalRef& inst,
                 compositor->OnCompositorAttached();
             });
 
-    // Set the first-paint flag so that we refresh viewports, etc.
+    
     if (RefPtr<CompositorBridgeChild> bridge = window.GetCompositorBridgeChild()) {
         bridge->SendForceIsFirstPaint();
     }
@@ -1385,7 +1378,7 @@ void
 nsWindow::GeckoViewSupport::Attach(const GeckoSession::Window::LocalRef& inst,
                                    jni::Object::Param aView)
 {
-    // Associate our previous GeckoEditable with the new GeckoView.
+    
     MOZ_ASSERT(window.mEditable);
     window.mEditable->OnViewChange(aView);
 }
@@ -1440,7 +1433,7 @@ nsWindow::DumpWindows(const nsTArray<nsWindow*>& wins, int indent)
 }
 
 nsWindow::nsWindow() :
-    mScreenId(0), // Use 0 (primary screen) as the default value.
+    mScreenId(0), 
     mIsVisible(false),
     mParent(nullptr),
     mIsFullScreen(false)
@@ -1451,9 +1444,9 @@ nsWindow::~nsWindow()
 {
     gTopLevelWindows.RemoveElement(this);
     ALOG("nsWindow %p destructor", (void*)this);
-    // The mCompositorSession should have been cleaned up in nsWindow::Destroy()
-    // DestroyLayerManager() will call DestroyCompositor() which will crash if
-    // called from nsBaseWidget destructor. See Bug 1392705
+    
+    
+    
     MOZ_ASSERT(!mCompositorSession);
 }
 
@@ -1513,20 +1506,20 @@ nsWindow::Destroy()
     nsBaseWidget::mOnDestroyCalled = true;
 
     if (mGeckoViewSupport) {
-        // Disassociate our native object with GeckoView.
+        
         mGeckoViewSupport = nullptr;
     }
 
-    // Stuff below may release the last ref to this
+    
     nsCOMPtr<nsIWidget> kungFuDeathGrip(this);
 
     while (mChildren.Length()) {
-        // why do we still have children?
+        
         ALOG("### Warning: Destroying window %p and reparenting child %p to null!", (void*)this, (void*)mChildren[0]);
         mChildren[0]->SetParent(nullptr);
     }
 
-    // Ensure the compositor has been shutdown before this nsWindow is potentially deleted
+    
     nsBaseWidget::DestroyCompositor();
 
     nsBaseWidget::Destroy();
@@ -1596,8 +1589,8 @@ nsWindow::SetParent(nsIWidget *aNewParent)
     if ((nsIWidget*)mParent == aNewParent)
         return;
 
-    // If we had a parent before, remove ourselves from its list of
-    // children.
+    
+    
     if (mParent)
         mParent->mChildren.RemoveElement(this);
 
@@ -1606,7 +1599,7 @@ nsWindow::SetParent(nsIWidget *aNewParent)
     if (mParent)
         mParent->mChildren.AppendElement(this);
 
-    // if we are now in the toplevel window's hierarchy, schedule a redraw
+    
     if (FindTopLevel() == nsWindow::TopWindow())
         RedrawAll();
 }
@@ -1651,20 +1644,20 @@ nsWindow::Show(bool aState)
     mIsVisible = aState;
 
     if (IsTopLevel()) {
-        // XXX should we bring this to the front when it's shown,
-        // if it's a toplevel widget?
+        
+        
 
-        // XXX we should synthesize a eMouseExitFromWidget (for old top
-        // window)/eMouseEnterIntoWidget (for new top window) since we need
-        // to pretend that the top window always has focus.  Not sure
-        // if Show() is the right place to do this, though.
+        
+        
+        
+        
 
         if (aState) {
-            // It just became visible, so bring it to the front.
+            
             BringToFront();
 
         } else if (nsWindow::TopWindow() == this) {
-            // find the next visible window to show
+            
             unsigned int i;
             for (i = 1; i < gTopLevelWindows.Length(); i++) {
                 nsWindow *win = gTopLevelWindows[i];
@@ -1697,7 +1690,7 @@ nsWindow::ConstrainPosition(bool aAllowSlop,
 {
     ALOG("nsWindow[%p]::ConstrainPosition %d [%d %d]", (void*)this, aAllowSlop, *aX, *aY);
 
-    // constrain toplevel windows; children we don't care about
+    
     if (IsTopLevel()) {
         *aX = 0;
         *aY = 0;
@@ -1750,7 +1743,7 @@ nsWindow::Resize(double aX,
         OnSizeChanged(gfx::IntSize::Truncate(aWidth, aHeight));
     }
 
-    // Should we skip honoring aRepaint here?
+    
     if (aRepaint && FindTopLevel() == nsWindow::TopWindow())
         RedrawAll();
 }
@@ -1826,10 +1819,10 @@ nsWindow::SetFocus(bool aRaise)
 void
 nsWindow::BringToFront()
 {
-    // If the window to be raised is the same as the currently raised one,
-    // do nothing. We need to check the focus manager as well, as the first
-    // window that is created will be first in the window list but won't yet
-    // be focused.
+    
+    
+    
+    
     nsCOMPtr<nsIFocusManager> fm = do_GetService(FOCUSMANAGER_CONTRACTID);
     nsCOMPtr<mozIDOMWindowProxy> existingTopWindow;
     fm->GetActiveWindow(getter_AddRefs(existingTopWindow));
@@ -1944,11 +1937,11 @@ nsWindow::CreateLayerManager(int aCompositorWidth, int aCompositorHeight)
 
     nsWindow *topLevelWindow = FindTopLevel();
     if (!topLevelWindow || topLevelWindow->mWindowType == eWindowType_invisible) {
-        // don't create a layer manager for an invisible top-level window
+        
         return;
     }
 
-    // Ensure that gfxPlatform is initialized first.
+    
     gfxPlatform::GetPlatform();
 
     if (ShouldUseOffMainThreadCompositing()) {
@@ -1957,7 +1950,7 @@ nsWindow::CreateLayerManager(int aCompositorWidth, int aCompositorHeight)
             return;
         }
 
-        // If we get here, then off main thread compositing failed to initialize.
+        
         sFailedToCreateGLContext = true;
     }
 
@@ -2056,7 +2049,7 @@ void *
 nsWindow::GetNativeData(uint32_t aDataType)
 {
     switch (aDataType) {
-        // used by GLContextProviderEGL, nullptr is EGL_DEFAULT_DISPLAY
+        
         case NS_NATIVE_DISPLAY:
             return nullptr;
 
@@ -2068,7 +2061,7 @@ nsWindow::GetNativeData(uint32_t aDataType)
             if (pseudoIMEContext) {
                 return pseudoIMEContext;
             }
-            // We assume that there is only one context per process on Android
+            
             return NS_ONLY_ONE_NATIVE_IME_CONTEXT;
         }
 
@@ -2102,10 +2095,10 @@ void
 nsWindow::DispatchHitTest(const WidgetTouchEvent& aEvent)
 {
     if (aEvent.mMessage == eTouchStart && aEvent.mTouches.Length() == 1) {
-        // Since touch events don't get retargeted by PositionedEventTargeting.cpp
-        // code on Fennec, we dispatch a dummy mouse event that *does* get
-        // retargeted. The Fennec browser.js code can use this to activate the
-        // highlight element in case the this touchstart is the start of a tap.
+        
+        
+        
+        
         WidgetMouseEvent hittest(true, eMouseHitTest, this,
                                  WidgetMouseEvent::eReal);
         hittest.mRefPoint = aEvent.mTouches[0]->mRefPoint;
@@ -2137,12 +2130,12 @@ nsWindow::GetModifiers(int32_t metaState)
 TimeStamp
 nsWindow::GetEventTimeStamp(int64_t aEventTime)
 {
-    // Android's event time is SystemClock.uptimeMillis that is counted in ms
-    // since OS was booted.
-    // (https://developer.android.com/reference/android/os/SystemClock.html)
-    // and this SystemClock.uptimeMillis uses SYSTEM_TIME_MONOTONIC.
-    // Our posix implemententaion of TimeStamp::Now uses SYSTEM_TIME_MONOTONIC
-    //  too. Due to same implementation, we can use this via FromSystemTime.
+    
+    
+    
+    
+    
+    
     int64_t tick =
         BaseTimeDurationPlatformUtils::TicksFromMilliseconds(aEventTime);
     return TimeStamp::FromSystemTime(tick);
@@ -2180,7 +2173,7 @@ nsWindow::GetNativeTextEventDispatcherListener()
     MOZ_ASSERT(top);
 
     if (!top->mEditableSupport) {
-        // Non-GeckoView windows don't support IME operations.
+        
         return nullptr;
     }
     return top->mEditableSupport;
@@ -2194,14 +2187,14 @@ nsWindow::SetInputContext(const InputContext& aContext,
     MOZ_ASSERT(top);
 
     if (!top->mEditableSupport) {
-        // Non-GeckoView windows don't support IME operations.
+        
         return;
     }
 
-    // We are using an IME event later to notify Java, and the IME event
-    // will be processed by the top window. Therefore, to ensure the
-    // IME event uses the correct mInputContext, we need to let the top
-    // window process SetInputContext
+    
+    
+    
+    
     top->mEditableSupport->SetInputContext(aContext, aAction);
 }
 
@@ -2212,12 +2205,12 @@ nsWindow::GetInputContext()
     MOZ_ASSERT(top);
 
     if (!top->mEditableSupport) {
-        // Non-GeckoView windows don't support IME operations.
+        
         return InputContext();
     }
 
-    // We let the top window process SetInputContext,
-    // so we should let it process GetInputContext as well.
+    
+    
     return top->mEditableSupport->GetInputContext();
 }
 
@@ -2234,18 +2227,18 @@ nsWindow::SynthesizeNativeTouchPoint(uint32_t aPointerId,
     int eventType;
     switch (aPointerState) {
     case TOUCH_CONTACT:
-        // This could be a ACTION_DOWN or ACTION_MOVE depending on the
-        // existing state; it is mapped to the right thing in Java.
+        
+        
         eventType = sdk::MotionEvent::ACTION_POINTER_DOWN;
         break;
     case TOUCH_REMOVE:
-        // This could be turned into a ACTION_UP in Java
+        
         eventType = sdk::MotionEvent::ACTION_POINTER_UP;
         break;
     case TOUCH_CANCEL:
         eventType = sdk::MotionEvent::ACTION_CANCEL;
         break;
-    case TOUCH_HOVER:   // not supported for now
+    case TOUCH_HOVER:   
     default:
         return NS_ERROR_UNEXPECTED;
     }
@@ -2334,7 +2327,7 @@ bool
 nsWindow::NeedsPaint()
 {
     if (!mLayerViewSupport || mLayerViewSupport->CompositorPaused() ||
-            // FindTopLevel() != nsWindow::TopWindow() ||
+            
             !GetLayerManager(nullptr)) {
         return false;
     }
