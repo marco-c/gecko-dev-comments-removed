@@ -50,7 +50,8 @@ tabbrowser {
     
     min-width: 0;
   }
-  .scrollbox-innerbox {
+
+  .tabbrowser-arrowscrollbox > .arrowscrollbox-scrollbox > .scrollbox-innerbox {
     
 
 
