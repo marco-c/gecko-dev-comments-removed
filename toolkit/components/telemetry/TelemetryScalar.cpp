@@ -137,13 +137,14 @@ struct DynamicScalarInfo : BaseScalarInfo {
 
   DynamicScalarInfo(uint32_t aKind, bool aRecordOnRelease,
                     bool aExpired, const nsACString& aName,
-                    bool aKeyed)
+                    bool aKeyed, bool aBuiltin)
     : BaseScalarInfo(aKind,
                      aRecordOnRelease ?
                      nsITelemetry::DATASET_RELEASE_CHANNEL_OPTOUT :
                      nsITelemetry::DATASET_RELEASE_CHANNEL_OPTIN,
                      RecordedProcessType::All,
-                     aKeyed)
+                     aKeyed,
+                     aBuiltin)
     , mDynamicName(aName)
     , mDynamicExpiration(aExpired)
   {}
@@ -855,6 +856,10 @@ ProcessesScalarsMapType gScalarStorageMap;
 
 ProcessesKeyedScalarsMapType gKeyedScalarStorageMap;
 
+
+ProcessesScalarsMapType gDynamicBuiltinScalarStorageMap;
+ProcessesKeyedScalarsMapType gDynamicBuiltinKeyedScalarStorageMap;
+
 } 
 
 
@@ -1101,7 +1106,10 @@ internal_GetScalarByEnum(const StaticMutexAutoLock& lock,
   const BaseScalarInfo &info = internal_GetScalarInfo(lock, aId);
 
   
-  if (aId.dynamic) {
+  
+  
+  
+  if (aId.dynamic && !info.builtin) {
     aProcessStorage = ProcessID::Dynamic;
   }
 
@@ -1113,9 +1121,14 @@ internal_GetScalarByEnum(const StaticMutexAutoLock& lock,
 
   
   
-  if (!gScalarStorageMap.Get(storageId, &scalarStorage)) {
+  ProcessesScalarsMapType& processStorage =
+    (aId.dynamic && info.builtin) ? gDynamicBuiltinScalarStorageMap : gScalarStorageMap;
+
+  
+  
+  if (!processStorage.Get(storageId, &scalarStorage)) {
     scalarStorage = new ScalarStorageMapType();
-    gScalarStorageMap.Put(storageId, scalarStorage);
+    processStorage.Put(storageId, scalarStorage);
   }
 
   
@@ -1258,7 +1271,10 @@ internal_GetKeyedScalarByEnum(const StaticMutexAutoLock& lock,
   const BaseScalarInfo &info = internal_GetScalarInfo(lock, aId);
 
   
-  if (aId.dynamic) {
+  
+  
+  
+  if (aId.dynamic && !info.builtin) {
     aProcessStorage = ProcessID::Dynamic;
   }
 
@@ -1270,9 +1286,14 @@ internal_GetKeyedScalarByEnum(const StaticMutexAutoLock& lock,
 
   
   
-  if (!gKeyedScalarStorageMap.Get(storageId, &scalarStorage)) {
+  ProcessesKeyedScalarsMapType& processStorage =
+    (aId.dynamic && info.builtin) ? gDynamicBuiltinKeyedScalarStorageMap : gKeyedScalarStorageMap;
+
+  
+  
+  if (!processStorage.Get(storageId, &scalarStorage)) {
     scalarStorage = new KeyedScalarStorageMapType();
-    gKeyedScalarStorageMap.Put(storageId, scalarStorage);
+    processStorage.Put(storageId, scalarStorage);
   }
 
   if (scalarStorage->Get(aId.id, &scalar)) {
@@ -1425,7 +1446,7 @@ internal_RegisterScalars(const StaticMutexAutoLock& lock,
     CharPtrEntryType *existingKey = gScalarNameIDMap.GetEntry(scalarInfo.name());
     if (existingKey) {
       
-      if (scalarInfo.mDynamicExpiration) {
+      if (scalarInfo.mDynamicExpiration && !scalarInfo.builtin) {
         DynamicScalarInfo& scalarData = (*gDynamicScalarInfo)[existingKey->mData.id];
         scalarData.mDynamicExpiration = true;
       }
@@ -1488,6 +1509,8 @@ TelemetryScalar::DeInitializeGlobalState()
   gScalarNameIDMap.Clear();
   gScalarStorageMap.Clear();
   gKeyedScalarStorageMap.Clear();
+  gDynamicBuiltinScalarStorageMap.Clear();
+  gDynamicBuiltinKeyedScalarStorageMap.Clear();
   gDynamicScalarInfo = nullptr;
   gInitDone = false;
 }
@@ -2133,41 +2156,63 @@ TelemetryScalar::CreateSnapshots(unsigned int aDataset, bool aClearScalars, JSCo
   nsDataHashtable<ProcessIDHashKey, ScalarArray> scalarsToReflect;
   {
     StaticMutexAutoLock locker(gTelemetryScalarsMutex);
+
     
     
-    for (auto iter = gScalarStorageMap.Iter(); !iter.Done(); iter.Next()) {
-      ScalarStorageMapType* scalarStorage = static_cast<ScalarStorageMapType*>(iter.Data());
-      ScalarArray& processScalars = scalarsToReflect.GetOrInsert(iter.Key());
-
+    auto snapshotter = [aDataset, &locker, &scalarsToReflect]
+                       (ProcessesScalarsMapType& aProcessStorage, bool aIsBuiltinDynamic)
+                       -> nsresult
+    {
       
-      bool isDynamicProcess = ProcessID::Dynamic == static_cast<ProcessID>(iter.Key());
-
       
-      for (auto childIter = scalarStorage->Iter(); !childIter.Done(); childIter.Next()) {
-        ScalarBase* scalar = static_cast<ScalarBase*>(childIter.Data());
+      for (auto iter = aProcessStorage.Iter(); !iter.Done(); iter.Next()) {
+        ScalarStorageMapType* scalarStorage = static_cast<ScalarStorageMapType*>(iter.Data());
+        ScalarArray& processScalars = scalarsToReflect.GetOrInsert(iter.Key());
 
         
-        const BaseScalarInfo& info =
-          internal_GetScalarInfo(locker, ScalarKey{childIter.Key(),
-                                 isDynamicProcess});
+        bool isDynamicProcess = ProcessID::Dynamic == static_cast<ProcessID>(iter.Key());
 
         
-        if (IsInDataset(info.dataset, aDataset)) {
+        for (auto childIter = scalarStorage->Iter(); !childIter.Done(); childIter.Next()) {
+          ScalarBase* scalar = static_cast<ScalarBase*>(childIter.Data());
+
           
-          nsCOMPtr<nsIVariant> scalarValue;
-          nsresult rv = scalar->GetValue(scalarValue);
-          if (NS_FAILED(rv)) {
-            return rv;
+          const BaseScalarInfo& info =
+            internal_GetScalarInfo(locker, ScalarKey{childIter.Key(),
+                                   aIsBuiltinDynamic ? true : isDynamicProcess});
+
+          
+          if (IsInDataset(info.dataset, aDataset)) {
+            
+            nsCOMPtr<nsIVariant> scalarValue;
+            nsresult rv = scalar->GetValue(scalarValue);
+            if (NS_FAILED(rv)) {
+              return rv;
+            }
+            
+            processScalars.AppendElement(mozilla::MakePair(info.name(), scalarValue));
           }
-          
-          processScalars.AppendElement(mozilla::MakePair(info.name(), scalarValue));
         }
       }
+      return NS_OK;
+    };
+
+    
+    nsresult rv = snapshotter(gScalarStorageMap, false);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+
+    
+    rv = snapshotter(gDynamicBuiltinScalarStorageMap, true);
+    if (NS_FAILED(rv)) {
+      return rv;
     }
 
     if (aClearScalars) {
       
       gScalarStorageMap.Clear();
+      gDynamicBuiltinScalarStorageMap.Clear();
     }
   }
 
@@ -2241,41 +2286,61 @@ TelemetryScalar::CreateKeyedSnapshots(unsigned int aDataset, bool aClearScalars,
   nsDataHashtable<ProcessIDHashKey, ScalarArray> scalarsToReflect;
   {
     StaticMutexAutoLock locker(gTelemetryScalarsMutex);
-    
-    
-    for (auto iter = gKeyedScalarStorageMap.Iter(); !iter.Done(); iter.Next()) {
-      KeyedScalarStorageMapType* scalarStorage =
-        static_cast<KeyedScalarStorageMapType*>(iter.Data());
-      ScalarArray& processScalars = scalarsToReflect.GetOrInsert(iter.Key());
 
+    auto snapshotter = [aDataset, &locker, &scalarsToReflect]
+                       (ProcessesKeyedScalarsMapType& aProcessStorage,
+                        bool aIsBuiltinDynamic) -> nsresult
+    {
       
-      bool isDynamicProcess = ProcessID::Dynamic == static_cast<ProcessID>(iter.Key());
-
-      for (auto childIter = scalarStorage->Iter(); !childIter.Done(); childIter.Next()) {
-        KeyedScalar* scalar = static_cast<KeyedScalar*>(childIter.Data());
-
-        
-        const BaseScalarInfo& info =
-          internal_GetScalarInfo(locker, ScalarKey{childIter.Key(),
-                                 isDynamicProcess});
+      
+      for (auto iter = aProcessStorage.Iter(); !iter.Done(); iter.Next()) {
+        KeyedScalarStorageMapType* scalarStorage =
+          static_cast<KeyedScalarStorageMapType*>(iter.Data());
+        ScalarArray& processScalars = scalarsToReflect.GetOrInsert(iter.Key());
 
         
-        if (IsInDataset(info.dataset, aDataset)) {
+        bool isDynamicProcess = ProcessID::Dynamic == static_cast<ProcessID>(iter.Key());
+
+        for (auto childIter = scalarStorage->Iter(); !childIter.Done(); childIter.Next()) {
+          KeyedScalar* scalar = static_cast<KeyedScalar*>(childIter.Data());
+
           
-          nsTArray<KeyedScalar::KeyValuePair> scalarKeyedData;
-          nsresult rv = scalar->GetValue(scalarKeyedData);
-          if (NS_FAILED(rv)) {
-            return rv;
+          const BaseScalarInfo& info =
+            internal_GetScalarInfo(locker, ScalarKey{childIter.Key(),
+                                   aIsBuiltinDynamic ? true : isDynamicProcess});
+
+          
+          if (IsInDataset(info.dataset, aDataset)) {
+            
+            nsTArray<KeyedScalar::KeyValuePair> scalarKeyedData;
+            nsresult rv = scalar->GetValue(scalarKeyedData);
+            if (NS_FAILED(rv)) {
+              return rv;
+            }
+            
+            processScalars.AppendElement(mozilla::MakePair(info.name(), scalarKeyedData));
           }
-          
-          processScalars.AppendElement(mozilla::MakePair(info.name(), scalarKeyedData));
         }
       }
+      return NS_OK;
+    };
+
+    
+    nsresult rv = snapshotter(gKeyedScalarStorageMap, false);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+
+    
+    rv = snapshotter(gDynamicBuiltinKeyedScalarStorageMap, true);
+    if (NS_FAILED(rv)) {
+      return rv;
     }
 
     if (aClearScalars) {
       
       gKeyedScalarStorageMap.Clear();
+      gDynamicBuiltinKeyedScalarStorageMap.Clear();
     }
   }
 
@@ -2333,6 +2398,7 @@ TelemetryScalar::CreateKeyedSnapshots(unsigned int aDataset, bool aClearScalars,
 nsresult
 TelemetryScalar::RegisterScalars(const nsACString& aCategoryName,
                                  JS::Handle<JS::Value> aScalarData,
+                                 bool aBuiltin,
                                  JSContext* cx)
 {
   MOZ_ASSERT(XRE_IsParentProcess(),
@@ -2431,7 +2497,7 @@ TelemetryScalar::RegisterScalars(const nsACString& aCategoryName,
     
     
     newScalarInfos.AppendElement(DynamicScalarInfo{
-      kind, recordOnRelease, expired, fullName, keyed
+      kind, recordOnRelease, expired, fullName, keyed, aBuiltin
     });
   }
 
@@ -2461,6 +2527,8 @@ TelemetryScalar::ClearScalars()
   StaticMutexAutoLock locker(gTelemetryScalarsMutex);
   gScalarStorageMap.Clear();
   gKeyedScalarStorageMap.Clear();
+  gDynamicBuiltinScalarStorageMap.Clear();
+  gDynamicBuiltinKeyedScalarStorageMap.Clear();
 }
 
 size_t
@@ -2475,23 +2543,26 @@ TelemetryScalar::GetScalarSizesOfIncludingThis(mozilla::MallocSizeOf aMallocSize
 {
   StaticMutexAutoLock locker(gTelemetryScalarsMutex);
   size_t n = 0;
-  
-  for (auto iter = gScalarStorageMap.Iter(); !iter.Done(); iter.Next()) {
-    ScalarStorageMapType* scalarStorage = static_cast<ScalarStorageMapType*>(iter.Data());
-    for (auto childIter = scalarStorage->Iter(); !childIter.Done(); childIter.Next()) {
-      ScalarBase* scalar = static_cast<ScalarBase*>(childIter.Data());
-      n += scalar->SizeOfIncludingThis(aMallocSizeOf);
+
+  auto getSizeOf = [aMallocSizeOf](auto &storageMap)
+  {
+    size_t partial = 0;
+    for (auto iter = storageMap.Iter(); !iter.Done(); iter.Next()) {
+      auto scalarStorage = iter.UserData();
+      for (auto childIter = scalarStorage->Iter(); !childIter.Done(); childIter.Next()) {
+        auto scalar = childIter.UserData();
+        partial += scalar->SizeOfIncludingThis(aMallocSizeOf);
+      }
     }
-  }
+    return partial;
+  };
+
   
-  for (auto iter = gKeyedScalarStorageMap.Iter(); !iter.Done(); iter.Next()) {
-    KeyedScalarStorageMapType* scalarStorage =
-      static_cast<KeyedScalarStorageMapType*>(iter.Data());
-    for (auto childIter = scalarStorage->Iter(); !childIter.Done(); childIter.Next()) {
-      KeyedScalar* scalar = static_cast<KeyedScalar*>(childIter.Data());
-      n += scalar->SizeOfIncludingThis(aMallocSizeOf);
-    }
-  }
+  n += getSizeOf(gScalarStorageMap);
+  n += getSizeOf(gKeyedScalarStorageMap);
+  n += getSizeOf(gDynamicBuiltinScalarStorageMap);
+  n += getSizeOf(gDynamicBuiltinKeyedScalarStorageMap);
+
   return n;
 }
 
@@ -2766,7 +2837,8 @@ TelemetryScalar::AddDynamicScalarDefinitions(
       recordOnRelease,
       def.expired,
       def.name,
-      def.keyed});
+      def.keyed,
+      false });
   }
 
   {
