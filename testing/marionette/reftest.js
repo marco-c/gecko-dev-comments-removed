@@ -69,7 +69,7 @@ reftest.Runner = class {
 
 
   async setup(urlCount, screenshotMode) {
-    this.parentWindow =  assert.window(this.driver.getCurrentWindow());
+    this.parentWindow =  assert.open(this.driver.getCurrentWindow());
 
     this.screenshotMode = SCREENSHOT_MODE[screenshotMode] ||
         SCREENSHOT_MODE.unexpected;
