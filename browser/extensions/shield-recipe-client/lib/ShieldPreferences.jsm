@@ -110,18 +110,9 @@ this.ShieldPreferences = {
     checkbox.setAttribute("id", "optOutStudiesEnabled");
     checkbox.setAttribute("class", "tail-with-learn-more");
     checkbox.setAttribute("label", "Allow Firefox to install and run studies");
-
-    let allowedByPolicy = Services.policies.isAllowed("Shield");
-    if (allowedByPolicy) {
-      
-      
-      
-      
-      checkbox.setAttribute("preference", OPT_OUT_STUDIES_ENABLED_PREF);
-    }
+    checkbox.setAttribute("preference", OPT_OUT_STUDIES_ENABLED_PREF);
     checkbox.setAttribute("disabled", Services.prefs.prefIsLocked(FHR_UPLOAD_ENABLED_PREF) ||
-                                      !AppConstants.MOZ_TELEMETRY_REPORTING ||
-                                      !allowedByPolicy);
+      !AppConstants.MOZ_TELEMETRY_REPORTING);
     hContainer.appendChild(checkbox);
 
     const viewStudies = doc.createElementNS(XUL_NS, "label");
@@ -138,7 +129,7 @@ this.ShieldPreferences = {
     
     const fhrPref = doc.defaultView.Preferences.add({ id: FHR_UPLOAD_ENABLED_PREF, type: "bool" });
     function onChangeFHRPref(event) {
-      checkbox.disabled = !Services.prefs.getBoolPref(FHR_UPLOAD_ENABLED_PREF) || !allowedByPolicy;
+      checkbox.disabled = !Services.prefs.getBoolPref(FHR_UPLOAD_ENABLED_PREF);
     }
     fhrPref.on("change", onChangeFHRPref);
     doc.defaultView.addEventListener("unload", () => fhrPref.off("change", onChangeFHRPref), { once: true });
