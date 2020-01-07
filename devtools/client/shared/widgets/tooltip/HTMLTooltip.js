@@ -255,6 +255,8 @@ function HTMLTooltip(toolboxDoc, {
   this.autofocus = autofocus;
   this.consumeOutsideClicks = consumeOutsideClicks;
   this.useXulWrapper = this._isXUL() && useXulWrapper;
+  this.preferredWidth = "auto";
+  this.preferredHeight = "auto";
 
   
   
@@ -330,7 +332,17 @@ HTMLTooltip.prototype = {
 
 
 
-  setContent: function(content, {width = "auto", height = Infinity} = {}) {
+
+
+
+
+
+
+
+
+
+
+  setContent: function(content, {width = "auto", height = "auto"} = {}) {
     this.preferredWidth = width;
     this.preferredHeight = height;
 
@@ -366,28 +378,21 @@ HTMLTooltip.prototype = {
     
     const viewportRect = this._getViewportRect();
 
-    const themeHeight = EXTRA_HEIGHT[this.type] + 2 * EXTRA_BORDER[this.type];
-    const preferredHeight = this.preferredHeight + themeHeight;
-
-    const {top, height, computedPosition} =
-      calculateVerticalPosition(anchorRect, viewportRect, preferredHeight, position, y);
-
-    this._position = computedPosition;
     
-    const isTop = computedPosition === POSITION.TOP;
-    this.container.classList.toggle("tooltip-top", isTop);
-    this.container.classList.toggle("tooltip-bottom", !isTop);
-
-    
-    
-    this.container.classList.toggle("tooltip-flexible-height",
-      this.preferredHeight === Infinity);
-
-    this.container.style.height = height + "px";
-
     let preferredWidth;
+    
+    
+    let measuredHeight;
     if (this.preferredWidth === "auto") {
-      preferredWidth = this._measureContainerWidth();
+      
+      this.container.style.width = "auto";
+      if (this.preferredHeight === "auto") {
+        this.container.style.height = "auto";
+      }
+      ({
+        width: preferredWidth,
+        height: measuredHeight,
+      } = this._measureContainerSize());
     } else {
       const themeWidth = 2 * EXTRA_BORDER[this.type];
       preferredWidth = this.preferredWidth + themeWidth;
@@ -398,11 +403,46 @@ HTMLTooltip.prototype = {
     const {left, width, arrowLeft} = calculateHorizontalPosition(
       anchorRect, viewportRect, preferredWidth, this.type, x, isRtl);
 
-    this.container.style.width = width + "px";
+    
+    
+    if (measuredHeight && width !== preferredWidth) {
+      measuredHeight = undefined;
+    }
 
+    
+    this.container.style.width = width + "px";
     if (this.type === TYPE.ARROW) {
       this.arrow.style.left = arrowLeft + "px";
     }
+
+    
+    let preferredHeight;
+    if (this.preferredHeight === "auto") {
+      if (measuredHeight) {
+        this.container.style.height = "auto";
+        preferredHeight = measuredHeight;
+      } else {
+        ({ height: preferredHeight } = this._measureContainerSize());
+      }
+    } else {
+      const themeHeight = EXTRA_HEIGHT[this.type] + 2 * EXTRA_BORDER[this.type];
+      preferredHeight = this.preferredHeight + themeHeight;
+    }
+
+    const {top, height, computedPosition} =
+      calculateVerticalPosition(anchorRect, viewportRect, preferredHeight, position, y);
+
+    this._position = computedPosition;
+    const isTop = computedPosition === POSITION.TOP;
+    this.container.classList.toggle("tooltip-top", isTop);
+    this.container.classList.toggle("tooltip-bottom", !isTop);
+
+    
+    
+    this.container.classList.toggle("tooltip-flexible-height",
+      this.preferredHeight === Infinity);
+
+    this.container.style.height = height + "px";
 
     if (this.useXulWrapper) {
       await this._showXulWrapperAt(left, top);
@@ -455,7 +495,7 @@ HTMLTooltip.prototype = {
     return this.doc.documentElement.getBoundingClientRect();
   },
 
-  _measureContainerWidth: function() {
+  _measureContainerSize: function() {
     const xulParent = this.container.parentNode;
     if (this.useXulWrapper && !this.isVisible()) {
       
@@ -463,15 +503,19 @@ HTMLTooltip.prototype = {
     }
 
     this.container.classList.add("tooltip-hidden");
-    this.container.style.width = "auto";
-    const width = this.container.getBoundingClientRect().width;
+    
+    
+    
+    this.container.classList.add("tooltip-top");
+    this.container.classList.remove("tooltip-bottom");
+    const { width, height } = this.container.getBoundingClientRect();
     this.container.classList.remove("tooltip-hidden");
 
     if (this.useXulWrapper && !this.isVisible()) {
       xulParent.appendChild(this.container);
     }
 
-    return width;
+    return { width, height };
   },
 
   
