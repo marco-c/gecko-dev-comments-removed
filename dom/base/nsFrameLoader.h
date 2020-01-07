@@ -236,6 +236,11 @@ public:
   
   
   
+  void ForceLayoutIfNecessary();
+
+  
+  
+  
   nsresult SwapWithOtherLoader(nsFrameLoader* aOther,
                                nsIFrameLoaderOwner* aThisOwner,
                                nsIFrameLoaderOwner* aOtherOwner);
