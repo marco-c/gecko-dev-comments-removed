@@ -227,11 +227,16 @@ async function createFileInHome() {
 
 
 
+
 async function createTempFile() {
   let browser = gBrowser.selectedBrowser;
   let path = fileInTempDir().path;
   let fileCreated = await ContentTask.spawn(browser, path, createFile);
-  ok(fileCreated == true, "creating a file in content temp is permitted");
+  if (isMac()) {
+    ok(fileCreated == false, "creating a file in content temp is not permitted");
+  } else {
+    ok(fileCreated == true, "creating a file in content temp is permitted");
+  }
   
   let fileDeleted = await ContentTask.spawn(browser, path, deleteFile);
   if (isMac()) {

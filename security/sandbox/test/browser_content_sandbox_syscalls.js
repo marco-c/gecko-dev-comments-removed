@@ -196,10 +196,15 @@ add_task(async function() {
   if (isLinux() || isMac()) {
     
     
+    
     let path = fileInTempDir().path;
     let flags = openWriteCreateFlags();
     let fd = await ContentTask.spawn(browser, {lib, path, flags}, callOpen);
-    ok(fd >= 0, "opening a file for writing in content temp is permitted");
+    if (isMac()) {
+      ok(fd === -1, "opening a file for writing in content temp is not permitted");
+    } else {
+      ok(fd >= 0, "opening a file for writing in content temp is permitted");
+    }
   }
 
   
