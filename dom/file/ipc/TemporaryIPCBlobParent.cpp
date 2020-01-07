@@ -55,23 +55,36 @@ TemporaryIPCBlobParent::CreateAndShareFile()
 }
 
 mozilla::ipc::IPCResult
-TemporaryIPCBlobParent::RecvOperationDone(const bool& aSuccess,
-                                          const nsCString& aContentType)
+TemporaryIPCBlobParent::RecvOperationFailed()
 {
   MOZ_ASSERT(mActive);
   mActive = false;
 
-  if (!aSuccess) {
-    
-    Unused << Send__delete__(this, NS_ERROR_FAILURE);
-    return IPC_OK();
-  }
+  
+  Unused << Send__delete__(this, NS_ERROR_FAILURE);
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult
+TemporaryIPCBlobParent::RecvOperationDone(const nsCString& aContentType,
+                                          const FileDescriptor& aFD)
+{
+  MOZ_ASSERT(mActive);
+  mActive = false;
+
+  
+  
+  
+  auto rawFD = aFD.ClonePlatformHandle();
+  PRFileDesc* prfile = PR_ImportFile(PROsfd(rawFD.release()));
 
   
   nsCOMPtr<nsIFile> file = Move(mFile);
 
   RefPtr<TemporaryFileBlobImpl> blobImpl =
     new TemporaryFileBlobImpl(file, NS_ConvertUTF8toUTF16(aContentType));
+
+  PR_Close(prfile);
 
   IPCBlob ipcBlob;
   nsresult rv = IPCBlobUtils::Serialize(blobImpl, Manager(), ipcBlob);

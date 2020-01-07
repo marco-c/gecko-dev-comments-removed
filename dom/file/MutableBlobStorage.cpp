@@ -302,8 +302,6 @@ public:
   {
     MOZ_ASSERT(!NS_IsMainThread());
 
-    mBlobStorage->CloseFD();
-
     RefPtr<Runnable> runnable =
       new CreateBlobRunnable(mBlobStorage, mParent.forget(),
                              mContentType, mCallback.forget());
@@ -593,7 +591,7 @@ MutableBlobStorage::TemporaryFileCreated(PRFileDesc* aFD)
     Unused << DispatchToIOThread(runnable.forget());
 
     
-    mActor->SendOperationDone(false, EmptyCString());
+    mActor->SendOperationFailed();
     mActor = nullptr;
     return;
   }
@@ -644,11 +642,21 @@ MutableBlobStorage::AskForBlob(TemporaryIPCBlobChildCallback* aCallback,
 {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(mStorageState == eClosed);
-  MOZ_ASSERT(!mFD);
+  MOZ_ASSERT(mFD);
   MOZ_ASSERT(mActor);
   MOZ_ASSERT(aCallback);
 
-  mActor->AskForBlob(aCallback, aContentType);
+  
+  
+  mActor->AskForBlob(aCallback, aContentType, mFD);
+
+  
+  
+  
+  RefPtr<Runnable> runnable = new CloseFileRunnable(mFD);
+  Unused << DispatchToIOThread(runnable.forget());
+
+  mFD = nullptr;
   mActor = nullptr;
 }
 
@@ -659,7 +667,7 @@ MutableBlobStorage::ErrorPropagated(nsresult aRv)
   mErrorResult = aRv;
 
   if (mActor) {
-    mActor->SendOperationDone(false, EmptyCString());
+    mActor->SendOperationFailed();
     mActor = nullptr;
   }
 }
