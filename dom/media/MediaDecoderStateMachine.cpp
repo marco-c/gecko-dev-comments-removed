@@ -836,6 +836,15 @@ public:
     
     
     
+    if (mMaster->mVideoDecodeSuspended) {
+      mMaster->mVideoDecodeSuspended = false;
+      mMaster->mOnPlaybackEvent.Notify(MediaPlaybackEvent::ExitVideoSuspend);
+      Reader()->SetVideoBlankDecode(false);
+    }
+
+    
+    
+    
     
     if (mVisibility == EventVisibility::Observable) {
       
@@ -876,6 +885,7 @@ public:
   void HandleResumeVideoDecoding(const TimeUnit&) override
   {
     
+    MOZ_ASSERT(false, "Shouldn't have suspended video decoding.");
   }
 
 protected:
@@ -2106,10 +2116,6 @@ StateObject::HandleResumeVideoDecoding(const TimeUnit& aTarget)
 {
   MOZ_ASSERT(mMaster->mVideoDecodeSuspended);
 
-  mMaster->mVideoDecodeSuspended = false;
-  mMaster->mOnPlaybackEvent.Notify(MediaPlaybackEvent::ExitVideoSuspend);
-  Reader()->SetVideoBlankDecode(false);
-
   
   TimeStamp start = TimeStamp::Now();
 
@@ -2271,12 +2277,6 @@ MediaDecoderStateMachine::
 DecodingState::Enter()
 {
   MOZ_ASSERT(mMaster->mSentFirstFrameLoadedEvent);
-
-  if (mMaster->mVideoDecodeSuspended &&
-      mMaster->mVideoDecodeMode == VideoDecodeMode::Normal) {
-    StateObject::HandleResumeVideoDecoding(mMaster->GetMediaTime());
-    return;
-  }
 
   if (mMaster->mVideoDecodeMode == VideoDecodeMode::Suspend &&
       !mMaster->mVideoDecodeSuspendTimer.IsScheduled() &&
