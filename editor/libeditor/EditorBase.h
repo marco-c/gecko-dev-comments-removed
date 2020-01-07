@@ -531,23 +531,6 @@ protected:
 
 
 
-  already_AddRefed<CreateElementTransaction>
-    CreateTxnForCreateElement(nsAtom& aTag,
-                              const EditorRawDOMPoint& aPointToInsert);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
 
 
   already_AddRefed<Element> CreateNode(nsAtom* aTag,

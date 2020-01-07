@@ -28,6 +28,11 @@ class Element;
 
 class CreateElementTransaction final : public EditTransactionBase
 {
+protected:
+  CreateElementTransaction(EditorBase& aEditorBase,
+                           nsAtom& aTag,
+                           const EditorRawDOMPoint& aPointToInsert);
+
 public:
   
 
@@ -38,9 +43,12 @@ public:
 
 
 
-  CreateElementTransaction(EditorBase& aEditorBase,
-                           nsAtom& aTag,
-                           const EditorRawDOMPoint& aPointToInsert);
+
+
+  static already_AddRefed<CreateElementTransaction>
+  Create(EditorBase& aEditorBase,
+         nsAtom& aTag,
+         const EditorRawDOMPoint& aPointToInsert);
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(CreateElementTransaction,
