@@ -36,7 +36,7 @@ void MozillaUnRegisterDebugFILE(FILE* aFile);
 
 MOZ_END_EXTERN_C
 
-#if defined(XP_WIN) || defined(XP_MACOSX)
+#if defined(XP_MACOSX) || (defined(XP_WIN) && !defined(__MINGW32__))
 
 #ifdef __cplusplus
 namespace mozilla {
