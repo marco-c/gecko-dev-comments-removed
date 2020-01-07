@@ -207,11 +207,13 @@ impl fmt::Debug for PropertyDeclarationBlock {
 
 impl PropertyDeclarationBlock {
     
+    #[inline]
     pub fn len(&self) -> usize {
         self.declarations.len()
     }
 
     
+    #[inline]
     pub fn new() -> Self {
         PropertyDeclarationBlock {
             declarations: Vec::new(),
@@ -229,31 +231,36 @@ impl PropertyDeclarationBlock {
         PropertyDeclarationBlock {
             declarations: vec![declaration],
             declarations_importance: SmallBitVec::from_elem(1, importance.important()),
-            longhands: longhands,
+            longhands,
         }
     }
 
     
+    #[inline]
     pub fn declarations(&self) -> &[PropertyDeclaration] {
         &self.declarations
     }
 
     
+    #[inline]
     pub fn declarations_importance(&self) -> &SmallBitVec {
         &self.declarations_importance
     }
 
     
+    #[inline]
     pub fn declaration_importance_iter(&self) -> DeclarationImportanceIterator {
         DeclarationImportanceIterator::new(&self.declarations, &self.declarations_importance)
     }
 
     
+    #[inline]
     pub fn normal_declaration_iter(&self) -> NormalDeclarationIterator {
         NormalDeclarationIterator::new(&self.declarations, &self.declarations_importance)
     }
 
     
+    #[inline]
     pub fn to_animation_value_iter<'a, 'cx, 'cx_a:'cx>(
         &'a self,
         context: &'cx mut Context<'cx_a>,
@@ -267,6 +274,7 @@ impl PropertyDeclarationBlock {
     
     
     
+    #[inline]
     pub fn any_important(&self) -> bool {
         !self.declarations_importance.all_false()
     }
@@ -275,11 +283,13 @@ impl PropertyDeclarationBlock {
     
     
     
+    #[inline]
     pub fn any_normal(&self) -> bool {
         !self.declarations_importance.all_true()
     }
 
     
+    #[inline]
     pub fn contains(&self, id: LonghandId) -> bool {
         self.longhands.contains(id)
     }
@@ -293,7 +303,15 @@ impl PropertyDeclarationBlock {
     
     
     
+    
+    #[inline]
     pub fn get(&self, property: PropertyDeclarationId) -> Option<(&PropertyDeclaration, Importance)> {
+        if let PropertyDeclarationId::Longhand(id) = property {
+            if !self.contains(id) {
+                return None;
+            }
+        }
+
         self.declarations.iter().enumerate().find(|&(_, decl)| decl.id() == property).map(|(i, decl)| {
             let importance = if self.declarations_importance.get(i as u32) {
                 Importance::Important
@@ -408,7 +426,7 @@ impl PropertyDeclarationBlock {
                 let all_shorthand_len = match drain.all_shorthand {
                     AllShorthand::NotSet => 0,
                     AllShorthand::CSSWideKeyword(_) |
-                    AllShorthand::WithVariables(_) => ShorthandId::All.longhands().len()
+                    AllShorthand::WithVariables(_) => shorthands::ALL_SHORTHAND_MAX_LEN,
                 };
                 let push_calls_count =
                     drain.declarations.len() + all_shorthand_len;
@@ -766,8 +784,6 @@ impl PropertyDeclarationBlock {
 
             
             for &shorthand in declaration.shorthands() {
-                let properties = shorthand.longhands();
-
                 
                 let mut current_longhands = SmallVec::<[_; 10]>::new();
                 let mut important_count = 0;
@@ -793,21 +809,24 @@ impl PropertyDeclarationBlock {
                         }
                     }
                 } else {
-                    for (longhand, importance) in self.declaration_importance_iter() {
-                        if longhand.id().is_longhand_of(shorthand) {
-                            current_longhands.push(longhand);
-                            if importance.important() {
-                                important_count += 1;
+                    let mut contains_all_longhands = true;
+                    for &longhand in shorthand.longhands() {
+                        match self.get(PropertyDeclarationId::Longhand(longhand)) {
+                            Some((declaration, importance)) => {
+                                current_longhands.push(declaration);
+                                if importance.important() {
+                                    important_count += 1;
+                                }
+                            }
+                            None => {
+                                contains_all_longhands = false;
+                                break;
                             }
                         }
                     }
+
                     
-                    
-                    
-                    
-                    
-                    
-                    if current_longhands.len() != properties.len() {
+                    if !contains_all_longhands {
                         continue;
                     }
                 }
