@@ -1553,7 +1553,6 @@ public:
   static void ShutDown();
 
   static bool HasSSE2();
-  static bool HasSSE4();
 
   
 
