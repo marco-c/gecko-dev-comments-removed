@@ -1286,6 +1286,7 @@ var AddonTestUtils = {
   async overrideBuiltIns(data) {
     
     
+    let prevPrefVal = Services.prefs.getBoolPref(PREF_DISABLE_SECURITY, false);
     Services.prefs.setBoolPref(PREF_DISABLE_SECURITY, true);
     aomStartup.initializeURLPreloader();
 
@@ -1297,7 +1298,7 @@ var AddonTestUtils = {
       ["override", "chrome://browser/content/built_in_addons.json",
        Services.io.newFileURI(file).spec],
     ]);
-    Services.prefs.setBoolPref(PREF_DISABLE_SECURITY, false);
+    Services.prefs.setBoolPref(PREF_DISABLE_SECURITY, prevPrefVal);
   }
 };
 
