@@ -46,20 +46,8 @@ SetTmpEnvironmentVariable(nsIFile* aValue)
 }
 #endif
 
-#if defined(XP_MACOSX) && defined(MOZ_CONTENT_SANDBOX)
-static void
-SetTmpEnvironmentVariable(nsIFile* aValue)
-{
-  nsAutoCString fullTmpPath;
-  nsresult rv = aValue->GetNativePath(fullTmpPath);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return;
-  }
-  Unused << NS_WARN_IF(setenv("TMPDIR", fullTmpPath.get(), 1) != 0);
-}
-#endif
 
-#if (defined(XP_WIN) || defined(XP_MACOSX)) && defined(MOZ_CONTENT_SANDBOX)
+#if defined(XP_WIN) && defined(MOZ_CONTENT_SANDBOX)
 static void
 SetUpSandboxEnvironment()
 {
@@ -247,7 +235,7 @@ ContentProcess::Init(int aArgc, char* aArgv[])
   mContent.SetProfileDir(profileDir);
 #endif
 
-#if (defined(XP_WIN) || defined(XP_MACOSX)) && defined(MOZ_CONTENT_SANDBOX)
+#if defined(XP_WIN) && defined(MOZ_CONTENT_SANDBOX)
   SetUpSandboxEnvironment();
 #endif
 
