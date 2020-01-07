@@ -13,10 +13,6 @@
 const Services = require("Services");
 const TOOLS_OPENED_PREF = "devtools.telemetry.tools.opened.version";
 
-
-const PENDING_EVENTS = new Map();
-const PENDING_EVENT_PROPERTIES = new Map();
-
 class Telemetry {
   constructor() {
     
@@ -26,10 +22,6 @@ class Telemetry {
     this.logScalar = this.logScalar.bind(this);
     this.logKeyedScalar = this.logKeyedScalar.bind(this);
     this.logOncePerBrowserVersion = this.logOncePerBrowserVersion.bind(this);
-    this.recordEvent = this.recordEvent.bind(this);
-    this.setEventRecordingEnabled = this.setEventRecordingEnabled.bind(this);
-    this.preparePendingEvent = this.preparePendingEvent.bind(this);
-    this.addEventProperty = this.addEventProperty.bind(this);
     this.destroy = this.destroy.bind(this);
 
     this._timers = new Map();
@@ -298,10 +290,10 @@ class Telemetry {
     }
 
     try {
-      if (isNaN(value) && typeof value !== "boolean") {
-        dump(`Warning: An attempt was made to write a non-numeric and ` +
-             `non-boolean value ${value} to the ${scalarId} scalar. Only ` +
-             `numeric and boolean values are allowed.`);
+      if (isNaN(value)) {
+        dump(`Warning: An attempt was made to write a non-numeric value ` +
+             `${value} to the ${scalarId} scalar. Only numeric values are ` +
+             `allowed.`);
 
         return;
       }
@@ -390,188 +382,6 @@ class Telemetry {
       Services.prefs.setCharPref(TOOLS_OPENED_PREF, latest);
       this.log(perUserHistogram, value);
     }
-  }
-
-  
-
-
-
-
-
-
-
-
-  setEventRecordingEnabled(category, enabled) {
-    return Services.telemetry.setEventRecordingEnabled(category, enabled);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  preparePendingEvent(category, method, object, value, expected = []) {
-    const sig = `${category},${method},${object},${value}`;
-
-    if (expected.length === 0) {
-      throw new Error(`preparePendingEvent() was called without any expected ` +
-                      `properties.`);
-    }
-
-    PENDING_EVENTS.set(sig, {
-      extra: {},
-      expected: new Set(expected)
-    });
-
-    const props = PENDING_EVENT_PROPERTIES.get(sig);
-    if (props) {
-      for (let [name, val] of Object.entries(props)) {
-        this.addEventProperty(category, method, object, value, name, val);
-      }
-      PENDING_EVENT_PROPERTIES.delete(sig);
-    }
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  addEventProperty(category, method, object, value, pendingPropName, pendingPropValue) {
-    const sig = `${category},${method},${object},${value}`;
-
-    
-    
-    if (!PENDING_EVENTS.has(sig)) {
-      PENDING_EVENT_PROPERTIES.set(sig, {
-        [pendingPropName]: pendingPropValue
-      });
-      return;
-    }
-
-    const { expected, extra } = PENDING_EVENTS.get(sig);
-
-    if (expected.has(pendingPropName)) {
-      extra[pendingPropName] = pendingPropValue;
-
-      if (expected.size === Object.keys(extra).length) {
-        this._sendPendingEvent(category, method, object, value);
-      }
-    } else {
-      
-      throw new Error(`An attempt was made to add the unexpected property ` +
-                      `"${pendingPropName}" to a telemetry event with the ` +
-                      `signature "${sig}"\n`);
-    }
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  recordEvent(category, method, object, value, extra) {
-    
-    for (let [name, val] of Object.entries(extra)) {
-      extra[name] = val + "";
-
-      if (val.length > 80) {
-        const sig = `${category},${method},${object},${value}`;
-
-        throw new Error(`The property "${name}" was added to a telemetry ` +
-                        `event with the signature ${sig} but it's value ` +
-                        `"${val}" is longer than the maximum allowed length ` +
-                        `of 80 characters\n`);
-      }
-    }
-    Services.telemetry.recordEvent(category, method, object, value, extra);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  _sendPendingEvent(category, method, object, value) {
-    const sig = `${category},${method},${object},${value}`;
-    const { extra } = PENDING_EVENTS.get(sig);
-
-    PENDING_EVENTS.delete(sig);
-    PENDING_EVENT_PROPERTIES.delete(sig);
-    this.recordEvent(category, method, object, value, extra);
   }
 
   destroy() {
