@@ -673,8 +673,9 @@ XULContentSinkImpl::ReportError(const char16_t* aErrorText,
     return NS_OK;
   };
 
-  XULDocument* doc = idoc ? idoc->AsXULDocument() : nullptr;
-  if (doc && !doc->OnDocumentParserError()) {
+  if (idoc &&
+      idoc->IsXULDocument() &&
+      !idoc->AsXULDocument()->OnDocumentParserError()) {
     
     return NS_OK;
   }

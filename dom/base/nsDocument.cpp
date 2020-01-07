@@ -3525,11 +3525,10 @@ nsIDocument::GetActiveElement()
   }
 
   
-  RefPtr<nsHTMLDocument> htmlDoc = AsHTMLDocument();
-  if (htmlDoc) {
+  if (IsHTMLOrXHTML()) {
     
     
-    return htmlDoc->GetBody();
+    return AsHTMLDocument()->GetBody();
   }
 
   

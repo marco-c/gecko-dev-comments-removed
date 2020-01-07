@@ -6298,14 +6298,16 @@ nsGlobalWindowOuter::UpdateCommands(const nsAString& anAction,
   }
 
   nsIDocument* doc = rootWindow->GetExtantDoc();
-  XULDocument* xulDoc = doc ? doc->AsXULDocument() : nullptr;
+  
+  if (!doc || !doc->IsXULDocument()) {
+    return;
+  }
   
   
-  
-  if (xulDoc && !anAction.EqualsLiteral("selectionchange")) {
+  if (!anAction.EqualsLiteral("selectionchange")) {
     
     nsIDOMXULCommandDispatcher* xulCommandDispatcher =
-      xulDoc->GetCommandDispatcher();
+      doc->AsXULDocument()->GetCommandDispatcher();
     if (xulCommandDispatcher) {
       nsContentUtils::AddScriptRunner(new CommandDispatcher(xulCommandDispatcher,
                                                             anAction));

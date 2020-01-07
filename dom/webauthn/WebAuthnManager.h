@@ -41,13 +41,6 @@
 
 
 
-
-class nsHTMLDocument {
-public:
-  bool IsRegistrableDomainSuffixOfOrEqualTo(const nsAString& aHostSuffixString,
-                                            const nsACString& aOrigHost);
-};
-
 namespace mozilla {
 namespace dom {
 

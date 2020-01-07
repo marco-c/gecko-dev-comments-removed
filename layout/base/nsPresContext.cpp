@@ -1462,13 +1462,11 @@ GetPropagatedScrollbarStylesForViewport(nsPresContext* aPresContext,
   
   
   
-  
-  nsHTMLDocument* htmlDoc = document->AsHTMLDocument();
-  if (!htmlDoc || !docElement->IsHTMLElement()) {
+  if (!document->IsHTMLOrXHTML() || !docElement->IsHTMLElement()) {
     return nullptr;
   }
 
-  Element* bodyElement = htmlDoc->GetBodyElement();
+  Element* bodyElement = document->AsHTMLDocument()->GetBodyElement();
   if (!bodyElement) {
     
     return nullptr;

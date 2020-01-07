@@ -1644,7 +1644,8 @@ NS_IMETHODIMP nsXULWindow::SavePersistentAttributes()
 
   
   RefPtr<dom::XULDocument> ownerXULDoc =
-    docShellElement->OwnerDoc()->AsXULDocument();
+    docShellElement->OwnerDoc()->IsXULDocument()
+      ? docShellElement->OwnerDoc()->AsXULDocument() : nullptr;
   if (docShellElement->IsXULElement()) {
     docShellElement->GetId(windowElementId);
   }

@@ -49,4 +49,11 @@ private:
 } 
 } 
 
+inline mozilla::dom::SVGDocument*
+nsIDocument::AsSVGDocument()
+{
+  MOZ_ASSERT(IsSVGDocument());
+  return static_cast<mozilla::dom::SVGDocument*>(this);
+}
+
 #endif 

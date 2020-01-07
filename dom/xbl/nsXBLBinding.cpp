@@ -226,9 +226,8 @@ nsXBLBinding::BindAnonymousContent(nsIContent* aAnonParent,
     
     
     
-    XULDocument* xuldoc = doc ? doc->AsXULDocument() : nullptr;
-    if (xuldoc) {
-      xuldoc->AddSubtreeToDocument(child);
+    if (doc && doc->IsXULDocument()) {
+      doc->AsXULDocument()->AddSubtreeToDocument(child);
     }
 #endif
   }
@@ -243,15 +242,15 @@ nsXBLBinding::UnbindAnonymousContent(nsIDocument* aDocument,
   
   nsCOMPtr<nsIContent> anonParent = aAnonParent;
 #ifdef MOZ_XUL
-  XULDocument* xuldoc = aDocument ? aDocument->AsXULDocument() : nullptr;
+  const bool isXULDocument = aDocument && aDocument->IsXULDocument();
 #endif
   for (nsIContent* child = aAnonParent->GetFirstChild();
        child;
        child = child->GetNextSibling()) {
     child->UnbindFromTree(true, aNullParent);
 #ifdef MOZ_XUL
-    if (xuldoc) {
-      xuldoc->RemoveSubtreeFromDocument(child);
+    if (isXULDocument) {
+      aDocument->AsXULDocument()->RemoveSubtreeFromDocument(child);
     }
 #endif
   }

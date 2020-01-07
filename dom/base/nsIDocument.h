@@ -3347,9 +3347,23 @@ public:
   nsIHTMLCollection* Children();
   uint32_t ChildElementCount();
 
-  virtual nsHTMLDocument* AsHTMLDocument() { return nullptr; }
-  virtual mozilla::dom::SVGDocument* AsSVGDocument() { return nullptr; }
-  virtual mozilla::dom::XULDocument* AsXULDocument() { return nullptr; }
+  
+
+
+
+  inline nsHTMLDocument* AsHTMLDocument();
+
+  
+
+
+
+  inline mozilla::dom::SVGDocument* AsSVGDocument();
+
+  
+
+
+
+  inline mozilla::dom::XULDocument* AsXULDocument();
 
   
 
