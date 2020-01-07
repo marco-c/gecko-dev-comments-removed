@@ -236,6 +236,22 @@ EnvironmentCoordinateFunctionScript(JSScript* script, jsbytecode* pc);
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class EnvironmentObject : public NativeObject
 {
   protected:
