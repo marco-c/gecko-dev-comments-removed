@@ -24,7 +24,14 @@ LOG = get_proxy_logger(component='mitmproxy')
 mozharness_dir = os.path.join(here, '../../../mozharness')
 sys.path.insert(0, mozharness_dir)
 
-TOOLTOOL_PATH = os.path.join(mozharness_dir, 'external_tools', 'tooltool.py')
+external_tools_path = os.environ.get('EXTERNALTOOLSPATH', None)
+
+if external_tools_path is not None:
+    
+    TOOLTOOL_PATH = os.path.join(external_tools_path, 'tooltool.py')
+else:
+    
+    TOOLTOOL_PATH = os.path.join(mozharness_dir, 'external_tools', 'tooltool.py')
 
 
 
