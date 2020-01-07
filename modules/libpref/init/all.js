@@ -2675,6 +2675,8 @@ pref("security.allow_chrome_frames_inside_content", false);
 
 pref("services.settings.server", "https://firefox.settings.services.mozilla.com/v1");
 pref("services.settings.changes.path", "/buckets/monitor/collections/changes/records");
+pref("services.settings.default_bucket", "main");
+pref("services.settings.default_signer", "");
 
 
 pref("extensions.blocklist.enabled", true);
