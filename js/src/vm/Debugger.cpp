@@ -4782,6 +4782,9 @@ class MOZ_STACK_CLASS Debugger::ObjectQuery
     AutoObjectVector objects;
 
     
+    JS::CompartmentSet debuggeeCompartments;
+
+    
 
 
 
@@ -4814,6 +4817,18 @@ class MOZ_STACK_CLASS Debugger::ObjectQuery
     bool findObjects() {
         if (!prepareQuery())
             return false;
+
+        if (!debuggeeCompartments.init()) {
+            ReportOutOfMemory(cx);
+            return false;
+        }
+
+        for (WeakGlobalObjectSet::Range r = dbg->allDebuggees(); !r.empty(); r.popFront()) {
+            if (!debuggeeCompartments.put(r.front()->compartment())) {
+                ReportOutOfMemory(cx);
+                return false;
+            }
+        }
 
         {
             
@@ -4866,10 +4881,20 @@ class MOZ_STACK_CLASS Debugger::ObjectQuery
 
 
         JSCompartment* comp = referent.compartment();
-        if (comp && !dbg->isDebuggeeUnbarriered(JS::GetRealmForCompartment(comp))) {
+        if (comp && !debuggeeCompartments.has(comp)) {
             traversal.abandonReferent();
             return true;
         }
+
+        
+
+
+
+
+
+        Realm* realm = referent.realm();
+        if (realm && !dbg->isDebuggeeUnbarriered(realm))
+            return true;
 
         
 

@@ -604,6 +604,13 @@ class JS_PUBLIC_API(Base) {
     virtual JSCompartment* compartment() const { return nullptr; }
 
     
+    
+    
+    
+    
+    virtual JS::Realm* realm() const { return nullptr; }
+
+    
     virtual bool hasAllocationStack() const { return false; }
 
     
@@ -776,6 +783,7 @@ class Node {
     const char16_t* typeName()      const { return base()->typeName(); }
     JS::Zone* zone()                const { return base()->zone(); }
     JSCompartment* compartment()    const { return base()->compartment(); }
+    JS::Realm* realm()              const { return base()->realm(); }
     const char* jsObjectClassName() const { return base()->jsObjectClassName(); }
     MOZ_MUST_USE bool jsObjectConstructorName(JSContext* cx, UniqueTwoByteChars& outName) const {
         return base()->jsObjectConstructorName(cx, outName);
@@ -982,6 +990,9 @@ class MOZ_STACK_CLASS JS_PUBLIC_API(RootList) {
     
     MOZ_MUST_USE bool init();
     
+    
+    
+    
     MOZ_MUST_USE bool init(CompartmentSet& debuggees);
     
     
@@ -1028,13 +1039,15 @@ class JS_PUBLIC_API(TracerConcrete) : public Base {
 };
 
 
+
 template<typename Referent>
-class JS_PUBLIC_API(TracerConcreteWithCompartment) : public TracerConcrete<Referent> {
+class JS_PUBLIC_API(TracerConcreteWithRealm) : public TracerConcrete<Referent> {
     typedef TracerConcrete<Referent> TracerBase;
     JSCompartment* compartment() const override;
+    JS::Realm* realm() const override;
 
   protected:
-    explicit TracerConcreteWithCompartment(Referent* ptr) : TracerBase(ptr) { }
+    explicit TracerConcreteWithRealm(Referent* ptr) : TracerBase(ptr) { }
 };
 
 
@@ -1074,9 +1087,9 @@ class JS_PUBLIC_API(Concrete<JS::BigInt>) : TracerConcrete<JS::BigInt> {
 #endif
 
 template<>
-class JS_PUBLIC_API(Concrete<JSScript>) : TracerConcreteWithCompartment<JSScript> {
+class JS_PUBLIC_API(Concrete<JSScript>) : TracerConcreteWithRealm<JSScript> {
   protected:
-    explicit Concrete(JSScript *ptr) : TracerConcreteWithCompartment<JSScript>(ptr) { }
+    explicit Concrete(JSScript *ptr) : TracerConcreteWithRealm<JSScript>(ptr) { }
 
   public:
     static void construct(void *storage, JSScript *ptr) { new (storage) Concrete(ptr); }
@@ -1091,14 +1104,17 @@ class JS_PUBLIC_API(Concrete<JSScript>) : TracerConcreteWithCompartment<JSScript
 
 
 template<>
-class JS_PUBLIC_API(Concrete<JSObject>) : public TracerConcreteWithCompartment<JSObject> {
+class JS_PUBLIC_API(Concrete<JSObject>) : public TracerConcrete<JSObject> {
   protected:
-    explicit Concrete(JSObject* ptr) : TracerConcreteWithCompartment(ptr) { }
+    explicit Concrete(JSObject* ptr) : TracerConcrete<JSObject>(ptr) { }
 
   public:
     static void construct(void* storage, JSObject* ptr) {
         new (storage) Concrete(ptr);
     }
+
+    JSCompartment* compartment() const override;
+    JS::Realm* realm() const override;
 
     const char* jsObjectClassName() const override;
     MOZ_MUST_USE bool jsObjectConstructorName(JSContext* cx, UniqueTwoByteChars& outName)
@@ -1139,6 +1155,7 @@ class JS_PUBLIC_API(Concrete<void>) : public Base {
     js::UniquePtr<EdgeRange> edges(JSContext* cx, bool wantNames) const override;
     JS::Zone* zone() const override;
     JSCompartment* compartment() const override;
+    JS::Realm* realm() const override;
     CoarseType coarseType() const final;
 
     explicit Concrete(void* ptr) : Base(ptr) { }
