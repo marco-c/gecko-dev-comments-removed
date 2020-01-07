@@ -874,26 +874,15 @@ element.inViewport = function(el, x = undefined, y = undefined) {
 
 
 element.getContainer = function(el) {
-  function findAncestralElement(startNode, validAncestors) {
-    let node = startNode;
-    while (node.parentNode) {
-      node = node.parentNode;
-      if (validAncestors.includes(node.localName)) {
-        return node;
-      }
-    }
-    return startNode;
-  }
-
   
   
   if (["option", "optgroup"].includes(el.localName)) {
-    return findAncestralElement(el, ["datalist", "select"]);
+    return element.findClosest(el, "datalist,select") || el;
   }
 
   
   
-  return findAncestralElement(el, ["button"]);
+  return element.findClosest(el, "button") || el;
 };
 
 
