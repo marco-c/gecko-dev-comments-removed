@@ -21,6 +21,9 @@ from mozpack.manifests import (
 from mozpack.copier import (
     FileCopier,
 )
+from mozbuild.backend import (
+    get_backend_class,
+)
 
 
 
@@ -275,6 +278,14 @@ class Daemon(object):
                 yield change
 
     def watch(self, verbose=True):
-        for change in self.output_changes(verbose=verbose):
-            pass
+        try:
+            active_backend = self.config_environment.substs.get('BUILD_BACKENDS', [None])[0]
+            if active_backend:
+                backend_cls = get_backend_class(active_backend)(self.config_environment)
+        except Exception:
+            backend_cls = None
 
+        for change in self.output_changes(verbose=verbose):
+            
+            if backend_cls:
+                backend_cls.post_build(self.config_environment, None, 1, False, 0)
