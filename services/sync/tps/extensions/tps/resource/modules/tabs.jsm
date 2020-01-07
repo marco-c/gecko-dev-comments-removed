@@ -12,6 +12,7 @@ const EXPORTED_SYMBOLS = ["BrowserTabs"];
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://services-sync/main.js");
 ChromeUtils.import("resource:///modules/sessionstore/TabStateFlusher.jsm");
+ChromeUtils.import("resource://tps/logger.jsm");
 
 
 
@@ -80,8 +81,9 @@ var BrowserTabs = {
         if (uri == weaveTabUrl && profile == client.clientName)
           if (title == undefined || title == tab.title)
             return true;
+        }
+        Logger.logInfo(`Dumping tabs for ${client.clientName}...\n` + JSON.stringify(client.tabs));
       }
-    }
     return false;
   },
 };
