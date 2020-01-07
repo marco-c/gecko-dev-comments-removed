@@ -40,8 +40,7 @@ StackingContextHelper::StackingContextHelper(const StackingContextHelper& aParen
   
   gfx::Matrix transform2d;
   if (aBoundTransform && aBoundTransform->CanDraw2D(&transform2d)) {
-    mInheritedTransform = transform2d * aParentSC.mInheritedTransform;
-    mScale = mInheritedTransform.ScaleFactors(true);
+    mScale = transform2d.ScaleFactors(true) * aParentSC.mScale;
   }
 
   mBuilder->PushStackingContext(wr::LayoutRect(),
@@ -65,7 +64,9 @@ StackingContextHelper::~StackingContextHelper()
 wr::LayoutRect
 StackingContextHelper::ToRelativeLayoutRect(const LayoutDeviceRect& aRect) const
 {
-  return wr::ToLayoutRect(RoundedToInt(aRect - mOrigin));
+  auto rect = aRect - mOrigin;
+  rect.Round();
+  return wr::ToLayoutRect(rect);
 }
 
 } 
