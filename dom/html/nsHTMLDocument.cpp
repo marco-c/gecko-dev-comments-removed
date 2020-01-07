@@ -60,7 +60,6 @@
 #include "nsIHttpChannel.h"
 #include "nsIFile.h"
 #include "nsFrameSelection.h"
-#include "nsISelectionPrivate.h" 
 
 #include "nsContentUtils.h"
 #include "nsJSUtils.h"
