@@ -65,14 +65,20 @@ public:
 
 
 
-  static already_AddRefed<IDecodingTask>
+
+
+
+
+
+  static nsresult
   CreateDecoder(DecoderType aType,
                 NotNull<RasterImage*> aImage,
                 NotNull<SourceBuffer*> aSourceBuffer,
                 const gfx::IntSize& aIntrinsicSize,
                 const gfx::IntSize& aOutputSize,
                 DecoderFlags aDecoderFlags,
-                SurfaceFlags aSurfaceFlags);
+                SurfaceFlags aSurfaceFlags,
+                IDecodingTask** aOutTask);
 
   
 
@@ -89,13 +95,19 @@ public:
 
 
 
-  static already_AddRefed<IDecodingTask>
+
+
+
+
+
+  static nsresult
   CreateAnimationDecoder(DecoderType aType,
                          NotNull<RasterImage*> aImage,
                          NotNull<SourceBuffer*> aSourceBuffer,
                          const gfx::IntSize& aIntrinsicSize,
                          DecoderFlags aDecoderFlags,
-                         SurfaceFlags aSurfaceFlags);
+                         SurfaceFlags aSurfaceFlags,
+                         IDecodingTask** aOutTask);
 
   
 

@@ -109,17 +109,18 @@ DecoderFactory::GetDecoder(DecoderType aType,
   return decoder.forget();
 }
 
- already_AddRefed<IDecodingTask>
+ nsresult
 DecoderFactory::CreateDecoder(DecoderType aType,
                               NotNull<RasterImage*> aImage,
                               NotNull<SourceBuffer*> aSourceBuffer,
                               const IntSize& aIntrinsicSize,
                               const IntSize& aOutputSize,
                               DecoderFlags aDecoderFlags,
-                              SurfaceFlags aSurfaceFlags)
+                              SurfaceFlags aSurfaceFlags,
+                              IDecodingTask** aOutTask)
 {
   if (aType == DecoderType::UNKNOWN) {
-    return nullptr;
+    return NS_ERROR_INVALID_ARG;
   }
 
   
@@ -135,8 +136,9 @@ DecoderFactory::CreateDecoder(DecoderType aType,
   decoder->SetDecoderFlags(aDecoderFlags | DecoderFlags::FIRST_FRAME_ONLY);
   decoder->SetSurfaceFlags(aSurfaceFlags);
 
-  if (NS_FAILED(decoder->Init())) {
-    return nullptr;
+  nsresult rv = decoder->Init();
+  if (NS_FAILED(rv)) {
+    return NS_ERROR_FAILURE;
   }
 
   
@@ -151,25 +153,32 @@ DecoderFactory::CreateDecoder(DecoderType aType,
 
   
   
-  if (SurfaceCache::Insert(provider) != InsertOutcome::SUCCESS) {
-    return nullptr;
+  switch (SurfaceCache::Insert(provider)) {
+    case InsertOutcome::SUCCESS:
+      break;
+    case InsertOutcome::FAILURE_ALREADY_PRESENT:
+      return NS_ERROR_ALREADY_INITIALIZED;
+    default:
+      return NS_ERROR_FAILURE;
   }
 
   
   RefPtr<IDecodingTask> task = provider.get();
-  return task.forget();
+  task.forget(aOutTask);
+  return NS_OK;
 }
 
- already_AddRefed<IDecodingTask>
+ nsresult
 DecoderFactory::CreateAnimationDecoder(DecoderType aType,
                                        NotNull<RasterImage*> aImage,
                                        NotNull<SourceBuffer*> aSourceBuffer,
                                        const IntSize& aIntrinsicSize,
                                        DecoderFlags aDecoderFlags,
-                                       SurfaceFlags aSurfaceFlags)
+                                       SurfaceFlags aSurfaceFlags,
+                                       IDecodingTask** aOutTask)
 {
   if (aType == DecoderType::UNKNOWN) {
-    return nullptr;
+    return NS_ERROR_INVALID_ARG;
   }
 
   MOZ_ASSERT(aType == DecoderType::GIF || aType == DecoderType::PNG,
@@ -186,8 +195,9 @@ DecoderFactory::CreateAnimationDecoder(DecoderType aType,
   decoder->SetDecoderFlags(aDecoderFlags | DecoderFlags::IS_REDECODE);
   decoder->SetSurfaceFlags(aSurfaceFlags);
 
-  if (NS_FAILED(decoder->Init())) {
-    return nullptr;
+  nsresult rv = decoder->Init();
+  if (NS_FAILED(rv)) {
+    return NS_ERROR_FAILURE;
   }
 
   
@@ -199,13 +209,19 @@ DecoderFactory::CreateAnimationDecoder(DecoderType aType,
 
   
   
-  if (SurfaceCache::Insert(provider) != InsertOutcome::SUCCESS) {
-    return nullptr;
+  switch (SurfaceCache::Insert(provider)) {
+    case InsertOutcome::SUCCESS:
+      break;
+    case InsertOutcome::FAILURE_ALREADY_PRESENT:
+      return NS_ERROR_ALREADY_INITIALIZED;
+    default:
+      return NS_ERROR_FAILURE;
   }
 
   
   RefPtr<IDecodingTask> task = provider.get();
-  return task.forget();
+  task.forget(aOutTask);
+  return NS_OK;
 }
 
  already_AddRefed<IDecodingTask>

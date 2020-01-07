@@ -1249,10 +1249,29 @@ RasterImage::Decode(const IntSize& aSize,
 
   
   RefPtr<IDecodingTask> task;
-  if (mAnimationState && aPlaybackType == PlaybackType::eAnimated) {
-    task = DecoderFactory::CreateAnimationDecoder(mDecoderType, WrapNotNull(this),
-                                                  mSourceBuffer, mSize,
-                                                  decoderFlags, surfaceFlags);
+  nsresult rv;
+  bool animated = mAnimationState && aPlaybackType == PlaybackType::eAnimated;
+  if (animated) {
+    rv = DecoderFactory::CreateAnimationDecoder(mDecoderType, WrapNotNull(this),
+                                                mSourceBuffer, mSize,
+                                                decoderFlags, surfaceFlags,
+                                                getter_AddRefs(task));
+  } else {
+    rv = DecoderFactory::CreateDecoder(mDecoderType, WrapNotNull(this),
+                                       mSourceBuffer, mSize, aSize,
+                                       decoderFlags, surfaceFlags,
+                                       getter_AddRefs(task));
+  }
+
+  if (rv == NS_ERROR_ALREADY_INITIALIZED) {
+    
+    
+    
+    MOZ_ASSERT(!task);
+    return true;
+  }
+
+  if (animated) {
     
     
     
@@ -1261,17 +1280,15 @@ RasterImage::Decode(const IntSize& aSize,
 #endif
       mAnimationState->UpdateState(mAnimationFinished, this, mSize, false);
     MOZ_ASSERT(rect.IsEmpty());
-  } else {
-    task = DecoderFactory::CreateDecoder(mDecoderType, WrapNotNull(this),
-                                         mSourceBuffer, mSize, aSize,
-                                         decoderFlags, surfaceFlags);
   }
 
   
-  if (!task) {
+  if (NS_FAILED(rv)) {
+    MOZ_ASSERT(!task);
     return false;
   }
 
+  MOZ_ASSERT(task);
   mDecodeCount++;
 
   
