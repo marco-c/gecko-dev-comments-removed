@@ -305,6 +305,8 @@ private:
   
   
   bool mReportCrossOriginRedirect;
+
+  bool mSecureConnection;
 };
 
 } 
