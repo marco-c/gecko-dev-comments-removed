@@ -58,17 +58,6 @@ function bindDOMWindowUtils(aWindow) {
   return wrapPrivileged(util);
 }
 
-function getRawComponents(aWindow) {
-  
-  
-  try {
-    let win = Cu.waiveXrays(aWindow);
-    if (typeof win.netscape.security.PrivilegeManager == "object")
-      Cu.forcePrivilegedComponentsForScope(aWindow);
-  } catch (e) {}
-  return Cu.getComponentsForScope(aWindow);
-}
-
 function isWrappable(x) {
   if (typeof x === "object")
     return x !== null;
@@ -657,25 +646,7 @@ SpecialPowersAPI.prototype = {
   
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   getFullComponents() {
-    if (this.Components && typeof this.Components.classes == "object") {
-      return this.Components;
-    }
     return Components;
   },
 
@@ -685,17 +656,7 @@ SpecialPowersAPI.prototype = {
   get Cc() { return wrapPrivileged(this.getFullComponents().classes); },
   get Ci() { return wrapPrivileged(this.getFullComponents().interfaces); },
   get Cu() { return wrapPrivileged(this.getFullComponents().utils); },
-  get Cr() { return wrapPrivileged(this.Components.results); },
-
-  
-
-
-
-
-
-
-
-  getRawComponents,
+  get Cr() { return wrapPrivileged(this.getFullComponents().results); },
 
   getDOMWindowUtils(aWindow) {
     if (aWindow == this.window.get() && this.DOMWindowUtils != null)
@@ -2265,4 +2226,3 @@ SpecialPowersAPI.prototype = {
 
 this.SpecialPowersAPI = SpecialPowersAPI;
 this.bindDOMWindowUtils = bindDOMWindowUtils;
-this.getRawComponents = getRawComponents;
