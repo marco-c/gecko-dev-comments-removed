@@ -10,12 +10,28 @@
 #define mozilla_ServoUtils_h
 
 #include "mozilla/TypeTraits.h"
+#include "MainThreadUtils.h"
 
 namespace mozilla {
 
 
 void AssertIsMainThreadOrServoFontMetricsLocked();
 
+class ServoStyleSet;
+extern ServoStyleSet* sInServoTraversal;
+inline bool IsInServoTraversal()
+{
+  
+  
+  
+  
+  
+  
+  
+  
+  MOZ_ASSERT(sInServoTraversal || NS_IsMainThread());
+  return sInServoTraversal;
+}
 } 
 
 #ifdef MOZ_STYLO

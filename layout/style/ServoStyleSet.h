@@ -85,19 +85,7 @@ class ServoStyleSet
   typedef ServoElementSnapshotTable SnapshotTable;
 
 public:
-  static bool IsInServoTraversal()
-  {
-    
-    
-    
-    
-    
-    
-    
-    
-    MOZ_ASSERT(sInServoTraversal || NS_IsMainThread());
-    return sInServoTraversal;
-  }
+  static bool IsInServoTraversal() { return mozilla::IsInServoTraversal(); }
 
 #ifdef DEBUG
   
@@ -651,8 +639,6 @@ private:
   
   
   UniquePtr<ServoStyleRuleMap> mStyleRuleMap;
-
-  static ServoStyleSet* sInServoTraversal;
 };
 
 class UACacheReporter final : public nsIMemoryReporter
