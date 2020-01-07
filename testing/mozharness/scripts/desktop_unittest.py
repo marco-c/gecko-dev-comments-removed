@@ -910,6 +910,7 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin,
                         )
                         if 'GCOV_RESULTS_DIR' in env:
                             shutil.rmtree(gcov_dir)
+                            del env['GCOV_RESULTS_DIR']
 
                     
                     
