@@ -648,39 +648,6 @@ CustomElementRegistry::GetDocGroup() const
   return mWindow ? mWindow->GetDocGroup() : nullptr;
 }
 
-static const char* kLifeCycleCallbackNames[] = {
-  "connectedCallback",
-  "disconnectedCallback",
-  "adoptedCallback",
-  "attributeChangedCallback"
-};
-
-static void
-CheckLifeCycleCallbacks(JSContext* aCx,
-                        JS::Handle<JSObject*> aConstructor,
-                        ErrorResult& aRv)
-{
-  for (size_t i = 0; i < ArrayLength(kLifeCycleCallbackNames); ++i) {
-    const char* callbackName = kLifeCycleCallbackNames[i];
-    JS::Rooted<JS::Value> callbackValue(aCx);
-    if (!JS_GetProperty(aCx, aConstructor, callbackName, &callbackValue)) {
-      aRv.StealExceptionFromJSContext(aCx);
-      return;
-    }
-    if (!callbackValue.isUndefined()) {
-      if (!callbackValue.isObject()) {
-        aRv.ThrowTypeError<MSG_NOT_OBJECT>(NS_ConvertASCIItoUTF16(callbackName));
-        return;
-      }
-      JS::Rooted<JSObject*> callback(aCx, &callbackValue.toObject());
-      if (!JS::IsCallable(callback)) {
-        aRv.ThrowTypeError<MSG_NOT_CALLABLE>(NS_ConvertASCIItoUTF16(callbackName));
-        return;
-      }
-    }
-  }
-}
-
 
 void
 CustomElementRegistry::Define(const nsAString& aName,
@@ -767,41 +734,21 @@ CustomElementRegistry::Define(const nsAString& aName,
 
 
 
-
-
-
-
-
-
-
-
-
-
-
   nsAutoString localName(aName);
   if (aOptions.mExtends.WasPassed()) {
     RefPtr<nsAtom> extendsAtom(NS_Atomize(aOptions.mExtends.Value()));
-    if (nsContentUtils::IsCustomElementName(extendsAtom, kNameSpaceID_XHTML)) {
+    if (nsContentUtils::IsCustomElementName(extendsAtom, nameSpaceID)) {
       aRv.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
       return;
     }
 
-    if (nameSpaceID == kNameSpaceID_XHTML) {
-      
-      int32_t tag = nsHTMLTags::CaseSensitiveAtomTagToId(extendsAtom);
-      if (tag == eHTMLTag_userdefined ||
-          tag == eHTMLTag_bgsound ||
-          tag == eHTMLTag_multicol) {
-        aRv.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
-        return;
-      }
-    } else { 
-      
-      
-      if (!nsContentUtils::IsNameWithDash(nameAtom)) {
-        aRv.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
-        return;
-      }
+    
+    int32_t tag = nsHTMLTags::CaseSensitiveAtomTagToId(extendsAtom);
+    if (tag == eHTMLTag_userdefined ||
+        tag == eHTMLTag_bgsound ||
+        tag == eHTMLTag_multicol) {
+      aRv.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
+      return;
     }
 
     localName.Assign(aOptions.mExtends.Value());
@@ -871,12 +818,6 @@ CustomElementRegistry::Define(const nsAString& aName,
 
 
 
-
-      
-      CheckLifeCycleCallbacks(cx, constructorProtoUnwrapped, aRv);
-      if (aRv.Failed()) {
-        return;
-      }
 
       
       
