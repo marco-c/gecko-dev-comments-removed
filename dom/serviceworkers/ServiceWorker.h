@@ -9,17 +9,16 @@
 
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/dom/BindingDeclarations.h"
-#include "mozilla/dom/ServiceWorkerBinding.h" 
 #include "mozilla/dom/ServiceWorkerDescriptor.h"
+
+#ifdef XP_WIN
+#undef PostMessage
+#endif
 
 class nsIGlobalObject;
 
 namespace mozilla {
 namespace dom {
-
-class ServiceWorkerInfo;
-class ServiceWorkerManager;
-class SharedWorker;
 
 bool
 ServiceWorkerVisible(JSContext* aCx, JSObject* aObj);
@@ -27,6 +26,39 @@ ServiceWorkerVisible(JSContext* aCx, JSObject* aObj);
 class ServiceWorker final : public DOMEventTargetHelper
 {
 public:
+  
+  
+  class Inner
+  {
+  public:
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    virtual void
+    AddServiceWorker(ServiceWorker* aWorker) = 0;
+
+    
+    
+    virtual void
+    RemoveServiceWorker(ServiceWorker* aWorker) = 0;
+
+    virtual void
+    PostMessage(nsIGlobalObject* aGlobal,
+                JSContext* aCx, JS::Handle<JS::Value> aMessage,
+                const Sequence<JSObject*>& aTransferable,
+                ErrorResult& aRv) = 0;
+
+    NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
+  };
+
   NS_DECL_ISUPPORTS_INHERITED
 
   IMPL_EVENT_HANDLER(statechange)
@@ -47,10 +79,6 @@ public:
   void
   GetScriptURL(nsString& aURL) const;
 
-#ifdef XP_WIN
-#undef PostMessage
-#endif
-
   void
   PostMessage(JSContext* aCx, JS::Handle<JS::Value> aMessage,
               const Sequence<JSObject*>& aTransferable, ErrorResult& aRv);
@@ -58,13 +86,13 @@ public:
 private:
   ServiceWorker(nsIGlobalObject* aWindow,
                 const ServiceWorkerDescriptor& aDescriptor,
-                ServiceWorkerInfo* aInfo);
+                Inner* aInner);
 
   
   ~ServiceWorker();
 
   ServiceWorkerDescriptor mDescriptor;
-  const RefPtr<ServiceWorkerInfo> mInfo;
+  const RefPtr<Inner> mInner;
 };
 
 } 
