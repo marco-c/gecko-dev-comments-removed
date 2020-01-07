@@ -1288,7 +1288,7 @@ KeyframeEffectReadOnly::GetKeyframes(JSContext*& aCx,
     } 
 
     if (keyframe.mComposite) {
-      keyframeDict.mComposite.Construct(keyframe.mComposite.value());
+      keyframeDict.mComposite.SetValue(keyframe.mComposite.value());
     }
 
     JS::Rooted<JS::Value> keyframeJSValue(aCx);
