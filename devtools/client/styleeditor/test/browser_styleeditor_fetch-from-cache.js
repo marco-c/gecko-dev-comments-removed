@@ -42,8 +42,6 @@ add_task(function* () {
     }
   }
 
-  is(items.length, 2,
-     "Got two requests for doc_uncached.css after Style Editor was loaded.");
-  ok(items[1].fromCache,
-     "Second request was loaded from browser cache");
+  is(items.length, 1,
+     "Got one request for doc_uncached.css after Style Editor was loaded.");
 });

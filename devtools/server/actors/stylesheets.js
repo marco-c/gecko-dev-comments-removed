@@ -423,6 +423,12 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
 
   fetchStylesheet: Task.async(function* (href) {
+    
+    let result = this.fetchStylesheetFromNetworkMonitor(href);
+    if (result) {
+      return result;
+    }
+
     let options = {
       loadFromCache: true,
       policy: Ci.nsIContentPolicy.TYPE_INTERNAL_STYLESHEET,
@@ -442,7 +448,6 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
       options.principal = this.ownerDocument.nodePrincipal;
     }
 
-    let result;
     try {
       result = yield fetch(this.href, options);
     } catch (e) {
@@ -457,6 +462,43 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
     return result;
   }),
+
+  
+
+
+  get _consoleActor() {
+    if (this.parentActor.exited) {
+      return null;
+    }
+    let form = this.parentActor.form();
+    return this.conn._getOrCreateActor(form.consoleActor);
+  },
+
+  
+
+
+
+
+
+
+  fetchStylesheetFromNetworkMonitor(href) {
+    let consoleActor = this._consoleActor;
+    if (!consoleActor) {
+      return null;
+    }
+    let request = consoleActor.getNetworkEventActorForURL(href);
+    if (!request) {
+      return null;
+    }
+    let content = request._response.content;
+    if (request._discardResponseBody || !content) {
+      return null;
+    }
+    return {
+      content: content.text,
+      contentType: content.mimeType,
+    };
+  },
 
   
 

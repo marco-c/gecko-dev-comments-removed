@@ -68,6 +68,7 @@ function WebConsoleActor(connection, parentActor) {
   this.dbg = this.parentActor.makeDebugger();
 
   this._netEvents = new Map();
+  this._networkEventActorsByURL = new Map();
   this._gripDepth = 0;
   this._listeners = new Set();
   this._lastConsoleInputEvaluation = undefined;
@@ -130,6 +131,16 @@ WebConsoleActor.prototype =
 
 
   _netEvents: null,
+
+  
+
+
+
+
+
+
+
+  _networkEventActorsByURL: null,
 
   
 
@@ -1632,6 +1643,8 @@ WebConsoleActor.prototype =
     let actor = this.getNetworkEventActor(event.channelId);
     actor.init(event);
 
+    this._networkEventActorsByURL.set(actor._request.url, actor);
+
     let packet = {
       from: this.actorID,
       type: "networkEvent",
@@ -1663,6 +1676,18 @@ WebConsoleActor.prototype =
     actor = new NetworkEventActor(this);
     this._actorPool.addActor(actor);
     return actor;
+  },
+
+  
+
+
+
+
+
+
+
+  getNetworkEventActorForURL(url) {
+    return this._networkEventActorsByURL.get(url);
   },
 
   
@@ -1992,6 +2017,9 @@ NetworkEventActor.prototype =
     }
     this._longStringActors = new Set();
 
+    if (this._request.url) {
+      this.parent._networkEventActorsByURL.delete(this._request.url);
+    }
     if (this.channel) {
       this.parent._netEvents.delete(this.channel);
     }
