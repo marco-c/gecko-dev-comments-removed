@@ -296,7 +296,14 @@ const getRelativeRect = function(node, relativeTo) {
 
 
 
+
+
+
+
+
 function HTMLTooltip(toolboxDoc, {
+    id = "",
+    className = "",
     type = "normal",
     autofocus = false,
     consumeOutsideClicks = true,
@@ -305,6 +312,8 @@ function HTMLTooltip(toolboxDoc, {
   EventEmitter.decorate(this);
 
   this.doc = toolboxDoc;
+  this.id = id;
+  this.className = className;
   this.type = type;
   this.autofocus = autofocus;
   this.consumeOutsideClicks = consumeOutsideClicks;
@@ -702,7 +711,15 @@ HTMLTooltip.prototype = {
   _createContainer: function() {
     const container = this.doc.createElementNS(XHTML_NS, "div");
     container.setAttribute("type", this.type);
+
+    if (this.id) {
+      container.setAttribute("id", this.id);
+    }
+
     container.classList.add("tooltip-container");
+    if (this.className) {
+      container.classList.add(...this.className.split(" "));
+    }
 
     let html = '<div class="tooltip-filler"></div>';
     html += '<div class="tooltip-panel"></div>';
