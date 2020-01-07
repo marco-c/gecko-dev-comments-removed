@@ -91,7 +91,6 @@ JSCompartment::JSCompartment(Zone* zone, const JS::CompartmentOptions& options =
     iterResultTemplate_(nullptr),
     lcovOutput()
 {
-    PodArrayZero(sawDeprecatedLanguageExtension);
     runtime_->numCompartments++;
     MOZ_ASSERT_IF(creationOptions_.mergeable(),
                   creationOptions_.invisibleToDebugger());
@@ -99,8 +98,6 @@ JSCompartment::JSCompartment(Zone* zone, const JS::CompartmentOptions& options =
 
 JSCompartment::~JSCompartment()
 {
-    reportTelemetry();
-
     
     JSRuntime* rt = runtimeFromActiveCooperatingThread();
     if (rt->lcovOutput().isEnabled())
@@ -1335,35 +1332,6 @@ JSCompartment::addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf,
             *scriptCountsMapArg += r.front().value()->sizeOfIncludingThis(mallocSizeOf);
         }
     }
-}
-
-void
-JSCompartment::reportTelemetry()
-{
-    
-    if (isSystem_)
-        return;
-
-    
-    JS::AutoSuppressGCAnalysis nogc;
-
-    
-    for (size_t i = 0; i < size_t(DeprecatedLanguageExtension::Count); i++) {
-        if (sawDeprecatedLanguageExtension[i])
-            runtime_->addTelemetry(JS_TELEMETRY_DEPRECATED_LANGUAGE_EXTENSIONS_IN_CONTENT, i);
-    }
-}
-
-void
-JSCompartment::addTelemetry(const char* filename, DeprecatedLanguageExtension e)
-{
-    
-    if (isSystem_)
-        return;
-    if (!filename || strncmp(filename, "http", 4) != 0)
-        return;
-
-    sawDeprecatedLanguageExtension[size_t(e)] = true;
 }
 
 HashNumber
