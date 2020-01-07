@@ -1953,7 +1953,12 @@ HTMLFormElement::CheckValidFormSubmission()
           
           
           if (mControls->mElements[i]->IsHTMLElement(nsGkAtoms::input) &&
-              nsContentUtils::IsFocusedContent(mControls->mElements[i])) {
+              
+              
+              
+              
+              
+              mControls->mElements[i]->State().HasState(NS_EVENT_STATE_FOCUS)) {
             static_cast<HTMLInputElement*>(mControls->mElements[i])
               ->UpdateValidityUIBits(true);
           }

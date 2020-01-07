@@ -132,11 +132,11 @@ nsIConstraintValidation::ReportValidity()
     return true;
   }
 
-  nsCOMPtr<nsIContent> content = do_QueryInterface(this);
-  MOZ_ASSERT(content, "This class should be inherited by HTML elements only!");
+  nsCOMPtr<Element> element = do_QueryInterface(this);
+  MOZ_ASSERT(element, "This class should be inherited by HTML elements only!");
 
   bool defaultAction = true;
-  nsContentUtils::DispatchTrustedEvent(content->OwnerDoc(), content,
+  nsContentUtils::DispatchTrustedEvent(element->OwnerDoc(), element,
                                        NS_LITERAL_STRING("invalid"),
                                        CanBubble::eNo,
                                        Cancelable::eYes,
@@ -164,7 +164,7 @@ nsIConstraintValidation::ReportValidity()
 
   nsCOMPtr<nsIMutableArray> invalidElements =
     do_CreateInstance(NS_ARRAY_CONTRACTID, &rv);
-  invalidElements->AppendElement(content);
+  invalidElements->AppendElement(element);
 
   NS_ENSURE_SUCCESS(rv, true);
   nsCOMPtr<nsISupports> inst;
@@ -179,13 +179,17 @@ nsIConstraintValidation::ReportValidity()
     }
   }
 
-  if (content->IsHTMLElement(nsGkAtoms::input) &&
-      nsContentUtils::IsFocusedContent(content)) {
-    HTMLInputElement* inputElement = HTMLInputElement::FromNode(content);
+  if (element->IsHTMLElement(nsGkAtoms::input) &&
+      
+      
+      
+      
+      
+      element->State().HasState(NS_EVENT_STATE_FOCUS)) {
+    HTMLInputElement* inputElement = HTMLInputElement::FromNode(element);
     inputElement->UpdateValidityUIBits(true);
   }
 
-  dom::Element* element = content->AsElement();
   element->UpdateState(true);
   return false;
 }

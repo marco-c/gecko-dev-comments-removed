@@ -6435,6 +6435,7 @@ HTMLInputElement::AddStates(EventStates aStates)
     if (!focusStates.IsEmpty()) {
       HTMLInputElement* ownerNumberControl = GetOwnerNumberControl();
       if (ownerNumberControl) {
+        
         ownerNumberControl->AddStates(focusStates);
       }
     }
@@ -6451,6 +6452,7 @@ HTMLInputElement::RemoveStates(EventStates aStates)
     if (!focusStates.IsEmpty()) {
       HTMLInputElement* ownerNumberControl = GetOwnerNumberControl();
       if (ownerNumberControl) {
+        
         ownerNumberControl->RemoveStates(focusStates);
       }
     }
