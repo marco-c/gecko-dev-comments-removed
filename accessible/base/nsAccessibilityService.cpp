@@ -147,6 +147,28 @@ MustBeAccessible(nsIContent* aContent, DocAccessible* aDocument)
 
 
 
+#ifdef MOZ_XUL
+Accessible*
+CreateMenupopupAccessible(nsIContent* aContent, Accessible* aContext)
+{
+#ifdef MOZ_ACCESSIBILITY_ATK
+    
+    
+    
+    
+    
+    nsIContent *parent = aContent->GetParent();
+    if (parent && parent->IsXULElement(nsGkAtoms::menu))
+      return nullptr;
+#endif
+
+    return new XULMenupopupAccessible(aContent, aContext->Document());
+}
+#endif
+
+
+
+
 static Accessible*
 New_HTMLLink(nsIContent* aContent, Accessible* aContext)
 {
@@ -1470,20 +1492,6 @@ nsAccessibilityService::CreateAccessibleByType(nsIContent* aContent,
 
   } else if (role.EqualsLiteral("xul:link")) {
     accessible = new XULLinkAccessible(aContent, aDoc);
-
-  } else if (role.EqualsLiteral("xul:menupopup")) {
-#ifdef MOZ_ACCESSIBILITY_ATK
-    
-    
-    
-    
-    
-    nsIContent *parent = aContent->GetParent();
-    if (parent && parent->IsXULElement(nsGkAtoms::menu))
-      return nullptr;
-#endif
-
-    accessible = new XULMenupopupAccessible(aContent, aDoc);
 
   } else if(role.EqualsLiteral("xul:pane")) {
     accessible = new EnumRoleAccessible<roles::PANE>(aContent, aDoc);
