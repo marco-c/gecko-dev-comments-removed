@@ -555,6 +555,14 @@ CreateHeaderBar(WidgetNodeType aWidgetType)
   
   GtkStyleContext* style = gtk_widget_get_style_context(headerbar);
   gtk_style_context_add_class(style, "titlebar");
+
+  
+  
+  
+  
+  
+  
+  
   gtk_style_context_add_class(style, "default-decoration");
 
   return headerbar;
