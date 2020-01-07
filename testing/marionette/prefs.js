@@ -171,6 +171,20 @@ class MarionetteBranch extends Branch {
 
 
 
+  get contentListener() {
+    return this.get("contentListener", false);
+  }
+
+  set contentListener(value) {
+    this.set("contentListener", value);
+  }
+
+  
+
+
+
+
+
   get port() {
     return this.get("port", 2828);
   }
