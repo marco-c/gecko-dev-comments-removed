@@ -669,20 +669,32 @@ function newChannelForURL(url, { policy, window, principal }) {
     securityFlags: securityFlags,
     uri: uri
   };
-  let prin = principal;
-  if (!prin) {
-    let oa = {};
-    if (window) {
-      oa = window.document.nodePrincipal.originAttributes;
-    }
-    prin = Services.scriptSecurityManager
-                   .createCodebasePrincipal(uri, oa);
-  }
+
+  
   
   if (!channelOptions.contentPolicyType) {
     channelOptions.contentPolicyType = Ci.nsIContentPolicy.TYPE_OTHER;
   }
-  channelOptions.loadingPrincipal = prin;
+
+  
+  
+  
+  if (window) {
+    channelOptions.loadingNode = window.document;
+  } else {
+    
+
+    
+    
+    
+    let prin = principal;
+    if (!prin) {
+      prin = Services.scriptSecurityManager
+                     .createCodebasePrincipal(uri, {});
+    }
+
+    channelOptions.loadingPrincipal = prin;
+  }
 
   try {
     return NetUtil.newChannel(channelOptions);
