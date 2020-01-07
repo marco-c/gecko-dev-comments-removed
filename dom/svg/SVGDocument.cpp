@@ -111,8 +111,13 @@ SVGDocument::EnsureNonSVGUserAgentStyleSheetsLoaded()
     
     
     
+    
+    
+    
+    
+    
     nsCOMPtr<nsICategoryManager> catMan =
-    do_GetService(NS_CATEGORYMANAGER_CONTRACTID);
+      do_GetService(NS_CATEGORYMANAGER_CONTRACTID);
     if (catMan) {
       nsCOMPtr<nsISimpleEnumerator> sheets;
       catMan->EnumerateCategory("agent-style-sheets", getter_AddRefs(sheets));

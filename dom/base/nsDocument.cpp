@@ -248,6 +248,7 @@
 #include "mozilla/ServoStyleSet.h"
 #include "mozilla/StyleSheet.h"
 #include "mozilla/StyleSheetInlines.h"
+#include "mozilla/dom/SVGDocument.h"
 #include "mozilla/dom/SVGSVGElement.h"
 #include "mozilla/dom/DocGroup.h"
 #include "mozilla/dom/TabGroup.h"
@@ -4195,6 +4196,10 @@ nsIDocument::AddOnDemandBuiltInUASheet(StyleSheet* aSheet)
       
       
       
+      
+      
+      
+      
       shell->StyleSet()->PrependStyleSheet(SheetType::Agent, aSheet);
       shell->ApplicableStylesChanged();
     }
@@ -5391,6 +5396,12 @@ nsIDocument::InsertAnonymousContent(Element& aElement, ErrorResult& aRv)
   if (!shell || !shell->GetCanvasFrame()) {
     aRv.Throw(NS_ERROR_UNEXPECTED);
     return nullptr;
+  }
+
+  
+  
+  if (IsSVGDocument()) {
+    AsSVGDocument()->EnsureNonSVGUserAgentStyleSheetsLoaded();
   }
 
   nsAutoScriptBlocker scriptBlocker;

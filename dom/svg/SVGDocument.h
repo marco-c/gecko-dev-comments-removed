@@ -23,6 +23,7 @@ class SVGForeignObjectElement;
 class SVGDocument final : public XMLDocument
 {
   friend class SVGForeignObjectElement; 
+  friend class nsIDocument; 
 
 public:
   SVGDocument()
