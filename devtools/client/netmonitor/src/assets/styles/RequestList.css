@@ -372,13 +372,13 @@
 
 
 
-.requests-list-duration {
+.requests-list-duration-time {
   width: 8%;
 }
 
 
 
-.requests-list-latency {
+.requests-list-latency-time {
   width: 8%;
 }
 
