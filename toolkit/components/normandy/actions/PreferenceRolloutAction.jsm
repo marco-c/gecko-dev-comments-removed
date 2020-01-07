@@ -143,12 +143,12 @@ class PreferenceRolloutAction extends BaseAction {
       let oldValue = null;
       if (oldPrefSpecs.has(prefSpec.preferenceName)) {
         let oldPrefSpec = oldPrefSpecs.get(prefSpec.preferenceName);
-        if (oldPrefSpec.previousValue !== prefSpec.previousValue) {
-          this.log.debug(`updating ${existingRollout.slug}: ${prefSpec.preferenceName} previous value changed from ${oldPrefSpec.previousValue} to ${prefSpec.previousValue}`);
-          prefSpec.previousValue = oldPrefSpec.previousValue;
-          anyChanged = true;
-        }
         oldValue = oldPrefSpec.value;
+
+        
+        
+        
+        prefSpec.previousValue = oldPrefSpec.previousValue;
       }
       if (oldValue !== newPrefSpecs.get(prefSpec.preferenceName).value) {
         anyChanged = true;
