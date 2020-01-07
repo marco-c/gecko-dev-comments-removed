@@ -331,6 +331,8 @@ private:
         void RecordIPFamilyPreference(uint16_t family);
         
         void ResetIPFamilyPreference();
+        
+        bool PreferenceKnown() const;
 
         
         size_t PendingQLength() const;

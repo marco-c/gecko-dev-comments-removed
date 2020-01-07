@@ -225,11 +225,7 @@ pref("dom.gamepad.haptic_feedback.enabled", true);
 
 
 
-#ifdef EARLY_BETA_OR_EARLIER
-pref("dom.keyboardevent.dispatch_during_composition", true);
-#else
 pref("dom.keyboardevent.dispatch_during_composition", false);
-#endif
 
 
 
@@ -1801,6 +1797,13 @@ pref("network.http.tls-handshake-timeout", 30);
 
 
 
+
+
+pref("network.http.fallback-connection-timeout", 5);
+
+
+
+
 pref("network.http.network-changed.timeout", 5);
 
 
@@ -2961,14 +2964,6 @@ pref("layout.css.visited_links_enabled", true);
 
 
 pref("layout.css.moz-document.content.enabled",  false);
-
-
-
-#ifdef EARLY_BETA_OR_EARLIER
-pref("layout.css.moz-document.url-prefix-hack.enabled", false);
-#else
-pref("layout.css.moz-document.url-prefix-hack.enabled", true);
-#endif
 
 
 
