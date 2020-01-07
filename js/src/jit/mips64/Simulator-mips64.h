@@ -106,6 +106,7 @@ const uint32_t kFCSRExceptionFlagMask = kFCSRFlagMask ^ kFCSRInexactFlagMask;
 
 const uint32_t kMaxWatchpointCode = 31;
 const uint32_t kMaxStopCode = 127;
+const uint32_t kWasmTrapCode = 6;
 
 
 
@@ -306,6 +307,8 @@ class Simulator {
     
     void handleWasmInterrupt();
     void startInterrupt(JitActivation* act);
+
+    bool handleWasmTrapFault();
 
     
     void instructionDecode(SimInstruction* instr);
