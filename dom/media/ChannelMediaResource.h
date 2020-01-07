@@ -8,7 +8,6 @@
 
 #include "BaseMediaResource.h"
 #include "MediaCache.h"
-#include "MediaChannelStatistics.h"
 #include "mozilla/Mutex.h"
 #include "nsIChannelEventSink.h"
 #include "nsIHttpChannel.h"
@@ -68,11 +67,7 @@ public:
   ChannelMediaResource(MediaResourceCallback* aDecoder,
                        nsIChannel* aChannel,
                        nsIURI* aURI,
-                       bool aIsPrivateBrowsing);
-  ChannelMediaResource(MediaResourceCallback* aDecoder,
-                       nsIChannel* aChannel,
-                       nsIURI* aURI,
-                       const MediaChannelStatistics& aStatistics);
+                       bool aIsPrivateBrowsing = false);
   ~ChannelMediaResource();
 
   
@@ -136,7 +131,6 @@ public:
   bool    IsTransportSeekable() override;
 
   size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const override {
-    
     
     
     size_t size = BaseMediaResource::SizeOfExcludingThis(aMallocSizeOf);
@@ -252,7 +246,6 @@ protected:
   
   MediaCacheStream mCacheStream;
 
-  MediaChannelStatistics mChannelStatistics;
   ChannelSuspendAgent mSuspendAgent;
 };
 

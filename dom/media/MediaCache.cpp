@@ -2033,6 +2033,8 @@ MediaCacheStream::NotifyDataStartedInternal(uint32_t aLoadID,
   
   mChannelEnded = false;
   mDidNotifyDataEnded = false;
+
+  UpdateDownloadStatistics(lock);
 }
 
 void
@@ -2091,6 +2093,8 @@ MediaCacheStream::NotifyDataReceived(uint32_t aLoadID,
     
     return;
   }
+
+  mDownloadStatistics.AddBytes(aCount);
 
   auto source = MakeSpan<const uint8_t>(aData, aCount);
 
@@ -2180,6 +2184,16 @@ MediaCacheStream::FlushPartialBlockInternal(AutoLock& aLock, bool aNotifyAll)
 }
 
 void
+MediaCacheStream::UpdateDownloadStatistics(AutoLock&)
+{
+  if (mChannelEnded || mClientSuspended) {
+    mDownloadStatistics.Stop();
+  } else {
+    mDownloadStatistics.Start();
+  }
+}
+
+void
 MediaCacheStream::NotifyDataEndedInternal(uint32_t aLoadID,
                                           nsresult aStatus,
                                           bool aReopenOnError)
@@ -2235,6 +2249,8 @@ MediaCacheStream::NotifyDataEndedInternal(uint32_t aLoadID,
   
   mChannelEnded = true;
   mMediaCache->QueueUpdate(lock);
+
+  UpdateDownloadStatistics(lock);
 
   if (NS_FAILED(aStatus)) {
     
@@ -2292,6 +2308,7 @@ MediaCacheStream::NotifyClientSuspended(bool aSuspended)
         mClientSuspended = aSuspended;
         
         mMediaCache->QueueUpdate(lock);
+        UpdateDownloadStatistics(lock);
       }
     });
   OwnerThread()->Dispatch(r.forget());
@@ -2865,6 +2882,8 @@ MediaCacheStream::InitAsClone(MediaCacheStream* aOriginal)
   mPrincipal = aOriginal->mPrincipal;
   mStreamLength = aOriginal->mStreamLength;
   mIsTransportSeekable = aOriginal->mIsTransportSeekable;
+  mDownloadStatistics = aOriginal->mDownloadStatistics;
+  mDownloadStatistics.Stop();
 
   
   
@@ -2923,6 +2942,14 @@ nsresult MediaCacheStream::GetCachedRanges(MediaByteRangeSet& aRanges)
       "Must have advanced to start of next range, or hit end of stream");
   }
   return NS_OK;
+}
+
+double
+MediaCacheStream::GetDownloadRate(bool* aIsReliable)
+{
+  
+  AutoLock lock(mMediaCache->Monitor());
+  return mDownloadStatistics.GetRate(aIsReliable);
 }
 
 nsCString

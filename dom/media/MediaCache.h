@@ -15,6 +15,8 @@
 #include "nsTArray.h"
 #include "nsTHashtable.h"
 
+#include "MediaChannelStatistics.h"
+
 class nsIEventTarget;
 class nsIPrincipal;
 
@@ -315,6 +317,8 @@ public:
   
   nsresult GetCachedRanges(MediaByteRangeSet& aRanges);
 
+  double GetDownloadRate(bool* aIsReliable);
+
   
   
   
@@ -462,6 +466,8 @@ private:
                                nsresult aStatus,
                                bool aReopenOnError);
 
+  void UpdateDownloadStatistics(AutoLock&);
+
   
   RefPtr<MediaCache> mMediaCache;
 
@@ -549,6 +555,8 @@ private:
 
   
   bool mClientSuspended = false;
+
+  MediaChannelStatistics mDownloadStatistics;
 };
 
 } 
