@@ -940,6 +940,10 @@ js::wasm::StartUnwinding(const RegisterState& registers, UnwindState* unwindStat
 #endif
         fixedFP = offsetFromEntry < SetJitEntryFP ? (Frame*) sp : fp;
         fixedPC = nullptr;
+
+        
+        if (intptr_t(fixedFP) == (FailFP & ~JitActivation::ExitFpWasmBit))
+            return false;
         break;
       case CodeRange::Throw:
         
