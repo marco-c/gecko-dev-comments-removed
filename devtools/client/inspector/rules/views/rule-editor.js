@@ -54,9 +54,6 @@ function RuleEditor(ruleView, rule) {
   this.ruleView = ruleView;
   this.doc = this.ruleView.styleDocument;
   this.toolbox = this.ruleView.inspector.toolbox;
-  
-  
-  this.sourceMapURLService = this.toolbox.sourceMapURLService;
   this.rule = rule;
 
   this.isEditable = !rule.isSystem;
@@ -95,9 +92,21 @@ RuleEditor.prototype = {
       
       let sourceLine = this.rule.ruleLine;
       let sourceColumn = this.rule.ruleColumn;
-      this.sourceMapURLService.unsubscribe(url, sourceLine, sourceColumn,
-                                           this._updateLocation);
+
+      if (this._sourceMapURLService) {
+        this._sourceMapURLService.unsubscribe(url, sourceLine, sourceColumn,
+          this._updateLocation);
+      }
     }
+  },
+
+  get sourceMapURLService() {
+    if (!this._sourceMapURLService) {
+      
+      this._sourceMapURLService = this.toolbox.sourceMapURLService;
+    }
+
+    return this._sourceMapURLService;
   },
 
   get isSelectorEditable() {
