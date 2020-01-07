@@ -52,6 +52,26 @@ var ObjectUtils = {
 
   strict(obj) {
     return _strict(obj);
+  },
+
+  
+
+
+
+  isEmpty(obj) {
+    if (!obj) {
+      return true;
+    }
+    if (typeof obj != "object") {
+      return false;
+    }
+    if (Array.isArray(obj)) {
+      return !obj.length;
+    }
+    for (let key in obj) {
+      return false;
+    }
+    return true;
   }
 };
 
