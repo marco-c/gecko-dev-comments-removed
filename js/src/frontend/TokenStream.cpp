@@ -485,12 +485,6 @@ TokenStreamAnyChars::undoInternalUpdateLineInfoForEOL()
     lineno--;
 }
 
-MOZ_ALWAYS_INLINE void
-TokenStreamAnyChars::updateFlagsForEOL()
-{
-    flags.isDirtyLine = false;
-}
-
 
 
 
