@@ -993,7 +993,7 @@ class DebugEnvironments
   private:
     bool init();
 
-    static DebugEnvironments* ensureCompartmentData(JSContext* cx);
+    static DebugEnvironments* ensureRealmData(JSContext* cx);
 
     template <typename Environment, typename Scope>
     static void onPopGeneric(JSContext* cx, const EnvironmentIter& ei);
@@ -1044,7 +1044,7 @@ class DebugEnvironments
     static void onPopLexical(JSContext* cx, const EnvironmentIter& ei);
     static void onPopLexical(JSContext* cx, AbstractFramePtr frame, jsbytecode* pc);
     static void onPopWith(AbstractFramePtr frame);
-    static void onCompartmentUnsetIsDebuggee(JSCompartment* c);
+    static void onRealmUnsetIsDebuggee(Realm* realm);
 };
 
 }  
