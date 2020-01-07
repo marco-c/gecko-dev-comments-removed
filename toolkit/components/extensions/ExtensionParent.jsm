@@ -232,7 +232,6 @@ ProxyMessenger = {
       if (this.ports.has(messageManager)) {
         this.ports.set(event.detail.messageManager, this.ports.get(messageManager));
         this.ports.delete(messageManager);
-        event.detail.addEventListener("SwapDocShells", this, {once: true});
       }
     }
   },
@@ -430,10 +429,6 @@ GlobalManager = {
   getExtension(extensionId) {
     return this.extensionMap.get(extensionId);
   },
-
-  injectInObject(context, isChromeCompat, dest) {
-    SchemaAPIManager.generateAPIs(context, context.extension.apis, dest);
-  },
 };
 
 
@@ -513,7 +508,6 @@ class ProxyContextParent extends BaseContext {
 defineLazyGetter(ProxyContextParent.prototype, "apiCan", function() {
   let obj = {};
   let can = new CanOfAPIs(this, this.extension.apiManager, obj);
-  GlobalManager.injectInObject(this, false, obj);
   return can;
 });
 
