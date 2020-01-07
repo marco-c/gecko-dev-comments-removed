@@ -14,11 +14,22 @@ add_task(async function () {
   let Actions = windowRequire("devtools/client/netmonitor/src/actions/index");
   store.dispatch(Actions.batchEnable(false));
 
-  hideColumn(monitor, "waterfall");
-  showColumn(monitor, "endTime");
-  showColumn(monitor, "responseTime");
-  showColumn(monitor, "duration");
-  showColumn(monitor, "latency");
+  let visibleColumns = store.getState().ui.columns;
+
+  
+  
+  
+  
+  
+  if (visibleColumns.waterfall) {
+    await hideColumn(monitor, "waterfall");
+  }
+
+  ["endTime", "responseTime", "duration", "latency"].forEach(async (column) => {
+    if (!visibleColumns[column]) {
+      await showColumn(monitor, column);
+    }
+  });
 
   let onNetworkEvents = waitForNetworkEvents(monitor, 1);
   let onEventTimings = waitFor(monitor.panelWin, EVENTS.RECEIVED_EVENT_TIMINGS);
