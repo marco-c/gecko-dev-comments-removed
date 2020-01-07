@@ -486,6 +486,11 @@ def target_tasks_promote_fennec(full_task_graph, parameters, graph_config):
         if attr("locale") or attr("chunk_locales"):
             return False
         if task.label in filtered_for_project:
+            
+            
+            
+            if 'old-id' in task.label:
+                return False
             if task.kind not in ('balrog', 'push-apk', 'push-apk-breakpoint'):
                 if task.attributes.get('nightly'):
                     return True
