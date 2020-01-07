@@ -5,6 +5,7 @@
 
 
 #include "EmptyBlobImpl.h"
+#include "mozilla/InputStreamLengthWrapper.h"
 #include "mozilla/SlicedInputStream.h"
 #include "StreamBlobImpl.h"
 #include "nsStreamUtils.h"
@@ -90,7 +91,10 @@ StreamBlobImpl::CreateInputStream(nsIInputStream** aStream, ErrorResult& aRv)
     mInputStream = replacementStream.forget();
   }
 
-  clonedStream.forget(aStream);
+  nsCOMPtr<nsIInputStream> wrappedStream =
+    InputStreamLengthWrapper::MaybeWrap(clonedStream.forget(), mLength);
+
+  wrappedStream.forget(aStream);
 }
 
 already_AddRefed<BlobImpl>

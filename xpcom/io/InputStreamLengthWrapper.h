@@ -40,6 +40,17 @@ public:
   NS_DECL_NSIINPUTSTREAMLENGTH
 
   
+  
+  
+  
+  
+  
+  
+  static already_AddRefed<nsIInputStream>
+  MaybeWrap(already_AddRefed<nsIInputStream> aInputStream,
+            int64_t aLength);
+
+  
   InputStreamLengthWrapper(already_AddRefed<nsIInputStream> aInputStream,
                            int64_t aLength);
 
