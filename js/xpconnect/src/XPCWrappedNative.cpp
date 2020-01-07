@@ -197,8 +197,7 @@ XPCWrappedNative::WrapNewGlobal(xpcObjectHelper& nativeHelper,
     XPCWrappedNativeProto* proto =
         XPCWrappedNativeProto::GetNewOrUsed(scope,
                                             nativeHelper.GetClassInfo(),
-                                            scrProto,
-                                             false);
+                                            scrProto);
     if (!proto)
         return NS_ERROR_FAILURE;
 
