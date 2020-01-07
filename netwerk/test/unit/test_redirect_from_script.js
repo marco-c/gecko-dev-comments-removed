@@ -26,6 +26,8 @@
 ChromeUtils.import("resource://testing-common/httpd.js");
 ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
 
+Cu.importGlobalProperties(["XMLHttpRequest"]);
+
 
 
 redirectHook = "http-on-modify-request";
@@ -209,9 +211,7 @@ function runXHRTest(uri, headerValue)
 {
   
   
-  var xhr = Cc["@mozilla.org/xmlextras/xmlhttprequest;1"];
-
-  var req = xhr.createInstance(Ci.nsIXMLHttpRequest);
+  var req = new XMLHttpRequest();
   req.open("GET", uri, false);
   req.send();
   Assert.equal(req.getResponseHeader(testHeaderName), headerValue);
