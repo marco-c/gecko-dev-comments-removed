@@ -61,10 +61,10 @@ public:
 
 
 
-  NS_IMETHOD UpdateStyleSheet(nsICSSLoaderObserver* aObserver,
-                              bool *aWillNotify,
-                              bool *aIsAlternate,
-                              bool aForceUpdate = false) = 0;
+  virtual nsresult UpdateStyleSheet(nsICSSLoaderObserver* aObserver,
+                                    bool *aWillNotify,
+                                    bool *aIsAlternate,
+                                    bool aForceUpdate = false) = 0;
 
   
 
