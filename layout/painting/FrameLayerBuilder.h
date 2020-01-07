@@ -79,6 +79,8 @@ public:
   const DisplayItemClip& GetClip() const { return mClip; }
   void Invalidate() { mIsInvalid = true; }
   void ClearAnimationCompositorState();
+  nsDisplayItem* GetItem() { return mItem; }
+  void SetItem(nsDisplayItem* aItem) { mItem = aItem; }
 
   bool HasMergedFrames() const { return mFrameList.Length() > 1; }
 
@@ -114,10 +116,6 @@ public:
     }
     return mRefCnt;
   }
-
-  void Disconnect();
-
-  bool Disconnected() { return mDisconnected; }
 
 private:
   DisplayItemData(LayerManagerData* aParent,
@@ -194,6 +192,9 @@ private:
 
 
 
+
+
+
   nsDisplayItem* mItem;
   nsRegion mChangedFrameInvalidations;
 
@@ -204,7 +205,6 @@ private:
   bool            mUsed;
   bool            mIsInvalid;
   bool            mReusedItem;
-  bool            mDisconnected;
 };
 
 class RefCountedRegion {
@@ -613,7 +613,10 @@ public:
 
 
 
-  DisplayItemData* GetOldLayerForFrame(nsIFrame* aFrame, uint32_t aDisplayItemKey, DisplayItemData* aOldData = nullptr);
+  DisplayItemData* GetOldLayerForFrame(nsIFrame* aFrame,
+                                       uint32_t aDisplayItemKey,
+                                       DisplayItemData* aOldData = nullptr,
+                                       LayerManager* aOldLayerManager = nullptr);
 
   
 
