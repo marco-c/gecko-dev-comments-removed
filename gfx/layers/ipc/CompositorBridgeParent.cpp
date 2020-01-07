@@ -517,6 +517,9 @@ mozilla::ipc::IPCResult
 CompositorBridgeParent::RecvWillClose()
 {
   StopAndClearResources();
+  
+  
+  mCanSend = false;
   return IPC_OK();
 }
 
