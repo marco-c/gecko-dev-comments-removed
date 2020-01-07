@@ -35,6 +35,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   DownloadAddonInstall: "resource://gre/modules/addons/XPIInstall.jsm",
   LocalAddonInstall: "resource://gre/modules/addons/XPIInstall.jsm",
   UpdateChecker: "resource://gre/modules/addons/XPIInstall.jsm",
+  XPIInstall: "resource://gre/modules/addons/XPIInstall.jsm",
   loadManifestFromFile: "resource://gre/modules/addons/XPIInstall.jsm",
   verifyBundleSignedState: "resource://gre/modules/addons/XPIInstall.jsm",
 });
@@ -252,9 +253,6 @@ const COMPATIBLE_BY_DEFAULT_TYPES = {
   dictionary: true
 };
 
-const MSG_JAR_FLUSH = "AddonJarFlush";
-const MSG_MESSAGE_MANAGER_CACHES_FLUSH = "AddonMessageManagerCachesFlush";
-
 var gGlobalScope = this;
 
 
@@ -305,7 +303,7 @@ function loadLazyObjects() {
     syncLoadManifestFromFile,
     isUsableAddon,
     recordAddonTelemetry,
-    flushChromeCaches,
+    flushChromeCaches: XPIInstall.flushChromeCaches,
     descriptorToPath,
   });
 
@@ -740,7 +738,7 @@ SafeInstallOperation.prototype = {
     }
 
     while (this._createdDirs.length > 0)
-      recursiveRemove(this._createdDirs.pop());
+      XPIInstall.recursiveRemove(this._createdDirs.pop());
   }
 };
 
@@ -979,77 +977,6 @@ function buildJarURI(aJarfile, aPath) {
   let uri = Services.io.newFileURI(aJarfile);
   uri = "jar:" + uri.spec + "!/" + aPath;
   return Services.io.newURI(uri);
-}
-
-
-
-
-
-
-
-function flushJarCache(aJarFile) {
-  Services.obs.notifyObservers(aJarFile, "flush-cache-entry");
-  Services.mm.broadcastAsyncMessage(MSG_JAR_FLUSH, aJarFile.path);
-}
-
-function flushChromeCaches() {
-  
-  Services.obs.notifyObservers(null, "startupcache-invalidate");
-  
-  Services.obs.notifyObservers(null, "message-manager-flush-caches");
-  
-  Services.mm.broadcastAsyncMessage(MSG_MESSAGE_MANAGER_CACHES_FLUSH, null);
-}
-
-
-
-
-
-
-
-function recursiveRemove(aFile) {
-  let isDir = null;
-
-  try {
-    isDir = aFile.isDirectory();
-  } catch (e) {
-    
-    
-    
-    if (e.result == Cr.NS_ERROR_FILE_TARGET_DOES_NOT_EXIST)
-      return;
-    if (e.result == Cr.NS_ERROR_FILE_NOT_FOUND)
-      return;
-
-    throw e;
-  }
-
-  setFilePermissions(aFile, isDir ? FileUtils.PERMS_DIRECTORY
-                                  : FileUtils.PERMS_FILE);
-
-  try {
-    aFile.remove(true);
-    return;
-  } catch (e) {
-    if (!aFile.isDirectory() || aFile.isSymlink()) {
-      logger.error("Failed to remove file " + aFile.path, e);
-      throw e;
-    }
-  }
-
-  
-  
-  
-  
-  let entries = getDirectoryEntries(aFile, true);
-  entries.forEach(recursiveRemove);
-
-  try {
-    aFile.remove(true);
-  } catch (e) {
-    logger.error("Failed to remove empty directory " + aFile.path, e);
-    throw e;
-  }
 }
 
 
@@ -2786,7 +2713,7 @@ var XPIProvider = {
                                        file, "uninstall", uninstallReason,
                                        { newVersion });
               this.unloadBootstrapScope(id);
-              flushChromeCaches();
+              XPIInstall.flushChromeCaches();
             }
           } catch (e) {
             Cu.reportError(e);
@@ -3342,7 +3269,7 @@ var XPIProvider = {
 
   async installAddonFromLocation(aFile, aInstallLocation, aInstallAction) {
     if (aFile.exists() && aFile.isFile()) {
-      flushJarCache(aFile);
+      XPIInstall.flushJarCache(aFile);
     }
     let addon = await loadManifestFromFile(aFile, aInstallLocation);
 
@@ -3412,7 +3339,7 @@ var XPIProvider = {
                                    "uninstall", uninstallReason, extraParams);
         }
         this.unloadBootstrapScope(existingAddonID);
-        flushChromeCaches();
+        XPIInstall.flushChromeCaches();
       }
     } else {
       addon.installDate = Date.now();
@@ -4228,7 +4155,7 @@ var XPIProvider = {
         }
         XPIStates.disableAddon(aAddon.id);
         this.unloadBootstrapScope(aAddon.id);
-        flushChromeCaches();
+        XPIInstall.flushChromeCaches();
       }
       aAddon._installLocation.uninstallAddon(aAddon.id);
       XPIDatabase.removeAddonMetadata(aAddon);
@@ -5663,7 +5590,7 @@ class MutableDirectoryInstallLocation extends DirectoryInstallLocation {
 
     for (let name of aLeafNames) {
       let file = getFile(name, dir);
-      recursiveRemove(file);
+      XPIInstall.recursiveRemove(file);
     }
 
     if (this._stagingDirLock > 0)
@@ -5699,7 +5626,7 @@ class MutableDirectoryInstallLocation extends DirectoryInstallLocation {
     let trashDirExists = trashDir.exists();
     try {
       if (trashDirExists)
-        recursiveRemove(trashDir);
+        XPIInstall.recursiveRemove(trashDir);
       trashDirExists = false;
     } catch (e) {
       logger.warn("Failed to remove trash directory", e);
@@ -5742,7 +5669,7 @@ class MutableDirectoryInstallLocation extends DirectoryInstallLocation {
 
       file = getFile(`${aId}.xpi`, this._directory);
       if (file.exists()) {
-        flushJarCache(file);
+        XPIInstall.flushJarCache(file);
         transaction.moveUnder(file, trashDir);
       }
     };
@@ -5782,7 +5709,7 @@ class MutableDirectoryInstallLocation extends DirectoryInstallLocation {
         transaction.copy(source, this._directory);
       } else if (action == "move") {
         if (source.isFile())
-          flushJarCache(source);
+          XPIInstall.flushJarCache(source);
 
         transaction.moveUnder(source, this._directory);
       }
@@ -5791,7 +5718,7 @@ class MutableDirectoryInstallLocation extends DirectoryInstallLocation {
       
       
       try {
-        recursiveRemove(trashDir);
+        XPIInstall.recursiveRemove(trashDir);
       } catch (e) {
         logger.warn("Failed to remove trash directory when installing " + id, e);
       }
@@ -5855,7 +5782,7 @@ class MutableDirectoryInstallLocation extends DirectoryInstallLocation {
 
     if (file.leafName != aId) {
       logger.debug("uninstallAddon: flushing jar cache " + file.path + " for addon " + aId);
-      flushJarCache(file);
+      XPIInstall.flushJarCache(file);
     }
 
     let transaction = new SafeInstallOperation();
@@ -5866,7 +5793,7 @@ class MutableDirectoryInstallLocation extends DirectoryInstallLocation {
       
       
       try {
-        recursiveRemove(trashDir);
+        XPIInstall.recursiveRemove(trashDir);
       } catch (e) {
         logger.warn("Failed to remove trash directory when uninstalling " + aId, e);
       }
@@ -6307,7 +6234,7 @@ class SystemAddonInstallLocation extends MutableDirectoryInstallLocation {
     let trashDirExists = trashDir.exists();
     try {
       if (trashDirExists)
-        recursiveRemove(trashDir);
+        XPIInstall.recursiveRemove(trashDir);
       trashDirExists = false;
     } catch (e) {
       logger.warn("Failed to remove trash directory", e);
@@ -6335,7 +6262,7 @@ class SystemAddonInstallLocation extends MutableDirectoryInstallLocation {
     
     try {
       if (source.isFile()) {
-        flushJarCache(source);
+        XPIInstall.flushJarCache(source);
       }
 
       transaction.moveUnder(source, this._directory);
@@ -6343,7 +6270,7 @@ class SystemAddonInstallLocation extends MutableDirectoryInstallLocation {
       
       
       try {
-        recursiveRemove(trashDir);
+        XPIInstall.recursiveRemove(trashDir);
       } catch (e) {
         logger.warn("Failed to remove trash directory when installing " + id, e);
       }

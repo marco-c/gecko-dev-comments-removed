@@ -188,7 +188,8 @@ add_task(async function setup() {
   let install = await AddonManager.getInstallForURL(BASE_URL + INSTALL_URL2,
                                                     undefined,
                                                     "application/x-xpinstall");
-  install.install();
+  let promise = promiseCompleteInstall(install);
+  registerCleanupFunction(() => promise);
 
   
   await AddonManager.getInstallForURL(BASE_URL + INSTALL_URL3,
