@@ -35,7 +35,6 @@
 #include "builtin/String.h"
 #include "gc/FreeOp.h"
 #include "gc/Marking.h"
-#include "jit/AsyncInterrupt.h"
 #include "jit/Ion.h"
 #include "jit/PcScriptCache.h"
 #include "js/CharacterEncoding.h"
@@ -53,6 +52,7 @@
 #include "vm/JSObject.h"
 #include "vm/JSScript.h"
 #include "vm/Shape.h"
+#include "wasm/WasmSignalHandlers.h"
 
 #include "vm/JSObject-inl.h"
 #include "vm/JSScript-inl.h"
@@ -123,12 +123,11 @@ JSContext::init(ContextKind kind)
             return false;
 
 #ifdef JS_SIMULATOR
-        simulator_ = jit::Simulator::Create(this);
+        simulator_ = js::jit::Simulator::Create(this);
         if (!simulator_)
             return false;
 #endif
 
-        jit::EnsureAsyncInterrupt(this);
         if (!wasm::EnsureSignalHandlers(this))
             return false;
     }

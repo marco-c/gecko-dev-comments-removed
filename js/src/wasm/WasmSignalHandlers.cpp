@@ -31,32 +31,20 @@
 
 #include "vm/ArrayBufferObject-inl.h"
 
-#if defined(XP_WIN)
-# include "util/Windows.h"
-#else
-# include <signal.h>
-# include <sys/mman.h>
-#endif
-
-#if defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
-# include <sys/ucontext.h> 
-#endif
-
-#if defined(__x86_64__)
-# if defined(__DragonFly__)
-#  include <machine/npx.h> 
-# elif defined(__FreeBSD__) || defined(__FreeBSD_kernel__) || \
-       defined(__NetBSD__) || defined(__OpenBSD__)
-#  include <machine/fpu.h> 
-# endif
-#endif
-
 using namespace js;
 using namespace js::jit;
 using namespace js::wasm;
 
 using JS::GenericNaN;
 using mozilla::DebugOnly;
+using mozilla::PodArrayZero;
+
+#if defined(ANDROID)
+# include <sys/system_properties.h>
+# if defined(MOZ_LINKER)
+extern "C" MFBT_API bool IsSignalHandlingBroken();
+# endif
+#endif
 
 
 
@@ -269,18 +257,36 @@ struct AutoSignalHandler
 #  define RFP_sig(p) ((p)->uc_mcontext.mc_regs[30])
 # endif
 #elif defined(XP_DARWIN)
-# define EIP_sig(p) ((p)->thread.uts.ts32.__eip)
-# define EBP_sig(p) ((p)->thread.uts.ts32.__ebp)
-# define ESP_sig(p) ((p)->thread.uts.ts32.__esp)
-# define RIP_sig(p) ((p)->thread.__rip)
-# define RBP_sig(p) ((p)->thread.__rbp)
-# define RSP_sig(p) ((p)->thread.__rsp)
-# define R11_sig(p) ((p)->thread.__r[11])
-# define R13_sig(p) ((p)->thread.__sp)
-# define R14_sig(p) ((p)->thread.__lr)
-# define R15_sig(p) ((p)->thread.__pc)
+# define EIP_sig(p) ((p)->uc_mcontext->__ss.__eip)
+# define EBP_sig(p) ((p)->uc_mcontext->__ss.__ebp)
+# define ESP_sig(p) ((p)->uc_mcontext->__ss.__esp)
+# define RIP_sig(p) ((p)->uc_mcontext->__ss.__rip)
+# define RBP_sig(p) ((p)->uc_mcontext->__ss.__rbp)
+# define RSP_sig(p) ((p)->uc_mcontext->__ss.__rsp)
+# define R14_sig(p) ((p)->uc_mcontext->__ss.__lr)
+# define R15_sig(p) ((p)->uc_mcontext->__ss.__pc)
 #else
 # error "Don't know how to read/write to the thread state via the mcontext_t."
+#endif
+
+#if defined(XP_WIN)
+# include "util/Windows.h"
+#else
+# include <signal.h>
+# include <sys/mman.h>
+#endif
+
+#if defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
+# include <sys/ucontext.h> 
+#endif
+
+#if defined(__x86_64__)
+# if defined(__DragonFly__)
+#  include <machine/npx.h> 
+# elif defined(__FreeBSD__) || defined(__FreeBSD_kernel__) || \
+       defined(__NetBSD__) || defined(__OpenBSD__)
+#  include <machine/fpu.h> 
+# endif
 #endif
 
 #if defined(ANDROID)
@@ -363,30 +369,38 @@ enum { REG_EIP = 14 };
 # endif  
 #endif 
 
+#if !defined(XP_WIN)
+# define CONTEXT ucontext_t
+#endif
+
+
+
+
+
 #if defined(XP_DARWIN)
 # if defined(__x86_64__)
 struct macos_x64_context {
     x86_thread_state64_t thread;
     x86_float_state64_t float_;
 };
-#  define CONTEXT macos_x64_context
+#  define EMULATOR_CONTEXT macos_x64_context
 # elif defined(__i386__)
 struct macos_x86_context {
     x86_thread_state_t thread;
     x86_float_state_t float_;
 };
-#  define CONTEXT macos_x86_context
+#  define EMULATOR_CONTEXT macos_x86_context
 # elif defined(__arm__)
 struct macos_arm_context {
     arm_thread_state_t thread;
     arm_neon_state_t float_;
 };
-#  define CONTEXT macos_arm_context
+#  define EMULATOR_CONTEXT macos_arm_context
 # else
 #  error Unsupported architecture
 # endif
-#elif !defined(XP_WIN)
-# define CONTEXT ucontext_t
+#else
+# define EMULATOR_CONTEXT CONTEXT
 #endif
 
 #if defined(_M_X64) || defined(__x86_64__)
@@ -414,10 +428,14 @@ struct macos_arm_context {
 # define LR_sig(p) R31_sig(p)
 #endif
 
+#if defined(PC_sig) && defined(FP_sig) && defined(SP_sig)
+# define KNOWS_MACHINE_STATE
+#endif
+
 static uint8_t**
 ContextToPC(CONTEXT* context)
 {
-#ifdef PC_sig
+#ifdef KNOWS_MACHINE_STATE
     return reinterpret_cast<uint8_t**>(&PC_sig(context));
 #else
     MOZ_CRASH();
@@ -427,48 +445,116 @@ ContextToPC(CONTEXT* context)
 static uint8_t*
 ContextToFP(CONTEXT* context)
 {
-#ifdef FP_sig
+#ifdef KNOWS_MACHINE_STATE
     return reinterpret_cast<uint8_t*>(FP_sig(context));
 #else
     MOZ_CRASH();
 #endif
 }
 
+#ifdef KNOWS_MACHINE_STATE
 static uint8_t*
 ContextToSP(CONTEXT* context)
 {
-#ifdef SP_sig
     return reinterpret_cast<uint8_t*>(SP_sig(context));
-#else
-    MOZ_CRASH();
-#endif
 }
 
-#if defined(__arm__) || defined(__aarch64__) || defined(__mips__)
+# if defined(__arm__) || defined(__aarch64__) || defined(__mips__)
 static uint8_t*
 ContextToLR(CONTEXT* context)
 {
-# ifdef LR_sig
     return reinterpret_cast<uint8_t*>(LR_sig(context));
+}
+# endif
+#endif 
+
+#if defined(XP_DARWIN)
+
+static uint8_t**
+ContextToPC(EMULATOR_CONTEXT* context)
+{
+# if defined(__x86_64__)
+    static_assert(sizeof(context->thread.__rip) == sizeof(void*),
+                  "stored IP should be compile-time pointer-sized");
+    return reinterpret_cast<uint8_t**>(&context->thread.__rip);
+# elif defined(__i386__)
+    static_assert(sizeof(context->thread.uts.ts32.__eip) == sizeof(void*),
+                  "stored IP should be compile-time pointer-sized");
+    return reinterpret_cast<uint8_t**>(&context->thread.uts.ts32.__eip);
+# elif defined(__arm__)
+    static_assert(sizeof(context->thread.__pc) == sizeof(void*),
+                  "stored IP should be compile-time pointer-sized");
+    return reinterpret_cast<uint8_t**>(&context->thread.__pc);
 # else
-    MOZ_CRASH();
+#  error Unsupported architecture
 # endif
 }
-#endif
+
+static uint8_t*
+ContextToFP(EMULATOR_CONTEXT* context)
+{
+# if defined(__x86_64__)
+    return (uint8_t*)context->thread.__rbp;
+# elif defined(__i386__)
+    return (uint8_t*)context->thread.uts.ts32.__ebp;
+# elif defined(__arm__)
+    return (uint8_t*)context->thread.__r[11];
+# else
+#  error Unsupported architecture
+# endif
+}
+
+# if defined(__arm__) || defined(__aarch64__)
+static uint8_t*
+ContextToLR(EMULATOR_CONTEXT* context)
+{
+    return (uint8_t*)context->thread.__lr;
+}
+# endif
+
+static uint8_t*
+ContextToSP(EMULATOR_CONTEXT* context)
+{
+# if defined(__x86_64__)
+    return (uint8_t*)context->thread.__rsp;
+# elif defined(__i386__)
+    return (uint8_t*)context->thread.uts.ts32.__esp;
+# elif defined(__arm__)
+    return (uint8_t*)context->thread.__sp;
+# else
+#  error Unsupported architecture
+# endif
+}
 
 static JS::ProfilingFrameIterator::RegisterState
-ToRegisterState(CONTEXT* context)
+ToRegisterState(EMULATOR_CONTEXT* context)
 {
     JS::ProfilingFrameIterator::RegisterState state;
     state.fp = ContextToFP(context);
     state.pc = *ContextToPC(context);
     state.sp = ContextToSP(context);
-#if defined(__arm__) || defined(__aarch64__) || defined(__mips__)
+# if defined(__arm__) || defined(__aarch64__)
     state.lr = ContextToLR(context);
-#else
-    state.lr = (void*)UINTPTR_MAX;
-#endif
+# endif
     return state;
+}
+#endif 
+
+static JS::ProfilingFrameIterator::RegisterState
+ToRegisterState(CONTEXT* context)
+{
+#ifdef KNOWS_MACHINE_STATE
+    JS::ProfilingFrameIterator::RegisterState state;
+    state.fp = ContextToFP(context);
+    state.pc = *ContextToPC(context);
+    state.sp = ContextToSP(context);
+# if defined(__arm__) || defined(__aarch64__) || defined(__mips__)
+    state.lr = ContextToLR(context);
+# endif
+    return state;
+#else
+    MOZ_CRASH();
+#endif
 }
 
 #if defined(WASM_HUGE_MEMORY)
@@ -567,7 +653,7 @@ AddressOfFPRegisterSlot(CONTEXT* context, FloatRegisters::Encoding encoding)
 }
 
 MOZ_COLD static void*
-AddressOfGPRegisterSlot(CONTEXT* context, Registers::Code code)
+AddressOfGPRegisterSlot(EMULATOR_CONTEXT* context, Registers::Code code)
 {
     switch (code) {
       case X86Encoding::rax: return &RAX_sig(context);
@@ -592,7 +678,7 @@ AddressOfGPRegisterSlot(CONTEXT* context, Registers::Code code)
 }
 # else
 MOZ_COLD static void*
-AddressOfFPRegisterSlot(CONTEXT* context, FloatRegisters::Encoding encoding)
+AddressOfFPRegisterSlot(EMULATOR_CONTEXT* context, FloatRegisters::Encoding encoding)
 {
     switch (encoding) {
       case X86Encoding::xmm0:  return &context->float_.__fpu_xmm0;
@@ -617,7 +703,7 @@ AddressOfFPRegisterSlot(CONTEXT* context, FloatRegisters::Encoding encoding)
 }
 
 MOZ_COLD static void*
-AddressOfGPRegisterSlot(CONTEXT* context, Registers::Code code)
+AddressOfGPRegisterSlot(EMULATOR_CONTEXT* context, Registers::Code code)
 {
     switch (code) {
       case X86Encoding::rax: return &context->thread.__rax;
@@ -643,20 +729,20 @@ AddressOfGPRegisterSlot(CONTEXT* context, Registers::Code code)
 # endif  
 #elif defined(JS_CODEGEN_ARM64)
 MOZ_COLD static void*
-AddressOfFPRegisterSlot(CONTEXT* context, FloatRegisters::Encoding encoding)
+AddressOfFPRegisterSlot(EMULATOR_CONTEXT* context, FloatRegisters::Encoding encoding)
 {
     MOZ_CRASH("NYI - asm.js not supported yet on this platform");
 }
 
 MOZ_COLD static void*
-AddressOfGPRegisterSlot(CONTEXT* context, Registers::Code code)
+AddressOfGPRegisterSlot(EMULATOR_CONTEXT* context, Registers::Code code)
 {
     MOZ_CRASH("NYI - asm.js not supported yet on this platform");
 }
 #endif
 
 MOZ_COLD static void
-SetRegisterToCoercedUndefined(CONTEXT* context, size_t size,
+SetRegisterToCoercedUndefined(EMULATOR_CONTEXT* context, size_t size,
                               const Disassembler::OtherOperand& value)
 {
     if (value.kind() == Disassembler::OtherOperand::FPR)
@@ -666,7 +752,7 @@ SetRegisterToCoercedUndefined(CONTEXT* context, size_t size,
 }
 
 MOZ_COLD static void
-SetRegisterToLoadedValue(CONTEXT* context, SharedMem<void*> addr, size_t size,
+SetRegisterToLoadedValue(EMULATOR_CONTEXT* context, SharedMem<void*> addr, size_t size,
                          const Disassembler::OtherOperand& value)
 {
     if (value.kind() == Disassembler::OtherOperand::FPR)
@@ -676,14 +762,14 @@ SetRegisterToLoadedValue(CONTEXT* context, SharedMem<void*> addr, size_t size,
 }
 
 MOZ_COLD static void
-SetRegisterToLoadedValueSext32(CONTEXT* context, SharedMem<void*> addr, size_t size,
+SetRegisterToLoadedValueSext32(EMULATOR_CONTEXT* context, SharedMem<void*> addr, size_t size,
                                const Disassembler::OtherOperand& value)
 {
     SetGPRegToLoadedValueSext32(addr, size, AddressOfGPRegisterSlot(context, value.gpr()));
 }
 
 MOZ_COLD static void
-StoreValueFromRegister(CONTEXT* context, SharedMem<void*> addr, size_t size,
+StoreValueFromRegister(EMULATOR_CONTEXT* context, SharedMem<void*> addr, size_t size,
                        const Disassembler::OtherOperand& value)
 {
     if (value.kind() == Disassembler::OtherOperand::FPR)
@@ -695,7 +781,7 @@ StoreValueFromRegister(CONTEXT* context, SharedMem<void*> addr, size_t size,
 }
 
 MOZ_COLD static uint8_t*
-ComputeAccessAddress(CONTEXT* context, const Disassembler::ComplexAddress& address)
+ComputeAccessAddress(EMULATOR_CONTEXT* context, const Disassembler::ComplexAddress& address)
 {
     MOZ_RELEASE_ASSERT(!address.isPCRelative(), "PC-relative addresses not supported yet");
 
@@ -720,7 +806,7 @@ ComputeAccessAddress(CONTEXT* context, const Disassembler::ComplexAddress& addre
 }
 
 MOZ_COLD static void
-HandleMemoryAccess(CONTEXT* context, uint8_t* pc, uint8_t* faultingAddress,
+HandleMemoryAccess(EMULATOR_CONTEXT* context, uint8_t* pc, uint8_t* faultingAddress,
                    const ModuleSegment* segment, const Instance& instance, JitActivation* activation,
                    uint8_t** ppc)
 {
@@ -732,7 +818,7 @@ HandleMemoryAccess(CONTEXT* context, uint8_t* pc, uint8_t* faultingAddress,
         
         
         
-        activation->startWasmTrap(wasm::Trap::OutOfBounds, 0, ToRegisterState(context));
+        MOZ_ALWAYS_TRUE(activation->startWasmInterrupt(ToRegisterState(context)));
         *ppc = segment->outOfBoundsCode();
         return;
     }
@@ -876,7 +962,7 @@ HandleMemoryAccess(CONTEXT* context, uint8_t* pc, uint8_t* faultingAddress,
 #else 
 
 MOZ_COLD static void
-HandleMemoryAccess(CONTEXT* context, uint8_t* pc, uint8_t* faultingAddress,
+HandleMemoryAccess(EMULATOR_CONTEXT* context, uint8_t* pc, uint8_t* faultingAddress,
                    const ModuleSegment* segment, const Instance& instance, JitActivation* activation,
                    uint8_t** ppc)
 {
@@ -885,7 +971,7 @@ HandleMemoryAccess(CONTEXT* context, uint8_t* pc, uint8_t* faultingAddress,
     const MemoryAccess* memoryAccess = instance.code().lookupMemoryAccess(pc);
     if (!memoryAccess) {
         
-        activation->startWasmTrap(wasm::Trap::OutOfBounds, 0, ToRegisterState(context));
+        MOZ_ALWAYS_TRUE(activation->startWasmInterrupt(ToRegisterState(context)));
         *ppc = segment->outOfBoundsCode();
         return;
     }
@@ -933,8 +1019,33 @@ HandleFault(PEXCEPTION_POINTERS exception)
     MOZ_ASSERT(activation);
 
     const Instance* instance = LookupFaultingInstance(*moduleSegment, pc, ContextToFP(context));
-    if (!instance)
-        return false;
+    if (!instance) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        return activation->isWasmInterrupted() &&
+               pc == moduleSegment->interruptCode() &&
+               moduleSegment->containsCodePC(activation->wasmInterruptResumePC());
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    if (activation->isWasmInterrupted()) {
+        MOZ_ASSERT(activation->wasmInterruptResumePC() == pc);
+        activation->finishWasmInterrupt();
+    }
 
     if (record->ExceptionCode == EXCEPTION_ILLEGAL_INSTRUCTION) {
         Trap trap;
@@ -1014,7 +1125,7 @@ HandleMachException(JSContext* cx, const ExceptionRequest& request)
     mach_port_t cxThread = request.body.thread.name;
 
     
-    CONTEXT context;
+    EMULATOR_CONTEXT context;
 # if defined(__x86_64__)
     unsigned int thread_state_count = x86_THREAD_STATE64_COUNT;
     unsigned int float_state_count = x86_FLOAT_STATE64_COUNT;
@@ -1335,7 +1446,7 @@ HandleFault(int signum, siginfo_t* info, void* ctx)
         
         
         
-        activation->startWasmTrap(wasm::Trap::UnalignedAccess, 0, ToRegisterState(context));
+        MOZ_ALWAYS_TRUE(activation->startWasmInterrupt(ToRegisterState(context)));
         *ppc = moduleSegment->unalignedAccessCode();
         return true;
     }
@@ -1384,8 +1495,119 @@ WasmFaultHandler(int signum, siginfo_t* info, void* context)
 }
 # endif 
 
-#if defined(ANDROID) && defined(MOZ_LINKER)
-extern "C" MFBT_API bool IsSignalHandlingBroken();
+static void
+RedirectIonBackedgesToInterruptCheck(JSContext* cx)
+{
+    if (!cx->runtime()->hasJitRuntime())
+        return;
+    jit::JitRuntime* jitRuntime = cx->runtime()->jitRuntime();
+    Zone* zone = cx->zoneRaw();
+    if (zone && !zone->isAtomsZone()) {
+        
+        
+        
+        
+        if (!jitRuntime->preventBackedgePatching()) {
+            jit::JitZoneGroup* jzg = zone->group()->jitZoneGroup;
+            jzg->patchIonBackedges(cx, jit::JitZoneGroup::BackedgeInterruptCheck);
+        }
+    }
+}
+
+bool
+wasm::InInterruptibleCode(JSContext* cx, uint8_t* pc, const ModuleSegment** ms)
+{
+    
+    
+    
+
+    if (!cx->compartment())
+        return false;
+
+    const CodeSegment* cs = LookupCodeSegment(pc);
+    if (!cs || !cs->isModule())
+        return false;
+
+    *ms = cs->asModule();
+    return !!(*ms)->code().lookupFuncRange(pc);
+}
+
+
+
+static bool
+RedirectJitCodeToInterruptCheck(JSContext* cx, CONTEXT* context)
+{
+    
+    if (cx != cx->runtime()->activeContext())
+        return false;
+
+    
+    
+    AutoNoteSingleThreadedRegion anstr;
+
+    RedirectIonBackedgesToInterruptCheck(cx);
+
+#ifdef JS_SIMULATOR
+    uint8_t* pc = cx->simulator()->get_pc_as<uint8_t*>();
+#else
+    uint8_t* pc = *ContextToPC(context);
+#endif
+
+    const ModuleSegment* moduleSegment = nullptr;
+    if (!InInterruptibleCode(cx, pc, &moduleSegment))
+        return false;
+
+#ifdef JS_SIMULATOR
+    
+    
+    cx->simulator()->trigger_wasm_interrupt();
+#else
+    
+    
+    JitActivation* activation = cx->activation()->asJit();
+
+    
+    
+    
+    if (activation->isWasmInterrupted())
+        return false;
+
+    if (!activation->startWasmInterrupt(ToRegisterState(context)))
+        return false;
+
+    *ContextToPC(context) = moduleSegment->interruptCode();
+#endif
+
+    return true;
+}
+
+#if !defined(XP_WIN)
+
+
+
+
+
+static const int sInterruptSignal = SIGVTALRM;
+
+static void
+JitInterruptHandler(int signum, siginfo_t* info, void* context)
+{
+    if (JSContext* cx = TlsContext.get()) {
+
+#if defined(JS_SIMULATOR_ARM) || defined(JS_SIMULATOR_MIPS32) || defined(JS_SIMULATOR_MIPS64)
+        SimulatorProcess::ICacheCheckingDisableCount++;
+#endif
+
+        RedirectJitCodeToInterruptCheck(cx, (CONTEXT*)context);
+
+#if defined(JS_SIMULATOR_ARM) || defined(JS_SIMULATOR_MIPS32) || defined(JS_SIMULATOR_MIPS64)
+        SimulatorProcess::cacheInvalidatedBySignalHandler_ = true;
+        SimulatorProcess::ICacheCheckingDisableCount--;
+#endif
+
+        cx->finishHandlingJitInterrupt();
+    }
+}
 #endif
 
 static bool sTriedInstallSignalHandlers = false;
@@ -1399,35 +1621,73 @@ ProcessHasSignalHandlers()
         return sHaveSignalHandlers;
     sTriedInstallSignalHandlers = true;
 
-#if defined(ANDROID) && defined(MOZ_LINKER)
+#if defined(ANDROID)
+# if !defined(__aarch64__)
+    
+    
+    
+    
+    
+    char version_string[PROP_VALUE_MAX];
+    PodArrayZero(version_string);
+    if (__system_property_get("ro.build.version.sdk", version_string) > 0) {
+        if (atol(version_string) < 19)
+            return false;
+    }
+# endif
+# if defined(MOZ_LINKER)
     
     if (IsSignalHandlingBroken())
         return false;
+# endif
 #endif
+
+    
+    
+#if defined(XP_WIN)
+    
+#else
+    struct sigaction interruptHandler;
+    interruptHandler.sa_flags = SA_SIGINFO;
+    interruptHandler.sa_sigaction = &JitInterruptHandler;
+    sigemptyset(&interruptHandler.sa_mask);
+    struct sigaction prev;
+    if (sigaction(sInterruptSignal, &interruptHandler, &prev))
+        MOZ_CRASH("unable to install interrupt handler");
+
+    
+    
+    
+    if ((prev.sa_flags & SA_SIGINFO && prev.sa_sigaction) ||
+        (prev.sa_handler != SIG_DFL && prev.sa_handler != SIG_IGN))
+    {
+        MOZ_CRASH("contention for interrupt signal");
+    }
+#endif 
 
     
     sAlreadyInSignalHandler.infallibleInit();
 
     
     
-#if defined(XP_WIN)
-# if defined(MOZ_ASAN)
+# if defined(XP_WIN)
+#  if defined(MOZ_ASAN)
     
     
     
     const bool firstHandler = false;
-# else
+#  else
     
     
     
     const bool firstHandler = true;
-# endif
+#  endif
     if (!AddVectoredExceptionHandler(firstHandler, WasmFaultHandler))
         return false;
-#elif defined(XP_DARWIN)
+# elif defined(XP_DARWIN)
     
     
-#else
+# else
     
     
     
@@ -1440,7 +1700,7 @@ ProcessHasSignalHandlers()
     if (sigaction(SIGSEGV, &faultHandler, &sPrevSEGVHandler))
         MOZ_CRASH("unable to install segv handler");
 
-# if defined(JS_CODEGEN_ARM)
+#  if defined(JS_CODEGEN_ARM)
     
     struct sigaction busHandler;
     busHandler.sa_flags = SA_SIGINFO | SA_NODEFER | SA_ONSTACK;
@@ -1448,7 +1708,7 @@ ProcessHasSignalHandlers()
     sigemptyset(&busHandler.sa_mask);
     if (sigaction(SIGBUS, &busHandler, &sPrevSIGBUSHandler))
         MOZ_CRASH("unable to install sigbus handler");
-# endif
+#  endif
 
     
     
@@ -1458,7 +1718,7 @@ ProcessHasSignalHandlers()
     sigemptyset(&wasmTrapHandler.sa_mask);
     if (sigaction(kWasmTrapSignal, &wasmTrapHandler, &sPrevWasmTrapHandler))
         MOZ_CRASH("unable to install wasm trap handler");
-#endif
+# endif
 
     sHaveSignalHandlers = true;
     return true;
@@ -1485,4 +1745,62 @@ wasm::HaveSignalHandlers()
 {
     MOZ_ASSERT(sTriedInstallSignalHandlers);
     return sHaveSignalHandlers;
+}
+
+
+
+
+
+
+
+
+
+
+void
+js::InterruptRunningJitCode(JSContext* cx)
+{
+    
+    
+    if (!HaveSignalHandlers())
+        return;
+
+    
+    
+    if (!cx->startHandlingJitInterrupt())
+        return;
+
+    
+    
+    
+    if (cx == TlsContext.get()) {
+        RedirectIonBackedgesToInterruptCheck(cx);
+        cx->finishHandlingJitInterrupt();
+        return;
+    }
+
+    
+    
+#if defined(XP_WIN)
+    
+    
+    
+    
+    HANDLE thread = (HANDLE)cx->threadNative();
+    if (SuspendThread(thread) != (DWORD)-1) {
+        CONTEXT context;
+        context.ContextFlags = CONTEXT_FULL;
+        if (GetThreadContext(thread, &context)) {
+            if (RedirectJitCodeToInterruptCheck(cx, &context))
+                SetThreadContext(thread, &context);
+        }
+        ResumeThread(thread);
+    }
+    cx->finishHandlingJitInterrupt();
+#else
+    
+    
+    
+    pthread_t thread = (pthread_t)cx->threadNative();
+    pthread_kill(thread, sInterruptSignal);
+#endif
 }

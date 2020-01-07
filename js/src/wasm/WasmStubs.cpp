@@ -1130,6 +1130,8 @@ GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi, Label* throwLa
     
     
     
+    
+    
 
     
     
@@ -1358,26 +1360,6 @@ wasm::GenerateBuiltinThunk(MacroAssembler& masm, ABIFunctionType abiType, ExitRe
     return FinishOffsets(masm, offsets);
 }
 
-#if defined(JS_CODEGEN_ARM)
-static const LiveRegisterSet RegsToPreserve(
-    GeneralRegisterSet(Registers::AllMask & ~((uint32_t(1) << Registers::sp) |
-                                              (uint32_t(1) << Registers::pc))),
-    FloatRegisterSet(FloatRegisters::AllDoubleMask));
-static_assert(!SupportsSimd, "high lanes of SIMD registers need to be saved too.");
-#elif defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
-static const LiveRegisterSet RegsToPreserve(
-    GeneralRegisterSet(Registers::AllMask & ~((uint32_t(1) << Registers::k0) |
-                                              (uint32_t(1) << Registers::k1) |
-                                              (uint32_t(1) << Registers::sp) |
-                                              (uint32_t(1) << Registers::zero))),
-    FloatRegisterSet(FloatRegisters::AllDoubleMask));
-static_assert(!SupportsSimd, "high lanes of SIMD registers need to be saved too.");
-#else
-static const LiveRegisterSet RegsToPreserve(
-    GeneralRegisterSet(Registers::AllMask & ~(uint32_t(1) << Registers::StackPointer)),
-    FloatRegisterSet(FloatRegisters::AllMask));
-#endif
-
 
 
 static bool
@@ -1389,35 +1371,14 @@ GenerateTrapExit(MacroAssembler& masm, Label* throwLabel, Offsets* offsets)
 
     
     
-    
-    
-    
-    masm.push(ImmWord(0));
-    masm.setFramePushed(0);
-    masm.PushRegsInMask(RegsToPreserve);
-
-    
-    
-    Register preAlignStackPointer = ABINonVolatileReg;
-    masm.moveStackPtrTo(preAlignStackPointer);
     masm.andToStackPtr(Imm32(~(ABIStackAlignment - 1)));
     if (ShadowStackSpace)
         masm.subFromStackPtr(Imm32(ShadowStackSpace));
 
     masm.assertStackAlignment(ABIStackAlignment);
-    masm.call(SymbolicAddress::OnTrap);
+    masm.call(SymbolicAddress::ReportTrap);
 
-    
-    masm.branchTestPtr(Assembler::Zero, ReturnReg, ReturnReg, throwLabel);
-
-    
-    
-    
-    
-    masm.moveToStackPtr(preAlignStackPointer);
-    masm.storePtr(ReturnReg, Address(masm.getStackPointer(), masm.framePushed()));
-    masm.PopRegsInMask(RegsToPreserve);
-    masm.ret();
+    masm.jump(throwLabel);
 
     return FinishOffsets(masm, offsets);
 }
@@ -1501,6 +1462,184 @@ GenerateUnalignedExit(MacroAssembler& masm, Label* throwLabel, Offsets* offsets)
                                            offsets);
 }
 
+#if defined(JS_CODEGEN_ARM)
+static const LiveRegisterSet AllRegsExceptPCSP(
+    GeneralRegisterSet(Registers::AllMask & ~((uint32_t(1) << Registers::sp) |
+                                              (uint32_t(1) << Registers::pc))),
+    FloatRegisterSet(FloatRegisters::AllDoubleMask));
+static_assert(!SupportsSimd, "high lanes of SIMD registers need to be saved too.");
+#elif defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
+static const LiveRegisterSet AllUserRegsExceptSP(
+    GeneralRegisterSet(Registers::AllMask & ~((uint32_t(1) << Registers::k0) |
+                                              (uint32_t(1) << Registers::k1) |
+                                              (uint32_t(1) << Registers::sp) |
+                                              (uint32_t(1) << Registers::zero))),
+    FloatRegisterSet(FloatRegisters::AllDoubleMask));
+static_assert(!SupportsSimd, "high lanes of SIMD registers need to be saved too.");
+#else
+static const LiveRegisterSet AllRegsExceptSP(
+    GeneralRegisterSet(Registers::AllMask & ~(uint32_t(1) << Registers::StackPointer)),
+    FloatRegisterSet(FloatRegisters::AllMask));
+#endif
+
+
+
+
+
+
+
+
+static bool
+GenerateInterruptExit(MacroAssembler& masm, Label* throwLabel, Offsets* offsets)
+{
+    masm.haltingAlign(CodeAlignment);
+
+    offsets->begin = masm.currentOffset();
+
+#if defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64)
+    
+    
+    
+    masm.push(Imm32(0));            
+    masm.setFramePushed(0);         
+    masm.PushFlags();               
+    masm.PushRegsInMask(AllRegsExceptSP); 
+
+    
+    
+    masm.moveStackPtrTo(ABINonVolatileReg);
+    masm.andToStackPtr(Imm32(~(ABIStackAlignment - 1)));
+    if (ShadowStackSpace)
+        masm.subFromStackPtr(Imm32(ShadowStackSpace));
+
+    
+    masm.assertStackAlignment(ABIStackAlignment);
+    masm.call(SymbolicAddress::HandleExecutionInterrupt);
+
+    
+    
+    masm.branchTestPtr(Assembler::Zero, ReturnReg, ReturnReg, throwLabel);
+
+    
+    
+    masm.moveToStackPtr(ABINonVolatileReg);
+    masm.storePtr(ReturnReg, Address(StackPointer, masm.framePushed()));
+
+    
+    
+    masm.PopRegsInMask(AllRegsExceptSP);
+    masm.PopFlags();
+
+    
+    MOZ_ASSERT(masm.framePushed() == 0);
+    masm.ret();
+#elif defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
+    
+    masm.subFromStackPtr(Imm32(2 * sizeof(intptr_t)));
+    
+    masm.setFramePushed(0);
+
+    
+    masm.PushRegsInMask(AllUserRegsExceptSP);
+
+    
+    masm.moveStackPtrTo(s0);
+    masm.as_cfc1(s1, Assembler::FCSR);
+
+    
+    masm.ma_and(StackPointer, StackPointer, Imm32(~(ABIStackAlignment - 1)));
+
+    
+    masm.storePtr(HeapReg, Address(s0, masm.framePushed() + sizeof(intptr_t)));
+
+# ifdef USES_O32_ABI
+    
+    masm.subFromStackPtr(Imm32(4 * sizeof(intptr_t)));
+# endif
+
+    masm.assertStackAlignment(ABIStackAlignment);
+    masm.call(SymbolicAddress::HandleExecutionInterrupt);
+
+    masm.branchTestPtr(Assembler::Zero, ReturnReg, ReturnReg, throwLabel);
+
+    
+    masm.moveToStackPtr(s0);
+
+    
+    masm.as_ctc1(s1, Assembler::FCSR);
+
+    
+    masm.storePtr(ReturnReg, Address(s0, masm.framePushed()));
+
+    masm.PopRegsInMask(AllUserRegsExceptSP);
+
+    
+    
+    masm.loadPtr(Address(StackPointer, 0), HeapReg);
+    
+    masm.addToStackPtr(Imm32(2 * sizeof(intptr_t)));
+    masm.as_jr(HeapReg);
+    masm.loadPtr(Address(StackPointer, -int32_t(sizeof(intptr_t))), HeapReg);
+#elif defined(JS_CODEGEN_ARM)
+    {
+        
+        ScratchRegisterScope scratch(masm);
+        SecondScratchRegisterScope secondScratch(masm);
+
+        
+        masm.as_alu(StackPointer, StackPointer, Imm8(4), OpSub);
+
+        
+        
+        masm.setFramePushed(0);
+
+        
+        masm.PushRegsInMask(AllRegsExceptPCSP);
+    }
+
+    
+    masm.as_mrs(r4);
+    masm.as_vmrs(r5);
+    masm.mov(sp, r6);
+
+    
+    
+    masm.andToStackPtr(Imm32(~(ABIStackAlignment - 1)));
+
+    
+    masm.assertStackAlignment(ABIStackAlignment);
+    masm.call(SymbolicAddress::HandleExecutionInterrupt);
+
+    
+    
+    masm.branchTestPtr(Assembler::Zero, ReturnReg, ReturnReg, throwLabel);
+
+    
+    
+    masm.mov(r6, sp);
+    masm.storePtr(ReturnReg, Address(sp, masm.framePushed()));
+
+    
+    
+    masm.as_vmsr(r5);
+    masm.as_msr(r4);
+    masm.PopRegsInMask(AllRegsExceptPCSP);
+
+    
+    MOZ_ASSERT(masm.framePushed() == 0);
+    masm.ret();
+#elif defined(JS_CODEGEN_ARM64)
+    MOZ_CRASH();
+#elif defined (JS_CODEGEN_NONE)
+    MOZ_CRASH();
+#else
+# error "Unknown architecture!"
+#endif
+
+    return FinishOffsets(masm, offsets);
+}
+
+
 
 
 
@@ -1514,6 +1653,7 @@ GenerateThrowStub(MacroAssembler& masm, Label* throwLabel, Offsets* offsets)
 
     offsets->begin = masm.currentOffset();
 
+    
     
     
     masm.andToStackPtr(Imm32(~(ABIStackAlignment - 1)));
@@ -1659,7 +1799,6 @@ wasm::GenerateStubs(const ModuleEnvironment& env, const FuncImportVector& import
           case Trap::IndirectCallBadSig:
           case Trap::ImpreciseSimdConversion:
           case Trap::StackOverflow:
-          case Trap::CheckInterrupt:
           case Trap::ThrowReported:
             break;
           
@@ -1696,11 +1835,18 @@ wasm::GenerateStubs(const ModuleEnvironment& env, const FuncImportVector& import
     if (!code->codeRanges.emplaceBack(CodeRange::TrapExit, offsets))
         return false;
 
-    CallableOffsets callableOffsets;
-    if (!GenerateDebugTrapStub(masm, &throwLabel, &callableOffsets))
+    if (!GenerateInterruptExit(masm, &throwLabel, &offsets))
         return false;
-    if (!code->codeRanges.emplaceBack(CodeRange::DebugTrap, callableOffsets))
+    if (!code->codeRanges.emplaceBack(CodeRange::Interrupt, offsets))
         return false;
+
+    {
+        CallableOffsets offsets;
+        if (!GenerateDebugTrapStub(masm, &throwLabel, &offsets))
+            return false;
+        if (!code->codeRanges.emplaceBack(CodeRange::DebugTrap, offsets))
+            return false;
+    }
 
     if (!GenerateThrowStub(masm, &throwLabel, &offsets))
         return false;

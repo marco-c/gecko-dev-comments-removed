@@ -30,6 +30,11 @@
 #include "wasm/WasmTypes.h"
 
 namespace js {
+
+
+extern void
+InterruptRunningJitCode(JSContext* cx);
+
 namespace wasm {
 
 
@@ -42,6 +47,13 @@ EnsureSignalHandlers(JSContext* cx);
 
 bool
 HaveSignalHandlers();
+
+class ModuleSegment;
+
+
+
+bool
+InInterruptibleCode(JSContext* cx, uint8_t* pc, const ModuleSegment** ms);
 
 #if defined(XP_DARWIN)
 
@@ -69,12 +81,31 @@ class MachExceptionHandler
 
 
 
+
+
+struct InterruptData
+{
+    
+    
+    void* unwindPC;
+
+    
+    void* resumePC;
+
+    InterruptData(void* unwindPC, void* resumePC)
+      : unwindPC(unwindPC), resumePC(resumePC)
+    {}
+};
+
 struct TrapData
 {
-    void* resumePC;
-    void* unwoundPC;
+    void* pc;
     Trap trap;
     uint32_t bytecodeOffset;
+
+    TrapData(void* pc, Trap trap, uint32_t bytecodeOffset)
+      : pc(pc), trap(trap), bytecodeOffset(bytecodeOffset)
+    {}
 };
 
 } 
