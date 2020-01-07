@@ -679,18 +679,6 @@ public:
   
 
   
-  
-  
-  
-  nsresult OpenAudioInput(int aID,
-                          AudioDataListener *aListener);
-  
-  void CloseAudioInput();
-
-  void DestroyImpl() override;
-
-  
-  
 
 
 
@@ -699,6 +687,19 @@ public:
 
   void SetPullEnabled(bool aEnabled);
 
+  
+  
+  
+  
+  nsresult OpenAudioInput(int aID,
+                          AudioDataListener *aListener);
+  
+  void CloseAudioInput();
+
+  
+  void DestroyImpl() override;
+
+  
   
 
 
