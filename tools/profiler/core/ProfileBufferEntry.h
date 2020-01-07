@@ -216,30 +216,6 @@ struct JITFrameInfo final
 class UniqueStacks
 {
 public:
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  struct JITAddress
-  {
-    void* mAddress;
-    uint32_t mStreamingGen;
-
-    uint32_t Hash() const;
-    bool operator==(const JITAddress& aRhs) const
-    {
-      return mAddress == aRhs.mAddress && mStreamingGen == aRhs.mStreamingGen;
-    }
-    bool operator!=(const JITAddress& aRhs) const { return !(*this == aRhs); }
-  };
-
   struct FrameKey {
     explicit FrameKey(const char* aLocation)
       : mData(NormalFrameData{
@@ -253,8 +229,8 @@ public:
     {
     }
 
-    FrameKey(const JITAddress& aJITAddress, uint32_t aJITDepth)
-      : mData(JITFrameData{ aJITAddress, aJITDepth })
+    FrameKey(void* aJITAddress, uint32_t aJITDepth, uint32_t aRangeIndex)
+      : mData(JITFrameData{ aJITAddress, aJITDepth, aRangeIndex })
     {
     }
 
@@ -273,8 +249,9 @@ public:
     struct JITFrameData {
       bool operator==(const JITFrameData& aOther) const;
 
-      JITAddress mAddress;
+      void* mCanonicalAddress;
       uint32_t mDepth;
+      uint32_t mRangeIndex;
     };
     mozilla::Variant<NormalFrameData, JITFrameData> mData;
   };
@@ -306,13 +283,7 @@ public:
     uint32_t mHash;
   };
 
-  explicit UniqueStacks();
-
-  
-  
-  
-  void AdvanceStreamingGeneration() { mStreamingGeneration++; }
-  uint32_t CurrentGen() { return mStreamingGeneration; }
+  explicit UniqueStacks(JITFrameInfo&& aJITFrameInfo);
 
   
   MOZ_MUST_USE StackKey BeginStack(const FrameKey& aFrame);
@@ -321,9 +292,14 @@ public:
   MOZ_MUST_USE StackKey AppendFrame(const StackKey& aStack,
                                     const FrameKey& aFrame);
 
-  MOZ_MUST_USE nsTArray<FrameKey>
-  GetOrAddJITFrameKeysForAddress(JSContext* aContext,
-                                 const JITAddress& aJITAddress);
+  
+  
+  
+  
+  
+  MOZ_MUST_USE mozilla::Maybe<nsTArray<UniqueStacks::FrameKey>>
+  LookupFramesForJITAddressFromBufferPos(void* aJITAddress,
+                                         uint64_t aBufferPosition);
 
   MOZ_MUST_USE uint32_t GetOrAddFrameIndex(const FrameKey& aFrame);
   MOZ_MUST_USE uint32_t GetOrAddStackIndex(const StackKey& aStack);
@@ -332,35 +308,20 @@ public:
   void SpliceStackTableElements(SpliceableJSONWriter& aWriter);
 
 private:
-  
-  
-  void MaybeAddJITFrameIndex(JSContext* aContext,
-                             const FrameKey& aFrame,
-                             const JS::ProfiledFrameHandle& aJITFrame);
-
   void StreamNonJITFrame(const FrameKey& aFrame);
-  void StreamJITFrame(JSContext* aContext,
-                      const JS::ProfiledFrameHandle& aJITFrame);
   void StreamStack(const StackKey& aStack);
 
 public:
   mozilla::UniquePtr<UniqueJSONStrings> mUniqueStrings;
 
 private:
-  
-  
-  
-  nsClassHashtable<nsGenericHashKey<JITAddress>, nsTArray<FrameKey>> mAddressToJITFrameKeysMap;
-
   SpliceableChunkedJSONWriter mFrameTableWriter;
   nsDataHashtable<nsGenericHashKey<FrameKey>, uint32_t> mFrameToIndexMap;
 
   SpliceableChunkedJSONWriter mStackTableWriter;
   nsDataHashtable<nsGenericHashKey<StackKey>, uint32_t> mStackToIndexMap;
 
-  
-  
-  uint32_t mStreamingGeneration;
+  nsTArray<JITFrameInfoForBufferRange> mJITInfoRanges;
 };
 
 

@@ -57,9 +57,18 @@ public:
                           int aThreadId, JSContext* aContext,
                           JITFrameInfo& aJITFrameInfo) const;
 
+  
+  
+  
+  
+  
+  
+  
+  
   bool StreamSamplesToJSON(SpliceableJSONWriter& aWriter, int aThreadId,
                            double aSinceTime, JSContext* cx,
                            UniqueStacks& aUniqueStacks) const;
+
   bool StreamMarkersToJSON(SpliceableJSONWriter& aWriter, int aThreadId,
                            const mozilla::TimeStamp& aProcessStartTime,
                            double aSinceTime,
