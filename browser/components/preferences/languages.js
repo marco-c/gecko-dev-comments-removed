@@ -149,6 +149,10 @@ var gLanguagesDialog = {
       this._activeLanguages.selectedIndex = selectedIndex;
     }
 
+    
+    
+    this.readSpoofEnglish();
+
     return undefined;
   },
 
@@ -157,8 +161,10 @@ var gLanguagesDialog = {
   },
 
   onAvailableLanguageSelect() {
+    var availableLanguages = this._availableLanguages;
     var addButton = document.getElementById("addButton");
-    addButton.disabled = false;
+    addButton.disabled = availableLanguages.disabled ||
+                         availableLanguages.selectedIndex < 0;
 
     this._availableLanguages.removeAttribute("accesskey");
   },
@@ -291,6 +297,40 @@ var gLanguagesDialog = {
       downButton.disabled = true;
       removeButton.disabled = false;
     }
+  },
+
+  readSpoofEnglish() {
+    var checkbox = document.getElementById("spoofEnglish");
+    var resistFingerprinting = Services.prefs.getBoolPref("privacy.resistFingerprinting");
+    if (!resistFingerprinting) {
+      checkbox.hidden = true;
+      return false;
+    }
+
+    var spoofEnglish = document.getElementById("privacy.spoof_english").value;
+    var activeLanguages = this._activeLanguages;
+    var availableLanguages = this._availableLanguages;
+    checkbox.hidden = false;
+    switch (spoofEnglish) {
+    case 1: 
+      activeLanguages.disabled = false;
+      activeLanguages.selectItem(activeLanguages.firstChild);
+      availableLanguages.disabled = false;
+      this.onAvailableLanguageSelect();
+      return false;
+    case 2: 
+      activeLanguages.clearSelection();
+      activeLanguages.disabled = true;
+      availableLanguages.disabled = true;
+      this.onAvailableLanguageSelect();
+      return true;
+    default: 
+      return false;
+    }
+  },
+
+  writeSpoofEnglish() {
+    return document.getElementById("spoofEnglish").checked ? 2 : 1;
   }
 };
 
