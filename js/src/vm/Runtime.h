@@ -643,9 +643,6 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
     js::ActiveThreadData<char*> defaultLocale;
 
     
-    js::ActiveThreadData<JSVersion> defaultVersion_;
-
-    
     js::ActiveThreadOrIonCompileData<bool> profilingScripts;
 
     
@@ -740,9 +737,6 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
 
     
     const char* getDefaultLocale();
-
-    JSVersion defaultVersion() const { return defaultVersion_; }
-    void setDefaultVersion(JSVersion v) { defaultVersion_ = v; }
 
     
     js::gc::GCRuntime   gc;

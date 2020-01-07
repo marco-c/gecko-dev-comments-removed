@@ -155,10 +155,6 @@ class JSAPITest
         return jsvalToSource(val);
     }
 
-    JSAPITestString toSource(JSVersion v) {
-        return JSAPITestString(JS_VersionToString(v));
-    }
-
     
     
     
