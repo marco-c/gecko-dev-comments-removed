@@ -1118,20 +1118,20 @@ nsTreeSanitizer::SanitizeStyleSheet(const nsAString& aOriginal,
     mozilla::css::Rule* rule = rules->Item(i);
     if (!rule)
       continue;
-    switch (rule->Type()) {
+    switch (rule->GetType()) {
       default:
         didSanitize = true;
         
         break;
-      case CSSRuleBinding::NAMESPACE_RULE:
-      case CSSRuleBinding::FONT_FACE_RULE: {
+      case mozilla::css::Rule::NAMESPACE_RULE:
+      case mozilla::css::Rule::FONT_FACE_RULE: {
         
         nsAutoString cssText;
         rule->GetCssText(cssText);
         aSanitized.Append(cssText);
         break;
       }
-      case CSSRuleBinding::STYLE_RULE: {
+      case mozilla::css::Rule::STYLE_RULE: {
         
         
         auto styleRule = static_cast<BindingStyleRule*>(rule);
@@ -1586,7 +1586,7 @@ nsTreeSanitizer::InitializeStatics()
     sAttributesMathML->PutEntry(*kAttributesMathML[i]);
   }
 
-  nsCOMPtr<nsIPrincipal> principal = NullPrincipal::Create();
+  nsCOMPtr<nsIPrincipal> principal = NullPrincipal::CreateWithoutOriginAttributes();
   principal.forget(&sNullPrincipal);
 }
 

@@ -1379,7 +1379,7 @@ private:
       MOZ_ASSERT(xpc, "This should never be null!");
 
       
-      nsCOMPtr<nsIPrincipal> principal = NullPrincipal::Create();
+      nsCOMPtr<nsIPrincipal> principal = NullPrincipal::CreateWithoutOriginAttributes();
 
       JS::Rooted<JSObject*> sandbox(aCx);
       nsresult rv = xpc->CreateSandbox(aCx, principal, sandbox.address());

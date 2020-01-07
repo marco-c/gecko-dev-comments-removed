@@ -66,6 +66,12 @@ NullPrincipal::Create(const OriginAttributes& aOriginAttributes, nsIURI* aURI)
   return nullPrin.forget();
 }
 
+ already_AddRefed<NullPrincipal>
+NullPrincipal::CreateWithoutOriginAttributes()
+{
+  return NullPrincipal::Create(mozilla::OriginAttributes(), nullptr);
+}
+
 nsresult
 NullPrincipal::Init(const OriginAttributes& aOriginAttributes, nsIURI* aURI)
 {

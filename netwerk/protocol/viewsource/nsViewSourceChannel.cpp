@@ -67,7 +67,7 @@ nsViewSourceChannel::Init(nsIURI* uri)
     
     
     
-    nsCOMPtr<nsIPrincipal> nullPrincipal = NullPrincipal::Create();
+    nsCOMPtr<nsIPrincipal> nullPrincipal = NullPrincipal::CreateWithoutOriginAttributes();
 
     rv = pService->NewChannel2(path,
                                nullptr, 

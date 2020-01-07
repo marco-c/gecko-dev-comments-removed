@@ -911,7 +911,7 @@ nsContentTreeOwner::ProvideWindow(mozIDOMWindowProxy* aParent,
     
     
     
-    RefPtr<NullPrincipal> nullPrincipal = NullPrincipal::Create();
+    RefPtr<NullPrincipal> nullPrincipal = NullPrincipal::CreateWithoutOriginAttributes();
     return browserDOMWin->CreateContentWindow(aURI, aParent, openLocation,
                                               flags, nullPrincipal, aReturn);
   }
