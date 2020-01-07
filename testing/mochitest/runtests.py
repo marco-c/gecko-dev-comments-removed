@@ -851,7 +851,6 @@ class MochitestDesktop(object):
     mediaDevices = None
 
     patternFiles = {}
-    base_profiles = ('common',)
 
     
     
@@ -1851,12 +1850,15 @@ toolbar#nav-bar {
             if os.path.isdir(path):
                 profile_data_dir = path
 
+        with open(os.path.join(profile_data_dir, 'profiles.json'), 'r') as fh:
+            base_profiles = json.load(fh)['mochitest']
+
         
         interpolation = {
             "server": "%s:%s" % (options.webServer, options.httpPort),
         }
 
-        for profile in self.base_profiles:
+        for profile in base_profiles:
             path = os.path.join(profile_data_dir, profile)
             self.profile.merge(path, interpolation=interpolation)
 
