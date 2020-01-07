@@ -91,8 +91,9 @@ public:
 };
 
 
-::std::ostream& operator<<(::std::ostream& aOstream,
-                           const MockAccessibleCaretEventHub::State* aState)
+static ::std::ostream&
+operator<<(::std::ostream& aOstream,
+           const MockAccessibleCaretEventHub::State* aState)
 {
   return aOstream << aState->Name();
 }

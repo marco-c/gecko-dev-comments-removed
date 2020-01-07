@@ -2898,7 +2898,8 @@ struct FramesWithDepth
 };
 
 
-void FlushFramesArray(nsTArray<FramesWithDepth>& aSource, nsTArray<nsIFrame*>* aDest)
+static void
+FlushFramesArray(nsTArray<FramesWithDepth>& aSource, nsTArray<nsIFrame*>* aDest)
 {
   if (aSource.IsEmpty()) {
     return;
@@ -3607,7 +3608,7 @@ static nsIFrame* GetBackgroundStyleContextFrame(nsIFrame* aFrame)
   return f;
 }
 
- void
+static void
 SetBackgroundClipRegion(DisplayListClipState::AutoSaveRestore& aClipState,
                         nsIFrame* aFrame, const nsPoint& aToReferenceFrame,
                         const nsStyleImageLayers::Layer& aLayer,

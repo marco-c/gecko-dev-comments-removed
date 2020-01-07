@@ -871,7 +871,7 @@ GetBrowserRoot(nsIContent* aContent)
 
 
 
-void
+static void
 GetScrollableOverflowForPerspective(nsIFrame* aScrolledFrame,
                                     nsIFrame* aCurrentFrame,
                                     const nsRect aScrollPort,
@@ -2531,7 +2531,7 @@ bool ScrollFrameHelper::IsAlwaysActive() const
           styles.mVertical != NS_STYLE_OVERFLOW_HIDDEN);
 }
 
- void
+static void
 RemoveDisplayPortCallback(nsITimer* aTimer, void* aClosure)
 {
   ScrollFrameHelper* helper = static_cast<ScrollFrameHelper*>(aClosure);
@@ -6315,7 +6315,7 @@ nsIScrollableFrame::GetPerceivedScrollingDirections() const
 
 
 
-void
+static void
 CollectScrollSnapCoordinates(nsIFrame* aFrame, nsIFrame* aScrolledFrame,
                              nsTArray<nsPoint>& aOutCoords)
 {
@@ -6356,7 +6356,7 @@ CollectScrollSnapCoordinates(nsIFrame* aFrame, nsIFrame* aScrolledFrame,
   }
 }
 
-layers::ScrollSnapInfo
+static layers::ScrollSnapInfo
 ComputeScrollSnapInfo(const ScrollFrameHelper& aScrollFrame)
 {
   ScrollSnapInfo result;

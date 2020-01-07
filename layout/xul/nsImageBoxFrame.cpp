@@ -106,8 +106,7 @@ nsImageBoxFrameEvent::Run()
 
 
 
-
-void
+static void
 FireImageDOMEvent(nsIContent* aContent, EventMessage aMessage)
 {
   NS_ASSERTION(aMessage == eLoad || aMessage == eLoadError,

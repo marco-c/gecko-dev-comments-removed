@@ -1927,7 +1927,7 @@ nsBoxFrame::AppendDirectlyOwnedAnonBoxes(nsTArray<OwnedAnonBox>& aResult)
 
 
 
-bool
+static bool
 IsBoxOrdinalLEQ(nsIFrame* aFrame1,
                 nsIFrame* aFrame2)
 {

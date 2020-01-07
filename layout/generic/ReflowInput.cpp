@@ -1979,7 +1979,7 @@ ReflowInput::InitAbsoluteConstraints(nsPresContext* aPresContext,
 
 
 
-nscoord
+static nscoord
 GetBlockMarginBorderPadding(const ReflowInput* aReflowInput)
 {
   nscoord result = 0;

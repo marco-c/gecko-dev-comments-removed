@@ -850,7 +850,7 @@ GetFrameForChildrenOnlyTransformHint(nsIFrame* aFrame)
 
 
 
-bool
+static bool
 RecomputePosition(nsIFrame* aFrame)
 {
   

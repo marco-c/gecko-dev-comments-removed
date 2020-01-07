@@ -246,7 +246,7 @@ NS_IMPL_ISUPPORTS(nsMathMLmactionFrame::MouseListener,
 
 
 
-void
+static void
 ShowStatus(nsPresContext* aPresContext, nsString& aStatusMsg)
 {
   nsCOMPtr<nsIDocShellTreeItem> docShellItem(aPresContext->GetDocShell());

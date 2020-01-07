@@ -265,8 +265,7 @@ static bool gInitialized = false;
 
 
 
-
-nsresult
+static nsresult
 Initialize()
 {
   if (gInitialized) {
