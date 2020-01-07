@@ -11,10 +11,8 @@ ChromeUtils.import("resource://testing-common/EnterprisePolicyTesting.jsm");
 
 
 Services.prefs.setBoolPref(PREF_DISABLE_SECURITY, true);
-Services.prefs.setBoolPref("browser.policies.enabled", true);
 registerCleanupFunction(() => {
   Services.prefs.clearUserPref(PREF_DISABLE_SECURITY);
-  Services.prefs.clearUserPref("browser.policies.enabled");
 });
 
 Services.policies; 

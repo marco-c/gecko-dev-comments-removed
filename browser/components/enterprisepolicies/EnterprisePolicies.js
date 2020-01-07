@@ -27,10 +27,6 @@ const PREF_ALTERNATE_PATH     = "browser.policies.alternatePath";
 const MAGIC_TEST_ROOT_PREFIX  = "<test-root>";
 const PREF_TEST_ROOT          = "mochitest.testRoot";
 
-
-
-
-const PREF_ENABLED            = "browser.policies.enabled";
 const PREF_LOGLEVEL           = "browser.policies.loglevel";
 
 
@@ -81,11 +77,6 @@ EnterprisePoliciesManager.prototype = {
   _xpcom_factory: EnterprisePoliciesFactory,
 
   _initialize() {
-    if (!Services.prefs.getBoolPref(PREF_ENABLED, false)) {
-      this.status = Ci.nsIEnterprisePolicies.INACTIVE;
-      return;
-    }
-
     let provider = this._chooseProvider();
 
     if (!provider) {
