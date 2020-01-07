@@ -31,7 +31,7 @@ addEventListener("load", function() {
       dumpLog("__startTimestamp" +
               Date.now() + 
               "__endTimestamp\n\n");
-      goQuitApplication();
+      TalosPowersContent.goQuitApplication();
   });
 
   
