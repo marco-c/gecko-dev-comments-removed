@@ -617,8 +617,6 @@ TextEditor::ExtendSelectionForDelete(Selection* aSelection,
       }
       case eToBeginningOfLine: {
         
-        selCont->IntraLineMove(true, false);
-        
         nsresult rv = selCont->IntraLineMove(false, true);
         *aAction = eNone;
         if (NS_WARN_IF(NS_FAILED(rv))) {
