@@ -138,7 +138,7 @@ pub struct Fragment {
     pub restyle_damage: RestyleDamage,
 
     
-    pub pseudo: PseudoElementType<()>,
+    pub pseudo: PseudoElementType,
 
     
     pub flags: FragmentFlags,
@@ -622,7 +622,7 @@ impl Fragment {
             margin: LogicalMargin::zero(writing_mode),
             specific: specific,
             inline_context: None,
-            pseudo: node.get_pseudo_element_type().strip(),
+            pseudo: node.get_pseudo_element_type(),
             flags: FragmentFlags::empty(),
             debug_id: DebugId::new(),
             stacking_context_id: StackingContextId::root(),
@@ -631,7 +631,7 @@ impl Fragment {
 
     
     pub fn from_opaque_node_and_style(node: OpaqueNode,
-                                      pseudo: PseudoElementType<()>,
+                                      pseudo: PseudoElementType,
                                       style: ServoArc<ComputedValues>,
                                       selected_style: ServoArc<ComputedValues>,
                                       mut restyle_damage: RestyleDamage,
