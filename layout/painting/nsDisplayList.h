@@ -1607,6 +1607,15 @@ public:
   const nsRegion& GetWindowOpaqueRegion() {
     return mWindowOpaqueRegion;
   }
+
+  
+
+
+  void ClearWindowOpaqueRegion()
+  {
+    mWindowOpaqueRegion.SetEmpty();
+  }
+
   void SetGlassDisplayItem(nsDisplayItem* aItem) {
     if (mGlassDisplayItem) {
       
