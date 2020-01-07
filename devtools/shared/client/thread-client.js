@@ -400,6 +400,17 @@ ThreadClient.prototype = {
 
 
 
+
+  skipBreakpoints: DebuggerClient.requester({
+    type: "skipBreakpoints",
+    skip: arg(0),
+  }),
+
+  
+
+
+
+
   get cachedFrames() {
     return this._frameCache;
   },
