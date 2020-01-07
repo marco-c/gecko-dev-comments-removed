@@ -149,6 +149,11 @@ LiveSavedFrameCache::find(JSContext* cx, FramePtr& framePtr, const jsbytecode* p
     
     if (pc != frames->back().pc) {
         frames->popBack();
+
+        
+        
+        
+        framePtr.clearHasCachedSavedFrame();
         frame.set(nullptr);
         return;
     }
