@@ -1134,9 +1134,8 @@ add_task(async function test_keyed_no_arguments() {
 
   h.add();
 
-  let s = h.snapshot();
   
-  Assert.equal(s.sum, undefined);
+  Assert.equal(h.keys().length, 0);
 });
 
 add_task(async function test_keyed_categorical_invalid_string() {
@@ -1145,11 +1144,10 @@ add_task(async function test_keyed_categorical_invalid_string() {
   let h = Telemetry.getKeyedHistogramById("TELEMETRY_TEST_KEYED_CATEGORICAL");
   h.clear();
 
-  h.add("someKey", "#notALablel");
+  h.add("someKey", "#notALabel");
 
-  let s = h.snapshot();
   
-  Assert.equal(s.sum, undefined);
+  Assert.equal(h.keys().length, 0);
 });
 
 add_task(async function test_keyed_count_multiple_samples() {
