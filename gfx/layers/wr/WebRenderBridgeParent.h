@@ -272,6 +272,7 @@ private:
   bool mPaused;
   bool mDestroyed;
   bool mForceRendering;
+  bool mReceivedDisplayList;
 
   
   WebRenderScrollData mScrollData;
