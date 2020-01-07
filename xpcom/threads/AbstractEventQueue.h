@@ -19,9 +19,7 @@ enum class EventPriority
   High,
   Input,
   Normal,
-  Idle,
-
-  Count
+  Idle
 };
 
 
