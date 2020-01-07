@@ -302,7 +302,7 @@ public:
   
   
   
-  int64_t GetLength();
+  int64_t GetLength() const;
   
   
   int64_t GetResourceID() { return mResourceID; }
