@@ -44,6 +44,13 @@ uint32_t AudioInputCubeb::sUserChannelCount = 0;
 
 void AudioInputCubeb::UpdateDeviceList()
 {
+  
+  
+  
+  for (auto& device_index : (*mDeviceIndexes)) {
+    device_index = -1; 
+  }
+
   cubeb* cubebContext = CubebUtils::GetCubebContext();
   if (!cubebContext) {
     return;
@@ -56,11 +63,6 @@ void AudioInputCubeb::UpdateDeviceList()
                                           &devices)) {
     return;
   }
-
-  for (auto& device_index : (*mDeviceIndexes)) {
-    device_index = -1; 
-  }
-  
 
   
   
