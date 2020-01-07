@@ -366,8 +366,14 @@ CPUInfo::SetSSEVersion()
         avxPresent = (xcr0EAX & xcr0SSEBit) && (xcr0EAX & xcr0AVXBit);
     }
 
-    static const int POPCNTBit = 1 << 23;
+    
+    
+    
+    static const int CMOVBit = 1 << 15;
+    MOZ_RELEASE_ASSERT(flagsEDX & CMOVBit,
+                       "CMOVcc instruction is not recognized by this CPU.");
 
+    static const int POPCNTBit = 1 << 23;
     popcntPresent = (flagsECX & POPCNTBit);
 
     
