@@ -4495,7 +4495,7 @@ PresShell::ContentInserted(nsIDocument* aDocument,
 }
 
 void
-PresShell::ContentRemoved(nsIDocument *aDocument,
+PresShell::ContentRemoved(nsIDocument* aDocument,
                           nsIContent* aMaybeContainer,
                           nsIContent* aChild,
                           nsIContent* aPreviousSibling)
@@ -4521,8 +4521,14 @@ PresShell::ContentRemoved(nsIDocument *aDocument,
   
   
   nsIContent* oldNextSibling = nullptr;
-  oldNextSibling = aPreviousSibling ?
-    aPreviousSibling->GetNextSibling() : container->GetFirstChild();
+
+  
+  
+  if (MOZ_LIKELY(!aChild->IsRootOfAnonymousSubtree())) {
+    oldNextSibling = aPreviousSibling
+      ? aPreviousSibling->GetNextSibling()
+      : container->GetFirstChild();
+  }
 
   mPresContext->RestyleManager()->ContentRemoved(container, aChild, oldNextSibling);
 
