@@ -1682,21 +1682,21 @@ JSFunction::maybeRelazify(JSRuntime* rt)
         return;
 
     
-    JSCompartment* comp = compartment();
-    if (comp->hasBeenEntered() && !rt->allowRelazificationForTesting)
+    Realm* realm = this->realm();
+    if (realm->hasBeenEntered() && !rt->allowRelazificationForTesting)
         return;
 
     
     
-    MOZ_ASSERT(!comp->isSelfHosting);
+    MOZ_ASSERT(!realm->isSelfHosting);
 
     
-    if (comp->isDebuggee())
+    if (realm->isDebuggee())
         return;
 
     
     
-    if (comp->collectCoverageForDebug())
+    if (realm->collectCoverageForDebug())
         return;
 
     
@@ -1727,7 +1727,7 @@ JSFunction::maybeRelazify(JSRuntime* rt)
         MOZ_ASSERT(getExtendedSlot(LAZY_FUNCTION_NAME_SLOT).toString()->isAtom());
     }
 
-    comp->scheduleDelazificationForDebugger();
+    realm->scheduleDelazificationForDebugger();
 }
 
 const JSFunctionSpec js::function_methods[] = {

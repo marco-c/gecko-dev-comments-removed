@@ -278,7 +278,7 @@ CompileCompartment::maybeGlobal()
 bool
 CompileCompartment::hasAllocationMetadataBuilder()
 {
-    return compartment()->hasAllocationMetadataBuilder();
+    return JS::GetRealmForCompartment(compartment())->hasAllocationMetadataBuilder();
 }
 
 

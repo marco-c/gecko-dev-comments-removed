@@ -367,19 +367,19 @@ template <typename T>
 static MOZ_ALWAYS_INLINE MOZ_MUST_USE T*
 SetNewObjectMetadata(JSContext* cx, T* obj)
 {
-    MOZ_ASSERT(!cx->compartment()->hasObjectPendingMetadata());
+    MOZ_ASSERT(!cx->realm()->hasObjectPendingMetadata());
 
     
     
     if (!cx->helperThread()) {
-        if (MOZ_UNLIKELY((size_t)cx->compartment()->hasAllocationMetadataBuilder()) &&
+        if (MOZ_UNLIKELY(cx->realm()->hasAllocationMetadataBuilder()) &&
             !cx->zone()->suppressAllocationMetadataBuilder)
         {
             
             AutoSuppressAllocationMetadataBuilder suppressMetadata(cx);
 
             Rooted<T*> rooted(cx, obj);
-            cx->compartment()->setNewObjectMetadata(cx, rooted);
+            cx->realm()->setNewObjectMetadata(cx, rooted);
             return rooted;
         }
     }
