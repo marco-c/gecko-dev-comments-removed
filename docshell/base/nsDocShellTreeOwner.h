@@ -39,28 +39,11 @@ class EventTarget;
 class nsWebBrowser;
 class ChromeTooltipListener;
 
-
-#define NS_ICDOCSHELLTREEOWNER_IID \
-  { 0x6d10c180, 0x6888, 0x11d4, { 0x95, 0x2b, 0x0, 0x20, 0x18, 0x3b, 0xf1, 0x81 } }
-
-
-
-
-
-class nsICDocShellTreeOwner : public nsISupports
-{
-public:
-  NS_DECLARE_STATIC_IID_ACCESSOR(NS_ICDOCSHELLTREEOWNER_IID)
-};
-
-NS_DEFINE_STATIC_IID_ACCESSOR(nsICDocShellTreeOwner, NS_ICDOCSHELLTREEOWNER_IID)
-
 class nsDocShellTreeOwner final : public nsIDocShellTreeOwner,
                                   public nsIBaseWindow,
                                   public nsIInterfaceRequestor,
                                   public nsIWebProgressListener,
                                   public nsIDOMEventListener,
-                                  public nsICDocShellTreeOwner,
                                   public nsSupportsWeakReference
 {
   friend class nsWebBrowser;
@@ -203,4 +186,4 @@ private:
   nsCOMPtr<nsINode> mPossibleTooltipNode;
 };
 
-#endif
+#endif 
