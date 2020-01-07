@@ -17,7 +17,6 @@
 #include "nsNodeInfoManager.h"      
 #include "nsPropertyTable.h"        
 #include "nsTObserverArray.h"       
-#include "nsWindowSizes.h"          
 #include "mozilla/ErrorResult.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/MemoryReporting.h"
@@ -56,6 +55,7 @@ class nsNodeSupportsWeakRefTearoff;
 class nsNodeWeakReference;
 class nsDOMMutationObserver;
 class nsRange;
+class nsWindowSizes;
 struct RawServoSelectorList;
 
 namespace mozilla {
@@ -359,11 +359,7 @@ public:
   
   
   
-  virtual void AddSizeOfIncludingThis(nsWindowSizes& aSizes,
-                                      size_t* aNodeSize) const {
-    *aNodeSize += aSizes.mState.mMallocSizeOf(this);
-    AddSizeOfExcludingThis(aSizes, aNodeSize);
-  }
+  void AddSizeOfIncludingThis(nsWindowSizes& aSizes, size_t* aNodeSize) const;
 
   friend class nsNodeUtils;
   friend class nsNodeWeakReference;

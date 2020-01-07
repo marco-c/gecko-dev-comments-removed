@@ -18,6 +18,7 @@
 #include "nsStyleStructInlines.h"
 #include "nsString.h"
 #include "nsPresContext.h"
+#include "nsWindowSizes.h"
 
 #include "nsCOMPtr.h"
 #include "nsIPresShell.h"
@@ -445,6 +446,19 @@ ComputedStyle::GetCachedLazyPseudoStyle(CSSPseudoElementType aPseudo) const
   }
 
   return mCachedInheritingStyles.Lookup(nsCSSPseudoElements::GetPseudoAtom(aPseudo));
+}
+
+void
+ComputedStyle::AddSizeOfIncludingThis(nsWindowSizes& aSizes,
+                                      size_t* aCVsSize) const
+{
+  
+  
+  
+  
+  *aCVsSize += ServoComputedValuesMallocEnclosingSizeOf(this);
+  mSource.AddSizeOfExcludingThis(aSizes);
+  mCachedInheritingStyles.AddSizeOfIncludingThis(aSizes, aCVsSize);
 }
 
 } 

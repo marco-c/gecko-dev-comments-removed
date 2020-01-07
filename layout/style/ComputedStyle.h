@@ -10,7 +10,6 @@
 #define _ComputedStyle_h_
 
 #include "nsIMemoryReporter.h"
-#include "nsWindowSizes.h"
 #include <algorithm>
 #include "mozilla/Assertions.h"
 #include "mozilla/RestyleLogging.h"
@@ -22,6 +21,7 @@
 
 class nsAtom;
 class nsPresContext;
+class nsWindowSizes;
 
 namespace mozilla {
 
@@ -354,16 +354,7 @@ public:
   
   
   
-  void AddSizeOfIncludingThis(nsWindowSizes& aSizes, size_t* aCVsSize) const
-  {
-    
-    
-    
-    
-    *aCVsSize += ServoComputedValuesMallocEnclosingSizeOf(this);
-    mSource.AddSizeOfExcludingThis(aSizes);
-    mCachedInheritingStyles.AddSizeOfIncludingThis(aSizes, aCVsSize);
-  }
+  void AddSizeOfIncludingThis(nsWindowSizes& aSizes, size_t* aCVsSize) const;
 
 protected:
   
