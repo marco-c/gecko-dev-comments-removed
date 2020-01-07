@@ -108,6 +108,13 @@ IsMatchForCompositor(const KeyframeEffect& aEffect,
     return MatchForCompositor::No;
   }
 
+  
+  
+  if (!aFrame->IsVisibleOrMayHaveVisibleDescendants() ||
+      aFrame->IsScrolledOutOfView()) {
+    return MatchForCompositor::NoAndBlockThisProperty;
+  }
+
   return animation->IsPlaying()
          ? MatchForCompositor::Yes
          : MatchForCompositor::IfNeeded;
