@@ -50,6 +50,9 @@ public:
   wr::WrExternalImageHandler GetExternalImageHandler();
 
   
+  void Update();
+
+  
   bool UpdateAndRender();
 
   

@@ -118,6 +118,9 @@ public:
   void NewFrameReady(wr::WindowId aWindowId);
 
   
+  void WakeUp(wr::WindowId aWindowId);
+
+  
   void PipelineSizeChanged(wr::WindowId aWindowId, uint64_t aPipelineId, float aWidth, float aHeight);
 
   
