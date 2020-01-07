@@ -720,6 +720,15 @@ pub struct GradientDisplayItem {
 
     
     pub gradient: Gradient,
+
+    
+    
+    
+    
+    
+    
+    
+    pub tile: Size2D<Au>,
 }
 
 
@@ -745,6 +754,15 @@ pub struct RadialGradientDisplayItem {
 
     
     pub gradient: RadialGradient,
+
+    
+    
+    
+    
+    
+    
+    
+    pub tile: Size2D<Au>,
 }
 
 
