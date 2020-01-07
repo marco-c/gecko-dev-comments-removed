@@ -325,6 +325,8 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel)
 #if defined(MOZ_XUL)
           
           if (eTransparencyTransparent == mTransparencyMode) {
+            
+            MutexAutoLock lock(mBasicLayersSurface->GetTransparentSurfaceLock());
             targetSurface = mBasicLayersSurface->EnsureTransparentSurface();
           }
 #endif
