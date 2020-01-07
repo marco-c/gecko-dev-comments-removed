@@ -1986,8 +1986,9 @@ APZCTreeManager::UpdateZoomConstraints(const ScrollableLayerGuid& aGuid,
     
     
     
-    MOZ_ASSERT(XRE_IsParentProcess());
-
+    
+    
+    
     GetUpdater()->RunOnUpdaterThread(
         aGuid.mLayersId,
         NewRunnableMethod<ScrollableLayerGuid, Maybe<ZoomConstraints>>(
