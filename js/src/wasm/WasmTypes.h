@@ -920,18 +920,25 @@ struct FuncTypeHashPolicy
 
 
 
+struct StructField
+{
+    ValType  type;
+    uint32_t offset;
+    bool     isMutable;
+};
+
+typedef Vector<StructField, 0, SystemAllocPolicy> StructFieldVector;
+
 class StructType
 {
   public:
-    ValTypeVector fields_;       
-    Uint32Vector  fieldOffsets_; 
+    StructFieldVector fields_;
 
   public:
-    StructType() : fields_(), fieldOffsets_() {}
+    StructType() : fields_() {}
 
-    StructType(ValTypeVector&& fields, Uint32Vector&& fieldOffsets)
-      : fields_(std::move(fields)),
-        fieldOffsets_(std::move(fieldOffsets))
+    explicit StructType(StructFieldVector&& fields)
+      : fields_(std::move(fields))
     {}
 
     WASM_DECLARE_SERIALIZABLE(StructType)

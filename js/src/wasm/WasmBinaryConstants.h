@@ -597,6 +597,11 @@ enum class NameType
     Local    = 2
 };
 
+enum class FieldFlags {
+    Mutable     = 0x01,
+    AllowedMask = 0x01
+};
+
 
 
 static const unsigned MaxTypes               =  1000000;
