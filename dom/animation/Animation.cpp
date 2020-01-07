@@ -298,11 +298,12 @@ Animation::SetStartTime(const Nullable<TimeDuration>& aNewStartTime)
 
 
 Nullable<TimeDuration>
-Animation::GetCurrentTime() const
+Animation::GetCurrentTimeForHoldTime(
+  const Nullable<TimeDuration>& aHoldTime) const
 {
   Nullable<TimeDuration> result;
-  if (!mHoldTime.IsNull()) {
-    result = mHoldTime;
+  if (!aHoldTime.IsNull()) {
+    result = aHoldTime;
     return result;
   }
 
