@@ -181,10 +181,9 @@ class FontEditor extends PureComponent {
 
   render() {
     const { fonts, axes, instance, properties } = this.props.fontEditor;
-    const usedFonts = fonts.filter(font => font.used);
     
     
-    const font = usedFonts.length === 0 ? fonts[0] : usedFonts[0];
+    const font = fonts[0];
     const hasFontAxes = font && font.variationAxes;
     const hasFontInstances = font && font.variationInstances.length > 0;
     const hasSlantOrItalicAxis = hasFontAxes && font.variationAxes.find(axis => {
@@ -195,7 +194,10 @@ class FontEditor extends PureComponent {
     });
 
     return dom.div(
-      {},
+      {
+        className: "theme-sidebar inspector-tabpanel",
+        id: "sidebar-panel-fontinspector"
+      },
       
       this.renderFontFamily(font),
       

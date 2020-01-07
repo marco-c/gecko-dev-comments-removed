@@ -6,14 +6,12 @@
 
 "use strict";
 
-const Services = require("Services");
 const { gDevTools } = require("devtools/client/framework/devtools");
 const { getColor } = require("devtools/client/shared/theme");
 const { createFactory, createElement } = require("devtools/client/shared/vendor/react");
 const { Provider } = require("devtools/client/shared/vendor/react-redux");
 const { throttle } = require("devtools/shared/throttle");
 const { debounce } = require("devtools/shared/debounce");
-const { ELEMENT_STYLE } = require("devtools/shared/specs/styles");
 
 const FontsApp = createFactory(require("./components/FontsApp"));
 
@@ -26,6 +24,7 @@ const { updateFonts } = require("./actions/fonts");
 const {
   applyInstance,
   resetFontEditor,
+  toggleFontEditor,
   updateAxis,
   updateCustomInstance,
   updateFontEditor,
@@ -34,8 +33,8 @@ const {
 const { updatePreviewText } = require("./actions/font-options");
 
 const CUSTOM_INSTANCE_NAME = getStr("fontinspector.customInstanceName");
+const FONT_EDITOR_ID = "fonteditor";
 const FONT_PROPERTIES = [
-  "font-family",
   "font-optical-sizing",
   "font-size",
   "font-stretch",
@@ -43,7 +42,6 @@ const FONT_PROPERTIES = [
   "font-variation-settings",
   "font-weight",
 ];
-const PREF_FONT_EDITOR = "devtools.inspector.fonteditor.enabled";
 const REGISTERED_AXES_TO_FONT_PROPERTIES = {
   "ital": "font-style",
   "opsz": "font-optical-sizing",
@@ -76,7 +74,9 @@ class FontInspector {
     this.onNewNode = this.onNewNode.bind(this);
     this.onPreviewFonts = this.onPreviewFonts.bind(this);
     this.onPropertyChange = this.onPropertyChange.bind(this);
+    this.onRuleSelected = this.onRuleSelected.bind(this);
     this.onToggleFontHighlight = this.onToggleFontHighlight.bind(this);
+    this.onRuleUnselected = this.onRuleUnselected.bind(this);
     this.onRuleUpdated = this.onRuleUpdated.bind(this);
     this.onThemeChanged = this.onThemeChanged.bind(this);
     this.update = this.update.bind(this);
@@ -108,14 +108,23 @@ class FontInspector {
     this.provider = provider;
 
     this.inspector.selection.on("new-node-front", this.onNewNode);
-    this.ruleView.on("property-value-updated", this.onRuleUpdated);
+    this.inspector.sidebar.on("fontinspector-selected", this.onNewNode);
+    this.ruleView.on("ruleview-rule-selected", this.onRuleSelected);
+    this.ruleView.on("ruleview-rule-unselected", this.onRuleUnselected);
 
     
     gDevTools.on("theme-switched", this.onThemeChanged);
 
     
-    if (this.isSelectedNodeValid()) {
-      this.onNewNode();
+    
+    
+    
+    const selectedRule = this.ruleView.getSelectedRules(FONT_EDITOR_ID)[0];
+    if (selectedRule) {
+      this.onRuleSelected({ editorId: FONT_EDITOR_ID, rule: selectedRule });
+    } else {
+      this.store.dispatch(updatePreviewText(""));
+      this.update();
     }
   }
 
@@ -142,7 +151,10 @@ class FontInspector {
 
   destroy() {
     this.inspector.selection.off("new-node-front", this.onNewNode);
+    this.inspector.sidebar.off("fontinspector-selected", this.onNewNode);
     this.ruleView.off("property-value-updated", this.onRuleUpdated);
+    this.ruleView.off("ruleview-rule-selected", this.onRuleSelected);
+    this.ruleView.off("ruleview-rule-unselected", this.onRuleUnselected);
     gDevTools.off("theme-switched", this.onThemeChanged);
 
     this.document = null;
@@ -163,11 +175,23 @@ class FontInspector {
 
 
 
+
   getFontProperties() {
     let properties = {};
 
+    
     for (let prop of FONT_PROPERTIES) {
       properties[prop] = this.nodeComputedStyle[prop].value;
+    }
+
+    
+    for (let rule of this.ruleView.rules) {
+      for (let textProp of rule.textProps) {
+        if (FONT_PROPERTIES.includes(textProp.name) && textProp.enabled &&
+            !textProp.overridden) {
+          properties[textProp.name] = textProp.value;
+        }
+      }
     }
 
     return properties;
@@ -335,21 +359,9 @@ class FontInspector {
   
 
 
-
-
   isPanelVisible() {
     return this.inspector.sidebar &&
            this.inspector.sidebar.getCurrentTabID() === "fontinspector";
-  }
-  
-
-
-
-
-  isSelectedNodeValid() {
-    return this.inspector.selection.nodeFront &&
-           this.inspector.selection.isConnected() &&
-           this.inspector.selection.isElementNode();
   }
 
     
@@ -426,7 +438,6 @@ class FontInspector {
   onNewNode() {
     if (this.isPanelVisible()) {
       this.update();
-      this.refreshFontEditor();
     }
   }
 
@@ -465,11 +476,60 @@ class FontInspector {
 
 
 
+
+
+
+
+
+
+
+  async onRuleSelected(eventData) {
+    const { editorId, rule } = eventData;
+    if (editorId === FONT_EDITOR_ID) {
+      const selector = rule.matchedSelectors[0];
+      this.selectedRule = rule;
+
+      await this.refreshFontEditor();
+      this.store.dispatch(toggleFontEditor(true, selector));
+      this.ruleView.on("property-value-updated", this.onRuleUpdated);
+    }
+  }
+
+  
+
+
+
   async onRuleUpdated() {
     await this.refreshFontEditor();
   }
 
   
+
+
+
+
+
+
+
+
+
+
+  onRuleUnselected(eventData) {
+    const { editorId, rule } = eventData;
+    if (editorId === FONT_EDITOR_ID && rule == this.selectedRule) {
+      this.nodeComputedStyle = {};
+      this.selectedRule = null;
+      this.textProperties.clear();
+      this.writers.clear();
+
+      this.store.dispatch(toggleFontEditor(false));
+      this.store.dispatch(resetFontEditor());
+
+      this.ruleView.off("property-value-updated", this.onRuleUpdated);
+    }
+  }
+
+    
 
 
 
@@ -531,16 +591,8 @@ class FontInspector {
 
 
 
-
-
   async refreshFontEditor() {
-    
-    if (!Services.prefs.getBoolPref(PREF_FONT_EDITOR)) {
-      return;
-    }
-
-    if (!this.inspector || !this.store || !this.isSelectedNodeValid()) {
-      this.store.dispatch(resetFontEditor());
+    if (!this.selectedRule || !this.inspector || !this.store) {
       return;
     }
 
@@ -555,24 +607,8 @@ class FontInspector {
     this.nodeComputedStyle = await this.pageStyle.getComputed(node, {
       filterProperties: FONT_PROPERTIES
     });
-    
-    
-    this.writers.clear();
-    this.textProperties.clear();
-    
-    this.selectedRule =
-      this.ruleView.rules.find(rule => rule.style.type === ELEMENT_STYLE);
     const fontEditor = this.store.getState().fontEditor;
     const properties = this.getFontProperties();
-    
-    const declaredFontNames =
-      properties["font-family"].split(",").map(font => font.replace(/\"+/g, "").trim());
-
-    
-    
-    for (let font of fonts) {
-      font.used = declaredFontNames.includes(font.CSSFamilyName);
-    }
 
     
     
@@ -604,7 +640,14 @@ class FontInspector {
     let { fontOptions } = this.store.getState();
     let { previewText } = fontOptions;
 
-    if (!this.isSelectedNodeValid() || !this.isPanelVisible()) {
+    
+    
+    let isElementOrTextNode = this.inspector.selection.isElementNode() ||
+                              this.inspector.selection.isTextNode();
+    if (!node ||
+        !this.isPanelVisible() ||
+        !this.inspector.selection.isConnected() ||
+        !isElementOrTextNode) {
       this.store.dispatch(updateFonts(fonts, otherFonts));
       return;
     }
