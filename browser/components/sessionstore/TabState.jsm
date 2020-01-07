@@ -25,12 +25,12 @@ var TabState = Object.freeze({
     TabStateInternal.update(browser, data);
   },
 
-  collect(tab) {
-    return TabStateInternal.collect(tab);
+  collect(tab, extData) {
+    return TabStateInternal.collect(tab, extData);
   },
 
-  clone(tab) {
-    return TabStateInternal.clone(tab);
+  clone(tab, extData) {
+    return TabStateInternal.clone(tab, extData);
   },
 
   copyFromCache(browser, tabData, options) {
@@ -56,8 +56,10 @@ var TabStateInternal = {
 
 
 
-  collect(tab) {
-    return this._collectBaseTabData(tab);
+
+
+  collect(tab, extData) {
+    return this._collectBaseTabData(tab, {extData});
   },
 
   
@@ -71,11 +73,14 @@ var TabStateInternal = {
 
 
 
-  clone(tab) {
-    return this._collectBaseTabData(tab, {includePrivateData: true});
+
+
+  clone(tab, extData) {
+    return this._collectBaseTabData(tab, {extData, includePrivateData: true});
   },
 
   
+
 
 
 
@@ -105,8 +110,8 @@ var TabStateInternal = {
     
     tabData.attributes = TabAttributes.get(tab);
 
-    if (tab.__SS_extdata) {
-      tabData.extData = tab.__SS_extdata;
+    if (options.extData) {
+      tabData.extData = options.extData;
     }
 
     

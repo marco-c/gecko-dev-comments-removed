@@ -26,7 +26,7 @@ add_task(async function() {
   await TabStateFlusher.flush(browser);
 
   
-  let tabState = TabState.collect(tab);
+  let tabState = TabState.collect(tab, ss.getInternalObjectState(tab));
   is(tabState.index, TAB_STATE.index, "correct shistory index");
 
   
