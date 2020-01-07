@@ -8,7 +8,7 @@ use {GlyphOptions, LayoutVector2D, PipelineId, PropertyBinding};
 use euclid::{SideOffsets2D, TypedRect};
 use std::ops::Not;
 
-#[cfg(feature = "debug-serialization")]
+#[cfg(any(feature = "serialize", feature = "deserialize"))]
 use GlyphInstance;
 
 
@@ -123,8 +123,9 @@ pub enum SpecificDisplayItem {
 
 
 
-#[cfg(feature = "debug-serialization")]
-#[derive(Deserialize, Serialize)]
+#[cfg(any(feature = "serialize", feature = "deserialize"))]
+#[cfg_attr(feature = "serialize", derive(Serialize))]
+#[cfg_attr(feature = "deserialize", derive(Deserialize))]
 pub enum CompletelySpecificDisplayItem {
     Clip(ClipDisplayItem, Vec<ComplexClipRegion>),
     ClipChain(ClipChainItem, Vec<ClipId>),

@@ -23,7 +23,8 @@ pub type ScrollStates = FastHashMap<ClipId, ScrollingState>;
 
 
 #[derive(Debug, Copy, Clone, PartialEq)]
-#[cfg_attr(feature = "capture", derive(Deserialize, Serialize))]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct CoordinateSystemId(pub u32);
 
 impl CoordinateSystemId {
@@ -461,11 +462,16 @@ impl ClipScrollTree {
 
     pub fn build_clip_chains(&mut self, screen_rect: &DeviceIntRect) {
         for descriptor in &self.clip_chains_descriptors {
+            
+            
+            
             let mut chain = match descriptor.parent {
                 Some(id) => self.clip_chains[&id].clone(),
                 None => ClipChain::empty(screen_rect),
             };
 
+            
+            
             for clip_id in &descriptor.clips {
                 if let Some(ref node_chain) = self.nodes[&clip_id].clip_chain {
                     if let Some(ref nodes) = node_chain.nodes {

@@ -22,7 +22,8 @@ const MINIMUM_LARGE_RECT_SIZE: u32 = 32;
 
 
 
-#[cfg_attr(feature = "capture", derive(Deserialize, Serialize))]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct GuillotineAllocator {
     texture_size: DeviceUintSize,
     free_list: FreeRectList,
@@ -171,7 +172,8 @@ impl GuillotineAllocator {
 
 
 
-#[cfg_attr(feature = "capture", derive(Deserialize, Serialize))]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
 struct FreeRectList {
     small: Vec<DeviceUintRect>,
     medium: Vec<DeviceUintRect>,

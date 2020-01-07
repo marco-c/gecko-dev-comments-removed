@@ -29,7 +29,8 @@ const TEXTURE_REGION_DIMENSIONS: u32 = 512;
 
 
 
-#[cfg_attr(feature = "capture", derive(Deserialize, Serialize))]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
 struct CacheTextureIdList {
     free_lists: FastHashMap<ImageFormat, Vec<CacheTextureId>>,
     next_id: usize,
@@ -65,7 +66,8 @@ impl CacheTextureIdList {
 
 
 #[derive(Debug)]
-#[cfg_attr(feature = "capture", derive(Deserialize, Serialize))]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
 enum EntryKind {
     Standalone,
     Cache {
@@ -82,7 +84,8 @@ enum EntryKind {
 
 
 #[derive(Debug)]
-#[cfg_attr(feature = "capture", derive(Deserialize, Serialize))]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
 struct CacheEntry {
     
     size: DeviceUintSize,
@@ -157,7 +160,8 @@ type WeakCacheEntryHandle = WeakFreeListHandle<CacheEntry>;
 
 
 #[derive(Debug)]
-#[cfg_attr(feature = "capture", derive(Clone, Deserialize, Serialize))]
+#[cfg_attr(feature = "capture", derive(Clone, Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct TextureCacheHandle {
     entry: Option<WeakCacheEntryHandle>,
 }
@@ -168,7 +172,8 @@ impl TextureCacheHandle {
     }
 }
 
-#[cfg_attr(feature = "capture", derive(Deserialize, Serialize))]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct TextureCache {
     
     
@@ -187,7 +192,7 @@ pub struct TextureCache {
 
     
     
-    #[cfg_attr(feature = "capture", serde(skip))]
+    #[cfg_attr(feature = "serde", serde(skip))]
     pending_updates: TextureUpdateList,
 
     
@@ -818,7 +823,8 @@ impl SlabSize {
 }
 
 
-#[cfg_attr(feature = "capture", derive(Deserialize, Serialize))]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
 struct TextureLocation(u8, u8);
 
 impl TextureLocation {
@@ -830,7 +836,8 @@ impl TextureLocation {
 
 
 
-#[cfg_attr(feature = "capture", derive(Deserialize, Serialize))]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
 struct TextureRegion {
     layer_index: i32,
     region_size: u32,
@@ -913,7 +920,8 @@ impl TextureRegion {
 
 
 
-#[cfg_attr(feature = "capture", derive(Deserialize, Serialize))]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
 struct TextureArray {
     filter: TextureFilter,
     layer_count: usize,

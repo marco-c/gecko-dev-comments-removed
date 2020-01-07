@@ -529,9 +529,7 @@ impl<'a> RawtestHarness<'a> {
         let pixels0 = self.render_and_get_pixels(window_rect);
 
         
-
         self.wrench.api.save_capture(path.into(), CaptureBits::all());
-        self.rx.recv().unwrap();
 
         
 

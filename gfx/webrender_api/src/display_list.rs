@@ -22,9 +22,9 @@ use std::marker::PhantomData;
 use std::slice;
 use time::precise_time_ns;
 
-#[cfg(feature = "debug-serialization")]
+#[cfg(feature = "deserialize")]
 use serde::de::Deserializer;
-#[cfg(feature = "debug-serialization")]
+#[cfg(feature = "serialize")]
 use serde::ser::{Serializer, SerializeSeq};
 
 
@@ -419,7 +419,7 @@ impl<'a, T: for<'de> Deserialize<'de>> Iterator for AuxIter<'a, T> {
 impl<'a, T: for<'de> Deserialize<'de>> ::std::iter::ExactSizeIterator for AuxIter<'a, T> {}
 
 
-#[cfg(feature = "debug-serialization")]
+#[cfg(feature = "serialize")]
 impl Serialize for BuiltDisplayList {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         use display_item::CompletelySpecificDisplayItem::*;
@@ -482,7 +482,7 @@ impl Serialize for BuiltDisplayList {
 
 
 
-#[cfg(feature = "debug-serialization")]
+#[cfg(feature = "deserialize")]
 impl<'de> Deserialize<'de> for BuiltDisplayList {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
