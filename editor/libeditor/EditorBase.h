@@ -26,6 +26,7 @@
 #include "nsIObserver.h"                
 #include "nsIPlaintextEditor.h"         
 #include "nsISelectionController.h"     
+#include "nsISelectionListener.h"       
 #include "nsISupportsImpl.h"            
 #include "nsIWeakReferenceUtils.h"      
 #include "nsLiteralString.h"            
@@ -188,6 +189,7 @@ enum class SplitAtEdges
 
 
 class EditorBase : public nsIEditor
+                 , public nsISelectionListener
                  , public nsSupportsWeakReference
 {
 public:
@@ -253,6 +255,9 @@ public:
 
   
   NS_DECL_NSIEDITOR
+
+  
+  NS_DECL_NSISELECTIONLISTENER
 
   
 

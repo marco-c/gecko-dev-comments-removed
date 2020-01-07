@@ -802,6 +802,7 @@ TextInputListener::TextInputListener(nsITextControlElement* aTxtCtrlElement)
   , mHadRedoItems(false)
   , mSettingValue(false)
   , mSetValueChanged(true)
+  , mListeningToSelectionChange(false)
 {
 }
 
@@ -809,30 +810,24 @@ NS_IMPL_CYCLE_COLLECTING_ADDREF(TextInputListener)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(TextInputListener)
 
 NS_INTERFACE_MAP_BEGIN(TextInputListener)
-  NS_INTERFACE_MAP_ENTRY(nsISelectionListener)
   NS_INTERFACE_MAP_ENTRY(nsISupportsWeakReference)
   NS_INTERFACE_MAP_ENTRY(nsIDOMEventListener)
-  NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsISelectionListener)
+  NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIDOMEventListener)
   NS_INTERFACE_MAP_ENTRIES_CYCLE_COLLECTION(TextInputListener)
 NS_INTERFACE_MAP_END
 
 NS_IMPL_CYCLE_COLLECTION_0(TextInputListener)
 
-
-
-NS_IMETHODIMP
-TextInputListener::NotifySelectionChanged(nsIDOMDocument* aDOMDocument,
-                                          nsISelection* aSelection,
-                                          int16_t aReason)
+void
+TextInputListener::OnSelectionChange(Selection& aSelection,
+                                     int16_t aReason)
 {
-  bool collapsed;
-  AutoWeakFrame weakFrame = mFrame;
-
-  if (!aDOMDocument || !aSelection ||
-      NS_FAILED(aSelection->GetIsCollapsed(&collapsed))) {
-    return NS_OK;
+  if (!mListeningToSelectionChange) {
+    return;
   }
 
+  AutoWeakFrame weakFrame = mFrame;
+
   
   
   
@@ -847,6 +842,7 @@ TextInputListener::NotifySelectionChanged(nsIDOMDocument* aDOMDocument,
   
   
   
+  bool collapsed = aSelection.IsCollapsed();
   if (!collapsed && (aReason & (nsISelectionListener::MOUSEUP_REASON |
                                 nsISelectionListener::KEYPRESS_REASON |
                                 nsISelectionListener::SELECTALL_REASON))) {
@@ -867,21 +863,19 @@ TextInputListener::NotifySelectionChanged(nsIDOMDocument* aDOMDocument,
 
   
   if (collapsed == mSelectionWasCollapsed) {
-    return NS_OK;
+    return;
   }
 
   mSelectionWasCollapsed = collapsed;
 
   if (!weakFrame.IsAlive() ||
       !nsContentUtils::IsFocusedContent(mFrame->GetContent())) {
-    return NS_OK;
+    return;
   }
 
-  return UpdateTextInputCommands(NS_LITERAL_STRING("select"),
-                                 aSelection, aReason);
+  UpdateTextInputCommands(NS_LITERAL_STRING("select"),
+                          &aSelection, aReason);
 }
-
-
 
 static void
 DoCommandCallback(Command aCommand, void* aData)
@@ -1263,7 +1257,7 @@ nsTextEditorState::BindToFrame(nsTextControlFrame* aFrame)
     if (caret) {
       selection->AddSelectionListener(caret);
     }
-    selection->AddSelectionListener(mTextListener);
+    mTextListener->StartToListenToSelectionChange();
   }
 
   
@@ -2112,14 +2106,7 @@ nsTextEditorState::UnbindFromFrame(nsTextControlFrame* aFrame)
 
   if (mSelCon) {
     if (mTextListener) {
-      
-      
-      
-      Selection* selection =
-        mSelCon->GetSelection(SelectionType::eNormal);
-      if (selection) {
-        selection->RemoveSelectionListener(mTextListener);
-      }
+      mTextListener->EndListeningToSelectionChange();
     }
 
     mSelCon->SetScrollableFrame(nullptr);

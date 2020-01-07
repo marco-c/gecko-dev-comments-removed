@@ -14,7 +14,6 @@
 #include "nsCycleCollectionParticipant.h"
 #include "nsIDocShell.h" 
 #include "nsIReflowObserver.h"
-#include "nsISelectionListener.h"
 #include "nsIScrollObserver.h"
 #include "nsIWidget.h"
 #include "nsStubDocumentObserver.h"
@@ -32,10 +31,13 @@ namespace mozilla {
 class EventStateManager;
 class TextComposition;
 
+namespace dom {
+class Selection;
+} 
 
 
-class IMEContentObserver final : public nsISelectionListener
-                               , public nsStubMutationObserver
+
+class IMEContentObserver final : public nsStubMutationObserver
                                , public nsIReflowObserver
                                , public nsIScrollObserver
                                , public nsSupportsWeakReference
@@ -51,8 +53,7 @@ public:
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(IMEContentObserver,
-                                           nsISelectionListener)
-  NS_DECL_NSISELECTIONLISTENER
+                                           nsIReflowObserver)
   NS_DECL_NSIMUTATIONOBSERVER_CHARACTERDATAWILLCHANGE
   NS_DECL_NSIMUTATIONOBSERVER_CHARACTERDATACHANGED
   NS_DECL_NSIMUTATIONOBSERVER_CONTENTAPPENDED
@@ -64,6 +65,11 @@ public:
 
   
   virtual void ScrollPositionChanged() override;
+
+  
+
+
+  void OnSelectionChange(dom::Selection& aSelection);
 
   bool OnMouseButtonEvent(nsPresContext* aPresContext,
                           WidgetMouseEvent* aMouseEvent);
@@ -336,14 +342,14 @@ private:
       : Runnable(aName)
       , mIMEContentObserver(
           do_GetWeakReference(
-            static_cast<nsISelectionListener*>(aIMEContentObserver)))
+            static_cast<nsIReflowObserver*>(aIMEContentObserver)))
     {
       MOZ_ASSERT(aIMEContentObserver);
     }
 
     already_AddRefed<IMEContentObserver> GetObserver() const
     {
-      nsCOMPtr<nsISelectionListener> observer =
+      nsCOMPtr<nsIReflowObserver> observer =
         do_QueryReferent(mIMEContentObserver);
       return observer.forget().downcast<IMEContentObserver>();
     }

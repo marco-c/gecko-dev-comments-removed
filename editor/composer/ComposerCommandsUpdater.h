@@ -11,7 +11,6 @@
 #include "nsCycleCollectionParticipant.h"
 #include "nsIDocumentStateListener.h"
 #include "nsINamed.h"
-#include "nsISelectionListener.h"
 #include "nsISupportsImpl.h"            
 #include "nsITimer.h"                   
 #include "nsITransactionListener.h"     
@@ -26,8 +25,7 @@ class nsPICommandUpdater;
 
 namespace mozilla {
 
-class ComposerCommandsUpdater final : public nsISelectionListener
-                                    , public nsIDocumentStateListener
+class ComposerCommandsUpdater final : public nsIDocumentStateListener
                                     , public nsITransactionListener
                                     , public nsITimerCallback
                                     , public nsINamed
@@ -39,9 +37,6 @@ public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(ComposerCommandsUpdater,
                                            nsIDocumentStateListener)
-
-  
-  NS_DECL_NSISELECTIONLISTENER
 
   
   NS_DECL_NSIDOCUMENTSTATELISTENER
@@ -56,6 +51,14 @@ public:
   NS_DECL_NSITRANSACTIONLISTENER
 
   nsresult Init(nsPIDOMWindowOuter* aDOMWindow);
+
+  
+
+
+  void OnSelectionChange()
+  {
+    PrimeUpdateTimer();
+  }
 
 protected:
   virtual ~ComposerCommandsUpdater();
