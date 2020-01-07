@@ -19,5 +19,20 @@ function trusted_click(test, callback, container)
 
 function trusted_request(test, element, container)
 {
-    trusted_click(test, () => element.requestFullscreen(), container || element.parentNode);
+    trusted_click(test, () => {
+        var promise = element.requestFullscreen();
+        if (promise) {
+            
+            
+            promise.then(() => {}, () => {});
+        }
+    }, container || element.parentNode);
+}
+
+
+function trusted_request_with_promise(test, element, container, resolve, reject)
+{
+    trusted_click(test, () => {
+        element.requestFullscreen().then(resolve, reject);
+    }, container || element.parentNode);
 }
