@@ -536,7 +536,12 @@ class Session(object):
 
     @command
     def close(self):
-        return self.send_session_command("DELETE", "window")
+        handles = self.send_session_command("DELETE", "window")
+        if len(handles) == 0:
+            
+            self.session_id = None
+
+        return handles
 
     @property
     @command
