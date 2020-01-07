@@ -50,6 +50,7 @@ module.exports = {
     "WebrtcGlobalInformation": false,
     
     "XULElement": false,
+    "console": true,
     "dump": true,
     "openDialog": false,
     "sizeToContent": false,
