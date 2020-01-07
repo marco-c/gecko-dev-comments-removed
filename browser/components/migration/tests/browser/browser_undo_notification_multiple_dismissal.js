@@ -32,8 +32,8 @@ add_task(async function checkNotificationsDismissed() {
   });
 
   let firstTab = await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:home", false);
-  let firstNotification = await getOrWaitForNotification(firstTab.linkedBrowser, "first tab");
   let secondTab = await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:home", false);
+  let firstNotification = await getOrWaitForNotification(firstTab.linkedBrowser, "first tab");
   let secondNotification = await getOrWaitForNotification(secondTab.linkedBrowser, "second tab");
 
   
