@@ -120,6 +120,13 @@ types.getType = function(type) {
 
 
 
+function isIterator(v) {
+  return v && typeof v === "object" && Symbol.iterator in v && !Array.isArray(v);
+}
+
+
+
+
 
 function identityWrite(v) {
   if (v === undefined) {
@@ -127,7 +134,7 @@ function identityWrite(v) {
   }
   
   
-  if (v && typeof (v) === "object" && Symbol.iterator in v) {
+  if (isIterator(v)) {
     return [...v];
   }
   return v;
