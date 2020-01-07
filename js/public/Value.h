@@ -389,6 +389,17 @@ class MOZ_NON_PARAM alignas(8) Value
 
     void setObject(JSObject& obj) {
         MOZ_ASSERT(js::gc::IsCellPointerValid(&obj));
+
+        
+        
+        
+        
+        
+        
+        
+        JSObject* testObj = &obj;
+        MOZ_DIAGNOSTIC_ASSERT(testObj != nullptr);
+
 #if defined(JS_PUNBOX64)
         
         
