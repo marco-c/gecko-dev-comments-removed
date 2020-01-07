@@ -375,8 +375,8 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
 
 
 
-  openWorkerToolbox(client, workerActor) {
-    client.attachWorker(workerActor, (response, workerClient) => {
+  openWorkerToolbox(client, workerTargetActor) {
+    client.attachWorker(workerTargetActor, (response, workerClient) => {
       const workerTarget = TargetFactory.forWorker(workerClient);
       gDevTools.showToolbox(workerTarget, null, Toolbox.HostType.WINDOW)
         .then(toolbox => {

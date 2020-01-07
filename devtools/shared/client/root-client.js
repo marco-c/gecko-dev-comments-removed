@@ -157,7 +157,7 @@ RootClient.prototype = {
       const worker = {
         name: form.url,
         url: form.url,
-        workerActor: form.actor
+        workerTargetActor: form.actor
       };
       switch (form.type) {
         case Ci.nsIWorkerDebugger.TYPE_SERVICE:
@@ -168,7 +168,7 @@ RootClient.prototype = {
             if (!registration.url) {
               registration.name = registration.url = form.url;
             }
-            registration.workerActor = form.actor;
+            registration.workerTargetActor = form.actor;
           } else {
             worker.fetch = form.fetch;
 

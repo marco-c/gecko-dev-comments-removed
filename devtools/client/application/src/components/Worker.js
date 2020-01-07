@@ -35,7 +35,7 @@ class Worker extends Component {
         scope: PropTypes.string.isRequired,
         
         registrationActor: PropTypes.string,
-        workerActor: PropTypes.string
+        workerTargetActor: PropTypes.string
       }).isRequired
     };
   }
@@ -55,7 +55,7 @@ class Worker extends Component {
     }
 
     const { client, worker } = this.props;
-    gDevToolsBrowser.openWorkerToolbox(client, worker.workerActor);
+    gDevToolsBrowser.openWorkerToolbox(client, worker.workerTargetActor);
   }
 
   start() {
@@ -81,7 +81,7 @@ class Worker extends Component {
 
   isRunning() {
     
-    return !!this.props.worker.workerActor;
+    return !!this.props.worker.workerTargetActor;
   }
 
   isActive() {

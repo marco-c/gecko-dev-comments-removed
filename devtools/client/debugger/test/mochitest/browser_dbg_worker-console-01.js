@@ -1,8 +1,8 @@
 
 
 
-var TAB_URL = EXAMPLE_URL + "doc_WorkerActor.attachThread-tab.html";
-var WORKER_URL = "code_WorkerActor.attachThread-worker.js";
+var TAB_URL = EXAMPLE_URL + "doc_WorkerTargetActor.attachThread-tab.html";
+var WORKER_URL = "code_WorkerTargetActor.attachThread-worker.js";
 
 add_task(async function testNormalExecution() {
   let {client, tab, tabClient, workerClient, toolbox, gDebugger} =
