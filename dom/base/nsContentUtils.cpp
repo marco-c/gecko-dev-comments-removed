@@ -3962,6 +3962,18 @@ nsContentUtils::EnsureStringBundle(PropertiesFile aFile)
 void
 nsContentUtils::AsyncPrecreateStringBundles()
 {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  MOZ_ASSERT(XRE_IsParentProcess());
+
   for (uint32_t bundleIndex = 0; bundleIndex < PropertiesFile_COUNT; ++bundleIndex) {
     nsresult rv = NS_IdleDispatchToCurrentThread(
       NS_NewRunnableFunction("AsyncPrecreateStringBundles",
