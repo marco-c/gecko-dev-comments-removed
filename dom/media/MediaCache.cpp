@@ -472,6 +472,16 @@ protected:
   
   
   static bool sThreadInit;
+
+private:
+  
+  
+  friend nsCString MediaCacheStream::GetDebugInfo();
+  mozilla::Monitor& GetMonitorOnTheMainThread()
+  {
+    MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
+    return mMonitor;
+  }
 };
 
 
@@ -2984,7 +2994,7 @@ MediaCacheStream::GetDownloadRate(bool* aIsReliable)
 nsCString
 MediaCacheStream::GetDebugInfo()
 {
-  AutoLock lock(mMediaCache->Monitor());
+  AutoLock lock(mMediaCache->GetMonitorOnTheMainThread());
   return nsPrintfCString("mStreamLength=%" PRId64 " mChannelOffset=%" PRId64
                          " mCacheSuspended=%d mChannelEnded=%d mLoadID=%u",
                          mStreamLength,
