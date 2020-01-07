@@ -547,6 +547,27 @@ nsHttpTransaction::OnActivated()
         return;
     }
 
+    if (mConnection && mRequestHead) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        bool isOldHttp = (mConnection->Version() == NS_HTTP_VERSION_0_9 ||
+                          mConnection->Version() == NS_HTTP_VERSION_1_0 ||
+                          mConnection->Version() == NS_HTTP_VERSION_1_1 ||
+                          mConnection->Version() == NS_HTTP_VERSION_UNKNOWN);
+        if (!isOldHttp) {
+            Unused << mRequestHead->SetHeader(nsHttp::TE, NS_LITERAL_CSTRING("Trailers"));
+        }
+    }
+
     mActivated = true;
     gHttpHandler->ConnMgr()->AddActiveTransaction(this);
 }

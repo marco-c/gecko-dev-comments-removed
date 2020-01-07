@@ -1209,6 +1209,17 @@ Http2Compressor::EncodeHeaderBlock(const nsCString &nvInput,
     }
   }
 
+  
+  
+  
+  
+  if (!connectForm) {
+    
+    nsAutoCString te("te");
+    nsAutoCString trailers("trailers");
+    ProcessHeader(nvPair(te, trailers), false, false);
+  }
+
   mOutput = nullptr;
   LOG(("Compressor state after EncodeHeaderBlock"));
   DumpState();
