@@ -306,6 +306,8 @@ private:
                                    bool                 aStartAtTop);
 #endif 
 
+  void ReturnToGalleyPresentation();
+
   
   
   
