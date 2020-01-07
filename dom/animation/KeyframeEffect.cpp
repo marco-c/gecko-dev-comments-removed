@@ -1194,6 +1194,41 @@ KeyframeEffect::OverflowRegionRefreshInterval()
 }
 
 bool
+KeyframeEffect::CanThrottleIfNotVisible(nsIFrame& aFrame) const
+{
+  
+  
+  
+  if (mInEffectOnLastAnimationTimingUpdate && CanIgnoreIfNotVisible()) {
+    nsIPresShell* presShell = GetPresShell();
+    if (presShell && !presShell->IsActive()) {
+      return true;
+    }
+
+    const bool isVisibilityHidden =
+      !aFrame.IsVisibleOrMayHaveVisibleDescendants();
+    if ((isVisibilityHidden && !HasVisibilityChange()) ||
+        aFrame.IsScrolledOutOfView()) {
+      
+      
+      if (HasPropertiesThatMightAffectOverflow()) {
+        
+        
+        if (HasFiniteActiveDuration()) {
+          return false;
+        }
+
+        return isVisibilityHidden
+          ? CanThrottleOverflowChangesInScrollable(aFrame)
+          : CanThrottleOverflowChanges(aFrame);
+      }
+      return true;
+    }
+  }
+  return false;
+}
+
+bool
 KeyframeEffect::CanThrottle() const
 {
   
@@ -1218,34 +1253,8 @@ KeyframeEffect::CanThrottle() const
     return true;
   }
 
-  
-  
-  
-  if (mInEffectOnLastAnimationTimingUpdate && CanIgnoreIfNotVisible()) {
-    nsIPresShell* presShell = GetPresShell();
-    if (presShell && !presShell->IsActive()) {
-      return true;
-    }
-
-    const bool isVisibilityHidden =
-      !frame->IsVisibleOrMayHaveVisibleDescendants();
-    if ((isVisibilityHidden && !HasVisibilityChange()) ||
-        frame->IsScrolledOutOfView()) {
-      
-      
-      if (HasPropertiesThatMightAffectOverflow()) {
-        
-        
-        if (HasFiniteActiveDuration()) {
-          return false;
-        }
-
-        return isVisibilityHidden
-          ? CanThrottleOverflowChangesInScrollable(*frame)
-          : CanThrottleOverflowChanges(*frame);
-      }
-      return true;
-    }
+  if (CanThrottleIfNotVisible(*frame)) {
+    return true;
   }
 
   
