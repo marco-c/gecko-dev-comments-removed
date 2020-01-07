@@ -460,19 +460,27 @@ Sync11Service.prototype = {
     }
   },
 
-  async _startTracking() {
-    const engines = this.engineManager.getAll();
+  _startTracking() {
+    const engines = [this.clientsEngine, ...this.engineManager.getAll()];
     for (let engine of engines) {
-      engine.startTracking();
+      try {
+        engine.startTracking();
+      } catch (e) {
+        this._log.error(`Could not start ${engine.name} engine tracker`, e);
+      }
     }
     
     Svc.Obs.notify("weave:service:tracking-started");
   },
 
   async _stopTracking() {
-    const engines = this.engineManager.getAll();
+    const engines = [this.clientsEngine, ...this.engineManager.getAll()];
     for (let engine of engines) {
-      await engine.stopTracking();
+      try {
+        await engine.stopTracking();
+      } catch (e) {
+        this._log.error(`Could not stop ${engine.name} engine tracker`, e);
+      }
     }
     Svc.Obs.notify("weave:service:tracking-stopped");
   },
@@ -789,7 +797,8 @@ Sync11Service.prototype = {
     
     if (this.clusterURL != "") {
       
-      for (let engine of [this.clientsEngine].concat(this.engineManager.getAll())) {
+      const engines = [this.clientsEngine, ...this.engineManager.getAll()];
+      for (let engine of engines) {
         try {
           await engine.removeClientData();
         } catch (ex) {
@@ -1298,7 +1307,7 @@ Sync11Service.prototype = {
       
       await this.resetService();
 
-      engines = [this.clientsEngine].concat(this.engineManager.getAll());
+      engines = [this.clientsEngine, ...this.engineManager.getAll()];
     } else {
       
       engines = this.engineManager.get(engines);
@@ -1372,7 +1381,7 @@ Sync11Service.prototype = {
         
         await this.resetService();
 
-        engines = [this.clientsEngine].concat(this.engineManager.getAll());
+        engines = [this.clientsEngine, ...this.engineManager.getAll()];
       } else {
         
         engines = this.engineManager.get(engines);
