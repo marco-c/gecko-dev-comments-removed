@@ -17,6 +17,7 @@
 #include "mozilla/plugins/PluginMessageUtils.h"
 #include "mozilla/plugins/PluginTypes.h"
 #include "mozilla/ipc/TaskFactory.h"
+#include "mozilla/RecursiveMutex.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/Unused.h"
 #include "npapi.h"
@@ -319,7 +320,9 @@ protected:
 
 
 
-    mozilla::Mutex mCrashReporterMutex;
+
+
+    mozilla::RecursiveMutex mCrashReporterMutex;
     UniquePtr<ipc::CrashReporterHost> mCrashReporter;
 };
 
