@@ -21,8 +21,8 @@ ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://testing-common/TestUtils.jsm");
 ChromeUtils.import("resource://testing-common/ContentTask.jsm");
 
-Services
-  .mm
+Cc["@mozilla.org/globalmessagemanager;1"]
+  .getService(Ci.nsIMessageListenerManager)
   .loadFrameScript(
     "chrome://mochikit/content/tests/BrowserTestUtils/content-utils.js", true);
 
@@ -144,7 +144,7 @@ var BrowserTestUtils = {
 
   openNewForegroundTab(tabbrowser, ...args) {
     let options;
-    if (tabbrowser instanceof Ci.nsIDOMXULElement) {
+    if (tabbrowser.ownerGlobal && tabbrowser === tabbrowser.ownerGlobal.gBrowser) {
       
       let [
         opening = "about:blank",

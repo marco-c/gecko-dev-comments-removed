@@ -211,7 +211,7 @@ Notification.prototype = {
 
 function PopupNotifications(tabbrowser, panel,
                                                       iconBox, options = {}) {
-  if (!(tabbrowser instanceof Ci.nsIDOMXULElement))
+  if (!tabbrowser)
     throw "Invalid tabbrowser";
   if (iconBox && !(iconBox instanceof Ci.nsIDOMXULElement))
     throw "Invalid iconBox";
