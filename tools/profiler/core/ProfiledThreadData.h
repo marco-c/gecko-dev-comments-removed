@@ -66,6 +66,8 @@ public:
   {
     mResponsiveness.reset();
     mLastSample = mozilla::Nothing();
+    MOZ_ASSERT(!mBufferPositionWhenReceivedJSContext,
+               "JSContext should have been cleared before the thread was unregistered");
     mUnregisterTime = TimeStamp::Now();
     mBufferPositionWhenUnregistered = mozilla::Some(aBufferPosition);
   }
@@ -80,12 +82,6 @@ public:
 
   
   
-  void FlushSamplesAndMarkers(JSContext* aCx,
-                              const mozilla::TimeStamp& aProcessStartTime,
-                              ProfileBuffer& aBuffer);
-
-  
-  
   ThreadResponsiveness* GetThreadResponsiveness()
   {
     ThreadResponsiveness* responsiveness = mResponsiveness.ptrOr(nullptr);
@@ -93,6 +89,17 @@ public:
   }
 
   const RefPtr<ThreadInfo> Info() const { return mThreadInfo; }
+
+  void NotifyReceivedJSContext(uint64_t aCurrentBufferPosition)
+  {
+    mBufferPositionWhenReceivedJSContext = mozilla::Some(aCurrentBufferPosition);
+  }
+
+  
+  
+  void NotifyAboutToLoseJSContext(JSContext* aCx,
+                                  const TimeStamp& aProcessStartTime,
+                                  ProfileBuffer& aBuffer);
 
 private:
   
@@ -120,6 +127,9 @@ private:
   
   
   mozilla::Maybe<uint64_t> mLastSample;
+
+  
+  mozilla::Maybe<uint64_t> mBufferPositionWhenReceivedJSContext;
 
   
   
