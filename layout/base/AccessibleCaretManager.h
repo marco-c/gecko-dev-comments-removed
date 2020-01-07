@@ -49,7 +49,7 @@ class AccessibleCaretManager
 {
 public:
   explicit AccessibleCaretManager(nsIPresShell* aPresShell);
-  virtual ~AccessibleCaretManager() = default;
+  virtual ~AccessibleCaretManager();
 
   
   void Terminate();
@@ -201,7 +201,11 @@ protected:
 
   
   
-  void FlushLayout() const;
+  
+  
+  
+  
+  MOZ_MUST_USE bool FlushLayout();
 
   dom::Element* GetEditingHostForFrame(nsIFrame* aFrame) const;
   dom::Selection* GetSelection() const;
@@ -257,7 +261,7 @@ protected:
 
   
   
-  virtual void DispatchCaretStateChangedEvent(dom::CaretChangedReason aReason) const;
+  virtual void DispatchCaretStateChangedEvent(dom::CaretChangedReason aReason);
 
   
   
@@ -300,6 +304,9 @@ protected:
 
   
   bool mIsScrollStarted = false;
+
+  
+  bool mFlushingLayout = false;
 
   static const int32_t kAutoScrollTimerDelay = 30;
 
