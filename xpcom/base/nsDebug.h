@@ -108,6 +108,11 @@ inline void MOZ_PretendNoReturn()
 
 
 
+#define NS_PRECONDITION(expr, str) NS_ASSERTION(expr, str)
+
+
+
+
 
 #ifdef DEBUG
 #define NS_NOTREACHED(str)                                    \
