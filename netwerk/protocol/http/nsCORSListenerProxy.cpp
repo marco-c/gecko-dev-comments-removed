@@ -490,6 +490,7 @@ nsCORSListenerProxy::OnStartRequest(nsIRequest* aRequest,
     }
     listener->OnStartRequest(aRequest, aContext);
 
+    
     return NS_ERROR_DOM_BAD_URI;
   }
 
@@ -554,10 +555,12 @@ nsCORSListenerProxy::CheckRequestApproved(nsIRequest* aRequest)
   nsresult status;
   nsresult rv = aRequest->GetStatus(&status);
   if (NS_FAILED(rv)) {
-   return rv;
+    LogBlockedRequest(aRequest, "CORSDidNotSucceed", nullptr, topChannel);
+    return rv;
   }
 
   if (NS_FAILED(status)) {
+    LogBlockedRequest(aRequest, "CORSDidNotSucceed", nullptr, topChannel);
     return status;
   }
 
@@ -667,6 +670,7 @@ nsCORSListenerProxy::OnDataAvailable(nsIRequest* aRequest,
 
   MOZ_ASSERT(mInited, "nsCORSListenerProxy has not been initialized properly");
   if (!mRequestApproved) {
+    
     return NS_ERROR_DOM_BAD_URI;
   }
   nsCOMPtr<nsIStreamListener> listener;
@@ -752,6 +756,7 @@ nsCORSListenerProxy::AsyncOnChannelRedirect(nsIChannel *aOldChannel,
         }
       }
       aOldChannel->Cancel(NS_ERROR_DOM_BAD_URI);
+      
       return NS_ERROR_DOM_BAD_URI;
     }
 
@@ -985,6 +990,9 @@ nsCORSListenerProxy::UpdateChannel(nsIChannel* aChannel,
   
   
   if (nsContentUtils::IsExpandedPrincipal(mOriginHeaderPrincipal)) {
+    nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aChannel);
+    LogBlockedRequest(aChannel, "CORSOriginHeaderNotAdded", nullptr,
+                      httpChannel);
     return NS_ERROR_DOM_BAD_URI;
   }
 
@@ -1034,7 +1042,11 @@ nsCORSListenerProxy::CheckPreflightNeeded(nsIChannel* aChannel, UpdateType aUpda
   bool doPreflight = loadInfo->GetForcePreflight();
 
   nsCOMPtr<nsIHttpChannel> http = do_QueryInterface(aChannel);
-  NS_ENSURE_TRUE(http, NS_ERROR_DOM_BAD_URI);
+  if (!http) {
+    LogBlockedRequest(aChannel, "CORSRequestNotHttp", nullptr, mHttpChannel);
+    return NS_ERROR_DOM_BAD_URI;
+  }
+
   nsAutoCString method;
   Unused << http->GetRequestMethod(method);
   if (!method.LowerCaseEqualsLiteral("get") &&
@@ -1073,11 +1085,18 @@ nsCORSListenerProxy::CheckPreflightNeeded(nsIChannel* aChannel, UpdateType aUpda
   
   
   if (aUpdateType != UpdateType::InternalOrHSTSRedirect) {
-    NS_ENSURE_FALSE(mHasBeenCrossSite, NS_ERROR_DOM_BAD_URI);
+    if (mHasBeenCrossSite) {
+      LogBlockedRequest(aChannel, "CORSPreflightDidNotSucceed", nullptr,
+                        mHttpChannel);
+      return NS_ERROR_DOM_BAD_URI;
+    }
   }
 
   nsCOMPtr<nsIHttpChannelInternal> internal = do_QueryInterface(http);
-  NS_ENSURE_TRUE(internal, NS_ERROR_DOM_BAD_URI);
+  if (!internal) {
+    LogBlockedRequest(aChannel, "CORSDidNotSucceed", nullptr, mHttpChannel);
+    return NS_ERROR_DOM_BAD_URI;
+  }
 
   internal->SetCorsPreflightParameters(
     headers.IsEmpty() ? loadInfoHeaders : headers);
@@ -1312,8 +1331,12 @@ nsCORSPreflightListener::AsyncOnChannelRedirect(nsIChannel *aOldChannel,
 {
   
   if (!NS_IsInternalSameURIRedirect(aOldChannel, aNewChannel, aFlags) &&
-      !NS_IsHSTSUpgradeRedirect(aOldChannel, aNewChannel, aFlags))
+      !NS_IsHSTSUpgradeRedirect(aOldChannel, aNewChannel, aFlags)) {
+    nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aOldChannel);
+    LogBlockedRequest(aOldChannel, "CORSExternalRedirectNotAllowed", nullptr,
+                      httpChannel);
     return NS_ERROR_DOM_BAD_URI;
+  }
 
   callback->OnRedirectVerifyCallback(NS_OK);
   return NS_OK;
