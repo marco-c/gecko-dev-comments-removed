@@ -5,7 +5,7 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 from .util.schema import validate_schema, Schema
-from voluptuous import Required
+from voluptuous import Required, Optional
 
 graph_config_schema = Schema({
     
@@ -14,6 +14,10 @@ graph_config_schema = Schema({
     Required('treeherder'): {
         
         Required('group-names'): {basestring: basestring}
+    },
+    Required('index'): {
+        
+        Optional('job-names'): [basestring],
     },
     Required('try'): {
         
