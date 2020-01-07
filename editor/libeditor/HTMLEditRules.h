@@ -552,9 +552,11 @@ protected:
 
 
 
-  EditorDOMPoint
-  JoinNearestEditableNodesWithTransaction(nsIContent& aLeftNode,
-                                          nsIContent& aRightNode);
+
+  MOZ_MUST_USE nsresult
+  JoinNearestEditableNodesWithTransaction(
+    nsIContent& aLeftNode, nsIContent& aRightNode,
+    EditorDOMPoint* aNewFirstChildOfRightNode);
 
   Element* GetTopEnclosingMailCite(nsINode& aNode);
 
