@@ -39,6 +39,10 @@
 
 
 
+
+
+
+
 "use strict";
 
 this.EXPORTED_SYMBOLS = [
@@ -49,6 +53,7 @@ this.EXPORTED_SYMBOLS = [
 const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.defineModuleGetter(this, "AppConstants",
   "resource://gre/modules/AppConstants.jsm");
 ChromeUtils.defineModuleGetter(this, "BrowserUtils",
@@ -136,6 +141,41 @@ this.AssociatedToNode = class {
 
 
 this.PanelMultiView = class extends this.AssociatedToNode {
+  
+
+
+
+
+
+
+
+
+  static async openPopup(panelNode, ...args) {
+    let panelMultiViewNode = panelNode.querySelector("panelmultiview");
+    if (panelMultiViewNode) {
+      return this.forNode(panelMultiViewNode).openPopup(...args);
+    }
+    panelNode.openPopup(...args);
+    return true;
+  }
+
+  
+
+
+
+
+
+
+
+  static hidePopup(panelNode) {
+    let panelMultiViewNode = panelNode.querySelector("panelmultiview");
+    if (panelMultiViewNode) {
+      this.forNode(panelMultiViewNode).hidePopup();
+    } else {
+      panelNode.hidePopup();
+    }
+  }
+
   get _panel() {
     return this.node.parentNode;
   }
@@ -196,7 +236,14 @@ this.PanelMultiView = class extends this.AssociatedToNode {
     return this._currentShowPromise || Promise.resolve();
   }
 
+  constructor(node) {
+    super(node);
+    this._openPopupPromise = Promise.resolve(false);
+    this._openPopupCancelCallback = () => {};
+  }
+
   connect() {
+    this.connected = true;
     this.knownViews = new Set(Array.from(
       this.node.getElementsByTagName("panelview"),
       node => PanelView.forNode(node)));
@@ -266,8 +313,149 @@ this.PanelMultiView = class extends this.AssociatedToNode {
     this._panel.removeEventListener("popupshown", this);
     this._panel.removeEventListener("popuphidden", this);
     this.window.removeEventListener("keydown", this);
-    this.node = this._viewContainer = this._viewStack = this.__dwu =
+    this.node = this._openPopupPromise = this._openPopupCancelCallback =
+      this._viewContainer = this._viewStack = this.__dwu =
       this._panelViewCache = this._transitionDetails = null;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async openPopup(...args) {
+    
+    
+    
+    
+    
+    let canCancel = true;
+    let cancelCallback = this._openPopupCancelCallback = () => {
+      
+      
+      
+      
+      
+      if (canCancel && this.node) {
+        canCancel = false;
+        this.dispatchCustomEvent("popuphidden");
+      }
+    };
+
+    
+    
+    let openPopupPromise = this._openPopupPromise.catch(() => {
+      return false;
+    });
+
+    
+    
+    
+    return this._openPopupPromise = openPopupPromise.then(async wasShown => {
+      
+      if (!this.node) {
+        return false;
+      }
+      
+      
+      
+      
+      if (wasShown && ["open", "showing"].includes(this._panel.state)) {
+        return true;
+      }
+      try {
+        
+        
+        
+        
+        
+        if (!this.connected) {
+          await BrowserUtils.promiseLayoutFlushed(this.document, "layout",
+                                                  () => {});
+          
+          
+          if (!this.connected) {
+            throw new Error("The binding for the panelmultiview element isn't" +
+                            " connected. The containing panel may still have" +
+                            " its display turned off by the hidden attribute.");
+          }
+        }
+        
+      } catch (ex) {
+        cancelCallback();
+        throw ex;
+      }
+      
+      if (!canCancel || !this.node) {
+        return false;
+      }
+      
+      
+      
+      
+      try {
+        canCancel = false;
+        this._panel.openPopup(...args);
+        return true;
+      } catch (ex) {
+        this.dispatchCustomEvent("popuphidden");
+        throw ex;
+      }
+    });
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  hidePopup() {
+    if (!this.node) {
+      return;
+    }
+
+    
+    
+    
+    
+    if (["open", "showing"].includes(this._panel.state)) {
+      this._panel.hidePopup();
+    } else {
+      this._openPopupCancelCallback();
+    }
   }
 
   
