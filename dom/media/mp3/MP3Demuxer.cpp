@@ -391,16 +391,31 @@ MP3TrackDemuxer::Duration() const
   if (mParser.VBRInfo().IsValid() && numAudioFrames.valueOr(0) + 1 > 1) {
     
     numFrames = numAudioFrames.value() + 1;
-  } else {
-    const int64_t streamLen = StreamLength();
-    if (streamLen < 0) {
-      
-      return TimeUnit::FromMicroseconds(-1);
-    }
-    if (AverageFrameLength() > 0) {
-      numFrames = (streamLen - mFirstFrameOffset) / AverageFrameLength();
-    }
+    return Duration(numFrames);
   }
+
+  const int64_t streamLen = StreamLength();
+  if (streamLen < 0) { 
+    
+    return TimeUnit::FromMicroseconds(-1);
+  }
+  
+  
+  
+
+  const int64_t size = streamLen - mFirstFrameOffset;
+  MOZ_ASSERT(size);
+
+  
+  if (!mParser.VBRInfo().IsValid()) {
+    const int32_t bitrate = mParser.CurrentFrame().Header().Bitrate();
+    return media::TimeUnit::FromSeconds(static_cast<double>(size) * 8 / bitrate);
+  }
+
+  if (AverageFrameLength() > 0) {
+    numFrames = size / AverageFrameLength();
+  }
+
   return Duration(numFrames);
 }
 
