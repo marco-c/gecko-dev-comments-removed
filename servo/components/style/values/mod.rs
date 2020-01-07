@@ -195,14 +195,3 @@ impl ToCss for KeyframesName {
     }
 }
 
-
-
-#[allow(missing_docs)]
-#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
-#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, Parse, PartialEq, ToCss)]
-pub enum ExtremumLength {
-    MozMaxContent,
-    MozMinContent,
-    MozFitContent,
-    MozAvailable,
-}
