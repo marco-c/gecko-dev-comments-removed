@@ -11,8 +11,8 @@ const Services = require("Services");
 const { ActorPool, appendExtraActors, createExtraActors } = require("devtools/server/actors/common");
 const { DebuggerServer } = require("devtools/server/main");
 
-loader.lazyRequireGetter(this, "WindowActor",
-  "devtools/server/actors/window", true);
+loader.lazyRequireGetter(this, "ChromeWindowTargetActor",
+  "devtools/server/actors/targets/chrome-window", true);
 
 
 
@@ -221,7 +221,7 @@ RootActor.prototype = {
     this.conn = null;
     this._tabActorPool = null;
     this._globalActorPool = null;
-    this._windowActorPool = null;
+    this._chromeWindowActorPool = null;
     this._parameters = null;
     this._chromeActor = null;
     this._processActors.clear();
@@ -364,14 +364,14 @@ RootActor.prototype = {
       };
     }
 
-    if (!this._windowActorPool) {
-      this._windowActorPool = new ActorPool(this.conn);
-      this.conn.addActorPool(this._windowActorPool);
+    if (!this._chromeWindowActorPool) {
+      this._chromeWindowActorPool = new ActorPool(this.conn);
+      this.conn.addActorPool(this._chromeWindowActorPool);
     }
 
-    const actor = new WindowActor(this.conn, window);
+    const actor = new ChromeWindowTargetActor(this.conn, window);
     actor.parentID = this.actorID;
-    this._windowActorPool.addActor(actor);
+    this._chromeWindowActorPool.addActor(actor);
 
     return {
       from: this.actorID,

@@ -4,6 +4,14 @@
 
 "use strict";
 
+
+
+
+
+
+
+
+
 const { Ci } = require("chrome");
 const Services = require("Services");
 const {
@@ -13,7 +21,14 @@ const {
 
 const { extend } = require("devtools/shared/extend");
 const { ActorClassWithSpec } = require("devtools/shared/protocol");
-const { browsingContextTargetSpec } = require("devtools/shared/specs/targets/browsing-context");
+const { chromeWindowTargetSpec } = require("devtools/shared/specs/targets/chrome-window");
+
+
+
+
+
+
+const chromeWindowTargetPrototype = extend({}, browsingContextTargetPrototype);
 
 
 
@@ -36,9 +51,7 @@ const { browsingContextTargetSpec } = require("devtools/shared/specs/targets/bro
 
 
 
-const windowPrototype = extend({}, browsingContextTargetPrototype);
-
-windowPrototype.initialize = function(connection, window) {
+chromeWindowTargetPrototype.initialize = function(connection, window) {
   BrowsingContextTargetActor.prototype.initialize.call(this, connection);
 
   const docShell = window.QueryInterface(Ci.nsIInterfaceRequestor)
@@ -51,9 +64,9 @@ windowPrototype.initialize = function(connection, window) {
 
 
 
-windowPrototype.isRootActor = true;
+chromeWindowTargetPrototype.isRootActor = true;
 
-windowPrototype.observe = function(subject, topic, data) {
+chromeWindowTargetPrototype.observe = function(subject, topic, data) {
   BrowsingContextTargetActor.prototype.observe.call(this, subject, topic, data);
   if (!this.attached) {
     return;
@@ -63,7 +76,7 @@ windowPrototype.observe = function(subject, topic, data) {
   }
 };
 
-windowPrototype._attach = function() {
+chromeWindowTargetPrototype._attach = function() {
   if (this.attached) {
     return false;
   }
@@ -78,7 +91,7 @@ windowPrototype._attach = function() {
   return true;
 };
 
-windowPrototype._detach = function() {
+chromeWindowTargetPrototype._detach = function() {
   if (!this.attached) {
     return false;
   }
@@ -92,4 +105,5 @@ windowPrototype._detach = function() {
   return true;
 };
 
-exports.WindowActor = ActorClassWithSpec(browsingContextTargetSpec, windowPrototype);
+exports.ChromeWindowTargetActor =
+  ActorClassWithSpec(chromeWindowTargetSpec, chromeWindowTargetPrototype);
