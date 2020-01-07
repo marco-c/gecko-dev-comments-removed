@@ -868,6 +868,13 @@ RetainedDisplayListBuilder::ComputeRebuildRegion(nsTArray<nsIFrame*>& aModifiedF
     
     nsRect overflow = f->GetVisualOverflowRectRelativeToSelf();
 
+    
+    
+    
+    if (f == mBuilder.GetCaretFrame()) {
+      overflow.UnionRect(overflow, mBuilder.GetCaretRect());
+    }
+
     ProcessFrame(f, mBuilder, &agr, overflow, mBuilder.RootReferenceFrame(),
                  aOutFramesWithProps, true);
 
