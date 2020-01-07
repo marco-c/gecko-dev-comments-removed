@@ -1,7 +1,7 @@
 
 
 
-const url = "http://example.org/browser/browser/base/content/test/general/dummy_page.html";
+const url = getRootDirectory(gTestPath).replace("chrome://mochitests/content", "http://example.org") + "dummy_page.html";
 
 add_task(async function purgeHistoryTest() {
   await BrowserTestUtils.withNewTab({
