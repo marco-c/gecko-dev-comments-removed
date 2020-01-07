@@ -855,7 +855,7 @@ pref("gfx.compositor.glcontext.opaque", false);
 
 pref("gfx.webrender.highlight-painted-layers", false);
 pref("gfx.webrender.async-scene-build", false);
-pref("gfx.webrender.blob-images", 1);
+pref("gfx.webrender.blob-images", true);
 pref("gfx.webrender.blob.invalidation", true);
 pref("gfx.webrender.hit-test", true);
 
@@ -4565,7 +4565,7 @@ pref("image.mem.animated.use_heap", false);
 
 
 
-pref("image.mem.shared", 1);
+pref("image.mem.shared", true);
 
 
 pref("image.mem.allow_locking_in_content_processes", true);
