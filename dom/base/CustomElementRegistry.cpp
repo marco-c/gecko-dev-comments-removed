@@ -972,18 +972,24 @@ CustomElementRegistry::Upgrade(Element* aElement,
 void
 CustomElementReactionsStack::CreateAndPushElementQueue()
 {
+  MOZ_ASSERT(mRecursionDepth);
+  MOZ_ASSERT(!mIsElementQueuePushedForCurrentRecursionDepth);
+
   
   mReactionsStack.AppendElement(MakeUnique<ElementQueue>());
+  mIsElementQueuePushedForCurrentRecursionDepth = true;
 }
 
 void
 CustomElementReactionsStack::PopAndInvokeElementQueue()
 {
-  
-  
+  MOZ_ASSERT(mRecursionDepth);
+  MOZ_ASSERT(mIsElementQueuePushedForCurrentRecursionDepth);
   MOZ_ASSERT(!mReactionsStack.IsEmpty(),
              "Reaction stack shouldn't be empty");
 
+  
+  
   const uint32_t lastIndex = mReactionsStack.Length() - 1;
   ElementQueue* elementQueue = mReactionsStack.ElementAt(lastIndex).get();
   
@@ -1007,6 +1013,7 @@ CustomElementReactionsStack::PopAndInvokeElementQueue()
              "reactions created by InvokeReactions() should be consumed and removed");
 
   mReactionsStack.RemoveElementAt(lastIndex);
+  mIsElementQueuePushedForCurrentRecursionDepth = false;
 }
 
 void
@@ -1030,8 +1037,15 @@ CustomElementReactionsStack::Enqueue(Element* aElement,
   RefPtr<CustomElementData> elementData = aElement->GetCustomElementData();
   MOZ_ASSERT(elementData, "CustomElementData should exist");
 
-  
-  if (!mReactionsStack.IsEmpty()) {
+  if (mRecursionDepth) {
+    
+    
+    if (!mIsElementQueuePushedForCurrentRecursionDepth) {
+      CreateAndPushElementQueue();
+    }
+
+    MOZ_ASSERT(!mReactionsStack.IsEmpty());
+    
     mReactionsStack.LastElement()->AppendElement(aElement);
     elementData->mReactionQueue.AppendElement(aReaction);
     return;
@@ -1039,6 +1053,8 @@ CustomElementReactionsStack::Enqueue(Element* aElement,
 
   
   
+  MOZ_ASSERT(mReactionsStack.IsEmpty(),
+             "custom element reactions stack should be empty");
   MOZ_ASSERT(!aReaction->IsUpgradeReaction(),
              "Upgrade reaction should not be scheduled to backup queue");
   mBackupQueue.AppendElement(aElement);
