@@ -606,7 +606,9 @@ private:
 
   
   
-  MediaEnginePrefs mLastPrefs;
+  
+  
+  MediaEnginePrefs mNetPrefs;
 
   
   AlignedFloatBuffer mOutputBuffer;
