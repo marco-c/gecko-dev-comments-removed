@@ -4,14 +4,12 @@
 
 
 
-use std::fmt::{self, Write};
-use style_traits::values::{CssWriter, SequenceWriter, ToCss};
 #[cfg(feature = "gecko")]
 use values::specified::url::SpecifiedUrl;
 
 
 #[derive(Animate, Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo,
-         ToAnimatedValue, ToAnimatedZero)]
+         ToAnimatedValue, ToAnimatedZero, ToCss)]
 pub struct BoxShadow<Color, SizeLength, BlurShapeLength, ShapeLength> {
     
     pub base: SimpleShadow<Color, SizeLength, BlurShapeLength>,
@@ -19,7 +17,7 @@ pub struct BoxShadow<Color, SizeLength, BlurShapeLength, ShapeLength> {
     pub spread: ShapeLength,
     
     #[animation(constant)]
-    #[value_info(represents_keyword)]
+    #[css(represents_keyword)]
     pub inset: bool,
 }
 
@@ -79,28 +77,4 @@ pub struct SimpleShadow<Color, SizeLength, ShapeLength> {
     pub vertical: SizeLength,
     
     pub blur: ShapeLength,
-}
-
-impl<Color, SizeLength, BlurShapeLength, ShapeLength> ToCss
-    for BoxShadow<Color, SizeLength, BlurShapeLength, ShapeLength>
-where
-    Color: ToCss,
-    SizeLength: ToCss,
-    BlurShapeLength: ToCss,
-    ShapeLength: ToCss,
-{
-    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
-    where
-        W: Write,
-    {
-        {
-            let mut writer = SequenceWriter::new(&mut *dest, " ");
-            writer.item(&self.base)?;
-            writer.item(&self.spread)?;
-        }
-        if self.inset {
-            dest.write_str(" inset")?;
-        }
-        Ok(())
-    }
 }

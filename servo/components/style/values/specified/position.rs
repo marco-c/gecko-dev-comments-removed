@@ -424,14 +424,14 @@ pub enum AutoFlow {
 }
 
 #[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo,
-         ToComputedValue)]
+         ToComputedValue, ToCss)]
 
 
 pub struct GridAutoFlow {
     
     pub autoflow: AutoFlow,
     
-    #[value_info(represents_keyword)]
+    #[css(represents_keyword)]
     pub dense: bool,
 }
 
@@ -443,20 +443,6 @@ impl GridAutoFlow {
             autoflow: AutoFlow::Row,
             dense: false,
         }
-    }
-}
-
-impl ToCss for GridAutoFlow {
-    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
-    where
-        W: Write,
-    {
-        self.autoflow.to_css(dest)?;
-
-        if self.dense {
-            dest.write_str(" dense")?;
-        }
-        Ok(())
     }
 }
 
