@@ -86,10 +86,6 @@ inline uint32_t RoundingDivideBy255(uint32_t n)
   return (n + 127) / 255;
 }
 
-
-
-nscolor LinearBlendColors(nscolor aBg, nscolor aFg, uint_fast8_t aFgRatio);
-
 } 
 
 

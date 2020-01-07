@@ -801,9 +801,6 @@ ConstructBorderRenderer(nsPresContext* aPresContext,
   nsMargin border = aStyleBorder.GetComputedBorder();
 
   
-  const nsStyleColor* ourColor = aComputedStyle->StyleColor();
-
-  
   
   bool quirks = aPresContext->CompatibilityMode() == eCompatibility_NavQuirks;
   nsIFrame* bgFrame = nsCSSRendering::FindNonTransparentBackgroundFrame(aForFrame, quirks);
@@ -861,7 +858,7 @@ ConstructBorderRenderer(nsPresContext* aPresContext,
   
   NS_FOR_CSS_SIDES (i) {
     borderStyles[i] = aStyleBorder.GetBorderStyle(i);
-    borderColors[i] = ourColor->CalcComplexColor(aStyleBorder.mBorderColor[i]);
+    borderColors[i] = aStyleBorder.mBorderColor[i].CalcColor(aComputedStyle);
   }
 
   PrintAsFormatString(" borderStyles: %d %d %d %d\n", borderStyles[0], borderStyles[1], borderStyles[2], borderStyles[3]);
