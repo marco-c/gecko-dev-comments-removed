@@ -350,8 +350,9 @@ public:
 
 
   template<typename PT, typename CT>
-  nsresult InsertNode(nsIContent& aContentToInsert,
-                      const EditorDOMPointBase<PT, CT>& aPointToInsert);
+  nsresult
+  InsertNodeWithTransaction(nsIContent& aContentToInsert,
+                            const EditorDOMPointBase<PT, CT>& aPointToInsert);
 
   enum ECloneAttributes { eDontCloneAttributes, eCloneAttributes };
   already_AddRefed<Element> ReplaceContainer(Element* aOldContainer,

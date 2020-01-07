@@ -151,7 +151,7 @@ HTMLEditor::InsertCell(nsIDOMElement* aDOMCell,
 
   
   AutoTransactionsConserveSelection dontChangeSelection(this);
-  return InsertNode(*newCell, pointToInsert);
+  return InsertNodeWithTransaction(*newCell, pointToInsert);
 }
 
 nsresult
@@ -220,7 +220,8 @@ HTMLEditor::InsertTableCell(int32_t aNumber,
       if (NS_WARN_IF(!cell)) {
         return NS_ERROR_FAILURE;
       }
-      rv = InsertNode(*cell, EditorRawDOMPoint(cellParent, cellOffset));
+      rv = InsertNodeWithTransaction(*cell,
+                                     EditorRawDOMPoint(cellParent, cellOffset));
       if (NS_FAILED(rv)) {
         break;
       }
@@ -661,8 +662,12 @@ HTMLEditor::InsertTableRow(int32_t aNumber,
 
       
       
-      rv = InsertNode(*newRow, EditorRawDOMPoint(parentOfRow, newRowOffset));
-      NS_ENSURE_SUCCESS(rv, rv);
+      rv = InsertNodeWithTransaction(*newRow,
+                                     EditorRawDOMPoint(parentOfRow,
+                                                       newRowOffset));
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
     }
   }
 
@@ -2302,8 +2307,12 @@ HTMLEditor::MergeCells(nsCOMPtr<nsIDOMElement> aTargetCell,
       nsresult rv = DeleteNode(cellChild->AsDOMNode());
       NS_ENSURE_SUCCESS(rv, rv);
 
-      rv = InsertNode(*cellChild, EditorRawDOMPoint(aTargetCell, insertIndex));
-      NS_ENSURE_SUCCESS(rv, rv);
+      rv = InsertNodeWithTransaction(*cellChild,
+                                     EditorRawDOMPoint(aTargetCell,
+                                                       insertIndex));
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
     }
   }
 

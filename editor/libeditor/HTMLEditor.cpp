@@ -1266,7 +1266,8 @@ HTMLEditor::ReplaceHeadContentsWithHTML(const nsAString& aSourceToInsert)
   
   while (nsCOMPtr<nsIContent> child = docfrag->GetFirstChild()) {
     nsresult rv =
-      InsertNode(*child, EditorRawDOMPoint(headNode, offsetOfNewNode++));
+      InsertNodeWithTransaction(*child,
+                                EditorRawDOMPoint(headNode, offsetOfNewNode++));
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -1670,7 +1671,7 @@ HTMLEditor::InsertNodeIntoProperAncestor(
     
     AutoEditorDOMPointChildInvalidator lockOffset(pointToInsert);
     
-    nsresult rv = InsertNode(aNode, pointToInsert);
+    nsresult rv = InsertNodeWithTransaction(aNode, pointToInsert);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return EditorDOMPoint();
     }
