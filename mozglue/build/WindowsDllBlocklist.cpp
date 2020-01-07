@@ -260,6 +260,9 @@ static const DllBlockInfo sWindowsDllBlocklist[] = {
   
   { "pghook.dll", ALL_VERSIONS },
 
+  
+  { "banksafe64.dll", MAKE_VERSION(1, 2, 15299, 65535) },
+
   { nullptr, 0 }
 };
 
