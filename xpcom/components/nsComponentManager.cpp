@@ -250,12 +250,6 @@ nsTArray<const mozilla::Module*>* nsComponentManagerImpl::sStaticModules;
 NSMODULE_DEFN(start_kPStaticModules);
 NSMODULE_DEFN(end_kPStaticModules);
 
-
-
-
-
-
-MOZ_ASAN_BLACKLIST
  void
 nsComponentManagerImpl::InitializeStaticModules()
 {
@@ -267,9 +261,7 @@ nsComponentManagerImpl::InitializeStaticModules()
   for (const mozilla::Module * const* staticModules =
          &NSMODULE_NAME(start_kPStaticModules) + 1;
        staticModules < &NSMODULE_NAME(end_kPStaticModules); ++staticModules)
-    if (*staticModules) { 
-      sStaticModules->AppendElement(*staticModules);
-    }
+    sStaticModules->AppendElement(*staticModules);
 }
 
 nsTArray<nsComponentManagerImpl::ComponentLocation>*
