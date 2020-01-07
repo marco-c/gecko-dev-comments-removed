@@ -8,6 +8,7 @@
 #include "builtin/Promise.h"
 
 #include "mozilla/Atomics.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/TimeStamp.h"
 
 #include "jsexn.h"
@@ -38,6 +39,9 @@ MillisecondsSinceStartup()
 enum PromiseHandler {
     PromiseHandlerIdentity = 0,
     PromiseHandlerThrower,
+
+    
+    PromiseHandlerThen,
 
     
     PromiseHandlerAsyncFunctionAwaitedFulfilled,
@@ -555,6 +559,10 @@ static MOZ_MUST_USE bool EnqueuePromiseResolveThenableJob(JSContext* cx,
                                                           HandleValue thenable,
                                                           HandleValue thenVal);
 
+static bool Promise_then(JSContext* cx, unsigned argc, Value* vp);
+static bool Promise_then_impl(JSContext* cx, HandleValue promiseVal, HandleValue onFulfilled,
+                              HandleValue onRejected, MutableHandleValue rval, bool rvalUsed);
+
 
 static MOZ_MUST_USE bool
 ResolvePromiseInternal(JSContext* cx, HandleObject promise, HandleValue resolutionVal)
@@ -596,6 +604,11 @@ ResolvePromiseInternal(JSContext* cx, HandleObject promise, HandleValue resoluti
     
     if (!IsCallable(thenVal))
         return FulfillMaybeWrappedPromise(cx, promise, resolutionVal);
+
+    
+    
+    if (IsNativeFunction(thenVal, Promise_then))
+        thenVal = UndefinedValue();
 
     
     RootedValue promiseVal(cx, ObjectValue(*promise));
@@ -1290,7 +1303,9 @@ PromiseResolveThenableJob(JSContext* cx, unsigned argc, Value* vp)
 
     RootedFunction job(cx, &args.callee().as<JSFunction>());
     RootedValue then(cx, job->getExtendedSlot(ThenableJobSlot_Handler));
-    MOZ_ASSERT(!IsWrapper(&then.toObject()));
+    MOZ_ASSERT(then.isObject() || then.isInt32());
+    MOZ_ASSERT_IF(then.isObject(), !IsWrapper(&then.toObject()));
+    MOZ_ASSERT_IF(then.isInt32(), then.toInt32() == PromiseHandlerThen);
     RootedNativeObject jobArgs(cx, &job->getExtendedSlot(ThenableJobSlot_JobData)
                                     .toObject().as<NativeObject>());
 
@@ -1304,15 +1319,23 @@ PromiseResolveThenableJob(JSContext* cx, unsigned argc, Value* vp)
         return false;
 
     
-    FixedInvokeArgs<2> args2(cx);
-    args2[0].setObject(*resolveFn);
-    args2[1].setObject(*rejectFn);
-
     RootedValue rval(cx);
+    if (then.isObject()) {
+        FixedInvokeArgs<2> args2(cx);
+        args2[0].setObject(*resolveFn);
+        args2[1].setObject(*rejectFn);
 
-    
-    if (Call(cx, then, thenable, args2, &rval))
-        return true;
+        
+        if (Call(cx, then, thenable, args2, &rval))
+            return true;
+    } else {
+        RootedValue resolveVal(cx, ObjectValue(*resolveFn));
+        RootedValue rejectVal(cx, ObjectValue(*rejectFn));
+
+        
+        if (Promise_then_impl(cx, thenable, resolveVal, rejectVal, &rval,  false))
+            return true;
+    }
 
     if (!MaybeGetAndClearException(cx, &rval))
         return false;
@@ -1323,6 +1346,8 @@ PromiseResolveThenableJob(JSContext* cx, unsigned argc, Value* vp)
     RootedValue rejectVal(cx, ObjectValue(*rejectFn));
     return Call(cx, rejectVal, UndefinedHandleValue, rejectArgs, &rval);
 }
+
+
 
 
 
@@ -1344,8 +1369,13 @@ EnqueuePromiseResolveThenableJob(JSContext* cx, HandleValue promiseToResolve_,
     
     
     
-    RootedObject then(cx, CheckedUnwrap(&thenVal.toObject()));
-    AutoRealm ar(cx, then);
+    RootedObject then(cx);
+    mozilla::Maybe<AutoRealm> ar;
+
+    if (thenVal.isObject()) {
+        then = CheckedUnwrap(&thenVal.toObject());
+        ar.emplace(cx, then);
+    }
 
     RootedAtom funName(cx, cx->names().empty);
     RootedFunction job(cx, NewNativeFunction(cx, PromiseResolveThenableJob, 0, funName,
@@ -1354,7 +1384,10 @@ EnqueuePromiseResolveThenableJob(JSContext* cx, HandleValue promiseToResolve_,
         return false;
 
     
-    job->setExtendedSlot(ThenableJobSlot_Handler, ObjectValue(*then));
+    if (then)
+        job->setExtendedSlot(ThenableJobSlot_Handler, ObjectValue(*then));
+    else
+        job->setExtendedSlot(ThenableJobSlot_Handler, Int32Value(PromiseHandlerThen));
 
     
     
@@ -3028,10 +3061,6 @@ js::AsyncGeneratorEnqueue(JSContext* cx, HandleValue asyncGenVal,
     result.setObject(*resultPromise);
     return true;
 }
-
-static bool Promise_then(JSContext* cx, unsigned argc, Value* vp);
-static bool Promise_then_impl(JSContext* cx, HandleValue promiseVal, HandleValue onFulfilled,
-                              HandleValue onRejected, MutableHandleValue rval, bool rvalUsed);
 
 static bool
 Promise_catch_impl(JSContext* cx, unsigned argc, Value* vp, bool rvalUsed)
