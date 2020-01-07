@@ -269,7 +269,7 @@ browser.usage:
       - 1331915
     description: >
       The number of times a graphite2 font has been loaded.
-    expires: "65"
+    expires: "60"
     kind: uint
     notification_emails:
       - tom@mozilla.com
@@ -1264,21 +1264,6 @@ screenshots:
       - ibicking@mozilla.com
       - clouserw@mozilla.com
     release_channel_collection: opt-out
-    record_in_processes:
-      - 'main'
-
-network.http:
-  backup_conn_won:
-    bug_numbers:
-      - 1402811
-    description: >
-      For connection where TFO has not be use, collect telemetry on whether the
-      backup connection or the primary connection was faster.
-    expires: "61"
-    kind: boolean
-    notification_emails:
-      - necko@mozilla.com
-      - ddamjanovic@mozilla.com
     record_in_processes:
       - 'main'
 
