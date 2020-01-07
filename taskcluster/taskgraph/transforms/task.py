@@ -865,15 +865,22 @@ def build_docker_worker_payload(config, task, task_def):
         
         
         
+
+        
+        
+        
+        
+        cache_version = 'v1'
+
         if run_task:
-            suffix = '-%s' % _run_task_suffix()
+            suffix = '-%s-%s' % (cache_version, _run_task_suffix())
 
             if out_of_tree_image:
                 name_hash = hashlib.sha256(out_of_tree_image).hexdigest()
                 suffix += name_hash[0:12]
 
         else:
-            suffix = ''
+            suffix = '-%s' % cache_version
 
         skip_untrusted = config.params.is_try() or level == 1
 
