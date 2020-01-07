@@ -25,15 +25,11 @@ namespace base {
 
 #if defined(OS_WIN)
 typedef HANDLE SharedMemoryHandle;
-typedef HANDLE SharedMemoryLock;
 #elif defined(OS_POSIX)
 
 
 typedef FileDescriptor SharedMemoryHandle;
 typedef ino_t SharedMemoryId;
-
-
-
 #endif
 
 
@@ -143,27 +139,11 @@ class SharedMemory {
     return ShareToProcessCommon(target_pid, new_handle, true);
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  void Lock();
-
-  
-  void Unlock();
-
  private:
 #if defined(OS_POSIX)
   bool CreateOrOpen(const std::wstring &name, int posix_flags, size_t size);
   bool FilenameForMemoryName(const std::wstring &memname,
                              std::wstring *filename);
-  void LockOrUnlockCommon(int function);
-
 #endif
   bool ShareToProcessCommon(ProcessId target_pid,
                             SharedMemoryHandle* new_handle,
@@ -179,29 +159,8 @@ class SharedMemory {
   void*              memory_;
   bool               read_only_;
   size_t             max_size_;
-#if !defined(OS_POSIX)
-  SharedMemoryLock   lock_;
-#endif
 
   DISALLOW_EVIL_CONSTRUCTORS(SharedMemory);
-};
-
-
-
-class SharedMemoryAutoLock {
- public:
-  explicit SharedMemoryAutoLock(SharedMemory* shared_memory)
-      : shared_memory_(shared_memory) {
-    shared_memory_->Lock();
-  }
-
-  ~SharedMemoryAutoLock() {
-    shared_memory_->Unlock();
-  }
-
- private:
-  SharedMemory* shared_memory_;
-  DISALLOW_EVIL_CONSTRUCTORS(SharedMemoryAutoLock);
 };
 
 }  
