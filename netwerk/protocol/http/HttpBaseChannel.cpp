@@ -4326,6 +4326,22 @@ HttpBaseChannel::GetPerformanceStorage()
 void
 HttpBaseChannel::MaybeReportTimingData()
 {
+  
+  
+  
+  
+  
+  if (mLoadInfo && mLoadInfo->GetExternalContentPolicyType() == nsIContentPolicy::TYPE_DOCUMENT) {
+    if ((mResponseHead && mResponseHead->HasHeader(nsHttp::Server_Timing)) ||
+        (mResponseTrailers && mResponseTrailers->HasHeader(nsHttp::Server_Timing))) {
+      mozilla::dom::PerformanceStorage* documentPerformance = GetPerformanceStorage();
+      if (documentPerformance) {
+        documentPerformance->CreateDocumentEntry(this);
+      }
+    }
+    return;
+  }
+
   mozilla::dom::PerformanceStorage* documentPerformance = GetPerformanceStorage();
   if (documentPerformance) {
       documentPerformance->AddEntry(this, this);
