@@ -798,9 +798,9 @@ public:
 
 
 
-  void SplitNodeImpl(const EditorDOMPoint& aStartOfRightNode,
-                     nsIContent& aNewLeftNode,
-                     ErrorResult& aError);
+  void DoSplitNode(const EditorDOMPoint& aStartOfRightNode,
+                   nsIContent& aNewLeftNode,
+                   ErrorResult& aError);
 
   
 

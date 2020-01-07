@@ -94,8 +94,8 @@ SplitNodeTransaction::DoTransaction()
   }
 
   
-  mEditorBase->SplitNodeImpl(EditorDOMPoint(mStartOfRightNode),
-                             *mNewLeftNode, error);
+  mEditorBase->DoSplitNode(EditorDOMPoint(mStartOfRightNode),
+                           *mNewLeftNode, error);
   
   
   
