@@ -18,7 +18,6 @@
 #include "nsDebug.h"
 
 #include <math.h>
-#include <dlfcn.h>
 
 static gboolean checkbox_check_state;
 static gboolean notebook_has_tab_gap;
@@ -182,9 +181,6 @@ moz_gtk_refresh()
     sCheckboxMetrics.initialized = false;
     sRadioMetrics.initialized = false;
     sToolbarMetrics.initialized = false;
-
-    
-    ResetWidgetCache();
 }
 
 gint
@@ -449,9 +445,9 @@ moz_gtk_header_bar_button_paint(cairo_t *cr, GdkRectangle* rect,
     moz_gtk_button_paint(cr, rect, state, relief, widget, direction);
 
     GtkWidget* iconWidget = gtk_bin_get_child(GTK_BIN(widget));
-    cairo_surface_t *surface = GetWidgetIconSurface(iconWidget, state->scale);
+    GdkPixbuf* pixbuf = GetWidgetIconPixbuf(iconWidget);
 
-    if (surface) {
+    if (pixbuf) {
         GtkStyleContext* style = gtk_widget_get_style_context(iconWidget);
         GtkStateFlags state_flags = GetStateFlagsFromGtkWidgetState(state);
 
@@ -461,13 +457,8 @@ moz_gtk_header_bar_button_paint(cairo_t *cr, GdkRectangle* rect,
         const ToolbarButtonGTKMetrics *metrics =
             GetToolbarButtonMetrics(aWidgetType);
 
-        
-        static auto sGtkRenderIconSurfacePtr =
-          (void (*)(GtkStyleContext *, cairo_t *, cairo_surface_t *, gdouble, gdouble))
-        dlsym(RTLD_DEFAULT, "gtk_render_icon_surface");
-
-        sGtkRenderIconSurfacePtr(style, cr, surface,
-                                 metrics->iconXPosition, metrics->iconYPosition);
+        gtk_render_icon(style, cr, pixbuf,
+                        metrics->iconXPosition, metrics->iconYPosition);
         gtk_style_context_restore(style);
     }
 
@@ -2380,6 +2371,7 @@ moz_gtk_get_widget_border(WidgetNodeType widget, gint* left, gint* top,
         {
             style = GetStyleContext(widget);
             moz_gtk_add_border_padding(style, left, top, right, bottom);
+            *top = *bottom = 0;
             return MOZ_GTK_SUCCESS;
         }
     
