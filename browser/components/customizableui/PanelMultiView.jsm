@@ -120,6 +120,7 @@ const TRANSITION_PHASES = Object.freeze({
 });
 
 let gNodeToObjectMap = new WeakMap();
+let gWindowsWithUnloadHandler = new WeakSet();
 let gMultiLineElementsMap = new WeakMap();
 
 
@@ -290,6 +291,44 @@ var PanelMultiView = class extends this.AssociatedToNode {
     }
   }
 
+  
+
+
+
+
+
+
+  static removePopup(panelNode) {
+    try {
+      let panelMultiViewNode = panelNode.querySelector("panelmultiview");
+      if (panelMultiViewNode) {
+        this.forNode(panelMultiViewNode).disconnect();
+      }
+    } finally {
+      
+      panelNode.remove();
+    }
+  }
+
+  
+
+
+
+  static ensureUnloadHandlerRegistered(window) {
+    if (gWindowsWithUnloadHandler.has(window)) {
+      return;
+    }
+
+    window.addEventListener("unload", () => {
+      for (let panelMultiViewNode of
+           window.document.querySelectorAll("panelmultiview")) {
+        this.forNode(panelMultiViewNode).disconnect();
+      }
+    }, { once: true });
+
+    gWindowsWithUnloadHandler.add(window);
+  }
+
   get _panel() {
     return this.node.parentNode;
   }
@@ -355,6 +394,8 @@ var PanelMultiView = class extends this.AssociatedToNode {
   connect() {
     this.connected = true;
 
+    PanelMultiView.ensureUnloadHandlerRegistered(this.window);
+
     let viewContainer = this._viewContainer =
       this.document.createElement("box");
     viewContainer.classList.add("panel-viewcontainer");
@@ -407,9 +448,9 @@ var PanelMultiView = class extends this.AssociatedToNode {
     });
   }
 
-  destructor() {
+  disconnect() {
     
-    if (!this.node)
+    if (!this.node || !this.connected)
       return;
 
     this._cleanupTransitionPhase();
