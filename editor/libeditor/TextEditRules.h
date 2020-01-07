@@ -139,10 +139,20 @@ protected:
 
   nsresult WillInsertBreak(bool* aCancel, bool* aHandled, int32_t aMaxLength);
 
-  nsresult WillSetText(bool* aCancel,
-                       bool* aHandled,
-                       const nsAString* inString,
-                       int32_t aMaxLength);
+  
+
+
+
+
+
+
+
+
+
+
+  MOZ_MUST_USE nsresult
+  WillSetText(bool* aCancel, bool* aHandled,
+              const nsAString* inString, int32_t aMaxLength);
 
   void WillInsert(bool* aCancel);
 
