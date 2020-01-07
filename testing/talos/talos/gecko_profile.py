@@ -118,7 +118,7 @@ class GeckoProfile(object):
             "enableTracing": 0,
             
             "remoteSymbolServer":
-                "http://symbolapi.mozilla.org:80/talos/",
+                "https://symbols.mozilla.org/symbolicate/v4",
             
             "maxCacheEntries": 2000000,
             
