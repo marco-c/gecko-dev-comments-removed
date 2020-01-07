@@ -805,11 +805,18 @@ nsAtomicFileOutputStream::DoOpen()
     }
 
     if (NS_SUCCEEDED(rv) && mTargetFileExists) {
+        
+        bool isWritable;
+        if (NS_SUCCEEDED(file->IsWritable(&isWritable)) && !isWritable) {
+            return NS_ERROR_FILE_ACCESS_DENIED;
+        }
+
         uint32_t origPerm;
         if (NS_FAILED(file->GetPermissions(&origPerm))) {
             NS_ERROR("Can't get permissions of target file");
             origPerm = mOpenParams.perm;
         }
+
         
         
         rv = tempResult->CreateUnique(nsIFile::NORMAL_FILE_TYPE, origPerm);
