@@ -456,7 +456,7 @@ ServoStyleSet::PreTraverseSync()
     }
   }
 
-  UpdateStylistIfNeeded();
+  MOZ_ASSERT(!StylistNeedsUpdate());
   presContext->CacheAllLangs();
 }
 
@@ -572,8 +572,9 @@ ServoStyleSet::ResolvePseudoElementStyle(Element* aOriginatingElement,
                                          ServoStyleContext* aParentContext,
                                          Element* aPseudoElement)
 {
+  
+  
   UpdateStylistIfNeeded();
-
   MOZ_ASSERT(aType < CSSPseudoElementType::Count);
 
   RefPtr<ServoStyleContext> computedValues;
@@ -929,6 +930,8 @@ ServoStyleSet::ProbePseudoElementStyle(Element* aOriginatingElement,
                                        CSSPseudoElementType aType,
                                        ServoStyleContext* aParentContext)
 {
+  
+  
   UpdateStylistIfNeeded();
 
   
@@ -1176,8 +1179,9 @@ ServoStyleSet::GetKeyframesForName(nsAtom* aName,
                                    const nsTimingFunction& aTimingFunction,
                                    nsTArray<Keyframe>& aKeyframes)
 {
-  UpdateStylistIfNeeded();
-
+  
+  
+  MOZ_ASSERT(!StylistNeedsUpdate());
   return Servo_StyleSet_GetKeyframesForName(mRawSet.get(),
                                             aName,
                                             &aTimingFunction,
@@ -1405,14 +1409,15 @@ ServoStyleSet::AppendFontFaceRules(nsTArray<nsFontFaceRuleContainer>& aArray)
 nsCSSCounterStyleRule*
 ServoStyleSet::CounterStyleRuleForName(nsAtom* aName)
 {
-  
-  
+  MOZ_ASSERT(!StylistNeedsUpdate());
   return Servo_StyleSet_GetCounterStyleRule(mRawSet.get(), aName);
 }
 
 already_AddRefed<gfxFontFeatureValueSet>
 ServoStyleSet::BuildFontFeatureValueSet()
 {
+  
+  
   UpdateStylistIfNeeded();
   RefPtr<gfxFontFeatureValueSet> set =
     Servo_StyleSet_BuildFontFeatureValueSet(mRawSet.get());
@@ -1424,7 +1429,7 @@ ServoStyleSet::ResolveForDeclarations(
   const ServoStyleContext* aParentOrNull,
   RawServoDeclarationBlockBorrowed aDeclarations)
 {
-  UpdateStylistIfNeeded();
+  
   return Servo_StyleSet_ResolveForDeclarations(mRawSet.get(),
                                                aParentOrNull,
                                                aDeclarations).Consume();
