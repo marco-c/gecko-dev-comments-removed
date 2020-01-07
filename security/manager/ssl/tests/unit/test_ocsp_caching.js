@@ -226,7 +226,7 @@ function add_tests() {
     
     
     let proxyFilter = {
-      applyFilter(aProxyService, aChannel, aProxy) {
+      applyFilter(aProxyService, aChannel, aProxy, aCallback) {
         
         if (aChannel.originalURI.spec == "http://localhost:8888/") {
           gObservedCnt++;
@@ -234,7 +234,7 @@ function add_tests() {
                 aFirstPartyDomain, "firstPartyDomain should match");
         }
         
-        return aProxy;
+        aCallback.onProxyFilterResult(aProxy);
       }
     };
     protocolProxyService.registerChannelFilter(proxyFilter, 0);

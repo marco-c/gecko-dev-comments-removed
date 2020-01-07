@@ -72,11 +72,11 @@ function observeChannels(onChannel) {
   
   
   let proxyFilter = {
-    applyFilter(aProxyService, aChannel, aProxy) {
+    applyFilter(aProxyService, aChannel, aProxy, aCallback) {
       
       onChannel(aChannel);
       
-      return aProxy;
+      aCallback.onProxyFilterResult(aProxy);
     }
   };
   protocolProxyService.registerChannelFilter(proxyFilter, 0);
