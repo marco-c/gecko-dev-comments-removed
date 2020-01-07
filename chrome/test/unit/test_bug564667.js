@@ -41,19 +41,13 @@ function test_removed_mapping(chromeURL, target) {
 
 
 
-
-
-function test_no_overlays(chromeURL, target, type = "overlay") {
+function test_no_overlays(chromeURL, target) {
   var uri = Services.io.newURI(chromeURL);
-  var overlays = (type == "overlay") ?
-      gCR.getXULOverlays(uri) : gCR.getStyleOverlays(uri);
+  var overlays = gCR.getStyleOverlays(uri);
 
   
   if (overlays.hasMoreElements()) {
-    if (type == "styles")
-      do_throw("Style Registered: " + chromeURL);
-    else
-      do_throw("Overlay Registered: " + chromeURL);
+    do_throw("Style Registered: " + chromeURL);
   }
 }
 
@@ -79,13 +73,8 @@ function testManifest(manifestPath, baseURI) {
   test_mapping("chrome://testOverride/content", "file:///test1/override");
 
   
-  test_no_overlays("chrome://test1/content/overlay.xul",
-                   "chrome://test1/content/test1.xul");
-
-  
   test_no_overlays("chrome://test1/content/style.xul",
                    "chrome://test1/content/test1.css", "styles");
-
 
   
   Components.manager.removeBootstrappedManifestLocation(manifestPath);
