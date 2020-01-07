@@ -1622,12 +1622,15 @@ class AddonInstall {
     
 
     
-    let repoAddon = await new Promise(resolve => AddonRepository.getCachedAddonByID(this.addon.id, resolve));
+    let repoAddon = await AddonRepository.getCachedAddonByID(this.addon.id);
 
     
     if (!repoAddon) {
-      await new Promise(resolve => AddonRepository.cacheAddons([this.addon.id], resolve));
-      repoAddon = await new Promise(resolve => AddonRepository.getCachedAddonByID(this.addon.id, resolve));
+      try {
+        [repoAddon] = await AddonRepository.cacheAddons([this.addon.id]);
+      } catch (err) {
+        logger.debug(`Error getting metadata for ${this.addon.id}: ${err.message}`);
+      }
     }
 
     this.addon._repositoryAddon = repoAddon;

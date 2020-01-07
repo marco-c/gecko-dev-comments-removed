@@ -13,8 +13,6 @@ const BAD_FRAMED_URL = "https://example.org/" + RELATIVE_DIR + "discovery_frame.
 const PREF_INSTALL_REQUIREBUILTINCERTS = "extensions.install.requireBuiltInCerts";
 
 
-Services.prefs.setBoolPref(PREF_GETADDONS_CACHE_ENABLED, true);
-
 Services.prefs.setBoolPref(PREF_INSTALL_REQUIREBUILTINCERTS, false);
 
 Services.perms.add(NetUtil.newURI("https://example.com/"), "install",
