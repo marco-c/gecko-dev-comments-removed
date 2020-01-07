@@ -353,11 +353,10 @@ void
 MacroAssemblerARM::ma_mov_patch(Imm32 imm32, Register dest, Assembler::Condition c,
                                 RelocStyle rs, Iter iter)
 {
+    
+    
     MOZ_ASSERT(iter.cur());
-
-    
-    
-    iter.maybeSkipAutomaticInstructions();
+    MOZ_ASSERT(iter.cur() == iter.cur()->maybeSkipAutomaticInstructions());
 
     int32_t imm = imm32.value;
     switch(rs) {
