@@ -455,19 +455,28 @@ FT_BEGIN_HEADER
   
 #ifndef FT_EXPORT
 
-#ifdef __cplusplus
+#ifdef FT2_BUILD_LIBRARY
+
+#if defined( _WIN32 ) && ( defined( _DLL ) || defined( DLL_EXPORT ) )
+#define FT_EXPORT( x )  __declspec( dllexport )  x
+#elif defined( __GNUC__ ) && __GNUC__ >= 4
+#define FT_EXPORT( x )  __attribute__(( visibility( "default" ) ))  x
+#elif defined( __cplusplus )
 #define FT_EXPORT( x )  extern "C"  x
 #else
 #define FT_EXPORT( x )  extern  x
 #endif
 
-#ifdef _MSC_VER
-#undef FT_EXPORT
-#ifdef _DLL
-#define FT_EXPORT( x )  __declspec( dllexport )  x
 #else
+
+#if defined( FT2_DLLIMPORT )
 #define FT_EXPORT( x )  __declspec( dllimport )  x
+#elif defined( __cplusplus )
+#define FT_EXPORT( x )  extern "C"  x
+#else
+#define FT_EXPORT( x )  extern  x
 #endif
+
 #endif
 
 #endif 

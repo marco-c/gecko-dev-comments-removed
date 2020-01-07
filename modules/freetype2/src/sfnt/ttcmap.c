@@ -360,7 +360,7 @@
       
       if ( valid->level >= FT_VALIDATE_PARANOID )
       {
-        if ( first_code >= 256 || first_code + code_count > 256 )
+        if ( first_code >= 256 || code_count > 256 - first_code )
           FT_INVALID_DATA;
       }
 
@@ -445,6 +445,7 @@
         if ( sub == subs )
           goto Exit;
       }
+
       result = sub;
     }
 
@@ -517,6 +518,13 @@
         FT_UInt   pos, idx;
 
 
+        if ( char_lo >= start + count && charcode <= 0xFF )
+        {
+          
+          charcode = 0x100;
+          continue;
+        }
+
         if ( offset == 0 )
         {
           if ( charcode == 0x100 )
@@ -549,19 +557,18 @@
             }
           }
         }
+
+        
+        
+        if ( count )
+          charcode--;
       }
 
-      
-      
-      
-      
       
       
     Next_SubHeader:
       if ( charcode <= 0xFF )
         charcode++;
-      else if ( charcode == 0x100 )
-        ;
       else
         charcode = FT_PAD_FLOOR( charcode, 0x100 ) + 0x100;
     }

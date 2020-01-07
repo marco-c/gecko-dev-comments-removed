@@ -147,7 +147,7 @@
   {
 
 #define TRICK_NAMES_MAX_CHARACTERS  19
-#define TRICK_NAMES_COUNT           23
+#define TRICK_NAMES_COUNT           26
 
     static const char trick_names[TRICK_NAMES_COUNT]
                                  [TRICK_NAMES_MAX_CHARACTERS + 1] =
@@ -167,12 +167,15 @@
       "DFGirl-W6-WIN-BF",   
       "DFGothic-EB",        
       "DFGyoSho-Lt",        
+      "DFHei-Md-HK-BF",     
       "DFHSGothic-W5",      
       "DFHSMincho-W3",      
       "DFHSMincho-W7",      
       "DFKaiSho-SB",        
       "DFKaiShu",
+      "DFKaiShu-Md-HK-BF",  
       "DFKai-SB",           
+      "DFMing-Bd-HK-BF",    
       "DLC",                
                             
       "DLCHayMedium",       
@@ -270,7 +273,7 @@
   tt_check_trickyness_sfnt_ids( TT_Face  face )
   {
 #define TRICK_SFNT_IDS_PER_FACE   3
-#define TRICK_SFNT_IDS_NUM_FACES  26
+#define TRICK_SFNT_IDS_NUM_FACES  29
 
     static const tt_sfnt_id_rec sfnt_id[TRICK_SFNT_IDS_NUM_FACES]
                                        [TRICK_SFNT_IDS_PER_FACE] = {
@@ -300,6 +303,11 @@
         { 0x8272F416UL, 0x00000045UL }  
       },
       { 
+        { 0x1257EB46UL, 0x00000350UL }, 
+        { 0xF699D160UL, 0x0000715FUL }, 
+        { 0xD222F568UL, 0x000003BCUL }  
+      },
+      { 
         { 0x1262EB4EUL, 0x00000350UL }, 
         { 0xE86A5D64UL, 0x00007940UL }, 
         { 0x7850F729UL, 0x000005FFUL }  
@@ -323,6 +331,16 @@
         { 0x11E5EAD4UL, 0x00000350UL }, 
         { 0xA6E78C01UL, 0x00008998UL }, 
         { 0x13A42602UL, 0x0000007EUL }  
+      },
+      { 
+        { 0x11E5EAD4UL, 0x00000360UL }, 
+        { 0x9DB282B2UL, 0x0000C06EUL }, 
+        { 0x53E6D7CAUL, 0x00000082UL }  
+      },
+      { 
+        { 0x1243EB18UL, 0x00000350UL }, 
+        { 0xBA0A8C30UL, 0x000074ADUL }, 
+        { 0xF3D83409UL, 0x0000037BUL }  
       },
       { 
         { 0x07DCF546UL, 0x00000308UL }, 

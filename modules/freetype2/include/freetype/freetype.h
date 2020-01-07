@@ -762,6 +762,7 @@ FT_BEGIN_HEADER
   
   
   
+  
   typedef enum  FT_Encoding_
   {
     FT_ENC_TAG( FT_ENCODING_NONE, 0, 0, 0, 0 ),
@@ -2833,6 +2834,10 @@ FT_BEGIN_HEADER
   
   
   
+  
+  
+  
+  
   FT_EXPORT( FT_Error )
   FT_Load_Char( FT_Face   face,
                 FT_ULong  char_code,
@@ -4552,7 +4557,7 @@ FT_BEGIN_HEADER
 
 #define FREETYPE_MAJOR  2
 #define FREETYPE_MINOR  9
-#define FREETYPE_PATCH  0
+#define FREETYPE_PATCH  1
 
 
   
