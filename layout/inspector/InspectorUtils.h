@@ -259,6 +259,12 @@ public:
                               const nsAString& aInput,
                               ErrorResult& aRv);
 
+  
+
+
+
+  static void ScrollElementIntoView(GlobalObject& aGlobal, Element& aElement);
+
 private:
   static already_AddRefed<nsStyleContext>
     GetCleanStyleContextForElement(Element* aElement, nsAtom* aPseudo);
