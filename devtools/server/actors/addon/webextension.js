@@ -4,9 +4,17 @@
 
 "use strict";
 
+
+
+
+
+
+
+
+
 const {DebuggerServer} = require("devtools/server/main");
 const protocol = require("devtools/shared/protocol");
-const {webExtensionSpec} = require("devtools/shared/specs/addon/webextension-parent");
+const {webExtensionSpec} = require("devtools/shared/specs/addon/webextension");
 
 loader.lazyImporter(this, "AddonManager", "resource://gre/modules/AddonManager.jsm");
 loader.lazyImporter(this, "ExtensionParent", "resource://gre/modules/ExtensionParent.jsm");
@@ -30,7 +38,7 @@ loader.lazyImporter(this, "ExtensionParent", "resource://gre/modules/ExtensionPa
 
 
 
-const WebExtensionParentActor = protocol.ActorClassWithSpec(webExtensionSpec, {
+const WebExtensionActor = protocol.ActorClassWithSpec(webExtensionSpec, {
   initialize(conn, addon) {
     this.conn = conn;
     this.addon = addon;
@@ -46,9 +54,9 @@ const WebExtensionParentActor = protocol.ActorClassWithSpec(webExtensionSpec, {
     this.addon = null;
     this._childFormPromise = null;
 
-    if (this._destroyProxyChildActor) {
-      this._destroyProxyChildActor();
-      delete this._destroyProxyChildActor;
+    if (this._destroyProxy) {
+      this._destroyProxy();
+      delete this._destroyProxy;
     }
   },
 
@@ -86,7 +94,7 @@ const WebExtensionParentActor = protocol.ActorClassWithSpec(webExtensionSpec, {
       return this._childFormPromise;
     }
 
-    const proxy = new ProxyChildActor(this.conn, this);
+    const proxy = new WebExtensionTargetActorProxy(this.conn, this);
     this._childFormPromise = proxy.connect().then(form => {
       
       
@@ -98,18 +106,18 @@ const WebExtensionParentActor = protocol.ActorClassWithSpec(webExtensionSpec, {
         isOOP: proxy.isOOP,
       });
     });
-    this._destroyProxyChildActor = () => proxy.destroy();
+    this._destroyProxy = () => proxy.destroy();
 
     return this._childFormPromise;
   },
 
   
 
-  onProxyChildActorDestroy() {
+  onProxyDestroy() {
     
     
     this._childFormPromise = null;
-    delete this._destroyProxyChildActor;
+    delete this._destroyProxy;
   },
 
   
@@ -132,9 +140,9 @@ const WebExtensionParentActor = protocol.ActorClassWithSpec(webExtensionSpec, {
   },
 });
 
-exports.WebExtensionParentActor = WebExtensionParentActor;
+exports.WebExtensionActor = WebExtensionActor;
 
-function ProxyChildActor(connection, parentActor) {
+function WebExtensionTargetActorProxy(connection, parentActor) {
   this._conn = connection;
   this._parentActor = parentActor;
   this.addonId = parentActor.id;
@@ -146,7 +154,7 @@ function ProxyChildActor(connection, parentActor) {
   this._childActorID = null;
 }
 
-ProxyChildActor.prototype = {
+WebExtensionTargetActorProxy.prototype = {
   
 
 
@@ -194,7 +202,7 @@ ProxyChildActor.prototype = {
     }
 
     if (this._parentActor) {
-      this._parentActor.onProxyChildActorDestroy();
+      this._parentActor.onProxyDestroy();
     }
 
     this._parentActor = null;
