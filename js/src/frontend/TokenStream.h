@@ -1662,7 +1662,7 @@ class MOZ_STACK_CLASS TokenStreamSpecific
 
 
 
-    MOZ_MUST_USE bool decimalNumber(int c, TokenStart start, const CharT* numStart,
+    MOZ_MUST_USE bool decimalNumber(int32_t unit, TokenStart start, const CharT* numStart,
                                     Modifier modifier, TokenKind* out);
 
     
