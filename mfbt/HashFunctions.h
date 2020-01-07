@@ -56,20 +56,12 @@
 
 #include <stdint.h>
 
-#ifdef __cplusplus
 namespace mozilla {
 
 
 
 
 static const uint32_t kGoldenRatioU32 = 0x9E3779B9U;
-
-inline uint32_t
-RotateBitsLeft32(uint32_t aValue, uint8_t aBits)
-{
-  MOZ_ASSERT(aBits < 32);
-  return (aValue << aBits) | (aValue >> (32 - aBits));
-}
 
 namespace detail {
 
@@ -118,7 +110,7 @@ AddU32ToHash(uint32_t aHash, uint32_t aValue)
 
 
   return mozilla::WrappingMultiply(kGoldenRatioU32,
-                                   (RotateBitsLeft32(aHash, 5) ^ aValue));
+                                   RotateLeft(aHash, 5) ^ aValue);
 }
 
 
@@ -383,6 +375,5 @@ private:
 };
 
 } 
-#endif 
 
 #endif 
