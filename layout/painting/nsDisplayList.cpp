@@ -1850,6 +1850,8 @@ nsDisplayListBuilder::FindAnimatedGeometryRootFrameFor(nsIFrame* aFrame, bool& a
       return cursor;
     cursor = next;
   }
+  
+  aIsAsync = true;
   return cursor;
 }
 
