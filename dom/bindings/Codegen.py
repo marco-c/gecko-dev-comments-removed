@@ -1825,6 +1825,26 @@ class CGClassConstructor(CGAbstractStaticMethod):
         return self.generate_code()
 
     def generate_code(self):
+        if self._ctor.isHTMLConstructor():
+            
+            
+            assert self.descriptor.interface.hasInterfacePrototypeObject()
+            
+            
+            assert self.descriptor.interface.hasInterfaceObject()
+            
+            
+            
+            
+            return fill(
+                """
+                return binding_detail::HTMLConstructor(cx, argc, vp,
+                                                       constructors::id::${name},
+                                                       prototypes::id::${name},
+                                                       CreateInterfaceObjects);
+                """,
+                name=self.descriptor.name)
+
         
         chromeOnlyCheck = ""
         if isChromeOnly(self._ctor):
@@ -1848,71 +1868,6 @@ class CGClassConstructor(CGAbstractStaticMethod):
         else:
             ctorName = self.descriptor.interface.identifier.name
 
-        
-        
-        
-        if self._ctor.isHTMLConstructor():
-            htmlConstructorSanityCheck = dedent("""
-                // The newTarget might be a cross-compartment wrapper. Get the underlying object
-                // so we can do the spec's object-identity checks.
-                JS::Rooted<JSObject*> newTarget(cx, js::CheckedUnwrap(&args.newTarget().toObject()));
-                if (!newTarget) {
-                  return ThrowErrorMessage(cx, MSG_ILLEGAL_CONSTRUCTOR);
-                }
-
-                // Step 2 of https://html.spec.whatwg.org/multipage/dom.html#htmlconstructor.
-                // Enter the compartment of our underlying newTarget object, so we end
-                // up comparing to the constructor object for our interface from that global.
-                {
-                  JSAutoCompartment ac(cx, newTarget);
-                  JS::Handle<JSObject*> constructor(GetConstructorObjectHandle(cx));
-                  if (!constructor) {
-                    return false;
-                  }
-                  if (newTarget == constructor) {
-                    return ThrowErrorMessage(cx, MSG_ILLEGAL_CONSTRUCTOR);
-                  }
-                }
-
-                """)
-
-            
-            
-            htmlConstructorFallback = dedent("""
-                if (!desiredProto) {
-                  // Step 7 of https://html.spec.whatwg.org/multipage/dom.html#htmlconstructor.
-                  // This fallback behavior is designed to match analogous behavior for the
-                  // JavaScript built-ins. So we enter the compartment of our underlying
-                  // newTarget object and fall back to the prototype object from that global.
-                  // XXX The spec says to use GetFunctionRealm(), which is not actually
-                  // the same thing as what we have here (e.g. in the case of scripted callable proxies
-                  // whose target is not same-compartment with the proxy, or bound functions, etc).
-                  // https://bugzilla.mozilla.org/show_bug.cgi?id=1317658
-                  {
-                    JSAutoCompartment ac(cx, newTarget);
-                    desiredProto = GetProtoObjectHandle(cx);
-                    if (!desiredProto) {
-                        return false;
-                    }
-                  }
-
-                  // desiredProto is in the compartment of the underlying newTarget object.
-                  // Wrap it into the context compartment.
-                  if (!JS_WrapObject(cx, &desiredProto)) {
-                    return false;
-                  }
-                }
-                """)
-        else:
-            htmlConstructorSanityCheck = ""
-            htmlConstructorFallback = ""
-
-
-        
-        
-        
-        
-        
         preamble = fill(
             """
             JS::CallArgs args = JS::CallArgsFromVp(argc, vp);
@@ -1924,40 +1879,19 @@ class CGClassConstructor(CGAbstractStaticMethod):
               return ThrowConstructorWithoutNew(cx, "${ctorName}");
             }
 
-            GlobalObject global(cx, obj);
-            if (global.Failed()) {
-              return false;
-            }
-
-            $*{htmlConstructorSanityCheck}
             JS::Rooted<JSObject*> desiredProto(cx);
             if (!GetDesiredProto(cx, args, &desiredProto)) {
               return false;
             }
-            $*{htmlConstructorFallback}
             """,
             chromeOnlyCheck=chromeOnlyCheck,
-            ctorName=ctorName,
-            htmlConstructorSanityCheck=htmlConstructorSanityCheck,
-            htmlConstructorFallback=htmlConstructorFallback)
+            ctorName=ctorName)
 
-        if  self._ctor.isHTMLConstructor():
-            signatures = self._ctor.signatures()
-            assert len(signatures) == 1
-            
-            
-            
-            
-            callGenerator = CGPerSignatureCall(signatures[0][0], signatures[0][1],
-                                               "CreateXULOrHTMLElement", True,
-                                               self.descriptor, self._ctor,
-                                               isConstructor=True)
-        else:
-            name = self._ctor.identifier.name
-            nativeName = MakeNativeName(self.descriptor.binaryNameFor(name))
-            callGenerator = CGMethodCall(nativeName, True, self.descriptor,
-                                         self._ctor, isConstructor=True,
-                                         constructorName=ctorName)
+        name = self._ctor.identifier.name
+        nativeName = MakeNativeName(self.descriptor.binaryNameFor(name))
+        callGenerator = CGMethodCall(nativeName, True, self.descriptor,
+                                     self._ctor, isConstructor=True,
+                                     constructorName=ctorName)
         return preamble + "\n" + callGenerator.define()
 
     def profiler_label_and_jscontext(self):
@@ -7764,20 +7698,23 @@ class CGPerSignatureCall(CGThing):
         if idlNode.isStatic():
             
             
-            if not isConstructor:
-                cgThings.append(CGGeneric(dedent(
-                    """
-                    GlobalObject global(cx, xpc::XrayAwareCalleeGlobal(obj));
-                    if (global.Failed()) {
-                      return false;
-                    }
+            
+            
+            
+            if isConstructor:
+                objForGlobalObject = "obj"
+            else:
+                objForGlobalObject = "xpc::XrayAwareCalleeGlobal(obj)"
+            cgThings.append(CGGeneric(fill(
+                """
+                GlobalObject global(cx, ${obj});
+                if (global.Failed()) {
+                  return false;
+                }
 
-                    """)))
-
+                """,
+                obj=objForGlobalObject)))
             argsPre.append("global")
-
-        if isConstructor and idlNode.isHTMLConstructor():
-            argsPre.extend(["args", "desiredProto"])
 
         
         

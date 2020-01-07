@@ -23,6 +23,7 @@
 #include "mozilla/dom/Exceptions.h"
 #include "mozilla/dom/NonRefcountedDOMObject.h"
 #include "mozilla/dom/Nullable.h"
+#include "mozilla/dom/PrototypeList.h"
 #include "mozilla/dom/RootedDictionary.h"
 #include "mozilla/SegmentedVector.h"
 #include "mozilla/ErrorResult.h"
@@ -3447,6 +3448,13 @@ namespace binding_detail {
 
 
 JSObject* UnprivilegedJunkScopeOrWorkerGlobal();
+
+
+bool
+HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
+                constructors::id::ID aConstructorId,
+                prototypes::id::ID aProtoId,
+                CreateInterfaceObjectsMethod aCreator);
 } 
 
 } 
