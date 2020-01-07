@@ -53,8 +53,7 @@ def do_unwinder_test():
 if platform.machine() == 'x86_64' and platform.system() == 'Linux':
     
     try:
-        import gdb.unwinder
-        import gdb.frames
+        import gdb.unwinder  
         do_unwinder_test()
-    except:
+    except Exception:
         pass

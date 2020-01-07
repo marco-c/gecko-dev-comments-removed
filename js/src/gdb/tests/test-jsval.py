@@ -1,5 +1,6 @@
 
 
+
 assert_subprinter_registered('SpiderMonkey', 'JS::Value')
 
 run_fragment('jsval.simple')

@@ -1,5 +1,6 @@
 
 
+
 assert_subprinter_registered('SpiderMonkey', 'ptr-to-JS::Symbol')
 
 run_fragment('JSSymbol.simple')

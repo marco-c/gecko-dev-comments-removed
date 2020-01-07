@@ -114,27 +114,40 @@ class JitTest:
         
         self.relpath_tests = os.path.relpath(path, TEST_DIR)
 
-        self.jitflags = []     
-        self.slow = False      
-        self.allow_oom = False  
-        self.allow_unhandlable_oom = False  
         
-        self.allow_overrecursed = False  
+        self.jitflags = []
         
-        self.valgrind = False  
-        self.tz_pacific = False  
-        self.test_also_noasmjs = False  
+        self.slow = False
         
-        self.test_also_wasm_baseline = False  
+        self.allow_oom = False
         
-        self.other_includes = []  
-        self.test_also = []  
-        self.test_join = []  
-        self.expect_error = ''  
-        self.expect_status = 0  
-        self.expect_crash = False  
+        self.allow_unhandlable_oom = False
+        
+        self.allow_overrecursed = False
+        
+        self.valgrind = False
+        
+        self.tz_pacific = False
+        
+        self.test_also_noasmjs = False
+        
+        
+        self.test_also_wasm_baseline = False
+        
+        self.other_includes = []
+        
+        self.test_also = []
+        
+        self.test_join = []
+        
+        self.expect_error = ''
+        
+        self.expect_status = 0
+        
+        self.expect_crash = False
         self.is_module = False
-        self.test_reflect_stringify = None  
+        
+        self.test_reflect_stringify = None
 
         
         self.enable = True
@@ -783,7 +796,7 @@ def platform_might_be_android():
         
         
         
-        import android
+        import android  
         return True
     except ImportError:
         return False

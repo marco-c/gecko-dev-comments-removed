@@ -2,17 +2,17 @@
 
 
 import mozilla.prettyprinters
-from mozilla.prettyprinters import pretty_printer, template_pretty_printer
+from mozilla.prettyprinters import template_pretty_printer
 
 
 mozilla.prettyprinters.clear_module_printers(__name__)
 
 
-
-
-
-
 class Common(object):
+    
+    
+    
+
     
     member = 'ptr'
 
@@ -81,9 +81,8 @@ class BarrieredBase(Common):
     member = 'value'
 
 
-
-
 def deref(root):
+    
     tag = root.type.strip_typedefs().tag
     if not tag:
         raise TypeError("Can't dereference type with no structure tag: %s" % (root.type,))

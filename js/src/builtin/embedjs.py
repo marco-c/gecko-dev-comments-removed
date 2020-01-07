@@ -82,7 +82,7 @@ namespace %(namespace)s {
     }
 } // selfhosted
 } // js
-"""
+"""  
 
 
 def embed(cxx, preprocessorOption, cppflags, msgs, sources, c_out, js_out, namespace, env):

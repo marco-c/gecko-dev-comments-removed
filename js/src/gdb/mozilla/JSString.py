@@ -2,7 +2,7 @@
 
 import gdb
 import mozilla.prettyprinters
-from mozilla.prettyprinters import pretty_printer, ptr_pretty_printer
+from mozilla.prettyprinters import ptr_pretty_printer
 
 try:
     chr(10000)  
@@ -13,9 +13,8 @@ except ValueError as exc:
 mozilla.prettyprinters.clear_module_printers(__name__)
 
 
-
-
 class JSStringTypeCache(object):
+    
     def __init__(self, cache):
         dummy = gdb.Value(0).cast(cache.JSString_ptr_t)
         self.NON_ATOM_BIT = dummy['NON_ATOM_BIT']

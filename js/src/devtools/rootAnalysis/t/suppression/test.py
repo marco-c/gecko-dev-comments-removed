@@ -1,3 +1,4 @@
+
 test.compile("source.cpp")
 test.run_analysis_script('gcTypes', upto='gcFunctions')
 

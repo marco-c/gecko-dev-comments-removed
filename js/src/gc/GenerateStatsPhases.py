@@ -49,8 +49,9 @@
 
 
 
+
+
 import re
-import sys
 import collections
 
 
@@ -172,11 +173,10 @@ PhaseKindGraphRoots = [
 ]
 
 
-
-
-
-
 def findAllPhaseKinds():
+    
+    
+    
     phases = []
     seen = set()
 
@@ -196,10 +196,9 @@ def findAllPhaseKinds():
 AllPhaseKinds = findAllPhaseKinds()
 
 
-
-
-
 class Phase:
+    
+    
     def __init__(self, phaseKind, parent):
         self.phaseKind = phaseKind
         self.parent = parent
@@ -326,7 +325,7 @@ def generateCpp(out):
     for phase in AllPhases:
         firstChild = phase.children[0] if phase.children else None
         phaseKind = phase.phaseKind
-        out.write("    /* %s */ PhaseInfo { %s, %s, %s, %s, PhaseKind::%s, %d, \"%s\", \"%s\" },\n" %
+        out.write("    /* %s */ PhaseInfo { %s, %s, %s, %s, PhaseKind::%s, %d, \"%s\", \"%s\" },\n" %  
                   (name(phase),
                    name(phase.parent),
                    name(firstChild),

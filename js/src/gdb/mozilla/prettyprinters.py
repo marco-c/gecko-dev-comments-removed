@@ -10,13 +10,12 @@ import re
 
 
 
-
-
-
-
-
-
 def check_for_reused_pretty_printer(fn):
+    
+    
+    
+    
+    
     if hasattr(fn, 'enabled'):
         raise RuntimeError("pretty-printer function %r registered more than once" % fn)
 

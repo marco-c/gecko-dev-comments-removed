@@ -1,6 +1,5 @@
 
 
-import gdb
 import mozilla.prettyprinters
 from mozilla.prettyprinters import ptr_pretty_printer
 

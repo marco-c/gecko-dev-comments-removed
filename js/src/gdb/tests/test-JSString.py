@@ -1,5 +1,6 @@
 
 
+
 assert_subprinter_registered('SpiderMonkey', 'ptr-to-JSString')
 run_fragment('JSString.simple')
 

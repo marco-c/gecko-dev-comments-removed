@@ -3,7 +3,7 @@
 import gdb
 import gdb.types
 import mozilla.prettyprinters
-from mozilla.prettyprinters import pretty_printer, ptr_pretty_printer
+from mozilla.prettyprinters import pretty_printer
 
 
 mozilla.prettyprinters.clear_module_printers(__name__)
@@ -89,11 +89,10 @@ class Box(object):
     def as_address(self): raise NotImplementedError
 
 
-
-
-
-
 class Punbox(Box):
+    
+    
+    
 
     FULL_WIDTH = 64
     TAG_SHIFT = 47
@@ -131,9 +130,9 @@ class Nunbox(Box):
     def as_address(self): return gdb.Value(self.asBits & Nunbox.PAYLOAD_MASK)
 
 
-
-
 class JSValueTypeCache(object):
+    
+
     def __init__(self, cache):
         
         d = gdb.types.make_enum_dict(gdb.lookup_type('JSValueType'))
@@ -162,7 +161,7 @@ class JSValueTypeCache(object):
             
             self.BIGINT = get('JSVAL_TYPE_BIGINT')
             self.enable_bigint = True
-        except:
+        except Exception:
             pass
 
         

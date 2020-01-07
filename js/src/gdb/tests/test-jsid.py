@@ -1,5 +1,6 @@
 
 
+
 assert_subprinter_registered('SpiderMonkey', 'jsid')
 
 run_fragment('jsid.simple')

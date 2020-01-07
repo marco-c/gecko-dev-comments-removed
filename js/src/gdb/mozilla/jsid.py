@@ -58,11 +58,10 @@ class jsid(object):
         return '$jsid(%s)' % (body,)
 
 
-
-
-
 @pretty_printer('JS::Rooted<long>')
 def RootedJSID(value, cache):
+    
+    
     return mozilla.Root.Rooted(value, cache, jsid)
 
 

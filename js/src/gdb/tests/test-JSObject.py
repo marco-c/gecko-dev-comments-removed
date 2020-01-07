@@ -1,5 +1,6 @@
 
 
+
 assert_subprinter_registered('SpiderMonkey', 'ptr-to-JSObject')
 assert_subprinter_registered('SpiderMonkey', 'ref-to-JSObject')
 

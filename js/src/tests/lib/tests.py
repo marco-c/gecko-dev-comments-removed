@@ -3,15 +3,9 @@
 
 
 
-import datetime
 import os
 import sys
-import time
 from contextlib import contextmanager
-from subprocess import Popen, PIPE
-from threading import Thread
-
-from results import TestOutput
 
 
 
@@ -152,18 +146,27 @@ class RefTestCase(object):
     """A test case consisting of a test and an expected result."""
 
     def __init__(self, path):
-        self.path = path     
-        self.options = []    
-        self.jitflags = []   
-        self.test_reflect_stringify = None  
+        
+        self.path = path
+        
+        self.options = []
+        
+        self.jitflags = []
         
         
-        self.is_module = False  
-        self.enable = True   
-        self.error = None    
-        self.expect = True   
-        self.random = False  
-        self.slow = False    
+        self.test_reflect_stringify = None
+        
+        self.is_module = False
+        
+        self.enable = True
+        
+        self.error = None
+        
+        self.expect = True
+        
+        self.random = False
+        
+        self.slow = False
 
         
         self.terms = None

@@ -1,3 +1,5 @@
+
+
 import fcntl
 import os
 import select
@@ -5,18 +7,17 @@ import time
 from subprocess import Popen, PIPE
 
 
-
-
-
-
-
-
-
-
-
-
-
 class TaskPool(object):
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
     
     
@@ -76,8 +77,8 @@ class TaskPool(object):
         with open(os.devnull, 'r') as devnull:
             while True:
                 while len(running) < self.job_limit and self.next_pending:
-                    t = self.next_pending
-                    p = Popen(t.cmd(), bufsize=16384,
+                    task = self.next_pending
+                    p = Popen(task.cmd(), bufsize=16384,
                               stdin=devnull, stdout=PIPE, stderr=PIPE,
                               cwd=self.cwd)
 
@@ -88,8 +89,8 @@ class TaskPool(object):
                     flags = fcntl.fcntl(p.stderr, fcntl.F_GETFL)
                     fcntl.fcntl(p.stderr, fcntl.F_SETFL, flags | os.O_NONBLOCK)
 
-                    t.start(p, time.time() + self.timeout)
-                    running.add(t)
+                    task.start(p, time.time() + self.timeout)
+                    running.add(task)
                     self.next_pending = next(self.pending, None)
 
                 
@@ -104,7 +105,8 @@ class TaskPool(object):
                 
                 stdouts_and_stderrs = ([t.pipe.stdout for t in running]
                                        + [t.pipe.stderr for t in running])
-                (readable, w, x) = select.select(stdouts_and_stderrs, [], [], secs_to_next_deadline)
+                (readable, w, x) = select.select(stdouts_and_stderrs, [], [],
+                                                 secs_to_next_deadline)
                 finished = set()
                 terminate = set()
                 for t in running:

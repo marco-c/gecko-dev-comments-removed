@@ -1,5 +1,8 @@
 
 
+
+
+
 assert_subprinter_registered('SpiderMonkey', 'js::InterpreterRegs')
 
 run_fragment('Interpreter.Regs')

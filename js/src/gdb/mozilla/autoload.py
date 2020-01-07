@@ -21,14 +21,13 @@ import mozilla.unwind
 
 
 try:
-    import my_mozilla_printers
+    import my_mozilla_printers  
 except ImportError:
     pass
 
 
-
-
 def register(objfile):
+    
     lookup = mozilla.prettyprinters.lookup_for_objfile(objfile)
     if lookup:
         gdb.printing.register_pretty_printer(objfile, lookup, replace=True)

@@ -1,5 +1,8 @@
 
 
+
+
+
 assert_subprinter_registered('SpiderMonkey', 'JS::GCCellPtr')
 
 run_fragment('ExecutableAllocator.empty')

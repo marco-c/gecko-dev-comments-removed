@@ -31,17 +31,21 @@ class ProgressBar(object):
 
         self.prior = None
         self.atLineStart = True
-        self.counters_fmt = fmt  
         
-        self.limit = limit  
-        self.limit_digits = int(math.ceil(math.log10(self.limit)))  
-        self.t0 = datetime.now()  
+        self.counters_fmt = fmt
+        
+        self.limit = limit
+        
+        self.limit_digits = int(math.ceil(math.log10(self.limit)))
+        
+        self.t0 = datetime.now()
 
         
         self.counters_width = 1  
         for layout in self.counters_fmt:
             self.counters_width += self.limit_digits
-            self.counters_width += 1  
+            
+            self.counters_width += 1
 
         self.barlen = 64 - self.counters_width
 
@@ -116,7 +120,7 @@ class ProgressBar(object):
         redirection.
         """
         try:
-            import android
+            import android  
             return False
         except ImportError:
             return sys.stdout.isatty()
