@@ -157,6 +157,7 @@ PreloadSandboxLib(base::environment_map* aEnv)
     
     preload.Append(' ');
     preload.Append(oldPreload);
+    (*aEnv)["MOZ_ORIG_LD_PRELOAD"] = oldPreload;
   }
   MOZ_ASSERT(aEnv->count("LD_PRELOAD") == 0);
   (*aEnv)["LD_PRELOAD"] = preload.get();

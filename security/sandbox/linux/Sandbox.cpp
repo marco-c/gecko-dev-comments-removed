@@ -482,6 +482,16 @@ SandboxEarlyInit() {
 
   
   
+  const char* oldPreload = PR_GetEnv("MOZ_ORIG_LD_PRELOAD");
+  char* preloadEntry;
+  
+  if (asprintf(&preloadEntry, "LD_PRELOAD=%s",
+               oldPreload ? oldPreload : "") != -1) {
+    PR_SetEnv(preloadEntry);
+  }
+
+  
+  
   if (!SandboxInfo::Get().Test(SandboxInfo::kHasSeccompTSync)) {
     
     
