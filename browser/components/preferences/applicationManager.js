@@ -75,7 +75,7 @@ var gAppManagerDialog = {
     var list = document.getElementById("appList");
     this._removed.push(list.selectedItem.app);
     var index = list.selectedIndex;
-    list.removeItemAt(index);
+    list.selectedItem.remove();
     if (list.getRowCount() == 0) {
       
       document.getElementById("appDetails").hidden = true;
