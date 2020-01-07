@@ -367,6 +367,19 @@ function getWasmBinarySync(text)
   return binary;
 }
 
+
+
+function getWasmBinary(text) {
+  let binary = getWasmBinarySync(text);
+  SimpleTest.executeSoon(function() {
+    testGenerator.next(binary);
+  });
+}
+function getWasmModule(_binary_) {
+  let module = new WebAssembly.Module(_binary_);
+  return module;
+}
+
 function workerScript() {
   "use strict";
 
