@@ -995,6 +995,10 @@ void qcms_transform_release(qcms_transform *t)
 	free(t->output_gamma_lut_g);
 	free(t->output_gamma_lut_b);
 
+	
+	if (t->r_clut)
+		free(t->r_clut);
+
 	transform_free(t);
 }
 
@@ -1190,6 +1194,7 @@ qcms_transform* qcms_transform_precacheLUT_float(qcms_transform *transform, qcms
 	}
 
 
+	
 	
 	if (src && lut != src) {
 		free(src);
