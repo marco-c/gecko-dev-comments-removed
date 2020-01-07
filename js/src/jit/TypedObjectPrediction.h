@@ -166,8 +166,8 @@ class TypedObjectPrediction {
     
     
 
-    ScalarTypeDescr::Type scalarType() const;
-    ReferenceTypeDescr::Type referenceType() const;
+    Scalar::Type scalarType() const;
+    ReferenceType referenceType() const;
     SimdType simdType() const;
 
     
