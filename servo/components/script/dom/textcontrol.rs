@@ -2,6 +2,11 @@
 
 
 
+
+
+
+
+
 use dom::bindings::cell::DomRefCell;
 use dom::bindings::codegen::Bindings::HTMLFormElementBinding::SelectionMode;
 use dom::bindings::conversions::DerivedFrom;
@@ -13,43 +18,53 @@ use dom::node::{Node, NodeDamage, window_from_node};
 use script_traits::ScriptToConstellationChan;
 use textinput::{SelectionDirection, SelectionState, TextInput};
 
-pub trait TextControl: DerivedFrom<EventTarget> + DerivedFrom<Node> {
-    fn textinput(&self) -> &DomRefCell<TextInput<ScriptToConstellationChan>>;
+pub trait TextControlElement: DerivedFrom<EventTarget> + DerivedFrom<Node> {
     fn selection_api_applies(&self) -> bool;
     fn has_selectable_text(&self) -> bool;
     fn set_dirty_value_flag(&self, value: bool);
+}
+
+pub struct TextControlSelection<'a, E: TextControlElement> {
+    element: &'a E,
+    textinput: &'a DomRefCell<TextInput<ScriptToConstellationChan>>,
+}
+
+impl<'a, E: TextControlElement> TextControlSelection<'a, E> {
+    pub fn new(element: &'a E, textinput: &'a DomRefCell<TextInput<ScriptToConstellationChan>>) -> Self {
+        TextControlSelection { element, textinput }
+    }
 
     
-    fn dom_select(&self) {
+    pub fn dom_select(&self) {
         
-        if !self.has_selectable_text() {
+        if !self.element.has_selectable_text() {
             return;
         }
 
         
-        self.set_selection_range(Some(0), Some(u32::max_value()), None, None);
+        self.set_range(Some(0), Some(u32::max_value()), None, None);
     }
 
     
-    fn get_dom_selection_start(&self) -> Option<u32> {
+    pub fn dom_start(&self) -> Option<u32> {
         
-        if !self.selection_api_applies() {
+        if !self.element.selection_api_applies() {
             return None;
         }
 
         
-        Some(self.selection_start())
+        Some(self.start())
     }
 
     
-    fn set_dom_selection_start(&self, start: Option<u32>) -> ErrorResult {
+    pub fn set_dom_start(&self, start: Option<u32>) -> ErrorResult {
         
-        if !self.selection_api_applies() {
+        if !self.element.selection_api_applies() {
             return Err(Error::InvalidState);
         }
 
         
-        let mut end = self.selection_end();
+        let mut end = self.end();
 
         
         if let Some(s) = start {
@@ -59,54 +74,54 @@ pub trait TextControl: DerivedFrom<EventTarget> + DerivedFrom<Node> {
         }
 
         
-        self.set_selection_range(start, Some(end), Some(self.selection_direction()), None);
+        self.set_range(start, Some(end), Some(self.direction()), None);
         Ok(())
     }
 
     
-    fn get_dom_selection_end(&self) -> Option<u32> {
+    pub fn dom_end(&self) -> Option<u32> {
         
-        if !self.selection_api_applies() {
+        if !self.element.selection_api_applies() {
             return None;
         }
 
         
-        Some(self.selection_end())
+        Some(self.end())
     }
 
     
-    fn set_dom_selection_end(&self, end: Option<u32>) -> ErrorResult {
+    pub fn set_dom_end(&self, end: Option<u32>) -> ErrorResult {
         
-        if !self.selection_api_applies() {
+        if !self.element.selection_api_applies() {
             return Err(Error::InvalidState);
         }
 
         
-        self.set_selection_range(Some(self.selection_start()), end, Some(self.selection_direction()), None);
+        self.set_range(Some(self.start()), end, Some(self.direction()), None);
         Ok(())
     }
 
     
-    fn get_dom_selection_direction(&self) -> Option<DOMString> {
+    pub fn dom_direction(&self) -> Option<DOMString> {
         
-        if !self.selection_api_applies() {
+        if !self.element.selection_api_applies() {
             return None;
         }
 
-        Some(DOMString::from(self.selection_direction()))
+        Some(DOMString::from(self.direction()))
     }
 
     
-    fn set_dom_selection_direction(&self, direction: Option<DOMString>) -> ErrorResult {
+    pub fn set_dom_direction(&self, direction: Option<DOMString>) -> ErrorResult {
         
-        if !self.selection_api_applies() {
+        if !self.element.selection_api_applies() {
             return Err(Error::InvalidState);
         }
 
         
-        self.set_selection_range(
-            Some(self.selection_start()),
-            Some(self.selection_end()),
+        self.set_range(
+            Some(self.start()),
+            Some(self.end()),
             direction.map(|d| SelectionDirection::from(d)),
             None
         );
@@ -114,31 +129,36 @@ pub trait TextControl: DerivedFrom<EventTarget> + DerivedFrom<Node> {
     }
 
     
-    fn set_dom_selection_range(&self, start: u32, end: u32, direction: Option<DOMString>) -> ErrorResult {
+    pub fn set_dom_range(&self, start: u32, end: u32, direction: Option<DOMString>) -> ErrorResult {
         
-        if !self.selection_api_applies() {
+        if !self.element.selection_api_applies() {
             return Err(Error::InvalidState);
         }
 
         
-        self.set_selection_range(Some(start), Some(end), direction.map(|d| SelectionDirection::from(d)), None);
+        self.set_range(Some(start), Some(end), direction.map(|d| SelectionDirection::from(d)), None);
         Ok(())
     }
 
     
-    fn set_dom_range_text(&self, replacement: DOMString, start: Option<u32>, end: Option<u32>,
-                          selection_mode: SelectionMode) -> ErrorResult {
+    pub fn set_dom_range_text(
+        &self,
+        replacement: DOMString,
+        start: Option<u32>,
+        end: Option<u32>,
+        selection_mode: SelectionMode
+    ) -> ErrorResult {
         
-        if !self.selection_api_applies() {
+        if !self.element.selection_api_applies() {
             return Err(Error::InvalidState);
         }
 
         
-        self.set_dirty_value_flag(true);
+        self.element.set_dirty_value_flag(true);
 
         
-        let mut start = start.unwrap_or_else(|| self.selection_start());
-        let mut end = end.unwrap_or_else(|| self.selection_end());
+        let mut start = start.unwrap_or_else(|| self.start());
+        let mut end = end.unwrap_or_else(|| self.end());
 
         
         if start > end {
@@ -147,9 +167,9 @@ pub trait TextControl: DerivedFrom<EventTarget> + DerivedFrom<Node> {
 
         
         
-        let original_selection_state = self.textinput().borrow().selection_state();
+        let original_selection_state = self.textinput.borrow().selection_state();
 
-        let content_length = self.textinput().borrow().len() as u32;
+        let content_length = self.textinput.borrow().len() as u32;
 
         
         if start > content_length {
@@ -162,10 +182,10 @@ pub trait TextControl: DerivedFrom<EventTarget> + DerivedFrom<Node> {
         }
 
         
-        let mut selection_start = self.selection_start();
+        let mut selection_start = self.start();
 
         
-        let mut selection_end = self.selection_end();
+        let mut selection_end = self.end();
 
         
         
@@ -173,7 +193,7 @@ pub trait TextControl: DerivedFrom<EventTarget> + DerivedFrom<Node> {
         let new_length = replacement.len() as u32;
 
         {
-            let mut textinput = self.textinput().borrow_mut();
+            let mut textinput = self.textinput.borrow_mut();
 
             
             textinput.set_selection_range(start, end, SelectionDirection::None);
@@ -224,32 +244,31 @@ pub trait TextControl: DerivedFrom<EventTarget> + DerivedFrom<Node> {
         }
 
         
-        self.set_selection_range(
-            Some(selection_start),
-            Some(selection_end),
-            None,
-            Some(original_selection_state)
-        );
-
+        self.set_range(Some(selection_start), Some(selection_end), None, Some(original_selection_state));
         Ok(())
     }
 
-    fn selection_start(&self) -> u32 {
-        self.textinput().borrow().selection_start_offset() as u32
+    fn start(&self) -> u32 {
+        self.textinput.borrow().selection_start_offset() as u32
     }
 
-    fn selection_end(&self) -> u32 {
-        self.textinput().borrow().selection_end_offset() as u32
+    fn end(&self) -> u32 {
+        self.textinput.borrow().selection_end_offset() as u32
     }
 
-    fn selection_direction(&self) -> SelectionDirection {
-        self.textinput().borrow().selection_direction
+    fn direction(&self) -> SelectionDirection {
+        self.textinput.borrow().selection_direction
     }
 
     
-    fn set_selection_range(&self, start: Option<u32>, end: Option<u32>, direction: Option<SelectionDirection>,
-                           original_selection_state: Option<SelectionState>) {
-        let mut textinput = self.textinput().borrow_mut();
+    fn set_range(
+        &self,
+        start: Option<u32>,
+        end: Option<u32>,
+        direction: Option<SelectionDirection>,
+        original_selection_state: Option<SelectionState>
+    ) {
+        let mut textinput = self.textinput.borrow_mut();
         let original_selection_state = original_selection_state.unwrap_or_else(|| textinput.selection_state());
 
         
@@ -263,15 +282,15 @@ pub trait TextControl: DerivedFrom<EventTarget> + DerivedFrom<Node> {
 
         
         if textinput.selection_state() != original_selection_state {
-            let window = window_from_node(self);
+            let window = window_from_node(self.element);
             window.user_interaction_task_source().queue_event(
-                &self.upcast::<EventTarget>(),
+                &self.element.upcast::<EventTarget>(),
                 atom!("select"),
                 EventBubbles::Bubbles,
                 EventCancelable::NotCancelable,
                 &window);
         }
 
-        self.upcast::<Node>().dirty(NodeDamage::OtherNodeDamage);
+        self.element.upcast::<Node>().dirty(NodeDamage::OtherNodeDamage);
     }
 }
