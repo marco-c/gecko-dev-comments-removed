@@ -954,12 +954,14 @@ JSCompartment::getOrCreateIterResultTemplateObject(JSContext* cx)
         return iterResultTemplate_; 
     }
 
-    
-    HeapTypeSet* types = group->maybeGetProperty(NameToId(cx->names().value));
-    MOZ_ASSERT(types);
-    {
-        AutoEnterAnalysis enter(cx);
-        types->makeUnknown(cx);
+    if (!group->unknownProperties()) {
+        
+        HeapTypeSet* types = group->maybeGetProperty(NameToId(cx->names().value));
+        MOZ_ASSERT(types);
+        {
+            AutoEnterAnalysis enter(cx);
+            types->makeUnknown(cx);
+        }
     }
 
     
