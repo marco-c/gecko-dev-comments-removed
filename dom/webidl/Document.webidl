@@ -234,7 +234,7 @@ partial interface Document {
 partial interface Document {
   // Note: Per spec the 'S' in these two is lowercase, but the "Moz"
   // versions have it uppercase.
-  [LenientSetter, Func="nsDocument::IsUnprefixedFullscreenEnabled"]
+  [LenientSetter, Unscopable, Func="nsDocument::IsUnprefixedFullscreenEnabled"]
   readonly attribute boolean fullscreen;
   [BinaryName="fullscreen"]
   readonly attribute boolean mozFullScreen;
@@ -382,12 +382,6 @@ partial interface Document {
   // like documentURI, except that for error pages, it returns the URI we were
   // trying to load when we hit an error, rather than the error page's own URI.
   [ChromeOnly] readonly attribute URI? mozDocumentURIIfNotForErrorPages;
-
-  // A promise that is resolved, with this document itself, when we have both
-  // fired DOMContentLoaded and are ready to start layout.  This is used for the
-  // "document_idle" webextension script injection point.
-  [ChromeOnly, Throws]
-  readonly attribute Promise<Document> documentReadyForIdle;
 };
 
 dictionary BlockParsingOptions {
