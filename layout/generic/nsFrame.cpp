@@ -2826,15 +2826,9 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
   nsRect visibleRect = aBuilder->GetVisibleRect();
   nsRect dirtyRect = aBuilder->GetDirtyRect();
 
-  const bool isTransformed = IsTransformed(disp);
-  const bool hasPerspective = isTransformed && HasPerspective(disp);
-  const bool extend3DContext = Extend3DContext(disp, effectSet);
-  const bool combines3DTransformWithAncestors =
-    (extend3DContext || isTransformed) && Combines3DTransformWithAncestors(disp);
-  const bool childrenHavePerspective = ChildrenHavePerspective(disp);
-
+  bool extend3DContext = Extend3DContext(disp, effectSet);
   Maybe<nsDisplayListBuilder::AutoPreserves3DContext> autoPreserves3DContext;
-  if (extend3DContext && !combines3DTransformWithAncestors) {
+  if (extend3DContext && !Combines3DTransformWithAncestors(disp)) {
     
     
     autoPreserves3DContext.emplace(aBuilder);
@@ -2854,11 +2848,15 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
   
   
   
-  if (aBuilder->IsRetainingDisplayList() && childrenHavePerspective) {
+  if (aBuilder->IsRetainingDisplayList() &&
+      ChildrenHavePerspective(disp)) {
     dirtyRect = visibleRect;
     aBuilder->MarkFrameModifiedDuringBuilding(this);
   }
 
+  bool inTransform = aBuilder->IsInTransform();
+  bool isTransformed = IsTransformed(disp);
+  bool hasPerspective = HasPerspective(disp);
   
   
   
@@ -2867,7 +2865,6 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
 
   nsRect visibleRectOutsideTransform = visibleRect;
   bool allowAsyncAnimation = false;
-  bool inTransform = aBuilder->IsInTransform();
   if (isTransformed) {
     const nsRect overflow = GetVisualOverflowRectRelativeToSelf();
     nsDisplayTransform::PrerenderDecision decision =
@@ -2889,7 +2886,7 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
 
       
       
-      if (combines3DTransformWithAncestors) {
+      if (Combines3DTransformWithAncestors(disp)) {
         visibleRect = dirtyRect = aBuilder->GetPreserves3DRect();
       }
 
@@ -3028,7 +3025,7 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
     nsDisplayListBuilder::AutoInTransformSetter
       inTransformSetter(aBuilder, inTransform);
     nsDisplayListBuilder::AutoSaveRestorePerspectiveIndex
-      perspectiveIndex(aBuilder, childrenHavePerspective);
+      perspectiveIndex(aBuilder, this);
     nsDisplayListBuilder::AutoFilterASRSetter
       filterASRSetter(aBuilder, usingFilter);
 
@@ -3091,11 +3088,12 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
     if (aBuilder->ContainsBlendMode() != BuiltBlendContainer() &&
         aBuilder->IsRetainingDisplayList()) {
       SetBuiltBlendContainer(aBuilder->ContainsBlendMode());
+      aBuilder->MarkCurrentFrameModifiedDuringBuilding();
 
       
       
       if (!aBuilder->GetDirtyRect().Contains(aBuilder->GetVisibleRect())) {
-        aBuilder->MarkCurrentFrameModifiedDuringBuilding();
+        aBuilder->SetDirtyRect(aBuilder->GetVisibleRect());
         set.DeleteAll(aBuilder);
 
         if (eventRegions) {
@@ -3558,6 +3556,12 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
                !aBuilder->GetIncludeAllOutOfFlows(),
                "It should be held for painting to window");
 
+    if (child->HasPerspective()) {
+      
+      
+      aBuilder->AllocatePerspectiveItemIndex();
+    }
+
     if (!DescendIntoChild(aBuilder, child, visible, dirty)) {
       return;
     }
@@ -3586,7 +3590,7 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
     return;
   }
 
-  const bool isSVG = child->GetStateBits() & NS_FRAME_SVG_LAYOUT;
+  bool isSVG = (child->GetStateBits() & NS_FRAME_SVG_LAYOUT);
 
   
   
@@ -3596,15 +3600,15 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
   
   bool pseudoStackingContext =
     (aFlags & DISPLAY_CHILD_FORCE_PSEUDO_STACKING_CONTEXT) != 0;
-
-  if (!pseudoStackingContext &&
-      !isSVG &&
+  awayFromCommonPath |= pseudoStackingContext;
+  if (!isSVG &&
       (aFlags & DISPLAY_CHILD_INLINE) &&
       !child->IsFrameOfType(eLineParticipant)) {
     
     
     
     pseudoStackingContext = true;
+    awayFromCommonPath = true;
   }
 
   nsDisplayListBuilder::OutOfFlowDisplayData* savedOutOfFlowData = nullptr;
@@ -3643,8 +3647,16 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
       visible.SetEmpty();
       dirty.SetEmpty();
     }
-
     pseudoStackingContext = true;
+    awayFromCommonPath = true;
+  }
+
+  const nsStyleDisplay* disp = child->StyleDisplay();
+
+  if (child->HasPerspective(disp)) {
+    
+    
+    aBuilder->AllocatePerspectiveItemIndex();
   }
 
   NS_ASSERTION(!child->IsPlaceholderFrame(),
@@ -3655,9 +3667,11 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
     return;
   }
 
-  if (aBuilder->GetIncludeAllOutOfFlows() && isPlaceholder) {
+  if (aBuilder->GetIncludeAllOutOfFlows() &&
+      (child->GetStateBits() & NS_FRAME_OUT_OF_FLOW)) {
     visible = child->GetVisualOverflowRect();
     dirty = child->GetVisualOverflowRect();
+    awayFromCommonPath = true;
   } else if (!DescendIntoChild(aBuilder, child, visible, dirty)) {
     return;
   }
@@ -3684,28 +3698,22 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
   
   
   EffectSet* effectSet = EffectSet::GetEffectSet(child);
-  const nsStyleDisplay* disp = child->StyleDisplay();
   const nsStyleEffects* effects = child->StyleEffects();
   const nsStylePosition* pos = child->StylePosition();
+  bool isVisuallyAtomic = child->IsVisuallyAtomic(effectSet, disp, effects);
+  bool isPositioned = disp->IsAbsPosContainingBlock(child);
+  bool isStackingContext = child->IsStackingContext(disp, pos, isPositioned, isVisuallyAtomic) ||
+                           (aFlags & DISPLAY_CHILD_FORCE_STACKING_CONTEXT);
 
-  const bool isVisuallyAtomic =
-    child->IsVisuallyAtomic(effectSet, disp, effects);
-
-  const bool isPositioned =
-    disp->IsAbsPosContainingBlock(child);
-
-  const bool isStackingContext =
-    child->IsStackingContext(disp, pos, isPositioned, isVisuallyAtomic) ||
-    (aFlags & DISPLAY_CHILD_FORCE_STACKING_CONTEXT);
-
-  if (pseudoStackingContext || isStackingContext || isPositioned ||
-      (!isSVG && disp->IsFloating(child)) ||
-      (isSVG && (effects->mClipFlags & NS_STYLE_CLIP_RECT) &&
-       IsSVGContentWithCSSClip(child))) {
+  if (isVisuallyAtomic || isPositioned || (!isSVG && disp->IsFloating(child)) ||
+      ((effects->mClipFlags & NS_STYLE_CLIP_RECT) &&
+       IsSVGContentWithCSSClip(child)) ||
+       disp->mIsolation != NS_STYLE_ISOLATION_AUTO ||
+       (disp->mWillChangeBitField & NS_STYLE_WILL_CHANGE_STACKING_CONTEXT) ||
+      (aFlags & DISPLAY_CHILD_FORCE_STACKING_CONTEXT)) {
     pseudoStackingContext = true;
     awayFromCommonPath = true;
   }
-
   NS_ASSERTION(!isStackingContext || pseudoStackingContext,
                "Stacking contexts must also be pseudo-stacking-contexts");
 
@@ -3736,6 +3744,7 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
     
     
     clipState.SetClipChainForContainingBlockDescendants(nullptr);
+    awayFromCommonPath = true;
   }
 
   
@@ -5689,20 +5698,8 @@ nsFrame::ComputeSize(gfxContext*         aRenderingContext,
     const nsStyleCoord* flexBasis = &(stylePos->mFlexBasis);
     if (flexBasis->GetUnit() != eStyleUnit_Auto) {
       
-      
-      
-      
-      
-      
-      
-      bool usingFlexBasisForHeight =
-        (usingFlexBasisForISize != aWM.IsVertical());
-      if (!usingFlexBasisForHeight ||
-          flexBasis->GetUnit() != eStyleUnit_Enumerated) {
-        
-        (usingFlexBasisForISize ? inlineStyleCoord : blockStyleCoord) =
-          flexBasis;
-      }
+      (usingFlexBasisForISize ? inlineStyleCoord : blockStyleCoord) =
+        flexBasis;
     }
   }
 
@@ -5952,20 +5949,8 @@ nsFrame::ComputeSizeWithIntrinsicDimensions(gfxContext*          aRenderingConte
       const nsStyleCoord* flexBasis = &(stylePos->mFlexBasis);
       if (flexBasis->GetUnit() != eStyleUnit_Auto) {
         
-        
-        
-        
-        
-        
-        
-        bool usingFlexBasisForHeight =
-          (usingFlexBasisForISize != aWM.IsVertical());
-        if (!usingFlexBasisForHeight ||
-            flexBasis->GetUnit() != eStyleUnit_Enumerated) {
-          
-          (usingFlexBasisForISize ? inlineStyleCoord : blockStyleCoord) =
-            flexBasis;
-        }
+        (usingFlexBasisForISize ? inlineStyleCoord : blockStyleCoord) =
+          flexBasis;
       }
     }
   }
