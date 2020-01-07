@@ -395,6 +395,7 @@ nsMathMLmrootFrame::GetIntrinsicISizeMetrics(gfxContext* aRenderingContext, Refl
 
 
 
+
 ComputedStyle*
 nsMathMLmrootFrame::GetAdditionalComputedStyle(int32_t aIndex) const
 {

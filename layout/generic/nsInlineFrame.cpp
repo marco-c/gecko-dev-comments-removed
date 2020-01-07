@@ -977,7 +977,7 @@ nsInlineFrame::UpdateStyleOfOwnedAnonBoxesForIBSplit(
 
     MOZ_ASSERT(blockFrame->Style()->GetPseudo() ==
                nsCSSAnonBoxes::mozBlockInsideInlineWrapper,
-               "Unexpected kind of style context");
+               "Unexpected kind of ComputedStyle");
 
     
     

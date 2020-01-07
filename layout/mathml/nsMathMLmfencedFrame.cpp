@@ -683,6 +683,7 @@ nsMathMLmfencedFrame::FixInterFrameSpacing(ReflowOutput& aDesiredSize)
 
 
 
+
 ComputedStyle*
 nsMathMLmfencedFrame::GetAdditionalComputedStyle(int32_t aIndex) const
 {

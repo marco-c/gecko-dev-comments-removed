@@ -411,7 +411,6 @@ KeyframeEffectReadOnly::EnsureBaseStyle(
     aBaseComputedStyle =
       aPresContext->StyleSet()->AsServo()->GetBaseContextForElement(
           animatingElement,
-          aPresContext,
           aComputedStyle);
   }
   RefPtr<RawServoAnimationValue> baseValue =
@@ -1009,7 +1008,6 @@ KeyframeEffectReadOnly::GetKeyframes(JSContext*& aCx,
     return;
   }
 
-  bool isServo = mDocument->IsStyledByServo();
   bool isCSSAnimation = mAnimation && mAnimation->AsCSSAnimation();
 
   
@@ -1024,7 +1022,7 @@ KeyframeEffectReadOnly::GetKeyframes(JSContext*& aCx,
   
   
   RefPtr<ComputedStyle> computedStyle;
-  if (isServo && isCSSAnimation) {
+  if (isCSSAnimation) {
     
     
     
@@ -1065,7 +1063,7 @@ KeyframeEffectReadOnly::GetKeyframes(JSContext*& aCx,
     
     
     
-    if (isServo && isCSSAnimation) {
+    if (isCSSAnimation) {
       for (const PropertyValuePair& propertyValue : keyframe.mPropertyValues) {
         if (propertyValue.mProperty ==
               nsCSSPropertyID::eCSSPropertyExtra_variable) {
@@ -1078,31 +1076,27 @@ KeyframeEffectReadOnly::GetKeyframes(JSContext*& aCx,
     JS::Rooted<JSObject*> keyframeObject(aCx, &keyframeJSValue.toObject());
     for (const PropertyValuePair& propertyValue : keyframe.mPropertyValues) {
       nsAutoString stringValue;
-      if (isServo) {
-        
-        if (propertyValue.mProperty ==
-              nsCSSPropertyID::eCSSPropertyExtra_variable) {
-          continue;
-        }
-        if (propertyValue.mServoDeclarationBlock) {
-          Servo_DeclarationBlock_SerializeOneValue(
-            propertyValue.mServoDeclarationBlock,
-            propertyValue.mProperty,
-            &stringValue,
-            computedStyle,
-            customProperties);
-        } else {
-          RawServoAnimationValue* value =
-            mBaseStyleValuesForServo.GetWeak(propertyValue.mProperty);
-
-          if (value) {
-            Servo_AnimationValue_Serialize(value,
-                                           propertyValue.mProperty,
-                                           &stringValue);
-          }
-        }
+      
+      if (propertyValue.mProperty ==
+            nsCSSPropertyID::eCSSPropertyExtra_variable) {
+        continue;
+      }
+      if (propertyValue.mServoDeclarationBlock) {
+        Servo_DeclarationBlock_SerializeOneValue(
+          propertyValue.mServoDeclarationBlock,
+          propertyValue.mProperty,
+          &stringValue,
+          computedStyle,
+          customProperties);
       } else {
-        MOZ_CRASH("old style system disabled");
+        RawServoAnimationValue* value =
+          mBaseStyleValuesForServo.GetWeak(propertyValue.mProperty);
+
+        if (value) {
+          Servo_AnimationValue_Serialize(value,
+                                         propertyValue.mProperty,
+                                         &stringValue);
+        }
       }
 
       const char* name = nsCSSProps::PropertyIDLName(propertyValue.mProperty);
@@ -1549,11 +1543,8 @@ KeyframeEffectReadOnly::CalculateCumulativeChangeHint(StyleType* aComputedStyle)
       }
 
       uint32_t equalStructs = 0;
-      uint32_t samePointerStructs = 0;
       nsChangeHint changeHint =
-        fromContext->CalcStyleDifference(toContext,
-                                         &equalStructs,
-                                         &samePointerStructs);
+        fromContext->CalcStyleDifference(toContext, &equalStructs);
 
       mCumulativeChangeHint |= changeHint;
     }

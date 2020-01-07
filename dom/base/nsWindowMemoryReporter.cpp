@@ -443,7 +443,7 @@ CollectWindowReports(nsGlobalWindowInner *aWindow,
               "Memory used by CSS rule nodes within a window.");
 
   REPORT_SIZE("/layout/style-contexts", mArenaSizes.mComputedStyles,
-              "Memory used by style contexts within a window.");
+              "Memory used by ComputedStyles within a window.");
 
   
   

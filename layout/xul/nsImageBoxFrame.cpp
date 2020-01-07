@@ -644,6 +644,7 @@ nsImageBoxFrame::CanOptimizeToImageLayer()
 
 
 
+
  void
 nsImageBoxFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle)
 {

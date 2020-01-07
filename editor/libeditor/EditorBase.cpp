@@ -48,7 +48,6 @@
 #include "mozilla/TextInputListener.h"  
 #include "mozilla/TextServicesDocument.h" 
 #include "mozilla/TextEvents.h"
-#include "mozilla/TransactionManager.h" 
 #include "mozilla/dom/CharacterData.h"  
 #include "mozilla/dom/Element.h"        
 #include "mozilla/dom/HTMLBodyElement.h"
@@ -109,6 +108,7 @@
 #include "nsStyleStructFwd.h"           
 #include "nsTextNode.h"                 
 #include "nsThreadUtils.h"              
+#include "nsTransactionManager.h"       
 #include "prtime.h"                     
 
 class nsIOutputStream;
@@ -180,7 +180,7 @@ EditorBase::~EditorBase()
   }
   
   HideCaret(false);
-  mTransactionManager = nullptr;
+  mTxnMgr = nullptr;
 }
 
 NS_IMPL_CYCLE_COLLECTION_CLASS(EditorBase)
@@ -193,7 +193,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(EditorBase)
  NS_IMPL_CYCLE_COLLECTION_UNLINK(mInlineSpellChecker)
  NS_IMPL_CYCLE_COLLECTION_UNLINK(mTextServicesDocument)
  NS_IMPL_CYCLE_COLLECTION_UNLINK(mTextInputListener)
- NS_IMPL_CYCLE_COLLECTION_UNLINK(mTransactionManager)
+ NS_IMPL_CYCLE_COLLECTION_UNLINK(mTxnMgr)
  NS_IMPL_CYCLE_COLLECTION_UNLINK(mActionListeners)
  NS_IMPL_CYCLE_COLLECTION_UNLINK(mEditorObservers)
  NS_IMPL_CYCLE_COLLECTION_UNLINK(mDocStateListeners)
@@ -223,7 +223,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(EditorBase)
  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mInlineSpellChecker)
  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mTextServicesDocument)
  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mTextInputListener)
- NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mTransactionManager)
+ NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mTxnMgr)
  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mActionListeners)
  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mEditorObservers)
  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDocStateListeners)
@@ -525,11 +525,9 @@ EditorBase::PreDestroy(bool aDestroyingFrames)
 
   
   
-  if (mTransactionManager) {
-    DebugOnly<bool> disabledUndoRedo = DisableUndoRedo();
-    NS_WARNING_ASSERTION(disabledUndoRedo,
-      "Failed to disable undo/redo transactions");
-    mTransactionManager = nullptr;
+  if (mTxnMgr) {
+    mTxnMgr->Clear();
+    mTxnMgr = nullptr;
   }
 
   mDidPreDestroy = true;
@@ -748,9 +746,8 @@ EditorBase::DoTransaction(Selection* aSelection, nsITransaction* aTxn)
     
     DoTransaction(mPlaceholderTransaction);
 
-    if (mTransactionManager) {
-      nsCOMPtr<nsITransaction> topTransaction =
-        mTransactionManager->PeekUndoStack();
+    if (mTxnMgr) {
+      nsCOMPtr<nsITransaction> topTransaction = mTxnMgr->PeekUndoStack();
       nsCOMPtr<nsIAbsorbingTransaction> topAbsorbingTransaction =
         do_QueryInterface(topTransaction);
       if (topAbsorbingTransaction) {
@@ -794,9 +791,9 @@ EditorBase::DoTransaction(Selection* aSelection, nsITransaction* aTxn)
     SelectionBatcher selectionBatcher(selection);
 
     nsresult rv;
-    if (mTransactionManager) {
-      RefPtr<TransactionManager> transactionManager(mTransactionManager);
-      rv = transactionManager->DoTransaction(aTxn);
+    if (mTxnMgr) {
+      RefPtr<nsTransactionManager> txnMgr = mTxnMgr;
+      rv = txnMgr->DoTransaction(aTxn);
     } else {
       rv = aTxn->DoTransaction();
     }
@@ -813,65 +810,161 @@ EditorBase::DoTransaction(Selection* aSelection, nsITransaction* aTxn)
 NS_IMETHODIMP
 EditorBase::EnableUndo(bool aEnable)
 {
-  
-  
   if (aEnable) {
-    DebugOnly<bool> enabledUndoRedo = EnableUndoRedo();
-    NS_WARNING_ASSERTION(enabledUndoRedo,
-      "Failed to enable undo/redo transactions");
-    return NS_OK;
+    if (!mTxnMgr) {
+      mTxnMgr = new nsTransactionManager();
+    }
+    mTxnMgr->SetMaxTransactionCount(-1);
+  } else if (mTxnMgr) {
+    
+    mTxnMgr->Clear();
+    mTxnMgr->SetMaxTransactionCount(0);
   }
-  DebugOnly<bool> disabledUndoRedo = DisableUndoRedo();
-  NS_WARNING_ASSERTION(disabledUndoRedo,
-    "Failed to disable undo/redo transactions");
+
   return NS_OK;
 }
 
 NS_IMETHODIMP
-EditorBase::GetTransactionManager(nsITransactionManager** aTransactionManager)
+EditorBase::GetNumberOfUndoItems(int32_t* aNumItems)
 {
-  if (NS_WARN_IF(!aTransactionManager)) {
+  *aNumItems = NumberOfUndoItems();
+  return *aNumItems >= 0 ? NS_OK : NS_ERROR_FAILURE;
+}
+
+int32_t
+EditorBase::NumberOfUndoItems() const
+{
+  if (!mTxnMgr) {
+    return 0;
+  }
+  int32_t numItems = 0;
+  if (NS_WARN_IF(NS_FAILED(mTxnMgr->GetNumberOfUndoItems(&numItems)))) {
+    return -1;
+  }
+  return numItems;
+}
+
+NS_IMETHODIMP
+EditorBase::GetNumberOfRedoItems(int32_t* aNumItems)
+{
+  *aNumItems = NumberOfRedoItems();
+  return *aNumItems >= 0 ? NS_OK : NS_ERROR_FAILURE;
+}
+
+int32_t
+EditorBase::NumberOfRedoItems() const
+{
+  if (!mTxnMgr) {
+    return 0;
+  }
+  int32_t numItems = 0;
+  if (NS_WARN_IF(NS_FAILED(mTxnMgr->GetNumberOfRedoItems(&numItems)))) {
+    return -1;
+  }
+  return numItems;
+}
+
+NS_IMETHODIMP
+EditorBase::GetTransactionManager(nsITransactionManager** aTxnManager)
+{
+  
+  
+  if (NS_WARN_IF(!aTxnManager)) {
     return NS_ERROR_INVALID_ARG;
   }
-  if (NS_WARN_IF(!mTransactionManager)) {
+  *aTxnManager = GetTransactionManager().take();
+  if (NS_WARN_IF(!*aTxnManager)) {
     return NS_ERROR_FAILURE;
   }
-  NS_IF_ADDREF(*aTransactionManager = mTransactionManager);
   return NS_OK;
+}
+
+already_AddRefed<nsITransactionManager>
+EditorBase::GetTransactionManager() const
+{
+  nsCOMPtr<nsITransactionManager> transactionManager = mTxnMgr.get();
+  return transactionManager.forget();
 }
 
 NS_IMETHODIMP
 EditorBase::Undo(uint32_t aCount)
 {
-  return NS_ERROR_NOT_IMPLEMENTED;
+  ForceCompositionEnd();
+
+  bool hasTxnMgr, hasTransaction = false;
+  CanUndo(&hasTxnMgr, &hasTransaction);
+  NS_ENSURE_TRUE(hasTransaction, NS_OK);
+
+  AutoRules beginRulesSniffing(this, EditAction::undo, nsIEditor::eNone);
+
+  if (!mTxnMgr) {
+    return NS_OK;
+  }
+
+  RefPtr<nsTransactionManager> txnMgr = mTxnMgr;
+  for (uint32_t i = 0; i < aCount; ++i) {
+    nsresult rv = txnMgr->UndoTransaction();
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    DoAfterUndoTransaction();
+  }
+
+  return NS_OK;
 }
 
 NS_IMETHODIMP
 EditorBase::CanUndo(bool* aIsEnabled,
                     bool* aCanUndo)
 {
-  if (NS_WARN_IF(!aIsEnabled) || NS_WARN_IF(!aCanUndo)) {
-    return NS_ERROR_INVALID_ARG;
+  NS_ENSURE_TRUE(aIsEnabled && aCanUndo, NS_ERROR_NULL_POINTER);
+  *aIsEnabled = !!mTxnMgr;
+  if (*aIsEnabled) {
+    int32_t numTxns = 0;
+    mTxnMgr->GetNumberOfUndoItems(&numTxns);
+    *aCanUndo = !!numTxns;
+  } else {
+    *aCanUndo = false;
   }
-  *aCanUndo = CanUndo();
-  *aIsEnabled = IsUndoRedoEnabled();
   return NS_OK;
 }
 
 NS_IMETHODIMP
 EditorBase::Redo(uint32_t aCount)
 {
-  return NS_ERROR_NOT_IMPLEMENTED;
+  bool hasTxnMgr, hasTransaction = false;
+  CanRedo(&hasTxnMgr, &hasTransaction);
+  NS_ENSURE_TRUE(hasTransaction, NS_OK);
+
+  AutoRules beginRulesSniffing(this, EditAction::redo, nsIEditor::eNone);
+
+  if (!mTxnMgr) {
+    return NS_OK;
+  }
+
+  RefPtr<nsTransactionManager> txnMgr = mTxnMgr;
+  for (uint32_t i = 0; i < aCount; ++i) {
+    nsresult rv = txnMgr->RedoTransaction();
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    DoAfterRedoTransaction();
+  }
+
+  return NS_OK;
 }
 
 NS_IMETHODIMP
 EditorBase::CanRedo(bool* aIsEnabled, bool* aCanRedo)
 {
-  if (NS_WARN_IF(!aIsEnabled) || NS_WARN_IF(!aCanRedo)) {
-    return NS_ERROR_INVALID_ARG;
+  NS_ENSURE_TRUE(aIsEnabled && aCanRedo, NS_ERROR_NULL_POINTER);
+
+  *aIsEnabled = !!mTxnMgr;
+  if (*aIsEnabled) {
+    int32_t numTxns = 0;
+    mTxnMgr->GetNumberOfRedoItems(&numTxns);
+    *aCanRedo = !!numTxns;
+  } else {
+    *aCanRedo = false;
   }
-  *aCanRedo = CanRedo();
-  *aIsEnabled = IsUndoRedoEnabled();
   return NS_OK;
 }
 
@@ -880,9 +973,9 @@ EditorBase::BeginTransaction()
 {
   BeginUpdateViewBatch();
 
-  if (mTransactionManager) {
-    RefPtr<TransactionManager> transactionManager(mTransactionManager);
-    transactionManager->BeginBatch(nullptr);
+  if (mTxnMgr) {
+    RefPtr<nsTransactionManager> txnMgr = mTxnMgr;
+    txnMgr->BeginBatch(nullptr);
   }
 
   return NS_OK;
@@ -891,9 +984,9 @@ EditorBase::BeginTransaction()
 NS_IMETHODIMP
 EditorBase::EndTransaction()
 {
-  if (mTransactionManager) {
-    RefPtr<TransactionManager> transactionManager(mTransactionManager);
-    transactionManager->EndBatch(false);
+  if (mTxnMgr) {
+    RefPtr<nsTransactionManager> txnMgr = mTxnMgr;
+    txnMgr->EndBatch(false);
   }
 
   EndUpdateViewBatch();
@@ -2378,8 +2471,8 @@ EditorBase::EndIMEComposition()
 
   
   
-  if (mTransactionManager) {
-    nsCOMPtr<nsITransaction> txn = mTransactionManager->PeekUndoStack();
+  if (mTxnMgr) {
+    nsCOMPtr<nsITransaction> txn = mTxnMgr->PeekUndoStack();
     nsCOMPtr<nsIAbsorbingTransaction> plcTxn = do_QueryInterface(txn);
     if (plcTxn) {
       DebugOnly<nsresult> rv = plcTxn->Commit();
@@ -4043,6 +4136,7 @@ EditorBase::IsPreformatted(nsIDOMNode* aNode,
   nsCOMPtr<nsIPresShell> ps = GetPresShell();
   NS_ENSURE_TRUE(ps, NS_ERROR_NOT_INITIALIZED);
 
+  
   
   RefPtr<ComputedStyle> elementStyle;
   if (!content->IsElement()) {

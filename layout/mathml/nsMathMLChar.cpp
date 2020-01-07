@@ -761,7 +761,7 @@ nsMathMLChar::~nsMathMLChar()
 ComputedStyle*
 nsMathMLChar::GetComputedStyle() const
 {
-  NS_ASSERTION(mComputedStyle, "chars should always have style context");
+  NS_ASSERTION(mComputedStyle, "chars should always have a ComputedStyle");
   return mComputedStyle;
 }
 
