@@ -569,8 +569,7 @@ EditorBase::SetFlags(uint32_t aFlags)
 
   
   if (CanEnableSpellCheck() != spellcheckerWasEnabled) {
-    nsresult rv = SyncRealTimeSpell();
-    NS_ENSURE_SUCCESS(rv, rv);
+    SyncRealTimeSpell();
   }
 
   
@@ -1326,7 +1325,7 @@ EditorBase::GetInlineSpellChecker(bool autoCreate,
   return NS_OK;
 }
 
-NS_IMETHODIMP
+void
 EditorBase::SyncRealTimeSpell()
 {
   bool enable = GetDesiredSpellCheckState();
@@ -1346,8 +1345,6 @@ EditorBase::SyncRealTimeSpell()
     
     mInlineSpellChecker->SetEnableRealTimeSpell(enable && spellChecker);
   }
-
-  return NS_OK;
 }
 
 NS_IMETHODIMP
@@ -1355,7 +1352,8 @@ EditorBase::SetSpellcheckUserOverride(bool enable)
 {
   mSpellcheckCheckboxState = enable ? eTriTrue : eTriFalse;
 
-  return SyncRealTimeSpell();
+  SyncRealTimeSpell();
+  return NS_OK;
 }
 
 template<typename PT, typename CT>

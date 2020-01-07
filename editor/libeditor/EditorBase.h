@@ -1817,6 +1817,12 @@ public:
 
   void HideCaret(bool aHide);
 
+  
+
+
+
+  void SyncRealTimeSpell();
+
 private:
   nsCOMPtr<nsISelectionController> mSelectionController;
   nsCOMPtr<nsIDocument> mDocument;
