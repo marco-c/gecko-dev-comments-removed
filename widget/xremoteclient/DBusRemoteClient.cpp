@@ -136,6 +136,17 @@ DBusRemoteClient::GetRemoteDestinationName(const char *aProgram,
     if (aDestinationName.Length() > DBUS_MAXIMUM_NAME_LENGTH)
       aDestinationName.Truncate(DBUS_MAXIMUM_NAME_LENGTH);
 
+    if (!dbus_validate_bus_name(aDestinationName.get(), nullptr)) {
+      
+      aDestinationName = nsPrintfCString("org.mozilla.%s.%s", aProgram,
+                                                             "default");
+      if (!dbus_validate_bus_name(aDestinationName.get(), nullptr)) {
+        
+        
+        return false;
+      }
+    }
+
     return true;
   }
 }
@@ -182,4 +193,3 @@ DBusRemoteClient::DoSendDBusCommandLine(const char *aProgram, const char *aProfi
 
   return NS_OK;
 }
-

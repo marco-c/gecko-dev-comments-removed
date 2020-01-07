@@ -189,6 +189,16 @@ nsDBusRemoteService::Startup(const char* aAppName, const char* aProfileName)
   if (busName.Length() > DBUS_MAXIMUM_NAME_LENGTH)
     busName.Truncate(DBUS_MAXIMUM_NAME_LENGTH);
 
+  
+  if (!dbus_validate_bus_name(busName.get(), nullptr)) {
+    busName = nsPrintfCString("org.mozilla.%s.%s", mAppName.get(), "default");
+    if (!dbus_validate_bus_name(busName.get(), nullptr)) {
+      
+      
+      return NS_ERROR_FAILURE;
+    }
+  }
+
   DBusError err;
   dbus_error_init(&err);
   dbus_bus_request_name(mConnection, busName.get(),
