@@ -72,11 +72,6 @@ class BaselineFrame
         
         
         HANDLING_EXCEPTION = 1 << 12,
-
-        
-        
-        
-        HAS_CACHED_SAVED_FRAME = 1 << 13
     };
 
   protected: 
@@ -310,13 +305,6 @@ class BaselineFrame
     }
     void unsetIsHandlingException() {
         flags_ &= ~HANDLING_EXCEPTION;
-    }
-
-    bool hasCachedSavedFrame() const {
-        return flags_ & HAS_CACHED_SAVED_FRAME;
-    }
-    void setHasCachedSavedFrame() {
-        flags_ |= HAS_CACHED_SAVED_FRAME;
     }
 
     bool overRecursed() const {
