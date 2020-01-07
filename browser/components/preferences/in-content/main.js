@@ -1421,9 +1421,11 @@ var gMainPane = {
     if (AppConstants.MOZ_UPDATER) {
       var enabledPref = Preferences.get("app.update.enabled");
       var autoPref = Preferences.get("app.update.auto");
+      let disabledByPolicy = Services.policies &&
+                             !Services.policies.isAllowed("appUpdate");
       var radiogroup = document.getElementById("updateRadioGroup");
 
-      if (!enabledPref.value) 
+      if (!enabledPref.value || disabledByPolicy) 
         radiogroup.value = "manual"; 
       else if (autoPref.value) 
         radiogroup.value = "auto"; 
@@ -1436,7 +1438,10 @@ var gMainPane = {
       
       
       
-      radiogroup.disabled = !canCheck || enabledPref.locked || autoPref.locked;
+      radiogroup.disabled = !canCheck ||
+                            enabledPref.locked ||
+                            autoPref.locked ||
+                            disabledByPolicy;
 
       if (AppConstants.MOZ_MAINTENANCE_SERVICE) {
         
@@ -1463,7 +1468,9 @@ var gMainPane = {
 
 
   updateWritePrefs() {
-    if (AppConstants.MOZ_UPDATER) {
+    let disabledByPolicy = Services.policies &&
+                           !Services.policies.isAllowed("appUpdate");
+    if (AppConstants.MOZ_UPDATER && !disabledByPolicy) {
       var enabledPref = Preferences.get("app.update.enabled");
       var autoPref = Preferences.get("app.update.auto");
       var radiogroup = document.getElementById("updateRadioGroup");
