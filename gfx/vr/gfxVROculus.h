@@ -62,6 +62,7 @@ private:
   nsTArray<RefPtr<layers::CompositingRenderTargetD3D11>> mRenderTargets;
   IntSize mPresentationSize;
   RefPtr<ID3D11Device> mDevice;
+  RefPtr<VRThread> mSubmitThread;
   
   TimeStamp mLastShouldQuit;
   
