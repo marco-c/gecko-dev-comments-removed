@@ -10841,6 +10841,7 @@ void
 CodeGenerator::visitLoadElementHole(LLoadElementHole* lir)
 {
     Register elements = ToRegister(lir->elements());
+    Register index = ToRegister(lir->index());
     Register initLength = ToRegister(lir->initLength());
     const ValueOperand out = ToOutValue(lir);
 
@@ -10848,40 +10849,27 @@ CodeGenerator::visitLoadElementHole(LLoadElementHole* lir)
 
     
     
-    Label undefined, done;
-    if (lir->index()->isConstant())
-        masm.branch32(Assembler::BelowOrEqual, initLength, Imm32(ToInt32(lir->index())), &undefined);
-    else
-        masm.branch32(Assembler::BelowOrEqual, initLength, ToRegister(lir->index()), &undefined);
+    Label outOfBounds, done;
+    masm.boundsCheck32ForLoad(index, initLength, out.scratchReg(), &outOfBounds);
 
-    if (lir->index()->isConstant()) {
-        NativeObject::elementsSizeMustNotOverflow();
-        masm.loadValue(Address(elements, ToInt32(lir->index()) * sizeof(Value)), out);
-    } else {
-        masm.loadValue(BaseObjectElementIndex(elements, ToRegister(lir->index())), out);
-    }
+    masm.loadValue(BaseObjectElementIndex(elements, index), out);
 
     
     
-    if (lir->mir()->needsHoleCheck())
+    if (lir->mir()->needsHoleCheck()) {
         masm.branchTestMagic(Assembler::NotEqual, out, &done);
-    else
-        masm.jump(&done);
-
-    masm.bind(&undefined);
-
-    if (mir->needsNegativeIntCheck()) {
-        if (lir->index()->isConstant()) {
-            if (ToInt32(lir->index()) < 0)
-                bailout(lir->snapshot());
-        } else {
-            Label negative;
-            masm.branch32(Assembler::LessThan, ToRegister(lir->index()), Imm32(0), &negative);
-            bailoutFrom(&negative, lir->snapshot());
-        }
+        masm.moveValue(UndefinedValue(), out);
     }
+    masm.jump(&done);
 
+    masm.bind(&outOfBounds);
+    if (mir->needsNegativeIntCheck()) {
+        Label negative;
+        masm.branch32(Assembler::LessThan, index, Imm32(0), &negative);
+        bailoutFrom(&negative, lir->snapshot());
+    }
     masm.moveValue(UndefinedValue(), out);
+
     masm.bind(&done);
 }
 
@@ -10995,32 +10983,27 @@ CodeGenerator::visitLoadTypedArrayElementHole(LLoadTypedArrayElementHole* lir)
 
     
     Register scratch = out.scratchReg();
-    RegisterOrInt32Constant key = ToRegisterOrInt32Constant(lir->index());
+    Register scratch2 = ToRegister(lir->temp());
+    Register index = ToRegister(lir->index());
     masm.unboxInt32(Address(object, TypedArrayObject::lengthOffset()), scratch);
 
     
-    Label inbounds, done;
-    masm.branch32(Assembler::Above, scratch, key, &inbounds);
-    masm.moveValue(UndefinedValue(), out);
-    masm.jump(&done);
+    Label outOfBounds, done;
+    masm.boundsCheck32ForLoad(index, scratch, scratch2, &outOfBounds);
 
     
-    masm.bind(&inbounds);
     masm.loadPtr(Address(object, TypedArrayObject::dataOffset()), scratch);
 
     Scalar::Type arrayType = lir->mir()->arrayType();
     int width = Scalar::byteSize(arrayType);
-
     Label fail;
-    if (key.isConstant()) {
-        Address source(scratch, key.constant() * width);
-        masm.loadFromTypedArray(arrayType, source, out, lir->mir()->allowDouble(),
-                                out.scratchReg(), &fail);
-    } else {
-        BaseIndex source(scratch, key.reg(), ScaleFromElemWidth(width));
-        masm.loadFromTypedArray(arrayType, source, out, lir->mir()->allowDouble(),
-                                out.scratchReg(), &fail);
-    }
+    BaseIndex source(scratch, index, ScaleFromElemWidth(width));
+    masm.loadFromTypedArray(arrayType, source, out, lir->mir()->allowDouble(),
+                            out.scratchReg(), &fail);
+    masm.jump(&done);
+
+    masm.bind(&outOfBounds);
+    masm.moveValue(UndefinedValue(), out);
 
     if (fail.used())
         bailoutFrom(&fail, lir->snapshot());
