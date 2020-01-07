@@ -1601,7 +1601,10 @@ BrowserGlue.prototype = {
         lastBackupFile = await PlacesBackups.getMostRecentBackup();
         if (lastBackupFile) {
           
-          await BookmarkJSONUtils.importFromFile(lastBackupFile, true);
+          await BookmarkJSONUtils.importFromFile(lastBackupFile, {
+            replace: true,
+            source: PlacesUtils.bookmarks.SOURCES.RESTORE_ON_STARTUP,
+          });
           importBookmarks = false;
         } else {
           
@@ -1649,7 +1652,10 @@ BrowserGlue.prototype = {
         if (bookmarksUrl) {
           
           try {
-            await BookmarkHTMLUtils.importFromURL(bookmarksUrl, true);
+            await BookmarkHTMLUtils.importFromURL(bookmarksUrl, {
+              replace: true,
+              source: PlacesUtils.bookmarks.SOURCES.RESTORE_ON_STARTUP,
+            });
           } catch (e) {
             Cu.reportError("Bookmarks.html file could be corrupt. " + e);
           }

@@ -60,7 +60,7 @@ Axis::Axis(AsyncPanZoomController* aAsyncPanZoomController)
 }
 
 float Axis::ToLocalVelocity(float aVelocityInchesPerMs) const {
-  ScreenPoint velocity = MakePoint(aVelocityInchesPerMs * APZCTreeManager::GetDPI());
+  ScreenPoint velocity = MakePoint(aVelocityInchesPerMs * mAsyncPanZoomController->GetDPI());
   
   
   ScreenPoint panStart = mAsyncPanZoomController->ToScreenCoordinates(

@@ -11,7 +11,7 @@
 
 #include "FrameMetrics.h"               
 #include "mozilla/EventForwards.h"      
-#include "mozilla/layers/APZUtils.h"    
+#include "mozilla/layers/LayersTypes.h"    
 #include "nsTArrayForwardDeclare.h"     
 #include "nsISupportsImpl.h"            
 #include "Units.h"                      
@@ -190,13 +190,6 @@ public:
 
   virtual void SetLongTapEnabled(bool aTapGestureEnabled) = 0;
 
-  
-
-
-
-
-
-  virtual void ProcessTouchVelocity(uint32_t aTimestampMs, float aSpeedY) = 0;
 
   
   
