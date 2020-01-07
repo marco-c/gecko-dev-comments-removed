@@ -472,7 +472,7 @@ public:
 
 
 
-  nsresult DoInlineTableEditingAction(Element& aUIAnonymousElement);
+  nsresult DoInlineTableEditingAction(const Element& aUIAnonymousElement);
 
 protected:
   class BlobReader final : public nsIEditorBlobListener
