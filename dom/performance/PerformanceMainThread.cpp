@@ -141,6 +141,17 @@ PerformanceMainThread::AddEntry(nsIHttpChannel* channel,
     originalURI->GetSpec(name);
     NS_ConvertUTF8toUTF16 entryName(name);
 
+    bool reportTiming = true;
+    timedChannel->GetReportResourceTiming(&reportTiming);
+
+    if (!reportTiming) {
+#ifdef DEBUG_jwatt
+      NS_WARNING(
+        nsPrintfCString("Not reporting CORS resource: %s", name.get()).get());
+#endif
+      return;
+    }
+
     
     
     
