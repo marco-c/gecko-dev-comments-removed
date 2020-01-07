@@ -95,6 +95,8 @@
 
 
 
+
+
 "use strict";
 
 var EXPORTED_SYMBOLS = [
@@ -346,11 +348,7 @@ var PanelMultiView = class extends this.AssociatedToNode {
     return this.node.parentNode;
   }
 
-  get _transitioning() {
-    return this.__transitioning;
-  }
   set _transitioning(val) {
-    this.__transitioning = val;
     if (val) {
       this.node.setAttribute("transitioning", "true");
     } else {
@@ -396,7 +394,6 @@ var PanelMultiView = class extends this.AssociatedToNode {
     this.node.prepend(viewContainer);
 
     this.openViews = [];
-    this.__transitioning = false;
 
     this._panel.addEventListener("popupshowing", this);
     this._panel.addEventListener("popuppositioned", this);
@@ -610,13 +607,42 @@ var PanelMultiView = class extends this.AssociatedToNode {
       return;
     }
 
+    if (!this.openViews.length) {
+      Cu.reportError(new Error(`Cannot show a subview in a closed panel.`));
+      return;
+    }
+
     let prevPanelView = this.openViews[this.openViews.length - 1];
     let nextPanelView = PanelView.forNode(viewNode);
     if (this.openViews.includes(nextPanelView)) {
       Cu.reportError(new Error(`Subview ${viewNode.id} is already open.`));
       return;
     }
+
+    
+    
+    
+    
+    if (!prevPanelView.active) {
+      return;
+    }
+    
+    
+    
+    prevPanelView.active = false;
+
+    
+    
     if (!(await this._openView(nextPanelView))) {
+      if (prevPanelView.isOpenIn(this)) {
+        
+        
+        
+        
+        
+        
+        prevPanelView.active = true;
+      }
       return;
     }
 
@@ -654,6 +680,14 @@ var PanelMultiView = class extends this.AssociatedToNode {
 
     let prevPanelView = this.openViews[this.openViews.length - 1];
     let nextPanelView = this.openViews[this.openViews.length - 2];
+
+    
+    
+    
+    if (!prevPanelView.active) {
+      return;
+    }
+    prevPanelView.active = false;
 
     prevPanelView.captureKnownSize();
     await this._transitionViews(prevPanelView.node, nextPanelView.node, true);
@@ -796,15 +830,10 @@ var PanelMultiView = class extends this.AssociatedToNode {
 
 
 
+
   async _transitionViews(previousViewNode, viewNode, reverse, anchor) {
     
     this._cleanupTransitionPhase();
-
-    
-    
-    if (this._panel.state != "open") {
-      return;
-    }
 
     const { window } = this;
 
@@ -912,14 +941,6 @@ var PanelMultiView = class extends this.AssociatedToNode {
     
     
     viewNode.style.width = viewRect.width + "px";
-
-    
-    
-    
-    
-    
-    
-    prevPanelView.active = false;
 
     
     details.phase = TRANSITION_PHASES.TRANSITION;
@@ -1058,13 +1079,11 @@ var PanelMultiView = class extends this.AssociatedToNode {
     }
     switch (aEvent.type) {
       case "keydown":
-        if (!this._transitioning) {
-          
-          
-          
-          let currentView = this.openViews[this.openViews.length - 1];
-          currentView.keyNavigation(aEvent, this._dir);
-        }
+        
+        
+        
+        let currentView = this.openViews[this.openViews.length - 1];
+        currentView.keyNavigation(aEvent, this._dir);
         break;
       case "mousemove":
         this.openViews.forEach(panelView => panelView.clearNavigation());
@@ -1425,7 +1444,14 @@ var PanelView = class extends this.AssociatedToNode {
 
 
 
+
+
+
   keyNavigation(event, dir) {
+    if (!this.active) {
+      return;
+    }
+
     let buttons = this.buttons;
     if (!buttons || !buttons.length) {
       buttons = this.buttons = this.getNavigableElements();
