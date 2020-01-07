@@ -1296,10 +1296,6 @@ var gBrowserInit = {
 
     gUIDensity.init();
 
-    if (AppConstants.CAN_DRAW_IN_TITLEBAR) {
-      gDragSpaceObserver.init();
-    }
-
     
     
     this._callWithURIToLoad(uriToLoad => {
@@ -1848,10 +1844,6 @@ var gBrowserInit = {
 
   onUnload() {
     gUIDensity.uninit();
-
-    if (AppConstants.CAN_DRAW_IN_TITLEBAR) {
-      gDragSpaceObserver.uninit();
-    }
 
     TabsInTitlebar.uninit();
 
@@ -5631,38 +5623,6 @@ var gTabletModePageCounter = {
 function displaySecurityInfo() {
   BrowserPageInfo(null, "securityTab");
 }
-
-
-
-var gDragSpaceObserver = {
-  pref: "browser.tabs.extraDragSpace",
-
-  init() {
-    this.update();
-    Services.prefs.addObserver(this.pref, this);
-  },
-
-  uninit() {
-    Services.prefs.removeObserver(this.pref, this);
-  },
-
-  observe(aSubject, aTopic, aPrefName) {
-    if (aTopic != "nsPref:changed" || aPrefName != this.pref) {
-      return;
-    }
-
-    this.update();
-  },
-
-  update() {
-    if (Services.prefs.getBoolPref(this.pref)) {
-      document.documentElement.setAttribute("extradragspace", "true");
-    } else {
-      document.documentElement.removeAttribute("extradragspace");
-    }
-    TabsInTitlebar.updateAppearance(true);
-  },
-};
 
 
 var gUIDensity = {
