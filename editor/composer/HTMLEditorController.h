@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsComposerController_h__
-#define nsComposerController_h__
+#ifndef mozilla_HTMLEditorController_h__
+#define mozilla_HTMLEditorController_h__
 
 
 #include "nscore.h"                     
@@ -23,12 +23,15 @@ class nsIControllerCommandTable;
 #define NS_HTMLEDITORCONTROLLER_CID \
  { 0x62db0002, 0xdbb6, 0x43f4, { 0x8f, 0xb7, 0x9d, 0x25, 0x38, 0xbc, 0x57, 0x47 } }
 
+namespace mozilla {
 
-class nsComposerController
+class HTMLEditorController final
 {
 public:
   static nsresult RegisterEditorDocStateCommands(nsIControllerCommandTable* inCommandTable);
   static nsresult RegisterHTMLEditorCommands(nsIControllerCommandTable* inCommandTable);
 };
+
+} 
 
 #endif 
