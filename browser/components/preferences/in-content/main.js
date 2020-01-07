@@ -17,6 +17,13 @@ ChromeUtils.import("resource://gre/modules/DownloadUtils.jsm");
 ChromeUtils.defineModuleGetter(this, "CloudStorage",
   "resource://gre/modules/CloudStorage.jsm");
 
+XPCOMUtils.defineLazyServiceGetters(this, {
+  gCategoryManager: ["@mozilla.org/categorymanager;1", "nsICategoryManager"],
+  gHandlerService: ["@mozilla.org/uriloader/handler-service;1", "nsIHandlerService"],
+  gMIMEService: ["@mozilla.org/mime;1", "nsIMIMEService"],
+  gWebContentContentConverterService: ["@mozilla.org/embeddor.implemented/web-content-handler-registrar;1", "nsIWebContentConverterService"],
+});
+
 
 const TYPE_MAYBE_FEED = "application/vnd.mozilla.maybe.feed";
 const TYPE_MAYBE_VIDEO_FEED = "application/vnd.mozilla.maybe.video.feed";
@@ -283,15 +290,6 @@ var gMainPane = {
     delete this._filter;
     return this._filter = document.getElementById("filter");
   },
-
-  _mimeSvc: Cc["@mozilla.org/mime;1"].
-    getService(Ci.nsIMIMEService),
-
-  _helperAppSvc: Cc["@mozilla.org/uriloader/external-helper-app-service;1"].
-    getService(Ci.nsIExternalHelperAppService),
-
-  _handlerSvc: Cc["@mozilla.org/uriloader/handler-service;1"].
-    getService(Ci.nsIHandlerService),
 
   _backoffIndex: 0,
 
@@ -1420,7 +1418,7 @@ var gMainPane = {
         handlerInfoWrapper = this._handledTypes[mimeType.type];
       } else {
         let wrappedHandlerInfo =
-          this._mimeSvc.getFromTypeAndExtension(mimeType.type, null);
+          gMIMEService.getFromTypeAndExtension(mimeType.type, null);
         handlerInfoWrapper = new HandlerInfoWrapper(mimeType.type, wrappedHandlerInfo);
         handlerInfoWrapper.handledOnlyByPlugin = true;
         this._handledTypes[mimeType.type] = handlerInfoWrapper;
@@ -1433,7 +1431,7 @@ var gMainPane = {
 
 
   _loadApplicationHandlers() {
-    var wrappedHandlerInfos = this._handlerSvc.enumerate();
+    var wrappedHandlerInfos = gHandlerService.enumerate();
     while (wrappedHandlerInfos.hasMoreElements()) {
       let wrappedHandlerInfo =
         wrappedHandlerInfos.getNext().QueryInterface(Ci.nsIHandlerInfo);
@@ -2104,7 +2102,7 @@ var gMainPane = {
 
       if (isFeedType(handlerInfo.type)) {
         
-        params.mimeInfo = this._mimeSvc.getFromTypeAndExtension(handlerInfo.type,
+        params.mimeInfo = gMIMEService.getFromTypeAndExtension(handlerInfo.type,
           handlerInfo.primaryExtension);
       } else {
         params.mimeInfo = handlerInfo.wrappedHandlerInfo;
@@ -2637,12 +2635,6 @@ HandlerInfoWrapper.prototype = {
 
   
 
-  _handlerSvc: Cc["@mozilla.org/uriloader/handler-service;1"].
-    getService(Ci.nsIHandlerService),
-
-  _categoryMgr: Cc["@mozilla.org/categorymanager;1"].
-    getService(Ci.nsICategoryManager),
-
   element(aID) {
     return document.getElementById(aID);
   },
@@ -2857,7 +2849,7 @@ HandlerInfoWrapper.prototype = {
       disabledPluginTypes.join(","));
 
     
-    this._categoryMgr.deleteCategoryEntry("Gecko-Content-Viewers",
+    gCategoryManager.deleteCategoryEntry("Gecko-Content-Viewers",
       this.type,
       false);
   },
@@ -2872,8 +2864,8 @@ HandlerInfoWrapper.prototype = {
       disabledPluginTypes.join(","));
 
     
-    this._categoryMgr.
-      addCategoryEntry("Gecko-Content-Viewers",
+    gCategoryManager.addCategoryEntry(
+      "Gecko-Content-Viewers",
       this.type,
       "@mozilla.org/content/plugin/document-loader-factory;1",
       false,
@@ -2884,7 +2876,7 @@ HandlerInfoWrapper.prototype = {
   
 
   store() {
-    this._handlerSvc.store(this.wrappedHandlerInfo);
+    gHandlerService.store(this.wrappedHandlerInfo);
   },
 
 
@@ -2934,14 +2926,6 @@ FeedHandlerInfo.prototype = {
 
   
 
-  _converterSvc:
-  Cc["@mozilla.org/embeddor.implemented/web-content-handler-registrar;1"].
-    getService(Ci.nsIWebContentConverterService),
-
-  _shellSvc: AppConstants.HAVE_SHELL_SERVICE ? getShellService() : null,
-
-  
-
   get description() {
     return this.element("bundlePreferences").getString(this._appPrefLabel);
   },
@@ -2959,7 +2943,7 @@ FeedHandlerInfo.prototype = {
         var uri = Preferences.get(this._prefSelectedWeb).value;
         if (!uri)
           return null;
-        return this._converterSvc.getWebContentHandlerByURI(this.type, uri);
+        return gWebContentContentConverterService.getWebContentHandlerByURI(this.type, uri);
 
       case "bookmarks":
       default:
@@ -2983,7 +2967,7 @@ FeedHandlerInfo.prototype = {
       
       
       
-      this._converterSvc.setAutoHandler(this.type, aNewValue);
+      gWebContentContentConverterService.setAutoHandler(this.type, aNewValue);
     }
   },
 
@@ -3038,7 +3022,7 @@ FeedHandlerInfo.prototype = {
     }
 
     
-    var webHandlers = this._converterSvc.getContentHandlers(this.type);
+    var webHandlers = gWebContentContentConverterService.getContentHandlers(this.type);
     for (let webHandler of webHandlers)
       this._possibleApplicationHandlers.appendElement(webHandler);
 
@@ -3053,7 +3037,7 @@ FeedHandlerInfo.prototype = {
     var defaultFeedReader = null;
     if (AppConstants.HAVE_SHELL_SERVICE) {
       try {
-        defaultFeedReader = this._shellSvc.defaultFeedReader;
+        defaultFeedReader = getShellService().defaultFeedReader;
       } catch (ex) {
         
       }
@@ -3077,7 +3061,7 @@ FeedHandlerInfo.prototype = {
   get hasDefaultHandler() {
     if (AppConstants.HAVE_SHELL_SERVICE) {
       try {
-        if (this._shellSvc.defaultFeedReader)
+        if (getShellService().defaultFeedReader)
           return true;
       } catch (ex) {
         
@@ -3197,7 +3181,8 @@ FeedHandlerInfo.prototype = {
         }
       } else {
         app.QueryInterface(Ci.nsIWebContentHandlerInfo);
-        this._converterSvc.removeContentHandler(app.contentType, app.uri);
+        gWebContentContentConverterService.removeContentHandler(app.contentType,
+                                                                app.uri);
       }
     }
     this._possibleApplicationHandlers._removed = [];
