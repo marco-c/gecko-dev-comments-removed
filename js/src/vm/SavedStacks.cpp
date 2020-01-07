@@ -74,6 +74,16 @@ LiveSavedFrameCache::insert(JSContext* cx, FramePtr& framePtr, const jsbytecode*
     MOZ_ASSERT(savedFrame);
     MOZ_ASSERT(initialized());
 
+#ifdef DEBUG
+    
+    
+    size_t limit = std::min(frames->length() / 2, size_t(500));
+    for (size_t i = 0; i < limit; i++) {
+        MOZ_ASSERT(Key(framePtr) != (*frames)[i].key);
+        MOZ_ASSERT(Key(framePtr) != (*frames)[frames->length() - 1 - i].key);
+    }
+#endif
+
     if (!frames->emplaceBack(framePtr, pc, savedFrame)) {
         ReportOutOfMemory(cx);
         return false;
@@ -89,35 +99,50 @@ LiveSavedFrameCache::find(JSContext* cx, FramePtr& framePtr, const jsbytecode* p
                           MutableHandleSavedFrame frame) const
 {
     MOZ_ASSERT(initialized());
-
     MOZ_ASSERT(framePtr.hasCachedSavedFrame());
-    Key key(framePtr);
-    size_t numberStillValid = 0;
 
-    frame.set(nullptr);
-    for (auto* p = frames->begin(); p < frames->end(); p++) {
-        numberStillValid++;
-        if (key == p->key && pc == p->pc) {
+    if (frames->empty())
+        
+        return;
+
+    Key key(framePtr);
+
+    auto *p = frames->begin();
+    for (; p < frames->end(); p++) {
+        if (key == p->key) {
             frame.set(p->savedFrame);
             break;
         }
     }
 
-    if (!frame) {
+    
+    
+    
+    
+    MOZ_ASSERT(frame);
+
+    
+    
+    
+    if (frame->compartment() != cx->compartment()) {
+        frame.set(nullptr);
         frames->clear();
         return;
     }
 
-    MOZ_ASSERT(0 < numberStillValid && numberStillValid <= frames->length());
-
-    if (frame->compartment() != cx->compartment()) {
+    
+    
+    
+    
+    if (pc != p->pc) {
         frame.set(nullptr);
-        numberStillValid--;
+        p--;
     }
 
     
     
-    frames->shrinkBy(frames->length() - numberStillValid);
+    p++;
+    frames->shrinkBy(frames->end() - p);
 }
 
 struct SavedFrame::Lookup {
@@ -196,6 +221,7 @@ class MOZ_STACK_CLASS SavedFrame::AutoLookupVector : public JS::CustomAutoRooter
     typedef Vector<Lookup, ASYNC_STACK_MAX_FRAME_COUNT> LookupVector;
     inline LookupVector* operator->() { return &lookups; }
     inline HandleLookup operator[](size_t i) { return HandleLookup(lookups[i]); }
+    inline HandleLookup back() { return HandleLookup(lookups.back()); }
 
   private:
     LookupVector lookups;
@@ -1197,12 +1223,19 @@ SavedStacks::copyAsyncStack(JSContext* cx, HandleObject asyncStack, HandleString
     MOZ_RELEASE_ASSERT(cx->compartment());
     assertSameCompartment(cx, this);
 
+    RootedAtom asyncCauseAtom(cx, AtomizeString(cx, asyncCause));
+    if (!asyncCauseAtom)
+        return false;
+
     RootedObject asyncStackObj(cx, CheckedUnwrap(asyncStack));
     MOZ_RELEASE_ASSERT(asyncStackObj);
     MOZ_RELEASE_ASSERT(js::SavedFrame::isSavedFrameAndNotProto(*asyncStackObj));
-    RootedSavedFrame frame(cx, &asyncStackObj->as<js::SavedFrame>());
+    adoptedStack.set(&asyncStackObj->as<js::SavedFrame>());
 
-    return adoptAsyncStack(cx, frame, asyncCause, adoptedStack, maxFrameCount);
+    if (!adoptAsyncStack(cx, adoptedStack, asyncCauseAtom, maxFrameCount))
+        return false;
+
+    return true;
 }
 
 void
@@ -1297,81 +1330,64 @@ SavedStacks::insertFrames(JSContext* cx, FrameIter& iter, MutableHandleSavedFram
     
     
 
-    Activation* asyncActivation = nullptr;
-    RootedSavedFrame asyncStack(cx, nullptr);
-    RootedString asyncCause(cx, nullptr);
-    bool parentIsInCache = false;
-    RootedSavedFrame cachedFrame(cx, nullptr);
-    Maybe<LiveSavedFrameCache::FramePtr> framePtr = LiveSavedFrameCache::FramePtr::create(iter);
-
     
     SavedFrame::AutoLookupVector stackChain(cx);
+
+    
+    
+    
+    RootedSavedFrame parent(cx, nullptr);
+
+    
+    
+    DebugOnly<bool> seenCached = false;
+
     while (!iter.done()) {
         Activation& activation = *iter.activation();
+        Maybe<LiveSavedFrameCache::FramePtr> framePtr = LiveSavedFrameCache::FramePtr::create(iter);
 
-        if (asyncActivation && asyncActivation != &activation) {
+        if (framePtr) {
+            MOZ_ASSERT_IF(seenCached, framePtr->hasCachedSavedFrame());
+            seenCached |= framePtr->hasCachedSavedFrame();
+        }
+
+        if (capture.is<JS::AllFrames>() && framePtr && framePtr->hasCachedSavedFrame())
+        {
+            auto* cache = activation.getLiveSavedFrameCache(cx);
+            if (!cache)
+                return false;
+            cache->find(cx, *framePtr, iter.pc(), &parent);
+
             
             
             
             
             
-            if (asyncActivation->asyncCallIsExplicit())
+            
+            
+            
+            if (parent)
                 break;
-            asyncActivation = nullptr;
         }
 
-        if (!asyncActivation) {
-            asyncStack = activation.asyncStack();
-            if (asyncStack) {
-                
-                
-                
-                
-                
-                AutoCompartmentUnchecked ac(cx, iter.compartment());
-                const char* cause = activation.asyncCause();
-                UTF8Chars utf8Chars(cause, strlen(cause));
-                size_t twoByteCharsLen = 0;
-                char16_t* twoByteChars = UTF8CharsToNewTwoByteCharsZ(cx, utf8Chars,
-                                                                     &twoByteCharsLen).get();
-                if (!twoByteChars)
-                    return false;
-
-                
-                
-                
-                
-                asyncCause = JS_AtomizeUCStringN(cx, twoByteChars, twoByteCharsLen);
-                js_free(twoByteChars);
-                if (!asyncCause)
-                    return false;
-                asyncActivation = &activation;
-            }
-        }
-
+        
+        
         Rooted<LocationValue> location(cx);
         {
             AutoCompartmentUnchecked ac(cx, iter.compartment());
             if (!cx->compartment()->savedStacks().getLocation(cx, iter, &location))
                 return false;
         }
-
-        
-        
-        if (capture.is<JS::AllFrames>())
-            parentIsInCache = framePtr && framePtr->hasCachedSavedFrame();
-
-        auto principals = iter.compartment()->principals();
         auto displayAtom = (iter.isWasm() || iter.isFunctionFrame()) ? iter.functionDisplayAtom() : nullptr;
-
+        auto principals = iter.compartment()->principals();
         MOZ_ASSERT_IF(framePtr && !iter.isWasm(), iter.pc());
 
         if (!stackChain->emplaceBack(location.source(),
                                      location.line(),
                                      location.column(),
                                      displayAtom,
-                                     nullptr,
-                                     nullptr,
+                                     nullptr, 
+                                     nullptr, 
                                      principals,
                                      framePtr,
                                      iter.pc(),
@@ -1383,24 +1399,56 @@ SavedStacks::insertFrames(JSContext* cx, FrameIter& iter, MutableHandleSavedFram
 
         if (captureIsSatisfied(cx, principals, location.source(), capture)) {
             
-            
-            asyncStack.set(nullptr);
+            parent.set(nullptr);
             break;
         }
 
         ++iter;
         framePtr = LiveSavedFrameCache::FramePtr::create(iter);
 
-        if (parentIsInCache &&
-            framePtr &&
-            framePtr->hasCachedSavedFrame())
+        if (iter.activation() != &activation && capture.is<JS::AllFrames>()) {
+            
+            
+            
+            activation.clearLiveSavedFrameCache();
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if (iter.activation() != &activation &&
+            activation.asyncStack() &&
+            (activation.asyncCallIsExplicit() || iter.done()) &&
+            !capture.is<JS::FirstSubsumedFrame>())
         {
-            auto* cache = activation.getLiveSavedFrameCache(cx);
-            if (!cache)
+            
+            
+            const char* cause = activation.asyncCause();
+            RootedAtom causeAtom(cx, AtomizeUTF8Chars(cx, cause, strlen(cause)));
+            if (!causeAtom)
                 return false;
-            cache->find(cx, *framePtr, iter.pc(), &cachedFrame);
-            if (cachedFrame)
-                break;
+
+            
+            
+            Maybe<size_t> maxFrames =
+                !capture.is<JS::MaxFrames>() ? Nothing()
+                : capture.as<JS::MaxFrames>().maxFrames == 0 ? Nothing()
+                : Some(capture.as<JS::MaxFrames>().maxFrames);
+
+            
+            
+            parent.set(activation.asyncStack());
+            if (!adoptAsyncStack(cx, &parent, causeAtom, maxFrames))
+                return false;
+            break;
         }
 
         if (capture.is<JS::MaxFrames>())
@@ -1409,45 +1457,31 @@ SavedStacks::insertFrames(JSContext* cx, FrameIter& iter, MutableHandleSavedFram
 
     
     
-    
-    RootedSavedFrame parentFrame(cx, cachedFrame);
-    if (asyncStack && !capture.is<JS::FirstSubsumedFrame>()) {
-        size_t maxAsyncFrames = capture.is<JS::MaxFrames>()
-            ? capture.as<JS::MaxFrames>().maxFrames
-            : ASYNC_STACK_MAX_FRAME_COUNT;
-        if (!adoptAsyncStack(cx, asyncStack, asyncCause, &parentFrame, Some(maxAsyncFrames)))
-            return false;
-    }
-
-    
-    
+    frame.set(parent);
     for (size_t i = stackChain->length(); i != 0; i--) {
         SavedFrame::HandleLookup lookup = stackChain[i-1];
-        lookup->parent = parentFrame;
-        parentFrame.set(getOrCreateSavedFrame(cx, lookup));
-        if (!parentFrame)
+        lookup->parent = frame;
+        frame.set(getOrCreateSavedFrame(cx, lookup));
+        if (!frame)
             return false;
 
-        if (capture.is<JS::AllFrames>() && lookup->framePtr && parentFrame != cachedFrame) {
+        if (capture.is<JS::AllFrames>() && lookup->framePtr) {
             auto* cache = lookup->activation->getLiveSavedFrameCache(cx);
-            if (!cache || !cache->insert(cx, *lookup->framePtr, lookup->pc, parentFrame))
+            if (!cache || !cache->insert(cx, *lookup->framePtr, lookup->pc, frame))
                 return false;
         }
     }
 
-    frame.set(parentFrame);
     return true;
 }
 
 bool
-SavedStacks::adoptAsyncStack(JSContext* cx, HandleSavedFrame asyncStack,
-                             HandleString asyncCause,
-                             MutableHandleSavedFrame adoptedStack,
+SavedStacks::adoptAsyncStack(JSContext* cx, MutableHandleSavedFrame asyncStack,
+                             HandleAtom asyncCause,
                              const Maybe<size_t>& maxFrameCount)
 {
-    RootedAtom asyncCauseAtom(cx, AtomizeString(cx, asyncCause));
-    if (!asyncCauseAtom)
-        return false;
+    MOZ_ASSERT(asyncStack);
+    MOZ_ASSERT(asyncCause);
 
     
     
@@ -1456,55 +1490,53 @@ SavedStacks::adoptAsyncStack(JSContext* cx, HandleSavedFrame asyncStack,
     size_t maxFrames = maxFrameCount.valueOr(ASYNC_STACK_MAX_FRAME_COUNT);
 
     
+    
     SavedFrame::AutoLookupVector stackChain(cx);
     SavedFrame* currentSavedFrame = asyncStack;
-    SavedFrame* firstSavedFrameParent = nullptr;
-    for (uint32_t i = 0; i < maxFrames && currentSavedFrame; i++) {
+    while (currentSavedFrame && stackChain->length() < maxFrames) {
         if (!stackChain->emplaceBack(*currentSavedFrame)) {
             ReportOutOfMemory(cx);
             return false;
         }
 
         currentSavedFrame = currentSavedFrame->getParent();
-
-        
-        if (i == 0) {
-            stackChain->back().asyncCause = asyncCauseAtom;
-            firstSavedFrameParent = currentSavedFrame;
-        }
     }
 
     
-    size_t oldestFramePosition = stackChain->length();
-    RootedSavedFrame parentFrame(cx, nullptr);
+    stackChain[0]->asyncCause = asyncCause;
 
+    
+    
+    
+    
     if (currentSavedFrame == nullptr &&
-        asyncStack->compartment() == cx->compartment()) {
-        
-        
-        
-        
-        oldestFramePosition = 1;
-        parentFrame = firstSavedFrameParent;
-    } else if (maxFrameCount.isNothing() &&
-               oldestFramePosition == ASYNC_STACK_MAX_FRAME_COUNT) {
-        
-        
-        
-        oldestFramePosition = ASYNC_STACK_MAX_FRAME_COUNT / 2;
+        asyncStack->compartment() == cx->compartment())
+    {
+        SavedFrame::HandleLookup lookup = stackChain[0];
+        lookup->parent = asyncStack->getParent();
+        asyncStack.set(getOrCreateSavedFrame(cx, lookup));
+        return !!asyncStack;
     }
 
     
     
-    for (size_t i = oldestFramePosition; i != 0; i--) {
-        SavedFrame::HandleLookup lookup = stackChain[i-1];
-        lookup->parent = parentFrame;
-        parentFrame.set(getOrCreateSavedFrame(cx, lookup));
-        if (!parentFrame)
+    
+    
+    if (maxFrameCount.isNothing() && currentSavedFrame)
+        stackChain->shrinkBy(ASYNC_STACK_MAX_FRAME_COUNT / 2);
+
+    
+    
+    asyncStack.set(nullptr);
+    while (!stackChain->empty()) {
+        SavedFrame::HandleLookup lookup = stackChain.back();
+        lookup->parent = asyncStack;
+        asyncStack.set(getOrCreateSavedFrame(cx, lookup));
+        if (!asyncStack)
             return false;
+        stackChain->popBack();
     }
 
-    adoptedStack.set(parentFrame);
     return true;
 }
 
