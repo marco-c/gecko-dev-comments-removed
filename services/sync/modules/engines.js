@@ -246,6 +246,7 @@ Tracker.prototype = {
   async finalize() {
     
     
+    await this.stop();
     this._saveChangedIDs();
     await this._storage.finalize();
   },
