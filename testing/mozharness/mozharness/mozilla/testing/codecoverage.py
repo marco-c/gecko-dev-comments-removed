@@ -160,8 +160,8 @@ class CodeCoverageMixin(object):
             dirs = self.query_abs_dirs()
 
             
-            file_path_gcda = os.path.join(dirs['abs_blob_upload_dir'], 'code-coverage-gcda.zip')
-            self.run_command(['zip', '-r', file_path_gcda, '.'], cwd=self.gcov_dir)
+            file_path_gcda = 'code-coverage-gcda.zip'
+            self.run_command(['zip', '-q', '-0', '-r', file_path_gcda, '.'], cwd=self.gcov_dir)
 
             
             file_path_jsvm = os.path.join(dirs['abs_blob_upload_dir'], 'code-coverage-jsvm.zip')
