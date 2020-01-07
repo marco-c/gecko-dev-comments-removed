@@ -426,15 +426,14 @@ impl CSSStyleDeclarationMethods for CSSStyleDeclaration {
     
     fn IndexedGetter(&self, index: u32) -> Option<DOMString> {
         self.owner.with_block(|pdb| {
-            pdb.declarations().get(index as usize).map(|declaration| {
-                let important = pdb.declarations_importance().get(index);
-                let mut css = String::new();
-                declaration.to_css(&mut css).unwrap();
-                if important {
-                    css += " !important";
-                }
-                DOMString::from(css)
-            })
+            let declaration = pdb.declarations().get(index as usize)?;
+            let important = pdb.declarations_importance().get(index as usize)?;
+            let mut css = String::new();
+            declaration.to_css(&mut css).unwrap();
+            if important {
+                css += " !important";
+            }
+            Some(DOMString::from(css))
         })
     }
 
