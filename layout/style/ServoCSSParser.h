@@ -49,31 +49,6 @@ public:
 
   static bool ParseIntersectionObserverRootMargin(const nsAString& aValue,
                                                   nsCSSRect* aResult);
-
-  
-
-
-
-
-
-
-  static already_AddRefed<nsAtom> ParseCounterStyleName(const nsAString& aValue);
-
-  
-
-
-
-
-
-
-
-
-
-  static bool
-  ParseCounterStyleDescriptor(nsCSSCounterDesc aDescriptor,
-                              const nsAString& aValue,
-                              URLExtraData* aURLExtraData,
-                              nsCSSValue& aResult);
 };
 
 } 
