@@ -1430,8 +1430,6 @@ HTMLEditor::InsertElementAtSelection(nsIDOMElement* aElement,
   nsCOMPtr<Element> element = do_QueryInterface(aElement);
   NS_ENSURE_TRUE(element, NS_ERROR_NULL_POINTER);
 
-  nsCOMPtr<nsIDOMNode> node = do_QueryInterface(aElement);
-
   CommitComposition();
   AutoPlaceholderBatch beginBatching(this);
   AutoRules beginRulesSniffing(this, EditAction::insertElement,
@@ -1471,7 +1469,7 @@ HTMLEditor::InsertElementAtSelection(nsIDOMElement* aElement,
       
       
       
-      if (HTMLEditUtils::IsNamedAnchor(node)) {
+      if (HTMLEditUtils::IsNamedAnchor(element)) {
         selection->CollapseToStart();
       } else {
         selection->CollapseToEnd();
@@ -1501,7 +1499,7 @@ HTMLEditor::InsertElementAtSelection(nsIDOMElement* aElement,
       }
       
       
-      if (HTMLEditUtils::IsTable(node) &&
+      if (HTMLEditUtils::IsTable(element) &&
           IsLastEditableChild(element)) {
         DebugOnly<bool> advanced = insertedPoint.AdvanceOffset();
         NS_WARNING_ASSERTION(advanced,
