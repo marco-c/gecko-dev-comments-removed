@@ -1029,6 +1029,20 @@ Actor.prototype = extend(Pool.prototype, {
     const pending = this._pendingResponse || Promise.resolve(null);
     const response = create(pending);
     this._pendingResponse = response;
+  },
+
+  
+
+
+
+
+
+
+
+  throwError: function(error, message) {
+    const err = new Error(message);
+    err.error = error;
+    throw err;
   }
 });
 exports.Actor = Actor;
