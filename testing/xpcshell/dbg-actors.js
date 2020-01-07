@@ -8,7 +8,7 @@
 
 
 
-const Cu = Components.utils;
+const Cu = Components.utils; 
 const { Promise } = Cu.import("resource://gre/modules/Promise.jsm", {});
 var { Services } = Cu.import("resource://gre/modules/Services.jsm", {});
 const { devtools } = Cu.import("resource://devtools/shared/Loader.jsm", {});

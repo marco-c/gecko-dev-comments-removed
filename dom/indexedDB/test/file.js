@@ -109,6 +109,7 @@ function verifyBuffers(buffer1, buffer2)
 
 function verifyBlob(blob1, blob2, fileId, blobReadHandler)
 {
+  
   is(blob1 instanceof Components.interfaces.nsIDOMBlob, true,
      "Instance of nsIDOMBlob");
   is(blob1 instanceof File, blob2 instanceof File,

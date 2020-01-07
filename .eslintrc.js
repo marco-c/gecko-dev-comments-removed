@@ -68,26 +68,6 @@ module.exports = {
     
     
     "files": [
-      "accessible/**",
-      "browser/**",
-      "devtools/**",
-      "dom/**",
-      "extensions/pref/**",
-      "mobile/android/**",
-      "security/manager/**",
-      "services/**",
-      "storage/test/**",
-      "testing/**",
-      "toolkit/**",
-      "xpcom/**",
-    ],
-    "rules": {
-      "mozilla/use-cc-etc": "off",
-    }
-  }, {
-    
-    
-    "files": [
       "devtools/**"
     ],
     "rules": {
