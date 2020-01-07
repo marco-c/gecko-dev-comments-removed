@@ -2218,14 +2218,11 @@ OffsetPercentBasis(const nsIFrame*    aFrame,
                    WritingMode        aWM,
                    const LogicalSize& aContainingBlockSize)
 {
+  
+  
+  
   LogicalSize offsetPercentBasis = aContainingBlockSize;
-  if (MOZ_LIKELY(!aFrame->GetParent() ||
-                 !aFrame->GetParent()->IsFlexOrGridContainer())) {
-    offsetPercentBasis.BSize(aWM) = offsetPercentBasis.ISize(aWM);
-  } else if (offsetPercentBasis.BSize(aWM) == NS_AUTOHEIGHT) {
-    offsetPercentBasis.BSize(aWM) = 0;
-  }
-
+  offsetPercentBasis.BSize(aWM) = offsetPercentBasis.ISize(aWM);
   return offsetPercentBasis;
 }
 
