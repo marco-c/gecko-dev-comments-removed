@@ -441,6 +441,20 @@ class Script {
             runSafeSyncWithoutClone(winUtils.addSheet, sheet, type);
           });
         }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if (this.css.length > 0) {
+          context.contentWindow.document.blockParsing(cssPromise, {blockScriptCreated: false});
+        }
       }
     }
 
