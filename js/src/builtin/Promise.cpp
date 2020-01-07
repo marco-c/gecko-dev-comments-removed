@@ -2344,8 +2344,8 @@ js::PromiseResolve(JSContext* cx, HandleObject constructor, HandleValue value)
 
 
 
-bool
-js::Promise_reject(JSContext* cx, unsigned argc, Value* vp)
+static bool
+Promise_reject(JSContext* cx, unsigned argc, Value* vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
     RootedValue thisVal(cx, args.thisv());
@@ -2373,8 +2373,8 @@ PromiseObject::unforgeableReject(JSContext* cx, HandleValue value)
 
 
 
-bool
-js::Promise_static_resolve(JSContext* cx, unsigned argc, Value* vp)
+static bool
+Promise_static_resolve(JSContext* cx, unsigned argc, Value* vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
     RootedValue thisVal(cx, args.thisv());
@@ -3028,16 +3028,51 @@ js::AsyncGeneratorEnqueue(JSContext* cx, HandleValue asyncGenVal,
     return true;
 }
 
-bool Promise_then_impl(JSContext* cx, unsigned argc, Value* vp, bool rvalUsed)
+static bool Promise_then(JSContext* cx, unsigned argc, Value* vp);
+static bool Promise_then_impl(JSContext* cx, HandleValue promiseVal, HandleValue onFulfilled,
+                              HandleValue onRejected, MutableHandleValue rval, bool rvalUsed);
+
+static bool
+Promise_catch_impl(JSContext* cx, unsigned argc, Value* vp, bool rvalUsed)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
 
     
-    RootedValue promiseVal(cx, args.thisv());
+    RootedValue thenVal(cx);
+    if (!GetProperty(cx, args.thisv(), cx->names().then, &thenVal))
+        return false;
 
-    RootedValue onFulfilled(cx, args.get(0));
-    RootedValue onRejected(cx, args.get(1));
+    if (IsNativeFunction(thenVal, &Promise_then)) {
+        return Promise_then_impl(cx, args.thisv(), UndefinedHandleValue, args.get(0),
+                                 args.rval(), rvalUsed);
+    }
 
+    FixedInvokeArgs<2> iargs(cx);
+    iargs[0].setUndefined();
+    iargs[1].set(args.get(0));
+
+    return Call(cx, thenVal, args.thisv(), iargs, args.rval());
+}
+
+
+static bool
+Promise_catch_noRetVal(JSContext* cx, unsigned argc, Value* vp)
+{
+    return Promise_catch_impl(cx, argc, vp, false);
+}
+
+
+static bool
+Promise_catch(JSContext* cx, unsigned argc, Value* vp)
+{
+    return Promise_catch_impl(cx, argc, vp, true);
+}
+
+static bool
+Promise_then_impl(JSContext* cx, HandleValue promiseVal, HandleValue onFulfilled,
+                  HandleValue onRejected, MutableHandleValue rval, bool rvalUsed)
+{
+    
     
     if (!promiseVal.isObject()) {
         JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_NOT_NONNULL_OBJECT,
@@ -3076,9 +3111,9 @@ bool Promise_then_impl(JSContext* cx, unsigned argc, Value* vp, bool rvalUsed)
     }
 
     if (rvalUsed)
-        args.rval().setObject(*resultPromise);
+        rval.setObject(*resultPromise);
     else
-        args.rval().setUndefined();
+        rval.setUndefined();
     return true;
 }
 
@@ -3086,14 +3121,16 @@ bool Promise_then_impl(JSContext* cx, unsigned argc, Value* vp, bool rvalUsed)
 bool
 Promise_then_noRetVal(JSContext* cx, unsigned argc, Value* vp)
 {
-    return Promise_then_impl(cx, argc, vp, false);
+    CallArgs args = CallArgsFromVp(argc, vp);
+    return Promise_then_impl(cx, args.thisv(), args.get(0), args.get(1), args.rval(), false);
 }
 
 
-bool
-js::Promise_then(JSContext* cx, unsigned argc, Value* vp)
+static bool
+Promise_then(JSContext* cx, unsigned argc, Value* vp)
 {
-    return Promise_then_impl(cx, argc, vp, true);
+    CallArgs args = CallArgsFromVp(argc, vp);
+    return Promise_then_impl(cx, args.thisv(), args.get(0), args.get(1), args.rval(), true);
 }
 
 
@@ -3771,9 +3808,18 @@ const JSJitInfo promise_then_info = {
   JSVAL_TYPE_UNDEFINED,
 };
 
+const JSJitInfo promise_catch_info = {
+  { (JSJitGetterOp)Promise_catch_noRetVal },
+  { 0 }, 
+  { 0 }, 
+  JSJitInfo::IgnoresReturnValueNative,
+  JSJitInfo::AliasEverything,
+  JSVAL_TYPE_UNDEFINED,
+};
+
 static const JSFunctionSpec promise_methods[] = {
-    JS_SELF_HOSTED_FN("catch", "Promise_catch", 1, 0),
     JS_FNINFO("then", Promise_then, &promise_then_info, 2, 0),
+    JS_FNINFO("catch", Promise_catch, &promise_catch_info, 1, 0),
     JS_SELF_HOSTED_FN("finally", "Promise_finally", 1, 0),
     JS_FS_END
 };
