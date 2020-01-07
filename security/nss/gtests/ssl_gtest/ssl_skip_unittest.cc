@@ -22,9 +22,11 @@ namespace nss_test {
 class TlsHandshakeSkipFilter : public TlsRecordFilter {
  public:
   
-  TlsHandshakeSkipFilter(const std::shared_ptr<TlsAgent>& a,
+  TlsHandshakeSkipFilter(const std::shared_ptr<TlsAgent>& agent,
                          uint8_t handshake_type)
-      : TlsRecordFilter(a), handshake_type_(handshake_type), skipped_(false) {}
+      : TlsRecordFilter(agent),
+        handshake_type_(handshake_type),
+        skipped_(false) {}
 
  protected:
   

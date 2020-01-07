@@ -85,7 +85,7 @@ pkix_pl_HttpDefaultClient_HdrCheckComplete(
         PKIX_PL_HttpDefaultClient *client,
         PKIX_UInt32 bytesRead,
         PKIX_Boolean *pKeepGoing,
-        void *plCtx)
+        void *plContext)
 {
         PKIX_UInt32 alreadyScanned = 0;
         PKIX_UInt32 comp = 0;
@@ -142,7 +142,7 @@ pkix_pl_HttpDefaultClient_HdrCheckComplete(
         headerLength = (eoh - client->rcvBuf);
 
         
-        PKIX_CHECK(PKIX_PL_Malloc(headerLength + 1, (void **)&copy, plCtx),
+        PKIX_CHECK(PKIX_PL_Malloc(headerLength + 1, (void **)&copy, plContext),
                 PKIX_MALLOCFAILED);
 
         
@@ -301,7 +301,7 @@ pkix_pl_HttpDefaultClient_HdrCheckComplete(
  
          if (contentLength > 0) {
              
-             PKIX_CHECK(PKIX_PL_Malloc(contentLength, (void **)&body, plCtx),
+             PKIX_CHECK(PKIX_PL_Malloc(contentLength, (void **)&body, plContext),
                         PKIX_MALLOCFAILED);
              
              
@@ -311,7 +311,7 @@ pkix_pl_HttpDefaultClient_HdrCheckComplete(
              }
          }
  
-         PKIX_CHECK(PKIX_PL_Free(client->rcvBuf, plCtx),
+         PKIX_CHECK(PKIX_PL_Free(client->rcvBuf, plContext),
                     PKIX_FREEFAILED);
          client->rcvBuf = body;
 
@@ -355,7 +355,7 @@ pkix_pl_HttpDefaultClient_Create(
         const char *host,
         PRUint16 portnum,
         PKIX_PL_HttpDefaultClient **pClient,
-        void *plCtx)
+        void *plContext)
 {
         PKIX_PL_HttpDefaultClient *client = NULL;
 
@@ -367,7 +367,7 @@ pkix_pl_HttpDefaultClient_Create(
                 (PKIX_HTTPDEFAULTCLIENT_TYPE,
                 sizeof (PKIX_PL_HttpDefaultClient),
                 (PKIX_PL_Object **)&client,
-                plCtx),
+                plContext),
                 PKIX_COULDNOTCREATEHTTPDEFAULTCLIENTOBJECT);
 
         
@@ -411,7 +411,7 @@ pkix_pl_HttpDefaultClient_Create(
 
 
 
-        client->plContext = plCtx;
+        client->plContext = plContext;
 
         *pClient = client;
 
@@ -430,7 +430,7 @@ cleanup:
 static PKIX_Error *
 pkix_pl_HttpDefaultClient_Destroy(
         PKIX_PL_Object *object,
-        void *plCtx)
+        void *plContext)
 {
         PKIX_PL_HttpDefaultClient *client = NULL;
 
@@ -438,13 +438,13 @@ pkix_pl_HttpDefaultClient_Destroy(
         PKIX_NULLCHECK_ONE(object);
 
         PKIX_CHECK(pkix_CheckType
-                    (object, PKIX_HTTPDEFAULTCLIENT_TYPE, plCtx),
+                    (object, PKIX_HTTPDEFAULTCLIENT_TYPE, plContext),
                     PKIX_OBJECTNOTANHTTPDEFAULTCLIENT);
 
         client = (PKIX_PL_HttpDefaultClient *)object;
 
         if (client->rcvHeaders) {
-            PKIX_PL_Free(client->rcvHeaders, plCtx);
+            PKIX_PL_Free(client->rcvHeaders, plContext);
             client->rcvHeaders = NULL;
         }
         if (client->rcvContentType) {
@@ -456,11 +456,11 @@ pkix_pl_HttpDefaultClient_Destroy(
                 client->GETBuf = NULL;
         }
         if (client->POSTBuf != NULL) {
-                PKIX_PL_Free(client->POSTBuf, plCtx);
+                PKIX_PL_Free(client->POSTBuf, plContext);
                 client->POSTBuf = NULL;
         }
         if (client->rcvBuf != NULL) {
-                PKIX_PL_Free(client->rcvBuf, plCtx);
+                PKIX_PL_Free(client->rcvBuf, plContext);
                 client->rcvBuf = NULL;
         }
         if (client->host) {
@@ -493,7 +493,7 @@ cleanup:
 
 
 PKIX_Error *
-pkix_pl_HttpDefaultClient_RegisterSelf(void *plCtx)
+pkix_pl_HttpDefaultClient_RegisterSelf(void *plContext)
 {
         extern pkix_ClassTable_Entry systemClasses[PKIX_NUMTYPES];
         pkix_ClassTable_Entry *entry =
@@ -543,7 +543,7 @@ static PKIX_Error *
 pkix_pl_HttpDefaultClient_ConnectContinue(
         PKIX_PL_HttpDefaultClient *client,
         PKIX_Boolean *pKeepGoing,
-        void *plCtx)
+        void *plContext)
 {
         PRErrorCode status;
         PKIX_Boolean keepGoing = PKIX_FALSE;
@@ -557,7 +557,7 @@ pkix_pl_HttpDefaultClient_ConnectContinue(
         callbackList = (PKIX_PL_Socket_Callback *)client->callbackList;
 
         PKIX_CHECK(callbackList->connectcontinueCallback
-                (client->socket, &status, plCtx),
+                (client->socket, &status, plContext),
                 PKIX_SOCKETCONNECTCONTINUEFAILED);
 
         if (status == 0) {
@@ -610,7 +610,7 @@ pkix_pl_HttpDefaultClient_Send(
         PKIX_PL_HttpDefaultClient *client,
         PKIX_Boolean *pKeepGoing,
         PKIX_UInt32 *pBytesTransferred,
-        void *plCtx)
+        void *plContext)
 {
         PKIX_Int32 bytesWritten = 0;
         PKIX_Int32 lenToWrite = 0;
@@ -640,7 +640,7 @@ pkix_pl_HttpDefaultClient_Send(
                         dataToWrite,
                         lenToWrite,
                         &bytesWritten,
-                        plCtx),
+                        plContext),
                         PKIX_SOCKETSENDFAILED);
 
                 client->rcvBuf = NULL;
@@ -705,7 +705,7 @@ pkix_pl_HttpDefaultClient_SendContinue(
         PKIX_PL_HttpDefaultClient *client,
         PKIX_Boolean *pKeepGoing,
         PKIX_UInt32 *pBytesTransferred,
-        void *plCtx)
+        void *plContext)
 {
         PKIX_Int32 bytesWritten = 0;
         PKIX_PL_Socket_Callback *callbackList = NULL;
@@ -718,7 +718,7 @@ pkix_pl_HttpDefaultClient_SendContinue(
         callbackList = (PKIX_PL_Socket_Callback *)client->callbackList;
 
         PKIX_CHECK(callbackList->pollCallback
-                (client->socket, &bytesWritten, NULL, plCtx),
+                (client->socket, &bytesWritten, NULL, plContext),
                 PKIX_SOCKETPOLLFAILED);
 
         
@@ -766,7 +766,7 @@ static PKIX_Error *
 pkix_pl_HttpDefaultClient_RecvHdr(
         PKIX_PL_HttpDefaultClient *client,
         PKIX_Boolean *pKeepGoing,
-        void *plCtx)
+        void *plContext)
 {
         PKIX_UInt32 bytesToRead = 0;
         PKIX_Int32 bytesRead = 0;
@@ -787,7 +787,7 @@ pkix_pl_HttpDefaultClient_RecvHdr(
                 (client->rcvBuf,
                 client->capacity,
                 (void **)&(client->rcvBuf),
-                plCtx),
+                plContext),
                 PKIX_REALLOCFAILED);
 
         bytesToRead = client->capacity - client->filledupBytes;
@@ -799,7 +799,7 @@ pkix_pl_HttpDefaultClient_RecvHdr(
                 (void *)&(client->rcvBuf[client->filledupBytes]),
                 bytesToRead,
                 &bytesRead,
-                plCtx),
+                plContext),
                 PKIX_SOCKETRECVFAILED);
 
         if (bytesRead > 0) {
@@ -808,7 +808,7 @@ pkix_pl_HttpDefaultClient_RecvHdr(
             PKIX_CHECK(
                 pkix_pl_HttpDefaultClient_HdrCheckComplete(client, bytesRead,
                                                            pKeepGoing,
-                                                           plCtx),
+                                                           plContext),
                        PKIX_HTTPDEFAULTCLIENTHDRCHECKCOMPLETEFAILED);
         } else {
             client->connectStatus = HTTP_RECV_HDR_PENDING;
@@ -848,7 +848,7 @@ static PKIX_Error *
 pkix_pl_HttpDefaultClient_RecvHdrContinue(
         PKIX_PL_HttpDefaultClient *client,
         PKIX_Boolean *pKeepGoing,
-        void *plCtx)
+        void *plContext)
 {
         PKIX_Int32 bytesRead = 0;
         PKIX_PL_Socket_Callback *callbackList = NULL;
@@ -861,14 +861,14 @@ pkix_pl_HttpDefaultClient_RecvHdrContinue(
         callbackList = (PKIX_PL_Socket_Callback *)client->callbackList;
 
         PKIX_CHECK(callbackList->pollCallback
-                (client->socket, NULL, &bytesRead, plCtx),
+                (client->socket, NULL, &bytesRead, plContext),
                 PKIX_SOCKETPOLLFAILED);
 
         if (bytesRead > 0) {
                 client->filledupBytes += bytesRead;
 
                 PKIX_CHECK(pkix_pl_HttpDefaultClient_HdrCheckComplete
-                        (client, bytesRead, pKeepGoing, plCtx),
+                        (client, bytesRead, pKeepGoing, plContext),
                         PKIX_HTTPDEFAULTCLIENTHDRCHECKCOMPLETEFAILED);
 
         } else {
@@ -911,7 +911,7 @@ static PKIX_Error *
 pkix_pl_HttpDefaultClient_RecvBody(
         PKIX_PL_HttpDefaultClient *client,
         PKIX_Boolean *pKeepGoing,
-        void *plCtx)
+        void *plContext)
 {
         PKIX_Int32 bytesRead = 0;
         PKIX_Int32 bytesToRead = 0;
@@ -952,7 +952,7 @@ pkix_pl_HttpDefaultClient_RecvBody(
                     client->capacity = newLength;
                     PKIX_CHECK(
                         PKIX_PL_Realloc(client->rcvBuf, newLength,
-                                        (void**)&client->rcvBuf, plCtx),
+                                        (void**)&client->rcvBuf, plContext),
                         PKIX_REALLOCFAILED);
                     freeBuffSize = client->capacity -
                         client->filledupBytes;
@@ -964,7 +964,7 @@ pkix_pl_HttpDefaultClient_RecvBody(
         
         if (client->connectStatus == HTTP_RECV_BODY_PENDING) {
             PKIX_CHECK(callbackList->pollCallback
-                       (client->socket, NULL, &bytesRead, plCtx),
+                       (client->socket, NULL, &bytesRead, plContext),
                        PKIX_SOCKETPOLLFAILED);
         } else {
             PKIX_CHECK(callbackList->recvCallback
@@ -972,7 +972,7 @@ pkix_pl_HttpDefaultClient_RecvBody(
                         (void *)&(client->rcvBuf[client->filledupBytes]),
                         bytesToRead,
                         &bytesRead,
-                        plCtx),
+                        plContext),
                        PKIX_SOCKETRECVFAILED);
         }
 
@@ -1039,7 +1039,7 @@ cleanup:
 static PKIX_Error *
 pkix_pl_HttpDefaultClient_Dispatch(
         PKIX_PL_HttpDefaultClient *client,
-        void *plCtx)
+        void *plContext)
 {
         PKIX_UInt32 bytesTransferred = 0;
         PKIX_Boolean keepGoing = PKIX_TRUE;
@@ -1051,33 +1051,33 @@ pkix_pl_HttpDefaultClient_Dispatch(
                 switch (client->connectStatus) {
                 case HTTP_CONNECT_PENDING:
                     PKIX_CHECK(pkix_pl_HttpDefaultClient_ConnectContinue
-                        (client, &keepGoing, plCtx),
+                        (client, &keepGoing, plContext),
                         PKIX_HTTPDEFAULTCLIENTCONNECTCONTINUEFAILED);
                     break;
                 case HTTP_CONNECTED:
                     PKIX_CHECK(pkix_pl_HttpDefaultClient_Send
-                        (client, &keepGoing, &bytesTransferred, plCtx),
+                        (client, &keepGoing, &bytesTransferred, plContext),
                         PKIX_HTTPDEFAULTCLIENTSENDFAILED);
                     break;
                 case HTTP_SEND_PENDING:
                     PKIX_CHECK(pkix_pl_HttpDefaultClient_SendContinue
-                        (client, &keepGoing, &bytesTransferred, plCtx),
+                        (client, &keepGoing, &bytesTransferred, plContext),
                         PKIX_HTTPDEFAULTCLIENTSENDCONTINUEFAILED);
                     break;
                 case HTTP_RECV_HDR:
                     PKIX_CHECK(pkix_pl_HttpDefaultClient_RecvHdr
-                        (client, &keepGoing, plCtx),
+                        (client, &keepGoing, plContext),
                         PKIX_HTTPDEFAULTCLIENTRECVHDRFAILED);
                     break;
                 case HTTP_RECV_HDR_PENDING:
                     PKIX_CHECK(pkix_pl_HttpDefaultClient_RecvHdrContinue
-                        (client, &keepGoing, plCtx),
+                        (client, &keepGoing, plContext),
                         PKIX_HTTPDEFAULTCLIENTRECVHDRCONTINUEFAILED);
                     break;
                 case HTTP_RECV_BODY:
                 case HTTP_RECV_BODY_PENDING:
                     PKIX_CHECK(pkix_pl_HttpDefaultClient_RecvBody
-                        (client, &keepGoing, plCtx),
+                        (client, &keepGoing, plContext),
                         PKIX_HTTPDEFAULTCLIENTRECVBODYFAILED);
                     break;
                 case HTTP_ERROR:
@@ -1106,7 +1106,7 @@ pkix_pl_HttpDefaultClient_CreateSession(
         const char *host,
         PRUint16 portnum,
         SEC_HTTP_SERVER_SESSION *pSession,
-        void *plCtx)
+        void *plContext)
 {
         PKIX_PL_HttpDefaultClient *client = NULL;
 
@@ -1115,7 +1115,7 @@ pkix_pl_HttpDefaultClient_CreateSession(
         PKIX_NULLCHECK_TWO(host, pSession);
 
         PKIX_CHECK(pkix_pl_HttpDefaultClient_Create
-                (host, portnum, &client, plCtx),
+                (host, portnum, &client, plContext),
                 PKIX_HTTPDEFAULTCLIENTCREATEFAILED);
 
         *pSession = (SEC_HTTP_SERVER_SESSION)client;
@@ -1130,7 +1130,7 @@ PKIX_Error *
 pkix_pl_HttpDefaultClient_KeepAliveSession(
         SEC_HTTP_SERVER_SESSION session,
         PRPollDesc **pPollDesc,
-        void *plCtx)
+        void *plContext)
 {
         PKIX_ENTER
                 (HTTPDEFAULTCLIENT,
@@ -1140,7 +1140,7 @@ pkix_pl_HttpDefaultClient_KeepAliveSession(
         PKIX_CHECK(pkix_CheckType
                 ((PKIX_PL_Object *)session,
                 PKIX_HTTPDEFAULTCLIENT_TYPE,
-                plCtx),
+                plContext),
                 PKIX_SESSIONNOTANHTTPDEFAULTCLIENT);
 
         
@@ -1159,7 +1159,7 @@ pkix_pl_HttpDefaultClient_RequestCreate(
         const char *http_request_method, 
         const PRIntervalTime timeout, 
         SEC_HTTP_REQUEST_SESSION *pRequest,
-        void *plCtx)
+        void *plContext)
 {
         PKIX_PL_HttpDefaultClient *client = NULL;
         PKIX_PL_Socket *socket = NULL;
@@ -1174,7 +1174,7 @@ pkix_pl_HttpDefaultClient_RequestCreate(
         PKIX_CHECK(pkix_CheckType
                 ((PKIX_PL_Object *)session,
                 PKIX_HTTPDEFAULTCLIENT_TYPE,
-                plCtx),
+                plContext),
                 PKIX_SESSIONNOTANHTTPDEFAULTCLIENT);
 
         client = (PKIX_PL_HttpDefaultClient *)session;
@@ -1212,7 +1212,7 @@ pkix_pl_HttpDefaultClient_RequestCreate(
                 2001,   
                 &status,
                 &socket,
-                plCtx),
+                plContext),
 		PKIX_HTTPCERTSTOREFINDSOCKETCONNECTIONFAILED);
 #else
 	PKIX_CHECK(pkix_HttpCertStore_FindSocketConnection
@@ -1221,20 +1221,20 @@ pkix_pl_HttpDefaultClient_RequestCreate(
                 client->portnum,
                 &status,
                 &socket,
-                plCtx),
+                plContext),
 		PKIX_HTTPCERTSTOREFINDSOCKETCONNECTIONFAILED);
 #endif
 
         client->socket = socket;
 
         PKIX_CHECK(pkix_pl_Socket_GetCallbackList
-                (socket, &callbackList, plCtx),
+                (socket, &callbackList, plContext),
                 PKIX_SOCKETGETCALLBACKLISTFAILED);
 
         client->callbackList = (void *)callbackList;
 
         PKIX_CHECK(pkix_pl_Socket_GetPRFileDesc
-                (socket, &fileDesc, plCtx),
+                (socket, &fileDesc, plContext),
                 PKIX_SOCKETGETPRFILEDESCFAILED);
 
         client->pollDesc.fd = fileDesc;
@@ -1264,7 +1264,7 @@ pkix_pl_HttpDefaultClient_SetPostData(
         const char *http_data, 
         const PRUint32 http_data_len,
         const char *http_content_type,
-        void *plCtx)
+        void *plContext)
 {
         PKIX_PL_HttpDefaultClient *client = NULL;
 
@@ -1276,7 +1276,7 @@ pkix_pl_HttpDefaultClient_SetPostData(
         PKIX_CHECK(pkix_CheckType
                 ((PKIX_PL_Object *)request,
                 PKIX_HTTPDEFAULTCLIENT_TYPE,
-                plCtx),
+                plContext),
                 PKIX_REQUESTNOTANHTTPDEFAULTCLIENT);
 
         client = (PKIX_PL_HttpDefaultClient *)request;
@@ -1307,7 +1307,7 @@ pkix_pl_HttpDefaultClient_TrySendAndReceive(
         PRUint32 *http_response_data_len, 
         PRPollDesc **pPollDesc,
         SECStatus *pSECReturn,
-        void *plCtx)        
+        void *plContext)        
 {
         PKIX_PL_HttpDefaultClient *client = NULL;
         PKIX_UInt32 postLen = 0;
@@ -1324,7 +1324,7 @@ pkix_pl_HttpDefaultClient_TrySendAndReceive(
         PKIX_CHECK(pkix_CheckType
                 ((PKIX_PL_Object *)request,
                 PKIX_HTTPDEFAULTCLIENT_TYPE,
-                plCtx),
+                plContext),
                 PKIX_REQUESTNOTANHTTPDEFAULTCLIENT);
 
         client = (PKIX_PL_HttpDefaultClient *)request;
@@ -1380,7 +1380,7 @@ pkix_pl_HttpDefaultClient_TrySendAndReceive(
                         PKIX_CHECK(PKIX_PL_Malloc
                                 (client->POSTLen,
                                 (void **)&(client->POSTBuf),
-                                plCtx),
+                                plContext),
                                 PKIX_MALLOCFAILED);
 
                         
@@ -1407,7 +1407,7 @@ pkix_pl_HttpDefaultClient_TrySendAndReceive(
         }
 
         
-        PKIX_CHECK(pkix_pl_HttpDefaultClient_Dispatch(client, plCtx),
+        PKIX_CHECK(pkix_pl_HttpDefaultClient_Dispatch(client, plContext),
                 PKIX_HTTPDEFAULTCLIENTDISPATCHFAILED);
 
         switch (client->connectStatus) {
@@ -1478,7 +1478,7 @@ cleanup:
 PKIX_Error *
 pkix_pl_HttpDefaultClient_Cancel(
         SEC_HTTP_REQUEST_SESSION request,
-        void *plCtx)
+        void *plContext)
 {
         PKIX_ENTER(HTTPDEFAULTCLIENT, "pkix_pl_HttpDefaultClient_Cancel");
         PKIX_NULLCHECK_ONE(request);
@@ -1486,7 +1486,7 @@ pkix_pl_HttpDefaultClient_Cancel(
         PKIX_CHECK(pkix_CheckType
                 ((PKIX_PL_Object *)request,
                 PKIX_HTTPDEFAULTCLIENT_TYPE,
-                plCtx),
+                plContext),
                 PKIX_REQUESTNOTANHTTPDEFAULTCLIENT);
 
         
