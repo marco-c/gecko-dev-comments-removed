@@ -138,9 +138,21 @@ class MOZ_STACK_CLASS nsTreeSanitizer {
     
 
 
+    struct AllowedAttributes
+    {
+      
+      AtomsTable* mNames = nullptr;
+      
+      const nsStaticAtom* const* mURLs = nullptr;
+      
+      bool mXLink = false;
+      
+      bool mStyle = false;
+      
+      bool mDangerousSrc = false;
+    };
 
-
-
+    
 
 
 
@@ -150,11 +162,7 @@ class MOZ_STACK_CLASS nsTreeSanitizer {
 
 
     void SanitizeAttributes(mozilla::dom::Element* aElement,
-                            AtomsTable* aAllowed,
-                            const nsStaticAtom* const* aURLs,
-                            bool aAllowXLink,
-                            bool aAllowStyle,
-                            bool aAllowDangerousSrc);
+                            AllowedAttributes aAllowed);
 
     
 
