@@ -699,8 +699,6 @@ static PLDHashTableOps pref_HashTableOps = {
   nullptr,
 };
 
-
-
 static Pref*
 pref_HashTableLookup(const char* aPrefName);
 
@@ -733,10 +731,6 @@ pref_savePrefs()
 
   return savedPrefs;
 }
-
-  
-  
-  
 
 #ifdef DEBUG
 
@@ -2715,10 +2709,6 @@ nsPrefLocalizedString::nsPrefLocalizedString() = default;
 
 nsPrefLocalizedString::~nsPrefLocalizedString() = default;
 
-
-
-
-
 NS_IMPL_ADDREF(nsPrefLocalizedString)
 NS_IMPL_RELEASE(nsPrefLocalizedString)
 
@@ -3406,12 +3396,6 @@ Preferences::Shutdown()
   }
 }
 
-
-
-
-
-
-
 Preferences::Preferences()
   : mRootBranch(new nsPrefBranch("", PrefValueKind::User))
   , mDefaultRootBranch(new nsPrefBranch("", PrefValueKind::Default))
@@ -3441,10 +3425,6 @@ Preferences::~Preferences()
   gPrefNameArena.Clear();
 }
 
-
-
-
-
 NS_IMPL_ADDREF(Preferences)
 NS_IMPL_RELEASE(Preferences)
 
@@ -3455,10 +3435,6 @@ NS_INTERFACE_MAP_BEGIN(Preferences)
   NS_INTERFACE_MAP_ENTRY(nsIPrefBranch)
   NS_INTERFACE_MAP_ENTRY(nsISupportsWeakReference)
 NS_INTERFACE_MAP_END
-
-
-
-
 
  void
 Preferences::SetInitPreferences(nsTArray<dom::Pref>* aDomPrefs)
@@ -3965,10 +3941,6 @@ openPrefFile(nsIFile* aFile)
   return NS_OK;
 }
 
-
-
-
-
 static int
 pref_CompareFileNames(nsIFile* aFile1, nsIFile* aFile2, void* )
 {
@@ -4334,10 +4306,6 @@ Preferences::InitInitialObjects()
 
   return Ok();
 }
-
-
-
-
 
  nsresult
 Preferences::GetBool(const char* aPrefName, bool* aResult, PrefValueKind aKind)
