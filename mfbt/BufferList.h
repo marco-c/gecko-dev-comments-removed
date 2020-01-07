@@ -9,7 +9,6 @@
 
 #include <algorithm>
 #include "mozilla/AllocPolicy.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Move.h"
 #include "mozilla/ScopeExit.h"
@@ -539,96 +538,61 @@ BufferList<AllocPolicy>::Extract(IterImpl& aIter, size_t aSize, bool* aSuccess)
   MOZ_ASSERT(aSize % kSegmentAlignment == 0);
   MOZ_ASSERT(intptr_t(aIter.mData) % kSegmentAlignment == 0);
 
-  auto failure = [this, aSuccess]() {
+  IterImpl iter = aIter;
+  size_t size = aSize;
+  size_t toCopy = std::min(size, aIter.RemainingInSegment());
+  MOZ_ASSERT(toCopy % kSegmentAlignment == 0);
+
+  BufferList result(0, toCopy, mStandardCapacity);
+  BufferList error(0, 0, mStandardCapacity);
+
+  
+  if (!result.WriteBytes(aIter.mData, toCopy)) {
     *aSuccess = false;
-    return BufferList(0, 0, mStandardCapacity);
-  };
+    return error;
+  }
+  iter.Advance(*this, toCopy);
+  size -= toCopy;
 
   
-  size_t segmentsNeeded = 0;
-  
-  
-  Maybe<size_t> lastSegmentSize;
-  {
-    
-    
-    IterImpl iter = aIter;
-    size_t remaining = aSize;
-    while (!iter.Done() && remaining &&
-           remaining >= iter.RemainingInSegment()) {
-      remaining -= iter.RemainingInSegment();
-      iter.Advance(*this, iter.RemainingInSegment());
-      segmentsNeeded++;
+  auto resultGuard = MakeScopeExit([&] {
+    *aSuccess = false;
+    result.mSegments.erase(result.mSegments.begin()+1, result.mSegments.end());
+  });
+
+  size_t movedSize = 0;
+  uintptr_t toRemoveStart = iter.mSegment;
+  uintptr_t toRemoveEnd = iter.mSegment;
+  while (!iter.Done() &&
+         !iter.HasRoomFor(size)) {
+    if (!result.mSegments.append(Segment(mSegments[iter.mSegment].mData,
+                                         mSegments[iter.mSegment].mSize,
+                                         mSegments[iter.mSegment].mCapacity))) {
+      return error;
     }
+    movedSize += iter.RemainingInSegment();
+    size -= iter.RemainingInSegment();
+    toRemoveEnd++;
+    iter.Advance(*this, iter.RemainingInSegment());
+  }
 
-    if (remaining) {
-      if (iter.Done()) {
-        
-        
-        return failure();
-      }
-      lastSegmentSize.emplace(remaining);
+  if (size)  {
+    if (!iter.HasRoomFor(size) ||
+        !result.WriteBytes(iter.Data(), size)) {
+      return error;
     }
+    iter.Advance(*this, size);
   }
 
-  BufferList result(0, 0, mStandardCapacity);
-  if (!result.mSegments.reserve(segmentsNeeded + lastSegmentSize.isSome())) {
-    return failure();
-  }
-
-  
-  
-  size_t firstSegmentSize = std::min(aSize, aIter.RemainingInSegment());
-  if (!result.WriteBytes(aIter.Data(), firstSegmentSize)) {
-    return failure();
-  }
-  aIter.Advance(*this, firstSegmentSize);
-  segmentsNeeded--;
-
-  
-  
-  char* finalSegment = nullptr;
-  
-  
-  if (lastSegmentSize.isSome()) {
-    MOZ_RELEASE_ASSERT(mStandardCapacity >= *lastSegmentSize);
-    finalSegment = this->template pod_malloc<char>(mStandardCapacity);
-    if (!finalSegment) {
-      return failure();
-    }
-  }
-
-  if (segmentsNeeded) {
-    size_t copyStart = aIter.mSegment;
-    
-    
-    
-    for (size_t i = 0; i < segmentsNeeded; ++i) {
-      result.mSegments.infallibleAppend(
-        Segment(mSegments[aIter.mSegment].mData,
-                mSegments[aIter.mSegment].mSize,
-                mSegments[aIter.mSegment].mCapacity));
-      aIter.Advance(*this, aIter.RemainingInSegment());
-    }
-    MOZ_RELEASE_ASSERT(aIter.mSegment == copyStart + segmentsNeeded);
-    mSegments.erase(mSegments.begin() + copyStart,
-                    mSegments.begin() + copyStart + segmentsNeeded);
-
-    
-    aIter.mSegment -= segmentsNeeded;
-  }
-  if (lastSegmentSize.isSome()) {
-    
-    result.mSegments.infallibleAppend(
-      Segment(finalSegment, 0, mStandardCapacity));
-    bool r = result.WriteBytes(aIter.Data(), *lastSegmentSize);
-    MOZ_RELEASE_ASSERT(r);
-    aIter.Advance(*this, *lastSegmentSize);
-  }
-
-  mSize -= aSize;
+  mSegments.erase(mSegments.begin() + toRemoveStart, mSegments.begin() + toRemoveEnd);
+  mSize -= movedSize;
+  aIter.mSegment = iter.mSegment - (toRemoveEnd - toRemoveStart);
+  aIter.mData = iter.mData;
+  aIter.mDataEnd = iter.mDataEnd;
+  MOZ_ASSERT(aIter.mDataEnd == mSegments[aIter.mSegment].End());
   result.mSize = aSize;
 
+  resultGuard.release();
   *aSuccess = true;
   return result;
 }
