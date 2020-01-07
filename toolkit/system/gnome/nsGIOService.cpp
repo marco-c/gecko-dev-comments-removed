@@ -13,6 +13,7 @@
 #include "nsComponentManagerUtils.h"
 #include "nsArray.h"
 #include "nsIFile.h"
+#include "nsPrintfCString.h"
 
 #include <gio/gio.h>
 #include <gtk/gtk.h>
@@ -21,6 +22,93 @@
 #include <dbus/dbus-glib-lowlevel.h>
 #endif
 
+
+
+static bool GetShouldUseFlatpakPortal() {
+  bool shouldUsePortal;
+  char *path;
+  path = g_build_filename(g_get_user_runtime_dir(), "flatpak-info", nullptr);
+  if (g_file_test(path, G_FILE_TEST_EXISTS)) {
+    shouldUsePortal = true;
+  } else {
+    shouldUsePortal = (g_getenv("GTK_USE_PORTAL") != nullptr);
+  }
+  g_free(path);
+  return shouldUsePortal;
+}
+
+static bool ShouldUseFlatpakPortal() {
+  static bool sShouldUseFlatpakPortal = GetShouldUseFlatpakPortal();
+  return sShouldUseFlatpakPortal;
+}
+
+class nsFlatpakHandlerApp : public nsIHandlerApp
+{
+public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIHANDLERAPP
+  nsFlatpakHandlerApp() = default;
+private:
+  virtual ~nsFlatpakHandlerApp() = default;
+
+};
+
+NS_IMPL_ISUPPORTS(nsFlatpakHandlerApp, nsIHandlerApp)
+
+NS_IMETHODIMP
+nsFlatpakHandlerApp::GetName(nsAString& aName)
+{
+  aName.AssignLiteral("System Handler");
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsFlatpakHandlerApp::SetName(const nsAString& aName)
+{
+  
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsFlatpakHandlerApp::GetDetailedDescription(nsAString& aDetailedDescription)
+{
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP
+nsFlatpakHandlerApp::SetDetailedDescription(const nsAString& aDetailedDescription)
+{
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP
+nsFlatpakHandlerApp::Equals(nsIHandlerApp* aHandlerApp, bool* _retval)
+{
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP
+nsFlatpakHandlerApp::LaunchWithURI(nsIURI* aUri, nsIInterfaceRequestor* aRequestor)
+{
+  nsCString spec;
+  aUri->GetSpec(spec);
+  GError *error = nullptr;
+
+  
+  
+  
+  
+  
+  
+  gtk_show_uri(nullptr, spec.get(), GDK_CURRENT_TIME, &error);
+  if (error) {
+    NS_WARNING(nsPrintfCString("Cannot launch flatpak handler: %s",
+          error->message).get());
+    g_error_free(error);
+    return NS_ERROR_FAILURE;
+  }
+  return NS_OK;
+}
 
 
 
@@ -101,25 +189,6 @@ nsGIOMimeApp::GetExpectsURIs(int32_t* aExpects)
 }
 
 NS_IMETHODIMP
-nsGIOMimeApp::Launch(const nsACString& aUri)
-{
-  GList uris = { 0 };
-  nsPromiseFlatCString flatUri(aUri);
-  uris.data = const_cast<char*>(flatUri.get());
-
-  GError *error = nullptr;
-  gboolean result = g_app_info_launch_uris(mApp, &uris, nullptr, &error);
-
-  if (!result) {
-    g_warning("Cannot launch application: %s", error->message);
-    g_error_free(error);
-    return NS_ERROR_FAILURE;
-  }
-
-  return NS_OK;
-}
-
-NS_IMETHODIMP
 nsGIOMimeApp::GetDetailedDescription(nsAString& aDetailedDescription)
 {
   return NS_ERROR_NOT_IMPLEMENTED;
@@ -179,9 +248,22 @@ nsGIOMimeApp::Equals(nsIHandlerApp* aHandlerApp, bool* _retval)
 NS_IMETHODIMP
 nsGIOMimeApp::LaunchWithURI(nsIURI* aUri, nsIInterfaceRequestor* aRequestor)
 {
-  nsCString uri_string;
-  aUri->GetSpec(uri_string);
-  return Launch(uri_string);
+  GList uris = { 0 };
+  nsCString spec;
+  aUri->GetSpec(spec);
+  
+  uris.data = const_cast<char*>(spec.get());
+
+  GError *error = nullptr;
+  gboolean result = g_app_info_launch_uris(mApp, &uris, nullptr, &error);
+
+  if (!result) {
+    g_warning("Cannot launch application: %s", error->message);
+    g_error_free(error);
+    return NS_ERROR_FAILURE;
+  }
+
+  return NS_OK;
 }
 
 class GIOUTF8StringEnumerator final : public nsIUTF8StringEnumerator
@@ -367,9 +449,18 @@ nsGIOService::GetMimeTypeFromExtension(const nsACString& aExtension,
 
 NS_IMETHODIMP
 nsGIOService::GetAppForURIScheme(const nsACString& aURIScheme,
-                                 nsIGIOMimeApp** aApp)
+                                 nsIHandlerApp** aApp)
 {
   *aApp = nullptr;
+
+  
+  
+  
+  if (ShouldUseFlatpakPortal()) {
+    nsFlatpakHandlerApp *mozApp = new nsFlatpakHandlerApp();
+    NS_ADDREF(*aApp = mozApp);
+    return NS_OK;
+  }
 
   GAppInfo *app_info = g_app_info_get_default_for_uri_scheme(
                           PromiseFlatCString(aURIScheme).get());
@@ -386,6 +477,13 @@ NS_IMETHODIMP
 nsGIOService::GetAppsForURIScheme(const nsACString& aURIScheme,
                                   nsIMutableArray** aResult)
 {
+  
+  
+  
+  
+  
+  
+  
   nsCOMPtr<nsIMutableArray> handlersArray =
     do_CreateInstance(NS_ARRAY_CONTRACTID);
 
@@ -411,9 +509,18 @@ nsGIOService::GetAppsForURIScheme(const nsACString& aURIScheme,
 
 NS_IMETHODIMP
 nsGIOService::GetAppForMimeType(const nsACString& aMimeType,
-                                nsIGIOMimeApp**   aApp)
+                                nsIHandlerApp**   aApp)
 {
   *aApp = nullptr;
+
+  
+  
+  if (ShouldUseFlatpakPortal()) {
+    nsFlatpakHandlerApp *mozApp = new nsFlatpakHandlerApp();
+    NS_ADDREF(*aApp = mozApp);
+    return NS_OK;
+  }
+
   char *content_type =
     g_content_type_from_mime_type(PromiseFlatCString(aMimeType).get());
   if (!content_type)
