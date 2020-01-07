@@ -250,7 +250,7 @@ typedef HashMap<JSScript*,
 class DebugScript
 {
     friend class ::JSScript;
-    friend struct ::JSCompartment;
+    friend class JS::Realm;
 
     
 
