@@ -4213,13 +4213,8 @@ gfxFontStyle::Hash() const
 {
     return mozilla::HashGeneric(systemFont, style.ForHash(),
                                 stretch.ForHash(), weight.ForHash(),
-                                size, sizeAdjust,
+                                size, int32_t(sizeAdjust * 1000.0f),
                                 nsRefPtrHashKey<nsAtom>::HashKey(language));
-    
-
-
-
-
 }
 
 void
