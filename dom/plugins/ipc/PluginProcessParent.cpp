@@ -61,6 +61,12 @@ PluginProcessParent::Launch(mozilla::UniquePtr<LaunchCompleteTask> aLaunchComple
     
 #if defined(XP_WIN)
     mSandboxLevel = aSandboxLevel;
+
+    
+    if (aSandboxLevel >= 3) {
+        std::wstring pluginFile(NS_ConvertUTF8toUTF16(mPluginFilePath.c_str()).get());
+        mAllowedFilesRead.push_back(pluginFile);
+    }
 #endif 
 #else
     if (aSandboxLevel != 0) {
