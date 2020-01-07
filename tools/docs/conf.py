@@ -46,6 +46,7 @@ extensions = [
 
 js_source_path = [
     'browser/components/extensions',
+    'testing/marionette',
     'toolkit/components/extensions',
     'toolkit/mozapps/extensions',
 ]
