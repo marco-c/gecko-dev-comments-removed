@@ -21,6 +21,53 @@ namespace mozilla {
 class TextEditor;
 } 
 
+struct NodeOffset
+{
+  nsINode* mNode;
+  int32_t  mOffset;
+
+  NodeOffset(): mNode(nullptr), mOffset(0) {}
+  NodeOffset(nsINode* aNode, int32_t aOffset)
+    : mNode(aNode), mOffset(aOffset) {}
+
+  bool operator==(const NodeOffset& aOther) const
+  {
+    return mNode == aOther.mNode && mOffset == aOther.mOffset;
+  }
+
+  bool operator!=(const NodeOffset& aOther) const
+  {
+    return !(*this == aOther);
+  }
+};
+
+class NodeOffsetRange
+{
+private:
+  NodeOffset mBegin;
+  NodeOffset mEnd;
+  bool mEmpty;
+public:
+  NodeOffsetRange() : mEmpty(true) {}
+  NodeOffsetRange(NodeOffset b, NodeOffset e)
+    : mBegin(b), mEnd(e), mEmpty(false) {}
+
+  NodeOffset Begin()
+  {
+    return mBegin;
+  }
+
+  NodeOffset End()
+  {
+    return mEnd;
+  }
+
+  bool Empty()
+  {
+    return mEmpty;
+  }
+};
+
 
 
 
@@ -44,22 +91,6 @@ class TextEditor;
 class mozInlineSpellWordUtil
 {
 public:
-  struct NodeOffset {
-    nsINode* mNode;
-    int32_t  mOffset;
-
-    NodeOffset(nsINode* aNode, int32_t aOffset) :
-      mNode(aNode), mOffset(aOffset) {}
-
-    bool operator==(const NodeOffset& aOther) const {
-      return mNode == aOther.mNode && mOffset == aOther.mOffset;
-    }
-
-    bool operator!=(const NodeOffset& aOther) const {
-      return !(*this == aOther);
-    }
-  };
-
   mozInlineSpellWordUtil()
     : mRootNode(nullptr),
       mSoftBegin(nullptr, 0), mSoftEnd(nullptr, 0),
@@ -86,10 +117,14 @@ public:
                            nsRange** aRange);
 
   
+  nsresult MakeRange(NodeOffset aBegin, NodeOffset aEnd, nsRange** aRange);
+
   
   
   
-  nsresult GetNextWord(nsAString& aText, nsRange** aRange,
+  
+  nsresult GetNextWord(nsAString& aText,
+                       NodeOffsetRange* aNodeOffsetRange,
                        bool* aSkipChecking);
 
   
@@ -175,9 +210,9 @@ private:
 
   nsresult SplitDOMWord(int32_t aStart, int32_t aEnd);
 
-  
-  nsresult MakeRange(NodeOffset aBegin, NodeOffset aEnd, nsRange** aRange);
   nsresult MakeRangeForWord(const RealWord& aWord, nsRange** aRange);
+  void MakeNodeOffsetRangeForWord(const RealWord& aWord,
+                                  NodeOffsetRange* aNodeOffsetRange);
 };
 
 #endif
