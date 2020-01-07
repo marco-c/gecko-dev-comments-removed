@@ -50,10 +50,7 @@ public:
   wr::WrExternalImageHandler GetExternalImageHandler();
 
   
-  void Update();
-
-  
-  bool Render();
+  bool UpdateAndRender();
 
   
   bool RenderToTarget(gfx::DrawTarget& aTarget);

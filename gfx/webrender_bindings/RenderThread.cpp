@@ -220,11 +220,9 @@ RenderThread::UpdateAndRender(wr::WindowId aWindowId)
   }
 
   auto& renderer = it->second;
-  renderer->Update();
-
   TimeStamp start = TimeStamp::Now();
 
-  bool ret = renderer->Render();
+  bool ret = renderer->UpdateAndRender();
   if (!ret) {
     
     return;
