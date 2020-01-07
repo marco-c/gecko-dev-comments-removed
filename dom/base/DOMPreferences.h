@@ -83,6 +83,10 @@ public:
   
   static bool NetworkInformationEnabled();
   static bool NetworkInformationEnabled(JSContext* aCx, JSObject* aObj);
+
+  
+  static bool FetchObserverEnabled();
+  static bool FetchObserverEnabled(JSContext* aCx, JSObject* aObj);
 };
 
 } 
