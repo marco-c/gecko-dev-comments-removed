@@ -785,7 +785,10 @@ TabActor.prototype = {
     let parentID = undefined;
     
     
-    if (window.parent && window != this._originalWindow) {
+    
+    
+    
+    if (window.parent && window.parent != window && window != this._originalWindow) {
       parentID = window.parent
                        .QueryInterface(Ci.nsIInterfaceRequestor)
                        .getInterface(Ci.nsIDOMWindowUtils)
