@@ -1,0 +1,21 @@
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.setExpandedState = setExpandedState;
+
+
+
+
+function setExpandedState(expanded) {
+  return ({
+    dispatch,
+    getState
+  }) => {
+    dispatch({
+      type: "SET_EXPANDED_STATE",
+      expanded
+    });
+  };
+}

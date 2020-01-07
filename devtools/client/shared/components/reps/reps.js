@@ -70,7 +70,7 @@ return  (function(modules) {
  	__webpack_require__.p = "/assets/build";
 
  	
- 	return __webpack_require__(__webpack_require__.s = 3655);
+ 	return __webpack_require__(__webpack_require__.s = 3730);
  })
 
  ({
@@ -6885,6 +6885,14 @@ function reducer(state = {}, action) {
 
 
 module.exports = reducer;
+
+ }),
+
+ 3730:
+ (function(module, exports, __webpack_require__) {
+
+module.exports = __webpack_require__(3655);
+
 
  })
 

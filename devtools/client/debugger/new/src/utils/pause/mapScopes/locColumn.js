@@ -1,0 +1,19 @@
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.locColumn = locColumn;
+
+
+
+
+function locColumn(loc) {
+  if (typeof loc.column !== "number") {
+    
+    
+    return 0;
+  }
+
+  return loc.column;
+}

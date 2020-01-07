@@ -70,7 +70,7 @@ return  (function(modules) {
  	__webpack_require__.p = "/assets/build";
 
  	
- 	return __webpack_require__(__webpack_require__.s = 3709);
+ 	return __webpack_require__(__webpack_require__.s = 3726);
  })
 
  ({
@@ -4407,6 +4407,14 @@ class WasmRemap {
 }
 
 exports.WasmRemap = WasmRemap;
+
+ }),
+
+ 3726:
+ (function(module, exports, __webpack_require__) {
+
+module.exports = __webpack_require__(3709);
+
 
  })
 

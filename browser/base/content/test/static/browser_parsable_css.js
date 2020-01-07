@@ -14,7 +14,7 @@ let whitelist = [
   {sourceName: /codemirror\.css$/i,
    isFromDevTools: true},
   
-  {sourceName: /devtools\/client\/debugger\/new\/debugger.css/i,
+  {sourceName: /devtools\/client\/debugger\/new\/dist\/debugger.css/i,
    isFromDevTools: true},
    
    {sourceName: /devtools-client-shared\/components\/reps\/reps.css/i,
@@ -262,9 +262,7 @@ function processCSSRules(sheet) {
     
     
     let urls = rule.cssText.match(/url\("[^"]*"\)/g);
-    
-    
-    let props = rule.cssText.match(/(var\(|\W)(--[\w\-]+)/g);
+    let props = rule.cssText.match(/(var\()?(--[\w\-]+)/g);
     if (!urls && !props)
       continue;
 
@@ -292,13 +290,8 @@ function processCSSRules(sheet) {
         prop = prop.substring(4);
         let prevValue = customPropsToReferencesMap.get(prop) || 0;
         customPropsToReferencesMap.set(prop, prevValue + 1);
-      } else {
-        
-        
-        prop = prop.substring(1);
-        if (!customPropsToReferencesMap.has(prop)) {
-          customPropsToReferencesMap.set(prop, undefined);
-        }
+      } else if (!customPropsToReferencesMap.has(prop)) {
+        customPropsToReferencesMap.set(prop, undefined);
       }
     }
   }

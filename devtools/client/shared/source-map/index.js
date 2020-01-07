@@ -70,7 +70,7 @@ return  (function(modules) {
  	__webpack_require__.p = "/assets/build";
 
  	
- 	return __webpack_require__(__webpack_require__.s = 3646);
+ 	return __webpack_require__(__webpack_require__.s = 3727);
  })
 
  ({
@@ -768,6 +768,14 @@ module.exports = {
   workerHandler,
   streamingWorkerHandler
 };
+
+ }),
+
+ 3727:
+ (function(module, exports, __webpack_require__) {
+
+module.exports = __webpack_require__(3646);
+
 
  })
 

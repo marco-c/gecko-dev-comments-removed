@@ -1,0 +1,23 @@
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.createLocation = createLocation;
+
+
+
+
+function createLocation({
+  sourceId,
+  line,
+  column,
+  sourceUrl
+}) {
+  return {
+    sourceId,
+    line,
+    column,
+    sourceUrl: sourceUrl || null
+  };
+}

@@ -1,0 +1,17 @@
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = assert;
+
+var _devtoolsEnvironment = require("devtools/client/debugger/new/dist/vendors").vendored["devtools-environment"];
+
+
+
+
+function assert(condition, message) {
+  if ((0, _devtoolsEnvironment.isDevelopment)() && !condition) {
+    throw new Error(`Assertion failure: ${message}`);
+  }
+}
