@@ -5,6 +5,21 @@ add_task(async function() {
   BrowserTestUtils.addTab(gBrowser);
   BrowserTestUtils.addTab(gBrowser);
 
+  
+  
+  
+  for (let node of ctrlTab.previews) {
+    node.style.pointerEvents = "none";
+  }
+  registerCleanupFunction(function() {
+    for (let node of ctrlTab.previews) {
+      try {
+        node.style.removeProperty("pointer-events");
+      } catch (e) {
+      }
+    }
+  });
+
   checkTabs(4);
 
   await ctrlTabTest([2], 1, 0);
