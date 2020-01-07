@@ -15,6 +15,9 @@ const {
 } = require("../utils/request-utils");
 const { buildHarLog } = require("./har-builder-utils");
 const L10N = new LocalizationHelper("devtools/client/locales/har.properties");
+const {
+  TIMING_KEYS
+} = require("../constants");
 
 
 
@@ -101,7 +104,6 @@ HarBuilder.prototype = {
     let entry = {};
     entry.pageref = page.id;
     entry.startedDateTime = dateToJSON(new Date(file.startedMillis));
-    entry.time = file.endedMillis - file.startedMillis;
 
     let eventTimings = file.eventTimings;
     if (!eventTimings && this._options.requestData) {
@@ -112,6 +114,19 @@ HarBuilder.prototype = {
     entry.response = await this.buildResponse(file);
     entry.cache = this.buildCache(file);
     entry.timings = eventTimings ? eventTimings.timings : {};
+
+    
+    
+    
+    
+    
+    
+    
+    
+    entry.time = TIMING_KEYS.reduce((sum, type) => {
+      let time = entry.timings[type];
+      return (typeof time != "undefined") ? (sum + time) : sum;
+    }, 0);
 
     
     
