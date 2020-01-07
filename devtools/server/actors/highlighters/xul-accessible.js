@@ -6,7 +6,7 @@
 
 const { getBounds } = require("./utils/accessibility");
 const { createNode, isNodeValid } = require("./utils/markup");
-const { loadSheet } = require("devtools/shared/layout/utils");
+const { getCurrentZoom, loadSheet } = require("devtools/shared/layout/utils");
 
 
 
@@ -80,7 +80,11 @@ class XULWindowAccessibleHighlighter {
 
 
   get _bounds() {
-    return getBounds(this.win, this.options);
+    
+    
+    const zoom = getCurrentZoom(this.currentNode);
+
+    return getBounds(this.win, { ...this.options, zoom });
   }
 
   

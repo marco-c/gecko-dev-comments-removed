@@ -25,20 +25,32 @@ const { getCurrentZoom } = require("devtools/shared/layout/utils");
 
 
 
-function getBounds(win, { x, y, w, h }) {
-  const { mozInnerScreenX, mozInnerScreenY, scrollX, scrollY } = win;
-  const zoom = getCurrentZoom(win);
+
+
+function getBounds(win, { x, y, w, h, zoom }) {
+  let { mozInnerScreenX, mozInnerScreenY, scrollX, scrollY } = win;
+  let zoomFactor = getCurrentZoom(win);
   let left = x, right = x + w, top = y, bottom = y + h;
+
+  
+  
+  if (zoom) {
+    zoomFactor = zoom;
+    mozInnerScreenX /= zoomFactor;
+    mozInnerScreenY /= zoomFactor;
+    scrollX /= zoomFactor;
+    scrollY /= zoomFactor;
+  }
 
   left -= mozInnerScreenX - scrollX;
   right -= mozInnerScreenX - scrollX;
   top -= mozInnerScreenY - scrollY;
   bottom -= mozInnerScreenY - scrollY;
 
-  left *= zoom;
-  right *= zoom;
-  top *= zoom;
-  bottom *= zoom;
+  left *= zoomFactor;
+  right *= zoomFactor;
+  top *= zoomFactor;
+  bottom *= zoomFactor;
 
   const width = right - left;
   const height = bottom - top;
