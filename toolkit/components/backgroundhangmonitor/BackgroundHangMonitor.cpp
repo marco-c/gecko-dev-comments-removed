@@ -685,6 +685,29 @@ BackgroundHangMonitor::BackgroundHangMonitor(const char* aName,
   : mThread(aThreadType == THREAD_SHARED ? BackgroundHangThread::FindThread() : nullptr)
 {
 #ifdef MOZ_ENABLE_BACKGROUND_HANG_MONITOR
+# ifdef MOZ_VALGRIND
+  
+  
+  
+  
+  
+  
+  
+  
+  if (RUNNING_ON_VALGRIND) {
+    const uint32_t scaleUp = 30;
+    const uint32_t extraMs = 6000;
+    if (aTimeoutMs != BackgroundHangMonitor::kNoTimeout) {
+      aTimeoutMs *= scaleUp;
+      aTimeoutMs += extraMs;
+    }
+    if (aMaxTimeoutMs != BackgroundHangMonitor::kNoTimeout) {
+      aMaxTimeoutMs *= scaleUp;
+      aMaxTimeoutMs += extraMs;
+    }
+  }
+# endif
+
   if (!BackgroundHangManager::sDisabled && !mThread) {
     mThread = new BackgroundHangThread(aName, aTimeoutMs, aMaxTimeoutMs,
                                        aThreadType);
