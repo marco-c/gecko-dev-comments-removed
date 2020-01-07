@@ -5744,11 +5744,6 @@ pref("media.gmp.insecure.allow", false);
 pref("dom.dialog_element.enabled", false);
 
 
-#ifdef MOZ_SECUREELEMENT
-pref("dom.secureelement.enabled", false);
-#endif
-
-
 
 
 
