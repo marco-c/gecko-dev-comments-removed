@@ -11,11 +11,11 @@
 
 
 
-function setWebComponentsPrefAndCreateIframe(aSrcDoc) {
+function setShadowDOMPrefAndCreateIframe(aSrcDoc) {
   return new Promise(function (aResolve, aReject) {
     SpecialPowers.pushPrefEnv({
       set: [
-        ["dom.webcomponents.enabled", true]
+        ["dom.webcomponents.shadowdom.enabled", true]
       ]
     }, () => {
       let iframe = document.createElement("iframe");

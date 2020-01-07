@@ -627,10 +627,9 @@ public:
   bool IsSynthesized();
 
   
-  static bool IsWebComponentsEnabled(JSContext* aCx, JSObject* aObject);
+  static bool IsShadowDOMEnabled(JSContext* aCx, JSObject* aObject);
   
-  
-  static bool IsWebComponentsEnabled(const nsINode* aNode);
+  static bool IsShadowDOMEnabled(const nsINode* aNode);
 private:
   void AddOnDemandBuiltInUASheet(mozilla::StyleSheet* aSheet);
   void SendToConsole(nsCOMArray<nsISecurityConsoleMessage>& aMessages);
