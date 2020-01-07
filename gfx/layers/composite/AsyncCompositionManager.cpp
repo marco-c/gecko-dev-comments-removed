@@ -1081,18 +1081,18 @@ LayerIsScrollbarTarget(const LayerMetricsWrapper& aTarget, Layer* aScrollbar)
 }
 
 static void
-ApplyAsyncTransformToScrollbarForContent(Layer* aScrollbar,
+ApplyAsyncTransformToScrollbarForContent(const RefPtr<APZSampler>& aSampler,
+                                         Layer* aScrollbar,
                                          const LayerMetricsWrapper& aContent,
                                          bool aScrollbarIsDescendant)
 {
   AsyncTransformComponentMatrix clipTransform;
 
+  MOZ_ASSERT(aSampler);
   LayerToParentLayerMatrix4x4 transform =
-      AsyncCompositionManager::ComputeTransformForScrollThumb(
+      aSampler->ComputeTransformForScrollThumb(
           aScrollbar->GetLocalTransformTyped(),
-          aContent.GetTransform(),
-          aContent.GetApzc(),
-          aContent.Metrics(),
+          aContent,
           aScrollbar->GetScrollThumbData(),
           aScrollbarIsDescendant,
           &clipTransform);
@@ -1108,168 +1108,6 @@ ApplyAsyncTransformToScrollbarForContent(Layer* aScrollbar,
   }
 
   SetShadowTransform(aScrollbar, transform);
-}
-
- LayerToParentLayerMatrix4x4
-AsyncCompositionManager::ComputeTransformForScrollThumb(
-    const LayerToParentLayerMatrix4x4& aCurrentTransform,
-    const Matrix4x4& aScrollableContentTransform,
-    AsyncPanZoomController* aApzc,
-    const FrameMetrics& aMetrics,
-    const ScrollThumbData& aThumbData,
-    bool aScrollbarIsDescendant,
-    AsyncTransformComponentMatrix* aOutClipTransform)
-{
-  
-  
-  
-  
-  
-  if (aMetrics.IsScrollInfoLayer()) {
-    return LayerToParentLayerMatrix4x4{};
-  }
-
-  MOZ_RELEASE_ASSERT(aApzc);
-
-  AsyncTransformComponentMatrix asyncTransform =
-    aApzc->GetCurrentAsyncTransform(AsyncPanZoomController::eForCompositing);
-
-  
-  
-  
-  
-  AsyncTransformComponentMatrix scrollbarTransform;
-  if (*aThumbData.mDirection == ScrollDirection::eVertical) {
-    const ParentLayerCoord asyncScrollY = asyncTransform._42;
-    const float asyncZoomY = asyncTransform._22;
-
-    
-    
-    
-    const float yScale = 1.f / asyncZoomY;
-
-    
-    const CSSToParentLayerScale effectiveZoom(aMetrics.GetZoom().yScale * asyncZoomY);
-
-    
-    
-    
-    const float ratio = aThumbData.mThumbRatio /
-        (aMetrics.GetPresShellResolution() * asyncZoomY);
-    
-    
-    
-    ParentLayerCoord yTranslation = -asyncScrollY * ratio;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    const CSSCoord thumbOrigin = (aMetrics.GetScrollOffset().y * ratio);
-    const CSSCoord thumbOriginScaled = thumbOrigin * yScale;
-    const CSSCoord thumbOriginDelta = thumbOriginScaled - thumbOrigin;
-    const ParentLayerCoord thumbOriginDeltaPL = thumbOriginDelta * effectiveZoom;
-    yTranslation -= thumbOriginDeltaPL;
-
-    if (aMetrics.IsRootContent()) {
-      
-      
-      
-      
-      
-      
-      yTranslation *= aMetrics.GetPresShellResolution();
-    }
-
-    scrollbarTransform.PostScale(1.f, yScale, 1.f);
-    scrollbarTransform.PostTranslate(0, yTranslation, 0);
-  }
-  if (*aThumbData.mDirection == ScrollDirection::eHorizontal) {
-    
-
-    const ParentLayerCoord asyncScrollX = asyncTransform._41;
-    const float asyncZoomX = asyncTransform._11;
-
-    const float xScale = 1.f / asyncZoomX;
-
-    const CSSToParentLayerScale effectiveZoom(aMetrics.GetZoom().xScale * asyncZoomX);
-
-    const float ratio = aThumbData.mThumbRatio /
-        (aMetrics.GetPresShellResolution() * asyncZoomX);
-    ParentLayerCoord xTranslation = -asyncScrollX * ratio;
-
-    const CSSCoord thumbOrigin = (aMetrics.GetScrollOffset().x * ratio);
-    const CSSCoord thumbOriginScaled = thumbOrigin * xScale;
-    const CSSCoord thumbOriginDelta = thumbOriginScaled - thumbOrigin;
-    const ParentLayerCoord thumbOriginDeltaPL = thumbOriginDelta * effectiveZoom;
-    xTranslation -= thumbOriginDeltaPL;
-
-    if (aMetrics.IsRootContent()) {
-      xTranslation *= aMetrics.GetPresShellResolution();
-    }
-
-    scrollbarTransform.PostScale(xScale, 1.f, 1.f);
-    scrollbarTransform.PostTranslate(xTranslation, 0, 0);
-  }
-
-  LayerToParentLayerMatrix4x4 transform =
-      aCurrentTransform * scrollbarTransform;
-
-  AsyncTransformComponentMatrix compensation;
-  
-  
-  
-  
-  
-  if (aMetrics.IsRootContent()) {
-    compensation =
-        AsyncTransformComponentMatrix::Scaling(
-            aMetrics.GetPresShellResolution(),
-            aMetrics.GetPresShellResolution(),
-            1.0f).Inverse();
-  }
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (aScrollbarIsDescendant) {
-    AsyncTransformComponentMatrix overscroll =
-        aApzc->GetOverscrollTransform(AsyncPanZoomController::eForCompositing);
-    Matrix4x4 asyncUntransform = (asyncTransform * overscroll).Inverse().ToUnknownMatrix();
-    Matrix4x4 contentTransform = aScrollableContentTransform;
-    Matrix4x4 contentUntransform = contentTransform.Inverse();
-
-    AsyncTransformComponentMatrix asyncCompensation =
-        ViewAs<AsyncTransformComponentMatrix>(
-            contentTransform
-          * asyncUntransform
-          * contentUntransform);
-
-    compensation = compensation * asyncCompensation;
-
-    
-    
-    if (aOutClipTransform) {
-      *aOutClipTransform = asyncCompensation;
-    }
-  }
-  transform = transform * compensation;
-
-  return transform;
 }
 
 static LayerMetricsWrapper
@@ -1328,7 +1166,8 @@ AsyncCompositionManager::ApplyAsyncTransformToScrollbar(Layer* aLayer)
   bool isAncestor = false;
   const LayerMetricsWrapper& scrollTarget = FindScrolledLayerForScrollbar(aLayer, &isAncestor);
   if (scrollTarget) {
-    ApplyAsyncTransformToScrollbarForContent(aLayer, scrollTarget, isAncestor);
+    ApplyAsyncTransformToScrollbarForContent(mCompositorBridge->GetAPZSampler(),
+        aLayer, scrollTarget, isAncestor);
   }
 }
 

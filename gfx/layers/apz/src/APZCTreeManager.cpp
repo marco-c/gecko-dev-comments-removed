@@ -609,7 +609,7 @@ APZCTreeManager::PushStateToWR(wr::TransactionBuilder& aTxn,
         MOZ_ASSERT(scrollTargetApzc);
         LayerToParentLayerMatrix4x4 transform = scrollTargetApzc->CallWithLastContentPaintMetrics(
             [&](const FrameMetrics& aMetrics) {
-                return AsyncCompositionManager::ComputeTransformForScrollThumb(
+                return ComputeTransformForScrollThumb(
                     aNode->GetTransform() * AsyncTransformMatrix(),
                     scrollTargetNode->GetTransform().ToUnknownMatrix(),
                     scrollTargetApzc,
@@ -2936,7 +2936,7 @@ APZCTreeManager::ComputeTransformForNode(const HitTestingTreeNode* aNode) const
       MOZ_ASSERT(scrollTargetApzc);
       return scrollTargetApzc->CallWithLastContentPaintMetrics(
         [&](const FrameMetrics& aMetrics) {
-          return AsyncCompositionManager::ComputeTransformForScrollThumb(
+          return ComputeTransformForScrollThumb(
               aNode->GetTransform() * AsyncTransformMatrix(),
               scrollTargetNode->GetTransform().ToUnknownMatrix(),
               scrollTargetApzc,
@@ -2987,6 +2987,168 @@ APZCTreeManager::GetAPZTestData(uint64_t aLayersId,
   }
   *aOutData = *(it->second);
   return true;
+}
+
+ LayerToParentLayerMatrix4x4
+APZCTreeManager::ComputeTransformForScrollThumb(
+    const LayerToParentLayerMatrix4x4& aCurrentTransform,
+    const Matrix4x4& aScrollableContentTransform,
+    AsyncPanZoomController* aApzc,
+    const FrameMetrics& aMetrics,
+    const ScrollThumbData& aThumbData,
+    bool aScrollbarIsDescendant,
+    AsyncTransformComponentMatrix* aOutClipTransform)
+{
+  
+  
+  
+  
+  
+  if (aMetrics.IsScrollInfoLayer()) {
+    return LayerToParentLayerMatrix4x4{};
+  }
+
+  MOZ_RELEASE_ASSERT(aApzc);
+
+  AsyncTransformComponentMatrix asyncTransform =
+    aApzc->GetCurrentAsyncTransform(AsyncPanZoomController::eForCompositing);
+
+  
+  
+  
+  
+  AsyncTransformComponentMatrix scrollbarTransform;
+  if (*aThumbData.mDirection == ScrollDirection::eVertical) {
+    const ParentLayerCoord asyncScrollY = asyncTransform._42;
+    const float asyncZoomY = asyncTransform._22;
+
+    
+    
+    
+    const float yScale = 1.f / asyncZoomY;
+
+    
+    const CSSToParentLayerScale effectiveZoom(aMetrics.GetZoom().yScale * asyncZoomY);
+
+    
+    
+    
+    const float ratio = aThumbData.mThumbRatio /
+        (aMetrics.GetPresShellResolution() * asyncZoomY);
+    
+    
+    
+    ParentLayerCoord yTranslation = -asyncScrollY * ratio;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    const CSSCoord thumbOrigin = (aMetrics.GetScrollOffset().y * ratio);
+    const CSSCoord thumbOriginScaled = thumbOrigin * yScale;
+    const CSSCoord thumbOriginDelta = thumbOriginScaled - thumbOrigin;
+    const ParentLayerCoord thumbOriginDeltaPL = thumbOriginDelta * effectiveZoom;
+    yTranslation -= thumbOriginDeltaPL;
+
+    if (aMetrics.IsRootContent()) {
+      
+      
+      
+      
+      
+      
+      yTranslation *= aMetrics.GetPresShellResolution();
+    }
+
+    scrollbarTransform.PostScale(1.f, yScale, 1.f);
+    scrollbarTransform.PostTranslate(0, yTranslation, 0);
+  }
+  if (*aThumbData.mDirection == ScrollDirection::eHorizontal) {
+    
+
+    const ParentLayerCoord asyncScrollX = asyncTransform._41;
+    const float asyncZoomX = asyncTransform._11;
+
+    const float xScale = 1.f / asyncZoomX;
+
+    const CSSToParentLayerScale effectiveZoom(aMetrics.GetZoom().xScale * asyncZoomX);
+
+    const float ratio = aThumbData.mThumbRatio /
+        (aMetrics.GetPresShellResolution() * asyncZoomX);
+    ParentLayerCoord xTranslation = -asyncScrollX * ratio;
+
+    const CSSCoord thumbOrigin = (aMetrics.GetScrollOffset().x * ratio);
+    const CSSCoord thumbOriginScaled = thumbOrigin * xScale;
+    const CSSCoord thumbOriginDelta = thumbOriginScaled - thumbOrigin;
+    const ParentLayerCoord thumbOriginDeltaPL = thumbOriginDelta * effectiveZoom;
+    xTranslation -= thumbOriginDeltaPL;
+
+    if (aMetrics.IsRootContent()) {
+      xTranslation *= aMetrics.GetPresShellResolution();
+    }
+
+    scrollbarTransform.PostScale(xScale, 1.f, 1.f);
+    scrollbarTransform.PostTranslate(xTranslation, 0, 0);
+  }
+
+  LayerToParentLayerMatrix4x4 transform =
+      aCurrentTransform * scrollbarTransform;
+
+  AsyncTransformComponentMatrix compensation;
+  
+  
+  
+  
+  
+  if (aMetrics.IsRootContent()) {
+    compensation =
+        AsyncTransformComponentMatrix::Scaling(
+            aMetrics.GetPresShellResolution(),
+            aMetrics.GetPresShellResolution(),
+            1.0f).Inverse();
+  }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (aScrollbarIsDescendant) {
+    AsyncTransformComponentMatrix overscroll =
+        aApzc->GetOverscrollTransform(AsyncPanZoomController::eForCompositing);
+    Matrix4x4 asyncUntransform = (asyncTransform * overscroll).Inverse().ToUnknownMatrix();
+    Matrix4x4 contentTransform = aScrollableContentTransform;
+    Matrix4x4 contentUntransform = contentTransform.Inverse();
+
+    AsyncTransformComponentMatrix asyncCompensation =
+        ViewAs<AsyncTransformComponentMatrix>(
+            contentTransform
+          * asyncUntransform
+          * contentUntransform);
+
+    compensation = compensation * asyncCompensation;
+
+    
+    
+    if (aOutClipTransform) {
+      *aOutClipTransform = asyncCompensation;
+    }
+  }
+  transform = transform * compensation;
+
+  return transform;
 }
 
 #if defined(MOZ_WIDGET_ANDROID)

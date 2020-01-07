@@ -133,37 +133,6 @@ public:
 
   typedef std::map<Layer*, ClipParts> ClipPartsCache;
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  static LayerToParentLayerMatrix4x4 ComputeTransformForScrollThumb(
-      const LayerToParentLayerMatrix4x4& aCurrentTransform,
-      const gfx::Matrix4x4& aScrollableContentTransform,
-      AsyncPanZoomController* aApzc,
-      const FrameMetrics& aMetrics,
-      const ScrollThumbData& aThumbData,
-      bool aScrollbarIsDescendant,
-      AsyncTransformComponentMatrix* aOutClipTransform);
 private:
   
   

@@ -55,6 +55,7 @@ class GeckoContentController;
 class HitTestingTreeNode;
 class WebRenderScrollData;
 struct AncestorTransform;
+struct ScrollThumbData;
 
 
 
@@ -483,6 +484,38 @@ public:
       EventMessage aEventMessage) override;
 
   bool GetAPZTestData(uint64_t aLayersId, APZTestData* aOutData);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static LayerToParentLayerMatrix4x4 ComputeTransformForScrollThumb(
+      const LayerToParentLayerMatrix4x4& aCurrentTransform,
+      const gfx::Matrix4x4& aScrollableContentTransform,
+      AsyncPanZoomController* aApzc,
+      const FrameMetrics& aMetrics,
+      const ScrollThumbData& aThumbData,
+      bool aScrollbarIsDescendant,
+      AsyncTransformComponentMatrix* aOutClipTransform);
 
 protected:
   
