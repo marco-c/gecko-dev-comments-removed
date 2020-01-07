@@ -16,6 +16,7 @@
 
 #include "mozilla/Assertions.h"
 #include "mozilla/PodOperations.h"
+#include "prenv.h"
 #include "sandbox/linux/bpf_dsl/seccomp_macros.h"
 #ifdef ANDROID
 #include "sandbox/linux/system_headers/linux_ucontext.h"
@@ -35,6 +36,12 @@ SandboxReporterClient::SandboxReporterClient(SandboxReport::ProcType aProcType,
   
   
   
+}
+
+SandboxReporterClient::SandboxReporterClient(SandboxReport::ProcType aProcType)
+  : SandboxReporterClient(aProcType, kSandboxReporterFileDesc)
+{
+  MOZ_RELEASE_ASSERT(PR_GetEnv("MOZ_SANDBOXED") != nullptr);
 }
 
 SandboxReport

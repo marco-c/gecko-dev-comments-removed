@@ -19,8 +19,11 @@ public:
   
   
   
-  explicit SandboxReporterClient(SandboxReport::ProcType aProcType,
-                                 int aFd = kSandboxReporterFileDesc);
+  SandboxReporterClient(SandboxReport::ProcType aProcType, int aFd);
+
+  
+  
+  explicit SandboxReporterClient(SandboxReport::ProcType aProcType);
 
   
   

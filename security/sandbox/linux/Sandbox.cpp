@@ -476,6 +476,10 @@ static const Array<const char*, 1> kLibsThatWillCrash {
 
 void
 SandboxEarlyInit() {
+  if (PR_GetEnv("MOZ_SANDBOXED") == nullptr) {
+    return;
+  }
+
   
   
   if (!SandboxInfo::Get().Test(SandboxInfo::kHasSeccompTSync)) {

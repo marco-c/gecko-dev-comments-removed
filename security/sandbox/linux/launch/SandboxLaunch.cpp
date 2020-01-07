@@ -115,9 +115,6 @@ void
 SandboxLaunchPrepare(GeckoProcessType aType,
 		     base::LaunchOptions* aOptions)
 {
-  PreloadSandboxLib(&aOptions->env_map);
-  AttachSandboxReporter(&aOptions->fds_to_remap);
-
   auto info = SandboxInfo::Get();
 
   
@@ -130,6 +127,13 @@ SandboxLaunchPrepare(GeckoProcessType aType,
   if (level == 0) {
     return;
   }
+
+  
+  
+  
+  aOptions->env_map["MOZ_SANDBOXED"] = "1";
+  PreloadSandboxLib(&aOptions->env_map);
+  AttachSandboxReporter(&aOptions->fds_to_remap);
 
   
   if (!info.Test(SandboxInfo::kHasUserNamespaces)) {
