@@ -66,9 +66,7 @@ async function createBookmark(parentId, url, title, index = bms.DEFAULT_INDEX) {
 }
 
 function getServerRecord(collection, id) {
-  let wbo = collection.get({ full: true, ids: [id] });
-  
-  return JSON.parse(JSON.parse(JSON.parse(JSON.parse(wbo)[0]).payload).ciphertext);
+  return collection.cleartext(id);
 }
 
 async function promiseNoLocalItem(guid) {
@@ -81,7 +79,7 @@ async function promiseNoLocalItem(guid) {
 
 async function validate(collection, expectedFailures = []) {
   let validator = new BookmarkValidator();
-  let records = collection.payloads();
+  let records = collection.cleartextPayloads();
 
   let { problemData: problems } = await validator.inspectServerRecords(records);
   
@@ -108,7 +106,7 @@ async function validate(collection, expectedFailures = []) {
     info(JSON.stringify(problems, undefined, 2));
     info("Expected: " + JSON.stringify(expectedFailures, undefined, 2));
     
-    info("Server records:\n" + JSON.stringify(collection.payloads(), undefined, 2));
+    info("Server records:\n" + JSON.stringify(collection.cleartextPayloads(), undefined, 2));
     let tree = await PlacesUtils.promiseBookmarksTree("", { includeItemIds: true });
     info("Local bookmark tree:\n" + JSON.stringify(tree, undefined, 2));
     ok(false);
@@ -166,13 +164,13 @@ add_task(async function test_dupe_bookmark() {
 
     
     equal(collection.count(), 7);
-    ok(getServerRecord(collection, bmk1_guid).deleted);
+    ok(collection.cleartext(bmk1_guid).deleted);
     
     await promiseNoLocalItem(bmk1_guid);
     
     equal((await getFolderChildrenIDs(folder1_id)).length, 1);
     
-    let serverRecord = getServerRecord(collection, folder1_guid);
+    let serverRecord = collection.cleartext(folder1_guid);
     ok(!serverRecord.children.includes(bmk1_guid));
     ok(serverRecord.children.includes(newGUID));
 
@@ -227,7 +225,7 @@ add_task(async function test_dupe_reparented_bookmark() {
 
     
     equal(collection.count(), 8);
-    ok(getServerRecord(collection, bmk1_guid).deleted);
+    ok(collection.cleartext(bmk1_guid).deleted);
     
     await promiseNoLocalItem(bmk1_guid);
     
@@ -236,12 +234,12 @@ add_task(async function test_dupe_reparented_bookmark() {
     equal((await getFolderChildrenIDs(folder2_id)).length, 1);
 
     
-    let serverRecord1 = getServerRecord(collection, folder1_guid);
+    let serverRecord1 = collection.cleartext(folder1_guid);
     ok(!serverRecord1.children.includes(bmk1_guid));
     ok(!serverRecord1.children.includes(newGUID));
 
     
-    let serverRecord2 = getServerRecord(collection, folder2_guid);
+    let serverRecord2 = collection.cleartext(folder2_guid);
     ok(!serverRecord2.children.includes(bmk1_guid));
     ok(serverRecord2.children.includes(newGUID));
 
@@ -308,7 +306,7 @@ add_task(async function test_dupe_reparented_locally_changed_bookmark() {
 
     
     equal(collection.count(), 8);
-    ok(getServerRecord(collection, bmk1_guid).deleted);
+    ok(collection.cleartext(bmk1_guid).deleted);
     
     await promiseNoLocalItem(bmk1_guid);
     
@@ -317,12 +315,12 @@ add_task(async function test_dupe_reparented_locally_changed_bookmark() {
     equal((await getFolderChildrenIDs(folder2_id)).length, 0);
 
     
-    let serverRecord1 = getServerRecord(collection, folder1_guid);
+    let serverRecord1 = collection.cleartext(folder1_guid);
     ok(!serverRecord1.children.includes(bmk1_guid));
     ok(serverRecord1.children.includes(newGUID));
 
     
-    let serverRecord2 = getServerRecord(collection, folder2_guid);
+    let serverRecord2 = collection.cleartext(folder2_guid);
     ok(!serverRecord2.children.includes(bmk1_guid));
     ok(!serverRecord2.children.includes(newGUID));
 
@@ -531,14 +529,14 @@ add_task(async function test_dupe_reparented_to_future_arriving_parent_bookmark(
 
     
     equal(collection.count(), 8);
-    ok(getServerRecord(collection, bmk1_guid).deleted);
+    ok(collection.cleartext(bmk1_guid).deleted);
     
     await promiseNoLocalItem(bmk1_guid);
     
     equal((await getFolderChildrenIDs(folder1_id)).length, 1);
 
     
-    let serverRecord1 = getServerRecord(collection, folder1_guid);
+    let serverRecord1 = collection.cleartext(folder1_guid);
     ok(!serverRecord1.children.includes(bmk1_guid));
     ok(serverRecord1.children.includes(newGUID));
 
@@ -649,7 +647,7 @@ add_task(async function test_dupe_empty_folder() {
     
     equal(collection.count(), 6);
     
-    ok(getServerRecord(collection, folder1_guid).deleted);
+    ok(collection.cleartext(folder1_guid).deleted);
     await promiseNoLocalItem(folder1_guid);
   } finally {
     await cleanup(engine, server);
