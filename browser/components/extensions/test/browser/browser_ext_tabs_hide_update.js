@@ -61,10 +61,6 @@ function getExtension() {
 
 
 add_task(async function test_tabs_update() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["extensions.webextensions.tabhide.enabled", true]],
-  });
-
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, "http://example.com/");
   await BrowserTestUtils.switchTab(gBrowser, gBrowser.tabs[0]);
 
@@ -116,10 +112,6 @@ add_task(async function test_tabs_update() {
 
 
 add_task(async function test_tabs_disable() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["extensions.webextensions.tabhide.enabled", true]],
-  });
-
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, "http://example.com/");
   await BrowserTestUtils.switchTab(gBrowser, gBrowser.tabs[0]);
 

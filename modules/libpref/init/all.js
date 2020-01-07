@@ -4935,7 +4935,7 @@ pref("extensions.webextensions.remote", false);
 pref("extensions.webextensions.protocol.remote", true);
 
 
-pref("extensions.webextensions.tabhide.enabled", false);
+pref("extensions.webextensions.tabhide.enabled", true);
 
 pref("extensions.webextensions.background-delayed-startup", false);
 
