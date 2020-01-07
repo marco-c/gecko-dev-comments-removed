@@ -4391,8 +4391,8 @@ var XULBrowserWindow = {
   defaultStatus: "",
   overLink: "",
   startTime: 0,
-  statusText: "",
   isBusy: false,
+  busyUI: false,
   
   inContentWhitelist: [],
 
@@ -4413,9 +4413,6 @@ var XULBrowserWindow = {
   get reloadCommand() {
     delete this.reloadCommand;
     return this.reloadCommand = document.getElementById("Browser:Reload");
-  },
-  get statusTextField() {
-    return gBrowser.getStatusPanel();
   },
   get isImage() {
     delete this.isImage;
@@ -4440,7 +4437,7 @@ var XULBrowserWindow = {
 
   setDefaultStatus(status) {
     this.defaultStatus = status;
-    this.updateStatusField();
+    StatusPanel.update();
   },
 
   setOverLink(url, anchorElt) {
@@ -4482,29 +4479,6 @@ var XULBrowserWindow = {
 
   getTabCount() {
     return gBrowser.tabs.length;
-  },
-
-  updateStatusField() {
-    var text, type, types = ["overLink"];
-    if (this._busyUI)
-      types.push("status");
-    types.push("defaultStatus");
-    for (type of types) {
-      text = this[type];
-      if (text)
-        break;
-    }
-
-    
-    
-    if (this.statusText != text) {
-      let field = this.statusTextField;
-      field.setAttribute("previoustype", field.getAttribute("type"));
-      field.setAttribute("type", type);
-      field.label = text;
-      field.setAttribute("crop", type == "overLink" ? "center" : "end");
-      this.statusText = text;
-    }
   },
 
   
@@ -4572,7 +4546,7 @@ var XULBrowserWindow = {
       this.isBusy = true;
 
       if (!(aStateFlags & nsIWebProgressListener.STATE_RESTORING)) {
-        this._busyUI = true;
+        this.busyUI = true;
 
         
         this.stopCommand.removeAttribute("disabled");
@@ -4625,8 +4599,8 @@ var XULBrowserWindow = {
 
       this.isBusy = false;
 
-      if (this._busyUI) {
-        this._busyUI = false;
+      if (this.busyUI) {
+        this.busyUI = false;
 
         this.stopCommand.setAttribute("disabled", "true");
         CombinedStopReload.switchToReload(aRequest, aWebProgress);
@@ -4787,7 +4761,7 @@ var XULBrowserWindow = {
 
   onStatusChange(aWebProgress, aRequest, aStatus, aMessage) {
     this.status = aMessage;
-    this.updateStatusField();
+    StatusPanel.update();
   },
 
   
@@ -4875,10 +4849,6 @@ var LinkTargetDisplay = {
   DELAY_HIDE: 250,
   _timer: 0,
 
-  get _isVisible() {
-    return XULBrowserWindow.statusTextField.label != "";
-  },
-
   update() {
     clearTimeout(this._timer);
     window.removeEventListener("mousemove", this, true);
@@ -4891,8 +4861,8 @@ var LinkTargetDisplay = {
       return;
     }
 
-    if (this._isVisible) {
-      XULBrowserWindow.updateStatusField();
+    if (StatusPanel.isVisible) {
+      StatusPanel.update();
     } else {
       
       this._showDelayed();
@@ -4912,7 +4882,7 @@ var LinkTargetDisplay = {
 
   _showDelayed() {
     this._timer = setTimeout(function(self) {
-      XULBrowserWindow.updateStatusField();
+      StatusPanel.update();
       window.removeEventListener("mousemove", self, true);
     }, this.DELAY_SHOW, this);
   },
@@ -4920,7 +4890,7 @@ var LinkTargetDisplay = {
   _hide() {
     clearTimeout(this._timer);
 
-    XULBrowserWindow.updateStatusField();
+    StatusPanel.update();
   }
 };
 
