@@ -7,8 +7,6 @@
 
 
 
-
-
 "use strict";
 
 const BASE_URI = "browser/devtools/client/webconsole/" +

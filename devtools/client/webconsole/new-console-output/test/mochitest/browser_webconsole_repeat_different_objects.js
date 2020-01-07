@@ -6,8 +6,6 @@
 
 
 
-
-
 "use strict";
 
 const TEST_URI = "data:text/html,Test repeated objects";

@@ -6,8 +6,6 @@
 
 
 
-
-
 "use strict";
 
 const ErrorDocs = require("devtools/server/actors/errordocs");

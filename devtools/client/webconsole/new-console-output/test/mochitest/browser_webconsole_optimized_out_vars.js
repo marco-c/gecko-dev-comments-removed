@@ -6,15 +6,13 @@
 
 
 
-
-
 "use strict";
 
 const TEST_URI = "http://example.com/browser/devtools/client/webconsole/" +
                  "new-console-output/test/mochitest/" +
                  "test-closure-optimized-out.html";
 
-add_task(async function () {
+add_task(async function() {
   
   await pushPref("devtools.debugger.new-debugger-frontend", false);
 
@@ -29,7 +27,7 @@ add_task(async function () {
   let fetchedScopes = debuggerPanel.panelWin.once(FETCHED_SCOPES);
 
   
-  ContentTask.spawn(gBrowser.selectedBrowser, {}, function* () {
+  ContentTask.spawn(gBrowser.selectedBrowser, {}, async function() {
     let button = content.document.querySelector("button");
     button.click();
   });
