@@ -9010,6 +9010,7 @@ nsDocShell::SetupNewViewer(nsIContentViewer* aNewViewer)
   }
 
   nscolor bgcolor = NS_RGBA(0, 0, 0, 0);
+  bool isActive = false;
   
   nsCOMPtr<nsIContentViewer> contentViewer = mContentViewer;
   if (contentViewer) {
@@ -9024,6 +9025,7 @@ nsDocShell::SetupNewViewer(nsIContentViewer* aNewViewer)
 
     if (shell) {
       bgcolor = shell->GetCanvasBackground();
+      isActive = shell->IsActive();
     }
 
     contentViewer->Close(mSavingOldViewer ? mOSHE.get() : nullptr);
@@ -9082,6 +9084,9 @@ nsDocShell::SetupNewViewer(nsIContentViewer* aNewViewer)
 
   if (shell) {
     shell->SetCanvasBackground(bgcolor);
+    if (isActive) {
+      shell->SetIsActive(isActive);
+    }
   }
 
   
