@@ -192,7 +192,7 @@ TelemetryIPCAccumulator::RecordChildScalarAction(uint32_t aId, bool aDynamic,
     DispatchIPCTimerFired();
   }
   
-  gChildScalarsActions->AppendElement(ScalarAction{aId, aDynamic, aAction, Some(aValue), Telemetry::ProcessID::Count});
+  gChildScalarsActions->AppendElement(ScalarAction{aId, aDynamic, aAction, Some(aValue)});
   ArmIPCTimer(locker);
 }
 
@@ -217,7 +217,7 @@ TelemetryIPCAccumulator::RecordChildKeyedScalarAction(uint32_t aId, bool aDynami
   }
   
   gChildKeyedScalarsActions->AppendElement(
-    KeyedScalarAction{aId, aDynamic, aAction, NS_ConvertUTF16toUTF8(aKey), Some(aValue), Telemetry::ProcessID::Count});
+    KeyedScalarAction{aId, aDynamic, aAction, NS_ConvertUTF16toUTF8(aKey), Some(aValue)});
   ArmIPCTimer(locker);
 }
 

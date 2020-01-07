@@ -446,9 +446,6 @@ PersistenceThreadLoadData()
         if (!fileContent.IsEmpty()) {
           MainThreadParsePersistedProbes(fileContent);
         }
-
-        TelemetryScalar::ApplyPendingOperations();
-
         
         MainThreadArmPersistenceTimer();
         
@@ -515,9 +512,6 @@ TelemetryGeckoViewPersistence::InitPersistence()
   }
 
   gPersistenceThread = thread.forget();
-
-  
-  TelemetryScalar::DeserializationStarted();
 
   
   
