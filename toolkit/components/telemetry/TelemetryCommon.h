@@ -119,6 +119,16 @@ IsValidIdentifierString(const nsACString& aStr, const size_t aMaxLength,
 JSString*
 ToJSString(JSContext* cx, const nsACString& aStr);
 
+
+
+
+
+
+
+
+JSString*
+ToJSString(JSContext* cx, const nsAString& aStr);
+
 } 
 } 
 } 
