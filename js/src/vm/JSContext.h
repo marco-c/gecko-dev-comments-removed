@@ -37,6 +37,10 @@ class JitContext;
 class DebugModeOSRVolatileJitFrameIter;
 } 
 
+namespace gc {
+class AutoSuppressNurseryCellAlloc;
+}
+
 typedef HashSet<Shape*> ShapeSet;
 
 
@@ -108,6 +112,9 @@ struct JSContext : public JS::RootingContext,
 
     
     js::ThreadLocalData<js::HelperThread*> helperThread_;
+
+    friend class js::gc::AutoSuppressNurseryCellAlloc;
+    js::ThreadLocalData<size_t> nurserySuppressions_;
 
     js::ThreadLocalData<JS::ContextOptions> options_;
 
@@ -226,6 +233,10 @@ struct JSContext : public JS::RootingContext,
 
     void setHelperThread(js::HelperThread* helperThread);
     js::HelperThread* helperThread() const { return helperThread_; }
+
+    bool isNurseryAllocSuppressed() const {
+        return nurserySuppressions_;
+    }
 
     
     JSCompartment* compartment() const {
