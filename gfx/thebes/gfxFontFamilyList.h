@@ -40,6 +40,7 @@ enum FontFamilyType : uint32_t {
   
   eFamily_moz_variable,
   eFamily_moz_fixed,
+  eFamily_moz_emoji,
 
   eFamily_generic_first = eFamily_serif,
   eFamily_generic_last = eFamily_fantasy,

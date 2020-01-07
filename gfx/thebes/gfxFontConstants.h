@@ -184,6 +184,7 @@ enum eFontPrefLang {
     #undef FONT_PREF_LANG
 
     , eFontPrefLang_CJKSet  
+    , eFontPrefLang_Emoji   
     , eFontPrefLang_First = eFontPrefLang_Western
     , eFontPrefLang_Last = eFontPrefLang_Others
     , eFontPrefLang_Count = (eFontPrefLang_Last - eFontPrefLang_First + 1)
