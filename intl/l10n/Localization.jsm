@@ -21,6 +21,7 @@
 
 
 
+const { XPCOMUtils } = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm", {});
 const { L10nRegistry } = ChromeUtils.import("resource://gre/modules/L10nRegistry.jsm", {});
 const LocaleService = Cc["@mozilla.org/intl/localeservice;1"].getService(Ci.mozILocaleService);
 const ObserverService = Cc["@mozilla.org/observer-service;1"].getService(Ci.nsIObserverService);
@@ -257,8 +258,8 @@ class Localization {
 
 
   registerObservers() {
-    ObserverService.addObserver(this, 'l10n:available-locales-changed', false);
-    ObserverService.addObserver(this, 'intl:requested-locales-changed', false);
+    ObserverService.addObserver(this, 'l10n:available-locales-changed', true);
+    ObserverService.addObserver(this, 'intl:requested-locales-changed', true);
   }
 
   
@@ -295,6 +296,10 @@ class Localization {
     this.ctxs = new CachedIterable(this.generateMessages(this.resourceIds));
   }
 }
+
+Localization.prototype.QueryInterface = XPCOMUtils.generateQI([
+  Ci.nsISupportsWeakReference
+]);
 
 
 
