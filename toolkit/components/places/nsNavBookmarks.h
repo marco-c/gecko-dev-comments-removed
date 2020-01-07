@@ -400,19 +400,6 @@ private:
                               int64_t* _itemId,
                               nsACString& _guid);
 
-  
-
-
-
-
-
-
-
-
-
-  nsresult GetBookmarkIdsForURITArray(nsIURI* aURI,
-                                      nsTArray<int64_t>& aResult);
-
   nsresult GetBookmarksForURI(nsIURI* aURI,
                               nsTArray<BookmarkData>& _bookmarks);
 
