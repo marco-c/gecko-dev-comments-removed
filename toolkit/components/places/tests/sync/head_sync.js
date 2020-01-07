@@ -2,6 +2,7 @@
 
 
 ChromeUtils.import("resource://gre/modules/Services.jsm");
+ChromeUtils.import("resource://gre/modules/CanonicalJSON.jsm");
 
 
 {
@@ -88,8 +89,8 @@ async function fetchLocalTree(rootGuid) {
 async function assertLocalTree(rootGuid, expected, message) {
   let actual = await fetchLocalTree(rootGuid);
   if (!ObjectUtils.deepEqual(actual, expected)) {
-    info(`Expected structure for ${rootGuid}: ${JSON.stringify(expected)}`);
-    info(`Actual structure for ${rootGuid}: ${JSON.stringify(actual)}`);
+    info(`Expected structure for ${rootGuid}: ${CanonicalJSON.stringify(expected)}`);
+    info(`Actual structure for ${rootGuid}:   ${CanonicalJSON.stringify(actual)}`);
     throw new Assert.constructor.AssertionError({ actual, expected, message });
   }
 }
