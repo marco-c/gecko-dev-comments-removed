@@ -5,6 +5,7 @@
 
 
 #include "nsSVGDataParser.h"
+#include "nsContentUtils.h"
 #include "SVGContentUtils.h"
 
 nsSVGDataParser::nsSVGDataParser(const nsAString& aValue)
@@ -31,7 +32,7 @@ bool
 nsSVGDataParser::SkipWsp()
 {
   while (mIter != mEnd) {
-    if (!IsSVGWhitespace(*mIter)) {
+    if (!nsContentUtils::IsHTMLWhitespace(*mIter)) {
       return true;
     }
     ++mIter;
