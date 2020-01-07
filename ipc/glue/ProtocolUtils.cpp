@@ -534,7 +534,7 @@ IProtocol::SetEventTargetForActor(IProtocol* aActor, nsIEventTarget* aEventTarge
 {
   
   aActor->SetManager(this);
-  SetEventTargetForActorInternal(aActor, aEventTarget);
+  mState->SetEventTargetForActor(aActor, aEventTarget);
 }
 
 void
@@ -543,37 +543,51 @@ IProtocol::ReplaceEventTargetForActor(IProtocol* aActor,
 {
   
   MOZ_ASSERT(aActor->Manager());
-  ReplaceEventTargetForActorInternal(aActor, aEventTarget);
-}
-
-void
-IProtocol::SetEventTargetForActorInternal(IProtocol* aActor,
-                                          nsIEventTarget* aEventTarget)
-{
-  Manager()->SetEventTargetForActorInternal(aActor, aEventTarget);
-}
-
-void
-IProtocol::ReplaceEventTargetForActorInternal(IProtocol* aActor,
-                                              nsIEventTarget* aEventTarget)
-{
-  Manager()->ReplaceEventTargetForActorInternal(aActor, aEventTarget);
+  mState->ReplaceEventTargetForActor(aActor, aEventTarget);
 }
 
 nsIEventTarget*
 IProtocol::GetActorEventTarget()
 {
-  
-  
-  MOZ_RELEASE_ASSERT(mId != kNullActorId && mId != kFreedActorId);
-  RefPtr<nsIEventTarget> target = Manager()->GetActorEventTargetInternal(this);
-  return target;
+  return mState->GetActorEventTarget();
 }
 
 already_AddRefed<nsIEventTarget>
-IProtocol::GetActorEventTargetInternal(IProtocol* aActor)
+IProtocol::GetActorEventTarget(IProtocol* aActor)
 {
-  return Manager()->GetActorEventTargetInternal(aActor);
+  return mState->GetActorEventTarget(aActor);
+}
+
+nsIEventTarget*
+IProtocol::ManagedState::GetActorEventTarget()
+{
+  
+  
+  MOZ_RELEASE_ASSERT(mProtocol->mId != kNullActorId && mProtocol->mId != kFreedActorId);
+  RefPtr<nsIEventTarget> target = GetActorEventTarget(mProtocol);
+  return target;
+}
+
+void
+IProtocol::ManagedState::SetEventTargetForActor(IProtocol* aActor,
+                                                        nsIEventTarget* aEventTarget)
+{
+  
+  
+  mProtocol->Manager()->mState->SetEventTargetForActor(aActor, aEventTarget);
+}
+
+void
+IProtocol::ManagedState::ReplaceEventTargetForActor(IProtocol* aActor,
+                                                            nsIEventTarget* aEventTarget)
+{
+  mProtocol->Manager()->ReplaceEventTargetForActor(aActor, aEventTarget);
+}
+
+already_AddRefed<nsIEventTarget>
+IProtocol::ManagedState::GetActorEventTarget(IProtocol* aActor)
+{
+  return mProtocol->Manager()->GetActorEventTarget(aActor);
 }
 
 IToplevelProtocol::IToplevelProtocol(ProtocolId aProtoId, Side aSide)
@@ -581,8 +595,7 @@ IToplevelProtocol::IToplevelProtocol(ProtocolId aProtoId, Side aSide)
    mMonitor("mozilla.ipc.IToplevelProtocol.mMonitor"),
    mProtocolId(aProtoId),
    mOtherPid(mozilla::ipc::kInvalidProcessId),
-   mOtherPidState(ProcessIdState::eUnstarted),
-   mEventTargetMutex("ProtocolEventTargetMutex")
+   mOtherPidState(ProcessIdState::eUnstarted)
 {
 }
 
@@ -742,6 +755,7 @@ IToplevelProtocol::ToplevelState::ToplevelState(IToplevelProtocol* aProtocol, Si
   : mProtocol(aProtocol)
   , mLastRouteId(aSide == ParentSide ? kFreedActorId : kNullActorId)
   , mLastShmemId(aSide == ParentSide ? kFreedActorId : kNullActorId)
+  , mEventTargetMutex("ProtocolEventTargetMutex")
 {
 }
 
@@ -862,7 +876,7 @@ IToplevelProtocol::ToplevelState::ShmemDestroyed(const Message& aMsg)
 }
 
 already_AddRefed<nsIEventTarget>
-IToplevelProtocol::GetMessageEventTarget(const Message& aMsg)
+IToplevelProtocol::ToplevelState::GetMessageEventTarget(const Message& aMsg)
 {
   int32_t route = aMsg.routing_id();
 
@@ -883,7 +897,7 @@ IToplevelProtocol::GetMessageEventTarget(const Message& aMsg)
     
     if (!target) {
       MutexAutoUnlock unlock(mEventTargetMutex);
-      target = GetConstructedEventTarget(aMsg);
+      target = mProtocol->GetConstructedEventTarget(aMsg);
     }
 
     mEventTargetMap.AddWithID(target, handle.mId);
@@ -891,14 +905,14 @@ IToplevelProtocol::GetMessageEventTarget(const Message& aMsg)
     
     lock.reset();
 
-    target = GetSpecificMessageEventTarget(aMsg);
+    target = mProtocol->GetSpecificMessageEventTarget(aMsg);
   }
 
   return target.forget();
 }
 
 already_AddRefed<nsIEventTarget>
-IToplevelProtocol::GetActorEventTargetInternal(IProtocol* aActor)
+IToplevelProtocol::ToplevelState::GetActorEventTarget(IProtocol* aActor)
 {
   MOZ_RELEASE_ASSERT(aActor->Id() != kNullActorId && aActor->Id() != kFreedActorId);
 
@@ -907,25 +921,19 @@ IToplevelProtocol::GetActorEventTargetInternal(IProtocol* aActor)
   return target.forget();
 }
 
-already_AddRefed<nsIEventTarget>
-IToplevelProtocol::GetActorEventTarget(IProtocol* aActor)
-{
-  return GetActorEventTargetInternal(aActor);
-}
-
 nsIEventTarget*
-IToplevelProtocol::GetActorEventTarget()
+IToplevelProtocol::ToplevelState::GetActorEventTarget()
 {
   
   return nullptr;
 }
 
 void
-IToplevelProtocol::SetEventTargetForActorInternal(IProtocol* aActor,
-                                                  nsIEventTarget* aEventTarget)
+IToplevelProtocol::ToplevelState::SetEventTargetForActor(IProtocol* aActor,
+                                                 nsIEventTarget* aEventTarget)
 {
   
-  MOZ_RELEASE_ASSERT(aActor != this);
+  MOZ_RELEASE_ASSERT(aActor != mProtocol);
 
   
   
@@ -952,12 +960,12 @@ IToplevelProtocol::SetEventTargetForActorInternal(IProtocol* aActor,
 }
 
 void
-IToplevelProtocol::ReplaceEventTargetForActorInternal(
+IToplevelProtocol::ToplevelState::ReplaceEventTargetForActor(
   IProtocol* aActor,
   nsIEventTarget* aEventTarget)
 {
   
-  MOZ_RELEASE_ASSERT(aActor != this);
+  MOZ_RELEASE_ASSERT(aActor != mProtocol);
 
   int32_t id = aActor->Id();
   
