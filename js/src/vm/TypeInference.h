@@ -451,9 +451,20 @@ class TypeSet
 
 
     inline unsigned getObjectCount() const;
+    inline bool hasGroup(unsigned i) const;
+    inline bool hasSingleton(unsigned i) const;
     inline ObjectKey* getObject(unsigned i) const;
     inline JSObject* getSingleton(unsigned i) const;
     inline ObjectGroup* getGroup(unsigned i) const;
+
+    
+
+
+
+
+
+
+
     inline JSObject* getSingletonNoBarrier(unsigned i) const;
     inline ObjectGroup* getGroupNoBarrier(unsigned i) const;
 

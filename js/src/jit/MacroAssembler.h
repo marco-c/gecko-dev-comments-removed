@@ -2617,6 +2617,18 @@ class MacroAssembler : public MacroAssemblerSpecific
     void alignJitStackBasedOnNArgs(uint32_t nargs);
 
     inline void assertStackAlignment(uint32_t alignment, int32_t offset = 0);
+
+    void performPendingReadBarriers();
+
+  private:
+    
+    
+    
+    JSObject* getSingletonAndDelayBarrier(const TypeSet* types, size_t i);
+    ObjectGroup* getGroupAndDelayBarrier(const TypeSet* types, size_t i);
+
+    Vector<JSObject*, 0, SystemAllocPolicy> pendingObjectReadBarriers_;
+    Vector<ObjectGroup*, 0, SystemAllocPolicy> pendingObjectGroupReadBarriers_;
 };
 
 
