@@ -148,16 +148,10 @@ public:
   virtual void AppendTextTo(nsAString& aResult) override;
   MOZ_MUST_USE
   virtual bool AppendTextTo(nsAString& aResult, const mozilla::fallible_t&) override;
-  virtual nsIContent* GetBindingParent() const override;
   virtual nsXBLBinding* DoGetXBLBinding() const override;
   virtual void SetXBLBinding(nsXBLBinding* aBinding,
                              nsBindingManager* aOldBindingManager = nullptr) override;
-  virtual ShadowRoot *GetContainingShadow() const override;
   virtual void SetShadowRoot(ShadowRoot* aBinding) override;
-  virtual mozilla::dom::HTMLSlotElement* GetAssignedSlot() const override;
-  virtual void SetAssignedSlot(mozilla::dom::HTMLSlotElement* aSlot) override;
-  virtual nsIContent *GetXBLInsertionPoint() const override;
-  virtual void SetXBLInsertionPoint(nsIContent* aContent) override;
   virtual bool IsLink(nsIURI** aURI) const override;
 
   virtual void DestroyContent() override;
@@ -246,12 +240,14 @@ public:
 
 
 
-  class nsExtendedDOMSlots
+  class nsExtendedDOMSlots final : public nsIContent::nsExtendedContentSlots
   {
   public:
     nsExtendedDOMSlots();
+    ~nsExtendedDOMSlots() final;
 
-    ~nsExtendedDOMSlots();
+    void Traverse(nsCycleCollectionTraversalCallback&) final;
+    void Unlink() final;
 
     
 
@@ -263,12 +259,6 @@ public:
 
 
     RefPtr<mozilla::DeclarationBlock> mSMILOverrideStyleDeclaration;
-
-    
-
-
-
-    nsIContent* mBindingParent;  
 
     
 
@@ -288,22 +278,7 @@ public:
     
 
 
-    RefPtr<ShadowRoot> mContainingShadow;
-
-    
-
-
-    RefPtr<mozilla::dom::HTMLSlotElement> mAssignedSlot;
-
-    
-
-
     RefPtr<nsXBLBinding> mXBLBinding;
-
-    
-
-
-    nsCOMPtr<nsIContent> mXBLInsertionPoint;
 
     
 
@@ -317,14 +292,14 @@ public:
 
   };
 
-  class nsDOMSlots : public nsINode::nsSlots
+  class nsDOMSlots final : public nsIContent::nsContentSlots
   {
   public:
     nsDOMSlots();
-    virtual ~nsDOMSlots();
+    ~nsDOMSlots() final;
 
-    void Traverse(nsCycleCollectionTraversalCallback &cb);
-    void Unlink();
+    void Traverse(nsCycleCollectionTraversalCallback&) final;
+    void Unlink() final;
 
     size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
@@ -356,8 +331,6 @@ public:
 
 
     RefPtr<nsDOMTokenList> mClassList;
-
-    mozilla::UniquePtr<nsExtendedDOMSlots> mExtendedSlots;
   };
 
 protected:
@@ -365,9 +338,17 @@ protected:
   void SetInnerHTMLInternal(const nsAString& aInnerHTML, ErrorResult& aError);
 
   
-  virtual nsINode::nsSlots* CreateSlots() override;
+  nsIContent::nsContentSlots* CreateSlots() override
+  {
+    return new nsDOMSlots();
+  }
 
-  nsDOMSlots *DOMSlots()
+  nsIContent::nsExtendedContentSlots* CreateExtendedSlots() final
+  {
+    return new nsExtendedDOMSlots();
+  }
+
+  nsDOMSlots* DOMSlots()
   {
     return static_cast<nsDOMSlots*>(Slots());
   }
@@ -379,22 +360,18 @@ protected:
 
   nsExtendedDOMSlots* ExtendedDOMSlots()
   {
-    nsDOMSlots* slots = DOMSlots();
-    if (!slots->mExtendedSlots) {
-      slots->mExtendedSlots = MakeUnique<nsExtendedDOMSlots>();
-    }
-
-    return slots->mExtendedSlots.get();
+    return static_cast<nsExtendedDOMSlots*>(ExtendedContentSlots());
   }
 
-  nsExtendedDOMSlots* GetExistingExtendedDOMSlots() const
+  const nsExtendedDOMSlots* GetExistingExtendedDOMSlots() const
   {
-    nsDOMSlots* slots = GetExistingDOMSlots();
-    if (slots) {
-      return slots->mExtendedSlots.get();
-    }
+    return static_cast<const nsExtendedDOMSlots*>(
+      GetExistingExtendedContentSlots());
+  }
 
-    return nullptr;
+  nsExtendedDOMSlots* GetExistingExtendedDOMSlots()
+  {
+    return static_cast<nsExtendedDOMSlots*>(GetExistingExtendedContentSlots());
   }
 
   

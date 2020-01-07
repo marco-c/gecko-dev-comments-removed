@@ -507,7 +507,11 @@ public:
 
 
 
-  virtual nsIContent* GetBindingParent() const = 0;
+  virtual nsIContent* GetBindingParent() const
+  {
+    const nsExtendedContentSlots* slots = GetExistingExtendedContentSlots();
+    return slots ? slots->mBindingParent : nullptr;
+  }
 
   
 
@@ -547,6 +551,8 @@ public:
 
 
 
+
+
   virtual void SetShadowRoot(mozilla::dom::ShadowRoot* aShadowRoot) = 0;
 
   
@@ -563,21 +569,29 @@ public:
 
 
 
-  virtual mozilla::dom::ShadowRoot *GetContainingShadow() const = 0;
+  mozilla::dom::ShadowRoot* GetContainingShadow() const
+  {
+    const nsExtendedContentSlots* slots = GetExistingExtendedContentSlots();
+    return slots ? slots->mContainingShadow.get() : nullptr;
+  }
 
   
 
 
 
 
-  virtual mozilla::dom::HTMLSlotElement* GetAssignedSlot() const = 0;
+  mozilla::dom::HTMLSlotElement* GetAssignedSlot() const
+  {
+    const nsExtendedContentSlots* slots = GetExistingExtendedContentSlots();
+    return slots ? slots->mAssignedSlot.get() : nullptr;
+  }
 
   
 
 
 
 
-  virtual void SetAssignedSlot(mozilla::dom::HTMLSlotElement* aSlot) = 0;
+  void SetAssignedSlot(mozilla::dom::HTMLSlotElement* aSlot);
 
   
 
@@ -600,14 +614,18 @@ public:
 
 
 
-  virtual nsIContent* GetXBLInsertionPoint() const = 0;
+  nsIContent* GetXBLInsertionPoint() const
+  {
+    const nsExtendedContentSlots* slots = GetExistingExtendedContentSlots();
+    return slots ? slots->mXBLInsertionPoint.get() : nullptr;
+  }
 
   
 
 
 
 
-  virtual void SetXBLInsertionPoint(nsIContent* aContent) = 0;
+  void SetXBLInsertionPoint(nsIContent* aContent);
 
   
 
@@ -849,6 +867,114 @@ public:
   }
 
 protected:
+  
+
+
+
+
+
+
+
+  class nsExtendedContentSlots
+  {
+  public:
+    nsExtendedContentSlots();
+    virtual ~nsExtendedContentSlots();
+
+    virtual void Traverse(nsCycleCollectionTraversalCallback&);
+    virtual void Unlink();
+
+    
+
+
+
+    nsIContent* mBindingParent;  
+
+    
+
+
+    nsCOMPtr<nsIContent> mXBLInsertionPoint;
+
+    
+
+
+    RefPtr<mozilla::dom::ShadowRoot> mContainingShadow;
+
+    
+
+
+    RefPtr<mozilla::dom::HTMLSlotElement> mAssignedSlot;
+  };
+
+  class nsContentSlots : public nsINode::nsSlots
+  {
+  public:
+    void Traverse(nsCycleCollectionTraversalCallback& aCb) override
+    {
+      nsINode::nsSlots::Traverse(aCb);
+      if (mExtendedSlots) {
+        mExtendedSlots->Traverse(aCb);
+      }
+    }
+
+    void Unlink() override
+    {
+      nsINode::nsSlots::Unlink();
+      if (mExtendedSlots) {
+        mExtendedSlots->Unlink();
+      }
+    }
+
+    mozilla::UniquePtr<nsExtendedContentSlots> mExtendedSlots;
+  };
+
+  
+  nsContentSlots* CreateSlots() override
+  {
+    return new nsContentSlots();
+  }
+
+  nsContentSlots* ContentSlots()
+  {
+    return static_cast<nsContentSlots*>(Slots());
+  }
+
+  const nsContentSlots* GetExistingContentSlots() const
+  {
+    return static_cast<nsContentSlots*>(GetExistingSlots());
+  }
+
+  nsContentSlots* GetExistingContentSlots()
+  {
+    return static_cast<nsContentSlots*>(GetExistingSlots());
+  }
+
+  virtual nsExtendedContentSlots* CreateExtendedSlots()
+  {
+    return new nsExtendedContentSlots();
+  }
+
+  const nsExtendedContentSlots* GetExistingExtendedContentSlots() const
+  {
+    const nsContentSlots* slots = GetExistingContentSlots();
+    return slots ? slots->mExtendedSlots.get() : nullptr;
+  }
+
+  nsExtendedContentSlots* GetExistingExtendedContentSlots()
+  {
+    nsContentSlots* slots = GetExistingContentSlots();
+    return slots ? slots->mExtendedSlots.get() : nullptr;
+  }
+
+  nsExtendedContentSlots* ExtendedContentSlots()
+  {
+    nsContentSlots* slots = ContentSlots();
+    if (!slots->mExtendedSlots) {
+      slots->mExtendedSlots.reset(CreateExtendedSlots());
+    }
+    return slots->mExtendedSlots.get();
+  }
+
   
 
 

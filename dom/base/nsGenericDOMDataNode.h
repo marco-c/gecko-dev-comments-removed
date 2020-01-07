@@ -158,16 +158,10 @@ public:
   virtual void DumpContent(FILE* out, int32_t aIndent, bool aDumpAll) const override;
 #endif
 
-  virtual nsIContent* GetBindingParent() const override;
   virtual nsXBLBinding* DoGetXBLBinding() const override;
   virtual void SetXBLBinding(nsXBLBinding* aBinding,
                              nsBindingManager* aOldBindingManager = nullptr) override;
-  virtual mozilla::dom::ShadowRoot *GetContainingShadow() const override;
   virtual void SetShadowRoot(mozilla::dom::ShadowRoot* aShadowRoot) override;
-  virtual mozilla::dom::HTMLSlotElement* GetAssignedSlot() const override;
-  virtual void SetAssignedSlot(mozilla::dom::HTMLSlotElement* aSlot) override;
-  virtual nsIContent *GetXBLInsertionPoint() const override;
-  virtual void SetXBLInsertionPoint(nsIContent* aContent) override;
   virtual bool IsNodeOfType(uint32_t aFlags) const override;
   virtual bool IsLink(nsIURI** aURI) const override;
 
@@ -236,57 +230,6 @@ protected:
     nsINode *parent = GetParentNode();
 
     return parent && parent->IsElement() ? parent->AsElement() : nullptr;
-  }
-
-  
-
-
-
-
-
-
-
-  class nsDataSlots : public nsINode::nsSlots
-  {
-  public:
-    nsDataSlots();
-
-    void Traverse(nsCycleCollectionTraversalCallback &cb);
-    void Unlink();
-
-    
-
-
-
-    nsIContent* mBindingParent;  
-
-    
-
-
-    nsCOMPtr<nsIContent> mXBLInsertionPoint;
-
-    
-
-
-    RefPtr<mozilla::dom::ShadowRoot> mContainingShadow;
-
-    
-
-
-    RefPtr<mozilla::dom::HTMLSlotElement> mAssignedSlot;
-  };
-
-  
-  virtual nsINode::nsSlots* CreateSlots() override;
-
-  nsDataSlots* DataSlots()
-  {
-    return static_cast<nsDataSlots*>(Slots());
-  }
-
-  nsDataSlots *GetExistingDataSlots() const
-  {
-    return static_cast<nsDataSlots*>(GetExistingSlots());
   }
 
   nsresult SplitText(uint32_t aOffset, nsIDOMText** aReturn);
