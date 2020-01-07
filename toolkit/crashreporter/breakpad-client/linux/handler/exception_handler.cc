@@ -106,7 +106,7 @@
 #endif
 
 
-static int tgkill(pid_t tgid, pid_t tid, int sig) {
+static int _tgkill(pid_t tgid, pid_t tid, int sig) {
   return syscall(__NR_tgkill, tgid, tid, sig);
   return 0;
 }
@@ -387,7 +387,7 @@ void ExceptionHandler::SignalHandler(int sig, siginfo_t* info, void* uc) {
     
     
     
-    if (tgkill(getpid(), syscall(__NR_gettid), sig) < 0) {
+    if (_tgkill(getpid(), syscall(__NR_gettid), sig) < 0) {
       
       
       
