@@ -688,6 +688,15 @@ nsScriptSecurityManager::CheckLoadURIWithPrincipal(nsIPrincipal* aPrincipal,
         
         return NS_OK;
     }
+    else if (sourceScheme.EqualsIgnoreCase("file") &&
+             targetScheme.EqualsIgnoreCase("moz-icon"))
+    {
+        
+        
+        
+        
+        return NS_OK;
+    }
 
     
     rv = NS_URIChainHasFlags(aTargetURI,
@@ -837,12 +846,6 @@ nsScriptSecurityManager::CheckLoadURIFlags(nsIURI *aSourceURI,
     NS_ENSURE_SUCCESS(rv, rv);
     if (hasFlags) {
         if (aFlags & nsIScriptSecurityManager::ALLOW_CHROME) {
-            
-            if (!targetScheme.EqualsLiteral("chrome")
-                    && !targetScheme.EqualsLiteral("resource")) {
-                return NS_OK;
-            }
-
             
             
             
