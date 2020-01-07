@@ -114,6 +114,7 @@ public:
 
     
 
+    MOZ_CAN_RUN_SCRIPT
     static bool DispatchMouseEvent(const nsCOMPtr<nsIPresShell>& aPresShell,
                                    const nsString& aType,
                                    const CSSPoint& aPoint,

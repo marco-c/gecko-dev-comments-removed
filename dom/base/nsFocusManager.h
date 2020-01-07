@@ -274,6 +274,8 @@ protected:
 
 
 
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   bool Blur(nsPIDOMWindowOuter* aWindowToClear,
             nsPIDOMWindowOuter* aAncestorWindowToFocus,
             bool aIsLeavingDocument,

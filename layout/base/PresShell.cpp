@@ -8,7 +8,6 @@
 
 #include "mozilla/PresShell.h"
 
-#include "mozilla/dom/FontFaceSet.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/StyleSheetInlines.h"
@@ -95,9 +94,6 @@
 #include "nsDisplayList.h"
 #include "nsRegion.h"
 #include "nsAutoLayoutPhase.h"
-#ifdef MOZ_GECKO_PROFILER
-#include "AutoProfilerStyleMarker.h"
-#endif
 #ifdef MOZ_REFLOW_PERF
 #include "nsFontMetrics.h"
 #endif
@@ -4060,13 +4056,6 @@ nsIPresShell::IsSafeToFlush() const
   return true;
 }
 
-void
-nsIPresShell::NotifyFontFaceSetOnRefresh()
-{
-  if (FontFaceSet* set = mDocument->GetFonts()) {
-    set->DidRefresh();
-  }
-}
 
 void
 PresShell::DoFlushPendingNotifications(FlushType aType)
@@ -4199,7 +4188,9 @@ PresShell::DoFlushPendingNotifications(mozilla::ChangesToFlush aFlush)
       if (!mIsDestroying) {
         nsAutoScriptBlocker scriptBlocker;
 #ifdef MOZ_GECKO_PROFILER
-        AutoProfilerStyleMarker tracingStyleFlush(Move(mStyleCause));
+        AutoProfilerTracing tracingStyleFlush("Paint", "Styles",
+                                              Move(mStyleCause));
+        mStyleCause = nullptr;
 #endif
 
         mPresContext->RestyleManager()->ProcessPendingRestyles();
@@ -4223,7 +4214,9 @@ PresShell::DoFlushPendingNotifications(mozilla::ChangesToFlush aFlush)
     if (!mIsDestroying) {
       nsAutoScriptBlocker scriptBlocker;
 #ifdef MOZ_GECKO_PROFILER
-      AutoProfilerStyleMarker tracingStyleFlush(Move(mStyleCause));
+      AutoProfilerTracing tracingStyleFlush("Paint", "Styles",
+                                            Move(mStyleCause));
+      mStyleCause = nullptr;
 #endif
 
       mPresContext->RestyleManager()->ProcessPendingRestyles();
@@ -7001,22 +6994,21 @@ PresShell::HandleEvent(nsIFrame* aFrame,
     }
 
     
-    nsIContent* pointerCapturingContent =
+    nsCOMPtr<nsIContent> pointerCapturingContent =
       PointerEventHandler::GetPointerCapturingContent(aEvent);
 
     if (pointerCapturingContent) {
-      nsIFrame* pointerCapturingFrame =
-        pointerCapturingContent->GetPrimaryFrame();
+      frame = pointerCapturingContent->GetPrimaryFrame();
 
-      if (!pointerCapturingFrame) {
+      if (!frame) {
         
         
         PointerEventHandler::DispatchPointerFromMouseOrTouch(
-          this, nullptr, pointerCapturingContent, aEvent, false, aEventStatus,
-          nullptr);
+          this, nullptr, pointerCapturingContent, aEvent, false,
+          aEventStatus, nullptr);
 
-        PresShell* shell = GetShellForEventTarget(nullptr,
-                                                  pointerCapturingContent);
+        RefPtr<PresShell> shell =
+          GetShellForEventTarget(nullptr, pointerCapturingContent);
 
         if (!shell) {
           
@@ -7026,8 +7018,6 @@ PresShell::HandleEvent(nsIFrame* aFrame,
         return shell->HandleEventWithTarget(aEvent, nullptr,
                                             pointerCapturingContent,
                                             aEventStatus, true);
-      } else {
-        frame = pointerCapturingFrame;
       }
     }
 
@@ -7102,7 +7092,7 @@ PresShell::HandleEvent(nsIFrame* aFrame,
       return NS_OK;
     }
 
-    PresShell* shell = static_cast<PresShell*>(frame->PresShell());
+    RefPtr<PresShell> shell = static_cast<PresShell*>(frame->PresShell());
     
     
     
@@ -7205,7 +7195,7 @@ PresShell::HandleEvent(nsIFrame* aFrame,
                 touchEvent)) {
           frame = newFrame;
           frame->GetContentForEvent(aEvent, getter_AddRefs(targetElement));
-          shell = static_cast<PresShell*>(frame->PresContext()->PresShell());
+          shell = static_cast<PresShell*>(frame->PresShell());
         }
       } else if (PresShell* newShell = GetShellForTouchEvent(aEvent)) {
         
@@ -7214,8 +7204,6 @@ PresShell::HandleEvent(nsIFrame* aFrame,
       }
     }
 
-    
-    nsCOMPtr<nsIPresShell> kungFuDeathGrip(shell);
     nsresult rv;
 
     
@@ -8622,7 +8610,7 @@ PresShell::WillDoReflow()
 
   mPresContext->FlushFontFeatureValues();
 
-  mLastReflowStart = GetPerformanceNowUnclamped();
+  mLastReflowStart = GetPerformanceNow();
 }
 
 void
@@ -8632,7 +8620,7 @@ PresShell::DidDoReflow(bool aInterruptible)
 
   nsCOMPtr<nsIDocShell> docShell = mPresContext->GetDocShell();
   if (docShell) {
-    DOMHighResTimeStamp now = GetPerformanceNowUnclamped();
+    DOMHighResTimeStamp now = GetPerformanceNow();
     docShell->NotifyReflowObservers(aInterruptible, mLastReflowStart, now);
   }
 
@@ -8644,7 +8632,7 @@ PresShell::DidDoReflow(bool aInterruptible)
 }
 
 DOMHighResTimeStamp
-PresShell::GetPerformanceNowUnclamped()
+PresShell::GetPerformanceNow()
 {
   DOMHighResTimeStamp now = 0;
 
@@ -8652,7 +8640,7 @@ PresShell::GetPerformanceNowUnclamped()
     Performance* perf = window->GetPerformance();
 
     if (perf) {
-      now = perf->NowUnclamped();
+      now = perf->Now();
     }
   }
 

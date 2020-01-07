@@ -2886,6 +2886,7 @@ public:
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   static nsresult SendMouseEvent(const nsCOMPtr<nsIPresShell>& aPresShell,
                                  const nsAString& aType,
                                  float aX,
