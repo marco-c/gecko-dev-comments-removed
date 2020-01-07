@@ -3674,23 +3674,6 @@ js::detail::CopyScript(JSContext* cx, HandleScript src, HandleScript dst,
             Rebase<uint32_t>(dst, src, src->yieldAndAwaitOffsets().vector_);
     }
 
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    MOZ_ASSERT_IF(dst->hasNonSyntacticScope(), !dst->maybeLazyScript());
-    MOZ_ASSERT_IF(dst->hasNonSyntacticScope(), !dst->isRelazifiable());
     return true;
 }
 

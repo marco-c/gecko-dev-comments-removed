@@ -2039,9 +2039,9 @@ js::CanReuseScriptForClone(JSCompartment* compartment, HandleFunction fun,
 
     
     
-    
-    
-    return fun->hasScript() && fun->nonLazyScript()->hasNonSyntacticScope();
+    return fun->hasScript()
+        ? fun->nonLazyScript()->hasNonSyntacticScope()
+        : fun->lazyScript()->enclosingScope()->hasOnChain(ScopeKind::NonSyntactic);
 }
 
 static inline JSFunction*
