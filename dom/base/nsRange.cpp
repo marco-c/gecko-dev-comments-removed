@@ -298,7 +298,6 @@ nsRange::nsRange(nsINode* aNode)
   , mNextStartRef(nullptr)
   , mNextEndRef(nullptr)
   , mIsPositioned(false)
-  , mMaySpanAnonymousSubtrees(false)
   , mIsGenerated(false)
   , mCalledByJS(false)
 {
@@ -1147,7 +1146,7 @@ nsRange::IsValidOffset(nsINode* aNode, uint32_t aOffset)
 
 
 nsINode*
-nsRange::ComputeRootNode(nsINode* aNode, bool aMaySpanAnonymousSubtrees)
+nsRange::ComputeRootNode(nsINode* aNode)
 {
   if (!aNode) {
     return nullptr;
@@ -1159,36 +1158,30 @@ nsRange::ComputeRootNode(nsINode* aNode, bool aMaySpanAnonymousSubtrees)
     }
 
     nsIContent* content = aNode->AsContent();
-    if (!aMaySpanAnonymousSubtrees) {
-      
-      ShadowRoot* containingShadow = content->GetContainingShadow();
-      if (containingShadow) {
-        return containingShadow;
-      }
 
-      
-      
-      nsINode* root = content->GetBindingParent();
-      if (root) {
-        return root;
-      }
+    
+    if (ShadowRoot* containingShadow = content->GetContainingShadow()) {
+      return containingShadow;
+    }
+
+    
+    
+    if (nsINode* root = content->GetBindingParent()) {
+      return root;
     }
   }
 
   
   
-  nsINode* root = aNode->GetUncomposedDoc();
-  if (root) {
+  if (nsINode* root = aNode->GetUncomposedDoc()) {
     return root;
   }
 
-  root = aNode->SubtreeRoot();
-
-  NS_ASSERTION(!root->IsDocument(),
+  NS_ASSERTION(!aNode->SubtreeRoot()->IsDocument(),
                "GetUncomposedDoc should have returned a doc");
 
   
-  return root;
+  return aNode->SubtreeRoot();
 }
 
 
@@ -1380,7 +1373,7 @@ nsRange::SelectNodesInContainer(nsINode* aContainer,
   MOZ_ASSERT(aStartContent && aContainer->ComputeIndexOf(aStartContent) != -1);
   MOZ_ASSERT(aEndContent && aContainer->ComputeIndexOf(aEndContent) != -1);
 
-  nsINode* newRoot = ComputeRootNode(aContainer, mMaySpanAnonymousSubtrees);
+  nsINode* newRoot = ComputeRootNode(aContainer);
   MOZ_ASSERT(newRoot);
   if (!newRoot) {
     return;
@@ -2582,8 +2575,6 @@ already_AddRefed<nsRange>
 nsRange::CloneRange() const
 {
   RefPtr<nsRange> range = new nsRange(mOwner);
-
-  range->SetMaySpanAnonymousSubtrees(mMaySpanAnonymousSubtrees);
 
   range->DoSetRange(mStart.AsRaw(), mEnd.AsRaw(), mRoot);
 
