@@ -273,24 +273,6 @@ function waitForAsyncUpdates(aCallback, aScope, aArguments) {
   commit.finalize();
 }
 
-
-
-
-
-
-
-
-
-
-function promiseIsURIVisited(aURI, aExpectedValue) {
-  return new Promise(resolve => {
-    PlacesUtils.asyncHistory.isURIVisited(aURI, function(unused, aIsVisited) {
-      resolve(aIsVisited);
-    });
-
-  });
-}
-
 function whenNewTabLoaded(aWindow, aCallback) {
   aWindow.BrowserOpenTab();
 
@@ -337,7 +319,6 @@ function promiseHistoryClearedState(aURIs, aShouldBeCleared) {
         callbackDone();
       });
     });
-
   });
 }
 

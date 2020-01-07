@@ -190,27 +190,6 @@ function promiseWaitForVisit(aUrl) {
 
 
 
-function promiseIsURIVisited(aUrl) {
-  return new Promise(resolve => {
-
-    PlacesUtils.asyncHistory.isURIVisited(NetUtil.newURI(aUrl),
-      function(aURI, aIsVisited) {
-        resolve(aIsVisited);
-      });
-
-  });
-}
-
-
-
-
-
-
-
-
-
-
-
 
 function promiseNewDownload(aSourceUrl) {
   return Downloads.createDownload({

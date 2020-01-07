@@ -13,10 +13,10 @@ XPCOMUtils.defineLazyModuleGetter(this, "PlacesUtils",
 XPCOMUtils.defineLazyModuleGetter(this, "NetUtil",
                                   "resource://gre/modules/NetUtil.jsm");
 
-XPCOMUtils.defineLazyGetter(this, "asyncHistory", function() {
+XPCOMUtils.defineLazyGetter(this, "history", function() {
   
   PlacesUtils.history.addObserver(PlacesUtils.livemarks, true);
-  return PlacesUtils.asyncHistory;
+  return PlacesUtils.history;
 });
 
 
@@ -601,8 +601,8 @@ Livemark.prototype = {
 
     
     for (let child of this._children) {
-      asyncHistory.isURIVisited(child.uri, (aURI, aIsVisited) => {
-        this.updateURIVisitedStatus(aURI, aIsVisited);
+      history.hasVisits(child.uri, isVisited => {
+        this.updateURIVisitedStatus(child.uri, isVisited);
       });
     }
 
