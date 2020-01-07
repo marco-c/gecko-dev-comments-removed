@@ -39,7 +39,7 @@
 static PKIX_Error *
 pkix_pl_InfoAccess_Create(
         PKIX_UInt32 method,
-        PKIX_PL_GeneralName *generalName,
+        PKIX_PL_GeneralName *gName,
         PKIX_PL_InfoAccess **pInfoAccess,
         void *plContext)
 {
@@ -47,7 +47,7 @@ pkix_pl_InfoAccess_Create(
         PKIX_PL_InfoAccess *infoAccess = NULL;
 
         PKIX_ENTER(INFOACCESS, "pkix_pl_InfoAccess_Create");
-        PKIX_NULLCHECK_TWO(generalName, pInfoAccess);
+        PKIX_NULLCHECK_TWO(gName, pInfoAccess);
 
         PKIX_CHECK(PKIX_PL_Object_Alloc
                 (PKIX_INFOACCESS_TYPE,
@@ -58,8 +58,8 @@ pkix_pl_InfoAccess_Create(
 
         infoAccess->method = method;
 
-        PKIX_INCREF(generalName);
-        infoAccess->location = generalName;
+        PKIX_INCREF(gName);
+        infoAccess->location = gName;
 
         *pInfoAccess = infoAccess;
         infoAccess = NULL;
@@ -700,7 +700,7 @@ pkix_pl_UnescapeURL(
 
 PKIX_Error *
 pkix_pl_InfoAccess_ParseLocation(
-        PKIX_PL_GeneralName *generalName,
+        PKIX_PL_GeneralName *gName,
         PLArenaPool *arena,
         LDAPRequestParams *request,
         char **pDomainName,
@@ -722,9 +722,9 @@ pkix_pl_InfoAccess_ParseLocation(
         LDAPNameComponent *nameComponent = NULL;
 
         PKIX_ENTER(INFOACCESS, "pkix_pl_InfoAccess_ParseLocation");
-        PKIX_NULLCHECK_FOUR(generalName, arena, request, pDomainName);
+        PKIX_NULLCHECK_FOUR(gName, arena, request, pDomainName);
 
-        PKIX_TOSTRING(generalName, &locationString, plContext,
+        PKIX_TOSTRING(gName, &locationString, plContext,
                 PKIX_GENERALNAMETOSTRINGFAILED);
 
         PKIX_CHECK(PKIX_PL_String_GetEncoded

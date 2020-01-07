@@ -375,14 +375,14 @@ void reason(char *fmt, ...);
 char g_intbuf[4096]; 
 char a_intbuf[4096]; 
 int g_verbose = 1;   
-int res;
 
-#define IFOK(x)                                            \
-    {                                                      \
-        if (MP_OKAY > (res = (x))) {                       \
-            reason("test %s failed: error %d\n", #x, res); \
-            return 1;                                      \
-        }                                                  \
+#define IFOK(x)                                                 \
+    {                                                           \
+        int ifok_res = (x);                                     \
+        if (MP_OKAY > ifok_res) {                               \
+            reason("test %s failed: error %d\n", #x, ifok_res); \
+            return 1;                                           \
+        }                                                       \
     }
 
 int
