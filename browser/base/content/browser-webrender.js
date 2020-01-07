@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+var gWebRender = {
+  
+
+
+  capture() {
+    window.QueryInterface(Ci.nsIInterfaceRequestor)
+          .getInterface(Ci.nsIDOMWindowUtils)
+          .wrCapture();
+  }
+};
