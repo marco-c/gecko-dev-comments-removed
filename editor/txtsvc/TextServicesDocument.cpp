@@ -21,7 +21,6 @@
 #include "nsID.h"                       
 #include "nsIDOMDocument.h"             
 #include "nsIDOMElement.h"              
-#include "nsIDOMHTMLElement.h"          
 #include "nsIDOMNode.h"                 
 #include "nsIEditor.h"                  
 #include "nsINode.h"                    

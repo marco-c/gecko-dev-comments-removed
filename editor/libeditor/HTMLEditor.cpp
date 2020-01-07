@@ -365,21 +365,16 @@ HTMLEditor::UpdateRootElement()
   
   
 
-  nsCOMPtr<nsIDOMElement> rootElement;
-  nsCOMPtr<nsIDOMHTMLElement> bodyElement;
-  GetBodyElement(getter_AddRefs(bodyElement));
-  if (bodyElement) {
-    rootElement = bodyElement;
-  } else {
-    
-    
-    nsCOMPtr<nsIDOMDocument> domDocument = GetDOMDocument();
-    if (domDocument) {
-      domDocument->GetDocumentElement(getter_AddRefs(rootElement));
+  mRootElement = GetBodyElement();
+  if (!mRootElement) {
+    nsCOMPtr<nsIDocument> doc = GetDocument();
+    if (doc) {
+      
+      
+      mRootElement = doc->GetDocumentElement();
     }
+    
   }
-
-  mRootElement = do_QueryInterface(rootElement);
 }
 
 already_AddRefed<nsIContent>
@@ -4663,9 +4658,7 @@ HTMLEditor::ShouldReplaceRootElement()
 
   
   
-  nsCOMPtr<nsIDOMHTMLElement> docBody;
-  GetBodyElement(getter_AddRefs(docBody));
-  return !SameCOMIdentity(docBody, mRootElement);
+  return mRootElement != GetBodyElement();
 }
 
 void
@@ -4700,18 +4693,15 @@ HTMLEditor::NotifyRootChanged()
   SyncRealTimeSpell();
 }
 
-nsresult
-HTMLEditor::GetBodyElement(nsIDOMHTMLElement** aBody)
+Element*
+HTMLEditor::GetBodyElement()
 {
   MOZ_ASSERT(IsInitialized(), "The HTMLEditor hasn't been initialized yet");
   nsCOMPtr<nsIDocument> document = GetDocument();
   if (NS_WARN_IF(!document)) {
-    return NS_ERROR_NOT_INITIALIZED;
+    return nullptr;
   }
-  nsCOMPtr<nsIDOMHTMLElement> body =
-    do_QueryInterface(ToSupports(document->GetBody()));
-  body.forget(aBody);
-  return NS_OK;
+  return document->GetBody();
 }
 
 already_AddRefed<nsINode>
