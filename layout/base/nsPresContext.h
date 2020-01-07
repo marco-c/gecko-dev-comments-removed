@@ -472,7 +472,7 @@ public:
     if (!r.IsEqualEdges(mVisibleArea)) {
       mVisibleArea = r;
       
-      if (!IsPaginated()) {
+      if (!IsPaginated() && HasCachedStyleData()) {
         MediaFeatureValuesChanged({
           mozilla::MediaFeatureChangeReason::ViewportChange
         });
@@ -619,19 +619,19 @@ public:
 
 
   void SetBaseMinFontSize(int32_t aMinFontSize) {
-    if (aMinFontSize == mBaseMinFontSize) {
+    if (aMinFontSize == mBaseMinFontSize)
       return;
-    }
 
     mBaseMinFontSize = aMinFontSize;
-
-    
-    
-    MediaFeatureValuesChanged({
-      eRestyle_ForceDescendants,
-      NS_STYLE_HINT_REFLOW,
-      mozilla::MediaFeatureChangeReason::MinFontSizeChange
-    });
+    if (HasCachedStyleData()) {
+      
+      
+      MediaFeatureValuesChanged({
+        eRestyle_ForceDescendants,
+        NS_STYLE_HINT_REFLOW,
+        mozilla::MediaFeatureChangeReason::MinFontSizeChange
+      });
+    }
   }
 
   float GetFullZoom() { return mFullZoom; }
@@ -1281,6 +1281,9 @@ protected:
   void AppUnitsPerDevPixelChanged();
 
   bool HavePendingInputEvent();
+
+  
+  bool HasCachedStyleData();
 
   
   
