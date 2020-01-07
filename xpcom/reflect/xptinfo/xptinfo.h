@@ -205,32 +205,4 @@ private:
 
 };
 
-
-
-struct nsXPTCMiniVariant;
-
-class nsXPTConstant : public XPTConstDescriptor
-{
-
-public:
-    MOZ_IMPLICIT nsXPTConstant(const XPTConstDescriptor& desc)
-        {*(XPTConstDescriptor*)this = desc;}
-
-    const char* GetName() const
-        {return name;}
-
-    const nsXPTType GetType() const
-        {return type.prefix;}
-
-    
-    
-    
-    
-    const nsXPTCMiniVariant* GetValue() const
-        {return (nsXPTCMiniVariant*) &value;}
-private:
-    nsXPTConstant();    
-
-};
-
 #endif 
