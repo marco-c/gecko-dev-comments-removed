@@ -11,12 +11,7 @@ from __future__ import absolute_import, unicode_literals, print_function
 
 
 
-
-
-
-
 INCLUSIVE_COMPONENTS = [
-    'docs',
     'py-lint',
     'js-lint',
     'yaml-lint',
@@ -27,10 +22,6 @@ INCLUSIVE_COMPONENTS = [
     'jsreftest',
 ]
 INCLUSIVE_COMPONENTS = sorted(INCLUSIVE_COMPONENTS)
-
-
-
-
 
 EXCLUSIVE_COMPONENTS = [
     
