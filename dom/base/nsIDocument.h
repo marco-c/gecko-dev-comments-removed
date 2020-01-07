@@ -2967,6 +2967,33 @@ public:
     mResponsiveContent.RemoveEntry(aContent);
   }
 
+  void AddComposedDocShadowRoot(mozilla::dom::ShadowRoot& aShadowRoot)
+  {
+    MOZ_ASSERT(IsShadowDOMEnabled());
+    mComposedShadowRoots.PutEntry(&aShadowRoot);
+  }
+
+  using ShadowRootSet = nsTHashtable<nsPtrHashKey<mozilla::dom::ShadowRoot>>;
+
+  void RemoveComposedDocShadowRoot(mozilla::dom::ShadowRoot& aShadowRoot)
+  {
+    MOZ_ASSERT(IsShadowDOMEnabled());
+    mComposedShadowRoots.RemoveEntry(&aShadowRoot);
+  }
+
+  
+  
+  
+  bool IsComposedDocShadowRoot(mozilla::dom::ShadowRoot& aShadowRoot)
+  {
+    return mComposedShadowRoots.Contains(&aShadowRoot);
+  }
+
+  const ShadowRootSet& ComposedShadowRoots() const
+  {
+    return mComposedShadowRoots;
+  }
+
   
   
   void NotifyMediaFeatureValuesChanged();
@@ -3757,6 +3784,11 @@ protected:
 
   
   RefPtr<mozilla::dom::ImageTracker> mImageTracker;
+
+  
+  
+  
+  ShadowRootSet mComposedShadowRoots;
 
   
   
