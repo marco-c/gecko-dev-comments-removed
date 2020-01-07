@@ -366,8 +366,6 @@ public:
 
   virtual void ApplySettingsFromCSP(bool aSpeculative) override;
 
-  virtual already_AddRefed<nsIParser> CreatorParserOrNull() override;
-
   
 
 
@@ -490,16 +488,12 @@ public:
   virtual void AddToNameTable(Element* aElement, nsAtom* aName) override;
   virtual void RemoveFromNameTable(Element* aElement, nsAtom* aName) override;
 
-  
-  
-  virtual void BeginUpdate(nsUpdateType aUpdateType) override;
   virtual void EndUpdate(nsUpdateType aUpdateType) override;
   virtual void BeginLoad() override;
   virtual void EndLoad() override;
 
   virtual void SetReadyStateInternal(ReadyState rs) override;
 
-  void FlushPendingNotifications(mozilla::FlushType aType) final;
   virtual void FlushExternalResources(mozilla::FlushType aType) override;
   virtual void SetXMLDeclaration(const char16_t *aVersion,
                                  const char16_t *aEncoding,
@@ -924,20 +918,6 @@ public:
 
 protected:
   friend class nsNodeUtils;
-  friend class nsDocumentOnStack;
-
-  void IncreaseStackRefCnt()
-  {
-    ++mStackRefCnt;
-  }
-
-  void DecreaseStackRefCnt()
-  {
-    if (--mStackRefCnt == 0 && mNeedsReleaseAfterStackRefCntRelease) {
-      mNeedsReleaseAfterStackRefCntRelease = false;
-      NS_RELEASE_THIS();
-    }
-  }
 
   
 
@@ -1003,9 +983,6 @@ protected:
   void ResetStylesheetsToURI(nsIURI* aURI);
   void FillStyleSet(mozilla::StyleSetHandle aStyleSet);
 
-  
-  bool IsSafeToFlush() const;
-
   void DispatchPageTransition(mozilla::dom::EventTarget* aDispatchTarget,
                               const nsAString& aType,
                               bool aPersisted);
@@ -1058,15 +1035,6 @@ protected:
   
   nsAttrAndChildArray mChildren;
 
-  
-  
-  nsCOMPtr<nsIParser> mParser;
-
-  
-  
-  
-  nsWeakPtr mWeakSink;
-
   nsTArray<RefPtr<mozilla::StyleSheet>> mOnDemandBuiltInUASheets;
   nsTArray<RefPtr<mozilla::StyleSheet>> mAdditionalSheets[AdditionalSheetTypeCount];
 
@@ -1110,9 +1078,6 @@ public:
   mozilla::TimeStamp mLoadingTimeStamp;
 
   
-  bool mIsGoingAway:1;
-
-  
   
   bool mMayHaveTitleElement:1;
 
@@ -1121,8 +1086,6 @@ public:
   bool mDelayFrameLoaderInitialization:1;
 
   bool mSynchronousDOMContentLoaded:1;
-
-  bool mInXBLUpdate:1;
 
   
   
@@ -1162,9 +1125,6 @@ public:
   
   
   nsCOMPtr<nsIDocument> mTemplateContentsOwner;
-
-  
-  uint32_t mUpdateNestLevel;
 
   
   
@@ -1289,9 +1249,6 @@ private:
   bool mAutoSize, mAllowZoom, mAllowDoubleTapZoom, mValidScaleFloat, mValidMaxScale, mScaleStrEmpty, mWidthStrEmpty;
   mozilla::CSSSize mViewportSize;
 
-  nsrefcnt mStackRefCnt;
-  bool mNeedsReleaseAfterStackRefCntRelease;
-
   
   
   bool mMaybeServiceWorkerControlled;
@@ -1317,7 +1274,7 @@ private:
 class nsDocumentOnStack
 {
 public:
-  explicit nsDocumentOnStack(nsDocument* aDoc) : mDoc(aDoc)
+  explicit nsDocumentOnStack(nsIDocument* aDoc) : mDoc(aDoc)
   {
     mDoc->IncreaseStackRefCnt();
   }
@@ -1326,7 +1283,7 @@ public:
     mDoc->DecreaseStackRefCnt();
   }
 private:
-  nsDocument* mDoc;
+  nsIDocument* mDoc;
 };
 
 #endif 

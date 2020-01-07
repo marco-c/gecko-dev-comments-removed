@@ -210,6 +210,7 @@ enum DocumentFlavor {
 
 
 class nsContentList;
+class nsDocumentOnStack;
 
 
 
@@ -373,7 +374,11 @@ public:
 
   virtual void ApplySettingsFromCSP(bool aSpeculative) = 0;
 
-  virtual already_AddRefed<nsIParser> CreatorParserOrNull() = 0;
+  already_AddRefed<nsIParser> CreatorParserOrNull()
+  {
+    nsCOMPtr<nsIParser> parser = mParser;
+    return parser.forget();
+  }
 
   
 
@@ -913,6 +918,9 @@ public:
     return mPresShell && mPresShell->IsObservingDocument()
       ? mPresShell : nullptr;
   }
+
+  
+  bool IsSafeToFlush() const;
 
   nsPresContext* GetPresContext() const
   {
@@ -1680,8 +1688,9 @@ public:
   
   
   
-  virtual void BeginUpdate(nsUpdateType aUpdateType) = 0;
+  void BeginUpdate(nsUpdateType aUpdateType);
   virtual void EndUpdate(nsUpdateType aUpdateType) = 0;
+
   virtual void BeginLoad() = 0;
   virtual void EndLoad() = 0;
 
@@ -1715,7 +1724,7 @@ public:
 
 
 
-  virtual void FlushPendingNotifications(mozilla::FlushType aType) = 0;
+  void FlushPendingNotifications(mozilla::FlushType aType);
 
   
 
@@ -3226,6 +3235,21 @@ private:
   mozilla::UniquePtr<SelectorCache> mGeckoSelectorCache;
 
 protected:
+  friend class nsDocumentOnStack;
+
+  void IncreaseStackRefCnt()
+  {
+    ++mStackRefCnt;
+  }
+
+  void DecreaseStackRefCnt()
+  {
+    if (--mStackRefCnt == 0 && mNeedsReleaseAfterStackRefCntRelease) {
+      mNeedsReleaseAfterStackRefCntRelease = false;
+      NS_RELEASE_THIS();
+    }
+  }
+
   ~nsIDocument();
   nsPropertyTable* GetExtraPropertyTable(uint16_t aCategory);
 
@@ -3560,7 +3584,14 @@ protected:
   bool mAllowUnsafeHTML : 1;
 
   
-  bool mInDestructor:1;
+  bool mInDestructor: 1;
+
+  
+  bool mIsGoingAway: 1;
+
+  bool mInXBLUpdate: 1;
+
+  bool mNeedsReleaseAfterStackRefCntRelease: 1;
 
   
   enum { eScopedStyle_Unknown, eScopedStyle_Disabled, eScopedStyle_Enabled };
@@ -3749,6 +3780,20 @@ protected:
   nsTArray<nsCOMPtr<nsIPrincipal>> mAncestorPrincipals;
   
   nsTArray<uint64_t> mAncestorOuterWindowIDs;
+
+  
+  
+  nsCOMPtr<nsIParser> mParser;
+
+  nsrefcnt mStackRefCnt;
+
+  
+  
+  
+  nsWeakPtr mWeakSink;
+
+  
+  uint32_t mUpdateNestLevel;
 
   
   
