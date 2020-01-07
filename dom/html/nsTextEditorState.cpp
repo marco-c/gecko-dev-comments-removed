@@ -805,11 +805,18 @@ TextInputListener::TextInputListener(nsITextControlElement* aTxtCtrlElement)
 {
 }
 
-NS_IMPL_ISUPPORTS(TextInputListener,
-                  nsISelectionListener,
-                  nsIEditorObserver,
-                  nsISupportsWeakReference,
-                  nsIDOMEventListener)
+NS_IMPL_CYCLE_COLLECTING_ADDREF(TextInputListener)
+NS_IMPL_CYCLE_COLLECTING_RELEASE(TextInputListener)
+
+NS_INTERFACE_MAP_BEGIN(TextInputListener)
+  NS_INTERFACE_MAP_ENTRY(nsISelectionListener)
+  NS_INTERFACE_MAP_ENTRY(nsISupportsWeakReference)
+  NS_INTERFACE_MAP_ENTRY(nsIDOMEventListener)
+  NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsISelectionListener)
+  NS_INTERFACE_MAP_ENTRIES_CYCLE_COLLECTION(TextInputListener)
+NS_INTERFACE_MAP_END
+
+NS_IMPL_CYCLE_COLLECTION_0(TextInputListener)
 
 
 
@@ -968,15 +975,13 @@ TextInputListener::HandleEvent(nsIDOMEvent* aEvent)
   return NS_OK;
 }
 
-
-
-NS_IMETHODIMP
-TextInputListener::EditAction()
+void
+TextInputListener::OnEditActionHandled()
 {
   if (!mFrame) {
     
     
-    return NS_OK;
+    return;
   }
 
   AutoWeakFrame weakFrame = mFrame;
@@ -1002,12 +1007,10 @@ TextInputListener::EditAction()
   }
 
   if (!weakFrame.IsAlive()) {
-    return NS_OK;
+    return;
   }
 
   HandleValueChanged(frame);
-
-  return NS_OK;
 }
 
 void
@@ -1029,21 +1032,6 @@ TextInputListener::HandleValueChanged(nsTextControlFrame* aFrame)
                                      true);
   }
 }
-
-NS_IMETHODIMP
-TextInputListener::BeforeEditAction()
-{
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-TextInputListener::CancelEditAction()
-{
-  return NS_OK;
-}
-
-
-
 
 nsresult
 TextInputListener::UpdateTextInputCommands(const nsAString& aCommandsToUpdate,
@@ -1548,7 +1536,7 @@ nsTextEditorState::PrepareEditor(const nsAString *aValue)
   }
 
   if (mTextListener) {
-    newTextEditor->AddEditorObserver(mTextListener);
+    newTextEditor->SetTextInputListener(mTextListener);
   }
 
   
@@ -2018,9 +2006,6 @@ nsTextEditorState::DestroyEditor()
 {
   
   if (mEditorInitialized) {
-    if (mTextListener) {
-      mTextEditor->RemoveEditorObserver(mTextListener);
-    }
     mTextEditor->PreDestroy(true);
     mEditorInitialized = false;
   }
@@ -2040,7 +2025,7 @@ nsTextEditorState::UnbindFromFrame(nsTextControlFrame* aFrame)
   
   if (mTextListener && mTextEditor && mEditorInitialized &&
       mTextEditor->IsInEditAction()) {
-    mTextListener->EditAction();
+    mTextListener->OnEditActionHandled();
   }
 
   

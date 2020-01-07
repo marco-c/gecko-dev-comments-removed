@@ -7,8 +7,8 @@
 #ifndef mozilla_TextInputListener_h
 #define mozilla_TextInputListener_h
 
+#include "nsCycleCollectionParticipant.h"
 #include "nsIDOMEventListener.h"
-#include "nsIEditorObserver.h"
 #include "nsISelectionListener.h"
 #include "nsStringFwd.h"
 #include "nsWeakReference.h"
@@ -22,7 +22,6 @@ namespace mozilla {
 
 class TextInputListener final : public nsISelectionListener
                               , public nsIDOMEventListener
-                              , public nsIEditorObserver
                               , public nsSupportsWeakReference
 {
 public:
@@ -42,13 +41,21 @@ public:
   }
 
   
-  
+
+
+
   void HandleValueChanged(nsTextControlFrame* aFrame = nullptr);
 
-  NS_DECL_ISUPPORTS
+  
+
+
+  void OnEditActionHandled();
+
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(TextInputListener,
+                                           nsISelectionListener)
   NS_DECL_NSISELECTIONLISTENER
   NS_DECL_NSIDOMEVENTLISTENER
-  NS_DECL_NSIEDITOROBSERVER
 
 protected:
   virtual ~TextInputListener() = default;
