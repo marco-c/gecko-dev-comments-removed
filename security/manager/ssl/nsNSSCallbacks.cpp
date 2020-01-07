@@ -282,12 +282,6 @@ OCSPRequest::Run()
     }
   }
 
-  
-  
-  
-  nsCOMPtr<nsILoadGroup> lg = do_CreateInstance(NS_LOADGROUP_CONTRACTID);
-  channel->SetLoadGroup(lg);
-
   nsCOMPtr<nsIInputStream> uploadStream;
   rv = NS_NewByteInputStream(getter_AddRefs(uploadStream),
                              reinterpret_cast<const char*>(mPOSTData.begin()),
