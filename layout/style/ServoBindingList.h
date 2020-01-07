@@ -183,6 +183,8 @@ SERVO_BINDING_FUNC(Servo_AuthorStyles_Create, RawServoAuthorStyles*)
 SERVO_BINDING_FUNC(Servo_AuthorStyles_AppendStyleSheet, void,
                    RawServoAuthorStylesBorrowedMut self,
                    const mozilla::ServoStyleSheet* gecko_sheet)
+SERVO_BINDING_FUNC(Servo_AuthorStyles_ForceDirty, void,
+                   RawServoAuthorStylesBorrowedMut self)
 
 
 SERVO_BINDING_FUNC(Servo_AuthorStyles_Flush, void,
