@@ -333,9 +333,10 @@ impl<'a, 'i> ::selectors::Parser<'i> for SelectorParser<'a> {
     type Impl = SelectorImpl;
     type Error = StyleParseErrorKind<'i>;
 
-    fn is_pseudo_element_allows_single_colon(name: &CowRcStr<'i>) -> bool {
+    fn pseudo_element_allows_single_colon(name: &str) -> bool {
+        
         ::selectors::parser::is_css2_pseudo_element(name) ||
-            name.starts_with("-moz-tree-") 
+            name.starts_with("-moz-tree-")
     }
 
     fn parse_non_ts_pseudo_class(
@@ -431,6 +432,8 @@ impl<'a, 'i> ::selectors::Parser<'i> for SelectorParser<'a> {
     ) -> Result<PseudoElement, ParseError<'i>> {
         PseudoElement::from_slice(&name, self.in_user_agent_stylesheet())
             .or_else(|| {
+                
+                
                 if name.starts_with("-moz-tree-") {
                     PseudoElement::tree_pseudo_element(&name, Box::new([]))
                 } else {
@@ -445,6 +448,7 @@ impl<'a, 'i> ::selectors::Parser<'i> for SelectorParser<'a> {
         name: CowRcStr<'i>,
         parser: &mut Parser<'i, 't>,
     ) -> Result<PseudoElement, ParseError<'i>> {
+        
         if name.starts_with("-moz-tree-") {
             
             

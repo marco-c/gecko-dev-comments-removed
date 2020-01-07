@@ -127,7 +127,7 @@ pub trait Parser<'i> {
 
     
     
-    fn is_pseudo_element_allows_single_colon(name: &CowRcStr<'i>) -> bool {
+    fn pseudo_element_allows_single_colon(name: &str) -> bool {
         is_css2_pseudo_element(name)
     }
 
@@ -1701,7 +1701,7 @@ where
 
 
 
-pub fn is_css2_pseudo_element<'i>(name: &CowRcStr<'i>) -> bool {
+pub fn is_css2_pseudo_element(name: &str) -> bool {
     
     match_ignore_ascii_case! { name,
         "before" | "after" | "first-line" | "first-letter" => true,
@@ -1760,7 +1760,7 @@ where
                 )),
             };
             let is_pseudo_element = !is_single_colon ||
-                P::is_pseudo_element_allows_single_colon(&name);
+                P::pseudo_element_allows_single_colon(&name);
             if is_pseudo_element {
                 let pseudo_element = if is_functional {
                     input.parse_nested_block(|input| {
