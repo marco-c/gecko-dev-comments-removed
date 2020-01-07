@@ -63,10 +63,12 @@ add_task(async function test_change_location_from_Toolbar() {
       
       fillBookmarkTextField("editBMPanel_locationField", TEST_URL2, dialogWin, false);
       await waitForCondition(() => locationPicker.value === TEST_URL2, "The location is correct after update.");
-
+      locationPicker.blur();
+      await promiseLocationChange;
+      Assert.equal(dialogWin.gEditItemOverlay.uri.spec, TEST_URL2, "The location is the expected one.");
+      locationPicker.focus();
       
       EventUtils.synthesizeKey("VK_RETURN", {}, dialogWin);
-      await promiseLocationChange;
 
       let updatedBm = await PlacesUtils.bookmarks.fetch(toolbarBookmark.guid);
       Assert.equal(updatedBm.url, TEST_URL2, "Should have updated the bookmark location in the database.");
