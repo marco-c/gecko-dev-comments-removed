@@ -1487,41 +1487,46 @@ StretchDistance(const gfxFontEntry* aFontEntry, FontStretch aTargetStretch)
 static inline double
 WeightDistance(const gfxFontEntry* aFontEntry, FontWeight aTargetWeight)
 {
+    const double kNotWithinCentralRange = 100.0;
     const double kReverseDistance = 600.0;
 
-    double distance = 0.0, addedDistance = 0.0;
     FontWeight minWeight = aFontEntry->Weight().Min();
     FontWeight maxWeight = aFontEntry->Weight().Max();
-    if (aTargetWeight < minWeight || aTargetWeight > maxWeight) {
-        if (aTargetWeight > FontWeight(500)) {
-            distance = minWeight - aTargetWeight;
-        } else if (aTargetWeight < FontWeight(400)) {
-            distance = aTargetWeight - maxWeight;
-        } else {
-            
 
-            
-            if (maxWeight >= FontWeight(400) &&
-                minWeight <= FontWeight(500)) {
-                if (maxWeight < aTargetWeight) {
-                    distance = FontWeight(500) - maxWeight;
-                } else {
-                    distance = minWeight - aTargetWeight;
-                }
-            } else {
-                
-                
-                
-                distance = aTargetWeight - maxWeight;
-                addedDistance = 100.0;
-            }
-        }
-        if (distance < 0.0) {
-            distance = kReverseDistance - distance;
-        }
-        distance += addedDistance;
+    if (aTargetWeight >= minWeight && aTargetWeight <= maxWeight) {
+        
+        return 0.0;
     }
-    return distance;
+
+    if (aTargetWeight < FontWeight(400)) {
+        
+        if (maxWeight < aTargetWeight) {
+            return aTargetWeight - maxWeight;
+        }
+        
+        return (minWeight - aTargetWeight) + kReverseDistance;
+    }
+
+    if (aTargetWeight > FontWeight(500)) {
+        
+        if (minWeight > aTargetWeight) {
+            return minWeight - aTargetWeight;
+        }
+        
+        return (aTargetWeight - maxWeight) + kReverseDistance;
+    }
+
+    
+    if (minWeight > aTargetWeight) {
+        if (minWeight <= FontWeight(500)) {
+            
+            return minWeight - aTargetWeight;
+        }
+        
+        return (minWeight - aTargetWeight) + kReverseDistance;
+    }
+    
+    return (aTargetWeight - maxWeight) + kNotWithinCentralRange;
 }
 
 static inline double
