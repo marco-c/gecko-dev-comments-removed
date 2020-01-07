@@ -52,8 +52,8 @@ TEST(UrlClassifierFailUpdate, CheckTableReset)
   
   auto func = [](TableUpdateV4* update, bool full, const char* str) {
     update->SetFullUpdate(full);
-    std::string prefix(str);
-    update->NewPrefixes(prefix.length(), prefix);
+    nsCString prefix(str);
+    update->NewPrefixes(prefix.Length(), prefix);
   };
 
   

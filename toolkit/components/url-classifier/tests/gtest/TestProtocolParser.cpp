@@ -92,14 +92,14 @@ TEST(UrlClassifierProtocolParser, SingleValueEncoding)
   auto& tus = p->GetTableUpdates();
   auto tuv4 = TableUpdate::Cast<TableUpdateV4>(tus[0]);
   auto& prefixMap = tuv4->Prefixes();
-  for (auto iter = prefixMap.Iter(); !iter.Done(); iter.Next()) {
+  for (auto iter = prefixMap.ConstIter(); !iter.Done(); iter.Next()) {
     
     ASSERT_EQ(iter.Key(), 4u);
 
     
     
-    auto& prefix = iter.Data()->GetPrefixString();
-    ASSERT_TRUE(prefix.Equals(nsCString(expectedPrefix, 4)));
+    nsCString* prefix = iter.Data();
+    ASSERT_TRUE(prefix->Equals(nsCString(expectedPrefix, 4)));
   }
 
   delete p;
