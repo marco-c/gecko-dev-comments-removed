@@ -2467,6 +2467,11 @@ ContentParent::InitInternal(ProcessPriority aInitialPriority)
     nsTArray<BlobURLRegistrationData> registrations;
     if (nsHostObjectProtocolHandler::GetAllBlobURLEntries(registrations,
                                                           this)) {
+      for (const BlobURLRegistrationData& registration : registrations) {
+        nsresult rv = TransmitPermissionsForPrincipal(registration.principal());
+        Unused << NS_WARN_IF(NS_FAILED(rv));
+      }
+
       Unused << SendInitBlobURLs(registrations);
     }
   }
@@ -2842,7 +2847,9 @@ ContentParent::Observe(nsISupports* aSubject,
     return NS_OK;
 
   
-  if (!strcmp(aTopic, "memory-pressure")) {
+  if (!strcmp(aTopic, "memory-pressure") &&
+      !StringEndsWith(nsDependentString(aData),
+                      NS_LITERAL_STRING("-no-forward"))) {
       Unused << SendFlushMemory(nsDependentString(aData));
   }
   else if (!strcmp(aTopic, "nsPref:changed")) {
@@ -5145,8 +5152,13 @@ ContentParent::BroadcastBlobURLRegistration(const nsACString& aURI,
 
   for (auto* cp : AllProcesses(eLive)) {
     if (cp != aIgnoreThisCP) {
+      nsresult rv = cp->TransmitPermissionsForPrincipal(principal);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        break;
+      }
+
       IPCBlob ipcBlob;
-      nsresult rv = IPCBlobUtils::Serialize(aBlobImpl, cp, ipcBlob);
+      rv = IPCBlobUtils::Serialize(aBlobImpl, cp, ipcBlob);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         break;
       }
