@@ -3612,10 +3612,7 @@ window._gBrowser = {
 
 
   addRangeToMultiSelectedTabs(aTab1, aTab2) {
-    
-    
     if (aTab1 == aTab2) {
-      this.addToMultiSelectedTabs(aTab1);
       return;
     }
 
@@ -3646,9 +3643,31 @@ window._gBrowser = {
       tab.removeAttribute("multiselected");
     }
     this._multiSelectedTabsSet = new WeakSet();
+    this._lastMultiSelectedTabRef = null;
     if (updatePositionalAttributes) {
       this.tabContainer._setPositionalAttributes();
     }
+  },
+
+  
+
+
+  updateActiveTabMultiSelectState() {
+    if (this.selectedTabs.length == 1) {
+      this.clearMultiSelectedTabs();
+    }
+  },
+
+  switchToNextMultiSelectedTab() {
+    let lastMultiSelectedTab = gBrowser.lastMultiSelectedTab;
+    if (lastMultiSelectedTab != gBrowser.selectedTab) {
+      gBrowser.selectedTab = lastMultiSelectedTab;
+      return;
+    }
+    let selectedTabs = ChromeUtils.nondeterministicGetWeakSetKeys(this._multiSelectedTabsSet)
+                                  .filter(tab => tab.isConnected && !tab.closing);
+    let length = selectedTabs.length;
+    gBrowser.selectedTab = selectedTabs[length - 1];
   },
 
   set selectedTabs(tabs) {
@@ -3683,7 +3702,9 @@ window._gBrowser = {
     if (tab && tab.isConnected && this._multiSelectedTabsSet.has(tab)) {
       return tab;
     }
-    return gBrowser.selectedTab;
+    let selectedTab = gBrowser.selectedTab;
+    this.lastMultiSelectedTab = selectedTab;
+    return selectedTab;
   },
 
   set lastMultiSelectedTab(aTab) {
