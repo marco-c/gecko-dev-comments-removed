@@ -1310,8 +1310,37 @@ NowAsMillis()
     double now = PRMJ_Now();
     if (sReduceMicrosecondTimePrecisionCallback)
         now = sReduceMicrosecondTimePrecisionCallback(now);
-    else if (sResolutionUsec)
-        now = floor(now / sResolutionUsec) * sResolutionUsec;
+    else if (sResolutionUsec) {
+        double clamped = floor(now / sResolutionUsec) * sResolutionUsec;
+
+        if (sJitter) {
+            
+            
+            
+            
+            
+            
+
+            uint64_t midpoint = *((uint64_t*)&clamped);
+            midpoint ^= 0x0F00DD1E2BAD2DED; 
+            
+            
+            midpoint ^= midpoint >> 33;
+            midpoint *= uint64_t{0xFF51AFD7ED558CCD};
+            midpoint ^= midpoint >> 33;
+            midpoint *= uint64_t{0xC4CEB9FE1A85EC53};
+            midpoint ^= midpoint >> 33;
+            midpoint %= sResolutionUsec;
+
+            if (now > clamped + midpoint) { 
+                now = clamped + sResolutionUsec;
+            } else { 
+                now = clamped;
+            }
+        } else { 
+            now = clamped;
+        }
+    }
 
     return TimeClip(now / PRMJ_USEC_PER_MSEC);
 }
