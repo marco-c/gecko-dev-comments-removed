@@ -184,25 +184,22 @@ SharedSurfacesChild::DestroySharedUserData(void* aClosure)
 }
 
  nsresult
-SharedSurfacesChild::Share(SourceSurfaceSharedData* aSurface,
-                           WebRenderLayerManager* aManager,
-                           wr::IpcResourceUpdateQueue& aResources,
-                           wr::ImageKey& aKey)
+SharedSurfacesChild::ShareInternal(SourceSurfaceSharedData* aSurface,
+                                   SharedUserData** aUserData)
 {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aSurface);
-  MOZ_ASSERT(aManager);
+  MOZ_ASSERT(aUserData);
 
   CompositorManagerChild* manager = CompositorManagerChild::GetInstance();
   if (NS_WARN_IF(!manager || !manager->CanSend())) {
+    
+    
+    
+    
+    aSurface->FinishedSharing();
     return NS_ERROR_NOT_INITIALIZED;
   }
-
-  
-  
-  
-  
-  int32_t invalidations = aSurface->Invalidations();
 
   static UserDataKey sSharedKey;
   SharedUserData* data =
@@ -216,7 +213,7 @@ SharedSurfacesChild::Share(SourceSurfaceSharedData* aSurface,
     data->SetId(manager->GetNextExternalImageId());
   } else if (data->IsShared()) {
     
-    aKey = data->UpdateKey(aManager, aResources, invalidations);
+    *aUserData = data;
     return NS_OK;
   }
 
@@ -234,7 +231,7 @@ SharedSurfacesChild::Share(SourceSurfaceSharedData* aSurface,
   if (pid == base::GetCurrentProcId()) {
     SharedSurfacesParent::AddSameProcess(data->Id(), aSurface);
     data->MarkShared();
-    aKey = data->UpdateKey(aManager, aResources, invalidations);
+    *aUserData = data;
     return NS_OK;
   }
 
@@ -269,8 +266,71 @@ SharedSurfacesChild::Share(SourceSurfaceSharedData* aSurface,
                                 SurfaceDescriptorShared(aSurface->GetSize(),
                                                         aSurface->Stride(),
                                                         format, handle));
-  aKey = data->UpdateKey(aManager, aResources, invalidations);
+  *aUserData = data;
   return NS_OK;
+}
+
+ void
+SharedSurfacesChild::Share(SourceSurfaceSharedData* aSurface)
+{
+  MOZ_ASSERT(aSurface);
+
+  
+  
+  
+  
+  if (!NS_IsMainThread()) {
+    class ShareRunnable final : public Runnable
+    {
+    public:
+      explicit ShareRunnable(SourceSurfaceSharedData* aSurface)
+        : Runnable("SharedSurfacesChild::Share")
+        , mSurface(aSurface)
+      { }
+
+      NS_IMETHOD Run() override
+      {
+        SharedUserData* unused = nullptr;
+        SharedSurfacesChild::ShareInternal(mSurface, &unused);
+        return NS_OK;
+      }
+
+    private:
+      RefPtr<SourceSurfaceSharedData> mSurface;
+    };
+
+    SystemGroup::Dispatch(TaskCategory::Other,
+                          MakeAndAddRef<ShareRunnable>(aSurface));
+    return;
+  }
+
+  SharedUserData* unused = nullptr;
+  SharedSurfacesChild::ShareInternal(aSurface, &unused);
+}
+
+ nsresult
+SharedSurfacesChild::Share(SourceSurfaceSharedData* aSurface,
+                           WebRenderLayerManager* aManager,
+                           wr::IpcResourceUpdateQueue& aResources,
+                           wr::ImageKey& aKey)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(aSurface);
+  MOZ_ASSERT(aManager);
+
+  
+  
+  
+  
+  int32_t invalidations = aSurface->Invalidations();
+  SharedUserData* data = nullptr;
+  nsresult rv = SharedSurfacesChild::ShareInternal(aSurface, &data);
+  if (NS_SUCCEEDED(rv)) {
+    MOZ_ASSERT(data);
+    aKey = data->UpdateKey(aManager, aResources, invalidations);
+  }
+
+  return rv;
 }
 
  nsresult

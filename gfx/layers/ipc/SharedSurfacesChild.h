@@ -31,10 +31,31 @@ class WebRenderLayerManager;
 class SharedSurfacesChild final
 {
 public:
+  
+
+
+
+
+
+
+  static void Share(gfx::SourceSurfaceSharedData* aSurface);
+
+  
+
+
+
+
   static nsresult Share(gfx::SourceSurfaceSharedData* aSurface,
                         WebRenderLayerManager* aManager,
                         wr::IpcResourceUpdateQueue& aResources,
                         wr::ImageKey& aKey);
+
+  
+
+
+
+
+
 
   static nsresult Share(ImageContainer* aContainer,
                         WebRenderLayerManager* aManager,
@@ -47,6 +68,9 @@ private:
 
   class ImageKeyData;
   class SharedUserData;
+
+  static nsresult ShareInternal(gfx::SourceSurfaceSharedData* aSurface,
+                                SharedUserData** aUserData);
 
   static void Unshare(const wr::ExternalImageId& aId, nsTArray<ImageKeyData>& aKeys);
   static void DestroySharedUserData(void* aClosure);
