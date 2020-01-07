@@ -5894,11 +5894,11 @@ namespace JS {
 
 
 
-typedef bool
-(* OpenAsmJSCacheEntryForReadOp)(HandleObject global, const char16_t* begin, const char16_t* limit,
-                                 size_t* size, const uint8_t** memory, intptr_t* handle);
-typedef void
-(* CloseAsmJSCacheEntryForReadOp)(size_t size, const uint8_t* memory, intptr_t handle);
+using OpenAsmJSCacheEntryForReadOp =
+    bool (*)(HandleObject global, const char16_t* begin, const char16_t* limit, size_t* size,
+             const uint8_t** memory, intptr_t* handle);
+using CloseAsmJSCacheEntryForReadOp =
+    void (*)(size_t size, const uint8_t* memory, intptr_t handle);
 
 
 enum AsmJSCacheResult
@@ -5926,19 +5926,18 @@ enum AsmJSCacheResult
 
 
 
-typedef AsmJSCacheResult
-(* OpenAsmJSCacheEntryForWriteOp)(HandleObject global, const char16_t* begin,
-                                  const char16_t* end, size_t size,
-                                  uint8_t** memory, intptr_t* handle);
-typedef void
-(* CloseAsmJSCacheEntryForWriteOp)(size_t size, uint8_t* memory, intptr_t handle);
+using OpenAsmJSCacheEntryForWriteOp =
+    AsmJSCacheResult (*)(HandleObject global, const char16_t* begin, const char16_t* end,
+                         size_t size, uint8_t** memory, intptr_t* handle);
+using CloseAsmJSCacheEntryForWriteOp =
+    void (*)(size_t size, uint8_t* memory, intptr_t handle);
 
 struct AsmJSCacheOps
 {
-    OpenAsmJSCacheEntryForReadOp openEntryForRead;
-    CloseAsmJSCacheEntryForReadOp closeEntryForRead;
-    OpenAsmJSCacheEntryForWriteOp openEntryForWrite;
-    CloseAsmJSCacheEntryForWriteOp closeEntryForWrite;
+    OpenAsmJSCacheEntryForReadOp openEntryForRead = nullptr;
+    CloseAsmJSCacheEntryForReadOp closeEntryForRead = nullptr;
+    OpenAsmJSCacheEntryForWriteOp openEntryForWrite = nullptr;
+    CloseAsmJSCacheEntryForWriteOp closeEntryForWrite = nullptr;
 };
 
 extern JS_PUBLIC_API(void)

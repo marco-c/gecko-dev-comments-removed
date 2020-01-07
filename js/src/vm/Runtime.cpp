@@ -180,9 +180,6 @@ JSRuntime::JSRuntime(JSRuntime* parentRuntime)
     JS_COUNT_CTOR(JSRuntime);
     liveRuntimesCount++;
 
-    
-
-    PodZero(&asmJSCacheOps);
     lcovOutput().init();
 }
 
