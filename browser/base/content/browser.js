@@ -5141,14 +5141,14 @@ var TabsProgressListener = {
     }
   },
 
-  onLocationChange(aBrowser, aWebProgress, aRequest, aLocationURI,
-                             aFlags) {
+  onLocationChange(aBrowser, aWebProgress, aRequest, aLocationURI, aFlags) {
     
     
     if (aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT) {
       
-      let mm = gBrowser.selectedBrowser.messageManager;
-      mm.sendAsyncMessage("Reader:PushState", {isArticle: gBrowser.selectedBrowser.isArticle});
+      aBrowser.messageManager.sendAsyncMessage("Reader:PushState", {
+        isArticle: aBrowser.isArticle,
+      });
       return;
     }
 
