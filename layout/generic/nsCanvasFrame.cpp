@@ -96,6 +96,10 @@ nsCanvasFrame::CreateAnonymousContent(nsTArray<ContentInfo>& aElements)
   aElements.AppendElement(mCustomContentContainer);
 
   
+  mCustomContentContainer->SetAttr(kNameSpaceID_None, nsGkAtoms::role,
+                                   NS_LITERAL_STRING("presentation"), false);
+
+  
   rv = mCustomContentContainer->SetAttr(kNameSpaceID_None, nsGkAtoms::_class,
                                         NS_LITERAL_STRING("moz-custom-content-container"),
                                         true);
