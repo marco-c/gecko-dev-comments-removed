@@ -13,6 +13,8 @@
 #include "mozilla/Services.h"
 #include "mozilla/intl/MozLocale.h"
 #include "mozilla/intl/OSPreferences.h"
+#include "nsDirectoryService.h"
+#include "nsDirectoryServiceDefs.h"
 #include "nsIObserverService.h"
 #include "nsIToolkitChromeRegistry.h"
 #include "nsStringEnumerator.h"
@@ -68,6 +70,30 @@ SanitizeForBCP47(nsACString& aLocale, bool strict)
   return U_SUCCESS(err);
 }
 
+
+
+
+
+static void
+SplitLocaleListStringIntoArray(nsACString& str, nsTArray<nsCString>& aRetVal)
+{
+  if (str.Length() > 0) {
+    for (const nsACString& part : str.Split(',')) {
+      nsAutoCString locale(part);
+      if (locale.EqualsLiteral("ja-JP-mac")) {
+        
+        if (!aRetVal.Contains(locale)) {
+          aRetVal.AppendElement(locale);
+        }
+      } else if (SanitizeForBCP47(locale, true)) {
+        if (!aRetVal.Contains(locale)) {
+          aRetVal.AppendElement(locale);
+        }
+      }
+    }
+  }
+}
+
 static bool
 ReadRequestedLocales(nsTArray<nsCString>& aRetVal)
 {
@@ -80,24 +106,12 @@ ReadRequestedLocales(nsTArray<nsCString>& aRetVal)
   
   
   if (NS_SUCCEEDED(rv)) {
-    if (str.Length() > 0) {
-      for (const nsACString& part : str.Split(',')) {
-        nsAutoCString locale(part);
-        if (locale.EqualsLiteral("ja-JP-mac")) {
-          
-          if (!aRetVal.Contains(locale)) {
-            aRetVal.AppendElement(locale);
-          }
-        } else if (SanitizeForBCP47(locale, true)) {
-          if (!aRetVal.Contains(locale)) {
-            aRetVal.AppendElement(locale);
-          }
-        }
-      }
-    } else {
+    if (str.Length() == 0) {
       
       
       OSPreferences::GetInstance()->GetSystemLocales(aRetVal);
+    } else {
+      SplitLocaleListStringIntoArray(str, aRetVal);
     }
   } else {
     nsAutoCString defaultLocale;
@@ -117,36 +131,6 @@ ReadRequestedLocales(nsTArray<nsCString>& aRetVal)
   return true;
 }
 
-static bool
-ReadAvailableLocales(nsTArray<nsCString>& aRetVal)
-{
-  nsCOMPtr<nsIToolkitChromeRegistry> cr =
-    mozilla::services::GetToolkitChromeRegistryService();
-  if (!cr) {
-    return false;
-  }
-
-  nsCOMPtr<nsIUTF8StringEnumerator> localesEnum;
-
-  nsresult rv =
-    cr->GetLocalesForPackage(NS_LITERAL_CSTRING("global"), getter_AddRefs(localesEnum));
-  if (!NS_SUCCEEDED(rv)) {
-    return false;
-  }
-
-  bool more;
-  while (NS_SUCCEEDED(rv = localesEnum->HasMore(&more)) && more) {
-    nsAutoCString localeStr;
-    rv = localesEnum->GetNext(localeStr);
-    if (!NS_SUCCEEDED(rv)) {
-      return false;
-    }
-
-    aRetVal.AppendElement(localeStr);
-  }
-  return !aRetVal.IsEmpty();
-}
-
 LocaleService::LocaleService(bool aIsServer)
   :mIsServer(aIsServer)
 {
@@ -161,12 +145,11 @@ LocaleService::LocaleService(bool aIsServer)
 void
 LocaleService::NegotiateAppLocales(nsTArray<nsCString>& aRetVal)
 {
-  nsAutoCString defaultLocale;
-  GetDefaultLocale(defaultLocale);
-
   if (mIsServer) {
+    nsAutoCString defaultLocale;
     AutoTArray<nsCString, 100> availableLocales;
     AutoTArray<nsCString, 10> requestedLocales;
+    GetDefaultLocale(defaultLocale);
     GetAvailableLocales(availableLocales);
     GetRequestedLocales(requestedLocales);
 
@@ -181,7 +164,13 @@ LocaleService::NegotiateAppLocales(nsTArray<nsCString>& aRetVal)
     
     
     
-    aRetVal.AppendElement(defaultLocale);
+    
+    
+    
+    
+    nsAutoCString lastFallbackLocale;
+    GetLastFallbackLocale(lastFallbackLocale);
+    aRetVal.AppendElement(lastFallbackLocale);
   }
 }
 
@@ -321,20 +310,14 @@ bool
 LocaleService::GetAvailableLocales(nsTArray<nsCString>& aRetVal)
 {
   if (mAvailableLocales.IsEmpty()) {
-    ReadAvailableLocales(mAvailableLocales);
+    
+    
+    
+    GetPackagedLocales(mAvailableLocales);
   }
 
   aRetVal = mAvailableLocales;
   return true;
-}
-
-void
-LocaleService::AvailableLocalesChanged()
-{
-  MOZ_ASSERT(mIsServer, "This should only be called in the server mode.");
-  mAvailableLocales.Clear();
-  
-  LocalesChanged();
 }
 
 void
@@ -373,10 +356,6 @@ LocaleService::LocalesChanged()
     nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
     if (obs) {
       obs->NotifyObservers(nullptr, "intl:app-locales-changed", nullptr);
-
-      
-      
-      obs->NotifyObservers(nullptr, "selected-locale-has-changed", nullptr);
     }
   }
 }
@@ -602,10 +581,6 @@ LocaleService::IsServer()
   return mIsServer;
 }
 
-
-
-
-
 static char**
 CreateOutArray(const nsTArray<nsCString>& aArray)
 {
@@ -617,6 +592,88 @@ CreateOutArray(const nsTArray<nsCString>& aArray)
   return result;
 }
 
+static bool
+GetGREFileContents(const char* aFilePath, nsCString* aOutString)
+{
+  
+  RefPtr<nsZipArchive> zip = Omnijar::GetReader(Omnijar::GRE);
+  if (zip) {
+    nsZipItemPtr<char> item(zip, aFilePath);
+    if (!item) {
+      return false;
+    }
+    aOutString->Assign(item.Buffer(), item.Length());
+    return true;
+  }
+
+  
+  
+  nsCOMPtr<nsIFile> path;
+  if (NS_FAILED(nsDirectoryService::gService->Get(NS_GRE_DIR,
+                                                  NS_GET_IID(nsIFile),
+                                                  getter_AddRefs(path)))) {
+    return false;
+  }
+
+  path->AppendRelativeNativePath(nsDependentCString(aFilePath));
+  bool result;
+  if (NS_FAILED(path->IsFile(&result)) || !result ||
+      NS_FAILED(path->IsReadable(&result)) || !result) {
+    return false;
+  }
+
+  
+  
+  FILE* fp;
+  if (NS_FAILED(path->OpenANSIFileDesc("r", &fp)) || !fp) {
+    return false;
+  }
+
+  fseek(fp, 0, SEEK_END);
+  long len = ftell(fp);
+  rewind(fp);
+  aOutString->SetLength(len);
+  size_t cc = fread(aOutString->BeginWriting(), 1, len, fp);
+
+  fclose(fp);
+
+  return cc == size_t(len);
+}
+
+void
+LocaleService::InitPackagedLocales()
+{
+  MOZ_ASSERT(mPackagedLocales.IsEmpty());
+
+  nsAutoCString localesString;
+  if (GetGREFileContents("res/multilocale.txt", &localesString)) {
+    localesString.Trim(" \t\n\r");
+    
+    MOZ_ASSERT(!localesString.IsEmpty());
+    SplitLocaleListStringIntoArray(localesString, mPackagedLocales);
+  }
+
+  
+  if (mPackagedLocales.IsEmpty()) {
+    nsAutoCString defaultLocale;
+    GetDefaultLocale(defaultLocale);
+    mPackagedLocales.AppendElement(defaultLocale);
+  }
+}
+
+void
+LocaleService::GetPackagedLocales(nsTArray<nsCString>& aRetVal)
+{
+  if (mPackagedLocales.IsEmpty()) {
+    InitPackagedLocales();
+  }
+  aRetVal = mPackagedLocales;
+}
+
+
+
+
+
 NS_IMETHODIMP
 LocaleService::GetDefaultLocale(nsACString& aRetVal)
 {
@@ -626,20 +683,14 @@ LocaleService::GetDefaultLocale(nsACString& aRetVal)
     
     
     
+    GetGREFileContents("update.locale", &mDefaultLocale);
+    mDefaultLocale.Trim(" \t\n\r");
     
-    
-    
-    RefPtr<nsZipArchive> zip = Omnijar::GetReader(Omnijar::GRE);
-    if (zip) {
-      nsZipItemPtr<char> item(zip, "update.locale");
-      size_t len = item.Length();
-      
-      while (len > 0 && item.Buffer()[len - 1] <= ' ') {
-        len--;
-      }
-      mDefaultLocale.Assign(item.Buffer(), len);
-    }
+    MOZ_ASSERT(!mDefaultLocale.IsEmpty());
+    MOZ_ASSERT(mDefaultLocale.EqualsLiteral("ja-JP-mac")
+        || SanitizeForBCP47(mDefaultLocale, true));
 
+    
     
     if (mDefaultLocale.IsEmpty()) {
       GetLastFallbackLocale(mDefaultLocale);
@@ -881,5 +932,42 @@ NS_IMETHODIMP
 LocaleService::GetIsAppLocaleRTL(bool* aRetVal)
 {
   (*aRetVal) = IsAppLocaleRTL();
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+LocaleService::SetAvailableLocales(const char** aAvailable,
+                                   uint32_t aAvailableCount)
+{
+  nsTArray<nsCString> newLocales;
+
+  for (uint32_t i = 0; i < aAvailableCount; i++) {
+    nsAutoCString locale(aAvailable[i]);
+    if (!locale.EqualsLiteral("ja-JP-mac") &&
+        !SanitizeForBCP47(locale, true)) {
+      NS_ERROR("Invalid language tag provided to SetAvailableLocales!");
+      return NS_ERROR_INVALID_ARG;
+    }
+    newLocales.AppendElement(locale);
+  }
+
+  if (newLocales != mAvailableLocales) {
+    mAvailableLocales = Move(newLocales);
+    LocalesChanged();
+  }
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+LocaleService::GetPackagedLocales(uint32_t* aCount, char*** aOutArray)
+{
+  if (mPackagedLocales.IsEmpty()) {
+    InitPackagedLocales();
+  }
+
+  *aCount = mPackagedLocales.Length();
+  *aOutArray = CreateOutArray(mPackagedLocales);
+
   return NS_OK;
 }
