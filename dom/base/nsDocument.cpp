@@ -6444,12 +6444,6 @@ nsIDocument::ImportNode(nsINode& aNode, bool aDeep, ErrorResult& rv) const
       break;
     }
     case nsIDOMNode::DOCUMENT_FRAGMENT_NODE:
-    {
-      if (imported->IsShadowRoot()) {
-        break;
-      }
-      MOZ_FALLTHROUGH;
-    }
     case nsIDOMNode::ATTRIBUTE_NODE:
     case nsIDOMNode::ELEMENT_NODE:
     case nsIDOMNode::PROCESSING_INSTRUCTION_NODE:
@@ -13190,35 +13184,6 @@ nsIDocument::SetUserHasInteracted(bool aUserHasInteracted)
 void
 nsIDocument::NotifyUserActivation()
 {
-  ActivateByUserGesture();
-  
-  nsCOMPtr<nsIPrincipal> principal = NodePrincipal();
-  nsCOMPtr<nsIDocument> parent = GetSameTypeParentDocument();
-  while (parent) {
-    parent->MaybeActivateByUserGesture(principal);
-    parent = parent->GetSameTypeParentDocument();
-  }
-}
-
-void
-nsIDocument::MaybeActivateByUserGesture(nsIPrincipal* aPrincipal)
-{
-  bool isEqual = false;
-  nsresult rv = aPrincipal->Equals(NodePrincipal(), &isEqual);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return;
-  }
-
-  
-  
-  if (isEqual || IsTopLevelContentDocument()) {
-    ActivateByUserGesture();
-  }
-}
-
-void
-nsIDocument::ActivateByUserGesture()
-{
   if (mUserHasActivatedInteraction) {
     return;
   }
@@ -13248,7 +13213,7 @@ nsIDocument*
 nsIDocument::GetFirstParentDocumentWithSamePrincipal(nsIPrincipal* aPrincipal)
 {
   MOZ_ASSERT(aPrincipal);
-  nsIDocument* parent = GetSameTypeParentDocument();
+  nsIDocument* parent = GetSameTypeParentDocument(this);
   while (parent) {
     bool isEqual = false;
     nsresult rv = aPrincipal->Equals(parent->NodePrincipal(), &isEqual);
@@ -13259,16 +13224,17 @@ nsIDocument::GetFirstParentDocumentWithSamePrincipal(nsIPrincipal* aPrincipal)
     if (isEqual) {
       return parent;
     }
-    parent = parent->GetSameTypeParentDocument();
+    parent = GetSameTypeParentDocument(parent);
   }
   MOZ_ASSERT(!parent);
   return nullptr;
 }
 
 nsIDocument*
-nsIDocument::GetSameTypeParentDocument()
+nsIDocument::GetSameTypeParentDocument(const nsIDocument* aDoc)
 {
-  nsCOMPtr<nsIDocShellTreeItem> current = GetDocShell();
+  MOZ_ASSERT(aDoc);
+  nsCOMPtr<nsIDocShellTreeItem> current = aDoc->GetDocShell();
   if (!current) {
     return nullptr;
   }
