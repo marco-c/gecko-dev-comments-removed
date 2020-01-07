@@ -67,26 +67,6 @@ void DisableSwitchNotifications(hal::SwitchDevice aDevice);
 
 
 
-void EnableSystemClockChangeNotifications();
-
-
-
-
-void DisableSystemClockChangeNotifications();
-
-
-
-
-void EnableSystemTimezoneChangeNotifications();
-
-
-
-
-void DisableSystemTimezoneChangeNotifications();
-
-
-
-
 
 bool HalChildDestroyed();
 } 

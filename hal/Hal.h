@@ -43,9 +43,6 @@ namespace hal {
 
 class WindowIdentifier;
 
-typedef Observer<int64_t> SystemClockChangeObserver;
-typedef Observer<SystemTimezoneChangeInformation> SystemTimezoneChangeObserver;
-
 } 
 
 namespace MOZ_HAL_NAMESPACE {
@@ -169,53 +166,6 @@ void GetCurrentNetworkInformation(hal::NetworkInformation* aNetworkInfo);
 
 
 void NotifyNetworkChange(const hal::NetworkInformation& aNetworkInfo);
-
-
-
-
-
-void AdjustSystemClock(int64_t aDeltaMilliseconds);
-
-
-
-
-
-void RegisterSystemClockChangeObserver(
-  hal::SystemClockChangeObserver* aObserver);
-
-
-
-
-
-void UnregisterSystemClockChangeObserver(
-  hal::SystemClockChangeObserver* aObserver);
-
-
-
-
-
-void NotifySystemClockChange(const int64_t& aClockDeltaMS);
-
-
-
-
-
-void RegisterSystemTimezoneChangeObserver(
-  hal::SystemTimezoneChangeObserver* aObserver);
-
-
-
-
-
-void UnregisterSystemTimezoneChangeObserver(
-  hal::SystemTimezoneChangeObserver* aObserver);
-
-
-
-
-
-void NotifySystemTimezoneChange(
-  const hal::SystemTimezoneChangeInformation& aSystemTimezoneChangeInfo);
 
 
 
