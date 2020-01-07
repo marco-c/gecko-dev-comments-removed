@@ -2524,8 +2524,7 @@ nsStandardURL::Resolve(const nsACString &in, nsACString &out)
         if (SegmentIs(mScheme, relpath, scheme, true)) {
             
             
-            if (nsCRT::strncmp(relpath + scheme.mPos + scheme.mLen,
-                               "://",3) == 0) {
+            if (strncmp(relpath + scheme.mPos + scheme.mLen, "://", 3) == 0) {
                 
                 
                 result = NS_strdup(relpath);
