@@ -242,24 +242,6 @@ nsThreadManagerGetSingleton(nsISupports* aOuter,
 
 NS_GENERIC_FACTORY_CONSTRUCTOR(nsThreadPool)
 
-static nsresult
-nsXPTIInterfaceInfoManagerGetSingleton(nsISupports* aOuter,
-                                       const nsIID& aIID,
-                                       void** aInstancePtr)
-{
-  NS_ASSERTION(aInstancePtr, "null outptr");
-  if (NS_WARN_IF(aOuter)) {
-    return NS_ERROR_NO_AGGREGATION;
-  }
-
-  nsCOMPtr<nsIInterfaceInfoManager> iim(XPTInterfaceInfoManager::GetSingleton());
-  if (!iim) {
-    return NS_ERROR_FAILURE;
-  }
-
-  return iim->QueryInterface(aIID, aInstancePtr);
-}
-
 nsComponentManagerImpl* nsComponentManagerImpl::gComponentManager = nullptr;
 bool gXPCOMShuttingDown = false;
 bool gXPCOMThreadsShutDown = false;
@@ -670,10 +652,6 @@ NS_InitXPCOM2(nsIServiceManager** aResult,
 
   
   
-  (void)XPTInterfaceInfoManager::GetSingleton();
-
-  
-  
   
   nsDirectoryService::gService->RegisterCategoryProviders();
 
@@ -1007,12 +985,6 @@ ShutdownXPCOM(nsIServiceManager* aServMgr)
 #endif
     }
   }
-
-  
-  
-  
-  
-  XPTInterfaceInfoManager::FreeInterfaceInfoManager();
 
   
   

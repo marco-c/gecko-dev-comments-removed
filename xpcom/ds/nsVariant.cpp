@@ -9,7 +9,7 @@
 #include "prdtoa.h"
 #include <math.h>
 #include "nsCycleCollectionParticipant.h"
-#include "xpt_struct.h"
+#include "xptinfo.h"
 #include "nsReadableUtils.h"
 #include "nsMemory.h"
 #include "nsString.h"

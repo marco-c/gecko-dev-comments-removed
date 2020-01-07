@@ -34,6 +34,7 @@
 #include "nsCRT.h"
 #include "nsContentUtils.h"
 #include "nsTextFragment.h"
+#include "nsTextNode.h"
 #include "nsIScriptError.h"
 
 #include "nsXBLResourceLoader.h"
@@ -708,13 +709,6 @@ nsXBLPrototypeBinding::ConstructInterfaceTable(const nsAString& aImpls)
 {
   if (!aImpls.IsEmpty()) {
     
-    
-    nsCOMPtr<nsIInterfaceInfoManager>
-      infoManager(do_GetService(NS_INTERFACEINFOMANAGER_SERVICE_CONTRACTID));
-    if (!infoManager)
-      return NS_ERROR_FAILURE;
-
-    
     NS_ConvertUTF16toUTF8 utf8impl(aImpls);
     char* str = utf8impl.BeginWriting();
     char* newStr;
@@ -724,8 +718,7 @@ nsXBLPrototypeBinding::ConstructInterfaceTable(const nsAString& aImpls)
     char* token = nsCRT::strtok( str, ", ", &newStr );
     while( token != nullptr ) {
       
-      nsCOMPtr<nsIInterfaceInfo> iinfo;
-      infoManager->GetInfoForName(token, getter_AddRefs(iinfo));
+      const nsXPTInterfaceInfo* iinfo = nsXPTInterfaceInfo::ByName(token);
 
       if (iinfo) {
         
@@ -738,9 +731,9 @@ nsXBLPrototypeBinding::ConstructInterfaceTable(const nsAString& aImpls)
 
           
           
-          nsCOMPtr<nsIInterfaceInfo> parentInfo;
+          const nsXPTInterfaceInfo* parentInfo;
           
-          while (NS_SUCCEEDED(iinfo->GetParent(getter_AddRefs(parentInfo))) && parentInfo) {
+          while (NS_SUCCEEDED(iinfo->GetParent(&parentInfo)) && parentInfo) {
             
             parentInfo->GetIIDShared(&iid);
 
