@@ -64,7 +64,8 @@ var AnimationPlayerActor = protocol.ActorClassWithSpec(animationPlayerSpec, {
 
 
 
-  initialize: function(animationsActor, player) {
+
+  initialize: function(animationsActor, player, createdTime) {
     Actor.prototype.initialize.call(this, animationsActor.conn);
 
     this.onAnimationMutation = this.onAnimationMutation.bind(this);
@@ -85,6 +86,8 @@ var AnimationPlayerActor = protocol.ActorClassWithSpec(animationPlayerSpec, {
     } else {
       this.observer.observe(this.node, {animations: true});
     }
+
+    this.createdTime = createdTime;
   },
 
   destroy: function() {
@@ -346,7 +349,9 @@ var AnimationPlayerActor = protocol.ActorClassWithSpec(animationPlayerSpec, {
       
       
       
-      documentCurrentTime: this.node.ownerDocument.timeline.currentTime
+      documentCurrentTime: this.node.ownerDocument.timeline.currentTime,
+      
+      createdTime: this.createdTime,
     };
   },
 
@@ -665,14 +670,28 @@ exports.AnimationsActor = protocol.ActorClassWithSpec(animationsSpec, {
   getAnimationPlayersForNode: function(nodeActor) {
     let animations = nodeActor.rawNode.getAnimations({subtree: true});
 
+    const createdTimeMap = new Map();
+
     
     if (this.actors) {
-      this.actors.forEach(actor => actor.destroy());
+      for (const actor of this.actors) {
+        
+        createdTimeMap.set(actor.player, actor.createdTime);
+        actor.destroy();
+      }
     }
+
     this.actors = [];
 
-    for (let i = 0; i < animations.length; i++) {
-      let actor = AnimationPlayerActor(this, animations[i]);
+    for (const animation of animations) {
+      let createdTime = createdTimeMap.get(animation);
+
+      if (typeof createdTime === "undefined") {
+        
+        createdTime = animation.startTime || animation.timeline.currentTime;
+      }
+
+      const actor = AnimationPlayerActor(this, animation, createdTime);
       this.actors.push(actor);
     }
 
@@ -747,7 +766,8 @@ exports.AnimationsActor = protocol.ActorClassWithSpec(animationsSpec, {
           this.actors.splice(index, 1);
         }
 
-        let actor = AnimationPlayerActor(this, player);
+        const createdTime = player.startTime || player.timeline.currentTime;
+        const actor = AnimationPlayerActor(this, player, createdTime);
         this.actors.push(actor);
         eventData.push({
           type: "added",
