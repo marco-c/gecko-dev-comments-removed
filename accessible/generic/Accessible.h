@@ -943,6 +943,13 @@ public:
   
 
 
+
+  bool IsARIAHidden() const { return mContextFlags & eARIAHidden; }
+  void SetARIAHidden(bool aIsDefined);
+
+  
+
+
   bool IsInsideAlert() const { return mContextFlags & eInsideAlert; }
 
   
@@ -1041,7 +1048,8 @@ protected:
 
   enum ContextFlags {
     eHasNameDependentParent = 1 << 0, 
-    eInsideAlert = 1 << 1,
+    eARIAHidden = 1 << 1,
+    eInsideAlert = 1 << 2,
 
     eLastContextFlag = eInsideAlert
   };
@@ -1134,7 +1142,7 @@ protected:
   int32_t mIndexInParent;
 
   static const uint8_t kStateFlagsBits = 12;
-  static const uint8_t kContextFlagsBits = 2;
+  static const uint8_t kContextFlagsBits = 3;
   static const uint8_t kTypeBits = 6;
   static const uint8_t kGenericTypesBits = 16;
 

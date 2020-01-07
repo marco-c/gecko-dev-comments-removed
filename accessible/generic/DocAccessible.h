@@ -278,12 +278,7 @@ public:
 
 
 
-  enum {
-    eIgnoreARIAHidden = 0,
-    eNoContainerIfARIAHidden = 1
-  };
-  Accessible* GetAccessibleOrContainer(nsINode* aNode,
-                                       int aARIAHiddenFlag = eIgnoreARIAHidden) const;
+  Accessible* GetAccessibleOrContainer(nsINode* aNode) const;
 
   
 
@@ -297,8 +292,7 @@ public:
 
 
 
-  Accessible* AccessibleOrTrueContainer(nsINode* aNode,
-                                        int aARIAHiddenFlag = eIgnoreARIAHidden) const;
+  Accessible* AccessibleOrTrueContainer(nsINode* aNode) const;
 
   
 
