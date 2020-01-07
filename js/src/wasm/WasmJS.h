@@ -285,7 +285,7 @@ class WasmTableObject : public NativeObject
     wasm::Table& table() const;
 };
 
-#ifdef ENABLE_WASM_GLOBAL
+#if defined(ENABLE_WASM_GLOBAL) && defined(EARLY_BETA_OR_EARLIER)
 
 
 
