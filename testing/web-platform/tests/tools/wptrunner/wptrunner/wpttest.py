@@ -75,7 +75,7 @@ class RunInfo(dict):
         try:
             
             rev = GitTree(log_error=False).rev
-        except subprocess.CalledProcessError:
+        except (OSError, subprocess.CalledProcessError):
             rev = None
         if rev:
             self["revision"] = rev
