@@ -99,7 +99,9 @@ impl WeakAtom {
     
     #[inline]
     pub fn clone(&self) -> Atom {
-        Atom::from(self.as_ptr())
+        unsafe {
+            Atom::from_raw(self.as_ptr())
+        }
     }
 
     
@@ -269,10 +271,20 @@ impl Atom {
     
     
     #[inline]
-    unsafe fn from_static(ptr: *mut nsStaticAtom) -> Self {
+    pub unsafe fn from_static(ptr: *mut nsStaticAtom) -> Self {
         let atom = Atom(ptr as *mut WeakAtom);
         debug_assert!(atom.is_static(),
                       "Called from_static for a non-static atom!");
+        atom
+    }
+
+    
+    #[inline(always)]
+    pub unsafe fn from_raw(ptr: *mut nsAtom) -> Self {
+        let atom = Atom(ptr as *mut WeakAtom);
+        if !atom.is_static() {
+            Gecko_AddRefAtom(ptr);
+        }
         atom
     }
 
@@ -308,7 +320,9 @@ impl Hash for WeakAtom {
 impl Clone for Atom {
     #[inline(always)]
     fn clone(&self) -> Atom {
-        Atom::from(self.as_ptr())
+        unsafe {
+            Atom::from_raw(self.as_ptr())
+        }
     }
 }
 
@@ -385,30 +399,6 @@ impl From<String> for Atom {
     #[inline]
     fn from(string: String) -> Atom {
         Atom::from(&*string)
-    }
-}
-
-impl From<*mut nsAtom> for Atom {
-    #[inline]
-    fn from(ptr: *mut nsAtom) -> Atom {
-        assert!(!ptr.is_null());
-        unsafe {
-            let ret = Atom(WeakAtom::new(ptr));
-            if !ret.is_static() {
-                Gecko_AddRefAtom(ptr);
-            }
-            ret
-        }
-    }
-}
-
-impl From<*mut nsStaticAtom> for Atom {
-    #[inline]
-    fn from(ptr: *mut nsStaticAtom) -> Atom {
-        assert!(!ptr.is_null());
-        unsafe {
-            Atom::from_static(ptr)
-        }
     }
 }
 
