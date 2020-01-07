@@ -398,6 +398,8 @@ CollectOrphans(nsINode* aRemovalRoot,
 void
 HTMLFormElement::UnbindFromTree(bool aDeep, bool aNullParent)
 {
+  
+  
   nsCOMPtr<nsIHTMLDocument> oldDocument = do_QueryInterface(GetUncomposedDoc());
 
   
@@ -1647,7 +1649,7 @@ HTMLFormElement::GetActionURL(nsIURI** aActionURL,
   
   
   
-  if (!IsInUncomposedDoc()) {
+  if (!IsInComposedDoc()) {
     return NS_OK; 
   }
 
