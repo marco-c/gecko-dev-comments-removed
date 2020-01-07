@@ -362,3 +362,5 @@ pref("devtools.telemetry.tools.opened.version", "{}");
 pref("devtools.responsive.reloadConditions.touchSimulation", false);
 
 pref("devtools.responsive.reloadConditions.userAgent", false);
+
+pref("devtools.responsive.reloadNotification.enabled", true);
