@@ -1113,7 +1113,7 @@ impl WebGLRenderingContext {
         match cap {
             constants::BLEND | constants::CULL_FACE | constants::DEPTH_TEST | constants::DITHER |
             constants::POLYGON_OFFSET_FILL | constants::SAMPLE_ALPHA_TO_COVERAGE | constants::SAMPLE_COVERAGE |
-            constants::SAMPLE_COVERAGE_INVERT | constants::SCISSOR_TEST | constants::STENCIL_TEST => true,
+            constants::SCISSOR_TEST | constants::STENCIL_TEST => true,
             _ => {
                 self.webgl_error(InvalidEnum);
                 false
@@ -1250,30 +1250,20 @@ impl WebGLRenderingContextMethods for WebGLRenderingContext {
         target: u32,
         parameter: u32,
     ) -> JSVal {
-        let buffer = handle_potential_webgl_error!(self, self.bound_buffer(target), return NullValue());
+        let buffer = handle_potential_webgl_error!(
+            self,
+            self.bound_buffer(target).and_then(|buf| buf.ok_or(InvalidOperation)),
+            return NullValue()
+        );
 
         match parameter {
-            constants::BUFFER_SIZE | constants::BUFFER_USAGE => {},
+            constants::BUFFER_SIZE => Int32Value(buffer.capacity() as i32),
+            constants::BUFFER_USAGE => Int32Value(buffer.usage() as i32),
             _ => {
                 self.webgl_error(InvalidEnum);
-                return NullValue();
+                NullValue()
             }
         }
-        let buffer = match buffer {
-            Some(buffer) => buffer,
-            None => {
-                self.webgl_error(InvalidOperation);
-                return NullValue();
-            }
-        };
-
-        if parameter == constants::BUFFER_SIZE {
-            return Int32Value(buffer.capacity() as i32);
-        }
-
-        let (sender, receiver) = webgl_channel().unwrap();
-        self.send_command(WebGLCommand::GetBufferParameter(target, parameter, sender));
-        Int32Value(receiver.recv().unwrap())
     }
 
     #[allow(unsafe_code)]
@@ -1487,19 +1477,30 @@ impl WebGLRenderingContextMethods for WebGLRenderingContext {
 
     
     fn BlendEquation(&self, mode: u32) {
-        if mode != constants::FUNC_ADD {
-            return self.webgl_error(InvalidEnum);
+        match mode {
+            constants::FUNC_ADD |
+            constants::FUNC_SUBTRACT |
+            constants::FUNC_REVERSE_SUBTRACT => {
+                self.send_command(WebGLCommand::BlendEquation(mode))
+            }
+            _ => self.webgl_error(InvalidEnum),
         }
-
-        self.send_command(WebGLCommand::BlendEquation(mode));
     }
 
     
     fn BlendEquationSeparate(&self, mode_rgb: u32, mode_alpha: u32) {
-        if mode_rgb != constants::FUNC_ADD || mode_alpha != constants::FUNC_ADD {
-            return self.webgl_error(InvalidEnum);
+        match mode_rgb {
+            constants::FUNC_ADD |
+            constants::FUNC_SUBTRACT |
+            constants::FUNC_REVERSE_SUBTRACT => {},
+            _ => return self.webgl_error(InvalidEnum),
         }
-
+        match mode_alpha {
+            constants::FUNC_ADD |
+            constants::FUNC_SUBTRACT |
+            constants::FUNC_REVERSE_SUBTRACT => {},
+            _ => return self.webgl_error(InvalidEnum),
+        }
         self.send_command(WebGLCommand::BlendEquationSeparate(mode_rgb, mode_alpha));
     }
 
@@ -1875,7 +1876,7 @@ impl WebGLRenderingContextMethods for WebGLRenderingContext {
 
     
     fn ClearDepth(&self, depth: f32) {
-        self.send_command(WebGLCommand::ClearDepth(depth as f64))
+        self.send_command(WebGLCommand::ClearDepth(depth))
     }
 
     
@@ -1925,17 +1926,13 @@ impl WebGLRenderingContextMethods for WebGLRenderingContext {
     
     fn DepthRange(&self, near: f32, far: f32) {
         
-        
-        
-        
-        
         if near > far {
             return self.webgl_error(InvalidOperation);
         }
-
-        self.send_command(WebGLCommand::DepthRange(near as f64, far as f64))
+        self.send_command(WebGLCommand::DepthRange(near, far))
     }
 
+    
     
     fn Enable(&self, cap: u32) {
         if self.validate_feature_enum(cap) {
@@ -1943,6 +1940,7 @@ impl WebGLRenderingContextMethods for WebGLRenderingContext {
         }
     }
 
+    
     
     fn Disable(&self, cap: u32) {
         if self.validate_feature_enum(cap) {
