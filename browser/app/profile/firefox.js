@@ -54,7 +54,6 @@ pref("extensions.update.autoUpdateDefault", true);
 
 
 pref("extensions.systemAddon.update.url", "https://aus5.mozilla.org/update/3/SystemAddons/%VERSION%/%BUILD_ID%/%BUILD_TARGET%/%LOCALE%/%CHANNEL%/%OS_VERSION%/%DISTRIBUTION%/%DISTRIBUTION_VERSION%/update.xml");
-pref("extensions.systemAddon.update.enabled", true);
 
 
 
@@ -719,8 +718,6 @@ pref("plugin.default.state", 1);
 
 pref("plugin.defaultXpi.state", 2);
 
-
-pref("plugin.state.java", 1);
 
 
 pref("plugin.state.flash", 1);
