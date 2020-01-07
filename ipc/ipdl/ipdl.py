@@ -107,10 +107,6 @@ for f in files:
         print >>sys.stderr, 'Error: New sync IPC messages must be reviewed by an IPC peer and recorded in %s' % options.syncMsgList
         sys.exit(1)
 
-    if _verbosity > 2:
-        log(3, '  pretty printed code:')
-        ipdl.genipdl(ast, codedir)
-
 if not ipdl.checkFixedSyncMessages(parser):
     
     sys.exit(1)
