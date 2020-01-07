@@ -855,7 +855,7 @@ pref("gfx.compositor.glcontext.opaque", false);
 
 pref("gfx.webrender.highlight-painted-layers", false);
 pref("gfx.webrender.async-scene-build", false);
-pref("gfx.webrender.blob-images", 1);
+pref("gfx.webrender.blob-images", true);
 pref("gfx.webrender.blob.invalidation", true);
 pref("gfx.webrender.hit-test", true);
 
@@ -2675,11 +2675,7 @@ pref("mousewheel.min_line_scroll_amount", 5);
 
 
 
-#ifdef EARLY_BETA_OR_EARLIER
-pref("mousewheel.autodir.enabled", true);
-#else
 pref("mousewheel.autodir.enabled", false);
-#endif
 
 
 
@@ -4561,7 +4557,7 @@ pref("image.mem.animated.use_heap", false);
 
 
 
-pref("image.mem.shared", 1);
+pref("image.mem.shared", true);
 
 
 pref("image.mem.allow_locking_in_content_processes", true);
