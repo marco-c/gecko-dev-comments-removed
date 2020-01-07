@@ -127,6 +127,7 @@ class CSSStyleSheet;
 class Encoding;
 class ErrorResult;
 class EventStates;
+class EventListenerManager;
 class PendingAnimationTracker;
 class StyleSetHandle;
 template<typename> class OwningNonNull;
@@ -2094,15 +2095,16 @@ public:
 
 
 
-  virtual void Reset(nsIChannel* aChannel, nsILoadGroup* aLoadGroup) = 0;
+  virtual void Reset(nsIChannel* aChannel, nsILoadGroup* aLoadGroup);
 
   
 
 
 
 
-  virtual void ResetToURI(nsIURI *aURI, nsILoadGroup* aLoadGroup,
-                          nsIPrincipal* aPrincipal) = 0;
+  virtual void ResetToURI(nsIURI* aURI,
+                          nsILoadGroup* aLoadGroup,
+                          nsIPrincipal* aPrincipal);
 
   
 
@@ -4458,6 +4460,8 @@ protected:
   mozilla::LayoutDeviceToScreenScale mScaleFloat;
   mozilla::CSSToLayoutDeviceScale mPixelRatio;
   mozilla::CSSSize mViewportSize;
+
+  RefPtr<mozilla::EventListenerManager> mListenerManager;
 
   nsTArray<RefPtr<mozilla::StyleSheet>> mOnDemandBuiltInUASheets;
   nsTArray<RefPtr<mozilla::StyleSheet>> mAdditionalSheets[AdditionalSheetTypeCount];
