@@ -4793,12 +4793,6 @@ nsGlobalWindowInner::FireHashchange(const nsAString &aOldURL,
   
   NS_ENSURE_STATE(IsCurrentInnerWindow());
 
-  nsIPresShell *shell = mDoc->GetShell();
-  RefPtr<nsPresContext> presContext;
-  if (shell) {
-    presContext = shell->GetPresContext();
-  }
-
   HashChangeEventInit init;
   init.mBubbles = true;
   init.mCancelable = false;
@@ -4834,13 +4828,6 @@ nsGlobalWindowInner::DispatchSyncPopState()
   nsCOMPtr<nsIVariant> stateObj;
   rv = mDoc->GetStateObject(getter_AddRefs(stateObj));
   NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  nsIPresShell *shell = mDoc->GetShell();
-  RefPtr<nsPresContext> presContext;
-  if (shell) {
-    presContext = shell->GetPresContext();
-  }
 
   bool result = true;
   AutoJSAPI jsapi;
