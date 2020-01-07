@@ -2468,7 +2468,9 @@ HTMLEditRules::WillDeleteSelection(Selection* aSelection,
       
       if (startNode == stepbrother && startNode->GetAsText() &&
           sibling->GetAsText()) {
-        EditorDOMPoint pt = JoinNodesSmart(*sibling, *startNode->AsContent());
+        EditorDOMPoint pt =
+          JoinNearestEditableNodesWithTransaction(*sibling,
+                                                  *startNode->AsContent());
         if (NS_WARN_IF(!pt.IsSet())) {
           return NS_ERROR_FAILURE;
         }
@@ -2564,7 +2566,8 @@ HTMLEditRules::WillDeleteSelection(Selection* aSelection,
         NS_ENSURE_STATE(leftNode && leftNode->IsContent() &&
                         rightNode && rightNode->IsContent());
         EditActionResult ret =
-          TryToJoinBlocks(*leftNode->AsContent(), *rightNode->AsContent());
+          TryToJoinBlocksWithTransaction(*leftNode->AsContent(),
+                                         *rightNode->AsContent());
         *aHandled |= ret.Handled();
         *aCancel |= ret.Canceled();
         if (NS_WARN_IF(ret.Failed())) {
@@ -2632,7 +2635,8 @@ HTMLEditRules::WillDeleteSelection(Selection* aSelection,
                                   address_of(selPointNode), &selPointOffset);
         NS_ENSURE_STATE(leftNode->IsContent() && rightNode->IsContent());
         EditActionResult ret =
-          TryToJoinBlocks(*leftNode->AsContent(), *rightNode->AsContent());
+          TryToJoinBlocksWithTransaction(*leftNode->AsContent(),
+                                         *rightNode->AsContent());
         
         
         
@@ -2735,7 +2739,8 @@ HTMLEditRules::WillDeleteSelection(Selection* aSelection,
           
           NS_ENSURE_STATE(mHTMLEditor);
           EditorDOMPoint pt =
-            mHTMLEditor->JoinNodeDeep(*leftParent, *rightParent);
+            mHTMLEditor->JoinNodesDeepWithTransaction(*leftParent,
+                                                      *rightParent);
           if (NS_WARN_IF(!pt.IsSet())) {
             return NS_ERROR_FAILURE;
           }
@@ -2813,7 +2818,8 @@ HTMLEditRules::WillDeleteSelection(Selection* aSelection,
         }
 
         if (join) {
-          EditActionResult ret = TryToJoinBlocks(*leftParent, *rightParent);
+          EditActionResult ret =
+            TryToJoinBlocksWithTransaction(*leftParent, *rightParent);
           MOZ_ASSERT(*aHandled);
           *aCancel |= ret.Canceled();
           if (NS_WARN_IF(ret.Failed())) {
@@ -2980,8 +2986,8 @@ HTMLEditRules::GetGoodSelPointForNode(nsINode& aNode,
 }
 
 EditActionResult
-HTMLEditRules::TryToJoinBlocks(nsIContent& aLeftNode,
-                               nsIContent& aRightNode)
+HTMLEditRules::TryToJoinBlocksWithTransaction(nsIContent& aLeftNode,
+                                              nsIContent& aRightNode)
 {
   if (NS_WARN_IF(!mHTMLEditor)) {
     return EditActionIgnored(NS_ERROR_UNEXPECTED);
@@ -3282,7 +3288,8 @@ HTMLEditRules::TryToJoinBlocks(nsIContent& aLeftNode,
   if (mergeLists || leftBlock->NodeInfo()->NameAtom() ==
                     rightBlock->NodeInfo()->NameAtom()) {
     
-    EditorDOMPoint pt = JoinNodesSmart(*leftBlock, *rightBlock);
+    EditorDOMPoint pt =
+      JoinNearestEditableNodesWithTransaction(*leftBlock, *rightBlock);
     if (pt.IsSet() && mergeLists) {
       RefPtr<Element> newBlock =
         ConvertListType(rightBlock, existingList, nsGkAtoms::li);
@@ -7830,16 +7837,9 @@ HTMLEditRules::MaybeSplitAncestorsForInsertWithTransaction(
   return splitNodeResult;
 }
 
-
-
-
-
-
-
-
 EditorDOMPoint
-HTMLEditRules::JoinNodesSmart(nsIContent& aNodeLeft,
-                              nsIContent& aNodeRight)
+HTMLEditRules::JoinNearestEditableNodesWithTransaction(nsIContent& aNodeLeft,
+                                                       nsIContent& aNodeRight)
 {
   
   nsCOMPtr<nsINode> parent = aNodeLeft.GetParentNode();
@@ -7866,7 +7866,7 @@ HTMLEditRules::JoinNodesSmart(nsIContent& aNodeLeft,
   
   if (HTMLEditUtils::IsList(&aNodeLeft) || aNodeLeft.GetAsText()) {
     
-    nsresult rv = mHTMLEditor->JoinNodes(aNodeLeft, aNodeRight);
+    nsresult rv = mHTMLEditor->JoinNodesWithTransaction(aNodeLeft, aNodeRight);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return EditorDOMPoint();
     }
@@ -7894,7 +7894,7 @@ HTMLEditRules::JoinNodesSmart(nsIContent& aNodeLeft,
   if (NS_WARN_IF(!mHTMLEditor)) {
     return EditorDOMPoint();
   }
-  nsresult rv = mHTMLEditor->JoinNodes(aNodeLeft, aNodeRight);
+  nsresult rv = mHTMLEditor->JoinNodesWithTransaction(aNodeLeft, aNodeRight);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return EditorDOMPoint();
   }
@@ -7908,7 +7908,7 @@ HTMLEditRules::JoinNodesSmart(nsIContent& aNodeLeft,
     if (NS_WARN_IF(!mHTMLEditor)) {
       return EditorDOMPoint();
     }
-    return JoinNodesSmart(*lastLeft, *firstRight);
+    return JoinNearestEditableNodesWithTransaction(*lastLeft, *firstRight);
   }
   return ret;
 }

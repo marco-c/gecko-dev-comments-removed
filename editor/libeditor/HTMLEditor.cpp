@@ -3668,8 +3668,10 @@ HTMLEditor::CollapseAdjacentTextNodes(nsRange* aInRange)
     
     nsCOMPtr<nsINode> prevSibOfRightNode = rightTextNode->GetPreviousSibling();
     if (prevSibOfRightNode && prevSibOfRightNode == leftTextNode) {
-      rv = JoinNodes(*leftTextNode, *rightTextNode);
-      NS_ENSURE_SUCCESS(rv, rv);
+      rv = JoinNodesWithTransaction(*leftTextNode, *rightTextNode);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
     }
 
     textNodes.RemoveElementAt(0); 

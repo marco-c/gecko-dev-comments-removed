@@ -389,7 +389,17 @@ public:
   SplitNodeWithTransaction(const EditorDOMPointBase<PT, CT>& aStartOfRightNode,
                            ErrorResult& aResult);
 
-  nsresult JoinNodes(nsINode& aLeftNode, nsINode& aRightNode);
+  
+
+
+
+
+
+
+
+
+  nsresult JoinNodesWithTransaction(nsINode& aLeftNode, nsINode& aRightNode);
+
   nsresult MoveNode(nsIContent* aNode, nsINode* aParent, int32_t aOffset);
 
   
@@ -803,6 +813,10 @@ public:
                    ErrorResult& aError);
 
   
+
+
+
+
 
 
 
@@ -1275,8 +1289,20 @@ public:
     const EditorDOMPointBase<PT, CT>& aDeepestStartOfRightNode,
     SplitAtEdges aSplitAtEdges);
 
-  EditorDOMPoint JoinNodeDeep(nsIContent& aLeftNode,
-                              nsIContent& aRightNode);
+  
+
+
+
+
+
+
+
+
+
+
+
+  EditorDOMPoint JoinNodesDeepWithTransaction(nsIContent& aLeftNode,
+                                              nsIContent& aRightNode);
 
   nsresult GetString(const nsAString& name, nsAString& value);
 

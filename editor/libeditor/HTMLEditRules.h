@@ -202,8 +202,9 @@ protected:
 
 
 
-  EditActionResult TryToJoinBlocks(nsIContent& aLeftNode,
-                                   nsIContent& aRightNode);
+
+  EditActionResult TryToJoinBlocksWithTransaction(nsIContent& aLeftNode,
+                                                  nsIContent& aRightNode);
 
   
 
@@ -459,8 +460,30 @@ protected:
                     nsAtom& aTag,
                     const EditorDOMPointBase<PT, CT>& aStartOfDeepestRightNode);
 
-  EditorDOMPoint JoinNodesSmart(nsIContent& aNodeLeft,
-                                nsIContent& aNodeRight);
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  EditorDOMPoint
+  JoinNearestEditableNodesWithTransaction(nsIContent& aLeftNode,
+                                          nsIContent& aRightNode);
+
   Element* GetTopEnclosingMailCite(nsINode& aNode);
   nsresult PopListItem(nsIContent& aListItem, bool* aOutOfList = nullptr);
   nsresult RemoveListStructure(Element& aList);
