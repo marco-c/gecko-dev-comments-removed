@@ -122,7 +122,8 @@ function limitProperties(name, obj, count, log) {
 
   
   
-  if (Object.keys(obj).length >= count) {
+  let num_properties = Object.keys(obj).length;
+  if (num_properties > count) {
     for (let key of Object.keys(obj)) {
       
       
@@ -139,8 +140,14 @@ function limitProperties(name, obj, count, log) {
 
       delete obj[key];
     }
-    log.warn("Number of properties exceeded in the GC telemetry " +
-        name + " ping");
+    let log_fn;
+    if ((name === "slice.times") || (name === "data.totals")) {
+        
+        log_fn = s => log.info(s);
+    } else {
+        log_fn = s => log.warn(s);
+    }
+    log_fn(`Number of properties exceeded in the GC telemetry ${name} ping, expected ${count} got ${num_properties}`);
   }
 }
 

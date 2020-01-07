@@ -37,12 +37,33 @@ function run_test() {
   assert_num_entries(0, false);
 
   
-  let my_gc = make_gc();
+  let my_big_gc = make_gc();
   for (let i = 0; i < 100; i++) {
-      my_gc["new_property_" + i] = "Data";
+      my_big_gc["new_property_" + i] = "Data";
   }
+  GCTelemetry.observeRaw(my_big_gc);
+  
+  Assert.equal(7, Object.keys(get_entry()).length);
+  assert_num_entries(1, true);
+  assert_num_entries(0, false);
 
-  GCTelemetry.observeRaw(my_gc);
+  
+  let my_gc_24 = make_gc();
+  for (let i = 0; i < 4; i++) {
+      my_gc_24["new_property_" + i] = "Data";
+  }
+  GCTelemetry.observeRaw(my_gc_24);
+  
+  Assert.equal(24, Object.keys(get_entry()).length);
+  assert_num_entries(1, true);
+  assert_num_entries(0, false);
+
+  
+  let my_gc_25 = make_gc();
+  for (let i = 0; i < 5; i++) {
+      my_gc_25["new_property_" + i] = "Data";
+  }
+  GCTelemetry.observeRaw(my_gc_25);
   
   Assert.equal(7, Object.keys(get_entry()).length);
   assert_num_entries(1, true);
