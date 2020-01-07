@@ -343,7 +343,10 @@ public:
 
 
 
-  already_AddRefed<ServoStyleContext> ResolveServoStyle(dom::Element* aElement);
+  already_AddRefed<ServoStyleContext> ResolveServoStyle(dom::Element* aElement)
+  {
+    return Servo_ResolveStyle(aElement, mRawSet.get()).Consume();
+  }
 
   bool GetKeyframesForName(nsAtom* aName,
                            const nsTimingFunction& aTimingFunction,
