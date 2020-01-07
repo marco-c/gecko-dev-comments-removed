@@ -122,7 +122,7 @@ using namespace mozilla::widget;
 #include "mozilla/layers/CompositorThread.h"
 
 #ifdef MOZ_X11
-#include "X11CompositorWidget.h"
+#include "GtkCompositorWidget.h"
 #include "gfxXlibSurface.h"
 #include "WindowSurfaceX11Image.h"
 #include "WindowSurfaceX11SHM.h"
@@ -4068,8 +4068,12 @@ nsWindow::Create(nsIWidget* aParent,
 
       mSurfaceProvider.Initialize(mXDisplay, mXWindow, mXVisual, mXDepth);
     }
+#ifdef MOZ_WAYLAND
+    else if (!mIsX11Display) {
+      mSurfaceProvider.Initialize(this);
+    }
 #endif
-
+#endif
     return NS_OK;
 }
 
@@ -7064,12 +7068,22 @@ nsWindow::RoundsWidgetCoordinatesTo()
 
 void nsWindow::GetCompositorWidgetInitData(mozilla::widget::CompositorWidgetInitData* aInitData)
 {
-  #ifdef MOZ_X11
-  *aInitData = mozilla::widget::X11CompositorWidgetInitData(
+#ifdef MOZ_X11
+#ifdef MOZ_WAYLAND
+  if (!mIsX11Display) {
+    *aInitData = mozilla::widget::GtkCompositorWidgetInitData(
+                                  (uintptr_t)nullptr,
+                                  nsCString(nullptr),
+                                  GetClientSize());
+  } else
+#endif
+  {
+    *aInitData = mozilla::widget::GtkCompositorWidgetInitData(
                                   mXWindow,
                                   nsCString(XDisplayString(mXDisplay)),
                                   GetClientSize());
-  #endif
+  }
+#endif
 }
 
 bool

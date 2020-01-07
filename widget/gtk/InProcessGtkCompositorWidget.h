@@ -1,0 +1,31 @@
+
+
+
+
+
+#ifndef widget_gtk_InProcessGtkCompositorWidgetParent_h
+#define widget_gtk_InProcessGtkCompositorWidgetParent_h
+
+#include "GtkCompositorWidget.h"
+
+class nsWindow;
+
+namespace mozilla {
+namespace widget {
+
+class InProcessGtkCompositorWidget final : public GtkCompositorWidget
+{
+public:
+  InProcessGtkCompositorWidget(const GtkCompositorWidgetInitData& aInitData,
+                               const layers::CompositorOptions& aOptions,
+                               nsWindow* aWindow);
+
+  
+
+  void ObserveVsync(VsyncObserver* aObserver) override;
+};
+
+} 
+} 
+
+#endif 

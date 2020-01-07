@@ -3,8 +3,8 @@
 
 
 
-#ifndef widget_gtk_X11CompositorWidget_h
-#define widget_gtk_X11CompositorWidget_h
+#ifndef widget_gtk_GtkCompositorWidget_h
+#define widget_gtk_GtkCompositorWidget_h
 
 #include "mozilla/widget/CompositorWidget.h"
 #include "WindowSurfaceProvider.h"
@@ -28,17 +28,17 @@ public:
   }
 };
 
-class X11CompositorWidgetInitData;
+class GtkCompositorWidgetInitData;
 
-class X11CompositorWidget
+class GtkCompositorWidget
  : public CompositorWidget
  , public PlatformCompositorWidgetDelegate
 {
 public:
-  X11CompositorWidget(const X11CompositorWidgetInitData& aInitData,
+  GtkCompositorWidget(const GtkCompositorWidgetInitData& aInitData,
                       const layers::CompositorOptions& aOptions,
                       nsWindow* aWindow = nullptr);
-  ~X11CompositorWidget();
+  ~GtkCompositorWidget();
 
   
 
@@ -55,7 +55,7 @@ public:
   LayoutDeviceIntSize GetClientSize() override;
 
   nsIWidget* RealWidget() override;
-  X11CompositorWidget* AsX11() override { return this; }
+  GtkCompositorWidget* AsX11() override { return this; }
   CompositorWidgetDelegate* AsDelegate() override { return this; }
 
   Display* XDisplay() const { return mXDisplay; }
