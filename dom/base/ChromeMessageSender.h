@@ -12,34 +12,20 @@
 namespace mozilla {
 namespace dom {
 
-class ChromeMessageBroadcaster;
+class MessageBroadcaster;
 
 class ChromeMessageSender final : public MessageSender
 {
 public:
-  ChromeMessageSender(ipc::MessageManagerCallback* aCallback,
-                      ChromeMessageBroadcaster* aParentManager,
-                      MessageManagerFlags aFlags=MessageManagerFlags::MM_NONE);
+  explicit ChromeMessageSender(MessageBroadcaster* aParentManager)
+    : MessageSender(nullptr, aParentManager, MessageManagerFlags::MM_CHROME)
+  {
+    
+    
+  }
 
   virtual JSObject* WrapObject(JSContext* aCx,
                                JS::Handle<JSObject*> aGivenProto) override;
-
-  
-  void LoadProcessScript(const nsAString& aUrl, bool aAllowDelayedLoad,
-                         mozilla::ErrorResult& aError)
-  {
-    LoadScript(aUrl, aAllowDelayedLoad, false, aError);
-  }
-  void RemoveDelayedProcessScript(const nsAString& aURL)
-  {
-    RemoveDelayedScript(aURL);
-  }
-  void GetDelayedProcessScripts(JSContext* aCx,
-                                nsTArray<nsTArray<JS::Value>>& aScripts,
-                                mozilla::ErrorResult& aError)
-  {
-    GetDelayedScripts(aCx, aScripts, aError);
-  }
 
   
   void LoadFrameScript(const nsAString& aUrl, bool aAllowDelayedLoad,
