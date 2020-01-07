@@ -168,8 +168,7 @@ public:
   
   
   already_AddRefed<ServoStyleContext>
-  ResolveStyleForText(nsIContent* aTextNode,
-                      ServoStyleContext* aParentContext);
+  ResolveStyleForText(nsIContent* aTextNode, ServoStyleContext* aParentContext);
 
   
   

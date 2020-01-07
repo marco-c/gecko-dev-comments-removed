@@ -2459,13 +2459,8 @@ nsCSSFrameConstructor::ConstructDocElementFrame(Element*                 aDocEle
     }
   }
 
-  
-  
-  
   RefPtr<nsStyleContext> styleContext =
-    mPresShell->StyleSet()->ResolveStyleFor(aDocElement,
-                                            nullptr,
-                                            LazyComputeBehavior::Assert);
+    mPresShell->StyleSet()->AsServo()->ResolveServoStyle(aDocElement);
 
   const nsStyleDisplay* display = styleContext->StyleDisplay();
 
@@ -2497,11 +2492,8 @@ nsCSSFrameConstructor::ConstructDocElementFrame(Element*                 aDocEle
     }
 
     if (resolveStyle) {
-      
-      
-      
-      styleContext = mPresShell->StyleSet()->ResolveStyleFor(
-          aDocElement, nullptr, LazyComputeBehavior::Assert);
+      styleContext =
+        mPresShell->StyleSet()->AsServo()->ResolveServoStyle(aDocElement);
       display = styleContext->StyleDisplay();
     }
   }
@@ -5029,98 +5021,34 @@ nsCSSFrameConstructor::InitAndRestoreFrame(const nsFrameConstructorState& aState
 }
 
 already_AddRefed<nsStyleContext>
-nsCSSFrameConstructor::ResolveStyleContext(nsIFrame* aParentFrame,
-                                           nsIContent* aContainer,
-                                           nsIContent* aChild)
+nsCSSFrameConstructor::ResolveStyleContext(nsIContent* aContent)
 {
-  MOZ_ASSERT(aContainer, "Must have parent here");
-  
-  
-  nsStyleContext* parentStyleContext = GetDisplayContentsStyleFor(aContainer);
-  if (MOZ_LIKELY(!parentStyleContext)) {
-    aParentFrame = nsFrame::CorrectStyleParentFrame(aParentFrame, nullptr);
-    if (aParentFrame) {
-      MOZ_ASSERT(aParentFrame->GetContent() == aContainer);
-      
-      
-      parentStyleContext = aParentFrame->StyleContext();
-    } else {
-      
-      
-      
-      
-      
-    }
-  }
+  ServoStyleSet* styleSet = mPresShell->StyleSet()->AsServo();
 
-  return ResolveStyleContext(parentStyleContext, aChild);
-}
-
-already_AddRefed<nsStyleContext>
-nsCSSFrameConstructor::ResolveStyleContext(nsIFrame* aParentFrame,
-                                           nsIContent* aChild)
-{
-  return ResolveStyleContext(aParentFrame, aChild->GetFlattenedTreeParent(), aChild);
-}
-
-already_AddRefed<nsStyleContext>
-nsCSSFrameConstructor::ResolveStyleContext(const InsertionPoint& aInsertion,
-                                           nsIContent* aChild)
-{
-  return ResolveStyleContext(aInsertion.mParentFrame, aInsertion.mContainer,
-                             aChild);
-}
-
-already_AddRefed<nsStyleContext>
-nsCSSFrameConstructor::ResolveStyleContext(nsStyleContext* aParentStyleContext,
-                                           nsIContent* aContent,
-                                           Element* aOriginatingElementOrNull)
-{
-  StyleSetHandle styleSet = mPresShell->StyleSet();
-
-  RefPtr<nsStyleContext> result;
   if (aContent->IsElement()) {
-    auto pseudoType = aContent->AsElement()->GetPseudoElementType();
-    if (pseudoType == CSSPseudoElementType::NotPseudo) {
-      MOZ_ASSERT(!aOriginatingElementOrNull);
-      result = styleSet->ResolveStyleFor(aContent->AsElement(),
-                                         aParentStyleContext,
-                                         LazyComputeBehavior::Assert);
-    } else {
-      MOZ_ASSERT(aContent->IsInNativeAnonymousSubtree());
-      if (!aOriginatingElementOrNull) {
-        
-        
-        
-        
-        
-        
-        MOZ_ASSERT(nsCSSPseudoElements::PseudoElementIsJSCreatedNAC(pseudoType));
-        aOriginatingElementOrNull =
-          nsContentUtils::GetClosestNonNativeAnonymousAncestor(aContent->AsElement());
-      }
-      MOZ_ASSERT(aOriginatingElementOrNull);
-      result = styleSet->ResolvePseudoElementStyle(aOriginatingElementOrNull,
-                                                   pseudoType,
-                                                   aParentStyleContext,
-                                                   aContent->AsElement());
-    }
-  } else {
-    MOZ_ASSERT(!aOriginatingElementOrNull);
-    NS_ASSERTION(aContent->IsNodeOfType(nsINode::eTEXT),
-                 "shouldn't waste time creating style contexts for "
-                 "comments and processing instructions");
-    result = styleSet->ResolveStyleForText(aContent, aParentStyleContext);
+    return styleSet->ResolveServoStyle(aContent->AsElement());
   }
+
+  MOZ_ASSERT(aContent->IsNodeOfType(nsINode::eTEXT),
+             "shouldn't waste time creating style contexts for "
+             "comments and processing instructions");
+
+  Element* parent = aContent->GetFlattenedTreeParentElement();
+  MOZ_ASSERT(parent, "Text out of the flattened tree?");
 
   
   
   
-  if (RestyleManager()->IsGecko()) {
-    MOZ_CRASH("old style system disabled");
-  }
-
-  return result.forget();
+  
+  
+  
+  
+  
+  
+  
+  RefPtr<ServoStyleContext> parentStyle =
+    Servo_Element_GetPrimaryComputedValues(parent).Consume();
+  return styleSet->ResolveStyleForText(aContent, parentStyle);
 }
 
 
@@ -5712,8 +5640,7 @@ nsCSSFrameConstructor::AddFrameConstructionItems(nsFrameConstructorState& aState
   if (!ShouldCreateItemsForChild(aState, aContent, parentFrame)) {
     return;
   }
-  RefPtr<nsStyleContext> styleContext =
-    ResolveStyleContext(aInsertion, aContent);
+  RefPtr<nsStyleContext> styleContext = ResolveStyleContext(aContent);
   DoAddFrameConstructionItems(aState, aContent, styleContext,
                               aSuppressWhiteSpaceOptimizations, parentFrame,
                               nullptr, aItems);
@@ -5983,8 +5910,7 @@ nsCSSFrameConstructor::AddFrameConstructionItemsInternal(nsFrameConstructorState
         continue;
       }
 
-      RefPtr<nsStyleContext> childContext =
-        ResolveStyleContext(styleContext, child);
+      RefPtr<nsStyleContext> childContext = ResolveStyleContext(child);
       DoAddFrameConstructionItems(aState, child, childContext,
                                   aSuppressWhiteSpaceOptimizations,
                                   aParentFrame, aAnonChildren, aItems);
@@ -6527,15 +6453,6 @@ nsCSSFrameConstructor::IsValidSibling(nsIFrame*              aSibling,
       LayoutFrameType::Menu == parentType) {
     
     if (UNSET_DISPLAY == aDisplay) {
-      nsIFrame* styleParent;
-      aSibling->GetParentStyleContext(&styleParent);
-      if (!styleParent) {
-        styleParent = aSibling->GetParent();
-      }
-      if (!styleParent) {
-        NS_NOTREACHED("Shouldn't happen");
-        return false;
-      }
       if (aContent->IsNodeOfType(nsINode::eCOMMENT) ||
           aContent->IsNodeOfType(nsINode::ePROCESSING_INSTRUCTION)) {
         
@@ -6543,8 +6460,7 @@ nsCSSFrameConstructor::IsValidSibling(nsIFrame*              aSibling,
         return false;
       }
       
-      RefPtr<nsStyleContext> styleContext =
-        ResolveStyleContext(styleParent, aContent);
+      RefPtr<nsStyleContext> styleContext = ResolveStyleContext(aContent);
       const nsStyleDisplay* display = styleContext->StyleDisplay();
       aDisplay = display->mDisplay;
     }
@@ -10422,103 +10338,7 @@ nsCSSFrameConstructor::AddFCItemsForAnonymousContent(
     MOZ_ASSERT(!content->IsStyledByServo() || !content->IsElement() ||
                content->AsElement()->HasServoData());
 
-    
-    nsAtom* pseudo = nullptr;
-    if (content->IsElement()) {
-      auto pseudoType = content->AsElement()->GetPseudoElementType();
-      if (pseudoType != CSSPseudoElementType::NotPseudo) {
-        pseudo = nsCSSPseudoElements::GetPseudoAtom(pseudoType);
-      }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    nsIFrame* inheritFrame = aFrame;
-    if (!content->IsNativeScrollbarContent()) {
-      while (inheritFrame->GetContent()->IsNativeAnonymous()) {
-        inheritFrame = inheritFrame->GetInFlowParent();
-      }
-    }
-
-    nsIFrame* styleParentFrame =
-      nsFrame::CorrectStyleParentFrame(inheritFrame, pseudo);
-    
-    
-    
-    MOZ_ASSERT(styleParentFrame || inheritFrame->IsCanvasFrame());
-    
-    MOZ_ASSERT(styleParentFrame || !pseudo);
-
-    Element* originating =
-      pseudo ? styleParentFrame->GetContent()->AsElement() : nullptr;
-    nsStyleContext* parentStyle =
-      styleParentFrame ? styleParentFrame->StyleContext() : nullptr;
-    RefPtr<nsStyleContext> styleContext =
-      ResolveStyleContext(parentStyle, content, originating);
+    RefPtr<nsStyleContext> styleContext = ResolveStyleContext(content);
 
     nsTArray<nsIAnonymousContentCreator::ContentInfo>* anonChildren = nullptr;
     if (!aAnonymousItems[i].mChildren.IsEmpty()) {
@@ -11494,11 +11314,7 @@ nsCSSFrameConstructor::CreateListBoxContent(nsContainerFrame*      aParentFrame,
                                   GetFloatContainingBlock(aParentFrame),
                                   do_AddRef(mTempFrameTreeState));
 
-    
-    
-
-    RefPtr<nsStyleContext> styleContext =
-      ResolveStyleContext(aParentFrame, aChild);
+    RefPtr<nsStyleContext> styleContext = ResolveStyleContext(aChild);
 
     
     
@@ -11875,8 +11691,7 @@ nsCSSFrameConstructor::BuildInlineChildItems(nsFrameConstructorState& aState,
       
       content->UnsetRestyleFlagsIfGecko();
 
-      RefPtr<nsStyleContext> childContext =
-        ResolveStyleContext(parentStyleContext, content);
+      RefPtr<nsStyleContext> childContext = ResolveStyleContext(content);
 
       AddFrameConstructionItemsInternal(aState, content, nullptr,
                                         content->NodeInfo()->NameAtom(),
