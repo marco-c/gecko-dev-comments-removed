@@ -1,13 +1,12 @@
-
-
-
-
+/* -*- Mode: Java; c-basic-offset: 4; tab-width: 20; indent-tabs-mode: nil; -*-
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 package org.mozilla.gecko.prompts;
 
 import org.mozilla.gecko.GeckoAppShell;
 import org.mozilla.gecko.R;
-import org.mozilla.gecko.gfx.LayerView;
 import org.mozilla.gecko.util.GeckoBundle;
 import org.mozilla.gecko.util.ThreadUtils;
 import org.mozilla.gecko.Tab;
@@ -69,7 +68,7 @@ public class Prompt implements OnClickListener, OnCancelListener, OnItemClickLis
     }
 
     private View applyInputStyle(View view, PromptInput input) {
-        
+        // Don't add padding to color picker views
         if (input.canApplyInputStyle()) {
             view.setPadding(mInputPaddingSize, 0, mInputPaddingSize, 0);
         }
@@ -110,8 +109,8 @@ public class Prompt implements OnClickListener, OnCancelListener, OnItemClickLis
 
     private int convertIndexToButtonType(final int buttonIndex, final int buttonCount) {
         if (buttonIndex < 0 || buttonIndex >= buttonCount) {
-            
-            
+            // All valid DialogInterface button values are < 0,
+            // so we return 0 as an invalid value.
             return 0;
         }
 
@@ -176,7 +175,7 @@ public class Prompt implements OnClickListener, OnCancelListener, OnItemClickLis
 
         AlertDialog.Builder builder = new AlertDialog.Builder(mContext);
         if (!TextUtils.isEmpty(title)) {
-            
+            // Long strings can delay showing the dialog, so we cap the number of characters shown to 256.
             builder.setTitle(title.substring(0, Math.min(title.length(), 256)));
         }
 
@@ -184,8 +183,8 @@ public class Prompt implements OnClickListener, OnCancelListener, OnItemClickLis
             builder.setMessage(text);
         }
 
-        
-        
+        // Because lists are currently added through the normal Android AlertBuilder interface, they're
+        // incompatible with also adding additional input elements to a dialog.
         if (listItems != null && listItems.length > 0) {
             addListItems(builder, listItems, choiceMode);
         } else if (!addInputs(builder)) {
@@ -215,21 +214,21 @@ public class Prompt implements OnClickListener, OnCancelListener, OnItemClickLis
         mInputs = inputs;
     }
 
-    
-
-
-
-
+    /* Adds to a result value from the lists that can be shown in dialogs.
+     *  Will set the selected value(s) to the button attribute of the
+     *  object that's passed in. If this is a multi-select dialog, sets a
+     *  selected attribute to an array of booleans.
+     */
     private void addListResult(final GeckoBundle result, int which) {
         if (mAdapter == null) {
             return;
         }
 
-        
+        // If the button has already been filled in
         final ArrayList<Integer> selected = mAdapter.getSelected();
 
-        
-        
+        // If we haven't assigned a button yet, or we assigned it to -1, assign the which
+        // parameter to both selected and the button.
         if (result.getInt("button", -1) == -1) {
             if (!selected.contains(which)) {
                 selected.add(which);
@@ -241,9 +240,9 @@ public class Prompt implements OnClickListener, OnCancelListener, OnItemClickLis
         result.putIntArray("list", selected);
     }
 
-    
-
-
+    /* Adds to a result value from the inputs that can be shown in dialogs.
+     * Each input will set its own value in the result.
+     */
     private void addInputValues(final GeckoBundle result) {
         if (mInputs == null) {
             return;
@@ -257,10 +256,10 @@ public class Prompt implements OnClickListener, OnCancelListener, OnItemClickLis
         }
     }
 
-    
-
-
-
+    /* Adds the selected button to a result. This should only be called if there
+     * are no lists shown on the dialog, since they also write their results to the button
+     * attribute.
+     */
     private void addButtonResult(final GeckoBundle result, int which) {
         int button = -1;
         switch (which) {
@@ -277,16 +276,16 @@ public class Prompt implements OnClickListener, OnCancelListener, OnItemClickLis
         closeDialog(which);
     }
 
-    
-
-
-
-
-
-
-
-
-
+    /* Adds a set of list items to the prompt. This can be used for either context menu type dialogs, checked lists,
+     * or multiple selection lists.
+     *
+     * @param builder
+     *        The alert builder currently building this dialog.
+     * @param listItems
+     *        The items to add.
+     * @param choiceMode
+     *        One of the ListView.CHOICE_MODE constants to designate whether this list shows checkmarks, radios buttons, or nothing.
+    */
     private void addListItems(AlertDialog.Builder builder, PromptListItem[] listItems, int choiceMode) {
         switch (choiceMode) {
             case ListView.CHOICE_MODE_MULTIPLE_MODAL:
@@ -302,15 +301,15 @@ public class Prompt implements OnClickListener, OnCancelListener, OnItemClickLis
         }
     }
 
-    
-
-
-
-
-
-
-
-
+    /* Shows a multi-select list with checkmarks on the side. Android doesn't support using an adapter for
+     * multi-choice lists by default so instead we insert our own custom list so that we can do fancy things
+     * to the rows like disabling/indenting them.
+     *
+     * @param builder
+     *        The alert builder currently building this dialog.
+     * @param listItems
+     *        The items to add.
+     */
     private void addMultiSelectList(AlertDialog.Builder builder, PromptListItem[] listItems) {
         ListView listView = (ListView) mInflater.inflate(R.layout.select_dialog_list, null);
         listView.setOnItemClickListener(this);
@@ -321,47 +320,47 @@ public class Prompt implements OnClickListener, OnCancelListener, OnItemClickLis
         builder.setView(listView);
     }
 
-    
-
-
-
-
-
-
+    /* Shows a single-select list with radio boxes on the side.
+     *
+     * @param builder
+     *        the alert builder currently building this dialog.
+     * @param listItems
+     *        The items to add.
+     */
     private void addSingleSelectList(AlertDialog.Builder builder, PromptListItem[] listItems) {
         mAdapter = new PromptListAdapter(mContext, R.layout.select_dialog_singlechoice, listItems);
         builder.setSingleChoiceItems(mAdapter, mAdapter.getSelectedIndex(), new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                
-                
+                // The adapter isn't aware of single vs. multi choice lists, so manually
+                // clear any other selected items first.
                 ArrayList<Integer> selected = mAdapter.getSelected();
                 for (Integer sel : selected) {
                     mAdapter.toggleSelected(sel);
                 }
 
-                
+                // Now select this item.
                 mAdapter.toggleSelected(which);
                 closeIfNoButtons(which);
             }
         });
     }
 
-    
-
-
-
-
-
-
+    /* Shows a single-select list.
+     *
+     * @param builder
+     *        the alert builder currently building this dialog.
+     * @param listItems
+     *        The items to add.
+     */
     private void addMenuList(AlertDialog.Builder builder, PromptListItem[] listItems) {
         mAdapter = new PromptListAdapter(mContext, android.R.layout.simple_list_item_1, listItems);
         builder.setAdapter(mAdapter, this);
     }
 
-    
-
-
+    /* Wraps an input in a linearlayout. We do this so that we can set padding that appears outside the background
+     * drawable for the view.
+     */
     private View wrapInput(final PromptInput input) {
         final LinearLayout linearLayout = new LinearLayout(mContext);
         linearLayout.setOrientation(LinearLayout.VERTICAL);
@@ -372,14 +371,14 @@ public class Prompt implements OnClickListener, OnCancelListener, OnItemClickLis
         return linearLayout;
     }
 
-    
-
-
-
-
-
-
-
+    /* Add the requested input elements to the dialog.
+     *
+     * @param builder
+     *        the alert builder currently building this dialog.
+     * @return
+     *         return true if the inputs were added successfully. This may fail
+     *         if the requested input is compatible with this Android version.
+     */
     private boolean addInputs(AlertDialog.Builder builder) {
         int length = mInputs == null ? 0 : mInputs.length;
         if (length == 0) {
@@ -388,7 +387,7 @@ public class Prompt implements OnClickListener, OnCancelListener, OnItemClickLis
 
         try {
             View root = null;
-            boolean scrollable = false; 
+            boolean scrollable = false; // If any of the inputs are scrollable, we won't wrap this in a ScrollView
 
             if (length == 1) {
                 root = wrapInput(mInputs[0]);
@@ -405,7 +404,7 @@ public class Prompt implements OnClickListener, OnCancelListener, OnItemClickLis
             }
 
             if (scrollable) {
-                
+                // If we're showing some sort of scrollable list, force an inverse background.
                 builder.setInverseBackgroundForced(true);
                 builder.setView(root);
             } else {
@@ -415,8 +414,8 @@ public class Prompt implements OnClickListener, OnCancelListener, OnItemClickLis
             }
         } catch (Exception ex) {
             Log.e(LOGTAG, "Error showing prompt inputs", ex);
-            
-            
+            // We cannot display these input widgets with this sdk version,
+            // do not display any dialog and finish the prompt now.
             cancelDialog();
             return false;
         }
@@ -424,17 +423,17 @@ public class Prompt implements OnClickListener, OnCancelListener, OnItemClickLis
         return true;
     }
 
-    
-
-
+    /* AdapterView.OnItemClickListener
+     * Called when a list item is clicked
+     */
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         ThreadUtils.assertOnUiThread();
         mAdapter.toggleSelected(position);
 
-        
-        
-        
+        // If there are no buttons on this dialog, then we take selecting an item as a sign to close
+        // the dialog. Note that means it will be hard to select multiple things in this list, but
+        // given there is no way to confirm+close the dialog, it seems reasonable.
         closeIfNoButtons(position);
     }
 
@@ -447,22 +446,22 @@ public class Prompt implements OnClickListener, OnCancelListener, OnItemClickLis
         return false;
     }
 
-    
-
-
-
-
-
-
+    /* @DialogInterface.OnCancelListener
+     * Called when the user hits back to cancel a dialog. The dialog will close itself when this
+     * ends. Setup the correct return values here.
+     *
+     * @param aDialog
+     *          A dialog interface for the dialog that's being closed.
+     */
     @Override
     public void onCancel(DialogInterface aDialog) {
         ThreadUtils.assertOnUiThread();
         cancelDialog();
     }
 
-    
-
-
+    /* Called in situations where we want to cancel the dialog . This can happen if the user hits back,
+     * or if the dialog can't be created because of invalid input.
+     */
     private void cancelDialog() {
         final GeckoBundle ret = new GeckoBundle();
         ret.putInt("button", -1);
@@ -471,9 +470,9 @@ public class Prompt implements OnClickListener, OnCancelListener, OnItemClickLis
         notifyClosing(ret);
     }
 
-    
-
-
+    /* Called any time we're closing the dialog to cleanup and notify listeners that the dialog
+     * is closing.
+     */
     private void closeDialog(int which) {
         final GeckoBundle ret = new GeckoBundle();
         mDialog.dismiss();
@@ -485,9 +484,9 @@ public class Prompt implements OnClickListener, OnCancelListener, OnItemClickLis
         notifyClosing(ret);
     }
 
-    
-
-
+    /* Called any time we're closing the dialog to cleanup and notify listeners that the dialog
+     * is closing.
+     */
     private void notifyClosing(final GeckoBundle ret) {
         ret.putString("guid", mGuid);
 
@@ -500,16 +499,16 @@ public class Prompt implements OnClickListener, OnCancelListener, OnItemClickLis
         }
     }
 
-    
+    // Called when the prompt inputs on the dialog change
     @Override
     public void onChange(PromptInput input) {
-        
-        
-        
+        // If there are no buttons on this dialog, assuming that "changing" an input
+        // means something was selected and we can close. This provides a way to tap
+        // on a list item and close the dialog automatically.
         if (!closeIfNoButtons(-1)) {
-            
-            
-            
+            // Alternatively, if a default button has been specified for double tapping,
+            // we want to close the dialog if the same input value has been transmitted
+            // twice in a row.
             closeIfDoubleTapEnabled(input.getValue());
         }
     }
@@ -524,10 +523,10 @@ public class Prompt implements OnClickListener, OnCancelListener, OnItemClickLis
     }
 
     public interface PromptCallback {
-        
-
-
-
+        /**
+         * Called when the Prompt has been completed (i.e. when the user has selected an item or action in the Prompt).
+         * This callback is run on the UI thread.
+         */
         public void onPromptFinished(GeckoBundle result);
     }
 }

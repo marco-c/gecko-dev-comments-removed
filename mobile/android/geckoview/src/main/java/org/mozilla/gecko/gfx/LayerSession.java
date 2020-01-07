@@ -341,6 +341,12 @@ public class LayerSession {
         rect.set(0, mClientTop - mTop, mWidth, mHeight);
     }
 
+    @WrapForJNI(stubName = "GetCompositor", calledFrom = "ui")
+    private Object getCompositorFromNative() {
+        
+        return mCompositorReady ? mCompositor : null;
+    }
+
      void onCompositorAttached() {
         if (DEBUG) {
             ThreadUtils.assertOnUiThread();

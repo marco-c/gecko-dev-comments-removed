@@ -86,10 +86,10 @@ public class PresentationMediaPlayerManager extends MediaPlayerManager {
     }
 
     @WrapForJNI(calledFrom = "ui")
-     static native void invalidateAndScheduleComposite(GeckoView geckoView);
+     static native void invalidateAndScheduleComposite(GeckoSession session);
 
     @WrapForJNI(calledFrom = "ui")
-     static native void addPresentationSurface(GeckoView geckoView, Surface surface);
+     static native void addPresentationSurface(GeckoSession session, Surface surface);
 
     @WrapForJNI(calledFrom = "ui")
      static native void removePresentationSurface();
@@ -128,14 +128,14 @@ public class PresentationMediaPlayerManager extends MediaPlayerManager {
                                    int height) {
             
             if (GeckoThread.isStateAtLeast(GeckoThread.State.PROFILE_READY)) {
-                invalidateAndScheduleComposite(mGeckoView);
+                invalidateAndScheduleComposite(mGeckoView.getSession());
             }
         }
 
         @Override
         public void surfaceCreated(SurfaceHolder holder) {
             if (GeckoThread.isStateAtLeast(GeckoThread.State.PROFILE_READY)) {
-                addPresentationSurface(mGeckoView, holder.getSurface());
+                addPresentationSurface(mGeckoView.getSession(), holder.getSurface());
             }
         }
 
