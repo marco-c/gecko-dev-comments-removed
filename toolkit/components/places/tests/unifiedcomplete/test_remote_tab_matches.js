@@ -203,3 +203,31 @@ add_task(async function test_localtab_matches_override() {
              ],
   });
 });
+
+add_task(async function test_remotetab_matches_override() {
+  
+  
+  let url = "http://foo.remote.com/";
+  
+  configureEngine({
+    guid_mobile: {
+      clientName: "My Phone",
+      tabs: [{
+        urlHistory: [url],
+        title: "An Example",
+      }],
+    }
+  });
+
+  
+  await PlacesTestUtils.addVisits(url);
+
+  await check_autocomplete({
+    search: "rem",
+    searchParam: "enable-actions",
+    matches: [ makeSearchMatch("rem", { heuristic: true }),
+               makeRemoteTabMatch("http://foo.remote.com/", "My Phone",
+                                  { title: "An Example" }),
+             ],
+  });
+});

@@ -21,6 +21,10 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   PlacesSyncUtils: "resource://gre/modules/PlacesSyncUtils.jsm",
 });
 
+XPCOMUtils.defineLazyGetter(this, "MOZ_ACTION_REGEX", () => {
+  return /^moz-action:([^,]+),(.*)$/;
+});
+
 
 
 
@@ -318,6 +322,8 @@ this.PlacesUtils = {
   TOPIC_BOOKMARKS_RESTORE_SUCCESS: "bookmarks-restore-success",
   TOPIC_BOOKMARKS_RESTORE_FAILED: "bookmarks-restore-failed",
 
+  ACTION_SCHEME: "moz-action:",
+
   asContainer: aNode => asContainer(aNode),
   asQuery: aNode => asQuery(aNode),
 
@@ -413,7 +419,38 @@ this.PlacesUtils = {
       }
       encodedParams[key] = encodeURIComponent(params[key]);
     }
-    return "moz-action:" + type + "," + JSON.stringify(encodedParams);
+    return this.ACTION_SCHEME + type + "," + JSON.stringify(encodedParams);
+  },
+
+  
+
+
+
+
+
+  parseActionUrl(url) {
+    if (url instanceof Ci.nsIURI)
+      url = url.spec;
+    else if (url instanceof URL)
+      url = url.href;
+    
+    if (!url.startsWith(this.ACTION_SCHEME))
+      return null;
+
+    try {
+      let [, type, params] = url.match(MOZ_ACTION_REGEX);
+      let action = {
+        type,
+        params: JSON.parse(params)
+      };
+      for (let key in action.params) {
+        action.params[key] = decodeURIComponent(action.params[key]);
+      }
+      return action;
+    } catch (ex) {
+      Cu.reportError(`Invalid action url "${url}"`);
+      return null;
+    }
   },
 
   

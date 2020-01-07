@@ -713,40 +713,18 @@ function stripHttpAndTrim(spec, trimSlash = true) {
 
 
 function makeKeyForURL(match) {
-  let actionUrl = match.value;
-
+  let url = match.value;
+  let action = PlacesUtils.parseActionUrl(url);
   
-  if (!actionUrl.startsWith("moz-action:")) {
+  if (!action || !("url" in action.params)) {
     
     
     if (match.hasOwnProperty("style") && match.style.includes("autofill")) {
-      return stripHttpAndTrim(match.comment);
+      url = match.comment;
     }
-    return stripHttpAndTrim(actionUrl);
+    return [stripHttpAndTrim(url), null];
   }
-  let [, type, params] = actionUrl.match(/^moz-action:([^,]+),(.*)$/);
-  try {
-    params = JSON.parse(params);
-  } catch (ex) {
-    
-    return stripHttpAndTrim(actionUrl);
-  }
-  
-  switch (type) {
-    case "remotetab":
-    case "switchtab":
-      if (params.url) {
-        return "moz-action:tab:" + stripHttpAndTrim(params.url);
-      }
-      break;
-      
-      
-    default:
-      
-      
-      
-  }
-  return stripHttpAndTrim(actionUrl);
+  return [stripHttpAndTrim(action.params.url), action];
 }
 
 
@@ -868,7 +846,7 @@ function Search(searchString, searchParam, autocompleteListener,
   this._currentMatchCount = 0;
 
   
-  this._usedURLs = new Set();
+  this._usedURLs = [];
   this._usedPlaceIds = new Set();
 
   
@@ -1060,8 +1038,7 @@ Search.prototype = {
     
 
     
-    let queries = [ this._adaptiveQuery ];
-
+    let queries = [];
     
     
     if (this.hasBehavior("openpage")) {
@@ -1132,14 +1109,22 @@ Search.prototype = {
       this._cleanUpNonCurrentMatches(MATCHTYPE.SUGGESTION);
     });
 
-    for (let [query, params] of queries) {
-      await conn.executeCached(query, params, this._onResultRow.bind(this));
+    
+    await conn.executeCached(this._adaptiveQuery[0], this._adaptiveQuery[1],
+                             this._onResultRow.bind(this));
+    if (!this.pending)
+      return;
+
+    
+    if (this._enableActions && this.hasBehavior("openpage")) {
+      await this._matchRemoteTabs();
       if (!this.pending)
         return;
     }
 
-    if (this._enableActions && this.hasBehavior("openpage")) {
-      await this._matchRemoteTabs();
+    
+    for (let [query, params] of queries) {
+      await conn.executeCached(query, params, this._onResultRow.bind(this));
       if (!this.pending)
         return;
     }
@@ -1859,23 +1844,6 @@ Search.prototype = {
                                        !this._searchString.includes("/"));
     }
 
-    
-    let urlMapKey = makeKeyForURL(match);
-    if ((match.placeId && this._usedPlaceIds.has(match.placeId)) ||
-        this._usedURLs.has(urlMapKey)) {
-      return;
-    }
-
-    
-    
-    
-    
-    
-    
-    if (match.placeId)
-      this._usedPlaceIds.add(match.placeId);
-    this._usedURLs.add(urlMapKey);
-
     match.style = match.style || "favicon";
 
     
@@ -1891,6 +1859,8 @@ Search.prototype = {
     match.finalCompleteValue = match.finalCompleteValue || "";
 
     let {index, replace} = this._getInsertIndexForMatch(match);
+    if (index == -1)
+      return;
     if (replace) { 
       this._result.removeMatchAt(index);
     }
@@ -1911,6 +1881,43 @@ Search.prototype = {
   },
 
   _getInsertIndexForMatch(match) {
+    
+    
+    
+    
+    
+    
+    
+    
+    let [urlMapKey, action] = makeKeyForURL(match);
+    if ((match.placeId && this._usedPlaceIds.has(match.placeId)) ||
+        this._usedURLs.map(e => e.key).includes(urlMapKey)) {
+      
+      if (action && ["switchtab", "remotetab"].includes(action.type)) {
+        
+        for (let i = 0; i < this._usedURLs.length; ++i) {
+          let {key: matchKey, action: matchAction} = this._usedURLs[i];
+          if (matchKey == urlMapKey) {
+            if (!matchAction || action.type == "switchtab") {
+              this._usedURLs[i] = {key: urlMapKey, action};
+              return { index:  i, replace: true };
+            }
+            break; 
+          }
+        }
+      }
+      return { index: -1, replace: false };
+    }
+
+    
+    
+    
+    
+    
+    
+    if (match.placeId)
+      this._usedPlaceIds.add(match.placeId);
+
     let index = 0;
     
     
@@ -1947,7 +1954,7 @@ Search.prototype = {
       }
     }
 
-    let replace = false;
+    let replace = 0;
     for (let bucket of this._buckets) {
       
       
@@ -1966,6 +1973,7 @@ Search.prototype = {
       bucket.insertIndex++;
       break;
     }
+    this._usedURLs[index] = {key: urlMapKey, action};
     return { index, replace };
   },
 
