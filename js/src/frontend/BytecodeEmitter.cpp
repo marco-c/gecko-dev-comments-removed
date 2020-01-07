@@ -253,12 +253,21 @@ class LoopControl : public BreakableControl
         loopDepth_ = enclosingLoop ? enclosingLoop->loopDepth_ + 1 : 1;
 
         int loopSlots;
-        if (loopKind == StatementKind::Spread)
+        if (loopKind == StatementKind::Spread) {
+            
+            
+            loopSlots = 4;
+        } else if (loopKind == StatementKind::ForOfLoop) {
+            
+            
             loopSlots = 3;
-        else if (loopKind == StatementKind::ForInLoop || loopKind == StatementKind::ForOfLoop)
+        } else if (loopKind == StatementKind::ForInLoop) {
+            
             loopSlots = 2;
-        else
+        } else {
+            
             loopSlots = 0;
+        }
 
         MOZ_ASSERT(loopSlots <= stackDepth_);
 
@@ -2102,6 +2111,12 @@ class ForOfLoopControl : public LoopControl
             return false;
 
         
+        if (!bce->emit1(JSOP_SWAP))                       
+            return false;
+        if (!bce->emit1(JSOP_POP))                        
+            return false;
+
+        
         
         if (!bce->emit1(JSOP_UNDEFINED))                  
             return false;
@@ -2115,6 +2130,8 @@ class ForOfLoopControl : public LoopControl
             
             
             
+            if (!bce->emit1(JSOP_UNDEFINED))              
+                return false;
             if (!bce->emit1(JSOP_UNDEFINED))              
                 return false;
         } else {
@@ -2789,7 +2806,9 @@ NonLocalExitControl::prepareForNonLocalJump(BytecodeEmitter::NestableControl* ta
                 if (!loopinfo.emitPrepareForNonLocalJump(bce_,  false)) 
                     return false;
             } else {
-                npops += 2;
+                
+                
+                npops += 3;
             }
             break;
 
@@ -5228,12 +5247,8 @@ BytecodeEmitter::emitIteratorNext(ParseNode* pn, IteratorKind iterKind ,
                ".next() iteration is prohibited in self-hosted code because it "
                "can run user-modifiable iteration code");
 
-    if (!emit1(JSOP_DUP))                                 
-        return false;
-    if (!emitAtomOp(cx->names().next, JSOP_CALLPROP))     
-        return false;
-    if (!emit1(JSOP_SWAP))                                
-        return false;
+    MOZ_ASSERT(this->stackDepth >= 2);                    
+
     if (!emitCall(JSOP_CALL, 0, pn))                      
         return false;
 
@@ -5622,6 +5637,7 @@ BytecodeEmitter::emitDestructuringOpsArray(ParseNode* pattern, DestructuringFlav
     
     
     
+    
 
     
     
@@ -5632,8 +5648,14 @@ BytecodeEmitter::emitDestructuringOpsArray(ParseNode* pattern, DestructuringFlav
 
     
     
-    if (!pattern->pn_head)
+    if (!pattern->pn_head) {
+        if (!emit1(JSOP_SWAP))                                    
+            return false;
+        if (!emit1(JSOP_POP))                                     
+            return false;
+
         return emitIteratorClose();                               
+    }
 
     
     if (!emit1(JSOP_FALSE))                                       
@@ -5696,7 +5718,9 @@ BytecodeEmitter::emitDestructuringOpsArray(ParseNode* pattern, DestructuringFlav
 
             
             
-            if (!emitDupAt(emitted))                              
+            if (!emitDupAt(emitted + 1))                          
+                return false;
+            if (!emitDupAt(emitted + 1))                          
                 return false;
             if (!emitUint32Operand(JSOP_NEWARRAY, 0))             
                 return false;
@@ -5756,7 +5780,9 @@ BytecodeEmitter::emitDestructuringOpsArray(ParseNode* pattern, DestructuringFlav
                 return false;
         }
 
-        if (!emitDupAt(emitted))                                  
+        if (!emitDupAt(emitted + 1))                              
+            return false;
+        if (!emitDupAt(emitted + 1))                              
             return false;
         if (!emitIteratorNext(pattern))                           
             return false;
@@ -5825,9 +5851,13 @@ BytecodeEmitter::emitDestructuringOpsArray(ParseNode* pattern, DestructuringFlav
     IfThenElseEmitter ifDone(this);
     if (!ifDone.emitIfElse())                                     
         return false;
-    if (!emit1(JSOP_POP))                                         
+    if (!emitPopN(2))                                             
         return false;
     if (!ifDone.emitElse())                                       
+        return false;
+    if (!emit1(JSOP_SWAP))                                        
+        return false;
+    if (!emit1(JSOP_POP))                                         
         return false;
     if (!emitIteratorClose())                                     
         return false;
@@ -6932,6 +6962,12 @@ BytecodeEmitter::emitIterator()
     checkTypeSet(JSOP_CALLITER);
     if (!emitCheckIsObj(CheckIsObjectKind::GetIterator))          
         return false;
+    if (!emit1(JSOP_DUP))                                         
+        return false;
+    if (!emitAtomOp(cx->names().next, JSOP_GETPROP))              
+        return false;
+    if (!emit1(JSOP_SWAP))                                        
+        return false;
     return true;
 }
 
@@ -6985,6 +7021,13 @@ BytecodeEmitter::emitAsyncIterator()
         return false;
 
     if (!ifAsyncIterIsUndefined.emitEnd())                        
+        return false;
+
+    if (!emit1(JSOP_DUP))                                         
+        return false;
+    if (!emitAtomOp(cx->names().next, JSOP_GETPROP))              
+        return false;
+    if (!emit1(JSOP_SWAP))                                        
         return false;
 
     return true;
@@ -7041,7 +7084,9 @@ BytecodeEmitter::emitSpread(bool allowSelfHosted)
         if (!emitLoopEntry(nullptr, initialJump))         
             return false;
 
-        if (!emitDupAt(2))                                
+        if (!emitDupAt(3))                                
+            return false;
+        if (!emitDupAt(3))                                
             return false;
         if (!emitIteratorNext(nullptr, IteratorKind::Sync, allowSelfHosted))  
             return false;
@@ -7067,10 +7112,12 @@ BytecodeEmitter::emitSpread(bool allowSelfHosted)
     if (!tryNoteList.append(JSTRY_FOR_OF, stackDepth, top.offset, breakTarget.offset))
         return false;
 
-    if (!emit2(JSOP_PICK, 3))                             
+    if (!emit2(JSOP_PICK, 4))                             
+        return false;
+    if (!emit2(JSOP_PICK, 4))                             
         return false;
 
-    return emitPopN(2);                                   
+    return emitPopN(3);                                   
 }
 
 bool
@@ -7181,6 +7228,7 @@ BytecodeEmitter::emitForOf(ParseNode* forOfLoop, EmitterScope* headLexicalEmitte
 
     
     
+    
     if (!emit1(JSOP_UNDEFINED))                           
         return false;
 
@@ -7236,7 +7284,7 @@ BytecodeEmitter::emitForOf(ParseNode* forOfLoop, EmitterScope* headLexicalEmitte
 
         if (!emit1(JSOP_POP))                             
             return false;
-        if (!emit1(JSOP_DUP))                             
+        if (!emit1(JSOP_DUP2))                            
             return false;
 
         if (!emitIteratorNext(forOfHead, iterKind, allowSelfHostedIter))
@@ -7324,7 +7372,7 @@ BytecodeEmitter::emitForOf(ParseNode* forOfLoop, EmitterScope* headLexicalEmitte
     if (!tryNoteList.append(JSTRY_FOR_OF, stackDepth, top.offset, breakTarget.offset))
         return false;
 
-    return emitPopN(2);                                   
+    return emitPopN(3);                                   
 }
 
 bool
@@ -8396,7 +8444,7 @@ BytecodeEmitter::emitYieldStar(ParseNode* iter)
 
     int32_t savedDepthTemp;
     int32_t startDepth = stackDepth;
-    MOZ_ASSERT(startDepth >= 2);
+    MOZ_ASSERT(startDepth >= 3);
 
     TryEmitter tryCatch(this, TryEmitter::TryCatchFinally, TryEmitter::DontUseRetVal,
                         TryEmitter::DontUseControl);
@@ -8601,17 +8649,11 @@ BytecodeEmitter::emitYieldStar(ParseNode* iter)
 
     
     
-    if (!emit1(JSOP_SWAP))                                       
+    if (!emit2(JSOP_UNPICK, 2))                                  
         return false;
-    if (!emit1(JSOP_DUP))                                        
+    if (!emit1(JSOP_DUP2))                                       
         return false;
-    if (!emit1(JSOP_DUP))                                        
-        return false;
-    if (!emitAtomOp(cx->names().next, JSOP_CALLPROP))            
-        return false;
-    if (!emit1(JSOP_SWAP))                                       
-        return false;
-    if (!emit2(JSOP_PICK, 3))                                    
+    if (!emit2(JSOP_PICK, 4))                                    
         return false;
     if (!emitCall(JSOP_CALL, 1, iter))                           
         return false;
@@ -8643,14 +8685,14 @@ BytecodeEmitter::emitYieldStar(ParseNode* iter)
     }
 
     
-    if (!emit1(JSOP_SWAP))                                       
+    if (!emit2(JSOP_UNPICK, 2))                                  
         return false;
-    if (!emit1(JSOP_POP))                                        
+    if (!emitPopN(2))                                            
         return false;
     if (!emitAtomOp(cx->names().value, JSOP_GETPROP))            
         return false;
 
-    MOZ_ASSERT(this->stackDepth == startDepth - 1);
+    MOZ_ASSERT(this->stackDepth == startDepth - 2);
 
     return true;
 }
@@ -9939,9 +9981,9 @@ BytecodeEmitter::emitArray(ParseNode* pn, uint32_t count)
         if (pn2->isKind(ParseNodeKind::Spread)) {
             if (!emitIterator())                                         
                 return false;
-            if (!emit2(JSOP_PICK, 2))                                    
+            if (!emit2(JSOP_PICK, 3))                                    
                 return false;
-            if (!emit2(JSOP_PICK, 2))                                    
+            if (!emit2(JSOP_PICK, 3))                                    
                 return false;
             if (!emitSpread(allowSelfHostedIter))                        
                 return false;
