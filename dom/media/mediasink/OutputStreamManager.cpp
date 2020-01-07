@@ -80,7 +80,7 @@ OutputStreamManager::Add(ProcessedMediaStream* aStream, bool aFinishWhenEnded)
 
   
   if (aFinishWhenEnded) {
-    aStream->SetAutofinish(true);
+    aStream->QueueSetAutofinish(true);
   }
 
   OutputStreamData* p = mStreams.AppendElement();

@@ -769,11 +769,11 @@ public:
 
 
 
-  void FinishWithLockHeld();
-  void Finish()
+  void FinishPendingWithLockHeld();
+  void FinishPending()
   {
     MutexAutoLock lock(mMutex);
-    FinishWithLockHeld();
+    FinishPendingWithLockHeld();
   }
 
   
@@ -908,7 +908,7 @@ protected:
   nsTArray<TrackData> mPendingTracks;
   nsTArray<TrackBound<DirectMediaStreamTrackListener>> mDirectTrackListeners;
   bool mPullEnabled;
-  bool mUpdateFinished;
+  bool mFinishPending;
   bool mNeedsMixing;
 };
 
@@ -1167,13 +1167,14 @@ public:
   
 
 
-  void Finish();
+  void QueueFinish();
   
 
 
 
 
-  void SetAutofinish(bool aAutofinish);
+
+  void QueueSetAutofinish(bool aAutofinish);
 
   ProcessedMediaStream* AsProcessedStream() override { return this; }
 
