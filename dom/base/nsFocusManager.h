@@ -27,6 +27,7 @@ class nsPIDOMWindowOuter;
 
 namespace mozilla {
 namespace dom {
+class Element;
 class TabParent;
 }
 }
@@ -193,7 +194,7 @@ protected:
 
 
 
-  void SetFocusInner(nsIContent* aNewContent, int32_t aFlags,
+  void SetFocusInner(mozilla::dom::Element* aNewContent, int32_t aFlags,
                      bool aFocusChanged, bool aAdjustWidget);
 
   
