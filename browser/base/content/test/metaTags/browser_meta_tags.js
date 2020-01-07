@@ -2,10 +2,7 @@
 
 
 
-const URL = "https://example.com/browser/browser/base/content/test/metaTags/meta_tags.html";
-
-
-
+const TEST_PATH = getRootDirectory(gTestPath).replace("chrome://mochitests/content", "https://example.com") + "meta_tags.html";
 
 
 
@@ -14,10 +11,10 @@ const URL = "https://example.com/browser/browser/base/content/test/metaTags/meta
 
 
 add_task(async function test_metadata() {
-  const tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, URL);
+  const tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_PATH);
 
   
-  const pageInfo = await waitForPageInfo(URL);
+  const pageInfo = await waitForPageInfo(TEST_PATH);
   is(pageInfo.description, "og:description", "got the correct description");
   is(pageInfo.previewImageURL.href, "https://test.com/og-image-secure-url.jpg", "got the correct preview image");
 
@@ -31,14 +28,14 @@ add_task(async function test_metadata() {
 
 
 add_task(async function multiple_tabs() {
-  const tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, URL);
+  const tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_PATH);
 
   
   
   gBrowser.addTab();
 
   
-  const pageInfo = await waitForPageInfo(URL);
+  const pageInfo = await waitForPageInfo(TEST_PATH);
   is(pageInfo.description, "og:description", "got the correct description");
   is(pageInfo.previewImageURL.href, "https://test.com/og-image-secure-url.jpg", "got the correct preview image");
 

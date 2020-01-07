@@ -8,6 +8,9 @@ ChromeUtils.defineModuleGetter(this, "PlacesTestUtils",
 
 
 
+
+
+
 async function waitForPageInfo(url) {
   let pageInfo;
   await BrowserTestUtils.waitForCondition(async () => {
