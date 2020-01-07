@@ -356,6 +356,7 @@ public:
 
     virtual nsresult SetNonClientMargins(LayoutDeviceIntMargin& aMargins) override;
     void SetDrawsInTitlebar(bool aState) override;
+    virtual void UpdateWindowDraggingRegion(const LayoutDeviceIntRegion& aRegion) override;
 
     
     gint GdkScaleFactor();
@@ -494,6 +495,8 @@ private:
     bool               mIsCSDAvailable;
     
     bool               mIsCSDEnabled;
+    
+    LayoutDeviceIntRegion mDraggableRegion;
 
 #ifdef ACCESSIBILITY
     RefPtr<mozilla::a11y::Accessible> mRootAccessible;

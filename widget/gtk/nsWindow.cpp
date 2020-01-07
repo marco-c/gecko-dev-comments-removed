@@ -2810,7 +2810,23 @@ nsWindow::OnButtonReleaseEvent(GdkEventButton *aEvent)
     gdk_event_get_axis ((GdkEvent*)aEvent, GDK_AXIS_PRESSURE, &pressure);
     event.pressure = pressure ? pressure : mLastMotionPressure;
 
-    DispatchInputEvent(&event);
+    nsEventStatus eventStatus = DispatchInputEvent(&event);
+
+    bool defaultPrevented = (eventStatus == nsEventStatus_eConsumeNoDefault);
+    
+    
+    LayoutDeviceIntPoint pos = event.mRefPoint;
+    if (!defaultPrevented
+             && event.button == WidgetMouseEvent::eLeftButton
+             && event.mClickCount == 2
+             && mDraggableRegion.Contains(pos.x, pos.y)) {
+
+        if (mSizeState == nsSizeMode_Maximized) {
+            SetSizeMode(nsSizeMode_Normal);
+        } else {
+            SetSizeMode(nsSizeMode_Maximized);
+        }
+    }
     mLastMotionPressure = pressure;
 
     
@@ -4400,6 +4416,16 @@ nsWindow::GetTransparencyMode()
     }
 
     return mIsTransparent ? eTransparencyTransparent : eTransparencyOpaque;
+}
+
+
+
+void
+nsWindow::UpdateWindowDraggingRegion(const LayoutDeviceIntRegion& aRegion)
+{
+  if (mDraggableRegion != aRegion) {
+    mDraggableRegion = aRegion;
+  }
 }
 
 #if (MOZ_WIDGET_GTK >= 3)
