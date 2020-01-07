@@ -5,9 +5,12 @@
 
 
 #include "jsapi.h"
+#include "jsfriendapi.h"
 #include "jswrapper.h"
 
-#include "jsatominlines.h"
+#include "NamespaceImports.h"
+
+#include "vm/String.h"
 
 using namespace js;
 

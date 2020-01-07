@@ -7,13 +7,9 @@
 #ifndef jsatom_h
 #define jsatom_h
 
-#include "mozilla/HashFunctions.h"
 #include "mozilla/Maybe.h"
 
-#include "jsalloc.h"
-
 #include "gc/Rooting.h"
-#include "js/GCHashTable.h"
 #include "vm/CommonPropertyNames.h"
 
 class JSAtom;
@@ -32,76 +28,6 @@ namespace js {
 
 extern const char*
 AtomToPrintableString(JSContext* cx, JSAtom* atom, JSAutoByteString* bytes);
-
-class AtomStateEntry
-{
-    uintptr_t bits;
-
-    static const uintptr_t NO_TAG_MASK = uintptr_t(-1) - 1;
-
-  public:
-    AtomStateEntry() : bits(0) {}
-    AtomStateEntry(const AtomStateEntry& other) : bits(other.bits) {}
-    AtomStateEntry(JSAtom* ptr, bool tagged)
-      : bits(uintptr_t(ptr) | uintptr_t(tagged))
-    {
-        MOZ_ASSERT((uintptr_t(ptr) & 0x1) == 0);
-    }
-
-    bool isPinned() const {
-        return bits & 0x1;
-    }
-
-    
-
-
-
-    void setPinned(bool pinned) const {
-        const_cast<AtomStateEntry*>(this)->bits |= uintptr_t(pinned);
-    }
-
-    JSAtom* asPtr(JSContext* cx) const;
-    JSAtom* asPtrUnbarriered() const;
-
-    bool needsSweep() {
-        JSAtom* atom = asPtrUnbarriered();
-        return gc::IsAboutToBeFinalizedUnbarriered(&atom);
-    }
-};
-
-struct AtomHasher
-{
-    struct Lookup;
-    static inline HashNumber hash(const Lookup& l);
-    static MOZ_ALWAYS_INLINE bool match(const AtomStateEntry& entry, const Lookup& lookup);
-    static void rekey(AtomStateEntry& k, const AtomStateEntry& newKey) { k = newKey; }
-};
-
-using AtomSet = JS::GCHashSet<AtomStateEntry, AtomHasher, SystemAllocPolicy>;
-
-
-
-
-class FrozenAtomSet
-{
-    AtomSet* mSet;
-
-public:
-    
-    explicit FrozenAtomSet(AtomSet* set) { mSet = set; }
-
-    ~FrozenAtomSet() { js_delete(mSet); }
-
-    MOZ_ALWAYS_INLINE AtomSet::Ptr readonlyThreadsafeLookup(const AtomSet::Lookup& l) const;
-
-    size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
-        return mSet->sizeOfIncludingThis(mallocSizeOf);
-    }
-
-    typedef AtomSet::Range Range;
-
-    AtomSet::Range all() const { return mSet->all(); }
-};
 
 class PropertyName;
 
@@ -186,6 +112,13 @@ class XDRState;
 template<XDRMode mode>
 bool
 XDRAtom(XDRState<mode>* xdr, js::MutableHandleAtom atomp);
+
+extern JS::Handle<PropertyName*>
+ClassName(JSProtoKey key, JSContext* cx);
+
+namespace gc {
+void MergeAtomsAddedWhileSweeping(JSRuntime* rt);
+} 
 
 #ifdef DEBUG
 

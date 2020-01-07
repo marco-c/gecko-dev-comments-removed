@@ -28,7 +28,6 @@
 #include <processthreadsapi.h>
 #endif 
 
-#include "jsatom.h"
 #include "jscompartment.h"
 #include "jsdtoa.h"
 #include "jsexn.h"
