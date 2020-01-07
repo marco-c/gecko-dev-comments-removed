@@ -7,7 +7,6 @@
 #ifndef mozilla_dom_workers_WorkerDebugger_h
 #define mozilla_dom_workers_WorkerDebugger_h
 
-#include "mozilla/dom/DOMTypes.h"
 #include "mozilla/dom/WorkerCommon.h"
 #include "nsIWorkerDebugger.h"
 
@@ -43,15 +42,6 @@ public:
   void
   ReportErrorToDebugger(const nsAString& aFilename, uint32_t aLineno,
                         const nsAString& aMessage);
-
-#ifndef RELEASE_OR_BETA
-  
-
-
-
-  PerformanceInfo
-  ReportPerformanceInfo();
-#endif
 
 private:
   virtual
