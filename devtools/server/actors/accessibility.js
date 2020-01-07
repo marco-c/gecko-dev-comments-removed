@@ -1025,6 +1025,15 @@ const AccessibilityActor = ActorClassWithSpec(accessibilitySpec, {
       case "initialized":
         this._canBeEnabled = data.canBeEnabled;
         this._canBeDisabled = data.canBeDisabled;
+
+        
+        
+        
+        
+        if (!data.enabled && this.enabled && data.canBeEnabled) {
+          this.messageManager.sendAsyncMessage(this._msgName, { action: "enable" });
+        }
+
         this.initializedDeferred.resolve();
         break;
       case "can-be-disabled-change":
