@@ -275,7 +275,7 @@ protected:
     
     
     
-    auto copiedArgs = MakeTuple(Forward<Ts>(aArgs)...);
+    auto copiedArgs = MakeTuple(std::forward<Ts>(aArgs)...);
 
     
     auto master = mMaster;

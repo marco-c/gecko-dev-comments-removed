@@ -20,7 +20,7 @@ ClientManagerOpParent::DoServiceOp(Method aMethod, Args&&... aArgs)
 {
   
   
-  RefPtr<ClientOpPromise> p = (mService->*aMethod)(Forward<Args>(aArgs)...);
+  RefPtr<ClientOpPromise> p = (mService->*aMethod)(std::forward<Args>(aArgs)...);
 
   
   

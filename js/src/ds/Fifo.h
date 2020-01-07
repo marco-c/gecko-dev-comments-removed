@@ -124,7 +124,7 @@ class Fifo
     
     template <typename U>
     MOZ_MUST_USE bool pushBack(U&& u) {
-        if (!rear_.append(mozilla::Forward<U>(u)))
+        if (!rear_.append(std::forward<U>(u)))
             return false;
         fixup();
         return true;
@@ -133,7 +133,7 @@ class Fifo
     
     template <typename... Args>
     MOZ_MUST_USE bool emplaceBack(Args&&... args) {
-        if (!rear_.emplaceBack(mozilla::Forward<Args>(args)...))
+        if (!rear_.emplaceBack(std::forward<Args>(args)...))
             return false;
         fixup();
         return true;

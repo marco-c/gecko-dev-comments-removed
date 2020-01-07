@@ -195,26 +195,6 @@ namespace mozilla {
 
 
 
-
-
-
-template<typename T>
-inline T&&
-Forward(typename RemoveReference<T>::Type& aX)
-{
-  return static_cast<T&&>(aX);
-}
-
-template<typename T>
-inline T&&
-Forward(typename RemoveReference<T>::Type&& aX)
-{
-  static_assert(!IsLvalueReference<T>::value,
-                "misuse of Forward detected!  try the other overload");
-  return static_cast<T&&>(aX);
-}
-
-
 template<typename T>
 inline void
 Swap(T& aX, T& aY)

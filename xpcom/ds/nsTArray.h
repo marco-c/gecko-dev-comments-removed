@@ -538,7 +538,7 @@ public:
     static_assert(!mozilla::IsSame<E_NoCV*, A_NoCV>::value,
                   "For safety, we disallow constructing nsTArray<E> elements "
                   "from E* pointers. See bug 960591.");
-    new (static_cast<void*>(aE)) E(mozilla::Forward<A>(aArg));
+    new (static_cast<void*>(aE)) E(std::forward<A>(aArg));
   }
   
   static inline void Destruct(E* aE) { aE->~E(); }
@@ -1493,7 +1493,7 @@ public:
                              const mozilla::fallible_t&)
   {
     return InsertElementAt<Item, FallibleAlloc>(aIndex,
-                                                mozilla::Forward<Item>(aItem));
+                                                std::forward<Item>(aItem));
   }
 
   
@@ -1558,7 +1558,7 @@ protected:
   {
     index_type index = IndexOfFirstElementGt<Item, Comparator>(aItem, aComp);
     return InsertElementAt<Item, ActualAlloc>(
-      index, mozilla::Forward<Item>(aItem));
+      index, std::forward<Item>(aItem));
   }
 public:
 
@@ -1568,7 +1568,7 @@ public:
                                  const mozilla::fallible_t&)
   {
     return InsertElementSorted<Item, Comparator, FallibleAlloc>(
-      mozilla::Forward<Item>(aItem), aComp);
+      std::forward<Item>(aItem), aComp);
   }
 
   
@@ -1578,7 +1578,7 @@ protected:
   {
     nsDefaultComparator<elem_type, Item> comp;
     return InsertElementSorted<Item, decltype(comp), ActualAlloc>(
-      mozilla::Forward<Item>(aItem), comp);
+      std::forward<Item>(aItem), comp);
   }
 public:
 
@@ -1587,7 +1587,7 @@ public:
   elem_type* InsertElementSorted(Item&& aItem, const mozilla::fallible_t&)
   {
     return InsertElementSorted<Item, FallibleAlloc>(
-      mozilla::Forward<Item>(aItem));
+      std::forward<Item>(aItem));
   }
 
   
@@ -1676,7 +1676,7 @@ public:
   elem_type* AppendElement(Item&& aItem,
                            const mozilla::fallible_t&)
   {
-    return AppendElement<Item, FallibleAlloc>(mozilla::Forward<Item>(aItem));
+    return AppendElement<Item, FallibleAlloc>(std::forward<Item>(aItem));
   }
 
   
@@ -2236,7 +2236,7 @@ nsTArray_Impl<E, Alloc>::InsertElementAt(index_type aIndex, Item&& aItem) -> ele
   this->template ShiftData<ActualAlloc>(aIndex, 0, 1, sizeof(elem_type),
                                         MOZ_ALIGNOF(elem_type));
   elem_type* elem = Elements() + aIndex;
-  elem_traits::Construct(elem, mozilla::Forward<Item>(aItem));
+  elem_traits::Construct(elem, std::forward<Item>(aItem));
   return elem;
 }
 
@@ -2290,7 +2290,7 @@ nsTArray_Impl<E, Alloc>::AppendElement(Item&& aItem) -> elem_type*
     return nullptr;
   }
   elem_type* elem = Elements() + Length();
-  elem_traits::Construct(elem, mozilla::Forward<Item>(aItem));
+  elem_traits::Construct(elem, std::forward<Item>(aItem));
   this->mHdr->mLength += 1;
   return elem;
 }

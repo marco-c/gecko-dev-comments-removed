@@ -31,7 +31,6 @@ using namespace js::frontend;
 
 using JS::AutoValueArray;
 using mozilla::DebugOnly;
-using mozilla::Forward;
 
 enum ASTType {
     AST_ERROR = -1,
@@ -322,7 +321,7 @@ class NodeBuilder
         
         
         args[i].set(head);
-        return callbackHelper(fun, args, i + 1, Forward<Arguments>(tail)...);
+        return callbackHelper(fun, args, i + 1, std::forward<Arguments>(tail)...);
     }
 
     
@@ -335,7 +334,7 @@ class NodeBuilder
         if (!iargs.init(cx, sizeof...(args) - 2 + size_t(saveLoc)))
             return false;
 
-        return callbackHelper(fun, iargs, 0, Forward<Arguments>(args)...);
+        return callbackHelper(fun, iargs, 0, std::forward<Arguments>(args)...);
     }
 
     
@@ -388,7 +387,7 @@ class NodeBuilder
         
         
         return defineProperty(obj, name, value)
-               && newNodeHelper(obj, Forward<Arguments>(rest)...);
+               && newNodeHelper(obj, std::forward<Arguments>(rest)...);
     }
 
     
@@ -402,7 +401,7 @@ class NodeBuilder
     MOZ_MUST_USE bool newNode(ASTType type, TokenPos* pos, Arguments&&... args) {
         RootedObject node(cx);
         return createNode(type, pos, &node) &&
-               newNodeHelper(node, Forward<Arguments>(args)...);
+               newNodeHelper(node, std::forward<Arguments>(args)...);
     }
 
     MOZ_MUST_USE bool listNode(ASTType type, const char* propName, NodeVector& elts, TokenPos* pos,
