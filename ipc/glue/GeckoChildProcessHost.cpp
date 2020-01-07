@@ -38,7 +38,6 @@
 
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/ipc/BrowserProcessSubThread.h"
-#include "mozilla/ipc/EnvironmentMap.h"
 #include "mozilla/Omnijar.h"
 #include "mozilla/Telemetry.h"
 #include "ProtocolUtils.h"
@@ -441,9 +440,15 @@ GeckoChildProcessHost::SetAlreadyDead()
 int32_t GeckoChildProcessHost::mChildCounter = 0;
 
 void
-GeckoChildProcessHost::GetChildLogName(const char* origLogName,
+GeckoChildProcessHost::SetChildLogName(const char* varName, const char* origLogName,
                                        nsACString &buffer)
 {
+  
+  
+  
+  
+  buffer.Assign(varName);
+
 #ifdef XP_WIN
   
   
@@ -470,6 +475,11 @@ GeckoChildProcessHost::GetChildLogName(const char* origLogName,
   
   buffer.AppendLiteral(".child-");
   buffer.AppendInt(mChildCounter);
+
+  
+  
+  
+  PR_SetEnv(buffer.BeginReading());
 }
 
 bool
@@ -479,34 +489,61 @@ GeckoChildProcessHost::PerformAsyncLaunch(std::vector<std::string> aExtraOpts)
   AutoSetProfilerEnvVarsForChildProcess profilerEnvironment;
 #endif
 
+  const char* origNSPRLogName = PR_GetEnv("NSPR_LOG_FILE");
+  const char* origMozLogName = PR_GetEnv("MOZ_LOG_FILE");
+  const char* origRustLog = PR_GetEnv("RUST_LOG");
+  const char* childRustLog = PR_GetEnv("RUST_LOG_CHILD");
+
   
   
   ++mChildCounter;
 
-  const char* origNSPRLogName = PR_GetEnv("NSPR_LOG_FILE");
-  const char* origMozLogName = PR_GetEnv("MOZ_LOG_FILE");
+  
+  
+  nsAutoCString nsprLogName;
+  nsAutoCString mozLogName;
+  nsAutoCString rustLog;
 
   if (origNSPRLogName) {
-    nsAutoCString nsprLogName;
-    GetChildLogName(origNSPRLogName, nsprLogName);
-    mLaunchOptions->env_map[ENVIRONMENT_LITERAL("NSPR_LOG_FILE")]
-        = ENVIRONMENT_STRING(nsprLogName).get();
+    if (mRestoreOrigNSPRLogName.IsEmpty()) {
+      mRestoreOrigNSPRLogName.AssignLiteral("NSPR_LOG_FILE=");
+      mRestoreOrigNSPRLogName.Append(origNSPRLogName);
+    }
+    SetChildLogName("NSPR_LOG_FILE=", origNSPRLogName, nsprLogName);
   }
   if (origMozLogName) {
-    nsAutoCString mozLogName;
-    GetChildLogName(origMozLogName, mozLogName);
-    mLaunchOptions->env_map[ENVIRONMENT_LITERAL("MOZ_LOG_FILE")]
-        = ENVIRONMENT_STRING(mozLogName).get();
+    if (mRestoreOrigMozLogName.IsEmpty()) {
+      mRestoreOrigMozLogName.AssignLiteral("MOZ_LOG_FILE=");
+      mRestoreOrigMozLogName.Append(origMozLogName);
+    }
+    SetChildLogName("MOZ_LOG_FILE=", origMozLogName, mozLogName);
   }
 
   
-  nsAutoCString childRustLog(PR_GetEnv("RUST_LOG_CHILD"));
-  if (!childRustLog.IsEmpty()) {
-    mLaunchOptions->env_map[ENVIRONMENT_LITERAL("RUST_LOG")]
-        = ENVIRONMENT_STRING(childRustLog).get();
+  if (childRustLog) {
+    if (mRestoreOrigRustLog.IsEmpty()) {
+      mRestoreOrigRustLog.AssignLiteral("RUST_LOG=");
+      mRestoreOrigRustLog.Append(origRustLog);
+    }
+    rustLog.AssignLiteral("RUST_LOG=");
+    rustLog.Append(childRustLog);
+    PR_SetEnv(rustLog.get());
   }
 
-  return PerformAsyncLaunchInternal(aExtraOpts);
+  bool retval = PerformAsyncLaunchInternal(aExtraOpts);
+
+  
+  if (origNSPRLogName) {
+    PR_SetEnv(mRestoreOrigNSPRLogName.get());
+  }
+  if (origMozLogName) {
+    PR_SetEnv(mRestoreOrigMozLogName.get());
+  }
+  if (origRustLog) {
+    PR_SetEnv(mRestoreOrigRustLog.get());
+  }
+
+  return retval;
 }
 
 bool
@@ -607,16 +644,17 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
   
   
 
-# if defined(OS_POSIX)
+# if defined(OS_LINUX) || defined(OS_MACOSX) || defined(OS_BSD) || defined(OS_SOLARIS)
+
 #  if defined(MOZ_WIDGET_GTK)
   if (mProcessType == GeckoProcessType_Content) {
     
-    mLaunchOptions->env_map["GTK_IM_MODULE"] = "gtk-im-context-simple";
+    mLaunchOptions->environ["GTK_IM_MODULE"] = "gtk-im-context-simple";
 
     
     
     
-    mLaunchOptions->env_map["NO_AT_BRIDGE"] = "1";
+    mLaunchOptions->environ["NO_AT_BRIDGE"] = "1";
   }
 #  endif 
 
@@ -642,10 +680,10 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
       new_ld_lib_path.Append(':');
       new_ld_lib_path.Append(ld_library_path);
     }
-    mLaunchOptions->env_map["LD_LIBRARY_PATH"] = new_ld_lib_path.get();
+    mLaunchOptions->environ["LD_LIBRARY_PATH"] = new_ld_lib_path.get();
 
 #  elif OS_MACOSX 
-    mLaunchOptions->env_map["DYLD_LIBRARY_PATH"] = path.get();
+    mLaunchOptions->environ["DYLD_LIBRARY_PATH"] = path.get();
     
     
     
@@ -664,7 +702,7 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
     }
     interpose.Append(path.get());
     interpose.AppendLiteral("/libplugin_child_interpose.dylib");
-    mLaunchOptions->env_map["DYLD_INSERT_LIBRARIES"] = interpose.get();
+    mLaunchOptions->environ["DYLD_INSERT_LIBRARIES"] = interpose.get();
 #  endif 
   }
 # endif 
@@ -992,7 +1030,6 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
   if (shouldSandboxCurrentProcess) {
     if (mSandboxBroker.LaunchApp(cmdLine.program().c_str(),
                                  cmdLine.command_line_string().c_str(),
-                                 mLaunchOptions->env_map,
                                  mProcessType,
                                  mEnableSandboxLogging,
                                  &process)) {
