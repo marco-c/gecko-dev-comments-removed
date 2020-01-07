@@ -24,6 +24,7 @@
 const { XPCOMUtils } = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm", {});
 const { L10nRegistry } = ChromeUtils.import("resource://gre/modules/L10nRegistry.jsm", {});
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm", {});
+const { AppConstants } = ChromeUtils.import("resource://gre/modules/AppConstants.jsm", {});
 
 
 
@@ -99,24 +100,6 @@ class CachedIterable {
 
 
 
-
-class L10nError extends Error {
-  constructor(message) {
-    super();
-    this.name = "L10nError";
-    this.message = message;
-  }
-}
-
- 
-
-
-
-
-
-
-
-
 function defaultGenerateMessages(resourceIds) {
   const appLocales = Services.locale.getAppLocalesAsLangTags();
   return L10nRegistry.generateContexts(appLocales, resourceIds);
@@ -156,17 +139,26 @@ class Localization {
 
   async formatWithFallback(keys, method) {
     const translations = [];
+
     for await (let ctx of this.ctxs) {
       
       
       if (typeof ctx.then === "function") {
         ctx = await ctx;
       }
-      const errors = keysFromContext(method, ctx, keys, translations);
-      if (!errors) {
+      const missingIds = keysFromContext(method, ctx, keys, translations);
+
+      if (missingIds.size === 0) {
         break;
       }
+
+      if (AppConstants.NIGHTLY_BUILD) {
+        const locale = ctx.locales[0];
+        const ids = Array.from(missingIds).join(", ");
+        console.warn(`Missing translations in ${locale}: ${ids}`);
+      }
     }
+
     return translations;
   }
 
@@ -312,11 +304,6 @@ Localization.prototype.QueryInterface = XPCOMUtils.generateQI([
 function valueFromContext(ctx, errors, id, args) {
   const msg = ctx.getMessage(id);
 
-  if (msg === undefined) {
-    errors.push(new L10nError(`Unknown entity: ${id}`));
-    return id;
-  }
-
   return ctx.format(msg, args, errors);
 }
 
@@ -344,11 +331,6 @@ function valueFromContext(ctx, errors, id, args) {
 
 function messageFromContext(ctx, errors, id, args) {
   const msg = ctx.getMessage(id);
-
-  if (msg === undefined) {
-    errors.push(new L10nError(`Unknown message: ${id}`));
-    return { value: id, attrs: null };
-  }
 
   const formatted = {
     value: ctx.format(msg, args, errors),
@@ -402,29 +384,23 @@ function messageFromContext(ctx, errors, id, args) {
 
 function keysFromContext(method, ctx, keys, translations) {
   const messageErrors = [];
-  let hasErrors = false;
+  const missingIds = new Set();
 
   keys.forEach((key, i) => {
     if (translations[i] !== undefined) {
       return;
     }
 
-    messageErrors.length = 0;
-    const translation = method(ctx, messageErrors, key[0], key[1]);
-
-    if (messageErrors.length === 0 ||
-        !messageErrors.some(e => e instanceof L10nError)) {
-      translations[i] = translation;
+    if (ctx.hasMessage(key[0])) {
+      messageErrors.length = 0;
+      translations[i] = method(ctx, messageErrors, key[0], key[1]);
+      
     } else {
-      hasErrors = true;
-    }
-
-    if (messageErrors.length) {
-      messageErrors.forEach(error => console.warn(error));
+      missingIds.add(key[0]);
     }
   });
 
-  return hasErrors;
+  return missingIds;
 }
 
 this.Localization = Localization;
