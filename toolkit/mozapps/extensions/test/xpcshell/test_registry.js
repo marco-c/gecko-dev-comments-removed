@@ -41,7 +41,7 @@ let registry;
 
 function run_test() {
   
-  if (!("nsIWindowsRegKey" in AM_Ci))
+  if (!("nsIWindowsRegKey" in Ci))
     return;
 
   registry = new MockRegistry();
@@ -56,10 +56,10 @@ function run_test() {
 
 
 function run_test_1() {
-  registry.setValue(AM_Ci.nsIWindowsRegKey.ROOT_KEY_LOCAL_MACHINE,
+  registry.setValue(Ci.nsIWindowsRegKey.ROOT_KEY_LOCAL_MACHINE,
                    "SOFTWARE\\Mozilla\\XPCShell\\Extensions",
                     "addon1@tests.mozilla.org", addon1Dir.path);
-  registry.setValue(AM_Ci.nsIWindowsRegKey.ROOT_KEY_CURRENT_USER,
+  registry.setValue(Ci.nsIWindowsRegKey.ROOT_KEY_CURRENT_USER,
                     "SOFTWARE\\Mozilla\\XPCShell\\Extensions",
                     "addon2@tests.mozilla.org", addon2Dir.path);
 
@@ -83,10 +83,10 @@ function run_test_1() {
 
 
 function run_test_2() {
-  registry.setValue(AM_Ci.nsIWindowsRegKey.ROOT_KEY_LOCAL_MACHINE,
+  registry.setValue(Ci.nsIWindowsRegKey.ROOT_KEY_LOCAL_MACHINE,
                     "SOFTWARE\\Mozilla\\XPCShell\\Extensions",
                     "addon1@tests.mozilla.org", null);
-  registry.setValue(AM_Ci.nsIWindowsRegKey.ROOT_KEY_CURRENT_USER,
+  registry.setValue(Ci.nsIWindowsRegKey.ROOT_KEY_CURRENT_USER,
                     "SOFTWARE\\Mozilla\\XPCShell\\Extensions",
                     "addon2@tests.mozilla.org", null);
 
@@ -103,10 +103,10 @@ function run_test_2() {
 
 
 function run_test_3() {
-  registry.setValue(AM_Ci.nsIWindowsRegKey.ROOT_KEY_LOCAL_MACHINE,
+  registry.setValue(Ci.nsIWindowsRegKey.ROOT_KEY_LOCAL_MACHINE,
                     "SOFTWARE\\Mozilla\\XPCShell\\Extensions",
                     "addon1@tests.mozilla.org", addon2Dir.path);
-  registry.setValue(AM_Ci.nsIWindowsRegKey.ROOT_KEY_CURRENT_USER,
+  registry.setValue(Ci.nsIWindowsRegKey.ROOT_KEY_CURRENT_USER,
                     "SOFTWARE\\Mozilla\\XPCShell\\Extensions",
                     "addon2@tests.mozilla.org", addon1Dir.path);
 
@@ -126,24 +126,24 @@ function run_test_4() {
   
   restartManager();
 
-  registry.setValue(AM_Ci.nsIWindowsRegKey.ROOT_KEY_LOCAL_MACHINE,
+  registry.setValue(Ci.nsIWindowsRegKey.ROOT_KEY_LOCAL_MACHINE,
                     "SOFTWARE\\Mozilla\\XPCShell\\Extensions",
                     "addon1@tests.mozilla.org", null);
-  registry.setValue(AM_Ci.nsIWindowsRegKey.ROOT_KEY_CURRENT_USER,
+  registry.setValue(Ci.nsIWindowsRegKey.ROOT_KEY_CURRENT_USER,
                     "SOFTWARE\\Mozilla\\XPCShell\\Extensions",
                     "addon2@tests.mozilla.org", null);
 
   restartManager();
 
-  registry.setValue(AM_Ci.nsIWindowsRegKey.ROOT_KEY_LOCAL_MACHINE,
+  registry.setValue(Ci.nsIWindowsRegKey.ROOT_KEY_LOCAL_MACHINE,
                     "SOFTWARE\\Mozilla\\XPCShell\\Extensions",
                     "addon1@tests.mozilla.org", addon1Dir.path);
   restartManager();
 
-  registry.setValue(AM_Ci.nsIWindowsRegKey.ROOT_KEY_LOCAL_MACHINE,
+  registry.setValue(Ci.nsIWindowsRegKey.ROOT_KEY_LOCAL_MACHINE,
                     "SOFTWARE\\Mozilla\\XPCShell\\Extensions",
                     "addon1@tests.mozilla.org", null);
-  registry.setValue(AM_Ci.nsIWindowsRegKey.ROOT_KEY_CURRENT_USER,
+  registry.setValue(Ci.nsIWindowsRegKey.ROOT_KEY_CURRENT_USER,
                     "SOFTWARE\\Mozilla\\XPCShell\\Extensions",
                     "addon2@tests.mozilla.org", addon1Dir.path);
   writeInstallRDFForExtension(addon2, gProfD, "addon1");
