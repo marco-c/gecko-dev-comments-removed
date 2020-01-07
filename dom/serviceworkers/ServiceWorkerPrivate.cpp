@@ -1810,6 +1810,13 @@ ServiceWorkerPrivate::SpawnWorkerIfNeeded(WakeUpReason aWhy,
     *aNewWorkerCreated = false;
   }
 
+  
+  
+  if (mWorkerPrivate && mWorkerPrivate->ParentStatusProtected() > Running) {
+    TerminateWorker();
+    MOZ_DIAGNOSTIC_ASSERT(!mWorkerPrivate);
+  }
+
   if (mWorkerPrivate) {
     
     
