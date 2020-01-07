@@ -75,11 +75,39 @@ function removeUnicodeExtensions(locale) {
 
 
 
-function IsStructurallyValidLanguageTag(locale) {
-    assert(typeof locale === "string", "locale is a string");
 
-    
-    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function parseLanguageTag(locale) {
+    assert(typeof locale === "string", "locale is a string");
 
     
     var index = 0;
@@ -143,27 +171,46 @@ function IsStructurallyValidLanguageTag(locale) {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    var localeLowercase = callFunction(std_String_toLowerCase, locale);
+
+    
+    
+    
     function tokenStartCodeUnitLower() {
-        var c = callFunction(std_String_charCodeAt, locale, tokenStart);
-        if (UPPER_A <= c && c <= UPPER_Z)
-            c |= 0x20;
+        var c = callFunction(std_String_charCodeAt, localeLowercase, tokenStart);
         assert((DIGIT_ZERO <= c && c <= DIGIT_NINE) || (LOWER_A <= c && c <= LOWER_Z),
                "unexpected code unit");
         return c;
     }
 
     
+    function tokenStringLower() {
+        return Substring(localeLowercase, tokenStart, tokenLength);
+    }
+
+    
     
     
     if (!nextToken())
-        return false;
+        return null;
 
     
     
     if (token !== ALPHA || tokenLength > 8)
-        return false;
+        return null;
 
     assert(tokenLength > 0, "token length is not zero if type is ALPHA");
+
+    var language, extlang1, extlang2, extlang3, script, region, privateuse;
+    var variants = [];
+    var extensions = [];
 
     
     
@@ -178,40 +225,47 @@ function IsStructurallyValidLanguageTag(locale) {
         
         
         if (tokenLength <= 3) {
+            language = tokenStringLower();
             if (!nextToken())
-                return false;
+                return null;
 
             
             
             if (token === ALPHA && tokenLength === 3) {
+                extlang1 = tokenStringLower();
                 if (!nextToken())
-                    return false;
+                    return null;
                 if (token === ALPHA && tokenLength === 3) {
+                    extlang2 = tokenStringLower();
                     if (!nextToken())
-                        return false;
+                        return null;
                     if (token === ALPHA && tokenLength === 3) {
+                        extlang3 = tokenStringLower();
                         if (!nextToken())
-                            return false;
+                            return null;
                     }
                 }
             }
         } else {
             assert(4 <= tokenLength && tokenLength <= 8, "reserved/registered language subtags");
+            language = tokenStringLower();
             if (!nextToken())
-                return false;
+                return null;
         }
 
         
         if (tokenLength === 4 && token === ALPHA) {
+            script = tokenStringLower();
             if (!nextToken())
-                return false;
+                return null;
         }
 
         
         
         if ((tokenLength === 2 && token === ALPHA) || (tokenLength === 3 && token === DIGIT)) {
+            region = tokenStringLower();
             if (!nextToken())
-                return false;
+                return null;
         }
 
         
@@ -219,14 +273,19 @@ function IsStructurallyValidLanguageTag(locale) {
         
         
         
-        var seenVariants = [];
         while ((5 <= tokenLength && tokenLength <= 8) ||
                (tokenLength === 4 && tokenStartCodeUnitLower() <= DIGIT_NINE))
         {
             assert(!(tokenStartCodeUnitLower() <= DIGIT_NINE) ||
                    tokenStartCodeUnitLower() >= DIGIT_ZERO,
                    "token-start-code-unit <= '9' implies token-start-code-unit is in '0'..'9'");
-            var variant = Substring(locale, tokenStart, tokenLength);
+
+            
+            
+            
+            
+            
+            var variant = tokenStringLower();
 
             
             
@@ -234,22 +293,12 @@ function IsStructurallyValidLanguageTag(locale) {
             
             
             
-            
-            
-            variant = callFunction(std_String_toLowerCase, variant);
-
-            
-            
-            
-            
-            
-            
-            if (callFunction(ArrayIndexOf, seenVariants, variant) !== -1)
-                return false;
-            _DefineDataProperty(seenVariants, seenVariants.length, variant);
+            if (callFunction(ArrayIndexOf, variants, variant) !== -1)
+                return null;
+            _DefineDataProperty(variants, variants.length, variant);
 
             if (!nextToken())
-                return false;
+                return null;
         }
 
         
@@ -260,6 +309,7 @@ function IsStructurallyValidLanguageTag(locale) {
         
         var seenSingletons = [];
         while (tokenLength === 1) {
+            var extensionStart = tokenStart;
             var singleton = tokenStartCodeUnitLower();
             if (singleton === LOWER_X)
                 break;
@@ -277,18 +327,22 @@ function IsStructurallyValidLanguageTag(locale) {
             
             
             if (callFunction(ArrayIndexOf, seenSingletons, singleton) !== -1)
-                return false;
+                return null;
             _DefineDataProperty(seenSingletons, seenSingletons.length, singleton);
 
             if (!nextToken())
-                return false;
+                return null;
 
             if (!(2 <= tokenLength && tokenLength <= 8))
-                return false;
+                return null;
             do {
                 if (!nextToken())
-                    return false;
+                    return null;
             } while (2 <= tokenLength && tokenLength <= 8);
+
+            var extension = Substring(localeLowercase, extensionStart,
+                                      (tokenStart - 1 - extensionStart));
+            _DefineDataProperty(extensions, extensions.length, extension);
         }
     }
 
@@ -297,40 +351,55 @@ function IsStructurallyValidLanguageTag(locale) {
     
     
     if (tokenLength === 1 && tokenStartCodeUnitLower() === LOWER_X) {
+        var privateuseStart = tokenStart;
         if (!nextToken())
-            return false;
+            return null;
 
         if (!(1 <= tokenLength && tokenLength <= 8))
-            return false;
+            return null;
         do {
             if (!nextToken())
-                return false;
+                return null;
         } while (1 <= tokenLength && tokenLength <= 8);
+
+        privateuse = Substring(localeLowercase, privateuseStart,
+                               localeLowercase.length - privateuseStart);
     }
 
     
     
     
-    if (token === NONE)
-        return true;
+    if (token === NONE) {
+        return {
+            locale: localeLowercase,
+            language,
+            extlang1,
+            extlang2,
+            extlang3,
+            script,
+            region,
+            variants,
+            extensions,
+            privateuse,
+        };
+    }
 
+    
+    
+    
+    
+    
+    
+    
     
     do {
         if (!nextToken())
-            return false;
+            return null;
     } while (token !== NONE);
 
     
     
-    
-    
-    
-    
-    locale = callFunction(std_String_toLowerCase, locale);
-
-    
-    
-    switch (locale) {
+    switch (localeLowercase) {
 #ifdef DEBUG
       
       
@@ -387,10 +456,10 @@ function IsStructurallyValidLanguageTag(locale) {
       case "sgn-be-fr":
       case "sgn-be-nl":
       case "sgn-ch-de":
-        return true;
+        return { locale: localeLowercase, grandfathered: true };
 
       default:
-        return false;
+        return null;
     }
 
     #undef NONE
@@ -409,20 +478,150 @@ function IsStructurallyValidLanguageTag(locale) {
 
 
 
-function ArrayJoinRange(array, separator, from, to = array.length) {
-    assert(typeof separator === "string", "|separator| is a string value");
-    assert(typeof from === "number", "|from| is a number value");
-    assert(typeof to === "number", "|to| is a number value");
-    assert(0 <= from && from <= to && to <= array.length, "|from| and |to| form a valid range");
 
-    if (from === to)
-        return "";
 
-    var result = array[from];
-    for (var i = from + 1; i < to; i++) {
-        result += separator + array[i];
+
+
+function IsStructurallyValidLanguageTag(locale) {
+    return parseLanguageTag(locale) !== null;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function CanonicalizeLanguageTagFromObject(localeObj) {
+    assert(IsObject(localeObj), "CanonicalizeLanguageTagFromObject");
+
+    var {locale} = localeObj;
+    assert(locale === callFunction(std_String_toLowerCase, locale),
+           "expected lower-case form for locale string");
+
+    
+    if (hasOwn(locale, langTagMappings))
+        return langTagMappings[locale];
+
+    assert(!hasOwn("grandfathered", localeObj),
+           "grandfathered tags should be mapped completely");
+
+    var {
+        language,
+        extlang1,
+        extlang2,
+        extlang3,
+        script,
+        region,
+        variants,
+        extensions,
+        privateuse,
+    } = localeObj;
+
+    
+    if (!language) {
+        assert(typeof privateuse === "string", "language or privateuse subtag required");
+        return privateuse;
     }
-    return result;
+
+    
+    
+    
+    
+    if (hasOwn(language, langSubtagMappings))
+        language = langSubtagMappings[language];
+
+    var canonical = language;
+
+    if (extlang1) {
+        
+        
+        
+        
+        
+        
+        
+        
+        if (hasOwn(extlang1, extlangMappings) && extlangMappings[extlang1] === language)
+            canonical = extlang1;
+        else
+            canonical += "-" + extlang1;
+    }
+
+    if (extlang2) {
+        assert(!(hasOwn(extlang2, extlangMappings) && extlangMappings[extlang2] === canonical),
+               "unexpected extlang2 replacement");
+        canonical += "-" + extlang2;
+    }
+
+    if (extlang3) {
+        assert(!(hasOwn(extlang3, extlangMappings) && extlangMappings[extlang3] === canonical),
+               "unexpected extlang3 replacement");
+        canonical += "-" + extlang3;
+    }
+
+    if (script) {
+        
+        
+        script = callFunction(std_String_toUpperCase, script[0]) +
+                 Substring(script, 1, script.length - 1);
+
+        assert(!hasOwn(script, langSubtagMappings), "unexpected script replacement");
+
+        canonical += "-" + script;
+    }
+
+    if (region) {
+        
+        region = callFunction(std_String_toUpperCase, region);
+
+        
+        
+        
+        
+        
+        
+        if (hasOwn(region, langSubtagMappings))
+            region = langSubtagMappings[region];
+
+        canonical += "-" + region;
+    }
+
+    if (variants.length > 0) {
+#ifdef DEBUG
+        for (var i = 0; i < variants.length; i++)
+            assert(!hasOwn(variants[i], langSubtagMappings), "unexpected variant replacement");
+#endif
+        canonical += "-" + callFunction(std_Array_join, variants, "-");
+    }
+
+    if (extensions.length > 0) {
+        
+        
+        callFunction(ArraySort, extensions);
+
+        canonical += "-" + callFunction(std_Array_join, extensions, "-");
+    }
+
+    
+    if (privateuse)
+        canonical += "-" + privateuse;
+
+    return canonical;
 }
 
 
@@ -446,119 +645,10 @@ function ArrayJoinRange(array, separator, from, to = array.length) {
 
 
 function CanonicalizeLanguageTag(locale) {
-    assert(IsStructurallyValidLanguageTag(locale), "CanonicalizeLanguageTag");
+    var localeObj = parseLanguageTag(locale);
+    assert(localeObj !== null, "CanonicalizeLanguageTag");
 
-    
-    
-    
-
-    
-    
-    
-    
-    
-    
-    locale = callFunction(std_String_toLowerCase, locale);
-
-    
-    if (hasOwn(locale, langTagMappings))
-        return langTagMappings[locale];
-
-    var subtags = StringSplitString(locale, "-");
-    var i = 0;
-
-    
-    
-    while (i < subtags.length) {
-        var subtag = subtags[i];
-
-        
-        
-        
-        
-        
-        if (subtag.length === 1 && (i > 0 || subtag === "x"))
-            break;
-
-        if (i !== 0) {
-            if (subtag.length === 4) {
-                
-                
-                
-                subtag = callFunction(std_String_toUpperCase, subtag[0]) +
-                         callFunction(String_substring, subtag, 1);
-            } else if (subtag.length === 2) {
-                
-                
-                subtag = callFunction(std_String_toUpperCase, subtag);
-            }
-        }
-        if (hasOwn(subtag, langSubtagMappings)) {
-            
-            
-            
-            
-            
-            
-            
-            
-            subtag = langSubtagMappings[subtag];
-        } else if (hasOwn(subtag, extlangMappings)) {
-            
-            
-            
-            
-            
-            
-            
-            
-            if (i === 1 && extlangMappings[subtag] === subtags[0]) {
-                callFunction(std_Array_shift, subtags);
-                i--;
-            }
-        }
-        subtags[i] = subtag;
-        i++;
-    }
-
-    
-    
-    if (i === subtags.length)
-        return callFunction(std_Array_join, subtags, "-");
-
-    var normal = ArrayJoinRange(subtags, "-", 0, i);
-
-    
-    
-    var extensions = [];
-    while (i < subtags.length && subtags[i] !== "x") {
-        var extensionStart = i;
-        i++;
-        while (i < subtags.length && subtags[i].length > 1)
-            i++;
-        var extension = ArrayJoinRange(subtags, "-", extensionStart, i);
-        _DefineDataProperty(extensions, extensions.length, extension);
-    }
-    callFunction(ArraySort, extensions);
-
-    
-    var privateUse = "";
-    if (i < subtags.length)
-        privateUse = ArrayJoinRange(subtags, "-", i);
-
-    
-    var canonical = normal;
-    if (extensions.length > 0)
-        canonical += "-" + callFunction(std_Array_join, extensions, "-");
-    if (privateUse.length > 0) {
-        
-        if (canonical.length > 0)
-            canonical += "-" + privateUse;
-        else
-            canonical = privateUse;
-    }
-
-    return canonical;
+    return CanonicalizeLanguageTagFromObject(localeObj);
 }
 
 
@@ -609,10 +699,11 @@ function ValidateAndCanonicalizeLanguageTag(locale) {
         return locale;
     }
 
-    if (!IsStructurallyValidLanguageTag(locale))
+    var localeObj = parseLanguageTag(locale);
+    if (localeObj === null)
         ThrowRangeError(JSMSG_INVALID_LANGUAGE_TAG, locale);
 
-    return CanonicalizeLanguageTag(locale);
+    return CanonicalizeLanguageTagFromObject(localeObj);
 }
 
 function localeContainsNoUnicodeExtensions(locale) {
@@ -677,11 +768,11 @@ function DefaultLocaleIgnoringAvailableLocales() {
 
     
     
-    var candidate;
-    if (!IsStructurallyValidLanguageTag(runtimeDefaultLocale)) {
+    var candidate = parseLanguageTag(runtimeDefaultLocale);
+    if (candidate === null) {
         candidate = lastDitchLocale();
     } else {
-        candidate = CanonicalizeLanguageTag(runtimeDefaultLocale);
+        candidate = CanonicalizeLanguageTagFromObject(candidate);
 
         
         
@@ -779,11 +870,8 @@ function addSpecialMissingLanguageTags(availableLocales) {
 function CanonicalizeLocaleList(locales) {
     if (locales === undefined)
         return [];
-    if (typeof locales === "string") {
-        if (!IsStructurallyValidLanguageTag(locales))
-            ThrowRangeError(JSMSG_INVALID_LANGUAGE_TAG, locales);
-        return [CanonicalizeLanguageTag(locales)];
-    }
+    if (typeof locales === "string")
+        return [ValidateAndCanonicalizeLanguageTag(locales)];
     var seen = [];
     var O = ToObject(locales);
     var len = ToLength(O.length);
@@ -796,9 +884,7 @@ function CanonicalizeLocaleList(locales) {
             if (!(typeof kValue === "string" || IsObject(kValue)))
                 ThrowTypeError(JSMSG_INVALID_LOCALES_ELEMENT);
             var tag = ToString(kValue);
-            if (!IsStructurallyValidLanguageTag(tag))
-                ThrowRangeError(JSMSG_INVALID_LANGUAGE_TAG, tag);
-            tag = CanonicalizeLanguageTag(tag);
+            tag = ValidateAndCanonicalizeLanguageTag(tag);
             if (callFunction(ArrayIndexOf, seen, tag) === -1)
                 _DefineDataProperty(seen, seen.length, tag);
         }
