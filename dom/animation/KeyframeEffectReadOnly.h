@@ -421,9 +421,6 @@ private:
                                     nsChangeHint_AddOrRemoveTransform |
                                     nsChangeHint_UpdateTransformLayer);
   }
-
-  
-  bool mIsComposingStyle = false;
 };
 
 } 

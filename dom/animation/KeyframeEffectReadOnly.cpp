@@ -283,15 +283,6 @@ KeyframeEffectReadOnly::UpdateProperties(const ComputedStyle* aStyle)
 {
   MOZ_ASSERT(aStyle);
 
-  
-  
-  
-  MOZ_DIAGNOSTIC_ASSERT(!mIsComposingStyle,
-                        "Should not be called while processing ComposeStyle()");
-  if (mIsComposingStyle) {
-    return;
-  }
-
   nsTArray<AnimationProperty> properties = BuildProperties(aStyle);
 
   
@@ -426,15 +417,6 @@ KeyframeEffectReadOnly::ComposeStyle(
   RawServoAnimationValueMap& aComposeResult,
   const nsCSSPropertyIDSet& aPropertiesToSkip)
 {
-  MOZ_DIAGNOSTIC_ASSERT(!mIsComposingStyle,
-                        "Should not be called recursively");
-  if (mIsComposingStyle) {
-    return;
-  }
-
-  AutoRestore<bool> isComposingStyle(mIsComposingStyle);
-  mIsComposingStyle = true;
-
   ComputedTiming computedTiming = GetComputedTiming();
 
   
