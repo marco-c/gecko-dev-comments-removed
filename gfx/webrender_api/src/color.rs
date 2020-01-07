@@ -115,7 +115,7 @@ pub struct ColorU {
 
 impl ColorU {
     
-    pub fn new(r: u8, g: u8, b: u8, a: u8) -> Self {
+    pub fn new(r: u8, g: u8, b: u8, a: u8) -> ColorU {
         ColorU { r, g, b, a }
     }
 }

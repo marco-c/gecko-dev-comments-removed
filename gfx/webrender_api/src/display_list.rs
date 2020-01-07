@@ -28,7 +28,7 @@ use {YuvData, YuvImageDisplayItem};
 
 
 
-pub const MAX_TEXT_RUN_LENGTH: usize = 2040;
+pub const MAX_TEXT_RUN_LENGTH: usize = 2038;
 
 
 const FIRST_CLIP_ID: usize = 2;
