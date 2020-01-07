@@ -188,12 +188,32 @@ protected:
 
 
 
+  MOZ_MUST_USE nsresult InsertBRIfNeeded(nsINode& aNode)
+  {
+    return InsertBRIfNeededInternal(aNode, false);
+  }
+
+  
+
+
+
+  MOZ_MUST_USE nsresult InsertMozBRIfNeeded(nsINode& aNode)
+  {
+    return InsertBRIfNeededInternal(aNode, true);
+  }
+
+  
 
 
 
 
 
-  nsresult InsertBRIfNeededInternal(nsINode& aNode, bool aInsertMozBR);
+
+
+
+
+  MOZ_MUST_USE nsresult
+  InsertBRIfNeededInternal(nsINode& aNode, bool aInsertMozBR);
 
   EditorDOMPoint GetGoodSelPointForNode(nsINode& aNode,
                                         nsIEditor::EDirection aAction);
@@ -576,24 +596,6 @@ protected:
   nsresult SelectionEndpointInNode(nsINode* aNode, bool* aResult);
   nsresult UpdateDocChangeRange(nsRange* aRange);
   nsresult ConfirmSelectionInBody();
-
-  
-
-
-
-  nsresult InsertBRIfNeeded(nsINode& aNode)
-  {
-    return InsertBRIfNeededInternal(aNode, false);
-  }
-
-  
-
-
-
-  nsresult InsertMozBRIfNeeded(nsINode& aNode)
-  {
-    return InsertBRIfNeededInternal(aNode, true);
-  }
 
   bool IsEmptyInline(nsINode& aNode);
   bool ListIsEmptyLine(nsTArray<OwningNonNull<nsINode>>& arrayOfNodes);
