@@ -112,6 +112,7 @@ class IncrementalRunnable;
 class IntlUtils;
 class Location;
 class MediaQueryList;
+class MozSelfSupport;
 class Navigator;
 class OwningExternalOrWindowProxy;
 class Promise;
@@ -888,6 +889,8 @@ public:
 
   bool ShouldResistFingerprinting();
 
+  mozilla::dom::MozSelfSupport* GetMozSelfSupport(mozilla::ErrorResult& aError);
+
   already_AddRefed<nsPIDOMWindowOuter>
   OpenDialog(JSContext* aCx,
              const nsAString& aUrl,
@@ -1161,6 +1164,10 @@ public:
   
   void UpdateCanvasFocus(bool aFocusChanged, nsIContent* aNewContent);
 
+  
+  void AddPendingPromise(mozilla::dom::Promise* aPromise);
+  void RemovePendingPromise(mozilla::dom::Promise* aPromise);
+
 public:
   virtual already_AddRefed<nsPIWindowRoot> GetTopWindowRoot() override;
 
@@ -1323,6 +1330,8 @@ protected:
   
   nsCOMPtr<nsISupports>         mExternal;
 
+  RefPtr<mozilla::dom::MozSelfSupport> mMozSelfSupport;
+
   RefPtr<mozilla::dom::Storage> mLocalStorage;
   RefPtr<mozilla::dom::Storage> mSessionStorage;
 
@@ -1402,6 +1411,8 @@ protected:
   RefPtr<mozilla::dom::IntlUtils> mIntlUtils;
 
   mozilla::UniquePtr<mozilla::dom::ClientSource> mClientSource;
+
+  nsTArray<RefPtr<mozilla::dom::Promise>> mPendingPromises;
 
   static InnerWindowByIdTable* sInnerWindowsById;
 
