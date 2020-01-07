@@ -278,6 +278,25 @@ TreeWidget.prototype = {
 
 
 
+  exists: function (item) {
+    let bookmark = this.root;
+
+    for (let id of item) {
+      if (bookmark.items.has(id)) {
+        bookmark = bookmark.items.get(id);
+      } else {
+        return false;
+      }
+    }
+    return true;
+  },
+
+  
+
+
+
+
+
   remove: function(item) {
     this.root.remove(item);
     this.attachments.delete(JSON.stringify(item));
