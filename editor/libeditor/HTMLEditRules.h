@@ -505,8 +505,9 @@ protected:
 
 
 
-  nsresult ApplyBlockStyle(nsTArray<OwningNonNull<nsINode>>& aNodeArray,
-                           nsAtom& aBlockTag);
+  MOZ_MUST_USE nsresult
+  ApplyBlockStyle(nsTArray<OwningNonNull<nsINode>>& aNodeArray,
+                  nsAtom& aBlockTag);
 
   nsresult MakeBlockquote(nsTArray<OwningNonNull<nsINode>>& aNodeArray);
 
