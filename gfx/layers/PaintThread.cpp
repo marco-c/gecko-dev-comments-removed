@@ -104,8 +104,8 @@ CapturedTiledPaintState::Copy::CopyBuffer()
   
   
   mDestination->CopySurface(source,
-                            mBounds,
-                            mBounds.TopLeft());
+                            mSourceBounds,
+                            mDestinationPoint);
   return true;
 }
 
