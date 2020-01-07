@@ -78,13 +78,7 @@ public:
   }
 
 private:
-  explicit DOMParser(nsISupports* aOwner)
-    : mOwner(aOwner)
-    , mAttemptedInit(false)
-    , mForceEnableXULXBL(false)
-  {
-    MOZ_ASSERT(aOwner);
-  }
+  DOMParser(nsISupports* aOwner, nsIPrincipal* aDocPrincipal);
 
   
 
@@ -103,12 +97,8 @@ private:
 
 
 
-
-
-
-
-  nsresult Init(nsIPrincipal* aPrincipal, nsIURI* aDocumentURI,
-                nsIURI* aBaseURI, nsIGlobalObject* aSriptObjet);
+  nsresult Init(nsIURI* aDocumentURI, nsIURI* aBaseURI,
+                nsIGlobalObject* aSriptObjet);
 
 
   already_AddRefed<nsIDocument> SetUpDocument(DocumentFlavor aFlavor,

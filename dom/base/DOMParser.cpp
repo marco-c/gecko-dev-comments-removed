@@ -28,6 +28,16 @@
 using namespace mozilla;
 using namespace mozilla::dom;
 
+DOMParser::DOMParser(nsISupports* aOwner, nsIPrincipal* aDocPrincipal)
+  : mOwner(aOwner)
+  , mPrincipal(aDocPrincipal)
+  , mAttemptedInit(false)
+  , mForceEnableXULXBL(false)
+{
+  MOZ_ASSERT(aOwner);
+  MOZ_ASSERT(aDocPrincipal);
+}
+
 DOMParser::~DOMParser()
 {
 }
@@ -230,56 +240,21 @@ DOMParser::ParseFromStream(nsIInputStream* aStream,
 }
 
 nsresult
-DOMParser::Init(nsIPrincipal* principal, nsIURI* documentURI,
-                nsIURI* baseURI, nsIGlobalObject* aScriptObject)
+DOMParser::Init(nsIURI* documentURI, nsIURI* baseURI,
+                nsIGlobalObject* aScriptObject)
 {
   NS_ENSURE_STATE(!mAttemptedInit);
   mAttemptedInit = true;
-  NS_ENSURE_ARG(principal || documentURI);
   mDocumentURI = documentURI;
 
   if (!mDocumentURI) {
-    principal->GetURI(getter_AddRefs(mDocumentURI));
-    
-    
-    if (!mDocumentURI && !nsContentUtils::IsSystemPrincipal(principal)) {
+    mPrincipal->GetURI(getter_AddRefs(mDocumentURI));
+    if (!mDocumentURI) {
       return NS_ERROR_INVALID_ARG;
     }
   }
 
   mScriptHandlingObject = do_GetWeakReference(aScriptObject);
-  mPrincipal = principal;
-  nsresult rv;
-  if (!mPrincipal) {
-    
-    
-    
-    nsContentUtils::ReportToConsole(nsIScriptError::warningFlag,
-                                    NS_LITERAL_CSTRING("DOM"),
-                                    nullptr,
-                                    nsContentUtils::eDOM_PROPERTIES,
-                                    "ChromeScriptedDOMParserWithoutPrincipal",
-                                    nullptr,
-                                    0,
-                                    documentURI);
-
-    OriginAttributes attrs;
-    mPrincipal = BasePrincipal::CreateCodebasePrincipal(mDocumentURI, attrs);
-    NS_ENSURE_TRUE(mPrincipal, NS_ERROR_FAILURE);
-  } else {
-    if (nsContentUtils::IsSystemPrincipal(mPrincipal)) {
-      
-      
-      mForceEnableXULXBL = true;
-      mPrincipal = NullPrincipal::CreateWithoutOriginAttributes();
-
-      if (!mDocumentURI) {
-        rv = mPrincipal->GetURI(getter_AddRefs(mDocumentURI));
-        NS_ENSURE_SUCCESS(rv, rv);
-      }
-    }
-  }
-
   mBaseURI = baseURI;
 
   MOZ_ASSERT(mPrincipal, "Must have principal");
@@ -292,15 +267,12 @@ DOMParser::Constructor(const GlobalObject& aOwner,
                        ErrorResult& rv)
 {
   MOZ_ASSERT(NS_IsMainThread());
-  RefPtr<DOMParser> domParser = new DOMParser(aOwner.GetAsSupports());
-
   nsCOMPtr<nsIPrincipal> docPrincipal = aOwner.GetSubjectPrincipal();
   nsIURI* documentURI = nullptr;
   nsIURI* baseURI = nullptr;
   if (nsContentUtils::IsSystemPrincipal(docPrincipal)) {
     docPrincipal = NullPrincipal::CreateWithoutOriginAttributes();
   } else {
-    AttemptedInitMarker marker(&domParser->mAttemptedInit);
     
     
     nsCOMPtr<nsPIDOMWindowInner> window = do_QueryInterface(aOwner.GetAsSupports());
@@ -317,8 +289,11 @@ DOMParser::Constructor(const GlobalObject& aOwner,
     }
   }
 
+  RefPtr<DOMParser> domParser = new DOMParser(aOwner.GetAsSupports(),
+                                              docPrincipal);
+
   nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(aOwner.GetAsSupports());
-  rv = domParser->Init(docPrincipal, documentURI, baseURI, global);
+  rv = domParser->Init(documentURI, baseURI, global);
   if (rv.Failed()) {
     return nullptr;
   }
@@ -335,30 +310,15 @@ DOMParser::SetUpDocument(DocumentFlavor aFlavor, ErrorResult& aRv)
   
   nsCOMPtr<nsIScriptGlobalObject> scriptHandlingObject =
     do_QueryReferent(mScriptHandlingObject);
-  nsresult rv;
-  if (!mPrincipal) {
-    if (NS_WARN_IF(mAttemptedInit)) {
-      aRv.Throw(NS_ERROR_NOT_INITIALIZED);
-      return nullptr;
-    }
-    AttemptedInitMarker marker(&mAttemptedInit);
-
-    nsCOMPtr<nsIPrincipal> prin = NullPrincipal::CreateWithoutOriginAttributes();
-    rv = Init(prin, nullptr, nullptr, scriptHandlingObject);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      aRv.Throw(rv);
-      return nullptr;
-    }
-  }
 
   
   NS_ASSERTION(mPrincipal, "Must have principal by now");
   NS_ASSERTION(mDocumentURI, "Must have document URI by now");
 
   nsCOMPtr<nsIDOMDocument> domDoc;
-  rv = NS_NewDOMDocument(getter_AddRefs(domDoc), EmptyString(), EmptyString(),
-                         nullptr, mDocumentURI, mBaseURI, mPrincipal,
-                         true, scriptHandlingObject, aFlavor);
+  nsresult rv = NS_NewDOMDocument(getter_AddRefs(domDoc), EmptyString(), EmptyString(),
+                                  nullptr, mDocumentURI, mBaseURI, mPrincipal,
+                                  true, scriptHandlingObject, aFlavor);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     aRv.Throw(rv);
     return nullptr;
