@@ -823,10 +823,7 @@ Toolbox.prototype = {
       } else {
         this.selectTool("options");
       }
-      
-      event.preventDefault();
     };
-    this.shortcuts.on(L10N.getStr("toolbox.options.key"), selectOptions);
     this.shortcuts.on(L10N.getStr("toolbox.help.key"), selectOptions);
   },
 
