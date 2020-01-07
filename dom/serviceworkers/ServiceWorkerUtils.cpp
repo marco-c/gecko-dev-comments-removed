@@ -14,14 +14,18 @@ namespace dom {
 bool
 ServiceWorkerParentInterceptEnabled()
 {
+  
+  
+  MOZ_ASSERT(NS_IsMainThread());
+
   static bool sInit = false;
-  static Atomic<bool> sEnabled;
+  static bool sEnabled;
 
   if (!sInit) {
     MOZ_ASSERT(NS_IsMainThread());
-    Preferences::AddAtomicBoolVarCache(&sEnabled,
-                                       "dom.serviceWorkers.parent_intercept",
-                                       false);
+    Preferences::AddBoolVarCache(&sEnabled,
+                                 "dom.serviceWorkers.parent_intercept",
+                                 false);
     sInit = true;
   }
 
