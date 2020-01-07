@@ -40,7 +40,16 @@
 
 
 
+
+
+
+
+
+
+
+
 function MenuItem({
+    accelerator = null,
     accesskey = null,
     checked = false,
     click = () => {},
@@ -52,6 +61,7 @@ function MenuItem({
     type = "normal",
     visible = true,
 } = { }) {
+  this.accelerator = accelerator;
   this.accesskey = accesskey;
   this.checked = checked;
   this.click = click;

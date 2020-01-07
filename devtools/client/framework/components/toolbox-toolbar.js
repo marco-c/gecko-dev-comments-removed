@@ -282,7 +282,7 @@ function showMeatballMenu(menuButton, {hostTypes, selectTool, L10N, toolbox}) {
   menu.append(new MenuItem({
     id: "toolbox-meatball-menu-settings",
     label: L10N.getStr("toolbox.meatballMenu.settings.label"),
-    
+    accelerator: L10N.getStr("toolbox.help.key"),
     click: () => selectTool("options"),
   }));
 
