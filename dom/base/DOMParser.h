@@ -85,6 +85,31 @@ private:
     MOZ_ASSERT(aOwner);
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  nsresult Init(nsIPrincipal* aPrincipal, nsIURI* aDocumentURI,
+                nsIURI* aBaseURI, nsIGlobalObject* aSriptObjet);
+
+
   nsresult InitInternal(nsISupports* aOwner, nsIPrincipal* prin,
                         nsIURI* documentURI, nsIURI* baseURI);
 
