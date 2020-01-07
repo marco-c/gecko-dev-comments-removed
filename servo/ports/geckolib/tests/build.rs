@@ -49,7 +49,16 @@ fn main() {
                 
                 
                 
-                if &cap[1] == "InvalidateStyleForDocStateChanges" {
+                
+                
+                
+                
+                
+                
+                
+                if &cap[1] == "InvalidateStyleForDocStateChanges" ||
+                    &cap[1] == "Element_IsDisplayContents"
+                {
                     continue;
                 }
                 w.write_all(format!("    [ Servo_{0}, bindings::Servo_{0} ];\n", &cap[1]).as_bytes()).unwrap();
