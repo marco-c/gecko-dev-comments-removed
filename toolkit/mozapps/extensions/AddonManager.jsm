@@ -3007,6 +3007,15 @@ var AddonManagerPrivate = {
     };
   },
 
+  recordTiming(name, task) {
+    let timer = this.simpleTimer(name);
+    try {
+      return task();
+    } finally {
+      timer.done();
+    }
+  },
+
   
 
 
