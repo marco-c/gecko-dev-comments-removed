@@ -301,9 +301,6 @@ class TryFinallyControl : public BytecodeEmitter::NestableControl
     
     JumpList gosubs;
 
-    
-    JumpList guardJump;
-
     TryFinallyControl(BytecodeEmitter* bce, StatementKind kind)
       : NestableControl(bce, kind),
         emittingSubroutine_(false)
@@ -1533,7 +1530,6 @@ class MOZ_STACK_CLASS TryEmitter
     
     
     
-    
     Maybe<TryFinallyControl> controlInfo_;
 
     int depth_;
@@ -1634,14 +1630,9 @@ class MOZ_STACK_CLASS TryEmitter
 
   public:
     bool emitCatch() {
-        if (state_ == Try) {
-            if (!emitTryEnd())
-                return false;
-        } else {
-            MOZ_ASSERT(state_ == Catch);
-            if (!emitCatchEnd(true))
-                return false;
-        }
+        MOZ_ASSERT(state_ == Try);
+        if (!emitTryEnd())
+            return false;
 
         MOZ_ASSERT(bce_->stackDepth == depth_);
 
@@ -1672,28 +1663,10 @@ class MOZ_STACK_CLASS TryEmitter
             if (!bce_->emitJump(JSOP_GOSUB, &controlInfo_->gosubs))
                 return false;
             MOZ_ASSERT(bce_->stackDepth == depth_);
-        }
 
-        
-        
-        if (!bce_->emitJump(JSOP_GOTO, &catchAndFinallyJump_))
-            return false;
-
-        
-        
-        if (controlInfo_->guardJump.offset != -1) {
-            if (!bce_->emitJumpTargetAndPatch(controlInfo_->guardJump))
+            
+            if (!bce_->emitJump(JSOP_GOTO, &catchAndFinallyJump_))
                 return false;
-            controlInfo_->guardJump.offset = -1;
-
-            
-            
-            if (!hasNext) {
-                if (!bce_->emit1(JSOP_EXCEPTION))
-                    return false;
-                if (!bce_->emit1(JSOP_THROW))
-                    return false;
-            }
         }
 
         return true;
@@ -3222,7 +3195,6 @@ BytecodeEmitter::checkSideEffects(ParseNode* pn, bool* answer)
         return true;
 
       case PNK_STATEMENTLIST:
-      case PNK_CATCHLIST:
       
       
       case PNK_OR:
@@ -3411,9 +3383,9 @@ BytecodeEmitter::checkSideEffects(ParseNode* pn, bool* answer)
             return false;
         if (*answer)
             return true;
-        if (ParseNode* catchList = pn->pn_kid2) {
-            MOZ_ASSERT(catchList->isKind(PNK_CATCHLIST));
-            if (!checkSideEffects(catchList, answer))
+        if (ParseNode* catchScope = pn->pn_kid2) {
+            MOZ_ASSERT(catchScope->isKind(PNK_LEXICALSCOPE));
+            if (!checkSideEffects(catchScope, answer))
                 return false;
             if (*answer)
                 return true;
@@ -3425,20 +3397,14 @@ BytecodeEmitter::checkSideEffects(ParseNode* pn, bool* answer)
         return true;
 
       case PNK_CATCH:
-        MOZ_ASSERT(pn->isArity(PN_TERNARY));
-        if (ParseNode* name = pn->pn_kid1) {
+        MOZ_ASSERT(pn->isArity(PN_BINARY));
+        if (ParseNode* name = pn->pn_left) {
             if (!checkSideEffects(name, answer))
                 return false;
             if (*answer)
                 return true;
         }
-        if (ParseNode* cond = pn->pn_kid2) {
-            if (!checkSideEffects(cond, answer))
-                return false;
-            if (*answer)
-                return true;
-        }
-        return checkSideEffects(pn->pn_kid3, answer);
+        return checkSideEffects(pn->pn_right, answer);
 
       case PNK_SWITCH:
         MOZ_ASSERT(pn->isArity(PN_BINARY));
@@ -6615,20 +6581,13 @@ bool
 BytecodeEmitter::emitCatch(ParseNode* pn)
 {
     
-    TryFinallyControl& controlInfo = innermostNestableControl->as<TryFinallyControl>();
+    MOZ_ASSERT(innermostNestableControl->is<TryFinallyControl>());
 
     
     if (!emit1(JSOP_EXCEPTION))
         return false;
 
-    
-
-
-
-    if (pn->pn_kid2 && !emit1(JSOP_DUP))
-        return false;
-
-    ParseNode* pn2 = pn->pn_kid1;
+    ParseNode* pn2 = pn->pn_left;
     if (!pn2) {
         
         if (!emit1(JSOP_POP))
@@ -6656,46 +6615,7 @@ BytecodeEmitter::emitCatch(ParseNode* pn)
     }
 
     
-    
-    if (pn->pn_kid2) {
-        if (!emitTree(pn->pn_kid2))
-            return false;
-
-        
-        
-        
-        JumpList guardCheck;
-        if (!emitJump(JSOP_IFNE, &guardCheck))
-            return false;
-
-        {
-            NonLocalExitControl nle(this, NonLocalExitControl::Throw);
-
-            
-            
-            if (!emit1(JSOP_THROWING))
-                return false;
-
-            
-            if (!nle.prepareForNonLocalJump(&controlInfo))
-                return false;
-
-            
-            if (!emitJump(JSOP_GOTO, &controlInfo.guardJump))
-                return false;
-        }
-
-        
-        if (!emitJumpTargetAndPatch(guardCheck))
-            return false;
-
-        
-        if (!emit1(JSOP_POP))
-            return false;
-    }
-
-    
-    return emitTree(pn->pn_kid3);
+    return emitTree(pn->pn_right);
 }
 
 
@@ -6703,11 +6623,11 @@ BytecodeEmitter::emitCatch(ParseNode* pn)
 MOZ_NEVER_INLINE bool
 BytecodeEmitter::emitTry(ParseNode* pn)
 {
-    ParseNode* catchList = pn->pn_kid2;
+    ParseNode* catchScope = pn->pn_kid2;
     ParseNode* finallyNode = pn->pn_kid3;
 
     TryEmitter::Kind kind;
-    if (catchList) {
+    if (catchScope) {
         if (finallyNode)
             kind = TryEmitter::TryCatchFinally;
         else
@@ -6725,43 +6645,25 @@ BytecodeEmitter::emitTry(ParseNode* pn)
         return false;
 
     
-    if (catchList) {
-        MOZ_ASSERT(catchList->isKind(PNK_CATCHLIST));
+    if (catchScope) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if (!tryCatch.emitCatch())
+            return false;
 
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        for (ParseNode* pn3 = catchList->pn_head; pn3; pn3 = pn3->pn_next) {
-            if (!tryCatch.emitCatch())
-                return false;
-
-            
-            MOZ_ASSERT(pn3->isKind(PNK_LEXICALSCOPE));
-            if (!emitTree(pn3))
-                return false;
-        }
+        MOZ_ASSERT(catchScope->isKind(PNK_LEXICALSCOPE));
+        if (!emitTree(catchScope))
+            return false;
     }
 
     
@@ -6896,7 +6798,7 @@ BytecodeEmitter::emitLexicalScope(ParseNode* pn)
     EmitterScope emitterScope(this);
     ScopeKind kind;
     if (body->isKind(PNK_CATCH))
-        kind = (!body->pn_kid1 || body->pn_kid1->isKind(PNK_NAME))
+        kind = (!body->pn_left || body->pn_left->isKind(PNK_NAME))
                ? ScopeKind::SimpleCatch
                : ScopeKind::Catch;
     else

@@ -79,7 +79,6 @@ class ObjectBox;
     F(DELETEEXPR) \
     F(TRY) \
     F(CATCH) \
-    F(CATCHLIST) \
     F(THROW) \
     F(DEBUGGER) \
     F(GENERATOR) \
@@ -200,7 +199,6 @@ IsTypeofKind(ParseNodeKind kind)
 {
     return PNK_TYPEOFNAME <= kind && kind <= PNK_TYPEOFEXPR;
 }
-
 
 
 
