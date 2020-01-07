@@ -68,7 +68,9 @@ public:
   
   
   
-  explicit IpcResourceUpdateQueue(layers::WebRenderBridgeChild* aAllocator, size_t aChunkSize = 57344);
+  
+  
+  explicit IpcResourceUpdateQueue(layers::WebRenderBridgeChild* aAllocator, size_t aChunkSize = 57328);
 
   bool AddImage(wr::ImageKey aKey,
                 const ImageDescriptor& aDescriptor,
