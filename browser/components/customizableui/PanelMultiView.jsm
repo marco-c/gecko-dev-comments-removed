@@ -347,13 +347,6 @@ var PanelMultiView = class extends this.AssociatedToNode {
     return this.node.parentNode;
   }
 
-  get _mainViewId() {
-    return this.node.getAttribute("mainViewId");
-  }
-  get _mainView() {
-    return this.document.getElementById(this._mainViewId);
-  }
-
   get _transitioning() {
     return this.__transitioning;
   }
@@ -675,11 +668,8 @@ var PanelMultiView = class extends this.AssociatedToNode {
 
 
   async _showMainView() {
-    if (!this.node || !this._mainViewId) {
-      return false;
-    }
-
-    let nextPanelView = PanelView.forNode(this._mainView);
+    let nextPanelView = PanelView.forNode(this.document.getElementById(
+      this.node.getAttribute("mainViewId")));
 
     
     let oldPanelMultiViewNode = nextPanelView.node.panelMultiView;
@@ -1108,9 +1098,10 @@ var PanelMultiView = class extends this.AssociatedToNode {
         break;
       }
       case "popupshown":
-        let mainPanelView = PanelView.forNode(this._mainView);
         
         
+        
+        let mainPanelView = this.openViews[0];
         mainPanelView.descriptionHeightWorkaround();
         this._activateView(mainPanelView);
         break;
