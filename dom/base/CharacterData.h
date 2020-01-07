@@ -97,7 +97,6 @@ public:
 
   
   nsresult GetLength(uint32_t* aLength);
-  nsresult AppendData(const nsAString& aArg);
   nsresult InsertData(uint32_t aOffset, const nsAString& aArg);
   nsresult DeleteData(uint32_t aOffset, uint32_t aCount);
   nsresult ReplaceData(uint32_t aOffset, uint32_t aCount,
@@ -184,10 +183,7 @@ public:
   
   void SubstringData(uint32_t aStart, uint32_t aCount, nsAString& aReturn,
                      ErrorResult& rv);
-  void AppendData(const nsAString& aData, ErrorResult& rv)
-  {
-    rv = AppendData(aData);
-  }
+  void AppendData(const nsAString& aData, ErrorResult& rv);
   void InsertData(uint32_t aOffset, const nsAString& aData, ErrorResult& rv)
   {
     rv = InsertData(aOffset, aData);
