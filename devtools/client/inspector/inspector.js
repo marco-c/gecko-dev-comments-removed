@@ -267,7 +267,8 @@ Inspector.prototype = {
 
     
     
-    if (this.show3PaneTooltip && this.toolbox.currentToolId === "inspector") {
+    if (this.show3PaneTooltip && !this.target.chrome &&
+        this.toolbox.currentToolId === "inspector") {
       this.threePaneTooltip = new ThreePaneOnboardingTooltip(this.toolbox, this.panelDoc);
     }
 
