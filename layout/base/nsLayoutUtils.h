@@ -3111,6 +3111,12 @@ public:
     return ResolveToLength<true>(aGap, aPercentageBasis);
   }
 
+  
+
+
+
+  static ComputedStyle* StyleForScrollbar(nsIFrame* aScrollbarPart);
+
 private:
   static uint32_t sFontSizeInflationEmPerLine;
   static uint32_t sFontSizeInflationMinTwips;
