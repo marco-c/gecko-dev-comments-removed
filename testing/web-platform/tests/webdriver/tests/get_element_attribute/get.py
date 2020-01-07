@@ -1,9 +1,6 @@
-
-
 import pytest
 
-from tests.support.asserts import assert_error, assert_success, assert_dialog_handled
-from tests.support.fixtures import create_dialog
+from tests.support.asserts import assert_error, assert_success
 from tests.support.inline import inline
 
 
@@ -15,115 +12,24 @@ def get_element_attribute(session, element, attr):
             attr=attr))
 
 
-
-
 def test_no_browsing_context(session, create_window):
-    
     session.window_handle = create_window()
     session.close()
 
     result = get_element_attribute(session, "foo", "id")
-
     assert_error(result, "no such window")
-
-
-def test_handle_prompt_dismiss(new_session, add_browser_capabilites):
-    
-    _, session = new_session({"capabilities": {"alwaysMatch": add_browser_capabilites({"unhandledPromptBehavior": "dismiss"})}})
-    session.url = inline("<input id=foo>")
-    element = session.find.css("#foo", all=False)
-
-    create_dialog(session)("alert", text="dismiss #1", result_var="dismiss1")
-
-    result = get_element_attribute(session, element.id, "id")
-
-    assert_success(result, "foo")
-    assert_dialog_handled(session, "dismiss #1")
-
-    create_dialog(session)("confirm", text="dismiss #2", result_var="dismiss2")
-
-    result = get_element_attribute(session, element.id, "id")
-
-    assert_success(result, "foo")
-    assert_dialog_handled(session, "dismiss #2")
-
-    create_dialog(session)("prompt", text="dismiss #3", result_var="dismiss3")
-
-    result = get_element_attribute(session, element.id, "id")
-
-    assert_success(result, "foo")
-    assert_dialog_handled(session, "dismiss #3")
-
-
-def test_handle_prompt_accept(new_session, add_browser_capabilites):
-    
-    _, session = new_session({"capabilities": {"alwaysMatch": add_browser_capabilites({"unhandledPromptBehavior": "accept"})}})
-    session.url = inline("<input id=foo>")
-    element = session.find.css("#foo", all=False)
-
-    create_dialog(session)("alert", text="dismiss #1", result_var="dismiss1")
-
-    result = get_element_attribute(session, element.id, "id")
-
-    assert_success(result, "foo")
-    assert_dialog_handled(session, "dismiss #1")
-
-    create_dialog(session)("confirm", text="dismiss #2", result_var="dismiss2")
-
-    result = get_element_attribute(session, element.id, "id")
-
-    assert_success(result, "foo")
-    assert_dialog_handled(session, "dismiss #2")
-
-    create_dialog(session)("prompt", text="dismiss #3", result_var="dismiss3")
-
-    result = get_element_attribute(session, element.id, "id")
-
-    assert_success(result, "foo")
-    assert_dialog_handled(session, "dismiss #3")
-
-
-def test_handle_prompt_missing_value(session):
-    
-    session.url = inline("<input id=foo>")
-    element = session.find.css("#foo", all=False)
-
-    create_dialog(session)("alert", text="dismiss #1", result_var="dismiss1")
-
-    result = get_element_attribute(session, element.id, "id")
-
-    assert_error(result, "unexpected alert open")
-    assert_dialog_handled(session, "dismiss #1")
-
-    create_dialog(session)("confirm", text="dismiss #2", result_var="dismiss2")
-
-    result = get_element_attribute(session, element.id, "id")
-
-    assert_error(result, "unexpected alert open")
-    assert_dialog_handled(session, "dismiss #2")
-
-    create_dialog(session)("prompt", text="dismiss #3", result_var="dismiss3")
-
-    result = get_element_attribute(session, element.id, "id")
-
-    assert_error(result, "unexpected alert open")
-    assert_dialog_handled(session, "dismiss #3")
-
 
 def test_element_not_found(session):
     
     result = get_element_attribute(session, "foo", "id")
-
     assert_error(result, "no such element")
 
 
 def test_element_stale(session):
-    
     session.url = inline("<input id=foo>")
     element = session.find.css("input", all=False)
     session.refresh()
     result = get_element_attribute(session, element.id, "id")
-
     assert_error(result, "stale element reference")
 
 
@@ -133,9 +39,9 @@ def test_normal(session):
     element = session.find.css("input", all=False)
     result = get_element_attribute(session, element.id, "input")
     assert_success(result, None)
-    assert False == session.execute_script("return document.querySelector('input').checked")
 
     
+    assert session.execute_script("return document.querySelector('input').checked") is False
     element.click()
     assert True == session.execute_script("return document.querySelector('input').checked")
     result = get_element_attribute(session, element.id, "input")
@@ -164,17 +70,14 @@ def test_normal(session):
     ("video", ["autoplay", "controls", "loop", "muted"])
 ])
 def test_boolean_attribute(session, tag, attrs):
-    
     for attr in attrs:
         session.url = inline("<{0} {1}>".format(tag, attr))
-
         element = session.find.css(tag, all=False)
         result = result = get_element_attribute(session, element.id, attr)
         assert_success(result, "true")
 
 
 def test_global_boolean_attributes(session):
-    
     session.url = inline("<p hidden>foo")
     element = session.find.css("p", all=False)
     result = result = get_element_attribute(session, element.id, "hidden")
