@@ -127,4 +127,10 @@ void apz_deregister_sampler(mozilla::wr::WrWindowId aWindowId);
 #undef WR_FUNC
 #undef WR_DESTRUCTOR_SAFE_FUNC
 
+
+
+extern "C" {
+void record_telemetry_time(mozilla::wr::TelemetryProbe aProbe, uint64_t aTimeNs);
+}
+
 #endif 
