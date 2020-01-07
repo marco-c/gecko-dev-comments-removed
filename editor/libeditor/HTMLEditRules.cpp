@@ -1987,7 +1987,6 @@ HTMLEditRules::SplitMailCites(Selection* aSelection,
   }
   RefPtr<HTMLEditor> htmlEditor(mHTMLEditor);
 
-  nsCOMPtr<nsIContent> leftCite, rightCite;
   nsCOMPtr<nsINode> selNode;
   nsCOMPtr<Element> citeNode;
   int32_t selOffset;
@@ -2029,6 +2028,9 @@ HTMLEditRules::SplitMailCites(Selection* aSelection,
       return splitCiteNodeResult.Rv();
     }
 
+    
+    
+    
     
     
     
@@ -2103,13 +2105,14 @@ HTMLEditRules::SplitMailCites(Selection* aSelection,
 
     
     bool bEmptyCite = false;
-    if (leftCite) {
-      rv = htmlEditor->IsEmptyNode(leftCite, &bEmptyCite, true, false);
+    if (previousNodeOfSplitPoint) {
+      rv = htmlEditor->IsEmptyNode(previousNodeOfSplitPoint, &bEmptyCite,
+                                   true, false);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
       if (bEmptyCite) {
-        rv = htmlEditor->DeleteNode(leftCite);
+        rv = htmlEditor->DeleteNode(previousNodeOfSplitPoint);
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
         }
