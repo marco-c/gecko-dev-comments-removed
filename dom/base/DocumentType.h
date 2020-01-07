@@ -13,7 +13,7 @@
 
 #include "mozilla/Attributes.h"
 #include "nsCOMPtr.h"
-#include "nsIDOMDocumentType.h"
+#include "nsIDOMNode.h"
 #include "nsIContent.h"
 #include "nsGenericDOMDataNode.h"
 #include "nsString.h"
@@ -26,17 +26,8 @@ namespace dom {
 
 
 
-class DocumentTypeForward : public nsGenericDOMDataNode,
-                            public nsIDOMDocumentType
-{
-public:
-  explicit DocumentTypeForward(already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo)
-    : nsGenericDOMDataNode(aNodeInfo)
-  {
-  }
-};
-
-class DocumentType final : public DocumentTypeForward
+class DocumentType final : public nsGenericDOMDataNode,
+                           public nsIDOMNode
 {
 public:
   DocumentType(already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo,
@@ -49,9 +40,6 @@ public:
 
   
   
-
-  
-  NS_DECL_NSIDOMDOCUMENTTYPE
 
   
   virtual bool IsNodeOfType(uint32_t aFlags) const override;
