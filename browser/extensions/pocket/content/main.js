@@ -222,86 +222,73 @@ var pktUI = (function() {
             startheight = overflowMenuHeight;
         }
 
-        getFirefoxAccountSignedInUser(function(userdata) {
-            var panelId = showPanel("about:pocket-saved?pockethost="
-                + Services.prefs.getCharPref("extensions.pocket.site")
-                + "&premiumStatus=" + (pktApi.isPremiumUser() ? "1" : "0")
-                + "&fxasignedin=" + ((typeof userdata == "object" && userdata !== null) ? "1" : "0")
-                + "&inoverflowmenu=" + inOverflowMenu
-                + "&locale=" + getUILocale(), {
-                onShow() {
-                    var saveLinkMessageId = "saveLink";
-                    _lastAddSucceeded = false;
-                    getPanelFrame().setAttribute("itemAdded", "false");
+        var panelId = showPanel("about:pocket-saved?pockethost=" + Services.prefs.getCharPref("extensions.pocket.site") + "&premiumStatus=" + (pktApi.isPremiumUser() ? "1" : "0") + "&inoverflowmenu=" + inOverflowMenu + "&locale=" + getUILocale(), {
+            onShow() {
+                var saveLinkMessageId = "saveLink";
+                _lastAddSucceeded = false;
+                getPanelFrame().setAttribute("itemAdded", "false");
 
+                
+                if (!isValidURL) {
                     
-                    if (!isValidURL) {
-                        
-                        let error = {
-                            message: "Only links can be saved",
-                            localizedKey: "onlylinkssaved"
-                        };
-                        pktUIMessaging.sendErrorMessageToPanel(panelId, saveLinkMessageId, error);
-                        return;
-                    }
-
-                    
-                    if (!navigator.onLine) {
-                        
-                        let error = {
-                            message: "You must be connected to the Internet in order to save to Pocket. Please connect to the Internet and try again."
-                        };
-                        pktUIMessaging.sendErrorMessageToPanel(panelId, saveLinkMessageId, error);
-                        return;
-                    }
-
-                    
-                    var options = {
-                        success(data, request) {
-                            var item = data.item;
-                            var ho2 = data.ho2;
-                            var accountState = data.account_state;
-                            var displayName = data.display_name;
-                            var successResponse = {
-                                status: "success",
-                                accountState,
-                                displayName,
-                                item,
-                                ho2
-                            };
-                            pktUIMessaging.sendMessageToPanel(panelId, saveLinkMessageId, successResponse);
-                            _lastAddSucceeded = true;
-                            getPanelFrame().setAttribute("itemAdded", "true");
-                        },
-                        error(error, request) {
-                            
-                            if (request.status === 401) {
-                                showSignUp();
-                                return;
-                            }
-
-                            
-                            
-                            var errorMessage = error.message || "There was an error when trying to save to Pocket.";
-                            var panelError = { message: errorMessage};
-
-                            
-                            pktUIMessaging.sendErrorMessageToPanel(panelId, saveLinkMessageId, panelError);
-                        }
+                    let error = {
+                        message: "Only links can be saved",
+                        localizedKey: "onlylinkssaved"
                     };
+                    pktUIMessaging.sendErrorMessageToPanel(panelId, saveLinkMessageId, error);
+                    return;
+                }
 
+                
+                if (!navigator.onLine) {
                     
-                    if (typeof title !== "undefined") {
-                        options.title = title;
+                    let error = {
+                        message: "You must be connected to the Internet in order to save to Pocket. Please connect to the Internet and try again."
+                    };
+                    pktUIMessaging.sendErrorMessageToPanel(panelId, saveLinkMessageId, error);
+                    return;
+                }
+
+                
+                var options = {
+                    success(data, request) {
+                        var item = data.item;
+                        var successResponse = {
+                            status: "success",
+                            item
+                        };
+                        pktUIMessaging.sendMessageToPanel(panelId, saveLinkMessageId, successResponse);
+                        _lastAddSucceeded = true;
+                        getPanelFrame().setAttribute("itemAdded", "true");
+                    },
+                    error(error, request) {
+                        
+                        if (request.status === 401) {
+                            showSignUp();
+                            return;
+                        }
+
+                        
+                        
+                        var errorMessage = error.message || "There was an error when trying to save to Pocket.";
+                        var panelError = { message: errorMessage};
+
+                        
+                        pktUIMessaging.sendErrorMessageToPanel(panelId, saveLinkMessageId, panelError);
                     }
+                };
 
-                    
-                    pktApi.addLink(url, options);
-                },
-                onHide: panelDidHide,
-                width: inOverflowMenu ? overflowMenuWidth : savePanelWidth,
-                height: startheight
-            });
+                
+                if (typeof title !== "undefined") {
+                    options.title = title;
+                }
+
+                
+                pktApi.addLink(url, options);
+            },
+            onHide: panelDidHide,
+            width: inOverflowMenu ? overflowMenuWidth : savePanelWidth,
+            height: startheight
         });
     }
 
@@ -409,34 +396,6 @@ var pktUI = (function() {
         var _getCurrentURLMessageId = "getCurrentURL";
         pktUIMessaging.addMessageListener(iframe, _getCurrentURLMessageId, function(panelId, data) {
             pktUIMessaging.sendResponseMessageToPanel(panelId, _getCurrentURLMessageId, getCurrentUrl());
-        });
-
-        
-        var _getArticleInfoMessageId = "getArticleInfo";
-        pktUIMessaging.addMessageListener(iframe, _getArticleInfoMessageId, function(panelId, data) {
-            pktApi.getArticleInfo(getCurrentUrl(), {
-                success(res, req) {
-                    pktUIMessaging.sendResponseMessageToPanel(panelId, _getArticleInfoMessageId, res);
-                },
-                error(err, req) {
-                    err.fallback_title = getCurrentTitle();
-                    err.fallback_domain = new URL(getCurrentUrl()).hostname;
-                    pktUIMessaging.sendResponseMessageToPanel(panelId, _getArticleInfoMessageId, err);
-                }
-            });
-        });
-
-        
-        var _getMobileDownloadMessageId = "getMobileDownload";
-        pktUIMessaging.addMessageListener(iframe, _getMobileDownloadMessageId, function(panelId, data) {
-            pktApi.getMobileDownload({
-                success(res, req) {
-                    pktUIMessaging.sendResponseMessageToPanel(panelId, _getMobileDownloadMessageId, res);
-                },
-                error(err, req) {
-                    pktUIMessaging.sendResponseMessageToPanel(panelId, _getMobileDownloadMessageId, err);
-                }
-            });
         });
 
         var _resizePanelMessageId = "resizePanel";
