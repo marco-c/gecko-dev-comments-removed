@@ -31,11 +31,13 @@ import android.content.res.Resources;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Binder;
+import android.os.Bundle;
 import android.os.IBinder;
 import android.os.IInterface;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.os.SystemClock;
+import android.support.annotation.Nullable;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
@@ -545,8 +547,9 @@ public class GeckoSession extends LayerSession
 
 
 
-    public static void preload(final Context context) {
-        preload(context,  null,  false);
+    public static void preload(final @NonNull Context context) {
+        preload(context,  null,
+                 null,  false);
     }
 
     
@@ -557,15 +560,21 @@ public class GeckoSession extends LayerSession
 
 
 
-    public static void preload(final Context context, final String geckoArgs,
+    public static void preload(final @NonNull Context context,
+                               final @Nullable String[] geckoArgs,
+                               final @Nullable Bundle extras,
                                final boolean multiprocess) {
         final Context appContext = context.getApplicationContext();
-        if (GeckoAppShell.getApplicationContext() == null) {
+        if (!appContext.equals(GeckoAppShell.getApplicationContext())) {
             GeckoAppShell.setApplicationContext(appContext);
         }
 
+        if (GeckoThread.isLaunched()) {
+            return;
+        }
+
         final int flags = multiprocess ? GeckoThread.FLAG_PRELOAD_CHILD : 0;
-        if (GeckoThread.initMainProcess( null, geckoArgs, flags)) {
+        if (GeckoThread.initMainProcess( null, geckoArgs, extras, flags)) {
             GeckoThread.launch();
         }
     }
@@ -578,19 +587,23 @@ public class GeckoSession extends LayerSession
         return mNativeQueue.isReady();
     }
 
-    public void openWindow(final Context appContext) {
+    public void openWindow(final @Nullable Context appContext) {
         ThreadUtils.assertOnUiThread();
 
         if (isOpen()) {
             throw new IllegalStateException("Session is open");
         }
 
-        if (!GeckoThread.isLaunched()) {
+        if (appContext != null) {
             final boolean multiprocess =
                     mSettings.getBoolean(GeckoSessionSettings.USE_MULTIPROCESS);
-            preload(appContext,  null, multiprocess);
+            preload(appContext,  null,  null, multiprocess);
         }
 
+        openWindow();
+    }
+
+    private void openWindow() {
         final String chromeUri = mSettings.getString(GeckoSessionSettings.CHROME_URI);
         final int screenId = mSettings.getInt(GeckoSessionSettings.SCREEN_ID);
         final boolean isPrivate = mSettings.getBoolean(GeckoSessionSettings.USE_PRIVATE_MODE);
