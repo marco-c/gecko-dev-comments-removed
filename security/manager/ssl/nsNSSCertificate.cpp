@@ -671,28 +671,22 @@ nsNSSCertificate::GetSha1Fingerprint(nsAString& _sha1Fingerprint)
 NS_IMETHODIMP
 nsNSSCertificate::GetTokenName(nsAString& aTokenName)
 {
-  aTokenName.Truncate();
-  if (mCert) {
-    
-    
-    
-    
-    
-    
-    
-    
-    if (mCert->slot) {
-      char* token = PK11_GetTokenName(mCert->slot);
-      if (token) {
-        aTokenName = NS_ConvertUTF8toUTF16(token);
-      }
-    } else {
-      nsAutoString tok;
-      if (NS_SUCCEEDED(GetPIPNSSBundleString("InternalToken", tok))) {
-        aTokenName = tok;
-      }
-    }
+  MOZ_ASSERT(mCert);
+  if (!mCert) {
+    return NS_ERROR_FAILURE;
   }
+  UniquePK11SlotInfo internalSlot(PK11_GetInternalSlot());
+  if (!internalSlot) {
+    return NS_ERROR_FAILURE;
+  }
+  nsCOMPtr<nsIPK11Token> token(
+    new nsPK11Token(mCert->slot ? mCert->slot : internalSlot.get()));
+  nsAutoCString tmp;
+  nsresult rv = token->GetTokenName(tmp);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  aTokenName.Assign(NS_ConvertUTF8toUTF16(tmp));
   return NS_OK;
 }
 

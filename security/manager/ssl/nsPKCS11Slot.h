@@ -27,6 +27,10 @@ protected:
 
 private:
   mozilla::UniquePK11SlotInfo mSlot;
+  
+  bool mIsInternalCryptoSlot;
+  
+  bool mIsInternalKeySlot;
   nsCString mSlotDesc;
   nsCString mSlotManufacturerID;
   nsCString mSlotHWVersion;
