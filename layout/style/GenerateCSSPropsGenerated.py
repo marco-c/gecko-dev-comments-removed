@@ -59,6 +59,26 @@ def generate(output, dataFile):
     output.write("};\n\n")
 
     
+    names = []
+    for p in properties:
+        if p.type() != "shorthand":
+            continue
+        name = "g{}SubpropTable".format(p.method)
+        names.append(name)
+        output.write("static const nsCSSPropertyID {}[] = {{\n".format(name))
+        for subprop in p.subprops:
+            output.write("  eCSSProperty_{},\n".format(subprop))
+        output.write("  eCSSProperty_UNKNOWN\n")
+        output.write("};\n\n")
+    output.write("const nsCSSPropertyID* const\n")
+    output.write("nsCSSProps::kSubpropertyTable["
+                 "eCSSProperty_COUNT - eCSSProperty_COUNT_no_shorthands"
+                 "] = {\n")
+    for name in names:
+        output.write("  {},\n".format(name))
+    output.write("};\n\n")
+
+    
     msg = ("GenerateCSSPropsGenerated.py did not list properties "
            "in nsCSSPropertyID order")
     for p in properties:
