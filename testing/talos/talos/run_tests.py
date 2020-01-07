@@ -195,12 +195,7 @@ def run_tests(config, browser_config):
 
     
     talos_results.add_extra_option('e10s')
-
-    
-    if config['enable_stylo']:
-        talos_results.add_extra_option('stylo')
-    if config['disable_stylo']:
-        talos_results.add_extra_option('stylo_disabled')
+    talos_results.add_extra_option('stylo')
 
     
     if config.get('stylothreads', 0) > 0:
