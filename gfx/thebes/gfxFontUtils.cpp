@@ -1304,58 +1304,58 @@ gfxFontUtils::ReadCanonicalName(const char *aNameData, uint32_t aDataLen,
 
 
 
-#define ANY 0xffff
+const uint16_t ANY = 0xffff;
 const gfxFontUtils::MacFontNameCharsetMapping gfxFontUtils::gMacFontNameCharsets[] =
 {
-    { ENCODING_ID_MAC_ROMAN,        LANG_ID_MAC_ENGLISH,      "macintosh"       },
-    { ENCODING_ID_MAC_ROMAN,        LANG_ID_MAC_ICELANDIC,    "x-mac-icelandic" },
-    { ENCODING_ID_MAC_ROMAN,        LANG_ID_MAC_TURKISH,      "x-mac-turkish"   },
-    { ENCODING_ID_MAC_ROMAN,        LANG_ID_MAC_POLISH,       "x-mac-ce"        },
-    { ENCODING_ID_MAC_ROMAN,        LANG_ID_MAC_ROMANIAN,     "x-mac-romanian"  },
-    { ENCODING_ID_MAC_ROMAN,        LANG_ID_MAC_CZECH,        "x-mac-ce"        },
-    { ENCODING_ID_MAC_ROMAN,        LANG_ID_MAC_SLOVAK,       "x-mac-ce"        },
-    { ENCODING_ID_MAC_ROMAN,        ANY,                      "macintosh"       },
-    { ENCODING_ID_MAC_JAPANESE,     LANG_ID_MAC_JAPANESE,     "Shift_JIS"       },
-    { ENCODING_ID_MAC_JAPANESE,     ANY,                      "Shift_JIS"       },
-    { ENCODING_ID_MAC_TRAD_CHINESE, LANG_ID_MAC_TRAD_CHINESE, "Big5"            },
-    { ENCODING_ID_MAC_TRAD_CHINESE, ANY,                      "Big5"            },
-    { ENCODING_ID_MAC_KOREAN,       LANG_ID_MAC_KOREAN,       "EUC-KR"          },
-    { ENCODING_ID_MAC_KOREAN,       ANY,                      "EUC-KR"          },
-    { ENCODING_ID_MAC_ARABIC,       LANG_ID_MAC_ARABIC,       "x-mac-arabic"    },
-    { ENCODING_ID_MAC_ARABIC,       LANG_ID_MAC_URDU,         "x-mac-farsi"     },
-    { ENCODING_ID_MAC_ARABIC,       LANG_ID_MAC_FARSI,        "x-mac-farsi"     },
-    { ENCODING_ID_MAC_ARABIC,       ANY,                      "x-mac-arabic"    },
-    { ENCODING_ID_MAC_HEBREW,       LANG_ID_MAC_HEBREW,       "x-mac-hebrew"    },
-    { ENCODING_ID_MAC_HEBREW,       ANY,                      "x-mac-hebrew"    },
-    { ENCODING_ID_MAC_GREEK,        ANY,                      "x-mac-greek"     },
-    { ENCODING_ID_MAC_CYRILLIC,     ANY,                      "x-mac-cyrillic"  },
-    { ENCODING_ID_MAC_DEVANAGARI,   ANY,                      "x-mac-devanagari"},
-    { ENCODING_ID_MAC_GURMUKHI,     ANY,                      "x-mac-gurmukhi"  },
-    { ENCODING_ID_MAC_GUJARATI,     ANY,                      "x-mac-gujarati"  },
-    { ENCODING_ID_MAC_SIMP_CHINESE, LANG_ID_MAC_SIMP_CHINESE, "gb18030"         },
-    { ENCODING_ID_MAC_SIMP_CHINESE, ANY,                      "gb18030"         }
+    { ENCODING_ID_MAC_ROMAN,        LANG_ID_MAC_ENGLISH,      MACINTOSH_ENCODING },
+    { ENCODING_ID_MAC_ROMAN,        LANG_ID_MAC_ICELANDIC,    X_USER_DEFINED_ENCODING },
+    { ENCODING_ID_MAC_ROMAN,        LANG_ID_MAC_TURKISH,      X_USER_DEFINED_ENCODING },
+    { ENCODING_ID_MAC_ROMAN,        LANG_ID_MAC_POLISH,       X_USER_DEFINED_ENCODING },
+    { ENCODING_ID_MAC_ROMAN,        LANG_ID_MAC_ROMANIAN,     X_USER_DEFINED_ENCODING },
+    { ENCODING_ID_MAC_ROMAN,        LANG_ID_MAC_CZECH,        X_USER_DEFINED_ENCODING },
+    { ENCODING_ID_MAC_ROMAN,        LANG_ID_MAC_SLOVAK,       X_USER_DEFINED_ENCODING },
+    { ENCODING_ID_MAC_ROMAN,        ANY,                      MACINTOSH_ENCODING },
+    { ENCODING_ID_MAC_JAPANESE,     LANG_ID_MAC_JAPANESE,     SHIFT_JIS_ENCODING },
+    { ENCODING_ID_MAC_JAPANESE,     ANY,                      SHIFT_JIS_ENCODING },
+    { ENCODING_ID_MAC_TRAD_CHINESE, LANG_ID_MAC_TRAD_CHINESE, BIG5_ENCODING },
+    { ENCODING_ID_MAC_TRAD_CHINESE, ANY,                      BIG5_ENCODING },
+    { ENCODING_ID_MAC_KOREAN,       LANG_ID_MAC_KOREAN,       EUC_KR_ENCODING },
+    { ENCODING_ID_MAC_KOREAN,       ANY,                      EUC_KR_ENCODING },
+    { ENCODING_ID_MAC_ARABIC,       LANG_ID_MAC_ARABIC,       X_USER_DEFINED_ENCODING },
+    { ENCODING_ID_MAC_ARABIC,       LANG_ID_MAC_URDU,         X_USER_DEFINED_ENCODING },
+    { ENCODING_ID_MAC_ARABIC,       LANG_ID_MAC_FARSI,        X_USER_DEFINED_ENCODING },
+    { ENCODING_ID_MAC_ARABIC,       ANY,                      X_USER_DEFINED_ENCODING },
+    { ENCODING_ID_MAC_HEBREW,       LANG_ID_MAC_HEBREW,       X_USER_DEFINED_ENCODING },
+    { ENCODING_ID_MAC_HEBREW,       ANY,                      X_USER_DEFINED_ENCODING },
+    { ENCODING_ID_MAC_GREEK,        ANY,                      X_USER_DEFINED_ENCODING },
+    { ENCODING_ID_MAC_CYRILLIC,     ANY,                      X_MAC_CYRILLIC_ENCODING },
+    { ENCODING_ID_MAC_DEVANAGARI,   ANY,                      X_USER_DEFINED_ENCODING },
+    { ENCODING_ID_MAC_GURMUKHI,     ANY,                      X_USER_DEFINED_ENCODING },
+    { ENCODING_ID_MAC_GUJARATI,     ANY,                      X_USER_DEFINED_ENCODING },
+    { ENCODING_ID_MAC_SIMP_CHINESE, LANG_ID_MAC_SIMP_CHINESE, GB18030_ENCODING },
+    { ENCODING_ID_MAC_SIMP_CHINESE, ANY,                      GB18030_ENCODING }
 };
 
-const char* gfxFontUtils::gISOFontNameCharsets[] = 
+const Encoding* gfxFontUtils::gISOFontNameCharsets[] =
 {
-     "windows-1252", 
+     WINDOWS_1252_ENCODING, 
      nullptr       , 
-     "windows-1252"  
+     WINDOWS_1252_ENCODING  
 };
 
-const char* gfxFontUtils::gMSFontNameCharsets[] =
+const Encoding* gfxFontUtils::gMSFontNameCharsets[] =
 {
-          ""          ,
-      ""          ,
-        "Shift_JIS" ,
+          UTF_16BE_ENCODING,
+      UTF_16BE_ENCODING,
+        SHIFT_JIS_ENCODING,
              nullptr      ,
-            "Big5"      ,
+            BIG5_ENCODING,
          nullptr      ,
            nullptr      ,
                               nullptr      ,
                               nullptr      ,
                               nullptr      ,
-     ""
+     UTF_16BE_ENCODING
 };
 
 struct MacCharsetMappingComparator
@@ -1380,13 +1380,14 @@ struct MacCharsetMappingComparator
 
 
 
-const char*
+
+const Encoding*
 gfxFontUtils::GetCharsetForFontName(uint16_t aPlatform, uint16_t aScript, uint16_t aLanguage)
 {
     switch (aPlatform)
     {
     case PLATFORM_ID_UNICODE:
-        return "";
+        return UTF_16BE_ENCODING;
 
     case PLATFORM_ID_MAC:
         {
@@ -1395,7 +1396,7 @@ gfxFontUtils::GetCharsetForFontName(uint16_t aPlatform, uint16_t aScript, uint16
                 size_t idx;
                 if (BinarySearchIf(gMacFontNameCharsets, 0, ArrayLength(gMacFontNameCharsets),
                                             MacCharsetMappingComparator(searchValue), &idx)) {
-                    return gMacFontNameCharsets[idx].mCharsetName;
+                    return gMacFontNameCharsets[idx].mEncoding;
                 }
 
                 
@@ -1443,9 +1444,9 @@ gfxFontUtils::DecodeFontName(const char *aNameData, int32_t aByteLen,
         return true;
     }
 
-    const char *csName = GetCharsetForFontName(aPlatformCode, aScriptCode, aLangCode);
+    auto encoding = GetCharsetForFontName(aPlatformCode, aScriptCode, aLangCode);
 
-    if (!csName) {
+    if (!encoding) {
         
 #ifdef DEBUG
         char warnBuf[128];
@@ -1458,7 +1459,7 @@ gfxFontUtils::DecodeFontName(const char *aNameData, int32_t aByteLen,
         return false;
     }
 
-    if (csName[0] == 0) {
+    if (encoding == UTF_16BE_ENCODING) {
         
         uint32_t strLen = aByteLen / 2;
         aName.SetLength(strLen);
@@ -1471,9 +1472,7 @@ gfxFontUtils::DecodeFontName(const char *aNameData, int32_t aByteLen,
         return true;
     }
 
-    nsDependentCString encodingName(csName);
-    if (StartsWith(encodingName, "x-mac-") &&
-        !encodingName.EqualsLiteral("x-mac-cyrillic")) {
+    if (encoding == X_USER_DEFINED_ENCODING) {
 #ifdef XP_MACOSX
         
         
@@ -1496,7 +1495,6 @@ gfxFontUtils::DecodeFontName(const char *aNameData, int32_t aByteLen,
         return false;
     }
 
-    auto encoding = Encoding::ForName(encodingName);
     auto rv = encoding->DecodeWithoutBOMHandling(
       AsBytes(MakeSpan(aNameData, aByteLen)), aName);
     return NS_SUCCEEDED(rv);

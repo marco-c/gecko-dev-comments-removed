@@ -10,6 +10,7 @@
 #include "nsComponentManagerUtils.h"
 #include "nsTArray.h"
 #include "mozilla/Likely.h"
+#include "mozilla/Encoding.h"
 #include "mozilla/EndianUtils.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/UniquePtr.h"
@@ -1008,22 +1009,22 @@ protected:
 
     
     
-    static const char*
+    static const mozilla::Encoding*
     GetCharsetForFontName(uint16_t aPlatform, uint16_t aScript, uint16_t aLanguage);
 
     struct MacFontNameCharsetMapping {
-        uint16_t    mEncoding;
+        uint16_t    mScript;
         uint16_t    mLanguage;
-        const char *mCharsetName;
+        const mozilla::Encoding* mEncoding;
 
         bool operator<(const MacFontNameCharsetMapping& rhs) const {
-            return (mEncoding < rhs.mEncoding) ||
-                   ((mEncoding == rhs.mEncoding) && (mLanguage < rhs.mLanguage));
+            return (mScript < rhs.mScript) ||
+                   ((mScript == rhs.mScript) && (mLanguage < rhs.mLanguage));
         }
     };
     static const MacFontNameCharsetMapping gMacFontNameCharsets[];
-    static const char* gISOFontNameCharsets[];
-    static const char* gMSFontNameCharsets[];
+    static const mozilla::Encoding* gISOFontNameCharsets[];
+    static const mozilla::Encoding* gMSFontNameCharsets[];
 };
 
 #endif 
