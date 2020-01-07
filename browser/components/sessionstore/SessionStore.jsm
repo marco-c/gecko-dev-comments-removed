@@ -1901,8 +1901,12 @@ var SessionStoreInternal = {
 
     
     if (aTab.__SS_lazyData && !browser.__SS_restoreState && TabStateCache.get(browser)) {
-      let tabState = TabState.clone(aTab);
-      this.restoreTab(aTab, tabState);
+      if (TabCrashHandler.willShowCrashedTab(browser)) {
+        this.enterCrashedState(browser);
+      } else {
+        let tabState = TabState.clone(aTab);
+        this.restoreTab(aTab, tabState);
+      }
     }
 
     
@@ -2118,20 +2122,7 @@ var SessionStoreInternal = {
 
       if (browser.__SS_restoreState &&
           browser.__SS_restoreState == TAB_STATE_NEEDS_RESTORE) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        if (TabCrashHandler.willShowCrashedTab(browser)) {
-          this.enterCrashedState(browser);
-        } else {
           this.restoreTabContent(tab);
-        }
       }
     }
   },
@@ -2890,19 +2881,7 @@ var SessionStoreInternal = {
       return;
     }
 
-    
-    
-    if (browser.isRemoteBrowser) {
-      throw new Error("SessionStore.reviveCrashedTab: " +
-                      "Somehow a crashed browser is still remote.");
-    }
-
-    
-    
-    
-    
     aTab.removeAttribute("crashed");
-    browser.loadURI("about:blank", null, null);
 
     let data = TabState.collect(aTab);
     this.restoreTab(aTab, data, {
