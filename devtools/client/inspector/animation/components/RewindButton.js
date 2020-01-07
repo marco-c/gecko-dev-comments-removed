@@ -1,0 +1,33 @@
+
+
+
+
+"use strict";
+
+const { PureComponent } = require("devtools/client/shared/vendor/react");
+const dom = require("devtools/client/shared/vendor/react-dom-factories");
+const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+
+const { getStr } = require("../utils/l10n");
+
+class RewindButton extends PureComponent {
+  static get propTypes() {
+    return {
+      rewindAnimationsCurrentTime: PropTypes.func.isRequired,
+    };
+  }
+
+  render() {
+    const { rewindAnimationsCurrentTime } = this.props;
+
+    return dom.button(
+      {
+        className: "rewind-button devtools-button",
+        onClick: rewindAnimationsCurrentTime,
+        title: getStr("timeline.rewindButtonTooltip"),
+      }
+    );
+  }
+}
+
+module.exports = RewindButton;
