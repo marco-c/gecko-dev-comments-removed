@@ -354,8 +354,7 @@ public:
 
   
   
-  
-  nsresult ReparentComputedStyle(nsIFrame* aFrame);
+  void ReparentComputedStyleForFirstLine(nsIFrame*);
 
   bool HasPendingRestyleAncestor(dom::Element* aElement) const;
 
@@ -525,7 +524,8 @@ protected:
 
   
   
-  void DoReparentComputedStyle(nsIFrame* aFrame, ServoStyleSet& aStyleSet);
+  
+  void DoReparentComputedStyleForFirstLine(nsIFrame*, ServoStyleSet&);
 
   
   

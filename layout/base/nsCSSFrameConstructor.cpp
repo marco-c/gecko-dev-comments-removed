@@ -485,7 +485,7 @@ ReparentFrame(RestyleManager* aRestyleManager,
   
   
   if (aForceStyleReparent) {
-    aRestyleManager->ReparentComputedStyle(aFrame);
+    aRestyleManager->ReparentComputedStyleForFirstLine(aFrame);
   }
 }
 
@@ -10562,7 +10562,7 @@ nsCSSFrameConstructor::CheckForFirstLineInsertion(nsIFrame* aParentFrame,
 
     
     for (nsIFrame* f : aFrameItems) {
-      restyleManager->ReparentComputedStyle(f);
+      restyleManager->ReparentComputedStyleForFirstLine(f);
     }
     return;
   }

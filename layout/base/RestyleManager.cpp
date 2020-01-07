@@ -2816,7 +2816,7 @@ RestyleManager::ProcessPostTraversal(
         static_cast<nsBlockFrame*>(styleFrame)->GetFirstLineFrame();
       if (firstLineFrame) {
         for (nsIFrame* kid : firstLineFrame->PrincipalChildList()) {
-          ReparentComputedStyle(kid);
+          ReparentComputedStyleForFirstLine(kid);
         }
       }
     }
@@ -3336,8 +3336,8 @@ RestyleManager::AttributeChanged(Element* aElement,
   }
 }
 
-nsresult
-RestyleManager::ReparentComputedStyle(nsIFrame* aFrame)
+void
+RestyleManager::ReparentComputedStyleForFirstLine(nsIFrame* aFrame)
 {
   
   
@@ -3357,14 +3357,12 @@ RestyleManager::ReparentComputedStyle(nsIFrame* aFrame)
   }
 #endif
 
-  DoReparentComputedStyle(aFrame, *StyleSet());
-
-  return NS_OK;
+  DoReparentComputedStyleForFirstLine(aFrame, *StyleSet());
 }
 
 void
-RestyleManager::DoReparentComputedStyle(nsIFrame* aFrame,
-                                        ServoStyleSet& aStyleSet)
+RestyleManager::DoReparentComputedStyleForFirstLine(nsIFrame* aFrame,
+                                                    ServoStyleSet& aStyleSet)
 {
   if (aFrame->IsBackdropFrame()) {
     
@@ -3398,7 +3396,7 @@ RestyleManager::DoReparentComputedStyle(nsIFrame* aFrame,
       nsPlaceholderFrame::GetRealFrameForPlaceholder(aFrame);
     MOZ_ASSERT(outOfFlow, "no out-of-flow frame");
     for (; outOfFlow; outOfFlow = outOfFlow->GetNextContinuation()) {
-      DoReparentComputedStyle(outOfFlow, aStyleSet);
+      DoReparentComputedStyleForFirstLine(outOfFlow, aStyleSet);
     }
   }
 
@@ -3412,7 +3410,7 @@ RestyleManager::DoReparentComputedStyle(nsIFrame* aFrame,
   bool isChild = providerFrame && providerFrame->GetParent() == aFrame;
   nsIFrame* providerChild = nullptr;
   if (isChild) {
-    DoReparentComputedStyle(providerFrame, aStyleSet);
+    DoReparentComputedStyleForFirstLine(providerFrame, aStyleSet);
     
     
     newParentStyle = providerFrame->Style();
@@ -3537,7 +3535,7 @@ RestyleManager::ReparentFrameDescendants(nsIFrame* aFrame,
       
       if (!(child->GetStateBits() & NS_FRAME_OUT_OF_FLOW) &&
           child != aProviderChild) {
-        DoReparentComputedStyle(child, aStyleSet);
+        DoReparentComputedStyleForFirstLine(child, aStyleSet);
       }
     }
   }
