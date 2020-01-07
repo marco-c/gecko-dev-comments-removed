@@ -3074,7 +3074,7 @@ pref("layout.css.prefixes.webkit", true);
 
 
 
-pref("layout.css.prefixes.device-pixel-ratio-webkit", false);
+pref("layout.css.prefixes.device-pixel-ratio-webkit", true);
 
 
 
