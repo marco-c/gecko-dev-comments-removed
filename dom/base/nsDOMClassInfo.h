@@ -23,81 +23,17 @@ struct nsGlobalNameStruct;
 class nsGlobalWindowInner;
 class nsGlobalWindowOuter;
 
-struct nsDOMClassInfoData;
-
-typedef nsIClassInfo* (*nsDOMClassInfoConstructorFnc)
-  (nsDOMClassInfoData* aData);
-
-typedef nsresult (*nsDOMConstructorFunc)(nsISupports** aNewObject);
-
-struct nsDOMClassInfoData
-{
-  
-  const char16_t *mNameUTF16;
-  const js::ClassOps mClassOps;
-  const js::Class mClass;
-  nsDOMClassInfoConstructorFnc mConstructorFptr;
-
-  nsIClassInfo *mCachedClassInfo;
-  const nsIID *mProtoChainInterface;
-  const nsIID **mInterfaces;
-  uint32_t mScriptableFlags : 31; 
-  uint32_t mHasClassInterface : 1;
-  bool mDisabled : 1;
-#ifdef DEBUG
-  uint32_t mDebugID;
-#endif
-};
-
 class nsWindowSH;
 
-class nsDOMClassInfo : public nsXPCClassInfo
+class nsDOMClassInfo
 {
   friend class nsWindowSH;
 
-protected:
-  virtual ~nsDOMClassInfo() {};
-
 public:
-  explicit nsDOMClassInfo(nsDOMClassInfoData* aData);
-
-  NS_DECL_NSIXPCSCRIPTABLE
-
-  NS_DECL_ISUPPORTS
-
-  NS_DECL_NSICLASSINFO
-
   static nsresult Init();
   static void ShutDown();
 
-  static nsIClassInfo *doCreate(nsDOMClassInfoData* aData)
-  {
-    return new nsDOMClassInfo(aData);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  static bool ObjectIsNativeWrapper(JSContext* cx, JSObject* obj);
-
 protected:
-  const nsDOMClassInfoData* mData;
-
-  virtual void PreserveWrapper(nsISupports *aNative) override
-  {
-  }
-
   static nsIXPConnect *sXPConnect;
 
   
