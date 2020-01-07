@@ -87,6 +87,16 @@ public final class GeckoRuntimeSettings implements Parcelable {
 
 
 
+        public @NonNull Builder remoteDebuggingEnabled(final boolean enabled) {
+            mSettings.mRemoteDebugging.set(enabled);
+            return this;
+        }
+
+        
+
+
+
+
         public @NonNull Builder webFontsEnabled(final boolean flag) {
             mSettings.mWebFonts.set(flag);
             return this;
@@ -130,11 +140,13 @@ public final class GeckoRuntimeSettings implements Parcelable {
 
      Pref<Boolean> mJavaScript = new Pref<Boolean>(
         "javascript.enabled", true);
+     Pref<Boolean> mRemoteDebugging = new Pref<Boolean>(
+        "devtools.debugger.remote-enabled", false);
      Pref<Boolean> mWebFonts = new Pref<Boolean>(
         "browser.display.use_document_fonts", true);
 
     private final Pref<?>[] mPrefs = new Pref<?>[] {
-        mJavaScript, mWebFonts
+        mJavaScript, mRemoteDebugging, mWebFonts
     };
 
      GeckoRuntimeSettings() {
@@ -149,12 +161,18 @@ public final class GeckoRuntimeSettings implements Parcelable {
         if (settings == null) {
             mArgs = new String[0];
             mExtras = new Bundle();
-        } else {
-            mUseContentProcess = settings.getUseContentProcessHint();
-            mArgs = settings.getArguments().clone();
-            mExtras = new Bundle(settings.getExtras());
-            mJavaScript.set(settings.mJavaScript.get());
-            mWebFonts.set(settings.mWebFonts.get());
+            return;
+        }
+
+        mUseContentProcess = settings.getUseContentProcessHint();
+        mArgs = settings.getArguments().clone();
+        mExtras = new Bundle(settings.getExtras());
+
+        for (int i = 0; i < mPrefs.length; i++) {
+            
+            @SuppressWarnings("unchecked")
+            final Pref<Object> uncheckedPref = (Pref<Object>) mPrefs[i];
+            uncheckedPref.set(settings.mPrefs[i].get());
         }
     }
 
@@ -215,6 +233,25 @@ public final class GeckoRuntimeSettings implements Parcelable {
 
 
 
+    public boolean getRemoteDebuggingEnabled() {
+        return mRemoteDebugging.get();
+    }
+
+    
+
+
+
+
+    public @NonNull GeckoRuntimeSettings setRemoteDebuggingEnabled(final boolean enabled) {
+        mRemoteDebugging.set(enabled);
+        return this;
+    }
+
+    
+
+
+
+
     public boolean getWebFontsEnabled() {
         return mWebFonts.get();
     }
@@ -239,8 +276,10 @@ public final class GeckoRuntimeSettings implements Parcelable {
         out.writeByte((byte) (mUseContentProcess ? 1 : 0));
         out.writeStringArray(mArgs);
         mExtras.writeToParcel(out, flags);
-        out.writeByte((byte) (mJavaScript.get() ? 1 : 0));
-        out.writeByte((byte) (mWebFonts.get() ? 1 : 0));
+
+        for (final Pref<?> pref : mPrefs) {
+            out.writeValue(pref.get());
+        }
     }
 
     
@@ -248,8 +287,13 @@ public final class GeckoRuntimeSettings implements Parcelable {
         mUseContentProcess = source.readByte() == 1;
         mArgs = source.createStringArray();
         mExtras.readFromParcel(source);
-        mJavaScript.set(source.readByte() == 1);
-        mWebFonts.set(source.readByte() == 1);
+
+        for (final Pref<?> pref : mPrefs) {
+            
+            @SuppressWarnings("unchecked")
+            final Pref<Object> uncheckedPref = (Pref<Object>) pref;
+            uncheckedPref.set(source.readValue(getClass().getClassLoader()));
+        }
     }
 
     public static final Parcelable.Creator<GeckoRuntimeSettings> CREATOR
