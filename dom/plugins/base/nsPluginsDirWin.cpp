@@ -26,41 +26,6 @@
 #include "nsIFile.h"
 #include "nsUnicharUtils.h"
 
-#include <shlwapi.h>
-#define SHOCKWAVE_BASE_FILENAME L"np32dsw"
-
-
-
-
-
-
-bool
-ShouldProtectPluginCurrentDirectory(char16ptr_t pluginFilePath)
-{
-  LPCWSTR passedInFilename = PathFindFileName(pluginFilePath);
-  if (!passedInFilename) {
-    return true;
-  }
-
-  
-  
-  if (!wcsicmp(passedInFilename, SHOCKWAVE_BASE_FILENAME L".dll")) {
-    return false;
-  }
-
-  
-  const uint64_t kFixedShockwaveVersion = 1202122;
-  uint64_t version;
-  int found = swscanf(passedInFilename, SHOCKWAVE_BASE_FILENAME L"_%llu.dll",
-                      &version);
-  if (found && version < kFixedShockwaveVersion) {
-    return false;
-  }
-
-  
-  return true;
-}
-
 using namespace mozilla;
 
 
@@ -283,12 +248,8 @@ nsresult nsPluginFile::LoadPlugin(PRLibrary **outLibrary)
   if (!mPlugin)
     return NS_ERROR_NULL_POINTER;
 
-  bool protectCurrentDirectory = true;
-
   nsAutoString pluginFilePath;
   mPlugin->GetPath(pluginFilePath);
-  protectCurrentDirectory =
-    ShouldProtectPluginCurrentDirectory(pluginFilePath.BeginReading());
 
   nsAutoString pluginFolderPath = pluginFilePath;
   int32_t idx = pluginFilePath.RFindChar('\\');
@@ -304,17 +265,14 @@ nsresult nsPluginFile::LoadPlugin(PRLibrary **outLibrary)
     NS_ASSERTION(restoreOrigDir, "Error in Loading plugin");
   }
 
-  if (protectCurrentDirectory) {
-    SetDllDirectory(nullptr);
-  }
+  
+  SetDllDirectory(nullptr);
 
   nsresult rv = mPlugin->Load(outLibrary);
   if (NS_FAILED(rv))
       *outLibrary = nullptr;
 
-  if (protectCurrentDirectory) {
-    SetDllDirectory(L"");
-  }
+  SetDllDirectory(L"");
 
   if (restoreOrigDir) {
     DebugOnly<BOOL> bCheck = SetCurrentDirectoryW(aOrigDir);
