@@ -128,7 +128,6 @@ public:
     , mMayHaveListenerManager(true)
     , mWantsPreHandleEvent(false)
     , mRootOfClosedTree(false)
-    , mItemInShadowTree(false)
     , mParentIsSlotInClosedTree(false)
     , mParentIsChromeHandler(false)
     , mRelatedTargetRetargetedInCurrentScope(false)
@@ -150,7 +149,6 @@ public:
     mMayHaveListenerManager = true;
     mWantsPreHandleEvent = false;
     mRootOfClosedTree = false;
-    mItemInShadowTree = false;
     mParentIsSlotInClosedTree = false;
     mParentIsChromeHandler = false;
     
@@ -238,12 +236,6 @@ public:
 
 
   bool mRootOfClosedTree;
-
-  
-
-
-
-  bool mItemInShadowTree;
 
   
 
