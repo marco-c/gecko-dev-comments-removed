@@ -276,6 +276,11 @@ RESTRequest.prototype = {
     }
 
     
+    if (!headers.accept) {
+      channel.setRequestHeader("accept", "application/json;q=0.9,*/*;q=0.2", false);
+    }
+
+    
     if (method == "PUT" || method == "POST" || method == "PATCH") {
       
       
