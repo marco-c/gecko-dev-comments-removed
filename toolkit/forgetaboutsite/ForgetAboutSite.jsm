@@ -65,23 +65,6 @@ var ForgetAboutSite = {
 
 
     
-    const phInterface = Ci.nsIPluginHost;
-    const FLAG_CLEAR_ALL = phInterface.FLAG_CLEAR_ALL;
-    let ph = Cc["@mozilla.org/plugin/host;1"].getService(phInterface);
-    let tags = ph.getPluginTags();
-    for (let i = 0; i < tags.length; i++) {
-      promises.push(new Promise(resolve => {
-        try {
-          ph.clearSiteData(tags[i], aDomain, FLAG_CLEAR_ALL, -1, resolve);
-        } catch (e) {
-          
-          
-          resolve();
-        }
-      }));
-    }
-
-    
     promises.push((async function() {
       let list = await Downloads.getList(Downloads.ALL);
       list.removeFinished(download => hasRootDomain(

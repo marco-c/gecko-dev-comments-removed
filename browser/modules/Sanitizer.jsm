@@ -14,7 +14,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   FormHistory: "resource://gre/modules/FormHistory.jsm",
   Downloads: "resource://gre/modules/Downloads.jsm",
   TelemetryStopwatch: "resource://gre/modules/TelemetryStopwatch.jsm",
-  setTimeout: "resource://gre/modules/Timer.jsm",
   ServiceWorkerCleanUp: "resource://gre/modules/ServiceWorkerCleanUp.jsm",
   OfflineAppCacheHelper: "resource://gre/modules/offlineAppCache.jsm",
   ContextualIdentityService: "resource://gre/modules/ContextualIdentityService.jsm",
@@ -325,33 +324,18 @@ var Sanitizer = {
 
     cookies: {
       async clear(range) {
-        let seenException;
         let refObj = {};
 
         
         TelemetryStopwatch.start("FX_SANITIZE_COOKIES_2", refObj);
-        await clearData(range, Ci.nsIClearDataService.CLEAR_COOKIES);
+        await clearData(range, Ci.nsIClearDataService.CLEAR_COOKIES |
+                               Ci.nsIClearDataService.CLEAR_PLUGIN_DATA);
         TelemetryStopwatch.finish("FX_SANITIZE_COOKIES_2", refObj);
 
         
-        try {
-          let mediaMgr = Cc["@mozilla.org/mediaManagerService;1"]
-                           .getService(Ci.nsIMediaManagerService);
-          mediaMgr.sanitizeDeviceIds(range && range[0]);
-        } catch (ex) {
-          seenException = ex;
-        }
-
-        
-        try {
-          await clearPluginData(range);
-        } catch (ex) {
-          seenException = ex;
-        }
-
-        if (seenException) {
-          throw seenException;
-        }
+        let mediaMgr = Cc["@mozilla.org/mediaManagerService;1"]
+                         .getService(Ci.nsIMediaManagerService);
+        mediaMgr.sanitizeDeviceIds(range && range[0]);
       },
     },
 
@@ -772,7 +756,7 @@ var Sanitizer = {
 
     pluginData: {
       async clear(range) {
-        await clearPluginData(range);
+        await clearData(range, Ci.nsIClearDataService.CLEAR_PLUGIN_DATA);
       },
     },
   },
@@ -859,70 +843,6 @@ async function sanitizeInternal(items, aItemsToClear, progress, options = {}) {
   progress = {};
   if (seenError) {
     throw new Error("Error sanitizing");
-  }
-}
-
-async function clearPluginData(range) {
-  
-  
-  
-  
-  
-  
-  
-  
-  let seenException;
-
-  let promiseClearPluginData = async function() {
-    const FLAG_CLEAR_ALL = Ci.nsIPluginHost.FLAG_CLEAR_ALL;
-    let ph = Cc["@mozilla.org/plugin/host;1"].getService(Ci.nsIPluginHost);
-
-    
-    
-    
-    let age = range ? (Date.now() / 1000 - range[0] / 1000000) : -1;
-    if (!range || age >= 0) {
-      let tags = ph.getPluginTags();
-      for (let tag of tags) {
-        try {
-          let rv = await new Promise(resolve =>
-            ph.clearSiteData(tag, null, FLAG_CLEAR_ALL, age, resolve)
-          );
-          
-          if (rv == Cr.NS_ERROR_PLUGIN_TIME_RANGE_NOT_SUPPORTED) {
-            await new Promise(resolve =>
-              ph.clearSiteData(tag, null, FLAG_CLEAR_ALL, -1, resolve)
-            );
-          }
-        } catch (ex) {
-          
-        }
-      }
-    }
-  };
-
-  try {
-    
-    promiseClearPluginData = promiseClearPluginData(range);
-
-    
-    await Promise.race([
-      promiseClearPluginData,
-      new Promise(resolve => setTimeout(resolve, 10000 ))
-    ]);
-  } catch (ex) {
-    seenException = ex;
-  }
-
-  
-  promiseClearPluginData.catch(() => {
-    
-    
-    
-  });
-
-  if (seenException) {
-    throw seenException;
   }
 }
 
