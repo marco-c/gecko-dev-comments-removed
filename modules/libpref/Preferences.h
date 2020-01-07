@@ -231,6 +231,9 @@ public:
   static bool HasUserValue(const char* aPref);
 
   
+  static bool MustSendToContentProcesses(const char* aPref);
+
+  
   
   static nsresult AddStrongObserver(nsIObserver* aObserver, const char* aPref);
   static nsresult AddWeakObserver(nsIObserver* aObserver, const char* aPref);
