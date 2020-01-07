@@ -540,7 +540,7 @@ pub struct InitialScriptState {
     
     pub content_process_shutdown_chan: IpcSender<()>,
     
-    pub webgl_chan: WebGLPipeline,
+    pub webgl_chan: Option<WebGLPipeline>,
     
     pub webvr_chan: Option<IpcSender<WebVRMsg>>,
     

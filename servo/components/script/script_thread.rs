@@ -484,7 +484,7 @@ pub struct ScriptThread {
     mutation_observers: DomRefCell<Vec<Dom<MutationObserver>>>,
 
     
-    webgl_chan: WebGLPipeline,
+    webgl_chan: Option<WebGLPipeline>,
 
     
     webvr_chan: Option<IpcSender<WebVRMsg>>,
@@ -2130,7 +2130,7 @@ impl ScriptThread {
             origin,
             incomplete.navigation_start,
             incomplete.navigation_start_precise,
-            self.webgl_chan.channel(),
+            self.webgl_chan.as_ref().map(|chan| chan.channel()),
             self.webvr_chan.clone(),
             self.microtask_queue.clone(),
             self.webrender_document,

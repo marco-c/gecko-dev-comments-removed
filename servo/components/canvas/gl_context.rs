@@ -24,6 +24,9 @@ pub enum GLContextFactory {
 impl GLContextFactory {
     
     pub fn current_native_handle(proxy: &CompositorProxy) -> Option<GLContextFactory> {
+        
+        
+        
         NativeGLContext::current_handle().map(|handle| {
             if cfg!(target_os = "windows") {
                 

@@ -171,7 +171,7 @@ pub struct InitialPipelineState {
     pub is_private: bool,
 
     
-    pub webgl_chan: WebGLPipeline,
+    pub webgl_chan: Option<WebGLPipeline>,
 
     
     pub webvr_chan: Option<IpcSender<WebVRMsg>>,
@@ -457,7 +457,7 @@ pub struct UnprivilegedPipelineContent {
     script_content_process_shutdown_port: IpcReceiver<()>,
     webrender_api_sender: webrender_api::RenderApiSender,
     webrender_document: webrender_api::DocumentId,
-    webgl_chan: WebGLPipeline,
+    webgl_chan: Option<WebGLPipeline>,
     webvr_chan: Option<IpcSender<WebVRMsg>>,
 }
 
