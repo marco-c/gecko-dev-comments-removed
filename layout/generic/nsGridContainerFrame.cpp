@@ -6925,6 +6925,9 @@ nsGridContainerFrame::GetGridFrameWithComputedInfo(nsIFrame* aFrame)
 
     if (reflowNeeded) {
       
+      
+      AutoWeakFrame weakFrameRef(aFrame);
+
       nsIPresShell* shell = gridFrame->PresShell();
       gridFrame->AddStateBits(NS_STATE_GRID_GENERATE_COMPUTED_VALUES);
       shell->FrameNeedsReflow(gridFrame,
@@ -6933,7 +6936,13 @@ nsGridContainerFrame::GetGridFrameWithComputedInfo(nsIFrame* aFrame)
       shell->FlushPendingNotifications(FlushType::Layout);
 
       
-      gridFrame = GetGridContainerFrame(aFrame);
+      
+      
+      if (!weakFrameRef.IsAlive()) {
+        return nullptr;
+      }
+
+      gridFrame = GetGridContainerFrame(weakFrameRef.GetFrame());
 
       
       MOZ_ASSERT(!gridFrame ||
