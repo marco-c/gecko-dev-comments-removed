@@ -255,8 +255,12 @@ MacPowerInformationService::HandleChange(void* aContext) {
     }
 
     
+    
     int currentCapacity = 0;
     const void* cfRef = ::CFDictionaryGetValue(currPowerSourceDesc, CFSTR(kIOPSCurrentCapacityKey));
+    if (!cfRef) {
+      continue;
+    }
     ::CFNumberGetValue((CFNumberRef)cfRef, kCFNumberSInt32Type, &currentCapacity);
 
     
