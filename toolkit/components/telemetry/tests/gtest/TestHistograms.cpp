@@ -308,7 +308,7 @@ TEST_F(TelemetryTestFixture, AccumulateLinearHistogram_MultipleSamples)
 
 TEST_F(TelemetryTestFixture, AccumulateLinearHistogram_DifferentSamples)
 {
-  nsTArray<uint32_t> samples({4, 8, 2147483646});
+  nsTArray<uint32_t> samples({4, 8, 2147483646, uint32_t(INT_MAX) + 1, UINT32_MAX});
 
   AutoJSContextWithGlobal cx(mCleanGlobal);
 
@@ -345,7 +345,9 @@ TEST_F(TelemetryTestFixture, AccumulateLinearHistogram_DifferentSamples)
   JS::ToUint32(cx.GetJSContext(), countLast, &uCountLast);
 
   const uint32_t kExpectedCountFirst = 2;
-  const uint32_t kExpectedCountLast = 1;
+  
+  
+  const uint32_t kExpectedCountLast = 3;
   ASSERT_EQ(uCountFirst, kExpectedCountFirst) << "The first bucket did not accumulate the correct number of values";
   ASSERT_EQ(uCountLast, kExpectedCountLast) << "The last bucket did not accumulate the correct number of values";
 }
