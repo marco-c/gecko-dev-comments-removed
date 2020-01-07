@@ -28,6 +28,7 @@
 #include "unicode/utf.h"
 #include "unicode/utf8.h"
 #include "unicode/utf16.h"
+#include "uassert.h"
 #include "ucnv_bld.h"
 #include "ucnv_cnv.h"
 #include "cmemory.h"
@@ -694,7 +695,9 @@ ucnv_UTF8FromUTF8(UConverterFromUnicodeArgs *pFromUArgs,
         
         
         
+        const uint8_t *limit=sourceLimit;
         if(count>targetCapacity) {
+            limit-=(count-targetCapacity);
             count=targetCapacity;
         }
 
@@ -707,11 +710,11 @@ ucnv_UTF8FromUTF8(UConverterFromUnicodeArgs *pFromUArgs,
             
             int32_t length=count-toULimit;
             if(length>0) {
-                uint8_t b1=*(sourceLimit-1);
+                uint8_t b1=*(limit-1);
                 if(U8_IS_SINGLE(b1)) {
                     
                 } else if(U8_IS_TRAIL(b1) && length>=2) {
-                    uint8_t b2=*(sourceLimit-2);
+                    uint8_t b2=*(limit-2);
                     if(0xe0<=b2 && b2<0xf0 && U8_IS_VALID_LEAD3_AND_T1(b2, b1)) {
                         
                         count-=2;
@@ -811,7 +814,7 @@ moreBytes:
             }
 
             
-            {
+            if(count>=toULength) {
                 int8_t i;
 
                 for(i=0; i<oldToULength; ++i) {
@@ -822,9 +825,18 @@ moreBytes:
                     *target++=*source++;
                 }
                 count-=toULength;
+            } else {
+                
+                
+                source-=(toULength-oldToULength);
+                pToUArgs->source=(char *)source;
+                pFromUArgs->target=(char *)target;
+                *pErrorCode=U_USING_DEFAULT_WARNING;
+                return;
             }
         }
     }
+    U_ASSERT(count>=0);
 
     if(U_SUCCESS(*pErrorCode) && source<sourceLimit) {
         if(target==(const uint8_t *)pFromUArgs->targetLimit) {

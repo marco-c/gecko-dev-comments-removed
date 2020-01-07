@@ -334,7 +334,7 @@ UPerfFunction* UPerfTest::runIndexedTest( int32_t , UBool , const char* & , char
 
 
 
-    fprintf(stderr,"*** runIndexedTest needs to be overriden! ***");
+    fprintf(stderr,"*** runIndexedTest needs to be overridden! ***");
     return NULL;
 }
 

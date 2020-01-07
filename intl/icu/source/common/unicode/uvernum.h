@@ -64,7 +64,7 @@
 
 
 
-#define U_ICU_VERSION_MINOR_NUM 1
+#define U_ICU_VERSION_MINOR_NUM 2
 
 
 
@@ -119,7 +119,7 @@
 
 
 
-#define U_ICU_VERSION "60.1"
+#define U_ICU_VERSION "60.2"
 
 
 
@@ -131,7 +131,7 @@
 
 
 
-#define U_ICU_DATA_VERSION "60.1"
+#define U_ICU_DATA_VERSION "60.2"
 #endif  
 
 
