@@ -12,7 +12,6 @@ module.exports = {
     
     
     "no-nested-ternary": "off",
-    "no-redeclare": "off",
     "no-undef": "off",
   }
 };
