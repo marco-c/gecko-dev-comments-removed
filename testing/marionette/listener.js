@@ -741,28 +741,21 @@ function emitTouchEvent(type, touch) {
       .getInterface(Ci.nsIWebNavigation)
       .QueryInterface(Ci.nsIDocShell);
   if (docShell.asyncPanZoomEnabled && legacyactions.scrolling) {
-    
-    
-    let index = sendSyncMessage("MarionetteFrame:getCurrentFrameId");
-
-    
-    if (index != null) {
-      let ev = {
-        index,
-        type,
-        id: touch.identifier,
-        clientX: touch.clientX,
-        clientY: touch.clientY,
-        screenX: touch.screenX,
-        screenY: touch.screenY,
-        radiusX: touch.radiusX,
-        radiusY: touch.radiusY,
-        rotation: touch.rotationAngle,
-        force: touch.force,
-      };
-      sendSyncMessage("Marionette:emitTouchEvent", ev);
-      return;
-    }
+    let ev = {
+      index: 0,
+      type,
+      id: touch.identifier,
+      clientX: touch.clientX,
+      clientY: touch.clientY,
+      screenX: touch.screenX,
+      screenY: touch.screenY,
+      radiusX: touch.radiusX,
+      radiusY: touch.radiusY,
+      rotation: touch.rotationAngle,
+      force: touch.force,
+    };
+    sendSyncMessage("Marionette:emitTouchEvent", ev);
+    return;
   }
 
   
