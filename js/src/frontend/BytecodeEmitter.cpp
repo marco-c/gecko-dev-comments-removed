@@ -2007,6 +2007,10 @@ class MOZ_STACK_CLASS IfThenElseEmitter
     
     
     
+    
+    
+    
+    
     enum class State {
         
         Start,
@@ -2022,6 +2026,9 @@ class MOZ_STACK_CLASS IfThenElseEmitter
 
         
         Else,
+
+        
+        ElseIf,
 
         
         End
@@ -2043,29 +2050,16 @@ class MOZ_STACK_CLASS IfThenElseEmitter
     {}
 
   private:
-    MOZ_MUST_USE bool emitIf(State nextState) {
-        MOZ_ASSERT(state_ == State::Start || state_ == State::Else);
-        MOZ_ASSERT(nextState == State::If || nextState == State::IfElse ||
-                   nextState == State::Cond);
+    MOZ_MUST_USE bool emitIfInternal(State nextState, SrcNoteType type) {
+        MOZ_ASSERT_IF(state_ == State::Start,
+                      nextState == State::If ||
+                      nextState == State::IfElse ||
+                      nextState == State::Cond);
+        MOZ_ASSERT_IF(state_ == State::ElseIf,
+                      nextState == State::If ||
+                      nextState == State::IfElse);
 
         
-        if (state_ == State::Else)
-            jumpAroundThen_ = JumpList();
-
-        
-        SrcNoteType type;
-        switch (nextState) {
-          case State::If:
-            type = SRC_IF;
-            break;
-          case State::IfElse:
-            type = SRC_IF_ELSE;
-            break;
-          default:
-            MOZ_ASSERT(nextState == State::Cond);
-            type = SRC_COND;
-            break;
-        }
         if (!bce_->newSrcNote(type))
             return false;
         if (!bce_->emitJump(JSOP_IFEQ, &jumpAroundThen_))
@@ -2096,15 +2090,18 @@ class MOZ_STACK_CLASS IfThenElseEmitter
 
   public:
     MOZ_MUST_USE bool emitIf() {
-        return emitIf(State::If);
+        MOZ_ASSERT(state_ == State::Start || state_ == State::ElseIf);
+        return emitIfInternal(State::If, SRC_IF);
     }
 
     MOZ_MUST_USE bool emitCond() {
-        return emitIf(State::Cond);
+        MOZ_ASSERT(state_ == State::Start);
+        return emitIfInternal(State::Cond, SRC_COND);
     }
 
     MOZ_MUST_USE bool emitIfElse() {
-        return emitIf(State::IfElse);
+        MOZ_ASSERT(state_ == State::Start || state_ == State::ElseIf);
+        return emitIfInternal(State::IfElse, SRC_IF_ELSE);
     }
 
     MOZ_MUST_USE bool emitElse() {
@@ -2125,6 +2122,19 @@ class MOZ_STACK_CLASS IfThenElseEmitter
         
         bce_->stackDepth = thenDepth_;
         state_ = State::Else;
+        return true;
+    }
+
+    MOZ_MUST_USE bool emitElseIf() {
+        MOZ_ASSERT(state_ == State::IfElse);
+
+        if (!emitElse())
+            return false;
+
+        
+        jumpAroundThen_ = JumpList();
+        state_ = State::ElseIf;
+
         return true;
     }
 
@@ -6901,13 +6911,17 @@ BytecodeEmitter::emitIf(ParseNode* pn)
         return false;
 
     if (elseNode) {
-        if (!ifThenElse.emitElse())
-            return false;
-
         if (elseNode->isKind(ParseNodeKind::If)) {
             pn = elseNode;
+
+            if (!ifThenElse.emitElseIf())
+                return false;
+
             goto if_again;
         }
+
+        if (!ifThenElse.emitElse())
+            return false;
 
         
         if (!emitTreeInBranch(elseNode))
