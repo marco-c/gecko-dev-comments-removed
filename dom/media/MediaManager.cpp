@@ -176,6 +176,10 @@ struct DeviceState {
 
   
   
+  TimeStamp mTrackEnabledTime;
+
+  
+  
   
   bool mOperationInProgress = false;
 
@@ -3868,6 +3872,7 @@ SourceListener::InitializeAsync()
 
         state->mDeviceEnabled = true;
         state->mTrackEnabled = true;
+        state->mTrackEnabledTime = TimeStamp::Now();
       }
       return InitPromise::CreateAndResolve(true, __func__);
     }, [self = RefPtr<SourceListener>(this), this](RefPtr<MediaMgrError>&& aResult)
@@ -4043,14 +4048,20 @@ SourceListener::SetEnabledFor(TrackID aTrackID, bool aEnable)
   RefPtr<MediaTimerPromise> timerPromise;
   if (aEnable) {
     timerPromise = MediaTimerPromise::CreateAndResolve(true, __func__);
+    state.mTrackEnabledTime = TimeStamp::Now();
   } else {
-    const TimeDuration offDelay = TimeDuration::FromMilliseconds(
+    const TimeDuration maxDelay = TimeDuration::FromMilliseconds(
       Preferences::GetUint(
         aTrackID == kAudioTrack
           ? "media.getusermedia.microphone.off_while_disabled.delay_ms"
           : "media.getusermedia.camera.off_while_disabled.delay_ms",
         3000));
-    timerPromise = state.mDisableTimer->WaitFor(offDelay, __func__);
+    const TimeDuration durationEnabled =
+      TimeStamp::Now() - state.mTrackEnabledTime;
+    const TimeDuration delay =
+      TimeDuration::Max(TimeDuration::FromMilliseconds(0),
+                        maxDelay - durationEnabled);
+    timerPromise = state.mDisableTimer->WaitFor(delay, __func__);
   }
 
   typedef MozPromise<nsresult, bool,  true> DeviceOperationPromise;
