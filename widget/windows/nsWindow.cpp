@@ -2455,8 +2455,7 @@ nsWindow::ResetLayout()
   
   RECT clientRc = {0};
   GetClientRect(mWnd, &clientRc);
-  nsIntRect evRect(WinUtils::ToIntRect(clientRc));
-  OnResize(evRect);
+  OnResize(WinUtils::ToIntRect(clientRc).Size());
 
   
   Invalidate();
@@ -6738,7 +6737,6 @@ void nsWindow::OnWindowPosChanged(WINDOWPOS* wp)
 
     newWidth  = r.right - r.left;
     newHeight = r.bottom - r.top;
-    nsIntRect rect(wp->x, wp->y, newWidth, newHeight);
 
     if (newWidth > mLastSize.width)
     {
@@ -6794,12 +6792,12 @@ void nsWindow::OnWindowPosChanged(WINDOWPOS* wp)
     }
 
     
+    LayoutDeviceIntSize clientSize(newWidth, newHeight);
     if (::GetClientRect(mWnd, &r)) {
-      rect.SizeTo(r.right - r.left, r.bottom - r.top);
+      clientSize = WinUtils::ToIntRect(r).Size();
     }
     
-    
-    OnResize(rect);
+    OnResize(clientSize);
   }
 }
 
@@ -7256,14 +7254,19 @@ void nsWindow::OnDestroy()
 }
 
 
-bool nsWindow::OnResize(nsIntRect &aWindowRect)
+bool
+nsWindow::OnResize(const LayoutDeviceIntSize& aSize)
 {
-  bool result = mWidgetListener ?
-    mWidgetListener->WindowResized(this, aWindowRect.Width(), aWindowRect.Height()) : false;
+  bool result = false;
+  if (mWidgetListener) {
+    result = mWidgetListener->
+      WindowResized(this, aSize.width, aSize.height);
+  }
 
   
   if (mAttachedWidgetListener) {
-    return mAttachedWidgetListener->WindowResized(this, aWindowRect.Width(), aWindowRect.Height());
+    return mAttachedWidgetListener->
+      WindowResized(this, aSize.width, aSize.height);
   }
 
   return result;

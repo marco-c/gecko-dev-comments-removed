@@ -425,7 +425,7 @@ public:
 
 
 
-  static nsIntRegion ConvertHRGNToRegion(HRGN aRgn);
+  static LayoutDeviceIntRegion ConvertHRGNToRegion(HRGN aRgn);
 
   
 
@@ -433,7 +433,7 @@ public:
 
 
 
-  static nsIntRect ToIntRect(const RECT& aRect);
+  static LayoutDeviceIntRect ToIntRect(const RECT& aRect);
 
   
 
