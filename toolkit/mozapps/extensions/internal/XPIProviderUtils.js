@@ -1445,10 +1445,6 @@ this.XPIDatabaseReconcile = {
     for (let [id, currentAddon] of currentVisible) {
       let previousAddon = previousVisible.get(id);
 
-      
-      if (currentAddon._installLocation.name != KEY_APP_GLOBAL)
-        XPIProvider.allAppGlobal = false;
-
       let isActive = !currentAddon.disabled && !currentAddon.pendingUninstall;
       let wasActive = previousAddon ? previousAddon.active : currentAddon.active;
 
