@@ -38,7 +38,7 @@ async function waitStartup(ui) {
 
   
   await waitUntilState(store, state => state.viewports.length == 1
-    && state.devices.listState == Types.deviceListState.LOADED);
+    && state.devices.listState == Types.loadableState.LOADED);
 }
 
 async function testDefaults(ui) {

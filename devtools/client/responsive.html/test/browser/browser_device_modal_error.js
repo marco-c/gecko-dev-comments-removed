@@ -23,7 +23,7 @@ addRDMTask(TEST_URL, async function ({ ui }) {
   
   
   await waitUntilState(store, state => state.viewports.length == 1
-    && state.devices.listState == Types.deviceListState.ERROR);
+    && state.devices.listState == Types.loadableState.ERROR);
 
   
   let placeholder = select.options[select.selectedIndex].innerHTML;
