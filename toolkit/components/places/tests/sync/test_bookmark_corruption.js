@@ -15,7 +15,7 @@ add_task(async function test_missing_children() {
 
   info("Make remote changes: A > ([B] C [D E])");
   {
-    await buf.store(shuffle([{
+    await storeRecords(buf, shuffle([{
       id: "menu",
       type: "folder",
       children: ["bookmarkBBBB", "bookmarkCCCC", "bookmarkDDDD",
@@ -54,7 +54,7 @@ add_task(async function test_missing_children() {
 
   info("Add (B E) to remote");
   {
-    await buf.store(shuffle([{
+    await storeRecords(buf, shuffle([{
       id: "bookmarkBBBB",
       type: "bookmark",
       title: "B",
@@ -105,7 +105,7 @@ add_task(async function test_missing_children() {
 
   info("Add D to remote");
   {
-    await buf.store([{
+    await storeRecords(buf, [{
       id: "bookmarkDDDD",
       type: "bookmark",
       title: "D",
@@ -169,7 +169,7 @@ add_task(async function test_new_orphan_without_local_parent() {
   
   
   info("Make remote changes: [A] > (B C D)");
-  await buf.store(shuffle([{
+  await storeRecords(buf, shuffle([{
     id: "bookmarkBBBB",
     type: "bookmark",
     title: "B (remote)",
@@ -226,7 +226,7 @@ add_task(async function test_new_orphan_without_local_parent() {
   
   
   info("Add [E] > A to remote");
-  await buf.store([{
+  await storeRecords(buf, [{
     id: "folderAAAAAA",
     type: "folder",
     title: "A",
@@ -277,7 +277,7 @@ add_task(async function test_new_orphan_without_local_parent() {
   }, "Should move (D C B) into A");
 
   info("Add E to remote");
-  await buf.store([{
+  await storeRecords(buf, [{
     id: "folderEEEEEE",
     type: "folder",
     title: "E",
@@ -335,7 +335,7 @@ add_task(async function test_new_orphan_without_local_parent() {
   }, "Should move A into E");
 
   info("Add Menu > E to remote");
-  await buf.store([{
+  await storeRecords(buf, [{
     id: "menu",
     type: "folder",
     children: ["folderEEEEEE"],
@@ -450,7 +450,7 @@ add_task(async function test_move_into_orphaned() {
       }],
     }],
   });
-  await buf.store([{
+  await storeRecords(buf, [{
     id: "menu",
     type: "folder",
     children: ["bookmarkAAAA", "bookmarkBBBB", "folderCCCCCC"],
@@ -498,7 +498,7 @@ add_task(async function test_move_into_orphaned() {
 
   
   info("Make remote changes: ([G] > A (C > (D H E))), (C > H)");
-  await buf.store(shuffle([{
+  await storeRecords(buf, shuffle([{
     id: "bookmarkAAAA",
     type: "bookmark",
     title: "A",
@@ -627,7 +627,7 @@ add_task(async function test_new_orphan_with_local_parent() {
       }],
     }],
   });
-  await buf.store(shuffle([{
+  await storeRecords(buf, shuffle([{
     id: "menu",
     type: "folder",
     children: ["folderAAAAAA"],
@@ -653,7 +653,7 @@ add_task(async function test_new_orphan_with_local_parent() {
   
   
   info("Set up remote with orphans: [A] > (C D)");
-  await buf.store([{
+  await storeRecords(buf, [{
     id: "bookmarkDDDD",
     type: "bookmark",
     title: "D (remote)",
@@ -738,7 +738,7 @@ add_task(async function test_new_orphan_with_local_parent() {
 
   
   info("Add A to remote");
-  await buf.store([{
+  await storeRecords(buf, [{
     id: "folderAAAAAA",
     type: "folder",
     title: "A",
@@ -799,7 +799,7 @@ add_task(async function test_tombstone_as_child() {
   let buf = await openMirror("tombstone_as_child");
   
   
-  await buf.store(shuffle([{
+  await storeRecords(buf, shuffle([{
     id: "menu",
     type: "folder",
     children: ["folderAAAAAA"],
@@ -901,7 +901,7 @@ add_task(async function test_left_pane_root() {
   
   
   
-  await buf.store(shuffle([{
+  await storeRecords(buf, shuffle([{
     id: "folderLEFTPR",
     type: "folder",
     parentid: "places",
@@ -957,7 +957,7 @@ add_task(async function test_left_pane_query() {
   
   
   
-  await buf.store([{
+  await storeRecords(buf, [{
     id: "folderLEFTPQ",
     type: "query",
     parentid: "folderLEFTPR",
@@ -1000,7 +1000,7 @@ add_task(async function test_partial_cycle() {
       }],
     }],
   });
-  await buf.store(shuffle([{
+  await storeRecords(buf, shuffle([{
     id: "menu",
     type: "folder",
     children: ["folderAAAAAA"],
@@ -1026,7 +1026,7 @@ add_task(async function test_partial_cycle() {
   
   
   info("Make remote changes: A > C");
-  await buf.store([{
+  await storeRecords(buf, [{
     id: "folderAAAAAA",
     type: "folder",
     title: "A (remote)",
@@ -1109,7 +1109,7 @@ add_task(async function test_complete_cycle() {
   
   
   info("Make remote changes: Menu > A > B > C > A");
-  await buf.store([{
+  await storeRecords(buf, [{
     id: "menu",
     type: "folder",
     children: ["folderAAAAAA"],
