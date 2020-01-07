@@ -74,9 +74,6 @@ var whitelist = [
    isFromDevTools: true},
 
   
-  {file: "chrome://mozapps/skin/downloads/downloadIcon.png"},
-
-  
   {file: "resource://gre/modules/reflect.jsm"},
 
   
