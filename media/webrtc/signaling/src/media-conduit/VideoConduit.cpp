@@ -665,6 +665,7 @@ WebrtcVideoConduit::VideoStreamFactory::CreateEncoderStreams(int width, int heig
     video_stream.SetRid(simulcastEncoding.rid);
 
     
+    video_stream.temporal_layer_thresholds_bps.clear();
     if (config.number_of_streams > 1) {
       
       
@@ -676,7 +677,6 @@ WebrtcVideoConduit::VideoStreamFactory::CreateEncoderStreams(int width, int heig
       
       
       
-      video_stream.temporal_layer_thresholds_bps.clear();
       if (mConduit->mCodecMode == webrtc::VideoCodecMode::kScreensharing) {
         video_stream.temporal_layer_thresholds_bps.push_back(video_stream.target_bitrate_bps);
       } else {
@@ -684,8 +684,6 @@ WebrtcVideoConduit::VideoStreamFactory::CreateEncoderStreams(int width, int heig
       }
       
       
-    } else {
-      video_stream.temporal_layer_thresholds_bps.clear();
     }
 
     if (mConduit->mCurSendCodecConfig->mName == "H264") {
