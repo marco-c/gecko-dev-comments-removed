@@ -9,10 +9,10 @@
 
 const TEST_URI = "<div>Test Element</div>";
 
-add_task(function* () {
-  yield addTab("data:text/html;charset=utf-8," + encodeURIComponent(TEST_URI));
-  let {inspector, view} = yield openRuleView();
-  yield selectNode("div", inspector);
+add_task(async function() {
+  await addTab("data:text/html;charset=utf-8," + encodeURIComponent(TEST_URI));
+  let {inspector, view} = await openRuleView();
+  await selectNode("div", inspector);
 
   let ruleEditor = getRuleViewRuleEditor(view, 0);
   
@@ -20,10 +20,10 @@ add_task(function* () {
   
   let onMutation = inspector.once("markupmutation");
   let onRuleViewChanged = view.once("ruleview-changed");
-  yield createNewRuleViewProperty(ruleEditor,
+  await createNewRuleViewProperty(ruleEditor,
     "color:red;width:100px;height: 100px;");
-  yield onMutation;
-  yield onRuleViewChanged;
+  await onMutation;
+  await onRuleViewChanged;
 
   is(ruleEditor.rule.textProps.length, 3,
     "Should have created new text properties.");

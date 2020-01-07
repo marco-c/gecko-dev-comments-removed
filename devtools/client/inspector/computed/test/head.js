@@ -82,7 +82,7 @@ function getComputedViewPropertyView(view, name) {
 
 
 
-var getComputedViewMatchedRules = Task.async(function* (view, name) {
+var getComputedViewMatchedRules = async function(view, name) {
   let expander;
   let propertyContent;
   for (let property of view.styleDocument.querySelectorAll(".computed-property-view")) {
@@ -98,11 +98,11 @@ var getComputedViewMatchedRules = Task.async(function* (view, name) {
     
     let onExpand = view.inspector.once("computed-view-property-expanded");
     expander.click();
-    yield onExpand;
+    await onExpand;
   }
 
   return propertyContent;
-});
+};
 
 
 
@@ -175,14 +175,14 @@ function selectAllText(view) {
 
 
 
-function* copyAllAndCheckClipboard(view, expectedPattern) {
+async function copyAllAndCheckClipboard(view, expectedPattern) {
   selectAllText(view);
   let contentDoc = view.styleDocument;
   let prop = contentDoc.querySelector(".computed-property-view");
 
   try {
     info("Trigger a copy event and wait for the clipboard content");
-    yield waitForClipboardPromise(() => fireCopyEvent(prop),
+    await waitForClipboardPromise(() => fireCopyEvent(prop),
                                   () => checkClipboard(expectedPattern));
   } catch (e) {
     failClipboardCheck(expectedPattern);
@@ -201,7 +201,7 @@ function* copyAllAndCheckClipboard(view, expectedPattern) {
 
 
 
-function* copySomeTextAndCheckClipboard(view, positions, expectedPattern) {
+async function copySomeTextAndCheckClipboard(view, positions, expectedPattern) {
   info("Testing selection copy");
 
   let contentDocument = view.styleDocument;
@@ -215,7 +215,7 @@ function* copySomeTextAndCheckClipboard(view, positions, expectedPattern) {
 
   try {
     info("Trigger a copy event and wait for the clipboard content");
-    yield waitForClipboardPromise(() => fireCopyEvent(props[0]),
+    await waitForClipboardPromise(() => fireCopyEvent(props[0]),
                                   () => checkClipboard(expectedPattern));
   } catch (e) {
     failClipboardCheck(expectedPattern);

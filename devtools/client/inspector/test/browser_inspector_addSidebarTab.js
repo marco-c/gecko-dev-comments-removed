@@ -12,8 +12,8 @@ const CONTENT_TEXT = "Hello World!";
 
 
 
-add_task(function* () {
-  let { inspector } = yield openInspectorForURL(TEST_URI);
+add_task(async function() {
+  let { inspector } = await openInspectorForURL(TEST_URI);
 
   const { Component, createFactory } = inspector.React;
   const dom = require("devtools/client/shared/vendor/react-dom-factories");

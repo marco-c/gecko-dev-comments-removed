@@ -8,20 +8,20 @@
 
 const TEST_URL = URL_ROOT + "doc_inspector_remove-iframe-during-load.html";
 
-add_task(function* () {
-  let {inspector, testActor} = yield openInspectorForURL("about:blank");
-  yield selectNode("body", inspector);
+add_task(async function() {
+  let {inspector, testActor} = await openInspectorForURL("about:blank");
+  await selectNode("body", inspector);
 
   
   
-  yield testActor.loadAndWaitForCustomEvent(TEST_URL);
+  await testActor.loadAndWaitForCustomEvent(TEST_URL);
 
   
   
   
   
   
-  ok(!(yield testActor.hasNode("iframe")),
+  ok(!(await testActor.hasNode("iframe")),
      "Iframes added by the content page should have been removed");
 
   
@@ -33,16 +33,16 @@ add_task(function* () {
     iframe.remove();
   });
 
-  ok(!(yield testActor.hasNode("iframe")),
+  ok(!(await testActor.hasNode("iframe")),
      "The after-load iframe should have been removed.");
 
   info("Waiting for markup-view to load.");
-  yield onMarkupLoaded;
+  await onMarkupLoaded;
 
   
-  ok(!(yield testActor.hasNode("iframe")), "Iframe has been removed.");
-  is((yield testActor.getProperty("#yay", "textContent")), "load",
+  ok(!(await testActor.hasNode("iframe")), "Iframe has been removed.");
+  is((await testActor.getProperty("#yay", "textContent")), "load",
      "Load event fired.");
 
-  yield selectNode("#yay", inspector);
+  await selectNode("#yay", inspector);
 });

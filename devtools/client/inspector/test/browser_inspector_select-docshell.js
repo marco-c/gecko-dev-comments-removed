@@ -13,13 +13,13 @@ const URL = "data:text/html;charset=UTF-8," +
             encodeURI('<iframe src="' + FrameURL +
                       '"></iframe><div id="top">top</div>');
 
-add_task(function* () {
+add_task(async function() {
   Services.prefs.setBoolPref("devtools.command-button-frames.enabled", true);
 
-  let {inspector, toolbox, testActor} = yield openInspectorForURL(URL);
+  let {inspector, toolbox, testActor} = await openInspectorForURL(URL);
 
   
-  ok((yield testActor.hasNode("#top")),
+  ok((await testActor.hasNode("#top")),
      "We have the test node on the top level document");
 
   assertMarkupViewIsLoaded(inspector);
@@ -29,8 +29,8 @@ add_task(function* () {
   ok(!btn.firstChild, "The frame list button doesn't have any children");
 
   
-  let menu = yield toolbox.showFramesMenu({target: btn});
-  yield once(menu, "open");
+  let menu = await toolbox.showFramesMenu({target: btn});
+  await once(menu, "open");
 
   
   let frames = menu.items.slice();
@@ -52,25 +52,25 @@ add_task(function* () {
   
   
   let newRoot = inspector.once("new-root");
-  yield selectNode("#top", inspector);
+  await selectNode("#top", inspector);
   info("Select the iframe");
   frames[0].click();
 
-  yield willNavigate;
-  yield newRoot;
+  await willNavigate;
+  await newRoot;
 
   info("Navigation to the iframe is done, the inspector should be back up");
 
   
-  ok(!(yield testActor.hasNode("iframe")),
+  ok(!(await testActor.hasNode("iframe")),
     "We not longer have access to the top frame elements");
-  ok((yield testActor.hasNode("#frame")),
+  ok((await testActor.hasNode("#frame")),
     "But now have direct access to the iframe elements");
 
   
   assertMarkupViewIsLoaded(inspector);
 
-  yield selectNode("#frame", inspector);
+  await selectNode("#frame", inspector);
 
   Services.prefs.clearUserPref("devtools.command-button-frames.enabled");
 });

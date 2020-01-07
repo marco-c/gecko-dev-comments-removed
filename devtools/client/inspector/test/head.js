@@ -41,7 +41,7 @@ registerCleanupFunction(() => {
   Services.prefs.clearUserPref("devtools.inspector.activeSidebar");
 });
 
-registerCleanupFunction(function* () {
+registerCleanupFunction(function() {
   
   
   
@@ -52,42 +52,42 @@ registerCleanupFunction(function* () {
   EventUtils.synthesizeMouseAtPoint(window.innerWidth, 1, {type: "mousemove"}, window);
 });
 
-var navigateTo = Task.async(function* (inspector, url) {
+var navigateTo = async function(inspector, url) {
   let markuploaded = inspector.once("markuploaded");
   let onNewRoot = inspector.once("new-root");
   let onUpdated = inspector.once("inspector-updated");
 
   info("Navigating to: " + url);
   let activeTab = inspector.toolbox.target.activeTab;
-  yield activeTab.navigateTo(url);
+  await activeTab.navigateTo(url);
 
   info("Waiting for markup view to load after navigation.");
-  yield markuploaded;
+  await markuploaded;
 
   info("Waiting for new root.");
-  yield onNewRoot;
+  await onNewRoot;
 
   info("Waiting for inspector to update after new-root event.");
-  yield onUpdated;
-});
+  await onUpdated;
+};
 
 
 
 
 
 
-var startPicker = Task.async(function* (toolbox, skipFocus) {
+var startPicker = async function(toolbox, skipFocus) {
   info("Start the element picker");
   toolbox.win.focus();
-  yield toolbox.highlighterUtils.startPicker();
+  await toolbox.highlighterUtils.startPicker();
   if (!skipFocus) {
     
     
-    yield ContentTask.spawn(gBrowser.selectedBrowser, null, function* () {
+    await ContentTask.spawn(gBrowser.selectedBrowser, null, async function() {
       content.focus();
     });
   }
-});
+};
 
 
 
@@ -110,11 +110,11 @@ function selectAndHighlightNode(selector, inspector) {
 
 
 
-function* focusNode(selector, inspector) {
+async function focusNode(selector, inspector) {
   getContainerForNodeFront(inspector.walker.rootNode, inspector).elt.focus();
-  let nodeFront = yield getNodeFront(selector, inspector);
+  let nodeFront = await getNodeFront(selector, inspector);
   let container = getContainerForNodeFront(nodeFront, inspector);
-  yield selectNode(nodeFront, inspector);
+  await selectNode(nodeFront, inspector);
   EventUtils.sendKey("return", inspector.panelWin);
   return container;
 }
@@ -140,11 +140,11 @@ function clearCurrentNodeSelection(inspector) {
 
 
 
-var openInspectorForURL = Task.async(function* (url, hostType) {
-  let tab = yield addTab(url);
-  let { inspector, toolbox, testActor } = yield openInspector(hostType);
+var openInspectorForURL = async function(url, hostType) {
+  let tab = await addTab(url);
+  let { inspector, toolbox, testActor } = await openInspector(hostType);
   return { tab, inspector, toolbox, testActor };
-});
+};
 
 function getActiveInspector() {
   let target = TargetFactory.forTab(gBrowser.selectedTab);
@@ -157,30 +157,30 @@ function getActiveInspector() {
 
 
 
-var clickOnInspectMenuItem = Task.async(function* (testActor, selector) {
+var clickOnInspectMenuItem = async function(testActor, selector) {
   info("Showing the contextual menu on node " + selector);
   let contentAreaContextMenu = document.querySelector(
     "#contentAreaContextMenu");
   let contextOpened = once(contentAreaContextMenu, "popupshown");
 
-  yield testActor.synthesizeMouse({
+  await testActor.synthesizeMouse({
     selector: selector,
     center: true,
     options: {type: "contextmenu", button: 2}
   });
 
-  yield contextOpened;
+  await contextOpened;
 
   info("Triggering the inspect action");
-  yield gContextMenu.inspectNode();
+  await gContextMenu.inspectNode();
 
   info("Hiding the menu");
   let contextClosed = once(contentAreaContextMenu, "popuphidden");
   contentAreaContextMenu.hidePopup();
-  yield contextClosed;
+  await contextClosed;
 
   return getActiveInspector();
-});
+};
 
 
 
@@ -192,14 +192,14 @@ var clickOnInspectMenuItem = Task.async(function* (testActor, selector) {
 
 
 
-var getNodeFrontInFrame = Task.async(function* (selector, frameSelector,
+var getNodeFrontInFrame = async function(selector, frameSelector,
                                                 inspector) {
-  let iframe = yield getNodeFront(frameSelector, inspector);
-  let {nodes} = yield inspector.walker.children(iframe);
+  let iframe = await getNodeFront(frameSelector, inspector);
+  let {nodes} = await inspector.walker.children(iframe);
   return inspector.walker.querySelector(nodes[0], selector);
-});
+};
 
-var focusSearchBoxUsingShortcut = Task.async(function* (panelWin, callback) {
+var focusSearchBoxUsingShortcut = async function(panelWin, callback) {
   info("Focusing search box");
   let searchBox = panelWin.document.getElementById("inspector-searchbox");
   let focused = once(searchBox, "focus");
@@ -208,12 +208,12 @@ var focusSearchBoxUsingShortcut = Task.async(function* (panelWin, callback) {
 
   synthesizeKeyShortcut(INSPECTOR_L10N.getStr("inspector.searchHTML.key"));
 
-  yield focused;
+  await focused;
 
   if (callback) {
     callback();
   }
-});
+};
 
 
 
@@ -237,9 +237,9 @@ function getContainerForNodeFront(nodeFront, {markup}) {
 
 
 var getContainerForSelector =
-Task.async(function* (selector, inspector, expectFailure = false) {
+async function(selector, inspector, expectFailure = false) {
   info("Getting the markup-container for node " + selector);
-  let nodeFront = yield getNodeFront(selector, inspector);
+  let nodeFront = await getNodeFront(selector, inspector);
   let container = getContainerForNodeFront(nodeFront, inspector);
 
   if (expectFailure) {
@@ -249,7 +249,7 @@ Task.async(function* (selector, inspector, expectFailure = false) {
   }
 
   return container;
-});
+};
 
 
 
@@ -260,17 +260,17 @@ Task.async(function* (selector, inspector, expectFailure = false) {
 
 
 
-var hoverContainer = Task.async(function* (selector, inspector) {
+var hoverContainer = async function(selector, inspector) {
   info("Hovering over the markup-container for node " + selector);
 
-  let nodeFront = yield getNodeFront(selector, inspector);
+  let nodeFront = await getNodeFront(selector, inspector);
   let container = getContainerForNodeFront(nodeFront, inspector);
 
   let highlit = inspector.toolbox.once("node-highlight");
   EventUtils.synthesizeMouseAtCenter(container.tagLine, {type: "mousemove"},
     inspector.markup.doc.defaultView);
   return highlit;
-});
+};
 
 
 
@@ -280,10 +280,10 @@ var hoverContainer = Task.async(function* (selector, inspector) {
 
 
 
-var clickContainer = Task.async(function* (selector, inspector) {
+var clickContainer = async function(selector, inspector) {
   info("Clicking on the markup-container for node " + selector);
 
-  let nodeFront = yield getNodeFront(selector, inspector);
+  let nodeFront = await getNodeFront(selector, inspector);
   let container = getContainerForNodeFront(nodeFront, inspector);
 
   let updated = inspector.once("inspector-updated");
@@ -292,7 +292,7 @@ var clickContainer = Task.async(function* (selector, inspector) {
   EventUtils.synthesizeMouseAtCenter(container.tagLine, {type: "mouseup"},
     inspector.markup.doc.defaultView);
   return updated;
-});
+};
 
 
 
@@ -367,14 +367,14 @@ function redoChange(inspector) {
 
 
 
-function* getNodeFrontForSelector(selector, inspector) {
+async function getNodeFrontForSelector(selector, inspector) {
   if (selector) {
     info("Retrieving front for selector " + selector);
     return getNodeFront(selector, inspector);
   }
 
   info("Retrieving front for doctype node");
-  let {nodes} = yield inspector.walker.children(inspector.walker.rootNode);
+  let {nodes} = await inspector.walker.children(inspector.walker.rootNode);
   return nodes[0];
 }
 
@@ -387,14 +387,14 @@ function* getNodeFrontForSelector(selector, inspector) {
 
 
 
-function* poll(check, desc, attempts = 10, timeBetweenAttempts = 200) {
+async function poll(check, desc, attempts = 10, timeBetweenAttempts = 200) {
   info(desc);
 
   for (let i = 0; i < attempts; i++) {
-    if (yield check()) {
+    if (await check()) {
       return;
     }
-    yield new Promise(resolve => setTimeout(resolve, timeBetweenAttempts));
+    await new Promise(resolve => setTimeout(resolve, timeBetweenAttempts));
   }
 
   throw new Error(`Timeout while: ${desc}`);
@@ -411,124 +411,122 @@ function* poll(check, desc, attempts = 10, timeBetweenAttempts = 200) {
 
 
 
-const getHighlighterHelperFor = (type) => Task.async(
-  function* ({inspector, testActor}) {
-    let front = inspector.inspector;
-    let highlighter = yield front.getHighlighterByType(type);
+const getHighlighterHelperFor = (type) => async function({inspector, testActor}) {
+  let front = inspector.inspector;
+  let highlighter = await front.getHighlighterByType(type);
 
-    let prefix = "";
+  let prefix = "";
 
-    
-    let prevX, prevY;
+  
+  let prevX, prevY;
 
-    
-    let highlightedNode = null;
+  
+  let highlightedNode = null;
 
-    return {
-      set prefix(value) {
-        prefix = value;
-      },
+  return {
+    set prefix(value) {
+      prefix = value;
+    },
 
-      get highlightedNode() {
-        if (!highlightedNode) {
-          return null;
-        }
-
-        return {
-          getComputedStyle: function* (options = {}) {
-            return yield inspector.pageStyle.getComputed(
-              highlightedNode, options);
-          }
-        };
-      },
-
-      get actorID() {
-        if (!highlighter) {
-          return null;
-        }
-
-        return highlighter.actorID;
-      },
-
-      show: function* (selector = ":root", options, frameSelector = null) {
-        if (frameSelector) {
-          highlightedNode = yield getNodeFrontInFrame(selector, frameSelector, inspector);
-        } else {
-          highlightedNode = yield getNodeFront(selector, inspector);
-        }
-        return yield highlighter.show(highlightedNode, options);
-      },
-
-      hide: function* () {
-        yield highlighter.hide();
-      },
-
-      isElementHidden: function* (id) {
-        return (yield testActor.getHighlighterNodeAttribute(
-          prefix + id, "hidden", highlighter)) === "true";
-      },
-
-      getElementTextContent: function* (id) {
-        return yield testActor.getHighlighterNodeTextContent(
-          prefix + id, highlighter);
-      },
-
-      getElementAttribute: function* (id, name) {
-        return yield testActor.getHighlighterNodeAttribute(
-          prefix + id, name, highlighter);
-      },
-
-      waitForElementAttributeSet: function* (id, name) {
-        yield poll(function* () {
-          let value = yield testActor.getHighlighterNodeAttribute(
-            prefix + id, name, highlighter);
-          return !!value;
-        }, `Waiting for element ${id} to have attribute ${name} set`);
-      },
-
-      waitForElementAttributeRemoved: function* (id, name) {
-        yield poll(function* () {
-          let value = yield testActor.getHighlighterNodeAttribute(
-            prefix + id, name, highlighter);
-          return !value;
-        }, `Waiting for element ${id} to have attribute ${name} removed`);
-      },
-
-      synthesizeMouse: function* (options) {
-        options = Object.assign({selector: ":root"}, options);
-        yield testActor.synthesizeMouse(options);
-      },
-
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      mouse: new Proxy({}, {
-        get: (target, name) =>
-          function* (x = prevX, y = prevY, selector = ":root") {
-            prevX = x;
-            prevY = y;
-            yield testActor.synthesizeMouse({
-              selector, x, y, options: {type: "mouse" + name}});
-          }
-      }),
-
-      reflow: function* () {
-        yield testActor.reflow();
-      },
-
-      finalize: function* () {
-        highlightedNode = null;
-        yield highlighter.finalize();
+    get highlightedNode() {
+      if (!highlightedNode) {
+        return null;
       }
-    };
-  }
-);
+
+      return {
+        getComputedStyle: async function(options = {}) {
+          return inspector.pageStyle.getComputed(
+            highlightedNode, options);
+        }
+      };
+    },
+
+    get actorID() {
+      if (!highlighter) {
+        return null;
+      }
+
+      return highlighter.actorID;
+    },
+
+    show: async function(selector = ":root", options, frameSelector = null) {
+      if (frameSelector) {
+        highlightedNode = await getNodeFrontInFrame(selector, frameSelector, inspector);
+      } else {
+        highlightedNode = await getNodeFront(selector, inspector);
+      }
+      return highlighter.show(highlightedNode, options);
+    },
+
+    hide: async function() {
+      await highlighter.hide();
+    },
+
+    isElementHidden: async function(id) {
+      return (await testActor.getHighlighterNodeAttribute(
+        prefix + id, "hidden", highlighter)) === "true";
+    },
+
+    getElementTextContent: async function(id) {
+      return testActor.getHighlighterNodeTextContent(
+        prefix + id, highlighter);
+    },
+
+    getElementAttribute: async function(id, name) {
+      return testActor.getHighlighterNodeAttribute(
+        prefix + id, name, highlighter);
+    },
+
+    waitForElementAttributeSet: async function(id, name) {
+      await poll(async function() {
+        let value = await testActor.getHighlighterNodeAttribute(
+          prefix + id, name, highlighter);
+        return !!value;
+      }, `Waiting for element ${id} to have attribute ${name} set`);
+    },
+
+    waitForElementAttributeRemoved: async function(id, name) {
+      await poll(async function() {
+        let value = await testActor.getHighlighterNodeAttribute(
+          prefix + id, name, highlighter);
+        return !value;
+      }, `Waiting for element ${id} to have attribute ${name} removed`);
+    },
+
+    synthesizeMouse: async function(options) {
+      options = Object.assign({selector: ":root"}, options);
+      await testActor.synthesizeMouse(options);
+    },
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    mouse: new Proxy({}, {
+      get: (target, name) =>
+        async function(x = prevX, y = prevY, selector = ":root") {
+          prevX = x;
+          prevY = y;
+          await testActor.synthesizeMouse({
+            selector, x, y, options: {type: "mouse" + name}});
+        }
+    }),
+
+    reflow: async function() {
+      await testActor.reflow();
+    },
+
+    finalize: async function() {
+      highlightedNode = null;
+      await highlighter.finalize();
+    }
+  };
+};
 
 
 
@@ -634,14 +632,14 @@ function containsFocus(doc, container) {
 
 
 
-var waitForTab = Task.async(function* () {
+var waitForTab = async function() {
   info("Waiting for a tab to open");
-  yield once(gBrowser.tabContainer, "TabOpen");
+  await once(gBrowser.tabContainer, "TabOpen");
   let tab = gBrowser.selectedTab;
-  yield BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+  await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
   info("The tab load completed");
   return tab;
-});
+};
 
 
 
@@ -681,7 +679,7 @@ function focusAndSendKey(win, key) {
 
 
 
-function* assertTooltipShownOnHover(tooltip, target) {
+async function assertTooltipShownOnHover(tooltip, target) {
   let mouseEvent = new target.ownerDocument.defaultView.MouseEvent("mousemove", {
     bubbles: true,
   });
@@ -689,7 +687,7 @@ function* assertTooltipShownOnHover(tooltip, target) {
 
   if (!tooltip.isVisible()) {
     info("Waiting for tooltip to be shown");
-    yield tooltip.once("shown");
+    await tooltip.once("shown");
   }
 
   ok(tooltip.isVisible(), `The tooltip is visible`);
@@ -708,7 +706,7 @@ function* assertTooltipShownOnHover(tooltip, target) {
 
 
 
-function* assertShowPreviewTooltip(view, target) {
+async function assertShowPreviewTooltip(view, target) {
   let mouseEvent = new target.ownerDocument.defaultView.MouseEvent("mousemove", {
     bubbles: true,
   });
@@ -721,7 +719,7 @@ function* assertShowPreviewTooltip(view, target) {
 
   if (!tooltip.isVisible()) {
     info("Waiting for tooltip to be shown");
-    yield tooltip.once("shown");
+    await tooltip.once("shown");
   }
 
   ok(tooltip.isVisible(), `The tooltip '${name}' is visible`);
@@ -738,7 +736,7 @@ function* assertShowPreviewTooltip(view, target) {
 
 
 
-function* assertTooltipHiddenOnMouseOut(tooltip, target) {
+async function assertTooltipHiddenOnMouseOut(tooltip, target) {
   
   let mouseEvent = new target.ownerDocument.defaultView.MouseEvent("mousemove", {
     bubbles: true,
@@ -746,7 +744,7 @@ function* assertTooltipHiddenOnMouseOut(tooltip, target) {
   });
   target.parentNode.dispatchEvent(mouseEvent);
 
-  yield tooltip.once("hidden");
+  await tooltip.once("hidden");
 
   ok(!tooltip.isVisible(), "The tooltip is hidden on mouseout");
 }
@@ -796,14 +794,14 @@ function getRuleViewRuleEditor(view, childrenIndex, nodeIndex) {
 
 
 
-function* getDisplayedNodeTextContent(selector, inspector) {
+async function getDisplayedNodeTextContent(selector, inspector) {
   
   
-  yield selectNode(selector, inspector);
+  await selectNode(selector, inspector);
 
-  let container = yield getContainerForSelector(selector, inspector);
-  yield inspector.markup.expandNode(container.node);
-  yield waitForMultipleChildrenUpdates(inspector);
+  let container = await getContainerForSelector(selector, inspector);
+  await inspector.markup.expandNode(container.node);
+  await waitForMultipleChildrenUpdates(inspector);
   if (container) {
     let textContainer = container.elt.querySelector("pre");
     return textContainer.textContent;
@@ -826,17 +824,17 @@ function* getDisplayedNodeTextContent(selector, inspector) {
 
 
 
-function* toggleShapesHighlighter(view, highlighters, selector, property, show) {
+async function toggleShapesHighlighter(view, highlighters, selector, property, show) {
   info("Toggle shapes highlighter");
   let container = getRuleViewProperty(view, selector, property).valueSpan;
   let shapesToggle = container.querySelector(".ruleview-shapeswatch");
   if (show) {
     let onHighlighterShown = highlighters.once("shapes-highlighter-shown");
     shapesToggle.click();
-    yield onHighlighterShown;
+    await onHighlighterShown;
   } else {
     let onHighlighterHidden = highlighters.once("shapes-highlighter-hidden");
     shapesToggle.click();
-    yield onHighlighterHidden;
+    await onHighlighterHidden;
   }
 }
