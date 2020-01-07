@@ -16,16 +16,12 @@ define(function(require, exports, module) {
   const { Toolbar, ToolbarButton } = createFactories(require("./reps/Toolbar"));
 
   
-  const EXPAND_THRESHOLD = 100 * 1024;
-
-  
 
 
   class JsonToolbar extends Component {
     static get propTypes() {
       return {
         actions: PropTypes.object,
-        dataSize: PropTypes.number,
       };
     }
 
@@ -33,8 +29,6 @@ define(function(require, exports, module) {
       super(props);
       this.onSave = this.onSave.bind(this);
       this.onCopy = this.onCopy.bind(this);
-      this.onCollapse = this.onCollapse.bind(this);
-      this.onExpand = this.onExpand.bind(this);
     }
 
     
@@ -47,14 +41,6 @@ define(function(require, exports, module) {
       this.props.actions.onCopyJson();
     }
 
-    onCollapse(event) {
-      this.props.actions.onCollapse();
-    }
-
-    onExpand(event) {
-      this.props.actions.onExpand();
-    }
-
     render() {
       return (
         Toolbar({},
@@ -63,13 +49,6 @@ define(function(require, exports, module) {
           ),
           ToolbarButton({className: "btn copy", onClick: this.onCopy},
             JSONView.Locale.$STR("jsonViewer.Copy")
-          ),
-          ToolbarButton({className: "btn collapse", onClick: this.onCollapse},
-            JSONView.Locale.$STR("jsonViewer.CollapseAll")
-          ),
-          this.props.dataSize > EXPAND_THRESHOLD ? undefined :
-          ToolbarButton({className: "btn expand", onClick: this.onExpand},
-            JSONView.Locale.$STR("jsonViewer.ExpandAll")
           ),
           SearchBox({
             actions: this.props.actions
