@@ -2901,7 +2901,7 @@ var SessionStoreInternal = {
     
     
     aTab.removeAttribute("crashed");
-    browser.loadURI("about:blank", null, null);
+    browser.loadURI("about:blank");
 
     let data = TabState.collect(aTab);
     this.restoreTab(aTab, data, {
@@ -3547,7 +3547,7 @@ var SessionStoreInternal = {
 
 
   speculativeConnectOnTabHover(tab) {
-    if (tab.__SS_lazyData && !tab.__SS_connectionPrepared) {
+    if (this._restore_on_demand && !tab.__SS_connectionPrepared && tab.hasAttribute("pending")) {
       let url = this.getLazyTabValue(tab, "url");
       let prepared = this.prepareConnectionToHost(url);
       
