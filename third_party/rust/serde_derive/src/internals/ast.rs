@@ -6,10 +6,10 @@
 
 
 
+use internals::attr;
+use internals::check;
+use internals::Ctxt;
 use syn;
-use attr;
-use check;
-use Ctxt;
 use syn::punctuated::Punctuated;
 
 pub struct Container<'a> {

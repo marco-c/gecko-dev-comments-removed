@@ -113,8 +113,6 @@
 
 
 
-
-
 use lib::*;
 
 mod impls;
@@ -152,7 +150,8 @@ macro_rules! declare_error_trait {
             ///
             /// impl Serialize for Path {
             ///     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-            ///         where S: Serializer
+            ///     where
+            ///         S: Serializer,
             ///     {
             ///         match self.to_str() {
             ///             Some(s) => serializer.serialize_str(s),
@@ -206,6 +205,7 @@ declare_error_trait!(Error: Sized + Debug + Display);
 
 
 pub trait Serialize {
+    
     
     
     
@@ -385,8 +385,10 @@ pub trait Serializer: Sized {
     
     
     
+    
     fn serialize_bool(self, v: bool) -> Result<Self::Ok, Self::Error>;
 
+    
     
     
     
@@ -437,8 +439,10 @@ pub trait Serializer: Sized {
     
     
     
+    
     fn serialize_i16(self, v: i16) -> Result<Self::Ok, Self::Error>;
 
+    
     
     
     
@@ -485,8 +489,10 @@ pub trait Serializer: Sized {
     
     
     
+    
     fn serialize_i64(self, v: i64) -> Result<Self::Ok, Self::Error>;
 
+    
     
     
     
@@ -537,8 +543,10 @@ pub trait Serializer: Sized {
     
     
     
+    
     fn serialize_u16(self, v: u16) -> Result<Self::Ok, Self::Error>;
 
+    
     
     
     
@@ -585,8 +593,10 @@ pub trait Serializer: Sized {
     
     
     
+    
     fn serialize_u64(self, v: u64) -> Result<Self::Ok, Self::Error>;
 
+    
     
     
     
@@ -633,6 +643,7 @@ pub trait Serializer: Sized {
     
     
     
+    
     fn serialize_f64(self, v: f64) -> Result<Self::Ok, Self::Error>;
 
     
@@ -658,8 +669,10 @@ pub trait Serializer: Sized {
     
     
     
+    
     fn serialize_char(self, v: char) -> Result<Self::Ok, Self::Error>;
 
+    
     
     
     
@@ -753,8 +766,12 @@ pub trait Serializer: Sized {
     
     
     
+    
+    
     fn serialize_none(self) -> Result<Self::Ok, Self::Error>;
 
+    
+    
     
     
     
@@ -810,8 +827,10 @@ pub trait Serializer: Sized {
     
     
     
+    
     fn serialize_unit(self) -> Result<Self::Ok, Self::Error>;
 
+    
     
     
     
@@ -856,6 +875,7 @@ pub trait Serializer: Sized {
     
     
     
+    
     fn serialize_unit_variant(
         self,
         name: &'static str,
@@ -863,6 +883,7 @@ pub trait Serializer: Sized {
         variant: &'static str,
     ) -> Result<Self::Ok, Self::Error>;
 
+    
     
     
     
@@ -915,6 +936,7 @@ pub trait Serializer: Sized {
     
     
     
+    
     fn serialize_newtype_variant<T: ?Sized>(
         self,
         name: &'static str,
@@ -925,6 +947,8 @@ pub trait Serializer: Sized {
     where
         T: Serialize;
 
+    
+    
     
     
     
@@ -1022,8 +1046,12 @@ pub trait Serializer: Sized {
     
     
     
+    
+    
+    
     fn serialize_tuple(self, len: usize) -> Result<Self::SerializeTuple, Self::Error>;
 
+    
     
     
     
@@ -1054,6 +1082,7 @@ pub trait Serializer: Sized {
         len: usize,
     ) -> Result<Self::SerializeTupleStruct, Self::Error>;
 
+    
     
     
     
@@ -1144,8 +1173,11 @@ pub trait Serializer: Sized {
     
     
     
+    
+    
     fn serialize_map(self, len: Option<usize>) -> Result<Self::SerializeMap, Self::Error>;
 
+    
     
     
     
@@ -1211,6 +1243,7 @@ pub trait Serializer: Sized {
     
     
     
+    
     fn serialize_struct_variant(
         self,
         name: &'static str,
@@ -1219,6 +1252,7 @@ pub trait Serializer: Sized {
         len: usize,
     ) -> Result<Self::SerializeStructVariant, Self::Error>;
 
+    
     
     
     
@@ -1255,6 +1289,7 @@ pub trait Serializer: Sized {
         serializer.end()
     }
 
+    
     
     
     
@@ -1323,6 +1358,7 @@ pub trait Serializer: Sized {
     
     
     
+    
     #[cfg(any(feature = "std", feature = "alloc"))]
     fn collect_str<T: ?Sized>(self, value: &T) -> Result<Self::Ok, Self::Error>
     where
@@ -1334,6 +1370,7 @@ pub trait Serializer: Sized {
         self.serialize_str(&string)
     }
 
+    
     
     
     
@@ -1412,11 +1449,14 @@ pub trait Serializer: Sized {
     
     
     
+    
     #[inline]
     fn is_human_readable(&self) -> bool {
         true
     }
 }
+
+
 
 
 
@@ -1542,6 +1582,10 @@ pub trait SerializeSeq {
 
 
 
+
+
+
+
 pub trait SerializeTuple {
     
     type Ok;
@@ -1557,6 +1601,7 @@ pub trait SerializeTuple {
     
     fn end(self) -> Result<Self::Ok, Self::Error>;
 }
+
 
 
 
@@ -1625,6 +1670,7 @@ pub trait SerializeTupleStruct {
 
 
 
+
 pub trait SerializeTupleVariant {
     
     type Ok;
@@ -1640,6 +1686,8 @@ pub trait SerializeTupleVariant {
     
     fn end(self) -> Result<Self::Ok, Self::Error>;
 }
+
+
 
 
 
@@ -1764,6 +1812,7 @@ pub trait SerializeMap {
 
 
 
+
 pub trait SerializeStruct {
     
     type Ok;
@@ -1790,6 +1839,7 @@ pub trait SerializeStruct {
     
     fn end(self) -> Result<Self::Ok, Self::Error>;
 }
+
 
 
 

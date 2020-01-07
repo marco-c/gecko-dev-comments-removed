@@ -118,8 +118,6 @@
 
 
 
-
-
 use lib::*;
 
 
@@ -172,7 +170,8 @@ macro_rules! declare_error_trait {
             ///
             /// impl<'de> Deserialize<'de> for IpAddr {
             ///     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-            ///         where D: Deserializer<'de>
+            ///     where
+            ///         D: Deserializer<'de>,
             ///     {
             ///         let s = try!(String::deserialize(deserializer));
             ///         s.parse().map_err(de::Error::custom)
@@ -196,6 +195,7 @@ macro_rules! declare_error_trait {
             /// For example if we try to deserialize a String out of a JSON file
             /// containing an integer, the unexpected type is the integer and the
             /// expected type is the string.
+            #[cold]
             fn invalid_type(unexp: Unexpected, exp: &Expected) -> Self {
                 Error::custom(format_args!("invalid type: {}, expected {}", unexp, exp))
             }
@@ -213,6 +213,7 @@ macro_rules! declare_error_trait {
             /// For example if we try to deserialize a String out of some binary data
             /// that is not valid UTF-8, the unexpected value is the bytes and the
             /// expected value is a string.
+            #[cold]
             fn invalid_value(unexp: Unexpected, exp: &Expected) -> Self {
                 Error::custom(format_args!("invalid value: {}, expected {}", unexp, exp))
             }
@@ -226,12 +227,14 @@ macro_rules! declare_error_trait {
             /// The `exp` argument provides information about what data was being
             /// expected. For example `exp` might say that a tuple of size 6 was
             /// expected.
+            #[cold]
             fn invalid_length(len: usize, exp: &Expected) -> Self {
                 Error::custom(format_args!("invalid length {}, expected {}", len, exp))
             }
 
             /// Raised when a `Deserialize` enum type received a variant with an
             /// unrecognized name.
+            #[cold]
             fn unknown_variant(variant: &str, expected: &'static [&'static str]) -> Self {
                 if expected.is_empty() {
                     Error::custom(format_args!("unknown variant `{}`, there are no variants",
@@ -245,6 +248,7 @@ macro_rules! declare_error_trait {
 
             /// Raised when a `Deserialize` struct type received a field with an
             /// unrecognized name.
+            #[cold]
             fn unknown_field(field: &str, expected: &'static [&'static str]) -> Self {
                 if expected.is_empty() {
                     Error::custom(format_args!("unknown field `{}`, there are no fields",
@@ -259,12 +263,14 @@ macro_rules! declare_error_trait {
             /// Raised when a `Deserialize` struct type expected to receive a required
             /// field with a particular name but that field was not present in the
             /// input.
+            #[cold]
             fn missing_field(field: &'static str) -> Self {
                 Error::custom(format_args!("missing field `{}`", field))
             }
 
             /// Raised when a `Deserialize` struct type received more than one of the
             /// same field.
+            #[cold]
             fn duplicate_field(field: &'static str) -> Self {
                 Error::custom(format_args!("duplicate field `{}`", field))
             }
@@ -277,6 +283,7 @@ declare_error_trait!(Error: Sized + error::Error);
 
 #[cfg(not(feature = "std"))]
 declare_error_trait!(Error: Sized + Debug + Display);
+
 
 
 
@@ -442,6 +449,8 @@ impl<'a> fmt::Display for Unexpected<'a> {
 
 
 
+
+
 pub trait Expected {
     
     
@@ -557,12 +566,21 @@ pub trait Deserialize<'de>: Sized {
 
 
 
+
+
 pub trait DeserializeOwned: for<'de> Deserialize<'de> {}
 impl<T> DeserializeOwned for T
 where
     T: for<'de> Deserialize<'de>,
 {
 }
+
+
+
+
+
+
+
 
 
 
@@ -1107,11 +1125,13 @@ pub trait Deserializer<'de>: Sized {
     
     
     
+    
     #[inline]
     fn is_human_readable(&self) -> bool {
         true
     }
 }
+
 
 
 
@@ -1507,6 +1527,15 @@ pub trait Visitor<'de>: Sized {
         let _ = data;
         Err(Error::invalid_type(Unexpected::Enum, &self))
     }
+
+    
+    #[doc(hidden)]
+    fn __private_visit_untagged_option<D>(self, _: D) -> Result<Self::Value, ()>
+    where
+        D: Deserializer<'de>,
+    {
+        Err(())
+    }
 }
 
 
@@ -1828,8 +1857,14 @@ pub trait VariantAccess<'de>: Sized {
     
     
     
+    
+    
+    
     fn unit_variant(self) -> Result<(), Self::Error>;
 
+    
+    
+    
     
     
     
@@ -1922,10 +1957,20 @@ pub trait VariantAccess<'de>: Sized {
     
     
     
+    
+    
+    
+    
+    
     fn tuple_variant<V>(self, len: usize, visitor: V) -> Result<V::Value, Self::Error>
     where
         V: Visitor<'de>;
 
+    
+    
+    
+    
+    
     
     
     

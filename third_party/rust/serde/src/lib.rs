@@ -79,21 +79,24 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/serde/1.0.37")]
+#![doc(html_root_url = "https://docs.rs/serde/1.0.58")]
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
 
 
 
-#![cfg_attr(feature = "unstable", feature(nonzero, specialization))]
+#![cfg_attr(feature = "unstable", feature(specialization))]
 #![cfg_attr(feature = "alloc", feature(alloc))]
 #![cfg_attr(feature = "cargo-clippy", deny(clippy, clippy_pedantic))]
 
-#![cfg_attr(feature = "cargo-clippy",
-            allow(cast_lossless, const_static_lifetime, doc_markdown, linkedlist,
-                  needless_pass_by_value, redundant_field_names, type_complexity,
-                  unreadable_literal, zero_prefixed_literal))]
+#![cfg_attr(
+    feature = "cargo-clippy",
+    allow(
+        cast_lossless, const_static_lifetime, doc_markdown, linkedlist, needless_pass_by_value,
+        redundant_field_names, type_complexity, unreadable_literal, zero_prefixed_literal
+    )
+)]
 
 #![cfg_attr(feature = "cargo-clippy", allow(
 
@@ -143,8 +146,8 @@ mod lib {
 
     pub use self::core::{cmp, iter, mem, ops, slice, str};
     pub use self::core::{f32, f64};
-    pub use self::core::{isize, i16, i32, i64, i8};
-    pub use self::core::{usize, u16, u32, u64, u8};
+    pub use self::core::{i16, i32, i64, i8, isize};
+    pub use self::core::{u16, u32, u64, u8, usize};
 
     pub use self::core::cell::{Cell, RefCell};
     pub use self::core::clone::{self, Clone};
@@ -176,14 +179,14 @@ mod lib {
     pub use std::boxed::Box;
 
     #[cfg(all(feature = "rc", feature = "alloc", not(feature = "std")))]
-    pub use alloc::rc::Rc;
+    pub use alloc::rc::{Rc, Weak as RcWeak};
     #[cfg(all(feature = "rc", feature = "std"))]
-    pub use std::rc::Rc;
+    pub use std::rc::{Rc, Weak as RcWeak};
 
     #[cfg(all(feature = "rc", feature = "alloc", not(feature = "std")))]
-    pub use alloc::arc::Arc;
+    pub use alloc::arc::{Arc, Weak as ArcWeak};
     #[cfg(all(feature = "rc", feature = "std"))]
-    pub use std::sync::Arc;
+    pub use std::sync::{Arc, Weak as ArcWeak};
 
     #[cfg(all(feature = "alloc", not(feature = "std")))]
     pub use alloc::{BTreeMap, BTreeSet, BinaryHeap, LinkedList, VecDeque};
@@ -209,10 +212,6 @@ mod lib {
     pub use std::sync::{Mutex, RwLock};
     #[cfg(feature = "std")]
     pub use std::time::{Duration, SystemTime, UNIX_EPOCH};
-
-    #[cfg(feature = "unstable")]
-    #[allow(deprecated)]
-    pub use core::nonzero::{NonZero, Zeroable};
 
     #[cfg(feature = "unstable")]
     pub use core::num::{NonZeroU16, NonZeroU32, NonZeroU64, NonZeroU8, NonZeroUsize};

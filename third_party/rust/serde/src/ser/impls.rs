@@ -374,19 +374,39 @@ deref_impl!(<'a, T: ?Sized> Serialize for Cow<'a, T> where T: Serialize + ToOwne
 
 
 
-#[cfg(feature = "unstable")]
-#[allow(deprecated)]
-impl<T> Serialize for NonZero<T>
+
+
+
+#[cfg(all(feature = "rc", any(feature = "std", feature = "alloc")))]
+impl<T: ?Sized> Serialize for RcWeak<T>
 where
-    T: Serialize + Zeroable + Clone,
+    T: Serialize,
 {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
-        self.clone().get().serialize(serializer)
+        self.upgrade().serialize(serializer)
     }
 }
+
+
+
+
+#[cfg(all(feature = "rc", any(feature = "std", feature = "alloc")))]
+impl<T: ?Sized> Serialize for ArcWeak<T>
+where
+    T: Serialize,
+{
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        self.upgrade().serialize(serializer)
+    }
+}
+
+
 
 macro_rules! nonzero_integers {
     ( $( $T: ident, )+ ) => {

@@ -91,7 +91,7 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/quote/0.5.1")]
+#![doc(html_root_url = "https://docs.rs/quote/0.5.2")]
 
 #[cfg(feature = "proc-macro")]
 extern crate proc_macro;

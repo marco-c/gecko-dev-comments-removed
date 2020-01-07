@@ -6,8 +6,8 @@
 
 
 
-use std::fmt::Display;
 use std::cell::RefCell;
+use std::fmt::Display;
 use std::thread;
 
 #[derive(Default)]
