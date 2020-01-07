@@ -322,19 +322,10 @@ function extraRootedGCThings()
 function extraRootedPointers()
 {
     return [
-        'ModuleValidator',
-        'JSErrorResult',
-        'WrappableJSErrorResult',
-
         
         
         'js::frontend::TokenStream',
         'js::frontend::TokenStreamAnyChars',
-
-        'mozilla::ErrorResult',
-        'mozilla::IgnoredErrorResult',
-        'mozilla::IgnoreErrors',
-        'mozilla::dom::binding_detail::FastErrorResult',
     ];
 }
 

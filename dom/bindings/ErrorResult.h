@@ -566,7 +566,7 @@ private:
   
   TErrorResult(const TErrorResult&) = delete;
   void operator=(const TErrorResult&) = delete;
-};
+} JS_HAZ_ROOTED;
 
 struct JustAssertCleanupPolicy {
   static const bool assertHandled = true;
@@ -838,7 +838,7 @@ private:
   
   
   binding_danger::TErrorResult<binding_danger::JustSuppressCleanupPolicy> mInner;
-};
+} JS_HAZ_ROOTED;
 
 
 
