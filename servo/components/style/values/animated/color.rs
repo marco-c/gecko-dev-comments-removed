@@ -6,7 +6,7 @@
 
 use values::animated::{Animate, Procedure, ToAnimatedZero};
 use values::distance::{ComputeSquaredDistance, SquaredDistance};
-use values::computed::ComplexColorRatios;
+use values::generics::color::{Color as GenericColor, ComplexColorRatios};
 
 
 
@@ -102,30 +102,15 @@ impl Animate for ComplexColorRatios {
     }
 }
 
-#[allow(missing_docs)]
-#[cfg_attr(feature = "servo", derive(MallocSizeOf))]
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub enum Color {
-    Numeric(RGBA),
-    Foreground,
-    Complex(RGBA, ComplexColorRatios),
-}
+
+pub type Color = GenericColor<RGBA>;
 
 impl Color {
-    fn currentcolor() -> Self {
-        Color::Foreground
-    }
-
-    
-    pub fn transparent() -> Self {
-        Color::Numeric(RGBA::transparent())
-    }
-
     fn effective_intermediate_rgba(&self) -> RGBA {
         match *self {
-            Color::Numeric(color) => color,
-            Color::Foreground => RGBA::transparent(),
-            Color::Complex(color, ratios) => RGBA {
+            GenericColor::Numeric(color) => color,
+            GenericColor::Foreground => RGBA::transparent(),
+            GenericColor::Complex(color, ratios) => RGBA {
                 alpha: color.alpha * ratios.bg,
                 ..color.clone()
             },
@@ -134,9 +119,9 @@ impl Color {
 
     fn effective_ratios(&self) -> ComplexColorRatios {
         match *self {
-            Color::Numeric(..) => ComplexColorRatios::NUMERIC,
-            Color::Foreground => ComplexColorRatios::FOREGROUND,
-            Color::Complex(.., ratios) => ratios,
+            GenericColor::Numeric(..) => ComplexColorRatios::NUMERIC,
+            GenericColor::Foreground => ComplexColorRatios::FOREGROUND,
+            GenericColor::Complex(.., ratios) => ratios,
         }
     }
 }
@@ -144,28 +129,26 @@ impl Color {
 impl Animate for Color {
     #[inline]
     fn animate(&self, other: &Self, procedure: Procedure) -> Result<Self, ()> {
+        use self::GenericColor::*;
+
         
         
         let (this_weight, other_weight) = procedure.weights();
 
         Ok(match (*self, *other, procedure) {
             
-            (Color::Foreground, Color::Foreground, Procedure::Interpolate { .. }) => {
-                Color::currentcolor()
-            }
+            (Foreground, Foreground, Procedure::Interpolate { .. }) => Color::currentcolor(),
             
-            (Color::Numeric(c1), Color::Numeric(c2), _) => {
-                Color::Numeric(c1.animate(&c2, procedure)?)
-            }
+            (Numeric(c1), Numeric(c2), _) => Numeric(c1.animate(&c2, procedure)?),
             
-            (Color::Foreground, Color::Numeric(color), _) => Color::Complex(
+            (Foreground, Numeric(color), _) => Self::with_ratios(
                 color,
                 ComplexColorRatios {
                     bg: other_weight as f32,
                     fg: this_weight as f32,
                 },
             ),
-            (Color::Numeric(color), Color::Foreground, _) => Color::Complex(
+            (Numeric(color), Foreground, _) => Self::with_ratios(
                 color,
                 ComplexColorRatios {
                     bg: this_weight as f32,
@@ -174,7 +157,7 @@ impl Animate for Color {
             ),
 
             
-            (Color::Foreground, Color::Foreground, _) => Color::Complex(
+            (Foreground, Foreground, _) => Self::with_ratios(
                 RGBA::transparent(),
                 ComplexColorRatios {
                     bg: 0.,
@@ -197,13 +180,7 @@ impl Animate for Color {
                 let alpha = color.alpha / ratios.bg;
                 let color = RGBA { alpha, ..color };
 
-                if ratios == ComplexColorRatios::NUMERIC {
-                    Color::Numeric(color)
-                } else if ratios == ComplexColorRatios::FOREGROUND {
-                    Color::Foreground
-                } else {
-                    Color::Complex(color, ratios)
-                }
+                Self::with_ratios(color, ratios)
             }
         })
     }
@@ -212,12 +189,13 @@ impl Animate for Color {
 impl ComputeSquaredDistance for Color {
     #[inline]
     fn compute_squared_distance(&self, other: &Self) -> Result<SquaredDistance, ()> {
+        use self::GenericColor::*;
+
         
         Ok(match (*self, *other) {
-            (Color::Foreground, Color::Foreground) => SquaredDistance::from_sqrt(0.),
-            (Color::Numeric(c1), Color::Numeric(c2)) => c1.compute_squared_distance(&c2)?,
-            (Color::Foreground, Color::Numeric(color))
-            | (Color::Numeric(color), Color::Foreground) => {
+            (Foreground, Foreground) => SquaredDistance::from_sqrt(0.),
+            (Numeric(c1), Numeric(c2)) => c1.compute_squared_distance(&c2)?,
+            (Foreground, Numeric(color)) | (Numeric(color), Foreground) => {
                 
                 color.compute_squared_distance(&RGBA::transparent())?
                     + SquaredDistance::from_sqrt(1.)
