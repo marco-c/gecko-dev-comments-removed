@@ -22,22 +22,11 @@ XPCOMUtils.defineLazyModuleGetter(this, "ShieldPreferences",
   "resource://shield-recipe-client/lib/ShieldPreferences.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "AddonStudies",
   "resource://shield-recipe-client/lib/AddonStudies.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "TelemetryEvents",
+  "resource://shield-recipe-client/lib/TelemetryEvents.jsm");
 
 this.EXPORTED_SYMBOLS = ["ShieldRecipeClient"];
 
-const {PREF_STRING, PREF_BOOL, PREF_INT} = Ci.nsIPrefBranch;
-
-const REASONS = {
-  APP_STARTUP: 1,      
-  APP_SHUTDOWN: 2,     
-  ADDON_ENABLE: 3,     
-  ADDON_DISABLE: 4,    
-  ADDON_INSTALL: 5,    
-  ADDON_UNINSTALL: 6,  
-  ADDON_UPGRADE: 7,    
-  ADDON_DOWNGRADE: 8,  
-};
-const PREF_DEV_MODE = "extensions.shield-recipe-client.dev_mode";
 const PREF_LOGGING_LEVEL = "extensions.shield-recipe-client.logging.level";
 const SHIELD_INIT_NOTIFICATION = "shield-init-complete";
 
@@ -80,6 +69,12 @@ this.ShieldRecipeClient = {
       ShieldPreferences.init();
     } catch (err) {
       log.error("Failed to initialize preferences UI:", err);
+    }
+
+    try {
+      TelemetryEvents.init();
+    } catch (err) {
+      log.error("Failed to initialize telemetry events:", err);
     }
 
     await RecipeRunner.init();

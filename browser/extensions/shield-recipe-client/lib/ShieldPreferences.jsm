@@ -73,22 +73,24 @@ this.ShieldPreferences = {
     let prefValue;
     switch (prefName) {
       
-      case FHR_UPLOAD_ENABLED_PREF:
+      case FHR_UPLOAD_ENABLED_PREF: {
         prefValue = Services.prefs.getBoolPref(FHR_UPLOAD_ENABLED_PREF);
         Services.prefs.setBoolPref(OPT_OUT_STUDIES_ENABLED_PREF, prefValue);
         break;
+      }
 
       
-      case OPT_OUT_STUDIES_ENABLED_PREF:
+      case OPT_OUT_STUDIES_ENABLED_PREF: {
         prefValue = Services.prefs.getBoolPref(OPT_OUT_STUDIES_ENABLED_PREF);
         if (!prefValue) {
           for (const study of await AddonStudies.getAll()) {
             if (study.active) {
-              await AddonStudies.stop(study.recipeId);
+              await AddonStudies.stop(study.recipeId, "general-opt-out");
             }
           }
         }
         break;
+      }
     }
   },
 

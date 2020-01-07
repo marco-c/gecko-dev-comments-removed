@@ -165,7 +165,7 @@ XPCOMUtils.defineLazyGetter(this.AboutPages, "aboutStudies", () => {
           this.sendStudyList(message.target);
           break;
         case "Shield:RemoveStudy":
-          this.removeStudy(message.data);
+          this.removeStudy(message.data.recipeId, message.data.reason);
           break;
         case "Shield:OpenDataPreferences":
           this.openDataPreferences();
@@ -195,8 +195,8 @@ XPCOMUtils.defineLazyGetter(this.AboutPages, "aboutStudies", () => {
 
 
 
-    async removeStudy(recipeId) {
-      await AddonStudies.stop(recipeId);
+    async removeStudy(recipeId, reason) {
+      await AddonStudies.stop(recipeId, reason);
 
       
       Services.mm.broadcastAsyncMessage("Shield:ReceiveStudyList", {
