@@ -274,11 +274,23 @@ this.pageAction = class extends ExtensionAPI {
     
     
     if (popupURL) {
-      let popup = new PanelPopup(this.extension, window.document, popupURL,
-                                 this.browserStyle);
-      await popup.contentReady;
+      if (this.popupNode && this.popupNode.panel.state !== "closed") {
+        
+        TelemetryStopwatch.cancel(popupOpenTimingHistogram, this);
+        window.BrowserPageActions.togglePanelForAction(this.browserPageAction,
+                                                       this.popupNode.panel);
+        return;
+      }
+
+      this.popupNode = new PanelPopup(this.extension, window.document, popupURL,
+                                      this.browserStyle);
+      
+      this.popupNode.panel.addEventListener("popuphiding", () => {
+        this.popupNode = undefined;
+      }, {once: true});
+      await this.popupNode.contentReady;
       window.BrowserPageActions.togglePanelForAction(this.browserPageAction,
-                                                     popup.panel);
+                                                     this.popupNode.panel);
       TelemetryStopwatch.finish(popupOpenTimingHistogram, this);
     } else {
       TelemetryStopwatch.cancel(popupOpenTimingHistogram, this);
