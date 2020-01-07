@@ -11,16 +11,13 @@
 
 
 
-
 from __future__ import absolute_import, print_function, unicode_literals
 
 import argparse
 import logging
 import os
-import redo
-import requests
 import sys
-
+from mozbuild.base import MozbuildObject
 log = logging.getLogger('upload-symbols')
 log.setLevel(logging.INFO)
 
@@ -43,6 +40,12 @@ def print_error(r):
         ))
 
 def main():
+    config = MozbuildObject.from_environment()
+    config._activate_virtualenv()
+
+    import redo
+    import requests
+
     logging.basicConfig()
     parser = argparse.ArgumentParser(
         description='Upload symbols in ZIP using token from Taskcluster secrets service.')
