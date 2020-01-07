@@ -63,6 +63,26 @@ namespace dom {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class Request;
 class IPCInternalRequest;
 
@@ -412,10 +432,10 @@ public:
   void
   OverrideContentPolicyType(nsContentPolicyType aContentPolicyType);
 
-  RequestDestination
-  Destination() const
+  RequestContext
+  Context() const
   {
-    return MapContentPolicyTypeToRequestDestination(mContentPolicyType);
+    return MapContentPolicyTypeToRequestContext(mContentPolicyType);
   }
 
   bool
@@ -550,15 +570,8 @@ private:
 
   ~InternalRequest();
 
-  
-  
-  
-  
-  
-  
-  
-  static RequestDestination
-  MapContentPolicyTypeToRequestDestination(nsContentPolicyType aContentPolicyType);
+  static RequestContext
+  MapContentPolicyTypeToRequestContext(nsContentPolicyType aContentPolicyType);
 
   static bool
   IsNavigationContentPolicy(nsContentPolicyType aContentPolicyType);
