@@ -29,7 +29,11 @@ if (!window.assert_times_equal) {
 
 if (!window.assert_time_equals_literal) {
   window.assert_time_equals_literal = (actual, expected, description) => {
-    assert_approx_equals(actual, expected, TIME_PRECISION, description);
+    if (Math.abs(expected) === Infinity) {
+      assert_equals(actual, expected, description);
+    } else {
+      assert_approx_equals(actual, expected, TIME_PRECISION, description);
+    }
   }
 }
 
