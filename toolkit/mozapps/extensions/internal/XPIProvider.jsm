@@ -784,16 +784,7 @@ function canRunInSafeMode(aAddon) {
 function isDisabledLegacy(addon) {
   return (!AddonSettings.ALLOW_LEGACY_EXTENSIONS &&
           LEGACY_TYPES.has(addon.type) &&
-
-          
           !addon._installLocation.isSystem &&
-
-          
-          
-          !(AppConstants.MOZ_ALLOW_LEGACY_EXTENSIONS &&
-            addon._installLocation.name == KEY_APP_TEMPORARY) &&
-
-          
           addon.signedState !== AddonManager.SIGNEDSTATE_PRIVILEGED);
 }
 
