@@ -1237,6 +1237,34 @@ struct DefaultHasher<AbstractFramePtr> {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class LiveSavedFrameCache
 {
   public:

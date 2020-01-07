@@ -1366,7 +1366,24 @@ SavedStacks::insertFrames(JSContext* cx, MutableHandleSavedFrame frame,
     
     RootedSavedFrame parent(cx, nullptr);
 
-    FrameIter iter(cx);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    FrameIter iter(cx,
+                   capture.is<JS::AllFrames>()
+                   ? FrameIter::IGNORE_DEBUGGER_EVAL_PREV_LINK
+                   : FrameIter::FOLLOW_DEBUGGER_EVAL_PREV_LINK);
 
     
     
@@ -1491,6 +1508,17 @@ SavedStacks::insertFrames(JSContext* cx, MutableHandleSavedFrame frame,
     for (size_t i = stackChain->length(); i != 0; i--) {
         SavedFrame::HandleLookup lookup = stackChain[i-1];
         lookup->parent = frame;
+
+        
+        
+        
+        
+        
+        if (capture.is<JS::AllFrames>() && lookup->framePtr) {
+            if (!checkForEvalInFramePrev(cx, lookup))
+                return false;
+        }
+
         frame.set(getOrCreateSavedFrame(cx, lookup));
         if (!frame)
             return false;
@@ -1567,6 +1595,59 @@ SavedStacks::adoptAsyncStack(JSContext* cx, MutableHandleSavedFrame asyncStack,
         stackChain->popBack();
     }
 
+    return true;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+bool
+SavedStacks::checkForEvalInFramePrev(JSContext* cx, SavedFrame::HandleLookup lookup)
+{
+    MOZ_ASSERT(lookup->framePtr);
+    if (!lookup->framePtr->isInterpreterFrame())
+        return true;
+
+    InterpreterFrame& interpreterFrame = lookup->framePtr->asInterpreterFrame();
+    if (!interpreterFrame.isDebuggerEvalFrame())
+        return true;
+
+    LiveSavedFrameCache::FramePtr target =
+        LiveSavedFrameCache::FramePtr::create(interpreterFrame.evalInFramePrev());
+
+    
+    
+    MOZ_ASSERT(target.hasCachedSavedFrame());
+
+    
+    
+    RootedSavedFrame saved(cx, nullptr);
+    for (Activation* act = lookup->activation; act; act = act->prev()) {
+        
+        
+        
+        auto* cache = act->getLiveSavedFrameCache(cx);
+        if (!cache)
+            return false;
+
+        cache->findWithoutInvalidation(target, &saved);
+        if (saved)
+            break;
+    }
+
+    
+    MOZ_ALWAYS_TRUE(saved);
+
+    lookup->parent = saved;
     return true;
 }
 
