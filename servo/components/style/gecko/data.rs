@@ -5,7 +5,6 @@
 
 
 use atomic_refcell::{AtomicRef, AtomicRefCell, AtomicRefMut};
-use context::TraversalStatistics;
 use dom::TElement;
 use gecko_bindings::bindings::{self, RawServoStyleSet};
 use gecko_bindings::structs::{RawGeckoPresContextOwned, ServoStyleSetSizes, ServoStyleSheet};
@@ -18,7 +17,6 @@ use properties::ComputedValues;
 use selector_parser::SnapshotMap;
 use servo_arc::Arc;
 use shared_lock::{Locked, StylesheetGuards, SharedRwLockReadGuard};
-use std::sync::atomic::{AtomicUsize, Ordering};
 use stylesheets::{StylesheetContents, StylesheetInDocument};
 use stylist::Stylist;
 
@@ -110,40 +108,11 @@ impl StylesheetInDocument for GeckoStyleSheet {
     }
 }
 
-#[derive(Default)]
-
-pub struct TraversalCount {
-    
-    pub total_count: AtomicUsize,
-    
-    pub parallel_count: AtomicUsize
-}
-
-impl TraversalCount {
-    fn record(&self, parallel: bool, count: u32) {
-        self.total_count.fetch_add(count as usize, Ordering::Relaxed);
-        if parallel {
-            self.parallel_count.fetch_add(count as usize, Ordering::Relaxed);
-        }
-    }
-
-    fn get(&self) -> (u32, u32) {
-        (self.total_count.load(Ordering::Relaxed) as u32,
-         self.parallel_count.load(Ordering::Relaxed) as u32)
-    }
-}
-
 
 
 pub struct PerDocumentStyleDataImpl {
     
     pub stylist: Stylist,
-    
-    pub traversal_count: TraversalCount,
-    
-    pub traversal_count_traversed: TraversalCount,
-    
-    pub traversal_count_styled: TraversalCount,
 }
 
 
@@ -165,9 +134,6 @@ impl PerDocumentStyleData {
 
         PerDocumentStyleData(AtomicRefCell::new(PerDocumentStyleDataImpl {
             stylist: Stylist::new(device, quirks_mode.into()),
-            traversal_count: Default::default(),
-            traversal_count_traversed: Default::default(),
-            traversal_count_styled: Default::default(),
         }))
     }
 
@@ -187,13 +153,6 @@ impl Drop for PerDocumentStyleDataImpl {
         if !structs::GECKO_IS_NIGHTLY {
             return
         }
-        let (total, parallel)  = self.traversal_count.get();
-        let (total_t, parallel_t)  = self.traversal_count_traversed.get();
-        let (total_s, parallel_s)  = self.traversal_count_styled.get();
-
-        unsafe { bindings::Gecko_RecordTraversalStatistics(total, parallel,
-                                                           total_t, parallel_t,
-                                                           total_s, parallel_s) }
     }
 }
 
@@ -260,15 +219,6 @@ impl PerDocumentStyleDataImpl {
     
     pub fn add_size_of(&self, ops: &mut MallocSizeOfOps, sizes: &mut ServoStyleSetSizes) {
         self.stylist.add_size_of(ops, sizes);
-    }
-
-    
-    pub fn record_traversal(&self, was_parallel: bool, stats: Option<TraversalStatistics>) {
-        self.traversal_count.record(was_parallel, 1);
-        if let Some(stats) = stats {
-            self.traversal_count_traversed.record(was_parallel, stats.elements_traversed);
-            self.traversal_count_styled.record(was_parallel, stats.elements_styled);
-        }
     }
 }
 
