@@ -326,6 +326,14 @@ impl Transaction {
 
     
     
+    
+    
+    pub fn append_dynamic_properties(&mut self, properties: DynamicProperties) {
+        self.frame_ops.push(FrameMsg::AppendDynamicProperties(properties));
+    }
+
+    
+    
     pub fn enable_frame_output(&mut self, pipeline_id: PipelineId, enable: bool) {
         self.frame_ops.push(FrameMsg::EnableFrameOutput(pipeline_id, enable));
     }
@@ -486,6 +494,7 @@ pub enum FrameMsg {
     ScrollNodeWithId(LayoutPoint, ExternalScrollId, ScrollClamping),
     GetScrollNodeState(MsgSender<Vec<ScrollNodeState>>),
     UpdateDynamicProperties(DynamicProperties),
+    AppendDynamicProperties(DynamicProperties),
 }
 
 impl fmt::Debug for SceneMsg {
@@ -513,6 +522,7 @@ impl fmt::Debug for FrameMsg {
             FrameMsg::GetScrollNodeState(..) => "FrameMsg::GetScrollNodeState",
             FrameMsg::EnableFrameOutput(..) => "FrameMsg::EnableFrameOutput",
             FrameMsg::UpdateDynamicProperties(..) => "FrameMsg::UpdateDynamicProperties",
+            FrameMsg::AppendDynamicProperties(..) => "FrameMsg::AppendDynamicProperties",
         })
     }
 }

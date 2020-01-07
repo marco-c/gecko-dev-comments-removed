@@ -31,7 +31,11 @@ impl SceneProperties {
     pub fn set_properties(&mut self, properties: DynamicProperties) {
         self.transform_properties.clear();
         self.float_properties.clear();
+        self.add_properties(properties);
+    }
 
+    
+    pub fn add_properties(&mut self, properties: DynamicProperties) {
         for property in properties.transforms {
             self.transform_properties
                 .insert(property.key.id, property.value);
