@@ -817,17 +817,10 @@ MediaCache::ReadCacheFile(AutoLock&,
                           int32_t aLength,
                           int32_t* aBytes)
 {
-  RefPtr<MediaBlockCacheBase> blockCache = mBlockCache;
-  if (!blockCache) {
+  if (!mBlockCache) {
     return NS_ERROR_FAILURE;
   }
-  {
-    
-    
-    AutoUnlock unlock(mMonitor);
-    return blockCache->Read(
-      aOffset, reinterpret_cast<uint8_t*>(aData), aLength, aBytes);
-  }
+  return mBlockCache->Read(aOffset, reinterpret_cast<uint8_t*>(aData), aLength, aBytes);
 }
 
 
