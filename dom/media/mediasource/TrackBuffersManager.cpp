@@ -177,7 +177,7 @@ TrackBuffersManager::QueueTask(SourceBufferTask* aTask)
   
   
   
-  RefPtr<AutoTaskQueue> taskQueue = GetTaskQueueSafe();
+  RefPtr<TaskQueue> taskQueue = GetTaskQueueSafe();
   if (!taskQueue) {
     MOZ_ASSERT(aTask->GetType() == SourceBufferTask::Type::Detach,
                "only detach task could happen here!");
