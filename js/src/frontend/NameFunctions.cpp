@@ -388,7 +388,6 @@ class NameResolver
         switch (cur->getKind()) {
           
           
-          case ParseNodeKind::Nop:
           case ParseNodeKind::EmptyStatement:
           case ParseNodeKind::String:
           case ParseNodeKind::TemplateString:

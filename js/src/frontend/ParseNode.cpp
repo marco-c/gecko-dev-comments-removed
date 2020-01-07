@@ -183,7 +183,6 @@ PushNodeChildren(ParseNode* pn, NodeStack* stack)
     switch (pn->getKind()) {
       
       
-      case ParseNodeKind::Nop:
       case ParseNodeKind::EmptyStatement:
       case ParseNodeKind::String:
       case ParseNodeKind::TemplateString:

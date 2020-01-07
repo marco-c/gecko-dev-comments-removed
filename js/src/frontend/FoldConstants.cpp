@@ -102,7 +102,6 @@ ContainsHoistedDeclaration(JSContext* cx, ParseNode* node, bool* result)
         return true;
 
       
-      case ParseNodeKind::Nop: 
       case ParseNodeKind::EmptyStatement:
       case ParseNodeKind::Debugger:
         MOZ_ASSERT(node->isArity(PN_NULLARY));
@@ -1591,7 +1590,6 @@ Fold(JSContext* cx, ParseNode** pnp, PerHandlerParser<FullParseHandler>& parser)
     ParseNode* pn = *pnp;
 
     switch (pn->getKind()) {
-      case ParseNodeKind::Nop:
       case ParseNodeKind::EmptyStatement:
       case ParseNodeKind::RegExp:
       case ParseNodeKind::String:
