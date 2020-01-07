@@ -2387,25 +2387,11 @@ pref("intl.fallbackCharsetList.ISO-8859-1", "windows-1252");
 pref("font.language.group",                 "chrome://global/locale/intl.properties");
 
 
-
-
 #ifdef MOZ_WIDGET_ANDROID
-
-
-#ifdef EARLY_BETA_OR_EARLIER
-pref("intl.ime.hack.on_any_apps.fire_key_events_for_composition", true);
-#else // #ifdef EARLY_BETA_OR_EARLIER
-pref("intl.ime.hack.on_any_apps.fire_key_events_for_composition", false);
-#endif // #ifdef EARLY_BETA_OR_EARLIER #else
-
-
-
-
 pref("intl.ime.hack.on_ime_unaware_apps.fire_key_events_for_composition", true);
-#else // #ifdef MOZ_WIDGET_ANDROID
-pref("intl.ime.hack.on_any_apps.fire_key_events_for_composition", false);
+#else
 pref("intl.ime.hack.on_ime_unaware_apps.fire_key_events_for_composition", false);
-#endif // #ifdef MOZ_WIDGET_ANDROID #else
+#endif
 
 
 
@@ -4765,7 +4751,7 @@ pref("image.mem.animated.use_heap", false);
 
 
 
-pref("image.mem.shared", 2);
+pref("image.mem.shared", 1);
 
 
 pref("image.mem.allow_locking_in_content_processes", true);
