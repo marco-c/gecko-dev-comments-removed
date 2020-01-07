@@ -1165,24 +1165,32 @@ WebRenderBridgeParent::ActorDestroy(ActorDestroyReason aWhy)
 void
 WebRenderBridgeParent::AdvanceAnimations()
 {
-  Maybe<TimeStamp> testingTimeStamp;
   if (CompositorBridgeParent* cbp = GetRootCompositorBridgeParent()) {
-    testingTimeStamp = cbp->GetTestingTimeStamp();
+    Maybe<TimeStamp> testingTimeStamp = cbp->GetTestingTimeStamp();
+    if (testingTimeStamp) {
+      
+      
+      
+      
+      
+      AnimationHelper::SampleAnimations(mAnimStorage, *testingTimeStamp);
+      return;
+    }
   }
 
-  TimeStamp animTime = testingTimeStamp.valueOr(
-    !mPreviousFrameTimeStamp.IsNull()
-    ? mPreviousFrameTimeStamp
-    : mCompositorScheduler->GetLastComposeTime());
-
-
-  AnimationHelper::SampleAnimations(mAnimStorage, animTime);
+  TimeStamp lastComposeTime = mCompositorScheduler->GetLastComposeTime();
+  
+  
+  AnimationHelper::SampleAnimations(mAnimStorage,
+      !mPreviousFrameTimeStamp.IsNull()
+      ? mPreviousFrameTimeStamp
+      : lastComposeTime);
 
   
   
   
   mPreviousFrameTimeStamp =
-    mAnimStorage->AnimatedValueCount() ? animTime : TimeStamp();
+    mAnimStorage->AnimatedValueCount() ? lastComposeTime : TimeStamp();
 }
 
 void
