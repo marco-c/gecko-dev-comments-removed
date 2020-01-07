@@ -90,6 +90,8 @@ invoke_copy_to_stack(uint64_t* d, uint32_t paramCount,
                 *d++ = s->val.u64;
             break;
         case nsXPTType::T_FLOAT:
+            
+            
             if (i < N_ARG_REGS)
                 *(float*)&regs[i] = s->val.f;
             else

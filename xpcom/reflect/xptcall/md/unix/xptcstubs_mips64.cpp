@@ -125,10 +125,12 @@ PrepareAndDispatch(nsXPTCStubBase* self, uint32_t methodIndex, uint64_t* args,
              break;
 
         case nsXPTType::T_FLOAT:
+              
+              
               if (iCount < PARAM_FPR_COUNT)
-                  dp->val.f  = (double)fprData[iCount++];
+                  dp->val.f  = *(float*)&fprData[iCount++];
               else
-                  dp->val.f  = *((double*)ap++);
+                  dp->val.f  = *((float*)ap++);
               break;
 
         case nsXPTType::T_DOUBLE:
