@@ -352,7 +352,7 @@ function runPropertyTests(propertyName, testCases) {
 
     
     
-    const syntaxExamples = testCase.syntax.match(/^[a-z\-]+$/) ?
+    const syntaxExamples = testCase.syntax.toLowerCase().match(/^[a-z\-]+$/) ?
       createKeywordExample(testCase.syntax) :
       gTestSyntaxExamples[testCase.syntax];
 
