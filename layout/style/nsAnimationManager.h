@@ -282,13 +282,12 @@ public:
   {
   }
 
-  NS_INLINE_DECL_REFCOUNTING(nsAnimationManager)
-
   typedef mozilla::AnimationCollection<mozilla::dom::CSSAnimation>
     CSSAnimationCollection;
   typedef nsTArray<RefPtr<mozilla::dom::CSSAnimation>>
     OwningCSSAnimationPtrArray;
 
+  ~nsAnimationManager() override = default;
 
   
 
@@ -298,6 +297,7 @@ public:
     mozilla::dom::Element* aElement,
     mozilla::CSSPseudoElementType aPseudoType,
     const mozilla::ComputedStyle* aComputedValues);
+
 
   
   
@@ -336,9 +336,6 @@ public:
   {
     return mMaybeReferencedAnimations.Contains(aName);
   }
-
-protected:
-  ~nsAnimationManager() override = default;
 
 private:
   
