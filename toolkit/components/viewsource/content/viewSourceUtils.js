@@ -44,10 +44,14 @@ var gViewSourceUtils = {
 
 
 
-  viewSource(aArgs) {
+  async viewSource(aArgs) {
+    
+    
     if (Services.prefs.getBoolPref("view_source.editor.external")) {
-      this.openInExternalEditor(aArgs);
-      return;
+      try {
+        await this.openInExternalEditor(aArgs);
+        return;
+      } catch (data) {}
     }
     
     let browserWin = Services.wm.getMostRecentWindow("navigator:browser");
@@ -167,99 +171,96 @@ var gViewSourceUtils = {
 
 
 
-  openInExternalEditor(aArgs, aCallBack) {
-    let data;
-    let { URL, browser, lineNumber } = aArgs;
-    data = {
-      url: URL,
-      lineNumber,
-      isPrivate: false,
-    };
-    if (browser) {
-      data.doc = {
-        characterSet: browser.characterSet,
-        contentType: browser.documentContentType,
-        title: browser.contentTitle,
+  openInExternalEditor(aArgs) {
+    return new Promise((resolve, reject) => {
+      let data;
+      let { URL, browser, lineNumber } = aArgs;
+      data = {
+        url: URL,
+        lineNumber,
+        isPrivate: false,
       };
-      data.isPrivate = PrivateBrowsingUtils.isBrowserPrivate(browser);
-    }
-
-
-    try {
-      var editor = this.getExternalViewSourceEditor();
-      if (!editor) {
-        this.handleCallBack(aCallBack, false, data);
-        return;
+      if (browser) {
+        data.doc = {
+          characterSet: browser.characterSet,
+          contentType: browser.documentContentType,
+          title: browser.contentTitle,
+        };
+        data.isPrivate = PrivateBrowsingUtils.isBrowserPrivate(browser);
       }
 
-      
-      var charset = data.doc ? data.doc.characterSet : null;
-      var uri = Services.io.newURI(data.url, charset);
-      data.uri = uri;
+      try {
+        var editor = this.getExternalViewSourceEditor();
+        if (!editor) {
+          reject(data);
+          return;
+        }
 
-      var path;
-      var contentType = data.doc ? data.doc.contentType : null;
-      if (uri.scheme == "file") {
         
-        path = uri.QueryInterface(Ci.nsIFileURL).file.path;
+        var charset = data.doc ? data.doc.characterSet : null;
+        var uri = Services.io.newURI(data.url, charset);
+        data.uri = uri;
 
-        var editorArgs = this.buildEditorArgs(path, data.lineNumber);
-        editor.runw(false, editorArgs, editorArgs.length);
-        this.handleCallBack(aCallBack, true, data);
-      } else {
-        
-        this.viewSourceProgressListener.contentLoaded = false;
-        this.viewSourceProgressListener.editor = editor;
-        this.viewSourceProgressListener.callBack = aCallBack;
-        this.viewSourceProgressListener.data = data;
-        if (!data.pageDescriptor) {
+        var path;
+        var contentType = data.doc ? data.doc.contentType : null;
+        if (uri.scheme == "file") {
           
-          var file = this.getTemporaryFile(uri, data.doc, contentType);
-          this.viewSourceProgressListener.file = file;
+          path = uri.QueryInterface(Ci.nsIFileURL).file.path;
 
-          var webBrowserPersist = Cc["@mozilla.org/embedding/browser/nsWebBrowserPersist;1"]
-                                  .createInstance(this.mnsIWebBrowserPersist);
-          
-          webBrowserPersist.persistFlags = this.mnsIWebBrowserPersist.PERSIST_FLAGS_REPLACE_EXISTING_FILES;
-          webBrowserPersist.progressListener = this.viewSourceProgressListener;
-          let referrerPolicy = Ci.nsIHttpChannel.REFERRER_POLICY_NO_REFERRER;
-          webBrowserPersist.savePrivacyAwareURI(uri, null, null, referrerPolicy, null, null, file, data.isPrivate);
-
-          let helperService = Cc["@mozilla.org/uriloader/external-helper-app-service;1"]
-                                .getService(Ci.nsPIExternalAppLauncher);
-          if (data.isPrivate) {
-            
-            helperService.deleteTemporaryPrivateFileWhenPossible(file);
-          } else {
-            
-            helperService.deleteTemporaryFileOnExit(file);
-          }
+          var editorArgs = this.buildEditorArgs(path, data.lineNumber);
+          editor.runw(false, editorArgs, editorArgs.length);
+          resolve(data);
         } else {
           
-          
-          
-          
-          
-          var webShell = Cc["@mozilla.org/docshell;1"].createInstance();
-          webShell.QueryInterface(Ci.nsIBaseWindow).create();
-          this.viewSourceProgressListener.webShell = webShell;
-          var progress = webShell.QueryInterface(this.mnsIWebProgress);
-          progress.addProgressListener(this.viewSourceProgressListener,
-                                       this.mnsIWebProgress.NOTIFY_STATE_DOCUMENT);
-          var pageLoader = webShell.QueryInterface(this.mnsIWebPageDescriptor);
-          pageLoader.loadPage(data.pageDescriptor, this.mnsIWebPageDescriptor.DISPLAY_AS_SOURCE);
-        }
-      }
-    } catch (ex) {
-      
-      Cu.reportError(ex);
-      this.handleCallBack(aCallBack, false, data);
-    }
-  },
+          this.viewSourceProgressListener.contentLoaded = false;
+          this.viewSourceProgressListener.editor = editor;
+          this.viewSourceProgressListener.resolve = resolve;
+          this.viewSourceProgressListener.reject = reject;
+          this.viewSourceProgressListener.data = data;
+          if (!data.pageDescriptor) {
+            
+            var file = this.getTemporaryFile(uri, data.doc, contentType);
+            this.viewSourceProgressListener.file = file;
 
-  
-  handleCallBack(aCallBack, result, data) {
-    aCallBack(result, data);
+            var webBrowserPersist = Cc["@mozilla.org/embedding/browser/nsWebBrowserPersist;1"]
+              .createInstance(this.mnsIWebBrowserPersist);
+            
+            webBrowserPersist.persistFlags = this.mnsIWebBrowserPersist.PERSIST_FLAGS_REPLACE_EXISTING_FILES;
+            webBrowserPersist.progressListener = this.viewSourceProgressListener;
+            let referrerPolicy = Ci.nsIHttpChannel.REFERRER_POLICY_NO_REFERRER;
+            webBrowserPersist.savePrivacyAwareURI(uri, null, null, referrerPolicy, null, null, file, data.isPrivate);
+
+            let helperService = Cc["@mozilla.org/uriloader/external-helper-app-service;1"]
+              .getService(Ci.nsPIExternalAppLauncher);
+            if (data.isPrivate) {
+              
+              helperService.deleteTemporaryPrivateFileWhenPossible(file);
+            } else {
+              
+              helperService.deleteTemporaryFileOnExit(file);
+            }
+          } else {
+            
+            
+            
+            
+            
+            var webShell = Cc["@mozilla.org/docshell;1"].createInstance();
+            webShell.QueryInterface(Ci.nsIBaseWindow).create();
+            this.viewSourceProgressListener.webShell = webShell;
+            var progress = webShell.QueryInterface(this.mnsIWebProgress);
+            progress.addProgressListener(this.viewSourceProgressListener,
+              this.mnsIWebProgress.NOTIFY_STATE_DOCUMENT);
+            var pageLoader = webShell.QueryInterface(this.mnsIWebPageDescriptor);
+            pageLoader.loadPage(data.pageDescriptor, this.mnsIWebPageDescriptor.DISPLAY_AS_SOURCE);
+          }
+        }
+      } catch (ex) {
+        
+        Cu.reportError(ex);
+        reject(data);
+      }
+    });
   },
 
   
@@ -298,7 +299,8 @@ var gViewSourceUtils = {
       }
       this.webShell = null;
       this.editor = null;
-      this.callBack = null;
+      this.resolve = null;
+      this.reject = null;
       this.data = null;
       this.file = null;
     },
@@ -374,11 +376,11 @@ var gViewSourceUtils = {
         this.editor.runw(false, editorArgs, editorArgs.length);
 
         this.contentLoaded = true;
-        gViewSourceUtils.handleCallBack(this.callBack, true, this.data);
+        this.resolve(this.data);
       } catch (ex) {
         
         Cu.reportError(ex);
-        gViewSourceUtils.handleCallBack(this.callBack, false, this.data);
+        this.reject(this.data);
       } finally {
         this.destroy();
       }
@@ -386,7 +388,8 @@ var gViewSourceUtils = {
 
     webShell: null,
     editor: null,
-    callBack: null,
+    resolve: null,
+    reject: null,
     data: null,
     file: null
   },

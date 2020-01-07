@@ -2596,7 +2596,7 @@ function readFromClipboard() {
 
 
 
-function BrowserViewSourceOfDocument(aArgsOrDocument) {
+async function BrowserViewSourceOfDocument(aArgsOrDocument) {
   let args;
 
   if (aArgsOrDocument instanceof Document) {
@@ -2620,62 +2620,55 @@ function BrowserViewSourceOfDocument(aArgsOrDocument) {
     args = aArgsOrDocument;
   }
 
-  let viewInternal = () => {
-    let tabBrowser = gBrowser;
-    let preferredRemoteType;
-    if (args.browser) {
-      preferredRemoteType = args.browser.remoteType;
-    } else {
-      if (!tabBrowser) {
-        throw new Error("BrowserViewSourceOfDocument should be passed the " +
-                        "subject browser if called from a window without " +
-                        "gBrowser defined.");
-      }
-      
-      
-      
-      
-      
-      preferredRemoteType =
-        E10SUtils.getRemoteTypeForURI(args.URL, gMultiProcessBrowser);
-    }
-
-    
-    if (!tabBrowser || !window.toolbar.visible) {
-      
-      let browserWindow = RecentWindow.getMostRecentBrowserWindow();
-      tabBrowser = browserWindow.gBrowser;
-    }
-
-    
-    
-    
-    
-    
-    let tab = tabBrowser.loadOneTab("about:blank", {
-      relatedToCurrent: true,
-      inBackground: false,
-      preferredRemoteType,
-      sameProcessAsFrameLoader: args.browser ? args.browser.frameLoader : null,
-      triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
-    });
-    args.viewSourceBrowser = tabBrowser.getBrowserForTab(tab);
-    top.gViewSourceUtils.viewSourceInBrowser(args);
-  };
-
   
   
   if (Services.prefs.getBoolPref("view_source.editor.external")) {
-    top.gViewSourceUtils
-       .openInExternalEditor(args, result => {
-      if (!result) {
-        viewInternal();
-      }
-    });
-  } else {
-    
-    viewInternal();
+    try {
+      await top.gViewSourceUtils.openInExternalEditor(args);
+      return;
+    } catch (data) {}
   }
+
+  let tabBrowser = gBrowser;
+  let preferredRemoteType;
+  if (args.browser) {
+    preferredRemoteType = args.browser.remoteType;
+  } else {
+    if (!tabBrowser) {
+      throw new Error("BrowserViewSourceOfDocument should be passed the " +
+                      "subject browser if called from a window without " +
+                      "gBrowser defined.");
+    }
+    
+    
+    
+    
+    
+    preferredRemoteType =
+      E10SUtils.getRemoteTypeForURI(args.URL, gMultiProcessBrowser);
+  }
+
+  
+  if (!tabBrowser || !window.toolbar.visible) {
+    
+    let browserWindow = RecentWindow.getMostRecentBrowserWindow();
+    tabBrowser = browserWindow.gBrowser;
+  }
+
+  
+  
+  
+  
+  
+  let tab = tabBrowser.loadOneTab("about:blank", {
+    relatedToCurrent: true,
+    inBackground: false,
+    preferredRemoteType,
+    sameProcessAsFrameLoader: args.browser ? args.browser.frameLoader : null,
+    triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+  });
+  args.viewSourceBrowser = tabBrowser.getBrowserForTab(tab);
+  top.gViewSourceUtils.viewSourceInBrowser(args);
 }
 
 
