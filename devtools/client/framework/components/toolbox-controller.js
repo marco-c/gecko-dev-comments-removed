@@ -48,7 +48,6 @@ class ToolboxController extends Component {
     this.setCanCloseToolbox = this.setCanCloseToolbox.bind(this);
     this.setPanelDefinitions = this.setPanelDefinitions.bind(this);
     this.setToolboxButtons = this.setToolboxButtons.bind(this);
-    this.setCanMinimize = this.setCanMinimize.bind(this);
   }
 
   shouldComponentUpdate() {
@@ -160,13 +159,6 @@ class ToolboxController extends Component {
     });
 
     this.setState({ toolboxButtons }, this.updateButtonIds);
-  }
-
-  setCanMinimize(canMinimize) {
-    
-
-
-    
   }
 
   render() {
