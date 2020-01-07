@@ -804,18 +804,22 @@ inDOMUtils::CssPropertySupportsType(const nsAString& aProperty, uint32_t aType,
   return NS_OK;
 }
 
-NS_IMETHODIMP
-inDOMUtils::GetCSSValuesForProperty(const nsAString& aProperty,
-                                    uint32_t* aLength,
-                                    char16_t*** aValues)
+namespace mozilla {
+namespace dom {
+
+ void
+InspectorUtils::GetCSSValuesForProperty(GlobalObject& aGlobalObject,
+                                        const nsAString& aProperty,
+                                        nsTArray<nsString>& aResult,
+                                        ErrorResult& aRv)
 {
   nsCSSPropertyID propertyID = nsCSSProps::
     LookupProperty(aProperty, CSSEnabledState::eForAllContent);
   if (propertyID == eCSSProperty_UNKNOWN) {
-    return NS_ERROR_FAILURE;
+    aRv.Throw(NS_ERROR_FAILURE);
+    return;
   }
 
-  nsTArray<nsString> array;
   
   
   if (propertyID == eCSSPropertyExtra_variable) {
@@ -824,9 +828,9 @@ inDOMUtils::GetCSSValuesForProperty(const nsAString& aProperty,
     
     uint32_t propertyParserVariant = nsCSSProps::ParserVariant(propertyID);
     
-    GetColorsForProperty(propertyParserVariant, array);
-    GetKeywordsForProperty(propertyID, array);
-    GetOtherValuesForProperty(propertyParserVariant, array);
+    GetColorsForProperty(propertyParserVariant, aResult);
+    GetKeywordsForProperty(propertyID, aResult);
+    GetOtherValuesForProperty(propertyParserVariant, aResult);
   } else {
     
     CSSPROPS_FOR_SHORTHAND_SUBPROPERTIES(subproperty, propertyID,
@@ -834,31 +838,25 @@ inDOMUtils::GetCSSValuesForProperty(const nsAString& aProperty,
       
       uint32_t propertyParserVariant = nsCSSProps::ParserVariant(*subproperty);
       if (propertyParserVariant & VARIANT_COLOR) {
-        GetColorsForProperty(propertyParserVariant, array);
+        GetColorsForProperty(propertyParserVariant, aResult);
         break;
       }
     }
     CSSPROPS_FOR_SHORTHAND_SUBPROPERTIES(subproperty, propertyID,
                                          CSSEnabledState::eForAllContent) {
       uint32_t propertyParserVariant = nsCSSProps::ParserVariant(*subproperty);
-      GetKeywordsForProperty(*subproperty, array);
-      GetOtherValuesForProperty(propertyParserVariant, array);
+      GetKeywordsForProperty(*subproperty, aResult);
+      GetOtherValuesForProperty(propertyParserVariant, aResult);
     }
   }
   
-  InsertNoDuplicates(array, NS_LITERAL_STRING("initial"));
-  InsertNoDuplicates(array, NS_LITERAL_STRING("inherit"));
-  InsertNoDuplicates(array, NS_LITERAL_STRING("unset"));
-
-  *aLength = array.Length();
-  char16_t** ret =
-    static_cast<char16_t**>(moz_xmalloc(*aLength * sizeof(char16_t*)));
-  for (uint32_t i = 0; i < *aLength; ++i) {
-    ret[i] = ToNewUnicode(array[i]);
-  }
-  *aValues = ret;
-  return NS_OK;
+  InsertNoDuplicates(aResult, NS_LITERAL_STRING("initial"));
+  InsertNoDuplicates(aResult, NS_LITERAL_STRING("inherit"));
+  InsertNoDuplicates(aResult, NS_LITERAL_STRING("unset"));
 }
+
+} 
+} 
 
 NS_IMETHODIMP
 inDOMUtils::ColorNameToRGB(const nsAString& aColorName, JSContext* aCx,

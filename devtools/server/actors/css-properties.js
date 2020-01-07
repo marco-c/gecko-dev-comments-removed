@@ -59,7 +59,7 @@ function generateCssProperties() {
     }
 
     
-    let values = DOMUtils.getCSSValuesForProperty(name);
+    let values = InspectorUtils.getCSSValuesForProperty(name);
     if (values.includes("aliceblue")) {
       values = values.filter(x => !colors.includes(x));
       values.unshift("COLOR");
