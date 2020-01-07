@@ -1357,16 +1357,15 @@ OggTrackDemuxer::NextSample()
     data->mTrackInfo = mParent->mSharedAudioTrackInfo;
   }
   
-  
-  
-  
-  data->mTime += mParent->mDecodedAudioDuration;
+  TimeUnit totalDuration = mParent->mDecodedAudioDuration;
   if (eos) {
     
     
     
     mParent->ReadOggChain(data->GetEndTime());
   }
+  
+  data->mTime += totalDuration;
   return data;
 }
 
