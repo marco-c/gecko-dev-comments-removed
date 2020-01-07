@@ -369,7 +369,22 @@ protected:
                        Tables aTables = Tables::yes);
   Element* IsInListItem(nsINode* aNode);
   nsAtom& DefaultParagraphSeparator();
-  nsresult ReturnInHeader(Element& aHeader, nsINode& aNode, int32_t aOffset);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_MUST_USE nsresult
+  ReturnInHeader(Element& aHeader, nsINode& aNode, int32_t aOffset);
 
   
 
