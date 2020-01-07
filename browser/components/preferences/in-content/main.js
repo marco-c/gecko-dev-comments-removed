@@ -244,6 +244,8 @@ if (AppConstants.MOZ_UPDATER) {
 
 var promiseLoadHandlersList;
 
+var gNodeToObjectMap = new WeakMap();
+
 var gMainPane = {
   
   
@@ -1505,7 +1507,7 @@ var gMainPane = {
 
   _rebuildView() {
     let lastSelectedType = this._list.selectedItem &&
-                           this._list.selectedItem.getAttribute("type");
+      HandlerListItem.forNode(this._list.selectedItem).handlerInfoWrapper.type;
 
     
     while (this._list.childNodes.length > 1)
@@ -1518,21 +1520,11 @@ var gMainPane = {
       visibleTypes = visibleTypes.filter(this._matchesFilter, this);
 
     for (let visibleType of visibleTypes) {
-      let item = document.createElement("richlistitem");
-      item.setAttribute("type", visibleType.type);
-      item.setAttribute("typeDescription", visibleType.typeDescription);
-      if (visibleType.smallIcon)
-        item.setAttribute("typeIcon", visibleType.smallIcon);
-      item.setAttribute("actionDescription", visibleType.actionDescription);
-
-      if (!this._setIconClassForPreferredAction(visibleType, item)) {
-        item.setAttribute("actionIcon", visibleType.actionIcon);
-      }
-
-      this._list.appendChild(item);
+      let item = new HandlerListItem(visibleType);
+      this._list.appendChild(item.node);
 
       if (visibleType.type === lastSelectedType) {
-        this._list.selectedItem = item;
+        this._list.selectedItem = item.node;
       }
     }
   },
@@ -1950,10 +1942,7 @@ var gMainPane = {
     handlerInfo.handledOnlyByPlugin = false;
 
     
-    typeItem.setAttribute("actionDescription", handlerInfo.actionDescription);
-    if (!this._setIconClassForPreferredAction(handlerInfo, typeItem)) {
-      typeItem.setAttribute("actionIcon", handlerInfo.actionIcon);
-    }
+    HandlerListItem.forNode(typeItem).refreshAction();
   },
 
   manageApp(aEvent) {
@@ -1970,10 +1959,7 @@ var gMainPane = {
       this.rebuildActionsMenu();
 
       
-      typeItem.setAttribute("actionDescription", handlerInfo.actionDescription);
-      if (!this._setIconClassForPreferredAction(handlerInfo, typeItem)) {
-        typeItem.setAttribute("actionIcon", handlerInfo.actionIcon);
-      }
+      HandlerListItem.forNode(typeItem).refreshAction();
     };
 
     gSubDialog.open("chrome://browser/content/preferences/applicationManager.xul",
@@ -2065,21 +2051,6 @@ var gMainPane = {
       fp.appendFilters(Ci.nsIFilePicker.filterApps);
       fp.open(fpCallback);
     }
-  },
-
-  _setIconClassForPreferredAction(aHandlerInfo, aElement) {
-    
-    
-    
-    aElement.removeAttribute("actionIcon");
-
-    if (aHandlerInfo.actionIconClass) {
-      aElement.setAttribute(APP_ICON_ATTR_NAME, aHandlerInfo.actionIconClass);
-      return true;
-    }
-
-    aElement.removeAttribute(APP_ICON_ATTR_NAME);
-    return false;
   },
 
   _getIconURLForHandlerApp(aHandlerApp) {
@@ -2457,6 +2428,43 @@ function isFeedType(t) {
 }
 
 
+
+
+class HandlerListItem {
+  static forNode(node) {
+    return gNodeToObjectMap.get(node);
+  }
+
+  constructor(handlerInfoWrapper) {
+    this.handlerInfoWrapper = handlerInfoWrapper;
+    this.node = document.createElement("richlistitem");
+    gNodeToObjectMap.set(this.node, this);
+
+    this.node.setAttribute("type", this.handlerInfoWrapper.type);
+    this.node.setAttribute("typeDescription",
+                           this.handlerInfoWrapper.typeDescription);
+    if (this.handlerInfoWrapper.smallIcon) {
+      this.node.setAttribute("typeIcon", this.handlerInfoWrapper.smallIcon);
+    } else {
+      this.node.removeAttribute("typeIcon");
+    }
+
+    this.refreshAction();
+  }
+
+  refreshAction() {
+    this.node.setAttribute("actionDescription",
+                           this.handlerInfoWrapper.actionDescription);
+    if (this.handlerInfoWrapper.actionIconClass) {
+      this.node.setAttribute(APP_ICON_ATTR_NAME,
+                             this.handlerInfoWrapper.actionIconClass);
+      this.node.removeAttribute("actionIcon");
+    } else {
+      this.node.removeAttribute(APP_ICON_ATTR_NAME);
+      this.node.setAttribute("actionIcon", this.handlerInfoWrapper.actionIcon);
+    }
+  }
+}
 
 
 
