@@ -95,7 +95,7 @@
 #include "KeyedStackCapturer.h"
 #endif 
 
-#if defined(MOZ_WIDGET_ANDROID)
+#if defined(MOZ_TELEMETRY_GECKOVIEW)
 #include "geckoview/TelemetryGeckoViewPersistence.h"
 #endif
 
@@ -1282,7 +1282,7 @@ TelemetryImpl::CreateTelemetryInstance()
   sTelemetry->InitMemoryReporter();
   InitHistogramRecordingEnabled(); 
 
-#if defined MOZ_WIDGET_ANDROID
+#if defined(MOZ_TELEMETRY_GECKOVIEW)
   
   
   
@@ -1308,7 +1308,7 @@ TelemetryImpl::ShutdownTelemetry()
   TelemetryEvent::DeInitializeGlobalState();
   TelemetryIPCAccumulator::DeInitializeGlobalState();
 
-#if defined(MOZ_WIDGET_ANDROID)
+#if defined(MOZ_TELEMETRY_GECKOVIEW)
   if (GetCurrentProduct() == SupportedProduct::Geckoview) {
     TelemetryGeckoViewPersistence::DeInitPersistence();
   }
@@ -1860,7 +1860,7 @@ TelemetryImpl::ResetCurrentProduct()
 NS_IMETHODIMP
 TelemetryImpl::ClearProbes()
 {
-#if defined(MOZ_WIDGET_ANDROID)
+#if defined(MOZ_TELEMETRY_GECKOVIEW)
   
   if (GetCurrentProduct() != SupportedProduct::Geckoview) {
     MOZ_ASSERT(false, "ClearProbes is only supported on GeckoView");

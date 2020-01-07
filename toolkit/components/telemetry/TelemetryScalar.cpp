@@ -18,7 +18,7 @@
 #include "nsPrintfCString.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/PContent.h"
-#if defined(MOZ_WIDGET_ANDROID)
+#if defined(MOZ_TELEMETRY_GECKOVIEW)
 
 #include "mozilla/JSONWriter.h"
 #endif
@@ -260,7 +260,7 @@ GetVariantFromIVariant(nsIVariant* aInput, uint32_t aScalarKind,
   return ScalarResult::Ok;
 }
 
-#if defined(MOZ_WIDGET_ANDROID)
+#if defined(MOZ_TELEMETRY_GECKOVIEW)
 
 
 
@@ -3084,7 +3084,7 @@ TelemetryScalar::AddDynamicScalarDefinitions(
   }
 }
 
-#if defined(MOZ_WIDGET_ANDROID)
+#if defined(MOZ_TELEMETRY_GECKOVIEW)
 
 
 

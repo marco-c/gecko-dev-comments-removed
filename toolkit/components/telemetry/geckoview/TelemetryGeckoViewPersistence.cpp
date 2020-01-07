@@ -411,6 +411,19 @@ PersistenceThreadLoadData()
 
 } 
 
+
+
+namespace TelemetryGeckoViewTesting {
+
+void
+TestDispatchPersist()
+{
+  gPersistenceThread->Dispatch(NS_NewRunnableFunction("Persist",
+    []() -> void { ::PersistenceThreadPersist(); }));
+}
+
+} 
+
 void
 TelemetryGeckoViewPersistence::InitPersistence()
 {
