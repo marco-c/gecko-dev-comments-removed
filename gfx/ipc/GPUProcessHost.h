@@ -55,7 +55,10 @@ public:
   
   
   
-  bool Launch();
+  
+  
+  
+  bool Launch(StringVector aExtraOpts);
 
   
   
