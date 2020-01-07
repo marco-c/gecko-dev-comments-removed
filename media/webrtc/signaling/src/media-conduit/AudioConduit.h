@@ -149,6 +149,7 @@ public:
 
 
 
+
    virtual MediaConduitErrorCode GetAudioFrame(int16_t speechData[],
                                               int32_t samplingFreqHz,
                                               int32_t capture_delay,
