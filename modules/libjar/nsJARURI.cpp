@@ -326,8 +326,14 @@ nsJARURI::SetSpecWithBase(const nsACString &aSpec, nsIURI* aBaseURL)
 
     ++begin; 
 
+    nsACString::const_iterator delim_begin = begin;
+    nsACString::const_iterator delim_end = end;
     nsACString::const_iterator frag = begin;
-    while (frag != end && *frag != '#') {
+
+    if (FindInReadable(NS_JAR_DELIMITER, delim_begin, delim_end)) {
+        frag = delim_end;
+    }
+    while (frag != end && (*frag != '#' && *frag != '?')) {
         ++frag;
     }
     if (frag != end) {
@@ -343,11 +349,12 @@ nsJARURI::SetSpecWithBase(const nsACString &aSpec, nsIURI* aBaseURL)
     
     
 
-    nsACString::const_iterator delim_begin (begin),
-                               delim_end   (end);
+    delim_begin = begin;
+    delim_end = end;
 
-    if (!RFindInReadable(NS_JAR_DELIMITER, delim_begin, delim_end))
+    if (!RFindInReadable(NS_JAR_DELIMITER, delim_begin, delim_end)) {
         return NS_ERROR_MALFORMED_URI;
+    }
 
     rv = ioServ->NewURI(Substring(begin, delim_begin), mCharsetHint.get(),
                         aBaseURL, getter_AddRefs(mJARFile));
