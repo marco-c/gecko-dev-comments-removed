@@ -583,10 +583,12 @@ class TokenStreamAnyChars: public ErrorReporter
     void computeErrorMetadataNoOffset(ErrorMetadata* err);
 
     virtual const char* getFilename() const override { return filename; }
+
+    virtual void lineAndColumnAt(size_t offset, uint32_t* line, uint32_t* column) const override;
+    virtual void currentLineAndColumn(uint32_t* line, uint32_t* column) const override;
+
     virtual bool hasTokenizationStarted() const override;
-    virtual void lineNumAndColumnIndex(size_t offset, uint32_t* line, uint32_t* column) const override;
     virtual void reportErrorNoOffsetVA(unsigned errorNumber, va_list args) override;
-    virtual size_t offset() const override;
 
   protected:
     
@@ -1123,9 +1125,6 @@ class MOZ_STACK_CLASS TokenStream final : public TokenStreamAnyChars
 
     TokenBuf            userbuf;            
     CharBuffer          tokenbuf;           
-
-public:
-    virtual size_t offset() const override;
 };
 
 extern const char*
