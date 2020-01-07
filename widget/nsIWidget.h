@@ -1462,24 +1462,6 @@ class nsIWidget : public nsISupports
 
 
 
-
-
-
-
-
-    virtual void SetWindowTitlebarColor(nscolor aColor, bool aActive) = 0;
-
-    
-
-
-
-
-
-
-
-
-
-
     virtual void SetDrawsInTitlebar(bool aState) = 0;
 
     
