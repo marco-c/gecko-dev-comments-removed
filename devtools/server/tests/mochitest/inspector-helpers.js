@@ -15,7 +15,7 @@ const Services = require("Services");
 
 const promise = require("promise"); 
 const defer = require("devtools/shared/defer");
-const {_documentWalker} = require("devtools/server/actors/inspector/inspector");
+const {DocumentWalker: _documentWalker} = require("devtools/server/actors/inspector/document-walker");
 
 
 Services.prefs.setBoolPref("devtools.debugger.log", true);

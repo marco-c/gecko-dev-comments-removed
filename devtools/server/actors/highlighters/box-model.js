@@ -18,7 +18,7 @@ const {
   setIgnoreLayoutChanges,
   getCurrentZoom,
  } = require("devtools/shared/layout/utils");
-const inspector = require("devtools/server/actors/inspector/inspector");
+const { getNodeDisplayName } = require("devtools/server/actors/inspector/utils");
 const nodeConstants = require("devtools/shared/dom-node-constants");
 
 
@@ -676,7 +676,7 @@ class BoxModelHighlighter extends AutoRefreshHighlighter {
         getBindingElementAndPseudo(this.currentNode);
 
     
-    let displayName = inspector.getNodeDisplayName(node);
+    let displayName = getNodeDisplayName(node);
 
     let id = node.id ? "#" + node.id : "";
 
