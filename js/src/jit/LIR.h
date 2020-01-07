@@ -1113,6 +1113,8 @@ namespace details {
         {}
 
       public:
+        
+        
         LDefinition* getDef(size_t index) {
             MOZ_ASSERT(index < Defs);
             return &defsAndTemps_[index];
@@ -1195,6 +1197,8 @@ class LInstructionHelper : public details::LInstructionFixedDefsTempsHelper<Defs
     }
 
   public:
+    
+    
     LAllocation* getOperand(size_t index) {
         return &operands_[index];
     }
