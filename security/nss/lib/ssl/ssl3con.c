@@ -6161,6 +6161,38 @@ ssl_ClientSetCipherSuite(sslSocket *ss, SSL3ProtocolVersion version,
 
 
 
+static PRBool
+ssl_CheckServerSessionIdCorrectness(sslSocket *ss, SECItem *sidBytes)
+{
+    PRBool sid_match = PR_FALSE;
+    PRBool sent_fake_sid = ss->opt.enableTls13CompatMode && !IS_DTLS(ss);
+
+    
+
+    if (sent_fake_sid && sidBytes->len == SSL3_SESSIONID_BYTES) {
+        PRUint8 buf[SSL3_SESSIONID_BYTES];
+        ssl_MakeFakeSid(ss, buf);
+        sid_match = PORT_Memcmp(buf, sidBytes->data, sidBytes->len) == 0;
+    }
+
+    
+    if (ss->version < SSL_LIBRARY_VERSION_TLS_1_3) {
+        return !sid_match;
+    }
+
+    
+    if (sent_fake_sid) {
+        return sid_match;
+    }
+
+    
+    return sidBytes->len == 0;
+}
+
+
+
+
+
 static SECStatus
 ssl3_HandleServerHello(sslSocket *ss, PRUint8 *b, PRUint32 length)
 {
@@ -6358,22 +6390,10 @@ ssl3_HandleServerHello(sslSocket *ss, PRUint8 *b, PRUint32 length)
     }
 
     
-    if (ss->version >= SSL_LIBRARY_VERSION_TLS_1_3) {
-        PRUint8 buf[SSL3_SESSIONID_BYTES];
-        unsigned int expectedSidLen;
-        if (ss->opt.enableTls13CompatMode && !IS_DTLS(ss)) {
-            expectedSidLen = SSL3_SESSIONID_BYTES;
-            ssl_MakeFakeSid(ss, buf);
-        } else {
-            expectedSidLen = 0;
-        }
-        if (sidBytes.len != expectedSidLen ||
-            (expectedSidLen > 0 &&
-             PORT_Memcmp(buf, sidBytes.data, expectedSidLen) != 0)) {
-            desc = illegal_parameter;
-            errCode = SSL_ERROR_RX_MALFORMED_SERVER_HELLO;
-            goto alert_loser;
-        }
+    if (!ssl_CheckServerSessionIdCorrectness(ss, &sidBytes)) {
+        desc = illegal_parameter;
+        errCode = SSL_ERROR_RX_MALFORMED_SERVER_HELLO;
+        goto alert_loser;
     }
 
     
