@@ -35,7 +35,8 @@ var template = function (set) {
         
         
         cont = assertEqIf(lastX > 0, x, set.length);
-        lastX = x;
+        if (inIon())
+            lastX = x;
         x = 0;
     }
     return y;
