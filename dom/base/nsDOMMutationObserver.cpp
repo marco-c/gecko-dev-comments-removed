@@ -902,15 +902,13 @@ nsDOMMutationObserver::HandleMutationsInternal(AutoSlowOperation& aAso)
 
   
   
+  
+  
+  
   nsTArray<RefPtr<HTMLSlotElement>> signalList;
   if (DocGroup::sPendingDocGroups) {
-    for (uint32_t i = 0; i < DocGroup::sPendingDocGroups->Length(); ++i) {
-      DocGroup* docGroup = DocGroup::sPendingDocGroups->ElementAt(i);
-      signalList.AppendElements(docGroup->SignalSlotList());
-
-      
-      
-      docGroup->ClearSignalSlotList();
+    for (DocGroup* docGroup : *DocGroup::sPendingDocGroups) {
+      docGroup->MoveSignalSlotListTo(signalList);
     }
     delete DocGroup::sPendingDocGroups;
     DocGroup::sPendingDocGroups = nullptr;

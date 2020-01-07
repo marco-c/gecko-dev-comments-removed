@@ -115,17 +115,9 @@ public:
 
   
   
-  void SignalSlotChange(const mozilla::dom::HTMLSlotElement* aSlot);
+  void SignalSlotChange(HTMLSlotElement& aSlot);
 
-  const nsTArray<RefPtr<HTMLSlotElement>>& SignalSlotList() const
-  {
-    return mSignalSlotList;
-  }
-
-  void ClearSignalSlotList()
-  {
-    mSignalSlotList.Clear();
-  }
+  void MoveSignalSlotListTo(nsTArray<RefPtr<HTMLSlotElement>>& aDest);
 
   
   static AutoTArray<RefPtr<DocGroup>, 2>* sPendingDocGroups;

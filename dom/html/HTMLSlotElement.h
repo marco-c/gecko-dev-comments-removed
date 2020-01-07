@@ -63,15 +63,26 @@ public:
   void RemoveAssignedNode(nsINode* aNode);
   void ClearAssignedNodes();
 
-  void EnqueueSlotChangeEvent() const;
+  void EnqueueSlotChangeEvent();
+  void RemovedFromSignalSlotList()
+  {
+    MOZ_ASSERT(mInSignalSlotList);
+    mInSignalSlotList = false;
+  }
+
   void FireSlotChangeEvent();
 
 protected:
   virtual ~HTMLSlotElement();
-  virtual JSObject*
-  WrapNode(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
+  JSObject* WrapNode(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) final;
 
   nsTArray<RefPtr<nsINode>> mAssignedNodes;
+
+  
+  
+  
+  
+  bool mInSignalSlotList = false;
 };
 
 } 
