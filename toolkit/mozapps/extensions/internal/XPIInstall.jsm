@@ -43,6 +43,8 @@ ChromeUtils.defineModuleGetter(this, "ProductAddonChecker",
                                "resource://gre/modules/addons/ProductAddonChecker.jsm");
 ChromeUtils.defineModuleGetter(this, "UpdateUtils",
                                "resource://gre/modules/UpdateUtils.jsm");
+ChromeUtils.defineModuleGetter(this, "XPIDatabase",
+                               "resource://gre/modules/addons/XPIDatabase.jsm");
 ChromeUtils.defineModuleGetter(this, "ZipUtils",
                                "resource://gre/modules/ZipUtils.jsm");
 
@@ -98,7 +100,6 @@ const XPI_INTERNAL_SYMBOLS = [
   "TEMPORARY_ADDON_SUFFIX",
   "TOOLKIT_ID",
   "XPI_PERMISSION",
-  "XPIDatabase",
   "XPIStates",
   "getExternalType",
   "isTheme",

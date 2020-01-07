@@ -31,6 +31,8 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   clearTimeout: "resource://gre/modules/Timer.jsm",
 
   UpdateChecker: "resource://gre/modules/addons/XPIInstall.jsm",
+  XPIDatabase: "resource://gre/modules/addons/XPIDatabase.jsm",
+  XPIDatabaseReconcile: "resource://gre/modules/addons/XPIDatabase.jsm",
   XPIInstall: "resource://gre/modules/addons/XPIInstall.jsm",
   verifyBundleSignedState: "resource://gre/modules/addons/XPIInstall.jsm",
 });
@@ -240,11 +242,6 @@ const LOGGER_ID = "addons.xpi";
 
 var logger = Log.repository.getLogger(LOGGER_ID);
 
-const LAZY_OBJECTS = ["XPIDatabase", "XPIDatabaseReconcile"];
-
-
-var gLazyObjectsLoaded = false;
-
 XPCOMUtils.defineLazyGetter(this, "gStartupScanScopes", () => {
   let appBuildID = Services.appinfo.appBuildID;
   let oldAppBuildID = Services.prefs.getCharPref(PREF_EM_LAST_APP_BUILD_ID, "");
@@ -255,46 +252,6 @@ XPCOMUtils.defineLazyGetter(this, "gStartupScanScopes", () => {
   }
 
   return Services.prefs.getIntPref(PREF_EM_STARTUP_SCAN_SCOPES, 0);
-});
-
-function loadLazyObjects() {
-  let uri = "resource://gre/modules/addons/XPIProviderUtils.js";
-  let scope = Cu.Sandbox(Services.scriptSecurityManager.getSystemPrincipal(), {
-    sandboxName: uri,
-    wantGlobalProperties: ["ChromeUtils", "TextDecoder"],
-  });
-
-  Object.assign(scope, {
-    ADDON_SIGNING: AddonSettings.ADDON_SIGNING,
-    SIGNED_TYPES,
-    BOOTSTRAP_REASONS,
-    DB_SCHEMA,
-    AddonInternal,
-    XPIProvider,
-    XPIStates,
-    isUsableAddon,
-    recordAddonTelemetry,
-    descriptorToPath,
-  });
-
-  Services.scriptloader.loadSubScript(uri, scope);
-
-  for (let name of LAZY_OBJECTS) {
-    delete gGlobalScope[name];
-    gGlobalScope[name] = scope[name];
-  }
-  gLazyObjectsLoaded = true;
-  return scope;
-}
-
-LAZY_OBJECTS.forEach(name => {
-  Object.defineProperty(gGlobalScope, name, {
-    get() {
-      let objs = loadLazyObjects();
-      return objs[name];
-    },
-    configurable: true
-  });
 });
 
 
@@ -1501,7 +1458,10 @@ var XPIProvider = {
   
   
   get isDBLoaded() {
-    return gLazyObjectsLoaded && XPIDatabase.initialized;
+    
+    
+    return (Object.getOwnPropertyDescriptor(gGlobalScope, "XPIDatabase").value &&
+            XPIDatabase.initialized);
   },
 
   
@@ -4773,6 +4733,7 @@ class WinRegInstallLocation extends DirectoryInstallLocation {
 var XPIInternal = {
   AddonInternal,
   BOOTSTRAP_REASONS,
+  DB_SCHEMA,
   KEY_APP_SYSTEM_ADDONS,
   KEY_APP_SYSTEM_DEFAULTS,
   KEY_APP_TEMPORARY,
@@ -4780,20 +4741,20 @@ var XPIInternal = {
   PREF_SYSTEM_ADDON_SET,
   SIGNED_TYPES,
   SystemAddonInstallLocation,
-  TemporaryInstallLocation,
   TEMPORARY_ADDON_SUFFIX,
   TOOLKIT_ID,
-  XPI_PERMISSION,
+  TemporaryInstallLocation,
+  XPIProvider,
   XPIStates,
+  XPI_PERMISSION,
   awaitPromise,
+  descriptorToPath,
   getExternalType,
   isTheme,
   isUsableAddon,
   isWebExtension,
   mustSign,
   recordAddonTelemetry,
-
-  get XPIDatabase() { return gGlobalScope.XPIDatabase; },
 };
 
 var addonTypes = [

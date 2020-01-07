@@ -6,11 +6,7 @@
 
 
 
-
-
-
-
-
+var EXPORTED_SYMBOLS = ["XPIDatabase", "XPIDatabaseReconcile"];
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
@@ -18,12 +14,34 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   AddonManager: "resource://gre/modules/AddonManager.jsm",
   AddonManagerPrivate: "resource://gre/modules/AddonManager.jsm",
   AddonRepository: "resource://gre/modules/addons/AddonRepository.jsm",
+  AddonSettings: "resource://gre/modules/addons/AddonSettings.jsm",
   DeferredTask: "resource://gre/modules/DeferredTask.jsm",
   FileUtils: "resource://gre/modules/FileUtils.jsm",
   OS: "resource://gre/modules/osfile.jsm",
   Services: "resource://gre/modules/Services.jsm",
   XPIInstall: "resource://gre/modules/addons/XPIInstall.jsm",
+  XPIInternal: "resource://gre/modules/addons/XPIProvider.jsm",
 });
+
+
+
+
+
+
+
+for (let sym of [
+  "AddonInternal",
+  "BOOTSTRAP_REASONS",
+  "DB_SCHEMA",
+  "SIGNED_TYPES",
+  "XPIProvider",
+  "XPIStates",
+  "descriptorToPath",
+  "isUsableAddon",
+  "recordAddonTelemetry",
+]) {
+  XPCOMUtils.defineLazyGetter(this, sym, () => XPIInternal[sym]);
+}
 
 ChromeUtils.import("resource://gre/modules/Log.jsm");
 const LOGGER_ID = "addons.xpi-utils";
@@ -1266,8 +1284,9 @@ this.XPIDatabaseReconcile = {
   updateCompatibility(aInstallLocation, aOldAddon, aAddonState, aReloadMetadata) {
     logger.debug("Updating compatibility for add-on " + aOldAddon.id + " in " + aInstallLocation.name);
 
-    let checkSigning = aOldAddon.signedState === undefined && ADDON_SIGNING &&
-                       SIGNED_TYPES.has(aOldAddon.type);
+    let checkSigning = (aOldAddon.signedState === undefined &&
+                        AddonSettings.ADDON_SIGNING &&
+                        SIGNED_TYPES.has(aOldAddon.type));
 
     let manifest = null;
     if (checkSigning || aReloadMetadata) {
