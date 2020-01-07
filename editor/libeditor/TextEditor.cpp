@@ -244,7 +244,8 @@ TextEditor::SetDocumentCharacterSet(const nsACString& characterSet)
 
   
   EditorRawDOMPoint atStartOfHeadNode(headNode, 0);
-  RefPtr<Element> metaElement = CreateNode(nsGkAtoms::meta, atStartOfHeadNode);
+  RefPtr<Element> metaElement =
+    CreateNodeWithTransaction(*nsGkAtoms::meta, atStartOfHeadNode);
   if (NS_WARN_IF(!metaElement)) {
     return NS_OK;
   }
@@ -469,12 +470,12 @@ TextEditor::CreateBRImpl(Selection& aSelection,
       pointInContainer.Set(aPointToInsert.GetContainer());
     }
     
-    newBRElement = CreateNode(nsGkAtoms::br, pointInContainer);
+    newBRElement = CreateNodeWithTransaction(*nsGkAtoms::br, pointInContainer);
     if (NS_WARN_IF(!newBRElement)) {
       return nullptr;
     }
   } else {
-    newBRElement = CreateNode(nsGkAtoms::br, aPointToInsert);
+    newBRElement = CreateNodeWithTransaction(*nsGkAtoms::br, aPointToInsert);
     if (NS_WARN_IF(!newBRElement)) {
       return nullptr;
     }
