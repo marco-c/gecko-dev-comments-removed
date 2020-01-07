@@ -60,8 +60,10 @@ public:
         THROTTLING_ENABLED,
         THROTTLING_SUSPEND_FOR,
         THROTTLING_RESUME_FOR,
-        THROTTLING_RESUME_IN,
-        THROTTLING_TIME_WINDOW
+        THROTTLING_READ_LIMIT,
+        THROTTLING_READ_INTERVAL,
+        THROTTLING_HOLD_TIME,
+        THROTTLING_MAX_TIME
     };
 
     
@@ -76,10 +78,13 @@ public:
                                uint16_t maxPersistentConnectionsPerProxy,
                                uint16_t maxRequestDelay,
                                bool throttleEnabled,
+                               uint32_t throttleVersion,
                                uint32_t throttleSuspendFor,
                                uint32_t throttleResumeFor,
-                               uint32_t throttleResumeIn,
-                               uint32_t throttleTimeWindow);
+                               uint32_t throttleReadLimit,
+                               uint32_t throttleReadInterval,
+                               uint32_t throttleHoldTime,
+                               uint32_t throttleMaxTime);
     MOZ_MUST_USE nsresult Shutdown();
 
     
@@ -228,7 +233,7 @@ public:
     
     
     
-    bool ShouldStopReading(nsHttpTransaction* aTrans);
+    bool ShouldThrottle(nsHttpTransaction* aTrans);
 
     
     
@@ -531,10 +536,13 @@ private:
     uint16_t mMaxPersistConnsPerProxy;
     uint16_t mMaxRequestDelay; 
     bool mThrottleEnabled;
+    uint32_t mThrottleVersion;
     uint32_t mThrottleSuspendFor;
     uint32_t mThrottleResumeFor;
-    uint32_t mThrottleResumeIn;
-    TimeDuration mThrottleTimeWindow;
+    uint32_t mThrottleReadLimit;
+    uint32_t mThrottleReadInterval;
+    uint32_t mThrottleHoldTime;
+    TimeDuration mThrottleMaxTime;
     Atomic<bool, mozilla::Relaxed> mIsShuttingDown;
 
     
@@ -718,6 +726,7 @@ private:
     nsClassHashtable<nsUint64HashKey, nsTArray<RefPtr<nsHttpTransaction>>> mActiveTransactions[2];
 
     
+    
     bool mThrottlingInhibitsReading;
 
     TimeStamp mThrottlingWindowEndsAt;
@@ -731,7 +740,14 @@ private:
     void EnsureThrottleTickerIfNeeded();
     
     
+    
+    
+    
+    
     void DestroyThrottleTicker();
+    
+    
+    
     
     void ThrottlerTick();
 

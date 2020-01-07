@@ -2205,16 +2205,25 @@ pref("network.auth.private-browsing-sso", false);
 
 
 pref("network.http.throttle.enable", true);
+pref("network.http.throttle.version", 1);
+
+
 pref("network.http.throttle.suspend-for", 900);
 pref("network.http.throttle.resume-for", 100);
 
 
+pref("network.http.throttle.read-limit-bytes", 8000);
+pref("network.http.throttle.read-interval-ms", 500);
 
-pref("network.http.throttle.resume-background-in", 1000);
 
 
 
-pref("network.http.throttle.time-window", 3000);
+
+pref("network.http.throttle.hold-time-ms", 800);
+
+
+
+pref("network.http.throttle.max-time-ms", 500);
 
 
 

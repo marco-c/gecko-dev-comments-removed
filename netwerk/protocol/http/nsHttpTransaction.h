@@ -229,7 +229,7 @@ private:
 
     
     
-    bool ShouldStopReading();
+    bool ShouldThrottle();
 
 private:
     class UpdateSecurityCallbacks : public Runnable
@@ -310,6 +310,19 @@ private:
     uint16_t                        mHttpResponseCode;
 
     uint32_t                        mCurrentHttpResponseHeaderSize;
+
+    int32_t const THROTTLE_NO_LIMIT = -1;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    int32_t                         mThrottlingReadAllowance;
 
     
     

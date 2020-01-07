@@ -104,6 +104,7 @@ nsHttpTransaction::nsHttpTransaction()
     , mHttpVersion(NS_HTTP_VERSION_UNKNOWN)
     , mHttpResponseCode(0)
     , mCurrentHttpResponseHeaderSize(0)
+    , mThrottlingReadAllowance(THROTTLE_NO_LIMIT)
     , mCapsToClear(0)
     , mResponseIsComplete(false)
     , mReadingStopped(false)
@@ -166,6 +167,11 @@ void nsHttpTransaction::ResumeReading()
     LOG(("nsHttpTransaction::ResumeReading %p", this));
 
     mReadingStopped = false;
+
+    
+    
+    mThrottlingReadAllowance = THROTTLE_NO_LIMIT;
+
     if (mConnection) {
         nsresult rv = mConnection->ResumeRecv();
         if (NS_FAILED(rv)) {
@@ -853,7 +859,7 @@ nsHttpTransaction::WritePipeSegment(nsIOutputStream *stream,
     return rv; 
 }
 
-bool nsHttpTransaction::ShouldStopReading()
+bool nsHttpTransaction::ShouldThrottle()
 {
     if (mActivatedAsH2) {
         
@@ -862,7 +868,7 @@ bool nsHttpTransaction::ShouldStopReading()
         
         
         
-        Unused << gHttpHandler->ConnMgr()->ShouldStopReading(this);
+        Unused << gHttpHandler->ConnMgr()->ShouldThrottle(this);
         return false;
     }
 
@@ -876,19 +882,23 @@ bool nsHttpTransaction::ShouldStopReading()
         return false;
     }
 
-    if (!gHttpHandler->ConnMgr()->ShouldStopReading(this)) {
+    if (!gHttpHandler->ConnMgr()->ShouldThrottle(this)) {
         
         return false;
     }
 
     if (mContentRead < 16000) {
         
-        LOG(("nsHttpTransaction::ShouldStopReading too few content (%" PRIi64 ") this=%p", mContentRead, this));
+        LOG(("nsHttpTransaction::ShouldThrottle too few content (%" PRIi64 ") this=%p", mContentRead, this));
         return false;
     }
 
-    if (gHttpHandler->ConnMgr()->IsConnEntryUnderPressure(mConnInfo)) {
-        LOG(("nsHttpTransaction::ShouldStopReading entry pressure this=%p", this));
+    if (!(mClassOfService & nsIClassOfService::Throttleable) &&
+        gHttpHandler->ConnMgr()->IsConnEntryUnderPressure(mConnInfo)) {
+        LOG(("nsHttpTransaction::ShouldThrottle entry pressure this=%p", this));
+        
+        
+        
         
         
         return false;
@@ -909,7 +919,16 @@ nsHttpTransaction::WriteSegments(nsAHttpSegmentWriter *writer,
         return NS_SUCCEEDED(mStatus) ? NS_BASE_STREAM_CLOSED : mStatus;
     }
 
-    if (ShouldStopReading()) {
+    if (ShouldThrottle()) {
+        if (mThrottlingReadAllowance == THROTTLE_NO_LIMIT) { 
+            
+            mThrottlingReadAllowance = gHttpHandler->ThrottlingReadLimit();
+        }
+    } else {
+        mThrottlingReadAllowance = THROTTLE_NO_LIMIT; 
+    }
+
+    if (mThrottlingReadAllowance == 0) { 
         if (gHttpHandler->ConnMgr()->CurrentTopLevelOuterContentWindowId() !=
             mTopLevelOuterContentWindowId) {
             nsHttp::NotifyActiveTabLoadOptimization();
@@ -935,6 +954,12 @@ nsHttpTransaction::WriteSegments(nsAHttpSegmentWriter *writer,
 
     if (!mPipeOut) {
         return NS_ERROR_UNEXPECTED;
+    }
+
+    if (mThrottlingReadAllowance > 0) {
+        LOG(("nsHttpTransaction::WriteSegments %p limiting read from %u to %d",
+             this, count, mThrottlingReadAllowance));
+        count = std::min(count, static_cast<uint32_t>(mThrottlingReadAllowance));
     }
 
     nsresult rv = mPipeOut->WriteSegments(WritePipeSegment, this, count, countWritten);
@@ -963,6 +988,9 @@ nsHttpTransaction::WriteSegments(nsAHttpSegmentWriter *writer,
             NS_ERROR("no socket thread event target");
             rv = NS_ERROR_UNEXPECTED;
         }
+    } else if (mThrottlingReadAllowance > 0 && NS_SUCCEEDED(rv)) {
+        MOZ_ASSERT(count >= *countWritten);
+        mThrottlingReadAllowance -= *countWritten;
     }
 
     return rv;
