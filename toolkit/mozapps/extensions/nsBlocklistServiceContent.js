@@ -84,6 +84,11 @@ Blocklist.prototype = {
     return Ci.nsIBlocklistService.STATE_BLOCKED;
   },
 
+  get isLoaded() {
+    
+    return true;
+  },
+
   
   getPluginBlocklistState(aPluginTag, aAppVersion, aToolkitVersion) {
     return Services.cpmm.sendSyncMessage("Blocklist:getPluginBlocklistState", {
