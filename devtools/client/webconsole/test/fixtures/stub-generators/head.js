@@ -370,6 +370,7 @@ async function generateCssMessageStubs() {
       gBrowser.selectedBrowser,
       [key, code],
       function([subKey, subCode]) {
+        content.document.docShell.cssErrorReportingEnabled = true;
         let style = content.document.createElement("style");
         
         style.innerHTML = subCode;
