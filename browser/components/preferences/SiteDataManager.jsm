@@ -9,9 +9,8 @@ XPCOMUtils.defineLazyModuleGetter(this, "OfflineAppCacheHelper",
                                   "resource:///modules/offlineAppCache.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "ContextualIdentityService",
                                   "resource://gre/modules/ContextualIdentityService.jsm");
-XPCOMUtils.defineLazyServiceGetter(this, "serviceWorkerManager",
-                                   "@mozilla.org/serviceworkers/manager;1",
-                                   "nsIServiceWorkerManager");
+XPCOMUtils.defineLazyModuleGetter(this, "ServiceWorkerCleanUp",
+                                  "resource://gre/modules/ServiceWorkerCleanUp.jsm");
 
 this.EXPORTED_SYMBOLS = [
   "SiteDataManager"
@@ -224,28 +223,11 @@ this.SiteDataManager = {
     }
   },
 
-  _unregisterServiceWorker(serviceWorker) {
-    return new Promise(resolve => {
-      let unregisterCallback = {
-        unregisterSucceeded: resolve,
-        unregisterFailed: resolve, 
-        QueryInterface: XPCOMUtils.generateQI([Ci.nsIServiceWorkerUnregisterCallback])
-      };
-      serviceWorkerManager.propagateUnregister(serviceWorker.principal, unregisterCallback, serviceWorker.scope);
-    });
-  },
-
   _removeServiceWorkersForSites(sites) {
     let promises = [];
-    let targetHosts = sites.map(s => s.principals[0].URI.host);
-    let serviceWorkers = serviceWorkerManager.getAllRegistrations();
-    for (let i = 0; i < serviceWorkers.length; i++) {
-      let sw = serviceWorkers.queryElementAt(i, Ci.nsIServiceWorkerRegistrationInfo);
-      
-      if (targetHosts.includes(sw.principal.URI.host)) {
-        promises.push(this._unregisterServiceWorker(sw));
-      }
-    }
+    sites.forEach(s => {
+      promises.push(ServiceWorkerCleanUp.removeFromHost(s.principals[0].URI.host));
+    });
     return Promise.all(promises);
   },
 
@@ -283,14 +265,7 @@ this.SiteDataManager = {
     Services.cookies.removeAll();
     OfflineAppCacheHelper.clear();
 
-    
-    let promises = [];
-    let serviceWorkers = serviceWorkerManager.getAllRegistrations();
-    for (let i = 0; i < serviceWorkers.length; i++) {
-      let sw = serviceWorkers.queryElementAt(i, Ci.nsIServiceWorkerRegistrationInfo);
-      promises.push(this._unregisterServiceWorker(sw));
-    }
-    await Promise.all(promises);
+    await ServiceWorkerCleanUp.removeAll();
 
     
     
@@ -303,7 +278,7 @@ this.SiteDataManager = {
     
     
     await this._getQuotaUsage();
-    promises = [];
+    let promises = [];
     for (let site of this._sites.values()) {
       this._removePermission(site);
       promises.push(this._removeQuotaUsage(site));
