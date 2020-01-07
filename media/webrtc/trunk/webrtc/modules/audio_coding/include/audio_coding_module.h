@@ -572,17 +572,6 @@ class AudioCodingModule {
   
   
   
-  virtual int ReceiveSampleRate() const = 0;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
   
   
   

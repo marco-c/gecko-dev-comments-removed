@@ -15,7 +15,6 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include <atomic>
 
 #include "webrtc/base/array_view.h"
 #include "webrtc/base/criticalsection.h"
@@ -210,7 +209,6 @@ class AcmReceiver {
   int LastAudioCodec(CodecInst* codec) const;
 
   rtc::Optional<SdpAudioFormat> LastAudioFormat() const;
-  int LastAudioSampleRate() const;
 
   
   
@@ -278,15 +276,12 @@ class AcmReceiver {
   rtc::Optional<CodecInst> last_audio_decoder_ GUARDED_BY(crit_sect_);
   rtc::Optional<SdpAudioFormat> last_audio_format_ GUARDED_BY(crit_sect_);
   ACMResampler resampler_ GUARDED_BY(crit_sect_);
-  
-  
-  std::unique_ptr<int16_t[]> last_audio_buffer_;
+  std::unique_ptr<int16_t[]> last_audio_buffer_ GUARDED_BY(crit_sect_);
   CallStatistics call_stats_ GUARDED_BY(crit_sect_);
-  NetEq* const neteq_;
+  NetEq* neteq_;
   Clock* clock_;  
-  std::atomic<bool> resampled_last_output_frame_;
+  bool resampled_last_output_frame_ GUARDED_BY(crit_sect_);
   rtc::Optional<int> last_packet_sample_rate_hz_ GUARDED_BY(crit_sect_);
-  std::atomic<int> last_audio_format_clockrate_hz_;
 };
 
 }  

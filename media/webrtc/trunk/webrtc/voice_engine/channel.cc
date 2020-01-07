@@ -3495,12 +3495,13 @@ int Channel::SetSendRtpHeaderExtension(bool enable,
 }
 
 int Channel::GetRtpTimestampRateHz() const {
-  int sampleRate = audio_coding_->ReceiveSampleRate();
+  const auto format = audio_coding_->ReceiveFormat();
   
   
   
   
-  return sampleRate != 0 ? sampleRate
+  return (format && format->clockrate_hz != 0)
+             ? format->clockrate_hz
              : audio_coding_->PlayoutFrequency();
 }
 

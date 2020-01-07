@@ -1159,9 +1159,21 @@ MediaStreamGraphImpl::UpdateGraph(GraphTime aEndBlockingDecisions)
 
   bool ensureNextIteration = false;
 
+  
+  AutoTArray<RefPtr<SourceMediaStream::NotifyPullPromise>, 64> promises;
   for (MediaStream* stream : mStreams) {
     if (SourceMediaStream* is = stream->AsSourceStream()) {
-      ensureNextIteration |= is->PullNewData(aEndBlockingDecisions);
+      ensureNextIteration |= is->PullNewData(aEndBlockingDecisions, promises);
+    }
+  }
+
+  
+  if (!promises.IsEmpty()) {
+    AwaitAll(do_AddRef(mThreadPool), promises);
+  }
+
+  for (MediaStream* stream : mStreams) {
+    if (SourceMediaStream* is = stream->AsSourceStream()) {
       is->ExtractPendingInput();
     }
     if (stream->mFinished) {
@@ -1477,6 +1489,10 @@ public:
       MonitorAutoLock mon(mGraph->mMonitor);
       mGraph->SetCurrentDriver(nullptr);
     }
+
+    
+    
+    mGraph->mThreadPool = nullptr;
 
     
     
@@ -2757,7 +2773,9 @@ SourceMediaStream::SetPullEnabled(bool aEnabled)
 }
 
 bool
-SourceMediaStream::PullNewData(StreamTime aDesiredUpToTime)
+SourceMediaStream::PullNewData(
+  StreamTime aDesiredUpToTime,
+  nsTArray<RefPtr<SourceMediaStream::NotifyPullPromise>>& aPromises)
 {
   TRACE_AUDIO_CALLBACK();
   MutexAutoLock lock(mMutex);
@@ -2780,7 +2798,7 @@ SourceMediaStream::PullNewData(StreamTime aDesiredUpToTime)
     MediaStreamListener* l = mListeners[j];
     {
       MutexAutoUnlock unlock(mMutex);
-      l->NotifyPull(GraphImpl(), t);
+      aPromises.AppendElement(l->AsyncNotifyPull(GraphImpl(), t));
     }
   }
   return true;
@@ -3595,6 +3613,7 @@ MediaStreamGraphImpl::MediaStreamGraphImpl(GraphDriverType aDriverRequested,
   , mStreamOrderDirty(false)
   , mLatencyLog(AsyncLatencyLogger::Get())
   , mAbstractMainThread(aMainThread)
+  , mThreadPool(GetMediaThreadPool(MediaThreadType::MSG_CONTROL))
   , mSelfRef(this)
   , mOutputChannels(std::min<uint32_t>(8, CubebUtils::MaxNumberOfChannels()))
 #ifdef DEBUG
