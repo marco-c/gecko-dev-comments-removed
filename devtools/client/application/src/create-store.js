@@ -9,11 +9,13 @@ const { createStore } = require("devtools/client/shared/vendor/redux");
 
 const rootReducer = require("./reducers/index");
 const { WorkersState } = require("./reducers/workers-state");
+const { PageState } = require("./reducers/page-state");
 
 function configureStore() {
   
   const initialState = {
     workers: new WorkersState(),
+    page: new PageState(),
   };
 
   return createStore(rootReducer, initialState);
