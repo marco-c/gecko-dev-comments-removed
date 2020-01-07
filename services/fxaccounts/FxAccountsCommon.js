@@ -213,7 +213,7 @@ exports.DERIVED_KEYS_NAMES = ["kSync", "kXCS", "kExtSync", "kExtKbHash"];
 
 exports.FXA_PWDMGR_PLAINTEXT_FIELDS = new Set(
   ["email", "verified", "authAt", "sessionToken", "uid", "oauthTokens", "profile",
-  "deviceId", "deviceRegistrationVersion", "profileCache"]);
+  "device", "profileCache"]);
 
 
 exports.FXA_PWDMGR_SECURE_FIELDS = new Set(
@@ -226,7 +226,7 @@ exports.FXA_PWDMGR_MEMORY_FIELDS = new Set(
 
 
 exports.FXA_PWDMGR_REAUTH_WHITELIST = new Set(
-  ["email", "uid", "profile", "deviceId", "deviceRegistrationVersion", "verified"]);
+  ["email", "uid", "profile", "device", "verified"]);
 
 
 exports.FXA_PWDMGR_HOST = "chrome://FirefoxAccounts";

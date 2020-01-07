@@ -660,25 +660,35 @@ FxAccountsInternal.prototype = {
     return this.currentAccountState.updateUserAccountData({ cert: null });
   },
 
-  getDeviceId() {
-    return this.currentAccountState.getUserAccountData()
-      .then(data => {
-        if (data) {
-          if (!data.deviceId || !data.deviceRegistrationVersion ||
-              data.deviceRegistrationVersion < this.DEVICE_REGISTRATION_VERSION) {
-            
-            
-            
-            return this._registerOrUpdateDevice(data);
-          }
-
-          
-          return data.deviceId;
+  async getDeviceId() {
+    let data = await this.currentAccountState.getUserAccountData();
+    if (!data) {
+      
+      return null;
+    }
+    
+    if (data.deviceId) {
+      log.info("Migrating from deviceId to device.");
+      await this.currentAccountState.updateUserAccountData({
+        deviceId: null,
+        deviceRegistrationVersion: null,
+        device: {
+          id: data.deviceId,
+          registrationVersion: data.deviceRegistrationVersion
         }
-
-        
-        return null;
       });
+      data = await this.currentAccountState.getUserAccountData();
+    }
+    const {device} = data;
+    if (!device || !device.registrationVersion ||
+        device.registrationVersion < this.DEVICE_REGISTRATION_VERSION) {
+      
+      
+      
+      return this._registerOrUpdateDevice(data);
+    }
+    
+    return device.id;
   },
 
   async getDeviceList() {
@@ -1548,25 +1558,30 @@ FxAccountsInternal.prototype = {
   
   
   
-  updateDeviceRegistration() {
-    return this.getSignedInUser().then(signedInUser => {
+  async updateDeviceRegistration() {
+    try {
+      const signedInUser = await this.getSignedInUser();
       if (signedInUser) {
-        return this._registerOrUpdateDevice(signedInUser);
+        await this._registerOrUpdateDevice(signedInUser);
       }
-      return null;
-    }).catch(error => this._logErrorAndResetDeviceRegistrationVersion(error));
+    } catch (error) {
+      await this._logErrorAndResetDeviceRegistrationVersion(error);
+    }
   },
 
   async handleDeviceDisconnection(deviceId) {
     const accountData = await this.currentAccountState.getUserAccountData();
-    const localDeviceId = accountData ? accountData.deviceId : null;
+    if (!accountData || !accountData.device) {
+      
+      return;
+    }
+    const localDeviceId = accountData.device.id;
     const isLocalDevice = (deviceId == localDeviceId);
     if (isLocalDevice) {
       this.signOut(true);
     }
     const data = JSON.stringify({ isLocalDevice });
     await this.notifyObservers(ON_DEVICE_DISCONNECTED_NOTIFICATION, data);
-    return null;
   },
 
   handleEmailUpdated(newEmail) {
@@ -1628,23 +1643,20 @@ FxAccountsInternal.prototype = {
   
   
   
-  _registerOrUpdateDevice(signedInUser) {
-    try {
-      
-      
-      
-      
-      if (Services.prefs.getBoolPref("identity.fxaccounts.skipDeviceRegistration")) {
-        return Promise.resolve();
-      }
-    } catch (ignore) {}
-
-    if (!signedInUser.sessionToken) {
-      return Promise.reject(new Error(
-        "_registerOrUpdateDevice called without a session token"));
+  async _registerOrUpdateDevice(signedInUser) {
+    
+    
+    if (Services.prefs.getBoolPref("identity.fxaccounts.skipDeviceRegistration", false)) {
+      return null;
     }
 
-    return this.fxaPushService.registerPushEndpoint().then(subscription => {
+    const {sessionToken, device: currentDevice} = signedInUser;
+    if (!sessionToken) {
+      throw new Error("_registerOrUpdateDevice called without a session token");
+    }
+
+    try {
+      const subscription = await this.fxaPushService.registerPushEndpoint();
       const deviceName = this._getDeviceName();
       let deviceOptions = {};
 
@@ -1659,21 +1671,27 @@ FxAccountsInternal.prototype = {
         }
       }
 
-      if (signedInUser.deviceId) {
+      let device;
+      if (currentDevice && currentDevice.id) {
         log.debug("updating existing device details");
-        return this.fxAccountsClient.updateDevice(
-          signedInUser.sessionToken, signedInUser.deviceId, deviceName, deviceOptions);
+        device = await this.fxAccountsClient.updateDevice(
+          sessionToken, currentDevice.id, deviceName, deviceOptions);
+      } else {
+        log.debug("registering new device details");
+        device = await this.fxAccountsClient.registerDevice(
+          sessionToken, deviceName, this._getDeviceType(), deviceOptions);
       }
 
-      log.debug("registering new device details");
-      return this.fxAccountsClient.registerDevice(
-        signedInUser.sessionToken, deviceName, this._getDeviceType(), deviceOptions);
-    }).then(device =>
-      this.currentAccountState.updateUserAccountData({
-        deviceId: device.id,
-        deviceRegistrationVersion: this.DEVICE_REGISTRATION_VERSION
-      }).then(() => device.id)
-    ).catch(error => this._handleDeviceError(error, signedInUser.sessionToken));
+      await this.currentAccountState.updateUserAccountData({
+        device: {
+          id: device.id,
+          registrationVersion: this.DEVICE_REGISTRATION_VERSION
+        }
+      });
+      return device.id;
+    } catch (error) {
+      return this._handleDeviceError(error, sessionToken);
+    }
   },
 
   _getDeviceName() {
@@ -1703,16 +1721,19 @@ FxAccountsInternal.prototype = {
     ).catch(() => {});
   },
 
-  _recoverFromUnknownDevice() {
+  async _recoverFromUnknownDevice() {
     
     
     
     log.warn("unknown device id, clearing the local device data");
-    return this.currentAccountState.updateUserAccountData({ deviceId: null })
-      .catch(error => this._logErrorAndResetDeviceRegistrationVersion(error));
+    try {
+      await this.currentAccountState.updateUserAccountData({device: null});
+    } catch (error) {
+      await this._logErrorAndResetDeviceRegistrationVersion(error);
+    }
   },
 
-  _recoverFromDeviceSessionConflict(error, sessionToken) {
+  async _recoverFromDeviceSessionConflict(error, sessionToken) {
     
     
     
@@ -1722,40 +1743,46 @@ FxAccountsInternal.prototype = {
     
     
     log.warn("device session conflict, attempting to ascertain the correct device id");
-    return this.fxAccountsClient.getDeviceList(sessionToken)
-      .then(devices => {
-        const matchingDevices = devices.filter(device => device.isCurrentDevice);
-        const length = matchingDevices.length;
-        if (length === 1) {
-          const deviceId = matchingDevices[0].id;
-          return this.currentAccountState.updateUserAccountData({
-            deviceId,
-            deviceRegistrationVersion: null
-          }).then(() => deviceId);
-        }
-        if (length > 1) {
-          log.error("insane server state, " + length + " devices for this session");
-        }
-        return this._logErrorAndResetDeviceRegistrationVersion(error);
-      }).catch(secondError => {
-        log.error("failed to recover from device-session conflict", secondError);
-        this._logErrorAndResetDeviceRegistrationVersion(error);
-      });
+    try {
+      const devices = await this.fxAccountsClient.getDeviceList(sessionToken);
+      const matchingDevices = devices.filter(device => device.isCurrentDevice);
+      const length = matchingDevices.length;
+      if (length === 1) {
+        const deviceId = matchingDevices[0].id;
+        await this.currentAccountState.updateUserAccountData({
+          device: {
+            id: deviceId,
+            registrationVersion: null
+          }
+        });
+        return deviceId;
+      }
+      if (length > 1) {
+        log.error("insane server state, " + length + " devices for this session");
+      }
+      await this._logErrorAndResetDeviceRegistrationVersion(error);
+    } catch (secondError) {
+      log.error("failed to recover from device-session conflict", secondError);
+      await this._logErrorAndResetDeviceRegistrationVersion(error);
+    }
+    return null;
   },
 
-  _logErrorAndResetDeviceRegistrationVersion(error) {
+  async _logErrorAndResetDeviceRegistrationVersion(error) {
     
     
     
     
     log.error("device registration failed", error);
-    return this.currentAccountState.updateUserAccountData({
-      deviceRegistrationVersion: null
-    }).catch(secondError => {
+    try {
+      this.currentAccountState.updateUserAccountData({
+        device: null
+      });
+    } catch (secondError) {
       log.error(
         "failed to reset the device registration version, device registration won't be retried",
         secondError);
-    }).then(() => {});
+    }
   },
 
   _handleTokenError(err) {

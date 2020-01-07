@@ -427,7 +427,7 @@ this.FxAccountsWebChannelHelpers.prototype = {
     
     
     let newCredentials = {
-      deviceId: null
+      device: null 
     };
     for (let name of Object.keys(credentials)) {
       if (name == "email" || name == "uid" || FxAccountsStorageManagerCanStoreField(name)) {
