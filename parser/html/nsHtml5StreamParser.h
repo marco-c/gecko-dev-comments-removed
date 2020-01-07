@@ -122,8 +122,6 @@ public:
   NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(nsHtml5StreamParser,
                                            nsICharsetDetectionObserver)
 
-  static void InitializeStatics();
-
   nsHtml5StreamParser(nsHtml5TreeOpExecutor* aExecutor,
                       nsHtml5Parser* aOwner,
                       eParserMode aMode);
@@ -580,20 +578,6 @@ private:
 
 
   eParserMode mMode;
-
-  
-
-
-
-
-  static int32_t sTimerInitialDelay;
-
-  
-
-
-
-
-  static int32_t sTimerSubsequentDelay;
 };
 
 #endif 

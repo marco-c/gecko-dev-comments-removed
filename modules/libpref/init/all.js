@@ -5066,16 +5066,6 @@ pref("device.sensors.ambientLight.enabled", true);
 pref("device.storage.enabled", false);
 
 
-pref("html5.offmainthread", true);
-
-
-
-pref("html5.flushtimer.initialdelay", 120);
-
-
-pref("html5.flushtimer.subsequentdelay", 120);
-
-
 pref("browser.history.maxStateObjectSize", 655360);
 
 pref("browser.meta_refresh_when_inactive.disabled", false);
