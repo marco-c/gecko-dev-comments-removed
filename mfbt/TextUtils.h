@@ -38,6 +38,16 @@ public:
 } 
 
 
+template<typename Char>
+constexpr bool
+IsAscii(Char aChar)
+{
+  using UnsignedChar = typename detail::MakeUnsignedChar<Char>::Type;
+  auto uc = static_cast<UnsignedChar>(aChar);
+  return uc < 0x80;
+}
+
+
 
 
 
