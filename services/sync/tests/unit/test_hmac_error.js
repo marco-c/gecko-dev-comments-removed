@@ -178,9 +178,9 @@ add_task(async function hmac_error_during_node_reassignment() {
 
   
   
-  function onwards() {
+  async function onwards() {
     _("== Invoking first sync.");
-    Async.promiseSpinningly(Service.sync());
+    await Service.sync();
     _("We should not simultaneously have data but no keys on the server.");
     let hasData = rotaryColl.wbo("flying") ||
                   rotaryColl.wbo("scotsman");
@@ -193,7 +193,7 @@ add_task(async function hmac_error_during_node_reassignment() {
   }
 
   _("Make sure that syncing again causes recovery.");
-  await new Promise(resolve => {
+  let callbacksPromise = new Promise(resolve => {
     onSyncFinished = function() {
       _("== First sync done.");
       _("---------------------------");
@@ -213,7 +213,7 @@ add_task(async function hmac_error_during_node_reassignment() {
           engine.lastSync = 0;
           hmacErrorCount = 0;
 
-          onSyncFinished = function() {
+          onSyncFinished = async function() {
             
             Assert.equal(hmacErrorCount, 0);
 
@@ -229,12 +229,12 @@ add_task(async function hmac_error_during_node_reassignment() {
             })();
           };
 
-          Async.promiseSpinningly(Service.sync());
+          Service.sync();
         },
         this);
       };
     };
-
-    onwards();
   });
+  await onwards();
+  await callbacksPromise;
 });
