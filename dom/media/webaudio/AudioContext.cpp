@@ -667,6 +667,12 @@ double
 AudioContext::CurrentTime()
 {
   MediaStream* stream = Destination()->Stream();
+
+  if (!mIsStarted &&
+    stream->StreamTimeToSeconds(stream->GetCurrentTime()) == 0) {
+      return 0;
+  }
+
   
   
   
