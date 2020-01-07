@@ -28,6 +28,7 @@ const PanelUI = {
       multiView: "appMenu-multiView",
       helpView: "PanelUI-helpView",
       libraryView: "appMenu-libraryView",
+      libraryRecentHighlights: "appMenu-library-recentHighlights",
       menuButton: "PanelUI-menu-button",
       panel: "appMenu-popup",
       notificationPanel: "appMenu-notification-popup",
@@ -305,7 +306,7 @@ const PanelUI = {
         break;
       case "ViewShowing":
         if (aEvent.target == this.libraryView) {
-          this.onLibraryViewShowing(aEvent.target);
+          this.onLibraryViewShowing(aEvent.target).catch(Cu.reportError);
         }
         break;
     }
@@ -507,32 +508,51 @@ const PanelUI = {
 
 
   async onLibraryViewShowing(viewNode) {
-    if (this._loadingRecentHighlights) {
+    
+    
+    
+    if (this._loadingRecentHighlights || !this.libraryRecentHighlightsEnabled) {
       return;
     }
+
+    
+    this.makeLibraryRecentHighlightsInvisible();
+
+    
     this._loadingRecentHighlights = true;
-
-    
-    
-    let container = this.clearLibraryRecentHighlights();
-    if (!this.libraryRecentHighlightsEnabled) {
+    try {
+      await this.fetchAndPopulateLibraryRecentHighlights();
+    } finally {
       this._loadingRecentHighlights = false;
-      return;
     }
+  },
 
+  
+
+
+
+  async fetchAndPopulateLibraryRecentHighlights() {
     let highlights = await NewTabUtils.activityStreamLinks.getHighlights({
       
       
       numItems: 6,
       withFavicons: true
+    }).catch(ex => {
+      
+      Cu.reportError(ex);
+      return [];
     });
+
     
-    let multiView = viewNode.panelMultiView;
-    if (!highlights.length || (multiView && multiView.getAttribute("panelopen") != "true")) {
-      this._loadingRecentHighlights = false;
+    
+    
+    
+    this.clearLibraryRecentHighlights();
+    if (!highlights.length) {
       return;
     }
 
+    let container = this.libraryRecentHighlights;
     container.hidden = container.previousSibling.hidden =
       container.previousSibling.previousSibling.hidden = false;
     let fragment = document.createDocumentFragment();
@@ -551,21 +571,29 @@ const PanelUI = {
       fragment.appendChild(button);
     }
     container.appendChild(fragment);
+  },
 
-    this._loadingRecentHighlights = false;
+  
+
+
+
+
+  makeLibraryRecentHighlightsInvisible() {
+    for (let button of this.libraryRecentHighlights.children) {
+      button.style.visibility = "hidden";
+    }
   },
 
   
 
 
   clearLibraryRecentHighlights() {
-    let container = document.getElementById("appMenu-library-recentHighlights");
+    let container = this.libraryRecentHighlights;
     while (container.firstChild) {
       container.firstChild.remove();
     }
     container.hidden = container.previousSibling.hidden =
       container.previousSibling.previousSibling.hidden = true;
-    return container;
   },
 
   
