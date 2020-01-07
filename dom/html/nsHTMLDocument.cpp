@@ -1340,6 +1340,14 @@ nsHTMLDocument::Open(JSContext* cx,
   }
 
   
+  
+  SetDocumentAndPageUseCounter(eUseCounter_custom_DocumentOpen);
+  bool isReplace = aReplace.LowerCaseEqualsLiteral("replace");
+  if (isReplace) {
+    SetDocumentAndPageUseCounter(eUseCounter_custom_DocumentOpenReplace);
+  }
+
+  
   if (mScriptGlobalObject) {
     nsCOMPtr<nsIContentViewer> cv;
     shell->GetContentViewer(getter_AddRefs(cv));
@@ -1567,8 +1575,7 @@ nsHTMLDocument::Open(JSContext* cx,
   
   
   
-  shell->SetLoadType(aReplace.LowerCaseEqualsLiteral("replace") ?
-                       LOAD_NORMAL_REPLACE : LOAD_NORMAL);
+  shell->SetLoadType(isReplace ? LOAD_NORMAL_REPLACE : LOAD_NORMAL);
 
   nsCOMPtr<nsIContentViewer> cv;
   shell->GetContentViewer(getter_AddRefs(cv));
