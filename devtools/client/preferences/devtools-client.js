@@ -14,9 +14,6 @@ pref("devtools.devedition.promo.url", "https://www.mozilla.org/firefox/developer
 #endif
 
 
-pref("devtools.toolbar.enabled", true);
-
-
 pref("devtools.webide.enabled", true);
 
 

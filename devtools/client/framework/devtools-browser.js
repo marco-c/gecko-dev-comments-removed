@@ -24,7 +24,6 @@ loader.lazyRequireGetter(this, "DebuggerServer", "devtools/server/main", true);
 loader.lazyRequireGetter(this, "DebuggerClient", "devtools/shared/client/debugger-client", true);
 loader.lazyRequireGetter(this, "BrowserMenus", "devtools/client/framework/browser-menus");
 loader.lazyRequireGetter(this, "appendStyleSheet", "devtools/client/shared/stylesheet-utils", true);
-loader.lazyRequireGetter(this, "DeveloperToolbar", "devtools/client/shared/developer-toolbar", true);
 loader.lazyRequireGetter(this, "ResponsiveUIManager", "devtools/client/responsive.html/manager", true);
 loader.lazyImporter(this, "BrowserToolboxProcess", "resource://devtools/client/framework/ToolboxProcess.jsm");
 loader.lazyImporter(this, "ScratchpadManager", "resource://devtools/client/scratchpad/scratchpad-manager.jsm");
@@ -52,11 +51,6 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
 
 
   _browserStyleSheets: new WeakMap(),
-
-  
-
-
-  _toolbars: new WeakMap(),
 
   
 
@@ -96,19 +90,6 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
         cmd.setAttribute("disabled", "true");
         cmd.setAttribute("hidden", "true");
       }
-    }
-
-    
-    let devToolbarEnabled = Services.prefs.getBoolPref("devtools.toolbar.enabled");
-    toggleMenuItem("menu_devToolbar", devToolbarEnabled);
-    let focusEl = doc.getElementById("menu_devToolbar");
-    if (devToolbarEnabled) {
-      focusEl.removeAttribute("disabled");
-    } else {
-      focusEl.setAttribute("disabled", "true");
-    }
-    if (devToolbarEnabled && Services.prefs.getBoolPref("devtools.toolbar.visible")) {
-      this.getDeveloperToolbar(win).show(false).catch(console.error);
     }
 
     
@@ -263,9 +244,6 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
       case "toggleToolbox":
       case "toggleToolboxF12":
         gDevToolsBrowser.toggleToolboxCommand(window.gBrowser, startTime);
-        break;
-      case "toggleToolbar":
-        gDevToolsBrowser.getDeveloperToolbar(window).focusToggle();
         break;
       case "webide":
         gDevToolsBrowser.openWebIDE();
@@ -490,22 +468,6 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
 
 
 
-
-
-  getDeveloperToolbar(win) {
-    let toolbar = this._toolbars.get(win);
-    if (toolbar) {
-      return toolbar;
-    }
-    toolbar = new DeveloperToolbar(win);
-    this._toolbars.set(win, toolbar);
-    return toolbar;
-  },
-
-  
-
-
-
   setSlowScriptDebugHandler() {
     let debugService = Cc["@mozilla.org/dom/slow-script-debug;1"]
                          .getService(Ci.nsISlowScriptDebug);
@@ -709,8 +671,6 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
       styleSheet.remove();
       this._browserStyleSheets.delete(win);
     }
-
-    this._toolbars.delete(win);
 
     let tabContainer = win.gBrowser.tabContainer;
     tabContainer.removeEventListener("TabSelect", this);
