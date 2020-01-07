@@ -159,7 +159,11 @@ The tasks to generate each docker image have predictable labels:
 Docker images are built from subdirectories of ``taskcluster/docker``, using
 ``docker build``.  There is currently no capability for one Docker image to
 depend on another in-tree docker image, without uploading the latter to a
-Docker repository.
+Docker repository
+
+The task definition used to create the image-building tasks is given in
+``image.yml`` in the kind directory, and is interpreted as a :doc:`YAML
+Template <yaml-templates>`.
 
 balrog
 ------
@@ -296,7 +300,7 @@ Submits bouncer updates for releases.
 
 release-mark-as-shipped
 -----------------------
-Marks releases as shipped in Ship-It.
+Marks releases as shipped in Ship-It v1
 
 release-bouncer-aliases
 -----------------------
