@@ -2844,7 +2844,7 @@ MacroAssembler::callWithABINoProfiler(void* fun, MoveOp::Type result, CheckUnsaf
 }
 
 void
-MacroAssembler::callWithABI(wasm::BytecodeOffset callOffset, wasm::SymbolicAddress imm,
+MacroAssembler::callWithABI(wasm::BytecodeOffset bytecode, wasm::SymbolicAddress imm,
                             MoveOp::Type result)
 {
     MOZ_ASSERT(wasm::NeedsBuiltinThunk(imm));
@@ -2861,7 +2861,7 @@ MacroAssembler::callWithABI(wasm::BytecodeOffset callOffset, wasm::SymbolicAddre
     
     loadWasmTlsRegFromFrame();
 
-    call(wasm::CallSiteDesc(callOffset.bytecodeOffset, wasm::CallSite::Symbolic), imm);
+    call(wasm::CallSiteDesc(bytecode.offset, wasm::CallSite::Symbolic), imm);
     callWithABIPost(stackAdjust, result,  true);
 
     Pop(WasmTlsReg);
@@ -3006,7 +3006,7 @@ MacroAssembler::wasmCallIndirect(const wasm::CallSiteDesc& desc, const wasm::Cal
     if (needsBoundsCheck) {
         loadWasmGlobalPtr(callee.tableLengthGlobalDataOffset(), scratch);
 
-        wasm::TrapDesc oobTrap(trapOffset, wasm::Trap::OutOfBounds, framePushed());
+        wasm::OldTrapDesc oobTrap(trapOffset, wasm::Trap::OutOfBounds, framePushed());
         branch32(Assembler::Condition::AboveOrEqual, index, scratch, oobTrap);
     }
 
@@ -3014,7 +3014,7 @@ MacroAssembler::wasmCallIndirect(const wasm::CallSiteDesc& desc, const wasm::Cal
     loadWasmGlobalPtr(callee.tableBaseGlobalDataOffset(), scratch);
 
     
-    wasm::TrapDesc nullTrap(trapOffset, wasm::Trap::IndirectCallToNull, framePushed());
+    wasm::OldTrapDesc nullTrap(trapOffset, wasm::Trap::IndirectCallToNull, framePushed());
     if (callee.wasmTableIsExternal()) {
         static_assert(sizeof(wasm::ExternalTableElem) == 8 || sizeof(wasm::ExternalTableElem) == 16,
                       "elements of external tables are two words");
@@ -3040,21 +3040,21 @@ MacroAssembler::wasmCallIndirect(const wasm::CallSiteDesc& desc, const wasm::Cal
 }
 
 void
-MacroAssembler::wasmEmitTrapOutOfLineCode()
+MacroAssembler::wasmEmitOldTrapOutOfLineCode()
 {
-    for (const wasm::TrapSite& site : trapSites()) {
+    for (const wasm::OldTrapSite& site : oldTrapSites()) {
         
         
         
         
         switch (site.kind) {
-          case wasm::TrapSite::Jump: {
+          case wasm::OldTrapSite::Jump: {
             RepatchLabel jump;
             jump.use(site.codeOffset);
             bind(&jump);
             break;
           }
-          case wasm::TrapSite::MemoryAccess: {
+          case wasm::OldTrapSite::MemoryAccess: {
             append(wasm::MemoryAccess(site.codeOffset, currentOffset()));
             break;
           }
@@ -3072,7 +3072,7 @@ MacroAssembler::wasmEmitTrapOutOfLineCode()
             
             
             
-            append(wasm::TrapFarJump(site.trap, farJumpWithPatch()));
+            append(wasm::OldTrapFarJump(site.trap, farJumpWithPatch()));
         } else {
             
             
@@ -3098,7 +3098,7 @@ MacroAssembler::wasmEmitTrapOutOfLineCode()
             
             
             
-            wasm::CallSiteDesc desc(site.bytecodeOffset, wasm::CallSiteDesc::TrapExit);
+            wasm::CallSiteDesc desc(site.offset, wasm::CallSiteDesc::OldTrapExit);
             call(desc, site.trap);
         }
 
@@ -3113,7 +3113,7 @@ MacroAssembler::wasmEmitTrapOutOfLineCode()
     
     breakpoint();
 
-    trapSites().clear();
+    oldTrapSites().clear();
 }
 
 void

@@ -362,7 +362,7 @@ CodeGeneratorMIPS64::visitDivOrModI64(LDivOrModI64* lir)
 
     
     if (lir->canBeDivideByZero())
-        masm.ma_b(rhs, rhs, trap(lir, wasm::Trap::IntegerDivideByZero), Assembler::Zero);
+        masm.ma_b(rhs, rhs, oldTrap(lir, wasm::Trap::IntegerDivideByZero), Assembler::Zero);
 
     
     if (lir->canBeNegativeOverflow()) {
@@ -372,7 +372,7 @@ CodeGeneratorMIPS64::visitDivOrModI64(LDivOrModI64* lir)
         if (lir->mir()->isMod()) {
             masm.ma_xor(output, output);
         } else {
-            masm.jump(trap(lir, wasm::Trap::IntegerOverflow));
+            masm.jump(oldTrap(lir, wasm::Trap::IntegerOverflow));
         }
         masm.jump(&done);
         masm.bind(&notmin);
@@ -399,7 +399,7 @@ CodeGeneratorMIPS64::visitUDivOrModI64(LUDivOrModI64* lir)
 
     
     if (lir->canBeDivideByZero())
-        masm.ma_b(rhs, rhs, trap(lir, wasm::Trap::IntegerDivideByZero), Assembler::Zero);
+        masm.ma_b(rhs, rhs, oldTrap(lir, wasm::Trap::IntegerDivideByZero), Assembler::Zero);
 
     masm.as_ddivu(lhs, rhs);
 

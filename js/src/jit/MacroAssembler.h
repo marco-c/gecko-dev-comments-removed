@@ -1506,7 +1506,7 @@ class MacroAssembler : public MacroAssemblerSpecific
     
     
     
-    void wasmEmitTrapOutOfLineCode();
+    void wasmEmitOldTrapOutOfLineCode();
 
     
     void wasmEmitStackCheck(Register sp, Register scratch, Label* onOverflow);

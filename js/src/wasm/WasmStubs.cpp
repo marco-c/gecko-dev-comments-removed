@@ -533,7 +533,7 @@ GenerateImportFunction(jit::MacroAssembler& masm, const FuncImport& fi, SigIdDes
 
     GenerateFunctionEpilogue(masm, framePushed, offsets);
 
-    masm.wasmEmitTrapOutOfLineCode();
+    masm.wasmEmitOldTrapOutOfLineCode();
 
     return FinishOffsets(masm, offsets);
 }
@@ -1006,7 +1006,7 @@ wasm::GenerateBuiltinThunk(MacroAssembler& masm, ABIFunctionType abiType, ExitRe
 
 
 static bool
-GenerateTrapExit(MacroAssembler& masm, Trap trap, Label* throwLabel, CallableOffsets* offsets)
+GenerateOldTrapExit(MacroAssembler& masm, Trap trap, Label* throwLabel, CallableOffsets* offsets)
 {
     masm.haltingAlign(CodeAlignment);
 
@@ -1028,7 +1028,7 @@ GenerateTrapExit(MacroAssembler& masm, Trap trap, Label* throwLabel, CallableOff
     MOZ_ASSERT(i.done());
 
     masm.assertStackAlignment(ABIStackAlignment);
-    masm.call(SymbolicAddress::ReportTrap);
+    masm.call(SymbolicAddress::OldReportTrap);
 
     masm.jump(throwLabel);
 
@@ -1369,7 +1369,7 @@ wasm::GenerateStubs(const ModuleEnvironment& env, const FuncImportVector& import
 
     for (Trap trap : MakeEnumeratedRange(Trap::Limit)) {
         CallableOffsets offsets;
-        if (!GenerateTrapExit(masm, trap, &throwLabel, &offsets))
+        if (!GenerateOldTrapExit(masm, trap, &throwLabel, &offsets))
             return false;
         if (!code->codeRanges.emplaceBack(trap, offsets))
             return false;

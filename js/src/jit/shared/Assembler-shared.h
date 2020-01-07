@@ -816,14 +816,14 @@ typedef Vector<CallFarJump, 0, SystemAllocPolicy> CallFarJumpVector;
 
 
 
-struct TrapDesc : BytecodeOffset
+struct OldTrapDesc : BytecodeOffset
 {
     enum Kind { Jump, MemoryAccess };
     Kind kind;
     Trap trap;
     uint32_t framePushed;
 
-    TrapDesc(BytecodeOffset offset, Trap trap, uint32_t framePushed, Kind kind = Jump)
+    OldTrapDesc(BytecodeOffset offset, Trap trap, uint32_t framePushed, Kind kind = Jump)
       : BytecodeOffset(offset), kind(kind), trap(trap), framePushed(framePushed)
     {}
 };
@@ -832,26 +832,26 @@ struct TrapDesc : BytecodeOffset
 
 
 
-struct TrapSite : TrapDesc
+struct OldTrapSite : OldTrapDesc
 {
     uint32_t codeOffset;
 
-    TrapSite(TrapDesc trap, uint32_t codeOffset)
-      : TrapDesc(trap), codeOffset(codeOffset)
+    OldTrapSite(OldTrapDesc trap, uint32_t codeOffset)
+      : OldTrapDesc(trap), codeOffset(codeOffset)
     {}
 };
 
-typedef Vector<TrapSite, 0, SystemAllocPolicy> TrapSiteVector;
+typedef Vector<OldTrapSite, 0, SystemAllocPolicy> OldTrapSiteVector;
 
 
 
 
-struct TrapFarJump
+struct OldTrapFarJump
 {
     Trap trap;
     jit::CodeOffset jump;
 
-    TrapFarJump(Trap trap, jit::CodeOffset jump)
+    OldTrapFarJump(Trap trap, jit::CodeOffset jump)
       : trap(trap), jump(jump)
     {}
 
@@ -860,7 +860,7 @@ struct TrapFarJump
     }
 };
 
-typedef Vector<TrapFarJump, 0, SystemAllocPolicy> TrapFarJumpVector;
+typedef Vector<OldTrapFarJump, 0, SystemAllocPolicy> OldTrapFarJumpVector;
 
 } 
 
@@ -871,8 +871,8 @@ class AssemblerShared
 {
     wasm::CallSiteVector callSites_;
     wasm::CallSiteTargetVector callSiteTargets_;
-    wasm::TrapSiteVector trapSites_;
-    wasm::TrapFarJumpVector trapFarJumps_;
+    wasm::OldTrapSiteVector oldTrapSites_;
+    wasm::OldTrapFarJumpVector oldTrapFarJumps_;
     wasm::CallFarJumpVector callFarJumps_;
     wasm::MemoryAccessVector memoryAccesses_;
     wasm::SymbolicAccessVector symbolicAccesses_;
@@ -930,11 +930,11 @@ class AssemblerShared
         enoughMemory_ &= callSites_.emplaceBack(desc, retAddr.offset());
         enoughMemory_ &= callSiteTargets_.emplaceBack(mozilla::Forward<Args>(args)...);
     }
-    void append(wasm::TrapSite trapSite) {
-        enoughMemory_ &= trapSites_.append(trapSite);
+    void append(wasm::OldTrapSite trapSite) {
+        enoughMemory_ &= oldTrapSites_.append(trapSite);
     }
-    void append(wasm::TrapFarJump jmp) {
-        enoughMemory_ &= trapFarJumps_.append(jmp);
+    void append(wasm::OldTrapFarJump jmp) {
+        enoughMemory_ &= oldTrapFarJumps_.append(jmp);
     }
     void append(wasm::CallFarJump jmp) {
         enoughMemory_ &= callFarJumps_.append(jmp);
@@ -947,9 +947,9 @@ class AssemblerShared
             
             
             
-            wasm::TrapDesc trap(access.trapOffset(), wasm::Trap::OutOfBounds, framePushed,
-                                wasm::TrapSite::MemoryAccess);
-            append(wasm::TrapSite(trap, codeOffset));
+            wasm::OldTrapDesc trap(access.trapOffset(), wasm::Trap::OutOfBounds, framePushed,
+                                   wasm::OldTrapSite::MemoryAccess);
+            append(wasm::OldTrapSite(trap, codeOffset));
         } else {
             
             
@@ -966,8 +966,8 @@ class AssemblerShared
 
     wasm::CallSiteVector& callSites() { return callSites_; }
     wasm::CallSiteTargetVector& callSiteTargets() { return callSiteTargets_; }
-    wasm::TrapSiteVector& trapSites() { return trapSites_; }
-    wasm::TrapFarJumpVector& trapFarJumps() { return trapFarJumps_; }
+    wasm::OldTrapSiteVector& oldTrapSites() { return oldTrapSites_; }
+    wasm::OldTrapFarJumpVector& oldTrapFarJumps() { return oldTrapFarJumps_; }
     wasm::CallFarJumpVector& callFarJumps() { return callFarJumps_; }
     wasm::MemoryAccessVector& memoryAccesses() { return memoryAccesses_; }
     wasm::SymbolicAccessVector& symbolicAccesses() { return symbolicAccesses_; }

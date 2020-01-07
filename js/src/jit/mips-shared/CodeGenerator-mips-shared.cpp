@@ -568,7 +568,7 @@ CodeGeneratorMIPSShared::visitDivI(LDivI* ins)
     
     if (mir->canBeDivideByZero()) {
         if (mir->trapOnError()) {
-            masm.ma_b(rhs, rhs, trap(mir, wasm::Trap::IntegerDivideByZero), Assembler::Zero);
+            masm.ma_b(rhs, rhs, oldTrap(mir, wasm::Trap::IntegerDivideByZero), Assembler::Zero);
         } else if (mir->canTruncateInfinities()) {
             
             Label notzero;
@@ -590,7 +590,7 @@ CodeGeneratorMIPSShared::visitDivI(LDivI* ins)
 
         masm.move32(Imm32(-1), temp);
         if (mir->trapOnError()) {
-            masm.ma_b(rhs, temp, trap(mir, wasm::Trap::IntegerOverflow), Assembler::Equal);
+            masm.ma_b(rhs, temp, oldTrap(mir, wasm::Trap::IntegerOverflow), Assembler::Equal);
         } else if (mir->canTruncateOverflow()) {
             
             Label skip;
@@ -718,7 +718,7 @@ CodeGeneratorMIPSShared::visitModI(LModI* ins)
     if (mir->canBeDivideByZero()) {
         if (mir->isTruncated()) {
             if (mir->trapOnError()) {
-                masm.ma_b(rhs, rhs, trap(mir, wasm::Trap::IntegerDivideByZero), Assembler::Zero);
+                masm.ma_b(rhs, rhs, oldTrap(mir, wasm::Trap::IntegerDivideByZero), Assembler::Zero);
             } else {
                 Label skip;
                 masm.ma_b(rhs, Imm32(0), &skip, Assembler::NotEqual, ShortJump);
@@ -1559,10 +1559,10 @@ CodeGeneratorMIPSShared::visitOutOfLineWasmTruncateCheck(OutOfLineWasmTruncateCh
 
     
     masm.bind(&fail);
-    masm.jump(trap(ool, wasm::Trap::IntegerOverflow));
+    masm.jump(oldTrap(ool, wasm::Trap::IntegerOverflow));
 
     masm.bind(&inputIsNaN);
-    masm.jump(trap(ool, wasm::Trap::InvalidConversionToInteger));
+    masm.jump(oldTrap(ool, wasm::Trap::InvalidConversionToInteger));
 }
 
 void
@@ -2415,7 +2415,7 @@ CodeGeneratorMIPSShared::visitUDivOrMod(LUDivOrMod* ins)
     if (ins->canBeDivideByZero()) {
         if (ins->mir()->isTruncated()) {
             if (ins->trapOnError()) {
-                masm.ma_b(rhs, rhs, trap(ins, wasm::Trap::IntegerDivideByZero), Assembler::Zero);
+                masm.ma_b(rhs, rhs, oldTrap(ins, wasm::Trap::IntegerDivideByZero), Assembler::Zero);
             } else {
                 
                 Label notzero;
@@ -2767,7 +2767,7 @@ CodeGeneratorMIPSShared::visitWasmAddOffset(LWasmAddOffset* lir)
     Register base = ToRegister(lir->base());
     Register out = ToRegister(lir->output());
 
-    masm.ma_addTestCarry(out, base, Imm32(mir->offset()), trap(mir, wasm::Trap::OutOfBounds));
+    masm.ma_addTestCarry(out, base, Imm32(mir->offset()), oldTrap(mir, wasm::Trap::OutOfBounds));
 }
 
 template <typename T>

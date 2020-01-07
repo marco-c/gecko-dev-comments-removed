@@ -285,7 +285,7 @@ CodeGeneratorX64::visitDivOrModI64(LDivOrModI64* lir)
 
     
     if (lir->canBeDivideByZero()) {
-        masm.branchTestPtr(Assembler::Zero, rhs, rhs, trap(lir, wasm::Trap::IntegerDivideByZero));
+        masm.branchTestPtr(Assembler::Zero, rhs, rhs, oldTrap(lir, wasm::Trap::IntegerDivideByZero));
     }
 
     
@@ -296,7 +296,7 @@ CodeGeneratorX64::visitDivOrModI64(LDivOrModI64* lir)
         if (lir->mir()->isMod())
             masm.xorl(output, output);
         else
-            masm.jump(trap(lir, wasm::Trap::IntegerOverflow));
+            masm.jump(oldTrap(lir, wasm::Trap::IntegerOverflow));
         masm.jump(&done);
         masm.bind(&notmin);
     }
@@ -328,7 +328,7 @@ CodeGeneratorX64::visitUDivOrModI64(LUDivOrModI64* lir)
 
     
     if (lir->canBeDivideByZero())
-        masm.branchTestPtr(Assembler::Zero, rhs, rhs, trap(lir, wasm::Trap::IntegerDivideByZero));
+        masm.branchTestPtr(Assembler::Zero, rhs, rhs, oldTrap(lir, wasm::Trap::IntegerDivideByZero));
 
     
     masm.xorl(rdx, rdx);

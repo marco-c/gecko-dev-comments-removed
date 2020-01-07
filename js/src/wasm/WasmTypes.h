@@ -1011,7 +1011,7 @@ class CodeRange
         ImportJitExit,     
         ImportInterpExit,  
         BuiltinThunk,      
-        TrapExit,          
+        OldTrapExit,       
         DebugTrap,         
         FarJumpIsland,     
         OutOfBoundsExit,   
@@ -1087,7 +1087,7 @@ class CodeRange
         return kind() == ImportJitExit;
     }
     bool isTrapExit() const {
-        return kind() == TrapExit;
+        return kind() == OldTrapExit;
     }
     bool isDebugTrap() const {
         return kind() == DebugTrap;
@@ -1187,12 +1187,12 @@ LookupInSorted(const CodeRangeVector& codeRanges, CodeRange::OffsetInCode target
 struct BytecodeOffset
 {
     static const uint32_t INVALID = -1;
-    uint32_t bytecodeOffset;
+    uint32_t offset;
 
-    BytecodeOffset() : bytecodeOffset(INVALID) {}
-    explicit BytecodeOffset(uint32_t bytecodeOffset) : bytecodeOffset(bytecodeOffset) {}
+    BytecodeOffset() : offset(INVALID) {}
+    explicit BytecodeOffset(uint32_t offset) : offset(offset) {}
 
-    bool isValid() const { return bytecodeOffset != INVALID; }
+    bool isValid() const { return offset != INVALID; }
 };
 
 
@@ -1210,7 +1210,7 @@ class CallSiteDesc
         Func,       
         Dynamic,    
         Symbolic,   
-        TrapExit,   
+        OldTrapExit,
         EnterFrame, 
         LeaveFrame, 
         Breakpoint  
@@ -1333,7 +1333,7 @@ enum class SymbolicAddress
     HandleExecutionInterrupt,
     HandleDebugTrap,
     HandleThrow,
-    ReportTrap,
+    OldReportTrap,
     ReportOutOfBounds,
     ReportUnalignedAccess,
     CallImport_Void,
