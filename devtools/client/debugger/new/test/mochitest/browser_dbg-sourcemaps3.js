@@ -3,11 +3,11 @@
 
 
 
+requestLongerTimeout(2);
 
 
 add_task(async function() {
   
-  requestLongerTimeout(2);
   await pushPref("devtools.debugger.features.map-scopes", true);
 
   const dbg = await initDebugger("doc-sourcemaps3.html");

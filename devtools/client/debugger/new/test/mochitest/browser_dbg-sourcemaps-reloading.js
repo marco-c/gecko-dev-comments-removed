@@ -1,5 +1,6 @@
 
 
+requestLongerTimeout(2);
 
 async function waitForBreakpointCount(dbg, count) {
   return waitForState(
@@ -10,8 +11,6 @@ async function waitForBreakpointCount(dbg, count) {
 
 add_task(async function() {
   
-  requestLongerTimeout(2);
-
   const dbg = await initDebugger("doc-sourcemaps.html");
   const { selectors: { getBreakpoint, getBreakpoints }, getState } = dbg;
 
@@ -21,7 +20,7 @@ add_task(async function() {
 
   await selectSource(dbg, entrySrc);
   ok(
-    dbg.win.cm.getValue().includes("window.keepMeAlive"),
+    getCM(dbg).getValue().includes("window.keepMeAlive"),
     "Original source text loaded correctly"
   );
 

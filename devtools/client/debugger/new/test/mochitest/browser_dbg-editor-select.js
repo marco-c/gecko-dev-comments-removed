@@ -3,13 +3,12 @@
 
 
 
+requestLongerTimeout(2);
 
 add_task(async function() {
   
   
   
-  requestLongerTimeout(2);
-
   const dbg = await initDebugger("doc-scripts.html");
   const { selectors: { getSelectedSource }, getState } = dbg;
   const simple1 = findSource(dbg, "simple1.js");

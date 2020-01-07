@@ -5,13 +5,12 @@
 
 
 
+requestLongerTimeout(2);
 
 var gDefaultHostType = Services.prefs.getCharPref("devtools.toolbox.host");
 
 add_task(async function() {
   
-  requestLongerTimeout(2);
-
   const dbg = await initDebugger("doc-iframes.html");
 
   const layouts = [

@@ -1,5 +1,6 @@
 
 
+requestLongerTimeout(2);
 
 function assertBpInGutter(dbg, lineNumber) {
   const el = findElement(dbg, "breakpoint");
@@ -17,8 +18,6 @@ function assertBpInGutter(dbg, lineNumber) {
 
 add_task(async function() {
   
-  requestLongerTimeout(2);
-
   const dbg = await initDebugger("doc-sourcemaps2.html");
   const { selectors: { getBreakpoint, getBreakpoints }, getState } = dbg;
 
