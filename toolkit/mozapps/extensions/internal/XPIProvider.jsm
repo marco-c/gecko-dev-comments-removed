@@ -6,6 +6,13 @@
 
 
 
+
+
+
+
+
+
+
 var EXPORTED_SYMBOLS = ["XPIProvider", "XPIInternal"];
 
 
@@ -1977,7 +1984,7 @@ var XPIProvider = {
                                                  ["signedState"]);
         }
 
-        let disabled = XPIProvider.updateAddonDisabledState(addon);
+        let disabled = XPIDatabase.updateAddonDisabledState(addon);
         if (disabled !== undefined)
           changes[disabled ? "disabled" : "enabled"].push(addon.id);
       }
@@ -2567,7 +2574,7 @@ var XPIProvider = {
     let addons = XPIDatabase.getAddonsByType("webextension-theme");
     for (let theme of addons) {
       if (theme.visible && theme.id != aId)
-        this.updateAddonDisabledState(theme, true, undefined, true);
+        XPIDatabase.updateAddonDisabledState(theme, true, undefined, true);
     }
 
     if (!aId && (!LightweightThemeManager.currentTheme ||
@@ -2587,7 +2594,7 @@ var XPIProvider = {
   updateAddonAppDisabledStates() {
     let addons = XPIDatabase.getAddons();
     for (let addon of addons) {
-      this.updateAddonDisabledState(addon);
+      XPIDatabase.updateAddonDisabledState(addon);
     }
   },
 
@@ -2603,7 +2610,7 @@ var XPIProvider = {
         if (aRepoAddon || AddonRepository.getCompatibilityOverridesSync(addon.id)) {
           logger.debug("updateAddonRepositoryData got info for " + addon.id);
           addon._repositoryAddon = aRepoAddon;
-          this.updateAddonDisabledState(addon);
+          XPIDatabase.updateAddonDisabledState(addon);
         }
       })));
   },
@@ -2828,7 +2835,7 @@ var XPIProvider = {
           activeAddon.disable = true;
           for (let addon of this.getDependentAddons(aAddon)) {
             if (addon.active)
-              this.updateAddonDisabledState(addon);
+              XPIDatabase.updateAddonDisabledState(addon);
           }
         }
       }
@@ -2890,7 +2897,7 @@ var XPIProvider = {
       
       if (aMethod == "startup" && aReason != BOOTSTRAP_REASONS.APP_STARTUP) {
         for (let addon of this.getDependentAddons(aAddon))
-          this.updateAddonDisabledState(addon);
+          XPIDatabase.updateAddonDisabledState(addon);
       }
 
       if (CHROME_TYPES.has(aAddon.type) && aMethod == "shutdown" && aReason != BOOTSTRAP_REASONS.APP_SHUTDOWN) {
@@ -2899,141 +2906,6 @@ var XPIProvider = {
       }
       this.setTelemetry(aAddon.id, aMethod + "_MS", new Date() - timeStart);
     }
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  updateAddonDisabledState(aAddon, aUserDisabled, aSoftDisabled, aBecauseSelecting) {
-    if (!(aAddon.inDatabase))
-      throw new Error("Can only update addon states for installed addons.");
-    if (aUserDisabled !== undefined && aSoftDisabled !== undefined) {
-      throw new Error("Cannot change userDisabled and softDisabled at the " +
-                      "same time");
-    }
-
-    if (aUserDisabled === undefined) {
-      aUserDisabled = aAddon.userDisabled;
-    } else if (!aUserDisabled) {
-      
-      aSoftDisabled = false;
-    }
-
-    
-    
-    if (aSoftDisabled === undefined || aUserDisabled)
-      aSoftDisabled = aAddon.softDisabled;
-
-    let appDisabled = !XPIDatabase.isUsableAddon(aAddon);
-    
-    if (aAddon.userDisabled == aUserDisabled &&
-        aAddon.appDisabled == appDisabled &&
-        aAddon.softDisabled == aSoftDisabled)
-      return undefined;
-
-    let wasDisabled = aAddon.disabled;
-    let isDisabled = aUserDisabled || aSoftDisabled || appDisabled;
-
-    
-    
-    let appDisabledChanged = aAddon.appDisabled != appDisabled;
-
-    
-    XPIDatabase.setAddonProperties(aAddon, {
-      userDisabled: aUserDisabled,
-      appDisabled,
-      softDisabled: aSoftDisabled
-    });
-
-    let wrapper = aAddon.wrapper;
-
-    if (appDisabledChanged) {
-      AddonManagerPrivate.callAddonListeners("onPropertyChanged",
-                                             wrapper,
-                                             ["appDisabled"]);
-    }
-
-    
-    
-    if (!aAddon.visible || (wasDisabled == isDisabled))
-      return undefined;
-
-    
-    Services.prefs.setBoolPref(PREF_PENDING_OPERATIONS, true);
-
-    
-    let xpiState = XPIStates.getAddon(aAddon.location, aAddon.id);
-    if (xpiState) {
-      xpiState.syncWithDB(aAddon);
-      XPIStates.save();
-    } else {
-      
-      logger.warn("No XPIState for ${id} in ${location}", aAddon);
-    }
-
-    
-    if (isDisabled != aAddon.active) {
-      AddonManagerPrivate.callAddonListeners("onOperationCancelled", wrapper);
-    } else {
-      if (isDisabled) {
-        AddonManagerPrivate.callAddonListeners("onDisabling", wrapper, false);
-      } else {
-        AddonManagerPrivate.callAddonListeners("onEnabling", wrapper, false);
-      }
-
-      XPIDatabase.updateAddonActive(aAddon, !isDisabled);
-
-      if (isDisabled) {
-        if (aAddon.bootstrap && this.activeAddons.has(aAddon.id)) {
-          this.callBootstrapMethod(aAddon, aAddon._sourceBundle, "shutdown",
-                                   BOOTSTRAP_REASONS.ADDON_DISABLE);
-          this.unloadBootstrapScope(aAddon.id);
-        }
-        AddonManagerPrivate.callAddonListeners("onDisabled", wrapper);
-      } else {
-        if (aAddon.bootstrap) {
-          this.callBootstrapMethod(aAddon, aAddon._sourceBundle, "startup",
-                                   BOOTSTRAP_REASONS.ADDON_ENABLE);
-        }
-        AddonManagerPrivate.callAddonListeners("onEnabled", wrapper);
-      }
-    }
-
-    
-    if (isTheme(aAddon.type)) {
-      if (!isDisabled) {
-        AddonManagerPrivate.notifyAddonChanged(aAddon.id, aAddon.type);
-
-        if (xpiState) {
-          xpiState.syncWithDB(aAddon);
-          XPIStates.save();
-        }
-      } else if (isDisabled && !aBecauseSelecting) {
-        AddonManagerPrivate.notifyAddonChanged(null, "theme");
-      }
-    }
-
-    return isDisabled;
   },
 };
 

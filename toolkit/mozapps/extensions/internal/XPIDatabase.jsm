@@ -6,6 +6,14 @@
 
 
 
+
+
+
+
+
+
+
+
 var EXPORTED_SYMBOLS = ["AddonInternal", "XPIDatabase", "XPIDatabaseReconcile"];
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -472,7 +480,7 @@ AddonInternal.prototype = {
     }
 
     if (this.inDatabase && updateDatabase) {
-      XPIProvider.updateAddonDisabledState(this, userDisabled, softDisabled);
+      XPIDatabase.updateAddonDisabledState(this, userDisabled, softDisabled);
       XPIDatabase.saveChanges();
     } else {
       this.appDisabled = !XPIDatabase.isUsableAddon(this);
@@ -888,7 +896,7 @@ AddonWrapper.prototype = {
       if (this.hidden) {
         throw new Error(`Cannot disable hidden add-on ${addon.id}`);
       }
-      XPIProvider.updateAddonDisabledState(addon, val);
+      XPIDatabase.updateAddonDisabledState(addon, val);
     } else {
       addon.userDisabled = val;
       
@@ -908,9 +916,9 @@ AddonWrapper.prototype = {
       
       if (isTheme(addon.type) && val && !addon.userDisabled) {
         if (isWebExtension(addon.type))
-          XPIProvider.updateAddonDisabledState(addon, undefined, val);
+          XPIDatabase.updateAddonDisabledState(addon, undefined, val);
       } else {
-        XPIProvider.updateAddonDisabledState(addon, undefined, val);
+        XPIDatabase.updateAddonDisabledState(addon, undefined, val);
       }
     } else if (!addon.userDisabled) {
       
@@ -1028,9 +1036,9 @@ AddonWrapper.prototype = {
 
       if (!this.temporarilyInstalled) {
         let addonFile = addon.getResourceURI;
-        XPIProvider.updateAddonDisabledState(addon, true);
+        XPIDatabase.updateAddonDisabledState(addon, true);
         Services.obs.notifyObservers(addonFile, "flush-cache-entry");
-        XPIProvider.updateAddonDisabledState(addon, false);
+        XPIDatabase.updateAddonDisabledState(addon, false);
         resolve();
       } else {
         
@@ -1253,7 +1261,7 @@ Object.assign(DBAddonInternal.prototype, {
     });
 
     if (wasCompatible != this.isCompatible)
-      XPIProvider.updateAddonDisabledState(this);
+      XPIDatabase.updateAddonDisabledState(this);
   },
 
   toJSON() {
@@ -2209,6 +2217,141 @@ this.XPIDatabase = {
         this.saveChanges();
       }
     }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  updateAddonDisabledState(aAddon, aUserDisabled, aSoftDisabled, aBecauseSelecting) {
+    if (!(aAddon.inDatabase))
+      throw new Error("Can only update addon states for installed addons.");
+    if (aUserDisabled !== undefined && aSoftDisabled !== undefined) {
+      throw new Error("Cannot change userDisabled and softDisabled at the " +
+                      "same time");
+    }
+
+    if (aUserDisabled === undefined) {
+      aUserDisabled = aAddon.userDisabled;
+    } else if (!aUserDisabled) {
+      
+      aSoftDisabled = false;
+    }
+
+    
+    
+    if (aSoftDisabled === undefined || aUserDisabled)
+      aSoftDisabled = aAddon.softDisabled;
+
+    let appDisabled = !this.isUsableAddon(aAddon);
+    
+    if (aAddon.userDisabled == aUserDisabled &&
+        aAddon.appDisabled == appDisabled &&
+        aAddon.softDisabled == aSoftDisabled)
+      return undefined;
+
+    let wasDisabled = aAddon.disabled;
+    let isDisabled = aUserDisabled || aSoftDisabled || appDisabled;
+
+    
+    
+    let appDisabledChanged = aAddon.appDisabled != appDisabled;
+
+    
+    this.setAddonProperties(aAddon, {
+      userDisabled: aUserDisabled,
+      appDisabled,
+      softDisabled: aSoftDisabled
+    });
+
+    let wrapper = aAddon.wrapper;
+
+    if (appDisabledChanged) {
+      AddonManagerPrivate.callAddonListeners("onPropertyChanged",
+                                             wrapper,
+                                             ["appDisabled"]);
+    }
+
+    
+    
+    if (!aAddon.visible || (wasDisabled == isDisabled))
+      return undefined;
+
+    
+    Services.prefs.setBoolPref(PREF_PENDING_OPERATIONS, true);
+
+    
+    let xpiState = XPIStates.getAddon(aAddon.location, aAddon.id);
+    if (xpiState) {
+      xpiState.syncWithDB(aAddon);
+      XPIStates.save();
+    } else {
+      
+      logger.warn("No XPIState for ${id} in ${location}", aAddon);
+    }
+
+    
+    if (isDisabled != aAddon.active) {
+      AddonManagerPrivate.callAddonListeners("onOperationCancelled", wrapper);
+    } else {
+      if (isDisabled) {
+        AddonManagerPrivate.callAddonListeners("onDisabling", wrapper, false);
+      } else {
+        AddonManagerPrivate.callAddonListeners("onEnabling", wrapper, false);
+      }
+
+      this.updateAddonActive(aAddon, !isDisabled);
+
+      if (isDisabled) {
+        if (aAddon.bootstrap && XPIProvider.activeAddons.has(aAddon.id)) {
+          XPIProvider.callBootstrapMethod(aAddon, aAddon._sourceBundle, "shutdown",
+                                          BOOTSTRAP_REASONS.ADDON_DISABLE);
+          XPIProvider.unloadBootstrapScope(aAddon.id);
+        }
+        AddonManagerPrivate.callAddonListeners("onDisabled", wrapper);
+      } else {
+        if (aAddon.bootstrap) {
+          XPIProvider.callBootstrapMethod(aAddon, aAddon._sourceBundle, "startup",
+                                          BOOTSTRAP_REASONS.ADDON_ENABLE);
+        }
+        AddonManagerPrivate.callAddonListeners("onEnabled", wrapper);
+      }
+    }
+
+    
+    if (isTheme(aAddon.type)) {
+      if (!isDisabled) {
+        AddonManagerPrivate.notifyAddonChanged(aAddon.id, aAddon.type);
+
+        if (xpiState) {
+          xpiState.syncWithDB(aAddon);
+          XPIStates.save();
+        }
+      } else if (isDisabled && !aBecauseSelecting) {
+        AddonManagerPrivate.notifyAddonChanged(null, "theme");
+      }
+    }
+
+    return isDisabled;
   },
 
   

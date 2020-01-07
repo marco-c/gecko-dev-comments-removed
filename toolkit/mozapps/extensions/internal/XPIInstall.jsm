@@ -6,6 +6,13 @@
 
 
 
+
+
+
+
+
+
+
 var EXPORTED_SYMBOLS = [
   "UpdateChecker",
   "XPIInstall",
