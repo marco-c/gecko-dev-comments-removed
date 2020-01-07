@@ -11,6 +11,9 @@ const {
   NoSuchWindowError,
   UnsupportedOperationError,
 } = ChromeUtils.import("chrome://marionette/content/error.js", {});
+const {
+  MessageManagerDestroyedPromise,
+} = ChromeUtils.import("chrome://marionette/content/sync.js", {});
 
 this.EXPORTED_SYMBOLS = ["browser", "Context", "WindowState"];
 
@@ -168,7 +171,11 @@ browser.Context = class {
   }
 
   get messageManager() {
-    return this.contentBrowser.messageManager;
+    if (this.contentBrowser) {
+      return this.contentBrowser.messageManager;
+    }
+
+    return null;
   }
 
   
@@ -277,7 +284,14 @@ browser.Context = class {
 
   closeWindow() {
     return new Promise(resolve => {
-      this.window.addEventListener("unload", resolve, {once: true});
+      
+      let destroyed = new MessageManagerDestroyedPromise(
+          this.window.messageManager);
+
+      this.window.addEventListener("unload", async () => {
+        await destroyed;
+        resolve();
+      }, {once: true});
       this.window.close();
     });
   }
@@ -302,14 +316,22 @@ browser.Context = class {
     }
 
     return new Promise((resolve, reject) => {
+      
+      let browserDetached = async () => {
+        await new MessageManagerDestroyedPromise(this.messageManager);
+        resolve();
+      };
+
       if (this.tabBrowser.closeTab) {
         
-        this.tabBrowser.deck.addEventListener("TabClose", resolve, {once: true});
+        this.tabBrowser.deck.addEventListener(
+            "TabClose", browserDetached, {once: true});
         this.tabBrowser.closeTab(this.tab);
 
       } else if (this.tabBrowser.removeTab) {
         
-        this.tab.addEventListener("TabClose", resolve, {once: true});
+        this.tab.addEventListener(
+            "TabClose", browserDetached, {once: true});
         this.tabBrowser.removeTab(this.tab);
 
       } else {

@@ -4,13 +4,24 @@
 
 "use strict";
 
+ChromeUtils.import("resource://gre/modules/Log.jsm");
+ChromeUtils.import("resource://gre/modules/Services.jsm");
+
 const {
   error,
   TimeoutError,
 } = ChromeUtils.import("chrome://marionette/content/error.js", {});
 
+this.EXPORTED_SYMBOLS = [
+  
+  "PollPromise",
+  "TimedPromise",
 
-this.EXPORTED_SYMBOLS = ["PollPromise", "TimedPromise"];
+  
+  "MessageManagerDestroyedPromise",
+];
+
+const logger = Log.repository.getLogger("Marionette");
 
 const {TYPE_ONE_SHOT, TYPE_REPEATING_SLACK} = Ci.nsITimer;
 
@@ -162,5 +173,45 @@ function TimedPromise(fn, {timeout = 1500, throws = TimeoutError} = {}) {
   }, err => {
     timer.cancel();
     throw err;
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function MessageManagerDestroyedPromise(messageManager) {
+  return new Promise(resolve => {
+    function observe(subject, topic) {
+      logger.debug(`Received observer notification ${topic}`);
+
+      if (subject == messageManager) {
+        Services.obs.removeObserver(this, "message-manager-disconnect");
+        resolve();
+      }
+    }
+
+    Services.obs.addObserver(observe, "message-manager-disconnect");
   });
 }
