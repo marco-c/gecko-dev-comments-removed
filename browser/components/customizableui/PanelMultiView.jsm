@@ -64,6 +64,7 @@ const TRANSITION_PHASES = Object.freeze({
 });
 
 let gNodeToObjectMap = new WeakMap();
+let gMultiLineElementsMap = new WeakMap();
 
 
 
@@ -110,6 +111,25 @@ this.AssociatedToNode = class {
     return this.__dwu = this.window.QueryInterface(Ci.nsIInterfaceRequestor)
                                    .getInterface(Ci.nsIDOMWindowUtils);
   }
+
+  
+
+
+
+
+
+
+
+
+  dispatchCustomEvent(eventName, detail, cancelable = false) {
+    let event = new this.window.CustomEvent(eventName, {
+      detail,
+      bubbles: true,
+      cancelable,
+    });
+    this.node.dispatchEvent(event);
+    return event.defaultPrevented;
+  }
 };
 
 
@@ -120,9 +140,6 @@ this.PanelMultiView = class extends this.AssociatedToNode {
     return this.node.parentNode;
   }
 
-  get showingSubView() {
-    return this._showingSubView;
-  }
   get _mainViewId() {
     return this.node.getAttribute("mainViewId");
   }
@@ -182,17 +199,13 @@ this.PanelMultiView = class extends this.AssociatedToNode {
       this.__keyNavigationMap = new Map();
     return this.__keyNavigationMap;
   }
-  get _multiLineElementsMap() {
-    if (!this.__multiLineElementsMap)
-      this.__multiLineElementsMap = new WeakMap();
-    return this.__multiLineElementsMap;
-  }
 
   connect() {
     this.knownViews = new Set(this.node.getElementsByTagName("panelview"));
     this.openViews = [];
     this._mainViewHeight = 0;
-    this.__transitioning = this._ignoreMutations = this._showingSubView = false;
+    this.__transitioning = false;
+    this.showingSubView = false;
 
     const {document, window} = this;
 
@@ -218,25 +231,15 @@ this.PanelMultiView = class extends this.AssociatedToNode {
     this._dir = cs.direction;
     this.showMainView();
 
-    this._showingSubView = false;
-
     
     
-    ["_mainView", "ignoreMutations", "showingSubView"].forEach(property => {
-      Object.defineProperty(this.node, property, {
-        enumerable: true,
-        get: () => this[property],
-        set: (val) => this[property] = val
-      });
-    });
-    ["goBack", "descriptionHeightWorkaround", "showMainView",
-     "showSubView"].forEach(method => {
+    ["goBack", "showMainView", "showSubView"].forEach(method => {
       Object.defineProperty(this.node, method, {
         enumerable: true,
         value: (...args) => this[method](...args)
       });
     });
-    ["current", "currentShowPromise"].forEach(property => {
+    ["current", "currentShowPromise", "showingSubView"].forEach(property => {
       Object.defineProperty(this.node, property, {
         enumerable: true,
         get: () => this[property]
@@ -290,46 +293,6 @@ this.PanelMultiView = class extends this.AssociatedToNode {
     }
   }
 
-  _setHeader(viewNode, titleText) {
-    
-    let header = viewNode.firstChild;
-    if (header && header.classList.contains("panel-header")) {
-      if (titleText) {
-        header.querySelector("label").setAttribute("value", titleText);
-      } else {
-        header.remove();
-      }
-      return;
-    }
-
-    
-    if (!titleText) {
-      return;
-    }
-
-    header = this.document.createElement("box");
-    header.classList.add("panel-header");
-
-    let backButton = this.document.createElement("toolbarbutton");
-    backButton.className =
-      "subviewbutton subviewbutton-iconic subviewbutton-back";
-    backButton.setAttribute("closemenu", "none");
-    backButton.setAttribute("tabindex", "0");
-    backButton.setAttribute("tooltip",
-      this.node.getAttribute("data-subviewbutton-tooltip"));
-    backButton.addEventListener("command", () => {
-      
-      viewNode.panelMultiView.goBack();
-      backButton.blur();
-    });
-
-    let label = this.document.createElement("label");
-    label.setAttribute("value", titleText);
-
-    header.append(backButton, label);
-    viewNode.prepend(header);
-  }
-
   goBack() {
     let previous = this.openViews.pop();
     let current = this._currentSubView;
@@ -366,9 +329,7 @@ this.PanelMultiView = class extends this.AssociatedToNode {
       
       if (panelview == theOne || !this.node || panelview.panelMultiView != this.node)
         continue;
-      if (panelview.hasAttribute("current"))
-        this._dispatchViewEvent(panelview, "ViewHiding");
-      panelview.removeAttribute("current");
+      PanelView.forNode(panelview).current = false;
     }
 
     this._viewShowing = null;
@@ -378,12 +339,9 @@ this.PanelMultiView = class extends this.AssociatedToNode {
 
     if (!this.openViews.includes(theOne))
       this.openViews.push(theOne);
-    if (!theOne.hasAttribute("current")) {
-      theOne.setAttribute("current", true);
-      this.descriptionHeightWorkaround(theOne);
-      this._dispatchViewEvent(theOne, "ViewShown");
-    }
-    this._showingSubView = theOne.id != this._mainViewId;
+
+    PanelView.forNode(theOne).current = true;
+    this.showingSubView = theOne.id != this._mainViewId;
   }
 
   showSubView(aViewId, aAnchor, aPreviousView) {
@@ -401,14 +359,15 @@ this.PanelMultiView = class extends this.AssociatedToNode {
         this._viewStack.appendChild(viewNode);
       }
 
+      let nextPanelView = PanelView.forNode(viewNode);
       this.knownViews.add(viewNode);
 
       viewNode.panelMultiView = this.node;
 
       let reverse = !!aPreviousView;
       if (!reverse) {
-        this._setHeader(viewNode, viewNode.getAttribute("title") ||
-                                  (aAnchor && aAnchor.getAttribute("label")));
+        nextPanelView.headerText = viewNode.getAttribute("title") ||
+                                   (aAnchor && aAnchor.getAttribute("label"));
       }
 
       let previousViewNode = aPreviousView || this._currentSubView;
@@ -435,10 +394,7 @@ this.PanelMultiView = class extends this.AssociatedToNode {
       
       
       
-      if (isMainView)
-        viewNode.setAttribute("mainview", true);
-      else
-        viewNode.removeAttribute("mainview");
+      nextPanelView.mainview = isMainView;
 
       if (aAnchor) {
         viewNode.classList.add("PanelUI-subView");
@@ -456,7 +412,7 @@ this.PanelMultiView = class extends this.AssociatedToNode {
             this.blockers.add(promise);
           }
         };
-        let cancel = this._dispatchViewEvent(viewNode, "ViewShowing", aAnchor, detail);
+        let cancel = nextPanelView.dispatchCustomEvent("ViewShowing", detail, true);
         if (detail.blockers.size) {
           try {
             let results = await Promise.all(detail.blockers);
@@ -513,6 +469,8 @@ this.PanelMultiView = class extends this.AssociatedToNode {
 
     const {window, document} = this;
 
+    let nextPanelView = PanelView.forNode(viewNode);
+
     if (this._autoResizeWorkaroundTimer)
       window.clearTimeout(this._autoResizeWorkaroundTimer);
 
@@ -562,7 +520,7 @@ this.PanelMultiView = class extends this.AssociatedToNode {
 
       
       
-      this.descriptionHeightWorkaround(viewNode);
+      nextPanelView.descriptionHeightWorkaround();
 
       viewRect = await BrowserUtils.promiseLayoutFlushed(this.document, "layout", () => {
         return this._dwu.getBoundsWithoutFlushing(viewNode);
@@ -712,35 +670,6 @@ this.PanelMultiView = class extends this.AssociatedToNode {
     }
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-  _dispatchViewEvent(viewNode, eventName, anchor, detail) {
-    let cancel = false;
-    if (eventName != "PanelMultiViewHidden") {
-      
-      CustomizableUI.ensureSubviewListeners(viewNode);
-    }
-
-    let evt = new this.window.CustomEvent(eventName, {
-      detail,
-      bubbles: true,
-      cancelable: eventName == "ViewShowing"
-    });
-    viewNode.dispatchEvent(evt);
-    if (!cancel)
-      cancel = evt.defaultPrevented;
-    return cancel;
-  }
-
   _calculateMaxHeight() {
     
     
@@ -820,7 +749,7 @@ this.PanelMultiView = class extends this.AssociatedToNode {
       case "popupshown":
         
         
-        this.descriptionHeightWorkaround();
+        PanelView.forNode(this._mainView).descriptionHeightWorkaround();
         break;
       case "popuphidden": {
         
@@ -850,7 +779,7 @@ this.PanelMultiView = class extends this.AssociatedToNode {
         this._viewContainer.style.removeProperty("min-width");
         this._viewContainer.style.removeProperty("max-width");
 
-        this._dispatchViewEvent(this.node, "PanelMultiViewHidden");
+        this.dispatchCustomEvent("PanelMultiViewHidden");
         break;
       }
     }
@@ -1043,6 +972,89 @@ this.PanelMultiView = class extends this.AssociatedToNode {
       navMap.selected.get().focus();
     }
   }
+};
+
+
+
+
+this.PanelView = class extends this.AssociatedToNode {
+  
+
+
+
+
+
+  set mainview(value) {
+    if (value) {
+      this.node.setAttribute("mainview", true);
+    } else {
+      this.node.removeAttribute("mainview");
+    }
+  }
+
+  set current(value) {
+    if (value) {
+      if (!this.node.hasAttribute("current")) {
+        this.node.setAttribute("current", true);
+        this.descriptionHeightWorkaround();
+        this.dispatchCustomEvent("ViewShown");
+      }
+    } else if (this.node.hasAttribute("current")) {
+      this.dispatchCustomEvent("ViewHiding");
+      this.node.removeAttribute("current");
+    }
+  }
+
+  
+
+
+  set headerText(value) {
+    
+    let header = this.node.firstChild;
+    if (header && header.classList.contains("panel-header")) {
+      if (value) {
+        header.querySelector("label").setAttribute("value", value);
+      } else {
+        header.remove();
+      }
+      return;
+    }
+
+    
+    if (!value) {
+      return;
+    }
+
+    header = this.document.createElement("box");
+    header.classList.add("panel-header");
+
+    let backButton = this.document.createElement("toolbarbutton");
+    backButton.className =
+      "subviewbutton subviewbutton-iconic subviewbutton-back";
+    backButton.setAttribute("closemenu", "none");
+    backButton.setAttribute("tabindex", "0");
+    backButton.setAttribute("tooltip",
+      this.node.getAttribute("data-subviewbutton-tooltip"));
+    backButton.addEventListener("command", () => {
+      
+      this.node.panelMultiView.goBack();
+      backButton.blur();
+    });
+
+    let label = this.document.createElement("label");
+    label.setAttribute("value", value);
+
+    header.append(backButton, label);
+    this.node.prepend(header);
+  }
+
+  
+
+
+  dispatchCustomEvent(...args) {
+    CustomizableUI.ensureSubviewListeners(this.node);
+    return super.dispatchCustomEvent(...args);
+  }
 
   
 
@@ -1054,12 +1066,8 @@ this.PanelMultiView = class extends this.AssociatedToNode {
 
 
 
-
-
-
-
-  descriptionHeightWorkaround(viewNode = this._mainView) {
-    if (!viewNode || !viewNode.hasAttribute("descriptionheightworkaround")) {
+  descriptionHeightWorkaround() {
+    if (!this.node.hasAttribute("descriptionheightworkaround")) {
       
       return;
     }
@@ -1077,7 +1085,7 @@ this.PanelMultiView = class extends this.AssociatedToNode {
       "label" + isMultiline,
       "toolbarbutton[wrap]:not([hidden])",
     ].join(",");
-    for (let element of viewNode.querySelectorAll(selector)) {
+    for (let element of this.node.querySelectorAll(selector)) {
       
       if (element.closest("[hidden]")) {
         continue;
@@ -1086,7 +1094,7 @@ this.PanelMultiView = class extends this.AssociatedToNode {
       element = element.labelElement || element;
 
       let bounds = element.getBoundingClientRect();
-      let previous = this._multiLineElementsMap.get(element);
+      let previous = gMultiLineElementsMap.get(element);
       
       
       if (!bounds.width || !bounds.height ||
@@ -1112,16 +1120,11 @@ this.PanelMultiView = class extends this.AssociatedToNode {
 
     
     for (let { element, bounds } of items) {
-      this._multiLineElementsMap.set(element, { bounds, textContent: element.textContent });
+      gMultiLineElementsMap.set(element, { bounds, textContent: element.textContent });
       element.style.height = bounds.height + "px";
     }
   }
-};
 
-
-
-
-this.PanelView = class extends this.AssociatedToNode {
   
 
 
