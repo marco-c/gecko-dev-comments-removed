@@ -154,9 +154,6 @@ public:
             mozilla::LogicalAxis aLogicalAxis) const override;
 
   
-  bool IsHorizontal();
-
-  
 
 
 
