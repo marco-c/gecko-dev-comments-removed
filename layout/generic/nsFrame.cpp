@@ -16,6 +16,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/DebugOnly.h"
+#include "mozilla/dom/ElementInlines.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/PathHelpers.h"
 #include "mozilla/Sprintf.h"
@@ -106,6 +107,8 @@
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/ServoStyleSet.h"
+#include "mozilla/ServoStyleSetInlines.h"
+#include "mozilla/css/ImageLoader.h"
 #include "mozilla/gfx/Tools.h"
 #include "nsPrintfCString.h"
 #include "ActiveLayerTracker.h"
@@ -9901,8 +9904,8 @@ nsFrame::DoGetParentComputedStyle(nsIFrame** aProviderFrame) const
   
   
   if (MOZ_LIKELY(mContent)) {
-    nsIContent* parentContent = mContent->GetFlattenedTreeParent();
-    if (MOZ_LIKELY(parentContent)) {
+    Element* parentElement = mContent->GetFlattenedTreeParentElement();
+    if (MOZ_LIKELY(parentElement)) {
       nsAtom* pseudo = Style()->GetPseudo();
       if (!pseudo || !mContent->IsElement() ||
           (!nsCSSAnonBoxes::IsAnonBox(pseudo) &&
@@ -9913,10 +9916,15 @@ nsFrame::DoGetParentComputedStyle(nsIFrame** aProviderFrame) const
           
 
           pseudo == nsCSSAnonBoxes::tableWrapper) {
-        nsCSSFrameConstructor* fm = PresContext()->FrameConstructor();
-        ComputedStyle* sc = fm->GetDisplayContentsStyleFor(parentContent);
-        if (MOZ_UNLIKELY(sc)) {
-          return sc;
+        if (Servo_Element_IsDisplayContents(parentElement)) {
+          RefPtr<ComputedStyle> style =
+            PresShell()->StyleSet()->ResolveServoStyle(parentElement);
+          
+          
+          
+          
+          
+          return style;
         }
       }
     } else {

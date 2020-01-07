@@ -420,6 +420,21 @@ IsInlineFrame(const nsIFrame* aFrame)
 
 
 
+static inline bool
+IsDisplayContents(const Element* aElement)
+{
+  return aElement->HasServoData() && Servo_Element_IsDisplayContents(aElement);
+}
+
+static inline bool
+IsDisplayContents(const nsIContent* aContent)
+{
+  return aContent->IsElement() && IsDisplayContents(aContent->AsElement());
+}
+
+
+
+
 
 static bool
 IsFrameForSVG(const nsIFrame* aFrame)
@@ -1633,8 +1648,6 @@ nsCSSFrameConstructor::NotifyDestroyingFrame(nsIFrame* aFrame)
   }
 
   RestyleManager()->NotifyDestroyingFrame(aFrame);
-
-  nsFrameManager::NotifyDestroyingFrame(aFrame);
 }
 
 struct nsGenConInitializer {
@@ -2467,7 +2480,6 @@ nsCSSFrameConstructor::ConstructDocElementFrame(Element*                 aDocEle
                "Scrollbars should have been propagated to the viewport");
 
   if (MOZ_UNLIKELY(display->mDisplay == StyleDisplay::None)) {
-    RegisterDisplayNoneStyleFor(aDocElement, computedStyle);
     return nullptr;
   }
 
@@ -5597,14 +5609,7 @@ nsCSSFrameConstructor::SetAsUndisplayedContent(nsFrameConstructorState& aState,
     }
     return;
   }
-  NS_ASSERTION(!aIsGeneratedContent, "Should have had pseudo type");
-
-  if (aState.mCreatingExtraFrames) {
-    MOZ_ASSERT(GetDisplayNoneStyleFor(aContent),
-               "should have called RegisterDisplayNoneStyleFor earlier");
-    return;
-  }
-  aList.AppendUndisplayedItem(aContent, aComputedStyle);
+  MOZ_ASSERT(!aIsGeneratedContent, "Should have had pseudo type");
 }
 
 void
@@ -5827,16 +5832,6 @@ nsCSSFrameConstructor::AddFrameConstructionItemsInternal(nsFrameConstructorState
   
   if (display->mDisplay == StyleDisplay::Contents &&
       !foundMathMLData) {
-    if (!GetDisplayContentsStyleFor(aContent)) {
-      MOZ_ASSERT(computedStyle->GetPseudo() || !isGeneratedContent,
-                 "Should have had pseudo type");
-      aState.mFrameManager->RegisterDisplayContentsStyleFor(aContent,
-                                                            computedStyle);
-    } else {
-      aState.mFrameManager->ChangeRegisteredDisplayContentsStyleFor(aContent,
-                                                                    computedStyle);
-    }
-
     if (aParentFrame) {
       aParentFrame->AddStateBits(NS_FRAME_MAY_HAVE_GENERATED_CONTENT);
     }
@@ -6492,6 +6487,9 @@ nsCSSFrameConstructor::FindSiblingInternal(
   };
 
   while (nsIContent* sibling = nextDomSibling(aIter)) {
+    
+    
+    
     if (nsIFrame* primaryFrame = sibling->GetPrimaryFrame()) {
       
       
@@ -6502,7 +6500,7 @@ nsCSSFrameConstructor::FindSiblingInternal(
       }
     }
 
-    if (GetDisplayContentsStyleFor(sibling)) {
+    if (IsDisplayContents(sibling)) {
       if (nsIFrame* frame = adjust(getNearPseudo(sibling))) {
         return frame;
       }
@@ -6587,7 +6585,7 @@ nsCSSFrameConstructor::FindSibling(const FlattenedChildIterator& aIter,
   
   
   const nsIContent* current = aIter.Parent();
-  while (GetDisplayContentsStyleFor(current)) {
+  while (IsDisplayContents(current)) {
     const nsIContent* parent = current->GetFlattenedTreeParent();
     MOZ_ASSERT(parent, "No display: contents on the root");
 
@@ -6703,7 +6701,7 @@ nsCSSFrameConstructor::GetContentInsertionFrameFor(nsIContent* aContent)
 {
   nsIFrame* frame;
   while (!(frame = aContent->GetPrimaryFrame())) {
-    if (!GetDisplayContentsStyleFor(aContent)) {
+    if (!IsDisplayContents(aContent)) {
       return nullptr;
     }
 
@@ -6829,9 +6827,7 @@ nsCSSFrameConstructor::CheckBitsForLazyFrameConstruction(nsIContent* aParent)
       noPrimaryFrame = needsFrameBitSet = false;
     }
     if (!noPrimaryFrame && !content->GetPrimaryFrame()) {
-      ComputedStyle* sc = GetDisplayNoneStyleFor(content);
-      noPrimaryFrame = !GetDisplayContentsStyleFor(content) &&
-        (sc && !sc->IsInDisplayNoneSubtree());
+      noPrimaryFrame = !IsDisplayContents(content);
     }
     if (!needsFrameBitSet && content->HasFlag(NODE_NEEDS_FRAME)) {
       needsFrameBitSet = true;
@@ -6882,12 +6878,16 @@ nsCSSFrameConstructor::MaybeConstructLazily(Operation aOperation,
 
   
   
-  nsIContent* parent = aChild->GetFlattenedTreeParent();
+  Element* parent = aChild->GetFlattenedTreeParentElement();
   if (!parent) {
     
     return true;
   }
 
+  if (Servo_Element_IsDisplayNone(parent)) {
+    
+    return true;
+  }
 
   
   if (aOperation == CONTENTINSERT) {
@@ -6911,7 +6911,7 @@ nsCSSFrameConstructor::MaybeConstructLazily(Operation aOperation,
   }
 
   CheckBitsForLazyFrameConstruction(parent);
-  parent->AsElement()->NoteDescendantsNeedFramesForServo();
+  parent->NoteDescendantsNeedFramesForServo();
 
   return true;
 }
@@ -6927,9 +6927,7 @@ nsCSSFrameConstructor::IssueSingleInsertNofications(nsIContent* aContainer,
        child = child->GetNextSibling()) {
     
     MOZ_ASSERT(MaybeGetListBoxBodyFrame(aContainer, child) ||
-               (!child->GetPrimaryFrame() &&
-                !GetDisplayNoneStyleFor(child) &&
-                !GetDisplayContentsStyleFor(child)));
+               !child->GetPrimaryFrame());
 
     
     ContentRangeInserted(aContainer, child, child->GetNextSibling(),
@@ -7094,9 +7092,9 @@ nsCSSFrameConstructor::ContentAppended(nsIContent* aContainer,
        child = child->GetNextSibling()) {
     
     
-    NS_ASSERTION(!child->GetPrimaryFrame() ||
-                 child->GetPrimaryFrame()->GetContent() != child,
-                 "asked to construct a frame for a node that already has a frame");
+    MOZ_ASSERT(!child->GetPrimaryFrame() ||
+               child->GetPrimaryFrame()->GetContent() != child,
+               "asked to construct a frame for a node that already has a frame");
   }
 #endif
 
@@ -7172,7 +7170,7 @@ nsCSSFrameConstructor::ContentAppended(nsIContent* aContainer,
   
   
   nsIFrame* nextSibling = nullptr;
-  if (GetDisplayContentsStyleFor(insertion.mContainer) ||
+  if (IsDisplayContents(insertion.mContainer) ||
       nsLayoutUtils::GetAfterFrame(insertion.mContainer)) {
     FlattenedChildIterator iter(insertion.mContainer);
     iter.Seek(insertion.mContainer->GetLastChild());
@@ -7577,7 +7575,8 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
 
   
   NS_ASSERTION(!parentFrame || parentFrame->GetContent() == aContainer ||
-               GetDisplayContentsStyleFor(aContainer), "New XBL code is possibly wrong!");
+               IsDisplayContents(aContainer),
+               "New XBL code is possibly wrong!");
 
   if (aInsertionKind == InsertionKind::Async &&
       MaybeConstructLazily(CONTENTINSERT, aStartChild)) {
@@ -7997,28 +7996,6 @@ nsCSSFrameConstructor::ContentRemoved(nsIContent* aContainer,
     
     
     childFrame = nullptr;
-    UnregisterDisplayNoneStyleFor(aChild, aContainer);
-  }
-  MOZ_ASSERT(!childFrame || !GetDisplayContentsStyleFor(aChild),
-             "display:contents nodes shouldn't have a frame");
-  if (!childFrame && GetDisplayContentsStyleFor(aChild)) {
-    
-    
-    
-    StyleChildrenIterator iter(aChild);
-    for (nsIContent* c = iter.GetNextChild(); c; c = iter.GetNextChild()) {
-      if (c->GetPrimaryFrame() || GetDisplayContentsStyleFor(c)) {
-        LAYOUT_PHASE_TEMP_EXIT();
-        bool didReconstruct =
-          ContentRemoved(aChild, c, nullptr, REMOVE_FOR_RECONSTRUCTION);
-        LAYOUT_PHASE_TEMP_REENTER();
-        if (didReconstruct) {
-          return true;
-        }
-      }
-    }
-    UnregisterDisplayContentsStyleFor(aChild, aContainer);
-    return false;
   }
 
 #ifdef MOZ_XUL
@@ -8038,10 +8015,10 @@ nsCSSFrameConstructor::ContentRemoved(nsIContent* aContainer,
   
   
   
+  
   bool isRoot = false;
   if (!aContainer) {
-    nsIFrame* viewport = GetRootFrame();
-    if (viewport) {
+    if (nsIFrame* viewport = GetRootFrame()) {
       nsIFrame* firstChild = viewport->PrincipalChildList().FirstChild();
       if (firstChild && firstChild->GetContent() == aChild) {
         isRoot = true;
@@ -8050,6 +8027,45 @@ nsCSSFrameConstructor::ContentRemoved(nsIContent* aContainer,
       }
     }
   }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  auto CouldHaveBeenDisplayContents = [aFlags](nsIContent* aContent) -> bool {
+    return aFlags == REMOVE_FOR_RECONSTRUCTION || IsDisplayContents(aContent);
+  };
+
+  if (!childFrame && CouldHaveBeenDisplayContents(aChild)) {
+    
+    
+    
+    StyleChildrenIterator iter(aChild);
+    for (nsIContent* c = iter.GetNextChild(); c; c = iter.GetNextChild()) {
+      if (c->GetPrimaryFrame() || CouldHaveBeenDisplayContents(aChild)) {
+        LAYOUT_PHASE_TEMP_EXIT();
+        bool didReconstruct =
+          ContentRemoved(aChild, c, nullptr, REMOVE_FOR_RECONSTRUCTION);
+        LAYOUT_PHASE_TEMP_REENTER();
+        if (didReconstruct) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
 
   if (childFrame) {
     InvalidateCanvasIfNeeded(mPresShell, aChild);
@@ -8143,7 +8159,6 @@ nsCSSFrameConstructor::ContentRemoved(nsIContent* aContainer,
       if (!childFrame || childFrame->GetContent() != aChild) {
         
         
-        UnregisterDisplayNoneStyleFor(aChild, aContainer);
         return false;
       }
       parentFrame = childFrame->GetParent();
@@ -10170,7 +10185,6 @@ nsCSSFrameConstructor::ConstructFramesFromItemList(nsFrameConstructorState& aSta
   CreateNeededPseudoInternalRubyBoxes(aState, aItems, aParentFrame);
   CreateNeededPseudoSiblings(aState, aItems, aParentFrame);
 
-  aItems.SetTriedConstructingFrames();
   for (FCItemIterator iter(aItems); !iter.IsDone(); iter.Next()) {
     NS_ASSERTION(iter.item().DesiredParentType() == GetParentType(aParentFrame),
                  "Needed pseudos didn't get created; expect bad things");
@@ -12231,8 +12245,7 @@ Iterator::AppendItemsToList(nsCSSFrameConstructor* aFCtor, const Iterator& aEnd,
 
   
   
-  if (!AtStart() || !aEnd.IsDone() || !aTargetList.IsEmpty() ||
-      !aTargetList.mUndisplayedItems.IsEmpty()) {
+  if (!AtStart() || !aEnd.IsDone() || !aTargetList.IsEmpty()) {
     do {
       AppendItemToList(aTargetList);
     } while (*this != aEnd);
@@ -12249,9 +12262,6 @@ Iterator::AppendItemsToList(nsCSSFrameConstructor* aFCtor, const Iterator& aEnd,
   aTargetList.mItemCount = mList.mItemCount;
   memcpy(aTargetList.mDesiredParentCounts, mList.mDesiredParentCounts,
          sizeof(aTargetList.mDesiredParentCounts));
-
-  
-  aTargetList.mUndisplayedItems.SwapElements(mList.mUndisplayedItems);
 
   
   mList.Reset(aFCtor);

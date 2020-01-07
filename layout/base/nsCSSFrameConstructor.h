@@ -833,7 +833,6 @@ private:
     void SetParentHasNoXBLChildren(bool aHasNoXBLChildren) {
       mParentHasNoXBLChildren = aHasNoXBLChildren;
     }
-    void SetTriedConstructingFrames() { mTriedConstructingFrames = true; }
     bool HasLineBoundaryAtStart() { return mLineBoundaryAtStart; }
     bool HasLineBoundaryAtEnd() { return mLineBoundaryAtEnd; }
     bool ParentHasNoXBLChildren() { return mParentHasNoXBLChildren; }
@@ -886,11 +885,6 @@ private:
       ++mItemCount;
       ++mDesiredParentCounts[item->DesiredParentType()];
       return item;
-    }
-
-    void AppendUndisplayedItem(nsIContent* aContent,
-                               ComputedStyle* aComputedStyle) {
-      mUndisplayedItems.AppendElement(UndisplayedItem(aContent, aComputedStyle));
     }
 
     void InlineItemAdded() { ++mInlineCount; }
@@ -1024,8 +1018,7 @@ private:
       mItemCount(0),
       mLineBoundaryAtStart(false),
       mLineBoundaryAtEnd(false),
-      mParentHasNoXBLChildren(false),
-      mTriedConstructingFrames(false)
+      mParentHasNoXBLChildren(false)
     {
       MOZ_COUNT_CTOR(FrameConstructionItemList);
       memset(mDesiredParentCounts, 0, sizeof(mDesiredParentCounts));
@@ -1035,16 +1028,6 @@ private:
     {
       while (FrameConstructionItem* item = mItems.popFirst()) {
         item->Delete(aFCtor);
-      }
-
-      
-      
-      
-      if (!mUndisplayedItems.IsEmpty() && mTriedConstructingFrames) {
-        for (uint32_t i = 0; i < mUndisplayedItems.Length(); ++i) {
-          UndisplayedItem& item = mUndisplayedItems[i];
-          aFCtor->RegisterDisplayNoneStyleFor(item.mContent, item.mComputedStyle);
-        }
       }
     }
 
@@ -1081,7 +1064,6 @@ private:
     
     void AdjustCountsForItem(FrameConstructionItem* aItem, int32_t aDelta);
 
-    nsTArray<UndisplayedItem> mUndisplayedItems;
     mozilla::LinkedList<FrameConstructionItem> mItems;
     uint32_t mInlineCount;
     uint32_t mBlockCount;
@@ -1096,8 +1078,6 @@ private:
     bool mLineBoundaryAtEnd;
     
     bool mParentHasNoXBLChildren;
-    
-    bool mTriedConstructingFrames;
   };
 
   

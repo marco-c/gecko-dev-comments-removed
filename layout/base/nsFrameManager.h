@@ -19,10 +19,6 @@ class nsILayoutHistoryState;
 class nsIPresShell;
 class nsPlaceholderFrame;
 class nsWindowSizes;
-namespace mozilla {
-class ComputedStyle;
-struct UndisplayedNode;
-}
 
 
 
@@ -35,16 +31,12 @@ struct UndisplayedNode;
 
 class nsFrameManager
 {
-  typedef mozilla::ComputedStyle ComputedStyle;
   typedef mozilla::layout::FrameChildListID ChildListID;
-  typedef mozilla::UndisplayedNode UndisplayedNode;
 
 public:
   explicit nsFrameManager(nsIPresShell* aPresShell)
     : mPresShell(aPresShell)
     , mRootFrame(nullptr)
-    , mDisplayNoneMap(nullptr)
-    , mDisplayContentsMap(nullptr)
     , mIsDestroyingFrames(false)
   {
     MOZ_ASSERT(mPresShell, "need a pres shell");
@@ -72,98 +64,6 @@ public:
 
   void Destroy();
 
-
-  
-  
-  
-  
-  
-  
-
-  
-
-
-  void RegisterDisplayNoneStyleFor(nsIContent* aContent,
-                                   ComputedStyle* aComputedStyle);
-
-  
-
-
-  void RegisterDisplayContentsStyleFor(nsIContent* aContent,
-                                       ComputedStyle* aComputedStyle);
-
-  
-
-
-  void ChangeRegisteredDisplayNoneStyleFor(nsIContent* aContent,
-                                           ComputedStyle* aComputedStyle)
-  {
-    ChangeComputedStyleInMap(mDisplayNoneMap, aContent, aComputedStyle);
-  }
-
-  
-
-
-  void ChangeRegisteredDisplayContentsStyleFor(nsIContent* aContent,
-                                               ComputedStyle* aComputedStyle)
-  {
-    ChangeComputedStyleInMap(mDisplayContentsMap, aContent, aComputedStyle);
-  }
-
-  
-
-
-  ComputedStyle* GetDisplayNoneStyleFor(const nsIContent* aContent)
-  {
-    if (!mDisplayNoneMap) {
-      return nullptr;
-    }
-    return GetComputedStyleInMap(mDisplayNoneMap, aContent);
-  }
-
-  
-
-
-  ComputedStyle* GetDisplayContentsStyleFor(const nsIContent* aContent)
-  {
-    if (!mDisplayContentsMap) {
-      return nullptr;
-    }
-    return GetComputedStyleInMap(mDisplayContentsMap, aContent);
-  }
-
-  
-
-
-
-  UndisplayedNode*
-  GetAllRegisteredDisplayNoneStylesIn(nsIContent* aParentContent);
-
-  
-
-
-
-
-  UndisplayedNode*
-  GetAllRegisteredDisplayContentsStylesIn(nsIContent* aParentContent);
-
-  
-
-
-
-
-  void UnregisterDisplayNoneStyleFor(nsIContent* aContent,
-                                     nsIContent* aParentContent);
-
-  
-
-
-
-
-  void UnregisterDisplayContentsStyleFor(nsIContent* aContent,
-                                         nsIContent* aParentContent);
-
-
   
   void AppendFrames(nsContainerFrame* aParentFrame,
                     ChildListID aListID,
@@ -175,12 +75,6 @@ public:
                     nsFrameList& aFrameList);
 
   void RemoveFrame(ChildListID aListID, nsIFrame* aOldFrame);
-
-  
-
-
-
-  void NotifyDestroyingFrame(nsIFrame* aFrame);
 
   
 
@@ -207,33 +101,9 @@ public:
   void AddSizeOfIncludingThis(nsWindowSizes& aSizes) const;
 
 protected:
-  class UndisplayedMap;
-
-  static nsIContent* ParentForUndisplayedMap(const nsIContent* aContent);
-
-  void ClearAllMapsFor(nsIContent* aParentContent);
-
-  static ComputedStyle* GetComputedStyleInMap(UndisplayedMap* aMap,
-                                              const nsIContent* aContent);
-  static UndisplayedNode* GetUndisplayedNodeInMapFor(UndisplayedMap* aMap,
-                                                     const nsIContent* aContent);
-  static UndisplayedNode* GetAllUndisplayedNodesInMapFor(UndisplayedMap* aMap,
-                                                         nsIContent* aParentContent);
-  static void SetComputedStyleInMap(
-      UndisplayedMap* aMap,
-      nsIContent* aContent,
-      ComputedStyle* aComputedStyle);
-
-  static void ChangeComputedStyleInMap(
-      UndisplayedMap* aMap,
-      nsIContent* aContent,
-      ComputedStyle* aComputedStyle);
-
   
   nsIPresShell* MOZ_NON_OWNING_REF mPresShell;
   nsIFrame* mRootFrame;
-  UndisplayedMap* mDisplayNoneMap;
-  UndisplayedMap* mDisplayContentsMap;
   bool mIsDestroyingFrames;  
 };
 
