@@ -4125,6 +4125,15 @@ CompileFunction(JSContext* cx, AutoObjectVector& envChain,
                 const char* name, unsigned nargs, const char* const* argnames,
                 const char* bytes, size_t length, JS::MutableHandleFunction fun);
 
+
+
+
+
+
+extern JS_PUBLIC_API(bool)
+InitScriptSourceElement(JSContext* cx, HandleScript script,
+                        HandleObject element, HandleString elementAttrName = nullptr);
+
 } 
 
 extern JS_PUBLIC_API(JSString*)
@@ -4322,6 +4331,9 @@ GetRequestedModuleSpecifier(JSContext* cx, JS::HandleValue requestedModuleObject
 extern JS_PUBLIC_API(void)
 GetRequestedModuleSourcePos(JSContext* cx, JS::HandleValue requestedModuleObject,
                             uint32_t* lineNumber, uint32_t* columnNumber);
+
+extern JS_PUBLIC_API(JSScript*)
+GetModuleScript(JS::HandleObject moduleRecord);
 
 } 
 
