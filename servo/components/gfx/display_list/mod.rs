@@ -23,18 +23,20 @@ use ipc_channel::ipc::IpcSharedMemory;
 use msg::constellation_msg::PipelineId;
 use net_traits::image::base::{Image, PixelFormat};
 use range::Range;
-use servo_geometry::max_rect;
+use servo_geometry::MaxRect;
 use std::cmp::{self, Ordering};
 use std::collections::HashMap;
+use std::f32;
 use std::fmt;
 use std::sync::Arc;
-use style::computed_values::{border_style, image_rendering};
 use style::values::computed::Filter;
 use style_traits::cursor::Cursor;
 use text::TextRun;
 use text::glyph::ByteIndex;
-use webrender_api::{self, BoxShadowClipMode, ClipId, ColorF, GradientStop, LocalClip, MixBlendMode};
-use webrender_api::{ScrollPolicy, ScrollSensitivity, StickyOffsetBounds, TransformStyle};
+use webrender_api::{BoxShadowClipMode, ClipId, ColorF, ExtendMode, GradientStop, ImageKey};
+use webrender_api::{ImageRendering, LayoutPoint, LayoutRect, LayoutSize, LayoutVector2D};
+use webrender_api::{LineStyle, LocalClip, MixBlendMode, NormalBorder, RepeatMode, ScrollPolicy};
+use webrender_api::{ScrollSensitivity, StickyOffsetBounds, TransformStyle};
 
 pub use style::dom::OpaqueNode;
 
@@ -442,7 +444,8 @@ impl BaseDisplayItem {
                 node: OpaqueNode(0),
                 pointing: None,
             },
-            local_clip: LocalClip::from(max_rect().to_rectf()),
+            
+            local_clip: LocalClip::from(LayoutRect::max_rect()),
             section: DisplayListSection::Content,
             stacking_context_id: StackingContextId::root(),
             clipping_and_scrolling: ClippingAndScrolling::simple(ClipScrollNodeIndex(0)),
@@ -489,7 +492,7 @@ impl ClippingRegion {
     #[inline]
     pub fn max() -> ClippingRegion {
         ClippingRegion {
-            main: max_rect(),
+            main: Rect::max_rect(),
             complex: Vec::new(),
         }
     }
@@ -600,7 +603,7 @@ impl ClippingRegion {
 
     #[inline]
     pub fn is_max(&self) -> bool {
-        self.main == max_rect() && self.complex.is_empty()
+        self.main == Rect::max_rect() && self.complex.is_empty()
     }
 }
 
@@ -610,7 +613,7 @@ impl fmt::Debug for ClippingRegion {
             write!(f, "ClippingRegion::Max")
         } else if *self == ClippingRegion::empty() {
             write!(f, "ClippingRegion::Empty")
-        } else if self.main == max_rect() {
+        } else if self.main == Rect::max_rect() {
             write!(f, "ClippingRegion(Complex={:?})", self.complex)
         } else {
             write!(f, "ClippingRegion(Rect={:?}, Complex={:?})", self.main, self.complex)
@@ -699,15 +702,15 @@ pub struct ImageDisplayItem {
     
     
     
-    pub stretch_size: Size2D<Au>,
+    pub stretch_size: LayoutSize,
 
     
     
-    pub tile_spacing: Size2D<Au>,
+    pub tile_spacing: LayoutSize,
 
     
     
-    pub image_rendering: image_rendering::T,
+    pub image_rendering: ImageRendering,
 }
 
 #[derive(Clone, Deserialize, MallocSizeOf, Serialize)]
@@ -720,16 +723,16 @@ pub struct IframeDisplayItem {
 #[derive(Clone, Deserialize, MallocSizeOf, Serialize)]
 pub struct Gradient {
     
-    pub start_point: Point2D<Au>,
+    pub start_point: LayoutPoint,
 
     
-    pub end_point: Point2D<Au>,
+    pub end_point: LayoutPoint,
 
     
     pub stops: Vec<GradientStop>,
 
     
-    pub repeating: bool,
+    pub extend_mode: ExtendMode,
 }
 
 #[derive(Clone, Deserialize, MallocSizeOf, Serialize)]
@@ -747,24 +750,24 @@ pub struct GradientDisplayItem {
     
     
     
-    pub tile: Size2D<Au>,
-    pub tile_spacing: Size2D<Au>,
+    pub tile: LayoutSize,
+    pub tile_spacing: LayoutSize,
 }
 
 
 #[derive(Clone, Deserialize, MallocSizeOf, Serialize)]
 pub struct RadialGradient {
     
-    pub center: Point2D<Au>,
+    pub center: LayoutPoint,
 
     
-    pub radius: Size2D<Au>,
+    pub radius: LayoutSize,
 
     
     pub stops: Vec<GradientStop>,
 
     
-    pub repeating: bool,
+    pub extend_mode: ExtendMode,
 }
 
 #[derive(Clone, Deserialize, MallocSizeOf, Serialize)]
@@ -782,21 +785,8 @@ pub struct RadialGradientDisplayItem {
     
     
     
-    pub tile: Size2D<Au>,
-    pub tile_spacing: Size2D<Au>,
-}
-
-
-#[derive(Clone, Deserialize, MallocSizeOf, Serialize)]
-pub struct NormalBorder {
-    
-    pub color: SideOffsets2D<ColorF>,
-
-    
-    pub style: SideOffsets2D<border_style::T>,
-
-    
-    pub radius: BorderRadii<Au>,
+    pub tile: LayoutSize,
+    pub tile_spacing: LayoutSize,
 }
 
 
@@ -815,10 +805,10 @@ pub struct ImageBorder {
     pub fill: bool,
 
     
-    pub repeat_horizontal: webrender_api::RepeatMode,
+    pub repeat_horizontal: RepeatMode,
 
     
-    pub repeat_vertical: webrender_api::RepeatMode,
+    pub repeat_vertical: RepeatMode,
 }
 
 
@@ -934,8 +924,7 @@ pub struct LineDisplayItem {
     pub color: ColorF,
 
     
-    #[ignore_malloc_size_of = "enum type in webrender"]
-    pub style: webrender_api::LineStyle,
+    pub style: LineStyle,
 }
 
 
@@ -945,25 +934,24 @@ pub struct BoxShadowDisplayItem {
     pub base: BaseDisplayItem,
 
     
-    pub box_bounds: Rect<Au>,
+    pub box_bounds: LayoutRect,
 
     
-    pub offset: Vector2D<Au>,
+    pub offset: LayoutVector2D,
 
     
     pub color: ColorF,
 
     
-    pub blur_radius: Au,
+    pub blur_radius: f32,
 
     
-    pub spread_radius: Au,
+    pub spread_radius: f32,
 
     
     pub border_radius: BorderRadii<Au>,
 
     
-    #[ignore_malloc_size_of = "enum type in webrender"]
     pub clip_mode: BoxShadowClipMode,
 }
 
@@ -974,13 +962,13 @@ pub struct PushTextShadowDisplayItem {
     pub base: BaseDisplayItem,
 
     
-    pub offset: Vector2D<Au>,
+    pub offset: LayoutVector2D,
 
     
     pub color: ColorF,
 
     
-    pub blur_radius: Au,
+    pub blur_radius: f32,
 }
 
 
@@ -1118,7 +1106,7 @@ pub struct WebRenderImageInfo {
     pub width: u32,
     pub height: u32,
     pub format: PixelFormat,
-    pub key: Option<webrender_api::ImageKey>,
+    pub key: Option<ImageKey>,
 }
 
 impl WebRenderImageInfo {
@@ -1152,28 +1140,3 @@ impl SimpleMatrixDetection for Transform3D<f32> {
     }
 }
 
-trait ToPointF {
-    fn to_pointf(&self) -> webrender_api::LayoutPoint;
-}
-
-impl ToPointF for Point2D<Au> {
-    fn to_pointf(&self) -> webrender_api::LayoutPoint {
-        webrender_api::LayoutPoint::new(self.x.to_f32_px(), self.y.to_f32_px())
-    }
-}
-
-trait ToRectF {
-    fn to_rectf(&self) -> webrender_api::LayoutRect;
-}
-
-impl ToRectF for Rect<Au> {
-    fn to_rectf(&self) -> webrender_api::LayoutRect {
-        let x = self.origin.x.to_f32_px();
-        let y = self.origin.y.to_f32_px();
-        let w = self.size.width.to_f32_px();
-        let h = self.size.height.to_f32_px();
-        let point = webrender_api::LayoutPoint::new(x, y);
-        let size = webrender_api::LayoutSize::new(w, h);
-        webrender_api::LayoutRect::new(point, size)
-    }
-}
