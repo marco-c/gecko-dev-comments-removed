@@ -394,8 +394,22 @@ public:
 
 
   void CollapseToEnd(mozilla::ErrorResult& aRv);
+
+  
+
+
+
+
+
+
+
+
   void Extend(nsINode& aContainer, uint32_t aOffset, ErrorResult& aRv);
   void AddRange(nsRange& aRange, mozilla::ErrorResult& aRv);
+  
+
+
+
   void SelectAllChildren(nsINode& aNode, mozilla::ErrorResult& aRv);
   void SetBaseAndExtent(nsINode& aAnchorNode, uint32_t aAnchorOffset,
                         nsINode& aFocusNode, uint32_t aFocusOffset,
