@@ -559,6 +559,8 @@ public:
 
   static UniquePtr<ShapeInfo> CreateBasicShape(
     const UniquePtr<StyleBasicShape>& aBasicShape,
+    nscoord aShapeMargin,
+    nsIFrame* const aFrame,
     const LogicalRect& aShapeBoxRect,
     WritingMode aWM,
     const nsSize& aContainerSize);
@@ -571,6 +573,8 @@ public:
 
   static UniquePtr<ShapeInfo> CreateCircleOrEllipse(
     const UniquePtr<StyleBasicShape>& aBasicShape,
+    nscoord aShapeMargin,
+    nsIFrame* const aFrame,
     const LogicalRect& aShapeBoxRect,
     WritingMode aWM,
     const nsSize& aContainerSize);
@@ -710,23 +714,61 @@ nsFloatManager::RoundedBoxShapeInfo::LineRight(const nscoord aBStart,
 class nsFloatManager::EllipseShapeInfo final : public nsFloatManager::ShapeInfo
 {
 public:
+  
+  
+  
+  
+  
+  
   EllipseShapeInfo(const nsPoint& aCenter,
-                   const nsSize& aRadii)
-    : mCenter(aCenter)
-    , mRadii(aRadii)
-  {}
+                   const nsSize& aRadii,
+                   nscoord aShapeMargin);
 
+  
+  
+  
+  
+  EllipseShapeInfo(const nsPoint& aCenter,
+                   const nsSize& aRadii,
+                   nscoord aShapeMargin,
+                   int32_t aAppUnitsPerDevPixel);
+
+  static bool ShapeMarginIsNegligible(nscoord aShapeMargin) {
+    
+    
+    
+    static const nscoord SHAPE_MARGIN_NEGLIGIBLE_MAX(0);
+    return aShapeMargin <= SHAPE_MARGIN_NEGLIGIBLE_MAX;
+  }
+
+  static bool RadiiAreRoughlyEqual(const nsSize& aRadii) {
+    
+    
+    
+    
+    return aRadii.width == aRadii.height;
+  }
   nscoord LineLeft(const nscoord aBStart,
                    const nscoord aBEnd) const override;
   nscoord LineRight(const nscoord aBStart,
                     const nscoord aBEnd) const override;
-  nscoord BStart() const override { return mCenter.y - mRadii.height; }
-  nscoord BEnd() const override { return mCenter.y + mRadii.height; }
-  bool IsEmpty() const override { return mRadii.IsEmpty(); };
+  nscoord BStart() const override {
+    return mCenter.y - mRadii.height - mShapeMargin;
+  }
+  nscoord BEnd() const override {
+    return mCenter.y + mRadii.height + mShapeMargin;
+  }
+  bool IsEmpty() const override {
+    return mRadii.IsEmpty();
+  }
 
   void Translate(nscoord aLineLeft, nscoord aBlockStart) override
   {
     mCenter.MoveBy(aLineLeft, aBlockStart);
+
+    for (nsRect& interval : mIntervals) {
+      interval.MoveBy(aLineLeft, aBlockStart);
+    }
   }
 
 private:
@@ -736,30 +778,88 @@ private:
   
   
   nsSize mRadii;
+  
+  
+  
+  nscoord mShapeMargin;
+
+  
+  
+  
+  
+
+  
+  nsTArray<nsRect> mIntervals;
 };
+
+nsFloatManager::EllipseShapeInfo::EllipseShapeInfo(const nsPoint& aCenter,
+                                                   const nsSize& aRadii,
+                                                   nscoord aShapeMargin)
+  : mCenter(aCenter)
+  , mRadii(aRadii)
+  , mShapeMargin(0) 
+{
+  MOZ_ASSERT(RadiiAreRoughlyEqual(aRadii) ||
+             ShapeMarginIsNegligible(aShapeMargin),
+             "This constructor should only be called when margin is "
+             "negligible or radii are roughly equal.");
+
+  
+  
+  mRadii.width += aShapeMargin;
+  mRadii.height += aShapeMargin;
+}
+
+nsFloatManager::EllipseShapeInfo::EllipseShapeInfo(const nsPoint& aCenter,
+                                                   const nsSize& aRadii,
+                                                   nscoord aShapeMargin,
+                                                   int32_t aAppUnitsPerDevPixel)
+  : mCenter(aCenter)
+  , mRadii(aRadii)
+  , mShapeMargin(aShapeMargin)
+{
+  if (RadiiAreRoughlyEqual(aRadii) || ShapeMarginIsNegligible(aShapeMargin)) {
+    
+    
+    mRadii.width += mShapeMargin;
+    mRadii.height += mShapeMargin;
+    mShapeMargin = 0;
+    return;
+  }
+
+  NS_ERROR("shape-margin > 0 not yet implemented for ellipse.");
+}
 
 nscoord
 nsFloatManager::EllipseShapeInfo::LineLeft(const nscoord aBStart,
                                            const nscoord aBEnd) const
 {
-  nscoord lineLeftDiff =
-    ComputeEllipseLineInterceptDiff(BStart(), BEnd(),
-                                    mRadii.width, mRadii.height,
-                                    mRadii.width, mRadii.height,
-                                    aBStart, aBEnd);
-  return mCenter.x - mRadii.width + lineLeftDiff;
+  if (mShapeMargin == 0) {
+    nscoord lineLeftDiff =
+      ComputeEllipseLineInterceptDiff(BStart(), BEnd(),
+                                      mRadii.width, mRadii.height,
+                                      mRadii.width, mRadii.height,
+                                      aBStart, aBEnd);
+    return mCenter.x - mRadii.width + lineLeftDiff;
+  }
+  NS_ERROR("shape-margin > 0 not yet implemented for ellipse.");
+  return 0;
 }
 
 nscoord
 nsFloatManager::EllipseShapeInfo::LineRight(const nscoord aBStart,
                                             const nscoord aBEnd) const
 {
-  nscoord lineRightDiff =
-    ComputeEllipseLineInterceptDiff(BStart(), BEnd(),
-                                    mRadii.width, mRadii.height,
-                                    mRadii.width, mRadii.height,
-                                    aBStart, aBEnd);
-  return mCenter.x + mRadii.width - lineRightDiff;
+  if (mShapeMargin == 0) {
+    nscoord lineRightDiff =
+      ComputeEllipseLineInterceptDiff(BStart(), BEnd(),
+                                      mRadii.width, mRadii.height,
+                                      mRadii.width, mRadii.height,
+                                      aBStart, aBEnd);
+    return mCenter.x + mRadii.width - lineRightDiff;
+  }
+  NS_ERROR("shape-margin > 0 not yet implemented for ellipse.");
+  return 0;
 }
 
 
@@ -1559,10 +1659,14 @@ nsFloatManager::FloatInfo::FloatInfo(nsIFrame* aFrame,
 
     case StyleShapeSourceType::Shape: {
       const UniquePtr<StyleBasicShape>& basicShape = shapeOutside.GetBasicShape();
+      nscoord shapeMargin = nsLayoutUtils::ResolveToLength<true>(
+        mFrame->StyleDisplay()->mShapeMargin,
+        LogicalSize(aWM, aContainerSize).ISize(aWM));
       
       LogicalRect shapeBoxRect =
         ShapeInfo::ComputeShapeBoxRect(shapeOutside, mFrame, aMarginRect, aWM);
-      mShapeInfo = ShapeInfo::CreateBasicShape(basicShape, shapeBoxRect, aWM,
+      mShapeInfo = ShapeInfo::CreateBasicShape(basicShape, shapeMargin, mFrame,
+                                               shapeBoxRect, aWM,
                                                aContainerSize);
       break;
     }
@@ -1733,6 +1837,8 @@ nsFloatManager::ShapeInfo::CreateShapeBox(
  UniquePtr<nsFloatManager::ShapeInfo>
 nsFloatManager::ShapeInfo::CreateBasicShape(
   const UniquePtr<StyleBasicShape>& aBasicShape,
+  nscoord aShapeMargin,
+  nsIFrame* const aFrame,
   const LogicalRect& aShapeBoxRect,
   WritingMode aWM,
   const nsSize& aContainerSize)
@@ -1742,7 +1848,8 @@ nsFloatManager::ShapeInfo::CreateBasicShape(
       return CreatePolygon(aBasicShape, aShapeBoxRect, aWM, aContainerSize);
     case StyleBasicShapeType::Circle:
     case StyleBasicShapeType::Ellipse:
-      return CreateCircleOrEllipse(aBasicShape, aShapeBoxRect, aWM,
+      return CreateCircleOrEllipse(aBasicShape, aShapeMargin, aFrame,
+                                   aShapeBoxRect, aWM,
                                    aContainerSize);
     case StyleBasicShapeType::Inset:
       return CreateInset(aBasicShape, aShapeBoxRect, aWM, aContainerSize);
@@ -1785,6 +1892,8 @@ nsFloatManager::ShapeInfo::CreateInset(
  UniquePtr<nsFloatManager::ShapeInfo>
 nsFloatManager::ShapeInfo::CreateCircleOrEllipse(
   const UniquePtr<StyleBasicShape>& aBasicShape,
+  nscoord aShapeMargin,
+  nsIFrame* const aFrame,
   const LogicalRect& aShapeBoxRect,
   WritingMode aWM,
   const nsSize& aContainerSize)
@@ -1805,17 +1914,34 @@ nsFloatManager::ShapeInfo::CreateCircleOrEllipse(
   if (type == StyleBasicShapeType::Circle) {
     nscoord radius = ShapeUtils::ComputeCircleRadius(aBasicShape, physicalCenter,
                                                      physicalShapeBoxRect);
+    
+    
     radii = nsSize(radius, radius);
-  } else {
-    MOZ_ASSERT(type == StyleBasicShapeType::Ellipse);
-    nsSize physicalRadii =
-      ShapeUtils::ComputeEllipseRadii(aBasicShape, physicalCenter,
-                                      physicalShapeBoxRect);
-    LogicalSize logicalRadii(aWM, physicalRadii);
-    radii = nsSize(logicalRadii.ISize(aWM), logicalRadii.BSize(aWM));
+    return MakeUnique<EllipseShapeInfo>(logicalCenter, radii, aShapeMargin);
   }
 
-  return MakeUnique<EllipseShapeInfo>(logicalCenter, radii);
+  MOZ_ASSERT(type == StyleBasicShapeType::Ellipse);
+  nsSize physicalRadii =
+    ShapeUtils::ComputeEllipseRadii(aBasicShape, physicalCenter,
+                                    physicalShapeBoxRect);
+  LogicalSize logicalRadii(aWM, physicalRadii);
+  radii = nsSize(logicalRadii.ISize(aWM), logicalRadii.BSize(aWM));
+
+  
+  
+  
+  
+  if (EllipseShapeInfo::ShapeMarginIsNegligible(aShapeMargin) ||
+      EllipseShapeInfo::RadiiAreRoughlyEqual(radii)) {
+    return MakeUnique<EllipseShapeInfo>(logicalCenter, radii, aShapeMargin);
+  }
+
+  
+  
+  nsDeviceContext* dc = aFrame->PresContext()->DeviceContext();
+  int32_t appUnitsPerDevPixel = dc->AppUnitsPerDevPixel();
+  return MakeUnique<EllipseShapeInfo>(logicalCenter, radii, aShapeMargin,
+                                      appUnitsPerDevPixel);
 }
 
  UniquePtr<nsFloatManager::ShapeInfo>
