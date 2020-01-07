@@ -6502,7 +6502,15 @@ LRESULT nsWindow::ProcessKeyUpMessage(const MSG &aMsg, bool *aEventDispatched)
 {
   ModifierKeyState modKeyState;
   NativeKey nativeKey(this, aMsg, modKeyState);
-  return static_cast<LRESULT>(nativeKey.HandleKeyUpMessage(aEventDispatched));
+  bool result = nativeKey.HandleKeyUpMessage(aEventDispatched);
+  if (aMsg.wParam == VK_F10) {
+    
+    
+    
+    
+    return true;
+  }
+  return result;
 }
 
 LRESULT nsWindow::ProcessKeyDownMessage(const MSG &aMsg,
