@@ -97,9 +97,9 @@ UpdateDriverSetupMacCommandLine(int& argc, char**& argv, bool restart)
 
   
   
-  rv = MonitorAutoLock(monitor).Wait(PR_SecondsToInterval(60));
-  if (NS_FAILED(rv)) {
-    LOG(("Update driver timed out waiting for SetupMacCommandLine: %d\n", rv));
+  CVStatus status = MonitorAutoLock(monitor).Wait(TimeDuration::FromSeconds(60));
+  if (status == CVStatus::Timeout) {
+    LOG(("Update driver timed out waiting for SetupMacCommandLine\n"));
   }
 }
 #endif

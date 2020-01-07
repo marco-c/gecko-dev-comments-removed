@@ -69,23 +69,4 @@ private:
 
 } 
 
-
-
-
-
-namespace IPC {
-
-template<>
-class ParamTraits<mozilla::HangDetails>
-{
-public:
-  typedef mozilla::HangDetails paramType;
-  static void Write(Message* aMsg, const paramType& aParam);
-  static bool Read(const Message* aMsg,
-                   PickleIterator* aIter,
-                   paramType* aResult);
-};
-
-} 
-
 #endif 

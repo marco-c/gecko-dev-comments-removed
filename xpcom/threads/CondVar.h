@@ -53,27 +53,31 @@ public:
     MOZ_COUNT_DTOR(CondVar);
   }
 
-#ifndef DEBUG
   
 
 
 
-  nsresult Wait(PRIntervalTime aInterval = PR_INTERVAL_NO_TIMEOUT)
+#ifndef DEBUG
+  void Wait()
   {
-
 #ifdef MOZILLA_INTERNAL_API
     AUTO_PROFILER_THREAD_SLEEP;
 #endif 
-    if (aInterval == PR_INTERVAL_NO_TIMEOUT) {
-      mImpl.wait(*mLock);
-    } else {
-      mImpl.wait_for(*mLock, TimeDuration::FromMilliseconds(double(aInterval)));
-    }
-    return NS_OK;
+    mImpl.wait(*mLock);
+  }
+
+  CVStatus Wait(TimeDuration aDuration)
+  {
+#ifdef MOZILLA_INTERNAL_API
+    AUTO_PROFILER_THREAD_SLEEP;
+#endif 
+    return mImpl.wait_for(*mLock, aDuration);
   }
 #else
-  nsresult Wait(PRIntervalTime aInterval = PR_INTERVAL_NO_TIMEOUT);
-#endif 
+  
+  void Wait();
+  CVStatus Wait(TimeDuration aDuration);
+#endif
 
   
 
@@ -128,7 +132,6 @@ private:
   Mutex* mLock;
   detail::ConditionVariableImpl mImpl;
 };
-
 
 } 
 

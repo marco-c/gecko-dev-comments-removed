@@ -14,6 +14,7 @@
 #include "mozilla/Monitor.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/storage/StatementCache.h"
+#include "mozilla/TimeStamp.h"
 #include "nsAutoPtr.h"
 #include "nsString.h"
 #include "nsCOMPtr.h"
@@ -440,7 +441,7 @@ private:
 
   
   
-  PRIntervalTime mDirtyEpoch;
+  TimeStamp mDirtyEpoch;
 
   
   bool mFlushImmediately;
@@ -491,7 +492,7 @@ private:
   
   
   
-  PRIntervalTime TimeUntilFlush();
+  TimeDuration TimeUntilFlush();
 
   
   void NotifyFlushCompletion();
