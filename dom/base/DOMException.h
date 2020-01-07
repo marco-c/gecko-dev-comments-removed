@@ -53,6 +53,11 @@ public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_NSIEXCEPTION
 
+  const nsCString& GetMessageMoz() const
+  {
+    return mMessage;
+  }
+
   
   
   bool StealJSVal(JS::Value* aVp);
@@ -76,10 +81,8 @@ public:
     
     
     nsAutoString name;
-    nsAutoString message;
     GetName(name);
-    GetMessageMoz(message);
-    CreateErrorMessage(name, message, aRetVal);
+    CreateErrorMessage(name, aRetVal);
   }
 
   void GetFilename(JSContext* aCx, nsAString& aFilename);
@@ -105,18 +108,17 @@ public:
 protected:
   virtual ~Exception();
 
-  void CreateErrorMessage(const nsAString& aName, const nsAString& aMessage,
-                          nsAString& aRetVal)
+  void CreateErrorMessage(const nsAString& aName, nsAString& aRetVal)
   {
     
-    if (!aName.IsEmpty() && !aMessage.IsEmpty()) {
+    if (!aName.IsEmpty() && !mMessage.IsEmpty()) {
       aRetVal.Assign(aName);
       aRetVal.AppendLiteral(": ");
-      aRetVal.Append(aMessage);
+      AppendUTF8toUTF16(mMessage, aRetVal);
     } else if (!aName.IsEmpty()) {
       aRetVal.Assign(aName);
-    } else if (!aMessage.IsEmpty()) {
-      aRetVal.Assign(aMessage);
+    } else if (!mMessage.IsEmpty()) {
+      CopyUTF8toUTF16(mMessage, aRetVal);
     } else {
       aRetVal.Truncate();
     }
@@ -163,17 +165,14 @@ public:
   }
 
   
-  void GetMessageMoz(nsString& retval);
   void GetName(nsString& retval);
 
   virtual void GetErrorMessage(nsAString& aRetVal) override
   {
     
     nsAutoString name;
-    nsAutoString message;
     GetName(name);
-    GetMessageMoz(message);
-    CreateErrorMessage(name, message, aRetVal);
+    CreateErrorMessage(name, aRetVal);
   }
 
   static already_AddRefed<DOMException>
@@ -185,9 +184,6 @@ public:
 protected:
 
   virtual ~DOMException() {}
-
-  nsCString mName;
-  nsCString mMessage;
 
   uint16_t mCode;
 };
