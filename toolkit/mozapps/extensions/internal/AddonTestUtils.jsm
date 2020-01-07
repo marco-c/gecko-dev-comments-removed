@@ -700,9 +700,16 @@ var AddonTestUtils = {
   
 
 
-  async promiseStartupManager() {
+
+
+
+
+  async promiseStartupManager(newVersion) {
     if (this.addonIntegrationService)
       throw new Error("Attempting to startup manager that was already started.");
+
+    if (newVersion)
+      this.appInfo.version = newVersion;
 
     this.addonIntegrationService = Cc["@mozilla.org/addons/integration;1"]
           .getService(Ci.nsIObserver);
@@ -770,17 +777,9 @@ var AddonTestUtils = {
 
 
 
-
-
-
-  promiseRestartManager(newVersion) {
-    return this.promiseShutdownManager()
-      .then(() => {
-        if (newVersion)
-          this.appInfo.version = newVersion;
-
-        return this.promiseStartupManager(!!newVersion);
-      });
+  async promiseRestartManager(newVersion) {
+    await this.promiseShutdownManager();
+    await this.promiseStartupManager(newVersion);
   },
 
   async loadAddonsList(flush = false) {
