@@ -222,6 +222,32 @@ TouchEvent::PrefEnabled(JSContext* aCx, JSObject* aGlobal)
 
 
 bool
+TouchEvent::PlatformSupportsTouch()
+{
+#if defined(MOZ_WIDGET_ANDROID)
+  
+  return true;
+#elif defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
+  static bool sDidCheckTouchDeviceSupport = false;
+  static bool sIsTouchDeviceSupportPresent = false;
+  
+  if (!sDidCheckTouchDeviceSupport) {
+    sDidCheckTouchDeviceSupport = true;
+    sIsTouchDeviceSupportPresent = WidgetUtils::IsTouchDeviceSupportPresent();
+    
+    
+    
+    
+    sIsTouchDeviceSupportPresent &= gfxPlatform::AsyncPanZoomEnabled();
+  }
+  return sIsTouchDeviceSupportPresent;
+#else
+  return false;
+#endif
+}
+
+
+bool
 TouchEvent::PrefEnabled(nsIDocShell* aDocShell)
 {
   static bool sPrefCached = false;
@@ -244,23 +270,20 @@ TouchEvent::PrefEnabled(nsIDocShell* aDocShell)
     enabled = false;
   } else {
     if (sPrefCacheValue == 2) {
-#if defined(MOZ_WIDGET_ANDROID)
+      enabled = PlatformSupportsTouch();
+
+      static bool firstTime = true;
       
-      enabled = true;
-#elif defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
-      static bool sDidCheckTouchDeviceSupport = false;
-      static bool sIsTouchDeviceSupportPresent = false;
       
-      if (!sDidCheckTouchDeviceSupport) {
-        sDidCheckTouchDeviceSupport = true;
-        sIsTouchDeviceSupportPresent = WidgetUtils::IsTouchDeviceSupportPresent();
-        
-        
-        
-        
-        sIsTouchDeviceSupportPresent &= gfxPlatform::AsyncPanZoomEnabled();
+      if (firstTime && !XRE_IsParentProcess()) {
+        CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("HasDeviceTouchScreen"),
+                                           enabled ?
+                                             NS_LITERAL_CSTRING("1") :
+                                             NS_LITERAL_CSTRING("0"));
+        firstTime = false;
       }
-      enabled = sIsTouchDeviceSupportPresent;
+
+#if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
       if (enabled && aDocShell) {
         
         
@@ -270,8 +293,6 @@ TouchEvent::PrefEnabled(nsIDocShell* aDocShell)
           enabled &= pc->GetRootWidget()->AsyncPanZoomEnabled();
         }
       }
-#else
-      enabled = false;
 #endif
     } else {
       enabled = !!sPrefCacheValue;
