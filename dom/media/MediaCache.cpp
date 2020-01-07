@@ -2306,6 +2306,11 @@ MediaCacheStream::NotifyClientSuspended(bool aSuspended)
         
         mMediaCache->QueueUpdate(lock);
         UpdateDownloadStatistics(lock);
+        if (mClientSuspended) {
+          
+          
+          lock.NotifyAll();
+        }
       }
     });
   OwnerThread()->Dispatch(r.forget());
