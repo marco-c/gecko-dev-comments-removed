@@ -1,5 +1,7 @@
 "use strict";
 
+
+
 module.exports = {
   "rules": {
     "camelcase": "error",
@@ -16,11 +18,8 @@ module.exports = {
       "ignoreUrls": true,
     }],
     "no-fallthrough": "error",
-    "no-new-object": "error",
     "no-undef-init": "error",
-    "no-unused-vars": ["error", {}],
     "no-var": "error",
     "object-curly-spacing": ["error", "never"],
-    "semi": "error",
   }
 };
