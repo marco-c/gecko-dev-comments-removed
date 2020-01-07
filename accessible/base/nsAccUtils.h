@@ -101,7 +101,8 @@ public:
   
 
 
-  static nsAtom* GetARIAToken(mozilla::dom::Element* aElement, nsAtom* aAttr);
+  static nsStaticAtom* GetARIAToken(mozilla::dom::Element* aElement,
+                                    nsAtom* aAttr);
 
   
 
