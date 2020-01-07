@@ -488,6 +488,16 @@ if use_minidump:
 
 
 
+if AUTOMATION:
+    env['JSTESTS_EXTRA_ARGS'] = "--show-output --show-cmd --failed-only --output-file={MOZ_UPLOAD_DIR}/jstests.fail.txt {old}".format(
+        MOZ_UPLOAD_DIR=env.get('MOZ_UPLOAD_DIR', '/tmp'),
+        old = env.get('JSTESTS_EXTRA_ARGS', ''))
+    env['JITTEST_EXTRA_ARGS'] = "--write-failures={MOZ_UPLOAD_DIR}/jit-tests.fail.txt --write-failure-output {old}".format(
+        MOZ_UPLOAD_DIR=env.get('MOZ_UPLOAD_DIR', '/tmp'),
+        old = env.get('JITTEST_EXTRA_ARGS', ''))
+
+
+
 results = []
 
 if 'checks' in test_suites:
