@@ -5,7 +5,9 @@
 
 
 #include "DocumentTimeline.h"
+#include "mozilla/ScopeExit.h"
 #include "mozilla/dom/DocumentTimelineBinding.h"
+#include "mozilla/dom/Promise.h"
 #include "AnimationUtils.h"
 #include "nsContentUtils.h"
 #include "nsDOMMutationObserver.h"
@@ -156,6 +158,16 @@ DocumentTimeline::WillRefresh(mozilla::TimeStamp aTime)
   bool needsTicks = false;
   nsTArray<Animation*> animationsToRemove(mAnimations.Count());
 
+  
+  
+  
+  
+  
+  
+  
+  auto autoPerformMicrotaskCheckpoint = MakeScopeExit([] {
+    Promise::PerformMicroTaskCheckpoint();
+  });
   nsAutoAnimationMutationBatch mb(mDocument);
 
   for (Animation* animation = mAnimationOrder.getFirst(); animation;
