@@ -31,6 +31,14 @@ var ParentUtils = {
           return;
         }
 
+        
+        let allowedNames = [ADDRESSES_COLLECTION_NAME, CREDITCARDS_COLLECTION_NAME];
+        assert.ok(allowedNames.includes(subject.wrappedJSObject.collectionName),
+                  "should include the collection name");
+        
+        if (data != "removeAll") {
+          assert.ok(subject.wrappedJSObject.guid, "should have a guid");
+        }
         Services.obs.removeObserver(observer, obsTopic);
         resolve();
       }, topic);
