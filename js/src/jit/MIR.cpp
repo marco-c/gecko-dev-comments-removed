@@ -5475,9 +5475,27 @@ MWasmLoadGlobalVar::mightAlias(const MDefinition* def) const
 {
     if (def->isWasmStoreGlobalVar()) {
         const MWasmStoreGlobalVar* store = def->toWasmStoreGlobalVar();
+
         
-        return (store->globalDataOffset() == globalDataOffset_) ? AliasType::MayAlias :
-                                                                  AliasType::NoAlias;
+        
+        if (isIndirect_ && store->isIndirect())
+            return AliasType::MayAlias;
+
+        
+        
+        if (!isIndirect_ && !store->isIndirect())
+            return store->globalDataOffset() == globalDataOffset_
+                      ? AliasType::MayAlias : AliasType::NoAlias;
+
+        
+        
+        return AliasType::NoAlias;
+
+        
+        
+        
+        
+        
     }
     return AliasType::MayAlias;
 }
@@ -5485,6 +5503,7 @@ MWasmLoadGlobalVar::mightAlias(const MDefinition* def) const
 HashNumber
 MWasmLoadGlobalVar::valueHash() const
 {
+    
     HashNumber hash = MDefinition::valueHash();
     hash = addU32ToHash(hash, globalDataOffset_);
     return hash;
@@ -5493,6 +5512,8 @@ MWasmLoadGlobalVar::valueHash() const
 bool
 MWasmLoadGlobalVar::congruentTo(const MDefinition* ins) const
 {
+    
+    
     if (ins->isWasmLoadGlobalVar())
         return globalDataOffset_ == ins->toWasmLoadGlobalVar()->globalDataOffset_;
     return false;
