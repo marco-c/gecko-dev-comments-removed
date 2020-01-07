@@ -358,7 +358,12 @@ nsBrowserContentHandler.prototype = {
         if (isLocal(resolvedURI)) {
           
           let features = "chrome,dialog=no,all" + this.getFeatures(cmdLine);
-          Services.ww.openWindow(null, resolvedURI.spec, "_blank", features, null);
+          
+          
+          let argArray = Cc["@mozilla.org/array;1"]
+                           .createInstance(Ci.nsIMutableArray);
+          argArray.appendElement(null);
+          Services.ww.openWindow(null, resolvedURI.spec, "_blank", features, argArray);
           cmdLine.preventDefault = true;
         } else {
           dump("*** Preventing load of web URI as chrome\n");
