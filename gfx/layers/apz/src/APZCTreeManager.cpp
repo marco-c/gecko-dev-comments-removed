@@ -1064,7 +1064,7 @@ template<typename PanGestureOrScrollWheelInput>
 static bool
 WillHandleInput(const PanGestureOrScrollWheelInput& aPanInput)
 {
-  if (!NS_IsMainThread()) {
+  if (!XRE_IsParentProcess() || !NS_IsMainThread()) {
     return true;
   }
 
@@ -1795,6 +1795,8 @@ void
 APZCTreeManager::UpdateWheelTransaction(LayoutDeviceIntPoint aRefPoint,
                                         EventMessage aEventMessage)
 {
+  APZThreadUtils::AssertOnControllerThread();
+
   WheelBlockState* txn = mInputQueue->GetActiveWheelTransaction();
   if (!txn) {
     return;
@@ -1840,6 +1842,8 @@ APZCTreeManager::ProcessUnhandledEvent(LayoutDeviceIntPoint* aRefPoint,
                                         ScrollableLayerGuid*  aOutTargetGuid,
                                         uint64_t*             aOutFocusSequenceNumber)
 {
+  APZThreadUtils::AssertOnControllerThread();
+
   
   
   CompositorHitTestInfo hitResult = CompositorHitTestInfo::eInvisibleToHitTest;
