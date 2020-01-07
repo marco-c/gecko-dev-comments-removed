@@ -79,7 +79,7 @@ pub enum ScriptMsg {
     ChangeRunningAnimationsState(AnimationState),
     
     
-    CreateCanvasPaintThread(Size2D<i32>, IpcSender<IpcSender<CanvasMsg>>),
+    CreateCanvasPaintThread(Size2D<i32>, IpcReceiver<CanvasMsg>),
     
     Focus,
     
