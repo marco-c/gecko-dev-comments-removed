@@ -239,6 +239,13 @@ static const wchar_t* gBlockedInprocDlls[] = {
 
 
 
+static const char* gBlockedRemoteClients[] = {
+  "tbnnotifier.exe" 
+};
+
+
+
+
 
 
 
@@ -292,17 +299,24 @@ LazyInstantiator::ShouldInstantiate(const DWORD aClientTid)
     return true;
   }
 
-  
-  
-  
-
-
-
-
+  nsresult rv;
+  if (!PR_GetEnv("MOZ_DISABLE_ACCESSIBLE_BLOCKLIST")) {
+    
+    nsAutoString leafName;
+    rv = clientExe->GetLeafName(leafName);
+    if (NS_SUCCEEDED(rv)) {
+      for (size_t i = 0, len = ArrayLength(gBlockedRemoteClients); i < len; ++i) {
+        if (leafName.EqualsIgnoreCase(gBlockedRemoteClients[i])) {
+          
+          return false;
+        }
+      }
+    }
+  }
 
   
   nsAutoString filePath;
-  nsresult rv = clientExe->GetPath(filePath);
+  rv = clientExe->GetPath(filePath);
   if (NS_SUCCEEDED(rv)) {
     a11y::SetInstantiator(filePath);
   }
@@ -909,4 +923,3 @@ LazyInstantiator::QueryService(REFGUID aServiceId, REFIID aServiceIid,
 
 } 
 } 
-
