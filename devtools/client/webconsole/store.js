@@ -3,43 +3,35 @@
 
 "use strict";
 
-const {FilterState} = require("devtools/client/webconsole/reducers/filters");
-const {PrefState} = require("devtools/client/webconsole/reducers/prefs");
-const {UiState} = require("devtools/client/webconsole/reducers/ui");
+
+const { FilterState } = require("devtools/client/webconsole/reducers/filters");
+const { PrefState } = require("devtools/client/webconsole/reducers/prefs");
+const { UiState } = require("devtools/client/webconsole/reducers/ui");
+
+
 const {
   applyMiddleware,
   compose,
   createStore
 } = require("devtools/client/shared/vendor/redux");
-const {
-  BATCH_ACTIONS
-} = require("devtools/client/shared/redux/middleware/debounce");
-const {
-  MESSAGE_OPEN,
-  MESSAGES_ADD,
-  MESSAGES_CLEAR,
-  PRIVATE_MESSAGES_CLEAR,
-  REMOVED_ACTORS_CLEAR,
-  NETWORK_MESSAGE_UPDATE,
-  PREFS,
-  INITIALIZE,
-  FILTER_TOGGLE,
-  APPEND_TO_HISTORY,
-  CLEAR_HISTORY,
-} = require("devtools/client/webconsole/constants");
-const { reducers } = require("./reducers/index");
-const {
-  getMessage,
-  getAllMessagesUiById,
-} = require("devtools/client/webconsole/selectors/messages");
-const DataProvider = require("devtools/client/netmonitor/src/connector/firefox-data-provider");
-const {
-  getAllNetworkMessagesUpdateById,
-} = require("devtools/client/webconsole/selectors/messages");
-const {getPrefsService} = require("devtools/client/webconsole/utils/prefs");
-const historyActions = require("devtools/client/webconsole/actions/history");
 
-loader.lazyRequireGetter(this, "asyncStorage", "devtools/shared/async-storage");
+
+const { PREFS } = require("devtools/client/webconsole/constants");
+const { getPrefsService } = require("devtools/client/webconsole/utils/prefs");
+
+
+const { reducers } = require("./reducers/index");
+
+
+const historyPersistence = require("./middleware/history-persistence");
+const thunk = require("./middleware/thunk");
+
+
+const enableBatching = require("./enhancers/batching");
+const enableActorReleaser = require("./enhancers/actor-releaser");
+const ensureCSSErrorReportingEnabled = require("./enhancers/css-error-reporting");
+const enableNetProvider = require("./enhancers/net-provider");
+const enableMessagesCacheClearing = require("./enhancers/message-cache-clearing");
 
 
 
@@ -85,7 +77,7 @@ function configureStore(hud, options = {}) {
   
   const middleware = applyMiddleware(
     thunk.bind(null, {prefsService}),
-    historyPersistenceMiddleware,
+    historyPersistence,
   );
 
   return createStore(
@@ -100,14 +92,6 @@ function configureStore(hud, options = {}) {
       ensureCSSErrorReportingEnabled(hud),
     )
   );
-}
-
-function thunk(options = {}, { dispatch, getState }) {
-  return next => action => {
-    return (typeof action === "function")
-      ? action(dispatch, getState, options)
-      : next(action);
-  };
 }
 
 function createRootReducer() {
@@ -134,245 +118,6 @@ function createRootReducer() {
         newState.prefs,
       ),
     });
-  };
-}
-
-
-
-
-function enableBatching() {
-  return next => (reducer, initialState, enhancer) => {
-    function batchingReducer(state, action) {
-      switch (action.type) {
-        case BATCH_ACTIONS:
-          return action.actions.reduce(batchingReducer, state);
-        default:
-          return reducer(state, action);
-      }
-    }
-
-    if (typeof initialState === "function" && typeof enhancer === "undefined") {
-      enhancer = initialState;
-      initialState = undefined;
-    }
-
-    return next(batchingReducer, initialState, enhancer);
-  };
-}
-
-
-
-
-
-
-function enableActorReleaser(hud) {
-  return next => (reducer, initialState, enhancer) => {
-    function releaseActorsEnhancer(state, action) {
-      state = reducer(state, action);
-
-      const type = action.type;
-      const proxy = hud ? hud.proxy : null;
-      if (
-        proxy &&
-        ([MESSAGES_ADD, MESSAGES_CLEAR, PRIVATE_MESSAGES_CLEAR].includes(type))
-      ) {
-        releaseActors(state.messages.removedActors, proxy);
-
-        
-        state = reducer(state, {
-          type: REMOVED_ACTORS_CLEAR
-        });
-      }
-
-      return state;
-    }
-
-    return next(releaseActorsEnhancer, initialState, enhancer);
-  };
-}
-
-
-
-
-
-function ensureCSSErrorReportingEnabled(hud) {
-  return next => (reducer, initialState, enhancer) => {
-    function ensureErrorReportingEnhancer(state, action) {
-      const proxy = hud ? hud.proxy : null;
-      if (!proxy) {
-        return reducer(state, action);
-      }
-
-      state = reducer(state, action);
-      if (!state.filters.css) {
-        return state;
-      }
-
-      const cssFilterToggled =
-        action.type == FILTER_TOGGLE && action.filter == "css";
-      if (cssFilterToggled || action.type == INITIALIZE) {
-        proxy.target.activeTab.ensureCSSErrorReportingEnabled();
-      }
-      return state;
-    }
-    return next(ensureErrorReportingEnhancer, initialState, enhancer);
-  };
-}
-
-
-
-
-
-
-
-
-
-function enableNetProvider(hud) {
-  let dataProvider;
-  return next => (reducer, initialState, enhancer) => {
-    function netProviderEnhancer(state, action) {
-      const proxy = hud ? hud.proxy : null;
-      if (!proxy) {
-        return reducer(state, action);
-      }
-
-      const actions = {
-        updateRequest: (id, data, batch) => {
-          proxy.dispatchRequestUpdate(id, data);
-        }
-      };
-
-      
-      
-      
-      if (!dataProvider && proxy.webConsoleClient) {
-        dataProvider = new DataProvider({
-          actions,
-          webConsoleClient: proxy.webConsoleClient
-        });
-
-        
-        
-        
-        
-        
-        proxy.networkDataProvider = dataProvider;
-      }
-
-      const type = action.type;
-      const newState = reducer(state, action);
-
-      
-      
-      
-      
-      
-      if (type == MESSAGE_OPEN) {
-        const updates = getAllNetworkMessagesUpdateById(newState);
-        const message = updates[action.id];
-        if (message && !message.openedOnce && message.source == "network") {
-          dataProvider.onNetworkEvent(message);
-          message.updates.forEach(updateType => {
-            dataProvider.onNetworkEventUpdate({
-              packet: { updateType: updateType },
-              networkInfo: message,
-            });
-          });
-        }
-      }
-
-      
-      
-      
-      
-      
-      
-      if (type == NETWORK_MESSAGE_UPDATE) {
-        const actor = action.response.networkInfo.actor;
-        const open = getAllMessagesUiById(state).includes(actor);
-        if (open) {
-          const message = getMessage(state, actor);
-          message.updates.forEach(updateType => {
-            dataProvider.onNetworkEventUpdate({
-              packet: { updateType },
-              networkInfo: message,
-            });
-          });
-        }
-      }
-
-      return newState;
-    }
-
-    return next(netProviderEnhancer, initialState, enhancer);
-  };
-}
-
-
-
-
-
-
-function enableMessagesCacheClearing(hud) {
-  return next => (reducer, initialState, enhancer) => {
-    function messagesCacheClearingEnhancer(state, action) {
-      state = reducer(state, action);
-
-      const webConsoleClient = hud && hud.proxy ? hud.proxy.webConsoleClient : null;
-      if (webConsoleClient && action.type === MESSAGES_CLEAR) {
-        webConsoleClient.clearNetworkRequests();
-        webConsoleClient.clearMessagesCache();
-      }
-      return state;
-    }
-
-    return next(messagesCacheClearingEnhancer, initialState, enhancer);
-  };
-}
-
-
-
-
-function releaseActors(removedActors, proxy) {
-  if (!proxy) {
-    return;
-  }
-
-  removedActors.forEach(actor => proxy.releaseActor(actor));
-}
-
-
-
-
-
-function historyPersistenceMiddleware(store) {
-  let historyLoaded = false;
-  asyncStorage.getItem("webConsoleHistory").then(value => {
-    if (Array.isArray(value)) {
-      store.dispatch(historyActions.historyLoaded(value));
-    }
-    historyLoaded = true;
-  }, err => {
-    historyLoaded = true;
-    console.error(err);
-  });
-
-  return next => action => {
-    const res = next(action);
-
-    const triggerStoreActions = [
-      APPEND_TO_HISTORY,
-      CLEAR_HISTORY,
-    ];
-
-    
-    
-    if (historyLoaded && triggerStoreActions.includes(action.type)) {
-      const state = store.getState();
-      asyncStorage.setItem("webConsoleHistory", state.history.entries);
-    }
-
-    return res;
   };
 }
 
