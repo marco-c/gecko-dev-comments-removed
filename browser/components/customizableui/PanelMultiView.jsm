@@ -287,7 +287,7 @@ this.PanelMultiView = class extends this.AssociatedToNode {
 
 
   get current() {
-    return this.node && (this._viewShowing || this._currentSubView);
+    return this.node && this._currentSubView;
   }
   get _currentSubView() {
     
@@ -597,8 +597,6 @@ this.PanelMultiView = class extends this.AssociatedToNode {
       panelView.current = false;
     }
 
-    this._viewShowing = null;
-
     if (!this.node || !nextPanelView)
       return;
 
@@ -624,12 +622,17 @@ this.PanelMultiView = class extends this.AssociatedToNode {
 
       
       
+      
+      if (await nextPanelView.dispatchAsyncEvent("ViewShowing")) {
+        return false;
+      }
+
+      
+      
       let showingSameView = viewNode == previousViewNode;
 
       let prevPanelView = PanelView.forNode(previousViewNode);
       prevPanelView.captureKnownSize();
-
-      this._viewShowing = viewNode;
 
       let reverse = !!previousView;
       if (!reverse) {
@@ -648,16 +651,6 @@ this.PanelMultiView = class extends this.AssociatedToNode {
 
       if (anchor) {
         viewNode.classList.add("PanelUI-subView");
-      }
-
-      if (!showingSameView || !viewNode.hasAttribute("current")) {
-        
-        
-        
-        if (await nextPanelView.dispatchAsyncEvent("ViewShowing")) {
-          this._viewShowing = null;
-          return false;
-        }
       }
 
       
@@ -997,7 +990,6 @@ this.PanelMultiView = class extends this.AssociatedToNode {
       case "popuphidden": {
         
         
-        this._viewShowing = null;
         this._transitioning = false;
         this.node.removeAttribute("panelopen");
         
