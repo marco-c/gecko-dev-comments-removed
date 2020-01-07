@@ -357,7 +357,7 @@ TEST_F(TelemetryTestFixture, AccumulateLinearHistogram_DifferentSamples)
 
   
   
-  const uint32_t expectedAccumulateClampedCount = 2;
+  const uint32_t expectedAccumulateClampedCount = 4;
   JS::RootedValue scalarsSnapshot(cx.GetJSContext());
   GetScalarsSnapshot(true, cx.GetJSContext(),&scalarsSnapshot);
   CheckKeyedUintScalar("telemetry.accumulate_clamped_values",

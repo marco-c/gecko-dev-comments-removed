@@ -30,6 +30,7 @@ add_task(async function test_reload() {
   info("Forging data");
   let data = {};
   let telemetrySnapshots = Services.telemetry.snapshotHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
+                                                                 false ,
                                                                  false ).parent;
   let i = 0;
   for (let k of Object.keys(HISTOGRAMS)) {
@@ -62,6 +63,7 @@ add_task(async function test_reload() {
   await wait;
 
   telemetrySnapshots = Services.telemetry.snapshotHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
+                                                             false ,
                                                              false ).parent;
   for (let k of Object.keys(HISTOGRAMS)) {
     let id = HISTOGRAMS[k];
