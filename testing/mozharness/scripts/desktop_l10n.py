@@ -15,7 +15,7 @@ import sys
 import shlex
 
 
-sys.path.insert(1, os.path.dirname(sys.path[0]))  
+sys.path.insert(1, os.path.dirname(sys.path[0]))
 
 from mozharness.base.errors import MakefileErrorList
 from mozharness.base.script import BaseScript
@@ -45,13 +45,18 @@ FAILURE_STR = "Failed"
 
 
 
-configuration_tokens = ('branch', 'update_channel')
+configuration_tokens = ('branch',
+                        'platform',
+                        'update_channel',
+                        )
 
 
 
-
-runtime_config_tokens = ('version', 'locale', 'abs_objdir', 'revision',
-                         'en_us_installer_binary_url')
+runtime_config_tokens = ('version', 'locale', 'from_buildid',
+                         'abs_objdir', 'revision',
+                         'to_buildid', 'en_us_binary_url',
+                         'en_us_installer_binary_url', 'mar_tools_url',
+                         'who')
 
 
 
@@ -65,6 +70,12 @@ class DesktopSingleLocale(LocalesMixin, AutomationMixin,
          "type": "string",
          "help": "Specify the locale(s) to sign and update. Optionally pass"
                  " revision separated by colon, en-GB:default."}
+    ], [
+        ['--locales-file', ],
+        {"action": "store",
+         "dest": "locales_file",
+         "type": "string",
+         "help": "Specify a file to determine which locales to sign and update"}
     ], [
         ['--tag-override', ],
         {"action": "store",
@@ -103,12 +114,17 @@ class DesktopSingleLocale(LocalesMixin, AutomationMixin,
                 "list-locales",
                 "setup",
                 "repack",
+                "funsize-props",
                 "summary",
             ],
             'config': {
                 "ignore_locales": ["en-US"],
                 "locales_dir": "browser/locales",
+                "buildid_section": "App",
+                "buildid_option": "BuildID",
+                "application_ini": "application.ini",
                 "log_name": "single_locale",
+                "hashType": "sha512",
             },
         }
 
@@ -247,6 +263,9 @@ class DesktopSingleLocale(LocalesMixin, AutomationMixin,
         config = self.config
         replace_dict = self.query_abs_dirs()
 
+        replace_dict['en_us_binary_url'] = config.get('en_us_binary_url')
+        
+        
         bootstrap_env = self.query_env(partial_env=config.get("bootstrap_env"),
                                        replace_dict=replace_dict)
         for binary in self._mar_binaries():
@@ -620,6 +639,12 @@ class DesktopSingleLocale(LocalesMixin, AutomationMixin,
         """returns a tuple with mar and mbsdiff paths"""
         config = self.config
         return (config['mar'], config['mbsdiff'])
+
+    def _mar_dir(self, dirname):
+        """returns the full path of dirname;
+            dirname is an entry in configuration"""
+        dirs = self.query_abs_dirs()
+        return os.path.join(dirs['abs_objdir'], self.config[dirname])
 
     
     def _get_tooltool_auth_file(self):

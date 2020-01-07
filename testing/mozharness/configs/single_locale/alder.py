@@ -1,8 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import os
 
 config = {
     "nightly_build": True,
     "branch": "alder",
+    "en_us_binary_url": "http://ftp.mozilla.org/pub/mozilla.org/firefox/nightly/latest-mozilla-central/",
     "update_channel": "nightly",
 
     
