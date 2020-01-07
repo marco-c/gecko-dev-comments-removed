@@ -17,6 +17,10 @@ const FontWeight = createFactory(require("./FontWeight"));
 const { getStr } = require("../utils/l10n");
 const Types = require("../types");
 
+
+
+const MAX_FONTS = 3;
+
 class FontEditor extends PureComponent {
   static get propTypes() {
     return {
@@ -97,9 +101,7 @@ class FontEditor extends PureComponent {
     return dom.details(
       {},
       dom.summary(
-        {
-          className: "font-family-unused-header",
-        },
+        {},
         getStr("fontinspector.familiesNotUsedLabel")
       ),
       familiesList
@@ -115,24 +117,22 @@ class FontEditor extends PureComponent {
 
 
 
-
-
-  renderFontFamily(fonts, families, onToggleFontHighlight) {
+  renderFontFamily(fonts, families) {
     if (!fonts.length) {
       return null;
     }
 
-    const fontList = dom.ul(
-      {
-        className: "fonts-list"
-      },
-      fonts.map(font => {
-        return dom.li(
-          {},
-          FontMeta({ font, onToggleFontHighlight })
+    const topUsedFontsList = this.renderFontList(fonts.slice(0, MAX_FONTS));
+    const moreUsedFontsList = this.renderFontList(fonts.slice(MAX_FONTS, fonts.length));
+    const moreUsedFonts = moreUsedFontsList === null
+      ? null
+      : dom.details({},
+          dom.summary({},
+            dom.span({ className: "label-open" }, getStr("fontinspector.seeMore")),
+            dom.span({ className: "label-close" }, getStr("fontinspector.seeLess"))
+          ),
+          moreUsedFontsList
         );
-      })
-    );
 
     return dom.label(
       {
@@ -148,9 +148,40 @@ class FontEditor extends PureComponent {
         {
           className: "font-control-box",
         },
-        fontList,
+        topUsedFontsList,
+        moreUsedFonts,
         this.renderFamilesNotUsed(families.notUsed)
       )
+    );
+  }
+
+  
+
+
+
+
+
+
+
+  renderFontList(fonts = []) {
+    if (!fonts.length) {
+      return null;
+    }
+
+    return dom.ul(
+      {
+        className: "fonts-list"
+      },
+      fonts.map(font => {
+        return dom.li(
+          {},
+          FontMeta({
+            font,
+            key: font.name,
+            onToggleFontHighlight: this.props.onToggleFontHighlight
+          })
+        );
+      })
     );
   }
 
@@ -244,7 +275,7 @@ class FontEditor extends PureComponent {
   }
 
   render() {
-    const { fontEditor, onToggleFontHighlight } = this.props;
+    const { fontEditor } = this.props;
     const { fonts, families, axes, instance, properties } = fontEditor;
     
     const font = fonts[0];
@@ -267,7 +298,7 @@ class FontEditor extends PureComponent {
       
       !hasWeight && this.renderWarning(),
       
-      this.renderFontFamily(fonts, families, onToggleFontHighlight),
+      this.renderFontFamily(fonts, families),
       
       hasFontInstances && this.renderInstances(font.variationInstances, instance),
       
