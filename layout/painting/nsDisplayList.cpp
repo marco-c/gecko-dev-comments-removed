@@ -656,10 +656,6 @@ AddAnimationsForProperty(nsIFrame* aFrame, nsDisplayListBuilder* aBuilder,
     
     
     aFrame->SetProperty(nsIFrame::RefusedAsyncAnimationProperty(), true);
-
-    
-    
-    aFrame->SchedulePaint();
     return;
   }
 
