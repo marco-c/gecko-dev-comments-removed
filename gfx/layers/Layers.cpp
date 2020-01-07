@@ -43,6 +43,7 @@
 #include "nsCSSValue.h"                 
 #include "nsDisplayList.h"              
 #include "nsPrintfCString.h"            
+#include "nsStyleStruct.h"              
 #include "protobuf/LayerScopePacket.pb.h"
 #include "mozilla/Compression.h"
 #include "TreeTraversal.h"              
@@ -1313,7 +1314,7 @@ ContainerLayer::DefaultComputeEffectiveTransforms(const Matrix4x4& aTransformToS
     
     idealTransform.ProjectTo2D();
   }
-  mUseIntermediateSurface = useIntermediateSurface && !GetLocalVisibleRegion().IsEmpty();
+  mUseIntermediateSurface = useIntermediateSurface;
   if (useIntermediateSurface) {
     ComputeEffectiveTransformsForChildren(Matrix4x4::From2D(residual));
   } else {
