@@ -7,6 +7,7 @@
 #ifndef mozilla_dom_U2FTokenManager_h
 #define mozilla_dom_U2FTokenManager_h
 
+#include "nsIU2FTokenManager.h"
 #include "mozilla/dom/U2FTokenTransport.h"
 #include "mozilla/dom/PWebAuthnTransaction.h"
 
@@ -26,10 +27,12 @@ namespace dom {
 class U2FSoftTokenManager;
 class WebAuthnTransactionParent;
 
-class U2FTokenManager final
+class U2FTokenManager final : public nsIU2FTokenManager
 {
 public:
-  NS_INLINE_DECL_REFCOUNTING(U2FTokenManager)
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSIU2FTOKENMANAGER
+
   static U2FTokenManager* Get();
   void Register(PWebAuthnTransactionParent* aTransactionParent,
                 const uint64_t& aTransactionId,
@@ -43,16 +46,27 @@ public:
   static void Initialize();
 private:
   U2FTokenManager();
-  ~U2FTokenManager();
+  ~U2FTokenManager() { }
   RefPtr<U2FTokenTransport> GetTokenManagerImpl();
   void AbortTransaction(const uint64_t& aTransactionId, const nsresult& aError);
   void ClearTransaction();
+  
+  void DoRegister(const WebAuthnMakeCredentialInfo& aInfo);
   void MaybeConfirmRegister(const uint64_t& aTransactionId,
                             const WebAuthnMakeCredentialResult& aResult);
   void MaybeAbortRegister(const uint64_t& aTransactionId, const nsresult& aError);
   void MaybeConfirmSign(const uint64_t& aTransactionId,
                         const WebAuthnGetAssertionResult& aResult);
   void MaybeAbortSign(const uint64_t& aTransactionId, const nsresult& aError);
+  
+  void RunResumeRegister(uint64_t aTransactionId, bool aPermitDirectAttestation);
+  
+  void RunCancel(uint64_t aTransactionId);
+  
+  template<typename ...T>
+  void SendPromptNotification(const char16_t* aFormat, T... aArgs);
+  
+  void RunSendPromptNotification(nsString aJSON);
   
   
   
@@ -64,6 +78,8 @@ private:
   
   
   uint64_t mLastTransactionId;
+  
+  Maybe<WebAuthnMakeCredentialInfo> mPendingRegisterInfo;
 };
 
 } 

@@ -57,6 +57,17 @@ async function executeTestPage(aUri) {
   }
 }
 
+add_task(async function test_setup() {
+  await SpecialPowers.pushPrefEnv({
+    "set": [
+      ["security.webauth.webauthn", true],
+      ["security.webauth.webauthn_enable_softtoken", true],
+      ["security.webauth.webauthn_enable_usbtoken", false],
+      ["security.webauth.webauthn_testing_allow_direct_attestation", true]
+    ]
+  });
+});
+
 add_task(async function test_loopback() {
   
   
@@ -64,12 +75,6 @@ add_task(async function test_loopback() {
   const testPage = "https://example.com/browser/dom/webauthn/tests/browser/tab_webauthn_success.html";
   {
     cleanupTelemetry();
-    
-    Services.prefs.setBoolPref("security.webauth.webauthn", true);
-    Services.prefs.setBoolPref("security.webauth.webauthn_enable_softtoken", true);
-    Services.prefs.setBoolPref("security.webauth.webauthn_enable_usbtoken", false);
-    Services.prefs.setBoolPref("security.webauth.webauthn_testing_allow_direct_attestation", true);
-
     await executeTestPage(testPage);
 
     let webauthn_used = getTelemetryForScalar("security.webauthn_used");
