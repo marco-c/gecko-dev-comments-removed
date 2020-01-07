@@ -338,10 +338,6 @@ protected:
   
   nsresult AdjustCollapsedRangeMaybeIntoTextNode(RawRange& aCollapsedRawRange);
   
-  nsresult GetStartFrameAndOffset(const RawRange& aRawRange,
-                                  nsIFrame*& aFrame,
-                                  int32_t& aOffsetInFrame);
-  
   
   nsresult ConvertToRootRelativeOffset(nsIFrame* aFrame,
                                        nsRect& aRect);
