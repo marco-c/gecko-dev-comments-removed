@@ -269,7 +269,8 @@ MultipartBlobImpl::SetLengthAndModifiedDate(ErrorResult& aRv)
     
     
     mLastModificationDate = nsRFPService::ReduceTimePrecisionAsUSecs(
-      lastModifiedSet ? lastModified * PR_USEC_PER_MSEC : JS_Now());
+      lastModifiedSet ? lastModified * PR_USEC_PER_MSEC : JS_Now(), 0);
+    
   }
 }
 

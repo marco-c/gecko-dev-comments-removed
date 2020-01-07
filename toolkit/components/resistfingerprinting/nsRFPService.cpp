@@ -557,7 +557,7 @@ nsRFPService::ReduceTimePrecisionAsUSecsWrapper(double aTime)
     aTime,
     MicroSeconds,
     TimerResolution(),
-    0,
+    0, 
     TimerPrecisionType::All);
 }
 
