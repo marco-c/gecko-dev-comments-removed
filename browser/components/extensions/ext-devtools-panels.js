@@ -84,7 +84,7 @@ class ParentDevToolsPanel {
 
     this.toolbox.addAdditionalTool({
       id: this.id,
-      url: "about:blank",
+      url: "chrome://browser/content/webext-panels.xul",
       icon: icon,
       label: title,
       tooltip: `DevTools Panel added by "${extensionName}" add-on.`,
@@ -216,14 +216,29 @@ class ParentDevToolsPanel {
     const {url} = this.panelOptions;
     const {document} = window;
 
+    
+    
+    
+    
+    let stack = document.getElementById("webext-panels-stack");
+    if (!stack) {
+      stack = document.createElementNS(XUL_NS, "stack");
+      stack.setAttribute("flex", "1");
+      stack.setAttribute("id", "webext-panels-stack");
+      document.documentElement.appendChild(stack);
+    }
+
     const browser = document.createElementNS(XUL_NS, "browser");
+    browser.setAttribute("id", "webext-panels-browser");
     browser.setAttribute("type", "content");
     browser.setAttribute("disableglobalhistory", "true");
-    browser.setAttribute("style", "width: 100%; height: 100%;");
-    browser.setAttribute("transparent", "true");
+    browser.setAttribute("flex", "1");
     browser.setAttribute("class", "webextension-devtoolsPanel-browser");
     browser.setAttribute("webextension-view-type", "devtools_panel");
-    browser.setAttribute("flex", "1");
+    
+    
+    browser.setAttribute("selectmenulist", "ContentSelectDropdown");
+    browser.setAttribute("autocompletepopup", "PopupAutoComplete");
 
     
     
@@ -254,8 +269,7 @@ class ParentDevToolsPanel {
       }
     });
 
-    document.body.setAttribute("style", "margin: 0; padding: 0;");
-    document.body.appendChild(browser);
+    stack.appendChild(browser);
 
     extensions.emit("extension-browser-inserted", browser, {
       devtoolsToolboxInfo: {
