@@ -635,6 +635,7 @@ static const char* const kBinaryFileExtensions[] = {
     ".sct", 
     ".search-ms", 
     ".seplugin", 
+    ".settingcontent-ms", 
     ".sh", 
     ".shar", 
     ".shb", 
