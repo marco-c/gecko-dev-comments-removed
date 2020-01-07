@@ -1161,7 +1161,7 @@ nsSocketTransport::BuildSocket(PRFileDesc *&fd, bool &proxyTransparent, bool &us
         uint32_t    controlFlags = 0;
 
         uint32_t i;
-        for (i=0; i<mTypeCount; ++i) {
+        for (i = 0; i < mTypeCount; ++i) {
             nsCOMPtr<nsISocketProvider> provider;
 
             SOCKET_LOG(("  pushing io layer [%u:%s]\n", i, mTypes[i]));
@@ -1192,10 +1192,28 @@ nsSocketTransport::BuildSocket(PRFileDesc *&fd, bool &proxyTransparent, bool &us
 
                 
                 
+                
+                
+                
+                
+                const char *socketProviderHost = host;
+                int32_t socketProviderPort = port;
+                if (mProxyTransparentResolvesHost &&
+                    (!strcmp(mTypes[0], "socks") || !strcmp(mTypes[0], "socks4"))) {
+                    SOCKET_LOG(("SOCKS %d Host/Route override: %s:%d -> %s:%d\n",
+                                mHttpsProxy,
+                                socketProviderHost, socketProviderPort,
+                                mHost.get(), mPort));
+                    socketProviderHost = mHost.get();
+                    socketProviderPort = mPort;
+                }
+
+                
+                
 
                 rv = provider->NewSocket(mNetAddr.raw.family,
-                                         mHttpsProxy ? mProxyHost.get() : host,
-                                         mHttpsProxy ? mProxyPort : port,
+                                         mHttpsProxy ? mProxyHost.get() : socketProviderHost,
+                                         mHttpsProxy ? mProxyPort : socketProviderPort,
                                          proxyInfo, mOriginAttributes,
                                          controlFlags, mTlsFlags, &fd,
                                          getter_AddRefs(secinfo));
@@ -1204,8 +1222,7 @@ nsSocketTransport::BuildSocket(PRFileDesc *&fd, bool &proxyTransparent, bool &us
                     NS_NOTREACHED("NewSocket succeeded but failed to create a PRFileDesc");
                     rv = NS_ERROR_UNEXPECTED;
                 }
-            }
-            else {
+            } else {
                 
                 
                 
@@ -1236,9 +1253,8 @@ nsSocketTransport::BuildSocket(PRFileDesc *&fd, bool &proxyTransparent, bool &us
                     secCtrl->SetNotificationCallbacks(callbacks);
                 
                 usingSSL = isSSL;
-            }
-            else if ((strcmp(mTypes[i], "socks") == 0) ||
-                     (strcmp(mTypes[i], "socks4") == 0)) {
+            } else if ((strcmp(mTypes[i], "socks") == 0) ||
+                       (strcmp(mTypes[i], "socks4") == 0)) {
                 
                 
                 proxyInfo = nullptr;

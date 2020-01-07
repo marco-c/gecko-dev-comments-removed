@@ -66,6 +66,10 @@ public:
                             nsIInterfaceRequestor *callbacks, nsProxyInfo *proxyInfo,
                             uint32_t caps, const OriginAttributes &originAttributes);
 
+  
+  
+  static bool AcceptableProxy(nsProxyInfo *pi);
+
   const nsCString &AlternateHost() const { return mAlternateHost; }
   const nsCString &OriginHost() const { return mOriginHost; }
   uint32_t OriginPort() const { return mOriginPort; }
