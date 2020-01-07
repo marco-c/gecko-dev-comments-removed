@@ -5091,6 +5091,21 @@ FormControlShrinksForPercentISize(nsIFrame* aFrame)
 
 
 
+static bool
+IsReplacedBoxResolvedAgainstZero(nsIFrame* aFrame,
+                                 const nsStyleCoord& aStyleSize,
+                                 const nsStyleCoord& aStyleMaxSize)
+{
+  const bool sizeHasPercent = aStyleSize.HasPercent();
+  return ((sizeHasPercent || aStyleMaxSize.HasPercent()) &&
+          aFrame->IsFrameOfType(nsIFrame::eReplacedSizing)) ||
+         (sizeHasPercent &&
+          FormControlShrinksForPercentISize(aFrame));
+}
+
+
+
+
 
 
 
@@ -5149,15 +5164,7 @@ AddIntrinsicSizeOffset(gfxContext* aRenderingContext,
 
   nscoord size;
   if (aType == nsLayoutUtils::MIN_ISIZE &&
-      (((aStyleSize.HasPercent() || aStyleMaxSize.HasPercent()) &&
-        aFrame->IsFrameOfType(nsIFrame::eReplacedSizing)) ||
-       (aStyleSize.HasPercent() &&
-        FormControlShrinksForPercentISize(aFrame)))) {
-    
-    
-    
-    
-    
+      ::IsReplacedBoxResolvedAgainstZero(aFrame, aStyleSize, aStyleMaxSize)) {
     
     result = 0; 
   } else if (GetAbsoluteCoord(aStyleSize, size) ||
