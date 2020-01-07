@@ -149,8 +149,6 @@ public:
 
   NS_DECL_ADDSIZEOFEXCLUDINGTHIS
 
-  already_AddRefed<nsIPrincipal> MaybeDowngradePrincipal(nsIPrincipal* aPrincipal);
-
   
   
   
@@ -242,8 +240,6 @@ public:
   static bool IsShadowDOMEnabled(JSContext* aCx, JSObject* aObject);
   
   static bool IsShadowDOMEnabled(const nsINode* aNode);
-private:
-  void SendToConsole(nsCOMArray<nsISecurityConsoleMessage>& aMessages);
 
 public:
   
@@ -287,8 +283,6 @@ public:
 
   nsresult CloneDocHelper(nsDocument* clone, bool aPreallocateChildren) const;
 
-  void MaybeEndOutermostXBLUpdate();
-
   
   void AsyncBlockOnload();
 
@@ -326,8 +320,6 @@ protected:
 
   explicit nsDocument(const char* aContentType);
   virtual ~nsDocument();
-
-  void EnsureOnloadBlocker();
 
 public:
   
