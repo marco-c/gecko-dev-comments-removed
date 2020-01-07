@@ -96,25 +96,9 @@ add_task(async function test() {
 
   
   
-  
-
-  info("Sort by annotation desc");
-  let ids = await PlacesUtils.promiseManyItemIds([guid1, guid3]);
-  PlacesUtils.annotations.setItemAnnotation(ids.get(guid1), "testAnno", "a", 0, 0);
-  PlacesUtils.annotations.setItemAnnotation(ids.get(guid3), "testAnno", "b", 0, 0);
-  result.sortingAnnotation = "testAnno";
-  result.sortingMode = NHQO.SORT_BY_ANNOTATION_DESCENDING;
-
-  
-  checkOrder(guid3, guid1, guid2);
 
   
   
-
-  
-  info("Annotation liveupdate");
-  PlacesUtils.annotations.setItemAnnotation(ids.get(guid1), "testAnno", "c", 0, 0);
-  checkOrder(guid1, guid3, guid2);
 
   
 

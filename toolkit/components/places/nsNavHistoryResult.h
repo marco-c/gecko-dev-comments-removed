@@ -145,9 +145,6 @@ public:
   bool mNeedsToApplySortingMode;
 
   
-  nsCString mSortingAnnotation;
-
-  
   bool mIsHistoryObserver;
   bool mIsBookmarkFolderObserver;
   bool mIsAllBookmarksObserver;
@@ -488,15 +485,12 @@ public:
   
   typedef nsCOMArray<nsNavHistoryResultNode>::nsCOMArrayComparatorFunc SortComparator;
   virtual uint16_t GetSortType();
-  virtual void GetSortingAnnotation(nsACString& aSortingAnnotation);
 
   static SortComparator GetSortingComparator(uint16_t aSortType);
-  virtual void RecursiveSort(const char* aData,
-                             SortComparator aComparator);
+  virtual void RecursiveSort(SortComparator aComparator);
   uint32_t FindInsertionPoint(nsNavHistoryResultNode* aNode, SortComparator aComparator,
-                              const char* aData, bool* aItemExists);
-  bool DoesChildNeedResorting(uint32_t aIndex, SortComparator aComparator,
-                                const char* aData);
+                              bool* aItemExists);
+  bool DoesChildNeedResorting(uint32_t aIndex, SortComparator aComparator);
 
   static int32_t SortComparison_StringLess(const nsAString& a, const nsAString& b);
 
@@ -525,12 +519,6 @@ public:
                                                nsNavHistoryResultNode* b,
                                                void* closure);
   static int32_t SortComparison_VisitCountGreater(nsNavHistoryResultNode* a,
-                                                  nsNavHistoryResultNode* b,
-                                                  void* closure);
-  static int32_t SortComparison_AnnotationLess(nsNavHistoryResultNode* a,
-                                               nsNavHistoryResultNode* b,
-                                               void* closure);
-  static int32_t SortComparison_AnnotationGreater(nsNavHistoryResultNode* a,
                                                   nsNavHistoryResultNode* b,
                                                   void* closure);
   static int32_t SortComparison_DateAddedLess(nsNavHistoryResultNode* a,
@@ -664,9 +652,7 @@ public:
   nsresult Refresh() override;
 
   virtual uint16_t GetSortType() override;
-  virtual void GetSortingAnnotation(nsACString& aSortingAnnotation) override;
-  virtual void RecursiveSort(const char* aData,
-                             SortComparator aComparator) override;
+  virtual void RecursiveSort(SortComparator aComparator) override;
 
   nsresult NotifyIfTagsChanged(nsIURI* aURI);
 

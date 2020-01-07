@@ -1160,9 +1160,7 @@ var ViewMenu = {
     
     
     
-    
-    
-    var colLookupTable = {
+    const colLookupTable = {
       title:        { key: "TITLE",        dir: "ascending"  },
       tags:         { key: "TAGS",         dir: "ascending"  },
       url:          { key: "URI",          dir: "ascending"  },
@@ -1182,7 +1180,6 @@ var ViewMenu = {
     aDirection = (aDirection || colLookupTable[columnId].dir).toUpperCase();
 
     var sortConst = "SORT_BY_" + colLookupTable[columnId].key + "_" + aDirection;
-    result.sortingAnnotation = colLookupTable[columnId].anno || "";
     result.sortingMode = Ci.nsINavHistoryQueryOptions[sortConst];
   }
 };

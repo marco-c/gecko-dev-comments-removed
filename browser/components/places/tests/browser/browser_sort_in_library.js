@@ -27,8 +27,6 @@
 
 
 
-
-
 const SORT_LOOKUP_TABLE = {
   title:        { key: "TITLE",        dir: "ASCENDING"  },
   tags:         { key: "TAGS",         dir: "ASCENDING"  },
@@ -37,9 +35,6 @@ const SORT_LOOKUP_TABLE = {
   visitCount:   { key: "VISITCOUNT",   dir: "DESCENDING" },
   dateAdded:    { key: "DATEADDED",    dir: "DESCENDING" },
   lastModified: { key: "LASTMODIFIED", dir: "DESCENDING" },
-  description:  { key:  "ANNOTATION",
-                  dir:  "ASCENDING",
-                  anno: "bookmarkProperties/description" }
 };
 
 
@@ -62,10 +57,7 @@ var prevSortKey = null;
 
 
 
-
-
-
-function checkSort(aTree, aSortingMode, aSortingAnno) {
+function checkSort(aTree, aSortingMode) {
   
   
   let res = aTree.result;
@@ -75,14 +67,6 @@ function checkSort(aTree, aSortingMode, aSortingAnno) {
   
   is(res.sortingMode, aSortingMode,
      "column should now have sortingMode " + aSortingMode);
-
-  
-  if ([Ci.nsINavHistoryQueryOptions.SORT_BY_ANNOTATION_ASCENDING,
-       Ci.nsINavHistoryQueryOptions.SORT_BY_ANNOTATION_DESCENDING].
-      includes(aSortingMode)) {
-    is(res.sortingAnnotation, aSortingAnno,
-       "column should now have sorting annotation " + aSortingAnno);
-  }
 }
 
 
@@ -190,11 +174,10 @@ function testSortByColAndDir(aOrganizerWin, aPlaceContentTree, aUnsortFirst) {
       "SORT_BY_" + SORT_LOOKUP_TABLE[colId].key + "_" +
       (aUnsortFirst ? SORT_LOOKUP_TABLE[colId].dir : prevSortDir);
     let expectedSortMode = Ci.nsINavHistoryQueryOptions[sortStr];
-    let expectedAnno = SORT_LOOKUP_TABLE[colId].anno || "";
 
     
     setSort(aOrganizerWin, aPlaceContentTree, aUnsortFirst, false, col);
-    checkSort(aPlaceContentTree, expectedSortMode, expectedAnno);
+    checkSort(aPlaceContentTree, expectedSortMode);
 
     
     ["ascending", "descending"].forEach(function(dir) {
@@ -202,7 +185,7 @@ function testSortByColAndDir(aOrganizerWin, aPlaceContentTree, aUnsortFirst) {
         "SORT_BY_" + SORT_LOOKUP_TABLE[colId].key + "_" + dir.toUpperCase();
       expectedSortMode = Ci.nsINavHistoryQueryOptions[sortStr];
       setSort(aOrganizerWin, aPlaceContentTree, aUnsortFirst, false, col, dir);
-      checkSort(aPlaceContentTree, expectedSortMode, expectedAnno);
+      checkSort(aPlaceContentTree, expectedSortMode);
     });
   }
 }
