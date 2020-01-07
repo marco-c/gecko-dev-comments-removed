@@ -887,6 +887,8 @@ pref("gfx.webrender.debug.profiler", false);
 pref("gfx.webrender.debug.gpu-time-queries", false);
 pref("gfx.webrender.debug.gpu-sample-queries", false);
 pref("gfx.webrender.debug.disable-batching", false);
+pref("gfx.webrender.debug.epochs", false);
+pref("gfx.webrender.debug.compact-profiler", false);
 
 pref("accessibility.browsewithcaret", false);
 pref("accessibility.warn_on_browsewithcaret", true);
@@ -2969,13 +2971,6 @@ pref("layout.css.font-variations.enabled", false);
 pref("layout.css.frames-timing.enabled", false);
 #else
 pref("layout.css.frames-timing.enabled", true);
-#endif
-
-
-
-
-#ifndef RELEASE_OR_BETA
-pref("layout.css.emulate-moz-box-with-flex", false);
 #endif
 
 
