@@ -984,7 +984,8 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
       
       return PlacesUtils.bookmarks.SYNC_STATUS.NORMAL;
     }
-    if (source == PlacesUtils.bookmarks.SOURCES.IMPORT_REPLACE) {
+    if (source == PlacesUtils.bookmarks.SOURCES.RESTORE ||
+        source == PlacesUtils.bookmarks.SOURCES.RESTORE_ON_STARTUP) {
       
       
       

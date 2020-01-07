@@ -374,7 +374,10 @@ var MigratorPrototype = {
 
         
         await BookmarkHTMLUtils.importFromURL(
-          "chrome://browser/locale/bookmarks.html", true).catch(r => r);
+          "chrome://browser/locale/bookmarks.html", {
+            replace: true,
+            source: PlacesUtils.bookmarks.SOURCES.RESTORE_ON_STARTUP,
+          }).catch(Cu.reportError);
 
         
         

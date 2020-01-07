@@ -279,7 +279,7 @@ add_task(async function() {
   }
 
   
-  await BookmarkJSONUtils.importFromFile(jsonFile, true);
+  await BookmarkJSONUtils.importFromFile(jsonFile, { replace: true });
 
   
   for (let singleTest of tests) {

@@ -48,19 +48,25 @@ var BookmarkJSONUtils = Object.freeze({
 
 
 
-  importFromURL: function BJU_importFromURL(aSpec, aReplace) {
-    return (async function() {
-      notifyObservers(PlacesUtils.TOPIC_BOOKMARKS_RESTORE_BEGIN, aReplace);
-      try {
-        let importer = new BookmarkImporter(aReplace);
-        await importer.importFromURL(aSpec);
 
-        notifyObservers(PlacesUtils.TOPIC_BOOKMARKS_RESTORE_SUCCESS, aReplace);
-      } catch (ex) {
-        Cu.reportError("Failed to restore bookmarks from " + aSpec + ": " + ex);
-        notifyObservers(PlacesUtils.TOPIC_BOOKMARKS_RESTORE_FAILED, aReplace);
-      }
-    })();
+
+
+
+  async importFromURL(aSpec, {
+    replace: aReplace = false,
+    source: aSource = aReplace ? PlacesUtils.bookmarks.SOURCES.RESTORE :
+                                 PlacesUtils.bookmarks.SOURCES.IMPORT,
+  } = {}) {
+    notifyObservers(PlacesUtils.TOPIC_BOOKMARKS_RESTORE_BEGIN, aReplace);
+    try {
+      let importer = new BookmarkImporter(aReplace, aSource);
+      await importer.importFromURL(aSpec);
+
+      notifyObservers(PlacesUtils.TOPIC_BOOKMARKS_RESTORE_SUCCESS, aReplace);
+    } catch (ex) {
+      Cu.reportError("Failed to restore bookmarks from " + aSpec + ": " + ex);
+      notifyObservers(PlacesUtils.TOPIC_BOOKMARKS_RESTORE_FAILED, aReplace);
+    }
   },
 
   
@@ -77,13 +83,21 @@ var BookmarkJSONUtils = Object.freeze({
 
 
 
-  async importFromFile(aFilePath, aReplace) {
+
+
+
+
+  async importFromFile(aFilePath, {
+    replace: aReplace = false,
+    source: aSource = aReplace ? PlacesUtils.bookmarks.SOURCES.RESTORE :
+                                 PlacesUtils.bookmarks.SOURCES.IMPORT,
+  } = {}) {
     notifyObservers(PlacesUtils.TOPIC_BOOKMARKS_RESTORE_BEGIN, aReplace);
     try {
       if (!(await OS.File.exists(aFilePath)))
         throw new Error("Cannot restore from nonexisting json file");
 
-      let importer = new BookmarkImporter(aReplace);
+      let importer = new BookmarkImporter(aReplace, aSource);
       if (aFilePath.endsWith("jsonlz4")) {
         await importer.importFromCompressedFile(aFilePath);
       } else {
@@ -147,12 +161,9 @@ var BookmarkJSONUtils = Object.freeze({
   }
 });
 
-function BookmarkImporter(aReplace) {
+function BookmarkImporter(aReplace, aSource) {
   this._replace = aReplace;
-  
-  
-  this._source = aReplace ? PlacesUtils.bookmarks.SOURCE_IMPORT_REPLACE :
-                            PlacesUtils.bookmarks.SOURCE_IMPORT;
+  this._source = aSource;
 }
 BookmarkImporter.prototype = {
   

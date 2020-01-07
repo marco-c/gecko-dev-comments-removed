@@ -44,7 +44,7 @@ add_task(async function test_import_tags() {
   }
 
   
-  await BookmarkHTMLUtils.importFromFile(HTMLFile, true);
+  await BookmarkHTMLUtils.importFromFile(HTMLFile, { replace: true });
 
   
   for (let { uri, tags } of bookmarkData) {

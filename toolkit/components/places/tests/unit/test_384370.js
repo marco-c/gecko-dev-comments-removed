@@ -31,7 +31,7 @@ add_task(async function() {
   
   
   let htmlFile = OS.Path.join(do_get_cwd().path, "bookmarks.preplaces.html");
-  await BookmarkHTMLUtils.importFromFile(htmlFile, true);
+  await BookmarkHTMLUtils.importFromFile(htmlFile, { replace: true });
 
   
   for (let { uri, tags } of tagData) {
@@ -57,7 +57,7 @@ add_task(async function() {
 
   
   
-  await BookmarkJSONUtils.importFromFile(jsonFile, true);
+  await BookmarkJSONUtils.importFromFile(jsonFile, { replace: true });
   info("imported json");
 
   

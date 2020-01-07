@@ -134,10 +134,19 @@ var BookmarkHTMLUtils = Object.freeze({
 
 
 
-  async importFromURL(aSpec, aInitialImport) {
+
+
+
+
+
+  async importFromURL(aSpec, {
+    replace: aInitialImport = false,
+    source: aSource = aInitialImport ? PlacesUtils.bookmarks.SOURCES.RESTORE :
+                                       PlacesUtils.bookmarks.SOURCES.IMPORT,
+  } = {}) {
     notifyObservers(PlacesUtils.TOPIC_BOOKMARKS_RESTORE_BEGIN, aInitialImport);
     try {
-      let importer = new BookmarkImporter(aInitialImport);
+      let importer = new BookmarkImporter(aInitialImport, aSource);
       await importer.importFromURL(aSpec);
 
       notifyObservers(PlacesUtils.TOPIC_BOOKMARKS_RESTORE_SUCCESS, aInitialImport);
@@ -160,13 +169,22 @@ var BookmarkHTMLUtils = Object.freeze({
 
 
 
-  async importFromFile(aFilePath, aInitialImport) {
+
+
+
+
+
+  async importFromFile(aFilePath, {
+    replace: aInitialImport = false,
+    source: aSource = aInitialImport ? PlacesUtils.bookmarks.SOURCES.RESTORE :
+                                       PlacesUtils.bookmarks.SOURCES.IMPORT,
+  } = {}) {
     notifyObservers(PlacesUtils.TOPIC_BOOKMARKS_RESTORE_BEGIN, aInitialImport);
     try {
       if (!(await OS.File.exists(aFilePath))) {
         throw new Error("Cannot import from nonexisting html file: " + aFilePath);
       }
-      let importer = new BookmarkImporter(aInitialImport);
+      let importer = new BookmarkImporter(aInitialImport, aSource);
       await importer.importFromURL(OS.Path.toFileURI(aFilePath));
 
       notifyObservers(PlacesUtils.TOPIC_BOOKMARKS_RESTORE_SUCCESS, aInitialImport);
@@ -286,12 +304,9 @@ function Frame(aFolder) {
   this.previousLastModifiedDate = null;
 }
 
-function BookmarkImporter(aInitialImport) {
+function BookmarkImporter(aInitialImport, aSource) {
   this._isImportDefaults = aInitialImport;
-  
-  
-  this._source = aInitialImport ? PlacesUtils.bookmarks.SOURCE_IMPORT_REPLACE :
-                                  PlacesUtils.bookmarks.SOURCE_IMPORT;
+  this._source = aSource;
 
   
   

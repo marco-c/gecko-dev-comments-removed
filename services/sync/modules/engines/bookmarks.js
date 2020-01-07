@@ -36,12 +36,6 @@ XPCOMUtils.defineLazyGetter(this, "ANNOS_TO_TRACK", () => [
 ]);
 
 const FOLDER_SORTINDEX = 1000000;
-const {
-  SOURCE_SYNC,
-  SOURCE_IMPORT,
-  SOURCE_IMPORT_REPLACE,
-  SOURCE_SYNC_REPARENT_REMOVED_FOLDER_CHILDREN,
-} = Ci.nsINavBookmarksService;
 
 
 
@@ -57,9 +51,13 @@ const FORBIDDEN_INCOMING_PARENT_IDS = ["pinned", "readinglist"];
 
 
 
-
-const IGNORED_SOURCES = [SOURCE_SYNC, SOURCE_IMPORT, SOURCE_IMPORT_REPLACE,
-                         SOURCE_SYNC_REPARENT_REMOVED_FOLDER_CHILDREN];
+XPCOMUtils.defineLazyGetter(this, "IGNORED_SOURCES", () => [
+  PlacesUtils.bookmarks.SOURCES.SYNC,
+  PlacesUtils.bookmarks.SOURCES.IMPORT,
+  PlacesUtils.bookmarks.SOURCES.RESTORE,
+  PlacesUtils.bookmarks.SOURCES.RESTORE_ON_STARTUP,
+  PlacesUtils.bookmarks.SOURCES.SYNC_REPARENT_REMOVED_FOLDER_CHILDREN,
+]);
 
 function isSyncedRootNode(node) {
   return node.root == "bookmarksMenuFolder" ||
