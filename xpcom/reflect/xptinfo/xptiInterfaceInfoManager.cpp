@@ -134,16 +134,16 @@ XPTInterfaceInfoManager::VerifyAndAddEntryIfNew(const XPTInterfaceDirectoryEntry
                                                 uint16_t idx,
                                                 xptiTypelibGuts* typelib)
 {
-    if (!iface->mInterfaceDescriptor)
+    if (!iface->InterfaceDescriptor())
         return;
 
     
     
     
-    if (iface->mInterfaceDescriptor->mNumMethods > 250 &&
-            !iface->mInterfaceDescriptor->IsBuiltinClass()) {
+    if (iface->InterfaceDescriptor()->mNumMethods > 250 &&
+            !iface->InterfaceDescriptor()->IsBuiltinClass()) {
         NS_ASSERTION(0, "Too many methods to handle for the stub, cannot load");
-        fprintf(stderr, "ignoring too large interface: %s\n", iface->mName);
+        fprintf(stderr, "ignoring too large interface: %s\n", iface->Name());
         return;
     }
 
