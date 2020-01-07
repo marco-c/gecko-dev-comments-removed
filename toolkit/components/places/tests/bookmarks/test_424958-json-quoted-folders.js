@@ -43,7 +43,7 @@ var quotesTest = {
     toolbar.containerOpen = true;
 
     
-    Assert.ok(toolbar.childCount, 1);
+    Assert.equal(toolbar.childCount, 1);
     var folderNode = toolbar.getChild(0);
     Assert.equal(folderNode.type, folderNode.RESULT_TYPE_FOLDER);
     Assert.equal(folderNode.title, this._folderTitle);
