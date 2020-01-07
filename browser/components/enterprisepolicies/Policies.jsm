@@ -221,6 +221,30 @@ var Policies = {
     }
   },
 
+  "Homepage": {
+    onBeforeUIStartup(manager, param) {
+      
+      
+      
+      let homepages = param.URL.spec;
+      if (param.Additional && param.Additional.length > 0) {
+        homepages += "|" + param.Additional.map(url => url.spec).join("|");
+      }
+      if (param.Locked) {
+        setAndLockPref("browser.startup.homepage", homepages);
+        setAndLockPref("browser.startup.page", 1);
+        setAndLockPref("pref.browser.homepage.disable_button.current_page", true);
+        setAndLockPref("pref.browser.homepage.disable_button.bookmark_page", true);
+        setAndLockPref("pref.browser.homepage.disable_button.restore_default", true);
+      } else {
+        runOncePerModification("setHomepage", homepages, () => {
+          Services.prefs.setStringPref("browser.startup.homepage", homepages);
+          Services.prefs.setIntPref("browser.startup.page", 1);
+        });
+      }
+    }
+  },
+
   "InstallAddons": {
     onBeforeUIStartup(manager, param) {
       addAllowDenyPermissions("install", param.Allow, null);
@@ -337,6 +361,36 @@ function runOnce(actionName, callback) {
     log.debug(`Not running action ${actionName} again because it has already run.`);
     return;
   }
-  callback();
   Services.prefs.setBoolPref(prefName, true);
+  callback();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function runOncePerModification(actionName, policyValue, callback) {
+  let prefName = `browser.policies.runOncePerModification.${actionName}`;
+  let oldPolicyValue = Services.prefs.getStringPref(prefName, undefined);
+  if (policyValue === oldPolicyValue) {
+    log.debug(`Not running action ${actionName} again because the policy's value is unchanged`);
+    return;
+  }
+  Services.prefs.setStringPref(prefName, policyValue);
+  callback();
 }
