@@ -2908,15 +2908,30 @@ nsRange::CreateContextualFragment(const nsAString& aFragment, ErrorResult& aRv)
 }
 
 static void ExtractRectFromOffset(nsIFrame* aFrame,
-                                  const int32_t aOffset, nsRect* aR, bool aKeepLeft,
-                                  bool aClampToEdge)
+                                  const int32_t aOffset, nsRect* aR,
+                                  bool aFlushToOriginEdge, bool aClampToEdge)
 {
   nsPoint point;
   aFrame->GetPointFromOffset(aOffset, &point);
 
+  
+  
+  bool isVertical = false;
+  if (aFrame->IsTextFrame()) {
+    nsTextFrame* textFrame = static_cast<nsTextFrame*>(aFrame);
+    isVertical = textFrame->GetTextRun(nsTextFrame::eInflated)->IsVertical();
+  }
+
   if (!aClampToEdge && !aR->Contains(point)) {
-    aR->SetWidth(0);
-    aR->x = point.x;
+    
+    
+    if (isVertical) {
+      aR->SetHeight(0);
+      aR->y = point.y;
+    } else {
+      aR->SetWidth(0);
+      aR->x = point.x;
+    }
     return;
   }
 
@@ -2924,11 +2939,24 @@ static void ExtractRectFromOffset(nsIFrame* aFrame,
     point = aR->ClampPoint(point);
   }
 
-  if (aKeepLeft) {
-    aR->SetWidth(point.x - aR->x);
+  
+  
+  if (aFlushToOriginEdge) {
+    
+    if (isVertical) {
+      aR->SetHeight(point.y - aR->y);
+    } else {
+      aR->SetWidth(point.x - aR->x);
+    }
   } else {
-    aR->SetWidth(aR->XMost() - point.x);
-    aR->x = point.x;
+    
+    if (isVertical) {
+      aR->SetHeight(aR->YMost() - point.y);
+      aR->y = point.y;
+    } else {
+      aR->SetWidth(aR->XMost() - point.x);
+      aR->x = point.x;
+    }
   }
 }
 
