@@ -128,6 +128,10 @@ class JSObject : public js::gc::Cell
         return group_;
     }
 
+    void initGroup(js::ObjectGroup* group) {
+        group_.init(group);
+    }
+
     
 
 
@@ -155,7 +159,6 @@ class JSObject : public js::gc::Cell
     
     
     inline void setInitialSlotsMaybeNonNative(js::HeapSlot* slots);
-    inline void setInitialElementsMaybeNonNative(js::HeapSlot* elements);
 
     enum GenerateShape {
         GENERATE_NONE,

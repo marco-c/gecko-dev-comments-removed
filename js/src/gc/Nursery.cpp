@@ -265,7 +265,7 @@ js::Nursery::leaveZealMode() {
 #endif 
 
 JSObject*
-js::Nursery::allocateObject(JSContext* cx, size_t size, size_t numDynamic, const js::Class* clasp)
+js::Nursery::allocateObject(JSContext* cx, size_t size, size_t nDynamicSlots, const js::Class* clasp)
 {
     
     MOZ_ASSERT(size >= sizeof(RelocationOverlay));
@@ -281,9 +281,9 @@ js::Nursery::allocateObject(JSContext* cx, size_t size, size_t numDynamic, const
 
     
     HeapSlot* slots = nullptr;
-    if (numDynamic) {
+    if (nDynamicSlots) {
         MOZ_ASSERT(clasp->isNative());
-        slots = static_cast<HeapSlot*>(allocateBuffer(cx->zone(), numDynamic * sizeof(HeapSlot)));
+        slots = static_cast<HeapSlot*>(allocateBuffer(cx->zone(), nDynamicSlots * sizeof(HeapSlot)));
         if (!slots) {
             
 
