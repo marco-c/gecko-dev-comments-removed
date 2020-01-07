@@ -3,14 +3,12 @@
 
 
 
-
 #include <MediaStreamGraphImpl.h>
 #include "mozilla/dom/AudioContext.h"
 #include "mozilla/SharedThreadPool.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Unused.h"
 #include "CubebUtils.h"
-#include "Tracing.h"
 
 #ifdef MOZ_WEBRTC
 #include "webrtc/MediaEngineWebRTC.h"
@@ -883,9 +881,6 @@ long
 AudioCallbackDriver::DataCallback(const AudioDataValue* aInputBuffer,
                                   AudioDataValue* aOutputBuffer, long aFrames)
 {
-   TRACE_AUDIO_CALLBACK_BUDGET(aFrames, mSampleRate);
-   TRACE_AUDIO_CALLBACK();
-
   
   if (!mAddedMixer) {
     mGraphImpl->mMixer.AddCallback(this);
