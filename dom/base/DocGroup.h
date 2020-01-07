@@ -23,6 +23,8 @@ namespace mozilla {
 class AbstractThread;
 namespace dom {
 
+class PerformanceInfo;
+
 
 
 
@@ -61,6 +63,9 @@ public:
   {
     return mPerformanceCounter;
   }
+
+  PerformanceInfo
+  ReportPerformanceInfo();
 #endif
   TabGroup* GetTabGroup()
   {
