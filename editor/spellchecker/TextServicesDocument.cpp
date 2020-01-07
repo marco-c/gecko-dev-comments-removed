@@ -31,7 +31,6 @@
 #include "nsITextServicesFilter.h"      
 #include "mozilla/intl/WordBreaker.h"   
 #include "nsRange.h"                    
-#include "nsStaticAtom.h"               
 #include "nsString.h"                   
 #include "nscore.h"                     
 
