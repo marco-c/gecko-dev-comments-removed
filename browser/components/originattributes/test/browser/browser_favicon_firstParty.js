@@ -26,6 +26,8 @@ const TEST_CACHE_PAGE = TEST_DIRECTORY + "file_favicon_cache.html";
 const FAVICON_URI = TEST_DIRECTORY + "file_favicon.png";
 const TEST_FAVICON_CACHE_URI = TEST_DIRECTORY + "file_favicon_cache.png";
 
+const ICON_DATA = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABH0lEQVRYw2P8////f4YBBEwMAwxGHcBCUMX/91DGOSj/BpT/DkpzQChGBSjfBErLQsVZhmoI/L8LpRdD6X1QietQGhYy7FB5aAgwmkLpBKi4BZTPMThDgBGjHIDF+f9mKD0fKvGBRKNdoF7sgPL1saaJwZgGDkJ9vpZMn8PAHqg5G9FyifBgD4H/W9HyOWrU/f+DIzHhkoeZxxgzZEIAVtJ9RxX+Q6DAxCmP3byhXxkxshAs5odqbcioAY3UC1CBLyTGOTqAmsfAOWRCwBvqxV0oIUB2OQAzDy3/D+a6wB7q8mCU2vD/nw94GziYIQOtDRn9oXz+IZMGBKGMbCjNh9Ii+v8HR4uIAUeLiEEbb9twELaIRlqrmHG0bzjiHQAA1LVfww8jwM4AAAAASUVORK5CYII=";
+
 let systemPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
 let makeURI = ChromeUtils.import("resource://gre/modules/BrowserUtils.jsm", {}).BrowserUtils.makeURI;
 
@@ -56,10 +58,7 @@ function clearAllPlacesFavicons() {
   });
 }
 
-function observeFavicon(aFirstPartyDomain, aExpectedCookie, aPageURI, aOnlyXUL) {
-  let faviconReqXUL = false;
-  
-  let faviconReqPlaces = aOnlyXUL === true;
+function observeFavicon(aFirstPartyDomain, aExpectedCookie, aPageURI) {
   let expectedPrincipal = Services.scriptSecurityManager
                                   .createCodebasePrincipal(aPageURI, { firstPartyDomain: aFirstPartyDomain });
 
@@ -89,15 +88,10 @@ function observeFavicon(aFirstPartyDomain, aExpectedCookie, aPageURI, aOnlyXUL) 
           is(reqLoadInfo.originAttributes.firstPartyDomain, aFirstPartyDomain,
             "The loadInfo has correct first party domain");
 
-          if (loadingPrincipal.equals(systemPrincipal)) {
-            faviconReqXUL = true;
-            ok(triggeringPrincipal.equals(expectedPrincipal),
-              "The triggeringPrincipal of favicon loading from XUL should be the content principal.");
-          } else {
-            faviconReqPlaces = true;
-            ok(loadingPrincipal.equals(expectedPrincipal),
-              "The loadingPrincipal of favicon loading from Places should be the content prinicpal");
-          }
+          ok(loadingPrincipal.equals(expectedPrincipal),
+            "The loadingPrincipal of favicon loads should be the content prinicpal");
+          ok(triggeringPrincipal.equals(expectedPrincipal),
+            "The triggeringPrincipal of favicon loads should be the content prinicpal");
 
           let faviconCookie = httpChannel.getRequestHeader("cookie");
 
@@ -106,10 +100,8 @@ function observeFavicon(aFirstPartyDomain, aExpectedCookie, aPageURI, aOnlyXUL) 
           ok(false, "Received unexpected topic: ", aTopic);
         }
 
-        if (faviconReqXUL && faviconReqPlaces) {
-          Services.obs.removeObserver(observer, "http-on-modify-request");
-          resolve();
-        }
+        Services.obs.removeObserver(observer, "http-on-modify-request");
+        resolve();
       }
     };
 
@@ -215,6 +207,12 @@ async function generateCookies(aThirdParty) {
   return cookies;
 }
 
+function assertIconIsData(item) {
+  let icon = item.getAttribute("image");
+  is(icon.substring(0, 5), "data:", "Expected the image element to be a data URI");
+  is(icon, ICON_DATA, "Expected to see the correct data.");
+}
+
 async function doTest(aTestPage, aExpectedCookies, aFaviconURL) {
   let firstPageURI = makeURI(TEST_SITE_ONE + aTestPage);
   let secondPageURI = makeURI(TEST_SITE_TWO + aTestPage);
@@ -234,6 +232,8 @@ async function doTest(aTestPage, aExpectedCookies, aFaviconURL) {
   
   await promiseFaviconLoaded;
 
+  assertIconIsData(tabInfo.tab);
+
   BrowserTestUtils.removeTab(tabInfo.tab);
   
   
@@ -252,8 +252,6 @@ async function doTest(aTestPage, aExpectedCookies, aFaviconURL) {
 }
 
 async function doTestForAllTabsFavicon(aTestPage, aExpectedCookies, aIsThirdParty) {
-  let firstPageURI = makeURI(TEST_SITE_ONE + aTestPage);
-  let secondPageURI = makeURI(TEST_SITE_TWO + aTestPage);
   let faviconURI = aIsThirdParty ? THIRD_PARTY_SITE + FAVICON_URI :
                                    TEST_SITE_ONE + FAVICON_URI;
 
@@ -270,20 +268,15 @@ async function doTestForAllTabsFavicon(aTestPage, aExpectedCookies, aIsThirdPart
   
   await promiseFaviconLoaded;
 
-  
-  
-  clearAllImageCaches();
-
-  
-  let promiseObserveFavicon = observeFavicon(FIRST_PARTY_ONE, aExpectedCookies[0],
-                                             firstPageURI, true);
+  assertIconIsData(tabInfo.tab);
 
   
   let allTabsView = document.getElementById("allTabsMenu-allTabsView");
   let allTabsPopupShownPromise = BrowserTestUtils.waitForEvent(allTabsView, "ViewShown");
   gTabsPanel.showAllTabsPanel();
-  await promiseObserveFavicon;
   await allTabsPopupShownPromise;
+
+  assertIconIsData(gTabsPanel.allTabsViewTabs.lastChild.firstChild);
 
   
   let allTabsPopupHiddenPromise = BrowserTestUtils.waitForEvent(allTabsView.panelMultiView, "PanelMultiViewHidden");
@@ -305,18 +298,14 @@ async function doTestForAllTabsFavicon(aTestPage, aExpectedCookies, aIsThirdPart
   
   await promiseFaviconLoaded;
 
-  
-  clearAllImageCaches();
-
-  
-  promiseObserveFavicon = observeFavicon(FIRST_PARTY_TWO, aExpectedCookies[1],
-                                         secondPageURI, true);
+  assertIconIsData(tabInfo.tab);
 
   
   allTabsPopupShownPromise = BrowserTestUtils.waitForEvent(allTabsView, "ViewShown");
   gTabsPanel.showAllTabsPanel();
-  await promiseObserveFavicon;
   await allTabsPopupShownPromise;
+
+  assertIconIsData(gTabsPanel.allTabsViewTabs.lastChild.firstChild);
 
   
   allTabsPopupHiddenPromise = BrowserTestUtils.waitForEvent(allTabsView.panelMultiView, "PanelMultiViewHidden");
@@ -414,16 +403,11 @@ add_task(async function test_favicon_cache_firstParty() {
   await promiseForFaviconLoaded;
 
   
-  let tabInfoB = await openTab(TEST_SITE_ONE + TEST_CACHE_PAGE);
-
-  
-  
-  
   
   let promiseForFaviconResponse = waitOnFaviconResponse(THIRD_PARTY_SITE + TEST_FAVICON_CACHE_URI);
 
   
-  let tabInfoC = await openTab(TEST_SITE_TWO + TEST_CACHE_PAGE);
+  let tabInfoB = await openTab(TEST_SITE_TWO + TEST_CACHE_PAGE);
 
   
   
@@ -437,5 +421,4 @@ add_task(async function test_favicon_cache_firstParty() {
 
   BrowserTestUtils.removeTab(tabInfoA.tab);
   BrowserTestUtils.removeTab(tabInfoB.tab);
-  BrowserTestUtils.removeTab(tabInfoC.tab);
 });
