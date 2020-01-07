@@ -55,9 +55,10 @@ const REPORTED_CATEGORIES = new Set([
 
 
 class BrowserErrorReporter {
-  constructor(fetchMethod = this._defaultFetch) {
+  constructor(fetchMethod = this._defaultFetch, chromeOnly = true) {
     
     this.fetch = fetchMethod;
+    this.chromeOnly = chromeOnly;
 
     
     this.requestBodyTemplate = {
@@ -133,7 +134,7 @@ class BrowserErrorReporter {
 
     const isWarning = message.flags & message.warningFlag;
     const isFromChrome = REPORTED_CATEGORIES.has(message.category);
-    if (!isFromChrome || isWarning) {
+    if ((this.chromeOnly && !isFromChrome) || isWarning) {
       return;
     }
 
@@ -141,6 +142,22 @@ class BrowserErrorReporter {
     const sampleRate = Number.parseFloat(Services.prefs.getCharPref(PREF_SAMPLE_RATE));
     if (!Number.isFinite(sampleRate) || (Math.random() >= sampleRate)) {
       return;
+    }
+
+    const extensions = new Map();
+    for (let extension of WebExtensionPolicy.getActiveExtensions()) {
+      extensions.set(extension.mozExtensionHostname, extension);
+    }
+
+    
+    
+    function mangleExtURL(string, anchored = true) {
+      let re = new RegExp(`${anchored ? "^" : ""}moz-extension://([^/]+)/`, "g");
+
+      return string.replace(re, (m0, m1) => {
+        let id = extensions.has(m1) ? extensions.get(m1).id : m1;
+        return `moz-extension://${id}/`;
+      });
     }
 
     
@@ -156,7 +173,9 @@ class BrowserErrorReporter {
     let frame = message.stack;
     
     while (frame && frames.length < 100) {
-      frames.push(await this.normalizeStackFrame(frame));
+      const normalizedFrame = await this.normalizeStackFrame(frame);
+      normalizedFrame.module = mangleExtURL(normalizedFrame.module, false);
+      frames.push(normalizedFrame);
       frame = frame.parent;
     }
     
@@ -169,7 +188,7 @@ class BrowserErrorReporter {
         values: [
           {
             type: errorName,
-            value: errorMessage,
+            value: mangleExtURL(errorMessage),
             module: message.sourceName,
             stacktrace: {
               frames,
