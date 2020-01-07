@@ -43,8 +43,7 @@ config = {
         'LC_ALL': 'C',
         
         'PATH': '/usr/local/bin:/usr/lib64/ccache:/bin:'
-                '/usr/bin:/usr/local/sbin:/usr/sbin:/sbin:'
-                '/home/cltbld/bin',
+                '/usr/bin:/usr/local/sbin:/usr/sbin:/sbin'
         
     },
     "check_test_env": {

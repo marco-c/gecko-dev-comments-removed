@@ -21,8 +21,7 @@ config = {
         'LC_ALL': 'C',
         
         'PATH': '/builds/worker/workspace/build/src/gcc/bin:/usr/local/bin:/usr/lib64/ccache:/bin:\
-/usr/bin:/usr/local/sbin:/usr/sbin:/sbin:\
-/home/cltbld/bin',
+/usr/bin:/usr/local/sbin:/usr/sbin:/sbin',
     },
     'mozconfig_variant': 'add-on-devel',
     
