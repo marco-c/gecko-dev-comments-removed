@@ -1,0 +1,6 @@
+
+
+if (typeof oomTest !== "function")
+    quit();
+
+oomTest(() => import.meta);

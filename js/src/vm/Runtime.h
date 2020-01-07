@@ -943,6 +943,10 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
     
     js::MainThreadData<JS::ModuleResolveHook> moduleResolveHook;
 
+    
+    
+    js::MainThreadData<JS::ModuleMetadataHook> moduleMetadataHook;
+
   public:
 #if defined(JS_BUILD_BINAST)
     js::BinaryASTSupport& binast() {

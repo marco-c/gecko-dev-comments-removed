@@ -3925,6 +3925,21 @@ GetModuleResolveHook(JSRuntime* rt);
 extern JS_PUBLIC_API(void)
 SetModuleResolveHook(JSRuntime* rt, ModuleResolveHook func);
 
+using ModuleMetadataHook = bool (*)(JSContext*, HandleObject, HandleObject);
+
+
+
+
+extern JS_PUBLIC_API(ModuleMetadataHook)
+GetModuleMetadataHook(JSRuntime* rt);
+
+
+
+
+
+extern JS_PUBLIC_API(void)
+SetModuleMetadataHook(JSRuntime* rt, ModuleMetadataHook func);
+
 
 
 

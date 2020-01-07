@@ -81,6 +81,7 @@
 
 
 
+
 #define FOR_EACH_OPCODE(macro)
 
 
@@ -2344,14 +2345,22 @@
 
 
  \
-    macro(JSOP_CALL_IGNORES_RV, 231, "call-ignores-rv", NULL, 3, -1, 1, JOF_UINT16|JOF_INVOKE|JOF_TYPESET)
+    macro(JSOP_CALL_IGNORES_RV, 231, "call-ignores-rv", NULL, 3, -1, 1, JOF_UINT16|JOF_INVOKE|JOF_TYPESET) \
+    
+
+
+
+
+
+
+ \
+    macro(JSOP_IMPORTMETA,    232, "importmeta", NULL,      1,  0,  1,  JOF_BYTE)
 
 
 
 
 
 #define FOR_EACH_TRAILING_UNUSED_OPCODE(macro) \
-    macro(232) \
     macro(233) \
     macro(234) \
     macro(235) \
