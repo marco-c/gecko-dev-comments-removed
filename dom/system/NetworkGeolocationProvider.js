@@ -9,7 +9,8 @@ ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 Cu.importGlobalProperties(["XMLHttpRequest"]);
 
-const POSITION_UNAVAILABLE = Ci.nsIDOMGeoPositionError.POSITION_UNAVAILABLE;
+
+const POSITION_UNAVAILABLE = 2;
 
 var gLoggingEnabled = false;
 
