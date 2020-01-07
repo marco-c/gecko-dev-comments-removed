@@ -177,9 +177,10 @@ public:
     RawServoAnimationValueMapBorrowedMut aAnimationValues);
 
   bool HasPendingStyleUpdates() const;
-  bool HasThrottledStyleUpdates() const;
 
 #ifdef MOZ_OLD_STYLE
+  bool HasThrottledStyleUpdates() const;
+
   
   
   

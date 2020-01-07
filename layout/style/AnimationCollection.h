@@ -38,7 +38,9 @@ class AnimationCollection
   AnimationCollection(dom::Element* aElement, nsAtom* aElementProperty)
     : mElement(aElement)
     , mElementProperty(aElementProperty)
+#ifdef MOZ_OLD_STYLE
     , mCheckGeneration(0)
+#endif
 #ifdef DEBUG
     , mCalledPropertyDtor(false)
 #endif
@@ -96,6 +98,7 @@ public:
 
   InfallibleTArray<RefPtr<AnimationType>> mAnimations;
 
+#ifdef MOZ_OLD_STYLE
   
   
   
@@ -105,6 +108,7 @@ public:
 
   
   void UpdateCheckGeneration(nsPresContext* aPresContext);
+#endif
 
 private:
   static nsAtom* GetPropertyAtomForPseudoType(
