@@ -134,7 +134,6 @@ FOR_EACH_COMMON_PROPERTYNAME(CONST_CHAR_STR)
 
 
 const char js_getter_str[]          = "getter";
-const char js_send_str[]            = "send";
 const char js_setter_str[]          = "setter";
 
 

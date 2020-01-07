@@ -188,7 +188,6 @@ class JSObject : public js::gc::Cell
     }
 
     inline bool isBoundFunction() const;
-    inline bool hasSpecialEquality() const;
 
     
     

@@ -222,21 +222,6 @@ class GlobalObject : public NativeObject
         return !value.isUndefined();
     }
 
-    
-
-
-
-
-
-
-
-
-
-    static HandleObject upcast(Handle<GlobalObject*> global) {
-        return HandleObject::fromMarkedLocation(
-                reinterpret_cast<JSObject * const*>(global.address()));
-    }
-
   private:
     bool arrayClassInitialized() const {
         return classIsInitialized(JSProto_Array);
