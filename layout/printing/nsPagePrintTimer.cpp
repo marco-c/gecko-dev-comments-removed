@@ -18,13 +18,7 @@ NS_IMPL_ISUPPORTS_INHERITED(nsPagePrintTimer, mozilla::Runnable, nsITimerCallbac
 nsPagePrintTimer::~nsPagePrintTimer()
 {
   
-  
-  
-  
-  nsCOMPtr<nsIContentViewer> cv(do_QueryInterface(mDocViewerPrint));
-  if (cv) {
-    cv->Destroy();
-  }
+  mDocViewerPrint->DecrementDestroyRefCount();
 }
 
 nsresult

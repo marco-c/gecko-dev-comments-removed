@@ -1675,7 +1675,6 @@ nsDocumentViewer::Destroy()
   
   
   if (mDestroyRefCount != 0) {
-    --mDestroyRefCount;
     return NS_OK;
   }
 
@@ -4470,6 +4469,12 @@ void
 nsDocumentViewer::IncrementDestroyRefCount()
 {
   ++mDestroyRefCount;
+}
+
+void
+nsDocumentViewer::DecrementDestroyRefCount()
+{
+  --mDestroyRefCount;
 }
 
 
