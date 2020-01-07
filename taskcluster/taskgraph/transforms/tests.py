@@ -720,6 +720,12 @@ def enable_code_coverage(config, tests):
                     test['run-on-projects'] == 'built-projects':
                 test['run-on-projects'] = ['mozilla-central', 'try']
 
+            
+            
+            test.pop('schedules-component', None)
+            test.pop('when', None)
+            test['optimization'] = None
+
             if 'talos' in test['test-name']:
                 test['max-run-time'] = 7200
                 if 'linux' in test['build-platform']:
