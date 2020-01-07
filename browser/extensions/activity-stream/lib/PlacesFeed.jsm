@@ -113,7 +113,9 @@ class BookmarksObserver extends Observer {
     
     
     if (type !== PlacesUtils.bookmarks.TYPE_BOOKMARK ||
-        source === PlacesUtils.bookmarks.SOURCES.IMPORT_REPLACE ||
+        source === PlacesUtils.bookmarks.SOURCES.IMPORT ||
+        source === PlacesUtils.bookmarks.SOURCES.RESTORE ||
+        source === PlacesUtils.bookmarks.SOURCES.RESTORE_ON_STARTUP ||
         source === PlacesUtils.bookmarks.SOURCES.SYNC ||
         (uri.scheme !== "http" && uri.scheme !== "https")) {
       return;
@@ -142,7 +144,9 @@ class BookmarksObserver extends Observer {
 
   onItemRemoved(id, folderId, index, type, uri, guid, parentGuid, source) { 
     if (type === PlacesUtils.bookmarks.TYPE_BOOKMARK &&
-        source !== PlacesUtils.bookmarks.SOURCES.IMPORT_REPLACE &&
+        source !== PlacesUtils.bookmarks.SOURCES.IMPORT &&
+        source !== PlacesUtils.bookmarks.SOURCES.RESTORE &&
+        source !== PlacesUtils.bookmarks.SOURCES.RESTORE_ON_STARTUP &&
         source !== PlacesUtils.bookmarks.SOURCES.SYNC) {
       this.dispatch({
         type: at.PLACES_BOOKMARK_REMOVED,
