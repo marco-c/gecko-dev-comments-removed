@@ -310,6 +310,8 @@ protected:
   
   
   uint8_t mRunsToCompletion : 1;
+  
+  bool mIsBlockingOnload : 1;
 
   
   

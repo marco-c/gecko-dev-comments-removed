@@ -107,6 +107,7 @@ nsContentSink::nsContentSink()
   , mDeferredFlushTags(0)
   , mIsDocumentObserver(0)
   , mRunsToCompletion(0)
+  , mIsBlockingOnload(false)
   , mDeflectedCount(0)
   , mHasPendingEvent(false)
   , mCurrentParseEndTime(0)
@@ -1566,8 +1567,14 @@ nsContentSink::DropParserAndPerfHint(void)
     FavorPerformanceHint(true, 0);
   }
 
-  if (!mRunsToCompletion) {
+  
+  
+  
+  
+  
+  if (!mRunsToCompletion && mIsBlockingOnload) {
     mDocument->UnblockOnload(true);
+    mIsBlockingOnload = false;
   }
 }
 
@@ -1622,6 +1629,7 @@ nsContentSink::WillBuildModelImpl()
 {
   if (!mRunsToCompletion) {
     mDocument->BlockOnload();
+    mIsBlockingOnload = true;
 
     mBeginLoadTime = PR_IntervalToMicroseconds(PR_IntervalNow());
   }
