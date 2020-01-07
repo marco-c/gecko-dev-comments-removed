@@ -1114,11 +1114,6 @@ BrowserGlue.prototype = {
     
     Services.tm.idleDispatchToMainThread(() => {
       SafeBrowsing.init();
-
-      
-      let reputationService = Cc["@mozilla.org/reputationservice/login-reputation-service;1"]
-        .getService(Ci.nsILoginReputationService);
-      reputationService.init();
     }, 5000);
 
     if (AppConstants.MOZ_CRASHREPORTER) {
