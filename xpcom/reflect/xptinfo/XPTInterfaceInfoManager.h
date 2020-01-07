@@ -67,29 +67,8 @@ private:
         xptiWorkingSet();
         ~xptiWorkingSet();
 
-        bool IsValid() const;
-
         void InvalidateInterfaceInfos();
-        void ClearHashTables();
 
-        
-
-        enum {NOT_FOUND = 0xffffffff};
-
-        
-
-        uint32_t GetDirectoryCount();
-        nsresult GetCloneOfDirectoryAt(uint32_t i, nsIFile** dir);
-        nsresult GetDirectoryAt(uint32_t i, nsIFile** dir);
-        bool     FindDirectory(nsIFile* dir, uint32_t* index);
-        bool     FindDirectoryOfFile(nsIFile* file, uint32_t* index);
-        bool     DirectoryAtMatchesPersistentDescriptor(uint32_t i, const char* desc);
-
-    private:
-        uint32_t        mFileCount;
-        uint32_t        mMaxFileCount;
-
-    public:
         
         
         
