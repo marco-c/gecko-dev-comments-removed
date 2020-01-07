@@ -4,6 +4,10 @@
 
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+ChromeUtils.import("resource://gre/modules/GeckoViewUtils.jsm");
+
+
+GeckoViewUtils.initLogging("GeckoView.ErrorPageEventHandler", this);
 
 ChromeUtils.defineModuleGetter(this, "SSLExceptions",
                                "resource://gre/modules/SSLExceptions.jsm");
