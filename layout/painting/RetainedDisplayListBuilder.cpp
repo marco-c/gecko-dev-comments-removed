@@ -664,6 +664,8 @@ HandlePreserve3D(nsIFrame* aFrame, nsRect& aOverflow)
   }
   if (last != aFrame) {
     aOverflow = last->GetVisualOverflowRectRelativeToParent();
+    CRR_LOG("HandlePreserve3D() Updated overflow rect to: %d %d %d %d\n",
+             aOverflow.x, aOverflow.y, aOverflow.width, aOverflow.height);
   }
 
   return aFrame;
@@ -678,31 +680,28 @@ ProcessFrame(nsIFrame* aFrame, nsDisplayListBuilder& aBuilder,
   nsIFrame* currentFrame = aFrame;
 
   while (currentFrame != aStopAtFrame) {
+    CRR_LOG("currentFrame: %p (placeholder=%d), aOverflow: %d %d %d %d\n",
+             currentFrame, !aStopAtStackingContext,
+             aOverflow.x, aOverflow.y, aOverflow.width, aOverflow.height);
+
     currentFrame = HandlePreserve3D(currentFrame, aOverflow);
 
     
     
-    nsIFrame* previousFrame = currentFrame;
-    aOverflow = nsLayoutUtils::TransformFrameRectToAncestor(currentFrame, aOverflow, aStopAtFrame,
-                                                           nullptr, nullptr,
-                                                            true,
-                                                           &currentFrame);
-    MOZ_ASSERT(currentFrame);
-
     
     
-    
-    
-    nsIFrame* placeholder = previousFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW)
-                          ? previousFrame->GetPlaceholderFrame()
+    nsIFrame* placeholder = currentFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW)
+                          ? currentFrame->GetPlaceholderFrame()
                           : nullptr;
 
     if (placeholder) {
+      
+      
       nsRect placeholderOverflow =
-        aOverflow + previousFrame->GetOffsetTo(placeholder);
+        aOverflow + currentFrame->GetOffsetTo(placeholder);
 
       CRR_LOG("Processing placeholder %p for OOF frame %p\n",
-              placeholder, previousFrame);
+              placeholder, currentFrame);
 
       CRR_LOG("OOF frame draw area: %d %d %d %d\n",
               placeholderOverflow.x, placeholderOverflow.y,
@@ -716,12 +715,20 @@ ProcessFrame(nsIFrame* aFrame, nsDisplayListBuilder& aBuilder,
       
       
       nsIFrame* ancestor =
-        nsLayoutUtils::FindNearestCommonAncestorFrame(previousFrame->GetParent(),
+        nsLayoutUtils::FindNearestCommonAncestorFrame(currentFrame->GetParent(),
                                                       placeholder->GetParent());
 
       ProcessFrame(placeholder, aBuilder, &dummyAGR, placeholderOverflow,
                    ancestor, aOutFramesWithProps, false);
     }
+
+    
+    
+    aOverflow = nsLayoutUtils::TransformFrameRectToAncestor(currentFrame, aOverflow, aStopAtFrame,
+                                                           nullptr, nullptr,
+                                                            true,
+                                                           &currentFrame);
+    MOZ_ASSERT(currentFrame);
 
     if (nsLayoutUtils::FrameHasDisplayPort(currentFrame)) {
       CRR_LOG("Frame belongs to displayport frame %p\n", currentFrame);
