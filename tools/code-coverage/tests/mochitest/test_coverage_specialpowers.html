@@ -14,15 +14,13 @@
 
   SimpleTest.waitForExplicitFinish();
 
-  (async function() {
-    await SpecialPowers.requestDumpCoverageCounters();
-    SimpleTest.ok(true, "Counters dumped.");
+  SpecialPowers.requestDumpCoverageCounters();
+  SimpleTest.ok(true, "Counters dumped.");
 
-    await SpecialPowers.requestResetCoverageCounters();
-    SimpleTest.ok(true, "Counters reset.");
+  SpecialPowers.requestResetCoverageCounters();
+  SimpleTest.ok(true, "Counters reset.");
 
-    SimpleTest.finish();
-  })();
+  SimpleTest.finish();
 
   </script>
 </head>
