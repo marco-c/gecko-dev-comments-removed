@@ -817,6 +817,12 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
 
   childArgv.push_back(childProcessType);
 
+# ifdef MOZ_WIDGET_COCOA
+  
+  
+  ReceivePort parent_recv_port(mach_connection_name.c_str());
+# endif 
+
 # if defined(MOZ_WIDGET_ANDROID)
   LaunchAndroidService(childProcessType, childArgv,
                        mLaunchOptions->fds_to_remap, &process);
@@ -834,7 +840,6 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
   const int kTimeoutMs = 10000;
 
   MachReceiveMessage child_message;
-  ReceivePort parent_recv_port(mach_connection_name.c_str());
   kern_return_t err = parent_recv_port.WaitForMessage(&child_message, kTimeoutMs);
   if (err != KERN_SUCCESS) {
     std::string errString = StringPrintf("0x%x %s", err, mach_error_string(err));
