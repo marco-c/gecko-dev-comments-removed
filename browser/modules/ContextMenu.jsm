@@ -333,7 +333,7 @@ class ContextMenu {
     let depth = 1;
     while (node && depth > 0) {
       
-      if (node.nodeType == Ci.nsIDOMNode.TEXT_NODE) {
+      if (node.nodeType == node.TEXT_NODE) {
         
         text += " " + node.data;
       } else if (node instanceof this.content.HTMLImageElement) {
@@ -532,7 +532,7 @@ class ContextMenu {
     
     let contentType = null;
     let contentDisposition = null;
-    if (aEvent.composedTarget.nodeType == Ci.nsIDOMNode.ELEMENT_NODE &&
+    if (aEvent.composedTarget.nodeType == aEvent.composedTarget.ELEMENT_NODE &&
         aEvent.composedTarget instanceof Ci.nsIImageLoadingContent &&
         aEvent.composedTarget.currentURI) {
       disableSetDesktopBg = this._disableSetDesktopBackground(aEvent.composedTarget);
@@ -708,7 +708,7 @@ class ContextMenu {
 
     context.shouldDisplay = true;
 
-    if (node.nodeType == Ci.nsIDOMNode.DOCUMENT_NODE ||
+    if (node.nodeType == node.DOCUMENT_NODE ||
         
         (node.namespaceURI == XUL_NS && !this._isXULTextLinkLabel(node))) {
       context.shouldDisplay = false;
@@ -788,7 +788,7 @@ class ContextMenu {
   _setContextForNodesNoChildren(editFlags) {
     const context = this.context;
 
-    if (context.target.nodeType == Ci.nsIDOMNode.TEXT_NODE) {
+    if (context.target.nodeType == context.target.TEXT_NODE) {
       
       context.canSpellCheck = context.target.parentNode &&
                               this._isSpellCheckEnabled(context.target);
@@ -797,7 +797,7 @@ class ContextMenu {
 
     
     
-    if (context.target.nodeType != Ci.nsIDOMNode.ELEMENT_NODE) {
+    if (context.target.nodeType != context.target.ELEMENT_NODE) {
       return;
     }
 
@@ -928,7 +928,7 @@ class ContextMenu {
     let elem = context.target;
 
     while (elem) {
-      if (elem.nodeType == Ci.nsIDOMNode.ELEMENT_NODE) {
+      if (elem.nodeType == elem.ELEMENT_NODE) {
         
         const XLINK_NS = "http://www.w3.org/1999/xlink";
 
@@ -994,7 +994,7 @@ class ContextMenu {
     
     const MathML_NS = "http://www.w3.org/1998/Math/MathML";
 
-    if ((context.target.nodeType == Ci.nsIDOMNode.TEXT_NODE &&
+    if ((context.target.nodeType == context.target.TEXT_NODE &&
          context.target.parentNode.namespaceURI == MathML_NS) ||
          (context.target.namespaceURI == MathML_NS)) {
       context.onMathML = true;
