@@ -17,7 +17,6 @@ public class GeckoActivityMonitor implements Application.ActivityLifecycleCallba
 
     private static final GeckoActivityMonitor instance = new GeckoActivityMonitor();
 
-    private GeckoApplication appContext;
     private WeakReference<Activity> currentActivity = new WeakReference<>(null);
 
     public static GeckoActivityMonitor getInstance() {
