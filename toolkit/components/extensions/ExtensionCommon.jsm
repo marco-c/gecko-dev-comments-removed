@@ -21,6 +21,7 @@ ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+  AppConstants: "resource://gre/modules/AppConstants.jsm",
   ConsoleAPI: "resource://gre/modules/Console.jsm",
   MessageChannel: "resource://gre/modules/MessageChannel.jsm",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
@@ -1774,6 +1775,12 @@ class EventManager {
 
 
 
+
+
+
+
+
+
   constructor(params) {
     
     
@@ -1781,14 +1788,172 @@ class EventManager {
     if (arguments.length > 1) {
       [this.context, this.name, this.register] = arguments;
       this.inputHandling = false;
+      this.persistent = null;
     } else {
-      let {context, name, register, inputHandling = false} = params;
+      let {context, name, register, inputHandling = false, persistent = null} = params;
       this.context = context;
       this.name = name;
       this.register = register;
       this.inputHandling = inputHandling;
+      this.persistent = persistent;
     }
+
     this.unregister = new Map();
+    this.remove = new Map();
+
+    if (this.persistent) {
+      if (this.context.viewType !== "background") {
+        this.persistent = null;
+      }
+      if (AppConstants.DEBUG) {
+        if (this.context.envType !== "addon_parent") {
+          throw new Error("Persistent event managers can only be created for addon_parent");
+        }
+        if (!this.persistent.module || !this.persistent.event) {
+          throw new Error("Persistent event manager must specify module and event");
+        }
+      }
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static _initPersistentListeners(extension) {
+    if (extension.persistentListeners) {
+      return;
+    }
+
+    let listeners = new DefaultMap(() => new DefaultMap(() => new Map()));
+    extension.persistentListeners = listeners;
+
+    let {persistentListeners} = extension.startupData;
+    if (!persistentListeners) {
+      return;
+    }
+
+    for (let [module, entry] of Object.entries(persistentListeners)) {
+      for (let [event, paramlists] of Object.entries(entry)) {
+        for (let paramlist of paramlists) {
+          let key = uneval(paramlist);
+          listeners.get(module).get(event).set(key, {params: paramlist});
+        }
+      }
+    }
+  }
+
+  
+  
+  
+  static _writePersistentListeners(extension) {
+    let startupListeners = {};
+    for (let [module, moduleEntry] of extension.persistentListeners) {
+      startupListeners[module] = {};
+      for (let [event, eventEntry] of moduleEntry) {
+        startupListeners[module][event] = Array.from(eventEntry.values(),
+                                                     listener => listener.params);
+      }
+    }
+
+    extension.startupData.persistentListeners = startupListeners;
+    extension.saveStartupData();
+  }
+
+  
+  
+  
+  
+  static primeListeners(extension) {
+    EventManager._initPersistentListeners(extension);
+
+    for (let [module, moduleEntry] of extension.persistentListeners) {
+      let api = extension.apiManager.getAPI(module, extension, "addon_parent");
+      for (let [event, eventEntry] of moduleEntry) {
+        for (let listener of eventEntry.values()) {
+          let primed = {pendingEvents: []};
+          listener.primed = primed;
+
+          let wakeup = (...args) => new Promise((resolve, reject) => {
+            primed.pendingEvents.push({args, resolve, reject});
+            extension.emit("background-page-event");
+          });
+
+          let fire = {
+            sync: wakeup,
+            async: wakeup,
+          };
+
+          let {unregister, convert} = api.primeListener(extension, event, fire, listener.params);
+          Object.assign(primed, {unregister, convert});
+        }
+      }
+    }
+  }
+
+  
+  
+  static clearPrimedListeners(extension) {
+    for (let [module, moduleEntry] of extension.persistentListeners) {
+      for (let [event, listeners] of moduleEntry) {
+        for (let [key, listener] of listeners) {
+          let {primed} = listener;
+          if (!primed) {
+            continue;
+          }
+
+          for (let evt of primed.pendingEvents) {
+            evt.reject(new Error("listener not re-registered"));
+          }
+
+          EventManager.clearPersistentListener(extension, module, event, key);
+          primed.unregister();
+        }
+      }
+    }
+  }
+
+  
+  
+  
+  static savePersistentListener(extension, module, event, args) {
+    EventManager._initPersistentListeners(extension);
+    let key = uneval(args);
+    extension.persistentListeners.get(module).get(event).set(key, {params: args});
+    EventManager._writePersistentListeners(extension);
+  }
+
+  
+  
+  
+  static clearPersistentListener(extension, module, event, key) {
+    let listeners = extension.persistentListeners.get(module).get(event);
+    listeners.delete(key);
+
+    if (listeners.size == 0) {
+      let moduleEntry = extension.persistentListeners.get(module);
+      moduleEntry.delete(event);
+      if (moduleEntry.size == 0) {
+        extension.persistentListeners.delete(module);
+      }
+    }
+
+    EventManager._writePersistentListeners(extension);
   }
 
   addListener(callback, ...args) {
@@ -1835,12 +2000,59 @@ class EventManager {
       },
     };
 
-    let unregister = this.register(fire, ...args);
+    let {extension} = this.context;
+
+    let unregister = null;
+    let recordStartupData = false;
+
+    
+    
+    
+    if (this.persistent) {
+      recordStartupData = true;
+      let {module, event} = this.persistent;
+
+      let key = uneval(args);
+      EventManager._initPersistentListeners(extension);
+      let listener = extension.persistentListeners
+                              .get(module).get(event).get(key);
+      if (listener) {
+        let {primed} = listener;
+        listener.primed = null;
+
+        primed.convert(fire);
+        unregister = primed.unregister;
+
+        for (let evt of primed.pendingEvents) {
+          evt.resolve(fire.async(...evt.args));
+        }
+
+        recordStartupData = false;
+        this.remove.set(callback, () => {
+          EventManager.clearPersistentListener(extension, module, event, uneval(args));
+        });
+      }
+    }
+
+    if (!unregister) {
+      unregister = this.register(fire, ...args);
+    }
+
     this.unregister.set(callback, unregister);
     this.context.callOnClose(this);
+
+    
+    
+    if (recordStartupData) {
+      let {module, event} = this.persistent;
+      EventManager.savePersistentListener(extension, module, event, args);
+      this.remove.set(callback, () => {
+        EventManager.clearPersistentListener(extension, module, event, uneval(args));
+      });
+    }
   }
 
-  removeListener(callback) {
+  removeListener(callback, clearPersistentListener = true) {
     if (!this.unregister.has(callback)) {
       return;
     }
@@ -1852,6 +2064,13 @@ class EventManager {
     } catch (e) {
       Cu.reportError(e);
     }
+
+    if (clearPersistentListener && this.remove.has(callback)) {
+      let cleanup = this.remove.get(callback);
+      this.remove.delete(callback);
+      cleanup();
+    }
+
     if (this.unregister.size == 0) {
       this.context.forgetOnClose(this);
     }
@@ -1863,7 +2082,7 @@ class EventManager {
 
   revoke() {
     for (let callback of this.unregister.keys()) {
-      this.removeListener(callback);
+      this.removeListener(callback, false);
     }
   }
 

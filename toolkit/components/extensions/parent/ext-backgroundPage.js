@@ -9,6 +9,9 @@ var {
   promiseExtensionViewLoaded,
 } = ExtensionParent;
 
+XPCOMUtils.defineLazyPreferenceGetter(this, "DELAYED_STARTUP",
+                                      "extensions.webextensions.background-delayed-startup");
+
 
 class BackgroundPage extends HiddenExtensionPage {
   constructor(extension, options) {
@@ -54,11 +57,37 @@ class BackgroundPage extends HiddenExtensionPage {
 
 this.backgroundPage = class extends ExtensionAPI {
   onManifestEntry(entryName) {
-    let {manifest} = this.extension;
+    let {extension} = this;
+    let {manifest} = extension;
 
-    this.bgPage = new BackgroundPage(this.extension, manifest.background);
+    this.bgPage = new BackgroundPage(extension, manifest.background);
+    if (extension.startupReason !== "APP_STARTUP" || !DELAYED_STARTUP) {
+      return this.bgPage.build();
+    }
 
-    return this.bgPage.build();
+    EventManager.primeListeners(extension);
+
+    extension.once("start-background-page", async () => {
+      await this.bgPage.build();
+      EventManager.clearPrimedListeners(extension);
+    });
+
+    
+    
+    
+    
+    
+    
+    
+    void browserPaintedPromise;
+    extension.once("background-page-event", async () => {
+      await browserPaintedPromise;
+      extension.emit("start-background-page");
+    });
+
+    browserStartupPromise.then(() => {
+      extension.emit("start-background-page");
+    });
   }
 
   onShutdown() {
