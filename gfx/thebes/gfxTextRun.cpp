@@ -2912,13 +2912,7 @@ gfxFontGroup::FindFontForChar(uint32_t aCh, uint32_t aPrevCh, uint32_t aNextCh,
                 
                 
                 
-                gfxFontEntry* fe = firstFont->GetFontEntry();
-                if (!fe->IsNormalStyle()) {
-                    
-                    
-                    
-                    font = FindFallbackFaceForChar(mFonts[0].Family(), aCh);
-                }
+                font = FindFallbackFaceForChar(mFonts[0].Family(), aCh);
             }
             if (font) {
                 *aMatchType = gfxTextRange::kFontGroup;
@@ -3029,8 +3023,7 @@ gfxFontGroup::FindFontForChar(uint32_t aCh, uint32_t aPrevCh, uint32_t aNextCh,
             
             
             fe = ff.FontEntry();
-            if (!fe->mIsUserFontContainer && !fe->IsUserFont() &&
-                !fe->IsNormalStyle()) {
+            if (!fe->mIsUserFontContainer && !fe->IsUserFont()) {
                 font = FindFallbackFaceForChar(ff.Family(), aCh);
                 if (font) {
                     *aMatchType = gfxTextRange::kFontGroup;
@@ -3425,18 +3418,13 @@ gfxFontGroup::WhichPrefFontSupportsChar(uint32_t aCh, uint32_t aNextCh)
 
             
             
-            if (!fe->IsNormalStyle()) {
-                
-                
-                
-                gfxFont* prefFont = FindFallbackFaceForChar(family, aCh);
-                if (prefFont) {
-                    mLastPrefFamily = family;
-                    mLastPrefFont = prefFont;
-                    mLastPrefLang = charLang;
-                    mLastPrefFirstFont = (i == 0 && j == 0);
-                    return prefFont;
-                }
+            gfxFont* prefFont = FindFallbackFaceForChar(family, aCh);
+            if (prefFont) {
+                mLastPrefFamily = family;
+                mLastPrefFont = prefFont;
+                mLastPrefLang = charLang;
+                mLastPrefFirstFont = (i == 0 && j == 0);
+                return prefFont;
             }
         }
     }
