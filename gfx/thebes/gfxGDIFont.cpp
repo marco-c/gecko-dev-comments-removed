@@ -460,7 +460,10 @@ gfxGDIFont::FillLogFont(LOGFONTW& aLogFont, gfxFloat aSize)
             weight = mNeedsBold ? 700 : 200;
         }
     } else {
-        weight = mNeedsBold ? 700 : fe->Weight().ToIntRounded();
+        
+        
+        MOZ_ASSERT(fe->Weight().IsSingle());
+        weight = mNeedsBold ? 700 : fe->Weight().Min().ToIntRounded();
     }
 
     fe->FillLogFont(&aLogFont, weight, aSize);
