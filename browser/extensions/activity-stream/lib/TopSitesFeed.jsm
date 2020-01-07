@@ -44,8 +44,7 @@ this.TopSitesFeed = class TopSitesFeed {
     PageThumbs.addExpirationFilter(this);
   }
 
-  async init() {
-    await this._tippyTopProvider.init();
+  init() {
     
     this.refreshDefaults(this.store.getState().Prefs.values[DEFAULT_SITES_PREF]);
     this._storage = this.store.dbStorage.getDbTable("sectionPrefs");
@@ -161,6 +160,9 @@ this.TopSitesFeed = class TopSitesFeed {
 
         
         delete link.__sharedCache;
+
+        
+        link.typedBonus = true;
       }
     }
 
@@ -172,6 +174,9 @@ this.TopSitesFeed = class TopSitesFeed {
 
 
   async refresh(options = {}) {
+    if (!this._tippyTopProvider.initialized) {
+      await this._tippyTopProvider.init();
+    }
     const links = await this.getLinksWithDefaults();
     const newAction = {type: at.TOP_SITES_UPDATED, data: {links}};
     let storedPrefs;

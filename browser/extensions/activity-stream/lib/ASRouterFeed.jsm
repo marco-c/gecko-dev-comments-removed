@@ -1,5 +1,5 @@
 const {actionTypes: at} = ChromeUtils.import("resource://activity-stream/common/Actions.jsm", {});
-const {MessageCenterRouter} = ChromeUtils.import("resource://activity-stream/lib/MessageCenterRouter.jsm", {});
+const {ASRouter} = ChromeUtils.import("resource://activity-stream/lib/ASRouter.jsm", {});
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 const ONBOARDING_FINISHED_PREF = "browser.onboarding.notification.finished";
@@ -8,13 +8,14 @@ const ONBOARDING_FINISHED_PREF = "browser.onboarding.notification.finished";
 
 
 
-class MessageCenterFeed {
+class ASRouterFeed {
   constructor(options = {}) {
-    this.router = options.router || MessageCenterRouter;
+    this.router = options.router || ASRouter;
   }
 
-  enable() {
-    this.router.init(this.store._messageChannel.channel);
+  async enable() {
+    await this.router.init(this.store._messageChannel.channel,
+      this.store.dbStorage.getDbTable("snippets"));
     
     Services.prefs.setBoolPref(ONBOARDING_FINISHED_PREF, true);
   }
@@ -33,7 +34,7 @@ class MessageCenterFeed {
 
 
   enableOrDisableBasedOnPref() {
-    const isExperimentEnabled = this.store.getState().Prefs.values.messageCenterExperimentEnabled;
+    const isExperimentEnabled = this.store.getState().Prefs.values.asrouterExperimentEnabled;
     if (!this.router.initialized && isExperimentEnabled) {
       this.enable();
     } else if (!isExperimentEnabled && this.router.initialized) {
@@ -53,6 +54,6 @@ class MessageCenterFeed {
     }
   }
 }
-this.MessageCenterFeed = MessageCenterFeed;
+this.ASRouterFeed = ASRouterFeed;
 
-const EXPORTED_SYMBOLS = ["MessageCenterFeed"];
+const EXPORTED_SYMBOLS = ["ASRouterFeed"];

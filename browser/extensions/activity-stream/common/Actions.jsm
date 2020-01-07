@@ -26,6 +26,7 @@ this.globalImportContext = globalImportContext;
 const actionTypes = {};
 for (const type of [
   "ARCHIVE_FROM_POCKET",
+  "AS_ROUTER_TELEMETRY_USER_EVENT",
   "BLOCK_URL",
   "BOOKMARK_URL",
   "COPY_DOWNLOAD_LINK",
@@ -36,7 +37,6 @@ for (const type of [
   "DIALOG_OPEN",
   "DISABLE_ONBOARDING",
   "DOWNLOAD_CHANGED",
-  "GO_TO_DOWNLOAD_PAGE",
   "INIT",
   "MIGRATION_CANCEL",
   "MIGRATION_COMPLETED",
@@ -239,6 +239,20 @@ function UserEvent(data) {
 
 
 
+function ASRouterUserEvent(data) {
+  return AlsoToMain({
+    type: actionTypes.AS_ROUTER_TELEMETRY_USER_EVENT,
+    data
+  });
+}
+
+
+
+
+
+
+
+
 function UndesiredEvent(data, importContext = globalImportContext) {
   const action = {
     type: actionTypes.TELEMETRY_UNDESIRED_EVENT,
@@ -295,6 +309,7 @@ this.actionTypes = actionTypes;
 this.actionCreators = {
   BroadcastToContent,
   UserEvent,
+  ASRouterUserEvent,
   UndesiredEvent,
   PerfEvent,
   ImpressionStats,
