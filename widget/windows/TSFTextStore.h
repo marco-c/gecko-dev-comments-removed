@@ -782,6 +782,17 @@ protected:
     RecordCompositionUpdateAction();
   }
 
+  void RemoveLastCompositionUpdateActions()
+  {
+    while (!mPendingActions.IsEmpty()) {
+      const PendingAction& lastAction = mPendingActions.LastElement();
+      if (lastAction.mType != PendingAction::Type::eCompositionUpdate) {
+        break;
+      }
+      mPendingActions.RemoveLastElement();
+    }
+  }
+
   
   
   

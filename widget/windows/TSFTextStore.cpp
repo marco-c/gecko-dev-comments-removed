@@ -5203,7 +5203,12 @@ TSFTextStore::RecordCompositionEndAction()
     return false;
   }
 
-  CompleteLastActionIfStillIncomplete();
+  
+  
+  
+  
+  
+  RemoveLastCompositionUpdateActions();
   PendingAction* action = mPendingActions.AppendElement();
   action->mType = PendingAction::Type::eCompositionEnd;
   action->mData = mComposition.mString;
