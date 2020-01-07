@@ -3,6 +3,8 @@
 
 
 
+#include <inttypes.h>
+
 #include "GeckoProfiler.h"
 #include "ProfilerBacktrace.h"
 #include "ProfilerMarkerPayload.h"
@@ -126,6 +128,20 @@ VsyncMarkerPayload::StreamPayload(SpliceableJSONWriter& aWriter,
   aWriter.DoubleProperty("vsync",
                          (mVsyncTimestamp - aProcessStartTime).ToMilliseconds());
   aWriter.StringProperty("category", "VsyncTimestamp");
+}
+
+void
+ScreenshotPayload::StreamPayload(SpliceableJSONWriter& aWriter,
+                                  const TimeStamp& aProcessStartTime,
+                                  UniqueStacks& aUniqueStacks)
+{
+  aUniqueStacks.mUniqueStrings->WriteProperty(aWriter, "url", mScreenshotDataURL.get());
+
+  char hexWindowID[32];
+  SprintfLiteral(hexWindowID, "0x%" PRIXPTR, mWindowIdentifier);
+  aWriter.StringProperty("windowID", hexWindowID);
+  aWriter.DoubleProperty("windowWidth", mWindowSize.width);
+  aWriter.DoubleProperty("windowHeight", mWindowSize.height);
 }
 
 void
