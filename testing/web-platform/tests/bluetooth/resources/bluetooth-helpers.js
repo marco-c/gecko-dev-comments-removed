@@ -477,15 +477,6 @@ function setUpPreconnectedDevice({
     }));
 }
 
-const health_thermometer_ad_packet = {
-  deviceAddress: '09:09:09:09:09:09',
-  rssi: -10,
-  scanRecord: {
-    name: 'Health Thermometer',
-    uuids: [health_thermometer.uuid],
-  },
-};
-
 
 
 
