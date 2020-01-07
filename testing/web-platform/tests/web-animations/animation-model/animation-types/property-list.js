@@ -751,19 +751,19 @@ const gCSSProperties = {
   'justify-content': {
     
     types: [
-      { type: 'discrete', options: [ [ 'baseline', 'last baseline' ] ] }
+      { type: 'discrete', options: [ [ 'start', 'end' ] ] }
     ]
   },
   'justify-items': {
     
     types: [
-      { type: 'discrete', options: [ [ 'baseline', 'last baseline' ] ] }
+      { type: 'discrete', options: [ [ 'start', 'end' ] ] }
     ]
   },
   'justify-self': {
     
     types: [
-      { type: 'discrete', options: [ [ 'baseline', 'last baseline' ] ] }
+      { type: 'discrete', options: [ [ 'start', 'end' ] ] }
     ]
   },
   'left': {
