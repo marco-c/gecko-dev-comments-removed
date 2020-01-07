@@ -102,7 +102,7 @@ def native_engine_run_task(config, job, taskdesc):
     worker = taskdesc['worker'] = job['worker']
     common_setup(config, job, taskdesc)
 
-    worker['context'] = '{}/raw-file/{}/taskcluster/docker/recipes/run-task'.format(
+    worker['context'] = '{}/raw-file/{}/taskcluster/scripts/run-task'.format(
         config.params['head_repository'], config.params['head_rev']
     )
 
