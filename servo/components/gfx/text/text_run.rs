@@ -333,10 +333,10 @@ impl<'a> TextRun {
     }
 
     
-    pub fn range_index_of_advance(&self, range: &Range<ByteIndex>, advance: Au) -> usize {
+    pub fn range_index_of_advance(&self, range: &Range<ByteIndex>, advance: f32) -> usize {
         
         
-        let mut remaining = advance;
+        let mut remaining = Au::from_f32_px(advance);
         self.natural_word_slices_in_range(range)
             .map(|slice| {
                 let (slice_index, slice_advance) =
