@@ -105,7 +105,7 @@ OfflineCacheUpdateChild::GatherObservers(nsCOMArray<nsIOfflineCacheUpdateObserve
 }
 
 void
-OfflineCacheUpdateChild::SetDocument(nsIDOMDocument *aDocument)
+OfflineCacheUpdateChild::SetDocument(nsIDocument *aDocument)
 {
     
     NS_ASSERTION(!mDocument, "Setting more then a single document on a child offline cache update");
@@ -116,11 +116,10 @@ OfflineCacheUpdateChild::SetDocument(nsIDOMDocument *aDocument)
     
     
     
-    nsCOMPtr<nsIDocument> document = do_QueryInterface(aDocument);
-    if (!document)
+    if (!aDocument)
         return;
 
-    nsIChannel* channel = document->GetChannel();
+    nsIChannel* channel = aDocument->GetChannel();
     nsCOMPtr<nsIApplicationCacheChannel> appCacheChannel =
         do_QueryInterface(channel);
     if (!appCacheChannel)
@@ -135,7 +134,7 @@ OfflineCacheUpdateChild::SetDocument(nsIDOMDocument *aDocument)
 }
 
 nsresult
-OfflineCacheUpdateChild::AssociateDocument(nsIDOMDocument *aDocument,
+OfflineCacheUpdateChild::AssociateDocument(nsIDocument *aDocument,
                                         nsIApplicationCache *aApplicationCache)
 {
     
@@ -175,7 +174,7 @@ NS_IMETHODIMP
 OfflineCacheUpdateChild::Init(nsIURI *aManifestURI,
                               nsIURI *aDocumentURI,
                               nsIPrincipal *aLoadingPrincipal,
-                              nsIDOMDocument *aDocument,
+                              nsIDocument *aDocument,
                               nsIFile *aCustomProfileDir)
 {
     nsresult rv;

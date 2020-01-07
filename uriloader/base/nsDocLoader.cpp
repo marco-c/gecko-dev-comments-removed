@@ -31,7 +31,6 @@
 #include "nsITransport.h"
 #include "nsISocketTransport.h"
 #include "nsIDocShell.h"
-#include "nsIDOMDocument.h"
 #include "nsIDocument.h"
 #include "nsPresContext.h"
 #include "nsIAsyncVerifyRedirectCallback.h"
@@ -684,8 +683,7 @@ void nsDocLoader::DocLoaderIsEmpty(bool aFlushLayout)
 
     
     if (aFlushLayout && !mDontFlushLayout) {
-      nsCOMPtr<nsIDOMDocument> domDoc = do_GetInterface(GetAsSupports(this));
-      nsCOMPtr<nsIDocument> doc = do_QueryInterface(domDoc);
+      nsCOMPtr<nsIDocument> doc = do_GetInterface(GetAsSupports(this));
       if (doc) {
         
         

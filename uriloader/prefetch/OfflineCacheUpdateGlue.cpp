@@ -98,7 +98,7 @@ NS_IMETHODIMP
 OfflineCacheUpdateGlue::Init(nsIURI *aManifestURI,
                              nsIURI *aDocumentURI,
                              nsIPrincipal* aLoadingPrincipal,
-                             nsIDOMDocument *aDocument,
+                             nsIDocument *aDocument,
                              nsIFile *aCustomProfileDir)
 {
     nsresult rv;
@@ -134,7 +134,7 @@ OfflineCacheUpdateGlue::Init(nsIURI *aManifestURI,
 }
 
 void
-OfflineCacheUpdateGlue::SetDocument(nsIDOMDocument *aDocument)
+OfflineCacheUpdateGlue::SetDocument(nsIDocument *aDocument)
 {
     
     NS_ASSERTION(!mDocument, 
@@ -146,11 +146,10 @@ OfflineCacheUpdateGlue::SetDocument(nsIDOMDocument *aDocument)
     
     
     
-    nsCOMPtr<nsIDocument> document = do_QueryInterface(aDocument);
-    if (!document)
+    if (!aDocument)
         return;
 
-    nsIChannel* channel = document->GetChannel();
+    nsIChannel* channel = aDocument->GetChannel();
     nsCOMPtr<nsIApplicationCacheChannel> appCacheChannel =
         do_QueryInterface(channel);
     if (!appCacheChannel)
