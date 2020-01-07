@@ -400,6 +400,16 @@ EditorSpellCheck::InitSpellChecker(nsIEditor* aEditor,
   textServicesDocument->SetFilter(mTxtSrvFilter);
 
   
+  
+  
+  
+  mSpellChecker = new mozSpellChecker();
+  rv = mSpellChecker->SetDocument(textServicesDocument, true);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  
   rv = textServicesDocument->InitWithEditor(aEditor);
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -438,12 +448,8 @@ EditorSpellCheck::InitSpellChecker(nsIEditor* aEditor,
     }
   }
 
-  mSpellChecker = new mozSpellChecker();
   rv = mSpellChecker->Init();
   MOZ_ASSERT(NS_SUCCEEDED(rv));
-  rv = mSpellChecker->SetDocument(textServicesDocument, true);
-  NS_ENSURE_SUCCESS(rv, rv);
-
   
   
   rv = UpdateCurrentDictionary(aCallback);

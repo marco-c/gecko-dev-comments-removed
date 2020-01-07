@@ -1477,51 +1477,35 @@ TextServicesDocument::InsertText(const nsString* aText)
   return rv;
 }
 
-NS_IMETHODIMP
-TextServicesDocument::DidInsertNode(nsIDOMNode* aNode,
-                                    nsresult aResult)
+void
+TextServicesDocument::DidDeleteNode(nsINode* aChild)
 {
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-TextServicesDocument::DidDeleteNode(nsIDOMNode* aChild,
-                                    nsresult aResult)
-{
-  NS_ENSURE_SUCCESS(aResult, NS_OK);
-
-  NS_ENSURE_TRUE(mIterator, NS_ERROR_FAILURE);
-
-  
-  
-  
-  
+  if (NS_WARN_IF(!mIterator)) {
+    return;
+  }
 
   LOCK_DOC(this);
 
   int32_t nodeIndex = 0;
   bool hasEntry = false;
   OffsetEntry *entry;
-  nsCOMPtr<nsINode> child = do_QueryInterface(aChild);
 
   nsresult rv =
-    NodeHasOffsetEntry(&mOffsetTable, child, &hasEntry, &nodeIndex);
-
+    NodeHasOffsetEntry(&mOffsetTable, aChild, &hasEntry, &nodeIndex);
   if (NS_FAILED(rv)) {
     UNLOCK_DOC(this);
-    return rv;
+    return;
   }
 
   if (!hasEntry) {
     
     
     UNLOCK_DOC(this);
-    return NS_OK;
+    return;
   }
 
   nsINode* node = mIterator->GetCurrentNode();
-
-  if (node && node == child &&
+  if (node && node == aChild &&
       mIteratorStatus != IteratorStatus::eDone) {
     
     
@@ -1533,16 +1517,15 @@ TextServicesDocument::DidDeleteNode(nsIDOMNode* aChild,
   }
 
   int32_t tcount = mOffsetTable.Length();
-
   while (nodeIndex < tcount) {
     entry = mOffsetTable[nodeIndex];
 
     if (!entry) {
       UNLOCK_DOC(this);
-      return NS_ERROR_FAILURE;
+      return;
     }
 
-    if (entry->mNode == child) {
+    if (entry->mNode == aChild) {
       entry->mIsValid = false;
     }
 
@@ -1550,41 +1533,16 @@ TextServicesDocument::DidDeleteNode(nsIDOMNode* aChild,
   }
 
   UNLOCK_DOC(this);
-
-  return NS_OK;
 }
 
-NS_IMETHODIMP
-TextServicesDocument::DidSplitNode(nsIDOMNode* aExistingRightNode,
-                                   nsIDOMNode* aNewLeftNode)
+void
+TextServicesDocument::DidJoinNodes(nsINode& aLeftNode,
+                                   nsINode& aRightNode)
 {
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-TextServicesDocument::DidJoinNodes(nsIDOMNode* aLeftNode,
-                                   nsIDOMNode* aRightNode,
-                                   nsIDOMNode* aParent,
-                                   nsresult aResult)
-{
-  NS_ENSURE_SUCCESS(aResult, NS_OK);
-
   
-  
-  
-  
-
-  
-
-  nsCOMPtr<nsINode> leftNode = do_QueryInterface(aLeftNode);
-  nsCOMPtr<nsINode> rightNode = do_QueryInterface(aRightNode);
-
-  if (!leftNode || !leftNode->IsNodeOfType(nsINode::eTEXT)) {
-    return NS_OK;
-  }
-
-  if (!rightNode || !rightNode->IsNodeOfType(nsINode::eTEXT)) {
-    return NS_OK;
+  if (!aLeftNode.IsNodeOfType(nsINode::eTEXT) ||
+      !aRightNode.IsNodeOfType(nsINode::eTEXT)) {
+    return;
   }
 
   
@@ -1596,31 +1554,34 @@ TextServicesDocument::DidJoinNodes(nsIDOMNode* aLeftNode,
   bool rightHasEntry = false;
 
   nsresult rv =
-    NodeHasOffsetEntry(&mOffsetTable, leftNode, &leftHasEntry, &leftIndex);
-  NS_ENSURE_SUCCESS(rv, rv);
+    NodeHasOffsetEntry(&mOffsetTable, &aLeftNode, &leftHasEntry, &leftIndex);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return;
+  }
 
   if (!leftHasEntry) {
     
     
-    return NS_OK;
+    return;
   }
 
-  rv = NodeHasOffsetEntry(&mOffsetTable, rightNode,
+  rv = NodeHasOffsetEntry(&mOffsetTable, &aRightNode,
                           &rightHasEntry, &rightIndex);
-
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return;
+  }
 
   if (!rightHasEntry) {
     
     
-    return NS_OK;
+    return;
   }
 
   NS_ASSERTION(leftIndex < rightIndex, "Indexes out of order.");
 
   if (leftIndex > rightIndex) {
     
-    return NS_ERROR_FAILURE;
+    return;
   }
 
   LOCK_DOC(this);
@@ -1630,26 +1591,23 @@ TextServicesDocument::DidJoinNodes(nsIDOMNode* aLeftNode,
 
   
   
-
-  uint32_t nodeLength = leftNode->Length();
-
+  uint32_t nodeLength = aLeftNode.Length();
   for (int32_t i = leftIndex; i < rightIndex; i++) {
     entry = mOffsetTable[i];
-    if (entry->mNode != leftNode) {
+    if (entry->mNode != &aLeftNode) {
       break;
     }
     if (entry->mIsValid) {
-      entry->mNode = rightNode;
+      entry->mNode = &aRightNode;
     }
   }
 
   
   
-
   for (int32_t i = rightIndex;
        i < static_cast<int32_t>(mOffsetTable.Length()); i++) {
     entry = mOffsetTable[i];
-    if (entry->mNode != rightNode) {
+    if (entry->mNode != &aRightNode) {
       break;
     }
     if (entry->mIsValid) {
@@ -1660,13 +1618,11 @@ TextServicesDocument::DidJoinNodes(nsIDOMNode* aLeftNode,
   
   
 
-  if (mIterator->GetCurrentNode() == leftNode) {
-    mIterator->PositionAt(rightNode);
+  if (mIterator->GetCurrentNode() == &aLeftNode) {
+    mIterator->PositionAt(&aRightNode);
   }
 
   UNLOCK_DOC(this);
-
-  return NS_OK;
 }
 
 nsresult
@@ -3252,6 +3208,54 @@ TextServicesDocument::FindWordBounds(nsTArray<OffsetEntry*>* aOffsetTable,
 
 
 
+
+
+
+
+
+NS_IMETHODIMP
+TextServicesDocument::DidInsertNode(nsIDOMNode* aNode,
+                                    nsresult aResult)
+{
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+TextServicesDocument::DidDeleteNode(nsIDOMNode* aChild,
+                                    nsresult aResult)
+{
+  if (NS_WARN_IF(NS_FAILED(aResult))) {
+    return NS_OK;
+  }
+  nsCOMPtr<nsINode> child = do_QueryInterface(aChild);
+  DidDeleteNode(child);
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+TextServicesDocument::DidSplitNode(nsIDOMNode* aExistingRightNode,
+                                   nsIDOMNode* aNewLeftNode)
+{
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+TextServicesDocument::DidJoinNodes(nsIDOMNode* aLeftNode,
+                                   nsIDOMNode* aRightNode,
+                                   nsIDOMNode* aParent,
+                                   nsresult aResult)
+{
+  if (NS_WARN_IF(NS_FAILED(aResult))) {
+    return NS_OK;
+  }
+  nsCOMPtr<nsINode> leftNode = do_QueryInterface(aLeftNode);
+  nsCOMPtr<nsINode> rightNode = do_QueryInterface(aRightNode);
+  if (NS_WARN_IF(!leftNode) || NS_WARN_IF(!rightNode)) {
+    return NS_OK;
+  }
+  DidJoinNodes(*leftNode, *rightNode);
+  return NS_OK;
+}
 
 NS_IMETHODIMP
 TextServicesDocument::DidCreateNode(const nsAString& aTag,

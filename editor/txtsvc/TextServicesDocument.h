@@ -219,7 +219,20 @@ public:
   nsresult InsertText(const nsString* aText);
 
   
+
+
   NS_DECL_NSIEDITACTIONLISTENER
+
+  
+
+
+
+
+
+
+
+  void DidDeleteNode(nsINode* aChild);
+  void DidJoinNodes(nsINode& aLeftNode, nsINode& aRightNode);
 
   static nsresult GetRangeEndPoints(nsRange* aRange,
                                     nsINode** aStartContainer,
