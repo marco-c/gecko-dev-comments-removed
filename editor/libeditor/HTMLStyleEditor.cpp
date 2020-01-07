@@ -314,12 +314,13 @@ HTMLEditor::SetInlinePropertyOnTextNode(Text& aText,
     nsIContent* sibling = GetPriorHTMLSibling(textNodeForTheRange);
     if (IsSimpleModifiableNode(sibling, &aProperty, aAttribute, &aValue)) {
       
-      return MoveNode(textNodeForTheRange, sibling, -1);
+      return MoveNodeToEndWithTransaction(*textNodeForTheRange, *sibling);
     }
     sibling = GetNextHTMLSibling(textNodeForTheRange);
     if (IsSimpleModifiableNode(sibling, &aProperty, aAttribute, &aValue)) {
       
-      return MoveNode(textNodeForTheRange, sibling, 0);
+      return MoveNodeWithTransaction(*textNodeForTheRange,
+                                     EditorRawDOMPoint(sibling, 0));
     }
   }
 
@@ -363,8 +364,10 @@ HTMLEditor::SetInlinePropertyOnNodeImpl(nsIContent& aNode,
   nsCOMPtr<nsIContent> previousSibling = GetPriorHTMLSibling(&aNode);
   nsCOMPtr<nsIContent> nextSibling = GetNextHTMLSibling(&aNode);
   if (IsSimpleModifiableNode(previousSibling, &aProperty, aAttribute, &aValue)) {
-    nsresult rv = MoveNode(&aNode, previousSibling, -1);
-    NS_ENSURE_SUCCESS(rv, rv);
+    nsresult rv = MoveNodeToEndWithTransaction(aNode, *previousSibling);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
     if (IsSimpleModifiableNode(nextSibling, &aProperty, aAttribute, &aValue)) {
       rv = JoinNodesWithTransaction(*previousSibling, *nextSibling);
       if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -374,8 +377,11 @@ HTMLEditor::SetInlinePropertyOnNodeImpl(nsIContent& aNode,
     return NS_OK;
   }
   if (IsSimpleModifiableNode(nextSibling, &aProperty, aAttribute, &aValue)) {
-    nsresult rv = MoveNode(&aNode, nextSibling, 0);
-    NS_ENSURE_SUCCESS(rv, rv);
+    nsresult rv =
+      MoveNodeWithTransaction(aNode, EditorRawDOMPoint(nextSibling, 0));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
     return NS_OK;
   }
 
@@ -652,8 +658,11 @@ HTMLEditor::ClearStyle(nsCOMPtr<nsINode>* aNode,
     
     
     if (savedBR) {
-      rv = MoveNode(savedBR, newSelParent, 0);
-      NS_ENSURE_SUCCESS(rv, rv);
+      rv = MoveNodeWithTransaction(*savedBR,
+                                   EditorRawDOMPoint(newSelParent, 0));
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
     }
     
     int32_t newSelOffset = 0;
@@ -1502,15 +1511,20 @@ HTMLEditor::RelativeFontChangeOnTextNode(FontSize aDir,
   nsCOMPtr<nsIContent> sibling = GetPriorHTMLSibling(textNodeForTheRange);
   if (sibling && sibling->IsHTMLElement(nodeType)) {
     
-    nsresult rv = MoveNode(textNodeForTheRange, sibling, -1);
-    NS_ENSURE_SUCCESS(rv, rv);
+    nsresult rv = MoveNodeToEndWithTransaction(*textNodeForTheRange, *sibling);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
     return NS_OK;
   }
   sibling = GetNextHTMLSibling(textNodeForTheRange);
   if (sibling && sibling->IsHTMLElement(nodeType)) {
     
-    nsresult rv = MoveNode(textNodeForTheRange, sibling, 0);
-    NS_ENSURE_SUCCESS(rv, rv);
+    nsresult rv = MoveNodeWithTransaction(*textNodeForTheRange,
+                                          EditorRawDOMPoint(sibling, 0));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
     return NS_OK;
   }
 
@@ -1613,13 +1627,13 @@ HTMLEditor::RelativeFontChangeOnNode(int32_t aSizeChange,
     nsIContent* sibling = GetPriorHTMLSibling(aNode);
     if (sibling && sibling->IsHTMLElement(atom)) {
       
-      return MoveNode(aNode, sibling, -1);
+      return MoveNodeToEndWithTransaction(*aNode, *sibling);
     }
 
     sibling = GetNextHTMLSibling(aNode);
     if (sibling && sibling->IsHTMLElement(atom)) {
       
-      return MoveNode(aNode, sibling, 0);
+      return MoveNodeWithTransaction(*aNode, EditorRawDOMPoint(sibling, 0));
     }
 
     

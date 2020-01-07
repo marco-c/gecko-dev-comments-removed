@@ -149,6 +149,12 @@ EditorBase::SplitNodeDeepWithTransaction(
               nsIContent& aMostAncestorToSplit,
               const EditorRawDOMPoint& aStartOfDeepestRightNode,
               SplitAtEdges aSplitAtEdges);
+template nsresult
+EditorBase::MoveNodeWithTransaction(nsIContent& aContent,
+                                    const EditorDOMPoint& aPointToInsert);
+template nsresult
+EditorBase::MoveNodeWithTransaction(nsIContent& aContent,
+                                    const EditorRawDOMPoint& aPointToInsert);
 
 EditorBase::EditorBase()
   : mPlaceholderName(nullptr)
@@ -1838,55 +1844,49 @@ EditorBase::InsertContainerAbove(nsIContent* aNode,
   return newContainer.forget();
 }
 
-
-
-
+template<typename PT, typename CT>
 nsresult
-EditorBase::MoveNode(nsIContent* aNode,
-                     nsINode* aParent,
-                     int32_t aOffset)
+EditorBase::MoveNodeWithTransaction(
+              nsIContent& aContent,
+              const EditorDOMPointBase<PT, CT>& aPointToInsert)
 {
-  MOZ_ASSERT(aNode);
-  MOZ_ASSERT(aParent);
-  MOZ_ASSERT(aOffset == -1 ||
-             (0 <= aOffset &&
-              AssertedCast<uint32_t>(aOffset) <= aParent->Length()));
+  MOZ_ASSERT(aPointToInsert.IsSetAndValid());
 
-  nsCOMPtr<nsINode> oldParent = aNode->GetParentNode();
-  if (NS_WARN_IF(!oldParent)) {
+  EditorDOMPoint oldPoint(&aContent);
+  if (NS_WARN_IF(!oldPoint.IsSet())) {
     return NS_ERROR_FAILURE;
-  }
-  int32_t oldOffset = oldParent->ComputeIndexOf(aNode);
-
-  if (aOffset == -1) {
-    
-    aOffset = AssertedCast<int32_t>(aParent->Length());
   }
 
   
-  if (aParent == oldParent && aOffset == oldOffset) {
+  if (aPointToInsert == oldPoint) {
     return NS_OK;
   }
 
   
-  AutoMoveNodeSelNotify selNotify(mRangeUpdater, oldParent, oldOffset,
-                                  aParent, aOffset);
+  EditorDOMPoint newPoint(aPointToInsert);
+  AutoMoveNodeSelNotify selNotify(mRangeUpdater, oldPoint, newPoint);
 
   
-  if (aParent == oldParent && oldOffset < aOffset) {
-    
-    aOffset--;
-  }
-
-  
-  nsCOMPtr<nsIContent> nodeToBeMoved(aNode);
-  nsresult rv = DeleteNodeWithTransaction(*nodeToBeMoved);
+  nsresult rv = DeleteNodeWithTransaction(aContent);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
 
-  rv = InsertNodeWithTransaction(*nodeToBeMoved,
-                                 EditorRawDOMPoint(aParent, aOffset));
+  
+  EditorRawDOMPoint pointToInsert(selNotify.ComputeInsertionPoint());
+  if (NS_WARN_IF(!pointToInsert.IsSet())) {
+    return NS_ERROR_FAILURE;
+  }
+  
+  
+  
+  
+  
+  
+  if (NS_WARN_IF(!pointToInsert.IsSetAndValid())) {
+    pointToInsert.SetToEndOf(pointToInsert.GetContainer());
+  }
+  rv = InsertNodeWithTransaction(aContent, pointToInsert);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }

@@ -470,7 +470,31 @@ public:
 
   nsresult JoinNodesWithTransaction(nsINode& aLeftNode, nsINode& aRightNode);
 
-  nsresult MoveNode(nsIContent* aNode, nsINode* aParent, int32_t aOffset);
+  
+
+
+
+
+  template<typename PT, typename CT>
+  nsresult
+  MoveNodeWithTransaction(nsIContent& aContent,
+                          const EditorDOMPointBase<PT, CT>& aPointToInsert);
+
+  
+
+
+
+
+
+
+  nsresult
+  MoveNodeToEndWithTransaction(nsIContent& aContent,
+                               nsINode& aNewContainer)
+  {
+    EditorRawDOMPoint pointToInsert;
+    pointToInsert.SetToEndOf(&aNewContainer);
+    return MoveNodeWithTransaction(aContent, pointToInsert);
+  }
 
   
 

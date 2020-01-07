@@ -1956,9 +1956,8 @@ HTMLEditRules::InsertBRElement(Selection& aSelection,
     EditorDOMPoint atSecondBRElement(maybeSecondBRNode);
     if (brElement->GetNextSibling() != maybeSecondBRNode) {
       nsresult rv =
-        htmlEditor->MoveNode(maybeSecondBRNode->AsContent(),
-                             afterBRElement.GetContainer(),
-                             afterBRElement.Offset());
+        htmlEditor->MoveNodeWithTransaction(*maybeSecondBRNode->AsContent(),
+                                            afterBRElement);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
@@ -3431,10 +3430,19 @@ HTMLEditRules::MoveNodeSmart(nsIContent& aNode,
   
   if (htmlEditor->CanContain(aDestElement, aNode)) {
     
-    nsresult rv =
-      htmlEditor->MoveNode(&aNode, &aDestElement, *aInOutDestOffset);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return EditActionIgnored(rv);
+    if (*aInOutDestOffset == -1) {
+      nsresult rv =
+        htmlEditor->MoveNodeToEndWithTransaction(aNode, aDestElement);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return EditActionIgnored(rv);
+      }
+    } else {
+      EditorRawDOMPoint pointToInsert(&aDestElement, *aInOutDestOffset);
+      nsresult rv =
+        htmlEditor->MoveNodeWithTransaction(aNode, pointToInsert);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return EditActionIgnored(rv);
+      }
     }
     if (*aInOutDestOffset != -1) {
       (*aInOutDestOffset)++;
@@ -3737,8 +3745,10 @@ HTMLEditRules::WillMakeList(Selection* aSelection,
         
         
         
-        rv = htmlEditor->MoveNode(curNode, curList, -1);
-        NS_ENSURE_SUCCESS(rv, rv);
+        rv = htmlEditor->MoveNodeToEndWithTransaction(*curNode, *curList);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
+        }
         newBlock = ConvertListType(curNode->AsElement(), listType, itemType);
         if (NS_WARN_IF(!newBlock)) {
           return NS_ERROR_FAILURE;
@@ -3784,8 +3794,10 @@ HTMLEditRules::WillMakeList(Selection* aSelection,
           }
         }
         
-        rv = htmlEditor->MoveNode(curNode, curList, -1);
-        NS_ENSURE_SUCCESS(rv, rv);
+        rv = htmlEditor->MoveNodeToEndWithTransaction(*curNode, *curList);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
+        }
         
         if (!curNode->IsHTMLElement(itemType)) {
           newBlock =
@@ -3802,8 +3814,10 @@ HTMLEditRules::WillMakeList(Selection* aSelection,
           curList = atCurNode.GetContainerAsElement();
         } else if (atCurNode.GetContainer() != curList) {
           
-          rv = htmlEditor->MoveNode(curNode, curList, -1);
-          NS_ENSURE_SUCCESS(rv, rv);
+          rv = htmlEditor->MoveNodeToEndWithTransaction(*curNode, *curList);
+          if (NS_WARN_IF(NS_FAILED(rv))) {
+            return rv;
+          }
         }
         if (!curNode->IsHTMLElement(itemType)) {
           newBlock =
@@ -3876,7 +3890,7 @@ HTMLEditRules::WillMakeList(Selection* aSelection,
       if (IsInlineNode(curNode) && prevListItem) {
         
         
-        rv = htmlEditor->MoveNode(curNode, prevListItem, -1);
+        rv = htmlEditor->MoveNodeToEndWithTransaction(*curNode, *prevListItem);
         NS_ENSURE_SUCCESS(rv, rv);
       } else {
         
@@ -3904,8 +3918,10 @@ HTMLEditRules::WillMakeList(Selection* aSelection,
     if (listItem) {
       
       
-      rv = htmlEditor->MoveNode(listItem, curList, -1);
-      NS_ENSURE_SUCCESS(rv, rv);
+      rv = htmlEditor->MoveNodeToEndWithTransaction(*listItem, *curList);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
     }
   }
 
@@ -4305,7 +4321,8 @@ HTMLEditRules::WillCSSIndent(Selection* aSelection,
             sibling->NodeInfo()->NameAtom() &&
           atCurNode.GetContainer()->NodeInfo()->NamespaceID() ==
             sibling->NodeInfo()->NamespaceID()) {
-        rv = htmlEditor->MoveNode(curNode->AsContent(), sibling, 0);
+        rv = htmlEditor->MoveNodeWithTransaction(*curNode->AsContent(),
+                                                 EditorRawDOMPoint(sibling, 0));
         NS_ENSURE_SUCCESS(rv, rv);
         continue;
       }
@@ -4319,8 +4336,11 @@ HTMLEditRules::WillCSSIndent(Selection* aSelection,
             sibling->NodeInfo()->NameAtom() &&
           atCurNode.GetContainer()->NodeInfo()->NamespaceID() ==
             sibling->NodeInfo()->NamespaceID()) {
-        rv = htmlEditor->MoveNode(curNode->AsContent(), sibling, -1);
-        NS_ENSURE_SUCCESS(rv, rv);
+        rv = htmlEditor->MoveNodeToEndWithTransaction(*curNode->AsContent(),
+                                                      *sibling);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
+        }
         continue;
       }
 
@@ -4352,10 +4372,11 @@ HTMLEditRules::WillCSSIndent(Selection* aSelection,
         mNewBlock = curList;
       }
       
-      uint32_t listLen = curList->Length();
-      rv = htmlEditor->MoveNode(curNode->AsContent(), curList, listLen);
-      NS_ENSURE_SUCCESS(rv, rv);
-
+      rv = htmlEditor->MoveNodeToEndWithTransaction(*curNode->AsContent(),
+                                                    *curList);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
       continue;
     }
 
@@ -4392,9 +4413,11 @@ HTMLEditRules::WillCSSIndent(Selection* aSelection,
     }
 
     
-    uint32_t quoteLen = curQuote->Length();
-    rv = htmlEditor->MoveNode(curNode->AsContent(), curQuote, quoteLen);
-    NS_ENSURE_SUCCESS(rv, rv);
+    rv = htmlEditor->MoveNodeToEndWithTransaction(*curNode->AsContent(),
+                                                  *curQuote);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
   }
   return NS_OK;
 }
@@ -4514,8 +4537,11 @@ HTMLEditRules::WillHTMLIndent(Selection* aSelection,
             sibling->NodeInfo()->NameAtom() &&
           atCurNode.GetContainer()->NodeInfo()->NamespaceID() ==
             sibling->NodeInfo()->NamespaceID()) {
-        rv = htmlEditor->MoveNode(curNode->AsContent(), sibling, 0);
-        NS_ENSURE_SUCCESS(rv, rv);
+        rv = htmlEditor->MoveNodeWithTransaction(*curNode->AsContent(),
+                                                 EditorRawDOMPoint(sibling, 0));
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
+        }
         continue;
       }
 
@@ -4528,8 +4554,11 @@ HTMLEditRules::WillHTMLIndent(Selection* aSelection,
             sibling->NodeInfo()->NameAtom() &&
           atCurNode.GetContainer()->NodeInfo()->NamespaceID() ==
             sibling->NodeInfo()->NamespaceID()) {
-        rv = htmlEditor->MoveNode(curNode->AsContent(), sibling, -1);
-        NS_ENSURE_SUCCESS(rv, rv);
+        rv = htmlEditor->MoveNodeToEndWithTransaction(*curNode->AsContent(),
+                                                      *sibling);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
+        }
         continue;
       }
 
@@ -4561,8 +4590,11 @@ HTMLEditRules::WillHTMLIndent(Selection* aSelection,
         mNewBlock = curList;
       }
       
-      rv = htmlEditor->MoveNode(curNode->AsContent(), curList, -1);
-      NS_ENSURE_SUCCESS(rv, rv);
+      rv = htmlEditor->MoveNodeToEndWithTransaction(*curNode->AsContent(),
+                                                    *curList);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
       
       curQuote = nullptr;
 
@@ -4611,8 +4643,10 @@ HTMLEditRules::WillHTMLIndent(Selection* aSelection,
         }
       }
 
-      rv = htmlEditor->MoveNode(listItem, curList, -1);
-      NS_ENSURE_SUCCESS(rv, rv);
+      rv = htmlEditor->MoveNodeToEndWithTransaction(*listItem, *curList);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
 
       
       indentedLI = listItem;
@@ -4653,8 +4687,11 @@ HTMLEditRules::WillHTMLIndent(Selection* aSelection,
     }
 
     
-    rv = htmlEditor->MoveNode(curNode->AsContent(), curQuote, -1);
-    NS_ENSURE_SUCCESS(rv, rv);
+    rv = htmlEditor->MoveNodeToEndWithTransaction(*curNode->AsContent(),
+                                                  *curQuote);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
     
     curList = nullptr;
   }
@@ -4849,9 +4886,12 @@ HTMLEditRules::WillOutdent(Selection& aSelection,
               
               
               
-
-              rv = htmlEditor->MoveNode(child, curParent, offset + 1);
-              NS_ENSURE_SUCCESS(rv, rv);
+              EditorRawDOMPoint afterCurrentList(curParent, offset + 1);
+              rv = htmlEditor->MoveNodeWithTransaction(*child,
+                                                       afterCurrentList);
+              if (NS_WARN_IF(NS_FAILED(rv))) {
+                return rv;
+              }
             } else {
               
               rv = htmlEditor->DeleteNodeWithTransaction(*child);
@@ -5425,8 +5465,11 @@ HTMLEditRules::WillAlign(Selection& aSelection,
     }
 
     
-    rv = htmlEditor->MoveNode(curNode->AsContent(), curDiv, -1);
-    NS_ENSURE_SUCCESS(rv, rv);
+    rv = htmlEditor->MoveNodeToEndWithTransaction(*curNode->AsContent(),
+                                                  *curDiv);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
   }
 
   return NS_OK;
@@ -5502,7 +5545,9 @@ HTMLEditRules::AlignBlockContents(nsINode& aNode,
   }
   
   while (lastChild && (lastChild != divElem)) {
-    nsresult rv = htmlEditor->MoveNode(lastChild, divElem, 0);
+    nsresult rv =
+      htmlEditor->MoveNodeWithTransaction(*lastChild,
+                                          EditorRawDOMPoint(divElem, 0));
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -6805,9 +6850,10 @@ HTMLEditRules::BustUpInlinesAtBRs(
     
     EditorRawDOMPoint atNextNode(splitNodeResult.GetNextNode());
     nsresult rv =
-      htmlEditor->MoveNode(brNode->AsContent(), atNextNode.GetContainer(),
-                           atNextNode.Offset());
-    NS_ENSURE_SUCCESS(rv, rv);
+      htmlEditor->MoveNodeWithTransaction(*brNode->AsContent(), atNextNode);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
     aOutArrayOfNodes.AppendElement(*brNode);
 
     nextNode = splitNodeResult.GetNextNode();
@@ -7410,12 +7456,16 @@ HTMLEditRules::ReturnInListItem(Selection& aSelection,
     if (HTMLEditUtils::IsList(atNextSiblingOfLeftList.GetContainer())) {
       
       nsresult rv =
-        htmlEditor->MoveNode(&aListItem,
-                             atNextSiblingOfLeftList.GetContainer(),
-                             atNextSiblingOfLeftList.Offset());
-      NS_ENSURE_SUCCESS(rv, rv);
-      rv = aSelection.Collapse(&aListItem, 0);
-      NS_ENSURE_SUCCESS(rv, rv);
+        htmlEditor->MoveNodeWithTransaction(aListItem,
+                                            atNextSiblingOfLeftList);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
+      ErrorResult error;
+      aSelection.Collapse(RawRangeBoundary(&aListItem, 0), error);
+      if (NS_WARN_IF(error.Failed())) {
+        return error.StealNSResult();
+      }
     } else {
       
       nsresult rv = htmlEditor->DeleteNodeWithTransaction(aListItem);
@@ -7633,8 +7683,12 @@ HTMLEditRules::MakeBlockquote(nsTArray<OwningNonNull<nsINode>>& aNodeArray)
       
     }
 
-    nsresult rv = htmlEditor->MoveNode(curNode->AsContent(), curBlock, -1);
-    NS_ENSURE_SUCCESS(rv, rv);
+    nsresult rv =
+      htmlEditor->MoveNodeToEndWithTransaction(*curNode->AsContent(),
+                                               *curBlock);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
   }
   return NS_OK;
 }
@@ -7842,8 +7896,12 @@ HTMLEditRules::ApplyBlockStyle(nsTArray<OwningNonNull<nsINode>>& aNodeArray,
       
       mNewBlock = curBlock;
       
-      nsresult rv = htmlEditor->MoveNode(curNode->AsContent(), curBlock, -1);
-      NS_ENSURE_SUCCESS(rv, rv);
+      nsresult rv =
+        htmlEditor->MoveNodeToEndWithTransaction(*curNode->AsContent(),
+                                                 *curBlock);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
       continue;
     }
 
@@ -7889,8 +7947,12 @@ HTMLEditRules::ApplyBlockStyle(nsTArray<OwningNonNull<nsINode>>& aNodeArray,
 
       
       
-      nsresult rv = htmlEditor->MoveNode(curNode->AsContent(), curBlock, -1);
-      NS_ENSURE_SUCCESS(rv, rv);
+      nsresult rv =
+        htmlEditor->MoveNodeToEndWithTransaction(*curNode->AsContent(),
+                                                 *curBlock);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
     }
   }
   return NS_OK;
@@ -7977,7 +8039,10 @@ HTMLEditRules::JoinNearestEditableNodesWithTransaction(nsIContent& aNodeLeft,
     if (NS_WARN_IF(!mHTMLEditor)) {
       return EditorDOMPoint();
     }
-    nsresult rv = mHTMLEditor->MoveNode(&aNodeRight, parent, parOffset);
+    nsresult rv =
+      mHTMLEditor->MoveNodeWithTransaction(aNodeRight,
+                                           EditorRawDOMPoint(parent,
+                                                             parOffset));
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return EditorDOMPoint();
     }
@@ -8892,9 +8957,10 @@ HTMLEditRules::PopListItem(nsIContent& aListItem,
   }
 
   nsresult rv =
-    mHTMLEditor->MoveNode(&aListItem, pointToInsertListItem.GetContainer(),
-                          pointToInsertListItem.Offset());
-  NS_ENSURE_SUCCESS(rv, rv);
+    mHTMLEditor->MoveNodeWithTransaction(aListItem, pointToInsertListItem);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 
   
   if (!HTMLEditUtils::IsList(pointToInsertListItem.GetContainer()) &&
@@ -9635,8 +9701,11 @@ HTMLEditRules::WillAbsolutePosition(Selection& aSelection,
         
       }
       
-      rv = htmlEditor->MoveNode(curNode->AsContent(), curList, -1);
-      NS_ENSURE_SUCCESS(rv, rv);
+      rv = htmlEditor->MoveNodeToEndWithTransaction(*curNode->AsContent(),
+                                                    *curList);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
       continue;
     }
 
@@ -9690,8 +9759,10 @@ HTMLEditRules::WillAbsolutePosition(Selection& aSelection,
           return NS_ERROR_FAILURE;
         }
       }
-      rv = htmlEditor->MoveNode(listItem, curList, -1);
-      NS_ENSURE_SUCCESS(rv, rv);
+      rv = htmlEditor->MoveNodeToEndWithTransaction(*listItem, *curList);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
       
       indentedLI = listItem;
       continue;
@@ -9723,7 +9794,8 @@ HTMLEditRules::WillAbsolutePosition(Selection& aSelection,
     }
 
     
-    rv = htmlEditor->MoveNode(curNode->AsContent(), curPositionedDiv, -1);
+    rv = htmlEditor->MoveNodeToEndWithTransaction(*curNode->AsContent(),
+                                                  *curPositionedDiv);
     NS_ENSURE_SUCCESS(rv, rv);
     
     curList = nullptr;
