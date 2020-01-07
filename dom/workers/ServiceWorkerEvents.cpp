@@ -675,6 +675,13 @@ RespondWithHandler::ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValu
     Telemetry::ScalarAdd(Telemetry::ScalarID::SW_CORS_RES_FOR_SO_REQ_COUNT, 1);
 
     
+    
+    
+    NS_ConvertUTF8toUTF16 responseURL(ir->GetUnfilteredURL());
+    autoCancel.SetCancelMessage(
+      NS_LITERAL_CSTRING("CorsResponseForSameOriginRequest"), mRequestURL,
+      responseURL);
+    return;
   }
 
   
