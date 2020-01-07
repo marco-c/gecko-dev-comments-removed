@@ -1134,58 +1134,65 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getDirective(bool isMultiline,
     MOZ_ASSERT(directiveLength <= 18);
     char16_t peeked[18];
 
-    if (peekChars(directiveLength, peeked) && CharsMatch(peeked, directive)) {
-        if (shouldWarnDeprecated) {
-            if (!warning(JSMSG_DEPRECATED_PRAGMA, errorMsgPragma))
-                return false;
-        }
+    
+    
+    if (!peekChars(directiveLength, peeked))
+        return true;
 
-        skipChars(directiveLength);
-        tokenbuf.clear();
+    
+    if (!CharsMatch(peeked, directive))
+        return true;
 
-        do {
-            int32_t c;
-            if (!peekChar(&c))
-                return false;
+    if (shouldWarnDeprecated) {
+        if (!warning(JSMSG_DEPRECATED_PRAGMA, errorMsgPragma))
+            return false;
+    }
 
-            if (c == EOF || unicode::IsSpaceOrBOM2(c))
-                break;
+    skipChars(directiveLength);
+    tokenbuf.clear();
 
-            consumeKnownChar(c);
-
-            
-            
-            
-            if (isMultiline && c == '*') {
-                int32_t c2;
-                if (!peekChar(&c2))
-                    return false;
-
-                if (c2 == '/') {
-                    ungetChar('*');
-                    break;
-                }
-            }
-
-            if (!tokenbuf.append(c))
-                return false;
-        } while (true);
-
-        if (tokenbuf.empty()) {
-            
-            
-            return true;
-        }
-
-        size_t length = tokenbuf.length();
-
-        *destination = anyCharsAccess().cx->template make_pod_array<char16_t>(length + 1);
-        if (!*destination)
+    do {
+        int32_t c;
+        if (!peekChar(&c))
             return false;
 
-        PodCopy(destination->get(), tokenbuf.begin(), length);
-        (*destination)[length] = '\0';
+        if (c == EOF || unicode::IsSpaceOrBOM2(c))
+            break;
+
+        consumeKnownChar(c);
+
+        
+        
+        
+        if (isMultiline && c == '*') {
+            int32_t c2;
+            if (!peekChar(&c2))
+                return false;
+
+            if (c2 == '/') {
+                ungetChar('*');
+                break;
+            }
+        }
+
+        if (!tokenbuf.append(c))
+            return false;
+    } while (true);
+
+    if (tokenbuf.empty()) {
+        
+        
+        return true;
     }
+
+    size_t length = tokenbuf.length();
+
+    *destination = anyCharsAccess().cx->template make_pod_array<char16_t>(length + 1);
+    if (!*destination)
+        return false;
+
+    PodCopy(destination->get(), tokenbuf.begin(), length);
+    (*destination)[length] = '\0';
 
     return true;
 }
