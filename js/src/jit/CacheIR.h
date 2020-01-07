@@ -1194,6 +1194,8 @@ class MOZ_RAII IRGenerator
 
     const CacheIRWriter& writerRef() const { return writer; }
     CacheKind cacheKind() const { return cacheKind_; }
+
+    static constexpr char* NotAttached = nullptr;
 };
 
 
