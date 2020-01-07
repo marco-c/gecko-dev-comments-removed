@@ -269,7 +269,6 @@ add_task(async function test_queries() {
       parentGuid: PlacesUtils.bookmarks.tagsGuid,
       title: "a-tag",
     });
-    let tagid = await PlacesUtils.promiseItemId(tag.guid);
 
     await PlacesTestUtils.markBookmarksAsSynced();
 
@@ -281,31 +280,38 @@ add_task(async function test_queries() {
           guid: "queryAAAAAAA",
           type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
           title: "TAG_QUERY query",
-          url: `place:type=6&sort=14&maxResults=10&folder=${tagid}`,
+          url: `place:tag=a-tag&&sort=14&maxResults=10`,
         },
         {
           
           guid: "queryBBBBBBB",
           type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
           title: "TAG_QUERY query but invalid folder id",
-          url: `place:type=6&sort=14&maxResults=10&folder=12345`,
+          url: `place:tag=b-tag&sort=14&maxResults=10`,
         },
         {
           
           guid: "queryCCCCCCC",
           type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
           title: "TAG_QUERY without a folder at all",
-          url: "place:type=6&sort=14&maxResults=10",
+          url: "place:sort=14&maxResults=10",
         },
-
-        ],
+        {
+          
+          guid: "queryDDDDDDD",
+          type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
+          title: "TAG_QUERY without a folder at all",
+          url: "place:tag=a-tag",
+        },
+      ],
     });
 
     info("Create records to upload");
     let changes = await buf.apply();
     Assert.strictEqual(changes.queryAAAAAAA.cleartext.folderName, tag.title);
-    Assert.strictEqual(changes.queryBBBBBBB.cleartext.folderName, undefined);
+    Assert.strictEqual(changes.queryBBBBBBB.cleartext.folderName, "b-tag");
     Assert.strictEqual(changes.queryCCCCCCC.cleartext.folderName, undefined);
+    Assert.strictEqual(changes.queryDDDDDDD.cleartext.folderName, tag.title);
   } finally {
     await PlacesUtils.bookmarks.eraseEverything();
     await PlacesSyncUtils.bookmarks.reset();

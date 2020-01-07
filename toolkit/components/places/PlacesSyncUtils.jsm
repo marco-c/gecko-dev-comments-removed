@@ -1405,7 +1405,7 @@ var GUIDMissing = async function(guid) {
 
 
 
-async function updateTagQueryFolder(db, info) {
+function updateTagQueryFolder(db, info) {
   if (info.kind != BookmarkSyncUtils.KINDS.QUERY || !info.folder || !info.url ||
       info.url.protocol != "place:") {
     return info;
@@ -1413,19 +1413,18 @@ async function updateTagQueryFolder(db, info) {
 
   let params = new URLSearchParams(info.url.pathname);
   let type = +params.get("type");
-
   if (type != Ci.nsINavHistoryQueryOptions.RESULTS_AS_TAG_CONTENTS) {
     return info;
   }
 
-  let id = await getOrCreateTagFolder(db, info.folder);
-  BookmarkSyncLog.debug(`updateTagQueryFolder: Tag query folder: ${
-    info.folder} = ${id}`);
+  BookmarkSyncLog.debug(`updateTagQueryFolder: Tag query folder: ${info.folder}`);
 
   
-  params.set("folder", id);
+  params.delete("queryType");
+  params.delete("type");
+  params.delete("folder");
+  params.set("tag", info.folder);
   info.url = new URL(info.url.protocol + params);
-
   return info;
 }
 
@@ -1965,35 +1964,6 @@ function shouldUpdateBookmark(bookmarkInfo) {
 }
 
 
-async function getTagFolder(db, tag) {
-  let results = await db.executeCached(`
-    SELECT id
-    FROM moz_bookmarks
-    WHERE type = :type AND
-          parent = :tagsFolderId AND
-          title = :tag`,
-    { type: PlacesUtils.bookmarks.TYPE_FOLDER,
-      tagsFolderId: PlacesUtils.tagsFolderId, tag });
-  return results.length ? results[0].getResultByName("id") : null;
-}
-
-
-async function getOrCreateTagFolder(db, tag) {
-  let id = await getTagFolder(db, tag);
-  if (id) {
-    return id;
-  }
-  
-  let item = await PlacesUtils.bookmarks.insert({
-    type: PlacesUtils.bookmarks.TYPE_FOLDER,
-    parentGuid: PlacesUtils.bookmarks.tagsGuid,
-    title: tag,
-    source: SOURCE_SYNC,
-  });
-  return PlacesUtils.promiseItemId(item.guid);
-}
-
-
 
 
 async function placesBookmarkToSyncBookmark(db, bookmarkItem) {
@@ -2192,21 +2162,10 @@ async function fetchQueryItem(db, bookmarkItem) {
     item.description = description;
   }
 
-  let folder = null;
   let params = new URLSearchParams(bookmarkItem.url.pathname);
-  let tagFolderId = +params.get("folder");
-  if (tagFolderId) {
-    try {
-      let tagFolderGuid = await PlacesUtils.promiseItemGuid(tagFolderId);
-      let tagFolder = await PlacesUtils.bookmarks.fetch(tagFolderGuid);
-      folder = tagFolder.title;
-    } catch (ex) {
-      BookmarkSyncLog.warn("fetchQueryItem: Query " + bookmarkItem.url.href +
-                           " points to nonexistent folder " + tagFolderId, ex);
-    }
-  }
-  if (folder != null) {
-    item.folder = folder;
+  let tags = params.getAll("tag");
+  if (tags.length == 1) {
+    item.folder = tags[0];
   }
 
   let query = await getAnno(db, bookmarkItem.guid,
