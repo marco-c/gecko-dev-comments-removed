@@ -10,13 +10,14 @@ ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/Timer.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+  AppConstants: "resource://gre/modules/AppConstants.jsm",
   OpenInTabsUtils: "resource:///modules/OpenInTabsUtils.jsm",
+  PlacesTransactions: "resource://gre/modules/PlacesTransactions.jsm",
   PlacesUtils: "resource://gre/modules/PlacesUtils.jsm",
   PluralForm: "resource://gre/modules/PluralForm.jsm",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
-  RecentWindow: "resource:///modules/RecentWindow.jsm",
   PromiseUtils: "resource://gre/modules/PromiseUtils.jsm",
-  PlacesTransactions: "resource://gre/modules/PlacesTransactions.jsm",
+  RecentWindow: "resource:///modules/RecentWindow.jsm",
   Weave: "resource://services-sync/main.js",
 });
 
@@ -1031,6 +1032,94 @@ var PlacesUIUtils = {
 
     return guidsToSelect;
   },
+
+  onSidebarTreeClick(event) {
+    
+    if (event.button == 2)
+      return;
+
+    let tree = event.target.parentNode;
+    let tbo = tree.treeBoxObject;
+    let cell = tbo.getCellAt(event.clientX, event.clientY);
+    if (cell.row == -1 || cell.childElt == "twisty")
+      return;
+
+    
+    
+    
+    
+    
+    let win = tree.ownerGlobal;
+    let rect = tbo.getCoordsForCellItem(cell.row, cell.col, "image");
+    let isRTL = win.getComputedStyle(tree).direction == "rtl";
+    let mouseInGutter = isRTL ? event.clientX > rect.x
+                              : event.clientX < rect.x;
+
+    let metaKey = AppConstants.platform === "macosx" ? event.metaKey
+                                                     : event.ctrlKey;
+    let modifKey = metaKey || event.shiftKey;
+    let isContainer = tbo.view.isContainer(cell.row);
+    let openInTabs = isContainer &&
+                     (event.button == 1 || (event.button == 0 && modifKey)) &&
+                     PlacesUtils.hasChildURIs(tree.view.nodeForTreeIndex(cell.row));
+
+    if (event.button == 0 && isContainer && !openInTabs) {
+      tbo.view.toggleOpenState(cell.row);
+    } else if (!mouseInGutter && openInTabs &&
+               event.originalTarget.localName == "treechildren") {
+      tbo.view.selection.select(cell.row);
+      this.openContainerNodeInTabs(tree.selectedNode, event, tree);
+    } else if (!mouseInGutter && !isContainer &&
+               event.originalTarget.localName == "treechildren") {
+      
+      
+      
+      tbo.view.selection.select(cell.row);
+      this.openNodeWithEvent(tree.selectedNode, event);
+    }
+  },
+
+  onSidebarTreeKeyPress(event) {
+    let node = event.target.selectedNode;
+    if (node) {
+      if (event.keyCode == KeyEvent.DOM_VK_RETURN)
+        this.openNodeWithEvent(node, event);
+    }
+  },
+
+  
+
+
+
+  onSidebarTreeMouseMove(event) {
+    let treechildren = event.target;
+    if (treechildren.localName != "treechildren")
+      return;
+
+    let tree = treechildren.parentNode;
+    let cell = tree.treeBoxObject.getCellAt(event.clientX, event.clientY);
+
+    
+    
+    
+    if (cell.row != -1) {
+      let node = tree.view.nodeForTreeIndex(cell.row);
+      if (PlacesUtils.nodeIsURI(node)) {
+        this.setMouseoverURL(node.uri, tree.ownerGlobal);
+        return;
+      }
+    }
+    this.setMouseoverURL("", tree.ownerGlobal);
+  },
+
+  setMouseoverURL(url, win) {
+    
+    
+    
+    if (win.top.XULBrowserWindow) {
+      win.top.XULBrowserWindow.setOverLink(url, null);
+    }
+  }
 };
 
 
