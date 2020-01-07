@@ -297,7 +297,6 @@ Sync11Service.prototype = {
 
     this._log.info("Loading Weave " + WEAVE_VERSION);
 
-    this.asyncObserver = Async.asyncObserver(this, this._log);
     this._clusterManager = this.identity.createClusterManager(this);
     this.recordManager = new RecordManager(this);
 
@@ -315,11 +314,10 @@ Sync11Service.prototype = {
                       "Weave, since it will not work correctly.");
     }
 
-    Svc.Obs.add("weave:service:setup-complete", this.asyncObserver);
-    Svc.Obs.add("sync:collection_changed", this.asyncObserver); 
-    Svc.Obs.add("fxaccounts:device_disconnected", this.asyncObserver);
-    
-    Services.prefs.addObserver(PREFS_BRANCH + "engine.", this.prefObserver.bind(this));
+    Svc.Obs.add("weave:service:setup-complete", this);
+    Svc.Obs.add("sync:collection_changed", this); 
+    Svc.Obs.add("fxaccounts:device_disconnected", this);
+    Services.prefs.addObserver(PREFS_BRANCH + "engine.", this);
 
     if (!this.enabled) {
       this._log.info("Firefox Sync disabled.");
@@ -413,43 +411,52 @@ Sync11Service.prototype = {
     this.engineManager.setDeclined(declined);
   },
 
-  async observe(subject, topic, data) {
-    try {
-      switch (topic) {
+  QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver,
+                                         Ci.nsISupportsWeakReference]),
+
+  observe(subject, topic, data) {
+    switch (topic) {
+      
+      
+      case "sync:collection_changed":
         
         
-        case "sync:collection_changed":
+        
+        if (data.includes("clients") && !Svc.Prefs.get("testing.tps", false)) {
           
           
           
-          if (data.includes("clients") && !Svc.Prefs.get("testing.tps", false)) {
-            
-            await this.sync({why: "collection_changed", engines: []});
-          }
-          break;
-        case "fxaccounts:device_disconnected":
-          data = JSON.parse(data);
-          if (!data.isLocalDevice) {
-            await this.clientsEngine.updateKnownStaleClients();
-          }
-          break;
-        case "weave:service:setup-complete":
-          let status = this._checkSetup();
-          if (status != STATUS_DISABLED && status != CLIENT_NOT_CONFIGURED) {
-            this._startTracking();
-          }
-          break;
-      }
-    } catch (e) {
-      this._log.error(e);
+          this.sync({why: "collection_changed", engines: []}).catch(e => {
+            this._log.error(e);
+          });
+        }
+        break;
+      case "fxaccounts:device_disconnected":
+        data = JSON.parse(data);
+        if (!data.isLocalDevice) {
+          
+          this.clientsEngine.updateKnownStaleClients().catch(e => {
+            this._log.error(e);
+          });
+        }
+        break;
+      case "weave:service:setup-complete":
+        let status = this._checkSetup();
+        if (status != STATUS_DISABLED && status != CLIENT_NOT_CONFIGURED) {
+          this._startTracking();
+        }
+        break;
+      case "nsPref:changed":
+        if (this._ignorePrefObserver) {
+          return;
+        }
+        const engine = data.slice((PREFS_BRANCH + "engine.").length);
+        this._handleEngineStatusChanged(engine);
+        break;
     }
   },
 
-  prefObserver(subject, topic, data) {
-    if (this._ignorePrefObserver) {
-      return;
-    }
-    const engine = data.slice((PREFS_BRANCH + "engine.").length);
+  _handleEngineStatusChanged(engine) {
     this._log.trace("Status for " + engine + " engine changed.");
     if (Svc.Prefs.get("engineStatusChanged." + engine, false)) {
       
@@ -1103,7 +1110,6 @@ Sync11Service.prototype = {
     let dateStr = Utils.formatTimestamp(new Date());
     this._log.debug("User-Agent: " + Utils.userAgent);
     await this.promiseInitialized;
-    await this.asyncObserver.promiseObserversComplete();
     this._log.info(`Starting sync at ${dateStr} in browser session ${browserSessionID}`);
     return this._catch(async function() {
       
