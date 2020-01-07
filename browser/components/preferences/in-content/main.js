@@ -1523,8 +1523,7 @@ var gMainPane = {
       item.setAttribute("typeDescription", visibleType.typeDescription);
       if (visibleType.smallIcon)
         item.setAttribute("typeIcon", visibleType.smallIcon);
-      item.setAttribute("actionDescription",
-        this._describePreferredAction(visibleType));
+      item.setAttribute("actionDescription", visibleType.actionDescription);
 
       if (!this._setIconClassForPreferredAction(visibleType, item)) {
         item.setAttribute("actionIcon",
@@ -1542,81 +1541,7 @@ var gMainPane = {
   _matchesFilter(aType) {
     var filterValue = this._filter.value.toLowerCase();
     return aType.typeDescription.toLowerCase().includes(filterValue) ||
-      this._describePreferredAction(aType).toLowerCase().includes(filterValue);
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  _describePreferredAction(aHandlerInfo) {
-    
-    
-    
-    if (aHandlerInfo.alwaysAskBeforeHandling) {
-      if (isFeedType(aHandlerInfo.type))
-        return gMainPane._prefsBundle.getFormattedString("previewInApp",
-          [this._brandShortName]);
-      return gMainPane._prefsBundle.getString("alwaysAsk");
-    }
-
-    switch (aHandlerInfo.preferredAction) {
-      case Ci.nsIHandlerInfo.saveToDisk:
-        return gMainPane._prefsBundle.getString("saveFile");
-
-      case Ci.nsIHandlerInfo.useHelperApp:
-        var preferredApp = aHandlerInfo.preferredApplicationHandler;
-        var name;
-        if (preferredApp instanceof Ci.nsILocalHandlerApp)
-          name = getFileDisplayName(preferredApp.executable);
-        else
-          name = preferredApp.name;
-        return gMainPane._prefsBundle.getFormattedString("useApp", [name]);
-
-      case Ci.nsIHandlerInfo.handleInternally:
-        
-        if (isFeedType(aHandlerInfo.type)) {
-          return gMainPane._prefsBundle.getFormattedString("addLiveBookmarksInApp",
-            [this._brandShortName]);
-        }
-
-        if (aHandlerInfo instanceof InternalHandlerInfoWrapper) {
-          return gMainPane._prefsBundle.getFormattedString("previewInApp",
-            [this._brandShortName]);
-        }
-
-        
-        
-        
-        if (this.isValidHandlerApp(aHandlerInfo.preferredApplicationHandler))
-          return aHandlerInfo.preferredApplicationHandler.name;
-
-        return aHandlerInfo.defaultDescription;
-
-      
-      
-      
-      
-
-      case Ci.nsIHandlerInfo.useSystemDefault:
-        return gMainPane._prefsBundle.getFormattedString("useDefault",
-          [aHandlerInfo.defaultDescription]);
-
-      case kActionUsePlugin:
-        return gMainPane._prefsBundle.getFormattedString("usePluginIn",
-          [aHandlerInfo.pluginName,
-          this._brandShortName]);
-      default:
-        throw new Error(`Unexpected preferredAction: ${aHandlerInfo.preferredAction}`);
-    }
+           aType.actionDescription.toLowerCase().includes(filterValue);
   },
 
   
@@ -1933,16 +1858,14 @@ var gMainPane = {
     if (!this._sortColumn)
       return;
 
-    var t = this;
-
     function sortByType(a, b) {
       return a.typeDescription.toLowerCase().
         localeCompare(b.typeDescription.toLowerCase());
     }
 
     function sortByAction(a, b) {
-      return t._describePreferredAction(a).toLowerCase().
-        localeCompare(t._describePreferredAction(b).toLowerCase());
+      return a.actionDescription.toLowerCase().
+        localeCompare(b.actionDescription.toLowerCase());
     }
 
     switch (this._sortColumn.getAttribute("value")) {
@@ -2028,8 +1951,7 @@ var gMainPane = {
     handlerInfo.handledOnlyByPlugin = false;
 
     
-    typeItem.setAttribute("actionDescription",
-      this._describePreferredAction(handlerInfo));
+    typeItem.setAttribute("actionDescription", handlerInfo.actionDescription);
     if (!this._setIconClassForPreferredAction(handlerInfo, typeItem)) {
       typeItem.setAttribute("actionIcon",
         this._getIconURLForPreferredAction(handlerInfo));
@@ -2050,8 +1972,7 @@ var gMainPane = {
       this.rebuildActionsMenu();
 
       
-      typeItem.setAttribute("actionDescription",
-        this._describePreferredAction(handlerInfo));
+      typeItem.setAttribute("actionDescription", handlerInfo.actionDescription);
       if (!this._setIconClassForPreferredAction(handlerInfo, typeItem)) {
         typeItem.setAttribute("actionIcon",
           this._getIconURLForPreferredAction(handlerInfo));
@@ -2667,6 +2588,72 @@ class HandlerInfoWrapper {
     }
 
     return this.description;
+  }
+
+  
+
+
+
+  get actionDescription() {
+    
+    
+    
+    if (this.alwaysAskBeforeHandling) {
+      if (isFeedType(this.type))
+        return gMainPane._prefsBundle.getFormattedString("previewInApp",
+          [gMainPane._brandShortName]);
+      return gMainPane._prefsBundle.getString("alwaysAsk");
+    }
+
+    switch (this.preferredAction) {
+      case Ci.nsIHandlerInfo.saveToDisk:
+        return gMainPane._prefsBundle.getString("saveFile");
+
+      case Ci.nsIHandlerInfo.useHelperApp:
+        var preferredApp = this.preferredApplicationHandler;
+        var name;
+        if (preferredApp instanceof Ci.nsILocalHandlerApp)
+          name = getFileDisplayName(preferredApp.executable);
+        else
+          name = preferredApp.name;
+        return gMainPane._prefsBundle.getFormattedString("useApp", [name]);
+
+      case Ci.nsIHandlerInfo.handleInternally:
+        
+        if (isFeedType(this.type)) {
+          return gMainPane._prefsBundle.getFormattedString("addLiveBookmarksInApp",
+            [gMainPane._brandShortName]);
+        }
+
+        if (this instanceof InternalHandlerInfoWrapper) {
+          return gMainPane._prefsBundle.getFormattedString("previewInApp",
+            [gMainPane._brandShortName]);
+        }
+
+        
+        
+        
+        if (gMainPane.isValidHandlerApp(this.preferredApplicationHandler))
+          return this.preferredApplicationHandler.name;
+
+        return this.defaultDescription;
+
+      
+      
+      
+      
+
+      case Ci.nsIHandlerInfo.useSystemDefault:
+        return gMainPane._prefsBundle.getFormattedString("useDefault",
+          [this.defaultDescription]);
+
+      case kActionUsePlugin:
+        return gMainPane._prefsBundle.getFormattedString("usePluginIn",
+          [this.pluginName,
+          gMainPane._brandShortName]);
+      default:
+        throw new Error(`Unexpected preferredAction: ${this.preferredAction}`);
+    }
   }
 
   get preferredApplicationHandler() {
