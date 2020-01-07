@@ -13,7 +13,10 @@ ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 ChromeUtils.defineModuleGetter(this, "AboutNewTab",
                                "resource:///modules/AboutNewTab.jsm");
 
-const LOCAL_NEWTAB_URL = "chrome://browser/content/newtab/newTab.xhtml";
+
+
+
+
 const TOPIC_APP_QUIT = "quit-application-granted";
 const TOPIC_LOCALES_CHANGE = "intl:requested-locales-changed";
 
@@ -27,8 +30,6 @@ const IS_MAIN_PROCESS = Services.appinfo.processType === Services.appinfo.PROCES
 
 const IS_RELEASE_OR_BETA = AppConstants.RELEASE_OR_BETA;
 
-
-const PREF_ACTIVITY_STREAM_ENABLED = "browser.newtabpage.activity-stream.enabled";
 const PREF_ACTIVITY_STREAM_PRERENDER_ENABLED = "browser.newtabpage.activity-stream.prerender";
 const PREF_ACTIVITY_STREAM_DEBUG = "browser.newtabpage.activity-stream.debug";
 
@@ -36,23 +37,19 @@ const PREF_ACTIVITY_STREAM_DEBUG = "browser.newtabpage.activity-stream.debug";
 function AboutNewTabService() {
   Services.obs.addObserver(this, TOPIC_APP_QUIT);
   Services.obs.addObserver(this, TOPIC_LOCALES_CHANGE);
-  Services.prefs.addObserver(PREF_ACTIVITY_STREAM_ENABLED, this);
   Services.prefs.addObserver(PREF_ACTIVITY_STREAM_PRERENDER_ENABLED, this);
   if (!IS_RELEASE_OR_BETA) {
     Services.prefs.addObserver(PREF_ACTIVITY_STREAM_DEBUG, this);
   }
 
   
-  this.toggleActivityStream();
+  this.toggleActivityStream(true);
   this.initialized = true;
 
   if (IS_MAIN_PROCESS) {
     AboutNewTab.init();
   }
 }
-
-
-
 
 
 
@@ -107,11 +104,7 @@ AboutNewTabService.prototype = {
   observe(subject, topic, data) {
     switch (topic) {
       case "nsPref:changed":
-        if (data === PREF_ACTIVITY_STREAM_ENABLED) {
-          if (this.toggleActivityStream()) {
-            this.notifyChange();
-          }
-        } else if (data === PREF_ACTIVITY_STREAM_PRERENDER_ENABLED) {
+        if (data === PREF_ACTIVITY_STREAM_PRERENDER_ENABLED) {
           this._activityStreamPrerender = Services.prefs.getBoolPref(PREF_ACTIVITY_STREAM_PRERENDER_ENABLED);
           this.notifyChange();
         } else if (!IS_RELEASE_OR_BETA && data === PREF_ACTIVITY_STREAM_DEBUG) {
@@ -147,12 +140,7 @@ AboutNewTabService.prototype = {
 
 
 
-
-
-
-
-  toggleActivityStream(stateEnabled = Services.prefs.getBoolPref(PREF_ACTIVITY_STREAM_ENABLED),
-                       forceState = false) {
+  toggleActivityStream(stateEnabled, forceState = false) {
 
     if (!forceState && (this.overridden || stateEnabled === this.activityStreamEnabled)) {
       
@@ -193,24 +181,19 @@ AboutNewTabService.prototype = {
 
 
 
-
-
   get defaultURL() {
-    if (this.activityStreamEnabled) {
-      
-      
-      
-      
-      return [
-        "resource://activity-stream/prerendered/",
-        this._activityStreamPath,
-        "activity-stream",
-        this._activityStreamPrerender ? "-prerendered" : "",
-        this._activityStreamDebug ? "-debug" : "",
-        ".html"
-      ].join("");
-    }
-    return LOCAL_NEWTAB_URL;
+    
+    
+    
+    
+    return [
+      "resource://activity-stream/prerendered/",
+      this._activityStreamPath,
+      "activity-stream",
+      this._activityStreamPrerender ? "-prerendered" : "",
+      this._activityStreamDebug ? "-debug" : "",
+      ".html"
+    ].join("");
   },
 
   get newTabURL() {
@@ -252,7 +235,7 @@ AboutNewTabService.prototype = {
   resetNewTabURL() {
     this._overridden = false;
     this._newTabURL = ABOUT_URL;
-    this.toggleActivityStream(undefined, true);
+    this.toggleActivityStream(true, true);
     this.notifyChange();
   },
 
@@ -262,7 +245,6 @@ AboutNewTabService.prototype = {
     }
     Services.obs.removeObserver(this, TOPIC_APP_QUIT);
     Services.obs.removeObserver(this, TOPIC_LOCALES_CHANGE);
-    Services.prefs.removeObserver(PREF_ACTIVITY_STREAM_ENABLED, this);
     Services.prefs.removeObserver(PREF_ACTIVITY_STREAM_PRERENDER_ENABLED, this);
     if (!IS_RELEASE_OR_BETA) {
       Services.prefs.removeObserver(PREF_ACTIVITY_STREAM_DEBUG, this);

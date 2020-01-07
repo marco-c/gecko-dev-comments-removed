@@ -11,7 +11,6 @@ add_task(async function test_blank() {
 });
 
 add_task(async function test_newtab() {
-  await SpecialPowers.pushPrefEnv({set: [["browser.newtabpage.activity-stream.enabled", true]]});
   await BrowserTestUtils.withNewTab({ gBrowser, url: "about:blank" },
                                     async function(browser) {
     
@@ -21,16 +20,5 @@ add_task(async function test_newtab() {
     BrowserTestUtils.loadURI(browser, "http://example.com");
     await BrowserTestUtils.browserLoaded(browser);
     is(gBrowser.canGoBack, true, "about:newtab was added to the session history when AS was enabled.");
-  });
-  await SpecialPowers.pushPrefEnv({set: [["browser.newtabpage.activity-stream.enabled", false]]});
-  await BrowserTestUtils.withNewTab({ gBrowser, url: "about:blank" },
-                                    async function(browser) {
-    
-    BrowserTestUtils.loadURI(browser, "about:newtab");
-    await BrowserTestUtils.browserLoaded(browser);
-
-    BrowserTestUtils.loadURI(browser, "http://example.com");
-    await BrowserTestUtils.browserLoaded(browser);
-    is(gBrowser.canGoBack, false, "about:newtab was not added to the session history when AS was disabled.");
   });
 });

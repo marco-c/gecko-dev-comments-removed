@@ -6,25 +6,10 @@ const uri = Services.io.newURI("about:newtab");
 
 function run_test() {
   test_AS_enabled_flags();
-  test_AS_disabled_flags();
-}
-
-
-
-function test_AS_disabled_flags() {
-  Services.prefs.setBoolPref("browser.newtabpage.activity-stream.enabled",
-    false);
-
-  let flags = am.getURIFlags(uri);
-
-  ok(!(flags & Ci.nsIAboutModule.URI_MUST_LOAD_IN_CHILD));
 }
 
 
 function test_AS_enabled_flags() {
-  Services.prefs.setBoolPref("browser.newtabpage.activity-stream.enabled",
-    true);
-
   let flags = am.getURIFlags(uri);
 
   ok(flags & Ci.nsIAboutModule.URI_MUST_LOAD_IN_CHILD);

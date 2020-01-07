@@ -10,12 +10,6 @@ function pushPrefs(...prefs) {
   return SpecialPowers.pushPrefEnv({set: prefs});
 }
 
-
-
-const ACTIVITY_STREAM_PREF = "browser.newtabpage.activity-stream.enabled";
-pushPrefs([ACTIVITY_STREAM_PREF, true]);
-gBrowser.removePreloadedBrowser();
-
 async function clearHistoryAndBookmarks() { 
   await PlacesUtils.bookmarks.eraseEverything();
   await PlacesUtils.history.clear();

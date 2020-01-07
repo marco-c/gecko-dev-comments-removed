@@ -1,14 +1,8 @@
 add_task(async function setup() {
   Services.prefs.setBoolPref("privacy.firstparty.isolate", true);
-  
-  
-  
-  
-  Services.prefs.setBoolPref("browser.newtabpage.activity-stream.enabled", true);
 
   registerCleanupFunction(function() {
     Services.prefs.clearUserPref("privacy.firstparty.isolate");
-    Services.prefs.clearUserPref("browser.newtabpage.activity-stream.enabled");
   });
 });
 

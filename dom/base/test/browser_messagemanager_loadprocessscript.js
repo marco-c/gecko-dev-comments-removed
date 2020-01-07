@@ -7,13 +7,8 @@ function checkBaseProcessCount(description) {
   const {childCount} = ppmm;
   
   
-  if (Services.prefs.getBoolPref("browser.newtabpage.activity-stream.enabled")) {
-    const extraCount = BASE_NUMBER_OF_PROCESSES + 1;
-    ok(childCount === BASE_NUMBER_OF_PROCESSES || childCount === extraCount, `${description} (${BASE_NUMBER_OF_PROCESSES} or ${extraCount})`);
-  }
-  else {
-    is(childCount, BASE_NUMBER_OF_PROCESSES, `${description} (${BASE_NUMBER_OF_PROCESSES})`);
-  }
+  const extraCount = BASE_NUMBER_OF_PROCESSES + 1;
+  ok(childCount === BASE_NUMBER_OF_PROCESSES || childCount === extraCount, `${description} (${BASE_NUMBER_OF_PROCESSES} or ${extraCount})`);
 }
 
 function processScript() {

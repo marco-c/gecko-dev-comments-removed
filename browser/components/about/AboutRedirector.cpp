@@ -21,8 +21,6 @@ namespace browser {
 
 NS_IMPL_ISUPPORTS(AboutRedirector, nsIAboutModule)
 
-bool AboutRedirector::sActivityStreamEnabled = false;
-
 struct RedirEntry {
   const char* id;
   const char* url;
@@ -77,14 +75,17 @@ static const RedirEntry kRedirMap[] = {
     nsIAboutModule::ALLOW_SCRIPT |
     nsIAboutModule::HIDE_FROM_ABOUTABOUT },
   
-  { "home", "chrome://browser/content/abouthome/aboutHome.xhtml",
+  
+  { "home", "about:blank",
     nsIAboutModule::URI_SAFE_FOR_UNTRUSTED_CONTENT |
     nsIAboutModule::URI_MUST_LOAD_IN_CHILD |
     nsIAboutModule::ALLOW_SCRIPT |
     nsIAboutModule::MAKE_LINKABLE |
     nsIAboutModule::ENABLE_INDEXED_DB },
-  
   { "newtab", "about:blank",
+    nsIAboutModule::ENABLE_INDEXED_DB |
+    nsIAboutModule::URI_MUST_LOAD_IN_CHILD |
+    nsIAboutModule::URI_SAFE_FOR_UNTRUSTED_CONTENT |
     nsIAboutModule::ALLOW_SCRIPT },
   { "preferences", "chrome://browser/content/preferences/in-content/preferences.xul",
     nsIAboutModule::ALLOW_SCRIPT },
@@ -115,17 +116,6 @@ GetAboutModuleName(nsIURI *aURI)
   return path;
 }
 
-void
-AboutRedirector::LoadActivityStreamPrefs()
-{
-  static bool sASEnabledCacheInited = false;
-  if (!sASEnabledCacheInited) {
-    Preferences::AddBoolVarCache(&AboutRedirector::sActivityStreamEnabled,
-                                 "browser.newtabpage.activity-stream.enabled");
-    sASEnabledCacheInited = true;
-  }
-}
-
 NS_IMETHODIMP
 AboutRedirector::NewChannel(nsIURI* aURI,
                             nsILoadInfo* aLoadInfo,
@@ -142,14 +132,11 @@ AboutRedirector::NewChannel(nsIURI* aURI,
   nsCOMPtr<nsIIOService> ioService = do_GetIOService(&rv);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  LoadActivityStreamPrefs();
-
   for (auto & redir : kRedirMap) {
     if (!strcmp(path.get(), redir.id)) {
       nsAutoCString url;
 
-      if (path.EqualsLiteral("newtab") ||
-          (path.EqualsLiteral("home") && sActivityStreamEnabled)) {
+      if (path.EqualsLiteral("newtab") || path.EqualsLiteral("home")) {
         
         nsCOMPtr<nsIAboutNewTabService> aboutNewTabService =
           do_GetService("@mozilla.org/browser/aboutnewtab-service;1", &rv);
@@ -201,24 +188,8 @@ AboutRedirector::GetURIFlags(nsIURI *aURI, uint32_t *result)
 
   nsAutoCString name = GetAboutModuleName(aURI);
 
-  LoadActivityStreamPrefs();
-
   for (auto & redir : kRedirMap) {
     if (name.Equals(redir.id)) {
-
-      
-      
-      
-      if (name.EqualsLiteral("newtab") || name.EqualsLiteral("home")) {
-        if (sActivityStreamEnabled) {
-          *result = redir.flags |
-            nsIAboutModule::URI_MUST_LOAD_IN_CHILD |
-            nsIAboutModule::ENABLE_INDEXED_DB |
-            nsIAboutModule::URI_SAFE_FOR_UNTRUSTED_CONTENT;
-          return NS_OK;
-        }
-      }
-
       *result = redir.flags;
       return NS_OK;
     }

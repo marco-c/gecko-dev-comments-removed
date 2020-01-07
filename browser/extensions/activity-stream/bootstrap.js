@@ -9,7 +9,6 @@ Cu.importGlobalProperties(["fetch"]);
 ChromeUtils.defineModuleGetter(this, "Services",
   "resource://gre/modules/Services.jsm");
 
-const ACTIVITY_STREAM_ENABLED_PREF = "browser.newtabpage.activity-stream.enabled";
 const BROWSER_READY_NOTIFICATION = "sessionstore-windows-restored";
 const PREF_CHANGED_TOPIC = "nsPref:changed";
 const REASON_SHUTDOWN_ON_PREF_CHANGE = "PREF_OFF";
@@ -51,7 +50,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "ActivityStream",
 
 
 
-
 function init(reason) {
   
   if (activityStream && activityStream.initialized) {
@@ -72,24 +70,11 @@ function init(reason) {
 
 
 
-
 function uninit(reason) {
   
   if (activityStream) {
     activityStream.uninit(reason);
     activityStream = null;
-  }
-}
-
-
-
-
-
-function onPrefChanged() {
-  if (Services.prefs.getBoolPref(ACTIVITY_STREAM_ENABLED_PREF, false)) {
-    init(REASON_STARTUP_ON_PREF_CHANGE);
-  } else {
-    uninit(REASON_SHUTDOWN_ON_PREF_CHANGE);
   }
 }
 
@@ -130,14 +115,7 @@ function migratePref(oldPrefName, cbIfNotDefault) {
 
 function onBrowserReady() {
   waitingForBrowserReady = false;
-
-  
-  Services.prefs.addObserver(ACTIVITY_STREAM_ENABLED_PREF, observe); 
-
-  
-  if (Services.prefs.getBoolPref(ACTIVITY_STREAM_ENABLED_PREF, false)) {
-    init(startupReason);
-  }
+  init(startupReason);
 
   
   migratePref("browser.newtabpage.rows", rows => {
@@ -164,11 +142,6 @@ function observe(subject, topic, data) {
       Services.obs.removeObserver(observe, BROWSER_READY_NOTIFICATION);
       
       Services.tm.dispatchToMainThread(() => onBrowserReady());
-      break;
-    case PREF_CHANGED_TOPIC:
-      if (data === ACTIVITY_STREAM_ENABLED_PREF) {
-        onPrefChanged();
-      }
       break;
   }
 }
@@ -201,9 +174,6 @@ this.shutdown = function shutdown(data, reason) {
   
   if (waitingForBrowserReady) {
     Services.obs.removeObserver(observe, BROWSER_READY_NOTIFICATION);
-  } else {
-    
-    Services.prefs.removeObserver(ACTIVITY_STREAM_ENABLED_PREF, observe);
   }
 
   

@@ -228,12 +228,6 @@ add_task(async function test_preload_crash() {
   }
 
   
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [[ "browser.newtabpage.activity-stream.enabled", true ]]
-  });
-
-  
   gBrowser.removePreloadedBrowser();
 
   
