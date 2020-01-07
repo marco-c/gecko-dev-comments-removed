@@ -38,7 +38,6 @@ protected:
   virtual ~nsFind();
 
   
-  
   bool mFindBackward;
   bool mCaseSensitive;
 

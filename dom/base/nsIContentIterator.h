@@ -12,7 +12,7 @@
 #include "mozilla/RangeBoundary.h"
 
 class nsINode;
-class nsIDOMRange;
+class nsRange;
 
 #define NS_ICONTENTITERATOR_IID \
 { 0x2550078e, 0xae87, 0x4914, \
@@ -30,7 +30,7 @@ public:
   
 
 
-  virtual nsresult Init(nsIDOMRange* aRange) = 0;
+  virtual nsresult Init(nsRange* aRange) = 0;
 
   
 
