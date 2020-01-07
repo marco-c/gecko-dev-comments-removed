@@ -55,7 +55,9 @@ async function runTest(searchStr) {
   });
 
   
-  controller.handleKeyNavigation(Ci.nsIDOMKeyEvent.DOM_VK_DOWN);
+  
+  
+  controller.handleKeyNavigation(0x28 );
   let expectedValue = matches[1];
   Assert.equal(input.textValue, expectedValue,
                "Should have filled second match");
@@ -67,7 +69,9 @@ async function runTest(searchStr) {
   
   
   
-  controller.handleKeyNavigation(Ci.nsIDOMKeyEvent.DOM_VK_UP);
+  
+  
+  controller.handleKeyNavigation(0x26 );
   expectedValue = searchStr + matches[0].substr(searchStr.length);
   Assert.equal(input.textValue, expectedValue,
                "Should have filled first match again");

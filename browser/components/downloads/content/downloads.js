@@ -416,9 +416,9 @@ var DownloadsPanel = {
     
     
     
-    if ((aEvent.keyCode == Ci.nsIDOMKeyEvent.DOM_VK_TAB ||
-        aEvent.keyCode == Ci.nsIDOMKeyEvent.DOM_VK_UP ||
-        aEvent.keyCode == Ci.nsIDOMKeyEvent.DOM_VK_DOWN) &&
+    if ((aEvent.keyCode == aEvent.DOM_VK_TAB ||
+         aEvent.keyCode == aEvent.DOM_VK_UP ||
+         aEvent.keyCode == aEvent.DOM_VK_DOWN) &&
         !this.keyFocusing) {
       this.keyFocusing = true;
       
@@ -430,7 +430,7 @@ var DownloadsPanel = {
       return;
     }
 
-    if (aEvent.keyCode == Ci.nsIDOMKeyEvent.DOM_VK_DOWN) {
+    if (aEvent.keyCode == aEvent.DOM_VK_DOWN) {
       
       
       if (richListBox.selectedItem === richListBox.lastChild ||
@@ -455,7 +455,7 @@ var DownloadsPanel = {
   _onKeyDown(aEvent) {
     
     
-    if (aEvent.keyCode == Ci.nsIDOMKeyEvent.DOM_VK_UP &&
+    if (aEvent.keyCode == aEvent.DOM_VK_UP &&
         document.activeElement.parentNode.id === "downloadsFooter" &&
         DownloadsView.richListBox.firstChild) {
       DownloadsView.richListBox.focus();
@@ -464,7 +464,7 @@ var DownloadsPanel = {
       return;
     }
 
-    let pasting = aEvent.keyCode == Ci.nsIDOMKeyEvent.DOM_VK_V &&
+    let pasting = aEvent.keyCode == aEvent.DOM_VK_V &&
                   aEvent.getModifierState("Accel");
 
     if (!pasting) {

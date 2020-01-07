@@ -19,7 +19,9 @@ AutoCompleteInput.prototype = Object.create(AutoCompleteInputBase.prototype);
 add_test(function test_keyNavigation() {
   doSearch("moz", "mozilla.com", "http://www.mozilla.com", function(aController) {
     Assert.equal(aController.input.textValue, "mozilla.com");
-    aController.handleKeyNavigation(Ci.nsIDOMKeyEvent.DOM_VK_RIGHT);
+    
+    
+    aController.handleKeyNavigation(0x27 );
     Assert.equal(aController.input.textValue, "mozilla.com");
   });
 });

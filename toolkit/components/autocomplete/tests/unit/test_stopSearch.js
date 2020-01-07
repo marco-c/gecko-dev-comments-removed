@@ -133,7 +133,9 @@ var gTests = [
 
   function(controller) {
     print("handleKeyNavigation");
-    controller.handleKeyNavigation(Ci.nsIDOMKeyEvent.DOM_VK_UP);
+    
+    
+    controller.handleKeyNavigation(0x26 );
   },
 ];
 

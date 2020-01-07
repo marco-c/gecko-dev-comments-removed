@@ -31,7 +31,9 @@ add_test(function test_handleEnter_key() {
     Assert.equal(aController.getFinalCompleteValueAt(1), "http://www.mozilla.org");
 
     Assert.equal(aController.input.popup.selectedIndex, 0);
-    aController.handleKeyNavigation(Ci.nsIDOMKeyEvent.DOM_VK_DOWN);
+    
+    
+    aController.handleKeyNavigation(0x28 );
     Assert.equal(aController.input.popup.selectedIndex, 1);
     
     
