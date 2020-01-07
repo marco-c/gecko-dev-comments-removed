@@ -411,8 +411,6 @@ var interfaceNamesInGlobalScope =
 
     "HTMLCollection",
 
-    "HTMLContentElement",
-
     "HTMLDataElement",
 
     "HTMLDataListElement",

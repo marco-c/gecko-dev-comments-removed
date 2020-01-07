@@ -49,7 +49,6 @@
 #include "mozilla/dom/FileBlobImpl.h"
 #include "mozilla/dom/HTMLInputElement.h"
 #include "mozilla/dom/HTMLTemplateElement.h"
-#include "mozilla/dom/HTMLContentElement.h"
 #include "mozilla/dom/IDTracker.h"
 #include "mozilla/dom/IPCBlobUtils.h"
 #include "mozilla/dom/Promise.h"
@@ -7536,9 +7535,8 @@ nsContentUtils::IsContentInsertionPoint(nsIContent* aContent)
   }
 
   
-  HTMLContentElement* contentElement =
-    HTMLContentElement::FromContent(aContent);
-  return contentElement && contentElement->IsInsertionPoint();
+  
+  return false;
 }
 
 
@@ -7553,14 +7551,6 @@ nsContentUtils::HasDistributedChildren(nsIContent* aContent)
     
     
     return true;
-  }
-
-  HTMLContentElement* contentEl = HTMLContentElement::FromContent(aContent);
-  if (contentEl && contentEl->IsInsertionPoint()) {
-    
-    
-    
-    return contentEl->MatchedNodes().IsEmpty();
   }
 
   return false;

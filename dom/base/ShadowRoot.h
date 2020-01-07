@@ -24,7 +24,6 @@ namespace mozilla {
 namespace dom {
 
 class Element;
-class HTMLContentElement;
 class ShadowRootStyleSheetList;
 
 class ShadowRoot final : public DocumentFragment,
@@ -72,27 +71,6 @@ public:
   void DistributeAllNodes();
 
 private:
-  
-
-
-
-
-
-
-
-
-  const HTMLContentElement* DistributeSingleNode(nsIContent* aContent);
-
-  
-
-
-
-
-
-
-
-
-  const HTMLContentElement* RemoveDistributedNode(nsIContent* aContent);
 
   
 
@@ -108,9 +86,6 @@ private:
   bool IsPooledNode(nsIContent* aChild) const;
 
 public:
-  void AddInsertionPoint(HTMLContentElement* aInsertionPoint);
-  void RemoveInsertionPoint(HTMLContentElement* aInsertionPoint);
-
   void SetInsertionPointChanged() { mInsertionPointChanged = true; }
 
   void SetAssociatedBinding(nsXBLBinding* aBinding) { mAssociatedBinding = aBinding; }
@@ -118,9 +93,6 @@ public:
   JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
 
   static ShadowRoot* FromNode(nsINode* aNode);
-
-  static void RemoveDestInsertionPoint(nsIContent* aInsertionPoint,
-                                       nsTArray<nsIContent*>& aDestInsertionPoints);
 
   
   Element* GetElementById(const nsAString& aElementId);
@@ -145,13 +117,6 @@ protected:
   virtual ~ShadowRoot();
 
   ShadowRootMode mMode;
-
-  
-  
-  
-  
-  
-  nsTArray<HTMLContentElement*> mInsertionPoints;
 
   nsTHashtable<nsIdentifierMapEntry> mIdentifierMap;
   nsXBLPrototypeBinding* mProtoBinding;
