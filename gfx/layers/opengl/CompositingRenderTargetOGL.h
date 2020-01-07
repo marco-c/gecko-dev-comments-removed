@@ -185,7 +185,7 @@ private:
 
 
   RefPtr<CompositorOGL> mCompositor;
-  GLContext* mGL;
+  RefPtr<GLContext> mGL;
   GLuint mTextureHandle;
   GLuint mFBO;
 };
