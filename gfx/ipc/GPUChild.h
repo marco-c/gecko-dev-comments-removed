@@ -37,6 +37,9 @@ public:
 
   bool EnsureGPUReady();
 
+  PAPZInputBridgeChild* AllocPAPZInputBridgeChild(const uint64_t& aLayersId) override;
+  bool DeallocPAPZInputBridgeChild(PAPZInputBridgeChild* aActor) override;
+
   
   void OnVarChanged(const GfxVarUpdate& aVar) override;
 

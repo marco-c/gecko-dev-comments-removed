@@ -481,6 +481,13 @@ public:
 
   static CompositorBridgeParent* GetCompositorBridgeParentFromLayersId(const uint64_t& aLayersId);
 
+  
+
+
+
+
+  static already_AddRefed<IAPZCTreeManager> GetAPZCTreeManager(uint64_t aLayersId);
+
 #if defined(MOZ_WIDGET_ANDROID)
   gfx::IntSize GetEGLSurfaceSize() {
     return mEGLSurfaceSize;
@@ -495,13 +502,6 @@ private:
 
 
   void StopAndClearResources();
-
-  
-
-
-
-
-  static already_AddRefed<IAPZCTreeManager> GetAPZCTreeManager(uint64_t aLayersId);
 
   
 

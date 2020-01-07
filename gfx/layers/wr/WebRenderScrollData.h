@@ -30,6 +30,7 @@ struct ActiveScrolledRoot;
 namespace layers {
 
 class Layer;
+class WebRenderLayerManager;
 class WebRenderScrollData;
 
 

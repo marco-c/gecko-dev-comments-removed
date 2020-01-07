@@ -9,6 +9,7 @@
 #include "InputData.h"                  
 #include "mozilla/dom/TabParent.h"      
 #include "mozilla/layers/APZCCallbackHelper.h" 
+#include "mozilla/layers/APZInputBridgeChild.h" 
 #include "mozilla/layers/RemoteCompositorSession.h" 
 
 namespace mozilla {
@@ -19,6 +20,10 @@ APZCTreeManagerChild::APZCTreeManagerChild()
 {
 }
 
+APZCTreeManagerChild::~APZCTreeManagerChild()
+{
+}
+
 void
 APZCTreeManagerChild::SetCompositorSession(RemoteCompositorSession* aSession)
 {
@@ -26,6 +31,26 @@ APZCTreeManagerChild::SetCompositorSession(RemoteCompositorSession* aSession)
   
   MOZ_ASSERT(!mCompositorSession ^ !aSession);
   mCompositorSession = aSession;
+}
+
+void
+APZCTreeManagerChild::SetInputBridge(APZInputBridgeChild* aInputBridge)
+{
+  
+  MOZ_ASSERT(XRE_IsParentProcess());
+  MOZ_ASSERT(!mInputBridge);
+
+  mInputBridge = aInputBridge;
+}
+
+void
+APZCTreeManagerChild::Destroy()
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  if (mInputBridge) {
+    mInputBridge->Destroy();
+    mInputBridge = nullptr;
+  }
 }
 
 nsEventStatus
