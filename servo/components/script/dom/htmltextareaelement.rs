@@ -233,7 +233,7 @@ impl HTMLTextAreaElementMethods for HTMLTextAreaElement {
         
         
         if !self.value_dirty.get() {
-            self.reset();
+            self.reset(false);
         }
     }
 
@@ -244,26 +244,7 @@ impl HTMLTextAreaElementMethods for HTMLTextAreaElement {
 
     
     fn SetValue(&self, value: DOMString) {
-        let mut textinput = self.textinput.borrow_mut();
-
-        
-        let old_value = textinput.get_content();
-        let old_selection = textinput.selection_origin;
-
-        
-        textinput.set_content(value);
-
-        
-        self.value_dirty.set(true);
-
-        if old_value != textinput.get_content() {
-            
-            textinput.clear_selection_to_limit(Direction::Forward);
-        } else {
-            textinput.selection_origin = old_selection;
-        }
-
-        self.upcast::<Node>().dirty(NodeDamage::OtherNodeDamage);
+        self.update_text_contents(value, true);
     }
 
     
@@ -325,15 +306,39 @@ impl HTMLTextAreaElementMethods for HTMLTextAreaElement {
 
 
 impl HTMLTextAreaElement {
-    pub fn reset(&self) {
+    pub fn reset(&self,  update_text_cursor: bool) {
         
-        self.SetValue(self.DefaultValue());
+        self.update_text_contents(self.DefaultValue(), update_text_cursor);
         self.value_dirty.set(false);
     }
 
     #[allow(unrooted_must_root)]
     fn selection(&self) -> TextControlSelection<Self> {
         TextControlSelection::new(&self, &self.textinput)
+    }
+
+    
+    fn update_text_contents(&self, value: DOMString, update_text_cursor: bool) {
+        let mut textinput = self.textinput.borrow_mut();
+
+        
+        let old_value = textinput.get_content();
+        let old_selection = textinput.selection_origin;
+
+        
+        textinput.set_content(value, update_text_cursor);
+
+        
+        self.value_dirty.set(true);
+
+        if old_value != textinput.get_content() {
+            
+            textinput.clear_selection_to_limit(Direction::Forward, update_text_cursor);
+        } else {
+            textinput.selection_origin = old_selection;
+        }
+
+        self.upcast::<Node>().dirty(NodeDamage::OtherNodeDamage);
     }
 }
 
@@ -427,7 +432,7 @@ impl VirtualMethods for HTMLTextAreaElement {
             s.children_changed(mutation);
         }
         if !self.value_dirty.get() {
-            self.reset();
+            self.reset(false);
         }
     }
 
@@ -478,7 +483,7 @@ impl VirtualMethods for HTMLTextAreaElement {
         self.super_type().unwrap().pop();
 
         
-        self.reset();
+        self.reset(false);
     }
 }
 
