@@ -6,7 +6,7 @@ runHeuristicsTest([
   {
     fixturePath: "Checkout_ShippingAddress.html",
     expectedResult: [
-      [[]], 
+      [], 
       [[
         {"section": "", "addressType": "", "contactType": "", "fieldName": "given-name"},
         {"section": "", "addressType": "", "contactType": "", "fieldName": "family-name"},
@@ -26,7 +26,7 @@ runHeuristicsTest([
   }, {
     fixturePath: "Checkout_Payment.html",
     expectedResult: [
-      [[]], 
+      [], 
       [[ 
         {"section": "", "addressType": "", "contactType": "", "fieldName": "email"},
       ]],

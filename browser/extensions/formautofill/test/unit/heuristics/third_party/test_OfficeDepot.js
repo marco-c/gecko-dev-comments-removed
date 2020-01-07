@@ -55,9 +55,9 @@ runHeuristicsTest([
   }, {
     fixturePath: "SignIn.html",
     expectedResult: [
-      [[ 
+      [ 
 
-      ]],
+      ],
     ],
   },
 ], "../../../fixtures/third_party/OfficeDepot/");

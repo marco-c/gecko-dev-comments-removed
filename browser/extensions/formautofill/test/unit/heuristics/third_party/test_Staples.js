@@ -6,7 +6,7 @@ runHeuristicsTest([
   {
     fixturePath: "Basic.html",
     expectedResult: [
-      [[ 
+      [ 
 
 
 
@@ -14,7 +14,7 @@ runHeuristicsTest([
 
 
 
-      ]],
+      ],
     ],
   }, {
     fixturePath: "Basic_ac_on.html",

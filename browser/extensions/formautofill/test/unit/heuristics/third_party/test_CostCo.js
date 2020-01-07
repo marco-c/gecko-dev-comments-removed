@@ -51,14 +51,13 @@ runHeuristicsTest([
         {"section": "", "addressType": "", "contactType": "", "fieldName": "cc-exp-month"},
         {"section": "", "addressType": "", "contactType": "", "fieldName": "cc-exp-year"},
 
-
         {"section": "", "addressType": "", "contactType": "", "fieldName": "cc-name"}, 
       ]],
       [[
         {"section": "", "addressType": "", "contactType": "", "fieldName": "cc-number"}, 
       ]],
       [],
-      [[]],
+      [],
       [[
         {"section": "", "addressType": "", "contactType": "", "fieldName": "given-name"},
         {"section": "", "addressType": "", "contactType": "", "fieldName": "additional-name"}, 
@@ -96,7 +95,7 @@ runHeuristicsTest([
   }, {
     fixturePath: "SignIn.html",
     expectedResult: [
-      [[]],
+      [],
       [],
       [[
         {"section": "", "addressType": "", "contactType": "", "fieldName": "email"},

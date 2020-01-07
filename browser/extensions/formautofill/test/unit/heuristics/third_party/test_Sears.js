@@ -7,13 +7,11 @@ runHeuristicsTest([
     fixturePath: "ShippingAddress.html",
     expectedResult: [
       [],
-      [[]], 
-      [[ 
+      [], 
+      [ 
 
-      ]],
-      [[ 
-
-
+      ],
+      [ 
 
 
 
@@ -24,7 +22,9 @@ runHeuristicsTest([
 
 
 
-      ]],
+
+
+      ],
       [ 
 
 
@@ -40,18 +40,18 @@ runHeuristicsTest([
 
 
       ],
-      [[ 
+      [ 
 
-      ]],
-      [[ 
+      ],
+      [ 
 
-      ]],
+      ],
     ],
   }, {
     fixturePath: "PaymentOptions.html",
     expectedResult: [
       [],
-      [[]], 
+      [], 
       [[ 
         {"section": "", "addressType": "", "contactType": "", "fieldName": "cc-number"},
         
