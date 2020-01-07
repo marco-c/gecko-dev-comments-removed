@@ -378,6 +378,14 @@ public:
 
 
 
+  static bool CallWithIndirectShadowTree(
+        uint64_t aId,
+        const std::function<void(LayerTreeState&)>& aFunc);
+
+  
+
+
+
 
 
 
