@@ -19,11 +19,8 @@ class DelayBuffer final
   typedef dom::ChannelInterpretation ChannelInterpretation;
 
 public:
-  
-  
-  DelayBuffer(double aMaxDelayTicks, double aSmoothingRate)
-    : mSmoothingRate(aSmoothingRate)
-    , mCurrentDelay(-1.0)
+  explicit DelayBuffer(double aMaxDelayTicks)
+    : mCurrentDelay(-1.0)
     
     , mMaxDelayTicks(ceil(aMaxDelayTicks))
     , mCurrentChunk(0)
@@ -96,7 +93,6 @@ private:
   FallibleTArray<AudioChunk> mChunks;
   
   AutoTArray<const float*,GUESS_AUDIO_CHANNELS> mUpmixChannels;
-  double mSmoothingRate;
   
   double mCurrentDelay;
   
