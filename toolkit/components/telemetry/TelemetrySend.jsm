@@ -59,7 +59,7 @@ const PING_FORMAT_VERSION = 4;
 
 const MS_IN_A_MINUTE = 60 * 1000;
 
-const PING_TYPE_OPTOUT = "optout";
+const PING_TYPE_DELETION = "deletion";
 
 
 const MIDNIGHT_FUZZING_INTERVAL_MS = 60 * MS_IN_A_MINUTE;
@@ -122,8 +122,8 @@ function isV4PingFormat(aPing) {
 
 
 
-function isOptoutPing(aPing) {
-  return isV4PingFormat(aPing) && (aPing.type == PING_TYPE_OPTOUT);
+function isDeletionPing(aPing) {
+  return isV4PingFormat(aPing) && (aPing.type == PING_TYPE_DELETION);
 }
 
 
@@ -131,7 +131,11 @@ function isOptoutPing(aPing) {
 
 
 
+
 function savePing(aPing) {
+  if (isDeletionPing(aPing)) {
+    return TelemetryStorage.saveDeletionPing(aPing);
+  }
   return TelemetryStorage.savePendingPing(aPing);
 }
 
@@ -449,9 +453,8 @@ var SendScheduler = {
       
       
       if (!TelemetrySendImpl.sendingEnabled()) {
-        
-        pending = [];
-        current = current.filter(p => isOptoutPing(p));
+        pending = pending.filter(pingInfo => TelemetryStorage.isDeletionPing(pingInfo.id));
+        current = current.filter(p => isDeletionPing(p));
       }
       this._log.trace("_doSendTask - can send - pending: " + pending.length + ", current: " + current.length);
 
@@ -944,13 +947,9 @@ var TelemetrySendImpl = {
         try {
           await this._doPing(ping, ping.id, false);
         } catch (ex) {
-          if (isOptoutPing(ping)) {
-            
-            this._log.info("sendPings - optout ping " + ping.id + " not sent, discarding", ex);
-          } else {
-            this._log.info("sendPings - ping " + ping.id + " not sent, saving to disk", ex);
-            await savePing(ping);
-          }
+          this._log.info("sendPings - ping " + ping.id + " not sent, saving to disk", ex);
+          
+          await savePing(ping);
         } finally {
           this._currentPings.delete(ping.id);
         }
@@ -1022,6 +1021,9 @@ var TelemetrySendImpl = {
     }
 
     if (success && isPersisted) {
+      if (TelemetryStorage.isDeletionPing(id)) {
+        return TelemetryStorage.removeDeletionPing();
+      }
       return TelemetryStorage.removePendingPing(id);
     }
     return Promise.resolve();
@@ -1242,7 +1244,7 @@ var TelemetrySendImpl = {
     
     if (IS_UNIFIED_TELEMETRY) {
       
-      if (ping && isOptoutPing(ping)) {
+      if (ping && isDeletionPing(ping)) {
         return true;
       }
       return Services.prefs.getBoolPref(TelemetryUtils.Preferences.FhrUploadEnabled, false);
@@ -1279,11 +1281,8 @@ var TelemetrySendImpl = {
   async _persistCurrentPings() {
     for (let [id, ping] of this._currentPings) {
       try {
-        
-        if (!isOptoutPing(ping)) {
-          await savePing(ping);
-          this._log.trace("_persistCurrentPings - saved ping " + id);
-        }
+        await savePing(ping);
+        this._log.trace("_persistCurrentPings - saved ping " + id);
       } catch (ex) {
         this._log.error("_persistCurrentPings - failed to save ping " + id, ex);
       } finally {

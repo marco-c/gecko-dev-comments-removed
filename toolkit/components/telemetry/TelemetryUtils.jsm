@@ -123,13 +123,6 @@ var TelemetryUtils = {
   
 
 
-  get knownClientID() {
-    return "c0ffeec0-ffee-c0ff-eec0-ffeec0ffeec0";
-  },
-
-  
-
-
   get isContentProcess() {
     return IS_CONTENT_PROCESS;
   },

@@ -26,6 +26,7 @@ const Utils = TelemetryUtils;
 const DATAREPORTING_DIR = "datareporting";
 const PINGS_ARCHIVE_DIR = "archived";
 const ABORTED_SESSION_FILE_NAME = "aborted-session-ping";
+const DELETION_PING_FILE_NAME = "pending-deletion-ping";
 const SESSION_STATE_FILE_NAME = "session-state.json";
 
 XPCOMUtils.defineLazyGetter(this, "gDataReportingDir", function() {
@@ -36,6 +37,9 @@ XPCOMUtils.defineLazyGetter(this, "gPingsArchivePath", function() {
 });
 XPCOMUtils.defineLazyGetter(this, "gAbortedSessionFilePath", function() {
   return OS.Path.join(gDataReportingDir, ABORTED_SESSION_FILE_NAME);
+});
+XPCOMUtils.defineLazyGetter(this, "gDeletionPingFilePath", function() {
+  return OS.Path.join(gDataReportingDir, DELETION_PING_FILE_NAME);
 });
 ChromeUtils.defineModuleGetter(this, "CommonUtils",
                                "resource://services-common/utils.js");
@@ -216,14 +220,6 @@ var TelemetryStorage = {
   
 
 
-
-  removeAppDataPings() {
-    return TelemetryStorageImpl.removeAppDataPings();
-  },
-
-  
-
-
   reset() {
     return TelemetryStorageImpl.reset();
   },
@@ -336,6 +332,30 @@ var TelemetryStorage = {
 
   loadAbortedSessionPing() {
     return TelemetryStorageImpl.loadAbortedSessionPing();
+  },
+
+  
+
+
+
+
+  saveDeletionPing(ping) {
+    return TelemetryStorageImpl.saveDeletionPing(ping);
+  },
+
+  
+
+
+
+  removeDeletionPing() {
+    return TelemetryStorageImpl.removeDeletionPing();
+  },
+
+  
+
+
+  isDeletionPing(aPingId) {
+    return TelemetryStorageImpl.isDeletionPing(aPingId);
   },
 
   
@@ -541,6 +561,8 @@ var TelemetryStorageImpl = {
   
   _abortedSessionSerializer: new SaveSerializer(),
   
+  _deletionPingSerializer: new SaveSerializer(),
+  
   _stateSaveSerializer: new SaveSerializer(),
 
   
@@ -591,6 +613,10 @@ var TelemetryStorageImpl = {
     
     await this._abortedSessionSerializer.flushTasks().catch(ex => {
       this._log.error("shutdown - failed to flush aborted-session writes", ex);
+    });
+
+    await this._deletionPingSerializer.flushTasks().catch(ex => {
+      this._log.error("shutdown - failed to flush deletion ping writes", ex);
     });
 
     if (this._cleanArchiveTask) {
@@ -1453,14 +1479,14 @@ var TelemetryStorageImpl = {
 
 
 
-  async* _iterateAppDataPings() {
-    this._log.trace("_iterateAppDataPings");
+  async _migrateAppDataPings() {
+    this._log.trace("_migrateAppDataPings");
 
     
     
     
     if (!OS.Constants.Path.userApplicationDataDir) {
-      this._log.trace("_iterateAppDataPings - userApplicationDataDir is not defined. Is this a test?");
+      this._log.trace("_migrateAppDataPings - userApplicationDataDir is not defined. Is this a test?");
       return;
     }
 
@@ -1472,56 +1498,29 @@ var TelemetryStorageImpl = {
     try {
       
       if (!(await iter.exists())) {
-        this._log.trace("_iterateAppDataPings - the AppData pending pings directory doesn't exist.");
+        this._log.trace("_migrateAppDataPings - the AppData pending pings directory doesn't exist.");
         return;
       }
 
       let files = (await iter.nextBatch()).filter(e => !e.isDir);
       for (let file of files) {
-        yield file;
+        try {
+          
+          const pingData = await this.loadPingFile(file.path);
+
+          
+          
+          await TelemetryStorage.savePing(pingData, true);
+
+          
+          await OS.File.remove(file.path);
+        } catch (ex) {
+          this._log.error("_migrateAppDataPings - failed to remove file " + file.path, ex);
+          continue;
+        }
       }
     } finally {
       await iter.close();
-    }
-  },
-
-  
-
-
-
-  async removeAppDataPings() {
-    this._log.trace("removeAppDataPings");
-
-    for await (const file of this._iterateAppDataPings()) {
-      try {
-        await OS.File.remove(file.path);
-      } catch (ex) {
-        this._log.error("removeAppDataPings - failed to remove file " + file.path, ex);
-      }
-    }
-  },
-
-  
-
-
-
-  async _migrateAppDataPings() {
-    this._log.trace("_migrateAppDataPings");
-
-    for await (const file of this._iterateAppDataPings()) {
-      try {
-        
-        const pingData = await this.loadPingFile(file.path);
-
-        
-        
-        await TelemetryStorage.savePing(pingData, true);
-
-        
-        await OS.File.remove(file.path);
-      } catch (ex) {
-        this._log.error("_migrateAppDataPings - failed to remove file " + file.path, ex);
-      }
     }
   },
 
@@ -1615,6 +1614,17 @@ var TelemetryStorageImpl = {
       }
     } finally {
       await iter.close();
+    }
+
+    
+    if (await OS.File.exists(gDeletionPingFilePath)) {
+      this._log.trace("_scanPendingPings - Adding pending deletion ping.");
+      
+      
+      this._pendingPings.set(Utils.generateUUID(), {
+        path: gDeletionPingFilePath,
+        lastModificationDate: Date.now(),
+      });
     }
 
     this._scannedPendingDirectory = true;
@@ -1758,6 +1768,53 @@ var TelemetryStorageImpl = {
         }
       }
     });
+  },
+
+  
+
+
+
+
+  async saveDeletionPing(ping) {
+    this._log.trace("saveDeletionPing - ping path: " + gDeletionPingFilePath);
+    await OS.File.makeDir(gDataReportingDir, { ignoreExisting: true });
+
+    let p = this._deletionPingSerializer.enqueueTask(() =>
+      this.savePingToFile(ping, gDeletionPingFilePath, true));
+    this._trackPendingPingSaveTask(p);
+    return p;
+  },
+
+  
+
+
+
+  async removeDeletionPing() {
+    return this._deletionPingSerializer.enqueueTask(async () => {
+      try {
+        await OS.File.remove(gDeletionPingFilePath, { ignoreAbsent: false });
+        this._log.trace("removeDeletionPing - success");
+      } catch (ex) {
+        if (ex.becauseNoSuchFile) {
+          this._log.trace("removeDeletionPing - no such file");
+        } else {
+          this._log.error("removeDeletionPing - error removing ping", ex);
+        }
+      }
+    });
+  },
+
+  isDeletionPing(aPingId) {
+    let pingInfo = this._pendingPings.get(aPingId);
+    if (!pingInfo) {
+      return false;
+    }
+
+    if (pingInfo.path != gDeletionPingFilePath) {
+      return false;
+    }
+
+    return true;
   },
 
   
