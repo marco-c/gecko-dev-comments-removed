@@ -47,6 +47,9 @@ module.exports = {
     "mozilla/import-content-task-globals": "error",
     "mozilla/import-headjs-globals": "error",
     "mozilla/mark-test-function-used": "error",
+    
+    
+    "mozilla/no-define-cc-etc": "off",
     "no-shadow": "error"
   }
 };

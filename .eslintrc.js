@@ -54,5 +54,34 @@ module.exports = {
         "varsIgnorePattern": "^Cc|Ci|Cu|Cr|EXPORTED_SYMBOLS"
       }]
     }
+  }, {
+    
+    
+    "files": [
+      "accessible/**",
+      "browser/**",
+      "devtools/**",
+      "dom/**",
+      "extensions/pref/**",
+      "mobile/android/**",
+      "security/manager/**",
+      "services/**",
+      "storage/test/**",
+      "testing/**",
+      "toolkit/**",
+      "xpcom/**",
+    ],
+    "rules": {
+      "mozilla/use-cc-etc": "off",
+    }
+  }, {
+    
+    
+    "files": [
+      "devtools/**"
+    ],
+    "rules": {
+      "mozilla/no-define-cc-etc": "off",
+    }
   }]
 };
