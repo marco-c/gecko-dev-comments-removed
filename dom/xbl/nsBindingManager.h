@@ -159,9 +159,11 @@ public:
 
   
   
-  using BoundContentBindingCallback = std::function<bool (nsXBLBinding*)>;
-  bool EnumerateBoundContentBindings(
-    const BoundContentBindingCallback& aCallback) const;
+  using BoundContentProtoBindingCallback =
+    std::function<bool (nsXBLPrototypeBinding*)>;
+
+  bool EnumerateBoundContentProtoBindings(
+      const BoundContentProtoBindingCallback&) const;
 
 protected:
   nsIXPConnectWrappedJS* GetWrappedJS(nsIContent* aContent);
