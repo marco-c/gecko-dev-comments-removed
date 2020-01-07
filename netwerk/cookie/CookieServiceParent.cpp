@@ -67,6 +67,7 @@ CookieServiceParent::CookieServiceParent()
   
   mCookieService = nsCookieService::GetSingleton();
   NS_ASSERTION(mCookieService, "couldn't get nsICookieService");
+  mProcessingCookie = false;
 }
 
 CookieServiceParent::~CookieServiceParent()
@@ -270,9 +271,14 @@ CookieServiceParent::RecvSetCookieString(const URIParams& aHost,
 
   
   nsDependentCString cookieString(aCookieString, 0);
+
+  
+  
+  mProcessingCookie = true;
   mCookieService->SetCookieStringInternal(hostURI, aIsForeign, cookieString,
-                                          aServerTime, aFromHttp, true, aAttrs,
+                                          aServerTime, aFromHttp, aAttrs,
                                           dummyChannel);
+  mProcessingCookie = false;
   return IPC_OK();
 }
 

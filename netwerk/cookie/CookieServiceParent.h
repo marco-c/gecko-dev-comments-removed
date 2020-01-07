@@ -32,6 +32,11 @@ public:
 
   void AddCookie(nsICookie *aCookie);
 
+  
+  
+  
+  
+  bool ProcessingCookie() { return mProcessingCookie; }
 protected:
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
 
@@ -62,6 +67,7 @@ protected:
                          nsIURI *aHostURI);
 
   RefPtr<nsCookieService> mCookieService;
+  bool mProcessingCookie;
 };
 
 } 
