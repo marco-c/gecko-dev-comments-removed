@@ -12,7 +12,7 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = [
+this.EXPORTED_SYMBOLS = [
   "LoginHelper",
 ];
 
@@ -26,7 +26,7 @@ ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 
 
-var LoginHelper = {
+this.LoginHelper = {
   
 
 
@@ -203,51 +203,6 @@ var LoginHelper = {
         
         return false;
       }
-    }
-
-    return false;
-  },
-
-  
-
-
-
-
-
-
-  checkForDuplicatesAndMaybeUpdate(aLogin) {
-    
-    
-    let existingLogins = Services.logins.findLogins({}, aLogin.hostname,
-                                                    aLogin.formSubmitURL,
-                                                    aLogin.httpRealm);
-    
-    
-    if (existingLogins.some(l => aLogin.matches(l, false ))) {
-      return true;
-    }
-    
-    
-    let foundMatchingLogin = false;
-    for (let existingLogin of existingLogins) {
-      if (aLogin.username == existingLogin.username) {
-        foundMatchingLogin = true;
-        existingLogin.QueryInterface(Ci.nsILoginMetaInfo);
-        if (aLogin.password != existingLogin.password &
-           aLogin.timePasswordChanged > existingLogin.timePasswordChanged) {
-          
-          
-          let propBag = Cc["@mozilla.org/hash-property-bag;1"].
-                        createInstance(Ci.nsIWritablePropertyBag);
-          propBag.setProperty("password", aLogin.password);
-          propBag.setProperty("timePasswordChanged", aLogin.timePasswordChanged);
-          Services.logins.modifyLogin(existingLogin, propBag);
-        }
-      }
-    }
-    
-    if (foundMatchingLogin) {
-      return true;
     }
 
     return false;
@@ -597,34 +552,6 @@ var LoginHelper = {
 
 
 
-
-  maybeImportLogin(loginData) {
-    
-    let login = Cc["@mozilla.org/login-manager/loginInfo;1"].createInstance(Ci.nsILoginInfo);
-    login.init(loginData.hostname,
-               loginData.formSubmitURL || (typeof(loginData.httpRealm) == "string" ? null : ""),
-               typeof(loginData.httpRealm) == "string" ? loginData.httpRealm : null,
-               loginData.username,
-               loginData.password,
-               loginData.usernameElement || "",
-               loginData.passwordElement || "");
-
-    login.QueryInterface(Ci.nsILoginMetaInfo);
-    login.timeCreated = loginData.timeCreated;
-    login.timeLastUsed = loginData.timeLastUsed || loginData.timeCreated;
-    login.timePasswordChanged = loginData.timePasswordChanged || loginData.timeCreated;
-    login.timesUsed = loginData.timesUsed || 1;
-    if (this.checkForDuplicatesAndMaybeUpdate(login)) {
-      return null;
-    }
-    return Services.logins.addLogin(login);
-  },
-
-  
-
-
-
-
   async maybeImportLogins(loginDatas) {
     let loginsToAdd = [];
     let loginMap = new Map();
@@ -657,7 +584,6 @@ var LoginHelper = {
       
       
       
-      
       let newLogins = loginMap.get(login.hostname) || [];
       if (!newLogins) {
         loginMap.set(login.hostname, newLogins);
@@ -685,12 +611,45 @@ var LoginHelper = {
         }
       }
 
-      if (this.checkForDuplicatesAndMaybeUpdate(login)) {
+      
+      
+      let existingLogins = Services.logins.findLogins({}, login.hostname,
+                                                      login.formSubmitURL,
+                                                      login.httpRealm);
+      
+      
+      if (existingLogins.some(l => login.matches(l, false ))) {
+        continue;
+      }
+      
+      
+      let foundMatchingLogin = false;
+      for (let existingLogin of existingLogins) {
+        if (login.username == existingLogin.username) {
+          foundMatchingLogin = true;
+          existingLogin.QueryInterface(Ci.nsILoginMetaInfo);
+          if (login.password != existingLogin.password &
+             login.timePasswordChanged > existingLogin.timePasswordChanged) {
+            
+            
+            let propBag = Cc["@mozilla.org/hash-property-bag;1"].
+                          createInstance(Ci.nsIWritablePropertyBag);
+            propBag.setProperty("password", login.password);
+            propBag.setProperty("timePasswordChanged", login.timePasswordChanged);
+            Services.logins.modifyLogin(existingLogin, propBag);
+          }
+        }
+      }
+      
+      if (foundMatchingLogin) {
         continue;
       }
 
       newLogins.push(login);
       loginsToAdd.push(login);
+    }
+    if (!loginsToAdd.length) {
+      return [];
     }
     return Services.logins.addLogins(loginsToAdd);
   },

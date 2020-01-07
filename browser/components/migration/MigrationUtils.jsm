@@ -4,7 +4,7 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["MigrationUtils", "MigratorPrototype"];
+this.EXPORTED_SYMBOLS = ["MigrationUtils", "MigratorPrototype"];
 
 const TOPIC_WILL_IMPORT_BOOKMARKS = "initial-migration-will-import-default-bookmarks";
 const TOPIC_DID_IMPORT_BOOKMARKS = "initial-migration-did-import-default-bookmarks";
@@ -84,7 +84,7 @@ function getMigrationBundle() {
 
 
 
-var MigratorPrototype = {
+this.MigratorPrototype = {
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIBrowserProfileMigrator]),
 
   
@@ -438,7 +438,7 @@ var MigratorPrototype = {
   },
 };
 
-var MigrationUtils = Object.freeze({
+this.MigrationUtils = Object.freeze({
   resourceTypes: {
     SETTINGS:   Ci.nsIBrowserProfileMigrator.SETTINGS,
     COOKIES:    Ci.nsIBrowserProfileMigrator.COOKIES,
@@ -1040,19 +1040,6 @@ var MigrationUtils = Object.freeze({
       this._updateHistoryUndo(places);
     }
     return PlacesUtils.asyncHistory.updatePlaces(places, options, true);
-  },
-
-  insertLoginWrapper(login) {
-    this._importQuantities.logins++;
-    let insertedLogin = LoginHelper.maybeImportLogin(login);
-    
-    
-    
-    
-    if (insertedLogin && gKeepUndoData) {
-      let {guid, timePasswordChanged} = insertedLogin;
-      gUndoData.get("logins").push({guid, timePasswordChanged});
-    }
   },
 
   async insertLoginsWrapper(logins) {
