@@ -2512,7 +2512,7 @@ JSScript::shareScriptData(JSContext* cx)
     MOZ_ASSERT(ssd);
     MOZ_ASSERT(ssd->refCount() == 1);
 
-    AutoLockForExclusiveAccess lock(cx);
+    AutoLockScriptData lock(cx->runtime());
 
     ScriptDataTable::AddPtr p = cx->scriptDataTable(lock).lookupForAdd(*ssd);
     if (p) {
@@ -2535,11 +2535,12 @@ JSScript::shareScriptData(JSContext* cx)
 }
 
 void
-js::SweepScriptData(JSRuntime* rt, AutoLockForExclusiveAccess& lock)
+js::SweepScriptData(JSRuntime* rt)
 {
     
     
 
+    AutoLockScriptData lock(rt);
     ScriptDataTable& table = rt->scriptDataTable(lock);
 
     for (ScriptDataTable::Enum e(table); !e.empty(); e.popFront()) {
@@ -2552,8 +2553,10 @@ js::SweepScriptData(JSRuntime* rt, AutoLockForExclusiveAccess& lock)
 }
 
 void
-js::FreeScriptData(JSRuntime* rt, AutoLockForExclusiveAccess& lock)
+js::FreeScriptData(JSRuntime* rt)
 {
+    AutoLockScriptData lock(rt);
+
     ScriptDataTable& table = rt->scriptDataTable(lock);
     if (!table.initialized())
         return;

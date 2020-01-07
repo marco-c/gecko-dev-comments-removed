@@ -6451,7 +6451,7 @@ GCRuntime::endSweepPhase(bool destroyingRuntime, AutoLockForExclusiveAccess& loc
 
 
 
-        SweepScriptData(rt, lock);
+        SweepScriptData(rt);
 
         
         if (rt->hasJitRuntime()) {
