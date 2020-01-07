@@ -119,16 +119,6 @@ public:
   virtual RefPtr<mozilla::dom::ServiceWorker>
   GetOrCreateServiceWorker(const mozilla::dom::ServiceWorkerDescriptor& aDescriptor);
 
-  
-  
-  
-  virtual void
-  AddServiceWorker(mozilla::dom::ServiceWorker* aServiceWorker);
-
-  
-  virtual void
-  RemoveServiceWorker(mozilla::dom::ServiceWorker* aServiceWorker);
-
 protected:
   virtual ~nsIGlobalObject();
 
