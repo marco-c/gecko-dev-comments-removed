@@ -372,6 +372,7 @@ GfxInfo::Init()
   
   
   
+  UINT flags = DIGCF_PRESENT | DIGCF_PROFILE | DIGCF_ALLCLASSES;
   if (mWindowsVersion >= kWindows8 &&
       mDeviceID[0].Length() == 0 &&
       mDeviceString[0].EqualsLiteral("RDPUDD Chained DD"))
@@ -386,12 +387,12 @@ GfxInfo::Init()
 
       
       mDeviceID[0].AssignLiteral("PCI\\VEN_1414&DEV_FEFE&SUBSYS_00000000");
+      flags |= DIGCF_DEVICEINTERFACE;
     }
   }
 
   
-  HDEVINFO devinfo = SetupDiGetClassDevsW(nullptr, mDeviceID[0].get(), nullptr,
-                                          DIGCF_PRESENT | DIGCF_PROFILE | DIGCF_ALLCLASSES);
+  HDEVINFO devinfo = SetupDiGetClassDevsW(nullptr, mDeviceID[0].get(), nullptr, flags);
 
   if (devinfo != INVALID_HANDLE_VALUE) {
     HKEY key;
