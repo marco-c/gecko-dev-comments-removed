@@ -9,6 +9,8 @@ ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 ChromeUtils.defineModuleGetter(this, "EventDispatcher",
   "resource://gre/modules/Messaging.jsm");
+ChromeUtils.defineModuleGetter(this, "Services",
+  "resource://gre/modules/Services.jsm");
 XPCOMUtils.defineLazyGetter(this, "WindowEventDispatcher",
   () => EventDispatcher.for(window));
 
@@ -23,8 +25,8 @@ XPCOMUtils.defineLazyGetter(this, "dump", () =>
 
 
 var ModuleManager = {
-  init: function() {
-    this.browser = document.getElementById("content");
+  init: function(aBrowser) {
+    this.browser = aBrowser;
     this.modules = {};
   },
 
@@ -45,8 +47,24 @@ var ModuleManager = {
   }
 };
 
+function createBrowser() {
+  const browser = window.browser = document.createElement("browser");
+  browser.setAttribute("type", "content");
+  browser.setAttribute("primary", "true");
+  browser.setAttribute("flex", "1");
+
+  
+  
+  Services.obs.notifyObservers(window, "geckoview-window-created");
+  window.document.getElementById("main-window").appendChild(browser);
+
+  browser.stop();
+  return browser;
+}
+
 function startup() {
-  ModuleManager.init();
+  const browser = createBrowser();
+  ModuleManager.init(browser);
 
   
   
@@ -69,5 +87,5 @@ function startup() {
 
   
   
-  document.getElementById("content").focus();
+  browser.focus();
 }

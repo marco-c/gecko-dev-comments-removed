@@ -9,6 +9,7 @@ package org.mozilla.geckoview;
 import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.UUID;
 
 import org.mozilla.gecko.annotation.WrapForJNI;
 import org.mozilla.gecko.EventDispatcher;
@@ -73,6 +74,9 @@ public class GeckoSession extends LayerSession
 
     private final TextInputController mTextInput = new TextInputController(this, mNativeQueue);
 
+    private String mId = UUID.randomUUID().toString().replace("-", "");
+     String getId() { return mId; }
+
     private final GeckoSessionHandler<ContentListener> mContentHandler =
         new GeckoSessionHandler<ContentListener>(
             "GeckoViewContent", this,
@@ -114,7 +118,8 @@ public class GeckoSession extends LayerSession
             "GeckoViewNavigation", this,
             new String[]{
                 "GeckoView:LocationChange",
-                "GeckoView:OnLoadUri"
+                "GeckoView:OnLoadUri",
+                "GeckoView:OnNewSession"
             }
         ) {
             @Override
@@ -137,6 +142,19 @@ public class GeckoSession extends LayerSession
                     final boolean result =
                         listener.onLoadUri(GeckoSession.this, uri, where);
                     callback.sendSuccess(result);
+                } else if ("GeckoView:OnNewSession".equals(event)) {
+                    final String uri = message.getString("uri");
+                    listener.onNewSession(GeckoSession.this, uri,
+                        new Response<GeckoSession>() {
+                            @Override
+                            public void respond(GeckoSession session) {
+                                if (session != null && session.isOpen() && session.isReady()) {
+                                    throw new IllegalArgumentException("Must use a new GeckoSession instance");
+                                }
+
+                                callback.sendSuccess(session != null ? session.getId() : null);
+                            }
+                        });
                 }
             }
         };
@@ -353,7 +371,7 @@ public class GeckoSession extends LayerSession
         public static native void open(Window instance, Compositor compositor,
                                        EventDispatcher dispatcher,
                                        GeckoBundle settings, String chromeUri,
-                                       int screenId, boolean privateMode);
+                                       int screenId, boolean privateMode, String id);
 
         @Override 
         protected void disposeNative() {
@@ -434,7 +452,7 @@ public class GeckoSession extends LayerSession
     private GeckoSessionSettings mSettings;
 
     public GeckoSession() {
-        this( null);
+        this(null);
     }
 
     public GeckoSession(final GeckoSessionSettings settings) {
@@ -447,13 +465,15 @@ public class GeckoSession extends LayerSession
         mListener.registerListeners();
     }
 
-    private void transferFrom(final Window window, final GeckoSessionSettings settings) {
+    private void transferFrom(final Window window, final GeckoSessionSettings settings,
+                              final String id) {
         if (isOpen()) {
             throw new IllegalStateException("Session is open");
         }
 
         mWindow = window;
         mSettings = new GeckoSessionSettings(settings, this);
+        mId = id;
 
         if (mWindow != null) {
             if (GeckoThread.isStateAtLeast(GeckoThread.State.PROFILE_READY)) {
@@ -471,7 +491,7 @@ public class GeckoSession extends LayerSession
     }
 
      void transferFrom(final GeckoSession session) {
-        transferFrom(session.mWindow, session.mSettings);
+        transferFrom(session.mWindow, session.mSettings, session.mId);
         session.mWindow = null;
         session.onWindowChanged();
     }
@@ -485,6 +505,7 @@ public class GeckoSession extends LayerSession
     public void writeToParcel(Parcel out, int flags) {
         out.writeStrongInterface(mWindow);
         out.writeParcelable(mSettings, flags);
+        out.writeString(mId);
     }
 
     
@@ -495,7 +516,8 @@ public class GeckoSession extends LayerSession
         final Window window = (ifce instanceof Window) ? (Window) ifce : null;
         final GeckoSessionSettings settings =
                 source.readParcelable(getClass().getClassLoader());
-        transferFrom(window, settings);
+        final String id = source.readString();
+        transferFrom(window, settings, id);
     }
 
     public static final Creator<GeckoSession> CREATOR = new Creator<GeckoSession>() {
@@ -546,6 +568,10 @@ public class GeckoSession extends LayerSession
         return mWindow != null;
     }
 
+     boolean isReady() {
+        return mNativeQueue.isReady();
+    }
+
     public void openWindow(final Context appContext) {
         ThreadUtils.assertOnUiThread();
 
@@ -567,7 +593,7 @@ public class GeckoSession extends LayerSession
 
         if (GeckoThread.isStateAtLeast(GeckoThread.State.PROFILE_READY)) {
             Window.open(mWindow, mCompositor, mEventDispatcher,
-                        mSettings.asBundle(), chromeUri, screenId, isPrivate);
+                        mSettings.asBundle(), chromeUri, screenId, isPrivate, mId);
         } else {
             GeckoThread.queueNativeCallUntil(
                 GeckoThread.State.PROFILE_READY,
@@ -577,7 +603,7 @@ public class GeckoSession extends LayerSession
                 EventDispatcher.class, mEventDispatcher,
                 GeckoBundle.class, mSettings.asBundle(),
                 String.class, chromeUri,
-                screenId, isPrivate);
+                screenId, isPrivate, mId);
         }
 
         onWindowChanged();
@@ -1306,6 +1332,16 @@ public class GeckoSession extends LayerSession
                            String uri, String elementSrc);
     }
 
+    
+
+
+    public interface Response<T> {
+        
+
+
+        void respond(T val);
+    }
+
     public interface NavigationListener {
         
 
@@ -1382,6 +1418,18 @@ public class GeckoSession extends LayerSession
 
 
         boolean onLoadUri(GeckoSession session, String uri, TargetWindow where);
+
+        
+
+
+
+
+
+
+
+
+
+        void onNewSession(GeckoSession session, String uri, Response<GeckoSession> response);
     }
 
     
