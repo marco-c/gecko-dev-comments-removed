@@ -118,12 +118,14 @@ class Config(Mapping):
 
     @property
     def ports(self):
+        
+        
+        new_ports = defaultdict(list)
+
         try:
             old_ports = self._computed_ports
         except AttributeError:
             old_ports = {}
-
-        self._computed_ports = defaultdict(list)
 
         for scheme, ports in self._ports.iteritems():
             for i, port in enumerate(ports):
@@ -136,8 +138,9 @@ class Config(Mapping):
                         port = get_port(self.server_host)
                 else:
                     port = port
-                self._computed_ports[scheme].append(port)
+                new_ports[scheme].append(port)
 
+        self._computed_ports = new_ports
         return self._computed_ports
 
     @ports.setter
