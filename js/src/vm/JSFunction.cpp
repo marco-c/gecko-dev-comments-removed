@@ -1681,8 +1681,12 @@ JSFunction::maybeRelazify(JSRuntime* rt)
 
     
     Realm* realm = this->realm();
-    if (realm->hasBeenEntered() && !rt->allowRelazificationForTesting)
-        return;
+    if (!rt->allowRelazificationForTesting) {
+        if (realm->compartment()->gcState.hasEnteredRealm)
+            return;
+
+        MOZ_ASSERT(!realm->hasBeenEnteredIgnoringJit());
+    }
 
     
     

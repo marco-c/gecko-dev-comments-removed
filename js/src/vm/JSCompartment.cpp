@@ -75,6 +75,8 @@ Realm::Realm(JSCompartment* comp, const JS::RealmOptions& options)
 
 Realm::~Realm()
 {
+    MOZ_ASSERT(!hasBeenEnteredIgnoringJit());
+
     
     JSRuntime* rt = runtimeFromMainThread();
     if (rt->lcovOutput().isEnabled())

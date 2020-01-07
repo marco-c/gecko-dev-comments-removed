@@ -575,10 +575,21 @@ struct JSCompartment
 
     
     
-    
-    
-    bool scheduledForDestruction = false;
-    bool maybeAlive = true;
+    struct {
+        
+        
+        
+        
+        bool scheduledForDestruction = false;
+        bool maybeAlive = true;
+
+        
+        
+        
+        
+        
+        bool hasEnteredRealm = false;
+    } gcState;
 
     JS::Zone* zone() { return zone_; }
     const JS::Zone* zone() const { return zone_; }
@@ -815,7 +826,21 @@ class JS::Realm : public JS::shadow::Realm
     js::ReadBarriered<js::ArgumentsObject*> unmappedArgumentsTemplate_ { nullptr };
     js::ReadBarriered<js::NativeObject*> iterResultTemplate_ { nullptr };
 
-    unsigned enterRealmDepth_ = 0;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    unsigned enterRealmDepthIgnoringJit_ = 0;
 
     enum {
         IsDebuggee = 1 << 0,
@@ -1019,16 +1044,20 @@ class JS::Realm : public JS::shadow::Realm
     }
 
     void enter() {
-        enterRealmDepth_++;
+        enterRealmDepthIgnoringJit_++;
     }
     void leave() {
-        enterRealmDepth_--;
+        MOZ_ASSERT(enterRealmDepthIgnoringJit_ > 0);
+        enterRealmDepthIgnoringJit_--;
     }
-    bool hasBeenEntered() const {
-        return enterRealmDepth_ > 0;
+    bool hasBeenEnteredIgnoringJit() const {
+        return enterRealmDepthIgnoringJit_ > 0;
     }
     bool shouldTraceGlobal() const {
-        return hasBeenEntered();
+        
+        
+        
+        return hasBeenEnteredIgnoringJit();
     }
 
     bool hasAllocationMetadataBuilder() const {
@@ -1305,8 +1334,18 @@ namespace js {
 
 
 template<typename T> inline void SetMaybeAliveFlag(T* thing) {}
-template<> inline void SetMaybeAliveFlag(JSObject* thing) {thing->compartment()->maybeAlive = true;}
-template<> inline void SetMaybeAliveFlag(JSScript* thing) {thing->compartment()->maybeAlive = true;}
+
+template<> inline void
+SetMaybeAliveFlag(JSObject* thing)
+{
+    thing->compartment()->gcState.maybeAlive = true;
+}
+
+template<> inline void
+SetMaybeAliveFlag(JSScript* thing)
+{
+    thing->compartment()->gcState.maybeAlive = true;
+}
 
 } 
 

@@ -517,8 +517,8 @@ JSContext::setRealm(JS::Realm* realm)
 {
     
     
-    MOZ_ASSERT_IF(realm_, realm_->hasBeenEntered());
-    MOZ_ASSERT_IF(realm, realm->hasBeenEntered());
+    MOZ_ASSERT_IF(realm_, realm_->hasBeenEnteredIgnoringJit());
+    MOZ_ASSERT_IF(realm, realm->hasBeenEnteredIgnoringJit());
 
     
     MOZ_ASSERT_IF(realm, CurrentThreadCanAccessZone(realm->zone()));
