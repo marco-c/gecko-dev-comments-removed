@@ -1655,6 +1655,14 @@ nsDocumentViewer::Destroy()
 {
   NS_ASSERTION(mDocument, "No document in Destroy()!");
 
+  
+  
+  
+  
+  if (mDestroyBlockedCount != 0) {
+    return NS_OK;
+  }
+
 #ifdef NS_PRINTING
   
   
@@ -1671,14 +1679,6 @@ nsDocumentViewer::Destroy()
   
   mAutoBeforeAndAfterPrint = nullptr;
 #endif
-
-  
-  
-  
-  
-  if (mDestroyBlockedCount != 0) {
-    return NS_OK;
-  }
 
   
   
