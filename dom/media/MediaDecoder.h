@@ -605,12 +605,6 @@ protected:
   Mirror<media::NullableTimeUnit> mStateMachineDuration;
 
   
-  
-  
-  
-  Mirror<int64_t> mPlaybackPosition;
-
-  
   Mirror<bool> mIsAudioDataAudible;
 
   

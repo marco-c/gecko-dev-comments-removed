@@ -120,6 +120,7 @@ struct MediaPlaybackEvent
   {
     PlaybackStarted,
     PlaybackStopped,
+    PlaybackProgressed,
     PlaybackEnded,
     SeekStarted,
     Loop,
@@ -138,6 +139,13 @@ struct MediaPlaybackEvent
   MOZ_IMPLICIT MediaPlaybackEvent(EventType aType)
     : mType(aType)
     , mData(Nothing{})
+  {
+  }
+
+  template<typename T>
+  MediaPlaybackEvent(EventType aType, T&& aArg)
+    : mType(aType)
+    , mData(Forward<T>(aArg))
   {
   }
 };
@@ -684,6 +692,9 @@ private:
 
   bool mSeamlessLoopingAllowed;
 
+  
+  int64_t mPlaybackOffset = 0;
+
 private:
   
   Mirror<media::TimeIntervals> mBuffered;
@@ -719,9 +730,6 @@ private:
   Canonical<media::TimeUnit> mCurrentPosition;
 
   
-  Canonical<int64_t> mPlaybackOffset;
-
-  
   Canonical<bool> mIsAudioDataAudible;
 
 public:
@@ -734,10 +742,6 @@ public:
   AbstractCanonical<media::TimeUnit>* CanonicalCurrentPosition()
   {
     return &mCurrentPosition;
-  }
-  AbstractCanonical<int64_t>* CanonicalPlaybackOffset()
-  {
-    return &mPlaybackOffset;
   }
   AbstractCanonical<bool>* CanonicalIsAudioDataAudible()
   {
