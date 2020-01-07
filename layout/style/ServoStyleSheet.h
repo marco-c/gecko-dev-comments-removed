@@ -99,8 +99,11 @@ public:
              nsIPrincipal* aSheetPrincipal,
              css::SheetLoadData* aLoadData,
              uint32_t aLineNumber,
-             nsCompatibility aCompatMode,
-             css::LoaderReusableStyleSheets* aReusableSheets = nullptr);
+             nsCompatibility aCompatMode);
+
+  
+  
+  void FinishAsyncParse(already_AddRefed<RawServoStyleSheetContents> aSheetContents);
 
   
   

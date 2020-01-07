@@ -147,6 +147,13 @@ VARCACHE_PREF(
 
 
 VARCACHE_PREF(
+  "layout.css.parsing.parallel",
+   layout_css_parsing_parallel,
+  bool, false
+)
+
+
+VARCACHE_PREF(
   "layout.css.font-display.enabled",
    layout_css_font_display_enabled,
   bool, true

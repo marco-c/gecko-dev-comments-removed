@@ -765,6 +765,11 @@ nsLayoutStylesheetCache::LoadSheet(nsIURI* aURI,
 
   nsZipArchive::sFileCorruptedReason = nullptr;
 
+  
+  
+  
+  
+  
   nsresult rv = gCSSLoader->LoadSheetSync(aURI, aParsingMode, true, aSheet);
   if (NS_FAILED(rv)) {
     ErrorLoadingSheet(aURI,
