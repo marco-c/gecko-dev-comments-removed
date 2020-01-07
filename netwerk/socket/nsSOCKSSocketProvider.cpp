@@ -43,6 +43,59 @@ nsSOCKSSocketProvider::CreateV5(nsISupports *aOuter, REFNSIID aIID, void **aResu
     return rv;
 }
 
+
+
+
+#if defined(XP_WIN)
+
+
+static PRFileDesc*
+OpenTCPSocket(int32_t family,
+              nsIProxyInfo *proxy)
+{
+    PRFileDesc* sock = nullptr;
+
+    nsAutoCString proxyHost;
+    proxy->GetHost(proxyHost);
+    if (IsNamedPipePath(proxyHost)) {
+        sock = CreateNamedPipeLayer();
+    } else {
+        sock = PR_OpenTCPSocket(family);
+    }
+
+    return sock;
+}
+#elif defined(XP_UNIX)
+
+
+
+
+
+
+
+
+static PRFileDesc*
+OpenTCPSocket(int32_t family,
+              nsIProxyInfo *proxy)
+{
+    nsAutoCString proxyHost;
+    proxy->GetHost(proxyHost);
+    if (StringBeginsWith(proxyHost, NS_LITERAL_CSTRING("file://"))) {
+        family = AF_LOCAL;
+    }
+
+    return PR_OpenTCPSocket(family);
+}
+#else
+
+static PRFileDesc*
+OpenTCPSocket(int32_t family,
+              nsIProxyInfo*)
+{
+    return PR_OpenTCPSocket(family);
+}
+#endif
+
 NS_IMETHODIMP
 nsSOCKSSocketProvider::NewSocket(int32_t family,
                                  const char *host,
@@ -54,20 +107,9 @@ nsSOCKSSocketProvider::NewSocket(int32_t family,
                                  PRFileDesc **result,
                                  nsISupports **socksInfo)
 {
-    PRFileDesc *sock;
-
-#if defined(XP_WIN)
-    nsAutoCString proxyHost;
-    proxy->GetHost(proxyHost);
-    if (IsNamedPipePath(proxyHost)) {
-        sock = CreateNamedPipeLayer();
-    } else
-#endif
-    {
-        sock = PR_OpenTCPSocket(family);
-        if (!sock) {
-            return NS_ERROR_OUT_OF_MEMORY;
-        }
+    PRFileDesc *sock = OpenTCPSocket(family, proxy);
+    if (!sock) {
+        return NS_ERROR_OUT_OF_MEMORY;
     }
 
     nsresult rv = nsSOCKSIOLayerAddToSocket(family,
