@@ -354,6 +354,9 @@ ChannelMediaDecoder::DownloadProgressed()
   ComputePlaybackRate();
   UpdatePlaybackRate();
   mResource->ThrottleReadahead(ShouldThrottleDownload());
+  
+  MediaStatistics stats = GetStatistics();
+  GetStateMachine()->DispatchCanPlayThrough(stats.CanPlayThrough());
 }
 
 void

@@ -6010,13 +6010,6 @@ HTMLMediaElement::UpdateReadyStateInternal()
   if (nextFrameStatus == NEXT_FRAME_UNAVAILABLE_BUFFERING) {
     
     ChangeReadyState(nsIDOMHTMLMediaElement::HAVE_CURRENT_DATA);
-    if (mDecoder) {
-      
-      
-      
-      
-      mDecoder->CanPlayThrough();
-    }
     return;
   }
 
