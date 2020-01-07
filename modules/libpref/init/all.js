@@ -5870,4 +5870,4 @@ pref("general.document_open_conversion_depth_limit", 20);
 
 
 
-pref("dom.event.default_to_passive_touch_listeners", false);
+pref("dom.event.default_to_passive_touch_listeners", true);
