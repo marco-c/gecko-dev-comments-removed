@@ -99,6 +99,7 @@ public class GeckoSession extends LayerSession
                 "GeckoView:DOMTitleChanged",
                 "GeckoView:DOMWindowFocus",
                 "GeckoView:DOMWindowClose",
+                "GeckoView:ExternalResponse",
                 "GeckoView:FullScreenEnter",
                 "GeckoView:FullScreenExit"
             }
@@ -130,6 +131,8 @@ public class GeckoSession extends LayerSession
                     delegate.onFullScreen(GeckoSession.this, true);
                 } else if ("GeckoView:FullScreenExit".equals(event)) {
                     delegate.onFullScreen(GeckoSession.this, false);
+                } else if ("GeckoView:ExternalResponse".equals(event)) {
+                    delegate.onExternalResponse(GeckoSession.this, new WebResponseInfo(message));
                 }
             }
         };
@@ -1614,6 +1617,43 @@ public class GeckoSession extends LayerSession
         return ContentDelegate.ELEMENT_TYPE_NONE;
     }
 
+    
+
+
+    public class WebResponseInfo {
+        
+
+
+        public final String uri;
+
+        
+
+
+        public final String contentType;
+
+        
+
+
+        public final long contentLength;
+
+        
+
+
+
+        public final String filename;
+
+         WebResponseInfo(GeckoBundle message) {
+            uri = message.getString("uri");
+            if (uri == null) {
+                throw new IllegalArgumentException("URI cannot be null");
+            }
+
+            contentType = message.getString("contentType");
+            contentLength = message.getLong("contentLength");
+            filename = message.getString("filename");
+        }
+    }
+
     public interface ContentDelegate {
         @IntDef({ELEMENT_TYPE_NONE, ELEMENT_TYPE_IMAGE, ELEMENT_TYPE_VIDEO,
                  ELEMENT_TYPE_AUDIO})
@@ -1673,6 +1713,15 @@ public class GeckoSession extends LayerSession
         void onContextMenu(GeckoSession session, int screenX, int screenY,
                            String uri, @ElementType int elementType,
                            String elementSrc);
+
+        
+
+
+
+
+
+
+        void onExternalResponse(GeckoSession session, WebResponseInfo response);
     }
 
     
