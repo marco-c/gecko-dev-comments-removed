@@ -7,7 +7,6 @@
 const { TargetFactory } = require("devtools/client/framework/target");
 const { DebuggerServer } = require("devtools/server/main");
 const { DebuggerClient } = require("devtools/shared/client/debugger-client");
-const { Task } = require("devtools/shared/task");
 
 
 
@@ -38,13 +37,10 @@ const { Task } = require("devtools/shared/task");
 
 
 
+exports.targetFromURL = async function targetFromURL(url) {
+  let client = await clientFromURL(url);
+  await client.connect();
 
-
-
-
-
-
-exports.targetFromURL = Task.async(function* (url) {
   let params = url.searchParams;
   let type = params.get("type");
   if (!type) {
@@ -55,10 +51,6 @@ exports.targetFromURL = Task.async(function* (url) {
   
   let chrome = params.has("chrome");
 
-  let client = yield createClient(params);
-
-  yield client.connect();
-
   let form, isTabActor;
   if (type === "tab") {
     
@@ -67,7 +59,7 @@ exports.targetFromURL = Task.async(function* (url) {
       throw new Error(`targetFromURL, wrong tab id '${id}', should be a number`);
     }
     try {
-      let response = yield client.getTab({ outerWindowID: id });
+      let response = await client.getTab({ outerWindowID: id });
       form = response.tab;
     } catch (ex) {
       if (ex.error == "noTab") {
@@ -83,7 +75,7 @@ exports.targetFromURL = Task.async(function* (url) {
       if (isNaN(id)) {
         id = 0;
       }
-      let response = yield client.getProcess(id);
+      let response = await client.getProcess(id);
       form = response.form;
       chrome = true;
       if (id != 0) {
@@ -104,7 +96,7 @@ exports.targetFromURL = Task.async(function* (url) {
       if (isNaN(id)) {
         throw new Error("targetFromURL, window requires id parameter");
       }
-      let response = yield client.mainRoot.getWindow({
+      let response = await client.mainRoot.getWindow({
         outerWindowID: id,
       });
       form = response.window;
@@ -120,16 +112,31 @@ exports.targetFromURL = Task.async(function* (url) {
   }
 
   return TargetFactory.forRemoteTab({ client, form, chrome, isTabActor });
-});
+};
 
-function* createClient(params) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function clientFromURL(url) {
+  let params = url.searchParams;
   let host = params.get("host");
   let port = params.get("port");
   let webSocket = !!params.get("ws");
 
   let transport;
   if (port) {
-    transport = yield DebuggerClient.socketConnect({ host, port, webSocket });
+    transport = await DebuggerClient.socketConnect({ host, port, webSocket });
   } else {
     
     DebuggerServer.init();
@@ -138,3 +145,5 @@ function* createClient(params) {
   }
   return new DebuggerClient(transport);
 }
+
+exports.clientFromURL = clientFromURL;

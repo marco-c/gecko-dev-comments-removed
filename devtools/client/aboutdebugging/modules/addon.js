@@ -9,18 +9,66 @@ loader.lazyImporter(this, "BrowserToolboxProcess",
 loader.lazyImporter(this, "AddonManager", "resource://gre/modules/AddonManager.jsm");
 loader.lazyImporter(this, "AddonManagerPrivate", "resource://gre/modules/AddonManager.jsm");
 
-let toolbox = null;
+var {TargetFactory} = require("devtools/client/framework/target");
+var {Toolbox} = require("devtools/client/framework/toolbox");
 
-exports.debugAddon = function (addonID) {
-  if (toolbox) {
-    toolbox.close();
+var {gDevTools} = require("devtools/client/framework/devtools");
+
+let browserToolboxProcess = null;
+let remoteAddonToolbox = null;
+function closeToolbox() {
+  if (browserToolboxProcess) {
+    browserToolboxProcess.close();
   }
 
-  toolbox = BrowserToolboxProcess.init({
+  if (remoteAddonToolbox) {
+    remoteAddonToolbox.destroy();
+  }
+}
+
+
+
+
+
+
+
+exports.debugLocalAddon = async function (addonID) {
+  
+  closeToolbox();
+
+  browserToolboxProcess = BrowserToolboxProcess.init({
     addonID,
     onClose: () => {
-      toolbox = null;
+      browserToolboxProcess = null;
     }
+  });
+};
+
+
+
+
+
+
+
+
+
+exports.debugRemoteAddon = async function (addonForm, client) {
+  
+  closeToolbox();
+
+  let options = {
+    form: addonForm,
+    chrome: true,
+    client,
+    isTabActor: addonForm.isWebExtension
+  };
+
+  let target = await TargetFactory.forRemoteTab(options);
+
+  let hostType = Toolbox.HostType.WINDOW;
+  remoteAddonToolbox = await gDevTools.showToolbox(target, null, hostType);
+  remoteAddonToolbox.once("destroy", () => {
+    remoteAddonToolbox = null;
   });
 };
 
