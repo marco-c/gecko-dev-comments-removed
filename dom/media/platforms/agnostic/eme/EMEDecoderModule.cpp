@@ -21,7 +21,6 @@
 #include "nsServiceManagerUtils.h"
 #include "DecryptThroughputLimit.h"
 #include "ChromiumCDMVideoDecoder.h"
-#include <algorithm>
 
 namespace mozilla {
 
@@ -37,8 +36,12 @@ public:
     : mNumChannels(aInfo.mChannels)
     
     
-    , mProfile(
-        std::min<uint8_t>(static_cast<uint8_t>(0xff & aInfo.mProfile), 4))
+    
+    
+    
+    
+    
+    , mProfile(aInfo.mProfile < 1 || aInfo.mProfile > 4 ? 2 : aInfo.mProfile)
     , mFrequencyIndex(Adts::GetFrequencyIndex(aInfo.mRate))
   {
   }
