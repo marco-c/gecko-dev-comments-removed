@@ -1743,6 +1743,7 @@ class IDLInterface(IDLInterfaceOrNamespace):
                   identifier == "LegacyEventInit" or
                   identifier == "ProbablyShortLivingWrapper" or
                   identifier == "LegacyUnenumerableNamedProperties" or
+                  identifier == "RunConstructorInCallerCompartment" or
                   identifier == "NonOrdinaryGetPrototypeOf"):
                 
                 if not attr.noArguments():
