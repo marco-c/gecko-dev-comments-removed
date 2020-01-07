@@ -173,16 +173,10 @@ where
         Self { inner, separator }
     }
 
-    
-    
-    
-    
-    
-    
     #[inline]
-    pub fn item<T>(&mut self, item: &T) -> fmt::Result
+    fn write_item<F>(&mut self, f: F) -> fmt::Result
     where
-        T: ToCss,
+        F: FnOnce(&mut CssWriter<'b, W>) -> fmt::Result
     {
         let old_prefix = self.inner.prefix;
         if old_prefix.is_none() {
@@ -191,7 +185,7 @@ where
             
             self.inner.prefix = Some(self.separator);
         }
-        item.to_css(&mut self.inner)?;
+        f(self.inner)?;
         match (old_prefix, self.inner.prefix) {
             (_, None) => {
                 
@@ -212,6 +206,29 @@ where
             }
         }
         Ok(())
+    }
+
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn item<T>(&mut self, item: &T) -> fmt::Result
+    where
+        T: ToCss,
+    {
+        self.write_item(|inner| item.to_css(inner))
+    }
+
+    
+    
+    
+    
+    #[inline]
+    pub fn raw_item(&mut self, item: &str) -> fmt::Result {
+        self.write_item(|inner| inner.write_str(item))
     }
 }
 
