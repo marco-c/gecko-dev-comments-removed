@@ -42,14 +42,5 @@ SVGSymbolElement::~SVGSymbolElement()
 
 NS_IMPL_ELEMENT_CLONE_WITH_INIT(SVGSymbolElement)
 
-
-
-
-bool
-SVGSymbolElement::IsInChromeDoc() const
-{
-  return nsContentUtils::IsChromeDoc(OwnerDoc());
-}
-
 } 
 } 
