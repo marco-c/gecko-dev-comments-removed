@@ -4832,18 +4832,26 @@ HTMLInputElement::HandleTypeChange(uint8_t aNewType, bool aNotify)
     
     
     CancelImageRequests(aNotify);
-  } else if (aNotify && mType == NS_FORM_INPUT_IMAGE) {
-    
-    
-    nsAutoString src;
-    if (GetAttr(kNameSpaceID_None, nsGkAtoms::src, src)) {
-      
-      
-      mUseUrgentStartForChannel = EventStateManager::IsHandlingUserInput();
 
-      LoadImage(src, false, aNotify, eImageLoadType_Normal,
-                mSrcTriggeringPrincipal);
+    
+    mAttrsAndChildren.UpdateMappedAttrRuleMapper(*this);
+  } else if (mType == NS_FORM_INPUT_IMAGE) {
+    if (aNotify) {
+      
+      
+      nsAutoString src;
+      if (GetAttr(kNameSpaceID_None, nsGkAtoms::src, src)) {
+        
+        
+        mUseUrgentStartForChannel = EventStateManager::IsHandlingUserInput();
+
+        LoadImage(src, false, aNotify, eImageLoadType_Normal,
+                  mSrcTriggeringPrincipal);
+      }
     }
+
+    
+    mAttrsAndChildren.UpdateMappedAttrRuleMapper(*this);
   }
 
   if (mType == NS_FORM_INPUT_PASSWORD && IsInComposedDoc()) {
@@ -5595,18 +5603,14 @@ HTMLInputElement::ParseAttribute(int32_t aNamespaceID,
 }
 
 void
-HTMLInputElement::MapAttributesIntoRule(const nsMappedAttributes* aAttributes,
-                                        MappedDeclarations& aDecls)
+HTMLInputElement::ImageInputMapAttributesIntoRule(const nsMappedAttributes* aAttributes,
+                                                  MappedDeclarations& aDecls)
 {
-  const nsAttrValue* value = aAttributes->GetAttr(nsGkAtoms::type);
-  if (value && value->Type() == nsAttrValue::eEnum &&
-      value->GetEnumValue() == NS_FORM_INPUT_IMAGE) {
-    nsGenericHTMLFormElementWithState::MapImageBorderAttributeInto(aAttributes, aDecls);
-    nsGenericHTMLFormElementWithState::MapImageMarginAttributeInto(aAttributes, aDecls);
-    nsGenericHTMLFormElementWithState::MapImageSizeAttributesInto(aAttributes, aDecls);
-    
-    nsGenericHTMLFormElementWithState::MapImageAlignAttributeInto(aAttributes, aDecls);
-  }
+  nsGenericHTMLFormElementWithState::MapImageBorderAttributeInto(aAttributes, aDecls);
+  nsGenericHTMLFormElementWithState::MapImageMarginAttributeInto(aAttributes, aDecls);
+  nsGenericHTMLFormElementWithState::MapImageSizeAttributesInto(aAttributes, aDecls);
+  
+  nsGenericHTMLFormElementWithState::MapImageAlignAttributeInto(aAttributes, aDecls);
 
   nsGenericHTMLFormElementWithState::MapCommonAttributesInto(aAttributes, aDecls);
 }
@@ -5645,7 +5649,6 @@ HTMLInputElement::IsAttributeMapped(const nsAtom* aAttribute) const
 {
   static const MappedAttributeEntry attributes[] = {
     { &nsGkAtoms::align },
-    { &nsGkAtoms::type },
     { nullptr },
   };
 
@@ -5662,7 +5665,15 @@ HTMLInputElement::IsAttributeMapped(const nsAtom* aAttribute) const
 nsMapRuleToAttributesFunc
 HTMLInputElement::GetAttributeMappingFunction() const
 {
-  return &MapAttributesIntoRule;
+  
+  
+  
+  
+  if (mType == NS_FORM_INPUT_IMAGE) {
+    return &ImageInputMapAttributesIntoRule;
+  }
+
+  return &MapCommonAttributesInto;
 }
 
 

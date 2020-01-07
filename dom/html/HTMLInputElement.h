@@ -1666,8 +1666,8 @@ protected:
   bool                     mHasPatternAttribute : 1;
 
 private:
-  static void MapAttributesIntoRule(const nsMappedAttributes* aAttributes,
-                                    MappedDeclarations&);
+  static void ImageInputMapAttributesIntoRule(const nsMappedAttributes* aAttributes,
+                                              MappedDeclarations&);
 
   
 

@@ -126,6 +126,17 @@ public:
     return DoSetMappedAttrStyleSheet(aSheet);
   }
 
+  
+  
+  
+  nsresult UpdateMappedAttrRuleMapper(nsMappedAttributeElement& aElement)
+  {
+    if (!mImpl || !mImpl->mMappedAttrs) {
+      return NS_OK;
+    }
+    return DoUpdateMappedAttrRuleMapper(aElement);
+  }
+
   void Compact();
 
   bool CanFitMoreAttrs() const
@@ -223,6 +234,11 @@ private:
 
 
   nsresult DoSetMappedAttrStyleSheet(nsHTMLStyleSheet* aSheet);
+
+  
+
+
+  nsresult DoUpdateMappedAttrRuleMapper(nsMappedAttributeElement& aElement);
 
   struct InternalAttr
   {
