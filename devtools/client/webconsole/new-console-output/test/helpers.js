@@ -23,23 +23,30 @@ const {
 function setupActions() {
   
   
+  const wrappedActions = Object.assign({}, actions);
+
   const idGenerator = new IdGenerator();
-  return Object.assign({}, actions, {
-    messageAdd: packet => actions.messageAdd(packet, idGenerator),
+  wrappedActions.messagesAdd = (packets) => {
+    return actions.messagesAdd(packets, idGenerator);
+  };
+
+  return {
+    ...actions,
     messagesAdd: packets => actions.messagesAdd(packets, idGenerator)
-  });
+  };
 }
 
 
 
 
-function setupStore(input = [], hud, options) {
+function setupStore(input = [], hud, options, wrappedActions) {
   const store = configureStore(hud, options);
 
   
-  input.forEach((cmd) => {
-    store.dispatch(actions.messageAdd(stubPackets.get(cmd)));
-  });
+  const messagesAdd = wrappedActions
+    ? wrappedActions.messagesAdd
+    : actions.messagesAdd;
+  store.dispatch(messagesAdd(input.map(cmd => stubPackets.get(cmd))));
 
   return store;
 }
@@ -80,9 +87,32 @@ function getMessageAt(state, index) {
   return messages.get([...messages.keys()][index]);
 }
 
+
+
+
+
+
+
+function getFirstMessage(state) {
+  return getMessageAt(state, 0);
+}
+
+
+
+
+
+
+
+function getLastMessage(state) {
+  const lastIndex = getAllMessagesById(state).size - 1;
+  return getMessageAt(state, lastIndex);
+}
+
 module.exports = {
   clonePacket,
   getMessageAt,
+  getFirstMessage,
+  getLastMessage,
   renderComponent,
   setupActions,
   setupStore,
