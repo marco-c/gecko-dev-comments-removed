@@ -2965,6 +2965,14 @@ public:
 
 
 
+  static StorageAccess StorageAllowedForNewWindow(nsIPrincipal* aPrincipal,
+                                                  nsIURI* aURI,
+                                                  nsPIDOMWindowInner* aParent);
+
+  
+
+
+
 
   static StorageAccess StorageAllowedForPrincipal(nsIPrincipal* aPrincipal);
 
@@ -3343,8 +3351,10 @@ private:
 
 
 
+
   static StorageAccess InternalStorageAllowedForPrincipal(nsIPrincipal* aPrincipal,
-                                                          nsPIDOMWindowInner* aWindow);
+                                                          nsPIDOMWindowInner* aWindow,
+                                                          nsIURI* aURI);
 
   static nsINode* GetCommonAncestorHelper(nsINode* aNode1, nsINode* aNode2);
   static nsIContent* GetCommonFlattenedTreeAncestorHelper(nsIContent* aContent1,

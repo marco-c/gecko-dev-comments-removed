@@ -8896,7 +8896,7 @@ nsContentUtils::StorageAllowedForWindow(nsPIDOMWindowInner* aWindow)
 {
   if (nsIDocument* document = aWindow->GetExtantDoc()) {
     nsCOMPtr<nsIPrincipal> principal = document->NodePrincipal();
-    return InternalStorageAllowedForPrincipal(principal, aWindow);
+    return InternalStorageAllowedForPrincipal(principal, aWindow, nullptr);
   }
 
   return StorageAccess::eDeny;
@@ -8910,7 +8910,7 @@ nsContentUtils::StorageAllowedForDocument(nsIDocument* aDoc)
 
   if (nsPIDOMWindowInner* inner = aDoc->GetInnerWindow()) {
     nsCOMPtr<nsIPrincipal> principal = aDoc->NodePrincipal();
-    return InternalStorageAllowedForPrincipal(principal, inner);
+    return InternalStorageAllowedForPrincipal(principal, inner, nullptr);
   }
 
   return StorageAccess::eDeny;
@@ -8918,9 +8918,22 @@ nsContentUtils::StorageAllowedForDocument(nsIDocument* aDoc)
 
 
 nsContentUtils::StorageAccess
+nsContentUtils::StorageAllowedForNewWindow(nsIPrincipal* aPrincipal,
+                                           nsIURI* aURI,
+                                           nsPIDOMWindowInner* aParent)
+{
+  MOZ_ASSERT(aPrincipal);
+  MOZ_ASSERT(aURI);
+  
+
+  return InternalStorageAllowedForPrincipal(aPrincipal, aParent, aURI);
+}
+
+
+nsContentUtils::StorageAccess
 nsContentUtils::StorageAllowedForPrincipal(nsIPrincipal* aPrincipal)
 {
-  return InternalStorageAllowedForPrincipal(aPrincipal, nullptr);
+  return InternalStorageAllowedForPrincipal(aPrincipal, nullptr, nullptr);
 }
 
 
@@ -8979,7 +8992,8 @@ nsContentUtils::GetCookieBehaviorForPrincipal(nsIPrincipal* aPrincipal,
 
 nsContentUtils::StorageAccess
 nsContentUtils::InternalStorageAllowedForPrincipal(nsIPrincipal* aPrincipal,
-                                                   nsPIDOMWindowInner* aWindow)
+                                                   nsPIDOMWindowInner* aWindow,
+                                                   nsIURI* aURI)
 {
   MOZ_ASSERT(aPrincipal);
 
@@ -9049,9 +9063,11 @@ nsContentUtils::InternalStorageAllowedForPrincipal(nsIPrincipal* aPrincipal,
   
   
   
-  nsCOMPtr<nsIURI> uri;
-  nsresult rv = aPrincipal->GetURI(getter_AddRefs(uri));
-  if (NS_SUCCEEDED(rv) && uri) {
+  nsCOMPtr<nsIURI> uri = aURI;
+  if (!uri) {
+    Unused << aPrincipal->GetURI(getter_AddRefs(uri));
+  }
+  if (uri) {
     bool isAbout = false;
     MOZ_ALWAYS_SUCCEEDS(uri->SchemeIs("about", &isAbout));
     if (isAbout) {
@@ -9073,7 +9089,7 @@ nsContentUtils::InternalStorageAllowedForPrincipal(nsIPrincipal* aPrincipal,
 
     bool thirdPartyWindow = false;
     if (NS_SUCCEEDED(thirdPartyUtil->IsThirdPartyWindow(
-          aWindow->GetOuterWindow(), nullptr, &thirdPartyWindow)) && thirdPartyWindow) {
+          aWindow->GetOuterWindow(), aURI, &thirdPartyWindow)) && thirdPartyWindow) {
       
       
       
