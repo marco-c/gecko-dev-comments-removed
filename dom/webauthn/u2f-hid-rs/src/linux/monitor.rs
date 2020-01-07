@@ -65,13 +65,11 @@ where
 
         
         let mut socket = monitor.listen()?;
-        let mut fds = vec![
-            ::libc::pollfd {
-                fd: socket.as_raw_fd(),
-                events: POLLIN,
-                revents: 0,
-            },
-        ];
+        let mut fds = vec![::libc::pollfd {
+            fd: socket.as_raw_fd(),
+            events: POLLIN,
+            revents: 0,
+        }];
 
         while alive() {
             
