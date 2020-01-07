@@ -2194,6 +2194,11 @@ pref("network.auth.subresource-img-cross-origin-http-auth-allow", false);
 
 
 
+pref("network.auth.non-web-content-triggered-resources-http-auth-allow", false);
+
+
+
+
 
 
 
