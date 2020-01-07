@@ -1,13 +1,13 @@
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
-
-
+/*
+ * Base class for DOM Core's Comment, DocumentType, Text,
+ * CDATASection and ProcessingInstruction nodes.
+ */
 
 #include "mozilla/dom/CharacterData.h"
 
@@ -23,7 +23,6 @@
 #include "nsReadableUtils.h"
 #include "mozilla/InternalMutationEvent.h"
 #include "nsIURI.h"
-#include "nsIDOMEvent.h"
 #include "nsCOMPtr.h"
 #include "nsDOMString.h"
 #include "nsChangeHint.h"
@@ -90,8 +89,8 @@ NS_IMPL_CYCLE_COLLECTION_CAN_SKIP_THIS_BEGIN(CharacterData)
   return Element::CanSkipThis(tmp);
 NS_IMPL_CYCLE_COLLECTION_CAN_SKIP_THIS_END
 
-
-
+// We purposefully don't TRAVERSE_BEGIN_INHERITED here.  All the bits
+// we should traverse should be added here or in nsINode::Traverse.
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(CharacterData)
   if (MOZ_UNLIKELY(cb.WantDebugInfo())) {
     char name[40];
@@ -107,12 +106,12 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(CharacterData)
   }
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
-
+// We purposefully don't UNLINK_BEGIN_INHERITED here.
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(CharacterData)
   nsIContent::Unlink(tmp);
 
-  
-  
+  // Clear flag here because unlinking slots will clear the
+  // containing shadow root pointer.
   tmp->UnsetFlags(NODE_IS_IN_SHADOW_TREE);
 
   nsContentSlots* slots = tmp->GetExistingContentSlots();
@@ -139,9 +138,9 @@ CharacterData::SetNodeValueInternal(const nsAString& aNodeValue,
                            aNodeValue.Length(), true);
 }
 
+//----------------------------------------------------------------------
 
-
-
+// Implementation of CharacterData
 
 void
 CharacterData::GetData(nsAString& aData) const
@@ -150,8 +149,8 @@ CharacterData::GetData(nsAString& aData) const
     aData.Truncate();
     mText.AppendTo(aData);
   } else {
-    
-    
+    // Must use Substring() since nsDependentCString() requires null
+    // terminated strings.
 
     const char *data = mText.Get1b();
 
@@ -193,15 +192,15 @@ CharacterData::SubstringData(uint32_t aStart, uint32_t aCount,
   if (mText.Is2b()) {
     aReturn.Assign(mText.Get2b() + aStart, amount);
   } else {
-    
-    
+    // Must use Substring() since nsDependentCString() requires null
+    // terminated strings.
 
     const char *data = mText.Get1b() + aStart;
     CopyASCIItoUTF16(Substring(data, data + amount), aReturn);
   }
 }
 
-
+//----------------------------------------------------------------------
 
 void
 CharacterData::AppendData(const nsAString& aData, ErrorResult& aRv)
@@ -250,7 +249,7 @@ CharacterData::SetTextInternal(uint32_t aOffset, uint32_t aCount,
   NS_PRECONDITION(aBuffer || !aLength,
                   "Null buffer passed to SetTextInternal!");
 
-  
+  // sanitize arguments
   uint32_t textLength = mText.GetLength();
   if (aOffset > textLength) {
     return NS_ERROR_DOM_INDEX_SIZE_ERR;
@@ -262,7 +261,7 @@ CharacterData::SetTextInternal(uint32_t aOffset, uint32_t aCount,
 
   uint32_t endOffset = aOffset + aCount;
 
-  
+  // Make sure the text fragment can hold the new data.
   if (aLength > aCount && !mText.CanGrowBy(aLength - aCount)) {
     return NS_ERROR_OUT_OF_MEMORY;
   }
@@ -296,35 +295,35 @@ CharacterData::SetTextInternal(uint32_t aOffset, uint32_t aCount,
                              TextNodeWillChangeDirection(this, &oldDir, aOffset));
 
   if (aOffset == 0 && endOffset == textLength) {
-    
-    
-    
-    
+    // Replacing whole text or old text was empty.  Don't bother to check for
+    // bidi in this string if the document already has bidi enabled.
+    // If this is marked as "maybe modified frequently", the text should be
+    // stored as char16_t since converting char* to char16_t* is expensive.
     bool ok =
       mText.SetTo(aBuffer, aLength, !document || !document->GetBidiEnabled(),
                   HasFlag(NS_MAYBE_MODIFIED_FREQUENTLY));
     NS_ENSURE_TRUE(ok, NS_ERROR_OUT_OF_MEMORY);
   }
   else if (aOffset == textLength) {
-    
+    // Appending to existing
     bool ok =
       mText.Append(aBuffer, aLength, !document || !document->GetBidiEnabled(),
                    HasFlag(NS_MAYBE_MODIFIED_FREQUENTLY));
     NS_ENSURE_TRUE(ok, NS_ERROR_OUT_OF_MEMORY);
   }
   else {
-    
+    // Merging old and new
 
     bool bidi = mText.IsBidi();
 
-    
+    // Allocate new buffer
     int32_t newLength = textLength - aCount + aLength;
-    
-    
+    // Use nsString and not nsAutoString so that we get a nsStringBuffer which
+    // can be just AddRefed in nsTextFragment.
     nsString to;
     to.SetCapacity(newLength);
 
-    
+    // Copy over appropriate data
     if (aOffset) {
       mText.AppendTo(to, 0, aOffset);
     }
@@ -338,9 +337,9 @@ CharacterData::SetTextInternal(uint32_t aOffset, uint32_t aCount,
       mText.AppendTo(to, endOffset, textLength - endOffset);
     }
 
-    
-    
-    
+    // If this is marked as "maybe modified frequently", the text should be
+    // stored as char16_t since converting char* to char16_t* is expensive.
+    // Use char16_t also when we have bidi characters.
     bool use2b = HasFlag(NS_MAYBE_MODIFIED_FREQUENTLY) || bidi;
     bool ok = mText.SetTo(to, false, use2b);
     mText.SetBidi(bidi);
@@ -351,19 +350,19 @@ CharacterData::SetTextInternal(uint32_t aOffset, uint32_t aCount,
   UnsetFlags(NS_CACHED_TEXT_IS_ONLY_WHITESPACE);
 
   if (document && mText.IsBidi()) {
-    
-    
+    // If we found bidi characters in mText.SetTo() above, indicate that the
+    // document contains bidi characters.
     document->SetBidiEnabled();
   }
 
   if (dirAffectsAncestor) {
-    
-    
+    // dirAffectsAncestor being true implies that we have a text node, see
+    // above.
     MOZ_ASSERT(NodeType() == TEXT_NODE);
     TextNodeChangedDirection(static_cast<nsTextNode*>(this), oldDir, aNotify);
   }
 
-  
+  // Notify observers
   if (aNotify) {
     CharacterDataChangeInfo info = {
       aOffset == textLength,
@@ -392,9 +391,9 @@ CharacterData::SetTextInternal(uint32_t aOffset, uint32_t aCount,
   return NS_OK;
 }
 
+//----------------------------------------------------------------------
 
-
-
+// Implementation of nsIContent
 
 #ifdef DEBUG
 void
@@ -454,8 +453,8 @@ CharacterData::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
                   "aDocument must be current doc of aParent");
   NS_PRECONDITION(!GetUncomposedDoc() && !IsInUncomposedDoc(),
                   "Already have a document.  Unbind first!");
-  
-  
+  // Note that as we recurse into the kids, they'll have a non-null parent.  So
+  // only assert if our parent is _changing_ while we have a parent.
   NS_PRECONDITION(!GetParent() || aParent == GetParent(),
                   "Already have a parent.  Unbind first!");
   NS_PRECONDITION(!GetBindingParent() ||
@@ -474,14 +473,14 @@ CharacterData::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
     aBindingParent = aParent->GetBindingParent();
   }
 
-  
+  // First set the binding parent
   if (aBindingParent) {
     NS_ASSERTION(IsRootOfNativeAnonymousSubtree() ||
                  !HasFlag(NODE_IS_IN_NATIVE_ANONYMOUS_SUBTREE) ||
                  (aParent && aParent->IsInNativeAnonymousSubtree()),
                  "Trying to re-bind content from native anonymous subtree to "
                  "non-native anonymous parent!");
-    ExtendedContentSlots()->mBindingParent = aBindingParent; 
+    ExtendedContentSlots()->mBindingParent = aBindingParent; // Weak, so no addref happens.
     if (aParent->IsInNativeAnonymousSubtree()) {
       SetFlags(NODE_IS_IN_NATIVE_ANONYMOUS_SUBTREE);
     }
@@ -503,7 +502,7 @@ CharacterData::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
 
   bool hadParent = !!GetParentNode();
 
-  
+  // Set parent
   if (aParent) {
     if (!GetParent()) {
       NS_ADDREF(aParent);
@@ -515,24 +514,24 @@ CharacterData::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
   }
   SetParentIsContent(aParent);
 
-  
+  // XXXbz sXBL/XBL2 issue!
 
-  
+  // Set document
   if (aDocument) {
-    
-    
+    // We no longer need to track the subtree pointer (and in fact we'll assert
+    // if we do this any later).
     ClearSubtreeRootPointer();
 
-    
+    // XXX See the comment in Element::BindToTree
     SetIsInDocument();
     if (mText.IsBidi()) {
       aDocument->SetBidiEnabled();
     }
-    
+    // Clear the lazy frame construction bits.
     UnsetFlags(NODE_NEEDS_FRAME | NODE_DESCENDANTS_NEED_FRAMES);
   } else if (!IsInShadowTree()) {
-    
-    
+    // If we're not in the doc and not in a shadow tree,
+    // update our subtree pointer.
     SetSubtreeRootPointer(aParent->SubtreeRoot());
   }
 
@@ -554,7 +553,7 @@ CharacterData::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
 void
 CharacterData::UnbindFromTree(bool aDeep, bool aNullParent)
 {
-  
+  // Unset frame flags; if we need them again later, they'll get set again.
   UnsetFlags(NS_CREATE_FRAME_IF_NON_WHITESPACE |
              NS_REFRAME_IF_WHITESPACE);
 
@@ -576,15 +575,15 @@ CharacterData::UnbindFromTree(bool aDeep, bool aNullParent)
   if (aNullParent || !mParent->IsInShadowTree()) {
     UnsetFlags(NODE_IS_IN_SHADOW_TREE);
 
-    
+    // Begin keeping track of our subtree root.
     SetSubtreeRootPointer(aNullParent ? this : mParent->SubtreeRoot());
   }
 
   if (document && !GetContainingShadow()) {
-    
-    
-    
-    
+    // Notify XBL- & nsIAnonymousContentCreator-generated
+    // anonymous content that the document is changing.
+    // Unlike XBL, bindings for web components shadow DOM
+    // do not get uninstalled.
     if (HasFlag(NODE_MAY_BE_IN_BINDING_MNGR)) {
       nsContentUtils::AddScriptRunner(
         new RemoveFromBindingManagerRunnable(document->BindingManager(), this,
@@ -691,9 +690,9 @@ CharacterData::IsLink(nsIURI** aURI) const
   return false;
 }
 
+//----------------------------------------------------------------------
 
-
-
+// Implementation of the nsIContent interface text functions
 
 const nsTextFragment *
 CharacterData::GetText()
@@ -741,14 +740,14 @@ CharacterData::TextIsOnlyWhitespace()
 bool
 CharacterData::ThreadSafeTextIsOnlyWhitespace() const
 {
-  
+  // FIXME: should this method take content language into account?
   if (mText.Is2b()) {
-    
-    
-    
-    
-    
-    
+    // The fragment contains non-8bit characters and such characters
+    // are never considered whitespace.
+    //
+    // FIXME(emilio): This is not quite true in presence of the
+    // NS_MAYBE_MODIFIED_FREQUENTLY flag... But looks like we only set that on
+    // anonymous nodes, so should be fine...
     return false;
   }
 
@@ -762,8 +761,8 @@ CharacterData::ThreadSafeTextIsOnlyWhitespace() const
   while (cp < end) {
     char ch = *cp;
 
-    
-    
+    // NOTE(emilio): If you ever change the definition of "whitespace" here, you
+    // need to change it too in RestyleManager::CharacterDataChanged.
     if (!dom::IsSpaceCharacter(ch)) {
       return false;
     }
@@ -803,5 +802,5 @@ CharacterData::AddSizeOfExcludingThis(nsWindowSizes& aSizes,
   *aNodeSize += mText.SizeOfExcludingThis(aSizes.mState.mMallocSizeOf);
 }
 
-} 
-} 
+} // namespace dom
+} // namespace mozilla

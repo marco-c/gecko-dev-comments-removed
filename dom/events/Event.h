@@ -64,24 +64,6 @@ private:
                        WidgetEvent* aEvent);
 
 public:
-  static Event* FromSupports(nsISupports* aSupports)
-  {
-    nsIDOMEvent* event =
-      static_cast<nsIDOMEvent*>(aSupports);
-#ifdef DEBUG
-    {
-      nsCOMPtr<nsIDOMEvent> target_qi =
-        do_QueryInterface(aSupports);
-
-      
-      
-      
-      MOZ_ASSERT(target_qi == event, "Uh, fix QI!");
-    }
-#endif
-    return static_cast<Event*>(event);
-  }
-
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(Event)
 
@@ -362,9 +344,9 @@ protected:
 class MOZ_RAII EventMessageAutoOverride
 {
 public:
-  explicit EventMessageAutoOverride(nsIDOMEvent* aEvent,
+  explicit EventMessageAutoOverride(Event* aEvent,
                                     EventMessage aOverridingMessage)
-    : mEvent(aEvent->InternalDOMEvent()),
+    : mEvent(aEvent),
       mOrigMessage(mEvent->mEvent->mMessage)
   {
     MOZ_ASSERT(aOverridingMessage != mOrigMessage,
@@ -394,8 +376,8 @@ protected:
 class MOZ_STACK_CLASS WantsPopupControlCheck
 {
 public:
-  explicit WantsPopupControlCheck(nsIDOMEvent* aEvent) :
-    mEvent(aEvent->InternalDOMEvent())
+  explicit WantsPopupControlCheck(Event* aEvent) :
+    mEvent(aEvent)
   {
     mOriginalWantsPopupControlCheck = mEvent->GetWantsPopupControlCheck();
     mEvent->SetWantsPopupControlCheck(mEvent->IsTrusted());
