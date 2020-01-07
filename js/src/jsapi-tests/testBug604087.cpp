@@ -7,8 +7,7 @@
 
 
 
-#include "jswrapper.h"
-
+#include "js/Wrapper.h"
 #include "jsapi-tests/tests.h"
 #include "vm/JSObject.h"
 #include "vm/ProxyObject.h"

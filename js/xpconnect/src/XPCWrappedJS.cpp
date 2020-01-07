@@ -7,7 +7,6 @@
 
 
 #include "xpcprivate.h"
-#include "jsprf.h"
 #include "mozilla/DeferredFinalize.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/jsipc/CrossProcessObjectWrappers.h"

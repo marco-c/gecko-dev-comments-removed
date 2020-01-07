@@ -4,7 +4,7 @@
 
 
 #include "MozIntlHelper.h"
-#include "jswrapper.h"
+#include "js/Wrapper.h"
 #include "mozilla/ModuleUtils.h"
 
 #define MOZ_MOZINTLHELPER_CID \

@@ -11,8 +11,8 @@
 
 #include "WrapperFactory.h"
 
-#include "jswrapper.h"
 #include "js/Proxy.h"
+#include "js/Wrapper.h"
 
 
 

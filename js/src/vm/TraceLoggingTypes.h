@@ -7,8 +7,9 @@
 #ifndef TraceLoggingTypes_h
 #define TraceLoggingTypes_h
 
-#include "jsalloc.h"
 #include "jsstr.h"
+
+#include "js/AllocPolicy.h"
 
 
 #define TRACELOGGER_TREE_ITEMS(_)                     \

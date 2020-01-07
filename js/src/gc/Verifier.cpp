@@ -4,20 +4,19 @@
 
 
 
-#ifdef MOZ_VALGRIND
-# include <valgrind/memcheck.h>
-#endif
-
 #include "mozilla/DebugOnly.h"
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/Sprintf.h"
 
-#include "jsprf.h"
+#ifdef MOZ_VALGRIND
+# include <valgrind/memcheck.h>
+#endif
 
 #include "gc/GCInternals.h"
 #include "gc/PublicIterators.h"
 #include "gc/Zone.h"
 #include "js/HashTable.h"
+#include "js/Printf.h"
 #include "vm/JSContext.h"
 
 #include "gc/GC-inl.h"

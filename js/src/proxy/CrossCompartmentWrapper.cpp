@@ -4,9 +4,8 @@
 
 
 
-#include "jswrapper.h"
-
 #include "gc/PublicIterators.h"
+#include "js/Wrapper.h"
 #include "proxy/DeadObjectProxy.h"
 #include "vm/Iteration.h"
 #include "vm/WrapperObject.h"

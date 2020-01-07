@@ -4,8 +4,9 @@
 
 
 
+#include "js/Wrapper.h"
+
 #include "jsexn.h"
-#include "jswrapper.h"
 
 #include "js/Proxy.h"
 #include "vm/ErrorObject.h"

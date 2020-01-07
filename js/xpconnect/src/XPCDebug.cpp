@@ -5,7 +5,6 @@
 
 
 #include "xpcprivate.h"
-#include "jsprf.h"
 #include "nsThreadUtils.h"
 #include "nsContentUtils.h"
 

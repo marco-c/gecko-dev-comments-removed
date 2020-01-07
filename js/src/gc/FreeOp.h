@@ -9,10 +9,10 @@
 
 #include "mozilla/Assertions.h" 
 
-#include "jsalloc.h" 
 #include "jsapi.h" 
 
 #include "jit/ExecutableAllocator.h" 
+#include "js/AllocPolicy.h" 
 #include "js/Utility.h" 
 #include "js/Vector.h" 
 

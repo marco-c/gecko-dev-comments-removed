@@ -4,8 +4,8 @@
 
 
 
-#ifndef jsprototypes_h
-#define jsprototypes_h
+#ifndef js_ProtoKey_h
+#define js_ProtoKey_h
 
 
 

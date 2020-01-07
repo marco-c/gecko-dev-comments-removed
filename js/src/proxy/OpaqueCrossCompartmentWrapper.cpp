@@ -4,7 +4,7 @@
 
 
 
-#include "jswrapper.h"
+#include "js/Wrapper.h"
 
 #include "vm/JSObject-inl.h"
 

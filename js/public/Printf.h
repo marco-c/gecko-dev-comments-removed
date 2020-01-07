@@ -4,8 +4,8 @@
 
 
 
-#ifndef jsprf_h
-#define jsprf_h
+#ifndef js_Printf_h
+#define js_Printf_h
 
 #include "mozilla/Printf.h"
 

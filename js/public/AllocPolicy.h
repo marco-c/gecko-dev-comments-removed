@@ -11,8 +11,8 @@
 
 
 
-#ifndef jsalloc_h
-#define jsalloc_h
+#ifndef js_AllocPolicy_h
+#define js_AllocPolicy_h
 
 #include "js/TypeDecls.h"
 #include "js/Utility.h"

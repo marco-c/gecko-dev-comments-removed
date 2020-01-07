@@ -4,7 +4,7 @@
 
 
 
-#include "jsalloc.h"
+#include "js/AllocPolicy.h"
 
 #include "vm/JSContext.h"
 

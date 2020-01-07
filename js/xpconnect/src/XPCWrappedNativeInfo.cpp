@@ -7,7 +7,7 @@
 
 
 #include "xpcprivate.h"
-#include "jswrapper.h"
+#include "js/Wrapper.h"
 
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/XPTInterfaceInfoManager.h"

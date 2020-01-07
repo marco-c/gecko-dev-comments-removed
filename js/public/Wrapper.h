@@ -4,8 +4,8 @@
 
 
 
-#ifndef jswrapper_h
-#define jswrapper_h
+#ifndef js_Wrapper_h
+#define js_Wrapper_h
 
 #include "mozilla/Attributes.h"
 
