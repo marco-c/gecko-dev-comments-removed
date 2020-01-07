@@ -141,11 +141,13 @@ class FontInspector {
 
     
     
+    let isElementOrTextNode = this.inspector.selection.isElementNode() ||
+                              this.inspector.selection.isTextNode();
     if (!showAllFonts &&
         (!node ||
          !this.isPanelVisible() ||
          !this.inspector.selection.isConnected() ||
-         !this.inspector.selection.isElementNode())) {
+         !isElementOrTextNode)) {
       this.store.dispatch(updateFonts(fonts));
       return;
     }
