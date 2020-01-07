@@ -3031,7 +3031,7 @@ pref("layout.css.emulate-moz-box-with-flex", false);
 
 
 
-pref("layout.css.paint-order.enabled", false);
+pref("layout.css.paint-order.enabled", true);
 
 
 pref("layout.css.prefixes.border-image", true);
