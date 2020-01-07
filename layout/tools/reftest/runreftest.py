@@ -304,6 +304,7 @@ class RefTest(object):
         prefs['reftest.focusFilterMode'] = options.focusFilterMode
         prefs['reftest.logLevel'] = options.log_tbpl_level or 'info'
         prefs['reftest.suite'] = options.suite
+        prefs['reftest.runSlower'] = options.runSlower
 
         
         if options.e10s:
