@@ -174,8 +174,8 @@ public:
   already_AddRefed<WebRenderAPI> CreateDocument(LayoutDeviceIntSize aSize, int8_t aLayerIndex);
 
   
-  static void InitExternalLogHandler();
-  static void ShutdownExternalLogHandler();
+  static void InitRustLogForGpuProcess();
+  static void ShutdownRustLogForGpuProcess();
 
   already_AddRefed<WebRenderAPI> Clone();
 

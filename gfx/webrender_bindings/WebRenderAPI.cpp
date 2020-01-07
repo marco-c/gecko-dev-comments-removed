@@ -275,17 +275,19 @@ TransactionWrapper::UpdateScrollPosition(const wr::WrPipelineId& aPipelineId,
 }
 
  void
-WebRenderAPI::InitExternalLogHandler()
+WebRenderAPI::InitRustLogForGpuProcess()
 {
+  MOZ_ASSERT(XRE_IsGPUProcess());
   
   
-  mozilla::wr::wr_init_external_log_handler(wr::WrLogLevelFilter::Error);
+  mozilla::wr::wr_init_log_for_gpu_process();
 }
 
  void
-WebRenderAPI::ShutdownExternalLogHandler()
+WebRenderAPI::ShutdownRustLogForGpuProcess()
 {
-  mozilla::wr::wr_shutdown_external_log_handler();
+  MOZ_ASSERT(XRE_IsGPUProcess());
+  mozilla::wr::wr_shutdown_log_for_gpu_process();
 }
 
  already_AddRefed<WebRenderAPI>

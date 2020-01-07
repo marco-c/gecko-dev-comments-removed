@@ -101,31 +101,6 @@ enum class ImageRendering : uint32_t {
   Sentinel 
 };
 
-
-
-
-
-
-
-
-
-enum class LevelFilter : uintptr_t {
-  
-  Off,
-  
-  Error,
-  
-  Warn,
-  
-  Info,
-  
-  Debug,
-  
-  Trace,
-
-  Sentinel 
-};
-
 enum class LineOrientation : uint8_t {
   Vertical,
   Horizontal,
@@ -780,8 +755,6 @@ struct GlyphOptions {
 
 using WrYuvColorSpace = YuvColorSpace;
 
-using WrLogLevelFilter = LevelFilter;
-
 struct ByteSlice {
   const uint8_t *buffer;
   uintptr_t len;
@@ -1389,7 +1362,7 @@ void wr_dump_display_list(WrState *aState)
 WR_FUNC;
 
 WR_INLINE
-void wr_init_external_log_handler(WrLogLevelFilter aLogFilter)
+void wr_init_log_for_gpu_process()
 WR_FUNC;
 
 extern bool wr_moz2d_render_cb(ByteSlice aBlob,
@@ -1583,7 +1556,7 @@ void wr_set_item_tag(WrState *aState,
 WR_FUNC;
 
 WR_INLINE
-void wr_shutdown_external_log_handler()
+void wr_shutdown_log_for_gpu_process()
 WR_FUNC;
 
 WR_INLINE
