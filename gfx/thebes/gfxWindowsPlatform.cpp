@@ -509,6 +509,13 @@ gfxWindowsPlatform::UpdateRenderMode()
   }
 }
 
+bool
+gfxWindowsPlatform::AllowOpenGLCanvas()
+{
+  
+  return false;
+}
+
 mozilla::gfx::BackendType
 gfxWindowsPlatform::GetContentBackendFor(mozilla::layers::LayersBackend aLayers)
 {

@@ -1386,7 +1386,8 @@ bool gfxPlatform::AllowOpenGLCanvas()
   
   
   bool correctBackend = !XRE_IsParentProcess() ||
-    ((mCompositorBackend == LayersBackend::LAYERS_OPENGL) &&
+    ((mCompositorBackend == LayersBackend::LAYERS_OPENGL ||
+      mCompositorBackend == LayersBackend::LAYERS_WR) &&
      (GetContentBackendFor(mCompositorBackend) == BackendType::SKIA));
 
   if (gfxPrefs::CanvasAzureAccelerated() && correctBackend) {

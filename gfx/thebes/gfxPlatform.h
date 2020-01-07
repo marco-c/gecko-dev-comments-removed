@@ -286,7 +286,7 @@ public:
     
     
     
-    bool AllowOpenGLCanvas();
+    virtual bool AllowOpenGLCanvas();
     virtual void InitializeSkiaCacheLimits();
 
     static bool AsyncPanZoomEnabled();
