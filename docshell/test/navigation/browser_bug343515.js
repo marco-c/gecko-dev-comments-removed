@@ -39,16 +39,22 @@ function test() {
   waitForExplicitFinish();
 
   
-  step1();
+  
+  
+  
+  SpecialPowers.pushPrefEnv({
+    set: [["browser.tabs.remote.warmup.enabled", false]],
+  }).then(step1);
 }
 
-async function step1() {
+function step1() {
+
   
   ctx.tab0 = gBrowser.selectedTab;
   ctx.tab0Browser = gBrowser.getBrowserForTab(ctx.tab0);
 
-  await BrowserTestUtils.waitForCondition(() => ctx.tab0Browser.docShellIsActive,
-    "Timed out waiting for initial tab to be active.");
+  
+  ok(ctx.tab0Browser.docShellIsActive, "Tab 0 should be active at test start");
 
   
   ctx.tab1 = BrowserTestUtils.addTab(gBrowser, testPath + "bug343515_pg1.html");
