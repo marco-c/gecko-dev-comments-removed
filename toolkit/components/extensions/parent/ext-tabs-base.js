@@ -1777,6 +1777,14 @@ class TabManagerBase {
 
 
 
+
+
+
+
+
+
+
+
   hasTabPermission(nativeTab) {
     return this.getWrapper(nativeTab).hasTabPermission;
   }

@@ -745,7 +745,11 @@ class Tab extends TabBase {
       lastAccessed: tabData.state ? tabData.state.lastAccessed : tabData.lastAccessed,
     };
 
-    if (extension.tabManager.hasTabPermission(tabData)) {
+    
+    
+    
+    
+    if (extension.hasPermission("tabs")) {
       let entries = tabData.state ? tabData.state.entries : tabData.entries;
       let lastTabIndex = tabData.state ? tabData.state.index : tabData.index;
       
