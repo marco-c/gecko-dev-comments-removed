@@ -83,10 +83,6 @@ public class LayerSession {
         public native void onBoundsChanged(int left, int top, int width, int height);
 
         
-        @WrapForJNI(calledFrom = "ui", dispatchTo = "proxy")
-        public native void createCompositor(int width, int height, Object surface);
-
-        
         @WrapForJNI(calledFrom = "ui", dispatchTo = "current")
         public native void syncPauseCompositor();
 
@@ -163,7 +159,6 @@ public class LayerSession {
     private CompositorController mController;
 
     private boolean mAttachedCompositor;
-    private boolean mCalledCreateCompositor;
     private boolean mCompositorReady;
     private Surface mSurface;
 
@@ -361,6 +356,8 @@ public class LayerSession {
             
             onSurfaceChanged(mSurface, mWidth, mHeight);
         }
+
+        mCompositor.sendToolbarAnimatorMessage(IS_COMPOSITOR_CONTROLLER_OPEN);
     }
 
      void onCompositorDetached() {
@@ -373,7 +370,6 @@ public class LayerSession {
         }
 
         mAttachedCompositor = false;
-        mCalledCreateCompositor = false;
         mCompositorReady = false;
     }
 
@@ -550,12 +546,6 @@ public class LayerSession {
             mCompositor.syncResumeResizeCompositor(width, height, surface);
             onWindowBoundsChanged();
             return;
-        }
-
-        if (mAttachedCompositor && !mCalledCreateCompositor) {
-            mCompositor.createCompositor(width, height, surface);
-            mCompositor.sendToolbarAnimatorMessage(IS_COMPOSITOR_CONTROLLER_OPEN);
-            mCalledCreateCompositor = true;
         }
 
         
