@@ -56,7 +56,7 @@ async function run_drag_test(startBookmarkIndex, newParentGuid) {
     
     
     
-    let ip = new InsertionPoint({
+    let ip = new PlacesInsertionPoint({
       isTag: true,
       tagName: TAG_NAME,
       orientation: Ci.nsITreeView.DROP_ON

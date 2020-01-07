@@ -76,7 +76,7 @@ async function run_drag_test(startBookmarkIndex, insertionIndex, newParentGuid,
     
     
     
-    let ip = new InsertionPoint({
+    let ip = new PlacesInsertionPoint({
       parentId: await PlacesUtils.promiseItemId(PlacesUtils.bookmarks.unfiledGuid),
       parentGuid: newParentGuid,
       index: insertionIndex,

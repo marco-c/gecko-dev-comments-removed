@@ -220,7 +220,7 @@ PlacesViewBase.prototype = {
     if (PlacesControllerDragHelper.disallowInsertion(container, this))
       return null;
 
-    return new InsertionPoint({
+    return new PlacesInsertionPoint({
       parentId: PlacesUtils.getConcreteItemId(container),
       parentGuid: PlacesUtils.getConcreteItemGuid(container),
       index, orientation, tagName
@@ -1519,7 +1519,7 @@ PlacesToolbar.prototype = {
                        : (aEvent.clientX < eltRect.left + threshold)) {
           
           dropPoint.ip =
-            new InsertionPoint({
+            new PlacesInsertionPoint({
               parentId: PlacesUtils.getConcreteItemId(this._resultNode),
               parentGuid: PlacesUtils.getConcreteItemGuid(this._resultNode),
               index: eltIndex,
@@ -1532,7 +1532,7 @@ PlacesToolbar.prototype = {
           let tagName = PlacesUtils.nodeIsTagQuery(elt._placesNode) ?
                         elt._placesNode.title : null;
           dropPoint.ip =
-            new InsertionPoint({
+            new PlacesInsertionPoint({
               parentId: PlacesUtils.getConcreteItemId(elt._placesNode),
               parentGuid: PlacesUtils.getConcreteItemGuid(elt._placesNode),
               tagName
@@ -1546,7 +1546,7 @@ PlacesToolbar.prototype = {
             -1 : eltIndex + 1;
 
           dropPoint.ip =
-            new InsertionPoint({
+            new PlacesInsertionPoint({
               parentId: PlacesUtils.getConcreteItemId(this._resultNode),
               parentGuid: PlacesUtils.getConcreteItemGuid(this._resultNode),
               index: beforeIndex,
@@ -1562,7 +1562,7 @@ PlacesToolbar.prototype = {
                        : (aEvent.clientX < eltRect.left + threshold)) {
           
           dropPoint.ip =
-            new InsertionPoint({
+            new PlacesInsertionPoint({
               parentId: PlacesUtils.getConcreteItemId(this._resultNode),
               parentGuid: PlacesUtils.getConcreteItemGuid(this._resultNode),
               index: eltIndex,
@@ -1575,7 +1575,7 @@ PlacesToolbar.prototype = {
             eltIndex == this._rootElt.childNodes.length - 1 ?
             -1 : eltIndex + 1;
           dropPoint.ip =
-            new InsertionPoint({
+            new PlacesInsertionPoint({
               parentId: PlacesUtils.getConcreteItemId(this._resultNode),
               parentGuid: PlacesUtils.getConcreteItemGuid(this._resultNode),
               index: beforeIndex,
@@ -1588,7 +1588,7 @@ PlacesToolbar.prototype = {
       
       
       dropPoint.ip =
-        new InsertionPoint({
+        new PlacesInsertionPoint({
           parentId: PlacesUtils.getConcreteItemId(this._resultNode),
           parentGuid: PlacesUtils.getConcreteItemGuid(this._resultNode),
           orientation: Ci.nsITreeView.DROP_BEFORE
