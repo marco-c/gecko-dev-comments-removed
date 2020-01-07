@@ -380,7 +380,7 @@ public class WebAppActivity extends AppCompatActivity
 
     @Override
     public boolean onLoadUri(final GeckoSession session, final String urlStr,
-                             final TargetWindow where) {
+                             final int target) {
         final Uri uri = Uri.parse(urlStr);
         if (uri == null) {
             
@@ -388,7 +388,7 @@ public class WebAppActivity extends AppCompatActivity
             return true;
         }
 
-        if (mManifest.isInScope(uri) && where != TargetWindow.NEW) {
+        if (mManifest.isInScope(uri) && target != TARGET_WINDOW_NEW) {
             
             
             return false;
