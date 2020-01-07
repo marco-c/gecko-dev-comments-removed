@@ -416,7 +416,7 @@ this.FxAccountsWebChannelHelpers.prototype = {
     });
   },
 
-  changePassword(credentials) {
+  async changePassword(credentials) {
     
     
     
@@ -436,8 +436,15 @@ this.FxAccountsWebChannelHelpers.prototype = {
         log.info("changePassword ignoring unsupported field", name);
       }
     }
-    return this._fxAccounts.updateUserAccountData(newCredentials)
-      .then(() => this._fxAccounts.updateDeviceRegistration());
+    await this._fxAccounts.updateUserAccountData(newCredentials);
+    
+    
+    try {
+      await this._fxAccounts.getKeys();
+    } catch (e) {
+      log.error("getKeys errored", e);
+    }
+    await this._fxAccounts.updateDeviceRegistration();
   },
 
   

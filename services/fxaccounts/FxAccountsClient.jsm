@@ -396,6 +396,8 @@ this.FxAccountsClient.prototype = {
 
 
 
+
+
   registerDevice(sessionTokenHex, name, type, options = {}) {
     let path = "/account/device";
 
@@ -409,6 +411,7 @@ this.FxAccountsClient.prototype = {
       body.pushPublicKey = options.pushPublicKey;
       body.pushAuthKey = options.pushAuthKey;
     }
+    body.availableCommands = options.availableCommands;
 
     return this._request(path, "POST", creds, body);
   },
@@ -455,7 +458,7 @@ this.FxAccountsClient.prototype = {
 
 
 
-  getMessages(sessionTokenHex, {index, limit}) {
+  getCommands(sessionTokenHex, {index, limit}) {
     const params = new URLSearchParams();
     if (index != undefined) {
       params.set("index", index);
@@ -463,7 +466,7 @@ this.FxAccountsClient.prototype = {
     if (limit != undefined) {
       params.set("limit", limit);
     }
-    const path = `/account/device/messages?${params.toString()}`;
+    const path = `/account/device/commands?${params.toString()}`;
     return this._request(path, "GET",
       deriveHawkCredentials(sessionTokenHex, "sessionToken"));
   },
@@ -479,13 +482,13 @@ this.FxAccountsClient.prototype = {
 
 
 
-  sendMessage(sessionTokenHex, topic, to, data) {
+  invokeCommand(sessionTokenHex, command, target, payload) {
     const body = {
-      topic,
-      to,
-      data
+      command,
+      target,
+      payload
     };
-    return this._request("/account/devices/messages", "POST",
+    return this._request("/account/devices/invoke_command", "POST",
       deriveHawkCredentials(sessionTokenHex, "sessionToken"), body);
   },
 
@@ -528,7 +531,7 @@ this.FxAccountsClient.prototype = {
       body.pushPublicKey = options.pushPublicKey;
       body.pushAuthKey = options.pushAuthKey;
     }
-    body.capabilities = options.capabilities;
+    body.availableCommands = options.availableCommands;
 
     return this._request(path, "POST", creds, body);
   },

@@ -26,8 +26,8 @@ ChromeUtils.defineModuleGetter(this, "jwcrypto",
 ChromeUtils.defineModuleGetter(this, "FxAccountsOAuthGrantClient",
   "resource://gre/modules/FxAccountsOAuthGrantClient.jsm");
 
-ChromeUtils.defineModuleGetter(this, "FxAccountsMessages",
-  "resource://gre/modules/FxAccountsMessages.js");
+ChromeUtils.defineModuleGetter(this, "FxAccountsCommands",
+  "resource://gre/modules/FxAccountsCommands.js");
 
 ChromeUtils.defineModuleGetter(this, "FxAccountsProfile",
   "resource://gre/modules/FxAccountsProfile.jsm");
@@ -44,6 +44,7 @@ var publicProperties = [
   "accountStatus",
   "canGetKeys",
   "checkVerificationStatus",
+  "commands",
   "getAccountsClient",
   "getAssertion",
   "getDeviceId",
@@ -61,7 +62,6 @@ var publicProperties = [
   "invalidateCertificate",
   "loadAndPoll",
   "localtimeOffsetMsec",
-  "messages",
   "notifyDevices",
   "now",
   "removeCachedOAuthToken",
@@ -412,12 +412,12 @@ FxAccountsInternal.prototype = {
     return this._profile;
   },
 
-  _messages: null,
-  get messages() {
-    if (!this._messages) {
-      this._messages = new FxAccountsMessages(this);
+  _commands: null,
+  get commands() {
+    if (!this._commands) {
+      this._commands = new FxAccountsCommands(this);
     }
-    return this._messages;
+    return this._commands;
   },
 
   
@@ -606,9 +606,9 @@ FxAccountsInternal.prototype = {
     if (!this.isUserEmailVerified(credentials)) {
       this.startVerifiedCheck(credentials);
     }
-    await this.updateDeviceRegistration();
     Services.telemetry.getHistogramById("FXA_CONFIGURED").add(1);
     await this.notifyObservers(ONLOGIN_NOTIFICATION);
+    await this.updateDeviceRegistration();
     return currentAccountState.resolve();
   },
 
@@ -706,15 +706,22 @@ FxAccountsInternal.prototype = {
       data = await this.currentAccountState.getUserAccountData();
     }
     const {device} = data;
-    if (!device || !device.registrationVersion ||
-        device.registrationVersion < this.DEVICE_REGISTRATION_VERSION) {
-      
-      
-      
+    if ((await this.checkDeviceUpdateNeeded(device))) {
       return this._registerOrUpdateDevice(data);
     }
     
     return device.id;
+  },
+
+  async checkDeviceUpdateNeeded(device) {
+    
+    
+    
+    const availableCommandsKeys = Object.keys((await this.availableCommands())).sort();
+    return !device || !device.registrationVersion ||
+           device.registrationVersion < this.DEVICE_REGISTRATION_VERSION ||
+           !device.registeredCommandsKeys ||
+           !CommonUtils.arrayEqual(device.registeredCommandsKeys, availableCommandsKeys);
   },
 
   async getDeviceList() {
@@ -767,8 +774,8 @@ FxAccountsInternal.prototype = {
       this._profile.tearDown();
       this._profile = null;
     }
-    if (this._messages) {
-      this._messages = null;
+    if (this._commands) {
+      this._commands = null;
     }
     
     
@@ -1049,6 +1056,9 @@ FxAccountsInternal.prototype = {
     
     
     await this.notifyObservers(ONVERIFIED_NOTIFICATION);
+    
+    
+    await this.updateDeviceRegistration();
     data = await currentState.getUserAccountData();
     return currentState.resolve(data);
   },
@@ -1683,13 +1693,17 @@ FxAccountsInternal.prototype = {
     return this.fxaPushService.getSubscription();
   },
 
-  
-  
-  get deviceCapabilities() {
-    if (Services.prefs.getBoolPref("identity.fxaccounts.messages.enabled", true)) {
-      return [CAPABILITY_MESSAGES, CAPABILITY_MESSAGES_SENDTAB];
+  async availableCommands() {
+    if (!Services.prefs.getBoolPref("identity.fxaccounts.commands.enabled", true)) {
+      return {};
     }
-    return [];
+    const sendTabKey = await this.commands.sendTab.getEncryptedKey();
+    if (!sendTabKey) { 
+      return {};
+    }
+    return {
+      [COMMAND_SENDTAB]: sendTabKey
+    };
   },
 
   
@@ -1716,7 +1730,8 @@ FxAccountsInternal.prototype = {
           deviceOptions.pushAuthKey = urlsafeBase64Encode(authKey);
         }
       }
-      deviceOptions.capabilities = this.deviceCapabilities;
+      deviceOptions.availableCommands = await this.availableCommands();
+      const availableCommandsKeys = Object.keys(deviceOptions.availableCommands).sort();
 
       let device;
       if (currentDevice && currentDevice.id) {
@@ -1729,11 +1744,14 @@ FxAccountsInternal.prototype = {
           sessionToken, deviceName, this._getDeviceType(), deviceOptions);
       }
 
+      
+      let {device: deviceProps} = await this.getSignedInUser();
       await this.currentAccountState.updateUserAccountData({
         device: {
-          ...currentDevice, 
+          ...deviceProps, 
           id: device.id,
-          registrationVersion: this.DEVICE_REGISTRATION_VERSION
+          registrationVersion: this.DEVICE_REGISTRATION_VERSION,
+          registeredCommandsKeys: availableCommandsKeys,
         }
       });
       return device.id;
