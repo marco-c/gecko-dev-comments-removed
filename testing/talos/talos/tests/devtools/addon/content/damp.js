@@ -21,6 +21,9 @@ XPCOMUtils.defineLazyGetter(this, "TargetFactory", function() {
 
 const DEBUG_ALLOCATIONS = env.get("DEBUG_DEVTOOLS_ALLOCATIONS");
 
+
+const TEST_TIMEOUT = 5 * 60000;
+
 function getMostRecentBrowserWindow() {
   return Services.wm.getMostRecentWindow("navigator:browser");
 }
@@ -189,6 +192,9 @@ Damp.prototype = {
     
     await this.garbageCollect();
 
+    let duration = Math.round(performance.now() - this._startTime);
+    dump(`${this._currentTest} took ${duration}ms.\n`);
+
     this._runNextTest();
   },
 
@@ -202,19 +208,47 @@ Damp.prototype = {
   _nextTestIndex: 0,
   _tests: [],
   _onSequenceComplete: 0,
+
+  
+  _timeout: null,
+
+  
+  _startTime: null,
+
+  
+  _currentTest: null,
+
+  
+  _done: false,
+
   _runNextTest() {
+    window.clearTimeout(this._timeout);
+
     if (this._nextTestIndex >= this._tests.length) {
       this._onSequenceComplete();
       return;
     }
 
     let test = this._tests[this._nextTestIndex++];
+    this._startTime = performance.now();
+    this._currentTest = test;
 
-    dump("Loading test : " + test + "\n");
+    dump(`Loading test '${test}'\n`);
     let testMethod = require("chrome://damp/content/tests/" + test);
 
-    dump("Executing test : " + test + "\n");
-    testMethod();
+    this._timeout = window.setTimeout(() => {
+      this.error("Test timed out");
+    }, TEST_TIMEOUT);
+
+    dump(`Executing test '${test}'\n`);
+    let promise = testMethod();
+
+    
+    if (promise && typeof(promise.catch) == "function") {
+      promise.catch(e => {
+        this.exception(e);
+      });
+    }
   },
   
   _doSequence(tests, onComplete) {
@@ -264,13 +298,22 @@ Damp.prototype = {
   _onTestComplete: null,
 
   _doneInternal() {
+    
+    if (this._done) {
+      return;
+    }
+    this._done = true;
+
     if (this.allocationTracker) {
       this.allocationTracker.stop();
       this.allocationTracker = null;
     }
-    this._logLine("DAMP_RESULTS_JSON=" + JSON.stringify(this._results));
-    this._reportAllResults();
     this._win.gBrowser.selectedTab = this._dampTab;
+
+    if (this._results) {
+      this._logLine("DAMP_RESULTS_JSON=" + JSON.stringify(this._results));
+      this._reportAllResults();
+    }
 
     if (this._onTestComplete) {
       this._onTestComplete(JSON.parse(JSON.stringify(this._results))); 
@@ -282,55 +325,82 @@ Damp.prototype = {
     return allocationTracker();
   },
 
+  error(message) {
+    
+    
+    dump("TEST-UNEXPECTED-FAIL | damp | ");
+
+    
+    if (this._currentTest) {
+      dump(this._currentTest + ": ");
+    }
+
+    dump(message + "\n");
+
+    
+    this._tests = [];
+    this._results = null;
+    this._doneInternal();
+  },
+
+  exception(e) {
+    this.error(e);
+    dump(e.stack + "\n");
+  },
+
   startTest(doneCallback, config) {
-    dump("Initialize the head file with a reference to this DAMP instance\n");
-    let head = require("chrome://damp/content/tests/head.js");
-    head.initialize(this);
+    try {
+      dump("Initialize the head file with a reference to this DAMP instance\n");
+      let head = require("chrome://damp/content/tests/head.js");
+      head.initialize(this);
 
-    this._onTestComplete = function(results) {
-      TalosParentProfiler.pause("DAMP - end");
-      doneCallback(results);
-    };
-    this._config = config;
+      this._onTestComplete = function(results) {
+        TalosParentProfiler.pause("DAMP - end");
+        doneCallback(results);
+      };
+      this._config = config;
 
-    this._win = Services.wm.getMostRecentWindow("navigator:browser");
-    this._dampTab = this._win.gBrowser.selectedTab;
-    this._win.gBrowser.selectedBrowser.focus(); 
+      this._win = Services.wm.getMostRecentWindow("navigator:browser");
+      this._dampTab = this._win.gBrowser.selectedTab;
+      this._win.gBrowser.selectedBrowser.focus(); 
 
-    TalosParentProfiler.resume("DAMP - start");
+      TalosParentProfiler.resume("DAMP - start");
 
-    
-    let filter = Services.prefs.getCharPref("talos.subtests", "");
+      
+      let filter = Services.prefs.getCharPref("talos.subtests", "");
 
-    let tests = config.subtests.filter(test => !test.disabled)
-                               .filter(test => test.name.includes(filter));
+      let tests = config.subtests.filter(test => !test.disabled)
+                                 .filter(test => test.name.includes(filter));
 
-    if (tests.length === 0) {
-      dump("ERROR: Unable to find any test matching '" + filter + "'\n");
-    }
-
-    
-    let topWindow = getMostRecentBrowserWindow();
-    if (topWindow.coldRunDAMPDone) {
-      tests = tests.filter(test => !test.cold);
-    } else {
-      topWindow.coldRunDAMPDone = true;
-    }
-
-    
-    let sequenceArray = [];
-    for (let test of tests) {
-      for (let r = 0; r < config.repeat; r++) {
-        sequenceArray.push(test.path);
+      if (tests.length === 0) {
+        this.error(`Unable to find any test matching '${filter}'`);
       }
-    }
 
-    
-    
-    this.garbageCollect().then(() => {
-      this._doSequence(sequenceArray, this._doneInternal);
-    }).catch(e => {
-      dump("Exception while running DAMP tests: " + e + "\n" + e.stack + "\n");
-    });
+      
+      let topWindow = getMostRecentBrowserWindow();
+      if (topWindow.coldRunDAMPDone) {
+        tests = tests.filter(test => !test.cold);
+      } else {
+        topWindow.coldRunDAMPDone = true;
+      }
+
+      
+      let sequenceArray = [];
+      for (let test of tests) {
+        for (let r = 0; r < config.repeat; r++) {
+          sequenceArray.push(test.path);
+        }
+      }
+
+      
+      
+      this.garbageCollect().then(() => {
+        this._doSequence(sequenceArray, this._doneInternal);
+      }).catch(e => {
+        this.exception(e);
+      });
+    } catch (e) {
+      this.exception(e);
+    }
   }
 };
