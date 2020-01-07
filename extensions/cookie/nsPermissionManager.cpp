@@ -126,7 +126,13 @@ static const char* kPreloadPermissions[] = {
   "beacon",
   "fetch",
   "image",
-  "manifest"
+  "manifest",
+
+  
+  
+  
+  
+  "cookie"
 };
 
 
