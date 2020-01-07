@@ -239,6 +239,7 @@ var FormAssistant = {
 
 
 
+
   _getListSuggestions: function(aElement) {
     if (!(aElement instanceof Ci.nsIDOMHTMLInputElement) || !aElement.list) {
       return [];
