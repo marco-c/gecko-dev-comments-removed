@@ -33,12 +33,17 @@ const { l10n } = require("devtools/client/webconsole/new-console-output/utils/me
 
 
 
+
+
+
 function createContextMenu(jsterm, parentNode, {
   actor,
   clipboardText,
   variableText,
   message,
-  serviceContainer
+  serviceContainer,
+  openSidebar,
+  rootActorId,
 }) {
   let win = parentNode.ownerDocument.defaultView;
   let selection = win.getSelection();
@@ -164,6 +169,17 @@ function createContextMenu(jsterm, parentNode, {
       selection.selectAllChildren(webconsoleOutput);
     },
   }));
+
+  
+  if (openSidebar) {
+    menu.append(new MenuItem({
+      id: "console-menu-open-sidebar",
+      label: l10n.getStr("webconsole.menu.openInSidebar.label"),
+      acesskey: l10n.getStr("webconsole.menu.openInSidebar.accesskey"),
+      disabled: !rootActorId,
+      click: () => openSidebar(message.messageId),
+    }));
+  }
 
   return menu;
 }
