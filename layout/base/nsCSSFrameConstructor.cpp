@@ -4469,19 +4469,25 @@ nsCSSFrameConstructor::FindXULDisplayData(const nsStyleDisplay* aDisplay,
     return nullptr;
   }
 
-  
-  
-  
-  
-  if (StaticPrefs::layout_css_emulate_moz_box_with_flex() &&
-      aElement && !aElement->IsXULElement(nsGkAtoms::scrollcorner) &&
-      (aDisplay->mDisplay == StyleDisplay::MozBox ||
-       aDisplay->mDisplay == StyleDisplay::MozInlineBox)) {
-    return nullptr;
-  }
-
   MOZ_ASSERT(aDisplay->mDisplay <= StyleDisplay::MozPopup,
              "Someone added a new display value?");
+
+  if (aDisplay->mDisplay == StyleDisplay::MozBox ||
+      aDisplay->mDisplay == StyleDisplay::MozInlineBox) {
+    if (!aElement->IsInNativeAnonymousSubtree() &&
+        aElement->OwnerDoc()->IsContentDocument()) {
+      aElement->OwnerDoc()->WarnOnceAbout(nsIDocument::eMozBoxOrInlineBoxDisplay);
+    }
+
+    
+    
+    
+    
+    if (StaticPrefs::layout_css_emulate_moz_box_with_flex() &&
+        !aElement->IsXULElement(nsGkAtoms::scrollcorner)) {
+      return nullptr;
+    }
+  }
 
   const FrameConstructionDataByDisplay& data =
     sXULDisplayData[size_t(aDisplay->mDisplay) - size_t(StyleDisplay::MozBox)];
