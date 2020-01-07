@@ -264,6 +264,7 @@ add_task(async function testDetailsObjects() {
   let browserActionWidget = getBrowserActionWidget(extension);
 
   let tests = await extension.awaitMessage("ready");
+  await promiseAnimationFrame();
 
   
   const DEFAULT_ICON = "chrome://browser/content/extension.svg";

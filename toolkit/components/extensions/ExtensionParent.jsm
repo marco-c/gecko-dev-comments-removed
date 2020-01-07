@@ -1289,6 +1289,8 @@ function watchExtensionProxyContextLoad({extension, viewType, browser}, onExtens
 
 
 let IconDetails = {
+  DEFAULT_ICON: "chrome://browser/content/extension.svg",
+
   
   iconCache: new DefaultWeakMap(() => {
     return new DefaultMap(() => new DefaultMap(() => new Map()));
@@ -1361,7 +1363,7 @@ let IconDetails = {
             
             this._checkURL(url, extension);
           }
-          result[size] = url;
+          result[size] = url || this.DEFAULT_ICON;
         }
       }
 
