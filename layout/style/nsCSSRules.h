@@ -296,8 +296,6 @@ private:
   nsCSSKeyframesRule(const nsCSSKeyframesRule& aCopy);
   ~nsCSSKeyframesRule();
 public:
-  NS_DECL_ISUPPORTS_INHERITED
-
   
 #ifdef DEBUG
   virtual void List(FILE* out = stdout, int32_t aIndent = 0) const override;
@@ -305,15 +303,12 @@ public:
   virtual already_AddRefed<mozilla::css::Rule> Clone() const override;
 
   
-  NS_IMETHOD GetName(nsAString& aName) final;
-  NS_IMETHOD SetName(const nsAString& aName) final;
-  NS_IMETHOD AppendRule(const nsAString& aRule) final;
-  NS_IMETHOD DeleteRule(const nsAString& aKey) final;
-  using nsIDOMCSSKeyframesRule::FindRule;
-
-  
   void GetCssTextImpl(nsAString& aCssText) const final;
+  void GetName(nsAString& aName) const final;
+  void SetName(const nsAString& aName) final;
   mozilla::dom::CSSRuleList* CssRules() final { return GroupRule::CssRules(); }
+  void AppendRule(const nsAString& aRule) final;
+  void DeleteRule(const nsAString& aKey) final;
   nsCSSKeyframeRule* FindRule(const nsAString& aKey) final;
 
   const nsAtom* GetName() const { return mName; }

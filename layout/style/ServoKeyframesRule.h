@@ -32,15 +32,12 @@ public:
   void SetStyleSheet(StyleSheet* aSheet) final;
 
   
-  NS_IMETHOD GetName(nsAString& aName) final;
-  NS_IMETHOD SetName(const nsAString& aName) final;
-  NS_IMETHOD AppendRule(const nsAString& aRule) final;
-  NS_IMETHOD DeleteRule(const nsAString& aKey) final;
-  using nsIDOMCSSKeyframesRule::FindRule;
-
-  
   void GetCssTextImpl(nsAString& aCssText) const final;
+  void GetName(nsAString& aName) const final;
+  void SetName(const nsAString& aName) final;
   dom::CSSRuleList* CssRules() final;
+  void AppendRule(const nsAString& aRule) final;
+  void DeleteRule(const nsAString& aKey) final;
   dom::CSSKeyframeRule* FindRule(const nsAString& aKey) final;
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const final;
