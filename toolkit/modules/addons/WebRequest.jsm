@@ -747,7 +747,15 @@ HttpObserverManager = {
 
         if (registerFilter && opts.blocking && opts.extension) {
           data.registerTraceableChannel = (extension, tabParent) => {
-            channel.registerTraceableChannel(extension, tabParent);
+            
+            
+            
+            
+            
+            
+            if (channel.channel) {
+              channel.registerTraceableChannel(extension, tabParent);
+            }
           };
         }
 
