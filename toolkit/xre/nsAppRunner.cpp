@@ -102,10 +102,8 @@
 #include <math.h>
 #include "cairo/cairo-features.h"
 #include "mozilla/WindowsDllBlocklist.h"
-#include "mozilla/mscom/EnsureMTA.h"
 #include "mozilla/mscom/MainThreadRuntime.h"
 #include "mozilla/widget/AudioSession.h"
-#include "mozilla/WindowsVersion.h"
 
 #ifndef PROCESS_DEP_ENABLE
 #define PROCESS_DEP_ENABLE 0x1
@@ -4370,16 +4368,6 @@ XREMain::XRE_mainRun()
   auto dllServicesDisable = MakeScopeExit([&dllServices]() {
     dllServices->Disable();
   });
-
-#if defined(NIGHTLY_BUILD)
-  if (!IsWin8OrLater()) {
-    
-    
-    
-    
-    mscom::EnsureMTA();
-  }
-#endif 
 #endif 
 
 #ifdef NS_FUNCTION_TIMER
