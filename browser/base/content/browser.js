@@ -580,36 +580,6 @@ const gStoragePressureObserver = {
   }
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-function findChildShell(aDocument, aDocShell, aSoughtURI) {
-  aDocShell.QueryInterface(Ci.nsIWebNavigation);
-  aDocShell.QueryInterface(Ci.nsIInterfaceRequestor);
-  var doc = aDocShell.getInterface(Ci.nsIDOMDocument);
-  if ((aDocument && doc == aDocument) ||
-      (aSoughtURI && aSoughtURI.spec == aDocShell.currentURI.spec))
-    return aDocShell;
-
-  var node = aDocShell.QueryInterface(Ci.nsIDocShellTreeItem);
-  for (var i = 0; i < node.childCount; ++i) {
-    var docShell = node.getChildAt(i);
-    docShell = findChildShell(aDocument, docShell, aSoughtURI);
-    if (docShell)
-      return docShell;
-  }
-  return null;
-}
-
 var gPopupBlockerObserver = {
   handleEvent(aEvent) {
     if (aEvent.originalTarget != gBrowser.selectedBrowser)
@@ -5700,7 +5670,7 @@ var gUIDensity = {
       }
     }
 
-    TabsInTitlebar.update();
+    TabsInTitlebar.updateAppearance(true);
     gBrowser.tabContainer.uiDensityChanged();
   },
 };
@@ -8397,14 +8367,14 @@ const gAccessibilityServiceIndicator = {
       [...document.querySelectorAll(".accessibility-indicator")].forEach(
         indicator => ["click", "keypress"].forEach(type =>
           indicator.addEventListener(type, this)));
-      TabsInTitlebar.update();
+      TabsInTitlebar.updateAppearance(true);
     } else if (this._active) {
       this._active = false;
       document.documentElement.removeAttribute("accessibilitymode");
       [...document.querySelectorAll(".accessibility-indicator")].forEach(
         indicator => ["click", "keypress"].forEach(type =>
           indicator.removeEventListener(type, this)));
-      TabsInTitlebar.update();
+      TabsInTitlebar.updateAppearance(true);
     }
   },
 

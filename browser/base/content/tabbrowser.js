@@ -370,10 +370,6 @@ window._gBrowser = {
     return this.selectedBrowser.webNavigation;
   },
 
-  get webBrowserFind() {
-    return this.selectedBrowser.webBrowserFind;
-  },
-
   get webProgress() {
     return this.selectedBrowser.webProgress;
   },
@@ -2149,7 +2145,6 @@ window._gBrowser = {
     var aNoInitialLabel;
     var aFocusUrlBar;
     var aName;
-    var aBulkOrderedOpen;
     if (arguments.length == 2 &&
         typeof arguments[1] == "object" &&
         !(arguments[1] instanceof Ci.nsIURI)) {
@@ -2181,7 +2176,6 @@ window._gBrowser = {
       aNoInitialLabel = params.noInitialLabel;
       aFocusUrlBar = params.focusUrlBar;
       aName = params.name;
-      aBulkOrderedOpen = params.bulkOrderedOpen;
     }
 
     
@@ -2435,21 +2429,18 @@ window._gBrowser = {
     }
 
     
-    if (!aBulkOrderedOpen &&
-        ((openerTab &&
-          Services.prefs.getBoolPref("browser.tabs.insertRelatedAfterCurrent")) ||
-         Services.prefs.getBoolPref("browser.tabs.insertAfterCurrent"))) {
+    
+    if (openerTab &&
+        Services.prefs.getBoolPref("browser.tabs.insertRelatedAfterCurrent")) {
 
-      let lastRelatedTab = openerTab && this._lastRelatedTabMap.get(openerTab);
-      let newTabPos = (lastRelatedTab || openerTab || this.selectedTab)._tPos + 1;
-
+      let lastRelatedTab = this._lastRelatedTabMap.get(openerTab);
+      let newTabPos = (lastRelatedTab || openerTab)._tPos + 1;
       if (lastRelatedTab)
         lastRelatedTab.owner = null;
-      else if (openerTab)
+      else
         t.owner = openerTab;
       this.moveTabTo(t, newTabPos, true);
-      if (openerTab)
-        this._lastRelatedTabMap.set(openerTab, t);
+      this._lastRelatedTabMap.set(openerTab, t);
     }
 
     
