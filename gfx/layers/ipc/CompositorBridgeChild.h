@@ -14,6 +14,7 @@
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/layers/PCompositorBridgeChild.h"
 #include "mozilla/layers/TextureForwarder.h" 
+#include "mozilla/layers/PaintThread.h" 
 #include "mozilla/webrender/WebRenderTypes.h"
 #include "nsClassHashtable.h"           
 #include "nsRefPtrHashtable.h"
@@ -45,9 +46,6 @@ class CompositorManagerChild;
 class CompositorOptions;
 class TextureClient;
 class TextureClientPool;
-class CapturedBufferState;
-class CapturedPaintState;
-class CapturedTiledPaintState;
 struct FrameMetrics;
 
 class CompositorBridgeChild final : public PCompositorBridgeChild,
@@ -227,27 +225,43 @@ public:
 
   
   
-  void NotifyBeginAsyncPrepareBuffer(CapturedBufferState* aState);
+  template<typename CapturedState>
+  void NotifyBeginAsyncPaint(CapturedState& aState)
+  {
+    MOZ_ASSERT(NS_IsMainThread());
+
+    MonitorAutoLock lock(mPaintLock);
+
+    
+    
+    
+    MOZ_ASSERT(!mIsDelayingForAsyncPaints);
+
+    mOutstandingAsyncPaints++;
+
+    
+    
+    aState->ForEachTextureClient([this] (auto aClient) {
+      aClient->AddPaintThreadRef();
+      mTextureClientsForAsyncPaint.AppendElement(aClient);
+    });
+  }
 
   
   
-  void NotifyFinishedAsyncPrepareBuffer(CapturedBufferState* aState);
+  template<typename CapturedState>
+  void NotifyFinishedAsyncPaint(CapturedState& aState)
+  {
+    MOZ_ASSERT(PaintThread::IsOnPaintThread());
 
-  
-  
-  void NotifyBeginAsyncPaint(CapturedPaintState* aState);
+    MonitorAutoLock lock(mPaintLock);
+    mOutstandingAsyncPaints--;
 
-  
-  
-  void NotifyFinishedAsyncPaint(CapturedPaintState* aState);
-
-  
-  
-  void NotifyBeginAsyncTiledPaint(CapturedTiledPaintState* aState);
-
-  
-  
-  void NotifyFinishedAsyncTiledPaint(CapturedTiledPaintState* aState);
+    aState->ForEachTextureClient([] (auto aClient) {
+      aClient->DropPaintThreadRef();
+    });
+    aState->DropTextureClients();
+  }
 
   
   
