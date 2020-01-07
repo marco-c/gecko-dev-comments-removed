@@ -1047,11 +1047,7 @@ pref("dom.ipc.plugins.sandbox-level.flash", 0);
 
 
 
-#if defined(NIGHTLY_BUILD)
 pref("security.sandbox.content.level", 5);
-#else
-pref("security.sandbox.content.level", 4);
-#endif
 
 
 
