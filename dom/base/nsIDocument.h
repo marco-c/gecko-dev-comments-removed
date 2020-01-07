@@ -3072,19 +3072,11 @@ public:
   }
 
   
+  
   void NotifyUserActivation();
 
   
   bool HasBeenUserActivated();
-
-  void MaybeNotifyUserActivation(nsIPrincipal* aPrincipal);
-
-  
-  nsIDocument* GetSameTypeParentDocument();
-
-  
-  
-  nsIDocument* GetFirstParentDocumentWithSamePrincipal(nsIPrincipal* aPrincipal);
 
   bool HasScriptsBlockedBySandbox();
 
@@ -3274,6 +3266,17 @@ protected:
 
   
   bool IsPotentiallyScrollable(mozilla::dom::HTMLBodyElement* aBody);
+
+  
+  nsIDocument* GetSameTypeParentDocument();
+
+  
+  
+  nsIDocument* GetFirstParentDocumentWithSamePrincipal(nsIPrincipal* aPrincipal);
+
+  
+  void ActivateByUserGesture();
+  void MaybeActivateByUserGesture(nsIPrincipal* aPrincipal);
 
   
   static bool MatchNameAttribute(mozilla::dom::Element* aElement,
