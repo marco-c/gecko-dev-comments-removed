@@ -393,6 +393,15 @@ test_description_schema = Schema({
         Any(basestring, None),
     ),
 
+    
+    
+    
+    
+    Optional('target'): optionally_keyed_by(
+        'test-platform',
+        Any(basestring, None),
+    ),
+
 }, required=True)
 
 
@@ -499,17 +508,19 @@ def setup_talos(config, tests):
 def set_target(config, tests):
     for test in tests:
         build_platform = test['build-platform']
-        if build_platform.startswith('macosx'):
-            target = 'target.dmg'
-        elif build_platform.startswith('android'):
-            if 'geckoview' in test['test-name']:
-                target = 'geckoview_example.apk'
-            else:
+        target = None
+        if 'target' in test:
+            resolve_keyed_by(test, 'target', item_name=test['test-name'])
+            target = test['target']
+        if not target:
+            if build_platform.startswith('macosx'):
+                target = 'target.dmg'
+            elif build_platform.startswith('android'):
                 target = 'target.apk'
-        elif build_platform.startswith('win'):
-            target = 'target.zip'
-        else:
-            target = 'target.tar.bz2'
+            elif build_platform.startswith('win'):
+                target = 'target.zip'
+            else:
+                target = 'target.tar.bz2'
         test['mozharness']['build-artifact-name'] = 'public/build/' + target
 
         yield test
