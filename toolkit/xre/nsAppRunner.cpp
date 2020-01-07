@@ -3876,6 +3876,9 @@ XREMain::XRE_mainStartup(bool* aExitFlag)
 
 #if defined(MOZ_WIDGET_GTK) && defined(MOZ_X11)
   
+  
+  
+  
   const char* useXI2 = PR_GetEnv("MOZ_USE_XINPUT2");
   if (!useXI2 || (*useXI2 == '0'))
     gdk_disable_multidevice();
