@@ -2220,15 +2220,15 @@ nsPresContext::HasAuthorSpecifiedRules(const nsIFrame* aFrame,
     return false;
   }
 
-  ComputedStyle* styleContext = aFrame->Style();
-  CSSPseudoElementType pseudoType = styleContext->GetPseudoType();
+  ComputedStyle* computedStyle = aFrame->Style();
+  CSSPseudoElementType pseudoType = computedStyle->GetPseudoType();
   
   
   if (pseudoType == CSSPseudoElementType::InheritingAnonBox ||
       pseudoType == CSSPseudoElementType::NonInheritingAnonBox) {
     return false;
   }
-  return Servo_HasAuthorSpecifiedRules(styleContext->AsServo(),
+  return Servo_HasAuthorSpecifiedRules(computedStyle->AsServo(),
                                        elem, pseudoType,
                                        aRuleTypeMask,
                                        UseDocumentColors());
