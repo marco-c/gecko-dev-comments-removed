@@ -1976,6 +1976,14 @@ Element::UnbindFromTree(bool aDeep, bool aNullParent)
     DeleteProperty(nsGkAtoms::animationsOfBeforeProperty);
     DeleteProperty(nsGkAtoms::animationsOfAfterProperty);
     DeleteProperty(nsGkAtoms::animationsProperty);
+    if (document) {
+      if (nsPresContext* presContext = document->GetPresContext()) {
+        
+        
+        
+        presContext->EffectCompositor()->ClearRestyleRequestsFor(this);
+      }
+    }
   }
 
   
