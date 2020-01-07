@@ -294,7 +294,7 @@ public class GeckoSession extends LayerSession
                 "GeckoView:AndroidPermission",
                 "GeckoView:ContentPermission",
                 "GeckoView:MediaPermission"
-            },  true
+            }
         ) {
             @Override
             public void handleMessage(final PermissionDelegate delegate,
