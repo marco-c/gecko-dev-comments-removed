@@ -30,19 +30,25 @@ const actionTypes = {
 
 const prefs = {
   PREFS: {
+    
+    
     FILTER: {
-      ERROR: "devtools.webconsole.filter.error",
-      WARN: "devtools.webconsole.filter.warn",
-      INFO: "devtools.webconsole.filter.info",
-      LOG: "devtools.webconsole.filter.log",
-      DEBUG: "devtools.webconsole.filter.debug",
-      CSS: "devtools.webconsole.filter.css",
-      NET: "devtools.webconsole.filter.net",
-      NETXHR: "devtools.webconsole.filter.netxhr",
+      ERROR: "filter.error",
+      WARN: "filter.warn",
+      INFO: "filter.info",
+      LOG: "filter.log",
+      DEBUG: "filter.debug",
+      CSS: "filter.css",
+      NET: "filter.net",
+      NETXHR: "filter.netxhr",
     },
     UI: {
-      FILTER_BAR: "devtools.webconsole.ui.filterbar",
+      
+      
+      FILTER_BAR: "ui.filterbar",
+      
       PERSIST: "devtools.webconsole.persistlog",
+      
       SIDEBAR_TOGGLE: "devtools.webconsole.sidebarToggle",
     }
   }

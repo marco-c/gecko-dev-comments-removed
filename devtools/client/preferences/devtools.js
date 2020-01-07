@@ -256,6 +256,15 @@ pref("devtools.webconsole.filter.serverinfo", false);
 pref("devtools.webconsole.filter.serverlog", false);
 
 
+pref("devtools.browserconsole.filter.error", true);
+pref("devtools.browserconsole.filter.warn", true);
+pref("devtools.browserconsole.filter.info", true);
+pref("devtools.browserconsole.filter.log", true);
+pref("devtools.browserconsole.filter.debug", true);
+pref("devtools.browserconsole.filter.css", false);
+pref("devtools.browserconsole.filter.net", false);
+pref("devtools.browserconsole.filter.netxhr", false);
+
 pref("devtools.browserconsole.filter.network", true);
 pref("devtools.browserconsole.filter.networkinfo", false);
 pref("devtools.browserconsole.filter.netwarn", true);
@@ -282,6 +291,8 @@ pref("devtools.browserconsole.filter.serverlog", false);
 
 
 pref("devtools.webconsole.ui.filterbar", false);
+
+pref("devtools.browserconsole.ui.filterbar", false);
 
 
 pref("devtools.webconsole.inputHistoryCount", 50);
