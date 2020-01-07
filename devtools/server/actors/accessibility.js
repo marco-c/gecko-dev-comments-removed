@@ -120,16 +120,33 @@ function isDefunct(accessible) {
   let defunct = false;
 
   try {
-    let extState = {};
-    accessible.getState({}, extState);
+    let extraState = {};
+    accessible.getState({}, extraState);
     
     
-    defunct = !!(extState.value & Ci.nsIAccessibleStates.EXT_STATE_DEFUNCT);
+    defunct = !!(extraState.value & Ci.nsIAccessibleStates.EXT_STATE_DEFUNCT);
   } catch (e) {
     defunct = true;
   }
 
   return defunct;
+}
+
+
+
+
+
+
+
+
+
+
+function isStale(accessible) {
+  let extraState = {};
+  accessible.getState({}, extraState);
+  
+  
+  return !!(extraState.value & Ci.nsIAccessibleStates.EXT_STATE_STALE);
 }
 
 
@@ -507,9 +524,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
     }
 
     let doc = this.getRawAccessibleFor(this.rootDoc);
-    let state = {};
-    doc.getState(state, {});
-    if (state.value & Ci.nsIAccessibleStates.STATE_BUSY) {
+    if (isStale(doc)) {
       return this.once("document-ready").then(docAcc => this.addRef(docAcc));
     }
 
@@ -577,6 +592,16 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
     let rawAccessible = event.accessible;
     let accessible = this.getRef(rawAccessible);
 
+    if ((rawAccessible instanceof Ci.nsIAccessibleDocument) && !accessible) {
+      let rootDocAcc = this.getRawAccessibleFor(this.rootDoc);
+      if (rawAccessible === rootDocAcc && !isStale(rawAccessible)) {
+        this.purgeSubtree(rawAccessible, event.DOMNode);
+        
+        
+        events.emit(this, "document-ready", rawAccessible);
+      }
+    }
+
     switch (event.eventType) {
       case EVENT_STATE_CHANGE:
         let { state, isEnabled } = event.QueryInterface(nsIAccessibleStateChangeEvent);
@@ -585,11 +610,6 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
         if (isBusy && !isEnabled && rawAccessible instanceof Ci.nsIAccessibleDocument) {
           
           this.purgeSubtree(rawAccessible, event.DOMNode);
-          
-          
-          if (event.DOMNode == this.rootDoc) {
-            events.emit(this, "document-ready", rawAccessible);
-          }
         }
 
         if (accessible) {
