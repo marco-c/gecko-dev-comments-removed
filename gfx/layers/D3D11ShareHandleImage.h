@@ -39,6 +39,10 @@ protected:
     TextureAllocationFlags aAllocFlags) override;
 
   RefPtr<ID3D11Device> mDevice;
+  
+
+
+  RefPtr<ID3D11Device> mImageDevice;
 };
 
 
