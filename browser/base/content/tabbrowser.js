@@ -353,13 +353,8 @@ window._gBrowser = {
   
 
 
-  loadURIWithFlags(aURI, aFlags, aReferrerURI, aCharset, aPostData) {
-    
-    
-    
-    
-    
-    return this.selectedBrowser.loadURIWithFlags(aURI, aFlags, aReferrerURI, aCharset, aPostData);
+  loadURIWithFlags(aURI, aParams) {
+    return this.mCurrentBrowser.loadURIWithFlags(aURI, aParams);
   },
 
   gotoIndex(aIndex) {
@@ -4716,4 +4711,3 @@ var StatusPanel = {
     }
   }
 };
-

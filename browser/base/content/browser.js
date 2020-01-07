@@ -3171,9 +3171,9 @@ var BrowserOnClick = {
     
     
     
-    gBrowser.loadURIWithFlags(gBrowser.currentURI.spec,
-                              Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CLASSIFIER,
-                              null, null, null);
+    gBrowser.loadURIWithFlags(gBrowser.currentURI.spec, {
+      flags: Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CLASSIFIER,
+    });
 
     Services.perms.add(gBrowser.currentURI, "safe-browsing",
                        Ci.nsIPermissionManager.ALLOW_ACTION,
@@ -3296,7 +3296,7 @@ function BrowserReloadWithFlags(reloadFlags) {
     
     
     
-    gBrowser.loadURIWithFlags(url, reloadFlags);
+    gBrowser.loadURIWithFlags(url, { flags: reloadFlags });
     return;
   }
 
@@ -5341,7 +5341,7 @@ nsBrowserAccess.prototype = {
                             Ci.nsIWebNavigation.LOAD_FLAGS_FROM_EXTERNAL :
                             Ci.nsIWebNavigation.LOAD_FLAGS_NONE;
           gBrowser.loadURIWithFlags(aURI.spec, {
-            aTriggeringPrincipal,
+            triggeringPrincipal: aTriggeringPrincipal,
             flags: loadflags,
             referrerURI: referrer,
             referrerPolicy,
