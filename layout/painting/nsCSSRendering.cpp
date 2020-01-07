@@ -3009,7 +3009,7 @@ nsCSSRendering::ComputeImageLayerPositioningArea(nsPresContext* aPresContext,
     
     
     
-    attachedToFrame = aPresContext->PresShell()->FrameManager()->GetRootFrame();
+    attachedToFrame = aPresContext->PresShell()->GetRootFrame();
     NS_ASSERTION(attachedToFrame, "no root frame");
     nsIFrame* pageContentFrame = nullptr;
     if (aPresContext->IsPaginated()) {

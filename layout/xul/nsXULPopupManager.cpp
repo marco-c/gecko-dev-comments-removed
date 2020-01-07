@@ -660,7 +660,7 @@ nsXULPopupManager::InitTriggerEvent(nsIDOMEvent* aEvent, nsIContent* aPopup,
           if (!rootDocPresContext)
             return;
           nsIFrame* rootDocumentRootFrame = rootDocPresContext->
-              PresShell()->FrameManager()->GetRootFrame();
+              PresShell()->GetRootFrame();
           if ((event->mClass == eMouseEventClass ||
                event->mClass == eMouseScrollEventClass ||
                event->mClass == eWheelEventClass) &&
@@ -672,7 +672,7 @@ nsXULPopupManager::InitTriggerEvent(nsIDOMEvent* aEvent, nsIContent* aPopup,
             mouseEvent->GetClientY(&clientPt.y);
 
             
-            nsPoint thisDocToRootDocOffset = presShell->FrameManager()->
+            nsPoint thisDocToRootDocOffset = presShell->
               GetRootFrame()->GetOffsetToCrossDoc(rootDocumentRootFrame);
             
             mCachedMousePoint.x = presContext->AppUnitsToDevPixels(

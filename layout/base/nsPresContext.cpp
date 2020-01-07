@@ -730,8 +730,7 @@ nsPresContext::InvalidatePaintedLayers()
 {
   if (!mShell)
     return;
-  nsIFrame* rootFrame = mShell->FrameManager()->GetRootFrame();
-  if (rootFrame) {
+  if (nsIFrame* rootFrame = mShell->GetRootFrame()) {
     
     
     
@@ -3193,7 +3192,7 @@ nsRootPresContext::ComputePluginGeometryUpdates(nsIFrame* aFrame,
 
   if (aBuilder) {
     MOZ_ASSERT(aList);
-    nsIFrame* rootFrame = FrameManager()->GetRootFrame();
+    nsIFrame* rootFrame = mShell->GetRootFrame();
 
     if (rootFrame && aBuilder->ContainsPluginItem()) {
       aBuilder->SetForPluginGeometry(true);
