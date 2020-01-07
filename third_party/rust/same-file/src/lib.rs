@@ -46,10 +46,28 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#![doc(html_root_url = "https://docs.rs/same-file/1.0.0")]
 #![deny(missing_docs)]
 
-#[cfg(windows)]
-extern crate kernel32;
 #[cfg(windows)]
 extern crate winapi;
 
@@ -78,10 +96,44 @@ mod win;
 
 
 
+
+
+
+
+
 #[derive(Debug, Eq, PartialEq)]
 pub struct Handle(imp::Handle);
 
 impl Handle {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -91,41 +143,200 @@ impl Handle {
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn from_file(file: File) -> io::Result<Handle> {
         imp::Handle::from_file(file).map(Handle)
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     pub fn stdin() -> io::Result<Handle> {
         imp::Handle::stdin().map(Handle)
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn stdout() -> io::Result<Handle> {
         imp::Handle::stdout().map(Handle)
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     pub fn stderr() -> io::Result<Handle> {
         imp::Handle::stderr().map(Handle)
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn as_file(&self) -> &File {
         self.0.as_file()
     }
 
+    
+    
+    
+    
+    
     
     pub fn as_file_mut(&mut self) -> &mut File {
         self.0.as_file_mut()
     }
 
     
+    
+    
     #[cfg(any(target_os = "redox", unix))]
     pub fn dev(&self) -> u64 {
         self.0.dev()
     }
 
+    
+    
     
     #[cfg(any(target_os = "redox", unix))]
     pub fn ino(&self) -> u64 {
@@ -149,11 +360,14 @@ impl Handle {
 
 
 
+
+
+
 pub fn is_same_file<P, Q>(
     path1: P,
     path2: Q,
 ) -> io::Result<bool> where P: AsRef<Path>, Q: AsRef<Path> {
-    Ok(try!(Handle::from_path(path1)) == try!(Handle::from_path(path2)))
+    Ok(Handle::from_path(path1)? == Handle::from_path(path2)?)
 }
 
 #[cfg(test)]
@@ -300,5 +514,17 @@ mod tests {
         fs::create_dir(dir.join("a")).unwrap();
         soft_link_dir(dir.join("a"), dir.join("alink")).unwrap();
         assert!(is_same_file(dir.join("a"), dir.join("alink")).unwrap());
+    }
+
+    #[test]
+    fn test_send() {
+        fn assert_send<T: Send>() {}
+        assert_send::<super::Handle>();
+    }
+
+    #[test]
+    fn test_sync() {
+        fn assert_sync<T: Sync>() {}
+        assert_sync::<super::Handle>();
     }
 }
