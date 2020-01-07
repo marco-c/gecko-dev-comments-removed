@@ -290,8 +290,7 @@ class FirefoxDataProvider {
 
 
 
-
-  async onNetworkEvent(type, networkInfo) {
+  async onNetworkEvent(networkInfo) {
     let {
       actor,
       cause,
@@ -324,8 +323,7 @@ class FirefoxDataProvider {
 
 
 
-
-  onNetworkEventUpdate(type, data) {
+  onNetworkEventUpdate(data) {
     let { packet, networkInfo } = data;
     let { actor } = networkInfo;
     let { updateType } = packet;

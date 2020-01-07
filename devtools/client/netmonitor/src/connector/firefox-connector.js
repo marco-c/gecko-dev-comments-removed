@@ -178,10 +178,10 @@ class FirefoxConnector {
   displayCachedEvents() {
     for (let networkInfo of this.webConsoleClient.getNetworkEvents()) {
       
-      this.dataProvider.onNetworkEvent("networkEvent", networkInfo);
+      this.dataProvider.onNetworkEvent(networkInfo);
       
       for (let updateType of networkInfo.updates) {
-        this.dataProvider.onNetworkEventUpdate("networkEventUpdate", {
+        this.dataProvider.onNetworkEventUpdate({
           packet: { updateType },
           networkInfo,
         });
@@ -215,7 +215,7 @@ class FirefoxConnector {
 
 
 
-  onDocEvent(type, event) {
+  onDocEvent(event) {
     this.actions.addTimingMarker(event);
     window.emit(EVENTS.TIMELINE_EVENT, event);
   }

@@ -357,9 +357,7 @@ WebConsoleConnectionProxy.prototype = {
 
 
 
-
-
-  _onNetworkEvent: function(type, networkInfo) {
+  _onNetworkEvent: function(networkInfo) {
     if (!this.webConsoleFrame) {
       return;
     }
@@ -377,9 +375,7 @@ WebConsoleConnectionProxy.prototype = {
 
 
 
-
-
-  _onNetworkEventUpdate: function(type, response) {
+  _onNetworkEventUpdate: function(response) {
     if (!this.webConsoleFrame) {
       return;
     }
