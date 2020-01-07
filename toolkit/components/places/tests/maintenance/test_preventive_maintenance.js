@@ -11,9 +11,6 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/PlacesDBUtils.jsm");
-
-
 var hs = PlacesUtils.history;
 var bs = PlacesUtils.bookmarks;
 var ts = PlacesUtils.tagging;

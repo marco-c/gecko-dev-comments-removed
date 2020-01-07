@@ -8,10 +8,11 @@
 
 
 
-
-ChromeUtils.import("resource://gre/modules/PlacesDBUtils.jsm");
-
 add_task(async function() {
+  
+  Assert.equal(PlacesUtils.history.databaseStatus,
+               PlacesUtils.history.DATABASE_STATUS_CREATE);
+
   let tasksStatusMap = await PlacesDBUtils.checkAndFixDatabase();
   let numberOfTasksRun = tasksStatusMap.size;
     let successfulTasks = [];

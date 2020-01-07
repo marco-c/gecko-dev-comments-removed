@@ -6,9 +6,6 @@
 
 
 
-
-ChromeUtils.import("resource://gre/modules/PlacesDBUtils.jsm");
-
 add_task(async function() {
   let tasksStatusMap = await PlacesDBUtils.runTasks([PlacesDBUtils.invalidateCaches]);
   let numberOfTasksRun = tasksStatusMap.size;

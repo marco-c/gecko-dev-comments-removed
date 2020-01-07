@@ -11,6 +11,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   Services: "resource://gre/modules/Services.jsm",
   OS: "resource://gre/modules/osfile.jsm",
   PlacesUtils: "resource://gre/modules/PlacesUtils.jsm",
+  Sqlite: "resource://gre/modules/Sqlite.jsm",
 });
 
 var EXPORTED_SYMBOLS = [ "PlacesDBUtils" ];
@@ -105,44 +106,24 @@ var PlacesDBUtils = {
   async checkIntegrity() {
     let logs = [];
 
-    async function integrity(db) {
-      let row;
-      await db.execute("PRAGMA integrity_check", null, (r, cancel) => {
-        row = r;
-        cancel();
-      });
-      return row.getResultByIndex(0) === "ok";
-    }
-    try {
-      
-      await PlacesUtils.withConnectionWrapper("PlacesDBUtils: check the integrity", async db => {
-        let isOk = await integrity(db);
-        if (isOk) {
-          logs.push("The database is sane");
-        } else {
-          
-          logs.push("The database is corrupt");
-          
-          await db.execute("REINDEX");
-          logs.push("The database has been REINDEXed");
-          isOk = await integrity(db);
-          if (isOk) {
-            logs.push("The database is now sane");
-          } else {
-            logs.push("The database is still corrupt");
-            Services.prefs.setBoolPref("places.database.replaceOnStartup", true);
-            PlacesDBUtils.clearPendingTasks();
-            throw new Error("Unable to fix corruption, database will be replaced on next startup");
-          }
-        }
-      });
-    } catch (ex) {
-      if (ex.message.indexOf("Unable to fix corruption") !== 0) {
-        
+    async function check(dbName) {
+      try {
+        await integrity(dbName);
+        logs.push(`The ${dbName} database is sane`);
+      } catch (ex) {
         PlacesDBUtils.clearPendingTasks();
-        throw new Error("Unable to check database integrity");
+        if (ex.status == Cr.NS_ERROR_FILE_CORRUPTED) {
+          logs.push(`The ${dbName} database is corrupt`);
+          Services.prefs.setCharPref("places.database.replaceDatabaseOnStartup", dbName);
+          throw new Error(`Unable to fix corruption, ${dbName} will be replaced on next startup`);
+        }
+        throw new Error(`Unable to check ${dbName} integrity: ${ex}`);
       }
     }
+
+    await check("places.sqlite");
+    await check("favicons.sqlite");
+
     return logs;
   },
 
@@ -1086,3 +1067,45 @@ var PlacesDBUtils = {
     return tasksMap;
   }
 };
+
+async function integrity(dbName) {
+  async function check(db) {
+    let row;
+    await db.execute("PRAGMA integrity_check", null, (r, cancel) => {
+      row = r;
+      cancel();
+    });
+    return row.getResultByIndex(0) === "ok";
+  }
+
+  
+  
+  
+  
+  
+  let path = OS.Path.join(OS.Constants.Path.profileDir, dbName);
+  let db = await Sqlite.openConnection({ path });
+  try {
+    if (await check(db))
+      return;
+
+    
+    
+    try {
+      await db.execute("REINDEX");
+    } catch (ex) {
+      let error = new Error("Impossible to reindex database");
+      error.status = Cr.NS_ERROR_FILE_CORRUPTED;
+      throw error;
+    }
+
+    
+    if (!await check(db)) {
+      let error = new Error("The database is still corrupt");
+      error.status = Cr.NS_ERROR_FILE_CORRUPTED;
+      throw error;
+    }
+  } finally {
+    await db.close();
+  }
+}

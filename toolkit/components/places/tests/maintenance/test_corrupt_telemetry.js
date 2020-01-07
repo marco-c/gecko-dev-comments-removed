@@ -5,14 +5,7 @@
 
 
 add_task(async function() {
-  let profileDBPath = await OS.Path.join(OS.Constants.Path.profileDir, "places.sqlite");
-  await OS.File.remove(profileDBPath, {ignoreAbsent: true});
-  
-  Assert.ok(!(await OS.File.exists(profileDBPath)), "places.sqlite shouldn't exist");
-  let dir = await OS.File.getCurrentDirectory();
-  let src = OS.Path.join(dir, "corruptDB.sqlite");
-  await OS.File.copy(src, profileDBPath);
-  Assert.ok(await OS.File.exists(profileDBPath), "places.sqlite should exist");
+  await createCorruptDb("places.sqlite");
 
   let count = Services.telemetry
                       .getHistogramById("PLACES_DATABASE_CORRUPTION_HANDLING_STAGE")

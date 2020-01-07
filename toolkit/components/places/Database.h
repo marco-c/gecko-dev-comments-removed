@@ -245,22 +245,13 @@ protected:
 
 
 
-
-
-
-
-  nsresult InitDatabaseFile(nsCOMPtr<mozIStorageService>& aStorage,
-                            bool* aNewDatabaseCreated);
+  nsresult EnsureFaviconsDatabaseAttached(const nsCOMPtr<mozIStorageService>& aStorage);
 
   
 
 
 
 
-
-  nsresult EnsureFaviconsDatabaseFile(nsCOMPtr<mozIStorageService>& aStorage);
-
-  
 
 
 
@@ -270,7 +261,9 @@ protected:
 
 
   nsresult BackupAndReplaceDatabaseFile(nsCOMPtr<mozIStorageService>& aStorage,
-                                        bool aTryToClone);
+                                        const nsString& aDbFilename,
+                                        bool aTryToClone,
+                                        bool aReopenConnection);
 
   
 
@@ -278,7 +271,10 @@ protected:
 
 
 
-  nsresult TryToCloneTablesFromCorruptDatabase(nsCOMPtr<mozIStorageService>& aStorage);
+
+
+  nsresult TryToCloneTablesFromCorruptDatabase(const nsCOMPtr<mozIStorageService>& aStorage,
+                                               const nsCOMPtr<nsIFile>& aDatabaseFile);
 
   
 
