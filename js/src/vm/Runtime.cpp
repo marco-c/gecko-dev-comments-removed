@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=8 sts=4 et sw=4 tw=99:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Atomics.h"
@@ -15,7 +15,7 @@
 # include <mach/mach.h>
 #elif defined(XP_UNIX)
 # include <sys/resource.h>
-#endif 
+#endif // defined(XP_DARWIN) || defined(XP_UNIX) || defined(XP_WIN)
 #include <locale.h>
 #include <string.h>
 #ifdef JS_CAN_CHECK_THREADSAFE_ACCESSES
@@ -59,13 +59,13 @@ using mozilla::PodZero;
 using mozilla::PositiveInfinity;
 using JS::DoubleNaNValue;
 
- MOZ_THREAD_LOCAL(JSContext*) js::TlsContext;
- Atomic<size_t> JSRuntime::liveRuntimesCount;
+/* static */ MOZ_THREAD_LOCAL(JSContext*) js::TlsContext;
+/* static */ Atomic<size_t> JSRuntime::liveRuntimesCount;
 Atomic<JS::LargeAllocationFailureCallback> js::OnLargeAllocationFailure;
 
 namespace js {
     bool gCanUseExtraThreads = true;
-} 
+} // namespace js
 
 void
 js::DisableExtraThreads()
@@ -178,7 +178,7 @@ JSRuntime::JSRuntime(JSRuntime* parentRuntime)
     JS_COUNT_CTOR(JSRuntime);
     liveRuntimesCount++;
 
-    
+    /* Initialize infallibly first, so we can goto bad and JS_DestroyRuntime. */
 
     PodZero(&asmJSCacheOps);
     lcovOutput().init();
@@ -240,7 +240,7 @@ JSRuntime::init(JSContext* cx, uint32_t maxbytes, uint32_t maxNurseryBytes)
     if (!scriptDataTable_.ref().init())
         return false;
 
-    
+    /* The garbage collector depends on everything before this point being initialized. */
     gcInitialized = true;
 
     if (!InitRuntimeNumberState(this))
@@ -277,37 +277,37 @@ JSRuntime::destroyRuntime()
     sharedIntlData.ref().destroyInstance();
 
     if (gcInitialized) {
-        
-
-
-
-        JSContext* cx = TlsContext.get();
+        /*
+         * Finish any in-progress GCs first. This ensures the parseWaitingOnGC
+         * list is empty in CancelOffThreadParses.
+         */
+        JSContext* cx = mainContextFromOwnThread();
         if (JS::IsIncrementalGCInProgress(cx))
             FinishGC(cx);
 
-        
+        /* Free source hook early, as its destructor may want to delete roots. */
         sourceHook = nullptr;
 
-        
-
-
-
-
-
+        /*
+         * Cancel any pending, in progress or completed Ion compilations and
+         * parse tasks. Waiting for wasm and compression tasks is done
+         * synchronously (on the active thread or during parse tasks), so no
+         * explicit canceling is needed for these.
+         */
         CancelOffThreadIonCompile(this);
         CancelOffThreadParses(this);
         CancelOffThreadCompressions(this);
 
-        
+        /* Remove persistent GC roots. */
         gc.finishRoots();
 
-        
-
-
-
+        /*
+         * Flag us as being destroyed. This allows the GC to free things like
+         * interned atoms and Ion trampolines.
+         */
         beingDestroyed_ = true;
 
-        
+        /* Allow the GC to release scripts that were being profiled. */
         profilingScripts = false;
 
         JS::PrepareForFullGC(cx);
@@ -318,10 +318,10 @@ JSRuntime::destroyRuntime()
 
     MOZ_ASSERT(!hasHelperThreadZones());
 
-    
-
-
-
+    /*
+     * Even though all objects in the compartment are dead, we may have keep
+     * some filenames around because of gcKeepAtoms.
+     */
     FreeScriptData(this);
 
 #if !EXPOSE_INTL_API
@@ -432,13 +432,13 @@ InvokeInterruptCallback(JSContext* cx)
 
     cx->runtime()->gc.gcIfRequested();
 
-    
-    
+    // A worker thread may have requested an interrupt after finishing an Ion
+    // compilation.
     jit::AttachFinishedCompilations(cx->zone()->group(), cx);
 
-    
-    
-    
+    // Important: Additional callbacks can occur inside the callback handler
+    // if it re-enters the JS engine. The embedding must ensure that the
+    // callback is disconnected before attempting such re-entry.
     if (cx->interruptCallbackDisabled)
         return true;
 
@@ -449,8 +449,8 @@ InvokeInterruptCallback(JSContext* cx)
     }
 
     if (!stop) {
-        
-        
+        // Debugger treats invoking the interrupt callback as a "step", so
+        // invoke the onStep handler.
         if (cx->compartment()->isDebuggee()) {
             ScriptFrameIter iter(cx);
             if (!iter.done() &&
@@ -464,7 +464,7 @@ InvokeInterruptCallback(JSContext* cx)
                   case ResumeMode::Continue:
                     return true;
                   case ResumeMode::Return:
-                    
+                    // See note in Debugger::propagateForcedReturn.
                     Debugger::propagateForcedReturn(cx, iter.abstractFramePtr(), rval);
                     return false;
                   case ResumeMode::Throw:
@@ -478,8 +478,8 @@ InvokeInterruptCallback(JSContext* cx)
         return true;
     }
 
-    
-    
+    // No need to set aside any pending exception here: ComputeStackString
+    // already does that.
     JSString* stack = ComputeStackString(cx);
     JSFlatString* flat = stack ? stack->ensureFlat(cx) : nullptr;
 
@@ -502,9 +502,9 @@ JSContext::requestInterrupt(InterruptMode mode)
     jitStackLimit = UINTPTR_MAX;
 
     if (mode == JSContext::RequestInterruptUrgent) {
-        
-        
-        
+        // If this interrupt is urgent (slow script dialog for instance), take
+        // additional steps to interrupt corner cases where the above fields are
+        // not regularly polled. Wake Atomics.wait() and irregexp JIT code.
         interruptRegExpJit_ = true;
         FutexThread::lock();
         if (fx.isWaiting())
@@ -552,7 +552,7 @@ JSRuntime::getDefaultLocale()
 
     const char* locale = setlocale(LC_ALL, nullptr);
 
-    
+    // convert to a well-formed BCP 47 language tag
     if (!locale || !strcmp(locale, "C"))
         locale = "und";
 
@@ -582,13 +582,13 @@ JSContext::triggerActivityCallback(bool active)
     if (!activityCallback)
         return;
 
-    
-
-
-
-
-
-
+    /*
+     * The activity callback must not trigger a GC: it would create a cirular
+     * dependency between entering a request and Rooted's requirement of being
+     * in a request. In practice this callback already cannot trigger GC. The
+     * suppression serves to inform the exact rooting hazard analysis of this
+     * property and ensures that it remains true in the future.
+     */
     AutoSuppressGC suppress(this);
 
     activityCallback(activityCallbackArg, active);
@@ -618,8 +618,8 @@ FreeOp::isDefaultFreeOp() const
 JSObject*
 JSRuntime::getIncumbentGlobal(JSContext* cx)
 {
-    
-    
+    // If the embedding didn't set a callback for getting the incumbent
+    // global, the currently active global is used.
     if (!cx->getIncumbentGlobalCallback) {
         if (!cx->compartment())
             return nullptr;
@@ -641,9 +641,9 @@ JSRuntime::enqueuePromiseJob(JSContext* cx, HandleFunction job, HandleObject pro
     RootedObject allocationSite(cx);
     if (promise) {
         RootedObject unwrappedPromise(cx, promise);
-        
-        
-        
+        // While the job object is guaranteed to be unwrapped, the promise
+        // might be wrapped. See the comments in
+        // intrinsic_EnqueuePromiseReactionJob for details.
         if (IsWrapper(promise))
             unwrappedPromise = UncheckedUnwrap(promise);
         if (unwrappedPromise->is<PromiseObject>())
@@ -717,10 +717,10 @@ JSRuntime::onOutOfMemory(AllocFunction allocFunc, size_t nbytes, void* reallocPt
         return nullptr;
 
     if (!oom::IsSimulatedOOMAllocation()) {
-        
-
-
-
+        /*
+         * Retry when we are done with the background sweeping and have stopped
+         * all the allocations and released the empty GC chunks.
+         */
         gc.onOutOfMallocMemory();
         void* p;
         switch (allocFunc) {
@@ -804,7 +804,7 @@ JSRuntime::clearUsedByHelperThread(Zone* zone)
     MOZ_ASSERT(zone->group()->usedByHelperThread());
     zone->group()->clearUsedByHelperThread();
     numActiveHelperThreadZones--;
-    JSContext* cx = TlsContext.get();
+    JSContext* cx = mainContextFromOwnThread();
     if (gc.fullGCForAtomsRequested() && cx->canCollectAtoms())
         gc.triggerFullGCForAtoms(cx);
 }
@@ -818,11 +818,11 @@ js::CurrentThreadCanAccessRuntime(const JSRuntime* rt)
 bool
 js::CurrentThreadCanAccessZone(Zone* zone)
 {
-    
+    // Helper thread zones can only be used by their owning thread.
     if (zone->usedByHelperThread())
         return zone->group()->ownedByCurrentHelperThread();
 
-    
+    // Other zones can only be accessed by the runtime's active context.
     return CurrentThreadCanAccessRuntime(zone->runtime_);
 }
 
