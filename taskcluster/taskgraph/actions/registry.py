@@ -166,6 +166,7 @@ def register_callback_action(name, title, symbol, description, order=10000,
                 'name': name,
                 'title': title,
                 'description': description,
+                
                 'taskGroupId': task_group_id,
                 'cb_name': cb.__name__,
                 'symbol': symbol,
@@ -241,8 +242,8 @@ def register_callback_action(name, title, symbol, description, order=10000,
                         
                         "user": {
                             'input': {'$eval': 'input'},
-                            'taskId': {'$eval': 'taskId'},
-                            'taskGroupId': {'$eval': 'taskGroupId'},
+                            'taskId': {'$eval': 'taskId'},  
+                            'taskGroupId': {'$eval': 'taskGroupId'},  
                         }
                     },
                 })
