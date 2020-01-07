@@ -5,6 +5,9 @@
 "use strict";
 
 
+const Promise = require("promise");
+
+
 
 
 
