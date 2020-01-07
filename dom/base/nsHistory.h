@@ -11,7 +11,6 @@
 #include "mozilla/dom/HistoryBinding.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
-#include "nsIDOMHistory.h"
 #include "nsPIDOMWindow.h" 
 #include "nsStringFwd.h"
 #include "nsWrapperCache.h"
@@ -22,9 +21,8 @@ class nsIWeakReference;
 class nsPIDOMWindowInner;
 
 
-class nsHistory final : public nsIDOMHistory, 
-                                                  
-                            public nsWrapperCache
+class nsHistory final : public nsISupports,
+                        public nsWrapperCache
 {
 public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
