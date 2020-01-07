@@ -2,7 +2,9 @@
 
 
 
-function run_test() {
+async function run_test() {
+  do_test_pending();
+
   Assert.ok("@mozilla.org/tools/code-coverage;1" in Cc);
 
   let codeCoverageCc = Cc["@mozilla.org/tools/code-coverage;1"];
@@ -11,7 +13,9 @@ function run_test() {
   let codeCoverage = codeCoverageCc.getService(Ci.nsICodeCoverage);
   Assert.ok(!!codeCoverage);
 
-  codeCoverage.dumpCounters();
+  await codeCoverage.dumpCounters();
 
-  codeCoverage.resetCounters();
+  await codeCoverage.resetCounters();
+
+  do_test_finished();
 }
