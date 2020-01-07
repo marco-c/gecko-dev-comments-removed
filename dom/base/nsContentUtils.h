@@ -1311,6 +1311,14 @@ public:
 
 
 
+  static bool IsUpgradableDisplayType(nsContentPolicyType aType);
+
+  
+
+
+
+
+
 
 
 
@@ -3445,6 +3453,7 @@ private:
   static bool sIsPerformanceTimingEnabled;
   static bool sIsResourceTimingEnabled;
   static bool sIsPerformanceNavigationTimingEnabled;
+  static bool sIsUpgradableDisplayContentPrefEnabled;
   static bool sIsFrameTimingPrefEnabled;
   static bool sIsFormAutofillAutocompleteEnabled;
   static bool sIsShadowDOMEnabled;

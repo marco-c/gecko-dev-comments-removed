@@ -878,7 +878,8 @@ CheckUpgradeInsecureRequestsPreventsCORS(nsIPrincipal* aRequestingPrincipal,
 
   
   
-  return loadInfo->GetUpgradeInsecureRequests();
+  return loadInfo->GetUpgradeInsecureRequests() ||
+         loadInfo->GetBrowserUpgradeInsecureRequests();
 }
 
 

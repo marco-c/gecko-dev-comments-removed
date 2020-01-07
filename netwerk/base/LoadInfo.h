@@ -93,6 +93,7 @@ public:
 
   void SetIsPreflight();
   void SetUpgradeInsecureRequests();
+  void SetBrowserUpgradeInsecureRequests();
 
 private:
   
@@ -112,11 +113,11 @@ private:
            nsContentPolicyType aContentPolicyType,
            LoadTainting aTainting,
            bool aUpgradeInsecureRequests,
+           bool aBrowserUpgradeInsecureRequests,
            bool aVerifySignedContent,
            bool aEnforceSRI,
            bool aAllowDocumentToBeAgnosticToCSP,
            bool aForceAllowDataURI,
-           bool aAllowInsecureRedirectToDataURI,
            bool aForceInheritPrincipalDropped,
            uint64_t aInnerWindowID,
            uint64_t aOuterWindowID,
@@ -177,11 +178,11 @@ private:
   nsContentPolicyType              mInternalContentPolicyType;
   LoadTainting                     mTainting;
   bool                             mUpgradeInsecureRequests;
+  bool                             mBrowserUpgradeInsecureRequests;
   bool                             mVerifySignedContent;
   bool                             mEnforceSRI;
   bool                             mAllowDocumentToBeAgnosticToCSP;
   bool                             mForceAllowDataURI;
-  bool                             mAllowInsecureRedirectToDataURI;
   bool                             mOriginalFrameSrcLoad;
   bool                             mForceInheritPrincipalDropped;
   uint64_t                         mInnerWindowID;

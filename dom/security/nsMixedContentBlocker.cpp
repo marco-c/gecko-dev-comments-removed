@@ -743,6 +743,17 @@ nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
     return NS_OK;
   }
 
+
+  
+  
+  
+  
+  bool isUpgradableDisplayType = nsContentUtils::IsUpgradableDisplayType(aContentType);
+  if (isHttpScheme && isUpgradableDisplayType) {
+    *aDecision = ACCEPT;
+    return NS_OK;
+  }
+
   
   
   

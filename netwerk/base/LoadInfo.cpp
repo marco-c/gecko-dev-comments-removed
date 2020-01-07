@@ -63,11 +63,11 @@ LoadInfo::LoadInfo(nsIPrincipal* aLoadingPrincipal,
   , mInternalContentPolicyType(aContentPolicyType)
   , mTainting(LoadTainting::Basic)
   , mUpgradeInsecureRequests(false)
+  , mBrowserUpgradeInsecureRequests(false)
   , mVerifySignedContent(false)
   , mEnforceSRI(false)
   , mAllowDocumentToBeAgnosticToCSP(false)
   , mForceAllowDataURI(false)
-  , mAllowInsecureRedirectToDataURI(false)
   , mOriginalFrameSrcLoad(false)
   , mForceInheritPrincipalDropped(false)
   , mInnerWindowID(0)
@@ -183,6 +183,20 @@ LoadInfo::LoadInfo(nsIPrincipal* aLoadingPrincipal,
       (nsContentUtils::IsPreloadType(mInternalContentPolicyType) &&
        aLoadingContext->OwnerDoc()->GetUpgradeInsecureRequests(true));
 
+    uint32_t externalType =
+      nsContentUtils::InternalContentPolicyTypeToExternal(mInternalContentPolicyType);
+    if (nsContentUtils::IsUpgradableDisplayType(externalType)) {
+      nsCOMPtr<nsIURI> uri;
+      mLoadingPrincipal->GetURI(getter_AddRefs(uri));
+      if (uri) {
+        
+        bool isHttpsScheme;
+        nsresult rv = uri->SchemeIs("https", &isHttpsScheme);
+        if (NS_SUCCEEDED(rv) && isHttpsScheme) {
+          mBrowserUpgradeInsecureRequests = true;
+        }
+      }
+    }
     
     nsCOMPtr<nsIChannel> channel = aLoadingContext->OwnerDoc()->GetChannel();
     if (channel) {
@@ -269,11 +283,11 @@ LoadInfo::LoadInfo(nsPIDOMWindowOuter* aOuterWindow,
   , mInternalContentPolicyType(nsIContentPolicy::TYPE_DOCUMENT)
   , mTainting(LoadTainting::Basic)
   , mUpgradeInsecureRequests(false)
+  , mBrowserUpgradeInsecureRequests(false)
   , mVerifySignedContent(false)
   , mEnforceSRI(false)
   , mAllowDocumentToBeAgnosticToCSP(false)
   , mForceAllowDataURI(false)
-  , mAllowInsecureRedirectToDataURI(false)
   , mOriginalFrameSrcLoad(false)
   , mForceInheritPrincipalDropped(false)
   , mInnerWindowID(0)
@@ -345,11 +359,11 @@ LoadInfo::LoadInfo(const LoadInfo& rhs)
   , mInternalContentPolicyType(rhs.mInternalContentPolicyType)
   , mTainting(rhs.mTainting)
   , mUpgradeInsecureRequests(rhs.mUpgradeInsecureRequests)
+  , mBrowserUpgradeInsecureRequests(rhs.mBrowserUpgradeInsecureRequests)
   , mVerifySignedContent(rhs.mVerifySignedContent)
   , mEnforceSRI(rhs.mEnforceSRI)
   , mAllowDocumentToBeAgnosticToCSP(rhs.mAllowDocumentToBeAgnosticToCSP)
   , mForceAllowDataURI(rhs.mForceAllowDataURI)
-  , mAllowInsecureRedirectToDataURI(rhs.mAllowInsecureRedirectToDataURI)
   , mOriginalFrameSrcLoad(rhs.mOriginalFrameSrcLoad)
   , mForceInheritPrincipalDropped(rhs.mForceInheritPrincipalDropped)
   , mInnerWindowID(rhs.mInnerWindowID)
@@ -388,11 +402,11 @@ LoadInfo::LoadInfo(nsIPrincipal* aLoadingPrincipal,
                    nsContentPolicyType aContentPolicyType,
                    LoadTainting aTainting,
                    bool aUpgradeInsecureRequests,
+                   bool aBrowserUpgradeInsecureRequests,
                    bool aVerifySignedContent,
                    bool aEnforceSRI,
                    bool aAllowDocumentToBeAgnosticToCSP,
                    bool aForceAllowDataURI,
-                   bool aAllowInsecureRedirectToDataURI,
                    bool aForceInheritPrincipalDropped,
                    uint64_t aInnerWindowID,
                    uint64_t aOuterWindowID,
@@ -425,11 +439,11 @@ LoadInfo::LoadInfo(nsIPrincipal* aLoadingPrincipal,
   , mInternalContentPolicyType(aContentPolicyType)
   , mTainting(aTainting)
   , mUpgradeInsecureRequests(aUpgradeInsecureRequests)
+  , mBrowserUpgradeInsecureRequests(aBrowserUpgradeInsecureRequests)
   , mVerifySignedContent(aVerifySignedContent)
   , mEnforceSRI(aEnforceSRI)
   , mAllowDocumentToBeAgnosticToCSP(aAllowDocumentToBeAgnosticToCSP)
   , mForceAllowDataURI(aForceAllowDataURI)
-  , mAllowInsecureRedirectToDataURI(aAllowInsecureRedirectToDataURI)
   , mOriginalFrameSrcLoad(false)
   , mForceInheritPrincipalDropped(aForceInheritPrincipalDropped)
   , mInnerWindowID(aInnerWindowID)
@@ -783,6 +797,13 @@ LoadInfo::GetUpgradeInsecureRequests(bool* aResult)
 }
 
 NS_IMETHODIMP
+LoadInfo::GetBrowserUpgradeInsecureRequests(bool* aResult)
+{
+  *aResult = mBrowserUpgradeInsecureRequests;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 LoadInfo::SetVerifySignedContent(bool aVerifySignedContent)
 {
   MOZ_ASSERT(mInternalContentPolicyType == nsIContentPolicy::TYPE_DOCUMENT,
@@ -826,20 +847,6 @@ NS_IMETHODIMP
 LoadInfo::GetForceAllowDataURI(bool* aForceAllowDataURI)
 {
   *aForceAllowDataURI = mForceAllowDataURI;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-LoadInfo::SetAllowInsecureRedirectToDataURI(bool aAllowInsecureRedirectToDataURI)
-{
-  mAllowInsecureRedirectToDataURI = aAllowInsecureRedirectToDataURI;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-LoadInfo::GetAllowInsecureRedirectToDataURI(bool* aAllowInsecureRedirectToDataURI)
-{
-  *aAllowInsecureRedirectToDataURI = mAllowInsecureRedirectToDataURI;
   return NS_OK;
 }
 
@@ -1124,6 +1131,12 @@ void
 LoadInfo::SetUpgradeInsecureRequests()
 {
   mUpgradeInsecureRequests = true;
+}
+
+void
+LoadInfo::SetBrowserUpgradeInsecureRequests()
+{
+  mBrowserUpgradeInsecureRequests = true;
 }
 
 NS_IMETHODIMP
