@@ -4232,12 +4232,12 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery
         cx(cx),
         debugger(dbg),
         iterMarker(&cx->runtime()->gc),
-        compartments(cx->zone()),
+        realms(cx->zone()),
         url(cx),
         displayURLString(cx),
         hasSource(false),
         source(cx, AsVariant(static_cast<ScriptSourceObject*>(nullptr))),
-        innermostForCompartment(cx->zone()),
+        innermostForRealm(cx->zone()),
         vector(cx, ScriptVector(cx)),
         wasmInstanceVector(cx, WasmInstanceObjectVector(cx))
     {}
@@ -4247,8 +4247,8 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery
 
 
     bool init() {
-        if (!compartments.init() ||
-            !innermostForCompartment.init())
+        if (!realms.init() ||
+            !innermostForRealm.init())
         {
             ReportOutOfMemory(cx);
             return false;
@@ -4418,14 +4418,14 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery
         if (!prepareQuery() || !delazifyScripts())
             return false;
 
-        JSCompartment* singletonComp = nullptr;
-        if (compartments.count() == 1)
-            singletonComp = compartments.all().front();
+        Realm* singletonRealm = nullptr;
+        if (realms.count() == 1)
+            singletonRealm = realms.all().front();
 
         
         MOZ_ASSERT(vector.empty());
         oom = false;
-        IterateScripts(cx, singletonComp, this, considerScript);
+        IterateScripts(cx, singletonRealm, this, considerScript);
         if (oom) {
             ReportOutOfMemory(cx);
             return false;
@@ -4442,7 +4442,7 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery
 
 
         if (innermost) {
-            for (CompartmentToScriptMap::Range r = innermostForCompartment.all();
+            for (RealmToScriptMap::Range r = innermostForRealm.all();
                  !r.empty();
                  r.popFront())
             {
@@ -4487,11 +4487,10 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery
     
     gc::AutoEnterIteration iterMarker;
 
-    typedef HashSet<JSCompartment*, DefaultHasher<JSCompartment*>, ZoneAllocPolicy>
-        CompartmentSet;
+    using RealmSet = HashSet<Realm*, DefaultHasher<Realm*>, ZoneAllocPolicy>;
 
     
-    CompartmentSet compartments;
+    RealmSet realms;
 
     
     RootedValue url;
@@ -4520,15 +4519,14 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery
     
     bool innermost;
 
-    typedef HashMap<JSCompartment*, JSScript*, DefaultHasher<JSCompartment*>, ZoneAllocPolicy>
-        CompartmentToScriptMap;
+    using RealmToScriptMap = HashMap<Realm*, JSScript*, DefaultHasher<Realm*>, ZoneAllocPolicy>;
 
     
 
 
 
 
-    CompartmentToScriptMap innermostForCompartment;
+    RealmToScriptMap innermostForRealm;
 
     
 
@@ -4545,14 +4543,14 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery
     
     bool oom;
 
-    bool addCompartment(JSCompartment* comp) {
-        return compartments.put(comp);
+    bool addRealm(Realm* realm) {
+        return realms.put(realm);
     }
 
     
     bool matchSingleGlobal(GlobalObject* global) {
-        MOZ_ASSERT(compartments.count() == 0);
-        if (!addCompartment(global->compartment())) {
+        MOZ_ASSERT(realms.count() == 0);
+        if (!addRealm(global->realm())) {
             ReportOutOfMemory(cx);
             return false;
         }
@@ -4564,10 +4562,10 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery
 
 
     bool matchAllDebuggeeGlobals() {
-        MOZ_ASSERT(compartments.count() == 0);
+        MOZ_ASSERT(realms.count() == 0);
         
         for (WeakGlobalObjectSet::Range r = debugger->debuggees.all(); !r.empty(); r.popFront()) {
-            if (!addCompartment(r.front()->compartment())) {
+            if (!addRealm(r.front()->realm())) {
                 ReportOutOfMemory(cx);
                 return false;
             }
@@ -4593,9 +4591,8 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery
     bool delazifyScripts() {
         
         
-        for (auto r = compartments.all(); !r.empty(); r.popFront()) {
-            JSCompartment* comp = r.front();
-            Realm* realm = JS::GetRealmForCompartment(comp);
+        for (auto r = realms.all(); !r.empty(); r.popFront()) {
+            Realm* realm = r.front();
             if (!realm->ensureDelazifyScriptsForDebugger(cx))
                 return false;
         }
@@ -4619,8 +4616,8 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery
         
         if (oom || script->selfHosted() || !script->code())
             return;
-        JSCompartment* compartment = script->compartment();
-        if (!compartments.has(compartment))
+        Realm* realm = script->realm();
+        if (!realms.has(realm))
             return;
         if (urlCString.ptr()) {
             bool gotFilename = false;
@@ -4667,7 +4664,7 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery
 
 
 
-            CompartmentToScriptMap::AddPtr p = innermostForCompartment.lookupForAdd(compartment);
+            RealmToScriptMap::AddPtr p = innermostForRealm.lookupForAdd(realm);
             if (p) {
                 
                 JSScript* incumbent = p->value();
@@ -4681,7 +4678,7 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery
 
 
 
-                if (!innermostForCompartment.add(p, compartment, script)) {
+                if (!innermostForRealm.add(p, realm, script)) {
                     oom = true;
                     return;
                 }

@@ -118,8 +118,7 @@ typedef void (*IterateScriptCallback)(JSRuntime* rt, void* data, JSScript* scrip
 
 
 extern void
-IterateScripts(JSContext* cx, JSCompartment* compartment,
-               void* data, IterateScriptCallback scriptCallback);
+IterateScripts(JSContext* cx, JS::Realm* realm, void* data, IterateScriptCallback scriptCallback);
 
 JS::Realm*
 NewRealm(JSContext* cx, JSPrincipals* principals, const JS::RealmOptions& options);
