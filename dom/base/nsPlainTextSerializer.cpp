@@ -1633,7 +1633,7 @@ nsPlainTextSerializer::Write(const nsAString& aStr)
     
     while(bol<totLen) {
       bool outputQuotes = mAtFirstColumn;
-      bool atFirstColumn = mAtFirstColumn;
+      bool atFirstColumn;
       bool outputLineBreak = false;
       bool spacesOnly = true;
 
