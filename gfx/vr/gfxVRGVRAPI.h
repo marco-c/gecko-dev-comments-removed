@@ -3,6 +3,7 @@
 
 
 
+
 #ifndef GFX_VR_GVR_API_H
 #define GFX_VR_GVR_API_H
 namespace mozilla {

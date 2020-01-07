@@ -3,6 +3,7 @@
 
 
 
+
 #ifndef mozilla_gfx_2d_SourceSurfaceCapture_h
 #define mozilla_gfx_2d_SourceSurfaceCapture_h
 
