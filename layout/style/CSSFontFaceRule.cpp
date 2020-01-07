@@ -4,7 +4,7 @@
 
 
 
-#include "mozilla/ServoFontFaceRule.h"
+#include "mozilla/dom/CSSFontFaceRule.h"
 
 #include "mozilla/dom/CSSFontFaceRuleBinding.h"
 #include "mozilla/dom/CSSStyleDeclarationBinding.h"
@@ -18,7 +18,7 @@ using namespace mozilla::dom;
 
 
 
-NS_INTERFACE_MAP_BEGIN(ServoFontFaceRuleDecl)
+NS_INTERFACE_MAP_BEGIN(CSSFontFaceRuleDecl)
   NS_WRAPPERCACHE_INTERFACE_MAP_ENTRY
   NS_INTERFACE_MAP_ENTRY(nsICSSDeclaration)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
@@ -31,36 +31,36 @@ NS_INTERFACE_MAP_BEGIN(ServoFontFaceRuleDecl)
   else
 NS_INTERFACE_MAP_END
 
-NS_IMPL_ADDREF_USING_AGGREGATOR(ServoFontFaceRuleDecl, ContainingRule())
-NS_IMPL_RELEASE_USING_AGGREGATOR(ServoFontFaceRuleDecl, ContainingRule())
+NS_IMPL_ADDREF_USING_AGGREGATOR(CSSFontFaceRuleDecl, ContainingRule())
+NS_IMPL_RELEASE_USING_AGGREGATOR(CSSFontFaceRuleDecl, ContainingRule())
 
 
 void
-ServoFontFaceRuleDecl::GetPropertyValue(nsCSSFontDesc aFontDescID,
-                                        nsAString& aResult) const
+CSSFontFaceRuleDecl::GetPropertyValue(nsCSSFontDesc aFontDescID,
+                                      nsAString& aResult) const
 {
   MOZ_ASSERT(aResult.IsEmpty());
   Servo_FontFaceRule_GetDescriptorCssText(mRawRule, aFontDescID, &aResult);
 }
 
 void
-ServoFontFaceRuleDecl::GetCssText(nsAString& aCssText)
+CSSFontFaceRuleDecl::GetCssText(nsAString& aCssText)
 {
   aCssText.Truncate();
   Servo_FontFaceRule_GetDeclCssText(mRawRule, &aCssText);
 }
 
 void
-ServoFontFaceRuleDecl::SetCssText(const nsAString& aCssText,
-                                  nsIPrincipal* aSubjectPrincipal,
-                                  ErrorResult& aRv)
+CSSFontFaceRuleDecl::SetCssText(const nsAString& aCssText,
+                                nsIPrincipal* aSubjectPrincipal,
+                                ErrorResult& aRv)
 {
   aRv.Throw(NS_ERROR_NOT_IMPLEMENTED); 
 }
 
 NS_IMETHODIMP
-ServoFontFaceRuleDecl::GetPropertyValue(const nsAString& aPropName,
-                                        nsAString& aResult)
+CSSFontFaceRuleDecl::GetPropertyValue(const nsAString& aPropName,
+                                      nsAString& aResult)
 {
   aResult.Truncate();
   GetPropertyValue(nsCSSProps::LookupFontDesc(aPropName), aResult);
@@ -68,8 +68,8 @@ ServoFontFaceRuleDecl::GetPropertyValue(const nsAString& aPropName,
 }
 
 NS_IMETHODIMP
-ServoFontFaceRuleDecl::RemoveProperty(const nsAString& aPropName,
-                                      nsAString& aResult)
+CSSFontFaceRuleDecl::RemoveProperty(const nsAString& aPropName,
+                                    nsAString& aResult)
 {
   nsCSSFontDesc descID = nsCSSProps::LookupFontDesc(aPropName);
   NS_ASSERTION(descID >= eCSSFontDesc_UNKNOWN &&
@@ -85,18 +85,18 @@ ServoFontFaceRuleDecl::RemoveProperty(const nsAString& aPropName,
 }
 
 void
-ServoFontFaceRuleDecl::GetPropertyPriority(const nsAString& aPropName,
-                                           nsAString& aResult)
+CSSFontFaceRuleDecl::GetPropertyPriority(const nsAString& aPropName,
+                                         nsAString& aResult)
 {
   
   aResult.Truncate();
 }
 
 NS_IMETHODIMP
-ServoFontFaceRuleDecl::SetProperty(const nsAString& aPropName,
-                                   const nsAString& aValue,
-                                   const nsAString& aPriority,
-                                   nsIPrincipal* aSubjectPrincipal)
+CSSFontFaceRuleDecl::SetProperty(const nsAString& aPropName,
+                                 const nsAString& aValue,
+                                 const nsAString& aPriority,
+                                 nsIPrincipal* aSubjectPrincipal)
 {
   
   
@@ -105,14 +105,14 @@ ServoFontFaceRuleDecl::SetProperty(const nsAString& aPropName,
 }
 
 uint32_t
-ServoFontFaceRuleDecl::Length()
+CSSFontFaceRuleDecl::Length()
 {
   return Servo_FontFaceRule_Length(mRawRule);
 }
 
 void
-ServoFontFaceRuleDecl::IndexedGetter(uint32_t aIndex, bool& aFound,
-                                     nsAString& aResult)
+CSSFontFaceRuleDecl::IndexedGetter(uint32_t aIndex, bool& aFound,
+                                   nsAString& aResult)
 {
   nsCSSFontDesc id = Servo_FontFaceRule_IndexGetter(mRawRule, aIndex);
   if (id != eCSSFontDesc_UNKNOWN) {
@@ -124,19 +124,19 @@ ServoFontFaceRuleDecl::IndexedGetter(uint32_t aIndex, bool& aFound,
 }
 
 css::Rule*
-ServoFontFaceRuleDecl::GetParentRule()
+CSSFontFaceRuleDecl::GetParentRule()
 {
   return ContainingRule();
 }
 
 nsINode*
-ServoFontFaceRuleDecl::GetParentObject()
+CSSFontFaceRuleDecl::GetParentObject()
 {
   return ContainingRule()->GetParentObject();
 }
 
 JSObject*
-ServoFontFaceRuleDecl::WrapObject(JSContext *cx, JS::Handle<JSObject*> aGivenProto)
+CSSFontFaceRuleDecl::WrapObject(JSContext *cx, JS::Handle<JSObject*> aGivenProto)
 {
   return CSSStyleDeclarationBinding::Wrap(cx, this, aGivenProto);
 }
@@ -145,9 +145,9 @@ ServoFontFaceRuleDecl::WrapObject(JSContext *cx, JS::Handle<JSObject*> aGivenPro
 
 
 
-NS_IMPL_CYCLE_COLLECTION_CLASS(ServoFontFaceRule)
+NS_IMPL_CYCLE_COLLECTION_CLASS(CSSFontFaceRule)
 
-NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN_INHERITED(ServoFontFaceRule,
+NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN_INHERITED(CSSFontFaceRule,
                                                mozilla::css::Rule)
   
 
@@ -157,7 +157,7 @@ NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN_INHERITED(ServoFontFaceRule,
   tmp->mDecl.TraceWrapper(aCallbacks, aClosure);
 NS_IMPL_CYCLE_COLLECTION_TRACE_END
 
-NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(ServoFontFaceRule,
+NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(CSSFontFaceRule,
                                                 mozilla::css::Rule)
   
 
@@ -167,13 +167,13 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(ServoFontFaceRule,
   tmp->mDecl.ReleaseWrapper(static_cast<nsISupports*>(p));
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
-NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(ServoFontFaceRule,
+NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(CSSFontFaceRule,
                                                   mozilla::css::Rule)
   
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 bool
-ServoFontFaceRule::IsCCLeaf() const
+CSSFontFaceRule::IsCCLeaf() const
 {
   if (!Rule::IsCCLeaf()) {
     return false;
@@ -182,11 +182,11 @@ ServoFontFaceRule::IsCCLeaf() const
   return !mDecl.PreservingWrapper();
 }
 
-NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(ServoFontFaceRule, mozilla::css::Rule)
+NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(CSSFontFaceRule, mozilla::css::Rule)
 
 #ifdef DEBUG
 void
-ServoFontFaceRule::List(FILE* out, int32_t aIndent) const
+CSSFontFaceRule::List(FILE* out, int32_t aIndent) const
 {
   nsAutoCString str;
   for (int32_t i = 0; i < aIndent; i++) {
@@ -198,33 +198,33 @@ ServoFontFaceRule::List(FILE* out, int32_t aIndent) const
 #endif
 
 uint16_t
-ServoFontFaceRule::Type() const
+CSSFontFaceRule::Type() const
 {
   return CSSRuleBinding::FONT_FACE_RULE;
 }
 
 void
-ServoFontFaceRule::GetCssText(nsAString& aCssText) const
+CSSFontFaceRule::GetCssText(nsAString& aCssText) const
 {
   aCssText.Truncate();
   Servo_FontFaceRule_GetCssText(Raw(), &aCssText);
 }
 
 nsICSSDeclaration*
-ServoFontFaceRule::Style()
+CSSFontFaceRule::Style()
 {
   return &mDecl;
 }
 
  size_t
-ServoFontFaceRule::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
+CSSFontFaceRule::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
 {
   return aMallocSizeOf(this);
 }
 
  JSObject*
-ServoFontFaceRule::WrapObject(JSContext* aCx,
-                              JS::Handle<JSObject*> aGivenProto)
+CSSFontFaceRule::WrapObject(JSContext* aCx,
+                            JS::Handle<JSObject*> aGivenProto)
 {
   return CSSFontFaceRuleBinding::Wrap(aCx, this, aGivenProto);
 }

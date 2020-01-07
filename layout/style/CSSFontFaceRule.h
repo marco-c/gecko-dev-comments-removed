@@ -4,18 +4,20 @@
 
 
 
-#ifndef mozilla_ServoFontFaceRule_h
-#define mozilla_ServoFontFaceRule_h
+#ifndef mozilla_CSSFontFaceRule_h
+#define mozilla_CSSFontFaceRule_h
 
 #include "mozilla/ServoBindingTypes.h"
 #include "mozilla/css/Rule.h"
 #include "nsICSSDeclaration.h"
 
 namespace mozilla {
+namespace dom {
 
 
-class ServoFontFaceRule;
-class ServoFontFaceRuleDecl final : public nsICSSDeclaration
+
+class CSSFontFaceRule;
+class CSSFontFaceRuleDecl final : public nsICSSDeclaration
 {
 public:
   NS_DECL_ISUPPORTS_INHERITED
@@ -30,15 +32,15 @@ public:
 
 protected:
   
-  friend class ServoFontFaceRule;
+  friend class CSSFontFaceRule;
 
-  explicit ServoFontFaceRuleDecl(already_AddRefed<RawServoFontFaceRule> aDecl)
+  explicit CSSFontFaceRuleDecl(already_AddRefed<RawServoFontFaceRule> aDecl)
     : mRawRule(std::move(aDecl)) {}
 
-  ~ServoFontFaceRuleDecl() = default;
+  ~CSSFontFaceRuleDecl() = default;
 
-  inline ServoFontFaceRule* ContainingRule();
-  inline const ServoFontFaceRule* ContainingRule() const;
+  inline CSSFontFaceRule* ContainingRule();
+  inline const CSSFontFaceRule* ContainingRule() const;
 
   RefPtr<RawServoFontFaceRule> mRawRule;
 
@@ -46,20 +48,20 @@ private:
   void* operator new(size_t size) CPP_THROW_NEW = delete;
 };
 
-class ServoFontFaceRule final : public css::Rule
+class CSSFontFaceRule final : public css::Rule
 {
 public:
-  ServoFontFaceRule(already_AddRefed<RawServoFontFaceRule> aRawRule,
+  CSSFontFaceRule(already_AddRefed<RawServoFontFaceRule> aRawRule,
                     uint32_t aLine, uint32_t aColumn)
     : css::Rule(aLine, aColumn)
     , mDecl(std::move(aRawRule))
   {}
 
-  ServoFontFaceRule(const ServoFontFaceRule&) = delete;
+  CSSFontFaceRule(const CSSFontFaceRule&) = delete;
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_INHERITED(
-      ServoFontFaceRule, css::Rule)
+      CSSFontFaceRule, css::Rule)
   bool IsCCLeaf() const final;
 
   RawServoFontFaceRule* Raw() const { return mDecl.mRawRule; }
@@ -80,28 +82,29 @@ public:
 #endif
 
 private:
-  virtual ~ServoFontFaceRule() = default;
+  virtual ~CSSFontFaceRule() = default;
 
   
-  friend class ServoFontFaceRuleDecl;
+  friend class CSSFontFaceRuleDecl;
 
-  ServoFontFaceRuleDecl mDecl;
+  CSSFontFaceRuleDecl mDecl;
 };
 
-inline ServoFontFaceRule*
-ServoFontFaceRuleDecl::ContainingRule()
+inline CSSFontFaceRule*
+CSSFontFaceRuleDecl::ContainingRule()
 {
-  return reinterpret_cast<ServoFontFaceRule*>
-    (reinterpret_cast<char*>(this) - offsetof(ServoFontFaceRule, mDecl));
+  return reinterpret_cast<CSSFontFaceRule*>
+    (reinterpret_cast<char*>(this) - offsetof(CSSFontFaceRule, mDecl));
 }
 
-inline const ServoFontFaceRule*
-ServoFontFaceRuleDecl::ContainingRule() const
+inline const CSSFontFaceRule*
+CSSFontFaceRuleDecl::ContainingRule() const
 {
-  return reinterpret_cast<const ServoFontFaceRule*>
-    (reinterpret_cast<const char*>(this) - offsetof(ServoFontFaceRule, mDecl));
+  return reinterpret_cast<const CSSFontFaceRule*>
+    (reinterpret_cast<const char*>(this) - offsetof(CSSFontFaceRule, mDecl));
 }
 
+} 
 } 
 
 #endif 
