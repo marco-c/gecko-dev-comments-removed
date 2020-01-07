@@ -29,10 +29,6 @@ public:
 
 private:
   virtual ~inDOMUtils();
-
-  static already_AddRefed<nsStyleContext>
-    GetCleanStyleContextForElement(mozilla::dom::Element* aElement,
-                                   nsAtom* aPseudo);
 };
 
 

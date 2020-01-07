@@ -8,7 +8,7 @@
 
 const { getRootBindingParent } = require("devtools/shared/layout/utils");
 const { getTabPrefs } = require("devtools/shared/indentation");
-const { Ci, Cc } = require("chrome");
+const InspectorUtils = require("InspectorUtils");
 
 const MAX_DATA_URL_LENGTH = 40;
 
@@ -511,9 +511,7 @@ exports.getBindingElementAndPseudo = getBindingElementAndPseudo;
 
 
 function getCSSStyleRules(node) {
-  const DOMUtils =
-    Cc["@mozilla.org/inspector/dom-utils;1"].getService(Ci.inIDOMUtils);
   let { bindingElement, pseudo } = getBindingElementAndPseudo(node);
-  return DOMUtils.getCSSStyleRules(bindingElement, pseudo);
+  return InspectorUtils.getCSSStyleRules(bindingElement, pseudo);
 }
 exports.getCSSStyleRules = getCSSStyleRules;
