@@ -55,6 +55,9 @@ const ENV_PRESERVE_PREFS = "MOZ_MARIONETTE_PREF_STATE_ACROSS_RESTARTS";
 const RECOMMENDED_PREFS = new Map([
 
   
+  ["app.normandy.api_url", ""],
+
+  
   
   
   
@@ -196,9 +199,6 @@ const RECOMMENDED_PREFS = new Map([
   
   
   ["extensions.installDistroAddons", false],
-
-  
-  ["extensions.shield-recipe-client.api_url", ""],
 
   ["extensions.showMismatchUI", false],
 
