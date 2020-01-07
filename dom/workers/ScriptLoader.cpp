@@ -409,7 +409,6 @@ public:
     , mOriginAttributes(aWorkerPrivate->GetOriginAttributes())
   {
     MOZ_ASSERT(aWorkerPrivate->IsServiceWorker());
-    MOZ_ASSERT(aWorkerPrivate->LoadScriptAsPartOfLoadingServiceWorkerScript());
     AssertIsOnMainThread();
   }
 
@@ -837,6 +836,12 @@ private:
     return mIsMainScript && mWorkerScriptType == WorkerScript;
   }
 
+  bool
+  IsDebuggerScript() const
+  {
+    return mWorkerScriptType == DebuggerScript;
+  }
+
   void
   CancelMainThreadWithBindingAborted()
   {
@@ -912,8 +917,7 @@ private:
       mWorkerPrivate->SetLoadingWorkerScript(true);
     }
 
-    if (!mWorkerPrivate->IsServiceWorker() ||
-        !mWorkerPrivate->LoadScriptAsPartOfLoadingServiceWorkerScript()) {
+    if (!mWorkerPrivate->IsServiceWorker() || IsDebuggerScript()) {
       for (uint32_t index = 0, len = mLoadInfos.Length(); index < len;
            ++index) {
         nsresult rv = LoadScript(index);
@@ -1791,7 +1795,10 @@ CacheScriptLoader::ResolvedCallback(JSContext* aCx,
     
     
     
-    if (NS_WARN_IF(mIsWorkerScript || mState != ServiceWorkerState::Parsed)) {
+    
+    
+    if (NS_WARN_IF(mIsWorkerScript || (mState != ServiceWorkerState::Parsed &&
+                                       mState != ServiceWorkerState::Installing))) {
       Fail(NS_ERROR_DOM_INVALID_STATE_ERR);
       return;
     }
