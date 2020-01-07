@@ -35,7 +35,7 @@ NS_IMETHODIMP nsWifiAccessPoint::GetSsid(nsAString& aSsid)
 {
   
   
-  CopyASCIItoUTF16(mSsid, aSsid);
+  aSsid.AssignASCII(mSsid);
   return NS_OK;
 }
 

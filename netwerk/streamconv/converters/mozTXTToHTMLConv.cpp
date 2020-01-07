@@ -748,11 +748,11 @@ mozTXTToHTMLConv::SmilyHit(const char16_t * aInString, int32_t aLength, bool col
     }
 
     outputHTML.AppendLiteral("<span class=\""); 
-    AppendASCIItoUTF16(imageName, outputHTML);  
+    outputHTML.AppendASCII(imageName);          
     outputHTML.AppendLiteral("\" title=\"");    
-    AppendASCIItoUTF16(tagTXT, outputHTML);     
+    outputHTML.AppendASCII(tagTXT);             
     outputHTML.AppendLiteral("\"><span>");      
-    AppendASCIItoUTF16(tagTXT, outputHTML);     
+    outputHTML.AppendASCII(tagTXT);             
     outputHTML.AppendLiteral("</span></span>"); 
     glyphTextLen = (col0 ? 0 : 1) + tagLen;
     return true;
