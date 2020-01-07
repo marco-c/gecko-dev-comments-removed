@@ -969,7 +969,7 @@ nsFloatManager::EllipseShapeInfo::LineEdge(const nscoord aBStart,
   
   if (mIntervals.IsEmpty()) {
     NS_WARNING("With mShapeMargin > 0, we can't proceed without intervals.");
-    return 0;
+    return aIsLineLeft ? nscoord_MAX : nscoord_MIN;
   }
 
   
@@ -1002,12 +1002,26 @@ nsFloatManager::EllipseShapeInfo::LineEdge(const nscoord aBStart,
 
   MOZ_ASSERT(bSmallestWithinIntervals >= mCenter.y &&
              bSmallestWithinIntervals < BEnd(),
-             "We should have a block value within the intervals.");
+             "We should have a block value within the float area.");
 
   size_t index = MinIntervalIndexContainingY(mIntervals,
                                              bSmallestWithinIntervals);
-  MOZ_ASSERT(index < mIntervals.Length(),
-             "We should have found a matching interval for this block value.");
+  if (index >= mIntervals.Length()) {
+    
+    
+    
+    
+    
+#ifdef DEBUG
+    nscoord onePixelPastLastInterval =
+      mIntervals[mIntervals.Length() - 1].YMost() +
+      mIntervals[mIntervals.Length() - 1].Height();
+    NS_WARNING_ASSERTION(bSmallestWithinIntervals < onePixelPastLastInterval,
+                         "We should have found a matching interval for this "
+                         "block value.");
+#endif
+    return aIsLineLeft ? nscoord_MAX : nscoord_MIN;
+  }
 
   
   
