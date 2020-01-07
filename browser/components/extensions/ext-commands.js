@@ -117,7 +117,7 @@ this.commands = class extends ExtensionAPI {
 
 
   buildKey(doc, name, shortcut) {
-    let keyElement = this.buildKeyFromShortcut(doc, shortcut);
+    let keyElement = this.buildKeyFromShortcut(doc, name, shortcut);
 
     
     
@@ -159,7 +159,8 @@ this.commands = class extends ExtensionAPI {
 
 
 
-  buildKeyFromShortcut(doc, shortcut) {
+
+  buildKeyFromShortcut(doc, name, shortcut) {
     let keyElement = doc.createElementNS(XUL_NS, "key");
 
     let parts = shortcut.split("+");
@@ -169,6 +170,10 @@ this.commands = class extends ExtensionAPI {
 
     
     keyElement.setAttribute("modifiers", this.getModifiersAttribute(parts));
+    if (name == "_execute_sidebar_action") {
+      let id = `ext-key-id-${this.id}-sidebar-action`;
+      keyElement.setAttribute("id", id);
+    }
 
     if (/^[A-Z]$/.test(chromeKey)) {
       

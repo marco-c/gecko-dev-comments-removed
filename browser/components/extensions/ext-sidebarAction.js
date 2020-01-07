@@ -162,6 +162,8 @@ this.sidebarAction = class extends ExtensionAPI {
     broadcaster.setAttribute("group", "sidebar");
     broadcaster.setAttribute("label", details.title);
     broadcaster.setAttribute("sidebarurl", this.sidebarUrl(details.panel));
+    let id = `ext-key-id-${this.id}`;
+    broadcaster.setAttribute("key", id);
 
     
     
