@@ -316,15 +316,8 @@ nsXMLFragmentContentSink::ReportError(const char16_t* aErrorText,
   mState = eXMLContentSinkState_InProlog;
 
   
-  nsCOMPtr<nsIDOMNode> node(do_QueryInterface(mRoot));
-  if (node) {
-    for (;;) {
-      nsCOMPtr<nsIDOMNode> child, dummy;
-      node->GetLastChild(getter_AddRefs(child));
-      if (!child)
-        break;
-      node->RemoveChild(child, getter_AddRefs(dummy));
-    }
+  while (mRoot->GetLastChild()) {
+    mRoot->GetLastChild()->Remove();
   }
 
   
