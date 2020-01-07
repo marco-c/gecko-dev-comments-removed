@@ -614,8 +614,12 @@ private:
   
   
   
-  void DoSheetComplete(SheetLoadData* aLoadData, nsresult aStatus,
-                       LoadDataArray& aDatasToNotify);
+  void DoSheetComplete(SheetLoadData* aLoadData, LoadDataArray& aDatasToNotify);
+
+  
+  
+  
+  void MarkLoadTreeFailed(SheetLoadData* aLoadData);
 
   StyleBackendType GetStyleBackendType() const;
 

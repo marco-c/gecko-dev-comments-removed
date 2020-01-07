@@ -170,6 +170,7 @@ SheetLoadData::SheetLoadData(Loader* aLoader,
   , mSheetAlreadyComplete(false)
   , mIsCrossOriginNoCORS(false)
   , mBlockResourceTiming(false)
+  , mLoadFailed(false)
   , mOwningElement(aOwningElement)
   , mObserver(aObserver)
   , mLoaderPrincipal(aLoaderPrincipal)
@@ -205,6 +206,7 @@ SheetLoadData::SheetLoadData(Loader* aLoader,
   , mSheetAlreadyComplete(false)
   , mIsCrossOriginNoCORS(false)
   , mBlockResourceTiming(false)
+  , mLoadFailed(false)
   , mOwningElement(nullptr)
   , mObserver(aObserver)
   , mLoaderPrincipal(aLoaderPrincipal)
@@ -250,6 +252,7 @@ SheetLoadData::SheetLoadData(Loader* aLoader,
   , mSheetAlreadyComplete(false)
   , mIsCrossOriginNoCORS(false)
   , mBlockResourceTiming(false)
+  , mLoadFailed(false)
   , mOwningElement(nullptr)
   , mObserver(aObserver)
   , mLoaderPrincipal(aLoaderPrincipal)
@@ -316,9 +319,9 @@ SheetLoadData::FireLoadEvent(nsIThreadInternal* aThread)
 
   nsContentUtils::DispatchTrustedEvent(node->OwnerDoc(),
                                        node,
-                                       NS_SUCCEEDED(mStatus) ?
-                                         NS_LITERAL_STRING("load") :
-                                         NS_LITERAL_STRING("error"),
+                                       mLoadFailed ?
+                                         NS_LITERAL_STRING("error") :
+                                         NS_LITERAL_STRING("load"),
                                        false, false);
 
   
@@ -326,13 +329,11 @@ SheetLoadData::FireLoadEvent(nsIThreadInternal* aThread)
 }
 
 void
-SheetLoadData::ScheduleLoadEventIfNeeded(nsresult aStatus)
+SheetLoadData::ScheduleLoadEventIfNeeded()
 {
   if (!mOwningElement) {
     return;
   }
-
-  mStatus = aStatus;
 
   nsCOMPtr<nsIThread> thread = do_GetCurrentThread();
   nsCOMPtr<nsIThreadInternal> internalThread = do_QueryInterface(thread);
@@ -1815,13 +1816,21 @@ Loader::DoParseSheetServo(ServoStyleSheet* aSheet,
 void
 Loader::SheetComplete(SheetLoadData* aLoadData, nsresult aStatus)
 {
-  LOG(("css::Loader::SheetComplete"));
+  LOG(("css::Loader::SheetComplete, status: 0x%" PRIx32, static_cast<uint32_t>(aStatus)));
+
+  
+  
+  
+  
+  if (NS_FAILED(aStatus)) {
+    MarkLoadTreeFailed(aLoadData);
+  }
 
   
   
   
   AutoTArray<RefPtr<SheetLoadData>, 8> datasToNotify;
-  DoSheetComplete(aLoadData, aStatus, datasToNotify);
+  DoSheetComplete(aLoadData, datasToNotify);
 
   
   uint32_t count = datasToNotify.Length();
@@ -1855,15 +1864,12 @@ Loader::SheetComplete(SheetLoadData* aLoadData, nsresult aStatus)
 }
 
 void
-Loader::DoSheetComplete(SheetLoadData* aLoadData, nsresult aStatus,
-                        LoadDataArray& aDatasToNotify)
+Loader::DoSheetComplete(SheetLoadData* aLoadData, LoadDataArray& aDatasToNotify)
 {
   LOG(("css::Loader::DoSheetComplete"));
   NS_PRECONDITION(aLoadData, "Must have a load data!");
   NS_PRECONDITION(aLoadData->mSheet, "Must have a sheet");
   NS_ASSERTION(mSheets, "mLoadingDatas should be initialized by now.");
-
-  LOG(("Load completed, status: 0x%" PRIx32, static_cast<uint32_t>(aStatus)));
 
   
   if (aLoadData->mURI) {
@@ -1897,7 +1903,7 @@ Loader::DoSheetComplete(SheetLoadData* aLoadData, nsresult aStatus,
       MOZ_ASSERT(!data->mSheet->HasForcedUniqueInner(),
                  "should not get a forced unique inner during parsing");
       data->mSheet->SetComplete();
-      data->ScheduleLoadEventIfNeeded(aStatus);
+      data->ScheduleLoadEventIfNeeded();
     }
     if (data->mMustNotify && (data->mObserver || !mObservers.IsEmpty())) {
       
@@ -1920,7 +1926,7 @@ Loader::DoSheetComplete(SheetLoadData* aLoadData, nsresult aStatus,
     if (data->mParentData &&
         --(data->mParentData->mPendingChildren) == 0 &&
         !data->mParentData->mIsBeingParsed) {
-      DoSheetComplete(data->mParentData, aStatus, aDatasToNotify);
+      DoSheetComplete(data->mParentData, aDatasToNotify);
     }
 
     data = data->mNext;
@@ -1930,7 +1936,7 @@ Loader::DoSheetComplete(SheetLoadData* aLoadData, nsresult aStatus,
   
   
   
-  if (NS_SUCCEEDED(aStatus) && aLoadData->mURI) {
+  if (!aLoadData->mLoadFailed && aLoadData->mURI) {
     
     
     
@@ -1971,6 +1977,24 @@ Loader::DoSheetComplete(SheetLoadData* aLoadData, nsresult aStatus,
   }
 
   NS_RELEASE(aLoadData);  
+}
+
+void
+Loader::MarkLoadTreeFailed(SheetLoadData* aLoadData)
+{
+  if (aLoadData->mURI) {
+    LOG_URI("  Load failed: '%s'", aLoadData->mURI);
+  }
+
+  do {
+    aLoadData->mLoadFailed = true;
+
+    if (aLoadData->mParentData) {
+      MarkLoadTreeFailed(aLoadData->mParentData);
+    }
+
+    aLoadData = aLoadData->mNext;
+  } while (aLoadData);
 }
 
 nsresult
@@ -2541,7 +2565,9 @@ Loader::PostLoadEvent(nsIURI* aURI,
     
     
     
-    evt->ScheduleLoadEventIfNeeded(NS_OK);
+    
+    MOZ_ASSERT(!evt->mLoadFailed, "Why are we marked as failed?");
+    evt->ScheduleLoadEventIfNeeded();
   }
 
   return rv;

@@ -77,7 +77,7 @@ public:
 
   already_AddRefed<nsIURI> GetReferrerURI();
 
-  void ScheduleLoadEventIfNeeded(nsresult aStatus);
+  void ScheduleLoadEventIfNeeded();
 
   NotNull<const Encoding*> DetermineNonBOMEncoding(nsACString const& aSegment,
                                                    nsIChannel* aChannel);
@@ -179,6 +179,10 @@ public:
 
   
   
+  bool mLoadFailed : 1;
+
+  
+  
   nsCOMPtr<nsIStyleSheetLinkingElement> mOwningElement;
 
   
@@ -193,12 +197,6 @@ public:
   
   
   const Encoding* mPreloadEncoding;
-
-  
-  
-  
-  
-  MOZ_INIT_OUTSIDE_CTOR nsresult mStatus;
 
 private:
   void FireLoadEvent(nsIThreadInternal* aThread);
