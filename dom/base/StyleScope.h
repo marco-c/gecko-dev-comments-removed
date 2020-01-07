@@ -8,7 +8,9 @@
 #define mozilla_dom_StyleScope_h__
 
 #include "nsTArray.h"
+#include "nsIdentifierMapEntry.h"
 
+class nsContentList;
 class nsINode;
 
 namespace mozilla {
@@ -17,6 +19,7 @@ class StyleSheet;
 namespace dom {
 
 class StyleSheetList;
+class ShadowRoot;
 
 
 
@@ -78,15 +81,65 @@ public:
 
   StyleSheetList& EnsureDOMStyleSheets();
 
+  Element* GetElementById(const nsAString& aElementId);
+
+  
+
+
+
+
+
+  inline const nsTArray<Element*>*
+  GetAllElementsForId(const nsAString& aElementId) const;
+
+  already_AddRefed<nsContentList>
+  GetElementsByTagName(const nsAString& aTagName)
+  {
+    return NS_GetContentList(&AsNode(), kNameSpaceID_Unknown, aTagName);
+  }
+
+  already_AddRefed<nsContentList>
+  GetElementsByTagNameNS(const nsAString& aNamespaceURI,
+                         const nsAString& aLocalName);
+
+  already_AddRefed<nsContentList>
+  GetElementsByTagNameNS(const nsAString& aNamespaceURI,
+                         const nsAString& aLocalName,
+                         mozilla::ErrorResult&);
+
+  already_AddRefed<nsContentList>
+  GetElementsByClassName(const nsAString& aClasses);
+
   ~StyleScope();
 
 protected:
   nsTArray<RefPtr<mozilla::StyleSheet>> mStyleSheets;
   RefPtr<mozilla::dom::StyleSheetList> mDOMStyleSheets;
 
+  
+
+
+
+
+
+
+
+  nsTHashtable<nsIdentifierMapEntry> mIdentifierMap;
+
   nsINode& mAsNode;
   const Kind mKind;
 };
+
+inline const nsTArray<Element*>*
+StyleScope::GetAllElementsForId(const nsAString& aElementId) const
+{
+  if (aElementId.IsEmpty()) {
+    return nullptr;
+  }
+
+  nsIdentifierMapEntry* entry = mIdentifierMap.GetEntry(aElementId);
+  return entry ? &entry->GetIdElements() : nullptr;
+}
 
 }
 

@@ -572,7 +572,7 @@ public:
 
 
   typedef bool (* IDTargetObserver)(Element* aOldElement,
-                                      Element* aNewelement, void* aData);
+                                    Element* aNewelement, void* aData);
 
   
 
@@ -2646,19 +2646,10 @@ public:
   virtual void ResetScrolledToRefAlready() = 0;
   virtual void SetChangeScrollPosWhenScrollingToRef(bool aValue) = 0;
 
-  
-
-
-
-
-
-  virtual Element* GetElementById(const nsAString& aElementId) = 0;
-
-  
-
-
-
-  virtual const nsTArray<Element*>* GetAllElementsForId(const nsAString& aElementId) const = 0;
+  using mozilla::dom::StyleScope::GetElementById;
+  using mozilla::dom::StyleScope::GetElementsByTagName;
+  using mozilla::dom::StyleScope::GetElementsByTagNameNS;
+  using mozilla::dom::StyleScope::GetElementsByClassName;
 
   
 
@@ -2855,18 +2846,6 @@ public:
 
   nsIDocument* GetTopLevelContentDocument();
 
-  already_AddRefed<nsContentList>
-  GetElementsByTagName(const nsAString& aTagName)
-  {
-    return NS_GetContentList(this, kNameSpaceID_Unknown, aTagName);
-  }
-  already_AddRefed<nsContentList>
-    GetElementsByTagNameNS(const nsAString& aNamespaceURI,
-                           const nsAString& aLocalName,
-                           mozilla::ErrorResult& aResult);
-  already_AddRefed<nsContentList>
-    GetElementsByClassName(const nsAString& aClasses);
-  
   virtual already_AddRefed<Element>
     CreateElement(const nsAString& aTagName,
                   const mozilla::dom::ElementCreationOptionsOrString& aOptions,

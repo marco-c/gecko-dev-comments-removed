@@ -57,8 +57,6 @@ public:
   }
 
   
-  void AddToIdTable(Element* aElement, nsAtom* aId);
-  void RemoveFromIdTable(Element* aElement, nsAtom* aId);
   void InsertSheet(StyleSheet* aSheet, nsIContent* aLinkingContent);
   void RemoveSheet(StyleSheet* aSheet);
   bool ApplyAuthorStyles();
@@ -117,15 +115,11 @@ public:
 
   static ShadowRoot* FromNode(nsINode* aNode);
 
+  void AddToIdTable(Element* aElement, nsAtom* aId);
+  void RemoveFromIdTable(Element* aElement, nsAtom* aId);
+
   
-  Element* GetElementById(const nsAString& aElementId);
-  already_AddRefed<nsContentList>
-    GetElementsByTagName(const nsAString& aNamespaceURI);
-  already_AddRefed<nsContentList>
-    GetElementsByTagNameNS(const nsAString& aNamespaceURI,
-                           const nsAString& aLocalName);
-  already_AddRefed<nsContentList>
-    GetElementsByClassName(const nsAString& aClasses);
+  using mozilla::dom::StyleScope::GetElementById;
   void GetInnerHTML(nsAString& aInnerHTML);
   void SetInnerHTML(const nsAString& aInnerHTML, ErrorResult& aError);
   void StyleSheetChanged();
@@ -147,8 +141,6 @@ protected:
   
   
   nsClassHashtable<nsStringHashKey, nsTArray<mozilla::dom::HTMLSlotElement*>> mSlotMap;
-
-  nsTHashtable<nsIdentifierMapEntry> mIdentifierMap;
   nsXBLPrototypeBinding* mProtoBinding;
 
   
