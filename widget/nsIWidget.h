@@ -165,7 +165,6 @@ enum nsTransparencyMode {
   eTransparencyTransparent, 
   eTransparencyGlass,       
   eTransparencyBorderlessGlass 
-  
 };
 
 
@@ -1212,6 +1211,11 @@ class nsIWidget : public nsISupports
                                              uint16_t aDuration,
                                              nsISupports* aData,
                                              nsIRunnable* aCallback) = 0;
+
+    
+
+
+    virtual void CleanupFullscreenTransition() = 0;
 
     
 
