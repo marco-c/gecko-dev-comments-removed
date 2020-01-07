@@ -344,21 +344,42 @@ IMContextWrapper::Init()
     if (contextID.EqualsLiteral("ibus")) {
         mIMContextID = IMContextID::eIBus;
         mIsIMInAsyncKeyHandlingMode = !IsIBusInSyncMode();
+        
+        
+        
+        
+        
+        mIsKeySnooped = false;
     } else if (contextID.EqualsLiteral("fcitx")) {
         mIMContextID = IMContextID::eFcitx;
         mIsIMInAsyncKeyHandlingMode = !IsFcitxInSyncMode();
+        
+        
+        
+        
+        
+        mIsKeySnooped = false;
     } else if (contextID.EqualsLiteral("uim")) {
         mIMContextID = IMContextID::eUim;
         mIsIMInAsyncKeyHandlingMode = false;
+        
+        
+        
+        
+        mIsKeySnooped =
+            Preferences::GetBool("intl.ime.hack.uim.using_key_snooper", true);
     } else if (contextID.EqualsLiteral("scim")) {
         mIMContextID = IMContextID::eScim;
         mIsIMInAsyncKeyHandlingMode = false;
+        mIsKeySnooped = false;
     } else if (contextID.EqualsLiteral("iiim")) {
         mIMContextID = IMContextID::eIIIMF;
         mIsIMInAsyncKeyHandlingMode = false;
+        mIsKeySnooped = false;
     } else {
         mIMContextID = IMContextID::eUnknown;
         mIsIMInAsyncKeyHandlingMode = false;
+        mIsKeySnooped = false;
     }
 
     
@@ -391,10 +412,11 @@ IMContextWrapper::Init()
 
     MOZ_LOG(gGtkIMLog, LogLevel::Info,
         ("0x%p Init(), mOwnerWindow=%p, mContext=%p (%s), "
-         "mIsIMInAsyncKeyHandlingMode=%s, mSimpleContext=%p, "
-         "mDummyContext=%p",
+         "mIsIMInAsyncKeyHandlingMode=%s, mIsKeySnooped=%s, "
+         "mSimpleContext=%p, mDummyContext=%p",
          this, mOwnerWindow, mContext, contextID.get(),
-         ToChar(mIsIMInAsyncKeyHandlingMode), mSimpleContext, mDummyContext));
+         ToChar(mIsIMInAsyncKeyHandlingMode), ToChar(mIsKeySnooped),
+         mSimpleContext, mDummyContext));
 }
 
 IMContextWrapper::~IMContextWrapper()
@@ -800,7 +822,7 @@ IMContextWrapper::OnKeyEvent(nsWindow* aCaller,
         
         
         if (!maybeHandledAsynchronously) {
-            MaybeDispatchKeyEventAsProcessedByIME();
+            MaybeDispatchKeyEventAsProcessedByIME(eVoidEvent);
             
         }
         
@@ -1699,11 +1721,16 @@ IMContextWrapper::GetCompositionString(GtkIMContext* aContext,
 }
 
 bool
-IMContextWrapper::MaybeDispatchKeyEventAsProcessedByIME()
+IMContextWrapper::MaybeDispatchKeyEventAsProcessedByIME(
+                      EventMessage aFollowingEvent)
 {
-    if ((!mProcessingKeyEvent && mPostingKeyEvents.IsEmpty()) ||
-        (mProcessingKeyEvent && mKeyboardEventWasDispatched) ||
-        !mLastFocusedWindow) {
+    if (!mLastFocusedWindow) {
+        return false;
+    }
+
+    if (!mIsKeySnooped &&
+        ((!mProcessingKeyEvent && mPostingKeyEvents.IsEmpty()) ||
+         (mProcessingKeyEvent && mKeyboardEventWasDispatched))) {
         return true;
     }
 
@@ -1717,53 +1744,119 @@ IMContextWrapper::MaybeDispatchKeyEventAsProcessedByIME()
     GtkIMContext* oldComposingContext = mComposingContext;
 
     RefPtr<nsWindow> lastFocusedWindow(mLastFocusedWindow);
-    if (mProcessingKeyEvent) {
-        mKeyboardEventWasDispatched = true;
-    }
 
-    
-    
-    
-    
-    GdkEventKey* sourceEvent =
-        mProcessingKeyEvent ? mProcessingKeyEvent :
-                              mPostingKeyEvents.GetFirstEvent();
+    if (mProcessingKeyEvent || !mPostingKeyEvents.IsEmpty()) {
+        if (mProcessingKeyEvent) {
+            mKeyboardEventWasDispatched = true;
+        }
+        
+        
+        
+        
+        GdkEventKey* sourceEvent =
+            mProcessingKeyEvent ? mProcessingKeyEvent :
+                                  mPostingKeyEvents.GetFirstEvent();
 
-    MOZ_LOG(gGtkIMLog, LogLevel::Info,
-        ("0x%p MaybeDispatchKeyEventAsProcessedByIME(), dispatch %s %s "
-         "event: { type=%s, keyval=%s, unicode=0x%X, state=%s, "
-         "time=%u, hardware_keycode=%u, group=%u }",
-         this, ToChar(sourceEvent->type == GDK_KEY_PRESS ? eKeyDown : eKeyUp),
-         mProcessingKeyEvent ? "processing" : "posted",
-         GetEventType(sourceEvent), gdk_keyval_name(sourceEvent->keyval),
-         gdk_keyval_to_unicode(sourceEvent->keyval),
-         GetEventStateName(sourceEvent->state, mIMContextID).get(),
-         sourceEvent->time, sourceEvent->hardware_keycode, sourceEvent->group));
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    bool isCancelled;
-    lastFocusedWindow->DispatchKeyDownOrKeyUpEvent(sourceEvent,
-                                                   !mMaybeInDeadKeySequence,
-                                                   &isCancelled);
-    MOZ_LOG(gGtkIMLog, LogLevel::Info,
-        ("0x%p   MaybeDispatchKeyEventAsProcessedByIME(), keydown or keyup "
-         "event is dispatched",
-         this));
-
-    if (!mProcessingKeyEvent) {
         MOZ_LOG(gGtkIMLog, LogLevel::Info,
-            ("0x%p   MaybeDispatchKeyEventAsProcessedByIME(), removing first "
-             "event from the queue",
+            ("0x%p MaybeDispatchKeyEventAsProcessedByIME("
+             "aFollowingEvent=%s), dispatch %s %s "
+             "event: { type=%s, keyval=%s, unicode=0x%X, state=%s, "
+             "time=%u, hardware_keycode=%u, group=%u }",
+             this, ToChar(aFollowingEvent),
+             ToChar(sourceEvent->type == GDK_KEY_PRESS ? eKeyDown : eKeyUp),
+             mProcessingKeyEvent ? "processing" : "posted",
+             GetEventType(sourceEvent), gdk_keyval_name(sourceEvent->keyval),
+             gdk_keyval_to_unicode(sourceEvent->keyval),
+             GetEventStateName(sourceEvent->state, mIMContextID).get(),
+             sourceEvent->time, sourceEvent->hardware_keycode,
+             sourceEvent->group));
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        bool isCancelled;
+        lastFocusedWindow->DispatchKeyDownOrKeyUpEvent(sourceEvent,
+                                                       !mMaybeInDeadKeySequence,
+                                                       &isCancelled);
+        MOZ_LOG(gGtkIMLog, LogLevel::Info,
+            ("0x%p   MaybeDispatchKeyEventAsProcessedByIME(), keydown or keyup "
+             "event is dispatched",
              this));
-        mPostingKeyEvents.RemoveEvent(sourceEvent);
+
+        if (!mProcessingKeyEvent) {
+            MOZ_LOG(gGtkIMLog, LogLevel::Info,
+                ("0x%p   MaybeDispatchKeyEventAsProcessedByIME(), removing first "
+                 "event from the queue",
+                 this));
+            mPostingKeyEvents.RemoveEvent(sourceEvent);
+        }
+    } else {
+        MOZ_ASSERT(mIsKeySnooped);
+        
+        MOZ_ASSERT(mIMContextID == IMContextID::eUim);
+        
+        
+        
+
+        
+        
+        
+        bool dispatchFakeKeyDown = false;
+        switch (aFollowingEvent) {
+            case eCompositionStart:
+            case eCompositionCommit:
+            case eCompositionCommitAsIs:
+                dispatchFakeKeyDown = true;
+                break;
+            
+            
+            
+            
+            
+            case eContentCommandDelete:
+                dispatchFakeKeyDown = true;
+                break;
+            
+            
+            
+            
+            case eCompositionChange:
+                dispatchFakeKeyDown = !mDispatchedCompositionString.IsEmpty();
+                break;
+            default:
+                MOZ_ASSERT_UNREACHABLE("Do you forget to handle the case?");
+                break;
+        }
+
+        if (dispatchFakeKeyDown) {
+            WidgetKeyboardEvent fakeKeyDownEvent(true, eKeyDown,
+                                                 lastFocusedWindow);
+            fakeKeyDownEvent.mKeyCode = NS_VK_PROCESSKEY;
+            fakeKeyDownEvent.mKeyNameIndex = KEY_NAME_INDEX_Process;
+            
+            
+            
+            fakeKeyDownEvent.mCodeNameIndex = CODE_NAME_INDEX_UNKNOWN;
+
+            MOZ_LOG(gGtkIMLog, LogLevel::Info,
+                ("0x%p MaybeDispatchKeyEventAsProcessedByIME("
+                 "aFollowingEvent=%s), dispatch fake eKeyDown event",
+                 this, ToChar(aFollowingEvent)));
+
+            bool isCancelled;
+            lastFocusedWindow->DispatchKeyDownOrKeyUpEvent(fakeKeyDownEvent,
+                                                           &isCancelled);
+            MOZ_LOG(gGtkIMLog, LogLevel::Info,
+                ("0x%p   MaybeDispatchKeyEventAsProcessedByIME(), "
+                 "fake keydown event is dispatched",
+                 this));
+        }
     }
 
     if (lastFocusedWindow->IsDestroyed() ||
@@ -1842,7 +1935,7 @@ IMContextWrapper::DispatchCompositionStart(GtkIMContext* aContext)
     
     
     
-    if (!MaybeDispatchKeyEventAsProcessedByIME()) {
+    if (!MaybeDispatchKeyEventAsProcessedByIME(eCompositionStart)) {
         MOZ_LOG(gGtkIMLog, LogLevel::Warning,
             ("0x%p   DispatchCompositionStart(), Warning, "
              "MaybeDispatchKeyEventAsProcessedByIME() returned false",
@@ -1907,7 +2000,7 @@ IMContextWrapper::DispatchCompositionChangeEvent(
     }
     
     
-    else if (!MaybeDispatchKeyEventAsProcessedByIME()) {
+    else if (!MaybeDispatchKeyEventAsProcessedByIME(eCompositionChange)) {
         MOZ_LOG(gGtkIMLog, LogLevel::Warning,
             ("0x%p   DispatchCompositionChangeEvent(), Warning, "
              "MaybeDispatchKeyEventAsProcessedByIME() returned false",
@@ -2029,7 +2122,8 @@ IMContextWrapper::DispatchCompositionCommitEvent(
     }
     
     
-    else if (!MaybeDispatchKeyEventAsProcessedByIME()) {
+    else if (!MaybeDispatchKeyEventAsProcessedByIME(
+                 aCommitString ? eCompositionCommit : eCompositionCommitAsIs)) {
         MOZ_LOG(gGtkIMLog, LogLevel::Warning,
             ("0x%p   DispatchCompositionCommitEvent(), Warning, "
              "MaybeDispatchKeyEventAsProcessedByIME() returned false",
@@ -2738,7 +2832,7 @@ IMContextWrapper::DeleteText(GtkIMContext* aContext,
 
     
     
-    if (!MaybeDispatchKeyEventAsProcessedByIME()) {
+    if (!MaybeDispatchKeyEventAsProcessedByIME(eContentCommandDelete)) {
         MOZ_LOG(gGtkIMLog, LogLevel::Warning,
             ("0x%p   DeleteText(), Warning, "
              "MaybeDispatchKeyEventAsProcessedByIME() returned false",

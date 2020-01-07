@@ -78,6 +78,7 @@ class nsWindow final : public nsBaseWidget
 public:
     typedef mozilla::gfx::DrawTarget DrawTarget;
     typedef mozilla::WidgetEventTime WidgetEventTime;
+    typedef mozilla::WidgetKeyboardEvent WidgetKeyboardEvent;
     typedef mozilla::widget::PlatformCompositorWidgetDelegate PlatformCompositorWidgetDelegate;
 
     nsWindow();
@@ -292,6 +293,18 @@ public:
 
     bool DispatchKeyDownOrKeyUpEvent(GdkEventKey* aEvent,
                                      bool aProcessedByIME,
+                                     bool* aIsCancelled);
+
+    
+
+
+
+
+
+
+
+
+    bool DispatchKeyDownOrKeyUpEvent(WidgetKeyboardEvent& aEvent,
                                      bool* aIsCancelled);
 
     WidgetEventTime    GetWidgetEventTime(guint32 aEventTime);
