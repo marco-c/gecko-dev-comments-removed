@@ -2334,7 +2334,7 @@ nsCSSRendering::GetImageLayerClip(const nsStyleImageLayers::Layer& aLayer,
   aClipState->mBGClipArea = clipBorderArea;
 
   if (aForFrame->IsScrollFrame() &&
-      NS_STYLE_IMAGELAYER_ATTACHMENT_LOCAL == aLayer.mAttachment) {
+      StyleImageLayerAttachment::Local == aLayer.mAttachment) {
     
     
 
@@ -2947,7 +2947,7 @@ nsCSSRendering::ComputeImageLayerPositioningArea(nsPresContext* aPresContext,
   LayoutFrameType frameType = aForFrame->Type();
   nsIFrame* geometryFrame = aForFrame;
   if (MOZ_UNLIKELY(frameType == LayoutFrameType::Scroll &&
-                   NS_STYLE_IMAGELAYER_ATTACHMENT_LOCAL == aLayer.mAttachment)) {
+                   StyleImageLayerAttachment::Local == aLayer.mAttachment)) {
     nsIScrollableFrame* scrollableFrame = do_QueryFrame(aForFrame);
     positionArea = nsRect(
       scrollableFrame->GetScrolledFrame()->GetPosition()
@@ -3008,7 +3008,7 @@ nsCSSRendering::ComputeImageLayerPositioningArea(nsPresContext* aPresContext,
   }
 
   nsIFrame* attachedToFrame = aForFrame;
-  if (NS_STYLE_IMAGELAYER_ATTACHMENT_FIXED == aLayer.mAttachment) {
+  if (StyleImageLayerAttachment::Fixed == aLayer.mAttachment) {
     
     
     
@@ -3283,7 +3283,7 @@ nsCSSRendering::PrepareImageLayer(nsPresContext* aPresContext,
   
   nsRect bgClipRect = aBGClipRect;
 
-  if (NS_STYLE_IMAGELAYER_ATTACHMENT_FIXED == aLayer.mAttachment &&
+  if (StyleImageLayerAttachment::Fixed == aLayer.mAttachment &&
       !transformedFixed &&
       (aFlags & nsCSSRendering::PAINTBG_TO_WINDOW)) {
     bgClipRect = positionArea + aBorderArea.TopLeft();

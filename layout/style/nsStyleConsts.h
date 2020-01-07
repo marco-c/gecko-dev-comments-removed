@@ -254,9 +254,11 @@ enum class FillMode : uint8_t;
 #define NS_STYLE_ANIMATION_PLAY_STATE_PAUSED      1
 
 
-#define NS_STYLE_IMAGELAYER_ATTACHMENT_SCROLL        0
-#define NS_STYLE_IMAGELAYER_ATTACHMENT_FIXED         1
-#define NS_STYLE_IMAGELAYER_ATTACHMENT_LOCAL         2
+enum class StyleImageLayerAttachment : uint8_t {
+    Scroll,
+    Fixed,
+    Local
+};
 
 
 

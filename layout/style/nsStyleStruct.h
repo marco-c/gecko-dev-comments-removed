@@ -653,6 +653,7 @@ struct nsStyleImageLayers {
 
   struct Layer {
     typedef mozilla::StyleGeometryBox StyleGeometryBox;
+    typedef mozilla::StyleImageLayerAttachment StyleImageLayerAttachment;
 
     nsStyleImage  mImage;         
     mozilla::Position mPosition;  
@@ -660,7 +661,8 @@ struct nsStyleImageLayers {
     StyleGeometryBox  mClip;      
     MOZ_INIT_OUTSIDE_CTOR
       StyleGeometryBox mOrigin;   
-    uint8_t       mAttachment;    
+    StyleImageLayerAttachment mAttachment;
+                                  
                                   
                                   
                                   
