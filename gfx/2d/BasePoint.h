@@ -91,8 +91,8 @@ struct BasePoint {
   
   
   Sub& Round() {
-    x = Coord(floor(T(x) + T(0.5)));
-    y = Coord(floor(T(y) + T(0.5)));
+    x = Coord(std::floor(T(x) + T(0.5f)));
+    y = Coord(std::floor(T(y) + T(0.5f)));
     return *static_cast<Sub*>(this);
   }
 
