@@ -1226,7 +1226,10 @@ impl Stylist {
         debug!("Determining if style is shareable: pseudo: {}",
                pseudo_element.is_some());
 
-        let only_default_rules = rule_inclusion == RuleInclusion::DefaultOnly;
+        let only_default_rules =
+            rule_inclusion == RuleInclusion::DefaultOnly;
+        let matches_user_and_author_rules =
+            rule_hash_target.matches_user_and_author_rules();
 
         
         if let Some(map) = self.cascade_data.user_agent.cascade_data.borrow_for_pseudo(pseudo_element) {
@@ -1265,7 +1268,7 @@ impl Stylist {
         
         
         
-        if rule_hash_target.matches_user_and_author_rules() {
+        if matches_user_and_author_rules {
             
             if let Some(map) = self.cascade_data.user.borrow_for_pseudo(pseudo_element) {
                 map.get_all_matching_rules(
@@ -1309,24 +1312,20 @@ impl Stylist {
             }
         });
 
-        if rule_hash_target.matches_user_and_author_rules() && !only_default_rules {
+        if matches_user_and_author_rules && !only_default_rules &&
+            !cut_off_inheritance
+        {
             
-            
-            if !cut_off_inheritance {
-                
-                if let Some(map) = self.cascade_data.author.borrow_for_pseudo(pseudo_element) {
-                    map.get_all_matching_rules(
-                        element,
-                        &rule_hash_target,
-                        applicable_declarations,
-                        context,
-                        self.quirks_mode,
-                        flags_setter,
-                        CascadeLevel::AuthorNormal
-                    );
-                }
-            } else {
-                debug!("skipping author normal rules due to cut off inheritance");
+            if let Some(map) = self.cascade_data.author.borrow_for_pseudo(pseudo_element) {
+                map.get_all_matching_rules(
+                    element,
+                    &rule_hash_target,
+                    applicable_declarations,
+                    context,
+                    self.quirks_mode,
+                    flags_setter,
+                    CascadeLevel::AuthorNormal
+                );
             }
         } else {
             debug!("skipping author normal rules");
