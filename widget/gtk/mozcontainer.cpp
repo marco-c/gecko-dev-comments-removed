@@ -12,6 +12,7 @@
 #include <gdk/gdkwayland.h>
 #endif
 #include <stdio.h>
+#include <dlfcn.h>
 
 #ifdef ACCESSIBILITY
 #include <atk/atk.h>
@@ -208,7 +209,12 @@ moz_container_init (MozContainer *container)
     {
       GdkDisplay *gdk_display = gtk_widget_get_display(GTK_WIDGET(container));
       if (GDK_IS_WAYLAND_DISPLAY (gdk_display)) {
-          wl_display* display = gdk_wayland_display_get_wl_display(gdk_display);
+          
+          static auto sGdkWaylandDisplayGetWlDisplay =
+              (wl_display *(*)(GdkDisplay *))
+              dlsym(RTLD_DEFAULT, "gdk_wayland_display_get_wl_display");
+
+          wl_display* display = sGdkWaylandDisplayGetWlDisplay(gdk_display);
           wl_registry* registry = wl_display_get_registry(display);
           wl_registry_add_listener(registry, &registry_listener, container);
           wl_display_dispatch(display);
@@ -229,6 +235,14 @@ moz_container_init (MozContainer *container)
 static gboolean
 moz_container_map_surface(MozContainer *container)
 {
+    
+    static auto sGdkWaylandDisplayGetWlCompositor =
+        (wl_compositor *(*)(GdkDisplay *))
+        dlsym(RTLD_DEFAULT, "gdk_wayland_display_get_wl_compositor");
+    static auto sGdkWaylandWindowGetWlSurface =
+        (wl_surface *(*)(GdkWindow *))
+        dlsym(RTLD_DEFAULT, "gdk_wayland_window_get_wl_surface");
+
     GdkDisplay *display = gtk_widget_get_display(GTK_WIDGET(container));
     if (GDK_IS_X11_DISPLAY(display))
         return false;
@@ -238,13 +252,13 @@ moz_container_map_surface(MozContainer *container)
 
     if (!container->surface) {
         struct wl_compositor *compositor;
-        compositor = gdk_wayland_display_get_wl_compositor(display);
+        compositor = sGdkWaylandDisplayGetWlCompositor(display);
         container->surface = wl_compositor_create_surface(compositor);
     }
 
     if (!container->subsurface) {
         GdkWindow* window = gtk_widget_get_window(GTK_WIDGET(container));
-        wl_surface* gtk_surface = gdk_wayland_window_get_wl_surface(window);
+        wl_surface* gtk_surface = sGdkWaylandWindowGetWlSurface(window);
         if (!gtk_surface) {
           
           
@@ -264,7 +278,7 @@ moz_container_map_surface(MozContainer *container)
         
         
         GdkDisplay* display = gtk_widget_get_display(GTK_WIDGET (container));
-        wl_compositor* compositor = gdk_wayland_display_get_wl_compositor(display);
+        wl_compositor* compositor = sGdkWaylandDisplayGetWlCompositor(display);
         wl_region* region = wl_compositor_create_region(compositor);
         wl_surface_set_input_region(container->surface, region);
         wl_region_destroy(region);

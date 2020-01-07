@@ -6936,9 +6936,14 @@ nsWindow::IsComposited() const
 wl_display*
 nsWindow::GetWaylandDisplay()
 {
+  
+  static auto sGdkWaylandDisplayGetWlDisplay =
+      (wl_display *(*)(GdkDisplay *))
+      dlsym(RTLD_DEFAULT, "gdk_wayland_display_get_wl_display");
+
   GdkDisplay* gdkDisplay = gdk_display_get_default();
   return mIsX11Display ? nullptr :
-                         gdk_wayland_display_get_wl_display(gdkDisplay);
+                         sGdkWaylandDisplayGetWlDisplay(gdkDisplay);
 }
 
 wl_surface*
