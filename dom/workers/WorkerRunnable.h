@@ -156,6 +156,7 @@ protected:
   
   
   
+  
   virtual bool
   WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate) = 0;
 
@@ -201,7 +202,7 @@ private:
   virtual bool
   PreDispatch(WorkerPrivate* aWorkerPrivate) override final
   {
-    workers::AssertIsOnMainThread();
+    AssertIsOnMainThread();
 
     return true;
   }
@@ -243,14 +244,14 @@ protected:
                                nsIEventTarget* aSyncLoopTarget)
   : WorkerSyncRunnable(aWorkerPrivate, aSyncLoopTarget)
   {
-    workers::AssertIsOnMainThread();
+    AssertIsOnMainThread();
   }
 
   MainThreadWorkerSyncRunnable(WorkerPrivate* aWorkerPrivate,
                                already_AddRefed<nsIEventTarget>&& aSyncLoopTarget)
   : WorkerSyncRunnable(aWorkerPrivate, Move(aSyncLoopTarget))
   {
-    workers::AssertIsOnMainThread();
+    AssertIsOnMainThread();
   }
 
   virtual ~MainThreadWorkerSyncRunnable()
@@ -260,7 +261,7 @@ private:
   virtual bool
   PreDispatch(WorkerPrivate* aWorkerPrivate) override
   {
-    workers::AssertIsOnMainThread();
+    AssertIsOnMainThread();
     return true;
   }
 
@@ -313,7 +314,7 @@ protected:
   explicit MainThreadWorkerRunnable(WorkerPrivate* aWorkerPrivate)
   : WorkerRunnable(aWorkerPrivate, WorkerThreadUnchangedBusyCount)
   {
-    workers::AssertIsOnMainThread();
+    AssertIsOnMainThread();
   }
 
   virtual ~MainThreadWorkerRunnable()
@@ -322,7 +323,7 @@ protected:
   virtual bool
   PreDispatch(WorkerPrivate* aWorkerPrivate) override
   {
-    workers::AssertIsOnMainThread();
+    AssertIsOnMainThread();
     return true;
   }
 
@@ -330,7 +331,7 @@ protected:
   PostDispatch(WorkerPrivate* aWorkerPrivate,
                bool aDispatchResult) override
   {
-    workers::AssertIsOnMainThread();
+    AssertIsOnMainThread();
   }
 };
 
@@ -349,7 +350,7 @@ protected:
   virtual bool
   PreDispatch(WorkerPrivate* aWorkerPrivate) override
   {
-    workers::AssertIsOnMainThread();
+    AssertIsOnMainThread();
     return true;
   }
 
@@ -357,7 +358,7 @@ protected:
   PostDispatch(WorkerPrivate* aWorkerPrivate,
                bool aDispatchResult) override
   {
-    workers::AssertIsOnMainThread();
+    AssertIsOnMainThread();
   }
 };
 
@@ -505,7 +506,7 @@ private:
   virtual bool
   PreDispatch(WorkerPrivate* aWorkerPrivate) override final
   {
-    workers::AssertIsOnMainThread();
+    AssertIsOnMainThread();
     return true;
   }
 

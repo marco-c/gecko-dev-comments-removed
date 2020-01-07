@@ -544,7 +544,7 @@ WarningOnlyErrorReporter(JSContext* aCx, JSErrorReport* aRep)
     
     
     
-    WorkerPrivate* worker = workers::GetWorkerPrivateFromContext(aCx);
+    WorkerPrivate* worker = GetWorkerPrivateFromContext(aCx);
     MOZ_ASSERT(worker);
 
     worker->ReportError(aCx, JS::ConstUTF8CharsZ(), aRep);
@@ -581,7 +581,7 @@ AutoJSAPI::ReportException()
     if (mIsMainThread) {
       errorGlobal = xpc::PrivilegedJunkScope();
     } else {
-      errorGlobal = workers::GetCurrentThreadWorkerGlobal();
+      errorGlobal = GetCurrentThreadWorkerGlobal();
     }
   }
   JSAutoCompartment ac(cx(), errorGlobal);
@@ -617,7 +617,7 @@ AutoJSAPI::ReportException()
       
       
       
-      WorkerPrivate* worker = workers::GetCurrentThreadWorkerPrivate();
+      WorkerPrivate* worker = GetCurrentThreadWorkerPrivate();
       MOZ_ASSERT(worker);
       MOZ_ASSERT(worker->GetJSContext() == cx());
       

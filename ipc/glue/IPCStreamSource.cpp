@@ -137,7 +137,7 @@ IPCStreamSource::Initialize()
   
   WorkerPrivate* workerPrivate = nullptr;
   if (!NS_IsMainThread()) {
-    workerPrivate = mozilla::dom::workers::GetCurrentThreadWorkerPrivate();
+    workerPrivate = mozilla::dom::GetCurrentThreadWorkerPrivate();
     if (workerPrivate) {
       bool result = HoldWorker(workerPrivate, WorkerStatus::Canceling);
       if (!result) {

@@ -226,7 +226,7 @@ var ignoreFunctions = {
 
     "void js::AutoEnterOOMUnsafeRegion::crash(uint64, int8*)" : true,
 
-    "void mozilla::dom::workers::WorkerPrivate::AssertIsOnWorkerThread() const" : true,
+    "void mozilla::dom::WorkerPrivate::AssertIsOnWorkerThread() const" : true,
 
     
     

@@ -198,7 +198,7 @@ NS_IMETHODIMP
 AlternativeDataStreamListener::OnStartRequest(nsIRequest* aRequest,
                                               nsISupports* aContext)
 {
-  workers::AssertIsOnMainThread();
+  AssertIsOnMainThread();
   MOZ_ASSERT(!mAlternativeDataType.IsEmpty());
   
   
@@ -274,7 +274,7 @@ AlternativeDataStreamListener::OnStopRequest(nsIRequest* aRequest,
                                              nsISupports* aContext,
                                              nsresult aStatusCode)
 {
-  workers::AssertIsOnMainThread();
+  AssertIsOnMainThread();
 
   
   
@@ -363,7 +363,7 @@ FetchDriver::~FetchDriver()
 nsresult
 FetchDriver::Fetch(AbortSignal* aSignal, FetchDriverObserver* aObserver)
 {
-  workers::AssertIsOnMainThread();
+  AssertIsOnMainThread();
 #ifdef DEBUG
   MOZ_ASSERT(!mFetchCalled);
   mFetchCalled = true;
@@ -771,7 +771,7 @@ FetchDriver::BeginAndGetFilteredResponse(InternalResponse* aResponse,
 void
 FetchDriver::FailWithNetworkError(nsresult rv)
 {
-  workers::AssertIsOnMainThread();
+  AssertIsOnMainThread();
   RefPtr<InternalResponse> error = InternalResponse::NetworkError(rv);
   if (mObserver) {
     mObserver->OnResponseAvailable(error);
@@ -789,7 +789,7 @@ NS_IMETHODIMP
 FetchDriver::OnStartRequest(nsIRequest* aRequest,
                             nsISupports* aContext)
 {
-  workers::AssertIsOnMainThread();
+  AssertIsOnMainThread();
 
   
   
@@ -1151,7 +1151,7 @@ FetchDriver::OnStopRequest(nsIRequest* aRequest,
                            nsISupports* aContext,
                            nsresult aStatusCode)
 {
-  workers::AssertIsOnMainThread();
+  AssertIsOnMainThread();
 
   MOZ_DIAGNOSTIC_ASSERT(!mOnStopRequestCalled);
   mOnStopRequestCalled = true;
@@ -1217,7 +1217,7 @@ FetchDriver::OnStopRequest(nsIRequest* aRequest,
 nsresult
 FetchDriver::FinishOnStopRequest(AlternativeDataStreamListener* aAltDataListener)
 {
-  workers::AssertIsOnMainThread();
+  AssertIsOnMainThread();
   
   
   if (!mOnStopRequestCalled) {

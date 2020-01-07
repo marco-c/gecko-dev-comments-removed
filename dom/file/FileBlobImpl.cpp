@@ -169,7 +169,7 @@ FileBlobImpl::GetType(nsAString& aType)
                "Should only use lazy ContentType when using the whole file");
 
     if (!NS_IsMainThread()) {
-      WorkerPrivate* workerPrivate = workers::GetCurrentThreadWorkerPrivate();
+      WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
       if (!workerPrivate) {
         
         
