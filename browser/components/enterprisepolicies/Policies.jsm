@@ -263,6 +263,18 @@ var Policies = {
     }
   },
 
+  "EnableTrackingProtection": {
+    onBeforeUIStartup(manager, param) {
+      if (param.Locked) {
+        setAndLockPref("privacy.trackingprotection.enabled", param.Value);
+        setAndLockPref("privacy.trackingprotection.pbmode.enabled", param.Value);
+      } else {
+        setDefaultPref("privacy.trackingprotection.enabled", param.Value);
+        setDefaultPref("privacy.trackingprotection.pbmode.enabled", param.Value);
+      }
+    }
+  },
+
   "FlashPlugin": {
     onBeforeUIStartup(manager, param) {
       addAllowDenyPermissions("plugin:flash", param.Allow, param.Block);
@@ -338,6 +350,23 @@ function setAndLockPref(prefName, prefValue) {
     Services.prefs.unlockPref(prefName);
   }
 
+  setDefaultPref(prefName, prefValue);
+
+  Services.prefs.lockPref(prefName);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+function setDefaultPref(prefName, prefValue) {
   let defaults = Services.prefs.getDefaultBranch("");
 
   switch (typeof(prefValue)) {
@@ -357,8 +386,6 @@ function setAndLockPref(prefName, prefValue) {
       defaults.setStringPref(prefName, prefValue);
       break;
   }
-
-  Services.prefs.lockPref(prefName);
 }
 
 
