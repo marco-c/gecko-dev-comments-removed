@@ -129,14 +129,6 @@
 
 #define CSS_PROPERTY_PARSE_PROPERTY_MASK          (7<<9)
 #define CSS_PROPERTY_PARSE_INACCESSIBLE           (1<<9)
-#define CSS_PROPERTY_PARSE_FUNCTION               (2<<9)
-
-
-
-#define CSS_PROPERTY_VALUE_PARSER_FUNCTION        (1<<12)
-static_assert((CSS_PROPERTY_PARSE_PROPERTY_MASK &
-               CSS_PROPERTY_VALUE_PARSER_FUNCTION) == 0,
-              "didn't leave enough room for the parse property constants");
 
 
 
