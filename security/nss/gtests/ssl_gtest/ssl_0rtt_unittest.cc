@@ -405,6 +405,9 @@ TEST_P(TlsConnectTls13, TestTls13ZeroRttDowngrade) {
 
 
 TEST_P(TlsConnectTls13, TestTls13ZeroRttDowngradeEarlyData) {
+  const char* k0RttData = "ABCDEF";
+  const PRInt32 k0RttDataLen = static_cast<PRInt32>(strlen(k0RttData));
+
   ConfigureSessionCache(RESUME_BOTH, RESUME_TICKET);
   server_->Set0RttEnabled(true);  
   Connect();
@@ -422,27 +425,28 @@ TEST_P(TlsConnectTls13, TestTls13ZeroRttDowngradeEarlyData) {
   
   
   client_->Set0RttEnabled(true);
-  ZeroRttSendReceive(true, false, [this]() {
-    client_->ExpectSendAlert(kTlsAlertIllegalParameter);
-    if (variant_ == ssl_variant_stream) {
-      server_->ExpectSendAlert(kTlsAlertUnexpectedMessage);
-    }
-    return true;
-  });
+  client_->Handshake();  
+  PRInt32 rv =
+      PR_Write(client_->ssl_fd(), k0RttData, k0RttDataLen);  
+  EXPECT_EQ(k0RttDataLen, rv);
 
-  client_->Handshake();
-  server_->Handshake();
-  ASSERT_TRUE_WAIT(
-      (client_->error_code() == SSL_ERROR_DOWNGRADE_WITH_EARLY_DATA), 2000);
-
-  
-  
   if (variant_ == ssl_variant_stream) {
     
-    ASSERT_TRUE_WAIT(
-        (server_->error_code() == SSL_ERROR_RX_UNEXPECTED_APPLICATION_DATA),
-        2000);
+    server_->ExpectSendAlert(kTlsAlertUnexpectedMessage);
+    server_->Handshake();  
+    EXPECT_EQ(TlsAgent::STATE_ERROR, server_->state());
+    server_->CheckErrorCode(SSL_ERROR_RX_UNEXPECTED_APPLICATION_DATA);
+  } else {
+    
+    server_->Handshake();  
+    EXPECT_EQ(TlsAgent::STATE_CONNECTING, server_->state());
   }
+
+  
+  ASSERT_EQ(TlsAgent::STATE_CONNECTING, client_->state());
+  client_->ExpectSendAlert(kTlsAlertIllegalParameter);
+  client_->Handshake();
+  client_->CheckErrorCode(SSL_ERROR_DOWNGRADE_WITH_EARLY_DATA);
 }
 
 static void CheckEarlyDataLimit(const std::shared_ptr<TlsAgent>& agent,
@@ -521,6 +525,8 @@ TEST_P(TlsConnectTls13, ReceiveTooMuchEarlyData) {
   client_->Handshake();  
   CheckEarlyDataLimit(client_, limit);
 
+  server_->Handshake();  
+
   
   EXPECT_EQ(SECSuccess,
             SSLInt_SetSocketMaxEarlyDataSize(client_->ssl_fd(), 1000));
@@ -534,21 +540,31 @@ TEST_P(TlsConnectTls13, ReceiveTooMuchEarlyData) {
     
     ExpectAlert(server_, kTlsAlertUnexpectedMessage);
   }
+
   server_->Handshake();  
-  server_->Handshake();  
+  if (variant_ == ssl_variant_stream) {
+    server_->CheckErrorCode(SSL_ERROR_TOO_MUCH_EARLY_DATA);
+  } else {
+    EXPECT_EQ(TlsAgent::STATE_CONNECTING, server_->state());
+  }
   CheckEarlyDataLimit(server_, limit);
 
   
   std::vector<uint8_t> buf(strlen(message) + 1);
   EXPECT_GT(0, PR_Read(server_->ssl_fd(), buf.data(), buf.capacity()));
   if (variant_ == ssl_variant_stream) {
-    server_->CheckErrorCode(SSL_ERROR_TOO_MUCH_EARLY_DATA);
+    EXPECT_EQ(SSL_ERROR_HANDSHAKE_FAILED, PORT_GetError());
+  } else {
+    EXPECT_EQ(PR_WOULD_BLOCK_ERROR, PORT_GetError());
   }
 
   client_->Handshake();  
-  client_->Handshake();  
   if (variant_ == ssl_variant_stream) {
+    client_->Handshake();  
     client_->CheckErrorCode(SSL_ERROR_HANDSHAKE_UNEXPECTED_ALERT);
+  } else {
+    server_->Handshake();  
+    EXPECT_EQ(TlsAgent::STATE_CONNECTED, server_->state());
   }
 }
 

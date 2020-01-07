@@ -123,11 +123,14 @@ typedef enum {
     ssl_sig_ecdsa_secp256r1_sha256 = 0x0403,
     ssl_sig_ecdsa_secp384r1_sha384 = 0x0503,
     ssl_sig_ecdsa_secp521r1_sha512 = 0x0603,
-    ssl_sig_rsa_pss_sha256 = 0x0804,
-    ssl_sig_rsa_pss_sha384 = 0x0805,
-    ssl_sig_rsa_pss_sha512 = 0x0806,
+    ssl_sig_rsa_pss_rsae_sha256 = 0x0804,
+    ssl_sig_rsa_pss_rsae_sha384 = 0x0805,
+    ssl_sig_rsa_pss_rsae_sha512 = 0x0806,
     ssl_sig_ed25519 = 0x0807,
     ssl_sig_ed448 = 0x0808,
+    ssl_sig_rsa_pss_pss_sha256 = 0x0809,
+    ssl_sig_rsa_pss_pss_sha384 = 0x080a,
+    ssl_sig_rsa_pss_pss_sha512 = 0x080b,
 
     ssl_sig_dsa_sha1 = 0x0202,
     ssl_sig_dsa_sha256 = 0x0402,
@@ -144,6 +147,11 @@ typedef enum {
 } SSLSignatureScheme;
 
 
+#define ssl_sig_rsa_pss_sha256 ssl_sig_rsa_pss_rsae_sha256
+#define ssl_sig_rsa_pss_sha384 ssl_sig_rsa_pss_rsae_sha384
+#define ssl_sig_rsa_pss_sha512 ssl_sig_rsa_pss_rsae_sha512
+
+
 
 
 
@@ -156,7 +164,7 @@ typedef enum {
     ssl_auth_ecdh_rsa = 5,   
     ssl_auth_ecdh_ecdsa = 6, 
     ssl_auth_rsa_sign = 7,   
-    ssl_auth_rsa_pss = 8,
+    ssl_auth_rsa_pss = 8,    
     ssl_auth_psk = 9,
     ssl_auth_tls13_any = 10,
     ssl_auth_size 

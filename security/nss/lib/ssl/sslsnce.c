@@ -495,12 +495,6 @@ ConvertToSID(sidCacheEntry *from,
 
     PORT_Memcpy(to->u.ssl3.sessionID, from->sessionID, from->sessionIDLength);
 
-    
-
-
-    to->u.ssl3.clientWriteKey = NULL;
-    to->u.ssl3.serverWriteKey = NULL;
-
     to->urlSvrName = NULL;
 
     to->u.ssl3.masterModuleID = (SECMODModuleID)-1; 
@@ -735,9 +729,11 @@ ServerSessionIDLookup(const PRIPv6Addr *addr,
 
 
 
-static void
-ServerSessionIDCache(sslSessionID *sid)
+void
+ssl_ServerCacheSessionID(sslSessionID *sid)
 {
+    PORT_Assert(sid);
+
     sidCacheEntry sce;
     PRUint32 now = 0;
     cacheDesc *cache = &globalCache;
@@ -800,8 +796,8 @@ ServerSessionIDCache(sslSessionID *sid)
 
 
 
-static void
-ServerSessionIDUncache(sslSessionID *sid)
+void
+ssl_ServerUncacheSessionID(sslSessionID *sid)
 {
     cacheDesc *cache = &globalCache;
     PRUint8 *sessionID;
@@ -1172,8 +1168,6 @@ ssl_ConfigServerSessionIDCacheInstanceWithOpt(cacheDesc *cache,
     }
 
     ssl_sid_lookup = ServerSessionIDLookup;
-    ssl_sid_cache = ServerSessionIDCache;
-    ssl_sid_uncache = ServerSessionIDUncache;
     return SECSuccess;
 }
 
@@ -1356,8 +1350,6 @@ SSL_InheritMPServerSIDCacheInstance(cacheDesc *cache, const char *envString)
     ssl_InitSessionCacheLocks(PR_FALSE);
 
     ssl_sid_lookup = ServerSessionIDLookup;
-    ssl_sid_cache = ServerSessionIDCache;
-    ssl_sid_uncache = ServerSessionIDUncache;
 
     if (!envString) {
         envString = PR_GetEnvSecure(envVarName);

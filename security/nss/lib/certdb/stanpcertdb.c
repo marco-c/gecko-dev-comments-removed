@@ -343,7 +343,7 @@ CERT_NewTempCertificate(CERTCertDBHandle *handle, SECItem *derCert,
         
         c = NSSCryptoContext_FindCertificateByEncodedCertificate(gCC,
                                                                  &encoding);
-        if (!c) {
+        if (!c && handle) {
             
             c = NSSTrustDomain_FindCertificateByEncodedCertificate(handle,
                                                                    &encoding);

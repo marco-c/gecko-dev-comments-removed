@@ -33,6 +33,8 @@ nssSlot_Destroy(
         if (PR_ATOMIC_DECREMENT(&slot->base.refCount) == 0) {
             PK11_FreeSlot(slot->pk11slot);
             PZ_DestroyLock(slot->base.lock);
+            PZ_DestroyCondVar(slot->isPresentCondition);
+            PZ_DestroyLock(slot->isPresentLock);
             return nssArena_Destroy(slot->base.arena);
         }
     }
@@ -117,35 +119,61 @@ nssSlot_IsTokenPresent(
     nssSession *session;
     CK_SLOT_INFO slotInfo;
     void *epv;
+    PRBool isPresent = PR_FALSE;
+
     
     if (nssSlot_IsPermanent(slot)) {
         return !PK11_IsDisabled(slot->pk11slot);
     }
-    
-    if (within_token_delay_period(slot)) {
-        return ((slot->ckFlags & CKF_TOKEN_PRESENT) != 0);
-    }
 
     
+    PZ_Lock(slot->isPresentLock);
+    if (within_token_delay_period(slot)) {
+        CK_FLAGS ckFlags = slot->ckFlags;
+        PZ_Unlock(slot->isPresentLock);
+        return ((ckFlags & CKF_TOKEN_PRESENT) != 0);
+    }
+    PZ_Unlock(slot->isPresentLock);
+
+    
+
     epv = slot->epv;
     if (!epv) {
         return PR_FALSE;
     }
+
+    
+    PZ_Lock(slot->isPresentLock);
+    while (slot->inIsPresent) {
+        PR_WaitCondVar(slot->isPresentCondition, 0);
+    }
+    
+
+    if (within_token_delay_period(slot)) {
+        CK_FLAGS ckFlags = slot->ckFlags;
+        PZ_Unlock(slot->isPresentLock);
+        return ((ckFlags & CKF_TOKEN_PRESENT) != 0);
+    }
+    
+
+    slot->inIsPresent = PR_TRUE;
+    PZ_Unlock(slot->isPresentLock);
+
     nssSlot_EnterMonitor(slot);
     ckrv = CKAPI(epv)->C_GetSlotInfo(slot->slotID, &slotInfo);
     nssSlot_ExitMonitor(slot);
     if (ckrv != CKR_OK) {
         slot->token->base.name[0] = 0; 
-        slot->lastTokenPing = PR_IntervalNow();
-        return PR_FALSE;
+        isPresent = PR_FALSE;
+        goto done;
     }
     slot->ckFlags = slotInfo.flags;
     
     if ((slot->ckFlags & CKF_TOKEN_PRESENT) == 0) {
         if (!slot->token) {
             
-            slot->lastTokenPing = PR_IntervalNow();
-            return PR_FALSE;
+            isPresent = PR_FALSE;
+            goto done;
         }
         session = nssToken_GetDefaultSession(slot->token);
         if (session) {
@@ -167,15 +195,15 @@ nssSlot_IsTokenPresent(
         slot->token->base.name[0] = 0; 
         
         nssToken_Remove(slot->token);
-        slot->lastTokenPing = PR_IntervalNow();
-        return PR_FALSE;
+        isPresent = PR_FALSE;
+        goto done;
     }
     
 
 
     session = nssToken_GetDefaultSession(slot->token);
     if (session) {
-        PRBool isPresent = PR_FALSE;
+        PRBool tokenRemoved;
         nssSession_EnterMonitor(session);
         if (session->handle != CK_INVALID_SESSION) {
             CK_SESSION_INFO sessionInfo;
@@ -187,12 +215,12 @@ nssSlot_IsTokenPresent(
                 session->handle = CK_INVALID_SESSION;
             }
         }
-        isPresent = session->handle != CK_INVALID_SESSION;
+        tokenRemoved = (session->handle == CK_INVALID_SESSION);
         nssSession_ExitMonitor(session);
         
-        if (isPresent) {
-            slot->lastTokenPing = PR_IntervalNow();
-            return PR_TRUE;
+        if (!tokenRemoved) {
+            isPresent = PR_TRUE;
+            goto done;
         }
     }
     
@@ -203,15 +231,27 @@ nssSlot_IsTokenPresent(
     nssToken_Remove(slot->token);
     
     nssrv = nssSlot_Refresh(slot);
+    isPresent = PR_TRUE;
     if (nssrv != PR_SUCCESS) {
         slot->token->base.name[0] = 0; 
         slot->ckFlags &= ~CKF_TOKEN_PRESENT;
-        
-        slot->lastTokenPing = PR_IntervalNow();
-        return PR_FALSE;
+        isPresent = PR_FALSE;
     }
+done:
+    
+
+
+
+
+
+
+
+    PZ_Lock(slot->isPresentLock);
     slot->lastTokenPing = PR_IntervalNow();
-    return PR_TRUE;
+    slot->inIsPresent = PR_FALSE;
+    PR_NotifyAllCondVar(slot->isPresentCondition);
+    PZ_Unlock(slot->isPresentLock);
+    return isPresent;
 }
 
 NSS_IMPLEMENT void *
