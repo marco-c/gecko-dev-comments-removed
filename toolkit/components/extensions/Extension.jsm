@@ -663,6 +663,9 @@ class ExtensionData {
     } else if (this.type == "langpack") {
       
       
+      
+
+      
       const platform = AppConstants.platform;
       const chromeEntries = [];
       for (const [language, entry] of Object.entries(manifest.languages)) {
@@ -677,7 +680,39 @@ class ExtensionData {
         }
       }
 
-      this.startupData = {chromeEntries};
+
+      
+      const productCodeName = AppConstants.MOZ_BUILD_APP.replace("/", "-");
+
+      
+      
+      
+      const langpackId =
+        `langpack-${manifest.langpack_id}-${productCodeName}`;
+
+
+      
+      const l10nRegistrySources = {};
+
+      
+      
+      const entries = await this.readDirectory("localization");
+      if (entries.length > 0) {
+        l10nRegistrySources.toolkit = "";
+      }
+
+      
+      if (manifest.sources) {
+        for (const [sourceName, {base_path}] of Object.entries(manifest.sources)) {
+          l10nRegistrySources[sourceName] = base_path;
+        }
+      }
+
+      
+      const languages = Object.keys(manifest.languages);
+
+
+      this.startupData = {chromeEntries, langpackId, l10nRegistrySources, languages};
     }
 
     if (schemaPromises.size) {
@@ -1803,41 +1838,9 @@ class Langpack extends ExtensionData {
       });
   }
 
-  async _parseManifest() {
-    let data = await super.parseManifest();
-
-    const productCodeName = AppConstants.MOZ_BUILD_APP.replace("/", "-");
-
-    
-    
-    
-    data.langpackId =
-      `langpack-${data.manifest.langpack_id}-${productCodeName}`;
-
-    const l10nRegistrySources = {};
-
-    
-    
-    const entries = await this.readDirectory("localization");
-    if (entries.length > 0) {
-      l10nRegistrySources.toolkit = "";
-    }
-
-    
-    if (data.manifest.sources) {
-      for (const [sourceName, {base_path}] of Object.entries(data.manifest.sources)) {
-        l10nRegistrySources[sourceName] = base_path;
-      }
-    }
-
-    data.l10nRegistrySources = l10nRegistrySources;
-
-    return data;
-  }
-
   parseManifest() {
     return StartupCache.manifests.get(this.manifestCacheKey,
-                                      () => this._parseManifest());
+                                      () => super.parseManifest());
   }
 
   async startup(reason) {
@@ -1848,18 +1851,16 @@ class Langpack extends ExtensionData {
         aomStartup.registerChrome(manifestURI, this.startupData.chromeEntries);
     }
 
-    const data = await this.parseManifest();
-    this.langpackId = data.langpackId;
-    this.l10nRegistrySources = data.l10nRegistrySources;
+    const langpackId = this.startupData.langpackId;
+    const l10nRegistrySources = this.startupData.l10nRegistrySources;
 
-    const languages = Object.keys(data.manifest.languages);
-    resourceProtocol.setSubstitution(this.langpackId, this.rootURI);
+    resourceProtocol.setSubstitution(langpackId, this.rootURI);
 
-    for (const [sourceName, basePath] of Object.entries(this.l10nRegistrySources)) {
+    for (const [sourceName, basePath] of Object.entries(l10nRegistrySources)) {
       L10nRegistry.registerSource(new FileSource(
-        `${sourceName}-${this.langpackId}`,
-        languages,
-        `resource://${this.langpackId}/${basePath}localization/{locale}/`
+        `${sourceName}-${langpackId}`,
+        this.startupData.languages,
+        `resource://${langpackId}/${basePath}localization/{locale}/`
       ));
     }
 
@@ -1868,14 +1869,14 @@ class Langpack extends ExtensionData {
   }
 
   async shutdown(reason) {
-    for (const sourceName of Object.keys(this.l10nRegistrySources)) {
-      L10nRegistry.removeSource(`${sourceName}-${this.langpackId}`);
+    for (const sourceName of Object.keys(this.startupData.l10nRegistrySources)) {
+      L10nRegistry.removeSource(`${sourceName}-${this.startupData.langpackId}`);
     }
     if (this.chromeRegistryHandle) {
       this.chromeRegistryHandle.destruct();
       this.chromeRegistryHandle = null;
     }
 
-    resourceProtocol.setSubstitution(this.langpackId, null);
+    resourceProtocol.setSubstitution(this.startupData.langpackId, null);
   }
 }
