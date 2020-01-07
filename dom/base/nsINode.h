@@ -453,6 +453,7 @@ public:
 
   bool IsDocument() const
   {
+    
     return !GetParentNode() && IsInUncomposedDoc();
   }
 
