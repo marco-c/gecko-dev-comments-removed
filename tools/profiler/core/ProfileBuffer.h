@@ -50,6 +50,13 @@ public:
   
   static const size_t kMaxFrameKeyLength = 512;
 
+  
+  
+  
+  void AddJITInfoForRange(uint64_t aRangeStart,
+                          int aThreadId, JSContext* aContext,
+                          JITFrameInfo& aJITFrameInfo) const;
+
   bool StreamSamplesToJSON(SpliceableJSONWriter& aWriter, int aThreadId,
                            double aSinceTime, JSContext* cx,
                            UniqueStacks& aUniqueStacks) const;
