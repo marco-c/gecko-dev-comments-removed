@@ -9762,7 +9762,7 @@ nsIDocument::CancelFrameRequestCallback(int32_t aHandle)
 }
 
 nsresult
-nsDocument::GetStateObject(nsIVariant** aState)
+nsIDocument::GetStateObject(nsIVariant** aState)
 {
   
   
@@ -9783,7 +9783,6 @@ nsDocument::GetStateObject(nsIVariant** aState)
   }
 
   NS_IF_ADDREF(*aState = mStateObjectCached);
-
   return NS_OK;
 }
 

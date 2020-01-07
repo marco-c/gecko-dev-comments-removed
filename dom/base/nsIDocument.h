@@ -2806,7 +2806,7 @@ public:
   
   void NotifyMediaFeatureValuesChanged();
 
-  virtual nsresult GetStateObject(nsIVariant** aResult) = 0;
+  nsresult GetStateObject(nsIVariant** aResult);
 
   nsDOMNavigationTiming* GetNavigationTiming() const
   {

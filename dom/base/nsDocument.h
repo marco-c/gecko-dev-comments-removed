@@ -646,8 +646,6 @@ public:
   
   virtual void GetPlugins(nsTArray<nsIObjectLoadingContent*>& aPlugins) override;
 
-  virtual nsresult GetStateObject(nsIVariant** aResult) override;
-
   
   
   
