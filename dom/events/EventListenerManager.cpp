@@ -326,6 +326,9 @@ EventListenerManager::AddEventListenerInternal(
       nsCOMPtr<nsIDocument> doc = window->GetExtantDoc();
       if (doc) {
         doc->WarnOnceAbout(nsIDocument::eMutationEvent);
+        if (aEventMessage == eLegacyAttrModified) {
+          doc->WarnOnceAbout(nsIDocument::eDOMAttrModifiedEvent);
+        }
       }
       
       
