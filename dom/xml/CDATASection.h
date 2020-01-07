@@ -45,14 +45,15 @@ public:
   NS_DECL_ISUPPORTS_INHERITED
 
   
-  NS_FORWARD_NSIDOMCHARACTERDATA(nsGenericDOMDataNode::)
-  using nsGenericDOMDataNode::SetData; 
+  NS_FORWARD_NSIDOMCHARACTERDATA(CharacterData::)
+  using CharacterData::SetData; 
+  using CharacterData::GetData;
 
   
   virtual bool IsNodeOfType(uint32_t aFlags) const override;
 
-  virtual nsGenericDOMDataNode* CloneDataNode(mozilla::dom::NodeInfo *aNodeInfo,
-                                              bool aCloneText) const override;
+  virtual CharacterData* CloneDataNode(mozilla::dom::NodeInfo *aNodeInfo,
+                                       bool aCloneText) const override;
 
   virtual nsIDOMNode* AsDOMNode() override { return this; }
 #ifdef DEBUG

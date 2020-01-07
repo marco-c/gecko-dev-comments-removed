@@ -11,7 +11,6 @@
 #include "mozilla/dom/BindingDeclarations.h"
 
 class nsAtom;
-class nsGenericDOMDataNode;
 class nsIDocument;
 class nsStyleContext;
 
@@ -21,6 +20,7 @@ namespace css {
 class Rule;
 } 
 namespace dom {
+class CharacterData;
 class Element;
 class InspectorFontFace;
 } 
@@ -164,11 +164,11 @@ public:
                                       ErrorResult& aRv);
 
   static bool IsIgnorableWhitespace(GlobalObject& aGlobalObject,
-                                    nsGenericDOMDataNode& aDataNode)
+                                    CharacterData& aDataNode)
   {
     return IsIgnorableWhitespace(aDataNode);
   }
-  static bool IsIgnorableWhitespace(nsGenericDOMDataNode& aDataNode);
+  static bool IsIgnorableWhitespace(CharacterData& aDataNode);
 
   
   

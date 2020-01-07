@@ -50,7 +50,7 @@ DocumentType::DocumentType(already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo,
                            const nsAString& aPublicId,
                            const nsAString& aSystemId,
                            const nsAString& aInternalSubset) :
-  nsGenericDOMDataNode(aNodeInfo),
+  CharacterData(aNodeInfo),
   mPublicId(aPublicId),
   mSystemId(aSystemId),
   mInternalSubset(aInternalSubset)
@@ -63,7 +63,7 @@ DocumentType::~DocumentType()
 {
 }
 
-NS_IMPL_ISUPPORTS_INHERITED(DocumentType, nsGenericDOMDataNode, nsIDOMNode)
+NS_IMPL_ISUPPORTS_INHERITED(DocumentType, CharacterData, nsIDOMNode)
 
 bool
 DocumentType::IsNodeOfType(uint32_t aFlags) const
@@ -105,7 +105,7 @@ DocumentType::GetInternalSubset(nsAString& aInternalSubset) const
   aInternalSubset = mInternalSubset;
 }
 
-nsGenericDOMDataNode*
+CharacterData*
 DocumentType::CloneDataNode(mozilla::dom::NodeInfo *aNodeInfo, bool aCloneText) const
 {
   already_AddRefed<mozilla::dom::NodeInfo> ni = RefPtr<mozilla::dom::NodeInfo>(aNodeInfo).forget();

@@ -26,7 +26,7 @@ class DeleteTextTransaction final : public EditTransactionBase
 {
 protected:
   DeleteTextTransaction(EditorBase& aEditorBase,
-                        nsGenericDOMDataNode& aCharData,
+                        dom::CharacterData& aCharData,
                         uint32_t aOffset,
                         uint32_t aLengthToDelete);
 
@@ -43,7 +43,7 @@ public:
 
   static already_AddRefed<DeleteTextTransaction>
   MaybeCreate(EditorBase& aEditorBase,
-              nsGenericDOMDataNode& aCharData,
+              dom::CharacterData& aCharData,
               uint32_t aOffset,
               uint32_t aLengthToDelete);
 
@@ -57,11 +57,11 @@ public:
 
   static already_AddRefed<DeleteTextTransaction>
   MaybeCreateForPreviousCharacter(EditorBase& aEditorBase,
-                                  nsGenericDOMDataNode& aCharData,
+                                  dom::CharacterData& aCharData,
                                   uint32_t aOffset);
   static already_AddRefed<DeleteTextTransaction>
   MaybeCreateForNextCharacter(EditorBase& aEditorBase,
-                              nsGenericDOMDataNode& aCharData,
+                              dom::CharacterData& aCharData,
                               uint32_t aOffset);
 
   
@@ -85,7 +85,7 @@ protected:
   RefPtr<EditorBase> mEditorBase;
 
   
-  RefPtr<nsGenericDOMDataNode> mCharData;
+  RefPtr<dom::CharacterData> mCharData;
 
   
   uint32_t mOffset;

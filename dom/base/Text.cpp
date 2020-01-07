@@ -34,7 +34,7 @@ Text::SplitText(uint32_t aOffset, ErrorResult& aRv)
 
   
   
-  nsGenericDOMDataNode* clone = CloneDataNode(mNodeInfo, false);
+  CharacterData* clone = CloneDataNode(mNodeInfo, false);
   MOZ_ASSERT(clone && clone->IsText());
   RefPtr<Text> newContent = static_cast<Text*>(clone);
 
