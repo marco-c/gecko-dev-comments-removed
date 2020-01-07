@@ -8,14 +8,36 @@
 
 #include "mozilla/FloatingPoint.h"
 
+#include <cfloat> 
+
 namespace mozilla {
 
 bool
-IsFloat32Representable(double aFloat32)
+IsFloat32Representable(double aValue)
 {
-  float asFloat = static_cast<float>(aFloat32);
-  double floatAsDouble = static_cast<double>(asFloat);
-  return floatAsDouble == aFloat32;
+  
+  if (!IsFinite(aValue)) {
+    return true;
+  }
+
+  
+  
+  if (Abs(aValue) > FLT_MAX) {
+    return false;
+  }
+
+  
+  
+  
+  
+  auto valueAsFloat = static_cast<float>(aValue);
+
+  
+  auto valueAsFloatAsDouble = static_cast<double>(valueAsFloat);
+
+  
+  
+  return valueAsFloatAsDouble == aValue;
 }
 
 } 
