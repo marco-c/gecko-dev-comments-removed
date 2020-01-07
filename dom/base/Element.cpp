@@ -3822,7 +3822,12 @@ Element::GetAnimations(const AnimationFilter& filter,
 {
   nsIDocument* doc = GetComposedDoc();
   if (doc) {
-    doc->FlushPendingNotifications(FlushType::Style);
+    
+    
+    
+    
+    doc->FlushPendingNotifications(
+      ChangesToFlush(FlushType::Style, false ));
   }
 
   Element* elem = this;

@@ -56,7 +56,12 @@ CSSPseudoElement::GetAnimations(const AnimationFilter& filter,
 {
   nsIDocument* doc = mParentElement->GetComposedDoc();
   if (doc) {
-    doc->FlushPendingNotifications(FlushType::Style);
+    
+    
+    
+    
+    doc->FlushPendingNotifications(
+      ChangesToFlush(FlushType::Style, false ));
   }
 
   Element::GetAnimationsUnsorted(mParentElement, mPseudoType, aRetVal);
