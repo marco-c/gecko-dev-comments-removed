@@ -12,8 +12,7 @@
   list-style-image: url("chrome://browser/skin/preferences/in-content/no-search-bar.svg");
 }
 
-#searchBarShownRadio,
-#showSearchSuggestionsFirstCheckbox {
+#searchBarShownRadio {
   
   margin-top: 10px;
 }
