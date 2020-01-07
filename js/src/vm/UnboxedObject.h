@@ -228,7 +228,10 @@ class UnboxedPlainObject : public UnboxedObject
     
     
     
-    UnboxedExpandoObject* expando_;
+    
+    
+    
+    
 
     
     uint8_t data_[1];
@@ -272,20 +275,20 @@ class UnboxedPlainObject : public UnboxedObject
     }
 
     UnboxedExpandoObject* maybeExpando() const {
-        return expando_;
+        return static_cast<UnboxedExpandoObject*>(shapeOrExpando_);
     }
 
     void setExpandoUnsafe(UnboxedExpandoObject* expando) {
-        expando_ = expando;
+        shapeOrExpando_ = expando;
     }
 
     void initExpando() {
-        expando_ = nullptr;
+        shapeOrExpando_ = nullptr;
     }
 
     
     JSObject** addressOfExpando() {
-        return reinterpret_cast<JSObject**>(&expando_);
+        return reinterpret_cast<JSObject**>(&shapeOrExpando_);
     }
 
     bool containsUnboxedOrExpandoProperty(JSContext* cx, jsid id) const;
@@ -307,7 +310,7 @@ class UnboxedPlainObject : public UnboxedObject
     static void trace(JSTracer* trc, JSObject* object);
 
     static size_t offsetOfExpando() {
-        return offsetof(UnboxedPlainObject, expando_);
+        return offsetOfShapeOrExpando();
     }
 
     static size_t offsetOfData() {

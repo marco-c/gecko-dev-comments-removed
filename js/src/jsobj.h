@@ -7,15 +7,6 @@
 #ifndef jsobj_h
 #define jsobj_h
 
-
-
-
-
-
-
-
-
-
 #include "mozilla/MemoryReporting.h"
 
 #include "gc/Barrier.h"
@@ -75,10 +66,35 @@ bool SetImmutablePrototype(JSContext* cx, JS::HandleObject obj, bool* succeeded)
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class JSObject : public js::gc::Cell
 {
   protected:
     js::GCPtrObjectGroup group_;
+    void* shapeOrExpando_;
 
   private:
     friend class js::Shape;
@@ -533,7 +549,12 @@ class JSObject : public js::gc::Cell
 
     
 
-    static size_t offsetOfGroup() { return offsetof(JSObject, group_); }
+    static constexpr size_t offsetOfGroup() {
+        return offsetof(JSObject, group_);
+    }
+    static constexpr size_t offsetOfShapeOrExpando() {
+        return offsetof(JSObject, shapeOrExpando_);
+    }
 
     
     static const size_t MAX_BYTE_SIZE = 4 * sizeof(void*) + 16 * sizeof(JS::Value);
@@ -582,12 +603,12 @@ operator!=(const JSObject& lhs, const JSObject& rhs)
 }
 
 
-struct JSObject_Slots0 : JSObject { void* data[3]; };
-struct JSObject_Slots2 : JSObject { void* data[3]; js::Value fslots[2]; };
-struct JSObject_Slots4 : JSObject { void* data[3]; js::Value fslots[4]; };
-struct JSObject_Slots8 : JSObject { void* data[3]; js::Value fslots[8]; };
-struct JSObject_Slots12 : JSObject { void* data[3]; js::Value fslots[12]; };
-struct JSObject_Slots16 : JSObject { void* data[3]; js::Value fslots[16]; };
+struct JSObject_Slots0 : JSObject { void* data[2]; };
+struct JSObject_Slots2 : JSObject { void* data[2]; js::Value fslots[2]; };
+struct JSObject_Slots4 : JSObject { void* data[2]; js::Value fslots[4]; };
+struct JSObject_Slots8 : JSObject { void* data[2]; js::Value fslots[8]; };
+struct JSObject_Slots12 : JSObject { void* data[2]; js::Value fslots[12]; };
+struct JSObject_Slots16 : JSObject { void* data[2]; js::Value fslots[16]; };
 
  MOZ_ALWAYS_INLINE void
 JSObject::readBarrier(JSObject* obj)

@@ -22,18 +22,18 @@ class ShapedObject : public JSObject
 {
   protected:
     
-    GCPtrShape shape_;
-
+    
+    
     MOZ_ALWAYS_INLINE const GCPtrShape& shapeRef() const {
-        return shape_;
+        return *reinterpret_cast<const GCPtrShape*>(&(this->shapeOrExpando_));
     }
     MOZ_ALWAYS_INLINE GCPtrShape& shapeRef() {
-        return shape_;
+        return *reinterpret_cast<GCPtrShape*>(&(this->shapeOrExpando_));
     }
 
     
     MOZ_ALWAYS_INLINE GCPtrShape* shapePtr() {
-        return &shape_;
+        return reinterpret_cast<GCPtrShape*>(&(this->shapeOrExpando_));
     }
 
   public:
@@ -50,12 +50,10 @@ class ShapedObject : public JSObject
         TraceEdge(trc, shapePtr(), "shape");
     }
 
-    static size_t offsetOfShape() { return offsetof(ShapedObject, shape_); }
-
-  private:
-    static void staticAsserts() {
-        static_assert(offsetof(ShapedObject, shape_) == offsetof(shadow::Object, shape),
+    static constexpr size_t offsetOfShape() {
+        static_assert(offsetOfShapeOrExpando() == offsetof(shadow::Object, shape),
                       "shadow shape must match actual shape");
+        return offsetOfShapeOrExpando();
     }
 };
 
