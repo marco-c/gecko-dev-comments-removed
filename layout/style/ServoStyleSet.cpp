@@ -33,7 +33,6 @@
 #include "nsSMILAnimationController.h"
 #include "nsStyleContext.h"
 #include "nsStyleSet.h"
-#include "nsXBLPrototypeBinding.h"
 #include "gfxUserFontSet.h"
 
 using namespace mozilla;
@@ -222,43 +221,6 @@ ServoStyleSet::SetPresContext(nsPresContext* aPresContext)
   }
 
   return false;
-}
-
-void
-ServoStyleSet::InvalidateStyleForDocumentStateChanges(EventStates aStatesChanged)
-{
-  MOZ_ASSERT(IsMaster());
-  MOZ_ASSERT(mDocument);
-  MOZ_ASSERT(!aStatesChanged.IsEmpty());
-
-  nsPresContext* pc = GetPresContext();
-  if (!pc) {
-    return;
-  }
-
-  Element* root = mDocument->GetRootElement();
-  if (!root) {
-    return;
-  }
-
-  
-  
-  
-  
-  AutoTArray<RawServoStyleSetBorrowed, 20> styleSets;
-  styleSets.AppendElement(mRawSet.get());
-  
-  
-  mDocument->BindingManager()->EnumerateBoundContentBindings(
-    [&](nsXBLBinding* aBinding) {
-      if (ServoStyleSet* set = aBinding->PrototypeBinding()->GetServoStyleSet()) {
-        styleSets.AppendElement(set->RawSet());
-      }
-      return true;
-    });
-
-  Servo_InvalidateStyleForDocStateChanges(
-    root, &styleSets, aStatesChanged.ServoValue());
 }
 
 nsRestyleHint

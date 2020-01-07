@@ -146,9 +146,6 @@ public:
   
   void RecordStyleSheetChange(ServoStyleSheet*, StyleSheet::ChangeType) {}
 
-  
-  void InvalidateStyleForDocumentStateChanges(EventStates aStatesChanged);
-
   void RecordShadowStyleChange(dom::ShadowRoot* aShadowRoot) {
     
     
