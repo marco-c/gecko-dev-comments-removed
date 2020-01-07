@@ -367,7 +367,14 @@ gfxPlatformFontList::InitOtherFamilyNames(bool aDeferOtherFamilyNamesLoading)
         return;
     }
 
-    if (aDeferOtherFamilyNamesLoading) {
+    
+    
+    
+    
+    
+    
+    if (aDeferOtherFamilyNamesLoading &&
+        Preferences::GetUint(FONT_LOADER_DELAY_PREF) > 0) {
         if (!mPendingOtherFamilyNameTask) {
             RefPtr<mozilla::CancelableRunnable> task = new InitOtherFamilyNamesRunnable();
             mPendingOtherFamilyNameTask = task;
