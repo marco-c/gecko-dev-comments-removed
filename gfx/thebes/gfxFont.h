@@ -631,17 +631,12 @@ protected:
 };
 
 struct gfxTextRange {
-    enum class MatchType : uint16_t {
+    enum class MatchType : uint8_t {
         
         
-        
-        kGenericMask    = 0x00ff,
-
-        
-        
-        kFontGroup      = 0x0100,
-        kPrefsFallback  = 0x0200,
-        kSystemFallback = 0x0400
+        kFontGroup      = 0x01,
+        kPrefsFallback  = 0x02,
+        kSystemFallback = 0x04
     };
     gfxTextRange(uint32_t aStart, uint32_t aEnd,
                  gfxFont* aFont, MatchType aMatchType,

@@ -925,29 +925,4 @@ protected:
     };
 };
 
-
-
-
-struct FamilyAndGeneric final {
-    FamilyAndGeneric()
-        : mFamily(nullptr)
-        , mGeneric(mozilla::FontFamilyType::eFamily_none)
-    {
-    }
-    FamilyAndGeneric(const FamilyAndGeneric& aOther)
-        : mFamily(aOther.mFamily)
-        , mGeneric(aOther.mGeneric)
-    {
-    }
-    explicit FamilyAndGeneric(gfxFontFamily* aFamily,
-                              mozilla::FontFamilyType aGeneric =
-                                  mozilla::FontFamilyType::eFamily_none)
-        : mFamily(aFamily)
-        , mGeneric(aGeneric)
-    {
-    }
-    gfxFontFamily* mFamily;
-    mozilla::FontFamilyType mGeneric;
-};
-
 #endif
