@@ -102,7 +102,9 @@ struct APZCTreeManager::TreeBuildingState {
   
   
   
-  std::unordered_map<ScrollableLayerGuid, AsyncPanZoomController*, ScrollableLayerGuidHash> mApzcMap;
+  std::unordered_map<ScrollableLayerGuid,
+                     AsyncPanZoomController*,
+                     ScrollableLayerGuid::HashFn> mApzcMap;
 
   
   
@@ -543,7 +545,12 @@ APZCTreeManager::PushStateToWR(wr::TransactionBuilder& aTxn,
   
   
   
-  std::unordered_map<ScrollableLayerGuid, HitTestingTreeNode*, ScrollableLayerGuidHash> httnMap;
+  
+  
+  std::unordered_map<ScrollableLayerGuid,
+                     HitTestingTreeNode*,
+                     ScrollableLayerGuid::HashIgnoringPresShellFn,
+                     ScrollableLayerGuid::EqualIgnoringPresShellFn> httnMap;
 
   bool activeAnimations = false;
   LayersId lastLayersId{(uint64_t)-1};
@@ -582,10 +589,7 @@ APZCTreeManager::PushStateToWR(wr::TransactionBuilder& aTxn,
           lastLayersId = aNode->GetLayersId();
         }
 
-        
-        
-        ScrollableLayerGuid guid(lastLayersId, 0, apzc->GetGuid().mScrollId);
-        httnMap.emplace(guid, aNode);
+        httnMap.emplace(apzc->GetGuid(), aNode);
 
         ParentLayerPoint layerTranslation = apzc->GetCurrentAsyncTransform(
             AsyncPanZoomController::eForCompositing).mTranslation;

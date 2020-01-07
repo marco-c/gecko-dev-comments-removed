@@ -52,7 +52,6 @@ class OverscrollHandoffChain;
 struct OverscrollHandoffState;
 class FocusTarget;
 struct FlingHandoffState;
-struct ScrollableLayerGuidHash;
 class LayerMetricsWrapper;
 class InputQueue;
 class GeckoContentController;
@@ -736,7 +735,9 @@ private:
   
 
 
-  std::unordered_map<ScrollableLayerGuid, ZoomConstraints, ScrollableLayerGuidHash> mZoomConstraints;
+  std::unordered_map<ScrollableLayerGuid,
+                     ZoomConstraints,
+                     ScrollableLayerGuid::HashFn> mZoomConstraints;
   
 
 
