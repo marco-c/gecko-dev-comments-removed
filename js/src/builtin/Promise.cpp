@@ -1569,8 +1569,9 @@ PromiseConstructor(JSContext* cx, unsigned argc, Value* vp)
         newTarget = unwrappedNewTarget;
         {
             AutoCompartment ac(cx, newTarget);
-            RootedObject promiseCtor(cx);
-            if (!GetBuiltinConstructor(cx, JSProto_Promise, &promiseCtor))
+            Handle<GlobalObject*> global = cx->global();
+            RootedObject promiseCtor(cx, GlobalObject::getOrCreatePromiseConstructor(cx, global));
+            if (!promiseCtor)
                 return false;
 
             
@@ -3169,8 +3170,9 @@ BlockOnPromise(JSContext* cx, HandleValue promiseVal, HandleObject blockedPromis
         
         
         
-        RootedObject PromiseCtor(cx);
-        if (!GetBuiltinConstructor(cx, JSProto_Promise, &PromiseCtor))
+        RootedObject PromiseCtor(cx,
+                                 GlobalObject::getOrCreatePromiseConstructor(cx, cx->global()));
+        if (!PromiseCtor)
             return false;
 
         RootedObject C(cx, SpeciesConstructor(cx, promiseObj, JSProto_Promise, IsPromiseSpecies));
