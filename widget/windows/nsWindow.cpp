@@ -615,7 +615,6 @@ nsWindow::nsWindow(bool aIsChildWindow)
   mDestroyCalled        = false;
   mHasTaskbarIconBeenCreated = false;
   mMouseTransparent     = false;
-  mDelayedFocus         = false;
   mPickerDisplayCount   = 0;
   mWindowType           = eWindowType_child;
   mBorderStyle          = eBorderStyle_default;
@@ -1622,10 +1621,6 @@ nsWindow::Show(bool bState)
         
         ::SendMessageW(mWnd, WM_CHANGEUISTATE, MAKEWPARAM(UIS_INITIALIZE, UISF_HIDEFOCUS | UISF_HIDEACCEL), 0);
       }
-      if (mDelayedFocus) {
-        mDelayedFocus = false;
-        ::SendMessageW(mWnd, WM_SETFOCUS, 0, 0);
-      }
     } else {
       
       
@@ -2097,38 +2092,36 @@ nsWindow::SetSizeMode(nsSizeMode aMode)
   
   mLastSizeMode = mSizeMode;
   nsBaseWidget::SetSizeMode(aMode);
-
-  int mode;
-  switch (aMode) {
-    case nsSizeMode_Fullscreen :
-      mode = SW_SHOW;
-      break;
-
-    case nsSizeMode_Maximized :
-      mode = SW_MAXIMIZE;
-      break;
-
-    case nsSizeMode_Minimized :
-      mode = SW_MINIMIZE;
-      break;
-
-    default :
-      mode = SW_RESTORE;
-  }
-
-  
-  
-  
-  
-  if(!(GetCurrentShowCmd(mWnd) == SW_SHOWNORMAL && mode == SW_RESTORE)) {
-    ::ShowWindow(mWnd, mode);
-  }
-
   if (mIsVisible) {
-    
-    if (mode == SW_MAXIMIZE || mode == SW_SHOW) {
-      DispatchFocusToTopLevelWindow(true);
+    int mode;
+
+    switch (aMode) {
+      case nsSizeMode_Fullscreen :
+        mode = SW_SHOW;
+        break;
+
+      case nsSizeMode_Maximized :
+        mode = SW_MAXIMIZE;
+        break;
+
+      case nsSizeMode_Minimized :
+        mode = SW_MINIMIZE;
+        break;
+
+      default :
+        mode = SW_RESTORE;
     }
+
+    
+    
+    
+    
+    if(!(GetCurrentShowCmd(mWnd) == SW_SHOWNORMAL && mode == SW_RESTORE)) {
+      ::ShowWindow(mWnd, mode);
+    }
+    
+    if (mode == SW_MAXIMIZE || mode == SW_SHOW)
+      DispatchFocusToTopLevelWindow(true);
   }
 }
 
@@ -6002,10 +5995,6 @@ nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
     break;
 
     case WM_SETFOCUS:
-      if (!mIsVisible) {
-        mDelayedFocus = true;
-        break;
-      }
       
       
       if (!WinUtils::IsOurProcessWindow(HWND(wParam))) {
