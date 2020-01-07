@@ -1598,9 +1598,6 @@ private:
     
     ElementMayHaveAnonymousChildren,
     
-    
-    NodeMayHaveChildrenWithLayoutBoxesDisabled,
-    
     BooleanFlagCount
   };
 
@@ -1724,19 +1721,6 @@ public:
 
   void SetMayHaveAnonymousChildren() { SetBoolFlag(ElementMayHaveAnonymousChildren); }
   bool MayHaveAnonymousChildren() const { return GetBoolFlag(ElementMayHaveAnonymousChildren); }
-
-  void SetMayHaveChildrenWithLayoutBoxesDisabled()
-  {
-    SetBoolFlag(NodeMayHaveChildrenWithLayoutBoxesDisabled);
-  }
-  void UnsetMayHaveChildrenWithLayoutBoxesDisabled()
-  {
-    ClearBoolFlag(NodeMayHaveChildrenWithLayoutBoxesDisabled);
-  }
-  bool MayHaveChildrenWithLayoutBoxesDisabled() const
-  {
-    return GetBoolFlag(NodeMayHaveChildrenWithLayoutBoxesDisabled);
-  }
 
 protected:
   void SetParentIsContent(bool aValue) { SetBoolFlag(ParentIsContent, aValue); }
