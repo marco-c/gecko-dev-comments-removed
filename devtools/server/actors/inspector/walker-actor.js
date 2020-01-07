@@ -189,18 +189,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     return {
       actor: this.actorID,
       root: this.rootNode.form(),
-      traits: {
-        
-        
-        
-        autoReleased: true,
-        
-        
-        
-        
-        multiFrameQuerySelectorAll: true,
-        textSearch: true,
-      }
+      traits: {}
     };
   },
 

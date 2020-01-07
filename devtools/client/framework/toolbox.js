@@ -2579,18 +2579,6 @@ Toolbox.prototype = {
       
       yield this._initInspector;
 
-      
-      
-      
-      
-      if (this._walker && !this.walker.traits.autoReleased) {
-        try {
-          yield this._walker.release();
-        } catch (e) {
-          
-        }
-      }
-
       yield this.highlighterUtils.stopPicker();
       yield this._inspector.destroy();
       if (this._highlighter) {
