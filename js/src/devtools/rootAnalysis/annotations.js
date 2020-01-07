@@ -332,6 +332,7 @@ function extraRootedPointers()
         
         
         'js::frontend::TokenStream',
+        'js::frontend::TokenStreamAnyChars',
 
         'mozilla::ErrorResult',
         'mozilla::IgnoredErrorResult',

@@ -522,21 +522,21 @@ class FunctionBox : public ObjectBox, public SharedContext
         return useAsm;
     }
 
-    void setStart(const TokenStream& tokenStream) {
-        uint32_t offset = tokenStream.currentToken().pos.begin;
-        setStart(tokenStream, offset);
+    void setStart(const TokenStreamAnyChars& anyChars) {
+        uint32_t offset = anyChars.currentToken().pos.begin;
+        setStart(anyChars, offset);
     }
 
-    void setStart(const TokenStream& tokenStream, uint32_t offset) {
+    void setStart(const TokenStreamAnyChars& anyChars, uint32_t offset) {
         bufStart = offset;
-        tokenStream.srcCoords.lineNumAndColumnIndex(offset, &startLine, &startColumn);
+        anyChars.srcCoords.lineNumAndColumnIndex(offset, &startLine, &startColumn);
     }
 
-    void setEnd(const TokenStream& tokenStream) {
+    void setEnd(const TokenStreamAnyChars& anyChars) {
         
         
         
-        uint32_t offset = tokenStream.currentToken().pos.end;
+        uint32_t offset = anyChars.currentToken().pos.end;
         bufEnd = offset;
         toStringEnd = offset;
     }
