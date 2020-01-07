@@ -134,27 +134,21 @@ var EventsHandler = {
     
     gFront.setup({ reload: false });
 
-    this._onTabNavigated = this._onTabNavigated.bind(this);
-    gTarget.on("will-navigate", this._onTabNavigated);
-    gTarget.on("navigate", this._onTabNavigated);
+    this._onTabWillNavigate = this._onTabWillNavigate.bind(this);
+    gTarget.on("will-navigate", this._onTabWillNavigate);
   },
 
   
 
 
   destroy: function () {
-    gTarget.off("will-navigate", this._onTabNavigated);
-    gTarget.off("navigate", this._onTabNavigated);
+    gTarget.off("will-navigate", this._onTabWillNavigate);
   },
 
   
 
 
-  _onTabNavigated: function (event) {
-    if (event != "will-navigate") {
-      return;
-    }
-
+  _onTabWillNavigate: function () {
     
     SnapshotsListView.empty();
     CallsListView.empty();
