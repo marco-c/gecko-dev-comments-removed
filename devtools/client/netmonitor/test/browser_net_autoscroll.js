@@ -41,6 +41,11 @@ add_task(function* () {
 
   
   
+  
+  
+  
+  
+  yield waitForNetworkEvents(monitor, 8);
   requestsContainer.scrollTop = requestsContainer.scrollHeight;
   ok(scrolledToBottom(requestsContainer), "Set scroll position to bottom.");
   yield waitForNetworkEvents(monitor, 8);
