@@ -42,6 +42,10 @@ if (isWorker) {
   loader.lazyRequireGetter(this, "ContentProcessListener", "devtools/server/actors/webconsole/listeners", true);
 }
 
+function isObject(value) {
+  return Object(value) === value;
+}
+
 
 
 
@@ -443,8 +447,7 @@ WebConsoleActor.prototype =
 
 
   makeDebuggeeValue: function (value, useObjectGlobal) {
-    let isObject = Object(value) === value;
-    if (useObjectGlobal && isObject) {
+    if (useObjectGlobal && isObject(value)) {
       try {
         let global = Cu.getGlobalForObject(value);
         let dbgGlobal = this.dbg.makeGlobalObjectReference(global);
@@ -1320,17 +1323,25 @@ WebConsoleActor.prototype =
       let objActor = this.getActorByID(options.bindObjectActor ||
                                        options.selectedObjectActor);
       if (objActor) {
-        let jsObj = objActor.obj.unsafeDereference();
-        
-        
-        
-        
-        let global = Cu.getGlobalForObject(jsObj);
-        let _dbgWindow = dbg.makeGlobalObjectReference(global);
-        bindSelf = dbgWindow.makeDebuggeeValue(jsObj);
+        let jsVal = objActor.rawValue();
 
-        if (options.bindObjectActor) {
-          dbgWindow = _dbgWindow;
+        if (isObject(jsVal)) {
+          
+          
+          
+          
+          bindSelf = dbgWindow.makeDebuggeeValue(jsVal);
+          if (options.bindObjectActor) {
+            let global = Cu.getGlobalForObject(jsVal);
+            try {
+              let _dbgWindow = dbg.makeGlobalObjectReference(global);
+              dbgWindow = _dbgWindow;
+            } catch (err) {
+              
+            }
+          }
+        } else {
+          bindSelf = jsVal;
         }
       }
     }

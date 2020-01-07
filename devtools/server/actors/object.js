@@ -69,6 +69,10 @@ function ObjectActor(obj, {
 ObjectActor.prototype = {
   actorPrefix: "obj",
 
+  rawValue: function () {
+    return this.obj.unsafeDereference();
+  },
+
   
 
 
@@ -2270,6 +2274,10 @@ function LongStringActor(string) {
 LongStringActor.prototype = {
   actorPrefix: "longString",
 
+  rawValue: function () {
+    return this.string;
+  },
+
   destroy: function () {
     
     
@@ -2340,6 +2348,10 @@ function ArrayBufferActor(buffer) {
 
 ArrayBufferActor.prototype = {
   actorPrefix: "arrayBuffer",
+
+  rawValue: function () {
+    return this.buffer;
+  },
 
   destroy: function () {
   },
