@@ -69,28 +69,32 @@ import android.util.Log;
         if (!mAlwaysListen && settingNewDelegate) {
             register(session);
         }
-    }
 
-    private void unregister(final GeckoSession session) {
-        setSessionIsReady(session,  false);
-        session.getEventDispatcher().unregisterUiThreadListener(this, mEvents);
-    }
-
-    private void register(final GeckoSession session) {
-        session.getEventDispatcher().registerUiThreadListener(this, mEvents);
-        setSessionIsReady(session,  true);
-    }
-
-    public void setSessionIsReady(final GeckoSession session, final boolean ready) {
         
-        if (!mAlwaysListen && mDelegate == null) {
+        if (!session.isOpen()) {
             return;
         }
 
         final GeckoBundle msg = new GeckoBundle(2);
         msg.putString("module", mModuleName);
-        msg.putBoolean("enabled", ready);
+        msg.putBoolean("enabled", isEnabled());
         session.getEventDispatcher().dispatch("GeckoView:UpdateModuleState", msg);
+    }
+
+    private void unregister(final GeckoSession session) {
+        session.getEventDispatcher().unregisterUiThreadListener(this, mEvents);
+    }
+
+    private void register(final GeckoSession session) {
+        session.getEventDispatcher().registerUiThreadListener(this, mEvents);
+    }
+
+    public String getName() {
+        return mModuleName;
+    }
+
+    public boolean isEnabled() {
+        return mDelegate != null;
     }
 
     @Override

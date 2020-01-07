@@ -40,6 +40,7 @@ var ModuleManager = {
         yield [
           module.name,
           new ModuleInfo({
+            enabled: !!initData.modules[module.name],
             manager: self,
             ...module,
           }),
@@ -106,6 +107,14 @@ var ModuleManager = {
         
         const initData = this._initData;
         this._updateSettings(initData.settings);
+
+        
+        for (const name in initData.modules) {
+          const module = this._modules.get(name);
+          if (module) {
+            module.enabled = initData.modules[name];
+          }
+        }
         break;
       }
 
@@ -124,7 +133,7 @@ var ModuleManager = {
 
 
 class ModuleInfo {
-  constructor({manager, name, resource}) {
+  constructor({enabled, manager, name, resource}) {
     this._manager = manager;
     this._name = name;
 
@@ -135,10 +144,13 @@ class ModuleInfo {
 
     this._impl = new scope[name](this);
     this._enabled = false;
+    
+    this._enabledOnInit = enabled;
   }
 
   onInit() {
     this._impl.onInit();
+    this.enabled = this._enabledOnInit;
   }
 
   get manager() {
