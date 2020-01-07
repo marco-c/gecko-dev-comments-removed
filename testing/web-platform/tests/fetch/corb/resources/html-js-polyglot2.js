@@ -1,0 +1,10 @@
+<!-- comment --> <script type='text/javascript'>
+
+
+
+
+
+
+window.polyglot = "html-js-polyglot2.js";
+
+//]]>--></script>

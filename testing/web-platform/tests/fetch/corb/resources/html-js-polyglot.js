@@ -4,6 +4,6 @@
 
 
 
-window.polyglot = 123;
+window.polyglot = "html-js-polyglot.js";
 
 
