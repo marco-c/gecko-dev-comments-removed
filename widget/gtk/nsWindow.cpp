@@ -1739,6 +1739,15 @@ nsWindow::GetNativeData(uint32_t aDataType)
     case NS_NATIVE_COMPOSITOR_DISPLAY:
         return gfxPlatformGtk::GetPlatform()->GetCompositorDisplay();
 #endif 
+    case NS_NATIVE_EGL_WINDOW: {
+        if (mIsX11Display)
+            return mGdkWindow ? (void*)GDK_WINDOW_XID(mGdkWindow) : nullptr;
+#ifdef MOZ_WAYLAND
+        if (mContainer)
+            return moz_container_get_wl_egl_window(mContainer);
+#endif
+        return nullptr;
+    }
     default:
         NS_WARNING("nsWindow::GetNativeData called with bad value");
         return nullptr;
@@ -4308,6 +4317,16 @@ nsWindow::NativeShow(bool aAction)
         }
     }
     else {
+#ifdef MOZ_WAYLAND
+        if (mContainer && moz_container_has_wl_egl_window(mContainer)) {
+            
+            
+            
+            
+            DestroyLayerManager();
+        }
+#endif
+
         if (mIsTopLevel) {
             
             
