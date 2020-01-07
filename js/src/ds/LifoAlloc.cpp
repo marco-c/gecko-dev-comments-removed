@@ -8,6 +8,12 @@
 
 #include "mozilla/MathAlgorithms.h"
 
+#include "ds/MemoryProtectionExceptionHandler.h"
+
+#ifdef LIFO_CHUNK_PROTECT
+# include "gc/Memory.h"
+#endif
+
 using namespace js;
 
 using mozilla::RoundUpPow2;
@@ -18,7 +24,7 @@ namespace detail {
 
 
 UniquePtr<BumpChunk>
-BumpChunk::newWithCapacity(size_t size)
+BumpChunk::newWithCapacity(size_t size, bool protect)
 {
     MOZ_ASSERT(RoundUpPow2(size) == size);
     MOZ_ASSERT(size >= sizeof(BumpChunk));
@@ -26,7 +32,7 @@ BumpChunk::newWithCapacity(size_t size)
     if (!mem)
         return nullptr;
 
-    UniquePtr<BumpChunk> result(new (mem) BumpChunk(size));
+    UniquePtr<BumpChunk> result(new (mem) BumpChunk(size, protect));
 
     
     
@@ -44,6 +50,96 @@ BumpChunk::canAlloc(size_t n)
     return bump_ <= newBump && newBump <= capacity_;
 }
 
+#ifdef LIFO_CHUNK_PROTECT
+
+static const uint8_t*
+AlignPtrUp(const uint8_t* ptr, uintptr_t align) {
+    MOZ_ASSERT(mozilla::IsPowerOfTwo(align));
+    uintptr_t uptr = uintptr_t(ptr);
+    uintptr_t diff = uptr & (align - 1);
+    diff = (align - diff) & (align - 1);
+    uptr = uptr + diff;
+    return (uint8_t*) uptr;
+}
+
+static const uint8_t*
+AlignPtrDown(const uint8_t* ptr, uintptr_t align) {
+    MOZ_ASSERT(mozilla::IsPowerOfTwo(align));
+    uintptr_t uptr = uintptr_t(ptr);
+    uptr = uptr & ~(align - 1);
+    return (uint8_t*) uptr;
+}
+
+void
+BumpChunk::setRWUntil(Loc loc) const
+{
+    if (!protect_)
+        return;
+
+    uintptr_t pageSize = gc::SystemPageSize();
+    
+    
+    
+    
+    const uint8_t* b = base();
+    const uint8_t* e = capacity_;
+    b = AlignPtrUp(b, pageSize);
+    e = AlignPtrDown(e, pageSize);
+    if (e < b)
+        e = b;
+    
+    
+    const uint8_t* m = nullptr;
+    switch (loc) {
+      case Loc::Header:
+        m = b;
+        break;
+      case Loc::Allocated:
+        m = begin();
+        break;
+      case Loc::Reserved:
+        m = end();
+        break;
+      case Loc::End:
+        m = e;
+        break;
+    }
+    m = AlignPtrUp(m, pageSize);
+    if (e < m)
+        m = e;
+
+    if (b < m)
+        gc::UnprotectPages(const_cast<uint8_t*>(b), m - b);
+    
+    
+    
+    if (m < e)
+        gc::MakePagesReadOnly(const_cast<uint8_t*>(m), e - m);
+}
+
+
+
+
+
+
+void
+BumpChunk::addMProtectHandler() const
+{
+    if (!protect_)
+        return;
+    js::MemoryProtectionExceptionHandler::addRegion(const_cast<uint8_t*>(base()), capacity_ - base());
+}
+
+void
+BumpChunk::removeMProtectHandler() const
+{
+    if (!protect_)
+        return;
+    js::MemoryProtectionExceptionHandler::removeRegion(const_cast<uint8_t*>(base()));
+}
+
+#endif
+
 } 
 } 
 
@@ -51,10 +147,12 @@ void
 LifoAlloc::freeAll()
 {
     while (!chunks_.empty()) {
+        chunks_.begin()->setRWUntil(Loc::End);
         BumpChunk bc = chunks_.popFirst();
         decrementCurSize(bc->computedSizeOfIncludingThis());
     }
     while (!unused_.empty()) {
+        unused_.begin()->setRWUntil(Loc::End);
         BumpChunk bc = unused_.popFirst();
         decrementCurSize(bc->computedSizeOfIncludingThis());
     }
@@ -90,7 +188,7 @@ LifoAlloc::newChunkWithCapacity(size_t n)
     }
 
     
-    BumpChunk result = detail::BumpChunk::newWithCapacity(chunkSize);
+    BumpChunk result = detail::BumpChunk::newWithCapacity(chunkSize, protect_);
     if (!result)
         return nullptr;
     MOZ_ASSERT(result->computedSizeOfIncludingThis() == chunkSize);
@@ -103,9 +201,16 @@ LifoAlloc::getOrCreateChunk(size_t n)
     
     
     
+    if (!chunks_.empty())
+        chunks_.last()->setRWUntil(Loc::Reserved);
+
+    
+    
+    
     if (!unused_.empty()) {
         if (unused_.begin()->canAlloc(n)) {
             chunks_.append(unused_.popFirst());
+            chunks_.last()->setRWUntil(Loc::End);
             return true;
         }
 
@@ -117,6 +222,7 @@ LifoAlloc::getOrCreateChunk(size_t n)
                 BumpChunkList temp = unused_.splitAfter(i.get());
                 chunks_.append(temp.popFirst());
                 unused_.appendAll(std::move(temp));
+                chunks_.last()->setRWUntil(Loc::End);
                 return true;
             }
         }
@@ -127,6 +233,9 @@ LifoAlloc::getOrCreateChunk(size_t n)
     if (!newChunk)
         return false;
     size_t size = newChunk->computedSizeOfIncludingThis();
+    
+    
+    
     chunks_.append(std::move(newChunk));
     incrementCurSize(size);
     return true;

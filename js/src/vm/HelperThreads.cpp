@@ -191,6 +191,10 @@ js::StartOffThreadIonCompile(jit::IonBuilder* builder, const AutoLockHelperThrea
     if (!HelperThreadState().ionWorklist(lock).append(builder))
         return false;
 
+    
+    
+    builder->alloc().lifoAlloc()->setReadOnly();
+
     HelperThreadState().notifyOne(GlobalHelperThreadState::PRODUCER, lock);
     return true;
 }
@@ -1996,6 +2000,10 @@ HelperThread::handleIonWorkload(AutoLockHelperThreadState& locked)
     
     
     jit::IonBuilder* builder = HelperThreadState().highestPriorityPendingIonCompile(locked);
+
+    
+    
+    builder->alloc().lifoAlloc()->setReadWrite();
 
     currentTask.emplace(builder);
 

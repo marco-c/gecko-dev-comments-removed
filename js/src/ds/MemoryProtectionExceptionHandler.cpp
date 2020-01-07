@@ -65,7 +65,9 @@ class ProtectedRegionTree
   public:
     ProtectedRegionTree()
       : lock(mutexid::ProtectedRegionTree),
-        alloc(4096),
+        
+        
+        alloc(4096, false),
         tree(&alloc)
     {
         sProtectedRegionsInit = true;
