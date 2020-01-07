@@ -446,12 +446,6 @@ const gCSSProperties = {
       { type: 'discrete', options: [ [ 'pointer', 'wait' ] ] }
     ]
   },
-  'direction': {
-    
-    types: [
-      { type: 'discrete', options: [ [ 'ltr', 'rtl' ] ] }
-    ]
-  },
   'dominant-baseline': {
     
     types: [
@@ -1470,12 +1464,6 @@ const gCSSProperties = {
     
     types: [
       { type: 'discrete', options: [ [ 'scroll-position', 'contents' ] ] }
-    ]
-  },
-  'writing-mode': {
-    
-    types: [
-      { type: 'discrete', options: [ [ 'vertical-rl', 'sideways-rl' ] ] }
     ]
   },
   'z-index': {
