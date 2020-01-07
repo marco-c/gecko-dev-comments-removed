@@ -262,22 +262,6 @@ static_assert((CSS_PROPERTY_PARSE_PROPERTY_MASK &
 
 
 
-
-
-#define CSS_PROPERTY_FIXPOS_CB                    (1<<29)
-
-
-
-
-
-
-
-
-#define CSS_PROPERTY_ABSPOS_CB                    (1<<30)
-
-
-
-
 #define CSS_PROPERTY_LOAD_USE_CORS                (1U<<31)
 
 
