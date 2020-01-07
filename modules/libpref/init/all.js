@@ -2003,7 +2003,11 @@ pref("network.dns.ipv4OnlyDomains", "");
 pref("network.dns.disableIPv6", false);
 
 
+#ifdef ANDROID
 pref("network.dnsCacheEntries", 400);
+#else
+pref("network.dnsCacheEntries", 800);
+#endif
 
 
 pref("network.dnsCacheExpiration", 60);
