@@ -7,6 +7,7 @@
 #ifndef mozilla_layers_APZUpdater_h
 #define mozilla_layers_APZUpdater_h
 
+#include <deque>
 #include <unordered_map>
 
 #include "base/platform_thread.h"   
@@ -52,6 +53,7 @@ public:
 
 
   static void SetUpdaterThread(const wr::WrWindowId& aWindowId);
+  static void ProcessPendingTasks(const wr::WrWindowId& aWindowId);
 
   void ClearTree();
   void UpdateFocusState(LayersId aRootLayerTreeId,
@@ -140,6 +142,13 @@ private:
   
   mutable bool mUpdaterThreadQueried;
 #endif
+
+  
+  Mutex mQueueLock;
+  
+  
+  
+  std::deque<RefPtr<Runnable>> mUpdaterQueue;
 };
 
 } 

@@ -13,6 +13,7 @@
 #include "mozilla/layers/CompositorThread.h"
 #include "mozilla/layers/SynchronousTask.h"
 #include "mozilla/layers/WebRenderScrollData.h"
+#include "mozilla/webrender/WebRenderAPI.h"
 #include "mozilla/webrender/WebRenderTypes.h"
 
 namespace mozilla {
@@ -27,6 +28,7 @@ APZUpdater::APZUpdater(const RefPtr<APZCTreeManager>& aApz)
 #ifdef DEBUG
   , mUpdaterThreadQueried(false)
 #endif
+  , mQueueLock("APZUpdater::QueueLock")
 {
   MOZ_ASSERT(aApz);
   mApz->SetUpdater(this);
@@ -65,6 +67,18 @@ APZUpdater::SetUpdaterThread(const wr::WrWindowId& aWindowId)
     
     MOZ_ASSERT(!updater->mUpdaterThreadQueried);
     updater->mUpdaterThreadId = Some(PlatformThread::CurrentId());
+  }
+}
+
+ void
+APZUpdater::ProcessPendingTasks(const wr::WrWindowId& aWindowId)
+{
+  if (RefPtr<APZUpdater> updater = GetUpdater(aWindowId)) {
+    MutexAutoLock lock(updater->mQueueLock);
+    for (auto task : updater->mUpdaterQueue) {
+      task->Run();
+    }
+    updater->mUpdaterQueue.clear();
   }
 }
 
@@ -255,7 +269,25 @@ APZUpdater::RunOnUpdaterThread(already_AddRefed<Runnable> aTask)
 
   if (UsingWebRenderUpdaterThread()) {
     
-    NS_WARNING("Dropping task posted to updater thread");
+    
+    
+    
+
+    { 
+      MutexAutoLock lock(mQueueLock);
+      mUpdaterQueue.push_back(task);
+    }
+    RefPtr<wr::WebRenderAPI> api = mApz->GetWebRenderAPI();
+    if (api) {
+      api->WakeSceneBuilder();
+    } else {
+      
+      
+      
+      
+      
+      NS_WARNING("Possibly dropping task posted to updater thread");
+    }
     return;
   }
 
@@ -344,9 +376,19 @@ apz_post_scene_swap(mozilla::wr::WrWindowId aWindowId,
 void
 apz_run_updater(mozilla::wr::WrWindowId aWindowId)
 {
+  
+  MOZ_ASSERT(gfxPrefs::WebRenderAsyncSceneBuild());
+  mozilla::layers::APZUpdater::ProcessPendingTasks(aWindowId);
 }
 
 void
 apz_deregister_updater(mozilla::wr::WrWindowId aWindowId)
 {
+  
+  
+  
+  
+  if (gfxPrefs::WebRenderAsyncSceneBuild()) {
+    mozilla::layers::APZUpdater::ProcessPendingTasks(aWindowId);
+  }
 }

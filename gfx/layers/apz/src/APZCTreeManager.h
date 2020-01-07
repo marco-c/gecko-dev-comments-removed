@@ -533,6 +533,10 @@ public:
   
   void AssertOnUpdaterThread();
 
+  
+  
+  already_AddRefed<wr::WebRenderAPI> GetWebRenderAPI() const;
+
 protected:
   
   virtual ~APZCTreeManager();
@@ -686,10 +690,6 @@ private:
 
   
   LayerToParentLayerMatrix4x4 ComputeTransformForNode(const HitTestingTreeNode* aNode) const;
-
-  
-  
-  already_AddRefed<wr::WebRenderAPI> GetWebRenderAPI() const;
 
   
   already_AddRefed<GeckoContentController> GetContentController(LayersId aLayersId) const;
