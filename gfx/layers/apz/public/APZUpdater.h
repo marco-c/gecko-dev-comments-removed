@@ -15,6 +15,7 @@
 #include "mozilla/layers/APZTestData.h"
 #include "mozilla/layers/WebRenderScrollData.h"
 #include "mozilla/StaticMutex.h"
+#include "mozilla/webrender/WebRenderTypes.h"
 #include "nsThreadUtils.h"
 #include "Units.h"
 
@@ -54,6 +55,9 @@ public:
 
 
   static void SetUpdaterThread(const wr::WrWindowId& aWindowId);
+  static void PrepareForSceneSwap(const wr::WrWindowId& aWindowId);
+  static void CompleteSceneSwap(const wr::WrWindowId& aWindowId,
+                                wr::WrPipelineInfo* aInfo);
   static void ProcessPendingTasks(const wr::WrWindowId& aWindowId);
 
   void ClearTree();
@@ -71,8 +75,11 @@ public:
 
 
 
+
+
   void UpdateScrollDataAndTreeState(LayersId aRootLayerTreeId,
                                     LayersId aOriginatingLayersId,
+                                    const wr::Epoch& aEpoch,
                                     WebRenderScrollData&& aScrollData);
 
   void NotifyLayerTreeAdopted(LayersId aLayersId,
@@ -126,6 +133,9 @@ protected:
   bool UsingWebRenderUpdaterThread() const;
   static already_AddRefed<APZUpdater> GetUpdater(const wr::WrWindowId& aWindowId);
 
+  bool IsQueueBlocked() const;
+  void ProcessQueue();
+
 private:
   RefPtr<APZCTreeManager> mApz;
 
@@ -134,6 +144,40 @@ private:
   std::unordered_map<LayersId,
                      WebRenderScrollData,
                      LayersId::HashFn> mScrollData;
+
+  
+  
+  struct EpochState {
+    
+    wr::Epoch mRequired;
+    
+    Maybe<wr::Epoch> mBuilt;
+    
+    bool mIsRoot;
+
+    EpochState();
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    bool IsBlockingQueue() const;
+  };
+
+  
+  
+  
+  
+  
+  std::unordered_map<LayersId,
+                     EpochState,
+                     LayersId::HashFn> mEpochData;
 
   
   

@@ -519,7 +519,8 @@ WebRenderBridgeParent::UpdateAPZFocusState(const FocusTarget& aFocus)
 }
 
 void
-WebRenderBridgeParent::UpdateAPZScrollData(WebRenderScrollData&& aData)
+WebRenderBridgeParent::UpdateAPZScrollData(const wr::Epoch& aEpoch,
+                                           WebRenderScrollData&& aData)
 {
   CompositorBridgeParent* cbp = GetRootCompositorBridgeParent();
   if (!cbp) {
@@ -527,7 +528,7 @@ WebRenderBridgeParent::UpdateAPZScrollData(WebRenderScrollData&& aData)
   }
   LayersId rootLayersId = cbp->RootLayerTreeId();
   if (RefPtr<APZUpdater> apz = cbp->GetAPZUpdater()) {
-    apz->UpdateScrollDataAndTreeState(rootLayersId, GetLayersId(), Move(aData));
+    apz->UpdateScrollDataAndTreeState(rootLayersId, GetLayersId(), aEpoch, Move(aData));
   }
 }
 
@@ -597,6 +598,15 @@ WebRenderBridgeParent::RecvSetDisplayList(const gfx::IntSize& aSize,
 
   mReceivedDisplayList = true;
 
+  
+  
+  
+  
+  
+  
+  
+  UpdateAPZScrollData(wrEpoch, Move(const_cast<WebRenderScrollData&>(aScrollData)));
+
   wr::Vec<uint8_t> dlData(Move(dl));
 
   
@@ -623,12 +633,6 @@ WebRenderBridgeParent::RecvSetDisplayList(const gfx::IntSize& aSize,
   }
 
   HoldPendingTransactionId(wrEpoch, aTransactionId, aTxnStartTime, aFwdTime);
-
-  
-  
-  
-  
-  UpdateAPZScrollData(Move(const_cast<WebRenderScrollData&>(aScrollData)));
 
   if (mIdNamespace != aIdNamespace) {
     

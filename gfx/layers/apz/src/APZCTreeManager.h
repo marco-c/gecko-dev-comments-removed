@@ -545,6 +545,14 @@ protected:
   APZUpdater* GetUpdater() const;
 
   
+  
+  
+private:
+  friend class APZUpdater;
+  void LockTree();
+  void UnlockTree();
+
+  
   virtual AsyncPanZoomController* NewAPZCInstance(LayersId aLayersId,
                                                   GeckoContentController* aController);
 public:

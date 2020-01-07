@@ -14,7 +14,6 @@
 #include "mozilla/layers/SynchronousTask.h"
 #include "mozilla/layers/WebRenderScrollDataWrapper.h"
 #include "mozilla/webrender/WebRenderAPI.h"
-#include "mozilla/webrender/WebRenderTypes.h"
 
 namespace mozilla {
 namespace layers {
@@ -71,14 +70,67 @@ APZUpdater::SetUpdaterThread(const wr::WrWindowId& aWindowId)
 }
 
  void
+APZUpdater::PrepareForSceneSwap(const wr::WrWindowId& aWindowId)
+{
+  if (RefPtr<APZUpdater> updater = GetUpdater(aWindowId)) {
+    updater->mApz->LockTree();
+  }
+}
+
+ void
+APZUpdater::CompleteSceneSwap(const wr::WrWindowId& aWindowId,
+                              wr::WrPipelineInfo* aInfo)
+{
+  RefPtr<APZUpdater> updater = GetUpdater(aWindowId);
+  if (!updater) {
+    
+    
+    
+    
+    return;
+  }
+
+  wr::WrPipelineId pipeline;
+  wr::WrEpoch epoch;
+  while (wr_pipeline_info_next_removed_pipeline(aInfo, &pipeline)) {
+    LayersId layersId = wr::AsLayersId(pipeline);
+    updater->mEpochData.erase(layersId);
+  }
+  
+  
+  for (auto& i : updater->mEpochData) {
+    i.second.mBuilt = Nothing();
+  }
+  while (wr_pipeline_info_next_epoch(aInfo, &pipeline, &epoch)) {
+    LayersId layersId = wr::AsLayersId(pipeline);
+    updater->mEpochData[layersId].mBuilt = Some(epoch);
+  }
+  wr_pipeline_info_delete(aInfo);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  updater->ProcessQueue();
+
+  updater->mApz->UnlockTree();
+}
+
+ void
 APZUpdater::ProcessPendingTasks(const wr::WrWindowId& aWindowId)
 {
   if (RefPtr<APZUpdater> updater = GetUpdater(aWindowId)) {
-    MutexAutoLock lock(updater->mQueueLock);
-    for (auto task : updater->mUpdaterQueue) {
-      task->Run();
-    }
-    updater->mUpdaterQueue.clear();
+    updater->ProcessQueue();
   }
 }
 
@@ -135,10 +187,25 @@ APZUpdater::UpdateHitTestingTree(LayersId aRootLayerTreeId,
 void
 APZUpdater::UpdateScrollDataAndTreeState(LayersId aRootLayerTreeId,
                                          LayersId aOriginatingLayersId,
+                                         const wr::Epoch& aEpoch,
                                          WebRenderScrollData&& aScrollData)
 {
   MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
   RefPtr<APZUpdater> self = this;
+  
+  
+  
+  
+  
+  RunOnUpdaterThread(NS_NewRunnableFunction(
+    "APZUpdater::UpdateEpochRequirement",
+    [=]() {
+      if (aRootLayerTreeId == aOriginatingLayersId) {
+        self->mEpochData[aOriginatingLayersId].mIsRoot = true;
+      }
+      self->mEpochData[aOriginatingLayersId].mRequired = aEpoch;
+    }
+  ));
   RunOnUpdaterThread(NS_NewRunnableFunction(
     "APZUpdater::UpdateHitTestingTree",
     [=,aScrollData=Move(aScrollData)]() {
@@ -179,6 +246,7 @@ APZUpdater::NotifyLayerTreeRemoved(LayersId aLayersId)
   RunOnUpdaterThread(NS_NewRunnableFunction(
     "APZUpdater::NotifyLayerTreeRemoved",
     [=]() {
+      self->mEpochData.erase(aLayersId);
       self->mScrollData.erase(aLayersId);
       self->mApz->NotifyLayerTreeRemoved(aLayersId);
     }
@@ -358,6 +426,80 @@ APZUpdater::GetUpdater(const wr::WrWindowId& aWindowId)
   return updater.forget();
 }
 
+bool
+APZUpdater::IsQueueBlocked() const
+{
+  AssertOnUpdaterThread();
+
+  for (const auto& i : mEpochData) {
+    if (i.second.IsBlockingQueue()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+void
+APZUpdater::ProcessQueue()
+{
+  { 
+    MutexAutoLock lock(mQueueLock);
+    if (mUpdaterQueue.empty()) {
+      return;
+    }
+  }
+
+  
+  
+  while (!IsQueueBlocked()) {
+    RefPtr<Runnable> task;
+
+    { 
+      MutexAutoLock lock(mQueueLock);
+      if (mUpdaterQueue.empty()) {
+        break;
+      }
+      task = mUpdaterQueue.front();
+      mUpdaterQueue.pop_front();
+    }
+
+    task->Run();
+  }
+}
+
+APZUpdater::EpochState::EpochState()
+  : mRequired{0}
+  , mIsRoot(false)
+{
+}
+
+bool
+APZUpdater::EpochState::IsBlockingQueue() const
+{
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (mIsRoot && !mBuilt) {
+    return true;
+  }
+  return mBuilt && (*mBuilt < mRequired);
+}
+
 } 
 } 
 
@@ -372,12 +514,18 @@ apz_register_updater(mozilla::wr::WrWindowId aWindowId)
 void
 apz_pre_scene_swap(mozilla::wr::WrWindowId aWindowId)
 {
+  
+  MOZ_ASSERT(gfxPrefs::WebRenderAsyncSceneBuild());
+  mozilla::layers::APZUpdater::PrepareForSceneSwap(aWindowId);
 }
 
 void
 apz_post_scene_swap(mozilla::wr::WrWindowId aWindowId,
                     mozilla::wr::WrPipelineInfo* aInfo)
 {
+  
+  MOZ_ASSERT(gfxPrefs::WebRenderAsyncSceneBuild());
+  mozilla::layers::APZUpdater::CompleteSceneSwap(aWindowId, aInfo);
 }
 
 void
