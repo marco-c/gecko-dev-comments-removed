@@ -669,7 +669,6 @@ class TaskCache(CacheManager):
             
             
             
-            
             url = get_artifact_url(taskId, artifact_name)
             urls.append(url)
         if not urls:
