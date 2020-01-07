@@ -93,7 +93,6 @@ class nsIDocShell;
 class nsIDocShellTreeItem;
 class nsIDocumentEncoder;
 class nsIDocumentObserver;
-class nsIDOMDocument;
 class nsIHTMLCollection;
 class nsILayoutHistoryState;
 class nsILoadContext;
@@ -4530,7 +4529,7 @@ NS_NewVideoDocument(nsIDocument** aInstancePtrResult);
 
 
 nsresult
-NS_NewDOMDocument(nsIDOMDocument** aInstancePtrResult,
+NS_NewDOMDocument(nsIDocument** aInstancePtrResult,
                   const nsAString& aNamespaceURI,
                   const nsAString& aQualifiedName,
                   mozilla::dom::DocumentType* aDoctype,
@@ -4544,7 +4543,7 @@ NS_NewDOMDocument(nsIDOMDocument** aInstancePtrResult,
 
 
 nsresult
-NS_NewXBLDocument(nsIDOMDocument** aInstancePtrResult,
+NS_NewXBLDocument(nsIDocument** aInstancePtrResult,
                   nsIURI* aDocumentURI,
                   nsIURI* aBaseURI,
                   nsIPrincipal* aPrincipal);
