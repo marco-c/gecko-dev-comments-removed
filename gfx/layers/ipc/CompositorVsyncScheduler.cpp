@@ -122,7 +122,6 @@ CompositorVsyncScheduler::Destroy()
 void
 CompositorVsyncScheduler::PostCompositeTask(TimeStamp aCompositeTimestamp)
 {
-  
   MonitorAutoLock lock(mCurrentCompositeTaskMonitor);
   if (mCurrentCompositeTask == nullptr && CompositorThreadHolder::Loop()) {
     RefPtr<CancelableRunnable> task = NewCancelableRunnableMethod<TimeStamp>(

@@ -51,8 +51,6 @@ public:
   bool NotifyVsync(TimeStamp aVsyncTimestamp);
   void SetNeedsComposite();
 
-  void PostCompositeTask(TimeStamp aCompositeTimestamp);
-  void PostVRTask(TimeStamp aTimestamp);
   void Destroy();
   void ScheduleComposition();
   void CancelCurrentCompositeTask();
@@ -77,6 +75,15 @@ private:
 
   
   void ScheduleTask(already_AddRefed<CancelableRunnable>);
+
+  
+  
+  void PostCompositeTask(TimeStamp aCompositeTimestamp);
+
+  
+  
+  void PostVRTask(TimeStamp aTimestamp);
+
   void NotifyCompositeTaskExecuted();
   void ObserveVsync();
   void UnobserveVsync();
