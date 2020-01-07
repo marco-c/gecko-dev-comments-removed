@@ -61,22 +61,52 @@ pub type UrlExtraData = ::servo_url::ServoUrl;
 
 
 #[cfg(feature = "gecko")]
-pub type UrlExtraData =
-    ::gecko_bindings::sugar::refptr::RefPtr<::gecko_bindings::structs::URLExtraData>;
+#[derive(Clone, PartialEq)]
+pub struct UrlExtraData(
+    pub ::gecko_bindings::sugar::refptr::RefPtr<::gecko_bindings::structs::URLExtraData>
+);
 
 #[cfg(feature = "gecko")]
 impl UrlExtraData {
     
-    
-    
-    pub fn as_str(&self) -> &str {
-        
-        "(stylo: not supported)"
+    #[inline]
+    pub fn is_chrome(&self) -> bool {
+        self.0.mIsChrome
     }
 
     
-    pub fn is_chrome(&self) -> bool {
-        self.mIsChrome
+    
+    
+    
+    
+    #[inline]
+    pub unsafe fn from_ptr_ref(ptr: &*mut ::gecko_bindings::structs::URLExtraData) -> &Self {
+        ::std::mem::transmute(ptr)
+    }
+}
+
+#[cfg(feature = "gecko")]
+impl fmt::Debug for UrlExtraData {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        use gecko_bindings::{structs, bindings};
+
+        struct DebugURI(*mut structs::nsIURI);
+        impl fmt::Debug for DebugURI {
+            fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                use nsstring::nsCString;
+                let mut spec = nsCString::new();
+                unsafe {
+                    bindings::Gecko_nsIURI_Debug(self.0, &mut spec);
+                }
+                spec.fmt(formatter)
+            }
+        }
+
+        formatter.debug_struct("URLExtraData")
+            .field("is_chrome", &self.is_chrome())
+            .field("base", &DebugURI(self.0.mBaseURI.raw::<structs::nsIURI>()))
+            .field("referrer", &DebugURI(self.0.mReferrer.raw::<structs::nsIURI>()))
+            .finish()
     }
 }
 
