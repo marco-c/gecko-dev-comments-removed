@@ -403,8 +403,10 @@ ScrollingLayersHelper::RecurseAndDefineAsr(nsDisplayItem* aItem,
       aItem, aAsr->mParent, aChain, aAppUnitsPerDevPixel, aSc);
   ids = ancestorIds;
 
+  
+  
   Maybe<ScrollMetadata> metadata = aAsr->mScrollableFrame->ComputeScrollMetadata(
-      mManager, aItem->ReferenceFrame(), ContainerLayerParameters(), nullptr);
+      nullptr, mManager, aItem->ReferenceFrame(), ContainerLayerParameters(), nullptr);
   MOZ_ASSERT(metadata);
   FrameMetrics& metrics = metadata->GetMetrics();
 
