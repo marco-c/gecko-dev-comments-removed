@@ -62,12 +62,16 @@ let isRounded = (x, expectedPrecision) => {
 
 let setupTest = async function(tab, resistFingerprinting, reduceTimerPrecision, expectedPrecision, runTests, workerCall) {
   await SpecialPowers.pushPrefEnv({"set":
-    
     [["privacy.resistFingerprinting", resistFingerprinting],
      ["privacy.reduceTimerPrecision", reduceTimerPrecision],
      ["privacy.resistFingerprinting.reduceTimerPrecision.microseconds", expectedPrecision * 1000]
      ]
   });
+  
+  
+  if (resistFingerprinting) {
+    expectedPrecision = expectedPrecision < 100 ? 100 : expectedPrecision;
+  }
   await ContentTask.spawn(tab.linkedBrowser, {
       list: PERFORMANCE_TIMINGS,
       precision: expectedPrecision,
@@ -191,7 +195,7 @@ add_task(async function runRPTestsForWorker() {
 
   await setupTest(tab, true, true, 100, runWorkerTest, "runRPTests");
   await setupTest(tab, true, false, 13, runWorkerTest, "runRPTests");
-  await setupTest(tab, true, false, .13, runWorkerTest, "runRPTests");
+  await setupTest(tab, true, true, .13, runWorkerTest, "runRPTests");
 
   await BrowserTestUtils.removeTab(tab);
   });
