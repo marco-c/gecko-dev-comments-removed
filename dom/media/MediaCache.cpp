@@ -2684,11 +2684,6 @@ MediaCacheStream::Read(char* aBuffer, uint32_t aCount, uint32_t* aBytes)
       return NS_ERROR_ABORT;
     }
 
-    if (mDidNotifyDataEnded && NS_FAILED(mNotifyDataEndedStatus)) {
-      
-      return NS_ERROR_FAILURE;
-    }
-
     if (!IsOffsetAllowed(streamOffset)) {
       LOGE("Stream %p invalid offset=%" PRId64, this, streamOffset);
       return NS_ERROR_ILLEGAL_VALUE;
@@ -2731,6 +2726,16 @@ MediaCacheStream::Read(char* aBuffer, uint32_t aCount, uint32_t* aBytes)
     }
     if (foundDataInPartialBlock) {
       
+      break;
+    }
+
+    if (mDidNotifyDataEnded && NS_FAILED(mNotifyDataEndedStatus)) {
+      
+      
+      
+      bytes = ReadPartialBlock(lock, streamOffset, buffer);
+      streamOffset += bytes;
+      buffer = buffer.From(bytes);
       break;
     }
 
