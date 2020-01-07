@@ -5,7 +5,7 @@
 
 
 
-use {Atom, LocalName, WeakAtom};
+use {Atom, LocalName, Namespace, WeakAtom};
 use applicable_declarations::ApplicableDeclarationList;
 use context::QuirksMode;
 use dom::TElement;
@@ -103,6 +103,8 @@ pub struct SelectorMap<T: 'static> {
     
     pub local_name_hash: PrecomputedHashMap<LocalName, SmallVec<[T; 1]>>,
     
+    pub namespace_hash: PrecomputedHashMap<Namespace, SmallVec<[T; 1]>>,
+    
     pub other: SmallVec<[T; 1]>,
     
     pub count: usize,
@@ -125,6 +127,7 @@ impl<T: 'static> SelectorMap<T> {
             id_hash: MaybeCaseInsensitiveHashMap::new(),
             class_hash: MaybeCaseInsensitiveHashMap::new(),
             local_name_hash: HashMap::default(),
+            namespace_hash: HashMap::default(),
             other: SmallVec::new(),
             count: 0,
         }
@@ -135,6 +138,7 @@ impl<T: 'static> SelectorMap<T> {
         self.id_hash.clear();
         self.class_hash.clear();
         self.local_name_hash.clear();
+        self.namespace_hash.clear();
         self.other.clear();
         self.count = 0;
     }
@@ -217,6 +221,18 @@ impl SelectorMap<Rule> {
             )
         }
 
+        if let Some(rules) = self.namespace_hash.get(rule_hash_target.namespace()) {
+            SelectorMap::get_matching_rules(
+                element,
+                rules,
+                matching_rules_list,
+                context,
+                flags_setter,
+                cascade_level,
+                shadow_cascade_order,
+            )
+        }
+
         SelectorMap::get_matching_rules(
             element,
             &self.other,
@@ -262,6 +278,7 @@ impl SelectorMap<Rule> {
 
 impl<T: SelectorMapEntry> SelectorMap<T> {
     
+    
     pub fn insert(
         &mut self,
         entry: T,
@@ -298,6 +315,9 @@ impl<T: SelectorMapEntry> SelectorMap<T> {
                     .try_entry(name.clone())?
                     .or_insert_with(SmallVec::new)
             },
+            Bucket::Namespace(url) => self.namespace_hash
+                .try_entry(url.clone())?
+                .or_insert_with(SmallVec::new),
             Bucket::Universal => &mut self.other,
         };
 
@@ -313,13 +333,13 @@ impl<T: SelectorMapEntry> SelectorMap<T> {
     
     
     
+    
     #[inline]
     pub fn lookup<'a, E, F>(&'a self, element: E, quirks_mode: QuirksMode, mut f: F) -> bool
     where
         E: TElement,
         F: FnMut(&'a T) -> bool,
     {
-        
         if let Some(id) = element.id() {
             if let Some(v) = self.id_hash.get(id, quirks_mode) {
                 for entry in v.iter() {
@@ -330,7 +350,6 @@ impl<T: SelectorMapEntry> SelectorMap<T> {
             }
         }
 
-        
         let mut done = false;
         element.each_class(|class| {
             if !done {
@@ -348,7 +367,6 @@ impl<T: SelectorMapEntry> SelectorMap<T> {
             return false;
         }
 
-        
         if let Some(v) = self.local_name_hash.get(element.local_name()) {
             for entry in v.iter() {
                 if !f(&entry) {
@@ -357,7 +375,14 @@ impl<T: SelectorMapEntry> SelectorMap<T> {
             }
         }
 
-        
+        if let Some(v) = self.namespace_hash.get(element.namespace()) {
+            for entry in v.iter() {
+                if !f(&entry) {
+                    return false;
+                }
+            }
+        }
+
         for entry in self.other.iter() {
             if !f(&entry) {
                 return false;
@@ -425,6 +450,7 @@ enum Bucket<'a> {
         name: &'a LocalName,
         lower_name: &'a LocalName,
     },
+    Namespace(&'a Namespace),
     Universal,
 }
 
@@ -436,6 +462,8 @@ fn specific_bucket_for<'a>(component: &'a Component<SelectorImpl>) -> Bucket<'a>
             name: &selector.name,
             lower_name: &selector.lower_name,
         },
+        Component::Namespace(_, ref url) |
+        Component::DefaultNamespace(ref url) => Bucket::Namespace(url),
         
         
         
@@ -480,10 +508,15 @@ fn find_bucket<'a>(mut iter: SelectorIter<'a, SelectorImpl>) -> Bucket<'a> {
                     current_bucket = new_bucket;
                 },
                 Bucket::LocalName { .. } => {
-                    if matches!(current_bucket, Bucket::Universal) {
+                    if matches!(current_bucket, Bucket::Universal | Bucket::Namespace(..)) {
                         current_bucket = new_bucket;
                     }
                 },
+                Bucket::Namespace(..) => {
+                    if matches!(current_bucket, Bucket::Universal) {
+                        current_bucket = new_bucket;
+                    }
+                }
                 Bucket::Universal => {},
             }
         }
