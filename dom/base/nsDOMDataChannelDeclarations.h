@@ -11,20 +11,17 @@
 
 
 #include "nsCOMPtr.h"
-#include "nsIDOMDataChannel.h"
 
 namespace mozilla {
    class DataChannel;
 }
 
+class nsDOMDataChannel;
 class nsPIDOMWindowInner;
 
 nsresult
 NS_NewDOMDataChannel(already_AddRefed<mozilla::DataChannel>&& dataChannel,
                      nsPIDOMWindowInner* aWindow,
-                     nsIDOMDataChannel** domDataChannel);
-
-
-void NS_DataChannelAppReady(nsIDOMDataChannel* domDataChannel);
+                     nsDOMDataChannel** domDataChannel);
 
 #endif 
