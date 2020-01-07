@@ -2350,7 +2350,7 @@ nsPrintJob::ReflowPrintObject(const UniquePtr<nsPrintObject>& aPO)
   if (aPO->mDocument->IsSVGDocument()) {
     
     
-    auto cache = nsLayoutStylesheetCache::For(aPO->mDocument->GetStyleBackendType());
+    auto cache = nsLayoutStylesheetCache::Singleton();
     styleSet->PrependStyleSheet(SheetType::Agent, cache->UASheet());
   }
 

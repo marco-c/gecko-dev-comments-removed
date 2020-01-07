@@ -524,7 +524,7 @@ SVGSVGElement::BindToTree(nsIDocument* aDocument,
     
     
     
-    auto cache = nsLayoutStylesheetCache::For(doc->GetStyleBackendType());
+    auto cache = nsLayoutStylesheetCache::Singleton();
     doc->EnsureOnDemandBuiltInUASheet(cache->SVGSheet());
   }
 

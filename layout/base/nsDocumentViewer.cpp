@@ -2344,7 +2344,7 @@ nsDocumentViewer::CreateStyleSet(nsIDocument* aDocument)
     return styleSet;
   }
 
-  auto cache = nsLayoutStylesheetCache::For(backendType);
+  auto cache = nsLayoutStylesheetCache::Singleton();
 
   
   StyleSheet* sheet = nullptr;
