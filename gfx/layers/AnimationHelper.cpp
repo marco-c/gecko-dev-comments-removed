@@ -152,7 +152,8 @@ AnimationHelper::SampleAnimationForEachNode(
   TimeStamp aCurrentFrameTime,
   AnimationArray& aAnimations,
   InfallibleTArray<AnimData>& aAnimationData,
-  RefPtr<RawServoAnimationValue>& aAnimationValue)
+  RefPtr<RawServoAnimationValue>& aAnimationValue,
+  const AnimatedValue* aPreviousValue)
 {
   MOZ_ASSERT(!aAnimations.IsEmpty(), "Should be called with animations");
 
@@ -182,9 +183,41 @@ AnimationHelper::SampleAnimationForEachNode(
     
     
     
-    const TimeStamp& timeStamp = !aPreviousFrameTime.IsNull()
-      ? aPreviousFrameTime
-      : aCurrentFrameTime;
+    
+    
+    
+    
+    
+    
+    bool hasFutureReadyTime = false;
+    if (!aPreviousValue &&
+        !animation.isNotPlaying() &&
+        !aPreviousFrameTime.IsNull()) {
+      
+      
+      
+      const TimeStamp readyTime =
+        animation.originTime() +
+        animation.startTime().get_TimeDuration() +
+        animation.holdTime().MultDouble(1.0 / animation.playbackRate());
+      hasFutureReadyTime = readyTime > aPreviousFrameTime;
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    const TimeStamp& timeStamp =
+      aPreviousFrameTime.IsNull() || hasFutureReadyTime
+      ? aCurrentFrameTime
+      : aPreviousFrameTime;
 
     
     
@@ -605,12 +638,14 @@ AnimationHelper::SampleAnimations(CompositorAnimationStorage* aStorage,
     AnimationHelper::SetAnimations(*animations,
                                    animationData,
                                    animationValue);
+    AnimatedValue* previousValue = aStorage->GetAnimatedValue(iter.Key());
     AnimationHelper::SampleResult sampleResult =
       AnimationHelper::SampleAnimationForEachNode(aPreviousFrameTime,
                                                   aCurrentFrameTime,
                                                   *animations,
                                                   animationData,
-                                                  animationValue);
+                                                  animationValue,
+                                                  previousValue);
 
     if (sampleResult != AnimationHelper::SampleResult::Sampled) {
       continue;

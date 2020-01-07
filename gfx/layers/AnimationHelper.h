@@ -224,12 +224,15 @@ public:
 
 
 
+
+
   static SampleResult
   SampleAnimationForEachNode(TimeStamp aPreviousFrameTime,
                              TimeStamp aCurrentFrameTime,
                              AnimationArray& aAnimations,
                              InfallibleTArray<AnimData>& aAnimationData,
-                             RefPtr<RawServoAnimationValue>& aAnimationValue);
+                             RefPtr<RawServoAnimationValue>& aAnimationValue,
+                             const AnimatedValue* aPreviousValue);
   
 
 
