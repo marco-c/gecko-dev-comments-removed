@@ -1054,12 +1054,6 @@ const gCSSProperties = {
     types: [
     ]
   },
-  'overflow-clip-box': {
-    
-    types: [
-      { type: 'discrete', options: [ [ 'padding-box', 'content-box' ] ] }
-    ]
-  },
   'overflow-wrap': {
     
     types: [
