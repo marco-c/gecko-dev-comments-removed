@@ -63,8 +63,6 @@ const {components, Cc, Ci} = require("chrome");
 loader.lazyImporter(this, "NetUtil", "resource://gre/modules/NetUtil.jsm");
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 const Services = require("Services");
-const { LocalizationHelper } = require("devtools/shared/l10n");
-const L10N = new LocalizationHelper("devtools/client/locales/netmonitor.properties");
 
 
 const gNSURLStore = new Map();
@@ -644,28 +642,9 @@ var NetworkHelper = {
 
       
       info.keaGroupName = SSLStatus.keaGroupName;
-      
-      if (info.keaGroupName == "none") {
-        info.keaGroupName = L10N.getStr("netmonitor.security.keaGroup.none");
-      }
-      if (info.keaGroupName == "custom") {
-        info.keaGroupName = L10N.getStr("netmonitor.security.keaGroup.custom");
-      }
-      if (info.keaGroupName == "unknown group") {
-        info.keaGroupName = L10N.getStr("netmonitor.security.keaGroup.unknown");
-      }
 
       
       info.signatureSchemeName = SSLStatus.signatureSchemeName;
-      
-      if (info.signatureSchemeName == "none") {
-        info.signatureSchemeName =
-          L10N.getStr("netmonitor.security.signatureScheme.none");
-      }
-      if (info.signatureSchemeName == "unknown signature") {
-        info.signatureSchemeName =
-          L10N.getStr("netmonitor.security.signatureScheme.unknown");
-      }
 
       
       info.protocolVersion =
@@ -674,33 +653,8 @@ var NetworkHelper = {
       
       info.cert = this.parseCertificateInfo(SSLStatus.serverCert);
 
-      info.certificateTransparency = null;
-
-      switch (SSLStatus.certificateTransparencyStatus) {
-        case SSLStatus.CERTIFICATE_TRANSPARENCY_NOT_APPLICABLE:
-        default:
-          break;
-        case SSLStatus.CERTIFICATE_TRANSPARENCY_NONE:
-          info.certificateTransparency =
-            L10N.getStr("certmgr.certificateTransparency.status.none");
-          break;
-        case SSLStatus.CERTIFICATE_TRANSPARENCY_POLICY_COMPLIANT:
-          info.certificateTransparency =
-            L10N.getStr("certmgr.certificateTransparency.status.ok");
-          break;
-        case SSLStatus.CERTIFICATE_TRANSPARENCY_POLICY_NOT_ENOUGH_SCTS:
-          info.certificateTransparency =
-            L10N.getStr(
-              "certmgr.certificateTransparency.status.notEnoughSCTS"
-            );
-          break;
-        case SSLStatus.CERTIFICATE_TRANSPARENCY_POLICY_NOT_DIVERSE_SCTS:
-          info.certificateTransparency =
-            L10N.getStr(
-              "certmgr.certificateTransparency.status.notDiverseSCTS"
-            );
-          break;
-      }
+      
+      info.certificateTransparency = SSLStatus.certificateTransparencyStatus;
 
       
       if (httpActivity.hostname) {
