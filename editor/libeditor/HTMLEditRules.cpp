@@ -1731,9 +1731,10 @@ HTMLEditRules::WillInsertBreak(Selection& aSelection,
   
   
   if (insertBRElement) {
-    nsresult rv = StandardBreakImpl(*atStartOfSelection.GetContainer(),
-                                    atStartOfSelection.Offset(), aSelection);
-    NS_ENSURE_SUCCESS(rv, rv);
+    nsresult rv = InsertBRElement(aSelection, atStartOfSelection);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
     *aHandled = true;
     return NS_OK;
   }
@@ -1767,8 +1768,7 @@ HTMLEditRules::WillInsertBreak(Selection& aSelection,
     }
     if (NS_WARN_IF(blockParent == host)) {
       
-      rv = StandardBreakImpl(*atStartOfSelection.GetContainer(),
-                             atStartOfSelection.Offset(), aSelection);
+      rv = InsertBRElement(aSelection, atStartOfSelection);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
@@ -1784,6 +1784,7 @@ HTMLEditRules::WillInsertBreak(Selection& aSelection,
   bool isEmpty;
   IsEmptyBlock(*blockParent, &isEmpty);
   if (isEmpty) {
+    AutoEditorDOMPointChildInvalidator lockOffset(atStartOfSelection);
     EditorRawDOMPoint endOfBlockParent;
     endOfBlockParent.SetToEndOf(blockParent);
     RefPtr<Element> br = htmlEditor->CreateBR(endOfBlockParent);
@@ -1817,6 +1818,7 @@ HTMLEditRules::WillInsertBreak(Selection& aSelection,
        blockParent->IsHTMLElement(nsGkAtoms::p)) ||
       (separator != ParagraphSeparator::br &&
        blockParent->IsAnyOfHTMLElements(nsGkAtoms::p, nsGkAtoms::div))) {
+    AutoEditorDOMPointChildInvalidator lockOffset(atStartOfSelection);
     
     EditActionResult result = ReturnInParagraph(aSelection, *blockParent);
     if (NS_WARN_IF(result.Failed())) {
@@ -1830,113 +1832,142 @@ HTMLEditRules::WillInsertBreak(Selection& aSelection,
   
   if (!(*aHandled)) {
     *aHandled = true;
-    return StandardBreakImpl(*atStartOfSelection.GetContainer(),
-                             atStartOfSelection.Offset(), aSelection);
+    return InsertBRElement(aSelection, atStartOfSelection);
   }
   return NS_OK;
 }
 
 nsresult
-HTMLEditRules::StandardBreakImpl(nsINode& aNode,
-                                 int32_t aOffset,
-                                 Selection& aSelection)
+HTMLEditRules::InsertBRElement(Selection& aSelection,
+                               const EditorDOMPoint& aPointToBreak)
 {
-  NS_ENSURE_STATE(mHTMLEditor);
+  if (NS_WARN_IF(!aPointToBreak.IsSet())) {
+    return NS_ERROR_INVALID_ARG;
+  }
+
+  if (NS_WARN_IF(!mHTMLEditor)) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
   RefPtr<HTMLEditor> htmlEditor(mHTMLEditor);
 
-  RefPtr<Element> brNode;
-  bool bAfterBlock = false;
-  bool bBeforeBlock = false;
-  nsCOMPtr<nsINode> node = &aNode;
+  bool brElementIsAfterBlock = false;
+  bool brElementIsBeforeBlock = false;
 
+  
+  RefPtr<Element> brElement;
   if (IsPlaintextEditor()) {
-    brNode = htmlEditor->CreateBR(EditorRawDOMPoint(node, aOffset));
-    NS_ENSURE_STATE(brNode);
+    brElement = htmlEditor->CreateBR(aPointToBreak.AsRaw());
+    if (NS_WARN_IF(!brElement)) {
+      return NS_ERROR_FAILURE;
+    }
   } else {
-    WSRunObject wsObj(htmlEditor, node, aOffset);
+    EditorDOMPoint pointToBreak(aPointToBreak);
+    WSRunObject wsObj(htmlEditor, pointToBreak.GetContainer(),
+                      pointToBreak.Offset());
     int32_t visOffset = 0;
     WSType wsType;
     nsCOMPtr<nsINode> visNode;
-    wsObj.PriorVisibleNode(node, aOffset, address_of(visNode),
-                           &visOffset, &wsType);
+    wsObj.PriorVisibleNode(pointToBreak.GetContainer(), pointToBreak.Offset(),
+                           address_of(visNode), &visOffset, &wsType);
     if (wsType & WSType::block) {
-      bAfterBlock = true;
+      brElementIsAfterBlock = true;
     }
-    wsObj.NextVisibleNode(node, aOffset, address_of(visNode),
-                          &visOffset, &wsType);
+    wsObj.NextVisibleNode(pointToBreak.GetContainer(), pointToBreak.Offset(),
+                          address_of(visNode), &visOffset, &wsType);
     if (wsType & WSType::block) {
-      bBeforeBlock = true;
+      brElementIsBeforeBlock = true;
     }
+    
+    
     nsCOMPtr<nsIDOMNode> linkDOMNode;
-    if (htmlEditor->IsInLink(GetAsDOMNode(node), address_of(linkDOMNode))) {
-      
+    if (htmlEditor->IsInLink(pointToBreak.GetContainerAsDOMNode(),
+                             address_of(linkDOMNode))) {
       nsCOMPtr<Element> linkNode = do_QueryInterface(linkDOMNode);
-      NS_ENSURE_STATE(linkNode || !linkDOMNode);
+      if (NS_WARN_IF(!linkNode)) {
+        return NS_ERROR_FAILURE;
+      }
       SplitNodeResult splitLinkNodeResult =
-        htmlEditor->SplitNodeDeep(*linkNode, EditorRawDOMPoint(node, aOffset),
+        htmlEditor->SplitNodeDeep(*linkNode, pointToBreak.AsRaw(),
                                   SplitAtEdges::eDoNotCreateEmptyContainer);
       if (NS_WARN_IF(splitLinkNodeResult.Failed())) {
         return splitLinkNodeResult.Rv();
       }
-      EditorRawDOMPoint splitPoint(splitLinkNodeResult.SplitPoint());
-      node = splitPoint.GetContainer();
-      aOffset = splitPoint.Offset();
+      pointToBreak = splitLinkNodeResult.SplitPoint();
     }
-    brNode =
-      wsObj.InsertBreak(aSelection, EditorRawDOMPoint(node, aOffset),
-                        nsIEditor::eNone);
-    if (NS_WARN_IF(!brNode)) {
+    brElement =
+      wsObj.InsertBreak(aSelection, pointToBreak.AsRaw(), nsIEditor::eNone);
+    if (NS_WARN_IF(!brElement)) {
       return NS_ERROR_FAILURE;
     }
   }
-  node = brNode->GetParentNode();
-  NS_ENSURE_TRUE(node, NS_ERROR_NULL_POINTER);
-  if (bAfterBlock && bBeforeBlock) {
+
+  
+  
+  if (NS_WARN_IF(!brElement->GetParentNode())) {
+    return NS_ERROR_FAILURE;
+  }
+
+  if (brElementIsAfterBlock && brElementIsBeforeBlock) {
+    
+    
+    
     
     
     
     aSelection.SetInterlinePosition(true);
-    EditorRawDOMPoint point(brNode);
-    nsresult rv = aSelection.Collapse(point.AsRaw());
-    NS_ENSURE_SUCCESS(rv, rv);
-  } else {
-    int32_t offset = node->IndexOf(brNode);
-    WSRunObject wsObj(htmlEditor, node, offset + 1);
-    nsCOMPtr<nsINode> secondBR;
-    int32_t visOffset = 0;
-    WSType wsType;
-    wsObj.NextVisibleNode(node, offset + 1, address_of(secondBR),
-                          &visOffset, &wsType);
-    if (wsType == WSType::br) {
-      
-      
-      
-      
-      
-      
-      nsCOMPtr<nsINode> brParent = secondBR->GetParentNode();
-      int32_t brOffset = brParent ? brParent->IndexOf(secondBR) : -1;
-      if (brParent != node || brOffset != offset + 1) {
-        nsresult rv =
-          htmlEditor->MoveNode(secondBR->AsContent(), node, offset + 1);
-        NS_ENSURE_SUCCESS(rv, rv);
+    EditorRawDOMPoint point(brElement);
+    ErrorResult error;
+    aSelection.Collapse(point, error);
+    if (NS_WARN_IF(error.Failed())) {
+      return error.StealNSResult();
+    }
+    return NS_OK;
+  }
+
+  EditorDOMPoint afterBRElement(brElement);
+  DebugOnly<bool> advanced = afterBRElement.AdvanceOffset();
+  NS_WARNING_ASSERTION(advanced,
+    "Failed to advance offset after the new <br> element");
+  WSRunObject wsObj(htmlEditor, afterBRElement.GetContainer(),
+                    afterBRElement.Offset());
+  nsCOMPtr<nsINode> maybeSecondBRNode;
+  int32_t visOffset = 0;
+  WSType wsType;
+  wsObj.NextVisibleNode(afterBRElement.GetContainer(), afterBRElement.Offset(),
+                        address_of(maybeSecondBRNode), &visOffset, &wsType);
+  if (wsType == WSType::br) {
+    
+    
+    
+    
+    
+    
+    EditorDOMPoint atSecondBRElement(maybeSecondBRNode);
+    if (brElement->GetNextSibling() != maybeSecondBRNode) {
+      nsresult rv =
+        htmlEditor->MoveNode(maybeSecondBRNode->AsContent(),
+                             afterBRElement.GetContainer(),
+                             afterBRElement.Offset());
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
       }
     }
-    
-    
-    
-    
+  }
 
-    
-    
-    nsCOMPtr<nsIContent> siblingNode = brNode->GetNextSibling();
-    if (siblingNode && IsBlockNode(*siblingNode)) {
-      aSelection.SetInterlinePosition(false);
-    } else {
-      aSelection.SetInterlinePosition(true);
-    }
-    nsresult rv = aSelection.Collapse(node, offset + 1);
-    NS_ENSURE_SUCCESS(rv, rv);
+  
+  
+  
+  
+
+  
+  
+  nsIContent* nextSiblingOfBRElement = brElement->GetNextSibling();
+  aSelection.SetInterlinePosition(!(nextSiblingOfBRElement &&
+                                    IsBlockNode(*nextSiblingOfBRElement)));
+  ErrorResult error;
+  aSelection.Collapse(afterBRElement.AsRaw(), error);
+  if (NS_WARN_IF(error.Failed())) {
+    return error.StealNSResult();
   }
   return NS_OK;
 }
