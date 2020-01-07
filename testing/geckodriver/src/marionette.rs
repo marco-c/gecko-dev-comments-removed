@@ -384,6 +384,10 @@ pub struct MarionetteSettings {
 
     
     
+    pub jsdebugger: bool,
+
+    
+    
     
     pub log_level: Option<LogLevel>,
 }
@@ -462,17 +466,20 @@ impl MarionetteHandler {
 
         let mut runner = FirefoxRunner::new(&binary, profile);
 
+        
         runner
-             
-            .arg("-marionette")
-             
             .env("MOZ_CRASHREPORTER", "1")
             .env("MOZ_CRASHREPORTER_NO_REPORT", "1")
             .env("MOZ_CRASHREPORTER_SHUTDOWN", "1");
 
+        
+        runner.arg("-marionette");
+        if self.settings.jsdebugger {
+            runner.arg("-jsdebugger");
+        }
         if let Some(args) = options.args.as_ref() {
             runner.args(args);
-        };
+        }
 
         let browser_proc = runner.start()
             .map_err(|e| {
@@ -499,6 +506,14 @@ impl MarionetteHandler {
         }
 
         prefs.insert_slice(&extra_prefs[..]);
+
+        if self.settings.jsdebugger {
+            prefs.insert("devtools.browsertoolbox.panel", Pref::new("jsdebugger".to_owned()));
+            prefs.insert("devtools.debugger.remote-enabled", Pref::new(true));
+            prefs.insert("devtools.chrome.enabled", Pref::new(true));
+            prefs.insert("devtools.debugger.prompt-connection", Pref::new(false));
+            prefs.insert("marionette.debugging.clicktostart", Pref::new(true));
+        }
 
         if let Some(ref level) = self.current_log_level {
             prefs.insert("marionette.log.level", Pref::new(level.to_string()));
