@@ -2287,33 +2287,6 @@ function BrowserOpenTab(event) {
   openUILinkIn(BROWSER_NEW_TAB_URL, where, { relatedToCurrent });
 }
 
-
-
-
-
-function delayedOpenWindow(chrome, flags, href, postData) {
-  
-  
-  
-  
-  
-  setTimeout(function() { openDialog(chrome, "_blank", flags, href, null, null, postData); }, 10);
-}
-
-
-
-function delayedOpenTab(aUrl, aReferrer, aCharset, aPostData, aAllowThirdPartyFixup) {
-  gBrowser.loadOneTab(aUrl, {
-    referrerURI: aReferrer,
-    charset: aCharset,
-    postData: aPostData,
-    inBackground: false,
-    allowThirdPartyFixup: aAllowThirdPartyFixup,
-    
-    triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
-  });
-}
-
 var gLastOpenDirectory = {
   _lastDir: null,
   get path() {
@@ -3539,15 +3512,6 @@ var PrintPreviewListener = {
     gBrowser.activateBrowserForPrintPreview(browser);
   },
 };
-
-function getMarkupDocumentViewer() {
-  return gBrowser.markupDocumentViewer;
-}
-
-
-function FillInHTMLTooltip(tipElement) {
-  document.getElementById("aHTMLTooltip").fillInPageTooltip(tipElement);
-}
 
 var browserDragAndDrop = {
   canDropLink: aEvent => Services.droppedLinkHandler.canDropLink(aEvent, true),
@@ -6331,20 +6295,6 @@ var gPageStyleMenu = {
     mm.sendAsyncMessage("PageStyle:Disable");
   },
 };
-
-
-var stylesheetFillPopup = gPageStyleMenu.fillPopup.bind(gPageStyleMenu);
-function stylesheetSwitchAll(contentWindow, title) {
-  
-  
-  
-  gPageStyleMenu.switchStyleSheet(title);
-}
-function setStyleDisabled(disabled) {
-  if (disabled)
-    gPageStyleMenu.disableStyle();
-}
-
 
 var LanguageDetectionListener = {
   init() {
