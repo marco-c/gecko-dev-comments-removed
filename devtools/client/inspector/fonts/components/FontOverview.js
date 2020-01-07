@@ -46,7 +46,7 @@ class FontOverview extends PureComponent {
     
     
     if (Services.prefs.getBoolPref(PREF_FONT_EDITOR)) {
-      return Accordion({
+      return fonts.length ? Accordion({
         items: [
           {
             header: getStr("fontinspector.renderedFontsInPageHeader"),
@@ -60,7 +60,9 @@ class FontOverview extends PureComponent {
             opened: false
           }
         ]
-      });
+      })
+      :
+      null;
     }
 
     return fonts.length ?
