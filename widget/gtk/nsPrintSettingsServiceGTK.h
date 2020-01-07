@@ -7,7 +7,7 @@
 #ifndef nsPrintOptionsGTK_h__
 #define nsPrintOptionsGTK_h__
 
-#include "nsPrintOptionsImpl.h"
+#include "nsPrintSettingsService.h"
 
 namespace mozilla
 {

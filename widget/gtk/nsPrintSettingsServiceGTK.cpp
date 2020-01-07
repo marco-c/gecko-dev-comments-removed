@@ -3,7 +3,7 @@
 
 
 
-#include "nsPrintOptionsGTK.h"
+#include "nsPrintSettingsServiceGTK.h"
 #include "nsPrintSettingsGTK.h"
 
 using namespace mozilla::embedding;

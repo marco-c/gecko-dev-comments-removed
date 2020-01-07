@@ -3,7 +3,7 @@
 
 
 
-#include "nsPrintOptionsImpl.h"
+#include "nsPrintSettingsService.h"
 
 #include "mozilla/embedding/PPrinting.h"
 #include "mozilla/layout/RemotePrintJobChild.h"

@@ -2,8 +2,10 @@
 
 
 
+
+#include "nsPrintSettingsServiceWin.h"
+
 #include "nsCOMPtr.h"
-#include "nsPrintOptionsWin.h"
 #include "nsPrintSettingsWin.h"
 #include "nsPrintDialogUtil.h"
 

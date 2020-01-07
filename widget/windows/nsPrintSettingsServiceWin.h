@@ -8,7 +8,7 @@
 #define nsPrintOptionsWin_h__
 
 #include "mozilla/embedding/PPrinting.h"
-#include "nsPrintOptionsImpl.h"  
+#include "nsPrintSettingsService.h"
 
 class nsIPrintSettings;
 class nsIWebBrowserPrint;

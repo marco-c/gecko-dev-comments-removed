@@ -2,7 +2,7 @@
 
 
 
-#include "nsPrintOptionsAndroid.h"
+#include "nsPrintSettingsServiceAndroid.h"
 
 #include "nsPrintSettingsImpl.h"
 
