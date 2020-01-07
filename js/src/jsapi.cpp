@@ -7554,27 +7554,48 @@ DescribeScriptedCaller(JSContext* cx, AutoFilename* filename, unsigned* lineno,
 
 
 
+
+
+
+
+
+
+
+
 static bool
-GetScriptedCallerActivationFast(JSContext* cx, Activation** activation)
+GetScriptedCallerActivationRealmFast(JSContext* cx, Activation** activation, Realm** realm)
 {
     ActivationIterator activationIter(cx);
 
     if (activationIter.done()) {
         *activation = nullptr;
+        *realm = nullptr;
         return true;
     }
 
-    *activation = activationIter.activation();
-
     if (activationIter->isJit()) {
         for (OnlyJSJitFrameIter iter(activationIter); !iter.done(); ++iter) {
-            if (iter.frame().isScripted() && !iter.frame().script()->selfHosted())
+            if (!iter.frame().isScripted())
+                continue;
+            if (!iter.frame().script()->selfHosted()) {
+                *activation = activationIter.activation();
+                *realm = iter.frame().script()->realm();
                 return true;
+            }
+            if (iter.frame().isIonScripted()) {
+                
+                
+                return false;
+            }
         }
     } else if (activationIter->isInterpreter()) {
-        for (InterpreterFrameIterator iter((*activation)->asInterpreter()); !iter.done(); ++iter) {
-            if (!iter.frame()->script()->selfHosted())
+        InterpreterActivation* act = activationIter->asInterpreter();
+        for (InterpreterFrameIterator iter(act); !iter.done(); ++iter) {
+            if (!iter.frame()->script()->selfHosted()) {
+                *activation = act;
+                *realm = iter.frame()->script()->realm();
                 return true;
+            }
         }
     }
 
@@ -7585,8 +7606,8 @@ JS_PUBLIC_API(JSObject*)
 GetScriptedCallerGlobal(JSContext* cx)
 {
     Activation* activation;
-
-    if (GetScriptedCallerActivationFast(cx, &activation)) {
+    Realm* realm;
+    if (GetScriptedCallerActivationRealmFast(cx, &activation, &realm)) {
         if (!activation)
             return nullptr;
     } else {
@@ -7594,14 +7615,17 @@ GetScriptedCallerGlobal(JSContext* cx)
         if (i.done())
             return nullptr;
         activation = i.activation();
+        realm = i.realm();
     }
+
+    MOZ_ASSERT(realm->compartment() == activation->compartment());
 
     
     
     if (activation->scriptedCallerIsHidden())
         return nullptr;
 
-    GlobalObject* global = JS::GetRealmForCompartment(activation->compartment())->maybeGlobal();
+    GlobalObject* global = realm->maybeGlobal();
 
     
     
