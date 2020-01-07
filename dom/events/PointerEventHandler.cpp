@@ -632,7 +632,7 @@ PointerEventHandler::DispatchGotOrLostPointerCaptureEvent(
     return;
   }
 
-  if (!aIsGotCapture && !aCaptureTarget->IsInUncomposedDoc()) {
+  if (!aIsGotCapture && !aCaptureTarget->IsInComposedDoc()) {
     
     
     PointerEventInit init;
