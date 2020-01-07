@@ -10,7 +10,9 @@
 #include <stdint.h>
 
 #include "nsAttrValue.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/ServoUtils.h"
 
 struct MiscContainer;
 
@@ -23,7 +25,12 @@ struct MiscContainer final
   
   
   
-  uintptr_t mStringBits;
+  
+  
+  
+  
+  
+  mozilla::Atomic<uintptr_t, mozilla::Relaxed> mStringBits;
   union {
     struct {
       union {
@@ -80,6 +87,15 @@ protected:
 
 public:
   bool GetString(nsAString& aString) const;
+
+  void SetStringBitsMainThread(uintptr_t aBits)
+  {
+    
+    
+    MOZ_ASSERT(!mozilla::IsInServoTraversal());
+    MOZ_ASSERT(NS_IsMainThread());
+    mStringBits = aBits;
+  }
 
   inline bool IsRefCounted() const
   {
