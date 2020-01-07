@@ -865,7 +865,7 @@ SourceSurfaceImage::GetTextureClient(KnowsCompositor* aForwarder)
   }
 
   
-  mTextureClients.Remove(aForwarder->GetSerial());
+  entry.OrRemove();
   return nullptr;
 }
 
