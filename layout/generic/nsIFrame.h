@@ -393,14 +393,6 @@ operator<<(std::ostream& aStream, const nsReflowStatus& aStatus);
 
 
 
-enum class nsDidReflowStatus : uint32_t {
-  NOT_FINISHED,
-  FINISHED
-};
-
-
-
-
 
 
 
