@@ -6827,17 +6827,15 @@ nsIDocument::SetBody(nsGenericHTMLElement* newBody, ErrorResult& rv)
 
   
   
-  
   if (!newBody ||
       !newBody->IsAnyOfHTMLElements(nsGkAtoms::body, nsGkAtoms::frameset) ||
-      !root || !root->IsHTMLElement() ||
-      !root->IsHTMLElement(nsGkAtoms::html)) {
+      !root) {
     rv.Throw(NS_ERROR_DOM_HIERARCHY_REQUEST_ERR);
     return;
   }
 
   
-  nsCOMPtr<Element> currentBody = GetBodyElement();
+  nsCOMPtr<Element> currentBody = GetBody();
   if (currentBody) {
     root->ReplaceChild(*newBody, *currentBody, rv);
   } else {
