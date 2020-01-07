@@ -8,10 +8,14 @@ package org.mozilla.geckoview;
 
 import android.annotation.TargetApi;
 import android.app.Activity;
+import android.content.ActivityNotFoundException;
+import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.os.Build;
+import android.util.Log;
 import android.view.ActionMode;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -24,11 +28,13 @@ public class BasicSelectionActionDelegate implements ActionMode.Callback,
                                              GeckoSession.SelectionActionDelegate {
     private static final String LOGTAG = "GeckoBasicSelectionAction";
 
+    protected static final String ACTION_PROCESS_TEXT = Intent.ACTION_PROCESS_TEXT;
+
     private static final String[] FLOATING_TOOLBAR_ACTIONS = new String[] {
-            ACTION_CUT, ACTION_COPY, ACTION_PASTE, ACTION_SELECT_ALL
+        ACTION_CUT, ACTION_COPY, ACTION_PASTE, ACTION_SELECT_ALL, ACTION_PROCESS_TEXT
     };
     private static final String[] FIXED_TOOLBAR_ACTIONS = new String[] {
-            ACTION_SELECT_ALL, ACTION_CUT, ACTION_COPY, ACTION_PASTE
+        ACTION_SELECT_ALL, ACTION_CUT, ACTION_COPY, ACTION_PASTE
     };
 
     protected final Activity mActivity;
@@ -36,11 +42,14 @@ public class BasicSelectionActionDelegate implements ActionMode.Callback,
     protected final Matrix mTempMatrix = new Matrix();
     protected final RectF mTempRect = new RectF();
 
+    private boolean mExternalActionsEnabled;
+
     protected ActionMode mActionMode;
     protected GeckoSession mSession;
     protected Selection mSelection;
     protected List<String> mActions;
     protected GeckoSession.Response<String> mResponse;
+    protected boolean mRepopulatedMenu;
 
     @TargetApi(Build.VERSION_CODES.M)
     private class Callback2Wrapper extends ActionMode.Callback2 {
@@ -78,6 +87,29 @@ public class BasicSelectionActionDelegate implements ActionMode.Callback,
     public BasicSelectionActionDelegate(final Activity activity, final boolean useFloatingToolbar) {
         mActivity = activity;
         mUseFloatingToolbar = useFloatingToolbar;
+        mExternalActionsEnabled = true;
+    }
+
+    
+
+
+
+
+    public void enableExternalActions(final boolean enable) {
+        mExternalActionsEnabled = enable;
+
+        if (mActionMode != null) {
+            mActionMode.invalidate();
+        }
+    }
+
+    
+
+
+
+
+    public boolean areExternalActionsEnabled() {
+        return mExternalActionsEnabled;
     }
 
     
@@ -99,6 +131,12 @@ public class BasicSelectionActionDelegate implements ActionMode.Callback,
 
 
     protected boolean isActionAvailable(final String id) {
+        if (mExternalActionsEnabled && !mSelection.text.isEmpty() &&
+                ACTION_PROCESS_TEXT.equals(id)) {
+            final PackageManager pm = mActivity.getPackageManager();
+            return pm.resolveActivity(getProcessTextIntent(),
+                                      PackageManager.MATCH_DEFAULT_ONLY) != null;
+        }
         return mActions.contains(id);
     }
 
@@ -123,6 +161,8 @@ public class BasicSelectionActionDelegate implements ActionMode.Callback,
             case ACTION_SELECT_ALL:
                 item.setTitle(android.R.string.selectAll);
                 break;
+            case ACTION_PROCESS_TEXT:
+                throw new IllegalStateException("Unexpected action");
         }
     }
 
@@ -132,7 +172,18 @@ public class BasicSelectionActionDelegate implements ActionMode.Callback,
 
 
 
-    protected boolean performAction(final String id) {
+
+    protected boolean performAction(final String id, final MenuItem item) {
+        if (ACTION_PROCESS_TEXT.equals(id)) {
+            try {
+                mActivity.startActivity(item.getIntent());
+            } catch (final ActivityNotFoundException e) {
+                Log.e(LOGTAG, "Cannot perform action", e);
+                return false;
+            }
+            return true;
+        }
+
         if (mResponse == null) {
             return false;
         }
@@ -159,6 +210,16 @@ public class BasicSelectionActionDelegate implements ActionMode.Callback,
         }
     }
 
+    private Intent getProcessTextIntent() {
+        final Intent intent = new Intent(Intent.ACTION_PROCESS_TEXT);
+        intent.addCategory(Intent.CATEGORY_DEFAULT);
+        intent.setType("text/plain");
+        intent.putExtra(Intent.EXTRA_PROCESS_TEXT, mSelection.text);
+        
+        intent.putExtra(Intent.EXTRA_PROCESS_TEXT_READONLY, true);
+        return intent;
+    }
+
     @Override
     public boolean onCreateActionMode(final ActionMode actionMode, final Menu menu) {
         final String[] allActions = getAllActions();
@@ -181,9 +242,28 @@ public class BasicSelectionActionDelegate implements ActionMode.Callback,
         boolean changed = false;
 
         
+        mRepopulatedMenu = menu.size() != 0;
+
         
-        for (int menuId = 0; menuId < allActions.length; menuId++) {
-            final String actionId = allActions[menuId];
+        
+        for (int i = 0; i < allActions.length; i++) {
+            final String actionId = allActions[i];
+            final int menuId = i + Menu.FIRST;
+
+            if (ACTION_PROCESS_TEXT.equals(actionId)) {
+                if (mExternalActionsEnabled && !mSelection.text.isEmpty()) {
+                    menu.addIntentOptions(menuId, menuId, menuId,
+                                          mActivity.getComponentName(),
+                                           null, getProcessTextIntent(),
+                                           0,  null);
+                    changed = true;
+                } else if (menu.findItem(menuId) != null) {
+                    menu.removeGroup(menuId);
+                    changed = true;
+                }
+                continue;
+            }
+
             if (isActionAvailable(actionId)) {
                 if (menu.findItem(menuId) == null) {
                     prepareAction(actionId, menu.add( Menu.NONE, menuId,
@@ -200,8 +280,29 @@ public class BasicSelectionActionDelegate implements ActionMode.Callback,
 
     @Override
     public boolean onActionItemClicked(final ActionMode actionMode, final MenuItem menuItem) {
+        MenuItem realMenuItem = null;
+        if (mRepopulatedMenu) {
+            
+            
+            final Menu menu = actionMode.getMenu();
+            final int size = menu.size();
+            for (int i = 0; i < size; i++) {
+                final MenuItem item = menu.getItem(i);
+                if (item == menuItem || (item.getItemId() == menuItem.getItemId() &&
+                        item.getTitle().equals(menuItem.getTitle()))) {
+                    realMenuItem = item;
+                    break;
+                }
+            }
+        } else {
+            realMenuItem = menuItem;
+        }
+
+        if (realMenuItem == null) {
+            return false;
+        }
         final String[] allActions = getAllActions();
-        return performAction(allActions[menuItem.getItemId()]);
+        return performAction(allActions[realMenuItem.getItemId() - Menu.FIRST], realMenuItem);
     }
 
     @Override
