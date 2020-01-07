@@ -41,6 +41,7 @@ class FilterNodeSoftware : public FilterNode,
 {
 public:
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(FilterNodeSoftware, override)
+  FilterNodeSoftware();
   virtual ~FilterNodeSoftware();
 
   
@@ -201,6 +202,12 @@ protected:
 
 
   std::vector<FilterInvalidationListener*> mInvalidationListeners;
+
+  
+
+
+
+  Mutex mCacheMutex;
 
   
 
