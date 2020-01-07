@@ -213,6 +213,7 @@ NewConsoleOutputWrapper.prototype = {
         serviceContainer,
         hud,
         onFirstMeaningfulPaint: resolve,
+        closeSplitConsole: this.closeSplitConsole.bind(this),
       });
 
       
@@ -345,6 +346,11 @@ NewConsoleOutputWrapper.prototype = {
     store.dispatch(actions.sidebarClose());
   },
 
+  dispatchSplitConsoleCloseButtonToggle: function() {
+    store.dispatch(actions.splitConsoleCloseButtonToggle(
+      this.toolbox && this.toolbox.currentToolId !== "webconsole"));
+  },
+
   batchedMessageUpdates: function(info) {
     this.queuedMessageUpdates.push(info);
     this.setTimeoutIfNeeded();
@@ -417,6 +423,11 @@ NewConsoleOutputWrapper.prototype = {
   
   getStore: function() {
     return store;
+  },
+
+  
+  closeSplitConsole() {
+    this.toolbox.closeSplitConsole();
   }
 };
 

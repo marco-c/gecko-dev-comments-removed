@@ -527,6 +527,7 @@ a.learn-more-link.webconsole-learn-more-link {
 
 
 
+
 .webconsole-filteringbar-wrapper {
   display: flex;
   grid-row: 1 / 2;
@@ -549,6 +550,10 @@ a.learn-more-link.webconsole-learn-more-link {
   width: 100%;
   align-items: center;
   -moz-user-select: none;
+}
+
+.split-console-close-button-wrapper {
+    min-height: var(--primary-toolbar-height);
 }
 
 .webconsole-filterbar-primary .devtools-plaininput {
@@ -1043,4 +1048,8 @@ html[dir="rtl"] .webconsole-output-wrapper img.collapse-button.arrow:not(.expand
 
 .theme-twisty {
   cursor: default;
+}
+
+#split-console-close-button::before {
+  background-image: var(--close-button-image);
 }
