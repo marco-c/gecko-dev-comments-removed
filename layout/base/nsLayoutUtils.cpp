@@ -196,7 +196,6 @@ typedef nsStyleTransformMatrix::TransformReferenceBox TransformReferenceBox;
  bool nsLayoutUtils::sInterruptibleReflowEnabled;
  bool nsLayoutUtils::sSVGTransformBoxEnabled;
  bool nsLayoutUtils::sTextCombineUprightDigitsEnabled;
- bool nsLayoutUtils::sStyloEnabled;
  uint32_t nsLayoutUtils::sIdlePeriodDeadlineLimit;
  uint32_t nsLayoutUtils::sQuiescentFramesBeforeIdlePeriod;
 
@@ -3273,7 +3272,7 @@ struct AutoNestedPaintCount {
     gPaintCountStack->AppendElement(0);
   }
   ~AutoNestedPaintCount() {
-    gPaintCountStack->RemoveLastElement();
+    gPaintCountStack->RemoveElementAt(gPaintCountStack->Length() - 1);
   }
 };
 
@@ -5826,7 +5825,8 @@ nsLayoutUtils::MarkDescendantsDirty(nsIFrame *aSubtreeRoot)
   
   
   do {
-    nsIFrame *subtreeRoot = subtrees.PopLastElement();
+    nsIFrame *subtreeRoot = subtrees.ElementAt(subtrees.Length() - 1);
+    subtrees.RemoveElementAt(subtrees.Length() - 1);
 
     
     
@@ -5836,7 +5836,8 @@ nsLayoutUtils::MarkDescendantsDirty(nsIFrame *aSubtreeRoot)
     stack.AppendElement(subtreeRoot);
 
     do {
-      nsIFrame *f = stack.PopLastElement();
+      nsIFrame *f = stack.ElementAt(stack.Length() - 1);
+      stack.RemoveElementAt(stack.Length() - 1);
 
       f->MarkIntrinsicISizesDirty();
 
@@ -5868,7 +5869,8 @@ nsLayoutUtils::MarkIntrinsicISizesDirtyIfDependentOnBSize(nsIFrame* aFrame)
   stack.AppendElement(aFrame);
 
   do {
-    nsIFrame* f = stack.PopLastElement();
+    nsIFrame* f = stack.ElementAt(stack.Length() - 1);
+    stack.RemoveElementAt(stack.Length() - 1);
 
     if (!f->HasAnyStateBits(
         NS_FRAME_DESCENDANT_INTRINSIC_ISIZE_DEPENDS_ON_BSIZE)) {
@@ -8277,8 +8279,6 @@ nsLayoutUtils::Initialize()
                                "svg.transform-box.enabled");
   Preferences::AddBoolVarCache(&sTextCombineUprightDigitsEnabled,
                                "layout.css.text-combine-upright-digits.enabled");
-  sStyloEnabled = true;
-
   Preferences::AddUintVarCache(&sIdlePeriodDeadlineLimit,
                                "layout.idle_period.time_limit",
                                DEFAULT_IDLE_PERIOD_TIME_LIMIT);
@@ -8308,20 +8308,6 @@ nsLayoutUtils::Shutdown()
 
   
   nsStyleList::Shutdown();
-}
-
-
-bool
-nsLayoutUtils::ShouldUseStylo(nsIPrincipal* aPrincipal)
-{
-  return true;
-}
-
-
-bool
-nsLayoutUtils::StyloChromeEnabled()
-{
-  return true;
 }
 
 

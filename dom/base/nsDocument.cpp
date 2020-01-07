@@ -1500,7 +1500,6 @@ nsIDocument::nsIDocument()
     mAsyncOnloadBlockCount(0),
     mCompatMode(eCompatibility_FullStandards),
     mReadyState(ReadyState::READYSTATE_UNINITIALIZED),
-    mStyleBackendType(StyleBackendType::None),
 #ifdef MOZILLA_INTERNAL_API
     mVisibilityState(dom::VisibilityState::Hidden),
 #else
@@ -2156,13 +2155,9 @@ nsDocument::Init()
 
   NS_ASSERTION(OwnerDoc() == this, "Our nodeinfo is busted!");
 
-  UpdateStyleBackendType();
-
   
   
-  mIsShadowDOMEnabled =
-    mStyleBackendType == StyleBackendType::Servo &&
-    nsContentUtils::IsShadowDOMEnabled();
+  mIsShadowDOMEnabled = nsContentUtils::IsShadowDOMEnabled();
 
   
   
@@ -6143,7 +6138,8 @@ nsIDocument::GetAnonymousElementByAttribute(nsIContent* aElement,
   if (!nodeList)
     return nullptr;
 
-  uint32_t length = nodeList->Length();
+  uint32_t length = 0;
+  nodeList->GetLength(&length);
 
   bool universalMatch = aAttrValue.EqualsLiteral("*");
 
@@ -8903,7 +8899,6 @@ nsDocument::CloneDocHelper(nsDocument* clone, bool aPreallocateChildren) const
   clone->mContentLanguage = mContentLanguage;
   clone->SetContentTypeInternal(GetContentTypeInternal());
   clone->mSecurityInfo = mSecurityInfo;
-  clone->mStyleBackendType = mStyleBackendType;
 
   
   clone->mType = mType;
@@ -12605,21 +12600,6 @@ nsIDocument::ReportHasScrollLinkedEffect()
                                   NS_LITERAL_CSTRING("Async Pan/Zoom"),
                                   this, nsContentUtils::eLAYOUT_PROPERTIES,
                                   "ScrollLinkedEffectFound2");
-}
-
-void
-nsIDocument::UpdateStyleBackendType()
-{
-  MOZ_ASSERT(mStyleBackendType == StyleBackendType::None,
-             "no need to call UpdateStyleBackendType now");
-
-  
-  mStyleBackendType = StyleBackendType::Gecko;
-
-  if (nsLayoutUtils::StyloEnabled() &&
-      nsLayoutUtils::ShouldUseStylo(NodePrincipal())) {
-    mStyleBackendType = StyleBackendType::Servo;
-  }
 }
 
 void

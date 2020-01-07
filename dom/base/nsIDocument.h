@@ -1737,24 +1737,13 @@ public:
     return mCSSLoader;
   }
 
-  mozilla::StyleBackendType GetStyleBackendType() const {
-    MOZ_ASSERT(mStyleBackendType != mozilla::StyleBackendType::None,
-               "Not initialized yet");
-    return mStyleBackendType;
+  mozilla::StyleBackendType GetStyleBackendType() const
+  {
+    return mozilla::StyleBackendType::Servo;
   }
 
-  
-
-
-
-
-
-  
-
-
-  void UpdateStyleBackendType();
-
-  bool IsStyledByServo() const {
+  bool IsStyledByServo() const
+  {
     return GetStyleBackendType() == mozilla::StyleBackendType::Servo;
   }
 
@@ -4224,10 +4213,6 @@ protected:
 
   
   ReadyState mReadyState;
-
-  
-  
-  mozilla::StyleBackendType mStyleBackendType;
 
 #ifdef MOZILLA_INTERNAL_API
   

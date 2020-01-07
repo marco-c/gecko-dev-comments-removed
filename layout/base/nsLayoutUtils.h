@@ -2521,36 +2521,6 @@ public:
     return sTextCombineUprightDigitsEnabled;
   }
 
-  
-  
-  
-  static bool StyloEnabled() {
-    return true;
-  }
-
-  
-  static bool StyloSupportedInCurrentProcess() {
-    if (XRE_IsContentProcess()) {
-      return true;
-    }
-    if (XRE_IsParentProcess()) {
-      
-      
-      if (StyloChromeEnabled()) {
-        return true;
-      }
-      
-      return !XRE_IsE10sParentProcess();
-    }
-    
-    MOZ_DIAGNOSTIC_ASSERT(false, "We should not be creating any document "
-                          "in processes other than content and parent");
-    return false;
-  }
-
-  
-  static bool StyloChromeEnabled();
-
   static uint32_t IdlePeriodDeadlineLimit() {
     return sIdlePeriodDeadlineLimit;
   }
@@ -2578,11 +2548,6 @@ public:
 
   static void Initialize();
   static void Shutdown();
-
-  
-
-
-  static bool ShouldUseStylo(nsIPrincipal* aPrincipal);
 
   
 
@@ -3101,7 +3066,6 @@ private:
   static bool sInterruptibleReflowEnabled;
   static bool sSVGTransformBoxEnabled;
   static bool sTextCombineUprightDigitsEnabled;
-  static bool sStyloEnabled;
   static uint32_t sIdlePeriodDeadlineLimit;
   static uint32_t sQuiescentFramesBeforeIdlePeriod;
 
