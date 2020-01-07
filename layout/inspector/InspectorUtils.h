@@ -167,6 +167,18 @@ public:
   }
   static bool IsIgnorableWhitespace(nsGenericDOMDataNode& aDataNode);
 
+  
+  
+  
+  static nsINode* GetParentForNode(nsINode& aNode,
+                                   bool aShowingAnonymousContent);
+  static nsINode* GetParentForNode(GlobalObject& aGlobalObject,
+                                   nsINode& aNode,
+                                   bool aShowingAnonymousContent)
+  {
+    return GetParentForNode(aNode, aShowingAnonymousContent);
+  }
+
 private:
   static already_AddRefed<nsStyleContext>
     GetCleanStyleContextForElement(Element* aElement, nsAtom* aPseudo);
