@@ -606,12 +606,6 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
       case EVENT_STATE_CHANGE:
         let { state, isEnabled } = event.QueryInterface(nsIAccessibleStateChangeEvent);
         let isBusy = state & Ci.nsIAccessibleStates.STATE_BUSY;
-        
-        if (isBusy && !isEnabled && rawAccessible instanceof Ci.nsIAccessibleDocument) {
-          
-          this.purgeSubtree(rawAccessible, event.DOMNode);
-        }
-
         if (accessible) {
           
           if (isBusy && isEnabled) {
