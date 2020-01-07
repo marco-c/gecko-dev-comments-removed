@@ -133,6 +133,9 @@ private:
   
   
   bool mSizeInitialized;
+  
+  
+  bool mNotifyDataEndedProcessed = false;
 };
 
 } 
