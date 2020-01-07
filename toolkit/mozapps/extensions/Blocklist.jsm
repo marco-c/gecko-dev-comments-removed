@@ -13,7 +13,7 @@ var EXPORTED_SYMBOLS = ["Blocklist"];
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
-XPCOMUtils.defineLazyGlobalGetters(this, ["DOMParser"]);
+XPCOMUtils.defineLazyGlobalGetters(this, ["XMLHttpRequest"]);
 
 ChromeUtils.defineModuleGetter(this, "AddonManager",
                                "resource://gre/modules/AddonManager.jsm");
@@ -29,6 +29,65 @@ ChromeUtils.defineModuleGetter(this, "OS",
                                "resource://gre/modules/osfile.jsm");
 ChromeUtils.defineModuleGetter(this, "ServiceRequest",
                                "resource://gre/modules/ServiceRequest.jsm");
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -313,8 +372,20 @@ var Blocklist = {
           break;
         case PREF_BLOCKLIST_ENABLED:
           gBlocklistEnabled = Services.prefs.getBoolPref(PREF_BLOCKLIST_ENABLED, true);
-          this._loadBlocklist();
-          this._blocklistUpdated(null, null);
+          
+          
+          
+          
+          let lastUpdate = this._lastUpdate || undefined;
+          let newUpdate = this._lastUpdate = (async () => {
+            await lastUpdate;
+            this._clear();
+            await this.loadBlocklistAsync();
+            await this._blocklistUpdated(null, null);
+            if (newUpdate == this._lastUpdate) {
+              delete this._lastUpdate;
+            }
+          })().catch(Cu.reportError);
           break;
         case PREF_BLOCKLIST_LEVEL:
           gBlocklistLevel = Math.min(Services.prefs.getIntPref(PREF_BLOCKLIST_LEVEL, DEFAULT_LEVEL),
@@ -617,11 +688,6 @@ var Blocklist = {
 
     
     
-    if (!this.isLoaded)
-      this._loadBlocklist();
-
-    
-    
     if (Services.prefs.getBoolPref(PREF_BLOCKLIST_UPDATE_ENABLED)) {
       RemoteSettings.pollChanges().catch(() => {
         
@@ -658,6 +724,10 @@ var Blocklist = {
     
     const lastModified = request.getResponseHeader("Last-Modified") || "";
     Services.prefs.setCharPref(PREF_BLOCKLIST_LAST_MODIFIED, lastModified);
+
+    if (!this.isLoaded) {
+      await this.loadBlocklistAsync();
+    }
 
     var oldAddonEntries = this._addonEntries;
     var oldPluginEntries = this._pluginEntries;
@@ -699,135 +769,6 @@ var Blocklist = {
   
 
 
-
-  _loadBlocklist() {
-    this._addonEntries = [];
-    this._gfxEntries = [];
-    this._pluginEntries = [];
-
-    Services.telemetry.getHistogramById("BLOCKLIST_SYNC_FILE_LOAD").add(true);
-
-    var profFile = FileUtils.getFile(KEY_PROFILEDIR, [FILE_BLOCKLIST]);
-    try {
-      this._loadBlocklistFromFile(profFile);
-    } catch (ex) {
-      LOG("Blocklist::_loadBlocklist: couldn't load file from profile, trying app dir");
-      try {
-        var appFile = FileUtils.getFile(KEY_APPDIR, [FILE_BLOCKLIST]);
-        this._loadBlocklistFromFile(appFile);
-      } catch (ex) {
-        LOG("Blocklist::_loadBlocklist: no XML File found");
-      }
-    }
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  _loadBlocklistFromFile(file) {
-    if (!gBlocklistEnabled) {
-      LOG("Blocklist::_loadBlocklistFromFile: blocklist is disabled");
-      return;
-    }
-
-    let text = "";
-    let fstream = null;
-    let cstream = null;
-
-    try {
-      fstream = Cc["@mozilla.org/network/file-input-stream;1"]
-                  .createInstance(Ci.nsIFileInputStream);
-      cstream = Cc["@mozilla.org/intl/converter-input-stream;1"]
-                  .createInstance(Ci.nsIConverterInputStream);
-
-      fstream.init(file, FileUtils.MODE_RDONLY, FileUtils.PERMS_FILE, 0);
-      cstream.init(fstream, "UTF-8", 0, 0);
-
-      let str = {};
-      let read = 0;
-
-      do {
-        read = cstream.readString(0xffffffff, str); 
-        text += str.value;
-      } while (read != 0);
-    } finally {
-      
-      
-      if (cstream) {
-        try {
-          cstream.close();
-        } catch (ex) {}
-      }
-      if (fstream) {
-        try {
-          fstream.close();
-        } catch (ex) {}
-      }
-    }
-
-    if (text)
-      this._loadBlocklistFromString(text);
-  },
-
-  
-
-
   get isLoaded() {
     return this._addonEntries != null && this._gfxEntries != null && this._pluginEntries != null;
   },
@@ -856,8 +797,8 @@ var Blocklist = {
   async _loadBlocklistAsyncInternal() {
     try {
       
-      let profPath = OS.Path.join(OS.Constants.Path.profileDir, FILE_BLOCKLIST);
-      await this._preloadBlocklistFile(profPath);
+      let profFile = FileUtils.getFile(KEY_PROFILEDIR, [FILE_BLOCKLIST]);
+      await this._preloadBlocklistFile(profFile);
       return;
     } catch (e) {
       LOG("Blocklist::loadBlocklistAsync: Failed to load XML file " + e);
@@ -865,7 +806,7 @@ var Blocklist = {
 
     var appFile = FileUtils.getFile(KEY_APPDIR, [FILE_BLOCKLIST]);
     try {
-      await this._preloadBlocklistFile(appFile.path);
+      await this._preloadBlocklistFile(appFile);
       return;
     } catch (e) {
       LOG("Blocklist::loadBlocklistAsync: Failed to load XML file " + e);
@@ -879,7 +820,7 @@ var Blocklist = {
     this._pluginEntries = [];
   },
 
-  async _preloadBlocklistFile(path) {
+  async _preloadBlocklistFile(file) {
     if (this.isLoaded) {
       return;
     }
@@ -889,34 +830,39 @@ var Blocklist = {
       return;
     }
 
-    let text = await OS.File.read(path, { encoding: "utf-8" });
+    let xmlDoc = await new Promise((resolve, reject) => {
+      let request = new XMLHttpRequest();
+      request.open("GET", Services.io.newFileURI(file).spec, true);
+      request.overrideMimeType("text/xml");
+      request.addEventListener("error", reject);
+      request.addEventListener("load", function() {
+        let {status} = request;
+        if (status != 200 && status != 0) {
+          LOG("_preloadBlocklistFile: there was an error during load, got status: " + status);
+          reject(new Error("Couldn't load blocklist file"));
+          return;
+        }
+        let doc = request.responseXML;
+        if (doc.documentElement.namespaceURI != XMLURI_BLOCKLIST) {
+          LOG("Blocklist::_loadBlocklistFromString: aborting due to incorrect " +
+              "XML Namespace.\nExpected: " + XMLURI_BLOCKLIST + "\n" +
+              "Received: " + doc.documentElement.namespaceURI);
+          reject(new Error("Local blocklist file has the wrong namespace!"));
+          return;
+        }
+        resolve(doc);
+      });
+      request.send(null);
+    });
 
-    await new Promise((resolve, reject) => {
+    await new Promise(resolve => {
       ChromeUtils.idleDispatch(() => {
         if (!this.isLoaded) {
-          Services.telemetry.getHistogramById("BLOCKLIST_SYNC_FILE_LOAD").add(false);
-          try {
-            this._loadBlocklistFromString(text);
-          } catch (ex) {
-            
-            reject(ex);
-          }
+          this._loadBlocklistFromXML(xmlDoc);
         }
         resolve();
       });
     });
-  },
-
-  _loadBlocklistFromString(text) {
-    var parser = new DOMParser();
-    var doc = parser.parseFromString(text, "text/xml");
-    if (doc.documentElement.namespaceURI != XMLURI_BLOCKLIST) {
-      LOG("Blocklist::_loadBlocklistFromString: aborting due to incorrect " +
-          "XML Namespace.\r\nExpected: " + XMLURI_BLOCKLIST + "\r\n" +
-          "Received: " + doc.documentElement.namespaceURI);
-      throw new Error("Couldn't find an XML doc with the right namespace!");
-    }
-    this._loadBlocklistFromXML(doc);
   },
 
   _loadBlocklistFromXML(doc) {
