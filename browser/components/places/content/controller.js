@@ -131,7 +131,6 @@ PlacesController.prototype = {
       return PlacesTransactions.topRedoEntry != null;
     case "cmd_cut":
     case "placesCmd_cut":
-    case "placesCmd_moveBookmarks":
       for (let node of this._view.selectedNodes) {
         
         
@@ -267,9 +266,6 @@ PlacesController.prototype = {
       break;
     case "placesCmd_show:info":
       this.showBookmarkPropertiesForSelection();
-      break;
-    case "placesCmd_moveBookmarks":
-      this.moveSelectedBookmarks().catch(Components.utils.reportError);
       break;
     case "placesCmd_reload":
       this.reloadSelectedLivemark();
@@ -765,45 +761,6 @@ PlacesController.prototype = {
     let guid = await txn.transact();
     
     this._view.selectItems([guid], false);
-  },
-
-  
-
-
-  async moveSelectedBookmarks() {
-    let args = {
-      
-      
-      moveToGuid: null,
-      
-      nodes: this._view.selectedNodes,
-    };
-    window.openDialog("chrome://browser/content/places/moveBookmarks.xul",
-                      "", "chrome, modal",
-                      args);
-
-    if (!args.moveToGuid) {
-      return;
-    }
-
-    let transactions = [];
-
-    for (let node of this._view.selectedNodes) {
-      
-      if (node.parent.bookmarkGuid == args.moveToGuid) {
-        continue;
-      }
-      transactions.push(PlacesTransactions.Move({
-        guid: node.bookmarkGuid,
-        newParentGuid: args.moveToGuid,
-      }));
-    }
-
-    if (transactions.length) {
-      await PlacesUIUtils.batchUpdatesForNode(this._view.result, transactions.length, async () => {
-        await PlacesTransactions.batch(transactions);
-      });
-    }
   },
 
   
@@ -1744,7 +1701,6 @@ function goUpdatePlacesCommands() {
   updatePlacesCommand("placesCmd_new:bookmark");
   updatePlacesCommand("placesCmd_new:separator");
   updatePlacesCommand("placesCmd_show:info");
-  updatePlacesCommand("placesCmd_moveBookmarks");
   updatePlacesCommand("placesCmd_reload");
   updatePlacesCommand("placesCmd_sortBy:name");
   updatePlacesCommand("placesCmd_cut");
