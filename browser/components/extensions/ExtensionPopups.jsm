@@ -360,7 +360,9 @@ class BasePopup {
     if (!background) {
       background = "#fff";
     }
-    this.panel.style.setProperty("--arrowpanel-background", background);
+    if (this.panel.id != "widget-overflow") {
+      this.panel.style.setProperty("--arrowpanel-background", background);
+    }
     if (background == "#fff") {
       
       this.panel.style.setProperty("--arrowpanel-border-color", "hsla(210,4%,10%,.15)");
