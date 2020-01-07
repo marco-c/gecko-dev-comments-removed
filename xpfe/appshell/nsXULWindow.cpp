@@ -274,9 +274,8 @@ NS_IMETHODIMP nsXULWindow::SetChromeFlags(uint32_t aChromeFlags)
                "SetChromeFlags() after AssumeChromeFlagsAreFrozen()!");
 
   mChromeFlags = aChromeFlags;
-  if (mChromeLoaded) {
-    ApplyChromeFlags();
-  }
+  if (mChromeLoaded)
+    NS_ENSURE_SUCCESS(ApplyChromeFlags(), NS_ERROR_FAILURE);
   return NS_OK;
 }
 
@@ -1084,7 +1083,82 @@ void nsXULWindow::OnChromeLoaded()
     mChromeLoaded = true;
     ApplyChromeFlags();
     SyncAttributesToWidget();
-    SizeShell();
+
+    int32_t specWidth = -1, specHeight = -1;
+    bool gotSize = false;
+    bool isContent = false;
+
+    GetHasPrimaryContent(&isContent);
+
+    CSSIntSize windowDiff = mWindow
+      ? RoundedToInt(GetWindowOuterInnerDiff(mWindow) /
+                     mWindow->GetDefaultScale())
+      : CSSIntSize();
+
+    
+    
+    if (isContent && nsContentUtils::ShouldResistFingerprinting()) {
+      ForceRoundedDimensions();
+    } else if (!mIgnoreXULSize) {
+      gotSize = LoadSizeFromXUL(specWidth, specHeight);
+      specWidth += windowDiff.width;
+      specHeight += windowDiff.height;
+    }
+
+    bool positionSet = !mIgnoreXULPosition;
+    nsCOMPtr<nsIXULWindow> parentWindow(do_QueryReferent(mParentWindow));
+#if defined(XP_UNIX) && !defined(XP_MACOSX)
+    
+    
+    
+    if (!parentWindow)
+      positionSet = false;
+#endif
+    if (positionSet) {
+      
+      
+      
+      
+      positionSet = LoadPositionFromXUL(specWidth, specHeight);
+    }
+
+    if (gotSize) {
+      SetSpecifiedSize(specWidth, specHeight);
+    }
+
+    if (mIntrinsicallySized) {
+      
+      nsCOMPtr<nsIContentViewer> cv;
+      mDocShell->GetContentViewer(getter_AddRefs(cv));
+      if (cv) {
+        nsCOMPtr<nsIDocShellTreeItem> docShellAsItem = do_QueryInterface(mDocShell);
+        nsCOMPtr<nsIDocShellTreeOwner> treeOwner;
+        docShellAsItem->GetTreeOwner(getter_AddRefs(treeOwner));
+        if (treeOwner) {
+          
+          
+          int32_t width = 0, height = 0;
+          if (NS_SUCCEEDED(cv->GetContentSize(&width, &height))) {
+            treeOwner->SizeShellTo(docShellAsItem, width, height);
+            
+            specWidth = width + windowDiff.width;
+            specHeight = height + windowDiff.height;
+          }
+        }
+      }
+    }
+
+    
+    
+    if (positionSet) {
+      LoadPositionFromXUL(specWidth, specHeight);
+    }
+
+    LoadMiscPersistentAttributesFromXUL();
+
+    if (mCenterAfterLoad && !positionSet) {
+      Center(parentWindow, parentWindow ? false : true, false);
+    }
 
     if (mShowAfterLoad) {
       SetVisibility(true);
@@ -2188,13 +2262,10 @@ void nsXULWindow::PersistentAttributesDirty(uint32_t aDirtyFlags)
   mPersistentAttributesDirty |= aDirtyFlags & mPersistentAttributesMask;
 }
 
-void
-nsXULWindow::ApplyChromeFlags()
+NS_IMETHODIMP nsXULWindow::ApplyChromeFlags()
 {
   nsCOMPtr<dom::Element> window = GetWindowDOMElement();
-  if (!window) {
-    return;
-  }
+  NS_ENSURE_TRUE(window, NS_ERROR_FAILURE);
 
   if (mChromeLoaded) {
     
@@ -2233,97 +2304,10 @@ nsXULWindow::ApplyChromeFlags()
 
   
   
-  IgnoredErrorResult rv;
+  ErrorResult rv;
   window->SetAttribute(NS_LITERAL_STRING("chromehidden"), newvalue, rv);
-}
 
-NS_IMETHODIMP
-nsXULWindow::BeforeStartLayout()
-{
-  ApplyChromeFlags();
-  SyncAttributesToWidget();
-  SizeShell();
   return NS_OK;
-}
-
-void
-nsXULWindow::SizeShell()
-{
-  int32_t specWidth = -1, specHeight = -1;
-  bool gotSize = false;
-  bool isContent = false;
-
-  GetHasPrimaryContent(&isContent);
-
-  CSSIntSize windowDiff = mWindow
-    ? RoundedToInt(GetWindowOuterInnerDiff(mWindow) /
-                   mWindow->GetDefaultScale())
-    : CSSIntSize();
-
-  
-  
-  if (isContent && nsContentUtils::ShouldResistFingerprinting()) {
-    ForceRoundedDimensions();
-  } else if (!mIgnoreXULSize) {
-    gotSize = LoadSizeFromXUL(specWidth, specHeight);
-    specWidth += windowDiff.width;
-    specHeight += windowDiff.height;
-  }
-
-  bool positionSet = !mIgnoreXULPosition;
-  nsCOMPtr<nsIXULWindow> parentWindow(do_QueryReferent(mParentWindow));
-#if defined(XP_UNIX) && !defined(XP_MACOSX)
-  
-  
-  
-  if (!parentWindow)
-    positionSet = false;
-#endif
-  if (positionSet) {
-    
-    
-    
-    
-    positionSet = LoadPositionFromXUL(specWidth, specHeight);
-  }
-
-  if (gotSize) {
-    SetSpecifiedSize(specWidth, specHeight);
-  }
-
-  if (mIntrinsicallySized) {
-    
-    nsCOMPtr<nsIContentViewer> cv;
-    mDocShell->GetContentViewer(getter_AddRefs(cv));
-    if (cv) {
-      nsCOMPtr<nsIDocShellTreeItem> docShellAsItem = do_QueryInterface(mDocShell);
-      nsCOMPtr<nsIDocShellTreeOwner> treeOwner;
-      docShellAsItem->GetTreeOwner(getter_AddRefs(treeOwner));
-      if (treeOwner) {
-        
-        
-        int32_t width = 0, height = 0;
-        if (NS_SUCCEEDED(cv->GetContentSize(&width, &height))) {
-          treeOwner->SizeShellTo(docShellAsItem, width, height);
-          
-          specWidth = width + windowDiff.width;
-          specHeight = height + windowDiff.height;
-        }
-      }
-    }
-  }
-
-  
-  
-  if (positionSet) {
-    LoadPositionFromXUL(specWidth, specHeight);
-  }
-
-  LoadMiscPersistentAttributesFromXUL();
-
-  if (mChromeLoaded && mCenterAfterLoad && !positionSet) {
-    Center(parentWindow, parentWindow ? false : true, false);
-  }
 }
 
 NS_IMETHODIMP nsXULWindow::GetXULBrowserWindow(nsIXULBrowserWindow * *aXULBrowserWindow)

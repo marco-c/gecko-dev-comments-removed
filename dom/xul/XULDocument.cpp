@@ -2661,28 +2661,29 @@ XULDocument::DoneWalking()
 
         NotifyPossibleTitleChange(false);
 
-        nsContentUtils::DispatchTrustedEvent(
-            this,
-            static_cast<nsIDocument*>(this),
-            NS_LITERAL_STRING("MozBeforeInitialXULLayout"),
-            true,
-            false);
-
         
         
         
-        if (nsCOMPtr<nsIDocShellTreeItem> item = GetDocShell()) {
+        nsCOMPtr<nsIDocShellTreeItem> item = GetDocShell();
+        if (item) {
             nsCOMPtr<nsIDocShellTreeOwner> owner;
             item->GetTreeOwner(getter_AddRefs(owner));
-            if (nsCOMPtr<nsIXULWindow> xulWin = do_GetInterface(owner)) {
+            nsCOMPtr<nsIXULWindow> xulWin = do_GetInterface(owner);
+            if (xulWin) {
                 nsCOMPtr<nsIDocShell> xulWinShell;
                 xulWin->GetDocShell(getter_AddRefs(xulWinShell));
                 if (SameCOMIdentity(xulWinShell, item)) {
                     
-                    xulWin->BeforeStartLayout();
+                    xulWin->ApplyChromeFlags();
                 }
             }
         }
+
+        nsContentUtils::DispatchTrustedEvent(this,
+                static_cast<nsIDocument*>(this),
+                NS_LITERAL_STRING("MozBeforeInitialXULLayout"),
+                true,
+                false);
 
         StartLayout();
 
