@@ -2506,9 +2506,6 @@ var SessionStoreInternal = {
     tabbrowser.moveTabTo(tab, pos);
 
     
-    tab.linkedBrowser.focus();
-
-    
     this._notifyOfClosedObjectsChange();
 
     return tab;
@@ -4019,6 +4016,11 @@ var SessionStoreInternal = {
        reason: aOptions.restoreContentReason ||
                RESTORE_TAB_CONTENT_REASON.SET_STATE,
        requestTime: Services.telemetry.msSystemNow()});
+
+    
+    if (aTab.selected) {
+      browser.focus();
+    }
   },
 
   
