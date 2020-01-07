@@ -618,6 +618,37 @@ static const nsRoleMapEntry sWAIRoleMaps[] =
     kNoReqStates
   },
   { 
+    &nsGkAtoms::graphicsDocument,
+    roles::DOCUMENT,
+    kUseMapRole,
+    eNoValue,
+    eNoAction,
+    eNoLiveAttr,
+    kGenericAccType,
+    kNoReqStates,
+    eReadonlyUntilEditable
+  },
+  { 
+    &nsGkAtoms::graphicsObject,
+    roles::GROUPING,
+    kUseMapRole,
+    eNoValue,
+    eNoAction,
+    eNoLiveAttr,
+    kGenericAccType,
+    kNoReqStates
+  },
+  { 
+    &nsGkAtoms::graphicsSymbol,
+    roles::GRAPHIC,
+    kUseMapRole,
+    eNoValue,
+    eNoAction,
+    eNoLiveAttr,
+    kGenericAccType,
+    kNoReqStates
+  },
+  { 
     &nsGkAtoms::grid,
     roles::TABLE,
     kUseMapRole,
