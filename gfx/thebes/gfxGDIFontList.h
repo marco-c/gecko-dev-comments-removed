@@ -163,7 +163,10 @@ public:
 
     gfxFontEntry* Clone() const override;
 
+    
     bool HasVariations() override { return false; }
+    void GetVariationAxes(nsTArray<gfxFontVariationAxis>&) override {}
+    void GetVariationInstances(nsTArray<gfxFontVariationInstance>&) override {}
 
     
     static GDIFontEntry* CreateFontEntry(const nsAString& aName,
