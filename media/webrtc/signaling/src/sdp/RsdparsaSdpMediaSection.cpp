@@ -260,8 +260,6 @@ RsdparsaSdpMediaSection::LoadConnection()
       mConnection = convertRustConnection(conn);
     }
   } else if (sdp_session_has_connection(mSession.get())){
-    
-    
     nr = sdp_get_session_connection(mSession.get(), &conn);
     if (NS_SUCCEEDED(nr)) {
       mConnection = convertRustConnection(conn);
