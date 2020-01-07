@@ -273,8 +273,12 @@ public:
 
 
 
+
+
+
   static nsresult CreateCGImageFromSurface(SourceSurface* aSurface,
-                                           CGImageRef* aResult);
+                                           CGImageRef* aResult,
+                                           bool* aIsEntirelyBlack = nullptr);
   
   
 
