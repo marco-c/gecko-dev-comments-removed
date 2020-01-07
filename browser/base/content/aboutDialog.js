@@ -78,6 +78,9 @@ function init(aEvent) {
         currentChannelText.hidden = true;
   }
 
+  if (AppConstants.MOZ_UPDATE_CHANNEL == "esr") {
+    document.getElementById("release").hidden = false;
+  }
   if (AppConstants.platform == "macosx") {
     
     window.sizeToContent();
