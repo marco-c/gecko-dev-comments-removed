@@ -131,6 +131,18 @@ void
 a11y::ProxyFocusEvent(ProxyAccessible* aTarget,
                       const LayoutDeviceIntRect& aCaretRect)
 {
+  FocusManager* focusMgr = FocusMgr();
+  if (focusMgr && focusMgr->FocusedAccessible()) {
+    
+    
+    
+    
+    
+    
+    
+    return;
+  }
+
   AccessibleWrap::UpdateSystemCaretFor(aTarget, aCaretRect);
   AccessibleWrap::FireWinEvent(WrapperFor(aTarget),
                                nsIAccessibleEvent::EVENT_FOCUS);
