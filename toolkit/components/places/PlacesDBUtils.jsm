@@ -227,8 +227,6 @@ this.PlacesDBUtils = {
   },
 
   async _getCoherenceStatements() {
-    let updateRootTitleSql = `UPDATE moz_bookmarks SET title = :title
-                              WHERE id = :root_id AND title <> :title`;
     let cleanupStatements = [
       
       
@@ -283,47 +281,6 @@ this.PlacesDBUtils = {
           WHERE NOT EXISTS
             (SELECT id FROM moz_places WHERE id = a.place_id LIMIT 1)
         )`
-      },
-
-      
-      
-      
-      
-      { query: updateRootTitleSql,
-        params: {
-          root_id: PlacesUtils.placesRootId,
-          title: "",
-        }
-      },
-      { query: updateRootTitleSql,
-        params: {
-          root_id: PlacesUtils.bookmarksMenuFolderId,
-          title: PlacesUtils.getString("BookmarksMenuFolderTitle"),
-        }
-      },
-      { query: updateRootTitleSql,
-        params: {
-          root_id: PlacesUtils.bookmarksMenuFolderId,
-          title: PlacesUtils.getString("BookmarksMenuFolderTitle"),
-        }
-      },
-      { query: updateRootTitleSql,
-        params: {
-          root_id: PlacesUtils.toolbarFolderId,
-          title: PlacesUtils.getString("BookmarksToolbarFolderTitle"),
-        }
-      },
-      { query: updateRootTitleSql,
-        params: {
-          root_id: PlacesUtils.unfiledBookmarksFolderId,
-          title: PlacesUtils.getString("OtherBookmarksFolderTitle"),
-        }
-      },
-      { query: updateRootTitleSql,
-        params: {
-          root_id: PlacesUtils.tagsFolderId,
-          title: PlacesUtils.getString("TagsFolderTitle"),
-        }
       },
 
       

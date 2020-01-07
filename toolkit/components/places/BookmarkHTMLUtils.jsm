@@ -920,8 +920,12 @@ function BookmarkExporter(aBookmarksTree) {
   
   let rootsMap = new Map();
   for (let child of aBookmarksTree.children) {
-    if (child.root)
+    if (child.root) {
       rootsMap.set(child.root, child);
+      
+      
+      child.title = PlacesUtils.bookmarks.getLocalizedTitle(child);
+    }
   }
 
   

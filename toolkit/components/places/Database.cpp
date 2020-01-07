@@ -226,7 +226,7 @@ SetJournalMode(nsCOMPtr<mozIStorageConnection>& aDBConn,
 nsresult
 CreateRoot(nsCOMPtr<mozIStorageConnection>& aDBConn,
            const nsCString& aRootName, const nsCString& aGuid,
-           const nsAString& titleString)
+           const nsCString& titleString)
 {
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -258,7 +258,7 @@ CreateRoot(nsCOMPtr<mozIStorageConnection>& aDBConn,
   rv = stmt->BindInt32ByName(NS_LITERAL_CSTRING("item_position"), itemPosition);
   if (NS_FAILED(rv)) return rv;
   rv = stmt->BindUTF8StringByName(NS_LITERAL_CSTRING("item_title"),
-                                  NS_ConvertUTF16toUTF8(titleString));
+                                  titleString);
   if (NS_FAILED(rv)) return rv;
   rv = stmt->BindInt64ByName(NS_LITERAL_CSTRING("date_added"), timestamp);
   if (NS_FAILED(rv)) return rv;
@@ -1227,11 +1227,6 @@ Database::InitSchema(bool* aDatabaseMigrated)
       
       
       
-
-      rv = UpdateBookmarkRootTitles();
-      
-      
-      MOZ_ASSERT(NS_SUCCEEDED(rv));
     }
   }
   else {
@@ -1334,42 +1329,29 @@ Database::CreateBookmarkRoots()
 {
   MOZ_ASSERT(NS_IsMainThread());
 
-  nsCOMPtr<nsIStringBundleService> bundleService =
-    services::GetStringBundleService();
-  NS_ENSURE_STATE(bundleService);
-  nsCOMPtr<nsIStringBundle> bundle;
-  nsresult rv = bundleService->CreateBundle(PLACES_BUNDLE, getter_AddRefs(bundle));
-  if (NS_FAILED(rv)) return rv;
-
-  nsAutoString rootTitle;
   
-  rv = CreateRoot(mMainConn, NS_LITERAL_CSTRING("places"),
-                  NS_LITERAL_CSTRING("root________"), rootTitle);
+  nsresult rv = CreateRoot(mMainConn, NS_LITERAL_CSTRING("places"),
+                           NS_LITERAL_CSTRING("root________"), EmptyCString());
   if (NS_FAILED(rv)) return rv;
 
   
-  rv = bundle->GetStringFromName("BookmarksMenuFolderTitle", rootTitle);
-  if (NS_FAILED(rv)) return rv;
+  
+
   rv = CreateRoot(mMainConn, NS_LITERAL_CSTRING("menu"),
-                  NS_LITERAL_CSTRING("menu________"), rootTitle);
+                  NS_LITERAL_CSTRING("menu________"), NS_LITERAL_CSTRING("menu"));
   if (NS_FAILED(rv)) return rv;
 
-  rv = bundle->GetStringFromName("BookmarksToolbarFolderTitle", rootTitle);
-  if (NS_FAILED(rv)) return rv;
   rv = CreateRoot(mMainConn, NS_LITERAL_CSTRING("toolbar"),
-                  NS_LITERAL_CSTRING("toolbar_____"), rootTitle);
+                  NS_LITERAL_CSTRING("toolbar_____"), NS_LITERAL_CSTRING("toolbar"));
   if (NS_FAILED(rv)) return rv;
 
-  rv = bundle->GetStringFromName("TagsFolderTitle", rootTitle);
-  if (NS_FAILED(rv)) return rv;
   rv = CreateRoot(mMainConn, NS_LITERAL_CSTRING("tags"),
-                  NS_LITERAL_CSTRING("tags________"), rootTitle);
+                  NS_LITERAL_CSTRING("tags________"), NS_LITERAL_CSTRING("tags"));
   if (NS_FAILED(rv)) return rv;
 
-  rv = bundle->GetStringFromName("OtherBookmarksFolderTitle", rootTitle);
   if (NS_FAILED(rv)) return rv;
   rv = CreateRoot(mMainConn, NS_LITERAL_CSTRING("unfiled"),
-                  NS_LITERAL_CSTRING("unfiled_____"), rootTitle);
+                  NS_LITERAL_CSTRING("unfiled_____"), NS_LITERAL_CSTRING("unfiled"));
   if (NS_FAILED(rv)) return rv;
 
   int64_t mobileRootId = CreateMobileRoot();
@@ -1483,69 +1465,6 @@ Database::InitTempEntities()
   NS_ENSURE_SUCCESS(rv, rv);
   rv = mMainConn->ExecuteSimpleSQL(CREATE_KEYWORDS_FOREIGNCOUNT_AFTERUPDATE_TRIGGER);
   NS_ENSURE_SUCCESS(rv, rv);
-
-  return NS_OK;
-}
-
-nsresult
-Database::UpdateBookmarkRootTitles()
-{
-  MOZ_ASSERT(NS_IsMainThread());
-
-  nsCOMPtr<nsIStringBundleService> bundleService =
-    services::GetStringBundleService();
-  NS_ENSURE_STATE(bundleService);
-
-  nsCOMPtr<nsIStringBundle> bundle;
-  nsresult rv = bundleService->CreateBundle(PLACES_BUNDLE, getter_AddRefs(bundle));
-  if (NS_FAILED(rv)) return rv;
-
-  nsCOMPtr<mozIStorageAsyncStatement> stmt;
-  rv = mMainConn->CreateAsyncStatement(NS_LITERAL_CSTRING(
-    "UPDATE moz_bookmarks SET title = :new_title WHERE guid = :guid"
-  ), getter_AddRefs(stmt));
-  if (NS_FAILED(rv)) return rv;
-
-  nsCOMPtr<mozIStorageBindingParamsArray> paramsArray;
-  rv = stmt->NewBindingParamsArray(getter_AddRefs(paramsArray));
-  if (NS_FAILED(rv)) return rv;
-
-  const char *rootGuids[] = { "menu________"
-                            , "toolbar_____"
-                            , "tags________"
-                            , "unfiled_____"
-                            , "mobile______"
-                            };
-  const char *titleStringIDs[] = { "BookmarksMenuFolderTitle"
-                                 , "BookmarksToolbarFolderTitle"
-                                 , "TagsFolderTitle"
-                                 , "OtherBookmarksFolderTitle"
-                                 , "MobileBookmarksFolderTitle"
-                                 };
-
-  for (uint32_t i = 0; i < ArrayLength(rootGuids); ++i) {
-    nsAutoString title;
-    rv = bundle->GetStringFromName(titleStringIDs[i], title);
-    if (NS_FAILED(rv)) return rv;
-
-    nsCOMPtr<mozIStorageBindingParams> params;
-    rv = paramsArray->NewBindingParams(getter_AddRefs(params));
-    if (NS_FAILED(rv)) return rv;
-    rv = params->BindUTF8StringByName(NS_LITERAL_CSTRING("guid"),
-                                      nsDependentCString(rootGuids[i]));
-    if (NS_FAILED(rv)) return rv;
-    rv = params->BindUTF8StringByName(NS_LITERAL_CSTRING("new_title"),
-                                      NS_ConvertUTF16toUTF8(title));
-    if (NS_FAILED(rv)) return rv;
-    rv = paramsArray->AddParams(params);
-    if (NS_FAILED(rv)) return rv;
-  }
-
-  rv = stmt->BindParameters(paramsArray);
-  if (NS_FAILED(rv)) return rv;
-  nsCOMPtr<mozIStoragePendingStatement> pendingStmt;
-  rv = stmt->ExecuteAsync(nullptr, getter_AddRefs(pendingStmt));
-  if (NS_FAILED(rv)) return rv;
 
   return NS_OK;
 }

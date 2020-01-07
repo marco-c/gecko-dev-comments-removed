@@ -23,12 +23,8 @@ add_task(async function() {
         
         let namepicker = dialogWin.document.getElementById("editBMPanel_namePicker");
         Assert.ok(namepicker.readOnly, "Name field is read-only");
-        let bookmark = await PlacesUtils.bookmarks.fetch(PlacesUtils.bookmarks.unfiledGuid);
-        Assert.equal(namepicker.value, bookmark.title, "Node title is correct");
-        
-        namepicker.blur();
-        bookmark = await PlacesUtils.bookmarks.fetch(PlacesUtils.bookmarks.unfiledGuid);
-        Assert.equal(namepicker.value, bookmark.title, "Root title is correct");
+        Assert.equal(namepicker.value,
+          PlacesUtils.getString("OtherBookmarksFolderTitle"), "Node title is correct");
       }
     );
   });

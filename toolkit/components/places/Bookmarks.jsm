@@ -185,6 +185,38 @@ var Bookmarks = Object.freeze({
 
 
 
+  getLocalizedTitle(info) {
+    if (!PlacesUtils.bookmarks.userContentRoots.includes(info.guid)) {
+      return info.title;
+    }
+
+    switch (info.guid) {
+      case PlacesUtils.bookmarks.toolbarGuid:
+        return PlacesUtils.getString("BookmarksToolbarFolderTitle");
+      case PlacesUtils.bookmarks.menuGuid:
+        return PlacesUtils.getString("BookmarksMenuFolderTitle");
+      case PlacesUtils.bookmarks.unfiledGuid:
+        return PlacesUtils.getString("OtherBookmarksFolderTitle");
+      case PlacesUtils.bookmarks.mobileGuid:
+        return PlacesUtils.getString("MobileBookmarksFolderTitle");
+      default:
+        throw new Error(`Unsupported guid ${info.guid} passed to getLocalizedTitle!`);
+    }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
