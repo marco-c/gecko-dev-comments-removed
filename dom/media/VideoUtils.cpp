@@ -417,8 +417,9 @@ bool ExtractVPXCodecDetails(const nsAString& aCodec,
 
 bool
 ExtractH264CodecDetails(const nsAString& aCodec,
-                        int16_t& aProfile,
-                        int16_t& aLevel)
+                        uint8_t& aProfile,
+                        uint8_t& aConstraint,
+                        uint8_t& aLevel)
 {
   
   
@@ -442,6 +443,11 @@ ExtractH264CodecDetails(const nsAString& aCodec,
   aProfile = PromiseFlatString(Substring(aCodec, 5, 2)).ToInteger(&rv, 16);
   NS_ENSURE_SUCCESS(rv, false);
 
+  
+  
+  aConstraint = PromiseFlatString(Substring(aCodec, 7, 2)).ToInteger(&rv, 16);
+  NS_ENSURE_SUCCESS(rv, false);
+
   aLevel = PromiseFlatString(Substring(aCodec, 9, 2)).ToInteger(&rv, 16);
   NS_ENSURE_SUCCESS(rv, false);
 
@@ -453,12 +459,8 @@ ExtractH264CodecDetails(const nsAString& aCodec,
 
   
   
-  
-  
-  uint8_t constraints = PromiseFlatString(Substring(aCodec, 7, 2)).ToInteger(&rv, 16);
   Telemetry::Accumulate(Telemetry::VIDEO_CANPLAYTYPE_H264_CONSTRAINT_SET_FLAG,
-                        constraints >= 4 ? constraints : 0);
-
+                        aConstraint >= 4 ? aConstraint : 0);
   
   
   Telemetry::Accumulate(Telemetry::VIDEO_CANPLAYTYPE_H264_PROFILE,
@@ -659,9 +661,10 @@ StartsWith(const nsACString& string, const char (&prefix)[N])
 bool
 IsH264CodecString(const nsAString& aCodec)
 {
-  int16_t profile = 0;
-  int16_t level = 0;
-  return ExtractH264CodecDetails(aCodec, profile, level);
+  uint8_t profile = 0;
+  uint8_t constraint = 0;
+  uint8_t level = 0;
+  return ExtractH264CodecDetails(aCodec, profile, constraint, level);
 }
 
 bool
