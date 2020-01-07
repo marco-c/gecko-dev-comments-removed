@@ -633,6 +633,7 @@ pub enum ApiMsg {
     
     WakeUp,
     WakeSceneBuilder,
+    FlushSceneBuilder(MsgSender<()>),
     ShutDown,
 }
 
@@ -653,6 +654,7 @@ impl fmt::Debug for ApiMsg {
             ApiMsg::ShutDown => "ApiMsg::ShutDown",
             ApiMsg::WakeUp => "ApiMsg::WakeUp",
             ApiMsg::WakeSceneBuilder => "ApiMsg::WakeSceneBuilder",
+            ApiMsg::FlushSceneBuilder(..) => "ApiMsg::FlushSceneBuilder",
         })
     }
 }
@@ -963,6 +965,15 @@ impl RenderApi {
 
     pub fn wake_scene_builder(&self) {
         self.send_message(ApiMsg::WakeSceneBuilder);
+    }
+
+    
+    
+    
+    pub fn flush_scene_builder(&self) {
+        let (tx, rx) = channel::msg_channel().unwrap();
+        self.send_message(ApiMsg::FlushSceneBuilder(tx));
+        rx.recv().unwrap(); 
     }
 
     

@@ -277,15 +277,38 @@ impl ClipScrollNodeData {
 #[repr(C)]
 pub struct ClipChainRectIndex(pub usize);
 
+
+
+
+
 #[derive(Debug, Copy, Clone)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
-#[repr(C)]
+pub enum UvRectKind {
+    
+    
+    Rect,
+    
+    
+    
+    
+    Quad {
+        top_left: DevicePoint,
+        top_right: DevicePoint,
+        bottom_left: DevicePoint,
+        bottom_right: DevicePoint,
+    },
+}
+
+#[derive(Debug, Copy, Clone)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct ImageSource {
     pub p0: DevicePoint,
     pub p1: DevicePoint,
     pub texture_layer: f32,
     pub user_data: [f32; 3],
+    pub uv_rect_kind: UvRectKind,
 }
 
 impl ImageSource {
@@ -302,5 +325,22 @@ impl ImageSource {
             self.user_data[1],
             self.user_data[2],
         ]);
+
+        
+        if let UvRectKind::Quad { top_left, top_right, bottom_left, bottom_right } = self.uv_rect_kind {
+            request.push([
+                top_left.x,
+                top_left.y,
+                top_right.x,
+                top_right.y,
+            ]);
+
+            request.push([
+                bottom_left.x,
+                bottom_left.y,
+                bottom_right.x,
+                bottom_right.y,
+            ]);
+        }
     }
 }

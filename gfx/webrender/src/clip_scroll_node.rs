@@ -102,6 +102,9 @@ pub struct ClipScrollNode {
     pub world_content_transform: LayoutToWorldFastTransform,
 
     
+    pub transform_kind: TransformedRectKind,
+
+    
     pub pipeline_id: PipelineId,
 
     
@@ -142,6 +145,7 @@ impl ClipScrollNode {
             local_viewport_rect: *rect,
             world_viewport_transform: LayoutToWorldFastTransform::identity(),
             world_content_transform: LayoutToWorldFastTransform::identity(),
+            transform_kind: TransformedRectKind::AxisAligned,
             parent: parent_index,
             children: Vec::new(),
             pipeline_id,
@@ -285,15 +289,10 @@ impl ClipScrollNode {
             }
         };
 
-        let transform_kind = if self.world_content_transform.preserves_2d_axis_alignment() {
-            TransformedRectKind::AxisAligned
-        } else {
-            TransformedRectKind::Complex
-        };
         let data = ClipScrollNodeData {
             transform: self.world_content_transform.into(),
             inv_transform,
-            transform_kind: transform_kind as u32 as f32,
+            transform_kind: self.transform_kind as u32 as f32,
             padding: [0.0; 3],
         };
 
@@ -320,6 +319,12 @@ impl ClipScrollNode {
         }
 
         self.update_transform(state, next_coordinate_system_id, scene_properties);
+
+        self.transform_kind = if self.world_content_transform.preserves_2d_axis_alignment() {
+            TransformedRectKind::AxisAligned
+        } else {
+            TransformedRectKind::Complex
+        };
 
         
         
