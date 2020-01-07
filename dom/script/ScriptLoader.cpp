@@ -1860,6 +1860,8 @@ ScriptLoader::GetScriptSource(ScriptLoadRequest* aRequest, nsAutoString& inlineD
 nsresult
 ScriptLoader::ProcessRequest(ScriptLoadRequest* aRequest)
 {
+  LOG(("ScriptLoadRequest (%p): Process request", aRequest));
+
   NS_ASSERTION(nsContentUtils::IsSafeToRunScript(),
                "Processing requests when running scripts is unsafe.");
   NS_ASSERTION(aRequest->IsReadyToRun(),
@@ -1871,6 +1873,7 @@ ScriptLoader::ProcessRequest(ScriptLoadRequest* aRequest)
       !aRequest->AsModuleRequest()->mModuleScript)
   {
     
+    LOG(("ScriptLoadRequest (%p):   Error loading request, firing error", aRequest));
     FireScriptAvailable(NS_ERROR_FAILURE, aRequest);
     return NS_OK;
   }
@@ -2892,7 +2895,7 @@ ScriptLoader::OnStreamComplete(nsIIncrementalStreamLoader* aLoader,
       MOZ_ASSERT(!modReq->IsTopLevel());
       MOZ_ASSERT(!modReq->isInList());
       modReq->Cancel();
-      FireScriptAvailable(rv, aRequest);
+      
     } else if (mParserBlockingRequest == aRequest) {
       MOZ_ASSERT(!aRequest->isInList());
       mParserBlockingRequest = nullptr;
