@@ -36,17 +36,20 @@ pub use super::specified::{AlignSelf, JustifySelf};
 #[derive(Clone, Copy, Debug, Eq, PartialEq, ToCss)]
 pub struct JustifyItems {
     
+    
     #[css(skip)]
     pub specified: specified::JustifyItems,
+    
+    
     
     pub computed: specified::JustifyItems,
 }
 
 impl JustifyItems {
     
-    pub fn auto() -> Self {
+    pub fn legacy() -> Self {
         Self {
-            specified: specified::JustifyItems::auto(),
+            specified: specified::JustifyItems::legacy(),
             computed: specified::JustifyItems::normal(),
         }
     }
@@ -59,7 +62,7 @@ impl ToComputedValue for specified::JustifyItems {
     fn to_computed_value(&self, _context: &Context) -> JustifyItems {
         use values::specified::align;
         let specified = *self;
-        let computed = if self.0 != align::AlignFlags::AUTO {
+        let computed = if self.0 != align::AlignFlags::LEGACY {
             *self
         } else {
             

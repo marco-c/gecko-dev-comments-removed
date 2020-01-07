@@ -677,13 +677,11 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
     
     
     
-    
-    
     #[cfg(feature = "gecko")]
     fn adjust_for_justify_items(&mut self) {
         use values::specified::align;
         let justify_items = self.style.get_position().clone_justify_items();
-        if justify_items.specified.0 != align::AlignFlags::AUTO {
+        if justify_items.specified.0 != align::AlignFlags::LEGACY {
             return;
         }
 
