@@ -62,11 +62,11 @@ public:
     : channels(channels)
   {}
 protected:
-  size_t frames_to_samples(size_t frames)
+  size_t frames_to_samples(size_t frames) const
   {
     return frames * channels;
   }
-  size_t samples_to_frames(size_t samples)
+  size_t samples_to_frames(size_t samples) const
   {
     assert(!(samples % channels));
     return samples / channels;
@@ -157,6 +157,7 @@ private:
   cubeb_stream * const stream;
   const cubeb_data_callback data_callback;
   void * const user_ptr;
+  bool draining = false;
 };
 
 
@@ -282,7 +283,7 @@ public:
 
 
 
-  uint32_t input_needed_for_output(uint32_t output_frame_count)
+  uint32_t input_needed_for_output(uint32_t output_frame_count) const
   {
     int32_t unresampled_frames_left = samples_to_frames(resampling_in_buffer.length());
     int32_t resampled_frames_left = samples_to_frames(resampling_out_buffer.length());
@@ -461,7 +462,7 @@ public:
 
 
 
-  size_t input_needed_for_output(uint32_t frames_needed)
+  size_t input_needed_for_output(uint32_t frames_needed) const
   {
     return frames_needed;
   }
