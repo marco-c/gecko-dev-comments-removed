@@ -2098,7 +2098,14 @@ LaunchCallbackApp(const NS_tchar *workingDir,
   
   
   if (!usingService) {
-    WinLaunchChild(argv[0], argc, argv, nullptr);
+    HANDLE hProcess;
+    if (WinLaunchChild(argv[0], argc, argv, nullptr, &hProcess)) {
+      
+      
+      
+      WaitForInputIdle(hProcess, kWaitForInputIdleTimeoutMS);
+      CloseHandle(hProcess);
+    }
   }
 #else
 # warning "Need implementaton of LaunchCallbackApp"

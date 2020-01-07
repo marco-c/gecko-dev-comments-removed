@@ -1794,8 +1794,14 @@ static nsresult LaunchChild(nsINativeAppSupport* aNative,
   if (NS_FAILED(rv))
     return rv;
 
-  if (!WinLaunchChild(exePath.get(), gRestartArgc, gRestartArgv))
+  HANDLE hProcess;
+  if (!WinLaunchChild(exePath.get(), gRestartArgc, gRestartArgv, nullptr, &hProcess))
     return NS_ERROR_FAILURE;
+  
+  
+  
+  ::WaitForInputIdle(hProcess, kWaitForInputIdleTimeoutMS);
+  ::CloseHandle(hProcess);
 
 #else
   nsAutoCString exePath;
