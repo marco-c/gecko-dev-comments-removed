@@ -167,6 +167,9 @@ function HashCompleter() {
   
   this._currentRequest = null;
   
+  
+  this._ongoingRequests = [];
+  
   this._pendingRequests = {};
 
   
@@ -199,6 +202,15 @@ HashCompleter.prototype = {
   complete: function HC_complete(aPartialHash, aGethashUrl, aTableName, aCallback) {
     if (!aGethashUrl) {
       throw Cr.NS_ERROR_NOT_INITIALIZED;
+    }
+
+    
+    for (let r of this._ongoingRequests) {
+      if (r.find(aPartialHash, aGethashUrl, aTableName)) {
+        log("Merge gethash request in " + aTableName + " for prefix : " + btoa(aPartialHash));
+        r.add(aPartialHash, aCallback, aTableName);
+        return;
+      }
     }
 
     if (!this._currentRequest) {
@@ -262,7 +274,9 @@ HashCompleter.prototype = {
 
     if (this._currentRequest) {
       try {
-        this._currentRequest.begin();
+        if (this._currentRequest.begin()) {
+          this._ongoingRequests.push(this._currentRequest);
+        }
       } finally {
         
         this._currentRequest = null;
@@ -272,8 +286,10 @@ HashCompleter.prototype = {
 
   
   
-  finishRequest(url, aStatus) {
-    this._backoffs[url].noteServerResponse(aStatus);
+  finishRequest(aRequest, aStatus) {
+    this._ongoingRequests = this._ongoingRequests.filter(v => v != aRequest);
+
+    this._backoffs[aRequest.gethashUrl].noteServerResponse(aStatus);
     Services.tm.dispatchToMainThread(this);
   },
 
@@ -351,7 +367,9 @@ HashCompleterRequest.prototype = {
         log('ERROR: Cannot mix "proto" tables with other types within ' +
             "the same gethash URL.");
       }
-      this.tableNames.set(aTableName);
+      if (!this.tableNames.has(aTableName)) {
+        this.tableNames.set(aTableName);
+      }
 
       
       if (this.provider == "") {
@@ -362,6 +380,17 @@ HashCompleterRequest.prototype = {
         this.telemetryProvider = gUrlUtil.getTelemetryProvider(aTableName);
       }
     }
+  },
+
+  find: function HCR_find(aPartialHash, aGetHashUrl, aTableName) {
+    if (this.gethashUrl != aGetHashUrl ||
+        !this.tableNames.has(aTableName)) {
+      return false;
+    }
+
+    return this._requests.find(function(r) {
+      return r.partialHash === aPartialHash;
+    });
   },
 
   fillTableStatesBase64: function HCR_fillTableStatesBase64(aCallback) {
@@ -392,7 +421,7 @@ HashCompleterRequest.prototype = {
     if (!this._completer.canMakeRequest(this.gethashUrl)) {
       log("Can't make request to " + this.gethashUrl + "\n");
       this.notifyFailure(Cr.NS_ERROR_ABORT);
-      return;
+      return false;
     }
 
     Services.obs.addObserver(this, "quit-application");
@@ -408,10 +437,14 @@ HashCompleterRequest.prototype = {
         
         this._completer.noteRequest(this.gethashUrl);
       } catch (err) {
+        this._completer._ongoingRequests =
+          this._completer._ongoingRequests.filter(v => v != this);
         this.notifyFailure(err);
         throw err;
       }
     });
+
+    return true;
   },
 
   notify: function HCR_notify() {
@@ -776,7 +809,7 @@ HashCompleterRequest.prototype = {
     }
     let success = Components.isSuccessCode(aStatusCode);
     log("Received a " + httpStatus + " status code from the " + this.provider +
-        " gethash server (success=" + success + ").");
+        " gethash server (success=" + success + "): " + btoa(this._response));
 
     Services.telemetry.getKeyedHistogramById("URLCLASSIFIER_COMPLETE_REMOTE_STATUS2").
       add(this.telemetryProvider, httpStatusToBucket(httpStatus));
@@ -789,7 +822,7 @@ HashCompleterRequest.prototype = {
       add(this.telemetryProvider, 0);
 
     
-    this._completer.finishRequest(this.gethashUrl, httpStatus);
+    this._completer.finishRequest(this, httpStatus);
 
     if (success) {
       try {
