@@ -648,6 +648,24 @@ DrawTargetRecording::EnsurePathStored(const Path *aPath)
   return pathRecording.forget();
 }
 
+
+
+void
+DrawTargetRecording::FlushItem(const IntRect &aBounds)
+{
+  mRecorder->FlushItem(aBounds);
+  
+  
+  
+  mRecorder->RecordEvent(RecordedDrawTargetCreation(this,
+                                                    mFinalDT->GetBackendType(),
+                                                    mSize,
+                                                    mFinalDT->GetFormat(),
+                                                    false, nullptr));
+  
+  mRecorder->RecordEvent(RecordedSetTransform(this, DrawTarget::GetTransform()));
+}
+
 void
 DrawTargetRecording::EnsurePatternDependenciesStored(const Pattern &aPattern)
 {

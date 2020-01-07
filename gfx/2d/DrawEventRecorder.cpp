@@ -96,11 +96,24 @@ DrawEventRecorderMemory::Flush()
 void
 DrawEventRecorderMemory::FlushItem(IntRect aRect)
 {
+  MOZ_RELEASE_ASSERT(!aRect.IsEmpty());
+  
+  
+  
   DetatchResources();
+
   WriteElement(mIndex, mOutputStream.mLength);
+
+  
   mSerializeCallback(mOutputStream, mUnscaledFonts);
   WriteElement(mIndex, mOutputStream.mLength);
+
+  WriteElement(mIndex, aRect.x);
+  WriteElement(mIndex, aRect.y);
+  WriteElement(mIndex, aRect.XMost());
+  WriteElement(mIndex, aRect.YMost());
   ClearResources();
+  WriteHeader(mOutputStream);
 }
 
 void

@@ -38,6 +38,8 @@ public:
 
   virtual void Flush() override { mFinalDT->Flush(); }
 
+  virtual void FlushItem(const IntRect &aBounds) override;
+
   
 
 
