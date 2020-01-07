@@ -13,7 +13,6 @@ config = {
     
     'enable_signing': False,
     'vcs_share_base': '/builds/hg-shared',
-    'enable_count_ctors': False,
     
     'perfherder_extra_options': ['artifact'],
     
