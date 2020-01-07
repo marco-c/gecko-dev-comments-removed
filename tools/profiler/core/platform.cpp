@@ -3145,11 +3145,7 @@ void
 profiler_unregister_thread()
 {
   MOZ_ASSERT_IF(NS_IsMainThread(), Scheduler::IsCooperativeThread());
-
-  if (!CorePS::Exists()) {
-    
-    return;
-  }
+  MOZ_RELEASE_ASSERT(CorePS::Exists());
 
   PSAutoLock lock(gPSMutex);
 
