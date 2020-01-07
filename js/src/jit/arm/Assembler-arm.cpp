@@ -3289,26 +3289,21 @@ Instruction::maybeSkipAutomaticInstructions()
     return this;
 }
 
-void
+Instruction*
 BufferInstructionIterator::maybeSkipAutomaticInstructions()
 {
-    
-    
-
     const PoolHeader* ph;
+    
+    
     if (InstIsGuard(*this, &ph)) {
         
         if (ph->isNatural())
-            return;
-        advance(sizeof(Instruction) * (1 + ph->size()));
-        maybeSkipAutomaticInstructions();
-        return;
+            return cur();
+        return next();
     }
-
-    if (InstIsBNop(cur())) {
-        next();
-        maybeSkipAutomaticInstructions();
-    }
+    if (InstIsBNop(cur()))
+        return next();
+    return cur();
 }
 
 

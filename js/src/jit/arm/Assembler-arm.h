@@ -1137,7 +1137,6 @@ PatchBackedge(CodeLocationJump& jump_, CodeLocationLabel label, JitZoneGroup::Ba
     PatchJump(jump_, label);
 }
 
-class InstructionIterator;
 class Assembler;
 typedef js::jit::AssemblerBufferWithConstantPools<1024, 4, Instruction, Assembler> ARMBuffer;
 
@@ -2290,13 +2289,24 @@ class InstructionIterator
     }
 };
 
+
+
 class BufferInstructionIterator : public ARMBuffer::AssemblerBufferInstIterator
 {
   public:
     BufferInstructionIterator(BufferOffset bo, ARMBuffer* buffer)
       : ARMBuffer::AssemblerBufferInstIterator(bo, buffer)
     {}
-    void maybeSkipAutomaticInstructions();
+
+    
+    Instruction* next() {
+        advance(cur()->size());
+        maybeSkipAutomaticInstructions();
+        return cur();
+    }
+
+    
+    Instruction* maybeSkipAutomaticInstructions();
 };
 
 static const uint32_t NumIntArgRegs = 4;
