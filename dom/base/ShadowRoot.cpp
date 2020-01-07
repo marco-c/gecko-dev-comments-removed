@@ -394,10 +394,18 @@ ShadowRoot::InsertSheetIntoAuthorData(size_t aIndex, StyleSheet& aSheet)
 void
 ShadowRoot::StyleSheetApplicableStateChanged(StyleSheet& aSheet, bool aApplicable)
 {
-  MOZ_ASSERT(mStyleSheets.Contains(&aSheet));
+  int32_t index = IndexOfSheet(aSheet);
+  if (index < 0) {
+    
+    
+    
+    
+    
+    MOZ_DIAGNOSTIC_ASSERT(aSheet.GetParentSheet(),
+                          "It'd better be an @import sheet");
+    return;
+  }
   if (aApplicable) {
-    int32_t index = IndexOfSheet(aSheet);
-    MOZ_RELEASE_ASSERT(index >= 0);
     InsertSheetIntoAuthorData(size_t(index), aSheet);
   } else {
     if (mStyleRuleMap) {
