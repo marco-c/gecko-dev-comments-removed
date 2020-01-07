@@ -4108,6 +4108,14 @@ nsContentUtils::ReportToConsole(uint32_t aErrorFlags,
                                      aLineNumber, aColumnNumber);
 }
 
+ void
+nsContentUtils::ReportEmptyGetElementByIdArg(const nsIDocument* aDoc)
+{
+  ReportToConsole(nsIScriptError::warningFlag,
+                  NS_LITERAL_CSTRING("DOM"), aDoc,
+                  nsContentUtils::eDOM_PROPERTIES,
+                  "EmptyGetElementByIdParam");
+}
 
  nsresult
 nsContentUtils::ReportToConsoleNonLocalized(const nsAString& aErrorText,
