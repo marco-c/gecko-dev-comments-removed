@@ -8,6 +8,7 @@
 
 const EventEmitter = require("devtools/shared/event-emitter");
 const {TooltipToggle} = require("devtools/client/shared/widgets/tooltip/TooltipToggle");
+const {focusableSelector} = require("devtools/client/shared/focus");
 const {getCurrentZoom} = require("devtools/shared/layout/utils");
 const {listenOnce} = require("devtools/shared/async-utils");
 
@@ -763,9 +764,6 @@ HTMLTooltip.prototype = {
 
 
   _maybeFocusTooltip: function() {
-    
-    
-    const focusableSelector = "a, button, iframe, input, select, textarea";
     const focusableElement = this.panel.querySelector(focusableSelector);
     if (this.autofocus && focusableElement) {
       focusableElement.focus();
