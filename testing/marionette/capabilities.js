@@ -23,6 +23,7 @@ this.EXPORTED_SYMBOLS = [
   "PageLoadStrategy",
   "Proxy",
   "Timeouts",
+  "UnhandledPromptBehavior",
 ];
 
 
@@ -358,6 +359,30 @@ class Proxy {
 }
 
 
+
+
+
+
+const UnhandledPromptBehavior = {
+  
+  Accept: "accept",
+  
+
+
+
+  AcceptAndNotify: "accept and notify",
+  
+  Dismiss: "dismiss",
+  
+
+
+
+  DismissAndNotify: "dismiss and notify",
+  
+  Ignore: "ignore",
+};
+
+
 class Capabilities extends Map {
   
   constructor() {
@@ -367,10 +392,11 @@ class Capabilities extends Map {
       ["browserVersion", appinfo.version],
       ["platformName", getWebDriverPlatformName()],
       ["platformVersion", Services.sysinfo.getProperty("version")],
-      ["pageLoadStrategy", PageLoadStrategy.Normal],
       ["acceptInsecureCerts", false],
-      ["timeouts", new Timeouts()],
+      ["pageLoadStrategy", PageLoadStrategy.Normal],
       ["proxy", new Proxy()],
+      ["timeouts", new Timeouts()],
+      ["unhandledPromptBehavior", UnhandledPromptBehavior.DismissAndNotify],
 
       
       ["rotatable", appinfo.name == "B2G"],
@@ -470,6 +496,19 @@ class Capabilities extends Map {
           matched.set("timeouts", timeouts);
           break;
 
+        case "unhandledPromptBehavior":
+          assert.string(v,
+              pprint`Expected ${k} to be a string, got ${v}`);
+
+          if (Object.values(UnhandledPromptBehavior).includes(v)) {
+            matched.set("unhandledPromptBehavior", v);
+          } else {
+            throw new InvalidArgumentError(
+                `Unknown unhandled prompt behavior: ${v}`);
+          }
+
+          break;
+
         case "moz:accessibilityChecks":
           assert.boolean(v,
               pprint`Expected ${k} to be a boolean, got ${v}`);
@@ -498,6 +537,7 @@ this.Capabilities = Capabilities;
 this.PageLoadStrategy = PageLoadStrategy;
 this.Proxy = Proxy;
 this.Timeouts = Timeouts;
+this.UnhandledPromptBehavior = UnhandledPromptBehavior;
 
 function getWebDriverPlatformName() {
   let name = Services.sysinfo.getProperty("name");
