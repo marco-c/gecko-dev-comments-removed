@@ -86,14 +86,23 @@ function initialValueCallback() {
 
 
 
+
 function setPrefs(setting, item) {
   let prefs = item.initialValue || setting.setCallback(item.value);
+  let changed = false;
   for (let pref in prefs) {
     if (prefs[pref] === undefined) {
-      Preferences.reset(pref);
-    } else {
+      if (Preferences.isSet(pref)) {
+        changed = true;
+        Preferences.reset(pref);
+      }
+    } else if (Preferences.get(pref) != prefs[pref]) {
       Preferences.set(pref, prefs[pref]);
+      changed = true;
     }
+  }
+  if (changed && typeof setting.onPrefsChanged == "function") {
+    setting.onPrefsChanged(item);
   }
 }
 

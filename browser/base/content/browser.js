@@ -2213,6 +2213,7 @@ function BrowserGoHome(aEvent) {
   var homePage = gHomeButton.getHomePage();
   var where = whereToOpenLink(aEvent, false, true);
   var urls;
+  var notifyObservers;
 
   
   if (where == "current" &&
@@ -2225,19 +2226,34 @@ function BrowserGoHome(aEvent) {
   case "current":
     loadOneOrMoreURIs(homePage, Services.scriptSecurityManager.getSystemPrincipal());
     gBrowser.selectedBrowser.focus();
+    notifyObservers = true;
     break;
   case "tabshifted":
   case "tab":
     urls = homePage.split("|");
     var loadInBackground = getBoolPref("browser.tabs.loadBookmarksInBackground", false);
+    
+    
+    
+    
+    notifyObservers = !loadInBackground;
     gBrowser.loadTabs(urls, {
       inBackground: loadInBackground,
       triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
     });
     break;
   case "window":
+    
+    notifyObservers = false;
     OpenBrowserWindow();
     break;
+  }
+  if (notifyObservers) {
+    
+    
+    
+    
+    Services.obs.notifyObservers(null, "browser-open-homepage-start");
   }
 }
 
@@ -2317,6 +2333,9 @@ function openLocation() {
 }
 
 function BrowserOpenTab(event) {
+  
+  
+  
   
   
   
@@ -4292,6 +4311,13 @@ function OpenBrowserWindow(options) {
 
   win.addEventListener("MozAfterPaint", () => {
     TelemetryStopwatch.finish("FX_NEW_WINDOW_MS", telemetryObj);
+    if (Services.prefs.getIntPref("browser.startup.page") == 1
+        && defaultArgs == handler.startPage) {
+      
+      
+      
+      Services.obs.notifyObservers(win, "browser-open-homepage-start");
+    }
   }, {once: true});
 
   return win;

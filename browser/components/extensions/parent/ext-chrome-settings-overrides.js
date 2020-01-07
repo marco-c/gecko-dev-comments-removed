@@ -2,18 +2,27 @@
 
 
 
-
-
 "use strict";
 
+ChromeUtils.defineModuleGetter(this, "AddonManager",
+                               "resource://gre/modules/AddonManager.jsm");
+ChromeUtils.defineModuleGetter(this, "BrowserUtils",
+                               "resource://gre/modules/BrowserUtils.jsm");
 ChromeUtils.defineModuleGetter(this, "ExtensionPreferencesManager",
                                "resource://gre/modules/ExtensionPreferencesManager.jsm");
 ChromeUtils.defineModuleGetter(this, "ExtensionSettingsStore",
                                "resource://gre/modules/ExtensionSettingsStore.jsm");
+ChromeUtils.defineModuleGetter(this, "ExtensionControlledPopup",
+                               "resource:///modules/ExtensionControlledPopup.jsm");
 
 const DEFAULT_SEARCH_STORE_TYPE = "default_search";
 const DEFAULT_SEARCH_SETTING_NAME = "defaultSearch";
 const ENGINE_ADDED_SETTING_NAME = "engineAdded";
+
+const HOMEPAGE_PREF = "browser.startup.homepage";
+const HOMEPAGE_CONFIRMED_TYPE = "homepageNotification";
+const HOMEPAGE_SETTING_TYPE = "prefs";
+const HOMEPAGE_SETTING_NAME = "homepage_override";
 
 
 
@@ -35,6 +44,65 @@ const searchInitialized = () => {
     }, SEARCH_SERVICE_TOPIC);
   });
 };
+
+XPCOMUtils.defineLazyGetter(this, "homepagePopup", () => {
+  return new ExtensionControlledPopup({
+    confirmedType: HOMEPAGE_CONFIRMED_TYPE,
+    observerTopic: "browser-open-homepage-start",
+    popupnotificationId: "extension-homepage-notification",
+    settingType: HOMEPAGE_SETTING_TYPE,
+    settingKey: HOMEPAGE_SETTING_NAME,
+    descriptionId: "extension-homepage-notification-description",
+    descriptionMessageId: "homepageControlled.message",
+    learnMoreMessageId: "homepageControlled.learnMore",
+    learnMoreLink: "extension-home",
+    async beforeDisableAddon(popup, win) {
+      
+      
+      
+      
+      
+      let gBrowser = win.gBrowser;
+      let tab = gBrowser.selectedTab;
+      await replaceUrlInTab(gBrowser, tab, "about:blank");
+      Services.prefs.addObserver(HOMEPAGE_PREF, async function prefObserver() {
+        Services.prefs.removeObserver(HOMEPAGE_PREF, prefObserver);
+        let loaded = waitForTabLoaded(tab);
+        win.BrowserGoHome();
+        await loaded;
+        
+        popup.open();
+      });
+    },
+  });
+});
+
+
+
+
+
+async function handleInitialHomepagePopup(extensionId, homepageUrl) {
+  
+  if (Services.prefs.getIntPref("browser.startup.page") == 1) {
+    let {gBrowser} = windowTracker.topWindow;
+    let tab = gBrowser.selectedTab;
+    let currentUrl = gBrowser.currentURI.spec;
+    
+    
+    
+    if (currentUrl != homepageUrl && currentUrl == "about:blank") {
+      await waitForTabLoaded(tab);
+      currentUrl = gBrowser.currentURI.spec;
+    }
+    
+    
+    if (currentUrl == homepageUrl && gBrowser.selectedTab == tab) {
+      homepagePopup.open();
+      return;
+    }
+  }
+  homepagePopup.addObserver(extensionId);
+}
 
 this.chrome_settings_overrides = class extends ExtensionAPI {
   static async processDefaultSearchSetting(action, id) {
@@ -91,7 +159,10 @@ this.chrome_settings_overrides = class extends ExtensionAPI {
   static onUninstall(id) {
     
     
-    return this.removeSearchSettings(id);
+    return Promise.all([
+      this.removeSearchSettings(id),
+      homepagePopup.clearConfirmation(id),
+    ]);
   }
 
   static onUpdate(id, manifest) {
@@ -113,9 +184,34 @@ this.chrome_settings_overrides = class extends ExtensionAPI {
     let {manifest} = extension;
 
     await ExtensionSettingsStore.initialize();
-    if (manifest.chrome_settings_overrides.homepage) {
-      ExtensionPreferencesManager.setSetting(extension.id, "homepage_override",
-                                             manifest.chrome_settings_overrides.homepage);
+
+    let homepageUrl = manifest.chrome_settings_overrides.homepage;
+
+    if (homepageUrl) {
+      let inControl;
+      if (extension.startupReason == "ADDON_INSTALL") {
+        inControl = await ExtensionPreferencesManager.setSetting(
+          extension.id, "homepage_override", homepageUrl);
+      } else {
+        let item = await ExtensionPreferencesManager.getSetting("homepage_override");
+        inControl = item.id == extension.id;
+      }
+      
+      
+      if (inControl) {
+        if (extension.startupReason == "APP_STARTUP") {
+          handleInitialHomepagePopup(extension.id, homepageUrl);
+        } else {
+          homepagePopup.addObserver(extension.id);
+        }
+      }
+      extension.callOnClose({
+        close: () => {
+          if (extension.shutdownReason == "ADDON_DISABLE") {
+            homepagePopup.clearConfirmation(extension.id);
+          }
+        },
+      });
     }
     if (manifest.chrome_settings_overrides.search_provider) {
       await searchInitialized();
@@ -238,11 +334,23 @@ this.chrome_settings_overrides = class extends ExtensionAPI {
 
 ExtensionPreferencesManager.addSetting("homepage_override", {
   prefNames: [
-    "browser.startup.homepage",
+    HOMEPAGE_PREF,
   ],
+  
+  
+  
+  
+  
+  onPrefsChanged(item) {
+    if (item.id) {
+      homepagePopup.addObserver(item.id);
+    } else {
+      homepagePopup.removeObserver();
+    }
+  },
   setCallback(value) {
     return {
-      "browser.startup.homepage": value,
+      [HOMEPAGE_PREF]: value,
     };
   },
 });

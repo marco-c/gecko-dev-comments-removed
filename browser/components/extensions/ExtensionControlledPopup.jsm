@@ -79,6 +79,10 @@ class ExtensionControlledPopup {
 
 
 
+
+
+
+
   constructor(opts) {
     this.confirmedType = opts.confirmedType;
     this.observerTopic = opts.observerTopic;
@@ -121,7 +125,7 @@ class ExtensionControlledPopup {
     this.removeObserver();
 
     
-    this.topWindow.requestIdleCallback(() => this.open());
+    this.topWindow.requestIdleCallback(() => this.open(subject));
   }
 
   removeObserver() {
@@ -146,7 +150,7 @@ class ExtensionControlledPopup {
     }
   }
 
-  async open() {
+  async open(targetWindow) {
     await ExtensionSettingsStore.initialize();
 
     
@@ -165,10 +169,11 @@ class ExtensionControlledPopup {
     }
 
     
-    let win = this.topWindow;
+    let win = targetWindow || this.topWindow;
     let doc = win.document;
     let panel = doc.getElementById("extension-notification-panel");
     let popupnotification = doc.getElementById(this.popupnotificationId);
+    let urlBarWasFocused = win.gURLBar.focused;
 
     if (!popupnotification) {
       throw new Error(`No popupnotification found for id "${this.popupnotificationId}"`);
@@ -186,10 +191,17 @@ class ExtensionControlledPopup {
         await this.setConfirmation(item.id);
       } else {
         
-        await this.beforeDisableAddon(this);
+        await this.beforeDisableAddon(this, win);
         addon.userDisabled = true;
       }
-      win.gURLBar.focus();
+
+      
+      
+      
+      
+      if (urlBarWasFocused) {
+        win.gURLBar.focus();
+      }
     };
     panel.addEventListener("command", handleCommand);
     panel.addEventListener("popuphidden", () => {
