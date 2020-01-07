@@ -178,7 +178,15 @@ protected:
   WillSetText(bool* aCancel, bool* aHandled,
               const nsAString* inString, int32_t aMaxLength);
 
-  void WillInsert(bool* aCancel);
+  
+
+
+
+
+
+
+
+  MOZ_MUST_USE nsresult WillInsert(bool* aCancel = nullptr);
 
   
 

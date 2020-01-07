@@ -1335,7 +1335,10 @@ HTMLEditRules::WillInsert(bool* aCancel)
   MOZ_ASSERT(IsEditorDataAvailable());
   MOZ_ASSERT(aCancel);
 
-  TextEditRules::WillInsert(aCancel);
+  nsresult rv = TextEditRules::WillInsert(aCancel);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return;
+  }
 
   
   
