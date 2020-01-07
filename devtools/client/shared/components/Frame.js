@@ -25,7 +25,7 @@ class Frame extends Component {
         column: PropTypes.oneOfType([ PropTypes.string, PropTypes.number ]),
       }).isRequired,
       
-      onClick: PropTypes.func.isRequired,
+      onClick: PropTypes.func,
       
       showFunctionName: PropTypes.bool,
       

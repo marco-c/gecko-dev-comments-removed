@@ -22,15 +22,27 @@ class SplitBox extends Component {
       
       initialSize: PropTypes.string,
       
-      initialWidth: PropTypes.string,
+      initialWidth: PropTypes.oneOfType([
+        PropTypes.number,
+        PropTypes.string
+      ]),
       
-      initialHeight: PropTypes.string,
+      initialHeight: PropTypes.oneOfType([
+        PropTypes.number,
+        PropTypes.string
+      ]),
       
       startPanel: PropTypes.any,
       
-      minSize: PropTypes.string,
+      minSize: PropTypes.oneOfType([
+        PropTypes.number,
+        PropTypes.string
+      ]),
       
-      maxSize: PropTypes.string,
+      maxSize: PropTypes.oneOfType([
+        PropTypes.number,
+        PropTypes.string
+      ]),
       
       endPanel: PropTypes.any,
       
