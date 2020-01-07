@@ -4762,6 +4762,9 @@ pref("image.mem.surfacecache.discard_factor", 1);
 pref("image.multithreaded_decoding.limit", -1);
 
 
+pref("image.multithreaded_decoding.idle_timeout", 600000);
+
+
 
 pref("canvas.image.cache.limit", 0);
 

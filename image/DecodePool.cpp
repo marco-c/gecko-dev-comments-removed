@@ -8,6 +8,7 @@
 #include <algorithm>
 
 #include "mozilla/ClearOnShutdown.h"
+#include "mozilla/DebugOnly.h"
 #include "mozilla/Monitor.h"
 #include "nsCOMPtr.h"
 #include "nsIObserverService.h"
@@ -55,9 +56,13 @@ public:
   MOZ_DECLARE_REFCOUNTED_TYPENAME(DecodePoolImpl)
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(DecodePoolImpl)
 
-  DecodePoolImpl(uint8_t aMaxThreads)
+  DecodePoolImpl(uint8_t aMaxThreads,
+                 uint8_t aMaxIdleThreads,
+                 PRIntervalTime aIdleTimeout)
     : mMonitor("DecodePoolImpl")
     , mThreads(aMaxThreads)
+    , mIdleTimeout(aIdleTimeout)
+    , mMaxIdleThreads(aMaxIdleThreads)
     , mAvailableThreads(aMaxThreads)
     , mIdleThreads(0)
     , mShuttingDown(false)
@@ -68,12 +73,26 @@ public:
   }
 
   
-  static void ShutdownThread(nsIThread* aThisThread)
+  void ShutdownThread(nsIThread* aThisThread, bool aShutdownIdle)
   {
+    {
+      
+      
+      MonitorAutoLock lock(mMonitor);
+      if (!mShuttingDown) {
+        ++mAvailableThreads;
+        DebugOnly<bool> removed = mThreads.RemoveElement(aThisThread);
+        MOZ_ASSERT(aShutdownIdle);
+        MOZ_ASSERT(mAvailableThreads < mThreads.Capacity());
+        MOZ_ASSERT(removed);
+      }
+    }
+
     
     
-    NS_DispatchToMainThread(NewRunnableMethod("DecodePoolImpl::ShutdownThread",
-                                              aThisThread, &nsIThread::Shutdown));
+    SystemGroup::Dispatch(TaskCategory::Other,
+                          NewRunnableMethod("DecodePoolImpl::ShutdownThread",
+                                            aThisThread, &nsIThread::Shutdown));
   }
 
   
@@ -129,7 +148,7 @@ public:
     mMonitor.Notify();
   }
 
-  Work StartWork()
+  Work StartWork(bool aShutdownIdle)
   {
     MonitorAutoLock lock(mMonitor);
 
@@ -138,21 +157,22 @@ public:
     
     MOZ_ASSERT(mIdleThreads > 0);
     --mIdleThreads;
-    return PopWorkLocked();
+    return PopWorkLocked(aShutdownIdle);
   }
 
-  Work PopWork()
+  Work PopWork(bool aShutdownIdle)
   {
     MonitorAutoLock lock(mMonitor);
-    return PopWorkLocked();
+    return PopWorkLocked(aShutdownIdle);
   }
 
 private:
   
-  Work PopWorkLocked()
+  Work PopWorkLocked(bool aShutdownIdle)
   {
     mMonitor.AssertCurrentThreadOwns();
 
+    PRIntervalTime timeout = mIdleTimeout;
     do {
       if (!mHighPriorityQueue.IsEmpty()) {
         return PopWorkFromQueue(mHighPriorityQueue);
@@ -163,15 +183,37 @@ private:
       }
 
       if (mShuttingDown) {
-        Work work;
-        work.mType = Work::Type::SHUTDOWN;
-        return work;
+        return CreateShutdownWork();
       }
 
       
-      ++mIdleThreads;
-      MOZ_ASSERT(mIdleThreads <= mThreads.Capacity());
-      mMonitor.Wait();
+      if (!aShutdownIdle) {
+        
+        
+        ++mIdleThreads;
+        MOZ_ASSERT(mIdleThreads <= mThreads.Capacity());
+        mMonitor.Wait();
+      } else {
+        
+        
+        
+        if (timeout == 0) {
+          return CreateShutdownWork();
+        }
+
+        ++mIdleThreads;
+        MOZ_ASSERT(mIdleThreads <= mThreads.Capacity());
+
+        PRIntervalTime now = PR_IntervalNow();
+        mMonitor.Wait(timeout);
+        PRIntervalTime delta = PR_IntervalNow() - now;
+        if (delta > timeout) {
+          timeout = 0;
+        } else {
+          timeout -= delta;
+        }
+      }
+
       MOZ_ASSERT(mIdleThreads > 0);
       --mIdleThreads;
     } while (true);
@@ -191,6 +233,13 @@ private:
     return work;
   }
 
+  Work CreateShutdownWork() const
+  {
+    Work work;
+    work.mType = Work::Type::SHUTDOWN;
+    return work;
+  }
+
   nsThreadPoolNaming mThreadNaming;
 
   
@@ -198,6 +247,8 @@ private:
   nsTArray<RefPtr<IDecodingTask>> mHighPriorityQueue;
   nsTArray<RefPtr<IDecodingTask>> mLowPriorityQueue;
   nsTArray<nsCOMPtr<nsIThread>> mThreads;
+  PRIntervalTime mIdleTimeout;
+  uint8_t mMaxIdleThreads;   
   uint8_t mAvailableThreads; 
   uint8_t mIdleThreads; 
   bool mShuttingDown;
@@ -206,9 +257,11 @@ private:
 class DecodePoolWorker final : public Runnable
 {
 public:
-  explicit DecodePoolWorker(DecodePoolImpl* aImpl)
+  explicit DecodePoolWorker(DecodePoolImpl* aImpl,
+                            bool aShutdownIdle)
     : Runnable("image::DecodePoolWorker")
     , mImpl(aImpl)
+    , mShutdownIdle(aShutdownIdle)
   { }
 
   NS_IMETHOD Run() override
@@ -218,7 +271,7 @@ public:
     nsCOMPtr<nsIThread> thisThread;
     nsThreadManager::get().GetCurrentThread(getter_AddRefs(thisThread));
 
-    Work work = mImpl->StartWork();
+    Work work = mImpl->StartWork(mShutdownIdle);
     do {
       switch (work.mType) {
         case Work::Type::TASK:
@@ -227,7 +280,7 @@ public:
           break;
 
         case Work::Type::SHUTDOWN:
-          DecodePoolImpl::ShutdownThread(thisThread);
+          mImpl->ShutdownThread(thisThread, mShutdownIdle);
           PROFILER_UNREGISTER_THREAD();
           return NS_OK;
 
@@ -235,7 +288,7 @@ public:
           MOZ_ASSERT_UNREACHABLE("Unknown work type");
       }
 
-      work = mImpl->PopWork();
+      work = mImpl->PopWork(mShutdownIdle);
     } while (true);
 
     MOZ_ASSERT_UNREACHABLE("Exiting thread without Work::Type::SHUTDOWN");
@@ -244,6 +297,7 @@ public:
 
 private:
   RefPtr<DecodePoolImpl> mImpl;
+  bool mShutdownIdle;
 };
 
 bool DecodePoolImpl::CreateThread()
@@ -251,7 +305,8 @@ bool DecodePoolImpl::CreateThread()
   mMonitor.AssertCurrentThreadOwns();
   MOZ_ASSERT(mAvailableThreads > 0);
 
-  nsCOMPtr<nsIRunnable> worker = new DecodePoolWorker(this);
+  bool shutdownIdle = mThreads.Length() >= mMaxIdleThreads;
+  nsCOMPtr<nsIRunnable> worker = new DecodePoolWorker(this, shutdownIdle);
   nsCOMPtr<nsIThread> thread;
   nsresult rv = NS_NewNamedThread(mThreadNaming.GetNextThreadName("ImgDecoder"),
                                   getter_AddRefs(thread), worker);
@@ -324,7 +379,21 @@ DecodePool::DecodePool()
   }
 
   
-  mImpl = new DecodePoolImpl(limit);
+  uint32_t idleLimit;
+
+  
+  int32_t prefIdleTimeout = gfxPrefs::ImageMTDecodingIdleTimeout();
+  PRIntervalTime idleTimeout;
+  if (prefIdleTimeout <= 0) {
+    idleTimeout = PR_INTERVAL_NO_TIMEOUT;
+    idleLimit = limit;
+  } else {
+    idleTimeout = PR_MillisecondsToInterval(static_cast<uint32_t>(prefIdleTimeout));
+    idleLimit = (limit + 1) / 2;
+  }
+
+  
+  mImpl = new DecodePoolImpl(limit, idleLimit, idleTimeout);
 
   
   nsresult rv = NS_NewNamedThread("ImageIO", getter_AddRefs(mIOThread));
