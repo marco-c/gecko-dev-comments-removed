@@ -3,7 +3,6 @@
 
 
 const {require} = ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
-const Services = require("Services");
 const {AppManager} = require("devtools/client/webide/modules/app-manager");
 
 window.addEventListener("load", function() {
@@ -116,6 +115,8 @@ function updateUI() {
 
   AppManager.update("details");
 }
+
+
 
 function removeProject() {
   AppManager.removeSelectedProject();

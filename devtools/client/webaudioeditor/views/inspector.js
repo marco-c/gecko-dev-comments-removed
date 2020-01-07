@@ -85,9 +85,8 @@ var InspectorView = {
       $("#web-audio-editor-details-pane-empty").removeAttribute("hidden");
       $("#web-audio-editor-tabs").setAttribute("hidden", "true");
       window.emit(EVENTS.UI_INSPECTOR_NODE_SET, null);
-    }
-    
-    else {
+    } else {
+      
       $("#web-audio-editor-details-pane-empty").setAttribute("hidden", "true");
       $("#web-audio-editor-tabs").removeAttribute("hidden");
       this._buildToolbar();

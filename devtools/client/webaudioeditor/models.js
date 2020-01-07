@@ -180,6 +180,7 @@ class AudioNodesCollection extends EventEmitter {
 
 
   add(obj) {
+    
     let node = new this.model(obj);
     node.collection = this;
 

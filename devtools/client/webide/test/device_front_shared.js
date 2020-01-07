@@ -1,6 +1,8 @@
 
 
 
+
+
 "use strict";
 
 var customName;
@@ -171,7 +173,7 @@ function addNewFieldBoolean() {
   ok(found, "Found new boolean field line");
 
   
-  var mouseClick = new MouseEvent("click", {
+  let mouseClick = new MouseEvent("click", {
     canBubble: true,
     cancelable: true,
     view: doc.parent,

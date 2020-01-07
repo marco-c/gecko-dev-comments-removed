@@ -3,7 +3,7 @@
 
 "use strict";
 
-var {Ci, Cu} = require("chrome");
+var {Ci} = require("chrome");
 
 const {FileUtils} = require("resource://gre/modules/FileUtils.jsm");
 const Services = require("Services");

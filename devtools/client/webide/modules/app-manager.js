@@ -2,8 +2,6 @@
 
 
 
-const {Cu} = require("chrome");
-
 const {TargetFactory} = require("devtools/client/framework/target");
 const Services = require("Services");
 const {FileUtils} = require("resource://gre/modules/FileUtils.jsm");
@@ -578,8 +576,6 @@ var AppManager = exports.AppManager = {
         self.reportError("error_cantInstallValidationErrors");
         return;
       }
-
-      let installPromise;
 
       if (project.type != "packaged" && project.type != "hosted") {
         return Promise.reject("Don't know how to install project");
