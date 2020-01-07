@@ -53,6 +53,24 @@ public:
 
     nsresult Init();
 
+public:
+    
+    
+    class FilterLink {
+    public:
+      NS_INLINE_DECL_REFCOUNTING(FilterLink)
+
+      uint32_t position;
+      nsCOMPtr<nsIProtocolProxyFilter> filter;
+      nsCOMPtr<nsIProtocolProxyChannelFilter> channelFilter;
+
+      FilterLink(uint32_t p, nsIProtocolProxyFilter *f);
+      FilterLink(uint32_t p, nsIProtocolProxyChannelFilter *cf);
+
+    private:
+      ~FilterLink();
+    };
+
 protected:
     friend class nsAsyncResolveRequest;
     friend class TestProtocolProxyService_LoadHostFilters_Test; 
@@ -235,27 +253,18 @@ protected:
 
 
 
-
-
-
-
-
-
-    void ApplyFilters(nsIChannel *channel, const nsProtocolInfo &info,
-                                  nsIProxyInfo **proxyInfo);
+    void CopyFilters(nsTArray<RefPtr<FilterLink>> &aCopy);
 
     
 
 
 
-    inline void ApplyFilters(nsIChannel *channel, const nsProtocolInfo &info,
-                             nsCOMPtr<nsIProxyInfo> &proxyInfo)
-    {
-      nsIProxyInfo *pi = nullptr;
-      proxyInfo.swap(pi);
-      ApplyFilters(channel, info, &pi);
-      proxyInfo.swap(pi);
-    }
+
+    bool ApplyFilter(FilterLink const* filterLink,
+                     nsIChannel *channel,
+                     const nsProtocolInfo &info,
+                     nsCOMPtr<nsIProxyInfo> proxyInfo,
+                     nsIProxyProtocolFilterResult* callback);
 
     
 
@@ -267,7 +276,20 @@ protected:
 
 
     void PruneProxyInfo(const nsProtocolInfo &info,
-                                    nsIProxyInfo **proxyInfo);
+                        nsIProxyInfo **proxyInfo);
+
+    
+
+
+
+    void PruneProxyInfo(const nsProtocolInfo &info,
+                        nsCOMPtr<nsIProxyInfo> &proxyInfo)
+    {
+      nsIProxyInfo *pi = nullptr;
+      proxyInfo.swap(pi);
+      PruneProxyInfo(info, &pi);
+      proxyInfo.swap(pi);
+    }
 
     
 
@@ -345,24 +367,9 @@ protected:
         }
     };
 
-    
-    
-    struct FilterLink {
-      struct FilterLink                *next;
-      uint32_t                          position;
-      nsCOMPtr<nsIProtocolProxyFilter> filter;
-      nsCOMPtr<nsIProtocolProxyChannelFilter> channelFilter;
-      FilterLink(uint32_t p, nsIProtocolProxyFilter *f)
-        : next(nullptr), position(p), filter(f), channelFilter(nullptr) {}
-      FilterLink(uint32_t p, nsIProtocolProxyChannelFilter *cf)
-        : next(nullptr), position(p), filter(nullptr), channelFilter(cf) {}
-      
-      ~FilterLink() { if (next) delete next; }
-    };
-
 private:
     
-    nsresult InsertFilterLink(FilterLink *link, uint32_t position);
+    nsresult InsertFilterLink(RefPtr<FilterLink>&& link);
     nsresult RemoveFilterLink(nsISupports *givenObject);
 
 protected:
@@ -370,11 +377,10 @@ protected:
     bool mFilterLocalHosts;
 
     
-    nsTArray<nsAutoPtr<HostInfo> > mHostFiltersArray;
+    nsTArray<nsAutoPtr<HostInfo>> mHostFiltersArray;
 
     
-    
-    FilterLink                  *mFilters;
+    nsTArray<RefPtr<FilterLink>> mFilters;
 
     uint32_t                     mProxyConfig;
 
