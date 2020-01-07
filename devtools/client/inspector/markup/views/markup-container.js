@@ -11,6 +11,12 @@ const {flashElementOn, flashElementOff} =
 
 const DRAG_DROP_MIN_INITIAL_DISTANCE = 10;
 
+const TYPES = {
+  TEXT_CONTAINER: "textcontainer",
+  ELEMENT_CONTAINER: "elementcontainer",
+  READ_ONLY_CONTAINER: "readonlycontainer",
+};
+
 
 
 
@@ -46,12 +52,13 @@ MarkupContainer.prototype = {
   initialize: function (markupView, node, type) {
     this.markup = markupView;
     this.node = node;
+    this.type = type;
     this.undo = this.markup.undo;
     this.win = this.markup._frame.contentWindow;
     this.id = "treeitem-" + markupContainerID++;
     this.htmlElt = this.win.document.documentElement;
 
-    this.buildMarkup(type);
+    this.buildMarkup();
 
     this.elt.container = this;
 
@@ -70,7 +77,7 @@ MarkupContainer.prototype = {
     this.updateIsDisplayed();
   },
 
-  buildMarkup: function (type) {
+  buildMarkup: function () {
     this.elt = this.win.document.createElement("li");
     this.elt.classList.add("child", "collapsed");
     this.elt.setAttribute("role", "presentation");
@@ -88,7 +95,7 @@ MarkupContainer.prototype = {
     this.tagState.setAttribute("role", "presentation");
     this.tagLine.appendChild(this.tagState);
 
-    if (type !== "textcontainer") {
+    if (this.type !== TYPES.TEXT_CONTAINER) {
       this.expander = this.win.document.createElement("span");
       this.expander.classList.add("theme-twisty", "expander");
       this.expander.setAttribute("role", "presentation");
@@ -303,49 +310,77 @@ MarkupContainer.prototype = {
     if (!this.canExpand) {
       value = false;
     }
+
     if (this.mustExpand) {
       value = true;
     }
 
     if (value && this.elt.classList.contains("collapsed")) {
-      
-      
-      let closingTag = this.elt.querySelector(".close");
-      if (closingTag) {
-        if (!this.closeTagLine) {
-          let line = this.markup.doc.createElement("div");
-          line.classList.add("tag-line");
-          
-          line.setAttribute("role", "presentation");
-
-          let tagState = this.markup.doc.createElement("div");
-          tagState.classList.add("tag-state");
-          line.appendChild(tagState);
-
-          line.appendChild(closingTag.cloneNode(true));
-
-          flashElementOff(line);
-          this.closeTagLine = line;
-        }
-        this.elt.appendChild(this.closeTagLine);
-      }
+      this.showCloseTagLine();
 
       this.elt.classList.remove("collapsed");
       this.expander.setAttribute("open", "");
       this.hovered = false;
       this.markup.emit("expanded");
     } else if (!value) {
-      if (this.closeTagLine) {
-        this.elt.removeChild(this.closeTagLine);
-        this.closeTagLine = undefined;
-      }
+      this.hideCloseTagLine();
+
       this.elt.classList.add("collapsed");
       this.expander.removeAttribute("open");
       this.markup.emit("collapsed");
     }
+
     if (this.showExpander) {
       this.tagLine.setAttribute("aria-expanded", this.expanded);
     }
+  },
+
+  
+
+
+
+  showCloseTagLine: function () {
+    
+    if (this.type !== TYPES.ELEMENT_CONTAINER) {
+      return;
+    }
+
+    
+    let closingTag = this.elt.querySelector(".close");
+    if (!closingTag) {
+      return;
+    }
+
+    
+    if (!this.closeTagLine) {
+      let line = this.markup.doc.createElement("div");
+      line.classList.add("tag-line");
+      
+      line.setAttribute("role", "presentation");
+
+      let tagState = this.markup.doc.createElement("div");
+      tagState.classList.add("tag-state");
+      line.appendChild(tagState);
+
+      line.appendChild(closingTag.cloneNode(true));
+
+      flashElementOff(line);
+      this.closeTagLine = line;
+    }
+    this.elt.appendChild(this.closeTagLine);
+  },
+
+  
+
+
+
+  hideCloseTagLine: function () {
+    if (!this.closeTagLine) {
+      return;
+    }
+
+    this.elt.removeChild(this.closeTagLine);
+    this.closeTagLine = undefined;
   },
 
   parentContainer: function () {
