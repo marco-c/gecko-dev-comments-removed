@@ -220,23 +220,6 @@ public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(EditorBase, nsIEditor)
 
-  
-
-
-
-
-
-
-
-
-
-
-  virtual nsresult Init(nsIDocument& doc,
-                        Element* aRoot,
-                        nsISelectionController* aSelCon,
-                        uint32_t aFlags,
-                        const nsAString& aInitialValue);
-
   bool IsInitialized() const { return !!mDocument; }
   already_AddRefed<nsIDOMDocument> GetDOMDocument();
   already_AddRefed<nsIDocument> GetDocument();
@@ -477,11 +460,6 @@ public:
   
 
 
-  virtual nsresult GetPreferredIMEState(widget::IMEState* aState);
-
-  
-
-
 
 
 
@@ -491,11 +469,6 @@ public:
   void SwitchTextDirectionTo(uint32_t aDirection);
 
   RangeUpdater& RangeUpdaterRef() { return mRangeUpdater; }
-
-  
-
-
-  nsresult FinalizeSelection();
 
 protected:
   nsresult DetermineCurrentDirection();
@@ -1314,17 +1287,6 @@ public:
   bool Destroyed() const
   {
     return mDidPreDestroy;
-  }
-
-  
-
-
-
-  bool OutputsMozDirty() const
-  {
-    
-    
-    return !IsInteractionAllowed() || IsMailEditor();
   }
 
   

@@ -107,14 +107,14 @@ public:
   Element* GetSelectionContainer();
 
   
+  NS_IMETHOD GetPreferredIMEState(widget::IMEState* aState) override;
+
+  
   NS_IMETHOD NotifySelectionChanged(nsIDOMDocument* aDOMDocument,
                                     nsISelection* aSelection,
                                     int16_t aReason) override;
 
   
-  virtual nsresult Init(nsIDocument& aDoc, Element* aRoot,
-                        nsISelectionController* aSelCon, uint32_t aFlags,
-                        const nsAString& aValue) override;
   NS_IMETHOD BeginningOfDocument() override;
   virtual nsresult HandleKeyPressEvent(
                      WidgetKeyboardEvent* aKeyboardEvent) override;
@@ -221,9 +221,10 @@ public:
   
   virtual nsresult EndUpdateViewBatch() override;
 
+  NS_IMETHOD Init(nsIDOMDocument* aDoc, nsIContent* aRoot,
+                  nsISelectionController* aSelCon, uint32_t aFlags,
+                  const nsAString& aValue) override;
   NS_IMETHOD PreDestroy(bool aDestroyingFrames) override;
-
-  virtual nsresult GetPreferredIMEState(widget::IMEState* aState) override;
 
   
 
@@ -390,6 +391,7 @@ public:
                  const EditorRawDOMPoint& aPointToInsert,
                  EditorRawDOMPoint* aPointAfterInsertedString =
                    nullptr) override;
+  NS_IMETHOD_(bool) IsModifiableNode(nsIDOMNode* aNode) override;
   virtual bool IsModifiableNode(nsINode* aNode) override;
 
   NS_IMETHOD SelectAll() override;
