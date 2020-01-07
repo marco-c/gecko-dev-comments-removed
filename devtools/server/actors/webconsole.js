@@ -882,6 +882,7 @@ WebConsoleActor.prototype =
 
 
 
+
   evaluateJSAsync: function(request) {
     
     
@@ -896,6 +897,39 @@ WebConsoleActor.prototype =
     
     const response = this.evaluateJS(request);
     response.resultID = resultID;
+
+    this._waitForHelperResultAndSend(response).catch(e =>
+      DevToolsUtils.reportException(
+        "evaluateJSAsync",
+        Error(`Encountered error while waiting for Helper Result: ${e}`)
+      )
+    );
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  _waitForHelperResultAndSend: async function(response) {
+    
+    if (
+      response.helperResult &&
+      typeof response.helperResult.then == "function"
+    ) {
+      response.helperResult = await response.helperResult;
+    }
 
     
     
