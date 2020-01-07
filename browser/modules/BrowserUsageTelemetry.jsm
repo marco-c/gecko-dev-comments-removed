@@ -81,6 +81,8 @@ const URLBAR_SELECTED_RESULT_METHODS = {
   enter: 0,
   enterSelection: 1,
   click: 2,
+  arrowEnterSelection: 3,
+  tabEnterSelection: 4,
 };
 
 
@@ -510,16 +512,21 @@ let BrowserUsageTelemetry = {
 
 
 
-  recordUrlbarSelectedResultMethod(event) {
+
+
+
+  recordUrlbarSelectedResultMethod(event, userSelectionBehavior = "none") {
     
     
     
     
     
     
+
     this._recordUrlOrSearchbarSelectedResultMethod(
       event, urlbarListener.selectedIndex,
-      "FX_URLBAR_SELECTED_RESULT_METHOD"
+      "FX_URLBAR_SELECTED_RESULT_METHOD",
+      userSelectionBehavior
     );
   },
 
@@ -535,11 +542,12 @@ let BrowserUsageTelemetry = {
   recordSearchbarSelectedResultMethod(event, highlightedIndex) {
     this._recordUrlOrSearchbarSelectedResultMethod(
       event, highlightedIndex,
-      "FX_SEARCHBAR_SELECTED_RESULT_METHOD"
+      "FX_SEARCHBAR_SELECTED_RESULT_METHOD",
+      "none"
     );
   },
 
-  _recordUrlOrSearchbarSelectedResultMethod(event, highlightedIndex, histogramID) {
+  _recordUrlOrSearchbarSelectedResultMethod(event, highlightedIndex, histogramID, userSelectionBehavior) {
     let histogram = Services.telemetry.getHistogramById(histogramID);
     
     let isClick = event instanceof Ci.nsIDOMMouseEvent ||
@@ -548,7 +556,16 @@ let BrowserUsageTelemetry = {
     if (isClick) {
       category = "click";
     } else if (highlightedIndex >= 0) {
-      category = "enterSelection";
+      switch (userSelectionBehavior) {
+      case "tab":
+        category = "tabEnterSelection";
+        break;
+      case "arrow":
+        category = "arrowEnterSelection";
+        break;
+      default:
+        category = "enterSelection";
+      }
     } else {
       category = "enter";
     }
