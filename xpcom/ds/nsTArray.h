@@ -414,6 +414,17 @@ protected:
   
   
   
+  
+  
+  
+  template<typename ActualAlloc>
+  void SwapFromEnd(index_type aStart, size_type aCount,
+                   size_type aElemSize, size_t aElemAlign);
+
+  
+  
+  
+  
   void IncrementLength(size_t aNum)
   {
     if (mHdr == EmptyHdr()) {
@@ -1717,6 +1728,58 @@ public:
   
   void RemoveElementAt(index_type aIndex) { RemoveElementsAt(aIndex, 1); }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void UnorderedRemoveElementsAt(index_type aStart, size_type aCount);
+
+  
+  
+  
+  
+  void UnorderedRemoveElementAt(index_type aIndex) {
+    UnorderedRemoveElementsAt(aIndex, 1);
+  }
+
   void Clear() {
     ClearAndRetainStorage();
     Compact();
@@ -2051,6 +2114,28 @@ nsTArray_Impl<E, Alloc>::RemoveElementsAt(index_type aStart, size_type aCount)
   this->template ShiftData<InfallibleAlloc>(aStart, aCount, 0,
                                             sizeof(elem_type),
                                             MOZ_ALIGNOF(elem_type));
+}
+
+template<typename E, class Alloc>
+void
+nsTArray_Impl<E, Alloc>::UnorderedRemoveElementsAt(index_type aStart, size_type aCount)
+{
+  MOZ_ASSERT(aCount == 0 || aStart < Length(), "Invalid aStart index");
+
+  mozilla::CheckedInt<index_type> rangeEnd = aStart;
+  rangeEnd += aCount;
+
+  if (MOZ_UNLIKELY(!rangeEnd.isValid() || rangeEnd.value() > Length())) {
+    InvalidArrayIndex_CRASH(aStart, Length());
+  }
+
+  
+  
+  
+  DestructRange(aStart, aCount);
+  this->template SwapFromEnd<InfallibleAlloc>(aStart, aCount,
+                                              sizeof(elem_type),
+                                              MOZ_ALIGNOF(elem_type));
 }
 
 template<typename E, class Alloc>
