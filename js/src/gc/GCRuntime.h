@@ -287,6 +287,16 @@ class GCRuntime
     void setDeterministic(bool enable);
 #endif
 
+#ifdef ENABLE_WASM_GC
+    
+    
+    
+    
+    static bool temporaryAbortIfWasmGc(JSContext* cx);
+#else
+    static bool temporaryAbortIfWasmGc(JSContext* cx) { return false; }
+#endif
+
     uint64_t nextCellUniqueId() {
         MOZ_ASSERT(nextCellUniqueId_ > 0);
         uint64_t uid = ++nextCellUniqueId_;

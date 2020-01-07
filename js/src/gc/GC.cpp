@@ -1074,20 +1074,8 @@ GCRuntime::setZeal(uint8_t zeal, uint32_t frequency)
 {
     MOZ_ASSERT(zeal <= unsigned(ZealMode::Limit));
 
-#ifdef ENABLE_WASM_GC
-    
-    
-    
-    
-    
-    JSContext* cx = rt->mainContextFromOwnThread();
-    if (cx->options().wasmGc()) {
-        for (FrameIter iter(cx); !iter.done(); ++iter) {
-            if (iter.isWasm())
-                return;
-        }
-    }
-#endif
+    if (temporaryAbortIfWasmGc(rt->mainContextFromOwnThread()))
+        return;
 
     if (verifyPreData)
         VerifyBarriers(rt, PreBarrierVerifier);
@@ -8242,6 +8230,13 @@ GCRuntime::setDeterministic(bool enabled)
 {
     MOZ_ASSERT(!JS::CurrentThreadIsHeapMajorCollecting());
     deterministicOnly = enabled;
+}
+#endif
+
+#ifdef ENABLE_WASM_GC
+ bool
+GCRuntime::temporaryAbortIfWasmGc(JSContext* cx) {
+    return cx->options().wasmGc() && cx->suppressGC;
 }
 #endif
 
