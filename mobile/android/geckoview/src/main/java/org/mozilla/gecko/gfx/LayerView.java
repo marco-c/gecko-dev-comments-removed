@@ -35,7 +35,6 @@ import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.InputDevice;
-import android.view.accessibility.AccessibilityManager;
 import android.widget.FrameLayout;
 
 import java.util.ArrayList;
@@ -47,9 +46,6 @@ import java.util.List;
 public class LayerView extends FrameLayout {
     private static final String LOGTAG = "GeckoLayerView";
 
-    private static AccessibilityManager sAccessibilityManager;
-
-    private PanZoomController mPanZoomController;
     private FullScreenState mFullScreenState;
 
     private int mDefaultClearColor = Color.WHITE;
@@ -90,99 +86,10 @@ public class LayerView extends FrameLayout {
         this(context, null);
     }
 
-    public void initializeView() {
-        mPanZoomController = PanZoomController.Factory.create(this);
-    }
-
-    
-
-
-
-
-
-    public void setIsLongpressEnabled(final boolean isLongpressEnabled) {
-        ThreadUtils.postToUiThread(new Runnable() {
-            @Override
-            public void run() {
-                mPanZoomController.setIsLongpressEnabled(isLongpressEnabled);
-            }
-        });
-    }
-
     private static Point getEventRadius(MotionEvent event) {
         return new Point((int)event.getToolMajor() / 2,
                          (int)event.getToolMinor() / 2);
     }
-
-    protected void destroy() {
-        if (mPanZoomController != null) {
-            mPanZoomController.destroy();
-        }
-    }
-
-    @Override
-    public boolean onTouchEvent(MotionEvent event) {
-        if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
-            requestFocus();
-        }
-
-        if (!isCompositorReady()) {
-            
-            
-            return true;
-        }
-        if (mPanZoomController != null && mPanZoomController.onTouchEvent(event)) {
-            return true;
-        }
-        return false;
-    }
-
-    private boolean isAccessibilityEnabled() {
-        if (sAccessibilityManager == null) {
-            sAccessibilityManager = (AccessibilityManager)
-                    getContext().getSystemService(Context.ACCESSIBILITY_SERVICE);
-        }
-        return sAccessibilityManager.isEnabled() &&
-               sAccessibilityManager.isTouchExplorationEnabled();
-    }
-
-    @Override
-    public boolean onHoverEvent(MotionEvent event) {
-        
-        
-        if (event.getSource() == InputDevice.SOURCE_TOUCHSCREEN &&
-            !isAccessibilityEnabled()) {
-            return false;
-        }
-
-        if (!isCompositorReady()) {
-            
-            
-            return true;
-        } else if (mPanZoomController != null && mPanZoomController.onMotionEvent(event)) {
-            return true;
-        }
-
-        return false;
-    }
-
-    @Override
-    public boolean onGenericMotionEvent(MotionEvent event) {
-        if (AndroidGamepadManager.handleMotionEvent(event)) {
-            return true;
-        }
-        if (!isCompositorReady()) {
-            
-            
-            return true;
-        }
-        if (mPanZoomController != null && mPanZoomController.onMotionEvent(event)) {
-            return true;
-        }
-        return false;
-    }
-
-    public PanZoomController getPanZoomController() { return mPanZoomController; }
 
     public void setSurfaceBackgroundColor(int newColor) {
     }
@@ -222,16 +129,6 @@ public class LayerView extends FrameLayout {
         mSession = session;
         mCompositor = session.mCompositor;
         mCompositor.layerView = this;
-
-        final NativePanZoomController npzc = (NativePanZoomController) mPanZoomController;
-
-        if (GeckoThread.isStateAtLeast(GeckoThread.State.PROFILE_READY)) {
-            mCompositor.attachToJava(npzc);
-        } else {
-            GeckoThread.queueNativeCallUntil(GeckoThread.State.PROFILE_READY,
-                    mCompositor, "attachToJava",
-                    NativePanZoomController.class, npzc);
-        }
     }
 
     @WrapForJNI(calledFrom = "ui")
