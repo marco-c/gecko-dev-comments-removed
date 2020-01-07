@@ -14,6 +14,7 @@
 class nsPIDOMWindowOuter;
 class nsIControllers;
 class nsIController;
+class nsINode;
 
 namespace mozilla {
 namespace dom {
@@ -33,8 +34,8 @@ public:
   virtual nsPIDOMWindowOuter* GetWindow()=0;
 
   
-  virtual nsIDOMNode* GetPopupNode() = 0;
-  virtual void SetPopupNode(nsIDOMNode* aNode) = 0;
+  virtual already_AddRefed<nsINode> GetPopupNode() = 0;
+  virtual void SetPopupNode(nsINode* aNode) = 0;
 
   
 

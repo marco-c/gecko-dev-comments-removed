@@ -596,12 +596,12 @@ public:
 
 
 
-  already_AddRefed<nsIDOMNode> GetLastTriggerPopupNode(nsIDocument* aDocument)
+  already_AddRefed<nsINode> GetLastTriggerPopupNode(nsIDocument* aDocument)
   {
     return GetLastTriggerNode(aDocument, false);
   }
 
-  already_AddRefed<nsIDOMNode> GetLastTriggerTooltipNode(nsIDocument* aDocument)
+  already_AddRefed<nsINode> GetLastTriggerTooltipNode(nsIDocument* aDocument)
   {
     return GetLastTriggerNode(aDocument, true);
   }
@@ -798,7 +798,7 @@ private:
 
 protected:
 
-  already_AddRefed<nsIDOMNode> GetLastTriggerNode(nsIDocument* aDocument, bool aIsTooltip);
+  already_AddRefed<nsINode> GetLastTriggerNode(nsIDocument* aDocument, bool aIsTooltip);
 
   
 
