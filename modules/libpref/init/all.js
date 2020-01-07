@@ -1584,9 +1584,11 @@ pref("network.protocol-handler.external.moz-icon", false);
 
 
 pref("network.protocol-handler.external.ttp", false);  
+pref("network.protocol-handler.external.htp", false);  
 pref("network.protocol-handler.external.ttps", false); 
 pref("network.protocol-handler.external.tps", false);  
 pref("network.protocol-handler.external.ps", false);   
+pref("network.protocol-handler.external.htps", false); 
 pref("network.protocol-handler.external.ile", false);  
 pref("network.protocol-handler.external.le", false);   
 
@@ -1689,10 +1691,6 @@ pref("network.http.referer.trimmingPolicy", 0);
 pref("network.http.referer.XOriginTrimmingPolicy", 0);
 
 pref("network.http.referer.XOriginPolicy", 0);
-
-
-
-pref("network.http.sendOriginHeader", 0);
 
 
 pref("network.http.redirection-limit", 20);
@@ -2291,7 +2289,6 @@ pref("intl.menuitems.insertseparatorbeforeaccesskeys","chrome://global/locale/in
 pref("intl.charset.detector",               "chrome://global/locale/intl.properties");
 pref("intl.charset.fallback.override",      "");
 pref("intl.charset.fallback.tld",           true);
-pref("intl.charset.fallback.utf8_for_file", false);
 pref("intl.ellipsis",                       "chrome://global-platform/locale/intl.properties");
 pref("intl.locale.matchOS",                 false);
 
@@ -3644,8 +3641,6 @@ pref("ui.mouse.radius.inputSource.touchOnly", true);
 
 #ifdef XP_WIN
 
-pref("font.name-list.emoji", "Segoe UI Emoji, EmojiOne Mozilla");
-
 pref("font.name-list.serif.ar", "Times New Roman");
 pref("font.name-list.sans-serif.ar", "Segoe UI, Tahoma, Arial");
 pref("font.name-list.monospace.ar", "Courier New");
@@ -4002,8 +3997,6 @@ pref("ui.key.saveLink.shift", false);
 
 
 
-pref("font.name-list.emoji", "Apple Color Emoji");
-
 pref("font.name-list.serif.ar", "Al Bayan");
 pref("font.name-list.sans-serif.ar", "Geeza Pro");
 pref("font.name-list.monospace.ar", "Geeza Pro");
@@ -4295,10 +4288,6 @@ pref("print.print_in_color", true);
 
 
 
-
-
-pref("font.name-list.emoji", "EmojiOne Mozilla");
-
 pref("font.name-list.serif.ar", "serif");
 pref("font.name-list.sans-serif.ar", "sans-serif");
 pref("font.name-list.monospace.ar", "monospace");
@@ -4473,8 +4462,6 @@ pref("font.size.fixed.x-western", 12);
 
 #if defined(ANDROID)
 
-
-pref("font.name-list.emoji", "Noto Color Emoji");
 
 pref("font.name-list.serif.ar", "Noto Naskh Arabic, Noto Serif, Droid Serif");
 pref("font.name-list.sans-serif.ar", "Noto Naskh Arabic, Clear Sans, Roboto, Droid Sans");
@@ -4703,13 +4690,6 @@ pref("webgl.force-index-validation", 0);
 pref("webgl.lose-context-on-memory-pressure", false);
 pref("webgl.can-lose-context-in-foreground", true);
 pref("webgl.restore-context-when-visible", true);
-#ifdef ANDROID
-pref("webgl.max-contexts", 16);
-pref("webgl.max-contexts-per-principal", 8);
-#else
-pref("webgl.max-contexts", 32);
-pref("webgl.max-contexts-per-principal", 16);
-#endif
 pref("webgl.max-warnings-per-context", 32);
 pref("webgl.enable-draft-extensions", false);
 pref("webgl.enable-privileged-extensions", false);
@@ -4997,8 +4977,6 @@ pref("full-screen-api.unprefix.enabled", false);
 pref("full-screen-api.unprefix.enabled", true);
 #endif
 pref("full-screen-api.allow-trusted-requests-only", true);
-
-pref("full-screen-api.ignore-widgets", false);
 pref("full-screen-api.pointer-lock.enabled", true);
 
 #ifndef MOZ_WIDGET_GTK

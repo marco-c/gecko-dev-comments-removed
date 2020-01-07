@@ -13,6 +13,11 @@ var data = [
   },
   {
     
+    wrong: 'htp://www.example.com/',
+    fixed: 'http://www.example.com/',
+  },
+  {
+    
     wrong: 'ttps://www.example.com/',
     fixed: 'https://www.example.com/',
   },
@@ -24,6 +29,11 @@ var data = [
   {
     
     wrong: 'ps://www.example.com/',
+    fixed: 'https://www.example.com/',
+  },
+  {
+    
+    wrong: 'htps://www.example.com/',
     fixed: 'https://www.example.com/',
   },
   {
