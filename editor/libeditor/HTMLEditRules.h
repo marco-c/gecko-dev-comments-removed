@@ -195,7 +195,15 @@ protected:
 
   nsresult WillInsertBreak(bool* aCancel, bool* aHandled);
 
-  void DeleteNodeIfCollapsedText(nsINode& aNode);
+  
+
+
+
+
+
+
+
+  MOZ_MUST_USE nsresult DeleteNodeIfCollapsedText(nsINode& aNode);
 
   
 
