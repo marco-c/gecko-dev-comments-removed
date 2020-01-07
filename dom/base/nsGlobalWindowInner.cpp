@@ -2118,6 +2118,10 @@ nsGlobalWindowInner::PostHandleEvent(EventChainPostVisitor& aVisitor)
       EventDispatcher::Dispatch(element, nullptr, &event, nullptr, &status);
     }
 
+    if (mVREventObserver) {
+      mVREventObserver->NotifyAfterLoad();
+    }
+
     uint32_t autoActivateVRDisplayID = 0;
     nsGlobalWindowOuter* outer = GetOuterWindowInternal();
     if (outer) {
@@ -7020,6 +7024,9 @@ nsGlobalWindowInner::DispatchVRDisplayActivate(uint32_t aDisplayID,
                                                mozilla::dom::VRDisplayEventReason aReason)
 {
   
+  VRDisplay::UpdateVRDisplays(mVRDisplays, this);
+
+  
   
   for (const auto& display : mVRDisplays) {
     if (display->DisplayId() == aDisplayID) {
@@ -7064,6 +7071,9 @@ nsGlobalWindowInner::DispatchVRDisplayDeactivate(uint32_t aDisplayID,
                                                  mozilla::dom::VRDisplayEventReason aReason)
 {
   
+  VRDisplay::UpdateVRDisplays(mVRDisplays, this);
+
+  
   
   for (const auto& display : mVRDisplays) {
     if (display->DisplayId() == aDisplayID && display->IsPresenting()) {
@@ -7094,6 +7104,9 @@ void
 nsGlobalWindowInner::DispatchVRDisplayConnect(uint32_t aDisplayID)
 {
   
+  VRDisplay::UpdateVRDisplays(mVRDisplays, this);
+
+  
   
   for (const auto& display : mVRDisplays) {
     if (display->DisplayId() == aDisplayID) {
@@ -7122,6 +7135,9 @@ void
 nsGlobalWindowInner::DispatchVRDisplayDisconnect(uint32_t aDisplayID)
 {
   
+  VRDisplay::UpdateVRDisplays(mVRDisplays, this);
+
+  
   
   for (const auto& display : mVRDisplays) {
     if (display->DisplayId() == aDisplayID) {
@@ -7149,6 +7165,9 @@ nsGlobalWindowInner::DispatchVRDisplayDisconnect(uint32_t aDisplayID)
 void
 nsGlobalWindowInner::DispatchVRDisplayPresentChange(uint32_t aDisplayID)
 {
+  
+  VRDisplay::UpdateVRDisplays(mVRDisplays, this);
+
   
   
   for (const auto& display : mVRDisplays) {
