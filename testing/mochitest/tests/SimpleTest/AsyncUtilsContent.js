@@ -11,8 +11,8 @@ ChromeUtils.import("resource://gre/modules/Services.jsm");
 var EventUtils = {};
 EventUtils.window = {};
 EventUtils.parent = EventUtils.window;
-EventUtils._EU_Ci = Components.interfaces;
-EventUtils._EU_Cc = Components.classes;
+EventUtils._EU_Ci = Ci;
+EventUtils._EU_Cc = Cc;
 
 EventUtils.navigator = content.document.defaultView.navigator;
 EventUtils.KeyboardEvent = content.document.defaultView.KeyboardEvent;

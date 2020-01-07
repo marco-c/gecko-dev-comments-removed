@@ -28,7 +28,7 @@ function run_test() {
       
       
       
-      if (!("nsIWindowsRegKey" in Components.interfaces))
+      if (!("nsIWindowsRegKey" in Ci))
         Assert.ok((file.permissions & 0o100) == 0o100);
 
       executeSoon(do_test_finished);

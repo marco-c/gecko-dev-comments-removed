@@ -55,7 +55,7 @@ function run_test() {
   
   do_load_manifest("component_import.manifest");
   const contractID = "@mozilla.org/tests/module-importer;";
-  Assert.ok((contractID + "1") in Components.classes);
+  Assert.ok((contractID + "1") in Cc);
   var foo = Cc[contractID + "1"]
               .createInstance(Ci.nsIClassInfo);
   Assert.ok(Boolean(foo));
@@ -80,7 +80,7 @@ function run_test() {
   Assert.ok(foo.contractID == contractID + "1");
 
   
-  Assert.ok((contractID + "2") in Components.classes);
+  Assert.ok((contractID + "2") in Cc);
   var bar = Cc[contractID + "2"]
               .createInstance(Ci.nsIClassInfo);
   Assert.ok(Boolean(bar));

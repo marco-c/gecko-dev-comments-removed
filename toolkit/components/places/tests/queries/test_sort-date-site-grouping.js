@@ -117,7 +117,7 @@ add_task(async function test_sort_date_site_grouping() {
   
   
   
-  let isLinux = ("@mozilla.org/gnome-gconf-service;1" in Components.classes);
+  let isLinux = ("@mozilla.org/gnome-gconf-service;1" in Cc);
   if (isLinux)
     return;
 

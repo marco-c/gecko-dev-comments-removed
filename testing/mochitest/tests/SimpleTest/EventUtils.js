@@ -33,17 +33,17 @@ window.__defineGetter__('_EU_Ci', function() {
   
   
   var c = Object.getOwnPropertyDescriptor(window, 'Components');
-  return c.value && !c.writable ? Components.interfaces : SpecialPowers.Ci;
+  return c.value && !c.writable ? Ci : SpecialPowers.Ci;
 });
 
 window.__defineGetter__('_EU_Cc', function() {
   var c = Object.getOwnPropertyDescriptor(window, 'Components');
-  return c.value && !c.writable ? Components.classes : SpecialPowers.Cc;
+  return c.value && !c.writable ? Cc : SpecialPowers.Cc;
 });
 
 window.__defineGetter__('_EU_Cu', function() {
   var c = Object.getOwnPropertyDescriptor(window, 'Components');
-  return c.value && !c.writable ? Components.utils : SpecialPowers.Cu;
+  return c.value && !c.writable ? Cu : SpecialPowers.Cu;
 });
 
 window.__defineGetter__("_EU_OS", function() {

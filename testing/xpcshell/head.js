@@ -87,7 +87,7 @@ try {
 
 
 if (runningInParent &&
-    "mozIAsyncHistory" in Components.interfaces) {
+    "mozIAsyncHistory" in Ci) {
   
   
   _Services.prefs.setBoolPref("places.history.enabled", true);
@@ -100,7 +100,7 @@ try {
     _Services.prefs.setBoolPref("network.disable.ipc.security", true);
 
     
-    if ("@mozilla.org/windows-registry-key;1" in Components.classes) {
+    if ("@mozilla.org/windows-registry-key;1" in Cc) {
       _Services.prefs.setCharPref("network.dns.ipv4OnlyDomains", "localhost");
     }
   }
@@ -113,7 +113,7 @@ try {
 
 try {
   if (runningInParent &&
-      "@mozilla.org/toolkit/crash-reporter;1" in Components.classes) {
+      "@mozilla.org/toolkit/crash-reporter;1" in Cc) {
     let crashReporter =
           Cc["@mozilla.org/toolkit/crash-reporter;1"]
           .getService(Ci.nsICrashReporter);
@@ -923,7 +923,7 @@ function legible_exception(exception) {
     return exception.toString();
 
     case "number":
-    for (let name in Components.results) {
+    for (let name in Cr) {
       if (exception === Cr[name]) {
         return "Components.results." + name;
       }
@@ -1132,7 +1132,7 @@ function do_get_profile(notifyProfileAfterChange = false) {
 
   
   if (runningInParent &&
-      "@mozilla.org/toolkit/crash-reporter;1" in Components.classes) {
+      "@mozilla.org/toolkit/crash-reporter;1" in Cc) {
     let crashReporter =
         Cc["@mozilla.org/toolkit/crash-reporter;1"]
           .getService(Ci.nsICrashReporter);

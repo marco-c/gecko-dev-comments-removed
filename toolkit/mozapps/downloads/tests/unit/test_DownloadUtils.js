@@ -205,7 +205,7 @@ function run_test() {
   testURI("jar:http://www.mozilla.com/file!/magic", "mozilla.com", "www.mozilla.com");
   testURI("file:///C:/Cool/Stuff/", "local file", "local file");
   
-  if ("@mozilla.org/network/protocol;1?name=moz-icon" in Components.classes) {
+  if ("@mozilla.org/network/protocol;1?name=moz-icon" in Cc) {
     testURI("moz-icon:file:///test.extension", "local file", "local file");
     testURI("moz-icon://.extension", "moz-icon resource", "moz-icon resource");
   }

@@ -4,8 +4,8 @@
 
 
 
-const I                    = Components.interfaces;
-const C                    = Components.classes;
+const I                    = Ci;
+const C                    = Cc;
 
 const nsIFile         = I.nsIFile;
 const nsIProperties        = I.nsIProperties;

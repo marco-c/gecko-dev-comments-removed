@@ -28,8 +28,8 @@ let EventUtils = {};
 EventUtils.window = {};
 EventUtils.parent = {};
 
-EventUtils._EU_Ci = Components.interfaces;
-EventUtils._EU_Cc = Components.classes;
+EventUtils._EU_Ci = Ci;
+EventUtils._EU_Cc = Cc;
 
 Services.scriptloader.loadSubScript("chrome://mochikit/content/tests/SimpleTest/EventUtils.js", EventUtils);
 

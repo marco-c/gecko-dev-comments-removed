@@ -101,7 +101,7 @@ add_task(async function initializeState() {
   
   
   
-  if ("@mozilla.org/browser/experiments-service;1" in Components.classes) {
+  if ("@mozilla.org/browser/experiments-service;1" in Cc) {
     let tmp = {};
     ChromeUtils.import("resource:///modules/experiments/Experiments.jsm", tmp);
     
