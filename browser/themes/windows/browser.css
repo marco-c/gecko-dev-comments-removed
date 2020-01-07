@@ -790,12 +790,6 @@ html|span.ac-emphasize-text-url {
 }
 
 
-.tab-close-button {
-  -moz-appearance: none;
-  border: none;
-}
-
-
 
 .alltabs-item[selected="true"] {
   font-weight: bold;
