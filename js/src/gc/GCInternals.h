@@ -50,56 +50,67 @@ class MOZ_RAII AutoCheckCanAccessAtomsDuringGC
 #endif
 };
 
-class MOZ_RAII AutoTraceSession
+
+class MOZ_RAII AutoHeapSession
 {
   public:
-    explicit AutoTraceSession(JSRuntime* rt, JS::HeapState state = JS::HeapState::Tracing);
-    ~AutoTraceSession();
+    ~AutoHeapSession();
 
-    
-    
-    mozilla::Maybe<AutoLockForExclusiveAccess> maybeLock;
+  protected:
+    AutoHeapSession(JSRuntime* rt, JS::HeapState state);
 
-    
-    
-    mozilla::Maybe<AutoCheckCanAccessAtomsDuringGC> maybeCheckAtomsAccess;
+  private:
+    AutoHeapSession(const AutoHeapSession&) = delete;
+    void operator=(const AutoHeapSession&) = delete;
 
-    AutoLockForExclusiveAccess& lock() {
-        return maybeLock.ref();
-    }
+    JSRuntime* runtime;
+    JS::HeapState prevState;
+    AutoGeckoProfilerEntry profilingStackFrame;
+};
+
+class MOZ_RAII AutoGCSession : public AutoHeapSession
+{
+  public:
+    explicit AutoGCSession(JSRuntime* rt, JS::HeapState state)
+      : AutoHeapSession(rt, state)
+    {}
 
     AutoCheckCanAccessAtomsDuringGC& checkAtomsAccess() {
         return maybeCheckAtomsAccess.ref();
     }
 
-  protected:
-    JSRuntime* runtime;
+    
+    
+    mozilla::Maybe<AutoCheckCanAccessAtomsDuringGC> maybeCheckAtomsAccess;
+};
 
-  private:
-    AutoTraceSession(const AutoTraceSession&) = delete;
-    void operator=(const AutoTraceSession&) = delete;
+class MOZ_RAII AutoTraceSession : public AutoLockForExclusiveAccess,
+                                  public AutoHeapSession
+{
+  public:
+    explicit AutoTraceSession(JSRuntime* rt)
+      : AutoLockForExclusiveAccess(rt),
+        AutoHeapSession(rt, JS::HeapState::Tracing)
+    {}
+};
 
-    JS::HeapState prevState;
-    AutoGeckoProfilerEntry profilingStackFrame;
+struct MOZ_RAII AutoFinishGC
+{
+    explicit AutoFinishGC(JSContext* cx) {
+        FinishGC(cx);
+    }
 };
 
 
 
-
-
-struct MOZ_RAII AutoPrepareForTracing
+class MOZ_RAII AutoPrepareForTracing : private AutoFinishGC,
+                                       public AutoTraceSession
 {
-    struct AutoFinishGC
-    {
-        explicit AutoFinishGC(JSContext* cx) {
-            FinishGC(cx);
-        }
-    };
-
-    AutoFinishGC finishGC;
-    AutoTraceSession session;
-
-    explicit AutoPrepareForTracing(JSContext* cx);
+  public:
+    explicit AutoPrepareForTracing(JSContext* cx)
+      : AutoFinishGC(cx),
+        AutoTraceSession(cx->runtime())
+    {}
 };
 
 AbortReason
