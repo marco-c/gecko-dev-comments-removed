@@ -997,22 +997,22 @@ const gCSSProperties = {
     types: [
     ]
   },
-  'offset-block-end': {
+  'inset-block-end': {
     
     types: [
     ]
   },
-  'offset-block-start': {
+  'inset-block-start': {
     
     types: [
     ]
   },
-  'offset-inline-end': {
+  'inset-inline-end': {
     
     types: [
     ]
   },
-  'offset-inline-start': {
+  'inset-inline-start': {
     
     types: [
     ]
