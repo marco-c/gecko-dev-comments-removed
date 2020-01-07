@@ -215,7 +215,13 @@ add_task(async function test_i18n_negotiation() {
     } + `(${runTests})`,
   };
 
-  Components.manager.addBootstrappedManifestLocation(do_get_file("data/locales/"));
+  
+  
+  
+  
+  
+  
+  Services.locale.setAvailableLocales(["en-US", "fr", "jp"]);
 
   let contentPage = await ExtensionTestUtils.loadContentPage(`${BASE_URL}/file_sample.html`);
 

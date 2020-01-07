@@ -61,7 +61,13 @@ add_task(async function() {
     return extension.awaitMessage("manifest");
   }
 
-  Components.manager.addBootstrappedManifestLocation(do_get_file("data/locales/"));
+  
+  
+  
+  
+  
+  
+  Services.locale.setAvailableLocales(["en-US", "fr", "jp"]);
 
   await extension.startup();
 

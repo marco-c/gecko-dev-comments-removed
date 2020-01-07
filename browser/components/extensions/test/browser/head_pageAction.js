@@ -7,14 +7,17 @@
 
 
 {
-  const chromeRegistry = Cc["@mozilla.org/chrome/chrome-registry;1"].getService(Ci.nsIChromeRegistry);
+  
+  
+  
+  
+  
+  
+  const avLocales = Services.locale.getAvailableLocales();
 
-  let localeDir = new URL("locale/", gTestPath).href;
-  let {file} = chromeRegistry.convertChromeURL(Services.io.newURI(localeDir)).QueryInterface(Ci.nsIFileURL);
-
-  Components.manager.addBootstrappedManifestLocation(file);
+  Services.locale.setAvailableLocales(["en-US", "es-ES"]);
   registerCleanupFunction(() => {
-    Components.manager.removeBootstrappedManifestLocation(file);
+    Services.locale.setAvailableLocales(avLocales);
   });
 }
 
