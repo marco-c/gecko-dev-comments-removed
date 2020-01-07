@@ -163,10 +163,9 @@ nsSVGAngle::ConvertToSpecifiedUnits(uint16_t unitType,
   }
 
   float valueInUserUnits = mBaseVal * GetDegreesPerUnit(mBaseValUnit);
-  mBaseValUnit = uint8_t(unitType);
   
   
-  SetBaseValue(valueInUserUnits, aSVGElement, false);
+  SetBaseValue(valueInUserUnits, unitType, aSVGElement, false);
 
   if (aSVGElement) {
     aSVGElement->DidChangeAngle(mAttrEnum, emptyOrOldValue);
@@ -294,10 +293,11 @@ nsSVGAngle::GetAnimValueString(nsAString & aValueAsString) const
 }
 
 void
-nsSVGAngle::SetBaseValue(float aValue, nsSVGElement *aSVGElement,
-                         bool aDoSetAttr)
+nsSVGAngle::SetBaseValue(float aValue, uint8_t aUnit,
+                         nsSVGElement *aSVGElement, bool aDoSetAttr)
 {
-  if (mBaseVal == aValue * GetDegreesPerUnit(mBaseValUnit)) {
+  float valueInSpecifiedUnits = aValue / GetDegreesPerUnit(aUnit);
+  if (aUnit == mBaseValUnit && mBaseVal == valueInSpecifiedUnits) {
     return;
   }
   nsAttrValue emptyOrOldValue;
@@ -305,7 +305,8 @@ nsSVGAngle::SetBaseValue(float aValue, nsSVGElement *aSVGElement,
     emptyOrOldValue = aSVGElement->WillChangeAngle(mAttrEnum);
   }
 
-  mBaseVal = aValue / GetDegreesPerUnit(mBaseValUnit);
+  mBaseValUnit = aUnit;
+  mBaseVal = valueInSpecifiedUnits;
   if (!mIsAnimated) {
     mAnimVal = mBaseVal;
   }
