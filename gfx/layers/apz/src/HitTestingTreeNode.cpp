@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "HitTestingTreeNode.h"
 
 #include "AsyncPanZoomController.h"                     
@@ -32,7 +30,7 @@ HitTestingTreeNode::HitTestingTreeNode(AsyncPanZoomController* aApzc,
   , mIsBackfaceHidden(false)
   , mOverride(EventRegionsOverride::NoOverride)
 {
-if (mIsPrimaryApzcHolder) {
+  if (mIsPrimaryApzcHolder) {
     MOZ_ASSERT(mApzc);
   }
   MOZ_ASSERT(!mApzc || mApzc->GetLayersId() == mLayersId);
