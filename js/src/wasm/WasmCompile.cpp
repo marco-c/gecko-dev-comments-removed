@@ -103,7 +103,7 @@ CompileArgs::initFromContext(JSContext* cx, ScriptedCaller&& scriptedCaller)
     
     
     
-    debugEnabled = cx->compartment()->debuggerObservesAsmJS();
+    debugEnabled = cx->realm()->debuggerObservesAsmJS();
 
     this->scriptedCaller = Move(scriptedCaller);
     return assumptions.initBuildIdFromContext(cx);

@@ -460,7 +460,7 @@ HandleInterrupt(JSContext* cx, bool invokeCallback)
     if (!stop) {
         
         
-        if (cx->compartment()->isDebuggee()) {
+        if (cx->realm()->isDebuggee()) {
             ScriptFrameIter iter(cx);
             if (!iter.done() &&
                 cx->compartment() == iter.compartment() &&

@@ -54,7 +54,6 @@ JSCompartment::JSCompartment(Zone* zone)
     lazyArrayBuffers(nullptr),
     nonSyntacticLexicalEnvironments_(nullptr),
     gcIncomingGrayPointers(nullptr),
-    debugModeBits(0),
     validAccessPtr(nullptr),
     randomKeyGenerator_(runtime_->forkRandomKeyGenerator()),
     debugEnvs(nullptr),
@@ -1071,7 +1070,7 @@ AddInnerLazyFunctionsFromScript(JSScript* script, AutoObjectVector& lazyFunction
 }
 
 static bool
-AddLazyFunctionsForCompartment(JSContext* cx, AutoObjectVector& lazyFunctions, AllocKind kind)
+AddLazyFunctionsForRealm(JSContext* cx, AutoObjectVector& lazyFunctions, AllocKind kind)
 {
     
     
@@ -1090,7 +1089,7 @@ AddLazyFunctionsForCompartment(JSContext* cx, AutoObjectVector& lazyFunctions, A
         
         
         if (gc::IsAboutToBeFinalizedUnbarriered(&fun) ||
-            fun->compartment() != cx->compartment())
+            fun->realm() != cx->realm())
         {
             continue;
         }
@@ -1108,16 +1107,16 @@ AddLazyFunctionsForCompartment(JSContext* cx, AutoObjectVector& lazyFunctions, A
 }
 
 static bool
-CreateLazyScriptsForCompartment(JSContext* cx)
+CreateLazyScriptsForRealm(JSContext* cx)
 {
     AutoObjectVector lazyFunctions(cx);
 
-    if (!AddLazyFunctionsForCompartment(cx, lazyFunctions, AllocKind::FUNCTION))
+    if (!AddLazyFunctionsForRealm(cx, lazyFunctions, AllocKind::FUNCTION))
         return false;
 
     
     
-    if (!AddLazyFunctionsForCompartment(cx, lazyFunctions, AllocKind::FUNCTION_EXTENDED))
+    if (!AddLazyFunctionsForRealm(cx, lazyFunctions, AllocKind::FUNCTION_EXTENDED))
         return false;
 
     
@@ -1145,17 +1144,17 @@ CreateLazyScriptsForCompartment(JSContext* cx)
 }
 
 bool
-JSCompartment::ensureDelazifyScriptsForDebugger(JSContext* cx)
+Realm::ensureDelazifyScriptsForDebugger(JSContext* cx)
 {
     AutoRealmUnchecked ar(cx, this);
-    if (needsDelazificationForDebugger() && !CreateLazyScriptsForCompartment(cx))
+    if (needsDelazificationForDebugger() && !CreateLazyScriptsForRealm(cx))
         return false;
-    debugModeBits &= ~DebuggerNeedsDelazification;
+    debugModeBits_ &= ~DebuggerNeedsDelazification;
     return true;
 }
 
 void
-JSCompartment::updateDebuggerObservesFlag(unsigned flag)
+Realm::updateDebuggerObservesFlag(unsigned flag)
 {
     MOZ_ASSERT(isDebuggee());
     MOZ_ASSERT(flag == DebuggerObservesAllExecution ||
@@ -1163,10 +1162,9 @@ JSCompartment::updateDebuggerObservesFlag(unsigned flag)
                flag == DebuggerObservesAsmJS ||
                flag == DebuggerObservesBinarySource);
 
-    Realm* realm = JS::GetRealmForCompartment(this);
     GlobalObject* global = zone()->runtimeFromMainThread()->gc.isForegroundSweeping()
-                           ? realm->unsafeUnbarrieredMaybeGlobal()
-                           : realm->maybeGlobal();
+                           ? unsafeUnbarrieredMaybeGlobal()
+                           : maybeGlobal();
     const GlobalObject::DebuggerVector* v = global->getDebuggers();
     for (auto p = v->begin(); p != v->end(); p++) {
         Debugger* dbg = *p;
@@ -1175,25 +1173,25 @@ JSCompartment::updateDebuggerObservesFlag(unsigned flag)
             flag == DebuggerObservesAsmJS ? dbg->observesAsmJS() :
             dbg->observesBinarySource())
         {
-            debugModeBits |= flag;
+            debugModeBits_ |= flag;
             return;
         }
     }
 
-    debugModeBits &= ~flag;
+    debugModeBits_ &= ~flag;
 }
 
 void
-JSCompartment::unsetIsDebuggee()
+Realm::unsetIsDebuggee()
 {
     if (isDebuggee()) {
-        debugModeBits &= ~DebuggerObservesMask;
+        debugModeBits_ &= ~DebuggerObservesMask;
         DebugEnvironments::onCompartmentUnsetIsDebuggee(this);
     }
 }
 
 void
-JSCompartment::updateDebuggerObservesCoverage()
+Realm::updateDebuggerObservesCoverage()
 {
     bool previousState = debuggerObservesCoverage();
     updateDebuggerObservesFlag(DebuggerObservesCoverage);
@@ -1215,26 +1213,25 @@ JSCompartment::updateDebuggerObservesCoverage()
     if (collectCoverage())
         return;
 
-    Realm* realm = JS::GetRealmForCompartment(this);
-    realm->clearScriptCounts();
-    realm->clearScriptNames();
+    clearScriptCounts();
+    clearScriptNames();
 }
 
 bool
-JSCompartment::collectCoverage() const
+Realm::collectCoverage() const
 {
     return collectCoverageForPGO() ||
            collectCoverageForDebug();
 }
 
 bool
-JSCompartment::collectCoverageForPGO() const
+Realm::collectCoverageForPGO() const
 {
     return !JitOptions.disablePgo;
 }
 
 bool
-JSCompartment::collectCoverageForDebug() const
+Realm::collectCoverageForDebug() const
 {
     return debuggerObservesCoverage() ||
            runtimeFromAnyThread()->profilingScripts ||
@@ -1262,10 +1259,10 @@ Realm::clearScriptNames()
 }
 
 void
-JSCompartment::clearBreakpointsIn(FreeOp* fop, js::Debugger* dbg, HandleObject handler)
+Realm::clearBreakpointsIn(FreeOp* fop, js::Debugger* dbg, HandleObject handler)
 {
     for (auto script = zone()->cellIter<JSScript>(); !script.done(); script.next()) {
-        if (script->compartment() == this && script->hasAnyBreakpointsOrStepMode())
+        if (script->realm() == this && script->hasAnyBreakpointsOrStepMode())
             script->clearBreakpointsIn(fop, dbg, handler);
     }
 }

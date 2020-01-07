@@ -104,7 +104,7 @@ BaselineCompiler::compile()
     
     
     
-    if (!script->hasScriptCounts() && cx->compartment()->collectCoverage()) {
+    if (!script->hasScriptCounts() && cx->realm()->collectCoverage()) {
         if (!script->initScriptCounts(cx))
             return Method_Error;
     }

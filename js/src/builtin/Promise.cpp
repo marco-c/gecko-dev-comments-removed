@@ -164,7 +164,7 @@ mozilla::Atomic<uint64_t> gIDGenerator(0);
 static MOZ_ALWAYS_INLINE bool
 ShouldCaptureDebugInfo(JSContext* cx)
 {
-    return cx->options().asyncStack() || cx->compartment()->isDebuggee();
+    return cx->options().asyncStack() || cx->realm()->isDebuggee();
 }
 
 class PromiseDebugInfo : public NativeObject
@@ -3068,7 +3068,7 @@ IsPromiseThenOrCatchRetValImplicitlyUsed(JSContext* cx)
         return false;
 
     
-    if (cx->compartment()->isDebuggee())
+    if (cx->realm()->isDebuggee())
         return true;
 
     

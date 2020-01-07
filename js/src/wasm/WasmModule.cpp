@@ -1287,7 +1287,7 @@ Module::instantiate(JSContext* cx,
     
 
     const ShareableBytes* maybeBytecode = nullptr;
-    if (cx->compartment()->isDebuggee() || metadata().debugEnabled ||
+    if (cx->realm()->isDebuggee() || metadata().debugEnabled ||
         !metadata().funcNames.empty())
     {
         maybeBytecode = bytecode_.get();
@@ -1297,7 +1297,7 @@ Module::instantiate(JSContext* cx,
     
     
 
-    bool binarySource = cx->compartment()->debuggerObservesBinarySource();
+    bool binarySource = cx->realm()->debuggerObservesBinarySource();
     auto debug = cx->make_unique<DebugState>(code, maybeBytecode, binarySource);
     if (!debug)
         return false;

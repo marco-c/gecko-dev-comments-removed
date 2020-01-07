@@ -986,7 +986,7 @@ InitFromBailout(JSContext* cx, size_t frameNo,
             
             
             
-            MOZ_ASSERT(cx->compartment()->isDebuggee());
+            MOZ_ASSERT(cx->realm()->isDebuggee());
             if (iter.moreFrames() || HasLiveStackValueAtDepth(script, pc, i + 1)) {
                 v = iter.read();
             } else {

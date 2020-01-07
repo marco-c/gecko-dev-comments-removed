@@ -38,6 +38,7 @@ namespace gc {
 template <typename Node, typename Derived> class ComponentFinder;
 } 
 
+class AutoRestoreRealmDebugMode;
 class GlobalObject;
 class LexicalEnvironmentObject;
 class MapObject;
@@ -660,26 +661,6 @@ struct JSCompartment
     JSObject*                    gcIncomingGrayPointers;
 
   private:
-    enum {
-        IsDebuggee = 1 << 0,
-        DebuggerObservesAllExecution = 1 << 1,
-        DebuggerObservesAsmJS = 1 << 2,
-        DebuggerObservesCoverage = 1 << 3,
-        DebuggerObservesBinarySource = 1 << 4,
-        DebuggerNeedsDelazification = 1 << 5
-    };
-
-    unsigned debugModeBits;
-    friend class AutoRestoreCompartmentDebugMode;
-
-    static const unsigned DebuggerObservesMask = IsDebuggee |
-                                                 DebuggerObservesAllExecution |
-                                                 DebuggerObservesCoverage |
-                                                 DebuggerObservesAsmJS |
-                                                 DebuggerObservesBinarySource;
-
-    void updateDebuggerObservesFlag(unsigned flag);
-
     bool getNonWrapperObjectForCurrentCompartment(JSContext* cx, js::MutableHandleObject obj);
     bool getOrCreateWrapper(JSContext* cx, js::HandleObject existing, js::MutableHandleObject obj);
 
@@ -789,118 +770,6 @@ struct JSCompartment
     }
 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    
-    
-    bool isDebuggee() const { return !!(debugModeBits & IsDebuggee); }
-    void setIsDebuggee() { debugModeBits |= IsDebuggee; }
-    void unsetIsDebuggee();
-
-    
-    
-    
-    bool debuggerObservesAllExecution() const {
-        static const unsigned Mask = IsDebuggee | DebuggerObservesAllExecution;
-        return (debugModeBits & Mask) == Mask;
-    }
-    void updateDebuggerObservesAllExecution() {
-        updateDebuggerObservesFlag(DebuggerObservesAllExecution);
-    }
-
-    
-    
-    
-    
-    
-    
-    bool debuggerObservesAsmJS() const {
-        static const unsigned Mask = IsDebuggee | DebuggerObservesAsmJS;
-        return (debugModeBits & Mask) == Mask;
-    }
-    void updateDebuggerObservesAsmJS() {
-        updateDebuggerObservesFlag(DebuggerObservesAsmJS);
-    }
-
-    bool debuggerObservesBinarySource() const {
-        static const unsigned Mask = IsDebuggee | DebuggerObservesBinarySource;
-        return (debugModeBits & Mask) == Mask;
-    }
-
-    void updateDebuggerObservesBinarySource() {
-        updateDebuggerObservesFlag(DebuggerObservesBinarySource);
-    }
-
-    
-    
-    bool debuggerObservesCoverage() const {
-        static const unsigned Mask = DebuggerObservesCoverage;
-        return (debugModeBits & Mask) == Mask;
-    }
-    void updateDebuggerObservesCoverage();
-
-    
-    
-    bool collectCoverage() const;
-    bool collectCoverageForDebug() const;
-    bool collectCoverageForPGO() const;
-
-    bool needsDelazificationForDebugger() const {
-        return debugModeBits & DebuggerNeedsDelazification;
-    }
-
-    
-
-
-
-    void scheduleDelazificationForDebugger() { debugModeBits |= DebuggerNeedsDelazification; }
-
-    
-
-
-
-    bool ensureDelazifyScriptsForDebugger(JSContext* cx);
-
-    void clearBreakpointsIn(js::FreeOp* fop, js::Debugger* dbg, JS::HandleObject handler);
-
-  private:
-    void sweepBreakpoints(js::FreeOp* fop);
-
-  public:
-    
     js::DebugEnvironments* debugEnvs;
 
     
@@ -967,6 +836,22 @@ class JS::Realm : public JSCompartment
 
     unsigned enterRealmDepth_ = 0;
 
+    enum {
+        IsDebuggee = 1 << 0,
+        DebuggerObservesAllExecution = 1 << 1,
+        DebuggerObservesAsmJS = 1 << 2,
+        DebuggerObservesCoverage = 1 << 3,
+        DebuggerObservesBinarySource = 1 << 4,
+        DebuggerNeedsDelazification = 1 << 5
+    };
+    static const unsigned DebuggerObservesMask = IsDebuggee |
+                                                 DebuggerObservesAllExecution |
+                                                 DebuggerObservesCoverage |
+                                                 DebuggerObservesAsmJS |
+                                                 DebuggerObservesBinarySource;
+    unsigned debugModeBits_ = 0;
+    friend class js::AutoRestoreRealmDebugMode;
+
     bool isAtomsRealm_ = false;
     bool isSelfHostingRealm_ = false;
     bool marked_ = true;
@@ -998,6 +883,10 @@ class JS::Realm : public JSCompartment
     bool firedOnNewGlobalObject = false;
 #endif
 
+  private:
+    void updateDebuggerObservesFlag(unsigned flag);
+
+  public:
     Realm(JS::Zone* zone, const JS::RealmOptions& options);
     ~Realm();
 
@@ -1230,6 +1119,111 @@ class JS::Realm : public JSCompartment
 
     js::ArgumentsObject* getOrCreateArgumentsTemplateObject(JSContext* cx, bool mapped);
     js::ArgumentsObject* maybeArgumentsTemplateObject(bool mapped) const;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    bool isDebuggee() const { return !!(debugModeBits_ & IsDebuggee); }
+    void setIsDebuggee() { debugModeBits_ |= IsDebuggee; }
+    void unsetIsDebuggee();
+
+    
+    
+    
+    bool debuggerObservesAllExecution() const {
+        static const unsigned Mask = IsDebuggee | DebuggerObservesAllExecution;
+        return (debugModeBits_ & Mask) == Mask;
+    }
+    void updateDebuggerObservesAllExecution() {
+        updateDebuggerObservesFlag(DebuggerObservesAllExecution);
+    }
+
+    
+    
+    
+    
+    
+    
+    bool debuggerObservesAsmJS() const {
+        static const unsigned Mask = IsDebuggee | DebuggerObservesAsmJS;
+        return (debugModeBits_ & Mask) == Mask;
+    }
+    void updateDebuggerObservesAsmJS() {
+        updateDebuggerObservesFlag(DebuggerObservesAsmJS);
+    }
+
+    bool debuggerObservesBinarySource() const {
+        static const unsigned Mask = IsDebuggee | DebuggerObservesBinarySource;
+        return (debugModeBits_ & Mask) == Mask;
+    }
+
+    void updateDebuggerObservesBinarySource() {
+        updateDebuggerObservesFlag(DebuggerObservesBinarySource);
+    }
+
+    
+    
+    bool debuggerObservesCoverage() const {
+        static const unsigned Mask = DebuggerObservesCoverage;
+        return (debugModeBits_ & Mask) == Mask;
+    }
+    void updateDebuggerObservesCoverage();
+
+    
+    
+    bool collectCoverage() const;
+    bool collectCoverageForDebug() const;
+    bool collectCoverageForPGO() const;
+
+    bool needsDelazificationForDebugger() const {
+        return debugModeBits_ & DebuggerNeedsDelazification;
+    }
+
+    
+    void scheduleDelazificationForDebugger() {
+        debugModeBits_ |= DebuggerNeedsDelazification;
+    }
+
+    
+    
+    bool ensureDelazifyScriptsForDebugger(JSContext* cx);
+
+    void clearBreakpointsIn(js::FreeOp* fop, js::Debugger* dbg, JS::HandleObject handler);
 };
 
 namespace js {

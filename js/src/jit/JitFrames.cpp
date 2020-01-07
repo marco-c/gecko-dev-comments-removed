@@ -174,7 +174,7 @@ static void
 HandleExceptionIon(JSContext* cx, const InlineFrameIterator& frame, ResumeFromException* rfe,
                    bool* overrecursed)
 {
-    if (cx->compartment()->isDebuggee()) {
+    if (cx->realm()->isDebuggee()) {
         
         
         
@@ -652,7 +652,7 @@ HandleException(ResumeFromException* rfe)
             bool invalidated = frame.checkInvalidation(&ionScript);
 
 #ifdef JS_TRACE_LOGGING
-            if (logger && cx->compartment()->isDebuggee() && logger->enabled()) {
+            if (logger && cx->realm()->isDebuggee() && logger->enabled()) {
                 logger->disable( true,
                                 "Forcefully disabled tracelogger, due to "
                                 "throwing an exception with an active Debugger "

@@ -1657,7 +1657,7 @@ jit::JitActivation::removeRematerializedFramesFromDebugger(JSContext* cx, uint8_
     
     
     
-    if (!cx->compartment()->isDebuggee() || !rematerializedFrames_)
+    if (!cx->realm()->isDebuggee() || !rematerializedFrames_)
         return;
     if (RematerializedFrameTable::Ptr p = rematerializedFrames_->lookup(top)) {
         for (uint32_t i = 0; i < p->value().length(); i++)

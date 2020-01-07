@@ -8014,13 +8014,13 @@ GCRuntime::mergeCompartments(JSCompartment* source, JSCompartment* target)
 
     sourceRealm->clearTables();
     source->zone()->clearTables();
-    source->unsetIsDebuggee();
+    sourceRealm->unsetIsDebuggee();
 
     
     
     
-    if (source->needsDelazificationForDebugger())
-        target->scheduleDelazificationForDebugger();
+    if (sourceRealm->needsDelazificationForDebugger())
+        targetRealm->scheduleDelazificationForDebugger();
 
     
     
