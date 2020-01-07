@@ -384,7 +384,20 @@ function getTabStateForContentWindow(aContentWindow) {
   else if (browser.value == MediaManagerService.STATE_CAPTURE_DISABLED)
     tabState.screen = "BrowserPaused";
 
-  if (tabState.screen) {
+  let screenEnabled = tabState.screen && !tabState.screen.includes("Paused");
+  let cameraEnabled = tabState.camera == MediaManagerService.STATE_CAPTURE_ENABLED;
+  let microphoneEnabled = tabState.microphone == MediaManagerService.STATE_CAPTURE_ENABLED;
+
+  
+  
+  
+  if (screenEnabled) {
+    tabState.sharing = "screen";
+  } else if (cameraEnabled) {
+    tabState.sharing = "camera";
+  } else if (microphoneEnabled) {
+    tabState.sharing = "microphone";
+  } else if (tabState.screen) {
     tabState.sharing = "screen";
   } else if (tabState.camera) {
     tabState.sharing = "camera";
@@ -395,9 +408,7 @@ function getTabStateForContentWindow(aContentWindow) {
   
   
   tabState.paused = tabState.sharing &&
-    (!tabState.screen || tabState.screen.includes("Paused")) &&
-    tabState.camera != MediaManagerService.STATE_CAPTURE_ENABLED &&
-    tabState.microphone != MediaManagerService.STATE_CAPTURE_ENABLED;
+    !screenEnabled && !cameraEnabled && !microphoneEnabled;
 
   tabState.windowId = getInnerWindowIDForWindow(aContentWindow);
   tabState.documentURI = aContentWindow.document.documentURI;
