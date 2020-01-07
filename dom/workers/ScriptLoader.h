@@ -21,11 +21,14 @@ namespace mozilla {
 
 class ErrorResult;
 
+namespace dom {
+
+struct WorkerLoadInfo;
+
+} 
 } 
 
 BEGIN_WORKERS_NAMESPACE
-
-struct WorkerLoadInfo;
 
 enum WorkerScriptType {
   WorkerScript,
