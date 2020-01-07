@@ -2904,8 +2904,6 @@ pref("layout.css.prefixes.font-features", true);
 pref("layout.css.background-blend-mode.enabled", true);
 
 
-pref("layout.css.text-combine-upright.enabled", true);
-
 pref("layout.css.text-combine-upright-digits.enabled", false);
 
 
