@@ -891,6 +891,7 @@ function Search(searchString, searchParam, autocompleteListener,
 
   this._searchTokens =
     this.filterTokens(getUnfilteredSearchTokens(this._searchString));
+  this._keywordSubstitute = null;
 
   this._prohibitSearchSuggestions = prohibitSearchSuggestions;
 
@@ -1122,16 +1123,6 @@ Search.prototype = {
     
     
     
-    
-
-    
-    let queries = [];
-    
-    
-    if (this.hasBehavior("openpage")) {
-      queries.push(this._switchToTabQuery);
-    }
-    queries.push(this._searchQuery);
 
     
     await this._checkPreloadedSitesExpiry();
@@ -1208,6 +1199,16 @@ Search.prototype = {
       if (!this.pending)
         return;
     }
+
+    
+    
+    let queries = [];
+    
+    
+    if (this.hasBehavior("openpage")) {
+      queries.push(this._switchToTabQuery);
+    }
+    queries.push(this._searchQuery);
 
     
     for (let [query, params] of queries) {
@@ -1499,7 +1500,7 @@ Search.prototype = {
   async _matchPlacesKeyword() {
     
     let keyword = this._searchTokens[0];
-    let entry = await PlacesUtils.keywords.fetch(this._searchTokens[0]);
+    let entry = await PlacesUtils.keywords.fetch(keyword);
     if (!entry)
       return false;
 
@@ -1538,6 +1539,9 @@ Search.prototype = {
       style,
       frecency: Infinity
     });
+    if (!this._keywordSubstitute) {
+      this._keywordSubstitute = entry.url.host;
+    }
     return true;
   },
 
@@ -1614,6 +1618,9 @@ Search.prototype = {
     let query = this._trimmedOriginalSearchString.substr(alias.length + 1);
 
     this._addSearchEngineMatch(match, query);
+    if (!this._keywordSubstitute) {
+      this._keywordSubstitute = match.resultDomain;
+    }
     return true;
   },
 
@@ -2253,6 +2260,21 @@ Search.prototype = {
 
 
 
+  get _keywordSubstitutedSearchString() {
+    let tokens = this._searchTokens;
+    if (this._keywordSubstitute) {
+      tokens = [this._keywordSubstitute, ...this._searchTokens.slice(1)];
+    }
+    return tokens.join(" ");
+  },
+
+  
+
+
+
+
+
+
   get _searchQuery() {
     let query = this._suggestionPrefQuery;
 
@@ -2265,7 +2287,7 @@ Search.prototype = {
         searchBehavior: this._behavior,
         
         
-        searchString: this._searchTokens.join(" "),
+        searchString: this._keywordSubstitutedSearchString,
         userContextId: this._userContextId,
         
         
@@ -2289,7 +2311,7 @@ Search.prototype = {
         searchBehavior: this._behavior,
         
         
-        searchString: this._searchTokens.join(" "),
+        searchString: this._keywordSubstitutedSearchString,
         userContextId: this._userContextId,
         maxResults: Prefs.get("maxRichResults")
       }
