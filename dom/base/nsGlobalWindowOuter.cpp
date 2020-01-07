@@ -1751,20 +1751,22 @@ nsGlobalWindowOuter::SetNewDocument(nsIDocument* aDocument,
     
     
     
-    JSCompartment *compartment = js::GetObjectCompartment(newInnerGlobal);
+    JS::Realm* realm = js::GetNonCCWObjectRealm(newInnerGlobal);
 #ifdef DEBUG
     bool sameOrigin = false;
     nsIPrincipal *existing =
-      nsJSPrincipals::get(JS_GetCompartmentPrincipals(compartment));
+      nsJSPrincipals::get(JS::GetRealmPrincipals(realm));
     aDocument->NodePrincipal()->Equals(existing, &sameOrigin);
     MOZ_ASSERT(sameOrigin);
-#endif
+
+    JSCompartment* compartment = JS::GetCompartmentForRealm(realm);
     MOZ_ASSERT_IF(aDocument == oldDoc,
                   xpc::GetCompartmentPrincipal(compartment) ==
                   aDocument->NodePrincipal());
+#endif
     if (aDocument != oldDoc) {
-      JS_SetCompartmentPrincipals(compartment,
-                                  nsJSPrincipals::get(aDocument->NodePrincipal()));
+      JS::SetRealmPrincipals(realm,
+                             nsJSPrincipals::get(aDocument->NodePrincipal()));
       
       
       xpc::ClearContentXBLScope(newInnerGlobal);

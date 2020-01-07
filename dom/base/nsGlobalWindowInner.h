@@ -377,7 +377,7 @@ public:
   virtual void MaybeUpdateTouchState() override;
 
   
-  void RefreshCompartmentPrincipal();
+  void RefreshRealmPrincipal();
 
   
   friend class FullscreenTransitionTask;

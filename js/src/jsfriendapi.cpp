@@ -169,10 +169,9 @@ JS::GetRealmPrincipals(JS::Realm* realm)
 }
 
 JS_FRIEND_API(void)
-JS_SetCompartmentPrincipals(JSCompartment* compartment, JSPrincipals* principals)
+JS::SetRealmPrincipals(JS::Realm* realm, JSPrincipals* principals)
 {
     
-    Realm* realm = JS::GetRealmForCompartment(compartment);
     if (principals == realm->principals())
         return;
 

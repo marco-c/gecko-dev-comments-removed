@@ -2366,7 +2366,7 @@ nsIDocument::ResetToURI(nsIURI* aURI,
 
   
   if (nsPIDOMWindowInner* win = GetInnerWindow()) {
-    nsGlobalWindowInner::Cast(win)->RefreshCompartmentPrincipal();
+    nsGlobalWindowInner::Cast(win)->RefreshRealmPrincipal();
   }
 }
 
