@@ -685,9 +685,7 @@ ServiceWorkerGlobalScope::ServiceWorkerGlobalScope(WorkerPrivate* aWorkerPrivate
   
   
   
-  , mRegistration(ServiceWorkerRegistration::CreateForWorker(aWorkerPrivate,
-                                                             this,
-                                                             aRegistrationDescriptor))
+  , mRegistration(GetOrCreateServiceWorkerRegistration(aRegistrationDescriptor))
 {
 }
 
