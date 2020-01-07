@@ -69,29 +69,6 @@ function getBackupFileForSameDate(aFilename) {
   })();
 }
 
-
-
-
-
-
-
-async function getTopLevelFolderIds() {
-  let db =  await PlacesUtils.promiseDBConnection();
-  let rows = await db.execute(
-    "SELECT id, guid FROM moz_bookmarks WHERE parent = :parentId",
-    { parentId: PlacesUtils.placesRootId }
-  );
-
-  let guids = [];
-  for (let row of rows) {
-    guids.push({
-      id: row.getResultByName("id"),
-      guid: row.getResultByName("guid")
-    });
-  }
-  return guids;
-}
-
 var PlacesBackups = {
   
 
@@ -250,8 +227,6 @@ var PlacesBackups = {
 
 
 
-
-
   async saveBookmarksToJSONFile(aFilePath) {
     let { count: nodeCount, hash: hash } =
       await BookmarkJSONUtils.exportToFile(aFilePath);
@@ -301,8 +276,6 @@ var PlacesBackups = {
   },
 
   
-
-
 
 
 
@@ -438,15 +411,9 @@ var PlacesBackups = {
 
 
 
-
-
   async getBookmarksTree() {
     let startTime = Date.now();
     let root = await PlacesUtils.promiseBookmarksTree(PlacesUtils.bookmarks.rootGuid, {
-      excludeItemsCallback: aItem => {
-        return aItem.annos &&
-          aItem.annos.find(a => a.name == PlacesUtils.EXCLUDE_FROM_BACKUP_ANNO);
-      },
       includeItemIds: true
     });
 
@@ -458,44 +425,5 @@ var PlacesBackups = {
       Cu.reportError("Unable to report telemetry.");
     }
     return [root, root.itemsCount];
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  async eraseEverythingIncludingUserRoots(options = {}) {
-    if (!options.source) {
-      options.source = PlacesUtils.bookmarks.SOURCES.DEFAULT;
-    }
-
-    let excludeItems =
-      PlacesUtils.annotations.getItemsWithAnnotation(PlacesUtils.EXCLUDE_FROM_BACKUP_ANNO);
-
-    let rootFolderChildren = await getTopLevelFolderIds();
-
-    
-    for (let child of rootFolderChildren) {
-      if (!PlacesUtils.bookmarks.userContentRoots.includes(child.guid) &&
-          child.guid != PlacesUtils.bookmarks.tagsGuid &&
-          !excludeItems.includes(child.id)) {
-       await PlacesUtils.bookmarks.remove(child.guid, {source: options.source});
-      }
-    }
-
-    return PlacesUtils.bookmarks.eraseEverything(options);
   },
 };

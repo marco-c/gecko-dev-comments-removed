@@ -85,8 +85,6 @@ var BookmarkJSONUtils = Object.freeze({
 
 
 
-
-
   async importFromFile(aFilePath, {
     replace: aReplace = false,
     source: aSource = aReplace ? PlacesUtils.bookmarks.SOURCES.RESTORE :
@@ -248,7 +246,7 @@ BookmarkImporter.prototype = {
 
     
     if (this._replace) {
-      await PlacesBackups.eraseEverythingIncludingUserRoots({ source: this._source });
+      await PlacesUtils.bookmarks.eraseEverything({ source: this._source });
     }
 
     let folderIdToGuidMap = {};
