@@ -162,6 +162,8 @@ void DownmixStereoToMono(mozilla::AudioDataValue* aBuffer,
 
 uint32_t DecideAudioPlaybackChannels(const AudioInfo& info);
 
+bool IsDefaultPlaybackDeviceMono();
+
 bool IsVideoContentType(const nsCString& aContentType);
 
 

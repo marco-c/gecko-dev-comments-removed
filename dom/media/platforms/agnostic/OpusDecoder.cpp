@@ -101,7 +101,7 @@ OpusDataDecoder::Init()
   
   
   
-  if (mOpusDecoder && mOpusParser->mChannels == 2 &&
+  if (IsDefaultPlaybackDeviceMono() ||
       DecideAudioPlaybackChannels(mInfo) == 1) {
     opus_multistream_decoder_ctl(mOpusDecoder, OPUS_SET_PHASE_INVERSION_DISABLED(1));
   }
