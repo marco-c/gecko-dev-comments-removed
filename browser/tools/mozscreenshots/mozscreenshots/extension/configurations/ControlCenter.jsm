@@ -262,7 +262,7 @@ async function openIdentityPopup(expand) {
   gIdentityHandler._identityPopup.hidePopup();
   
   if (AppConstants.platform == "macosx") {
-    gIdentityHandler._identityPopup.style["-moz-window-shadow"] = "none";
+    gIdentityHandler._identityPopup.classList.add("no-shadow");
   }
   gIdentityHandler._identityBox.querySelector("#identity-icon").click();
   if (expand) {

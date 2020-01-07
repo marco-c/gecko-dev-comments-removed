@@ -12,6 +12,12 @@
 }
 
 
+
+#identity-popup.no-shadow {
+  -moz-window-shadow: none;
+}
+
+
 #identity-popup[connection=not-secure] [when-connection~=not-secure],
 #identity-popup[connection=secure-cert-user-overridden] [when-connection~=secure-cert-user-overridden],
 #identity-popup[connection=secure-ev] [when-connection~=secure-ev],
