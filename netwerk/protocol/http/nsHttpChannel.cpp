@@ -4788,7 +4788,16 @@ nsHttpChannel::OpenCacheInputStream(nsICacheEntry* cacheEntry, bool startBufferi
 
     
     
-    if (!mPreferredCachedAltDataType.IsEmpty()) {
+    
+    bool altDataFromChild = false;
+    {
+        nsCString value;
+        rv = cacheEntry->GetMetaDataElement("alt-data-from-child",
+                                            getter_Copies(value));
+        altDataFromChild = !value.IsEmpty();
+    }
+
+    if (!mPreferredCachedAltDataType.IsEmpty() && (altDataFromChild == mAltDataForChild)) {
         rv = cacheEntry->OpenAlternativeInputStream(mPreferredCachedAltDataType,
                                                     getter_AddRefs(stream));
         if (NS_SUCCEEDED(rv)) {
@@ -7874,7 +7883,13 @@ nsHttpChannel::OpenAlternativeOutputStream(const nsACString & type, nsIOutputStr
     if (!cacheEntry) {
         return NS_ERROR_NOT_AVAILABLE;
     }
-    return cacheEntry->OpenAlternativeOutputStream(type, _retval);
+    nsresult rv = cacheEntry->OpenAlternativeOutputStream(type, _retval);
+    if (NS_SUCCEEDED(rv)) {
+        
+        
+        cacheEntry->SetMetaDataElement("alt-data-from-child", nullptr);
+    }
+    return rv;
 }
 
 
