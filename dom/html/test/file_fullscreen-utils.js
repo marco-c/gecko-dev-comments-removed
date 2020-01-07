@@ -80,3 +80,17 @@ function addFullscreenErrorContinuation(callback, inDoc) {
   doc.addEventListener("fullscreenerror", listener);
 }
 
+
+
+function waitForLoadAndPaint(win, callback) {
+  win.addEventListener("MozAfterPaint", function() {
+    
+    
+    
+    if (win.document.readyState == 'complete') {
+      callback();
+    } else {
+      win.addEventListener("load", callback, {once: true});
+    }
+  }, { once: true });
+}
