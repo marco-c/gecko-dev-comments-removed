@@ -9,10 +9,11 @@
 
 #include "base/revocable_store.h"
 #include "base/tuple.h"
-#include "mozilla/IndexSequence.h"
 #include "mozilla/Tuple.h"
 #include "nsISupportsImpl.h"
 #include "nsThreadUtils.h"
+
+#include <utility>
 
 
 
@@ -23,7 +24,7 @@ namespace details {
 
 
 template<size_t... Indices, class ObjT, class Method, typename... Args>
-void CallMethod(mozilla::IndexSequence<Indices...>, ObjT* obj, Method method,
+void CallMethod(std::index_sequence<Indices...>, ObjT* obj, Method method,
                 mozilla::Tuple<Args...>& arg)
 {
   (obj->*method)(mozilla::Move(mozilla::Get<Indices>(arg))...);
@@ -31,7 +32,7 @@ void CallMethod(mozilla::IndexSequence<Indices...>, ObjT* obj, Method method,
 
 
 template<size_t... Indices, typename Function, typename... Args>
-void CallFunction(mozilla::IndexSequence<Indices...>, Function function,
+void CallFunction(std::index_sequence<Indices...>, Function function,
                   mozilla::Tuple<Args...>& arg)
 {
   (*function)(mozilla::Move(mozilla::Get<Indices>(arg))...);
@@ -44,16 +45,14 @@ void CallFunction(mozilla::IndexSequence<Indices...>, Function function,
 template<class ObjT, class Method, typename... Args>
 void DispatchTupleToMethod(ObjT* obj, Method method, mozilla::Tuple<Args...>& arg)
 {
-  details::CallMethod(typename mozilla::IndexSequenceFor<Args...>::Type(),
-                      obj, method, arg);
+  details::CallMethod(std::index_sequence_for<Args...>{}, obj, method, arg);
 }
 
 
 template<typename Function, typename... Args>
 void DispatchTupleToFunction(Function function, mozilla::Tuple<Args...>& arg)
 {
-  details::CallFunction(typename mozilla::IndexSequenceFor<Args...>::Type(),
-                        function, arg);
+  details::CallFunction(std::index_sequence_for<Args...>{}, function, arg);
 }
 
 
