@@ -501,6 +501,7 @@ nsComputedDOMStyle::DoGetComputedStyleNoFlush(Element* aElement,
                                               StyleType aStyleType)
 {
   MOZ_ASSERT(aElement, "NULL element");
+
   
   
   
@@ -518,6 +519,14 @@ nsComputedDOMStyle::DoGetComputedStyleNoFlush(Element* aElement,
 
   CSSPseudoElementType pseudoType = GetPseudoType(aPseudo);
   if (aPseudo && pseudoType >= CSSPseudoElementType::Count) {
+    return nullptr;
+  }
+
+  if (aElement->IsInNativeAnonymousSubtree() && !aElement->IsInComposedDoc()) {
+    
+    
+    
+    
     return nullptr;
   }
 
