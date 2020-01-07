@@ -9,75 +9,67 @@
 "use strict";
 
 const TEST_URI = "http://example.com/browser/devtools/client/webconsole/" +
-                 "test/test-bug-869003-top-window.html";
+                 "new-console-output/test/mochitest/" +
+                 "test-inspect-cross-domain-objects-top.html";
 
-add_task(function* () {
-  
-  
-  
-  
+add_task(async function () {
   requestLongerTimeout(2);
 
-  yield loadTab("data:text/html;charset=utf8,<p>hello");
-  let hud = yield openConsole();
+  let hud = await openNewTabAndConsole("data:text/html;charset=utf8,<p>hello");
 
+  info("Wait for the 'foobar' message to be logged by the frame");
+  let onMessage = waitForMessage(hud, "foobar");
   BrowserTestUtils.loadURI(gBrowser.selectedBrowser, TEST_URI);
+  let {node} = await onMessage;
 
-  let [result] = yield waitForMessages({
-    webconsole: hud,
-    messages: [{
-      name: "console.log message",
-      text: "foobar",
-      category: CATEGORY_WEBDEV,
-      severity: SEVERITY_LOG,
-      objects: true,
-    }],
-  });
+  const objectInspectors = [...node.querySelectorAll(".tree")];
+  is(objectInspectors.length, 2, "There is the expected number of object inspectors");
 
-  let msg = [...result.matched][0];
-  ok(msg, "message element");
+  const [oi1, oi2] = objectInspectors;
 
-  let body = msg.querySelector(".message-body");
-  ok(body, "message body");
-  ok(body.textContent.includes('{ hello: "world!",'), "message text check");
-  ok(body.textContent.includes('function func()'), "message text check");
-
-  yield testClickable(result.clickableElements[0], [
-    { name: "hello", value: "world!" },
-    { name: "bug", value: 869003 },
-  ], hud);
-  yield testClickable(result.clickableElements[1], [
-    { name: "hello", value: "world!" },
-    { name: "name", value: "func" },
-    { name: "length", value: 1 },
-  ], hud);
-});
-
-function* testClickable(clickable, props, hud) {
-  ok(clickable, "clickable object found");
-
-  executeSoon(() => {
-    EventUtils.synthesizeMouse(clickable, 2, 2, {}, hud.iframeWindow);
-  });
-
-  let aVar = yield hud.jsterm.once("variablesview-fetched");
-  ok(aVar, "variables view fetched");
-  ok(aVar._variablesView, "variables view object");
-
-  let [result] = yield findVariableViewProperties(aVar, props, { webconsole: hud });
-  let prop = result.matchedProp;
-  ok(prop, "matched the |" + props[0].name + "| property in the variables view");
+  info("Expanding the first object inspector");
+  await expandObjectInspector(oi1);
 
   
-  aVar = yield updateVariablesViewProperty({
-    property: prop,
-    field: "value",
-    string: "'omgtest'",
-    webconsole: hud,
+  
+  
+  
+  
+
+  let oi1Nodes = oi1.querySelectorAll(".node");
+  is(oi1Nodes.length, 4, "There is the expected number of nodes in the tree");
+  ok(oi1.textContent.includes("bug: 869003"), "Expected content");
+  ok(oi1.textContent.includes('hello: "world!"'), "Expected content");
+
+  info("Expanding the second object inspector");
+  await expandObjectInspector(oi2);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  let oi2Nodes = oi2.querySelectorAll(".node");
+  is(oi2Nodes.length, 9, "There is the expected number of nodes in the tree");
+  ok(oi2.textContent.includes("arguments: null"), "Expected content");
+  ok(oi2.textContent.includes("bug: 869003"), "Expected content");
+  ok(oi2.textContent.includes("caller: null"), "Expected content");
+  ok(oi2.textContent.includes('hello: "world!"'), "Expected content");
+  ok(oi2.textContent.includes("length: 1"), "Expected content");
+  ok(oi2.textContent.includes('name: "func"'), "Expected content");
+});
+
+function expandObjectInspector(oi) {
+  let onMutation = waitForNodeMutation(oi, {
+    childList: true
   });
 
-  info("onFetchAfterUpdate");
-
-  props[0].value = "omgtest";
-  yield findVariableViewProperties(aVar, props, { webconsole: hud });
+  oi.querySelector(".arrow").click();
+  return onMutation;
 }
