@@ -408,26 +408,4 @@ class AccessFuContentTestRunner {
   movePreviousByGranularity(aGranularity, ...aExpectedEvents) {
     return this.moveByGranularity("Previous", aGranularity, ...aExpectedEvents);
   }
-
-  
-  
-  moveCaret(aDirection, aGranularity, ...aExpectedEvents) {
-    return this.expectAndroidEvents(() => {
-      this.sendMessage({
-        name: "AccessFu:MoveCaret",
-        data: {
-          direction: aDirection,
-          granularity: aGranularity
-        }
-      });
-    }, ...aExpectedEvents);
-  }
-
-  moveCaretNext(aGranularity, ...aExpectedEvents) {
-    return this.moveCaret("Next", aGranularity, ...aExpectedEvents);
-  }
-
-  moveCaretPrevious(aGranularity, ...aExpectedEvents) {
-    return this.moveCaret("Previous", aGranularity, ...aExpectedEvents);
-  }
 }

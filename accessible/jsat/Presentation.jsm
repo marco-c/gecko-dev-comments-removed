@@ -254,13 +254,6 @@ class AndroidPresentor {
   
 
 
-  editingModeChanged(aIsEditing) {
-    return this.announce(UtteranceGenerator.genForEditingMode(aIsEditing));
-  }
-
-  
-
-
   announce(aAnnouncement) {
     let localizedAnnouncement = Utils.localize(aAnnouncement).join(" ");
     return [{
