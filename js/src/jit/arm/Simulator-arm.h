@@ -112,11 +112,13 @@ class Simulator
     explicit Simulator(JSContext* cx);
     ~Simulator();
 
+    static bool supportsAtomics() { return HasLDSTREXBHD(); }
+
     
     
     static Simulator* Current();
 
-    static inline uintptr_t StackLimit() {
+    static uintptr_t StackLimit() {
         return Simulator::Current()->stackLimit();
     }
 
