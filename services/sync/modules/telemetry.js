@@ -492,14 +492,15 @@ class SyncTelemetryImpl {
     }
     
     
-    if (record.syncs.length) {
-      log.trace(`submitting ${record.syncs.length} sync record(s) to telemetry`);
+    let numEvents = record.events ? record.events.length : 0;
+    if (record.syncs.length || numEvents) {
+      log.trace(`submitting ${record.syncs.length} sync record(s) and ` +
+                `${numEvents} event(s) to telemetry`);
       TelemetryController.submitExternalPing("sync", record);
       return true;
     }
     return false;
   }
-
 
   onSyncStarted(data) {
     const why = data && JSON.parse(data).why;
@@ -594,9 +595,9 @@ class SyncTelemetryImpl {
         event.push(extra);
       }
     } else if (extra) {
-        event.push(null); 
-        event.push(extra);
-      }
+      event.push(null); 
+      event.push(extra);
+    }
     this.events.push(event);
   }
 
