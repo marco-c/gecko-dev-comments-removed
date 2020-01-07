@@ -24,5 +24,14 @@ MFBT_API void DllBlocklist_Initialize(uint32_t aInitFlags = eDllBlocklistInitFla
 MFBT_API void DllBlocklist_WriteNotes(HANDLE file);
 MFBT_API bool DllBlocklist_CheckStatus();
 
+
+namespace mozilla {
+namespace detail {
+class DllServicesBase;
+} 
+} 
+
+MFBT_API void DllBlocklist_SetDllServices(mozilla::detail::DllServicesBase* aSvc);
+
 #endif 
 #endif 
