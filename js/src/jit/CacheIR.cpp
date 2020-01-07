@@ -729,6 +729,20 @@ GeneratePrototypeHoleGuards(CacheIRWriter& writer, JSObject* obj, ObjOperandId o
     }
 }
 
+
+
+
+static void
+TestMatchingHolder(CacheIRWriter& writer, JSObject* obj, ObjOperandId objId)
+{
+    
+    
+    
+    MOZ_ASSERT(obj->is<NativeObject>());
+
+    writer.guardShapeForOwnProperties(objId, obj->as<NativeObject>().lastProperty());
+}
+
 static void
 EmitReadSlotGuard(CacheIRWriter& writer, JSObject* obj, JSObject* holder,
                   ObjOperandId objId, Maybe<ObjOperandId>* holderId)
@@ -743,7 +757,7 @@ EmitReadSlotGuard(CacheIRWriter& writer, JSObject* obj, JSObject* holder,
 
             
             holderId->emplace(writer.loadObject(holder));
-            writer.guardShape(holderId->ref(), holder->as<NativeObject>().lastProperty());
+            TestMatchingHolder(writer, holder, holderId->ref());
         } else {
             
             
@@ -843,7 +857,7 @@ EmitCallGetterResult(CacheIRWriter& writer, JSObject* obj, JSObject* holder, Sha
 
             
             ObjOperandId holderId = writer.loadObject(holder);
-            writer.guardShape(holderId, holder->as<NativeObject>().lastProperty());
+            TestMatchingHolder(writer, holder, holderId);
         }
     } else {
         writer.guardHasGetterSetter(objId, shape);
@@ -1238,7 +1252,7 @@ IRGenerator::guardDOMProxyExpandoObjectAndShape(JSObject* obj, ObjOperandId objI
 
     
     ObjOperandId expandoObjId = writer.guardIsObject(expandoValId);
-    writer.guardShape(expandoObjId, expandoObj->as<NativeObject>().shape());
+    TestMatchingHolder(writer, expandoObj, expandoObjId);
     return expandoObjId;
 }
 
@@ -1369,7 +1383,7 @@ GetPropIRGenerator::tryAttachDOMProxyUnshadowed(HandleObject obj, ObjOperandId o
 
         
         ObjOperandId holderId = writer.loadObject(holder);
-        writer.guardShape(holderId, holder->lastProperty());
+        TestMatchingHolder(writer, holder, holderId);
 
         if (canCache == CanAttachReadSlot) {
             EmitLoadSlotResult(writer, holderId, holder, shape);
@@ -3353,7 +3367,7 @@ SetPropIRGenerator::tryAttachSetter(HandleObject obj, ObjOperandId objId, Handle
 
             
             ObjOperandId holderId = writer.loadObject(holder);
-            writer.guardShape(holderId, holder->as<NativeObject>().lastProperty());
+            TestMatchingHolder(writer, holder, holderId);
         }
     } else {
         writer.guardHasGetterSetter(objId, propShape);
@@ -3656,7 +3670,7 @@ SetPropIRGenerator::tryAttachDOMProxyUnshadowed(HandleObject obj, ObjOperandId o
 
     
     ObjOperandId holderId = writer.loadObject(holder);
-    writer.guardShape(holderId, holder->as<NativeObject>().lastProperty());
+    TestMatchingHolder(writer, holder, holderId);
 
     
     
