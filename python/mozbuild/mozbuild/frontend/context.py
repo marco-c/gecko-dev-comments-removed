@@ -815,7 +815,7 @@ class Schedules(object):
             raise AttributeError("Cannot assign to this value - use += instead")
         unexpected = [v for v in value if v not in schedules.INCLUSIVE_COMPONENTS]
         if unexpected:
-            raise Exception("unexpected exclusive component(s) " + ', '.join(unexpected))
+            raise Exception("unexpected inclusive component(s) " + ', '.join(unexpected))
 
     
     @property
@@ -835,6 +835,25 @@ class Schedules(object):
     @property
     def components(self):
         return list(sorted(set(self._inclusive) | set(self._exclusive)))
+
+    
+    
+    def __or__(self, other):
+        rv = Schedules()
+        rv._inclusive = self._inclusive + other._inclusive
+        if other._exclusive == self._exclusive:
+            rv._exclusive = self._exclusive
+        elif self._exclusive == schedules.EXCLUSIVE_COMPONENTS:
+            rv._exclusive = other._exclusive
+        elif other._exclusive == schedules.EXCLUSIVE_COMPONENTS:
+            rv._exclusive = self._exclusive
+        else:
+            msg = 'Two Files sections have set SCHEDULES.exclusive to different' \
+                'values; these cannot be combined: {} and {}'
+            msg = msg.format(self._exclusive, other._exclusive)
+            raise ValueError(msg)
+        return rv
+
 
 @memoize
 def ContextDerivedTypedHierarchicalStringList(type):
@@ -1084,6 +1103,10 @@ class Files(SubContext):
                                        for e in v.files)
                 self.test_tags |= set(v.tags)
                 self.test_flavors |= set(v.flavors)
+                continue
+
+            if k == 'SCHEDULES' and 'SCHEDULES' in self:
+                self['SCHEDULES'] = self['SCHEDULES'] | v
                 continue
 
             
