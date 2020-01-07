@@ -89,13 +89,8 @@ Blocklist.prototype = {
     return true;
   },
 
-  
   getPluginBlocklistState(aPluginTag, aAppVersion, aToolkitVersion) {
-    return Services.cpmm.sendSyncMessage("Blocklist:getPluginBlocklistState", {
-      addonData: this.flattenObject(aPluginTag),
-      appVersion: aAppVersion,
-      toolkitVersion: aToolkitVersion
-    })[0];
+    throw new Error(kMissingAPIMessage);
   },
 
   getAddonBlocklistURL(aAddon, aAppVersion, aToolkitVersion) {

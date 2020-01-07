@@ -230,7 +230,6 @@ function Blocklist() {
   Services.prefs.addObserver(PREF_EM_LOGGING_ENABLED, this);
   this.wrappedJSObject = this;
   
-  Services.ppmm.addMessageListener("Blocklist:getPluginBlocklistState", this);
   Services.ppmm.addMessageListener("Blocklist:content-blocklist-updated", this);
 }
 
@@ -256,7 +255,6 @@ Blocklist.prototype = {
 
   shutdown() {
     Services.obs.removeObserver(this, "xpcom-shutdown");
-    Services.ppmm.removeMessageListener("Blocklist:getPluginBlocklistState", this);
     Services.ppmm.removeMessageListener("Blocklist:content-blocklist-updated", this);
     Services.prefs.removeObserver("extensions.blocklist.", this);
     Services.prefs.removeObserver(PREF_EM_LOGGING_ENABLED, this);
@@ -294,10 +292,6 @@ Blocklist.prototype = {
   
   receiveMessage(aMsg) {
     switch (aMsg.name) {
-      case "Blocklist:getPluginBlocklistState":
-        return this.getPluginBlocklistState(aMsg.data.addonData,
-                                            aMsg.data.appVersion,
-                                            aMsg.data.toolkitVersion);
       case "Blocklist:content-blocklist-updated":
         Services.obs.notifyObservers(null, "content-blocklist-updated");
         break;
