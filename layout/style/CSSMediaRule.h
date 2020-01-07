@@ -8,13 +8,13 @@
 #define mozilla_dom_CSSMediaRule_h
 
 #include "mozilla/css/GroupRule.h"
-#include "nsIDOMCSSConditionRule.h"
+#include "nsIDOMCSSGroupingRule.h"
 
 namespace mozilla {
 namespace dom {
 
 class CSSMediaRule : public css::ConditionRule
-                   , public nsIDOMCSSConditionRule
+                   , public nsIDOMCSSGroupingRule
 {
 protected:
   using ConditionRule::ConditionRule;
@@ -32,13 +32,7 @@ public:
   NS_DECL_NSIDOMCSSGROUPINGRULE
 
   
-  NS_IMETHOD SetConditionText(const nsAString& aConditionText) override = 0;
-
-  
   uint16_t Type() const override { return nsIDOMCSSRule::MEDIA_RULE; }
-  
-  void SetConditionText(const nsAString& aConditionText,
-                        ErrorResult& aRv) final;
   virtual MediaList* Media() = 0;
 
   JSObject* WrapObject(JSContext* aCx,

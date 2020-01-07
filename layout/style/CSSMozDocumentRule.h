@@ -14,7 +14,7 @@ namespace mozilla {
 namespace dom {
 
 class CSSMozDocumentRule : public css::ConditionRule
-                         , public nsIDOMCSSConditionRule
+                         , public nsIDOMCSSGroupingRule
 {
 protected:
   using ConditionRule::ConditionRule;
@@ -36,15 +36,9 @@ public:
   NS_DECL_NSIDOMCSSGROUPINGRULE
 
   
-  NS_IMETHOD SetConditionText(const nsAString& aConditionText) override = 0;
-
-  
   uint16_t Type() const final override {
     return nsIDOMCSSRule::DOCUMENT_RULE;
   }
-  
-  void SetConditionText(const nsAString& aConditionText,
-                        ErrorResult& aRv) final;
 
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;

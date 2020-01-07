@@ -231,10 +231,7 @@ protected:
   using GroupRule::GroupRule;
 
 public:
-  
-  
-  
-  NS_IMETHOD GetConditionText(nsAString& aConditionText) = 0;
+  virtual void GetConditionText(nsAString& aConditionText) = 0;
   virtual void SetConditionText(const nsAString& aConditionText,
                                 ErrorResult& aRv) = 0;
 };

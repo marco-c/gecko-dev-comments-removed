@@ -32,11 +32,10 @@ public:
   RawServoSupportsRule* Raw() const { return mRawRule; }
 
   
-  NS_DECL_NSIDOMCSSCONDITIONRULE
-
-  
-  void GetCssTextImpl(nsAString& aCssText) const override;
-  using CSSSupportsRule::SetConditionText;
+  void GetCssTextImpl(nsAString& aCssText) const final;
+  void GetConditionText(nsAString& aConditionText) final;
+  void SetConditionText(const nsAString& aConditionText,
+                        ErrorResult& aRv) final;
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf)
     const override;
