@@ -33,7 +33,6 @@ struct NativeIterator
 {
     GCPtrObject obj;    
     JSObject* iterObj_; 
-    GCPtrFlatString* props_array;
     GCPtrFlatString* props_cursor;
     GCPtrFlatString* props_end;
     HeapReceiverGuard* guard_array;
@@ -46,12 +45,30 @@ struct NativeIterator
     NativeIterator* next_;
     NativeIterator* prev_;
 
+    
+    
+    
+    
+    
+    
+    
+    
+
   public:
-    inline GCPtrFlatString* begin() const {
-        return props_array;
+    GCPtrFlatString* begin() const {
+        static_assert(alignof(NativeIterator) >= alignof(GCPtrFlatString),
+                      "GCPtrFlatStrings for properties must be able to appear "
+                      "directly after NativeIterator, with no padding space "
+                      "required for correct alignment");
+
+        
+        
+        const NativeIterator* immediatelyAfter = this + 1;
+        auto* afterNonConst = const_cast<NativeIterator*>(immediatelyAfter);
+        return reinterpret_cast<GCPtrFlatString*>(afterNonConst);
     }
 
-    inline GCPtrFlatString* end() const {
+    GCPtrFlatString* end() const {
         return props_end;
     }
 
