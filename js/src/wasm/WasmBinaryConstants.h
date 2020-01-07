@@ -69,6 +69,9 @@ enum class TypeCode
     Func                                 = 0x60,  
 
     
+    Struct                               = 0x50,  
+
+    
     BlockVoid                            = 0x40,  
 
     Limit                                = 0x80
@@ -603,6 +606,7 @@ static const unsigned MaxElemSegments        = 10000000;
 static const unsigned MaxTableMaximumLength  = 10000000;
 static const unsigned MaxLocals              =    50000;
 static const unsigned MaxParams              =     1000;
+static const unsigned MaxStructFields        =     1000;
 static const unsigned MaxMemoryMaximumPages  =    65536;
 static const unsigned MaxStringBytes         =   100000;
 static const unsigned MaxModuleBytes         = 1024 * 1024 * 1024;
