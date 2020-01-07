@@ -357,3 +357,8 @@ pref("devtools.editor.autocomplete", true);
 
 
 pref("devtools.telemetry.tools.opened.version", "{}");
+
+
+pref("devtools.responsive.reloadConditions.touchSimulation", false);
+
+pref("devtools.responsive.reloadConditions.userAgent", false);
