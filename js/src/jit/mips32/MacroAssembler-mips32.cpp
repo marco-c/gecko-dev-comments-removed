@@ -117,6 +117,11 @@ MacroAssemblerMIPSCompat::convertDoubleToFloat32(FloatRegister src, FloatRegiste
     as_cvtsd(dest, src);
 }
 
+const int CauseBitPos = int(Assembler::CauseI);
+const int CauseBitCount = 1 + int(Assembler::CauseV) - int(Assembler::CauseI);
+const int CauseIOrVMask = ((1 << int(Assembler::CauseI)) |
+                           (1 << int(Assembler::CauseV))) >> int(Assembler::CauseI);
+
 
 
 
@@ -136,12 +141,12 @@ MacroAssemblerMIPSCompat::convertDoubleToInt32(FloatRegister src, Register dest,
     as_truncwd(ScratchFloat32Reg, src);
     as_cfc1(ScratchRegister, Assembler::FCSR);
     moveFromFloat32(ScratchFloat32Reg, dest);
-    ma_ext(ScratchRegister, ScratchRegister, Assembler::CauseI, 6);
+    ma_ext(ScratchRegister, ScratchRegister, CauseBitPos, CauseBitCount);
     
     
     
     
-    as_andi(ScratchRegister, ScratchRegister, 0x11);
+    as_andi(ScratchRegister, ScratchRegister, CauseIOrVMask);
     ma_b(ScratchRegister, Imm32(0), fail, Assembler::NotEqual);
 }
 
@@ -160,7 +165,8 @@ MacroAssemblerMIPSCompat::convertFloat32ToInt32(FloatRegister src, Register dest
     as_truncws(ScratchFloat32Reg, src);
     as_cfc1(ScratchRegister, Assembler::FCSR);
     moveFromFloat32(ScratchFloat32Reg, dest);
-    ma_ext(ScratchRegister, ScratchRegister, Assembler::CauseI, 1);
+    ma_ext(ScratchRegister, ScratchRegister, CauseBitPos, CauseBitCount);
+    as_andi(ScratchRegister, ScratchRegister, CauseIOrVMask);
     ma_b(ScratchRegister, Imm32(0), fail, Assembler::NotEqual);
 }
 
