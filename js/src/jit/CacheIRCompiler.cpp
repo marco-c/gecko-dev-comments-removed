@@ -1988,6 +1988,28 @@ CacheIRCompiler::emitGuardIndexIsNonNegative()
 }
 
 bool
+CacheIRCompiler::emitGuardTagNotEqual()
+{
+    Register lhs = allocator.useRegister(masm, reader.valueTagOperandId());
+    Register rhs = allocator.useRegister(masm, reader.valueTagOperandId());
+
+    FailurePath* failure;
+    if (!addFailurePath(&failure))
+        return false;
+
+    Label done;
+    masm.branch32(Assembler::Equal, lhs, rhs, failure->label());
+
+    
+    masm.branchTestNumber(Assembler::NotEqual, lhs, &done);
+    masm.branchTestNumber(Assembler::NotEqual, rhs, &done);
+    masm.jump(failure->label());
+
+    masm.bind(&done);
+    return true;
+}
+
+bool
 CacheIRCompiler::emitLoadDenseElementHoleResult()
 {
     AutoOutputRegister output(*this);
