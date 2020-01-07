@@ -245,11 +245,6 @@ impl ClipSources {
         }
     }
 
-    
-    pub fn has_clips(&self) -> bool {
-        !self.clips.is_empty()
-    }
-
     pub fn get_screen_bounds(
         &self,
         transform: &LayerToWorldFastTransform,

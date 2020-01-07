@@ -2,8 +2,9 @@
 
 
 
-use api::{BoxShadowClipMode, ColorF, DeviceIntPoint, DeviceIntRect, FilterOp, LayerPoint};
-use api::{LayerRect, LayerToWorldScale, LayerVector2D, MixBlendMode, PipelineId};
+use api::{DeviceIntPoint, DeviceIntRect, DeviceIntSize, DeviceSize};
+use api::{LayerPoint, LayerRect, LayerToWorldScale, LayerVector2D};
+use api::{BoxShadowClipMode, ColorF, FilterOp, MixBlendMode, PipelineId};
 use api::{PremultipliedColorF, Shadow};
 use box_shadow::{BLUR_SAMPLE_SCALE, BoxShadowCacheKey};
 use clip_scroll_tree::ClipScrollNodeIndex;
@@ -17,6 +18,21 @@ use render_task::{RenderTaskCacheKeyKind, RenderTaskId, RenderTaskLocation};
 use resource_cache::CacheItem;
 use scene::{FilterOpHelpers, SceneProperties};
 use tiling::RenderTargetKind;
+
+
+
+
+
+
+
+
+
+fn to_cache_size(size: DeviceSize) -> DeviceIntSize {
+    DeviceIntSize::new(
+        1.max(size.width.round() as i32),
+        1.max(size.height.round() as i32),
+    )
+}
 
 
 
@@ -474,13 +490,7 @@ impl PicturePrimitive {
                 
                 
                 
-
-                
-                
-                
-                
-                
-                let cache_size = (content_rect.size * content_scale).round().to_i32();
+                let cache_size = to_cache_size(content_rect.size * content_scale);
 
                 
                 
@@ -520,7 +530,7 @@ impl PicturePrimitive {
                 
                 
                 
-                let cache_size = (content_rect.size * content_scale).round().to_i32();
+                let cache_size = to_cache_size(content_rect.size * content_scale);
 
                 
                 
