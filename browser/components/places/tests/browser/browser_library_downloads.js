@@ -10,59 +10,42 @@
 
 
 
-var now = Date.now();
+add_task(async function test() {
+  
+  await PlacesTestUtils.addVisits([{
+    uri: "http://mozilla.org",
+    transition: PlacesUtils.history.TRANSITION_TYPED
+  }, {
+    uri: "http://google.com",
+    transition: PlacesUtils.history.TRANSITION_DOWNLOAD
+  }, {
+    uri: "http://en.wikipedia.org",
+    transition: PlacesUtils.history.TRANSITION_TYPED
+  }, {
+    uri: "http://ubuntu.org",
+    transition: PlacesUtils.history.TRANSITION_DOWNLOAD
+  }]);
 
-function test() {
-  waitForExplicitFinish();
+  let library = await promiseLibrary("Downloads");
 
-  let onLibraryReady = function(win) {
-    
-    let places = [
-      { uri: NetUtil.newURI("http://mozilla.com"),
-        visits: [ new VisitInfo(PlacesUtils.history.TRANSITION_TYPED) ]
-      },
-      { uri: NetUtil.newURI("http://google.com"),
-        visits: [ new VisitInfo(PlacesUtils.history.TRANSITION_DOWNLOAD) ]
-      },
-      { uri: NetUtil.newURI("http://en.wikipedia.org"),
-        visits: [ new VisitInfo(PlacesUtils.history.TRANSITION_TYPED) ]
-      },
-      { uri: NetUtil.newURI("http://ubuntu.org"),
-        visits: [ new VisitInfo(PlacesUtils.history.TRANSITION_DOWNLOAD) ]
-      },
-    ];
-    PlacesUtils.asyncHistory.updatePlaces(places, {
-      handleResult() {},
-      handleError() {
-        ok(false, "gHistory.updatePlaces() failed");
-      },
-      handleCompletion() {
-        
-        isnot(win.PlacesOrganizer._places.selectedNode, null,
-              "Downloads is present and selected");
+  registerCleanupFunction(async () => {
+    await library.close();
+    await PlacesUtils.history.clear();
+  });
 
+  
+  Assert.notEqual(library.PlacesOrganizer._places.selectedNode, null,
+    "Downloads is present and selected");
 
-        
-        let testURIs = ["http://ubuntu.org/", "http://google.com/"];
-        for (let element of win.ContentArea.currentView
-                                           .associatedElement.children) {
-          is(element._shell.download.source.url, testURIs.shift(),
-             "URI matches");
-        }
+  
+  let testURIs = ["http://ubuntu.org/", "http://google.com/"];
 
-        win.close();
-        PlacesUtils.history.clear().then(finish);
-      }
-    });
-  };
+  await BrowserTestUtils.waitForCondition(() =>
+    library.ContentArea.currentView.associatedElement.children.length == testURIs.length);
 
-  openLibrary(onLibraryReady, "Downloads");
-}
-
-function VisitInfo(aTransitionType) {
-  this.transitionType =
-    aTransitionType === undefined ?
-      PlacesUtils.history.TRANSITION_LINK : aTransitionType;
-  this.visitDate = now++ * 1000;
-}
-VisitInfo.prototype = {};
+  for (let element of library.ContentArea.currentView
+                                          .associatedElement.children) {
+    Assert.equal(element._shell.download.source.url, testURIs.shift(),
+      "URI matches");
+  }
+});
