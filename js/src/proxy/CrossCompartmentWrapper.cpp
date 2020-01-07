@@ -4,11 +4,11 @@
 
 
 
-#include "jsiter.h"
 #include "jswrapper.h"
 
 #include "gc/PublicIterators.h"
 #include "proxy/DeadObjectProxy.h"
+#include "vm/Iteration.h"
 #include "vm/WrapperObject.h"
 
 #include "gc/Nursery-inl.h"

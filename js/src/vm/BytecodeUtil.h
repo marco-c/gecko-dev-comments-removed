@@ -4,8 +4,8 @@
 
 
 
-#ifndef jsopcode_h
-#define jsopcode_h
+#ifndef vm_BytecodeUtil_h
+#define vm_BytecodeUtil_h
 
 
 

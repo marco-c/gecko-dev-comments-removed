@@ -4,13 +4,12 @@
 
 
 
-#include "jsiter.h"
-
 #include "jit/BaselineCompiler.h"
 #include "jit/BaselineIC.h"
 #include "jit/BaselineJIT.h"
 #include "jit/Linker.h"
 #include "jit/SharedICHelpers.h"
+#include "vm/Iteration.h"
 
 #include "jsboolinlines.h"
 

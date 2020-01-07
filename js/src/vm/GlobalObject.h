@@ -782,6 +782,8 @@ class GlobalObject : public NativeObject
 
     
     static bool initIntlObject(JSContext* cx, Handle<GlobalObject*> global);
+
+    
     static bool addRelativeTimeFormatConstructor(JSContext* cx, HandleObject intl);
 
     

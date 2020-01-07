@@ -4,8 +4,8 @@
 
 
 
-#ifndef jsiter_h
-#define jsiter_h
+#ifndef vm_Iteration_h
+#define vm_Iteration_h
 
 
 

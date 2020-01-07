@@ -4,10 +4,10 @@
 
 
 
-#ifndef jsopcodeinlines_h
-#define jsopcodeinlines_h
+#ifndef vm_BytecodeUtil_inl_h
+#define vm_BytecodeUtil_inl_h
 
-#include "jsopcode.h"
+#include "vm/BytecodeUtil.h"
 
 #include "vm/JSScript.h"
 

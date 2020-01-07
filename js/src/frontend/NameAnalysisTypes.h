@@ -4,11 +4,10 @@
 
 
 
-#ifndef frontend_NameAnalysis_h
-#define frontend_NameAnalysis_h
+#ifndef frontend_NameAnalysisTypes_h
+#define frontend_NameAnalysisTypes_h
 
-#include "jsopcode.h"
-
+#include "vm/BytecodeUtil.h"
 #include "vm/Scope.h"
 
 namespace js {
