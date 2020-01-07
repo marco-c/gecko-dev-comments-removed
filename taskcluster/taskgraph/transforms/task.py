@@ -559,6 +559,13 @@ task_description_schema = Schema({
             Required('paths'): [basestring],
         }],
     }, {
+        Required('implementation'): 'bouncer-submission',
+        Required('locales'): [basestring],
+        Required('entries'): object,
+    }, {
+        Required('implementation'): 'push-apk-breakpoint',
+        Required('payload'): object,
+    }, {
         Required('implementation'): 'invalid',
         
         
@@ -1108,6 +1115,16 @@ def build_balrog_payload(config, task, task_def):
             })
 
 
+@payload_builder('bouncer-submission')
+def build_bouncer_submission_payload(config, task, task_def):
+    worker = task['worker']
+
+    task_def['payload'] = {
+        'locales':  worker['locales'],
+        'submission_entries': worker['entries']
+    }
+
+
 @payload_builder('push-apk')
 def build_push_apk_payload(config, task, task_def):
     worker = task['worker']
@@ -1120,6 +1137,11 @@ def build_push_apk_payload(config, task, task_def):
 
     if worker.get('rollout-percentage', None):
         task_def['payload']['rollout_percentage'] = worker['rollout-percentage']
+
+
+@payload_builder('push-apk-breakpoint')
+def build_push_apk_breakpoint_payload(config, task, task_def):
+    task_def['payload'] = task['worker']['payload']
 
 
 @payload_builder('shipit')
