@@ -109,13 +109,6 @@ pref("browser.cache.compression_level", 0);
 pref("browser.download.forbid_open_with", false);
 
 
-#ifdef EARLY_BETA_OR_EARLIER
-pref("dom.registerContentHandler.enabled", false);
-#else
-pref("dom.registerContentHandler.enabled", true);
-#endif
-
-
 pref("dom.quotaManager.testing", false);
 
 
@@ -4286,10 +4279,6 @@ pref("browser.urlbar.clickSelectsAll", false);
 
 
 
-
-
-pref("ui.allow_platform_file_picker", true);
-
 pref("helpers.global_mime_types_file", "/etc/mime.types");
 pref("helpers.global_mailcap_file", "/etc/mailcap");
 pref("helpers.private_mime_types_file", "~/.mime.types");
@@ -4340,10 +4329,6 @@ pref("browser.urlbar.clickSelectsAll", false);
 
 
 
-
-
-
-pref("ui.allow_platform_file_picker", true);
 
 pref("helpers.global_mime_types_file", "/etc/mime.types");
 pref("helpers.global_mailcap_file", "/etc/mailcap");
