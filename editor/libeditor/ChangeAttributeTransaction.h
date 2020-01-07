@@ -27,15 +27,35 @@ class Element;
 
 class ChangeAttributeTransaction final : public EditTransactionBase
 {
+protected:
+  ChangeAttributeTransaction(dom::Element& aElement,
+                             nsAtom& aAttribute,
+                             const nsAString* aValue);
+
 public:
   
 
 
 
 
-  ChangeAttributeTransaction(dom::Element& aElement,
-                             nsAtom& aAttribute,
-                             const nsAString* aValue);
+
+
+
+  static already_AddRefed<ChangeAttributeTransaction>
+  Create(dom::Element& aElement,
+         nsAtom& aAttribute,
+         const nsAString& aValue);
+
+  
+
+
+
+
+
+
+  static already_AddRefed<ChangeAttributeTransaction>
+  CreateToRemove(dom::Element& aElement,
+                 nsAtom& aAttribute);
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(ChangeAttributeTransaction,
@@ -58,13 +78,13 @@ private:
   nsString mValue;
 
   
+  nsString mUndoValue;
+
+  
   bool mRemoveAttribute;
 
   
   bool mAttributeWasSet;
-
-  
-  nsString mUndoValue;
 };
 
 } 
