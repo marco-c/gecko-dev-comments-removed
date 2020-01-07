@@ -151,8 +151,17 @@ public:
   nsresult DeleteSelectionAsAction(EDirection aDirection,
                                    EStripWrappers aStripWrappers);
 
-  virtual nsresult DeleteSelectionImpl(EDirection aAction,
-                                       EStripWrappers aStripWrappers);
+  
+
+
+
+
+
+
+
+  virtual nsresult
+  DeleteSelectionWithTransaction(EDirection aAction,
+                                 EStripWrappers aStripWrappers);
 
   
   NS_IMETHOD TypedText(const nsAString& aString, ETypingAction aAction);

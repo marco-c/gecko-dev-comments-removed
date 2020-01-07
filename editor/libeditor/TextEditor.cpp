@@ -715,7 +715,7 @@ TextEditor::DeleteSelectionAsAction(EDirection aDirection,
   nsresult rv = rules->WillDoAction(selection, &ruleInfo, &cancel, &handled);
   NS_ENSURE_SUCCESS(rv, rv);
   if (!cancel && !handled) {
-    rv = DeleteSelectionImpl(aDirection, aStripWrappers);
+    rv = DeleteSelectionWithTransaction(aDirection, aStripWrappers);
   }
   if (!cancel) {
     
@@ -725,8 +725,8 @@ TextEditor::DeleteSelectionAsAction(EDirection aDirection,
 }
 
 nsresult
-TextEditor::DeleteSelectionImpl(EDirection aDirection,
-                                EStripWrappers aStripWrappers)
+TextEditor::DeleteSelectionWithTransaction(EDirection aDirection,
+                                           EStripWrappers aStripWrappers)
 {
   MOZ_ASSERT(aStripWrappers == eStrip || aStripWrappers == eNoStrip);
 

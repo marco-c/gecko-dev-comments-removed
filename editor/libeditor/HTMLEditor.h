@@ -383,8 +383,17 @@ public:
   virtual bool AreNodesSameType(nsIContent* aNode1,
                                 nsIContent* aNode2) override;
 
-  virtual nsresult DeleteSelectionImpl(EDirection aAction,
-                                       EStripWrappers aStripWrappers) override;
+  
+
+
+
+
+
+
+
+  virtual nsresult
+  DeleteSelectionWithTransaction(EDirection aAction,
+                                 EStripWrappers aStripWrappers) override;
 
   
 

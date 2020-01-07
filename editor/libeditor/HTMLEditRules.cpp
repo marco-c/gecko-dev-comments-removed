@@ -2719,19 +2719,24 @@ HTMLEditRules::WillDeleteSelection(Selection* aSelection,
   }
 
   {
+    if (NS_WARN_IF(!mHTMLEditor)) {
+      return NS_ERROR_FAILURE;
+    }
+    RefPtr<HTMLEditor> htmlEditor(mHTMLEditor);
+
     
-    NS_ENSURE_STATE(mHTMLEditor);
-    AutoTrackDOMPoint startTracker(mHTMLEditor->mRangeUpdater,
+    AutoTrackDOMPoint startTracker(htmlEditor->mRangeUpdater,
                                    address_of(startNode), &startOffset);
-    AutoTrackDOMPoint endTracker(mHTMLEditor->mRangeUpdater,
+    AutoTrackDOMPoint endTracker(htmlEditor->mRangeUpdater,
                                  address_of(endNode), &endOffset);
     
     *aHandled = true;
 
     if (endNode == startNode) {
-      NS_ENSURE_STATE(mHTMLEditor);
-      rv = mHTMLEditor->DeleteSelectionImpl(aAction, aStripWrappers);
-      NS_ENSURE_SUCCESS(rv, rv);
+      rv = htmlEditor->DeleteSelectionWithTransaction(aAction, aStripWrappers);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
     } else {
       
       nsCOMPtr<Element> startCiteNode = GetTopEnclosingMailCite(*startNode);
@@ -2747,14 +2752,13 @@ HTMLEditRules::WillDeleteSelection(Selection* aSelection,
       }
 
       
-      NS_ENSURE_STATE(mHTMLEditor);
       nsCOMPtr<Element> leftParent = HTMLEditor::GetBlock(*startNode);
       nsCOMPtr<Element> rightParent = HTMLEditor::GetBlock(*endNode);
 
       
       if (leftParent && leftParent == rightParent) {
         NS_ENSURE_STATE(mHTMLEditor);
-        mHTMLEditor->DeleteSelectionImpl(aAction, aStripWrappers);
+        htmlEditor->DeleteSelectionWithTransaction(aAction, aStripWrappers);
       } else {
         
         NS_ENSURE_STATE(leftParent && rightParent);
@@ -2764,22 +2768,22 @@ HTMLEditRules::WillDeleteSelection(Selection* aSelection,
         nsCOMPtr<nsINode> rightBlockParent = rightParent->GetParentNode();
 
         
-        NS_ENSURE_STATE(mHTMLEditor);
         if (leftBlockParent == rightBlockParent &&
-            mHTMLEditor->AreNodesSameType(leftParent, rightParent) &&
+            htmlEditor->AreNodesSameType(leftParent, rightParent) &&
             
             (leftParent->IsHTMLElement(nsGkAtoms::p) ||
              HTMLEditUtils::IsListItem(leftParent) ||
              HTMLEditUtils::IsHeader(*leftParent))) {
           
-          NS_ENSURE_STATE(mHTMLEditor);
-          rv = mHTMLEditor->DeleteSelectionImpl(aAction, aStripWrappers);
-          NS_ENSURE_SUCCESS(rv, rv);
+          rv = htmlEditor->DeleteSelectionWithTransaction(aAction,
+                                                          aStripWrappers);
+          if (NS_WARN_IF(NS_FAILED(rv))) {
+            return rv;
+          }
           
-          NS_ENSURE_STATE(mHTMLEditor);
           EditorDOMPoint pt =
-            mHTMLEditor->JoinNodesDeepWithTransaction(*leftParent,
-                                                      *rightParent);
+            htmlEditor->JoinNodesDeepWithTransaction(*leftParent,
+                                                     *rightParent);
           if (NS_WARN_IF(!pt.IsSet())) {
             return NS_ERROR_FAILURE;
           }
@@ -2822,12 +2826,10 @@ HTMLEditRules::WillDeleteSelection(Selection* aSelection,
               }
               nsCOMPtr<nsIContent> content = somenode->AsContent();
               if (Text* text = content->GetAsText()) {
-                NS_ENSURE_STATE(mHTMLEditor);
-                join = !mHTMLEditor->IsInVisibleTextFrames(*text);
+                join = !htmlEditor->IsInVisibleTextFrames(*text);
               } else {
-                NS_ENSURE_STATE(mHTMLEditor);
                 join = content->IsHTMLElement(nsGkAtoms::br) &&
-                       !mHTMLEditor->IsVisibleBRElement(somenode);
+                       !htmlEditor->IsVisibleBRElement(somenode);
               }
             }
           }
@@ -2839,10 +2841,6 @@ HTMLEditRules::WillDeleteSelection(Selection* aSelection,
         
         if (startNode->GetAsText() &&
             startNode->Length() > static_cast<uint32_t>(startOffset)) {
-          if (NS_WARN_IF(!mHTMLEditor)) {
-            return NS_ERROR_FAILURE;
-          }
-          RefPtr<HTMLEditor> htmlEditor(mHTMLEditor);
           
           OwningNonNull<CharacterData> dataNode =
             *static_cast<CharacterData*>(startNode.get());
@@ -2854,10 +2852,6 @@ HTMLEditRules::WillDeleteSelection(Selection* aSelection,
           }
         }
         if (endNode->GetAsText() && endOffset) {
-          if (NS_WARN_IF(!mHTMLEditor)) {
-            return NS_ERROR_FAILURE;
-          }
-          RefPtr<HTMLEditor> htmlEditor(mHTMLEditor);
           
           OwningNonNull<CharacterData> dataNode =
             *static_cast<CharacterData*>(endNode.get());
