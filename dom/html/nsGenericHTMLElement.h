@@ -450,7 +450,7 @@ public:
 
 
   static void MapCommonAttributesInto(const nsMappedAttributes* aAttributes,
-                                      mozilla::GenericSpecifiedValues* aGenericData);
+                                      mozilla::MappedDeclarations&);
   
 
 
@@ -459,7 +459,7 @@ public:
 
 
   static void MapCommonAttributesIntoExceptHidden(const nsMappedAttributes* aAttributes,
-                                                  mozilla::GenericSpecifiedValues* aGenericData);
+                                                  mozilla::MappedDeclarations&);
 
   static const MappedAttributeEntry sCommonAttributeMap[];
   static const MappedAttributeEntry sImageMarginSizeAttributeMap[];
@@ -477,7 +477,7 @@ public:
 
 
   static void MapImageAlignAttributeInto(const nsMappedAttributes* aAttributes,
-                                         mozilla::GenericSpecifiedValues* aGenericData);
+                                         mozilla::MappedDeclarations&);
 
   
 
@@ -488,7 +488,7 @@ public:
 
 
   static void MapDivAlignAttributeInto(const nsMappedAttributes* aAttributes,
-                                       mozilla::GenericSpecifiedValues* aGenericData);
+                                       mozilla::MappedDeclarations&);
 
   
 
@@ -499,7 +499,7 @@ public:
 
 
   static void MapVAlignAttributeInto(const nsMappedAttributes* aAttributes,
-                                     mozilla::GenericSpecifiedValues* aGenericData);
+                                     mozilla::MappedDeclarations&);
 
   
 
@@ -509,7 +509,7 @@ public:
 
 
   static void MapImageBorderAttributeInto(const nsMappedAttributes* aAttributes,
-                                          mozilla::GenericSpecifiedValues* aGenericData);
+                                          mozilla::MappedDeclarations&);
   
 
 
@@ -518,7 +518,7 @@ public:
 
 
   static void MapImageMarginAttributeInto(const nsMappedAttributes* aAttributes,
-                                          mozilla::GenericSpecifiedValues* aGenericData);
+                                          mozilla::MappedDeclarations&);
   
 
 
@@ -527,7 +527,7 @@ public:
 
 
   static void MapImageSizeAttributesInto(const nsMappedAttributes* aAttributes,
-                                         mozilla::GenericSpecifiedValues* aGenericData);
+                                         mozilla::MappedDeclarations&);
 
   
 
@@ -537,7 +537,7 @@ public:
 
 
   static void MapWidthAttributeInto(const nsMappedAttributes* aAttributes,
-                                    mozilla::GenericSpecifiedValues* aGenericData);
+                                    mozilla::MappedDeclarations&);
   
 
 
@@ -546,7 +546,7 @@ public:
 
 
   static void MapHeightAttributeInto(const nsMappedAttributes* aAttributes,
-                                     mozilla::GenericSpecifiedValues* aGenericData);
+                                     mozilla::MappedDeclarations&);
   
 
 
@@ -556,7 +556,7 @@ public:
 
 
   static void MapBackgroundInto(const nsMappedAttributes* aAttributes,
-                                mozilla::GenericSpecifiedValues* aGenericData);
+                                mozilla::MappedDeclarations&);
   
 
 
@@ -566,7 +566,7 @@ public:
 
 
   static void MapBGColorInto(const nsMappedAttributes* aAttributes,
-                             mozilla::GenericSpecifiedValues* aGenericData);
+                             mozilla::MappedDeclarations&);
   
 
 
@@ -576,7 +576,7 @@ public:
 
 
   static void MapBackgroundAttributesInto(const nsMappedAttributes* aAttributes,
-                                          mozilla::GenericSpecifiedValues* aGenericData);
+                                          mozilla::MappedDeclarations&);
   
 
 
@@ -586,7 +586,7 @@ public:
 
 
   static void MapScrollingAttributeInto(const nsMappedAttributes* aAttributes,
-                                        mozilla::GenericSpecifiedValues* aGenericData);
+                                        mozilla::MappedDeclarations&);
   
 
 

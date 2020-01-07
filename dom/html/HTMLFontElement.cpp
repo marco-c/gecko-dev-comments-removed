@@ -6,7 +6,7 @@
 
 #include "HTMLFontElement.h"
 #include "mozilla/dom/HTMLFontElementBinding.h"
-#include "mozilla/GenericSpecifiedValuesInlines.h"
+#include "mozilla/MappedDeclarations.h"
 #include "nsAttrValueInlines.h"
 #include "nsMappedAttributes.h"
 #include "nsContentUtils.h"
@@ -55,42 +55,42 @@ HTMLFontElement::ParseAttribute(int32_t aNamespaceID,
 
 void
 HTMLFontElement::MapAttributesIntoRule(const nsMappedAttributes* aAttributes,
-                                       GenericSpecifiedValues* aData)
+                                       MappedDeclarations& aDecls)
 {
   
-  if (!aData->PropertyIsSet(eCSSProperty_font_family)) {
+  if (!aDecls.PropertyIsSet(eCSSProperty_font_family)) {
     const nsAttrValue* value = aAttributes->GetAttr(nsGkAtoms::face);
     if (value && value->Type() == nsAttrValue::eString &&
         !value->IsEmptyString()) {
-      aData->SetFontFamily(value->GetStringValue());
+      aDecls.SetFontFamily(value->GetStringValue());
     }
   }
   
-  if (!aData->PropertyIsSet(eCSSProperty_font_size)) {
+  if (!aDecls.PropertyIsSet(eCSSProperty_font_size)) {
     const nsAttrValue* value = aAttributes->GetAttr(nsGkAtoms::size);
     if (value && value->Type() == nsAttrValue::eInteger)
-      aData->SetKeywordValue(eCSSProperty_font_size, value->GetIntegerValue());
+      aDecls.SetKeywordValue(eCSSProperty_font_size, value->GetIntegerValue());
   }
-  if (!aData->PropertyIsSet(eCSSProperty_color)) {
+  if (!aDecls.PropertyIsSet(eCSSProperty_color)) {
     
     const nsAttrValue* value = aAttributes->GetAttr(nsGkAtoms::color);
     nscolor color;
     if (value && value->GetColorValue(color)) {
-      aData->SetColorValue(eCSSProperty_color, color);
+      aDecls.SetColorValue(eCSSProperty_color, color);
     }
   }
-  if (aData->Document()->GetCompatibilityMode() == eCompatibility_NavQuirks) {
+  if (aDecls.Document()->GetCompatibilityMode() == eCompatibility_NavQuirks) {
     
     
     
     const nsAttrValue* value = aAttributes->GetAttr(nsGkAtoms::color);
     nscolor color;
     if (value && value->GetColorValue(color)) {
-      aData->SetTextDecorationColorOverride();
+      aDecls.SetTextDecorationColorOverride();
     }
   }
 
-  nsGenericHTMLElement::MapCommonAttributesInto(aAttributes, aData);
+  nsGenericHTMLElement::MapCommonAttributesInto(aAttributes, aDecls);
 }
 
 NS_IMETHODIMP_(bool)

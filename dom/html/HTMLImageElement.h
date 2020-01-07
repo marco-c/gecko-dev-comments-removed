@@ -407,7 +407,7 @@ private:
   bool SourceElementMatches(Element* aSourceElement);
 
   static void MapAttributesIntoRule(const nsMappedAttributes* aAttributes,
-                                    GenericSpecifiedValues* aGenericData);
+                                    MappedDeclarations&);
   
 
 
