@@ -1018,7 +1018,7 @@ def make_job_description(config, tests):
 
         if test.get('when'):
             jobdesc['when'] = test['when']
-        elif config.params['project'] != 'try':
+        elif config.params['project'] != 'try' and suite not in INCLUSIVE_COMPONENTS:
             
             jobdesc['optimization'] = {'skip-unless-schedules-or-seta': schedules}
         else:
