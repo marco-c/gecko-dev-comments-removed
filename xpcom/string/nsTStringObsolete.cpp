@@ -169,13 +169,10 @@ ToIntegerCommon(const nsTString<T>& aSrc,
       *aErrorCode = NS_OK;
 
       
-      bool haveValue = false;
-
       while(cp<endcp){
         theChar=*cp++;
         if(('0'<=theChar) && (theChar<='9')){
           result = (aRadix * result) + (theChar-'0');
-          haveValue = true;
         }
         else if((theChar>='A') && (theChar<='F')) {
           if(10==aRadix) {
@@ -185,7 +182,6 @@ ToIntegerCommon(const nsTString<T>& aSrc,
           }
           else {
             result = (aRadix * result) + ((theChar-'A')+10);
-            haveValue = true;
           }
         }
         else if((theChar>='a') && (theChar<='f')) {
@@ -196,10 +192,9 @@ ToIntegerCommon(const nsTString<T>& aSrc,
           }
           else {
             result = (aRadix * result) + ((theChar-'a')+10);
-            haveValue = true;
           }
         }
-        else if((('X'==theChar) || ('x'==theChar)) && (!haveValue || result == 0)) {
+        else if((('X'==theChar) || ('x'==theChar)) && result == 0) {
           
           
           
