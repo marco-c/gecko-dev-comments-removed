@@ -10,6 +10,9 @@ const { DebuggerServer } = require("../main");
 const { getChildDocShells, TabActor } = require("./tab");
 const makeDebugger = require("./utils/make-debugger");
 
+const { extend } = require("devtools/shared/extend");
+const { ActorClassWithSpec, Actor } = require("devtools/shared/protocol");
+const { tabSpec } = require("devtools/shared/specs/tab");
 
 
 
@@ -30,7 +33,18 @@ const makeDebugger = require("./utils/make-debugger");
 
 
 
-function ChromeActor(connection) {
+
+
+
+
+
+
+
+
+const chromePrototype = extend({}, TabActor.prototype);
+
+chromePrototype.initialize = function(connection) {
+  Actor.prototype.initialize.call(this, connection);
   TabActor.call(this, connection);
 
   
@@ -69,20 +83,15 @@ function ChromeActor(connection) {
     value: docShell,
     configurable: true
   });
-}
-exports.ChromeActor = ChromeActor;
+};
 
-ChromeActor.prototype = Object.create(TabActor.prototype);
-
-ChromeActor.prototype.constructor = ChromeActor;
-
-ChromeActor.prototype.isRootActor = true;
+chromePrototype.isRootActor = true;
 
 
 
 
 
-Object.defineProperty(ChromeActor.prototype, "docShells", {
+Object.defineProperty(chromePrototype, "docShells", {
   get: function() {
     
     let docShells = [];
@@ -99,7 +108,7 @@ Object.defineProperty(ChromeActor.prototype, "docShells", {
   }
 });
 
-ChromeActor.prototype.observe = function(subject, topic, data) {
+chromePrototype.observe = function(subject, topic, data) {
   TabActor.prototype.observe.call(this, subject, topic, data);
   if (!this.attached) {
     return;
@@ -114,7 +123,7 @@ ChromeActor.prototype.observe = function(subject, topic, data) {
   }
 };
 
-ChromeActor.prototype._attach = function() {
+chromePrototype._attach = function() {
   if (this.attached) {
     return false;
   }
@@ -140,7 +149,7 @@ ChromeActor.prototype._attach = function() {
   return undefined;
 };
 
-ChromeActor.prototype._detach = function() {
+chromePrototype._detach = function() {
   if (!this.attached) {
     return false;
   }
@@ -170,7 +179,7 @@ ChromeActor.prototype._detach = function() {
 
 
 
-ChromeActor.prototype.preNest = function() {
+chromePrototype.preNest = function() {
   
   let e = Services.wm.getEnumerator(null);
   while (e.hasMoreElements()) {
@@ -185,7 +194,7 @@ ChromeActor.prototype.preNest = function() {
 
 
 
-ChromeActor.prototype.postNest = function(nestData) {
+chromePrototype.postNest = function(nestData) {
   
   let e = Services.wm.getEnumerator(null);
   while (e.hasMoreElements()) {
@@ -196,3 +205,7 @@ ChromeActor.prototype.postNest = function(nestData) {
     windowUtils.suppressEventHandling(false);
   }
 };
+
+chromePrototype.typeName = "Chrome";
+exports.chromePrototype = chromePrototype;
+exports.ChromeActor = ActorClassWithSpec(tabSpec, chromePrototype);

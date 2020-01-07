@@ -1110,10 +1110,6 @@ exports.generateActorSpec = generateActorSpec;
 
 
 var generateRequestHandlers = function(actorSpec, actorProto) {
-  if (actorProto._actorSpec) {
-    throw new Error("actorProto called twice on the same actor prototype!");
-  }
-
   actorProto.typeName = actorSpec.typeName;
 
   
