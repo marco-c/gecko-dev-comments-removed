@@ -91,8 +91,6 @@ class GridInspector {
       return;
     }
 
-    this.loadHighlighterSettings();
-
     
     this.swatchColorPickerTooltip = new SwatchColorPickerTooltip(
       this.inspector.toolbox.doc,
@@ -259,21 +257,6 @@ class GridInspector {
     return this.inspector && this.inspector.toolbox && this.inspector.sidebar &&
            this.inspector.toolbox.currentToolId === "inspector" &&
            this.inspector.sidebar.getCurrentTabID() === "layoutview";
-  }
-
-  
-
-
-  loadHighlighterSettings() {
-    let { dispatch } = this.store;
-
-    let showGridAreas = Services.prefs.getBoolPref(SHOW_GRID_AREAS);
-    let showGridLineNumbers = Services.prefs.getBoolPref(SHOW_GRID_LINE_NUMBERS);
-    let showInfinteLines = Services.prefs.getBoolPref(SHOW_INFINITE_LINES_PREF);
-
-    dispatch(updateShowGridAreas(showGridAreas));
-    dispatch(updateShowGridLineNumbers(showGridLineNumbers));
-    dispatch(updateShowInfiniteLines(showInfinteLines));
   }
 
   showGridHighlighter(node, settings) {
