@@ -53,7 +53,7 @@ const device = {
 
 
 
-exports.deviceListState = createEnum([
+exports.loadableState = createEnum([
   "INITIALIZED",
   "LOADING",
   "LOADED",
@@ -93,7 +93,7 @@ exports.devices = {
   modalOpenedFromViewport: PropTypes.number,
 
   
-  listState: PropTypes.oneOf(Object.keys(exports.deviceListState)),
+  listState: PropTypes.oneOf(Object.keys(exports.loadableState)),
 
 };
 
