@@ -46,6 +46,7 @@
 #include "mozilla/ReverseIterator.h"
 #include "nsIXULRuntime.h"
 #include "mozilla/mscom/AsyncInvoker.h"
+#include "mozilla/mscom/Interceptor.h"
 
 #include "oleacc.h"
 
@@ -101,6 +102,24 @@ AccessibleWrap::Shutdown()
       doc->RemoveID(mID);
       mID = kNoID;
     }
+  }
+
+  if (XRE_IsContentProcess()) {
+    
+    
+    
+    
+    
+    
+    IUnknown* unk = static_cast<IAccessible*>(this);
+    mscom::Interceptor::DisconnectRemotesForTarget(unk);
+    
+    
+    
+    
+    
+    unk = static_cast<IAccessibleHyperlink*>(this);
+    mscom::Interceptor::DisconnectRemotesForTarget(unk);
   }
 
   Accessible::Shutdown();
