@@ -1130,7 +1130,6 @@ var Impl = {
 
     
     if (Telemetry.canRecordExtended) {
-      payloadObj.chromeHangs = protect(() => Telemetry.chromeHangs);
       payloadObj.log = [];
       payloadObj.webrtc = protect(() => Telemetry.webrtcStats);
     }

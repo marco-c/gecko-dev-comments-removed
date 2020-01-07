@@ -189,7 +189,7 @@ public:
 
 
 
-  static bool RegisterAnnotator(HangMonitor::Annotator& aAnnotator);
+  static bool RegisterAnnotator(BackgroundHangAnnotator& aAnnotator);
 
   
 
@@ -197,7 +197,7 @@ public:
 
 
 
-  static bool UnregisterAnnotator(HangMonitor::Annotator& aAnnotator);
+  static bool UnregisterAnnotator(BackgroundHangAnnotator& aAnnotator);
 };
 
 } 

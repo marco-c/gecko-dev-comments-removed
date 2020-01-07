@@ -92,9 +92,6 @@ class GeckoInstance(object):
         
         "geo.wifi.scan": False,
 
-        
-        "hangmonitor.timeout": 0,
-
         "javascript.options.showInConsole": True,
 
         
