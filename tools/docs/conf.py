@@ -44,7 +44,11 @@ extensions = [
 
 
 
-js_source_path = ['toolkit/mozapps/extensions']
+js_source_path = [
+    'browser/components/extensions',
+    'toolkit/components/extensions',
+    'toolkit/mozapps/extensions',
+]
 root_for_relative_js_paths = '.'
 jsdoc_config_path = 'tools/docs/jsdoc.json'
 
