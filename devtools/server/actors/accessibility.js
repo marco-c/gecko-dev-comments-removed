@@ -245,7 +245,12 @@ const AccessibleActor = ActorClassWithSpec(accessibleSpec, {
     if (this.isDefunct) {
       return null;
     }
-    return this.rawAccessible.keyboardShortcut;
+    
+    
+    
+    
+    
+    return this.rawAccessible.accessKey || this.rawAccessible.keyboardShortcut;
   },
 
   get childCount() {
@@ -684,9 +689,10 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
           events.emit(accessible, "attributes-change", accessible.attributes);
         }
         break;
+      
       case EVENT_ACCELERATOR_CHANGE:
         if (accessible) {
-          events.emit(accessible, "shortcut-change", rawAccessible.keyboardShortcut);
+          events.emit(accessible, "shortcut-change", accessible.keyboardShortcut);
         }
         break;
       default:
