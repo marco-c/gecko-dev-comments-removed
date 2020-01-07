@@ -283,7 +283,7 @@ class TypeSet
 
         ObjectGroup* maybeGroup();
 
-        JSCompartment* maybeCompartment();
+        JS::Compartment* maybeCompartment();
     } JS_HAZ_GC_POINTER;
 
     
@@ -369,7 +369,7 @@ class TypeSet
 
         inline void trace(JSTracer* trc);
 
-        JSCompartment* maybeCompartment();
+        JS::Compartment* maybeCompartment();
 
         bool operator == (Type o) const { return data == o.data; }
         bool operator != (Type o) const { return data != o.data; }
@@ -538,7 +538,7 @@ class TypeSet
     TemporaryTypeSet* cloneObjectsOnly(LifoAlloc* alloc);
     TemporaryTypeSet* cloneWithoutObjects(LifoAlloc* alloc);
 
-    JSCompartment* maybeCompartment();
+    JS::Compartment* maybeCompartment();
 
     
     static void readBarrier(const TypeSet* types);
@@ -649,7 +649,7 @@ class TypeConstraint
     virtual bool sweep(TypeZone& zone, TypeConstraint** res) = 0;
 
     
-    virtual JSCompartment* maybeCompartment() = 0;
+    virtual JS::Compartment* maybeCompartment() = 0;
 };
 
 
@@ -1501,7 +1501,7 @@ inline const char * InferSpewColor(TypeSet* types) { return nullptr; }
 
 
 void
-PrintTypes(JSContext* cx, JSCompartment* comp, bool force);
+PrintTypes(JSContext* cx, JS::Compartment* comp, bool force);
 
 } 
 

@@ -150,7 +150,7 @@ public:
 
   JSObject* GlobalJSObject() const;
 
-  JSCompartment* Compartment() const;
+  JS::Compartment* Compartment() const;
 
   
   

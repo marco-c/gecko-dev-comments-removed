@@ -344,7 +344,7 @@ struct Zone : public JS::shadow::Zone,
   public:
     mozilla::LinkedList<js::WeakMapBase>& gcWeakMapList() { return gcWeakMapList_.ref(); }
 
-    typedef js::Vector<JSCompartment*, 1, js::SystemAllocPolicy> CompartmentVector;
+    typedef js::Vector<JS::Compartment*, 1, js::SystemAllocPolicy> CompartmentVector;
 
   private:
     
@@ -704,7 +704,7 @@ struct Zone : public JS::shadow::Zone,
     }
 
     
-    void deleteEmptyCompartment(JSCompartment* comp);
+    void deleteEmptyCompartment(JS::Compartment* comp);
 
     
 

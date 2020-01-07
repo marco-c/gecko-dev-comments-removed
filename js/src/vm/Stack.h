@@ -1411,7 +1411,7 @@ class Activation
 {
   protected:
     JSContext* cx_;
-    JSCompartment* compartment_;
+    JS::Compartment* compartment_;
     Activation* prev_;
     Activation* prevProfiling_;
 
@@ -1451,7 +1451,7 @@ class Activation
     JSContext* cx() const {
         return cx_;
     }
-    JSCompartment* compartment() const {
+    JS::Compartment* compartment() const {
         return compartment_;
     }
     Activation* prev() const {
@@ -2052,7 +2052,7 @@ class FrameIter
     FrameIter& operator++();
 
     JS::Realm* realm() const;
-    JSCompartment* compartment() const;
+    JS::Compartment* compartment() const;
     Activation* activation() const { return data_.activations_.activation(); }
 
     bool isInterp() const {

@@ -67,7 +67,7 @@ struct Cell
     inline JSRuntime* runtimeFromAnyThread() const;
 
     
-    inline JSCompartment* maybeCompartment() const { return nullptr; }
+    inline JS::Compartment* maybeCompartment() const { return nullptr; }
 
     
     

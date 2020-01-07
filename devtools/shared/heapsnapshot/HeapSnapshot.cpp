@@ -1069,7 +1069,7 @@ ShouldIncludeEdge(JS::CompartmentSet* compartments,
   
   
 
-  JSCompartment* compartment = edge.referent.compartment();
+  JS::Compartment* compartment = edge.referent.compartment();
 
   if (!compartment || compartments->has(compartment)) {
     return true;

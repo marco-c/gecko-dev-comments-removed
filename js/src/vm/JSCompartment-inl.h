@@ -88,7 +88,7 @@ js::AutoRealmUnchecked::AutoRealmUnchecked(JSContext* cx, JS::Realm* target)
 {}
 
 inline bool
-JSCompartment::wrap(JSContext* cx, JS::MutableHandleValue vp)
+JS::Compartment::wrap(JSContext* cx, JS::MutableHandleValue vp)
 {
     
     if (!vp.isGCThing())

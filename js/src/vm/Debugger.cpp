@@ -4872,7 +4872,7 @@ class MOZ_STACK_CLASS Debugger::ObjectQuery
 
 
 
-        JSCompartment* comp = referent.compartment();
+        JS::Compartment* comp = referent.compartment();
         if (comp && !debuggeeCompartments.has(comp)) {
             traversal.abandonReferent();
             return true;

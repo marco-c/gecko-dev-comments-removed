@@ -1174,7 +1174,7 @@ IsChromeOrXBL(JSContext* cx, JSObject* )
     MOZ_ASSERT(NS_IsMainThread());
     JS::Realm* realm = JS::GetCurrentRealmOrNull(cx);
     MOZ_ASSERT(realm);
-    JSCompartment* c = JS::GetCompartmentForRealm(realm);
+    JS::Compartment* c = JS::GetCompartmentForRealm(realm);
 
     
     

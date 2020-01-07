@@ -39,7 +39,7 @@ class WrapperFactory {
 
     
     
-    static bool AllowWaiver(JSCompartment* target, JSCompartment* origin);
+    static bool AllowWaiver(JS::Compartment* target, JS::Compartment* origin);
 
     
     static bool AllowWaiver(JSObject* wrapper);

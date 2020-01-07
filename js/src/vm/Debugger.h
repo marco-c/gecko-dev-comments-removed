@@ -127,7 +127,7 @@ class DebuggerWeakMap : private WeakMap<HeapPtr<UnbarrieredKey>, HeapPtr<JSObjec
                     ZoneAllocPolicy> CountMap;
 
     CountMap zoneCounts;
-    JSCompartment* compartment;
+    JS::Compartment* compartment;
 
   public:
     typedef WeakMap<Key, Value, MovableCellHasher<Key>> Base;
@@ -1592,7 +1592,6 @@ class WasmBreakpointSite;
 
 class BreakpointSite {
     friend class Breakpoint;
-    friend struct ::JSCompartment;
     friend class ::JSScript;
     friend class Debugger;
 
@@ -1655,7 +1654,6 @@ class BreakpointSite {
 
 
 class Breakpoint {
-    friend struct ::JSCompartment;
     friend class Debugger;
     friend class BreakpointSite;
 

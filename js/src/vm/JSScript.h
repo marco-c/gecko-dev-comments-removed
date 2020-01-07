@@ -1250,8 +1250,8 @@ class JSScript : public js::gc::TenuredCell
   public:
     inline JSPrincipals* principals();
 
-    JSCompartment* compartment() const { return JS::GetCompartmentForRealm(realm_); }
-    JSCompartment* maybeCompartment() const { return compartment(); }
+    JS::Compartment* compartment() const { return JS::GetCompartmentForRealm(realm_); }
+    JS::Compartment* maybeCompartment() const { return compartment(); }
     JS::Realm* realm() const { return realm_; }
 
     js::SharedScriptData* scriptData() {

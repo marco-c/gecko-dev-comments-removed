@@ -155,7 +155,7 @@ JS::GetIsSecureContext(JS::Realm* realm)
 }
 
 JS_FRIEND_API(JSPrincipals*)
-JS_GetCompartmentPrincipals(JSCompartment* compartment)
+JS_GetCompartmentPrincipals(JS::Compartment* compartment)
 {
     
     
@@ -347,7 +347,7 @@ js::GetRealmZone(JS::Realm* realm)
 }
 
 JS_FRIEND_API(bool)
-js::IsSystemCompartment(JSCompartment* comp)
+js::IsSystemCompartment(JS::Compartment* comp)
 {
     
     
@@ -629,7 +629,7 @@ JS_FRIEND_API(void)
 js::VisitGrayWrapperTargets(Zone* zone, GCThingCallback callback, void* closure)
 {
     for (CompartmentsInZoneIter comp(zone); !comp.done(); comp.next()) {
-        for (JSCompartment::WrapperEnum e(comp); !e.empty(); e.popFront())
+        for (Compartment::WrapperEnum e(comp); !e.empty(); e.popFront())
             e.front().mutableKey().applyToWrapped(VisitGrayCallbackFunctor(callback, closure));
     }
 }
