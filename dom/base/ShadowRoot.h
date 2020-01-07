@@ -76,7 +76,23 @@ private:
 
 
 
-  bool RedistributeElement(Element*);
+  bool MaybeReassignElement(Element* aElement, const nsAttrValue* aOldValue);
+
+  
+
+
+
+  const HTMLSlotElement* AssignSlotFor(nsIContent* aContent);
+
+  
+
+
+
+
+
+
+  const HTMLSlotElement* UnassignSlotFor(nsIContent* aContent,
+                                         const nsAString& aSlotName);
 
   
 
@@ -86,6 +102,9 @@ private:
   bool IsPooledNode(nsIContent* aChild) const;
 
 public:
+  void AddSlot(HTMLSlotElement* aSlot);
+  void RemoveSlot(HTMLSlotElement* aSlot);
+
   void SetInsertionPointChanged() { mInsertionPointChanged = true; }
 
   void SetAssociatedBinding(nsXBLBinding* aBinding) { mAssociatedBinding = aBinding; }
@@ -117,6 +136,11 @@ protected:
   virtual ~ShadowRoot();
 
   ShadowRootMode mMode;
+
+  
+  
+  
+  nsClassHashtable<nsStringHashKey, nsTArray<mozilla::dom::HTMLSlotElement*>> mSlotMap;
 
   nsTHashtable<nsIdentifierMapEntry> mIdentifierMap;
   nsXBLPrototypeBinding* mProtoBinding;
