@@ -1005,7 +1005,7 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
             
             
             
-            this.sheetActor.allRulesHaveSource() &&
+            !this.sheetActor.hasRulesModifiedByCSSOM() &&
             
             
             

@@ -240,24 +240,8 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
 
 
-
-  allRulesHaveSource: function () {
-    let rules;
-    try {
-      rules = this.rawSheet.cssRules;
-    } catch (e) {
-      
-      return true;
-    }
-
-    for (let i = 0; i < rules.length; i++) {
-      let rule = rules[i];
-      if (InspectorUtils.getRelativeRuleLine(rule) === 0) {
-        return false;
-      }
-    }
-
-    return true;
+  hasRulesModifiedByCSSOM: function () {
+    return InspectorUtils.hasRulesModifiedByCSSOM(this.rawSheet);
   },
 
   
