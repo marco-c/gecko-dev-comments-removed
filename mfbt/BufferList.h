@@ -614,7 +614,14 @@ BufferList<AllocPolicy>::Extract(IterImpl& aIter, size_t aSize, bool* aSuccess)
                 mSegments[aIter.mSegment].mCapacity));
       aIter.Advance(*this, aIter.RemainingInSegment());
     }
-    MOZ_RELEASE_ASSERT(aIter.mSegment == copyStart + segmentsToCopy);
+    
+    
+    
+    
+    
+    MOZ_RELEASE_ASSERT(
+      (aIter.mSegment == copyStart + segmentsToCopy) ||
+      (aIter.Done() && aIter.mSegment == copyStart + segmentsToCopy - 1));
     mSegments.erase(mSegments.begin() + copyStart,
                     mSegments.begin() + copyStart + segmentsToCopy);
 
