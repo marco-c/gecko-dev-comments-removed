@@ -416,6 +416,12 @@ public:
                        const nsString& aDeviceId,
                        const char** aOutBadConstraint) override;
 
+  
+
+
+
+  void GetSettings(dom::MediaTrackSettings& aOutSettings) const override;
+
   void Pull(const RefPtr<const AllocationHandle>& aHandle,
             const RefPtr<SourceMediaStream>& aStream,
             TrackID aTrackID,
