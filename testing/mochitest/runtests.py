@@ -1829,9 +1829,7 @@ toolbar#nav-bar {
 
         
         
-        options.extraPrefs.append(
-            "marionette.logging=%s" %
-            "TRACE")
+        options.extraPrefs.append("marionette.log.level=%s" % "TRACE")
 
         
         extensions = self.getExtensionsToInstall(options)
