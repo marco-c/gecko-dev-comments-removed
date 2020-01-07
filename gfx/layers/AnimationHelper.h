@@ -7,11 +7,12 @@
 #ifndef mozilla_layers_AnimationHelper_h
 #define mozilla_layers_AnimationHelper_h
 
+#include "mozilla/dom/Nullable.h"
 #include "mozilla/ComputedTimingFunction.h" 
 #include "mozilla/layers/LayersMessages.h" 
 #include "mozilla/TimeStamp.h"          
 #include "mozilla/TimingParams.h"
-
+#include "X11UndefineNone.h"
 
 namespace mozilla {
 struct AnimationValue;
@@ -25,6 +26,15 @@ struct AnimData {
   InfallibleTArray<RefPtr<RawServoAnimationValue>> mEndValues;
   InfallibleTArray<Maybe<mozilla::ComputedTimingFunction>> mFunctions;
   TimingParams mTiming;
+  
+  
+  
+  dom::Nullable<double> mProgressOnLastCompose;
+  uint64_t mCurrentIterationOnLastCompose = 0;
+  
+  
+  uint32_t mSegmentIndexOnLastCompose = 0;
+  dom::Nullable<double> mPortionInSegmentOnLastCompose;
 };
 
 struct AnimationTransform {
@@ -195,16 +205,27 @@ class AnimationHelper
 {
 public:
 
+  enum class SampleResult {
+    None,
+    Skipped,
+    Sampled
+  };
+
   
 
 
 
-  static void
+
+
+
+
+
+
+  static SampleResult
   SampleAnimationForEachNode(TimeStamp aTime,
                              AnimationArray& aAnimations,
                              InfallibleTArray<AnimData>& aAnimationData,
-                             RefPtr<RawServoAnimationValue>& aAnimationValue,
-                             bool& aHasInEffectAnimations);
+                             RefPtr<RawServoAnimationValue>& aAnimationValue);
   
 
 

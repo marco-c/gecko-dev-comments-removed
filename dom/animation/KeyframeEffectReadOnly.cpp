@@ -1586,19 +1586,30 @@ KeyframeEffectReadOnly::MarkCascadeNeedsUpdate()
   effectSet->MarkCascadeNeedsUpdate();
 }
 
-bool
-KeyframeEffectReadOnly::HasComputedTimingChanged() const
+ bool
+KeyframeEffectReadOnly::HasComputedTimingChanged(
+  const ComputedTiming& aComputedTiming,
+  IterationCompositeOperation aIterationComposite,
+  const Nullable<double>& aProgressOnLastCompose,
+  uint64_t aCurrentIterationOnLastCompose)
 {
   
   
   
   
+  return aComputedTiming.mProgress != aProgressOnLastCompose ||
+         (aIterationComposite == IterationCompositeOperation::Accumulate &&
+          aComputedTiming.mCurrentIteration != aCurrentIterationOnLastCompose);
+}
+
+bool
+KeyframeEffectReadOnly::HasComputedTimingChanged() const
+{
   ComputedTiming computedTiming = GetComputedTiming();
-  return computedTiming.mProgress != mProgressOnLastCompose ||
-         (mEffectOptions.mIterationComposite ==
-            IterationCompositeOperation::Accumulate &&
-         computedTiming.mCurrentIteration !=
-          mCurrentIterationOnLastCompose);
+  return HasComputedTimingChanged(computedTiming,
+                                  mEffectOptions.mIterationComposite,
+                                  mProgressOnLastCompose,
+                                  mCurrentIterationOnLastCompose);
 }
 
 bool

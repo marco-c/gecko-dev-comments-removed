@@ -660,30 +660,58 @@ SampleAnimations(Layer* aLayer,
           return;
         }
         isAnimating = true;
-        bool hasInEffectAnimations = false;
         RefPtr<RawServoAnimationValue> animationValue =
           layer->GetBaseAnimationStyle();
-        AnimationHelper::SampleAnimationForEachNode(aTime,
-                                                    animations,
-                                                    layer->GetAnimationData(),
-                                                    animationValue,
-                                                    hasInEffectAnimations);
-        if (hasInEffectAnimations) {
-          Animation& animation = animations.LastElement();
-          ApplyAnimatedValue(layer,
-                             aStorage,
-                             animation.property(),
-                             animation.data(),
-                             animationValue);
-        } else {
-          
-          
-          
-          HostLayer* layerCompositor = layer->AsHostLayer();
-          layerCompositor->SetShadowBaseTransform(layer->GetBaseTransform());
-          layerCompositor->SetShadowTransformSetByAnimation(false);
-          layerCompositor->SetShadowOpacity(layer->GetOpacity());
-          layerCompositor->SetShadowOpacitySetByAnimation(false);
+        AnimationHelper::SampleResult sampleResult =
+          AnimationHelper::SampleAnimationForEachNode(aTime,
+                                                      animations,
+                                                      layer->GetAnimationData(),
+                                                      animationValue);
+        switch (sampleResult) {
+          case AnimationHelper::SampleResult::Sampled: {
+            Animation& animation = animations.LastElement();
+            ApplyAnimatedValue(layer,
+                               aStorage,
+                               animation.property(),
+                               animation.data(),
+                               animationValue);
+            break;
+          }
+          case AnimationHelper::SampleResult::Skipped:
+            
+            
+#ifdef DEBUG
+            
+            switch (animations[0].property()) {
+              case eCSSProperty_opacity:
+                MOZ_ASSERT(FuzzyEqualsMultiplicative(
+                  layer->AsHostLayer()->GetShadowOpacity(),
+                  *(aStorage->GetAnimationOpacity(layer->GetCompositorAnimationsId()))));
+                break;
+              case eCSSProperty_transform: {
+                AnimatedValue* transform =
+                  aStorage->GetAnimatedValue(layer->GetCompositorAnimationsId());
+                MOZ_ASSERT(
+                  transform->mTransform.mTransformInDevSpace.FuzzyEqualsMultiplicative(
+                    (layer->AsHostLayer()->GetShadowBaseTransform())));
+                break;
+              }
+              default:
+                MOZ_ASSERT_UNREACHABLE("Unsupported properties");
+                break;
+            }
+#endif
+            break;
+          case AnimationHelper::SampleResult::None: {
+            HostLayer* layerCompositor = layer->AsHostLayer();
+            layerCompositor->SetShadowBaseTransform(layer->GetBaseTransform());
+            layerCompositor->SetShadowTransformSetByAnimation(false);
+            layerCompositor->SetShadowOpacity(layer->GetOpacity());
+            layerCompositor->SetShadowOpacitySetByAnimation(false);
+            break;
+          }
+          default:
+            break;
         }
       });
 
