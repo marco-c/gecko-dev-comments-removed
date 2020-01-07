@@ -2356,18 +2356,6 @@ xpc_JSObjectIsID(JSContext* cx, JSObject* obj);
 
 
 
-extern bool
-xpc_DumpJSStack(bool showArgs, bool showLocals, bool showThisProps);
-
-
-
-extern JS::UniqueChars
-xpc_PrintJSStack(JSContext* cx, bool showArgs, bool showLocals,
-                 bool showThisProps);
-
-
-
-
 class MOZ_RAII AutoScriptEvaluate
 {
 public:

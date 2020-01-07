@@ -255,6 +255,17 @@ extern void
 xpc_UnmarkSkippableJSHolders();
 
 
+extern bool
+xpc_DumpJSStack(bool showArgs, bool showLocals, bool showThisProps);
+
+
+
+extern JS::UniqueChars
+xpc_PrintJSStack(JSContext* cx, bool showArgs, bool showLocals,
+                 bool showThisProps);
+
+
+
 class XPCStringConvert
 {
 public:
