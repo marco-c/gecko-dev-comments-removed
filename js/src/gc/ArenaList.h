@@ -223,8 +223,13 @@ class ArenaLists
 
 
     ZoneGroupData<AllAllocKindArray<FreeSpan*>> freeLists_;
-    FreeSpan*& freeLists(AllocKind i) { return freeLists_.ref()[i]; }
-    FreeSpan* freeLists(AllocKind i) const { return freeLists_.ref()[i]; }
+    AllAllocKindArray<FreeSpan*>& freeLists() { return freeLists_.ref(); }
+    const AllAllocKindArray<FreeSpan*>& freeLists() const { return freeLists_.ref(); }
+
+    FreeSpan* freeList(AllocKind i) const { return freeLists()[i]; }
+
+    inline void setFreeList(AllocKind i, FreeSpan* span);
+    inline void clearFreeList(AllocKind i);
 
     
     
@@ -286,9 +291,9 @@ class ArenaLists
     inline bool needBackgroundFinalizeWait(AllocKind kind) const;
 
     
-    inline void purge();
+    inline void clearFreeLists();
 
-    inline void prepareForIncrementalGC();
+    inline void unmarkPreMarkedFreeCells();
 
     
     inline bool arenaIsInUse(Arena* arena, AllocKind kind) const;
