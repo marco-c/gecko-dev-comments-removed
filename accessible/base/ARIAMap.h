@@ -142,7 +142,7 @@ struct nsRoleMapEntry
 
 
   bool Is(nsAtom* aARIARole) const
-    { return *roleAtom == aARIARole; }
+    { return roleAtom == aARIARole; }
 
   
 
@@ -154,10 +154,10 @@ struct nsRoleMapEntry
 
 
   const nsDependentAtomString ARIARoleString() const
-    { return nsDependentAtomString(*roleAtom); }
+    { return nsDependentAtomString(roleAtom); }
 
   
-  nsStaticAtom** roleAtom;
+  nsStaticAtom* const roleAtom;
 
   
   mozilla::a11y::role role;
