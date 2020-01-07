@@ -53,6 +53,8 @@ class SandboxBroker final
     
     
     RECURSIVE     = 1 << 5,
+    
+    MAY_CONNECT   = 1 << 6,
   };
   
   

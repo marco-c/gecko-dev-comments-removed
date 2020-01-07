@@ -370,6 +370,21 @@ SandboxBrokerPolicyFactory::SandboxBrokerPolicyFactory()
   }
 #endif
 
+  
+  
+  const char* bumblebeeSocket = PR_GetEnv("BUMBLEBEE_SOCKET");
+  if (bumblebeeSocket == nullptr) {
+    bumblebeeSocket = "/var/run/bumblebee.socket";
+  }
+  policy->AddPath(SandboxBroker::MAY_CONNECT, bumblebeeSocket);
+
+  
+  
+  policy->AddPrefix(SandboxBroker::MAY_CONNECT, "/tmp/.X11-unix/X");
+  if (const auto xauth = PR_GetEnv("XAUTHORITY")) {
+    policy->AddPath(rdonly, xauth);
+  }
+
   mCommonContentPolicy.reset(policy);
 #endif
 }
@@ -508,9 +523,8 @@ SandboxBrokerPolicyFactory::GetContentPolicy(int aPid, bool aFileProcess)
 
   if (allowPulse) {
     
-    if (const auto xauth = PR_GetEnv("XAUTHORITY")) {
-      policy->AddPath(rdonly, xauth);
-    }
+    
+    
     policy->AddPath(rdonly, "/var/lib/dbus/machine-id");
   }
 

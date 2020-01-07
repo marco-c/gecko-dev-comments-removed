@@ -15,6 +15,7 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/un.h>
 #include <unistd.h>
 
 #include "mozilla/Assertions.h"
@@ -243,5 +244,39 @@ SandboxBrokerClient::Readlink(const char* aPath, void* aBuff, size_t aSize)
   return DoCall(&req, aPath, nullptr, aBuff, false);
 }
 
-} 
+int
+SandboxBrokerClient::Connect(const sockaddr_un* aAddr, size_t aLen, int aType)
+{
+  static const size_t maxLen = sizeof(aAddr->sun_path);
+  const char* path = aAddr->sun_path;
+  const auto addrEnd = reinterpret_cast<const char*>(aAddr) + aLen;
+  
+  if (addrEnd <= path) {
+    return -EINVAL;
+  }
+  
+  if (aAddr->sun_family != AF_UNIX) {
+    return -EAFNOSUPPORT;
+  }
+  
+  auto bufLen = static_cast<size_t>(addrEnd - path);
+  if (bufLen > maxLen) {
+    bufLen = maxLen;
+  }
+  
+  
+  
+  const size_t pathLen = strnlen(path, bufLen);
+  if (pathLen == bufLen) {
+    return -ENAMETOOLONG;
+  }
+  
+  if (pathLen == 0) {
+    return -ECONNREFUSED;
+  }
 
+  const Request req = { SANDBOX_SOCKET_CONNECT, aType, 0 };
+  return DoCall(&req, path, nullptr, nullptr, true);
+}
+
+} 

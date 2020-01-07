@@ -41,7 +41,8 @@ const char* SandboxBrokerCommon::OperationDescription[] = {
   "rename",
   "rmdir",
   "unlink",
-  "readlink"
+  "readlink",
+  "connect"
 };
 
  ssize_t

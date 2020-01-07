@@ -37,12 +37,14 @@ public:
     SANDBOX_FILE_RMDIR,
     SANDBOX_FILE_UNLINK,
     SANDBOX_FILE_READLINK,
+    SANDBOX_SOCKET_CONNECT,
   };
   
   static const char* OperationDescription[];
 
   struct Request {
     Operation mOp;
+    
     
     int mFlags;
     
