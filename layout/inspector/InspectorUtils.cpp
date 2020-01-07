@@ -319,6 +319,12 @@ InspectorUtils::GetRelativeRuleLine(GlobalObject& aGlobal, css::Rule& aRule)
   return lineNumber;
 }
 
+ bool
+InspectorUtils::HasRulesModifiedByCSSOM(GlobalObject& aGlobal, StyleSheet& aSheet)
+{
+  return aSheet.HasModifiedRules();
+}
+
  CSSLexer*
 InspectorUtils::GetCSSLexer(GlobalObject& aGlobal, const nsAString& aText)
 {

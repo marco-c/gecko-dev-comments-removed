@@ -69,6 +69,8 @@ public:
 
   static uint32_t GetRelativeRuleLine(GlobalObject& aGlobal, css::Rule& aRule);
 
+  static bool HasRulesModifiedByCSSOM(GlobalObject& aGlobal, StyleSheet& aSheet);
+
   static CSSLexer* GetCSSLexer(GlobalObject& aGlobal, const nsAString& aText);
 
   
