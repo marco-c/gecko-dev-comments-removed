@@ -104,7 +104,6 @@ function CssRuleView(inspector, document, store, pageStyle) {
   EventEmitter.decorate(this);
 
   this.inspector = inspector;
-  this.highlighters = inspector.highlighters;
   this.styleDocument = document;
   this.styleWindow = this.styleDocument.defaultView;
   this.store = store || {};
@@ -152,6 +151,9 @@ function CssRuleView(inspector, document, store, pageStyle) {
   this.shortcuts.on("CmdOrCtrl+F", event => this._onShortcut("CmdOrCtrl+F", event));
   this.element.addEventListener("copy", this._onCopy);
   this.element.addEventListener("contextmenu", this._onContextMenu);
+  this.element.addEventListener("mousemove", () => {
+    this.addHighlightersToView();
+  }, { once: true });
   this.addRuleButton.addEventListener("click", this._onAddRule);
   this.searchField.addEventListener("input", this._onFilterStyles);
   this.searchClearButton.addEventListener("click", this._onClearSearch);
@@ -176,8 +178,6 @@ function CssRuleView(inspector, document, store, pageStyle) {
 
   
   this.tooltips = new TooltipsOverlay(this);
-
-  this.highlighters.addToView(this);
 }
 
 CssRuleView.prototype = {
@@ -222,6 +222,16 @@ CssRuleView.prototype = {
   
   get dummyElement() {
     return this._dummyElement;
+  },
+
+  
+  get highlighters() {
+    if (!this._highlighters) {
+      
+      this._highlighters = this.inspector.highlighters;
+    }
+
+    return this._highlighters;
   },
 
   
@@ -745,8 +755,13 @@ CssRuleView.prototype = {
       this._contextMenu = null;
     }
 
+    if (this._highlighters) {
+      this._highlighters.removeFromView(this);
+      this._highlighters = null;
+    }
+
     this.tooltips.destroy();
-    this.highlighters.removeFromView(this);
+
     this.unselectAllRules();
 
     
@@ -773,7 +788,6 @@ CssRuleView.prototype = {
     this.focusCheckbox = null;
 
     this.inspector = null;
-    this.highlighters = null;
     this.styleDocument = null;
     this.styleWindow = null;
 
@@ -1623,8 +1637,15 @@ CssRuleView.prototype = {
       event.preventDefault();
       event.stopPropagation();
     }
-  }
+  },
 
+  
+
+
+
+  addHighlightersToView() {
+    this.highlighters.addToView(this);
+  },
 };
 
 

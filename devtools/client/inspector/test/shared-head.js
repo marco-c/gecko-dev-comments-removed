@@ -79,15 +79,20 @@ var openInspectorSidebarTab = async function(id) {
 
 function openRuleView() {
   return openInspector().then(data => {
+    let view = data.inspector.getPanel("ruleview").view;
+
     
     
-    data.inspector.getPanel("ruleview").view.debounce = manualDebounce();
+    view.debounce = manualDebounce();
+
+    
+    view.addHighlightersToView();
 
     return {
       toolbox: data.toolbox,
       inspector: data.inspector,
       testActor: data.testActor,
-      view: data.inspector.getPanel("ruleview").view
+      view,
     };
   });
 }
@@ -101,11 +106,15 @@ function openRuleView() {
 
 function openComputedView() {
   return openInspectorSidebarTab("computedview").then(data => {
+    let view = data.inspector.getPanel("computedview").computedView;
+    
+    view.addHighlightersToView();
+
     return {
       toolbox: data.toolbox,
       inspector: data.inspector,
       testActor: data.testActor,
-      view: data.inspector.getPanel("computedview").computedView
+      view,
     };
   });
 }
@@ -149,7 +158,9 @@ function openLayoutView() {
 
 
 function selectRuleView(inspector) {
-  return inspector.getPanel("ruleview").view;
+  let view = inspector.getPanel("ruleview").view;
+  view.addHighlightersToView();
+  return view;
 }
 
 
@@ -161,7 +172,9 @@ function selectRuleView(inspector) {
 
 function selectComputedView(inspector) {
   inspector.sidebar.select("computedview");
-  return inspector.getPanel("computedview").computedView;
+  let view = inspector.getPanel("computedview").computedView;
+  view.addHighlightersToView();
+  return view;
 }
 
 

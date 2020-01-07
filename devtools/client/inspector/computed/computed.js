@@ -150,7 +150,6 @@ UpdateProcess.prototype = {
 
 function CssComputedView(inspector, document, pageStyle) {
   this.inspector = inspector;
-  this.highlighters = inspector.highlighters;
   this.styleDocument = document;
   this.styleWindow = this.styleDocument.defaultView;
   this.pageStyle = pageStyle;
@@ -162,11 +161,11 @@ function CssComputedView(inspector, document, pageStyle) {
 
   
   this.focusWindow = this.focusWindow.bind(this);
-  this._onContextMenu = this._onContextMenu.bind(this);
+  this._onClearSearch = this._onClearSearch.bind(this);
   this._onClick = this._onClick.bind(this);
+  this._onContextMenu = this._onContextMenu.bind(this);
   this._onCopy = this._onCopy.bind(this);
   this._onFilterStyles = this._onFilterStyles.bind(this);
-  this._onClearSearch = this._onClearSearch.bind(this);
   this._onIncludeBrowserStyles = this._onIncludeBrowserStyles.bind(this);
 
   let doc = this.styleDocument;
@@ -183,6 +182,9 @@ function CssComputedView(inspector, document, pageStyle) {
   this.styleDocument.addEventListener("mousedown", this.focusWindow);
   this.element.addEventListener("click", this._onClick);
   this.element.addEventListener("contextmenu", this._onContextMenu);
+  this.element.addEventListener("mousemove", () => {
+    this.addHighlightersToView();
+  }, { once: true });
   this.searchField.addEventListener("input", this._onFilterStyles);
   this.searchClearButton.addEventListener("click", this._onClearSearch);
   this.includeBrowserStylesCheckbox.addEventListener("input",
@@ -206,8 +208,6 @@ function CssComputedView(inspector, document, pageStyle) {
 
   
   this.tooltips = new TooltipsOverlay(this);
-
-  this.highlighters.addToView(this);
 }
 
 
@@ -248,6 +248,16 @@ CssComputedView.prototype = {
     }
 
     return this._contextMenu;
+  },
+
+  
+  get highlighters() {
+    if (!this._highlighters) {
+      
+      this._highlighters = this.inspector.highlighters;
+    }
+
+    return this._highlighters;
   },
 
   setPageStyle: function(pageStyle) {
@@ -725,6 +735,14 @@ CssComputedView.prototype = {
   
 
 
+
+  addHighlightersToView() {
+    this.highlighters.addToView(this);
+  },
+
+  
+
+
   destroy: function() {
     this._viewedElement = null;
     this._outputParser = null;
@@ -745,16 +763,20 @@ CssComputedView.prototype = {
       this._contextMenu = null;
     }
 
+    if (this._highlighters) {
+      this._highlighters.removeFromView(this);
+      this._highlighters = null;
+    }
+
     this.tooltips.destroy();
-    this.highlighters.removeFromView(this);
 
     
-    this.styleDocument.removeEventListener("mousedown", this.focusWindow);
     this.element.removeEventListener("click", this._onClick);
-    this.styleDocument.removeEventListener("copy", this._onCopy);
     this.element.removeEventListener("contextmenu", this._onContextMenu);
     this.searchField.removeEventListener("input", this._onFilterStyles);
     this.searchClearButton.removeEventListener("click", this._onClearSearch);
+    this.styleDocument.removeEventListener("copy", this._onCopy);
+    this.styleDocument.removeEventListener("mousedown", this.focusWindow);
     this.includeBrowserStylesCheckbox.removeEventListener("input",
       this._onIncludeBrowserStyles);
 
@@ -771,7 +793,6 @@ CssComputedView.prototype = {
     this.propertyViews = null;
 
     this.inspector = null;
-    this.highlighters = null;
     this.styleDocument = null;
     this.styleWindow = null;
 

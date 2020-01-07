@@ -972,7 +972,7 @@ class HighlightersOverlay {
 
 
 
-  async destroy() {
+  destroy() {
     this.destroyHighlighters();
     this.destroyEditors();
 
