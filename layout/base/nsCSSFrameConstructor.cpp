@@ -1916,6 +1916,11 @@ nsCSSFrameConstructor::CreateGeneratedContentItem(nsFrameConstructorState& aStat
       CreateGeneratedContent(aState, aParentContent, pseudoComputedStyle,
                              contentIndex);
     if (content) {
+      
+      
+      
+      
+      content->SetFlags(NODE_IS_IN_NATIVE_ANONYMOUS_SUBTREE);
       container->AppendChildTo(content, false);
       if (content->IsElement()) {
         
