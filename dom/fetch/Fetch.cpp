@@ -162,6 +162,22 @@ private:
   }
 };
 
+class WorkerFetchResolver;
+
+class WorkerNotifier final : public WorkerHolder
+{
+  RefPtr<WorkerFetchResolver> mResolver;
+
+public:
+  explicit WorkerNotifier(WorkerFetchResolver* aResolver)
+    : WorkerHolder("WorkerNotifier", AllowIdleShutdownStart)
+    , mResolver(aResolver)
+  {}
+
+  bool
+  Notify(Status aStatus) override;
+};
+
 class WorkerFetchResolver final : public FetchDriverObserver
 {
   
@@ -170,6 +186,7 @@ class WorkerFetchResolver final : public FetchDriverObserver
 
   
   RefPtr<FetchObserver> mFetchObserver;
+  UniquePtr<WorkerHolder> mWorkerHolder;
 
 public:
   
@@ -193,6 +210,11 @@ public:
 
     RefPtr<WorkerFetchResolver> r =
       new WorkerFetchResolver(proxy, signalProxy, aObserver);
+
+    if (NS_WARN_IF(!r->HoldWorker(aWorkerPrivate))) {
+      return nullptr;
+    }
+
     return r.forget();
   }
 
@@ -271,6 +293,8 @@ public:
       mSignalProxy->Shutdown();
       mSignalProxy = nullptr;
     }
+
+    mWorkerHolder = nullptr;
   }
 
 private:
@@ -290,6 +314,18 @@ private:
 
   virtual void
   FlushConsoleReport() override;
+
+  bool
+  HoldWorker(WorkerPrivate* aWorkerPrivate)
+  {
+    UniquePtr<WorkerNotifier> wn(new WorkerNotifier(this));
+    if (NS_WARN_IF(!wn->HoldWorker(aWorkerPrivate, Canceling))) {
+      return false;
+    }
+
+    mWorkerHolder = Move(wn);
+    return true;
+  }
 };
 
 class MainThreadFetchResolver final : public FetchDriverObserver
@@ -730,6 +766,18 @@ public:
 
   
 };
+
+bool
+WorkerNotifier::Notify(Status aStatus)
+{
+  if (mResolver) {
+    
+    
+    mResolver->Shutdown(mWorkerPrivate);
+  }
+
+  return true;
+}
 
 void
 WorkerFetchResolver::OnResponseAvailableInternal(InternalResponse* aResponse)
