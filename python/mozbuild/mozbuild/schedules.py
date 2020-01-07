@@ -23,6 +23,7 @@ INCLUSIVE_COMPONENTS = [
     
     'jittest',
     'test-verify',
+    'test-verify-gpu',
     'test-verify-wpt',
     'test-coverage',
     'test-coverage-wpt',
