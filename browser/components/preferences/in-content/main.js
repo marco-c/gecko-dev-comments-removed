@@ -6,7 +6,6 @@
 
 
 
-
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/Downloads.jsm");
 ChromeUtils.import("resource://gre/modules/FileUtils.jsm");
@@ -367,13 +366,6 @@ var gMainPane = {
     window.addEventListener("unload", () => {
       Services.obs.removeObserver(newTabObserver, "newtab-url-changed");
     });
-
-    let connectionSettingsLink = document.getElementById("connectionSettingsLearnMore");
-    let connectionSettingsUrl = Services.urlFormatter.formatURLPref("app.support.baseURL") +
-                                "prefs-connection-settings";
-    connectionSettingsLink.setAttribute("href", connectionSettingsUrl);
-    this.updateProxySettingsUI();
-    initializeProxyUI(gMainPane);
 
     if (AppConstants.platform == "win") {
       
@@ -1098,28 +1090,7 @@ var gMainPane = {
 
 
   showConnections() {
-    gSubDialog.open("chrome://browser/content/preferences/connection.xul",
-                    null, null, this.updateProxySettingsUI.bind(this));
-  },
-
-  
-  
-  async updateProxySettingsUI() {
-    let controllingExtension = await getControllingExtension(PREF_SETTING_TYPE, PROXY_KEY);
-    let fragment = controllingExtension ?
-      getControllingExtensionFragment(PROXY_KEY, controllingExtension, this._brandShortName) :
-      BrowserUtils.getLocalizedFragment(
-        document,
-        this._prefsBundle.getString("connectionDesc.label"),
-        this._brandShortName);
-    let description = document.getElementById("connectionSettingsDescription");
-
-    
-    while (description.firstChild) {
-      description.firstChild.remove();
-    }
-
-    description.appendChild(fragment);
+    gSubDialog.open("chrome://browser/content/preferences/connection.xul");
   },
 
   checkBrowserContainers(event) {

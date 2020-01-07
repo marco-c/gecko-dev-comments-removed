@@ -4,7 +4,6 @@
 
 
 
-
 var gSearchResultsPane = {
   listSearchTooltips: new Set(),
   listSearchMenuitemIndicators: new Set(),
