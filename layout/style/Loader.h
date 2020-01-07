@@ -197,7 +197,7 @@ public:
   typedef nsIStyleSheetLinkingElement::IsInline IsInline;
   typedef nsIStyleSheetLinkingElement::MediaMatched MediaMatched;
   typedef nsIStyleSheetLinkingElement::Update LoadSheetResult;
-  typedef nsIStyleSheetLinkingElement::StyleSheetInfo StyleSheetInfo;
+  typedef nsIStyleSheetLinkingElement::SheetInfo SheetInfo;
 
   Loader();
   
@@ -236,8 +236,10 @@ public:
 
 
 
+
+
   Result<LoadSheetResult, nsresult>
-    LoadInlineStyle(const StyleSheetInfo&,
+    LoadInlineStyle(const SheetInfo&,
                     const nsAString& aBuffer,
                     uint32_t aLineNumber,
                     nsICSSLoaderObserver* aObserver);
@@ -253,7 +255,7 @@ public:
 
 
   Result<LoadSheetResult, nsresult>
-    LoadStyleLink(const StyleSheetInfo&, nsICSSLoaderObserver* aObserver);
+    LoadStyleLink(const SheetInfo&, nsICSSLoaderObserver* aObserver);
 
   
 
@@ -463,7 +465,7 @@ private:
                               nsINode* aRequestingNode,
                               bool aIsPreload);
 
-  nsresult CreateSheet(const StyleSheetInfo& aInfo,
+  nsresult CreateSheet(const SheetInfo& aInfo,
                        nsIPrincipal* aLoaderPrincipal,
                        css::SheetParsingMode aParsingMode,
                        bool aSyncLoad,

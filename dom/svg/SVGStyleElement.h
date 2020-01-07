@@ -84,7 +84,7 @@ protected:
   }
 
   
-  Maybe<StyleSheetInfo> GetStyleSheetInfo() final;
+  Maybe<SheetInfo> GetStyleSheetInfo() final;
 
   
 

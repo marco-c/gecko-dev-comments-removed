@@ -100,7 +100,7 @@ XMLStylesheetProcessingInstruction::OverrideBaseURI(nsIURI* aNewBaseURI)
   mOverriddenBaseURI = aNewBaseURI;
 }
 
-Maybe<nsStyleLinkElement::StyleSheetInfo>
+Maybe<nsStyleLinkElement::SheetInfo>
 XMLStylesheetProcessingInstruction::GetStyleSheetInfo()
 {
   
@@ -150,7 +150,7 @@ XMLStylesheetProcessingInstruction::GetStyleSheetInfo()
   auto encoding = doc->GetDocumentCharacterSet();
   nsCOMPtr<nsIURI> uri;
   NS_NewURI(getter_AddRefs(uri), href, encoding, baseURL);
-  return Some(StyleSheetInfo {
+  return Some(SheetInfo {
     *doc,
     this,
     uri.forget(),
