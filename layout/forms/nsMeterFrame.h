@@ -72,8 +72,6 @@ public:
 
   bool ShouldUseNativeStyle() const;
 
-  virtual Element* GetPseudoElement(mozilla::CSSPseudoElementType aType) override;
-
 protected:
   
   void ReflowBarFrame(nsIFrame*                aBarFrame,

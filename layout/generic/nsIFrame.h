@@ -4009,14 +4009,6 @@ public:
 
 
 
-
-  virtual mozilla::dom::Element*
-  GetPseudoElement(mozilla::CSSPseudoElementType aType);
-
-  
-
-
-
   bool BackfaceIsHidden(const nsStyleDisplay* aStyleDisplay) const {
     MOZ_ASSERT(aStyleDisplay == StyleDisplay());
     return aStyleDisplay->BackfaceIsHidden();
