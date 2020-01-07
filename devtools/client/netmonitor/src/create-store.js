@@ -8,18 +8,18 @@ const Services = require("Services");
 const { applyMiddleware, createStore } = require("devtools/client/shared/vendor/redux");
 
 
-const batching = require("../middleware/batching");
-const prefs = require("../middleware/prefs");
-const thunk = require("../middleware/thunk");
-const recording = require("../middleware/recording");
+const batching = require("./middleware/batching");
+const prefs = require("./middleware/prefs");
+const thunk = require("./middleware/thunk");
+const recording = require("./middleware/recording");
 
 
-const rootReducer = require("../reducers/index");
-const { FilterTypes, Filters } = require("../reducers/filters");
-const { Requests } = require("../reducers/requests");
-const { Sort } = require("../reducers/sort");
-const { TimingMarkers } = require("../reducers/timing-markers");
-const { UI, Columns } = require("../reducers/ui");
+const rootReducer = require("./reducers/index");
+const { FilterTypes, Filters } = require("./reducers/filters");
+const { Requests } = require("./reducers/requests");
+const { Sort } = require("./reducers/sort");
+const { TimingMarkers } = require("./reducers/timing-markers");
+const { UI, Columns } = require("./reducers/ui");
 
 
 
