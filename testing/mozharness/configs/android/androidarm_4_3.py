@@ -34,7 +34,5 @@ config = {
     "emulator": {
         "name": "test-1",
         "device_id": "emulator-5554",
-        "http_port": "8854",  
-        "ssl_port": "4454",  
     },
 }
