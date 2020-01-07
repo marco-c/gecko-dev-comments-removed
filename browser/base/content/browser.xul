@@ -6,17 +6,22 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+<!-- The "global.css" stylesheet is imported first to allow other stylesheets to
+     override rules using selectors with the same specificity. This applies to
+     both "content" and "skin" packages, which bug 1385444 will unify later. -->
+<?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
+
 <?xml-stylesheet href="chrome://browser/content/browser.css" type="text/css"?>
 <?xml-stylesheet href="chrome://browser/content/downloads/downloads.css"?>
 <?xml-stylesheet href="chrome://browser/content/places/places.css" type="text/css"?>
 <?xml-stylesheet href="chrome://browser/content/usercontext/usercontext.css" type="text/css"?>
+<?xml-stylesheet href="chrome://browser/skin/" type="text/css"?>
 <?xml-stylesheet href="chrome://browser/skin/controlcenter/panel.css" type="text/css"?>
 <?xml-stylesheet href="chrome://browser/skin/customizableui/panelUI.css" type="text/css"?>
 <?xml-stylesheet href="chrome://browser/skin/downloads/downloads.css"?>
 <?xml-stylesheet href="chrome://browser/skin/searchbar.css"?>
 <?xml-stylesheet href="chrome://browser/skin/places/places.css"?>
 <?xml-stylesheet href="chrome://browser/skin/places/editBookmark.css"?>
-<?xml-stylesheet href="chrome://browser/skin/" type="text/css"?>
 <?xml-stylesheet href="chrome://browser/content/tabbrowser.css" type="text/css"?>
 <?xml-stylesheet href="chrome://browser/skin/compacttheme.css" type="text/css" alternate="yes" title="Light/Dark"?>
 
@@ -239,12 +244,6 @@
       </html:div>
       <box id="editBookmarkPanelImage"/>
 #include ../../components/places/content/editBookmarkPanel.inc.xul
-      <vbox id="editBookmarkPanelBottomContent" flex="1">
-        <checkbox id="editBookmarkPanel_showForNewBookmarks"
-                  label="&editBookmark.showForNewBookmarks.label;"
-                  accesskey="&editBookmark.showForNewBookmarks.accesskey;"
-                  oncommand="StarUI.onShowForNewBookmarksCheckboxCommand();"/>
-      </vbox>
       <hbox id="editBookmarkPanelBottomButtons" pack="end">
 #ifndef XP_UNIX
         <button id="editBookmarkPanelDoneButton"

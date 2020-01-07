@@ -2,8 +2,6 @@
 
 
 
-@import url("chrome://global/skin/");
-
 %include shared.inc
 %define toolbarButtonPressed :hover:active:not([disabled="true"]):not([cui-areatype="menu-panel"])
 
