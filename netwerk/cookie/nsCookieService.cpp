@@ -3485,8 +3485,10 @@ nsCookieService::CanSetCookie(nsIURI*             aHostURI,
   
   
   if ((aCookieAttributes.sameSite != nsICookie2::SAMESITE_UNSET) &&
+      aThirdPartyUtil &&
       IsSameSiteEnabled()) {
-    bool isThirdParty = NS_IsSameSiteForeign(aChannel, aHostURI);
+    bool isThirdParty = false;
+    aThirdPartyUtil->IsThirdPartyChannel(aChannel, aHostURI, &isThirdParty);
     if (isThirdParty) {
       COOKIE_LOGFAILURE(SET_COOKIE, aHostURI, savedCookieHeader,
                         "failed the samesite tests");
