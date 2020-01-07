@@ -64,61 +64,6 @@ var gRegisteredModules = Object.create(null);
 
 
 
-
-
-
-
-
-function ModuleAPI() {
-  let activeTargetScopedActors = new Set();
-  let activeGlobalActors = new Set();
-
-  return {
-    
-    setRootActor(factory) {
-      DebuggerServer.setRootActor(factory);
-    },
-
-    
-    addGlobalActor(factory, name) {
-      DebuggerServer.addGlobalActor(factory, name);
-      activeGlobalActors.add(factory);
-    },
-    
-    removeGlobalActor(factory) {
-      DebuggerServer.removeGlobalActor(factory);
-      activeGlobalActors.delete(factory);
-    },
-
-    
-    addTargetScopedActor(factory, name) {
-      DebuggerServer.addTargetScopedActor(factory, name);
-      activeTargetScopedActors.add(factory);
-    },
-    
-    removeTargetScopedActor(factory) {
-      DebuggerServer.removeTargetScopedActor(factory);
-      activeTargetScopedActors.delete(factory);
-    },
-
-    
-    
-    destroy() {
-      for (const factory of activeTargetScopedActors) {
-        DebuggerServer.removeTargetScopedActor(factory);
-      }
-      activeTargetScopedActors = null;
-      for (const factory of activeGlobalActors) {
-        DebuggerServer.removeGlobalActor(factory);
-      }
-      activeGlobalActors = null;
-    }
-  };
-}
-
-
-
-
 var DebuggerServer = {
   _listeners: [],
   _initialized: false,
@@ -151,7 +96,7 @@ var DebuggerServer = {
 
 
   get rootlessServer() {
-    return !this.isModuleRegistered("devtools/server/actors/webbrowser");
+    return !this.createRootActor;
   },
 
   
@@ -239,7 +184,8 @@ var DebuggerServer = {
     }
 
     if (root) {
-      this.registerModule("devtools/server/actors/webbrowser");
+      const { createRootActor } = require("devtools/server/actors/webbrowser");
+      this.setRootActor(createRootActor);
     }
 
     if (target) {
@@ -296,56 +242,42 @@ var DebuggerServer = {
 
 
 
-
-
-
-
-
   registerModule(id, options) {
     if (id in gRegisteredModules) {
       return;
     }
 
-    if (options) {
-      
-      const {prefix, constructor, type} = options;
-      if (typeof (prefix) !== "string") {
-        throw new Error(`Lazy actor definition for '${id}' requires a string ` +
-                        `'prefix' option.`);
-      }
-      if (typeof (constructor) !== "string") {
-        throw new Error(`Lazy actor definition for '${id}' requires a string ` +
-                        `'constructor' option.`);
-      }
-      if (!("global" in type) && !("target" in type)) {
-        throw new Error(`Lazy actor definition for '${id}' requires a dictionary ` +
-                        `'type' option whose attributes can be 'global' or 'target'.`);
-      }
-      const name = prefix + "Actor";
-      const mod = {
-        id: id,
-        prefix: prefix,
-        constructorName: constructor,
-        type: type,
-        globalActor: type.global,
-        targetScopedActor: type.target
-      };
-      gRegisteredModules[id] = mod;
-      if (mod.targetScopedActor) {
-        this.addTargetScopedActor(mod, name);
-      }
-      if (mod.globalActor) {
-        this.addGlobalActor(mod, name);
-      }
-    } else {
-      
-      const moduleAPI = ModuleAPI();
-      const mod = require(id);
-      mod.register(moduleAPI);
-      gRegisteredModules[id] = {
-        module: mod,
-        api: moduleAPI
-      };
+    if (!options) {
+      throw new Error("DebuggerServer.registerModule requires an options argument");
+    }
+    const {prefix, constructor, type} = options;
+    if (typeof (prefix) !== "string") {
+      throw new Error(`Lazy actor definition for '${id}' requires a string ` +
+                      `'prefix' option.`);
+    }
+    if (typeof (constructor) !== "string") {
+      throw new Error(`Lazy actor definition for '${id}' requires a string ` +
+                      `'constructor' option.`);
+    }
+    if (!("global" in type) && !("target" in type)) {
+      throw new Error(`Lazy actor definition for '${id}' requires a dictionary ` +
+                      `'type' option whose attributes can be 'global' or 'target'.`);
+    }
+    const name = prefix + "Actor";
+    const mod = {
+      id,
+      prefix,
+      constructorName: constructor,
+      type,
+      globalActor: type.global,
+      targetScopedActor: type.target
+    };
+    gRegisteredModules[id] = mod;
+    if (mod.targetScopedActor) {
+      this.addTargetScopedActor(mod, name);
+    }
+    if (mod.globalActor) {
+      this.addGlobalActor(mod, name);
     }
   },
 
@@ -371,12 +303,6 @@ var DebuggerServer = {
     }
     if (mod.globalActor) {
       this.removeGlobalActor(mod);
-    }
-
-    if (mod.module) {
-      
-      mod.module.unregister(mod.api);
-      mod.api.destroy();
     }
 
     delete gRegisteredModules[id];

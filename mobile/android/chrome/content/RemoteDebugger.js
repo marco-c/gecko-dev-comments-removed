@@ -5,8 +5,12 @@
 
 "use strict";
 
-XPCOMUtils.defineLazyGetter(this, "DebuggerServer", () => {
+XPCOMUtils.defineLazyGetter(this, "require", () => {
   let { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
+  return require;
+});
+
+XPCOMUtils.defineLazyGetter(this, "DebuggerServer", () => {
   let { DebuggerServer } = require("devtools/server/main");
   return DebuggerServer;
 });
@@ -201,7 +205,8 @@ var RemoteDebugger = {
 
     
     DebuggerServer.registerAllActors();
-    DebuggerServer.registerModule("resource://gre/modules/dbg-browser-actors.js");
+    const { createRootActor } = require("resource://gre/modules/dbg-browser-actors.js");
+    DebuggerServer.setRootActor(createRootActor);
 
     
     DebuggerServer.allowChromeProcess = true;
