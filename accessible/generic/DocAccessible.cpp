@@ -1251,26 +1251,14 @@ DocAccessible::GetAccessibleOrContainer(nsINode* aNode) const
   if (!aNode || !aNode->GetComposedDoc())
     return nullptr;
 
-  nsINode* currNode = aNode;
-  Accessible* accessible = nullptr;
-  while (!(accessible = GetAccessible(currNode))) {
-    nsINode* parent = nullptr;
-
-    
-    
-    
-    if (currNode->IsContent())
-      parent = currNode->AsContent()->GetFlattenedTreeParent();
-
-    
-    
-    if (!parent)
-      parent = currNode->GetParentNode();
-
-    if (!(currNode = parent)) break;
+  for (nsINode* currNode = aNode; currNode;
+       currNode = currNode->GetFlattenedTreeParentNode()) {
+    if (Accessible* accessible = GetAccessible(currNode)) {
+      return accessible;
+    }
   }
 
-  return accessible;
+  return nullptr;
 }
 
 Accessible*
@@ -2216,7 +2204,8 @@ DocAccessible::PutChildrenBack(nsTArray<RefPtr<Accessible> >* aChildren,
 
     nsIContent* content = child->GetContent();
     int32_t idxInParent = -1;
-    Accessible* origContainer = AccessibleOrTrueContainer(content->GetParentNode());
+    Accessible* origContainer =
+      AccessibleOrTrueContainer(content->GetFlattenedTreeParentNode());
     if (origContainer) {
       TreeWalker walker(origContainer);
       if (walker.Seek(content)) {

@@ -680,9 +680,8 @@ NotificationController::WillRefresh(mozilla::TimeStamp aTime)
     
     
     
-    nsINode* containerNode = textNode->GetParentNode();
-    if (!containerNode ||
-        textNode->GetOwnerDocument() != mDocument->DocumentNode()) {
+    nsINode* containerNode = textNode->GetFlattenedTreeParentNode();
+    if (!containerNode || textNode->OwnerDoc() != mDocument->DocumentNode()) {
       MOZ_ASSERT(!textAcc,
                  "Text node was removed but accessible is kept alive!");
       continue;
