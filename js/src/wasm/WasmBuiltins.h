@@ -26,9 +26,6 @@ namespace wasm {
 
 class WasmFrameIter;
 
-void*
-AddressOf(SymbolicAddress sym, jit::ABIFunctionType* abiType);
-
 
 
 
