@@ -8,25 +8,31 @@ var Cc = SpecialPowers.Cc;
 var Ci = SpecialPowers.Ci;
 
 
-var FAKE_ENABLED = true;
-var TEST_AUDIO_FREQ = 1000;
-try {
-  var audioDevice = SpecialPowers.getCharPref('media.audio_loopback_dev');
-  var videoDevice = SpecialPowers.getCharPref('media.video_loopback_dev');
-  dump('TEST DEVICES: Using media devices:\n');
-  dump('audio: ' + audioDevice + '\nvideo: ' + videoDevice + '\n');
-  FAKE_ENABLED = false;
+let WANT_FAKE_AUDIO = true;
+
+let WANT_FAKE_VIDEO = true;
+let TEST_AUDIO_FREQ = 1000;
+let audioDevice = SpecialPowers.getCharPref("media.audio_loopback_dev", "");
+if (audioDevice) {
+  WANT_FAKE_AUDIO = false;
   
   TEST_AUDIO_FREQ = -1;
-} catch (e) {
-  dump('TEST DEVICES: No test devices found (in media.{audio,video}_loopback_dev, using fake streams.\n');
-  FAKE_ENABLED = true;
+  dump("TEST DEVICES: Got loopback audio: " + audioDevice + "\n");
+} else {
+  dump("TEST DEVICES: No test device found in media.audio_loopback_dev, using fake audio streams.\n");
+}
+let videoDevice = SpecialPowers.getCharPref("media.video_loopback_dev", "");
+if (videoDevice) {
+  WANT_FAKE_VIDEO = false;
+  dump("TEST DEVICES: Got loopback video: " + videoDevice + "\n");
+} else {
+  dump("TEST DEVICES: No test device found in media.video_loopback_dev, using fake video streams.\n");
 }
 
 
 
 
-var DISABLE_LOOPBACK_TONE = false
+let DISABLE_LOOPBACK_TONE = false;
 
 
 
@@ -68,7 +74,7 @@ class LoopbackTone {
     this.oscNode.stop();
     this.oscNode = null;
   }
-};
+}
 
 var DefaultLoopbackTone = null;
 
@@ -348,7 +354,7 @@ function createMediaElementForTrack(track, idPrefix) {
 
 
 function getUserMedia(constraints) {
-  if (!FAKE_ENABLED
+  if (!WANT_FAKE_AUDIO
       && !constraints.fake
       && constraints.audio
       && !DISABLE_LOOPBACK_TONE) {
@@ -395,14 +401,16 @@ function setupEnvironment() {
       ['media.peerconnection.remoteTrackId.enabled', true],
       ['media.peerconnection.rtpsourcesapi.enabled', true],
       ['media.navigator.permission.disabled', true],
-      ['media.navigator.streams.fake', FAKE_ENABLED],
+      
+      
+      ['media.navigator.streams.fake', WANT_FAKE_AUDIO || WANT_FAKE_VIDEO],
       ['media.getusermedia.screensharing.enabled', true],
       ['media.getusermedia.audiocapture.enabled', true],
       ['media.recorder.audio_node.enabled', true]
     ]
   };
 
-  if (!FAKE_ENABLED) {
+  if (!WANT_FAKE_AUDIO) {
     defaultMochitestPrefs.set.push(
       ["media.volume_scale", "1"],
     );
