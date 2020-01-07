@@ -11437,8 +11437,7 @@ nsCSSFrameConstructor::CreateFloatingLetterFrame(
     NS_NewFirstLetterFrame(mPresShell, aStyleContext);
   
   
-  
-  nsIContent* letterContent = aTextContent->GetParent();
+  nsIContent* letterContent = aParentFrame->GetContent();
   nsContainerFrame* containingBlock = aState.GetGeometricParent(
     aStyleContext->StyleDisplay(), aParentFrame);
   InitAndRestoreFrame(aState, letterContent, containingBlock, letterFrame);
@@ -11574,7 +11573,7 @@ nsCSSFrameConstructor::CreateLetterFrame(nsContainerFrame* aBlockFrame,
       
       
       
-      nsIContent* letterContent = aTextContent->GetParent();
+      nsIContent* letterContent = aParentFrame->GetContent();
       letterFrame->Init(letterContent, aParentFrame, nullptr);
 
       InitAndRestoreFrame(state, aTextContent, letterFrame, textFrame);
