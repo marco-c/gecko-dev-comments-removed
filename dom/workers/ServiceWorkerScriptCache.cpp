@@ -468,6 +468,16 @@ private:
 
     mState = WaitingForScriptOrComparisonResult;
 
+    
+    
+    
+    
+    
+    rv = FetchScript(mURL, true , mOldCache);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return;
+    }
+
     for (uint32_t i = 0; i < len; ++i) {
       JS::Rooted<JS::Value> val(aCx);
       if (NS_WARN_IF(!JS_GetElement(aCx, obj, i, &val)) ||
@@ -484,7 +494,12 @@ private:
       nsString URL;
       request->GetUrl(URL);
 
-      rv = FetchScript(URL, mURL == URL , mOldCache);
+      
+      if (mURL == URL) {
+        continue;
+      }
+
+      rv = FetchScript(URL, false , mOldCache);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return;
       }
