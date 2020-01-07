@@ -94,8 +94,12 @@ struct DefaultJitOptions
     mozilla::Maybe<uint32_t> forcedDefaultIonSmallFunctionWarmUpThreshold;
     mozilla::Maybe<IonRegisterAllocator> forcedRegisterAllocator;
 
+    
+    
+    
     bool spectreIndexMasking;
     bool spectreStringMitigations;
+    bool spectreValueMasking;
 
     
     bool disableUnboxedObjects;

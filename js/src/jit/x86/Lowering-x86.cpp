@@ -119,8 +119,16 @@ LIRGeneratorX86::visitUnbox(MUnbox* unbox)
 
     
     LUnbox* lir = new(alloc()) LUnbox;
-    lir->setOperand(0, usePayloadInRegisterAtStart(inner));
-    lir->setOperand(1, useType(inner, LUse::ANY));
+    bool reusePayloadReg = !JitOptions.spectreValueMasking ||
+        unbox->type() == MIRType::Int32 ||
+        unbox->type() == MIRType::Boolean;
+    if (reusePayloadReg) {
+        lir->setOperand(0, usePayloadInRegisterAtStart(inner));
+        lir->setOperand(1, useType(inner, LUse::ANY));
+    } else {
+        lir->setOperand(0, usePayload(inner, LUse::REGISTER));
+        lir->setOperand(1, useType(inner, LUse::ANY));
+    }
 
     if (unbox->fallible())
         assignSnapshot(lir, unbox->bailoutKind());
@@ -130,7 +138,10 @@ LIRGeneratorX86::visitUnbox(MUnbox* unbox)
     
     
     
-    defineReuseInput(lir, unbox, 0);
+    if (reusePayloadReg)
+        defineReuseInput(lir, unbox, 0);
+    else
+        define(lir, unbox);
 }
 
 void

@@ -312,6 +312,10 @@ CanonicalizeNaN(double d)
 
 
 
+
+
+
+
 class MOZ_NON_PARAM alignas(8) Value
 {
   public:
