@@ -66,7 +66,7 @@ function testSameOriginCredentials() {
               {
                 
                 pass: 1,
-                noCookie: 1,
+                cookie: cookieStr,
               },
               {
                 pass: 1,
