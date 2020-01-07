@@ -13,6 +13,7 @@ Cu.import("resource://gre/modules/Services.jsm");
 const {
   InvalidArgumentError,
   InvalidSessionIDError,
+  JavaScriptError,
   NoSuchWindowError,
   UnexpectedAlertOpenError,
   UnsupportedOperationError,
@@ -31,6 +32,30 @@ const isFirefox = () =>
 
 
 this.assert = {};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.acyclic = function(obj, msg = "", error = JavaScriptError) {
+  try {
+    JSON.stringify(obj);
+  } catch (e) {
+    throw new error(msg || e);
+  }
+};
 
 
 
