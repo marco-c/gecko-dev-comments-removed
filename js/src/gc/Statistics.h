@@ -166,6 +166,8 @@ struct Statistics
     void nonincremental(gc::AbortReason reason) {
         MOZ_ASSERT(reason != gc::AbortReason::None);
         nonincrementalReason_ = reason;
+        writeLogMessage("Non-incremental reason: %s",
+            nonincrementalReason());
     }
 
     bool nonincremental() const {
@@ -266,11 +268,21 @@ struct Statistics
     
     UniqueChars renderNurseryJson(JSRuntime* rt) const;
 
+#ifdef DEBUG
+    
+    void writeLogMessage(const char* fmt, ...);
+#else
+    void writeLogMessage(const char* fmt, ...) { };
+#endif
+
   private:
     JSRuntime* runtime;
 
     
     FILE* gcTimerFile;
+
+    
+    FILE* gcDebugFile;
 
     ZoneGCStats zoneStats;
 
