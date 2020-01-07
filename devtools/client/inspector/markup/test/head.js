@@ -619,16 +619,3 @@ async function checkDeleteAndSelection(inspector, key,
   node = await getNodeFront(selector, inspector);
   ok(node, "The node is back");
 }
-
-
-
-
-
-async function expandContainer(inspector, container) {
-  let onChildren = waitForChildrenUpdated(inspector);
-  let onUpdated = inspector.once("inspector-updated");
-  EventUtils.synthesizeMouseAtCenter(container.expander, {},
-    inspector.markup.doc.defaultView);
-  await onChildren;
-  await onUpdated;
-}

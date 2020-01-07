@@ -482,6 +482,13 @@ MarkupView.prototype = {
   
 
 
+  getSelectedContainer: function() {
+    return this._selectedContainer;
+  },
+
+  
+
+
 
 
 

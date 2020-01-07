@@ -838,3 +838,26 @@ async function toggleShapesHighlighter(view, highlighters, selector, property, s
     await onHighlighterHidden;
   }
 }
+
+
+
+
+
+async function expandContainer(inspector, container) {
+  await inspector.markup.expandNode(container.node);
+  await waitForMultipleChildrenUpdates(inspector);
+}
+
+
+
+
+
+
+async function expandContainerByClick(inspector, container) {
+  let onChildren = waitForChildrenUpdated(inspector);
+  let onUpdated = inspector.once("inspector-updated");
+  EventUtils.synthesizeMouseAtCenter(container.expander, {},
+    inspector.markup.doc.defaultView);
+  await onChildren;
+  await onUpdated;
+}
