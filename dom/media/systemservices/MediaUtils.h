@@ -425,6 +425,8 @@ private:
 
 
 
+
+
 template<typename ResolveValueType,
          typename RejectValueType,
          typename ResolveFunction,
@@ -436,9 +438,10 @@ Await(
   ResolveFunction&& aResolveFunction,
   RejectFunction&& aRejectFunction)
 {
-  Monitor mon(__func__);
   RefPtr<AutoTaskQueue> taskQueue =
     new AutoTaskQueue(Move(aPool), "MozPromiseAwait");
+  
+  Monitor& mon = taskQueue->Monitor();
   bool done = false;
 
   aPromise->Then(taskQueue,
@@ -468,9 +471,10 @@ typename MozPromise<ResolveValueType, RejectValueType, Excl>::
 Await(already_AddRefed<nsIEventTarget> aPool,
       RefPtr<MozPromise<ResolveValueType, RejectValueType, Excl>> aPromise)
 {
-  Monitor mon(__func__);
   RefPtr<AutoTaskQueue> taskQueue =
     new AutoTaskQueue(Move(aPool), "MozPromiseAwait");
+  
+  Monitor& mon = taskQueue->Monitor();
   bool done = false;
 
   typename MozPromise<ResolveValueType, RejectValueType, Excl>::ResolveOrRejectValue val;
