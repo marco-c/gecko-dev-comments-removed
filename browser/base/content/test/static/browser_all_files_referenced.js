@@ -91,10 +91,6 @@ var whitelist = [
   {file: "resource://pdf.js/build/pdf.worker.js"},
 
   
-  {file: "resource://app/modules/NewTabSearchProvider.jsm"},
-  {file: "resource://app/modules/NewTabWebChannel.jsm"},
-
-  
   {file: "resource://gre/res/fonts/mathfontSTIXGeneral.properties"},
   {file: "resource://gre/res/fonts/mathfontUnicode.properties"},
 
