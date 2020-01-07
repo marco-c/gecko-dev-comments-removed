@@ -68,7 +68,8 @@ function String_generic_match(thisValue, regexp) {
 
 
 
-function String_pad(maxLength, fillString, padEnd) {
+function String_pad(maxLength, fillString, padEnd = false) {
+
     
     RequireObjectCoercible(this);
     let str = ToString(this);
@@ -82,28 +83,21 @@ function String_pad(maxLength, fillString, padEnd) {
         return str;
 
     
-    assert(fillString !== undefined, "never called when fillString is undefined");
-    let filler = ToString(fillString);
+    let filler = fillString === undefined ? " " : ToString(fillString);
 
     
     if (filler === "")
         return str;
 
     
-    
-    if (intMaxLength > MAX_STRING_LENGTH)
-        ThrowRangeError(JSMSG_RESULTING_STRING_TOO_LARGE);
-
-    
     let fillLen = intMaxLength - strLen;
 
     
-    
-    
     let truncatedStringFiller = callFunction(String_repeat, filler,
-                                             (fillLen / filler.length) | 0);
+                                             fillLen / filler.length);
 
-    truncatedStringFiller += Substring(filler, 0, fillLen % filler.length);
+    truncatedStringFiller += callFunction(String_substr, filler, 0,
+                                          fillLen % filler.length);
 
     
     if (padEnd === true)
@@ -509,14 +503,11 @@ function String_repeat(count) {
     if (n < 0)
         ThrowRangeError(JSMSG_NEGATIVE_REPETITION_COUNT);
 
-    
-    if (!(n * S.length <= MAX_STRING_LENGTH))
+    if (!(n * S.length < (1 << 28)))
         ThrowRangeError(JSMSG_RESULTING_STRING_TOO_LARGE);
 
     
-    assert((MAX_STRING_LENGTH & (MAX_STRING_LENGTH + 1)) === 0,
-           "MAX_STRING_LENGTH can be used as a bitmask");
-    n = n & MAX_STRING_LENGTH;
+    n = n & ((1 << 28) - 1);
 
     
     var T = "";

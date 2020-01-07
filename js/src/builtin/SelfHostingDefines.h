@@ -24,9 +24,6 @@
 #define MAX_ARGS_LENGTH (500 * 1000)
 
 
-#define MAX_STRING_LENGTH ((1 << 28) - 1)
-
-
 #define SPREAD(v, n) SPREAD_##n(v)
 #define SPREAD_1(v) v[0]
 #define SPREAD_2(v) SPREAD_1(v), v[1]
