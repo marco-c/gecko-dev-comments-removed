@@ -1536,9 +1536,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       this.sources.getOriginalLocation(generatedLocation));
     const url = originalSourceActor ? originalSourceActor.url : null;
 
-    
-    
-    if (!url || this.sources.isBlackBoxed(url)) {
+    if (this.sources.isBlackBoxed(url)) {
       return undefined;
     }
 
