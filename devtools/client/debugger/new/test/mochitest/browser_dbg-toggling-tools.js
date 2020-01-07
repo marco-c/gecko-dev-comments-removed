@@ -1,25 +1,9 @@
 
 
 
-function getSplitConsole(dbg) {
-  const { toolbox, win } = dbg;
+"use strict";
 
-  if (!win) {
-    win = toolbox.win;
-  }
 
-  if (!toolbox.splitConsole) {
-    pressKey(dbg, "Escape");
-  }
-
-  return new Promise(resolve => {
-    toolbox.getPanelWhenReady("webconsole").then(() => {
-      ok(toolbox.splitConsole, "Split console is shown.");
-      let jsterm = toolbox.getPanel("webconsole").hud.jsterm;
-      resolve(jsterm);
-    });
-  });
-}
 
 add_task(async function() {
   const dbg = await initDebugger("doc-scripts.html");
