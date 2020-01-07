@@ -468,15 +468,19 @@ private:
 
 #ifdef DEBUG
     
-
-
-
-    void RegisterLastAppendTime(MediaStreamGraphImpl* aGraph);
-
     
     
-    GraphTime mLastAppendTime = 0;
+    GraphTime mLastCallbackAppendTime = 0;
 #endif
+    
+    
+    
+    bool mLiveFramesAppended = false;
+
+    
+    
+    
+    bool mLiveSilenceAppended = false;
 
     const RefPtr<AllocationHandle> mHandle;
     RefPtr<SourceMediaStream> mStream;

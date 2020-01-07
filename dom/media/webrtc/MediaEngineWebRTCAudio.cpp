@@ -104,19 +104,6 @@ MediaEngineWebRTCMicrophoneSource::Allocation::Allocation(
 
 MediaEngineWebRTCMicrophoneSource::Allocation::~Allocation() = default;
 
-#ifdef DEBUG
-void
-MediaEngineWebRTCMicrophoneSource::Allocation::RegisterLastAppendTime(
-    MediaStreamGraphImpl* aGraph)
-{
-  aGraph->AssertOnGraphThreadOrNotRunning();
-  MOZ_ASSERT((aGraph->IterationEnd() == 0 && mLastAppendTime == 0) ||
-             aGraph->IterationEnd() > mLastAppendTime,
-             "Iteration time didn't advance since last append");
-  mLastAppendTime = aGraph->IterationEnd();
-}
-#endif
-
 MediaEngineWebRTCMicrophoneSource::MediaEngineWebRTCMicrophoneSource(
     mozilla::AudioInput* aAudioInput,
     int aIndex,
@@ -698,6 +685,13 @@ MediaEngineWebRTCMicrophoneSource::Start(const RefPtr<const AllocationHandle>& a
     MutexAutoLock lock(mMutex);
     allocation.mEnabled = true;
 
+#ifdef DEBUG
+    
+    allocation.mLastCallbackAppendTime = 0;
+#endif
+    allocation.mLiveFramesAppended = false;
+    allocation.mLiveSilenceAppended = false;
+
     if (!mListener) {
       mListener = new WebRTCAudioDataListener(this);
     }
@@ -773,6 +767,8 @@ MediaEngineWebRTCMicrophoneSource::Pull(const RefPtr<const AllocationHandle>& aH
 {
   LOG_FRAMES(("NotifyPull, desired = %" PRId64, (int64_t) aDesiredTime));
 
+  StreamTime delta;
+
   {
     MutexAutoLock lock(mMutex);
     size_t i = mAllocations.IndexOf(aHandle, 0, AllocationHandleComparator());
@@ -782,19 +778,45 @@ MediaEngineWebRTCMicrophoneSource::Pull(const RefPtr<const AllocationHandle>& aH
       return;
     }
 
-#ifdef DEBUG
-    mAllocations[i].RegisterLastAppendTime(
-      static_cast<MediaStreamGraphImpl*>(aStream->Graph()));
-#endif
-  }
+    
+    
+    delta = aDesiredTime - aStream->GetEndOfAppendedData(aTrackID);
 
-  StreamTime delta = aDesiredTime - aStream->GetEndOfAppendedData(aTrackID);
-  if (delta <= 0) {
-    return;
-  }
+    if (!mAllocations[i].mLiveFramesAppended ||
+        !mAllocations[i].mLiveSilenceAppended) {
+      
+      
+      
+      
+      
+      delta += WEBAUDIO_BLOCK_SIZE;
+    }
 
-  
-  
+    if (delta < 0) {
+      LOG_FRAMES(("Not appending silence for allocation %p; %" PRId64 " frames already buffered",
+                  mAllocations[i].mHandle.get(), -delta));
+      return;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    MOZ_ASSERT_IF(
+      mAllocations[i].mEnabled &&
+      mAllocations[i].mLiveFramesAppended &&
+      mAllocations[i].mLiveSilenceAppended,
+      aStream->GraphImpl()->IterationEnd() >
+      mAllocations[i].mLastCallbackAppendTime);
+
+    if (mAllocations[i].mLiveFramesAppended) {
+      mAllocations[i].mLiveSilenceAppended = true;
+    }
+  }
 
   AudioSegment audio;
   audio.AppendNullData(delta);
@@ -984,10 +1006,20 @@ MediaEngineWebRTCMicrophoneSource::PacketizeAndProcess(MediaStreamGraph* aGraph,
     }
 
     AudioSegment segment;
-    for (const Allocation& allocation : mAllocations) {
+    for (Allocation& allocation : mAllocations) {
       if (!allocation.mStream) {
         continue;
       }
+
+      if (!allocation.mEnabled) {
+        continue;
+      }
+
+#ifdef DEBUG
+      allocation.mLastCallbackAppendTime =
+        allocation.mStream->GraphImpl()->IterationEnd();
+#endif
+      allocation.mLiveFramesAppended = true;
 
       
       
@@ -1043,9 +1075,15 @@ MediaEngineWebRTCMicrophoneSource::InsertInGraph(const T* aBuffer,
       continue;
     }
 
+    if (!allocation.mEnabled) {
+      continue;
+    }
+
 #ifdef DEBUG
-    allocation.RegisterLastAppendTime(allocation.mStream->GraphImpl());
+    allocation.mLastCallbackAppendTime =
+      allocation.mStream->GraphImpl()->IterationEnd();
 #endif
+    allocation.mLiveFramesAppended = true;
 
     TimeStamp insertTime;
     
