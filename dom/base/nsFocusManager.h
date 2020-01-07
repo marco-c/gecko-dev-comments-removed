@@ -143,9 +143,10 @@ public:
     
     eIncludeVisibleDescendants,
   };
-  static nsIContent* GetFocusedDescendant(nsPIDOMWindowOuter* aWindow,
-                                          SearchRange aSearchRange,
-                                          nsPIDOMWindowOuter** aFocusedWindow);
+  static mozilla::dom::Element*
+  GetFocusedDescendant(nsPIDOMWindowOuter* aWindow,
+                       SearchRange aSearchRange,
+                       nsPIDOMWindowOuter** aFocusedWindow);
 
   
 
@@ -157,7 +158,7 @@ public:
 
 
 
-  static nsIContent* GetRedirectedFocus(nsIContent* aContent);
+  static mozilla::dom::Element* GetRedirectedFocus(nsIContent* aContent);
 
   
 
@@ -245,7 +246,8 @@ protected:
 
 
 
-  nsIContent* CheckIfFocusable(nsIContent* aContent, uint32_t aFlags);
+  mozilla::dom::Element* CheckIfFocusable(mozilla::dom::Element* aContent,
+                                          uint32_t aFlags);
 
   
 
@@ -303,7 +305,7 @@ protected:
 
 
   void Focus(nsPIDOMWindowOuter* aWindow,
-             nsIContent* aContent,
+             mozilla::dom::Element* aContent,
              uint32_t aFlags,
              bool aIsNewDocument,
              bool aFocusChanged,
