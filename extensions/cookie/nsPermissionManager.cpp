@@ -748,6 +748,15 @@ IsExpandedPrincipal(nsIPrincipal* aPrincipal)
   return !!ep;
 }
 
+
+
+static bool
+IsPersistentExpire(uint32_t aExpire)
+{
+  return aExpire != nsIPermissionManager::EXPIRE_SESSION &&
+    aExpire != nsIPermissionManager::EXPIRE_POLICY;
+}
+
 } 
 
 
@@ -1688,7 +1697,8 @@ nsPermissionManager::AddFromPrincipal(nsIPrincipal* aPrincipal,
   NS_ENSURE_ARG_POINTER(aType);
   NS_ENSURE_TRUE(aExpireType == nsIPermissionManager::EXPIRE_NEVER ||
                  aExpireType == nsIPermissionManager::EXPIRE_TIME ||
-                 aExpireType == nsIPermissionManager::EXPIRE_SESSION,
+                 aExpireType == nsIPermissionManager::EXPIRE_SESSION ||
+                 aExpireType == nsIPermissionManager::EXPIRE_POLICY,
                  NS_ERROR_INVALID_ARG);
 
   
@@ -1853,7 +1863,7 @@ nsPermissionManager::AddInternal(nsIPrincipal* aPrincipal,
         sPreloadPermissionCount++;
       }
 
-      if (aDBOperation == eWriteToDB && aExpireType != nsIPermissionManager::EXPIRE_SESSION) {
+      if (aDBOperation == eWriteToDB && IsPersistentExpire(aExpireType)) {
         UpdateDB(op, mStmtInsert, id, origin, aType, aPermission, aExpireType, aExpireTime, aModificationTime);
       }
 
@@ -1873,6 +1883,14 @@ nsPermissionManager::AddInternal(nsIPrincipal* aPrincipal,
     {
       PermissionEntry oldPermissionEntry = entry->GetPermissions()[index];
       id = oldPermissionEntry.mID;
+
+      
+      
+      if (entry->GetPermissions()[index].mExpireType == EXPIRE_POLICY) {
+        NS_WARNING("Attempting to remove EXPIRE_POLICY permission");
+        break;
+      }
+
       entry->GetPermissions().RemoveElementAt(index);
 
       
@@ -1910,6 +1928,13 @@ nsPermissionManager::AddInternal(nsIPrincipal* aPrincipal,
 
       
       
+      if (entry->GetPermissions()[index].mExpireType == EXPIRE_POLICY) {
+        NS_WARNING("Attempting to modify EXPIRE_POLICY permission");
+        break;
+      }
+
+      
+      
       
       if (entry->GetPermissions()[index].mExpireType != nsIPermissionManager::EXPIRE_SESSION &&
           aExpireType == nsIPermissionManager::EXPIRE_SESSION) {
@@ -1927,7 +1952,7 @@ nsPermissionManager::AddInternal(nsIPrincipal* aPrincipal,
       entry->GetPermissions()[index].mExpireTime = aExpireTime;
       entry->GetPermissions()[index].mModificationTime = aModificationTime;
 
-      if (aDBOperation == eWriteToDB && aExpireType != nsIPermissionManager::EXPIRE_SESSION)
+      if (aDBOperation == eWriteToDB && IsPersistentExpire(aExpireType))
         
         
         UpdateDB(op, mStmtUpdate, id, EmptyCString(), EmptyCString(),
@@ -1963,6 +1988,8 @@ nsPermissionManager::AddInternal(nsIPrincipal* aPrincipal,
       
       NS_ENSURE_TRUE(entry->GetPermissions()[index].mExpireType != nsIPermissionManager::EXPIRE_SESSION,
                      NS_ERROR_UNEXPECTED);
+      NS_ENSURE_TRUE(entry->GetPermissions()[index].mExpireType != nsIPermissionManager::EXPIRE_POLICY,
+                     NS_ERROR_UNEXPECTED);
       
       
       
@@ -1976,7 +2003,7 @@ nsPermissionManager::AddInternal(nsIPrincipal* aPrincipal,
       entry->GetPermissions()[index].mModificationTime = aModificationTime;
 
       
-      if (aDBOperation == eWriteToDB) {
+      if (aDBOperation == eWriteToDB && IsPersistentExpire(aExpireType)) {
         UpdateDB(eOperationAdding, mStmtInsert, id, origin, aType, aPermission,
                  aExpireType, aExpireTime, aModificationTime);
       }
