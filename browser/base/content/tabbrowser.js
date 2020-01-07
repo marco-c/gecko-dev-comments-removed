@@ -1812,6 +1812,8 @@ window._gBrowser = {
 
     browser.loadURI(BROWSER_NEW_TAB_URL);
     browser.docShellIsActive = false;
+    browser.renderLayers = true;
+    browser._urlbarFocused = true;
 
     
     let tabURI = Services.io.newURI(BROWSER_NEW_TAB_URL);
