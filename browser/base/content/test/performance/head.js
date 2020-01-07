@@ -84,7 +84,6 @@ async function withReflowObserver(testFn, expectedReflows = [], win = window) {
     reflowInterruptible(start, end) {
       
       
-      dirtyFrameFn();
     },
 
     QueryInterface: XPCOMUtils.generateQI([Ci.nsIReflowObserver,

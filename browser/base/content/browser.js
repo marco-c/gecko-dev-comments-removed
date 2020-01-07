@@ -8010,7 +8010,7 @@ var gIdentityHandler = {
       classes += " in-use";
 
       
-      BrowserUtils.promiseLayoutFlushed(document, "style", () => {
+      window.promiseDocumentFlushed(() => {}).then(() => {
         let sharingIconBlink = document.getElementById("sharing-icon").getAnimations()[0];
         if (sharingIconBlink) {
           let startTime = sharingIconBlink.startTime;
