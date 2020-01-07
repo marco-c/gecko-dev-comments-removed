@@ -86,7 +86,7 @@ function searchHistory(aInput) {
   
   
   
-  gHistoryTree.load([query], options);
+  gHistoryTree.load(query, options);
 
   if (gHistoryGrouping == "lastvisited")
     this.TelemetryStopwatch.finish("HISTORY_LASTVISITED_TREE_QUERY_TIME_MS");

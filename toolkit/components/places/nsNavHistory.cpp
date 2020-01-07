@@ -33,6 +33,7 @@
 #include "nsIEffectiveTLDService.h"
 #include "nsIClassInfoImpl.h"
 #include "nsIIDNService.h"
+#include "nsQueryObject.h"
 #include "nsThreadUtils.h"
 #include "nsAppDirectoryServiceDefs.h"
 #include "nsMathUtils.h"
@@ -192,9 +193,8 @@ NS_IMPL_CI_INTERFACE_GETTER(nsNavHistory,
 
 namespace {
 
-static int64_t GetSimpleBookmarksQueryFolder(
-    const nsCOMArray<nsNavHistoryQuery>& aQueries,
-    nsNavHistoryQueryOptions* aOptions);
+static int64_t GetSimpleBookmarksQueryFolder(nsNavHistoryQuery* aQuery,
+                                             nsNavHistoryQueryOptions* aOptions);
 static void ParseSearchTermsFromQueries(const nsCOMArray<nsNavHistoryQuery>& aQueries,
                                         nsTArray<nsTArray<nsString>*>* aTerms);
 
@@ -1234,42 +1234,14 @@ nsNavHistory::GetNewQueryOptions(nsINavHistoryQueryOptions **_retval)
 }
 
 
-
-
 NS_IMETHODIMP
-nsNavHistory::ExecuteQuery(nsINavHistoryQuery *aQuery, nsINavHistoryQueryOptions *aOptions,
+nsNavHistory::ExecuteQuery(nsINavHistoryQuery *aQuery,
+                           nsINavHistoryQueryOptions *aOptions,
                            nsINavHistoryResult** _retval)
 {
   NS_ASSERTION(NS_IsMainThread(), "This can only be called on the main thread");
   NS_ENSURE_ARG(aQuery);
   NS_ENSURE_ARG(aOptions);
-  NS_ENSURE_ARG_POINTER(_retval);
-
-  return ExecuteQueries(&aQuery, 1, aOptions, _retval);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-NS_IMETHODIMP
-nsNavHistory::ExecuteQueries(nsINavHistoryQuery** aQueries, uint32_t aQueryCount,
-                             nsINavHistoryQueryOptions *aOptions,
-                             nsINavHistoryResult** _retval)
-{
-  NS_ASSERTION(NS_IsMainThread(), "This can only be called on the main thread");
-  NS_ENSURE_ARG(aQueries);
-  NS_ENSURE_ARG(aOptions);
-  NS_ENSURE_ARG(aQueryCount);
   NS_ENSURE_ARG_POINTER(_retval);
 
   nsresult rv;
@@ -1279,15 +1251,14 @@ nsNavHistory::ExecuteQueries(nsINavHistoryQuery** aQueries, uint32_t aQueryCount
 
   
   nsCOMArray<nsNavHistoryQuery> queries;
-  for (uint32_t i = 0; i < aQueryCount; i ++) {
-    nsCOMPtr<nsNavHistoryQuery> query = do_QueryInterface(aQueries[i], &rv);
-    NS_ENSURE_SUCCESS(rv, rv);
-    queries.AppendElement(query.forget());
-  }
+  RefPtr<nsNavHistoryQuery> query = do_QueryObject(aQuery);
+  NS_ENSURE_STATE(query);
+  queries.AppendObject(query);
 
   
   RefPtr<nsNavHistoryContainerResultNode> rootNode;
-  int64_t folderId = GetSimpleBookmarksQueryFolder(queries, options);
+
+  int64_t folderId = GetSimpleBookmarksQueryFolder(query, options);
   if (folderId) {
     
     
@@ -1315,7 +1286,7 @@ nsNavHistory::ExecuteQueries(nsINavHistoryQuery** aQueries, uint32_t aQueryCount
 
   
   RefPtr<nsNavHistoryResult> result;
-  rv = nsNavHistoryResult::NewHistoryResult(aQueries, aQueryCount, options,
+  rv = nsNavHistoryResult::NewHistoryResult(queries, 1, options,
                                             rootNode, isBatching(),
                                             getter_AddRefs(result));
   NS_ENSURE_SUCCESS(rv, rv);
@@ -4000,7 +3971,9 @@ nsNavHistory::QueryRowToResult(int64_t itemId,
   
   if (NS_SUCCEEDED(rv)) {
     
-    int64_t targetFolderId = GetSimpleBookmarksQueryFolder(queries, options);
+    RefPtr<nsNavHistoryQuery> query = do_QueryObject(queries[0]);
+    NS_ENSURE_STATE(query);
+    int64_t targetFolderId = GetSimpleBookmarksQueryFolder(query, options);
     if (targetFolderId) {
       nsNavBookmarks *bookmarks = nsNavBookmarks::GetBookmarksService();
       NS_ENSURE_TRUE(bookmarks, NS_ERROR_OUT_OF_MEMORY);
@@ -4308,33 +4281,29 @@ namespace {
 
 
 static int64_t
-GetSimpleBookmarksQueryFolder(const nsCOMArray<nsNavHistoryQuery>& aQueries,
+GetSimpleBookmarksQueryFolder(nsNavHistoryQuery* aQuery,
                               nsNavHistoryQueryOptions* aOptions)
 {
-  if (aQueries.Count() != 1)
-    return 0;
-
-  nsNavHistoryQuery* query = aQueries[0];
-  if (query->Folders().Length() != 1)
+  if (aQuery->Folders().Length() != 1)
     return 0;
 
   bool hasIt;
-  query->GetHasBeginTime(&hasIt);
+  aQuery->GetHasBeginTime(&hasIt);
   if (hasIt)
     return 0;
-  query->GetHasEndTime(&hasIt);
+  aQuery->GetHasEndTime(&hasIt);
   if (hasIt)
     return 0;
-  query->GetHasDomain(&hasIt);
+  aQuery->GetHasDomain(&hasIt);
   if (hasIt)
     return 0;
-  query->GetHasUri(&hasIt);
+  aQuery->GetHasUri(&hasIt);
   if (hasIt)
     return 0;
-  (void)query->GetHasSearchTerms(&hasIt);
+  (void)aQuery->GetHasSearchTerms(&hasIt);
   if (hasIt)
     return 0;
-  if (query->Tags().Length() > 0)
+  if (aQuery->Tags().Length() > 0)
     return 0;
   if (aOptions->MaxResults() > 0)
     return 0;
@@ -4347,7 +4316,7 @@ GetSimpleBookmarksQueryFolder(const nsCOMArray<nsNavHistoryQuery>& aQueries,
   
   
 
-  return query->Folders()[0];
+  return aQuery->Folders()[0];
 }
 
 
