@@ -39,6 +39,7 @@
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/ClientHandle.h"
 #include "mozilla/dom/ClientManager.h"
+#include "mozilla/dom/ClientSource.h"
 #include "mozilla/dom/ConsoleUtils.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/DOMPrefs.h"
@@ -2489,6 +2490,38 @@ ServiceWorkerManager::DispatchFetchEvent(nsIInterceptedChannel* aChannel,
     }
 
     if (clientInfo.isSome()) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (!XRE_IsParentProcess()) {
+        nsCOMPtr<nsIPrincipal> clientPrincipal = clientInfo.ref().GetPrincipal();
+        if (!clientPrincipal || !clientPrincipal->Equals(principal)) {
+          UniquePtr<ClientSource> reservedClient =
+            loadInfo->TakeReservedClientSource();
+
+          nsCOMPtr<nsISerialEventTarget> target =
+            reservedClient ? reservedClient->EventTarget()
+                           : SystemGroup::EventTargetFor(TaskCategory::Other);
+
+          reservedClient.reset();
+          reservedClient = ClientManager::CreateSource(ClientType::Window,
+                                                       target,
+                                                       principal);
+
+          loadInfo->GiveReservedClientSource(Move(reservedClient));
+        }
+      }
+
       
       
       
