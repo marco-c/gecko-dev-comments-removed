@@ -2,7 +2,6 @@
 
 
 ChromeUtils.import("resource://gre/modules/Services.jsm");
-ChromeUtils.import("resource://gre/modules/CanonicalJSON.jsm");
 
 
 {
@@ -14,10 +13,12 @@ ChromeUtils.import("resource://gre/modules/CanonicalJSON.jsm");
 
 
 
+ChromeUtils.import("resource://gre/modules/CanonicalJSON.jsm");
 ChromeUtils.import("resource://gre/modules/Log.jsm");
 ChromeUtils.import("resource://gre/modules/ObjectUtils.jsm");
 ChromeUtils.import("resource://gre/modules/PlacesSyncUtils.jsm");
 ChromeUtils.import("resource://gre/modules/SyncedBookmarksMirror.jsm");
+ChromeUtils.import("resource://testing-common/FileTestUtils.jsm");
 ChromeUtils.import("resource://testing-common/httpd.js");
 
 
@@ -243,4 +244,13 @@ function expectBookmarkChangeNotifications(options) {
   let observer = new BookmarkObserver(options);
   PlacesUtils.bookmarks.addObserver(observer);
   return observer;
+}
+
+
+
+async function setupFixtureFile(fixturePath) {
+  let fixtureFile = do_get_file(fixturePath);
+  let tempFile = FileTestUtils.getTempFile(fixturePath);
+  await OS.File.copy(fixtureFile.path, tempFile.path);
+  return tempFile;
 }
