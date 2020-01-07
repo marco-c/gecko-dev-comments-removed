@@ -50,6 +50,7 @@ class gfxContext final {
     typedef mozilla::gfx::CompositionOp CompositionOp;
     typedef mozilla::gfx::JoinStyle JoinStyle;
     typedef mozilla::gfx::FillRule FillRule;
+    typedef mozilla::gfx::Float Float;
     typedef mozilla::gfx::Path Path;
     typedef mozilla::gfx::Pattern Pattern;
     typedef mozilla::gfx::Rect Rect;
@@ -286,7 +287,7 @@ public:
 
 
 
-    void Paint(gfxFloat alpha = 1.0);
+    void Paint(Float alpha = 1.0);
 
     
 
@@ -303,25 +304,25 @@ public:
 
 
 
-    void SetDash(gfxFloat *dashes, int ndash, gfxFloat offset);
+    void SetDash(const Float *dashes, int ndash, Float offset);
     
     
     
-    bool CurrentDash(FallibleTArray<gfxFloat>& dashes, gfxFloat* offset) const;
+    bool CurrentDash(FallibleTArray<Float>& dashes, Float* offset) const;
     
-    gfxFloat CurrentDashOffset() const;
-
-    
-
-
-    void SetLineWidth(gfxFloat width);
+    Float CurrentDashOffset() const;
 
     
 
 
+    void SetLineWidth(Float width);
+
+    
 
 
-    gfxFloat CurrentLineWidth() const;
+
+
+    Float CurrentLineWidth() const;
 
     
 
@@ -336,8 +337,8 @@ public:
     void SetLineJoin(JoinStyle join);
     JoinStyle CurrentLineJoin() const;
 
-    void SetMiterLimit(gfxFloat limit);
-    gfxFloat CurrentMiterLimit() const;
+    void SetMiterLimit(Float limit);
+    Float CurrentMiterLimit() const;
 
     
 
@@ -461,7 +462,6 @@ private:
   typedef mozilla::gfx::DrawTarget DrawTarget;
   typedef mozilla::gfx::Color Color;
   typedef mozilla::gfx::StrokeOptions StrokeOptions;
-  typedef mozilla::gfx::Float Float;
   typedef mozilla::gfx::PathBuilder PathBuilder;
   typedef mozilla::gfx::SourceSurface SourceSurface;
 
