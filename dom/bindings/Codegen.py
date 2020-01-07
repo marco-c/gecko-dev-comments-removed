@@ -1579,7 +1579,7 @@ class CGAbstractMethod(CGThing):
     def _auto_profiler_label(self):
         profiler_label_and_jscontext = self.profiler_label_and_jscontext()
         if profiler_label_and_jscontext:
-            return 'AUTO_PROFILER_LABEL_FAST("%s", OTHER, %s);' % profiler_label_and_jscontext
+            return 'AUTO_PROFILER_LABEL_FAST("%s", DOM, %s);' % profiler_label_and_jscontext
         return None
 
     def declare(self):
@@ -7236,9 +7236,9 @@ class CGCallGenerator(CGThing):
 
             getPrincipal = fill(
                 """
-                JS::Realm* realm = js::GetContextRealm(cx);
-                MOZ_ASSERT(realm);
-                JSPrincipals* principals = JS::GetRealmPrincipals(realm);
+                JSCompartment* compartment = js::GetContextCompartment(cx);
+                MOZ_ASSERT(compartment);
+                JSPrincipals* principals = JS_GetCompartmentPrincipals(compartment);
                 nsIPrincipal* principal = nsJSPrincipals::get(principals);
                 ${checkPrincipal}
                 """,
@@ -7563,7 +7563,7 @@ class CGPerSignatureCall(CGThing):
             if not idlNode.isStatic():
                 needsUnwrap = True
                 needsUnwrappedVar = True
-                argsPost.append("(unwrappedObj ? js::GetNonCCWObjectRealm(*unwrappedObj) : js::GetContextRealm(cx))")
+                argsPost.append("js::GetObjectCompartment(unwrappedObj ? *unwrappedObj : obj)")
         elif needScopeObject(returnType, arguments, self.extendedAttributes,
                              descriptor.wrapperCache, True,
                              idlNode.getExtendedAttribute("StoreInSlot")):
@@ -15009,7 +15009,7 @@ class CGJSImplMember(CGNativeMember):
 
     def getArgs(self, returnType, argList):
         args = CGNativeMember.getArgs(self, returnType, argList)
-        args.append(Argument("JS::Realm*", "aRealm", "nullptr"))
+        args.append(Argument("JSCompartment*", "aCompartment", "nullptr"))
         return args
 
 
@@ -15058,7 +15058,7 @@ class CGJSImplMethod(CGJSImplMember):
             assert args[-1].argType == 'JS::Handle<JSObject*>'
             assert args[-1].name == 'aGivenProto'
             constructorArgs = [arg.name for arg in args[2:-1]]
-            constructorArgs.append("js::GetNonCCWObjectRealm(scopeObj)")
+            constructorArgs.append("js::GetObjectCompartment(scopeObj)")
             initCall = fill(
                 """
                 // Wrap the object before calling __Init so that __DOM_IMPL__ is available.
@@ -15522,7 +15522,7 @@ class CGCallback(CGClass):
         
         
         
-        args.append(Argument("JS::Realm*", "aRealm", "nullptr"))
+        args.append(Argument("JSCompartment*", "aCompartment", "nullptr"))
         
         argsWithoutThis = list(args)
         args.insert(0, Argument("const T&",  "thisVal"))
@@ -15550,7 +15550,7 @@ class CGCallback(CGClass):
             if (!aExecutionReason) {
               aExecutionReason = "${executionReason}";
             }
-            CallSetup s(this, aRv, aExecutionReason, aExceptionHandling, aRealm);
+            CallSetup s(this, aRv, aExecutionReason, aExceptionHandling, aCompartment);
             if (!s.GetContext()) {
               MOZ_ASSERT(aRv.Failed());
               return${errorReturn};
@@ -15961,7 +15961,7 @@ class CallbackMember(CGNativeMember):
                                      "nullptr"))
                 args.append(Argument("ExceptionHandling", "aExceptionHandling",
                                      "eReportExceptions"))
-            args.append(Argument("JS::Realm*", "aRealm", "nullptr"))
+            args.append(Argument("JSCompartment*", "aCompartment", "nullptr"))
             return args
         
         
@@ -15976,10 +15976,10 @@ class CallbackMember(CGNativeMember):
         if self.rethrowContentException:
             
             
-            callSetup += ', "%s", eRethrowContentExceptions, aRealm, /* aIsJSImplementedWebIDL = */ ' % self.getPrettyName()
+            callSetup += ', "%s", eRethrowContentExceptions, aCompartment, /* aIsJSImplementedWebIDL = */ ' % self.getPrettyName()
             callSetup += toStringBool(isJSImplementedDescriptor(self.descriptorProvider))
         else:
-            callSetup += ', "%s", aExceptionHandling, aRealm' % self.getPrettyName()
+            callSetup += ', "%s", aExceptionHandling, aCompartment' % self.getPrettyName()
         callSetup += ");\n"
         return fill(
             """
