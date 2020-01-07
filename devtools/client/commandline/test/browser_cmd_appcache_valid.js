@@ -5,7 +5,8 @@
 
 
 const TEST_URI = "https://sub1.test2.example.com/browser/devtools/client/" +
-                 "commandline/test/browser_cmd_appcache_valid_index.html";
+                 "commandline/test/" +
+                 "browser_cmd_appcache_valid_index_relative_manifest.html";
 
 function test() {
   return Task.spawn(spawnTest).then(finish, helpers.handleError);
@@ -112,7 +113,7 @@ function* spawnTest() {
       check: {
         input:  "appcache validate " + TEST_URI,
               
-        markup: "VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV",
+        markup: "VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV",
         status: "VALID",
         args: {
           uri: {
@@ -152,8 +153,8 @@ function* spawnTest() {
       post: function (output, text) {
         ok(!text.includes("index"), "index is not contained in output");
         ok(!text.includes("page1"), "page1 is not contained in output");
-        ok(!text.includes("page2"), "page1 is not contained in output");
-        ok(!text.includes("page3"), "page1 is not contained in output");
+        ok(!text.includes("page2"), "page2 is not contained in output");
+        ok(!text.includes("page3"), "page3 is not contained in output");
       }
     },
 
@@ -162,7 +163,7 @@ function* spawnTest() {
       check: {
         input:  "appcache viewentry --key " + TEST_URI,
               
-        markup: "VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV",
+        markup: "VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV",
         status: "VALID",
         args: {}
       },
