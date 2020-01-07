@@ -5,7 +5,6 @@ gAccService = 0;
 
 netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
 nsIAccessible = Ci.nsIAccessible;
-nsIDOMNode = Ci.nsIDOMNode;
 
 function initAccessibility() {
   netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
@@ -20,64 +19,38 @@ function initAccessibility() {
   return gAccService;
 }
 
-function getAccessible(aAccOrElmOrID, aInterfaces) {
-  if (!aAccOrElmOrID) {
-    return null;
-  }
-
-  var elm = null;
-
-  if (aAccOrElmOrID instanceof nsIAccessible) {
-    elm = aAccOrElmOrID.DOMNode;
-
-  } else if (aAccOrElmOrID instanceof nsIDOMNode) {
-    elm = aAccOrElmOrID;
-
-  } else {
-    elm = document.getElementById(aAccOrElmOrID);
-  }
-
-  var acc = (aAccOrElmOrID instanceof nsIAccessible) ? aAccOrElmOrID : null;
-  if (!acc) {
-    try {
-      acc = gAccService.getAccessibleFor(elm);
-    } catch (e) {
-    }
-  }
-
-  if (!aInterfaces) {
-    return acc;
-  }
-
-  if (aInterfaces instanceof Array) {
-    for (var index = 0; index < aInterfaces.length; index++) {
-      try {
-        acc.QueryInterface(aInterfaces[index]);
-      } catch (e) {
-      }
-    }
-    return acc;
-  }
-
+function getAccessible(aNode) {
   try {
-    acc.QueryInterface(aInterfaces);
+    return gAccService.getAccessibleFor(aNode);
   } catch (e) {
   }
 
-  return acc;
+  return null;
 }
 
+function ensureAccessibleTreeForNode(aNode) {
+  var acc = getAccessible(aNode);
 
-function ensureAccessibleTree(aAccOrElmOrID) {
-  acc = getAccessible(aAccOrElmOrID);
+  ensureAccessibleTreeForAccessible(acc);
+}
 
-  var child = acc.firstChild;
+function ensureAccessibleTreeForAccessible(aAccessible) {
+  var child = aAccessible.firstChild;
   while (child) {
-    ensureAccessibleTree(child);
+    ensureAccessibleTreeForAccessible(child);
     try {
       child = child.nextSibling;
     } catch (e) {
       child = null;
     }
   }
+}
+
+
+function ensureAccessibleTreeForId(aID) {
+  var node = document.getElementById(aID);
+  if (!node) {
+    return;
+  }
+  ensureAccessibleTreeForNode(node);
 }
