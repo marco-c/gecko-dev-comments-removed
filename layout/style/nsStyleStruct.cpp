@@ -2199,7 +2199,8 @@ nsStyleImageRequest::~nsStyleImageRequest()
 
 bool
 nsStyleImageRequest::Resolve(
-  nsPresContext* aPresContext, const nsStyleImageRequest* aOldImageRequest)
+  nsPresContext* aPresContext,
+  const nsStyleImageRequest* aOldImageRequest)
 {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(!IsResolved(), "already resolved");
@@ -2219,14 +2220,29 @@ nsStyleImageRequest::Resolve(
     }
   }
 
-  mDocGroup = doc->GetDocGroup();
+  
+  
+  
+  
+  
+  
+  if (aPresContext->IsChrome() && aOldImageRequest &&
+      aOldImageRequest->IsResolved() && DefinitelyEquals(*aOldImageRequest)) {
+    MOZ_ASSERT(aOldImageRequest->mDocGroup == doc->GetDocGroup());
+    MOZ_ASSERT(mModeFlags == aOldImageRequest->mModeFlags);
 
-  mImageValue->Initialize(doc);
+    mDocGroup = aOldImageRequest->mDocGroup;
+    mImageValue = aOldImageRequest->mImageValue;
+    mRequestProxy = aOldImageRequest->mRequestProxy;
+  } else {
+    mDocGroup = doc->GetDocGroup();
+    mImageValue->Initialize(doc);
 
-  nsCSSValue value;
-  value.SetImageValue(mImageValue);
-  mRequestProxy = value.GetPossiblyStaticImageValue(aPresContext->Document(),
-                                                    aPresContext);
+    nsCSSValue value;
+    value.SetImageValue(mImageValue);
+    mRequestProxy = value.GetPossiblyStaticImageValue(aPresContext->Document(),
+                                                      aPresContext);
+  }
 
   if (!mRequestProxy) {
     
@@ -2234,7 +2250,7 @@ nsStyleImageRequest::Resolve(
   }
 
   if (mModeFlags & Mode::Track) {
-    mImageTracker = aPresContext->Document()->ImageTracker();
+    mImageTracker = doc->ImageTracker();
   }
 
   MaybeTrackAndLock();
