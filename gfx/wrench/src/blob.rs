@@ -26,6 +26,12 @@ fn deserialize_blob(blob: &[u8]) -> Result<ColorU, ()> {
 }
 
 
+fn premul(x: u8, a: u8) -> u8 {
+    let t = (x as u32) * (a as u32) + 128;
+    ((t + (t >> 8)) >> 8) as u8
+}
+
+
 
 fn render_blob(
     color: ColorU,
@@ -73,10 +79,11 @@ fn render_blob(
 
             match descriptor.format {
                 ImageFormat::BGRA8 => {
-                    texels[((y * descriptor.width + x) * 4 + 0) as usize] = color.b * checker + tc;
-                    texels[((y * descriptor.width + x) * 4 + 1) as usize] = color.g * checker + tc;
-                    texels[((y * descriptor.width + x) * 4 + 2) as usize] = color.r * checker + tc;
-                    texels[((y * descriptor.width + x) * 4 + 3) as usize] = color.a * checker + tc;
+                    let a = color.a * checker + tc;
+                    texels[((y * descriptor.width + x) * 4 + 0) as usize] = premul(color.b * checker + tc, a);
+                    texels[((y * descriptor.width + x) * 4 + 1) as usize] = premul(color.g * checker + tc, a);
+                    texels[((y * descriptor.width + x) * 4 + 2) as usize] = premul(color.r * checker + tc, a);
+                    texels[((y * descriptor.width + x) * 4 + 3) as usize] = a;
                 }
                 ImageFormat::R8 => {
                     texels[(y * descriptor.width + x) as usize] = color.a * checker + tc;

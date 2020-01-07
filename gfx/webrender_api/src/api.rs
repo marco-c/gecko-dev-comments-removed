@@ -1078,21 +1078,18 @@ impl<T> PropertyBindingKey<T> {
 
 
 
+
+
+
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
 pub enum PropertyBinding<T> {
     Value(T),
-    Binding(PropertyBindingKey<T>),
+    Binding(PropertyBindingKey<T>, T),
 }
 
 impl<T> From<T> for PropertyBinding<T> {
     fn from(value: T) -> PropertyBinding<T> {
         PropertyBinding::Value(value)
-    }
-}
-
-impl<T> From<PropertyBindingKey<T>> for PropertyBinding<T> {
-    fn from(key: PropertyBindingKey<T>) -> PropertyBinding<T> {
-        PropertyBinding::Binding(key)
     }
 }
 
