@@ -46,7 +46,7 @@ xpcAccessibilityService::AddRef(void)
 
   
   
-  if (mRefCnt > 1 && PlatformDisabledState() != ePlatformIsDisabled) {
+  if (mRefCnt > 1) {
     GetOrCreateAccService(nsAccessibilityService::eXPCOM);
   }
 
@@ -280,12 +280,9 @@ NS_GetAccessibilityService(nsIAccessibilityService** aResult)
   NS_ENSURE_TRUE(aResult, NS_ERROR_NULL_POINTER);
   *aResult = nullptr;
 
-  
-  if (PlatformDisabledState() == ePlatformIsDisabled) {
+  if (!GetOrCreateAccService(nsAccessibilityService::eXPCOM)) {
     return NS_ERROR_SERVICE_NOT_AVAILABLE;
   }
-
-  GetOrCreateAccService(nsAccessibilityService::eXPCOM);
 
   xpcAccessibilityService* service = new xpcAccessibilityService();
   NS_ENSURE_TRUE(service, NS_ERROR_OUT_OF_MEMORY);
