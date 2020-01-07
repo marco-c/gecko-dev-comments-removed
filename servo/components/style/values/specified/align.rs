@@ -18,8 +18,7 @@ bitflags! {
     /// Constants shared by multiple CSS Box Alignment properties
     ///
     /// These constants match Gecko's `NS_STYLE_ALIGN_*` constants.
-    #[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-    #[derive(ToComputedValue)]
+    #[derive(MallocSizeOf, ToComputedValue)]
     pub struct AlignFlags: u8 {
         // Enumeration stored in the lower 5 bits:
         /// 'auto'
@@ -70,12 +69,27 @@ bitflags! {
     }
 }
 
+impl AlignFlags {
+    
+    #[inline]
+    fn value(&self) -> Self {
+        *self & !AlignFlags::FLAG_BITS
+    }
+}
+
 impl ToCss for AlignFlags {
     fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
     where
         W: Write,
     {
-        let s = match *self & !AlignFlags::FLAG_BITS {
+        match *self & AlignFlags::FLAG_BITS {
+            AlignFlags::LEGACY => dest.write_str("legacy ")?,
+            AlignFlags::SAFE => dest.write_str("safe ")?,
+            
+            _ => {}
+        }
+
+        dest.write_str(match self.value() {
             AlignFlags::AUTO => "auto",
             AlignFlags::NORMAL => "normal",
             AlignFlags::START => "start",
@@ -94,46 +108,29 @@ impl ToCss for AlignFlags {
             AlignFlags::SPACE_AROUND => "space-around",
             AlignFlags::SPACE_EVENLY => "space-evenly",
             _ => unreachable!()
-        };
-        dest.write_str(s)?;
-
-        match *self & AlignFlags::FLAG_BITS {
-            AlignFlags::LEGACY => { dest.write_str(" legacy")?; }
-            AlignFlags::SAFE => { dest.write_str(" safe")?; }
-            AlignFlags::UNSAFE => { dest.write_str(" unsafe")?; }
-            _ => {}
-        }
-        Ok(())
+        })
     }
 }
 
 
-const ALIGN_ALL_BITS: u16 = structs::NS_STYLE_ALIGN_ALL_BITS as u16;
 
-const ALIGN_ALL_SHIFT: u32 = structs::NS_STYLE_ALIGN_ALL_SHIFT;
-
-
-
-
-#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, ToComputedValue)]
-#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
-pub struct ContentDistribution {
-    primary: AlignFlags,
-    fallback: AlignFlags,
+#[derive(Clone, Copy, PartialEq)]
+pub enum AxisDirection {
+    
+    Block,
+    
+    Inline,
 }
 
 
 
 
-
-
-
-#[derive(Clone, Copy, PartialEq)]
-pub enum FallbackAllowed {
+#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, ToComputedValue, ToCss)]
+#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
+pub struct ContentDistribution {
+    primary: AlignFlags,
     
-    Yes,
     
-    No,
 }
 
 impl ContentDistribution {
@@ -145,16 +142,33 @@ impl ContentDistribution {
 
     
     #[inline]
-    pub fn new(flags: AlignFlags) -> Self {
-        Self::with_fallback(flags, AlignFlags::empty())
+    pub fn new(primary: AlignFlags) -> Self {
+        Self { primary }
+    }
+
+    fn from_bits(bits: u16) -> Self {
+        Self {
+            primary: AlignFlags::from_bits_truncate(bits as u8)
+        }
+    }
+
+    fn as_bits(&self) -> u16 {
+        self.primary.bits() as u16
     }
 
     
-    
-    
-    #[inline]
-    pub fn with_fallback(primary: AlignFlags, fallback: AlignFlags) -> Self {
-        Self { primary, fallback }
+    pub fn is_valid_on_both_axes(&self) -> bool {
+        match self.primary.value() {
+            
+            AlignFlags::BASELINE |
+            AlignFlags::LAST_BASELINE => false,
+
+            
+            AlignFlags::LEFT |
+            AlignFlags::RIGHT => false,
+
+            _ => true,
+        }
     }
 
     
@@ -165,81 +179,117 @@ impl ContentDistribution {
 
     
     #[inline]
-    pub fn fallback(self) -> AlignFlags {
-        self.fallback
-    }
-
-    
-    #[inline]
     pub fn has_extra_flags(self) -> bool {
-        self.primary().intersects(AlignFlags::FLAG_BITS) ||
-        self.fallback().intersects(AlignFlags::FLAG_BITS)
+        self.primary().intersects(AlignFlags::FLAG_BITS)
     }
 
     
-    
-    pub fn parse_with_fallback<'i, 't>(
+    pub fn parse<'i, 't>(
         input: &mut Parser<'i, 't>,
-        fallback_allowed: FallbackAllowed,
+        axis: AxisDirection,
     ) -> Result<Self, ParseError<'i>> {
         
-        if let Ok(value) = input.try(|input| parse_normal_or_baseline(input)) {
-            return Ok(ContentDistribution::new(value))
+        if input.try(|i| i.expect_ident_matching("normal")).is_ok() {
+            return Ok(ContentDistribution::normal());
         }
 
         
-        if let Ok(value) = input.try(|input| parse_content_distribution(input)) {
-            if fallback_allowed == FallbackAllowed::Yes {
-                if let Ok(fallback) = input.try(|input| parse_overflow_content_position(input)) {
-                    return Ok(ContentDistribution::with_fallback(value, fallback))
-                }
+        if axis == AxisDirection::Block {
+            if let Ok(value) = input.try(parse_baseline) {
+                return Ok(ContentDistribution::new(value));
             }
-            return Ok(ContentDistribution::new(value))
         }
 
         
-        let fallback = parse_overflow_content_position(input)?;
-        if fallback_allowed == FallbackAllowed::Yes {
-            if let Ok(value) = input.try(|input| parse_content_distribution(input)) {
-                return Ok(ContentDistribution::with_fallback(value, fallback))
-            }
+        if let Ok(value) = input.try(parse_content_distribution) {
+            return Ok(ContentDistribution::new(value));
         }
 
-        Ok(ContentDistribution::new(fallback))
-    }
-}
+        
+        let overflow_position =
+            input.try(parse_overflow_position)
+            .unwrap_or(AlignFlags::empty());
 
-impl ToCss for ContentDistribution {
-    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
-    where
-        W: Write,
-    {
-        self.primary().to_css(dest)?;
-        match self.fallback() {
-            AlignFlags::AUTO => {}
-            fallback => {
-                dest.write_str(" ")?;
-                fallback.to_css(dest)?;
-            }
-        }
-        Ok(())
-    }
-}
+        let content_position = try_match_ident_ignore_ascii_case! { input,
+            "start" => AlignFlags::START,
+            "end" => AlignFlags::END,
+            "flex-start" => AlignFlags::FLEX_START,
+            "flex-end" => AlignFlags::FLEX_END,
+            "center" => AlignFlags::CENTER,
+            "left" if axis == AxisDirection::Inline => AlignFlags::LEFT,
+            "right" if axis == AxisDirection::Inline => AlignFlags::RIGHT,
+        };
 
-
-impl Parse for ContentDistribution {
-    
-    
-    fn parse<'i, 't>(_: &ParserContext, input: &mut Parser<'i, 't>) -> Result<Self, ParseError<'i>> {
-        Self::parse_with_fallback(input, FallbackAllowed::Yes)
+        Ok(ContentDistribution::new(content_position | overflow_position))
     }
 }
 
 
 
 
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[derive(Clone, Copy, Debug, Eq, PartialEq, ToComputedValue, ToCss)]
+#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, ToComputedValue, ToCss)]
+pub struct AlignContent(pub ContentDistribution);
+
+impl Parse for AlignContent {
+    fn parse<'i, 't>(
+        _: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Self, ParseError<'i>> {
+        Ok(AlignContent(ContentDistribution::parse(
+            input,
+            AxisDirection::Block,
+        )?))
+    }
+}
+
+#[cfg(feature = "gecko")]
+impl From<u16> for AlignContent {
+    fn from(bits: u16) -> Self {
+        AlignContent(ContentDistribution::from_bits(bits))
+    }
+}
+
+#[cfg(feature = "gecko")]
+impl From<AlignContent> for u16 {
+    fn from(v: AlignContent) -> u16 {
+        v.0.as_bits()
+    }
+}
+
+
+
+
+#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, ToComputedValue, ToCss)]
+pub struct JustifyContent(pub ContentDistribution);
+
+impl Parse for JustifyContent {
+    fn parse<'i, 't>(
+        _: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Self, ParseError<'i>> {
+        Ok(JustifyContent(ContentDistribution::parse(
+            input,
+            AxisDirection::Inline,
+        )?))
+    }
+}
+
+#[cfg(feature = "gecko")]
+impl From<u16> for JustifyContent {
+    fn from(bits: u16) -> Self {
+        JustifyContent(ContentDistribution::from_bits(bits))
+    }
+}
+
+#[cfg(feature = "gecko")]
+impl From<JustifyContent> for u16 {
+    fn from(v: JustifyContent) -> u16 {
+        v.0.as_bits()
+    }
+}
+
+
+#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, ToComputedValue, ToCss)]
 pub struct SelfAlignment(pub AlignFlags);
 
 impl SelfAlignment {
@@ -250,31 +300,104 @@ impl SelfAlignment {
     }
 
     
+    pub fn is_valid_on_both_axes(&self) -> bool {
+        match self.0.value() {
+            
+            AlignFlags::BASELINE |
+            AlignFlags::LAST_BASELINE => false,
+
+            
+            AlignFlags::LEFT |
+            AlignFlags::RIGHT => false,
+
+            _ => true,
+        }
+    }
+
+    
     #[inline]
     pub fn has_extra_flags(self) -> bool {
         self.0.intersects(AlignFlags::FLAG_BITS)
     }
-}
 
-
-impl Parse for SelfAlignment {
     
-    
-    fn parse<'i, 't>(_: &ParserContext, input: &mut Parser<'i, 't>) -> Result<Self, ParseError<'i>> {
+    pub fn parse<'i, 't>(
+        input: &mut Parser<'i, 't>,
+        axis: AxisDirection,
+    ) -> Result<Self, ParseError<'i>> {
         
-        if let Ok(value) = input.try(parse_auto_normal_stretch_baseline) {
+        if axis == AxisDirection::Block {
+            if let Ok(value) = input.try(parse_baseline) {
+                return Ok(SelfAlignment(value));
+            }
+        }
+
+        
+        if let Ok(value) = input.try(parse_auto_normal_stretch) {
             return Ok(SelfAlignment(value))
         }
+
         
-        Ok(SelfAlignment(parse_overflow_self_position(input)?))
+        let overflow_position =
+            input.try(parse_overflow_position)
+            .unwrap_or(AlignFlags::empty());
+        let self_position = parse_self_position(input, axis)?;
+        Ok(SelfAlignment(overflow_position | self_position))
     }
 }
 
 
 
 
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[derive(Clone, Copy, Debug, Eq, PartialEq, ToComputedValue, ToCss)]
+#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, ToComputedValue, ToCss)]
+pub struct AlignSelf(pub SelfAlignment);
+
+impl Parse for AlignSelf {
+    fn parse<'i, 't>(_: &ParserContext, input: &mut Parser<'i, 't>) -> Result<Self, ParseError<'i>> {
+        Ok(AlignSelf(SelfAlignment::parse(input, AxisDirection::Block)?))
+    }
+}
+
+impl From<u8> for AlignSelf {
+    fn from(bits: u8) -> Self {
+        AlignSelf(SelfAlignment(AlignFlags::from_bits_truncate(bits)))
+    }
+}
+
+impl From<AlignSelf> for u8 {
+    fn from(align: AlignSelf) -> u8 {
+        (align.0).0.bits()
+    }
+}
+
+
+
+
+#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, ToComputedValue, ToCss)]
+pub struct JustifySelf(pub SelfAlignment);
+
+impl Parse for JustifySelf {
+    fn parse<'i, 't>(_: &ParserContext, input: &mut Parser<'i, 't>) -> Result<Self, ParseError<'i>> {
+        Ok(JustifySelf(SelfAlignment::parse(input, AxisDirection::Inline)?))
+    }
+}
+
+impl From<u8> for JustifySelf {
+    fn from(bits: u8) -> Self {
+        JustifySelf(SelfAlignment(AlignFlags::from_bits_truncate(bits)))
+    }
+}
+
+impl From<JustifySelf> for u8 {
+    fn from(justify: JustifySelf) -> u8 {
+        (justify.0).0.bits()
+    }
+}
+
+
+
+
+#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, ToComputedValue, ToCss)]
 pub struct AlignItems(pub AlignFlags);
 
 impl AlignItems {
@@ -297,19 +420,25 @@ impl Parse for AlignItems {
     
     fn parse<'i, 't>(_: &ParserContext, input: &mut Parser<'i, 't>) -> Result<Self, ParseError<'i>> {
         
-        if let Ok(value) = input.try(parse_normal_stretch_baseline) {
+        if let Ok(baseline) = input.try(parse_baseline) {
+            return Ok(AlignItems(baseline));
+        }
+
+        
+        if let Ok(value) = input.try(parse_normal_stretch) {
             return Ok(AlignItems(value))
         }
         
-        Ok(AlignItems(parse_overflow_self_position(input)?))
+        let overflow = input.try(parse_overflow_position).unwrap_or(AlignFlags::empty());
+        let self_position = parse_self_position(input, AxisDirection::Block)?;
+        Ok(AlignItems(self_position | overflow))
     }
 }
 
 
 
 
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[derive(Clone, Copy, Debug, Eq, PartialEq, ToCss)]
+#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, ToCss)]
 pub struct JustifyItems(pub AlignFlags);
 
 impl JustifyItems {
@@ -332,52 +461,49 @@ impl JustifyItems {
     }
 }
 
-
 impl Parse for JustifyItems {
-    
-    
-    
     fn parse<'i, 't>(_: &ParserContext, input: &mut Parser<'i, 't>) -> Result<Self, ParseError<'i>> {
         
-        if let Ok(value) = input.try(parse_auto_normal_stretch_baseline) {
+        
+        
+        
+        if let Ok(baseline) = input.try(parse_baseline) {
+            return Ok(JustifyItems(baseline));
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if let Ok(value) = input.try(parse_auto_normal_stretch) {
             return Ok(JustifyItems(value))
         }
+
         
         if let Ok(value) = input.try(parse_legacy) {
             return Ok(JustifyItems(value))
         }
+
         
-        Ok(JustifyItems(parse_overflow_self_position(input)?))
-    }
-}
-
-#[cfg(feature = "gecko")]
-impl From<u16> for ContentDistribution {
-    fn from(bits: u16) -> ContentDistribution {
-        let primary =
-            AlignFlags::from_bits_truncate((bits & ALIGN_ALL_BITS) as u8);
-        let fallback =
-            AlignFlags::from_bits_truncate((bits >> ALIGN_ALL_SHIFT) as u8);
-        ContentDistribution::with_fallback(primary, fallback)
-    }
-}
-
-#[cfg(feature = "gecko")]
-impl From<ContentDistribution> for u16 {
-    fn from(v: ContentDistribution) -> u16 {
-        v.primary().bits() as u16 |
-        ((v.fallback().bits() as u16) << ALIGN_ALL_SHIFT)
+        let overflow = input.try(parse_overflow_position).unwrap_or(AlignFlags::empty());
+        let self_position = parse_self_position(input, AxisDirection::Inline)?;
+        Ok(JustifyItems(overflow | self_position))
     }
 }
 
 
-fn parse_auto_normal_stretch_baseline<'i, 't>(
+fn parse_auto_normal_stretch<'i, 't>(
     input: &mut Parser<'i, 't>,
 ) -> Result<AlignFlags, ParseError<'i>> {
-    if let Ok(baseline) = input.try(parse_baseline) {
-        return Ok(baseline);
-    }
-
     try_match_ident_ignore_ascii_case! { input,
         "auto" => Ok(AlignFlags::AUTO),
         "normal" => Ok(AlignFlags::NORMAL),
@@ -386,11 +512,7 @@ fn parse_auto_normal_stretch_baseline<'i, 't>(
 }
 
 
-fn parse_normal_stretch_baseline<'i, 't>(input: &mut Parser<'i, 't>) -> Result<AlignFlags, ParseError<'i>> {
-    if let Ok(baseline) = input.try(parse_baseline) {
-        return Ok(baseline);
-    }
-
+fn parse_normal_stretch<'i, 't>(input: &mut Parser<'i, 't>) -> Result<AlignFlags, ParseError<'i>> {
     try_match_ident_ignore_ascii_case! { input,
         "normal" => Ok(AlignFlags::NORMAL),
         "stretch" => Ok(AlignFlags::STRETCH),
@@ -398,18 +520,7 @@ fn parse_normal_stretch_baseline<'i, 't>(input: &mut Parser<'i, 't>) -> Result<A
 }
 
 
-fn parse_normal_or_baseline<'i, 't>(input: &mut Parser<'i, 't>) -> Result<AlignFlags, ParseError<'i>> {
-    if let Ok(baseline) = input.try(parse_baseline) {
-        return Ok(baseline);
-    }
-
-    input.expect_ident_matching("normal")?;
-    Ok(AlignFlags::NORMAL)
-}
-
-
 fn parse_baseline<'i, 't>(input: &mut Parser<'i, 't>) -> Result<AlignFlags, ParseError<'i>> {
-    
     try_match_ident_ignore_ascii_case! { input,
         "baseline" => Ok(AlignFlags::BASELINE),
         "first" => {
@@ -434,37 +545,6 @@ fn parse_content_distribution<'i, 't>(input: &mut Parser<'i, 't>) -> Result<Alig
 }
 
 
-fn parse_overflow_content_position<'i, 't>(input: &mut Parser<'i, 't>) -> Result<AlignFlags, ParseError<'i>> {
-    
-    if let Ok(mut content) = input.try(parse_content_position) {
-        if let Ok(overflow) = input.try(parse_overflow_position) {
-            content |= overflow;
-        }
-        return Ok(content)
-    }
-    
-    if let Ok(overflow) = parse_overflow_position(input) {
-        if let Ok(content) = parse_content_position(input) {
-            return Ok(overflow | content)
-        }
-    }
-    return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError))
-}
-
-
-fn parse_content_position<'i, 't>(input: &mut Parser<'i, 't>) -> Result<AlignFlags, ParseError<'i>> {
-    try_match_ident_ignore_ascii_case! { input,
-        "start" => Ok(AlignFlags::START),
-        "end" => Ok(AlignFlags::END),
-        "flex-start" => Ok(AlignFlags::FLEX_START),
-        "flex-end" => Ok(AlignFlags::FLEX_END),
-        "center" => Ok(AlignFlags::CENTER),
-        "left" => Ok(AlignFlags::LEFT),
-        "right" => Ok(AlignFlags::RIGHT),
-    }
-}
-
-
 fn parse_overflow_position<'i, 't>(input: &mut Parser<'i, 't>) -> Result<AlignFlags, ParseError<'i>> {
     try_match_ident_ignore_ascii_case! { input,
         "safe" => Ok(AlignFlags::SAFE),
@@ -473,36 +553,21 @@ fn parse_overflow_position<'i, 't>(input: &mut Parser<'i, 't>) -> Result<AlignFl
 }
 
 
-fn parse_overflow_self_position<'i, 't>(input: &mut Parser<'i, 't>) -> Result<AlignFlags, ParseError<'i>> {
-    
-    if let Ok(mut self_position) = input.try(parse_self_position) {
-        if let Ok(overflow) = input.try(parse_overflow_position) {
-            self_position |= overflow;
-        }
-        return Ok(self_position)
-    }
-    
-    if let Ok(overflow) = parse_overflow_position(input) {
-        if let Ok(self_position) = parse_self_position(input) {
-            return Ok(overflow | self_position)
-        }
-    }
-    return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError))
-}
-
-
-fn parse_self_position<'i, 't>(input: &mut Parser<'i, 't>) -> Result<AlignFlags, ParseError<'i>> {
-    try_match_ident_ignore_ascii_case! { input,
-        "start" => Ok(AlignFlags::START),
-        "end" => Ok(AlignFlags::END),
-        "flex-start" => Ok(AlignFlags::FLEX_START),
-        "flex-end" => Ok(AlignFlags::FLEX_END),
-        "center" => Ok(AlignFlags::CENTER),
-        "left" => Ok(AlignFlags::LEFT),
-        "right" => Ok(AlignFlags::RIGHT),
-        "self-start" => Ok(AlignFlags::SELF_START),
-        "self-end" => Ok(AlignFlags::SELF_END),
-    }
+fn parse_self_position<'i, 't>(
+    input: &mut Parser<'i, 't>,
+    axis: AxisDirection,
+) -> Result<AlignFlags, ParseError<'i>> {
+    Ok(try_match_ident_ignore_ascii_case! { input,
+        "start" => AlignFlags::START,
+        "end" => AlignFlags::END,
+        "flex-start" => AlignFlags::FLEX_START,
+        "flex-end" => AlignFlags::FLEX_END,
+        "center" => AlignFlags::CENTER,
+        "self-start" => AlignFlags::SELF_START,
+        "self-end" => AlignFlags::SELF_END,
+        "left" if axis == AxisDirection::Inline => AlignFlags::LEFT,
+        "right" if axis == AxisDirection::Inline => AlignFlags::RIGHT,
+    })
 }
 
 
