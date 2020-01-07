@@ -41,6 +41,7 @@ const {
   WebDriverError,
 } = ChromeUtils.import("chrome://marionette/content/error.js", {});
 ChromeUtils.import("chrome://marionette/content/evaluate.js");
+const {pprint} = ChromeUtils.import("chrome://marionette/content/format.js", {});
 ChromeUtils.import("chrome://marionette/content/interaction.js");
 ChromeUtils.import("chrome://marionette/content/l10n.js");
 ChromeUtils.import("chrome://marionette/content/legacyaction.js");
@@ -872,21 +873,18 @@ GeckoDriver.prototype.getContext = function() {
 
 
 GeckoDriver.prototype.executeScript = async function(cmd, resp) {
-  assert.open(this.getCurrentWindow());
-
-  let {script, args, scriptTimeout} = cmd.parameters;
-  scriptTimeout = scriptTimeout || this.timeouts.script;
-
+  let {script, args} = cmd.parameters;
   let opts = {
+    script: cmd.parameters.script,
+    args: cmd.parameters.args,
+    timeout: cmd.parameters.scriptTimeout,
     sandboxName: cmd.parameters.sandbox,
-    newSandbox: !!(typeof cmd.parameters.newSandbox == "undefined") ||
-        cmd.parameters.newSandbox,
+    newSandbox: cmd.parameters.newSandbox,
     file: cmd.parameters.filename,
     line: cmd.parameters.line,
     debug: cmd.parameters.debug_script,
   };
-
-  resp.body.value = await this.execute_(script, args, scriptTimeout, opts);
+  resp.body.value = await this.execute_(script, args, opts);
 };
 
 
@@ -949,44 +947,78 @@ GeckoDriver.prototype.executeScript = async function(cmd, resp) {
 
 
 GeckoDriver.prototype.executeAsyncScript = async function(cmd, resp) {
-  assert.open(this.getCurrentWindow());
-
-  let {script, args, scriptTimeout} = cmd.parameters;
-  scriptTimeout = scriptTimeout || this.timeouts.script;
-
+  let {script, args} = cmd.parameters;
   let opts = {
+    script: cmd.parameters.script,
+    args: cmd.parameters.args,
+    timeout: cmd.parameters.scriptTimeout,
     sandboxName: cmd.parameters.sandbox,
-    newSandbox: !!(typeof cmd.parameters.newSandbox == "undefined") ||
-        cmd.parameters.newSandbox,
+    newSandbox: cmd.parameters.newSandbox,
     file: cmd.parameters.filename,
     line: cmd.parameters.line,
     debug: cmd.parameters.debug_script,
     async: true,
   };
-
-  resp.body.value = await this.execute_(script, args, scriptTimeout, opts);
+  resp.body.value = await this.execute_(script, args, opts);
 };
 
 GeckoDriver.prototype.execute_ = async function(
-    script, args, timeout, opts = {}) {
+    script,
+    args = [],
+    {
+      timeout = null,
+      sandboxName = null,
+      newSandbox = false,
+      file = "",
+      line = 0,
+      debug = false,
+      async = false,
+    } = {}) {
+
+  if (typeof timeout == "undefined" || timeout === null) {
+    timeout = this.timeouts.script;
+  }
+
+  assert.open(this.getCurrentWindow());
+
+  assert.string(script, pprint`Expected "script" to be a string: ${script}`);
+  assert.array(args, pprint`Expected script args to be an array: ${args}`);
+  assert.positiveInteger(timeout, pprint`Expected script timeout to be a positive integer: ${timeout}`);
+  if (sandboxName !== null) {
+    assert.string(sandboxName, pprint`Expected sandbox name to be a string: ${sandboxName}`);
+  }
+  assert.boolean(newSandbox, pprint`Expected newSandbox to be boolean: ${newSandbox}`);
+  assert.string(file, pprint`Expected file to be a string: ${file}`);
+  assert.number(line, pprint`Expected line to be a number: ${line}`);
+  assert.boolean(debug, pprint`Expected debug_script to be boolean: ${debug}`);
+
+  let opts = {
+    timeout,
+    sandboxName,
+    newSandbox,
+    file,
+    line,
+    debug,
+    async,
+  };
+
   let res, els;
 
   switch (this.context) {
     case Context.Content:
       
-      if (!opts.sandboxName) {
-        res = await this.listener.execute(script, args, timeout, opts);
+      if (!sandboxName) {
+        res = await this.listener.execute(script, args, opts);
 
       
       } else {
-        res = await this.listener.executeInSandbox(
-            script, args, timeout, opts);
+        res = await this.listener.executeInSandbox(script, args, opts);
       }
 
       break;
 
     case Context.Chrome:
-      let sb = this.sandboxes.get(opts.sandboxName, opts.newSandbox);
+      let sb = this.sandboxes.get(sandboxName, newSandbox);
       opts.timeout = timeout;
       let wargs = evaluate.fromJSON(args, this.curBrowser.seenEls, sb.window);
       res = await evaluate.sandbox(sb, script, wargs, opts);
