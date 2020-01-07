@@ -1,0 +1,33 @@
+
+
+
+
+"use strict";
+
+const { PureComponent } = require("devtools/client/shared/vendor/react");
+const dom = require("devtools/client/shared/vendor/react-dom-factories");
+const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+
+class AnimatedPropertyName extends PureComponent {
+  static get propTypes() {
+    return {
+      property: PropTypes.string.isRequired,
+    };
+  }
+
+  render() {
+    const { property } = this.props;
+
+    return dom.div(
+      {
+        className: "animated-property-name",
+      },
+      dom.span(
+        {},
+        property
+      )
+    );
+  }
+}
+
+module.exports = AnimatedPropertyName;

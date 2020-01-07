@@ -4,9 +4,11 @@
 
 "use strict";
 
-const { PureComponent } = require("devtools/client/shared/vendor/react");
+const { createFactory, PureComponent } = require("devtools/client/shared/vendor/react");
 const dom = require("devtools/client/shared/vendor/react-dom-factories");
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+
+const AnimatedPropertyName = createFactory(require("./AnimatedPropertyName"));
 
 class AnimatedPropertyItem extends PureComponent {
   static get propTypes() {
@@ -17,10 +19,17 @@ class AnimatedPropertyItem extends PureComponent {
   }
 
   render() {
+    const { property } = this.props;
+
     return dom.li(
       {
         className: "animated-property-item"
-      }
+      },
+      AnimatedPropertyName(
+        {
+          property,
+        }
+      )
     );
   }
 }
