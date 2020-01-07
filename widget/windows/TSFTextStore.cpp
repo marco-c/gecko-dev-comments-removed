@@ -1096,6 +1096,7 @@ public:
   DECL_AND_IMPL_IS_TIP_ACTIVE(IsATOK2014Active)
   DECL_AND_IMPL_IS_TIP_ACTIVE(IsATOK2015Active)
   DECL_AND_IMPL_IS_TIP_ACTIVE(IsATOK2016Active)
+  DECL_AND_IMPL_IS_TIP_ACTIVE(IsJapanist10Active)
 
   DECL_AND_IMPL_IS_TIP_ACTIVE(IsMSBopomofoActive)
   DECL_AND_IMPL_IS_TIP_ACTIVE(IsMSChangJieActive)
@@ -1247,8 +1248,15 @@ private:
   
   
 
-  
-  
+  bool IsJapanist10ActiveInternal() const
+  {
+    
+    static const GUID kGUID = {
+      0xE6D66705, 0x1EDA, 0x4373,
+        { 0x8D, 0x01, 0x1D, 0x0C, 0xB2, 0xD0, 0x54, 0xC7 }
+    };
+    return mActiveTIPGUID == kGUID;
+  }
 
   
 
@@ -1705,6 +1713,10 @@ public:
   DECL_AND_IMPL_BOOL_PREF(
     "intl.tsf.hack.atok.do_not_return_no_layout_error_of_composition_string",
     DoNotReturnNoLayoutErrorToATOKOfCompositionString, true)
+  DECL_AND_IMPL_BOOL_PREF(
+    "intl.tsf.hack.japanist10."
+    "do_not_return_no_layout_error_of_composition_string",
+    DoNotReturnNoLayoutErrorToJapanist10OfCompositionString, true)
   DECL_AND_IMPL_BOOL_PREF(
     "intl.tsf.hack.ms_simplified_chinese.do_not_return_no_layout_error",
     DoNotReturnNoLayoutErrorToMSSimplifiedTIP, true)
@@ -3360,7 +3372,7 @@ TSFTextStore::SetSelectionInternal(const TS_SELECTION_ACP* pSelection,
   
   
   if (selectionForTSF.EqualsExceptDirection(*pSelection)) {
-    MOZ_LOG(sTextStoreLog, LogLevel::Error,
+    MOZ_LOG(sTextStoreLog, LogLevel::Warning,
       ("0x%p   TSFTextStore::SetSelectionInternal() Succeeded but "
        "did nothing because the selection range isn't changing", this));
     selectionForTSF.SetSelection(*pSelection);
@@ -4253,8 +4265,20 @@ TSFTextStore::GetTextExt(TsViewCookie vcView,
   MOZ_LOG(sTextStoreLog, LogLevel::Info,
     ("0x%p TSFTextStore::GetTextExt(vcView=%ld, "
      "acpStart=%ld, acpEnd=%ld, prc=0x%p, pfClipped=0x%p), "
+     "IsHandlingComposition()=%s, "
+     "mContentForTSF={ MinOffsetOfLayoutChanged()=%u, "
+     "LatestCompositionStartOffset()=%d, LatestCompositionEndOffset()=%d }, "
+     "mComposition= { IsComposing()=%s, mStart=%d, EndOffset()=%d }, "
      "mDeferNotifyingTSF=%s, mWaitingQueryLayout=%s",
      this, vcView, acpStart, acpEnd, prc, pfClipped,
+     GetBoolName(IsHandlingComposition()),
+     mContentForTSF.MinOffsetOfLayoutChanged(),
+     mContentForTSF.HasOrHadComposition() ?
+       mContentForTSF.LatestCompositionStartOffset() : -1,
+     mContentForTSF.HasOrHadComposition() ?
+       mContentForTSF.LatestCompositionEndOffset() : -1,
+     GetBoolName(mComposition.IsComposing()),
+     mComposition.mStart, mComposition.EndOffset(),
      GetBoolName(mDeferNotifyingTSF), GetBoolName(mWaitingQueryLayout)));
 
   if (!IsReadLocked()) {
@@ -4376,6 +4400,19 @@ TSFTextStore::GetTextExt(TsViewCookie vcView,
               !TSFPrefs::NeedToCreateNativeCaretForLegacyATOK()) &&
              mContentForTSF.LatestCompositionStartOffset() == acpStart &&
              mContentForTSF.LatestCompositionEndOffset() == acpEnd) {
+      dontReturnNoLayoutError = true;
+    }
+    
+    
+    
+    
+    else if (
+      TSFPrefs::DoNotReturnNoLayoutErrorToJapanist10OfCompositionString() &&
+      TSFStaticSink::IsJapanist10Active() &&
+      acpStart >= mContentForTSF.LatestCompositionStartOffset() &&
+      acpStart <= mContentForTSF.LatestCompositionEndOffset() &&
+      acpEnd >= mContentForTSF.LatestCompositionStartOffset() &&
+      acpEnd <= mContentForTSF.LatestCompositionEndOffset()) {
       dontReturnNoLayoutError = true;
     }
     
