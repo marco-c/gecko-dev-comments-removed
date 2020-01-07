@@ -2,8 +2,12 @@
 
 
 from __future__ import print_function
-import os, re, string, sys
+import os
+import re
+import string
+import sys
 from mozbuild.util import FileAvoidWrite
+
 
 def find_in_path(file, searchpath):
     for dir in searchpath.split(os.pathsep):
@@ -11,6 +15,7 @@ def find_in_path(file, searchpath):
         if os.path.exists(f):
             return f
     return ''
+
 
 def header_path(header, compiler):
     if compiler == 'gcc':
@@ -21,6 +26,8 @@ def header_path(header, compiler):
     else:
         
         raise NotImplementedError(compiler)
+
+
 
 
 

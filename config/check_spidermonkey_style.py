@@ -45,12 +45,12 @@ import sys
 
 
 ignored_js_src_dirs = [
-   'js/src/config/',            
-   'js/src/ctypes/libffi/',     
-   'js/src/devtools/',          
-   'js/src/editline/',          
-   'js/src/gdb/',               
-   'js/src/vtune/'              
+    'js/src/config/',            
+    'js/src/ctypes/libffi/',     
+    'js/src/devtools/',          
+    'js/src/editline/',          
+    'js/src/gdb/',               
+    'js/src/vtune/'              
 ]
 
 
@@ -58,9 +58,9 @@ included_inclnames_to_ignore = set([
     'ffi.h',                    
     'devtools/sharkctl.h',      
     'devtools/Instruments.h',   
-    'double-conversion/double-conversion.h', 
+    'double-conversion/double-conversion.h',  
     'javascript-trace.h',       
-    'frontend/ReservedWordsGenerated.h', 
+    'frontend/ReservedWordsGenerated.h',  
     'gc/StatsPhasesGenerated.h',         
     'gc/StatsPhasesGenerated.cpp',       
     'jit/LOpcodes.h',           
@@ -92,7 +92,7 @@ included_inclnames_to_ignore = set([
     'unicode/ucol.h',           
     'unicode/udat.h',           
     'unicode/udatpg.h',         
-    'unicode/udisplaycontext.h',
+    'unicode/udisplaycontext.h',  
     'unicode/uenum.h',          
     'unicode/uloc.h',           
     'unicode/unistr.h',         
@@ -110,8 +110,9 @@ included_inclnames_to_ignore = set([
 
 oddly_ordered_inclnames = set([
     'ctypes/typedefs.h',        
-    'frontend/BinSource-auto.h', 
-    'frontend/ReservedWordsGenerated.h', 
+    'frontend/BinSource-auto.h',  
+    
+    'frontend/ReservedWordsGenerated.h',
     'gc/StatsPhasesGenerated.h',         
     'gc/StatsPhasesGenerated.cpp',       
     'psapi.h',                  
@@ -317,7 +318,8 @@ def check_style(enable_fixup):
                 with open(filename, 'w') as f:
                     f.write(code.to_source())
 
-            check_file(filename, inclname, file_kind, code, all_inclnames, included_h_inclnames)
+            check_file(filename, inclname, file_kind, code,
+                       all_inclnames, included_h_inclnames)
 
         edges[inclname] = included_h_inclnames
 
@@ -326,7 +328,7 @@ def check_style(enable_fixup):
     
     difflines = difflib.unified_diff(expected_output, actual_output,
                                      fromfile='check_spidermonkey_style.py expected output',
-                                       tofile='check_spidermonkey_style.py actual output')
+                                     tofile='check_spidermonkey_style.py actual output')
     ok = True
     for diffline in difflines:
         ok = False
@@ -435,6 +437,7 @@ class CppBlock(object):
 
     Each kid is either an Include (representing a #include), OrdinaryCode, or
     a nested CppBlock.'''
+
     def __init__(self, start_line=""):
         self.start = start_line
         self.end = ''
@@ -508,7 +511,8 @@ class CppBlock(object):
             cutoff = last_include_index + 1
 
             if should_try_to_sort(includes):
-                output.extend(pretty_sorted_includes(includes) + batch[cutoff:])
+                output.extend(pretty_sorted_includes(
+                    includes) + batch[cutoff:])
             else:
                 output.extend(batch)
             del batch[:]
@@ -540,6 +544,7 @@ class CppBlock(object):
 
 class OrdinaryCode(object):
     ''' A list of lines of code that aren't #include/#if/#else/#endif lines. '''
+
     def __init__(self, lines=None):
         self.lines = lines if lines is not None else []
 
@@ -566,14 +571,16 @@ def read_file(f):
             m = re.match(r'(\s*#\s*include\s+)"([^"]*)"(.*)', line)
             if m is not None:
                 prefix, inclname, suffix = m.groups()
-                block_stack[-1].kids.append(Include(prefix, inclname, suffix, linenum, is_system=False))
+                block_stack[-1].kids.append(Include(prefix,
+                                                    inclname, suffix, linenum, is_system=False))
                 continue
 
             
             m = re.match(r'(\s*#\s*include\s+)<([^>]*)>(.*)', line)
             if m is not None:
                 prefix, inclname, suffix = m.groups()
-                block_stack[-1].kids.append(Include(prefix, inclname, suffix, linenum, is_system=True))
+                block_stack[-1].kids.append(Include(prefix,
+                                                    inclname, suffix, linenum, is_system=True))
                 continue
 
             
@@ -601,7 +608,8 @@ def read_file(f):
                 
                 block_stack.pop().end = line
                 if len(block_stack) == 0:
-                    raise ValueError("#endif without #if at line " + str(linenum))
+                    raise ValueError(
+                        "#endif without #if at line " + str(linenum))
                 continue
 
         
@@ -648,7 +656,8 @@ def check_file(filename, inclname, file_kind, code, all_inclnames, included_h_in
                 
                 
                 if inclname == include.inclname:
-                    error(filename, include.linenum, 'the file includes itself')
+                    error(filename, include.linenum,
+                          'the file includes itself')
 
     def check_includes_order(include1, include2):
         '''Check the ordering of two #include statements.'''
@@ -689,6 +698,7 @@ def find_cycles(all_inclnames, edges):
     def draw_SCC(c):
         cset = set(c)
         drawn = set()
+
         def draw(v, indent):
             out('   ' * indent + ('-> ' if indent else '   ') + v)
             if v in drawn:
@@ -704,7 +714,8 @@ def find_cycles(all_inclnames, edges):
     for scc in sorted(SCCs):
         if len(scc) != 1:
             if not have_drawn_an_SCC:
-                error('(multiple files)', None, 'header files form one or more cycles')
+                error('(multiple files)', None,
+                      'header files form one or more cycles')
                 have_drawn_an_SCC = True
 
             draw_SCC(scc)

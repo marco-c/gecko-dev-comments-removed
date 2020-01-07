@@ -159,7 +159,6 @@ def main():
             
             emit_line_info = True
 
-
     
     
     for fn in alloc_fns_unescaped:
@@ -199,7 +198,8 @@ def main():
         for line in lines:
             m = re.search(alloc_lines_re, line)
             if m:
-                print('check_vanilla_allocations.py:', m.group(1), 'called at', m.group(3))
+                print('check_vanilla_allocations.py:',
+                      m.group(1), 'called at', m.group(3))
 
     if has_failed:
         sys.exit(1)
