@@ -238,6 +238,7 @@ class Tree extends Component {
       scroll: 0,
       height: window.innerHeight,
       seen: new Set(),
+      mouseDown: false
     };
 
     this._onExpand = oncePerAnimationFrame(this._onExpand).bind(this);
@@ -269,6 +270,15 @@ class Tree extends Component {
   componentWillReceiveProps(nextProps) {
     this._autoExpand();
     this._updateHeight();
+  }
+
+  shouldComponentUpdate(nextProps, nextState) {
+    let { scroll, height, seen, mouseDown } = this.state;
+
+    return scroll !== nextState.scroll ||
+           height !== nextState.height ||
+           seen !== nextState.seen ||
+           mouseDown === nextState.mouseDown;
   }
 
   componentWillUnmount() {
@@ -329,12 +339,7 @@ class Tree extends Component {
 
 
   _updateHeight() {
-    if (this.refs.tree.clientHeight &&
-        this.refs.tree.clientHeight !== this.state.height) {
-      this.setState({
-        height: this.refs.tree.clientHeight
-      });
-    }
+    this.setState({ height: this.refs.tree.clientHeight });
   }
 
   
@@ -685,19 +690,17 @@ class Tree extends Component {
         onKeyPress: this._preventArrowKeyScrolling,
         onKeyUp: this._preventArrowKeyScrolling,
         onScroll: this._onScroll,
-        onFocus: ({nativeEvent}) => {
-          if (focused || !nativeEvent || !this.refs.tree) {
+        onMouseDown: () => this.setState({ mouseDown: true }),
+        onMouseUp: () => this.setState({ mouseDown: false }),
+        onFocus: () => {
+          if (focused || this.state.mouseDown) {
             return;
           }
 
-          let { explicitOriginalTarget } = nativeEvent;
           
           
           
-          if (explicitOriginalTarget !== this.refs.tree &&
-              !this.refs.tree.contains(explicitOriginalTarget)) {
-            this._focus(begin, toRender[0].item);
-          }
+          this._focus(begin, toRender[0].item);
         },
         onClick: () => {
           
