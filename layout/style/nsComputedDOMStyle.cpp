@@ -485,12 +485,22 @@ MustReresolveStyle(const mozilla::ComputedStyle* aStyle)
   return aStyle->HasPseudoElementData() && !aStyle->GetPseudo();
 }
 
+static inline CSSPseudoElementType
+GetPseudoType(nsAtom* aPseudo)
+{
+  if (!aPseudo) {
+    return CSSPseudoElementType::NotPseudo;
+  }
+  
+  return nsCSSPseudoElements::GetPseudoType(
+    aPseudo, CSSEnabledState::eIgnoreEnabledState);
+}
+
 already_AddRefed<ComputedStyle>
 nsComputedDOMStyle::DoGetComputedStyleNoFlush(Element* aElement,
                                               nsAtom* aPseudo,
                                               nsIPresShell* aPresShell,
-                                              StyleType aStyleType,
-                                              AnimationFlag aAnimationFlag)
+                                              StyleType aStyleType)
 {
   MOZ_ASSERT(aElement, "NULL element");
   
@@ -508,13 +518,9 @@ nsComputedDOMStyle::DoGetComputedStyleNoFlush(Element* aElement,
     }
   }
 
-  auto pseudoType = CSSPseudoElementType::NotPseudo;
-  if (aPseudo) {
-    pseudoType = nsCSSPseudoElements::
-      GetPseudoType(aPseudo, CSSEnabledState::eIgnoreEnabledState);
-    if (pseudoType >= CSSPseudoElementType::Count) {
-      return nullptr;
-    }
+  CSSPseudoElementType pseudoType = GetPseudoType(aPseudo);
+  if (aPseudo && pseudoType >= CSSPseudoElementType::Count) {
+    return nullptr;
   }
 
   
@@ -536,21 +542,6 @@ nsComputedDOMStyle::DoGetComputedStyleNoFlush(Element* aElement,
       
       
       if (!MustReresolveStyle(result)) {
-        
-        
-        if (aAnimationFlag == eWithoutAnimation) {
-          nsPresContext* presContext = frame->PresContext();
-          Element* elementOrPseudoElement =
-            EffectCompositor::GetElementToRestyle(aElement, pseudoType);
-          if (!elementOrPseudoElement) {
-            return nullptr;
-          }
-          return presContext->StyleSet()->AsServo()->
-            GetBaseContextForElement(elementOrPseudoElement,
-                                     presContext,
-                                     result);
-        }
-
         RefPtr<ComputedStyle> ret = result;
         return ret.forget();
       }
@@ -559,12 +550,6 @@ nsComputedDOMStyle::DoGetComputedStyleNoFlush(Element* aElement,
 
   
   
-
-  nsPresContext* presContext = presShell->GetPresContext();
-  if (!presContext) {
-    return nullptr;
-  }
-
   ServoStyleSet* styleSet = presShell->StyleSet()->AsServo();
 
   StyleRuleInclusion rules = aStyleType == eDefaultOnly
@@ -572,18 +557,30 @@ nsComputedDOMStyle::DoGetComputedStyleNoFlush(Element* aElement,
                              : StyleRuleInclusion::All;
   RefPtr<ComputedStyle> result =
      styleSet->ResolveStyleLazily(aElement, pseudoType, rules);
-  if (aAnimationFlag == eWithAnimation) {
-    return result.forget();
+  return result.forget();
+}
+
+already_AddRefed<ComputedStyle>
+nsComputedDOMStyle::GetUnanimatedComputedStyleNoFlush(Element* aElement,
+                                                      nsAtom* aPseudo)
+{
+  RefPtr<ComputedStyle> style = GetComputedStyleNoFlush(aElement, aPseudo);
+  if (!style) {
+    return nullptr;
   }
+
+  CSSPseudoElementType pseudoType = GetPseudoType(aPseudo);
+  nsIPresShell* shell = aElement->OwnerDoc()->GetShell();
+  MOZ_ASSERT(shell, "How in the world did we get a style a few lines above?");
 
   Element* elementOrPseudoElement =
     EffectCompositor::GetElementToRestyle(aElement, pseudoType);
   if (!elementOrPseudoElement) {
     return nullptr;
   }
-  return styleSet->GetBaseContextForElement(elementOrPseudoElement,
-                                            presContext,
-                                            result);
+
+  return shell->StyleSet()->AsServo()->GetBaseContextForElement(
+    elementOrPseudoElement, style);
 }
 
 nsMargin
@@ -940,8 +937,7 @@ nsComputedDOMStyle::UpdateCurrentStyleSources(bool aNeedsLayoutFlush)
           mContent->AsElement(),
           mPseudo,
           presShellForContent ? presShellForContent.get() : mPresShell,
-          mStyleType,
-          eWithAnimation);
+          mStyleType);
     if (!resolvedComputedStyle) {
       ClearComputedStyle();
       return;

@@ -372,7 +372,6 @@ public:
 
   already_AddRefed<ComputedStyle>
   GetBaseContextForElement(dom::Element* aElement,
-                           nsPresContext* aPresContext,
                            const ComputedStyle* aStyle);
 
   
