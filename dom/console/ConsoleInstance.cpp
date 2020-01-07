@@ -31,6 +31,8 @@ ConsoleInstance::ConsoleInstance(const ConsoleInstanceOptions& aOptions)
     
     mConsole->mDumpToStdout = true;
   }
+
+  mConsole->mDumpPrefix = aOptions.mPrefix;
 }
 
 ConsoleInstance::~ConsoleInstance()
