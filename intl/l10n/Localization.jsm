@@ -32,7 +32,7 @@ const { AppConstants } = ChromeUtils.import("resource://gre/modules/AppConstants
 
 
 
-class CachedIterable {
+class CachedAsyncIterable {
   
 
 
@@ -83,10 +83,15 @@ class CachedIterable {
 
 
 
-  touchNext() {
+
+
+  async touchNext(count = 1) {
     const { seen, iterator } = this;
-    if (seen.length === 0 || seen[seen.length - 1].done === false) {
-      seen.push(iterator.next());
+    let idx = 0;
+    while (idx++ < count) {
+      if (seen.length === 0 || seen[seen.length - 1].done === false) {
+        seen.push(await iterator.next());
+      }
     }
   }
 }
@@ -122,7 +127,7 @@ class Localization {
   constructor(resourceIds, generateMessages = defaultGenerateMessages) {
     this.resourceIds = resourceIds;
     this.generateMessages = generateMessages;
-    this.ctxs = new CachedIterable(this.generateMessages(this.resourceIds));
+    this.ctxs = new CachedAsyncIterable(this.generateMessages(this.resourceIds));
   }
 
   
@@ -268,7 +273,7 @@ class Localization {
 
 
   onLanguageChange() {
-    this.ctxs = new CachedIterable(this.generateMessages(this.resourceIds));
+    this.ctxs = new CachedAsyncIterable(this.generateMessages(this.resourceIds));
   }
 }
 
