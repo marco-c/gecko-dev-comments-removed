@@ -47,7 +47,17 @@ pub trait Runner {
 }
 
 pub trait RunnerProcess {
-    fn status(&mut self) -> io::Result<Option<process::ExitStatus>>;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn try_wait(&mut self) -> io::Result<Option<process::ExitStatus>>;
 
     
     fn running(&mut self) -> bool;
@@ -109,12 +119,12 @@ pub struct FirefoxProcess {
 }
 
 impl RunnerProcess for FirefoxProcess {
-    fn status(&mut self) -> io::Result<Option<process::ExitStatus>> {
+    fn try_wait(&mut self) -> io::Result<Option<process::ExitStatus>> {
         self.process.try_wait()
     }
 
     fn running(&mut self) -> bool {
-        self.status().unwrap().is_none()
+        self.try_wait().unwrap().is_none()
     }
 
     fn kill(&mut self) -> io::Result<process::ExitStatus> {
