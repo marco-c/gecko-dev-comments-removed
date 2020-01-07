@@ -753,9 +753,7 @@ class LNode
 
     
     
-    virtual bool isCallPreserved(AnyRegister reg) const {
-        return false;
-    }
+    inline bool isCallPreserved(AnyRegister reg) const;
 
     uint32_t id() const {
         return id_;
@@ -781,9 +779,7 @@ class LNode
 
     
     
-    virtual bool recoversInput() const {
-        return false;
-    }
+    inline bool recoversInput() const;
 
     virtual void dump(GenericPrinter& out);
     void dump();
