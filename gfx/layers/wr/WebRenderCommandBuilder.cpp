@@ -1613,6 +1613,13 @@ WebRenderCommandBuilder::GenerateFallbackData(nsDisplayItem* aItem,
   scaledBounds.Scale(scale.width, scale.height);
   LayerIntSize dtSize = RoundedToInt(scaledBounds).Size();
 
+  
+  
+  
+  if (dtSize.width <= 0 || dtSize.height <= 0) {
+    return nullptr;
+  }
+
   bool needPaint = true;
   LayoutDeviceIntPoint offset = RoundedToInt(bounds.TopLeft());
   aImageRect = LayoutDeviceRect(offset, LayoutDeviceSize(RoundedToInt(bounds).Size()));
