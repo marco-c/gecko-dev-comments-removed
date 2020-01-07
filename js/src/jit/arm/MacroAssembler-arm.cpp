@@ -357,7 +357,7 @@ MacroAssemblerARM::ma_mov_patch(Imm32 imm32, Register dest, Assembler::Condition
 
     
     
-    iter.skipPool();
+    iter.maybeSkipAutomaticInstructions();
 
     int32_t imm = imm32.value;
     switch(rs) {

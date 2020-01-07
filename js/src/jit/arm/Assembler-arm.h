@@ -2006,12 +2006,14 @@ class Instruction
         MOZ_ASSERT(data >> 28 != 0xf, "The instruction does not have condition code");
         return (Assembler::Condition)(data & 0xf0000000);
     }
+
     
     
     Instruction* next();
 
     
-    Instruction* skipPool();
+    
+    Instruction* maybeSkipAutomaticInstructions();
 
     
     
@@ -2266,17 +2268,23 @@ class InstructionIterator
 {
   private:
     Instruction* inst_;
+
   public:
-    explicit InstructionIterator(Instruction* inst) : inst_(inst) {
-        skipPool();
+    explicit InstructionIterator(Instruction* inst)
+      : inst_(inst)
+    {
+        maybeSkipAutomaticInstructions();
     }
-    void skipPool() {
-        inst_ = inst_->skipPool();
+
+    void maybeSkipAutomaticInstructions() {
+        inst_ = inst_->maybeSkipAutomaticInstructions();
     }
+
     Instruction* next() {
         inst_ = inst_->next();
-        return cur();
+        return inst_;
     }
+
     Instruction* cur() const {
         return inst_;
     }
@@ -2288,7 +2296,7 @@ class BufferInstructionIterator : public ARMBuffer::AssemblerBufferInstIterator
     BufferInstructionIterator(BufferOffset bo, ARMBuffer* buffer)
       : ARMBuffer::AssemblerBufferInstIterator(bo, buffer)
     {}
-    void skipPool();
+    void maybeSkipAutomaticInstructions();
 };
 
 static const uint32_t NumIntArgRegs = 4;

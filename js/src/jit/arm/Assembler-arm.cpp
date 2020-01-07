@@ -3263,7 +3263,7 @@ InstIsArtificialGuard(Instruction* inst, const PoolHeader** ph)
 
 
 Instruction*
-Instruction::skipPool()
+Instruction::maybeSkipAutomaticInstructions()
 {
     const PoolHeader* ph;
     
@@ -3272,15 +3272,15 @@ Instruction::skipPool()
         
         if (ph->isNatural())
             return this;
-        return (this + 1 + ph->size())->skipPool();
+        return (this + 1 + ph->size())->maybeSkipAutomaticInstructions();
     }
     if (InstIsBNop(this))
-        return (this + 1)->skipPool();
+        return (this + 1)->maybeSkipAutomaticInstructions();
     return this;
 }
 
 void
-BufferInstructionIterator::skipPool()
+BufferInstructionIterator::maybeSkipAutomaticInstructions()
 {
     
     
@@ -3291,13 +3291,13 @@ BufferInstructionIterator::skipPool()
         if (ph->isNatural())
             return;
         advance(sizeof(Instruction) * (1 + ph->size()));
-        skipPool();
+        maybeSkipAutomaticInstructions();
         return;
     }
 
     if (InstIsBNop(cur())) {
         next();
-        skipPool();
+        maybeSkipAutomaticInstructions();
     }
 }
 
@@ -3340,10 +3340,10 @@ Instruction::next()
     
     
     if (InstIsGuard(this, &ph))
-        return (ret + ph->size())->skipPool();
+        return (ret + ph->size())->maybeSkipAutomaticInstructions();
     if (InstIsArtificialGuard(ret, &ph))
-        return (ret + 1 + ph->size())->skipPool();
-    return ret->skipPool();
+        return (ret + 1 + ph->size())->maybeSkipAutomaticInstructions();
+    return ret->maybeSkipAutomaticInstructions();
 }
 
 void
@@ -3387,8 +3387,7 @@ void
 Assembler::ToggleCall(CodeLocationLabel inst_, bool enabled)
 {
     Instruction* inst = (Instruction*)inst_.raw();
-    
-    inst = inst->skipPool();
+    inst = inst->maybeSkipAutomaticInstructions();
     MOZ_ASSERT(inst->is<InstMovW>() || inst->is<InstLDR>());
 
     if (inst->is<InstMovW>()) {
@@ -3418,8 +3417,7 @@ size_t
 Assembler::ToggledCallSize(uint8_t* code)
 {
     Instruction* inst = (Instruction*)code;
-    
-    inst = inst->skipPool();
+    inst = inst->maybeSkipAutomaticInstructions();
     MOZ_ASSERT(inst->is<InstMovW>() || inst->is<InstLDR>());
 
     if (inst->is<InstMovW>()) {
@@ -3439,7 +3437,7 @@ Assembler::BailoutTableStart(uint8_t* code)
 {
     Instruction* inst = (Instruction*)code;
     
-    inst = inst->skipPool();
+    inst = inst->maybeSkipAutomaticInstructions();
     MOZ_ASSERT(inst->is<InstBLImm>());
     return (uint8_t*) inst;
 }
