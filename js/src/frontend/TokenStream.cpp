@@ -1266,11 +1266,7 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getDirective(bool isMultiline,
             return false;
 
         if (unicode::IsSpaceOrBOM2(codePoint)) {
-            ungetCodePointIgnoreEOL(codePoint);
-
-            if (codePoint == unicode::LINE_SEPARATOR || codePoint == unicode::PARA_SEPARATOR)
-                anyCharsAccess().undoInternalUpdateLineInfoForEOL();
-
+            ungetNonAsciiNormalizedCodePoint(codePoint);
             break;
         }
 
@@ -1453,30 +1449,38 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::identifierName(TokenStart start,
         this->badToken();
     });
 
-    int c;
+    
+    
+    
+    int32_t unit;
     while (true) {
-        c = getCodeUnit();
-        if (c == EOF)
+        unit = getCodeUnit();
+        if (unit == EOF)
             break;
 
-        uint32_t codePoint;
-        if (!matchMultiUnitCodePoint(c, &codePoint))
-            return false;
-        if (codePoint) {
-            if (!unicode::IsIdentifierPart(codePoint))
-                break;
+        if (MOZ_LIKELY(isAsciiCodePoint(unit))) {
+            if (MOZ_UNLIKELY(!unicode::IsIdentifierPart(static_cast<char16_t>(unit)))) {
+                
+                
+                uint32_t codePoint;
+                if (unit != '\\' || !matchUnicodeEscapeIdent(&codePoint)) {
+                    ungetCodeUnit(unit);
+                    break;
+                }
 
-            continue;
-        }
+                escaping = IdentifierEscapes::SawUnicodeEscape;
+            }
+        } else {
+            int32_t codePoint;
+            if (!getNonAsciiCodePoint(unit, &codePoint))
+                return false;
 
-        if (!unicode::IsIdentifierPart(char16_t(c))) {
-            uint32_t qc;
-            if (c != '\\' || !matchUnicodeEscapeIdent(&qc))
+            if (!unicode::IsIdentifierPart(uint32_t(codePoint))) {
+                ungetNonAsciiNormalizedCodePoint(codePoint);
                 break;
-            escaping = IdentifierEscapes::SawUnicodeEscape;
+            }
         }
     }
-    ungetCodeUnit(c);
 
     const CharT* chars;
     size_t length;
@@ -1687,9 +1691,7 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::decimalNumber(int32_t unit, TokenSta
             if (!getCodePoint(&codePoint))
                 return false;
 
-            ungetCodePointIgnoreEOL(codePoint);
-            if (codePoint == unicode::LINE_SEPARATOR || codePoint == unicode::PARA_SEPARATOR)
-                anyCharsAccess().undoInternalUpdateLineInfoForEOL();
+            ungetNonAsciiNormalizedCodePoint(codePoint);
 
             if (unicode::IsIdentifierStart(uint32_t(codePoint))) {
                 error(JSMSG_IDSTART_AFTER_NUMBER);
