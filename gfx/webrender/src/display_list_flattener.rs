@@ -13,7 +13,6 @@ use api::{LineOrientation, LineStyle, LocalClip, NinePatchBorderSource, Pipeline
 use api::{PropertyBinding, ReferenceFrame, RepeatMode, ScrollFrameDisplayItem, ScrollSensitivity};
 use api::{Shadow, SpecificDisplayItem, StackingContext, StickyFrameDisplayItem, TexelRect};
 use api::{TransformStyle, YuvColorSpace, YuvData};
-use app_units::Au;
 use clip::{ClipRegion, ClipSource, ClipSources, ClipStore};
 use clip_scroll_node::{ClipScrollNode, NodeType, StickyFrameInfo};
 use clip_scroll_tree::{ClipChainIndex, ClipScrollNodeIndex, ClipScrollTree};
@@ -1886,16 +1885,6 @@ impl<'a> DisplayListFlattener<'a> {
 
             
             if font_instance.size.0 <= 0 {
-                return;
-            }
-
-            
-            
-            
-            
-            
-            
-            if font_instance.size >= Au::from_px(4096) {
                 return;
             }
 
