@@ -557,7 +557,7 @@ protected:
 
     nsresult
     CreateAndInsertPI(const nsXULPrototypePI* aProtoPI,
-                      nsINode* aParent, uint32_t aIndex);
+                      nsINode* aParent, nsINode* aBeforeThis);
 
     
 
@@ -571,7 +571,7 @@ protected:
     nsresult
     InsertXMLStylesheetPI(const nsXULPrototypePI* aProtoPI,
                           nsINode* aParent,
-                          uint32_t aIndex,
+                          nsINode* aBeforeThis,
                           nsIContent* aPINode);
 
     
@@ -581,7 +581,7 @@ protected:
     nsresult
     InsertXULOverlayPI(const nsXULPrototypePI* aProtoPI,
                        nsINode* aParent,
-                       uint32_t aIndex,
+                       nsINode* aBeforeThis,
                        nsIContent* aPINode);
 
     
