@@ -267,10 +267,6 @@ pref("devtools.netmonitor.persistlog", false);
 pref("devtools.webconsole.timestampMessages", false);
 
 
-
-pref("devtools.webconsole.autoMultiline", true);
-
-
 #if defined(NIGHTLY_BUILD)
 pref("devtools.webconsole.sidebarToggle", true);
 #else
