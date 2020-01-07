@@ -197,7 +197,7 @@ AudioSink::InitializeAudioStream(const PlaybackParams& aParams)
   
   uint32_t channelMap = mConverter
                         ? mConverter->OutputConfig().Layout().Map()
-                        : AudioStream::GetPreferredChannelMap(mOutputChannels);
+                        : AudioConfig::ChannelLayout(mOutputChannels).Map();
   
   
   
