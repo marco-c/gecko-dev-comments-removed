@@ -71,43 +71,9 @@ XPCOMUtils.defineLazyGetter(this, "MirrorLog", () =>
   Log.repository.getLogger("Sync.Engine.Bookmarks.Mirror")
 );
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-XPCOMUtils.defineLazyGetter(this, "LocalItemsSQLFragment", () => `
-  localItems(id, guid, parentId, parentGuid, position, type, title,
-             parentTitle, placeId, dateAdded, lastModified, syncChangeCounter,
-             isSyncable, level) AS (
-    SELECT b.id, b.guid, p.id, p.guid, b.position, b.type, b.title, p.title,
-           b.fk, b.dateAdded, b.lastModified, b.syncChangeCounter,
-           b.guid IN (${PlacesUtils.bookmarks.userContentRoots.map(v =>
-             `'${v}'`
-           ).join(",")}), 0
-    FROM moz_bookmarks b
-    JOIN moz_bookmarks p ON p.id = b.parent
-    WHERE b.guid <> '${PlacesUtils.bookmarks.tagsGuid}' AND
-          p.guid = '${PlacesUtils.bookmarks.rootGuid}'
-    UNION ALL
-    SELECT b.id, b.guid, s.id, s.guid, b.position, b.type, b.title, s.title,
-           b.fk, b.dateAdded, b.lastModified, b.syncChangeCounter,
-           s.isSyncable, s.level + 1
-    FROM moz_bookmarks b
-    JOIN localItems s ON s.id = b.parent
-  )
-`);
+XPCOMUtils.defineLazyGetter(this, "UserContentRootsAsSqlList", () =>
+  PlacesUtils.bookmarks.userContentRoots.map(v => `'${v}'`).join(",")
+);
 
 
 
@@ -578,10 +544,9 @@ class SyncedBookmarksMirror {
       }
 
       MirrorLog.debug("Applying merged tree");
-      let localDeletions = Array.from(merger.deleteLocally).map(guid => {
-        let localNode = localTree.nodeForGuid(guid);
-        return { guid, level: localNode ? localNode.level : -1 };
-      });
+      let localDeletions = Array.from(merger.deleteLocally).map(guid =>
+        ({ guid, level: localTree.levelForGuid(guid) })
+      );
       let remoteDeletions = Array.from(merger.deleteRemotely);
       let { time: updateTiming } = await withTiming(
         "Apply merged tree",
@@ -618,8 +583,7 @@ class SyncedBookmarksMirror {
       await this.db.execute(`DELETE FROM itemsRemoved`);
       await this.db.execute(`DELETE FROM itemsMoved`);
       await this.db.execute(`DELETE FROM annosChanged`);
-      await this.db.execute(`DELETE FROM idsToWeaklyUpload`);
-      await this.db.execute(`DELETE FROM guidsToDeleteRemotely`);
+      await this.db.execute(`DELETE FROM itemsToWeaklyReupload`);
       await this.db.execute(`DELETE FROM itemsToUpload`);
 
       return changeRecords;
@@ -1058,9 +1022,15 @@ class SyncedBookmarksMirror {
        (NOT v.isDeleted OR b.guid NOT NULL)
       ) OR EXISTS (
        WITH RECURSIVE
-       ${LocalItemsSQLFragment}
+       syncedItems(id, syncChangeCounter) AS (
+         SELECT b.id, b.syncChangeCounter FROM moz_bookmarks b
+         WHERE b.guid IN (${UserContentRootsAsSqlList})
+         UNION ALL
+         SELECT b.id, b.syncChangeCounter FROM moz_bookmarks b
+         JOIN syncedItems s ON b.parent = s.id
+       )
        SELECT 1
-       FROM localItems
+       FROM syncedItems
        WHERE syncChangeCounter > 0
       ) OR EXISTS (
        SELECT 1
@@ -1126,7 +1096,7 @@ class SyncedBookmarksMirror {
     
     
     
-    await inflateTree(remoteTree, pseudoTree, remoteTree.root);
+    await inflateTree(remoteTree, pseudoTree, PlacesUtils.bookmarks.rootGuid);
 
     
     let tombstoneRows = await this.db.execute(`
@@ -1188,15 +1158,25 @@ class SyncedBookmarksMirror {
   async fetchLocalTree(localTimeSeconds) {
     let localTree = new BookmarkTree(BookmarkNode.root());
 
+    
+    
+    
+    
     let itemRows = await this.db.execute(`
       WITH RECURSIVE
-      ${LocalItemsSQLFragment}
-      SELECT s.id, s.guid, s.parentGuid,
+      syncedItems(id, level) AS (
+        SELECT b.id, 0 AS level FROM moz_bookmarks b
+        WHERE b.guid IN (${UserContentRootsAsSqlList})
+        UNION ALL
+        SELECT b.id, s.level + 1 AS level FROM moz_bookmarks b
+        JOIN syncedItems s ON s.id = b.parent
+      )
+      SELECT b.id, b.guid, p.guid AS parentGuid,
              /* Map Places item types to Sync record kinds. */
-             (CASE s.type
+             (CASE b.type
                 WHEN :bookmarkType THEN (
                   CASE SUBSTR((SELECT h.url FROM moz_places h
-                               WHERE h.id = s.placeId), 1, 6)
+                               WHERE h.id = b.fk), 1, 6)
                   /* Queries are bookmarks with a "place:" URL scheme. */
                   WHEN 'place:' THEN :queryKind
                   ELSE :bookmarkKind END)
@@ -1205,15 +1185,16 @@ class SyncedBookmarksMirror {
                     /* Livemarks are folders with a feed URL annotation. */
                     SELECT 1 FROM moz_items_annos a
                     JOIN moz_anno_attributes n ON n.id = a.anno_attribute_id
-                    WHERE a.item_id = s.id AND
+                    WHERE a.item_id = b.id AND
                           n.name = :feedURLAnno
                   ) THEN :livemarkKind
                   ELSE :folderKind END)
                 ELSE :separatorKind END) AS kind,
-             s.lastModified / 1000 AS localModified, s.syncChangeCounter,
-             s.level, s.isSyncable
-      FROM localItems s
-      ORDER BY s.level, s.parentId, s.position`,
+             b.lastModified / 1000 AS localModified, b.syncChangeCounter
+      FROM moz_bookmarks b
+      JOIN moz_bookmarks p ON p.id = b.parent
+      JOIN syncedItems s ON s.id = b.id
+      ORDER BY s.level, b.parent, b.position`,
       { bookmarkType: PlacesUtils.bookmarks.TYPE_BOOKMARK,
         queryKind: SyncedBookmarksMirror.KIND.QUERY,
         bookmarkKind: SyncedBookmarksMirror.KIND.BOOKMARK,
@@ -1408,11 +1389,6 @@ class SyncedBookmarksMirror {
       SQLITE_MAX_VARIABLE_NUMBER)) {
 
       await this.db.execute(`
-        INSERT INTO guidsToDeleteRemotely(guid)
-        VALUES ${new Array(chunk.length).fill("(?)").join(",")}`,
-        chunk);
-
-      await this.db.execute(`
         UPDATE items SET
           needsMerge = 0
         WHERE needsMerge AND
@@ -1605,7 +1581,7 @@ class SyncedBookmarksMirror {
     for (let chunk of PlacesSyncUtils.chunkArray(weakUpload,
       SQLITE_MAX_VARIABLE_NUMBER)) {
       await this.db.execute(`
-        INSERT INTO idsToWeaklyUpload(id)
+        INSERT INTO itemsToWeaklyReupload(id)
         SELECT b.id FROM moz_bookmarks b
         WHERE b.guid IN (${new Array(chunk.length).fill("?").join(",")})`,
         chunk);
@@ -1615,7 +1591,7 @@ class SyncedBookmarksMirror {
     
     
     await this.db.execute(`
-      INSERT OR IGNORE INTO idsToWeaklyUpload(id)
+      INSERT OR IGNORE INTO itemsToWeaklyReupload(id)
       SELECT b.id FROM moz_bookmarks b
       JOIN mergeStates r ON r.mergedGuid = b.guid
       JOIN items v ON v.guid = r.mergedGuid
@@ -1628,53 +1604,61 @@ class SyncedBookmarksMirror {
     
     await this.db.execute(`
       WITH RECURSIVE
-      ${LocalItemsSQLFragment}
+      syncedItems(id, level) AS (
+        SELECT b.id, 0 AS level FROM moz_bookmarks b
+        WHERE b.guid IN (${UserContentRootsAsSqlList})
+        UNION ALL
+        SELECT b.id, s.level + 1 AS level FROM moz_bookmarks b
+        JOIN syncedItems s ON s.id = b.parent
+      )
       INSERT INTO itemsToUpload(id, guid, syncChangeCounter, parentGuid,
                                 parentTitle, dateAdded, type, title, isQuery,
                                 url, tags, description, loadInSidebar,
                                 smartBookmarkName, keyword, feedURL, siteURL,
                                 position, tagFolderName)
-      SELECT s.id, s.guid, s.syncChangeCounter, s.parentGuid, s.parentTitle,
-             s.dateAdded / 1000, s.type, s.title,
+      SELECT b.id, b.guid, b.syncChangeCounter, p.guid, p.title,
+             b.dateAdded / 1000, b.type, b.title,
              IFNULL(SUBSTR(h.url, 1, 6) = 'place:', 0) AS isQuery,
              h.url,
              (SELECT GROUP_CONCAT(t.title, ',') FROM moz_bookmarks e
               JOIN moz_bookmarks t ON t.id = e.parent
               JOIN moz_bookmarks r ON r.id = t.parent
-              WHERE s.type = :bookmarkType AND
+              WHERE b.type = :bookmarkType AND
                     r.guid = :tagsGuid AND
                     e.fk = h.id),
              (SELECT a.content FROM moz_items_annos a
               JOIN moz_anno_attributes n ON n.id = a.anno_attribute_id
-              WHERE s.type IN (:bookmarkType, :folderType) AND
-                    a.item_id = s.id AND
+              WHERE b.type IN (:bookmarkType, :folderType) AND
+                    a.item_id = b.id AND
                     n.name = :descriptionAnno),
              IFNULL((SELECT a.content FROM moz_items_annos a
                      JOIN moz_anno_attributes n ON n.id = a.anno_attribute_id
-                     WHERE a.item_id = s.id AND
+                     WHERE a.item_id = b.id AND
                            n.name = :sidebarAnno), 0),
              (SELECT a.content FROM moz_items_annos a
               JOIN moz_anno_attributes n ON n.id = a.anno_attribute_id
-              WHERE a.item_id = s.id AND
+              WHERE a.item_id = b.id AND
                     n.name = :smartBookmarkAnno),
              (SELECT keyword FROM moz_keywords WHERE place_id = h.id),
              (SELECT a.content FROM moz_items_annos a
               JOIN moz_anno_attributes n ON n.id = a.anno_attribute_id
-              WHERE s.type = :folderType AND
-                    a.item_id = s.id AND
+              WHERE b.type = :folderType AND
+                    a.item_id = b.id AND
                     n.name = :feedURLAnno),
              (SELECT a.content FROM moz_items_annos a
               JOIN moz_anno_attributes n ON n.id = a.anno_attribute_id
-              WHERE s.type = :folderType AND
-                    a.item_id = s.id AND
+              WHERE b.type = :folderType AND
+                    a.item_id = b.id AND
                     n.name = :siteURLAnno),
-             s.position,
+             b.position,
              (SELECT get_query_param(substr(url, 7), 'tag')
               WHERE substr(h.url, 1, 6) = 'place:')
-      FROM localItems s
-      LEFT JOIN moz_places h ON h.id = s.placeId
-      LEFT JOIN idsToWeaklyUpload w ON w.id = s.id
-      WHERE s.syncChangeCounter >= 1 OR
+      FROM moz_bookmarks b
+      JOIN moz_bookmarks p ON p.id = b.parent
+      JOIN syncedItems s ON s.id = b.id
+      LEFT JOIN moz_places h ON h.id = b.fk
+      LEFT JOIN itemsToWeaklyReupload w ON w.id = b.id
+      WHERE b.syncChangeCounter >= 1 OR
             w.id NOT NULL`,
       { bookmarkType: PlacesUtils.bookmarks.TYPE_BOOKMARK,
         tagsGuid: PlacesUtils.bookmarks.tagsGuid,
@@ -1693,16 +1677,11 @@ class SyncedBookmarksMirror {
       JOIN itemsToUpload o ON o.id = b.parent`);
 
     
-    await this.db.execute(`
-      REPLACE INTO itemsToUpload(guid, syncChangeCounter, isDeleted)
-      SELECT d.guid, 1, 1 FROM guidsToDeleteRemotely d
-      JOIN items v ON v.guid = d.guid`);
-
-    
     
     await this.db.execute(`
-      INSERT OR IGNORE INTO itemsToUpload(guid, syncChangeCounter, isDeleted)
-      SELECT guid, 1, 1 FROM moz_bookmarks_deleted`);
+      INSERT OR IGNORE INTO itemsToUpload(guid, syncChangeCounter, isDeleted,
+                                          dateAdded)
+      SELECT guid, 1, 1, dateRemoved / 1000 FROM moz_bookmarks_deleted`);
   }
 
   
@@ -2687,17 +2666,9 @@ async function initializeTempMirrorEntities(db) {
     PRIMARY KEY(itemId, annoName, wasRemoved)
   ) WITHOUT ROWID`);
 
-  
-  
-  
-  await db.execute(`CREATE TEMP TABLE idsToWeaklyUpload(
+  await db.execute(`CREATE TEMP TABLE itemsToWeaklyReupload(
     id INTEGER PRIMARY KEY
   )`);
-
-  
-  await db.execute(`CREATE TEMP TABLE guidsToDeleteRemotely(
-    guid TEXT PRIMARY KEY
-  ) WITHOUT ROWID`);
 
   
   
@@ -2810,21 +2781,13 @@ function validateTag(rawTag) {
 
 
 
-async function inflateTree(tree, pseudoTree, parentNode) {
-  let nodes = pseudoTree.get(parentNode.guid);
+async function inflateTree(tree, pseudoTree, parentGuid) {
+  let nodes = pseudoTree.get(parentGuid);
   if (nodes) {
     for (let node of nodes) {
       await maybeYield();
-      node.level = parentNode.level + 1;
-      
-      
-      
-      
-      node.isSyncable = parentNode == tree.root ?
-        PlacesUtils.bookmarks.userContentRoots.includes(node.guid) :
-        parentNode.isSyncable;
-      tree.insert(parentNode.guid, node);
-      await inflateTree(tree, pseudoTree, node);
+      tree.insert(parentGuid, node);
+      await inflateTree(tree, pseudoTree, node.guid);
     }
   }
 }
@@ -2908,9 +2871,9 @@ function makeDupeKey(node, content) {
 
 
 class BookmarkMergeState {
-  constructor(value, structure = value) {
-    this.value = value;
-    this.structure = structure;
+  constructor(type, newStructureNode = null) {
+    this.type = type;
+    this.newStructureNode = newStructureNode;
   }
 
   
@@ -2926,8 +2889,21 @@ class BookmarkMergeState {
 
 
 
-  static new(oldState) {
-    return new BookmarkMergeState(oldState.value, BookmarkMergeState.TYPE.NEW);
+
+
+
+  static new(oldState, newStructureNode) {
+    return new BookmarkMergeState(oldState.type, newStructureNode);
+  }
+
+  
+  structure() {
+    return this.newStructureNode ? BookmarkMergeState.TYPE.NEW : this.type;
+  }
+
+  
+  value() {
+    return this.type;
   }
 
   
@@ -2943,7 +2919,7 @@ class BookmarkMergeState {
   }
 
   valueToString() {
-    switch (this.value) {
+    switch (this.value()) {
       case BookmarkMergeState.TYPE.LOCAL:
         return "Value: Local";
       case BookmarkMergeState.TYPE.REMOTE:
@@ -2953,12 +2929,14 @@ class BookmarkMergeState {
   }
 
   structureToString() {
-    switch (this.structure) {
+    switch (this.structure()) {
       case BookmarkMergeState.TYPE.LOCAL:
         return "Structure: Local";
       case BookmarkMergeState.TYPE.REMOTE:
         return "Structure: Remote";
       case BookmarkMergeState.TYPE.NEW:
+        
+        
         return "Structure: New";
     }
     return "Structure: ?";
@@ -3003,14 +2981,11 @@ BookmarkMergeState.remote = new BookmarkMergeState(
 
 
 class BookmarkNode {
-  constructor(guid, age, kind, needsMerge = false, level = 0,
-              isSyncable = true) {
+  constructor(guid, age, kind, needsMerge = false) {
     this.guid = guid;
-    this.age = age;
     this.kind = kind;
+    this.age = age;
     this.needsMerge = needsMerge;
-    this.level = level;
-    this.isSyncable = isSyncable;
     this.children = [];
   }
 
@@ -3040,13 +3015,11 @@ class BookmarkNode {
     let age = Math.max(localTimeSeconds - localModified / 1000, 0) || 0;
 
     let kind = row.getResultByName("kind");
-    let level = row.getResultByName("level");
-    let isSyncable = !!row.getResultByName("isSyncable");
 
     let syncChangeCounter = row.getResultByName("syncChangeCounter");
     let needsMerge = syncChangeCounter > 0;
 
-    return new BookmarkNode(guid, age, kind, needsMerge, level, isSyncable);
+    return new BookmarkNode(guid, age, kind, needsMerge);
   }
 
   
@@ -3191,10 +3164,12 @@ class BookmarkNode {
 
 class BookmarkTree {
   constructor(root) {
-    this.root = root;
-    this.byGuid = new Map([[this.root.guid, this.root]]);
-    this.parentNodeByChildNode = new Map([[this.root, null]]);
+    this.byGuid = new Map();
+    this.infosByNode = new WeakMap();
     this.deletedGuids = new Set();
+
+    this.root = root;
+    this.byGuid.set(this.root.guid, this.root);
   }
 
   get guidCount() {
@@ -3210,7 +3185,17 @@ class BookmarkTree {
   }
 
   parentNodeFor(childNode) {
-    return this.parentNodeByChildNode.get(childNode);
+    let info = this.infosByNode.get(childNode);
+    return info ? info.parentNode : null;
+  }
+
+  levelForGuid(guid) {
+    let node = this.byGuid.get(guid);
+    if (!node) {
+      return -1;
+    }
+    let info = this.infosByNode.get(node);
+    return info ? info.level : -1;
   }
 
   
@@ -3238,16 +3223,27 @@ class BookmarkTree {
 
     parentNode.children.push(node);
     this.byGuid.set(node.guid, node);
-    this.parentNodeByChildNode.set(node, parentNode);
+
+    let parentInfo = this.infosByNode.get(parentNode);
+    let level = parentInfo ? parentInfo.level + 1 : 0;
+    this.infosByNode.set(node, { parentNode, level });
   }
 
   noteDeleted(guid) {
     this.deletedGuids.add(guid);
   }
 
-  * guids() {
-    for (let [guid] of this.byGuid) {
-      yield guid;
+  * syncableGuids() {
+    let nodesToWalk = PlacesUtils.bookmarks.userContentRoots.map(guid => {
+      let node = this.byGuid.get(guid);
+      return node ? node.children : [];
+    });
+    while (nodesToWalk.length) {
+      let childNodes = nodesToWalk.pop();
+      for (let node of childNodes) {
+        yield node.guid;
+        nodesToWalk.push(node.children);
+      }
     }
     for (let guid of this.deletedGuids) {
       yield guid;
@@ -3294,12 +3290,78 @@ class MergedBookmarkNode {
         parentGuid: this.guid,
         level,
         position,
-        valueState: mergedChild.mergeState.value,
-        structureState: mergedChild.mergeState.structure,
+        valueState: mergedChild.mergeState.value(),
+        structureState: mergedChild.mergeState.structure(),
       };
       yield mergeStateParam;
       yield* mergedChild.mergeStatesParams(level + 1);
     }
+  }
+
+  
+
+
+
+
+
+  async toBookmarkNode() {
+    if (MergedBookmarkNode.cachedBookmarkNodes.has(this)) {
+      return MergedBookmarkNode.cachedBookmarkNodes.get(this);
+    }
+
+    let decidedValueNode = this.decidedValue();
+    let decidedStructureState = this.mergeState.structure();
+    let needsMerge = decidedStructureState == BookmarkMergeState.TYPE.NEW ||
+                     (decidedStructureState == BookmarkMergeState.TYPE.LOCAL &&
+                      decidedValueNode.needsMerge);
+
+    let newNode = new BookmarkNode(this.guid, decidedValueNode.age,
+                                   decidedValueNode.kind, needsMerge);
+    MergedBookmarkNode.cachedBookmarkNodes.set(this, newNode);
+
+    if (newNode.isFolder()) {
+      for await (let mergedChildNode of yieldingIterator(this.mergedChildren)) {
+        newNode.children.push(await mergedChildNode.toBookmarkNode());
+      }
+    }
+
+    return newNode;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  decidedValue() {
+    let valueState = this.mergeState.value();
+    switch (valueState) {
+      case BookmarkMergeState.TYPE.LOCAL:
+        if (!this.localNode) {
+          MirrorLog.error("Merged node ${guid} has local value state, but " +
+                          "no local node", this);
+          throw new TypeError(
+            "Can't take local value state without local node");
+        }
+        return this.localNode;
+
+      case BookmarkMergeState.TYPE.REMOTE:
+        if (!this.remoteNode) {
+          MirrorLog.error("Merged node ${guid} has remote value state, but " +
+                          "no remote node", this);
+          throw new TypeError(
+            "Can't take remote value state without remote node");
+        }
+        return this.remoteNode;
+    }
+    MirrorLog.error("Merged node ${guid} has unknown value state ${valueState}",
+                    { guid: this.guid, valueState });
+    throw new TypeError("Can't take unknown value state");
   }
 
   
@@ -3334,6 +3396,9 @@ class MergedBookmarkNode {
     return this.toString();
   }
 }
+
+
+MergedBookmarkNode.cachedBookmarkNodes = new WeakMap();
 
 
 
@@ -3404,10 +3469,15 @@ class BookmarkMerger {
   }
 
   async merge() {
-    let localRoot = this.localTree.nodeForGuid(PlacesUtils.bookmarks.rootGuid);
-    let remoteRoot = this.remoteTree.nodeForGuid(PlacesUtils.bookmarks.rootGuid);
-    let mergedRoot = await this.mergeNode(PlacesUtils.bookmarks.rootGuid, localRoot,
-                                          remoteRoot);
+    let mergedRoot = new MergedBookmarkNode(PlacesUtils.bookmarks.rootGuid,
+      BookmarkNode.root(), null, BookmarkMergeState.local);
+    for (let guid of PlacesUtils.bookmarks.userContentRoots) {
+      let localSyncableRoot = this.localTree.nodeForGuid(guid);
+      let remoteSyncableRoot = this.remoteTree.nodeForGuid(guid);
+      let mergedSyncableRoot = await this.mergeNode(guid, localSyncableRoot,
+                                                    remoteSyncableRoot);
+      mergedRoot.mergedChildren.push(mergedSyncableRoot);
+    }
 
     
     
@@ -3427,7 +3497,7 @@ class BookmarkMerger {
   }
 
   async subsumes(tree) {
-    for await (let guid of Async.yieldingIterator(tree.guids())) {
+    for await (let guid of Async.yieldingIterator(tree.syncableGuids())) {
       if (!this.mentions(guid)) {
         return false;
       }
@@ -3963,7 +4033,9 @@ class BookmarkMerger {
     
     
     if (mergeStateChanged) {
-      let newMergeState = BookmarkMergeState.new(mergedNode.mergeState);
+      let newStructureNode = await mergedNode.toBookmarkNode();
+      let newMergeState = BookmarkMergeState.new(mergedNode.mergeState,
+                                                 newStructureNode);
       MirrorLog.trace("Merge state for ${mergedNode} has new structure " +
                       "${newMergeState}", { mergedNode, newMergeState });
       this.structureCounts.new++;
@@ -4044,26 +4116,10 @@ class BookmarkMerger {
 
   async checkForLocalStructureChangeOfRemoteNode(mergedNode, remoteParentNode,
                                                  remoteNode) {
-    if (!remoteNode.isSyncable) {
-      
-      
-      this.deleteLocally.add(remoteNode.guid);
-      await this.relocateRemoteOrphansToNode(mergedNode, remoteNode);
-      return BookmarkMerger.STRUCTURE.DELETED;
-    }
-
     if (!this.localTree.isDeleted(remoteNode.guid)) {
       let localNode = this.localTree.nodeForGuid(remoteNode.guid);
       if (!localNode) {
         return BookmarkMerger.STRUCTURE.UNCHANGED;
-      }
-      if (!localNode.isSyncable) {
-        
-        
-        
-        this.deleteLocally.add(remoteNode.guid);
-        await this.relocateRemoteOrphansToNode(mergedNode, remoteNode);
-        return BookmarkMerger.STRUCTURE.DELETED;
       }
       let localParentNode = this.localTree.parentNodeFor(localNode);
       if (!localParentNode) {
@@ -4102,7 +4158,14 @@ class BookmarkMerger {
                        { remoteNode });
     }
 
-    await this.relocateRemoteOrphansToNode(mergedNode, remoteNode);
+    this.deleteRemotely.add(remoteNode.guid);
+
+    let mergedOrphanNodes = await this.processRemoteOrphansForNode(mergedNode,
+                                                                   remoteNode);
+    await this.relocateOrphansTo(mergedNode, mergedOrphanNodes);
+    MirrorLog.trace("Relocating remote orphans ${mergedOrphanNodes} to " +
+                    "${mergedNode}", { mergedOrphanNodes, mergedNode });
+
     return BookmarkMerger.STRUCTURE.DELETED;
   }
 
@@ -4125,28 +4188,10 @@ class BookmarkMerger {
 
   async checkForRemoteStructureChangeOfLocalNode(mergedNode, localParentNode,
                                                  localNode) {
-    if (!localNode.isSyncable) {
-      
-      
-      this.deleteRemotely.add(localNode.guid);
-      await this.relocateLocalOrphansToNode(mergedNode, localNode);
-      return BookmarkMerger.STRUCTURE.DELETED;
-    }
-
     if (!this.remoteTree.isDeleted(localNode.guid)) {
       let remoteNode = this.remoteTree.nodeForGuid(localNode.guid);
       if (!remoteNode) {
         return BookmarkMerger.STRUCTURE.UNCHANGED;
-      }
-      if (!remoteNode.isSyncable) {
-        
-        
-        
-        
-        
-        this.deleteRemotely.add(localNode.guid);
-        await this.relocateLocalOrphansToNode(mergedNode, localNode);
-        return BookmarkMerger.STRUCTURE.DELETED;
       }
       let remoteParentNode = this.remoteTree.parentNodeFor(remoteNode);
       if (!remoteParentNode) {
@@ -4176,63 +4221,18 @@ class BookmarkMerger {
                       "changed locally; taking remote deletion", { localNode });
     }
 
-    await this.relocateLocalOrphansToNode(mergedNode, localNode);
-    return BookmarkMerger.STRUCTURE.DELETED;
-  }
+    MirrorLog.trace("Local node ${localNode} deleted remotely; taking remote " +
+                    "deletion", { localNode });
 
-  
-
-
-
-
-
-
-
-
-
-
-
-  async relocateRemoteOrphansToNode(mergedNode, remoteNode) {
-    this.deleteRemotely.add(remoteNode.guid);
-
-    let mergedOrphanNodes = await this.processRemoteOrphansForNode(mergedNode,
-                                                                   remoteNode);
-
-    MirrorLog.trace("Relocating remote orphans ${mergedOrphanNodes} to " +
-                    "${mergedNode}", { mergedOrphanNodes, mergedNode });
-    for await (let mergedOrphanNode of yieldingIterator(mergedOrphanNodes)) {
-      
-      let mergeState = BookmarkMergeState.new(mergedOrphanNode.mergeState);
-      mergedOrphanNode.mergeState = mergeState;
-      mergedNode.mergedChildren.push(mergedOrphanNode);
-    }
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  async relocateLocalOrphansToNode(mergedNode, localNode) {
     this.deleteLocally.add(localNode.guid);
 
     let mergedOrphanNodes = await this.processLocalOrphansForNode(mergedNode,
                                                                   localNode);
-
+    await this.relocateOrphansTo(mergedNode, mergedOrphanNodes);
     MirrorLog.trace("Relocating local orphans ${mergedOrphanNodes} to " +
                     "${mergedNode}", { mergedOrphanNodes, mergedNode });
-    for await (let mergedOrphanNode of yieldingIterator(mergedOrphanNodes)) {
-      let mergeState = BookmarkMergeState.new(mergedOrphanNode.mergeState);
-      mergedOrphanNode.mergeState = mergeState;
-      mergedNode.mergedChildren.push(mergedOrphanNode);
-    }
+
+    return BookmarkMerger.STRUCTURE.DELETED;
   }
 
   
@@ -4300,6 +4300,26 @@ class BookmarkMerger {
     }
 
     return mergedOrphanNodes;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  async relocateOrphansTo(mergedNode, mergedOrphanNodes) {
+    for (let mergedOrphanNode of mergedOrphanNodes) {
+      let newStructureNode = await mergedOrphanNode.toBookmarkNode();
+      let newMergeState = BookmarkMergeState.new(mergedOrphanNode.mergeState,
+                                                 newStructureNode);
+      mergedOrphanNode.mergeState = newMergeState;
+      mergedNode.mergedChildren.push(mergedOrphanNode);
+    }
   }
 
   
