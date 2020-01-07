@@ -37,6 +37,8 @@ ChromeUtils.import("resource://gre/modules/AsyncShutdown.jsm");
 
 ChromeUtils.defineModuleGetter(this, "console",
   "resource://gre/modules/Console.jsm");
+ChromeUtils.defineModuleGetter(this, "PromiseUtils",
+  "resource://gre/modules/PromiseUtils.jsm");
 ChromeUtils.defineModuleGetter(this, "RunState",
   "resource:///modules/sessionstore/RunState.jsm");
 ChromeUtils.defineModuleGetter(this, "TelemetryStopwatch",
@@ -199,15 +201,12 @@ var SessionFileInternal = {
   },
 
   
+  
+  _deferredInitialized: PromiseUtils.defer(),
+
+  
+  
   _initializationStarted: false,
-
-  
-  
-  _readOrigin: null,
-
-  
-  
-  _usingOldExtension: false,
 
   
   
@@ -222,7 +221,6 @@ var SessionFileInternal = {
   async _readInternal(useOldExtension) {
     let result;
     let noFilesFound = true;
-    this._usingOldExtension = useOldExtension;
 
     
     for (let key of this.Paths.loadOrder) {
@@ -287,6 +285,8 @@ var SessionFileInternal = {
 
   
   async read() {
+    this._initializationStarted = true;
+
     
     let {result, noFilesFound} = await this._readInternal(false);
     if (!result) {
@@ -310,55 +310,39 @@ var SessionFileInternal = {
         useOldExtension: false
       };
     }
-    this._readOrigin = result.origin;
 
     result.noFilesFound = noFilesFound;
 
     
     
-    this._initWorker();
+    let promiseInitialized = SessionWorker.post("init", [result.origin, result.useOldExtension, this.Paths, {
+      maxUpgradeBackups: Services.prefs.getIntPref(PREF_MAX_UPGRADE_BACKUPS, 3),
+      maxSerializeBack: Services.prefs.getIntPref(PREF_MAX_SERIALIZE_BACK, 10),
+      maxSerializeForward: Services.prefs.getIntPref(PREF_MAX_SERIALIZE_FWD, -1)
+    }]);
+
+    promiseInitialized.catch(err => {
+      
+      Promise.reject(err);
+    }).then(() => this._deferredInitialized.resolve());
 
     return result;
   },
 
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  _initWorker() {
-    return new Promise(resolve => {
-      if (this._initializationStarted) {
-        resolve();
-        return;
-      }
-
-      if (!this._readOrigin) {
-        throw new Error("_initWorker called too early! Please read the session file from disk first.");
-      }
-
-      this._initializationStarted = true;
-      SessionWorker.post("init", [this._readOrigin, this._usingOldExtension, this.Paths, {
-        maxUpgradeBackups: Services.prefs.getIntPref(PREF_MAX_UPGRADE_BACKUPS, 3),
-        maxSerializeBack: Services.prefs.getIntPref(PREF_MAX_SERIALIZE_BACK, 10),
-        maxSerializeForward: Services.prefs.getIntPref(PREF_MAX_SERIALIZE_FWD, -1)
-      }]).catch(err => {
-        
-        Promise.reject(err);
-      }).then(resolve);
-    });
-  },
-
-  
   async _postToWorker(...args) {
-    await this._initWorker();
+    if (!this._initializationStarted) {
+      
+      
+      
+
+      
+      
+      
+      this.read();
+    }
+    await this._deferredInitialized.promise;
     return SessionWorker.post(...args);
   },
 
@@ -371,10 +355,6 @@ var SessionFileInternal = {
   _checkWorkerHealth() {
     if (this._workerHealth.failures >= kMaxWriteFailures) {
       SessionWorker.terminate();
-      
-      
-      this._initializationStarted = false;
-      
       this._workerHealth.failures = 0;
       Telemetry.scalarAdd("browser.session.restore.worker_restart_count", 1);
     }
@@ -451,11 +431,7 @@ var SessionFileInternal = {
   },
 
   wipe() {
-    return this._postToWorker("wipe").then(() => {
-      
-      
-      this._initializationStarted = false;
-    });
+    return this._postToWorker("wipe");
   },
 
   _recordTelemetry(telemetry) {
