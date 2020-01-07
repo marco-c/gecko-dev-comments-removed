@@ -25,10 +25,11 @@ pub use gecko::media_queries::{Device, Expression};
 
 
 #[cfg_attr(feature = "servo", derive(MallocSizeOf))]
-#[css(comma, iterable)]
+#[css(comma)]
 #[derive(Clone, Debug, ToCss)]
 pub struct MediaList {
     
+    #[css(iterable)]
     pub media_queries: Vec<MediaQuery>,
 }
 

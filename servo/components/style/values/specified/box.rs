@@ -369,9 +369,9 @@ pub enum OverflowClipBox {
 pub enum WillChange {
     
     Auto,
-    #[css(comma, iterable)]
     
-    AnimateableFeatures(Box<[CustomIdent]>),
+    #[css(comma)]
+    AnimateableFeatures(#[css(iterable)] Box<[CustomIdent]>),
 }
 
 impl WillChange {

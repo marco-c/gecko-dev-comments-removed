@@ -176,9 +176,9 @@ impl UrlMatchingFunction {
 
 
 
-#[css(comma, iterable)]
+#[css(comma)]
 #[derive(Clone, Debug, ToCss)]
-pub struct DocumentCondition(Vec<UrlMatchingFunction>);
+pub struct DocumentCondition(#[css(iterable)] Vec<UrlMatchingFunction>);
 
 impl DocumentCondition {
     

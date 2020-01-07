@@ -547,9 +547,8 @@ impl Parse for Fallback {
 
 
 #[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[css(iterable)]
 #[derive(Clone, Debug, Eq, PartialEq, ToComputedValue, ToCss)]
-pub struct Symbols(pub Vec<Symbol>);
+pub struct Symbols(#[css(iterable)] pub Vec<Symbol>);
 
 impl Parse for Symbols {
     fn parse<'i, 't>(context: &ParserContext, input: &mut Parser<'i, 't>) -> Result<Self, ParseError<'i>> {

@@ -145,9 +145,9 @@ impl KeyframePercentage {
 
 
 
-#[css(comma, iterable)]
+#[css(comma)]
 #[derive(Clone, Debug, Eq, PartialEq, ToCss)]
-pub struct KeyframeSelector(Vec<KeyframePercentage>);
+pub struct KeyframeSelector(#[css(iterable)] Vec<KeyframePercentage>);
 
 impl KeyframeSelector {
     

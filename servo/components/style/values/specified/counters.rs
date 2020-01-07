@@ -92,8 +92,7 @@ pub enum Content {
     #[cfg(feature = "gecko")]
     MozAltContent,
     
-    #[css(iterable)]
-    Items(Box<[ContentItem]>),
+    Items(#[css(iterable)] Box<[ContentItem]>),
 }
 
 

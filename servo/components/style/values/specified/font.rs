@@ -152,8 +152,8 @@ impl From<LengthOrPercentage> for FontSize {
 #[derive(Clone, Debug, Eq, Hash, PartialEq, ToCss)]
 pub enum FontFamily {
     
-    #[css(iterable, comma)]
-    Values(FontFamilyList),
+    #[css(comma)]
+    Values(#[css(iterable)] FontFamilyList),
     
     System(SystemFont),
 }
@@ -718,11 +718,11 @@ pub enum VariantAlternates {
     #[css(function)]
     Stylistic(CustomIdent),
     
-    #[css(comma, function, iterable)]
-    Styleset(Box<[CustomIdent]>),
+    #[css(comma, function)]
+    Styleset(#[css(iterable)] Box<[CustomIdent]>),
     
-    #[css(comma, function, iterable)]
-    CharacterVariant(Box<[CustomIdent]>),
+    #[css(comma, function)]
+    CharacterVariant(#[css(iterable)] Box<[CustomIdent]>),
     
     #[css(function)]
     Swash(CustomIdent),
