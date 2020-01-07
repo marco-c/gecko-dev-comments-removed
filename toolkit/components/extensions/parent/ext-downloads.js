@@ -519,13 +519,19 @@ this.downloads = class extends ExtensionAPI {
               return target;
             }
 
+            const window = Services.wm.getMostRecentWindow("navigator:browser");
+            const basename = OS.Path.basename(target);
+            const ext = basename.match(/\.([^.]+)$/);
+
             
             const picker = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
-            const window = Services.wm.getMostRecentWindow("navigator:browser");
             picker.init(window, null, Ci.nsIFilePicker.modeSave);
             picker.displayDirectory = new FileUtils.File(dir);
             picker.appendFilters(Ci.nsIFilePicker.filterAll);
-            picker.defaultString = OS.Path.basename(target);
+            picker.defaultString = basename;
+
+            
+            picker.defaultExtension = ext && ext[1];
 
             
             return new Promise((resolve, reject) => {
