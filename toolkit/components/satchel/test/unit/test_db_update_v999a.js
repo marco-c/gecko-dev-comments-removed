@@ -11,18 +11,7 @@
 
 
 
-var iter = tests();
-
-function run_test() {
-  do_test_pending();
-  iter.next();
-}
-
-function next_test() {
-  iter.next();
-}
-
-function* tests() {
+add_task(async function() {
   let testnum = 0;
 
   try {
@@ -40,33 +29,28 @@ function* tests() {
     testfile.copyTo(profileDir, "formhistory.sqlite");
     Assert.equal(999, getDBVersion(testfile));
 
-    let checkZero = function(num) { Assert.equal(num, 0); next_test(); };
-    let checkOne = function(num) { Assert.equal(num, 1); next_test(); };
+    
+    testnum++;
+    
+    Assert.ok(await promiseCountEntries(null, null) > 0);
+    Assert.equal(1, await promiseCountEntries("name-A", "value-A"));
+    Assert.equal(1, await promiseCountEntries("name-B", "value-B"));
+    Assert.equal(1, await promiseCountEntries("name-C", "value-C1"));
+    Assert.equal(1, await promiseCountEntries("name-C", "value-C2"));
+    Assert.equal(1, await promiseCountEntries("name-E", "value-E"));
+
+    
+    Assert.equal(CURRENT_SCHEMA, getDBVersion(destFile));
 
     
     testnum++;
     
-    yield countEntries(null, null, function(num) { Assert.ok(num > 0); next_test(); });
-    yield countEntries("name-A", "value-A", checkOne);
-    yield countEntries("name-B", "value-B", checkOne);
-    yield countEntries("name-C", "value-C1", checkOne);
-    yield countEntries("name-C", "value-C2", checkOne);
-    yield countEntries("name-E", "value-E", checkOne);
-
-    
-    Assert.equal(CURRENT_SCHEMA, FormHistory.schemaVersion);
-
-    
-    testnum++;
-    
-    yield countEntries("name-D", "value-D", checkZero);
-    yield updateEntry("add", "name-D", "value-D", next_test);
-    yield countEntries("name-D", "value-D", checkOne);
-    yield updateEntry("remove", "name-D", "value-D", next_test);
-    yield countEntries("name-D", "value-D", checkZero);
+    Assert.equal(0, await promiseCountEntries("name-D", "value-D"));
+    await promiseUpdateEntry("add", "name-D", "value-D");
+    Assert.equal(1, await promiseCountEntries("name-D", "value-D"));
+    await promiseUpdateEntry("remove", "name-D", "value-D");
+    Assert.equal(0, await promiseCountEntries("name-D", "value-D"));
   } catch (e) {
     throw new Error(`FAILED in test #${testnum} -- ${e}`);
   }
-
-  do_test_finished();
-}
+});
