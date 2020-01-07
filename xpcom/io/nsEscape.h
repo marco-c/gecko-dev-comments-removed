@@ -93,7 +93,8 @@ enum EscapeMask {
 
   esc_AlwaysCopy     = 1u << 13, 
   esc_Colon          = 1u << 14, 
-  esc_SkipControl    = 1u << 15  
+  esc_SkipControl    = 1u << 15, 
+  esc_Spaces         = 1u << 16  
 };
 
 

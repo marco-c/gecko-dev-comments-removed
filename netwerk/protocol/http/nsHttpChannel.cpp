@@ -304,7 +304,6 @@ nsHttpChannel::nsHttpChannel()
     , mRequestTime(0)
     , mOfflineCacheLastModifiedTime(0)
     , mSuspendTotalTime(0)
-    , mRedirectType(0)
     , mCacheOpenWithPriority(false)
     , mCacheQueueSizeWhenOpen(0)
     , mCachedContentIsValid(false)
@@ -334,7 +333,6 @@ nsHttpChannel::nsHttpChannel()
     , mUsedNetwork(0)
     , mAuthConnectionRestartable(0)
     , mPushedStream(nullptr)
-    , mLocalBlocklist(false)
     , mOnTailUnblock(nullptr)
     , mWarningReporter(nullptr)
     , mIsReadingFromCache(false)
@@ -992,7 +990,7 @@ nsHttpChannel::SetupTransaction()
     }
 
     
-    if (NS_EscapeURL(path.get(), path.Length(), esc_OnlyNonASCII, buf)) {
+    if (NS_EscapeURL(path.get(), path.Length(), esc_OnlyNonASCII | esc_Spaces, buf)) {
         requestURI = &buf;
     } else {
         requestURI = &path;
@@ -5503,7 +5501,7 @@ nsHttpChannel::AsyncProcessRedirection(uint32_t redirectType)
 
     
     nsAutoCString locationBuf;
-    if (NS_EscapeURL(location.get(), -1, esc_OnlyNonASCII, locationBuf))
+    if (NS_EscapeURL(location.get(), -1, esc_OnlyNonASCII | esc_Spaces, locationBuf))
         location = locationBuf;
 
     mRedirectType = redirectType;
