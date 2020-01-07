@@ -297,6 +297,10 @@ function checkFieldWrite(entry, location, fields)
 
         if (/\bThreadLocal<\b/.test(field))
             return;
+
+        
+        if (field == "nsStringBuffer.mCanary")
+            return;
     }
 
     var str = "";
