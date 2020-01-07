@@ -114,44 +114,28 @@ this.DownloadPrompter.prototype = {
 
 
 
+  async confirmLaunchExecutable(path) {
+    const kPrefSkipConfirm = "browser.download.skipConfirmLaunchExecutable";
 
-
-
-  confirmLaunchExecutable(aPath) {
-    const kPrefAlertOnEXEOpen = "browser.download.manager.alertOnEXEOpen";
+    
+    if (!this._prompter) {
+      return true;
+    }
 
     try {
-      
-      if (!this._prompter) {
-        return Promise.resolve(true);
+      if (Services.prefs.getBoolPref(kPrefSkipConfirm)) {
+        return true;
       }
-
-      try {
-        if (!Services.prefs.getBoolPref(kPrefAlertOnEXEOpen)) {
-          return Promise.resolve(true);
-        }
-      } catch (ex) {
-        
-      }
-
-      let leafName = OS.Path.basename(aPath);
-
-      let s = DownloadUIHelper.strings;
-      let checkState = { value: false };
-      let shouldLaunch = this._prompter.confirmCheck(
-                           s.fileExecutableSecurityWarningTitle,
-                           s.fileExecutableSecurityWarning(leafName, leafName),
-                           s.fileExecutableSecurityWarningDontAsk,
-                           checkState);
-
-      if (shouldLaunch) {
-        Services.prefs.setBoolPref(kPrefAlertOnEXEOpen, !checkState.value);
-      }
-
-      return Promise.resolve(shouldLaunch);
     } catch (ex) {
-      return Promise.reject(ex);
+      
     }
+
+    let leafName = OS.Path.basename(path);
+
+    let s = DownloadUIHelper.strings;
+    return this._prompter.confirm(s.fileExecutableSecurityWarningTitle,
+                                  s.fileExecutableSecurityWarning(leafName,
+                                                                  leafName));
   },
 
   
