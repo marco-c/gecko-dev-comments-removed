@@ -26,6 +26,10 @@ class EditorBase;
 
 class SplitNodeTransaction final : public EditTransactionBase
 {
+private:
+  SplitNodeTransaction(EditorBase& aEditorBase,
+                       const EditorRawDOMPoint& aStartOfRightNode);
+
 public:
   
 
@@ -34,8 +38,13 @@ public:
 
 
 
-  SplitNodeTransaction(EditorBase& aEditorBase,
-                       const EditorRawDOMPoint& aStartOfRightNode);
+
+
+
+
+  static already_AddRefed<SplitNodeTransaction>
+  Create(EditorBase& aEditorBase,
+         const EditorRawDOMPoint& aStartOfRightNode);
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(SplitNodeTransaction,
