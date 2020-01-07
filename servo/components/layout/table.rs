@@ -30,7 +30,7 @@ use style::values::CSSFloat;
 use style::values::computed::LengthOrPercentageOrAuto;
 use table_cell::TableCellFlow;
 use table_row::{self, CellIntrinsicInlineSize, CollapsedBorder, CollapsedBorderProvenance};
-use table_row::TableRowFlow;
+use table_row::{TableRowFlow, TableRowSizeData};
 use table_wrapper::TableLayout;
 
 #[allow(unsafe_code)]
@@ -785,49 +785,51 @@ impl TableLikeFlow for BlockFlow {
         }
 
         if self.base.restyle_damage.contains(ServoRestyleDamage::REFLOW) {
+            let mut sizes = vec![Default::default()];
             
-            let mut sizes = vec![(Au(0), Au(0))];
             
-            
-            let mut cumulative_border = Au(0);
+            let mut cumulative_border_spacing = Au(0);
             let mut incoming_rowspan_data = vec![];
+            let mut rowgroup_id = 0;
+            let mut first = true;
 
             
             
             
-            for kid in self.base.child_iter_mut()
-                           .filter(|k| k.is_table_row())
-                           .skip(1) {
-                cumulative_border +=
-                    border_spacing_for_row(&self.fragment, kid.as_table_row(),
-                                           block_direction_spacing);
-                
-                sizes.push((Au(0), cumulative_border));
+            for kid in self.base.child_iter_mut() {
+                if kid.is_table_row() {
+                    
+                    if first {
+                        first = false;
+                        continue;
+                    }
+                    cumulative_border_spacing +=
+                        border_spacing_for_row(&self.fragment, kid.as_table_row(),
+                                               block_direction_spacing);
+                    sizes.push(TableRowSizeData {
+                        
+                        size: Au(0),
+                        cumulative_border_spacing,
+                        rowgroup_id
+                    });
+                } else if kid.is_table_rowgroup() && !first {
+                    rowgroup_id += 1;
+                }
             }
 
             
             
             let mut i = 0;
-            let mut overflow = Au(0);
             for kid in self.base.child_iter_mut() {
                 if kid.is_table_row() {
-                    let (size, oflo) = kid.as_mut_table_row()
+                    let size = kid.as_mut_table_row()
                         .compute_block_size_table_row_base(layout_context,
                                                            &mut incoming_rowspan_data,
                                                            &sizes,
                                                            i);
-                    sizes[i].0 = size;
-                    overflow = oflo;
+                    sizes[i].size = size;
                     i += 1;
-                
-                } else if kid.is_table_rowgroup() {
-                    if i > 0 {
-                        sizes[i - 1].0 = cmp::max(sizes[i - 1].0, overflow);
-                    }
                 }
-            }
-            if i > 0 {
-                sizes[i - 1].0 = cmp::max(sizes[i - 1].0, overflow);
             }
 
 

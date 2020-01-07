@@ -19,7 +19,7 @@ use gfx_traits::print_tree::PrintTree;
 use layout_debug;
 use model::MaybeAuto;
 use serde::{Serialize, Serializer};
-use std::cmp::{max, min};
+use std::cmp::max;
 use std::fmt;
 use std::iter::{Enumerate, IntoIterator, Peekable};
 use style::computed_values::border_collapse::T as BorderCollapse;
@@ -113,30 +113,24 @@ impl TableRowFlow {
     
     pub fn compute_block_size_table_row_base<'a>(&'a mut self, layout_context: &LayoutContext,
                                                  incoming_rowspan_data: &mut Vec<Au>,
-                                                 border_info: &[(Au, Au)], 
-                                                 row_index: usize) -> (Au, Au) {
+                                                 border_info: &[TableRowSizeData],
+                                                 row_index: usize) -> Au {
         fn include_sizes_from_previous_rows(col: &mut usize,
                                             incoming_rowspan: &[u32],
                                             incoming_rowspan_data: &mut Vec<Au>,
-                                            max_block_size: &mut Au,
-                                            largest_leftover_incoming_size: &mut Au) {
+                                            max_block_size: &mut Au) {
             while let Some(span) = incoming_rowspan.get(*col) {
-                if *span <= 1 {
+                if *span == 1 {
                     break;
                 }
                 let incoming = incoming_rowspan_data[*col];
                 *max_block_size = max(*max_block_size, incoming);
-                if *span > 2 {
-                    *largest_leftover_incoming_size = max(*largest_leftover_incoming_size,
-                                                          incoming * (*span - 1) as i32)
-                }
                 *col += 1;
             }
         }
         
         
         let mut max_block_size = Au(0);
-        let mut largest_leftover_incoming_size = Au(0);
         let thread_id = self.block_flow.base.thread_id;
         let content_box = self.block_flow.base.position
             - self.block_flow.fragment.border_padding
@@ -145,15 +139,14 @@ impl TableRowFlow {
         let mut col = 0;
         for kid in self.block_flow.base.child_iter_mut() {
             include_sizes_from_previous_rows(&mut col, &self.incoming_rowspan,
-                                             incoming_rowspan_data, &mut max_block_size,
-                                             &mut largest_leftover_incoming_size);
+                                             incoming_rowspan_data, &mut max_block_size);
             kid.place_float_if_applicable();
             debug_assert!(!kid.base().flags.is_float(), "table cells should never float");
             kid.assign_block_size_for_inorder_child_if_necessary(layout_context,
                                                                  thread_id,
                                                                  content_box);
 
-            let row_span;
+            let mut row_span;
             let column_span;
             let cell_total;
             {
@@ -166,12 +159,11 @@ impl TableRowFlow {
             child_node.position.start.b = Au(0);
             let mut cell_block_size_pressure = max(cell_total, child_node.position.size.block);
 
-            if row_span > 1 {
+            if row_span != 1 {
                 if incoming_rowspan_data.len() <= col {
                     incoming_rowspan_data.resize(col + 1, Au(0));
                 }
-                let border_sizes_spanned = get_spanned_border_size(border_info, row_index, row_span);
-                let pressure_copy = cell_block_size_pressure;
+                let border_sizes_spanned = get_spanned_border_size(border_info, row_index, &mut row_span);
 
                 cell_block_size_pressure -= border_sizes_spanned;
 
@@ -180,18 +172,12 @@ impl TableRowFlow {
                 
                 cell_block_size_pressure /= row_span as i32;
                 incoming_rowspan_data[col] = cell_block_size_pressure;
-
-                
-                
-                largest_leftover_incoming_size = max(largest_leftover_incoming_size,
-                                                     pressure_copy);
             }
 
             max_block_size = max(max_block_size, cell_block_size_pressure);
             col += column_span;
         }
-        include_sizes_from_previous_rows(&mut col, &self.incoming_rowspan, incoming_rowspan_data, &mut max_block_size,
-                                         &mut largest_leftover_incoming_size);
+        include_sizes_from_previous_rows(&mut col, &self.incoming_rowspan, incoming_rowspan_data, &mut max_block_size);
 
         let mut block_size = max_block_size;
         
@@ -203,20 +189,21 @@ impl TableRowFlow {
             MaybeAuto::Auto => block_size,
             MaybeAuto::Specified(value) => max(value, block_size),
         };
-        (block_size, largest_leftover_incoming_size)
+        block_size
     }
 
-    pub fn assign_block_size_to_self_and_children(&mut self, sizes: &[(Au, Au)], index: usize) {
+    pub fn assign_block_size_to_self_and_children(&mut self, sizes: &[TableRowSizeData], index: usize) {
         
-        let block_size = sizes[index].0;
+        let block_size = sizes[index].size;
         for kid in self.block_flow.base.child_iter_mut() {
             let child_table_cell = kid.as_mut_table_cell();
-            let block_size = if child_table_cell.row_span > 1 {
-                let row_sizes = sizes[index..].iter()
-                                              .take(child_table_cell.row_span as usize)
-                                              .fold(Au(0), |accum, size| accum + size.0);
+            let block_size = if child_table_cell.row_span != 1 {
+                let mut row_span = child_table_cell.row_span;
                 let border_sizes_spanned =
-                    get_spanned_border_size(sizes, index, child_table_cell.row_span);
+                    get_spanned_border_size(sizes, index, &mut row_span);
+                let row_sizes = sizes[index..].iter()
+                                              .take(row_span as usize)
+                                              .fold(Au(0), |accum, r| accum + r.size);
                 row_sizes + border_sizes_spanned
             } else {
                 block_size
@@ -279,12 +266,45 @@ impl TableRowFlow {
     }
 }
 
+#[derive(Debug, Default)]
+pub struct TableRowSizeData {
+    
+    pub size: Au,
+    
+    pub cumulative_border_spacing: Au,
+    
+    
+    
+    
+    
+    
+    
+    
+    pub rowgroup_id: u32,
+}
 
 
 
-fn get_spanned_border_size(sizes: &[(Au, Au)], row_index: usize, row_span: u32) -> Au {
-    let last_row_idx = min(row_index + row_span as usize - 1, sizes.len() - 1);
-    sizes[last_row_idx].1 - sizes[row_index].1
+
+
+fn get_spanned_border_size(sizes: &[TableRowSizeData], row_index: usize, row_span: &mut u32) -> Au {
+    
+    if *row_span == 0 || row_index + *row_span as usize > sizes.len() {
+        *row_span = (sizes.len() - row_index) as u32;
+    }
+    let mut last_row_idx = row_index + *row_span as usize - 1;
+    
+    
+    
+    if sizes[last_row_idx].rowgroup_id != sizes[row_index].rowgroup_id {
+        
+        
+        *row_span = sizes[row_index..last_row_idx + 1].iter()
+                        .position(|s| s.rowgroup_id != sizes[row_index].rowgroup_id)
+                        .unwrap() as u32;
+        last_row_idx = row_index + *row_span as usize - 1;
+    }
+    sizes[last_row_idx].cumulative_border_spacing - sizes[row_index].cumulative_border_spacing
 }
 
 impl Flow for TableRowFlow {
