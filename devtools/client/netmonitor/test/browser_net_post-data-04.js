@@ -24,8 +24,7 @@ add_task(async function() {
 
   
   wait = waitForDOM(document, "#params-panel .tree-section");
-  EventUtils.sendMouseEvent({ type: "click" },
-    document.querySelector(".network-details-panel-toggle"));
+  store.dispatch(Actions.toggleNetworkDetails());
   EventUtils.sendMouseEvent({ type: "click" },
     document.querySelector("#params-tab"));
   await wait;
