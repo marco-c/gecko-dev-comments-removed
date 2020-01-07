@@ -37,8 +37,7 @@ add_task(async function preferred_API() {
     });
 
     saveImageURL(url, "image.jpg", null, true, false, null, null, null, null, false);
-    
-    let channel = gBrowser.contentDocumentAsCPOW.docShell.currentDocumentChannel;
+    let channel = content.document.docShell.currentDocumentChannel;
     if (channel) {
       ok(true, channel.QueryInterface(Ci.nsIHttpChannelInternal)
                       .channelIsForDownload);
@@ -74,8 +73,7 @@ add_task(async function deprecated_API() {
     
     let doc = document;
 
-    
-    let channel = gBrowser.contentDocumentAsCPOW.docShell.currentDocumentChannel;
+    let channel = content.document.docShell.currentDocumentChannel;
     if (channel) {
       ok(true, channel.QueryInterface(Ci.nsIHttpChannelInternal)
                       .channelIsForDownload);

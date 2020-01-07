@@ -60,7 +60,7 @@ function test() {
   gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser, TEST_URI);
   BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser).then(() => {
     
-    doc = gBrowser.contentDocumentAsCPOW;
+    doc = content.document;
     
     runTests();
   });

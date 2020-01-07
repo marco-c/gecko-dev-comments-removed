@@ -62,7 +62,7 @@ function testMessages(hud) {
   Cu.nukeSandbox(sandbox);
 
   
-  gBrowser.contentWindowAsCPOW.console.log("bug587757b");
+  content.console.log("bug587757b");
 
   
   hud.jsterm.execute("document.location.href");

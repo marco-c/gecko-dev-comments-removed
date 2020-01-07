@@ -9,11 +9,12 @@ var gSecondTestPermissionString = gPluginHost.getPermissionStringForType("applic
 
 function doOnPageLoad(url, continuation) {
   gNextTest = continuation;
-  BrowserTestUtils.browserLoaded(gTestBrowser).then(pageLoad);
-  gTestBrowser.loadURI(url);
+  gTestBrowser.addEventListener("load", pageLoad, true);
+  gTestBrowser.contentWindow.location = url;
 }
 
 function pageLoad() {
+  gTestBrowser.removeEventListener("load", pageLoad);
   
   
   executeSoon(gNextTest);
@@ -62,10 +63,10 @@ function test() {
 
 
 function testPart1a() {
-  let testElement = gTestBrowser.contentDocumentAsCPOW.getElementById("test");
+  let testElement = gTestBrowser.contentDocument.getElementById("test");
   let objLoadingContent = testElement.QueryInterface(Ci.nsIObjectLoadingContent);
   ok(!objLoadingContent.activated, "part 1a: Test plugin should not be activated");
-  let secondtest = gTestBrowser.contentDocumentAsCPOW.getElementById("secondtestA");
+  let secondtest = gTestBrowser.contentDocument.getElementById("secondtestA");
   objLoadingContent = secondtest.QueryInterface(Ci.nsIObjectLoadingContent);
   ok(objLoadingContent.activated, "part 1a: Second Test plugin should be activated");
 
@@ -93,11 +94,11 @@ function testPart1b() {
 
 
 function testPart2() {
-  let testElement = gTestBrowser.contentDocumentAsCPOW.getElementById("test").
+  let testElement = gTestBrowser.contentDocument.getElementById("test").
     QueryInterface(Ci.nsIObjectLoadingContent);
   ok(testElement.activated, "part 2: Test plugin should be activated");
 
-  let secondtest = gTestBrowser.contentDocumentAsCPOW.getElementById("secondtestA").
+  let secondtest = gTestBrowser.contentDocument.getElementById("secondtestA").
     QueryInterface(Ci.nsIObjectLoadingContent);
   ok(!secondtest.activated, "part 2: Second Test plugin should not be activated");
   is(secondtest.pluginFallbackType, Ci.nsIObjectLoadingContent.PLUGIN_CLICK_TO_PLAY,
@@ -122,13 +123,13 @@ function testPart2() {
 
 
 function testPart3() {
-  let testElement = gTestBrowser.contentDocumentAsCPOW.getElementById("test").
+  let testElement = gTestBrowser.contentDocument.getElementById("test").
     QueryInterface(Ci.nsIObjectLoadingContent);
   ok(!testElement.activated, "part 3: Test plugin should not be activated");
   is(testElement.pluginFallbackType, Ci.nsIObjectLoadingContent.PLUGIN_DISABLED,
     "part 3: Test plugin should be marked as PLUGIN_DISABLED");
 
-  let secondtest = gTestBrowser.contentDocumentAsCPOW.getElementById("secondtestA").
+  let secondtest = gTestBrowser.contentDocument.getElementById("secondtestA").
     QueryInterface(Ci.nsIObjectLoadingContent);
 
   ok(!secondtest.activated, "part 3: Second Test plugin should not be activated");
