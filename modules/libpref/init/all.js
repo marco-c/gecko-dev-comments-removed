@@ -1116,12 +1116,6 @@ pref("devtools.debugger.force-local", true);
 pref("devtools.debugger.forbid-certified-apps", true);
 
 
-
-
-
-pref("devtools.netmonitor.responseBodyLimit", 1048576);
-
-
 pref("devtools.defaultColorUnit", "authored");
 
 
@@ -5926,18 +5920,12 @@ pref("media.block-autoplay-until-in-foreground", true);
 
 
 
-#ifdef MOZ_STYLO
-#ifdef MOZ_STYLO_ENABLE
 pref("layout.css.servo.enabled", true);
-#else
-pref("layout.css.servo.enabled", false);
-#endif
 
 
 
 
 pref("layout.css.servo.chrome.enabled", true);
-#endif
 
 
 
