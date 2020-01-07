@@ -1105,7 +1105,9 @@ HttpChannelChild::OnStopRequest(const nsresult& channelStatus,
   
   
   
-  if (!mPreferredCachedAltDataType.IsEmpty()) {
+  
+  
+  if (NS_SUCCEEDED(channelStatus) && !mPreferredCachedAltDataType.IsEmpty()) {
     mKeptAlive = true;
     SendDocumentChannelCleanup(false); 
     return;
