@@ -357,6 +357,8 @@ WebRenderAPI::GetNamespace() {
   return wr_api_get_namespace(mDocHandle);
 }
 
+extern void ClearBlobImageResources(WrIdNamespace aNamespace);
+
 WebRenderAPI::~WebRenderAPI()
 {
   if (!mRootDocumentApi) {
@@ -373,6 +375,21 @@ WebRenderAPI::~WebRenderAPI()
 
     wr_api_shut_down(mDocHandle);
   }
+
+  
+  
+  
+  
+  
+#ifdef MOZ_BUILD_WEBRENDER
+  wr::WrIdNamespace ns = GetNamespace();
+#else
+  wr::WrIdNamespace ns{0};
+#endif
+
+  
+  
+  ClearBlobImageResources(ns);
 
   wr_api_delete(mDocHandle);
 }
