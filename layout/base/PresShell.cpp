@@ -1543,8 +1543,7 @@ PresShell::AddUserSheet(StyleSheet* aSheet)
   mStyleSet->BeginUpdate();
 
   nsStyleSheetService* sheetService = nsStyleSheetService::gInstance;
-  nsTArray<RefPtr<StyleSheet>>& userSheets =
-    *sheetService->UserStyleSheets(mStyleSet->BackendType());
+  nsTArray<RefPtr<StyleSheet>>& userSheets = *sheetService->UserStyleSheets();
   
   
   for (StyleSheet* sheet : userSheets) {
