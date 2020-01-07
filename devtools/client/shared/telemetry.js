@@ -48,14 +48,6 @@ class Telemetry {
 
 
 
-  msSinceProcessStart() {
-    return Services.telemetry.msSinceProcessStart();
-  }
-
-  
-
-
-
 
 
 
