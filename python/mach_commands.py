@@ -86,7 +86,7 @@ class MachCommands(MachCommandBase):
             mozfile.remove(tempdir)
 
     def run_python_tests(self,
-                         tests=[],
+                         tests=None,
                          test_objects=None,
                          subsuite=None,
                          verbose=False,
@@ -94,22 +94,16 @@ class MachCommands(MachCommandBase):
                          **kwargs):
         self._activate_virtualenv()
 
-        
-        
-        
-        
-        
-        
         if test_objects is None:
             from moztest.resolve import TestResolver
             resolver = self._spawn(TestResolver)
-            if tests:
-                
-                test_objects = resolver.resolve_tests(paths=tests,
-                                                      flavor='python')
-            else:
-                
-                test_objects = resolver.resolve_tests(flavor='python')
+            
+            test_objects = resolver.resolve_tests(paths=tests, flavor='python')
+        else:
+            
+            
+            
+            subsuite = None
 
         mp = TestManifest()
         mp.tests.extend(test_objects)
