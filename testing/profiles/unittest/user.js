@@ -15,6 +15,7 @@ user_pref("app.update.url.android", "");
 
 user_pref("apz.content_response_timeout", 60000);
 user_pref("browser.EULA.override", true);
+user_pref("browser.chrome.guess_favicon", false);
 
 user_pref("browser.aboutHomeSnippets.updateUrl", "nonexistent://test");
 
