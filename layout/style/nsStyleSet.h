@@ -622,13 +622,8 @@ private:
   mozilla::EnumeratedArray<mozilla::SheetType, mozilla::SheetType::Count,
                            nsTArray<RefPtr<mozilla::CSSStyleSheet>>> mSheets;
 
-  
-  
   mozilla::EnumeratedArray<mozilla::SheetType, mozilla::SheetType::Count,
                            nsCOMPtr<nsIStyleRuleProcessor>> mRuleProcessors;
-
-  
-  nsTArray<nsCOMPtr<nsIStyleRuleProcessor> > mScopedDocSheetRuleProcessors;
 
   RefPtr<nsBindingManager> mBindingManager;
 

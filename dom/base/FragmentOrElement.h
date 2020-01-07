@@ -164,14 +164,6 @@ public:
     return Children()->Length();
   }
 
-  
-
-
-
-
-
-  void SetIsElementInStyleScopeFlagOnSubtree(bool aInStyleScope);
-
 public:
   
 
@@ -374,14 +366,6 @@ protected:
   {
     return static_cast<nsExtendedDOMSlots*>(GetExistingExtendedContentSlots());
   }
-
-  
-
-
-
-
-
-  void SetIsElementInStyleScopeFlagOnShadowTree(bool aInStyleScope);
 
   friend class ::ContentUnbinder;
   

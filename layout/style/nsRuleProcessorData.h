@@ -160,89 +160,6 @@ struct MOZ_STACK_CLASS TreeMatchContext {
 
 
 
-  void InitStyleScopes(mozilla::dom::Element* aElement);
-
-  void PushStyleScope(mozilla::dom::Element* aElement)
-  {
-    NS_PRECONDITION(aElement, "aElement must not be null");
-    if (aElement->IsScopedStyleRoot()) {
-      mStyleScopes.AppendElement(aElement);
-    }
-  }
-
-  void PopStyleScope(mozilla::dom::Element* aElement)
-  {
-    NS_PRECONDITION(aElement, "aElement must not be null");
-    if (mStyleScopes.SafeLastElement(nullptr) == aElement) {
-      mStyleScopes.TruncateLength(mStyleScopes.Length() - 1);
-    }
-  }
-
-  bool PopStyleScopeForSelectorMatching(mozilla::dom::Element* aElement)
-  {
-    NS_ASSERTION(mForScopedStyle, "only call PopStyleScopeForSelectorMatching "
-                                  "when mForScopedStyle is true");
-
-    if (!mCurrentStyleScope) {
-      return false;
-    }
-    if (mCurrentStyleScope == aElement) {
-      mCurrentStyleScope = nullptr;
-    }
-    return true;
-  }
-
-#ifdef DEBUG
-  void AssertHasAllStyleScopes(mozilla::dom::Element* aElement) const;
-#endif
-
-  bool SetStyleScopeForSelectorMatching(mozilla::dom::Element* aSubject,
-                                        mozilla::dom::Element* aScope)
-  {
-#ifdef DEBUG
-    AssertHasAllStyleScopes(aSubject);
-#endif
-
-    mForScopedStyle = !!aScope;
-    if (!aScope) {
-      
-      
-      mCurrentStyleScope = nullptr;
-      return true;
-    }
-    if (aScope == aSubject) {
-      
-      
-      
-      
-      
-      mCurrentStyleScope = nullptr;
-      return true;
-    }
-    if (mStyleScopes.Contains(aScope)) {
-      
-      
-      
-      mCurrentStyleScope = aScope;
-      return true;
-    }
-    
-    
-    mCurrentStyleScope = nullptr;
-    return false;
-  }
-
-  bool IsWithinStyleScopeForSelectorMatching() const
-  {
-    NS_ASSERTION(mForScopedStyle, "only call IsWithinScopeForSelectorMatching "
-                                  "when mForScopedStyle is true");
-    return mCurrentStyleScope;
-  }
-
-  
-
-
-
 
 
   class MOZ_RAII AutoAncestorPusher {
@@ -250,14 +167,13 @@ struct MOZ_STACK_CLASS TreeMatchContext {
     explicit AutoAncestorPusher(TreeMatchContext* aTreeMatchContext
                                 MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
       : mPushedAncestor(false)
-      , mPushedStyleScope(false)
       , mTreeMatchContext(aTreeMatchContext)
       , mElement(nullptr)
     {
       MOZ_GUARD_OBJECT_NOTIFIER_INIT;
     }
 
-    void PushAncestorAndStyleScope(mozilla::dom::Element* aElement) {
+    void PushAncestor(mozilla::dom::Element* aElement) {
       if (!mTreeMatchContext) {
         MOZ_ASSERT(!aElement || aElement->IsStyledByServo());
         return;
@@ -267,45 +183,18 @@ struct MOZ_STACK_CLASS TreeMatchContext {
       if (aElement) {
         mElement = aElement;
         mPushedAncestor = true;
-        mPushedStyleScope = true;
         mTreeMatchContext->mAncestorFilter.PushAncestor(aElement);
-        mTreeMatchContext->PushStyleScope(aElement);
       }
     }
 
-    void PushAncestorAndStyleScope(nsIContent* aContent) {
+    void PushAncestor(nsIContent* aContent) {
       if (!mTreeMatchContext) {
         MOZ_ASSERT(!aContent || aContent->IsStyledByServo());
         return;
       }
 
       if (aContent && aContent->IsElement()) {
-        PushAncestorAndStyleScope(aContent->AsElement());
-      }
-    }
-
-    void PushStyleScope(mozilla::dom::Element* aElement) {
-      if (!mTreeMatchContext) {
-        MOZ_ASSERT(!aElement || aElement->IsStyledByServo());
-        return;
-      }
-
-      MOZ_ASSERT(!mElement);
-      if (aElement) {
-        mElement = aElement;
-        mPushedStyleScope = true;
-        mTreeMatchContext->PushStyleScope(aElement);
-      }
-    }
-
-    void PushStyleScope(nsIContent* aContent) {
-      if (!mTreeMatchContext) {
-        MOZ_ASSERT(!aContent || aContent->IsStyledByServo());
-        return;
-      }
-
-      if (aContent && aContent->IsElement()) {
-        PushStyleScope(aContent->AsElement());
+        PushAncestor(aContent->AsElement());
       }
     }
 
@@ -313,14 +202,10 @@ struct MOZ_STACK_CLASS TreeMatchContext {
       if (mPushedAncestor) {
         mTreeMatchContext->mAncestorFilter.PopAncestor();
       }
-      if (mPushedStyleScope) {
-        mTreeMatchContext->PopStyleScope(mElement);
-      }
     }
 
   private:
     bool mPushedAncestor;
-    bool mPushedStyleScope;
     TreeMatchContext* mTreeMatchContext;
     mozilla::dom::Element* mElement;
     MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
@@ -406,10 +291,6 @@ struct MOZ_STACK_CLASS TreeMatchContext {
 
   
   
-  bool mForScopedStyle;
-
-  
-  
   
   
   
@@ -425,9 +306,6 @@ struct MOZ_STACK_CLASS TreeMatchContext {
   AutoTArray<mozilla::dom::Element*, 1> mStyleScopes;
 
   
-  mozilla::dom::Element* mCurrentStyleScope;
-
-  
   TreeMatchContext(bool aForStyling,
                    nsRuleWalker::VisitedHandlingType aVisitedHandling,
                    nsIDocument* aDocument,
@@ -441,8 +319,6 @@ struct MOZ_STACK_CLASS TreeMatchContext {
     , mCompatMode(aDocument->GetCompatibilityMode())
     , mUsingPrivateBrowsing(false)
     , mSkippingParentDisplayBasedStyleFixup(false)
-    , mForScopedStyle(false)
-    , mCurrentStyleScope(nullptr)
   {
     if (aMatchVisited != eNeverMatchVisited) {
       nsILoadContext* loadContext = mDocument->GetLoadContext();
@@ -651,8 +527,7 @@ public:
   {
   public:
     explicit AutoAncestorPusher(TreeMatchContext* aTreeMatchContext) {}
-    void PushAncestorAndStyleScope(nsIContent* aContent) {}
-    void PushStyleScope(nsIContent* aContent) {}
+    void PushAncestor(nsIContent* aContent) {}
   };
 
   class AutoParentDisplayBasedStyleFixupSkipper

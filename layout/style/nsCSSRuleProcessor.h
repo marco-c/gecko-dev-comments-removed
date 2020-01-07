@@ -183,13 +183,6 @@ public:
   bool AppendFontFeatureValuesRules(nsPresContext* aPresContext,
                               nsTArray<nsCSSFontFeatureValuesRule*>& aArray);
 
-  
-
-
-
-
-  mozilla::dom::Element* GetScopeElement() const { return mScopeElement; }
-
   void TakeDocumentRulesAndCacheKey(
       nsPresContext* aPresContext,
       nsTArray<mozilla::css::DocumentRule*>& aDocumentRules,
@@ -247,10 +240,6 @@ private:
 
   
   nsPresContext *mLastPresContext;
-
-  
-  
-  RefPtr<mozilla::dom::Element> mScopeElement;
 
   nsTArray<mozilla::css::DocumentRule*> mDocumentRules;
   nsDocumentRuleResultCacheKey mDocumentCacheKey;

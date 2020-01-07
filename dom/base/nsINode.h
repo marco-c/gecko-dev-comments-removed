@@ -1663,11 +1663,6 @@ private:
     
     NodeAncestorHasDirAuto,
     
-    
-    ElementIsInStyleScope,
-    
-    ElementIsScopedStyleRoot,
-    
     NodeHandlingClick,
     
     NodeHasRelevantHoverRules,
@@ -1795,23 +1790,6 @@ public:
   
   inline bool NodeOrAncestorHasDirAuto() const;
 
-  void SetIsElementInStyleScope(bool aValue) {
-    MOZ_ASSERT(IsElement(), "SetIsInStyleScope on a non-Element node");
-    SetBoolFlag(ElementIsInStyleScope, aValue);
-  }
-  void SetIsElementInStyleScope() {
-    MOZ_ASSERT(IsElement(), "SetIsInStyleScope on a non-Element node");
-    SetBoolFlag(ElementIsInStyleScope);
-  }
-  void ClearIsElementInStyleScope() {
-    MOZ_ASSERT(IsElement(), "ClearIsInStyleScope on a non-Element node");
-    ClearBoolFlag(ElementIsInStyleScope);
-  }
-  bool IsElementInStyleScope() const { return GetBoolFlag(ElementIsInStyleScope); }
-
-  void SetIsScopedStyleRoot() { SetBoolFlag(ElementIsScopedStyleRoot); }
-  void ClearIsScopedStyleRoot() { ClearBoolFlag(ElementIsScopedStyleRoot); }
-  bool IsScopedStyleRoot() { return GetBoolFlag(ElementIsScopedStyleRoot); }
   bool HasRelevantHoverRules() const { return GetBoolFlag(NodeHasRelevantHoverRules); }
   void SetHasRelevantHoverRules() { SetBoolFlag(NodeHasRelevantHoverRules); }
   void SetParserHasNotified() { SetBoolFlag(ParserHasNotified); };

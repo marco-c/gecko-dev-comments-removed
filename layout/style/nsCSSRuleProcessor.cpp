@@ -985,7 +985,6 @@ nsCSSRuleProcessor::nsCSSRuleProcessor(sheet_array_type&& aSheets,
                        ? aPreviousCSSRuleProcessor->CloneMQCacheKey()
                        : UniquePtr<nsMediaQueryResultCacheKey>())
   , mLastPresContext(nullptr)
-  , mScopeElement(aScopeElement)
   , mStyleSetRefCnt(0)
   , mSheetType(aSheetType)
   , mIsShared(aIsShared)
@@ -995,9 +994,6 @@ nsCSSRuleProcessor::nsCSSRuleProcessor(sheet_array_type&& aSheets,
   , mDocumentRulesAndCacheKeyValid(false)
 #endif
 {
-  NS_ASSERTION(!!mScopeElement == (aSheetType == SheetType::ScopedDoc),
-               "aScopeElement must be specified iff aSheetType is "
-               "eScopedDocSheet");
   for (sheet_array_type::size_type i = mSheets.Length(); i-- != 0; ) {
     mSheets[i]->AddRuleProcessor(this);
   }
@@ -1025,12 +1021,10 @@ NS_IMPL_CYCLE_COLLECTION_CLASS(nsCSSRuleProcessor)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(nsCSSRuleProcessor)
   tmp->ClearSheets();
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mScopeElement)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(nsCSSRuleProcessor)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mSheets)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mScopeElement)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 void
@@ -1757,18 +1751,7 @@ static bool SelectorMatches(Element* aElement,
       break;
 
     case CSSPseudoClassType::scope:
-      if (aTreeMatchContext.mForScopedStyle) {
-        if (aTreeMatchContext.mCurrentStyleScope) {
-          
-          
-          
-          
-          
-          
-          
-          return false;
-        }
-      } else if (aTreeMatchContext.HasSpecifiedScope()) {
+      if (aTreeMatchContext.HasSpecifiedScope()) {
         if (!aTreeMatchContext.IsScopeElement(aElement)) {
           return false;
         }
@@ -2003,14 +1986,6 @@ SelectorMatchesTree(Element* aPrevElement,
 
     
     
-    if (aTreeMatchContext.mForScopedStyle &&
-        !aTreeMatchContext.IsWithinStyleScopeForSelectorMatching()) {
-      ASSERT_XBL_CHILDREN_HACK();
-      return false;
-    }
-
-    
-    
     Element* element = nullptr;
     if (char16_t('+') == selector->mOperator ||
         char16_t('~') == selector->mOperator) {
@@ -2038,20 +2013,12 @@ SelectorMatchesTree(Element* aPrevElement,
       
       if (content && content->IsElement()) {
         element = content->AsElement();
-        if (aTreeMatchContext.mForScopedStyle) {
-          
-          
-          
-          
-          aTreeMatchContext.PopStyleScopeForSelectorMatching(element);
-        }
 
         
         
         
         
         if (selector->mOperator == '>' && element->IsActiveChildrenElement()) {
-          Element* styleScope = aTreeMatchContext.mCurrentStyleScope;
           xblChildrenMatched |=
             SelectorMatchesTree(element, selector, aTreeMatchContext, aFlags);
 
@@ -2062,12 +2029,6 @@ SelectorMatchesTree(Element* aPrevElement,
             return true;
           }
 #endif
-
-          
-          
-          
-          
-          aTreeMatchContext.mCurrentStyleScope = styleScope;
         }
       }
     }
@@ -2123,15 +2084,9 @@ SelectorMatchesTree(Element* aPrevElement,
         
         
         
-        Element* styleScope = aTreeMatchContext.mCurrentStyleScope;
         if (SelectorMatchesTree(element, selector, aTreeMatchContext, aFlags)) {
           return true;
         }
-        
-        
-        
-        
-        aTreeMatchContext.mCurrentStyleScope = styleScope;
       }
       selector = selector->mNext;
     }
@@ -2161,12 +2116,6 @@ void ContentEnumFunc(const RuleValue& value, nsCSSSelector* aSelector,
   if (ancestorFilter &&
       !ancestorFilter->MightHaveMatchingAncestor<RuleValue::eMaxAncestorHashes>(
           value.mAncestorSelectorHashes)) {
-    
-    return;
-  }
-  if (!data->mTreeMatchContext.SetStyleScopeForSelectorMatching(data->mElement,
-                                                                data->mScope)) {
-    
     
     return;
   }
@@ -2324,10 +2273,6 @@ nsCSSRuleProcessor::HasStateDependentStyle(ElementDependentRuleProcessorData* aD
                                            CSSPseudoElementType aPseudoType,
                                            EventStates aStateMask)
 {
-  MOZ_ASSERT(!aData->mTreeMatchContext.mForScopedStyle,
-             "mCurrentStyleScope will need to be saved and restored after the "
-             "SelectorMatchesTree call");
-
   bool isPseudoElement =
     aPseudoType != CSSPseudoElementType::NotPseudo;
 
@@ -2512,13 +2457,6 @@ AttributeEnumFunc(nsCSSSelector* aSelector,
                   AttributeEnumData* aData)
 {
   AttributeRuleProcessorData *data = aData->data;
-
-  if (!data->mTreeMatchContext.SetStyleScopeForSelectorMatching(data->mElement,
-                                                                data->mScope)) {
-    
-    
-    return;
-  }
 
   nsRestyleHint possibleChange =
     RestyleHintForSelectorWithAttributeChange(aData->change,
@@ -3579,10 +3517,6 @@ nsCSSRuleProcessor::SelectorListMatches(Element* aElement,
                                         TreeMatchContext& aTreeMatchContext,
                                         nsCSSSelectorList* aSelectorList)
 {
-  MOZ_ASSERT(!aTreeMatchContext.mForScopedStyle,
-             "mCurrentStyleScope will need to be saved and restored after the "
-             "SelectorMatchesTree call");
-
   while (aSelectorList) {
     nsCSSSelector* sel = aSelectorList->mSelectors;
     NS_ASSERTION(sel, "Should have *some* selectors");
@@ -3649,7 +3583,6 @@ TreeMatchContext::InitAncestors(Element *aElement)
 {
   MOZ_ASSERT(!mAncestorFilter.mFilter);
   MOZ_ASSERT(mAncestorFilter.mHashes.IsEmpty());
-  MOZ_ASSERT(mStyleScopes.IsEmpty());
 
   mAncestorFilter.mFilter = new AncestorFilter::Filter();
 
@@ -3670,28 +3603,6 @@ TreeMatchContext::InitAncestors(Element *aElement)
     
     for (uint32_t i = ancestors.Length(); i-- != 0; ) {
       mAncestorFilter.PushAncestor(ancestors[i]);
-      PushStyleScope(ancestors[i]);
-    }
-  }
-}
-
-void
-TreeMatchContext::InitStyleScopes(Element* aElement)
-{
-  MOZ_ASSERT(mStyleScopes.IsEmpty());
-
-  if (MOZ_LIKELY(aElement)) {
-    
-    AutoTArray<Element*, 50> ancestors;
-    Element* cur = aElement;
-    do {
-      ancestors.AppendElement(cur);
-      cur = cur->GetParentElementCrossingShadowRoot();
-    } while (cur);
-
-    
-    for (uint32_t i = ancestors.Length(); i-- != 0; ) {
-      PushStyleScope(ancestors[i]);
     }
   }
 }
@@ -3754,23 +3665,6 @@ AncestorFilter::AssertHasAllAncestors(Element *aElement) const
   Element* cur = aElement->GetParentElementCrossingShadowRoot();
   while (cur) {
     MOZ_ASSERT(mElements.Contains(cur));
-    cur = cur->GetParentElementCrossingShadowRoot();
-  }
-}
-
-void
-TreeMatchContext::AssertHasAllStyleScopes(Element* aElement) const
-{
-  if (aElement->IsInNativeAnonymousSubtree()) {
-    
-    
-    return;
-  }
-  Element* cur = aElement->GetParentElementCrossingShadowRoot();
-  while (cur) {
-    if (cur->IsScopedStyleRoot()) {
-      MOZ_ASSERT(mStyleScopes.Contains(cur));
-    }
     cur = cur->GetParentElementCrossingShadowRoot();
   }
 }
