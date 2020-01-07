@@ -376,6 +376,31 @@ public:
 
   void SetCanCacheFrameOffset(bool aCanCacheFrameOffset);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsresult
+  GetRangesForIntervalArray(nsINode* aBeginNode, int32_t aBeginOffset,
+                            nsINode* aEndNode, int32_t aEndOffset,
+                            bool aAllowAdjacent,
+                            nsTArray<nsRange*>* aRanges);
+
 private:
   friend class ::nsAutoScrollTimer;
 
