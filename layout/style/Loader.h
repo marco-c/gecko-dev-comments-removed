@@ -306,7 +306,10 @@ public:
 
 
 
+
+
   nsresult LoadChildSheet(StyleSheet* aParentSheet,
+                          SheetLoadData* aParentData,
                           nsIURI* aURL,
                           dom::MediaList* aMedia,
                           ImportRule* aGeckoParentRule,

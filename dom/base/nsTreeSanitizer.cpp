@@ -1112,13 +1112,14 @@ nsTreeSanitizer::SanitizeStyleSheet(const nsAString& aOriginal,
     rv = sheet->AsServo()->ParseSheet(
         aDocument->CSSLoader(), NS_ConvertUTF16toUTF8(aOriginal),
         aDocument->GetDocumentURI(), aBaseURI, aDocument->NodePrincipal(),
-        0, aDocument->GetCompatibilityMode());
+         nullptr, 0, aDocument->GetCompatibilityMode());
   } else {
 #ifdef MOZ_OLD_STYLE
     
     nsCSSParser parser(nullptr, sheet->AsGecko());
-    rv = parser.ParseSheet(aOriginal, aDocument->GetDocumentURI(), aBaseURI,
-                           aDocument->NodePrincipal(), 0);
+    rv = parser.ParseSheet(aOriginal, aDocument->GetDocumentURI(),
+                           aBaseURI, aDocument->NodePrincipal(),
+                            nullptr, 0);
 #else
     MOZ_CRASH("old style system disabled");
 #endif

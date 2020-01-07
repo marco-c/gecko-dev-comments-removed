@@ -1013,7 +1013,7 @@ nsLayoutStylesheetCache::BuildPreferenceSheet(RefPtr<StyleSheet>* aSheet,
     ServoStyleSheet* servoSheet = sheet->AsServo();
     
     nsresult rv = servoSheet->ParseSheet(
-      nullptr, sheetText, uri, uri, nullptr, 0, eCompatibility_FullStandards);
+      nullptr, sheetText, uri, uri, nullptr,  nullptr, 0, eCompatibility_FullStandards);
     
     
     MOZ_RELEASE_ASSERT(NS_SUCCEEDED(rv));

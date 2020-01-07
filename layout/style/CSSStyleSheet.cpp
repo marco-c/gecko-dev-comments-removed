@@ -919,7 +919,8 @@ CSSStyleSheet::ReparseSheet(const nsAString& aInput)
 
   nsCSSParser parser(loader, this);
   nsresult rv = parser.ParseSheet(aInput, mInner->mSheetURI, mInner->mBaseURI,
-                                  mInner->mPrincipal, lineNumber, &reusableSheets);
+                                  mInner->mPrincipal,  nullptr,
+                                  lineNumber, &reusableSheets);
   DidDirty(); 
   NS_ENSURE_SUCCESS(rv, rv);
 

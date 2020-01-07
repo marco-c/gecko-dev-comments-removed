@@ -13,6 +13,7 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/css/Loader.h"
+#include "mozilla/css/SheetLoadData.h"
 
 #include "nsCSSPropertyID.h"
 #include "nsCSSScanner.h"
@@ -78,10 +79,12 @@ public:
 
 
 
+
   nsresult ParseSheet(const nsAString& aInput,
                       nsIURI*          aSheetURL,
                       nsIURI*          aBaseURI,
                       nsIPrincipal*    aSheetPrincipal,
+                      mozilla::css::SheetLoadData* aLoadData,
                       uint32_t         aLineNumber,
                       mozilla::css::LoaderReusableStyleSheets* aReusableSheets =
                         nullptr);
