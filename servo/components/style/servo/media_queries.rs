@@ -170,9 +170,9 @@ pub enum ExpressionKind {
 
 #[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "servo", derive(MallocSizeOf))]
-pub struct Expression(pub ExpressionKind);
+pub struct MediaFeatureExpression(pub ExpressionKind);
 
-impl Expression {
+impl MediaFeatureExpression {
     
     
     
@@ -196,7 +196,7 @@ impl Expression {
             let name = input.expect_ident_cloned()?;
             input.expect_colon()?;
             
-            Ok(Expression(match_ignore_ascii_case! { &name,
+            Ok(MediaFeatureExpression(match_ignore_ascii_case! { &name,
                 "min-width" => {
                     ExpressionKind::Width(Range::Min(specified::Length::parse_non_negative(context, input)?))
                 },
@@ -206,7 +206,7 @@ impl Expression {
                 "width" => {
                     ExpressionKind::Width(Range::Eq(specified::Length::parse_non_negative(context, input)?))
                 },
-                _ => return Err(input.new_custom_error(SelectorParseErrorKind::UnexpectedIdent(name.clone())))
+                _ => return Err(input.new_custom_error(SelectorParseErrorKind::UnexpectedIdent(name)))
             }))
         })
     }
@@ -228,7 +228,7 @@ impl Expression {
     }
 }
 
-impl ToCss for Expression {
+impl ToCss for MediaFeatureExpression {
     fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
     where
         W: Write,

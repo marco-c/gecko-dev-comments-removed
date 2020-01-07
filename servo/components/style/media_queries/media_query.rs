@@ -13,7 +13,7 @@ use selectors::parser::SelectorParseErrorKind;
 use std::fmt::{self, Write};
 use str::string_as_ascii_lowercase;
 use style_traits::{CssWriter, ParseError, StyleParseErrorKind, ToCss};
-use super::Expression;
+use super::MediaFeatureExpression;
 use values::CustomIdent;
 
 
@@ -66,7 +66,7 @@ pub struct MediaQuery {
     
     pub media_type: MediaQueryType,
     
-    pub expressions: Vec<Expression>,
+    pub expressions: Vec<MediaFeatureExpression>,
 }
 
 impl ToCss for MediaQuery {
@@ -143,7 +143,7 @@ impl MediaQuery {
                 }
 
                 
-                expressions.push(Expression::parse(context, input)?);
+                expressions.push(MediaFeatureExpression::parse(context, input)?);
 
                 MediaQueryType::All
             },
@@ -161,7 +161,7 @@ impl MediaQuery {
                     expressions,
                 });
             }
-            expressions.push(Expression::parse(context, input)?)
+            expressions.push(MediaFeatureExpression::parse(context, input)?)
         }
     }
 }
