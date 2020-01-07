@@ -71,7 +71,11 @@ public:
   typedef ServoElementSnapshotFlags Flags;
 
   explicit ServoElementSnapshot(const Element* aElement);
-  ~ServoElementSnapshot();
+
+  ~ServoElementSnapshot()
+  {
+    MOZ_COUNT_DTOR(ServoElementSnapshot);
+  }
 
   bool HasAttrs() const { return HasAny(Flags::Attributes); }
 
@@ -151,7 +155,7 @@ public:
     return nullptr;
   }
 
-  const nsAttrValue* DoGetClasses() const
+  const nsAttrValue* GetClasses() const
   {
     MOZ_ASSERT(HasAttrs());
     return &mClass;
