@@ -1290,9 +1290,11 @@ FoldElement(JSContext* cx, ParseNode** nodePtr, PerHandlerParser<FullParseHandle
             
             
             
-            JSAtom* atom = ToAtom<NoGC>(cx, DoubleValue(number));
-            if (!atom)
+            JSAtom* atom = NumberToAtom(cx, number);
+            if (!atom) {
+                cx->recoverFromOutOfMemory();
                 return false;
+            }
             name = atom->asPropertyName();
         }
     }
