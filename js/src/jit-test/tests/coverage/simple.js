@@ -541,3 +541,38 @@ checkLcov(function () {
 
 
 
+
+
+{
+    checkLcov(function () { 
+        function f() { return 0; } var l = f(); 
+        
+        
+        
+        
+    });
+
+    
+    checkLcov(function () { 
+        function f() { return 0; } function g() { return 1; } 
+        var v = f() + g(); 
+        
+        
+        
+        
+    });
+
+    
+    checkLcov(function () { 
+        if (1 === 2)  
+            throw "0 hits here"; function f() { return "1 hit here"; } 
+        f();  
+        
+        
+        
+        
+    });
+}
+
+
+
