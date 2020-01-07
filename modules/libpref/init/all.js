@@ -5262,11 +5262,6 @@ pref("media.ondevicechange.fakeDeviceChangeEvent.enabled", false);
 
 pref("layout.css.touch_action.enabled", true);
 
-
-
-
-pref("layout.css.expensive-style-struct-assertions.enabled", false);
-
 #if defined(MOZ_WIDGET_ANDROID)
 
 pref("dom.netinfo.enabled", true);
