@@ -2,6 +2,10 @@
 
 
 
+.tabbrowser-tabpanels {
+  -moz-binding: url("chrome://browser/content/tabbrowser.xml#tabbrowser-tabpanels");
+}
+
 .tabbrowser-arrowscrollbox {
   -moz-binding: url("chrome://browser/content/tabbrowser.xml#tabbrowser-arrowscrollbox");
 }
