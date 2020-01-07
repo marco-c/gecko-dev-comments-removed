@@ -789,7 +789,8 @@ add_task(async function() {
 });
 
 
-add_task(async function test_zip_extension() {
+add_task({ skip_if: () => AppConstants.MOZ_APP_NAME == "thunderbird" },
+         async function test_zip_extension() {
   let xpi = createTempWebExtensionFile({
     background() {
       
