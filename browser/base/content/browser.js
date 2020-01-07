@@ -8346,29 +8346,6 @@ var gIdentityHandler = {
       this._permissionReloadHint.removeAttribute("hidden");
       PanelView.forNode(this._identityPopupMainView)
                .descriptionHeightWorkaround();
-
-      
-      let histogram = Services.telemetry.getKeyedHistogramById("WEB_PERMISSION_CLEARED");
-
-      let permissionType = 0;
-      if (aPermission.state == SitePermissions.ALLOW &&
-          aPermission.scope == SitePermissions.SCOPE_PERSISTENT) {
-        
-        permissionType = 1;
-      } else if (aPermission.state == SitePermissions.BLOCK &&
-                 aPermission.scope == SitePermissions.SCOPE_PERSISTENT) {
-        
-        permissionType = 2;
-      } else if (aPermission.state == SitePermissions.ALLOW) {
-        
-        permissionType = 3;
-      } else if (aPermission.state == SitePermissions.BLOCK) {
-        
-        permissionType = 4;
-      }
-
-      histogram.add("(all)", permissionType);
-      histogram.add(aPermission.id, permissionType);
     });
 
     container.appendChild(button);
