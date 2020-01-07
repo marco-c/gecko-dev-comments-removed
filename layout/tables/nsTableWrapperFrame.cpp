@@ -123,6 +123,10 @@ nsTableWrapperFrame::AppendFrames(ChildListID     aListID,
   
   PresShell()->FrameNeedsReflow(this, nsIPresShell::eTreeChange,
                                 NS_FRAME_HAS_DIRTY_CHILDREN);
+  
+  
+  
+  MarkNeedsDisplayItemRebuild();
 }
 
 void
@@ -142,6 +146,7 @@ nsTableWrapperFrame::InsertFrames(ChildListID     aListID,
   
   PresShell()->FrameNeedsReflow(this, nsIPresShell::eTreeChange,
                                 NS_FRAME_HAS_DIRTY_CHILDREN);
+  MarkNeedsDisplayItemRebuild();
 }
 
 void
@@ -163,6 +168,7 @@ nsTableWrapperFrame::RemoveFrame(ChildListID  aListID,
 
   PresShell()->FrameNeedsReflow(this, nsIPresShell::eTreeChange,
                                 NS_FRAME_HAS_DIRTY_CHILDREN);
+  MarkNeedsDisplayItemRebuild();
 }
 
 void
