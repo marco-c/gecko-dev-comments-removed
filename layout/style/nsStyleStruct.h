@@ -2330,13 +2330,13 @@ public:
     mFillRule = aFillRule;
   }
 
-  Position& GetPosition() {
+  mozilla::Position& GetPosition() {
     MOZ_ASSERT(mType == StyleBasicShapeType::Circle ||
                mType == StyleBasicShapeType::Ellipse,
                "expected circle or ellipse");
     return mPosition;
   }
-  const Position& GetPosition() const {
+  const mozilla::Position& GetPosition() const {
     MOZ_ASSERT(mType == StyleBasicShapeType::Circle ||
                mType == StyleBasicShapeType::Ellipse,
                "expected circle or ellipse");
@@ -2396,7 +2396,7 @@ private:
   
   nsTArray<nsStyleCoord> mCoordinates;
   
-  Position mPosition;
+  mozilla::Position mPosition;
   
   nsStyleCorners mRadius;
 };
