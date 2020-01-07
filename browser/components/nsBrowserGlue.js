@@ -109,7 +109,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   LoginManagerParent: "resource://gre/modules/LoginManagerParent.jsm",
   NewTabUtils: "resource://gre/modules/NewTabUtils.jsm",
   Normandy: "resource://normandy/Normandy.jsm",
-  ObjectUtils: "resource://gre/modules/ObjectUtils.jsm",
   OS: "resource://gre/modules/osfile.jsm",
   PageActions: "resource:///modules/PageActions.jsm",
   PageThumbs: "resource://gre/modules/PageThumbs.jsm",
@@ -121,7 +120,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   PluralForm: "resource://gre/modules/PluralForm.jsm",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
   ProcessHangMonitor: "resource:///modules/ProcessHangMonitor.jsm",
-  PromiseUtils: "resource://gre/modules/PromiseUtils.jsm",
   ReaderParent: "resource:///modules/ReaderParent.jsm",
   RecentWindow: "resource:///modules/RecentWindow.jsm",
   RemotePrompt: "resource:///modules/RemotePrompt.jsm",
@@ -485,11 +483,8 @@ BrowserGlue.prototype = {
           if (this._placesBrowserInitComplete) {
             Services.obs.notifyObservers(null, "places-browser-init-complete");
           }
-        } else if (data == "migrateMatchBucketsPrefForUI66") {
-          this._migrateMatchBucketsPrefForUI66().then(() => {
-            Services.obs.notifyObservers(null, "browser-glue-test",
-                                         "migrateMatchBucketsPrefForUI66-done");
-          });
+        } else if (data == "migrateMatchBucketsPrefForUIVersion60") {
+          this._migrateMatchBucketsPrefForUIVersion60(true);
         }
         break;
       case "initial-migration-will-import-default-bookmarks":
@@ -572,7 +567,6 @@ BrowserGlue.prototype = {
         PdfJs.init(true);
         break;
       case "shield-init-complete":
-        this._shieldInitCompleteDeferred.resolve();
         this._sendMainPingCentrePing();
         break;
     }
@@ -618,8 +612,6 @@ BrowserGlue.prototype = {
     if (AppConstants.platform == "win") {
       JawsScreenReaderVersionCheck.init();
     }
-
-    this._shieldInitCompleteDeferred = PromiseUtils.defer();
   },
 
   
@@ -1841,7 +1833,7 @@ BrowserGlue.prototype = {
 
   
   _migrateUI: function BG__migrateUI() {
-    const UI_VERSION = 66;
+    const UI_VERSION = 65;
     const BROWSER_DOCURL = "chrome://browser/content/browser.xul";
 
     let currentUIVersion;
@@ -2133,6 +2125,8 @@ BrowserGlue.prototype = {
 
     if (currentUIVersion < 60) {
       
+      
+      this._migrateMatchBucketsPrefForUIVersion60();
     }
 
     if (currentUIVersion < 61) {
@@ -2182,12 +2176,6 @@ BrowserGlue.prototype = {
           }
         }
       });
-    }
-
-    if (currentUIVersion < 66) {
-      
-      
-      this._migrateMatchBucketsPrefForUI66();
     }
 
     
@@ -2271,75 +2259,44 @@ BrowserGlue.prototype = {
     }
   },
 
-  async _migrateMatchBucketsPrefForUI66() {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    
-    await this._shieldInitCompleteDeferred.promise;
-
-    
-    
-    
-    let prefName = "browser.urlbar.matchBuckets";
-    let prefValue = Services.prefs.getCharPref(prefName, "");
-
-    
-    let experiment = null;
-    let experimentName = "pref-flip-search-composition-57-release-1413565";
-    let {PreferenceExperiments} =
-      ChromeUtils.import("resource://normandy/lib/PreferenceExperiments.jsm", {});
-    try {
-      experiment = await PreferenceExperiments.get(experimentName);
-    } catch (e) {}
-
-    
-    if (experiment && !experiment.expired) {
-      await PreferenceExperiments.stop(experimentName, {
-        resetValue: true,
-        reason: "external:search-ui-migration",
-      });
-    }
-
-    
-    
-    
-    if (Services.prefs.getCharPref(prefName, "")) {
-      return;
-    }
-
-    
-    
-    
-    
-    if (prefValue) {
-      let buckets = PlacesUtils.convertMatchBucketsStringToArray(prefValue);
-      if (ObjectUtils.deepEqual(buckets, [["suggestion", 4], ["general", 5]])) {
-        return;
+  _migrateMatchBucketsPrefForUIVersion60(forceCheck = false) {
+    function check() {
+      if (CustomizableUI.getPlacementOfWidget("search-container")) {
+        Services.prefs.setCharPref(prefName,
+                                   "general:5,suggestion:Infinity");
       }
     }
-
+    let prefName = "browser.urlbar.matchBuckets";
+    let pref = Services.prefs.getCharPref(prefName, "");
+    if (!pref) {
+      
+      
+      
+      
+      
+      
+      if (forceCheck) {
+        
+        check();
+      } else {
+        
+        
+        
+        let listener = {
+          onAreaNodeRegistered(area, container) {
+            if (CustomizableUI.AREA_NAVBAR == area) {
+              check();
+              CustomizableUI.removeListener(listener);
+            }
+          },
+        };
+        CustomizableUI.addListener(listener);
+      }
+    }
     
     
     
-    prefValue = prefValue || "general:5,suggestion:Infinity";
-    Services.prefs.setCharPref(prefName, prefValue);
+    
   },
 
   async ensurePlacesDefaultQueriesInitialized() {
