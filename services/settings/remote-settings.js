@@ -160,11 +160,13 @@ async function fetchLatestChanges(url, lastEtag) {
     let payload;
     try {
       payload = await response.json();
-    } catch (e) {}
+    } catch (e) {
+      payload = e.message;
+    }
     if (!payload.hasOwnProperty("data")) {
       
       
-      throw new Error(`Server error response ${JSON.stringify(payload)}`);
+      throw new Error(`Server error ${response.status} ${response.statusText}: ${JSON.stringify(payload)}`);
     }
     changes = payload.data;
   }
