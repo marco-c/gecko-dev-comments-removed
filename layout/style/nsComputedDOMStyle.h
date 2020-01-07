@@ -130,6 +130,11 @@ public:
     mExposeVisitedStyle = aExpose;
   }
 
+
+  void GetCSSImageURLs(const nsAString& aPropertyName,
+                       nsTArray<nsString>& aImageURLs,
+                       mozilla::ErrorResult& aRv) final;
+
   
   
   
