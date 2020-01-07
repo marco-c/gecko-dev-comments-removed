@@ -547,7 +547,9 @@ HTMLTooltip.prototype = {
 
     this.doc.defaultView.clearTimeout(this.attachEventsTimer);
     this.attachEventsTimer = this.doc.defaultView.setTimeout(() => {
-      this._maybeFocusTooltip();
+      if (this.autofocus) {
+        this.focus();
+      }
       
       this.topWindow = this._getTopWindow();
       this.topWindow.addEventListener("click", this._onClick, true);
@@ -763,11 +765,26 @@ HTMLTooltip.prototype = {
 
 
 
-  _maybeFocusTooltip: function() {
+
+  focus: function() {
     const focusableElement = this.panel.querySelector(focusableSelector);
-    if (this.autofocus && focusableElement) {
+    if (focusableElement) {
       focusableElement.focus();
     }
+    return !!focusableElement;
+  },
+
+  
+
+
+
+
+  focusEnd: function() {
+    const focusableElements = this.panel.querySelectorAll(focusableSelector);
+    if (focusableElements.length) {
+      focusableElements[focusableElements.length - 1].focus();
+    }
+    return focusableElements.length !== 0;
   },
 
   _getTopWindow: function() {
