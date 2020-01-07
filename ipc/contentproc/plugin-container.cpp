@@ -11,10 +11,7 @@
 #ifdef XP_WIN
 #include <windows.h>
 
-
-#define XRE_DONT_PROTECT_DLL_LOAD
 #include "nsWindowsWMain.cpp"
-#include "nsSetDllDirectory.h"
 #else
 
 #include <unistd.h>
@@ -49,16 +46,6 @@ content_process_main(mozilla::Bootstrap* bootstrap, int argc, char* argv[])
 #endif
 
     bootstrap->XRE_SetProcessType(argv[--argc]);
-
-#ifdef XP_WIN
-    
-    
-    
-    if (bootstrap->XRE_GetProcessType() != GeckoProcessType_Plugin) {
-        mozilla::SanitizeEnvironmentVariables();
-        SetDllDirectoryW(L"");
-    }
-#endif
 
     nsresult rv = bootstrap->XRE_InitChildProcess(argc, argv, &childData);
     return NS_FAILED(rv);
