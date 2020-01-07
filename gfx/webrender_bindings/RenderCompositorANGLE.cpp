@@ -13,6 +13,7 @@
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/layers/HelpersD3D11.h"
 #include "mozilla/layers/SyncObject.h"
+#include "mozilla/webrender/RenderThread.h"
 #include "mozilla/widget/CompositorWidget.h"
 #include "mozilla/widget/WinCompositorWidget.h"
 #include "mozilla/WindowsVersion.h"
@@ -69,8 +70,43 @@ RenderCompositorANGLE::GetDeviceOfEGLDisplay()
 }
 
 bool
+RenderCompositorANGLE::SutdownEGLLibraryIfNecessary()
+{
+  const RefPtr<gl::GLLibraryEGL> egl = gl::GLLibraryEGL::Get();
+  if (!egl) {
+    
+    return true;
+  }
+
+  RefPtr<ID3D11Device> device = gfx::DeviceManagerDx::Get()->GetCompositorDevice();
+  
+  
+  
+  
+  
+  
+  
+  if (device.get() != GetDeviceOfEGLDisplay() &&
+      RenderThread::Get()->RendererCount() == 0) {
+    
+    egl->Shutdown();
+  }
+  return true;
+}
+
+bool
 RenderCompositorANGLE::Initialize()
 {
+  if (RenderThread::Get()->IsHandlingDeviceReset()) {
+    gfxCriticalNote << "Waiting for handling device reset";
+    return false;
+  }
+
+  
+  if (!SutdownEGLLibraryIfNecessary()) {
+    return false;
+  }
+
   nsCString discardFailureId;
   if (!gl::GLLibraryEGL::EnsureInitialized( true, &discardFailureId)) {
     gfxCriticalNote << "Failed to load EGL library: " << discardFailureId.get();
@@ -274,6 +310,11 @@ RenderCompositorANGLE::CreateSwapChainForDCompIfPossible(IDXGIFactory2* aDXGIFac
 bool
 RenderCompositorANGLE::BeginFrame()
 {
+  if (mDevice->GetDeviceRemovedReason() != S_OK) {
+    RenderThread::Get()->HandleDeviceReset("BeginFrame");
+    return false;
+  }
+
   mWidget->AsWindows()->UpdateCompositorWndSizeIfNecessary();
 
   if (!ResizeBufferIfNeeded()) {
@@ -286,8 +327,11 @@ RenderCompositorANGLE::BeginFrame()
   }
 
   if (mSyncObject) {
-    
-    mSyncObject->Synchronize();
+    if (!mSyncObject->Synchronize()) {
+      
+      RenderThread::Get()->HandleDeviceReset("SyncObject");
+      return false;
+    }
   }
   return true;
 }
