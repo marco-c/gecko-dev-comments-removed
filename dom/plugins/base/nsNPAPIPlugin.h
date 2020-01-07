@@ -14,14 +14,11 @@
 #include "mozilla/PluginLibrary.h"
 #include "mozilla/RefCounted.h"
 
-
-
 #if defined(XP_WIN)
 #define NS_NPAPIPLUGIN_CALLBACK(_type, _name) _type (__stdcall * _name)
 #else
 #define NS_NPAPIPLUGIN_CALLBACK(_type, _name) _type (* _name)
 #endif
-
 
 typedef NS_NPAPIPLUGIN_CALLBACK(NPError, NP_GETENTRYPOINTS) (NPPluginFuncs* pCallbacks);
 typedef NS_NPAPIPLUGIN_CALLBACK(NPError, NP_PLUGININIT) (const NPNetscapeFuncs* pCallbacks);
