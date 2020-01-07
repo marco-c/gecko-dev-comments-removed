@@ -1016,6 +1016,8 @@ IonCacheIRCompiler::emitMegamorphicLoadSlotResult()
     masm.adjustStack(sizeof(Value));
 
     masm.branchIfFalseBool(scratch2, failure->label());
+    if (JitOptions.spectreJitToCxxCalls)
+        masm.speculationBarrier();
     return true;
 }
 
@@ -1209,6 +1211,9 @@ IonCacheIRCompiler::emitCallNativeGetterResult()
     Address outparam(masm.getStackPointer(), IonOOLNativeExitFrameLayout::offsetOfResult());
     masm.loadValue(outparam, output.valueReg());
 
+    if (JitOptions.spectreJitToCxxCalls)
+        masm.speculationBarrier();
+
     masm.adjustStack(IonOOLNativeExitFrameLayout::Size(0));
     return true;
 }
@@ -1267,6 +1272,10 @@ IonCacheIRCompiler::emitCallProxyGetResult()
     
     Address outparam(masm.getStackPointer(), IonOOLProxyExitFrameLayout::offsetOfResult());
     masm.loadValue(outparam, output.valueReg());
+
+    
+    if (JitOptions.spectreJitToCxxCalls)
+        masm.speculationBarrier();
 
     
     masm.adjustStack(IonOOLProxyExitFrameLayout::Size());
