@@ -37,9 +37,8 @@ function test() {
     let caretMove = ensureCaretAt(panel, 15, 1, true);
     
     executeSoon(function () {
-      EventUtils.synthesizeKey("l", { accelKey: true });
-      EventUtils.synthesizeKey("1", {});
-      EventUtils.synthesizeKey("5", {});
+      EventUtils.synthesizeKey("l", {accelKey: true});
+      EventUtils.sendString("15");
     });
     yield caretMove;
 

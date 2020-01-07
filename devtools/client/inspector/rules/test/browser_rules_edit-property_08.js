@@ -51,7 +51,7 @@ add_task(function* () {
   
   
   onRuleViewChanged = view.once("ruleview-changed");
-  EventUtils.synthesizeKey("VK_ESCAPE", {});
+  EventUtils.synthesizeKey("KEY_Escape");
   yield onRuleViewChanged;
 });
 

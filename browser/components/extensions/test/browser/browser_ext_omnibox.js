@@ -111,12 +111,12 @@ add_task(async function() {
   async function startInputSession(indexToWaitFor) {
     gURLBar.focus();
     gURLBar.value = keyword;
-    EventUtils.synthesizeKey(" ", {});
+    EventUtils.sendString(" ");
     await expectEvent("on-input-started-fired");
     
     
     let char = ((inputSessionSerial++) % 10).toString();
-    EventUtils.synthesizeKey(char, {});
+    EventUtils.sendString(char);
 
     await expectEvent("on-input-changed-fired", {text: char});
     
@@ -131,58 +131,52 @@ add_task(async function() {
     gURLBar.focus();
 
     
-    for (let letter of keyword) {
-      EventUtils.synthesizeKey(letter, {});
-    }
-    EventUtils.synthesizeKey(" ", {});
+    EventUtils.sendString(keyword + " ");
     await expectEvent("on-input-started-fired");
 
     
-    EventUtils.synthesizeKey("VK_BACK_SPACE", {});
+    EventUtils.synthesizeKey("KEY_Backspace");
     await expectEvent("on-input-cancelled-fired");
 
-    EventUtils.synthesizeKey(" ", {});
+    EventUtils.sendString(" ");
     await expectEvent("on-input-started-fired");
 
     
-    EventUtils.synthesizeKey("VK_RETURN", {});
+    EventUtils.synthesizeKey("KEY_Enter");
     await expectEvent("on-input-entered-fired");
 
     gURLBar.focus();
 
     
-    for (let letter of keyword) {
-      EventUtils.synthesizeKey(letter, {});
-    }
-    EventUtils.synthesizeKey(" ", {});
+    EventUtils.sendString(keyword + " ");
     await expectEvent("on-input-started-fired");
 
     
-    EventUtils.synthesizeKey("b", {});
+    EventUtils.sendString("b");
     await expectEvent("on-input-changed-fired", {text: "b"});
 
-    EventUtils.synthesizeKey("c", {});
+    EventUtils.sendString("c");
     await expectEvent("on-input-changed-fired", {text: "bc"});
 
-    EventUtils.synthesizeKey("VK_BACK_SPACE", {});
+    EventUtils.synthesizeKey("KEY_Backspace");
     await expectEvent("on-input-changed-fired", {text: "b"});
 
     
     
-    EventUtils.synthesizeKey("VK_BACK_SPACE", {});
+    EventUtils.synthesizeKey("KEY_Backspace");
     await expectEvent("on-input-changed-fired", {text: ""});
 
     
-    EventUtils.synthesizeKey("VK_BACK_SPACE", {});
+    EventUtils.synthesizeKey("KEY_Backspace");
     await expectEvent("on-input-cancelled-fired");
 
     
     
-    EventUtils.synthesizeKey(" ", {});
+    EventUtils.sendString(" ");
     await expectEvent("on-input-started-fired");
 
     
-    EventUtils.synthesizeKey(" ", {});
+    EventUtils.sendString(" ");
     await expectEvent("on-input-changed-fired", {text: " "});
 
     
@@ -222,9 +216,7 @@ add_task(async function() {
     await startInputSession(suggestionIndex);
 
     
-    for (let i = 0; i < suggestionIndex; i++) {
-      EventUtils.synthesizeKey("VK_DOWN", {});
-    }
+    EventUtils.synthesizeKey("KEY_ArrowDown", {repeat: suggestionIndex});
 
     let promiseEvent = expectEvent("on-input-entered-fired", {
       text: expectedText,

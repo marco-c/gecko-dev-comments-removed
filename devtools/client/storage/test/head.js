@@ -709,7 +709,7 @@ function* editCell(id, column, newValue, validate = true) {
 
   editableFieldsEngine.edit(row[column]);
 
-  yield typeWithTerminator(newValue, "VK_RETURN", validate);
+  yield typeWithTerminator(newValue, "KEY_Enter", validate);
 }
 
 
@@ -827,7 +827,7 @@ function* typeWithTerminator(str, terminator, validate = true) {
   EventUtils.sendString(str);
 
   info("Pressing " + terminator);
-  EventUtils.synthesizeKey(terminator, {});
+  EventUtils.synthesizeKey(terminator);
 
   if (validate) {
     info("Validating results... waiting for ROW_EDIT event.");

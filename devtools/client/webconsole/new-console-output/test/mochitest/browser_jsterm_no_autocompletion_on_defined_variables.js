@@ -21,18 +21,17 @@ function testCompletion(hud) {
 
   
   jsterm.setInputValue("var d = ");
-  EventUtils.synthesizeKey("5", {});
-  EventUtils.synthesizeKey(";", {});
+  EventUtils.sendString("5;");
   is(input.value, "var d = 5;", "var d = 5;");
   is(jsterm.completeNode.value, "", "no completion");
-  EventUtils.synthesizeKey("VK_RETURN", {});
+  EventUtils.synthesizeKey("KEY_Enter");
   is(jsterm.completeNode.value, "", "clear completion on execute()");
 
   
   jsterm.setInputValue("var a = ");
-  EventUtils.synthesizeKey("d", {});
+  EventUtils.sendString("d");
   is(input.value, "var a = d", "var a = d");
   is(jsterm.completeNode.value, "", "no completion");
-  EventUtils.synthesizeKey("VK_RETURN", {});
+  EventUtils.synthesizeKey("KEY_Enter");
   is(jsterm.completeNode.value, "", "clear completion on execute()");
 }

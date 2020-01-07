@@ -24,7 +24,7 @@ add_task(async function test() {
   let promise = promiseEvent(searchPopup, "popupshown");
   info("Opening search panel");
   searchbar.focus();
-  EventUtils.synthesizeKey("VK_DOWN", {});
+  EventUtils.synthesizeKey("KEY_ArrowDown");
   await promise;
 
   
@@ -60,19 +60,19 @@ add_task(async function test() {
   for (let button = null;
        button != menuButton;
        button = searchbar.textbox.popup.oneOffButtons.selectedButton) {
-    EventUtils.synthesizeKey("VK_UP", {});
+    EventUtils.synthesizeKey("KEY_ArrowUp");
   }
 
   
   promise = promiseEvent(buttonPopup, "popupshown");
-  EventUtils.synthesizeKey("VK_RIGHT", {});
+  EventUtils.synthesizeKey("KEY_ArrowRight");
   await promise;
 
   Assert.ok(menuButton.open, "Submenu should be open");
 
   
   promise = promiseEvent(buttonPopup, "popuphidden");
-  EventUtils.synthesizeKey("VK_ESCAPE", {});
+  EventUtils.synthesizeKey("KEY_Escape");
   await promise;
 
   Assert.ok(!menuButton.open, "Submenu should be closed");

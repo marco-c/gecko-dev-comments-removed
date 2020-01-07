@@ -34,10 +34,10 @@ add_task(async function () {
   is(jsterm.lastInputValue, "window.foobarBug660806.location",
      "lastInputValue is correct");
 
-  EventUtils.synthesizeKey("VK_RETURN", {});
+  EventUtils.synthesizeKey("KEY_Enter");
 
   let onSetInputValue = jsterm.once("set-input-value");
-  EventUtils.synthesizeKey("VK_UP", {});
+  EventUtils.synthesizeKey("KEY_ArrowUp");
   await onSetInputValue;
 
   

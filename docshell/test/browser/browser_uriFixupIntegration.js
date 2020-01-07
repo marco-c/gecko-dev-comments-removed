@@ -36,7 +36,7 @@ add_task(async function test() {
     
     gURLBar.value = searchParams;
     gURLBar.focus();
-    EventUtils.synthesizeKey("VK_RETURN", {});
+    EventUtils.synthesizeKey("KEY_Enter");
     await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
 
     

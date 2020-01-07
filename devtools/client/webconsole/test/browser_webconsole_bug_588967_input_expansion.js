@@ -32,12 +32,12 @@ function testInputExpansion(hud) {
   input.selectionStart = length;
   
   
-  EventUtils.synthesizeKey("d", {});
+  EventUtils.sendString("d");
   ok(input.clientHeight > ordinaryHeight, "the input expanded");
 
   
   input.value = "";
-  EventUtils.synthesizeKey("d", {});
+  EventUtils.sendString("d");
   is(input.clientHeight, ordinaryHeight, "the input's height is normal again");
 
   input = length = null;

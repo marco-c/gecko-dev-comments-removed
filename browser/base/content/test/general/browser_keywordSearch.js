@@ -119,5 +119,5 @@ function doTest() {
   
   gURLBar.value = gCurrTest.testText;
   gURLBar.focus();
-  EventUtils.synthesizeKey("VK_RETURN", {});
+  EventUtils.synthesizeKey("KEY_Enter");
 }

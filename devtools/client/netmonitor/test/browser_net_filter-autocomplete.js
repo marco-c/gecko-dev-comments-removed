@@ -58,7 +58,7 @@ add_task(async function () {
 
   document.querySelector(".devtools-filterinput").focus();
   
-  EventUtils.synthesizeKey("s", {});
+  EventUtils.sendString("s");
   ok(document.querySelector(".devtools-autocomplete-popup"),
     "Autocomplete Popup Created");
   testAutocompleteContents([
@@ -70,15 +70,15 @@ add_task(async function () {
     "status-code:",
   ], document);
 
-  EventUtils.synthesizeKey("c", {});
+  EventUtils.sendString("c");
   testAutocompleteContents(["scheme:"], document);
-  EventUtils.synthesizeKey("VK_TAB", {});
+  EventUtils.synthesizeKey("KEY_Tab");
   
   ok(document.querySelector(".devtools-autocomplete-popup"),
     "Autocomplete Popup alive with content values");
   testAutocompleteContents(["scheme:http"], document);
 
-  EventUtils.synthesizeKey("VK_RETURN", {});
+  EventUtils.synthesizeKey("KEY_Enter");
   is(document.querySelector(".devtools-filterinput").value,
     "scheme:http", "Value correctly set after Enter");
   ok(!document.querySelector(".devtools-autocomplete-popup"),
@@ -86,29 +86,29 @@ add_task(async function () {
 
   
   
-  EventUtils.synthesizeKey(" p", {});
+  EventUtils.sendString(" p");
   testAutocompleteContents(["protocol:"], document);
 
   
   
-  EventUtils.synthesizeKey("VK_RETURN", {});
+  EventUtils.synthesizeKey("KEY_Enter");
   
-  EventUtils.synthesizeKey("VK_RETURN", {});
+  EventUtils.synthesizeKey("KEY_Enter");
   is(document.querySelector(".devtools-filterinput").value,
     "scheme:http protocol:HTTP/1.1",
     "Tokenized click generates correct value in input box");
 
   
-  EventUtils.synthesizeKey(" status-code:", {});
+  EventUtils.sendString(" status-code:");
   testAutocompleteContents(["status-code:200", "status-code:304"], document);
 
   
-  EventUtils.synthesizeKey("304", {});
+  EventUtils.sendString("304");
   ok(!document.querySelector(".devtools-autocomplete-popup"),
     "Typing the exact value closes autocomplete");
 
   
-  EventUtils.synthesizeKey(" mime-type:text", {});
+  EventUtils.sendString(" mime-type:text");
   testAutocompleteContents([
     "mime-type:text/css",
     "mime-type:text/html",
@@ -116,7 +116,7 @@ add_task(async function () {
   ], document);
 
   
-  EventUtils.synthesizeKey(" -", {});
+  EventUtils.sendString(" -");
   testAutocompleteContents([
     "-cause:",
     "-domain:",
@@ -139,7 +139,7 @@ add_task(async function () {
   ], document);
 
   
-  EventUtils.synthesizeKey("is:", {});
+  EventUtils.sendString("is:");
   testAutocompleteContents(["-is:cached", "-is:from-cache", "-is:running"], document);
 
   await teardown(monitor);

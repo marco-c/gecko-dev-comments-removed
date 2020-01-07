@@ -34,7 +34,7 @@ function test() {
           "The popup should be open with a simple text entry");
       
       
-      executeSoon(() => EventUtils.synthesizeKey("VK_F11", {}));
+      executeSoon(() => EventUtils.synthesizeKey("KEY_F11"));
       
       yield waitForThreadEvents(gPanel, "resumed");
       yield waitForThreadEvents(gPanel, "paused");

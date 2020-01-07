@@ -27,7 +27,7 @@ add_task(async function() {
 
   
   let dialogShown = awaitAndCloseAlertDialog();
-  EventUtils.synthesizeKey("VK_RETURN", {});
+  EventUtils.synthesizeKey("KEY_Enter");
   await dialogShown;
 
   

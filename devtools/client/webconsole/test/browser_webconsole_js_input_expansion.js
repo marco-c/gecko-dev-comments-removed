@@ -30,7 +30,7 @@ add_task(function* () {
   let initialHeight = getHeight();
   
   
-  EventUtils.synthesizeKey("d", {});
+  EventUtils.sendString("d");
   let newHeight = getHeight();
   ok(initialHeight < newHeight, "Height changed: " + newHeight);
 
@@ -39,14 +39,14 @@ add_task(function* () {
   length = input.value.length;
   input.selectionEnd = length;
   input.selectionStart = length;
-  EventUtils.synthesizeKey("d", {});
+  EventUtils.sendString("d");
   let newerHeight = getHeight();
 
   ok(newerHeight > newHeight, "height changed: " + newerHeight);
 
   
   input.value = "";
-  EventUtils.synthesizeKey("d", {});
+  EventUtils.sendString("d");
   let height = getHeight();
   info("height: " + height);
   info("initialHeight: " + initialHeight);

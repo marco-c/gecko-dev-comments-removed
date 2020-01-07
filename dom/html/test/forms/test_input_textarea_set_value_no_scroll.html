@@ -37,7 +37,7 @@
     element.selectionStart = element.selectionEnd = element.value.length;
 
     setTimeout(function() {
-      synthesizeKey('f', {});
+      sendString('f');
 
       requestAnimationFrame(function() {
         var selectionAtTheEndSnapshot = snapshotWindow(window);

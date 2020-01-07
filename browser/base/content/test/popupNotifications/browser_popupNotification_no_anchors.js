@@ -120,7 +120,7 @@ var tests = [
         
         let hidden = waitForNotificationPanelHidden();
         gURLBar.select();
-        EventUtils.synthesizeKey("*", {});
+        EventUtils.sendString("*");
         await hidden;
 
         is(document.getElementById("geo-notification-icon").boxObject.width, 0,
@@ -130,8 +130,8 @@ var tests = [
         
         
         shown = waitForNotificationPanel();
-        EventUtils.synthesizeKey("VK_BACK_SPACE", {});
-        EventUtils.synthesizeKey("VK_TAB", {});
+        EventUtils.synthesizeKey("KEY_Backspace");
+        EventUtils.synthesizeKey("KEY_Tab");
         await shown;
 
         is(PopupNotifications.panel.anchorNode.id, "identity-icon",
@@ -139,12 +139,12 @@ var tests = [
 
         
         hidden = waitForNotificationPanelHidden();
-        EventUtils.synthesizeKey("VK_TAB", { shiftKey: true });
+        EventUtils.synthesizeKey("KEY_Tab", {shiftKey: true});
         await hidden;
 
         
         shown = waitForNotificationPanel();
-        EventUtils.synthesizeKey("VK_ESCAPE", {});
+        EventUtils.synthesizeKey("KEY_Escape");
         await shown;
 
         checkPopup(PopupNotifications.panel, this.notifyObj);
@@ -163,8 +163,8 @@ var tests = [
       for (let persistent of [false, true]) {
         
         gURLBar.select();
-        EventUtils.synthesizeKey("*", {});
-        EventUtils.synthesizeKey("VK_BACK_SPACE", {});
+        EventUtils.sendString("*");
+        EventUtils.synthesizeKey("KEY_Backspace");
 
         
         let notShowing = promiseTopicObserved("PopupNotifications-updateNotShowing");
@@ -176,7 +176,7 @@ var tests = [
 
         
         let shown = waitForNotificationPanel();
-        EventUtils.synthesizeKey("VK_ESCAPE", {});
+        EventUtils.synthesizeKey("KEY_Escape");
         await shown;
 
         checkPopup(PopupNotifications.panel, this.notifyObj);
@@ -210,7 +210,7 @@ var tests = [
 
       
       gURLBar.select();
-      EventUtils.synthesizeKey("*", {});
+      EventUtils.sendString("*");
 
       
       shown = waitForNotificationPanel();

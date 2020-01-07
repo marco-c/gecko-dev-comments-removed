@@ -156,7 +156,7 @@ add_task(async function() {
 
   let suggestionsPromise = promiseSearchEvents(["Suggestions"]);
 
-  EventUtils.synthesizeKey("x", {});
+  EventUtils.sendString("x");
 
   
   
@@ -164,8 +164,8 @@ add_task(async function() {
   await suggestionsPromise;
 
   
-  EventUtils.synthesizeKey("a", { accelKey: true });
-  EventUtils.synthesizeKey("VK_DELETE", {});
+  EventUtils.synthesizeKey("a", {accelKey: true});
+  EventUtils.synthesizeKey("KEY_Delete");
 
   await ContentTask.spawn(gBrowser.selectedBrowser, {}, async function() {
     Assert.ok(content.document.getElementById("searchSuggestionTable").hidden,

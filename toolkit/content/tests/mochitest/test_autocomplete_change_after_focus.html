@@ -88,9 +88,9 @@
 
     await promisePopupShown;
 
-    sendKey("DOWN");
-    sendKey("RETURN");
-    sendKey("RETURN");
+    synthesizeKey("KEY_ArrowDown");
+    synthesizeKey("KEY_Enter");
+    synthesizeKey("KEY_Enter");
 
     await handleEnterPromise;
   });

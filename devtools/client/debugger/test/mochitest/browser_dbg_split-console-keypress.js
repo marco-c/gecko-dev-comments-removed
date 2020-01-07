@@ -45,15 +45,15 @@ function test() {
     
     
     let stepTests = [
-      {key: "VK_F11", keyRepeat: 1, caretLine: 16},
-      {key: "VK_F11", keyRepeat: 2, caretLine: 18},
-      {key: "VK_F11", keyRepeat: 2, caretLine: 27},
-      {key: "VK_F10", keyRepeat: 1, caretLine: 27},
-      {key: "VK_F11", keyRepeat: 1, caretLine: 18},
-      {key: "VK_F11", keyRepeat: 5, caretLine: 32},
-      {key: "VK_F11", modifier:"Shift", keyRepeat: 1, caretLine: 29},
-      {key: "VK_F11", modifier:"Shift", keyRepeat: 2, caretLine: 34},
-      {key: "VK_F11", modifier:"Shift", keyRepeat: 2, caretLine: 34}
+      {key: "KEY_F11", keyRepeat: 1, caretLine: 16},
+      {key: "KEY_F11", keyRepeat: 2, caretLine: 18},
+      {key: "KEY_F11", keyRepeat: 2, caretLine: 27},
+      {key: "KEY_F10", keyRepeat: 1, caretLine: 27},
+      {key: "KEY_F11", keyRepeat: 1, caretLine: 18},
+      {key: "KEY_F11", keyRepeat: 5, caretLine: 32},
+      {key: "KEY_F11", modifier:"Shift", keyRepeat: 1, caretLine: 29},
+      {key: "KEY_F11", modifier:"Shift", keyRepeat: 2, caretLine: 34},
+      {key: "KEY_F11", modifier:"Shift", keyRepeat: 2, caretLine: 34}
     ];
     
     executeSoon(() => generateMouseClickInTab(gTab,
@@ -92,7 +92,7 @@ function test() {
     is(consoleLostFocus, false, "Console input should not lose focus");
     
     
-    executeSoon(() => EventUtils.synthesizeKey("VK_F8", {}));
+    executeSoon(() => EventUtils.synthesizeKey("KEY_F8"));
 
     
     consoleLostFocus = false;

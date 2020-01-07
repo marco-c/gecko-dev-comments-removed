@@ -11,7 +11,7 @@ add_task(async function() {
   let tab = gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser, START_VALUE);
 
   gURLBar.focus();
-  EventUtils.synthesizeKey("VK_RETURN", {});
+  EventUtils.synthesizeKey("KEY_Enter");
   await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
 
   
@@ -30,7 +30,7 @@ add_task(async function() {
 
   let tabOpenPromise = BrowserTestUtils.waitForEvent(gBrowser.tabContainer, "TabOpen");
   gURLBar.focus();
-  EventUtils.synthesizeKey("VK_RETURN", {altKey: true});
+  EventUtils.synthesizeKey("KEY_Enter", {altKey: true});
 
   
   await tabOpenPromise;

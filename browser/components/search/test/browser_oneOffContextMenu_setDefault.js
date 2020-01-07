@@ -150,7 +150,7 @@ async function openPopupAndGetEngineButton(isSearch, popup, oneOffBinding, baseI
   } else {
     
     urlbar.focus();
-    EventUtils.synthesizeKey("a", {});
+    EventUtils.sendString("a");
   }
   await promise;
 
@@ -195,7 +195,7 @@ async function openPopupAndGetEngineButton(isSearch, popup, oneOffBinding, baseI
 async function promiseClosePopup(popup) {
   
   let promise = promiseEvent(popup, "popuphidden");
-  EventUtils.synthesizeKey("VK_ESCAPE", {});
+  EventUtils.synthesizeKey("KEY_Escape");
   await promise;
 
   

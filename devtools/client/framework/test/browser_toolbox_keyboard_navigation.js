@@ -35,47 +35,49 @@ add_task(function* () {
   ok(containsFocus(doc, toolbar), "Focus is within the toolbar");
 
   
-  EventUtils.synthesizeKey("VK_TAB", {});
+  EventUtils.synthesizeKey("KEY_Tab");
   ok(!containsFocus(doc, toolbar), "Focus is outside of the toolbar");
 
   
-  EventUtils.synthesizeKey("VK_TAB", { shiftKey: true });
+  EventUtils.synthesizeKey("KEY_Tab", {shiftKey: true});
   ok(containsFocus(doc, toolbar), "Focus is within the toolbar again");
 
   
   for (let i = 0; i < toolbarControls.length; ++i) {
     is(doc.activeElement.id, toolbarControls[i].id, "New control is focused");
     if (i < toolbarControls.length - 1) {
-      EventUtils.synthesizeKey("VK_RIGHT", {});
+      EventUtils.synthesizeKey("KEY_ArrowRight");
     }
   }
 
   
-  EventUtils.synthesizeKey("VK_TAB", {});
+  EventUtils.synthesizeKey("KEY_Tab");
   ok(!containsFocus(doc, toolbar), "Focus is outside of the toolbar");
 
   
-  EventUtils.synthesizeKey("VK_TAB", { shiftKey: true });
+  EventUtils.synthesizeKey("KEY_Tab", {shiftKey: true});
   ok(containsFocus(doc, toolbar), "Focus is within the toolbar again");
 
   
   for (let i = toolbarControls.length - 1; i >= 0; --i) {
     is(doc.activeElement.id, toolbarControls[i].id, "New control is focused");
-    if (i > 0) { EventUtils.synthesizeKey("VK_LEFT", {}); }
+    if (i > 0) {
+      EventUtils.synthesizeKey("KEY_ArrowLeft");
+    }
   }
 
   
   let expectedFocusedControl = toolbarControls[2];
-  EventUtils.synthesizeKey("VK_RIGHT", {});
-  EventUtils.synthesizeKey("VK_RIGHT", {});
+  EventUtils.synthesizeKey("KEY_ArrowRight");
+  EventUtils.synthesizeKey("KEY_ArrowRight");
   is(doc.activeElement.id, expectedFocusedControl.id, "New control is focused");
 
   
-  EventUtils.synthesizeKey("VK_TAB", {});
+  EventUtils.synthesizeKey("KEY_Tab");
   ok(!containsFocus(doc, toolbar), "Focus is outside of the toolbar");
 
   
   
-  EventUtils.synthesizeKey("VK_TAB", { shiftKey: true });
+  EventUtils.synthesizeKey("KEY_Tab", {shiftKey: true});
   is(doc.activeElement.id, expectedFocusedControl.id, "New control is focused");
 });

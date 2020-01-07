@@ -39,12 +39,12 @@ function* testEditSelector(view) {
 
   editor.input.value = ".pickme";
   let onRuleViewChanged = once(view, "ruleview-changed");
-  EventUtils.synthesizeKey("VK_RETURN", {});
+  EventUtils.synthesizeKey("KEY_Enter");
   yield onRuleViewChanged;
 
   
   let onBlur = once(view.styleDocument.activeElement, "blur");
-  EventUtils.synthesizeKey("VK_ESCAPE", {}, view.styleWindow);
+  EventUtils.synthesizeKey("KEY_Escape", {}, view.styleWindow);
   yield onBlur;
 
   
