@@ -2155,9 +2155,11 @@ private:
                         mozilla::StyleDisplay& aTargetContentDisplay);
 
   
+  
+  
   template<SiblingDirection>
   nsIFrame* FindSiblingInternal(
-    mozilla::dom::FlattenedChildIterator,
+    mozilla::dom::FlattenedChildIterator&,
     nsIContent* aTargetContent,
     mozilla::StyleDisplay& aTargetContentDisplay);
 
