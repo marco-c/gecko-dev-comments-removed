@@ -111,6 +111,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   LoginManagerParent: "resource://gre/modules/LoginManagerParent.jsm",
   NetUtil: "resource://gre/modules/NetUtil.jsm",
   NewTabUtils: "resource://gre/modules/NewTabUtils.jsm",
+  Normandy: "resource://normandy/Normandy.jsm",
   OS: "resource://gre/modules/osfile.jsm",
   PageActions: "resource:///modules/PageActions.jsm",
   PageThumbs: "resource://gre/modules/PageThumbs.jsm",
@@ -711,6 +712,7 @@ BrowserGlue.prototype = {
       author: vendorShortName,
     });
 
+    Normandy.init();
 
     
     let locales = Services.locale.getPackagedLocales();
@@ -1059,6 +1061,8 @@ BrowserGlue.prototype = {
     if (AppConstants.NIGHTLY_BUILD && AppConstants.MOZ_DATA_REPORTING) {
       this.browserErrorReporter.uninit();
     }
+
+    Normandy.uninit();
   },
 
   
@@ -3188,14 +3192,13 @@ this.NSGetFactory = XPCOMUtils.generateNSGetFactory(components);
 
 
 
-var globalMM = Cc["@mozilla.org/globalmessagemanager;1"].getService(Ci.nsIMessageListenerManager);
-globalMM.addMessageListener("UITour:onPageEvent", function(aMessage) {
+Services.mm.addMessageListener("UITour:onPageEvent", function(aMessage) {
   UITour.onPageEvent(aMessage, aMessage.data);
 });
 
 
 
 
-globalMM.addMessageListener("HybridContentTelemetry:onTelemetryMessage", aMessage => {
+Services.mm.addMessageListener("HybridContentTelemetry:onTelemetryMessage", aMessage => {
   HybridContentTelemetry.onTelemetryMessage(aMessage, aMessage.data);
 });
