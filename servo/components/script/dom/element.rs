@@ -350,7 +350,7 @@ impl Element {
 
     
     
-    fn style(&self) -> Option<Arc<ComputedValues>> {
+    pub fn style(&self) -> Option<Arc<ComputedValues>> {
         window_from_node(self).style_query(
             self.upcast::<Node>().to_trusted_node_address()
         )
