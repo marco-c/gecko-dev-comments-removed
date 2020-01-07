@@ -45,25 +45,27 @@ add_task(async function test_add_interesting_window() {
   
   
   
-  let domWindowClosed = BrowserTestUtils.domWindowClosed(newWin);
-
-  
-  
-  
   let windowClosed = BrowserTestUtils.windowClosed(newWin);
+
+  let handled = false;
+  whenDomWindowClosedHandled(() => {
+    
+    let currentClosedWindows = ss.getClosedWindowCount();
+    is(currentClosedWindows, initialClosedWindows,
+       "We should not have added the window to the closed windows array");
+
+    handled = true;
+  });
 
   
   newWin.close();
 
-  await domWindowClosed;
+  await windowClosed;
+
+  ok(handled, "domwindowclosed should already be handled here");
+
   
   let currentClosedWindows = ss.getClosedWindowCount();
-  is(currentClosedWindows, initialClosedWindows,
-     "We should not have added the window to the closed windows array");
-
-  await windowClosed;
-  
-  currentClosedWindows = ss.getClosedWindowCount();
   is(currentClosedWindows,
      initialClosedWindows + 1,
      "We should have added the window to the closed windows array");
@@ -113,25 +115,27 @@ add_task(async function test_remove_uninteresting_window() {
   
   
   
-  let domWindowClosed = BrowserTestUtils.domWindowClosed(newWin);
-
-  
-  
-  
   let windowClosed = BrowserTestUtils.windowClosed(newWin);
+
+  let handled = false;
+  whenDomWindowClosedHandled(() => {
+    
+    let currentClosedWindows = ss.getClosedWindowCount();
+    is(currentClosedWindows, initialClosedWindows + 1,
+       "We should have added the window to the closed windows array");
+
+    handled = true;
+  });
 
   
   newWin.close();
 
-  await domWindowClosed;
+  await windowClosed;
+
+  ok(handled, "domwindowclosed should already be handled here");
+
   
   let currentClosedWindows = ss.getClosedWindowCount();
-  is(currentClosedWindows, initialClosedWindows + 1,
-     "We should have added the window to the closed windows array");
-
-  await windowClosed;
-  
-  currentClosedWindows = ss.getClosedWindowCount();
   is(currentClosedWindows,
      initialClosedWindows,
      "We should have removed the window from the closed windows array");

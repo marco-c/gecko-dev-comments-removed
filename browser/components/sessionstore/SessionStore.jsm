@@ -29,6 +29,7 @@ const NOTIFY_INITIATING_MANUAL_RESTORE = "sessionstore-initiating-manual-restore
 const NOTIFY_CLOSED_OBJECTS_CHANGED = "sessionstore-closed-objects-changed";
 
 const NOTIFY_TAB_RESTORED = "sessionstore-debug-tab-restored"; 
+const NOTIFY_DOMWINDOWCLOSED_HANDLED = "sessionstore-debug-domwindowclosed-handled"; 
 
 
 
@@ -772,6 +773,9 @@ var SessionStoreInternal = {
         this.onClose(aSubject).then(() => {
           this._notifyOfClosedObjectsChange();
         });
+        if (gDebuggingEnabled) {
+          Services.obs.notifyObservers(null, NOTIFY_DOMWINDOWCLOSED_HANDLED);
+        }
         break;
       case "quit-application-granted":
         let syncShutdown = aData == "syncShutdown";
