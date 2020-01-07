@@ -529,7 +529,14 @@ HeapCheckTracerBase::onChild(const JS::GCCellPtr& thing)
         return;
 
     
-    Zone* zone = thing.is<JSObject>() ? thing.as<JSObject>().zone() : cell->asTenured().zone();
+    Zone* zone;
+    if (thing.is<JSObject>())
+        zone = thing.as<JSObject>().zone();
+    else if (thing.is<JSString>())
+        zone = thing.as<JSString>().zone();
+    else
+        zone = cell->asTenured().zone();
+
     if (zone->group() && zone->group()->usedByHelperThread())
         return;
 
