@@ -24,7 +24,7 @@ import java.io.OutputStream;
 
 
 public class GzipNonChunkedCompressingEntity extends GzipCompressingEntity {
-    final int MAX_BUFFER_SIZE_BYTES = 10 * 1000 * 1000; 
+    static final int MAX_BUFFER_SIZE_BYTES = 10 * 1000 * 1000; 
 
     private byte[] gzippedContent;
 

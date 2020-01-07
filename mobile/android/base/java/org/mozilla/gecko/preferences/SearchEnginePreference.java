@@ -28,7 +28,7 @@ import android.view.View;
 
 
 public class SearchEnginePreference extends CustomListPreference {
-    protected String LOGTAG = "SearchEnginePreference";
+    protected static final String LOGTAG = "SearchEnginePreference";
 
     protected static final int INDEX_REMOVE_BUTTON = 1;
 

@@ -26,9 +26,9 @@ import com.robotium.solo.Condition;
 
 
 public class testAddSearchEngine extends AboutHomeTest {
-    private final int MAX_WAIT_TEST_MS = 5000;
-    private final String SEARCH_TEXT = "Firefox for Android";
-    private final String ADD_SEARCHENGINE_OPTION_TEXT = "Add as Search Engine";
+    private static final int MAX_WAIT_TEST_MS = 5000;
+    private static final String SEARCH_TEXT = "Firefox for Android";
+    private static final String ADD_SEARCHENGINE_OPTION_TEXT = "Add as Search Engine";
 
     public void testAddSearchEngine() {
         String blankPageURL = getAbsoluteUrl(mStringHelper.ROBOCOP_BLANK_PAGE_01_URL);

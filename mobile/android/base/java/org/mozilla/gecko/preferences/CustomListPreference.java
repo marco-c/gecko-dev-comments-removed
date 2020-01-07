@@ -21,7 +21,7 @@ import android.widget.TextView;
 
 
 public abstract class CustomListPreference extends Preference implements View.OnLongClickListener {
-    protected String LOGTAG = "CustomListPreference";
+    protected static final String LOGTAG = "CustomListPreference";
 
     
     public static final int INDEX_SET_DEFAULT_BUTTON = 0;

@@ -27,7 +27,7 @@ import ch.boye.httpclientandroidlib.entity.EntityTemplate;
 
 
 public class RecordUploadRunnable implements Runnable {
-    public final String LOG_TAG = "RecordUploadRunnable";
+    public static final String LOG_TAG = "RecordUploadRunnable";
 
     public final static byte[] RECORDS_START = { 91 };      
     public final static byte[] RECORD_SEPARATOR = { 44 };   
