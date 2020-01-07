@@ -1928,11 +1928,13 @@ Element::UnbindFromTree(bool aDeep, bool aNullParent)
   }
 
   if (HasServoData()) {
+    MOZ_ASSERT(document);
     MOZ_ASSERT(IsInAnonymousSubtree());
     MOZ_ASSERT(document && document->IsStyledByServo());
+  }
+
+  if (document && document->IsStyledByServo()) {
     ClearServoData(document);
-  } else if (document && document->GetServoRestyleRoot() == this) {
-    document->ClearServoRestyleRoot();
   }
 
   if (aNullParent) {
@@ -4386,7 +4388,11 @@ Element::ClearServoData(nsIDocument* aDoc) {
   MOZ_ASSERT(IsStyledByServo());
   MOZ_ASSERT(aDoc);
 #ifdef MOZ_STYLO
-  Servo_Element_ClearData(this);
+  if (HasServoData()) {
+    Servo_Element_ClearData(this);
+  } else {
+    UnsetFlags(kAllServoDescendantBits | NODE_NEEDS_FRAME);
+  }
   
   
   

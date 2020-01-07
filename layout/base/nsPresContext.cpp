@@ -897,6 +897,8 @@ nsPresContext::Init(nsDeviceContext* aDeviceContext)
   
   
   
+  
+  
   if (mDocument->IsStyledByServo()) {
     Element* root = mDocument->GetRootElement();
     if (root && root->HasServoData()) {
