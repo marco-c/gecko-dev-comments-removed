@@ -93,6 +93,7 @@ nsXULWindow::nsXULWindow(uint32_t aChromeFlags)
     mContinueModalLoop(false),
     mDebuting(false),
     mChromeLoaded(false),
+    mSizingShellFromXUL(false),
     mShowAfterLoad(false),
     mIntrinsicallySized(false),
     mCenterAfterLoad(false),
@@ -577,6 +578,11 @@ NS_IMETHODIMP nsXULWindow::GetUnscaledDevicePixelsPerCSSPixel(double *aScale)
 NS_IMETHODIMP nsXULWindow::SetPositionDesktopPix(int32_t aX, int32_t aY)
 {
   mWindow->Move(aX, aY);
+  if (mSizingShellFromXUL) {
+    
+    
+    return NS_OK;
+  }
   if (!mChromeLoaded) {
     
     
@@ -616,6 +622,11 @@ NS_IMETHODIMP nsXULWindow::SetSize(int32_t aCX, int32_t aCY, bool aRepaint)
   DesktopToLayoutDeviceScale scale = mWindow->GetDesktopToDeviceScale();
   DesktopSize size = LayoutDeviceIntSize(aCX, aCY) / scale;
   mWindow->Resize(size.width, size.height, aRepaint);
+  if (mSizingShellFromXUL) {
+    
+    
+    return NS_OK;
+  }
   if (!mChromeLoaded) {
     
     
@@ -649,6 +660,11 @@ NS_IMETHODIMP nsXULWindow::SetPositionAndSize(int32_t aX, int32_t aY,
   DesktopRect rect = LayoutDeviceIntRect(aX, aY, aCX, aCY) / scale;
   mWindow->Resize(rect.X(), rect.Y(), rect.Width(), rect.Height(),
                   !!(aFlags & nsIBaseWindow::eRepaint));
+  if (mSizingShellFromXUL) {
+    
+    
+    return NS_OK;
+  }
   if (!mChromeLoaded) {
     
     
@@ -2270,6 +2286,9 @@ nsXULWindow::BeforeStartLayout()
 void
 nsXULWindow::SizeShell()
 {
+  AutoRestore<bool> sizingShellFromXUL(mSizingShellFromXUL);
+  mSizingShellFromXUL = true;
+
   int32_t specWidth = -1, specHeight = -1;
   bool gotSize = false;
   bool isContent = false;
