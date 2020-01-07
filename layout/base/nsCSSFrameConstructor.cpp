@@ -3245,21 +3245,23 @@ nsCSSFrameConstructor::ConstructSelectFrame(nsFrameConstructorState& aState,
                  "Ended up with floating dropdown list somehow.");
 
     
+    nsFrameItems childItems;
+
+    
     
     nsContainerFrame* scrolledFrame =
       NS_NewSelectsAreaFrame(mPresShell, styleContext, flags);
 
     InitializeSelectFrame(aState, listFrame, scrolledFrame, content,
                           comboboxFrame, listStyle, true,
-                          aItem.mPendingBinding, aFrameItems);
+                          aItem.mPendingBinding, childItems);
 
     NS_ASSERTION(listFrame->GetView(), "ListFrame's view is nullptr");
 
     
     
     
-    nsFrameItems childItems;
-
+    
     
     
     
@@ -3286,12 +3288,14 @@ nsCSSFrameConstructor::ConstructSelectFrame(nsFrameConstructorState& aState,
 
     comboboxFrame->SetInitialChildList(kPrincipalList, childItems);
 
-    
-    
-    nsFrameItems popupItems;
-    popupItems.AddChild(listFrame);
-    comboboxFrame->SetInitialChildList(nsIFrame::kSelectPopupList,
-                                       popupItems);
+    if (!Preferences::GetBool(kPrefSelectPopupInContent)) {
+      
+      
+      nsFrameItems popupItems;
+      popupItems.AddChild(listFrame);
+      comboboxFrame->SetInitialChildList(nsIFrame::kSelectPopupList,
+                                         popupItems);
+    }
 
     aState.mFrameState = historyState;
     if (aState.mFrameState) {
@@ -3343,7 +3347,7 @@ nsCSSFrameConstructor::InitializeSelectFrame(nsFrameConstructorState& aState,
 
   scrollFrame->Init(aContent, geometricParent, nullptr);
 
-  if (!aBuildCombobox) {
+  if (!aBuildCombobox || Preferences::GetBool(kPrefSelectPopupInContent)) {
     aState.AddChild(scrollFrame, aFrameItems, aContent, aParentFrame);
   }
 
