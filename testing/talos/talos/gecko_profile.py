@@ -204,6 +204,9 @@ class GeckoProfile(object):
                                               path_in_zip,
                                               self.profile_arcname)
                     )
+            
+            
+            os.environ['TALOS_LATEST_GECKO_PROFILE_ARCHIVE'] = self.profile_arcname
 
     def clean(self):
         """
