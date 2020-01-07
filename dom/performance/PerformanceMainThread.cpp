@@ -159,14 +159,14 @@ PerformanceMainThread::AddEntry(nsIHttpChannel* channel,
     
     
     
-    RefPtr<PerformanceTiming> performanceTiming =
-        new PerformanceTiming(this, timedChannel, channel,
-            0);
+    UniquePtr<PerformanceTimingData> performanceTimingData(
+        new PerformanceTimingData(timedChannel, channel, 0));
 
     
     
     RefPtr<PerformanceResourceTiming> performanceEntry =
-      new PerformanceResourceTiming(performanceTiming, this, entryName, channel);
+      new PerformanceResourceTiming(Move(performanceTimingData), this,
+                                    entryName);
 
     
     
@@ -326,10 +326,9 @@ PerformanceMainThread::EnsureDocEntry()
 {
   if (!mDocEntry && nsContentUtils::IsPerformanceNavigationTimingEnabled()) {
     nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(mChannel);
-    RefPtr<PerformanceTiming> timing =
-      new PerformanceTiming(this, mChannel, nullptr, 0);
-    mDocEntry = new PerformanceNavigationTiming(timing, this,
-                                                httpChannel);
+    UniquePtr<PerformanceTimingData> timing(
+      new PerformanceTimingData(mChannel, nullptr, 0));
+    mDocEntry = new PerformanceNavigationTiming(Move(timing), this);
   }
 }
 
