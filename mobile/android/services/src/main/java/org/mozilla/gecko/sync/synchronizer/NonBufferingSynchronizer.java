@@ -1,0 +1,12 @@
+
+
+
+
+package org.mozilla.gecko.sync.synchronizer;
+
+public class NonBufferingSynchronizer extends Synchronizer {
+    @Override
+    protected SynchronizerSession newSynchronizerSession() {
+        return new NonBufferingSynchronizerSession(this, this);
+    }
+}

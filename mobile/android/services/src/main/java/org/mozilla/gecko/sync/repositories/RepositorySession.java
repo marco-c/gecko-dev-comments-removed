@@ -186,13 +186,6 @@ public abstract class RepositorySession {
   
 
 
-
-  public void storeFlush() {
-  }
-
-  
-
-
   public void performCleanup() {
   }
 

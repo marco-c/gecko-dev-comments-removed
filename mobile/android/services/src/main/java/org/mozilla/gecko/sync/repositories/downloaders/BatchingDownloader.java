@@ -248,19 +248,6 @@ public class BatchingDownloader {
         }
 
         
-        
-        
-        
-        
-        runTaskOnQueue(new Runnable() {
-            @Override
-            public void run() {
-                Logger.debug(LOG_TAG, "Running onBatchCompleted.");
-                fetchRecordsDelegate.onBatchCompleted();
-            }
-        });
-
-        
         if (!mayProceedWithBatching(fetchDeadline)) {
             this.handleFetchFailed(fetchRecordsDelegate, new SyncDeadlineReachedException());
             return;

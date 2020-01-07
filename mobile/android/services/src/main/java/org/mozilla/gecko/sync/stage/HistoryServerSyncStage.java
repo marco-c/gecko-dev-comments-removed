@@ -16,7 +16,15 @@ import org.mozilla.gecko.sync.repositories.android.HistoryRepository;
 import org.mozilla.gecko.sync.repositories.domain.HistoryRecordFactory;
 import org.mozilla.gecko.sync.repositories.domain.VersionConstants;
 
-public class HistoryServerSyncStage extends ServerSyncStage {
+
+
+
+
+
+
+
+
+public class HistoryServerSyncStage extends NonBufferingServerSyncStage {
   protected static final String LOG_TAG = "HistoryStage";
 
   

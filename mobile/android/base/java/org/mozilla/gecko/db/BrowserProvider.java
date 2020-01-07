@@ -2964,7 +2964,7 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
                     
                     
                     } catch (SQLiteConstraintException e) {
-                        Log.w(LOGTAG, "Unexpected constraint exception while inserting a visit", e);
+                        
                     }
                 }
                 if (inserted != valueSet.length) {

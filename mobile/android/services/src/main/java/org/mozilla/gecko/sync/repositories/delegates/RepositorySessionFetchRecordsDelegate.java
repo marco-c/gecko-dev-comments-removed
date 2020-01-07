@@ -15,19 +15,7 @@ public interface RepositorySessionFetchRecordsDelegate {
   
 
 
-
-
-
-
-
-
   void onFetchCompleted();
-
-  
-
-
-
-  void onBatchCompleted();
 
   RepositorySessionFetchRecordsDelegate deferredFetchDelegate(ExecutorService executor);
 }

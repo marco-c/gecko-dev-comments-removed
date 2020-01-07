@@ -58,8 +58,8 @@ public abstract class ServerSyncStage extends AbstractSessionManagingSyncStage i
 
   protected static final String LOG_TAG = "ServerSyncStage";
 
-  protected long stageStartTimestamp = -1;
-  protected long stageCompleteTimestamp = -1;
+  private long stageStartTimestamp = -1;
+  private long stageCompleteTimestamp = -1;
 
   
 
@@ -123,7 +123,7 @@ public abstract class ServerSyncStage extends AbstractSessionManagingSyncStage i
 
 
 
-  protected void checkAndUpdateUserSelectedEngines(boolean enabledInMetaGlobal) throws MetaGlobalException {
+  private void checkAndUpdateUserSelectedEngines(boolean enabledInMetaGlobal) throws MetaGlobalException {
     Map<String, Boolean> selectedEngines = session.config.userSelectedEngines;
     String thisEngine = this.getEngineName();
 
@@ -137,7 +137,7 @@ public abstract class ServerSyncStage extends AbstractSessionManagingSyncStage i
     }
   }
 
-  protected EngineSettings getEngineSettings() throws NonObjectJSONException, IOException {
+  private EngineSettings getEngineSettings() throws NonObjectJSONException, IOException {
     Integer version = getStorageVersion();
     if (version == null) {
       Logger.warn(LOG_TAG, "null storage version for " + this + "; using version 0.");
@@ -214,7 +214,7 @@ public abstract class ServerSyncStage extends AbstractSessionManagingSyncStage i
     return this.getCollection() + ".";
   }
 
-  protected String statePreferencesPrefix() {
+   String statePreferencesPrefix() {
     return this.getCollection() + ".state.";
   }
 
@@ -222,19 +222,23 @@ public abstract class ServerSyncStage extends AbstractSessionManagingSyncStage i
     return new SynchronizerConfiguration(session.config.getBranch(bundlePrefix()));
   }
 
-  protected void persistConfig(SynchronizerConfiguration synchronizerConfiguration) {
+  private void persistConfig(SynchronizerConfiguration synchronizerConfiguration) {
     synchronizerConfiguration.persist(session.config.getBranch(bundlePrefix()));
   }
 
-  public Synchronizer getConfiguredSynchronizer(GlobalSession session) throws NoCollectionKeysSetException, URISyntaxException, NonObjectJSONException, IOException {
+  private Synchronizer getConfiguredSynchronizer() throws NoCollectionKeysSetException, URISyntaxException, NonObjectJSONException, IOException {
     Repository remote = wrappedServerRepo();
 
-    Synchronizer synchronizer = new Synchronizer();
+    Synchronizer synchronizer = getSynchronizer();
     synchronizer.repositoryA = remote;
     synchronizer.repositoryB = this.getLocalRepository();
     synchronizer.load(getConfig());
 
     return synchronizer;
+  }
+
+  protected Synchronizer getSynchronizer() {
+    return new Synchronizer();
   }
 
   
@@ -259,7 +263,7 @@ public abstract class ServerSyncStage extends AbstractSessionManagingSyncStage i
 
 
 
-  protected void resetLocalWithSyncID(String syncID) {
+  private void resetLocalWithSyncID(String syncID) {
     
     SynchronizerConfiguration config;
     try {
@@ -281,8 +285,8 @@ public abstract class ServerSyncStage extends AbstractSessionManagingSyncStage i
 
   
   private static final class WipeWaiter {
-    public boolean sessionSucceeded = true;
-    public boolean wipeSucceeded = true;
+     boolean sessionSucceeded = true;
+     boolean wipeSucceeded = true;
     public Exception error;
 
     public void notify(Exception e, boolean sessionSucceeded) {
@@ -410,7 +414,7 @@ public abstract class ServerSyncStage extends AbstractSessionManagingSyncStage i
   
 
 
-  protected void wipeServer(final AuthHeaderProvider authHeaderProvider, final WipeServerDelegate wipeDelegate) {
+  private void wipeServer(final AuthHeaderProvider authHeaderProvider, final WipeServerDelegate wipeDelegate) {
     SyncStorageRequest request;
 
     try {
@@ -464,7 +468,7 @@ public abstract class ServerSyncStage extends AbstractSessionManagingSyncStage i
 
 
 
-  public void wipeServer(final GlobalSession session) throws Exception {
+  private void wipeServer(final GlobalSession session) throws Exception {
     this.session = session;
 
     final WipeWaiter monitor = new WipeWaiter();
@@ -580,7 +584,7 @@ public abstract class ServerSyncStage extends AbstractSessionManagingSyncStage i
 
     Synchronizer synchronizer;
     try {
-      synchronizer = this.getConfiguredSynchronizer(session);
+      synchronizer = this.getConfiguredSynchronizer();
     } catch (NoCollectionKeysSetException e) {
       session.abort(e, "No CollectionKeys.");
       return;
@@ -602,7 +606,7 @@ public abstract class ServerSyncStage extends AbstractSessionManagingSyncStage i
 
 
 
-  protected String getStageDurationString() {
+  private String getStageDurationString() {
     return Utils.formatDuration(stageStartTimestamp, stageCompleteTimestamp);
   }
 

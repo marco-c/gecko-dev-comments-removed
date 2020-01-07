@@ -123,7 +123,6 @@ public class BatchingDownloaderTest {
         public boolean isFailure;
         public boolean isFetched;
         public boolean isSuccess;
-        public int batchesCompleted;
         public Exception ex;
         public Record record;
 
@@ -142,11 +141,6 @@ public class BatchingDownloaderTest {
         @Override
         public void onFetchCompleted() {
             this.isSuccess = true;
-        }
-
-        @Override
-        public void onBatchCompleted() {
-            this.batchesCompleted += 1;
         }
 
         @Override
@@ -296,7 +290,6 @@ public class BatchingDownloaderTest {
         assertTrue(sessionFetchRecordsDelegate.isSuccess);
         assertFalse(sessionFetchRecordsDelegate.isFetched);
         assertFalse(sessionFetchRecordsDelegate.isFailure);
-        assertEquals(0, sessionFetchRecordsDelegate.batchesCompleted);
 
         
         
@@ -324,7 +317,6 @@ public class BatchingDownloaderTest {
         assertTrue(sessionFetchRecordsDelegate.isSuccess);
         assertFalse(sessionFetchRecordsDelegate.isFetched);
         assertFalse(sessionFetchRecordsDelegate.isFailure);
-        assertEquals(0, sessionFetchRecordsDelegate.batchesCompleted);
 
         
         ensureOffsetContextIsNull(repositoryStateProvider);
@@ -349,7 +341,6 @@ public class BatchingDownloaderTest {
         assertFalse(sessionFetchRecordsDelegate.isSuccess);
         assertFalse(sessionFetchRecordsDelegate.isFetched);
         assertFalse(sessionFetchRecordsDelegate.isFailure);
-        assertEquals(1, sessionFetchRecordsDelegate.batchesCompleted);
 
         
         ensureOffsetContextIs(repositoryStateProvider, "25", "oldest", 1L);
@@ -365,7 +356,6 @@ public class BatchingDownloaderTest {
         assertFalse(sessionFetchRecordsDelegate.isSuccess);
         assertFalse(sessionFetchRecordsDelegate.isFetched);
         assertFalse(sessionFetchRecordsDelegate.isFailure);
-        assertEquals(2, sessionFetchRecordsDelegate.batchesCompleted);
 
         
         ensureOffsetContextIs(repositoryStateProvider, "50", "oldest", 1L);
@@ -381,7 +371,6 @@ public class BatchingDownloaderTest {
         assertFalse(sessionFetchRecordsDelegate.isSuccess);
         assertFalse(sessionFetchRecordsDelegate.isFetched);
         assertFalse(sessionFetchRecordsDelegate.isFailure);
-        assertEquals(3, sessionFetchRecordsDelegate.batchesCompleted);
 
         
         ensureOffsetContextIs(repositoryStateProvider, "75", "oldest", 1L);
@@ -394,7 +383,6 @@ public class BatchingDownloaderTest {
         assertTrue(sessionFetchRecordsDelegate.isSuccess);
         assertFalse(sessionFetchRecordsDelegate.isFetched);
         assertFalse(sessionFetchRecordsDelegate.isFailure);
-        assertEquals(3, sessionFetchRecordsDelegate.batchesCompleted);
 
         
         ensureOffsetContextIsNull(repositoryStateProvider);
