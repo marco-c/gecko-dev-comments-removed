@@ -103,18 +103,17 @@ class MobileSingleLocale(LocalesMixin, TooltoolMixin, AutomationMixin,
             return self.repack_env
         c = self.config
         repack_env = self.query_env(partial_env=c.get("repack_env"))
-        if self.query_is_nightly() or self.query_is_nightly_promotion():
-            if self.query_is_nightly():
-                
-                
-                
-                repack_env["IS_NIGHTLY"] = "yes"
+        if self.query_is_nightly():
             
-            if c.get('update_channel'):
-                repack_env["MOZ_UPDATE_CHANNEL"] = c['update_channel']
-            else:  
-                repack_env["MOZ_UPDATE_CHANNEL"] = \
-                    "nightly-%s" % (c['branch'],)
+            
+            
+            repack_env["IS_NIGHTLY"] = "yes"
+        
+        if c.get('update_channel'):
+            repack_env["MOZ_UPDATE_CHANNEL"] = c['update_channel']
+        else:  
+            repack_env["MOZ_UPDATE_CHANNEL"] = \
+                "nightly-%s" % (c['branch'],)
 
         self.repack_env = repack_env
         return self.repack_env
