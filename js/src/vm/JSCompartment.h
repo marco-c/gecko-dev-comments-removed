@@ -25,7 +25,7 @@
 #include "vm/RegExpShared.h"
 #include "vm/SavedStacks.h"
 #include "vm/Time.h"
-#include "wasm/WasmCompartment.h"
+#include "wasm/WasmRealm.h"
 
 namespace js {
 
@@ -730,9 +730,6 @@ struct JSCompartment
     
     mozilla::LinkedList<js::UnboxedLayout> unboxedLayouts;
 
-    
-    js::wasm::Compartment wasm;
-
   protected:
     
     
@@ -1121,6 +1118,9 @@ class JS::Realm : public JSCompartment
     bool isAtomsRealm_ = false;
 
   public:
+    
+    js::wasm::Realm wasm;
+
     Realm(JS::Zone* zone, const JS::RealmOptions& options);
 
     MOZ_MUST_USE bool init(JSContext* maybecx);

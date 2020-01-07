@@ -2640,8 +2640,8 @@ UpdateExecutionObservabilityOfScriptsInZone(JSContext* cx, Zone* zone,
     }
 
     
-    for (JSCompartment* c : zone->compartments()) {
-        for (wasm::Instance* instance : c->wasm.instances()) {
+    for (RealmsInZoneIter r(zone); !r.done(); r.next()) {
+        for (wasm::Instance* instance : r->wasm.instances()) {
             if (!instance->debugEnabled())
                 continue;
 
@@ -4446,7 +4446,7 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery
         
         
         for (WeakGlobalObjectSet::Range r = debugger->allDebuggees(); !r.empty(); r.popFront()) {
-            for (wasm::Instance* instance : r.front()->compartment()->wasm.instances()) {
+            for (wasm::Instance* instance : r.front()->realm()->wasm.instances()) {
                 consider(instance->object());
                 if (oom) {
                     ReportOutOfMemory(cx);

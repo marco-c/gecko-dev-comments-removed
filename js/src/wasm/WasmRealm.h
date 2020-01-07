@@ -16,8 +16,8 @@
 
 
 
-#ifndef wasm_compartment_h
-#define wasm_compartment_h
+#ifndef wasm_realm_h
+#define wasm_realm_h
 
 #include "wasm/WasmJS.h"
 
@@ -28,15 +28,14 @@ namespace wasm {
 
 
 
-
-class Compartment
+class Realm
 {
     JSRuntime* runtime_;
     InstanceVector instances_;
 
   public:
-    explicit Compartment(JSRuntime* rt);
-    ~Compartment();
+    explicit Realm(JSRuntime* rt);
+    ~Realm();
 
     
     
@@ -60,7 +59,7 @@ class Compartment
 
     
 
-    void addSizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf, size_t* compartmentTables);
+    void addSizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf, size_t* realmTables);
 };
 
 

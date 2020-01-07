@@ -1327,7 +1327,7 @@ Module::instantiate(JSContext* cx,
     
     
 
-    if (!cx->compartment()->wasm.registerInstance(cx, instance))
+    if (!cx->realm()->wasm.registerInstance(cx, instance))
         return false;
 
     
