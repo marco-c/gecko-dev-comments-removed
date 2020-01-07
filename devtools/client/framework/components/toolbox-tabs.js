@@ -239,6 +239,8 @@ class ToolboxTabs extends Component {
       selectTool,
     } = this.props;
 
+    this._tabsOrderManager.setOverflowedTabs(this.state.overflowedTabIds);
+
     let tabs = panelDefinitions.map(panelDefinition => {
       
       if (!this.state.overflowedTabIds.includes(panelDefinition.id)) {
