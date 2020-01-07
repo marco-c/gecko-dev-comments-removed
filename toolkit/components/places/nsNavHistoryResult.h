@@ -296,7 +296,6 @@ protected:
 public:
 
   nsNavHistoryResult* GetResult();
-  nsNavHistoryQueryOptions* GetGeneratingOptions();
 
   
   
@@ -471,9 +470,18 @@ public:
   
   nsCOMArray<nsNavHistoryResultNode> mChildren;
 
+  
+  
+  
+  
+  
+  
+  nsCOMPtr<nsNavHistoryQueryOptions> mOriginalOptions;
   nsCOMPtr<nsNavHistoryQueryOptions> mOptions;
 
   void FillStats();
+  
+  void SetAsParentOfNode(nsNavHistoryResultNode* aNode);
   nsresult ReverseUpdateStats(int32_t aAccessCountChange);
 
   

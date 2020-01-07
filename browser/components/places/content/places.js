@@ -240,22 +240,15 @@ var PlacesOrganizer = {
     if (!this._places.hasSelection)
       return;
 
-    var node = this._places.selectedNode;
-    var queries = PlacesUtils.asQuery(node).getQueries();
-
-    
-    var options = node.queryOptions.clone();
-    options.excludeItems = false;
-    var placeURI = PlacesUtils.history.queriesToQueryString(queries,
-                                                            queries.length,
-                                                            options);
+    let node = this._places.selectedNode;
+    let placeURI = node.uri;
 
     
     
     
     if (ContentArea.currentPlace != placeURI || !resetSearchBox) {
       ContentArea.currentPlace = placeURI;
-      this.location = node.uri;
+      this.location = placeURI;
     }
 
     
@@ -264,9 +257,9 @@ var PlacesOrganizer = {
     
     
     
-    if (node.uri == this._cachedLeftPaneSelectedURI)
+    if (placeURI == this._cachedLeftPaneSelectedURI)
       return;
-    this._cachedLeftPaneSelectedURI = node.uri;
+    this._cachedLeftPaneSelectedURI = placeURI;
 
     
     

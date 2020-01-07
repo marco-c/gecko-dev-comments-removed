@@ -1319,26 +1319,21 @@ PlacesTreeView.prototype = {
   isContainer: function PTV_isContainer(aRow) {
     
     let node = this._rows[aRow];
-    if (node === undefined)
+    if (node === undefined || !PlacesUtils.nodeIsContainer(node))
       return false;
 
-    if (PlacesUtils.nodeIsContainer(node)) {
-      
-      
-      if (this._flatList)
-        return true;
-
-      
-      if (PlacesUtils.nodeIsQuery(node)) {
-        let parent = node.parent;
-        if ((PlacesUtils.nodeIsQuery(parent) ||
-             PlacesUtils.nodeIsFolder(parent)) &&
-            !PlacesUtils.asQuery(node).hasChildren)
-          return PlacesUtils.asQuery(parent).queryOptions.expandQueries;
-      }
+    
+    
+    if (this._flatList)
       return true;
+
+    
+    
+    if (PlacesUtils.nodeIsQuery(node) && !PlacesUtils.nodeIsTagQuery(node)) {
+      PlacesUtils.asQuery(node);
+      return node.queryOptions.expandQueries || node.hasChildren;
     }
-    return false;
+    return true;
   },
 
   isContainerOpen: function PTV_isContainerOpen(aRow) {

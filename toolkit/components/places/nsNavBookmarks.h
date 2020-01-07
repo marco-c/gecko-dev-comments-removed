@@ -129,6 +129,7 @@ public:
   
   
   nsresult QueryFolderChildren(int64_t aFolderId,
+                               nsNavHistoryQueryOptions* aOriginalOptions,
                                nsNavHistoryQueryOptions* aOptions,
                                nsCOMArray<nsNavHistoryResultNode>* children);
 
@@ -147,7 +148,12 @@ public:
 
 
 
+
+
+
+
   nsresult ProcessFolderNodeRow(mozIStorageValueArray* aRow,
+                                nsNavHistoryQueryOptions* aOriginalOptions,
                                 nsNavHistoryQueryOptions* aOptions,
                                 nsCOMArray<nsNavHistoryResultNode>* aChildren,
                                 int32_t& aCurrentIndex);
