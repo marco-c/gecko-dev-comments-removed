@@ -118,8 +118,7 @@ impl Device {
 
     
     pub fn set_root_font_size(&self, size: Au) {
-        self.root_font_size
-            .store(size.0 as isize, Ordering::Relaxed)
+        self.root_font_size.store(size.0 as isize, Ordering::Relaxed)
     }
 
     
@@ -229,7 +228,7 @@ impl Device {
 }
 
 
-#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Range {
     
     Min,
@@ -241,7 +240,7 @@ pub enum Range {
 
 
 
-#[derive(Clone, Debug, MallocSizeOf)]
+#[derive(Clone, Debug)]
 pub struct Expression {
     feature: &'static nsMediaFeature,
     value: Option<MediaExpressionValue>,
@@ -294,7 +293,7 @@ impl PartialEq for Expression {
 
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum MediaExpressionValue {
     
     Length(Length),
