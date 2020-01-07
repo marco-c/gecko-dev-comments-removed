@@ -302,7 +302,7 @@ CanvasFrameAnonymousContentHelper.prototype = {
 
 
 
-  _onWindowReady(e, {isTopLevel}) {
+  _onWindowReady({isTopLevel}) {
     if (isTopLevel) {
       this._removeAllListeners();
       this.elements.clear();

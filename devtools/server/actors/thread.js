@@ -86,7 +86,9 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
     this._allEventsListener = this._allEventsListener.bind(this);
     this.onNewGlobal = this.onNewGlobal.bind(this);
-    this.onSourceEvent = this.onSourceEvent.bind(this);
+    this.onNewSourceEvent = this.onNewSourceEvent.bind(this);
+    this.onUpdatedSourceEvent = this.onUpdatedSourceEvent.bind(this);
+
     this.uncaughtExceptionHook = this.uncaughtExceptionHook.bind(this);
     this.onDebuggerStatement = this.onDebuggerStatement.bind(this);
     this.onNewScript = this.onNewScript.bind(this);
@@ -221,8 +223,8 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     this._sourceActorStore = null;
 
     EventEmitter.off(this._parent, "window-ready", this._onWindowReady);
-    this.sources.off("newSource", this.onSourceEvent);
-    this.sources.off("updatedSource", this.onSourceEvent);
+    this.sources.off("newSource", this.onNewSourceEvent);
+    this.sources.off("updatedSource", this.onUpdatedSourceEvent);
     this.clearDebuggees();
     this.conn.removeActorPool(this._threadLifetimePool);
     this._threadLifetimePool = null;
@@ -263,8 +265,8 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
     Object.assign(this._options, request.options || {});
     this.sources.setOptions(this._options);
-    this.sources.on("newSource", this.onSourceEvent);
-    this.sources.on("updatedSource", this.onSourceEvent);
+    this.sources.on("newSource", this.onNewSourceEvent);
+    this.sources.on("updatedSource", this.onUpdatedSourceEvent);
 
     
     
@@ -1553,23 +1555,35 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
 
 
-
-  onSourceEvent: function (name, source) {
+  onNewSourceEvent: function (source) {
+    const type = "newSource";
     this.conn.send({
       from: this._parent.actorID,
-      type: name,
+      type,
       source: source.form()
     });
 
     
     
-    if (name === "newSource") {
-      this.conn.send({
-        from: this.actorID,
-        type: name,
-        source: source.form()
-      });
-    }
+    this.conn.send({
+      from: this.actorID,
+      type,
+      source: source.form()
+    });
+  },
+
+  
+
+
+
+
+
+  onUpdatedSourceEvent: function (source) {
+    this.conn.send({
+      from: this._parent.actorID,
+      type: "updatedSource",
+      source: source.form()
+    });
   },
 
   

@@ -333,7 +333,7 @@ BrowserToolboxProcess.prototype = {
 
 
 
-  _onConnectionChange: function (evt, what, connection) {
+  _onConnectionChange: function (what, connection) {
     let wrappedJSObject = { what, connection };
     Services.obs.notifyObservers({ wrappedJSObject }, "toolbox-connection-change");
   },
