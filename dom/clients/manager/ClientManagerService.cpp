@@ -448,6 +448,54 @@ ClientManagerService::MatchAll(const ClientMatchAllArgs& aArgs)
 }
 
 RefPtr<ClientOpPromise>
+ClientManagerService::Claim(const ClientClaimArgs& aArgs)
+{
+  AssertIsOnBackgroundThread();
+
+  const IPCServiceWorkerDescriptor& serviceWorker = aArgs.serviceWorker();
+  const PrincipalInfo& principalInfo = serviceWorker.principalInfo();
+
+  RefPtr<PromiseListHolder> promiseList = new PromiseListHolder();
+
+  for (auto iter = mSourceTable.Iter(); !iter.Done(); iter.Next()) {
+    ClientSourceParent* source = iter.UserData();
+    MOZ_DIAGNOSTIC_ASSERT(source);
+
+    if (source->IsFrozen()) {
+      continue;
+    }
+
+    if (!MatchPrincipalInfo(source->Info().PrincipalInfo(), principalInfo)) {
+      continue;
+    }
+
+    const Maybe<ServiceWorkerDescriptor>& controller = source->GetController();
+    if (controller.isSome() &&
+        controller.ref().Scope() == serviceWorker.scope() &&
+        controller.ref().Id() == serviceWorker.id()) {
+      continue;
+    }
+
+    
+    
+    
+    
+    if (!source->ExecutionReady() ||
+        source->Info().Type() == ClientType::Serviceworker ||
+        source->Info().URL().Find(serviceWorker.scope()) != 0) {
+      continue;
+    }
+
+    promiseList->AddPromise(source->StartOp(aArgs));
+  }
+
+  
+  promiseList->MaybeFinish();
+
+  return promiseList->GetResultPromise();
+}
+
+RefPtr<ClientOpPromise>
 ClientManagerService::GetInfoAndState(const ClientGetInfoAndStateArgs& aArgs)
 {
   RefPtr<ClientOpPromise> ref;
