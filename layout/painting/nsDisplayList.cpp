@@ -20,7 +20,6 @@
 #include "gfxUtils.h"
 #include "mozilla/dom/TabChild.h"
 #include "mozilla/dom/KeyframeEffectReadOnly.h"
-#include "mozilla/dom/Selection.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/layers/PLayerTransaction.h"
 #include "nsCSSRendering.h"
@@ -80,6 +79,7 @@
 #include "FrameLayerBuilder.h"
 #include "mozilla/EventStateManager.h"
 #include "nsCaret.h"
+#include "nsISelection.h"
 #include "nsDOMTokenList.h"
 #include "nsCSSProps.h"
 #include "nsSVGMaskFrame.h"
@@ -1021,8 +1021,8 @@ nsDisplayListBuilder::nsDisplayListBuilder(nsIFrame* aReferenceFrame,
   if (pc->IsRenderingOnlySelection()) {
     nsCOMPtr<nsISelectionController> selcon(do_QueryInterface(shell));
     if (selcon) {
-      mBoundingSelection =
-        selcon->GetSelection(nsISelectionController::SELECTION_NORMAL);
+      selcon->GetSelection(nsISelectionController::SELECTION_NORMAL,
+                           getter_AddRefs(mBoundingSelection));
     }
   }
 
@@ -6700,14 +6700,12 @@ nsDisplayOpacity::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuil
 
   if (!animationInfo.GetAnimations().IsEmpty()) {
     opacityForSC = nullptr;
-    OptionalOpacity opacityForCompositor = mOpacity;
     prop.id = animationsId;
     prop.effect_type = wr::WrAnimationType::Opacity;
 
 
     OpAddCompositorAnimations
-      anim(CompositorAnimations(animationInfo.GetAnimations(), animationsId),
-           void_t(), opacityForCompositor);
+      anim(CompositorAnimations(animationInfo.GetAnimations(), animationsId));
     aManager->WrBridge()->AddWebRenderParentCommand(anim);
     aManager->AddActiveCompositorAnimationId(animationsId);
   } else if (animationsId) {
@@ -8555,13 +8553,8 @@ nsDisplayTransform::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBu
     prop.id = animationsId;
     prop.effect_type = wr::WrAnimationType::Transform;
 
-    
-    
-    OptionalTransform transformForCompositor = newTransformMatrix;
-
     OpAddCompositorAnimations
-      anim(CompositorAnimations(animationInfo.GetAnimations(), animationsId),
-           transformForCompositor, void_t());
+      anim(CompositorAnimations(animationInfo.GetAnimations(), animationsId));
     aManager->WrBridge()->AddWebRenderParentCommand(anim);
     aManager->AddActiveCompositorAnimationId(animationsId);
   } else if (animationsId) {
