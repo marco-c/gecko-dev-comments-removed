@@ -792,10 +792,8 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
 
     if (!this.isSourceMapped) {
       const generatedLocation = GeneratedLocation.fromOriginalLocation(originalLocation);
-      const isWasm = this.source && this.source.introductionType === "wasm";
       if (!this._setBreakpointAtGeneratedLocation(actor, generatedLocation) &&
-          !noSliding &&
-          !isWasm) {
+          !noSliding) {
         const query = { line: originalLine };
         
         
