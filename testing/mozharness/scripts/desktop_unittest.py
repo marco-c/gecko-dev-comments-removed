@@ -192,6 +192,7 @@ class DesktopUnittest(TestingMixin, MercurialScript, BlobUploadMixin, MozbaseMix
             config_options=self.config_options,
             all_actions=[
                 'clobber',
+                'read-buildbot-config',
                 'download-and-extract',
                 'create-virtualenv',
                 'install',
@@ -535,6 +536,8 @@ class DesktopUnittest(TestingMixin, MercurialScript, BlobUploadMixin, MozbaseMix
 
     
 
+    
+    
     
     
     
