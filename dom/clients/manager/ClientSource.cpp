@@ -8,6 +8,7 @@
 
 #include "ClientManager.h"
 #include "ClientManagerChild.h"
+#include "ClientPrincipalUtils.h"
 #include "ClientSourceChild.h"
 #include "ClientState.h"
 #include "ClientValidation.h"
@@ -375,6 +376,11 @@ void
 ClientSource::SetController(const ServiceWorkerDescriptor& aServiceWorker)
 {
   NS_ASSERT_OWNINGTHREAD(ClientSource);
+
+  
+  
+  MOZ_RELEASE_ASSERT(ClientMatchPrincipalInfo(mClientInfo.PrincipalInfo(),
+                                              aServiceWorker.PrincipalInfo()));
 
   
   
