@@ -220,7 +220,7 @@ public:
   nsresult BeginUpdate();
 
   
-  nsresult ApplyUpdate(TableUpdate &aUpdate);
+  nsresult ApplyUpdate(TableUpdateV2 *aUpdate);
 
   
   nsresult Expire();
