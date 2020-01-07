@@ -2988,7 +2988,7 @@ EditorBase::DeleteTextWithTransaction(CharacterData& aCharData,
   }
 
   AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
-                                      *this, EditSubAction::deleteText,
+                                      *this, EditSubAction::eDeleteText,
                                       nsIEditor::ePrevious);
 
   

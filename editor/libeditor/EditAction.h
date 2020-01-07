@@ -39,7 +39,8 @@ enum class EditSubAction : int32_t
   
   eJoinNodes,
 
-  deleteText = 1003,
+  
+  eDeleteText,
 
   
   insertText = 2000,
