@@ -95,7 +95,6 @@ NS_IMPL_CYCLE_COLLECTING_RELEASE(FormData)
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(FormData)
   NS_WRAPPERCACHE_INTERFACE_MAP_ENTRY
   NS_INTERFACE_MAP_ENTRY(nsIDOMFormData)
-  NS_INTERFACE_MAP_ENTRY(nsIXHRSendable)
   NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIDOMFormData)
 NS_INTERFACE_MAP_END
 
@@ -399,9 +398,9 @@ FormData::Constructor(const GlobalObject& aGlobal,
 
 
 
-NS_IMETHODIMP
+nsresult
 FormData::GetSendInfo(nsIInputStream** aBody, uint64_t* aContentLength,
-                      nsACString& aContentTypeWithCharset, nsACString& aCharset)
+                      nsACString& aContentTypeWithCharset, nsACString& aCharset) const
 {
   FSMultipartFormData fs(UTF_8_ENCODING, nullptr);
 
