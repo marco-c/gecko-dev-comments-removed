@@ -6,8 +6,8 @@
 
 
 
-use std::error::Error;
 use buffer::Cursor;
+use std::error::Error;
 use std::fmt::{self, Display};
 
 
@@ -22,7 +22,7 @@ pub type PResult<'a, O> = Result<(O, Cursor<'a>), ParseError>;
 
 
 
-pub fn parse_error<O>() -> PResult<'static, O> {
+pub fn parse_error<'a, O>() -> PResult<'a, O> {
     Err(ParseError(None))
 }
 

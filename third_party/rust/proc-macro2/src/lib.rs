@@ -24,37 +24,63 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/proc-macro2/0.3.6")]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#![doc(html_root_url = "https://docs.rs/proc-macro2/0.4.6")]
 #![cfg_attr(feature = "nightly", feature(proc_macro))]
 
 #[cfg(feature = "proc-macro")]
 extern crate proc_macro;
-
-#[cfg(not(feature = "nightly"))]
 extern crate unicode_xid;
 
+use std::cmp::Ordering;
 use std::fmt;
+use std::hash::{Hash, Hasher};
 use std::iter::FromIterator;
 use std::marker;
 use std::rc::Rc;
 use std::str::FromStr;
 
 #[macro_use]
-#[cfg(not(feature = "nightly"))]
 mod strnom;
+mod stable;
 
-#[path = "stable.rs"]
 #[cfg(not(feature = "nightly"))]
-mod imp;
+use stable as imp;
 #[path = "unstable.rs"]
 #[cfg(feature = "nightly")]
 mod imp;
+
+
+
+
+
+
+
 
 #[derive(Clone)]
 pub struct TokenStream {
     inner: imp::TokenStream,
     _marker: marker::PhantomData<Rc<()>>,
 }
+
 
 pub struct LexError {
     inner: imp::LexError,
@@ -69,14 +95,36 @@ impl TokenStream {
         }
     }
 
-    pub fn empty() -> TokenStream {
-        TokenStream::_new(imp::TokenStream::empty())
+    fn _new_stable(inner: stable::TokenStream) -> TokenStream {
+        TokenStream {
+            inner: inner.into(),
+            _marker: marker::PhantomData,
+        }
     }
 
+    
+    pub fn new() -> TokenStream {
+        TokenStream::_new(imp::TokenStream::new())
+    }
+
+    #[deprecated(since = "0.4.4", note = "please use TokenStream::new")]
+    pub fn empty() -> TokenStream {
+        TokenStream::new()
+    }
+
+    
     pub fn is_empty(&self) -> bool {
         self.inner.is_empty()
     }
 }
+
+
+
+
+
+
+
+
 
 impl FromStr for TokenStream {
     type Err = LexError;
@@ -104,17 +152,29 @@ impl From<TokenStream> for proc_macro::TokenStream {
     }
 }
 
+impl Extend<TokenTree> for TokenStream {
+    fn extend<I: IntoIterator<Item = TokenTree>>(&mut self, streams: I) {
+        self.inner.extend(streams)
+    }
+}
+
+
 impl FromIterator<TokenTree> for TokenStream {
     fn from_iter<I: IntoIterator<Item = TokenTree>>(streams: I) -> Self {
         TokenStream::_new(streams.into_iter().collect())
     }
 }
 
+
+
+
+
 impl fmt::Display for TokenStream {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.inner.fmt(f)
     }
 }
+
 
 impl fmt::Debug for TokenStream {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -132,6 +192,9 @@ impl fmt::Debug for LexError {
 #[cfg(procmacro2_semver_exempt)]
 pub use imp::FileName;
 
+
+
+
 #[cfg(procmacro2_semver_exempt)]
 #[derive(Clone, PartialEq, Eq)]
 pub struct SourceFile(imp::SourceFile);
@@ -139,10 +202,24 @@ pub struct SourceFile(imp::SourceFile);
 #[cfg(procmacro2_semver_exempt)]
 impl SourceFile {
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn path(&self) -> &FileName {
         self.0.path()
     }
 
+    
+    
     pub fn is_real(&self) -> bool {
         self.0.is_real()
     }
@@ -162,11 +239,19 @@ impl fmt::Debug for SourceFile {
     }
 }
 
+
+
+
 #[cfg(procmacro2_semver_exempt)]
 pub struct LineColumn {
+    
+    
     pub line: usize,
+    
+    
     pub column: usize,
 }
+
 
 #[derive(Copy, Clone)]
 pub struct Span {
@@ -182,10 +267,25 @@ impl Span {
         }
     }
 
+    fn _new_stable(inner: stable::Span) -> Span {
+        Span {
+            inner: inner.into(),
+            _marker: marker::PhantomData,
+        }
+    }
+
+    
+    
+    
+    
+    
     pub fn call_site() -> Span {
         Span::_new(imp::Span::call_site())
     }
 
+    
+    
+    
     #[cfg(procmacro2_semver_exempt)]
     pub fn def_site() -> Span {
         Span::_new(imp::Span::def_site())
@@ -193,11 +293,15 @@ impl Span {
 
     
     
+    
+    
     #[cfg(procmacro2_semver_exempt)]
     pub fn resolved_at(&self, other: Span) -> Span {
         Span::_new(self.inner.resolved_at(other.inner))
     }
 
+    
+    
     
     
     #[cfg(procmacro2_semver_exempt)]
@@ -211,11 +315,17 @@ impl Span {
         self.inner.unstable()
     }
 
+    
+    
+    
     #[cfg(procmacro2_semver_exempt)]
     pub fn source_file(&self) -> SourceFile {
         SourceFile(self.inner.source_file())
     }
 
+    
+    
+    
     #[cfg(procmacro2_semver_exempt)]
     pub fn start(&self) -> LineColumn {
         let imp::LineColumn { line, column } = self.inner.start();
@@ -225,6 +335,9 @@ impl Span {
         }
     }
 
+    
+    
+    
     #[cfg(procmacro2_semver_exempt)]
     pub fn end(&self) -> LineColumn {
         let imp::LineColumn { line, column } = self.inner.end();
@@ -234,16 +347,25 @@ impl Span {
         }
     }
 
+    
+    
+    
+    
+    
     #[cfg(procmacro2_semver_exempt)]
     pub fn join(&self, other: Span) -> Option<Span> {
         self.inner.join(other.inner).map(Span::_new)
     }
 
+    
+    
+    
     #[cfg(procmacro2_semver_exempt)]
     pub fn eq(&self, other: &Span) -> bool {
         self.inner.eq(&other.inner)
     }
 }
+
 
 impl fmt::Debug for Span {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -251,29 +373,41 @@ impl fmt::Debug for Span {
     }
 }
 
-#[derive(Clone, Debug)]
+
+#[derive(Clone)]
 pub enum TokenTree {
+    
     Group(Group),
-    Term(Term),
-    Op(Op),
+    
+    Ident(Ident),
+    
+    Punct(Punct),
+    
     Literal(Literal),
 }
 
 impl TokenTree {
+    
+    
     pub fn span(&self) -> Span {
         match *self {
             TokenTree::Group(ref t) => t.span(),
-            TokenTree::Term(ref t) => t.span(),
-            TokenTree::Op(ref t) => t.span(),
+            TokenTree::Ident(ref t) => t.span(),
+            TokenTree::Punct(ref t) => t.span(),
             TokenTree::Literal(ref t) => t.span(),
         }
     }
 
+    
+    
+    
+    
+    
     pub fn set_span(&mut self, span: Span) {
         match *self {
             TokenTree::Group(ref mut t) => t.set_span(span),
-            TokenTree::Term(ref mut t) => t.set_span(span),
-            TokenTree::Op(ref mut t) => t.set_span(span),
+            TokenTree::Ident(ref mut t) => t.set_span(span),
+            TokenTree::Punct(ref mut t) => t.set_span(span),
             TokenTree::Literal(ref mut t) => t.set_span(span),
         }
     }
@@ -285,15 +419,15 @@ impl From<Group> for TokenTree {
     }
 }
 
-impl From<Term> for TokenTree {
-    fn from(g: Term) -> TokenTree {
-        TokenTree::Term(g)
+impl From<Ident> for TokenTree {
+    fn from(g: Ident) -> TokenTree {
+        TokenTree::Ident(g)
     }
 }
 
-impl From<Op> for TokenTree {
-    fn from(g: Op) -> TokenTree {
-        TokenTree::Op(g)
+impl From<Punct> for TokenTree {
+    fn from(g: Punct) -> TokenTree {
+        TokenTree::Punct(g)
     }
 }
 
@@ -303,33 +437,77 @@ impl From<Literal> for TokenTree {
     }
 }
 
+
+
+
+
 impl fmt::Display for TokenTree {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             TokenTree::Group(ref t) => t.fmt(f),
-            TokenTree::Term(ref t) => t.fmt(f),
-            TokenTree::Op(ref t) => t.fmt(f),
+            TokenTree::Ident(ref t) => t.fmt(f),
+            TokenTree::Punct(ref t) => t.fmt(f),
             TokenTree::Literal(ref t) => t.fmt(f),
         }
     }
 }
 
-#[derive(Clone, Debug)]
+
+impl fmt::Debug for TokenTree {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        
+        
+        match *self {
+            TokenTree::Group(ref t) => t.fmt(f),
+            TokenTree::Ident(ref t) => {
+                let mut debug = f.debug_struct("Ident");
+                debug.field("sym", &format_args!("{}", t));
+                #[cfg(any(feature = "nightly", procmacro2_semver_exempt))]
+                debug.field("span", &t.span());
+                debug.finish()
+            }
+            TokenTree::Punct(ref t) => t.fmt(f),
+            TokenTree::Literal(ref t) => t.fmt(f),
+        }
+    }
+}
+
+
+
+
+
+#[derive(Clone)]
 pub struct Group {
     delimiter: Delimiter,
     stream: TokenStream,
     span: Span,
 }
 
+
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum Delimiter {
+    
     Parenthesis,
+    
     Brace,
+    
     Bracket,
+    
+    
+    
+    
+    
+    
+    
     None,
 }
 
 impl Group {
+    
+    
+    
+    
+    
     pub fn new(delimiter: Delimiter, stream: TokenStream) -> Group {
         Group {
             delimiter: delimiter,
@@ -338,116 +516,345 @@ impl Group {
         }
     }
 
+    
     pub fn delimiter(&self) -> Delimiter {
         self.delimiter
     }
 
+    
+    
+    
+    
     pub fn stream(&self) -> TokenStream {
         self.stream.clone()
     }
 
+    
+    
     pub fn span(&self) -> Span {
         self.span
     }
 
+    
+    
+    
+    
+    
+    
     pub fn set_span(&mut self, span: Span) {
         self.span = span;
     }
 }
 
+
+
+
 impl fmt::Display for Group {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.stream.fmt(f)
+        let (left, right) = match self.delimiter {
+            Delimiter::Parenthesis => ("(", ")"),
+            Delimiter::Brace => ("{", "}"),
+            Delimiter::Bracket => ("[", "]"),
+            Delimiter::None => ("", ""),
+        };
+
+        f.write_str(left)?;
+        self.stream.fmt(f)?;
+        f.write_str(right)?;
+
+        Ok(())
     }
 }
 
-#[derive(Copy, Clone, Debug)]
-pub struct Op {
+impl fmt::Debug for Group {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        let mut debug = fmt.debug_struct("Group");
+        debug.field("delimiter", &self.delimiter);
+        debug.field("stream", &self.stream);
+        #[cfg(procmacro2_semver_exempt)]
+        debug.field("span", &self.span);
+        debug.finish()
+    }
+}
+
+
+
+
+
+#[derive(Clone)]
+pub struct Punct {
     op: char,
     spacing: Spacing,
     span: Span,
 }
 
+
+
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum Spacing {
+    
     Alone,
+    
+    
+    
+    
     Joint,
 }
 
-impl Op {
-    pub fn new(op: char, spacing: Spacing) -> Op {
-        Op {
+impl Punct {
+    
+    
+    
+    
+    
+    
+    
+    pub fn new(op: char, spacing: Spacing) -> Punct {
+        Punct {
             op: op,
             spacing: spacing,
             span: Span::call_site(),
         }
     }
 
-    pub fn op(&self) -> char {
+    
+    pub fn as_char(&self) -> char {
         self.op
     }
 
+    
+    
+    
+    
+    
     pub fn spacing(&self) -> Spacing {
         self.spacing
     }
 
+    
     pub fn span(&self) -> Span {
         self.span
     }
 
+    
     pub fn set_span(&mut self, span: Span) {
         self.span = span;
     }
 }
 
-impl fmt::Display for Op {
+
+
+impl fmt::Display for Punct {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.op.fmt(f)
     }
 }
 
-#[derive(Copy, Clone)]
-pub struct Term {
-    inner: imp::Term,
+impl fmt::Debug for Punct {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        let mut debug = fmt.debug_struct("Punct");
+        debug.field("op", &self.op);
+        debug.field("spacing", &self.spacing);
+        #[cfg(procmacro2_semver_exempt)]
+        debug.field("span", &self.span);
+        debug.finish()
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Clone)]
+pub struct Ident {
+    inner: imp::Ident,
     _marker: marker::PhantomData<Rc<()>>,
 }
 
-impl Term {
-    fn _new(inner: imp::Term) -> Term {
-        Term {
+impl Ident {
+    fn _new(inner: imp::Ident) -> Ident {
+        Ident {
             inner: inner,
             _marker: marker::PhantomData,
         }
     }
 
-    pub fn new(string: &str, span: Span) -> Term {
-        Term::_new(imp::Term::new(string, span.inner))
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn new(string: &str, span: Span) -> Ident {
+        Ident::_new(imp::Ident::new(string, span.inner))
     }
 
-    pub fn as_str(&self) -> &str {
-        self.inner.as_str()
+    
+    
+    
+    #[cfg(procmacro2_semver_exempt)]
+    pub fn new_raw(string: &str, span: Span) -> Ident {
+        Ident::_new_raw(string, span)
     }
 
+    fn _new_raw(string: &str, span: Span) -> Ident {
+        Ident::_new(imp::Ident::new_raw(string, span.inner))
+    }
+
+    
     pub fn span(&self) -> Span {
         Span::_new(self.inner.span())
     }
 
+    
+    
     pub fn set_span(&mut self, span: Span) {
         self.inner.set_span(span.inner);
     }
 }
 
-impl fmt::Display for Term {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.as_str().fmt(f)
+impl PartialEq for Ident {
+    fn eq(&self, other: &Ident) -> bool {
+        self.to_string() == other.to_string()
     }
 }
 
-impl fmt::Debug for Term {
+impl<T> PartialEq<T> for Ident
+where
+    T: ?Sized + AsRef<str>,
+{
+    fn eq(&self, other: &T) -> bool {
+        self.to_string() == other.as_ref()
+    }
+}
+
+impl Eq for Ident {}
+
+impl PartialOrd for Ident {
+    fn partial_cmp(&self, other: &Ident) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for Ident {
+    fn cmp(&self, other: &Ident) -> Ordering {
+        self.to_string().cmp(&other.to_string())
+    }
+}
+
+impl Hash for Ident {
+    fn hash<H: Hasher>(&self, hasher: &mut H) {
+        self.to_string().hash(hasher)
+    }
+}
+
+
+
+impl fmt::Display for Ident {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.inner.fmt(f)
     }
 }
+
+impl fmt::Debug for Ident {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.inner.fmt(f)
+    }
+}
+
+
+
+
+
+
 
 #[derive(Clone)]
 pub struct Literal {
@@ -455,8 +862,40 @@ pub struct Literal {
     _marker: marker::PhantomData<Rc<()>>,
 }
 
-macro_rules! int_literals {
+macro_rules! suffixed_int_literals {
     ($($name:ident => $kind:ident,)*) => ($(
+        
+        ///
+        
+        
+        
+        
+        
+        ///
+        
+        
+        
+        pub fn $name(n: $kind) -> Literal {
+            Literal::_new(imp::Literal::$name(n))
+        }
+    )*)
+}
+
+macro_rules! unsuffixed_int_literals {
+    ($($name:ident => $kind:ident,)*) => ($(
+        
+        ///
+        
+        
+        
+        
+        
+        
+        
+        ///
+        
+        
+        
         pub fn $name(n: $kind) -> Literal {
             Literal::_new(imp::Literal::$name(n))
         }
@@ -471,7 +910,14 @@ impl Literal {
         }
     }
 
-    int_literals! {
+    fn _new_stable(inner: stable::Literal) -> Literal {
+        Literal {
+            inner: inner.into(),
+            _marker: marker::PhantomData,
+        }
+    }
+
+    suffixed_int_literals! {
         u8_suffixed => u8,
         u16_suffixed => u16,
         u32_suffixed => u32,
@@ -482,7 +928,9 @@ impl Literal {
         i32_suffixed => i32,
         i64_suffixed => i64,
         isize_suffixed => isize,
+    }
 
+    unsuffixed_int_literals! {
         u8_unsuffixed => u8,
         u16_unsuffixed => u16,
         u32_unsuffixed => u32,
@@ -505,6 +953,19 @@ impl Literal {
         Literal::_new(imp::Literal::f64_suffixed(f))
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn f32_unsuffixed(f: f32) -> Literal {
         assert!(f.is_finite());
         Literal::_new(imp::Literal::f32_unsuffixed(f))
@@ -548,15 +1009,20 @@ impl fmt::Display for Literal {
     }
 }
 
+
 pub mod token_stream {
     use std::fmt;
     use std::marker;
     use std::rc::Rc;
 
+    use imp;
     pub use TokenStream;
     use TokenTree;
-    use imp;
 
+    
+    
+    
+    
     pub struct IntoIter {
         inner: imp::TokenTreeIter,
         _marker: marker::PhantomData<Rc<()>>,

@@ -129,11 +129,11 @@
 
 #[cfg(feature = "proc-macro")]
 use proc_macro as pm;
-use proc_macro2::{Delimiter, Literal, Span, Term, TokenStream};
-use proc_macro2::{Group, TokenTree, Op};
+use proc_macro2::{Delimiter, Ident, Literal, Span, TokenStream};
+use proc_macro2::{Group, Punct, TokenTree};
 
-use std::ptr;
 use std::marker::PhantomData;
+use std::ptr;
 
 #[cfg(synom_verbose_trace)]
 use std::fmt::{self, Debug};
@@ -143,8 +143,8 @@ use std::fmt::{self, Debug};
 enum Entry {
     
     Group(Span, Delimiter, TokenBuffer),
-    Term(Term),
-    Op(Op),
+    Ident(Ident),
+    Punct(Punct),
     Literal(Literal),
     
     
@@ -177,11 +177,11 @@ impl TokenBuffer {
         let mut seqs = Vec::new();
         for tt in stream {
             match tt {
-                TokenTree::Term(sym) => {
-                    entries.push(Entry::Term(sym));
+                TokenTree::Ident(sym) => {
+                    entries.push(Entry::Ident(sym));
                 }
-                TokenTree::Op(op) => {
-                    entries.push(Entry::Op(op));
+                TokenTree::Punct(op) => {
+                    entries.push(Entry::Punct(op));
                 }
                 TokenTree::Literal(l) => {
                     entries.push(Entry::Literal(l));
@@ -218,6 +218,9 @@ impl TokenBuffer {
         TokenBuffer { data: entries }
     }
 
+    
+    
+    
     
     
     #[cfg(feature = "proc-macro")]
@@ -367,20 +370,20 @@ impl<'a> Cursor<'a> {
 
     
     
-    pub fn term(mut self) -> Option<(Term, Cursor<'a>)> {
+    pub fn ident(mut self) -> Option<(Ident, Cursor<'a>)> {
         self.ignore_none();
         match *self.entry() {
-            Entry::Term(term) => Some((term, unsafe { self.bump() })),
+            Entry::Ident(ref ident) => Some((ident.clone(), unsafe { self.bump() })),
             _ => None,
         }
     }
 
     
     
-    pub fn op(mut self) -> Option<(Op, Cursor<'a>)> {
+    pub fn punct(mut self) -> Option<(Punct, Cursor<'a>)> {
         self.ignore_none();
         match *self.entry() {
-            Entry::Op(op) => Some((op, unsafe { self.bump() })),
+            Entry::Punct(ref op) => Some((op.clone(), unsafe { self.bump() })),
             _ => None,
         }
     }
@@ -423,8 +426,8 @@ impl<'a> Cursor<'a> {
                 TokenTree::from(g)
             }
             Entry::Literal(ref lit) => lit.clone().into(),
-            Entry::Term(term) => term.into(),
-            Entry::Op(op) => op.into(),
+            Entry::Ident(ref ident) => ident.clone().into(),
+            Entry::Punct(ref op) => op.clone().into(),
             Entry::End(..) => {
                 return None;
             }
@@ -439,8 +442,8 @@ impl<'a> Cursor<'a> {
         match *self.entry() {
             Entry::Group(span, ..) => span,
             Entry::Literal(ref l) => l.span(),
-            Entry::Term(t) => t.span(),
-            Entry::Op(o) => o.span(),
+            Entry::Ident(ref t) => t.span(),
+            Entry::Punct(ref o) => o.span(),
             Entry::End(..) => Span::call_site(),
         }
     }

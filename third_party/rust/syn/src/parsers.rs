@@ -95,6 +95,8 @@ macro_rules! named {
 #[macro_export]
 macro_rules! call {
     ($i:expr, $fun:expr $(, $args:expr)*) => {{
+        #[allow(unused_imports)]
+        use $crate::synom::ext::*;
         let i = $i;
         eprintln!(concat!(" -> ", stringify!($fun), " @ {:?}"), i);
         let r = $fun(i $(, $args)*);
@@ -143,9 +145,11 @@ macro_rules! call {
 #[cfg(not(synom_verbose_trace))]
 #[macro_export]
 macro_rules! call {
-    ($i:expr, $fun:expr $(, $args:expr)*) => {
+    ($i:expr, $fun:expr $(, $args:expr)*) => {{
+        #[allow(unused_imports)]
+        use $crate::synom::ext::*;
         $fun($i $(, $args)*)
-    };
+    }};
 }
 
 
@@ -723,7 +727,7 @@ macro_rules! reject {
     ($i:expr,) => {{
         let _ = $i;
         $crate::parse_error()
-    }}
+    }};
 }
 
 
@@ -797,6 +801,7 @@ macro_rules! tuple_parser {
         ::std::result::Result::Ok((($($parsed),*), $i))
     };
 }
+
 
 
 
@@ -1259,6 +1264,58 @@ macro_rules! tap {
 macro_rules! syn {
     ($i:expr, $t:ty) => {
         <$t as $crate::synom::Synom>::parse($i)
+    };
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[macro_export]
+macro_rules! custom_keyword {
+    ($i:expr, $keyword:ident) => {
+        match <$crate::Ident as $crate::synom::Synom>::parse($i) {
+            ::std::result::Result::Err(err) => ::std::result::Result::Err(err),
+            ::std::result::Result::Ok((token, i)) => {
+                if token == stringify!($keyword) {
+                    ::std::result::Result::Ok((token, i))
+                } else {
+                    $crate::parse_error()
+                }
+            }
+        }
     };
 }
 

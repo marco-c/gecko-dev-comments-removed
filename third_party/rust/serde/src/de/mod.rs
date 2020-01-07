@@ -118,6 +118,7 @@
 
 
 
+
 use lib::*;
 
 
@@ -148,6 +149,13 @@ macro_rules! declare_error_trait {
         ///
         /// Most deserializers should only need to provide the `Error::custom` method
         /// and inherit the default behavior for the other methods.
+        ///
+        /// # Example implementation
+        ///
+        /// The [example data format] presented on the website shows an error
+        /// type appropriate for a basic JSON data format.
+        ///
+        /// [example data format]: https://serde.rs/data-format.html
         pub trait Error: Sized $(+ $($supertrait)::+)* {
             /// Raised when there is general error when deserializing a type.
             ///
@@ -504,6 +512,14 @@ impl<'a> Display for Expected + 'a {
 
 
 
+
+
+
+
+
+
+
+
 pub trait Deserialize<'de>: Sized {
     
     
@@ -568,12 +584,28 @@ pub trait Deserialize<'de>: Sized {
 
 
 
+
+
+
+
+
+
+
+
 pub trait DeserializeOwned: for<'de> Deserialize<'de> {}
 impl<T> DeserializeOwned for T
 where
     T: for<'de> Deserialize<'de>,
 {
 }
+
+
+
+
+
+
+
+
 
 
 
@@ -841,6 +873,23 @@ where
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 pub trait Deserializer<'de>: Sized {
     
     
@@ -884,6 +933,20 @@ pub trait Deserializer<'de>: Sized {
     where
         V: Visitor<'de>;
 
+    serde_if_integer128! {
+        /// Hint that the `Deserialize` type is expecting an `i128` value.
+        ///
+        /// This method is available only on Rust compiler versions >=1.26. The
+        /// default behavior unconditionally returns an error.
+        fn deserialize_i128<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+        where
+            V: Visitor<'de>
+        {
+            let _ = visitor;
+            Err(Error::custom("i128 is not supported"))
+        }
+    }
+
     
     fn deserialize_u8<V>(self, visitor: V) -> Result<V::Value, Self::Error>
     where
@@ -903,6 +966,20 @@ pub trait Deserializer<'de>: Sized {
     fn deserialize_u64<V>(self, visitor: V) -> Result<V::Value, Self::Error>
     where
         V: Visitor<'de>;
+
+    serde_if_integer128! {
+        /// Hint that the `Deserialize` type is expecting an `u128` value.
+        ///
+        /// This method is available only on Rust compiler versions >=1.26. The
+        /// default behavior unconditionally returns an error.
+        fn deserialize_u128<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+        where
+            V: Visitor<'de>
+        {
+            let _ = visitor;
+            Err(Error::custom("u128 is not supported"))
+        }
+    }
 
     
     fn deserialize_f32<V>(self, visitor: V) -> Result<V::Value, Self::Error>
@@ -1166,6 +1243,16 @@ pub trait Deserializer<'de>: Sized {
 
 
 
+
+
+
+
+
+
+
+
+
+
 pub trait Visitor<'de>: Sized {
     
     type Value;
@@ -1250,6 +1337,20 @@ pub trait Visitor<'de>: Sized {
         Err(Error::invalid_type(Unexpected::Signed(v), &self))
     }
 
+    serde_if_integer128! {
+        /// The input contains a `i128`.
+        ///
+        /// This method is available only on Rust compiler versions >=1.26. The
+        /// default implementation fails with a type error.
+        fn visit_i128<E>(self, v: i128) -> Result<Self::Value, E>
+        where
+            E: Error,
+        {
+            let _ = v;
+            Err(Error::invalid_type(Unexpected::Other("i128"), &self))
+        }
+    }
+
     
     
     
@@ -1294,6 +1395,20 @@ pub trait Visitor<'de>: Sized {
         E: Error,
     {
         Err(Error::invalid_type(Unexpected::Unsigned(v), &self))
+    }
+
+    serde_if_integer128! {
+        /// The input contains a `u128`.
+        ///
+        /// This method is available only on Rust compiler versions >=1.26. The
+        /// default implementation fails with a type error.
+        fn visit_u128<E>(self, v: u128) -> Result<Self::Value, E>
+        where
+            E: Error,
+        {
+            let _ = v;
+            Err(Error::invalid_type(Unexpected::Other("u128"), &self))
+        }
     }
 
     
@@ -1544,6 +1659,21 @@ pub trait Visitor<'de>: Sized {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 pub trait SeqAccess<'de> {
     
     
@@ -1605,6 +1735,21 @@ where
         (**self).size_hint()
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1788,6 +1933,21 @@ where
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 pub trait EnumAccess<'de>: Sized {
     
     
@@ -1816,6 +1976,21 @@ pub trait EnumAccess<'de>: Sized {
         self.variant_seed(PhantomData)
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -2017,6 +2192,16 @@ pub trait VariantAccess<'de>: Sized {
     where
         V: Visitor<'de>;
 }
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -174,6 +174,11 @@ macro_rules! forward_to_deserialize_any_helper {
     (i64<$l:tt, $v:ident>) => {
         forward_to_deserialize_any_method!{deserialize_i64<$l, $v>()}
     };
+    (i128<$l:tt, $v:ident>) => {
+        serde_if_integer128! {
+            forward_to_deserialize_any_method!{deserialize_i128<$l, $v>()}
+        }
+    };
     (u8<$l:tt, $v:ident>) => {
         forward_to_deserialize_any_method!{deserialize_u8<$l, $v>()}
     };
@@ -185,6 +190,11 @@ macro_rules! forward_to_deserialize_any_helper {
     };
     (u64<$l:tt, $v:ident>) => {
         forward_to_deserialize_any_method!{deserialize_u64<$l, $v>()}
+    };
+    (u128<$l:tt, $v:ident>) => {
+        serde_if_integer128! {
+            forward_to_deserialize_any_method!{deserialize_u128<$l, $v>()}
+        }
     };
     (f32<$l:tt, $v:ident>) => {
         forward_to_deserialize_any_method!{deserialize_f32<$l, $v>()}

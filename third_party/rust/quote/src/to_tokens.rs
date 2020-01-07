@@ -1,8 +1,8 @@
-use super::Tokens;
+use super::TokenStreamExt;
 
 use std::borrow::Cow;
 
-use proc_macro2::{Group, Literal, Op, Span, Term, TokenStream, TokenTree};
+use proc_macro2::{Group, Ident, Literal, Punct, Span, TokenStream, TokenTree};
 
 
 
@@ -48,42 +48,49 @@ pub trait ToTokens {
     
     
     
-    fn to_tokens(&self, tokens: &mut Tokens);
+    
+    
+    
+    
+    
+    
+    
+    fn to_tokens(&self, tokens: &mut TokenStream);
 
     
     
     
     
-    fn into_tokens(self) -> Tokens
+    fn into_token_stream(self) -> TokenStream
     where
         Self: Sized,
     {
-        let mut tokens = Tokens::new();
+        let mut tokens = TokenStream::new();
         self.to_tokens(&mut tokens);
         tokens
     }
 }
 
 impl<'a, T: ?Sized + ToTokens> ToTokens for &'a T {
-    fn to_tokens(&self, tokens: &mut Tokens) {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
         (**self).to_tokens(tokens);
     }
 }
 
 impl<'a, T: ?Sized + ToOwned + ToTokens> ToTokens for Cow<'a, T> {
-    fn to_tokens(&self, tokens: &mut Tokens) {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
         (**self).to_tokens(tokens);
     }
 }
 
 impl<T: ?Sized + ToTokens> ToTokens for Box<T> {
-    fn to_tokens(&self, tokens: &mut Tokens) {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
         (**self).to_tokens(tokens);
     }
 }
 
 impl<T: ToTokens> ToTokens for Option<T> {
-    fn to_tokens(&self, tokens: &mut Tokens) {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
         if let Some(ref t) = *self {
             t.to_tokens(tokens);
         }
@@ -91,13 +98,13 @@ impl<T: ToTokens> ToTokens for Option<T> {
 }
 
 impl ToTokens for str {
-    fn to_tokens(&self, tokens: &mut Tokens) {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
         tokens.append(Literal::string(self));
     }
 }
 
 impl ToTokens for String {
-    fn to_tokens(&self, tokens: &mut Tokens) {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
         self.as_str().to_tokens(tokens);
     }
 }
@@ -105,7 +112,7 @@ impl ToTokens for String {
 macro_rules! primitive {
     ($($t:ident => $name:ident)*) => ($(
         impl ToTokens for $t {
-            fn to_tokens(&self, tokens: &mut Tokens) {
+            fn to_tokens(&self, tokens: &mut TokenStream) {
                 tokens.append(Literal::$name(*self));
             }
         }
@@ -130,50 +137,54 @@ primitive! {
 }
 
 impl ToTokens for char {
-    fn to_tokens(&self, tokens: &mut Tokens) {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
         tokens.append(Literal::character(*self));
     }
 }
 
 impl ToTokens for bool {
-    fn to_tokens(&self, tokens: &mut Tokens) {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
         let word = if *self { "true" } else { "false" };
-        tokens.append(Term::new(word, Span::call_site()));
+        tokens.append(Ident::new(word, Span::call_site()));
     }
 }
 
 impl ToTokens for Group {
-    fn to_tokens(&self, tokens: &mut Tokens) {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
         tokens.append(self.clone());
     }
 }
 
-impl ToTokens for Term {
-    fn to_tokens(&self, tokens: &mut Tokens) {
+impl ToTokens for Ident {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
         tokens.append(self.clone());
     }
 }
 
-impl ToTokens for Op {
-    fn to_tokens(&self, tokens: &mut Tokens) {
+impl ToTokens for Punct {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
         tokens.append(self.clone());
     }
 }
 
 impl ToTokens for Literal {
-    fn to_tokens(&self, tokens: &mut Tokens) {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
         tokens.append(self.clone());
     }
 }
 
 impl ToTokens for TokenTree {
-    fn to_tokens(&self, dst: &mut Tokens) {
+    fn to_tokens(&self, dst: &mut TokenStream) {
         dst.append(self.clone());
     }
 }
 
 impl ToTokens for TokenStream {
-    fn to_tokens(&self, dst: &mut Tokens) {
+    fn to_tokens(&self, dst: &mut TokenStream) {
         dst.append_all(self.clone().into_iter());
+    }
+
+    fn into_token_stream(self) -> TokenStream {
+        self
     }
 }

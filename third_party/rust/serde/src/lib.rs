@@ -79,14 +79,17 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/serde/1.0.58")]
+
+
+
+#![doc(html_root_url = "https://docs.rs/serde/1.0.66")]
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
 
 
 
-#![cfg_attr(feature = "unstable", feature(specialization))]
+#![cfg_attr(feature = "unstable", feature(specialization, never_type))]
 #![cfg_attr(feature = "alloc", feature(alloc))]
 #![cfg_attr(feature = "cargo-clippy", deny(clippy, clippy_pedantic))]
 
@@ -130,9 +133,6 @@
 #[cfg(feature = "alloc")]
 extern crate alloc;
 
-#[cfg(all(feature = "unstable", feature = "std"))]
-extern crate core;
-
 
 
 
@@ -144,7 +144,7 @@ mod lib {
         pub use std::*;
     }
 
-    pub use self::core::{cmp, iter, mem, ops, slice, str};
+    pub use self::core::{cmp, iter, mem, num, ops, slice, str};
     pub use self::core::{f32, f64};
     pub use self::core::{i16, i32, i64, i8, isize};
     pub use self::core::{u16, u32, u64, u8, usize};
@@ -211,16 +211,19 @@ mod lib {
     #[cfg(feature = "std")]
     pub use std::sync::{Mutex, RwLock};
     #[cfg(feature = "std")]
-    pub use std::time::{Duration, SystemTime, UNIX_EPOCH};
+    pub use std::time::{SystemTime, UNIX_EPOCH};
 
-    #[cfg(feature = "unstable")]
-    pub use core::num::{NonZeroU16, NonZeroU32, NonZeroU64, NonZeroU8, NonZeroUsize};
+    #[cfg(any(core_duration, feature = "std"))]
+    pub use self::core::time::Duration;
 }
 
 
 
 #[macro_use]
 mod macros;
+
+#[macro_use]
+mod integer128;
 
 pub mod de;
 pub mod ser;

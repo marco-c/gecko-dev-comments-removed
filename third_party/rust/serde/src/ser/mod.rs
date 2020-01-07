@@ -113,6 +113,7 @@
 
 
 
+
 use lib::*;
 
 mod impls;
@@ -127,6 +128,13 @@ macro_rules! declare_error_trait {
         /// Trait used by `Serialize` implementations to generically construct
         /// errors belonging to the `Serializer` against which they are
         /// currently running.
+        ///
+        /// # Example implementation
+        ///
+        /// The [example data format] presented on the website shows an error
+        /// type appropriate for a basic JSON data format.
+        ///
+        /// [example data format]: https://serde.rs/data-format.html
         pub trait Error: Sized $(+ $($supertrait)::+)* {
             /// Used when a [`Serialize`] implementation encounters any error
             /// while serializing a type.
@@ -239,6 +247,15 @@ pub trait Serialize {
     where
         S: Serializer;
 }
+
+
+
+
+
+
+
+
+
 
 
 
@@ -492,6 +509,37 @@ pub trait Serializer: Sized {
     
     fn serialize_i64(self, v: i64) -> Result<Self::Ok, Self::Error>;
 
+    serde_if_integer128! {
+        /// Serialize an `i128` value.
+        ///
+        /// ```rust
+        /// # #[macro_use]
+        /// # extern crate serde;
+        /// #
+        /// # use serde::Serializer;
+        /// #
+        /// # __private_serialize!();
+        /// #
+        /// impl Serialize for i128 {
+        ///     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        ///     where
+        ///         S: Serializer,
+        ///     {
+        ///         serializer.serialize_i128(*self)
+        ///     }
+        /// }
+        /// #
+        /// # fn main() {}
+        /// ```
+        ///
+        /// This method is available only on Rust compiler versions >=1.26. The
+        /// default behavior unconditionally returns an error.
+        fn serialize_i128(self, v: i128) -> Result<Self::Ok, Self::Error> {
+            let _ = v;
+            Err(Error::custom("i128 is not supported"))
+        }
+    }
+
     
     
     
@@ -595,6 +643,37 @@ pub trait Serializer: Sized {
     
     
     fn serialize_u64(self, v: u64) -> Result<Self::Ok, Self::Error>;
+
+    serde_if_integer128! {
+        /// Serialize a `u128` value.
+        ///
+        /// ```rust
+        /// # #[macro_use]
+        /// # extern crate serde;
+        /// #
+        /// # use serde::Serializer;
+        /// #
+        /// # __private_serialize!();
+        /// #
+        /// impl Serialize for u128 {
+        ///     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        ///     where
+        ///         S: Serializer,
+        ///     {
+        ///         serializer.serialize_u128(*self)
+        ///     }
+        /// }
+        /// #
+        /// # fn main() {}
+        /// ```
+        ///
+        /// This method is available only on Rust compiler versions >=1.26. The
+        /// default behavior unconditionally returns an error.
+        fn serialize_u128(self, v: u128) -> Result<Self::Ok, Self::Error> {
+            let _ = v;
+            Err(Error::custom("u128 is not supported"))
+        }
+    }
 
     
     
@@ -1495,6 +1574,15 @@ pub trait Serializer: Sized {
 
 
 
+
+
+
+
+
+
+
+
+
 pub trait SerializeSeq {
     
     type Ok;
@@ -1510,6 +1598,15 @@ pub trait SerializeSeq {
     
     fn end(self) -> Result<Self::Ok, Self::Error>;
 }
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1622,6 +1719,15 @@ pub trait SerializeTuple {
 
 
 
+
+
+
+
+
+
+
+
+
 pub trait SerializeTupleStruct {
     
     type Ok;
@@ -1671,6 +1777,15 @@ pub trait SerializeTupleStruct {
 
 
 
+
+
+
+
+
+
+
+
+
 pub trait SerializeTupleVariant {
     
     type Ok;
@@ -1686,6 +1801,15 @@ pub trait SerializeTupleVariant {
     
     fn end(self) -> Result<Self::Ok, Self::Error>;
 }
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1813,6 +1937,15 @@ pub trait SerializeMap {
 
 
 
+
+
+
+
+
+
+
+
+
 pub trait SerializeStruct {
     
     type Ok;
@@ -1839,6 +1972,15 @@ pub trait SerializeStruct {
     
     fn end(self) -> Result<Self::Ok, Self::Error>;
 }
+
+
+
+
+
+
+
+
+
 
 
 

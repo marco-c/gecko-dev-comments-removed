@@ -1,13 +1,12 @@
-use proc_macro2::{Op, Spacing};
-use quote::Tokens;
+use proc_macro2::{Punct, Spacing, TokenStream};
 
 
 
 
 
-pub fn replacement() -> Tokens {
+pub fn replacement() -> TokenStream {
     
-    let dollar = Op::new('$', Spacing::Alone);
+    let dollar = Punct::new('$', Spacing::Alone);
 
     quote! {
         #[allow(unused_macros)]
