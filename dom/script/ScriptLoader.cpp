@@ -1376,10 +1376,15 @@ ScriptLoader::ProcessExternalScript(nsIScriptElement* aElement,
       ReportErrorToConsole(request, rv);
 
       
-      NS_DispatchToCurrentThread(
+      nsCOMPtr<nsIRunnable> runnable =
         NewRunnableMethod("nsIScriptElement::FireErrorEvent",
                           aElement,
-                          &nsIScriptElement::FireErrorEvent));
+                          &nsIScriptElement::FireErrorEvent);
+      if (mDocument) {
+        mDocument->Dispatch(TaskCategory::Other, runnable.forget());
+      } else {
+        NS_DispatchToCurrentThread(runnable);
+      }
       return false;
     }
   }
