@@ -76,11 +76,6 @@ public:
   
 
 
-  bool IsRendered() const;
-
-  
-
-
 
   void *GetBaseValKey() const {
     return (void*)&mBaseVal;
