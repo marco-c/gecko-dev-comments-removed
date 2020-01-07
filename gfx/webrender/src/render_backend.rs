@@ -19,7 +19,7 @@ use debug_server;
 use frame::FrameContext;
 use frame_builder::{FrameBuilder, FrameBuilderConfig};
 use gpu_cache::GpuCache;
-use hit_test::HitTester;
+use hit_test::{HitTest, HitTester};
 use internal_types::{DebugOutput, FastHashMap, FastHashSet, RenderedDocument, ResultMsg};
 use profiler::{BackendProfileCounters, IpcProfileCounters, ResourceProfileCounters};
 use record::ApiRecordingReceiver;
@@ -37,9 +37,9 @@ use serde_json;
 use std::path::PathBuf;
 use std::sync::atomic::{ATOMIC_USIZE_INIT, AtomicUsize, Ordering};
 use std::sync::mpsc::Sender;
+use std::mem::replace;
 use std::u32;
 use time::precise_time_ns;
-
 
 #[cfg_attr(feature = "capture", derive(Clone, Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -77,6 +77,12 @@ struct Document {
     
     
     
+    removed_pipelines: Vec<PipelineId>,
+    
+    
+    
+    
+    
     render_on_scroll: Option<bool>,
     
     
@@ -104,6 +110,7 @@ impl Document {
         };
         Document {
             scene: Scene::new(),
+            removed_pipelines: Vec::new(),
             view: DocumentView {
                 window_size,
                 inner_rect: DeviceUintRect::new(DeviceUintPoint::zero(), window_size),
@@ -133,6 +140,7 @@ impl Document {
             self.view.accumulated_scale_factor(),
             &self.output_pipelines,
         );
+        self.removed_pipelines.extend(self.scene.removed_pipelines.drain(..));
         self.frame_builder = Some(frame_builder);
     }
 
@@ -155,6 +163,7 @@ impl Document {
             &mut resource_profile.texture_cache,
             &mut resource_profile.gpu_cache,
             &self.scene.properties,
+            replace(&mut self.removed_pipelines, Vec::new()),
         );
 
         self.hit_tester = Some(hit_tester);
@@ -419,7 +428,9 @@ impl RenderBackend {
             DocumentMsg::HitTest(pipeline_id, point, flags, tx) => {
 
                 let result = match doc.hit_tester {
-                    Some(ref hit_tester) => hit_tester.hit_test(pipeline_id, point, flags),
+                    Some(ref hit_tester) => {
+                        hit_tester.hit_test(HitTest::new(pipeline_id, point, flags))
+                    }
                     None => HitTestResult { items: Vec::new() },
                 };
 
@@ -976,6 +987,7 @@ impl RenderBackend {
                 output_pipelines: FastHashSet::default(),
                 render_on_scroll: None,
                 render_on_hittest: false,
+                removed_pipelines: Vec::new(),
                 hit_tester: None,
             };
 
@@ -983,7 +995,7 @@ impl RenderBackend {
             let render_doc = match CaptureConfig::deserialize::<Frame, _>(root, frame_name) {
                 Some(frame) => {
                     info!("\tloaded a built frame with {} passes", frame.passes.len());
-                    doc.frame_ctx.make_rendered_document(frame)
+                    doc.frame_ctx.make_rendered_document(frame, Vec::new())
                 }
                 None => {
                     doc.build_scene(&mut self.resource_cache);

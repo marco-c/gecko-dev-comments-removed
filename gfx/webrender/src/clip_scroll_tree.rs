@@ -43,10 +43,10 @@ impl CoordinateSystemId {
     }
 }
 
-struct ClipChainDescriptor {
-    id: ClipChainId,
-    parent: Option<ClipChainId>,
-    clips: Vec<ClipId>,
+pub struct ClipChainDescriptor {
+    pub id: ClipChainId,
+    pub parent: Option<ClipChainId>,
+    pub clips: Vec<ClipId>,
 }
 
 pub struct ClipScrollTree {
@@ -55,7 +55,7 @@ pub struct ClipScrollTree {
     
     
     
-    clip_chains_descriptors: Vec<ClipChainDescriptor>,
+    pub clip_chains_descriptors: Vec<ClipChainDescriptor>,
 
     
     pub clip_chains: FastHashMap<ClipChainId, ClipChain>,

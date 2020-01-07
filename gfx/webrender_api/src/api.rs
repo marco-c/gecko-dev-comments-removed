@@ -478,8 +478,6 @@ pub enum DebugCommand {
     
     EnableRenderTargetDebug(bool),
     
-    EnableAlphaRectsDebug(bool),
-    
     EnableGpuTimeQueries(bool),
     
     EnableGpuSampleQueries(bool),

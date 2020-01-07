@@ -2,11 +2,12 @@
 
 
 
-use api::{ClipId, DeviceUintRect, DocumentId, Epoch};
+use api::{ClipId, DeviceUintRect, DocumentId};
 use api::{ExternalImageData, ExternalImageId};
-use api::{ImageFormat, PipelineId};
+use api::ImageFormat;
 use api::DebugCommand;
 use device::TextureFilter;
+use renderer::PipelineInfo;
 use gpu_cache::GpuCacheUpdateList;
 use fxhash::FxHasher;
 use profiler::BackendProfileCounters;
@@ -134,7 +135,9 @@ pub struct RenderedDocument {
     
     
     
-    pub pipeline_epoch_map: FastHashMap<PipelineId, Epoch>,
+    
+    
+    pub pipeline_info: PipelineInfo,
     
     pub layers_bouncing_back: FastHashSet<ClipId>,
 
@@ -143,12 +146,12 @@ pub struct RenderedDocument {
 
 impl RenderedDocument {
     pub fn new(
-        pipeline_epoch_map: FastHashMap<PipelineId, Epoch>,
+        pipeline_info: PipelineInfo,
         layers_bouncing_back: FastHashSet<ClipId>,
         frame: tiling::Frame,
     ) -> Self {
         RenderedDocument {
-            pipeline_epoch_map,
+            pipeline_info,
             layers_bouncing_back,
             frame,
         }
