@@ -2401,12 +2401,6 @@ public:
   
 
 
-
-  static bool IsTextAlignUnsafeValueEnabled();
-
-  
-
-
   static bool IsInterCharacterRubyEnabled();
 
   
