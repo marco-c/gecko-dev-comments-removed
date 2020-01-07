@@ -1326,8 +1326,6 @@ class GeneralTokenStreamChars
         CharsBase::ungetCodeUnit(c);
     }
 
-    void ungetChar(int32_t c);
-
     
 
 
@@ -1375,12 +1373,6 @@ class TokenStreamChars<char16_t, AnyCharsAccess>
     
     
     MOZ_MUST_USE bool getCodePoint(int32_t* cp);
-
-    
-    
-    MOZ_MUST_USE bool getChar(int32_t* cp) {
-        return getCodePoint(cp);
-    }
 
     
 
@@ -1547,7 +1539,6 @@ class MOZ_STACK_CLASS TokenStreamSpecific
     using GeneralCharsBase::consumeRestOfSingleLineComment;
     using TokenStreamCharsShared::copyCharBufferTo;
     using CharsBase::fillCharBufferWithTemplateStringContents;
-    using SpecializedCharsBase::getChar;
     using SpecializedCharsBase::getCodePoint;
     using GeneralCharsBase::getCodeUnit;
     using SpecializedCharsBase::getFullAsciiCodePoint;
@@ -1563,7 +1554,6 @@ class MOZ_STACK_CLASS TokenStreamSpecific
     using GeneralCharsBase::newSimpleToken;
     using CharsBase::peekCodeUnit;
     using CharsBase::sourceUnits;
-    using GeneralCharsBase::ungetChar;
     using SpecializedCharsBase::ungetCodePointIgnoreEOL;
     using GeneralCharsBase::ungetCodeUnit;
     using SpecializedCharsBase::ungetNonAsciiNormalizedCodePoint;
