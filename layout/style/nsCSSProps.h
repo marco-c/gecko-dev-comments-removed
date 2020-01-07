@@ -205,7 +205,6 @@ static_assert((CSS_PROPERTY_PARSE_PROPERTY_MASK &
 #define CSS_PROPERTY_UNITLESS_LENGTH_QUIRK        (1<<16)
 
 
-#define CSS_PROPERTY_IS_ALIAS                     (1<<17)
 
 
 #define CSS_PROPERTY_APPLIES_TO_PLACEHOLDER       (1<<18)
