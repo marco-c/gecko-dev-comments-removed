@@ -4,10 +4,10 @@
 
 
 
-#ifndef jsfuninlines_h
-#define jsfuninlines_h
+#ifndef vm_JSFunction_inl_h
+#define vm_JSFunction_inl_h
 
-#include "jsfun.h"
+#include "vm/JSFunction.h"
 
 #include "vm/EnvironmentObject.h"
 

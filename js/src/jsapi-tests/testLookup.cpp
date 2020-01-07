@@ -5,9 +5,9 @@
 
 
 
-#include "jsfun.h"  
-
 #include "jsapi-tests/tests.h"
+
+#include "vm/JSFunction.h"  
 
 #include "vm/JSObject-inl.h"
 

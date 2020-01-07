@@ -4,8 +4,8 @@
 
 
 
-#ifndef jsfun_h
-#define jsfun_h
+#ifndef vm_JSFunction_h
+#define vm_JSFunction_h
 
 
 
