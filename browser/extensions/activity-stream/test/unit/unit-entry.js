@@ -86,7 +86,6 @@ const TEST_GLOBAL = {
   fetch() {},
   
   Image: function() {}, 
-  LightweightThemeManager: {currentThemeForDisplay: {}},
   PlacesUtils: {
     get bookmarks() {
       return TEST_GLOBAL.Cc["@mozilla.org/browser/nav-bookmarks-service;1"];
