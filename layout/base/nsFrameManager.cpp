@@ -135,7 +135,6 @@ nsFrameManager::ParentForUndisplayedMap(const nsIContent* aContent)
   MOZ_ASSERT(aContent);
 
   nsIContent* parent = aContent->GetParentElementCrossingShadowRoot();
-  MOZ_ASSERT(parent || !aContent->GetParent(), "no non-elements");
 
   
   parent = UndisplayedMap::GetApplicableParent(parent);
@@ -209,6 +208,7 @@ nsFrameManager::SetStyleContextInMap(UndisplayedMap* aMap,
   
   
   nsIContent* parent = ParentForUndisplayedMap(aContent);
+  MOZ_ASSERT(parent || !aContent->GetParent(), "no non-elements");
 
 #ifdef DEBUG
   nsIPresShell* shell = aStyleContext->PresContext()->PresShell();
@@ -257,6 +257,7 @@ nsFrameManager::ChangeStyleContextInMap(UndisplayedMap* aMap,
   
   
   nsIContent* parent = ParentForUndisplayedMap(aContent);
+  MOZ_ASSERT(parent || !aContent->GetParent(), "no non-elements");
 
   for (UndisplayedNode* node = aMap->GetFirstNode(parent);
        node; node = node->getNext()) {
