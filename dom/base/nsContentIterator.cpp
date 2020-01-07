@@ -1016,7 +1016,7 @@ nsContentSubtreeIterator::InitWithRange()
   }
 
   
-  nsContentUtils::GetAncestorsAndOffsets(endContainer->AsDOMNode(), endOffset,
+  nsContentUtils::GetAncestorsAndOffsets(endContainer, endOffset,
                                          &mEndNodes, &mEndOffsets);
 
   nsIContent* firstCandidate = nullptr;

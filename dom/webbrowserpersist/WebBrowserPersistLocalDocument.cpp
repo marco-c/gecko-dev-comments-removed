@@ -30,7 +30,6 @@
 #include "nsFrameLoader.h"
 #include "nsIComponentRegistrar.h"
 #include "nsIContent.h"
-#include "nsIDOMNode.h"
 #include "nsIDOMWindowUtils.h"
 #include "nsIDocShell.h"
 #include "nsIDocument.h"
@@ -236,7 +235,7 @@ class ResourceReader final : public nsIWebBrowserPersistDocumentReceiver {
 public:
     ResourceReader(WebBrowserPersistLocalDocument* aParent,
                    nsIWebBrowserPersistResourceVisitor* aVisitor);
-    nsresult OnWalkDOMNode(nsIDOMNode* aNode);
+    nsresult OnWalkDOMNode(nsINode* aNode);
 
     
     
@@ -263,10 +262,10 @@ private:
 
     nsresult OnWalkURI(const nsACString& aURISpec);
     nsresult OnWalkURI(nsIURI* aURI);
-    nsresult OnWalkAttribute(nsIDOMNode* aNode,
+    nsresult OnWalkAttribute(Element* aElement,
                              const char* aAttribute,
                              const char* aNamespaceURI = "");
-    nsresult OnWalkSubframe(nsIDOMNode* aNode);
+    nsresult OnWalkSubframe(nsINode* aNode);
 
     ~ResourceReader();
 
@@ -305,7 +304,7 @@ ResourceReader::DocumentDone(nsresult aStatus)
 }
 
 nsresult
-ResourceReader::OnWalkSubframe(nsIDOMNode* aNode)
+ResourceReader::OnWalkSubframe(nsINode* aNode)
 {
     nsCOMPtr<nsIFrameLoaderOwner> loaderOwner = do_QueryInterface(aNode);
     NS_ENSURE_STATE(loaderOwner);
@@ -380,18 +379,15 @@ ResourceReader::OnWalkURI(const nsACString& aURISpec)
 }
 
 static void
-ExtractAttribute(nsIDOMNode* aNode,
+ExtractAttribute(Element* aElement,
                  const char* aAttribute,
                  const char* aNamespaceURI,
                  nsCString&  aValue)
 {
-    nsCOMPtr<dom::Element> element = do_QueryInterface(aNode);
-    MOZ_ASSERT(element);
-
     
     
 
-    RefPtr<nsDOMAttributeMap> attrMap = element->Attributes();
+    RefPtr<nsDOMAttributeMap> attrMap = aElement->Attributes();
 
     NS_ConvertASCIItoUTF16 namespaceURI(aNamespaceURI);
     NS_ConvertASCIItoUTF16 attribute(aAttribute);
@@ -406,12 +402,12 @@ ExtractAttribute(nsIDOMNode* aNode,
 }
 
 nsresult
-ResourceReader::OnWalkAttribute(nsIDOMNode* aNode,
+ResourceReader::OnWalkAttribute(Element* aElement,
                                 const char* aAttribute,
                                 const char* aNamespaceURI)
 {
     nsAutoCString uriSpec;
-    ExtractAttribute(aNode, aAttribute, aNamespaceURI, uriSpec);
+    ExtractAttribute(aElement, aAttribute, aNamespaceURI, uriSpec);
     if (uriSpec.IsEmpty()) {
         return NS_OK;
     }
@@ -429,15 +425,10 @@ GetXMLStyleSheetLink(dom::ProcessingInstruction *aPI, nsAString &aHref)
 }
 
 nsresult
-ResourceReader::OnWalkDOMNode(nsIDOMNode* aNode)
+ResourceReader::OnWalkDOMNode(nsINode* aNode)
 {
-    nsCOMPtr<nsIContent> content = do_QueryInterface(aNode);
-    if (!content) {
-        return NS_OK;
-    }
-
     
-    if (auto nodeAsPI = dom::ProcessingInstruction::FromNode(content)) {
+    if (auto nodeAsPI = dom::ProcessingInstruction::FromNode(aNode)) {
         nsAutoString target;
         nodeAsPI->GetTarget(target);
         if (target.EqualsLiteral("xml-stylesheet")) {
@@ -451,55 +442,57 @@ ResourceReader::OnWalkDOMNode(nsIDOMNode* aNode)
     }
 
     
-    if (content->IsHTMLElement(nsGkAtoms::img)) {
-        return OnWalkAttribute(aNode, "src");
+    if (aNode->IsHTMLElement(nsGkAtoms::img)) {
+        return OnWalkAttribute(aNode->AsElement(), "src");
     }
 
-    if (content->IsSVGElement(nsGkAtoms::img)) {
-        return OnWalkAttribute(aNode, "href", "http://www.w3.org/1999/xlink");
+    if (aNode->IsSVGElement(nsGkAtoms::img)) {
+        return OnWalkAttribute(aNode->AsElement(), "href",
+                               "http://www.w3.org/1999/xlink");
     }
 
-    if (content->IsAnyOfHTMLElements(nsGkAtoms::audio, nsGkAtoms::video)) {
-        return OnWalkAttribute(aNode, "src");
+    if (aNode->IsAnyOfHTMLElements(nsGkAtoms::audio, nsGkAtoms::video)) {
+        return OnWalkAttribute(aNode->AsElement(), "src");
     }
 
-    if (content->IsHTMLElement(nsGkAtoms::source)) {
-        return OnWalkAttribute(aNode, "src");
+    if (aNode->IsHTMLElement(nsGkAtoms::source)) {
+        return OnWalkAttribute(aNode->AsElement(), "src");
     }
 
-    if (content->IsHTMLElement(nsGkAtoms::body)) {
-        return OnWalkAttribute(aNode, "background");
+    if (aNode->IsHTMLElement(nsGkAtoms::body)) {
+        return OnWalkAttribute(aNode->AsElement(), "background");
     }
 
-    if (content->IsHTMLElement(nsGkAtoms::table)) {
-        return OnWalkAttribute(aNode, "background");
+    if (aNode->IsHTMLElement(nsGkAtoms::table)) {
+        return OnWalkAttribute(aNode->AsElement(), "background");
     }
 
-    if (content->IsHTMLElement(nsGkAtoms::tr)) {
-        return OnWalkAttribute(aNode, "background");
+    if (aNode->IsHTMLElement(nsGkAtoms::tr)) {
+        return OnWalkAttribute(aNode->AsElement(), "background");
     }
 
-    if (content->IsAnyOfHTMLElements(nsGkAtoms::td, nsGkAtoms::th)) {
-        return OnWalkAttribute(aNode, "background");
+    if (aNode->IsAnyOfHTMLElements(nsGkAtoms::td, nsGkAtoms::th)) {
+        return OnWalkAttribute(aNode->AsElement(), "background");
     }
 
-    if (content->IsHTMLElement(nsGkAtoms::script)) {
-        return OnWalkAttribute(aNode, "src");
+    if (aNode->IsHTMLElement(nsGkAtoms::script)) {
+        return OnWalkAttribute(aNode->AsElement(), "src");
     }
 
-    if (content->IsSVGElement(nsGkAtoms::script)) {
-        return OnWalkAttribute(aNode, "href", "http://www.w3.org/1999/xlink");
+    if (aNode->IsSVGElement(nsGkAtoms::script)) {
+        return OnWalkAttribute(aNode->AsElement(), "href",
+                               "http://www.w3.org/1999/xlink");
     }
 
-    if (content->IsHTMLElement(nsGkAtoms::embed)) {
-        return OnWalkAttribute(aNode, "src");
+    if (aNode->IsHTMLElement(nsGkAtoms::embed)) {
+        return OnWalkAttribute(aNode->AsElement(), "src");
     }
 
-    if (content->IsHTMLElement(nsGkAtoms::object)) {
-        return OnWalkAttribute(aNode, "data");
+    if (aNode->IsHTMLElement(nsGkAtoms::object)) {
+        return OnWalkAttribute(aNode->AsElement(), "data");
     }
 
-    if (auto nodeAsLink = dom::HTMLLinkElement::FromNode(content)) {
+    if (auto nodeAsLink = dom::HTMLLinkElement::FromNode(aNode)) {
         
         nsAutoString linkRel;
         nodeAsLink->GetRel(linkRel);
@@ -527,7 +520,7 @@ ResourceReader::OnWalkDOMNode(nsIDOMNode* aNode)
                 
                 if (Substring(startWord, current)
                         .LowerCaseEqualsLiteral("stylesheet")) {
-                    OnWalkAttribute(aNode, "href");
+                    OnWalkAttribute(aNode->AsElement(), "href");
                     return NS_OK;
                 }
                 if (current == end) {
@@ -538,18 +531,18 @@ ResourceReader::OnWalkDOMNode(nsIDOMNode* aNode)
         return NS_OK;
     }
 
-    if (content->IsHTMLElement(nsGkAtoms::frame)) {
+    if (aNode->IsHTMLElement(nsGkAtoms::frame)) {
         return OnWalkSubframe(aNode);
     }
 
-    if (content->IsHTMLElement(nsGkAtoms::iframe) &&
+    if (aNode->IsHTMLElement(nsGkAtoms::iframe) &&
         !(mPersistFlags & IWBP::PERSIST_FLAGS_IGNORE_IFRAMES)) {
         return OnWalkSubframe(aNode);
     }
 
-    auto nodeAsInput = dom::HTMLInputElement::FromNode(content);
+    auto nodeAsInput = dom::HTMLInputElement::FromNode(aNode);
     if (nodeAsInput) {
-        return OnWalkAttribute(aNode, "src");
+        return OnWalkAttribute(aNode->AsElement(), "src");
     }
 
     return NS_OK;
@@ -1161,7 +1154,7 @@ WebBrowserPersistLocalDocument::ReadResources(nsIWebBrowserPersistResourceVisito
     RefPtr<ResourceReader> reader = new ResourceReader(this, aVisitor);
     nsCOMPtr<nsINode> currentNode = walker->CurrentNode();
     do {
-        rv = reader->OnWalkDOMNode(currentNode->AsDOMNode());
+        rv = reader->OnWalkDOMNode(currentNode);
         if (NS_WARN_IF(NS_FAILED(rv))) {
             break;
         }

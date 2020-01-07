@@ -98,9 +98,7 @@ createTextNode(txIEvalContext *aContext, nsString& aValue,
     nsresult rv = text->SetText(aValue, false);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    
-    
-    *aResult = txXPathNativeNode::createXPathNode(text->AsContent(), true);
+    *aResult = txXPathNativeNode::createXPathNode(text, true);
     NS_ENSURE_TRUE(*aResult, NS_ERROR_OUT_OF_MEMORY);
 
     return NS_OK;
