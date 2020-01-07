@@ -5990,6 +5990,11 @@ nsGridContainerFrame::Reflow(nsPresContext*           aPresContext,
                           computedISize, bSize);
 
   if (!prevInFlow) {
+    if (computedBSize == NS_AUTOHEIGHT && stylePos->mRowGap.HasPercent()) {
+      
+      gridReflowInput.mRows.mGridGap =
+        nsLayoutUtils::ResolveGapToLength(stylePos->mRowGap, bSize);
+    }
     
     
     gridReflowInput.mRows.AlignJustifyContent(stylePos, wm, contentArea.Size(wm));
