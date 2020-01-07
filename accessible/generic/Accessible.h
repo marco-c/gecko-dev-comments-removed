@@ -686,7 +686,7 @@ public:
   
 
 
-  virtual uint8_t ActionCount();
+  virtual uint8_t ActionCount() const;
 
   
 
@@ -706,7 +706,7 @@ public:
   
 
 
-  virtual bool DoAction(uint8_t aIndex);
+  virtual bool DoAction(uint8_t aIndex) const;
 
   
 
