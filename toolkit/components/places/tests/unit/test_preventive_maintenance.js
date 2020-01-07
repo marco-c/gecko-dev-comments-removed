@@ -11,7 +11,7 @@
 
 
 
-Components.utils.import("resource://gre/modules/PlacesDBUtils.jsm");
+ChromeUtils.import("resource://gre/modules/PlacesDBUtils.jsm");
 
 
 var hs = PlacesUtils.history;

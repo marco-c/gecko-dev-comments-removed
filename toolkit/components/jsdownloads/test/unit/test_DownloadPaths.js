@@ -5,7 +5,7 @@
 
 
 
-Cu.import("resource://gre/modules/AppConstants.jsm");
+ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 
 function testSanitize(leafName, expectedLeafName) {
   Assert.equal(DownloadPaths.sanitize(leafName), expectedLeafName);

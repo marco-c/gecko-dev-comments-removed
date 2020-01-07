@@ -11,7 +11,7 @@
 
 
 
-var {require} = Components.utils.import("resource://devtools/shared/Loader.jsm", {});
+var {require} = ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
 var {generateCssProperties} = require("devtools/server/actors/css-properties");
 
 Components.utils.importGlobalProperties(["InspectorUtils"]);

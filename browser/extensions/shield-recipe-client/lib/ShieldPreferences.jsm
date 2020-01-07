@@ -4,16 +4,16 @@
 "use strict";
 
 const {utils: Cu} = Components;
-Cu.import("resource://gre/modules/Services.jsm");
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+ChromeUtils.import("resource://gre/modules/Services.jsm");
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
-XPCOMUtils.defineLazyModuleGetter(
+ChromeUtils.defineModuleGetter(
   this, "AppConstants", "resource://gre/modules/AppConstants.jsm"
 );
-XPCOMUtils.defineLazyModuleGetter(
+ChromeUtils.defineModuleGetter(
   this, "AddonStudies", "resource://shield-recipe-client/lib/AddonStudies.jsm"
 );
-XPCOMUtils.defineLazyModuleGetter(
+ChromeUtils.defineModuleGetter(
   this, "CleanupManager", "resource://shield-recipe-client/lib/CleanupManager.jsm"
 );
 
@@ -73,24 +73,22 @@ this.ShieldPreferences = {
     let prefValue;
     switch (prefName) {
       
-      case FHR_UPLOAD_ENABLED_PREF: {
+      case FHR_UPLOAD_ENABLED_PREF:
         prefValue = Services.prefs.getBoolPref(FHR_UPLOAD_ENABLED_PREF);
         Services.prefs.setBoolPref(OPT_OUT_STUDIES_ENABLED_PREF, prefValue);
         break;
-      }
 
       
-      case OPT_OUT_STUDIES_ENABLED_PREF: {
+      case OPT_OUT_STUDIES_ENABLED_PREF:
         prefValue = Services.prefs.getBoolPref(OPT_OUT_STUDIES_ENABLED_PREF);
         if (!prefValue) {
           for (const study of await AddonStudies.getAll()) {
             if (study.active) {
-              await AddonStudies.stop(study.recipeId, "general-opt-out");
+              await AddonStudies.stop(study.recipeId);
             }
           }
         }
         break;
-      }
     }
   },
 

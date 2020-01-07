@@ -1,4 +1,4 @@
-Components.utils.import("resource://gre/modules/ctypes.jsm");
+ChromeUtils.import("resource://gre/modules/ctypes.jsm");
 
 
 var scope = {};
@@ -10,7 +10,7 @@ function run_test() {
 
   
   Components.utils.unload("resource://gre/modules/ctypes.jsm");
-  Components.utils.import("resource://gre/modules/ctypes.jsm", scope);
+  ChromeUtils.import("resource://gre/modules/ctypes.jsm", scope);
   ctypes = scope.ctypes;
   main_test();
 }

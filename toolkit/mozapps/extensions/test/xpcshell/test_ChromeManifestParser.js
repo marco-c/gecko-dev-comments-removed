@@ -4,7 +4,7 @@
 
 
 
-Components.utils.import("resource://gre/modules/ChromeManifestParser.jsm");
+ChromeUtils.import("resource://gre/modules/ChromeManifestParser.jsm");
 
 
 function run_test() {

@@ -26,16 +26,16 @@
 
 var {classes: Cc, interfaces: Ci, utils: Cu} = Components; 
 
-Cu.import("resource://gre/modules/Accounts.jsm"); 
-Cu.import("resource://gre/modules/PromiseUtils.jsm"); 
-Cu.import("resource://gre/modules/Services.jsm"); 
-Cu.import("resource://gre/modules/XPCOMUtils.jsm"); 
+ChromeUtils.import("resource://gre/modules/Accounts.jsm"); 
+ChromeUtils.import("resource://gre/modules/PromiseUtils.jsm"); 
+ChromeUtils.import("resource://gre/modules/Services.jsm"); 
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm"); 
 
 const ACTION_URL_PARAM = "action";
 
 const COMMAND_LOADED = "fxaccounts:loaded";
 
-const log = Cu.import("resource://gre/modules/AndroidLog.jsm", {}).AndroidLog.bind("FxAccounts");
+const log = ChromeUtils.import("resource://gre/modules/AndroidLog.jsm", {}).AndroidLog.bind("FxAccounts");
 
 XPCOMUtils.defineLazyServiceGetter(this, "ParentalControls",
   "@mozilla.org/parental-controls-service;1", "nsIParentalControlsService");

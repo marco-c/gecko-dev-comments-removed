@@ -53,15 +53,14 @@
 "use strict";
 
 const {utils: Cu} = Components;
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
-XPCOMUtils.defineLazyModuleGetter(this, "Services", "resource://gre/modules/Services.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "CleanupManager", "resource://shield-recipe-client/lib/CleanupManager.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "JSONFile", "resource://gre/modules/JSONFile.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "OS", "resource://gre/modules/osfile.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "LogManager", "resource://shield-recipe-client/lib/LogManager.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "TelemetryEnvironment", "resource://gre/modules/TelemetryEnvironment.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "TelemetryEvents", "resource://shield-recipe-client/lib/TelemetryEvents.jsm");
+ChromeUtils.defineModuleGetter(this, "Services", "resource://gre/modules/Services.jsm");
+ChromeUtils.defineModuleGetter(this, "CleanupManager", "resource://shield-recipe-client/lib/CleanupManager.jsm");
+ChromeUtils.defineModuleGetter(this, "JSONFile", "resource://gre/modules/JSONFile.jsm");
+ChromeUtils.defineModuleGetter(this, "OS", "resource://gre/modules/osfile.jsm");
+ChromeUtils.defineModuleGetter(this, "LogManager", "resource://shield-recipe-client/lib/LogManager.jsm");
+ChromeUtils.defineModuleGetter(this, "TelemetryEnvironment", "resource://gre/modules/TelemetryEnvironment.jsm");
 
 this.EXPORTED_SYMBOLS = ["PreferenceExperiments"];
 
@@ -187,10 +186,7 @@ this.PreferenceExperiments = {
       if (getPref(UserPreferences, experiment.preferenceName, experiment.preferenceType) !== experiment.preferenceValue) {
         
         log.info(`Stopping experiment "${experiment.name}" because its value changed`);
-        await this.stop(experiment.name, {
-          didResetValue: false,
-          reason: "user-preference-changed-sideload",
-        });
+        await this.stop(experiment.name, false);
         continue;
       }
 
@@ -355,7 +351,6 @@ this.PreferenceExperiments = {
     store.saveSoon();
 
     TelemetryEnvironment.setExperimentActive(name, branch, {type: EXPERIMENT_TYPE_PREFIX + experimentType});
-    TelemetryEvents.sendEvent("enroll", "preference_study", name, {experimentType, branch});
     await this.saveStartupPrefs();
   },
 
@@ -382,10 +377,8 @@ this.PreferenceExperiments = {
       observer() {
         const newValue = getPref(UserPreferences, preferenceName, preferenceType);
         if (newValue !== preferenceValue) {
-          PreferenceExperiments.stop(experimentName, {
-            didResetValue: false,
-            reason: "user-preference-changed",
-          }).catch(Cu.reportError);
+          PreferenceExperiments.stop(experimentName, false)
+                               .catch(Cu.reportError);
         }
       },
     };
@@ -461,16 +454,8 @@ this.PreferenceExperiments = {
 
 
 
-
-
-
-
-
-  async stop(experimentName, {resetValue = true, reason = "unknown"} = {}) {
+  async stop(experimentName, resetValue = true) {
     log.debug(`PreferenceExperiments.stop(${experimentName})`);
-    if (reason === "unknown") {
-      log.warn(`experiment ${experimentName} ending for unknown reason`);
-    }
 
     const store = await ensureStorage();
     if (!(experimentName in store.data)) {
@@ -511,10 +496,6 @@ this.PreferenceExperiments = {
     store.saveSoon();
 
     TelemetryEnvironment.setExperimentInactive(experimentName, experiment.branch);
-    TelemetryEvents.sendEvent("unenroll", "preference_study", experimentName, {
-      didResetValue: resetValue ? "true" : "false",
-      reason,
-    });
     await this.saveStartupPrefs();
   },
 

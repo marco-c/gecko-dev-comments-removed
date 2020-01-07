@@ -2,7 +2,7 @@
 
 "use strict";
 
-Cu.import("resource://testing-common/PlacesTestUtils.jsm");
+ChromeUtils.import("resource://testing-common/PlacesTestUtils.jsm");
 
 add_task(async function test_global_history() {
   let extension = ExtensionTestUtils.loadExtension({

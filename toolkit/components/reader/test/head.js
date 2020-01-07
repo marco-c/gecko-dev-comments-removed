@@ -1,4 +1,4 @@
-XPCOMUtils.defineLazyModuleGetter(this, "Promise",
+ChromeUtils.defineModuleGetter(this, "Promise",
   "resource://gre/modules/Promise.jsm");
 
 

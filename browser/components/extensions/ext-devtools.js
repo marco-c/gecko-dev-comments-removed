@@ -13,10 +13,10 @@
 
 
 
-XPCOMUtils.defineLazyModuleGetter(this, "DevToolsShim",
-                                  "chrome://devtools-shim/content/DevToolsShim.jsm");
+ChromeUtils.defineModuleGetter(this, "DevToolsShim",
+                               "chrome://devtools-shim/content/DevToolsShim.jsm");
 
-Cu.import("resource://gre/modules/ExtensionParent.jsm");
+ChromeUtils.import("resource://gre/modules/ExtensionParent.jsm");
 
 var {
   HiddenExtensionPage,

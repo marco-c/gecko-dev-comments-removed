@@ -4,13 +4,13 @@
 "use strict";
 
 const { interfaces: Ci, results: Cr, manager: Cm, utils: Cu } = Components;
-Cu.import("resource://gre/modules/Services.jsm");
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+ChromeUtils.import("resource://gre/modules/Services.jsm");
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
-XPCOMUtils.defineLazyModuleGetter(
+ChromeUtils.defineModuleGetter(
   this, "CleanupManager", "resource://shield-recipe-client/lib/CleanupManager.jsm",
 );
-XPCOMUtils.defineLazyModuleGetter(
+ChromeUtils.defineModuleGetter(
   this, "AddonStudies", "resource://shield-recipe-client/lib/AddonStudies.jsm",
 );
 
@@ -165,7 +165,7 @@ XPCOMUtils.defineLazyGetter(this.AboutPages, "aboutStudies", () => {
           this.sendStudyList(message.target);
           break;
         case "Shield:RemoveStudy":
-          this.removeStudy(message.data.recipeId, message.data.reason);
+          this.removeStudy(message.data);
           break;
         case "Shield:OpenDataPreferences":
           this.openDataPreferences();
@@ -195,8 +195,8 @@ XPCOMUtils.defineLazyGetter(this.AboutPages, "aboutStudies", () => {
 
 
 
-    async removeStudy(recipeId, reason) {
-      await AddonStudies.stop(recipeId, reason);
+    async removeStudy(recipeId) {
+      await AddonStudies.stop(recipeId);
 
       
       Services.mm.broadcastAsyncMessage("Shield:ReceiveStudyList", {

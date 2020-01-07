@@ -8,7 +8,7 @@
 
 
 const { MockRegistrar } =
-  Cu.import("resource://testing-common/MockRegistrar.jsm", {});
+  ChromeUtils.import("resource://testing-common/MockRegistrar.jsm", {});
 
 const certService = Cc["@mozilla.org/security/local-cert-service;1"]
                       .getService(Ci.nsILocalCertService);

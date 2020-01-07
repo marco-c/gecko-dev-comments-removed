@@ -1,11 +1,11 @@
 
 
 
-Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
-XPCOMUtils.defineLazyModuleGetter(this, "BrowserTestUtils",
+ChromeUtils.defineModuleGetter(this, "BrowserTestUtils",
   "resource://testing-common/BrowserTestUtils.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "ContentTask",
+ChromeUtils.defineModuleGetter(this, "ContentTask",
   "resource://testing-common/ContentTask.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "PlacesUtils",
+ChromeUtils.defineModuleGetter(this, "PlacesUtils",
   "resource://gre/modules/PlacesUtils.jsm");

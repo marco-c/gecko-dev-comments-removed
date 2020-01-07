@@ -2,7 +2,7 @@
 
 
 
-Components.utils.import("resource://gre/modules/osfile.jsm");
+ChromeUtils.import("resource://gre/modules/osfile.jsm");
 
 async function createTestFile(filename, content) {
   let path = OS.Path.join(OS.Constants.Path.tmpDir, filename);

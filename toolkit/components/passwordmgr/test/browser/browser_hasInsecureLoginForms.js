@@ -1,7 +1,7 @@
 
 
 
-Cu.import("resource://gre/modules/LoginManagerParent.jsm", this);
+ChromeUtils.import("resource://gre/modules/LoginManagerParent.jsm", this);
 
 const testUrlPath =
       "://example.com/browser/toolkit/components/passwordmgr/test/browser/";

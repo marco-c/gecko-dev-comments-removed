@@ -3,7 +3,7 @@
 
 
 function closeWindow(aClose, aPromptFunction) {
-  let { AppConstants } = Components.utils.import("resource://gre/modules/AppConstants.jsm", {});
+  let { AppConstants } = ChromeUtils.import("resource://gre/modules/AppConstants.jsm", {});
 
   
   if (AppConstants.platform != "macosx") {
@@ -106,7 +106,7 @@ Object.defineProperty(this, "NS_ASSERT", {
   get() {
     delete this.NS_ASSERT;
     var tmpScope = {};
-    Components.utils.import("resource://gre/modules/debug.js", tmpScope);
+    ChromeUtils.import("resource://gre/modules/debug.js", tmpScope);
     return this.NS_ASSERT = tmpScope.NS_ASSERT;
   },
 });

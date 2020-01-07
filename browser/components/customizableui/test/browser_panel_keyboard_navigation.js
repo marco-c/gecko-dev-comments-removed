@@ -4,7 +4,7 @@
 
 
 
-const {PanelView} = Cu.import("resource:///modules/PanelMultiView.jsm", {});
+const {PanelView} = ChromeUtils.import("resource:///modules/PanelMultiView.jsm", {});
 const kHelpButtonId = "appMenu-help-button";
 
 add_task(async function testUpDownKeys() {

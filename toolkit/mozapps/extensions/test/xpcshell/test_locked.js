@@ -4,8 +4,8 @@
 
 
 
-Components.utils.import("resource://testing-common/httpd.js");
-Components.utils.import("resource://gre/modules/osfile.jsm");
+ChromeUtils.import("resource://testing-common/httpd.js");
+ChromeUtils.import("resource://gre/modules/osfile.jsm");
 
 var testserver = new HttpServer();
 testserver.start(-1);

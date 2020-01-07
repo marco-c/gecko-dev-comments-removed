@@ -1,10 +1,9 @@
 "use strict";
 
-Cu.import("resource://gre/modules/Preferences.jsm", this);
-Cu.import("resource://gre/modules/TelemetryEnvironment.jsm", this);
-Cu.import("resource://shield-recipe-client/lib/PreferenceExperiments.jsm", this);
-Cu.import("resource://shield-recipe-client/lib/CleanupManager.jsm", this);
-Cu.import("resource://shield-recipe-client/lib/TelemetryEvents.jsm", this);
+ChromeUtils.import("resource://gre/modules/Preferences.jsm", this);
+ChromeUtils.import("resource://gre/modules/TelemetryEnvironment.jsm", this);
+ChromeUtils.import("resource://shield-recipe-client/lib/PreferenceExperiments.jsm", this);
+ChromeUtils.import("resource://shield-recipe-client/lib/CleanupManager.jsm", this);
 
 
 const {withMockExperiments} = PreferenceExperiments;
@@ -102,8 +101,7 @@ decorate_task(
   withMockExperiments,
   withMockPreferences,
   withStub(PreferenceExperiments, "startObserver"),
-  withStub(TelemetryEvents, "sendEvent"),
-  async function testStart(experiments, mockPreferences, startObserverStub, sendEventStub) {
+  async function testStart(experiments, mockPreferences, startObserverStub) {
     mockPreferences.set("fake.preference", "oldvalue", "default");
     mockPreferences.set("fake.preference", "uservalue", "user");
 
@@ -409,12 +407,8 @@ decorate_task(
   withMockExperiments,
   withMockPreferences,
   withSpy(PreferenceExperiments, "stopObserver"),
-  withStub(TelemetryEvents, "sendEvent"),
-  async function testStop(experiments, mockPreferences, stopObserverSpy, sendEventStub) {
-    
-    
+  async function testStop(experiments, mockPreferences, stopObserverSpy) {
     is(Preferences.get("fake.preference"), null, "preference should start unset");
-
     mockPreferences.set(`${startupPrefs}.fake.preference`, "experimentvalue", "user");
     mockPreferences.set("fake.preference", "experimentvalue", "default");
     experiments.test = experimentFactory({
@@ -428,7 +422,7 @@ decorate_task(
     });
     PreferenceExperiments.startObserver("test", "fake.preference", "string", "experimentvalue");
 
-    await PreferenceExperiments.stop("test", {reason: "test-reason"});
+    await PreferenceExperiments.stop("test");
     ok(stopObserverSpy.calledWith("test"), "stop removed an observer");
     is(experiments.test.expired, true, "stop marked the experiment as expired");
     is(
@@ -439,15 +433,6 @@ decorate_task(
     ok(
       !Services.prefs.prefHasUserValue(`${startupPrefs}.fake.preference`),
       "stop cleared the startup preference for fake.preference.",
-    );
-
-    Assert.deepEqual(
-      sendEventStub.getCall(0).args,
-      ["unenroll", "preference_study", experiments.test.name, {
-        didResetValue: "true",
-        reason: "test-reason",
-      }],
-      "stop should send the correct telemetry event"
     );
 
     PreferenceExperiments.stopAllObservers();
@@ -520,8 +505,8 @@ decorate_task(
   withMockExperiments,
   withMockPreferences,
   withStub(PreferenceExperiments, "stopObserver"),
-  withStub(TelemetryEvents, "sendEvent"),
-  async function testStopReset(experiments, mockPreferences, stopObserverStub, sendEventStub) {
+
+  async function(experiments, mockPreferences, stopObserver) {
     mockPreferences.set("fake.preference", "customvalue", "default");
     experiments.test = experimentFactory({
       name: "test",
@@ -533,19 +518,11 @@ decorate_task(
       peferenceBranchType: "default",
     });
 
-    await PreferenceExperiments.stop("test", {reason: "test-reason", resetValue: false});
+    await PreferenceExperiments.stop("test", false);
     is(
       DefaultPreferences.get("fake.preference"),
       "customvalue",
       "stop did not modify the preference",
-    );
-    Assert.deepEqual(
-      sendEventStub.getCall(0).args,
-      ["unenroll", "preference_study", experiments.test.name, {
-        didResetValue: "false",
-        reason: "test-reason",
-      }],
-      "stop should send the correct telemetry event"
     );
   }
 );
@@ -701,8 +678,7 @@ decorate_task(
   withMockExperiments,
   withStub(TelemetryEnvironment, "setExperimentActive"),
   withStub(TelemetryEnvironment, "setExperimentInactive"),
-  withStub(TelemetryEvents, "sendEvent"),
-  async function testStartAndStopTelemetry(experiments, setActiveStub, setInactiveStub, sendEventStub) {
+  async function testInitTelemetry(experiments, setActiveStub, setInactiveStub) {
     await PreferenceExperiments.start({
       name: "test",
       branch: "branch",
@@ -715,28 +691,10 @@ decorate_task(
     Assert.deepEqual(
       setActiveStub.getCall(0).args,
       ["test", "branch", {type: "normandy-exp"}],
-      "Experiment is registered by start()",
+      "Experiment is registerd by start()",
     );
-    await PreferenceExperiments.stop("test", {reason: "test-reason"});
+    await PreferenceExperiments.stop("test");
     ok(setInactiveStub.calledWith("test", "branch"), "Experiment is unregistered by stop()");
-
-    Assert.deepEqual(
-      sendEventStub.getCall(0).args,
-      ["enroll", "preference_study", "test", {
-        experimentType: "exp",
-        branch: "branch",
-      }],
-      "PreferenceExperiments.start() should send the correct telemetry event"
-    );
-
-    Assert.deepEqual(
-      sendEventStub.getCall(1).args,
-      ["unenroll", "preference_study", "test", {
-        reason: "test-reason",
-        didResetValue: "true",
-      }],
-      "PreferenceExperiments.stop() should send the correct telemetry event"
-    );
   },
 );
 
@@ -745,8 +703,7 @@ decorate_task(
   withMockExperiments,
   withStub(TelemetryEnvironment, "setExperimentActive"),
   withStub(TelemetryEnvironment, "setExperimentInactive"),
-  withStub(TelemetryEvents, "sendEvent"),
-  async function testInitTelemetryExperimentType(experiments, setActiveStub, setInactiveStub, sendEventStub) {
+  async function testInitTelemetry(experiments, setActiveStub, setInactiveStub) {
     await PreferenceExperiments.start({
       name: "test",
       branch: "branch",
@@ -761,15 +718,6 @@ decorate_task(
       setActiveStub.getCall(0).args,
       ["test", "branch", {type: "normandy-pref-test"}],
       "start() should register the experiment with the provided type",
-    );
-
-    Assert.deepEqual(
-      sendEventStub.getCall(0).args,
-      ["enroll", "preference_study", "test", {
-        experimentType: "pref-test",
-        branch: "branch",
-      }],
-      "start should include the passed reason in the telemetry event"
     );
 
     
@@ -794,8 +742,7 @@ decorate_task(
   withMockExperiments,
   withMockPreferences,
   withStub(PreferenceExperiments, "stop"),
-  withStub(TelemetryEvents, "sendEvent"),
-  async function testInitChanges(experiments, mockPreferences, stopStub, sendEventStub) {
+  async function testInitChanges(experiments, mockPreferences, stopStub) {
     mockPreferences.set("fake.preference", "experiment value", "default");
     experiments.test = experimentFactory({
       name: "test",
@@ -806,7 +753,7 @@ decorate_task(
     await PreferenceExperiments.init();
     ok(stopStub.calledWith("test"), "Experiment is stopped because value changed");
     is(Preferences.get("fake.preference"), "changed value", "Preference value was not changed");
-  },
+  }
 );
 
 
@@ -987,22 +934,4 @@ decorate_task(
       "Preference should be absent",
     );
   },
-);
-
-
-decorate_task(
-  withMockExperiments,
-  withMockPreferences,
-  withStub(PreferenceExperiments, "stopObserver"),
-  withStub(TelemetryEvents, "sendEvent"),
-  async function testStopUnknownReason(experiments, mockPreferences, stopObserverStub, sendEventStub) {
-    mockPreferences.set("fake.preference", "default value", "default");
-    experiments.test = experimentFactory({ name: "test", preferenceName: "fake.preference" });
-    await PreferenceExperiments.stop("test");
-    is(
-      sendEventStub.getCall(0).args[3].reason,
-      "unknown",
-      "PreferenceExperiments.stop() should use unknown as the default reason",
-    );
-  }
 );

@@ -13,7 +13,7 @@ const NAME_REFERENCES = "chrome://formautofill/content/nameReferences.js";
 
 this.EXPORTED_SYMBOLS = ["FormAutofillNameUtils"];
 
-Cu.import("resource://formautofill/FormAutofillUtils.jsm");
+ChromeUtils.import("resource://formautofill/FormAutofillUtils.jsm");
 
 
 

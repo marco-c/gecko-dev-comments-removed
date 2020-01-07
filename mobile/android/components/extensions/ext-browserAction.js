@@ -5,12 +5,12 @@
 
 
 
-XPCOMUtils.defineLazyModuleGetter(this, "Services",
-                                  "resource://gre/modules/Services.jsm");
+ChromeUtils.defineModuleGetter(this, "Services",
+                               "resource://gre/modules/Services.jsm");
 
 
-XPCOMUtils.defineLazyModuleGetter(this, "BrowserActions",
-                                  "resource://gre/modules/BrowserActions.jsm");
+ChromeUtils.defineModuleGetter(this, "BrowserActions",
+                               "resource://gre/modules/BrowserActions.jsm");
 
 
 let browserActionMap = new WeakMap();

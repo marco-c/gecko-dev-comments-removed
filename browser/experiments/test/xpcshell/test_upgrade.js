@@ -2,7 +2,7 @@
 
 
 "use strict";
-Cu.import("resource:///modules/experiments/Experiments.jsm");
+ChromeUtils.import("resource:///modules/experiments/Experiments.jsm");
 
 var cacheData = {
   _enabled: true,

@@ -2,7 +2,7 @@
 
 
 function run_test() {
-  const { MessageContext } = Components.utils.import("resource://gre/modules/MessageContext.jsm", {});
+  const { MessageContext } = ChromeUtils.import("resource://gre/modules/MessageContext.jsm", {});
 
   test_methods_presence(MessageContext);
   test_methods_calling(MessageContext);

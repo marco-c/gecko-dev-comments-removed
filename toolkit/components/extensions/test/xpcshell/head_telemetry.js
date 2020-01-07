@@ -4,8 +4,8 @@
 
 
 
-XPCOMUtils.defineLazyModuleGetter(this, "ContentTaskUtils",
-                                  "resource://testing-common/ContentTaskUtils.jsm");
+ChromeUtils.defineModuleGetter(this, "ContentTaskUtils",
+                               "resource://testing-common/ContentTaskUtils.jsm");
 
 const IS_OOP = Services.prefs.getBoolPref("extensions.webextensions.remote");
 

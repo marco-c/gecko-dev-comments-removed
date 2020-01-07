@@ -8,7 +8,7 @@
 
 var {classes: Cc, interfaces: Ci, utils: Cu} = Components
 
-Cu.import("resource://gre/modules/FileUtils.jsm");
+ChromeUtils.import("resource://gre/modules/FileUtils.jsm");
 
 
 var gEnv = Cc["@mozilla.org/process/environment;1"]

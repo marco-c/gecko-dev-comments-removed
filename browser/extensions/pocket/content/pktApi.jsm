@@ -45,8 +45,8 @@
 const {classes: Cc, interfaces: Ci, utils: Cu, manager: Cm} = Components;
 this.EXPORTED_SYMBOLS = ["pktApi"];
 
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-Cu.import("resource://gre/modules/Services.jsm");
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
 var pktApi = (function() {
@@ -601,20 +601,6 @@ var pktApi = (function() {
     
 
 
-
-    function retrieve(data = {}, options = {}) {
-        const requestData = Object.assign({}, data, {access_token: getAccessToken()});
-        return apiRequest({
-            path: "/get",
-            data: requestData,
-            success: options.success,
-            error: options.error
-        });
-    }
-
-    
-
-
     function getSignupPanelTabTestVariant() {
         return getMultipleTestOption("panelSignUp", {control: 1, v1: 8, v2: 1 });
     }
@@ -658,6 +644,5 @@ var pktApi = (function() {
         getSuggestedTagsForItem,
         getSuggestedTagsForURL,
         getSignupPanelTabTestVariant,
-        retrieve,
     };
 }());

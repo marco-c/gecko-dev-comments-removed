@@ -10,16 +10,16 @@ Services.prefs.setCharPref("identity.fxaccounts.auth.uri", "http://localhost");
 
 Services.prefs.setCharPref("identity.fxaccounts.loglevel", "Trace");
 
-Cu.import("resource://gre/modules/FxAccounts.jsm");
-Cu.import("resource://gre/modules/FxAccountsClient.jsm");
-Cu.import("resource://gre/modules/FxAccountsCommon.js");
-Cu.import("resource://gre/modules/osfile.jsm");
-Cu.import("resource://services-common/utils.js");
-Cu.import("resource://gre/modules/FxAccountsCommon.js");
+ChromeUtils.import("resource://gre/modules/FxAccounts.jsm");
+ChromeUtils.import("resource://gre/modules/FxAccountsClient.jsm");
+ChromeUtils.import("resource://gre/modules/FxAccountsCommon.js");
+ChromeUtils.import("resource://gre/modules/osfile.jsm");
+ChromeUtils.import("resource://services-common/utils.js");
+ChromeUtils.import("resource://gre/modules/FxAccountsCommon.js");
 
 
 
-var {LoginManagerStorage} = Cu.import("resource://gre/modules/FxAccountsStorage.jsm", {});
+var {LoginManagerStorage} = ChromeUtils.import("resource://gre/modules/FxAccountsStorage.jsm", {});
 var isLoggedIn = true;
 LoginManagerStorage.prototype.__defineGetter__("_isLoggedIn", () => isLoggedIn);
 

@@ -1,5 +1,5 @@
 
-Cu.import("resource://services-sync/util.js");
+ChromeUtils.import("resource://services-sync/util.js");
 
 function run_test() {
   _("Normalize passphrase recognizes hyphens.");

@@ -3,14 +3,14 @@
 
 
 
-Components.utils.import("resource://gre/modules/NetUtil.jsm");
+ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
 
 function test() {
   waitForExplicitFinish();
 
   
   
-  Components.utils.import("resource://testing-common/httpd.js", {});
+  ChromeUtils.import("resource://testing-common/httpd.js", {});
 
   nextTest();
 }

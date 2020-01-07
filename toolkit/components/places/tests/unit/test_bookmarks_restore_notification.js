@@ -4,7 +4,7 @@
 
 
 
-Cu.import("resource://gre/modules/BookmarkHTMLUtils.jsm");
+ChromeUtils.import("resource://gre/modules/BookmarkHTMLUtils.jsm");
 
 
 

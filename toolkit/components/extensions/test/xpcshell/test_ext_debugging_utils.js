@@ -2,8 +2,8 @@
 
 "use strict";
 
-Cu.import("resource://gre/modules/ExtensionParent.jsm");
-Cu.import("resource://gre/modules/Preferences.jsm");
+ChromeUtils.import("resource://gre/modules/ExtensionParent.jsm");
+ChromeUtils.import("resource://gre/modules/Preferences.jsm");
 
 add_task(async function testExtensionDebuggingUtilsCleanup() {
   const extension = ExtensionTestUtils.loadExtension({

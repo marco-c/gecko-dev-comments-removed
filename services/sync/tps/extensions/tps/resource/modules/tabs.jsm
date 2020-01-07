@@ -11,8 +11,8 @@ const EXPORTED_SYMBOLS = ["BrowserTabs"];
 
 const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 
-Cu.import("resource://gre/modules/Services.jsm");
-Cu.import("resource://services-sync/main.js");
+ChromeUtils.import("resource://gre/modules/Services.jsm");
+ChromeUtils.import("resource://services-sync/main.js");
 
 
 

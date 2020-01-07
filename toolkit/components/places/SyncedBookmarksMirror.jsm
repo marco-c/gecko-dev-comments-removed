@@ -55,8 +55,8 @@ const { utils: Cu, interfaces: Ci } = Components;
 
 Cu.importGlobalProperties(["URL"]);
 
-Cu.import("resource://gre/modules/Services.jsm");
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+ChromeUtils.import("resource://gre/modules/Services.jsm");
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   AsyncShutdown: "resource://gre/modules/AsyncShutdown.jsm",
@@ -1064,39 +1064,40 @@ class SyncedBookmarksMirror {
         JOIN guidsWithLevelsToDelete o ON o.guid = b.guid`,
         guids);
 
-      
-      
-      
+      let guidsParams = new Array(guids.length).fill("?").join(",");
+
       
       await this.db.execute(`
         UPDATE moz_places SET
           frecency = -1
-        WHERE id IN (SELECT placeId FROM itemsRemoved
-                     WHERE NOT isUntagging)`);
+        WHERE id IN (SELECT fk FROM moz_bookmarks
+                     WHERE guid IN (${guidsParams}))`,
+        guids);
 
       
       await this.db.execute(`
         DELETE FROM moz_items_annos
-        WHERE item_id IN (SELECT itemId FROM itemsRemoved
-                          WHERE NOT isUntagging)`);
+        WHERE item_id = (SELECT id FROM moz_bookmarks
+                         WHERE guid IN (${guidsParams}))`,
+        guids);
 
       
       await this.db.execute(`
         DELETE FROM moz_bookmarks_deleted
-        WHERE guid IN (SELECT guid FROM itemsRemoved)`);
+        WHERE guid IN (${guidsParams})`,
+        guids);
 
       await this.db.execute(`
-        DELETE FROM moz_bookmarks
-        WHERE id IN (SELECT itemId FROM itemsRemoved
-                     WHERE NOT isUntagging)`);
+        DELETE FROM moz_bookmarks WHERE guid IN (${guidsParams})`,
+        guids);
 
       
       await this.db.execute(`
         UPDATE items SET
           needsMerge = 0
         WHERE needsMerge AND
-              guid IN (SELECT guid FROM itemsRemoved
-                       WHERE NOT isUntagging)`);
+              guid IN (${guidsParams})`,
+        guids);
     }
 
     MirrorLog.debug("Flagging remotely deleted items as merged");
@@ -1796,6 +1797,11 @@ async function initializeMirrorDatabase(db) {
   )`);
 
   await db.execute(`CREATE INDEX mirror.urlHashes ON urls(hash)`);
+
+  await db.execute(`CREATE INDEX mirror.locations ON structure(
+    parentGuid,
+    position
+  )`);
 
   await createMirrorRoots(db);
 }
@@ -3067,36 +3073,17 @@ class BookmarkMerger {
     let remoteRoot = this.remoteTree.nodeForGuid(PlacesUtils.bookmarks.rootGuid);
     let mergedRoot = this.mergeNode(PlacesUtils.bookmarks.rootGuid, localRoot,
                                     remoteRoot);
-
-    
-    
-    
-    
-    for (let guid of this.localTree.deletedGuids) {
-      if (!this.mentions(guid)) {
-        this.deleteRemotely.add(guid);
-      }
-    }
-    for (let guid of this.remoteTree.deletedGuids) {
-      if (!this.mentions(guid)) {
-        this.deleteLocally.add(guid);
-      }
-    }
     return mergedRoot;
   }
 
   subsumes(tree) {
     for (let guid of tree.guids()) {
-      if (!this.mentions(guid)) {
+      if (!this.mergedGuids.has(guid) && !this.deleteLocally.has(guid) &&
+          !this.deleteRemotely.has(guid)) {
         return false;
       }
     }
     return true;
-  }
-
-  mentions(guid) {
-    return this.mergedGuids.has(guid) || this.deleteLocally.has(guid) ||
-           this.deleteRemotely.has(guid);
   }
 
   

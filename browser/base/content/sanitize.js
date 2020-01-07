@@ -5,8 +5,8 @@
 
 
 
-Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
-Components.utils.import("resource://gre/modules/Services.jsm");
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   AppConstants: "resource://gre/modules/AppConstants.jsm",
@@ -285,7 +285,7 @@ Sanitizer.prototype = {
     offlineApps: {
       async clear(range) {
         
-        Components.utils.import("resource:///modules/offlineAppCache.jsm");
+        ChromeUtils.import("resource:///modules/offlineAppCache.jsm");
         
         OfflineAppCacheHelper.clear();
 

@@ -3,7 +3,7 @@
 
 "use strict";
 
-XPCOMUtils.defineLazyModuleGetter(this, "Snackbars", "resource://gre/modules/Snackbars.jsm");
+ChromeUtils.defineModuleGetter(this, "Snackbars", "resource://gre/modules/Snackbars.jsm");
 
 var MasterPassword = {
   pref: "privacy.masterpassword.enabled",

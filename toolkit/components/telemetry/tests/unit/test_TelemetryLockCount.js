@@ -3,7 +3,7 @@
 
 
 
-Cu.import("resource://gre/modules/Services.jsm", this);
+ChromeUtils.import("resource://gre/modules/Services.jsm", this);
 
 const LOCK_FILE_NAME = "Telemetry.FailedProfileLocks.txt";
 const N_FAILED_LOCKS = 10;

@@ -6,7 +6,7 @@
 setExpectedFailuresForSelfTest(8);
 
 
-let JSMPromise = Cu.import("resource://gre/modules/Promise.jsm", {}).Promise;
+let JSMPromise = ChromeUtils.import("resource://gre/modules/Promise.jsm", {}).Promise;
 
 async function rejectOnNextTick(error) {
   await Promise.resolve();

@@ -1,11 +1,10 @@
 "use strict";
 
-Cu.import("resource://gre/modules/IndexedDB.jsm", this);
-Cu.import("resource://testing-common/TestUtils.jsm", this);
-Cu.import("resource://testing-common/AddonTestUtils.jsm", this);
-Cu.import("resource://shield-recipe-client/lib/Addons.jsm", this);
-Cu.import("resource://shield-recipe-client/lib/AddonStudies.jsm", this);
-Cu.import("resource://shield-recipe-client/lib/TelemetryEvents.jsm", this);
+ChromeUtils.import("resource://gre/modules/IndexedDB.jsm", this);
+ChromeUtils.import("resource://testing-common/TestUtils.jsm", this);
+ChromeUtils.import("resource://testing-common/AddonTestUtils.jsm", this);
+ChromeUtils.import("resource://shield-recipe-client/lib/Addons.jsm", this);
+ChromeUtils.import("resource://shield-recipe-client/lib/AddonStudies.jsm", this);
 
 
 AddonTestUtils.initMochitest(this);
@@ -176,9 +175,8 @@ decorate_task(
 
 decorate_task(
   withWebExtension({version: "2.0"}),
-  withStub(TelemetryEvents, "sendEvent"),
   AddonStudies.withStudies(),
-  async function testStart([addonId, addonFile], sendEventStub) {
+  async function testStart([addonId, addonFile]) {
     const startupPromise = AddonTestUtils.promiseWebExtensionStartup(addonId);
     const addonUrl = Services.io.newFileURI(addonFile).spec;
 
@@ -212,12 +210,6 @@ decorate_task(
       "start saves study data to storage",
     );
     ok(study.studyStartDate, "start assigns a value to the study start date.");
-
-    Assert.deepEqual(
-      sendEventStub.getCall(0).args,
-      ["enroll", "addon_study", args.name, {addonId, addonVersion: "2.0"}],
-      "AddonStudies.start() should send the correct telemetry event"
-    );
 
     await AddonStudies.stop(args.recipeId);
   }
@@ -253,25 +245,14 @@ decorate_task(
     studyFactory({active: true, addonId: testStopId, studyEndDate: null}),
   ]),
   withInstalledWebExtension({id: testStopId}),
-  withStub(TelemetryEvents, "sendEvent"),
-  async function testStop([study], [addonId, addonFile], sendEventStub) {
-    await AddonStudies.stop(study.recipeId, "test-reason");
+  async function testStop([study], [addonId, addonFile]) {
+    await AddonStudies.stop(study.recipeId);
     const newStudy = await AddonStudies.get(study.recipeId);
     ok(!newStudy.active, "stop marks the study as inactive.");
     ok(newStudy.studyEndDate, "stop saves the study end date.");
 
     const addon = await Addons.get(addonId);
     is(addon, null, "stop uninstalls the study add-on.");
-
-    Assert.deepEqual(
-      sendEventStub.getCall(0).args,
-      ["unenroll", "addon_study", study.name, {
-        addonId,
-        addonVersion: study.addonVersion,
-        reason: "test-reason",
-      }],
-      "stop should send the correct telemetry event"
-    );
   }
 );
 
@@ -299,25 +280,15 @@ decorate_task(
     studyFactory({active: true, addonId: "installed@example.com"}),
     studyFactory({active: false, addonId: "already.gone@example.com", studyEndDate: new Date(2012, 1)}),
   ]),
-  withStub(TelemetryEvents, "sendEvent"),
   withInstalledWebExtension({id: "installed@example.com"}),
-  async function testInit([activeUninstalledStudy, activeInstalledStudy, inactiveStudy], sendEventStub) {
+  async function testInit([activeStudy, activeInstalledStudy, inactiveStudy]) {
     await AddonStudies.init();
 
-    const newActiveStudy = await AddonStudies.get(activeUninstalledStudy.recipeId);
+    const newActiveStudy = await AddonStudies.get(activeStudy.recipeId);
     ok(!newActiveStudy.active, "init marks studies as inactive if their add-on is not installed.");
     ok(
       newActiveStudy.studyEndDate,
       "init sets the study end date if a study's add-on is not installed."
-    );
-    Assert.deepEqual(
-      sendEventStub.getCall(0).args,
-      ["unenroll", "addon_study", activeUninstalledStudy.name, {
-        addonId: activeUninstalledStudy.addonId,
-        addonVersion: activeUninstalledStudy.addonVersion,
-        reason: "uninstalled-sideload",
-      }],
-      "AddonStudies.init() should send the correct telemetry event"
     );
 
     const newInactiveStudy = await AddonStudies.get(inactiveStudy.recipeId);
@@ -333,9 +304,6 @@ decorate_task(
       newActiveInstalledStudy,
       "init does not modify studies whose add-on is still installed."
     );
-
-    
-    ok(sendEventStub.calledOnce);
   }
 );
 
@@ -353,21 +321,6 @@ decorate_task(
     ok(
       newStudy.studyEndDate,
       "The study end date is set when the add-on for the study is uninstalled."
-    );
-  }
-);
-
-
-decorate_task(
-  AddonStudies.withStudies([studyFactory({ active: true })]),
-  withStub(TelemetryEvents, "sendEvent"),
-  async function testStopUnknownReason([study], sendEventStub) {
-    await AddonStudies.stop(study.recipeId);
-    is(
-      sendEventStub.getCall(0).args[3].reason,
-      "unknown",
-      "stop should send the correct telemetry event",
-      "AddonStudies.stop() should use unknown as the default reason",
     );
   }
 );

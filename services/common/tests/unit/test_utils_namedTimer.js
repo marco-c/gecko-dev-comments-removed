@@ -1,7 +1,7 @@
 
 
 
-Cu.import("resource://services-common/utils.js");
+ChromeUtils.import("resource://services-common/utils.js");
 
 add_test(function test_required_args() {
   try {
