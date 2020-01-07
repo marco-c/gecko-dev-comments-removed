@@ -80,6 +80,12 @@ class PaymentDialog extends PaymentStateSubscriberMixin(HTMLElement) {
     });
   }
 
+  changeShippingOption(optionID) {
+    paymentRequest.changeShippingOption({
+      optionID,
+    });
+  }
+
   
 
 
@@ -120,7 +126,8 @@ class PaymentDialog extends PaymentStateSubscriberMixin(HTMLElement) {
 
     
     
-    if (!shippingOptions.find(option => option.id == selectedShippingOption)) {
+    if (shippingOptions &&
+        !shippingOptions.find(option => option.id == selectedShippingOption)) {
       
       for (let i = shippingOptions.length - 1; i >= 0; i--) {
         if (shippingOptions[i].selected) {
@@ -131,6 +138,7 @@ class PaymentDialog extends PaymentStateSubscriberMixin(HTMLElement) {
       if (!selectedShippingOption && shippingOptions.length) {
         selectedShippingOption = shippingOptions[0].id;
       }
+      this._cachedState.selectedShippingOption = selectedShippingOption;
       this.requestStore.setState({
         selectedShippingOption,
       });
@@ -144,7 +152,12 @@ class PaymentDialog extends PaymentStateSubscriberMixin(HTMLElement) {
       this.changeShippingAddress(state.selectedShippingAddress);
     }
 
+    if (state.selectedShippingOption != this._cachedState.selectedShippingOption) {
+      this.changeShippingOption(state.selectedShippingOption);
+    }
+
     this._cachedState.selectedShippingAddress = state.selectedShippingAddress;
+    this._cachedState.selectedShippingOption = state.selectedShippingOption;
   }
 
   render(state) {

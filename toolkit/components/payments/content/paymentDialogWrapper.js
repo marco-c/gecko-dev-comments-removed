@@ -404,6 +404,14 @@ var paymentDialogWrapper = {
     paymentSrv.changeShippingAddress(this.request.requestId, address);
   },
 
+  onChangeShippingOption({optionID}) {
+    
+    
+    
+    
+    paymentSrv.changeShippingOption(this.request.requestId, optionID);
+  },
+
   
 
 
@@ -436,6 +444,10 @@ var paymentDialogWrapper = {
       }
       case "changeShippingAddress": {
         this.onChangeShippingAddress(data);
+        break;
+      }
+      case "changeShippingOption": {
+        this.onChangeShippingOption(data);
         break;
       }
       case "paymentCancel": {
