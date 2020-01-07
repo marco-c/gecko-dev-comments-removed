@@ -465,6 +465,8 @@ private:
 
   void UpdateDownloadStatistics(AutoLock&);
 
+  void CloseInternal(AutoLock&);
+
   
   RefPtr<MediaCache> mMediaCache;
 

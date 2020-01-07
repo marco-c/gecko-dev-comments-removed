@@ -2377,8 +2377,19 @@ MediaCacheStream::Close()
   if (!mMediaCache) {
     return;
   }
+  OwnerThread()->Dispatch(NS_NewRunnableFunction(
+    "MediaCacheStream::Close",
+    [ this, client = RefPtr<ChannelMediaResource>(mClient) ]() {
+      AutoLock lock(mMediaCache->Monitor());
+      CloseInternal(lock);
+    }));
+}
 
-  AutoLock lock(mMediaCache->Monitor());
+void
+MediaCacheStream::CloseInternal(AutoLock& aLock)
+{
+  MOZ_ASSERT(OwnerThread()->IsOnCurrentThread());
+
   if (mClosed) {
     return;
   }
@@ -2386,17 +2397,15 @@ MediaCacheStream::Close()
   
   
   
-  mMediaCache->QueueSuspendedStatusUpdate(lock, mResourceID);
+  mMediaCache->QueueSuspendedStatusUpdate(aLock, mResourceID);
 
   mClosed = true;
-  mMediaCache->ReleaseStreamBlocks(lock, this);
+  mMediaCache->ReleaseStreamBlocks(aLock, this);
   
-  lock.NotifyAll();
+  aLock.NotifyAll();
 
   
-  
-  
-  mMediaCache->QueueUpdate(lock);
+  mMediaCache->QueueUpdate(aLock);
 }
 
 void
