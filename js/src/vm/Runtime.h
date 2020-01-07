@@ -937,6 +937,9 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
     
     js::ExclusiveData<js::wasm::InstanceVector> wasmInstances;
 
+    
+    js::MainThreadData<JS::ModuleResolveHook> moduleResolveHook;
+
   public:
 #if defined(JS_BUILD_BINAST)
     js::BinaryASTSupport& binast() {

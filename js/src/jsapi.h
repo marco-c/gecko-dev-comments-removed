@@ -4141,17 +4141,19 @@ extern JS_PUBLIC_API(bool)
 Evaluate(JSContext* cx, const ReadOnlyCompileOptions& options,
          const char* filename, JS::MutableHandleValue rval);
 
+using ModuleResolveHook = JSObject* (*)(JSContext*, HandleObject, HandleString);
 
 
 
-extern JS_PUBLIC_API(JSFunction*)
-GetModuleResolveHook(JSContext* cx);
+
+extern JS_PUBLIC_API(ModuleResolveHook)
+GetModuleResolveHook(JSRuntime* rt);
 
 
 
 
 extern JS_PUBLIC_API(void)
-SetModuleResolveHook(JSContext* cx, JS::HandleFunction func);
+SetModuleResolveHook(JSRuntime* rt, ModuleResolveHook func);
 
 
 
