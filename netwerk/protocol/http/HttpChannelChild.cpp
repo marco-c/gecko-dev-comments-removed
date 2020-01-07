@@ -13,6 +13,7 @@
 #include "mozilla/Unused.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/DocGroup.h"
+#include "mozilla/dom/ServiceWorkerUtils.h"
 #include "mozilla/dom/TabChild.h"
 #include "mozilla/dom/TabGroup.h"
 #include "mozilla/extensions/StreamFilterParent.h"
@@ -614,26 +615,28 @@ HttpChannelChild::OnStartRequest(const nsresult& channelStatus,
   mAvailableCachedAltDataType = altDataType;
   mAltDataLength = altDataLen;
 
-  const Maybe<ServiceWorkerDescriptor>& prevController =
-    mLoadInfo->GetController();
-
   SetApplyConversion(aApplyConversion);
 
-  
-  
-  
-  if (aController.isSome() && prevController.isNothing()) {
-    mLoadInfo->SetController(aController.ref());
-  }
+  if (ServiceWorkerParentInterceptEnabled()) {
+    const Maybe<ServiceWorkerDescriptor>& prevController =
+      mLoadInfo->GetController();
 
-  
-  
-  
-  else {
-    MOZ_DIAGNOSTIC_ASSERT((prevController.isNothing() && aController.isNothing()) ||
-                          (prevController.ref().Id() == aController.ref().Id() &&
-                           prevController.ref().Scope() == aController.ref().Scope() &&
-                           prevController.ref().PrincipalInfo() == aController.ref().PrincipalInfo()));
+    
+    
+    
+    if (aController.isSome() && prevController.isNothing()) {
+      mLoadInfo->SetController(aController.ref());
+    }
+
+    
+    
+    
+    else {
+      MOZ_DIAGNOSTIC_ASSERT((prevController.isNothing() && aController.isNothing()) ||
+                            (prevController.ref().Id() == aController.ref().Id() &&
+                             prevController.ref().Scope() == aController.ref().Scope() &&
+                             prevController.ref().PrincipalInfo() == aController.ref().PrincipalInfo()));
+    }
   }
 
   mAfterOnStartRequestBegun = true;
