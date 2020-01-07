@@ -133,7 +133,10 @@ getUpdateRequirements(const RefPtr<nsNavHistoryQuery>& aQuery,
   
   
   
-  if (aOptions->MaxResults() > 0)
+  uint16_t sortingMode = aOptions->SortingMode();
+  if (aOptions->MaxResults() > 0 &&
+      sortingMode != nsINavHistoryQueryOptions::SORT_BY_DATE_ASCENDING &&
+      sortingMode != nsINavHistoryQueryOptions::SORT_BY_DATE_DESCENDING)
     return QUERYUPDATE_COMPLEX;
 
   if (domainBasedItems)
@@ -2436,6 +2439,10 @@ nsNavHistoryQueryResultNode::OnVisit(nsIURI* aURI, int64_t aVisitId,
 {
   if (aHidden && !mOptions->IncludeHidden())
     return NS_OK;
+  
+  
+  if (mTransitions.Length() > 0 && !mTransitions.Contains(aTransitionType))
+    return NS_OK;
 
   nsNavHistoryResult* result = GetResult();
   NS_ENSURE_STATE(result);
@@ -2498,11 +2505,6 @@ nsNavHistoryQueryResultNode::OnVisit(nsIURI* aURI, int64_t aVisitId,
     case QUERYUPDATE_SIMPLE: {
       
       
-      if (mTransitions.Length() > 0 && !mTransitions.Contains(aTransitionType))
-        return NS_OK;
-
-      
-      
       RefPtr<nsNavHistoryResultNode> addition;
       nsresult rv = history->VisitIdToResultNode(aVisitId, mOptions,
                                                  getter_AddRefs(addition));
@@ -2514,6 +2516,25 @@ nsNavHistoryQueryResultNode::OnVisit(nsIURI* aURI, int64_t aVisitId,
       addition->mTransitionType = aTransitionType;
       if (!evaluateQueryForNode(mQuery, mOptions, addition))
         return NS_OK; 
+
+      
+      
+      
+      
+      if (mOptions->MaxResults() &&
+          static_cast<uint32_t>(mChildren.Count()) >= mOptions->MaxResults()) {
+        uint16_t sortType = GetSortType();
+        if (sortType == nsINavHistoryQueryOptions::SORT_BY_DATE_ASCENDING &&
+            aTime > std::max(mChildren[0]->mTime,
+                             mChildren[mChildren.Count() -1]->mTime)) {
+          return NS_OK;
+        }
+        if (sortType == nsINavHistoryQueryOptions::SORT_BY_DATE_DESCENDING &&
+            aTime < std::min(mChildren[0]->mTime,
+                             mChildren[mChildren.Count() -1]->mTime)) {
+          return NS_OK;
+        }
+      }
 
       if (mOptions->ResultType() == nsNavHistoryQueryOptions::RESULTS_AS_VISIT) {
         
@@ -2537,6 +2558,12 @@ nsNavHistoryQueryResultNode::OnVisit(nsIURI* aURI, int64_t aVisitId,
           rv = InsertSortedChild(addition);
           NS_ENSURE_SUCCESS(rv, rv);
         }
+      }
+
+      
+      if (mOptions->MaxResults() &&
+          static_cast<uint32_t>(mChildren.Count()) > mOptions->MaxResults()) {
+        mChildren.RemoveObjectAt(mChildren.Count() - 1);
       }
 
       if (aAdded)
