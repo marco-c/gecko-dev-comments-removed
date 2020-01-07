@@ -127,6 +127,30 @@ void AccumulateCategorical(E enumValue) {
 
 
 
+template<class E>
+void
+AccumulateCategorical(const nsTArray<E>& enumValues)
+{
+  static_assert(IsCategoricalLabelEnum<E>::value,
+                "Only categorical label enum types are supported.");
+  nsTArray<uint32_t> intSamples(enumValues.Length());
+
+  for (E aValue: enumValues){
+    intSamples.AppendElement(static_cast<uint32_t>(aValue));
+  }
+
+  HistogramID categoricalId = static_cast<HistogramID>(CategoricalLabelId<E>::value);
+
+  Accumulate(categoricalId, intSamples);
+}
+
+
+
+
+
+
+
+
 
 template<class E>
 void AccumulateCategoricalKeyed(const nsCString& key, E enumValue) {
@@ -147,6 +171,14 @@ void AccumulateCategoricalKeyed(const nsCString& key, E enumValue) {
 
 
 void AccumulateCategorical(HistogramID id, const nsCString& label);
+
+
+
+
+
+
+
+void AccumulateCategorical(HistogramID id, const nsTArray<nsCString>& labels);
 
 
 
