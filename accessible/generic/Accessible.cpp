@@ -1085,7 +1085,7 @@ Accessible::NativeAttributes()
 
   
   nsAutoString value;
-  StyleInfo styleInfo(mContent->AsElement(), mDoc->PresShell());
+  StyleInfo styleInfo(mContent->AsElement());
 
   
   styleInfo.Display(value);

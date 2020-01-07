@@ -61,7 +61,7 @@ nsSMILCompositor::ComposeAttribute(bool& aMightHavePendingStyleUpdates)
   if (MightNeedBaseStyle()) {
     baseStyleContext =
       nsComputedDOMStyle::GetUnanimatedStyleContextNoFlush(mKey.mElement,
-                                                           nullptr, nullptr);
+                                                           nullptr);
   }
 
   

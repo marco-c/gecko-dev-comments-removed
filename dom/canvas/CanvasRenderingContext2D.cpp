@@ -1201,7 +1201,7 @@ CanvasRenderingContext2D::ParseColor(const nsAString& aString,
       
       
       RefPtr<nsStyleContext> canvasStyle =
-        nsComputedDOMStyle::GetStyleContext(mCanvasElement, nullptr, presShell);
+        nsComputedDOMStyle::GetStyleContext(mCanvasElement, nullptr);
       if (canvasStyle) {
         *aColor = canvasStyle->StyleColor()->mColor;
       }
@@ -1228,9 +1228,8 @@ CanvasRenderingContext2D::ParseColor(const nsAString& aString,
     RefPtr<nsStyleContext> parentContext;
     if (mCanvasElement && mCanvasElement->IsInUncomposedDoc()) {
       
-      parentContext = nsComputedDOMStyle::GetStyleContext(mCanvasElement,
-                                                          nullptr,
-                                                          presShell);
+      parentContext =
+        nsComputedDOMStyle::GetStyleContext(mCanvasElement, nullptr);
     }
 
     Unused << nsRuleNode::ComputeColor(
@@ -2003,20 +2002,18 @@ CanvasRenderingContext2D::ClearTarget()
 
   SetInitialState();
 
+  if (!mCanvasElement || !mCanvasElement->IsInUncomposedDoc()) {
+    return;
+  }
+
   
   
-  RefPtr<nsStyleContext> canvasStyle;
-  if (mCanvasElement && mCanvasElement->IsInUncomposedDoc()) {
-    nsCOMPtr<nsIPresShell> presShell = GetPresShell();
-    if (presShell) {
-      canvasStyle =
-        nsComputedDOMStyle::GetStyleContext(mCanvasElement, nullptr, presShell);
-      if (canvasStyle) {
-        WritingMode wm(canvasStyle);
-        if (wm.IsVertical() && !wm.IsSideways()) {
-          CurrentState().textBaseline = TextBaseline::MIDDLE;
-        }
-      }
+  RefPtr<nsStyleContext> canvasStyle =
+    nsComputedDOMStyle::GetStyleContext(mCanvasElement, nullptr);
+  if (canvasStyle) {
+    WritingMode wm(canvasStyle);
+    if (wm.IsVertical() && !wm.IsSideways()) {
+      CurrentState().textBaseline = TextBaseline::MIDDLE;
     }
   }
 }
@@ -2738,18 +2735,19 @@ CreateFontDeclaration(const nsAString& aFont,
 }
 
 static already_AddRefed<GeckoStyleContext>
-GetFontParentStyleContext(Element* aElement, nsIPresShell* aPresShell,
+GetFontParentStyleContext(Element* aElement,
+                          nsIPresShell* aPresShell,
                           ErrorResult& aError)
 {
   if (aElement && aElement->IsInUncomposedDoc()) {
     
     RefPtr<nsStyleContext> result =
-      nsComputedDOMStyle::GetStyleContext(aElement, nullptr, aPresShell);
+      nsComputedDOMStyle::GetStyleContext(aElement, nullptr);
     if (!result) {
       aError.Throw(NS_ERROR_FAILURE);
       return nullptr;
     }
-    return already_AddRefed<GeckoStyleContext>(result.forget().take()->AsGecko());
+    return GeckoStyleContext::TakeRef(result.forget());
   }
 
   
@@ -2918,17 +2916,11 @@ GetFontStyleForServo(Element* aElement, const nsAString& aFont,
 
   ServoStyleSet* styleSet = aPresShell->StyleSet()->AsServo();
 
-  RefPtr<ServoStyleContext> parentStyle;
+  RefPtr<nsStyleContext> parentStyle;
   
   
   if (aElement && aElement->IsInUncomposedDoc()) {
-    
-    aPresShell->FlushPendingNotifications(FlushType::Style);
-    
-    
-    
-    parentStyle =
-      styleSet->ResolveStyleLazily(aElement, CSSPseudoElementType::NotPseudo);
+    parentStyle = nsComputedDOMStyle::GetStyleContext(aElement, nullptr);
   } else {
     RefPtr<RawServoDeclarationBlock> declarations =
       CreateFontDeclarationForServo(NS_LITERAL_STRING("10px sans-serif"),
@@ -2945,14 +2937,13 @@ GetFontStyleForServo(Element* aElement, const nsAString& aFont,
              "GetFontParentStyleContext should have returned an error if the presshell is being destroyed.");
 
   RefPtr<ServoStyleContext> sc =
-    styleSet->ResolveForDeclarations(parentStyle, declarations);
+    styleSet->ResolveForDeclarations(parentStyle->AsServo(), declarations);
 
   
   
   
   
   Servo_SerializeFontValueForCanvas(declarations, &aOutUsedFont);
-
   return sc.forget();
 }
 
@@ -4588,7 +4579,7 @@ CanvasRenderingContext2D::DrawOrMeasureText(const nsAString& aRawText,
   if (mCanvasElement && mCanvasElement->IsInUncomposedDoc()) {
     
     canvasStyle =
-      nsComputedDOMStyle::GetStyleContext(mCanvasElement, nullptr, presShell);
+      nsComputedDOMStyle::GetStyleContext(mCanvasElement, nullptr);
     if (!canvasStyle) {
       return NS_ERROR_FAILURE;
     }

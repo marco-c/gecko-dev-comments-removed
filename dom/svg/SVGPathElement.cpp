@@ -330,7 +330,7 @@ SVGPathElement::BuildPath(PathBuilder* aBuilder)
   Float strokeWidth = 0;
 
   RefPtr<nsStyleContext> styleContext =
-    nsComputedDOMStyle::GetStyleContextNoFlush(this, nullptr, nullptr);
+    nsComputedDOMStyle::GetStyleContextNoFlush(this, nullptr);
   if (styleContext) {
     const nsStyleSVG* style = styleContext->StyleSVG();
     

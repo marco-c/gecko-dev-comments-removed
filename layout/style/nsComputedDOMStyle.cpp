@@ -378,12 +378,11 @@ nsComputedDOMStyle::nsComputedDOMStyle(dom::Element* aElement,
   , mAnimationFlag(aFlag)
 {
   MOZ_ASSERT(aElement && aPresShell);
+  MOZ_ASSERT(aPresShell->GetPresContext());
 
   mDocumentWeak = do_GetWeakReference(aPresShell->GetDocument());
   mContent = aElement;
   mPseudo = nsCSSPseudoElements::GetPseudoAtom(aPseudoElt);
-
-  MOZ_ASSERT(aPresShell->GetPresContext());
 }
 
 nsComputedDOMStyle::~nsComputedDOMStyle()
@@ -518,25 +517,12 @@ nsComputedDOMStyle::GetPropertyValue(const nsAString& aPropertyName,
 already_AddRefed<nsStyleContext>
 nsComputedDOMStyle::GetStyleContext(Element* aElement,
                                     nsAtom* aPseudo,
-                                    nsIPresShell* aPresShell,
                                     StyleType aStyleType)
 {
-  
-  
-  
-  
-  
-  nsCOMPtr<nsIPresShell> presShell =
-    nsContentUtils::GetPresShellForContent(aElement);
-  if (!presShell) {
-    presShell = aPresShell;
-    if (!presShell)
-      return nullptr;
+  if (nsIDocument* doc = aElement->GetComposedDoc()) {
+    doc->FlushPendingNotifications(FlushType::Style);
   }
-
-  presShell->FlushPendingNotifications(FlushType::Style);
-
-  return GetStyleContextNoFlush(aElement, aPseudo, presShell, aStyleType);
+  return GetStyleContextNoFlush(aElement, aPseudo, aStyleType);
 }
 
 #ifdef MOZ_OLD_STYLE
@@ -834,8 +820,8 @@ nsComputedDOMStyle::DoGetStyleContextNoFlush(Element* aElement,
   
   if (parent && parent->IsElement()) {
     RefPtr<nsStyleContext> p =
-      GetStyleContextNoFlush(parent->AsElement(), nullptr,
-                             aPresShell, aStyleType);
+      DoGetStyleContextNoFlush(parent->AsElement(), nullptr,
+                               aPresShell, aStyleType, eWithAnimation);
     MOZ_ASSERT(p && p->IsGecko());
     parentContext = GeckoStyleContext::TakeRef(p.forget());
   }
@@ -979,6 +965,11 @@ nsComputedDOMStyle::UpdateCurrentStyleSources(bool aNeedsLayoutFlush)
   }
 
   
+  
+  
+  
+
+  
   FlushTarget target = aNeedsLayoutFlush ? FlushTarget::Normal : GetFlushTarget(document);
 
   
@@ -1097,11 +1088,12 @@ nsComputedDOMStyle::UpdateCurrentStyleSources(bool aNeedsLayoutFlush)
 #endif
     
     RefPtr<nsStyleContext> resolvedStyleContext =
-      nsComputedDOMStyle::GetStyleContextNoFlush(
+      DoGetStyleContextNoFlush(
           mContent->AsElement(),
           mPseudo,
           presShellForContent ? presShellForContent.get() : mPresShell,
-          mStyleType);
+          mStyleType,
+          eWithAnimation);
     if (!resolvedStyleContext) {
       ClearStyleContext();
       return;
@@ -1111,9 +1103,8 @@ nsComputedDOMStyle::UpdateCurrentStyleSources(bool aNeedsLayoutFlush)
     
     
     NS_ASSERTION(target == FlushTarget::ParentOnly ||
-                 (mPresShell &&
-                   currentGeneration ==
-                     mPresShell->GetPresContext()->GetUndisplayedRestyleGeneration()),
+                 currentGeneration ==
+                     mPresShell->GetPresContext()->GetUndisplayedRestyleGeneration(),
                    "why should we have flushed style again?");
 
     SetResolvedStyleContext(Move(resolvedStyleContext), currentGeneration);

@@ -2975,6 +2975,11 @@ nsGenericHTMLElement::NewURIFromString(const nsAString& aURISpec,
 static bool
 IsOrHasAncestorWithDisplayNone(Element* aElement, nsIPresShell* aPresShell)
 {
+  
+  
+  
+  
+  
   AutoTArray<Element*, 10> elementsToCheck;
   
   
@@ -3005,8 +3010,7 @@ IsOrHasAncestorWithDisplayNone(Element* aElement, nsIPresShell* aPresShell)
             element, CSSPseudoElementType::NotPseudo);
       }
     } else {
-      sc = nsComputedDOMStyle::GetStyleContextNoFlush(element,
-                                                      nullptr, aPresShell);
+      sc = nsComputedDOMStyle::GetStyleContextNoFlush(element, nullptr);
     }
     if (sc->StyleDisplay()->mDisplay == StyleDisplay::None) {
       return true;
