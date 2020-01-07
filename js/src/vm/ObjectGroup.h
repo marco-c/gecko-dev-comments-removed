@@ -87,17 +87,97 @@ enum NewObjectKind {
 
 class ObjectGroup : public gc::TenuredCell
 {
+  public:
+    class Property;
+
+  private:
+    
+    const Class* clasp_; 
+
+    
+    GCPtr<TaggedProto> proto_; 
+
+    
+    JS::Realm* realm_;; 
+
+    
+    ObjectGroupFlags flags_; 
+
+    
+    
+    void* addendum_ = nullptr;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    Property** propertySet = nullptr;
+
+    
+
+  private:
+    static inline uint32_t offsetOfClasp() {
+        return offsetof(ObjectGroup, clasp_);
+    }
+
+    static inline uint32_t offsetOfProto() {
+        return offsetof(ObjectGroup, proto_);
+    }
+
+    static inline uint32_t offsetOfRealm() {
+        return offsetof(ObjectGroup, realm_);
+    }
+
+    static inline uint32_t offsetOfFlags() {
+        return offsetof(ObjectGroup, flags_);
+    }
+
+    static inline uint32_t offsetOfAddendum() {
+        return offsetof(ObjectGroup, addendum_);
+    }
+
     friend class gc::GCRuntime;
     friend class gc::GCTrace;
 
     
-    const Class* clasp_;
-
-    
-    GCPtr<TaggedProto> proto_;
-
-    
-    JS::Realm* realm_;
+    friend class js::jit::MacroAssembler;
 
   public:
     const Class* clasp() const {
@@ -156,10 +236,6 @@ class ObjectGroup : public gc::TenuredCell
     JSCompartment* maybeCompartment() const { return compartment(); }
     JS::Realm* realm() const { return realm_; }
 
-  private:
-    
-    ObjectGroupFlags flags_;
-
   public:
     
     enum AddendumKind {
@@ -191,10 +267,6 @@ class ObjectGroup : public gc::TenuredCell
     };
 
   private:
-    
-    
-    void* addendum_;
-
     void setAddendum(AddendumKind kind, void* addendum, bool writeBarrier = true);
 
     AddendumKind addendumKind() const {
@@ -333,49 +405,6 @@ class ObjectGroup : public gc::TenuredCell
         static jsid getKey(Property* p) { return p->id; }
     };
 
-  private:
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    Property** propertySet;
   public:
 
     inline ObjectGroup(const Class* clasp, TaggedProto proto, JS::Realm* realm,
@@ -463,30 +492,6 @@ class ObjectGroup : public gc::TenuredCell
     void finalize(FreeOp* fop);
 
     static const JS::TraceKind TraceKind = JS::TraceKind::ObjectGroup;
-
-  private:
-    
-    friend class js::jit::MacroAssembler;
-
-    static inline uint32_t offsetOfClasp() {
-        return offsetof(ObjectGroup, clasp_);
-    }
-
-    static inline uint32_t offsetOfProto() {
-        return offsetof(ObjectGroup, proto_);
-    }
-
-    static inline uint32_t offsetOfRealm() {
-        return offsetof(ObjectGroup, realm_);
-    }
-
-    static inline uint32_t offsetOfAddendum() {
-        return offsetof(ObjectGroup, addendum_);
-    }
-
-    static inline uint32_t offsetOfFlags() {
-        return offsetof(ObjectGroup, flags_);
-    }
 
   public:
     const ObjectGroupFlags* addressOfFlags() const {
