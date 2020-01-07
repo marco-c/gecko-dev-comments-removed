@@ -6,6 +6,7 @@ package org.mozilla.gecko.background.fxa;
 
 import org.mozilla.gecko.sync.ExtendedJSONObject;
 import org.mozilla.gecko.sync.Utils;
+import org.mozilla.gecko.util.StringUtils;
 
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
@@ -27,26 +28,21 @@ public class FxAccount20CreateDelegate {
 
 
 
-
   public FxAccount20CreateDelegate(byte[] emailUTF8, byte[] quickStretchedPW, boolean preVerified) throws UnsupportedEncodingException, GeneralSecurityException {
     this.emailUTF8 = emailUTF8;
     this.authPW = FxAccountUtils.generateAuthPW(quickStretchedPW);
     this.preVerified = preVerified;
   }
 
-  public ExtendedJSONObject getCreateBody() throws FxAccountClientException {
+  public ExtendedJSONObject getCreateBody() {
     final ExtendedJSONObject body = new ExtendedJSONObject();
-    try {
-      body.put("email", new String(emailUTF8, "UTF-8"));
-      body.put("authPW", Utils.byte2Hex(authPW));
-      if (preVerified) {
-        
-        
-        body.put("preVerified", preVerified);
-      }
-      return body;
-    } catch (UnsupportedEncodingException e) {
-      throw new FxAccountClientException(e);
+    body.put("email", new String(emailUTF8, StringUtils.UTF_8));
+    body.put("authPW", Utils.byte2Hex(authPW));
+    if (preVerified) {
+      
+      
+      body.put("preVerified", preVerified);
     }
+    return body;
   }
 }
