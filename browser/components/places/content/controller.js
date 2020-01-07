@@ -730,9 +730,15 @@ PlacesController.prototype = {
                                        }, window.top);
     if (performed) {
       
-      let insertedNodeId = PlacesUtils.bookmarks
-                                      .getIdForItemAt(ip.itemId, await ip.getIndex());
-      this._view.selectItems([insertedNodeId], false);
+      
+      
+      
+      let insertedNode = await PlacesUtils.bookmarks.fetch({
+        parentGuid: ip.guid,
+        index: await ip.getIndex()
+      });
+
+      this._view.selectItems([insertedNode.guid], false);
     }
   },
 
@@ -757,9 +763,8 @@ PlacesController.prototype = {
 
     let txn = PlacesTransactions.NewSeparator({ parentGuid: ip.guid, index });
     let guid = await txn.transact();
-    let itemId = await PlacesUtils.promiseItemId(guid);
     
-    this._view.selectItems([itemId], false);
+    this._view.selectItems([guid], false);
   },
 
   
@@ -1302,10 +1307,7 @@ PlacesController.prototype = {
     let itemsToSelect = [];
     if (PlacesUIUtils.useAsyncTransactions) {
       let doCopy = action == "copy";
-      let guidsToSelect = await handleTransferItems(items, ip, doCopy, this._view);
-
-      let guidsToIdMap = await PlacesUtils.promiseManyItemIds(guidsToSelect);
-      itemsToSelect = Array.from(guidsToIdMap.values());
+      itemsToSelect = await handleTransferItems(items, ip, doCopy, this._view);
     } else {
       let transactions = [];
       let insertionIndex = await ip.getIndex();

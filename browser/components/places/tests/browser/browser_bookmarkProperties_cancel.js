@@ -13,7 +13,6 @@ registerCleanupFunction(async function() {
 });
 
 let bookmarks; 
-let bookmarkIds; 
 
 add_task(async function setup() {
   bookmarks = await PlacesUtils.bookmarks.insertTree({
@@ -26,10 +25,6 @@ add_task(async function setup() {
       url: "http://example.com/2",
     }]
   });
-
-  bookmarkIds = await PlacesUtils.promiseManyItemIds([
-    bookmarks[0].guid, bookmarks[1].guid
-  ]);
 
   
   
@@ -45,7 +40,7 @@ add_task(async function test_cancel_with_no_changes() {
   }
 
   await withSidebarTree("bookmarks", async (tree) => {
-    tree.selectItems([bookmarkIds.get(bookmarks[0].guid)]);
+    tree.selectItems([bookmarks[0].guid]);
 
     
     
@@ -53,7 +48,7 @@ add_task(async function test_cancel_with_no_changes() {
     
     await tree.controller.remove("Remove Selection");
 
-    tree.selectItems([bookmarkIds.get(bookmarks[1].guid)]);
+    tree.selectItems([bookmarks[1].guid]);
 
     
     await withBookmarksDialog(
@@ -86,7 +81,7 @@ add_task(async function test_cancel_with_changes() {
   }
 
   await withSidebarTree("bookmarks", async (tree) => {
-    tree.selectItems([bookmarkIds.get(bookmarks[1].guid)]);
+    tree.selectItems([bookmarks[1].guid]);
 
     
     await withBookmarksDialog(
