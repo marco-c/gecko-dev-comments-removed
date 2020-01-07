@@ -254,6 +254,15 @@ private:
     Atomic<int32_t, Relaxed>        mMaxTimePerPollIter;
     Atomic<bool, Relaxed>           mTelemetryEnabledPref;
     Atomic<PRIntervalTime, Relaxed> mMaxTimeForPrClosePref;
+    
+    
+    Atomic<PRIntervalTime, Relaxed> mLastNetworkLinkChangeTime;
+    
+    
+    Atomic<PRIntervalTime, Relaxed> mNetworkLinkChangeBusyWaitPeriod;
+    
+    
+    Atomic<PRIntervalTime, Relaxed> mNetworkLinkChangeBusyWaitTimeout;
 
     
     

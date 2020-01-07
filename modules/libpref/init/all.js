@@ -1785,6 +1785,16 @@ pref("network.sts.max_time_for_events_between_two_polls", 100);
 
 
 
+
+pref("network.sts.poll_busy_wait_period", 50);
+
+
+
+
+pref("network.sts.poll_busy_wait_period_timeout", 7);
+
+
+
 pref("network.sts.max_time_for_pr_close_during_shutdown", 5000);
 
 
