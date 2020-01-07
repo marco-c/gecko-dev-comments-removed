@@ -4,7 +4,7 @@ function run_test() {
   
   
   var contentSB = new Cu.Sandbox(['http://www.google.com'],
-                                 { wantGlobalProperties: ["XMLHttpRequest"], wantComponents: true });
+                                 { wantGlobalProperties: ["XMLHttpRequest"] });
 
   
   Cu.evalInSandbox('xhr = new XMLHttpRequest();', contentSB);
@@ -30,13 +30,4 @@ function run_test() {
   var desc = Object.getOwnPropertyDescriptor(xhr, 'waivedAccessors');
   Assert.ok(desc.get === fWaiver);
   Assert.ok(desc.set === fWaiver);
-
-  
-  var unwaivedC = contentSB.Components;
-  Assert.ok(Cu.isXrayWrapper(unwaivedC));
-  var waivedC = unwaivedC.wrappedJSObject;
-  Assert.ok(waivedC && unwaivedC && (waivedC != unwaivedC));
-  xhr.waivedC = waivedC;
-  Assert.ok(xhr.waivedC === waivedC);
-  Assert.ok(Cu.unwaiveXrays(xhr.waivedC) === unwaivedC);
 }
