@@ -76,8 +76,21 @@ PrintTargetWindows::BeginPrinting(const nsAString& aTitle,
   docinfo.lpszDatatype = nullptr;
   docinfo.fwType = 0;
 
-  ::StartDocW(mDC, &docinfo);
-
+  
+  
+  
+  
+  
+  
+  
+  
+  int result = ::StartDocW(mDC, &docinfo);
+  if (result <= 0) {
+    if (::GetLastError() == ERROR_CANCELLED) {
+      return NS_ERROR_ABORT;
+    }
+    return NS_ERROR_FAILURE;
+  }
   return NS_OK;
 }
 

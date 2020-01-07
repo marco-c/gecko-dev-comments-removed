@@ -529,6 +529,10 @@ nsDeviceContext::BeginDocument(const nsAString& aTitle,
         mIsCurrentlyPrintingDoc = true;
     }
 
+    
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv) || rv == NS_ERROR_ABORT,
+                         "nsDeviceContext::BeginDocument failed");
+
     return rv;
 }
 
