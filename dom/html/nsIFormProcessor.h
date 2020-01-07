@@ -18,7 +18,11 @@
 #include "nsStringFwd.h"
 #include "nsTArrayForwardDeclare.h"
 
-class nsIDOMHTMLElement;
+namespace mozilla {
+namespace dom {
+class Element;
+}
+}
 
 
 #define NS_FORMPROCESSOR_CID \
@@ -53,7 +57,7 @@ public:
 
 
 
-  virtual nsresult ProcessValue(nsIDOMHTMLElement* aElement,
+  virtual nsresult ProcessValue(mozilla::dom::Element* aElement,
                                 const nsAString& aName,
                                 nsAString& aValue) = 0;
 
