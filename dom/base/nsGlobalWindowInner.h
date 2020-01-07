@@ -1097,8 +1097,42 @@ public:
   bool IsPopupSpamWindow();
 
 private:
-  template<typename Method>
-  void CallOnChildren(Method aMethod);
+  
+  
+  
+  
+  enum class CallState
+  {
+    Continue,
+    Stop,
+  };
+
+  
+  
+  
+  template<typename Method, typename... Args>
+  CallState CallOnChildren(Method aMethod, Args& ...aArgs);
+
+  
+  
+  template<typename Return, typename Method, typename... Args>
+  typename std::enable_if<std::is_void<Return>::value,
+                          nsGlobalWindowInner::CallState>::type
+  CallChild(nsGlobalWindowInner* aWindow, Method aMethod, Args& ...aArgs)
+  {
+    (aWindow->*aMethod)(aArgs...);
+    return nsGlobalWindowInner::CallState::Continue;
+  }
+
+  
+  template<typename Return, typename Method, typename... Args>
+  typename std::enable_if<std::is_same<Return,
+                                       nsGlobalWindowInner::CallState>::value,
+                          nsGlobalWindowInner::CallState>::type
+  CallChild(nsGlobalWindowInner* aWindow, Method aMethod, Args& ...aArgs)
+  {
+    return (aWindow->*aMethod)(aArgs...);
+  }
 
   void FreezeInternal();
   void ThawInternal();
