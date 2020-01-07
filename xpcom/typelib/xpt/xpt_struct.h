@@ -257,8 +257,8 @@ struct XPTConstDescriptor {
 
 
 struct XPTParamDescriptor {
-  uint8_t flags;
-  XPTTypeDescriptor type;
+  uint8_t mFlags;
+  XPTTypeDescriptor mType;
 };
 
 
