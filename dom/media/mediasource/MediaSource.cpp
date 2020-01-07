@@ -418,6 +418,12 @@ MediaSource::Enabled(JSContext* cx, JSObject* aGlobal)
   return Preferences::GetBool("media.mediasource.enabled");
 }
 
+ bool
+MediaSource::ExperimentalEnabled(JSContext* cx, JSObject* aGlobal)
+{
+  return Preferences::GetBool("media.mediasource.experimental.enabled");
+}
+
 void
 MediaSource::SetLiveSeekableRange(double aStart, double aEnd, ErrorResult& aRv)
 {
