@@ -693,8 +693,10 @@ Animation::Tick()
     
     
     
-    mPendingReadyTime.SetValue(std::min(mTimeline->GetCurrentTime().Value(),
-                                        mPendingReadyTime.Value()));
+    TimeDuration currentTime = mTimeline->GetCurrentTime().Value();
+    if (currentTime < mPendingReadyTime.Value()) {
+      mPendingReadyTime.SetValue(currentTime);
+    }
     FinishPendingAt(mPendingReadyTime.Value());
     mPendingReadyTime.SetNull();
   }
