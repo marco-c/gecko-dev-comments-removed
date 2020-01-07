@@ -340,6 +340,13 @@ public:
   
   
   
+  void UpdateBoundsFromView();
+
+  
+  
+  
+  
+  
   
   CGFloat                 BackingScaleFactor() const;
 
