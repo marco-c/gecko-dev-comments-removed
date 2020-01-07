@@ -126,6 +126,7 @@ struct NrIceCandidatePair {
   NrIceCandidate remote;
   
   std::string codeword;
+  uint64_t component_id;
 
   
   uint64_t bytes_sent;
