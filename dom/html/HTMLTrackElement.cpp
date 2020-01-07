@@ -361,13 +361,14 @@ HTMLTrackElement::BindToTree(nsIDocument* aDocument,
   NS_ENSURE_SUCCESS(rv, rv);
 
   LOG(LogLevel::Debug, ("Track Element bound to tree."));
-  if (!aParent || !aParent->IsNodeOfType(nsINode::eMEDIA)) {
+  auto* parent = HTMLMediaElement::FromNodeOrNull(aParent);
+  if (!parent) {
     return NS_OK;
   }
 
   
   if (!mMediaParent) {
-    mMediaParent = static_cast<HTMLMediaElement*>(aParent);
+    mMediaParent = parent;
 
     
     mMediaParent->NotifyAddedSource();

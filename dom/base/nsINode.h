@@ -423,8 +423,6 @@ public:
     
     eDATA_NODE           = 1 << 8,
     
-    eMEDIA               = 1 << 9,
-    
     eANIMATION           = 1 << 10,
     
     eFILTER              = 1 << 11,
