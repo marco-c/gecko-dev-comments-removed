@@ -57,19 +57,19 @@ function getURL(sourceUrl, debuggeeUrl = "") {
       
       return def;
 
-    case "webpack:":
-      
+    case "moz-extension:":
+    case "resource:":
       return (0, _lodash.merge)(def, {
-        path: path,
-        group: "webpack://",
-        filename: filename
+        path,
+        group: `${protocol}//${host || ""}`,
+        filename
       });
 
+    case "webpack:":
     case "ng:":
-      
       return (0, _lodash.merge)(def, {
         path: path,
-        group: "ng://",
+        group: `${protocol}//`,
         filename: filename
       });
 
@@ -91,14 +91,12 @@ function getURL(sourceUrl, debuggeeUrl = "") {
     case null:
       if (pathname && pathname.startsWith("/")) {
         
-        
         return (0, _lodash.merge)(def, {
           path: path,
           group: "file://",
           filename: filename
         });
       } else if (host === null) {
-        
         
         return (0, _lodash.merge)(def, {
           path: url,
