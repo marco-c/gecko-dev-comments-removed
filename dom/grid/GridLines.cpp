@@ -87,6 +87,21 @@ GridLines::SetLineInfo(const ComputedGridTrackInfo* aTrackInfo,
     uint32_t numRepeatTracks = aTrackInfo->mRemovedRepeatTracks.Length();
     uint32_t numAddedLines = 0;
 
+    
+    
+    
+    
+    
+    
+    uint32_t leadingTrackCount = trackCount;
+    if (numRepeatTracks > 0) {
+      for (auto& removedTrack : aTrackInfo->mRemovedRepeatTracks) {
+        if (removedTrack) {
+          ++leadingTrackCount;
+        }
+      }
+    }
+
     for (uint32_t i = aTrackInfo->mStartFragmentTrack;
          i < aTrackInfo->mEndFragmentTrack + 1;
          i++) {
@@ -137,6 +152,7 @@ GridLines::SetLineInfo(const ComputedGridTrackInfo* aTrackInfo,
                                                lastTrackEdge,
                                                repeatIndex,
                                                numRepeatTracks,
+                                               leadingTrackCount,
                                                lineNames);
       }
 
@@ -145,6 +161,7 @@ GridLines::SetLineInfo(const ComputedGridTrackInfo* aTrackInfo,
       MOZ_ASSERT(line1Index > 0, "line1Index must be positive.");
       bool isBeforeFirstExplicit =
         (line1Index <= aTrackInfo->mNumLeadingImplicitTracks);
+      bool isAfterLastExplicit = line1Index > (leadingTrackCount + 1);
       
       
       
@@ -152,11 +169,13 @@ GridLines::SetLineInfo(const ComputedGridTrackInfo* aTrackInfo,
       
       
       uint32_t lineNumber = isBeforeFirstExplicit ? 0 :
-        (line1Index - aTrackInfo->mNumLeadingImplicitTracks + numAddedLines);
+        (line1Index + numAddedLines - aTrackInfo->mNumLeadingImplicitTracks);
+
+      
+      int32_t lineNegativeNumber = isAfterLastExplicit ? 0 :
+        (line1Index + numAddedLines - (leadingTrackCount + 1));
       GridDeclaration lineType =
-        (isBeforeFirstExplicit ||
-         line1Index > (aTrackInfo->mNumLeadingImplicitTracks +
-                       aTrackInfo->mNumExplicitTracks + 1))
+        (isBeforeFirstExplicit || isAfterLastExplicit)
          ? GridDeclaration::Implicit
          : GridDeclaration::Explicit;
       line->SetLineValues(
@@ -165,6 +184,7 @@ GridLines::SetLineInfo(const ComputedGridTrackInfo* aTrackInfo,
         nsPresContext::AppUnitsToDoubleCSSPixels(startOfNextTrack -
                                                  lastTrackEdge),
         lineNumber,
+        lineNegativeNumber,
         lineType
       );
 
@@ -181,6 +201,7 @@ GridLines::AppendRemovedAutoFits(const ComputedGridTrackInfo* aTrackInfo,
                                  nscoord aLastTrackEdge,
                                  uint32_t& aRepeatIndex,
                                  uint32_t aNumRepeatTracks,
+                                 uint32_t aNumLeadingTracks,
                                  nsTArray<nsString>& aLineNames)
 {
   
@@ -225,13 +246,29 @@ GridLines::AppendRemovedAutoFits(const ComputedGridTrackInfo* aTrackInfo,
 
     RefPtr<GridLine> line = new GridLine(this);
     mLines.AppendElement(line);
+
+    
+    
+    
+    
+    
     uint32_t lineNumber = aTrackInfo->mRepeatFirstTrack +
                           aRepeatIndex + 1;
+
+    
+    
+    
+    
+    
+    int32_t lineNegativeNumber = (aTrackInfo->mNumLeadingImplicitTracks +
+                                  aTrackInfo->mRepeatFirstTrack +
+                                  aRepeatIndex) - aNumLeadingTracks;
     line->SetLineValues(
       aLineNames,
       nsPresContext::AppUnitsToDoubleCSSPixels(aLastTrackEdge),
       nsPresContext::AppUnitsToDoubleCSSPixels(0),
       lineNumber,
+      lineNegativeNumber,
       GridDeclaration::Explicit
     );
 
