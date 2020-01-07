@@ -4,6 +4,7 @@
 
 use dom::bindings::cell::DomRefCell;
 use dom::bindings::conversions::DerivedFrom;
+use dom::bindings::error::{Error, ErrorResult};
 use dom::bindings::str::DOMString;
 use dom::event::{EventBubbles, EventCancelable};
 use dom::eventtarget::EventTarget;
@@ -13,52 +14,108 @@ use textinput::{SelectionDirection, TextInput};
 
 pub trait TextControl: DerivedFrom<EventTarget> + DerivedFrom<Node> {
     fn textinput(&self) -> &DomRefCell<TextInput<ScriptToConstellationChan>>;
+    fn selection_api_applies(&self) -> bool;
 
     
-    fn dom_selection_start(&self) -> u32 {
-        self.textinput().borrow().get_selection_start()
-    }
-
-    
-    fn set_dom_selection_start(&self, start: u32) {
+    fn get_dom_selection_start(&self) -> Option<u32> {
         
-        let mut end = self.dom_selection_end();
-
-        
-        if end < start {
-            end = start;
+        if !self.selection_api_applies() {
+            return None;
         }
 
         
-        self.set_selection_range(start, end, self.selection_direction());
+        Some(self.selection_start())
     }
 
     
-    fn dom_selection_end(&self) -> u32 {
-        self.textinput().borrow().get_absolute_insertion_point() as u32
-    }
-
-    
-    fn set_dom_selection_end(&self, end: u32) {
-        self.set_selection_range(self.dom_selection_start(), end, self.selection_direction());
-    }
-
-    
-    fn dom_selection_direction(&self) -> DOMString {
-        DOMString::from(self.selection_direction())
-    }
-
-    
-    fn set_dom_selection_direction(&self, direction: DOMString) {
-        self.textinput().borrow_mut().selection_direction = SelectionDirection::from(direction);
-    }
-
-    
-    fn set_dom_selection_range(&self, start: u32, end: u32, direction: Option<DOMString>) {
+    fn set_dom_selection_start(&self, start: Option<u32>) -> ErrorResult {
         
-        let direction = direction.map_or(SelectionDirection::None, |d| SelectionDirection::from(d));
+        if !self.selection_api_applies() {
+            return Err(Error::InvalidState);
+        }
 
-        self.set_selection_range(start, end, direction);
+        
+        let mut end = self.selection_end();
+
+        
+        if let Some(s) = start {
+            if end < s {
+                end = s;
+            }
+        }
+
+        
+        self.set_selection_range(start, Some(end), Some(self.selection_direction()));
+        Ok(())
+    }
+
+    
+    fn get_dom_selection_end(&self) -> Option<u32> {
+        
+        if !self.selection_api_applies() {
+            return None;
+        }
+
+        
+        Some(self.selection_end())
+    }
+
+    
+    fn set_dom_selection_end(&self, end: Option<u32>) -> ErrorResult {
+        
+        if !self.selection_api_applies() {
+            return Err(Error::InvalidState);
+        }
+
+        
+        self.set_selection_range(Some(self.selection_start()), end, Some(self.selection_direction()));
+        Ok(())
+    }
+
+    
+    fn get_dom_selection_direction(&self) -> Option<DOMString> {
+        
+        if !self.selection_api_applies() {
+            return None;
+        }
+
+        Some(DOMString::from(self.selection_direction()))
+    }
+
+    
+    fn set_dom_selection_direction(&self, direction: Option<DOMString>) -> ErrorResult {
+        
+        if !self.selection_api_applies() {
+            return Err(Error::InvalidState);
+        }
+
+        
+        self.set_selection_range(
+            Some(self.selection_start()),
+            Some(self.selection_end()),
+            direction.map(|d| SelectionDirection::from(d))
+        );
+        Ok(())
+    }
+
+    
+    fn set_dom_selection_range(&self, start: u32, end: u32, direction: Option<DOMString>) -> ErrorResult {
+        
+        if !self.selection_api_applies() {
+            return Err(Error::InvalidState);
+        }
+
+        
+        self.set_selection_range(Some(start), Some(end), direction.map(|d| SelectionDirection::from(d)));
+        Ok(())
+    }
+
+    fn selection_start(&self) -> u32 {
+        self.textinput().borrow().get_selection_start()
+    }
+
+    fn selection_end(&self) -> u32 {
+        self.textinput().borrow().get_absolute_insertion_point() as u32
     }
 
     fn selection_direction(&self) -> SelectionDirection {
@@ -66,12 +123,15 @@ pub trait TextControl: DerivedFrom<EventTarget> + DerivedFrom<Node> {
     }
 
     
-    fn set_selection_range(&self, start: u32, end: u32, direction: SelectionDirection) {
+    fn set_selection_range(&self, start: Option<u32>, end: Option<u32>, direction: Option<SelectionDirection>) {
         
-        self.textinput().borrow_mut().selection_direction = direction;
+        let start = start.unwrap_or(0);
 
         
-        self.textinput().borrow_mut().set_selection_range(start, end);
+        let end = end.unwrap_or(0);
+
+        
+        self.textinput().borrow_mut().set_selection_range(start, end, direction.unwrap_or(SelectionDirection::None));
 
         
         let window = window_from_node(self);
