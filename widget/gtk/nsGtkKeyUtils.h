@@ -132,8 +132,10 @@ public:
 
 
 
+
     static void InitKeyEvent(WidgetKeyboardEvent& aKeyEvent,
-                             GdkEventKey* aGdkKeyEvent);
+                             GdkEventKey* aGdkKeyEvent,
+                             bool aIsProcessedByIME);
 
     
 
