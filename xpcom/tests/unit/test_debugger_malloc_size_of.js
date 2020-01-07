@@ -9,7 +9,6 @@
 
 
 
-var Cu = Components.utils;
 const { byteSize } = Cu.getJSTestingFunctions();
 
 function run_test() {

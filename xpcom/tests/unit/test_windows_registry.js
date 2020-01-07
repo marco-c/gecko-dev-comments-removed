@@ -5,12 +5,6 @@
 
 
 
-const Cr = Components.results;
-const Ci = Components.interfaces;
-const Cc = Components.classes;
-const Cu = Components.utils;
-const CC = Components.Constructor;
-
 const nsIWindowsRegKey = Ci.nsIWindowsRegKey;
 let regKeyComponent = Cc["@mozilla.org/windows-registry-key;1"];
 

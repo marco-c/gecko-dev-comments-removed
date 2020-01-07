@@ -3,9 +3,6 @@
 
 
 
-var Cc = Components.classes;
-var Ci = Components.interfaces;
-
 function run_test() {
   
   let base = Cc["@mozilla.org/file/directory_service;1"]

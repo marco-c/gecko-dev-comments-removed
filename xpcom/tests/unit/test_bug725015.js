@@ -2,9 +2,6 @@
 
 
 
-var Cc = Components.classes;
-var Ci = Components.interfaces;
-
 Components.utils.import("resource://gre/modules/Services.jsm");
 
 const manifest = do_get_file("bug725015.manifest");

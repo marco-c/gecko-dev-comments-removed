@@ -6,10 +6,6 @@
 
 
 
-var Cc = Components.classes;
-var Ci = Components.interfaces;
-var Cr = Components.results;
-
 function run_test() {
   test1();
   test2();

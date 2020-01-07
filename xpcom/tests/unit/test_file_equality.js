@@ -4,10 +4,6 @@
 
 
 
-var Cr = Components.results;
-var Ci = Components.interfaces;
-
-var CC = Components.Constructor;
 var LocalFile = CC("@mozilla.org/file/local;1", "nsIFile", "initWithPath");
 
 function run_test() {

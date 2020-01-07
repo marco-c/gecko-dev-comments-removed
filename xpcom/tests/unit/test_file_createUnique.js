@@ -3,10 +3,6 @@
 
 
 
-var Cc = Components.classes;
-var Ci = Components.interfaces;
-var Cr = Components.results;
-
 function run_test() {
   
   var longLeafName = new Array(256).join("T");

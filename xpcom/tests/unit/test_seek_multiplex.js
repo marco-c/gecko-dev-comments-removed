@@ -2,11 +2,6 @@
 
 
 
-var Ci = Components.interfaces;
-var Cr = Components.results;
-var CC = Components.Constructor;
-var Cc = Components.classes;
-
 
 const data = "0123456789";
 
@@ -160,4 +155,3 @@ function run_test() {
   test_multiplex_streams();
   test_multiplex_bug797871();
 }
-

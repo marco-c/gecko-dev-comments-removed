@@ -5,12 +5,6 @@
 
 
 
-var Cr = Components.results;
-var Ci = Components.interfaces;
-var Cc = Components.classes;
-var Cu = Components.utils;
-var CC = Components.Constructor;
-
 const LocalFile = CC("@mozilla.org/file/local;1", "nsIFile", "initWithPath");
 
 Cu.import("resource://gre/modules/Services.jsm");
