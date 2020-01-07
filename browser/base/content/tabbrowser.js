@@ -28,9 +28,9 @@ window._gBrowser = {
     this._setupInitialBrowserAndTab();
 
     if (Services.prefs.getBoolPref("browser.display.use_system_colors")) {
-      this.tabpanels.style.backgroundColor = "-moz-default-background-color";
+      this.mPanelContainer.style.backgroundColor = "-moz-default-background-color";
     } else if (Services.prefs.getIntPref("browser.display.document_color_use") == 2) {
-      this.tabpanels.style.backgroundColor =
+      this.mPanelContainer.style.backgroundColor =
         Services.prefs.getCharPref("browser.display.background_color");
     }
 
@@ -43,7 +43,7 @@ window._gBrowser = {
 
       
       
-      this.tabpanels.classList.add("tabbrowser-tabpanels");
+      this.mPanelContainer.classList.add("tabbrowser-tabpanels");
     } else {
       this._outerWindowIDBrowserMap.set(this.selectedBrowser.outerWindowID,
         this.selectedBrowser);
@@ -127,7 +127,7 @@ window._gBrowser = {
   _browserBindingProperties: [
     "canGoBack", "canGoForward", "goBack", "goForward", "permitUnload",
     "reload", "reloadWithFlags", "stop", "loadURI", "loadURIWithFlags",
-    "goHome", "homePage", "gotoIndex", "currentURI", "documentURI",
+    "gotoIndex", "currentURI", "documentURI",
     "preferences", "imageDocument", "isRemoteBrowser", "messageManager",
     "getTabBrowser", "finder", "fastFind", "sessionHistory", "contentTitle",
     "characterSet", "fullZoom", "textZoom", "webProgress",
@@ -199,24 +199,24 @@ window._gBrowser = {
     return this.tabbox = document.getElementById("tabbrowser-tabbox");
   },
 
-  get tabpanels() {
-    delete this.tabpanels;
-    return this.tabpanels = document.getElementById("tabbrowser-tabpanels");
+  get mPanelContainer() {
+    delete this.mPanelContainer;
+    return this.mPanelContainer = document.getElementById("tabbrowser-tabpanels");
   },
 
   get addEventListener() {
     delete this.addEventListener;
-    return this.addEventListener = this.tabpanels.addEventListener.bind(this.tabpanels);
+    return this.addEventListener = this.mPanelContainer.addEventListener.bind(this.mPanelContainer);
   },
 
   get removeEventListener() {
     delete this.removeEventListener;
-    return this.removeEventListener = this.tabpanels.removeEventListener.bind(this.tabpanels);
+    return this.removeEventListener = this.mPanelContainer.removeEventListener.bind(this.mPanelContainer);
   },
 
   get dispatchEvent() {
     delete this.dispatchEvent;
-    return this.dispatchEvent = this.tabpanels.dispatchEvent.bind(this.tabpanels);
+    return this.dispatchEvent = this.mPanelContainer.dispatchEvent.bind(this.mPanelContainer);
   },
 
   get visibleTabs() {
@@ -299,7 +299,7 @@ window._gBrowser = {
     this._selectedTab = tab;
 
     let uniqueId = this._generateUniquePanelID();
-    this.tabpanels.childNodes[0].id = uniqueId;
+    this.mPanelContainer.childNodes[0].id = uniqueId;
     tab.linkedPanel = uniqueId;
     tab.permanentKey = browser.permanentKey;
     tab._tPos = 0;
@@ -368,21 +368,8 @@ window._gBrowser = {
     return this.selectedBrowser.loadURIWithFlags(aURI, aFlags, aReferrerURI, aCharset, aPostData);
   },
 
-  goHome() {
-    return this.selectedBrowser.goHome();
-  },
-
   gotoIndex(aIndex) {
     return this.selectedBrowser.gotoIndex(aIndex);
-  },
-
-  set homePage(val) {
-    this.selectedBrowser.homePage = val;
-    return val;
-  },
-
-  get homePage() {
-    return this.selectedBrowser.homePage;
   },
 
   get currentURI() {
@@ -1025,12 +1012,13 @@ window._gBrowser = {
 
     
     
+    const nsIWebProgressListener = Ci.nsIWebProgressListener;
     if (newTab.hasAttribute("busy") && !this.mIsBusy) {
       this.mIsBusy = true;
       this._callProgressListeners(null, "onStateChange",
                                   [webProgress, null,
-                                   Ci.nsIWebProgressListener.STATE_START |
-                                   Ci.nsIWebProgressListener.STATE_IS_NETWORK, 0],
+                                  nsIWebProgressListener.STATE_START |
+                                  nsIWebProgressListener.STATE_IS_NETWORK, 0],
                                   true, false);
     }
 
@@ -1040,8 +1028,8 @@ window._gBrowser = {
       this.mIsBusy = false;
       this._callProgressListeners(null, "onStateChange",
                                   [webProgress, null,
-                                   Ci.nsIWebProgressListener.STATE_STOP |
-                                   Ci.nsIWebProgressListener.STATE_IS_NETWORK, 0],
+                                  nsIWebProgressListener.STATE_STOP |
+                                  nsIWebProgressListener.STATE_IS_NETWORK, 0],
                                   true, false);
     }
 
@@ -1799,7 +1787,7 @@ window._gBrowser = {
     this._preloadedBrowser = browser;
 
     let notificationbox = this.getNotificationBox(browser);
-    this.tabpanels.appendChild(notificationbox);
+    this.mPanelContainer.appendChild(notificationbox);
 
     if (remoteType != E10SUtils.NOT_REMOTE) {
       
@@ -2054,7 +2042,7 @@ window._gBrowser = {
       
       
       
-      this.tabpanels.appendChild(notificationbox);
+      this.mPanelContainer.appendChild(notificationbox);
     }
 
     
@@ -2145,7 +2133,7 @@ window._gBrowser = {
     aBrowser.destroy();
 
     let notificationbox = this.getNotificationBox(aBrowser);
-    this.tabpanels.removeChild(notificationbox);
+    this.mPanelContainer.removeChild(notificationbox);
     tab.removeAttribute("linkedpanel");
 
     this._createLazyBrowser(tab);
@@ -3956,10 +3944,13 @@ window._gBrowser = {
         this._tabListeners.delete(tab);
       }
     }
-
-    Services.els.removeSystemEventListener(document, "keydown", this, false);
+    const nsIEventListenerService =
+      Ci.nsIEventListenerService;
+    let els = Cc["@mozilla.org/eventlistenerservice;1"]
+      .getService(nsIEventListenerService);
+    els.removeSystemEventListener(document, "keydown", this, false);
     if (AppConstants.platform == "macosx") {
-      Services.els.removeSystemEventListener(document, "keypress", this, false);
+      els.removeSystemEventListener(document, "keypress", this, false);
     }
     window.removeEventListener("sizemodechange", this);
     window.removeEventListener("occlusionstatechange", this);
@@ -4247,7 +4238,8 @@ class TabProgressListener {
 
     
     
-    if (aStateFlags & Ci.nsIWebProgressListener.STATE_STOP &&
+    const nsIWebProgressListener = Ci.nsIWebProgressListener;
+    if (aStateFlags & nsIWebProgressListener.STATE_STOP &&
         this.mRequestCount == 0 &&
         !aLocation) {
       return true;
@@ -4285,9 +4277,11 @@ class TabProgressListener {
     if (!aRequest)
       return;
 
+    const nsIWebProgressListener = Ci.nsIWebProgressListener;
+    const nsIChannel = Ci.nsIChannel;
     let location, originalLocation;
     try {
-      aRequest.QueryInterface(Ci.nsIChannel);
+      aRequest.QueryInterface(nsIChannel);
       location = aRequest.URI;
       originalLocation = aRequest.originalURI;
     } catch (ex) {}
@@ -4300,15 +4294,15 @@ class TabProgressListener {
     
     
     if ((ignoreBlank &&
-         aStateFlags & Ci.nsIWebProgressListener.STATE_STOP &&
-         aStateFlags & Ci.nsIWebProgressListener.STATE_IS_NETWORK) ||
+        aStateFlags & nsIWebProgressListener.STATE_STOP &&
+        aStateFlags & nsIWebProgressListener.STATE_IS_NETWORK) ||
         !ignoreBlank && this.mBlank) {
       this.mBlank = false;
     }
 
-    if (aStateFlags & Ci.nsIWebProgressListener.STATE_START) {
+    if (aStateFlags & nsIWebProgressListener.STATE_START) {
       this.mRequestCount++;
-    } else if (aStateFlags & Ci.nsIWebProgressListener.STATE_STOP) {
+    } else if (aStateFlags & nsIWebProgressListener.STATE_STOP) {
       const NS_ERROR_UNKNOWN_HOST = 2152398878;
       if (--this.mRequestCount > 0 && aStatus == NS_ERROR_UNKNOWN_HOST) {
         
@@ -4320,8 +4314,8 @@ class TabProgressListener {
       this.mRequestCount = 0;
     }
 
-    if (aStateFlags & Ci.nsIWebProgressListener.STATE_START &&
-        aStateFlags & Ci.nsIWebProgressListener.STATE_IS_NETWORK) {
+    if (aStateFlags & nsIWebProgressListener.STATE_START &&
+        aStateFlags & nsIWebProgressListener.STATE_IS_NETWORK) {
       if (aWebProgress.isTopLevel) {
         
         
@@ -4349,7 +4343,7 @@ class TabProgressListener {
       }
 
       if (this._shouldShowProgress(aRequest)) {
-        if (!(aStateFlags & Ci.nsIWebProgressListener.STATE_RESTORING) &&
+        if (!(aStateFlags & nsIWebProgressListener.STATE_RESTORING) &&
             aWebProgress && aWebProgress.isTopLevel) {
           this.mTab.setAttribute("busy", "true");
           this.mTab._notselectedsinceload = !this.mTab.selected;
@@ -4386,8 +4380,8 @@ class TabProgressListener {
           gBrowser.mIsBusy = true;
         }
       }
-    } else if (aStateFlags & Ci.nsIWebProgressListener.STATE_STOP &&
-               aStateFlags & Ci.nsIWebProgressListener.STATE_IS_NETWORK) {
+    } else if (aStateFlags & nsIWebProgressListener.STATE_STOP &&
+               aStateFlags & nsIWebProgressListener.STATE_IS_NETWORK) {
 
       if (this.mTab.hasAttribute("busy")) {
         this.mTab.removeAttribute("busy");
@@ -4471,9 +4465,8 @@ class TabProgressListener {
                                 [aWebProgress, aRequest, aStateFlags, aStatus],
                                 false);
 
-    if (aStateFlags &
-        (Ci.nsIWebProgressListener.STATE_START |
-         Ci.nsIWebProgressListener.STATE_STOP)) {
+    if (aStateFlags & (nsIWebProgressListener.STATE_START |
+        nsIWebProgressListener.STATE_STOP)) {
       
       this.mMessage = "";
       this.mTotalProgress = 0;
