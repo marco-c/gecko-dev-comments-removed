@@ -4578,7 +4578,7 @@ XREMain::XRE_mainRun()
 #if defined(MOZ_SANDBOX)
   
   
-  SandboxBroker::CacheRulesDirectories();
+  SandboxBroker::GeckoDependentInitialize();
 #endif
 #endif
 

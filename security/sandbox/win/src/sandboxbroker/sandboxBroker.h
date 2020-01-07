@@ -30,7 +30,7 @@ public:
 
 
 
-  static void CacheRulesDirectories();
+  static void GeckoDependentInitialize();
 
   bool LaunchApp(const wchar_t *aPath,
                  const wchar_t *aArguments,
