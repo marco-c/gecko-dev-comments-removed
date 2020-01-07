@@ -36,6 +36,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   NewTabUtils: "resource://gre/modules/NewTabUtils.jsm",
   PageActions: "resource:///modules/PageActions.jsm",
   PageThumbs: "resource://gre/modules/PageThumbs.jsm",
+  PanelMultiView: "resource:///modules/PanelMultiView.jsm",
   PanelView: "resource:///modules/PanelMultiView.jsm",
   PluralForm: "resource://gre/modules/PluralForm.jsm",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
@@ -4334,17 +4335,17 @@ var XULBrowserWindow = {
   },
 
   setOverLink(url, anchorElt) {
-    if (url) {
-      url = Services.textToSubURI.unEscapeURIForUI("UTF-8", url);
+    const textToSubURI = Cc["@mozilla.org/intl/texttosuburi;1"].
+                         getService(Ci.nsITextToSubURI);
+    url = textToSubURI.unEscapeURIForUI("UTF-8", url);
 
-      
-      
-      url = url.replace(/[\u200e\u200f\u202a\u202b\u202c\u202d\u202e]/g,
-                        encodeURIComponent);
+    
+    
+    url = url.replace(/[\u200e\u200f\u202a\u202b\u202c\u202d\u202e]/g,
+                      encodeURIComponent);
 
-      if (gURLBar && gURLBar._mayTrimURLs )
-        url = trimURL(url);
-    }
+    if (gURLBar && gURLBar._mayTrimURLs )
+      url = trimURL(url);
 
     this.overLink = url;
     LinkTargetDisplay.update();
@@ -7255,7 +7256,7 @@ var gIdentityHandler = {
   handleMoreInfoClick(event) {
     displaySecurityInfo();
     event.stopPropagation();
-    this._identityPopup.hidePopup();
+    PanelMultiView.hidePopup(this._identityPopup);
   },
 
   showSecuritySubView() {
@@ -7277,14 +7278,14 @@ var gIdentityHandler = {
     
     BrowserReloadWithFlags(
       Ci.nsIWebNavigation.LOAD_FLAGS_ALLOW_MIXED_CONTENT);
-    this._identityPopup.hidePopup();
+    PanelMultiView.hidePopup(this._identityPopup);
   },
 
   enableMixedContentProtection() {
     gBrowser.selectedBrowser.messageManager.sendAsyncMessage(
       "MixedContent:ReenableProtection", {});
     BrowserReload();
-    this._identityPopup.hidePopup();
+    PanelMultiView.hidePopup(this._identityPopup);
   },
 
   removeCertException() {
@@ -7296,7 +7297,7 @@ var gIdentityHandler = {
     let port = this._uri.port > 0 ? this._uri.port : 443;
     this._overrideService.clearValidityOverride(host, port);
     BrowserReloadSkipCache();
-    this._identityPopup.hidePopup();
+    PanelMultiView.hidePopup(this._identityPopup);
   },
 
   
@@ -7362,7 +7363,7 @@ var gIdentityHandler = {
     
     
     if (shouldHidePopup) {
-      this._identityPopup.hidePopup();
+      PanelMultiView.hidePopup(this._identityPopup);
     }
 
     
@@ -7826,7 +7827,8 @@ var gIdentityHandler = {
     this._identityBox.setAttribute("open", "true");
 
     
-    this._identityPopup.openPopup(this._identityIcon, "bottomcenter topleft");
+    PanelMultiView.openPopup(this._identityPopup, this._identityIcon,
+                             "bottomcenter topleft").catch(Cu.reportError);
   },
 
   onPopupShown(event) {
@@ -7859,7 +7861,7 @@ var gIdentityHandler = {
       
       
       
-      this._identityPopup.hidePopup();
+      PanelMultiView.hidePopup(this._identityPopup);
     }
   },
 

@@ -204,7 +204,9 @@ async function assertMixedContentBlockingState(tabbrowser, states = {}) {
   }
 
   
+  let promisePanelOpen = BrowserTestUtils.waitForEvent(gIdentityHandler._identityPopup, "popupshown");
   gIdentityHandler._identityBox.click();
+  await promisePanelOpen;
   let popupAttr = doc.getElementById("identity-popup").getAttribute("mixedcontent");
   let bodyAttr = doc.getElementById("identity-popup-securityView-body").getAttribute("mixedcontent");
 
