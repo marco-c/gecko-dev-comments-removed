@@ -9,7 +9,6 @@
 
 #include "nscore.h"
 #include "nsXPCOM.h"
-#include "xptcall.h"
 
 
 
