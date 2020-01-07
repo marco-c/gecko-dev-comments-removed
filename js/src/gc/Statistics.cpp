@@ -15,6 +15,7 @@
 #include <ctype.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <type_traits>
 
 #include "jsutil.h"
 
@@ -711,7 +712,26 @@ Statistics::Statistics(JSRuntime* rt)
 {
     for (auto& count : counts)
         count = 0;
-    PodZero(&totalTimes_);
+
+#ifdef DEBUG
+    for (const auto& duration : totalTimes_) {
+#if defined(XP_WIN) || defined(XP_MACOSX) || (defined(XP_UNIX) && !defined(__clang__))
+        
+        
+        
+        
+        
+        using ElementType = typename mozilla::RemoveReference<decltype(duration)>::Type;
+        static_assert(!std::is_trivially_constructible<ElementType>::value,
+                      "Statistics::Statistics will only initialize "
+                      "totalTimes_'s elements if their default constructor is "
+                      "non-trivial");
+#endif 
+        MOZ_ASSERT(duration.IsZero(),
+                   "totalTimes_ default-initialization should have "
+                   "default-initialized every element of totalTimes_ to zero");
+    }
+#endif
 
     MOZ_ALWAYS_TRUE(phaseStack.reserve(MAX_PHASE_NESTING));
     MOZ_ALWAYS_TRUE(suspendedPhases.reserve(MAX_SUSPENDED_PHASES));
