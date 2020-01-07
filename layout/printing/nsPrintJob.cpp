@@ -2344,13 +2344,6 @@ nsPrintJob::ReflowPrintObject(const UniquePtr<nsPrintObject>& aPO)
   UniquePtr<ServoStyleSet> styleSet =
     mDocViewerPrint->CreateStyleSet(aPO->mDocument);
 
-  if (aPO->mDocument->IsSVGDocument()) {
-    
-    
-    auto cache = nsLayoutStylesheetCache::Singleton();
-    styleSet->PrependStyleSheet(SheetType::Agent, cache->UASheet());
-  }
-
   aPO->mPresShell = aPO->mDocument->CreateShell(aPO->mPresContext,
                                                 aPO->mViewManager,
                                                 std::move(styleSet));

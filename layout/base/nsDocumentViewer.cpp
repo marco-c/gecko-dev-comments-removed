@@ -2440,19 +2440,6 @@ nsDocumentViewer::CreateStyleSet(nsIDocument* aDocument)
   UniquePtr<ServoStyleSet> styleSet = MakeUnique<ServoStyleSet>();
 
   
-
-  if (aDocument->IsBeingUsedAsImage()) {
-    MOZ_ASSERT(aDocument->IsSVGDocument(),
-               "Do we want to skip most sheets for this new image type?");
-
-    
-    
-    
-    
-    
-    return styleSet;
-  }
-
   auto cache = nsLayoutStylesheetCache::Singleton();
 
   
@@ -2473,81 +2460,63 @@ nsDocumentViewer::CreateStyleSet(nsIDocument* aDocument)
     styleSet->PrependStyleSheet(SheetType::Agent, sheet);
   }
 
-  if (!aDocument->IsSVGDocument()) {
-    
-    
+  sheet = cache->FormsSheet();
+  if (sheet) {
+    styleSet->PrependStyleSheet(SheetType::Agent, sheet);
+  }
 
+  if (aDocument->LoadsFullXULStyleSheetUpFront()) {
     
-    
-    
-    
-    
-
-    sheet = cache->FormsSheet();
+    sheet = cache->XULComponentsSheet();
     if (sheet) {
       styleSet->PrependStyleSheet(SheetType::Agent, sheet);
     }
 
-    if (aDocument->LoadsFullXULStyleSheetUpFront()) {
-      
-      sheet = cache->XULComponentsSheet();
-      if (sheet) {
-        styleSet->PrependStyleSheet(SheetType::Agent, sheet);
-      }
-
-      
-      
-      sheet = cache->XULSheet();
-      if (sheet) {
-        styleSet->PrependStyleSheet(SheetType::Agent, sheet);
-      }
-    }
-
-    sheet = cache->MinimalXULSheet();
-    if (sheet) {
-      
-      
-      styleSet->PrependStyleSheet(SheetType::Agent, sheet);
-    }
-
-    sheet = cache->CounterStylesSheet();
-    if (sheet) {
-      styleSet->PrependStyleSheet(SheetType::Agent, sheet);
-    }
-
-    if (nsLayoutUtils::ShouldUseNoScriptSheet(aDocument)) {
-      sheet = cache->NoScriptSheet();
-      if (sheet) {
-        styleSet->PrependStyleSheet(SheetType::Agent, sheet);
-      }
-    }
-
-    if (nsLayoutUtils::ShouldUseNoFramesSheet(aDocument)) {
-      sheet = cache->NoFramesSheet();
-      if (sheet) {
-        styleSet->PrependStyleSheet(SheetType::Agent, sheet);
-      }
-    }
-
     
     
-
-    sheet = cache->HTMLSheet();
-    if (sheet) {
-      styleSet->PrependStyleSheet(SheetType::Agent, sheet);
-    }
-
-    styleSet->PrependStyleSheet(SheetType::Agent, cache->UASheet());
-  } else {
-    
-    sheet = cache->MinimalXULSheet();
+    sheet = cache->XULSheet();
     if (sheet) {
       styleSet->PrependStyleSheet(SheetType::Agent, sheet);
     }
   }
 
-  nsStyleSheetService* sheetService = nsStyleSheetService::GetInstance();
-  if (sheetService) {
+  sheet = cache->MinimalXULSheet();
+  if (sheet) {
+    
+    
+    styleSet->PrependStyleSheet(SheetType::Agent, sheet);
+  }
+
+  sheet = cache->CounterStylesSheet();
+  if (sheet) {
+    styleSet->PrependStyleSheet(SheetType::Agent, sheet);
+  }
+
+  if (nsLayoutUtils::ShouldUseNoScriptSheet(aDocument)) {
+    sheet = cache->NoScriptSheet();
+    if (sheet) {
+      styleSet->PrependStyleSheet(SheetType::Agent, sheet);
+    }
+  }
+
+  if (nsLayoutUtils::ShouldUseNoFramesSheet(aDocument)) {
+    sheet = cache->NoFramesSheet();
+    if (sheet) {
+      styleSet->PrependStyleSheet(SheetType::Agent, sheet);
+    }
+  }
+
+  
+  
+
+  sheet = cache->HTMLSheet();
+  if (sheet) {
+    styleSet->PrependStyleSheet(SheetType::Agent, sheet);
+  }
+
+  styleSet->PrependStyleSheet(SheetType::Agent, cache->UASheet());
+
+  if (nsStyleSheetService* sheetService = nsStyleSheetService::GetInstance()) {
     for (StyleSheet* sheet : *sheetService->AgentStyleSheets()) {
       styleSet->AppendStyleSheet(SheetType::Agent, sheet);
     }

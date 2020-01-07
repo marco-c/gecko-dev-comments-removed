@@ -765,10 +765,7 @@ nsXULElement::BindToTree(nsIDocument* aDocument,
 
   nsIDocument* doc = GetComposedDoc();
 #ifdef DEBUG
-  if (doc &&
-      !doc->LoadsFullXULStyleSheetUpFront() &&
-      !doc->IsUnstyledDocument()) {
-
+  if (doc && !doc->AllowXULXBL() && !doc->IsUnstyledDocument()) {
     
     
     

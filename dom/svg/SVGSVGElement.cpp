@@ -495,8 +495,7 @@ SVGSVGElement::BindToTree(nsIDocument* aDocument,
                                               aCompileEventHandlers);
   NS_ENSURE_SUCCESS(rv,rv);
 
-  nsIDocument* doc = GetComposedDoc();
-  if (doc) {
+  if (nsIDocument* doc = GetComposedDoc()) {
     
     
     

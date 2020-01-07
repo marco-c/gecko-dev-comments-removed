@@ -84,27 +84,3 @@ foreignObject {
   
   outline: 1px dotted;
 }
-
-
-
-
-
-
-
-
-*|*:any-link {
-  cursor: pointer;
-}
-
-*|*:any-link:-moz-focusring {
-  
-  outline: 1px dotted;
-}
-
-
-
-
-*|*::-moz-viewport, *|*::-moz-viewport-scroll, *|*::-moz-canvas, *|*::-moz-scrolled-canvas {
-  display: block !important;
-  background-color: inherit;
-}

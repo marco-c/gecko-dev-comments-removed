@@ -5358,12 +5358,6 @@ nsIDocument::InsertAnonymousContent(Element& aElement, ErrorResult& aRv)
     return nullptr;
   }
 
-  
-  
-  if (IsSVGDocument()) {
-    AsSVGDocument()->EnsureNonSVGUserAgentStyleSheetsLoaded();
-  }
-
   nsAutoScriptBlocker scriptBlocker;
   nsCOMPtr<Element> container = shell->GetCanvasFrame()
                                      ->GetCustomContentContainer();
