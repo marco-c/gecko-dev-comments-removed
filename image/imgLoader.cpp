@@ -1768,7 +1768,7 @@ imgLoader::ValidateRequestWithNewChannel(imgRequest* request,
       
       
       
-      proxy->SetNotificationsDeferred(true);
+      proxy->MarkValidating();
 
       
       request->GetValidator()->AddProxy(proxy);
@@ -1834,7 +1834,7 @@ imgLoader::ValidateRequestWithNewChannel(imgRequest* request,
   
   
   
-  req->SetNotificationsDeferred(true);
+  req->MarkValidating();
 
   
   hvc->AddProxy(req);
@@ -2936,13 +2936,45 @@ imgCacheValidator::AddProxy(imgRequestProxy* aProxy)
   
   aProxy->AddToLoadGroup();
 
-  mProxies.AppendObject(aProxy);
+  mProxies.AppendElement(aProxy);
 }
 
 void
 imgCacheValidator::RemoveProxy(imgRequestProxy* aProxy)
 {
-  mProxies.RemoveObject(aProxy);
+  mProxies.RemoveElement(aProxy);
+}
+
+void
+imgCacheValidator::UpdateProxies()
+{
+  
+  
+  
+  
+  
+  
+  AutoTArray<RefPtr<imgRequestProxy>, 4> proxies(Move(mProxies));
+
+  for (auto& proxy : proxies) {
+    
+    
+    
+    MOZ_ASSERT(proxy->IsValidating());
+    MOZ_ASSERT(proxy->NotificationsDeferred(),
+               "Proxies waiting on cache validation should be "
+               "deferring notifications!");
+    if (mNewRequest) {
+      proxy->ChangeOwner(mNewRequest);
+    }
+    proxy->ClearValidating();
+  }
+
+  for (auto& proxy : proxies) {
+    
+    
+    proxy->SyncNotifyListener();
+  }
 }
 
 
@@ -2982,25 +3014,11 @@ imgCacheValidator::OnStartRequest(nsIRequest* aRequest, nsISupports* ctxt)
     }
 
     if (isFromCache && sameURI) {
-      uint32_t count = mProxies.Count();
-      for (int32_t i = count-1; i>=0; i--) {
-        imgRequestProxy* proxy = static_cast<imgRequestProxy*>(mProxies[i]);
-
-        
-        
-        MOZ_ASSERT(proxy->NotificationsDeferred(),
-                   "Proxies waiting on cache validation should be "
-                   "deferring notifications!");
-        proxy->SetNotificationsDeferred(false);
-
-        
-        
-        proxy->SyncNotifyListener();
-      }
-
       
       aRequest->Cancel(NS_BINDING_ABORTED);
 
+      
+      
       mRequest->SetLoadId(context);
       mRequest->SetValidator(nullptr);
 
@@ -3009,6 +3027,7 @@ imgCacheValidator::OnStartRequest(nsIRequest* aRequest, nsISupports* ctxt)
       mNewRequest = nullptr;
       mNewEntry = nullptr;
 
+      UpdateProxies();
       return NS_OK;
     }
   }
@@ -3035,6 +3054,8 @@ imgCacheValidator::OnStartRequest(nsIRequest* aRequest, nsISupports* ctxt)
   
   mRequest->RemoveFromCache();
 
+  
+  
   mRequest->SetValidator(nullptr);
   mRequest = nullptr;
 
@@ -3055,17 +3076,7 @@ imgCacheValidator::OnStartRequest(nsIRequest* aRequest, nsISupports* ctxt)
   
   mImgLoader->PutIntoCache(mNewRequest->CacheKey(), mNewEntry);
 
-  uint32_t count = mProxies.Count();
-  for (int32_t i = count-1; i>=0; i--) {
-    imgRequestProxy* proxy = static_cast<imgRequestProxy*>(mProxies[i]);
-    proxy->ChangeOwner(mNewRequest);
-
-    
-    
-    proxy->SetNotificationsDeferred(false);
-    proxy->SyncNotifyListener();
-  }
-
+  UpdateProxies();
   mNewRequest = nullptr;
   mNewEntry = nullptr;
 

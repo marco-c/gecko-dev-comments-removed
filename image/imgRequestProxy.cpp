@@ -121,6 +121,7 @@ imgRequestProxy::imgRequestProxy() :
   mListenerIsStrongRef(false),
   mDecodeRequested(false),
   mDeferNotifications(false),
+  mValidating(false),
   mHadListener(false),
   mHadDispatch(false)
 {
@@ -163,15 +164,13 @@ imgRequestProxy::~imgRequestProxy()
   
   NullOutListener();
 
-  if (GetOwner()) {
-    
+  
 
 
 
 
-    mCanceled = true;
-    GetOwner()->RemoveProxy(this, NS_OK);
-  }
+  mCanceled = true;
+  RemoveFromOwner(NS_OK);
 
   RemoveFromLoadGroup();
   LOG_FUNC(gImgLog, "imgRequestProxy::~imgRequestProxy");
@@ -237,6 +236,7 @@ imgRequestProxy::ChangeOwner(imgRequest* aNewOwner)
   GetOwner()->RemoveProxy(this, NS_OK);
 
   mBehaviour->SetOwner(aNewOwner);
+  MOZ_ASSERT(!GetValidator(), "New owner cannot be validating!");
 
   
   for (uint32_t i = 0; i < oldLockCount; i++) {
@@ -251,14 +251,29 @@ imgRequestProxy::ChangeOwner(imgRequest* aNewOwner)
   }
 
   AddToOwner(nullptr);
+  return NS_OK;
+}
+
+void
+imgRequestProxy::MarkValidating()
+{
+  MOZ_ASSERT(GetValidator());
+  mValidating = true;
+}
+
+void
+imgRequestProxy::ClearValidating()
+{
+  MOZ_ASSERT(mValidating);
+  MOZ_ASSERT(!GetValidator());
+  mValidating = false;
 
   
   
   if (mDecodeRequested) {
+    mDecodeRequested = false;
     StartDecoding(imgIContainer::FLAG_NONE);
   }
-
-  return NS_OK;
 }
 
 bool
@@ -351,11 +366,28 @@ imgRequestProxy::AddToOwner(nsIDocument* aLoadingDocument)
     mEventTarget = do_GetMainThread();
   }
 
-  if (!GetOwner()) {
+  imgRequest* owner = GetOwner();
+  if (!owner) {
     return;
   }
 
-  GetOwner()->AddProxy(this);
+  owner->AddProxy(this);
+}
+
+void
+imgRequestProxy::RemoveFromOwner(nsresult aStatus)
+{
+  imgRequest* owner = GetOwner();
+  if (owner) {
+    if (mValidating) {
+      imgCacheValidator* validator = owner->GetValidator();
+      MOZ_ASSERT(validator);
+      validator->RemoveProxy(this);
+      mValidating = false;
+    }
+
+    owner->RemoveProxy(this, aStatus);
+  }
 }
 
 void
@@ -494,10 +526,7 @@ imgRequestProxy::Cancel(nsresult status)
 void
 imgRequestProxy::DoCancel(nsresult status)
 {
-  if (GetOwner()) {
-    GetOwner()->RemoveProxy(this, status);
-  }
-
+  RemoveFromOwner(status);
   RemoveFromLoadGroup();
   NullOutListener();
 }
@@ -519,17 +548,7 @@ imgRequestProxy::CancelAndForgetObserver(nsresult aStatus)
 
   mCanceled = true;
   mForceDispatchLoadGroup = true;
-
-  imgRequest* owner = GetOwner();
-  if (owner) {
-    imgCacheValidator* validator = owner->GetValidator();
-    if (validator) {
-      validator->RemoveProxy(this);
-    }
-
-    owner->RemoveProxy(this, aStatus);
-  }
-
+  RemoveFromOwner(aStatus);
   RemoveFromLoadGroup();
   mForceDispatchLoadGroup = false;
 
@@ -859,15 +878,16 @@ imgRequestProxy::PerformClone(imgINotificationObserver* aObserver,
   
   NS_ADDREF(*aClone = clone);
 
-  if (GetOwner() && GetOwner()->GetValidator()) {
+  imgCacheValidator* validator = GetValidator();
+  if (validator) {
     
     
     
     
     
     
-    clone->SetNotificationsDeferred(true);
-    GetOwner()->GetValidator()->AddProxy(clone);
+    clone->MarkValidating();
+    validator->AddProxy(clone);
   } else {
     
     
@@ -1268,6 +1288,16 @@ imgRequest*
 imgRequestProxy::GetOwner() const
 {
   return mBehaviour->GetOwner();
+}
+
+imgCacheValidator*
+imgRequestProxy::GetValidator() const
+{
+  imgRequest* owner = GetOwner();
+  if (!owner) {
+    return nullptr;
+  }
+  return owner->GetValidator();
 }
 
 
