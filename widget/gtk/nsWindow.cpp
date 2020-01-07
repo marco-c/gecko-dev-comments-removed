@@ -3663,9 +3663,13 @@ nsWindow::Create(nsIWidget* aParent,
         
         
         
-        GtkWindowType type =
-            mWindowType != eWindowType_popup || aInitData->mNoAutoHide ?
-              GTK_WINDOW_TOPLEVEL : GTK_WINDOW_POPUP;
+        
+        
+        GtkWindowType type = GTK_WINDOW_TOPLEVEL;
+        if (mWindowType == eWindowType_popup) {
+            type = (mIsX11Display && aInitData->mNoAutoHide) ?
+                GTK_WINDOW_TOPLEVEL : GTK_WINDOW_POPUP;
+        }
         mShell = gtk_window_new(type);
 
         bool useAlphaVisual = (mWindowType == eWindowType_popup &&
@@ -3753,7 +3757,11 @@ nsWindow::Create(nsIWidget* aParent,
             else {
                 switch (aInitData->mPopupHint) {
                     case ePopupTypeMenu:
-                        gtkTypeHint = GDK_WINDOW_TYPE_HINT_POPUP_MENU;
+                        
+                        
+                        
+                        gtkTypeHint = mIsX11Display ? GDK_WINDOW_TYPE_HINT_POPUP_MENU :
+                                                      GDK_WINDOW_TYPE_HINT_UTILITY;
                         break;
                     case ePopupTypeTooltip:
                         gtkTypeHint = GDK_WINDOW_TYPE_HINT_TOOLTIP;
@@ -3806,8 +3814,11 @@ nsWindow::Create(nsIWidget* aParent,
 
 
 
+
+
         GtkStyleContext* style = gtk_widget_get_style_context(mShell);
         drawToContainer =
+            !mIsX11Display ||
             (mIsCSDAvailable && GetCSDSupportLevel() == CSD_SUPPORT_FLAT ) ||
             gtk_style_context_has_class(style, "csd");
 #endif
@@ -4801,6 +4812,12 @@ nsWindow::GrabPointer(guint32 aTime)
     if (!mGdkWindow)
         return;
 
+    if (!mIsX11Display) {
+        
+        
+        return;
+    }
+
     gint retval;
     retval = gdk_pointer_grab(mGdkWindow, TRUE,
                               (GdkEventMask)(GDK_BUTTON_PRESS_MASK |
@@ -4834,6 +4851,13 @@ nsWindow::ReleaseGrabs(void)
     LOG(("ReleaseGrabs\n"));
 
     mRetryPointerGrab = false;
+
+    if (!mIsX11Display) {
+        
+        
+        return;
+    }
+
     gdk_pointer_ungrab(GDK_CURRENT_TIME);
 }
 
