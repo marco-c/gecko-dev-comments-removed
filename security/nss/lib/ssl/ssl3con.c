@@ -6288,7 +6288,7 @@ ssl3_HandleServerHello(sslSocket *ss, PRUint8 *b, PRUint32 length)
     
 
     if (ss->version < SSL_LIBRARY_VERSION_TLS_1_3) {
-        if (ss->ssl3.hs.helloRetry) {
+        if (isHelloRetry || ss->ssl3.hs.helloRetry) {
             
             desc = illegal_parameter;
             errCode = SSL_ERROR_RX_MALFORMED_SERVER_HELLO;
