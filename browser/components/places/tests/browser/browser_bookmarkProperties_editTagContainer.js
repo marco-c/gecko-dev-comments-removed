@@ -61,6 +61,11 @@ add_task(async function() {
       Assert.equal(tree.selectedNode.title, "tag2", "The node has the correct title");
 
       
+      fillBookmarkTextField("editBMPanel_namePicker", "", dialogWin);
+      Assert.equal(namepicker.value, "tag2", "Title has not been changed");
+      Assert.equal(tree.selectedNode.title, "tag2", "The node has the correct title");
+
+      
       let tags = PlacesUtils.tagging.getTagsForURI(uri);
       Assert.equal(tags.length, 1, "Found the right number of tags");
       Assert.ok(tags.includes("tag2"), "Found the expected tag");
