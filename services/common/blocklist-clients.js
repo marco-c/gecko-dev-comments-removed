@@ -127,6 +127,59 @@ async function updateJSONBlocklist(client, { data: { current: records } }) {
   }
 }
 
+
+
+
+
+
+
+
+
+
+
+async function targetAppFilter(entry, { appID, version: appVersion }) {
+  
+  if (!("versionRange" in entry)) {
+    return entry;
+  }
+
+  const { versionRange } = entry;
+
+  
+  if (!Array.isArray(versionRange)) {
+    const { minVersion = "0", maxVersion = "*" } = versionRange;
+    const matchesRange = (Services.vc.compare(appVersion, minVersion) >= 0 &&
+                          Services.vc.compare(appVersion, maxVersion) <= 0);
+    return matchesRange ? entry : null;
+  }
+
+  
+  
+  if (versionRange.length == 0) {
+    return entry;
+  }
+  for (const vr of versionRange) {
+    const { targetApplication = [] } = vr;
+    if (targetApplication.length == 0) {
+      return entry;
+    }
+    for (const ta of targetApplication) {
+      const { guid } = ta;
+      if (!guid) {
+        return entry;
+      }
+      const { minVersion = "0", maxVersion = "*" } = ta;
+      if (guid == appID &&
+          Services.vc.compare(appVersion, minVersion) >= 0 &&
+          Services.vc.compare(appVersion, maxVersion) <= 0) {
+        return entry;
+      }
+    }
+  }
+  
+  return null;
+}
+
 var AddonBlocklistClient;
 var GfxBlocklistClient;
 var OneCRLBlocklistClient;
@@ -145,6 +198,7 @@ function initialize() {
     bucketName: Services.prefs.getCharPref(PREF_BLOCKLIST_BUCKET),
     lastCheckTimePref: PREF_BLOCKLIST_ADDONS_CHECKED_SECONDS,
     signerName: Services.prefs.getCharPref(PREF_BLOCKLIST_ADDONS_SIGNER),
+    filterFunc: targetAppFilter,
   });
   AddonBlocklistClient.on("sync", updateJSONBlocklist.bind(null, AddonBlocklistClient));
 
@@ -152,6 +206,7 @@ function initialize() {
     bucketName: Services.prefs.getCharPref(PREF_BLOCKLIST_BUCKET),
     lastCheckTimePref: PREF_BLOCKLIST_PLUGINS_CHECKED_SECONDS,
     signerName: Services.prefs.getCharPref(PREF_BLOCKLIST_PLUGINS_SIGNER),
+    filterFunc: targetAppFilter,
   });
   PluginBlocklistClient.on("sync", updateJSONBlocklist.bind(null, PluginBlocklistClient));
 
@@ -159,6 +214,7 @@ function initialize() {
     bucketName: Services.prefs.getCharPref(PREF_BLOCKLIST_BUCKET),
     lastCheckTimePref: PREF_BLOCKLIST_GFX_CHECKED_SECONDS,
     signerName: Services.prefs.getCharPref(PREF_BLOCKLIST_GFX_SIGNER),
+    filterFunc: targetAppFilter,
   });
   GfxBlocklistClient.on("sync", updateJSONBlocklist.bind(null, GfxBlocklistClient));
 
