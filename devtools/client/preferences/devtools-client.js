@@ -289,11 +289,7 @@ pref("devtools.webconsole.timestampMessages", false);
 pref("devtools.webconsole.autoMultiline", true);
 
 
-#if defined(NIGHTLY_BUILD)
-pref("devtools.webconsole.sidebarToggle", true);
-#else
 pref("devtools.webconsole.sidebarToggle", false);
-#endif
 
 
 pref("devtools.performance.new-panel-enabled", false);
