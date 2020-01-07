@@ -41,6 +41,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   AddonSettings: "resource://gre/modules/addons/AddonSettings.jsm",
   AppConstants: "resource://gre/modules/AppConstants.jsm",
   AsyncShutdown: "resource://gre/modules/AsyncShutdown.jsm",
+  ContextualIdentityService: "resource://gre/modules/ContextualIdentityService.jsm",
   ExtensionCommon: "resource://gre/modules/ExtensionCommon.jsm",
   ExtensionPermissions: "resource://gre/modules/ExtensionPermissions.jsm",
   ExtensionStorage: "resource://gre/modules/ExtensionStorage.jsm",
@@ -102,6 +103,13 @@ const {
 XPCOMUtils.defineLazyGetter(this, "console", ExtensionUtils.getConsole);
 
 XPCOMUtils.defineLazyGetter(this, "LocaleData", () => ExtensionCommon.LocaleData);
+
+
+
+XPCOMUtils.defineLazyGetter(this, "WEBEXT_STORAGE_USER_CONTEXT_ID", () => {
+  return ContextualIdentityService.getDefaultPrivateIdentity(
+    "userContextIdInternal.webextStorageLocal").userContextId;
+});
 
 
 
@@ -219,14 +227,20 @@ var UninstallObserver = {
     if (!Services.prefs.getBoolPref(LEAVE_STORAGE_PREF, false)) {
       
       AsyncShutdown.profileChangeTeardown.addBlocker(
-        `Clear Extension Storage ${addon.id}`,
-        ExtensionStorage.clear(addon.id));
+        `Clear Extension Storage ${addon.id} (File Backend)`,
+        ExtensionStorage.clear(addon.id, {shouldNotifyListeners: false}));
 
       
       let baseURI = Services.io.newURI(`moz-extension://${uuid}/`);
       let principal = Services.scriptSecurityManager.createCodebasePrincipal(
         baseURI, {});
       Services.qms.clearStoragesForPrincipal(principal);
+
+      
+      let storagePrincipal = Services.scriptSecurityManager.createCodebasePrincipal(baseURI, {
+        userContextId: WEBEXT_STORAGE_USER_CONTEXT_ID,
+      });
+      Services.qms.clearStoragesForPrincipal(storagePrincipal);
 
       
       let storage = Services.domStorageManager.getStorage(null, principal);
@@ -1271,6 +1285,7 @@ class Extension extends ExtensionData {
     this.baseURL = this.getURL("");
     this.baseURI = Services.io.newURI(this.baseURL).QueryInterface(Ci.nsIURL);
     this.principal = this.createPrincipal();
+
     this.views = new Set();
     this._backgroundPageFrameLoader = null;
 
@@ -1392,8 +1407,8 @@ class Extension extends ExtensionData {
     this.emit("test-harness-message", ...args);
   }
 
-  createPrincipal(uri = this.baseURI) {
-    return Services.scriptSecurityManager.createCodebasePrincipal(uri, {});
+  createPrincipal(uri = this.baseURI, originAttributes = {}) {
+    return Services.scriptSecurityManager.createCodebasePrincipal(uri, originAttributes);
   }
 
   
