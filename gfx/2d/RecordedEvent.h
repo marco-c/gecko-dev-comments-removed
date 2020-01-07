@@ -195,9 +195,9 @@ struct MemStream {
       
       
       if (mLength > mCapacity) {
-        mCapacity = mLength;
+        mCapacity = mLength * 2;
       }
-      mData = (char*)realloc(mData, mCapacity * 2);
+      mData = (char*)realloc(mData, mCapacity);
     }
   }
 
