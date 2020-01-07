@@ -995,6 +995,11 @@ a.learn-more-link.webconsole-learn-more-link {
 }
 
 
+.webconsole-output-wrapper .console-message-prefix {
+  color: var(--theme-comment);
+}
+
+
 
 .webconsole-output-wrapper .message.network .method {
   margin-inline-end: 5px;

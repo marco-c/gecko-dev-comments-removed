@@ -703,6 +703,8 @@ function passSearchFilters(message, filters) {
     || isTextInMessageText(text, message.messageText)
     
     || isTextInNotes(text, message.notes)
+    
+    || isTextInPrefix(text, message.prefix)
   );
 }
 
@@ -802,6 +804,17 @@ function isTextInNotes(text, notes) {
       note.messageBody.toLocaleLowerCase().includes(text.toLocaleLowerCase())
     )
   );
+}
+
+
+
+
+function isTextInPrefix(text, prefix) {
+  if (!prefix) {
+    return false;
+  }
+
+  return `${prefix}: `.toLocaleLowerCase().includes(text.toLocaleLowerCase());
 }
 
 
