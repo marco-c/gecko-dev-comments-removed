@@ -12,13 +12,12 @@
 #include "nsISupports.h"
 #include "xptinfo.h"
 #include "js/Value.h"
+#include "mozilla/Attributes.h"
 #include "mozilla/MemoryReporting.h"
 
 struct nsXPTCMiniVariant
 {
-
-
-    union
+    union U
     {
         int8_t    i8;
         int16_t   i16;
@@ -38,7 +37,13 @@ struct nsXPTCMiniVariant
         
         
         
-        JS::UninitializedValue j;
+        JS::Value j;
+
+        
+        
+        MOZ_PUSH_DISABLE_NONTRIVIAL_UNION_WARNINGS
+        U() {}
+        MOZ_POP_DISABLE_NONTRIVIAL_UNION_WARNINGS
     } val;
 };
 

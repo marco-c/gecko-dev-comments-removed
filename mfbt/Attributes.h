@@ -477,6 +477,46 @@
 
 
 
+#if defined(_MSC_VER)
+#  define MOZ_PUSH_DISABLE_NONTRIVIAL_UNION_WARNINGS \
+     __pragma(warning(push)) \
+     __pragma(warning(disable:4582)) \
+     __pragma(warning(disable:4583))
+#  define MOZ_POP_DISABLE_NONTRIVIAL_UNION_WARNINGS \
+     __pragma(warning(pop))
+#else
+#  define MOZ_PUSH_DISABLE_NONTRIVIAL_UNION_WARNINGS
+#  define MOZ_POP_DISABLE_NONTRIVIAL_UNION_WARNINGS
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

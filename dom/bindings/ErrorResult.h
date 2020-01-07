@@ -25,6 +25,7 @@
 #ifndef mozilla_ErrorResult_h
 #define mozilla_ErrorResult_h
 
+#include <new>
 #include <stdarg.h>
 
 #include "js/GCAnnotations.h"
@@ -500,17 +501,46 @@ private:
 
   struct Message;
   struct DOMExceptionInfo;
-  
-  
-  
-  
-  
-  
-  union {
+  union Extra {
+    
+    
     Message* mMessage; 
-    JS::UninitializedValue mJSException; 
+
+    
+    
+    JS::Value mJSException; 
+
+    
+    
     DOMExceptionInfo* mDOMExceptionInfo; 
-  };
+
+    
+    
+    MOZ_PUSH_DISABLE_NONTRIVIAL_UNION_WARNINGS
+    Extra() {}
+    MOZ_POP_DISABLE_NONTRIVIAL_UNION_WARNINGS
+  } mExtra;
+
+  Message* InitMessage(Message* aMessage) {
+    
+    
+    new (&mExtra.mMessage) Message*(aMessage);
+    return mExtra.mMessage;
+  }
+
+  JS::Value& InitJSException() {
+    
+    
+    new (&mExtra.mJSException) JS::Value(); 
+    return mExtra.mJSException;
+  }
+
+  DOMExceptionInfo* InitDOMExceptionInfo(DOMExceptionInfo* aDOMExceptionInfo) {
+    
+    
+    new (&mExtra.mDOMExceptionInfo) DOMExceptionInfo*(aDOMExceptionInfo);
+    return mExtra.mDOMExceptionInfo;
+  }
 
 #ifdef DEBUG
   
