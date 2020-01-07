@@ -13,6 +13,8 @@ use values::generics::svg as generic;
 
 pub use values::specified::SVGPaintOrder;
 
+pub use values::specified::MozContextProperties;
+
 
 pub type SVGPaint = generic::SVGPaint<RGBA, ComputedUrl>;
 
