@@ -4373,7 +4373,10 @@ OverflowableToolbar.prototype = {
       this._panel.addEventListener("popupshown", () => {
         this._panel.addEventListener("dragover", this);
         this._panel.addEventListener("dragend", this);
-        resolve();
+        
+        
+        
+        Services.tm.dispatchToMainThread(resolve);
       }, {once: true});
     });
   },
