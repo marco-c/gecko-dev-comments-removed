@@ -300,7 +300,9 @@ function ignoreGCFunction(mangled)
         return true;
 
     
-    if (/refillFreeList/.test(fun) && /\(js::AllowGC\)0u/.test(fun))
+    
+    
+    if (/refillFreeList|tryNew/.test(fun) && /\(js::AllowGC\)0u/.test(fun))
         return true;
     return false;
 }
