@@ -5205,12 +5205,15 @@ public:
     return HasSameTypeAndClip(aItem) && HasSameContent(aItem);
   }
 
+  virtual nsDisplayItemGeometry* AllocateGeometry(nsDisplayListBuilder* aBuilder) override
+  {
+    return new nsDisplayOpacityGeometry(this, aBuilder, mOpacity);
+  }
+
   virtual void ComputeInvalidationRegion(nsDisplayListBuilder* aBuilder,
                                          const nsDisplayItemGeometry* aGeometry,
-                                         nsRegion* aInvalidRegion) const override
-  {
-    
-  }
+                                         nsRegion* aInvalidRegion) const override;
+
   virtual bool IsInvalid(nsRect& aRect) const override
   {
     if (mForEventsAndPluginsOnly) {
