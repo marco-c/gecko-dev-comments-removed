@@ -10,6 +10,7 @@ const Services = require("Services");
 const { gDevTools } = require("devtools/client/framework/devtools");
 const { getColor } = require("devtools/client/shared/theme");
 const { createFactory, createElement } = require("devtools/client/shared/vendor/react");
+const { getCssProperties } = require("devtools/shared/fronts/css-properties");
 const { Provider } = require("devtools/client/shared/vendor/react-redux");
 const { debounce } = require("devtools/shared/debounce");
 const { ELEMENT_STYLE } = require("devtools/shared/specs/styles");
@@ -55,8 +56,11 @@ const REGISTERED_AXES = Object.keys(REGISTERED_AXES_TO_FONT_PROPERTIES);
 
 class FontInspector {
   constructor(inspector, window) {
+    this.cssProperties = getCssProperties(inspector.toolbox);
     this.document = window.document;
     this.inspector = inspector;
+    
+    this.keywordValues = new Set(this.getFontPropertyValueKeywords());
     this.nodeComputedStyle = {};
     this.pageStyle = this.inspector.pageStyle;
     this.ruleView = this.inspector.getPanel("ruleview").view;
@@ -203,7 +207,6 @@ class FontInspector {
 
 
   getFontProperties() {
-    const KEYWORD_VALUES = ["initial", "inherit", "unset", "none"];
     const properties = {};
 
     
@@ -222,7 +225,7 @@ class FontInspector {
 
       for (const textProp of rule.textProps) {
         if (FONT_PROPERTIES.includes(textProp.name) &&
-            !KEYWORD_VALUES.includes(textProp.value) &&
+            !this.keywordValues.has(textProp.value) &&
             !textProp.value.includes("calc(") &&
             !textProp.value.includes("var(") &&
             !textProp.overridden &&
@@ -233,6 +236,23 @@ class FontInspector {
     }
 
     return properties;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  getFontPropertyValueKeywords() {
+    return ["font-size", "font-weight", "font-stretch"].reduce((acc, property) => {
+      return acc.concat(this.cssProperties.getValues(property));
+    }, []);
   }
 
   async getFontsForNode(node, options) {
