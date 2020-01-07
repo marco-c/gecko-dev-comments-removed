@@ -46,7 +46,10 @@ JS::Realm::globalIsAboutToBeFinalized()
  inline js::ObjectRealm&
 js::ObjectRealm::get(const JSObject* obj)
 {
-    return obj->realm()->objects_;
+    
+    
+    
+    return obj->maybeCCWRealm()->objects_;
 }
 
 template <typename T>
