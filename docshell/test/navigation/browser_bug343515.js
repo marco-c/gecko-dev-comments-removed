@@ -9,12 +9,11 @@ var ctx = {};
 
 
 
-function nShotsListener(aBrowser, aType, aCallback, aCount) {
+function nShotsListener(aElem, aType, aCallback, aCount) {
   let count = aCount;
-  let removeFunc;
-  removeFunc = BrowserTestUtils.addContentEventListener(aBrowser, aType, function listenerCallback() {
+  aElem.addEventListener(aType, function listenerCallback() {
     if (--count == 0) {
-      removeFunc();
+      aElem.removeEventListener(aType, listenerCallback, true);
 
       
       
@@ -23,8 +22,8 @@ function nShotsListener(aBrowser, aType, aCallback, aCount) {
   }, true);
 }
 
-function oneShotListener(aBrowser, aType, aCallback) {
-  nShotsListener(aBrowser, aType, aCallback, 1);
+function oneShotListener(aElem, aType, aCallback) {
+  nShotsListener(aElem, aType, aCallback, 1);
 }
 
 function waitForPageshow(aBrowser, callback) {

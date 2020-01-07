@@ -17,8 +17,7 @@ async function ensurePreloaded(gBrowser) {
   
   
   await BrowserTestUtils.waitForCondition( () => {
-    let doc = gBrowser._preloadedBrowser.contentDocumentAsCPOW;
-    return doc && doc.readyState == "complete";
+    return gBrowser._preloadedBrowser.contentDocument.readyState == "complete";
   });
 }
 

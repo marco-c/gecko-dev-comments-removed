@@ -218,7 +218,6 @@ RemoteWebProgressManager.prototype = {
 
     if (isTopLevel) {
       this._browser._contentWindow = objects.contentWindow;
-      this._browser._contentDocument = objects.contentDocument;
       
       
       if (json.documentContentType !== null) {

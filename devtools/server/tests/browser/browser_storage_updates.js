@@ -299,7 +299,7 @@ function* finishTests(client) {
 add_task(function* () {
   let browser = yield addTab(MAIN_DOMAIN + "storage-updates.html");
   
-  let doc = browser.contentDocumentAsCPOW;
+  let doc = browser.contentDocument;
 
   initDebuggerServer();
 

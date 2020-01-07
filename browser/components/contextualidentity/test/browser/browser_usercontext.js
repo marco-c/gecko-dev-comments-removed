@@ -70,7 +70,7 @@ add_task(async function test() {
 
     
     
-    let title = browser.contentDocumentAsCPOW.title.trim().split("|");
+    let title = browser.contentDocument.title.trim().split("|");
 
     
     for (let part of title) {

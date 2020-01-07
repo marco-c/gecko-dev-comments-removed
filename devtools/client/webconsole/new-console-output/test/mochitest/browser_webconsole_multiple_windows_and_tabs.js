@@ -35,7 +35,7 @@ add_task(async function () {
   for (let tab of tabs) {
     
     let hud = await openConsole(tab);
-    let tabWindow = hud.target.tab.linkedBrowser.contentWindowAsCPOW;
+    let tabWindow = hud.target.tab.linkedBrowser.contentWindow;
     let message = "message for tab " + tabs.indexOf(tab);
 
     
