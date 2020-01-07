@@ -40,6 +40,8 @@ ChromeUtils.defineModuleGetter(this, "CustomizableUI",
                                "resource:///modules/CustomizableUI.jsm");
 ChromeUtils.defineModuleGetter(this, "CustomizableWidgets",
                                "resource:///modules/CustomizableWidgets.jsm");
+ChromeUtils.defineModuleGetter(this, "PrivateBrowsingUtils",
+                               "resource://gre/modules/PrivateBrowsingUtils.jsm");
 
 
 
@@ -948,6 +950,14 @@ const JsonView = {
       
       chrome.saveBrowser(browser);
     } else {
+      if (!message.data.startsWith("blob:null") || !browser.contentPrincipal.isNullPrincipal) {
+        Cu.reportError("Got invalid request to save JSON data");
+        return;
+      }
+      
+      
+      
+      
       
       
       
@@ -956,8 +966,16 @@ const JsonView = {
         onDocumentReady(doc) {
           const uri = chrome.makeURI(doc.documentURI, doc.characterSet);
           const filename = chrome.getDefaultFileName(undefined, uri, doc, null);
-          chrome.internalSave(message.data, doc, filename, null, doc.contentType,
-            false, null, null, null, doc, false, null, undefined);
+          chrome.internalSave(message.data, null, filename, null, doc.contentType,
+            false ,
+            null, 
+            null, 
+            null, 
+            null, 
+            false, 
+            null, 
+            PrivateBrowsingUtils.isBrowserPrivate(browser), 
+            Services.scriptSecurityManager.getSystemPrincipal());
         },
         onError(status) {
           throw new Error("JSON Viewer's onSave failed in startPersistence");

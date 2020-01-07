@@ -62,14 +62,15 @@ function forbidCPOW(arg, func, argname) {
 
 
 function saveURL(aURL, aFileName, aFilePickerTitleKey, aShouldBypassCache,
-                 aSkipPrompt, aReferrer, aSourceDocument, aIsContentWindowPrivate) {
+                 aSkipPrompt, aReferrer, aSourceDocument,
+                 aIsContentWindowPrivate, aPrincipal) {
   forbidCPOW(aURL, "saveURL", "aURL");
   forbidCPOW(aReferrer, "saveURL", "aReferrer");
   
 
   internalSave(aURL, null, aFileName, null, null, aShouldBypassCache,
                aFilePickerTitleKey, null, aReferrer, aSourceDocument,
-               aSkipPrompt, null, aIsContentWindowPrivate);
+               aSkipPrompt, null, aIsContentWindowPrivate, aPrincipal);
 }
 
 
@@ -112,7 +113,7 @@ const nsISupportsCString = Ci.nsISupportsCString;
 
 function saveImageURL(aURL, aFileName, aFilePickerTitleKey, aShouldBypassCache,
                       aSkipPrompt, aReferrer, aDoc, aContentType, aContentDisp,
-                      aIsContentWindowPrivate) {
+                      aIsContentWindowPrivate, aPrincipal) {
   forbidCPOW(aURL, "saveImageURL", "aURL");
   forbidCPOW(aReferrer, "saveImageURL", "aReferrer");
 
@@ -156,7 +157,7 @@ function saveImageURL(aURL, aFileName, aFilePickerTitleKey, aShouldBypassCache,
 
   internalSave(aURL, null, aFileName, aContentDisp, aContentType,
                aShouldBypassCache, aFilePickerTitleKey, null, aReferrer,
-               null, aSkipPrompt, null, aIsContentWindowPrivate);
+               aDoc, aSkipPrompt, null, aIsContentWindowPrivate, aPrincipal);
 }
 
 
@@ -332,10 +333,14 @@ XPCOMUtils.defineConstant(this, "kSaveAsType_Text", kSaveAsType_Text);
 
 
 
+
+
+
+
 function internalSave(aURL, aDocument, aDefaultFileName, aContentDisposition,
                       aContentType, aShouldBypassCache, aFilePickerTitleKey,
                       aChosenData, aReferrer, aInitiatingDocument, aSkipPrompt,
-                      aCacheKey, aIsContentWindowPrivate) {
+                      aCacheKey, aIsContentWindowPrivate, aPrincipal) {
   forbidCPOW(aURL, "internalSave", "aURL");
   forbidCPOW(aReferrer, "internalSave", "aReferrer");
   forbidCPOW(aCacheKey, "internalSave", "aCacheKey");
@@ -411,8 +416,17 @@ function internalSave(aURL, aDocument, aDefaultFileName, aContentDisposition,
         : aInitiatingDocument.isPrivate;
     }
 
+    
+    
+    
+    let sourcePrincipal =
+      aPrincipal ||
+      (aDocument && (aDocument.nodePrincipal || aDocument.principal)) ||
+      (aInitiatingDocument && aInitiatingDocument.nodePrincipal);
+
     var persistArgs = {
       sourceURI,
+      sourcePrincipal,
       sourceReferrer: aReferrer,
       sourceDocument: useSaveDocument ? aDocument : null,
       targetContentType: (saveAsType == kSaveAsType_Text) ? "text/plain" : null,
@@ -463,8 +477,7 @@ function internalPersist(persistArgs) {
 
   
   const nsIWBP = Ci.nsIWebBrowserPersist;
-  const flags = nsIWBP.PERSIST_FLAGS_REPLACE_EXISTING_FILES |
-                nsIWBP.PERSIST_FLAGS_FORCE_ALLOW_COOKIES;
+  const flags = nsIWBP.PERSIST_FLAGS_REPLACE_EXISTING_FILES;
   if (persistArgs.bypassCache)
     persist.persistFlags = flags | nsIWBP.PERSIST_FLAGS_BYPASS_CACHE;
   else
@@ -511,6 +524,7 @@ function internalPersist(persistArgs) {
                          persistArgs.targetContentType, encodingFlags, kWrapColumn);
   } else {
     persist.savePrivacyAwareURI(persistArgs.sourceURI,
+                                persistArgs.sourcePrincipal,
                                 persistArgs.sourceCacheKey,
                                 persistArgs.sourceReferrer,
                                 Ci.nsIHttpChannel.REFERRER_POLICY_UNSET,
