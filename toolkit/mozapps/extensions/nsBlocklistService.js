@@ -6,6 +6,8 @@
 
 "use strict";
 
+
+
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
@@ -75,6 +77,31 @@ const EXTENSION_BLOCK_FILTERS = ["id", "name", "creator", "homepageURL", "update
 var gLoggingEnabled = null;
 var gBlocklistEnabled = true;
 var gBlocklistLevel = DEFAULT_LEVEL;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -166,6 +193,11 @@ function restartApp() {
 
 
 
+
+
+
+
+
 function matchesOSABI(blocklistElement) {
   if (blocklistElement.hasAttribute("os")) {
     var choices = blocklistElement.getAttribute("os").split(",");
@@ -181,6 +213,8 @@ function matchesOSABI(blocklistElement) {
 
   return true;
 }
+
+
 
 
 
@@ -231,6 +265,14 @@ function Blocklist() {
 }
 
 Blocklist.prototype = {
+  STATE_NOT_BLOCKED: Ci.nsIBlocklistService.STATE_NOT_BLOCKED,
+  STATE_SOFTBLOCKED: Ci.nsIBlocklistService.STATE_SOFTBLOCKED,
+  STATE_BLOCKED: Ci.nsIBlocklistService.STATE_BLOCKED,
+  STATE_OUTDATED: Ci.nsIBlocklistService.STATE_OUTDATED,
+  STATE_VULNERABLE_UPDATE_AVAILABLE: Ci.nsIBlocklistService.STATE_VULNERABLE_UPDATE_AVAILABLE,
+  STATE_VULNERABLE_NO_UPDATE: Ci.nsIBlocklistService.STATE_VULNERABLE_NO_UPDATE,
+
+
   
 
 
@@ -288,6 +330,19 @@ Blocklist.prototype = {
   },
 
   
+
+
+
+
+
+
+
+
+
+
+
+
+
   getAddonBlocklistState(addon, appVersion, toolkitVersion) {
     if (!this.isLoaded)
       this._loadBlocklist();
@@ -296,7 +351,6 @@ Blocklist.prototype = {
   },
 
   
-
 
 
 
@@ -344,6 +398,26 @@ Blocklist.prototype = {
     return null;
   },
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   async getAddonBlocklistEntry(addon, appVersion, toolkitVersion) {
     await this.loadBlocklistAsync();
     return this._getAddonBlocklistEntry(addon, this._addonEntries,
@@ -351,7 +425,6 @@ Blocklist.prototype = {
   },
 
   
-
 
 
 
@@ -377,6 +450,8 @@ Blocklist.prototype = {
   },
 
   
+
+
 
 
 
@@ -756,6 +831,9 @@ Blocklist.prototype = {
       this._loadBlocklistFromString(text);
   },
 
+  
+
+
   get isLoaded() {
     return this._addonEntries != null && this._gfxEntries != null && this._pluginEntries != null;
   },
@@ -767,6 +845,9 @@ Blocklist.prototype = {
     this._pluginEntries = null;
     delete this._preloadPromise;
   },
+
+  
+
 
   async loadBlocklistAsync() {
     if (this.isLoaded) {
@@ -1090,6 +1171,7 @@ Blocklist.prototype = {
 
 
 
+
   _getPluginBlocklistEntry(plugin, pluginEntries, appVersion, toolkitVersion) {
     if (!gBlocklistEnabled)
       return null;
@@ -1135,6 +1217,7 @@ Blocklist.prototype = {
   },
 
   
+
 
 
 
@@ -1350,7 +1433,7 @@ Blocklist.prototype = {
     if ("@mozilla.org/addons/blocklist-prompt;1" in Cc) {
       try {
         let blockedPrompter = Cc["@mozilla.org/addons/blocklist-prompt;1"]
-                               .getService(Ci.nsIBlocklistPrompt);
+                               .getService().wrappedJSObject;
         blockedPrompter.prompt(addonList);
       } catch (e) {
         LOG(e);
@@ -1470,6 +1553,7 @@ BlocklistItemData.prototype = {
 
 
 
+
   includesItem(version, appVersion, toolkitVersion) {
     
     
@@ -1500,6 +1584,8 @@ BlocklistItemData.prototype = {
 
 
 
+
+
   matchesRange(version, minVersion, maxVersion) {
     if (minVersion && Services.vc.compare(version, minVersion) < 0)
       return false;
@@ -1509,6 +1595,7 @@ BlocklistItemData.prototype = {
   },
 
   
+
 
 
 
@@ -1539,6 +1626,7 @@ BlocklistItemData.prototype = {
 
 
 
+
   getBlocklistAppVersions(targetAppElement) {
     var appVersions = [ ];
 
@@ -1559,6 +1647,9 @@ BlocklistItemData.prototype = {
   },
 
   
+
+
+
 
 
 
