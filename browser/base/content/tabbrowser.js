@@ -1768,6 +1768,7 @@ window._gBrowser = {
     
     
     return Services.prefs.getBoolPref("browser.newtab.preload") &&
+      Services.prefs.getBoolPref("browser.newtabpage.enabled") &&
       !aboutNewTabService.overridden;
   },
 
