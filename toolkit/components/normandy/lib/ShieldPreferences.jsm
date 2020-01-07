@@ -22,17 +22,13 @@ const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 const NS_PREFBRANCH_PREFCHANGE_TOPIC_ID = "nsPref:changed"; 
 const FHR_UPLOAD_ENABLED_PREF = "datareporting.healthreport.uploadEnabled";
 const OPT_OUT_STUDIES_ENABLED_PREF = "app.shield.optoutstudies.enabled";
+const NORMANDY_ENABLED_PREF = "app.normandy.enabled";
 
 
 
 
 var ShieldPreferences = {
   init() {
-    
-    if (!Services.prefs.getBoolPref(FHR_UPLOAD_ENABLED_PREF)) {
-      Services.prefs.setBoolPref(OPT_OUT_STUDIES_ENABLED_PREF, false);
-    }
-
     
     Services.prefs.addObserver(FHR_UPLOAD_ENABLED_PREF, this);
     CleanupManager.addCleanupHandler(() => {
@@ -72,13 +68,6 @@ var ShieldPreferences = {
     let prefValue;
     switch (prefName) {
       
-      case FHR_UPLOAD_ENABLED_PREF: {
-        prefValue = Services.prefs.getBoolPref(FHR_UPLOAD_ENABLED_PREF);
-        Services.prefs.setBoolPref(OPT_OUT_STUDIES_ENABLED_PREF, prefValue);
-        break;
-      }
-
-      
       case OPT_OUT_STUDIES_ENABLED_PREF: {
         prefValue = Services.prefs.getBoolPref(OPT_OUT_STUDIES_ENABLED_PREF);
         if (!prefValue) {
@@ -98,6 +87,8 @@ var ShieldPreferences = {
 
 
   injectOptOutStudyCheckbox(doc) {
+    const allowedByPolicy = Services.policies.isAllowed("Shield");
+
     const container = doc.createElementNS(XUL_NS, "vbox");
     container.classList.add("indent");
 
@@ -109,15 +100,6 @@ var ShieldPreferences = {
     checkbox.setAttribute("id", "optOutStudiesEnabled");
     checkbox.setAttribute("class", "tail-with-learn-more");
     checkbox.setAttribute("label", "Allow Firefox to install and run studies");
-
-    let allowedByPolicy = Services.policies.isAllowed("Shield");
-    if (allowedByPolicy) {
-      
-      
-      
-      
-      checkbox.setAttribute("preference", OPT_OUT_STUDIES_ENABLED_PREF);
-    }
     hContainer.appendChild(checkbox);
 
     const viewStudies = doc.createElementNS(XUL_NS, "label");
@@ -133,11 +115,49 @@ var ShieldPreferences = {
 
     
     const fhrPref = doc.defaultView.Preferences.add({ id: FHR_UPLOAD_ENABLED_PREF, type: "bool" });
-    function onChangeFHRPref() {
-      let isDisabled = Services.prefs.prefIsLocked(FHR_UPLOAD_ENABLED_PREF) ||
-                       !AppConstants.MOZ_TELEMETRY_REPORTING ||
-                       !Services.prefs.getBoolPref(FHR_UPLOAD_ENABLED_PREF) ||
-                       !allowedByPolicy;
+    function updateStudyCheckboxState() {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+
+      const checkboxMatchesPref = (
+        AppConstants.MOZ_DATA_REPORTING &&
+        allowedByPolicy &&
+        Services.prefs.getBoolPref(FHR_UPLOAD_ENABLED_PREF, false) &&
+        Services.prefs.getBoolPref(NORMANDY_ENABLED_PREF, false)
+      );
+
+      if (checkboxMatchesPref) {
+        if (Services.prefs.getBoolPref(OPT_OUT_STUDIES_ENABLED_PREF)) {
+          checkbox.setAttribute("checked", "checked");
+        } else {
+          checkbox.removeAttribute("checked");
+        }
+        checkbox.setAttribute("preference", OPT_OUT_STUDIES_ENABLED_PREF);
+      } else {
+        checkbox.removeAttribute("preference");
+        checkbox.removeAttribute("checked");
+      }
+
+      const isDisabled = (
+        !allowedByPolicy ||
+        Services.prefs.prefIsLocked(OPT_OUT_STUDIES_ENABLED_PREF) ||
+        !Services.prefs.getBoolPref(FHR_UPLOAD_ENABLED_PREF)
+      );
+
       
       
       if (isDisabled) {
@@ -146,9 +166,9 @@ var ShieldPreferences = {
         checkbox.removeAttribute("disabled");
       }
     }
-    fhrPref.on("change", onChangeFHRPref);
-    onChangeFHRPref();
-    doc.defaultView.addEventListener("unload", () => fhrPref.off("change", onChangeFHRPref), { once: true });
+    fhrPref.on("change", updateStudyCheckboxState);
+    updateStudyCheckboxState();
+    doc.defaultView.addEventListener("unload", () => fhrPref.off("change", updateStudyCheckboxState), { once: true });
 
     
     const parent = doc.getElementById("submitHealthReportBox").closest("description");
