@@ -1826,6 +1826,9 @@ PresShell::Initialize(nscoord aWidth, nscoord aHeight)
     
     
     nsContentUtils::AddScriptRunner(new XBLConstructorRunner(mDocument));
+
+    
+    NS_ENSURE_STATE(!mHaveShutDown);
   }
 
   NS_ASSERTION(rootFrame, "How did that happen?");
