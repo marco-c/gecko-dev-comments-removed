@@ -1033,41 +1033,55 @@ EnvironmentCache.prototype = {
   _getPrefData() {
     let prefData = {};
     for (let [pref, policy] of this._watchedPrefs.entries()) {
-      let prefType = Services.prefs.getPrefType(pref);
+      let prefValue = this._getPrefValue(pref, policy.what);
 
-      let what = policy.what;
-      if (what == TelemetryEnvironment.RECORD_DEFAULTPREF_VALUE ||
-          what == TelemetryEnvironment.RECORD_DEFAULTPREF_STATE) {
-        
-        if (prefType == Ci.nsIPrefBranch.PREF_INVALID) {
-          continue;
-        }
-      } else if (!Services.prefs.prefHasUserValue(pref)) {
-        
+      if (prefValue === undefined) {
         continue;
       }
 
-      
-      
-      let prefValue;
-      if (what == TelemetryEnvironment.RECORD_DEFAULTPREF_STATE) {
-        prefValue = "<set>";
-      } else if (what == TelemetryEnvironment.RECORD_PREF_STATE) {
-        prefValue = "<user-set>";
-      } else if (prefType == Ci.nsIPrefBranch.PREF_STRING) {
-        prefValue = Services.prefs.getStringPref(pref);
-      } else if (prefType == Ci.nsIPrefBranch.PREF_BOOL) {
-        prefValue = Services.prefs.getBoolPref(pref);
-      } else if (prefType == Ci.nsIPrefBranch.PREF_INT) {
-        prefValue = Services.prefs.getIntPref(pref);
-      } else if (prefType == Ci.nsIPrefBranch.PREF_INVALID) {
-        prefValue = null;
-      } else {
-        throw new Error(`Unexpected preference type ("${prefType}") for "${pref}".`);
-      }
       prefData[pref] = prefValue;
     }
     return prefData;
+  },
+
+  
+
+
+
+
+
+
+
+  _getPrefValue(pref, what) {
+    
+    
+    let prefType = Services.prefs.getPrefType(pref);
+
+    if (what == TelemetryEnvironment.RECORD_DEFAULTPREF_VALUE ||
+      what == TelemetryEnvironment.RECORD_DEFAULTPREF_STATE) {
+      
+      if (prefType == Ci.nsIPrefBranch.PREF_INVALID) {
+        return undefined;
+      }
+    } else if (!Services.prefs.prefHasUserValue(pref)) {
+      
+      return undefined;
+    }
+
+    if (what == TelemetryEnvironment.RECORD_DEFAULTPREF_STATE) {
+      return "<set>";
+    } else if (what == TelemetryEnvironment.RECORD_PREF_STATE) {
+      return "<user-set>";
+    } else if (prefType == Ci.nsIPrefBranch.PREF_STRING) {
+      return Services.prefs.getStringPref(pref);
+    } else if (prefType == Ci.nsIPrefBranch.PREF_BOOL) {
+      return Services.prefs.getBoolPref(pref);
+    } else if (prefType == Ci.nsIPrefBranch.PREF_INT) {
+      return Services.prefs.getIntPref(pref);
+    } else if (prefType == Ci.nsIPrefBranch.PREF_INVALID) {
+      return null;
+    }
+    throw new Error(`Unexpected preference type ("${prefType}") for "${pref}".`);
   },
 
   QueryInterface: XPCOMUtils.generateQI([Ci.nsISupportsWeakReference]),
@@ -1085,10 +1099,10 @@ EnvironmentCache.prototype = {
     }
   },
 
-  _onPrefChanged() {
+  _onPrefChanged(aData) {
     this._log.trace("_onPrefChanged");
     let oldEnvironment = Cu.cloneInto(this._currentEnvironment, myScope);
-    this._updateSettings();
+    this._currentEnvironment.settings.userPrefs[aData] = this._getPrefValue(aData, this._watchedPrefs.get(aData).what);
     this._onEnvironmentChange("pref-changed", oldEnvironment);
   },
 
@@ -1175,7 +1189,7 @@ EnvironmentCache.prototype = {
         break;
       case PREF_CHANGED_TOPIC:
         if (this._watchedPrefs.has(aData)) {
-          this._onPrefChanged();
+          this._onPrefChanged(aData);
         }
         break;
     }
