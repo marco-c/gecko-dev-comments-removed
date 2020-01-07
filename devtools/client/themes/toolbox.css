@@ -164,8 +164,10 @@
   transform: rotate(180deg);
 }
 
-#toolbox-controls {
-  margin-right: 3px;
+
+
+:root[platform="mac"] #toolbox-controls {
+  margin-inline-end: 3px;
 }
 
 #toolbox-buttons-end > .devtools-separator {
