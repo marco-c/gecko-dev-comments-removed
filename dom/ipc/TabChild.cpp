@@ -436,7 +436,6 @@ TabChild::TabChild(nsIContentChild* aManager,
   , mTopLevelDocAccessibleChild(nullptr)
 #endif
   , mPendingDocShellIsActive(false)
-  , mPendingDocShellPreserveLayers(false)
   , mPendingDocShellReceivedMessage(false)
   , mPendingDocShellBlockers(0)
   , mWidgetNativeData(0)
@@ -2662,8 +2661,7 @@ TabChild::RemovePendingDocShellBlocker()
   mPendingDocShellBlockers--;
   if (!mPendingDocShellBlockers && mPendingDocShellReceivedMessage) {
     mPendingDocShellReceivedMessage = false;
-    InternalSetDocShellIsActive(mPendingDocShellIsActive,
-                                mPendingDocShellPreserveLayers);
+    InternalSetDocShellIsActive(mPendingDocShellIsActive);
   }
 }
 
@@ -2685,15 +2683,52 @@ TabChild::OnDocShellActivated(bool aIsActive)
 }
 
 void
-TabChild::InternalSetDocShellIsActive(bool aIsActive, bool aPreserveLayers)
+TabChild::InternalSetDocShellIsActive(bool aIsActive)
 {
+  
+  mIsPrerendered &= !aIsActive;
+  nsCOMPtr<nsIDocShell> docShell = do_GetInterface(WebNavigation());
+
+  if (docShell) {
+    docShell->SetIsActive(aIsActive);
+  }
+}
+
+mozilla::ipc::IPCResult
+TabChild::RecvSetDocShellIsActive(const bool& aIsActive)
+{
+  
+  
+  
+  if (mPendingDocShellBlockers > 0) {
+    mPendingDocShellReceivedMessage = true;
+    mPendingDocShellIsActive = aIsActive;
+    return IPC_OK();
+  }
+
+  InternalSetDocShellIsActive(aIsActive);
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult
+TabChild::RecvRenderLayers(const bool& aEnabled, const uint64_t& aLayerObserverEpoch)
+{
+  
+  
+  
+  
+  if (mLayerObserverEpoch >= aLayerObserverEpoch) {
+    return IPC_OK();
+  }
+  mLayerObserverEpoch = aLayerObserverEpoch;
+
   auto clearForcePaint = MakeScopeExit([&] {
     
     
     
     
     
-    if (aIsActive) {
+    if (aEnabled) {
       ProcessHangMonitor::ClearForcePaint();
     }
   });
@@ -2709,30 +2744,22 @@ TabChild::InternalSetDocShellIsActive(bool aIsActive, bool aPreserveLayers)
     lm->SetLayerObserverEpoch(mLayerObserverEpoch);
   }
 
-  
-  mIsPrerendered &= !aIsActive;
-  nsCOMPtr<nsIDocShell> docShell = do_GetInterface(WebNavigation());
-  if (docShell) {
-    bool wasActive;
-    docShell->GetIsActive(&wasActive);
-    if (aIsActive && wasActive) {
+  if (aEnabled) {
+    if (IsVisible()) {
       
       
       
       if (IPCOpen()) {
         Unused << SendForcePaintNoOp(mLayerObserverEpoch);
-        return;
+        return IPC_OK();
       }
     }
 
-    docShell->SetIsActive(aIsActive);
-  }
-
-  if (aIsActive) {
     MakeVisible();
 
+    nsCOMPtr<nsIDocShell> docShell = do_GetInterface(WebNavigation());
     if (!docShell) {
-      return;
+      return IPC_OK();
     }
 
     
@@ -2740,6 +2767,8 @@ TabChild::InternalSetDocShellIsActive(bool aIsActive, bool aPreserveLayers)
     
     
     if (nsCOMPtr<nsIPresShell> presShell = docShell->GetPresShell()) {
+      presShell->SetIsActive(true);
+
       if (nsIFrame* root = presShell->FrameConstructor()->GetRootFrame()) {
         FrameLayerBuilder::InvalidateAllLayersForFrame(
           nsLayoutUtils::GetDisplayRootFrame(root));
@@ -2763,36 +2792,10 @@ TabChild::InternalSetDocShellIsActive(bool aIsActive, bool aPreserveLayers)
       }
       APZCCallbackHelper::SuppressDisplayport(false, presShell);
     }
-  } else if (!aPreserveLayers) {
+  } else {
     MakeHidden();
   }
-}
 
-mozilla::ipc::IPCResult
-TabChild::RecvSetDocShellIsActive(const bool& aIsActive,
-                                  const bool& aPreserveLayers,
-                                  const uint64_t& aLayerObserverEpoch)
-{
-  
-  
-  
-  
-  if (mLayerObserverEpoch >= aLayerObserverEpoch) {
-    return IPC_OK();
-  }
-  mLayerObserverEpoch = aLayerObserverEpoch;
-
-  
-  
-  
-  if (mPendingDocShellBlockers > 0) {
-    mPendingDocShellReceivedMessage = true;
-    mPendingDocShellIsActive = aIsActive;
-    mPendingDocShellPreserveLayers = aPreserveLayers;
-    return IPC_OK();
-  }
-
-  InternalSetDocShellIsActive(aIsActive, aPreserveLayers);
   return IPC_OK();
 }
 
@@ -3037,7 +3040,7 @@ TabChild::NotifyPainted()
 void
 TabChild::MakeVisible()
 {
-  if (mPuppetWidget && mPuppetWidget->IsVisible()) {
+  if (IsVisible()) {
     return;
   }
 
@@ -3049,7 +3052,7 @@ TabChild::MakeVisible()
 void
 TabChild::MakeHidden()
 {
-  if (mPuppetWidget && !mPuppetWidget->IsVisible()) {
+  if (!IsVisible()) {
     return;
   }
 
@@ -3063,11 +3066,18 @@ TabChild::MakeHidden()
       rootPresContext->ComputePluginGeometryUpdates(rootFrame, nullptr, nullptr);
       rootPresContext->ApplyPluginGeometryUpdates();
     }
+    shell->SetIsActive(false);
   }
 
   if (mPuppetWidget) {
     mPuppetWidget->Show(false);
   }
+}
+
+bool
+TabChild::IsVisible()
+{
+  return mPuppetWidget && mPuppetWidget->IsVisible();
 }
 
 NS_IMETHODIMP
@@ -3558,7 +3568,7 @@ TabChild::ForcePaint(uint64_t aLayerObserverEpoch)
   }
 
   nsAutoScriptBlocker scriptBlocker;
-  RecvSetDocShellIsActive(true, false, aLayerObserverEpoch);
+  RecvRenderLayers(true, aLayerObserverEpoch);
 }
 
 void
