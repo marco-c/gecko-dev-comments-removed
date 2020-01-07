@@ -5,8 +5,7 @@
 
 add_task(async function() {
   await SpecialPowers.pushPrefEnv({"set": [
-    ["browser.preferences.search", true],
-    ["browser.storageManager.enabled", true]
+    ["browser.preferences.search", true]
   ]});
 });
 

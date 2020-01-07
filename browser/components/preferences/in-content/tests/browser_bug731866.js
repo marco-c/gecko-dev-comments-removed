@@ -4,7 +4,6 @@
 ChromeUtils.import("resource://gre/modules/PlacesUtils.jsm");
 ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
 
-const storageManagerDisabled = !SpecialPowers.getBoolPref("browser.storageManager.enabled");
 const browserContainersGroupDisabled = !SpecialPowers.getBoolPref("privacy.userContext.ui.enabled");
 
 function test() {
@@ -22,14 +21,7 @@ function checkElements(expectedPane) {
         element.id === "drmGroup") {
       continue;
     }
-    
-    
-    
-    
-    if (element.id == "siteDataGroup" && storageManagerDisabled) {
-      is_element_hidden(element, "Disabled siteDataGroup should be hidden");
-      continue;
-    }
+
     
     if (element.id == "browserContainersGroup" && browserContainersGroupDisabled) {
       is_element_hidden(element, "Disabled browserContainersGroup should be hidden");

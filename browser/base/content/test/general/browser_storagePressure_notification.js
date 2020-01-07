@@ -23,7 +23,6 @@ function openAboutPrefPromise() {
 
 add_task(async function() {
   const TEST_NOTIFICATION_INTERVAL_MS = 2000;
-  await SpecialPowers.pushPrefEnv({set: [["browser.storageManager.enabled", true]]});
   await SpecialPowers.pushPrefEnv({set: [["browser.storageManager.pressureNotification.minIntervalMS", TEST_NOTIFICATION_INTERVAL_MS]]});
   
   
@@ -47,7 +46,6 @@ add_task(async function() {
 
 
 add_task(async function() {
-  await SpecialPowers.pushPrefEnv({ set: [["browser.storageManager.enabled", true]] });
   await SpecialPowers.pushPrefEnv({ set: [["browser.storageManager.pressureNotification.minIntervalMS", 0]] });
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, "https://example.com");
 
@@ -74,7 +72,6 @@ add_task(async function() {
 
 add_task(async function() {
   const TEST_NOTIFICATION_INTERVAL_MS = 0;
-  await SpecialPowers.pushPrefEnv({set: [["browser.storageManager.enabled", true]]});
   await SpecialPowers.pushPrefEnv({set: [["browser.storageManager.pressureNotification.minIntervalMS", TEST_NOTIFICATION_INTERVAL_MS]]});
 
   await notifyStoragePressure();

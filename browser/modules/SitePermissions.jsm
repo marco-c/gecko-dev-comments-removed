@@ -684,12 +684,6 @@ var gPermissionObject = {
   }
 };
 
-
-
-if (!Services.prefs.getBoolPref("browser.storageManager.enabled")) {
-  delete gPermissionObject["persistent-storage"];
-}
-
 if (!Services.prefs.getBoolPref("dom.webmidi.enabled")) {
   
   
