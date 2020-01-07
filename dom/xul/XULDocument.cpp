@@ -3219,6 +3219,16 @@ XULDocument::OnScriptCompileComplete(JSScript* aScript, nsresult aStatus)
         *docp = doc->mNextSrcLoadWaiter;
         doc->mNextSrcLoadWaiter = nullptr;
 
+        if (aStatus == NS_BINDING_ABORTED && !scriptProto->HasScriptObject()) {
+            
+            
+            
+            bool block = false;
+            doc->LoadScript(scriptProto, &block);
+            NS_RELEASE(doc);
+            return rv;
+        }
+
         
         if (NS_SUCCEEDED(aStatus) && scriptProto->HasScriptObject()) {
             doc->ExecuteScript(scriptProto);
