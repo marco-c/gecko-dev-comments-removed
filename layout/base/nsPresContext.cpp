@@ -79,6 +79,7 @@
 #include "gfxPrefs.h"
 #include "nsIDOMChromeWindow.h"
 #include "nsFrameLoader.h"
+#include "mozilla/dom/FontFaceSet.h"
 #include "nsContentUtils.h"
 #include "nsPIWindowRoot.h"
 #include "mozilla/Preferences.h"
@@ -218,19 +219,10 @@ nsPresContext::PrefChangedCallback(const char* aPrefName, void* instance_data)
   RefPtr<nsPresContext>  presContext =
     static_cast<nsPresContext*>(instance_data);
 
-  NS_ASSERTION(nullptr != presContext, "bad instance data");
-  if (nullptr != presContext) {
+  NS_ASSERTION(presContext, "bad instance data");
+  if (presContext) {
     presContext->PreferenceChanged(aPrefName);
   }
-}
-
-void
-nsPresContext::PrefChangedUpdateTimerCallback(nsITimer *aTimer, void *aClosure)
-{
-  nsPresContext*  presContext = (nsPresContext*)aClosure;
-  NS_ASSERTION(presContext != nullptr, "bad instance data");
-  if (presContext)
-    presContext->UpdateAfterPreferencesChanged();
 }
 
 void
@@ -377,12 +369,6 @@ nsPresContext::Destroy()
     mEventManager = nullptr;
   }
 
-  if (mPrefChangedTimer)
-  {
-    mPrefChangedTimer->Cancel();
-    mPrefChangedTimer = nullptr;
-  }
-
   
   Preferences::UnregisterPrefixCallback(nsPresContext::PrefChangedCallback,
                                         "font.",
@@ -475,7 +461,6 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(nsPresContext)
   
   
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPrintSettings);
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPrefChangedTimer);
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(nsPresContext)
@@ -822,21 +807,16 @@ nsPresContext::PreferenceChanged(const char* aPrefName)
     
     mPrefChangePendingNeedsReflow = true;
   }
+
   
-  if (!mPrefChangedTimer)
-  {
-    
-    
-    
-    
-    
-    nsLayoutStylesheetCache::InvalidatePreferenceSheets();
-    mPrefChangedTimer = CreateTimer(PrefChangedUpdateTimerCallback,
-                                    "PrefChangedUpdateTimerCallback", 0);
-    if (!mPrefChangedTimer) {
-      return;
-    }
-  }
+  
+  
+  
+  
+  
+  nsLayoutStylesheetCache::InvalidatePreferenceSheets();
+  DispatchPrefChangedRunnableIfNeeded();
+
   if (prefName.EqualsLiteral("nglayout.debug.paint_flashing") ||
       prefName.EqualsLiteral("nglayout.debug.paint_flashing_chrome")) {
     mPaintFlashingInitialized = false;
@@ -845,9 +825,29 @@ nsPresContext::PreferenceChanged(const char* aPrefName)
 }
 
 void
+nsPresContext::DispatchPrefChangedRunnableIfNeeded()
+{
+  if (mPostedPrefChangedRunnable) {
+    return;
+  }
+
+  nsCOMPtr<nsIRunnable> runnable =
+    NewRunnableMethod("nsPresContext::UpdateAfterPreferencesChanged",
+                      this,
+                      &nsPresContext::UpdateAfterPreferencesChanged);
+  nsresult rv = Document()->Dispatch(TaskCategory::Other, runnable.forget());
+  if (NS_SUCCEEDED(rv)) {
+    mPostedPrefChangedRunnable = true;
+  }
+}
+
+void
 nsPresContext::UpdateAfterPreferencesChanged()
 {
-  mPrefChangedTimer = nullptr;
+  mPostedPrefChangedRunnable = false;
+  if (!mShell) {
+    return;
+  }
 
   if (!mContainer) {
     
@@ -864,9 +864,7 @@ nsPresContext::UpdateAfterPreferencesChanged()
   GetUserPreferences();
 
   
-  if (mShell) {
-    mShell->UpdatePreferenceStyles();
-  }
+  mShell->UpdatePreferenceStyles();
 
   InvalidatePaintedLayers();
   mDeviceContext->FlushFontCache();
@@ -1636,10 +1634,7 @@ nsPresContext::SetContainer(nsIDocShell* aDocShell)
                  "Should only need pref update if mContainer is null.");
     mContainer = static_cast<nsDocShell*>(aDocShell);
     if (mNeedsPrefUpdate) {
-      if (!mPrefChangedTimer) {
-        mPrefChangedTimer = CreateTimer(PrefChangedUpdateTimerCallback,
-                                        "PrefChangedUpdateTimerCallback", 0);
-      }
+      DispatchPrefChangedRunnableIfNeeded();
       mNeedsPrefUpdate = false;
     }
   } else {
@@ -1832,8 +1827,7 @@ nsPresContext::ThemeChanged()
       NewRunnableMethod("nsPresContext::ThemeChangedInternal",
                         this,
                         &nsPresContext::ThemeChangedInternal);
-    nsresult rv = Document()->Dispatch(TaskCategory::Other,
-                                       ev.forget());
+    nsresult rv = Document()->Dispatch(TaskCategory::Other, ev.forget());
     if (NS_SUCCEEDED(rv)) {
       mPendingThemeChanged = true;
     }
@@ -1887,8 +1881,7 @@ nsPresContext::SysColorChanged()
       NewRunnableMethod("nsPresContext::SysColorChangedInternal",
                         this,
                         &nsPresContext::SysColorChangedInternal);
-    nsresult rv = Document()->Dispatch(TaskCategory::Other,
-                                       ev.forget());
+    nsresult rv = Document()->Dispatch(TaskCategory::Other, ev.forget());
     if (NS_SUCCEEDED(rv)) {
       mPendingSysColorChanged = true;
     }
@@ -2883,6 +2876,15 @@ nsPresContext::HavePendingInputEvent()
       }
       return false;
     }
+  }
+}
+
+void
+nsPresContext::NotifyFontFaceSetOnRefresh()
+{
+  FontFaceSet* set = mDocument->GetFonts();
+  if (set) {
+    set->DidRefresh();
   }
 }
 
