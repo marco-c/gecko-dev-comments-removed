@@ -102,9 +102,13 @@ struct APZCTreeManager::TreeBuildingState {
   
   
   
+  
+  
+  
   std::unordered_map<ScrollableLayerGuid,
-                     AsyncPanZoomController*,
-                     ScrollableLayerGuid::HashFn> mApzcMap;
+                     RefPtr<AsyncPanZoomController>,
+                     ScrollableLayerGuid::HashIgnoringPresShellFn,
+                     ScrollableLayerGuid::EqualIgnoringPresShellFn> mApzcMap;
 
   
   
@@ -231,6 +235,7 @@ APZCTreeManager::APZCTreeManager(LayersId aRootLayersId)
       mSampler(nullptr),
       mUpdater(nullptr),
       mTreeLock("APZCTreeLock"),
+      mMapLock("APZCMapLock"),
       mHitResultForInputBlock(CompositorHitTestInfo::eInvisibleToHitTest),
       mRetainedTouchIdentifier(-1),
       mInScrollbarTouchDrag(false),
@@ -474,6 +479,12 @@ APZCTreeManager::UpdateHitTestingTreeImpl(LayersId aRootLayerTreeId,
 
   
   MOZ_ASSERT(!(mRootNode && mRootNode->GetPrevSibling()));
+
+  { 
+    
+    MutexAutoLock lock(mMapLock);
+    mApzcMap = Move(state.mApzcMap);
+  }
 
   for (size_t i = 0; i < state.mNodesToDestroy.Length(); i++) {
     APZCTM_LOG("Destroying node at %p with APZC %p\n",

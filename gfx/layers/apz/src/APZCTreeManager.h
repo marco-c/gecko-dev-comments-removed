@@ -102,6 +102,7 @@ struct ScrollThumbData;
 
 
 
+
 class APZCTreeManager : public IAPZCTreeManager
                       , public APZInputBridge {
 
@@ -731,6 +732,16 @@ private:
 
   mutable mozilla::RecursiveMutex mTreeLock;
   RefPtr<HitTestingTreeNode> mRootNode;
+
+  
+
+
+
+  mutable mozilla::Mutex mMapLock;
+  std::unordered_map<ScrollableLayerGuid,
+                     RefPtr<AsyncPanZoomController>,
+                     ScrollableLayerGuid::HashIgnoringPresShellFn,
+                     ScrollableLayerGuid::EqualIgnoringPresShellFn> mApzcMap;
 
   
 
