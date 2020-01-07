@@ -1945,8 +1945,11 @@ nsLayoutUtils::DoCompareTreePosition(nsIFrame* aFrame1,
   }
 
   AutoTArray<nsIFrame*,20> frame1Ancestors;
-  if (aCommonAncestor &&
-      !FillAncestors(aFrame1, aCommonAncestor, &frame1Ancestors)) {
+  
+  
+  
+  if (!FillAncestors(aFrame1, aCommonAncestor, &frame1Ancestors) &&
+      aCommonAncestor) {
     
     
     return DoCompareTreePosition(aFrame1, aFrame2,
