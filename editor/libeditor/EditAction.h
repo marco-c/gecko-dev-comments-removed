@@ -86,7 +86,9 @@ enum class EditSubAction : int32_t
   
   eCreateOrRemoveBlock,
 
-  removeList,
+  
+  eRemoveList,
+
   makeDefListItem,
   insertElement,
   insertQuotation,
