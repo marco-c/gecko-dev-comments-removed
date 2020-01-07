@@ -202,9 +202,6 @@ class MacroAssemblerX86Shared : public Assembler
     void jump(const Address& addr) {
         jmp(Operand(addr));
     }
-    void jump(wasm::OldTrapDesc target) {
-        jmp(target);
-    }
 
     void convertInt32ToDouble(Register src, FloatRegister dest) {
         

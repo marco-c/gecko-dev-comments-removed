@@ -1112,7 +1112,6 @@ class CodeRange
         ImportJitExit,     
         BuiltinThunk,      
         TrapExit,          
-        OldTrapExit,       
         DebugTrap,         
         FarJumpIsland,     
         OutOfBoundsExit,   
@@ -1152,7 +1151,6 @@ class CodeRange
     CodeRange(Kind kind, CallableOffsets offsets);
     CodeRange(Kind kind, uint32_t funcIndex, CallableOffsets);
     CodeRange(uint32_t funcIndex, JitExitOffsets offsets);
-    CodeRange(Trap trap, CallableOffsets offsets);
     CodeRange(uint32_t funcIndex, uint32_t lineOrBytecode, FuncOffsets offsets);
 
     void offsetBy(uint32_t offset) {
@@ -1190,7 +1188,7 @@ class CodeRange
         return kind() == ImportJitExit;
     }
     bool isTrapExit() const {
-        return kind() == OldTrapExit || kind() == TrapExit;
+        return kind() == TrapExit;
     }
     bool isDebugTrap() const {
         return kind() == DebugTrap;
@@ -1204,7 +1202,7 @@ class CodeRange
     
 
     bool hasReturn() const {
-        return isFunction() || isImportExit() || kind() == OldTrapExit || isDebugTrap();
+        return isFunction() || isImportExit() || isDebugTrap();
     }
     uint32_t ret() const {
         MOZ_ASSERT(hasReturn());
@@ -1306,7 +1304,6 @@ class CallSiteDesc
         Func,       
         Dynamic,    
         Symbolic,   
-        OldTrapExit,
         EnterFrame, 
         LeaveFrame, 
         Breakpoint  
@@ -1429,7 +1426,6 @@ enum class SymbolicAddress
     HandleDebugTrap,
     HandleThrow,
     HandleTrap,
-    OldReportTrap,
     ReportOutOfBounds,
     ReportUnalignedAccess,
     ReportInt64JSCall,
