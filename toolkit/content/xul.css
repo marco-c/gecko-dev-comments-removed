@@ -1029,24 +1029,6 @@ richlistbox > listheader {
 
 
 
-datepicker {
-  -moz-binding: url('chrome://global/content/bindings/datetimepicker.xml#datepicker');
-}
-
-datepicker[type="popup"] {
-  -moz-binding: url('chrome://global/content/bindings/datetimepicker.xml#datepicker-popup');
-}
-
-datepicker[type="grid"] {
-  -moz-binding: url('chrome://global/content/bindings/datetimepicker.xml#datepicker-grid');
-}
-
-timepicker {
-  -moz-binding: url('chrome://global/content/bindings/datetimepicker.xml#timepicker');
-}
-
-
-
 findbar {
   -moz-binding: url('chrome://global/content/bindings/findbar.xml#findbar');
   overflow-x: hidden;
