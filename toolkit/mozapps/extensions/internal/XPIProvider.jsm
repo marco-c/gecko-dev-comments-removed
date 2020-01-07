@@ -38,6 +38,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   ConsoleAPI: "resource://gre/modules/Console.jsm",
   JSONFile: "resource://gre/modules/JSONFile.jsm",
   LegacyExtensionsUtils: "resource://gre/modules/LegacyExtensionsUtils.jsm",
+  TelemetrySession: "resource://gre/modules/TelemetrySession.jsm",
 
   XPIDatabase: "resource://gre/modules/addons/XPIDatabase.jsm",
   XPIDatabaseReconcile: "resource://gre/modules/addons/XPIDatabase.jsm",
@@ -532,6 +533,7 @@ const JSON_FIELDS = Object.freeze([
   "path",
   "runInSafeMode",
   "startupData",
+  "telemetryKey",
   "type",
   "version",
 ]);
@@ -557,6 +559,10 @@ class XPIState {
       if (prop in saved) {
         this[prop] = saved[prop];
       }
+    }
+
+    if (!this.telemetryKey) {
+      this.telemetryKey = this.getTelemetryKey();
     }
 
     if (saved.currentModifiedTime && saved.currentModifiedTime != this.lastModifiedTime) {
@@ -651,6 +657,7 @@ class XPIState {
       lastModifiedTime: this.lastModifiedTime,
       path: this.relativePath,
       version: this.version,
+      telemetryKey: this.telemetryKey,
     };
     if (this.type != "extension") {
       json.type = this.type;
@@ -698,6 +705,16 @@ class XPIState {
 
 
 
+  getTelemetryKey() {
+    return encoded`${this.id}:${this.version}`;
+  }
+
+  
+
+
+
+
+
 
 
 
@@ -719,6 +736,8 @@ class XPIState {
     if (aDBAddon.startupData) {
       this.startupData = aDBAddon.startupData;
     }
+
+    this.telemetryKey = this.getTelemetryKey();
 
     this.bootstrapped = !!aDBAddon.bootstrap;
     if (this.bootstrapped) {
@@ -1851,15 +1870,12 @@ var XPIProvider = {
       return;
     }
 
-    let data = Array.from(XPIStates.enabledAddons(),
-                          a => encoded`${a.id}:${a.version}`).join(",");
+    let data = Array.from(XPIStates.enabledAddons(), a => a.telemetryKey).join(",");
 
     try {
       Services.appinfo.annotateCrashReport("Add-ons", data);
     } catch (e) { }
 
-    let TelemetrySession =
-      ChromeUtils.import("resource://gre/modules/TelemetrySession.jsm", {}).TelemetrySession;
     TelemetrySession.setAddOns(data);
   },
 
@@ -2522,8 +2538,11 @@ var XPIProvider = {
 
 
 
+
+
+
   loadBootstrapScope(aId, aFile, aVersion, aType, aRunInSafeMode, aDependencies,
-                     hasEmbeddedWebExtension) {
+                     hasEmbeddedWebExtension, aReason) {
     this.activeAddons.set(aId, {
       bootstrapScope: null,
       
@@ -2532,7 +2551,11 @@ var XPIProvider = {
     });
 
     
-    this.addAddonsToCrashReporter();
+    
+    
+    if (aReason !== BOOTSTRAP_REASONS.APP_STARTUP) {
+      this.addAddonsToCrashReporter();
+    }
 
     let activeAddon = this.activeAddons.get(aId);
 
@@ -2644,7 +2667,8 @@ var XPIProvider = {
       if (!activeAddon) {
         this.loadBootstrapScope(aAddon.id, aFile, aAddon.version, aAddon.type,
                                 runInSafeMode, aAddon.dependencies,
-                                aAddon.hasEmbeddedWebExtension || false);
+                                aAddon.hasEmbeddedWebExtension || false,
+                                aReason);
         activeAddon = this.activeAddons.get(aAddon.id);
       }
 
