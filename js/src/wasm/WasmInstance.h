@@ -55,7 +55,7 @@ class Instance
     bool                            enterFrameTrapsEnabled_;
 
     
-    const void** addressOfSigId(const SigIdDesc& sigId) const;
+    const void** addressOfFuncTypeId(const FuncTypeIdDesc& funcTypeId) const;
     FuncImportTls& funcImportTls(const FuncImport& fi);
     TableTls& tableTls(const TableDesc& td) const;
 
