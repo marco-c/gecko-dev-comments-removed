@@ -1768,7 +1768,8 @@ FontFaceSet::CheckLoadingFinished()
     return;
   }
 
-  if (mStatus == FontFaceSetLoadStatus::Loaded) {
+  if ((mReady && mReady->State() != Promise::PromiseState::Pending) ||
+      mResolveLazilyCreatedReadyPromise) {
     
     
     return;
