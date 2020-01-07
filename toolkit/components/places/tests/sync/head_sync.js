@@ -1,13 +1,22 @@
+
+
+
+ChromeUtils.import("resource://gre/modules/Services.jsm");
+
+
+{
+  
+  let commonFile = do_get_file("../head_common.js", false);
+  let uri = Services.io.newFileURI(commonFile);
+  Services.scriptloader.loadSubScript(uri.spec, this);
+}
+
+
+
 ChromeUtils.import("resource://gre/modules/Log.jsm");
 ChromeUtils.import("resource://gre/modules/ObjectUtils.jsm");
-ChromeUtils.import("resource://gre/modules/osfile.jsm");
-ChromeUtils.import("resource://gre/modules/PlacesUtils.jsm");
 ChromeUtils.import("resource://gre/modules/PlacesSyncUtils.jsm");
-ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/SyncedBookmarksMirror.jsm");
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-
-ChromeUtils.import("resource://testing-common/PlacesTestUtils.jsm");
 ChromeUtils.import("resource://testing-common/httpd.js");
 
 

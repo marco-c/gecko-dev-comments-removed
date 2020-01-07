@@ -23,7 +23,7 @@ tests.push({
   
   _litterTitle: "",
 
-  populate: function populate() {
+  async populate() {
     
     var rootNode = PlacesUtils.getFolderContents(PlacesUtils.placesRootId,
                                                  false, false).root;
@@ -43,16 +43,16 @@ tests.push({
     PlacesUtils.tagging.tagURI(this._testURI, this._tags);
 
     
+    await PlacesUtils.bookmarks.eraseEverything();
     this._roots = [PlacesUtils.bookmarksMenuFolderId, PlacesUtils.toolbarFolderId,
                    PlacesUtils.unfiledBookmarksFolderId, PlacesUtils.mobileFolderId,
                    this._folderId];
-    this._roots.forEach(function(aRootId) {
-      
-      PlacesUtils.bookmarks.removeFolderChildren(aRootId);
-      
+
+    this._roots.forEach(aRootId => {
+          
       PlacesUtils.bookmarks.insertBookmark(aRootId, this._testURI,
                                            PlacesUtils.bookmarks.DEFAULT_INDEX, "test");
-    }, this);
+    });
 
     
     
@@ -127,11 +127,11 @@ add_task(async function() {
   let jsonFile = OS.Path.join(OS.Constants.Path.profileDir, "bookmarks.json");
 
   
-  tests.forEach(function(aTest) {
-    aTest.populate();
+  for (let test of tests) {
+    await test.populate();
     
-    aTest.validate();
-  });
+    test.validate();
+  }
 
   await BookmarkJSONUtils.exportToFile(jsonFile);
 
