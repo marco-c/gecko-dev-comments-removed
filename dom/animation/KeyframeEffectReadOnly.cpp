@@ -212,6 +212,7 @@ KeyframeEffectReadOnly::SetKeyframes(
   }
 
   
+  
   if (aStyle) {
     UpdateProperties(aStyle);
     MaybeUpdateFrameForCompositor();
