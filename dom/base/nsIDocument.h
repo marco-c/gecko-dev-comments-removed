@@ -3621,13 +3621,11 @@ protected:
 
   Tri mAllowXULXBL;
 
-#ifdef DEBUG
   
 
 
 
   bool mIsLinkUpdateRegistrationsForbidden;
-#endif
 
   
   
