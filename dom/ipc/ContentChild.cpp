@@ -544,6 +544,7 @@ ContentChild::ContentChild()
 #endif
  , mIsAlive(true)
  , mShuttingDown(false)
+ , mShutdownTimeout(0)
 {
   
   
@@ -558,6 +559,12 @@ ContentChild::ContentChild()
     sShutdownCanary = new ShutdownCanary();
     ClearOnShutdown(&sShutdownCanary, ShutdownPhase::Shutdown);
   }
+  
+  
+  
+  
+  mShutdownTimeout =
+    Preferences::GetInt("dom.ipc.tabs.shutdownTimeoutSecs", 5) * 1000 / 2;
 }
 
 #ifdef _MSC_VER
@@ -3030,28 +3037,32 @@ ContentChild::RecvShutdown()
 void
 ContentChild::ShutdownInternal()
 {
-  
-  
-  
-  
   CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("IPCShutdownState"),
                                      NS_LITERAL_CSTRING("RecvShutdown"));
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   MOZ_ASSERT(NS_IsMainThread());
   RefPtr<nsThread> mainThread = nsThreadManager::get().GetCurrentThread();
-  
-  
-  
-  
-  if (mainThread && mainThread->RecursionDepth() > 1) {
+  if (mainThread && mainThread->RecursionDepth() > 1 && mShutdownTimeout > 0) {
     
     
     
+    int32_t delay = 100;
     MessageLoop::current()->PostDelayedTask(
       NewRunnableMethod(
         "dom::ContentChild::RecvShutdown", this,
         &ContentChild::ShutdownInternal),
-      100);
+      delay);
+    mShutdownTimeout -= delay;
     return;
   }
 
