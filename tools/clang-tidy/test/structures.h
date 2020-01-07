@@ -41,6 +41,7 @@ public:
   ~basic_string() {}
   size_t size() const;
   bool empty() const;
+  size_t find (const char* s, size_t pos = 0) const;
   const T *c_str() const;
   _Type& assign(const T *s);
   basic_string<T> *operator+=(const basic_string<T> &) {}
