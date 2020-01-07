@@ -509,16 +509,6 @@ public:
   LocalFileToBlobCompleted(Blob* aBlob);
 
 protected:
-  
-  
-  enum class State : uint8_t {
-    unsent,           
-    opened,           
-    headers_received, 
-    loading,          
-    done,             
-  };
-
   nsresult DetectCharset();
   nsresult AppendToResponseText(const char * aBuffer, uint32_t aBufferLen);
   static nsresult StreamReaderFunc(nsIInputStream* in,
@@ -530,7 +520,7 @@ protected:
   nsresult CreateResponseParsedJSON(JSContext* aCx);
   
   
-  nsresult ChangeState(State aState, bool aBroadcast = true);
+  nsresult ChangeState(uint16_t aState, bool aBroadcast = true);
   already_AddRefed<nsILoadGroup> GetLoadGroup() const;
   nsIURI *GetBaseURI();
 
@@ -696,7 +686,7 @@ protected:
   Maybe<ClientInfo> mClientInfo;
   Maybe<ServiceWorkerDescriptor> mController;
 
-  State mState;
+  uint16_t mState;
 
   StyleBackendType mStyleBackend;
 

@@ -2188,10 +2188,10 @@ XMLHttpRequestWorker::Abort(ErrorResult& aRv)
   
   
   
-  if ((mStateData.mReadyState == State::opened && mStateData.mFlagSend) ||
-      mStateData.mReadyState == State::headers_received ||
-      mStateData.mReadyState == State::loading ||
-      mStateData.mReadyState == State::done) {
+  if ((mStateData.mReadyState == XMLHttpRequestBinding::OPENED && mStateData.mFlagSend) ||
+      mStateData.mReadyState == XMLHttpRequestBinding::HEADERS_RECEIVED ||
+      mStateData.mReadyState == XMLHttpRequestBinding::LOADING ||
+      mStateData.mReadyState == XMLHttpRequestBinding::DONE) {
     mStateData.mStatus = 0;
     mStateData.mStatusText.Truncate();
   }
