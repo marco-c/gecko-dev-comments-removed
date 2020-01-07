@@ -59,22 +59,6 @@ void make_dumpable() {
 }
 #endif
 
-extern "C" {
-
-
-
-
-
-
-
-
-
-
-
-
-  APKOPEN_EXPORT __attribute__((weak)) void *__dso_handle;
-}
-
 typedef int mozglueresult;
 
 enum StartupEvent {

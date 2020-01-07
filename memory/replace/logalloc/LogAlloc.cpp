@@ -57,9 +57,6 @@ GetTid()
 
 #ifdef ANDROID
 
-extern "C" MOZ_EXPORT __attribute__((weak)) void* __dso_handle;
-
-
 extern "C" MOZ_EXPORT int
 pthread_atfork(void (*)(void), void (*)(void), void (*)(void));
 #endif
