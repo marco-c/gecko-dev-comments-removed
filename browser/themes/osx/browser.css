@@ -640,18 +640,6 @@ html|input.urlbar-input {
 
 
 
-#historySwipeAnimationCurrentPage,
-#historySwipeAnimationNextPage {
-  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.6);
-}
-
-#historySwipeAnimationContainer {
-  background: url("chrome://browser/skin/subtle-pattern.png") #B3B9C1;
-}
-
-
-
-
 %include ../shared/sidebar.inc.css
 
 #sidebar-box {

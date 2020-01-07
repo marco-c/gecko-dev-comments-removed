@@ -236,7 +236,7 @@ var gGestureSupport = {
 
 
   _setupSwipeGesture: function GS__setupSwipeGesture() {
-    gHistorySwipeAnimation.startAnimation(false);
+    gHistorySwipeAnimation.startAnimation();
 
     this._doUpdate = function GS__doUpdate(aEvent) {
       gHistorySwipeAnimation.updateAnimation(aEvent.delta);
@@ -405,12 +405,8 @@ var gGestureSupport = {
 
   _coordinateSwipeEventWithAnimation:
   function GS__coordinateSwipeEventWithAnimation(aEvent, aDir) {
-    if ((gHistorySwipeAnimation.isAnimationRunning()) &&
-        (aDir == "RIGHT" || aDir == "LEFT")) {
-      gHistorySwipeAnimation.processSwipeEvent(aEvent, aDir);
-    } else {
-      this.processSwipeEvent(aEvent, aDir);
-    }
+    gHistorySwipeAnimation.stopAnimation();
+    this.processSwipeEvent(aEvent, aDir);
   },
 
   
@@ -584,44 +580,22 @@ var gHistorySwipeAnimation = {
 
 
   init: function HSA_init() {
-    if (!this._isSupported())
+    if (!this._isSupported()) {
       return;
-
-    this.active = false;
-    this.isLTR = document.documentElement.matches(":-moz-locale-dir(ltr)");
-    this._trackedSnapshots = [];
-    this._startingIndex = -1;
-    this._historyIndex = -1;
-    this._boxWidth = -1;
-    this._boxHeight = -1;
-    this._maxSnapshots = this._getMaxSnapshots();
-    this._lastSwipeDir = "";
-    this._direction = "horizontal";
-
-    
-    
-    if (this._maxSnapshots > 0) {
-      this.active = true;
-      gBrowser.addEventListener("pagehide", this);
-      gBrowser.addEventListener("pageshow", this);
-      gBrowser.addEventListener("popstate", this);
-      gBrowser.addEventListener("DOMModalDialogClosed", this);
-      gBrowser.tabContainer.addEventListener("TabClose", this);
     }
+
+    this.isLTR = document.documentElement.matches(":-moz-locale-dir(ltr)");
+    this._isStoppingAnimation = false;
+    this.active = true;
   },
 
   
 
 
   uninit: function HSA_uninit() {
-    gBrowser.removeEventListener("pagehide", this);
-    gBrowser.removeEventListener("pageshow", this);
-    gBrowser.removeEventListener("popstate", this);
-    gBrowser.removeEventListener("DOMModalDialogClosed", this);
-    gBrowser.tabContainer.removeEventListener("TabClose", this);
-
     this.active = false;
     this.isLTR = false;
+    this._removeBoxes();
   },
 
   
@@ -630,51 +604,36 @@ var gHistorySwipeAnimation = {
 
 
 
-
-  startAnimation: function HSA_startAnimation(aIsVerticalSwipe) {
-    this._direction = aIsVerticalSwipe ? "vertical" : "horizontal";
-
+  startAnimation: function HSA_startAnimation() {
     if (this.isAnimationRunning()) {
-      
-      
-      
-      
-      
-      
-      
-      if (this._direction == "horizontal" || this._lastSwipeDir != "") {
-        gBrowser.stop();
-        this._lastSwipeDir = "RELOAD"; 
-        this._canGoBack = this.canGoBack();
-        this._canGoForward = this.canGoForward();
-        this._handleFastSwiping();
-      }
-      this.updateAnimation(0);
-    } else {
-      
-      let updateSessionHistory = sessionHistory => {
-        this._startingIndex = sessionHistory.index;
-        this._historyIndex = this._startingIndex;
-        this._canGoBack = this.canGoBack();
-        this._canGoForward = this.canGoForward();
-        if (this.active) {
-          this._addBoxes();
-          this._takeSnapshot();
-          this._installPrevAndNextSnapshots();
-          this._lastSwipeDir = "";
-        }
-        this.updateAnimation(0);
-      };
-      SessionStore.getSessionHistory(gBrowser.selectedTab, updateSessionHistory);
+      return;
     }
+
+    this._isStoppingAnimation = false;
+    this._canGoBack = this.canGoBack();
+    this._canGoForward = this.canGoForward();
+    if (this.active) {
+      this._addBoxes();
+    }
+    this.updateAnimation(0);
   },
 
   
 
 
   stopAnimation: function HSA_stopAnimation() {
-    gHistorySwipeAnimation._removeBoxes();
-    this._historyIndex = this._getCurrentHistoryIndex();
+    if (!this.isAnimationRunning()) {
+      return;
+    }
+    this._isStoppingAnimation = true;
+    let box = this._prevBox.style.opacity > 0 ? this._prevBox : this._nextBox;
+    if (box.style.opacity > 0) {
+      box.style.transition = "opacity 0.2s cubic-bezier(.07,.95,0,1)";
+      box.addEventListener("transitionend", this._completeFadeOut);
+      box.style.opacity = 0;
+    } else {
+      this._removeBoxes();
+    }
   },
 
   
@@ -685,93 +644,28 @@ var gHistorySwipeAnimation = {
 
 
   updateAnimation: function HSA_updateAnimation(aVal) {
-    if (!this.isAnimationRunning()) {
+    if (!this.isAnimationRunning() || this._isStoppingAnimation) {
       return;
     }
 
     
     
     
-    let dampValue = 4;
-    if (this._direction == "vertical") {
-      this._prevBox.collapsed = true;
-      this._nextBox.collapsed = true;
-      this._positionBox(this._curBox, -1 * aVal / dampValue);
-    } else if ((aVal >= 0 && this.isLTR) ||
-               (aVal <= 0 && !this.isLTR)) {
-      let tempDampValue = 1;
+    
+    let opacity = Math.abs(aVal) * 4;
+    if ((aVal >= 0 && this.isLTR) ||
+        (aVal <= 0 && !this.isLTR)) {
+      
       if (this._canGoBack) {
         this._prevBox.collapsed = false;
-      } else {
-        tempDampValue = dampValue;
-        this._prevBox.collapsed = true;
+        this._nextBox.collapsed = true;
+        this._prevBox.style.opacity = opacity > 1 ? 1 : opacity;
       }
-
-      
-      
-      
-      this._positionBox(this._curBox, aVal / tempDampValue);
-
-      
-      this._positionBox(this._nextBox, 1);
     } else if (this._canGoForward) {
       
-      
-      
-      
-      
-      
       this._nextBox.collapsed = false;
-      let offset = this.isLTR ? 1 : -1;
-      this._positionBox(this._curBox, 0);
-      this._positionBox(this._nextBox, offset + aVal);
-    } else {
       this._prevBox.collapsed = true;
-      this._positionBox(this._curBox, aVal / dampValue);
-    }
-  },
-
-  _getCurrentHistoryIndex() {
-    return SessionStore.getSessionHistory(gBrowser.selectedTab).index;
-  },
-
-  
-
-
-
-
-
-  handleEvent: function HSA_handleEvent(aEvent) {
-    let browser = gBrowser.selectedBrowser;
-    switch (aEvent.type) {
-      case "TabClose":
-        let browserForTab = gBrowser.getBrowserForTab(aEvent.target);
-        this._removeTrackedSnapshot(-1, browserForTab);
-        break;
-      case "DOMModalDialogClosed":
-        this.stopAnimation();
-        break;
-      case "pageshow":
-        if (aEvent.target == browser.contentDocument) {
-          this.stopAnimation();
-        }
-        break;
-      case "popstate":
-        if (aEvent.target == browser.contentDocument.defaultView) {
-          this.stopAnimation();
-        }
-        break;
-      case "pagehide":
-        if (aEvent.target == browser.contentDocument) {
-          
-          
-          
-          if (!this.isAnimationRunning()) {
-            this._takeSnapshot();
-          }
-          this._compressSnapshotAtCurrentIndex();
-        }
-        break;
+      this._nextBox.style.opacity = opacity > 1 ? 1 : opacity;
     }
   },
 
@@ -789,27 +683,7 @@ var gHistorySwipeAnimation = {
 
 
 
-
-
-
-  processSwipeEvent: function HSA_processSwipeEvent(aEvent, aDir) {
-    if (aDir == "RIGHT")
-      this._historyIndex += this.isLTR ? 1 : -1;
-    else if (aDir == "LEFT")
-      this._historyIndex += this.isLTR ? -1 : 1;
-    else
-      return;
-    this._lastSwipeDir = aDir;
-  },
-
-  
-
-
-
-
   canGoBack: function HSA_canGoBack() {
-    if (this.isAnimationRunning())
-      return this._doesIndexExistInHistory(this._historyIndex - 1);
     return gBrowser.webNavigation.canGoBack;
   },
 
@@ -819,8 +693,6 @@ var gHistorySwipeAnimation = {
 
 
   canGoForward: function HSA_canGoForward() {
-    if (this.isAnimationRunning())
-      return this._doesIndexExistInHistory(this._historyIndex + 1);
     return gBrowser.webNavigation.canGoForward;
   },
 
@@ -830,40 +702,7 @@ var gHistorySwipeAnimation = {
 
 
   swipeEndEventReceived: function HSA_swipeEndEventReceived() {
-    
-    let updateSessionHistory = sessionHistory => {
-      if (this._lastSwipeDir != "" && this._historyIndex != this._startingIndex)
-        this._navigateToHistoryIndex();
-      else
-        this.stopAnimation();
-    };
-    SessionStore.getSessionHistory(gBrowser.selectedTab, updateSessionHistory);
-  },
-
-  
-
-
-
-
-
-
-  _doesIndexExistInHistory: function HSA__doesIndexExistInHistory(aIndex) {
-    try {
-      return SessionStore.getSessionHistory(gBrowser.selectedTab).entries[aIndex] != null;
-    } catch (ex) {
-      return false;
-    }
-  },
-
-  
-
-
-
-  _navigateToHistoryIndex: function HSA__navigateToHistoryIndex() {
-    if (this._doesIndexExistInHistory(this._historyIndex))
-      gBrowser.webNavigation.gotoIndex(this._historyIndex);
-    else
-      this.stopAnimation();
+    this.stopAnimation();
   },
 
   
@@ -876,14 +715,8 @@ var gHistorySwipeAnimation = {
     return window.matchMedia("(-moz-swipe-animation-enabled)").matches;
   },
 
-  
-
-
-
-
-  _handleFastSwiping: function HSA__handleFastSwiping() {
-    this._installCurrentPageSnapshot(null);
-    this._installPrevAndNextSnapshots();
+  _completeFadeOut: function HSA__completeFadeOut(aEvent) {
+    gHistorySwipeAnimation._removeBoxes();
   },
 
   
@@ -897,35 +730,28 @@ var gHistorySwipeAnimation = {
                                           "stack");
     browserStack.appendChild(this._container);
 
-    this._prevBox = this._createElement("historySwipeAnimationPreviousPage",
+    this._prevBox = this._createElement("historySwipeAnimationPreviousArrow",
                                         "box");
+    this._prevBox.collapsed = true;
+    this._prevBox.style.opacity = 0;
     this._container.appendChild(this._prevBox);
 
-    this._curBox = this._createElement("historySwipeAnimationCurrentPage",
-                                       "box");
-    this._container.appendChild(this._curBox);
-
-    this._nextBox = this._createElement("historySwipeAnimationNextPage",
+    this._nextBox = this._createElement("historySwipeAnimationNextArrow",
                                         "box");
+    this._nextBox.collapsed = true;
+    this._nextBox.style.opacity = 0;
     this._container.appendChild(this._nextBox);
-
-    
-    this._boxWidth = this._curBox.getBoundingClientRect().width;
-    this._boxHeight = this._curBox.getBoundingClientRect().height;
   },
 
   
 
 
   _removeBoxes: function HSA__removeBoxes() {
-    this._curBox = null;
     this._prevBox = null;
     this._nextBox = null;
     if (this._container)
       this._container.remove();
     this._container = null;
-    this._boxWidth = -1;
-    this._boxHeight = -1;
   },
 
   
@@ -942,301 +768,5 @@ var gHistorySwipeAnimation = {
     let element = document.createElementNS(XULNS, aTagName);
     element.id = aID;
     return element;
-  },
-
-  
-
-
-
-
-
-
-
-  _positionBox: function HSA__positionBox(aBox, aPosition) {
-    let transform = "";
-
-    if (this._direction == "vertical")
-      transform = "translateY(" + this._boxHeight * aPosition + "px)";
-    else
-      transform = "translateX(" + this._boxWidth * aPosition + "px)";
-
-    aBox.style.transform = transform;
-  },
-
-  
-
-
-
-
-
-  _readyToTakeSnapshots: function HSA__readyToTakeSnapshots() {
-    return (this._maxSnapshots >= 1 && this._getCurrentHistoryIndex() >= 0);
-  },
-
-  
-
-
-  _takeSnapshot: function HSA__takeSnapshot() {
-    if (!this._readyToTakeSnapshots()) {
-      return;
-    }
-
-    let canvas = null;
-
-    let browser = gBrowser.selectedBrowser;
-    let r = browser.getBoundingClientRect();
-    canvas = document.createElementNS("http://www.w3.org/1999/xhtml",
-                                      "canvas");
-    canvas.mozOpaque = true;
-    let scale = window.devicePixelRatio;
-    canvas.width = r.width * scale;
-    canvas.height = r.height * scale;
-    let ctx = canvas.getContext("2d");
-    let zoom = browser.markupDocumentViewer.fullZoom * scale;
-    ctx.scale(zoom, zoom);
-    ctx.drawWindow(browser.contentWindow,
-                   0, 0, canvas.width / zoom, canvas.height / zoom, "white",
-                   ctx.DRAWWINDOW_DO_NOT_FLUSH | ctx.DRAWWINDOW_DRAW_VIEW |
-                   ctx.DRAWWINDOW_ASYNC_DECODE_IMAGES |
-                   ctx.DRAWWINDOW_USE_WIDGET_LAYERS);
-
-    TelemetryStopwatch.start("FX_GESTURE_INSTALL_SNAPSHOT_OF_PAGE");
-    try {
-      this._installCurrentPageSnapshot(canvas);
-      this._assignSnapshotToCurrentBrowser(canvas);
-    } finally {
-      TelemetryStopwatch.finish("FX_GESTURE_INSTALL_SNAPSHOT_OF_PAGE");
-    }
-  },
-
-  
-
-
-
-  _getMaxSnapshots: function HSA__getMaxSnapshots() {
-    return Services.prefs.getIntPref("browser.snapshots.limit");
-  },
-
-  
-
-
-
-
-
-
-
-  _assignSnapshotToCurrentBrowser:
-  function HSA__assignSnapshotToCurrentBrowser(aCanvas) {
-    let browser = gBrowser.selectedBrowser;
-    let currIndex = this._getCurrentHistoryIndex();
-
-    this._removeTrackedSnapshot(currIndex, browser);
-    this._addSnapshotRefToArray(currIndex, browser);
-
-    if (!("snapshots" in browser))
-      browser.snapshots = [];
-    let snapshots = browser.snapshots;
-    
-    
-    
-    snapshots[currIndex] = {
-      image: aCanvas,
-      scale: window.devicePixelRatio
-    };
-  },
-
-  
-
-
-
-  _compressSnapshotAtCurrentIndex:
-  function HSA__compressSnapshotAtCurrentIndex() {
-    if (!this._readyToTakeSnapshots()) {
-      
-      
-      return;
-    }
-
-    TelemetryStopwatch.start("FX_GESTURE_COMPRESS_SNAPSHOT_OF_PAGE");
-    try {
-      let browser = gBrowser.selectedBrowser;
-      let snapshots = browser.snapshots;
-      let currIndex = this._getCurrentHistoryIndex();
-
-      
-      let canvas = snapshots[currIndex].image;
-      canvas.toBlob(function(aBlob) {
-          if (snapshots[currIndex]) {
-            snapshots[currIndex].image = aBlob;
-          }
-        }, "image/png"
-      );
-    } finally {
-      TelemetryStopwatch.finish("FX_GESTURE_COMPRESS_SNAPSHOT_OF_PAGE");
-    }
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  _removeTrackedSnapshot: function HSA__removeTrackedSnapshot(aIndex, aBrowser) {
-    let arr = this._trackedSnapshots;
-    let requiresExactIndexMatch = aIndex >= 0;
-    for (let i = 0; i < arr.length; i++) {
-      if ((arr[i].browser == aBrowser) &&
-          (aIndex < 0 || aIndex == arr[i].index)) {
-        delete aBrowser.snapshots[arr[i].index];
-        arr.splice(i, 1);
-        if (requiresExactIndexMatch)
-          return; 
-        i--; 
-             
-      }
-    }
-  },
-
-  
-
-
-
-
-
-
-
-
-  _addSnapshotRefToArray:
-  function HSA__addSnapshotRefToArray(aIndex, aBrowser) {
-    let id = { index: aIndex,
-               browser: aBrowser };
-    let arr = this._trackedSnapshots;
-    arr.unshift(id);
-
-    while (arr.length > this._maxSnapshots) {
-      let lastElem = arr[arr.length - 1];
-      delete lastElem.browser.snapshots[lastElem.index].image;
-      delete lastElem.browser.snapshots[lastElem.index];
-      arr.splice(-1, 1);
-    }
-  },
-
-  
-
-
-
-
-
-
-
-
-
-  _convertToImg: function HSA__convertToImg(aBlob) {
-    if (!aBlob)
-      return null;
-
-    
-    if (aBlob instanceof HTMLCanvasElement)
-      return aBlob;
-
-    let img = new Image();
-    let url = "";
-    try {
-      url = URL.createObjectURL(aBlob);
-      img.onload = function() {
-        URL.revokeObjectURL(url);
-      };
-    } finally {
-      img.src = url;
-    }
-    return img;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-  _scaleSnapshot: function HSA__scaleSnapshot(aSnapshot, aScale, aBox) {
-    if (aSnapshot && aScale != 1 && aBox) {
-      if (aSnapshot instanceof HTMLCanvasElement) {
-        aBox.style.backgroundSize =
-          aSnapshot.width / aScale + "px " + aSnapshot.height / aScale + "px";
-      } else {
-        
-        aSnapshot.addEventListener("load", function() {
-          aBox.style.backgroundSize =
-            aSnapshot.width / aScale + "px " + aSnapshot.height / aScale + "px";
-        });
-      }
-    }
-  },
-
-  
-
-
-
-
-
-
-
-
-  _installCurrentPageSnapshot:
-  function HSA__installCurrentPageSnapshot(aCanvas) {
-    let currSnapshot = aCanvas;
-    let scale = window.devicePixelRatio;
-    if (!currSnapshot) {
-      let snapshots = gBrowser.selectedBrowser.snapshots || {};
-      let currIndex = this._historyIndex;
-      if (currIndex in snapshots) {
-        currSnapshot = this._convertToImg(snapshots[currIndex].image);
-        scale = snapshots[currIndex].scale;
-      }
-    }
-    this._scaleSnapshot(currSnapshot, scale, this._curBox ? this._curBox :
-                                                            null);
-    document.mozSetImageElement("historySwipeAnimationCurrentPageSnapshot",
-                                currSnapshot);
-  },
-
-  
-
-
-
-  _installPrevAndNextSnapshots:
-  function HSA__installPrevAndNextSnapshots() {
-    let snapshots = gBrowser.selectedBrowser.snapshots || [];
-    let currIndex = this._historyIndex;
-    let prevIndex = currIndex - 1;
-    let prevSnapshot = null;
-    if (prevIndex in snapshots) {
-      prevSnapshot = this._convertToImg(snapshots[prevIndex].image);
-      this._scaleSnapshot(prevSnapshot, snapshots[prevIndex].scale,
-                          this._prevBox);
-    }
-    document.mozSetImageElement("historySwipeAnimationPreviousPageSnapshot",
-                                prevSnapshot);
-
-    let nextIndex = currIndex + 1;
-    let nextSnapshot = null;
-    if (nextIndex in snapshots) {
-      nextSnapshot = this._convertToImg(snapshots[nextIndex].image);
-      this._scaleSnapshot(nextSnapshot, snapshots[nextIndex].scale,
-                          this._nextBox);
-    }
-    document.mozSetImageElement("historySwipeAnimationNextPageSnapshot",
-                                nextSnapshot);
   },
 };
