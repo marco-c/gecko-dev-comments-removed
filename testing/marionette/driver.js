@@ -2767,13 +2767,7 @@ GeckoDriver.prototype.deleteSession = function() {
     
     Preferences.set(CONTENT_LISTENER_PREF, false);
 
-    
-    for (let win in this.browsers) {
-      let browser = this.browsers[win];
-      browser.knownFrames.forEach(() => {
-        globalMessageManager.broadcastAsyncMessage("Marionette:Deregister");
-      });
-    }
+    globalMessageManager.broadcastAsyncMessage("Marionette:Deregister");
 
     for (let win of this.windows) {
       if (win.messageManager) {
