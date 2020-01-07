@@ -23,6 +23,9 @@ std::unordered_map<uint64_t, APZSampler*> APZSampler::sWindowIdMap;
 
 APZSampler::APZSampler(const RefPtr<APZCTreeManager>& aApz)
   : mApz(aApz)
+#ifdef DEBUG
+  , mSamplerThreadQueried(false)
+#endif
 {
   MOZ_ASSERT(aApz);
   mApz->SetSampler(this);
@@ -45,6 +48,16 @@ APZSampler::SetWebRenderWindowId(const wr::WindowId& aWindowId)
   MOZ_ASSERT(!mWindowId);
   mWindowId = Some(aWindowId);
   sWindowIdMap[wr::AsUint64(aWindowId)] = this;
+}
+
+ void
+APZSampler::SetSamplerThread(const wr::WrWindowId& aWindowId)
+{
+  if (RefPtr<APZSampler> sampler = GetSampler(aWindowId)) {
+    
+    MOZ_ASSERT(!sampler->mSamplerThreadQueried);
+    sampler->mSamplerThreadId = Some(PlatformThread::CurrentId());
+  }
 }
 
 bool
@@ -173,7 +186,27 @@ APZSampler::AssertOnSamplerThread() const
 bool
 APZSampler::IsSamplerThread() const
 {
+  if (UsingWebRenderSamplerThread()) {
+    return PlatformThread::CurrentId() == *mSamplerThreadId;
+  }
   return CompositorThreadHolder::IsInCompositorThread();
+}
+
+bool
+APZSampler::UsingWebRenderSamplerThread() const
+{
+  
+  
+  
+  
+  
+  
+  
+  
+#ifdef DEBUG
+  mSamplerThreadQueried = true;
+#endif
+  return mSamplerThreadId.isSome();
 }
 
  already_AddRefed<APZSampler>

@@ -9,6 +9,7 @@
 
 #include <unordered_map>
 
+#include "base/platform_thread.h" 
 #include "mozilla/layers/AsyncCompositionManager.h" 
 #include "mozilla/StaticMutex.h"
 #include "nsTArray.h"
@@ -42,6 +43,14 @@ public:
   explicit APZSampler(const RefPtr<APZCTreeManager>& aApz);
 
   void SetWebRenderWindowId(const wr::WindowId& aWindowId);
+
+  
+
+
+
+
+
+  static void SetSamplerThread(const wr::WrWindowId& aWindowId);
 
   bool PushStateToWR(wr::TransactionBuilder& aTxn,
                      const TimeStamp& aSampleTime);
@@ -90,6 +99,7 @@ public:
 protected:
   virtual ~APZSampler();
 
+  bool UsingWebRenderSamplerThread() const;
   static already_AddRefed<APZSampler> GetSampler(const wr::WrWindowId& aWindowId);
 
 private:
@@ -101,6 +111,19 @@ private:
   static StaticMutex sWindowIdLock;
   static std::unordered_map<uint64_t, APZSampler*> sWindowIdMap;
   Maybe<wr::WrWindowId> mWindowId;
+
+  
+  
+  
+  
+  
+  
+  Maybe<PlatformThreadId> mSamplerThreadId;
+#ifdef DEBUG
+  
+  
+  mutable bool mSamplerThreadQueried;
+#endif
 
 };
 
