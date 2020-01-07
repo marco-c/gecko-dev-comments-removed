@@ -9,7 +9,7 @@
 #include "txCore.h"
 
 class nsIDocument;
-class nsIDOMNode;
+class nsINode;
 
 
 
@@ -22,7 +22,7 @@ public:
     
 
 
-    static void ResetWithSource(nsIDocument *aNewDoc, nsIDOMNode *aSourceNode);
+    static void ResetWithSource(nsIDocument *aNewDoc, nsINode *aSourceNode);
 
     
 
