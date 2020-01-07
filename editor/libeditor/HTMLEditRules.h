@@ -590,9 +590,21 @@ protected:
   nsresult RemoveAlignment(nsINode& aNode, const nsAString& aAlignType,
                            bool aChildrenOnly);
   nsresult MakeSureElemStartsOrEndsOnCR(nsINode& aNode, bool aStarts);
-  enum class ContentsOnly { no, yes };
-  nsresult AlignBlock(Element& aElement,
-                      const nsAString& aAlignType, ContentsOnly aContentsOnly);
+
+  
+
+
+
+
+
+
+
+
+
+  enum class ResetAlignOf { ElementAndDescendants, OnlyDescendants };
+  MOZ_MUST_USE nsresult
+  AlignBlock(Element& aElement, const nsAString& aAlignType,
+             ResetAlignOf aResetAlignOf);
 
   
 
