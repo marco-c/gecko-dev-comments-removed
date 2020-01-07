@@ -1522,7 +1522,9 @@ nsCORSListenerProxy::StartCORSPreflight(nsIChannel* aRequestChannel,
   
   RefPtr<nsHttpChannel> reqCh = do_QueryObject(aRequestChannel);
   RefPtr<nsHttpChannel> preCh = do_QueryObject(preHttp);
-  preCh->SetWarningReporter(reqCh->GetWarningReporter());
+  if (preCh && reqCh) { 
+    preCh->SetWarningReporter(reqCh->GetWarningReporter());
+  }
 
   nsTArray<nsCString> preflightHeaders;
   if (!aUnsafeHeaders.IsEmpty()) {
