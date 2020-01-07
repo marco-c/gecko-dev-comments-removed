@@ -73,21 +73,8 @@ public final class SessionTextInput {
 
 
 
-        void restartInput(@RestartReason int reason);
 
-        
-
-
-
-
-        void showSoftInput();
-
-        
-
-
-
-
-        void hideSoftInput();
+        void restartInput(@NonNull GeckoSession session, @RestartReason int reason);
 
         
 
@@ -95,9 +82,15 @@ public final class SessionTextInput {
 
 
 
+        void showSoftInput(@NonNull GeckoSession session);
+
+        
 
 
-        void updateSelection(int selStart, int selEnd, int compositionStart, int compositionEnd);
+
+
+
+        void hideSoftInput(@NonNull GeckoSession session);
 
         
 
@@ -106,7 +99,21 @@ public final class SessionTextInput {
 
 
 
-        void updateExtractedText(@NonNull ExtractedTextRequest request,
+
+
+        void updateSelection(@NonNull GeckoSession session, int selStart, int selEnd,
+                             int compositionStart, int compositionEnd);
+
+        
+
+
+
+
+
+
+
+        void updateExtractedText(@NonNull GeckoSession session,
+                                 @NonNull ExtractedTextRequest request,
                                  @NonNull ExtractedText text);
 
         
@@ -115,7 +122,8 @@ public final class SessionTextInput {
 
 
 
-        void updateCursorAnchorInfo(@NonNull CursorAnchorInfo info);
+
+        void updateCursorAnchorInfo(@NonNull GeckoSession session, @NonNull CursorAnchorInfo info);
     }
 
     
@@ -176,7 +184,9 @@ public final class SessionTextInput {
         void updateCompositionRects(final RectF[] aRects);
     }
 
-    private final class DefaultDelegate implements Delegate {
+    private static final class DefaultDelegate implements Delegate {
+        public static final DefaultDelegate INSTANCE = new DefaultDelegate();
+
         private InputMethodManager getInputMethodManager(@Nullable final View view) {
             if (view == null) {
                 return null;
@@ -186,9 +196,9 @@ public final class SessionTextInput {
         }
 
         @Override
-        public void restartInput(int reason) {
+        public void restartInput(@NonNull final GeckoSession session, final int reason) {
             ThreadUtils.assertOnUiThread();
-            final View view = getView();
+            final View view = session.getTextInput().getView();
             final InputMethodManager imm = getInputMethodManager(view);
             if (imm == null) {
                 return;
@@ -218,9 +228,9 @@ public final class SessionTextInput {
         }
 
         @Override
-        public void showSoftInput() {
+        public void showSoftInput(@NonNull final GeckoSession session) {
             ThreadUtils.assertOnUiThread();
-            final View view = getView();
+            final View view = session.getTextInput().getView();
             final InputMethodManager imm = getInputMethodManager(view);
             if (imm != null) {
                 if (view.hasFocus() && !imm.isActive(view)) {
@@ -234,9 +244,9 @@ public final class SessionTextInput {
         }
 
         @Override
-        public void hideSoftInput() {
+        public void hideSoftInput(@NonNull final GeckoSession session) {
             ThreadUtils.assertOnUiThread();
-            final View view = getView();
+            final View view = session.getTextInput().getView();
             final InputMethodManager imm = getInputMethodManager(view);
             if (imm != null) {
                 imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
@@ -244,10 +254,11 @@ public final class SessionTextInput {
         }
 
         @Override
-        public void updateSelection(final int selStart, final int selEnd,
+        public void updateSelection(@NonNull final GeckoSession session,
+                                    final int selStart, final int selEnd,
                                     final int compositionStart, final int compositionEnd) {
             ThreadUtils.assertOnUiThread();
-            final View view = getView();
+            final View view = session.getTextInput().getView();
             final InputMethodManager imm = getInputMethodManager(view);
             if (imm != null) {
                 imm.updateSelection(view, selStart, selEnd, compositionStart, compositionEnd);
@@ -255,10 +266,11 @@ public final class SessionTextInput {
         }
 
         @Override
-        public void updateExtractedText(@NonNull final ExtractedTextRequest request,
+        public void updateExtractedText(@NonNull final GeckoSession session,
+                                        @NonNull final ExtractedTextRequest request,
                                         @NonNull final ExtractedText text) {
             ThreadUtils.assertOnUiThread();
-            final View view = getView();
+            final View view = session.getTextInput().getView();
             final InputMethodManager imm = getInputMethodManager(view);
             if (imm != null) {
                 imm.updateExtractedText(view, request.token, text);
@@ -267,9 +279,10 @@ public final class SessionTextInput {
 
         @TargetApi(21)
         @Override
-        public void updateCursorAnchorInfo(@NonNull final CursorAnchorInfo info) {
+        public void updateCursorAnchorInfo(@NonNull final GeckoSession session,
+                                           @NonNull final CursorAnchorInfo info) {
             ThreadUtils.assertOnUiThread();
-            final View view = getView();
+            final View view = session.getTextInput().getView();
             final InputMethodManager imm = getInputMethodManager(view);
             if (imm != null) {
                 imm.updateCursorAnchorInfo(view, info);
@@ -462,7 +475,7 @@ public final class SessionTextInput {
     public Delegate getDelegate() {
         ThreadUtils.assertOnUiThread();
         if (mDelegate == null) {
-            mDelegate = new DefaultDelegate();
+            mDelegate = DefaultDelegate.INSTANCE;
         }
         return mDelegate;
     }
