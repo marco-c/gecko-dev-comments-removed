@@ -336,23 +336,34 @@ class WebPlatformTest(TestingMixin, MercurialScript, CodeCoverageMixin):
                 test_types = [suite]
 
             summary = None
+            executed_too_many_tests = False
             for per_test_args in self.query_args(suite):
-                if (datetime.now() - start_time) > max_per_test_time:
-                    
-                    
-                    
-                    self.info("TinderboxPrint: Running tests took too long: Not all tests "
-                              "were executed.<br/>")
-                    return
-                if executed_tests >= max_per_test_tests:
-                    
-                    
-                    
-                    
-                    self.info("TinderboxPrint: Too many modified tests: Not all tests "
-                              "were executed.<br/>")
-                    return
-                executed_tests = executed_tests + 1
+                
+                
+                
+                is_baseline_test = 'baselinecoverage' in per_test_args[-1] \
+                                   if self.per_test_coverage else False
+                if executed_too_many_tests and not is_baseline_test:
+                    continue
+
+                if not is_baseline_test:
+                    if (datetime.now() - start_time) > max_per_test_time:
+                        
+                        
+                        
+                        self.info("TinderboxPrint: Running tests took too long: Not all tests "
+                                  "were executed.<br/>")
+                        return
+                    if executed_tests >= max_per_test_tests:
+                        
+                        
+                        
+                        
+                        self.info("TinderboxPrint: Too many modified tests: Not all tests "
+                                  "were executed.<br/>")
+                        executed_too_many_tests = True
+
+                    executed_tests = executed_tests + 1
 
                 cmd = self._query_cmd(test_types)
                 cmd.extend(per_test_args)
