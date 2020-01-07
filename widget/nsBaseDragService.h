@@ -35,6 +35,7 @@ class SourceSurface;
 
 namespace dom {
 class DataTransfer;
+class Selection;
 } 
 } 
 
@@ -176,7 +177,7 @@ protected:
   mozilla::CSSIntPoint mImageOffset;
 
   
-  nsCOMPtr<nsISelection> mSelection;
+  RefPtr<mozilla::dom::Selection> mSelection;
 
   
   

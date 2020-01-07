@@ -28,7 +28,7 @@
 
 #include <algorithm>
 #include "nsIDOMNodeList.h" 
-#include "nsIDOMRange.h" 
+#include "nsRange.h" 
 #include "nsINode.h"
 #include "nsPIDOMWindow.h" 
 
