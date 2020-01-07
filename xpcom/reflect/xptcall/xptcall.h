@@ -134,6 +134,7 @@ struct nsXPTCVariant : public nsXPTCMiniVariant
               case nsXPTType::T_INTERFACE:         
               case nsXPTType::T_INTERFACE_IS:      
               case nsXPTType::T_DOMOBJECT:         
+              case nsXPTType::T_PROMISE:           
               case nsXPTType::T_ARRAY:             
               case nsXPTType::T_PSTRING_SIZE_IS:   
               case nsXPTType::T_PWSTRING_SIZE_IS:  
