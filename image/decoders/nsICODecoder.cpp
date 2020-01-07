@@ -101,6 +101,13 @@ nsICODecoder::GetFinalStateFromContainedDecoder()
   mCurrentFrame = mContainedDecoder->GetCurrentFrameRef();
 
   
+  
+  MOZ_ASSERT(!mContainedDecoder->GetFinalizeFrames());
+  if (mCurrentFrame) {
+    mCurrentFrame->FinalizeSurface();
+  }
+
+  
   nsresult rv = HasError() || mContainedDecoder->HasError()
               ? NS_ERROR_FAILURE
               : NS_OK;
@@ -663,13 +670,6 @@ nsICODecoder::FinishResource()
   
   MOZ_ASSERT_IF(mContainedDecoder->HasSize(),
                 mContainedDecoder->Size() == mDirEntry->mSize);
-
-  
-  
-  MOZ_ASSERT(!mContainedDecoder->GetFinalizeFrames());
-  if (mCurrentFrame) {
-    mCurrentFrame->FinalizeSurface();
-  }
 
   return Transition::TerminateSuccess();
 }
