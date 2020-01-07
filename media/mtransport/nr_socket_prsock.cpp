@@ -208,16 +208,9 @@ public:
 
 
 
-  void AddUse()
+ void AddUse()
   {
-    RUN_ON_THREAD(mParentThread,
-                  mozilla::WrapRunnable(RefPtr<SingletonThreadHolder>(this),
-                                        &SingletonThreadHolder::AddUse_i),
-                  NS_DISPATCH_SYNC);
-  }
-
-  void AddUse_i()
-  {
+    MOZ_ASSERT(mParentThread == NS_GetCurrentThread());
     MOZ_ASSERT(int32_t(mUseCount) >= 0, "illegal refcnt");
     nsrefcnt count = ++mUseCount;
     if (count == 1) {
@@ -232,14 +225,6 @@ public:
   }
 
   void ReleaseUse()
-  {
-    RUN_ON_THREAD(mParentThread,
-                  mozilla::WrapRunnable(RefPtr<SingletonThreadHolder>(this),
-                                        &SingletonThreadHolder::ReleaseUse_i),
-                  NS_DISPATCH_SYNC);
-  }
-
-  void ReleaseUse_i()
   {
     MOZ_ASSERT(mParentThread == NS_GetCurrentThread());
     nsrefcnt count = --mUseCount;
@@ -1144,18 +1129,15 @@ NrUdpSocketIpc::NrUdpSocketIpc()
 
 NrUdpSocketIpc::~NrUdpSocketIpc()
 {
-  
-  
-
 #if defined(MOZILLA_INTERNAL_API)
   
+  
+  
   RUN_ON_THREAD(io_thread_,
-                mozilla::WrapRunnableNM(&NrUdpSocketIpc::release_child_i,
-                                        socket_child_.forget().take()),
+                mozilla::WrapRunnableNM(&NrUdpSocketIpc::destroy_i,
+                                        socket_child_.forget().take(),
+                                        sts_thread_),
                 NS_DISPATCH_NORMAL);
-  
-  
-  sThread->ReleaseUse();
 #endif
 }
 
@@ -1347,6 +1329,7 @@ int NrUdpSocketIpc::create(nr_transport_addr *addr) {
 
   state_ = NR_CONNECTING;
 
+  MOZ_ASSERT(io_thread_);
   RUN_ON_THREAD(io_thread_,
                 mozilla::WrapRunnable(RefPtr<NrUdpSocketIpc>(this),
                                       &NrUdpSocketIpc::create_i,
@@ -1639,13 +1622,24 @@ void NrUdpSocketIpc::close_i() {
 
 #if defined(MOZILLA_INTERNAL_API)
 
+static void ReleaseIOThread_s()
+{
+  sThread->ReleaseUse();
+}
 
-void NrUdpSocketIpc::release_child_i(nsIUDPSocketChild* aChild) {
+
+
+void NrUdpSocketIpc::destroy_i(nsIUDPSocketChild* aChild,
+                               nsCOMPtr<nsIEventTarget>& aStsThread) {
   RefPtr<nsIUDPSocketChild> socket_child_ref =
     already_AddRefed<nsIUDPSocketChild>(aChild);
   if (socket_child_ref) {
     socket_child_ref->Close();
   }
+
+  RUN_ON_THREAD(aStsThread,
+                WrapRunnableNM(&ReleaseIOThread_s),
+                NS_DISPATCH_NORMAL);
 }
 #endif
 
