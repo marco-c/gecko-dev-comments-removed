@@ -35,6 +35,11 @@ public:
 
   virtual nsresult Init();
 
+private:
+  
+  nsPrintSettingsService(const nsPrintSettingsService& x) = delete;
+  nsPrintSettingsService& operator=(const nsPrintSettingsService& x) = delete;
+
 protected:
   virtual ~nsPrintSettingsService() {}
 
@@ -59,17 +64,20 @@ protected:
 
 
 
-  virtual nsresult ReadPrefs(nsIPrintSettings* aPS, const nsAString&
-                             aPrinterName, uint32_t aFlags);
+  virtual nsresult ReadPrefs(nsIPrintSettings* aPS,
+                             const nsAString& aPrinterName,
+                             uint32_t aFlags);
   
 
 
 
 
 
-  virtual nsresult WritePrefs(nsIPrintSettings* aPS, const nsAString& aPrefName,
+  virtual nsresult WritePrefs(nsIPrintSettings* aPS,
+                              const nsAString& aPrinterName,
                               uint32_t aFlags);
-  const char* GetPrefName(const char *     aPrefName,
+
+  const char* GetPrefName(const char* aPrefName,
                           const nsAString&  aPrinterName);
 
   
@@ -84,11 +92,6 @@ protected:
   nsCOMPtr<nsIPrintSettings> mGlobalPrintSettings;
 
   nsCString mPrefName;
-
-private:
-  
-  nsPrintSettingsService(const nsPrintSettingsService& x) = delete;
-  nsPrintSettingsService& operator=(const nsPrintSettingsService& x) = delete;
 };
 
 #endif 

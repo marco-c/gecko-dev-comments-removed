@@ -666,10 +666,6 @@ nsPrintSettingsService::ReadPrefs(nsIPrintSettings* aPS,
   return NS_OK;
 }
 
-
-
-
-
 nsresult
 nsPrintSettingsService::WritePrefs(nsIPrintSettings* aPS,
                                    const nsAString& aPrinterName,
