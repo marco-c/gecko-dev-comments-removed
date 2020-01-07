@@ -99,7 +99,6 @@ var BookmarkPropertiesPanel = {
 
   _defaultInsertionPoint: null,
   _hiddenRows: [],
-  _batching: false,
 
   
 
@@ -304,8 +303,6 @@ var BookmarkPropertiesPanel = {
     
     window.addEventListener("resize", this);
 
-    this._beginBatch();
-
     switch (this._action) {
       case ACTION_EDIT:
         gEditItemOverlay.initPanel({ node: this._node,
@@ -373,29 +370,6 @@ var BookmarkPropertiesPanel = {
   },
 
   
-  
-  
-  _batchBlockingDeferred: null,
-  _beginBatch() {
-    if (this._batching)
-      return;
-    if (!PlacesUIUtils.useAsyncTransactions) {
-      PlacesUtils.transactionManager.beginBatch(null);
-    }
-    this._batching = true;
-  },
-
-  _endBatch() {
-    if (!this._batching)
-      return;
-
-    if (!PlacesUIUtils.useAsyncTransactions) {
-      PlacesUtils.transactionManager.endBatch(false);
-    }
-    this._batching = false;
-  },
-
-  
   QueryInterface: function BPP_QueryInterface(aIID) {
     if (aIID.equals(Ci.nsIDOMEventListener) ||
         aIID.equals(Ci.nsISupports))
@@ -427,19 +401,13 @@ var BookmarkPropertiesPanel = {
     
     
     gEditItemOverlay.uninitPanel(true);
-    this._endBatch();
     window.arguments[0].performed = true;
   },
 
   onDialogCancel() {
     
     
-    
     gEditItemOverlay.uninitPanel(true);
-    this._endBatch();
-    if (!PlacesUIUtils.useAsyncTransactions) {
-      PlacesUtils.transactionManager.undoTransaction();
-    }
     window.arguments[0].performed = false;
   },
 
@@ -493,132 +461,7 @@ var BookmarkPropertiesPanel = {
     ];
   },
 
-  
-
-
-
-  _getCreateNewBookmarkTransaction:
-  function BPP__getCreateNewBookmarkTransaction(aContainer, aIndex) {
-    var annotations = [];
-    var childTransactions = [];
-
-    if (this._description) {
-      let annoObj = { name: PlacesUIUtils.DESCRIPTION_ANNO,
-                      type: Ci.nsIAnnotationService.TYPE_STRING,
-                      flags: 0,
-                      value: this._description,
-                      expires: Ci.nsIAnnotationService.EXPIRE_NEVER };
-      let editItemTxn = new PlacesSetItemAnnotationTransaction(-1, annoObj);
-      childTransactions.push(editItemTxn);
-    }
-
-    if (this._loadInSidebar) {
-      let annoObj = { name: PlacesUIUtils.LOAD_IN_SIDEBAR_ANNO,
-                      value: true };
-      let setLoadTxn = new PlacesSetItemAnnotationTransaction(-1, annoObj);
-      childTransactions.push(setLoadTxn);
-    }
-
-    
-    if (this._charSet && !PrivateBrowsingUtils.isWindowPrivate(window))
-      PlacesUtils.setCharsetForURI(this._uri, this._charSet);
-
-    let createTxn = new PlacesCreateBookmarkTransaction(this._uri,
-                                                        aContainer,
-                                                        aIndex,
-                                                        this._title,
-                                                        this._keyword,
-                                                        annotations,
-                                                        childTransactions,
-                                                        this._postData);
-
-    return new PlacesAggregatedTransaction(this._getDialogTitle(),
-                                           [createTxn]);
-  },
-
-  
-
-
-
-  _getTransactionsForURIList: function BPP__getTransactionsForURIList() {
-    var transactions = [];
-    for (let uri of this._URIs) {
-      let createTxn =
-        new PlacesCreateBookmarkTransaction(uri.uri, -1,
-                                            PlacesUtils.bookmarks.DEFAULT_INDEX,
-                                            uri.title);
-      transactions.push(createTxn);
-    }
-    return transactions;
-  },
-
-  
-
-
-
-  _getCreateNewFolderTransaction:
-  function BPP__getCreateNewFolderTransaction(aContainer, aIndex) {
-    var annotations = [];
-    var childItemsTransactions;
-    if (this._URIs.length)
-      childItemsTransactions = this._getTransactionsForURIList();
-
-    if (this._description)
-      annotations.push(this._getDescriptionAnnotation(this._description));
-
-    return new PlacesCreateFolderTransaction(this._title, aContainer,
-                                             aIndex, annotations,
-                                             childItemsTransactions);
-  },
-
-  async _createNewItem() {
-    let [container, index] = await this._getInsertionPointDetails();
-    let txn;
-    switch (this._itemType) {
-      case BOOKMARK_FOLDER:
-        txn = this._getCreateNewFolderTransaction(container, index);
-        break;
-      case LIVEMARK_CONTAINER:
-        txn = new PlacesCreateLivemarkTransaction(this._feedURI, this._siteURI,
-                                                  this._title, container, index);
-        break;
-      default: 
-        txn = this._getCreateNewBookmarkTransaction(container, index);
-    }
-
-    PlacesUtils.transactionManager.doTransaction(txn);
-    
-    if (txn._promise) {
-      await txn._promise;
-    }
-
-    let folderGuid = await PlacesUtils.promiseItemGuid(container);
-    let bm = await PlacesUtils.bookmarks.fetch({
-      parentGuid: folderGuid,
-      index
-    });
-    this._itemId = await PlacesUtils.promiseItemId(bm.guid);
-
-    return Object.freeze({
-      itemId: this._itemId,
-      bookmarkGuid: bm.guid,
-      title: this._title,
-      uri: this._uri ? this._uri.spec : "",
-      type: this._itemType == BOOKMARK_ITEM ?
-              Ci.nsINavHistoryResultNode.RESULT_TYPE_URI :
-              Ci.nsINavHistoryResultNode.RESULT_TYPE_FOLDER,
-      parent: {
-        itemId: container,
-        bookmarkGuid: await PlacesUtils.promiseItemGuid(container),
-        type: Ci.nsINavHistoryResultNode.RESULT_TYPE_FOLDER
-      }
-    });
-  },
-
   async _promiseNewItem() {
-    if (!PlacesUIUtils.useAsyncTransactions)
-      return this._createNewItem();
-
     let [containerId, index, parentGuid] = await this._getInsertionPointDetails();
     let annotations = [];
     if (this._description) {

@@ -916,9 +916,6 @@ pref("browser.sessionstore.max_write_failures", 5);
 pref("accessibility.blockautorefresh", false);
 
 
-pref("browser.places.useAsyncTransactions", true);
-
-
 pref("places.history.enabled", true);
 
 

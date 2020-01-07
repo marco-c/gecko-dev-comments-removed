@@ -11,8 +11,6 @@ XPCOMUtils.defineLazyScriptGetter(this, ["PlacesToolbar", "PlacesMenu",
 
 var StarUI = {
   _itemGuids: null,
-  
-  _itemIdsMap: null,
   _batching: false,
   _isNewBookmark: false,
   _isComposing: false,
@@ -96,10 +94,8 @@ var StarUI = {
           this._restoreCommandsState();
           let removeBookmarksOnPopupHidden = this._removeBookmarksOnPopupHidden;
           this._removeBookmarksOnPopupHidden = false;
-          let idsForRemoval = this._itemIdsMap;
           let guidsForRemoval = this._itemGuids;
           this._itemGuids = null;
-          this._itemIdsMap = null;
 
           if (this._batching) {
             this.endBatch();
@@ -107,25 +103,11 @@ var StarUI = {
 
           if (removeBookmarksOnPopupHidden && guidsForRemoval) {
             if (this._isNewBookmark) {
-              if (!PlacesUIUtils.useAsyncTransactions) {
-                PlacesUtils.transactionManager.undoTransaction();
-                break;
-              }
               PlacesTransactions.undo().catch(Cu.reportError);
               break;
             }
             
             
-            if (!PlacesUIUtils.useAsyncTransactions) {
-              if (idsForRemoval) {
-                for (let itemId of idsForRemoval.values()) {
-                  let txn = new PlacesRemoveItemTransaction(itemId);
-                  PlacesUtils.transactionManager.doTransaction(txn);
-                }
-              }
-              break;
-            }
-
             PlacesTransactions.Remove(guidsForRemoval)
                               .transact().catch(Cu.reportError);
           } else if (this._isNewBookmark) {
@@ -230,7 +212,6 @@ var StarUI = {
     }
 
     this._isNewBookmark = aIsNewBookmark;
-    this._itemIdsMap = null;
     this._itemGuids = null;
     
     
@@ -291,9 +272,6 @@ var StarUI = {
     await PlacesUtils.bookmarks.fetch({url: aUrl},
       bookmark => this._itemGuids.push(bookmark.guid));
 
-    if (!PlacesUIUtils.useAsyncTransactions) {
-      this._itemIdsMap = await PlacesUtils.promiseManyItemIds(this._itemGuids);
-    }
     let forms = gNavigatorBundle.getString("editBookmark.removeBookmarks.label");
     let bookmarksCount = this._itemGuids.length;
     let label = PluralForm.get(bookmarksCount, forms)
@@ -365,14 +343,10 @@ var StarUI = {
   beginBatch() {
     if (this._batching)
       return;
-    if (PlacesUIUtils.useAsyncTransactions) {
-      this._batchBlockingDeferred = PromiseUtils.defer();
-      PlacesTransactions.batch(async () => {
-        await this._batchBlockingDeferred.promise;
-      });
-    } else {
-      PlacesUtils.transactionManager.beginBatch(null);
-    }
+    this._batchBlockingDeferred = PromiseUtils.defer();
+    PlacesTransactions.batch(async () => {
+      await this._batchBlockingDeferred.promise;
+    });
     this._batching = true;
   },
 
@@ -380,12 +354,8 @@ var StarUI = {
     if (!this._batching)
       return;
 
-    if (PlacesUIUtils.useAsyncTransactions) {
-      this._batchBlockingDeferred.resolve();
-      this._batchBlockingDeferred = null;
-    } else {
-      PlacesUtils.transactionManager.endBatch(false);
-    }
+    this._batchBlockingDeferred.resolve();
+    this._batchBlockingDeferred = null;
     this._batching = false;
   }
 };
@@ -413,75 +383,6 @@ var PlacesCommandHook = {
 
 
   async bookmarkPage(aBrowser, aShowEditUI, aUrl = null, aTitle = null) {
-    if (PlacesUIUtils.useAsyncTransactions) {
-      await this._bookmarkPagePT(aBrowser, aShowEditUI, aUrl, aTitle);
-      return;
-    }
-
-    
-    
-    var uri = aUrl ? Services.io.newURI(aUrl) : aBrowser.currentURI;
-    var itemId = PlacesUtils.getMostRecentBookmarkForURI(uri);
-    let isNewBookmark = itemId == -1;
-    if (isNewBookmark) {
-      
-      var title;
-      var description;
-      var charset;
-
-      let docInfo = aUrl ? {} : await this._getPageDetails(aBrowser);
-
-      try {
-        title = aTitle ||
-                (docInfo.isErrorPage ? PlacesUtils.history.getPageTitle(uri)
-                                     : aBrowser.contentTitle) ||
-                uri.displaySpec;
-        description = docInfo.description;
-        charset = aUrl ? null : aBrowser.characterSet;
-      } catch (e) { }
-
-      if (aShowEditUI) {
-        
-        
-        
-        StarUI.beginBatch();
-      }
-
-      var descAnno = { name: PlacesUIUtils.DESCRIPTION_ANNO, value: description };
-      var txn = new PlacesCreateBookmarkTransaction(uri,
-                                                    PlacesUtils.unfiledBookmarksFolderId,
-                                                    PlacesUtils.bookmarks.DEFAULT_INDEX,
-                                                    title, null, [descAnno]);
-      PlacesUtils.transactionManager.doTransaction(txn);
-      itemId = txn.item.id;
-      
-      if (charset && !PrivateBrowsingUtils.isBrowserPrivate(aBrowser))
-        PlacesUtils.setCharsetForURI(uri, charset);
-    }
-
-    
-    gURLBar.handleRevert();
-
-    
-    if (!aShowEditUI)
-      return;
-
-    let anchor = BookmarkingUI.anchor;
-    if (anchor) {
-      await StarUI.showEditBookmarkPopup(itemId, anchor,
-                                         "bottomcenter topright", isNewBookmark,
-                                         uri);
-      return;
-    }
-
-    
-    await StarUI.showEditBookmarkPopup(itemId, aBrowser, "overlap",
-                                       isNewBookmark, uri);
-  },
-
-  
-  
-  async _bookmarkPagePT(aBrowser, aShowEditUI, aUrl, aTitle) {
     
     
     let url = aUrl ? new URL(aUrl) : new URL(aBrowser.currentURI.spec);
