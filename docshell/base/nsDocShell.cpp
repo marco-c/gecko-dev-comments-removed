@@ -8698,7 +8698,7 @@ nsDocShell::CreateContentViewer(const nsACString& aContentType,
 {
   *aContentHandler = nullptr;
 
-  if (!mTreeOwner) {
+  if (!mTreeOwner || mIsBeingDestroyed) {
     
     
     return NS_ERROR_DOCSHELL_DYING;
