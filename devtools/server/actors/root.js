@@ -219,7 +219,7 @@ RootActor.prototype = {
     }
     this._extraActors = null;
     this.conn = null;
-    this._tabActorPool = null;
+    this._tabTargetActorPool = null;
     this._globalActorPool = null;
     this._chromeWindowActorPool = null;
     this._parameters = null;
@@ -278,22 +278,22 @@ RootActor.prototype = {
     
     
     const newActorPool = new ActorPool(this.conn);
-    const tabActorList = [];
+    const targetActorList = [];
     let selected;
 
     const options = request.options || {};
-    const tabActors = await tabList.getList(options);
-    for (const tabActor of tabActors) {
-      if (tabActor.exited) {
+    const targetActors = await tabList.getList(options);
+    for (const targetActor of targetActors) {
+      if (targetActor.exited) {
         
         continue;
       }
-      if (tabActor.selected) {
-        selected = tabActorList.length;
+      if (targetActor.selected) {
+        selected = targetActorList.length;
       }
-      tabActor.parentID = this.actorID;
-      newActorPool.addActor(tabActor);
-      tabActorList.push(tabActor);
+      targetActor.parentID = this.actorID;
+      newActorPool.addActor(targetActor);
+      targetActorList.push(targetActor);
     }
 
     
@@ -301,16 +301,16 @@ RootActor.prototype = {
 
     
     
-    if (this._tabActorPool) {
-      this.conn.removeActorPool(this._tabActorPool);
+    if (this._tabTargetActorPool) {
+      this.conn.removeActorPool(this._tabTargetActorPool);
     }
-    this._tabActorPool = newActorPool;
-    this.conn.addActorPool(this._tabActorPool);
+    this._tabTargetActorPool = newActorPool;
+    this.conn.addActorPool(this._tabTargetActorPool);
 
     
     Object.assign(reply, {
       selected: selected || 0,
-      tabs: tabActorList.map(actor => actor.form()),
+      tabs: targetActorList.map(actor => actor.form()),
     });
 
     return reply;
@@ -322,14 +322,14 @@ RootActor.prototype = {
       return { error: "noTabs",
                message: "This root actor has no browser tabs." };
     }
-    if (!this._tabActorPool) {
-      this._tabActorPool = new ActorPool(this.conn);
-      this.conn.addActorPool(this._tabActorPool);
+    if (!this._tabTargetActorPool) {
+      this._tabTargetActorPool = new ActorPool(this.conn);
+      this.conn.addActorPool(this._tabTargetActorPool);
     }
 
-    let tabActor;
+    let targetActor;
     try {
-      tabActor = await tabList.getTab(options);
+      targetActor = await tabList.getTab(options);
     } catch (error) {
       if (error.error) {
         
@@ -341,10 +341,10 @@ RootActor.prototype = {
       };
     }
 
-    tabActor.parentID = this.actorID;
-    this._tabActorPool.addActor(tabActor);
+    targetActor.parentID = this.actorID;
+    this._tabTargetActorPool.addActor(targetActor);
 
-    return { tab: tabActor.form() };
+    return { tab: targetActor.form() };
   },
 
   onGetWindow: function({ outerWindowID }) {
@@ -573,10 +573,10 @@ RootActor.prototype = {
       if (this._globalActorPool.has(actor)) {
         this._globalActorPool.removeActor(actor);
       }
-      if (this._tabActorPool) {
+      if (this._tabTargetActorPool) {
         
         
-        this._tabActorPool.forEach(tab => {
+        this._tabTargetActorPool.forEach(tab => {
           tab.removeActorByName(name);
         });
       }

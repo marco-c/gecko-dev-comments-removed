@@ -37,28 +37,28 @@ function TestTabList(connection) {
 
   
   
-  this._tabActors = [];
+  this._targetActors = [];
 
   
-  this._tabActorPool = new ActorPool(connection);
+  this._targetActorPool = new ActorPool(connection);
 
   for (const global of gTestGlobals) {
-    const actor = new TestTabActor(connection, global);
+    const actor = new TestTargetActor(connection, global);
     actor.selected = false;
-    this._tabActors.push(actor);
-    this._tabActorPool.addActor(actor);
+    this._targetActors.push(actor);
+    this._targetActorPool.addActor(actor);
   }
-  if (this._tabActors.length > 0) {
-    this._tabActors[0].selected = true;
+  if (this._targetActors.length > 0) {
+    this._targetActors[0].selected = true;
   }
 
-  connection.addActorPool(this._tabActorPool);
+  connection.addActorPool(this._targetActorPool);
 }
 
 TestTabList.prototype = {
   constructor: TestTabList,
   getList: function() {
-    return Promise.resolve([...this._tabActors]);
+    return Promise.resolve([...this._targetActors]);
   }
 };
 
@@ -72,7 +72,7 @@ function createRootActor(connection) {
   return root;
 }
 
-function TestTabActor(connection, global) {
+function TestTargetActor(connection, global) {
   this.conn = connection;
   this._global = global;
   this._global.wrappedJSObject = global;
@@ -89,9 +89,9 @@ function TestTabActor(connection, global) {
   });
 }
 
-TestTabActor.prototype = {
-  constructor: TestTabActor,
-  actorPrefix: "TestTabActor",
+TestTargetActor.prototype = {
+  constructor: TestTargetActor,
+  actorPrefix: "TestTargetActor",
 
   get window() {
     return this._global;
@@ -113,10 +113,10 @@ TestTabActor.prototype = {
 
     
     const actorPool = new ActorPool(this.conn);
-    this._createExtraActors(DebuggerServer.tabActorFactories, actorPool);
+    this._createExtraActors(DebuggerServer.targetScopedActorFactories, actorPool);
     if (!actorPool.isEmpty()) {
-      this._tabActorPool = actorPool;
-      this.conn.addActorPool(this._tabActorPool);
+      this._targetActorPool = actorPool;
+      this.conn.addActorPool(this._targetActorPool);
     }
 
     this._appendExtraActors(response);
@@ -149,8 +149,8 @@ TestTabActor.prototype = {
 
   removeActorByName: function(name) {
     const actor = this._extraActors[name];
-    if (this._tabActorPool) {
-      this._tabActorPool.removeActor(actor);
+    if (this._targetActorPool) {
+      this._targetActorPool.removeActor(actor);
     }
     delete this._extraActors[name];
   },
@@ -160,10 +160,10 @@ TestTabActor.prototype = {
   _appendExtraActors: appendExtraActors
 };
 
-TestTabActor.prototype.requestTypes = {
-  "attach": TestTabActor.prototype.onAttach,
-  "detach": TestTabActor.prototype.onDetach,
-  "reload": TestTabActor.prototype.onReload
+TestTargetActor.prototype.requestTypes = {
+  "attach": TestTargetActor.prototype.onAttach,
+  "detach": TestTargetActor.prototype.onDetach,
+  "reload": TestTargetActor.prototype.onReload
 };
 
 exports.register = function(handle) {

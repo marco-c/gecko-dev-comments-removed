@@ -27,7 +27,7 @@ try {
     
     
     
-    DebuggerServer.registerActors({ tab: true });
+    DebuggerServer.registerActors({ target: true });
 
     const connections = new Map();
 
