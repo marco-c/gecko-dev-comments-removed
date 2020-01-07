@@ -266,15 +266,6 @@ add_task(async function test_bookmarks() {
   Assert.equal(bookmarksObserver._itemChangedProperty, "title");
 
   
-  Assert.equal(bs.getIdForItemAt(testRoot, 0), workFolder);
-  
-  Assert.equal(bs.getIdForItemAt(1337, 0), -1);
-  
-  Assert.equal(bs.getIdForItemAt(testRoot, 1337), -1);
-  
-  Assert.equal(bs.getIdForItemAt(1337, 1337), -1);
-
-  
   let oldParentCC = getChildCount(testRoot);
   bs.moveItem(workFolder, homeFolder, bs.DEFAULT_INDEX);
   Assert.equal(bookmarksObserver._itemMovedId, workFolder);
@@ -287,15 +278,6 @@ add_task(async function test_bookmarks() {
   Assert.equal(bs.getItemIndex(workFolder), 1);
   Assert.equal(bs.getFolderIdForItem(workFolder), homeFolder);
 
-  
-  
-  Assert.notEqual(bs.getIdForItemAt(testRoot, 0), workFolder);
-  
-  Assert.notEqual(bs.getIdForItemAt(testRoot, -1), workFolder);
-  
-  Assert.equal(bs.getIdForItemAt(homeFolder, 1), workFolder);
-  
-  Assert.equal(bs.getIdForItemAt(homeFolder, -1), workFolder);
   
   Assert.equal(getChildCount(testRoot), oldParentCC - 1);
 
