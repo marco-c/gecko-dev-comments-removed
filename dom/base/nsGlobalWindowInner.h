@@ -204,18 +204,19 @@ ImplCycleCollectionTraverse(nsCycleCollectionTraversalCallback& aCallback,
 
 
 
-class nsGlobalWindowInner : public mozilla::dom::EventTarget,
-                            public nsPIDOMWindowInner,
-                            private nsIDOMWindow,
-                            
-                            
-                            private nsIDOMChromeWindow,
-                            public nsIScriptGlobalObject,
-                            public nsIScriptObjectPrincipal,
-                            public nsSupportsWeakReference,
-                            public nsIInterfaceRequestor,
-                            public PRCListStr,
-                            public nsAPostRefreshObserver
+class nsGlobalWindowInner final
+  : public mozilla::dom::EventTarget
+  , public nsPIDOMWindowInner
+  , private nsIDOMWindow
+  
+  
+  , private nsIDOMChromeWindow
+  , public nsIScriptGlobalObject
+  , public nsIScriptObjectPrincipal
+  , public nsSupportsWeakReference
+  , public nsIInterfaceRequestor
+  , public PRCListStr
+  , public nsAPostRefreshObserver
 {
 public:
   typedef mozilla::TimeStamp TimeStamp;

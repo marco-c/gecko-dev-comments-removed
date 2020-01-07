@@ -161,17 +161,18 @@ extern const js::Class OuterWindowProxyClass;
 
 
 
-class nsGlobalWindowOuter : public mozilla::dom::EventTarget,
-                            public nsPIDOMWindowOuter,
-                            private nsIDOMWindow,
-                            
-                            
-                            private nsIDOMChromeWindow,
-                            public nsIScriptGlobalObject,
-                            public nsIScriptObjectPrincipal,
-                            public nsSupportsWeakReference,
-                            public nsIInterfaceRequestor,
-                            public PRCListStr
+class nsGlobalWindowOuter final
+  : public mozilla::dom::EventTarget
+  , public nsPIDOMWindowOuter
+  , private nsIDOMWindow
+    
+    
+  , private nsIDOMChromeWindow
+  , public nsIScriptGlobalObject
+  , public nsIScriptObjectPrincipal
+  , public nsSupportsWeakReference
+  , public nsIInterfaceRequestor
+  , public PRCListStr
 {
 public:
   typedef nsDataHashtable<nsUint64HashKey, nsGlobalWindowOuter*> OuterWindowByIdTable;
