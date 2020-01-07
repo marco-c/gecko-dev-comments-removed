@@ -59,6 +59,10 @@ public:
   
   static bool StorageManagerEnabled();
   static bool StorageManagerEnabled(JSContext* aCx, JSObject* aObj);
+
+  
+  static bool PromiseRejectionEventsEnabled();
+  static bool PromiseRejectionEventsEnabled(JSContext* aCx, JSObject* aObj);
 };
 
 } 
