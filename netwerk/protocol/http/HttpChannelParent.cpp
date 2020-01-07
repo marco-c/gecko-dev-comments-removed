@@ -1524,6 +1524,23 @@ HttpChannelParent::OnStartRequest(nsIRequest *aRequest, nsISupports *aContext)
   int64_t altDataLen = chan->GetAltDataLength();
 
   
+  
+  
+  
+  
+  
+  
+  OptionalIPCServiceWorkerDescriptor ipcController = void_t();
+  nsCOMPtr<nsILoadInfo> loadInfo;
+  Unused << chan->GetLoadInfo(getter_AddRefs(loadInfo));
+  if (loadInfo) {
+    const Maybe<ServiceWorkerDescriptor>& controller = loadInfo->GetController();
+    if (controller.isSome()) {
+      ipcController = controller.ref().ToIPC();
+    }
+  }
+
+  
   requestHead->Enter();
   nsresult rv = NS_OK;
   if (mIPCClosed ||
@@ -1540,7 +1557,8 @@ HttpChannelParent::OnStartRequest(nsIRequest *aRequest, nsISupports *aContext)
                           redirectCount,
                           cacheKeyValue,
                           altDataType,
-                          altDataLen))
+                          altDataLen,
+                          ipcController))
   {
     rv = NS_ERROR_UNEXPECTED;
   }
