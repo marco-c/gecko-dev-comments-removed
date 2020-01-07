@@ -550,6 +550,47 @@ function handleRequest(req, res) {
     return;
 
   }
+  else if (u.pathname === "/dns-cname-a") {
+    
+    
+    
+    var content;
+
+    content = new Buffer("0000" +
+                         "0100" +
+                         "0001" + 
+                         "0002" + 
+                         "00000000" + 
+                         "07636E616D652d61" + 
+                         "076578616D706C6503636F6D00" + 
+                         "00010001" + 
+
+                         
+                         "C00C" + 
+                         "0005" + 
+                         "0001" + 
+                         "00000037" + 
+                         "0012" +   
+                         "0468657265" + 
+                         "076578616D706C6503636F6D00" + 
+
+                         
+                         "0468657265" + 
+                         "076578616D706C6503636F6D00" + 
+                         "0001" + 
+                         "0001" + 
+                         "00000037" + 
+                         "0004" + 
+                         "09080706", 
+                         "hex");
+    res.setHeader('Content-Type', 'application/dns-udpwireformat');
+    res.setHeader('Content-Length', content.length);
+    res.writeHead(200);
+    res.write(content);
+    res.end("");
+    return;
+
+  }
   else if (u.pathname === "/dns-cname-loop") {
     
     var content;
@@ -611,9 +652,17 @@ function handleRequest(req, res) {
       
       var content= new Buffer("00000100000100010000000007636F6E6669726D076578616D706C6503636F6D0000020001C00C00020001000000370012026E73076578616D706C6503636F6D010A00", "hex");
       ns_confirm++;
+    } else if (2 >= ns_confirm) {
+      
+
+      
+      
+      var content= new Buffer("000001000001000100000000" + "073130622d313030" +
+                              "076578616D706C6503636F6D00001C0001C00C001C00010000003700100001000000000000000000000000FFFF", "hex");
+      ns_confirm++;
     } else {
       
-      var content= new Buffer("0000010000010001000000000577726F6E67076578616D706C6503636F6D00001C0001C00C001C00010000003700100001000000000000000000000000FFFF", "hex");
+      return;
     }
     res.setHeader('Content-Type', 'application/dns-udpwireformat');
     res.setHeader('Content-Length', content.length);

@@ -199,7 +199,7 @@ function test3()
   prefs.setCharPref("network.trr.uri", "https://foo.example.com:" + h2Port + "/dns-auth");
   prefs.setCharPref("network.trr.credentials", "user:password");
   test_answer = "127.0.0.1";
-  listen = dns.asyncResolve("auth.example.com", 0, listenerFine, mainThread, defaultOriginAttributes);
+  listen = dns.asyncResolve("bar.example.com", 0, listenerFine, mainThread, defaultOriginAttributes);
 }
 
 
@@ -284,7 +284,8 @@ function test10()
   } catch (e) {
     
     do_test_finished();
-    run_dns_tests();
+    do_timeout(200, run_dns_tests);
+    
   }
 }
 
@@ -409,6 +410,24 @@ function test21()
   listen = dns.asyncResolve("test21.example.com", 0, listenerFine, mainThread, defaultOriginAttributes);
 }
 
+
+
+function test22()
+{
+  prefs.setIntPref("network.trr.mode", 3); 
+  prefs.setCharPref("network.trr.uri", "https://foo.example.com:" + h2Port + "/dns");
+  listen = dns.asyncResolve("mismatch.example.com", 0, listenerFails, mainThread, defaultOriginAttributes);
+}
+
+
+function test23()
+{
+  prefs.setIntPref("network.trr.mode", 3); 
+  prefs.setCharPref("network.trr.uri", "https://foo.example.com:" + h2Port + "/dns-cname-a");
+  test_answer = "9.8.7.6";
+  listen = dns.asyncResolve("cname-a.example.com", 0, listenerFine, mainThread, defaultOriginAttributes);
+}
+
 var tests = [ test1,
               test1b,
               test2,
@@ -433,6 +452,8 @@ var tests = [ test1,
               test19,
               test20,
               test21,
+              test22,
+              test23,
               testsDone
             ];
 

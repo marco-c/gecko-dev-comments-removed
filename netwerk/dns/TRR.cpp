@@ -489,7 +489,67 @@ TRR::PassQName(unsigned int &index)
 
 
 nsresult
-TRR::DohDecode()
+TRR::GetQname(nsAutoCString &aQname, unsigned int &aIndex)
+{
+  uint8_t clength = 0;
+  unsigned int cindex = aIndex;
+  unsigned int loop = 128; 
+  unsigned int endindex = 0; 
+  do {
+    if (cindex >= mBodySize) {
+      LOG(("TRR: bad cname packet\n"));
+      return NS_ERROR_ILLEGAL_VALUE;
+    }
+    clength = static_cast<uint8_t>(mResponse[cindex]);
+    if ((clength & 0xc0) == 0xc0) {
+      
+      if ((cindex +1) >= mBodySize) {
+        return NS_ERROR_ILLEGAL_VALUE;
+      }
+      
+      uint16_t newpos = (clength & 0x3f) << 8 | mResponse[cindex+1];
+      if (!endindex) {
+        
+        endindex = cindex + 2;
+      }
+      cindex = newpos;
+      continue;
+    } else if (clength & 0xc0) {
+      
+      LOG(("TRR: bad cname packet\n"));
+      return NS_ERROR_ILLEGAL_VALUE;
+    } else {
+      cindex++;
+    }
+    if (clength) {
+      if (!aQname.IsEmpty()) {
+        aQname.Append(".");
+      }
+      if ((cindex + clength) > mBodySize) {
+        return NS_ERROR_ILLEGAL_VALUE;
+      }
+      aQname.Append((const char *)(&mResponse[cindex]), clength);
+      cindex += clength; 
+    }
+  } while (clength && --loop);
+
+  if (!loop) {
+    LOG(("TRR::DohDecode pointer loop error\n"));
+    return NS_ERROR_ILLEGAL_VALUE;
+  }
+  if (!endindex) {
+    
+    endindex = cindex;
+  }
+  aIndex = endindex;
+  return NS_OK;
+}
+
+
+
+
+nsresult
+TRR::DohDecode(nsCString &aHost)
 {
   
   
@@ -509,7 +569,7 @@ TRR::DohDecode()
   nsAutoCString host;
   nsresult rv;
 
-  LOG(("doh decode %s %d bytes\n", mHost.get(), mBodySize));
+  LOG(("doh decode %s %d bytes\n", aHost.get(), mBodySize));
 
   mCname.Truncate();
 
@@ -519,7 +579,7 @@ TRR::DohDecode()
   }
   uint8_t rcode = mResponse[3] & 0x0F;
   if (rcode) {
-    LOG(("TRR Decode %s RCODE %d\n", mHost.get(), rcode));
+    LOG(("TRR Decode %s RCODE %d\n", aHost.get(), rcode));
     return NS_ERROR_FAILURE;
   }
 
@@ -556,7 +616,8 @@ TRR::DohDecode()
        answerRecords, mBodySize, host.get(), index));
 
   while (answerRecords) {
-    rv = PassQName(index);
+    nsAutoCString qname;
+    rv = GetQname(qname, index);
     if (NS_FAILED(rv)) {
       return rv;
     }
@@ -610,94 +671,70 @@ TRR::DohDecode()
       return NS_ERROR_ILLEGAL_VALUE;
     }
 
-    
-    
-    
-    
+    if (qname.Equals(aHost)) {
 
-    switch(TYPE) {
-    case TRRTYPE_A:
-      if (RDLENGTH != 4) {
-        LOG(("TRR bad length for A (%u)\n", RDLENGTH));
-        return NS_ERROR_UNEXPECTED;
-      }
-      rv = mDNS.Add(TTL, mResponse, index, RDLENGTH,
-                    mAllowRFC1918);
-      if (NS_FAILED(rv)) {
-        LOG(("TRR:DohDecode failed: local IP addresses or unknown IP family\n"));
-        return rv;
-      }
-      break;
-    case TRRTYPE_AAAA:
-      if (RDLENGTH != 16) {
-        LOG(("TRR bad length for AAAA (%u)\n", RDLENGTH));
-        return NS_ERROR_UNEXPECTED;
-      }
-      rv = mDNS.Add(TTL, mResponse, index, RDLENGTH,
-                    mAllowRFC1918);
-      if (NS_FAILED(rv)) {
-        LOG(("TRR got unique/local IPv6 address!\n"));
-        return rv;
-      }
-      break;
-
-    case TRRTYPE_NS:
-      break;
-    case TRRTYPE_CNAME:
-      if (mCname.IsEmpty()) {
-        uint8_t clength = 0;
-        unsigned int cindex = index;
-        unsigned int loop = 128; 
-        do {
-          if (cindex >= mBodySize) {
-            LOG(("TRR: bad cname packet\n"));
-            return NS_ERROR_ILLEGAL_VALUE;
-          }
-          clength = static_cast<uint8_t>(mResponse[cindex]);
-          if ((clength & 0xc0) == 0xc0) {
-            
-            if ((cindex +1) >= mBodySize) {
-              return NS_ERROR_ILLEGAL_VALUE;
-            }
-            
-            uint16_t newpos = (clength & 0x3f) << 8 | mResponse[cindex+1];
-            cindex = newpos;
-            continue;
-          } else if (clength & 0xc0) {
-            
-            LOG(("TRR: bad cname packet\n"));
-            return NS_ERROR_ILLEGAL_VALUE;
-          } else {
-            cindex++;
-          }
-          if (clength) {
-            if (!mCname.IsEmpty()) {
-              mCname.Append(".");
-            }
-            if ((cindex + clength) > mBodySize) {
-              return NS_ERROR_ILLEGAL_VALUE;
-            }
-            mCname.Append((const char *)(&mResponse[cindex]), clength);
-            cindex += clength; 
-          }
-        } while (clength && --loop);
-
-        if (!loop) {
-          LOG(("TRR::DohDecode pointer loop error\n"));
-          return NS_ERROR_ILLEGAL_VALUE;
-        }
-
-        LOG(("TRR::DohDecode CNAME host %s => %s\n",
-             host.get(), mCname.get()));
-      }
-      else {
-        LOG(("TRR::DohDecode CNAME - ignoring another entry\n"));
-      }
-      break;
-    default:
       
-      LOG(("TRR unsupported TYPE (%u) RDLENGTH %u\n", TYPE, RDLENGTH));
-      break;
+      
+      
+      
+
+      switch(TYPE) {
+      case TRRTYPE_A:
+        if (RDLENGTH != 4) {
+          LOG(("TRR bad length for A (%u)\n", RDLENGTH));
+          return NS_ERROR_UNEXPECTED;
+        }
+        rv = mDNS.Add(TTL, mResponse, index, RDLENGTH,
+                      mAllowRFC1918);
+        if (NS_FAILED(rv)) {
+          LOG(("TRR:DohDecode failed: local IP addresses or unknown IP family\n"));
+          return rv;
+        }
+        break;
+      case TRRTYPE_AAAA:
+        if (RDLENGTH != 16) {
+          LOG(("TRR bad length for AAAA (%u)\n", RDLENGTH));
+          return NS_ERROR_UNEXPECTED;
+        }
+        rv = mDNS.Add(TTL, mResponse, index, RDLENGTH,
+                      mAllowRFC1918);
+        if (NS_FAILED(rv)) {
+          LOG(("TRR got unique/local IPv6 address!\n"));
+          return rv;
+        }
+        break;
+
+      case TRRTYPE_NS:
+        break;
+      case TRRTYPE_CNAME:
+        if (mCname.IsEmpty()) {
+          nsAutoCString qname;
+          unsigned int qnameindex = index;
+          rv = GetQname(qname, qnameindex);
+          if (NS_FAILED(rv)) {
+            return rv;
+          }
+          if(!qname.IsEmpty()) {
+            mCname = qname;
+            LOG(("TRR::DohDecode CNAME host %s => %s\n",
+                 host.get(), mCname.get()));
+          } else {
+            LOG(("TRR::DohDecode empty CNAME for host %s!\n",
+                 host.get()));
+          }
+        }
+        else {
+          LOG(("TRR::DohDecode CNAME - ignoring another entry\n"));
+        }
+        break;
+      default:
+        
+        LOG(("TRR unsupported TYPE (%u) RDLENGTH %u\n", TYPE, RDLENGTH));
+        break;
+      }
+    }
+    else {
+      LOG(("TRR asked for %s data but got %s\n", aHost.get(), qname.get()));
     }
 
     index += RDLENGTH;
@@ -832,10 +869,21 @@ nsresult
 TRR::On200Response()
 {
   
-  nsresult rv = DohDecode();
+  nsresult rv = DohDecode(mHost);
 
   if (NS_SUCCEEDED(rv)) {
     if (!mDNS.mAddresses.getFirst() && !mCname.IsEmpty()) {
+      nsCString cname = mCname;
+      LOG(("TRR: check for CNAME record for %s within previous response\n",
+           cname.get()));
+      rv = DohDecode(cname);
+      if (NS_SUCCEEDED(rv) && mDNS.mAddresses.getFirst()) {
+        LOG(("TRR: Got the CNAME record without asking for it\n"));
+        ReturnData();
+        return NS_OK;
+      }
+      
+      mCname = cname;
       if (!--mCnameLoop) {
         LOG(("TRR::On200Response CNAME loop, eject!\n"));
       } else  {
