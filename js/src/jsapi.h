@@ -1502,6 +1502,22 @@ JS_DefineProfilingFunctions(JSContext* cx, JS::HandleObject obj);
 extern JS_PUBLIC_API(bool)
 JS_DefineDebuggerObject(JSContext* cx, JS::HandleObject obj);
 
+namespace JS {
+
+
+
+
+
+
+
+extern JS_PUBLIC_API(void)
+SetProfileTimelineRecordingEnabled(bool enabled);
+
+extern JS_PUBLIC_API(bool)
+IsProfileTimelineRecordingEnabled();
+
+} 
+
 #ifdef JS_HAS_CTYPES
 
 
