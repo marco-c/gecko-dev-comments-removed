@@ -228,6 +228,11 @@ public final class PanZoomController extends JNIObject {
         } else if ((action == MotionEvent.ACTION_HOVER_MOVE) ||
                    (action == MotionEvent.ACTION_HOVER_ENTER) ||
                    (action == MotionEvent.ACTION_HOVER_EXIT)) {
+            if (event.getSource() == InputDevice.SOURCE_TOUCHSCREEN) {
+                
+                
+                return false;
+            }
             return handleMouseEvent(event);
         } else {
             return false;

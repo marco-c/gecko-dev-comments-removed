@@ -517,14 +517,14 @@ public class GeckoView extends FrameLayout {
     @Override
     public boolean onHoverEvent(final MotionEvent event) {
         
-        
-        if (event.getSource() == InputDevice.SOURCE_TOUCHSCREEN &&
-            !SessionAccessibility.Settings.isEnabled()) {
-            return false;
+        if (SessionAccessibility.Settings.isEnabled() &&
+            event.getSource() == InputDevice.SOURCE_TOUCHSCREEN &&
+            mSession != null) {
+            mSession.getAccessibility().onExploreByTouch(event);
+            return true;
         }
 
-        return mSession != null &&
-               mSession.getPanZoomController().onMotionEvent(event);
+        return false;
     }
 
     @Override
