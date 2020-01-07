@@ -12,9 +12,11 @@
 #include "gfxPrefs.h"
 #include "FrameMetrics.h"
 #include "nsDebug.h"             
+#include "nsTArray.h"
 #include "mozilla/Assertions.h"  
 #include "mozilla/DebugOnly.h"   
 #include "mozilla/ToString.h"    
+#include "mozilla/gfx/CompositorHitTestInfo.h"
 #include "ipc/IPCMessageUtils.h"
 #include "js/TypeDecls.h"
 
@@ -22,6 +24,9 @@ namespace mozilla {
 namespace layers {
 
 typedef uint32_t SequenceNumber;
+
+
+
 
 
 
@@ -66,6 +71,12 @@ public:
                                     const std::string& aValue) {
     LogTestDataImpl(mRepaintRequests, aSequenceNumber, aScrollId, aKey, aValue);
   }
+  void RecordHitResult(const ScreenPoint& aPoint,
+                       const mozilla::gfx::CompositorHitTestInfo& aResult,
+                       const ViewID& aScrollId)
+  {
+    mHitResults.AppendElement(HitResult { aPoint, aResult, aScrollId });
+  }
 
   
   bool ToJS(JS::MutableHandleValue aOutValue, JSContext* aContext) const;
@@ -78,9 +89,15 @@ public:
   struct Bucket : BucketBase {};
   typedef std::map<SequenceNumber, Bucket> DataStoreBase;
   struct DataStore : DataStoreBase {};
+  struct HitResult {
+    ScreenPoint point;
+    mozilla::gfx::CompositorHitTestInfo result;
+    ViewID scrollId;
+  };
 private:
   DataStore mPaints;
   DataStore mRepaintRequests;
+  nsTArray<HitResult> mHitResults;
 
   void LogTestDataImpl(DataStore& aDataStore,
                        SequenceNumber aSequenceNumber,
@@ -144,12 +161,14 @@ struct ParamTraits<mozilla::layers::APZTestData>
   {
     WriteParam(aMsg, aParam.mPaints);
     WriteParam(aMsg, aParam.mRepaintRequests);
+    WriteParam(aMsg, aParam.mHitResults);
   }
 
   static bool Read(const Message* aMsg, PickleIterator* aIter, paramType* aResult)
   {
     return (ReadParam(aMsg, aIter, &aResult->mPaints) &&
-            ReadParam(aMsg, aIter, &aResult->mRepaintRequests));
+            ReadParam(aMsg, aIter, &aResult->mRepaintRequests) &&
+            ReadParam(aMsg, aIter, &aResult->mHitResults));
   }
 };
 
@@ -164,6 +183,26 @@ struct ParamTraits<mozilla::layers::APZTestData::Bucket>
 template <>
 struct ParamTraits<mozilla::layers::APZTestData::DataStore>
   : ParamTraits<mozilla::layers::APZTestData::DataStoreBase> {};
+
+template <>
+struct ParamTraits<mozilla::layers::APZTestData::HitResult>
+{
+  typedef mozilla::layers::APZTestData::HitResult paramType;
+
+  static void Write(Message* aMsg, const paramType& aParam)
+  {
+    WriteParam(aMsg, aParam.point);
+    WriteParam(aMsg, aParam.result);
+    WriteParam(aMsg, aParam.scrollId);
+  }
+
+  static bool Read(const Message* aMsg, PickleIterator* aIter, paramType* aResult)
+  {
+    return (ReadParam(aMsg, aIter, &aResult->point) &&
+            ReadParam(aMsg, aIter, &aResult->result) &&
+            ReadParam(aMsg, aIter, &aResult->scrollId));
+  }
+};
 
 } 
 

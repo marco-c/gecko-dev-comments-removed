@@ -45,6 +45,10 @@ enum class CompositorHitTestInfo : uint16_t {
   
   
   eScrollbarVertical = 1 << 8,
+
+  
+  
+  ALL_BITS = (1 << 9) - 1,
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(CompositorHitTestInfo)
