@@ -1002,47 +1002,56 @@ nsSVGOuterSVGAnonChildFrame::Init(nsIContent*       aContent,
 }
 #endif
 
-bool
-nsSVGOuterSVGAnonChildFrame::IsSVGTransformed(Matrix* aOwnTransform,
-                                              Matrix* aFromParentTransform) const
+static Matrix
+ComputeOuterSVGAnonChildFrameTransform(const nsSVGOuterSVGAnonChildFrame* aFrame)
 {
   
   
   
   
-
-  SVGSVGElement* content = static_cast<SVGSVGElement*>(GetContent());
+  SVGSVGElement* content = static_cast<SVGSVGElement*>(aFrame->GetContent());
 
   if (!content->HasChildrenOnlyTransform()) {
-    return false;
+    return Matrix();
   }
 
   
   gfxMatrix ownMatrix =
     content->PrependLocalTransformsTo(gfxMatrix(), eChildToUserSpace);
 
-  if (ownMatrix.IsIdentity()) {
-    return false;
+  if (ownMatrix.HasNonTranslation()) {
+    
+    
+    MOZ_ASSERT(ownMatrix.IsRectilinear(),
+                "Non-rectilinear transform will break the following logic");
+
+    
+    
+    
+    
+    CSSPoint pos = CSSPixel::FromAppUnits(aFrame->GetPosition());
+    CSSPoint scaledPos = CSSPoint(ownMatrix._11 * pos.x, ownMatrix._22 * pos.y);
+    CSSPoint deltaPos = scaledPos - pos;
+    ownMatrix *= gfxMatrix::Translation(-deltaPos.x, -deltaPos.y);
   }
 
+  return gfx::ToMatrix(ownMatrix);
+}
+
+
+
+
+
+
+
+
+
+bool
+nsSVGOuterSVGAnonChildFrame::IsSVGTransformed(Matrix* aOwnTransform,
+                                              Matrix* aFromParentTransform) const
+{
   if (aOwnTransform) {
-    if (ownMatrix.HasNonTranslation()) {
-      
-      
-      MOZ_ASSERT(ownMatrix.IsRectilinear(),
-                 "Non-rectilinear transform will break the following logic");
-
-      
-      
-      
-      
-      CSSPoint pos = CSSPixel::FromAppUnits(GetPosition());
-      CSSPoint scaledPos = CSSPoint(ownMatrix._11 * pos.x, ownMatrix._22 * pos.y);
-      CSSPoint deltaPos = scaledPos - pos;
-      ownMatrix *= gfxMatrix::Translation(-deltaPos.x, -deltaPos.y);
-    }
-
-    *aOwnTransform = gfx::ToMatrix(ownMatrix);
+    *aOwnTransform = ComputeOuterSVGAnonChildFrameTransform(this);
   }
 
   return true;
