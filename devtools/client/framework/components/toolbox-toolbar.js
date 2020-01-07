@@ -30,11 +30,10 @@ class ToolboxToolbar extends Component {
       
       currentToolId: PropTypes.string,
       
+      
       highlightedTools: PropTypes.instanceOf(Set),
       
       panelDefinitions: PropTypes.array,
-      
-      optionsPanel: PropTypes.object,
       
       hostTypes: PropTypes.arrayOf(PropTypes.shape({
         position: PropTypes.string.isRequired,
@@ -75,7 +74,6 @@ class ToolboxToolbar extends Component {
           renderToolboxButtonsStart(this.props),
           ToolboxTabs(this.props),
           renderToolboxButtonsEnd(this.props),
-          renderOptions(this.props),
           renderSeparator(),
           renderToolboxControls(this.props)
         )
@@ -160,39 +158,11 @@ function renderToolboxButtons({focusedButton, toolboxButtons, focusButton}, isSt
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function renderOptions({focusedButton, currentToolId, highlightedTools,
-                        optionsPanel, selectTool, focusButton}) {
-  return div({id: "toolbox-option-container"}, ToolboxTab({
-    panelDefinition: optionsPanel,
-    currentToolId,
-    selectTool,
-    highlightedTools,
-    focusedButton,
-    focusButton,
-  }));
-}
-
-
-
-
 function renderSeparator() {
   return div({className: "devtools-separator"});
 }
+
+
 
 
 
@@ -288,9 +258,12 @@ function renderToolboxControls(props) {
 
 
 
-function showMeatballMenu(menuButton, {hostTypes, L10N, toolbox}) {
+
+
+function showMeatballMenu(menuButton, {hostTypes, selectTool, L10N, toolbox}) {
   const menu = new Menu({ id: "toolbox-meatball-menu" });
 
+  
   for (const hostType of hostTypes) {
     menu.append(new MenuItem({
       id: `toolbox-meatball-menu-dock-${hostType.position}`,
@@ -301,8 +274,17 @@ function showMeatballMenu(menuButton, {hostTypes, L10N, toolbox}) {
     }));
   }
 
+  if (menu.items.length) {
+    menu.append(new MenuItem({ type: "separator" }));
+  }
+
   
-  
+  menu.append(new MenuItem({
+    id: "toolbox-meatball-menu-settings",
+    label: L10N.getStr("toolbox.meatballMenu.settings.label"),
+    
+    click: () => selectTool("options"),
+  }));
 
   const rect = menuButton.getBoundingClientRect();
   const screenX = menuButton.ownerDocument.defaultView.mozInnerScreenX;
