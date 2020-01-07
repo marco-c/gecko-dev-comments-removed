@@ -12,8 +12,9 @@ ChromeUtils.import("resource://services-sync/util.js");
 ChromeUtils.import("resource://gre/modules/FileUtils.jsm");
 ChromeUtils.import("resource://gre/modules/PromiseUtils.jsm");
 
-var fakeServer = new SyncServer();
+const fakeServer = new SyncServer();
 fakeServer.start();
+const fakeServerUrl = "http://localhost:" + fakeServer.port;
 
 registerCleanupFunction(function() {
   return promiseStopServer(fakeServer).finally(() => {
@@ -21,25 +22,7 @@ registerCleanupFunction(function() {
   });
 });
 
-var fakeServerUrl = "http://localhost:" + fakeServer.port;
-
-const logsdir = FileUtils.getDir("ProfD", ["weave", "logs"], true);
-
-const PROLONGED_ERROR_DURATION =
-  (Svc.Prefs.get("errorhandler.networkFailureReportTimeout") * 2) * 1000;
-
-const NON_PROLONGED_ERROR_DURATION =
-  (Svc.Prefs.get("errorhandler.networkFailureReportTimeout") / 2) * 1000;
-
-function setLastSync(lastSyncValue) {
-  Svc.Prefs.set("lastSync", (new Date(Date.now() - lastSyncValue)).toString());
-}
-
-
-
-let errorHandler = Service.errorHandler;
 let engine;
-
 add_task(async function setup() {
   await Service.engineManager.clear();
   await Service.engineManager.register(EHTestsCommon.CatapultEngine);
@@ -52,7 +35,6 @@ async function clean() {
   await promiseLogReset;
   Status.resetSync();
   Status.resetBackoff();
-  errorHandler.didReportProlongedError = false;
   
   syncTestLogging();
 }
@@ -130,235 +112,7 @@ add_task(async function test_credentials_changed_logout() {
   await promiseStopServer(server);
 });
 
-add_task(function test_no_lastSync_pref() {
-  syncTestLogging();
-  
-  Status.resetSync();
-  errorHandler.dontIgnoreErrors = true;
-  Status.sync = CREDENTIALS_CHANGED;
-  Assert.ok(errorHandler.shouldReportError());
-
-  
-  Status.resetSync();
-  errorHandler.dontIgnoreErrors = true;
-  Status.login = LOGIN_FAILED_NETWORK_ERROR;
-  Assert.ok(errorHandler.shouldReportError());
-
-});
-
-add_task(function test_shouldReportError() {
-  Status.login = MASTER_PASSWORD_LOCKED;
-  Assert.ok(!errorHandler.shouldReportError());
-
-  
-  
-  Service.clusterURL = fakeServerUrl;
-
-  
-  Status.resetSync();
-  setLastSync(NON_PROLONGED_ERROR_DURATION);
-  errorHandler.dontIgnoreErrors = true;
-  Status.sync = CREDENTIALS_CHANGED;
-  Assert.ok(errorHandler.shouldReportError());
-
-  
-  Status.resetSync();
-  setLastSync(PROLONGED_ERROR_DURATION);
-  errorHandler.dontIgnoreErrors = true;
-  Status.sync = CREDENTIALS_CHANGED;
-  Assert.ok(errorHandler.shouldReportError());
-
-  
-  Status.resetSync();
-  setLastSync(NON_PROLONGED_ERROR_DURATION);
-  errorHandler.dontIgnoreErrors = true;
-  Status.login = LOGIN_FAILED_NETWORK_ERROR;
-  Assert.ok(errorHandler.shouldReportError());
-
-  
-  Status.resetSync();
-  setLastSync(NON_PROLONGED_ERROR_DURATION);
-  errorHandler.dontIgnoreErrors = true;
-  Status.sync = LOGIN_FAILED_NETWORK_ERROR;
-  Assert.ok(errorHandler.shouldReportError());
-
-  
-  Status.resetSync();
-  setLastSync(PROLONGED_ERROR_DURATION);
-  errorHandler.dontIgnoreErrors = true;
-  Status.login = LOGIN_FAILED_NETWORK_ERROR;
-  Assert.ok(errorHandler.shouldReportError());
-
-  
-  Status.resetSync();
-  setLastSync(PROLONGED_ERROR_DURATION);
-  errorHandler.dontIgnoreErrors = true;
-  Status.sync = LOGIN_FAILED_NETWORK_ERROR;
-  Assert.ok(errorHandler.shouldReportError());
-
-  
-  Status.resetSync();
-  setLastSync(PROLONGED_ERROR_DURATION);
-  errorHandler.dontIgnoreErrors = false;
-  errorHandler.didReportProlongedError = false;
-  Status.sync = CREDENTIALS_CHANGED;
-  Assert.ok(errorHandler.shouldReportError());
-  Assert.ok(errorHandler.didReportProlongedError);
-  errorHandler.didReportProlongedError = false;
-
-  
-  Status.resetSync();
-  setLastSync(PROLONGED_ERROR_DURATION);
-  errorHandler.dontIgnoreErrors = false;
-  Status.login = LOGIN_FAILED_NETWORK_ERROR;
-  Assert.ok(errorHandler.shouldReportError());
-  Assert.ok(errorHandler.didReportProlongedError);
-  errorHandler.didReportProlongedError = false;
-
-  
-  Status.resetSync();
-  setLastSync(PROLONGED_ERROR_DURATION);
-  errorHandler.dontIgnoreErrors = false;
-  Status.sync = LOGIN_FAILED_NETWORK_ERROR;
-  Assert.ok(errorHandler.shouldReportError());
-  Assert.ok(errorHandler.didReportProlongedError);
-  errorHandler.didReportProlongedError = false;
-
-  
-  Status.resetSync();
-  setLastSync(NON_PROLONGED_ERROR_DURATION);
-  errorHandler.dontIgnoreErrors = false;
-  Status.sync = CREDENTIALS_CHANGED;
-  Assert.ok(errorHandler.shouldReportError());
-  Assert.ok(!errorHandler.didReportProlongedError);
-
-  
-  Status.resetSync();
-  setLastSync(NON_PROLONGED_ERROR_DURATION);
-  errorHandler.dontIgnoreErrors = false;
-  Status.login = LOGIN_FAILED_NETWORK_ERROR;
-  Assert.ok(!errorHandler.shouldReportError());
-  Assert.ok(!errorHandler.didReportProlongedError);
-
-  
-  Status.resetSync();
-  setLastSync(NON_PROLONGED_ERROR_DURATION);
-  errorHandler.dontIgnoreErrors = false;
-  Status.sync = LOGIN_FAILED_NETWORK_ERROR;
-  Assert.ok(!errorHandler.shouldReportError());
-  Assert.ok(!errorHandler.didReportProlongedError);
-
-  
-  Status.resetSync();
-  setLastSync(NON_PROLONGED_ERROR_DURATION);
-  errorHandler.dontIgnoreErrors = false;
-  Status.sync = SERVER_MAINTENANCE;
-  Assert.ok(!errorHandler.shouldReportError());
-  Assert.ok(!errorHandler.didReportProlongedError);
-
-  
-  Status.resetSync();
-  setLastSync(NON_PROLONGED_ERROR_DURATION);
-  errorHandler.dontIgnoreErrors = false;
-  Status.login = SERVER_MAINTENANCE;
-  Assert.ok(!errorHandler.shouldReportError());
-  Assert.ok(!errorHandler.didReportProlongedError);
-
-  
-  Status.resetSync();
-  setLastSync(PROLONGED_ERROR_DURATION);
-  errorHandler.dontIgnoreErrors = false;
-  Status.sync = SERVER_MAINTENANCE;
-  Assert.ok(errorHandler.shouldReportError());
-  Assert.ok(errorHandler.didReportProlongedError);
-  errorHandler.didReportProlongedError = false;
-
-  
-  Status.resetSync();
-  setLastSync(PROLONGED_ERROR_DURATION);
-  errorHandler.dontIgnoreErrors = false;
-  Status.login = SERVER_MAINTENANCE;
-  Assert.ok(errorHandler.shouldReportError());
-  Assert.ok(errorHandler.didReportProlongedError);
-  errorHandler.didReportProlongedError = false;
-
-  
-  Status.resetSync();
-  setLastSync(NON_PROLONGED_ERROR_DURATION);
-  errorHandler.dontIgnoreErrors = true;
-  Status.sync = SERVER_MAINTENANCE;
-  Assert.ok(errorHandler.shouldReportError());
-  
-  Assert.ok(!errorHandler.didReportProlongedError);
-
-  
-  Status.resetSync();
-  setLastSync(NON_PROLONGED_ERROR_DURATION);
-  errorHandler.dontIgnoreErrors = true;
-  Status.login = SERVER_MAINTENANCE;
-  Assert.ok(errorHandler.shouldReportError());
-  Assert.ok(!errorHandler.didReportProlongedError);
-
-  
-  
-  Status.resetSync();
-  setLastSync(PROLONGED_ERROR_DURATION);
-  errorHandler.dontIgnoreErrors = true;
-  Status.sync = SERVER_MAINTENANCE;
-  Assert.ok(errorHandler.shouldReportError());
-  Assert.ok(!errorHandler.didReportProlongedError);
-
-  
-  
-  Status.resetSync();
-  setLastSync(PROLONGED_ERROR_DURATION);
-  errorHandler.dontIgnoreErrors = true;
-  Status.login = SERVER_MAINTENANCE;
-  Assert.ok(errorHandler.shouldReportError());
-  Assert.ok(!errorHandler.didReportProlongedError);
-});
-
-add_task(async function test_shouldReportError_master_password() {
-  _("Test error ignored due to locked master password");
-  let server = await EHTestsCommon.sync_httpd_setup();
-  await EHTestsCommon.setUp(server);
-
-  
-  
-  Service._verifyLogin = Service.verifyLogin;
-  Service.verifyLogin = async function() {
-    Status.login = MASTER_PASSWORD_LOCKED;
-    return false;
-  };
-
-  setLastSync(NON_PROLONGED_ERROR_DURATION);
-  await Service.sync();
-  Assert.ok(!errorHandler.shouldReportError());
-
-  
-  Service.verifyLogin = Service._verifyLogin;
-  await clean();
-  await promiseStopServer(server);
-});
-
-
-
-add_task(function test_shouldReportLoginFailureWithNoCluster() {
-  
-  Service.clusterURL = "";
-
-  
-  Status.resetSync();
-  
-  Status.login = LOGIN_FAILED_LOGIN_REJECTED;
-  Assert.ok(errorHandler.shouldReportError());
-  
-  
-  Status.login = LOGIN_SUCCEEDED;
-  Assert.ok(!errorHandler.shouldReportError());
-});
-
-add_task(async function test_login_syncAndReportErrors_non_network_error() {
+add_task(async function test_login_non_network_error() {
   enableValidationPrefs();
 
   
@@ -367,18 +121,14 @@ add_task(async function test_login_syncAndReportErrors_non_network_error() {
   await EHTestsCommon.setUp(server);
   Service.identity._syncKeyBundle = null;
 
-  let promiseObserved = promiseOneObserver("weave:ui:login:error");
-
-  setLastSync(NON_PROLONGED_ERROR_DURATION);
-  errorHandler.syncAndReportErrors();
-  await promiseObserved;
+  await Service.sync();
   Assert.equal(Status.login, LOGIN_FAILED_NO_PASSPHRASE);
 
   await clean();
   await promiseStopServer(server);
 });
 
-add_task(async function test_sync_syncAndReportErrors_non_network_error() {
+add_task(async function test_sync_non_network_error() {
   enableValidationPrefs();
 
   
@@ -393,16 +143,12 @@ add_task(async function test_sync_syncAndReportErrors_non_network_error() {
 
   await EHTestsCommon.generateCredentialsChangedFailure();
 
-  let promiseObserved = promiseOneObserver("weave:ui:sync:error");
-
-  setLastSync(NON_PROLONGED_ERROR_DURATION);
-  let ping = await wait_for_ping(() => errorHandler.syncAndReportErrors(), true);
+  let ping = await sync_and_validate_telem(true);
   equal(ping.status.sync, CREDENTIALS_CHANGED);
   deepEqual(ping.failureReason, {
     name: "unexpectederror",
     error: "Error: Aborting sync, remote setup failed"
   });
-  await promiseObserved;
 
   Assert.equal(Status.sync, CREDENTIALS_CHANGED);
   
@@ -411,214 +157,28 @@ add_task(async function test_sync_syncAndReportErrors_non_network_error() {
   await promiseStopServer(server);
 });
 
-add_task(async function test_login_syncAndReportErrors_prolonged_non_network_error() {
-  enableValidationPrefs();
-
-  
-  
-  let server = await EHTestsCommon.sync_httpd_setup();
-  await EHTestsCommon.setUp(server);
-  Service.identity._syncKeyBundle = null;
-
-  let promiseObserved = promiseOneObserver("weave:ui:login:error");
-
-  setLastSync(PROLONGED_ERROR_DURATION);
-  errorHandler.syncAndReportErrors();
-  await promiseObserved;
-  Assert.equal(Status.login, LOGIN_FAILED_NO_PASSPHRASE);
-
-  await clean();
-  await promiseStopServer(server);
-});
-
-add_task(async function test_sync_syncAndReportErrors_prolonged_non_network_error() {
-  enableValidationPrefs();
-
-  
-  
-  let server = await EHTestsCommon.sync_httpd_setup();
-  await EHTestsCommon.setUp(server);
-
-  
-  await Service.sync();
-  Assert.equal(Status.sync, SYNC_SUCCEEDED);
-  Assert.ok(Service.isLoggedIn);
-
-  await EHTestsCommon.generateCredentialsChangedFailure();
-
-  let promiseObserved = promiseOneObserver("weave:ui:sync:error");
-
-  setLastSync(PROLONGED_ERROR_DURATION);
-  let ping = await wait_for_ping(() => errorHandler.syncAndReportErrors(), true);
-  equal(ping.status.sync, CREDENTIALS_CHANGED);
-  deepEqual(ping.failureReason, {
-    name: "unexpectederror",
-    error: "Error: Aborting sync, remote setup failed"
-  });
-  await promiseObserved;
-
-  Assert.equal(Status.sync, CREDENTIALS_CHANGED);
-  
-  await Async.promiseYield();
-  await clean();
-  await promiseStopServer(server);
-});
-
-add_task(async function test_login_syncAndReportErrors_network_error() {
+add_task(async function test_login_sync_network_error() {
   enableValidationPrefs();
 
   
   await configureIdentity({username: "broken.wipe"});
   Service.clusterURL = fakeServerUrl;
 
-  let promiseObserved = promiseOneObserver("weave:ui:login:error");
-
-  setLastSync(NON_PROLONGED_ERROR_DURATION);
-  errorHandler.syncAndReportErrors();
-  await promiseObserved;
-
+  await Service.sync();
   Assert.equal(Status.login, LOGIN_FAILED_NETWORK_ERROR);
 
   await clean();
 });
 
 
-add_task(async function test_sync_syncAndReportErrors_network_error() {
+add_task(async function test_sync_network_error() {
   enableValidationPrefs();
 
   
   Services.io.offline = true;
 
-  let promiseUISyncError = promiseOneObserver("weave:ui:sync:error");
-
-  setLastSync(NON_PROLONGED_ERROR_DURATION);
-  errorHandler.syncAndReportErrors();
-  await promiseUISyncError;
+  await Service.sync();
   Assert.equal(Status.sync, LOGIN_FAILED_NETWORK_ERROR);
-
-  Services.io.offline = false;
-  await clean();
-});
-
-add_task(async function test_login_syncAndReportErrors_prolonged_network_error() {
-  enableValidationPrefs();
-
-  
-  
-  await configureIdentity({username: "johndoe"});
-
-  Service.clusterURL = fakeServerUrl;
-
-  let promiseObserved = promiseOneObserver("weave:ui:login:error");
-
-  setLastSync(PROLONGED_ERROR_DURATION);
-  errorHandler.syncAndReportErrors();
-  await promiseObserved;
-  Assert.equal(Status.login, LOGIN_FAILED_NETWORK_ERROR);
-
-  await clean();
-});
-
-add_task(async function test_sync_syncAndReportErrors_prolonged_network_error() {
-  enableValidationPrefs();
-
-  
-  
-  Services.io.offline = true;
-
-  let promiseUISyncError = promiseOneObserver("weave:ui:sync:error");
-
-  setLastSync(PROLONGED_ERROR_DURATION);
-  errorHandler.syncAndReportErrors();
-  await promiseUISyncError;
-  Assert.equal(Status.sync, LOGIN_FAILED_NETWORK_ERROR);
-
-  Services.io.offline = false;
-  await clean();
-});
-
-add_task(async function test_login_prolonged_non_network_error() {
-  enableValidationPrefs();
-
-  
-  let server = await EHTestsCommon.sync_httpd_setup();
-  await EHTestsCommon.setUp(server);
-  Service.identity._syncKeyBundle = null;
-
-  let promiseObserved = promiseOneObserver("weave:ui:login:error");
-
-  setLastSync(PROLONGED_ERROR_DURATION);
-  await Service.sync();
-  await promiseObserved;
-  Assert.equal(Status.sync, PROLONGED_SYNC_FAILURE);
-  Assert.ok(errorHandler.didReportProlongedError);
-
-  await clean();
-  await promiseStopServer(server);
-});
-
-add_task(async function test_sync_prolonged_non_network_error() {
-  enableValidationPrefs();
-
-  
-  let server = await EHTestsCommon.sync_httpd_setup();
-  await EHTestsCommon.setUp(server);
-
-  
-  await Service.sync();
-  Assert.equal(Status.sync, SYNC_SUCCEEDED);
-  Assert.ok(Service.isLoggedIn);
-
-  await EHTestsCommon.generateCredentialsChangedFailure();
-
-  let promiseObserved = promiseOneObserver("weave:ui:sync:error");
-
-  setLastSync(PROLONGED_ERROR_DURATION);
-
-  let ping = await sync_and_validate_telem(true);
-  equal(ping.status.sync, PROLONGED_SYNC_FAILURE);
-  deepEqual(ping.failureReason, {
-    name: "unexpectederror",
-    error: "Error: Aborting sync, remote setup failed"
-  });
-  await promiseObserved;
-  Assert.equal(Status.sync, PROLONGED_SYNC_FAILURE);
-  Assert.ok(errorHandler.didReportProlongedError);
-  await clean();
-  await promiseStopServer(server);
-});
-
-add_task(async function test_login_prolonged_network_error() {
-  enableValidationPrefs();
-
-  
-  await configureIdentity({username: "johndoe"});
-  Service.clusterURL = fakeServerUrl;
-
-  let promiseObserved = promiseOneObserver("weave:ui:login:error");
-
-  setLastSync(PROLONGED_ERROR_DURATION);
-  await Service.sync();
-  await promiseObserved;
-  Assert.equal(Status.sync, PROLONGED_SYNC_FAILURE);
-  Assert.ok(errorHandler.didReportProlongedError);
-
-  await clean();
-});
-
-add_task(async function test_sync_prolonged_network_error() {
-  enableValidationPrefs();
-
-  
-  Services.io.offline = true;
-
-  let promiseUISyncError = promiseOneObserver("weave:ui:sync:error");
-
-  setLastSync(PROLONGED_ERROR_DURATION);
-  await Service.sync();
-  await promiseUISyncError;
-  Assert.equal(Status.sync, PROLONGED_SYNC_FAILURE);
-  Assert.ok(errorHandler.didReportProlongedError);
 
   Services.io.offline = false;
   await clean();
@@ -632,13 +192,8 @@ add_task(async function test_login_non_network_error() {
   await EHTestsCommon.setUp(server);
   Service.identity._syncKeyBundle = null;
 
-  let promiseObserved = promiseOneObserver("weave:ui:login:error");
-
-  setLastSync(NON_PROLONGED_ERROR_DURATION);
   await Service.sync();
-  await promiseObserved;
   Assert.equal(Status.login, LOGIN_FAILED_NO_PASSPHRASE);
-  Assert.ok(!errorHandler.didReportProlongedError);
 
   await clean();
   await promiseStopServer(server);
@@ -658,13 +213,8 @@ add_task(async function test_sync_non_network_error() {
 
   await EHTestsCommon.generateCredentialsChangedFailure();
 
-  let promiseObserved = promiseOneObserver("weave:ui:sync:error");
-
-  setLastSync(NON_PROLONGED_ERROR_DURATION);
   await Service.sync();
-  await promiseObserved;
   Assert.equal(Status.sync, CREDENTIALS_CHANGED);
-  Assert.ok(!errorHandler.didReportProlongedError);
 
   await clean();
   await promiseStopServer(server);
@@ -676,14 +226,10 @@ add_task(async function test_login_network_error() {
   await configureIdentity({username: "johndoe"});
   Service.clusterURL = fakeServerUrl;
 
-  let promiseObserved = promiseOneObserver("weave:ui:clear-error");
   
 
-  setLastSync(NON_PROLONGED_ERROR_DURATION);
   await Service.sync();
-  await promiseObserved;
   Assert.equal(Status.login, LOGIN_FAILED_NETWORK_ERROR);
-  Assert.ok(!errorHandler.didReportProlongedError);
 
   Services.io.offline = false;
   await clean();
@@ -695,13 +241,8 @@ add_task(async function test_sync_network_error() {
   
   Services.io.offline = true;
 
-  let promiseSyncFinished = promiseOneObserver("weave:ui:sync:finish");
-
-  setLastSync(NON_PROLONGED_ERROR_DURATION);
   await Service.sync();
-  await promiseSyncFinished;
   Assert.equal(Status.sync, LOGIN_FAILED_NETWORK_ERROR);
-  Assert.ok(!errorHandler.didReportProlongedError);
 
   Services.io.offline = false;
   await clean();
@@ -719,24 +260,14 @@ add_task(async function test_sync_server_maintenance_error() {
   engine.exception = {status: 503,
                       headers: {"retry-after": BACKOFF}};
 
-  function onSyncError() {
-    do_throw("Shouldn't get here!");
-  }
-  Svc.Obs.add("weave:ui:sync:error", onSyncError);
-
   Assert.equal(Status.service, STATUS_OK);
 
-  let promiseObserved = promiseOneObserver("weave:ui:sync:finish");
-
-  setLastSync(NON_PROLONGED_ERROR_DURATION);
   let ping = await sync_and_validate_telem(true);
   equal(ping.status.sync, SERVER_MAINTENANCE);
   deepEqual(ping.engines.find(e => e.failureReason).failureReason, { name: "httperror", code: 503 });
 
-  await promiseObserved;
   Assert.equal(Status.service, SYNC_FAILED_PARTIAL);
   Assert.equal(Status.sync, SERVER_MAINTENANCE);
-  Assert.ok(!errorHandler.didReportProlongedError);
 
   await clean();
   await promiseStopServer(server);
@@ -757,27 +288,16 @@ add_task(async function test_info_collections_login_server_maintenance_error() {
     backoffInterval = subject;
   });
 
-  function onUIUpdate() {
-    do_throw("Shouldn't experience UI update!");
-  }
-  Svc.Obs.add("weave:ui:login:error", onUIUpdate);
-
   Assert.ok(!Status.enforceBackoff);
   Assert.equal(Status.service, STATUS_OK);
 
-  let promiseObserved = promiseOneObserver("weave:ui:clear-error");
-
-  setLastSync(NON_PROLONGED_ERROR_DURATION);
   await Service.sync();
-  await promiseObserved;
 
   Assert.ok(Status.enforceBackoff);
   Assert.equal(backoffInterval, 42);
   Assert.equal(Status.service, LOGIN_FAILED);
   Assert.equal(Status.login, SERVER_MAINTENANCE);
-  Assert.ok(!errorHandler.didReportProlongedError);
 
-  Svc.Obs.remove("weave:ui:login:error", onUIUpdate);
   await clean();
   await promiseStopServer(server);
 });
@@ -797,27 +317,16 @@ add_task(async function test_meta_global_login_server_maintenance_error() {
     backoffInterval = subject;
   });
 
-  function onUIUpdate() {
-    do_throw("Shouldn't get here!");
-  }
-  Svc.Obs.add("weave:ui:login:error", onUIUpdate);
-
   Assert.ok(!Status.enforceBackoff);
   Assert.equal(Status.service, STATUS_OK);
 
-  let promiseObserved = promiseOneObserver("weave:ui:clear-error");
-
-  setLastSync(NON_PROLONGED_ERROR_DURATION);
   await Service.sync();
-  await promiseObserved;
 
   Assert.ok(Status.enforceBackoff);
   Assert.equal(backoffInterval, 42);
   Assert.equal(Status.service, LOGIN_FAILED);
   Assert.equal(Status.login, SERVER_MAINTENANCE);
-  Assert.ok(!errorHandler.didReportProlongedError);
 
-  Svc.Obs.remove("weave:ui:login:error", onUIUpdate);
   await clean();
   await promiseStopServer(server);
 });
