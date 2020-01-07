@@ -343,6 +343,8 @@ ExtensionManager = {
         contentScripts: extension.contentScripts.map(parseScriptOptions),
       });
 
+      policy.debugName = `${JSON.stringify(policy.name)} (ID: ${policy.id}, ${policy.getURL()})`;
+
       
       
       

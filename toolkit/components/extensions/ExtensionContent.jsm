@@ -426,7 +426,7 @@ class ContentScriptContextChild extends BaseContext {
       
       
       this.sandbox = Cu.Sandbox(contentWindow, {
-        sandboxName: `Content Script ExtensionPage ${this.extension.id}`,
+        sandboxName: `Web-Accessible Extension Page ${extension.policy.debugName}`,
         sandboxPrototype: contentWindow,
         sameZoneAs: contentWindow,
         wantXrays: false,
@@ -443,7 +443,7 @@ class ContentScriptContextChild extends BaseContext {
 
       this.sandbox = Cu.Sandbox(principal, {
         metadata,
-        sandboxName: `Content Script ${this.extension.id}`,
+        sandboxName: `Content Script ${extension.policy.debugName}`,
         sandboxPrototype: contentWindow,
         sameZoneAs: contentWindow,
         wantXrays: true,
