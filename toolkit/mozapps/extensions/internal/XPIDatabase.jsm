@@ -232,9 +232,8 @@ let AddonWrapper;
 
 
 
-
 class AddonInternal {
-  constructor() {
+  constructor(addonData) {
     this._hasResourceCache = new Map();
 
     this._wrapper = null;
@@ -253,6 +252,8 @@ class AddonInternal {
     this.skinnable = false;
     this.startupData = null;
 
+    this.inDatabase = false;
+
     
 
 
@@ -261,6 +262,26 @@ class AddonInternal {
 
     this.dependencies = EMPTY_ARRAY;
     this.hasEmbeddedWebExtension = false;
+
+    if (addonData) {
+      if (addonData.descriptor && !addonData.path) {
+        addonData.path = descriptorToPath(addonData.descriptor);
+      }
+
+      copyProperties(addonData, PROP_JSON_FIELDS, this);
+
+      if (!this.dependencies)
+        this.dependencies = [];
+      Object.freeze(this.dependencies);
+
+      this.addedToDatabase();
+
+      if (!addonData._sourceBundle) {
+        throw new Error("Expected passed argument to contain a path");
+      }
+
+      this._sourceBundle = addonData._sourceBundle;
+    }
   }
 
   get wrapper() {
@@ -268,6 +289,18 @@ class AddonInternal {
       this._wrapper = new AddonWrapper(this);
     }
     return this._wrapper;
+  }
+
+  addedToDatabase() {
+    if (this._installLocation) {
+      this.location = this._installLocation.name;
+    } else if (this.location) {
+      this._installLocation = XPIProvider.installLocationsByName[this.location];
+    }
+
+    this._key = `${this.location}:${this.id}`;
+
+    this.inDatabase = true;
   }
 
   get selectedLocale() {
@@ -514,55 +547,31 @@ class AddonInternal {
   }
 
   applyCompatibilityUpdate(aUpdate, aSyncCompatibility) {
+    let wasCompatible = this.isCompatible;
+
     for (let targetApp of this.targetApplications) {
       for (let updateTarget of aUpdate.targetApplications) {
         if (targetApp.id == updateTarget.id && (aSyncCompatibility ||
             Services.vc.compare(targetApp.maxVersion, updateTarget.maxVersion) < 0)) {
           targetApp.minVersion = updateTarget.minVersion;
           targetApp.maxVersion = updateTarget.maxVersion;
+
+          if (this.inDatabase)
+            XPIDatabase.saveChanges();
         }
       }
     }
-    this.appDisabled = !XPIDatabase.isUsableAddon(this);
+
+    if (wasCompatible != this.isCompatible) {
+      if (this.inDatabase)
+        XPIDatabase.updateAddonDisabledState(this);
+      else
+        this.appDisabled = !XPIDatabase.isUsableAddon(this);
+    }
   }
 
-  
-
-
-
-
-
-
-
-
-
   toJSON() {
-    let obj = {};
-    for (let prop in this) {
-      
-      if (prop == "wrapper")
-        continue;
-
-      
-      if (prop.substring(0, 1) == "_")
-        continue;
-
-      
-      if (this.__lookupGetter__(prop))
-        continue;
-
-      
-      if (this.__lookupSetter__(prop))
-        continue;
-
-      
-      if (typeof this[prop] == "function")
-        continue;
-
-      obj[prop] = this[prop];
-    }
-
-    return obj;
+    return copyProperties(this, PROP_JSON_FIELDS);
   }
 
   
@@ -1240,76 +1249,6 @@ PROP_LOCALE_MULTI.forEach(function(aProp) {
 
 
 
-class DBAddonInternal extends AddonInternal {
-  constructor(aLoaded) {
-    super();
-
-    if (aLoaded.descriptor) {
-      if (!aLoaded.path) {
-        aLoaded.path = descriptorToPath(aLoaded.descriptor);
-      }
-      delete aLoaded.descriptor;
-    }
-
-    copyProperties(aLoaded, PROP_JSON_FIELDS, this);
-
-    if (!this.dependencies)
-      this.dependencies = [];
-    Object.freeze(this.dependencies);
-
-    if (aLoaded._installLocation) {
-      this._installLocation = aLoaded._installLocation;
-      this.location = aLoaded._installLocation.name;
-    } else if (aLoaded.location) {
-      this._installLocation = XPIProvider.installLocationsByName[this.location];
-    }
-
-    this._key = this.location + ":" + this.id;
-
-    if (!aLoaded._sourceBundle) {
-      throw new Error("Expected passed argument to contain a path");
-    }
-
-    this._sourceBundle = aLoaded._sourceBundle;
-  }
-
-  applyCompatibilityUpdate(aUpdate, aSyncCompatibility) {
-    let wasCompatible = this.isCompatible;
-
-    this.targetApplications.forEach(function(aTargetApp) {
-      aUpdate.targetApplications.forEach(function(aUpdateTarget) {
-        if (aTargetApp.id == aUpdateTarget.id && (aSyncCompatibility ||
-            Services.vc.compare(aTargetApp.maxVersion, aUpdateTarget.maxVersion) < 0)) {
-          aTargetApp.minVersion = aUpdateTarget.minVersion;
-          aTargetApp.maxVersion = aUpdateTarget.maxVersion;
-          XPIDatabase.saveChanges();
-        }
-      });
-    });
-
-    if (wasCompatible != this.isCompatible)
-      XPIDatabase.updateAddonDisabledState(this);
-  }
-
-  toJSON() {
-    return copyProperties(this, PROP_JSON_FIELDS);
-  }
-
-  get inDatabase() {
-    return true;
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1509,7 +1448,7 @@ this.XPIDatabase = {
           logger.warn("Could not find source bundle for add-on " + loadedAddon.id, e);
         }
 
-        let newAddon = new DBAddonInternal(loadedAddon);
+        let newAddon = new AddonInternal(loadedAddon);
         addonDB.set(newAddon._key, newAddon);
       });
 
@@ -2062,22 +2001,22 @@ this.XPIDatabase = {
 
 
 
-  addAddonMetadata(aAddon, aPath) {
+  addToDatabase(aAddon, aPath) {
     if (!this.addonDB) {
       AddonManagerPrivate.recordSimpleMeasure("XPIDB_lateOpen_addMetadata",
           XPIProvider.runPhase);
       this.syncLoadDB(false);
     }
 
-    let newAddon = new DBAddonInternal(aAddon);
-    newAddon.path = aPath;
-    this.addonDB.set(newAddon._key, newAddon);
-    if (newAddon.visible) {
-      this.makeAddonVisible(newAddon);
+    aAddon.addedToDatabase();
+    aAddon.path = aPath;
+    this.addonDB.set(aAddon._key, aAddon);
+    if (aAddon.visible) {
+      this.makeAddonVisible(aAddon);
     }
 
     this.saveChanges();
-    return newAddon;
+    return aAddon;
   },
 
   
@@ -2102,8 +2041,7 @@ this.XPIDatabase = {
     aNewAddon.seen = aOldAddon.seen;
     aNewAddon.active = (aNewAddon.visible && !aNewAddon.disabled && !aNewAddon.pendingUninstall);
 
-    
-    return this.addAddonMetadata(aNewAddon, aPath);
+    return this.addToDatabase(aNewAddon, aPath);
   },
 
   
@@ -2567,7 +2505,7 @@ this.XPIDatabaseReconcile = {
       }
     }
 
-    return XPIDatabase.addAddonMetadata(aNewAddon, aAddonState.path);
+    return XPIDatabase.addToDatabase(aNewAddon, aAddonState.path);
   },
 
   

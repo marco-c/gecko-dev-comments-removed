@@ -1795,7 +1795,7 @@ class AddonInstall {
           }
         } else {
           this.addon.active = (this.addon.visible && !this.addon.disabled);
-          this.addon = XPIDatabase.addAddonMetadata(this.addon, file.path);
+          this.addon = XPIDatabase.addToDatabase(this.addon, file.path);
           XPIStates.addAddon(this.addon);
           this.addon.installDate = this.addon.updateDate;
           XPIDatabase.saveChanges();
@@ -3866,7 +3866,7 @@ var XPIInstall = {
       
       addon.userDisabled = false;
 
-      addon = XPIDatabase.addAddonMetadata(addon, addon._sourceBundle.path);
+      addon = XPIDatabase.addToDatabase(addon, addon._sourceBundle.path);
 
       XPIStates.addAddon(addon);
       XPIDatabase.saveChanges();
