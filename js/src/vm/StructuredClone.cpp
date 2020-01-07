@@ -431,13 +431,6 @@ struct JSStructuredCloneReader {
     JS::StructuredCloneScope allowedScope;
 
     
-    
-    
-    
-    
-    JS::StructuredCloneScope storedScope;
-
-    
     AutoValueVector objs;
 
     
@@ -2060,14 +2053,6 @@ JSStructuredCloneReader::readSharedArrayBuffer(MutableHandleValue vp)
     }
 
     
-    
-    if (storedScope > JS::StructuredCloneScope::SameProcessDifferentThread) {
-        JS_ReportErrorNumberASCII(context(), GetErrorMessage, nullptr, JSMSG_SC_BAD_SERIALIZED_DATA,
-                                  "can't transfer SharedArrayBuffer cross-process");
-        return false;
-    }
-
-    
 
     if (!rawbuf->addReference()) {
         JS_ReportErrorNumberASCII(context(), GetErrorMessage, nullptr, JSMSG_SC_SAB_REFCNT_OFLO);
@@ -2395,28 +2380,25 @@ JSStructuredCloneReader::readHeader()
     if (!in.getPair(&tag, &data))
         return in.reportTruncated();
 
-    if (tag != SCTAG_HEADER) {
+    JS::StructuredCloneScope storedScope;
+    if (tag == SCTAG_HEADER) {
+        MOZ_ALWAYS_TRUE(in.readPair(&tag, &data));
+        storedScope = JS::StructuredCloneScope(data);
+    } else {
         
         storedScope = JS::StructuredCloneScope::DifferentProcess;
-        return true;
     }
 
-    MOZ_ALWAYS_TRUE(in.readPair(&tag, &data));
-    storedScope = JS::StructuredCloneScope(data);
-
-    if (data != uint32_t(JS::StructuredCloneScope::SameProcessSameThread) &&
-        data != uint32_t(JS::StructuredCloneScope::SameProcessDifferentThread) &&
-        data != uint32_t(JS::StructuredCloneScope::DifferentProcess))
+    if (storedScope != JS::StructuredCloneScope::SameProcessSameThread &&
+        storedScope != JS::StructuredCloneScope::SameProcessDifferentThread &&
+        storedScope != JS::StructuredCloneScope::DifferentProcess)
     {
         JS_ReportErrorNumberASCII(context(), GetErrorMessage, nullptr, JSMSG_SC_BAD_SERIALIZED_DATA,
                                   "invalid structured clone scope");
         return false;
     }
-    if (storedScope < allowedScope) {
-        JS_ReportErrorNumberASCII(context(), GetErrorMessage, nullptr, JSMSG_SC_BAD_SERIALIZED_DATA,
-                                  "incompatible structured clone scope");
-        return false;
-    }
+
+    
 
     return true;
 }
@@ -2457,10 +2439,12 @@ JSStructuredCloneReader::readTransferMap()
             return false;
 
         if (tag == SCTAG_TRANSFER_MAP_ARRAY_BUFFER) {
-            if (storedScope == JS::StructuredCloneScope::DifferentProcess) {
+            if (allowedScope == JS::StructuredCloneScope::DifferentProcess) {
                 
                 
-                continue;
+                
+                ReportDataCloneError(cx, callbacks, JS_SCERR_TRANSFERABLE);
+                return false;
             }
 
             size_t nbytes = extraData;
