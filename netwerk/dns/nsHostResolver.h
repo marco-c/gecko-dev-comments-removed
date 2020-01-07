@@ -20,7 +20,6 @@
 #include "GetAddrInfo.h"
 #include "mozilla/net/DNS.h"
 #include "mozilla/net/DashboardTypes.h"
-#include "mozilla/LinkedList.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
 
@@ -131,7 +130,8 @@ public:
 private:
     friend class nsHostResolver;
 
-    mozilla::LinkedList<RefPtr<nsResolveHostCallback>> mCallbacks;
+
+    PRCList callbacks; 
 
     bool    resolving; 
 
@@ -166,10 +166,7 @@ private:
 
 
 
-
-class nsResolveHostCallback
-    : public mozilla::LinkedListElement<RefPtr<nsResolveHostCallback>>
-    , public nsISupports
+class NS_NO_VTABLE nsResolveHostCallback : public PRCList
 {
 public:
     
@@ -208,8 +205,6 @@ public:
     virtual bool EqualsAsyncListener(nsIDNSListener *aListener) = 0;
 
     virtual size_t SizeOfIncludingThis(mozilla::MallocSizeOf) const = 0;
-protected:
-    virtual ~nsResolveHostCallback() = default;
 };
 
 
