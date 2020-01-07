@@ -927,6 +927,11 @@ nsImageLoadingContent::LoadImage(nsIURI* aNewURI,
 
   
   if (aDocument->IsLoadedAsData()) {
+    
+    
+    ClearPendingRequest(NS_BINDING_ABORTED,
+                        Some(OnNonvisible::DISCARD_IMAGES));
+
     SetBlockedRequest(nsIContentPolicy::REJECT_REQUEST);
 
     FireEvent(NS_LITERAL_STRING("error"));
