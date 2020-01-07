@@ -1072,11 +1072,8 @@ xpc::CreateSandboxObject(JSContext* cx, MutableHandleValue vp, nsISupports* prin
     {
         JSAutoRealm ar(cx, sandbox);
 
-        nsCOMPtr<nsIScriptObjectPrincipal> sbp =
-            new SandboxPrivate(principal, sandbox);
-
         
-        JS_SetPrivate(sandbox, sbp.forget().take());
+        SandboxPrivate::Create(principal, sandbox);
 
         
         
