@@ -836,6 +836,14 @@ public:
     mBidiEnabled = true;
   }
 
+  
+
+
+  bool GetMathMLEnabled() const
+  {
+    return mMathMLEnabled;
+  }
+
   void SetMathMLEnabled()
   {
     mMathMLEnabled = true;
@@ -1459,6 +1467,28 @@ public:
 
 
 
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  void EnsureOnDemandBuiltInUASheet(mozilla::StyleSheet* aSheet);
 
   mozilla::dom::StyleSheetList* StyleSheets()
   {
@@ -3586,6 +3616,7 @@ protected:
 
   void UpdateDocumentStates(mozilla::EventStates);
 
+  void AddOnDemandBuiltInUASheet(mozilla::StyleSheet* aSheet);
   void RemoveDocStyleSheetsFromStyleSets();
   void RemoveStyleSheetsFromStyleSets(
       const nsTArray<RefPtr<mozilla::StyleSheet>>& aSheets,
@@ -4387,6 +4418,7 @@ protected:
   nsCOMPtr<nsIRunnable> mMaybeEndOutermostXBLUpdateRunner;
   nsCOMPtr<nsIRequest> mOnloadBlocker;
 
+  nsTArray<RefPtr<mozilla::StyleSheet>> mOnDemandBuiltInUASheets;
   nsTArray<RefPtr<mozilla::StyleSheet>> mAdditionalSheets[AdditionalSheetTypeCount];
 
   
