@@ -357,18 +357,10 @@ this.PanelMultiView = class extends this.AssociatedToNode {
 
       viewNode.panelMultiView = this.node;
 
-      let reverse = !!aPreviousView;
-      if (!reverse) {
-        nextPanelView.headerText = viewNode.getAttribute("title") ||
-                                   (aAnchor && aAnchor.getAttribute("label"));
-      }
-
       let previousViewNode = aPreviousView || this._currentSubView;
       
       
       let showingSameView = viewNode == previousViewNode;
-      let playTransition = (!!previousViewNode && !showingSameView && this._panel.state == "open");
-      let isMainView = viewNode.id == this._mainViewId;
 
       let previousRect = previousViewNode.__lastKnownBoundingRect =
           this._dwu.getBoundsWithoutFlushing(previousViewNode);
@@ -384,16 +376,25 @@ this.PanelMultiView = class extends this.AssociatedToNode {
       }
 
       this._viewShowing = viewNode;
-      
-      
-      
-      nextPanelView.mainview = isMainView;
+
+      let reverse = !!aPreviousView;
+      if (!reverse) {
+        
+        
+        
+        
+        nextPanelView.headerText = viewNode.getAttribute("title") ||
+                                   (aAnchor && aAnchor.getAttribute("label"));
+        
+        let isMainView = viewNode.id == this._mainViewId;
+        nextPanelView.mainview = isMainView;
+        
+        nextPanelView.minMaxWidth = isMainView ? 0 : this._mainViewWidth;
+      }
 
       if (aAnchor) {
         viewNode.classList.add("PanelUI-subView");
       }
-      if (!isMainView && this._mainViewWidth)
-        viewNode.style.maxWidth = viewNode.style.minWidth = this._mainViewWidth + "px";
 
       if (!showingSameView || !viewNode.hasAttribute("current")) {
         
@@ -425,7 +426,7 @@ this.PanelMultiView = class extends this.AssociatedToNode {
       
       
       await this._cleanupTransitionPhase();
-      if (playTransition) {
+      if (!showingSameView && this._panel.state == "open") {
         await this._transitionViews(previousViewNode, viewNode, reverse, previousRect, aAnchor);
         nextPanelView.focusSelectedElement();
       } else {
@@ -760,8 +761,6 @@ this.PanelMultiView = class extends this.AssociatedToNode {
         for (let panelView of this._viewStack.children) {
           if (panelView.nodeName != "children") {
             panelView.__lastKnownBoundingRect = null;
-            panelView.style.removeProperty("min-width");
-            panelView.style.removeProperty("max-width");
           }
         }
         this.window.removeEventListener("keydown", this);
@@ -813,6 +812,20 @@ this.PanelView = class extends this.AssociatedToNode {
     } else if (this.node.hasAttribute("current")) {
       this.dispatchCustomEvent("ViewHiding");
       this.node.removeAttribute("current");
+    }
+  }
+
+  
+
+
+
+  set minMaxWidth(value) {
+    let style = this.node.style;
+    if (value) {
+      style.minWidth = style.maxWidth = value + "px";
+    } else {
+      style.removeProperty("min-width");
+      style.removeProperty("max-width");
     }
   }
 
