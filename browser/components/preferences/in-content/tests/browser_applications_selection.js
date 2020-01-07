@@ -33,7 +33,7 @@ add_task(async function selectInternalOptionForFeed() {
   Assert.ok(feedItem.selected, "Should be able to select our item.");
 
   
-  let list = await TestUtils.waitForCondition(() =>
+  let list = await waitForCondition(() =>
     win.document.getAnonymousElementByAttribute(feedItem, "class", "actionsMenu"));
   info("Got list after item was selected");
 
@@ -47,7 +47,7 @@ add_task(async function selectInternalOptionForFeed() {
   chooseItems[0].dispatchEvent(cmdEvent);
 
   
-  list = await TestUtils.waitForCondition(() =>
+  list = await waitForCondition(() =>
     win.document.getAnonymousElementByAttribute(feedItem, "class", "actionsMenu"));
   info("Got list after item was selected");
   Assert.ok(list.selectedItem, "Should have a selected item.");
@@ -65,14 +65,14 @@ add_task(async function reselectInternalOptionForFeed() {
   container.selectItem(anotherItem);
 
   
-  await TestUtils.waitForCondition(() =>
+  await waitForCondition(() =>
     win.document.getAnonymousElementByAttribute(anotherItem, "class", "actionsMenu"));
   info("Got list after item was selected");
 
   
   container.selectItem(feedItem);
 
-  let list = await TestUtils.waitForCondition(() =>
+  let list = await waitForCondition(() =>
     win.document.getAnonymousElementByAttribute(feedItem, "class", "actionsMenu"));
   info("Got list after item was selected");
 
