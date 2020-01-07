@@ -67,7 +67,7 @@ AVD_DICT = {
                    ['-skip-adb-auth', '-verbose', '-show-kernel'
                     
                     
-                   ],
+                    ],
                    False),
     '7.0': AvdInfo('Android 7.0',
                    'mozemulator-7.0',
