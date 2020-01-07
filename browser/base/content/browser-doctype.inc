@@ -9,8 +9,6 @@
 %charsetDTD;
 <!ENTITY % textcontextDTD SYSTEM "chrome:
 %textcontextDTD;
-<!ENTITY % customizeToolbarDTD SYSTEM "chrome:
-  %customizeToolbarDTD;
 <!ENTITY % placesDTD SYSTEM "chrome:
 %placesDTD;
 <!ENTITY % safebrowsingDTD SYSTEM "chrome:

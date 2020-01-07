@@ -137,8 +137,6 @@ var whitelist = [
   {file: "chrome://browser/locale/taskbar.properties",
    platforms: ["linux", "macosx"]},
   
-  {file: "chrome://global/content/customizeToolbar.xul"},
-  
   {file: "chrome://global/skin/icons/error-16.png"},
   
   {file: "chrome://global/skin/icons/warning-64.png", platforms: ["linux"]},

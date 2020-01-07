@@ -58,7 +58,7 @@ const kSubviewEvents = [
 
 
 
-var kVersion = 13;
+var kVersion = 14;
 
 
 
@@ -242,6 +242,13 @@ var CustomizableUIInternal = {
     }, true);
 
     SearchWidgetTracker.init();
+  },
+
+  get _builtinAreas() {
+    return new Set([
+      ...this._builtinToolbars,
+      CustomizableUI.AREA_FIXED_OVERFLOW_PANEL,
+    ]);
   },
 
   get _builtinToolbars() {
@@ -456,6 +463,15 @@ var CustomizableUIInternal = {
         let buttonIndex = placements.indexOf("e10s-button");
         if (buttonIndex != -1) {
           placements.splice(buttonIndex, 1);
+        }
+      }
+    }
+
+    
+    if (currentVersion < 14 && gSavedState.placements) {
+      for (let area in gSavedState.placements) {
+        if (!this._builtinAreas.has(area)) {
+          delete gSavedState.placements[area];
         }
       }
     }
@@ -688,8 +704,7 @@ var CustomizableUIInternal = {
     if (!areaProperties) {
       
       
-      if (!aToolbar.hasAttribute("defaultset") &&
-          !aToolbar.hasAttribute("customindex")) {
+      if (!aToolbar.hasAttribute("defaultset")) {
         if (!gPendingBuildAreas.has(area)) {
           gPendingBuildAreas.set(area, new Map());
         }
@@ -2632,8 +2647,6 @@ var CustomizableUIInternal = {
       gUIStateBeforeReset.newElementCount = gNewElementCount;
     } catch (e) { }
 
-    this._resetExtraToolbars();
-
     Services.prefs.clearUserPref(kPrefCustomizationState);
     Services.prefs.clearUserPref(kPrefDrawInTitlebar);
     Services.prefs.clearUserPref(kPrefExtraDragSpace);
@@ -2653,28 +2666,6 @@ var CustomizableUIInternal = {
     
     for (let [areaId, ] of gAreas) {
       this.restoreStateForArea(areaId);
-    }
-  },
-
-  _resetExtraToolbars(aFilter = null) {
-    let firstWindow = true; 
-    for (let [win, ] of gBuildWindows) {
-      let toolbox = win.gNavToolbox;
-      for (let child of toolbox.children) {
-        let matchesFilter = !aFilter || aFilter == child.id;
-        if (child.hasAttribute("customindex") && matchesFilter) {
-          let toolbarId = "toolbar" + child.getAttribute("customindex");
-          toolbox.toolbarset.removeAttribute(toolbarId);
-          if (firstWindow) {
-            win.document.persist(toolbox.toolbarset.id, toolbarId);
-            
-            
-            this.unregisterArea(child.id, true);
-          }
-          child.remove();
-        }
-      }
-      firstWindow = false;
     }
   },
 
@@ -2743,10 +2734,6 @@ var CustomizableUIInternal = {
     Object.getOwnPropertyNames(gUIStateBeforeReset).forEach((prop) => {
       gUIStateBeforeReset[prop] = null;
     });
-  },
-
-  removeExtraToolbar(aToolbarId) {
-    this._resetExtraToolbars(aToolbarId);
   },
 
   
