@@ -160,6 +160,17 @@ class MarionetteBranch extends Branch {
 
 
 
+
+  get clickToStart() {
+    return this.get("debugging.clicktostart", false);
+  }
+
+  
+
+
+
+
+
   get port() {
     return this.get("port", 2828);
   }
