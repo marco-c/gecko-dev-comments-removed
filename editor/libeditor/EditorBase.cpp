@@ -71,7 +71,7 @@
 #include "nsGenericHTMLElement.h"       
 #include "nsGkAtoms.h"                  
 #include "nsIAbsorbingTransaction.h"    
-#include "nsAtom.h"                     
+#include "nsAtom.h"                    
 #include "nsIContent.h"                 
 #include "nsIDocument.h"                
 #include "nsIDOMEventListener.h"        
@@ -4819,66 +4819,92 @@ EditorBase::DetermineCurrentDirection()
   return NS_OK;
 }
 
-NS_IMETHODIMP
-EditorBase::SwitchTextDirection()
+nsresult
+EditorBase::ToggleTextDirection()
 {
   
-  Element* rootElement = GetExposedRoot();
+  
 
   nsresult rv = DetermineCurrentDirection();
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  if (IsRightToLeft()) {
+    nsresult rv = SetTextDirectionTo(TextDirection::eLTR);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+  } else if (IsLeftToRight()) {
+    nsresult rv = SetTextDirectionTo(TextDirection::eRTL);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+  }
 
   
-  if (IsRightToLeft()) {
-    NS_ASSERTION(!IsLeftToRight(),
-                 "Unexpected mutually exclusive flag");
-    mFlags &= ~nsIPlaintextEditor::eEditorRightToLeft;
-    mFlags |= nsIPlaintextEditor::eEditorLeftToRight;
-    rv = rootElement->SetAttr(kNameSpaceID_None, nsGkAtoms::dir, NS_LITERAL_STRING("ltr"), true);
-  } else if (IsLeftToRight()) {
-    NS_ASSERTION(!IsRightToLeft(),
-                 "Unexpected mutually exclusive flag");
-    mFlags |= nsIPlaintextEditor::eEditorRightToLeft;
-    mFlags &= ~nsIPlaintextEditor::eEditorLeftToRight;
-    rv = rootElement->SetAttr(kNameSpaceID_None, nsGkAtoms::dir, NS_LITERAL_STRING("rtl"), true);
-  }
+  
+  FireInputEvent();
 
-  if (NS_SUCCEEDED(rv)) {
-    FireInputEvent();
-  }
-
-  return rv;
+  return NS_OK;
 }
 
 void
-EditorBase::SwitchTextDirectionTo(uint32_t aDirection)
+EditorBase::SwitchTextDirectionTo(TextDirection aTextDirection)
 {
   
-  Element* rootElement = GetExposedRoot();
+  
 
   nsresult rv = DetermineCurrentDirection();
-  NS_ENSURE_SUCCESS_VOID(rv);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return;
+  }
+
+  if (aTextDirection == TextDirection::eLTR && IsRightToLeft()) {
+    if (NS_WARN_IF(NS_FAILED(SetTextDirectionTo(aTextDirection)))) {
+      return;
+    }
+  } else if (aTextDirection == TextDirection::eRTL && IsLeftToRight()) {
+    if (NS_WARN_IF(NS_FAILED(SetTextDirectionTo(aTextDirection)))) {
+      return;
+    }
+  }
 
   
-  if (aDirection == nsIPlaintextEditor::eEditorLeftToRight &&
-      IsRightToLeft()) {
-    NS_ASSERTION(!(mFlags & nsIPlaintextEditor::eEditorLeftToRight),
-                 "Unexpected mutually exclusive flag");
+  
+  FireInputEvent();
+}
+
+nsresult
+EditorBase::SetTextDirectionTo(TextDirection aTextDirection)
+{
+  Element* rootElement = GetExposedRoot();
+
+  if (aTextDirection == TextDirection::eLTR) {
+    NS_ASSERTION(!IsLeftToRight(), "Unexpected mutually exclusive flag");
     mFlags &= ~nsIPlaintextEditor::eEditorRightToLeft;
     mFlags |= nsIPlaintextEditor::eEditorLeftToRight;
-    rv = rootElement->SetAttr(kNameSpaceID_None, nsGkAtoms::dir, NS_LITERAL_STRING("ltr"), true);
-  } else if (aDirection == nsIPlaintextEditor::eEditorRightToLeft &&
-             IsLeftToRight()) {
-    NS_ASSERTION(!(mFlags & nsIPlaintextEditor::eEditorRightToLeft),
-                 "Unexpected mutually exclusive flag");
-    mFlags |= nsIPlaintextEditor::eEditorRightToLeft;
-    mFlags &= ~nsIPlaintextEditor::eEditorLeftToRight;
-    rv = rootElement->SetAttr(kNameSpaceID_None, nsGkAtoms::dir, NS_LITERAL_STRING("rtl"), true);
+    nsresult rv = rootElement->SetAttr(kNameSpaceID_None, nsGkAtoms::dir,
+                                       NS_LITERAL_STRING("ltr"), true);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+    return NS_OK;
   }
 
-  if (NS_SUCCEEDED(rv)) {
-    FireInputEvent();
+  if (aTextDirection == TextDirection::eRTL) {
+    NS_ASSERTION(!IsRightToLeft(), "Unexpected mutually exclusive flag");
+    mFlags |= nsIPlaintextEditor::eEditorRightToLeft;
+    mFlags &= ~nsIPlaintextEditor::eEditorLeftToRight;
+    nsresult rv = rootElement->SetAttr(kNameSpaceID_None, nsGkAtoms::dir,
+                                       NS_LITERAL_STRING("rtl"), true);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+    return NS_OK;
   }
+
+  return NS_OK;
 }
 
 bool

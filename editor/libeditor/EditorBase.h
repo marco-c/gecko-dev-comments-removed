@@ -348,7 +348,21 @@ public:
 
   nsresult CommitComposition();
 
-  void SwitchTextDirectionTo(uint32_t aDirection);
+  
+
+
+  nsresult ToggleTextDirection();
+
+  
+
+
+
+  enum class TextDirection
+  {
+    eLTR,
+    eRTL,
+  };
+  void SwitchTextDirectionTo(TextDirection aTextDirection);
 
   
 
@@ -1824,6 +1838,13 @@ private:
   nsCOMPtr<nsISelectionController> mSelectionController;
   nsCOMPtr<nsIDocument> mDocument;
 
+
+  
+
+
+
+
+  nsresult SetTextDirectionTo(TextDirection aTextDirection);
 protected:
   enum Tristate
   {
