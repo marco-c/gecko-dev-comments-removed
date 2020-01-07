@@ -273,7 +273,7 @@ private:
 
   RefPtr<mozilla::safebrowsing::Classifier> mClassifier;
   
-  nsAutoPtr<ProtocolParser> mProtocolParser;
+  mozilla::UniquePtr<ProtocolParser> mProtocolParser;
 
   
   nsCOMPtr<nsIFile> mCacheDir;
