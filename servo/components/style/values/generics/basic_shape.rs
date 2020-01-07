@@ -43,6 +43,7 @@ pub enum ShapeBox {
 
 
 #[allow(missing_docs)]
+#[animation(no_bound(ImageOrUrl))]
 #[derive(Animate, Clone, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToCss)]
 pub enum ShapeSource<BasicShape, ReferenceBox, ImageOrUrl> {
     #[animation(error)]

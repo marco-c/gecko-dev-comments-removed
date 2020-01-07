@@ -35,6 +35,9 @@ pub mod effects;
 
 
 
+
+
+
 pub trait Animate: Sized {
     
     fn animate(&self, other: &Self, procedure: Procedure) -> Result<Self, ()>;
@@ -69,6 +72,9 @@ pub trait ToAnimatedValue {
     
     fn from_animated_value(animated: Self::AnimatedValue) -> Self;
 }
+
+
+
 
 
 
