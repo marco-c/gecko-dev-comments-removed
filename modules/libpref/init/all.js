@@ -4775,7 +4775,7 @@ pref("image.mem.animated.use_heap", false);
 
 
 
-pref("image.mem.shared", 2);
+pref("image.mem.shared", 1);
 
 
 pref("image.mem.allow_locking_in_content_processes", true);
@@ -5368,6 +5368,8 @@ pref("dom.vr.enabled", false);
 pref("dom.vr.autoactivate.enabled", false);
 
 pref("dom.vr.controller_trigger_threshold", "0.1");
+
+pref("dom.vr.external.enabled", false);
 
 
 
