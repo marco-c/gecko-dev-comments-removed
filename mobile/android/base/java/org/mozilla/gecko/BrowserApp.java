@@ -281,6 +281,9 @@ public class BrowserApp extends GeckoApp
     
     private boolean mShowingToolbarChromeForActionBar;
 
+    private SafeIntent safeStartingIntent;
+    private boolean isInAutomation;
+
     private static class MenuItemInfo implements Parcelable {
         public int id;
         public String label;
@@ -723,10 +726,10 @@ public class BrowserApp extends GeckoApp
 
         showSplashScreen = true;
 
-        final SafeIntent intent = new SafeIntent(getIntent());
-        final boolean isInAutomation = IntentUtils.getIsInAutomationFromEnvironment(intent);
+        safeStartingIntent = new SafeIntent(getIntent());
+        isInAutomation = IntentUtils.getIsInAutomationFromEnvironment(safeStartingIntent);
 
-        GeckoProfile.setIntentArgs(intent.getStringExtra("args"));
+        GeckoProfile.setIntentArgs(safeStartingIntent.getStringExtra("args"));
 
         if (!isInAutomation && AppConstants.MOZ_ANDROID_DOWNLOAD_CONTENT_SERVICE) {
             
@@ -746,7 +749,7 @@ public class BrowserApp extends GeckoApp
           return;
         }
 
-        initSwitchboardAndMma(this, intent, isInAutomation);
+        initSwitchboardAndMma(this, safeStartingIntent, isInAutomation);
         initTelemetryUploader(isInAutomation);
 
         mBrowserChrome = (ViewGroup) findViewById(R.id.browser_chrome);
@@ -819,18 +822,18 @@ public class BrowserApp extends GeckoApp
         });
         mBrowserToolbar.setTabHistoryController(tabHistoryController);
 
-        final String action = intent.getAction();
+        final String action = safeStartingIntent.getAction();
         if (Intent.ACTION_VIEW.equals(action)) {
             
-            mBrowserToolbar.setTitle(intent.getDataString());
+            mBrowserToolbar.setTitle(safeStartingIntent.getDataString());
 
-            showTabQueuePromptIfApplicable(intent);
+            showTabQueuePromptIfApplicable(safeStartingIntent);
         } else if (ACTION_VIEW_MULTIPLE.equals(action) && savedInstanceState == null) {
             
             
             
             
-            openMultipleTabsFromIntent(intent);
+            openMultipleTabsFromIntent(safeStartingIntent);
         } else if (GuestSession.NOTIFICATION_INTENT.equals(action)) {
             GuestSession.onNotificationIntentReceived(this);
         } else if (TabQueueHelper.LOAD_URLS_ACTION.equals(action)) {
@@ -900,6 +903,7 @@ public class BrowserApp extends GeckoApp
             "Updater:Launch",
             "Sanitize:Finished",
             "Sanitize:OpenTabs",
+            "NotificationSettings:FeatureTipsStatusUpdated",
             null);
 
         EventDispatcher.getInstance().registerBackgroundThreadListener(this,
@@ -1732,6 +1736,7 @@ public class BrowserApp extends GeckoApp
             "Updater:Launch",
             "Sanitize:Finished",
             "Sanitize:OpenTabs",
+            "NotificationSettings:FeatureTipsStatusUpdated",
             null);
 
         EventDispatcher.getInstance().unregisterBackgroundThreadListener(this,
@@ -2314,6 +2319,14 @@ public class BrowserApp extends GeckoApp
                     contentProviderClient.release();
                 }
 
+                break;
+
+            case "NotificationSettings:FeatureTipsStatusUpdated":
+                if (message.getBoolean("isMmaEnabled")) {
+                    initSwitchboardAndMma(this, safeStartingIntent, isInAutomation);
+                } else {
+                    MmaDelegate.stop();
+                }
                 break;
 
             default:
