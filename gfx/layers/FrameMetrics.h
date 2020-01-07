@@ -197,12 +197,25 @@ public:
     return mCompositionBounds.Size() / GetZoom();
   }
 
-  CSSRect CalculateCompositedRectInCssPixels() const
+  
+
+
+
+
+
+
+
+
+
+  CSSRect CalculateCompositionBoundsInCssPixelsOfSurroundingContent() const
   {
     if (GetZoom() == CSSToParentLayerScale2D(0, 0)) {
       return CSSRect();  
     }
-    return mCompositionBounds / GetZoom();
+    
+    
+    
+    return mCompositionBounds / GetZoom() * CSSToCSSScale{mPresShellResolution};
   }
 
   CSSSize CalculateBoundedCompositedSizeInCssPixels() const
