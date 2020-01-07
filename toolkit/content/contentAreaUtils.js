@@ -1090,10 +1090,12 @@ function getDefaultExtension(aFilename, aURI, aContentType) {
     return ""; 
 
   
-  const stdURLContractID = "@mozilla.org/network/standard-url;1";
-  const stdURLIID = Components.interfaces.nsIURL;
-  var url = Components.classes[stdURLContractID].createInstance(stdURLIID);
-  url.filePath = aFilename;
+  var url = Components.classes["@mozilla.org/network/standard-url-mutator;1"]
+                      .createInstance(Components.interfaces.nsIURIMutator)
+                      .setSpec("http://example.com") 
+                      .setFilePath(aFilename)
+                      .finalize()
+                      .QueryInterface(Components.interfaces.nsIURL);
 
   var ext = url.fileExtension;
 

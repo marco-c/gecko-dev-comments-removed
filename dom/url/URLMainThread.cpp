@@ -404,7 +404,9 @@ URLMainThread::SetPathname(const nsAString& aPathname, ErrorResult& aRv)
 {
   
 
-  mURI->SetFilePath(NS_ConvertUTF16toUTF8(aPathname));
+  Unused << NS_MutateURI(mURI)
+              .SetFilePath(NS_ConvertUTF16toUTF8(aPathname))
+              .Finalize(mURI);
 }
 
 void
