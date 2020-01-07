@@ -446,7 +446,7 @@ pref("media.suspend-bkgnd-video.enabled", true);
 pref("media.suspend-bkgnd-video.delay-ms", 10000);
 
 
-pref("media.resume-bkgnd-video-on-tabhover", true);;
+pref("media.resume-bkgnd-video-on-tabhover", true);
 
 
 pref("media.seamless-looping", true);
@@ -2432,7 +2432,7 @@ pref("intl.hyphenation-alias.nb-*", "nb");
 pref("intl.hyphenation-alias.nn-*", "nn");
 
 
-pref("font.name.serif.ar", "");;
+pref("font.name.serif.ar", "");
 pref("font.name.sans-serif.ar", "");
 pref("font.name.monospace.ar", "");
 pref("font.name.cursive.ar", "");
@@ -5744,6 +5744,11 @@ pref("media.gmp.insecure.allow", false);
 pref("dom.dialog_element.enabled", false);
 
 
+#ifdef MOZ_SECUREELEMENT
+pref("dom.secureelement.enabled", false);
+#endif
+
+
 
 
 
@@ -5817,11 +5822,7 @@ pref("layout.css.servo.enabled", false);
 
 
 
-#ifdef MOZ_OLD_STYLE
 pref("layout.css.servo.chrome.enabled", false);
-#else
-pref("layout.css.servo.chrome.enabled", true);
-#endif
 #endif
 
 
