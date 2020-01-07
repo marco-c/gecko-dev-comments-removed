@@ -5493,18 +5493,18 @@ BytecodeEmitter::setOrEmitSetFunName(ParseNode* maybeFun, HandleAtom name,
         
         
         
-        if (fun->hasCompileTimeName()) {
+        if (fun->hasInferredName()) {
 #ifdef DEBUG
             RootedFunction rootedFun(cx, fun);
             JSAtom* funName = NameToFunctionName(cx, name, prefixKind);
             if (!funName)
                 return false;
-            MOZ_ASSERT(funName == rootedFun->compileTimeName());
+            MOZ_ASSERT(funName == rootedFun->inferredName());
 #endif
             return true;
         }
 
-        fun->setCompileTimeName(name);
+        fun->setInferredName(name);
         return true;
     }
 

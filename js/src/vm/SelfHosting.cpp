@@ -483,7 +483,7 @@ intrinsic_MakeDefaultConstructor(JSContext* cx, unsigned argc, Value* vp)
     
     
     
-    ctor->clearGuessedAtom();
+    ctor->clearInferredName();
 
     args.rval().setUndefined();
     return true;

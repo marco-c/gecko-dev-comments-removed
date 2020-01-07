@@ -278,7 +278,11 @@ class NameResolver
         retAtom.set(buf.finishAtom());
         if (!retAtom)
             return false;
-        fun->setGuessedAtom(retAtom);
+
+        
+        
+        if (!pn->isDirectRHSAnonFunction())
+            fun->setGuessedAtom(retAtom);
         return true;
     }
 
