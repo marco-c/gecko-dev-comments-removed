@@ -1206,8 +1206,10 @@ BrowserPageActions.addSearchEngine = {
       button.setAttribute("image", engine.icon);
       button.setAttribute("uri", engine.uri);
       button.addEventListener("command", event => {
-        PanelMultiView.hidePopup(BrowserPageActions.panelNode);
-        this._handleClickOnEngineButton(button);
+        let panelNode = panelViewNode.closest("panel");
+        PanelMultiView.hidePopup(panelNode);
+        this._installEngine(button.getAttribute("uri"),
+                            button.getAttribute("image"));
       });
       body.appendChild(button);
     }
@@ -1223,12 +1225,13 @@ BrowserPageActions.addSearchEngine = {
         return;
       }
     }
-    this._handleClickOnEngineButton(buttonNode);
-  },
-
-  _handleClickOnEngineButton(button) {
-    this._installEngine(button.getAttribute("uri"),
-                        button.getAttribute("image"));
+    
+    
+    
+    
+    
+    let engine = this.engines[0];
+    this._installEngine(engine.uri, engine.icon);
   },
 
   _installEngine(uri, image) {
