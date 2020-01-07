@@ -103,8 +103,6 @@ public:
 
 private:
   void DownloadProgressed();
-  void PinForSeek() override;
-  void UnpinForSeek() override;
 
   
   MediaDecoderStateMachine* CreateStateMachine();
@@ -152,10 +150,6 @@ private:
   
   
   MediaChannelStatistics mPlaybackStatistics;
-
-  
-  
-  bool mPinnedForSeek = false;
 
   
   

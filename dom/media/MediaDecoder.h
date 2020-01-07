@@ -478,12 +478,6 @@ protected:
 
 private:
   
-  virtual void PinForSeek() = 0;
-
-  
-  virtual void UnpinForSeek() = 0;
-
-  
   void NotifyCompositor();
 
   void OnPlaybackErrorEvent(const MediaResult& aError);
