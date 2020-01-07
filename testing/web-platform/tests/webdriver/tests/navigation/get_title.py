@@ -9,7 +9,6 @@ def read_global(session, name):
     return session.execute_script("return %s;" % name)
 
 
-
 def test_title_from_closed_context(session, create_window):
     new_window = create_window()
     session.window_handle = new_window
@@ -19,18 +18,6 @@ def test_title_from_closed_context(session, create_window):
                                     "session/%s/title" % session.session_id)
 
     assert_error(result, "no such window")
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 def test_title_handle_prompt_dismiss(new_session, add_browser_capabilites):
@@ -68,18 +55,6 @@ def test_title_handle_prompt_dismiss(new_session, add_browser_capabilites):
     assert read_global(session, "dismiss3") == None
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 def test_title_handle_prompt_accept(new_session, add_browser_capabilites):
     _, session = new_session({"capabilities": {"alwaysMatch": add_browser_capabilites({"unhandledPromptBehavior": "accept"})}})
     session.url = inline("<title>WD doc title</title>")
@@ -112,17 +87,6 @@ def test_title_handle_prompt_accept(new_session, add_browser_capabilites):
     assert_success(result, expected_title)
     assert_dialog_handled(session, "accept #3")
     assert read_global(session, "accept3") == "" or read_global(session, "accept3") == "undefined"
-
-
-
-
-
-
-
-
-
-
-
 
 
 def test_title_handle_prompt_missing_value(session, create_dialog):
@@ -177,34 +141,12 @@ def test_title_handle_prompt_missing_value(session, create_dialog):
 
 
 
-
-
-
-
-
-
-
-
-
 def test_title_from_top_context(session):
     session.url = inline("<title>Foobar</title><h2>Hello</h2>")
 
     result = session.transport.send("GET",
                                     "session/%s/title" % session.session_id)
     assert_success(result, read_global(session, "document.title"))
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 def test_title_with_duplicate_element(session):
@@ -216,16 +158,6 @@ def test_title_with_duplicate_element(session):
     assert_success(result, read_global(session, "document.title"))
 
 
-
-
-
-
-
-
-
-
-
-
 def test_title_without_element(session):
     session.url = inline("<h2>Hello</h2>")
 
@@ -233,9 +165,6 @@ def test_title_without_element(session):
                                     "session/%s/title" % session.session_id)
 
     assert_success(result, read_global(session, "document.title"))
-
-
-
 
 
 def test_title_after_modification(session):
@@ -248,15 +177,6 @@ def test_title_after_modification(session):
     assert_success(result, read_global(session, "document.title"))
 
 
-
-
-
-
-
-
-
-
-
 def test_title_strip_and_collapse(session):
     document = "<title>   a b\tc\nd\t \n e\t\n </title><h2>Hello</h2>"
     session.url = inline(document)
@@ -265,9 +185,6 @@ def test_title_strip_and_collapse(session):
                                     "session/%s/title" % session.session_id)
 
     assert_success(result, read_global(session, "document.title"))
-
-
-
 
 
 def test_title_from_frame(session, create_frame):
