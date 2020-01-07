@@ -119,7 +119,11 @@ const char *gInaccessibleProperties[] = {
     "-moz-window-opacity", 
     "-moz-window-transform", 
     "-moz-window-transform-origin", 
-    "-moz-window-shadow" 
+    "-moz-window-shadow", 
+    "-moz-border-top-colors", 
+    "-moz-border-bottom-colors", 
+    "-moz-border-left-colors", 
+    "-moz-border-right-colors" 
 };
 
 inline int
