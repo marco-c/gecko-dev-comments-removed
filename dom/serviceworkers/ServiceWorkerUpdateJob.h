@@ -18,6 +18,7 @@ enum class OnFailure : uint8_t;
 } 
 
 class ServiceWorkerManager;
+class ServiceWorkerRegistrationInfo;
 
 
 
