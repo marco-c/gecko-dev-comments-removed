@@ -5104,19 +5104,23 @@ nsWindow::SetWindowDecoration(nsBorderStyle aStyle)
 
     
     
+    GdkWindow *window = gtk_widget_get_window(mShell);
+
+    
+    
     
     bool wasVisible = false;
-    if (gdk_window_is_visible(mGdkWindow)) {
-        gdk_window_hide(mGdkWindow);
+    if (gdk_window_is_visible(window)) {
+        gdk_window_hide(window);
         wasVisible = true;
     }
 
     gint wmd = ConvertBorderStyles(aStyle);
     if (wmd != -1)
-      gdk_window_set_decorations(mGdkWindow, (GdkWMDecoration) wmd);
+      gdk_window_set_decorations(window, (GdkWMDecoration) wmd);
 
     if (wasVisible)
-        gdk_window_show(mGdkWindow);
+        gdk_window_show(window);
 
     
     
@@ -5124,10 +5128,13 @@ nsWindow::SetWindowDecoration(nsBorderStyle aStyle)
     
     
 #ifdef MOZ_X11
-    XSync(GDK_DISPLAY_XDISPLAY(gdk_display_get_default()) , False);
-#else
-    gdk_flush ();
+    if (mIsX11Display) {
+        XSync(GDK_DISPLAY_XDISPLAY(gdk_display_get_default()) , False);
+    } else
 #endif 
+    {
+        gdk_flush ();
+    }
 }
 
 void
