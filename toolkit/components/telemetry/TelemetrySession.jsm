@@ -566,6 +566,17 @@ var TelemetrySession = Object.freeze({
   getMetadata(reason) {
     return Impl.getMetadata(reason);
   },
+
+  
+
+
+
+
+  resetSubsessionCounter() {
+    Impl._subsessionCounter = 0;
+    Impl._profileSubsessionCounter = 0;
+  },
+
   
 
 
