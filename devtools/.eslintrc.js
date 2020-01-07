@@ -242,9 +242,6 @@ module.exports = {
     "sort-vars": "off",
     
     
-    "space-before-function-paren": ["error", {"anonymous": "always", "named": "never"}],
-    
-    
     
     "space-in-brackets": "off",
     
