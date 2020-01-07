@@ -30,9 +30,7 @@
 
 
 
-
 #include "js-config.h"
-#include "jsversion.h"
 
 
 

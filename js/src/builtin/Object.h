@@ -71,11 +71,9 @@ GetOwnPropertyDescriptorToArray(JSContext* cx, unsigned argc, JS::Value* vp);
 MOZ_MUST_USE bool
 IdToStringOrSymbol(JSContext* cx, JS::HandleId id, JS::MutableHandleValue result);
 
-#if JS_HAS_TOSOURCE
 
 JSString*
 ObjectToSource(JSContext* cx, JS::HandleObject obj);
-#endif 
 
 extern MOZ_MUST_USE bool
 WatchHandler(JSContext* cx, JSObject* obj, jsid id, const JS::Value& old,
