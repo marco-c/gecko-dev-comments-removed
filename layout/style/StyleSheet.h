@@ -14,7 +14,6 @@
 #include "mozilla/CORSMode.h"
 #include "mozilla/ServoUtils.h"
 #include "nsICSSLoaderObserver.h"
-#include "nsIDOMStyleSheet.h"
 #include "nsWrapperCache.h"
 
 class nsIDocument;
@@ -45,8 +44,7 @@ class Rule;
 
 
 
-class StyleSheet : public nsIDOMStyleSheet
-                 , public nsICSSLoaderObserver
+class StyleSheet : public nsICSSLoaderObserver
                  , public nsWrapperCache
 {
 protected:
@@ -60,8 +58,7 @@ protected:
 
 public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_AMBIGUOUS(StyleSheet,
-                                                         nsIDOMStyleSheet)
+  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(StyleSheet)
 
   
 
@@ -205,14 +202,14 @@ public:
 #endif
 
   
-  
-  
+  void GetType(nsAString& aType);
+  void GetHref(nsAString& aHref, ErrorResult& aRv);
   
   inline StyleSheet* GetParentStyleSheet() const;
-  
+  void GetTitle(nsAString& aTitle);
   dom::MediaList* Media();
   bool Disabled() const { return mDisabled; }
-  
+  void SetDisabled(bool aDisabled);
   void GetSourceMapURL(nsAString& aTitle);
   void SetSourceMapURL(const nsAString& aSourceMapURL);
   void SetSourceMapURLFromComment(const nsAString& aSourceMapURLFromComment);
@@ -236,15 +233,6 @@ public:
   
   inline dom::ParentObject GetParentObject() const;
   JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) final;
-
-  
-  NS_IMETHOD GetType(nsAString& aType) final;
-  NS_IMETHOD GetDisabled(bool* aDisabled) final;
-  NS_IMETHOD SetDisabled(bool aDisabled) final;
-  NS_IMETHOD GetOwnerNode(nsIDOMNode** aOwnerNode) final;
-  NS_IMETHOD GetParentStyleSheet(nsIDOMStyleSheet** aParentStyleSheet) final;
-  NS_IMETHOD GetHref(nsAString& aHref) final;
-  NS_IMETHOD GetTitle(nsAString& aTitle) final;
 
   
   
