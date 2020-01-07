@@ -2162,6 +2162,30 @@ bool NS_IsSameSiteForeign(nsIChannel* aChannel, nsIURI* aHostURI)
 
   bool isForeign = false;
   thirdPartyUtil->IsThirdPartyChannel(aChannel, uri, &isForeign);
+
+  
+  
+  if (isForeign) {
+    return true;
+  }
+
+  
+  
+  
+
+  nsCOMPtr<nsIPrincipal> redirectPrincipal;
+  nsCOMPtr<nsIURI> redirectURI;
+  for (nsIRedirectHistoryEntry* entry : loadInfo->RedirectChain()) {
+    entry->GetPrincipal(getter_AddRefs(redirectPrincipal));
+    if (redirectPrincipal) {
+      redirectPrincipal->GetURI(getter_AddRefs(redirectURI));
+      thirdPartyUtil->IsThirdPartyChannel(aChannel, redirectURI, &isForeign);
+      
+      if (isForeign) {
+        return true;
+      }
+    }
+  }
   return isForeign;
 }
 
