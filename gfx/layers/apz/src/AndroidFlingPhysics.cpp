@@ -31,21 +31,40 @@ static double ComputeDeceleration(float aFriction)
 const float kDecelerationRate = 2.3582018f;
 
 
-const float kFlingFriction = 0.015f;
+static float GetFlingFriction()
+{
+  return gfxPrefs::APZChromeFlingPhysicsFriction();
+}
 
 
-const float kInflexion = 0.35f;
+static float GetInflexion()
+{
+  
+  
+  
+  const float inflexion = gfxPrefs::APZChromeFlingPhysicsInflexion();
+  if (inflexion < 0.0f) {
+    return 0.0f;
+  }
+  if (inflexion > 1.0f) {
+    return 1.0f;
+  }
+  return inflexion;
+}
 
 
 
-const float kThresholdForFlingEnd = 0.1;
+static float GetThresholdForFlingEnd()
+{
+  return gfxPrefs::APZChromeFlingPhysicsStopThreshold();
+}
 
 const float kTuningCoeff = ComputeDeceleration(0.84f);
 
 static double ComputeSplineDeceleration(ParentLayerCoord aVelocity)
 {
   float velocityPerSec = aVelocity * 1000.0f;
-  return std::log(kInflexion * velocityPerSec / (kFlingFriction * kTuningCoeff));
+  return std::log(GetInflexion() * velocityPerSec / (GetFlingFriction() * kTuningCoeff));
 }
 
 static TimeDuration ComputeFlingDuration(ParentLayerCoord aVelocity)
@@ -58,7 +77,7 @@ static TimeDuration ComputeFlingDuration(ParentLayerCoord aVelocity)
 static ParentLayerCoord ComputeFlingDistance(ParentLayerCoord aVelocity)
 {
   const double splineDecel = ComputeSplineDeceleration(aVelocity);
-  return kFlingFriction * kTuningCoeff *
+  return GetFlingFriction() * kTuningCoeff *
       std::exp(kDecelerationRate / (kDecelerationRate - 1.0) * splineDecel);
 }
 
@@ -67,8 +86,8 @@ public:
   SplineConstants() {
     const float kStartTension = 0.5f;
     const float kEndTension = 1.0f;
-    const float kP1 = kStartTension * kInflexion;
-    const float kP2 = 1.0f - kEndTension * (1.0f - kInflexion);
+    const float kP1 = kStartTension * GetInflexion();
+    const float kP2 = 1.0f - kEndTension * (1.0f - GetInflexion());
 
     float xMin = 0.0f;
     for (int i = 0; i < kNumSamples; i++) {
@@ -76,7 +95,13 @@ public:
 
       float xMax = 1.0f;
       float x, tx, coef;
-      while (true) {
+      
+      
+      
+      
+      static const int sIterationLimit = 100;
+      int iterations = 0;
+      while (iterations++ < sIterationLimit) {
         x = xMin + (xMax - xMin) / 2.0f;
         coef = 3.0f * x * (1.0f - x);
         tx = coef * ((1.0f - x) * kP1 + x * kP2) + x * x * x;
@@ -178,7 +203,8 @@ bool AndroidFlingPhysics::SampleImpl(const TimeDuration& aDelta,
   mCurrentPos = mTargetPos * distanceCoef;
 
   ParentLayerPoint remainder = mTargetPos - mCurrentPos;
-  if (fabsf(remainder.x) < kThresholdForFlingEnd && fabsf(remainder.y) < kThresholdForFlingEnd) {
+  const float threshold = GetThresholdForFlingEnd();
+  if (fabsf(remainder.x) < threshold && fabsf(remainder.y) < threshold) {
     return false;
   }
 
