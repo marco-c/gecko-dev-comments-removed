@@ -6421,6 +6421,12 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
            StyleOrient::Inline);
 
   
+  SetFactor(*aRuleData->ValueForShapeImageThreshold(),
+            display->mShapeImageThreshold, conditions,
+            parentDisplay->mShapeImageThreshold, 0.0f,
+            SETFCT_OPACITY | SETFCT_UNSET_INITIAL);
+
+  
   const nsCSSValue* shapeOutsideValue = aRuleData->ValueForShapeOutside();
   switch (shapeOutsideValue->GetUnit()) {
     case eCSSUnit_Null:
