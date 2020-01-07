@@ -31,7 +31,6 @@ class KeyframeEffectReadOnly;
 class Promise;
 } 
 
-class GeckoComputedStyle;
 enum class CSSPseudoElementType : uint8_t;
 struct NonOwningAnimationTarget;
 
