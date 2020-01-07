@@ -27,6 +27,15 @@ struct XPTTypeDescriptorPrefix;
 struct XPTHeader {
   static const uint16_t kNumInterfaces;
   static const XPTInterfaceDirectoryEntry kInterfaceDirectory[];
+  static const XPTInterfaceDescriptor kInterfaces[];
+  static const XPTTypeDescriptor kTypes[];
+  static const XPTParamDescriptor kParams[];
+  static const XPTMethodDescriptor kMethods[];
+  static const XPTConstDescriptor kConsts[];
+
+  
+  
+  static const char kStrings[];
 };
 
 
@@ -39,8 +48,10 @@ struct XPTInterfaceDirectoryEntry {
   inline const char* Name() const;
 
   nsID mIID;
-  const char* mName;
-  const XPTInterfaceDescriptor* mInterfaceDescriptor;
+  uint32_t mName; 
+  
+  
+  uint32_t mInterfaceDescriptor;
 };
 
 
@@ -64,14 +75,12 @@ struct XPTInterfaceDescriptor {
   
 
 
-  const XPTMethodDescriptor* mMethodDescriptors;
-  const XPTConstDescriptor* mConstDescriptors;
-  const XPTTypeDescriptor* mAdditionalTypes;
+  uint16_t mMethodDescriptors; 
+  uint16_t mConstDescriptors; 
   uint16_t mParentInterface;
   uint16_t mNumMethods;
   uint16_t mNumConstants;
   uint8_t mFlags;
-  uint8_t mNumAdditionalTypes;
 };
 
 
@@ -147,9 +156,9 @@ struct XPTTypeDescriptor {
     return mData1;
   }
 
-  const XPTTypeDescriptor* ArrayElementType(const XPTInterfaceDescriptor* aDescriptor) const {
+  const XPTTypeDescriptor* ArrayElementType() const {
     MOZ_ASSERT(Tag() == TD_ARRAY);
-    return &aDescriptor->mAdditionalTypes[mData2];
+    return &XPTHeader::kTypes[mData2];
   }
 
   
@@ -188,10 +197,10 @@ union XPTConstValue {
 
 struct XPTConstDescriptor {
   const char* Name() const {
-    return mName;
+    return &XPTHeader::kStrings[mName];
   }
 
-  const char* mName;
+  uint32_t mName; 
   XPTTypeDescriptor mType;
   union XPTConstValue mValue;
 };
@@ -210,36 +219,39 @@ struct XPTParamDescriptor {
 
 struct XPTMethodDescriptor {
   const char* Name() const {
-    return mName;
+    return &XPTHeader::kStrings[mName];
   }
   const XPTParamDescriptor& Param(uint8_t aIndex) const {
-    return mParams[aIndex];
+    return XPTHeader::kParams[mParams + aIndex];
   }
 
-  const char* mName;
-  const XPTParamDescriptor* mParams;
+  uint32_t mName; 
+  uint32_t mParams; 
   uint8_t mFlags;
   uint8_t mNumArgs;
 };
 
 const char*
 XPTInterfaceDirectoryEntry::Name() const {
-  return mName;
+  return &XPTHeader::kStrings[mName];
 }
 
 const XPTInterfaceDescriptor*
 XPTInterfaceDirectoryEntry::InterfaceDescriptor() const {
-  return mInterfaceDescriptor;
+  if (mInterfaceDescriptor == 0) {
+    return nullptr;
+  }
+  return &XPTHeader::kInterfaces[mInterfaceDescriptor - 1];
 }
 
 const XPTMethodDescriptor&
 XPTInterfaceDescriptor::Method(size_t aIndex) const {
-  return mMethodDescriptors[aIndex];
+  return XPTHeader::kMethods[mMethodDescriptors + aIndex];
 }
 
 const XPTConstDescriptor&
 XPTInterfaceDescriptor::Const(size_t aIndex) const {
-  return mConstDescriptors[aIndex];
+  return XPTHeader::kConsts[mConstDescriptors + aIndex];
 }
 
 #endif 
