@@ -205,10 +205,21 @@ var FullZoom = {
       return;
     }
 
-    
     if (aURI.spec == "about:blank") {
-      this._applyPrefToZoom(undefined, browser,
-                            this._notifyOnLocationChange.bind(this, browser));
+      if (!browser.contentPrincipal || browser.contentPrincipal.isNullPrincipal) {
+        
+        
+        this._applyPrefToZoom(1, browser,
+                              this._notifyOnLocationChange.bind(this, browser));
+      } else {
+        
+        
+        
+        
+        
+        this._applyPrefToZoom(undefined, browser,
+                              this._notifyOnLocationChange.bind(this, browser));
+      }
       return;
     }
 
