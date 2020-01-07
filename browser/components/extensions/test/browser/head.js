@@ -215,11 +215,25 @@ var awaitExtensionPanel = async function(extension, win = window, awaitLoad = tr
     win.document, "WebExtPopupLoaded", true,
     event => event.detail.extension.id === extension.id);
 
+  let popup = getPanelForNode(browser);
+
+  
+  
+  let anims = popup.getAnimations();
+  let animationPromises = anims.map(animation => animation.finished);
+
   await Promise.all([
-    promisePopupShown(getPanelForNode(browser)),
+    promisePopupShown(popup),
+
+    ...animationPromises,
 
     awaitLoad && awaitBrowserLoaded(browser),
   ]);
+
+  
+  
+  
+  await new Promise(SimpleTest.executeSoon);
 
   return browser;
 };
