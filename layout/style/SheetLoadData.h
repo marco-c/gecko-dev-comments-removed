@@ -151,6 +151,18 @@ public:
 
   
   
+  
+  
+  bool mIsCrossOriginNoCORS : 1;
+
+  
+  
+  
+  
+  bool mBlockResourceTiming : 1;
+
+  
+  
   nsCOMPtr<nsIStyleSheetLinkingElement> mOwningElement;
 
   
