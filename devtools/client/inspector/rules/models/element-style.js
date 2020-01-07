@@ -8,9 +8,10 @@
 
 const promise = require("promise");
 const Rule = require("devtools/client/inspector/rules/models/rule");
-const {promiseWarn} = require("devtools/client/inspector/shared/utils");
-const {ELEMENT_STYLE} = require("devtools/shared/specs/styles");
-const {getCssProperties, isCssVariable} = require("devtools/shared/fronts/css-properties");
+const UserProperties = require("devtools/client/inspector/rules/models/user-properties");
+const { promiseWarn } = require("devtools/client/inspector/shared/utils");
+const { getCssProperties, isCssVariable } = require("devtools/shared/fronts/css-properties");
+const { ELEMENT_STYLE } = require("devtools/shared/specs/styles");
 
 
 
@@ -369,84 +370,6 @@ ElementStyle.prototype = {
   getVariable: function(name) {
     return this.variables.get(name);
   },
-};
-
-
-
-
-
-function UserProperties() {
-  this.map = new Map();
-}
-
-UserProperties.prototype = {
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  getProperty: function(style, name, value) {
-    const key = this.getKey(style);
-    const entry = this.map.get(key, null);
-
-    if (entry && name in entry) {
-      return entry[name];
-    }
-    return value;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-  setProperty: function(style, name, userValue) {
-    const key = this.getKey(style, name);
-    const entry = this.map.get(key, null);
-
-    if (entry) {
-      entry[name] = userValue;
-    } else {
-      const props = {};
-      props[name] = userValue;
-      this.map.set(key, props);
-    }
-  },
-
-  
-
-
-
-
-
-
-
-  contains: function(style, name) {
-    const key = this.getKey(style, name);
-    const entry = this.map.get(key, null);
-    return !!entry && name in entry;
-  },
-
-  getKey: function(style, name) {
-    return style.actorID + ":" + name;
-  },
-
-  clear: function() {
-    this.map.clear();
-  }
 };
 
 module.exports = ElementStyle;
