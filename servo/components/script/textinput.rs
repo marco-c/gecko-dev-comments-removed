@@ -56,6 +56,18 @@ pub struct TextPoint {
     pub index: usize,
 }
 
+impl TextPoint {
+    
+    fn constrain_to(&self, lines: &[DOMString]) -> TextPoint {
+        let line = min(self.line, lines.len() - 1);
+
+        TextPoint {
+            line,
+            index: min(self.index, lines[line].len()),
+        }
+    }
+}
+
 #[derive(Clone, Copy, PartialEq)]
 pub struct SelectionState {
     start: TextPoint,
@@ -68,21 +80,26 @@ pub struct SelectionState {
 pub struct TextInput<T: ClipboardProvider> {
     
     lines: Vec<DOMString>,
+
     
-    pub edit_point: TextPoint,
+    edit_point: TextPoint,
+
     
     
-    pub selection_origin: Option<TextPoint>,
+    selection_origin: Option<TextPoint>,
+    selection_direction: SelectionDirection,
+
     
     multiline: bool,
+
     #[ignore_malloc_size_of = "Can't easily measure this generic type"]
     clipboard_provider: T,
+
     
     
     
-    pub max_length: Option<usize>,
-    pub min_length: Option<usize>,
-    pub selection_direction: SelectionDirection,
+    max_length: Option<usize>,
+    min_length: Option<usize>,
 }
 
 
@@ -175,6 +192,32 @@ impl<T: ClipboardProvider> TextInput<T> {
         i
     }
 
+    pub fn edit_point(&self) -> TextPoint {
+        self.edit_point
+    }
+
+    pub fn selection_origin(&self) -> Option<TextPoint> {
+        self.selection_origin
+    }
+
+    
+    
+    pub fn selection_origin_or_edit_point(&self) -> TextPoint {
+        self.selection_origin.unwrap_or(self.edit_point)
+    }
+
+    pub fn selection_direction(&self) -> SelectionDirection {
+        self.selection_direction
+    }
+
+    pub fn set_max_length(&mut self, length: Option<usize>) {
+        self.max_length = length;
+    }
+
+    pub fn set_min_length(&mut self, length: Option<usize>) {
+        self.min_length = length;
+    }
+
     
     pub fn delete_char(&mut self, dir: Direction) {
         if self.selection_origin.is_none() || self.selection_origin == Some(self.edit_point) {
@@ -194,12 +237,6 @@ impl<T: ClipboardProvider> TextInput<T> {
             self.selection_origin = Some(self.edit_point);
         }
         self.replace_selection(DOMString::from(s.into()));
-    }
-
-    
-    
-    pub fn selection_origin_or_edit_point(&self) -> TextPoint {
-        self.selection_origin.unwrap_or(self.edit_point)
     }
 
     
@@ -833,12 +870,6 @@ impl<T: ClipboardProvider> TextInput<T> {
     }
 
     
-    pub fn single_line_content_mut(&mut self) -> &mut DOMString {
-        assert!(!self.multiline);
-        &mut self.lines[0]
-    }
-
-    
     
     pub fn set_content(&mut self, content: DOMString, update_text_cursor: bool) {
         self.lines = if self.multiline {
@@ -850,11 +881,15 @@ impl<T: ClipboardProvider> TextInput<T> {
         } else {
             vec!(content)
         };
+
         if update_text_cursor {
-            self.edit_point.line = min(self.edit_point.line, self.lines.len() - 1);
-            self.edit_point.index = min(self.edit_point.index, self.current_line_length());
+            self.edit_point = self.edit_point.constrain_to(&self.lines);
         }
-        self.selection_origin = None;
+
+        if let Some(origin) = self.selection_origin {
+            self.selection_origin = Some(origin.constrain_to(&self.lines));
+        }
+
         self.assert_ok_selection();
     }
 

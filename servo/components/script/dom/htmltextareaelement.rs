@@ -323,7 +323,6 @@ impl HTMLTextAreaElement {
 
         
         let old_value = textinput.get_content();
-        let old_selection = textinput.selection_origin;
 
         
         textinput.set_content(value, update_text_cursor);
@@ -334,8 +333,6 @@ impl HTMLTextAreaElement {
         if old_value != textinput.get_content() {
             
             textinput.clear_selection_to_limit(Direction::Forward, update_text_cursor);
-        } else {
-            textinput.selection_origin = old_selection;
         }
 
         self.upcast::<Node>().dirty(NodeDamage::OtherNodeDamage);
