@@ -422,8 +422,7 @@ var PocketOverlay = {
     PocketPageAction.shutdown();
 
     for (let window of browserWindows()) {
-      for (let id of ["panelMenu_pocket", "panelMenu_pocketSeparator",
-                      "appMenu-library-pocket-button"]) {
+      for (let id of ["appMenu-library-pocket-button"]) {
         let element = window.document.getElementById(id) ||
                       window.gNavToolbox.palette.querySelector("#" + id);
         if (element)
@@ -463,28 +462,7 @@ var PocketOverlay = {
     let hidden = !isPocketEnabled();
 
     
-    let sib = document.getElementById("panelMenuBookmarkThisPage");
-    if (sib && !document.getElementById("panelMenu_pocket")) {
-      let menu = createElementWithAttrs(document, "toolbarbutton", {
-        "id": "panelMenu_pocket",
-        "label": gPocketBundle.GetStringFromName("pocketMenuitem.label"),
-        "class": "subviewbutton cui-withicon",
-        "oncommand": "Pocket.openList(event)",
-        "hidden": hidden
-      });
-      let sep = createElementWithAttrs(document, "toolbarseparator", {
-        "id": "panelMenu_pocketSeparator",
-        "hidden": hidden
-      });
-      
-      
-      sib = sib.nextSibling;
-      sib.parentNode.insertBefore(sep, sib);
-      sib.parentNode.insertBefore(menu, sib);
-    }
-
-    
-    sib = document.getElementById("appMenu-library-history-button");
+    let sib = document.getElementById("appMenu-library-history-button");
     if (sib && !document.getElementById("appMenu-library-pocket-button")) {
       let menu = createElementWithAttrs(document, "toolbarbutton", {
         "id": "appMenu-library-pocket-button",
