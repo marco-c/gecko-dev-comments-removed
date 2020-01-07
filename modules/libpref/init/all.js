@@ -854,7 +854,7 @@ pref("gfx.compositor.glcontext.opaque", false);
 #endif
 
 pref("gfx.webrender.highlight-painted-layers", false);
-pref("gfx.webrender.async-scene-build", false);
+pref("gfx.webrender.async-scene-build", 2);
 pref("gfx.webrender.blob-images", true);
 pref("gfx.webrender.blob.invalidation", true);
 pref("gfx.webrender.hit-test", true);
@@ -2457,7 +2457,7 @@ pref("security.csp.experimentalEnabled", false);
 pref("security.csp.enableStrictDynamic", true);
 
 #if defined(DEBUG) && !defined(ANDROID)
-pref("csp.content_privileged_about_uris_without_csp", "blank,cache,certerror,checkerboard,credits,home,logo,neterror,newtab,printpreview,srcdoc,studies");
+pref("csp.content_privileged_about_uris_without_csp", "blank,cache,certerror,checkerboard,credits,home,logo,neterror,newtab,printpreview,rights,srcdoc,studies");
 #endif
 
 #ifdef NIGHTLY_BUILD
