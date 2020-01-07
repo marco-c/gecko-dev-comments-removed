@@ -220,11 +220,15 @@ public class NativeQueue {
         if (lastSkipped < 0) {
             
             mQueue.clear();
-            mQueue.trimToSize();
         } else if (lastSkipped < mQueue.size() - 1) {
             
             
             mQueue.subList(lastSkipped + 1, mQueue.size()).clear();
         }
+    }
+
+    public synchronized void reset(final State initial) {
+        mQueue.clear();
+        mState = initial;
     }
 }

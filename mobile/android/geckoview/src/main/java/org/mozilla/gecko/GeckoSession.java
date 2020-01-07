@@ -316,6 +316,11 @@ public class GeckoSession extends LayerSession
             
             asBinder().attachInterface(null, Window.class.getName());
 
+            
+            synchronized (this) {
+                mNativeQueue.reset(State.INITIAL);
+            }
+
             if (GeckoThread.isStateAtLeast(GeckoThread.State.PROFILE_READY)) {
                 nativeDisposeNative();
             } else {
@@ -342,7 +347,7 @@ public class GeckoSession extends LayerSession
                 
                 
                 nativeQueue.setState(mNativeQueue.getState());
-                mNativeQueue.checkAndSetState(State.READY, State.INITIAL);
+                mNativeQueue.reset(State.INITIAL);
                 mNativeQueue = nativeQueue;
             }
         }
