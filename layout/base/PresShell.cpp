@@ -1752,6 +1752,14 @@ PresShell::Initialize()
   RecomputeFontSizeInflationEnabled();
   MOZ_DIAGNOSTIC_ASSERT(!mIsDestroying);
 
+  
+  
+  
+  
+  
+  mPresContext->FlushPendingMediaFeatureValuesChanged();
+  MOZ_DIAGNOSTIC_ASSERT(!mIsDestroying);
+
   mDidInitialize = true;
 
 #ifdef DEBUG
