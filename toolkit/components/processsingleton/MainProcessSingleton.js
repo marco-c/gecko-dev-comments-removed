@@ -65,6 +65,7 @@ MainProcessSingleton.prototype = {
     switch (topic) {
     case "app-startup": {
       Services.obs.addObserver(this, "xpcom-shutdown");
+      Services.obs.addObserver(this, "document-element-inserted");
 
       
       
@@ -75,8 +76,25 @@ MainProcessSingleton.prototype = {
       break;
     }
 
+    case "document-element-inserted":
+      
+      
+      
+      
+      const doc = subject;
+      if (doc.nodePrincipal.isSystemPrincipal &&
+          doc.contentType == "application/vnd.mozilla.xul+xml") {
+        for (let script of [
+          "chrome://global/content/elements/stringbundle.js",
+        ]) {
+          Services.scriptloader.loadSubScript(script, doc.ownerGlobal);
+        }
+      }
+      break;
+
     case "xpcom-shutdown":
       Services.mm.removeMessageListener("Search:AddEngine", this.addSearchEngine);
+      Services.obs.removeObserver(this, "document-element-inserted");
       break;
     }
   },
