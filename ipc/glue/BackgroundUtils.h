@@ -117,14 +117,14 @@ LoadInfoArgsToLoadInfo(const mozilla::net::OptionalLoadInfoArgs& aOptionalLoadIn
 
 void
 LoadInfoToParentLoadInfoForwarder(nsILoadInfo *aLoadInfo,
-                                  mozilla::net::ParentLoadInfoForwarderArgs* outLoadInfoChildForwardArgs);
+                                  mozilla::net::ParentLoadInfoForwarderArgs* aForwarderArgsOut);
 
 
 
 
 
 nsresult
-MergeParentLoadInfoForwarder(mozilla::net::ParentLoadInfoForwarderArgs const& outLoadInfoChildForwardArgs,
+MergeParentLoadInfoForwarder(mozilla::net::ParentLoadInfoForwarderArgs const& aForwarderArgs,
                              nsILoadInfo *aLoadInfo);
 
 } 
