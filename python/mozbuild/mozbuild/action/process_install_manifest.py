@@ -69,7 +69,9 @@ def process_manifest(destdir, paths, track,
         remove_empty_directories=remove_empty_directories)
 
     if track:
-        manifest.write(path=track)
+        
+        
+        manifest.write(path=track, expand_pattern=True)
 
     return result
 
