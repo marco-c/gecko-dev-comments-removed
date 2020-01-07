@@ -2654,6 +2654,11 @@ enum nsStyleContentType {
 struct nsStyleContentAttr {
   RefPtr<nsAtom> mName; 
   RefPtr<nsAtom> mNamespaceURL; 
+
+  bool operator==(const nsStyleContentAttr& aOther) const
+  {
+    return mName == aOther.mName && mNamespaceURL == aOther.mNamespaceURL;
+  }
 };
 
 class nsStyleContentData
