@@ -1534,6 +1534,9 @@ nsSocketTransport::InitiateSocket()
     bool connectCalled = true; 
     status = PR_Connect(fd, &prAddr, NS_SOCKET_CONNECT_TIMEOUT);
     PRErrorCode code = PR_GetError();
+    if (status == PR_SUCCESS) {
+        PR_SetFDInheritable(fd, false);
+    }
     if ((status == PR_SUCCESS) && tfo) {
         {
             MutexAutoLock lock(mLock);
