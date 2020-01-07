@@ -13,8 +13,6 @@ ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.defineModuleGetter(this, "ConsoleAPI",
                                "resource://gre/modules/Console.jsm");
 
-Cu.importGlobalProperties(["crypto", "TextDecoder", "TextEncoder"]);
-
 function getConsole() {
   return new ConsoleAPI({
     maxLogLevelPref: "extensions.webextensions.log.level",
@@ -23,13 +21,6 @@ function getConsole() {
 }
 
 XPCOMUtils.defineLazyGetter(this, "console", getConsole);
-
-XPCOMUtils.defineLazyGetter(this, "utf8Encoder", () => {
-  return new TextEncoder("utf-8");
-});
-XPCOMUtils.defineLazyGetter(this, "utf8Decoder", () => {
-  return new TextDecoder("utf-8");
-});
 
 
 XPCOMUtils.defineLazyGetter(this, "idleTimeout",
@@ -661,21 +652,6 @@ function checkLoadURL(url, principal, options) {
   return true;
 }
 
-
-
-
-
-
-
-
-
-
-
-async function stringToCryptoHash(text, algo = "SHA-1") {
-  const buffer = await crypto.subtle.digest(algo, utf8Encoder.encode(text));
-  return utf8Decoder.decode(buffer);
-}
-
 var ExtensionUtils = {
   checkLoadURL,
   defineLazyGetter,
@@ -694,7 +670,6 @@ var ExtensionUtils = {
   promiseEvent,
   promiseObserved,
   runSafeSyncWithoutClone,
-  stringToCryptoHash,
   withHandlingUserInput,
   DefaultMap,
   DefaultWeakMap,
