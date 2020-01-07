@@ -8,12 +8,19 @@
 
 
 
-  function documentReady() {
+
+
+
+
+
+  function documentReady(callback) {
     if (document.contentType === 'application/vnd.mozilla.xul+xml') {
       
       return new Promise(
         resolve => document.addEventListener(
-          'MozBeforeInitialXULLayout', resolve, { once: true }
+          'MozBeforeInitialXULLayout', () => {
+            resolve(callback());
+          }, { once: true }
         )
       );
     }
@@ -21,11 +28,13 @@
     
     const rs = document.readyState;
     if (rs === 'interactive' || rs === 'completed') {
-      return Promise.resolve();
+      return Promise.resolve(callback());
     }
     return new Promise(
       resolve => document.addEventListener(
-        'readystatechange', resolve, { once: true }
+        'readystatechange', () => {
+          resolve(callback());
+        }, { once: true }
       )
     );
   }
@@ -49,7 +58,7 @@
   
   document.l10n.ctxs.touchNext();
 
-  document.l10n.ready = documentReady().then(() => {
+  document.l10n.ready = documentReady(() => {
     document.l10n.registerObservers();
     window.addEventListener('unload', () => {
       document.l10n.unregisterObservers();
