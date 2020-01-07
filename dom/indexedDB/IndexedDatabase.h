@@ -83,6 +83,10 @@ struct StructuredCloneReadInfo
   
   inline
   MOZ_IMPLICIT StructuredCloneReadInfo(SerializedStructuredCloneReadInfo&& aOther);
+
+  
+  inline
+  size_t Size() const;
 };
 
 } 
