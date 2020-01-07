@@ -263,6 +263,11 @@ public:
     return name;
   }
 
+  
+
+
+  bool VerifyCRCs() const;
+
 private:
   
   char *name;

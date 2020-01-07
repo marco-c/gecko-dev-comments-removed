@@ -491,6 +491,7 @@ public final class GeckoLoader {
 
     
     private static native void putenv(String map);
+    public static native boolean verifyCRCs(String apkName);
 
     
     public static native void nativeRun(String[] args, int crashFd, int ipcFd, int crashAnnotationFd);
