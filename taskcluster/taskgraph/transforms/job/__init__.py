@@ -119,9 +119,6 @@ def rewrite_when_to_optimization(config, jobs):
 
         
         files_changed.append('{}/**'.format(config.path))
-        if 'in-tree' in job.get('worker', {}).get('docker-image', {}):
-            files_changed.append('taskcluster/docker/{}/**'.format(
-                job['worker']['docker-image']['in-tree']))
 
         
         job['optimization'] = {'skip-unless-changed': files_changed}
