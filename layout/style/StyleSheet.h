@@ -382,11 +382,6 @@ protected:
 
   void ApplicableStateChanged(bool aApplicable);
 
-  
-  
-  
-  void EnabledStateChanged() { };
-
   struct ChildSheetListBuilder {
     RefPtr<StyleSheet>* sheetSlot;
     StyleSheet* parent;
