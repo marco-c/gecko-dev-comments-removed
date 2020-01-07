@@ -288,7 +288,9 @@ UninstallObserver.init();
 
 
 
-this.ExtensionData = class {
+
+
+class ExtensionData {
   constructor(rootURI) {
     this.rootURI = rootURI;
     this.resourceURL = rootURI.spec;
@@ -320,9 +322,16 @@ this.ExtensionData = class {
   }
 
   
+
+
+
   manifestError(message) {
     this.packagingError(`Reading manifest: ${message}`);
   }
+
+  
+
+
 
   manifestWarning(message) {
     this.packagingWarning(`Reading manifest: ${message}`);
@@ -961,7 +970,7 @@ this.ExtensionData = class {
 
     return result;
   }
-};
+}
 
 const PROXIED_EVENTS = new Set(["test-harness-message", "add-permissions", "remove-permissions"]);
 
@@ -978,6 +987,7 @@ class BootstrapScope {
   }
 
   startup(data, reason) {
+    
     this.extension = new Extension(data, this.BOOTSTRAP_REASON_TO_STRING_MAP[reason]);
     return this.extension.startup();
   }
@@ -1008,6 +1018,7 @@ class LangpackBootstrapScope {
   uninstall(data, reason) {}
 
   startup(data, reason) {
+    
     this.langpack = new Langpack(data);
     return this.langpack.startup();
   }
@@ -1020,7 +1031,10 @@ class LangpackBootstrapScope {
 
 
 
-this.Extension = class extends ExtensionData {
+
+
+
+class Extension extends ExtensionData {
   constructor(addonData, startupReason) {
     super(addonData.resourceURI);
 
@@ -1112,6 +1126,13 @@ this.Extension = class extends ExtensionData {
     });
     
   }
+
+  
+  
+
+
+
+
 
   static getBootstrapScope(id, file) {
     return new BootstrapScope();
@@ -1351,6 +1372,15 @@ this.Extension = class extends ExtensionData {
       return Promise.all(promises);
     });
   }
+
+  
+
+
+
+
+
+
+
 
   callOnClose(obj) {
     this.onShutdown.add(obj);
@@ -1651,9 +1681,9 @@ this.Extension = class extends ExtensionData {
     }
     return this._optionalOrigins;
   }
-};
+}
 
-this.Langpack = class extends ExtensionData {
+class Langpack extends ExtensionData {
   constructor(addonData, startupReason) {
     super(addonData.resourceURI);
     this.startupData = addonData.startupData;
@@ -1754,4 +1784,4 @@ this.Langpack = class extends ExtensionData {
 
     resourceProtocol.setSubstitution(this.langpackId, null);
   }
-};
+}
