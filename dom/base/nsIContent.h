@@ -11,6 +11,7 @@
 #include "nsCaseTreatment.h" 
 #include "nsINode.h"
 #include "nsStringFwd.h"
+#include "nsISupportsImpl.h"
 
 
 class nsAtom;
@@ -67,6 +68,9 @@ public:
 #endif 
 
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_ICONTENT_IID)
+
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTION_CLASS(nsIContent)
 
   
 
@@ -770,10 +774,25 @@ public:
   virtual nsresult GetEventTargetParent(
                      mozilla::EventChainPreVisitor& aVisitor) override;
 
-  virtual bool IsPurple() = 0;
-  virtual void RemovePurple() = 0;
+  bool IsPurple() const
+  {
+    return mRefCnt.IsPurple();
+  }
 
-  virtual bool OwnedOnlyByTheDOMTree() { return false; }
+  void RemovePurple()
+  {
+    mRefCnt.RemovePurple();
+  }
+
+  bool OwnedOnlyByTheDOMTree()
+  {
+    uint32_t rc = mRefCnt.get();
+    if (GetParent()) {
+      --rc;
+    }
+    rc -= GetChildCount();
+    return rc == 0;
+  }
 
 protected:
   
@@ -889,6 +908,8 @@ protected:
 
 
   nsAtom* DoGetID() const;
+
+  ~nsIContent() {}
 
 public:
 #ifdef DEBUG
