@@ -8,7 +8,7 @@
 
 
 
-
+pref("marionette.enabled", false);
 
 
 
@@ -20,7 +20,6 @@ pref("marionette.log.level", "info");
 
 
 pref("marionette.port", 2828);
-
 
 
 pref("marionette.prefs.recommended", true);
