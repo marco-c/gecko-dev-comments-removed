@@ -2,6 +2,7 @@
 
 
 
+ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/osfile.jsm");
 
@@ -62,8 +63,32 @@ ContentAreaDropListener.prototype =
         data = dt.mozGetDataAt(type, i);
         if (data) {
           let lines = data.replace(/^\s+|\s+$/mg, "").split("\n");
+          if (!lines.length) {
+            return;
+          }
+
+          
+          
+          
+          
+          
+          
+          
+          let hasURI = false;
+          let flags = Ci.nsIURIFixup.FIXUP_FLAG_FIX_SCHEME_TYPOS |
+              Ci.nsIURIFixup.FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP;
           for (let line of lines) {
-            this._addLink(links, line, line, type);
+            let info = Services.uriFixup.getFixupURIInfo(line, flags);
+            if (info.fixedURI) {
+              
+              
+              hasURI = true;
+              this._addLink(links, line, line, type);
+            }
+          }
+
+          if (!hasURI) {
+            this._addLink(links, data, data, type);
           }
           return;
         }
