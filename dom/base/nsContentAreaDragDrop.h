@@ -51,6 +51,9 @@ public:
 
 
 
+
+
+
   static nsresult GetDragData(nsPIDOMWindowOuter* aWindow,
                               nsIContent* aTarget,
                               nsIContent* aSelectionTargetNode,
@@ -58,7 +61,8 @@ public:
                               mozilla::dom::DataTransfer* aDataTransfer,
                               bool* aCanDrag,
                               nsISelection** aSelection,
-                              nsIContent** aDragNode);
+                              nsIContent** aDragNode,
+                              nsACString& aPrincipalURISpec);
 };
 
 

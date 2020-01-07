@@ -1281,7 +1281,8 @@ TabParent::QueryDropLinksForVerification()
 
 void
 TabParent::SendRealDragEvent(WidgetDragEvent& aEvent, uint32_t aDragAction,
-                             uint32_t aDropEffect)
+                             uint32_t aDropEffect,
+                             const nsCString& aPrincipalURISpec)
 {
   if (mIsDestroyed || !mIsReadyToHandleInputEvents) {
     return;
@@ -1294,7 +1295,8 @@ TabParent::SendRealDragEvent(WidgetDragEvent& aEvent, uint32_t aDragAction,
     }
   }
   DebugOnly<bool> ret =
-    PBrowserParent::SendRealDragEvent(aEvent, aDragAction, aDropEffect);
+    PBrowserParent::SendRealDragEvent(aEvent, aDragAction, aDropEffect,
+                                      aPrincipalURISpec);
   NS_WARNING_ASSERTION(ret, "PBrowserParent::SendRealDragEvent() failed");
   MOZ_ASSERT(!ret || aEvent.HasBeenPostedToRemoteProcess());
 }
@@ -3345,7 +3347,8 @@ TabParent::RecvInvokeDragSession(nsTArray<IPCDataTransfer>&& aTransfers,
                                  const uint32_t& aAction,
                                  const OptionalShmem& aVisualDnDData,
                                  const uint32_t& aStride, const uint8_t& aFormat,
-                                 const LayoutDeviceIntRect& aDragRect)
+                                 const LayoutDeviceIntRect& aDragRect,
+                                 const nsCString& aPrincipalURISpec)
 {
   mInitialDataTransferItems.Clear();
   nsIPresShell* shell = mFrameElement->OwnerDoc()->GetShell();
@@ -3387,6 +3390,7 @@ TabParent::RecvInvokeDragSession(nsTArray<IPCDataTransfer>&& aTransfers,
 
   mDragValid = true;
   mDragRect = aDragRect;
+  mDragPrincipalURISpec = aPrincipalURISpec;
 
   esm->BeginTrackingRemoteDragGesture(mFrameElement);
 
@@ -3398,8 +3402,22 @@ TabParent::RecvInvokeDragSession(nsTArray<IPCDataTransfer>&& aTransfers,
 }
 
 void
-TabParent::AddInitialDnDDataTo(DataTransfer* aDataTransfer)
+TabParent::AddInitialDnDDataTo(DataTransfer* aDataTransfer,
+                               nsACString& aPrincipalURISpec)
 {
+  aPrincipalURISpec.Assign(mDragPrincipalURISpec);
+
+  nsCOMPtr<nsIPrincipal> principal;
+  if (!mDragPrincipalURISpec.IsEmpty()) {
+    
+    principal = BasePrincipal::CreateCodebasePrincipal(mDragPrincipalURISpec);
+  }
+  if (!principal) {
+    
+    
+    principal = nsContentUtils::GetSystemPrincipal();
+  }
+
   for (uint32_t i = 0; i < mInitialDataTransferItems.Length(); ++i) {
     nsTArray<IPCDataTransferItem>& itemArray = mInitialDataTransferItems[i];
     for (auto& item : itemArray) {
@@ -3437,17 +3455,15 @@ TabParent::AddInitialDnDDataTo(DataTransfer* aDataTransfer)
 
       
       
-
-      
-      
       
       aDataTransfer->SetDataWithPrincipalFromOtherProcess(NS_ConvertUTF8toUTF16(item.flavor()),
                                                           variant, i,
-                                                          nsContentUtils::GetSystemPrincipal(),
+                                                          principal,
                                                            false);
     }
   }
   mInitialDataTransferItems.Clear();
+  mDragPrincipalURISpec.Truncate(0);
 }
 
 bool

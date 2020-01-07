@@ -114,45 +114,64 @@ ContentAreaDropListener.prototype =
     
     let secMan = Cc["@mozilla.org/scriptsecuritymanager;1"].
                    getService(Ci.nsIScriptSecurityManager);
-    let sourceNode = dataTransfer.mozSourceNode;
     let flags = secMan.STANDARD;
     if (disallowInherit)
       flags |= secMan.DISALLOW_INHERIT_PRINCIPAL;
 
-    let principal;
-    if (sourceNode) {
-      principal = this._getTriggeringPrincipalFromSourceNode(sourceNode);
-    } else {
-      
-      
-      principal = secMan.createCodebasePrincipal(ioService.newURI("file:///"), {});
-    }
+    let principal = this._getTriggeringPrincipalFromDataTransfer(dataTransfer, false);
     secMan.checkLoadURIStrWithPrincipal(principal, uriString, flags);
 
     return uriString;
   },
 
-  _getTriggeringPrincipalFromSourceNode: function(aSourceNode)
+  _getTriggeringPrincipalFromDataTransfer: function(aDataTransfer,
+                                                    fallbackToSystemPrincipal)
   {
-    if (aSourceNode.localName == "browser" &&
-        aSourceNode.namespaceURI == "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul") {
-      return aSourceNode.contentPrincipal;
+    let sourceNode = aDataTransfer.mozSourceNode;
+    if (sourceNode &&
+        (sourceNode.localName !== "browser" ||
+         sourceNode.namespaceURI !== "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul")) {
+      
+      
+      
+      
+      
+      
+      if (sourceNode.nodePrincipal) {
+        return sourceNode.nodePrincipal;
+      }
     }
-    return aSourceNode.nodePrincipal;
+
+    
+    
+    let principalURISpec = aDataTransfer.mozTriggeringPrincipalURISpec;
+    if (!principalURISpec) {
+      
+      
+      
+      
+      
+      
+      if (fallbackToSystemPrincipal) {
+        let secMan = Cc["@mozilla.org/scriptsecuritymanager;1"].
+            getService(Ci.nsIScriptSecurityManager);
+        return secMan.getSystemPrincipal();
+      } else {
+        principalURISpec = "file:///";
+      }
+    }
+    let ioService = Cc["@mozilla.org/network/io-service;1"]
+        .getService(Components.interfaces.nsIIOService);
+    let secMan = Cc["@mozilla.org/scriptsecuritymanager;1"].
+        getService(Ci.nsIScriptSecurityManager);
+    return secMan.createCodebasePrincipal(ioService.newURI(principalURISpec), {});
   },
 
   getTriggeringPrincipal: function(aEvent)
   {
     let dataTransfer = aEvent.dataTransfer;
-    let sourceNode = dataTransfer.mozSourceNode;
-    if (sourceNode) {
-      return this._getTriggeringPrincipalFromSourceNode(sourceNode, false);
-    }
-    
-    
-    let secMan = Cc["@mozilla.org/scriptsecuritymanager;1"].
-                   getService(Ci.nsIScriptSecurityManager);
-    return secMan.getSystemPrincipal();
+    return this._getTriggeringPrincipalFromDataTransfer(dataTransfer, true);
+
   },
 
   canDropLink: function(aEvent, aAllowSameDocument)
