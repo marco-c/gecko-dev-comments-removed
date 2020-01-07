@@ -330,7 +330,15 @@ protected:
   nsresult WillIndent(bool* aCancel, bool* aHandled);
   nsresult WillCSSIndent(bool* aCancel, bool* aHandled);
   nsresult WillHTMLIndent(bool* aCancel, bool* aHandled);
-  nsresult WillOutdent(bool* aCancel, bool* aHandled);
+
+  
+
+
+
+
+
+
+  MOZ_MUST_USE nsresult WillOutdent(bool* aCancel, bool* aHandled);
 
   
 
@@ -528,6 +536,21 @@ protected:
 
   MOZ_MUST_USE nsresult
   AfterEditInner(EditAction action, nsIEditor::EDirection aDirection);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_MUST_USE SplitRangeOffFromNodeResult OutdentAroundSelection();
 
   
 

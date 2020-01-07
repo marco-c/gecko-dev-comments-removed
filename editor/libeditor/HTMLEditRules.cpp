@@ -5071,9 +5071,6 @@ HTMLEditRules::WillOutdent(bool* aCancel,
   MOZ_ASSERT(aCancel && aHandled);
   *aCancel = false;
   *aHandled = true;
-  nsCOMPtr<nsIContent> rememberedLeftBQ, rememberedRightBQ;
-
-  bool useCSS = HTMLEditorRef().IsCSSEnabled();
 
   nsresult rv = NormalizeSelection();
   if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -5081,252 +5078,19 @@ HTMLEditRules::WillOutdent(bool* aCancel,
   }
 
   
-  {
-    AutoSelectionRestorer selectionRestorer(&SelectionRef(), &HTMLEditorRef());
-
-    
-    
-    
-    
-    nsTArray<OwningNonNull<nsINode>> arrayOfNodes;
-    rv = GetNodesFromSelection(EditAction::outdent, arrayOfNodes,
-                               TouchContent::yes);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
-
-    
-    
-
-    nsCOMPtr<Element> curBlockQuote;
-    nsCOMPtr<nsIContent> firstBQChild, lastBQChild;
-    bool curBlockQuoteIsIndentedWithCSS = false;
-    for (uint32_t i = 0; i < arrayOfNodes.Length(); i++) {
-      if (!arrayOfNodes[i]->IsContent()) {
-        continue;
-      }
-      OwningNonNull<nsIContent> curNode = *arrayOfNodes[i]->AsContent();
-
-      
-      int32_t offset;
-      nsCOMPtr<nsINode> curParent =
-        EditorBase::GetNodeLocation(curNode, &offset);
-      if (!curParent) {
-        continue;
-      }
-
-      
-      if (curNode->IsHTMLElement(nsGkAtoms::blockquote)) {
-        
-        
-        if (curBlockQuote) {
-          SplitRangeOffFromNodeResult outdentResult =
-            OutdentPartOfBlock(*curBlockQuote, *firstBQChild, *lastBQChild,
-                               curBlockQuoteIsIndentedWithCSS);
-          if (NS_WARN_IF(outdentResult.Failed())) {
-            return outdentResult.Rv();
-          }
-          rememberedLeftBQ = outdentResult.GetLeftContent();
-          rememberedRightBQ = outdentResult.GetRightContent();
-          curBlockQuote = nullptr;
-          firstBQChild = nullptr;
-          lastBQChild = nullptr;
-          curBlockQuoteIsIndentedWithCSS = false;
-        }
-        rv = HTMLEditorRef().RemoveBlockContainerWithTransaction(
-                               *curNode->AsElement());
-        if (NS_WARN_IF(NS_FAILED(rv))) {
-          return rv;
-        }
-        continue;
-      }
-      
-      if (useCSS && IsBlockNode(curNode)) {
-        nsAtom& marginProperty = MarginPropertyAtomForIndent(curNode);
-        nsAutoString value;
-        CSSEditUtils::GetSpecifiedProperty(curNode, marginProperty, value);
-        float f;
-        RefPtr<nsAtom> unit;
-        CSSEditUtils::ParseLength(value, &f, getter_AddRefs(unit));
-        if (f > 0) {
-          nsresult rv = DecreaseMarginToOutdent(*curNode->AsElement());
-          if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
-            return NS_ERROR_EDITOR_DESTROYED;
-          }
-          NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-            "Failed to decrease indentation");
-          continue;
-        }
-      }
-      
-      if (HTMLEditUtils::IsListItem(curNode)) {
-        
-        
-        
-        if (curBlockQuote) {
-          SplitRangeOffFromNodeResult outdentResult =
-            OutdentPartOfBlock(*curBlockQuote, *firstBQChild, *lastBQChild,
-                               curBlockQuoteIsIndentedWithCSS);
-          if (NS_WARN_IF(outdentResult.Failed())) {
-            return outdentResult.Rv();
-          }
-          rememberedLeftBQ = outdentResult.GetLeftContent();
-          rememberedRightBQ = outdentResult.GetRightContent();
-          curBlockQuote = nullptr;
-          firstBQChild = nullptr;
-          lastBQChild = nullptr;
-          curBlockQuoteIsIndentedWithCSS = false;
-        }
-        rv = PopListItem(*curNode->AsContent());
-        if (NS_WARN_IF(NS_FAILED(rv))) {
-          return rv;
-        }
-        continue;
-      }
-      
-      if (curBlockQuote) {
-        
-        if (EditorUtils::IsDescendantOf(*curNode, *curBlockQuote)) {
-          lastBQChild = curNode;
-          
-          continue;
-        }
-        
-        
-        
-        SplitRangeOffFromNodeResult outdentResult =
-          OutdentPartOfBlock(*curBlockQuote, *firstBQChild, *lastBQChild,
-                             curBlockQuoteIsIndentedWithCSS);
-        if (NS_WARN_IF(outdentResult.Failed())) {
-          return outdentResult.Rv();
-        }
-        rememberedLeftBQ = outdentResult.GetLeftContent();
-        rememberedRightBQ = outdentResult.GetRightContent();
-        curBlockQuote = nullptr;
-        firstBQChild = nullptr;
-        lastBQChild = nullptr;
-        curBlockQuoteIsIndentedWithCSS = false;
-        
-      }
-
-      
-      OwningNonNull<nsINode> n = curNode;
-      curBlockQuoteIsIndentedWithCSS = false;
-      
-      
-      while (!n->IsHTMLElement(nsGkAtoms::body) && 
-             HTMLEditorRef().IsDescendantOfEditorRoot(n) &&
-             (n->IsHTMLElement(nsGkAtoms::table) ||
-              !HTMLEditUtils::IsTableElement(n))) {
-        if (!n->GetParentNode()) {
-          break;
-        }
-        n = *n->GetParentNode();
-        if (n->IsHTMLElement(nsGkAtoms::blockquote)) {
-          
-          curBlockQuote = n->AsElement();
-          firstBQChild = curNode;
-          lastBQChild = curNode;
-          break;
-        } else if (useCSS) {
-          nsAtom& marginProperty = MarginPropertyAtomForIndent(curNode);
-          nsAutoString value;
-          CSSEditUtils::GetSpecifiedProperty(*n, marginProperty, value);
-          float f;
-          RefPtr<nsAtom> unit;
-          CSSEditUtils::ParseLength(value, &f, getter_AddRefs(unit));
-          if (f > 0 && !(HTMLEditUtils::IsList(curParent) &&
-                         HTMLEditUtils::IsList(curNode))) {
-            curBlockQuote = n->AsElement();
-            firstBQChild = curNode;
-            lastBQChild = curNode;
-            curBlockQuoteIsIndentedWithCSS = true;
-            break;
-          }
-        }
-      }
-
-      if (!curBlockQuote) {
-        
-        if (HTMLEditUtils::IsList(curParent)) {
-          
-          if (HTMLEditUtils::IsList(curNode)) {
-            
-            rv = HTMLEditorRef().RemoveBlockContainerWithTransaction(
-                                   *curNode->AsElement());
-            if (NS_WARN_IF(NS_FAILED(rv))) {
-              return rv;
-            }
-          }
-          
-        } else if (HTMLEditUtils::IsList(curNode)) {
-          
-          nsCOMPtr<nsIContent> child = curNode->GetLastChild();
-          while (child) {
-            if (HTMLEditUtils::IsListItem(child)) {
-              rv = PopListItem(*child);
-              if (NS_WARN_IF(NS_FAILED(rv))) {
-                return rv;
-              }
-            } else if (HTMLEditUtils::IsList(child)) {
-              
-              
-              
-              EditorRawDOMPoint afterCurrentList(curParent, offset + 1);
-              rv = HTMLEditorRef().MoveNodeWithTransaction(*child,
-                                                           afterCurrentList);
-              if (NS_WARN_IF(NS_FAILED(rv))) {
-                return rv;
-              }
-            } else {
-              
-              rv = HTMLEditorRef().DeleteNodeWithTransaction(*child);
-              if (NS_WARN_IF(NS_FAILED(rv))) {
-                return rv;
-              }
-            }
-            child = curNode->GetLastChild();
-          }
-          
-          rv = HTMLEditorRef().RemoveBlockContainerWithTransaction(
-                                 *curNode->AsElement());
-          if (NS_WARN_IF(NS_FAILED(rv))) {
-            return rv;
-          }
-        } else if (useCSS) {
-          nsCOMPtr<Element> element;
-          if (curNode->GetAsText()) {
-            
-            element = curNode->GetParentElement();
-          } else if (curNode->IsElement()) {
-            element = curNode->AsElement();
-          }
-          if (element) {
-            nsresult rv = DecreaseMarginToOutdent(*element);
-            if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
-              return NS_ERROR_EDITOR_DESTROYED;
-            }
-            NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-              "Failed to decrease indentation");
-          }
-        }
-      }
-    }
-    if (curBlockQuote) {
-      
-      SplitRangeOffFromNodeResult outdentResult =
-        OutdentPartOfBlock(*curBlockQuote, *firstBQChild, *lastBQChild,
-                           curBlockQuoteIsIndentedWithCSS);
-      if (NS_WARN_IF(outdentResult.Failed())) {
-        return outdentResult.Rv();
-      }
-      rememberedLeftBQ = outdentResult.GetLeftContent();
-      rememberedRightBQ = outdentResult.GetRightContent();
-    }
+  
+  
+  SplitRangeOffFromNodeResult outdentResult = OutdentAroundSelection();
+  if (NS_WARN_IF(!CanHandleEditAction())) {
+    return NS_ERROR_EDITOR_DESTROYED;
   }
+  if (NS_WARN_IF(outdentResult.Failed())) {
+    return outdentResult.Rv();
+  }
+
   
   
-  if (!rememberedLeftBQ && !rememberedRightBQ) {
+  if (!outdentResult.GetLeftContent() && !outdentResult.GetRightContent()) {
     return NS_OK;
   }
 
@@ -5335,7 +5099,7 @@ HTMLEditRules::WillOutdent(bool* aCancel,
   }
 
   
-  if (rememberedLeftBQ) {
+  if (outdentResult.GetLeftContent()) {
     nsRange* firstRange = SelectionRef().GetRangeAt(0);
     if (NS_WARN_IF(!firstRange)) {
       return NS_OK;
@@ -5344,37 +5108,340 @@ HTMLEditRules::WillOutdent(bool* aCancel,
     if (NS_WARN_IF(!atStartOfSelection.IsSet())) {
       return NS_ERROR_FAILURE;
     }
-    if (atStartOfSelection.Container() == rememberedLeftBQ ||
+    if (atStartOfSelection.Container() == outdentResult.GetLeftContent() ||
         EditorUtils::IsDescendantOf(*atStartOfSelection.Container(),
-                                    *rememberedLeftBQ)) {
+                                    *outdentResult.GetLeftContent())) {
       
-      EditorRawDOMPoint afterRememberedLeftBQ(rememberedLeftBQ);
+      EditorRawDOMPoint afterRememberedLeftBQ(outdentResult.GetLeftContent());
       afterRememberedLeftBQ.AdvanceOffset();
       IgnoredErrorResult error;
       SelectionRef().Collapse(afterRememberedLeftBQ, error);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return NS_ERROR_EDITOR_DESTROYED;
+      }
       NS_WARNING_ASSERTION(!error.Failed(),
         "Failed to collapse selection after the left <blockquote>");
     }
   }
   
-  if (rememberedRightBQ) {
+  
+  if (outdentResult.GetRightContent()) {
     nsRange* firstRange = SelectionRef().GetRangeAt(0);
     const RangeBoundary& atStartOfSelection = firstRange->StartRef();
     if (NS_WARN_IF(!atStartOfSelection.IsSet())) {
       return NS_ERROR_FAILURE;
     }
-    if (atStartOfSelection.Container() == rememberedRightBQ ||
+    if (atStartOfSelection.Container() == outdentResult.GetRightContent() ||
         EditorUtils::IsDescendantOf(*atStartOfSelection.Container(),
-                                    *rememberedRightBQ)) {
+                                    *outdentResult.GetRightContent())) {
       
-      EditorRawDOMPoint atRememberedRightBQ(rememberedRightBQ);
+      EditorRawDOMPoint atRememberedRightBQ(outdentResult.GetRightContent());
       IgnoredErrorResult error;
       SelectionRef().Collapse(atRememberedRightBQ, error);
+      if (NS_WARN_IF(!CanHandleEditAction())) {
+        return NS_ERROR_EDITOR_DESTROYED;
+      }
       NS_WARNING_ASSERTION(!error.Failed(),
         "Failed to collapse selection after the right <blockquote>");
     }
   }
   return NS_OK;
+}
+
+SplitRangeOffFromNodeResult
+HTMLEditRules::OutdentAroundSelection()
+{
+  MOZ_ASSERT(IsEditorDataAvailable());
+
+  AutoSelectionRestorer selectionRestorer(&SelectionRef(), &HTMLEditorRef());
+
+  bool useCSS = HTMLEditorRef().IsCSSEnabled();
+
+  
+  
+  
+  
+  nsTArray<OwningNonNull<nsINode>> arrayOfNodes;
+  nsresult rv =
+    GetNodesFromSelection(EditAction::outdent, arrayOfNodes, TouchContent::yes);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return SplitRangeOffFromNodeResult(rv);
+  }
+
+  
+  
+
+  nsCOMPtr<nsIContent> leftContentOfLastOutdented;
+  nsCOMPtr<nsIContent> middleContentOfLastOutdented;
+  nsCOMPtr<nsIContent> rightContentOfLastOutdented;
+  nsCOMPtr<Element> curBlockQuote;
+  nsCOMPtr<nsIContent> firstBQChild, lastBQChild;
+  bool curBlockQuoteIsIndentedWithCSS = false;
+  for (uint32_t i = 0; i < arrayOfNodes.Length(); i++) {
+    if (!arrayOfNodes[i]->IsContent()) {
+      continue;
+    }
+    OwningNonNull<nsIContent> curNode = *arrayOfNodes[i]->AsContent();
+
+    
+    int32_t offset;
+    nsCOMPtr<nsINode> curParent =
+      EditorBase::GetNodeLocation(curNode, &offset);
+    if (!curParent) {
+      continue;
+    }
+
+    
+    if (curNode->IsHTMLElement(nsGkAtoms::blockquote)) {
+      
+      
+      if (curBlockQuote) {
+        SplitRangeOffFromNodeResult outdentResult =
+          OutdentPartOfBlock(*curBlockQuote, *firstBQChild, *lastBQChild,
+                             curBlockQuoteIsIndentedWithCSS);
+        if (NS_WARN_IF(outdentResult.Failed())) {
+          return outdentResult;
+        }
+        leftContentOfLastOutdented = outdentResult.GetLeftContent();
+        middleContentOfLastOutdented = outdentResult.GetMiddleContent();
+        rightContentOfLastOutdented = outdentResult.GetRightContent();
+        curBlockQuote = nullptr;
+        firstBQChild = nullptr;
+        lastBQChild = nullptr;
+        curBlockQuoteIsIndentedWithCSS = false;
+      }
+      rv = HTMLEditorRef().RemoveBlockContainerWithTransaction(
+                             *curNode->AsElement());
+      if (NS_WARN_IF(!CanHandleEditAction())) {
+        return SplitRangeOffFromNodeResult(NS_ERROR_EDITOR_DESTROYED);
+      }
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return SplitRangeOffFromNodeResult(rv);
+      }
+      continue;
+    }
+
+    
+    if (useCSS && IsBlockNode(curNode)) {
+      nsAtom& marginProperty = MarginPropertyAtomForIndent(curNode);
+      nsAutoString value;
+      CSSEditUtils::GetSpecifiedProperty(curNode, marginProperty, value);
+      if (NS_WARN_IF(!CanHandleEditAction())) {
+        return SplitRangeOffFromNodeResult(NS_ERROR_EDITOR_DESTROYED);
+      }
+      float f;
+      RefPtr<nsAtom> unit;
+      CSSEditUtils::ParseLength(value, &f, getter_AddRefs(unit));
+      if (f > 0) {
+        nsresult rv = DecreaseMarginToOutdent(*curNode->AsElement());
+        if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
+          return SplitRangeOffFromNodeResult(NS_ERROR_EDITOR_DESTROYED);
+        }
+        NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+          "Failed to decrease indentation");
+        continue;
+      }
+    }
+
+    
+    if (HTMLEditUtils::IsListItem(curNode)) {
+      
+      
+      
+      if (curBlockQuote) {
+        SplitRangeOffFromNodeResult outdentResult =
+          OutdentPartOfBlock(*curBlockQuote, *firstBQChild, *lastBQChild,
+                             curBlockQuoteIsIndentedWithCSS);
+        if (NS_WARN_IF(outdentResult.Failed())) {
+          return outdentResult;
+        }
+        leftContentOfLastOutdented = outdentResult.GetLeftContent();
+        middleContentOfLastOutdented = outdentResult.GetMiddleContent();
+        rightContentOfLastOutdented = outdentResult.GetRightContent();
+        curBlockQuote = nullptr;
+        firstBQChild = nullptr;
+        lastBQChild = nullptr;
+        curBlockQuoteIsIndentedWithCSS = false;
+      }
+      rv = PopListItem(*curNode->AsContent());
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return SplitRangeOffFromNodeResult(rv);
+      }
+      continue;
+    }
+
+    
+    if (curBlockQuote) {
+      
+      if (EditorUtils::IsDescendantOf(*curNode, *curBlockQuote)) {
+        lastBQChild = curNode;
+        
+        continue;
+      }
+      
+      
+      
+      SplitRangeOffFromNodeResult outdentResult =
+        OutdentPartOfBlock(*curBlockQuote, *firstBQChild, *lastBQChild,
+                           curBlockQuoteIsIndentedWithCSS);
+      if (NS_WARN_IF(outdentResult.Failed())) {
+        return outdentResult;
+      }
+      leftContentOfLastOutdented = outdentResult.GetLeftContent();
+      middleContentOfLastOutdented = outdentResult.GetMiddleContent();
+      rightContentOfLastOutdented = outdentResult.GetRightContent();
+      curBlockQuote = nullptr;
+      firstBQChild = nullptr;
+      lastBQChild = nullptr;
+      curBlockQuoteIsIndentedWithCSS = false;
+      
+    }
+
+    
+    OwningNonNull<nsINode> n = curNode;
+    curBlockQuoteIsIndentedWithCSS = false;
+    
+    
+    while (!n->IsHTMLElement(nsGkAtoms::body) &&
+           HTMLEditorRef().IsDescendantOfEditorRoot(n) &&
+           (n->IsHTMLElement(nsGkAtoms::table) ||
+            !HTMLEditUtils::IsTableElement(n))) {
+      if (!n->GetParentNode()) {
+        break;
+      }
+      n = *n->GetParentNode();
+      if (n->IsHTMLElement(nsGkAtoms::blockquote)) {
+        
+        curBlockQuote = n->AsElement();
+        firstBQChild = curNode;
+        lastBQChild = curNode;
+        break;
+      }
+
+      if (!useCSS) {
+        continue;
+      }
+
+      nsAtom& marginProperty = MarginPropertyAtomForIndent(curNode);
+      nsAutoString value;
+      CSSEditUtils::GetSpecifiedProperty(*n, marginProperty, value);
+      if (NS_WARN_IF(!CanHandleEditAction())) {
+        return SplitRangeOffFromNodeResult(NS_ERROR_EDITOR_DESTROYED);
+      }
+      float f;
+      RefPtr<nsAtom> unit;
+      CSSEditUtils::ParseLength(value, &f, getter_AddRefs(unit));
+      if (f > 0 && !(HTMLEditUtils::IsList(curParent) &&
+                     HTMLEditUtils::IsList(curNode))) {
+        curBlockQuote = n->AsElement();
+        firstBQChild = curNode;
+        lastBQChild = curNode;
+        curBlockQuoteIsIndentedWithCSS = true;
+        break;
+      }
+    }
+
+    if (curBlockQuote) {
+      continue;
+    }
+
+    
+    if (HTMLEditUtils::IsList(curParent)) {
+      
+      if (HTMLEditUtils::IsList(curNode)) {
+        
+        rv = HTMLEditorRef().RemoveBlockContainerWithTransaction(
+                               *curNode->AsElement());
+        if (NS_WARN_IF(!CanHandleEditAction())) {
+          return SplitRangeOffFromNodeResult(NS_ERROR_EDITOR_DESTROYED);
+        }
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return SplitRangeOffFromNodeResult(rv);
+        }
+      }
+      continue;
+    }
+
+    if (HTMLEditUtils::IsList(curNode)) {
+      
+      nsCOMPtr<nsIContent> child = curNode->GetLastChild();
+      while (child) {
+        if (HTMLEditUtils::IsListItem(child)) {
+          rv = PopListItem(*child);
+          if (NS_WARN_IF(NS_FAILED(rv))) {
+            return SplitRangeOffFromNodeResult(rv);
+          }
+        } else if (HTMLEditUtils::IsList(child)) {
+          
+          
+          
+          EditorRawDOMPoint afterCurrentList(curParent, offset + 1);
+          rv = HTMLEditorRef().MoveNodeWithTransaction(*child,
+                                                       afterCurrentList);
+          if (NS_WARN_IF(!CanHandleEditAction())) {
+            return SplitRangeOffFromNodeResult(NS_ERROR_EDITOR_DESTROYED);
+          }
+          if (NS_WARN_IF(NS_FAILED(rv))) {
+            return SplitRangeOffFromNodeResult(rv);
+          }
+        } else {
+          
+          rv = HTMLEditorRef().DeleteNodeWithTransaction(*child);
+          if (NS_WARN_IF(!CanHandleEditAction())) {
+            return SplitRangeOffFromNodeResult(NS_ERROR_EDITOR_DESTROYED);
+          }
+          if (NS_WARN_IF(NS_FAILED(rv))) {
+            return SplitRangeOffFromNodeResult(rv);
+          }
+        }
+        child = curNode->GetLastChild();
+      }
+      
+      rv = HTMLEditorRef().RemoveBlockContainerWithTransaction(
+                             *curNode->AsElement());
+      if (NS_WARN_IF(!CanHandleEditAction())) {
+        return SplitRangeOffFromNodeResult(NS_ERROR_EDITOR_DESTROYED);
+      }
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return SplitRangeOffFromNodeResult(rv);
+      }
+      continue;
+    }
+
+    if (useCSS) {
+      nsCOMPtr<Element> element;
+      if (curNode->GetAsText()) {
+        
+        element = curNode->GetParentElement();
+      } else if (curNode->IsElement()) {
+        element = curNode->AsElement();
+      }
+      if (element) {
+        nsresult rv = DecreaseMarginToOutdent(*element);
+        if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
+          return SplitRangeOffFromNodeResult(NS_ERROR_EDITOR_DESTROYED);
+        }
+        NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+          "Failed to decrease indentation");
+      }
+      continue;
+    }
+  }
+
+  if (!curBlockQuote) {
+    return SplitRangeOffFromNodeResult(leftContentOfLastOutdented,
+                                       middleContentOfLastOutdented,
+                                       rightContentOfLastOutdented);
+  }
+
+  
+  SplitRangeOffFromNodeResult outdentResult =
+    OutdentPartOfBlock(*curBlockQuote, *firstBQChild, *lastBQChild,
+                       curBlockQuoteIsIndentedWithCSS);
+  if (NS_WARN_IF(outdentResult.Failed())) {
+    return outdentResult;
+  }
+  return outdentResult;
 }
 
 SplitRangeOffFromNodeResult
