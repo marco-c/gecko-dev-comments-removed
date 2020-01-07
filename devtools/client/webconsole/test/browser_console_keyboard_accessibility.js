@@ -63,6 +63,10 @@ add_task(async function () {
   });
   await hud.jsterm.once("messages-cleared");
 
+  
+  
+  await new Promise(executeSoon);
+
   is(hud.outputNode.textContent.indexOf("foobarz1"), -1, "output cleared");
   is(hud.jsterm.inputNode.getAttribute("focused"), "true",
      "jsterm input is focused");
