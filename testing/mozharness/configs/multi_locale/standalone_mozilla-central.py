@@ -4,6 +4,9 @@ import os
 BUILD_DIR = "mozilla-central"
 
 
+REPO_PATH = "mozilla-central"
+
+
 
 L10N_REPO_PATH = "l10n-central"
 
@@ -20,6 +23,11 @@ config = {
     "locales_platform": "android-multilocale",
     "locales_dir": "mobile/android/locales",
     "ignore_locales": ["en-US", "multi"],
+    "repos": [{
+        "repo": "https://hg.mozilla.org/%s" % REPO_PATH,
+        "branch": "default",
+        "dest": BUILD_DIR,
+    }],
     "vcs_share_base": "/builds/hg-shared",
     "l10n_repos": [],
     "hg_l10n_base": "https://hg.mozilla.org/%s" % L10N_REPO_PATH,

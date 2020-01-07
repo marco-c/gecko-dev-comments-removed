@@ -16,10 +16,11 @@ from copy import deepcopy
 sys.path.insert(1, os.path.dirname(sys.path[0]))
 
 from mozharness.base.config import parse_config_file
+from mozharness.base.parallel import ChunkingMixin
 
 
 
-class LocalesMixin(object):
+class LocalesMixin(ChunkingMixin):
     def __init__(self, **kwargs):
         """ Mixins generally don't have an __init__.
         This breaks super().__init__() for children.
@@ -36,6 +37,8 @@ class LocalesMixin(object):
         c = self.config
         ignore_locales = c.get("ignore_locales", [])
         additional_locales = c.get("additional_locales", [])
+        
+        
         
         
         
@@ -89,6 +92,13 @@ class LocalesMixin(object):
 
         if not locales:
             return None
+        if 'total_locale_chunks' and 'this_locale_chunk' in c:
+            self.debug("Pre-chunking locale list: %s" % str(locales))
+            locales = self.query_chunked_list(locales,
+                                              c['this_locale_chunk'],
+                                              c['total_locale_chunks'],
+                                              sort=True)
+            self.debug("Post-chunking locale list: %s" % locales)
         self.locales = locales
         return self.locales
 
@@ -161,14 +171,24 @@ class LocalesMixin(object):
         if parent_dir is None:
             parent_dir = self.query_abs_dirs()['abs_l10n_dir']
         self.mkdir_p(parent_dir)
+        repos = []
+        replace_dict = {}
         
         
         if c.get("l10n_repos"):
-            repos = c.get("l10n_repos")
+            if c.get("user_repo_override"):
+                replace_dict['user_repo_override'] = c['user_repo_override']
+                for repo_dict in deepcopy(c['l10n_repos']):
+                    repo_dict['repo'] = repo_dict['repo'] % replace_dict
+                    repos.append(repo_dict)
+            else:
+                repos = c.get("l10n_repos")
             self.vcs_checkout_repos(repos, tag_override=c.get('tag_override'))
         
         locales = self.query_locales()
         locale_repos = []
+        if c.get("user_repo_override"):
+            hg_l10n_base = hg_l10n_base % {"user_repo_override": c["user_repo_override"]}
         for locale in locales:
             tag = c.get('hg_l10n_tag', 'default')
             if self.l10n_revisions.get(locale):
@@ -182,6 +202,16 @@ class LocalesMixin(object):
                                        parent_dir=parent_dir,
                                        tag_override=c.get('tag_override'))
         self.gecko_locale_revisions = revs
+
+    def query_l10n_repo(self):
+        
+        mozilla_dir = self.config['mozilla_dir']
+        repo = None
+        for repository in self.config['repos']:
+            if repository.get('dest') == mozilla_dir:
+                repo = repository['repo']
+                break
+        return repo
 
 
 

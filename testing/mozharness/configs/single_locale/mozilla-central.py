@@ -10,8 +10,25 @@ config = {
     "hg_l10n_base": "https://hg.mozilla.org/l10n-central",
 
     
-    "mar_tools_url": os.environ["MAR_TOOLS_URL"],
+    "mar_tools_url": os.environ.get(
+        "MAR_TOOLS_URL",
+        
+        "https://ftp.mozilla.org/pub/mozilla.org/firefox/nightly/latest-mozilla-central/mar-tools/%(platform)s"
+    ),
 
+    
+    "repos": [{
+        "vcs": "hg",
+        "repo": "https://hg.mozilla.org/build/tools",
+        "branch": "default",
+        "dest": "tools",
+    }, {
+        "vcs": "hg",
+        "repo": "https://hg.mozilla.org/mozilla-central",
+        "revision": "%(revision)s",
+        "dest": "mozilla-central",
+        "clone_upstream_url": "https://hg.mozilla.org/mozilla-unified",
+    }],
     
     'is_automation': True,
 }
