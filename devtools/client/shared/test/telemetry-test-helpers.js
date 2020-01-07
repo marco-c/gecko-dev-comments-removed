@@ -27,7 +27,6 @@ class TelemetryHelpers {
 
 
   stopTelemetry() {
-    this.clearToolsOpenedPref();
     Services.telemetry.canRecordExtended = this.oldCanRecord;
 
     
@@ -71,15 +70,6 @@ class TelemetryHelpers {
         }
       }
     }
-  }
-
-  
-
-
-  clearToolsOpenedPref() {
-    const TOOLS_OPENED_PREF = "devtools.telemetry.tools.opened.version";
-
-    Services.prefs.clearUserPref(TOOLS_OPENED_PREF);
   }
 
   
