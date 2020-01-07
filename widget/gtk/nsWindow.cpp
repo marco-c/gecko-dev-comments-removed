@@ -3642,8 +3642,11 @@ nsWindow::Create(nsIWidget* aParent,
             useAlphaVisual = true;
 
 #ifdef GL_PROVIDER_GLX
-        bool useWebRender = gfxPlatform::Initialized() &&
-            gfx::gfxVars::UseWebRender() &&
+        
+        
+        Unused << gfxPlatform::GetPlatform();
+
+        bool useWebRender = gfx::gfxVars::UseWebRender() &&
             AllowWebRenderForThisWindow();
 
         
