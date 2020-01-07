@@ -2119,40 +2119,35 @@ DefineAccessorPropertyById(JSContext* cx, HandleObject obj, HandleId id,
 
     
     
-    
-    if (!(attrs & JSPROP_PROPOP_ACCESSORS)) {
-        if (getter && !(attrs & JSPROP_GETTER)) {
-            RootedAtom atom(cx, IdToFunctionName(cx, id, FunctionPrefixKind::Get));
-            if (!atom)
-                return false;
-            JSFunction* getobj = NewNativeFunction(cx, (Native) getter, 0, atom);
-            if (!getobj)
-                return false;
+    if (getter && !(attrs & JSPROP_GETTER)) {
+        RootedAtom atom(cx, IdToFunctionName(cx, id, FunctionPrefixKind::Get));
+        if (!atom)
+            return false;
+        JSFunction* getobj = NewNativeFunction(cx, (Native) getter, 0, atom);
+        if (!getobj)
+            return false;
 
-            if (get.info)
-                getobj->setJitInfo(get.info);
+        if (get.info)
+            getobj->setJitInfo(get.info);
 
-            getter = JS_DATA_TO_FUNC_PTR(GetterOp, getobj);
-            attrs |= JSPROP_GETTER;
-        }
-        if (setter && !(attrs & JSPROP_SETTER)) {
-            
-            AutoRooterGetterSetter getRoot(cx, JSPROP_GETTER, &getter, nullptr);
-            RootedAtom atom(cx, IdToFunctionName(cx, id, FunctionPrefixKind::Set));
-            if (!atom)
-                return false;
-            JSFunction* setobj = NewNativeFunction(cx, (Native) setter, 1, atom);
-            if (!setobj)
-                return false;
+        getter = JS_DATA_TO_FUNC_PTR(GetterOp, getobj);
+        attrs |= JSPROP_GETTER;
+    }
+    if (setter && !(attrs & JSPROP_SETTER)) {
+        
+        AutoRooterGetterSetter getRoot(cx, JSPROP_GETTER, &getter, nullptr);
+        RootedAtom atom(cx, IdToFunctionName(cx, id, FunctionPrefixKind::Set));
+        if (!atom)
+            return false;
+        JSFunction* setobj = NewNativeFunction(cx, (Native) setter, 1, atom);
+        if (!setobj)
+            return false;
 
-            if (set.info)
-                setobj->setJitInfo(set.info);
+        if (set.info)
+            setobj->setJitInfo(set.info);
 
-            setter = JS_DATA_TO_FUNC_PTR(SetterOp, setobj);
-            attrs |= JSPROP_SETTER;
-        }
-    } else {
-        attrs &= ~JSPROP_PROPOP_ACCESSORS;
+        setter = JS_DATA_TO_FUNC_PTR(SetterOp, setobj);
+        attrs |= JSPROP_SETTER;
     }
 
     AssertHeapIsIdle();
@@ -2172,7 +2167,7 @@ static bool
 DefineDataPropertyById(JSContext* cx, HandleObject obj, HandleId id, HandleValue value,
                        unsigned attrs)
 {
-    MOZ_ASSERT(!(attrs & (JSPROP_GETTER | JSPROP_SETTER | JSPROP_PROPOP_ACCESSORS)));
+    MOZ_ASSERT(!(attrs & (JSPROP_GETTER | JSPROP_SETTER)));
 
     AssertHeapIsIdle();
     CHECK_REQUEST(cx);

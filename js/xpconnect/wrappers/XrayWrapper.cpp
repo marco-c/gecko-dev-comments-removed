@@ -448,7 +448,6 @@ TryResolvePropertyFromSpecs(JSContext* cx, HandleId id, HandleObject holder,
                                        
                                        
                                        
-                                       
                                        desc.attributes()))
             {
                 return false;

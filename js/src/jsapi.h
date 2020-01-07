@@ -478,8 +478,6 @@ static const uint8_t JSPROP_PERMANENT =        0x04;
 
 
 
-static const uint8_t JSPROP_PROPOP_ACCESSORS = 0x08;
-
 
 static const uint8_t JSPROP_GETTER =           0x10;
 
