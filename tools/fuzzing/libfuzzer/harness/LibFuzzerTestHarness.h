@@ -9,8 +9,8 @@
 
 
 
-#ifndef FuzzerTestHarness_h__
-#define FuzzerTestHarness_h__
+#ifndef LibFuzzerTestHarness_h__
+#define LibFuzzerTestHarness_h__
 
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Attributes.h"

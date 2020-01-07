@@ -69,8 +69,6 @@ included_inclnames_to_ignore = set([
     'jscustomallocator.h',      
     'js-config.h',              
     'fdlibm.h',                 
-    'FuzzerDefs.h',             
-    'FuzzingInterface.h',       
     'mozmemory.h',              
     'pratom.h',                 
     'prcvar.h',                 

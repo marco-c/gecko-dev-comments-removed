@@ -3,22 +3,19 @@
 
 
 
-#include "FuzzerRegistry.h"
+#include "LibFuzzerRegistry.h"
 
 namespace mozilla {
 
-class FuzzerRunner {
+class LibFuzzerRunner {
 public:
   int Run(int* argc, char*** argv);
-
-#ifdef LIBFUZZER
   void setParams(LibFuzzerDriver aDriver);
 
 private:
   LibFuzzerDriver mFuzzerDriver;
-#endif
 };
 
-extern FuzzerRunner* fuzzerRunner;
+extern LibFuzzerRunner* libFuzzerRunner;
 
 } 
