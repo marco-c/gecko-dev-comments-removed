@@ -114,6 +114,15 @@ public:
   ~DocumentOrShadowRoot() = default;
 
 protected:
+  nsIContent* Retarget(nsIContent* aContent) const;
+
+  
+
+
+
+
+  Element* GetRetargetedFocusedElement();
+
   nsTArray<RefPtr<mozilla::StyleSheet>> mStyleSheets;
   RefPtr<mozilla::dom::StyleSheetList> mDOMStyleSheets;
 

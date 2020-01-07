@@ -554,6 +554,14 @@ public:
 
 
 
+
+  nsIContent* GetContainingShadowHost() const;
+
+  
+
+
+
+
   mozilla::dom::HTMLSlotElement* GetAssignedSlot() const
   {
     const nsExtendedContentSlots* slots = GetExistingExtendedContentSlots();

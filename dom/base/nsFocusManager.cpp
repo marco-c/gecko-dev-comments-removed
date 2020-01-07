@@ -852,8 +852,9 @@ nsFocusManager::ContentRemoved(nsIDocument* aDocument, nsIContent* aContent)
 
   
   
+  
   nsIContent* content = window->GetFocusedNode();
-  if (content && nsContentUtils::ContentIsDescendantOf(content, aContent)) {
+  if (content && nsContentUtils::ContentIsHostIncludingDescendantOf(content, aContent)) {
     bool shouldShowFocusRing = window->ShouldShowFocusRing();
     window->SetFocusedNode(nullptr);
 
