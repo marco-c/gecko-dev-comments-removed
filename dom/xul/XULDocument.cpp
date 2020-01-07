@@ -2259,6 +2259,21 @@ XULDocument::LoadOverlayInternal(nsIURI* aURI, bool aIsDynamic,
 {
     nsresult rv;
 
+    
+    
+    
+    
+#ifdef MOZ_CRASH_XUL_OVERLAYS
+    nsCString docSpec;
+    mCurrentPrototype->GetURI()->GetSpec(docSpec);
+    nsCString overlaySpec;
+    aURI->GetSpec(overlaySpec);
+    printf("Attempt to load overlay %s into %s\n",
+           overlaySpec.get(),
+           docSpec.get());
+    MOZ_CRASH("Attempt to load overlay");
+#endif
+
     *aShouldReturn = false;
     *aFailureFromContent = false;
 
