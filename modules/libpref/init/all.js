@@ -792,6 +792,11 @@ pref("gfx.downloadable_fonts.otl_validation", true);
 #endif
 
 
+
+
+pref("gfx.downloadable_fonts.keep_color_bitmaps", false);
+
+
 pref("gfx.downloadable_fonts.keep_variation_tables", false);
 
 #ifdef ANDROID

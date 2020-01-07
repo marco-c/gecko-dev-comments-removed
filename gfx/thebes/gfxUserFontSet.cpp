@@ -180,6 +180,8 @@ public:
         mCheckOTLTables = gfxPrefs::ValidateOTLTables();
         
         mKeepVariationTables = gfxPrefs::KeepVariationTables();
+        
+        mKeepColorBitmaps = gfxPrefs::KeepColorBitmaps();
     }
 
     virtual ots::TableAction GetTableAction(uint32_t aTag) override {
@@ -199,7 +201,11 @@ public:
               aTag == TRUETYPE_TAG('V', 'V', 'A', 'R'))) ||
             aTag == TRUETYPE_TAG('S', 'V', 'G', ' ') ||
             aTag == TRUETYPE_TAG('C', 'O', 'L', 'R') ||
-            aTag == TRUETYPE_TAG('C', 'P', 'A', 'L')) {
+            aTag == TRUETYPE_TAG('C', 'P', 'A', 'L') ||
+            (mKeepColorBitmaps &&
+             (aTag == TRUETYPE_TAG('C', 'B', 'D', 'T') ||
+              aTag == TRUETYPE_TAG('C', 'B', 'L', 'C'))) ||
+            false) {
             return ots::TABLE_ACTION_PASSTHRU;
         }
         return ots::TABLE_ACTION_DEFAULT;
@@ -232,6 +238,7 @@ private:
     nsTHashtable<nsCStringHashKey> mWarningsIssued;
     bool mCheckOTLTables;
     bool mKeepVariationTables;
+    bool mKeepColorBitmaps;
 };
 
 
