@@ -18,7 +18,7 @@
 #include <istream>
 #include <ostream>
 #include <fstream>
-#if defined(__MINGW32__)
+#if defined(__MINGW32__) && defined(__GLIBCXX__)
 #include "mozilla/UniquePtr.h"
 #include <fcntl.h>
 #include <ext/stdio_filebuf.h>
@@ -26,7 +26,7 @@
 
 namespace mozilla {
 
-#if defined(__MINGW32__)
+#if defined(__MINGW32__) && defined(__GLIBCXX__)
 
 
 class IFStream : public std::istream
