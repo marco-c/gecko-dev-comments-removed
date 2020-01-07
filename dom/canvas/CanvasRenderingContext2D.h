@@ -691,7 +691,10 @@ protected:
   
 
 
-  void ClearTarget();
+
+
+
+  void ClearTarget(int32_t aWidth = -1, int32_t aHeight = -1);
 
   
 
