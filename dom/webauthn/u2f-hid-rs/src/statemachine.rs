@@ -10,6 +10,10 @@ use std::time::Duration;
 use util::{io_err, OnceCallback};
 use u2fprotocol::{u2f_init_device, u2f_is_keyhandle_valid, u2f_register, u2f_sign};
 
+fn is_valid_transport(transports: ::AuthenticatorTransports) -> bool {
+    transports.is_empty() || transports.contains(::AuthenticatorTransports::USB)
+}
+
 #[derive(Default)]
 pub struct StateMachine {
     transaction: Option<Transaction>,
@@ -26,7 +30,7 @@ impl StateMachine {
         timeout: u64,
         challenge: Vec<u8>,
         application: Vec<u8>,
-        key_handles: Vec<Vec<u8>>,
+        key_handles: Vec<::KeyHandle>,
         callback: OnceCallback<Vec<u8>>,
     ) {
         
@@ -60,8 +64,9 @@ impl StateMachine {
             
             
             if key_handles.iter().any(|key_handle| {
-                u2f_is_keyhandle_valid(dev, &challenge, &application, key_handle)
-                    .unwrap_or(false) 
+                is_valid_transport(key_handle.transports) &&
+                    u2f_is_keyhandle_valid(dev, &challenge, &application, &key_handle.credential)
+                        .unwrap_or(false) 
             })
             {
                 return;
@@ -85,10 +90,11 @@ impl StateMachine {
 
     pub fn sign(
         &mut self,
+        flags: ::SignFlags,
         timeout: u64,
         challenge: Vec<u8>,
         application: Vec<u8>,
-        key_handles: Vec<Vec<u8>>,
+        key_handles: Vec<::KeyHandle>,
         callback: OnceCallback<(Vec<u8>, Vec<u8>)>,
     ) {
         
@@ -109,13 +115,36 @@ impl StateMachine {
             }
 
             
+            
+            
+            
+            
+            
+            
+            if !flags.is_empty() {
+                return;
+            }
+
+            
             let key_handles = key_handles
                 .iter()
                 .filter(|key_handle| {
-                    u2f_is_keyhandle_valid(dev, &challenge, &application, key_handle)
+                    u2f_is_keyhandle_valid(dev, &challenge, &application, &key_handle.credential)
                         .unwrap_or(false) 
                 })
                 .collect::<Vec<_>>();
+
+            
+            let transports = key_handles.iter().fold(
+                ::AuthenticatorTransports::empty(),
+                |t, k| t | k.transports,
+            );
+
+            
+            
+            if !is_valid_transport(transports) {
+                return;
+            }
 
             while alive() {
                 
@@ -129,8 +158,14 @@ impl StateMachine {
                 } else {
                     
                     for key_handle in &key_handles {
-                        if let Ok(bytes) = u2f_sign(dev, &challenge, &application, key_handle) {
-                            callback.call(Ok((key_handle.to_vec(), bytes)));
+                        if let Ok(bytes) = u2f_sign(
+                            dev,
+                            &challenge,
+                            &application,
+                            &key_handle.credential,
+                        )
+                        {
+                            callback.call(Ok((key_handle.credential.clone(), bytes)));
                             break;
                         }
                     }
