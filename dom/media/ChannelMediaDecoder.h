@@ -44,6 +44,7 @@ class ChannelMediaDecoder : public MediaDecoder
     void NotifyDataEnded(nsresult aStatus) override;
     void NotifyPrincipalChanged() override;
     void NotifySuspendedStatusChanged(bool aSuspendedByCache) override;
+    void NotifyBytesConsumed(int64_t aBytes, int64_t aOffset) override;
 
     static void TimerCallback(nsITimer* aTimer, void* aClosure);
 
@@ -114,6 +115,8 @@ private:
   
   void NotifyBytesConsumed(int64_t aBytes, int64_t aOffset);
 
+  void SeekingChanged();
+
   bool CanPlayThroughImpl() override final;
 
   bool IsLiveStream() override final;
@@ -137,6 +140,14 @@ private:
   MediaStatistics GetStatistics(const PlaybackRateInfo& aInfo);
 
   bool ShouldThrottleDownload(const MediaStatistics& aStats);
+
+  WatchManager<ChannelMediaDecoder> mWatchManager;
+
+  
+  
+  
+  
+  bool mIgnoreProgressData = false;
 
   
   
