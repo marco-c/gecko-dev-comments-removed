@@ -7,9 +7,7 @@
 body {
   background-size: 64px 32px;
   background-repeat: repeat-x;
-  
-
-  padding: 75px 0;
+  padding: 0;
   
 
 
@@ -28,10 +26,6 @@ body {
 }
 
 @media only screen and (max-width: 959px) {
-  body {
-    padding: 75px 48px;
-  }
-
   .title {
     background-image: none !important;
     padding-inline-start: 0;
@@ -45,11 +39,7 @@ body {
 
 @media only screen and (max-width: 640px) {
   body {
-    justify-content: unset;
-    
-
-
-    padding: 75px 20px 0;
+    padding: 0 75px;
   }
 
   .title-text {
