@@ -67,7 +67,10 @@ def get_raptor_test_list(args):
     available_tests = get_browser_test_list(args.app)
     tests_to_run = []
     
-    args.test = args.test[0]
+    if args.test is not None and len(args.test) > 0:
+        args.test = args.test[0]
+    else:
+        args.test = None
     
     
     if args.test is not None:
