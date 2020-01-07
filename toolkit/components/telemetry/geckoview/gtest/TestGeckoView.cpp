@@ -32,6 +32,28 @@ const char kSampleData[] = R"({
         "testKey": 73
       }
     }
+  },
+  "histograms": {
+    "parent": {
+      "TELEMETRY_TEST_MULTIPRODUCT": {
+        "sum": 6,
+        "counts": [
+          3, 5, 7
+        ]
+      }
+    }
+  },
+  "keyedHistograms": {
+    "content": {
+      "TELEMETRY_TEST_MULTIPRODUCT_KEYED": {
+        "niceKey": {
+          "sum": 10,
+          "counts": [
+            1, 2, 3
+          ]
+        }
+      }
+    }
   }
 })";
 
@@ -225,6 +247,80 @@ TestDeserializePersistedKeyedScalars(JSContext* aCx, JS::HandleValue aData)
   CheckJSONEqual(aCx, aData, keyedScalarData);
 }
 
+void
+TestSerializeHistograms(JSONWriter& aWriter)
+{
+  
+  
+  
+  aWriter.StartObjectProperty("parent");
+  aWriter.StartObjectProperty("TELEMETRY_TEST_MULTIPRODUCT");
+  aWriter.IntProperty("sum", 6);
+  aWriter.StartArrayProperty("counts");
+  aWriter.IntElement(3);
+  aWriter.IntElement(5);
+  aWriter.IntElement(7);
+  aWriter.EndArray();
+  aWriter.EndObject();
+  aWriter.EndObject();
+}
+
+void
+TestSerializeKeyedHistograms(JSONWriter& aWriter)
+{
+  
+  
+  
+  aWriter.StartObjectProperty("content");
+  aWriter.StartObjectProperty("TELEMETRY_TEST_MULTIPRODUCT_KEYED");
+  aWriter.StartObjectProperty("niceKey");
+  aWriter.IntProperty("sum", 10);
+  aWriter.StartArrayProperty("counts");
+  aWriter.IntElement(1);
+  aWriter.IntElement(2);
+  aWriter.IntElement(3);
+  aWriter.EndArray();
+  aWriter.EndObject();
+  aWriter.EndObject();
+  aWriter.EndObject();
+}
+
+void
+TestDeserializeHistograms(JSContext* aCx, JS::HandleValue aData)
+{
+  
+  JS::RootedValue sampleData(aCx);
+  NS_ConvertUTF8toUTF16 utf16Content(kSampleData);
+  ASSERT_TRUE(JS_ParseJSON(aCx, utf16Content.BeginReading(), utf16Content.Length(), &sampleData))
+    << "Failed to create a JS object from the JSON sample";
+
+  
+  JS::RootedObject sampleObj(aCx, &sampleData.toObject());
+  JS::RootedValue histogramData(aCx);
+  ASSERT_TRUE(JS_GetProperty(aCx, sampleObj, "histograms", &histogramData) && histogramData.isObject())
+    << "Failed to get sampleData['histograms']";
+
+  CheckJSONEqual(aCx, aData, histogramData);
+}
+
+void
+TestDeserializeKeyedHistograms(JSContext* aCx, JS::HandleValue aData)
+{
+  
+  JS::RootedValue sampleData(aCx);
+  NS_ConvertUTF8toUTF16 utf16Content(kSampleData);
+  ASSERT_TRUE(JS_ParseJSON(aCx, utf16Content.BeginReading(), utf16Content.Length(), &sampleData))
+    << "Failed to create a JS object from the JSON sample";
+
+  
+  JS::RootedObject sampleObj(aCx, &sampleData.toObject());
+  JS::RootedValue keyedHistogramData(aCx);
+  ASSERT_TRUE(JS_GetProperty(aCx, sampleObj, "keyedHistograms", &keyedHistogramData)
+              && keyedHistogramData.isObject()) << "Failed to get sampleData['keyedHistograms']";
+
+  CheckJSONEqual(aCx, aData, keyedHistogramData);
+}
+
 } 
 
 
@@ -249,6 +345,15 @@ nsresult SerializeScalars(JSONWriter& aWriter) { TestSerializeScalars(aWriter); 
 nsresult SerializeKeyedScalars(JSONWriter& aWriter) { TestSerializeKeyedScalars(aWriter); return NS_OK; }
 nsresult DeserializePersistedScalars(JSContext* aCx, JS::HandleValue aData) { TestDeserializePersistedScalars(aCx, aData); return NS_OK; }
 nsresult DeserializePersistedKeyedScalars(JSContext* aCx, JS::HandleValue aData) { TestDeserializePersistedKeyedScalars(aCx, aData); return NS_OK; }
+
+} 
+
+namespace TelemetryHistogram {
+
+nsresult SerializeHistograms(mozilla::JSONWriter &aWriter) { TestSerializeHistograms(aWriter); return NS_OK; }
+nsresult SerializeKeyedHistograms(mozilla::JSONWriter &aWriter) { TestSerializeKeyedHistograms(aWriter); return NS_OK; }
+nsresult DeserializeHistograms(JSContext* aCx, JS::HandleValue aData) { TestDeserializeHistograms(aCx, aData); return NS_OK; }
+nsresult DeserializeKeyedHistograms(JSContext* aCx, JS::HandleValue aData) { TestDeserializeKeyedHistograms(aCx, aData); return NS_OK; }
 
 } 
 
