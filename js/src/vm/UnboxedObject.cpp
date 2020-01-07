@@ -132,14 +132,15 @@ UnboxedLayout::makeConstructorCode(JSContext* cx, HandleObjectGroup group)
                       Imm32(OBJECT_FLAG_PRE_TENURE), &tenuredObject);
 
     
-    masm.createGCObject(object, scratch1, templateObject, gc::DefaultHeap, &failure,
+    TemplateObject templateObj(templateObject);
+    masm.createGCObject(object, scratch1, templateObj, gc::DefaultHeap, &failure,
                          false);
 
     masm.jump(&allocated);
     masm.bind(&tenuredObject);
 
     
-    masm.createGCObject(object, scratch1, templateObject, gc::TenuredHeap, &failure,
+    masm.createGCObject(object, scratch1, templateObj, gc::TenuredHeap, &failure,
                          false);
 
     
@@ -267,7 +268,7 @@ UnboxedLayout::makeConstructorCode(JSContext* cx, HandleObjectGroup group)
     
     
     
-    masm.initUnboxedObjectContents(object, templateObject);
+    masm.initUnboxedObjectContents(object, templateObject->layoutDontCheckGeneration());
 
     masm.bind(&failure);
 
@@ -288,7 +289,7 @@ UnboxedLayout::makeConstructorCode(JSContext* cx, HandleObjectGroup group)
     }
 
     
-    masm.initUnboxedObjectContents(object, templateObject);
+    masm.initUnboxedObjectContents(object, templateObject->layoutDontCheckGeneration());
 
     masm.movePtr(ImmWord(CLEAR_CONSTRUCTOR_CODE_TOKEN), object);
     masm.jump(&done);
