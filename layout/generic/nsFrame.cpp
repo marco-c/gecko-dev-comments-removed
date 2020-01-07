@@ -3556,12 +3556,6 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
                !aBuilder->GetIncludeAllOutOfFlows(),
                "It should be held for painting to window");
 
-    if (child->HasPerspective()) {
-      
-      
-      aBuilder->AllocatePerspectiveItemIndex();
-    }
-
     if (!DescendIntoChild(aBuilder, child, visible, dirty)) {
       return;
     }
@@ -3651,14 +3645,6 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
     pseudoStackingContext = true;
   }
 
-  const nsStyleDisplay* disp = child->StyleDisplay();
-
-  if (child->HasPerspective(disp)) {
-    
-    
-    aBuilder->AllocatePerspectiveItemIndex();
-  }
-
   NS_ASSERTION(!child->IsPlaceholderFrame(),
                "Should have dealt with placeholders already");
   if (aBuilder->GetSelectedFramesOnly() &&
@@ -3696,6 +3682,7 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
   
   
   EffectSet* effectSet = EffectSet::GetEffectSet(child);
+  const nsStyleDisplay* disp = child->StyleDisplay();
   const nsStyleEffects* effects = child->StyleEffects();
   const nsStylePosition* pos = child->StylePosition();
 
