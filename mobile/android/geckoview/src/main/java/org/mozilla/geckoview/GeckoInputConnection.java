@@ -31,7 +31,6 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.ExtractedText;
 import android.view.inputmethod.ExtractedTextRequest;
 import android.view.inputmethod.InputConnection;
-import android.view.inputmethod.InputMethodManager;
 
 import org.mozilla.gecko.Clipboard;
 import org.mozilla.gecko.InputMethods;
@@ -75,7 +74,6 @@ import java.lang.reflect.Proxy;
     private final SessionTextInput.EditableClient mEditableClient;
     protected int mBatchEditCount;
     private ExtractedTextRequest mUpdateRequest;
-    private final ExtractedText mUpdateExtract = new ExtractedText();
     private final InputConnection mKeyInputConnection;
     private CursorAnchorInfo.Builder mCursorAnchorInfoBuilder;
 
@@ -272,42 +270,26 @@ import java.lang.reflect.Proxy;
         return mView;
     }
 
-    private InputMethodManager getInputMethodManager() {
-        View view = getView();
-        if (view == null) {
-            return null;
-        }
-        Context context = view.getContext();
-        return InputMethods.getInputMethodManager(context);
+    @NonNull
+     SessionTextInput.Delegate getInputDelegate() {
+        return mSession.getTextInput().getDelegate();
     }
 
     private void showSoftInputWithToolbar(final boolean showToolbar) {
         if (mSoftInputReentrancyGuard) {
             return;
         }
-        final View v = getView();
-        final InputMethodManager imm = getInputMethodManager();
-        if (v == null || imm == null) {
-            return;
-        }
 
-        v.post(new Runnable() {
+        getView().post(new Runnable() {
             @Override
             public void run() {
-                if (v.hasFocus() && !imm.isActive(v)) {
-                    
-                    
-                    v.clearFocus();
-                    v.requestFocus();
-                }
-
                 if (showToolbar) {
                     mSession.getDynamicToolbarAnimator().showToolbar( true);
                 }
                 mSession.getEventDispatcher().dispatch("GeckoView:ZoomToInput", null);
 
                 mSoftInputReentrancyGuard = true;
-                imm.showSoftInput(v, 0);
+                getInputDelegate().showSoftInput();
                 mSoftInputReentrancyGuard = false;
             }
         });
@@ -317,80 +299,53 @@ import java.lang.reflect.Proxy;
         if (mSoftInputReentrancyGuard) {
             return;
         }
-        final InputMethodManager imm = getInputMethodManager();
-        if (imm != null) {
-            final View v = getView();
-            mSoftInputReentrancyGuard = true;
-            imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
-            mSoftInputReentrancyGuard = false;
-        }
+        getView().post(new Runnable() {
+            @Override
+            public void run() {
+                mSoftInputReentrancyGuard = true;
+                getInputDelegate().hideSoftInput();
+                mSoftInputReentrancyGuard = false;
+            }
+        });
     }
 
-    private void restartInput() {
-
-        final InputMethodManager imm = getInputMethodManager();
-        if (imm == null) {
-            return;
-        }
-        final View v = getView();
-        
-        
-        
-        
-        
-        
-        
-        if (InputMethods.needsSoftResetWorkaround(mCurrentInputMethod)) {
-            
-            
-            
-            
-            notifySelectionChange(-1, -1);
-        }
-        try {
-            imm.restartInput(v);
-        } catch (RuntimeException e) {
-            Log.e(LOGTAG, "Error restarting input", e);
-        }
-    }
-
-    private void resetInputConnection() {
-        if (mBatchEditCount != 0) {
-            Log.w(LOGTAG, "resetting with mBatchEditCount = " + mBatchEditCount);
-            mBatchEditCount = 0;
-        }
-
-        
-
-        restartInput();
+    private void restartInput(final @SessionTextInput.Delegate.RestartReason int reason) {
+        getView().post(new Runnable() {
+            @Override
+            public void run() {
+                getInputDelegate().restartInput(reason);
+            }
+        });
     }
 
     @Override 
     public void onTextChange() {
-
-        if (mUpdateRequest == null) {
-            return;
-        }
-
-        final InputMethodManager imm = getInputMethodManager();
-        final View v = getView();
         final Editable editable = getEditable();
-        if (imm == null || v == null || editable == null) {
+        if (mUpdateRequest == null || editable == null) {
             return;
         }
-        mUpdateExtract.flags = 0;
+
+        final ExtractedTextRequest request = mUpdateRequest;
+        final ExtractedText extractedText = new ExtractedText();
+        extractedText.flags = 0;
         
-        mUpdateExtract.partialStartOffset = -1;
-        mUpdateExtract.partialEndOffset = -1;
-        mUpdateExtract.selectionStart = Selection.getSelectionStart(editable);
-        mUpdateExtract.selectionEnd = Selection.getSelectionEnd(editable);
-        mUpdateExtract.startOffset = 0;
-        if ((mUpdateRequest.flags & GET_TEXT_WITH_STYLES) != 0) {
-            mUpdateExtract.text = new SpannableString(editable);
+        extractedText.partialStartOffset = -1;
+        extractedText.partialEndOffset = -1;
+        extractedText.selectionStart = Selection.getSelectionStart(editable);
+        extractedText.selectionEnd = Selection.getSelectionEnd(editable);
+        extractedText.startOffset = 0;
+        if ((request.flags & GET_TEXT_WITH_STYLES) != 0) {
+            extractedText.text = new SpannableString(editable);
         } else {
-            mUpdateExtract.text = editable.toString();
+            extractedText.text = editable.toString();
         }
-        imm.updateExtractedText(v, mUpdateRequest.token, mUpdateExtract);
+
+        getView().post(new Runnable() {
+            @Override
+            public void run() {
+                getInputDelegate().updateExtractedText(request, extractedText);
+            }
+        });
     }
 
     @Override 
@@ -404,16 +359,21 @@ import java.lang.reflect.Proxy;
         }
     }
 
-    private void notifySelectionChange(int start, int end) {
-
-        final InputMethodManager imm = getInputMethodManager();
-        final View v = getView();
+    private void notifySelectionChange(final int start, final int end) {
         final Editable editable = getEditable();
-        if (imm == null || v == null || editable == null) {
+        if (editable == null) {
             return;
         }
-        imm.updateSelection(v, start, end, getComposingSpanStart(editable),
-                            getComposingSpanEnd(editable));
+
+        final int compositionStart = getComposingSpanStart(editable);
+        final int compositionEnd = getComposingSpanEnd(editable);
+
+        getView().post(new Runnable() {
+            @Override
+            public void run() {
+                getInputDelegate().updateSelection(start, end, compositionStart, compositionEnd);
+            }
+        });
     }
 
     @TargetApi(21)
@@ -473,12 +433,13 @@ import java.lang.reflect.Proxy;
 
         mCursorAnchorInfoBuilder.setComposingText(0, composition);
 
-        final InputMethodManager imm = getInputMethodManager();
-        if (imm == null) {
-            return;
-        }
-
-        imm.updateCursorAnchorInfo(view, mCursorAnchorInfoBuilder.build());
+        final CursorAnchorInfo info = mCursorAnchorInfoBuilder.build();
+        getView().post(new Runnable() {
+            @Override
+            public void run() {
+                getInputDelegate().updateCursorAnchorInfo(info);
+            }
+        });
     }
 
     @Override
@@ -596,10 +557,10 @@ import java.lang.reflect.Proxy;
         return getHandler();
     }
 
-
     @Override 
     public void closeConnection() {
         
+        super.closeConnection();
     }
 
     @Override 
@@ -824,7 +785,12 @@ import java.lang.reflect.Proxy;
             case NOTIFY_IME_OF_FOCUS:
                 
                 mFocused = true;
-                resetInputConnection();
+                if (mBatchEditCount != 0) {
+                    Log.w(LOGTAG, "resetting with mBatchEditCount = " + mBatchEditCount);
+                    mBatchEditCount = 0;
+                }
+                
+                restartInput(SessionTextInput.Delegate.RESTART_REASON_FOCUS);
                 break;
 
             case NOTIFY_IME_OF_BLUR:
@@ -856,7 +822,7 @@ import java.lang.reflect.Proxy;
                     }
                 }
                 
-                restartInput();
+                restartInput(SessionTextInput.Delegate.RESTART_REASON_CONTENT_CHANGE);
                 break;
             }
 
@@ -919,7 +885,9 @@ import java.lang.reflect.Proxy;
         
         
         if (mIMEState == IME_STATE_DISABLED || mFocused) {
-            restartInput();
+            restartInput(mIMEState == IME_STATE_DISABLED ?
+                         SessionTextInput.Delegate.RESTART_REASON_BLUR :
+                         SessionTextInput.Delegate.RESTART_REASON_CONTENT_CHANGE);
         }
     }
 }
