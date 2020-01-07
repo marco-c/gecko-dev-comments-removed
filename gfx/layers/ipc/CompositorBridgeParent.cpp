@@ -1732,7 +1732,11 @@ CompositorBridgeParent::RecvAdoptChild(const LayersId& child)
 {
   RefPtr<APZUpdater> oldApzUpdater;
   APZCTreeManagerParent* parent;
-  {
+  bool scheduleComposition = false;
+  RefPtr<CrossProcessCompositorBridgeParent> cpcp;
+  RefPtr<WebRenderBridgeParent> childWrBridge;
+
+  { 
     MonitorAutoLock lock(*sIndirectLayerTreesLock);
     if (sIndirectLayerTrees[child].mParent) {
       
@@ -1745,23 +1749,32 @@ CompositorBridgeParent::RecvAdoptChild(const LayersId& child)
       sIndirectLayerTrees[child].mLayerTree->SetLayerManager(mLayerManager, GetAnimationStorage());
       
       
-      ScheduleComposition();
+      scheduleComposition = true;
     }
-    if (mWrBridge && sIndirectLayerTrees[child].mWrBridge) {
-      RefPtr<wr::WebRenderAPI> api = mWrBridge->GetWebRenderAPI();
-      api = api->Clone();
-      sIndirectLayerTrees[child].mWrBridge->UpdateWebRender(mWrBridge->CompositorScheduler(),
-                                                            api,
-                                                            mWrBridge->AsyncImageManager(),
-                                                            GetAnimationStorage());
-      
-      CrossProcessCompositorBridgeParent* cpcp = sIndirectLayerTrees[child].mCrossProcessParent;
-      if (cpcp) {
-        TimeStamp now = TimeStamp::Now();
-        cpcp->DidCompositeLocked(child, now, now);
-      }
+    if (mWrBridge) {
+      childWrBridge = sIndirectLayerTrees[child].mWrBridge;
+      cpcp = sIndirectLayerTrees[child].mCrossProcessParent;
     }
     parent = sIndirectLayerTrees[child].mApzcTreeManagerParent;
+  }
+
+  if (scheduleComposition) {
+    ScheduleComposition();
+  }
+
+  if (childWrBridge) {
+    MOZ_ASSERT(mWrBridge);
+    RefPtr<wr::WebRenderAPI> api = mWrBridge->GetWebRenderAPI();
+    api = api->Clone();
+    childWrBridge->UpdateWebRender(mWrBridge->CompositorScheduler(),
+                                   api,
+                                   mWrBridge->AsyncImageManager(),
+                                   GetAnimationStorage());
+    
+    if (cpcp) {
+      TimeStamp now = TimeStamp::Now();
+      cpcp->DidComposite(child, now, now);
+    }
   }
 
   if (oldApzUpdater) {
