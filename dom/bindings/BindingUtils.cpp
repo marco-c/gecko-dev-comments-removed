@@ -2893,9 +2893,7 @@ ConvertJSValueToByteString(JSContext* cx, JS::Handle<JS::Value> v,
     return false;
   }
 
-  if (!JS_EncodeStringToBuffer(cx, s, result.BeginWriting(), length)) {
-    return false;
-  }
+  JS_EncodeStringToBuffer(cx, s, result.BeginWriting(), length);
 
   return true;
 }
@@ -2948,7 +2946,8 @@ IsNonExposedGlobal(JSContext* aCx, JSObject* aGlobal,
                 GlobalNames::SharedWorkerGlobalScope |
                 GlobalNames::ServiceWorkerGlobalScope |
                 GlobalNames::WorkerDebuggerGlobalScope |
-                GlobalNames::WorkletGlobalScope)) == 0,
+                GlobalNames::WorkletGlobalScope |
+                GlobalNames::AudioWorkletGlobalScope)) == 0,
              "Unknown non-exposed global type");
 
   const char* name = js::GetObjectClass(aGlobal)->name;
@@ -2985,6 +2984,11 @@ IsNonExposedGlobal(JSContext* aCx, JSObject* aGlobal,
 
   if ((aNonExposedGlobals & GlobalNames::WorkletGlobalScope) &&
       !strcmp(name, "WorkletGlobalScope")) {
+    return true;
+  }
+
+  if ((aNonExposedGlobals & GlobalNames::AudioWorkletGlobalScope) &&
+      !strcmp(name, "AudioWorkletGlobalScope")) {
     return true;
   }
 
