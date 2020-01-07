@@ -540,6 +540,29 @@ this.PanelMultiView = class extends this.AssociatedToNode {
     }
   }
 
+  
+
+
+
+
+
+
+
+
+
+  showSubView(viewIdOrNode, anchor) {
+    let viewNode = typeof viewIdOrNode == "string" ?
+                   this.document.getElementById(viewIdOrNode) : viewIdOrNode;
+    if (!viewNode) {
+      throw new Error(`Subview ${viewIdOrNode} doesn't exist.`);
+    }
+
+    this._showView(viewNode, anchor);
+  }
+
+  
+
+
   goBack() {
     if (this.openViews.length < 2) {
       
@@ -549,14 +572,14 @@ this.PanelMultiView = class extends this.AssociatedToNode {
 
     let previous = this.openViews.pop().node;
     let current = this._currentSubView;
-    this.showSubView(current, null, previous);
+    this._showView(current, null, previous);
   }
 
   async showMainView() {
     if (!this.node || !this._mainViewId)
       return false;
 
-    return this.showSubView(this._mainView);
+    return this._showView(this._mainView);
   }
 
   
@@ -586,27 +609,19 @@ this.PanelMultiView = class extends this.AssociatedToNode {
     this.showingSubView = nextPanelView.node.id != this._mainViewId;
   }
 
-  async showSubView(aViewId, aAnchor, aPreviousView) {
+  async _showView(viewNode, anchor, previousView) {
     try {
-      
-      let viewNode = typeof aViewId == "string" ? this.node.querySelector("#" + aViewId) : aViewId;
-      if (!viewNode) {
-        viewNode = this.document.getElementById(aViewId);
-        if (viewNode) {
-          this._viewStack.appendChild(viewNode);
-        } else {
-          throw new Error(`Subview ${aViewId} doesn't exist!`);
-        }
-      } else if (viewNode.parentNode == this._panelViewCache) {
-        this._viewStack.appendChild(viewNode);
-      }
-
       let nextPanelView = PanelView.forNode(viewNode);
       this.knownViews.add(nextPanelView);
 
       viewNode.panelMultiView = this.node;
 
-      let previousViewNode = aPreviousView || this._currentSubView;
+      let previousViewNode = previousView || this._currentSubView;
+
+      if (viewNode.parentNode != this._viewStack) {
+        this._viewStack.appendChild(viewNode);
+      }
+
       
       
       let showingSameView = viewNode == previousViewNode;
@@ -616,14 +631,14 @@ this.PanelMultiView = class extends this.AssociatedToNode {
 
       this._viewShowing = viewNode;
 
-      let reverse = !!aPreviousView;
+      let reverse = !!previousView;
       if (!reverse) {
         
         
         
         
         nextPanelView.headerText = viewNode.getAttribute("title") ||
-                                   (aAnchor && aAnchor.getAttribute("label"));
+                                   (anchor && anchor.getAttribute("label"));
         
         let isMainView = viewNode.id == this._mainViewId;
         nextPanelView.mainview = isMainView;
@@ -631,7 +646,7 @@ this.PanelMultiView = class extends this.AssociatedToNode {
         nextPanelView.minMaxWidth = isMainView ? 0 : prevPanelView.knownWidth;
       }
 
-      if (aAnchor) {
+      if (anchor) {
         viewNode.classList.add("PanelUI-subView");
       }
 
@@ -649,7 +664,7 @@ this.PanelMultiView = class extends this.AssociatedToNode {
       
       await this._cleanupTransitionPhase();
       if (!showingSameView && this._panel.state == "open") {
-        await this._transitionViews(previousViewNode, viewNode, reverse, aAnchor);
+        await this._transitionViews(previousViewNode, viewNode, reverse, anchor);
         nextPanelView.focusSelectedElement();
       } else {
         this.hideAllViewsExcept(nextPanelView);
