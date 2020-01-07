@@ -90,8 +90,16 @@ nsStyleLinkElement::GetTitleAndMediaForElement(const Element& aSelf,
                                                nsString& aTitle,
                                                nsString& aMedia)
 {
-  aSelf.GetAttr(kNameSpaceID_None, nsGkAtoms::title, aTitle);
-  aTitle.CompressWhitespace();
+  
+  
+  
+  
+  
+  
+  if (aSelf.IsInUncomposedDoc()) {
+    aSelf.GetAttr(kNameSpaceID_None, nsGkAtoms::title, aTitle);
+    aTitle.CompressWhitespace();
+  }
 
   aSelf.GetAttr(kNameSpaceID_None, nsGkAtoms::media, aMedia);
   
