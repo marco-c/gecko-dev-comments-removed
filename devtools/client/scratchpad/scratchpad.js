@@ -337,14 +337,14 @@ var Scratchpad = {
 
 
   hideMenu: function SP_hideMenu() {
-    document.getElementById("sp-menubar").style.display = "none";
+    document.getElementById("sp-menu-toolbar").style.display = "none";
   },
 
   
 
 
   showMenu: function SP_showMenu() {
-    document.getElementById("sp-menubar").style.display = "";
+    document.getElementById("sp-menu-toolbar").style.display = "";
   },
 
   
