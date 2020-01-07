@@ -247,6 +247,61 @@ VARCACHE_PREF(
 
 
 
+#ifdef ANDROID
+  
+  
+  
+  
+# define PREF_VALUE false
+#else
+# define PREF_VALUE true
+#endif
+VARCACHE_PREF(
+  "javascript.options.gc_on_memory_pressure",
+   javascript_options_gc_on_memory_pressure,
+  bool, PREF_VALUE
+)
+#undef PREF_VALUE
+
+VARCACHE_PREF(
+  "javascript.options.compact_on_user_inactive",
+   javascript_options_compact_on_user_inactive,
+  bool, true
+)
+
+
+
+#ifdef NIGHTLY_BUILD
+# define PREF_VALUE  15000  // ms
+#else
+# define PREF_VALUE 300000  // ms
+#endif
+VARCACHE_PREF(
+  "javascript.options.compact_on_user_inactive_delay",
+   javascript_options_compact_on_user_inactive_delay,
+   uint32_t, PREF_VALUE
+)
+#undef PREF_VALUE
+
+VARCACHE_PREF(
+  "javascript.options.mem.log",
+   javascript_options_mem_log,
+  bool, false
+)
+
+VARCACHE_PREF(
+  "javascript.options.mem.notify",
+   javascript_options_mem_notify,
+  bool, false
+)
+
+
+
+
+
+
+
+
 
 
 

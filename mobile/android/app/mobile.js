@@ -367,10 +367,6 @@ pref("geo.enabled", true);
 
 
 
-
-
-pref("javascript.options.gc_on_memory_pressure", false);
-
 pref("javascript.options.mem.high_water_mark", 32);
 
 pref("dom.max_chrome_script_run_time", 0); 
