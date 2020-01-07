@@ -405,18 +405,18 @@ public:
   
 
 
-  bool HasListenersFor(const nsAString& aEventName);
+  bool HasListenersFor(const nsAString& aEventName) const;
 
   
 
 
 
-  bool HasListenersFor(nsAtom* aEventNameWithOn);
+  bool HasListenersFor(nsAtom* aEventNameWithOn) const;
 
   
 
 
-  bool HasListeners();
+  bool HasListeners() const;
 
   
 
