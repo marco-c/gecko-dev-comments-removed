@@ -1209,8 +1209,8 @@ static const uint8_t kEntities[] = {
 
 
 static const uint8_t kAttrEntities[] = {
-  _, _, _, _, _, _, _, _, _, _,
-  _, _, _, _, _, _, _, _, _, _,
+  _, _, _, _, _, _, _, _, _, 5,
+  6, _, _, 7, _, _, _, _, _, _,
   _, _, _, _, _, _, _, _, _, _,
   _, _, _, _, 1, _, _, _, 2, _,
   _, _, _, _, _, _, _, _, _, _,
@@ -1226,6 +1226,9 @@ static const char* const kEntityStrings[] = {
    "&amp;",
    "&lt;",
    "&gt;",
+   "&#9;",
+   "&#xA;",
+   "&#xD;",
 };
 
 bool
