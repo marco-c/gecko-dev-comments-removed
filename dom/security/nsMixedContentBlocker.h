@@ -48,6 +48,7 @@ public:
   
   
   static bool IsPotentiallyTrustworthyLoopbackURL(nsIURI* aURL);
+  static bool IsPotentiallyTrustworthyOnion(nsIURI* aURL);
 
   
 

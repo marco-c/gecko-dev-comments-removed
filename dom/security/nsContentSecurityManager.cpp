@@ -21,6 +21,7 @@
 #include "nsIImageLoadingContent.h"
 
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/nsMixedContentBlocker.h"
 #include "mozilla/dom/TabChild.h"
 
 NS_IMPL_ISUPPORTS(nsContentSecurityManager,
@@ -878,6 +879,12 @@ nsContentSecurityManager::IsOriginPotentiallyTrustworthy(nsIPrincipal* aPrincipa
           return NS_OK;
         }
       }
+    }
+    
+    
+    if (nsMixedContentBlocker::IsPotentiallyTrustworthyOnion(uri)) {
+      *aIsTrustWorthy = true;
+      return NS_OK;
     }
   }
 

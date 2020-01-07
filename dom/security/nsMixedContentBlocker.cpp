@@ -398,6 +398,28 @@ nsMixedContentBlocker::IsPotentiallyTrustworthyLoopbackURL(nsIURI* aURL) {
 
 
 
+bool
+nsMixedContentBlocker::IsPotentiallyTrustworthyOnion(nsIURI* aURL) {
+  static bool sInited = false;
+  static bool sWhiteListOnions = false;
+  if (!sInited) {
+    Preferences::AddBoolVarCache(&sWhiteListOnions,
+                                 "dom.securecontext.whitelist_onions");
+    sInited = true;
+  }
+  if (!sWhiteListOnions) {
+    return false;
+  }
+
+  nsAutoCString host;
+  nsresult rv = aURL->GetHost(host);
+  NS_ENSURE_SUCCESS(rv, false);
+  return StringEndsWith(host, NS_LITERAL_CSTRING(".onion"));
+}
+
+
+
+
 nsresult
 nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
                                   uint32_t aContentType,
@@ -727,6 +749,13 @@ nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
 
   
   
+  if (isHttpScheme && IsPotentiallyTrustworthyOnion(innerContentLocation)) {
+    *aDecision = ACCEPT;
+    return NS_OK;
+  }
+
+  
+  
   
   
   
@@ -907,9 +936,6 @@ nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
 
   
   if (aContentType == TYPE_OBJECT_SUBREQUEST) {
-    if (!sBlockMixedObjectSubrequest) {
-      rootDoc->WarnOnceAbout(nsIDocument::eMixedDisplayObjectSubrequest);
-    }
     rootDoc->SetHasMixedContentObjectSubrequest(true);
   }
 
