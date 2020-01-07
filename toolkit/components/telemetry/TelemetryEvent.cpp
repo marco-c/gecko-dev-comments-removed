@@ -548,8 +548,12 @@ RegisterEvents(const StaticMutexAutoLock& lock, const nsACString& category,
 
     
     
+    
+    
+    
+    
     EventKey* existing = nullptr;
-    if (gEventNameIDMap.Get(eventName, &existing)) {
+    if (!aBuiltin && gEventNameIDMap.Get(eventName, &existing)) {
       if (eventExpired[i]) {
         existing->id = kExpiredEventId;
       }
