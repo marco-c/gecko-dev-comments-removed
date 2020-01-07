@@ -360,15 +360,6 @@ this.AsyncShutdown = {
       return getPhase;
     }
     return undefined;
-  },
-
-  
-
-
-
-
-  get DELAY_CRASH_MS() {
-    return DELAY_CRASH_MS;
   }
 };
 
