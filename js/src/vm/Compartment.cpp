@@ -205,8 +205,8 @@ Compartment::getNonWrapperObjectForCurrentCompartment(JSContext* cx, MutableHand
     
     
     
-    MOZ_ASSERT(!cx->runtime()->isSelfHostingGlobal(cx->global()));
-    MOZ_ASSERT(!cx->runtime()->isSelfHostingGlobal(&obj->global()));
+    MOZ_ASSERT(!cx->runtime()->isSelfHostingZone(cx->zone()));
+    MOZ_ASSERT(!cx->runtime()->isSelfHostingZone(obj->zone()));
 
     
     
