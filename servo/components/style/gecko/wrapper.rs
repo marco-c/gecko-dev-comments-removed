@@ -697,28 +697,9 @@ impl<'le> GeckoElement<'le> {
     
     
     
-    unsafe fn maybe_restyle<'a>(
-        &self,
-        data: &'a mut ElementData,
-        animation_only: bool,
-    ) -> bool {
-        if !data.has_styles() {
-            return false;
-        }
-
-        
-        if animation_only {
-            bindings::Gecko_NoteAnimationOnlyDirtyElement(self.0);
-        } else {
-            bindings::Gecko_NoteDirtyElement(self.0);
-        }
-
-        
-        true
-    }
-
     
-    pub fn note_explicit_hints(
+    
+    pub unsafe fn note_explicit_hints(
         &self,
         restyle_hint: nsRestyleHint,
         change_hint: nsChangeHint,
@@ -735,20 +716,25 @@ impl<'le> GeckoElement<'le> {
                         restyle_hint.has_non_animation_hint()),
                       "Animation restyle hints should not appear with non-animation restyle hints");
 
-        let mut maybe_data = self.mutate_data();
-        let should_restyle = maybe_data.as_mut().map_or(false, |d| unsafe {
-            self.maybe_restyle(d, restyle_hint.has_animation_hint())
-        });
-        if should_restyle {
-            maybe_data
-                .as_mut()
-                .unwrap()
-                .hint
-                .insert(restyle_hint.into());
-            maybe_data.as_mut().unwrap().damage |= damage;
+        let mut data = match self.mutate_data() {
+            Some(d) => d,
+            None => {
+                debug!("(Element not styled, discarding hints)");
+                return;
+            }
+        };
+
+        debug_assert!(data.has_styles(), "how?");
+
+        
+        if restyle_hint.has_animation_hint() {
+            bindings::Gecko_NoteAnimationOnlyDirtyElement(self.0);
         } else {
-            debug!("(Element not styled, discarding hints)");
+            bindings::Gecko_NoteDirtyElement(self.0);
         }
+
+        data.hint.insert(restyle_hint);
+        data.damage |= damage;
     }
 
     
@@ -1320,8 +1306,7 @@ impl<'le> TElement for GeckoElement<'le> {
     }
 
     
-    fn process_post_animation(&self,
-                              tasks: PostAnimationTasks) {
+    fn process_post_animation(&self, tasks: PostAnimationTasks) {
         use gecko_bindings::structs::nsChangeHint_nsChangeHint_Empty;
         use gecko_bindings::structs::nsRestyleHint_eRestyle_Subtree;
 
@@ -1336,8 +1321,12 @@ impl<'le> TElement for GeckoElement<'le> {
                               .map_or(true, |p| !p.is_before_or_after()),
                           "display property animation shouldn't run on pseudo elements \
                            since it's only for SMIL");
-            self.note_explicit_hints(nsRestyleHint_eRestyle_Subtree,
-                                     nsChangeHint_nsChangeHint_Empty);
+            unsafe {
+                self.note_explicit_hints(
+                    nsRestyleHint_eRestyle_Subtree,
+                    nsChangeHint_nsChangeHint_Empty,
+                );
+            }
         }
     }
 
