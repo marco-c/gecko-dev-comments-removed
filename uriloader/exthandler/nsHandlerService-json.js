@@ -130,22 +130,7 @@ HandlerService.prototype = {
     }
 
     for (let scheme of Object.keys(schemes)) {
-
-      
-      
-      
-      
-      
-      let osDefaultHandlerFound = {};
-      let protoInfo = gExternalProtocolService.getProtocolHandlerInfoFromOS(scheme,
-                                                                            osDefaultHandlerFound);
-
-      if (this.exists(protoInfo)) {
-        this.fillHandlerInfo(protoInfo, null);
-      } else {
-        gExternalProtocolService.setProtocolHandlerDefaults(protoInfo,
-                                                            osDefaultHandlerFound.value);
-      }
+      let protoInfo = gExternalProtocolService.getProtocolHandlerInfo(scheme);
 
       
       let possibleHandlers = protoInfo.possibleApplicationHandlers;
