@@ -237,8 +237,9 @@ MacroAssemblerCompat::profilerEnterFrame(RegisterOrSP framePtr, Register scratch
 void
 MacroAssemblerCompat::breakpoint()
 {
-    static int code = 0xA77;
-    Brk((code++) & 0xffff);
+    
+    
+    Brk(0);
 }
 
 
