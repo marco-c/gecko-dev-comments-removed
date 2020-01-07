@@ -135,8 +135,16 @@ KeyShortcuts.parseElectronKey = function(window, str) {
   }
 
   if (typeof key === "string" && key.length === 1) {
-    
-    shortcut.key = key.toLowerCase();
+    if (shortcut.alt) {
+      
+      
+      
+      shortcut.keyCode = KeyCodes[`DOM_VK_${key.toUpperCase()}`];
+      shortcut.keyCodeString = key;
+    } else {
+      
+      shortcut.key = key.toLowerCase();
+    }
   } else if (key in ElectronKeysMapping) {
     
     key = ElectronKeysMapping[key];
