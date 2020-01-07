@@ -11,6 +11,7 @@ use cssparser::Parser;
 use hash::FnvHashMap;
 use parser::{Parse, ParserContext};
 use selectors::parser::SelectorParseErrorKind;
+use servo_arc::Arc;
 use std::fmt::{self, Write};
 use std::ops::Range;
 use str::HTML_SPACE_CHARACTERS;
@@ -624,6 +625,23 @@ impl Parse for TemplateAreas {
 
 trivial_to_computed_value!(TemplateAreas);
 
+
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToCss)]
+pub struct TemplateAreasArc(#[ignore_malloc_size_of = "Arc"] pub Arc<TemplateAreas>);
+
+impl Parse for TemplateAreasArc {
+    fn parse<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Self, ParseError<'i>> {
+        let parsed = TemplateAreas::parse(context, input)?;
+
+        Ok(TemplateAreasArc(Arc::new(parsed)))
+    }
+}
+
+trivial_to_computed_value!(TemplateAreasArc);
+
 #[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[derive(Clone, Debug, PartialEq)]
 
@@ -673,7 +691,7 @@ fn is_name_code_point(c: char) -> bool {
 
 
 
-pub type GridTemplateAreas = Either<TemplateAreas, None_>;
+pub type GridTemplateAreas = Either<TemplateAreasArc, None_>;
 
 impl GridTemplateAreas {
     #[inline]
