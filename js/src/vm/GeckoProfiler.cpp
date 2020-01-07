@@ -152,7 +152,7 @@ GeckoProfilerRuntime::enable(bool enabled)
     
     
     
-    for (RealmsIter r(rt, SkipAtoms); !r.done(); r.next())
+    for (RealmsIter r(rt); !r.done(); r.next())
         r->wasm.ensureProfilingLabels(enabled);
 }
 

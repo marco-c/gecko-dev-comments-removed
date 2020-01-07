@@ -8909,7 +8909,7 @@ Shell(JSContext* cx, OptionParser* op, char** envp)
 
 
 
-    for (CompartmentsIter c(cx->runtime(), SkipAtoms); !c.done(); c.next())
+    for (CompartmentsIter c(cx->runtime()); !c.done(); c.next())
         PrintTypes(cx, c, false);
 
     return result;

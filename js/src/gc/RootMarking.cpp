@@ -369,7 +369,7 @@ js::gc::GCRuntime::traceRuntimeCommon(JSTracer* trc, TraceOrMarkRuntime traceOrM
 
     
     
-    for (RealmsIter r(rt, SkipAtoms); !r.done(); r.next())
+    for (RealmsIter r(rt); !r.done(); r.next())
         r->traceRoots(trc, traceOrMark);
 
     
@@ -427,7 +427,7 @@ js::gc::GCRuntime::finishRoots()
 
     rt->finishSelfHosting();
 
-    for (RealmsIter r(rt, SkipAtoms); !r.done(); r.next())
+    for (RealmsIter r(rt); !r.done(); r.next())
         r->finishRoots();
 
 #ifdef DEBUG

@@ -158,7 +158,7 @@ static inline bool
 IsCompilingWasm()
 {
     
-    return GetJitContext()->realm == nullptr;
+    return GetJitContext()->zone == nullptr;
 }
 #endif
 

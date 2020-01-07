@@ -620,7 +620,7 @@ struct JSCompartment
     explicit JSCompartment(JS::Zone* zone);
     ~JSCompartment();
 
-    MOZ_MUST_USE bool init(JSContext* maybecx);
+    MOZ_MUST_USE bool init(JSContext* cx);
 
   public:
     MOZ_MUST_USE inline bool wrap(JSContext* cx, JS::MutableHandleValue vp);
@@ -731,7 +731,7 @@ class ObjectRealm
     explicit ObjectRealm(JS::Zone* zone);
     ~ObjectRealm();
 
-    MOZ_MUST_USE bool init(JSContext* maybecx);
+    MOZ_MUST_USE bool init(JSContext* cx);
 
     void finishRoots();
     void trace(JSTracer* trc);
@@ -832,7 +832,6 @@ class JS::Realm : private JSCompartment
     unsigned debugModeBits_ = 0;
     friend class js::AutoRestoreRealmDebugMode;
 
-    bool isAtomsRealm_ = false;
     bool isSelfHostingRealm_ = false;
     bool marked_ = true;
     bool isSystem_ = false;
@@ -890,7 +889,7 @@ class JS::Realm : private JSCompartment
     Realm(JS::Zone* zone, const JS::RealmOptions& options);
     ~Realm();
 
-    MOZ_MUST_USE bool init(JSContext* maybecx);
+    MOZ_MUST_USE bool init(JSContext* cx);
     void destroy(js::FreeOp* fop);
     void clearTables();
 
@@ -939,13 +938,6 @@ class JS::Realm : private JSCompartment
 
     
     bool preserveJitCode() { return creationOptions_.preserveJitCode(); }
-
-    bool isAtomsRealm() const {
-        return isAtomsRealm_;
-    }
-    void setIsAtomsRealm() {
-        isAtomsRealm_ = true;
-    }
 
     bool isSelfHostingRealm() const {
         return isSelfHostingRealm_;
@@ -1265,8 +1257,6 @@ class JS::Realm : private JSCompartment
         return randomNumberGenerator_.ptr();
     }
 
-    js::HashNumber randomHashCode();
-
     mozilla::HashCodeScrambler randomHashCodeScrambler();
 
     bool isAccessValid() const {
@@ -1361,7 +1351,6 @@ class AutoRealm
 {
     JSContext* const cx_;
     JS::Realm* const origin_;
-    const AutoLockForExclusiveAccess* maybeLock_;
 
   public:
     template <typename T>
@@ -1374,19 +1363,23 @@ class AutoRealm
   protected:
     inline AutoRealm(JSContext* cx, JS::Realm* target);
 
-    
-    inline AutoRealm(JSContext* cx, JS::Realm* target,
-                     AutoLockForExclusiveAccess& lock);
-
   private:
     AutoRealm(const AutoRealm&) = delete;
     AutoRealm& operator=(const AutoRealm&) = delete;
 };
 
-class AutoAtomsRealm : protected AutoRealm
+class MOZ_RAII AutoAtomsZone
 {
+    JSContext* const cx_;
+    JS::Realm* const origin_;
+    const AutoLockForExclusiveAccess& lock_;
+
+    AutoAtomsZone(const AutoAtomsZone&) = delete;
+    AutoAtomsZone& operator=(const AutoAtomsZone&) = delete;
+
   public:
-    inline AutoAtomsRealm(JSContext* cx, AutoLockForExclusiveAccess& lock);
+    inline AutoAtomsZone(JSContext* cx, AutoLockForExclusiveAccess& lock);
+    inline ~AutoAtomsZone();
 };
 
 
@@ -1526,4 +1519,4 @@ struct GCPolicy<js::CrossCompartmentKey> : public StructGCPolicy<js::CrossCompar
 };
 } 
 
-#endif 
+#endif

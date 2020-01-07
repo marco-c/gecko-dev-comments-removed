@@ -568,9 +568,14 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
     mozilla::Maybe<mozilla::non_crypto::XorShift128PlusRNG> randomKeyGenerator_;
     mozilla::non_crypto::XorShift128PlusRNG& randomKeyGenerator();
 
+    
+    mozilla::Maybe<mozilla::non_crypto::XorShift128PlusRNG> randomHashCodeGenerator_;
+
   public:
     mozilla::HashCodeScrambler randomHashCodeScrambler();
     mozilla::non_crypto::XorShift128PlusRNG forkRandomKeyGenerator();
+
+    js::HashNumber randomHashCode();
 
     
     
@@ -702,11 +707,6 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
     
     
     
-    js::WriteOnceData<JS::Realm*> atomsRealm_;
-
-    
-    
-    
     js::ExclusiveAccessLockOrGCTaskData<js::SymbolRegistry> symbolRegistry_;
 
   public:
@@ -734,25 +734,16 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
         return atomsAddedWhileSweeping_;
     }
 
-    JS::Realm* atomsRealm(js::AutoLockForExclusiveAccess& lock) {
-        return atomsRealm_;
+    const JS::Zone* atomsZone(const js::AutoLockForExclusiveAccess& lock) const {
+        return gc.atomsZone;
     }
-    JS::Realm* unsafeAtomsRealm() {
-        return atomsRealm_;
+    JS::Zone* atomsZone(const js::AutoLockForExclusiveAccess& lock) {
+        return gc.atomsZone;
     }
-
-    
-    
-    
-    bool isAtomsCompartment(JSCompartment* comp) {
-        return JS::GetRealmForCompartment(comp) == atomsRealm_;
-    }
-
-    const JS::Zone* atomsZone(js::AutoLockForExclusiveAccess& lock) const {
+    JS::Zone* unsafeAtomsZone() {
         return gc.atomsZone;
     }
 
-    
     bool isAtomsZone(const JS::Zone* zone) const {
         return zone == gc.atomsZone;
     }

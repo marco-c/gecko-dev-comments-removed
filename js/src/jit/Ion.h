@@ -72,6 +72,7 @@ class JitContext
     
     CompileRuntime* runtime;
     CompileRealm* realm;
+    CompileZone* zone;
 
     int getNextAssemblerId() {
         return assemblerCount_++;

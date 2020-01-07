@@ -1,12 +1,12 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=8 sts=4 et sw=4 tw=99:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/*
- * JS atom table.
- */
+
+
+
+
+
+
+
+
 
 #include "vm/JSAtom-inl.h"
 
@@ -49,7 +49,7 @@ struct js::AtomHasher::Lookup
     };
     bool isLatin1;
     size_t length;
-    const JSAtom* atom; /* Optional. */
+    const JSAtom* atom; 
     JS::AutoCheckCannotGC nogc;
 
     HashNumber hash;
@@ -132,8 +132,8 @@ JS_FOR_EACH_PROTOTYPE(DEFINE_PROTO_STRING)
 FOR_EACH_COMMON_PROPERTYNAME(CONST_CHAR_STR)
 #undef CONST_CHAR_STR
 
-// Use a low initial capacity for atom hash tables to avoid penalizing runtimes
-// which create a small number of atoms.
+
+
 static const uint32_t JS_STRING_HASH_COUNT = 64;
 
 MOZ_ALWAYS_INLINE AtomSet::Ptr
@@ -155,7 +155,7 @@ JSRuntime::initializeAtoms(JSContext* cx)
     if (!atoms_ || !atoms_->init(JS_STRING_HASH_COUNT))
         return false;
 
-    // |permanentAtoms| hasn't been created yet.
+    
     MOZ_ASSERT(!permanentAtoms);
 
     if (parentRuntime) {
@@ -201,7 +201,7 @@ JSRuntime::initializeAtoms(JSContext* cx)
 
     emptyString = commonNames->empty;
 
-    // Create the well-known symbols.
+    
     wellKnownSymbols = js_new<WellKnownSymbols>();
     if (!wellKnownSymbols)
         return false;
@@ -272,11 +272,11 @@ js::TracePermanentAtoms(JSTracer* trc)
 {
     JSRuntime* rt = trc->runtime();
 
-    // Permanent atoms only need to be traced in the runtime which owns them.
+    
     if (rt->parentRuntime)
         return;
 
-    // Static strings are not included in the permanent atoms table.
+    
     if (rt->staticStrings)
         rt->staticStrings->trace(trc);
 
@@ -310,11 +310,11 @@ JSRuntime::transformToPermanentAtoms(JSContext* cx)
 {
     MOZ_ASSERT(!parentRuntime);
 
-    // All static strings were created as permanent atoms, now move the contents
-    // of the atoms table into permanentAtoms and mark each as permanent.
+    
+    
 
     MOZ_ASSERT(!permanentAtoms);
-    permanentAtoms = js_new<FrozenAtomSet>(atoms_);   // takes ownership of atoms_
+    permanentAtoms = js_new<FrozenAtomSet>(atoms_);   
 
     atoms_ = js_new<AtomSet>();
     if (!atoms_ || !atoms_->init(JS_STRING_HASH_COUNT))
@@ -334,7 +334,7 @@ LookupAtomState(JSRuntime* rt, const AtomHasher::Lookup& lookup)
 {
     MOZ_ASSERT(rt->currentThreadHasExclusiveAccess());
 
-    AtomSet::Ptr p = rt->unsafeAtoms().lookup(lookup); // Safe because we hold the lock.
+    AtomSet::Ptr p = rt->unsafeAtoms().lookup(lookup); 
     if (!p && rt->atomsAddedWhileSweeping())
         p = rt->atomsAddedWhileSweeping()->lookup(lookup);
     return p;
@@ -346,7 +346,7 @@ static JSAtom*
 AtomizeAndCopyCharsInner(JSContext* cx, const CharT* tbchars, size_t length, PinningBehavior pin,
                          const Maybe<uint32_t>& indexValue, const AtomHasher::Lookup& lookup);
 
-/* |tbchars| must not point into an inline or short string. */
+
 template <typename CharT>
 MOZ_ALWAYS_INLINE
 static JSAtom*
@@ -358,29 +358,29 @@ AtomizeAndCopyChars(JSContext* cx, const CharT* tbchars, size_t length, PinningB
 
     AtomHasher::Lookup lookup(tbchars, length);
 
-    // Try the per-Zone cache first. If we find the atom there we can avoid the
-    // atoms lock, the markAtom call, and the multiple HashSet lookups below.
-    // We don't use the per-Zone cache if we want a pinned atom: handling that
-    // is more complicated and pinning atoms is relatively uncommon.
+    
+    
+    
+    
     Zone* zone = cx->zone();
     Maybe<AtomSet::AddPtr> zonePtr;
     if (MOZ_LIKELY(zone && pin == DoNotPinAtom)) {
         zonePtr.emplace(zone->atomCache().lookupForAdd(lookup));
         if (zonePtr.ref()) {
-            // The cache is purged on GC so if we're in the middle of an
-            // incremental GC we should have barriered the atom when we put
-            // it in the cache.
+            
+            
+            
             JSAtom* atom = zonePtr.ref()->asPtrUnbarriered();
             MOZ_ASSERT(AtomIsMarked(zone, atom));
             return atom;
         }
     }
 
-    // Note: when this function is called while the permanent atoms table is
-    // being initialized (in initializeAtoms()), |permanentAtoms| is not yet
-    // initialized so this lookup is always skipped. Only once
-    // transformToPermanentAtoms() is called does |permanentAtoms| get
-    // initialized and then this lookup will go ahead.
+    
+    
+    
+    
+    
     if (cx->isPermanentAtomsInitialized()) {
         AtomSet::Ptr pp = cx->permanentAtoms().readonlyThreadsafeLookup(lookup);
         if (pp) {
@@ -391,8 +391,8 @@ AtomizeAndCopyChars(JSContext* cx, const CharT* tbchars, size_t length, PinningB
         }
     }
 
-    // Validate the length before taking the exclusive access lock, as throwing
-    // an exception here may reenter this code.
+    
+    
     if (MOZ_UNLIKELY(!JSString::validateLength(cx, length)))
         return nullptr;
 
@@ -424,13 +424,13 @@ AtomizeAndCopyCharsInner(JSContext* cx, const CharT* tbchars, size_t length, Pin
     if (!atomsAddedWhileSweeping) {
         p = atoms.lookupForAdd(lookup);
     } else {
-        // We're currently sweeping the main atoms table and all new atoms will
-        // be added to a secondary table. Check this first.
+        
+        
         MOZ_ASSERT(rt->atomsZone(lock)->isGCSweeping());
         p = atomsAddedWhileSweeping->lookupForAdd(lookup);
 
-        // If that fails check the main table but check if any atom found there
-        // is dead.
+        
+        
         if (!p) {
             if (AtomSet::AddPtr p2 = atoms.lookupForAdd(lookup)) {
                 JSAtom* atom = p2->asPtrUnbarriered();
@@ -451,13 +451,13 @@ AtomizeAndCopyCharsInner(JSContext* cx, const CharT* tbchars, size_t length, Pin
 
     JSAtom* atom;
     {
-        AutoAtomsRealm ar(cx, lock);
+        AutoAtomsZone az(cx, lock);
 
         JSFlatString* flat = NewStringCopyN<NoGC>(cx, tbchars, length);
         if (!flat) {
-            // Grudgingly forgo last-ditch GC. The alternative would be to release
-            // the lock, manually GC here, and retry from the top. If you fix this,
-            // please also fix or comment the similar case in Symbol::new_.
+            
+            
+            
             ReportOutOfMemory(cx);
             return nullptr;
         }
@@ -471,12 +471,12 @@ AtomizeAndCopyCharsInner(JSContext* cx, const CharT* tbchars, size_t length, Pin
         if (indexValue)
             atom->maybeInitializeIndex(*indexValue, true);
 
-        // We have held the lock since looking up p, and the operations we've done
-        // since then can't GC; therefore the atoms table has not been modified and
-        // p is still valid.
+        
+        
+        
         AtomSet* addSet = atomsAddedWhileSweeping ? atomsAddedWhileSweeping : &atoms;
         if (!addSet->add(p, AtomStateEntry(atom, bool(pin)))) {
-            ReportOutOfMemory(cx); /* SystemAllocPolicy does not report OOM. */
+            ReportOutOfMemory(cx); 
             return nullptr;
         }
     }
@@ -494,11 +494,11 @@ AtomizeAndCopyChars(JSContext* cx, const Latin1Char* tbchars, size_t length, Pin
 
 JSAtom*
 js::AtomizeString(JSContext* cx, JSString* str,
-                  js::PinningBehavior pin /* = js::DoNotPinAtom */)
+                  js::PinningBehavior pin )
 {
     if (str->isAtom()) {
         JSAtom& atom = str->asAtom();
-        /* N.B. static atoms are effectively always interned. */
+        
         if (pin != PinAtom || atom.isPinned())
             return &atom;
 
@@ -507,7 +507,7 @@ js::AtomizeString(JSContext* cx, JSString* str,
         AutoLockForExclusiveAccess lock(cx);
 
         AtomSet::Ptr p = LookupAtomState(cx->runtime(), lookup);
-        MOZ_ASSERT(p); // Unpinned atoms must exist in atoms table.
+        MOZ_ASSERT(p); 
         MOZ_ASSERT(p->asPtrUnbarriered() == &atom);
 
         MOZ_ASSERT(pin == PinAtom);
@@ -558,9 +558,9 @@ js::AtomizeChars(JSContext* cx, const char16_t* chars, size_t length, PinningBeh
 JSAtom*
 js::AtomizeUTF8Chars(JSContext* cx, const char* utf8Chars, size_t utf8ByteLength)
 {
-    // This could be optimized to hand the char16_t's directly to the JSAtom
-    // instead of making a copy. UTF8CharsToNewTwoByteCharsZ should be
-    // refactored to take an JSContext so that this function could also.
+    
+    
+    
 
     UTF8Chars utf8(utf8Chars, utf8ByteLength);
 
@@ -694,8 +694,8 @@ js::XDRAtom(XDRState<mode>* xdr, MutableHandleAtom atomp)
         latin1 = lengthAndEncoding & 0x1;
     }
 
-    // We need to align the string in the XDR buffer such that we can avoid
-    // non-align loads of 16bits characters.
+    
+    
     if (!latin1)
         MOZ_TRY(xdr->codeAlign(sizeof(char16_t)));
 
@@ -707,7 +707,7 @@ js::XDRAtom(XDRState<mode>* xdr, MutableHandleAtom atomp)
     }
 
     MOZ_ASSERT(mode == XDR_DECODE);
-    /* Avoid JSString allocation for already existing atoms. See bug 321985. */
+    
     JSContext* cx = xdr->cx();
     JSAtom* atom;
     if (latin1) {
@@ -721,7 +721,7 @@ js::XDRAtom(XDRState<mode>* xdr, MutableHandleAtom atomp)
         atom = AtomizeChars(cx, chars, length);
     } else {
 #if MOZ_LITTLE_ENDIAN
-        /* Directly access the little endian chars in the XDR buffer. */
+        
         const char16_t* chars = nullptr;
         if (length) {
             const uint8_t *ptr;
@@ -733,20 +733,20 @@ js::XDRAtom(XDRState<mode>* xdr, MutableHandleAtom atomp)
         }
         atom = AtomizeChars(cx, chars, length);
 #else
-        /*
-         * We must copy chars to a temporary buffer to convert between little and
-         * big endian data.
-         */
+        
+
+
+
         char16_t* chars;
         char16_t stackChars[256];
         if (length <= ArrayLength(stackChars)) {
             chars = stackChars;
         } else {
-            /*
-             * This is very uncommon. Don't use the tempLifoAlloc arena for this as
-             * most allocations here will be bigger than tempLifoAlloc's default
-             * chunk size.
-             */
+            
+
+
+
+
             chars = cx->pod_malloc<char16_t>(length);
             if (!chars)
                 return xdr->fail(JS::TranscodeResult_Throw);
@@ -756,7 +756,7 @@ js::XDRAtom(XDRState<mode>* xdr, MutableHandleAtom atomp)
         atom = AtomizeChars(cx, chars, length);
         if (chars != stackChars)
             js_free(chars);
-#endif /* !MOZ_LITTLE_ENDIAN */
+#endif 
     }
 
     if (!atom)
@@ -780,8 +780,8 @@ js::ClassName(JSProtoKey key, JSContext* cx)
 void
 js::gc::MergeAtomsAddedWhileSweeping(JSRuntime* rt)
 {
-    // Add atoms that were added to the secondary table while we were sweeping
-    // the main table.
+    
+    
 
     AutoEnterOOMUnsafeRegion oomUnsafe;
     AtomSet* atomsTable = rt->atomsForSweeping();
