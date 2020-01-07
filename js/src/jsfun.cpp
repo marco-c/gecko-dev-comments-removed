@@ -116,8 +116,8 @@ AdvanceToActiveCallLinear(JSContext* cx, NonBuiltinScriptFrameIter& iter, Handle
     return false;
 }
 
-static void
-ThrowTypeErrorBehavior(JSContext* cx)
+void
+js::ThrowTypeErrorBehavior(JSContext* cx)
 {
     JS_ReportErrorFlagsAndNumberASCII(cx, JSREPORT_ERROR, GetErrorMessage, nullptr,
                                      JSMSG_THROW_TYPE_ERROR);
@@ -814,13 +814,6 @@ fun_trace(JSTracer* trc, JSObject* obj)
     obj->as<JSFunction>().trace(trc);
 }
 
-static bool
-ThrowTypeError(JSContext* cx, unsigned argc, Value* vp)
-{
-    ThrowTypeErrorBehavior(cx);
-    return false;
-}
-
 static JSObject*
 CreateFunctionConstructor(JSContext* cx, JSProtoKey key)
 {
@@ -905,51 +898,6 @@ CreateFunctionPrototype(JSContext* cx, JSProtoKey key)
 
     if (!JSObject::setNewGroupUnknown(cx, &JSFunction::class_, functionProto))
         return nullptr;
-
-    
-    
-    self->setPrototype(key, ObjectValue(*functionProto));
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    RootedFunction throwTypeError(cx,
-      NewFunctionWithProto(cx, ThrowTypeError, 0, JSFunction::NATIVE_FUN,
-                           nullptr, nullptr, functionProto, AllocKind::FUNCTION,
-                           SingletonObject));
-    if (!throwTypeError || !PreventExtensions(cx, throwTypeError))
-        return nullptr;
-
-    
-    
-    Rooted<PropertyDescriptor> nonConfigurableDesc(cx);
-    nonConfigurableDesc.setAttributes(JSPROP_PERMANENT | JSPROP_IGNORE_READONLY |
-                                      JSPROP_IGNORE_ENUMERATE | JSPROP_IGNORE_VALUE);
-
-    RootedId lengthId(cx, NameToId(cx->names().length));
-    ObjectOpResult lengthResult;
-    if (!NativeDefineProperty(cx, throwTypeError, lengthId, nonConfigurableDesc, lengthResult))
-        return nullptr;
-    MOZ_ASSERT(lengthResult);
-
-    
-    
-    
-    
-    RootedId nameId(cx, NameToId(cx->names().name));
-    ObjectOpResult nameResult;
-    if (!NativeDefineProperty(cx, throwTypeError, nameId, nonConfigurableDesc, nameResult))
-        return nullptr;
-    MOZ_ASSERT(nameResult);
-
-    self->setThrowTypeError(throwTypeError);
 
     return functionProto;
 }
