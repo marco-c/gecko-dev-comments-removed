@@ -1836,8 +1836,6 @@ PresShell::Initialize(nscoord aWidth, nscoord aHeight)
     nsContentUtils::AddScriptRunner(new XBLConstructorRunner(mDocument));
   }
 
-  mDocument->TriggerAutoFocus();
-
   NS_ASSERTION(rootFrame, "How did that happen?");
 
   
