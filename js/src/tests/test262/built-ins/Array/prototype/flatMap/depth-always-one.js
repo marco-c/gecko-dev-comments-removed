@@ -8,7 +8,6 @@
 
 
 
-
 assert.compareArray([1, 2].flatMap(function(e) {
   return [e, e * 2];
 }), [1, 2, 2, 4], 'array depth is 1');

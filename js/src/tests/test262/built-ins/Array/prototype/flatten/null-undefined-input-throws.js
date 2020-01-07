@@ -7,7 +7,6 @@
 
 
 
-
 assert.throws(TypeError, function() {
   [].flatten.call(null);
 }, 'null value');

@@ -10,7 +10,6 @@
 
 
 
-
 assert.sameValue(
   Array.prototype.flatten.name, 'flatten',
   'The value of `Array.prototype.flatten.name` is `"flatten"`'
