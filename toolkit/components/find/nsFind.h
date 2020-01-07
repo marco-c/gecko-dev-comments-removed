@@ -71,8 +71,8 @@ protected:
   void ResetAll();
 
   
-  nsresult InitIterator(nsIDOMNode* aStartNode, int32_t aStartOffset,
-                        nsIDOMNode* aEndNode, int32_t aEndOffset);
+  nsresult InitIterator(nsINode* aStartNode, int32_t aStartOffset,
+                        nsINode* aEndNode, int32_t aEndOffset);
   RefPtr<nsFindContentIterator> mIterator;
 
   friend class PeekNextCharRestoreState;
