@@ -14,9 +14,6 @@ const {
 } = ChromeUtils.import("chrome://marionette/content/error.js", {});
 ChromeUtils.import("chrome://marionette/content/evaluate.js");
 ChromeUtils.import("chrome://marionette/content/modal.js");
-const {
-  MessageManagerDestroyedPromise,
-} = ChromeUtils.import("chrome://marionette/content/sync.js", {});
 
 this.EXPORTED_SYMBOLS = ["proxy"];
 
@@ -144,22 +141,16 @@ proxy.AsyncMessageChannel = class {
 
       
       
-      this.closeHandler = async ({type, target}) => {
+      this.closeHandler = ({type, target}) => {
         log.debug(`Received DOM event ${type} for ${target}`);
 
-        let messageManager;
         switch (type) {
-          case "unload":
-            messageManager = this.browser.window.messageManager;
-            break;
           case "TabClose":
-            messageManager = this.browser.messageManager;
+          case "unload":
+            this.removeHandlers();
+            resolve();
             break;
         }
-
-        await new MessageManagerDestroyedPromise(messageManager);
-        this.removeHandlers();
-        resolve();
       };
 
       
@@ -217,9 +208,7 @@ proxy.AsyncMessageChannel = class {
       if (this.browser.tab) {
         let node = this.browser.tab.addEventListener ?
             this.browser.tab : this.browser.contentBrowser;
-        if (node) {
-          node.removeEventListener("TabClose", this.closeHandler);
-        }
+        node.removeEventListener("TabClose", this.closeHandler);
       }
     }
   }
