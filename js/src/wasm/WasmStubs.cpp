@@ -272,15 +272,16 @@ AssertExpectedSP(const MacroAssembler& masm)
 #endif
 }
 
+template <class Operand>
 static void
-WasmPush(MacroAssembler& masm, Register r)
+WasmPush(MacroAssembler& masm, const Operand& op)
 {
 #ifdef JS_CODEGEN_ARM64
     
     masm.reserveStack(16);
-    masm.storePtr(r, Address(masm.getStackPointer(), 0));
+    masm.storePtr(op, Address(masm.getStackPointer(), 0));
 #else
-    masm.Push(r);
+    masm.Push(op);
 #endif
 }
 
@@ -1486,6 +1487,34 @@ wasm::GenerateBuiltinThunk(MacroAssembler& masm, ABIFunctionType abiType, ExitRe
     return FinishOffsets(masm, offsets);
 }
 
+#if defined(JS_CODEGEN_ARM)
+static const LiveRegisterSet RegsToPreserve(
+    GeneralRegisterSet(Registers::AllMask & ~((uint32_t(1) << Registers::sp) |
+                                              (uint32_t(1) << Registers::pc))),
+    FloatRegisterSet(FloatRegisters::AllDoubleMask));
+static_assert(!SupportsSimd, "high lanes of SIMD registers need to be saved too.");
+#elif defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
+static const LiveRegisterSet RegsToPreserve(
+    GeneralRegisterSet(Registers::AllMask & ~((uint32_t(1) << Registers::k0) |
+                                              (uint32_t(1) << Registers::k1) |
+                                              (uint32_t(1) << Registers::sp) |
+                                              (uint32_t(1) << Registers::zero))),
+    FloatRegisterSet(FloatRegisters::AllDoubleMask));
+static_assert(!SupportsSimd, "high lanes of SIMD registers need to be saved too.");
+#elif defined(JS_CODEGEN_ARM64)
+
+
+
+static const LiveRegisterSet RegsToPreserve(
+    GeneralRegisterSet(Registers::AllMask & ~((uint32_t(1) << Registers::StackPointer) |
+                                              (uint32_t(1) << Registers::lr))),
+    FloatRegisterSet(FloatRegisters::AllMask));
+#else
+static const LiveRegisterSet RegsToPreserve(
+    GeneralRegisterSet(Registers::AllMask & ~(uint32_t(1) << Registers::StackPointer)),
+    FloatRegisterSet(FloatRegisters::AllMask));
+#endif
+
 
 
 static bool
@@ -1494,18 +1523,47 @@ GenerateTrapExit(MacroAssembler& masm, Label* throwLabel, Offsets* offsets)
     AssertExpectedSP(masm);
     masm.haltingAlign(CodeAlignment);
 
+    masm.setFramePushed(0);
+
     offsets->begin = masm.currentOffset();
 
     
     
+    
+    
+    
+    WasmPush(masm, ImmWord(0));
+    unsigned framePushedBeforePreserve = masm.framePushed();
+    masm.PushRegsInMask(RegsToPreserve);
+    unsigned offsetOfReturnWord = masm.framePushed() - framePushedBeforePreserve;
+
+    
+    
+    Register preAlignStackPointer = ABINonVolatileReg;
+    masm.moveStackPtrTo(preAlignStackPointer);
     masm.andToStackPtr(Imm32(~(ABIStackAlignment - 1)));
     if (ShadowStackSpace)
         masm.subFromStackPtr(Imm32(ShadowStackSpace));
 
     masm.assertStackAlignment(ABIStackAlignment);
-    masm.call(SymbolicAddress::ReportTrap);
+    masm.call(SymbolicAddress::HandleTrap);
 
-    masm.jump(throwLabel);
+    
+    masm.branchTestPtr(Assembler::Zero, ReturnReg, ReturnReg, throwLabel);
+
+    
+    
+    
+    
+    masm.moveToStackPtr(preAlignStackPointer);
+    masm.storePtr(ReturnReg, Address(masm.getStackPointer(), offsetOfReturnWord));
+    masm.PopRegsInMask(RegsToPreserve);
+#ifdef JS_CODEGEN_ARM64
+    WasmPop(masm, lr);
+    masm.abiret();
+#else
+    masm.ret();
+#endif
 
     return FinishOffsets(masm, offsets);
 }
@@ -1590,31 +1648,6 @@ GenerateUnalignedExit(MacroAssembler& masm, Label* throwLabel, Offsets* offsets)
     return GenerateGenericMemoryAccessTrap(masm, SymbolicAddress::ReportUnalignedAccess, throwLabel,
                                            offsets);
 }
-
-#if defined(JS_CODEGEN_ARM)
-static const LiveRegisterSet AllRegsExceptPCSP(
-    GeneralRegisterSet(Registers::AllMask & ~((uint32_t(1) << Registers::sp) |
-                                              (uint32_t(1) << Registers::pc))),
-    FloatRegisterSet(FloatRegisters::AllDoubleMask));
-static_assert(!SupportsSimd, "high lanes of SIMD registers need to be saved too.");
-#elif defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
-static const LiveRegisterSet AllUserRegsExceptSP(
-    GeneralRegisterSet(Registers::AllMask & ~((uint32_t(1) << Registers::k0) |
-                                              (uint32_t(1) << Registers::k1) |
-                                              (uint32_t(1) << Registers::sp) |
-                                              (uint32_t(1) << Registers::zero))),
-    FloatRegisterSet(FloatRegisters::AllDoubleMask));
-static_assert(!SupportsSimd, "high lanes of SIMD registers need to be saved too.");
-#elif defined(JS_CODEGEN_ARM64)
-static const LiveRegisterSet AllRegsExceptSPLR(
-    GeneralRegisterSet(Registers::AllMask & ~((uint32_t(1) << Registers::StackPointer) |
-                                              (uint32_t(1) << Registers::lr))),
-    FloatRegisterSet(FloatRegisters::AllMask));
-#else
-static const LiveRegisterSet AllRegsExceptSP(
-    GeneralRegisterSet(Registers::AllMask & ~(uint32_t(1) << Registers::StackPointer)),
-    FloatRegisterSet(FloatRegisters::AllMask));
-#endif
 
 
 
@@ -1788,6 +1821,7 @@ wasm::GenerateStubs(const ModuleEnvironment& env, const FuncImportVector& import
           case Trap::IndirectCallBadSig:
           case Trap::ImpreciseSimdConversion:
           case Trap::StackOverflow:
+          case Trap::CheckInterrupt:
           case Trap::ThrowReported:
             break;
           

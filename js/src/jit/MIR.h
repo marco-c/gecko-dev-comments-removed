@@ -8352,6 +8352,33 @@ class MInterruptCheck : public MNullaryInstruction
 };
 
 
+class MWasmInterruptCheck
+  : public MUnaryInstruction,
+    public NoTypePolicy::Data
+{
+    wasm::BytecodeOffset bytecodeOffset_;
+
+    MWasmInterruptCheck(MDefinition* tlsPointer, wasm::BytecodeOffset bytecodeOffset)
+      : MUnaryInstruction(classOpcode, tlsPointer),
+        bytecodeOffset_(bytecodeOffset)
+    {
+        setGuard();
+    }
+
+  public:
+    INSTRUCTION_HEADER(WasmInterruptCheck)
+    TRIVIAL_NEW_WRAPPERS
+    NAMED_OPERANDS((0, tlsPtr))
+
+    AliasSet getAliasSet() const override {
+        return AliasSet::None();
+    }
+    wasm::BytecodeOffset bytecodeOffset() const {
+        return bytecodeOffset_;
+    }
+};
+
+
 
 
 class MWasmTrap

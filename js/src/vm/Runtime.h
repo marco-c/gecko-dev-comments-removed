@@ -1003,6 +1003,11 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
     
     js::ActiveThreadData<mozilla::Maybe<js::wasm::TrapData>> wasmTrapData;
 
+    
+    
+    
+    js::ExclusiveData<js::wasm::InstanceVector> wasmInstances;
+
   public:
 #if defined(NIGHTLY_BUILD)
     
