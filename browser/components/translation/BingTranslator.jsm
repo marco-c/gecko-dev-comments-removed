@@ -12,6 +12,8 @@ ChromeUtils.import("resource://gre/modules/PromiseUtils.jsm");
 ChromeUtils.import("resource://services-common/utils.js");
 ChromeUtils.import("resource://gre/modules/Http.jsm");
 
+Cu.importGlobalProperties(["XMLHttpRequest"]);
+
 
 const MAX_REQUEST_DATA = 5000; 
                                
@@ -129,7 +131,7 @@ this.BingTranslator.prototype = {
 
 
   _chunkFailed(aError) {
-    if (aError instanceof Ci.nsIXMLHttpRequest &&
+    if (aError instanceof XMLHttpRequest &&
         [400, 401].includes(aError.status)) {
       let body = aError.responseText;
       if (body && body.includes("TranslateApiException") &&
