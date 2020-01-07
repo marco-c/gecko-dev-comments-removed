@@ -402,8 +402,7 @@ class CommandBase(object):
         
         os_prefix = "linux"
         if is_windows():
-            print("The nightly flag is not supported on windows yet.")
-            sys.exit(1)
+            os_prefix = "windows-msvc"
         if is_macosx():
             print("The nightly flag is not supported on mac yet.")
             sys.exit(1)
@@ -430,8 +429,11 @@ class CommandBase(object):
         nightly_target_directory = path.join(self.context.topdir, "target")
         
         
-        destination_file = path.join(
-            nightly_target_directory, file_to_download)
+        target_file_path = file_to_download.replace(':', '-').split('/')
+        destination_file = os.path.join(
+            nightly_target_directory, os.path.join(*target_file_path))
+        
+        
         destination_folder = os.path.splitext(destination_file)[0]
         nightlies_folder = path.join(
             nightly_target_directory, 'nightly', os_prefix)
@@ -457,11 +459,20 @@ class CommandBase(object):
             print("The nightly file {} has already been extracted.".format(
                 destination_folder))
         else:
-            print("Extracting to {}...".format(destination_folder))
-            with tarfile.open(os.path.join(nightlies_folder, destination_file), "r") as tar:
-                tar.extractall(destination_folder)
-
-        return path.join(destination_folder, "servo", "servo")
+            print("Extracting to {} ...".format(destination_folder))
+            if is_windows():
+                command = 'msiexec /a {} /qn TARGETDIR={}'.format(
+                    os.path.join(nightlies_folder, destination_file), destination_folder)
+                if subprocess.call(command, stdout=PIPE, stderr=PIPE) != 0:
+                    print("Could not extract the nightly executable from the msi package.")
+                    sys.exit(1)
+            else:
+                with tarfile.open(os.path.join(nightlies_folder, destination_file), "r") as tar:
+                    tar.extractall(destination_folder)
+        bin_folder = path.join(destination_folder, "servo")
+        if is_windows():
+            bin_folder = path.join(destination_folder, "PFiles", "Mozilla research", "Servo Tech Demo")
+        return path.join(bin_folder, "servo{}".format(BIN_SUFFIX))
 
     def build_env(self, hosts_file_path=None, target=None, is_build=False, geckolib=False, test_unit=False):
         """Return an extended environment dictionary."""
