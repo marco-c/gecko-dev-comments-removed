@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "WebGLContext.h"
 
@@ -10,6 +10,7 @@
 #include "mozilla/dom/ToJSValue.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Preferences.h"
+#include "MozFramebuffer.h"
 #include "nsString.h"
 #include "WebGLBuffer.h"
 #include "WebGLContextUtils.h"
@@ -39,10 +40,10 @@ WebGLContext::SetEnabled(const char* const funcName, const GLenum cap, const boo
     switch (cap) {
     case LOCAL_GL_DEPTH_TEST:
     case LOCAL_GL_STENCIL_TEST:
-        break; 
+        break; // Lazily applied, so don't tell GL yet or we will desync.
 
     default:
-        
+        // Non-lazy caps.
         gl->SetEnabled(cap, enabled);
         break;
     }
@@ -56,7 +57,7 @@ WebGLContext::GetStencilBits(GLint* const out_stencilBits) const
         if (mBoundDrawFramebuffer->StencilAttachment().IsDefined() &&
             mBoundDrawFramebuffer->DepthStencilAttachment().IsDefined())
         {
-            
+            // Error, we don't know which stencil buffer's bits to use
             ErrorInvalidFramebufferOperation("getParameter: framebuffer has two stencil buffers bound");
             return false;
         }
@@ -202,14 +203,14 @@ WebGLContext::GetParameter(JSContext* cx, GLenum pname, ErrorResult& rv)
                 } else {
                     gl->fGetIntegerv(pname, (GLint*)&val);
                 }
-                
-                
+                // TODO: JS doesn't support 64-bit integers. Be lossy and
+                // cast to double (53 bits)
                 return JS::NumberValue(val);
             }
 
         case LOCAL_GL_GPU_DISJOINT_EXT:
             {
-                realGLboolean val = false; 
+                realGLboolean val = false; // Not disjoint by default.
                 if (gl->IsExtensionSupported(gl::GLContext::EXT_disjoint_timer_query)) {
                     gl->fGetBooleanv(pname, &val);
                 }
@@ -221,9 +222,9 @@ WebGLContext::GetParameter(JSContext* cx, GLenum pname, ErrorResult& rv)
         }
     }
 
-    
-    
-    
+    // Privileged string params exposed by WEBGL_debug_renderer_info.
+    // The privilege check is done in WebGLContext::IsExtensionSupported.
+    // So here we just have to check that the extension is enabled.
     if (IsExtensionEnabled(WebGLExtensionID::WEBGL_debug_renderer_info)) {
         switch (pname) {
         case UNMASKED_VENDOR_WEBGL:
@@ -282,9 +283,9 @@ WebGLContext::GetParameter(JSContext* cx, GLenum pname, ErrorResult& rv)
     }
 
     switch (pname) {
-        
-        
-        
+        //
+        // String params
+        //
         case LOCAL_GL_VENDOR:
         case LOCAL_GL_RENDERER:
             return StringValue(cx, "Mozilla", rv);
@@ -293,10 +294,10 @@ WebGLContext::GetParameter(JSContext* cx, GLenum pname, ErrorResult& rv)
         case LOCAL_GL_SHADING_LANGUAGE_VERSION:
             return StringValue(cx, "WebGL GLSL ES 1.0", rv);
 
-        
-        
+        ////////////////////////////////
+        // Single-value params
 
-        
+        // unsigned int
         case LOCAL_GL_CULL_FACE_MODE:
         case LOCAL_GL_FRONT_FACE:
         case LOCAL_GL_ACTIVE_TEXTURE:
@@ -341,14 +342,14 @@ WebGLContext::GetParameter(JSContext* cx, GLenum pname, ErrorResult& rv)
             return JS::NumberValue(uint32_t(ret));
         }
 
-        
+        // int
         case LOCAL_GL_STENCIL_REF:
         case LOCAL_GL_STENCIL_BACK_REF: {
             GLint stencilBits = 0;
             if (!GetStencilBits(&stencilBits))
                 return JS::NullValue();
 
-            
+            // Assuming stencils have 8 bits
             const GLint stencilMask = (1 << stencilBits) - 1;
 
             GLint refValue = 0;
@@ -396,7 +397,7 @@ WebGLContext::GetParameter(JSContext* cx, GLenum pname, ErrorResult& rv)
         case LOCAL_GL_ALPHA_BITS:
         case LOCAL_GL_DEPTH_BITS:
         case LOCAL_GL_STENCIL_BITS: {
-            
+            // Deprecated and removed in GL Core profiles, so special handling required.
             GLint val;
             if (!GetChannelBits(funcName, pname, &val))
                 return JS::NullValue();
@@ -444,10 +445,10 @@ WebGLContext::GetParameter(JSContext* cx, GLenum pname, ErrorResult& rv)
             return JS::ObjectOrNullValue(obj);
         }
 
-        
-        
+        // unsigned int. here we may have to return very large values like 2^32-1 that can't be represented as
+        // javascript integer values. We just return them as doubles and javascript doesn't care.
         case LOCAL_GL_STENCIL_BACK_VALUE_MASK:
-            return JS::DoubleValue(mStencilValueMaskBack); 
+            return JS::DoubleValue(mStencilValueMaskBack); // pass as FP value to allow large values such as 2^32-1.
 
         case LOCAL_GL_STENCIL_BACK_WRITEMASK:
             return JS::DoubleValue(mStencilWriteMaskBack);
@@ -458,7 +459,7 @@ WebGLContext::GetParameter(JSContext* cx, GLenum pname, ErrorResult& rv)
         case LOCAL_GL_STENCIL_WRITEMASK:
             return JS::DoubleValue(mStencilWriteMaskFront);
 
-        
+        // float
         case LOCAL_GL_LINE_WIDTH:
             return JS::DoubleValue(mLineWidth);
 
@@ -471,7 +472,7 @@ WebGLContext::GetParameter(JSContext* cx, GLenum pname, ErrorResult& rv)
             return JS::DoubleValue(f);
         }
 
-        
+        // bool
         case LOCAL_GL_DEPTH_TEST:
             return JS::BooleanValue(mDepthTestEnabled);
         case LOCAL_GL_STENCIL_TEST:
@@ -491,20 +492,20 @@ WebGLContext::GetParameter(JSContext* cx, GLenum pname, ErrorResult& rv)
             return JS::BooleanValue(bool(b));
         }
 
-        
+        // bool, WebGL-specific
         case UNPACK_FLIP_Y_WEBGL:
             return JS::BooleanValue(mPixelStore_FlipY);
         case UNPACK_PREMULTIPLY_ALPHA_WEBGL:
             return JS::BooleanValue(mPixelStore_PremultiplyAlpha);
 
-        
+        // uint, WebGL-specific
         case UNPACK_COLORSPACE_CONVERSION_WEBGL:
             return JS::NumberValue(uint32_t(mPixelStore_ColorspaceConversion));
 
-        
-        
+        ////////////////////////////////
+        // Complex values
 
-        
+        // 2 floats
         case LOCAL_GL_DEPTH_RANGE:
         case LOCAL_GL_ALIASED_POINT_SIZE_RANGE:
         case LOCAL_GL_ALIASED_LINE_WIDTH_RANGE: {
@@ -518,7 +519,7 @@ WebGLContext::GetParameter(JSContext* cx, GLenum pname, ErrorResult& rv)
                 fv[0] = mGLAliasedLineWidthRange[0];
                 fv[1] = mGLAliasedLineWidthRange[1];
                 break;
-            
+            // case LOCAL_GL_DEPTH_RANGE:
             default:
                 gl->fGetFloatv(pname, fv);
                 break;
@@ -530,7 +531,7 @@ WebGLContext::GetParameter(JSContext* cx, GLenum pname, ErrorResult& rv)
             return JS::ObjectOrNullValue(obj);
         }
 
-        
+        // 4 floats
         case LOCAL_GL_COLOR_CLEAR_VALUE:
         case LOCAL_GL_BLEND_COLOR: {
             GLfloat fv[4] = { 0 };
@@ -542,7 +543,7 @@ WebGLContext::GetParameter(JSContext* cx, GLenum pname, ErrorResult& rv)
             return JS::ObjectOrNullValue(obj);
         }
 
-        
+        // 2 ints
         case LOCAL_GL_MAX_VIEWPORT_DIMS: {
             GLint iv[2] = { GLint(mGLMaxViewportDims[0]), GLint(mGLMaxViewportDims[1]) };
             JSObject* obj = dom::Int32Array::Create(cx, this, 2, iv);
@@ -552,7 +553,7 @@ WebGLContext::GetParameter(JSContext* cx, GLenum pname, ErrorResult& rv)
             return JS::ObjectOrNullValue(obj);
         }
 
-        
+        // 4 ints
         case LOCAL_GL_SCISSOR_BOX:
         case LOCAL_GL_VIEWPORT: {
             GLint iv[4] = { 0 };
@@ -564,7 +565,7 @@ WebGLContext::GetParameter(JSContext* cx, GLenum pname, ErrorResult& rv)
             return JS::ObjectOrNullValue(obj);
         }
 
-        
+        // 4 bools
         case LOCAL_GL_COLOR_WRITEMASK: {
             const bool vals[4] = { bool(mColorWriteMask & (1 << 0)),
                                    bool(mColorWriteMask & (1 << 1)),
@@ -589,7 +590,7 @@ WebGLContext::GetParameter(JSContext* cx, GLenum pname, ErrorResult& rv)
             return WebGLObjectAsJSValue(cx, mBoundRenderbuffer.get(), rv);
         }
 
-        
+        // DRAW_FRAMEBUFFER_BINDING is the same as FRAMEBUFFER_BINDING.
         case LOCAL_GL_FRAMEBUFFER_BINDING: {
             return WebGLObjectAsJSValue(cx, mBoundDrawFramebuffer.get(), rv);
         }
@@ -631,7 +632,7 @@ WebGLContext::GetParameterIndexed(JSContext* cx, GLenum pname, GLuint index,
                 retval.setNull();
                 return;
             }
-            retval.setNull(); 
+            retval.setNull(); // See bug 903594
             return;
         }
 
@@ -700,4 +701,4 @@ WebGLContext::GetStateTrackingSlot(GLenum cap)
     return nullptr;
 }
 
-} 
+} // namespace mozilla
