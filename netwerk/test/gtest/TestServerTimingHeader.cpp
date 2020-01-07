@@ -177,9 +177,9 @@ TEST(TestServerTimingHeader, HeaderParsing) {
   testServerTimingHeader("metric;dur=foo;dur=567.8", {{"metric", "", ""}});
 
   
-  testServerTimingHeader("metric;dur;dur=123.4", {{"metric", "123.4", ""}});
+  testServerTimingHeader("metric;dur;dur=123.4", {{"metric", "0", ""}});
   testServerTimingHeader("metric;desc;desc=description",
-                         {{"metric", "0", "description"}});
+                         {{"metric", "0", ""}});
 
   
   testServerTimingHeader("metric;DuR=123.4;DeSc=description",
@@ -187,9 +187,9 @@ TEST(TestServerTimingHeader, HeaderParsing) {
 
   
   testServerTimingHeader("metric=foo;dur;dur=123.4,metric2",
-                         {{"metric", "123.4", ""}, {"metric2", "0", ""}});
+                         {{"metric", "0", ""}, {"metric2", "0", ""}});
   testServerTimingHeader("metric\"foo;dur;dur=123.4,metric2",
-                         {{"metric", "", ""}});
+                         {{"metric", "0", ""}});
 
   
   testServerTimingHeader(" ", {});

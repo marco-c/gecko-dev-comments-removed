@@ -79,15 +79,23 @@ ServerTimingParser::Parse()
 
       
       
+      
+      
       if (currentName.LowerCaseEqualsASCII("dur") &&
-          currentValue.BeginReading() &&
           !foundDuration) {
-        timingHeader->SetDuration(ParseDouble(currentValue));
+        if (currentValue.BeginReading()) {
+          timingHeader->SetDuration(ParseDouble(currentValue));
+        } else {
+          timingHeader->SetDuration(0.0);
+        }
         foundDuration = true;
       } else if (currentName.LowerCaseEqualsASCII("desc") &&
-                 !currentValue.IsEmpty() &&
                  !foundDescription) {
-        timingHeader->SetDescription(currentValue);
+        if (!currentValue.IsEmpty()) {
+          timingHeader->SetDescription(currentValue);
+        } else {
+          timingHeader->SetDescription(EmptyCString());
+        }
         foundDescription = true;
       }
 
