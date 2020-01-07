@@ -8,14 +8,14 @@
 
 
 
-var { Ci, Cc } = require("chrome");
+var { Ci, Cc, CC, Cu, Cr } = require("chrome");
 var Services = require("Services");
 var { ActorPool, OriginalLocation, RegisteredActorFactory,
       ObservedActorFactory } = require("devtools/server/actors/common");
 var { LocalDebuggerTransport, ChildDebuggerTransport, WorkerDebuggerTransport } =
   require("devtools/shared/transport/transport");
 var DevToolsUtils = require("devtools/shared/DevToolsUtils");
-var { dumpn } = DevToolsUtils;
+var { dumpn, dumpv } = DevToolsUtils;
 var flags = require("devtools/shared/flags");
 var OldEventEmitter = require("devtools/shared/old-event-emitter");
 var SyncPromise = require("devtools/shared/deprecated-sync-thenables");
@@ -32,6 +32,20 @@ DevToolsUtils.defineLazyGetter(this, "generateUUID", () => {
                            .getService(Ci.nsIUUIDGenerator);
   return generateUUID;
 });
+
+
+
+
+this.Ci = Ci;
+this.Cc = Cc;
+this.CC = CC;
+this.Cu = Cu;
+this.Cr = Cr;
+this.Services = Services;
+this.ActorPool = ActorPool;
+this.DevToolsUtils = DevToolsUtils;
+this.dumpn = dumpn;
+this.dumpv = dumpv;
 
 
 
