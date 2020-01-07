@@ -392,4 +392,5 @@ user_pref("extensions.screenshots.disabled", true);
 
 
 
-user_pref("places.database.lastMaintenance", 7258114800);
+
+user_pref("places.database.lastMaintenance", 2147483647);
