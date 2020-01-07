@@ -540,7 +540,7 @@ var ViewSourceContent = {
 
     
     let treewalker = content.document
-        .createTreeWalker(pre, Ci.nsIDOMNodeFilter.SHOW_TEXT, null);
+        .createTreeWalker(pre, 4 , null);
 
     
     let firstCol = 1;
