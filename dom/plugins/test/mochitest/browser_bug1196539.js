@@ -14,10 +14,6 @@ const kMaxPaints = 10;
 add_task(async function() {
   let result, tabSwitchedPromise;
 
-  
-  
-  await SpecialPowers.pushPrefEnv({set: [["browser.tabs.remote.tabCacheSize", 0]]});
-
   setTestPluginEnabledState(Ci.nsIPluginTag.STATE_ENABLED, "Test Plug-in");
 
   let testTab = gBrowser.selectedTab;
