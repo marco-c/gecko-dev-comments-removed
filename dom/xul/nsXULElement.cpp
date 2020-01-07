@@ -671,6 +671,7 @@ nsXULElement::UpdateEditableState(bool aNotify)
     UpdateState(aNotify);
 }
 
+#ifdef DEBUG
 
 
 
@@ -683,31 +684,11 @@ static inline bool XULElementsRulesInMinimalXULSheet(nsAtom* aTag)
          aTag == nsGkAtoms::scrollcorner ||
          aTag == nsGkAtoms::slider ||
          aTag == nsGkAtoms::thumb ||
-         aTag == nsGkAtoms::scale ||
          
          aTag == nsGkAtoms::datetimebox ||
          aTag == nsGkAtoms::resizer ||
          aTag == nsGkAtoms::label ||
          aTag == nsGkAtoms::videocontrols;
-}
-
-#ifdef DEBUG
-
-
-
-
-
-static inline bool
-IsInVideoControls(nsXULElement* aElement)
-{
-  nsIContent* ancestor = aElement->GetParent();
-  while (ancestor) {
-    if (ancestor->NodeInfo()->Equals(nsGkAtoms::videocontrols, kNameSpaceID_XUL)) {
-      return true;
-    }
-    ancestor = ancestor->GetParent();
-  }
-  return false;
 }
 #endif
 
@@ -763,6 +744,7 @@ nsXULElement::BindToTree(nsIDocument* aDocument,
   NS_ENSURE_SUCCESS(rv, rv);
 
   nsIDocument* doc = GetComposedDoc();
+#ifdef DEBUG
   if (doc &&
       !doc->LoadsFullXULStyleSheetUpFront() &&
       !doc->IsUnstyledDocument()) {
@@ -774,26 +756,11 @@ nsXULElement::BindToTree(nsIDocument* aDocument,
     
     
     
-    
-    
-
     if (!XULElementsRulesInMinimalXULSheet(NodeInfo()->NameAtom())) {
-      auto cache = nsLayoutStylesheetCache::For(doc->GetStyleBackendType());
-      doc->EnsureOnDemandBuiltInUASheet(cache->XULSheet());
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      NS_ASSERTION(IsInVideoControls(this),
-                   "Unexpected XUL element in non-XUL doc");
+      NS_ERROR("Unexpected XUL element in non-XUL doc");
     }
   }
+#endif
 
   if (doc && NeedTooltipSupport(*this)) {
       AddTooltipSupport();
