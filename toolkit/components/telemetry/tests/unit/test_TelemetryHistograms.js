@@ -1140,3 +1140,43 @@ async function test_mobileSpecificHistograms() {
 
   Assert.ok(!(DESKTOP_ONLY_HISTOGRAM in histograms), "Should not have recorded desktop-only histogram");
 });
+
+add_task({
+  skip_if: () => gIsAndroid
+},
+async function test_clearHistogramsOnSnapshot() {
+  const COUNT = "TELEMETRY_TEST_COUNT";
+  let h = Telemetry.getHistogramById(COUNT);
+  h.clear();
+  let snapshot;
+
+  
+  snapshot = Telemetry.snapshotHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
+                                              false ).parent;
+  Assert.ok(!(COUNT in snapshot));
+
+  
+  h.add(1);
+
+  Assert.equal(h.snapshot().sum, 1);
+  snapshot = Telemetry.snapshotHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
+                                              false ).parent;
+  Assert.ok(COUNT in snapshot);
+  Assert.equal(snapshot[COUNT].sum, 1);
+
+  
+  
+  h.add(41);
+
+  Assert.equal(h.snapshot().sum, 42);
+  snapshot = Telemetry.snapshotHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
+                                              true ).parent;
+  Assert.ok(COUNT in snapshot);
+  Assert.equal(snapshot[COUNT].sum, 42);
+
+  
+  Assert.equal(h.snapshot().sum, 0);
+  snapshot = Telemetry.snapshotHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
+                                              false ).parent;
+  Assert.ok(!(COUNT in snapshot));
+});
