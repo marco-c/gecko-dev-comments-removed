@@ -846,7 +846,7 @@ IonBuilder::inlineArrayPush(CallInfo& callInfo)
 
         
         
-        MOZ_TRY(callInfo.pushFormals(this, current));
+        callInfo.pushPriorCallStack(this, current);
     }
 
     MInstruction* ins = nullptr;
@@ -879,7 +879,7 @@ IonBuilder::inlineArrayPush(CallInfo& callInfo)
 
     if (callInfo.argc() > 1) {
         
-        callInfo.popFormals(current);
+        callInfo.popPriorCallStack(current);
     }
     current->push(ins);
 
