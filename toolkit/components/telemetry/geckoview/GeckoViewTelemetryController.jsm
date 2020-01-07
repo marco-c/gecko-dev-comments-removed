@@ -22,6 +22,8 @@ var EXPORTED_SYMBOLS = ["GeckoViewTelemetryController"];
 
 
 
+
+
 const TelemetrySnapshots = [
   {
     type: "histograms",
