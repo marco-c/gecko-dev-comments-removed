@@ -11,6 +11,7 @@
 #include "SharedSSLState.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Telemetry.h"
+#include "mozilla/Unused.h"
 #include "nsAppDirectoryServiceDefs.h"
 #include "nsCRT.h"
 #include "nsILineInputStream.h"
@@ -378,11 +379,13 @@ nsCertOverrideService::RememberValidityOverride(const nsACString& aHostName,
       return NS_ERROR_FAILURE;
     }
 
-    SECStatus srv = PK11_ImportCert(slot.get(), nsscert.get(), CK_INVALID_HANDLE,
-                                    nickname.get(), false);
-    if (srv != SECSuccess) {
-      return NS_ERROR_FAILURE;
-    }
+    
+    
+    
+    
+    
+    Unused << PK11_ImportCert(slot.get(), nsscert.get(), CK_INVALID_HANDLE,
+                              nickname.get(), false);
   }
 
   nsAutoCString fpStr;
