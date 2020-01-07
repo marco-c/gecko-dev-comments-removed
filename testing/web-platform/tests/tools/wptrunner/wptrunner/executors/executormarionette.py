@@ -118,7 +118,7 @@ class MarionetteTestharnessProtocolPart(TestharnessProtocolPart):
 
     def load_runner(self, url_protocol):
         
-        self.marionette.execute_script("if (window.wrappedJSObject.win) {window.wrappedJSObject.win.close()}")
+        self.marionette.execute_script("if (window.win) {window.win.close()}")
         url = urlparse.urljoin(self.parent.executor.server_url(url_protocol),
                                "/testharness_runner.html")
         self.logger.debug("Loading %s" % url)
@@ -519,7 +519,7 @@ class MarionetteTestharnessExecutor(TestharnessExecutor):
         return (test.result_cls(*data), [])
 
     def do_testharness(self, protocol, url, timeout):
-        protocol.base.execute_script("if (window.wrappedJSObject.win) {window.wrappedJSObject.win.close()}")
+        protocol.base.execute_script("if (window.win) {window.win.close()}")
         parent_window = protocol.testharness.close_old_windows(protocol)
 
         if timeout is not None:
