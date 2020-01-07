@@ -118,64 +118,24 @@ PerformanceMainThread::AddEntry(nsIHttpChannel* channel,
 {
   MOZ_ASSERT(NS_IsMainThread());
 
-  
-  if (!nsContentUtils::IsResourceTimingEnabled()) {
+  nsAutoString initiatorType;
+  nsAutoString entryName;
+
+  UniquePtr<PerformanceTimingData> performanceTimingData(
+    PerformanceTimingData::Create(timedChannel, channel, 0, initiatorType,
+                                  entryName));
+  if (!performanceTimingData) {
     return;
   }
 
   
-  if (IsResourceEntryLimitReached()) {
-    return;
-  }
+  
+  RefPtr<PerformanceResourceTiming> performanceEntry =
+    new PerformanceResourceTiming(Move(performanceTimingData), this,
+                                  entryName);
 
-  if (channel && timedChannel) {
-    nsAutoCString name;
-    nsAutoString initiatorType;
-    nsCOMPtr<nsIURI> originalURI;
-
-    timedChannel->GetInitiatorType(initiatorType);
-
-    
-    
-    
-    channel->GetOriginalURI(getter_AddRefs(originalURI));
-    originalURI->GetSpec(name);
-    NS_ConvertUTF8toUTF16 entryName(name);
-
-    bool reportTiming = true;
-    timedChannel->GetReportResourceTiming(&reportTiming);
-
-    if (!reportTiming) {
-#ifdef DEBUG_jwatt
-      NS_WARNING(
-        nsPrintfCString("Not reporting CORS resource: %s", name.get()).get());
-#endif
-      return;
-    }
-
-    
-    
-    
-    
-    
-    
-    UniquePtr<PerformanceTimingData> performanceTimingData(
-        new PerformanceTimingData(timedChannel, channel, 0));
-
-    
-    
-    RefPtr<PerformanceResourceTiming> performanceEntry =
-      new PerformanceResourceTiming(Move(performanceTimingData), this,
-                                    entryName);
-
-    
-    
-    if (initiatorType.IsEmpty()) {
-      initiatorType = NS_LITERAL_STRING("other");
-    }
-    performanceEntry->SetInitiatorType(initiatorType);
-    InsertResourceEntry(performanceEntry);
-  }
+  performanceEntry->SetInitiatorType(initiatorType);
+  InsertResourceEntry(performanceEntry);
 }
 
 
