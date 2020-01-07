@@ -522,7 +522,7 @@ var gExtensionsNotifications = {
     button.setAttribute("image", icon || DEFAULT_EXTENSION_ICON);
     button.className = "addon-banner-item";
 
-    button.addEventListener("click", callback);
+    button.addEventListener("command", callback);
     PanelUI.addonNotificationContainer.appendChild(button);
   },
 
@@ -559,6 +559,10 @@ var gExtensionsNotifications = {
 
       let text = gNavigatorBundle.getFormattedString("webextPerms.sideloadMenuItem", [addon.name, appName]);
       this._createAddonButton(text, addon.iconURL, evt => {
+        
+        
+        
+        PanelUI.hide();
         ExtensionsUI.showSideloaded(gBrowser, addon);
       });
     }

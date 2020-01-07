@@ -128,6 +128,9 @@ add_task(async function() {
   addons.children[0].click();
 
   
+  ok(PanelUI.panel.state != "open", "Main menu is closed or closing.");
+
+  
   
   let panel = await popupPromise;
   is(gBrowser.currentURI.spec, "about:addons", "Foreground tab is at about:addons");
