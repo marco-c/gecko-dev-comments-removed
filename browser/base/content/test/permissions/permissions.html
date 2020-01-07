@@ -7,9 +7,10 @@
     <meta charset="utf8">
   </head>
 <script>
+var gKeyDowns = 0;
 var gKeyPresses = 0;
 </script>
-  <body onkeypress="gKeyPresses++;">
+  <body onkeydown="gKeyDowns++;" onkeypress="gKeyPresses++">
 	
 
   <button id="geo" onclick="navigator.geolocation.getCurrentPosition(() => {})">Geolocation</button>
