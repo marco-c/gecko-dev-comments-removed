@@ -16,7 +16,7 @@ var testGenerator = testSteps();
 
 
 var c = Object.getOwnPropertyDescriptor(this, "Components");
-if ((!c || !c.value || c.writable) && typeof SpecialPowers === "object") {
+if ((!c.value || c.writable) && typeof SpecialPowers === "object") {
   
   Components = SpecialPowers.Components;
 }

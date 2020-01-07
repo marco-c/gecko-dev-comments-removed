@@ -1387,13 +1387,6 @@ pref("dom.input.skip_cursor_move_for_same_value_set", true);
 pref("dom.cycle_collector.incremental", true);
 
 
-#ifdef NIGHTLY_BUILD
-pref("dom.use_components_shim", false);
-#else // NIGHTLY_BUILD
-pref("dom.use_components_shim", true);
-#endif // NIGHTLY_BUILD
-
-
 #ifndef XP_WIN
 pref("content.sink.pending_event_mode", 0);
 #endif
