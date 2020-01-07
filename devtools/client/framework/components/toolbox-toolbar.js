@@ -177,16 +177,16 @@ function renderToolboxButtons({focusedButton, toolboxButtons, focusButton}, isSt
   
   let children = renderedButtons;
   if (renderedButtons.length) {
+    if (isStart) {
+      children.push(renderSeparator());
     
     
-    if (rdmIndex !== -1) {
+    } else if (rdmIndex !== -1 && visibleButtons.length > 1) {
       children.splice(
         children.length - 1,
         0,
         renderSeparator()
       );
-    } else {
-      children.push(renderSeparator());
     }
   }
 
