@@ -1012,11 +1012,8 @@ nsLayoutStylesheetCache::BuildPreferenceSheet(RefPtr<StyleSheet>* aSheet,
   } else {
     ServoStyleSheet* servoSheet = sheet->AsServo();
     
-    nsresult rv = servoSheet->ParseSheet(
+    servoSheet->ParseSheetSync(
       nullptr, sheetText, uri, uri, nullptr,  nullptr, 0, eCompatibility_FullStandards);
-    
-    
-    MOZ_RELEASE_ASSERT(NS_SUCCEEDED(rv));
   }
 
 #undef NS_GET_R_G_B

@@ -622,8 +622,11 @@ SheetLoadData::OnStreamComplete(nsIUnicharStreamLoader* aLoader,
     return rv;
   }
 
+  
+  
   bool completed;
-  rv = mLoader->ParseSheet(aBuffer, Span<const uint8_t>(), this, completed);
+  rv = mLoader->ParseSheet(aBuffer, Span<const uint8_t>(), this,
+                            true, completed);
   NS_ASSERTION(completed || !mSyncLoad, "sync load did not complete");
   return rv;
 }
@@ -1682,6 +1685,7 @@ nsresult
 Loader::ParseSheet(const nsAString& aUTF16,
                    Span<const uint8_t> aUTF8,
                    SheetLoadData* aLoadData,
+                   bool aAllowAsync,
                    bool& aCompleted)
 {
   LOG(("css::Loader::ParseSheet"));
@@ -1689,7 +1693,7 @@ Loader::ParseSheet(const nsAString& aUTF16,
   NS_PRECONDITION(aLoadData->mSheet, "Must have sheet to parse into");
   aCompleted = false;
   if (ServoStyleSheet* sheet = aLoadData->mSheet->GetAsServo()) {
-    return DoParseSheetServo(sheet, aUTF16, aUTF8, aLoadData, aCompleted);
+    return DoParseSheetServo(sheet, aUTF16, aUTF8, aLoadData, aAllowAsync, aCompleted);
   }
 #ifdef MOZ_OLD_STYLE
   return DoParseSheetGecko(aLoadData->mSheet->AsGecko(), aUTF16, aUTF8, aLoadData, aCompleted);
@@ -1741,9 +1745,38 @@ Loader::DoParseSheetServo(ServoStyleSheet* aSheet,
                           const nsAString& aUTF16,
                           Span<const uint8_t> aUTF8,
                           SheetLoadData* aLoadData,
+                          bool aAllowAsync,
                           bool& aCompleted)
 {
   aLoadData->mIsBeingParsed = true;
+
+  
+  
+  if (aLoadData->mSyncLoad || !aAllowAsync) {
+    aSheet->ParseSheetSync(
+      this,
+      aUTF8.IsEmpty() ? NS_ConvertUTF16toUTF8(aUTF16) : aUTF8,
+      aSheet->GetSheetURI(),
+      aSheet->GetBaseURI(),
+      aSheet->Principal(),
+      aLoadData,
+      aLoadData->mLineNumber,
+      GetCompatibilityMode()
+    );
+    aLoadData->mIsBeingParsed = false;
+
+    bool noPendingChildren = aLoadData->mPendingChildren == 0;
+    MOZ_ASSERT_IF(aLoadData->mSyncLoad, noPendingChildren);
+    if (noPendingChildren) {
+      aCompleted = true;
+      SheetComplete(aLoadData, NS_OK);
+    }
+
+    return NS_OK;
+  }
+
+  
+
   nsresult rv = aSheet->ParseSheet(
     this,
     aUTF8.IsEmpty() ? NS_ConvertUTF16toUTF8(aUTF16) : aUTF8,
@@ -1761,9 +1794,6 @@ Loader::DoParseSheetServo(ServoStyleSheet* aSheet,
     SheetComplete(aLoadData, rv);
     return rv;
   }
-
-  NS_ASSERTION(aLoadData->mPendingChildren == 0 || !aLoadData->mSyncLoad,
-               "Sync load has leftover pending children!");
 
   if (aLoadData->mPendingChildren == 0) {
     LOG(("  No pending kids from parse"));
@@ -2020,7 +2050,11 @@ Loader::LoadInlineStyle(nsIContent* aElement,
   NS_ADDREF(data);
   data->mLineNumber = aLineNumber;
   
-  rv = ParseSheet(aBuffer, Span<const uint8_t>(), data, *aCompleted);
+  
+  
+  
+  rv = ParseSheet(aBuffer, Span<const uint8_t>(), data,
+                   false, *aCompleted);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
