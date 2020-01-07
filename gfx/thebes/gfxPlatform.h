@@ -592,7 +592,16 @@ public:
     virtual gfxImageFormat GetOffscreenFormat()
     { return mozilla::gfx::SurfaceFormat::X8R8G8B8_UINT32; }
 
+    
+
+
     virtual bool UsesTiling() const;
+
+    
+
+
+
+    virtual bool ContentUsesTiling() const;
 
     
 
@@ -757,7 +766,7 @@ protected:
     virtual void GetAcceleratedCompositorBackends(nsTArray<mozilla::layers::LayersBackend>& aBackends);
 
     
-    virtual BackendPrefsData GetBackendPrefs();
+    virtual BackendPrefsData GetBackendPrefs() const;
 
     
 

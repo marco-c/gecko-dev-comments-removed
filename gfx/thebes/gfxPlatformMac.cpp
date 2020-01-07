@@ -102,7 +102,7 @@ gfxPlatformMac::~gfxPlatformMac()
 }
 
 BackendPrefsData
-gfxPlatformMac::GetBackendPrefs()
+gfxPlatformMac::GetBackendPrefs() const
 {
   BackendPrefsData data;
 
@@ -120,6 +120,12 @@ gfxPlatformMac::UsesTiling() const
     
     
     return true;
+}
+
+bool
+gfxPlatformMac::ContentUsesTiling() const
+{
+    return UsesTiling();
 }
 
 gfxPlatformFontList*
