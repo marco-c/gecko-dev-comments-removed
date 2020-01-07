@@ -280,6 +280,15 @@ nsINode::GetParentOrHostNode() const
 nsINode*
 nsINode::SubtreeRoot() const
 {
+  auto RootOfNode = [](const nsINode* aStart) -> nsINode* {
+    const nsINode* node = aStart;
+    const nsINode* iter = node;
+    while ((iter = iter->GetParentNode())) {
+      node = iter;
+    }
+    return const_cast<nsINode*>(node);
+  };
+
   
   
   
@@ -294,19 +303,18 @@ nsINode::SubtreeRoot() const
   } else if (IsContent()) {
     ShadowRoot* containingShadow = AsContent()->GetContainingShadow();
     node = containingShadow ? containingShadow : mSubtreeRoot;
+    if (!node) {
+      NS_WARNING("Using SubtreeRoot() on unlinked element?");
+      node = RootOfNode(this);
+    }
   } else {
     node = mSubtreeRoot;
   }
-  NS_ASSERTION(node, "Should always have a node here!");
+  MOZ_ASSERT(node, "Should always have a node here!");
 #ifdef DEBUG
   {
-    const nsINode* slowNode = this;
-    const nsINode* iter = slowNode;
-    while ((iter = iter->GetParentNode())) {
-      slowNode = iter;
-    }
-
-    NS_ASSERTION(slowNode == node, "These should always be in sync!");
+    const nsINode* slowNode = RootOfNode(this);
+    MOZ_ASSERT(slowNode == node, "These should always be in sync!");
   }
 #endif
   return node;

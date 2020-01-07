@@ -434,7 +434,10 @@ protected:
 
 
 
-  virtual void PopulateSelf(uint32_t aNeededLength);
+
+
+  virtual void PopulateSelf(uint32_t aNeededLength,
+                            uint32_t aExpectedElementsIfDirty = 0);
 
   
 
@@ -685,6 +688,9 @@ private:
 
 
 
-  void PopulateSelf(uint32_t aNeededLength) override;
+
+
+  void PopulateSelf(uint32_t aNeededLength,
+                    uint32_t aExpectedElementsIfDirty = 0) override;
 };
 #endif 

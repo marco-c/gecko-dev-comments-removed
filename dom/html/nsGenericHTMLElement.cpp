@@ -5,7 +5,7 @@
 
 
 #include "mozilla/ArrayUtils.h"
-#include "mozilla/DeclarationBlock.h"
+#include "mozilla/DeclarationBlockInlines.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/EventListenerManager.h"
 #include "mozilla/EventStateManager.h"
@@ -473,14 +473,13 @@ nsGenericHTMLElement::UnbindFromTree(bool aDeep, bool aNullParent)
     }
   }
 
-  
+  nsStyledElement::UnbindFromTree(aDeep, aNullParent);
+
   
   nsExtendedDOMSlots* slots = GetExistingExtendedDOMSlots();
   if (slots && slots->mLabelsList) {
     slots->mLabelsList->MaybeResetRoot(SubtreeRoot());
   }
-
-  nsStyledElement::UnbindFromTree(aDeep, aNullParent);
 }
 
 HTMLFormElement*
