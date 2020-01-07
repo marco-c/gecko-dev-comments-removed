@@ -139,6 +139,10 @@ def main():
         if "_memory_" in filename:
             continue
 
+        
+        if "Fuzzer" in filename:
+            continue
+
         fn = m.group(2)
         if filename == 'jsutil.o':
             jsutil_cpp.add(fn)
