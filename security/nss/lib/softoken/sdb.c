@@ -644,13 +644,18 @@ static int
 sdb_openDB(const char *name, sqlite3 **sqlDB, int flags)
 {
     int sqlerr;
-    
-
-
-
+    int openFlags;
 
     *sqlDB = NULL;
-    sqlerr = sqlite3_open(name, sqlDB);
+
+    if (flags & SDB_RDONLY) {
+        openFlags = SQLITE_OPEN_READONLY;
+    } else {
+        openFlags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE;
+    }
+
+    
+    sqlerr = sqlite3_open_v2(name, sqlDB, openFlags, NULL);
     if (sqlerr != SQLITE_OK) {
         return sqlerr;
     }
