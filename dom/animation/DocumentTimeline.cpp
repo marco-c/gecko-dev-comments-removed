@@ -167,7 +167,8 @@ DocumentTimeline::WillRefresh(mozilla::TimeStamp aTime)
   nsAutoAnimationMutationBatch mb(mDocument);
 
   for (Animation* animation = mAnimationOrder.getFirst(); animation;
-       animation = animation->getNext()) {
+       animation =
+         static_cast<LinkedListElement<Animation>*>(animation)->getNext()) {
     
     if (animation->GetTimeline() != this) {
       

@@ -25,7 +25,7 @@ nsIGlobalObject::~nsIGlobalObject()
 {
   UnlinkHostObjectURIs();
   DisconnectEventTargetObjects();
-  MOZ_DIAGNOSTIC_ASSERT(mEventTargetObjects.IsEmpty());
+  MOZ_DIAGNOSTIC_ASSERT(mEventTargetObjects.isEmpty());
 }
 
 nsIPrincipal*
@@ -131,16 +131,17 @@ void
 nsIGlobalObject::AddEventTargetObject(DOMEventTargetHelper* aObject)
 {
   MOZ_DIAGNOSTIC_ASSERT(aObject);
-  MOZ_ASSERT(!mEventTargetObjects.Contains(aObject));
-  mEventTargetObjects.PutEntry(aObject);
+  MOZ_ASSERT(!aObject->isInList());
+  mEventTargetObjects.insertBack(aObject);
 }
 
 void
 nsIGlobalObject::RemoveEventTargetObject(DOMEventTargetHelper* aObject)
 {
   MOZ_DIAGNOSTIC_ASSERT(aObject);
-  MOZ_ASSERT(mEventTargetObjects.Contains(aObject));
-  mEventTargetObjects.RemoveEntry(aObject);
+  MOZ_ASSERT(aObject->isInList());
+  MOZ_ASSERT(aObject->GetOwnerGlobal() == this);
+  aObject->remove();
 }
 
 void
@@ -150,8 +151,9 @@ nsIGlobalObject::ForEachEventTargetObject(const std::function<void(DOMEventTarge
   
   
   AutoTArray<DOMEventTargetHelper*, 64> targetList;
-  for (auto iter = mEventTargetObjects.ConstIter(); !iter.Done(); iter.Next()) {
-    targetList.AppendElement(iter.Get()->GetKey());
+  for (const DOMEventTargetHelper* deth = mEventTargetObjects.getFirst();
+       deth; deth = deth->getNext()) {
+    targetList.AppendElement(const_cast<DOMEventTargetHelper*>(deth));
   }
 
   
@@ -159,7 +161,7 @@ nsIGlobalObject::ForEachEventTargetObject(const std::function<void(DOMEventTarge
   for (auto target : targetList) {
     
     
-    if (!mEventTargetObjects.Contains(target)) {
+    if (target->GetOwnerGlobal() != this) {
       continue;
     }
     aFunc(target, &done);
@@ -177,7 +179,7 @@ nsIGlobalObject::DisconnectEventTargetObjects()
 
     
     
-    MOZ_DIAGNOSTIC_ASSERT(!mEventTargetObjects.Contains(aTarget));
+    MOZ_DIAGNOSTIC_ASSERT(aTarget->GetOwnerGlobal() != this);
   });
 }
 
@@ -215,6 +217,5 @@ size_t
 nsIGlobalObject::ShallowSizeOfExcludingThis(MallocSizeOf aSizeOf) const
 {
   size_t rtn = mHostObjectURIs.ShallowSizeOfExcludingThis(aSizeOf);
-  rtn += mEventTargetObjects.ShallowSizeOfExcludingThis(aSizeOf);
   return rtn;
 }

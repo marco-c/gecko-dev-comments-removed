@@ -7,6 +7,7 @@
 #ifndef nsIGlobalObject_h__
 #define nsIGlobalObject_h__
 
+#include "mozilla/LinkedList.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/dom/ClientInfo.h"
 #include "mozilla/dom/DispatcherTrait.h"
@@ -42,9 +43,7 @@ class nsIGlobalObject : public nsISupports,
 
   
   
-  
-  
-  nsTHashtable<nsPtrHashKey<mozilla::DOMEventTargetHelper>> mEventTargetObjects;
+  mozilla::LinkedList<mozilla::DOMEventTargetHelper> mEventTargetObjects;
 
   bool mIsDying;
 
