@@ -910,6 +910,11 @@ nsHttpTransaction::WriteSegments(nsAHttpSegmentWriter *writer,
     }
 
     if (ShouldStopReading()) {
+        if (gHttpHandler->ConnMgr()->CurrentTopLevelOuterContentWindowId() !=
+            mTopLevelOuterContentWindowId) {
+            nsHttp::NotifyActiveTabLoadOptimization();
+        }
+
         
         
         LOG(("nsHttpTransaction::WriteSegments %p response throttled", this));

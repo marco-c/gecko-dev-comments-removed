@@ -5193,6 +5193,12 @@ nsConnectionEntry::AppendPendingQForNonFocusedWindows(
         it.UserData()->RemoveElementsAt(0, count);
 
         if (maxCount && totalCount == maxCount) {
+            if (it.UserData()->Length()) {
+                
+                
+                
+                nsHttp::NotifyActiveTabLoadOptimization();
+            }
             break;
         }
     }

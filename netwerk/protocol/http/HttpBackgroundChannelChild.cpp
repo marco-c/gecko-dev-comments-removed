@@ -180,10 +180,16 @@ HttpBackgroundChannelChild::RecvOnTransportAndData(
 IPCResult
 HttpBackgroundChannelChild::RecvOnStopRequest(
                                             const nsresult& aChannelStatus,
-                                            const ResourceTimingStruct& aTiming)
+                                            const ResourceTimingStruct& aTiming,
+                                            const TimeStamp& aLastActiveTabOptHit)
 {
   LOG(("HttpBackgroundChannelChild::RecvOnStopRequest [this=%p]\n", this));
   MOZ_ASSERT(OnSocketThread());
+
+  
+  
+  
+  nsHttp::SetLastActiveTabLoadOptimizationHit(aLastActiveTabOptHit);
 
   if (NS_WARN_IF(!mChannelChild)) {
     return IPC_OK();
@@ -194,12 +200,13 @@ HttpBackgroundChannelChild::RecvOnStopRequest(
          static_cast<uint32_t>(aChannelStatus)));
 
     mQueuedRunnables.AppendElement(
-      NewRunnableMethod<const nsresult, const ResourceTimingStruct>(
+      NewRunnableMethod<const nsresult, const ResourceTimingStruct, const TimeStamp>(
         "HttpBackgroundChannelChild::RecvOnStopRequest",
         this,
         &HttpBackgroundChannelChild::RecvOnStopRequest,
         aChannelStatus,
-        aTiming));
+        aTiming,
+        aLastActiveTabOptHit));
 
     return IPC_OK();
   }

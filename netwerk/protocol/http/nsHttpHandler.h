@@ -11,7 +11,9 @@
 #include "nsHttpConnectionMgr.h"
 #include "ASpdySession.h"
 
+#include "mozilla/Mutex.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/TimeStamp.h"
 #include "nsString.h"
 #include "nsCOMPtr.h"
 #include "nsWeakReference.h"
@@ -403,6 +405,14 @@ public:
         return mActiveTabPriority;
     }
 
+    
+    
+    
+    void NotifyActiveTabLoadOptimization();
+    TimeStamp const GetLastActiveTabLoadOptimizationHit();
+    void SetLastActiveTabLoadOptimizationHit(TimeStamp const &when);
+    bool IsBeforeLastActiveTabLoadOptimization(TimeStamp const &when);
+
 private:
     nsHttpHandler();
 
@@ -688,6 +698,18 @@ private:
     
     uint32_t mProcessId;
     uint32_t mNextChannelId;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    Mutex mLastActiveTabLoadOptimizationLock;
+    TimeStamp mLastActiveTabLoadOptimizationHit;
 
 public:
     MOZ_MUST_USE nsresult NewChannelId(uint64_t& channelId);

@@ -13,6 +13,7 @@
 #include "nsString.h"
 #include "nsError.h"
 #include "nsTArray.h"
+#include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
 
 
@@ -219,6 +220,14 @@ namespace nsHttp
     
     
     
+    void NotifyActiveTabLoadOptimization();
+    TimeStamp const GetLastActiveTabLoadOptimizationHit();
+    void SetLastActiveTabLoadOptimizationHit(TimeStamp const &when);
+    bool IsBeforeLastActiveTabLoadOptimization(TimeStamp const &when);
+
+    
+    
+    
     
     
     
@@ -298,7 +307,6 @@ public:
 private:
     nsCString mFull;
 };
-
 
 } 
 } 
