@@ -260,7 +260,7 @@ import java.lang.reflect.Proxy;
     }
 
     @NonNull
-     SessionTextInput.Delegate getInputDelegate() {
+     GeckoSession.TextInputDelegate getInputDelegate() {
         return mSession.getTextInput().getDelegate();
     }
 

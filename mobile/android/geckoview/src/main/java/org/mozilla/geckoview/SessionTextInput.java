@@ -18,7 +18,6 @@ import android.app.Activity;
 import android.content.Context;
 import android.graphics.RectF;
 import android.os.Handler;
-import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.text.Editable;
@@ -31,9 +30,6 @@ import android.view.inputmethod.ExtractedText;
 import android.view.inputmethod.ExtractedTextRequest;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
-
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
 
 
 
@@ -49,96 +45,6 @@ import java.lang.annotation.RetentionPolicy;
 
 public final class SessionTextInput {
      static final String LOGTAG = "GeckoSessionTextInput";
-
-    
-
-
-
-
-    public interface Delegate {
-        @Retention(RetentionPolicy.SOURCE)
-        @IntDef({RESTART_REASON_FOCUS, RESTART_REASON_BLUR, RESTART_REASON_CONTENT_CHANGE})
-        @interface RestartReason {}
-        
-        int RESTART_REASON_FOCUS = 0;
-        
-        int RESTART_REASON_BLUR = 1;
-        
-
-
-
-
-        int RESTART_REASON_CONTENT_CHANGE = 2;
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-        void restartInput(@NonNull GeckoSession session, @RestartReason int reason);
-
-        
-
-
-
-
-
-
-        void showSoftInput(@NonNull GeckoSession session);
-
-        
-
-
-
-
-
-
-        void hideSoftInput(@NonNull GeckoSession session);
-
-        
-
-
-
-
-
-
-
-
-
-        void updateSelection(@NonNull GeckoSession session, int selStart, int selEnd,
-                             int compositionStart, int compositionEnd);
-
-        
-
-
-
-
-
-
-
-
-        void updateExtractedText(@NonNull GeckoSession session,
-                                 @NonNull ExtractedTextRequest request,
-                                 @NonNull ExtractedText text);
-
-        
-
-
-
-
-
-
-
-        void updateCursorAnchorInfo(@NonNull GeckoSession session, @NonNull CursorAnchorInfo info);
-    }
 
     
      interface InputConnectionClient {
@@ -196,7 +102,7 @@ public final class SessionTextInput {
         void updateCompositionRects(final RectF[] aRects);
     }
 
-    private static final class DefaultDelegate implements Delegate {
+    private static final class DefaultDelegate implements GeckoSession.TextInputDelegate {
         public static final DefaultDelegate INSTANCE = new DefaultDelegate();
 
         private InputMethodManager getInputMethodManager(@Nullable final View view) {
@@ -318,7 +224,7 @@ public final class SessionTextInput {
     private final GeckoEditable mEditable;
     private final GeckoEditableChild mEditableChild;
     private InputConnectionClient mInputConnection;
-    private Delegate mDelegate;
+    private GeckoSession.TextInputDelegate mDelegate;
 
      SessionTextInput(final @NonNull GeckoSession session,
                                    final @NonNull NativeQueue queue) {
@@ -483,7 +389,7 @@ public final class SessionTextInput {
 
 
 
-    public void setDelegate(@Nullable final Delegate delegate) {
+    public void setDelegate(@Nullable final GeckoSession.TextInputDelegate delegate) {
         ThreadUtils.assertOnUiThread();
         mDelegate = delegate;
     }
@@ -493,7 +399,7 @@ public final class SessionTextInput {
 
 
 
-    public Delegate getDelegate() {
+    public GeckoSession.TextInputDelegate getDelegate() {
         ThreadUtils.assertOnUiThread();
         if (mDelegate == null) {
             mDelegate = DefaultDelegate.INSTANCE;

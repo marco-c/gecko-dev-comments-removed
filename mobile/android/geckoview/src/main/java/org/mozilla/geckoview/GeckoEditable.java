@@ -1219,7 +1219,7 @@ import android.view.inputmethod.EditorInfo;
 
                 
                 if (mIMEState != SessionTextInput.EditableListener.IME_STATE_DISABLED) {
-                    icRestartInput(SessionTextInput.Delegate.RESTART_REASON_FOCUS);
+                    icRestartInput(GeckoSession.TextInputDelegate.RESTART_REASON_FOCUS);
                 }
                 break;
 
@@ -1248,7 +1248,7 @@ import android.view.inputmethod.EditorInfo;
                     }
                 }
                 
-                icRestartInput(SessionTextInput.Delegate.RESTART_REASON_CONTENT_CHANGE);
+                icRestartInput(GeckoSession.TextInputDelegate.RESTART_REASON_CONTENT_CHANGE);
                 return; 
             }
 
@@ -1320,16 +1320,19 @@ import android.view.inputmethod.EditorInfo;
         
         
         
-        if (oldState != SessionTextInput.EditableListener.IME_STATE_DISABLED) {
-            if (state == SessionTextInput.EditableListener.IME_STATE_DISABLED) {
-                icRestartInput(SessionTextInput.Delegate.RESTART_REASON_BLUR);
-            } else if (mFocusedChild != null) {
-                icRestartInput(SessionTextInput.Delegate.RESTART_REASON_CONTENT_CHANGE);
-            }
+
+        
+        if (oldState == SessionTextInput.EditableListener.IME_STATE_DISABLED) {
+            return;
+        }
+        if (state == SessionTextInput.EditableListener.IME_STATE_DISABLED) {
+            icRestartInput(GeckoSession.TextInputDelegate.RESTART_REASON_BLUR);
+        } else if (mFocusedChild != null) {
+            icRestartInput(GeckoSession.TextInputDelegate.RESTART_REASON_CONTENT_CHANGE);
         }
     }
 
-    private void icRestartInput(@SessionTextInput.Delegate.RestartReason final int reason) {
+    private void icRestartInput(@GeckoSession.TextInputDelegate.RestartReason final int reason) {
         if (DEBUG) {
             assertOnIcThread();
         }

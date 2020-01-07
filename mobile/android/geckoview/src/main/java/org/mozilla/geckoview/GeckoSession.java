@@ -46,6 +46,9 @@ import android.support.annotation.NonNull;
 import android.support.annotation.StringDef;
 import android.util.Base64;
 import android.util.Log;
+import android.view.inputmethod.CursorAnchorInfo;
+import android.view.inputmethod.ExtractedText;
+import android.view.inputmethod.ExtractedTextRequest;
 
 public class GeckoSession extends LayerSession
                           implements Parcelable {
@@ -2917,5 +2920,95 @@ public class GeckoSession extends LayerSession
 
         void onMediaPermissionRequest(GeckoSession session, String uri, MediaSource[] video,
                                       MediaSource[] audio, MediaCallback callback);
+    }
+
+    
+
+
+
+
+    public interface TextInputDelegate {
+        @Retention(RetentionPolicy.SOURCE)
+        @IntDef({RESTART_REASON_FOCUS, RESTART_REASON_BLUR, RESTART_REASON_CONTENT_CHANGE})
+        @interface RestartReason {}
+        
+        int RESTART_REASON_FOCUS = 0;
+        
+        int RESTART_REASON_BLUR = 1;
+        
+
+
+
+
+        int RESTART_REASON_CONTENT_CHANGE = 2;
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+        void restartInput(@NonNull GeckoSession session, @RestartReason int reason);
+
+        
+
+
+
+
+
+
+        void showSoftInput(@NonNull GeckoSession session);
+
+        
+
+
+
+
+
+
+        void hideSoftInput(@NonNull GeckoSession session);
+
+        
+
+
+
+
+
+
+
+
+
+        void updateSelection(@NonNull GeckoSession session, int selStart, int selEnd,
+                             int compositionStart, int compositionEnd);
+
+        
+
+
+
+
+
+
+
+
+        void updateExtractedText(@NonNull GeckoSession session,
+                                 @NonNull ExtractedTextRequest request,
+                                 @NonNull ExtractedText text);
+
+        
+
+
+
+
+
+
+
+        void updateCursorAnchorInfo(@NonNull GeckoSession session, @NonNull CursorAnchorInfo info);
     }
 }
