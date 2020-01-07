@@ -62,6 +62,7 @@ describe("ConsoleAPICall component:", () => {
       const secondElementStyle = elements.eq(1).prop("style");
       
       expect(secondElementStyle.color).toBe(`red`);
+      expect(secondElementStyle["line-height"]).toBe("1.5");
       
       expect(secondElementStyle.background).toBe(undefined);
     });
