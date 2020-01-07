@@ -427,7 +427,11 @@ void MacroAssembler::LogicalMacro(const Register& rd,
     } else {
       
       Register temp = temps.AcquireSameSizeAs(rn);
-      Operand imm_operand = MoveImmediateForShiftedOp(temp, immediate);
+
+      
+      
+      PreShiftImmMode mode = rn.IsSP() ? kNoShift : kAnyShift;
+      Operand imm_operand = MoveImmediateForShiftedOp(temp, immediate, mode);
 
       
       VIXL_ASSERT(!temp.Is(rd) && !temp.Is(rn));
@@ -965,7 +969,8 @@ bool MacroAssembler::TryOneInstrMoveImmediate(const Register& dst,
 
 
 Operand MacroAssembler::MoveImmediateForShiftedOp(const Register& dst,
-                                                  int64_t imm) {
+                                                  int64_t imm,
+                                                  PreShiftImmMode mode) {
   int reg_size = dst.size();
 
   
@@ -974,6 +979,14 @@ Operand MacroAssembler::MoveImmediateForShiftedOp(const Register& dst,
   } else {
     
     int shift_low = CountTrailingZeros(imm, reg_size);
+    if (mode == kLimitShiftForSP) {
+      
+      
+      
+      
+      shift_low = std::min(shift_low, 4);
+    }
+
     int64_t imm_low = imm >> shift_low;
 
     
@@ -981,11 +994,11 @@ Operand MacroAssembler::MoveImmediateForShiftedOp(const Register& dst,
     int shift_high = CountLeadingZeros(imm, reg_size);
     int64_t imm_high = (imm << shift_high) | ((INT64_C(1) << shift_high) - 1);
 
-    if (TryOneInstrMoveImmediate(dst, imm_low)) {
+    if ((mode != kNoShift) && TryOneInstrMoveImmediate(dst, imm_low)) {
       
       
       return Operand(dst, LSL, shift_low);
-    } else if (TryOneInstrMoveImmediate(dst, imm_high)) {
+    } else if ((mode == kAnyShift) && TryOneInstrMoveImmediate(dst, imm_high)) {
       
       
       return Operand(dst, LSR, shift_high);
@@ -1037,19 +1050,27 @@ void MacroAssembler::AddSubMacro(const Register& rd,
   }
 
   if ((operand.IsImmediate() && !IsImmAddSub(operand.immediate())) ||
-      (rn.IsZero() && !operand.IsShiftedRegister())                ||
+      (rn.IsZero() && !operand.IsShiftedRegister()) ||
       (operand.IsShiftedRegister() && (operand.shift() == ROR))) {
     UseScratchRegisterScope temps(this);
     Register temp = temps.AcquireSameSizeAs(rn);
-
-    
-    VIXL_ASSERT(!temp.Is(rd) && !temp.Is(rn));
-    VIXL_ASSERT(!temp.Is(operand.maybeReg()));
-
     if (operand.IsImmediate()) {
+      PreShiftImmMode mode = kAnyShift;
+
+      
+      
+      
+      if (rd.IsSP()) {
+        
+        
+        mode = (S == SetFlags) ? kNoShift : kLimitShiftForSP;
+      } else if (rn.IsSP()) {
+        mode = kLimitShiftForSP;
+      } 
+
       Operand imm_operand =
-          MoveImmediateForShiftedOp(temp, operand.immediate());
-      AddSub(rd, rn, imm_operand, S, op);
+          MoveImmediateForShiftedOp(temp, operand.immediate(), mode);
+      AddSub(rd, rn, imm_operand, S, op); 
     } else {
       Mov(temp, operand);
       AddSub(rd, rn, temp, S, op);

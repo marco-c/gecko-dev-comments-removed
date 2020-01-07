@@ -143,6 +143,21 @@ enum BranchType {
 enum DiscardMoveMode { kDontDiscardForSameWReg, kDiscardForSameWReg };
 
 
+
+
+
+
+
+
+
+
+enum PreShiftImmMode {
+  kNoShift,          
+  kLimitShiftForSP,  
+  kAnyShift          
+};
+
+
 class MacroAssembler : public js::jit::Assembler {
  public:
   MacroAssembler();
@@ -272,7 +287,9 @@ class MacroAssembler : public js::jit::Assembler {
   
   
   
-  Operand MoveImmediateForShiftedOp(const Register& dst, int64_t imm);
+  Operand MoveImmediateForShiftedOp(const Register& dst,
+		                    int64_t imm,
+				    PreShiftImmMode mode);
 
   
   void ComputeAddress(const Register& dst, const MemOperand& mem_op);
