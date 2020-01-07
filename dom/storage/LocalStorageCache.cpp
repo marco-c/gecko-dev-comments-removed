@@ -249,6 +249,30 @@ LocalStorageCache::Preload()
   storageChild->AsyncPreload(this);
 }
 
+namespace {
+
+
+
+
+class TelemetryAutoTimer
+{
+public:
+  explicit TelemetryAutoTimer(Telemetry::HistogramID aId)
+    : id(aId), start(TimeStamp::Now())
+  {}
+
+  ~TelemetryAutoTimer()
+  {
+    Telemetry::AccumulateTimeDelta(id, start);
+  }
+
+private:
+  Telemetry::HistogramID id;
+  const TimeStamp start;
+};
+
+} 
+
 void
 LocalStorageCache::WaitForPreload(Telemetry::HistogramID aTelemetryID)
 {
@@ -271,7 +295,7 @@ LocalStorageCache::WaitForPreload(Telemetry::HistogramID aTelemetryID)
   }
 
   
-  Telemetry::RuntimeAutoTimer timer(aTelemetryID);
+  TelemetryAutoTimer timer(aTelemetryID);
 
   
   
