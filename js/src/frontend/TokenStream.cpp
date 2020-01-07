@@ -1225,25 +1225,44 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getDirective(bool isMultiline,
     tokenbuf.clear();
 
     do {
-        int32_t c;
-        if (!peekChar(&c))
-            return false;
-
-        if (c == EOF || unicode::IsSpaceOrBOM2(c))
+        int32_t unit = peekCodeUnit();
+        if (unit == EOF)
             break;
 
-        consumeKnownChar(c);
+        if (MOZ_LIKELY(isAsciiCodePoint(unit))) {
+            if (unicode::IsSpaceOrBOM2(unit))
+                break;
 
-        
-        
-        
-        if (isMultiline && c == '*' && matchCodeUnit('/')) {
-            ungetCodeUnit('/');
-            ungetCodeUnit('*');
+            consumeKnownCodeUnit(unit);
+
+            
+            
+            
+            if (isMultiline && unit == '*' && peekCodeUnit() == '/') {
+                ungetCodeUnit('*');
+                break;
+            }
+
+            if (!tokenbuf.append(unit))
+                return false;
+
+            continue;
+        }
+
+        int32_t codePoint;
+        if (!getCodePoint(&codePoint))
+            return false;
+
+        if (unicode::IsSpaceOrBOM2(codePoint)) {
+            ungetCodePointIgnoreEOL(codePoint);
+
+            if (codePoint == unicode::LINE_SEPARATOR || codePoint == unicode::PARA_SEPARATOR)
+                anyCharsAccess().undoInternalUpdateLineInfoForEOL();
+
             break;
         }
 
-        if (!tokenbuf.append(c))
+        if (!appendCodePointToTokenbuf(codePoint))
             return false;
     } while (true);
 
