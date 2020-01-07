@@ -321,11 +321,15 @@ protected:
                                 int32_t* aInOutDestOffset);
 
   nsresult DeleteNonTableElements(nsINode* aNode);
-  nsresult WillMakeList(const nsAString* aListType,
-                        bool aEntireList,
-                        const nsAString* aBulletType,
-                        bool* aCancel, bool* aHandled,
-                        const nsAString* aItemType = nullptr);
+
+  
+
+
+  MOZ_MUST_USE nsresult
+  WillMakeList(const nsAString* aListType, bool aEntireList,
+               const nsAString* aBulletType,
+               bool* aCancel, bool* aHandled,
+               const nsAString* aItemType = nullptr);
 
   
 
@@ -704,6 +708,16 @@ protected:
   OutdentPartOfBlock(Element& aBlockElement,
                      nsIContent& aStartOfOutdent, nsIContent& aEndOutdent,
                      bool aIsBlockIndentedWithCSS);
+
+  
+
+
+
+
+
+  MOZ_MUST_USE nsresult
+  MakeList(nsAtom& aListType, bool aEntireList, const nsAString* aBulletType,
+           bool* aCancel, nsAtom& aItemType);
 
   
 
