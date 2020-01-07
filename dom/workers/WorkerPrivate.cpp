@@ -58,6 +58,7 @@
 #include "WorkerError.h"
 #include "WorkerEventTarget.h"
 #include "WorkerNavigator.h"
+#include "WorkerRef.h"
 #include "WorkerRunnable.h"
 #include "WorkerScope.h"
 #include "WorkerThread.h"
@@ -967,16 +968,6 @@ PRThreadFromThread(nsIThread* aThread)
 
   return result;
 }
-
-class SimpleWorkerHolder final : public WorkerHolder
-{
-public:
-  SimpleWorkerHolder()
-    : WorkerHolder("SimpleWorkerHolder")
-  {}
-
-  virtual bool Notify(WorkerStatus aStatus) override { return true; }
-};
 
 
 
@@ -2795,18 +2786,19 @@ WorkerPrivate::Constructor(JSContext* aCx,
                            const nsACString& aServiceWorkerScope,
                            WorkerLoadInfo* aLoadInfo, ErrorResult& aRv)
 {
-  
-  
-  UniquePtr<SimpleWorkerHolder> holder;
-
   WorkerPrivate* parent = NS_IsMainThread() ?
                           nullptr :
                           GetCurrentThreadWorkerPrivate();
+
+  
+  
+  RefPtr<StrongWorkerRef> workerRef;
   if (parent) {
     parent->AssertIsOnWorkerThread();
 
-    holder.reset(new SimpleWorkerHolder());
-    if (!holder->HoldWorker(parent, Canceling)) {
+    workerRef =
+      StrongWorkerRef::Create(parent, "WorkerPrivate::Constructor");
+    if (NS_WARN_IF(!workerRef)) {
       aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
       return nullptr;
     }
