@@ -2165,7 +2165,7 @@ nsPrintJob::UpdateSelectionAndShrinkPrintObject(nsPrintObject* aPO,
   
   
   if (selectionPS) {
-    selectionPS->RemoveAllRanges();
+    selectionPS->RemoveAllRanges(IgnoreErrors());
   }
   if (selection && selectionPS) {
     int32_t cnt = selection->RangeCount();

@@ -614,7 +614,7 @@ nsresult mozInlineSpellChecker::Cleanup(bool aDestroyingFrames)
     rv = NS_ERROR_FAILURE;
   } else {
     if (!aDestroyingFrames) {
-      spellCheckSelection->RemoveAllRanges();
+      spellCheckSelection->RemoveAllRanges(IgnoreErrors());
     }
 
     rv = UnregisterEventListeners();
@@ -964,7 +964,7 @@ mozInlineSpellChecker::ReplaceWord(nsIDOMNode *aNode, int32_t aOffset,
 
     RefPtr<Selection> selection = mTextEditor->GetSelection();
     NS_ENSURE_TRUE(selection, NS_ERROR_UNEXPECTED);
-    selection->RemoveAllRanges();
+    selection->RemoveAllRanges(IgnoreErrors());
     selection->AddRange(*editorRange, IgnoreErrors());
 
     MOZ_ASSERT(mTextEditor);
@@ -1307,7 +1307,7 @@ mozInlineSpellChecker::DoSpellCheckSelection(mozInlineSpellWordUtil& aWordUtil,
   
   
   
-  aSpellCheckSelection->RemoveAllRanges();
+  aSpellCheckSelection->RemoveAllRanges(IgnoreErrors());
 
   
   

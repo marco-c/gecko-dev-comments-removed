@@ -3187,7 +3187,7 @@ PresShell::GoToAnchor(const nsAString& aAnchorName, bool aScroll,
     
     RefPtr<Selection> sel = mSelection->GetSelection(SelectionType::eNormal);
     if (sel) {
-      sel->RemoveAllRanges();
+      sel->RemoveAllRanges(IgnoreErrors());
       sel->AddRange(*jumpToRange, IgnoreErrors());
       if (!selectAnchor) {
         

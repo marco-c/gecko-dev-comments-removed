@@ -2439,7 +2439,7 @@ nsFocusManager::MoveCaretToFocus(nsIPresShell* aPresShell, nsIContent* aContent)
     if (domSelection) {
       
       
-      domSelection->RemoveAllRanges();
+      domSelection->RemoveAllRanges(IgnoreErrors());
       if (aContent) {
         ErrorResult rv;
         RefPtr<nsRange> newRange = doc->CreateRange(rv);
