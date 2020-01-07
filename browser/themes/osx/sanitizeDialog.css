@@ -83,7 +83,7 @@
 
 
 
-.prefWindow-dlgbuttons {
+.dialog-button-box {
   margin-inline-end: 0;
 }
 .dialog-button[dlgtype="accept"] {

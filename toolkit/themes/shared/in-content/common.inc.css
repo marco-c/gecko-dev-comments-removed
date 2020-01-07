@@ -94,10 +94,6 @@ xul|caption xul|label {
   overflow: auto;
 }
 
-xul|prefpane > xul|*.content-box {
-  overflow: visible;
-}
-
 
 
 xul|groupbox {
@@ -133,6 +129,11 @@ xul|tabs {
   border-top: 1px solid var(--in-content-box-border-color);
   border-bottom: 1px solid var(--in-content-box-border-color);
   background-color: var(--in-content-page-background);
+}
+
+xul|*.tabs-left,
+xul|*.tabs-right {
+  border-bottom: none;
 }
 
 xul|tab {
