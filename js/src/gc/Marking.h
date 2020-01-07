@@ -58,28 +58,63 @@ PushArena(GCMarker* gcmarker, Arena* arena);
 
 
 
-template <typename T>
-bool
-IsMarkedUnbarriered(JSRuntime* rt, T* thingp);
 
 
 
 
-template <typename T>
-bool
-IsMarked(JSRuntime* rt, WriteBarrieredBase<T>* thingp);
+
+
 
 template <typename T>
-bool
-IsAboutToBeFinalizedUnbarriered(T* thingp);
+bool IsMarkedInternal(JSRuntime* rt, T* thing);
+template <typename T>
+bool IsMarkedInternal(JSRuntime* rt, T** thing);
 
 template <typename T>
-bool
-IsAboutToBeFinalized(WriteBarrieredBase<T>* thingp);
+bool IsAboutToBeFinalizedInternal(T* thingp);
+template <typename T>
+bool IsAboutToBeFinalizedInternal(T** thingp);
+
+
+
 
 template <typename T>
-bool
-IsAboutToBeFinalized(ReadBarrieredBase<T>* thingp);
+inline bool
+IsMarkedUnbarriered(JSRuntime* rt, T* thingp)
+{
+    return IsMarkedInternal(rt, ConvertToBase(thingp));
+}
+
+
+
+
+template <typename T>
+inline bool
+IsMarked(JSRuntime* rt, WriteBarrieredBase<T>* thingp)
+{
+    return IsMarkedInternal(rt, ConvertToBase(thingp->unsafeUnbarrieredForTracing()));
+}
+
+template <typename T>
+inline bool
+IsAboutToBeFinalizedUnbarriered(T* thingp)
+{
+    return IsAboutToBeFinalizedInternal(ConvertToBase(thingp));
+}
+
+template <typename T>
+inline bool
+IsAboutToBeFinalized(WriteBarrieredBase<T>* thingp)
+{
+    return IsAboutToBeFinalizedInternal(ConvertToBase(thingp->unsafeUnbarrieredForTracing()));
+}
+
+template <typename T>
+inline bool
+IsAboutToBeFinalized(ReadBarrieredBase<T>* thingp)
+{
+    return IsAboutToBeFinalizedInternal(ConvertToBase(thingp->unsafeUnbarrieredForTracing()));
+}
 
 bool
 IsAboutToBeFinalizedDuringSweep(TenuredCell& tenured);
