@@ -11,7 +11,6 @@ const { gDevTools } = require("devtools/client/framework/devtools");
 const { getColor } = require("devtools/client/shared/theme");
 const { createFactory, createElement } = require("devtools/client/shared/vendor/react");
 const { Provider } = require("devtools/client/shared/vendor/react-redux");
-const { throttle } = require("devtools/shared/throttle");
 const { debounce } = require("devtools/shared/debounce");
 const { ELEMENT_STYLE } = require("devtools/shared/specs/styles");
 
@@ -64,15 +63,13 @@ class FontInspector {
     this.selectedRule = null;
     this.store = this.inspector.store;
     
-    this.textProperties = new Map();
-    
     
     
     
     this.writers = new Map();
 
     this.snapshotChanges = debounce(this.snapshotChanges, 100, this);
-    this.syncChanges = throttle(this.syncChanges, 100, this);
+    this.syncChanges = debounce(this.syncChanges, 100, this);
     this.onInstanceChange = this.onInstanceChange.bind(this);
     this.onNewNode = this.onNewNode.bind(this);
     this.onPreviewFonts = this.onPreviewFonts.bind(this);
@@ -151,8 +148,6 @@ class FontInspector {
     this.ruleView = null;
     this.selectedRule = null;
     this.store = null;
-    this.textProperties.clear();
-    this.textProperties = null;
     this.writers.clear();
     this.writers = null;
   }
@@ -229,17 +224,13 @@ class FontInspector {
 
 
   getTextProperty(name, value) {
-    if (!this.textProperties.has(name)) {
-      let textProperty =
-        this.selectedRule.textProps.find(prop => prop.name === name);
-      if (!textProperty) {
-        textProperty = this.selectedRule.editor.addProperty(name, value, "", true);
-      }
-
-      this.textProperties.set(name, textProperty);
+    let textProperty =
+      this.selectedRule.textProps.find(prop => prop.name === name);
+    if (!textProperty) {
+      textProperty = this.selectedRule.editor.addProperty(name, value, "", true);
     }
 
-    return this.textProperties.get(name);
+    return textProperty;
   }
 
   
@@ -371,7 +362,7 @@ class FontInspector {
            this.inspector.selection.isElementNode();
   }
 
-    
+  
 
 
 
@@ -382,8 +373,12 @@ class FontInspector {
 
 
 
-  syncChanges(textProperty, value) {
-    textProperty.updateValue(value);
+  syncChanges(name, value) {
+    const textProperty = this.getTextProperty(name, value);
+    if (textProperty) {
+      textProperty.setValue(value);
+    }
+
     this.ruleView.on("property-value-updated", this.onRuleUpdated);
   }
 
@@ -585,7 +580,6 @@ class FontInspector {
     
     
     this.writers.clear();
-    this.textProperties.clear();
     
     this.selectedRule =
       this.ruleView.rules.find(rule => rule.domRule.type === ELEMENT_STYLE);
@@ -703,6 +697,14 @@ class FontInspector {
 
 
 
+
+
+
+
+
+
+
+
   updatePropertyValue(name, value) {
     const textProperty = this.getTextProperty(name, value);
     if (!textProperty || textProperty.value === value) {
@@ -714,7 +716,7 @@ class FontInspector {
     
     textProperty.rule.previewPropertyValue(textProperty, value, "");
     
-    this.syncChanges(textProperty, value);
+    this.syncChanges(name, value);
   }
 }
 
