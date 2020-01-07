@@ -53,7 +53,6 @@ class FxDesktopBuild(BuildScript, TryToolsMixin, object):
                 "pgo_platforms": ['linux', 'linux64', 'win32', 'win64'],
                 
                 "nightly_build": False,
-                'balrog_credentials_file': 'oauth.txt',
                 
                 "tools_repo": "https://hg.mozilla.org/build/tools",
                 
