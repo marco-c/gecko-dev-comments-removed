@@ -40,11 +40,6 @@ public:
 
   virtual nsresult GetScriptLocation(nsACString& aStr) override;
 
-  
-
-
-  static void InitializeStatics();
-
   static nsresult
   GenerateOriginNoSuffixFromURI(nsIURI* aURI, nsACString& aOrigin);
 
