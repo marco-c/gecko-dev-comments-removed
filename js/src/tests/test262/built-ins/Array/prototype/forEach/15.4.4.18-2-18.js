@@ -9,14 +9,15 @@
 
 
 
-        var result = false;
-        function callbackfn(val, idx, obj) {
-            result = (obj.length === 3);
-        }
+var result = false;
 
-        var str = new String("012");
+function callbackfn(val, idx, obj) {
+  result = (obj.length === 3);
+}
 
-        Array.prototype.forEach.call(str, callbackfn);
+var str = new String("012");
+
+Array.prototype.forEach.call(str, callbackfn);
 
 assert(result, 'result !== true');
 

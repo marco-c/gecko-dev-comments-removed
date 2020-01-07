@@ -7,8 +7,8 @@
 
 
 
-  function cb(){}
-  var i = [].some(cb);
+function cb() {}
+var i = [].some(cb);
 
 assert.sameValue(i, false, 'i');
 

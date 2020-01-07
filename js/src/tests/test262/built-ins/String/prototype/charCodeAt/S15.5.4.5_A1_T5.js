@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+if (function() {
+    return "lego"
+  }().charCodeAt(null) !== 0x6C) {
+  $ERROR('#1: function(){return "lego"}().charCodeAt(null) === 0x6C. Actual: ' + function() {
+    return "lego"
+  }().charCodeAt(null));
+}
+
+
+
+reportCompare(0, 0);

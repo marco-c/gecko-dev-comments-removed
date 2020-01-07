@@ -9,8 +9,7 @@
 
 
 
-function ZeroArgConstructor() {
-}
+function ZeroArgConstructor() {}
 
 assert.throws(TypeError, function() {
   Promise.reject.call(ZeroArgConstructor, 4);

@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+
+this.value = "global";
+
+Object.defineProperty(obj, "property", this);
+
+assert.sameValue(obj.property, "global", 'obj.property');
+
+reportCompare(0, 0);

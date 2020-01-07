@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var AsyncGeneratorFunctionPrototype = Object.getPrototypeOf(async function*() {});
+
+verifyProperty(AsyncGeneratorFunctionPrototype, Symbol.toStringTag, {
+  value: 'AsyncGeneratorFunction',
+  enumerable: false,
+  writable: false,
+  configurable: true,
+});
+
+reportCompare(0, 0);

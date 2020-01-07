@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+if (new String("lego").concat(x) !== "legoundefined") {
+  $ERROR('#1: var x; new String("lego").concat(x) === "legoundefined". Actual: ' + new String("lego").concat(x));
+}
+
+
+
+var x;
+
+reportCompare(0, 0);

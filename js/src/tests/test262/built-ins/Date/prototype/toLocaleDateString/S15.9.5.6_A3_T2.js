@@ -10,7 +10,7 @@
 
 
 
-if (delete Date.prototype.toLocaleDateString.length  !== true) {
+if (delete Date.prototype.toLocaleDateString.length !== true) {
   $ERROR('#1: The Date.prototype.toLocaleDateString.length property does not have the attributes DontDelete');
 }
 

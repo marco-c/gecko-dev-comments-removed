@@ -23,9 +23,9 @@
 
 
 
-function DummyError() { }
+function DummyError() {}
 
-var newTarget = function(){}.bind(null);
+var newTarget = function() {}.bind(null);
 Object.defineProperty(newTarget, "prototype", {
   get: function() {
     throw new DummyError();

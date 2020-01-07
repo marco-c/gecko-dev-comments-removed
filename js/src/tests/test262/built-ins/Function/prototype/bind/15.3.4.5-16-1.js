@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+function foo() {}
+var o = {};
+
+var bf = foo.bind(o);
+var ex = Object.isExtensible(bf);
+
+assert.sameValue(ex, true, 'ex');
+
+reportCompare(0, 0);

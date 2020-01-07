@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+
+Object.defineProperties(obj, {
+  property: {
+    get: undefined
+  }
+});
+
+assert(obj.hasOwnProperty("property"), 'obj.hasOwnProperty("property") !== true');
+assert.sameValue(typeof obj.property, "undefined", 'typeof obj.property');
+
+reportCompare(0, 0);

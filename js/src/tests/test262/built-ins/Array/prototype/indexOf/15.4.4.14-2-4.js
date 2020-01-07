@@ -9,11 +9,11 @@
 
 
 
-        var targetObj = {};
-        var arrProtoLen;
+var targetObj = {};
+var arrProtoLen;
 
-            arrProtoLen = Array.prototype.length;
-            Array.prototype.length = 0;
+arrProtoLen = Array.prototype.length;
+Array.prototype.length = 0;
 
 assert.sameValue([0, targetObj].indexOf(targetObj), 1, '[0, targetObj].indexOf(targetObj)');
 

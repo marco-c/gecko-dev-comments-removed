@@ -8,6 +8,8 @@
 
 
 
+
+
 assert.sameValue(SharedArrayBuffer.prototype.constructor, SharedArrayBuffer);
 
 verifyNotEnumerable(SharedArrayBuffer.prototype, "constructor");

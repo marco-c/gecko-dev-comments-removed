@@ -22,11 +22,13 @@
 
 
 
-assert.sameValue(ArrayBuffer.length, 1);
+
+
 
 verifyProperty(ArrayBuffer, "length", {
-  writable: false,
+  value: 1,
   enumerable: false,
+  writable: false,
   configurable: true,
 });
 

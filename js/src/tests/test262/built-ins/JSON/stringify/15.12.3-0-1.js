@@ -17,7 +17,7 @@
 
 
 
-  var f = JSON.stringify;
+var f = JSON.stringify;
 
 assert.sameValue(typeof(f), "function", 'typeof(f)');
 

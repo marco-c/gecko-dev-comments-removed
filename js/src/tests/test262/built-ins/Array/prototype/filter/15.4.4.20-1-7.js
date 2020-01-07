@@ -7,11 +7,11 @@
 
 
 
-        function callbackfn(val, idx, obj) {
-            return obj instanceof String;
-        }
+function callbackfn(val, idx, obj) {
+  return obj instanceof String;
+}
 
-        var newArr = Array.prototype.filter.call("abc", callbackfn);
+var newArr = Array.prototype.filter.call("abc", callbackfn);
 
 assert.sameValue(newArr[0], "a", 'newArr[0]');
 

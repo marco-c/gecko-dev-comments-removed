@@ -10,12 +10,12 @@
 
 
 
-if((new Number()).hasOwnProperty("toPrecision") !== false){
+if ((new Number()).hasOwnProperty("toPrecision") !== false) {
   $ERROR('#1: Number instance must have no special property "toPrecision"');
 }
 
 
-if((new Number()).toPrecision !== Number.prototype.toPrecision){
+if ((new Number()).toPrecision !== Number.prototype.toPrecision) {
   $ERROR('#2: Number instance property "toPrecision" must be inherited from Number prototype object');
 }
 

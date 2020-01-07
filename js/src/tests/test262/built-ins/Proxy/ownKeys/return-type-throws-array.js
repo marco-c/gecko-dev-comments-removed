@@ -25,7 +25,9 @@
 
 var p = new Proxy({}, {
   ownKeys() {
-    return [[]];
+    return [
+      []
+    ];
   }
 });
 

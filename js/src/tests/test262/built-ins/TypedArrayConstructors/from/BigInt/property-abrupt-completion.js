@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var source = {
+  length: 2
+};
+Object.defineProperty(source, "0", {
+  get() {
+    throw new Test262Error();
+  }
+});
+
+testWithBigIntTypedArrayConstructors(function(TA) {
+  assert.throws(Test262Error, function() {
+    TA.from(source);
+  });
+});
+
+reportCompare(0, 0);

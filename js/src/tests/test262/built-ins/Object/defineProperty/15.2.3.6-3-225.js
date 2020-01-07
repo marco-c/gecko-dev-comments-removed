@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+
+var regObj = new RegExp();
+
+regObj.get = function() {
+  return "regExpGetProperty";
+};
+
+Object.defineProperty(obj, "property", regObj);
+
+assert.sameValue(obj.property, "regExpGetProperty", 'obj.property');
+
+reportCompare(0, 0);

@@ -10,8 +10,8 @@
 
 
 
-var x = [0,1];
-var arr = x.splice(-2,-1);
+var x = [0, 1];
+var arr = x.splice(-2, -1);
 
 
 arr.getClass = Object.prototype.toString;

@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+var regObj = new RegExp(/test/);
+
+assert.sameValue(String.prototype.trim.call(regObj), "/test/", 'String.prototype.trim.call(regObj)');
+
+reportCompare(0, 0);

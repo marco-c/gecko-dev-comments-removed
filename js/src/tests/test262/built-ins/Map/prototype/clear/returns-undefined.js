@@ -16,7 +16,10 @@
 
 
 
-var m1 = new Map([['foo', 'bar'], [1, 1]]);
+var m1 = new Map([
+  ['foo', 'bar'],
+  [1, 1]
+]);
 
 assert.sameValue(m1.clear(), undefined, 'clears a map and returns undefined');
 assert.sameValue(m1.clear(), undefined, 'returns undefined on an empty map');

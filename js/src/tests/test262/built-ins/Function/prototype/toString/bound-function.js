@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+let f = function(){}.bind(null);
+
+assertNativeFunction(f);
+
+reportCompare(0, 0);

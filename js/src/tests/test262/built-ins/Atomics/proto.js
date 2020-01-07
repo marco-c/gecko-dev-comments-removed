@@ -12,6 +12,8 @@
 
 
 
+
+
 var proto = Object.getPrototypeOf(Atomics);
 
 assert.sameValue(proto, Object.prototype);

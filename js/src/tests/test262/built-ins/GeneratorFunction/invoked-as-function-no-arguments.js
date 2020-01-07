@@ -8,7 +8,7 @@
 
 
 
-var GeneratorFunction = Object.getPrototypeOf(function* () {}).constructor;
+var GeneratorFunction = Object.getPrototypeOf(function*() {}).constructor;
 
 var g = GeneratorFunction();
 var iter = g();

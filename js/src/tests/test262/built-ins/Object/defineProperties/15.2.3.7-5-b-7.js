@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+var accessed = false;
+
+Object.defineProperties(obj, {
+  prop: {}
+});
+
+for (var property in obj) {
+  if (property === "prop") {
+    accessed = true;
+  }
+}
+
+assert.sameValue(accessed, false, 'accessed');
+
+reportCompare(0, 0);

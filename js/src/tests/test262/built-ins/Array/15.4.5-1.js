@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+var a = [];
+var s = Object.prototype.toString.call(a);
+
+assert.sameValue(s, '[object Array]', 's');
+
+reportCompare(0, 0);

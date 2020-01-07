@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var s = Symbol("1");
+
+testWithBigIntTypedArrayConstructors(function(TA) {
+  var sample = new TA();
+
+  assert.throws(TypeError, function() {
+    sample.set(sample, s);
+  });
+});
+
+reportCompare(0, 0);

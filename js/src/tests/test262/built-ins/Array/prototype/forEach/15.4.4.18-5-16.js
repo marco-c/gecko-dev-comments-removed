@@ -7,14 +7,14 @@
 
 
 
-        var result = false;
-        var objRegExp = new RegExp();
+var result = false;
+var objRegExp = new RegExp();
 
-        function callbackfn(val, idx, obj) {
-            result = (this === objRegExp);
-        }
+function callbackfn(val, idx, obj) {
+  result = (this === objRegExp);
+}
 
-        [11].forEach(callbackfn, objRegExp);
+[11].forEach(callbackfn, objRegExp);
 
 assert(result, 'result !== true');
 

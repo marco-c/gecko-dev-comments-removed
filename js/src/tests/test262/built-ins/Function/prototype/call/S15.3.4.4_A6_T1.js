@@ -9,7 +9,7 @@
 
 
 
-Function("a1,a2,a3","this.shifted=a1;").call(null,[1]);
+Function("a1,a2,a3", "this.shifted=a1;").call(null, [1]);
 
 
 if (this["shifted"].constructor !== Array) {

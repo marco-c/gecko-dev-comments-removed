@@ -9,16 +9,17 @@
 
 
 
+
 var sab = new SharedArrayBuffer(1024);
 
 var other_views = [Int8Array, Uint8Array, Int16Array, Uint16Array, Uint32Array,
                    Uint8ClampedArray, Float32Array, Float64Array];
 
 testWithTypedArrayConstructors(function(View) {
-    var view = new View(sab);
+  var view = new View(sab);
 
-    
-    assert.throws(TypeError, (() => Atomics.wake(view, 0, 0))); 
+  
+  assert.throws(TypeError, (() => Atomics.wake(view, 0, 0))); 
 }, other_views);
 
 reportCompare(0, 0);

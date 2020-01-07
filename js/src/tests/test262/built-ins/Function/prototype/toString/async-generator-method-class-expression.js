@@ -7,13 +7,14 @@
 
 
 
+
 let x = "h";
 let f = class { async  *  f  (  )  {  } }.prototype.f;
 let g = class { async  *  [  "g"  ]  (  )  {  } }.prototype.g;
 let h = class { async  *  [  x  ]  (  )  {  } }.prototype.h;
 
-assert.sameValue(f.toString(), "async /* a */ * /* b */ f /* c */ ( /* d */ ) /* e */ { /* f */ }");
-assert.sameValue(g.toString(), "async /* a */ * /* b */ [ /* c */ \"g\" /* d */ ] /* e */ ( /* f */ ) /* g */ { /* h */ }");
-assert.sameValue(h.toString(), "async /* a */ * /* b */ [ /* c */ x /* d */ ] /* e */ ( /* f */ ) /* g */ { /* h */ }");
+assertToStringOrNativeFunction(f, "async /* a */ * /* b */ f /* c */ ( /* d */ ) /* e */ { /* f */ }");
+assertToStringOrNativeFunction(g, "async /* a */ * /* b */ [ /* c */ \"g\" /* d */ ] /* e */ ( /* f */ ) /* g */ { /* h */ }");
+assertToStringOrNativeFunction(h, "async /* a */ * /* b */ [ /* c */ x /* d */ ] /* e */ ( /* f */ ) /* g */ { /* h */ }");
 
 reportCompare(0, 0);

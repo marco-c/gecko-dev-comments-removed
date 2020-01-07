@@ -8,7 +8,7 @@
 
 
 
-if(Date.prototype.hasOwnProperty("setUTCMilliseconds") !== true){
+if (Date.prototype.hasOwnProperty("setUTCMilliseconds") !== true) {
   $ERROR('#1: The Date.prototype has the property "setUTCMilliseconds"');
 }
 

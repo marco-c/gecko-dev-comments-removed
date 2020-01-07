@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+var errObj = new Error("error");
+
+errObj.get = function() {
+  return "VerifyErrorObject";
+};
+
+var newObj = Object.create({}, {
+  prop: errObj
+});
+
+assert.sameValue(newObj.prop, "VerifyErrorObject", 'newObj.prop');
+
+reportCompare(0, 0);

@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+
+Object.defineProperties(obj, {
+  property: {
+    value: 300
+  }
+});
+
+assert.sameValue(obj.property, 300, 'obj.property');
+
+reportCompare(0, 0);

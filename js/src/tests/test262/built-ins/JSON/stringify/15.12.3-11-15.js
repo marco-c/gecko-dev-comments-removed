@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(JSON.stringify(function() {}, function(k, v) {
+  return 99
+}), '99', 'JSON.stringify(function() {}, function(k,v) {return 99})');
+
+reportCompare(0, 0);

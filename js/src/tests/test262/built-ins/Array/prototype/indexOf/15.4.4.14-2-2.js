@@ -7,9 +7,9 @@
 
 
 
-        var targetObj = {};
+var targetObj = {};
 
-            Array.prototype[2] = targetObj;
+Array.prototype[2] = targetObj;
 
 
 assert.sameValue([0, targetObj].indexOf(targetObj), 1, '[0, targetObj].indexOf(targetObj)');

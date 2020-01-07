@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+var f = Object.isExtensible;
+
+assert.sameValue(typeof(f), "function", 'typeof(f)');
+
+reportCompare(0, 0);

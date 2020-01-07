@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+var arrObj = [];
+assert.throws(RangeError, function() {
+  Object.defineProperty(arrObj, "length", {
+    value: 123.5
+  });
+});
+
+reportCompare(0, 0);

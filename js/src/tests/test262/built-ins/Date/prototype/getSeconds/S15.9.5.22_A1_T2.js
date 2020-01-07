@@ -8,7 +8,7 @@
 
 
 
-if (delete Date.prototype.getSeconds  === false) {
+if (delete Date.prototype.getSeconds === false) {
   $ERROR('#1: The Date.prototype.getSeconds property has not the attributes DontDelete');
 }
 

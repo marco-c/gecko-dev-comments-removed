@@ -1,0 +1,20 @@
+'use strict';
+
+
+
+
+
+
+
+
+
+
+
+
+function fun() {
+  return (this instanceof String);
+}
+
+assert.sameValue(fun.call(""), false, 'fun.call("")');
+
+reportCompare(0, 0);

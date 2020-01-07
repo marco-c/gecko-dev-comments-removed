@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+var e = Object.isExtensible(String.prototype);
+
+assert.sameValue(e, true, 'e');
+
+reportCompare(0, 0);

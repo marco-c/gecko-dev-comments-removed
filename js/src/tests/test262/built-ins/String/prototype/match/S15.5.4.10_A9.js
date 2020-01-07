@@ -14,7 +14,7 @@
 
 
 if (!(String.prototype.match.hasOwnProperty('length'))) {
-  $ERROR('#0: String.prototype.match.hasOwnProperty(\'length\') return true. Actual: '+String.prototype.match.hasOwnProperty('length'));
+  $ERROR('#0: String.prototype.match.hasOwnProperty(\'length\') return true. Actual: ' + String.prototype.match.hasOwnProperty('length'));
 }
 
 
@@ -30,7 +30,7 @@ if (!delete String.prototype.match.length) {
 
 
 if (String.prototype.match.hasOwnProperty('length')) {
-  $ERROR('#2: delete String.prototype.match.length; String.prototype.match.hasOwnProperty(\'length\') return false. Actual: '+String.prototype.match.hasOwnProperty('length'));
+  $ERROR('#2: delete String.prototype.match.length; String.prototype.match.hasOwnProperty(\'length\') return false. Actual: ' + String.prototype.match.hasOwnProperty('length'));
 }
 
 

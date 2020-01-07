@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+var o = {};
+Object.defineProperty(o, "foo", {
+  get: function() {
+    "use strict";
+    gNonStrict();
+  }
+});
+
+assert.throws(TypeError, function() {
+  o.foo;
+});
+
+function gNonStrict() {
+  return gNonStrict.caller || gNonStrict.caller.throwTypeError;
+}
+
+reportCompare(0, 0);

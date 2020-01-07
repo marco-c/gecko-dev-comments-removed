@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  new Proxy({}, null);
+});
+
+reportCompare(0, 0);

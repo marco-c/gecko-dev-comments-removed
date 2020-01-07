@@ -12,16 +12,16 @@
 
 
 
-var __re =  new RegExp("00");
+var __re = new RegExp("00");
 
-Number.prototype.split=String.prototype.split;
+Number.prototype.split = String.prototype.split;
 
 var __split = 6776767677.006771122677555.split(__re, eval("\"1\""));
 
 
 
 if (typeof __split !== "object") {
-  $ERROR('#1: var __re =  new RegExp("00"); Number.prototype.split=String.prototype.split; __split = 6776767677.006771122677555.split(__re, eval(""1"")); typeof __split === "object". Actual: '+typeof __split );
+  $ERROR('#1: var __re =  new RegExp("00"); Number.prototype.split=String.prototype.split; __split = 6776767677.006771122677555.split(__re, eval(""1"")); typeof __split === "object". Actual: ' + typeof __split);
 }
 
 
@@ -29,7 +29,7 @@ if (typeof __split !== "object") {
 
 
 if (__split.constructor !== Array) {
-  $ERROR('#2: var __re =  new RegExp("00"); Number.prototype.split=String.prototype.split; __split = 6776767677.006771122677555.split(__re, eval(""1"")); __split.constructor === Array. Actual: '+__split.constructor );
+  $ERROR('#2: var __re =  new RegExp("00"); Number.prototype.split=String.prototype.split; __split = 6776767677.006771122677555.split(__re, eval(""1"")); __split.constructor === Array. Actual: ' + __split.constructor);
 }
 
 
@@ -37,7 +37,7 @@ if (__split.constructor !== Array) {
 
 
 if (__split.length !== 1) {
-  $ERROR('#3: var __re =  new RegExp("00"); Number.prototype.split=String.prototype.split; __split = 6776767677.006771122677555.split(__re, eval(""1"")); __split.length === 1. Actual: '+__split.length );
+  $ERROR('#3: var __re =  new RegExp("00"); Number.prototype.split=String.prototype.split; __split = 6776767677.006771122677555.split(__re, eval(""1"")); __split.length === 1. Actual: ' + __split.length);
 }
 
 
@@ -45,7 +45,7 @@ if (__split.length !== 1) {
 
 
 if (__split[0] !== "6776767677.") {
-  $ERROR('#3: var __re =  new RegExp("00"); Number.prototype.split=String.prototype.split; __split = 6776767677.006771122677555.split(__re, eval(""1"")); __split[0] === "6776767677.". Actual: '+__split[0] );
+  $ERROR('#3: var __re =  new RegExp("00"); Number.prototype.split=String.prototype.split; __split = 6776767677.006771122677555.split(__re, eval(""1"")); __split[0] === "6776767677.". Actual: ' + __split[0]);
 }
 
 

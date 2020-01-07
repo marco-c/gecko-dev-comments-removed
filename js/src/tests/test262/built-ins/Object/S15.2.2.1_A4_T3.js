@@ -9,7 +9,7 @@
 
 
 
-var n_obj = new Object((1===1)&&!(false));
+var n_obj = new Object((1 === 1) && !(false));
 
 
 if (n_obj.constructor !== Boolean) {
@@ -22,12 +22,12 @@ if (typeof n_obj !== 'object') {
 }
 
 
-if ( n_obj != true) {
+if (n_obj != true) {
   $ERROR('#4: When the Object constructor is called with Boolean argument return ToObject(boolean)');
 }
 
 
-if ( n_obj === true) {
+if (n_obj === true) {
   $ERROR('#5: When the Object constructor is called with Boolean argument return ToObject(boolean)');
 }
 

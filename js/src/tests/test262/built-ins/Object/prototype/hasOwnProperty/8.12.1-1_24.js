@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+var base = {
+  set foo(x) {;
+  }
+};
+var o = Object.create(base);
+
+assert.sameValue(o.hasOwnProperty("foo"), false, 'o.hasOwnProperty("foo")');
+
+reportCompare(0, 0);

@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+var newObj = Object.create({}, {
+  prop: {
+    get: function() {
+      return "ownDataProperty";
+    }
+  }
+});
+
+assert.sameValue(newObj.prop, "ownDataProperty", 'newObj.prop');
+
+reportCompare(0, 0);

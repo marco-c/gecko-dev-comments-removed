@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+var __instance = new Array('new', 'zoo', 'revue');
+
+
+
+if (__instance.lastIndexOf('new') !== 0) {
+  $ERROR('#1: __instance = new Array(\'new\',\'zoo\',\'revue\'); __instance.lastIndexOf(\'new\') === 0. Actual: ' + __instance.lastIndexOf('new'));
+}
+
+
+
+
+
+if (__instance.lastIndexOf('zoo') !== 1) {
+  $ERROR('#2: __instance = new Array(\'new\',\'zoo\',\'revue\'); __instance.lastIndexOf(\'zoo\') === 1. Actual: ' + __instance.lastIndexOf('zoo'));
+}
+
+
+
+reportCompare(0, 0);

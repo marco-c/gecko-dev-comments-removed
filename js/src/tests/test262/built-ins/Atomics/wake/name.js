@@ -9,6 +9,8 @@
 
 
 
+
+
 assert.sameValue(Atomics.wake.name, "wake");
 
 verifyNotEnumerable(Atomics.wake, "name");

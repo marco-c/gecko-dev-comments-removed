@@ -18,7 +18,7 @@ var __str = String(__obj__str);
 
 
 if (__str !== __obj__str) {
-  $ERROR('#1: __obj__str = "caps"; __str = String(__obj__str); __str === __obj__str. Actual: __str ==='+__str ); 
+  $ERROR('#1: __obj__str = "caps"; __str = String(__obj__str); __str === __obj__str. Actual: __str ===' + __str);
 }
 
 

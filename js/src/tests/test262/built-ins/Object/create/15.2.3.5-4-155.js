@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+var proto = {
+  value: "inheritedDataProperty"
+};
+
+var ConstructFun = function() {};
+ConstructFun.prototype = proto;
+
+var descObj = new ConstructFun();
+
+var newObj = Object.create({}, {
+  prop: descObj
+});
+
+assert.sameValue(newObj.prop, "inheritedDataProperty", 'newObj.prop');
+
+reportCompare(0, 0);

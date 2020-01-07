@@ -23,6 +23,8 @@
 
 
 
+
+
 assert.sameValue(Atomics.add.length, 3);
 
 verifyNotEnumerable(Atomics.add, "length");

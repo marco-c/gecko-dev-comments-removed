@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+var p = Proxy.revocable({}, {});
+
+p.revoke();
+
+assert.throws(TypeError, function() {
+  "attr" in p.proxy;
+});
+
+reportCompare(0, 0);

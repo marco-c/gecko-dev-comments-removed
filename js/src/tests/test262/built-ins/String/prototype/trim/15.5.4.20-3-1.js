@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+var lineTerminatorsStr = "\u000A\u000D\u2028\u2029";
+
+assert.sameValue(lineTerminatorsStr.trim(), "", 'lineTerminatorsStr.trim()');
+
+reportCompare(0, 0);

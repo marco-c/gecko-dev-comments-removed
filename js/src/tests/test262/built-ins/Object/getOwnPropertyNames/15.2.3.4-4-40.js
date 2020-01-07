@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+var str = new String("abc");
+
+String.prototype.protoProperty = "protoString";
+
+var result = Object.getOwnPropertyNames(str);
+
+for (var p in result) {
+  assert.notSameValue(result[p], "protoProperty", 'result[p]');
+}
+
+reportCompare(0, 0);

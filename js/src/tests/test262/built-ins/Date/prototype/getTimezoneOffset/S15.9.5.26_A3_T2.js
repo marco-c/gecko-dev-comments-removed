@@ -10,7 +10,7 @@
 
 
 
-if (delete Date.prototype.getTimezoneOffset.length  !== true) {
+if (delete Date.prototype.getTimezoneOffset.length !== true) {
   $ERROR('#1: The Date.prototype.getTimezoneOffset.length property does not have the attributes DontDelete');
 }
 

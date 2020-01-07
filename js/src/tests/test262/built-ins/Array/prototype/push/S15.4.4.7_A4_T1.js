@@ -25,32 +25,32 @@ if (obj.length !== 4294967299) {
 
 
 if (obj[0] !== undefined) {
-   $ERROR('#3: var obj = {}; obj.push = Array.prototype.push; obj.length = 4294967296; obj.push("x", "y", "z"); obj[0] === undefined. Actual: ' + (obj[0]));
+  $ERROR('#3: var obj = {}; obj.push = Array.prototype.push; obj.length = 4294967296; obj.push("x", "y", "z"); obj[0] === undefined. Actual: ' + (obj[0]));
 }
 
 
 if (obj[1] !== undefined) {
-   $ERROR('#4: var obj = {}; obj.push = Array.prototype.push; obj.length = 4294967296; obj.push("x", "y", "z"); obj[1] === undefined. Actual: ' + (obj[1]));
+  $ERROR('#4: var obj = {}; obj.push = Array.prototype.push; obj.length = 4294967296; obj.push("x", "y", "z"); obj[1] === undefined. Actual: ' + (obj[1]));
 }
 
 
 if (obj[2] !== undefined) {
-   $ERROR('#5: var obj = {}; obj.push = Array.prototype.push; obj.length = 4294967296; obj.push("x", "y", "z"); obj[2] === undefined. Actual: ' + (obj[2]));
+  $ERROR('#5: var obj = {}; obj.push = Array.prototype.push; obj.length = 4294967296; obj.push("x", "y", "z"); obj[2] === undefined. Actual: ' + (obj[2]));
 }
 
 
 if (obj[4294967296] !== "x") {
-   $ERROR('#6: var obj = {}; obj.push = Array.prototype.push; obj.length = 4294967296; obj.push("x", "y", "z"); obj[4294967296] === "x". Actual: ' + (obj[4294967296]));
+  $ERROR('#6: var obj = {}; obj.push = Array.prototype.push; obj.length = 4294967296; obj.push("x", "y", "z"); obj[4294967296] === "x". Actual: ' + (obj[4294967296]));
 }
 
 
 if (obj[4294967297] !== "y") {
-   $ERROR('#7: var obj = {}; obj.push = Array.prototype.push; obj.length = 4294967296; obj.push("x", "y", "z"); obj[4294967297] === "y". Actual: ' + (obj[4294967297]));
+  $ERROR('#7: var obj = {}; obj.push = Array.prototype.push; obj.length = 4294967296; obj.push("x", "y", "z"); obj[4294967297] === "y". Actual: ' + (obj[4294967297]));
 }
 
 
 if (obj[4294967298] !== "z") {
-   $ERROR('#8: var obj = {}; obj.push = Array.prototype.push; obj.length = 4294967296; obj.push("x", "y", "z"); obj[4294967298] === "z". Actual: ' + (obj[4294967298]));
+  $ERROR('#8: var obj = {}; obj.push = Array.prototype.push; obj.length = 4294967296; obj.push("x", "y", "z"); obj[4294967298] === "z". Actual: ' + (obj[4294967298]));
 }
 
 var obj = {};

@@ -9,14 +9,14 @@
 
 
 
-        function callbackfn(val, idx, obj) {
-            return obj.length === 2;
-        }
+function callbackfn(val, idx, obj) {
+  return obj.length === 2;
+}
 
-        var func = function (a, b) {
-            var newArr = Array.prototype.filter.call(arguments, callbackfn);
-            return newArr.length === 2;
-        };
+var func = function(a, b) {
+  var newArr = Array.prototype.filter.call(arguments, callbackfn);
+  return newArr.length === 2;
+};
 
 assert(func(12, 11), 'func(12, 11) !== true');
 

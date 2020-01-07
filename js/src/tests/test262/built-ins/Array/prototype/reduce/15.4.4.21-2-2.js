@@ -7,9 +7,9 @@
 
 
 
-        function callbackfn(prevVal, curVal, idx, obj) {
-            return (obj.length === 2);
-        }
+function callbackfn(prevVal, curVal, idx, obj) {
+  return (obj.length === 2);
+}
 
 assert.sameValue([12, 11].reduce(callbackfn, 1), true, '[12, 11].reduce(callbackfn, 1)');
 

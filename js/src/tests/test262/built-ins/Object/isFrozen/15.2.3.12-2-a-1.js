@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+var obj = {};
+
+Object.defineProperty(obj, "foo", {
+  value: 12,
+  writable: true,
+  configurable: false
+});
+
+Object.preventExtensions(obj);
+
+assert.sameValue(Object.isFrozen(obj), false, 'Object.isFrozen(obj)');
+
+reportCompare(0, 0);

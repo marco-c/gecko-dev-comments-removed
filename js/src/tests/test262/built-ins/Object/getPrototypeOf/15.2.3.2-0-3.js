@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  Object.getPrototypeOf();
+});
+
+reportCompare(0, 0);

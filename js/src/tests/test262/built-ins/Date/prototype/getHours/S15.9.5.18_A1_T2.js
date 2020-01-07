@@ -8,7 +8,7 @@
 
 
 
-if (delete Date.prototype.getHours  === false) {
+if (delete Date.prototype.getHours === false) {
   $ERROR('#1: The Date.prototype.getHours property has not the attributes DontDelete');
 }
 

@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+var arr = [];
+assert.throws(TypeError, function() {
+  Object.defineProperties(arr, {
+    length: {
+      enumerable: true
+    }
+  });
+});
+
+reportCompare(0, 0);

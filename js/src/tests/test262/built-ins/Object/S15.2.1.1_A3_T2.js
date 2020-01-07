@@ -9,7 +9,7 @@
 
 
 
-var obj = Object(null,2,3);
+var obj = Object(null, 2, 3);
 
 
 if (obj.constructor !== Object) {

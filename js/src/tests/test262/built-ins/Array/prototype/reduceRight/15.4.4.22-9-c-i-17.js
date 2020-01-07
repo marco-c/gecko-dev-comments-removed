@@ -9,21 +9,26 @@
 
 
 
-        var testResult = false;
-        function callbackfn(prevVal, curVal, idx, obj) {
-            if (idx === 1) {
-                testResult = (typeof curVal === "undefined");
-            }
-        }
+var testResult = false;
 
-        var obj = { 0: 0, 2: 2, length: 3 };
+function callbackfn(prevVal, curVal, idx, obj) {
+  if (idx === 1) {
+    testResult = (typeof curVal === "undefined");
+  }
+}
 
-        Object.defineProperty(obj, "1", {
-            set: function () { },
-            configurable: true
-        });
+var obj = {
+  0: 0,
+  2: 2,
+  length: 3
+};
 
-        Array.prototype.reduceRight.call(obj, callbackfn, "initialValue");
+Object.defineProperty(obj, "1", {
+  set: function() {},
+  configurable: true
+});
+
+Array.prototype.reduceRight.call(obj, callbackfn, "initialValue");
 
 assert(testResult, 'testResult !== true');
 

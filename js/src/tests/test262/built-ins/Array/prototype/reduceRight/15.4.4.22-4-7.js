@@ -9,9 +9,9 @@
 
 
 
-  var arr = new Array(10);
+var arr = new Array(10);
 assert.throws(TypeError, function() {
-    arr.reduceRight(new Object());
+  arr.reduceRight(new Object());
 });
 
 reportCompare(0, 0);

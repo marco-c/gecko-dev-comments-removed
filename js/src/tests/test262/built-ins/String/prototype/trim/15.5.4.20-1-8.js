@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+var strObj = String("    abc");
+
+assert.sameValue(strObj.trim(), "abc", 'strObj.trim()');
+assert.sameValue(strObj.toString(), "    abc", 'strObj.toString()');
+
+reportCompare(0, 0);

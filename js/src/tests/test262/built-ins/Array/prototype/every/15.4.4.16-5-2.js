@@ -7,15 +7,16 @@
 
 
 
-  var res = false;
-  var o = new Object();
-  o.res = true;
-  function callbackfn(val, idx, obj)
-  {
-    return this.res;
-  }
+var res = false;
+var o = new Object();
+o.res = true;
 
-  var arr = [1];
+function callbackfn(val, idx, obj)
+{
+  return this.res;
+}
+
+var arr = [1];
 
 assert.sameValue(arr.every(callbackfn, o), true, 'arr.every(callbackfn, o)');
 

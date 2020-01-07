@@ -12,10 +12,15 @@
 
 
 
-var obj = {0:0,1:1,2:2,3:3};
+var obj = {
+  0: 0,
+  1: 1,
+  2: 2,
+  3: 3
+};
 obj.length = 4;
 obj.splice = Array.prototype.splice;
-var arr = obj.splice(-4,3,4,5);
+var arr = obj.splice(-4, 3, 4, 5);
 
 
 arr.getClass = Object.prototype.toString;

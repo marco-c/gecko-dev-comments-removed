@@ -9,7 +9,7 @@
 
 
 
-var obj = Object((1===1)&&(!false));
+var obj = Object((1 === 1) && (!false));
 
 
 if (obj.constructor !== Boolean) {
@@ -27,7 +27,7 @@ if (!(obj)) {
 }
 
 
-if (obj===true) {
+if (obj === true) {
   $ERROR('#3: Object(expression) returns ToObject(expression)');
 }
 

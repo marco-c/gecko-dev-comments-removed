@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+
+var AsyncGeneratorFunction = Object.getPrototypeOf(async function* () {}).constructor;
+
+assert(Object.isExtensible(AsyncGeneratorFunction));
+
+reportCompare(0, 0);

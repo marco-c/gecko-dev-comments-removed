@@ -1,0 +1,15 @@
+'use strict';
+
+
+
+
+
+
+
+
+
+
+
+Function('a', 'a', 'return;');
+
+reportCompare(0, 0);

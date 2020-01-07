@@ -9,12 +9,12 @@
 
 
 
-var __str = String(function(){}());
+var __str = String(function() {}());
 
 
 
 if (typeof __str !== "string") {
-  $ERROR('#1: __str = String(function(){}()); typeof __str === "string". Actual: typeof __str ==='+typeof __str ); 
+  $ERROR('#1: __str = String(function(){}()); typeof __str === "string". Actual: typeof __str ===' + typeof __str);
 }
 
 
@@ -22,7 +22,7 @@ if (typeof __str !== "string") {
 
 
 if (__str !== "undefined") {
-  $ERROR('#2: __str = String(function(){}()); __str === "undefined". Actual: __str ==='+__str ); 
+  $ERROR('#2: __str = String(function(){}()); __str === "undefined". Actual: __str ===' + __str);
 }
 
 

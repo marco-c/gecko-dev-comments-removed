@@ -9,19 +9,30 @@
 
 
 
-  foo.prototype = new Array(1, 2, 3);
-  function foo() {}
-  var f = new foo();
+foo.prototype = new Array(1, 2, 3);
 
-  var o = { toString: function () { return '0';}};
-  f.length = o;
+function foo() {}
+var f = new foo();
 
-  
-  
-  
-  
-  
- var i = Array.prototype.lastIndexOf.call({length: { toString: function () { return '0';}}}, 1);
+var o = {
+  toString: function() {
+    return '0';
+  }
+};
+f.length = o;
+
+
+
+
+
+
+var i = Array.prototype.lastIndexOf.call({
+  length: {
+    toString: function() {
+      return '0';
+    }
+  }
+}, 1);
 
 
 assert.sameValue(i, -1, 'i');

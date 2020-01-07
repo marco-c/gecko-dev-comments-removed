@@ -9,7 +9,7 @@
 
 
 var x = Date.prototype.getMonth;
-if(x === 1)
+if (x === 1)
   Date.prototype.getMonth = 2;
 else
   Date.prototype.getMonth = 1;

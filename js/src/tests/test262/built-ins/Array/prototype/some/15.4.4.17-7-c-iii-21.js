@@ -7,9 +7,9 @@
 
 
 
-        function callbackfn(val, idx, obj) {
-            return new Date();
-        }
+function callbackfn(val, idx, obj) {
+  return new Date();
+}
 
 assert([11].some(callbackfn), '[11].some(callbackfn) !== true');
 

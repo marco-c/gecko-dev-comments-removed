@@ -10,7 +10,7 @@
 
 
 
-if (delete Date.prototype.getMinutes.length  !== true) {
+if (delete Date.prototype.getMinutes.length !== true) {
   $ERROR('#1: The Date.prototype.getMinutes.length property does not have the attributes DontDelete');
 }
 

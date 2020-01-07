@@ -8,11 +8,11 @@
 
 
 
-if(Date.prototype.getUTCFullYear.hasOwnProperty("length") !== true){
+if (Date.prototype.getUTCFullYear.hasOwnProperty("length") !== true) {
   $ERROR('#1: The getUTCFullYear has a "length" property');
 }
 
-if(Date.prototype.getUTCFullYear.length !== 0){
+if (Date.prototype.getUTCFullYear.length !== 0) {
   $ERROR('#2: The "length" property of the getUTCFullYear is 0');
 }
 

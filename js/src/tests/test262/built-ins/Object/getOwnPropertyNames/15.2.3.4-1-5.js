@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+
+
+Object.getOwnPropertyNames("abc");
+
+reportCompare(0, 0);

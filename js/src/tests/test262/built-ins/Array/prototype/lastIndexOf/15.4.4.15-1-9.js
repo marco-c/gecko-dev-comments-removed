@@ -7,10 +7,10 @@
 
 
 
-        var obj = function (a, b) {
-            return a + b;
-        };
-        obj[1] = true;
+var obj = function(a, b) {
+  return a + b;
+};
+obj[1] = true;
 
 assert.sameValue(Array.prototype.lastIndexOf.call(obj, true), 1, 'Array.prototype.lastIndexOf.call(obj, true)');
 

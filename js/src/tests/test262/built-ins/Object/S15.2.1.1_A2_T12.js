@@ -9,7 +9,9 @@
 
 
 
-var obj = Object(1.1*([].length+{q:1}["q"]));
+var obj = Object(1.1 * ([].length + {
+  q: 1
+}["q"]));
 
 
 if (typeof obj !== "object") {
@@ -22,7 +24,7 @@ if (obj.constructor !== Number) {
 }
 
 
-if ((obj != 1.1)||(obj === 1.1)) {
+if ((obj != 1.1) || (obj === 1.1)) {
   $ERROR('#4: Object(expression) returns ToObject(expression)');
 }
 

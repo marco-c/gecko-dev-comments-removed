@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+var descObj = {};
+
+Object.defineProperty(descObj, "get", {
+  get: function() {
+    return function() {
+      return "ownAccessorProperty";
+    };
+  }
+});
+
+var newObj = Object.create({}, {
+  prop: descObj
+});
+
+assert.sameValue(newObj.prop, "ownAccessorProperty", 'newObj.prop');
+
+reportCompare(0, 0);

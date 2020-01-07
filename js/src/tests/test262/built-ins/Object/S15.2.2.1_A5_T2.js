@@ -12,7 +12,7 @@
 var num = NaN;
 
 
-if (typeof num  !== 'number') {
+if (typeof num !== 'number') {
   $ERROR('#1: NaN is NOT a number');
 }
 

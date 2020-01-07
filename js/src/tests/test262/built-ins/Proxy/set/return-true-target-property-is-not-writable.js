@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+var target = {};
+var handler = {
+  set: function(t, prop, value, receiver) {
+    return true;
+  }
+};
+var p = new Proxy(target, handler);
+
+Object.defineProperty(target, "attr", {
+  configurable: true,
+  writable: false,
+  value: "foo"
+});
+
+assert(Reflect.set(p, "attr", "foo"));
+
+reportCompare(0, 0);

@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+var b = Object.isFrozen(RegExp);
+
+assert.sameValue(b, false, 'b');
+
+reportCompare(0, 0);

@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+var obj = new Date();
+
+assert.sameValue(Object.getPrototypeOf(obj), Date.prototype, 'Object.getPrototypeOf(obj)');
+
+reportCompare(0, 0);

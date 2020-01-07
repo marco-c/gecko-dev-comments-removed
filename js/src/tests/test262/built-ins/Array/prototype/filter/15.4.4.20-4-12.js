@@ -7,14 +7,14 @@
 
 
 
-        function callbackfn(val, idx, obj) {
-            if (idx === 1) {
-                return val === 9;
-            }
-            return false;
-        }
+function callbackfn(val, idx, obj) {
+  if (idx === 1) {
+    return val === 9;
+  }
+  return false;
+}
 
-        var newArr = [11, 9].filter(callbackfn);
+var newArr = [11, 9].filter(callbackfn);
 
 assert.sameValue(newArr.length, 1, 'newArr.length');
 assert.sameValue(newArr[0], 9, 'newArr[0]');

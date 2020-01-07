@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+Object.freeze(false);
+Object.freeze(true);
+
+reportCompare(0, 0);

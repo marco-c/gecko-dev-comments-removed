@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+var fun = function() {};
+
+Object.defineProperty(fun, "foo", {
+  value: 12,
+  configurable: false
+});
+assert.throws(TypeError, function() {
+  Object.defineProperty(fun, "foo", {
+    value: 11,
+    configurable: true
+  });
+});
+assert.sameValue(fun.foo, 12, 'fun.foo');
+
+reportCompare(0, 0);

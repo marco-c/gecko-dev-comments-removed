@@ -21,6 +21,6 @@ assert(firstObject !== null);
 previousObject = null;
 
 (new Function('tag', 'a', 'b', 'return tag`head${b}tail`;'))(tag, 1, 2);
-assert.sameValue(previousObject, firstObject);
+assert.notSameValue(previousObject, firstObject);
 
 reportCompare(0, 0);

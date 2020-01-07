@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+var desc = Object.getOwnPropertyDescriptor(Date.prototype, "getDay");
+
+assert.sameValue(desc.value, Date.prototype.getDay, 'desc.value');
+assert.sameValue(desc.writable, true, 'desc.writable');
+assert.sameValue(desc.enumerable, false, 'desc.enumerable');
+assert.sameValue(desc.configurable, true, 'desc.configurable');
+
+reportCompare(0, 0);

@@ -7,9 +7,9 @@
 
 
 
-  var arr = new Array(10);
+var arr = new Array(10);
 assert.throws(TypeError, function() {
-    arr.some(null);
+  arr.some(null);
 });
 
 reportCompare(0, 0);

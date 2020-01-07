@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+var x = +Infinity;
+if (Math.round(x) !== +Infinity)
+{
+  $ERROR("#1: 'var x=+Infinity; Math.round(x) !== +Infinity'");
+}
+
+reportCompare(0, 0);

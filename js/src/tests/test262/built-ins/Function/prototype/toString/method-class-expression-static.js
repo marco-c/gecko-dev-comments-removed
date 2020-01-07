@@ -6,13 +6,14 @@
 
 
 
+
 let x = "h";
 let f = class { static f  (  )  {  } }.f;
 let g = class { static [  "g"  ]  (  )  {  } }.g;
 let h = class { static [  x  ]  (  )  {  } }.h;
 
-assert.sameValue(f.toString(), "f /* a */ ( /* b */ ) /* c */ { /* d */ }");
-assert.sameValue(g.toString(), "[ /* a */ \"g\" /* b */ ] /* c */ ( /* d */ ) /* e */ { /* f */ }");
-assert.sameValue(h.toString(), "[ /* a */ x /* b */ ] /* c */ ( /* d */ ) /* e */ { /* f */ }");
+assertToStringOrNativeFunction(f, "f /* a */ ( /* b */ ) /* c */ { /* d */ }");
+assertToStringOrNativeFunction(g, "[ /* a */ \"g\" /* b */ ] /* c */ ( /* d */ ) /* e */ { /* f */ }");
+assertToStringOrNativeFunction(h, "[ /* a */ x /* b */ ] /* c */ ( /* d */ ) /* e */ { /* f */ }");
 
 reportCompare(0, 0);

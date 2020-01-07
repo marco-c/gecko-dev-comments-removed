@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+
+obj.foo = true; 
+
+Object.defineProperties(obj, {
+  foo: {
+    value: false
+  }
+});
+verifyEqualTo(obj, "foo", false);
+
+verifyWritable(obj, "foo");
+
+verifyEnumerable(obj, "foo");
+
+verifyConfigurable(obj, "foo");
+
+reportCompare(0, 0);

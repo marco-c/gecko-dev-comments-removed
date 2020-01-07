@@ -20,13 +20,13 @@
 
 var body = "return a;";
 
-var p=Object("a");
+var p = Object("a");
 
 
 try {
   var f = new Function(p, body);
 } catch (e) {
-  $ERROR('#1: test failed with error '+e);
+  $ERROR('#1: test failed with error ' + e);
 }
 
 
@@ -35,7 +35,7 @@ if (f.constructor !== Function) {
 }
 
 
-if (f(1)!==1) {
+if (f(1) !== 1) {
   $ERROR('#3: When the Function constructor is called with one argument then body be that argument the following steps are taken...');
 }
 

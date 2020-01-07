@@ -9,15 +9,15 @@
 
 
 
-var obj={};
+var obj = {};
 
 
 try {
-  Function().apply(obj,"1,3,4");
+  Function().apply(obj, "1,3,4");
   $ERROR('#1: if argArray is neither an array nor an arguments object (see 10.1.8), a TypeError exception is thrown');
 } catch (e) {
   if (!(e instanceof TypeError)) {
-  	$ERROR('#1.1: if argArray is neither an array nor an arguments object (see 10.1.8), a TypeError exception is thrown');
+    $ERROR('#1.1: if argArray is neither an array nor an arguments object (see 10.1.8), a TypeError exception is thrown');
   }
 }
 

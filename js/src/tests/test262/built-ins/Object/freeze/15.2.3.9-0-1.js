@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+var f = Object.freeze;
+
+assert.sameValue(typeof(f), "function", 'typeof(f)');
+
+reportCompare(0, 0);

@@ -19,6 +19,8 @@
 
 
 
+
+
 assert.sameValue(SharedArrayBuffer.prototype.slice.name, "slice");
 
 verifyNotEnumerable(SharedArrayBuffer.prototype.slice, "name");

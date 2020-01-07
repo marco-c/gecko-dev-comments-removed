@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+var desc = Object.getOwnPropertyDescriptor(String.prototype, "concat");
+
+assert.sameValue(desc.value, String.prototype.concat, 'desc.value');
+assert.sameValue(desc.writable, true, 'desc.writable');
+assert.sameValue(desc.enumerable, false, 'desc.enumerable');
+assert.sameValue(desc.configurable, true, 'desc.configurable');
+
+reportCompare(0, 0);

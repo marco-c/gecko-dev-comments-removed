@@ -1,0 +1,64 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+testWithBigIntTypedArrayConstructors(function(TA) {
+
+  assert.throws(SyntaxError, function() {
+    new TA(["definately not a number"]);
+  }, "StringToBigInt(prim) == NaN");
+
+});
+
+reportCompare(0, 0);

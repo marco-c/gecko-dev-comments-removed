@@ -9,6 +9,8 @@
 
 
 
+
+
 assert.sameValue(Atomics.or.name, "or");
 
 verifyNotEnumerable(Atomics.or, "name");

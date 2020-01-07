@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+var newObj = Object.create({}, {
+  prop: {
+    get: function() {
+      return "present";
+    }
+  }
+});
+
+assert.sameValue(newObj.prop, "present", 'newObj.prop');
+
+reportCompare(0, 0);

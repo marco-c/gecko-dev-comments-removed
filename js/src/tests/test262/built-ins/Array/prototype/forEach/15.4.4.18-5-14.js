@@ -7,12 +7,13 @@
 
 
 
-        var result = false;
-        function callbackfn(val, idx, obj) {
-            result = (this === Math);
-        }
+var result = false;
 
-        [11].forEach(callbackfn, Math);
+function callbackfn(val, idx, obj) {
+  result = (this === Math);
+}
+
+[11].forEach(callbackfn, Math);
 
 assert(result, 'result !== true');
 

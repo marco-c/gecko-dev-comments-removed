@@ -7,16 +7,17 @@
 
 
 
-        var result = false;
-        function callbackfn(val, idx, obj) {
-            result = obj instanceof Error;
-        }
+var result = false;
 
-        var obj = new Error();
-        obj.length = 1;
-        obj[0] = 1;
+function callbackfn(val, idx, obj) {
+  result = obj instanceof Error;
+}
 
-        Array.prototype.forEach.call(obj, callbackfn);
+var obj = new Error();
+obj.length = 1;
+obj[0] = 1;
+
+Array.prototype.forEach.call(obj, callbackfn);
 
 assert(result, 'result !== true');
 

@@ -8,7 +8,7 @@
 
 
 
-if (delete Date.prototype.constructor  === false) {
+if (delete Date.prototype.constructor === false) {
   $ERROR('#1: The Date.prototype.constructor property has not the attributes DontDelete');
 }
 

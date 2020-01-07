@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+try {
+  Object.defineProperty(Math, "foo", {
+    value: 12,
+    configurable: true
+  });
+
+  verifyEqualTo(Math, "foo", 12);
+
+  verifyNotWritable(Math, "foo");
+
+  verifyNotEnumerable(Math, "foo");
+
+  verifyConfigurable(Math, "foo");
+} finally {
+  delete Math.foo;
+}
+
+reportCompare(0, 0);

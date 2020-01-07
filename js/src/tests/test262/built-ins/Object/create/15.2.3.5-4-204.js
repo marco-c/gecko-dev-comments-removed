@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+var newObj = Object.create({}, {
+  prop: {
+    writable: undefined
+  }
+});
+
+assert(newObj.hasOwnProperty("prop"));
+assert.sameValue(typeof newObj.prop, "undefined");
+verifyNotWritable(newObj, "prop");
+
+reportCompare(0, 0);

@@ -11,7 +11,7 @@
 
 
 
-var obj = Object(""+1);
+var obj = Object("" + 1);
 
 
 if (obj.constructor !== String) {
@@ -24,7 +24,7 @@ if (typeof obj !== "object") {
 }
 
 
-if ((obj != "1")||(obj === "1")) {
+if ((obj != "1") || (obj === "1")) {
   $ERROR('#4: Object(expression) returns ToObject(expression)');
 }
 

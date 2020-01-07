@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+var attributes = {
+  get: function() {
+    return "ownDataProperty";
+  }
+};
+
+Object.defineProperty(obj, "property", attributes);
+
+assert.sameValue(obj.property, "ownDataProperty", 'obj.property');
+
+reportCompare(0, 0);

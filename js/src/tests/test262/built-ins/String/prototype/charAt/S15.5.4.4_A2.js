@@ -9,7 +9,7 @@
 
 
 
-function __FACTORY(){};
+function __FACTORY() {};
 
 __FACTORY.prototype.charAt = String.prototype.charAt;
 
@@ -18,7 +18,7 @@ var __instance = new __FACTORY;
 
 
 if (__instance.charAt(-1) !== "") {
-  $ERROR('#1: __instance.charAt(-1) === "". Actual: __instance.charAt(-1) ==='+__instance.charAt(-1) ); 
+  $ERROR('#1: __instance.charAt(-1) === "". Actual: __instance.charAt(-1) ===' + __instance.charAt(-1));
 }
 
 

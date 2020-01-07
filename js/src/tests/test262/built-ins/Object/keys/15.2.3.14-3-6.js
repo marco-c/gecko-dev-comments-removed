@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+
+var arr = Object.keys(obj);
+
+assert(arr instanceof Array, 'arr instanceof Array !== true');
+
+reportCompare(0, 0);

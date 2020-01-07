@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+var desc = Object.getOwnPropertyDescriptor(Math, "max");
+
+assert.sameValue(desc.value, Math.max, 'desc.value');
+assert.sameValue(desc.writable, true, 'desc.writable');
+assert.sameValue(desc.enumerable, false, 'desc.enumerable');
+assert.sameValue(desc.configurable, true, 'desc.configurable');
+
+reportCompare(0, 0);

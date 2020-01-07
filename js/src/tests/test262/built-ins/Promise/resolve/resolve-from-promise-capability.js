@@ -16,7 +16,9 @@
 
 
 
-var expectedThisValue = (function() { return this; }());
+var expectedThisValue = (function() {
+  return this;
+}());
 var callCount = 0;
 var object = {};
 var thisValue, args;

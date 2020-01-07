@@ -12,18 +12,23 @@
 
 
 
-  var o = {};
+var o = {};
 
-  var getter = function () { return 1; };
-  var desc = { get: getter };
+var getter = function() {
+  return 1;
+};
+var desc = {
+  get: getter
+};
 
-  Object.defineProperty(o, "foo", desc);
+Object.defineProperty(o, "foo", desc);
 
-  var propDesc = Object.getOwnPropertyDescriptor(o, "foo");
+var propDesc = Object.getOwnPropertyDescriptor(o, "foo");
 
 assert.sameValue(typeof(propDesc.get), "function", 'typeof(propDesc.get)');
-assert.sameValue(propDesc.get, getter, 'propDesc.get');                   
-assert.sameValue(propDesc.set, undefined, 'propDesc.set');                
-assert.sameValue(propDesc.enumerable, false, 'propDesc.enumerable');      
-assert.sameValue(propDesc.configurable, false, 'propDesc.configurable');  
+assert.sameValue(propDesc.get, getter, 'propDesc.get'); 
+assert.sameValue(propDesc.set, undefined, 'propDesc.set'); 
+assert.sameValue(propDesc.enumerable, false, 'propDesc.enumerable'); 
+assert.sameValue(propDesc.configurable, false, 'propDesc.configurable'); 
+
 reportCompare(0, 0);

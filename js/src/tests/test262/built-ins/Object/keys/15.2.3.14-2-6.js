@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+var o = {
+  x: 1,
+  y: 2
+};
+
+var a = Object.keys(o);
+
+assert.sameValue(Object.isFrozen(a), false, 'Object.isFrozen(a)');
+
+reportCompare(0, 0);

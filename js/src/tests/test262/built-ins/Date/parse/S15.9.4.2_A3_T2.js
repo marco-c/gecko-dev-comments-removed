@@ -10,7 +10,7 @@
 
 
 
-if (delete Date.parse.length  !== true) {
+if (delete Date.parse.length !== true) {
   $ERROR('#1: The Date.parse.length property does not have the attributes DontDelete');
 }
 

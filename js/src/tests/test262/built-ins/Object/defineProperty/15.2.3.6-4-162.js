@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+var arrObj = [];
+
+Object.defineProperty(arrObj, "length", {
+  writable: false
+});
+assert.throws(TypeError, function() {
+  Object.defineProperty(arrObj, "length", {
+    value: 12
+  });
+});
+
+reportCompare(0, 0);

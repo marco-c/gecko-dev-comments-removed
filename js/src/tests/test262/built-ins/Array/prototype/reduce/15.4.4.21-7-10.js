@@ -7,8 +7,8 @@
 
 
 
-        var str = "initialValue is present";
+var str = "initialValue is present";
 
-assert.sameValue([].reduce(function () { }, str), str, '[].reduce(function () { }, str)');
+assert.sameValue([].reduce(function() {}, str), str, '[].reduce(function () { }, str)');
 
 reportCompare(0, 0);

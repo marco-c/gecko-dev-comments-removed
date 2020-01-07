@@ -9,16 +9,16 @@
 
 
 
-        
-        
-        
-        
-        
-        var fromIndex = {
-            toString: function () {
-                return '1';
-            }
-        };
+
+
+
+
+
+var fromIndex = {
+  toString: function() {
+    return '1';
+  }
+};
 
 assert.sameValue([0, true].indexOf(true, fromIndex), 1, '[0, true].indexOf(true, fromIndex)');
 

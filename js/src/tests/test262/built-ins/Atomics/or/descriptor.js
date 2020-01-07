@@ -8,6 +8,8 @@
 
 
 
+
+
 verifyWritable(Atomics, "or");
 verifyNotEnumerable(Atomics, "or");
 verifyConfigurable(Atomics, "or");

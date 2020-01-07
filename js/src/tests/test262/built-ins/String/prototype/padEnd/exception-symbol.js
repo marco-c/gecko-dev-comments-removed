@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  String.prototype.padEnd.call(Symbol());
+});
+
+reportCompare(0, 0);

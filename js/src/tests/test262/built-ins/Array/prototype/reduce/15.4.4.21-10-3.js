@@ -7,11 +7,12 @@
 
 
 
-  foo.prototype = [1];
-  function foo() {}
-  var f = new foo();
+foo.prototype = [1];
 
-  function cb(){}
+function foo() {}
+var f = new foo();
+
+function cb() {}
 
 assert.sameValue(f.reduce(cb), 1, 'f.reduce(cb)');
 

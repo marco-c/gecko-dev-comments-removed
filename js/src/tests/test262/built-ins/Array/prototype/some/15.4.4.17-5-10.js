@@ -7,11 +7,11 @@
 
 
 
-        var objArray = [];
+var objArray = [];
 
-        function callbackfn(val, idx, obj) {
-            return this === objArray;
-        }
+function callbackfn(val, idx, obj) {
+  return this === objArray;
+}
 
 assert([11].some(callbackfn, objArray), '[11].some(callbackfn, objArray) !== true');
 

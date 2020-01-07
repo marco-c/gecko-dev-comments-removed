@@ -9,7 +9,7 @@
 
 
 var x = Date.prototype.getFullYear;
-if(x === 1)
+if (x === 1)
   Date.prototype.getFullYear = 2;
 else
   Date.prototype.getFullYear = 1;

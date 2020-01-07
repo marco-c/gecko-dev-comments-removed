@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+
+Object.prototype.get = function() {
+  return "argumentGetProperty";
+};
+var argObj = (function() {
+  return arguments;
+})();
+
+Object.defineProperty(obj, "property", argObj);
+
+assert.sameValue(obj.property, "argumentGetProperty", 'obj.property');
+
+reportCompare(0, 0);

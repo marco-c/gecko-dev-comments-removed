@@ -11,12 +11,12 @@
 
 
 
-  foo.prototype = Function.prototype;
-  
-  function foo() {}
-  var f = new foo();
+foo.prototype = Function.prototype;
+
+function foo() {}
+var f = new foo();
 assert.throws(TypeError, function() {
-    f.bind();
+  f.bind();
 });
 
 reportCompare(0, 0);

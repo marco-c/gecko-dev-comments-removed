@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+throw "Test262: This statement should not be evaluated.";
+
+function _13_0_11_fun() {
+    "use strict";
+    function _13_0_11_inner() {
+        eval = 42;
+    }
+}

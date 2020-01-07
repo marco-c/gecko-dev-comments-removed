@@ -10,21 +10,21 @@
 
 
 
-        function callbackfn(val, idx, obj) {
-            if (idx === 0) {
-                return typeof val === "undefined";
-            }
-            return false;
-        }
+function callbackfn(val, idx, obj) {
+  if (idx === 0) {
+    return typeof val === "undefined";
+  }
+  return false;
+}
 
-        var arr = [];
+var arr = [];
 
-        Object.defineProperty(arr, "0", {
-            set: function () { },
-            configurable: true
-        });
+Object.defineProperty(arr, "0", {
+  set: function() {},
+  configurable: true
+});
 
-            Array.prototype[0] = 100;
+Array.prototype[0] = 100;
 
 assert(arr.some(callbackfn), 'arr.some(callbackfn) !== true');
 

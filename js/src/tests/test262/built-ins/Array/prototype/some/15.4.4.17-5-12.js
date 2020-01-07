@@ -7,11 +7,11 @@
 
 
 
-        var objBoolean = new Boolean();
+var objBoolean = new Boolean();
 
-        function callbackfn(val, idx, obj) {
-            return this === objBoolean;
-        }
+function callbackfn(val, idx, obj) {
+  return this === objBoolean;
+}
 
 assert([11].some(callbackfn, objBoolean), '[11].some(callbackfn, objBoolean) !== true');
 

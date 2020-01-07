@@ -7,11 +7,11 @@
 
 
 
-        function callbackfn(val, idx) {
-            return (val > 10 && arguments[2][idx] === val);
-        }
+function callbackfn(val, idx) {
+  return (val > 10 && arguments[2][idx] === val);
+}
 
-        var testResult = [11].map(callbackfn);
+var testResult = [11].map(callbackfn);
 
 assert.sameValue(testResult[0], true, 'testResult[0]');
 

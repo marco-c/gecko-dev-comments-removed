@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(parseFloat(".00_01e2"), .00);
+
+reportCompare(0, 0);

@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+var errObj = new Error("ErrorMessage");
+errObj.name = "ErrorName";
+
+assert.sameValue(errObj.toString(), "ErrorName: ErrorMessage", 'errObj.toString()');
+
+reportCompare(0, 0);

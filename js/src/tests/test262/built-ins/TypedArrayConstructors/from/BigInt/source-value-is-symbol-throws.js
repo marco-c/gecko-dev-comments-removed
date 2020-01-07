@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var s = Symbol("1");
+
+testWithBigIntTypedArrayConstructors(function(TA) {
+  assert.throws(TypeError, function() {
+    TA.from([s]);
+  });
+});
+
+reportCompare(0, 0);

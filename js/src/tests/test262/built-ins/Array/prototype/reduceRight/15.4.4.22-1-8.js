@@ -7,13 +7,13 @@
 
 
 
-        var obj = new String("hello\nworld\\!");
-        var accessed = false;
+var obj = new String("hello\nworld\\!");
+var accessed = false;
 
-        function callbackfn(prevVal, curVal, idx, o) {
-            accessed = true;
-            return o instanceof String;
-        }
+function callbackfn(prevVal, curVal, idx, o) {
+  accessed = true;
+  return o instanceof String;
+}
 
 assert(Array.prototype.reduceRight.call(obj, callbackfn, "h"), 'Array.prototype.reduceRight.call(obj, callbackfn, "h") !== true');
 assert(accessed, 'accessed !== true');

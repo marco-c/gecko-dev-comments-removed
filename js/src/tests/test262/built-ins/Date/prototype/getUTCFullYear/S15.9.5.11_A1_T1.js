@@ -9,7 +9,7 @@
 
 
 var x = Date.prototype.getUTCFullYear;
-if(x === 1)
+if (x === 1)
   Date.prototype.getUTCFullYear = 2;
 else
   Date.prototype.getUTCFullYear = 1;

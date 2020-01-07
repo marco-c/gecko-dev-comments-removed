@@ -9,7 +9,7 @@
 
 
 
-var obj = new Object((null,2,3),1,2);
+var obj = new Object((null, 2, 3), 1, 2);
 
 
 if (obj.constructor !== Number) {
@@ -22,7 +22,7 @@ if (typeof obj !== "object") {
 }
 
 
-if ((obj != 3)||(obj === 3)) {
+if ((obj != 3) || (obj === 3)) {
   $ERROR('3#: Since Object as a function calling is the same as function calling list of arguments can appears in braces;');
 }
 

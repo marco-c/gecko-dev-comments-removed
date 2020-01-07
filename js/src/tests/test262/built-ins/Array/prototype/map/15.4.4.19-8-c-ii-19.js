@@ -7,20 +7,24 @@
 
 
 
-        var called = 0;
-        var result = false;
+var called = 0;
+var result = false;
 
-        function callbackfn(val, idx, obj) {
-            called++;
-            if (val === 11) {
-                result = true;
-            }
-            return true;
-        }
+function callbackfn(val, idx, obj) {
+  called++;
+  if (val === 11) {
+    result = true;
+  }
+  return true;
+}
 
-        var obj = { 0: 9, non_index_property: 11, length: 20 };
+var obj = {
+  0: 9,
+  non_index_property: 11,
+  length: 20
+};
 
-        var testResult = Array.prototype.map.call(obj, callbackfn);
+var testResult = Array.prototype.map.call(obj, callbackfn);
 
 assert.sameValue(result, false, 'result');
 assert.sameValue(testResult[0], true, 'testResult[0]');

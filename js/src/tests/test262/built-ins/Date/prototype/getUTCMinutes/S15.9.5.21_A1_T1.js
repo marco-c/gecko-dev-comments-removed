@@ -9,7 +9,7 @@
 
 
 var x = Date.prototype.getUTCMinutes;
-if(x === 1)
+if (x === 1)
   Date.prototype.getUTCMinutes = 2;
 else
   Date.prototype.getUTCMinutes = 1;

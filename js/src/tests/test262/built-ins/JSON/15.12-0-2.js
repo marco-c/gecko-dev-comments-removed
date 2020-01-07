@@ -10,9 +10,9 @@
 
 
 
-  var o = JSON;
+var o = JSON;
 assert.throws(TypeError, function() {
-    var j = new JSON();
+  var j = new JSON();
 });
 
 reportCompare(0, 0);

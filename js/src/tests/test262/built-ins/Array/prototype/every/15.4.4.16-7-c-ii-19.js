@@ -7,14 +7,19 @@
 
 
 
-        var called = 0;
+var called = 0;
 
-        function callbackfn(val, idx, obj) {
-            called++;
-            return val !== 8;
-        }
+function callbackfn(val, idx, obj) {
+  called++;
+  return val !== 8;
+}
 
-        var obj = { 0: 11, 10: 12, non_index_property: 8, length: 20 };
+var obj = {
+  0: 11,
+  10: 12,
+  non_index_property: 8,
+  length: 20
+};
 
 assert(Array.prototype.every.call(obj, callbackfn), 'Array.prototype.every.call(obj, callbackfn) !== true');
 assert.sameValue(called, 2, 'called');

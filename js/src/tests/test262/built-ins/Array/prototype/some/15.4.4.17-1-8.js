@@ -7,11 +7,11 @@
 
 
 
-        function callbackfn(val, idx, obj) {
-            return obj instanceof String;
-        }
+function callbackfn(val, idx, obj) {
+  return obj instanceof String;
+}
 
-        var obj = new String("hello\nw_orld\\!");
+var obj = new String("hello\nw_orld\\!");
 
 assert(Array.prototype.some.call(obj, callbackfn), 'Array.prototype.some.call(obj, callbackfn) !== true');
 

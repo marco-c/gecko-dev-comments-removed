@@ -6,6 +6,7 @@
 
 
 
+
 let x = "h";
 class F { static f  (  )  {  } }
 class G { static [  "g"  ]  (  )  {  } }
@@ -15,8 +16,8 @@ let f = F.f;
 let g = G.g;
 let h = H.h;
 
-assert.sameValue(f.toString(), "f /* a */ ( /* b */ ) /* c */ { /* d */ }");
-assert.sameValue(g.toString(), "[ /* a */ \"g\" /* b */ ] /* c */ ( /* d */ ) /* e */ { /* f */ }");
-assert.sameValue(h.toString(), "[ /* a */ x /* b */ ] /* c */ ( /* d */ ) /* e */ { /* f */ }");
+assertToStringOrNativeFunction(f, "f /* a */ ( /* b */ ) /* c */ { /* d */ }");
+assertToStringOrNativeFunction(g, "[ /* a */ \"g\" /* b */ ] /* c */ ( /* d */ ) /* e */ { /* f */ }");
+assertToStringOrNativeFunction(h, "[ /* a */ x /* b */ ] /* c */ ( /* d */ ) /* e */ { /* f */ }");
 
 reportCompare(0, 0);

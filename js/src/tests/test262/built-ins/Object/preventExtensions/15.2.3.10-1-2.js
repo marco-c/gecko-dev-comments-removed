@@ -1,0 +1,11 @@
+
+
+
+
+
+
+
+
+Object.preventExtensions(null);
+
+reportCompare(0, 0);

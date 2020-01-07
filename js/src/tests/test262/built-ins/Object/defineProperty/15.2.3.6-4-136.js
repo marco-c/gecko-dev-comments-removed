@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+var arrObj = [];
+assert.throws(RangeError, function() {
+  Object.defineProperty(arrObj, "length", {
+    value: NaN
+  });
+});
+
+reportCompare(0, 0);

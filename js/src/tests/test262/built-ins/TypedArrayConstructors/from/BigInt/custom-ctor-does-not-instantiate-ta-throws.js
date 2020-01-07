@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+testWithBigIntTypedArrayConstructors(function(TA) {
+  var ctor = function() {};
+
+  assert.throws(TypeError, function() {
+    TA.from.call(ctor, []);
+  });
+});
+
+reportCompare(0, 0);

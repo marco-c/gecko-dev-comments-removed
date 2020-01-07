@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+var obj = {};
+obj.prop = obj;
+
+assert.throws(TypeError, function() {
+  JSON.stringify(obj);
+});
+
+reportCompare(0, 0);

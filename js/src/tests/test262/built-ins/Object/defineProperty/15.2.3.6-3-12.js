@@ -12,13 +12,15 @@
 
 
 
-    var o = {};
-    
-    
-    var setter = "abc";
-    var desc = { set: setter };
+var o = {};
+
+
+var setter = "abc";
+var desc = {
+  set: setter
+};
 assert.throws(TypeError, function() {
-      Object.defineProperty(o, "foo", desc);
+  Object.defineProperty(o, "foo", desc);
 });
 assert.sameValue(o.hasOwnProperty("foo"), false, 'o.hasOwnProperty("foo")');
 

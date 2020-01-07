@@ -7,17 +7,18 @@
 
 
 
-  var res = false;
-  function callbackfn(val, idx, obj)
-  {
-    return this.res;
-  }
+var res = false;
 
-  function foo(){}
-  foo.res = true;
+function callbackfn(val, idx, obj)
+{
+  return this.res;
+}
 
-  var srcArr = [1];
-  var resArr = srcArr.filter(callbackfn,foo);
+function foo() {}
+foo.res = true;
+
+var srcArr = [1];
+var resArr = srcArr.filter(callbackfn, foo);
 
 assert.sameValue(resArr.length, 1, 'resArr.length');
 

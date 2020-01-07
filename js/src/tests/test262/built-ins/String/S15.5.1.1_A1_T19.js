@@ -9,12 +9,12 @@
 
 
 
-var __str = String(new Array(1,2,3));
+var __str = String(new Array(1, 2, 3));
 
 
 
 if (typeof __str !== "string") {
-  $ERROR('#1: __str = String(new Array(1,2,3)); typeof __str === "string". Actual: typeof __str ==='+typeof __str ); 
+  $ERROR('#1: __str = String(new Array(1,2,3)); typeof __str === "string". Actual: typeof __str ===' + typeof __str);
 }
 
 
@@ -22,7 +22,7 @@ if (typeof __str !== "string") {
 
 
 if (__str !== "1,2,3") {
-  $ERROR('#2: __str = String(new Array(1,2,3)); __str === "1,2,3". Actual: __str ==='+__str ); 
+  $ERROR('#2: __str = String(new Array(1,2,3)); __str === "1,2,3". Actual: __str ===' + __str);
 }
 
 

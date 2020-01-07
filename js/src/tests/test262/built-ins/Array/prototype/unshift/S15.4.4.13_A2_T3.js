@@ -16,21 +16,39 @@ var obj = {};
 obj.unshift = Array.prototype.unshift;
 
 
-obj.length = {valueOf: function() {return 3}};
+obj.length = {
+  valueOf: function() {
+    return 3
+  }
+};
 var unshift = obj.unshift();
 if (unshift !== 3) {
   $ERROR('#1:  obj.length = {valueOf: function() {return 3}}  obj.unshift() === 3. Actual: ' + (unshift));
 }
 
 
-obj.length = {valueOf: function() {return 3}, toString: function() {return 1}};
+obj.length = {
+  valueOf: function() {
+    return 3
+  },
+  toString: function() {
+    return 1
+  }
+};
 var unshift = obj.unshift();
 if (unshift !== 3) {
   $ERROR('#0:  obj.length = {valueOf: function() {return 3}, toString: function() {return 1}}  obj.unshift() === 3. Actual: ' + (unshift));
 }
 
 
-obj.length = {valueOf: function() {return 3}, toString: function() {return {}}};
+obj.length = {
+  valueOf: function() {
+    return 3
+  },
+  toString: function() {
+    return {}
+  }
+};
 var unshift = obj.unshift();
 if (unshift !== 3) {
   $ERROR('#1:  obj.length = {valueOf: function() {return 3}, toString: function() {return {}}}  obj.unshift() === 3. Actual: ' + (unshift));
@@ -38,7 +56,14 @@ if (unshift !== 3) {
 
 
 try {
-  obj.length = {valueOf: function() {return 3}, toString: function() {throw "error"}};
+  obj.length = {
+    valueOf: function() {
+      return 3
+    },
+    toString: function() {
+      throw "error"
+    }
+  };
   var unshift = obj.unshift();
   if (unshift !== 3) {
     $ERROR('#4.1:  obj.length = {valueOf: function() {return 3}, toString: function() {throw "error"}}; obj.unshift() === ",". Actual: ' + (unshift));
@@ -53,14 +78,25 @@ catch (e) {
 }
 
 
-obj.length = {toString: function() {return 1}};
+obj.length = {
+  toString: function() {
+    return 1
+  }
+};
 var unshift = obj.unshift();
 if (unshift !== 1) {
   $ERROR('#5:  obj.length = {toString: function() {return 1}}  obj.unshift() === 1. Actual: ' + (unshift));
 }
 
 
-obj.length = {valueOf: function() {return {}}, toString: function() {return 1}}
+obj.length = {
+  valueOf: function() {
+    return {}
+  },
+  toString: function() {
+    return 1
+  }
+}
 var unshift = obj.unshift();
 if (unshift !== 1) {
   $ERROR('#6:  obj.length = {valueOf: function() {return {}}, toString: function() {return 1}}  obj.unshift() === 1. Actual: ' + (unshift));
@@ -69,7 +105,14 @@ if (unshift !== 1) {
 
 try {
 
-  obj.length = {valueOf: function() {throw "error"}, toString: function() {return 1}};
+  obj.length = {
+    valueOf: function() {
+      throw "error"
+    },
+    toString: function() {
+      return 1
+    }
+  };
   var unshift = obj.unshift();
   $ERROR('#7.1:  obj.length = {valueOf: function() {throw "error"}, toString: function() {return 1}}; obj.unshift() throw "error". Actual: ' + (unshift));
 }
@@ -82,7 +125,14 @@ catch (e) {
 
 try {
 
-  obj.length = {valueOf: function() {return {}}, toString: function() {return {}}};
+  obj.length = {
+    valueOf: function() {
+      return {}
+    },
+    toString: function() {
+      return {}
+    }
+  };
   var unshift = obj.unshift();
   $ERROR('#8.1:  obj.length = {valueOf: function() {return {}}, toString: function() {return {}}}  obj.unshift() throw TypeError. Actual: ' + (unshift));
 }

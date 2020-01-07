@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  Object.create({}, {
+    prop: {
+      set: new Date()
+    }
+  });
+});
+
+reportCompare(0, 0);

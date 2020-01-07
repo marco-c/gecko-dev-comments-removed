@@ -8,11 +8,11 @@
 
 
 
-if(Date.prototype.getDate.hasOwnProperty("length") !== true){
+if (Date.prototype.getDate.hasOwnProperty("length") !== true) {
   $ERROR('#1: The getDate has a "length" property');
 }
 
-if(Date.prototype.getDate.length !== 0){
+if (Date.prototype.getDate.length !== 0) {
   $ERROR('#2: The "length" property of the getDate is 0');
 }
 

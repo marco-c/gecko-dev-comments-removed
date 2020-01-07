@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+Object.defineProperty(obj, 100000000000000000000, {});
+
+assert(obj.hasOwnProperty("100000000000000000000"), 'obj.hasOwnProperty("100000000000000000000") !== true');
+
+reportCompare(0, 0);

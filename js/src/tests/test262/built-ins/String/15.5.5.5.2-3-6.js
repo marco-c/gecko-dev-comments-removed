@@ -11,7 +11,7 @@
 
 
 
-  var s = String("hello world");
+var s = String("hello world");
 
 assert.sameValue(s[NaN], undefined, 's[NaN]');
 

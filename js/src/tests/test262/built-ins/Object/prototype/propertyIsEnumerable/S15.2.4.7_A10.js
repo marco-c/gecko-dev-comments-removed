@@ -19,7 +19,9 @@ if (!(Object.prototype.propertyIsEnumerable.hasOwnProperty('length'))) {
 
 var obj = Object.prototype.propertyIsEnumerable.length;
 
-verifyNotWritable(Object.prototype.propertyIsEnumerable, "length", null, function(){return "shifted";});
+verifyNotWritable(Object.prototype.propertyIsEnumerable, "length", null, function() {
+  return "shifted";
+});
 
 
 if (Object.prototype.propertyIsEnumerable.length !== obj) {

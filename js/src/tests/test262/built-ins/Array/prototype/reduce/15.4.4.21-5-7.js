@@ -10,22 +10,27 @@
 
 
 
-  foo.prototype = new Array(1, 2, 3);
-  function foo() {}
-  var f = new foo();
+foo.prototype = new Array(1, 2, 3);
 
-  var o = { toString: function () { return '0';}};
-  f.length = o;
+function foo() {}
+var f = new foo();
 
-  
-  
-  
-  
-  
+var o = {
+  toString: function() {
+    return '0';
+  }
+};
+f.length = o;
 
-  function cb(){}
+
+
+
+
+
+
+function cb() {}
 assert.throws(TypeError, function() {
-    f.reduce(cb);
+  f.reduce(cb);
 });
 
 reportCompare(0, 0);

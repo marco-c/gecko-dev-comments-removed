@@ -7,16 +7,16 @@
 
 
 
-        var result = false;
+var result = false;
 
-        function callbackfn(val, idx, obj) {
-            result = obj instanceof Boolean;
-        }
+function callbackfn(val, idx, obj) {
+  result = obj instanceof Boolean;
+}
 
-            Boolean.prototype[0] = true;
-            Boolean.prototype.length = 1;
+Boolean.prototype[0] = true;
+Boolean.prototype.length = 1;
 
-            Array.prototype.forEach.call(false, callbackfn);
+Array.prototype.forEach.call(false, callbackfn);
 
 assert(result, 'result !== true');
 

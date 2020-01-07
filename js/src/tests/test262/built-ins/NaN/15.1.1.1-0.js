@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+var desc = Object.getOwnPropertyDescriptor(this, 'NaN');
+
+assert.sameValue(desc.writable, false, 'desc.writable');
+assert.sameValue(desc.enumerable, false, 'desc.enumerable');
+assert.sameValue(desc.configurable, false, 'desc.configurable');
+
+reportCompare(0, 0);

@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+var boolObj = new Boolean(false);
+
+Object.freeze(boolObj);
+
+assert(Object.isFrozen(boolObj), 'Object.isFrozen(boolObj) !== true');
+
+reportCompare(0, 0);

@@ -11,9 +11,13 @@
 
 
 
-var i=0;
+var i = 0;
 
-var p={toString:function(){return "arg"+(++i);}};
+var p = {
+  toString: function() {
+    return "arg" + (++i);
+  }
+};
 
 
 try {
@@ -23,12 +27,12 @@ try {
 }
 
 
-if (!(f instanceof Function)){
+if (!(f instanceof Function)) {
   $ERROR('#2: It is permissible but not necessary to have one argument for each formal parameter to be specified');
 }
 
 
-if (f(4,"2","QUESTION") !== "42QUESTION") {
+if (f(4, "2", "QUESTION") !== "42QUESTION") {
   $ERROR('#3: It is permissible but not necessary to have one argument for each formal parameter to be specified');
 }
 

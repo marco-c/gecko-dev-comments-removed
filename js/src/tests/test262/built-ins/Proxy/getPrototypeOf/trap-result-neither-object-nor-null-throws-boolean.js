@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+var p = new Proxy({}, {
+  getPrototypeOf: function() {
+    return false;
+  }
+});
+
+assert.throws(TypeError, function() {
+  Object.getPrototypeOf(p);
+});
+
+reportCompare(0, 0);

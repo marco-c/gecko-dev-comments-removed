@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+var numObj = new Number(3);
+
+Object.freeze(numObj);
+
+assert(Object.isFrozen(numObj), 'Object.isFrozen(numObj) !== true');
+
+reportCompare(0, 0);

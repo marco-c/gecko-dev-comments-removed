@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+var numObj = new Number(123);
+
+numObj.writable = true;
+
+var newObj = Object.create({}, {
+  prop: numObj
+});
+
+var beforeWrite = (newObj.hasOwnProperty("prop") && typeof(newObj.prop) === "undefined");
+
+newObj.prop = "isWritable";
+
+var afterWrite = (newObj.prop === "isWritable");
+
+assert.sameValue(beforeWrite, true, 'beforeWrite');
+assert.sameValue(afterWrite, true, 'afterWrite');
+
+reportCompare(0, 0);

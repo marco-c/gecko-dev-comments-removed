@@ -7,6 +7,8 @@
 
 
 
+
+
 $262.agent.start(
 `
 $262.agent.receiveBroadcast(function (sab, id) {
@@ -22,10 +24,10 @@ $262.agent.broadcast(ia.buffer);
 assert.sameValue(getReport(), "timed-out");
 
 function getReport() {
-    var r;
-    while ((r = $262.agent.getReport()) == null)
-        $262.agent.sleep(100);
-    return r;
+  var r;
+  while ((r = $262.agent.getReport()) == null)
+    $262.agent.sleep(100);
+  return r;
 }
 
 reportCompare(0, 0);

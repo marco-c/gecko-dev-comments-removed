@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+var target = {
+  attr: 1
+};
+var p = new Proxy(target, {
+  has: function(t, prop) {
+    return 1;
+  }
+});
+
+assert.sameValue(("attr" in p), true);
+
+reportCompare(0, 0);

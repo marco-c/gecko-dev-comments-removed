@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+
+JSON.get = function() {
+  return "jsonGetProperty";
+};
+
+Object.defineProperty(obj, "property", JSON);
+
+assert.sameValue(obj.property, "jsonGetProperty", 'obj.property');
+
+reportCompare(0, 0);

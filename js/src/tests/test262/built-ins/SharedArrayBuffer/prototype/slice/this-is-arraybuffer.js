@@ -7,6 +7,8 @@
 
 
 
+
+
 assert.throws(TypeError, function() {
   var ab = new ArrayBuffer(0);
   SharedArrayBuffer.prototype.slice.call(ab);

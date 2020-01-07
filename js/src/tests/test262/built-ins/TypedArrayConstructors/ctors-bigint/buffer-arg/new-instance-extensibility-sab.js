@@ -1,0 +1,41 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+testWithBigIntTypedArrayConstructors(function(TA) {
+  var buffer = new SharedArrayBuffer(8);
+  var sample = new TA(buffer);
+
+  assert(Object.isExtensible(sample));
+});
+
+reportCompare(0, 0);

@@ -11,15 +11,15 @@
 
 
 
-var f=Function.call(this, "return this.planet;");
-var g=Function.call(this, "return this.color;");
+var f = Function.call(this, "return this.planet;");
+var g = Function.call(this, "return this.color;");
 
 
 if (f() !== undefined) {
   $ERROR('#2: ');
 }
 
-var planet="mars";
+var planet = "mars";
 
 
 if (f() !== "mars") {
@@ -29,9 +29,9 @@ if (f() !== "mars") {
 
 if (g() !== undefined) {
   $ERROR('#3: ');
-}   
+}
 
-this.color="red";
+this.color = "red";
 
 
 if (g() !== "red") {

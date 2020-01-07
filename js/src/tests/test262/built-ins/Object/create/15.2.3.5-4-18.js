@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+var proto = {};
+
+proto.prop = {};
+
+var ConstructFun = function() {};
+ConstructFun.prototype = proto;
+var child = new ConstructFun();
+
+var newObj = Object.create({}, child);
+
+assert.sameValue(newObj.hasOwnProperty("prop"), false, 'newObj.hasOwnProperty("prop")');
+
+reportCompare(0, 0);

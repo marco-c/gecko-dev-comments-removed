@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+assert.sameValue(
+  Object.prototype.toString.hasOwnProperty("prototype"),
+  false,
+  "Object.prototype.toString.hasOwnProperty(\"prototype\") returns false"
+);
+
+reportCompare(0, 0);

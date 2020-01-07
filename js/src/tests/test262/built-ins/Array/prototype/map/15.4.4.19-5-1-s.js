@@ -8,15 +8,15 @@
 
 
 
-  var innerThisCorrect = false;
+var innerThisCorrect = false;
 
-  function callbackfn(val, idx, obj) {
-    "use strict";
-    innerThisCorrect = this===undefined;
-    return true;
-  }
+function callbackfn(val, idx, obj) {
+  "use strict";
+  innerThisCorrect = this === undefined;
+  return true;
+}
 
-  [1].map(callbackfn);
+[1].map(callbackfn);
 
 assert(innerThisCorrect, 'innerThisCorrect !== true');
 

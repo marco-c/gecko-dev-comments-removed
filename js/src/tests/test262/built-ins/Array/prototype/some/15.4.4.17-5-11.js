@@ -7,11 +7,11 @@
 
 
 
-        var objString = new String();
+var objString = new String();
 
-        function callbackfn(val, idx, obj) {
-            return this === objString;
-        }
+function callbackfn(val, idx, obj) {
+  return this === objString;
+}
 
 assert([11].some(callbackfn, objString), '[11].some(callbackfn, objString) !== true');
 

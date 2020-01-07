@@ -9,9 +9,11 @@
 
 
 
-var f = function(){this.touched= true;};
+var f = function() {
+  this.touched = true;
+};
 
-var obj={};
+var obj = {};
 
 f.call(obj);
 

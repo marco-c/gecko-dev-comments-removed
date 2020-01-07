@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(BigUint64Array, "length", {
+  value: 3,
+  writable: false,
+  enumerable: false,
+  configurable: true
+});
+
+reportCompare(0, 0);

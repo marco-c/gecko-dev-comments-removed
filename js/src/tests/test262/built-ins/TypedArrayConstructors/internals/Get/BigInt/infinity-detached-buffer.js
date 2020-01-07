@@ -1,0 +1,43 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+testWithBigIntTypedArrayConstructors(function(TA) {
+  var sample = new TA(0);
+  $DETACHBUFFER(sample.buffer);
+
+  assert.throws(TypeError, function() {
+    sample.Infinity;
+  });
+});
+
+reportCompare(0, 0);

@@ -19,6 +19,7 @@
 
 
 
+
 assert.sameValue(TypedArray.prototype.copyWithin.name, "copyWithin");
 
 verifyNotEnumerable(TypedArray.prototype.copyWithin, "name");

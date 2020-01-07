@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+var argObj = (function() {
+  return arguments;
+}());
+
+Object.freeze(argObj);
+
+assert(Object.isFrozen(argObj), 'Object.isFrozen(argObj) !== true');
+
+reportCompare(0, 0);

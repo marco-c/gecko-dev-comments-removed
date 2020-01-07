@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+var arr = [];
+
+Object.defineProperties(arr, {
+  length: {
+    value: "2"
+  }
+});
+
+assert.sameValue(arr.length, 2, 'arr.length');
+
+reportCompare(0, 0);

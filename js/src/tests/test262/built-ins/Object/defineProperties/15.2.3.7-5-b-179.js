@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+
+Object.defineProperties(obj, {
+  property: {
+    writable: new Boolean(true)
+  }
+});
+
+obj.property = "isWritable";
+
+assert.sameValue(obj.property, "isWritable", 'obj.property');
+
+reportCompare(0, 0);

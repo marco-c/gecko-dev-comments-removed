@@ -17,7 +17,7 @@
 
 
 
-var GeneratorFunction = Object.getPrototypeOf(function* () {}).constructor;
+var GeneratorFunction = Object.getPrototypeOf(function*() {}).constructor;
 
 
 GeneratorFunction('x = yield');

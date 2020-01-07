@@ -7,8 +7,8 @@
 
 
 
-        var fun = Date.now;
+var fun = Date.now;
 
-assert.sameValue(typeof (fun), "function", 'typeof (fun)');
+assert.sameValue(typeof(fun), "function", 'typeof (fun)');
 
 reportCompare(0, 0);

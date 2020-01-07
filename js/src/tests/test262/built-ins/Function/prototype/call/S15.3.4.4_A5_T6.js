@@ -9,9 +9,11 @@
 
 
 
-var obj=new String("soap");
+var obj = new String("soap");
 
-( function(){this.touched= true;}).call(obj);
+(function() {
+  this.touched = true;
+}).call(obj);
 
 
 if (!(obj.touched)) {

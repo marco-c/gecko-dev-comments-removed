@@ -9,6 +9,8 @@
 
 
 
+
+
 assert.sameValue(Atomics.sub.name, "sub");
 
 verifyNotEnumerable(Atomics.sub, "name");

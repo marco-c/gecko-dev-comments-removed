@@ -19,6 +19,7 @@
 
 
 
+
 var desc = Object.getOwnPropertyDescriptor(TypedArray.prototype, "buffer");
 
 assert.sameValue(desc.get.name, "get buffer");

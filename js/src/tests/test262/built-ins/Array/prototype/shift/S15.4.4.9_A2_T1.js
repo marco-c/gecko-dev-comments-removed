@@ -18,15 +18,15 @@ obj.shift = Array.prototype.shift;
 if (obj.length !== undefined) {
   $ERROR('#0: var obj = {}; obj.length === undefined. Actual: ' + (obj.length));
 } else {
-    
-    var shift = obj.shift();
-if (shift !== undefined) {
-      $ERROR('#1: var obj = {}; obj.shift = Array.prototype.shift; obj.shift() === undefined. Actual: ' + (shift));
-    }
-    
-    if (obj.length !== 0) {
-      $ERROR('#2: var obj = {}; obj.shift = Array.prototype.shift; obj.shift(); obj.length === 0. Actual: ' + (obj.length));
-    }
+  
+  var shift = obj.shift();
+  if (shift !== undefined) {
+    $ERROR('#1: var obj = {}; obj.shift = Array.prototype.shift; obj.shift() === undefined. Actual: ' + (shift));
+  }
+  
+  if (obj.length !== 0) {
+    $ERROR('#2: var obj = {}; obj.shift = Array.prototype.shift; obj.shift(); obj.length === 0. Actual: ' + (obj.length));
+  }
 }
 
 

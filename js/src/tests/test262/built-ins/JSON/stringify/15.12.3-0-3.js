@@ -10,8 +10,8 @@
 
 
 
-  var o = JSON;
-  var desc = Object.getOwnPropertyDescriptor(o, "stringify");
+var o = JSON;
+var desc = Object.getOwnPropertyDescriptor(o, "stringify");
 
 assert.sameValue(desc.configurable, true, 'desc.configurable');
 

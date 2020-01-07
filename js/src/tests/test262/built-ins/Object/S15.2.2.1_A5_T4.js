@@ -9,7 +9,9 @@
 
 
 
-var n_obj = new Object( 2*([].length + {q:1}["q"]));
+var n_obj = new Object(2 * ([].length + {
+  q: 1
+}["q"]));
 
 
 if (n_obj.constructor !== Number) {
@@ -22,12 +24,12 @@ if (typeof n_obj !== 'object') {
 }
 
 
-if ( n_obj != 2) {
+if (n_obj != 2) {
   $ERROR('#4: When the Object constructor is called with Number argument return ToObject(number)');
 }
 
 
-if ( n_obj === 2) {
+if (n_obj === 2) {
   $ERROR('#5: When the Object constructor is called with Number argument return ToObject(number)');
 }
 

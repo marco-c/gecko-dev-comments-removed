@@ -19,6 +19,7 @@
 
 
 
+
 assert.sameValue(TypedArray.prototype.map.name, "map");
 
 verifyNotEnumerable(TypedArray.prototype.map, "name");

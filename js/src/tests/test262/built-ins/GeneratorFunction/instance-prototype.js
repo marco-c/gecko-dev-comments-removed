@@ -21,7 +21,7 @@
 
 
 
-var GeneratorFunction = Object.getPrototypeOf(function* () {}).constructor;
+var GeneratorFunction = Object.getPrototypeOf(function*() {}).constructor;
 
 var instance = GeneratorFunction();
 

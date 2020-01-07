@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+var proto = {};
+
+Object.defineProperty(proto, "configurable", {
+  set: function() {}
+});
+
+var ConstructFun = function() {};
+ConstructFun.prototype = proto;
+var descObj = new ConstructFun();
+
+var newObj = Object.create({}, {
+  prop: descObj
+});
+
+assert(newObj.hasOwnProperty("prop"));
+verifyNotConfigurable(newObj, "prop");
+
+reportCompare(0, 0);

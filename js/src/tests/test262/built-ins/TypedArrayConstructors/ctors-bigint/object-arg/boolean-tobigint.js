@@ -1,0 +1,55 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+testWithBigIntTypedArrayConstructors(function(TA) {
+  var typedArray = new TA([false, true]);
+
+  assert.sameValue(typedArray[0], 0n);
+  assert.sameValue(typedArray[1], 1n);
+});
+
+reportCompare(0, 0);

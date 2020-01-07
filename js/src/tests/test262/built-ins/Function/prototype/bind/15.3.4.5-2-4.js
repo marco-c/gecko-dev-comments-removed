@@ -9,8 +9,8 @@
 
 
 
-  var bsc = String.bind(null);
-  var s = bsc("hello world");
+var bsc = String.bind(null);
+var s = bsc("hello world");
 
 assert.sameValue(s, "hello world", 's');
 

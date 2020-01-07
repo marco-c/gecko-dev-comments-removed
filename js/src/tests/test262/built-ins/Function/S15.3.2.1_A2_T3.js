@@ -19,12 +19,12 @@ try {
 }
 
 
-if (!(f instanceof Function)){
+if (!(f instanceof Function)) {
   $ERROR('#2: It is permissible but not necessary to have one argument for each formal parameter to be specified');
 }
 
 
-if (f(1,1,"ABBA") !== "2ABBA") {
+if (f(1, 1, "ABBA") !== "2ABBA") {
   $ERROR('#3: It is permissible but not necessary to have one argument for each formal parameter to be specified');
 }
 

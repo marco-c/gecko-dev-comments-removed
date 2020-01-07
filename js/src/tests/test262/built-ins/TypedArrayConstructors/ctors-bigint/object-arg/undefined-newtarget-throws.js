@@ -1,0 +1,33 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+testWithBigIntTypedArrayConstructors(function(TA) {
+  assert.throws(TypeError, function() {
+    TA({});
+  });
+
+  assert.throws(TypeError, function() {
+    TA([]);
+  });
+});
+
+reportCompare(0, 0);

@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+var o = {
+  x: 1,
+  y: 2
+};
+
+var a = Object.keys(o);
+
+assert.sameValue(Object.isExtensible(a), true, 'Object.isExtensible(a)');
+
+reportCompare(0, 0);

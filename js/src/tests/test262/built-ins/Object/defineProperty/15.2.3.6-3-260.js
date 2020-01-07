@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+var data = "data";
+
+this.set = function(value) {
+  data = value;
+};
+
+Object.defineProperty(obj, "property", this);
+obj.property = "overrideData";
+
+assert(obj.hasOwnProperty("property"), 'obj.hasOwnProperty("property") !== true');
+assert.sameValue(data, "overrideData", 'data');
+
+reportCompare(0, 0);

@@ -8,6 +8,8 @@
 
 
 
-['z'].forEach(function(){ Object.freeze(Array.prototype.forEach); });
+['z'].forEach(function() {
+  Object.freeze(Array.prototype.forEach);
+});
 
 reportCompare(0, 0);

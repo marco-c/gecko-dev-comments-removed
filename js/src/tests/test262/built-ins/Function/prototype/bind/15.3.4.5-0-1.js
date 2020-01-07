@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+var f = Function.prototype.bind;
+
+assert.sameValue(typeof(f), "function", 'typeof(f)');
+
+reportCompare(0, 0);

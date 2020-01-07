@@ -7,12 +7,13 @@
 
 
 
-        var accessed = false;
-        function callbackfn(val, idx, obj) {
-            accessed = true;
-        }
+var accessed = false;
 
-        [11, 9].forEach(callbackfn);
+function callbackfn(val, idx, obj) {
+  accessed = true;
+}
+
+[11, 9].forEach(callbackfn);
 
 assert(accessed, 'accessed !== true');
 

@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  Function.prototype.bind.call({});
+});
+
+reportCompare(0, 0);

@@ -21,6 +21,6 @@ assert(firstObject !== null);
 previousObject = null;
 
 eval('tag`head${a}tail`');
-assert.sameValue(previousObject, firstObject);
+assert.notSameValue(previousObject, firstObject);
 
 reportCompare(0, 0);

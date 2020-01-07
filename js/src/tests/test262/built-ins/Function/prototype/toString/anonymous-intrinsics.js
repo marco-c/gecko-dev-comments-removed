@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+var ThrowTypeError = (function() { "use strict"; return Object.getOwnPropertyDescriptor(arguments, "callee").get })()
+assert.sameValue(ThrowTypeError.name, "");
+assertNativeFunction(ThrowTypeError);
+
+reportCompare(0, 0);

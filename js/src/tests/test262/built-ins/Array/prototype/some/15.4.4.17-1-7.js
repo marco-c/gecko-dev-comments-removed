@@ -7,9 +7,9 @@
 
 
 
-        function callbackfn(val, idx, obj) {
-            return obj instanceof String;
-        }
+function callbackfn(val, idx, obj) {
+  return obj instanceof String;
+}
 
 assert(Array.prototype.some.call("hello\nw_orld\\!", callbackfn), 'Array.prototype.some.call("hello\nw_orld\\!", callbackfn) !== true');
 

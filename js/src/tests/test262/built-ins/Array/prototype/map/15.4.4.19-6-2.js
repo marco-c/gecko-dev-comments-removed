@@ -7,7 +7,7 @@
 
 
 
-        var newArr = [11].map(function () { });
+var newArr = [11].map(function() {});
 
 assert(newArr instanceof Array, 'newArr instanceof Array !== true');
 

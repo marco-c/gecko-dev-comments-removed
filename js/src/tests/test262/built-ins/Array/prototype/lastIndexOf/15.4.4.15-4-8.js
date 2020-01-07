@@ -9,20 +9,22 @@
 
 
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
- var i = Array.prototype.lastIndexOf.call({length: [ ]}, 1);
+
+
+
+
+
+
+
+
+
+
+
+
+
+var i = Array.prototype.lastIndexOf.call({
+  length: []
+}, 1);
 
 
 assert.sameValue(i, -1, 'i');

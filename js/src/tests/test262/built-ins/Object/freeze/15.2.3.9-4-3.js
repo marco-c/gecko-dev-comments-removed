@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+var obj = {};
+
+obj.foo = 10; 
+
+Object.preventExtensions(obj);
+
+Object.freeze(obj);
+
+assert(Object.isFrozen(obj), 'Object.isFrozen(obj) !== true');
+
+reportCompare(0, 0);

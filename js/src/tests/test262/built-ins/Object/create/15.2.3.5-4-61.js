@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+var accessed = false;
+var descObj = new String();
+
+descObj.enumerable = true;
+
+var newObj = Object.create({}, {
+  prop: descObj
+});
+for (var property in newObj) {
+  if (property === "prop") {
+    accessed = true;
+  }
+}
+
+assert(accessed, 'accessed !== true');
+
+reportCompare(0, 0);

@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+
+var regObj = new RegExp();
+
+regObj.value = "RegExp";
+
+Object.defineProperty(obj, "property", regObj);
+
+assert.sameValue(obj.property, "RegExp", 'obj.property');
+
+reportCompare(0, 0);

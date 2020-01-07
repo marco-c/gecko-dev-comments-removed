@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+var obj = {};
+Object.freeze(obj);
+
+assert.sameValue(Object.isExtensible(obj), false, 'Object.isExtensible(obj)');
+
+reportCompare(0, 0);

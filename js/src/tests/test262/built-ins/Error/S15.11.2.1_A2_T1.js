@@ -11,9 +11,9 @@
 
 
 
-var err1=new Error('msg1');
-if(!Error.prototype.isPrototypeOf(err1)){
-  $ERROR('#1: Error.prototype.isPrototypeOf(err1) return true. Actual: '+Error.prototype.isPrototypeOf(err1));
+var err1 = new Error('msg1');
+if (!Error.prototype.isPrototypeOf(err1)) {
+  $ERROR('#1: Error.prototype.isPrototypeOf(err1) return true. Actual: ' + Error.prototype.isPrototypeOf(err1));
 }
 
 

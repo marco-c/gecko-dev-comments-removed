@@ -8,11 +8,11 @@
 
 
 
-if(Date.prototype.setMonth.hasOwnProperty("length") !== true){
+if (Date.prototype.setMonth.hasOwnProperty("length") !== true) {
   $ERROR('#1: The setMonth has a "length" property');
 }
 
-if(Date.prototype.setMonth.length !== 2){
+if (Date.prototype.setMonth.length !== 2) {
   $ERROR('#2: The "length" property of the setMonth is 2');
 }
 

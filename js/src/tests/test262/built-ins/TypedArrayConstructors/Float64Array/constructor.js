@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof Float64Array, 'function', 'typeof Float64Array is "function"');
+
+reportCompare(0, 0);

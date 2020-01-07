@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+var global = this;
+
+assert.throws(TypeError, function() {
+  new global();
+});
+
+reportCompare(0, 0);

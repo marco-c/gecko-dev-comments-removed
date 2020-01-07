@@ -7,14 +7,14 @@
 
 
 
-        function callbackfn(val, idx, obj) {
-            return obj instanceof Boolean;
-        }
+function callbackfn(val, idx, obj) {
+  return obj instanceof Boolean;
+}
 
-        var obj = new Boolean(true);
-        obj.length = 2;
-        obj[0] = 11;
-        obj[1] = 9;
+var obj = new Boolean(true);
+obj.length = 2;
+obj[0] = 11;
+obj[1] = 9;
 
 assert(Array.prototype.some.call(obj, callbackfn), 'Array.prototype.some.call(obj, callbackfn) !== true');
 

@@ -9,16 +9,16 @@
 
 
 
-        
-        var obj = {
-            1: true,
-            2: 2,
-            length: {
-                valueOf: function () {
-                    return 2;
-                }
-            }
-        };
+
+var obj = {
+  1: true,
+  2: 2,
+  length: {
+    valueOf: function() {
+      return 2;
+    }
+  }
+};
 
 assert.sameValue(Array.prototype.indexOf.call(obj, true), 1, 'Array.prototype.indexOf.call(obj, true)');
 assert.sameValue(Array.prototype.indexOf.call(obj, 2), -1, 'Array.prototype.indexOf.call(obj, 2)');

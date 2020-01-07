@@ -9,11 +9,11 @@
 
 
 
-        var proto = Array.prototype;
-        var Con = function () { };
-        Con.prototype = proto;
+var proto = Array.prototype;
+var Con = function() {};
+Con.prototype = proto;
 
-        var child = new Con();
+var child = new Con();
 
 assert.sameValue(Array.isArray(child), false, 'Array.isArray(child)');
 

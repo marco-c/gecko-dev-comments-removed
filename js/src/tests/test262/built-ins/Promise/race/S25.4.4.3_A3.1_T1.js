@@ -11,8 +11,7 @@
 
 
 
-function ZeroArgConstructor() {
-}
+function ZeroArgConstructor() {}
 
 assert.throws(TypeError, function() {
   Promise.race.call(ZeroArgConstructor, [3]);

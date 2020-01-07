@@ -10,6 +10,7 @@
 
 
 
+
 function
 
 f
@@ -33,6 +34,6 @@ y
 }
 
 
-assert.sameValue(f.toString(), "function\n// a\nf\n// b\n(\n// c\nx\n// d\n,\n// e\ny\n// f\n)\n// g\n{\n// h\n;\n// i\n;\n// j\n}");
+assertToStringOrNativeFunction(f, "function\n// a\nf\n// b\n(\n// c\nx\n// d\n,\n// e\ny\n// f\n)\n// g\n{\n// h\n;\n// i\n;\n// j\n}");
 
 reportCompare(0, 0);

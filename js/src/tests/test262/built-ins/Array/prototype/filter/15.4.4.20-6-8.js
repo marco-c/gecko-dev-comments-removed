@@ -9,28 +9,29 @@
 
 
 
-  foo.prototype = new Array(1, 2, 3);
-  function foo() {}
-  var f = new foo();
+foo.prototype = new Array(1, 2, 3);
 
-  f.length = [];
+function foo() {}
+var f = new foo();
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+f.length = [];
 
-  function cb(){}
-  var a = f.filter(cb);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function cb() {}
+var a = f.filter(cb);
 
 
 assert(Array.isArray(a), 'Array.isArray(a) !== true');

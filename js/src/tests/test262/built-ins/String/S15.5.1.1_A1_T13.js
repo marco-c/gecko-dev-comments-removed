@@ -14,7 +14,7 @@ var __str = String(true);
 
 
 if (typeof __str !== "string") {
-  $ERROR('#1: __str = String(true); typeof __str === "string". Actual: typeof __str ==='+typeof __str ); 
+  $ERROR('#1: __str = String(true); typeof __str === "string". Actual: typeof __str ===' + typeof __str);
 }
 
 
@@ -22,7 +22,7 @@ if (typeof __str !== "string") {
 
 
 if (__str !== "true") {
-  $ERROR('#2: __str = String(true); __str === "true". Actual: __str ==='+__str ); 
+  $ERROR('#2: __str = String(true); __str === "true". Actual: __str ===' + __str);
 }
 
 
@@ -32,7 +32,7 @@ __str = String(false);
 
 
 if (typeof __str !== "string") {
-  $ERROR('#3: __str = String(false); typeof __str === "string". Actual: typeof __str ==='+typeof __str ); 
+  $ERROR('#3: __str = String(false); typeof __str === "string". Actual: typeof __str ===' + typeof __str);
 }
 
 
@@ -40,7 +40,7 @@ if (typeof __str !== "string") {
 
 
 if (__str !== "false") {
-  $ERROR('#4: __str = String(false); __str === "false". Actual: __str ==='+__str ); 
+  $ERROR('#4: __str = String(false); __str === "false". Actual: __str ===' + __str);
 }
 
 
@@ -50,7 +50,7 @@ __str = String(Boolean(true));
 
 
 if (typeof __str !== "string") {
-  $ERROR('#5: __str = String(Boolean(true)); typeof __str === "string". Actual: typeof __str ==='+typeof __str ); 
+  $ERROR('#5: __str = String(Boolean(true)); typeof __str === "string". Actual: typeof __str ===' + typeof __str);
 }
 
 
@@ -58,7 +58,7 @@ if (typeof __str !== "string") {
 
 
 if (__str !== "true") {
-  $ERROR('#6: __str = String(Boolean(true)); __str === "true". Actual: __str ==='+__str ); 
+  $ERROR('#6: __str = String(Boolean(true)); __str === "true". Actual: __str ===' + __str);
 }
 
 
@@ -68,7 +68,7 @@ __str = String(Boolean(false));
 
 
 if (typeof __str !== "string") {
-  $ERROR('#7: __str = String(Boolean(false)); typeof __str === "string". Actual: typeof __str ==='+typeof __str ); 
+  $ERROR('#7: __str = String(Boolean(false)); typeof __str === "string". Actual: typeof __str ===' + typeof __str);
 }
 
 
@@ -76,7 +76,7 @@ if (typeof __str !== "string") {
 
 
 if (__str !== "false") {
-  $ERROR('#8: __str = String(Boolean(false)); __str === "false". Actual: __str ==='+__str ); 
+  $ERROR('#8: __str = String(Boolean(false)); __str === "false". Actual: __str ===' + __str);
 }
 
 

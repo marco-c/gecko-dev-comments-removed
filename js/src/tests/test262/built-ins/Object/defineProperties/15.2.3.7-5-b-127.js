@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+
+var str = new String("abc");
+
+str.value = "String";
+
+Object.defineProperties(obj, {
+  property: str
+});
+
+assert.sameValue(obj.property, "String", 'obj.property');
+
+reportCompare(0, 0);

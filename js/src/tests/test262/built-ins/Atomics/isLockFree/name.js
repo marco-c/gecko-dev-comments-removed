@@ -9,6 +9,8 @@
 
 
 
+
+
 assert.sameValue(Atomics.isLockFree.name, "isLockFree");
 
 verifyNotEnumerable(Atomics.isLockFree, "name");

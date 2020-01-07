@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+function testFunc() {}
+
+testFunc.bind();
+
+reportCompare(0, 0);

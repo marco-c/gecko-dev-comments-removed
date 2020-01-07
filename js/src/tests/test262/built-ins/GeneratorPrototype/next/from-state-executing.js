@@ -37,9 +37,11 @@
 
 
 var iter, result;
+
 function* withoutVal() {
   iter.next();
 }
+
 function* withVal() {
   iter.next(42);
 }

@@ -7,13 +7,13 @@
 
 
 
-        var accessed = false;
-        var objArray = [];
+var accessed = false;
+var objArray = [];
 
-        function callbackfn(val, idx, obj) {
-            accessed = true;
-            return this === objArray;
-        }
+function callbackfn(val, idx, obj) {
+  accessed = true;
+  return this === objArray;
+}
 
 
 

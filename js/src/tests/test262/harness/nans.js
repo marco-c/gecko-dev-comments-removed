@@ -11,10 +11,16 @@
 
 
 
-assert.sameValue(Number.isNaN(distinctNaNs[0]), true);
-assert.sameValue(Number.isNaN(distinctNaNs[1]), true);
-assert.sameValue(Number.isNaN(distinctNaNs[2]), true);
-assert.sameValue(Number.isNaN(distinctNaNs[3]), true);
-assert.sameValue(Number.isNaN(distinctNaNs[4]), true);
+
+
+
+
+
+
+
+
+for (var i = 0; i < NaNs.length; i++) {
+  assert.sameValue(Number.isNaN(NaNs[i]), true, "index: " + i);
+}
 
 reportCompare(0, 0);

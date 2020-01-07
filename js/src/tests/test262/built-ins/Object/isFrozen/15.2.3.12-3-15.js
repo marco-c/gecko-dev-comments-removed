@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+var b = Object.isFrozen(Date);
+
+assert.sameValue(b, false, 'b');
+
+reportCompare(0, 0);

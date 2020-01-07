@@ -7,13 +7,13 @@
 
 
 
-        var result = false;
+var result = false;
 
-        function callbackfn(val, idx, obj) {
-            result = (this === eval);
-        }
+function callbackfn(val, idx, obj) {
+  result = (this === eval);
+}
 
-        [11].forEach(callbackfn, eval);
+[11].forEach(callbackfn, eval);
 
 assert(result, 'result !== true');
 

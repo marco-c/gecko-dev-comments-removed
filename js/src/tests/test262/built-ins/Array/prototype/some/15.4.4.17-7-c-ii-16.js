@@ -9,11 +9,14 @@
 
 
 
-        function callbackfn(val, idx, obj) {
-            return this.valueOf() === false;
-        }
+function callbackfn(val, idx, obj) {
+  return this.valueOf() === false;
+}
 
-        var obj = { 0: 11, length: 1 };
+var obj = {
+  0: 11,
+  length: 1
+};
 
 assert(Array.prototype.some.call(obj, callbackfn, false), 'Array.prototype.some.call(obj, callbackfn, false) !== true');
 

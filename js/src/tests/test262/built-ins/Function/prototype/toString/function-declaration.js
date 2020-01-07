@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+function  f  (  x  ,  y  )  {  ;  ;  }
+
+assertToStringOrNativeFunction(f, "function /* a */ f /* b */ ( /* c */ x /* d */ , /* e */ y /* f */ ) /* g */ { /* h */ ; /* i */ ; /* j */ }");
+
+reportCompare(0, 0);

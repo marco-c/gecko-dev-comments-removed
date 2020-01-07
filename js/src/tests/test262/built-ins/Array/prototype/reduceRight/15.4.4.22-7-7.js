@@ -10,20 +10,25 @@
 
 
 
-  foo.prototype = new Array(1, 2, 3);
-  function foo() {}
-  var f = new foo();
+foo.prototype = new Array(1, 2, 3);
 
-  var o = { toString: function () { return '0';}};
-  f.length = o;
+function foo() {}
+var f = new foo();
 
-  
-  
-  
-  
-  
+var o = {
+  toString: function() {
+    return '0';
+  }
+};
+f.length = o;
 
-  function cb(){}
-assert.sameValue(f.reduceRight(cb,1), 1, 'f.reduceRight(cb,1)');
+
+
+
+
+
+
+function cb() {}
+assert.sameValue(f.reduceRight(cb, 1), 1, 'f.reduceRight(cb,1)');
 
 reportCompare(0, 0);

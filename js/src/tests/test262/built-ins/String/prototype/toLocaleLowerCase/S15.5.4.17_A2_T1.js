@@ -12,7 +12,7 @@
 
 
 if ("Hello, WoRlD!".toLocaleLowerCase() !== "hello, world!") {
-  $ERROR('#1: "Hello, WoRlD!".toLocaleLowerCase() === "hello, world!". Actual: '+("Hello, WoRlD!".toLocaleLowerCase()) );
+  $ERROR('#1: "Hello, WoRlD!".toLocaleLowerCase() === "hello, world!". Actual: ' + ("Hello, WoRlD!".toLocaleLowerCase()));
 }
 
 
@@ -20,7 +20,7 @@ if ("Hello, WoRlD!".toLocaleLowerCase() !== "hello, world!") {
 
 
 if ("Hello, WoRlD!".toLocaleLowerCase() !== String("hello, world!")) {
-  $ERROR('#2: "Hello, WoRlD!".toLocaleLowerCase() === String("hello, world!"). Actual: '+("Hello, WoRlD!".toLocaleLowerCase()) );
+  $ERROR('#2: "Hello, WoRlD!".toLocaleLowerCase() === String("hello, world!"). Actual: ' + ("Hello, WoRlD!".toLocaleLowerCase()));
 }
 
 

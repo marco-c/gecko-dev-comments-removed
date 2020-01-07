@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+var obj = {};
+assert.throws(TypeError, function() {
+  Object.defineProperties(obj, {
+    prop: null
+  });
+});
+assert.sameValue(obj.hasOwnProperty("prop"), false, 'obj.hasOwnProperty("prop")');
+
+reportCompare(0, 0);

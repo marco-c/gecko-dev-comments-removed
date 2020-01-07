@@ -11,7 +11,7 @@
 
 
 
-  var s = new String("hello world");
+var s = new String("hello world");
 
 assert.sameValue(s[11], undefined, 's[11]');
 

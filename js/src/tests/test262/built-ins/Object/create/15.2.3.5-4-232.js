@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+var newObj = Object.create({}, {
+  prop: {}
+});
+
+assert.sameValue(typeof(newObj.prop), "undefined", 'typeof (newObj.prop)');
+
+reportCompare(0, 0);

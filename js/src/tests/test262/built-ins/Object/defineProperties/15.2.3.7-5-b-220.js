@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+assert.throws(TypeError, function() {
+  Object.defineProperties(obj, {
+    property: {
+      get: 123
+    }
+  });
+});
+
+reportCompare(0, 0);

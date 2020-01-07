@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+
+Math.writable = false;
+
+Object.defineProperties(obj, {
+  property: Math
+});
+
+assert(obj.hasOwnProperty("property"));
+verifyNotWritable(obj, "property");
+
+reportCompare(0, 0);

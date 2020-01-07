@@ -7,7 +7,7 @@
 
 
 
-async function foo() { };
+async function foo() {};
 assert.sameValue(foo.prototype, undefined, 'foo.prototype should be undefined');
 assert(!foo.hasOwnProperty('prototype'), 'foo.prototype should not exist');
 

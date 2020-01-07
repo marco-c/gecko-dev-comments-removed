@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+var regObj = new RegExp();
+
+Object.freeze(regObj);
+
+assert(Object.isFrozen(regObj), 'Object.isFrozen(regObj) !== true');
+
+reportCompare(0, 0);

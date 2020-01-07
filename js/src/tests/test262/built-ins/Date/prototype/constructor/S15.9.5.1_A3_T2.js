@@ -10,7 +10,7 @@
 
 
 
-if (delete Date.prototype.constructor.length  !== true) {
+if (delete Date.prototype.constructor.length !== true) {
   $ERROR('#1: The Date.prototype.constructor.length property does not have the attributes DontDelete');
 }
 

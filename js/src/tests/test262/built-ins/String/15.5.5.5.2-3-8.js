@@ -11,8 +11,8 @@
 
 
 
-  var s = String("hello world");
+var s = String("hello world");
 
-assert.sameValue(s[Math.pow(2, 32)-1], undefined, 's[Math.pow(2, 32)-1]');
+assert.sameValue(s[Math.pow(2, 32) - 1], undefined, 's[Math.pow(2, 32)-1]');
 
 reportCompare(0, 0);

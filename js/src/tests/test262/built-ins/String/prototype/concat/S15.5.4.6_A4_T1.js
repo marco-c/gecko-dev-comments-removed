@@ -9,14 +9,18 @@
 
 
 
-var __instance = {toString:function(){return "one"}};
+var __instance = {
+  toString: function() {
+    return "one"
+  }
+};
 
 __instance.concat = String.prototype.concat;
 
 
 
-if (__instance.concat("two",x) !== "onetwoundefined") {
-  $ERROR('#1: var x; __instance = {toString:function(){return "one"}}; __instance.concat = String.prototype.concat;  __instance.concat("two",x) === "onetwoundefined". Actual: '+__instance.concat("two",x) ); 
+if (__instance.concat("two", x) !== "onetwoundefined") {
+  $ERROR('#1: var x; __instance = {toString:function(){return "one"}}; __instance.concat = String.prototype.concat;  __instance.concat("two",x) === "onetwoundefined". Actual: ' + __instance.concat("two", x));
 }
 
 

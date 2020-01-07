@@ -41,7 +41,7 @@ class Outer {
     
     return class {
       f() {
-	this.#x = 1;
+        this.#x = 1;
       }
     }
   }

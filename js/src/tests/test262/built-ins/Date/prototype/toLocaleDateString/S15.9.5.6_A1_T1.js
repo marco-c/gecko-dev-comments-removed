@@ -11,7 +11,7 @@
 
 
 var x = Date.prototype.toLocaleDateString;
-if(x === 1)
+if (x === 1)
   Date.prototype.toLocaleDateString = 2;
 else
   Date.prototype.toLocaleDateString = 1;

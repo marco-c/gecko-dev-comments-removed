@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+try {
+  Error.prototype();
+  $ERROR('#1: "Error.prototype()" lead to throwing exception');
+} catch (e) {
+  if (e instanceof Test262Error) throw e;
+}
+
+
+
+reportCompare(0, 0);

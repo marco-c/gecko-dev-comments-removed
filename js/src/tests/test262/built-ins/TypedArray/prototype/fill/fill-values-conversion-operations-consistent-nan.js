@@ -51,22 +51,53 @@
 
 
 
-function body(FloatArray) {
-  var sample = new FloatArray(3);
-  var control, idx, someNaN, sampleBytes, controlBytes;
 
-  for (idx = 0; idx < distinctNaNs.length; ++idx) {
-    someNaN = distinctNaNs[idx];
-    control = new FloatArray([someNaN, someNaN, someNaN]);
 
-    sample.fill(someNaN);
 
-    sampleBytes = new Uint8Array(sample.buffer);
-    controlBytes = new Uint8Array(control.buffer);
-    assert(compareArray(sampleBytes, controlBytes), 'NaN value #' + idx);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+testWithTypedArrayConstructors(function(FA) {
+  var precision = FA === Float32Array ? "single" : "double";
+  var samples = new FA(3);
+  var controls, idx, aNaN;
+
+  for (idx = 0; idx < NaNs.length; ++idx) {
+    aNaN = NaNs[idx];
+    controls = new Float32Array([aNaN, aNaN, aNaN]);
+
+    samples.fill(aNaN);
+
+    for (var i = 0; i < samples.length; i++) {
+      var sample = samples[i];
+      var control = controls[i];
+
+      assert(
+        samples[i] !== samples[i],
+        `samples (index=${idx}) produces a valid NaN (${precision} precision)`
+      );
+
+      assert(
+        controls[i] !== controls[i],
+        `controls (index=${idx}) produces a valid NaN (${precision} precision)`
+      );
+    }
   }
-}
-
-testWithTypedArrayConstructors(body, [Float32Array, Float64Array]);
+}, [Float32Array, Float64Array]);
 
 reportCompare(0, 0);

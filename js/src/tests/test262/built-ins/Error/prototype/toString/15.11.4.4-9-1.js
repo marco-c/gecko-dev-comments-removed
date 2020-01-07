@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+var errObj = new Error();
+errObj.name = "ErrorName";
+
+assert.sameValue(errObj.toString(), "ErrorName", 'errObj.toString()');
+
+reportCompare(0, 0);

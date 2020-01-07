@@ -7,10 +7,10 @@
 
 
 
-        function fun() {
-            return arguments;
-        }
-        var obj = fun(1, true, 3);
+function fun() {
+  return arguments;
+}
+var obj = fun(1, true, 3);
 
 assert.sameValue(Array.prototype.indexOf.call(obj, true), 1, 'Array.prototype.indexOf.call(obj, true)');
 

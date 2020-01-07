@@ -10,7 +10,7 @@
 
 
 
-if (delete Date.prototype.setHours.length  !== true) {
+if (delete Date.prototype.setHours.length !== true) {
   $ERROR('#1: The Date.prototype.setHours.length property does not have the attributes DontDelete');
 }
 

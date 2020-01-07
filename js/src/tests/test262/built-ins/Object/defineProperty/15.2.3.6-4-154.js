@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+var arrObj = [];
+
+Object.defineProperty(arrObj, "length", {
+  value: 4294967294
+});
+
+assert.sameValue(arrObj.length, 4294967294, 'arrObj.length');
+
+reportCompare(0, 0);

@@ -1,0 +1,24 @@
+
+'use strict';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+throw "Test262: This statement should not be evaluated.";
+
+function _13_1_7_fun(param, param, param) { }

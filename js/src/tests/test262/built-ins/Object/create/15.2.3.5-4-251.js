@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+Math.get = function() {
+  return "VerifyMathObject";
+};
+
+var newObj = Object.create({}, {
+  prop: Math
+});
+
+assert.sameValue(newObj.prop, "VerifyMathObject", 'newObj.prop');
+
+reportCompare(0, 0);

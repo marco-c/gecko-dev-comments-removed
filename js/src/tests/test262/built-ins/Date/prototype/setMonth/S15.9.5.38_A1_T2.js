@@ -8,7 +8,7 @@
 
 
 
-if (delete Date.prototype.setMonth  === false) {
+if (delete Date.prototype.setMonth === false) {
   $ERROR('#1: The Date.prototype.setMonth property has not the attributes DontDelete');
 }
 

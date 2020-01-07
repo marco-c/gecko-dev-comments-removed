@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+var obj = [2];
+obj.len = 200;
+
+Object.preventExtensions(obj);
+
+assert.sameValue(Object.isFrozen(obj), false, 'Object.isFrozen(obj)');
+
+reportCompare(0, 0);

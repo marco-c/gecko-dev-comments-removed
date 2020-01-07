@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function* g() {}
+var result = g().next()
+
+assert(result instanceof Promise)
+
+reportCompare(0, 0);

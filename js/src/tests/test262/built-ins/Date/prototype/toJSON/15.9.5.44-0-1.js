@@ -7,7 +7,7 @@
 
 
 
-  var f = Date.prototype.toJSON;
+var f = Date.prototype.toJSON;
 
 assert.sameValue(typeof(f), "function", 'typeof(f)');
 

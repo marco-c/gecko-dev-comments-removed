@@ -17,7 +17,7 @@
 
 
 
-  var f = JSON.parse;
+var f = JSON.parse;
 
 assert.sameValue(typeof(f), "function", 'typeof(f)');
 

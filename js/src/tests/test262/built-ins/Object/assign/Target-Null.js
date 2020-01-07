@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  Object.assign(null, {
+    a: 1
+  });
+});
+
+reportCompare(0, 0);

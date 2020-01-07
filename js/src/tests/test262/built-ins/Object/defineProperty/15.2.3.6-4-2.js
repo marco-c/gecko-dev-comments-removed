@@ -12,16 +12,18 @@
 
 
 
-  var o = {};
+var o = {};
 
-  var desc = { value: 1 };
-  Object.defineProperty(o, "foo", desc);
+var desc = {
+  value: 1
+};
+Object.defineProperty(o, "foo", desc);
 
-  var propDesc = Object.getOwnPropertyDescriptor(o, "foo");
+var propDesc = Object.getOwnPropertyDescriptor(o, "foo");
 
-assert.sameValue(propDesc.value, 1, 'propDesc.value');                    
-assert.sameValue(propDesc.writable, false, 'propDesc.writable');          
-assert.sameValue(propDesc.enumerable, false, 'propDesc.enumerable');      
-assert.sameValue(propDesc.configurable, false, 'propDesc.configurable');  
+assert.sameValue(propDesc.value, 1, 'propDesc.value'); 
+assert.sameValue(propDesc.writable, false, 'propDesc.writable'); 
+assert.sameValue(propDesc.enumerable, false, 'propDesc.enumerable'); 
+assert.sameValue(propDesc.configurable, false, 'propDesc.configurable'); 
 
 reportCompare(0, 0);

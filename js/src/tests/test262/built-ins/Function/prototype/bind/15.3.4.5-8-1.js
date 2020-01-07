@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+function foo() {}
+var o = {};
+
+var bf = foo.bind(o);
+
+assert.sameValue(typeof(bf), 'function', 'typeof(bf)');
+
+reportCompare(0, 0);

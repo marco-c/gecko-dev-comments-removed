@@ -11,13 +11,13 @@
 
 
 
-var x = new Array(0,1,2,3);
+var x = new Array(0, 1, 2, 3);
 if (x.join("") !== "0123") {
   $ERROR('#0: x = new Array(0,1,2,3); x.join("") === "0123". Actual: ' + (x.join("")));
 }
 
 
-x = new Array(0,1,2,3);
+x = new Array(0, 1, 2, 3);
 if (x.join("\\") !== "0\\1\\2\\3") {
   $ERROR('#1: x = new Array(0,1,2,3); x.join("\\") === "0\\1\\2\\3". Actual: ' + (x.join("\\")));
 }

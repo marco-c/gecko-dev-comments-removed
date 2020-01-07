@@ -9,8 +9,8 @@
 
 
 
-this.color="red";
-var planet="mars";
+this.color = "red";
+var planet = "mars";
 
 var f = Function.call("blablastring", "return this.color;");
 

@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+var arr = [];
+
+arr[0] = 100; 
+
+Object.defineProperties(arr, {
+  "0": {
+    value: 100,
+    writable: true,
+    enumerable: true,
+    configurable: true
+  }
+});
+
+verifyEqualTo(arr, "0", 100);
+
+verifyWritable(arr, "0");
+
+verifyEnumerable(arr, "0");
+
+verifyConfigurable(arr, "0");
+
+reportCompare(0, 0);

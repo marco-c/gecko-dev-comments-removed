@@ -7,9 +7,9 @@
 
 
 
-        var obj = new SyntaxError();
-        obj[1] = true;
-        obj.length = 2;
+var obj = new SyntaxError();
+obj[1] = true;
+obj.length = 2;
 
 assert.sameValue(Array.prototype.indexOf.call(obj, true), 1, 'Array.prototype.indexOf.call(obj, true)');
 

@@ -20,7 +20,7 @@ obj[2] = 2;
 obj[3] = 3;
 obj[4] = 4;
 obj.length = 5;
-var arr = obj.slice(-5,-2);
+var arr = obj.slice(-5, -2);
 
 
 arr.getClass = Object.prototype.toString;

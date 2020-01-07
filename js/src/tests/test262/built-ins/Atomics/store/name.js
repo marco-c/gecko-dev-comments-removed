@@ -9,6 +9,8 @@
 
 
 
+
+
 assert.sameValue(Atomics.store.name, "store");
 
 verifyNotEnumerable(Atomics.store, "name");

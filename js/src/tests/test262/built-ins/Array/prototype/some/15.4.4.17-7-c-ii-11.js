@@ -7,9 +7,9 @@
 
 
 
-        function callbackfn(val, idx) {
-            return val > 10 && arguments[2][idx] === val;
-        }
+function callbackfn(val, idx) {
+  return val > 10 && arguments[2][idx] === val;
+}
 
 assert([9, 12].some(callbackfn), '[9, 12].some(callbackfn) !== true');
 

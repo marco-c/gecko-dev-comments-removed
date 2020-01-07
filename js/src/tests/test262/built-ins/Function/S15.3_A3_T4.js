@@ -9,14 +9,14 @@
 
 
 
-var f=Function.call(this, "return planet;");
+var f = Function.call(this, "return planet;");
 
 
 if (f() !== undefined) {
   $ERROR('#1: ');
-}  
+}
 
-var planet="mars";
+var planet = "mars";
 
 
 if (f() !== "mars") {

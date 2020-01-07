@@ -7,9 +7,10 @@
 
 
 
+
 let GeneratorFunction = Object.getPrototypeOf(function*(){}).constructor;
 let g = GeneratorFunction("a", " /* a */ b, c /* b */ //", "/* c */ yield yield; /* d */ //");
 
-assert.sameValue(g.toString(), "function* anonymous(a, /* a */ b, c /* b */ //\n) {\n/* c */ yield yield; /* d */ //\n}");
+assertToStringOrNativeFunction(g, "function* anonymous(a, /* a */ b, c /* b */ //\n) {\n/* c */ yield yield; /* d */ //\n}");
 
 reportCompare(0, 0);

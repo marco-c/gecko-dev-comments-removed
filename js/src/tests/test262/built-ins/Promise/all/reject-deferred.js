@@ -25,7 +25,9 @@
 
 var thenable = {
   then: function(_, reject) {
-    new Promise(function(resolve) { resolve(); })
+    new Promise(function(resolve) {
+        resolve();
+      })
       .then(function() {
         reject();
       });

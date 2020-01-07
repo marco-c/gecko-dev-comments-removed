@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+testWithBigIntTypedArrayConstructors(function(TA) {
+  var typedArray = new TA(4);
+
+  assert.throws(TypeError, function() {
+    TA(typedArray);
+  });
+});
+
+reportCompare(0, 0);

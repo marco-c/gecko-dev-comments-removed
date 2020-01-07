@@ -9,9 +9,9 @@
 
 
 
-        var date = new Date(Infinity, 1, 70, 0, 0, 0);
+var date = new Date(Infinity, 1, 70, 0, 0, 0);
 assert.throws(RangeError, function() {
-            date.toISOString();
+  date.toISOString();
 });
 
 reportCompare(0, 0);

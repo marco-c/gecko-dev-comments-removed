@@ -7,11 +7,11 @@
 
 
 
-        function callbackfn(val, idx, obj) {
-            return this === eval;
-        }
+function callbackfn(val, idx, obj) {
+  return this === eval;
+}
 
-        var testResult = [11].map(callbackfn, eval);
+var testResult = [11].map(callbackfn, eval);
 
 assert.sameValue(testResult[0], true, 'testResult[0]');
 

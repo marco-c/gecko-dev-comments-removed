@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  Uint32Array.prototype.buffer;
+});
+
+reportCompare(0, 0);

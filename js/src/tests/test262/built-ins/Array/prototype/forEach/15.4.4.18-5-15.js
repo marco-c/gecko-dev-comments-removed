@@ -7,14 +7,14 @@
 
 
 
-        var result = false;
-        var objDate = new Date();
+var result = false;
+var objDate = new Date();
 
-        function callbackfn(val, idx, obj) {
-            result = (this === objDate);
-        }
+function callbackfn(val, idx, obj) {
+  result = (this === objDate);
+}
 
-        [11].forEach(callbackfn, objDate);
+[11].forEach(callbackfn, objDate);
 
 assert(result, 'result !== true');
 

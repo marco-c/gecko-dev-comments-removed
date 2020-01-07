@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+for (var x in Number) {
+  if (x === "MAX_VALUE") {
+    $ERROR('#1: Number.MAX_VALUE has the attribute DontEnum');
+  }
+}
+
+if (Number.propertyIsEnumerable('MAX_VALUE')) {
+  $ERROR('#2: Number.MAX_VALUE has the attribute DontEnum');
+}
+
+reportCompare(0, 0);

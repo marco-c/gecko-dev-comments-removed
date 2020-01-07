@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+var foo = function() {};
+
+var obj = foo.bind({});
+
+assert.sameValue(Object.prototype.toString.call(obj), "[object Function]", 'Object.prototype.toString.call(obj)');
+
+reportCompare(0, 0);

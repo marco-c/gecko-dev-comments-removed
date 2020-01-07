@@ -8,7 +8,6 @@
 
 
 
-
 function tag(templateObject) {
   previousObject = templateObject;
 }
@@ -23,6 +22,6 @@ assert(firstObject !== null);
 previousObject = null;
 
 eval('tag`head${b}tail`');
-assert.sameValue(previousObject, firstObject);
+assert.notSameValue(previousObject, firstObject);
 
 reportCompare(0, 0);

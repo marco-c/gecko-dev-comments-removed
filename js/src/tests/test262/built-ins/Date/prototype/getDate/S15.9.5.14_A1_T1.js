@@ -9,7 +9,7 @@
 
 
 var x = Date.prototype.getDate;
-if(x === 1)
+if (x === 1)
   Date.prototype.getDate = 2;
 else
   Date.prototype.getDate = 1;

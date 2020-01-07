@@ -15,6 +15,8 @@
 
 
 
+
+
 verifyNotEnumerable(SharedArrayBuffer.prototype, "slice");
 verifyWritable(SharedArrayBuffer.prototype, "slice");
 verifyConfigurable(SharedArrayBuffer.prototype, "slice");

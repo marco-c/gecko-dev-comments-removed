@@ -1,0 +1,19 @@
+'use strict';
+
+
+
+
+
+
+
+
+
+
+
+function fn() {}
+
+assert.throws(TypeError, function() {
+  fn.caller;
+});
+
+reportCompare(0, 0);

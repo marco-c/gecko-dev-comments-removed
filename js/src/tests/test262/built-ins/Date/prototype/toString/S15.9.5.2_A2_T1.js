@@ -8,11 +8,11 @@
 
 
 
-if(Date.prototype.toString.hasOwnProperty("length") !== true){
+if (Date.prototype.toString.hasOwnProperty("length") !== true) {
   $ERROR('#1: The toString has a "length" property');
 }
 
-if(Date.prototype.toString.length !== 0){
+if (Date.prototype.toString.length !== 0) {
   $ERROR('#2: The "length" property of the toString is 0');
 }
 

@@ -9,26 +9,30 @@
 
 
 
-        var accessed = false;
-        function callbackfn(val, idx, obj) {
-            accessed = true;
-            return true;
-        }
+var accessed = false;
 
-            Object.defineProperty(Object.prototype, "length", {
-                get: function () {
-                    return 2;
-                },
-                configurable: true
-            });
+function callbackfn(val, idx, obj) {
+  accessed = true;
+  return true;
+}
 
-            var obj = { 0: 12, 1: 11 };
-            Object.defineProperty(obj, "length", {
-                set: function () { },
-                configurable: true
-            });
+Object.defineProperty(Object.prototype, "length", {
+  get: function() {
+    return 2;
+  },
+  configurable: true
+});
 
-            var newArr = Array.prototype.filter.call(obj, callbackfn);
+var obj = {
+  0: 12,
+  1: 11
+};
+Object.defineProperty(obj, "length", {
+  set: function() {},
+  configurable: true
+});
+
+var newArr = Array.prototype.filter.call(obj, callbackfn);
 
 assert.sameValue(newArr.length, 0, 'newArr.length');
 assert.sameValue(accessed, false, 'accessed');

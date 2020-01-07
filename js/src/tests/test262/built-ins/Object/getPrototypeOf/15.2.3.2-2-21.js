@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+var arr = [1, 2, 3];
+
+assert.sameValue(Object.getPrototypeOf(arr), Array.prototype, 'Object.getPrototypeOf(arr)');
+
+reportCompare(0, 0);

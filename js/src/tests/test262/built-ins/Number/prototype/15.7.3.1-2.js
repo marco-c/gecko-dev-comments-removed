@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Object.getPrototypeOf(new Number(42)), Number.prototype, 'Object.getPrototypeOf(new Number(42))');
+
+reportCompare(0, 0);

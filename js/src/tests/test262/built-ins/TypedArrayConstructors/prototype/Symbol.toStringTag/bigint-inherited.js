@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+testWithBigIntTypedArrayConstructors(function(TA) {
+  assert.sameValue(TA.prototype.hasOwnProperty(Symbol.toStringTag), false);
+});
+
+reportCompare(0, 0);

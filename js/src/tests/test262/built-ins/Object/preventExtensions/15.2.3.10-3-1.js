@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+var preCheck = Object.isExtensible(obj);
+Object.preventExtensions(obj);
+
+assert(preCheck, 'preCheck !== true');
+assert.sameValue(Object.isExtensible(obj), false, 'Object.isExtensible(obj)');
+
+reportCompare(0, 0);

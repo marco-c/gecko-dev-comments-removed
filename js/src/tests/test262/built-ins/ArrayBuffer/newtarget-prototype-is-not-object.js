@@ -22,7 +22,7 @@
 
 
 
-function newTarget() { }
+function newTarget() {}
 
 newTarget.prototype = undefined;
 var arrayBuffer = Reflect.construct(ArrayBuffer, [1], newTarget);

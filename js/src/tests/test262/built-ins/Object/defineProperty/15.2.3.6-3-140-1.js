@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+
+Array.prototype.value = "Array";
+var arrObj = [1, 2, 3];
+
+Object.defineProperty(obj, "property", arrObj);
+
+assert.sameValue(obj.property, "Array", 'obj.property');
+
+reportCompare(0, 0);

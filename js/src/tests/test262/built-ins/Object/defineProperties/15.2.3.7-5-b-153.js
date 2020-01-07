@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+
+var str = new String("abc");
+
+str.writable = false;
+
+Object.defineProperties(obj, {
+  property: str
+});
+
+assert(obj.hasOwnProperty("property"));
+verifyNotWritable(obj, "property");
+
+reportCompare(0, 0);

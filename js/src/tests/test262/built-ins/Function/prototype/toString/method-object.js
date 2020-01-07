@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+let f = { f  (  )  {  } }.f;
+
+assertToStringOrNativeFunction(f, "f /* a */ ( /* b */ ) /* c */ { /* d */ }");
+
+reportCompare(0, 0);

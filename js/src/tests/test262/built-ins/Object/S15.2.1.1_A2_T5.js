@@ -12,7 +12,7 @@
 var num = NaN;
 
 
-if(typeof num  !== 'number'){
+if (typeof num !== 'number') {
   $ERROR('#1: num = NaN should have number type');
 }
 
@@ -24,7 +24,7 @@ if (obj.constructor !== Number) {
 }
 
 
-if (typeof obj!=="object") {
+if (typeof obj !== "object") {
   $ERROR('#2: Object(NaN) returns ToObject(NaN)');
 }
 

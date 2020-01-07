@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+var f = String.prototype.trim;
+
+assert.sameValue(typeof(f), "function", 'typeof(f)');
+
+reportCompare(0, 0);

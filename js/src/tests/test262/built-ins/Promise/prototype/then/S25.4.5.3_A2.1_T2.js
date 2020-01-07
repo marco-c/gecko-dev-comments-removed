@@ -9,13 +9,12 @@
 
 
 
-function ZeroArgConstructor() {
-}
+function ZeroArgConstructor() {}
 
 var z = new ZeroArgConstructor();
 
 assert.throws(TypeError, function() {
-  Promise.then.call(z, function () {}, function () {});
+  Promise.then.call(z, function() {}, function() {});
 });
 
 reportCompare(0, 0);

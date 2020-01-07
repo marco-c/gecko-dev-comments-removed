@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+
+Object.defineProperty(obj, "prop", {
+  value: 2010,
+  writable: false,
+  enumerable: false,
+  configurable: false
+});
+
+assert(obj.hasOwnProperty("prop"));
+verifyNotConfigurable(obj, "prop");
+
+reportCompare(0, 0);

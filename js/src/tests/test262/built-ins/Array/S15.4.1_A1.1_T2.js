@@ -12,14 +12,14 @@
 
 
 Array.prototype.toString = Object.prototype.toString;
-var x = Array(); 
+var x = Array();
 if (x.toString() !== "[object " + "Array" + "]") {
   $ERROR('#1: Array.prototype.toString = Object.prototype.toString; var x = Array(); x.toString() === "[object " + "Array" + "]". Actual: ' + (x.toString()));
 }
 
 
 Array.prototype.toString = Object.prototype.toString;
-var x = Array(0,1,2); 
+var x = Array(0, 1, 2);
 if (x.toString() !== "[object " + "Array" + "]") {
   $ERROR('#2: Array.prototype.toString = Object.prototype.toString; var x = Array(0,1,2); x.toString() === "[object " + "Array" + "]". Actual: ' + (x.toString()));
 }

@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+var obj = {
+  "Infinity": 1
+};
+
+var desc = Object.getOwnPropertyDescriptor(obj, +Infinity);
+
+assert.sameValue(desc.value, 1, 'desc.value');
+
+reportCompare(0, 0);

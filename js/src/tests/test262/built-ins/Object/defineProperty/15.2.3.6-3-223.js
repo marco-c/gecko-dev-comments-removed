@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+
+Math.get = function() {
+  return "mathGetProperty";
+};
+
+Object.defineProperty(obj, "property", Math);
+
+assert.sameValue(obj.property, "mathGetProperty", 'obj.property');
+
+reportCompare(0, 0);

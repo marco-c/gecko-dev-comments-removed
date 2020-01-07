@@ -7,8 +7,8 @@
 
 
 
-            Boolean.prototype[1] = true;
-            Boolean.prototype.length = 2;
+Boolean.prototype[1] = true;
+Boolean.prototype.length = 2;
 
 assert.sameValue(Array.prototype.lastIndexOf.call(true, true), 1, 'Array.prototype.lastIndexOf.call(true, true)');
 

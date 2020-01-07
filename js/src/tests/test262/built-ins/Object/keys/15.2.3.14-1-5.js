@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  Object.keys(undefined);
+});
+
+reportCompare(0, 0);

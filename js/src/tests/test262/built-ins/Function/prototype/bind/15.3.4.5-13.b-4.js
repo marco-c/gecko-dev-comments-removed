@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+function foo() {}
+var o = {};
+
+var bf = foo.bind(o);
+
+assert.sameValue(bf.length, 0, 'bf.length');
+
+reportCompare(0, 0);

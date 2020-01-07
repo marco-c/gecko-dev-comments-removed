@@ -7,11 +7,11 @@
 
 
 
-  var a = new Array(1,2,1);
+var a = new Array(1, 2, 1);
 
 
-assert.sameValue(a.lastIndexOf(2,undefined), -1, 'a.lastIndexOf(2,undefined)');
-assert.sameValue(a.lastIndexOf(1,undefined), 0, 'a.lastIndexOf(1,undefined)');
+assert.sameValue(a.lastIndexOf(2, undefined), -1, 'a.lastIndexOf(2,undefined)');
+assert.sameValue(a.lastIndexOf(1, undefined), 0, 'a.lastIndexOf(1,undefined)');
 assert.sameValue(a.lastIndexOf(1), 2, 'a.lastIndexOf(1)');
 
 reportCompare(0, 0);

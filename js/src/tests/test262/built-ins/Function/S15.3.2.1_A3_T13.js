@@ -22,7 +22,7 @@ var p = "a,b,c";
 try {
   var f = new Function(p, null);
 } catch (e) {
-  $ERROR('#1: test failed with error '+e);
+  $ERROR('#1: test failed with error ' + e);
 }
 
 
@@ -31,7 +31,7 @@ if (f.constructor !== Function) {
 }
 
 
-if (f()!==undefined) {
+if (f() !== undefined) {
   $ERROR('#3: When the Function constructor is called with arguments p, body the following steps are taken...');
 }
 

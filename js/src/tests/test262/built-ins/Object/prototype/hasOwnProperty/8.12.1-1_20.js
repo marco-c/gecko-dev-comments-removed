@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+var o = {
+  get foo() {
+    return 42;
+  }
+};
+
+assert(o.hasOwnProperty("foo"), 'o.hasOwnProperty("foo") !== true');
+
+reportCompare(0, 0);

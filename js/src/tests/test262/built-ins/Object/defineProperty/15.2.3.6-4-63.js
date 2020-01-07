@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+
+Object.defineProperty(obj, "foo", {
+  value: NaN
+});
+
+Object.defineProperty(obj, "foo", {
+  value: NaN
+});
+
+assert.sameValue(obj.foo, NaN);
+
+verifyNotWritable(obj, "foo");
+
+verifyNotEnumerable(obj, "foo");
+
+verifyNotConfigurable(obj, "foo");
+
+reportCompare(0, 0);

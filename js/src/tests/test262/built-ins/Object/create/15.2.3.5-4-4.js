@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+var props = {};
+var result = false;
+
+Object.defineProperty(props, "prop", {
+  get: function() {
+    result = this instanceof Object;
+    return {};
+  },
+  enumerable: true
+});
+Object.create({}, props);
+
+assert(result, 'result !== true');
+
+reportCompare(0, 0);

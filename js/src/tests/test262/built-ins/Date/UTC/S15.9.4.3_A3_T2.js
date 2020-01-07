@@ -10,7 +10,7 @@
 
 
 
-if (delete Date.UTC.length  !== true) {
+if (delete Date.UTC.length !== true) {
   $ERROR('#1: The Date.UTC.length property does not have the attributes DontDelete');
 }
 

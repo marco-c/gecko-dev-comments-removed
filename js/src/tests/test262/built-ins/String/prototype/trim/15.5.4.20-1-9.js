@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+var strObj = new String(undefined);
+
+assert.sameValue(strObj.trim(), "undefined", 'strObj.trim()');
+
+reportCompare(0, 0);

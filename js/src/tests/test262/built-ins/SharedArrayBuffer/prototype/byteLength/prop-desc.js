@@ -7,6 +7,8 @@
 
 
 
+
+
 var desc = Object.getOwnPropertyDescriptor(SharedArrayBuffer.prototype, "byteLength");
 
 assert.sameValue(desc.set, undefined);

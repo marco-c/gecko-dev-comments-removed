@@ -9,7 +9,7 @@
 
 
 
-var AsyncFunction = async function foo() { }.constructor;
+var AsyncFunction = async function foo() {}.constructor;
 var fn;
 
 fn = AsyncFunction("a", "await 1;");

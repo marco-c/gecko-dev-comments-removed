@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+function foo() {}
+var o = {};
+
+var bf = foo.bind(o);
+
+assert(bf.hasOwnProperty('length'), 'bf.hasOwnProperty("length") !== true');
+
+reportCompare(0, 0);

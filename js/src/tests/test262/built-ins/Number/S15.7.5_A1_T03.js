@@ -10,12 +10,12 @@
 
 
 
-if((new Number()).hasOwnProperty("toLocaleString") !== false){
+if ((new Number()).hasOwnProperty("toLocaleString") !== false) {
   $ERROR('#1: Number instance must have no special property "toLocaleString"');
 }
 
 
-if((new Number()).toLocaleString !== Number.prototype.toLocaleString){
+if ((new Number()).toLocaleString !== Number.prototype.toLocaleString) {
   $ERROR('#2: Number instance property "toLocaleString" must be inherited from Number prototype object');
 }
 

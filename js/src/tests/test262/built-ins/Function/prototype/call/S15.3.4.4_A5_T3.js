@@ -10,9 +10,12 @@
 
 
 
-var obj="soap";
+var obj = "soap";
 
-var retobj = ( function(){this.touched= true; return this;} ).call(obj);
+var retobj = (function() {
+  this.touched = true;
+  return this;
+}).call(obj);
 
 
 if (typeof obj.touched !== "undefined") {

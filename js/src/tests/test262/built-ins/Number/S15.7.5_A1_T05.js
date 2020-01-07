@@ -10,12 +10,12 @@
 
 
 
-if((new Number()).hasOwnProperty("toFixed") !== false){
+if ((new Number()).hasOwnProperty("toFixed") !== false) {
   $ERROR('#1: Number instance must have no special property "toFixed"');
 }
 
 
-if((new Number()).toFixed !== Number.prototype.toFixed){
+if ((new Number()).toFixed !== Number.prototype.toFixed) {
   $ERROR('#2: Number instance property "toFixed" must be inherited from Number prototype object');
 }
 

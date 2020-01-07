@@ -28,7 +28,7 @@ function StopSplice() {}
 var traps = [];
 var targetLength;
 
-var array = ["no-hole", , "stop"];
+var array = ["no-hole",  , "stop"];
 array.constructor = {
   [Symbol.species]: function(n) {
     targetLength = n;
@@ -42,7 +42,7 @@ var source = new Proxy(array, allowProxyTraps({
 
     
     if (pk === "length")
-      return 2**53 + 2;
+      return 2 ** 53 + 2;
 
     return Reflect.get(t, pk, r);
   },
@@ -66,11 +66,11 @@ var target = new Proxy([], allowProxyTraps({
 
 assert.throws(StopSplice, function() {
   
-  Array.prototype.splice.call(source, 0, 2**53 + 4);
+  Array.prototype.splice.call(source, 0, 2 ** 53 + 4);
 });
 
-assert.sameValue(targetLength, 2**53 - 1,
-                 "length and deleteCount were correctly clamped to 2^53-1");
+assert.sameValue(targetLength, 2 ** 53 - 1,
+  "length and deleteCount were correctly clamped to 2^53-1");
 
 assert.compareArray(traps, [
   "source.[[Get]]:length",

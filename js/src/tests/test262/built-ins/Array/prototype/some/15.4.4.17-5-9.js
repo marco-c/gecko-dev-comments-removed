@@ -7,11 +7,11 @@
 
 
 
-        var objFunction = function () { };
+var objFunction = function() {};
 
-        function callbackfn(val, idx, obj) {
-            return this === objFunction;
-        }
+function callbackfn(val, idx, obj) {
+  return this === objFunction;
+}
 
 assert([11].some(callbackfn, objFunction), '[11].some(callbackfn, objFunction) !== true');
 

@@ -9,7 +9,9 @@
 
 
 
-var func = function(){return 1;};
+var func = function() {
+  return 1;
+};
 
 
 if (typeof func !== 'function') {
@@ -19,7 +21,7 @@ if (typeof func !== 'function') {
 var n_obj = Object(func);
 
 
-if ((n_obj !== func)||(n_obj()!==1)) {
+if ((n_obj !== func) || (n_obj() !== 1)) {
   $ERROR('#2: Object(function) returns function');
 }
 

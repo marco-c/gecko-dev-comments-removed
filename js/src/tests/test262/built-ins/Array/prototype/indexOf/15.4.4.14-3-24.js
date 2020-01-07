@@ -9,7 +9,11 @@
 
 
 
-        var obj = { 122: true, 123: false, length: 123.321 }; 
+var obj = {
+  122: true,
+  123: false,
+  length: 123.321
+}; 
 
 assert.sameValue(Array.prototype.indexOf.call(obj, true), 122, 'Array.prototype.indexOf.call(obj, true)');
 assert.sameValue(Array.prototype.indexOf.call(obj, false), -1, 'Array.prototype.indexOf.call(obj, false)');

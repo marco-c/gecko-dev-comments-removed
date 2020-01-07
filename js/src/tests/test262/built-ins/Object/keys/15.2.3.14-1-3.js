@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+
+
+Object.keys('abc');
+
+reportCompare(0, 0);

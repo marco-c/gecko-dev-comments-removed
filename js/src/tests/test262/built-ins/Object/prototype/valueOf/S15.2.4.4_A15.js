@@ -12,7 +12,7 @@
 var v = Object.prototype.valueOf;
 
 assert.throws(TypeError, function() {
-    v();
+  v();
 });
 
 reportCompare(0, 0);

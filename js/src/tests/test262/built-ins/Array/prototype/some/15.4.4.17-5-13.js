@@ -7,11 +7,11 @@
 
 
 
-        var objNumber = new Number();
+var objNumber = new Number();
 
-        function callbackfn(val, idx, obj) {
-            return this === objNumber;
-        }
+function callbackfn(val, idx, obj) {
+  return this === objNumber;
+}
 
 assert([11].some(callbackfn, objNumber), '[11].some(callbackfn, objNumber) !== true');
 

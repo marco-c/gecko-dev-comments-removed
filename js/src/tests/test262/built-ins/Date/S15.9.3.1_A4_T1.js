@@ -17,30 +17,34 @@
 
 
 
-var myObj = function(val){
+var myObj = function(val) {
   this.value = val;
-  this.valueOf = function(){throw "valueOf-"+this.value;};
-  this.toString = function(){throw "toString-"+this.value;};
+  this.valueOf = function() {
+    throw "valueOf-" + this.value;
+  };
+  this.toString = function() {
+    throw "toString-" + this.value;
+  };
 };
 
 
-try{
+try {
   var x1 = new Date(new myObj(1), new myObj(2));
   $ERROR("#1: The 1st step is calling ToNumber(year)");
 }
-catch(e){
-  if(e !== "valueOf-1"){
+catch (e) {
+  if (e !== "valueOf-1") {
     $ERROR("#1: The 1st step is calling ToNumber(year)");
   }
 }
 
 
-try{
+try {
   var x2 = new Date(1, new myObj(2));
   $ERROR("#2: The 2nd step is calling ToNumber(month)");
 }
-catch(e){
-  if(e !== "valueOf-2"){
+catch (e) {
+  if (e !== "valueOf-2") {
     $ERROR("#2: The 2nd step is calling ToNumber(month)");
   }
 }

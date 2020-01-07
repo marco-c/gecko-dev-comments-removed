@@ -7,13 +7,13 @@
 
 
 
-        var objBoolean = new Boolean();
+var objBoolean = new Boolean();
 
-        function callbackfn(val, idx, obj) {
-            return this === objBoolean;
-        }
+function callbackfn(val, idx, obj) {
+  return this === objBoolean;
+}
 
-        var testResult = [11].map(callbackfn, objBoolean);
+var testResult = [11].map(callbackfn, objBoolean);
 
 assert.sameValue(testResult[0], true, 'testResult[0]');
 

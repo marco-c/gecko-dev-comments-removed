@@ -7,9 +7,9 @@
 
 
 
-        function callbackfn() {
-            return true;
-        }
+function callbackfn() {
+  return true;
+}
 
 assert([11, 12].some(callbackfn), '[11, 12].some(callbackfn) !== true');
 

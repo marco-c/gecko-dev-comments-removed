@@ -14,6 +14,7 @@
 
 
 
+
 assert.sameValue(SharedArrayBuffer.prototype[Symbol.toStringTag], 'SharedArrayBuffer');
 
 verifyNotEnumerable(SharedArrayBuffer.prototype, Symbol.toStringTag);

@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+var b = Object.isSealed(Number.prototype);
+
+assert.sameValue(b, false, 'b');
+
+reportCompare(0, 0);

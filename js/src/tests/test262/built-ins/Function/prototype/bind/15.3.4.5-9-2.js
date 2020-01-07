@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+function foo() {}
+var o = {};
+
+var bf = foo.bind(o);
+
+assert.sameValue(Object.getPrototypeOf(bf), Function.prototype, 'Object.getPrototypeOf(bf)');
+
+reportCompare(0, 0);

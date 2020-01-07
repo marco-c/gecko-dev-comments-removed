@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+
+async function  f  (  x  ,  y  )  {  ;  ;  }
+
+assertToStringOrNativeFunction(f, "async function /* a */ f /* b */ ( /* c */ x /* d */ , /* e */ y /* f */ ) /* g */ { /* h */ ; /* i */ ; /* j */ }");
+
+reportCompare(0, 0);

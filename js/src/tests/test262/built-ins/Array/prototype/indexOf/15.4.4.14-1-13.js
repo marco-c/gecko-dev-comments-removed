@@ -7,10 +7,10 @@
 
 
 
-        var targetObj = {};
+var targetObj = {};
 
-            JSON[3] = targetObj;
-            JSON.length = 5;
+JSON[3] = targetObj;
+JSON.length = 5;
 
 assert.sameValue(Array.prototype.indexOf.call(JSON, targetObj), 3, 'Array.prototype.indexOf.call(JSON, targetObj)');
 

@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+var o = {
+  set foo(x) {;
+  }
+};
+
+assert(o.hasOwnProperty("foo"), 'o.hasOwnProperty("foo") !== true');
+
+reportCompare(0, 0);

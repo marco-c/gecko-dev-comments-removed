@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+assert.throws(SyntaxError, function() {
+  JSON.parse('\u200b1234'); 
+});
+
+reportCompare(0, 0);

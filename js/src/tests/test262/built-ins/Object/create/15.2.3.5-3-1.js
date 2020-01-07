@@ -9,9 +9,9 @@
 
 
 
-    function base() {}
-    var b = new base();
-    var d = Object.create(b);
+function base() {}
+var b = new base();
+var d = Object.create(b);
 
 assert.sameValue(Object.getPrototypeOf(d), b, 'Object.getPrototypeOf(d)');
 assert.sameValue(b.isPrototypeOf(d), true, 'b.isPrototypeOf(d)');

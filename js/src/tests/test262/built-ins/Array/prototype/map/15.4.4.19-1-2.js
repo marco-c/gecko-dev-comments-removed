@@ -9,7 +9,7 @@
 
 
 assert.throws(TypeError, function() {
-            Array.prototype.map.call(null); 
+  Array.prototype.map.call(null); 
 });
 
 reportCompare(0, 0);

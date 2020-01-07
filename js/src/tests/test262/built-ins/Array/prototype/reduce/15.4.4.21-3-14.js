@@ -7,14 +7,17 @@
 
 
 
-        var accessed2 = false;
+var accessed2 = false;
 
-        function callbackfn2(prevVal, curVal, idx, obj) {
-            accessed2 = true;
-            return 2;
-        }
+function callbackfn2(prevVal, curVal, idx, obj) {
+  accessed2 = true;
+  return 2;
+}
 
-        var obj2 = { 0: 9, length: "-Infinity" };
+var obj2 = {
+  0: 9,
+  length: "-Infinity"
+};
 
 assert.sameValue(Array.prototype.reduce.call(obj2, callbackfn2, 1), 1, 'Array.prototype.reduce.call(obj2, callbackfn2, 1)');
 assert.sameValue(accessed2, false, 'accessed2');

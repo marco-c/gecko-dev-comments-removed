@@ -12,7 +12,7 @@
 var bool = false;
 
 
-if (typeof bool  !== 'boolean') {
+if (typeof bool !== 'boolean') {
   $ERROR('#1: false is NOT a boolean');
 }
 
@@ -29,12 +29,12 @@ if (typeof n_obj !== 'object') {
 }
 
 
-if ( n_obj != bool) {
+if (n_obj != bool) {
   $ERROR('#4: When the Object constructor is called with Boolean argument return ToObject(boolean)');
 }
 
 
-if ( n_obj === bool) {
+if (n_obj === bool) {
   $ERROR('#5: When the Object constructor is called with Boolean argument return ToObject(boolean)');
 }
 

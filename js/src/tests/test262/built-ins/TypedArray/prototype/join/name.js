@@ -19,6 +19,7 @@
 
 
 
+
 assert.sameValue(TypedArray.prototype.join.name, "join");
 
 verifyNotEnumerable(TypedArray.prototype.join, "name");

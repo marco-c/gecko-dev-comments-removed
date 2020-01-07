@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+
+Object.defineProperties(obj, {
+  property: {
+    writable: new Number(123)
+  }
+});
+
+obj.property = "isWritable";
+
+assert.sameValue(obj.property, "isWritable", 'obj.property');
+
+reportCompare(0, 0);

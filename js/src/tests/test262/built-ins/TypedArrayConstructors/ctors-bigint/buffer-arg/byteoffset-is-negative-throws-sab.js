@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var buffer = new SharedArrayBuffer(8);
+
+testWithBigIntTypedArrayConstructors(function(TA) {
+  assert.throws(RangeError, function() {
+    new TA(buffer, -1);
+  });
+  assert.throws(RangeError, function() {
+    new TA(buffer, -Infinity);
+  });
+});
+
+reportCompare(0, 0);

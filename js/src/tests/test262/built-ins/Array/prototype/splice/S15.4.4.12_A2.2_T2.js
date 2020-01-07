@@ -8,8 +8,8 @@
 
 
 
-var x = [0,1];
-var arr = x.splice(0,NaN);
+var x = [0, 1];
+var arr = x.splice(0, NaN);
 
 
 arr.getClass = Object.prototype.toString;

@@ -16,14 +16,14 @@ obj.join = Array.prototype.join;
 if (obj.length !== undefined) {
   $ERROR('#0: var obj = {}; obj.length === undefined. Actual: ' + (obj.length));
 } else {
-    
-    if (obj.join() !== "") {
-      $ERROR('#1: var obj = {}; obj.join = Array.prototype.join; obj.join() === "". Actual: ' + (obj.join()));
-    }
-    
-    if (obj.length !== undefined) {
-      $ERROR('#2: var obj = {}; obj.join = Array.prototype.join; obj.join(); obj.length === undefined. Actual: ' + (obj.length));
-    }
+  
+  if (obj.join() !== "") {
+    $ERROR('#1: var obj = {}; obj.join = Array.prototype.join; obj.join() === "". Actual: ' + (obj.join()));
+  }
+  
+  if (obj.length !== undefined) {
+    $ERROR('#2: var obj = {}; obj.join = Array.prototype.join; obj.join(); obj.length === undefined. Actual: ' + (obj.length));
+  }
 }
 
 

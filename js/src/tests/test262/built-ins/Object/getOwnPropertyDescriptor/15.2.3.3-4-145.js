@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+var desc = Object.getOwnPropertyDescriptor(Date.prototype, "setUTCFullYear");
+
+assert.sameValue(desc.value, Date.prototype.setUTCFullYear, 'desc.value');
+assert.sameValue(desc.writable, true, 'desc.writable');
+assert.sameValue(desc.enumerable, false, 'desc.enumerable');
+assert.sameValue(desc.configurable, true, 'desc.configurable');
+
+reportCompare(0, 0);

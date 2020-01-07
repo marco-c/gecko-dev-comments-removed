@@ -9,15 +9,16 @@
 
 
 
-        var testResult = false;
-        function callbackfn(prevVal, curVal, idx, obj) {
-            if (idx === 1) {
-                testResult = (curVal === 1);
-            }
-        }
+var testResult = false;
 
-            Array.prototype[1] = "11";
-            [0, 1, 2].reduceRight(callbackfn, "initialValue");
+function callbackfn(prevVal, curVal, idx, obj) {
+  if (idx === 1) {
+    testResult = (curVal === 1);
+  }
+}
+
+Array.prototype[1] = "11";
+[0, 1, 2].reduceRight(callbackfn, "initialValue");
 
 assert(testResult, 'testResult !== true');
 

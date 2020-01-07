@@ -33,7 +33,6 @@
 
 
 
-
 testWithTypedArrayConstructors(function(TA) {
   var sample = new TA(2);
   var loops = 0;

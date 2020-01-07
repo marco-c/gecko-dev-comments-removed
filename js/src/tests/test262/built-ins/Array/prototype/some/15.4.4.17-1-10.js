@@ -7,12 +7,12 @@
 
 
 
-        function callbackfn(val, idx, obj) {
-            return '[object Math]' === Object.prototype.toString.call(obj);
-        }
+function callbackfn(val, idx, obj) {
+  return '[object Math]' === Object.prototype.toString.call(obj);
+}
 
-            Math.length = 1;
-            Math[0] = 1;
+Math.length = 1;
+Math[0] = 1;
 
 assert(Array.prototype.some.call(Math, callbackfn), 'Array.prototype.some.call(Math, callbackfn) !== true');
 

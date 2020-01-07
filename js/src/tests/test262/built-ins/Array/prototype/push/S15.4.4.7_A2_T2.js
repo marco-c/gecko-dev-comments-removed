@@ -35,7 +35,9 @@ if (obj["0"] !== -1) {
 
 
 obj.length = Number.POSITIVE_INFINITY;
-assert.throws(TypeError, function() { obj.push(-4); });
+assert.throws(TypeError, function() {
+  obj.push(-4);
+});
 
 
 if (obj.length !== Number.POSITIVE_INFINITY) {

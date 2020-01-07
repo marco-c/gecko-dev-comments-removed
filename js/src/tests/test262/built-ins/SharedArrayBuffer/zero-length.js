@@ -17,6 +17,8 @@
 
 
 
+
+
 var positiveZero = new SharedArrayBuffer(+0);
 assert.sameValue(positiveZero.byteLength, 0);
 

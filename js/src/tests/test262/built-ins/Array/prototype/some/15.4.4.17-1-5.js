@@ -7,12 +7,12 @@
 
 
 
-        function callbackfn(val, idx, obj) {
-            return obj instanceof Number;
-        }
+function callbackfn(val, idx, obj) {
+  return obj instanceof Number;
+}
 
-            Number.prototype[1] = true;
-            Number.prototype.length = 2;
+Number.prototype[1] = true;
+Number.prototype.length = 2;
 
 assert(Array.prototype.some.call(5, callbackfn), 'Array.prototype.some.call(5, callbackfn) !== true');
 

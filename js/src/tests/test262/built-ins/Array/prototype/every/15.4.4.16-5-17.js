@@ -7,12 +7,12 @@
 
 
 
-        var accessed = false;
+var accessed = false;
 
-        function callbackfn(val, idx, obj) {
-            accessed = true;
-            return this === JSON;
-        }
+function callbackfn(val, idx, obj) {
+  accessed = true;
+  return this === JSON;
+}
 
 assert([11].every(callbackfn, JSON), '[11].every(callbackfn, JSON) !== true');
 assert(accessed, 'accessed !== true');

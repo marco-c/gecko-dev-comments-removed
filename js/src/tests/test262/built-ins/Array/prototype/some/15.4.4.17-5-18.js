@@ -7,11 +7,11 @@
 
 
 
-        var objError = new RangeError();
+var objError = new RangeError();
 
-        function callbackfn(val, idx, obj) {
-            return this === objError;
-        }
+function callbackfn(val, idx, obj) {
+  return this === objError;
+}
 
 assert([11].some(callbackfn, objError), '[11].some(callbackfn, objError) !== true');
 

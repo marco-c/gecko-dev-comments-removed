@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+var obj = {};
+assert.throws(TypeError, function() {
+  Object.defineProperty(obj, "property", undefined);
+});
+
+reportCompare(0, 0);

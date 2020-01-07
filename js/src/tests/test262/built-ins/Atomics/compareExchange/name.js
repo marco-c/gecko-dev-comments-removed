@@ -9,6 +9,8 @@
 
 
 
+
+
 assert.sameValue(Atomics.compareExchange.name, "compareExchange");
 
 verifyNotEnumerable(Atomics.compareExchange, "name");

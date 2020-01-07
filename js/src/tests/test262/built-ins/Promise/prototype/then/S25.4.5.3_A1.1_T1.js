@@ -10,7 +10,7 @@
 
 
 if (!(Promise.prototype.then instanceof Function)) {
-    $ERROR("Expected Promise.prototype.then to be a function");
+  $ERROR("Expected Promise.prototype.then to be a function");
 }
 
 reportCompare(0, 0);

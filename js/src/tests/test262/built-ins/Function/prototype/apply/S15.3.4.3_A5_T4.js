@@ -10,7 +10,10 @@
 
 
 
-f = function(){this.touched= true; return this;};
+f = function() {
+  this.touched = true;
+  return this;
+};
 
 retobj = f.apply(obj);
 

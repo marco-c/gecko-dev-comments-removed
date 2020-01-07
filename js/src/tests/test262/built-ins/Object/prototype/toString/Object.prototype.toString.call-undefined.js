@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+assert.sameValue(
+  Object.prototype.toString.call(undefined),
+  "[object Undefined]",
+  "Object.prototype.toString.call(undefined) returns [object Undefined]"
+);
+
+reportCompare(0, 0);

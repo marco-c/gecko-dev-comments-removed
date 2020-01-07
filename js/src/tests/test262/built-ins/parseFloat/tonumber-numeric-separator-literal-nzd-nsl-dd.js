@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(parseFloat("1_1"), 1);
+
+reportCompare(0, 0);

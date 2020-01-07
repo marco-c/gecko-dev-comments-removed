@@ -8,7 +8,7 @@
 
 
 
-if (delete Date.prototype.getUTCMinutes  === false) {
+if (delete Date.prototype.getUTCMinutes === false) {
   $ERROR('#1: The Date.prototype.getUTCMinutes property has not the attributes DontDelete');
 }
 

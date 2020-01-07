@@ -7,9 +7,9 @@
 
 
 
-        function callbackfn(val, idx, obj) {
-            return this === JSON;
-        }
+function callbackfn(val, idx, obj) {
+  return this === JSON;
+}
 
 assert([11].some(callbackfn, JSON), '[11].some(callbackfn, JSON) !== true');
 

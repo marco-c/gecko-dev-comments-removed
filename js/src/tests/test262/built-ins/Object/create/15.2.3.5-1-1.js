@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  Object.create(undefined);
+});
+
+reportCompare(0, 0);

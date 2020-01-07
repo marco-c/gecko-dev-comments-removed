@@ -13,7 +13,7 @@
 
 
 assert.throws(TypeError, function() {
-    JSON.bind();
+  JSON.bind();
 });
 
 reportCompare(0, 0);

@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+testWithBigIntTypedArrayConstructors(function(TA) {
+  var buffer = new ArrayBuffer(TA.BYTES_PER_ELEMENT);
+  assert.throws(TypeError, function() {
+    TA(buffer);
+  });
+});
+
+reportCompare(0, 0);

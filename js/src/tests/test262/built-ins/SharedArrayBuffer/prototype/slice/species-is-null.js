@@ -11,6 +11,7 @@
 
 
 
+
 var speciesConstructor = {};
 speciesConstructor[Symbol.species] = null;
 

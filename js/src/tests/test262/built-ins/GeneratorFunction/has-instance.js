@@ -8,10 +8,10 @@
 
 
 
-var GeneratorFunction = Object.getPrototypeOf(function* () {}).constructor;
+var GeneratorFunction = Object.getPrototypeOf(function*() {}).constructor;
 
 function* gDecl() {}
-var gExpr = function* () {};
+var gExpr = function*() {};
 
 assert(
   gDecl instanceof GeneratorFunction,

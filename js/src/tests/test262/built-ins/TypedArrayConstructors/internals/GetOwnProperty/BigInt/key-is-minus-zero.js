@@ -1,0 +1,40 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+testWithBigIntTypedArrayConstructors(function(TA) {
+  var sample = new TA([42n]);
+
+  
+  assert.sameValue(Object.getOwnPropertyDescriptor(sample, "-0"), undefined);
+});
+
+reportCompare(0, 0);

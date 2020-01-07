@@ -10,7 +10,7 @@
 
 
 
-if (delete Date.prototype.getDay.length  !== true) {
+if (delete Date.prototype.getDay.length !== true) {
   $ERROR('#1: The Date.prototype.getDay.length property does not have the attributes DontDelete');
 }
 

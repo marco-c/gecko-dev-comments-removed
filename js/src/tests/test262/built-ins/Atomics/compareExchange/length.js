@@ -23,6 +23,8 @@
 
 
 
+
+
 assert.sameValue(Atomics.compareExchange.length, 4);
 
 verifyNotEnumerable(Atomics.compareExchange, "length");

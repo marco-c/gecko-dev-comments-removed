@@ -1,0 +1,47 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function newTarget() {}
+var proto = {};
+newTarget.prototype = proto;
+
+testWithBigIntTypedArrayConstructors(function(TA) {
+  var ta = Reflect.construct(TA, [], newTarget);
+
+  assert.sameValue(ta.constructor, Object);
+  assert.sameValue(Object.getPrototypeOf(ta), proto);
+});
+
+reportCompare(0, 0);

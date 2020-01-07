@@ -14,10 +14,10 @@
 
 var expectedThis = this;
 
-var p = new Promise(function (resolve) {
-    if (this !== expectedThis) {
-        $ERROR("'this' must be global object, got " + this);
-    }
+var p = new Promise(function(resolve) {
+  if (this !== expectedThis) {
+    $ERROR("'this' must be global object, got " + this);
+  }
 
-    resolve();
+  resolve();
 }).then($DONE, $DONE);

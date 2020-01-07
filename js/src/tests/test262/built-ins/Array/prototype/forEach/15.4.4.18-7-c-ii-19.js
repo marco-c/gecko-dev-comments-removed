@@ -7,18 +7,24 @@
 
 
 
-        var accessed = false;
-        var result = true;
-        function callbackfn(val, idx, obj) {
-            accessed = true;
-            if (val === 8) {
-                result = false;
-            }
-        }
+var accessed = false;
+var result = true;
 
-        var obj = { 0: 11, 10: 12, non_index_property: 8, length: 20 };
+function callbackfn(val, idx, obj) {
+  accessed = true;
+  if (val === 8) {
+    result = false;
+  }
+}
 
-        Array.prototype.forEach.call(obj, callbackfn);
+var obj = {
+  0: 11,
+  10: 12,
+  non_index_property: 8,
+  length: 20
+};
+
+Array.prototype.forEach.call(obj, callbackfn);
 
 assert(result, 'result !== true');
 assert(accessed, 'accessed !== true');

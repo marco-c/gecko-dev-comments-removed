@@ -11,11 +11,11 @@
 
 
 
-var __str = new String(new Array(1,2,3));
+var __str = new String(new Array(1, 2, 3));
 
 
 if (typeof __str !== "object") {
-  $ERROR('#1: __str = new String(new Array(1,2,3)); typeof __str === "object". Actual: typeof __str ==='+typeof __str ); 
+  $ERROR('#1: __str = new String(new Array(1,2,3)); typeof __str === "object". Actual: typeof __str ===' + typeof __str);
 }
 
 
@@ -23,15 +23,15 @@ if (typeof __str !== "object") {
 
 
 if (__str.constructor !== String) {
-  $ERROR('#1.5: __str = new String(new Array(1,2,3)); __str.constructor === String. Actual: __str.constructor ==='+__str.constructor ); 
+  $ERROR('#1.5: __str = new String(new Array(1,2,3)); __str.constructor === String. Actual: __str.constructor ===' + __str.constructor);
 }
 
 
 
 
 
-if (__str !="1,2,3") {
-  $ERROR('#2: __str = new String(new Array(1,2,3)); __str =="1,2,3". Actual: __str =='+__str ); 
+if (__str != "1,2,3") {
+  $ERROR('#2: __str = new String(new Array(1,2,3)); __str =="1,2,3". Actual: __str ==' + __str);
 }
 
 

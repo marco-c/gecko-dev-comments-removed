@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+if (function() {
+    return "gnulluna"
+  }().search(null) !== 1) {
+  $ERROR('#1: function(){return "gnulluna"}().search(null) === 1. Actual: ' + function() {
+    return "gnulluna"
+  }().search(null));
+}
+
+
+
+reportCompare(0, 0);

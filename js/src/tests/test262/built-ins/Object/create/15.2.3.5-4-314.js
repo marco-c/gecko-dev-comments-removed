@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+var newObj = Object.create({}, {
+  foo: {}
+});
+
+assert(newObj.hasOwnProperty("foo"), 'newObj.hasOwnProperty("foo") !== true');
+
+reportCompare(0, 0);

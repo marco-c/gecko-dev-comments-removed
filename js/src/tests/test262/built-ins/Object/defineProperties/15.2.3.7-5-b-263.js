@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+var getFun = function() {};
+var obj = {};
+assert.throws(TypeError, function() {
+  Object.defineProperties(obj, {
+    prop: {
+      value: 12,
+      get: getFun
+    }
+  });
+});
+
+reportCompare(0, 0);

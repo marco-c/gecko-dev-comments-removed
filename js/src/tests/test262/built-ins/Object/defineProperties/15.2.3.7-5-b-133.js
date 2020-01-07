@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+
+JSON.value = "JSON";
+
+Object.defineProperties(obj, {
+  property: JSON
+});
+
+assert.sameValue(obj.property, "JSON", 'obj.property');
+
+reportCompare(0, 0);

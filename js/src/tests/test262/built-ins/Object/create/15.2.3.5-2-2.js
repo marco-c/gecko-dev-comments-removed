@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+var newObj = Object.create({});
+
+assert(newObj instanceof Object, 'newObj instanceof Object !== true');
+
+reportCompare(0, 0);

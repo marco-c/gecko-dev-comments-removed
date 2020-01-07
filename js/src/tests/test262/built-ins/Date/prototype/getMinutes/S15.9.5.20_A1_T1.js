@@ -9,7 +9,7 @@
 
 
 var x = Date.prototype.getMinutes;
-if(x === 1)
+if (x === 1)
   Date.prototype.getMinutes = 2;
 else
   Date.prototype.getMinutes = 1;

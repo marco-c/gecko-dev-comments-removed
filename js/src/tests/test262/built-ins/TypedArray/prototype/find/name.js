@@ -19,6 +19,7 @@
 
 
 
+
 assert.sameValue(TypedArray.prototype.find.name, "find");
 
 verifyNotEnumerable(TypedArray.prototype.find, "name");

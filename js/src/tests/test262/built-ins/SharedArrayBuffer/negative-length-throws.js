@@ -22,6 +22,8 @@
 
 
 
+
+
 assert.throws(RangeError, function() {
   new SharedArrayBuffer(-1);
 });

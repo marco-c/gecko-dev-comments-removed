@@ -9,9 +9,9 @@
 
 
 
-  var arr = new Array(10);
+var arr = new Array(10);
 assert.throws(ReferenceError, function() {
-    arr.reduce(foo);
+  arr.reduce(foo);
 });
 
 reportCompare(0, 0);

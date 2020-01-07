@@ -12,7 +12,7 @@
 var str = 'Luke Skywalker';
 
 
-if (typeof str  !== 'string') {
+if (typeof str !== 'string') {
   $ERROR('#1: "Luke Skywalker" should be a String primitive');
 }
 
@@ -29,7 +29,7 @@ if (typeof obj !== "object") {
 }
 
 
-if ((obj != "Luke Skywalker")||(obj === "Luke Skywalker")) {
+if ((obj != "Luke Skywalker") || (obj === "Luke Skywalker")) {
   $ERROR('#4: Object("Luke Skywalker") returns ToObject("Luke Skywalker")');
 }
 

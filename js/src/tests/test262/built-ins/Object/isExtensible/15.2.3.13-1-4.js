@@ -1,0 +1,11 @@
+
+
+
+
+
+
+
+
+Object.isExtensible("abc");
+
+reportCompare(0, 0);

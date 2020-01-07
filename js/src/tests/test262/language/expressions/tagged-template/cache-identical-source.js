@@ -7,6 +7,7 @@
 
 
 
+
 function tag(templateObject) {
   previousObject = templateObject;
 }
@@ -20,10 +21,10 @@ assert(firstObject !== null);
 previousObject = null;
 
 tag`head${a}tail`;
-assert.sameValue(
+assert.notSameValue(
   previousObject,
   firstObject,
-  'The realm\'s template cache is used when tagged templates are executed in the source code directly'
+  'The realm\'s template cache is by site, not string contents'
 );
 
 reportCompare(0, 0);

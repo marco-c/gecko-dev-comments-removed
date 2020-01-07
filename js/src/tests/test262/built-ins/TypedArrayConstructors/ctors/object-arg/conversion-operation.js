@@ -1,0 +1,55 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+testTypedArrayConversions(byteConversionValues, function(TA, value, expected) {
+  var sample = new TA([value]);
+
+  assert.sameValue(sample[0], expected, value + " converts to " + expected);
+});
+
+reportCompare(0, 0);

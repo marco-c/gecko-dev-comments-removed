@@ -8,10 +8,11 @@
 
 
 
+
 let f = async function  F  (  x  ,  y  )  {  ;  ;  };
 let g = async function  (  x  ,  y  )  {  ;  ;  };
 
-assert.sameValue(f.toString(), "async function /* a */ F /* b */ ( /* c */ x /* d */ , /* e */ y /* f */ ) /* g */ { /* h */ ; /* i */ ; /* j */ }");
-assert.sameValue(g.toString(), "async function /* a */ ( /* b */ x /* c */ , /* d */ y /* e */ ) /* f */ { /* g */ ; /* h */ ; /* i */ }");
+assertToStringOrNativeFunction(f, "async function /* a */ F /* b */ ( /* c */ x /* d */ , /* e */ y /* f */ ) /* g */ { /* h */ ; /* i */ ; /* j */ }");
+assertToStringOrNativeFunction(g, "async function /* a */ ( /* b */ x /* c */ , /* d */ y /* e */ ) /* f */ { /* g */ ; /* h */ ; /* i */ }");
 
 reportCompare(0, 0);

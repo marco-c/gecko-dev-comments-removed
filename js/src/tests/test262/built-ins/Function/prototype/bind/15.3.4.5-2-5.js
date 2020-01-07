@@ -9,8 +9,8 @@
 
 
 
-  var bbc = Boolean.bind(null);
-  var b = bbc(true);
+var bbc = Boolean.bind(null);
+var b = bbc(true);
 
 assert.sameValue(b, true, 'b');
 

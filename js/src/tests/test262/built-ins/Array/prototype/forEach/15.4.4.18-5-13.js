@@ -7,14 +7,14 @@
 
 
 
-        var result = false;
-        var objNumber = new Number();
+var result = false;
+var objNumber = new Number();
 
-        function callbackfn(val, idx, obj) {
-            result = (this === objNumber);
-        }
+function callbackfn(val, idx, obj) {
+  result = (this === objNumber);
+}
 
-        [11].forEach(callbackfn, objNumber);
+[11].forEach(callbackfn, objNumber);
 
 assert(result, 'result !== true');
 

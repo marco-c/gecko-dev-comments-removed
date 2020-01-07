@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+var target = {};
+var p = new Proxy(target, {
+  get: function() {
+    return 2;
+  }
+});
+
+Object.defineProperty(target, 'attr', {
+  get: function() {
+    return 1;
+  }
+});
+
+assert.sameValue(p.attr, 2);
+assert.sameValue(p['attr'], 2);
+
+reportCompare(0, 0);

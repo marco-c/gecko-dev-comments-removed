@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+function foo() {}
+var obj = foo.bind({});
+
+assert.throws(TypeError, function() {
+  obj.arguments;
+});
+
+reportCompare(0, 0);

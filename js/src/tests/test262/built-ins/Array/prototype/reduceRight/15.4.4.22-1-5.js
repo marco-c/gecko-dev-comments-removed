@@ -7,15 +7,15 @@
 
 
 
-        var accessed = false;
+var accessed = false;
 
-        function callbackfn(prevVal, curVal, idx, obj) {
-            accessed = true;
-            return obj instanceof Number;
-        }
+function callbackfn(prevVal, curVal, idx, obj) {
+  accessed = true;
+  return obj instanceof Number;
+}
 
-            Number.prototype[0] = 1;
-            Number.prototype.length = 1;
+Number.prototype[0] = 1;
+Number.prototype.length = 1;
 
 assert(Array.prototype.reduceRight.call(2.5, callbackfn, 1), 'Array.prototype.reduceRight.call(2.5, callbackfn, 1) !== true');
 assert(accessed, 'accessed !== true');

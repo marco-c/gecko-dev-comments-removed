@@ -19,6 +19,7 @@
 
 
 
+
 var desc = Object.getOwnPropertyDescriptor(TypedArray.prototype, "byteLength");
 
 assert.sameValue(desc.get.name, "get byteLength");

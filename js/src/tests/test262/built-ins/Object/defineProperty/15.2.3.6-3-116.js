@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+
+Object.defineProperty(obj, "property", {
+  configurable: Math
+});
+
+var beforeDeleted = obj.hasOwnProperty("property");
+
+delete obj.property;
+
+var afterDeleted = obj.hasOwnProperty("property");
+
+assert.sameValue(beforeDeleted, true, 'beforeDeleted');
+assert.sameValue(afterDeleted, false, 'afterDeleted');
+
+reportCompare(0, 0);

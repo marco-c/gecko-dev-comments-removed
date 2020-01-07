@@ -14,7 +14,7 @@
 
 
 
-var promise = new Promise(function(){});
+var promise = new Promise(function() {});
 
 promise.constructor = undefined;
 assert.throws(TypeError, function() {

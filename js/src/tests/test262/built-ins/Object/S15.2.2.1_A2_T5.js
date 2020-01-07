@@ -9,7 +9,7 @@
 
 
 
-var obj = new Date(1978,3);
+var obj = new Date(1978, 3);
 
 var n_obj = new Object(obj);
 
@@ -19,7 +19,7 @@ if (n_obj !== obj) {
 }
 
 
-if ((n_obj.getFullYear() !== 1978)||(n_obj.getMonth() !== 3)) {
+if ((n_obj.getFullYear() !== 1978) || (n_obj.getMonth() !== 3)) {
   $ERROR('#2: When the Object constructor is called and if the value is an Object simply value returns.');
 }
 

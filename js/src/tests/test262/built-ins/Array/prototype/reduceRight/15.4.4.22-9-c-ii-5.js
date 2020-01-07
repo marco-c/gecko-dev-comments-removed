@@ -9,27 +9,27 @@
 
 
 
-        var arr = [11, 12, 13, 14];
-        var kIndex = [];
-        var result = true;
-        var called = 0;
+var arr = [11, 12, 13, 14];
+var kIndex = [];
+var result = true;
+var called = 0;
 
-        
-        function callbackfn(preVal, curVal, idx, o) {
-            
-            called++;
-            if (typeof kIndex[idx] === "undefined") {
-                
-                if (idx !== arr.length - 1 && typeof kIndex[idx + 1] === "undefined") {
-                    result = false;
-                }
-                kIndex[idx] = 1;
-            } else {
-                result = false;
-            }
-        }
 
-        arr.reduceRight(callbackfn, 1);
+function callbackfn(preVal, curVal, idx, o) {
+  
+  called++;
+  if (typeof kIndex[idx] === "undefined") {
+    
+    if (idx !== arr.length - 1 && typeof kIndex[idx + 1] === "undefined") {
+      result = false;
+    }
+    kIndex[idx] = 1;
+  } else {
+    result = false;
+  }
+}
+
+arr.reduceRight(callbackfn, 1);
 
 assert(result, 'result !== true');
 assert.sameValue(called, 4, 'called');

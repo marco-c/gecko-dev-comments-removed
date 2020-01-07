@@ -9,7 +9,7 @@
 
 
 function fakeObject() {
-    $ERROR('The overriden version of Object was called!');
+  $ERROR('The overriden version of Object was called!');
 }
 fakeObject.getOwnPropertyDescriptors = Object.getOwnPropertyDescriptors;
 fakeObject.keys = Object.keys;
@@ -19,3 +19,5 @@ global.Object = fakeObject;
 
 assert.sameValue(Object, fakeObject, 'Sanity check failed: could not modify the global Object');
 assert.sameValue(Object.keys(Object.getOwnPropertyDescriptors('a')).length, 2, 'Expected string primitive to have 2 descriptors');
+
+reportCompare(0, 0);

@@ -8,7 +8,6 @@
 
 
 
-
 function tag(templateObject) {
   previousObject = templateObject;
 }
@@ -23,10 +22,10 @@ assert(firstObject !== null);
 previousObject = null;
 
 (new Function('tag', 'a', 'b', 'return tag`head${b}tail`;'))(tag, 1, 2);
-assert.sameValue(
+assert.notSameValue(
   previousObject,
   firstObject,
-  'The realm\'s template cache is referenced when tagged templates are declared within "new Function" contexts and templated values differ'
+  'The realm\'s template cache is by site, not string contents'
 );
 
 reportCompare(0, 0);

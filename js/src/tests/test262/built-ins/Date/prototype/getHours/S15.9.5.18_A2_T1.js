@@ -8,11 +8,11 @@
 
 
 
-if(Date.prototype.getHours.hasOwnProperty("length") !== true){
+if (Date.prototype.getHours.hasOwnProperty("length") !== true) {
   $ERROR('#1: The getHours has a "length" property');
 }
 
-if(Date.prototype.getHours.length !== 0){
+if (Date.prototype.getHours.length !== 0) {
   $ERROR('#2: The "length" property of the getHours is 0');
 }
 

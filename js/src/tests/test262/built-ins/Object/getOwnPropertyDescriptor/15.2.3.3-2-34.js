@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+var obj = {
+  "undefined": 1
+};
+
+var desc = Object.getOwnPropertyDescriptor(obj, "undefined");
+
+assert.sameValue(desc.value, 1, 'desc.value');
+
+reportCompare(0, 0);

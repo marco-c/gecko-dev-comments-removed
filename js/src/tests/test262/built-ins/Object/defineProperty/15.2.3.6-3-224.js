@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+
+var dateObj = new Date();
+
+dateObj.get = function() {
+  return "dateGetProperty";
+};
+
+Object.defineProperty(obj, "property", dateObj);
+
+assert.sameValue(obj.property, "dateGetProperty", 'obj.property');
+
+reportCompare(0, 0);

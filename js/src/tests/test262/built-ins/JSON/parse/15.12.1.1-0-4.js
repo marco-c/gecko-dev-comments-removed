@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+assert.throws(SyntaxError, function() {
+  JSON.parse('\u00a01234'); 
+});
+
+reportCompare(0, 0);

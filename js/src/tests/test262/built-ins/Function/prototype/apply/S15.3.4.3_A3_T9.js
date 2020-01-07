@@ -9,7 +9,7 @@
 
 
 
-eval( " Function(\"this.feat=1\").apply(void 0) " );
+eval(" Function(\"this.feat=1\").apply(void 0) ");
 
 
 if (this["feat"] !== 1) {

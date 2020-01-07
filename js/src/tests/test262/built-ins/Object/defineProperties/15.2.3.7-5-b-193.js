@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+
+var getter = function() {
+  return "ownDataProperty";
+};
+
+Object.defineProperties(obj, {
+  property: {
+    get: getter
+  }
+});
+
+assert.sameValue(obj.property, "ownDataProperty", 'obj.property');
+
+reportCompare(0, 0);

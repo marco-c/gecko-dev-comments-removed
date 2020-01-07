@@ -9,15 +9,15 @@
 
 
 
-var f=Function.call(this, "return planet;");
-var g=Function.call(this, "return color;");
+var f = Function.call(this, "return planet;");
+var g = Function.call(this, "return color;");
 
 
-if (f()!==undefined) {
+if (f() !== undefined) {
   $ERROR('#1: ');
 }
 
-var planet="mars";
+var planet = "mars";
 
 
 if (f() !== "mars") {
@@ -25,15 +25,15 @@ if (f() !== "mars") {
 }
 
 
-try{
+try {
   g();
   $ERROR('#3: ');
-} catch(e){
+} catch (e) {
   if (!(e instanceof ReferenceError))
-  	$ERROR('#3.1: ');
-}   
+    $ERROR('#3.1: ');
+}
 
-this.color="red";
+this.color = "red";
 
 
 if (g() !== "red") {

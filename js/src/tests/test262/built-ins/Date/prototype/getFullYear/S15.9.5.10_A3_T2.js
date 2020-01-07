@@ -10,7 +10,7 @@
 
 
 
-if (delete Date.prototype.getFullYear.length  !== true) {
+if (delete Date.prototype.getFullYear.length !== true) {
   $ERROR('#1: The Date.prototype.getFullYear.length property does not have the attributes DontDelete');
 }
 

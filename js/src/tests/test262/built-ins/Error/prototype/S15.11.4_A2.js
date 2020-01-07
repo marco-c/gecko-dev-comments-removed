@@ -11,13 +11,13 @@
 
 
 
-Error.prototype.toString=Object.prototype.toString;
+Error.prototype.toString = Object.prototype.toString;
 var __tostr = Error.prototype.toString();
 
 
 
 if (__tostr !== "[object Object]") {
-	$ERROR('#1: Error.prototype.toString=Object.prototype.toString; __tostr = Error.prototype.toString(); __tostr === "[object Object]". Actual: '+__tostr );
+  $ERROR('#1: Error.prototype.toString=Object.prototype.toString; __tostr = Error.prototype.toString(); __tostr === "[object Object]". Actual: ' + __tostr);
 }
 
 

@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+
+Math.get = function() {
+  return "Math";
+};
+
+Object.defineProperties(obj, {
+  property: Math
+});
+
+assert.sameValue(obj.property, "Math", 'obj.property');
+
+reportCompare(0, 0);

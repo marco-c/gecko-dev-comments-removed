@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+function f() {
+  return gNonStrict();
+};
+var o = {};
+(function() {
+  "use strict";
+  f.apply(o);
+})();
+
+
+function gNonStrict() {
+  return gNonStrict.caller;
+}
+
+reportCompare(0, 0);

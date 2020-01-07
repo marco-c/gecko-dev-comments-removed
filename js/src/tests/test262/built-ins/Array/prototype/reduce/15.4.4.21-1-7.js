@@ -7,9 +7,9 @@
 
 
 
-        function callbackfn(prevVal, curVal, idx, obj) {
-            return obj instanceof String;
-        }
+function callbackfn(prevVal, curVal, idx, obj) {
+  return obj instanceof String;
+}
 
 assert(Array.prototype.reduce.call("abc", callbackfn, 1), 'Array.prototype.reduce.call("abc", callbackfn, 1) !== true');
 

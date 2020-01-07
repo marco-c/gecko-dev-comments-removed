@@ -1,0 +1,11 @@
+
+
+
+
+
+
+
+
+Object.seal(null);
+
+reportCompare(0, 0);

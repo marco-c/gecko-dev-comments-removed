@@ -7,8 +7,8 @@
 
 
 
-            Math.length = 2;
-            Math[1] = 100;
+Math.length = 2;
+Math[1] = 100;
 
 assert.sameValue(Array.prototype.lastIndexOf.call(Math, 100), 1, 'Array.prototype.lastIndexOf.call(Math, 100)');
 

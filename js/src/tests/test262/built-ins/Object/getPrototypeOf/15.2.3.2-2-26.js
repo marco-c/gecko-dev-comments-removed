@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+var obj = new RegExp();
+
+assert.sameValue(Object.getPrototypeOf(obj), RegExp.prototype, 'Object.getPrototypeOf(obj)');
+
+reportCompare(0, 0);

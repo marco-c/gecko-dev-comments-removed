@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+var desc = Object.getOwnPropertyDescriptor(Math, "caller");
+
+assert.sameValue(desc, undefined, 'desc');
+
+reportCompare(0, 0);

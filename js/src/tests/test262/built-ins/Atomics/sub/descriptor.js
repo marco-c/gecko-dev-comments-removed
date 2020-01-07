@@ -8,6 +8,8 @@
 
 
 
+
+
 verifyWritable(Atomics, "sub");
 verifyNotEnumerable(Atomics, "sub");
 verifyConfigurable(Atomics, "sub");

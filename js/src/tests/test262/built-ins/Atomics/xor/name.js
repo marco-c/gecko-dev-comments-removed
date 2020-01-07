@@ -9,6 +9,8 @@
 
 
 
+
+
 assert.sameValue(Atomics.xor.name, "xor");
 
 verifyNotEnumerable(Atomics.xor, "name");

@@ -9,7 +9,9 @@
 
 
 
-var obj = {flag:true};
+var obj = {
+  flag: true
+};
 
 
 if (typeof(obj) !== 'object') {
@@ -19,7 +21,7 @@ if (typeof(obj) !== 'object') {
 var n_obj = Object(obj);
 
 
-if ((n_obj !== obj)||(!(n_obj['flag']))) {
+if ((n_obj !== obj) || (!(n_obj['flag']))) {
   $ERROR('#2: Object({flag:true}) returns ToObject({flag:true})');
 }
 

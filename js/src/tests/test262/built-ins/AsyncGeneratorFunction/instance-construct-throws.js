@@ -1,0 +1,33 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var AsyncGeneratorFunction = Object.getPrototypeOf(async function* () {}).constructor;
+
+var instance = AsyncGeneratorFunction();
+
+assert.throws(TypeError, function() {
+    new instance();
+})
+
+
+
+reportCompare(0, 0);

@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(SyntaxError, function() {
+  Function('a,a', '"use strict";');
+});
+
+reportCompare(0, 0);

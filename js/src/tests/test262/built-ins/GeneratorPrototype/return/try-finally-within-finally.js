@@ -11,9 +11,9 @@
 
 var inFinally = 0;
 var unreachable = 0;
+
 function* g() {
-  try {
-  } finally {
+  try {} finally {
     inFinally += 1;
     yield;
     unreachable += 1;

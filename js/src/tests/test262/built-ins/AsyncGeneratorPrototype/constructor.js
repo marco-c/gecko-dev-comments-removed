@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function* g() {}
+var AsyncGenerator = Object.getPrototypeOf(g);
+var AsyncGeneratorPrototype = AsyncGenerator.prototype;
+
+verifyProperty(AsyncGeneratorPrototype, 'constructor', {
+  value: AsyncGenerator,
+  enumerable: false,
+  writable: false,
+  configurable: true,
+});
+
+reportCompare(0, 0);

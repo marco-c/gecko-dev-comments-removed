@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var buffer = new ArrayBuffer(8);
+var s = Symbol("1");
+
+testWithBigIntTypedArrayConstructors(function(TA) {
+  assert.throws(TypeError, function() {
+    new TA(buffer, 0, s);
+  });
+});
+
+reportCompare(0, 0);

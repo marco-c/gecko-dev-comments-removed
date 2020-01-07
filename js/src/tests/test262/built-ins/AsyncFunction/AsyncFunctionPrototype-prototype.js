@@ -6,7 +6,7 @@
 
 
 
-var AsyncFunction = async function foo() { }.constructor;
+var AsyncFunction = async function foo() {}.constructor;
 assert.sameValue(Object.getPrototypeOf(AsyncFunction.prototype), Function.prototype);
 
 reportCompare(0, 0);

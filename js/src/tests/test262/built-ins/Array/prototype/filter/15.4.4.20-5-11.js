@@ -7,15 +7,15 @@
 
 
 
-        var accessed = false;
-        var objString = new String();
+var accessed = false;
+var objString = new String();
 
-        function callbackfn(val, idx, obj) {
-            accessed = true;
-            return this === objString;
-        }
+function callbackfn(val, idx, obj) {
+  accessed = true;
+  return this === objString;
+}
 
-        var newArr = [11].filter(callbackfn, objString);
+var newArr = [11].filter(callbackfn, objString);
 
 assert.sameValue(newArr[0], 11, 'newArr[0]');
 assert(accessed, 'accessed !== true');

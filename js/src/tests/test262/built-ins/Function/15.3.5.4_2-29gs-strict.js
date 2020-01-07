@@ -1,0 +1,26 @@
+'use strict';
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  (function() {
+    (function() {
+      gNonStrict();
+    })();
+  })();
+});
+
+function gNonStrict() {
+  return gNonStrict.caller;
+}
+
+reportCompare(0, 0);

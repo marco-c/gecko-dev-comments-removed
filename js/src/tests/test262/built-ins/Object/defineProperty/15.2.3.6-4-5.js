@@ -13,29 +13,34 @@
 
 
 
-  function sameDataDescriptorValues(d1, d2) {
-    return (d1.value === d2.value &&
-            d1.enumerable === d2.enumerable &&
-            d1.writable === d2.writable &&
-            d1.configurable === d2.configurable);
-  }
+function sameDataDescriptorValues(d1, d2) {
+  return (d1.value === d2.value &&
+    d1.enumerable === d2.enumerable &&
+    d1.writable === d2.writable &&
+    d1.configurable === d2.configurable);
+}
 
-  var o = {};
+var o = {};
 
-  
-  
-  o["foo"] = 101;
 
-  
-  
-  var d1 = Object.getOwnPropertyDescriptor(o, "foo");  
 
-  
-  
-  var desc = { value: 101, enumerable: true, writable: true, configurable: true };
-  Object.defineProperty(o, "foo", desc);
+o["foo"] = 101;
 
-  var d2 = Object.getOwnPropertyDescriptor(o, "foo"); 
+
+
+var d1 = Object.getOwnPropertyDescriptor(o, "foo");
+
+
+
+var desc = {
+  value: 101,
+  enumerable: true,
+  writable: true,
+  configurable: true
+};
+Object.defineProperty(o, "foo", desc);
+
+var d2 = Object.getOwnPropertyDescriptor(o, "foo");
 
 assert.sameValue(sameDataDescriptorValues(d1, d2), true, 'sameDataDescriptorValues(d1, d2)');
 

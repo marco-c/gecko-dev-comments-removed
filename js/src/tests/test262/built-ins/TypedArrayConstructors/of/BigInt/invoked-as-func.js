@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+testWithBigIntTypedArrayConstructors(function(TA) {
+  var of = TA.of;
+
+  assert.throws(TypeError, function() {
+    of();
+  });
+});
+
+reportCompare(0, 0);

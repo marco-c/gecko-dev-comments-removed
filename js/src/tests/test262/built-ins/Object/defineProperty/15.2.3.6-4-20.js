@@ -13,21 +13,28 @@
 
 
 
-  var o = {};
+var o = {};
 
-  
-  
-  var getter = function () { return 1;}
-  var d1 = { get: getter, configurable: false };
-  Object.defineProperty(o, "foo", d1);
 
-  
-  
-  var desc = { get: undefined };
+
+var getter = function() {
+  return 1;
+}
+var d1 = {
+  get: getter,
+  configurable: false
+};
+Object.defineProperty(o, "foo", d1);
+
+
+
+var desc = {
+  get: undefined
+};
 assert.throws(TypeError, function() {
-    Object.defineProperty(o, "foo", desc);
+  Object.defineProperty(o, "foo", desc);
 });
-      var d2 = Object.getOwnPropertyDescriptor(o, "foo");
+var d2 = Object.getOwnPropertyDescriptor(o, "foo");
 
 assert.sameValue(d2.get, getter, 'd2.get');
 assert.sameValue(d2.configurable, false, 'd2.configurable');

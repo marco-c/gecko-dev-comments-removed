@@ -7,6 +7,8 @@
 
 
 
+
+
 assert.throws(TypeError, function() {
   SharedArrayBuffer.prototype.slice.call({});
 }, "`this` value is Object");

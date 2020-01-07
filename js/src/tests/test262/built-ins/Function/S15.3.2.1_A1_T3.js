@@ -18,7 +18,7 @@
 try {
   var f = new Function(1);
 } catch (e) {
-  $ERROR('#1: test failed with error '+e);
+  $ERROR('#1: test failed with error ' + e);
 }
 
 
@@ -27,7 +27,7 @@ if (f.constructor !== Function) {
 }
 
 
-if (f()!==undefined) {
+if (f() !== undefined) {
   $ERROR('#3: When the Function constructor is called with one argument then body be that argument the following steps are taken...');
 }
 

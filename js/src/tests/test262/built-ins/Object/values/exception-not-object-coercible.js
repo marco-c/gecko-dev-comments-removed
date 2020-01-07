@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  Object.values(null);
+});
+
+assert.throws(TypeError, function() {
+  Object.values(undefined);
+});
+
+reportCompare(0, 0);

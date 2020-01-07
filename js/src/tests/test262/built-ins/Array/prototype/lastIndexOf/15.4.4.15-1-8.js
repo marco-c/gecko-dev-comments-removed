@@ -7,7 +7,7 @@
 
 
 
-        var obj = new String("undefined");
+var obj = new String("undefined");
 
 assert.sameValue(Array.prototype.lastIndexOf.call(obj, "f"), 4, 'Array.prototype.lastIndexOf.call(obj, "f")');
 

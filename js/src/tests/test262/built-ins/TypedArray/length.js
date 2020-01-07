@@ -16,10 +16,16 @@
 
 
 
-assert.sameValue(TypedArray.length, 0);
 
-verifyNotEnumerable(TypedArray, 'length');
-verifyNotWritable(TypedArray, 'length');
-verifyConfigurable(TypedArray, 'length');
+
+
+
+
+verifyProperty(TypedArray, "length", {
+  value: 0,
+  writable: false,
+  enumerable: false,
+  configurable: true
+});
 
 reportCompare(0, 0);

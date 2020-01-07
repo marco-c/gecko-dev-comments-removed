@@ -5,6 +5,8 @@
 
 
 
+
+
 var getter = Object.getOwnPropertyDescriptor(
   SharedArrayBuffer.prototype, "byteLength"
 ).get;

@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+var x = +Infinity;
+if (Math.exp(x) !== +Infinity)
+{
+  $ERROR("#1: 'var x = +Infinity; Math.exp(x) !== +Infinity'");
+}
+
+reportCompare(0, 0);

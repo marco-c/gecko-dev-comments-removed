@@ -7,7 +7,7 @@
 
 
 
-var F = function () {};
+var F = function() {};
 F.prototype.a = {};
 F.prototype.b = {};
 
@@ -41,3 +41,5 @@ assert.sameValue(
   2,
   'result has same number of own property names as f'
 );
+
+reportCompare(0, 0);

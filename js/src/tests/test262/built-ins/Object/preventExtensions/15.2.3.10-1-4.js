@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+
+
+Object.preventExtensions("abc");
+
+reportCompare(0, 0);

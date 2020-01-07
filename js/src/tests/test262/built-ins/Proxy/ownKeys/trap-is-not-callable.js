@@ -16,12 +16,14 @@
 
 
 
-var p = new Proxy({attr:1}, {
-    ownKeys: {}
+var p = new Proxy({
+  attr: 1
+}, {
+  ownKeys: {}
 });
 
 assert.throws(TypeError, function() {
-    Object.keys(p);
+  Object.keys(p);
 });
 
 reportCompare(0, 0);

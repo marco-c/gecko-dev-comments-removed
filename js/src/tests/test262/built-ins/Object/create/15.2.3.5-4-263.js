@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+var newObj = Object.create({}, {
+  prop: {
+    get: function() {}
+  }
+});
+
+assert(newObj.hasOwnProperty("prop"), 'newObj.hasOwnProperty("prop") !== true');
+assert.sameValue(typeof newObj.prop, "undefined", 'typeof newObj.prop');
+
+reportCompare(0, 0);

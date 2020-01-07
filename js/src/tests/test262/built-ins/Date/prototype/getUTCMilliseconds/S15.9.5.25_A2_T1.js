@@ -8,11 +8,11 @@
 
 
 
-if(Date.prototype.getUTCMilliseconds.hasOwnProperty("length") !== true){
+if (Date.prototype.getUTCMilliseconds.hasOwnProperty("length") !== true) {
   $ERROR('#1: The getUTCMilliseconds has a "length" property');
 }
 
-if(Date.prototype.getUTCMilliseconds.length !== 0){
+if (Date.prototype.getUTCMilliseconds.length !== 0) {
   $ERROR('#2: The "length" property of the getUTCMilliseconds is 0');
 }
 

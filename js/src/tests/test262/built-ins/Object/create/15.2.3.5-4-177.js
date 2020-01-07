@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+this.value = "GlobalValue";
+
+var newObj = Object.create({}, {
+  prop: this
+});
+
+assert.sameValue(newObj.prop, "GlobalValue", 'newObj.prop');
+
+reportCompare(0, 0);

@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+NaN = true;
+if (typeof(NaN) === "boolean") {
+  $ERROR('#1: NaN = true; typeof(NaN) !== "boolean". Actual: ' + (typeof(NaN)));
+}
+
+reportCompare(0, 0);

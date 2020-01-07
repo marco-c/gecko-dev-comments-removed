@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+var b = Object.isSealed(Error);
+
+assert.sameValue(b, false, 'b');
+
+reportCompare(0, 0);

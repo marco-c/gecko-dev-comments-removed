@@ -1,0 +1,40 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var fromIndex = {
+  valueOf: function() {
+    throw new Test262Error();
+  }
+};
+
+testWithBigIntTypedArrayConstructors(function(TA) {
+  var sample = new TA([7n]);
+
+  assert.throws(Test262Error, function() {
+    sample.includes(7n, fromIndex);
+  });
+});
+
+reportCompare(0, 0);

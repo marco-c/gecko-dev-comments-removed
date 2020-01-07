@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+var str = new String("123");
+
+var desc = Object.getOwnPropertyDescriptor(str, "2");
+
+assert.sameValue(desc.value, "3", 'desc.value');
+
+reportCompare(0, 0);

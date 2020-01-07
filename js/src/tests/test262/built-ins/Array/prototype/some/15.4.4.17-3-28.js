@@ -7,17 +7,17 @@
 
 
 
-        var accessed = false;
+var accessed = false;
 
-        function callbackfn(val, idx, obj) {
-            accessed = true;
-            return val > 10;
-        }
+function callbackfn(val, idx, obj) {
+  accessed = true;
+  return val > 10;
+}
 
-        var obj = {
-            0: 12,
-            length: 4294967296
-        };
+var obj = {
+  0: 12,
+  length: 4294967296
+};
 
 assert(Array.prototype.some.call(obj, callbackfn), 'Array.prototype.some.call(obj, callbackfn) !== true');
 assert(accessed, 'accessed !== true');

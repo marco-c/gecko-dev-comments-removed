@@ -14,11 +14,13 @@
 
 
 
-  var o = {};
-  Object.preventExtensions(o);
+var o = {};
+Object.preventExtensions(o);
 assert.throws(TypeError, function() {
-    var desc = { value: 1 };
-    Object.defineProperty(o, "foo", desc);
+  var desc = {
+    value: 1
+  };
+  Object.defineProperty(o, "foo", desc);
 });
 assert.sameValue(o.hasOwnProperty("foo"), false, 'o.hasOwnProperty("foo")');
 

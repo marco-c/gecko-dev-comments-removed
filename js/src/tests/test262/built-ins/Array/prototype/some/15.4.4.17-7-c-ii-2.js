@@ -7,16 +7,16 @@
 
 
 
-  function callbackfn(val, idx, obj)
-  {
-    if(arguments.length === 3)   
-      return false;
-    else
-      return true;
-  }
+function callbackfn(val, idx, obj)
+{
+  if (arguments.length === 3) 
+    return false;
+  else
+    return true;
+}
 
-  var arr = [0,1,true,null,new Object(),"five"];
-  arr[999999] = -6.6;
+var arr = [0, 1, true, null, new Object(), "five"];
+arr[999999] = -6.6;
 
 
 assert.sameValue(arr.some(callbackfn), false, 'arr.some(callbackfn)');

@@ -12,7 +12,7 @@
 var num = Infinity;
 
 
-if (typeof num  !== 'number') {
+if (typeof num !== 'number') {
   $ERROR('#1: Infinity is NOT a number');
 }
 
@@ -29,12 +29,12 @@ if (typeof n_obj !== 'object') {
 }
 
 
-if ( n_obj != num) {
+if (n_obj != num) {
   $ERROR('#4: When the Object constructor is called with Number argument return ToObject(number)');
 }
 
 
-if ( n_obj === num) {
+if (n_obj === num) {
   $ERROR('#5: When the Object constructor is called with Number argument return ToObject(number)');
 }
 

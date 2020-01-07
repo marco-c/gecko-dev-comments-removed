@@ -22,9 +22,9 @@ var body = "return this;";
 
 
 try {
-  var f = new Function(undefined,body);
+  var f = new Function(undefined, body);
 } catch (e) {
-  $ERROR('#1: test failed with error '+e);
+  $ERROR('#1: test failed with error ' + e);
 }
 
 
@@ -33,7 +33,7 @@ if (f.constructor !== Function) {
 }
 
 
-if (f()!==this) {
+if (f() !== this) {
   $ERROR('#3: When the Function constructor is called with one argument then body be that argument the following steps are taken...');
 }
 

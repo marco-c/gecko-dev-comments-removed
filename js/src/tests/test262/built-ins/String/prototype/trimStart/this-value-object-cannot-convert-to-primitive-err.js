@@ -53,7 +53,9 @@ var thisVal = {
 
 assert.throws(
   TypeError,
-  function() { String.prototype.trimStart.call(thisVal); },
+  function() {
+    String.prototype.trimStart.call(thisVal);
+  },
 );
 
 reportCompare(0, 0);

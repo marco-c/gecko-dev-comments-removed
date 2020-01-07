@@ -8,7 +8,7 @@
 
 
 
-assert.throws(ReferenceError, function () {
+assert.throws(ReferenceError, function() {
   AsyncFunction
 }, "AsyncFunction should not be present as a global");
 

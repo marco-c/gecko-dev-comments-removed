@@ -8,7 +8,7 @@
 
 
 
-var AsyncFunction = async function foo() { }.constructor;
+var AsyncFunction = async function foo() {}.constructor;
 verifyNotConfigurable(AsyncFunction, 'prototype');
 verifyNotWritable(AsyncFunction, 'prototype');
 verifyNotEnumerable(AsyncFunction, 'prototype');

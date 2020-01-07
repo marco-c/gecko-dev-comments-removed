@@ -7,16 +7,17 @@
 
 
 
-        var result = false;
-        function callbackfn(val, idx, obj) {
-            result = ('[object Arguments]' === Object.prototype.toString.call(obj));
-        }
+var result = false;
 
-        var obj = (function () {
-            return arguments;
-        }("a", "b"));
+function callbackfn(val, idx, obj) {
+  result = ('[object Arguments]' === Object.prototype.toString.call(obj));
+}
 
-        Array.prototype.forEach.call(obj, callbackfn);
+var obj = (function() {
+  return arguments;
+}("a", "b"));
+
+Array.prototype.forEach.call(obj, callbackfn);
 
 assert(result, 'result !== true');
 

@@ -10,7 +10,7 @@
 
 
 assert.throws(TypeError, function() {
-    Object.prototype.valueOf.call(undefined);
+  Object.prototype.valueOf.call(undefined);
 });
 
 reportCompare(0, 0);

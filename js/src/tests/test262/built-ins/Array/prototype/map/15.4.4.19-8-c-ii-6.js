@@ -7,17 +7,20 @@
 
 
 
-        var obj = { 0: 11, length: 1 };
-        var thisArg = {};
+var obj = {
+  0: 11,
+  length: 1
+};
+var thisArg = {};
 
-        function callbackfn() {
-            return this === thisArg &&
-                arguments[0] === 11 &&
-                arguments[1] === 0 &&
-                arguments[2] === obj;
-        }
+function callbackfn() {
+  return this === thisArg &&
+    arguments[0] === 11 &&
+    arguments[1] === 0 &&
+    arguments[2] === obj;
+}
 
-        var testResult = Array.prototype.map.call(obj, callbackfn, thisArg);
+var testResult = Array.prototype.map.call(obj, callbackfn, thisArg);
 
 assert.sameValue(testResult[0], true, 'testResult[0]');
 

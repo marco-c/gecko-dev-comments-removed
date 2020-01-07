@@ -21,7 +21,8 @@
 
 
 
-function newTarget() { }
+
+function newTarget() {}
 
 newTarget.prototype = undefined;
 var arrayBuffer = Reflect.construct(SharedArrayBuffer, [1], newTarget);

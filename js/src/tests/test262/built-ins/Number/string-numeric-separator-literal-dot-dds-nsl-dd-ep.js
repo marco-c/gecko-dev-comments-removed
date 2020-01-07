@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Number(".10_1e2"), NaN, ".10_1e2");
+
+reportCompare(0, 0);

@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+var obj = {
+  "a": "a"
+};
+
+var result = Object.getOwnPropertyNames(obj);
+
+assert.sameValue(result[0], "a", 'result[0]');
+
+reportCompare(0, 0);

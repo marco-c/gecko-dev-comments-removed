@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+var booleanObj = new Boolean(false);
+
+booleanObj.value = "BooleanValue";
+
+var newObj = Object.create({}, {
+  prop: booleanObj
+});
+
+assert.sameValue(newObj.prop, "BooleanValue", 'newObj.prop');
+
+reportCompare(0, 0);

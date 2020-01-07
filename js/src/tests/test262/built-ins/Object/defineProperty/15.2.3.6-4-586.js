@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+var data = "data";
+
+Object.defineProperty(Object.prototype, "prop", {
+  get: function() {
+    return data;
+  },
+  enumerable: false,
+  configurable: true
+});
+verifyNotWritable(JSON, "prop", "nocheck");
+
+assert(!JSON.hasOwnProperty("prop"));
+assert.sameValue(JSON.prop, "data");
+assert.sameValue(data, "data");
+
+reportCompare(0, 0);

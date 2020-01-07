@@ -8,7 +8,7 @@
 
 
 var proto = [];
-var Con = function () { };
+var Con = function() {};
 Con.prototype = proto;
 
 var child = new Con();

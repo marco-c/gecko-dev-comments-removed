@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+var accessed = false;
+
+var attr = {};
+Object.defineProperty(attr, "enumerable", {
+  get: function() {
+    return true;
+  }
+});
+
+Object.defineProperty(obj, "property", attr);
+
+for (var prop in obj) {
+  if (prop === "property") {
+    accessed = true;
+  }
+}
+
+assert(accessed, 'accessed !== true');
+
+reportCompare(0, 0);

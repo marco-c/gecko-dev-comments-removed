@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+var newObj = Object.create({}, {
+  prop: {
+    writable: true,
+    configurable: true,
+    enumerable: true
+  }
+});
+
+assert(newObj.hasOwnProperty("prop"), 'newObj.hasOwnProperty("prop") !== true');
+assert.sameValue(newObj.prop, undefined, 'newObj.prop');
+
+reportCompare(0, 0);

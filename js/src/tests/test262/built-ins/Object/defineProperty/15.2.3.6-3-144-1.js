@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+
+Object.prototype.value = "Math";
+
+Object.defineProperty(obj, "property", Math);
+
+assert.sameValue(obj.property, "Math", 'obj.property');
+
+reportCompare(0, 0);

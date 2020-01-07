@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+assert.throws(TypeError, function() {
+  Object.defineProperties(obj, {
+    prop: {
+      set: null
+    }
+  });
+});
+
+reportCompare(0, 0);

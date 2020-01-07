@@ -14,6 +14,8 @@
 
 
 
+
+
 var buffer = new SharedArrayBuffer();
 
 assert.sameValue(buffer.byteLength, 0);

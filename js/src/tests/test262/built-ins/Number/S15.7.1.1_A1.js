@@ -10,23 +10,23 @@
 
 
 
-if( typeof Number("10") !== "number" ) {
-  $ERROR('#1: typeof Number("10") should be "number", actual is "'+typeof Number("10")+'"');
+if (typeof Number("10") !== "number") {
+  $ERROR('#1: typeof Number("10") should be "number", actual is "' + typeof Number("10") + '"');
 }
 
 
-if( typeof Number(10) !== "number" ) {
-  $ERROR('#2: typeof Number(10) should be "number", actual is "'+typeof Number(10)+'"');
+if (typeof Number(10) !== "number") {
+  $ERROR('#2: typeof Number(10) should be "number", actual is "' + typeof Number(10) + '"');
 }
 
 
-if( typeof Number(new String("10")) !== "number" ) {
-  $ERROR('#3: typeof Number(new String("10")) should be "number", actual is "'+typeof Number(new String("10"))+'"');
+if (typeof Number(new String("10")) !== "number") {
+  $ERROR('#3: typeof Number(new String("10")) should be "number", actual is "' + typeof Number(new String("10")) + '"');
 }
 
 
-if( typeof Number(new Object(10)) !== "number" ) {
-  $ERROR('#4: typeof Number(new Object(10)) should be "number", actual is "'+typeof Number(new Object(10))+'"');
+if (typeof Number(new Object(10)) !== "number") {
+  $ERROR('#4: typeof Number(new Object(10)) should be "number", actual is "' + typeof Number(new Object(10)) + '"');
 }
 
 

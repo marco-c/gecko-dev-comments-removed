@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+var o = {
+  x: 1,
+  y: 2
+};
+
+var a = Object.keys(o);
+
+assert.sameValue(Array.isArray(a), true, 'Array.isArray(a)');
+
+reportCompare(0, 0);

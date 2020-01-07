@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+var funObj = function() {};
+
+funObj.foo = 10; 
+
+Object.freeze(funObj);
+
+verifyNotWritable(funObj, "foo");
+verifyNotConfigurable(funObj, "foo");
+
+assert.sameValue(funObj.foo, 10);
+
+reportCompare(0, 0);

@@ -12,7 +12,7 @@
 
 if (typeof Array() !== "object") {
   $ERROR('#1: typeof Array() === "object". Actual: ' + (typeof Array()));
-}  
+}
 
 
 if ((Array() instanceof Array) !== true) {

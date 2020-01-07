@@ -15,6 +15,8 @@
 
 
 
+
+
 assert.throws(TypeError, function() {
   SharedArrayBuffer();
 });

@@ -11,7 +11,7 @@
 
 
 
-var x = new Array(0,1,2,3);
+var x = new Array(0, 1, 2, 3);
 var shift = x.shift();
 if (shift !== 0) {
   $ERROR('#1: x = new Array(0,1,2,3); x.shift() === 0. Actual: ' + (shift));

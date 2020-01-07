@@ -9,8 +9,8 @@
 
 
 
-        var arr = [];
-        arr[Math.pow(2, 32) - 2] = true; 
+var arr = [];
+arr[Math.pow(2, 32) - 2] = true; 
 
 assert.sameValue(arr.indexOf(true, "Infinity"), -1, 'arr.indexOf(true, "Infinity")');
 

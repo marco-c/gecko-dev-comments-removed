@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+var regObj = new RegExp();
+
+regObj.get = function() {
+  return "VerifyRegExpObject";
+};
+
+var newObj = Object.create({}, {
+  prop: regObj
+});
+
+assert.sameValue(newObj.prop, "VerifyRegExpObject", 'newObj.prop');
+
+reportCompare(0, 0);

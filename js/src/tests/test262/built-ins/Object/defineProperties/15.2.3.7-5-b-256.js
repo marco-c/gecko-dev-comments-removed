@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+assert.throws(TypeError, function() {
+  Object.defineProperties(obj, {
+    prop: {
+      set: "abcdef"
+    }
+  });
+});
+
+reportCompare(0, 0);

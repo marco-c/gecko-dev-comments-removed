@@ -8,7 +8,7 @@
 
 
 
-var x = new Array(1,0);
+var x = new Array(1, 0);
 x.sort();
 
 
@@ -26,7 +26,7 @@ if (x[1] !== 1) {
   $ERROR('#3: var x = new Array(1,0);  x.sort(); x[1] === 1. Actual: ' + (x[1]));
 }
 
-var x = new Array(1,0);
+var x = new Array(1, 0);
 x.sort(undefined);
 
 

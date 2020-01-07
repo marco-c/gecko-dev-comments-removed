@@ -22,19 +22,4 @@ verifyProperty(BigInt.prototype, Symbol.toStringTag, {
   configurable: true
 });
 
-assert.sameValue(Object.prototype.toString.call(3n), "[object BigInt]");
-assert.sameValue(Object.prototype.toString.call(Object(3n)), "[object BigInt]");
-
-
-
-Object.defineProperty(BigInt.prototype, Symbol.toStringTag, {
-  value: "FooBar",
-  writable: false,
-  enumerable: false,
-  configurable: true
-});
-
-assert.sameValue(Object.prototype.toString.call(3n), "[object FooBar]");
-assert.sameValue(Object.prototype.toString.call(Object(3n)), "[object FooBar]");
-
 reportCompare(0, 0);

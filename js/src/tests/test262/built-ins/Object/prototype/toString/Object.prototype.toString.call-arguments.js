@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+assert.sameValue(
+  Object.prototype.toString.call(function() { return arguments; }()),
+  "[object Arguments]",
+  "Object.prototype.toString.call(function() { return arguments; }()) returns [object Arguments]"
+);
+
+reportCompare(0, 0);

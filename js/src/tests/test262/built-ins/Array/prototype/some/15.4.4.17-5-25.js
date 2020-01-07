@@ -8,16 +8,16 @@
 
 
 
-        function innerObj() {
-            this._15_4_4_17_5_25 = true;
-            var _15_4_4_17_5_25 = false;
+function innerObj() {
+  this._15_4_4_17_5_25 = true;
+  var _15_4_4_17_5_25 = false;
 
-            function callbackfn(val, idx, obj) {
-                return this._15_4_4_17_5_25;
-            }
-            var arr = [1];
-            this.retVal = !arr.some(callbackfn);
-        }
+  function callbackfn(val, idx, obj) {
+    return this._15_4_4_17_5_25;
+  }
+  var arr = [1];
+  this.retVal = !arr.some(callbackfn);
+}
 
 assert(new innerObj().retVal, 'new innerObj().retVal !== true');
 

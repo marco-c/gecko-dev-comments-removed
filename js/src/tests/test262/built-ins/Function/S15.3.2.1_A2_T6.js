@@ -11,24 +11,28 @@
 
 
 
-var i=0;
+var i = 0;
 
-var p={toString:function(){return "arg"+(++i)}};
+var p = {
+  toString: function() {
+    return "arg" + (++i)
+  }
+};
 
 
 try {
-  var f = Function(p+","+p+","+p, "return arg1+arg2+arg3;");
+  var f = Function(p + "," + p + "," + p, "return arg1+arg2+arg3;");
 } catch (e) {
   $ERROR('#1: test failed');
 }
 
 
-if (!(f instanceof Function)){
+if (!(f instanceof Function)) {
   $ERROR('#2: It is permissible but not necessary to have one argument for each formal parameter to be specified');
 }
 
 
-if (f("",1,p) !== "1arg4") {
+if (f("", 1, p) !== "1arg4") {
   $ERROR('#3: It is permissible but not necessary to have one argument for each formal parameter to be specified');
 }
 

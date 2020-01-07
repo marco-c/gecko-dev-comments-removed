@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+assert.throws(SyntaxError, function() {
+  JSON.parse('12\t\r\n 34'); 
+});
+
+reportCompare(0, 0);

@@ -7,13 +7,13 @@
 
 
 
-        function callbackfn(val, idx, obj) {
-            return obj instanceof Error;
-        }
+function callbackfn(val, idx, obj) {
+  return obj instanceof Error;
+}
 
-        var obj = new Error();
-        obj.length = 1;
-        obj[0] = 1;
+var obj = new Error();
+obj.length = 1;
+obj[0] = 1;
 
 assert(Array.prototype.some.call(obj, callbackfn), 'Array.prototype.some.call(obj, callbackfn) !== true');
 

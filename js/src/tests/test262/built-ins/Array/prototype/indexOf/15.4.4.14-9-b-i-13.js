@@ -9,21 +9,21 @@
 
 
 
-        var arr = [];
+var arr = [];
 
-            Object.defineProperty(Array.prototype, "0", {
-                get: function () {
-                    return false;
-                },
-                configurable: true
-            });
+Object.defineProperty(Array.prototype, "0", {
+  get: function() {
+    return false;
+  },
+  configurable: true
+});
 
-            Object.defineProperty(arr, "0", {
-                get: function () {
-                    return true;
-                },
-                configurable: true
-            });
+Object.defineProperty(arr, "0", {
+  get: function() {
+    return true;
+  },
+  configurable: true
+});
 
 assert.sameValue(arr.indexOf(true), 0, 'arr.indexOf(true)');
 

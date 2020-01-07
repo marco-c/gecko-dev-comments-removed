@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+var p = Promise.all([]);
+if (!(p instanceof Promise)) {
+  $ERROR('Expected p to be a Promise');
+}
+
+reportCompare(0, 0);

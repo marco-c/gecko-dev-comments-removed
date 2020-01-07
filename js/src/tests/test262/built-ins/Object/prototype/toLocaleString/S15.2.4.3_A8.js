@@ -23,9 +23,9 @@ if (Object.prototype.toLocaleString.propertyIsEnumerable('length')) {
 }
 
 
-for (var p in Object.prototype.toLocaleString){
-  if (p==="length")
-        $ERROR('#2: the Object.prototype.toLocaleString.length property has the attributes DontEnum');
+for (var p in Object.prototype.toLocaleString) {
+  if (p === "length")
+    $ERROR('#2: the Object.prototype.toLocaleString.length property has the attributes DontEnum');
 }
 
 

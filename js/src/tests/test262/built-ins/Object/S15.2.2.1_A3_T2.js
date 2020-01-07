@@ -12,7 +12,7 @@
 var str = '';
 
 
-if (typeof str  !== 'string') {
+if (typeof str !== 'string') {
   $ERROR('#1: "" is NOT a String');
 }
 
@@ -29,12 +29,12 @@ if (typeof n_obj !== 'object') {
 }
 
 
-if ( n_obj != str) {
+if (n_obj != str) {
   $ERROR('#4: When the Object constructor is called with String argument return ToObject(string)');
 }
 
 
-if ( n_obj === str) {
+if (n_obj === str) {
   $ERROR('#5: When the Object constructor is called with String argument return ToObject(string)');
 }
 

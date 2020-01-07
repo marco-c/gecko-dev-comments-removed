@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+var p = new Proxy({}, {
+  deleteProperty: function() {
+    return true;
+  }
+});
+
+assert.sameValue(delete p.attr, true);
+
+reportCompare(0, 0);

@@ -9,20 +9,20 @@
 
 
 
-  function callbackfn(val, idx, obj)
-  {
-    delete srcArr[2];
-    delete srcArr[4];
-    if(val > 0)
-      return true;
-    else
-      return false;
-   }
+function callbackfn(val, idx, obj)
+{
+  delete srcArr[2];
+  delete srcArr[4];
+  if (val > 0)
+    return true;
+  else
+    return false;
+}
 
-  Array.prototype[4] = 5;
-  var srcArr = [1,2,3,4,5];
-  var resArr = srcArr.filter(callbackfn);
-  delete Array.prototype[4];
+Array.prototype[4] = 5;
+var srcArr = [1, 2, 3, 4, 5];
+var resArr = srcArr.filter(callbackfn);
+delete Array.prototype[4];
 
 
 assert.sameValue(resArr.length, 4, 'resArr.length');

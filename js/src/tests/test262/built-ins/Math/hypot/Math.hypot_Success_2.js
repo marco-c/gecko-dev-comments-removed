@@ -1,0 +1,12 @@
+
+
+
+
+
+
+
+
+
+assert.sameValue(Math.hypot(3, 4), 5, 'Math.hypot(3,4)');
+
+reportCompare(0, 0);

@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+if (String.prototype.indexOf.prototype !== undefined) {
+  $ERROR('#1: String.prototype.indexOf.prototype === undefined. Actual: ' + String.prototype.indexOf.prototype);
+}
+
+
+
+reportCompare(0, 0);

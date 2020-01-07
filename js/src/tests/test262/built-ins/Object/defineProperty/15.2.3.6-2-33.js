@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+var obj = {};
+Object.defineProperty(obj, "", {});
+
+assert(obj.hasOwnProperty(""), 'obj.hasOwnProperty("") !== true');
+
+reportCompare(0, 0);

@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+
+var funObj = function() {};
+
+funObj.get = function() {
+  return "functionGetProperty";
+};
+
+Object.defineProperty(obj, "property", funObj);
+
+assert.sameValue(obj.property, "functionGetProperty", 'obj.property');
+
+reportCompare(0, 0);

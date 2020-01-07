@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+Object.defineProperty(obj, "property", {
+  set: function() {},
+  configurable: true
+});
+
+var desc = Object.getOwnPropertyDescriptor(obj, "property");
+
+assert("get" in desc, '"get" in desc !== true');
+
+reportCompare(0, 0);

@@ -9,12 +9,12 @@
 
 
 
-        var accessed = false;
+var accessed = false;
 
-        function callbackfn(val, idx, obj) {
-            accessed = true;
-            return NaN;
-        }
+function callbackfn(val, idx, obj) {
+  accessed = true;
+  return NaN;
+}
 
 assert.sameValue([11].some(callbackfn), false, '[11].some(callbackfn)');
 

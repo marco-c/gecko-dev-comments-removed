@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+
+
+Object.getOwnPropertyDescriptor(0, "foo");
+
+reportCompare(0, 0);

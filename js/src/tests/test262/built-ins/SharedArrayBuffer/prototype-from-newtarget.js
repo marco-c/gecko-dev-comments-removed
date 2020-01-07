@@ -21,10 +21,11 @@
 
 
 
+
 var arrayBuffer = Reflect.construct(SharedArrayBuffer, [8], Object);
 assert.sameValue(Object.getPrototypeOf(arrayBuffer), Object.prototype, "NewTarget is built-in Object constructor");
 
-var newTarget = function(){}.bind(null);
+var newTarget = function() {}.bind(null);
 Object.defineProperty(newTarget, "prototype", {
   get: function() {
     return Array.prototype;

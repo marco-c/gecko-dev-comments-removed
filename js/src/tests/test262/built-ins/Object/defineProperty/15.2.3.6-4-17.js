@@ -12,20 +12,24 @@
 
 
 
-  var o = {};
+var o = {};
 
-  
-  var d1 = { value: 101 };
-  Object.defineProperty(o, "foo", d1);
 
-  
-  
-  var desc = { value: 102 };
+var d1 = {
+  value: 101
+};
+Object.defineProperty(o, "foo", d1);
+
+
+
+var desc = {
+  value: 102
+};
 assert.throws(TypeError, function() {
-    Object.defineProperty(o, "foo", desc);
+  Object.defineProperty(o, "foo", desc);
 });
-      
-      var d2 = Object.getOwnPropertyDescriptor(o, "foo");
+
+var d2 = Object.getOwnPropertyDescriptor(o, "foo");
 
 assert.sameValue(d2.value, 101, 'd2.value');
 assert.sameValue(d2.writable, false, 'd2.writable');

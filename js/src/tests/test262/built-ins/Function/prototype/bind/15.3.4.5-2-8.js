@@ -9,10 +9,10 @@
 
 
 
-        var bac = Array.bind(null);
-        var a = bac(42);
-        a.prop = "verifyPropertyExist";
-        a[41] = 41;
+var bac = Array.bind(null);
+var a = bac(42);
+a.prop = "verifyPropertyExist";
+a[41] = 41;
 
 assert.sameValue(a.prop, "verifyPropertyExist", 'a.prop');
 assert.sameValue(a[41], 41, 'a[41]');

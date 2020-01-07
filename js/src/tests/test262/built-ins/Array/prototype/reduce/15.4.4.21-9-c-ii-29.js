@@ -7,15 +7,19 @@
 
 
 
-        var objNumber = new Number();
+var objNumber = new Number();
 
-        var accessed = false;
-        function callbackfn(prevVal, curVal, idx, obj) {
-            accessed = true;
-            return prevVal === objNumber;
-        }
+var accessed = false;
 
-        var obj = { 0: 11, length: 1 };
+function callbackfn(prevVal, curVal, idx, obj) {
+  accessed = true;
+  return prevVal === objNumber;
+}
+
+var obj = {
+  0: 11,
+  length: 1
+};
 
 assert.sameValue(Array.prototype.reduce.call(obj, callbackfn, objNumber), true, 'Array.prototype.reduce.call(obj, callbackfn, objNumber)');
 assert(accessed, 'accessed !== true');

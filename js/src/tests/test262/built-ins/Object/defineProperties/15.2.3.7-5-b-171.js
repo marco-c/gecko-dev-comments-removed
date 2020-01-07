@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+
+Object.defineProperties(obj, {
+  property: {
+    writable: NaN
+  }
+});
+
+assert(obj.hasOwnProperty("property"));
+verifyNotWritable(obj, "property");
+
+reportCompare(0, 0);

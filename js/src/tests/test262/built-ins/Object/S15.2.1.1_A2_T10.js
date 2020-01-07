@@ -9,7 +9,7 @@
 
 
 
-var arr = [1,2,3];
+var arr = [1, 2, 3];
 
 
 if (typeof arr !== 'object') {
@@ -21,7 +21,7 @@ var n_obj = Object(arr);
 arr.push(4);
 
 
-if ((n_obj !== arr)||(n_obj[3]!==4)) {
+if ((n_obj !== arr) || (n_obj[3] !== 4)) {
   $ERROR('#2: Object([1,2,3]) returns ToObject([1,2,3])');
 }
 

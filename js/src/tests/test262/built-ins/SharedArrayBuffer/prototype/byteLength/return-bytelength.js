@@ -5,6 +5,8 @@
 
 
 
+
+
 var ab1 = new SharedArrayBuffer(0);
 assert.sameValue(ab1.byteLength, 0);
 

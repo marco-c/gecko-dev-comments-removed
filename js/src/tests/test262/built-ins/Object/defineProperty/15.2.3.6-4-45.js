@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+Object.defineProperty(this, "foo", {
+  value: 12,
+  configurable: true
+});
+
+verifyEqualTo(this, "foo", 12);
+
+verifyNotWritable(this, "foo");
+
+verifyNotEnumerable(this, "foo");
+
+verifyConfigurable(this, "foo");
+
+reportCompare(0, 0);

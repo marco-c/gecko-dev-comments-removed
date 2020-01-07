@@ -6,10 +6,11 @@
 
 
 
+
 let f = function  F  (  x  ,  y  )  {  ;  ;  };
 let g = function  (  x  ,  y  )  {  ;  ;  };
 
-assert.sameValue(f.toString(), "function /* a */ F /* b */ ( /* c */ x /* d */ , /* e */ y /* f */ ) /* g */ { /* h */ ; /* i */ ; /* j */ }");
-assert.sameValue(g.toString(), "function /* a */ ( /* b */ x /* c */ , /* d */ y /* e */ ) /* f */ { /* g */ ; /* h */ ; /* i */ }");
+assertToStringOrNativeFunction(f, "function /* a */ F /* b */ ( /* c */ x /* d */ , /* e */ y /* f */ ) /* g */ { /* h */ ; /* i */ ; /* j */ }");
+assertToStringOrNativeFunction(g, "function /* a */ ( /* b */ x /* c */ , /* d */ y /* e */ ) /* f */ { /* g */ ; /* h */ ; /* i */ }");
 
 reportCompare(0, 0);

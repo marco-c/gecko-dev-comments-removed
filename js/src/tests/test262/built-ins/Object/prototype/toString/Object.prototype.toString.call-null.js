@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+assert.sameValue(
+  Object.prototype.toString.call(null),
+  "[object Null]",
+  "Object.prototype.toString.call(null) returns [object Null]"
+);
+
+reportCompare(0, 0);

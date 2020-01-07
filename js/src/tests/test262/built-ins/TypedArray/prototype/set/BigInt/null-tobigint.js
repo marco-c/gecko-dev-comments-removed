@@ -1,0 +1,50 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+testWithBigIntTypedArrayConstructors(function(TA) {
+  var typedArray = new TA(1);
+
+  assert.throws(TypeError, function() {
+    typedArray.set([null]);
+  }, "abrupt completion from Null");
+
+});
+
+reportCompare(0, 0);

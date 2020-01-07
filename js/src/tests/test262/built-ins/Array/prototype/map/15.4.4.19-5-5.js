@@ -7,18 +7,19 @@
 
 
 
-  var res = false;
-  function callbackfn(val, idx, obj)
-  {
-    return this.res;
-  }
+var res = false;
 
-  function foo(){}
-  var f = new foo();
-  f.res = true;
+function callbackfn(val, idx, obj)
+{
+  return this.res;
+}
 
-  var srcArr = [1];
-  var resArr = srcArr.map(callbackfn,f);
+function foo() {}
+var f = new foo();
+f.res = true;
+
+var srcArr = [1];
+var resArr = srcArr.map(callbackfn, f);
 
 assert.sameValue(resArr[0], true, 'resArr[0]');
 

@@ -1,0 +1,49 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+testWithBigIntTypedArrayConstructors(function(TA) {
+  var typedArray = new TA(2);
+  typedArray.set([false, true])
+
+  assert.sameValue(typedArray[0], 0n, "False converts to BigInt");
+  assert.sameValue(typedArray[1], 1n, "True converts to BigInt");
+});
+
+reportCompare(0, 0);

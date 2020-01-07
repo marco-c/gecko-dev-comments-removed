@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+var arrObj = [0, 1];
+
+Object.freeze(arrObj);
+
+assert(Object.isFrozen(arrObj), 'Object.isFrozen(arrObj) !== true');
+
+reportCompare(0, 0);

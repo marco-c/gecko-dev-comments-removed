@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+if (function() {
+    return "GnulLuNa"
+  }().toLocaleLowerCase() !== "gnulluna") {
+  $ERROR('#1: function(){return "GnulLuNa"}().toLocaleLowerCase() === "gnulluna". Actual: ' + function() {
+    return "GnulLuNa"
+  }().toLocaleLowerCase());
+}
+
+
+
+reportCompare(0, 0);

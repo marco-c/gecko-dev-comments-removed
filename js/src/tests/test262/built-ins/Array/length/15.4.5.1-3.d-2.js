@@ -11,7 +11,7 @@
 
 
 assert.throws(RangeError, function() {
-      [].length = 4294967297 ;
+  [].length = 4294967297;
 });
 
 reportCompare(0, 0);

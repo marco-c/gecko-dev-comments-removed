@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var arrayLike = { length: {} };
+
+arrayLike.length = {
+  valueOf: function() {
+    throw new Test262Error();
+  }
+};
+
+testWithBigIntTypedArrayConstructors(function(TA) {
+  assert.throws(Test262Error, function() {
+    TA.from(arrayLike);
+  });
+});
+
+reportCompare(0, 0);

@@ -9,9 +9,9 @@
 
 
 
-        function callbackfn(val, idx, obj) {
-            return -Infinity;
-        }
+function callbackfn(val, idx, obj) {
+  return -Infinity;
+}
 
 assert([11].some(callbackfn), '[11].some(callbackfn) !== true');
 

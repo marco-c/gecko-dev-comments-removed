@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+var target = {
+  attr: 1
+};
+var p = new Proxy(target, {});
+
+p.attr = 2;
+
+assert.sameValue(target.attr, 2);
+
+reportCompare(0, 0);

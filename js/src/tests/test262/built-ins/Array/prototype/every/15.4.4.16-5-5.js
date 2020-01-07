@@ -7,17 +7,18 @@
 
 
 
-  var res = false;
-  function callbackfn(val, idx, obj)
-  {
-    return this.res;
-  }
+var res = false;
 
-  function foo(){}
-  var f = new foo();
-  f.res = true;
-  var arr = [1];
+function callbackfn(val, idx, obj)
+{
+  return this.res;
+}
 
-assert.sameValue(arr.every(callbackfn,f), true, 'arr.every(callbackfn,f)');
+function foo() {}
+var f = new foo();
+f.res = true;
+var arr = [1];
+
+assert.sameValue(arr.every(callbackfn, f), true, 'arr.every(callbackfn,f)');
 
 reportCompare(0, 0);

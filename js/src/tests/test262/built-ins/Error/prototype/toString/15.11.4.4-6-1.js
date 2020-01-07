@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+var errObj = new Error();
+
+assert.sameValue(errObj.toString(), "Error", 'errObj.toString()');
+
+reportCompare(0, 0);

@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+
+this.get = function() {
+  return "globalGetProperty";
+};
+
+Object.defineProperty(obj, "property", this);
+
+assert.sameValue(obj.property, "globalGetProperty", 'obj.property');
+
+reportCompare(0, 0);

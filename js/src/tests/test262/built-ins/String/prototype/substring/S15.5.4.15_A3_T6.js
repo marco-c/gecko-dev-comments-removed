@@ -11,13 +11,13 @@
 
 
 
-var __instance = new Object(); 
+var __instance = new Object();
 __instance.substring = String.prototype.substring;
 
 
 
 if (__instance.substring(8, __instance.toString().length) !== "Object]") {
-  $ERROR('#1: __instance = new Object(); __instance.substring = String.prototype.substring; __instance.substring(8, __instance.toString().length) === "Object]". Actual: '+__instance.substring(8, __instance.toString().length) );
+  $ERROR('#1: __instance = new Object(); __instance.substring = String.prototype.substring; __instance.substring(8, __instance.toString().length) === "Object]". Actual: ' + __instance.substring(8, __instance.toString().length));
 }
 
 

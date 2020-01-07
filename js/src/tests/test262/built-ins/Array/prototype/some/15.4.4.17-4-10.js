@@ -9,17 +9,20 @@
 
 
 
-        var obj = { 0: 11, 1: 12 };
+var obj = {
+  0: 11,
+  1: 12
+};
 
-        Object.defineProperty(obj, "length", {
-            get: function () {
-                throw new Test262Error();
-            },
-            configurable: true
-        });
+Object.defineProperty(obj, "length", {
+  get: function() {
+    throw new Test262Error();
+  },
+  configurable: true
+});
 
 assert.throws(Test262Error, function() {
-            Array.prototype.some.call(obj, undefined);
+  Array.prototype.some.call(obj, undefined);
 });
 
 reportCompare(0, 0);

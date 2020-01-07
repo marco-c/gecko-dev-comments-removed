@@ -17,63 +17,67 @@
 
 
 
-var myObj = function(val){
+var myObj = function(val) {
   this.value = val;
-  this.valueOf = function(){throw "valueOf-"+this.value;};
-  this.toString = function(){throw "toString-"+this.value;};
+  this.valueOf = function() {
+    throw "valueOf-" + this.value;
+  };
+  this.toString = function() {
+    throw "toString-" + this.value;
+  };
 };
 
 
-try{
+try {
   var x1 = new Date(new myObj(1), new myObj(2), new myObj(3), new myObj(4), new myObj(5));
   $ERROR("#1: The 1st step is calling ToNumber(year)");
 }
-catch(e){
-  if(e !== "valueOf-1"){
+catch (e) {
+  if (e !== "valueOf-1") {
     $ERROR("#1: The 1st step is calling ToNumber(year)");
   }
 }
 
 
-try{
+try {
   var x2 = new Date(1, new myObj(2), new myObj(3), new myObj(4), new myObj(5));
   $ERROR("#2: The 2nd step is calling ToNumber(month)");
 }
-catch(e){
-  if(e !== "valueOf-2"){
+catch (e) {
+  if (e !== "valueOf-2") {
     $ERROR("#2: The 2nd step is calling ToNumber(month)");
   }
 }
 
 
-try{
+try {
   var x3 = new Date(1, 2, new myObj(3), new myObj(4), new myObj(5));
   $ERROR("#3: The 3rd step is calling ToNumber(date)");
 }
-catch(e){
-  if(e !== "valueOf-3"){
+catch (e) {
+  if (e !== "valueOf-3") {
     $ERROR("#3: The 3rd step is calling ToNumber(date)");
   }
 }
 
 
-try{
+try {
   var x4 = new Date(1, 2, 3, new myObj(4), new myObj(5));
   $ERROR("#4: The 4th step is calling ToNumber(hours)");
 }
-catch(e){
-  if(e !== "valueOf-4"){
+catch (e) {
+  if (e !== "valueOf-4") {
     $ERROR("#4: The 4th step is calling ToNumber(hours)");
   }
 }
 
 
-try{
+try {
   var x5 = new Date(1, 2, 3, 4, new myObj(5));
   $ERROR("#5: The 5th step is calling ToNumber(minutes)");
 }
-catch(e){
-  if(e !== "valueOf-5"){
+catch (e) {
+  if (e !== "valueOf-5") {
     $ERROR("#5: The 5th step is calling ToNumber(minutes)");
   }
 }

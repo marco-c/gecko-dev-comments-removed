@@ -9,10 +9,10 @@
 
 
 
-            Object.defineProperty(Array.prototype, "0", {
-                set: function () { },
-                configurable: true
-            });
+Object.defineProperty(Array.prototype, "0", {
+  set: function() {},
+  configurable: true
+});
 
 assert.sameValue([, ].indexOf(undefined), 0, '[, ].indexOf(undefined)');
 

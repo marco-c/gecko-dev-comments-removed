@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+function Target() {}
+var p = new Proxy(Target, {
+  construct: {}
+});
+
+assert.throws(TypeError, function() {
+  new p();
+});
+
+reportCompare(0, 0);

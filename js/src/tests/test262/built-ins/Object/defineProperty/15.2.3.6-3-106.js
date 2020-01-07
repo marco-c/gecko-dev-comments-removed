@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+
+Object.defineProperty(obj, "property", {
+  configurable: NaN
+});
+
+assert(obj.hasOwnProperty("property"));
+verifyNotConfigurable(obj, "property");
+
+reportCompare(0, 0);

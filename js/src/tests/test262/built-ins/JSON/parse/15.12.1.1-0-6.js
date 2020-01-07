@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+assert.throws(SyntaxError, function() {
+  JSON.parse('\ufeff1234'); 
+});
+
+reportCompare(0, 0);

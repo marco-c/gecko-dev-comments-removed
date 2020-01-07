@@ -11,6 +11,8 @@
 
 
 
+
+
 $262.agent.start(
 `
 var sab = new SharedArrayBuffer(1024);
@@ -47,13 +49,13 @@ assert.sameValue(getReport(), "A timed-out");
 assert.sameValue(getReport(), "B not-equal"); 
 var r;
 while ((r = getReport()) != "done")
-    assert.sameValue(r, "C not-equal");
+  assert.sameValue(r, "C not-equal");
 
 function getReport() {
-    var r;
-    while ((r = $262.agent.getReport()) == null)
-        $262.agent.sleep(100);
-    return r;
+  var r;
+  while ((r = $262.agent.getReport()) == null)
+    $262.agent.sleep(100);
+  return r;
 }
 
 reportCompare(0, 0);

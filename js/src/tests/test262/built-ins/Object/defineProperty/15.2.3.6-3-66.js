@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+var accessed = false;
+
+Object.defineProperty(obj, "property", {
+  enumerable: JSON
+});
+
+for (var prop in obj) {
+  if (prop === "property") {
+    accessed = true;
+  }
+}
+
+assert(accessed, 'accessed !== true');
+
+reportCompare(0, 0);

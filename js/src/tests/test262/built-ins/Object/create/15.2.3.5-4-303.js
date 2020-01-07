@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  Object.create({}, {
+    prop: {
+      get: function() {},
+      value: 100
+    }
+  });
+});
+
+reportCompare(0, 0);

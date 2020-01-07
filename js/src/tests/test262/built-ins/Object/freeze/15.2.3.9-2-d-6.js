@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+var dateObj = new Date();
+
+Object.freeze(dateObj);
+
+assert(Object.isFrozen(dateObj), 'Object.isFrozen(dateObj) !== true');
+
+reportCompare(0, 0);

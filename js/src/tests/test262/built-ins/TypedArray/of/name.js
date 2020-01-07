@@ -19,6 +19,7 @@
 
 
 
+
 assert.sameValue(TypedArray.of.name, "of");
 
 verifyNotEnumerable(TypedArray.of, "name");

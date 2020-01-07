@@ -14,7 +14,7 @@
 
 
 function C(executor) {
-  executor(function(){}, function(){});
+  executor(function() {}, function() {});
 }
 Object.defineProperty(C, Symbol.species, {
   get: function() {

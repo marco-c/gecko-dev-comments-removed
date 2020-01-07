@@ -16,7 +16,7 @@ if (this.propertyIsEnumerable('parseInt') !== false) {
 
 
 var result = true;
-for (var p in this){
+for (var p in this) {
   if (p === "parseInt") {
     result = false;
   }

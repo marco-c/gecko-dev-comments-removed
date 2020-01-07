@@ -8,7 +8,7 @@
 
 
 
-async function foo () { };
+async function foo() {};
 
 assert.sameValue(foo.name, "foo");
 verifyNotWritable(foo, "name");

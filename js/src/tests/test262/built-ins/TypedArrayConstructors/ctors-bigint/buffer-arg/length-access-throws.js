@@ -1,0 +1,36 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var buffer = new ArrayBuffer(8);
+var len = {
+  valueOf() {
+    throw new Test262Error();
+  }
+};
+
+testWithBigIntTypedArrayConstructors(function(TA) {
+  assert.throws(Test262Error, function() {
+    new TA(buffer, 0, len);
+  });
+});
+
+reportCompare(0, 0);

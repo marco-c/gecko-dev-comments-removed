@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+
+var errObj = new Error();
+
+errObj.get = function() {
+  return "errorGetProperty";
+};
+
+Object.defineProperty(obj, "property", errObj);
+
+assert.sameValue(obj.property, "errorGetProperty", 'obj.property');
+
+reportCompare(0, 0);

@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+var descObj = {
+  writable: ""
+};
+
+var newObj = Object.create({}, {
+  prop: descObj
+});
+
+assert(newObj.hasOwnProperty("prop"))
+assert.sameValue(typeof newObj.prop, "undefined");
+verifyNotWritable(newObj, "prop");
+
+reportCompare(0, 0);

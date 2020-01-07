@@ -6,6 +6,8 @@
 
 
 
+
+
 assert.throws(TypeError, function() {
   SharedArrayBuffer.prototype.byteLength;
 });

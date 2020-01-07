@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+var obj = {};
+
+Object.defineProperty(obj, "prop", {
+  value: "ThisIsAString"
+});
+
+var desc = Object.getOwnPropertyDescriptor(obj, "prop");
+
+assert.sameValue(obj.prop, "ThisIsAString", 'obj.prop');
+assert.sameValue(desc.value, "ThisIsAString", 'desc.value');
+
+reportCompare(0, 0);

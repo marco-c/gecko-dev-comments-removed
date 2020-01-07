@@ -7,8 +7,8 @@
 
 
 
-        var arr = [0, 1, 2, 3, 4];
-        
+var arr = [0, 1, 2, 3, 4];
+
 
 assert.sameValue(arr.lastIndexOf(0), arr.lastIndexOf(0, 4), 'arr.lastIndexOf(0)');
 assert.sameValue(arr.lastIndexOf(2), arr.lastIndexOf(2, 4), 'arr.lastIndexOf(2)');

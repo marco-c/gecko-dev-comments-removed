@@ -19,6 +19,7 @@
 
 
 
+
 assert.sameValue(TypedArray.prototype.reduceRight.name, "reduceRight");
 
 verifyNotEnumerable(TypedArray.prototype.reduceRight, "name");

@@ -9,7 +9,7 @@
 
 
 var x = Date.prototype.setUTCHours;
-if(x === 1)
+if (x === 1)
   Date.prototype.setUTCHours = 2;
 else
   Date.prototype.setUTCHours = 1;

@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+var f = Object.keys;
+
+assert.sameValue(typeof(f), "function", 'typeof(f)');
+
+reportCompare(0, 0);

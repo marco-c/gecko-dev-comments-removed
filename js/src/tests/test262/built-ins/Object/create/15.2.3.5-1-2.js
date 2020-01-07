@@ -1,0 +1,11 @@
+
+
+
+
+
+
+
+
+Object.create(null);
+
+reportCompare(0, 0);

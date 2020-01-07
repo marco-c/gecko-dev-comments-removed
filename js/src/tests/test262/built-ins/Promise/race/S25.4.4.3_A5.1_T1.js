@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+var p = Promise.race([]);
+
+p.then(function() {
+  $ERROR("Never settles.");
+}, function() {
+  $ERROR("Never settles.");
+}).then($DONE, $DONE);
+
+
+
+Promise.resolve().then().then().then($DONE, $DONE);

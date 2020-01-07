@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  Object.defineProperties({}, null);
+});
+
+reportCompare(0, 0);

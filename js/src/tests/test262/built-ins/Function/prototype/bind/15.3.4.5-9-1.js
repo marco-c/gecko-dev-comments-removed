@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+function foo() {}
+var o = {};
+
+var bf = foo.bind(o);
+
+assert(Function.prototype.isPrototypeOf(bf), 'Function.prototype.isPrototypeOf(bf) !== true');
+
+reportCompare(0, 0);

@@ -7,17 +7,20 @@
 
 
 
-        var accessed = false;
-        var thisArg = {};
-        var obj = { 0: 11, length: 1 };
+var accessed = false;
+var thisArg = {};
+var obj = {
+  0: 11,
+  length: 1
+};
 
-        function callbackfn() {
-            accessed = true;
-            return this === thisArg &&
-                arguments[0] === 11 &&
-                arguments[1] === 0 &&
-                arguments[2] === obj;
-        }
+function callbackfn() {
+  accessed = true;
+  return this === thisArg &&
+    arguments[0] === 11 &&
+    arguments[1] === 0 &&
+    arguments[2] === obj;
+}
 
 assert(Array.prototype.every.call(obj, callbackfn, thisArg), 'Array.prototype.every.call(obj, callbackfn, thisArg) !== true');
 assert(accessed, 'accessed !== true');

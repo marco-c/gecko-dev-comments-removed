@@ -11,13 +11,19 @@
 
 
 
-var i=0;
+var i = 0;
 
-var p={toString:function(){return "a"+(++i);}};
+var p = {
+  toString: function() {
+    return "a" + (++i);
+  }
+};
 
-var obj={};
+var obj = {};
 
-new Function(p,p,p, "this.shifted=a3;").apply( obj,( function(){return arguments;}) ("a","b","c") );
+new Function(p, p, p, "this.shifted=a3;").apply(obj, (function() {
+  return arguments;
+})("a", "b", "c"));
 
 
 if (obj["shifted"] !== "c") {

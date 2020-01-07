@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+assert.throws(SyntaxError, function() {
+  JSON.parse('\u2028\u20291234'); 
+});
+
+reportCompare(0, 0);

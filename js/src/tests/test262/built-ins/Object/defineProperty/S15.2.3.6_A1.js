@@ -12,10 +12,12 @@
 
 
 
-function getter() { return 'gotten'; }
+function getter() {
+  return 'gotten';
+}
 
 if (typeof document !== 'undefined' &&
-    typeof document.createElement === 'function') {
+  typeof document.createElement === 'function') {
   var f = document.createElement("form");
   var refused = false;
   try {

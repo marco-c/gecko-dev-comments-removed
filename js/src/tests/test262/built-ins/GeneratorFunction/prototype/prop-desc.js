@@ -10,7 +10,7 @@
 
 
 
-var GeneratorFunction = Object.getPrototypeOf(function* () {}).constructor;
+var GeneratorFunction = Object.getPrototypeOf(function*() {}).constructor;
 
 verifyNotEnumerable(GeneratorFunction, 'prototype');
 verifyNotWritable(GeneratorFunction, 'prototype');

@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+var iterable  = { [Symbol.iterator]: undefined };
+
+assert.throws(TypeError,
+  function () {
+    new Map(iterable);
+});
+
+reportCompare(0, 0);

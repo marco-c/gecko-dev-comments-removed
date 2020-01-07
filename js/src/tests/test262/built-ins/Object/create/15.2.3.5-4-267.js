@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+var newObj = Object.create({}, {
+  prop: {
+    get: function() {
+      return "data";
+    }
+  }
+});
+
+assert(newObj.hasOwnProperty("prop"));
+verifyNotWritable(newObj, "prop");
+
+reportCompare(0, 0);

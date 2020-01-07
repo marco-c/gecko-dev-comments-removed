@@ -7,11 +7,11 @@
 
 
 
-        var objDate = new Date();
+var objDate = new Date();
 
-        function callbackfn(val, idx, obj) {
-            return this === objDate;
-        }
+function callbackfn(val, idx, obj) {
+  return this === objDate;
+}
 
 assert([11].some(callbackfn, objDate), '[11].some(callbackfn, objDate) !== true');
 

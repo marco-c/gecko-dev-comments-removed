@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+var newObj = Object.create({}, {
+  prop: {
+    set: function() {},
+    get: function() {},
+    enumerable: true
+  }
+});
+
+assert(newObj.hasOwnProperty("prop"));
+verifyNotConfigurable(newObj, "prop");
+
+reportCompare(0, 0);

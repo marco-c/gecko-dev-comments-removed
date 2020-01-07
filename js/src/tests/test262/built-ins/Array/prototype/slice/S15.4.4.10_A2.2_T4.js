@@ -8,8 +8,8 @@
 
 
 
-var x = [0,1,2,3,4];
-var arr = x.slice(0,Number.NEGATIVE_INFINITY);
+var x = [0, 1, 2, 3, 4];
+var arr = x.slice(0, Number.NEGATIVE_INFINITY);
 
 
 arr.getClass = Object.prototype.toString;

@@ -8,8 +8,15 @@
 
 
 
-var x = [0,1,2,3,4];
-var arr = x.slice(0,{valueOf: function() {return 3}, toString: function() {return 0}});
+var x = [0, 1, 2, 3, 4];
+var arr = x.slice(0, {
+  valueOf: function() {
+    return 3
+  },
+  toString: function() {
+    return 0
+  }
+});
 
 
 arr.getClass = Object.prototype.toString;

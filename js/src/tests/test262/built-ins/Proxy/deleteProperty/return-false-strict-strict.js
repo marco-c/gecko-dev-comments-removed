@@ -1,0 +1,22 @@
+'use strict';
+
+
+
+
+
+
+
+
+
+
+
+
+var p = new Proxy({}, {
+  deleteProperty: function() {
+    return false;
+  }
+});
+
+assert.sameValue(Reflect.deleteProperty(p, "attr"), false);
+
+reportCompare(0, 0);

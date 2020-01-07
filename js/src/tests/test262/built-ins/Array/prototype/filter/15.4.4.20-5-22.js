@@ -7,14 +7,14 @@
 
 
 
-        var accessed = false;
+var accessed = false;
 
-        function callbackfn(val, idx, obj) {
-            accessed = true;
-            return this.valueOf() === false;
-        }
+function callbackfn(val, idx, obj) {
+  accessed = true;
+  return this.valueOf() === false;
+}
 
-        var newArr = [11].filter(callbackfn, false);
+var newArr = [11].filter(callbackfn, false);
 
 assert.sameValue(newArr[0], 11, 'newArr[0]');
 assert(accessed, 'accessed !== true');

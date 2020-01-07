@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+if (new String(42).charAt(function() {}()) !== "4") {
+  $ERROR('#1: new String(42).charAt(function(){}()) === "4". Actual: new String(42).charAt(function(){}()) ===' + new String(42).charAt(function() {}()));
+}
+
+
+
+reportCompare(0, 0);

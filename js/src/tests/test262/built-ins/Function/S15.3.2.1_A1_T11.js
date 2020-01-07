@@ -18,7 +18,7 @@
 try {
   var f = new Function(undefined);
 } catch (e) {
-  $ERROR('#1: test failed with error '+e);
+  $ERROR('#1: test failed with error ' + e);
 }
 
 

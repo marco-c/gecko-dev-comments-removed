@@ -7,8 +7,9 @@
 
 
 
+
 async  function  *  f  (  x  ,  y  )  {  ;  ;  }
 
-assert.sameValue(f.toString(), "async /* a */ function /* b */ * /* c */ f /* d */ ( /* e */ x /* f */ , /* g */ y /* h */ ) /* i */ { /* j */ ; /* k */ ; /* l */ }");
+assertToStringOrNativeFunction(f, "async /* a */ function /* b */ * /* c */ f /* d */ ( /* e */ x /* f */ , /* g */ y /* h */ ) /* i */ { /* j */ ; /* k */ ; /* l */ }");
 
 reportCompare(0, 0);

@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+var errObj = new SyntaxError();
+
+Object.freeze(errObj);
+
+assert(Object.isFrozen(errObj), 'Object.isFrozen(errObj) !== true');
+
+reportCompare(0, 0);

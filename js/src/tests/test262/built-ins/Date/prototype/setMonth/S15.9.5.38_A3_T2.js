@@ -10,7 +10,7 @@
 
 
 
-if (delete Date.prototype.setMonth.length  !== true) {
+if (delete Date.prototype.setMonth.length !== true) {
   $ERROR('#1: The Date.prototype.setMonth.length property does not have the attributes DontDelete');
 }
 

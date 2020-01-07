@@ -18,7 +18,7 @@ var __split = __string.split(new RegExp);
 
 
 if (__split.constructor !== Array) {
-  $ERROR('#1: var __string = new String("one-1 two-2 three-3"); __split = __string.split(new RegExp); __split.constructor === Array. Actual: '+__split.constructor );
+  $ERROR('#1: var __string = new String("one-1 two-2 three-3"); __split = __string.split(new RegExp); __split.constructor === Array. Actual: ' + __split.constructor);
 }
 
 
@@ -26,17 +26,17 @@ if (__split.constructor !== Array) {
 
 
 if (__split.length !== __string.length) {
-  $ERROR('#2: var __string = new String("one-1 two-2 three-3"); __split = __string.split(new RegExp); __split.length === __string.length. Actual: '+__split.length );
+  $ERROR('#2: var __string = new String("one-1 two-2 three-3"); __split = __string.split(new RegExp); __split.length === __string.length. Actual: ' + __split.length);
 }
 
 
 
 
 
-for ( var i = 0; i < __string.length; i++ ) {
-    if (__string.charAt(i)!==__split[i]) {
-      $ERROR('#3.'+i+': var __string = new String("one-1 two-2 three-3"); __split = __string.split(new RegExp); __string.charAt('+i+')===__split['+i+']. Actual: '+__string.charAt(i));
-    }
+for (var i = 0; i < __string.length; i++) {
+  if (__string.charAt(i) !== __split[i]) {
+    $ERROR('#3.' + i + ': var __string = new String("one-1 two-2 three-3"); __split = __string.split(new RegExp); __string.charAt(' + i + ')===__split[' + i + ']. Actual: ' + __string.charAt(i));
+  }
 }
 
 

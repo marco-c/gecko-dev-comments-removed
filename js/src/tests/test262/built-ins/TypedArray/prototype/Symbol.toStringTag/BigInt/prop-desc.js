@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var TypedArrayPrototype = TypedArray.prototype;
+var desc = Object.getOwnPropertyDescriptor(
+  TypedArrayPrototype, Symbol.toStringTag
+);
+
+assert.sameValue(desc.set, undefined);
+assert.sameValue(typeof desc.get, 'function');
+verifyNotEnumerable(TypedArrayPrototype, Symbol.toStringTag);
+verifyConfigurable(TypedArrayPrototype, Symbol.toStringTag);
+
+reportCompare(0, 0);

@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+var p = Object.getPrototypeOf(Number);
+
+assert.sameValue(p, Function.prototype, 'p');
+
+reportCompare(0, 0);

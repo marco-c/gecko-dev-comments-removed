@@ -7,23 +7,23 @@
 
 
 
-        function callbackfn(val, idx, obj) {
-            if (idx === 2 && val === "length") {
-                return false;
-            } else {
-                return true;
-            }
-        }
+function callbackfn(val, idx, obj) {
+  if (idx === 2 && val === "length") {
+    return false;
+  } else {
+    return true;
+  }
+}
 
-        var arr = { };
+var arr = {};
 
-        Object.defineProperty(arr, "length", {
-            get: function () {
-                arr[2] = "length";
-                return 3;
-            },
-            configurable: true
-        });
+Object.defineProperty(arr, "length", {
+  get: function() {
+    arr[2] = "length";
+    return 3;
+  },
+  configurable: true
+});
 
 assert.sameValue(Array.prototype.every.call(arr, callbackfn), false, 'Array.prototype.every.call(arr, callbackfn)');
 

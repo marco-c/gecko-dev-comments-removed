@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+var regObj = new RegExp();
+
+regObj.value = "RegExpValue";
+
+var newObj = Object.create({}, {
+  prop: regObj
+});
+
+assert.sameValue(newObj.prop, "RegExpValue", 'newObj.prop');
+
+reportCompare(0, 0);

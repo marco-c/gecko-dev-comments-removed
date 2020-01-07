@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+var x = +Infinity;
+if (Math.sqrt(x) !== +Infinity)
+{
+  $ERROR("#1: 'var x=+Infinity; Math.sqrt(x) !== +Infinity'");
+}
+
+reportCompare(0, 0);

@@ -7,6 +7,7 @@
 
 
 
+
 var previousObject = null;
 var firstObject = null;
 function tag(templateObject) {

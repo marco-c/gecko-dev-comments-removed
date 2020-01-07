@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+var accessed = false;
+
+RegExp.prototype.enumerable = true;
+var regObj = new RegExp();
+
+Object.defineProperty(obj, "property", regObj);
+
+for (var prop in obj) {
+  if (prop === "property") {
+    accessed = true;
+  }
+}
+
+assert(accessed, 'accessed !== true');
+
+reportCompare(0, 0);

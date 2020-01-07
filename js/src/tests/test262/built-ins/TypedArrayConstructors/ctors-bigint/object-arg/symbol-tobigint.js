@@ -1,0 +1,63 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var s = Symbol()
+
+testWithBigIntTypedArrayConstructors(function(TA) {
+
+  assert.throws(TypeError, function() {
+    new TA([s]);
+  }, "abrupt completion from Symbol");
+
+});
+
+reportCompare(0, 0);

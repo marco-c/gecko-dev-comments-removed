@@ -65,4 +65,5 @@ testWithTypedArrayConstructors(function(TA) {
   });
   assert.sameValue(result, -1, "value not found - changed after call");
 });
+
 reportCompare(0, 0);

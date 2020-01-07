@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+testWithBigIntTypedArrayConstructors(function(TA) {
+  assert.throws(RangeError, function() {
+    new TA(Infinity);
+  });
+});
+
+reportCompare(0, 0);

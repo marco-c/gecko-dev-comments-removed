@@ -7,12 +7,13 @@
 
 
 
-        var result = false;
-        function callbackfn(val, idx, obj) {
-            result = (this === JSON);
-        }
+var result = false;
 
-        [11].forEach(callbackfn, JSON);
+function callbackfn(val, idx, obj) {
+  result = (this === JSON);
+}
+
+[11].forEach(callbackfn, JSON);
 
 assert(result, 'result !== true');
 

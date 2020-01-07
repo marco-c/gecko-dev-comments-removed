@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+if (function() {
+    return "gnullunazzgnull"
+  }().lastIndexOf(null) !== 11) {
+  $ERROR('#1: function(){return "gnullunazzgnull"}().lastIndexOf(null) === 11. Actual: ' + function() {
+    return "gnullunazzgnull"
+  }().lastIndexOf(null));
+}
+
+
+
+reportCompare(0, 0);

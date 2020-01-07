@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+var obj = {
+  "abc": 1
+};
+
+var ownProp = {
+  toString: function() {
+    return "abc";
+  }
+};
+
+var desc = Object.getOwnPropertyDescriptor(obj, ownProp);
+
+assert.sameValue(desc.value, 1, 'desc.value');
+
+reportCompare(0, 0);

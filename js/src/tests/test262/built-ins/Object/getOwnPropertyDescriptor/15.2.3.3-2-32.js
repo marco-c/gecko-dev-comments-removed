@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+var obj = {
+  "": 1
+};
+
+var desc = Object.getOwnPropertyDescriptor(obj, "");
+
+assert.sameValue(desc.value, 1, 'desc.value');
+
+reportCompare(0, 0);

@@ -9,8 +9,8 @@
 
 
 
-function dynaString(s1, s2){
-  return String(s1)+String(s2);
+function dynaString(s1, s2) {
+  return String(s1) + String(s2);
 }
 
 
@@ -18,7 +18,7 @@ if (Number(dynaString("-", "0")) !== -Number("0")) {
   $ERROR('#1: Number("-"+"0") === -Number("0")');
 } else {
   
-  if (1/Number(dynaString("-", "0")) !== -1/Number("0")) {
+  if (1 / Number(dynaString("-", "0")) !== -1 / Number("0")) {
     $ERROR('#2: 1/Number("-"+"0") === -1/Number("0")');
   }
 }

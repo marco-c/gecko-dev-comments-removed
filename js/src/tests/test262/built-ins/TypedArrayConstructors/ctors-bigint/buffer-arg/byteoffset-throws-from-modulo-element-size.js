@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var buffer = new ArrayBuffer(8);
+
+testWithBigIntTypedArrayConstructors(function(TA) {
+  assert.throws(RangeError, function() {
+    new TA(buffer, 7);
+  });
+});
+
+reportCompare(0, 0);

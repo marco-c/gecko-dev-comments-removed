@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var desc = Object.getOwnPropertyDescriptor(TypedArray.prototype, Symbol.toStringTag);
+
+assert.sameValue(desc.get.name, "get [Symbol.toStringTag]");
+
+verifyNotEnumerable(desc.get, "name");
+verifyNotWritable(desc.get, "name");
+verifyConfigurable(desc.get, "name");
+
+reportCompare(0, 0);

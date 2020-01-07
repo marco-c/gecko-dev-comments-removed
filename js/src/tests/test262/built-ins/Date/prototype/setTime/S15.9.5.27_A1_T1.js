@@ -9,7 +9,7 @@
 
 
 var x = Date.prototype.setTime;
-if(x === 1)
+if (x === 1)
   Date.prototype.setTime = 2;
 else
   Date.prototype.setTime = 1;

@@ -9,7 +9,7 @@
 
 
 
-var AsyncFunction = async function foo() { }.constructor;
+var AsyncFunction = async function foo() {}.constructor;
 assert.sameValue(AsyncFunction.length, 1);
 verifyNotWritable(AsyncFunction, 'length');
 verifyNotEnumerable(AsyncFunction, 'length');

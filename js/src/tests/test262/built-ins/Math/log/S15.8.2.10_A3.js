@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+var x = +0;
+if (Math.log(x) !== -Infinity)
+{
+  $ERROR("#1: 'var x=+0; Math.log(x) !== -Infinity'");
+}
+
+
+var x = -0;
+if (Math.log(x) !== -Infinity)
+{
+  $ERROR("#1: 'var x=-0; Math.log(x) !== -Infinity'");
+}
+
+reportCompare(0, 0);

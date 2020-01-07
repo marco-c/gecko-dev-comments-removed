@@ -1,0 +1,33 @@
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+
+Object.defineProperty(obj, "foo", {
+  value: 10,
+  enumerable: false
+});
+
+Object.defineProperties(obj, {
+  foo: {
+    enumerable: false
+  }
+});
+verifyEqualTo(obj, "foo", 10);
+
+verifyNotWritable(obj, "foo");
+
+verifyNotEnumerable(obj, "foo");
+
+verifyNotConfigurable(obj, "foo");
+
+reportCompare(0, 0);

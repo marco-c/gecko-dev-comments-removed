@@ -7,13 +7,13 @@
 
 
 
-  var a = new Array();
-  a[100] = 1;
-  a[99999] = "";
-  a[10] = new Object();
-  a[5555] = 5.5;
-  a[123456] = "str";
-  a[5] = 1E+309;
+var a = new Array();
+a[100] = 1;
+a[99999] = "";
+a[10] = new Object();
+a[5555] = 5.5;
+a[123456] = "str";
+a[5] = 1E+309;
 
 assert.sameValue(a.lastIndexOf(1), 100, 'a.lastIndexOf(1)');
 assert.sameValue(a.lastIndexOf(""), 99999, 'a.lastIndexOf("")');

@@ -14,7 +14,7 @@
 
 
 if (!(String.prototype.charCodeAt.hasOwnProperty('length'))) {
-  $ERROR('#0: String.prototype.charCodeAt.hasOwnProperty(\'length\') return true. Actual: '+String.prototype.charCodeAt.hasOwnProperty('length')); 
+  $ERROR('#0: String.prototype.charCodeAt.hasOwnProperty(\'length\') return true. Actual: ' + String.prototype.charCodeAt.hasOwnProperty('length'));
 }
 
 
@@ -30,7 +30,7 @@ if (!delete String.prototype.charCodeAt.length) {
 
 
 if (String.prototype.charCodeAt.hasOwnProperty('length')) {
-  $ERROR('#2: delete String.prototype.charCodeAt.length; String.prototype.charCodeAt.hasOwnProperty(\'length\') return false. Actual: '+String.prototype.charCodeAt.hasOwnProperty('length')); 
+  $ERROR('#2: delete String.prototype.charCodeAt.length; String.prototype.charCodeAt.hasOwnProperty(\'length\') return false. Actual: ' + String.prototype.charCodeAt.hasOwnProperty('length'));
 }
 
 

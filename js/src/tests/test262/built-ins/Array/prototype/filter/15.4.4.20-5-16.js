@@ -7,16 +7,16 @@
 
 
 
-        var accessed = false;
+var accessed = false;
 
-        var objRegExp = new RegExp();
+var objRegExp = new RegExp();
 
-        function callbackfn(val, idx, obj) {
-            accessed = true;
-            return this === objRegExp;
-        }
+function callbackfn(val, idx, obj) {
+  accessed = true;
+  return this === objRegExp;
+}
 
-        var newArr = [11].filter(callbackfn, objRegExp);
+var newArr = [11].filter(callbackfn, objRegExp);
 
 assert.sameValue(newArr[0], 11, 'newArr[0]');
 assert(accessed, 'accessed !== true');

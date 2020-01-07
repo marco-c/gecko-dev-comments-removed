@@ -19,6 +19,7 @@
 
 
 
+
 var desc = Object.getOwnPropertyDescriptor(TypedArray.prototype, "byteOffset");
 
 assert.sameValue(desc.get.name, "get byteOffset");

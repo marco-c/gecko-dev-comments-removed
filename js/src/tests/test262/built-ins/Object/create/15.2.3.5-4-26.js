@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+var props = {};
+Object.defineProperty(props, "prop", {
+  set: function() {},
+  enumerable: true
+});
+assert.throws(TypeError, function() {
+  Object.create({}, props);
+});
+
+reportCompare(0, 0);

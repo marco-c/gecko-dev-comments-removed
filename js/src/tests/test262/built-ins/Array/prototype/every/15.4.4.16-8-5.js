@@ -9,13 +9,14 @@
 
 
 
-  foo.prototype = new Array(1, 2, 3);
-  function foo() {}
-  var f = new foo();
-  f.length = '0';
+foo.prototype = new Array(1, 2, 3);
 
-  function cb(){}
-  var i = f.every(cb);
+function foo() {}
+var f = new foo();
+f.length = '0';
+
+function cb() {}
+var i = f.every(cb);
 
 
 assert.sameValue(i, true, 'i');

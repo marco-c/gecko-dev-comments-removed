@@ -21,12 +21,12 @@ assert.sameValue(Atomics.wake(view, 0, 1), 0);
 
 
 testWithAtomicsInBoundsIndices(function(IdxGen) {
-    let Idx = IdxGen(view);
-    view.fill(0);
-    
-    
-    Atomics.store(view, Idx, 37);
-    assert.sameValue(Atomics.wake(view, Idx, 1), 0);
+  let Idx = IdxGen(view);
+  view.fill(0);
+  
+  
+  Atomics.store(view, Idx, 37);
+  assert.sameValue(Atomics.wake(view, Idx, 1), 0);
 });
 
 reportCompare(0, 0);

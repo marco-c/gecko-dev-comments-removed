@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+var s = "\u2029\
+           abc";
+
+assert.sameValue(s.trim(), "abc", 's.trim()');
+
+reportCompare(0, 0);

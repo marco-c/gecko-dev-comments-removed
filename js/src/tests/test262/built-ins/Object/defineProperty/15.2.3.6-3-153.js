@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+
+var attr = {
+  value: 100
+};
+
+Object.defineProperty(obj, "property", attr);
+
+assert(obj.hasOwnProperty("property"));
+verifyNotWritable(obj, "property");
+
+reportCompare(0, 0);

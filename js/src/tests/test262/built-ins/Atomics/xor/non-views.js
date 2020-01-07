@@ -11,7 +11,7 @@
 
 
 testWithAtomicsNonViewValues(function(view) {
-    assert.throws(TypeError, (() => Atomics.xor(view, 0, 0)));
+  assert.throws(TypeError, (() => Atomics.xor(view, 0, 0)));
 });
 
 reportCompare(0, 0);

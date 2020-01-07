@@ -1,0 +1,65 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+testWithBigIntTypedArrayConstructors(function(TA) {
+  var typedArray = new TA(1);
+
+  assert.throws(TypeError, function() {
+    typedArray[0] = undefined;
+  }, "abrupt completion from undefined");
+
+});
+
+reportCompare(0, 0);

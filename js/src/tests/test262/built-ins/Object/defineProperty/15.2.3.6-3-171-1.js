@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+try {
+  Date.prototype.writable = true;
+
+  var dateObj = new Date();
+
+  Object.defineProperty(obj, "property", dateObj);
+  verifyWritable(obj, "property");
+
+} finally {
+  delete Date.prototype.writable;
+}
+
+reportCompare(0, 0);

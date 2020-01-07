@@ -7,9 +7,9 @@
 
 
 
-  var a = [1,2,3];
+var a = [1, 2, 3];
 
 
-assert.sameValue(a.indexOf(1,undefined), 0, 'a.indexOf(1,undefined)');
+assert.sameValue(a.indexOf(1, undefined), 0, 'a.indexOf(1,undefined)');
 
 reportCompare(0, 0);

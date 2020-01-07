@@ -12,12 +12,12 @@
 
 
 var target = {
-    attr: "foo"
+  attr: "foo"
 };
 var r = Proxy.revocable(target, {
-    get: function(t, prop) {
-        return t[prop] + "!";
-    }
+  get: function(t, prop) {
+    return t[prop] + "!";
+  }
 });
 
 assert.sameValue(r.proxy.attr, "foo!");

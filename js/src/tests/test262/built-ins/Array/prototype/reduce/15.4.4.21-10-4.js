@@ -7,11 +7,14 @@
 
 
 
-  foo.prototype = new Array(1, 2, 3, 4);
-  function foo() {}
-  var f = new foo();
+foo.prototype = new Array(1, 2, 3, 4);
 
-  function cb(prevVal, curVal, idx, obj){return prevVal + curVal;}
+function foo() {}
+var f = new foo();
+
+function cb(prevVal, curVal, idx, obj) {
+  return prevVal + curVal;
+}
 
 assert.sameValue(f.reduce(cb), 10, 'f.reduce(cb)');
 

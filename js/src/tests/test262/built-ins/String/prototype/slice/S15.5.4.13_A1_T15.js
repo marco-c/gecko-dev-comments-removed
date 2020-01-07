@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+var __num = 11.001002;
+
+Number.prototype.slice = String.prototype.slice;
+
+
+
+
+if (__num.slice() !== "11.001002") {
+  $ERROR('#1: var __num = 11.001002; Number.prototype.slice = String.prototype.slice; __num.slice()==="11.001002". Actual: ' + __num.slice());
+}
+
+
+
+reportCompare(0, 0);

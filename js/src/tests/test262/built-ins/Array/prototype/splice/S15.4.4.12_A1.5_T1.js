@@ -8,7 +8,7 @@
 
 
 
-var x = [0,1,2,3];
+var x = [0, 1, 2, 3];
 var arr = x.splice(undefined, undefined);
 
 

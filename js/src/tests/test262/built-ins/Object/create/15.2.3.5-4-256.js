@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+this.get = function() {
+  return "VerifyGlobalObject";
+};
+
+var newObj = Object.create({}, {
+  prop: this
+});
+
+assert.sameValue(newObj.prop, "VerifyGlobalObject", 'newObj.prop');
+
+reportCompare(0, 0);

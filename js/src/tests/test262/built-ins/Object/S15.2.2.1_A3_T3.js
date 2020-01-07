@@ -9,7 +9,7 @@
 
 
 
-var n_obj = new Object(""+1);
+var n_obj = new Object("" + 1);
 
 
 if (n_obj.constructor !== String) {
@@ -22,12 +22,12 @@ if (typeof n_obj !== 'object') {
 }
 
 
-if ( n_obj != "1") {
+if (n_obj != "1") {
   $ERROR('#4: When the Object constructor is called with String argument return ToObject(string)');
 }
 
 
-if ( n_obj === "1") {
+if (n_obj === "1") {
   $ERROR('#5: When the Object constructor is called with String argument return ToObject(string)');
 }
 

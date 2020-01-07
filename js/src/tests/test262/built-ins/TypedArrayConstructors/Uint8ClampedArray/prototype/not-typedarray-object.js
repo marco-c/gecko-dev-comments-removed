@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  Uint8ClampedArray.prototype.buffer;
+});
+
+reportCompare(0, 0);

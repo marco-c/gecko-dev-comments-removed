@@ -8,11 +8,11 @@
 
 
 
-if(Date.prototype.toLocaleString.hasOwnProperty("length") !== true){
+if (Date.prototype.toLocaleString.hasOwnProperty("length") !== true) {
   $ERROR('#1: The toLocaleString has a "length" property');
 }
 
-if(Date.prototype.toLocaleString.length !== 0){
+if (Date.prototype.toLocaleString.length !== 0) {
   $ERROR('#2: The "length" property of the toLocaleString is 0');
 }
 

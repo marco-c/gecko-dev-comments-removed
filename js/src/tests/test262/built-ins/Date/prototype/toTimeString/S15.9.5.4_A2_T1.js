@@ -8,11 +8,11 @@
 
 
 
-if(Date.prototype.toTimeString.hasOwnProperty("length") !== true){
+if (Date.prototype.toTimeString.hasOwnProperty("length") !== true) {
   $ERROR('#1: The toTimeString has a "length" property');
 }
 
-if(Date.prototype.toTimeString.length !== 0){
+if (Date.prototype.toTimeString.length !== 0) {
   $ERROR('#2: The "length" property of the toTimeString is 0');
 }
 

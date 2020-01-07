@@ -7,13 +7,13 @@
 
 
 
-        var accessed = false;
-        var objNumber = new Number();
+var accessed = false;
+var objNumber = new Number();
 
-        function callbackfn(val, idx, obj) {
-            accessed = true;
-            return this === objNumber;
-        }
+function callbackfn(val, idx, obj) {
+  accessed = true;
+  return this === objNumber;
+}
 
 assert([11].every(callbackfn, objNumber), '[11].every(callbackfn, objNumber) !== true');
 assert(accessed, 'accessed !== true');

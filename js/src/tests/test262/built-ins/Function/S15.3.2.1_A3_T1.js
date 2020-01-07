@@ -19,16 +19,24 @@
 
 
 
-var p = {toString:function(){throw 1;}};
-var body = {toString:function(){throw "body";}};
+var p = {
+  toString: function() {
+    throw 1;
+  }
+};
+var body = {
+  toString: function() {
+    throw "body";
+  }
+};
 
 
 try {
-  var f = new Function(p,body);
+  var f = new Function(p, body);
   $ERROR('#1: test failed');
 } catch (e) {
   if (e !== 1) {
-  	$ERROR('#1.1: i) Let Result(i) be the first argument; ii) Let P be ToString(Result(i))');
+    $ERROR('#1.1: i) Let Result(i) be the first argument; ii) Let P be ToString(Result(i))');
   }
 }
 

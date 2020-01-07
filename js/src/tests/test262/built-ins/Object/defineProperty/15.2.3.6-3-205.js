@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+
+Object.defineProperty(obj, "property", {
+  get: function() {
+    return "present";
+  }
+});
+
+assert.sameValue(obj.property, "present", 'obj.property');
+
+reportCompare(0, 0);

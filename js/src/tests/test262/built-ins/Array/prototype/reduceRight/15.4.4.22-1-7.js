@@ -7,12 +7,12 @@
 
 
 
-        var accessed = false;
+var accessed = false;
 
-        function callbackfn(prevVal, curVal, idx, obj) {
-            accessed = true;
-            return obj instanceof String;
-        }
+function callbackfn(prevVal, curVal, idx, obj) {
+  accessed = true;
+  return obj instanceof String;
+}
 
 assert(Array.prototype.reduceRight.call("hello\nworld\\!", callbackfn, "h"), 'Array.prototype.reduceRight.call("hello\nworld\\!", callbackfn, "h") !== true');
 assert(accessed, 'accessed !== true');

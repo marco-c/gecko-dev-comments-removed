@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+var arr = [];
+
+Object.defineProperty(arr, "0", {
+  value: null
+});
+
+Object.defineProperties(arr, {
+  "0": {
+    value: null
+  }
+});
+verifyEqualTo(arr, "0", null);
+
+verifyNotWritable(arr, "0");
+
+verifyNotEnumerable(arr, "0");
+
+verifyNotConfigurable(arr, "0");
+
+reportCompare(0, 0);

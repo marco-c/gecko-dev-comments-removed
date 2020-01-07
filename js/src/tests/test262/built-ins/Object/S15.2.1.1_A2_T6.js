@@ -12,7 +12,7 @@
 var num = Infinity;
 
 
-if(typeof num  !== 'number'){
+if (typeof num !== 'number') {
   $ERROR('#1: num = Infinity should be a Number primitive');
 }
 
@@ -24,12 +24,12 @@ if (obj.constructor !== Number) {
 }
 
 
-if (typeof obj!=="object") {
+if (typeof obj !== "object") {
   $ERROR('#3: Object(Infinity) returns ToObject(Infinity)');
 }
 
 
-if ((obj != Infinity)||(obj === Infinity)) {
+if ((obj != Infinity) || (obj === Infinity)) {
   $ERROR('#4: Object(Infinity) returns ToObject(Infinity)');
 }
 

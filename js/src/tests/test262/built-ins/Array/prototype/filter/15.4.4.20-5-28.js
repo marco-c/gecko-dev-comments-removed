@@ -7,7 +7,7 @@
 
 
 
-        var newArr = [11].filter(function () { });
+var newArr = [11].filter(function() {});
 
 assert(newArr instanceof Array, 'newArr instanceof Array !== true');
 

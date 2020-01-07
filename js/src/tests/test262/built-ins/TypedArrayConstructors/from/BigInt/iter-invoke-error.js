@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var iter = {};
+iter[Symbol.iterator] = function() {
+  throw new Test262Error();
+};
+
+testWithBigIntTypedArrayConstructors(function(TA) {
+  assert.throws(Test262Error, function() {
+    TA.from(iter);
+  });
+});
+
+reportCompare(0, 0);

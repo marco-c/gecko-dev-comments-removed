@@ -11,7 +11,7 @@
 
 
 
-var myComparefn = function(x,y) {
+var myComparefn = function(x, y) {
   if (x === undefined) return -1;
   if (y === undefined) return 1;
   return 0;

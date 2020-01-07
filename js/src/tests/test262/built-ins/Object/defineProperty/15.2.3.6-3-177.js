@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+
+this.writable = true;
+
+Object.defineProperty(obj, "property", this);
+
+var beforeWrite = obj.hasOwnProperty("property");
+
+obj.property = "isWritable";
+
+var afterWrite = (obj.property === "isWritable");
+
+assert.sameValue(beforeWrite, true, 'beforeWrite');
+assert.sameValue(afterWrite, true, 'afterWrite');
+
+reportCompare(0, 0);

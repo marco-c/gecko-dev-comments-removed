@@ -7,12 +7,12 @@
 
 
 
-        function callbackfn(prevVal, curVal, idx, obj) {
-            return ('[object JSON]' === Object.prototype.toString.call(obj));
-        }
+function callbackfn(prevVal, curVal, idx, obj) {
+  return ('[object JSON]' === Object.prototype.toString.call(obj));
+}
 
-            JSON.length = 1;
-            JSON[0] = 1;
+JSON.length = 1;
+JSON[0] = 1;
 
 assert(Array.prototype.reduce.call(JSON, callbackfn, 1), 'Array.prototype.reduce.call(JSON, callbackfn, 1) !== true');
 

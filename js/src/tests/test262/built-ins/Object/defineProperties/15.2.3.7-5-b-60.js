@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+
+Object.defineProperties(obj, {
+  prop: {}
+});
+
+assert(obj.hasOwnProperty("prop"));
+verifyNotConfigurable(obj, "prop");
+
+reportCompare(0, 0);

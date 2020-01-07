@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+
+
+Function('a,a', 'return;');
+
+reportCompare(0, 0);

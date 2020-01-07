@@ -10,7 +10,7 @@
 
 
 
-  var o = JSON;
+var o = JSON;
 
 assert.sameValue(typeof(o), "object", 'typeof(o)');
 

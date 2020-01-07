@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+var foo = function() {};
+
+var obj = foo.bind({});
+
+Object.defineProperty(Function.prototype, "property", {
+  set: function() {},
+  configurable: true
+});
+
+assert.sameValue(typeof(obj.property), "undefined", 'typeof (obj.property)');
+
+reportCompare(0, 0);

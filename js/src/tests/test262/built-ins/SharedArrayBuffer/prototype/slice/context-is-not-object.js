@@ -10,6 +10,7 @@
 
 
 
+
 assert.throws(TypeError, function() {
   SharedArrayBuffer.prototype.slice.call(undefined);
 }, "`this` value is undefined");

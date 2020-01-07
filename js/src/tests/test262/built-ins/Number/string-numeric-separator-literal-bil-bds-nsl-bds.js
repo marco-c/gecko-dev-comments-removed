@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Number("0b01_00"), NaN, "0b01_00");
+assert.sameValue(Number("0B01_00"), NaN, "0B01_00");
+
+reportCompare(0, 0);

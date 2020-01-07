@@ -7,9 +7,9 @@
 
 
 
-        function callbackfn(val, idx, obj) {
-            return this.valueOf() === 101;
-        }
+function callbackfn(val, idx, obj) {
+  return this.valueOf() === 101;
+}
 
 assert([11].some(callbackfn, 101), '[11].some(callbackfn, 101) !== true');
 

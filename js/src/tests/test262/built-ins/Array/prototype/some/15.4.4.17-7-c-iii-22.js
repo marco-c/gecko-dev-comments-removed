@@ -9,9 +9,9 @@
 
 
 
-        function callbackfn(val, idx, obj) {
-            return new RegExp();
-        }
+function callbackfn(val, idx, obj) {
+  return new RegExp();
+}
 
 assert([11].some(callbackfn), '[11].some(callbackfn) !== true');
 

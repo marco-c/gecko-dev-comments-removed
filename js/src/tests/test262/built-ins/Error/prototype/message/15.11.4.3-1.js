@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+for (var i in Error.prototype) {
+  assert.notSameValue(i, "message", 'i');
+}
+
+reportCompare(0, 0);

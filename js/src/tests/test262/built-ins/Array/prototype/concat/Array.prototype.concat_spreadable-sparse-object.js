@@ -10,7 +10,9 @@
 
 
 
-var obj = { length: 5 };
+var obj = {
+  length: 5
+};
 obj[Symbol.isConcatSpreadable] = true;
 assert(compareArray([void 0, void 0, void 0, void 0, void 0], [].concat(obj)));
 

@@ -9,13 +9,24 @@
 
 
 
-var __obj = {toString:function(){return "\u0041B";}}
-var __obj2 = {valueOf:function(){return {};},toString:function(){return "1";}}
+var __obj = {
+  toString: function() {
+    return "\u0041B";
+  }
+}
+var __obj2 = {
+  valueOf: function() {
+    return {};
+  },
+  toString: function() {
+    return "1";
+  }
+}
 
 
 
-if ("ABB\u0041BABAB".indexOf(__obj, __obj2)!==3) {
-  $ERROR('#1: var __obj = {toString:function(){return "\u0041B";}}; var __obj2 = {valueOf:function(){return {};},toString:function(){return "1";}}; "ABB\\u0041BABAB".indexOf(__obj, __obj2)===3. Actual: '+("ABB\u0041BABAB".indexOf(__obj, __obj2))); 
+if ("ABB\u0041BABAB".indexOf(__obj, __obj2) !== 3) {
+  $ERROR('#1: var __obj = {toString:function(){return "\u0041B";}}; var __obj2 = {valueOf:function(){return {};},toString:function(){return "1";}}; "ABB\\u0041BABAB".indexOf(__obj, __obj2)===3. Actual: ' + ("ABB\u0041BABAB".indexOf(__obj, __obj2)));
 }
 
 

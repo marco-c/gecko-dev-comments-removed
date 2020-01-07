@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  'abc'.padStart(10, Symbol());
+});
+
+reportCompare(0, 0);

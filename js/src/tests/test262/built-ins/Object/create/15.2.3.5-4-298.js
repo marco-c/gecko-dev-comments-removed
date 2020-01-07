@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+var data = "data";
+
+var newObj = Object.create({}, {
+  prop: {
+    set: function(value) {
+      data = value;
+    }
+  }
+});
+
+newObj.prop = "overrideData";
+
+assert(newObj.hasOwnProperty("prop"), 'newObj.hasOwnProperty("prop") !== true');
+assert.sameValue(data, "overrideData", 'data');
+
+reportCompare(0, 0);

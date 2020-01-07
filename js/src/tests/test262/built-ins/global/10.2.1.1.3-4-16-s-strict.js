@@ -1,0 +1,18 @@
+'use strict';
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  NaN = 12;
+});
+
+reportCompare(0, 0);

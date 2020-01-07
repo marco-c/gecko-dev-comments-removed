@@ -7,13 +7,13 @@
 
 
 
-        var objArray = new Array(2);
+var objArray = new Array(2);
 
-        function callbackfn(val, idx, obj) {
-            return this === objArray;
-        }
+function callbackfn(val, idx, obj) {
+  return this === objArray;
+}
 
-        var testResult = [11].map(callbackfn, objArray);
+var testResult = [11].map(callbackfn, objArray);
 
 assert.sameValue(testResult[0], true, 'testResult[0]');
 

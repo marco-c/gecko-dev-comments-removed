@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var s = Symbol("1");
+
+testWithBigIntTypedArrayConstructors(function(TA) {
+  var sample = new TA(2);
+
+  assert.throws(TypeError, function() {
+    sample.set([1n], s);
+  });
+});
+
+reportCompare(0, 0);

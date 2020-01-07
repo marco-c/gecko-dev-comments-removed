@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+if (function() {
+    return "lego"
+  }().concat(null) !== "legonull") {
+  $ERROR('#1: function(){return "lego"}().concat(null) === "legonull". Actual: ' + function() {
+    return "lego"
+  }().concat(null));
+}
+
+
+
+reportCompare(0, 0);

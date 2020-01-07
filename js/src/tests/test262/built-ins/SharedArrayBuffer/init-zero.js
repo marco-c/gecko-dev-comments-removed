@@ -8,6 +8,7 @@
 
 
 
+
 var view = new DataView(new SharedArrayBuffer(9));
 
 assert.sameValue(view.getUint8(0), 0, 'index 0');

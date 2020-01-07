@@ -9,9 +9,9 @@
 
 
 
-  var arr = new Array(10);
+var arr = new Array(10);
 assert.throws(ReferenceError, function() {
-    arr.map(foo);
+  arr.map(foo);
 });
 
 reportCompare(0, 0);

@@ -25,7 +25,7 @@
 
 
 
-var GeneratorFunction = Object.getPrototypeOf(function* () {}).constructor;
+var GeneratorFunction = Object.getPrototypeOf(function*() {}).constructor;
 
 assert.sameValue(GeneratorFunction().length, 0);
 assert.sameValue(GeneratorFunction('').length, 0);

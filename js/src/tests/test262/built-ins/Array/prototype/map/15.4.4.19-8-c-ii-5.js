@@ -9,24 +9,24 @@
 
 
 
-        var kIndex = [];
+var kIndex = [];
 
-        
-        function callbackfn(val, idx, obj) {
-            
-            if (typeof kIndex[idx] === "undefined") {
-                
-                if (idx !== 0 && typeof kIndex[idx - 1] === "undefined") {
-                    return true;
-                }
-                kIndex[idx] = 1;
-                return false;
-            } else {
-                return true;
-            }
-        }
 
-        var testResult = [11, 12, 13, 14].map(callbackfn);
+function callbackfn(val, idx, obj) {
+  
+  if (typeof kIndex[idx] === "undefined") {
+    
+    if (idx !== 0 && typeof kIndex[idx - 1] === "undefined") {
+      return true;
+    }
+    kIndex[idx] = 1;
+    return false;
+  } else {
+    return true;
+  }
+}
+
+var testResult = [11, 12, 13, 14].map(callbackfn);
 
 assert.sameValue(testResult.length, 4, 'testResult.length');
 assert.sameValue(testResult[0], false, 'testResult[0]');

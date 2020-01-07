@@ -7,13 +7,14 @@
 
 
 
-        var result = false;
-        function callbackfn(val, idx, obj) {
-            result = obj instanceof String;
-        }
+var result = false;
 
-        var obj = new String("abc");
-        Array.prototype.forEach.call(obj, callbackfn);
+function callbackfn(val, idx, obj) {
+  result = obj instanceof String;
+}
+
+var obj = new String("abc");
+Array.prototype.forEach.call(obj, callbackfn);
 
 assert(result, 'result !== true');
 
