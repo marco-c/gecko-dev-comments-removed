@@ -233,6 +233,8 @@ enum DwarfAttribute {
   DW_AT_call_file     = 0x58,
   DW_AT_call_line     = 0x59,
   
+  DW_AT_linkage_name  = 0x6e,
+  
   DW_AT_MIPS_fde = 0x2001,
   DW_AT_MIPS_loop_begin = 0x2002,
   DW_AT_MIPS_tail_loop_begin = 0x2003,
