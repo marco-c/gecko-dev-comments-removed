@@ -163,8 +163,8 @@ public:
   DataType mDataType;     
   bool mIsInline;         
   bool mHasSourceMapURL;  
-  bool mIsDefer;          
-  bool mIsAsync;          
+  bool mInDeferList;      
+  bool mInAsyncList;      
   bool mPreloadAsAsync;   
   bool mPreloadAsDefer;   
   bool mIsNonAsyncScriptInserted; 

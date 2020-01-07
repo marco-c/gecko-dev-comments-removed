@@ -1472,7 +1472,7 @@ ScriptLoader::ProcessScriptElement(nsIScriptElement* aElement)
     request->mValidJSVersion = validJSVersion;
 
     if (aElement->GetScriptAsync()) {
-      request->mIsAsync = true;
+      request->mInAsyncList = true;
       if (request->IsReadyToRun()) {
         mLoadedAsyncRequests.AppendElement(request);
         
@@ -1594,10 +1594,10 @@ ScriptLoader::ProcessScriptElement(nsIScriptElement* aElement)
   if (request->IsModuleRequest()) {
     ModuleLoadRequest* modReq = request->AsModuleRequest();
     modReq->mBaseURL = mDocument->GetDocBaseURI();
-    modReq->mIsAsync = aElement->GetScriptAsync();
+    modReq->mInAsyncList = aElement->GetScriptAsync();
 
     if (aElement->GetParserCreated() != NOT_FROM_PARSER) {
-      if (modReq->mIsAsync) {
+      if (modReq->mInAsyncList) {
         mLoadingAsyncRequests.AppendElement(modReq);
       } else {
         AddDeferRequest(modReq);
@@ -2952,14 +2952,14 @@ ScriptLoader::HandleLoadError(ScriptLoadRequest *aRequest, nsresult aResult)
     SetModuleFetchFinishedAndResumeWaitingRequests(request, aResult);
   }
 
-  if (aRequest->mIsDefer) {
+  if (aRequest->mInDeferList) {
     MOZ_ASSERT_IF(aRequest->IsModuleRequest(),
                   aRequest->AsModuleRequest()->IsTopLevel());
     if (aRequest->isInList()) {
       RefPtr<ScriptLoadRequest> req = mDeferRequests.Steal(aRequest);
       FireScriptAvailable(aResult, req);
     }
-  } else if (aRequest->mIsAsync) {
+  } else if (aRequest->mInAsyncList) {
     MOZ_ASSERT_IF(aRequest->IsModuleRequest(),
                   aRequest->AsModuleRequest()->IsTopLevel());
     if (aRequest->isInList()) {
@@ -3034,7 +3034,7 @@ ScriptLoader::MaybeMoveToLoadedList(ScriptLoadRequest* aRequest)
   
   
   
-  if (aRequest->mIsAsync) {
+  if (aRequest->mInAsyncList) {
     MOZ_ASSERT(aRequest->isInList());
     if (aRequest->isInList()) {
       RefPtr<ScriptLoadRequest> req = mLoadingAsyncRequests.Steal(aRequest);
@@ -3257,7 +3257,7 @@ ScriptLoader::PreloadURI(nsIURI* aURI, const nsAString& aCharset,
 void
 ScriptLoader::AddDeferRequest(ScriptLoadRequest* aRequest)
 {
-  aRequest->mIsDefer = true;
+  aRequest->mInDeferList = true;
   mDeferRequests.AppendElement(aRequest);
   if (mDeferEnabled && aRequest == mDeferRequests.getFirst() &&
       mDocument && !mBlockingDOMContentLoaded) {
