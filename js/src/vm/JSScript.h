@@ -2528,19 +2528,19 @@ PCToLineNumber(unsigned startLine, jssrcnote* notes, jsbytecode* code, jsbytecod
 
 
 
-
-
-
-enum LineOption {
-    CALLED_FROM_JSOP_EVAL,
-    NOT_CALLED_FROM_JSOP_EVAL
-};
-
 extern void
 DescribeScriptedCallerForCompilation(JSContext* cx, MutableHandleScript maybeScript,
-                                     const char** file, unsigned* linenop,
-                                     uint32_t* pcOffset, bool* mutedErrors,
-                                     LineOption opt = NOT_CALLED_FROM_JSOP_EVAL);
+                                     const char** file, unsigned* linenop, uint32_t* pcOffset,
+                                     bool* mutedErrors);
+
+
+
+
+
+extern void
+DescribeScriptedCallerForDirectEval(JSContext* cx, HandleScript script, jsbytecode* pc,
+                                    const char** file, unsigned* linenop, uint32_t* pcOffset,
+                                    bool* mutedErrors);
 
 JSScript*
 CloneScriptIntoFunction(JSContext* cx, HandleScope enclosingScope, HandleFunction fun,
