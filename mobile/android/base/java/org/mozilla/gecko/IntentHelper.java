@@ -63,9 +63,6 @@ public final class IntentHelper implements BundleEventListener {
     private static final String MARKET_INTENT_URI_PACKAGE_PREFIX = "market://details?id=";
     private static final String EXTRA_BROWSER_FALLBACK_URL = "browser_fallback_url";
 
-    
-    private static final String UNKNOWN_PROTOCOL_URI_PREFIX = "about:neterror?e=unknownProtocolFound&u=";
-
     private static IntentHelper instance;
 
     private IntentHelper() {
@@ -505,7 +502,6 @@ public final class IntentHelper implements BundleEventListener {
 
         if (TextUtils.isEmpty(uri)) {
             Log.w(LOGTAG, "Received empty URL - loading about:neterror");
-            errorResponse.putString("uri", getUnknownProtocolErrorPageUri(""));
             errorResponse.putBoolean("isFallback", false);
             callback.sendError(errorResponse);
             return;
@@ -516,16 +512,8 @@ public final class IntentHelper implements BundleEventListener {
             
             intent = Intent.parseUri(uri, 0);
         } catch (final URISyntaxException e) {
-            String errorUri;
-            try {
-                errorUri = getUnknownProtocolErrorPageUri(URLEncoder.encode(uri, "UTF-8"));
-            } catch (final UnsupportedEncodingException encodingE) {
-                errorUri = getUnknownProtocolErrorPageUri("");
-            }
-
             
             Log.w(LOGTAG, "Unable to parse Intent URI - loading about:neterror");
-            errorResponse.putString("uri", errorUri);
             errorResponse.putBoolean("isFallback", false);
             callback.sendError(errorResponse);
             return;
@@ -575,7 +563,6 @@ public final class IntentHelper implements BundleEventListener {
             
             
             Log.w(LOGTAG, "Unable to open URI, maybe showing neterror");
-            errorResponse.putString("uri", getUnknownProtocolErrorPageUri(intent.getData().toString()));
             errorResponse.putBoolean("isFallback", false);
             callback.sendError(errorResponse);
         }
@@ -599,16 +586,6 @@ public final class IntentHelper implements BundleEventListener {
             Log.w(LOGTAG, "URISyntaxException parsing fallback URI");
         }
         return false;
-    }
-
-    
-
-
-
-
-
-    private String getUnknownProtocolErrorPageUri(final String encodedUri) {
-        return UNKNOWN_PROTOCOL_URI_PREFIX + encodedUri;
     }
 
     private static class ResultHandler implements ActivityResultHandler {
