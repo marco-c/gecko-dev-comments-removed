@@ -39,6 +39,7 @@ class ExtendableEvent;
 class KeyboardEvent;
 class TimeEvent;
 class WantsPopupControlCheck;
+class XULCommandEvent;
 #define GENERATED_EVENT(EventClass_) class EventClass_;
 #include "mozilla/dom/GeneratedEventList.h"
 #undef GENERATED_EVENT
@@ -128,6 +129,12 @@ public:
 
   
   virtual DragEvent* AsDragEvent()
+  {
+    return nullptr;
+  }
+
+  
+  virtual XULCommandEvent* AsXULCommandEvent()
   {
     return nullptr;
   }

@@ -11,13 +11,11 @@
 
 #include "mozilla/dom/UIEvent.h"
 #include "mozilla/dom/XULCommandEventBinding.h"
-#include "nsIDOMXULCommandEvent.h"
 
 namespace mozilla {
 namespace dom {
 
-class XULCommandEvent : public UIEvent,
-                        public nsIDOMXULCommandEvent
+class XULCommandEvent : public UIEvent
 {
 public:
   XULCommandEvent(EventTarget* aOwner,
@@ -26,14 +24,15 @@ public:
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(XULCommandEvent, UIEvent)
-  NS_DECL_NSIDOMXULCOMMANDEVENT
-
-  
-  NS_FORWARD_TO_UIEVENT
 
   virtual JSObject* WrapObjectInternal(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override
   {
     return XULCommandEventBinding::Wrap(aCx, this, aGivenProto);
+  }
+
+  virtual XULCommandEvent* AsXULCommandEvent() override
+  {
+    return this;
   }
 
   bool AltKey();
@@ -56,12 +55,8 @@ public:
                         bool aCtrlKey, bool aAltKey,
                         bool aShiftKey, bool aMetaKey,
                         Event* aSourceEvent,
-                        uint16_t aInputSource)
-  {
-    InitCommandEvent(aType, aCanBubble, aCancelable, aView->AsInner(),
-                     aDetail, aCtrlKey, aAltKey, aShiftKey, aMetaKey,
-                     aSourceEvent, aInputSource);
-  }
+                        uint16_t aInputSource,
+                        ErrorResult& aRv);
 
 protected:
   ~XULCommandEvent() {}
