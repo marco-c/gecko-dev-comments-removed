@@ -564,6 +564,7 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
     return PlacesUtils.withConnectionWrapper(
       "BookmarkSyncUtils: pushChanges", async function(db) {
         let skippedCount = 0;
+        let weakCount = 0;
         let updateParams = [];
 
         for (let recordId in changeRecords) {
@@ -576,6 +577,12 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
               synced: { required: true },
             }
           );
+
+          
+          if (!changeRecord.counter) {
+            weakCount++;
+            continue;
+          }
 
           
           
@@ -617,7 +624,8 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
         }
 
         BookmarkSyncLog.debug(`pushChanges: Processed change records`,
-                              { skipped: skippedCount,
+                              { weak: weakCount,
+                                skipped: skippedCount,
                                 updated: updateParams.length });
       }
     );
@@ -1031,7 +1039,7 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
   ratchetTimestampBackwards(existingMillis, serverMillis, lowerBound = BookmarkSyncUtils.EARLIEST_BOOKMARK_TIMESTAMP) {
     const possible = [+existingMillis, +serverMillis].filter(n => !isNaN(n) && n > lowerBound);
     if (!possible.length) {
-      return undefined;
+      return 0;
     }
     return Math.min(...possible);
   },
