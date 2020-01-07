@@ -26,6 +26,7 @@
 #include "nsIWritablePropertyBag2.h"
 #include "nsSubDocumentFrame.h"
 #include "nsGenericHTMLElement.h"
+#include "nsStubMutationObserver.h"
 
 #include "nsILinkHandler.h"
 #include "nsISelectionListener.h"
@@ -203,6 +204,108 @@ private:
     nsDocumentViewer*  mDocViewer;
 };
 
+namespace viewer_detail {
+
+
+
+
+class BFCachePreventionObserver final : public nsStubMutationObserver
+{
+public:
+  explicit BFCachePreventionObserver(nsIDocument* aDocument)
+    : mDocument(aDocument)
+  {
+  }
+
+  NS_DECL_ISUPPORTS
+
+  NS_DECL_NSIMUTATIONOBSERVER_CHARACTERDATACHANGED
+  NS_DECL_NSIMUTATIONOBSERVER_ATTRIBUTECHANGED
+  NS_DECL_NSIMUTATIONOBSERVER_CONTENTAPPENDED
+  NS_DECL_NSIMUTATIONOBSERVER_CONTENTINSERTED
+  NS_DECL_NSIMUTATIONOBSERVER_CONTENTREMOVED
+  NS_DECL_NSIMUTATIONOBSERVER_NODEWILLBEDESTROYED
+
+  
+  void Disconnect();
+
+private:
+  ~BFCachePreventionObserver() = default;
+
+  
+  void MutationHappened();
+
+  nsIDocument* mDocument; 
+};
+
+NS_IMPL_ISUPPORTS(BFCachePreventionObserver, nsIMutationObserver)
+
+void
+BFCachePreventionObserver::CharacterDataChanged(nsIContent* aContent,
+                                                const CharacterDataChangeInfo&)
+{
+  MutationHappened();
+}
+
+void
+BFCachePreventionObserver::AttributeChanged(Element* aElement,
+                                            int32_t aNameSpaceID,
+                                            nsAtom* aAttribute,
+                                            int32_t aModType,
+                                            const nsAttrValue* aOldValue)
+{
+  MutationHappened();
+}
+
+void
+BFCachePreventionObserver::ContentAppended(nsIContent* aFirstNewContent)
+{
+  MutationHappened();
+}
+
+void
+BFCachePreventionObserver::ContentInserted(nsIContent* aChild)
+{
+  MutationHappened();
+}
+
+void
+BFCachePreventionObserver::ContentRemoved(nsIContent* aChild,
+                                          nsIContent* aPreviousSibling)
+{
+  MutationHappened();
+}
+
+void
+BFCachePreventionObserver::NodeWillBeDestroyed(const nsINode* aNode)
+{
+  mDocument = nullptr;
+}
+
+void
+BFCachePreventionObserver::Disconnect()
+{
+  if (mDocument) {
+    mDocument->RemoveMutationObserver(this);
+    
+    
+    mDocument = nullptr;
+  }
+}
+
+void
+BFCachePreventionObserver::MutationHappened()
+{
+  MOZ_ASSERT(mDocument,
+             "How can we not have a document but be getting notified for mutations?");
+  mDocument->DisallowBFCaching();
+  Disconnect();
+}
+
+
+} 
+
+using viewer_detail::BFCachePreventionObserver;
 
 
 class nsDocumentViewer final : public nsIContentViewer,
@@ -340,6 +443,9 @@ protected:
 
   nsCOMPtr<nsIContentViewer> mPreviousViewer;
   nsCOMPtr<nsISHEntry> mSHEntry;
+  
+  
+  RefPtr<BFCachePreventionObserver> mBFCachePreventionObserver;
 
   nsIWidget* mParentWidget; 
   bool mAttachedToParent; 
@@ -1562,6 +1668,14 @@ nsDocumentViewer::Close(nsISHEntry *aSHEntry)
   if (!mDocument)
     return NS_OK;
 
+  if (mSHEntry) {
+    if (mBFCachePreventionObserver) {
+      mBFCachePreventionObserver->Disconnect();
+    }
+    mBFCachePreventionObserver = new BFCachePreventionObserver(mDocument);
+    mDocument->AddMutationObserver(mBFCachePreventionObserver);
+  }
+
 #if defined(NS_PRINTING) && defined(NS_PRINT_PREVIEW)
   
   
@@ -1663,6 +1777,13 @@ nsDocumentViewer::Destroy()
   
   mAutoBeforeAndAfterPrint = nullptr;
 #endif
+
+  
+  
+  if (mBFCachePreventionObserver) {
+    mBFCachePreventionObserver->Disconnect();
+    mBFCachePreventionObserver = nullptr;
+  }
 
   if (mSHEntry && mDocument && !mDocument->IsBFCachingAllowed()) {
     
