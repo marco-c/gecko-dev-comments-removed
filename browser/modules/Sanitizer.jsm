@@ -17,8 +17,12 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   TelemetryStopwatch: "resource://gre/modules/TelemetryStopwatch.jsm",
   setTimeout: "resource://gre/modules/Timer.jsm",
   ServiceWorkerCleanUp: "resource://gre/modules/ServiceWorkerCleanUp.jsm",
+  OfflineAppCacheHelper: "resource:///modules/offlineAppCache.jsm",
 });
 
+XPCOMUtils.defineLazyServiceGetter(this, "sas",
+                                   "@mozilla.org/storage/activity-service;1",
+                                   "nsIStorageActivityService");
 XPCOMUtils.defineLazyServiceGetter(this, "quotaManagerService",
                                    "@mozilla.org/dom/quota-manager-service;1",
                                    "nsIQuotaManagerService");
@@ -363,9 +367,38 @@ var Sanitizer = {
     offlineApps: {
       async clear(range) {
         
-        ChromeUtils.import("resource:///modules/offlineAppCache.jsm");
-        
         OfflineAppCacheHelper.clear();
+
+        if (range) {
+          let principals = sas.getActiveOrigins(range[0], range[1])
+                              .QueryInterface(Ci.nsIArray);
+
+          let promises = [];
+
+          for (let i = 0; i < principals.length; ++i) {
+            let principal = principals.queryElementAt(i, Ci.nsIPrincipal);
+
+            if (principal.URI.scheme != "http" &&
+                principal.URI.scheme != "https" &&
+                principal.URI.scheme != "file") {
+              continue;
+            }
+
+            
+            Services.obs.notifyObservers(null, "browser:purge-domain-data", principal.URI.host);
+
+            
+            await ServiceWorkerCleanUp.removeFromPrincipal(principal);
+
+            
+            promises.push(new Promise(r => {
+              let req = quotaManagerService.clearStoragesForPrincipal(principal, null, false);
+              req.callback = () => { r(); };
+            }));
+          }
+
+          return Promise.all(promises);
+        }
 
         
         Services.obs.notifyObservers(null, "extension:purge-localStorage");

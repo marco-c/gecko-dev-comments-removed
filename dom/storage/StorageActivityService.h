@@ -60,7 +60,7 @@ private:
   MaybeStopTimer();
 
   
-  nsDataHashtable<nsCStringHashKey, TimeStamp> mActivities;
+  nsDataHashtable<nsCStringHashKey, PRTime> mActivities;
 
   nsCOMPtr<nsITimer> mTimer;
 };
