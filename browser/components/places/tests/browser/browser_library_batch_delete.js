@@ -44,7 +44,7 @@ add_task(async function test_create_and_batch_remove_bookmarks() {
 
   
   let PO = gLibrary.PlacesOrganizer;
-  PO.selectLeftPaneQuery("UnfiledBookmarks");
+  PO.selectLeftPaneBuiltIn("UnfiledBookmarks");
   Assert.notEqual(PO._places.selectedNode, null, "Selected unsorted bookmarks");
 
   let unsortedNode = PlacesUtils.asContainer(PO._places.selectedNode);
@@ -76,8 +76,8 @@ add_task(async function test_ensure_correct_selection_and_functionality() {
   let PO = gLibrary.PlacesOrganizer;
   let ContentTree = gLibrary.ContentTree;
   
-  PO.selectLeftPaneQuery("History");
-  PO.selectLeftPaneQuery("UnfiledBookmarks");
+  PO.selectLeftPaneBuiltIn("History");
+  PO.selectLeftPaneBuiltIn("UnfiledBookmarks");
   
   ContentTree.view.selectNode(ContentTree.view.result.root.getChild(0));
   Assert.equal(ContentTree.view.selectedNode.title, "keepme",

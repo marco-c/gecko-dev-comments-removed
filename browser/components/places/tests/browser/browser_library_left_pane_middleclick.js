@@ -22,7 +22,7 @@ add_task(async function test_setup() {
 
   registerCleanupFunction(async () => {
     
-    gLibrary.PlacesOrganizer.selectLeftPaneQuery("UnfiledBookmarks");
+    gLibrary.PlacesOrganizer.selectLeftPaneBuiltIn("UnfiledBookmarks");
     gLibrary.PlacesOrganizer._places.selectedNode.containerOpen = false;
 
     await PlacesUtils.bookmarks.eraseEverything();
@@ -51,7 +51,7 @@ add_task(async function test_open_folder_in_tabs() {
   });
 
   
-  gLibrary.PlacesOrganizer.selectLeftPaneQuery("UnfiledBookmarks");
+  gLibrary.PlacesOrganizer.selectLeftPaneBuiltIn("UnfiledBookmarks");
   Assert.notEqual(gLibrary.PlacesOrganizer._places.selectedNode, null,
         "We correctly have selection in the Library left pane");
 
