@@ -6,6 +6,12 @@ self.onconnect = function (event) {
     case "close":
       close();
       break;
+
+    case "close_loop":
+      close();
+      
+      while(1) {}
+      break;
     }
   };
 };
