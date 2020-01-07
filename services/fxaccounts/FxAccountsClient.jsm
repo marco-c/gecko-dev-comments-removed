@@ -208,6 +208,7 @@ this.FxAccountsClient.prototype = {
 
 
 
+
   signOut(sessionTokenHex, options = {}) {
     let path = "/session/destroy";
     if (options.service) {
@@ -482,36 +483,6 @@ this.FxAccountsClient.prototype = {
       body.pushPublicKey = options.pushPublicKey;
       body.pushAuthKey = options.pushAuthKey;
     }
-
-    return this._request(path, "POST", creds, body);
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  signOutAndDestroyDevice(sessionTokenHex, id, options = {}) {
-    let path = "/account/device/destroy";
-
-    if (options.service) {
-      path += "?service=" + encodeURIComponent(options.service);
-    }
-
-    let creds = deriveHawkCredentials(sessionTokenHex, "sessionToken");
-    let body = { id };
 
     return this._request(path, "POST", creds, body);
   },

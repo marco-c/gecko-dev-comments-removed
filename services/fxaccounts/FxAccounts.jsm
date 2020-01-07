@@ -70,7 +70,6 @@ var publicProperties = [
   "setSignedInUser",
   "signOut",
   "updateDeviceRegistration",
-  "deleteDeviceRegistration",
   "updateUserAccountData",
   "whenVerified",
 ];
@@ -119,36 +118,30 @@ AccountState.prototype = {
         new Error("Verification aborted; Another user signing in"));
       this.whenVerifiedDeferred = null;
     }
-
     if (this.whenKeysReadyDeferred) {
       this.whenKeysReadyDeferred.reject(
         new Error("Verification aborted; Another user signing in"));
       this.whenKeysReadyDeferred = null;
     }
-
-    this.cert = null;
-    this.keyPair = null;
-    this.oauthTokens = null;
-    
-    
-    if (!this.storageManager) {
-      return Promise.resolve();
-    }
-    let storageManager = this.storageManager;
-    this.storageManager = null;
-    return storageManager.finalize();
+    return this.signOut();
   },
 
   
-  signOut() {
+  async signOut() {
     this.cert = null;
     this.keyPair = null;
     this.oauthTokens = null;
-    let storageManager = this.storageManager;
+
+    
+    
+    if (!this.storageManager) {
+      return;
+    }
+    const storageManager = this.storageManager;
     this.storageManager = null;
-    return storageManager.deleteAccountData().then(() => {
-      return storageManager.finalize();
-    });
+
+    await storageManager.deleteAccountData();
+    await storageManager.finalize();
   },
 
   
@@ -572,7 +565,7 @@ FxAccountsInternal.prototype = {
     log.debug("setSignedInUser - aborting any existing flows");
     const signedInUser = await this.getSignedInUser();
     if (signedInUser) {
-      await this.deleteDeviceRegistration(signedInUser.sessionToken, signedInUser.deviceId);
+      await this._signOutServer(signedInUser.sessionToken, signedInUser.oauthTokens);
     }
     await this.abortExistingFlow();
     let currentAccountState = this.currentAccountState = this.newAccountState(
@@ -719,7 +712,7 @@ FxAccountsInternal.prototype = {
   
 
 
-  abortExistingFlow: function abortExistingFlow() {
+  abortExistingFlow() {
     if (this.currentTimer) {
       log.debug("Polling aborted; Another user signing in");
       clearTimeout(this.currentTimer);
@@ -769,94 +762,74 @@ FxAccountsInternal.prototype = {
   },
 
   _destroyAllOAuthTokens(tokenInfos) {
+    if (!tokenInfos) {
+      return Promise.resolve();
+    }
     
     let promises = [];
-    for (let tokenInfo of Object.values(tokenInfos || {})) {
+    for (let tokenInfo of Object.values(tokenInfos)) {
       promises.push(this._destroyOAuthToken(tokenInfo));
     }
     return Promise.all(promises);
   },
 
-  signOut: function signOut(localOnly) {
-    let currentState = this.currentAccountState;
+  async signOut(localOnly) {
     let sessionToken;
     let tokensToRevoke;
-    let deviceId;
-    return currentState.getUserAccountData().then(data => {
-      
-      
-      if (data) {
-        sessionToken = data.sessionToken;
-        tokensToRevoke = data.oauthTokens;
-        deviceId = data.deviceId;
-      }
-      return this._signOutLocal();
-    }).then(() => {
-      
-      
-      if (!localOnly) {
-        
-        
-        Promise.resolve().then(() => {
-          
-          
-          
-          if (sessionToken) {
-            return this._signOutServer(sessionToken, deviceId);
-          }
-          log.warn("Missing session token; skipping remote sign out");
-          return null;
-        }).catch(err => {
-          log.error("Error during remote sign out of Firefox Accounts", err);
-        }).then(() => {
-          return this._destroyAllOAuthTokens(tokensToRevoke);
-        }).catch(err => {
-          log.error("Error during destruction of oauth tokens during signout", err);
-        }).then(() => {
-          FxAccountsConfig.resetConfigURLs();
-          
-          return this.notifyObservers("testhelper-fxa-signout-complete");
-        });
-      } else {
-        
-        
-        FxAccountsConfig.resetConfigURLs();
-      }
-    }).then(() => {
-      return this.notifyObservers(ONLOGOUT_NOTIFICATION);
-    });
-  },
-
-  
-
-
-
-  _signOutLocal: function signOutLocal() {
-    let currentAccountState = this.currentAccountState;
-    return currentAccountState.signOut().then(() => {
-      
-      return this.abortExistingFlow();
-    }).then(() => {
-      this.currentAccountState = this.newAccountState();
-      return this.currentAccountState.promiseInitialized;
-    });
-  },
-
-  _signOutServer(sessionToken, deviceId) {
+    const data = await this.currentAccountState.getUserAccountData();
     
-    
-    
-    
-
-    const options = { service: "sync" };
-
-    if (deviceId) {
-      log.debug("destroying device, session and unsubscribing from FxA push");
-      return this.deleteDeviceRegistration(sessionToken, deviceId);
+    if (data) {
+      sessionToken = data.sessionToken;
+      tokensToRevoke = data.oauthTokens;
     }
+    await this._signOutLocal();
+    if (!localOnly) {
+      
+      
+      Services.tm.dispatchToMainThread(async () => {
+        await this._signOutServer(sessionToken, tokensToRevoke);
+        FxAccountsConfig.resetConfigURLs();
+        this.notifyObservers("testhelper-fxa-signout-complete");
+      });
+    } else {
+      
+      
+      FxAccountsConfig.resetConfigURLs();
+    }
+    return this.notifyObservers(ONLOGOUT_NOTIFICATION);
+  },
 
-    log.debug("destroying session");
-    return this.fxAccountsClient.signOut(sessionToken, options);
+  async _signOutLocal() {
+    await this.currentAccountState.signOut();
+    
+    await this.abortExistingFlow();
+    this.currentAccountState = this.newAccountState();
+    return this.currentAccountState.promiseInitialized;
+  },
+
+  async _signOutServer(sessionToken, tokensToRevoke) {
+    log.debug("Unsubscribing from FxA push.");
+    try {
+      await this.fxaPushService.unsubscribe();
+    } catch (err) {
+      log.error("Could not unsubscribe from push.", err);
+    }
+    if (sessionToken) {
+      log.debug("Destroying session and device.");
+      try {
+        await this.fxAccountsClient.signOut(sessionToken, {service: "sync"});
+      } catch (err) {
+        log.error("Error during remote sign out of Firefox Accounts", err);
+      }
+    } else {
+      log.warn("Missing session token; skipping remote sign out");
+    }
+    log.debug("Destroying all OAuth tokens.");
+    try {
+      await this._destroyAllOAuthTokens(tokensToRevoke);
+    } catch (err) {
+      log.error("Error during destruction of oauth tokens during signout", err);
+    }
   },
 
   
@@ -1584,31 +1557,6 @@ FxAccountsInternal.prototype = {
       }
       return null;
     }).catch(error => this._logErrorAndResetDeviceRegistrationVersion(error));
-  },
-
-  
-  
-  async deleteDeviceRegistration(sessionToken, deviceId) {
-    try {
-      
-      if (Services.prefs.getBoolPref("identity.fxaccounts.skipDeviceRegistration")) {
-        return Promise.resolve();
-      }
-    } catch (ignore) {}
-
-    try {
-      await this.fxaPushService.unsubscribe();
-      if (sessionToken && deviceId) {
-        await this.fxAccountsClient.signOutAndDestroyDevice(sessionToken, deviceId);
-      }
-      await this.currentAccountState.updateUserAccountData({
-        deviceId: null,
-        deviceRegistrationVersion: null
-      });
-    } catch (err) {
-      log.error("Could not delete the device registration", err);
-    }
-    return Promise.resolve();
   },
 
   async handleDeviceDisconnection(deviceId) {
