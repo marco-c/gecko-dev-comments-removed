@@ -75,43 +75,30 @@ var ADDONS = [{
   appVersion: "3"
 }];
 
-class MockPlugin {
-  constructor(name, version, enabledState) {
-    this.name = name;
-    this.version = version;
-    this.enabledState = enabledState;
-  }
-  get disabled() {
-    return this.enabledState == Ci.nsIPluginTag.STATE_DISABLED;
-  }
-}
+
+
+
+
+copyBlocklistToProfile(do_get_file("data/bug455906_start.xml"));
 
 var PLUGINS = [
   
-  new MockPlugin("test_bug455906_1", "5", Ci.nsIPluginTag.STATE_DISABLED),
+  new MockPluginTag({name: "test_bug455906_1", version: "5"}, Ci.nsIPluginTag.STATE_DISABLED),
   
-  new MockPlugin("test_bug455906_2", "5", Ci.nsIPluginTag.STATE_ENABLED),
+  new MockPluginTag({name: "test_bug455906_2", version: "5"}, Ci.nsIPluginTag.STATE_ENABLED),
   
-  new MockPlugin("test_bug455906_3", "5", Ci.nsIPluginTag.STATE_ENABLED),
+  new MockPluginTag({name: "test_bug455906_3", version: "5"}, Ci.nsIPluginTag.STATE_ENABLED),
   
-  new MockPlugin("test_bug455906_4", "5", Ci.nsIPluginTag.STATE_DISABLED),
+  new MockPluginTag({name: "test_bug455906_4", version: "5"}, Ci.nsIPluginTag.STATE_DISABLED),
   
-  new MockPlugin("test_bug455906_5", "5", Ci.nsIPluginTag.STATE_ENABLED),
+  new MockPluginTag({name: "test_bug455906_5", version: "5"}, Ci.nsIPluginTag.STATE_ENABLED),
   
-  new MockPlugin("test_bug455906_6", "5", Ci.nsIPluginTag.STATE_ENABLED)
+  new MockPluginTag({name: "test_bug455906_6", version: "5"}, Ci.nsIPluginTag.STATE_ENABLED)
 ];
 
 var gNotificationCheck = null;
 
-
-var PluginHost = {
-  getPluginTags(countRef) {
-    countRef.value = PLUGINS.length;
-    return PLUGINS;
-  },
-
-  QueryInterface: XPCOMUtils.generateQI(["nsIPluginHost"]),
-};
+mockPluginHost(PLUGINS);
 
 
 
@@ -131,7 +118,6 @@ var WindowWatcher = {
   QueryInterface: XPCOMUtils.generateQI(["nsIWindowWatcher"]),
 };
 
-MockRegistrar.register("@mozilla.org/plugin/host;1", PluginHost);
 MockRegistrar.register("@mozilla.org/embedcomp/window-watcher;1", WindowWatcher);
 
 function createAddon(addon) {
@@ -195,10 +181,6 @@ function checkAddonState(addon, state) {
 }
 
 add_task(async function setup() {
-  
-  
-  copyBlocklistToProfile(do_get_file("data/bug455906_start.xml"));
-
   createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "3", "8");
   await promiseStartupManager();
 

@@ -7,15 +7,19 @@ ChromeUtils.import("resource://testing-common/MockRegistrar.jsm");
 
 
 
+class MockPlugin extends MockPluginTag {
+  constructor(opts) {
+    super(opts, opts.enabledState);
+    this.blocklisted = opts.blocklisted;
+  }
+}
+
 var PLUGINS = [{
   name: "Duplicate Plugin 1",
   description: "A duplicate plugin",
   version: "1",
   blocklisted: false,
   enabledState: Ci.nsIPluginTag.STATE_ENABLED,
-  get disabled() {
-    return this.enabledState == Ci.nsIPluginTag.STATE_DISABLED;
-  },
   filename: "/home/mozilla/.plugins/dupplugin1.so"
 }, {
   name: "Duplicate Plugin 1",
@@ -23,9 +27,6 @@ var PLUGINS = [{
   version: "1",
   blocklisted: false,
   enabledState: Ci.nsIPluginTag.STATE_ENABLED,
-  get disabled() {
-    return this.enabledState == Ci.nsIPluginTag.STATE_DISABLED;
-  },
   filename: "/usr/lib/plugins/dupplugin1.so"
 }, {
   name: "Duplicate Plugin 2",
@@ -33,9 +34,6 @@ var PLUGINS = [{
   version: "1",
   blocklisted: false,
   enabledState: Ci.nsIPluginTag.STATE_ENABLED,
-  get disabled() {
-    return this.enabledState == Ci.nsIPluginTag.STATE_DISABLED;
-  },
   filename: "/home/mozilla/.plugins/dupplugin2.so"
 }, {
   name: "Duplicate Plugin 2",
@@ -43,9 +41,6 @@ var PLUGINS = [{
   version: "1",
   blocklisted: false,
   enabledState: Ci.nsIPluginTag.STATE_ENABLED,
-  get disabled() {
-    return this.enabledState == Ci.nsIPluginTag.STATE_DISABLED;
-  },
   filename: "/usr/lib/plugins/dupplugin2.so"
 }, {
   name: "Non-duplicate Plugin", 
@@ -53,9 +48,6 @@ var PLUGINS = [{
   version: "1",
   blocklisted: false,
   enabledState: Ci.nsIPluginTag.STATE_ENABLED,
-  get disabled() {
-    return this.enabledState == Ci.nsIPluginTag.STATE_DISABLED;
-  },
   filename: "/home/mozilla/.plugins/dupplugin3.so"
 }, {
   name: "Non-duplicate Plugin", 
@@ -63,9 +55,6 @@ var PLUGINS = [{
   version: "1",
   blocklisted: false,
   enabledState: Ci.nsIPluginTag.STATE_ENABLED,
-  get disabled() {
-    return this.enabledState == Ci.nsIPluginTag.STATE_DISABLED;
-  },
   filename: "/usr/lib/plugins/dupplugin4.so"
 }, {
   name: "Another Non-duplicate Plugin", 
@@ -73,29 +62,10 @@ var PLUGINS = [{
   version: "1",
   blocklisted: false,
   enabledState: Ci.nsIPluginTag.STATE_ENABLED,
-  get disabled() {
-    return this.enabledState == Ci.nsIPluginTag.STATE_DISABLED;
-  },
   filename: "/home/mozilla/.plugins/dupplugin5.so"
-}];
+}].map(opts => new MockPlugin(opts));
 
-
-var PluginHost = {
-  getPluginTags(countRef) {
-    countRef.value = PLUGINS.length;
-    return PLUGINS;
-  },
-
-  QueryInterface(iid) {
-    if (iid.equals(Ci.nsIPluginHost)
-     || iid.equals(Ci.nsISupports))
-      return this;
-
-    throw Cr.NS_ERROR_NO_INTERFACE;
-  }
-};
-
-MockRegistrar.register("@mozilla.org/plugin/host;1", PluginHost);
+mockPluginHost(PLUGINS);
 
 var gPluginIDs = [null, null, null, null, null];
 
