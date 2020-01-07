@@ -2046,7 +2046,7 @@ bool
 nsNativeThemeWin::GetWidgetPadding(nsDeviceContext* aContext, 
                                    nsIFrame* aFrame,
                                    uint8_t aWidgetType,
-                                   nsIntMargin* aResult)
+                                   LayoutDeviceIntMargin* aResult)
 {
   switch (aWidgetType) {
     
@@ -2830,7 +2830,7 @@ bool
 nsNativeThemeWin::ClassicGetWidgetPadding(nsDeviceContext* aContext,
                                    nsIFrame* aFrame,
                                    uint8_t aWidgetType,
-                                   nsIntMargin* aResult)
+                                   LayoutDeviceIntMargin* aResult)
 {
   switch (aWidgetType) {
     case NS_THEME_MENUITEM:

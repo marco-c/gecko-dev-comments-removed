@@ -118,7 +118,7 @@ HeadlessThemeGTK::GetWidgetBorder(nsDeviceContext* aContext, nsIFrame* aFrame,
 bool
 HeadlessThemeGTK::GetWidgetPadding(nsDeviceContext* aContext,
                                    nsIFrame* aFrame, uint8_t aWidgetType,
-                                   nsIntMargin* aResult)
+                                   LayoutDeviceIntMargin* aResult)
 {
   
   switch (aWidgetType) {
