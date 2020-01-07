@@ -189,6 +189,8 @@ var interfaceNamesInGlobalScope =
 
     "PerformanceResourceTiming",
 
+    "PerformanceServerTiming",
+
     "ProgressEvent",
 
     "PushEvent",

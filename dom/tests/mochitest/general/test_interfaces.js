@@ -769,6 +769,8 @@ var interfaceNamesInGlobalScope =
 
     {name: "PerformanceResourceTiming", insecureContext: true},
 
+    {name: "PerformanceServerTiming", insecureContext: false},
+
     {name: "PerformanceTiming", insecureContext: true},
 
     {name: "PeriodicWave", insecureContext: true},

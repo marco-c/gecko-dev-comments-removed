@@ -189,6 +189,8 @@ var interfaceNamesInGlobalScope =
 
     {name: "PerformanceResourceTiming", insecureContext: true},
 
+    {name: "PerformanceServerTiming", insecureContext: false},
+
     {name: "ProgressEvent", insecureContext: true},
 
     {name: "PushManager", insecureContext: true},
