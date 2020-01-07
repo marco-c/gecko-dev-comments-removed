@@ -914,10 +914,10 @@ public:
 
 
 
-  virtual nsresult SetAttr(int32_t aNameSpaceID, nsAtom* aName,
-                           nsAtom* aPrefix, const nsAString& aValue,
-                           nsIPrincipal* aMaybeScriptedPrincipal,
-                           bool aNotify);
+  nsresult SetAttr(int32_t aNameSpaceID, nsAtom* aName,
+                   nsAtom* aPrefix, const nsAString& aValue,
+                   nsIPrincipal* aMaybeScriptedPrincipal,
+                   bool aNotify);
 
   
 
