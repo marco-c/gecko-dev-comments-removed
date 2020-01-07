@@ -9,7 +9,7 @@
 #include "mozilla/Unused.h"
 #include "nsIContentViewer.h"
 #include "nsIServiceManager.h"
-#include "nsPrintEngine.h"
+#include "nsPrintJob.h"
 
 using namespace mozilla;
 
@@ -79,13 +79,13 @@ nsPagePrintTimer::Run()
 
   
   
-  donePrinting = !mPrintEngine || mPrintEngine->PrintPage(mPrintObj, inRange);
+  donePrinting = !mPrintJob || mPrintJob->PrintPage(mPrintObj, inRange);
   if (donePrinting) {
 
     if (mWaitingForRemotePrint ||
         
         
-        (!mPrintEngine || mPrintEngine->DonePrintingPages(mPrintObj, NS_OK))) {
+        (!mPrintJob || mPrintJob->DonePrintingPages(mPrintObj, NS_OK))) {
       initNewTimer = false;
       mDone = true;
     }
@@ -100,8 +100,8 @@ nsPagePrintTimer::Run()
     nsresult result = StartTimer(inRange);
     if (NS_FAILED(result)) {
       mDone = true;     
-      if (mPrintEngine) {
-        mPrintEngine->SetIsPrinting(false);
+      if (mPrintJob) {
+        mPrintJob->SetIsPrinting(false);
       }
     }
   }
@@ -149,8 +149,8 @@ nsPagePrintTimer::Notify(nsITimer *timer)
   if (mDocViewerPrint) {
     bool donePrePrint = true;
     
-    if (mPrintEngine && !mWaitingForRemotePrint) {
-      donePrePrint = mPrintEngine->PrePrintPage();
+    if (mPrintJob && !mWaitingForRemotePrint) {
+      donePrePrint = mPrintJob->PrePrintPage();
     }
 
     if (donePrePrint && !mWaitingForRemotePrint) {
@@ -185,8 +185,8 @@ nsPagePrintTimer::RemotePrintFinished()
   }
 
   
-  if (mDone && mPrintEngine) {
-    mDone = mPrintEngine->DonePrintingPages(mPrintObj, NS_OK);
+  if (mDone && mPrintJob) {
+    mDone = mPrintJob->DonePrintingPages(mPrintObj, NS_OK);
   }
 
   mWaitingForRemotePrint->SetTarget(
@@ -221,7 +221,7 @@ nsPagePrintTimer::Fail()
 
   mDone = true;
   Stop();
-  if (mPrintEngine) {
-    mPrintEngine->CleanupOnFailure(NS_OK, false);
+  if (mPrintJob) {
+    mPrintJob->CleanupOnFailure(NS_OK, false);
   }
 }

@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsPrintEngine_h___
-#define nsPrintEngine_h___
+#ifndef nsPrintJob_h
+#define nsPrintJob_h
 
 #include "mozilla/Attributes.h"
 #include "mozilla/UniquePtr.h"
@@ -36,9 +36,9 @@ class nsIPageSequenceFrame;
 
 
 
-class nsPrintEngine final : public nsIObserver,
-                            public nsIWebProgressListener,
-                            public nsSupportsWeakReference
+class nsPrintJob final : public nsIObserver
+                       , public nsIWebProgressListener
+                       , public nsSupportsWeakReference
 {
 public:
   
@@ -74,7 +74,7 @@ public:
     eDocTitleDefURLDoc
   };
 
-  nsPrintEngine();
+  nsPrintJob();
 
   void Destroy();
   void DestroyPrintingData();
@@ -158,9 +158,6 @@ public:
   
   already_AddRefed<nsPIDOMWindowOuter> FindFocusedDOMWindow();
 
-  
-  
-  
   static void GetDocumentTitleAndURL(nsIDocument* aDoc,
                                      nsAString&   aTitle,
                                      nsAString&   aURLStr);
@@ -206,8 +203,10 @@ public:
     mDisallowSelectionPrint = aDisallowSelectionPrint;
   }
 
-protected:
-  ~nsPrintEngine();
+private:
+  nsPrintJob& operator=(const nsPrintJob& aOther) = delete;
+
+  ~nsPrintJob();
 
   nsresult CommonPrint(bool aIsPrintPreview, nsIPrintSettings* aPrintSettings,
                        nsIWebProgressListener* aWebProgressListener,
@@ -232,10 +231,27 @@ protected:
 
   void DisconnectPagePrintTimer();
 
-  
+  nsresult AfterNetworkPrint(bool aHandleError);
+
+  nsresult SetRootView(nsPrintObject* aPO,
+                       bool& aDoReturn,
+                       bool& aDocumentIsTopLevel,
+                       nsSize& aAdjSize);
+  nsView* GetParentViewForRoot();
+  bool DoSetPixelScale();
+  void UpdateZoomRatio(nsPrintObject* aPO, bool aSetPixelScale);
+  nsresult ReconstructAndReflow(bool aDoSetPixelScale);
+  nsresult UpdateSelectionAndShrinkPrintObject(nsPrintObject* aPO,
+                                               bool aDocumentIsTopLevel);
+  nsresult InitPrintDocConstruction(bool aHandleError);
+  void FirePrintPreviewUpdateEvent();
+
+  void PageDone(nsresult aResult);
+
+
   bool mIsCreatingPrintPreview;
   bool mIsDoingPrinting;
-  bool mIsDoingPrintPreview; 
+  bool mIsDoingPrintPreview;
   bool mProgressDialogIsShown;
 
   nsCOMPtr<nsIDocumentViewerPrint> mDocViewerPrint;
@@ -262,24 +278,7 @@ protected:
   bool mDidLoadDataForPrinting;
   bool mIsDestroying;
   bool mDisallowSelectionPrint;
-
-  nsresult AfterNetworkPrint(bool aHandleError);
-
-  nsresult SetRootView(nsPrintObject* aPO,
-                       bool& aDoReturn,
-                       bool& aDocumentIsTopLevel,
-                       nsSize& aAdjSize);
-  nsView* GetParentViewForRoot();
-  bool DoSetPixelScale();
-  void UpdateZoomRatio(nsPrintObject* aPO, bool aSetPixelScale);
-  nsresult ReconstructAndReflow(bool aDoSetPixelScale);
-  nsresult UpdateSelectionAndShrinkPrintObject(nsPrintObject* aPO,
-                                               bool aDocumentIsTopLevel);
-  nsresult InitPrintDocConstruction(bool aHandleError);
-  void FirePrintPreviewUpdateEvent();
-private:
-  nsPrintEngine& operator=(const nsPrintEngine& aOther) = delete;
-  void PageDone(nsresult aResult);
 };
 
 #endif 
+
