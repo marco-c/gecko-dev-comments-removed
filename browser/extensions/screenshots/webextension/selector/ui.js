@@ -20,7 +20,7 @@ this.ui = (function() {
       el = el.parentNode;
     }
     return false;
-  }
+  };
 
   const substitutedCss = inlineSelectionCss.replace(/MOZ_EXTENSION([^"]+)/g, (match, filename) => {
     return browser.extension.getURL(filename);
@@ -81,7 +81,7 @@ this.ui = (function() {
 
   const isDownloadOnly = exports.isDownloadOnly = function() {
     return window.downloadOnly;
-  }
+  };
 
   
   
@@ -278,7 +278,7 @@ this.ui = (function() {
           this.element.style.height = "100%";
           this.element.addEventListener("load", watchFunction(() => {
             this.document = this.element.contentDocument;
-            assertIsBlankDocument(this.document)
+            assertIsBlankDocument(this.document);
             
             this.document.documentElement.innerHTML = `
                <head>
@@ -286,7 +286,7 @@ this.ui = (function() {
                 <title></title>
                </head>
                <body>
-                 <div class="preview-overlay">
+                 <div class="preview-overlay precision-cursor">
                    <div class="fixed-container">
                      <div class="face-container">
                        <div class="eye left"><div class="eyeball"></div></div>
@@ -665,7 +665,7 @@ this.ui = (function() {
           clearTimeout(timer);
         }
         timer = setTimeout(cb, delay);
-      }
+      };
     },
 
     remove() {

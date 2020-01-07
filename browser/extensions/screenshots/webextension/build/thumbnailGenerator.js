@@ -6,7 +6,7 @@ this.thumbnailGenerator = (function () {let exports={};
 
 
 
-const maxResizeScaleFactor = 0.5
+const maxResizeScaleFactor = 0.5;
 
 
 
@@ -49,7 +49,7 @@ function getThumbnailDimensions(imageWidth, imageHeight) {
     height: thumbnailImageHeight,
     scaledX,
     scaledY
-  }
+  };
 }
 
 
@@ -108,7 +108,7 @@ function createThumbnail(dataUrl, imageWidth, imageHeight, urlOrBlob) {
             resolve(blob);
           });
         } else {
-          resolve(thumbnailCanvas.toDataURL("image/png"))
+          resolve(thumbnailCanvas.toDataURL("image/png"));
         }
         return;
       }
@@ -116,7 +116,7 @@ function createThumbnail(dataUrl, imageWidth, imageHeight, urlOrBlob) {
       srcWidth = destWidth;
       srcHeight = destHeight;
       thumbnailImage.src = thumbnailCanvas.toDataURL();
-    }
+    };
     thumbnailImage.src = dataUrl;
   });
 }
