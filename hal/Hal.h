@@ -265,26 +265,6 @@ void UnlockScreenOrientation();
 
 
 
-
-
-void RegisterSwitchObserver(hal::SwitchDevice aDevice, hal::SwitchObserver *aSwitchObserver);
-
-
-
-
-void UnregisterSwitchObserver(hal::SwitchDevice aDevice, hal::SwitchObserver *aSwitchObserver);
-
-
-
-
-
-
-void NotifySwitchChange(const hal::SwitchEvent& aEvent);
-
-
-
-
-
 bool SetProcessPrioritySupported();
 
 

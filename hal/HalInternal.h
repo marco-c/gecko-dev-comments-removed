@@ -57,16 +57,6 @@ void DisableScreenConfigurationNotifications();
 
 
 
-void EnableSwitchNotifications(hal::SwitchDevice aDevice);
-
-
-
-
-void DisableSwitchNotifications(hal::SwitchDevice aDevice);
-
-
-
-
 
 bool HalChildDestroyed();
 } 
