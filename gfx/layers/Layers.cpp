@@ -43,7 +43,6 @@
 #include "nsCSSValue.h"                 
 #include "nsDisplayList.h"              
 #include "nsPrintfCString.h"            
-#include "nsStyleStruct.h"              
 #include "protobuf/LayerScopePacket.pb.h"
 #include "mozilla/Compression.h"
 #include "TreeTraversal.h"              

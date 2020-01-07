@@ -72,7 +72,7 @@
 #include "nsMathUtils.h"                
 #include "nsPoint.h"                    
 #include "nsStyleConsts.h"
-#include "nsStyleStruct.h"              
+#include "nsTimingFunction.h"
 #include "nsTArray.h"                   
 #include "nsThreadUtils.h"              
 #include "nsViewportInfo.h"             
