@@ -13,7 +13,6 @@ module.exports = {
     
     "no-nested-ternary": "off",
     "no-redeclare": "off",
-    "no-shadow": "off",
     "no-undef": "off",
   }
 };
