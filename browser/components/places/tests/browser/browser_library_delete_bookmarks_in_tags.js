@@ -45,7 +45,7 @@ add_task(async function test_tags() {
   
   let PO = library.PlacesOrganizer;
 
-  PO.selectLeftPaneBuiltIn("Tags");
+  PO.selectLeftPaneQuery("Tags");
   let tagsNode = PO._places.selectedNode;
   Assert.notEqual(tagsNode, null, "Should have a valid selection");
   let tagsTitle = PlacesUtils.getString("TagsFolderTitle");

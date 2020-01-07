@@ -46,7 +46,7 @@ add_task(async function() {
   await PlacesOrganizer._places.controller.paste();
 
   
-  PlacesOrganizer.selectLeftPaneBuiltIn("History");
+  PlacesOrganizer.selectLeftPaneQuery("History");
   let histContainer = PlacesOrganizer._places.selectedNode;
   PlacesUtils.asContainer(histContainer);
   histContainer.containerOpen = true;
@@ -67,7 +67,7 @@ add_task(async function() {
 
   
   
-  PlacesOrganizer.selectLeftPaneBuiltIn("UnfiledBookmarks");
+  PlacesOrganizer.selectLeftPaneQuery("UnfiledBookmarks");
 
   
   let unsortedNode = ContentTree.view.view.nodeForTreeIndex(1);
@@ -87,7 +87,7 @@ add_task(async function() {
 });
 
 function focusTag(PlacesOrganizer) {
-  PlacesOrganizer.selectLeftPaneBuiltIn("Tags");
+  PlacesOrganizer.selectLeftPaneQuery("Tags");
   let tags = PlacesOrganizer._places.selectedNode;
   tags.containerOpen = true;
   let fooTag = tags.getChild(0);
@@ -100,7 +100,7 @@ function focusTag(PlacesOrganizer) {
 
 function copyHistNode(PlacesOrganizer, ContentTree) {
   
-  PlacesOrganizer.selectLeftPaneBuiltIn("History");
+  PlacesOrganizer.selectLeftPaneQuery("History");
   let histContainer = PlacesOrganizer._places.selectedNode;
   PlacesUtils.asContainer(histContainer);
   histContainer.containerOpen = true;

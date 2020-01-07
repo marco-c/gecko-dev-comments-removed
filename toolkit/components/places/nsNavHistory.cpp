@@ -832,12 +832,8 @@ nsNavHistory::GetUpdateRequirements(const nsCOMArray<nsNavHistoryQuery>& aQuerie
   }
 
   if (aOptions->ResultType() ==
-        nsINavHistoryQueryOptions::RESULTS_AS_TAG_QUERY)
-      return QUERYUPDATE_COMPLEX_WITH_BOOKMARKS;
-
-  if (aOptions->ResultType() ==
-        nsINavHistoryQueryOptions::RESULTS_AS_ROOTS_QUERY)
-      return QUERYUPDATE_MOBILEPREF;
+      nsINavHistoryQueryOptions::RESULTS_AS_TAG_QUERY)
+    return QUERYUPDATE_COMPLEX_WITH_BOOKMARKS;
 
   
   
@@ -1394,8 +1390,7 @@ bool NeedToFilterResultSet(const nsCOMArray<nsNavHistoryQuery>& aQueries,
                              nsNavHistoryQueryOptions *aOptions)
 {
   uint16_t resultType = aOptions->ResultType();
-  return resultType == nsINavHistoryQueryOptions::RESULTS_AS_TAG_CONTENTS ||
-         aOptions->ExcludeQueries();
+  return resultType == nsINavHistoryQueryOptions::RESULTS_AS_TAG_CONTENTS;
 }
 
 
@@ -1419,7 +1414,6 @@ private:
   nsresult SelectAsDay();
   nsresult SelectAsSite();
   nsresult SelectAsTag();
-  nsresult SelectAsRoots();
 
   nsresult Where();
   nsresult GroupBy();
@@ -1518,11 +1512,6 @@ PlacesSQLQueryBuilder::Select()
 
     case nsINavHistoryQueryOptions::RESULTS_AS_TAG_QUERY:
       rv = SelectAsTag();
-      NS_ENSURE_SUCCESS(rv, rv);
-      break;
-
-    case nsINavHistoryQueryOptions::RESULTS_AS_ROOTS_QUERY:
-      rv = SelectAsRoots();
       NS_ENSURE_SUCCESS(rv, rv);
       break;
 
@@ -1931,49 +1920,6 @@ PlacesSQLQueryBuilder::SelectAsTag()
     history->GetTagsFolder()
   );
 
-  return NS_OK;
-}
-
-nsresult
-PlacesSQLQueryBuilder::SelectAsRoots()
-{
-  nsNavHistory *history = nsNavHistory::GetHistoryService();
-  NS_ENSURE_STATE(history);
-
-  nsAutoCString toolbarTitle;
-  nsAutoCString menuTitle;
-  nsAutoCString unfiledTitle;
-
-  history->GetStringFromName("BookmarksToolbarFolderTitle", toolbarTitle);
-  history->GetStringFromName("BookmarksMenuFolderTitle", menuTitle);
-  history->GetStringFromName("OtherBookmarksFolderTitle", unfiledTitle);
-
-  nsAutoCString mobileString;
-
-  if (Preferences::GetBool(MOBILE_BOOKMARKS_PREF, false)) {
-    nsAutoCString mobileTitle;
-    history->GetStringFromName("MobileBookmarksFolderTitle", mobileTitle);
-
-    mobileString = nsPrintfCString(","
-      "(null, 'place:folder=MOBILE_BOOKMARKS', '%s', null, null, null, "
-       "null, null, 0, 0, null, null, null, null, '" MOBILE_BOOKMARKS_VIRTUAL_GUID "', null) ",
-      mobileTitle.get());
-  }
-
-  mQueryString = nsPrintfCString(
-    "SELECT * FROM ("
-        "VALUES(null, 'place:folder=TOOLBAR', '%s', null, null, null, "
-               "null, null, 0, 0, null, null, null, null, 'toolbar____v', null), "
-              "(null, 'place:folder=BOOKMARKS_MENU', '%s', null, null, null, "
-               "null, null, 0, 0, null, null, null, null, 'menu_______v', null), "
-              "(null, 'place:folder=UNFILED_BOOKMARKS', '%s', null, null, null, "
-               "null, null, 0, 0, null, null, null, null, 'unfiled___v', null) "
-              " %s "
-    ")",
-    toolbarTitle.get(),
-    menuTitle.get(),
-    unfiledTitle.get(),
-    mobileString.get());
   return NS_OK;
 }
 
@@ -3211,9 +3157,7 @@ nsNavHistory::QueryToSelectClause(nsNavHistoryQuery* aQuery,
                                   nsCString* aClause)
 {
   bool hasIt;
-  
-  
-  bool excludeQueries = false;
+  bool excludeQueries = aOptions->ExcludeQueries();
 
   ConditionBuilder clause(aQueryIndex);
 
@@ -3612,28 +3556,24 @@ nsNavHistory::FilterResultSet(nsNavHistoryQueryResultNode* aQueryNode,
   ParseSearchTermsFromQueries(aQueries, &terms);
 
   uint16_t resultType = aOptions->ResultType();
-  bool excludeQueries = aOptions->ExcludeQueries();
   for (int32_t nodeIndex = 0; nodeIndex < aSet.Count(); nodeIndex++) {
-    if (excludeQueries && aSet[nodeIndex]->IsQuery()) {
+    
+    
+    if (!aSet[nodeIndex]->IsURI())
       continue;
-    }
 
     
     
     
     if (resultType == nsINavHistoryQueryOptions::RESULTS_AS_TAG_CONTENTS &&
-        (!aSet[nodeIndex]->IsURI() ||
-         (nodeIndex > 0 && aSet[nodeIndex]->mURI == aSet[nodeIndex-1]->mURI))) {
+        nodeIndex > 0 && aSet[nodeIndex]->mURI == aSet[nodeIndex-1]->mURI)
       continue;
-    }
 
     if (aSet[nodeIndex]->mItemId != -1 && aQueryNode &&
         aQueryNode->mItemId == aSet[nodeIndex]->mItemId) {
       continue;
     }
 
-    
-    
     
     bool appendNode = false;
     for (int32_t queryIndex = 0;
@@ -3844,11 +3784,6 @@ nsNavHistory::RowToResult(mozIStorageValueArray* aRow,
       NS_ENSURE_SUCCESS(rv, rv);
     }
 
-    if (aOptions->ResultType() == nsNavHistoryQueryOptions::RESULTS_AS_ROOTS_QUERY) {
-      rv = aRow->GetUTF8String(kGetInfoIndex_Guid, guid);
-      NS_ENSURE_SUCCESS(rv, rv);
-    }
-
     RefPtr<nsNavHistoryResultNode> resultNode;
     rv = QueryRowToResult(itemId, guid, url, title, accessCount, time,
                           getter_AddRefs(resultNode));
@@ -3949,11 +3884,8 @@ nsNavHistory::QueryRowToResult(int64_t itemId,
                                PRTime aTime,
                                nsNavHistoryResultNode** aNode)
 {
-  
-  
-  if (itemId != -1) {
-    MOZ_ASSERT(!aBookmarkGuid.IsEmpty());
-  }
+  MOZ_ASSERT((itemId != -1 && !aBookmarkGuid.IsEmpty()) ||
+             (itemId == -1 && aBookmarkGuid.IsEmpty()));
 
   nsCOMArray<nsNavHistoryQuery> queries;
   nsCOMPtr<nsNavHistoryQueryOptions> options;

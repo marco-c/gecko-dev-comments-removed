@@ -135,42 +135,22 @@ var Bookmarks = Object.freeze({
 
 
 
-  rootGuid:    "root________",
-  menuGuid:    "menu________",
-  toolbarGuid: "toolbar_____",
-  unfiledGuid: "unfiled_____",
-  mobileGuid:  "mobile______",
 
-  
-  
-  tagsGuid:    "tags________",
+   rootGuid:    "root________",
+   menuGuid:    "menu________",
+   toolbarGuid: "toolbar_____",
+   unfiledGuid: "unfiled_____",
+   mobileGuid:  "mobile______",
 
-  
+   
+   
+   tagsGuid:    "tags________",
 
-
-
-  userContentRoots: ["toolbar_____", "menu________", "unfiled_____", "mobile______"],
-
-  
+   
 
 
 
-  virtualMenuGuid: "menu_______v",
-  virtualToolbarGuid: "toolbar____v",
-  virtualUnfiledGuid: "unfiled___v",
-  virtualMobileGuid: "mobile____v",
-
-  
-
-
-
-
-
-  isVirtualRootItem(guid) {
-    return guid == PlacesUtils.bookmarks.virtualMenuGuid ||
-           guid == PlacesUtils.bookmarks.virtualToolbarGuid ||
-           guid == PlacesUtils.bookmarks.virtualUnfiledGuid;
-  },
+   userContentRoots: ["toolbar_____", "menu________", "unfiled_____", "mobile______"],
 
   
 

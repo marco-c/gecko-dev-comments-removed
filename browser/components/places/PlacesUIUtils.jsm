@@ -205,7 +205,7 @@ let InternalFaviconLoader = {
 };
 
 this.PlacesUIUtils = {
-  ORGANIZER_LEFTPANE_VERSION: 8,
+  ORGANIZER_LEFTPANE_VERSION: 7,
   ORGANIZER_FOLDER_ANNO: "PlacesOrganizer/OrganizerFolder",
   ORGANIZER_QUERY_ANNO: "PlacesOrganizer/OrganizerQuery",
 
@@ -514,16 +514,6 @@ this.PlacesUIUtils = {
     }
 
     
-    if (PlacesUtils.nodeIsQuery(parentNode) && PlacesUtils.nodeIsFolder(aNode)) {
-      let guid = PlacesUtils.getConcreteItemGuid(aNode);
-      
-      
-      if (PlacesUtils.isRootItem(guid)) {
-        return false;
-      }
-    }
-
-    
     
     if (aNode.itemId == -1) {
       
@@ -587,7 +577,8 @@ this.PlacesUIUtils = {
     if (typeof Object.getOwnPropertyDescriptor(this, "leftPaneFolderId").get == "function") {
       return false;
     }
-    return itemId == this.leftPaneFolderId;
+    return itemId == this.leftPaneFolderId ||
+           itemId == this.allBookmarksFolderId;
   },
 
   
@@ -848,6 +839,7 @@ this.PlacesUIUtils = {
   
   maybeRebuildLeftPane() {
     let leftPaneRoot = -1;
+    let allBookmarksId;
 
     
     let bs = PlacesUtils.bookmarks;
@@ -860,9 +852,21 @@ this.PlacesUIUtils = {
       "Downloads": { title: this.getString("OrganizerQueryDownloads") },
       "Tags": { title: this.getString("OrganizerQueryTags") },
       "AllBookmarks": { title: this.getString("OrganizerQueryAllBookmarks") },
+      "BookmarksToolbar":
+        { title: "",
+          concreteTitle: PlacesUtils.getString("BookmarksToolbarFolderTitle"),
+          concreteId: PlacesUtils.toolbarFolderId },
+      "BookmarksMenu":
+        { title: "",
+          concreteTitle: PlacesUtils.getString("BookmarksMenuFolderTitle"),
+          concreteId: PlacesUtils.bookmarksMenuFolderId },
+      "UnfiledBookmarks":
+        { title: "",
+          concreteTitle: PlacesUtils.getString("OtherBookmarksFolderTitle"),
+          concreteId: PlacesUtils.unfiledBookmarksFolderId },
     };
     
-    const EXPECTED_QUERY_COUNT = 4;
+    const EXPECTED_QUERY_COUNT = 7;
 
     
     function safeRemoveItem(aItemId) {
@@ -1049,14 +1053,34 @@ this.PlacesUIUtils = {
                           Ci.nsINavHistoryQueryOptions.SORT_BY_TITLE_ASCENDING);
 
         
-        this.create_query("AllBookmarks", leftPaneRoot,
-                          "place:type=" +
-                          Ci.nsINavHistoryQueryOptions.RESULTS_AS_ROOTS_QUERY);
+        allBookmarksId = this.create_folder("AllBookmarks", leftPaneRoot, false);
+
+        
+        this.create_query("BookmarksToolbar", allBookmarksId,
+                          "place:folder=TOOLBAR");
+
+        
+        this.create_query("BookmarksMenu", allBookmarksId,
+                          "place:folder=BOOKMARKS_MENU");
+
+        
+        this.create_query("UnfiledBookmarks", allBookmarksId,
+                          "place:folder=UNFILED_BOOKMARKS");
       }
     };
     bs.runInBatchMode(callback, null);
 
     return leftPaneRoot;
+  },
+
+  
+
+
+  get allBookmarksFolderId() {
+    
+    this.leftPaneFolderId;
+    delete this.allBookmarksFolderId;
+    return this.allBookmarksFolderId = this.leftPaneQueries.AllBookmarks;
   },
 
   

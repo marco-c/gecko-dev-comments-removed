@@ -137,7 +137,6 @@ PlacesTreeView.prototype = {
       case Ci.nsINavHistoryQueryOptions.RESULTS_AS_SITE_QUERY:
       case Ci.nsINavHistoryQueryOptions.RESULTS_AS_DATE_SITE_QUERY:
       case Ci.nsINavHistoryQueryOptions.RESULTS_AS_TAG_QUERY:
-      case Ci.nsINavHistoryQueryOptions.RESULTS_AS_ROOTS_QUERY:
         return false;
     }
 
@@ -196,9 +195,8 @@ PlacesTreeView.prototype = {
     let parent = aNode.parent;
     let parentIsPlain = this._isPlainContainer(parent);
     if (!parentIsPlain) {
-      if (parent == this._rootNode) {
+      if (parent == this._rootNode)
         return this._rows.indexOf(aNode);
-      }
 
       return this._rows.indexOf(aNode, aParentRow);
     }
@@ -1278,35 +1276,21 @@ PlacesTreeView.prototype = {
             properties += " hostContainer";
         } else if (nodeType == Ci.nsINavHistoryResultNode.RESULT_TYPE_FOLDER ||
                  nodeType == Ci.nsINavHistoryResultNode.RESULT_TYPE_FOLDER_SHORTCUT) {
-          if (itemId != -1) {
-            if (this._controller.hasCachedLivemarkInfo(node)) {
-              properties += " livemark";
-            } else {
-              PlacesUtils.livemarks.getLivemark({ id: itemId })
-                .then(aLivemark => {
-                  this._controller.cacheLivemarkInfo(node, aLivemark);
-                  let livemarkProps = this._cellProperties.get(node);
-                  this._cellProperties.set(node, livemarkProps += " livemark");
-                  
-                  this._invalidateCellValue(node, this.COLUMN_TYPE_TITLE);
-                }, () => undefined);
-            }
+          if (this._controller.hasCachedLivemarkInfo(node)) {
+            properties += " livemark";
+          } else {
+            PlacesUtils.livemarks.getLivemark({ id: node.itemId })
+              .then(aLivemark => {
+                this._controller.cacheLivemarkInfo(node, aLivemark);
+                let livemarkProps = this._cellProperties.get(node);
+                this._cellProperties.set(node, livemarkProps += " livemark");
+                
+                this._invalidateCellValue(node, this.COLUMN_TYPE_TITLE);
+              }, () => undefined);
           }
         }
 
-        if (itemId == -1) {
-          switch (node.bookmarkGuid) {
-          case PlacesUtils.bookmarks.virtualToolbarGuid:
-            properties += ` queryFolder_${PlacesUtils.bookmarks.toolbarGuid}`;
-            break;
-          case PlacesUtils.bookmarks.virtualMenuGuid:
-            properties += ` queryFolder_${PlacesUtils.bookmarks.menuGuid}`;
-            break;
-          case PlacesUtils.bookmarks.virtualUnfiledGuid:
-            properties += ` queryFolder_${PlacesUtils.bookmarks.unfiledGuid}`;
-            break;
-          }
-        } else {
+        if (itemId != -1) {
           let queryName = PlacesUIUtils.getLeftPaneQueryNameFromId(itemId);
           if (queryName)
             properties += " OrganizerQuery_" + queryName;
@@ -1780,12 +1764,12 @@ PlacesTreeView.prototype = {
     
     
     
-    if (PlacesUtils.nodeIsSeparator(node) || PlacesUtils.isRootItem(itemGuid) ||
-        PlacesUtils.isQueryGeneratedFolder(itemGuid))
+    if (PlacesUtils.nodeIsSeparator(node) || PlacesUtils.isRootItem(itemGuid))
       return false;
 
     let parentId = PlacesUtils.getConcreteItemId(node.parent);
-    if (parentId == PlacesUIUtils.leftPaneFolderId) {
+    if (parentId == PlacesUIUtils.leftPaneFolderId ||
+        parentId == PlacesUIUtils.allBookmarksFolderId) {
       
       
       

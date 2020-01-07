@@ -18,31 +18,37 @@
 
 const TEST_URI = "http://www.mozilla.org/";
 
-add_task(async function test_no_leak_closing_library_with_history_selected() {
-  
-  await PlacesTestUtils.addVisits(TEST_URI);
+function test() {
+  function onLibraryReady(organizer) {
+    let contentTree = organizer.document.getElementById("placeContent");
+    isnot(contentTree, null, "Sanity check: placeContent tree should exist");
+    isnot(organizer.PlacesOrganizer, null, "Sanity check: PlacesOrganizer should exist");
+    isnot(organizer.gEditItemOverlay, null, "Sanity check: gEditItemOverlay should exist");
 
-  let organizer = await promiseLibrary();
+    ok(organizer.gEditItemOverlay.initialized, "gEditItemOverlay is initialized");
+    isnot(organizer.gEditItemOverlay.itemId, -1, "Editing a bookmark");
 
-  let contentTree = organizer.document.getElementById("placeContent");
-  Assert.notEqual(contentTree, null, "Sanity check: placeContent tree should exist");
-  Assert.notEqual(organizer.PlacesOrganizer, null, "Sanity check: PlacesOrganizer should exist");
-  Assert.notEqual(organizer.gEditItemOverlay, null, "Sanity check: gEditItemOverlay should exist");
+    
+    organizer.PlacesOrganizer.selectLeftPaneQuery("History");
+    
+    let selection = contentTree.view.selection;
+    selection.clearSelection();
+    selection.rangedSelect(0, 0, true);
+    
+    is(organizer.gEditItemOverlay.itemId, -1, "Editing an history entry");
+    
+    organizer.close();
+    
+    PlacesTestUtils.clearHistory().then(finish);
+  }
 
-  Assert.ok(organizer.gEditItemOverlay.initialized, "gEditItemOverlay is initialized");
-  Assert.notEqual(organizer.gEditItemOverlay._paneInfo.itemGuid, "", "Editing a bookmark");
-
+  waitForExplicitFinish();
   
-  organizer.PlacesOrganizer.selectLeftPaneBuiltIn("History");
-  
-  let selection = contentTree.view.selection;
-  selection.clearSelection();
-  selection.rangedSelect(0, 0, true);
-  
-  Assert.equal(organizer.gEditItemOverlay._paneInfo.itemGuid, "", "Editing an history entry");
-  
-  organizer.close();
-
-  
-  await PlacesUtils.history.clear();
-});
+  ok(PlacesUtils, "checking PlacesUtils, running in chrome context?");
+  PlacesTestUtils.addVisits(
+    {uri: Services.io.newURI(TEST_URI), visitDate: Date.now() * 1000,
+      transition: PlacesUtils.history.TRANSITION_TYPED}
+    ).then(() => {
+      openLibrary(onLibraryReady);
+    });
+}

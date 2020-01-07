@@ -41,47 +41,12 @@ var PlacesOrganizer = {
     this._places.place = "place:excludeItems=1&expandQueries=0&folder=" + leftPaneRoot;
   },
 
-  
-
-
-
-
-
-
-  selectLeftPaneBuiltIn(item) {
-    switch (item) {
-      case "AllBookmarks":
-      case "History":
-      case "Downloads":
-      case "Tags": {
-        var itemId = PlacesUIUtils.leftPaneQueries[item];
-        this._places.selectItems([itemId]);
-        
-        if (item == "AllBookmarks" || item == "History")
-          PlacesUtils.asContainer(this._places.selectedNode).containerOpen = true;
-        break;
-      }
-      case "BookmarksMenu":
-        this.selectLeftPaneContainerByHierarchy([
-          PlacesUIUtils.leftPaneQueries.AllBookmarks,
-          PlacesUtils.bookmarks.virtualMenuGuid
-        ]);
-        break;
-      case "BookmarksToolbar":
-        this.selectLeftPaneContainerByHierarchy([
-          PlacesUIUtils.leftPaneQueries.AllBookmarks,
-          PlacesUtils.bookmarks.virtualToolbarGuid
-        ]);
-        break;
-      case "UnfiledBookmarks":
-        this.selectLeftPaneContainerByHierarchy([
-          PlacesUIUtils.leftPaneQueries.AllBookmarks,
-          PlacesUtils.bookmarks.virtualUnfiledGuid
-        ]);
-        break;
-      default:
-        throw new Error(`Unrecognized item ${item} passed to selectLeftPaneRootItem`);
-    }
+  selectLeftPaneQuery: function PO_selectLeftPaneQuery(aQueryName) {
+    var itemId = PlacesUIUtils.leftPaneQueries[aQueryName];
+    this._places.selectItems([itemId]);
+    
+    if (aQueryName == "AllBookmarks" || aQueryName == "History")
+      PlacesUtils.asContainer(this._places.selectedNode).containerOpen = true;
   },
 
   
@@ -94,10 +59,10 @@ var PlacesOrganizer = {
 
 
 
-
-  selectLeftPaneContainerByHierarchy(aHierarchy) {
+  selectLeftPaneContainerByHierarchy:
+  function PO_selectLeftPaneContainerByHierarchy(aHierarchy) {
     if (!aHierarchy)
-      throw new Error("Containers hierarchy not specified");
+      throw new Error("Invalid containers hierarchy");
     let hierarchy = [].concat(aHierarchy);
     let selectWasSuppressed = this._places.view.selection.selectEventsSuppressed;
     if (!selectWasSuppressed)
@@ -109,16 +74,12 @@ var PlacesOrganizer = {
             this._places.selectItems([container], false);
             break;
           case "string":
-            try {
-              this.selectLeftPaneBuiltIn(container);
-            } catch (ex) {
-              if (container.substr(0, 6) == "place:") {
-                this._places.selectPlaceURI(container);
-              } else {
-                
-                this._places.selectItems([container], false);
-              }
-            }
+            if (container.substr(0, 6) == "place:")
+              this._places.selectPlaceURI(container);
+            else if (container in PlacesUIUtils.leftPaneQueries)
+              this.selectLeftPaneQuery(container);
+            else
+              throw new Error("Invalid container found: " + container);
             break;
           default:
             throw new Error("Invalid container type found: " + container);
