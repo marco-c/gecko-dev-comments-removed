@@ -1270,6 +1270,12 @@ class LiveSavedFrameCache
         inline bool hasCachedSavedFrame() const;
         inline void setHasCachedSavedFrame();
 
+        
+        inline bool isInterpreterFrame() const { return ptr.is<InterpreterFrame*>(); }
+
+        
+        inline InterpreterFrame& asInterpreterFrame() const { return *ptr.as<InterpreterFrame*>(); }
+
         bool operator==(const FramePtr& rhs) const { return rhs.ptr == this->ptr; }
         bool operator!=(const FramePtr& rhs) const { return !(rhs == *this); }
     };
