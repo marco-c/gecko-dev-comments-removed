@@ -14,7 +14,19 @@ using namespace js::jit;
 
 #ifdef JS_DISASM_SUPPORTED
 
-mozilla::Atomic<uint32_t> DisassemblerSpew::live_(0);
+
+
+
+
+
+
+
+
+
+
+
+
+mozilla::Atomic<uint32_t> DisassemblerSpew::counter_(0);
 #endif
 
 DisassemblerSpew::DisassemblerSpew()
@@ -24,11 +36,12 @@ DisassemblerSpew::DisassemblerSpew()
     labelIndent_(""),
     targetIndent_(""),
     spewNext_(1000),
-    nodes_(nullptr)
+    nodes_(nullptr),
+    tag_(0)
 #endif
 {
 #ifdef JS_DISASM_SUPPORTED
-    live_++;
+    tag_ = counter_++;
 #endif
 }
 
@@ -41,7 +54,6 @@ DisassemblerSpew::~DisassemblerSpew()
         p = p->next;
         js_free(victim);
     }
-    live_--;
 #endif
 }
 
@@ -60,33 +72,24 @@ DisassemblerSpew::isDisabled()
 void
 DisassemblerSpew::spew(const char* fmt, ...)
 {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
 #ifdef JS_DISASM_SUPPORTED
+    static const char prefix_chars[] = "0123456789"
+                                       "abcdefghijklmnopqrstuvwxyz"
+                                       "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    static const char prefix_fmt[] = "[%c] ";
+
     char fmt2[1024];
-    MOZ_RELEASE_ASSERT(sizeof(fmt2) >= strlen(fmt) + live_ + 1);
-    uint32_t i;
-    for (i = 0; i < live_-1; i++ )
-        fmt2[i] = '>';
-    if (live_ > 1)
-        fmt2[i++] = ' ';
-    strcpy(fmt2 + i, fmt);
-#else
-    const char* fmt2 = fmt;
+    if (sizeof(fmt2) >= strlen(fmt) + sizeof(prefix_fmt)) {
+        snprintf(fmt2, sizeof(prefix_fmt), prefix_fmt,
+                 prefix_chars[tag_ % (sizeof(prefix_chars) - 1)]);
+        strcat(fmt2, fmt);
+        fmt = fmt2;
+    }
 #endif
 
     va_list args;
     va_start(args, fmt);
-    spewVA(fmt2, args);
+    spewVA(fmt, args);
     va_end(args);
 }
 

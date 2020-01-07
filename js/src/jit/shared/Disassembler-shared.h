@@ -165,6 +165,7 @@ class DisassemblerSpew
     const char* targetIndent_;
     uint32_t spewNext_;
     Node* nodes_;
+    uint32_t tag_;
 
     
     
@@ -173,7 +174,7 @@ class DisassemblerSpew
     
     
     
-    static mozilla::Atomic<uint32_t> live_;
+    static mozilla::Atomic<uint32_t> counter_;
 #endif
 };
 
