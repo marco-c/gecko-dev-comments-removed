@@ -28,6 +28,9 @@ const SIZES_TELEMETRY_ENUM = {
 const FAVICON_PARSING_TIMEOUT = 100;
 const FAVICON_RICH_ICON_MIN_WIDTH = 96;
 
+const TYPE_ICO = "image/x-icon";
+const TYPE_SVG = "image/svg+xml";
+
 
 
 
@@ -122,8 +125,25 @@ function setIconForLink(aIconInfo, aChromeGlobal) {
 
 
 
-function isICO(icon) {
-  return icon.type == "image/x-icon" || icon.type == "image/vnd.microsoft.icon";
+function guessType(icon) {
+  
+  if (!icon) {
+    return "";
+  }
+
+  
+  if (!icon.type) {
+    let extension = icon.iconUri.filePath.split(".").pop();
+    switch (extension) {
+      case "ico":
+        return TYPE_ICO;
+      case "svg":
+        return TYPE_SVG;
+    }
+  }
+
+  
+  return icon.type == "image/vnd.microsoft.icon" ? TYPE_ICO : icon.type || "";
 }
 
 
@@ -142,9 +162,7 @@ function faviconTimeoutCallback(aFaviconLoads, aPageUrl, aChromeGlobal) {
   if (!load)
     return;
 
-  let preferredIcon = {
-    type: null
-  };
+  let preferredIcon;
   let preferredWidth = 16 * Math.ceil(aChromeGlobal.content.devicePixelRatio);
   
   let defaultIcon;
@@ -157,11 +175,11 @@ function faviconTimeoutCallback(aFaviconLoads, aPageUrl, aChromeGlobal) {
       
       
       
-      if (icon.type == "image/svg+xml") {
+      if (guessType(icon) == TYPE_SVG) {
         preferredIcon = icon;
-      } else if (icon.width == preferredWidth && preferredIcon.type != "image/svg+xml") {
+      } else if (icon.width == preferredWidth && guessType(preferredIcon) != TYPE_SVG) {
         preferredIcon = icon;
-      } else if (isICO(icon) && (preferredIcon.type == null || isICO(preferredIcon))) {
+      } else if (guessType(icon) == TYPE_ICO && (!preferredIcon || guessType(preferredIcon) == TYPE_ICO)) {
         preferredIcon = icon;
       }
     }
@@ -185,7 +203,7 @@ function faviconTimeoutCallback(aFaviconLoads, aPageUrl, aChromeGlobal) {
   if (largestRichIcon) {
     setIconForLink(largestRichIcon, aChromeGlobal);
   }
-  if (preferredIcon.type) {
+  if (preferredIcon) {
     setIconForLink(preferredIcon, aChromeGlobal);
   } else if (defaultIcon) {
     setIconForLink(defaultIcon, aChromeGlobal);
