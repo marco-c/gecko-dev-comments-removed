@@ -3048,7 +3048,8 @@ HTMLEditor::EnableStyleSheet(const nsAString& aURL,
 
   
   nsCOMPtr<nsIDocument> document = GetDocument();
-  sheet->SetAssociatedDocument(document, StyleSheet::NotOwnedByDocument);
+  sheet->SetAssociatedDocumentOrShadowRoot(
+    document, StyleSheet::NotOwnedByDocumentOrShadowRoot);
 
   sheet->SetDisabled(!aEnable);
   return NS_OK;
@@ -3066,7 +3067,8 @@ HTMLEditor::EnableExistingStyleSheet(const nsAString& aURL)
 
   
   nsCOMPtr<nsIDocument> document = GetDocument();
-  sheet->SetAssociatedDocument(document, StyleSheet::NotOwnedByDocument);
+  sheet->SetAssociatedDocumentOrShadowRoot(
+    document, StyleSheet::NotOwnedByDocumentOrShadowRoot);
 
   
   

@@ -47,6 +47,7 @@ class SheetLoadData;
 namespace dom {
 class CSSImportRule;
 class CSSRuleList;
+class DocumentOrShadowRoot;
 class MediaList;
 class ShadowRoot;
 class SRIMetadata;
@@ -58,7 +59,7 @@ class StyleSheet final : public nsICSSLoaderObserver
   StyleSheet(const StyleSheet& aCopy,
              StyleSheet* aParentToUse,
              dom::CSSImportRule* aOwnerRuleToUse,
-             nsIDocument* aDocumentToUse,
+             dom::DocumentOrShadowRoot* aDocOrShadowRootToUse,
              nsINode* aOwningNodeToUse);
 
   virtual ~StyleSheet();
@@ -210,7 +211,7 @@ public:
 
   already_AddRefed<StyleSheet> Clone(StyleSheet* aCloneParent,
                                      dom::CSSImportRule* aCloneOwnerRule,
-                                     nsIDocument* aCloneDocument,
+                                     dom::DocumentOrShadowRoot* aCloneDocumentOrShadowRoot,
                                      nsINode* aCloneOwningNode) const;
 
   bool HasForcedUniqueInner() const
@@ -244,21 +245,38 @@ public:
   void AppendAllChildSheets(nsTArray<StyleSheet*>& aArray);
 
   
-  enum DocumentAssociationMode : uint8_t {
+  enum AssociationMode : uint8_t {
     
     
-    OwnedByDocument,
+    OwnedByDocumentOrShadowRoot,
     
     
-    NotOwnedByDocument
+    NotOwnedByDocumentOrShadowRoot
   };
-  nsIDocument* GetAssociatedDocument() const { return mDocument; }
-  bool IsOwnedByDocument() const {
-    return mDocumentAssociationMode == OwnedByDocument;
+  dom::DocumentOrShadowRoot* GetAssociatedDocumentOrShadowRoot() const
+  {
+    return mDocumentOrShadowRoot;
   }
+
   
-  void SetAssociatedDocument(nsIDocument* aDocument, DocumentAssociationMode);
-  void ClearAssociatedDocument();
+  
+  
+  bool IsKeptAliveByDocument() const;
+
+  
+  nsIDocument* GetComposedDoc() const;
+
+  
+  
+  
+  nsIDocument* GetAssociatedDocument() const;
+
+  void SetAssociatedDocumentOrShadowRoot(dom::DocumentOrShadowRoot*,
+                                         AssociationMode);
+  void ClearAssociatedDocumentOrShadowRoot()
+  {
+    SetAssociatedDocumentOrShadowRoot(nullptr, NotOwnedByDocumentOrShadowRoot);
+  }
 
   nsINode* GetOwnerNode() const
   {
@@ -482,7 +500,7 @@ protected:
   StyleSheet* mParent;    
 
   nsString mTitle;
-  nsIDocument* mDocument; 
+  dom::DocumentOrShadowRoot* mDocumentOrShadowRoot; 
   nsINode* mOwningNode; 
   dom::CSSImportRule* mOwnerRule; 
 
@@ -506,7 +524,8 @@ protected:
   
   
   
-  DocumentAssociationMode mDocumentAssociationMode;
+  
+  AssociationMode mAssociationMode;
 
   
   

@@ -1243,8 +1243,7 @@ Loader::InsertSheetInDoc(StyleSheet* aSheet,
 
 
 nsresult
-Loader::InsertChildSheet(StyleSheet* aSheet,
-                         StyleSheet* aParentSheet)
+Loader::InsertChildSheet(StyleSheet* aSheet, StyleSheet* aParentSheet)
 {
   LOG(("css::Loader::InsertChildSheet"));
   MOZ_ASSERT(aSheet, "Nothing to insert");
@@ -2163,9 +2162,7 @@ Loader::LoadChildSheet(StyleSheet* aParentSheet,
 
   
   
-  
-  
-  if (aParentSheet->GetAssociatedDocument()) {
+  if (aParentSheet->GetAssociatedDocumentOrShadowRoot()) {
     StyleSheet* topSheet = aParentSheet;
     while (StyleSheet* parent = topSheet->GetParentSheet()) {
       topSheet = parent;
