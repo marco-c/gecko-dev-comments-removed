@@ -9,7 +9,7 @@ from collections import OrderedDict
 import ipdl.ast
 import ipdl.builtin
 from ipdl.cxx.ast import *
-from ipdl.type import ActorType, UnionType, TypeVisitor, builtinHeaderIncludes
+from ipdl.type import ActorType, TypeVisitor, builtinHeaderIncludes
 
 
 
@@ -602,21 +602,12 @@ def _cxxTypeNeedsMove(ipdltype):
                                   ipdltype.isByteBuf() or
                                   ipdltype.isEndpoint())
 
-def _cxxTypeCanMove(ipdltype):
-    return not (ipdltype.isIPDL() and ipdltype.isActor())
-
 def _cxxMoveRefType(ipdltype, side):
     t = _cxxBareType(ipdltype, side)
     if _cxxTypeNeedsMove(ipdltype):
         t.ref = 2
         return t
     return _cxxConstRefType(ipdltype, side)
-
-def _cxxForceMoveRefType(ipdltype, side):
-    assert _cxxTypeCanMove(ipdltype)
-    t = _cxxBareType(ipdltype, side)
-    t.ref = 2
-    return t
 
 def _cxxPtrToType(ipdltype, side):
     t = _cxxBareType(ipdltype, side)
@@ -706,11 +697,6 @@ necessarily a C++ reference."""
         t.ptr = 1
         return t
 
-    def forceMoveType(self, side):
-        """Return this decl's C++ Type with forced move semantics."""
-        assert _cxxTypeCanMove(self.ipdltype)
-        return _cxxForceMoveRefType(self.ipdltype, side)
-
 
 
 class HasFQName:
@@ -722,6 +708,13 @@ class _CompoundTypeComponent(_HybridDecl):
         _HybridDecl.__init__(self, ipdltype, name)
         self.side = side
         self.special = _hasVisibleActor(ipdltype)
+        self.recursive = ct.decl.type.mutuallyRecursiveWith(ipdltype)
+
+    def internalType(self):
+        if self.recursive:
+            return self.ptrToType()
+        else:
+            return self.bareType()
 
     
     
@@ -738,8 +731,6 @@ class _CompoundTypeComponent(_HybridDecl):
         return _HybridDecl.constPtrToType(self, self.side)
     def inType(self, side=None):
         return _HybridDecl.inType(self, self.side)
-    def forceMoveType(self, side=None):
-        return _HybridDecl.forceMoveType(self, self.side)
 
 
 class StructDecl(ipdl.ast.StructDecl, HasFQName):
@@ -774,6 +765,8 @@ class _StructField(_CompoundTypeComponent):
         ref = self.memberVar()
         if thisexpr is not None:
             ref = ExprSelect(thisexpr, '.', ref.name)
+        if self.recursive:
+            ref = ExprDeref(ref)
         return ref
 
     def constRefExpr(self, thisexpr=None):
@@ -792,6 +785,22 @@ class _StructField(_CompoundTypeComponent):
 
     def memberVar(self):
         return ExprVar(self.name + '_')
+
+    def initStmts(self):
+        if self.recursive:
+            return [ StmtExpr(ExprAssn(self.memberVar(),
+                                       ExprNew(self.bareType()))) ]
+        elif self.ipdltype.isIPDL() and self.ipdltype.isActor():
+            return [ StmtExpr(ExprAssn(self.memberVar(),
+                                       ExprLiteral.NULL)) ]
+        else:
+            return []
+
+    def destructStmts(self):
+        if self.recursive:
+            return [ StmtExpr(ExprDelete(self.memberVar())) ]
+        else:
+            return []
 
 
 class UnionDecl(ipdl.ast.UnionDecl, HasFQName):
@@ -824,11 +833,6 @@ IPDL union type."""
             else:
                 self.other = _UnionMember(ipdltype, ud, _otherSide(side), self)
 
-        
-        
-        
-        self.recursive = ud.decl.type.mutuallyRecursiveWith(ipdltype)
-
     def enum(self):
         return 'T' + self.flattypename
 
@@ -837,12 +841,6 @@ IPDL union type."""
 
     def enumvar(self):
         return ExprVar(self.enum())
-
-    def internalType(self):
-        if self.recursive:
-            return self.ptrToType()
-        else:
-            return self.bareType()
 
     def unionType(self):
         """Type used for storage in generated C union decl."""
@@ -1490,20 +1488,7 @@ class _GenerateProtocolCode(ipdl.ast.Visitor):
             for headername in sorted(iter(aggregateTypeIncludes)):
                 hf.addthing(CppDirective('include', '"' + headername + '"'))
 
-        
-        
-        for cxxInc in tu.cxxIncludes:
-            cxxInc.accept(self)
-        for inc in tu.includes:
-            inc.accept(self)
-        self.generateStructsAndUnions(tu)
-        for using in tu.builtinUsing:
-            using.accept(self)
-        for using in tu.using:
-            using.accept(self)
-        if tu.protocol:
-            tu.protocol.accept(self)
-
+        ipdl.ast.Visitor.visitTranslationUnit(self, tu)
         if tu.filetype == 'header':
             self.cppIncludeHeaders.append(_ipdlhHeaderName(tu))
 
@@ -1537,56 +1522,36 @@ class _GenerateProtocolCode(ipdl.ast.Visitor):
             self.hdrfile.addthing(CppDirective(
                     'include', '"'+ _ipdlhHeaderName(inc.tu) +'.h"'))
 
-    def generateStructsAndUnions(self, tu):
-        '''Generate the definitions for all structs and unions. This will
-        re-order the declarations if needed in the C++ code such that
-        dependencies have already been defined.'''
-        decls = OrderedDict()
-        for su in tu.structsAndUnions:
-            if isinstance(su, StructDecl):
-                which = 'struct'
-                forwarddecls, fulldecltypes, cls = _generateCxxStruct(su)
-            else:
-                assert isinstance(su, UnionDecl)
-                which = 'union'
-                forwarddecls, fulldecltypes, cls = _generateCxxUnion(su)
+    def processStructOrUnionClass(self, su, which, forwarddecls, cls):
+        clsdecl, methoddefns = _splitClassDeclDefn(cls)
 
-            clsdecl, methoddefns = _splitClassDeclDefn(cls)
-
-            
-            
-            decls[su.decl.type] = (
-                fulldecltypes,
-                [  Whitespace.NL ]
-                + forwarddecls
-                + [ Whitespace("""
+        self.hdrfile.addthings(
+            [  Whitespace.NL ]
+            + forwarddecls
+            + [ Whitespace("""
 //-----------------------------------------------------------------------------
 // Declaration of the IPDL type |%s %s|
 //
 """% (which, su.name)),
-                    _putInNamespaces(clsdecl, su.namespaces),
-                ])
+                _putInNamespaces(clsdecl, su.namespaces),
+            ])
 
-            self.structUnionDefns.extend([
-                Whitespace("""
+        self.structUnionDefns.extend([
+            Whitespace("""
 //-----------------------------------------------------------------------------
 // Method definitions for the IPDL type |%s %s|
 //
 """% (which, su.name)),
-                _putInNamespaces(methoddefns, su.namespaces),
-            ])
+            _putInNamespaces(methoddefns, su.namespaces),
+        ])
 
-        
-        def gen_struct(deps, defn):
-            for dep in deps:
-                if dep in decls:
-                    d, t = decls[dep]
-                    del decls[dep]
-                    gen_struct(d, t)
-            self.hdrfile.addthings(defn)
-        while len(decls) > 0:
-            _, (d, t) = decls.popitem(False)
-            gen_struct(d, t)
+    def visitStructDecl(self, sd):
+        return self.processStructOrUnionClass(sd, 'struct',
+                                              *_generateCxxStruct(sd))
+
+    def visitUnionDecl(self, ud):
+        return self.processStructOrUnionClass(ud, 'union',
+                                              *_generateCxxUnion(ud))
 
     def visitProtocol(self, p):
         self.cppIncludeHeaders.append(_protocolHeaderName(self.protocol, ''))
@@ -1841,16 +1806,14 @@ def _generateMessageConstructor(md, segmentSize, protocol, forReply=False):
 
 class _ComputeTypeDeps(TypeVisitor):
     '''Pass that gathers the C++ types that a particular IPDL type
-(recursively) depends on.  There are three kinds of dependencies: (i)
+(recursively) depends on.  There are two kinds of dependencies: (i)
 types that need forward declaration; (ii) types that need a |using|
-stmt; (iii) IPDL structs or unions which must be fully declared
-before this struct.  Some types generate multiple kinds.'''
+stmt.  Some types generate both kinds.'''
 
     def __init__(self, fortype, unqualifiedTypedefs=False):
         ipdl.type.TypeVisitor.__init__(self)
         self.usingTypedefs = [ ]
         self.forwardDeclStmts = [ ]
-        self.fullDeclTypes = [ ]
         self.fortype = fortype
         self.unqualifiedTypedefs = unqualifiedTypedefs
 
@@ -1884,12 +1847,8 @@ before this struct.  Some types generate multiple kinds.'''
         self.visited.add(su)
         self.maybeTypedef(su.fullname(), su.name())
 
-        
-        
-        if isinstance(self.fortype, UnionType) and self.fortype.mutuallyRecursiveWith(su):
+        if su.mutuallyRecursiveWith(self.fortype):
             self.forwardDeclStmts.append(_makeForwardDecl(su))
-        else:
-            self.fullDeclTypes.append(su)
 
         return defaultVisit(self, su)
 
@@ -1932,7 +1891,6 @@ def _generateCxxStruct(sd):
 
     usingTypedefs = gettypedeps.usingTypedefs
     forwarddeclstmts = gettypedeps.forwardDeclStmts
-    fulldecltypes = gettypedeps.fullDeclTypes
 
     struct = Class(sd.name, final=1)
     struct.addstmts([ Label.PRIVATE ]
@@ -1940,6 +1898,9 @@ def _generateCxxStruct(sd):
                     + [ Whitespace.NL, Label.PUBLIC ])
 
     constreftype = Type(sd.name, const=1, ref=1)
+    initvar = ExprVar('Init')
+    callinit = ExprCall(initvar)
+    assignvar = ExprVar('Assign')
 
     def fieldsAsParamList():
         return [ Decl(f.inType(), f.argVar().name) for f in sd.fields ]
@@ -1953,30 +1914,54 @@ def _generateCxxStruct(sd):
     
     if len(sd.fields):
         
-        defctor = ConstructorDefn(ConstructorDecl(sd.name, force_inline=1))
-
-        
-        
-        
-        
-        
-        defctor.memberinits = [ ExprMemberInit(f.memberVar()) for f in sd.fields ]
+        defctor = ConstructorDefn(ConstructorDecl(sd.name))
+        defctor.addstmt(StmtExpr(callinit))
+        defctor.memberinits = []
+        for f in sd.fields:
+          
+          if not (f.ipdltype.isCxx() and f.ipdltype.isAtom()):
+            continue
+          defctor.memberinits.append(ExprMemberInit(f.memberVar()))
         struct.addstmts([ defctor, Whitespace.NL ])
 
     
     valctor = ConstructorDefn(ConstructorDecl(sd.name,
                                               params=fieldsAsParamList(),
                                               force_inline=1))
-    valctor.memberinits = [ ExprMemberInit(f.memberVar(),
-                                           args=[ f.argVar() ])
-                            for f in sd.fields ]
+    valctor.addstmts([
+        StmtExpr(callinit),
+        StmtExpr(ExprCall(assignvar,
+                          args=[ f.argVar() for f in sd.fields ]))
+    ])
     struct.addstmts([ valctor, Whitespace.NL ])
 
     
-    
+    ovar = ExprVar('_o')
+    copyctor = ConstructorDefn(ConstructorDecl(
+        sd.name,
+        params=[ Decl(constreftype, ovar.name) ],
+        force_inline=1))
+    copyctor.addstmts([
+        StmtExpr(callinit),
+        StmtExpr(assignFromOther(ovar))
+    ])
+    struct.addstmts([ copyctor, Whitespace.NL ])
 
     
-    ovar = ExprVar('_o')
+    dtor = DestructorDefn(DestructorDecl(sd.name))
+    for f in sd.fields:
+        dtor.addstmts(f.destructStmts())
+    struct.addstmts([ dtor, Whitespace.NL ])
+
+    
+    opeq = MethodDefn(MethodDecl(
+        'operator=',
+        params=[ Decl(constreftype, ovar.name) ],
+        force_inline=1))
+    opeq.addstmt(StmtExpr(assignFromOther(ovar)))
+    struct.addstmts([ opeq, Whitespace.NL ])
+
+    
     opeqeq = MethodDefn(MethodDecl(
         'operator==',
         params=[ Decl(constreftype, ovar.name) ],
@@ -2022,10 +2007,23 @@ def _generateCxxStruct(sd):
     struct.addstmt(Label.PRIVATE)
 
     
-    struct.addstmts([ StmtDecl(Decl(f.bareType(), f.memberVar().name))
+    init = MethodDefn(MethodDecl(initvar.name))
+    for f in sd.fields:
+        init.addstmts(f.initStmts())
+    struct.addstmts([ init, Whitespace.NL ])
+
+    
+    assign = MethodDefn(MethodDecl(assignvar.name,
+                                   params=fieldsAsParamList()))
+    assign.addstmts([ StmtExpr(ExprAssn(f.refExpr(), f.argVar()))
+                      for f in sd.fields ])
+    struct.addstmts([ assign, Whitespace.NL ])
+
+    
+    struct.addstmts([ StmtDecl(Decl(f.internalType(), f.memberVar().name))
                       for f in sd.fields ])
 
-    return forwarddeclstmts, fulldecltypes, struct
+    return forwarddeclstmts, struct
 
 
 
@@ -2065,13 +2063,10 @@ def _generateCxxUnion(ud):
     
     
     
-    
-    
     cls = Class(ud.name, final=1)
     
     inClsType = Type(ud.name, const=1, ref=1)
     refClsType = Type(ud.name, ref=1)
-    rvalueRefClsType = Type(ud.name, ref=2)
     typetype = Type('Type')
     valuetype = Type('Value')
     mtypevar = ExprVar('mType')
@@ -2098,9 +2093,6 @@ def _generateCxxUnion(ud):
         ifdied.addifstmt(StmtExpr(memb.callCtor()))
         return ifdied
 
-    def voidCast(expr):
-        return ExprCast(expr, Type.VOID, static=1)
-
     
     gettypedeps = _ComputeTypeDeps(ud.decl.type)
     for c in ud.components:
@@ -2108,7 +2100,6 @@ def _generateCxxUnion(ud):
 
     usingTypedefs = gettypedeps.usingTypedefs
     forwarddeclstmts = gettypedeps.forwardDeclStmts
-    fulldecltypes = gettypedeps.fullDeclTypes
 
     
     cls.addstmt(Label.PUBLIC)
@@ -2230,15 +2221,6 @@ def _generateCxxUnion(ud):
             StmtExpr(ExprAssn(mtypevar, c.enumvar())) ])
         cls.addstmts([ copyctor, Whitespace.NL ])
 
-        if not _cxxTypeCanMove(c.ipdltype):
-            continue
-        movector = ConstructorDefn(ConstructorDecl(
-            ud.name, params=[ Decl(c.forceMoveType(), othervar.name) ]))
-        movector.addstmts([
-            StmtExpr(c.callCtor(ExprMove(othervar))),
-            StmtExpr(ExprAssn(mtypevar, c.enumvar())) ])
-        cls.addstmts([ movector, Whitespace.NL ])
-
     
     copyctor = ConstructorDefn(ConstructorDecl(
         ud.name, params=[ Decl(inClsType, othervar.name) ]))
@@ -2266,48 +2248,11 @@ def _generateCxxUnion(ud):
     cls.addstmts([ copyctor, Whitespace.NL ])
 
     
-    movector = ConstructorDefn(ConstructorDecl(
-        ud.name, params=[ Decl(rvalueRefClsType, othervar.name) ]))
-    othertypevar = ExprVar("t")
-    moveswitch = StmtSwitch(othertypevar)
-    for c in ud.components:
-        case = StmtBlock()
-        if c.recursive:
-            
-            
-            case.addstmts([
-                
-                StmtExpr(ExprAssn(c.callGetPtr(),
-                                  ExprCall(ExprSelect(othervar, '.', ExprVar(c.getPtrName())))))
-            ])
-        else:
-            case.addstmts([
-                
-                StmtExpr(c.callCtor(ExprMove(ExprCall(ExprSelect(othervar, '.', c.getTypeName()))))),
-                
-                StmtExpr(voidCast(ExprCall(ExprSelect(othervar, '.', maybedtorvar), args=[ tnonevar ]))),
-            ])
-        case.addstmts([ StmtBreak() ])
-        moveswitch.addcase(CaseLabel(c.enum()), case)
-    moveswitch.addcase(CaseLabel(tnonevar.name),
-                       StmtBlock([ StmtBreak() ]))
-    moveswitch.addcase(
-        DefaultLabel(),
-        StmtBlock([ _logicError('unreached'), StmtReturn() ]))
-    movector.addstmts([
-        StmtExpr(callAssertSanity(uvar=othervar)),
-        StmtDecl(Decl(typetype, othertypevar.name), init=ud.callType(othervar)),
-        moveswitch,
-        StmtExpr(ExprAssn(ExprSelect(othervar, '.', mtypevar), tnonevar)),
-        StmtExpr(ExprAssn(mtypevar, othertypevar))
-    ])
-    cls.addstmts([ movector, Whitespace.NL ])
-
-    
     dtor = DestructorDefn(DestructorDecl(ud.name))
     
     
-    dtor.addstmt(StmtExpr(voidCast(callMaybeDestroy(tnonevar))))
+    dtor.addstmt(StmtExpr(ExprCast(callMaybeDestroy(tnonevar), Type.VOID,
+                                   static=1)))
     cls.addstmts([ dtor, Whitespace.NL ])
 
     
@@ -2319,7 +2264,6 @@ def _generateCxxUnion(ud):
     
     rhsvar = ExprVar('aRhs')
     for c in ud.components:
-        
         opeq = MethodDefn(MethodDecl(
             'operator=',
             params=[ Decl(c.inType(), rhsvar.name) ],
@@ -2328,23 +2272,6 @@ def _generateCxxUnion(ud):
             
             maybeReconstruct(c, c.enumvar()),
             StmtExpr(c.callOperatorEq(rhsvar)),
-            StmtExpr(ExprAssn(mtypevar, c.enumvar())),
-            StmtReturn(ExprDeref(ExprVar.THIS))
-        ])
-        cls.addstmts([ opeq, Whitespace.NL ])
-
-        
-        if not _cxxTypeCanMove(c.ipdltype):
-            continue
-
-        opeq = MethodDefn(MethodDecl(
-            'operator=',
-            params=[ Decl(c.forceMoveType(), rhsvar.name) ],
-            ret=refClsType))
-        opeq.addstmts([
-            
-            maybeReconstruct(c, c.enumvar()),
-            StmtExpr(c.callOperatorEq(ExprMove(rhsvar))),
             StmtExpr(ExprAssn(mtypevar, c.enumvar())),
             StmtReturn(ExprDeref(ExprVar.THIS))
         ])
@@ -2381,51 +2308,6 @@ def _generateCxxUnion(ud):
         StmtExpr(callAssertSanity(uvar=rhsvar)),
         StmtDecl(Decl(typetype, rhstypevar.name), init=ud.callType(rhsvar)),
         opeqswitch,
-        StmtExpr(ExprAssn(mtypevar, rhstypevar)),
-        StmtReturn(ExprDeref(ExprVar.THIS))
-    ])
-    cls.addstmts([ opeq, Whitespace.NL ])
-
-    
-    opeq = MethodDefn(MethodDecl(
-        'operator=',
-        params=[ Decl(rvalueRefClsType, rhsvar.name) ],
-        ret=refClsType))
-    rhstypevar = ExprVar('t')
-    opeqswitch = StmtSwitch(rhstypevar)
-    for c in ud.components:
-        case = StmtBlock()
-        if c.recursive:
-            case.addstmts([
-                StmtExpr(voidCast(callMaybeDestroy(tnonevar))),
-                StmtExpr(ExprAssn(c.callGetPtr(),
-                                  ExprCall(ExprSelect(rhsvar, '.', ExprVar(c.getPtrName()))))),
-            ])
-        else:
-            case.addstmts([
-                maybeReconstruct(c, rhstypevar),
-                StmtExpr(c.callOperatorEq(
-                    ExprMove(ExprCall(ExprSelect(rhsvar, '.', c.getTypeName()))))),
-                
-                StmtExpr(voidCast(ExprCall(ExprSelect(rhsvar, '.', maybedtorvar), args=[ tnonevar ]))),
-            ])
-        case.addstmts([ StmtBreak() ])
-        opeqswitch.addcase(CaseLabel(c.enum()), case)
-    opeqswitch.addcase(
-        CaseLabel(tnonevar.name),
-        
-        
-        StmtBlock([ StmtExpr(voidCast(callMaybeDestroy(rhstypevar))),
-                    StmtBreak() ])
-    )
-    opeqswitch.addcase(
-        DefaultLabel(),
-        StmtBlock([ _logicError('unreached'), StmtBreak() ]))
-    opeq.addstmts([
-        StmtExpr(callAssertSanity(uvar=rhsvar)),
-        StmtDecl(Decl(typetype, rhstypevar.name), init=ud.callType(rhsvar)),
-        opeqswitch,
-        StmtExpr(ExprAssn(ExprSelect(rhsvar, '.', mtypevar), tnonevar)),
         StmtExpr(ExprAssn(mtypevar, rhstypevar)),
         StmtReturn(ExprDeref(ExprVar.THIS))
     ])
@@ -2515,7 +2397,7 @@ def _generateCxxUnion(ud):
         StmtDecl(Decl(typetype, mtypevar.name))
     ])
 
-    return forwarddeclstmts, fulldecltypes, cls
+    return forwarddeclstmts, cls
 
 
 
