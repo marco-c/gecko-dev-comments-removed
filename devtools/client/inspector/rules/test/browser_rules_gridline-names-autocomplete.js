@@ -29,7 +29,8 @@ const changeTestData = [
 
 
 const newAreaTestData = [
-  ["g", {}, "grid", OPEN, SELECTED, !CHANGE],
+  ["g", {}, "gap", OPEN, SELECTED, !CHANGE],
+  ["VK_DOWN", {}, "grid", OPEN, SELECTED, !CHANGE],
   ["VK_DOWN", {}, "grid-area", OPEN, SELECTED, !CHANGE],
   ["VK_TAB", {}, "", !OPEN, !SELECTED, !CHANGE],
   "grid-line-names-updated",
@@ -46,7 +47,7 @@ const newAreaTestData = [
 
 
 const newRowTestData = [
-  ["g", {}, "grid", OPEN, SELECTED, !CHANGE],
+  ["g", {}, "gap", OPEN, SELECTED, !CHANGE],
   ["r", {}, "grid", OPEN, SELECTED, !CHANGE],
   ["i", {}, "grid", OPEN, SELECTED, !CHANGE],
   ["d", {}, "grid", OPEN, SELECTED, !CHANGE],
