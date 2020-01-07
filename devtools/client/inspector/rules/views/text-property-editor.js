@@ -1043,7 +1043,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  _onHoverShapePoint: function(event, point) {
+  _onHoverShapePoint: function(point) {
     
     let shapeToggle = this.valueSpan.querySelector(".ruleview-shapeswatch.active");
     if (!shapeToggle) {

@@ -57,7 +57,8 @@ class GridInspector {
     this.getSwatchColorPickerTooltip = this.getSwatchColorPickerTooltip.bind(this);
     this.updateGridPanel = this.updateGridPanel.bind(this);
 
-    this.onHighlighterChange = this.onHighlighterChange.bind(this);
+    this.onHighlighterShown = this.onHighlighterShown.bind(this);
+    this.onHighlighterHidden = this.onHighlighterHidden.bind(this);
     this.onNavigate = this.onNavigate.bind(this);
     this.onReflow = throttle(this.onReflow, 500, this);
     this.onSetGridOverlayColor = this.onSetGridOverlayColor.bind(this);
@@ -95,8 +96,8 @@ class GridInspector {
       }
     );
 
-    this.highlighters.on("grid-highlighter-hidden", this.onHighlighterChange);
-    this.highlighters.on("grid-highlighter-shown", this.onHighlighterChange);
+    this.highlighters.on("grid-highlighter-hidden", this.onHighlighterHidden);
+    this.highlighters.on("grid-highlighter-shown", this.onHighlighterShown);
     this.inspector.sidebar.on("select", this.onSidebarSelect);
     this.inspector.on("new-root", this.onNavigate);
 
@@ -108,8 +109,8 @@ class GridInspector {
 
 
   destroy() {
-    this.highlighters.off("grid-highlighter-hidden", this.onHighlighterChange);
-    this.highlighters.off("grid-highlighter-shown", this.onHighlighterChange);
+    this.highlighters.off("grid-highlighter-hidden", this.onHighlighterHidden);
+    this.highlighters.off("grid-highlighter-shown", this.onHighlighterShown);
     this.inspector.sidebar.off("select", this.onSidebarSelect);
     this.inspector.off("new-root", this.onNavigate);
 
@@ -355,6 +356,35 @@ class GridInspector {
     this.store.dispatch(updateGrids(grids));
     this.inspector.emit("grid-panel-updated");
   }
+  
+
+
+
+
+
+
+
+
+
+
+  onHighlighterShown(nodeFront, options) {
+    return this.onHighlighterChange(true, nodeFront, options);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  onHighlighterHidden(nodeFront, options) {
+    return this.onHighlighterChange(false, nodeFront, options);
+  }
 
   
 
@@ -368,8 +398,7 @@ class GridInspector {
 
 
 
-  onHighlighterChange(event, nodeFront, options = {}) {
-    let highlighted = event === "grid-highlighter-shown";
+  onHighlighterChange(highlighted, nodeFront, options = {}) {
     let { color } = options;
 
     
