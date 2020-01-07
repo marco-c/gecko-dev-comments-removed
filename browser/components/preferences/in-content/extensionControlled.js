@@ -21,7 +21,7 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "trackingprotectionUiEnabled",
                                       "privacy.trackingprotection.ui.enabled");
 
 const PREF_SETTING_TYPE = "prefs";
-const PROXY_KEY = "proxyConfig";
+const PROXY_KEY = "proxy.settings";
 const API_PROXY_PREFS = [
   "network.proxy.type",
   "network.proxy.http",
@@ -45,7 +45,7 @@ let extensionControlledContentIds = {
   "homepage_override": "browserHomePageExtensionContent",
   "newTabURL": "browserNewTabExtensionContent",
   "defaultSearch": "browserDefaultSearchExtensionContent",
-  "proxyConfig": "proxyExtensionContent",
+  "proxy.settings": "proxyExtensionContent",
   get "websites.trackingProtectionMode"() {
     return {
       button: "trackingProtectionExtensionContentButton",
@@ -57,14 +57,14 @@ let extensionControlledContentIds = {
   }
 };
 
-const extensionControlledL10nKeys = {
-  "homepage_override": "homepage-override",
-  "newTabURL": "new-tab-url",
-  "defaultSearch": "default-search",
-  "privacy.containers": "privacy-containers",
-  "websites.trackingProtectionMode": "websites-tracking-protection-mode",
-  "proxyConfig": "proxy-config",
-};
+function getExtensionControlledArgs(settingName) {
+  switch (settingName) {
+    case "proxy.settings":
+      return [document.getElementById("bundleBrand").getString("brandShortName")];
+    default:
+      return [];
+  }
+}
 
 let extensionControlledIds = {};
 
@@ -96,7 +96,7 @@ async function getControllingExtension(type, settingName) {
   return addon;
 }
 
-async function handleControllingExtension(type, settingName) {
+async function handleControllingExtension(type, settingName, stringId) {
   let addon = await getControllingExtension(type, settingName);
 
   
@@ -106,7 +106,7 @@ async function handleControllingExtension(type, settingName) {
   
   if (addon) {
     extensionControlledIds[settingName] = addon.id;
-    showControllingExtension(settingName, addon);
+    showControllingExtension(settingName, addon, stringId);
   } else {
     let elements = getControllingExtensionEls(settingName);
     if (extensionControlledIds[settingName]
@@ -122,58 +122,35 @@ async function handleControllingExtension(type, settingName) {
   return !!addon;
 }
 
-function settingNameToL10nID(settingName) {
-  if (!extensionControlledL10nKeys.hasOwnProperty(settingName)) {
-    throw new Error(`Unknown extension controlled setting name: ${settingName}`);
-  }
-  return `extension-controlled-${extensionControlledL10nKeys[settingName]}`;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function setControllingExtensionDescription(elem, addon, settingName) {
-  
-  while (elem.firstChild) {
-    elem.firstChild.remove();
-  }
-
-  if (addon === null) {
-    document.l10n.setAttributes(elem, settingName);
-    return;
-  }
-
-  let image = document.createElementNS("http://www.w3.org/1999/xhtml", "img");
+function getControllingExtensionFragment(stringId, addon, ...extraArgs) {
+  let msg = document.getElementById("bundlePreferences").getString(stringId);
+  let image = document.createElement("image");
   const defaultIcon = "chrome://mozapps/skin/extensions/extensionGeneric.svg";
   image.setAttribute("src", addon.iconURL || defaultIcon);
-  image.setAttribute("data-l10n-name", "icon");
   image.classList.add("extension-controlled-icon");
-  elem.appendChild(image);
-  const l10nId = settingNameToL10nID(settingName);
-  document.l10n.setAttributes(elem, l10nId, {
-    name: addon.name
-  });
+  let addonBit = document.createDocumentFragment();
+  addonBit.appendChild(image);
+  addonBit.appendChild(document.createTextNode(" " + addon.name));
+  return BrowserUtils.getLocalizedFragment(document, msg, addonBit, ...extraArgs);
 }
 
-async function showControllingExtension(settingName, addon) {
+async function showControllingExtension(
+  settingName, addon, stringId = `extensionControlled.${settingName}`) {
   
   let elements = getControllingExtensionEls(settingName);
+  let extraArgs = getExtensionControlledArgs(settingName);
 
   elements.section.classList.remove("extension-controlled-disabled");
   let description = elements.description;
 
-  setControllingExtensionDescription(description, addon, settingName);
+  
+  while (description.firstChild) {
+    description.firstChild.remove();
+  }
+
+  let fragment = getControllingExtensionFragment(
+    stringId, addon, ...extraArgs);
+  description.appendChild(fragment);
 
   if (elements.button) {
     elements.button.hidden = false;
@@ -196,39 +173,19 @@ function showEnableExtensionMessage(settingName) {
 
   elements.button.hidden = true;
   elements.section.classList.add("extension-controlled-disabled");
-
-  elements.description.textContent = "";
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  elements.description.removeAttribute("data-l10n-id");
-
-  let icon = (url, name) => {
-    let img = document.createElementNS("http://www.w3.org/1999/xhtml", "img");
+  let icon = url => {
+    let img = document.createElement("image");
     img.src = url;
-    img.setAttribute("data-l10n-name", name);
     img.className = "extension-controlled-icon";
     return img;
   };
-  let label = document.createElement("label");
-  let addonIcon = icon("chrome://mozapps/skin/extensions/extensionGeneric-16.svg", "addons-icon");
-  let toolbarIcon = icon("chrome://browser/skin/menu.svg", "menu-icon");
-  label.appendChild(addonIcon);
-  label.appendChild(toolbarIcon);
-  document.l10n.setAttributes(label, "extension-controlled-enable");
-  elements.description.appendChild(label);
+  let addonIcon = icon("chrome://mozapps/skin/extensions/extensionGeneric-16.svg");
+  let toolbarIcon = icon("chrome://browser/skin/menu.svg");
+  let message = document.getElementById("bundlePreferences")
+                        .getString("extensionControlled.enable");
+  let frag = BrowserUtils.getLocalizedFragment(document, message, addonIcon, toolbarIcon);
+  elements.description.innerHTML = "";
+  elements.description.appendChild(frag);
   let dismissButton = document.createElement("image");
   dismissButton.setAttribute("class", "extension-controlled-icon close-icon");
   dismissButton.addEventListener("click", function dismissHandler() {
