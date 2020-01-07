@@ -22,95 +22,6 @@
 using namespace js;
 using namespace js::jit;
 
-
-
-MOZ_ALIGNED_DECL(static const uint64_t, 16) TO_DOUBLE[4] = {
-    0x4530000043300000LL,
-    0x0LL,
-    0x4330000000000000LL,
-    0x4530000000000000LL
-};
-
-static const double TO_DOUBLE_HIGH_SCALE = 0x100000000;
-
-bool
-MacroAssemblerX86::convertUInt64ToDoubleNeedsTemp()
-{
-    return HasSSE3();
-}
-
-void
-MacroAssemblerX86::convertUInt64ToDouble(Register64 src, FloatRegister dest, Register temp)
-{
-    
-    if (!HasSSE3()) {
-        MOZ_ASSERT(temp == Register::Invalid());
-
-        
-        zeroDouble(dest);
-
-        asMasm().Push(src.high);
-        asMasm().Push(src.low);
-        fild(Operand(esp, 0));
-
-        Label notNegative;
-        asMasm().branch32(Assembler::NotSigned, src.high, Imm32(0), &notNegative);
-        double add_constant = 18446744073709551616.0; 
-        store64(Imm64(mozilla::BitwiseCast<uint64_t>(add_constant)), Address(esp, 0));
-        fld(Operand(esp, 0));
-        faddp();
-        bind(&notNegative);
-
-        fstp(Operand(esp, 0));
-        vmovsd(Address(esp, 0), dest);
-        asMasm().freeStack(2 * sizeof(intptr_t));
-        return;
-    }
-
-    
-    
-    MOZ_ASSERT(dest.size() == 8);
-    FloatRegister dest128 = FloatRegister(dest.encoding(), FloatRegisters::Simd128);
-
-    
-    
-
-    
-    
-    
-    vmovd(src.low, dest128);
-    vmovd(src.high, ScratchSimd128Reg);
-
-    
-    
-    vpunpckldq(ScratchSimd128Reg, dest128, dest128);
-
-    
-    
-    
-    
-    
-    
-    movePtr(ImmWord((uintptr_t)TO_DOUBLE), temp);
-    vpunpckldq(Operand(temp, 0), dest128, dest128);
-
-    
-    
-    
-    
-    
-    
-    
-    
-    vsubpd(Operand(temp, sizeof(uint64_t) * 2), dest128, dest128);
-
-    
-    
-    
-    
-    vhaddpd(dest128, dest128);
-}
-
 void
 MacroAssemblerX86::loadConstantDouble(double d, FloatRegister dest)
 {
@@ -1201,56 +1112,129 @@ MacroAssembler::wasmTruncateFloat32ToUInt64(FloatRegister input, Register64 outp
 
 
 
+
+
+
+MOZ_ALIGNED_DECL(static const uint64_t, 16) TO_DOUBLE[4] = {
+    0x4530000043300000LL,
+    0x0LL,
+    0x4330000000000000LL,
+    0x4530000000000000LL
+};
+
+bool
+MacroAssembler::convertUInt64ToDoubleNeedsTemp()
+{
+    return HasSSE3();
+}
+
 void
-MacroAssemblerX86::convertInt64ToDouble(Register64 input, FloatRegister output)
+MacroAssembler::convertUInt64ToDouble(Register64 src, FloatRegister dest, Register temp)
+{
+    
+    if (!HasSSE3()) {
+        MOZ_ASSERT(temp == Register::Invalid());
+
+        
+        zeroDouble(dest);
+
+        Push(src.high);
+        Push(src.low);
+        fild(Operand(esp, 0));
+
+        Label notNegative;
+        branch32(Assembler::NotSigned, src.high, Imm32(0), &notNegative);
+        double add_constant = 18446744073709551616.0; 
+        store64(Imm64(mozilla::BitwiseCast<uint64_t>(add_constant)), Address(esp, 0));
+        fld(Operand(esp, 0));
+        faddp();
+        bind(&notNegative);
+
+        fstp(Operand(esp, 0));
+        vmovsd(Address(esp, 0), dest);
+        freeStack(2 * sizeof(intptr_t));
+        return;
+    }
+
+    
+    
+    MOZ_ASSERT(dest.size() == 8);
+    FloatRegister dest128 = FloatRegister(dest.encoding(), FloatRegisters::Simd128);
+
+    
+    
+
+    
+    
+    
+    vmovd(src.low, dest128);
+    vmovd(src.high, ScratchSimd128Reg);
+
+    
+    
+    vpunpckldq(ScratchSimd128Reg, dest128, dest128);
+
+    
+    
+    
+    
+    
+    
+    movePtr(ImmWord((uintptr_t)TO_DOUBLE), temp);
+    vpunpckldq(Operand(temp, 0), dest128, dest128);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    vsubpd(Operand(temp, sizeof(uint64_t) * 2), dest128, dest128);
+
+    
+    
+    
+    
+    vhaddpd(dest128, dest128);
+}
+
+void
+MacroAssembler::convertInt64ToDouble(Register64 input, FloatRegister output)
 {
     
     zeroDouble(output);
 
-    asMasm().Push(input.high);
-    asMasm().Push(input.low);
+    Push(input.high);
+    Push(input.low);
     fild(Operand(esp, 0));
 
     fstp(Operand(esp, 0));
     vmovsd(Address(esp, 0), output);
-    asMasm().freeStack(2 * sizeof(intptr_t));
+    freeStack(2 * sizeof(intptr_t));
 }
 
 void
-MacroAssemblerX86::convertInt64ToFloat32(Register64 input, FloatRegister output)
-{
-    
-    zeroDouble(output);
-
-    asMasm().Push(input.high);
-    asMasm().Push(input.low);
-    fild(Operand(esp, 0));
-
-    fstp32(Operand(esp, 0));
-    vmovss(Address(esp, 0), output);
-    asMasm().freeStack(2 * sizeof(intptr_t));
-}
-
-void
-MacroAssemblerX86::convertUInt64ToFloat32(Register64 input, FloatRegister output, Register temp)
+MacroAssembler::convertUInt64ToFloat32(Register64 input, FloatRegister output, Register temp)
 {
     
     zeroDouble(output);
 
     
-    asMasm().reserveStack(2 * sizeof(intptr_t));
+    reserveStack(2 * sizeof(intptr_t));
     fnstcw(Operand(esp, 0));
     load32(Operand(esp, 0), temp);
     orl(Imm32(0x300), temp);
     store32(temp, Operand(esp, sizeof(intptr_t)));
     fldcw(Operand(esp, sizeof(intptr_t)));
 
-    asMasm().Push(input.high);
-    asMasm().Push(input.low);
+    Push(input.high);
+    Push(input.low);
     fild(Operand(esp, 0));
 
     Label notNegative;
-    asMasm().branch32(Assembler::NotSigned, input.high, Imm32(0), &notNegative);
+    branch32(Assembler::NotSigned, input.high, Imm32(0), &notNegative);
     double add_constant = 18446744073709551616.0; 
     uint64_t add_constant_u64 = mozilla::BitwiseCast<uint64_t>(add_constant);
     store64(Imm64(add_constant_u64), Address(esp, 0));
@@ -1261,10 +1245,27 @@ MacroAssemblerX86::convertUInt64ToFloat32(Register64 input, FloatRegister output
 
     fstp32(Operand(esp, 0));
     vmovss(Address(esp, 0), output);
-    asMasm().freeStack(2 * sizeof(intptr_t));
+    freeStack(2 * sizeof(intptr_t));
 
     
     fldcw(Operand(esp, 0));
-    asMasm().freeStack(2 * sizeof(intptr_t));
+    freeStack(2 * sizeof(intptr_t));
 }
+
+void
+MacroAssembler::convertInt64ToFloat32(Register64 input, FloatRegister output)
+{
+    
+    zeroDouble(output);
+
+    Push(input.high);
+    Push(input.low);
+    fild(Operand(esp, 0));
+
+    fstp32(Operand(esp, 0));
+    vmovss(Address(esp, 0), output);
+    freeStack(2 * sizeof(intptr_t));
+}
+
+
 

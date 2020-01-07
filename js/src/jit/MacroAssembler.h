@@ -1419,6 +1419,25 @@ class MacroAssembler : public MacroAssemblerSpecific
     
     
 
+    
+    void convertUInt64ToFloat32(Register64 src, FloatRegister dest, Register temp)
+        DEFINED_ON(arm64, mips64, x64, x86);
+
+    void convertInt64ToFloat32(Register64 src, FloatRegister dest)
+        DEFINED_ON(arm64, mips64, x64, x86);
+
+    bool convertUInt64ToDoubleNeedsTemp() PER_ARCH;
+
+    
+    void convertUInt64ToDouble(Register64 src, FloatRegister dest, Register temp) PER_ARCH;
+
+    void convertInt64ToDouble(Register64 src, FloatRegister dest)
+        DEFINED_ON(arm64, mips64, x64, x86);
+
+  public:
+    
+    
+
     CodeOffset illegalInstruction() PER_SHARED_ARCH;
     void wasmTrap(wasm::Trap trap, wasm::BytecodeOffset bytecodeOffset);
 
