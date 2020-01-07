@@ -29,6 +29,9 @@
 
 #include "gfxVRPuppet.h"
 #include "ipc/VRLayerParent.h"
+#if !defined(MOZ_WIDGET_ANDROID)
+#include "service/VRService.h"
+#endif
 
 using namespace mozilla;
 using namespace mozilla::gfx;
@@ -74,31 +77,50 @@ VRManager::VRManager()
 
 
 
-  mExternalManager = VRSystemManagerExternal::Create();
+
+#if !defined(MOZ_WIDGET_ANDROID)
+  
+  
+  mVRService = VRService::Create();
+  if (mVRService) {
+    mExternalManager = VRSystemManagerExternal::Create(mVRService->GetAPIShmem());
+  }
   if (mExternalManager) {
+    mManagers.AppendElement(mExternalManager);
+  }
+#endif
+
+  if (!mExternalManager) {
+    mExternalManager = VRSystemManagerExternal::Create();
+    if (mExternalManager) {
       mManagers.AppendElement(mExternalManager);
+    }
   }
 
 #if defined(XP_WIN)
-  
-  mgr = VRSystemManagerOculus::Create();
-  if (mgr) {
-    mManagers.AppendElement(mgr);
+  if (!mVRService) {
+    
+    mgr = VRSystemManagerOculus::Create();
+    if (mgr) {
+      mManagers.AppendElement(mgr);
+    }
   }
 #endif
 
 #if defined(XP_WIN) || defined(XP_MACOSX) || (defined(XP_LINUX) && !defined(MOZ_WIDGET_ANDROID))
-  
-  mgr = VRSystemManagerOpenVR::Create();
-  if (mgr) {
-    mManagers.AppendElement(mgr);
-  }
-
-  
-  mgr = VRSystemManagerOSVR::Create();
-  if (mgr) {
+  if (!mVRService) {
+    
+    mgr = VRSystemManagerOpenVR::Create();
+    if (mgr) {
       mManagers.AppendElement(mgr);
-  }
+    }
+
+    
+    mgr = VRSystemManagerOSVR::Create();
+    if (mgr) {
+        mManagers.AppendElement(mgr);
+    }
+  } 
 #endif
 
   
@@ -135,6 +157,11 @@ VRManager::Shutdown()
   for (uint32_t i = 0; i < mManagers.Length(); ++i) {
     mManagers[i]->Shutdown();
   }
+#if !defined(MOZ_WIDGET_ANDROID)
+  if (mVRService) {
+    mVRService->Stop();
+  }
+#endif
 }
 
 void
@@ -321,6 +348,11 @@ VRManager::RefreshVRDisplays(bool aMustDispatch)
 
 
   if (mVRDisplaysRequested || aMustDispatch) {
+#if !defined(MOZ_WIDGET_ANDROID)
+    if (mVRService) {
+      mVRService->Start();
+    }
+#endif
     EnumerateVRDisplays();
   }
 
