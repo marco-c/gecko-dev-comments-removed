@@ -8,15 +8,15 @@
 
 const { BrowserLoader } = ChromeUtils.import("resource://devtools/client/shared/browser-loader.js", {});
 
-this.NewConsoleOutput = function(parentNode, jsterm, toolbox, owner, serviceContainer) {
+this.WebConsoleOutput = function(parentNode, jsterm, toolbox, owner, serviceContainer) {
   
   
   
-  let NewConsoleOutputWrapper = BrowserLoader({
+  let WebConsoleOutputWrapper = BrowserLoader({
     baseURI: "resource://devtools/client/webconsole/",
     window
-  }).require("./new-console-output-wrapper");
+  }).require("./webconsole-output-wrapper");
 
-  return new NewConsoleOutputWrapper(
+  return new WebConsoleOutputWrapper(
     parentNode, jsterm, toolbox, owner, serviceContainer);
 };
