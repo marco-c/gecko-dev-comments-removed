@@ -2592,7 +2592,8 @@ RestyleManager::ProcessPostTraversal(
   nsIFrame* styleFrame = nsLayoutUtils::GetStyleFrame(aElement);
   nsIFrame* primaryFrame = aElement->GetPrimaryFrame();
 
-  MOZ_ASSERT(aElement->HasServoData(), "How in the world?");
+  MOZ_DIAGNOSTIC_ASSERT(aElement->HasServoData(),
+                        "Element without Servo data on a post-traversal? How?");
 
   
   
