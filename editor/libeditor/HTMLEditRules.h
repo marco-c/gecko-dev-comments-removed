@@ -597,8 +597,24 @@ protected:
 
   bool IsEmptyInline(nsINode& aNode);
   bool ListIsEmptyLine(nsTArray<OwningNonNull<nsINode>>& arrayOfNodes);
-  nsresult RemoveAlignment(nsINode& aNode, const nsAString& aAlignType,
-                           bool aChildrenOnly);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_MUST_USE nsresult
+  RemoveAlignment(nsINode& aNode, const nsAString& aAlignType,
+                  bool aDescendantsOnly);
 
   
 
