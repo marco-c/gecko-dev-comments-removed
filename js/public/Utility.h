@@ -418,8 +418,6 @@ static inline void js_free(void* p)
     
     free(p);
 }
-
-JS_PUBLIC_API(char*) js_strdup(const char* s);
 #endif
 
 #include <new>
