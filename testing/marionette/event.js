@@ -1025,24 +1025,6 @@ event.synthesizeKeyExpectEvent = function(
 
 
 
-
-
-
-
-event.synthesizeComposition = function(ev, window = undefined) {
-  let domutils = getDOMWindowUtils(window);
-  domutils.sendCompositionEvent(ev.type, ev.data || "", ev.locale || "");
-};
-
-
-
-
-
-
-
-
-
-
 event.synthesizeQuerySelectedText = function(window = undefined) {
   let domutils = getDOMWindowUtils(window);
   return domutils.sendQueryContentEvent(
