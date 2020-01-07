@@ -130,8 +130,8 @@ static bool
 IsChromeJSScript(JSScript* aScript)
 {
   
-  auto compartment = js::GetScriptCompartment(aScript);
-  return js::IsSystemCompartment(compartment);
+  auto realm = js::GetScriptRealm(aScript);
+  return js::IsSystemRealm(realm);
 }
 
 void
