@@ -129,94 +129,95 @@ ToIntegerCommon(const nsTString<T>& aSrc,
   
   *aErrorCode=NS_ERROR_ILLEGAL_VALUE;
 
-  if(cp) {
+  
 
-    
+  auto endcp=aSrc.EndReading();
+  bool done=false;
 
-    auto endcp=aSrc.EndReading();
-    bool done=false;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    while((cp<endcp) && (!done)){
-      switch(*cp++) {
-        case 'a': case 'b': case 'c': case 'd': case 'e': case 'f':
-        case 'A': case 'B': case 'C': case 'D': case 'E': case 'F':
-          done=true;
-          break;
-        case '0': case '1': case '2': case '3': case '4':
-        case '5': case '6': case '7': case '8': case '9':
-          done=true;
-          break;
-        case '-':
-          negate=true; 
-          break;
-        default:
-          break;
-      } 
-    }
-
-    if (done) {
-      
-      cp--;
-
-      
-      *aErrorCode = NS_OK;
-
-      
-      while(cp<endcp){
-        theChar=*cp++;
-        if(('0'<=theChar) && (theChar<='9')){
-          result = (aRadix * result) + (theChar-'0');
-        }
-        else if((theChar>='A') && (theChar<='F')) {
-          if(10==aRadix) {
-            *aErrorCode=NS_ERROR_ILLEGAL_VALUE;
-            result=0;
-            break;
-          }
-          else {
-            result = (aRadix * result) + ((theChar-'A')+10);
-          }
-        }
-        else if((theChar>='a') && (theChar<='f')) {
-          if(10==aRadix) {
-            *aErrorCode=NS_ERROR_ILLEGAL_VALUE;
-            result=0;
-            break;
-          }
-          else {
-            result = (aRadix * result) + ((theChar-'a')+10);
-          }
-        }
-        else if((('X'==theChar) || ('x'==theChar)) && result == 0) {
-          
-          
-          
-          continue;
-        }
-        else {
-          
-          break;
-        }
-
-        if (!result.isValid()) {
-          
-          *aErrorCode = NS_ERROR_ILLEGAL_VALUE;
-          return 0;
-        }
-      } 
-      if(negate)
-        result=-result;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  while((cp<endcp) && (!done)){
+    switch(*cp++) {
+      case 'a': case 'b': case 'c': case 'd': case 'e': case 'f':
+      case 'A': case 'B': case 'C': case 'D': case 'E': case 'F':
+        done=true;
+        break;
+      case '0': case '1': case '2': case '3': case '4':
+      case '5': case '6': case '7': case '8': case '9':
+        done=true;
+        break;
+      case '-':
+        negate=true; 
+        break;
+      default:
+        break;
     } 
   }
+
+  if (!done) {
+    
+    return 0;
+  }
+
+  
+  cp--;
+
+  
+  *aErrorCode = NS_OK;
+
+  
+  while(cp<endcp){
+    theChar=*cp++;
+    if(('0'<=theChar) && (theChar<='9')){
+      result = (aRadix * result) + (theChar-'0');
+    }
+    else if((theChar>='A') && (theChar<='F')) {
+      if(10==aRadix) {
+        *aErrorCode=NS_ERROR_ILLEGAL_VALUE;
+        result=0;
+        break;
+      }
+      else {
+        result = (aRadix * result) + ((theChar-'A')+10);
+      }
+    }
+    else if((theChar>='a') && (theChar<='f')) {
+      if(10==aRadix) {
+        *aErrorCode=NS_ERROR_ILLEGAL_VALUE;
+        result=0;
+        break;
+      }
+      else {
+        result = (aRadix * result) + ((theChar-'a')+10);
+      }
+    }
+    else if((('X'==theChar) || ('x'==theChar)) && result == 0) {
+      
+      
+      
+      continue;
+    }
+    else {
+      
+      break;
+    }
+
+    if (!result.isValid()) {
+      
+      *aErrorCode = NS_ERROR_ILLEGAL_VALUE;
+      return 0;
+    }
+  } 
+  if(negate)
+    result=-result;
+
   return result.value();
 }
 
