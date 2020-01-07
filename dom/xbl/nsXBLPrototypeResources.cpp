@@ -105,17 +105,10 @@ nsXBLPrototypeResources::FlushSkinSheets()
     mStyleSheetList.AppendElement(newSheet);
   }
 
-  if (doc->IsStyledByServo()) {
-    
-    
-    
-    
-    if (auto* shell = doc->GetShell()) {
-      MOZ_ASSERT(shell->GetPresContext());
-      ComputeServoStyles(*shell->StyleSet()->AsServo());
-    }
-  } else {
-    MOZ_CRASH("old style system disabled");
+  
+  if (auto* shell = doc->GetShell()) {
+    MOZ_ASSERT(shell->GetPresContext());
+    ComputeServoStyles(*shell->StyleSet()->AsServo());
   }
 
   return NS_OK;

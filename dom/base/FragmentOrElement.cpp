@@ -1253,7 +1253,7 @@ FragmentOrElement::DestroyContent()
   
   
   
-  if (IsElement() && document->IsStyledByServo()) {
+  if (IsElement()) {
     AsElement()->ClearServoData();
   }
 

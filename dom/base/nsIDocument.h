@@ -1742,11 +1742,6 @@ public:
     return mozilla::StyleBackendType::Servo;
   }
 
-  bool IsStyledByServo() const
-  {
-    return GetStyleBackendType() == mozilla::StyleBackendType::Servo;
-  }
-
   
 
 

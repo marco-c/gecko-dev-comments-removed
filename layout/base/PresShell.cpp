@@ -2960,26 +2960,24 @@ PresShell::DestroyFramesForAndRestyle(Element* aElement)
   ++mChangeNestCount;
 
   const bool didReconstruct = FrameConstructor()->DestroyFramesFor(aElement);
-  if (aElement->IsStyledByServo()) {
-    if (aElement->GetFlattenedTreeParentNode()) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      ServoRestyleManager::ClearServoDataFromSubtree(
-          aElement, ServoRestyleManager::IncludeRoot::No);
-    } else {
-      
-      
-      ServoRestyleManager::ClearServoDataFromSubtree(aElement);
-    }
+  if (aElement->GetFlattenedTreeParentNode()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    ServoRestyleManager::ClearServoDataFromSubtree(
+        aElement, ServoRestyleManager::IncludeRoot::No);
+  } else {
+    
+    
+    ServoRestyleManager::ClearServoDataFromSubtree(aElement);
   }
 
   auto changeHint = didReconstruct

@@ -125,17 +125,9 @@ public:
   nsresult GetBindingImplementation(nsIContent* aContent, REFNSIID aIID, void** aResult);
 
 
-  
-  
-  
-  
-  bool MediumFeaturesChanged(nsPresContext* aPresContext,
-                             mozilla::MediaFeatureChangeReason);
-
   void AppendAllSheets(nsTArray<mozilla::StyleSheet*>& aArray);
 
-  void Traverse(nsIContent *aContent,
-                            nsCycleCollectionTraversalCallback &cb);
+  void Traverse(nsIContent *aContent, nsCycleCollectionTraversalCallback &cb);
 
   NS_DECL_CYCLE_COLLECTION_CLASS(nsBindingManager)
 

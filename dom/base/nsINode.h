@@ -1043,12 +1043,6 @@ public:
 
 
 
-  bool IsStyledByServo() const;
-
-  
-
-
-
 
 
 
@@ -2074,10 +2068,7 @@ protected:
     const ServoFunctor& aServoFunctor,
     const GeckoFunctor& aGeckoFunctor)
   {
-    if (IsStyledByServo()) {
-      return aServoFunctor(ParseServoSelectorList(aSelectorString, aRv));
-    }
-    MOZ_CRASH("old style system disabled");
+    return aServoFunctor(ParseServoSelectorList(aSelectorString, aRv));
   }
 
 public:

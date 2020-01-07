@@ -138,12 +138,7 @@ nsDOMCSSAttributeDeclaration::GetCSSDeclaration(Operation aOperation)
   }
 
   
-  RefPtr<DeclarationBlock> decl;
-  if (mElement->IsStyledByServo()) {
-    decl = new ServoDeclarationBlock();
-  } else {
-    MOZ_CRASH("old style system disabled");
-  }
+  RefPtr<DeclarationBlock> decl = new ServoDeclarationBlock();
 
   
   nsresult rv;

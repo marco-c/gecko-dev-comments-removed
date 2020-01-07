@@ -261,14 +261,10 @@ public:
   {
     AnimationValue result;
     bool hasProperty = false;
-    if (mDocument->IsStyledByServo()) {
-      
-      
-      
-      result.mServo = mBaseStyleValuesForServo.GetWeak(aProperty, &hasProperty);
-    } else {
-      MOZ_CRASH("old style system disabled");
-    }
+    
+    
+    
+    result.mServo = mBaseStyleValuesForServo.GetWeak(aProperty, &hasProperty);
     MOZ_ASSERT(hasProperty || result.IsNull());
     return result;
   }
