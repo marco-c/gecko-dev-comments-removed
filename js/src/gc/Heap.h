@@ -487,18 +487,12 @@ struct ChunkTrailer
 {
     
     ChunkTrailer(JSRuntime* rt, StoreBuffer* sb)
-      : location(ChunkLocation::Nursery)
-      , padding{}
-      , storeBuffer(sb)
-      , runtime(rt)
+      : location(ChunkLocation::Nursery), storeBuffer(sb), runtime(rt)
     {}
 
     
     explicit ChunkTrailer(JSRuntime* rt)
-      : location(ChunkLocation::TenuredHeap)
-      , padding{}
-      , storeBuffer(nullptr)
-      , runtime(rt)
+      : location(ChunkLocation::TenuredHeap), storeBuffer(nullptr), runtime(rt)
     {}
 
   public:

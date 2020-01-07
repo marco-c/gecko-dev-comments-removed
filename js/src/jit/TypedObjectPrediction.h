@@ -118,9 +118,7 @@ class TypedObjectPrediction {
     
     
 
-    TypedObjectPrediction()
-      : data_{}
-    {
+    TypedObjectPrediction() {
         kind_ = Empty;
     }
 

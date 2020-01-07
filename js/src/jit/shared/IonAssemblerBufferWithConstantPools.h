@@ -243,7 +243,6 @@ class BranchDeadlineSet
 
   public:
     explicit BranchDeadlineSet(LifoAlloc& alloc)
-      : earliestRange_{}
     {
         
         

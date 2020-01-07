@@ -193,11 +193,7 @@ struct TokenPos {
     uint32_t    begin;  
     uint32_t    end;    
 
-    TokenPos()
-      : begin{}
-      , end{}
-    {
-    }
+    TokenPos() {}
     TokenPos(uint32_t begin, uint32_t end) : begin(begin), end(end) {}
 
     
