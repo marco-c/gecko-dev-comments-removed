@@ -1801,13 +1801,25 @@ HTMLEditRules::WillInsertBreak(Selection& aSelection,
     }
     *aHandled = result.Handled();
     *aCancel = result.Canceled();
+    if (result.Handled()) {
+      
+      
+      
+      lockOffset.Cancel();
+      return NS_OK;
+    }
     
+    MOZ_ASSERT(!*aCancel, "ReturnInParagraph canceled this edit action, "
+                          "WillInsertBreak() needs to handle such case");
   }
 
   
-  if (!(*aHandled)) {
-    *aHandled = true;
-    return InsertBRElement(aSelection, atStartOfSelection);
+  MOZ_ASSERT(!*aHandled, "Reached last resort of WillInsertBreak() "
+                         "after the edit action is handled");
+  nsresult rv = InsertBRElement(aSelection, atStartOfSelection);
+  *aHandled = true;
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
   }
   return NS_OK;
 }

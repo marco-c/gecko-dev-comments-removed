@@ -830,6 +830,7 @@ class MOZ_STACK_CLASS AutoEditorDOMPointOffsetInvalidator final
 public:
   explicit AutoEditorDOMPointOffsetInvalidator(EditorDOMPoint& aPoint)
     : mPoint(aPoint)
+    , mCanceled(false)
   {
     MOZ_ASSERT(aPoint.IsSetAndValid());
     MOZ_ASSERT(mPoint.CanContainerHaveChildren());
@@ -838,7 +839,9 @@ public:
 
   ~AutoEditorDOMPointOffsetInvalidator()
   {
-    InvalidateOffset();
+    if (!mCanceled) {
+      InvalidateOffset();
+    }
   }
 
   
@@ -855,12 +858,22 @@ public:
     }
   }
 
+  
+
+
+  void Cancel()
+  {
+    mCanceled = true;
+  }
+
 private:
   EditorDOMPoint& mPoint;
   
   
   
   nsCOMPtr<nsIContent> mChild;
+
+  bool mCanceled;
 
   AutoEditorDOMPointOffsetInvalidator() = delete;
   AutoEditorDOMPointOffsetInvalidator(
@@ -884,6 +897,7 @@ class MOZ_STACK_CLASS AutoEditorDOMPointChildInvalidator final
 public:
   explicit AutoEditorDOMPointChildInvalidator(EditorDOMPoint& aPoint)
     : mPoint(aPoint)
+    , mCanceled(false)
   {
     MOZ_ASSERT(aPoint.IsSetAndValid());
     Unused << mPoint.Offset();
@@ -891,7 +905,9 @@ public:
 
   ~AutoEditorDOMPointChildInvalidator()
   {
-    InvalidateChild();
+    if (!mCanceled) {
+      InvalidateChild();
+    }
   }
 
   
@@ -902,8 +918,18 @@ public:
     mPoint.Set(mPoint.GetContainer(), mPoint.Offset());
   }
 
+  
+
+
+  void Cancel()
+  {
+    mCanceled = true;
+  }
+
 private:
   EditorDOMPoint& mPoint;
+
+  bool mCanceled;
 
   AutoEditorDOMPointChildInvalidator() = delete;
   AutoEditorDOMPointChildInvalidator(
