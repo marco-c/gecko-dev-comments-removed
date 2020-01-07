@@ -9,10 +9,6 @@
 Cu.import("resource://gre/modules/ExtensionParent.jsm");
 
 var {
-  ExtensionError,
-} = ExtensionUtils;
-
-var {
   IconDetails,
 } = ExtensionParent;
 
@@ -56,13 +52,14 @@ this.sidebarAction = class extends ExtensionAPI {
       icon: IconDetails.normalize({path: options.default_icon}, extension),
       panel: options.default_panel || "",
     };
+    this.globals = Object.create(this.defaults);
 
-    this.tabContext = new TabContext(tab => Object.create(this.defaults),
+    this.tabContext = new TabContext(tab => Object.create(this.globals),
                                      extension);
 
     
     this.windowOpenListener = (window) => {
-      this.createMenuItem(window, this.defaults);
+      this.createMenuItem(window, this.globals);
     };
     windowTracker.addOpenListener(this.windowOpenListener);
 
@@ -291,12 +288,16 @@ this.sidebarAction = class extends ExtensionAPI {
 
 
   setProperty(nativeTab, prop, value) {
+    let values;
     if (nativeTab === null) {
-      this.defaults[prop] = value;
-    } else if (value !== null) {
-      this.tabContext.get(nativeTab)[prop] = value;
+      values = this.globals;
     } else {
-      delete this.tabContext.get(nativeTab)[prop];
+      values = this.tabContext.get(nativeTab);
+    }
+    if (value === null) {
+      delete values[prop];
+    } else {
+      values[prop] = value;
     }
 
     this.updateOnChange(nativeTab);
@@ -314,7 +315,7 @@ this.sidebarAction = class extends ExtensionAPI {
 
   getProperty(nativeTab, prop) {
     if (nativeTab === null) {
-      return this.defaults[prop];
+      return this.globals[prop];
     }
     return this.tabContext.get(nativeTab)[prop];
   }
@@ -381,13 +382,7 @@ this.sidebarAction = class extends ExtensionAPI {
       sidebarAction: {
         async setTitle(details) {
           let nativeTab = getTab(details.tabId);
-
-          let title = details.title;
-          
-          if (nativeTab && title === "") {
-            title = null;
-          }
-          sidebarAction.setProperty(nativeTab, "title", title);
+          sidebarAction.setProperty(nativeTab, "title", details.title);
         },
 
         getTitle(details) {
@@ -401,6 +396,9 @@ this.sidebarAction = class extends ExtensionAPI {
           let nativeTab = getTab(details.tabId);
 
           let icon = IconDetails.normalize(details, extension, context);
+          if (!Object.keys(icon).length) {
+            icon = null;
+          }
           sidebarAction.setProperty(nativeTab, "icon", icon);
         },
 
@@ -409,15 +407,13 @@ this.sidebarAction = class extends ExtensionAPI {
 
           let url;
           
-          if (nativeTab && details.panel === "") {
+          if (!details.panel) {
             url = null;
-          } else if (details.panel !== "") {
+          } else {
             url = context.uri.resolve(details.panel);
             if (!context.checkLoadURL(url)) {
               return Promise.reject({message: `Access denied for URL ${url}`});
             }
-          } else {
-            throw new ExtensionError("Invalid url for sidebar panel.");
           }
 
           sidebarAction.setProperty(nativeTab, "panel", url);

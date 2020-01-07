@@ -1299,14 +1299,16 @@ let IconDetails = {
         }
 
         for (let size of Object.keys(path)) {
-          let url = baseURI.resolve(path[size]);
+          let url = path[size];
+          if (url) {
+            url = baseURI.resolve(path[size]);
 
-          
-          
-          
-          
-          this._checkURL(url, extension);
-
+            
+            
+            
+            
+            this._checkURL(url, extension);
+          }
           result[size] = url;
         }
       }
@@ -1368,7 +1370,7 @@ let IconDetails = {
     }
 
     if (bestSize) {
-      return {size: bestSize, icon: icons[bestSize]};
+      return {size: bestSize, icon: icons[bestSize] || DEFAULT};
     }
 
     return {size, icon: DEFAULT};
