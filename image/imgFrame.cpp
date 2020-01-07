@@ -610,6 +610,14 @@ imgFrame::ImageUpdatedInternal(const nsIntRect& aUpdateRect)
   
   mDecoded.IntersectRect(mDecoded, mFrameRect);
 
+  
+  
+  if (mRawSurface) {
+    mRawSurface->Invalidate();
+  }
+  if (mLockedSurface && mRawSurface != mLockedSurface) {
+    mLockedSurface->Invalidate();
+  }
   return NS_OK;
 }
 
