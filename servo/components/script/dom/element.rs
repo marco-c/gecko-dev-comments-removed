@@ -348,27 +348,24 @@ impl Element {
     }
 
     
-    
-    
-    
-    
     fn has_css_layout_box(&self) -> bool {
-        self.upcast::<Node>().bounding_content_box().is_some()
+        let style = self.upcast::<Node>().style();
+
+        
+        
+        style.map_or(false, |s| !s.get_box().clone_display().is_none())
     }
 
     
     fn potentially_scrollable(&self) -> bool {
-        self.has_css_layout_box() &&
-        !self.overflow_x_is_visible() &&
-        !self.overflow_y_is_visible()
+        self.has_css_layout_box() && !self.has_any_visible_overflow()
     }
 
     
     fn has_scrolling_box(&self) -> bool {
         
         
-        self.overflow_x_is_hidden() ||
-        self.overflow_y_is_hidden()
+        self.has_any_hidden_overflow()
     }
 
     fn has_overflow(&self) -> bool {
@@ -377,31 +374,32 @@ impl Element {
     }
 
     
-    fn overflow_x_is_visible(&self) -> bool {
-        let window = window_from_node(self);
-        let overflow_pair = window.overflow_query(self.upcast::<Node>().to_trusted_node_address());
-        overflow_pair.x == overflow_x::computed_value::T::Visible
+    
+    
+    
+
+    
+    fn has_any_visible_overflow(&self) -> bool {
+        let style = self.upcast::<Node>().style();
+
+        style.map_or(false, |s| {
+            let box_ = s.get_box();
+
+            box_.clone_overflow_x() == overflow_x::computed_value::T::Visible ||
+                box_.clone_overflow_y() == overflow_y::computed_value::T::Visible
+        })
     }
 
     
-    fn overflow_y_is_visible(&self) -> bool {
-        let window = window_from_node(self);
-        let overflow_pair = window.overflow_query(self.upcast::<Node>().to_trusted_node_address());
-        overflow_pair.y == overflow_y::computed_value::T::Visible
-    }
+    fn has_any_hidden_overflow(&self) -> bool {
+        let style = self.upcast::<Node>().style();
 
-    
-    fn overflow_x_is_hidden(&self) -> bool {
-        let window = window_from_node(self);
-        let overflow_pair = window.overflow_query(self.upcast::<Node>().to_trusted_node_address());
-        overflow_pair.x == overflow_x::computed_value::T::Hidden
-    }
+        style.map_or(false, |s| {
+            let box_ = s.get_box();
 
-    
-    fn overflow_y_is_hidden(&self) -> bool {
-        let window = window_from_node(self);
-        let overflow_pair = window.overflow_query(self.upcast::<Node>().to_trusted_node_address());
-        overflow_pair.y == overflow_y::computed_value::T::Hidden
+            box_.clone_overflow_x() == overflow_x::computed_value::T::Hidden ||
+                box_.clone_overflow_y() == overflow_y::computed_value::T::Hidden
+        })
     }
 }
 

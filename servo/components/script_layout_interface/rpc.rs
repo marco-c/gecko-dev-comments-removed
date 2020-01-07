@@ -5,7 +5,9 @@
 use app_units::Au;
 use euclid::{Point2D, Rect};
 use script_traits::UntrustedNodeAddress;
-use style::properties::longhands::{margin_top, margin_right, margin_bottom, margin_left, overflow_x};
+use servo_arc::Arc;
+use style::properties::ComputedValues;
+use style::properties::longhands::overflow_x;
 use webrender_api::ClipId;
 
 
@@ -24,8 +26,6 @@ pub trait LayoutRPC {
     
     fn node_geometry(&self) -> NodeGeometryResponse;
     
-    fn node_overflow(&self) -> NodeOverflowResponse;
-    
     fn node_scroll_area(&self) -> NodeGeometryResponse;
     
     fn node_scroll_root_id(&self) -> NodeScrollRootIdResponse;
@@ -33,7 +33,8 @@ pub trait LayoutRPC {
     fn resolved_style(&self) -> ResolvedStyleResponse;
     fn offset_parent(&self) -> OffsetParentResponse;
     
-    fn margin_style(&self) -> MarginStyleResponse;
+    
+    fn style(&self) -> StyleResponse;
     fn text_index(&self) -> TextIndexResponse;
     
     fn nodes_from_point_response(&self) -> Vec<UntrustedNodeAddress>;
@@ -70,23 +71,7 @@ impl OffsetParentResponse {
 }
 
 #[derive(Clone)]
-pub struct MarginStyleResponse {
-    pub top: margin_top::computed_value::T,
-    pub right: margin_right::computed_value::T,
-    pub bottom: margin_bottom::computed_value::T,
-    pub left: margin_left::computed_value::T,
-}
-
-impl MarginStyleResponse {
-    pub fn empty() -> MarginStyleResponse {
-        MarginStyleResponse {
-            top: margin_top::computed_value::T::Auto,
-            right: margin_right::computed_value::T::Auto,
-            bottom: margin_bottom::computed_value::T::Auto,
-            left: margin_left::computed_value::T::Auto,
-        }
-    }
-}
+pub struct StyleResponse(pub Option<Arc<ComputedValues>>);
 
 #[derive(Clone)]
 pub struct TextIndexResponse(pub Option<usize>);

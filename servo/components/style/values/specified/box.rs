@@ -216,6 +216,12 @@ impl Display {
             other => other,
         }
     }
+
+    
+    #[inline]
+    pub fn is_none(&self) -> bool {
+        *self == Display::None
+    }
 }
 
 
