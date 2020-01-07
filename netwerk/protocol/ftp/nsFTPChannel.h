@@ -122,6 +122,9 @@ private:
     PRTime                           mLastModifiedTime;
     bool                             mForcePending;
     RefPtr<ADivertableParentChannel> mParentChannel;
+
+    
+    uint32_t                          mSuspendCount;
 };
 
 #endif 

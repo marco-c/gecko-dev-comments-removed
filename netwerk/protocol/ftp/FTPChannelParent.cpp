@@ -226,7 +226,7 @@ mozilla::ipc::IPCResult
 FTPChannelParent::RecvSuspend()
 {
   if (mChannel) {
-    SuspendChannel();
+    mChannel->Suspend();
   }
   return IPC_OK();
 }
@@ -235,7 +235,7 @@ mozilla::ipc::IPCResult
 FTPChannelParent::RecvResume()
 {
   if (mChannel) {
-    ResumeChannel();
+    mChannel->Resume();
   }
   return IPC_OK();
 }
@@ -633,18 +633,7 @@ FTPChannelParent::GetInterface(const nsIID& uuid, void** result)
 }
 
 nsresult
-FTPChannelParent::SuspendChannel()
-{
-  nsCOMPtr<nsIChannelWithDivertableParentListener> chan =
-    do_QueryInterface(mChannel);
-  if (chan) {
-    return chan->SuspendInternal();
-  }
-  return mChannel->Suspend();
-}
-
-nsresult
-FTPChannelParent::ResumeChannel()
+FTPChannelParent::ResumeChannelInternalIfPossible()
 {
   nsCOMPtr<nsIChannelWithDivertableParentListener> chan =
     do_QueryInterface(mChannel);
@@ -668,19 +657,34 @@ FTPChannelParent::SuspendForDiversion()
 
   
   
-  nsresult rv = SuspendChannel();
+  nsCOMPtr<nsIChannelWithDivertableParentListener> chan =
+    do_QueryInterface(mChannel);
+  if (chan) {
+    chan->MessageDiversionStarted(this);
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsresult rv;
+  if (chan) {
+    rv = chan->SuspendInternal();
+  } else {
+    rv = mChannel->Suspend();
+  }
+
   MOZ_ASSERT(NS_SUCCEEDED(rv) || rv == NS_ERROR_NOT_AVAILABLE);
   mSuspendedForDiversion = NS_SUCCEEDED(rv);
 
   
   
   mDivertingFromChild = true;
-
-  nsCOMPtr<nsIChannelWithDivertableParentListener> chan =
-    do_QueryInterface(mChannel);
-  if (chan) {
-    chan->MessageDiversionStarted(this);
-  }
 
   return NS_OK;
 }
@@ -704,7 +708,7 @@ FTPChannelParent::ResumeForDiversion()
   }
 
   if (mSuspendedForDiversion) {
-    nsresult rv = ResumeChannel();
+    nsresult rv = ResumeChannelInternalIfPossible();
     if (NS_WARN_IF(NS_FAILED(rv))) {
       FailDiversion(NS_ERROR_UNEXPECTED, true);
       return rv;
@@ -868,7 +872,7 @@ FTPChannelParent::NotifyDiversionFailed(nsresult aErrorCode,
 
   
   if (mSuspendedForDiversion) {
-    ResumeChannel();
+    ResumeChannelInternalIfPossible();
   }
   
   
