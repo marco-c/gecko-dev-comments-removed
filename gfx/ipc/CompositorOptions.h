@@ -33,7 +33,6 @@ public:
     : mUseAPZ(false)
     , mUseWebRender(false)
     , mUseAdvancedLayers(false)
-    , mInitiallyPaused(false)
   {
   }
 
@@ -42,21 +41,15 @@ public:
     : mUseAPZ(aUseAPZ)
     , mUseWebRender(aUseWebRender)
     , mUseAdvancedLayers(false)
-    , mInitiallyPaused(false)
   {
   }
 
   bool UseAPZ() const { return mUseAPZ; }
   bool UseWebRender() const { return mUseWebRender; }
   bool UseAdvancedLayers() const { return mUseAdvancedLayers; }
-  bool InitiallyPaused() const { return mInitiallyPaused; }
 
   void SetUseAdvancedLayers(bool aUseAdvancedLayers) {
     mUseAdvancedLayers = aUseAdvancedLayers;
-  }
-
-  void SetInitiallyPaused(bool aPauseAtStartup) {
-    mInitiallyPaused = aPauseAtStartup;
   }
 
   bool operator==(const CompositorOptions& aOther) const {
@@ -71,9 +64,7 @@ private:
   bool mUseAPZ;
   bool mUseWebRender;
   bool mUseAdvancedLayers;
-  bool mInitiallyPaused;
 
-  
   
 };
 

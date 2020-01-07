@@ -823,6 +823,19 @@ class nsWindow::LayerViewSupport final
 public:
     typedef LayerSession::Compositor::Natives<LayerViewSupport> Base;
 
+    template<class Functor>
+    static void OnNativeCall(Functor&& aCall)
+    {
+        if (aCall.IsTarget(&LayerViewSupport::CreateCompositor)) {
+            
+            nsAppShell::SyncRunEvent(nsAppShell::LambdaEvent<Functor>(
+                    mozilla::Move(aCall)), &LayerViewEvent::MakeEvent);
+            return;
+        }
+
+        MOZ_CRASH("Unexpected call");
+    }
+
     static LayerViewSupport*
     FromNative(const LayerSession::Compositor::LocalRef& instance)
     {
@@ -915,6 +928,20 @@ public:
         }
 
         mWindow->Resize(aLeft, aTop, aWidth, aHeight,  false);
+    }
+
+    void CreateCompositor(int32_t aWidth, int32_t aHeight,
+                          jni::Object::Param aSurface)
+    {
+        MOZ_ASSERT(NS_IsMainThread());
+        if (!mWindow) {
+            return; 
+        }
+
+        mSurface = aSurface;
+        mWindow->CreateLayerManager(aWidth, aHeight);
+
+        mCompositorPaused = false;
     }
 
     void SyncPauseCompositor()
@@ -1396,14 +1423,6 @@ nsWindow::Create(nsIWidget* aParent,
         mParent = parent;
     }
 
-    
-    
-    
-    
-    Resize(0, 0, false);
-
-    CreateLayerManager();
-
 #ifdef DEBUG_ANDROID_WIDGET
     DumpWindows();
 #endif
@@ -1840,7 +1859,7 @@ nsWindow::GetLayerManager(PLayerTransactionChild*, LayersBackend, LayerManagerPe
 }
 
 void
-nsWindow::CreateLayerManager()
+nsWindow::CreateLayerManager(int aCompositorWidth, int aCompositorHeight)
 {
     if (mLayerManager) {
         return;
@@ -1856,8 +1875,7 @@ nsWindow::CreateLayerManager()
     gfxPlatform::GetPlatform();
 
     if (ShouldUseOffMainThreadCompositing()) {
-        LayoutDeviceIntRect rect = GetBounds();
-        CreateCompositor(rect.Width(), rect.Height());
+        CreateCompositor(aCompositorWidth, aCompositorHeight);
         if (mLayerManager) {
             return;
         }

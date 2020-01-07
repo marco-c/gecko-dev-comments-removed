@@ -411,8 +411,6 @@ CompositorBridgeParent::Initialize()
     mApzUpdater = new APZUpdater(mApzcTreeManager, mOptions.UseWebRender());
   }
 
-  mPaused = mOptions.InitiallyPaused();
-
   mCompositorBridgeID = 0;
   
   
