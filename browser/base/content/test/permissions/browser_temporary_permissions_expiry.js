@@ -7,6 +7,10 @@
 const ORIGIN = "https://example.com";
 const PERMISSIONS_PAGE = getRootDirectory(gTestPath).replace("chrome://mochitests/content", ORIGIN) + "permissions.html";
 
+
+const { PromiseTestUtils } = Cu.import("resource://testing-common/PromiseTestUtils.jsm", {});
+PromiseTestUtils.whitelistRejectionsGlobally(/The request is not allowed/);
+
 const EXPIRE_TIME_MS = 100;
 const TIMEOUT_MS = 500;
 
