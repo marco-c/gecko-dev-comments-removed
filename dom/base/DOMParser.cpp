@@ -57,70 +57,49 @@ StringFromSupportedType(SupportedType aType)
 
 already_AddRefed<nsIDocument>
 DOMParser::ParseFromString(const nsAString& aStr, SupportedType aType,
-                           ErrorResult& rv)
+                           ErrorResult& aRv)
 {
-  nsCOMPtr<nsIDOMDocument> domDocument;
-  rv = ParseFromString(aStr,
-                       StringFromSupportedType(aType),
-                       getter_AddRefs(domDocument));
-  nsCOMPtr<nsIDocument> document(do_QueryInterface(domDocument));
-  return document.forget();
-}
-
-NS_IMETHODIMP
-DOMParser::ParseFromString(const char16_t *str,
-                           const char *contentType,
-                           nsIDOMDocument **aResult)
-{
-  NS_ENSURE_ARG(str);
-  
-  
-  return ParseFromString(nsDependentString(str), contentType, aResult);
-}
-
-nsresult
-DOMParser::ParseFromString(const nsAString& str,
-                           const char *contentType,
-                           nsIDOMDocument **aResult)
-{
-  NS_ENSURE_ARG_POINTER(aResult);
-
-  nsresult rv;
-
-  if (!nsCRT::strcmp(contentType, "text/html")) {
-    nsCOMPtr<nsIDOMDocument> domDocument;
-    rv = SetUpDocument(DocumentFlavorHTML, getter_AddRefs(domDocument));
-    NS_ENSURE_SUCCESS(rv, rv);
-    nsCOMPtr<nsIDocument> document = do_QueryInterface(domDocument);
+  if (aType == SupportedType::Text_html) {
+    nsCOMPtr<nsIDocument> document;
+    nsresult rv = SetUpDocument(DocumentFlavorHTML, getter_AddRefs(document));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      aRv.Throw(rv);
+      return nullptr;
+    }
 
     
-
     if (mForceEnableXULXBL) {
       document->ForceEnableXULXBL();
     }
 
-    rv = nsContentUtils::ParseDocumentHTML(str, document, false);
-    NS_ENSURE_SUCCESS(rv, rv);
+    rv = nsContentUtils::ParseDocumentHTML(aStr, document, false);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      aRv.Throw(rv);
+      return nullptr;
+    }
 
-    domDocument.forget(aResult);
-    return rv;
+    return document.forget();
   }
 
   nsAutoCString utf8str;
   
-  if (!AppendUTF16toUTF8(str, utf8str, mozilla::fallible)) {
-    return NS_ERROR_OUT_OF_MEMORY;
+  if (!AppendUTF16toUTF8(aStr, utf8str, mozilla::fallible)) {
+    aRv.Throw(NS_ERROR_OUT_OF_MEMORY);
+    return nullptr;
   }
 
   
   nsCOMPtr<nsIInputStream> stream;
-  rv = NS_NewByteInputStream(getter_AddRefs(stream),
-                             utf8str.get(), utf8str.Length(),
-                             NS_ASSIGNMENT_DEPEND);
-  if (NS_FAILED(rv))
-    return rv;
+  nsresult rv = NS_NewByteInputStream(getter_AddRefs(stream),
+                                      utf8str.get(), utf8str.Length(),
+                                      NS_ASSIGNMENT_DEPEND);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    aRv.Throw(rv);
+    return nullptr;
+  }
 
-  return ParseFromStream(stream, "UTF-8", utf8str.Length(), contentType, aResult);
+  return ParseFromStream(stream,  NS_LITERAL_STRING("UTF-8"),
+                         utf8str.Length(), aType, aRv);
 }
 
 already_AddRefed<nsIDocument>
@@ -231,9 +210,9 @@ DOMParser::ParseFromStream(nsIInputStream* aStream,
     stream = bufferedStream;
   }
 
-  nsCOMPtr<nsIDOMDocument> domDocument;
+  nsCOMPtr<nsIDocument> document;
   rv = SetUpDocument(svg ? DocumentFlavorSVG : DocumentFlavorLegacyGuess,
-                     getter_AddRefs(domDocument));
+                     getter_AddRefs(document));
   NS_ENSURE_SUCCESS(rv, rv);
 
   
@@ -255,17 +234,13 @@ DOMParser::ParseFromStream(nsIInputStream* aStream,
   nsCOMPtr<nsIStreamListener> listener;
 
   
-  
-  
-  nsCOMPtr<nsIDocument> document(do_QueryInterface(domDocument));
-  if (!document) return NS_ERROR_FAILURE;
-
-  
-
   if (mForceEnableXULXBL) {
     document->ForceEnableXULXBL();
   }
 
+  
+  
+  
   rv = document->StartDocumentLoad(kLoadAsData, parserChannel,
                                    nullptr, nullptr,
                                    getter_AddRefs(listener),
@@ -299,9 +274,7 @@ DOMParser::ParseFromStream(nsIInputStream* aStream,
     return NS_ERROR_FAILURE;
   }
 
-  domDocument.swap(*aResult);
-
-  return NS_OK;
+  return CallQueryInterface(document, aResult);
 }
 
 nsresult
@@ -411,7 +384,7 @@ DOMParser::InitInternal(nsISupports* aOwner, nsIPrincipal* prin,
 }
 
 nsresult
-DOMParser::SetUpDocument(DocumentFlavor aFlavor, nsIDOMDocument** aResult)
+DOMParser::SetUpDocument(DocumentFlavor aFlavor, nsIDocument** aResult)
 {
   
   
@@ -434,10 +407,13 @@ DOMParser::SetUpDocument(DocumentFlavor aFlavor, nsIDOMDocument** aResult)
   NS_ASSERTION(mPrincipal, "Must have principal by now");
   NS_ASSERTION(mDocumentURI, "Must have document URI by now");
 
-  return NS_NewDOMDocument(aResult, EmptyString(), EmptyString(), nullptr,
-                           mDocumentURI, mBaseURI,
-                           mPrincipal,
-                           true,
-                           scriptHandlingObject,
-                           aFlavor);
+  nsCOMPtr<nsIDOMDocument> domDoc;
+  rv = NS_NewDOMDocument(getter_AddRefs(domDoc), EmptyString(), EmptyString(),
+                         nullptr, mDocumentURI, mBaseURI, mPrincipal,
+                         true, scriptHandlingObject, aFlavor);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  nsCOMPtr<nsIDocument> doc = do_QueryInterface(domDoc);
+  doc.forget(aResult);
+  return NS_OK;
 }
