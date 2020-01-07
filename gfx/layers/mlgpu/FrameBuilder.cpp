@@ -13,6 +13,7 @@
 #include "MLGDevice.h"                  
 #include "RenderPassMLGPU.h"
 #include "RenderViewMLGPU.h"
+#include "mozilla/gfx/Logging.h"
 #include "mozilla/gfx/Polygon.h"
 #include "mozilla/layers/BSPTree.h"
 #include "mozilla/layers/LayersHelpers.h"
@@ -151,7 +152,7 @@ FrameBuilder::ProcessContainerLayer(ContainerLayer* aContainer,
 
   
   if (!layer) {
-    gfxDevCrash(LogReason::InvalidLayerType) <<
+    gfxDevCrash(gfx::LogReason::InvalidLayerType) <<
       "Layer type is invalid: " << aContainer->Name();
     return false;
   }
@@ -180,7 +181,7 @@ FrameBuilder::ProcessContainerLayer(ContainerLayer* aContainer,
   
   ContainerLayerMLGPU* viewContainer = layer->AsContainerLayerMLGPU();
   if (!viewContainer) {
-    gfxDevCrash(LogReason::InvalidLayerType) <<
+    gfxDevCrash(gfx::LogReason::InvalidLayerType) <<
       "Container layer type is invalid: " << aContainer->Name();
     return false;
   }
