@@ -430,6 +430,17 @@ CacheRegisterAllocator::allocateFixedRegister(MacroAssembler& masm, Register reg
     }
 
     
+    if (availableRegsAfterSpill_.has(reg)) {
+        availableRegsAfterSpill_.take(reg);
+        masm.push(reg);
+        stackPushed_ += sizeof(uintptr_t);
+
+        masm.propagateOOM(spilledRegs_.append(SpilledRegister(reg, stackPushed_)));
+        currentOpRegs_.add(reg);
+        return;
+    }
+
+    
     for (size_t i = 0; i < operandLocations_.length(); i++) {
         OperandLocation& loc = operandLocations_[i];
         if (loc.kind() == OperandLocation::PayloadReg) {
