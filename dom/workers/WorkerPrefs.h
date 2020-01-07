@@ -21,7 +21,6 @@
 
 
 
-WORKER_SIMPLE_PREF("dom.webnotifications.requireinteraction.enabled", DOMWorkerNotificationRIEnabled, DOM_WORKERNOTIFICATIONRI)
 WORKER_SIMPLE_PREF("dom.serviceWorkers.enabled", ServiceWorkersEnabled, SERVICEWORKERS_ENABLED)
 WORKER_SIMPLE_PREF("dom.serviceWorkers.testing.enabled", ServiceWorkersTestingEnabled, SERVICEWORKERS_TESTING_ENABLED)
 WORKER_SIMPLE_PREF("dom.serviceWorkers.openWindow.enabled", OpenWindowEnabled, OPEN_WINDOW_ENABLED)
