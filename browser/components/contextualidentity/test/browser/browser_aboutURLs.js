@@ -8,14 +8,10 @@ add_task(async function() {
   let aboutURLs = [];
 
   
-  let skipURLs = [
-    
+  let networkURLs = [
     "credits",
-    
-    
-    "telemetry",
-    
-    "downloads"
+    "telemetry" 
+                
   ];
 
   for (let cid in Cc) {
@@ -31,7 +27,7 @@ add_task(async function() {
       let uri = Services.io.newURI("about:" + aboutType);
       let flags = am.getURIFlags(uri);
       if (!(flags & Ci.nsIAboutModule.HIDE_FROM_ABOUTABOUT) &&
-          !skipURLs.includes(aboutType)) {
+          !networkURLs.includes(aboutType)) {
         aboutURLs.push(aboutType);
       }
     } catch (e) {
