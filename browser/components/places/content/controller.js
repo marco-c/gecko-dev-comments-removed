@@ -820,7 +820,7 @@ PlacesController.prototype = {
                  PlacesUtils.asQuery(node.parent).queryOptions.queryType ==
                    Ci.nsINavHistoryQueryOptions.QUERY_TYPE_HISTORY) {
         
-        PlacesUtils.history.remove(node.uri).catch(Cu.reportError);
+        await PlacesUtils.history.remove(node.uri).catch(Cu.reportError);
         
       } else if (node.itemId == -1 &&
                  PlacesUtils.nodeIsQuery(node) &&
@@ -829,7 +829,7 @@ PlacesController.prototype = {
         
         
         
-        this._removeHistoryContainer(node);
+        await this._removeHistoryContainer(node).catch(Cu.reportError);
         
       } else {
         
@@ -869,7 +869,7 @@ PlacesController.prototype = {
 
 
 
-  _removeRowsFromHistory: function PC__removeRowsFromHistory() {
+  async _removeRowsFromHistory() {
     let nodes = this._view.selectedNodes;
     let URIs = new Set();
     for (let i = 0; i < nodes.length; ++i) {
@@ -879,11 +879,13 @@ PlacesController.prototype = {
       } else if (PlacesUtils.nodeIsQuery(node) &&
                PlacesUtils.asQuery(node).queryOptions.queryType ==
                  Ci.nsINavHistoryQueryOptions.QUERY_TYPE_HISTORY) {
-        this._removeHistoryContainer(node);
+        await this._removeHistoryContainer(node).catch(Cu.reportError);
       }
     }
 
-    PlacesUtils.history.remove([...URIs]).catch(Cu.reportError);
+    if (URIs.size) {
+      await PlacesUtils.history.remove([...URIs]);
+    }
   },
 
   
@@ -893,10 +895,14 @@ PlacesController.prototype = {
 
 
 
-  _removeHistoryContainer: function PC__removeHistoryContainer(aContainerNode) {
+  async _removeHistoryContainer(aContainerNode) {
     if (PlacesUtils.nodeIsHost(aContainerNode)) {
       
-      PlacesUtils.history.removePagesFromHost(aContainerNode.title, true);
+      
+      
+      let host = "." + (aContainerNode.title == PlacesUtils.getString("localhost") ?
+                          "" : aContainerNode.title);
+      await PlacesUtils.history.removeByFilter({host});
     } else if (PlacesUtils.nodeIsDay(aContainerNode)) {
       
       let query = aContainerNode.query;
@@ -908,7 +914,10 @@ PlacesController.prototype = {
       
       
       
-      PlacesUtils.history.removePagesByTimeframe(beginTime + 1, endTime);
+      await PlacesUtils.history.removeByFilter({
+        beginDate: PlacesUtils.toDate(beginTime + 1000),
+        endDate: PlacesUtils.toDate(endTime)
+      });
     }
   },
 
@@ -928,12 +937,13 @@ PlacesController.prototype = {
       if (queryType == Ci.nsINavHistoryQueryOptions.QUERY_TYPE_BOOKMARKS) {
         await this._removeRowsFromBookmarks();
       } else if (queryType == Ci.nsINavHistoryQueryOptions.QUERY_TYPE_HISTORY) {
-        this._removeRowsFromHistory();
+        await this._removeRowsFromHistory();
       } else {
         throw new Error("implement support for QUERY_TYPE_UNIFIED");
       }
-    } else
+    } else {
       throw new Error("unexpected root");
+    }
   },
 
   

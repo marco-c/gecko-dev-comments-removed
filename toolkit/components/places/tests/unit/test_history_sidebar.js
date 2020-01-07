@@ -369,7 +369,10 @@ async function task_test_date_liveupdate(aResultType) {
 
   Assert.equal(root.childCount, visibleContainers.length);
   
-  hs.removePagesByTimeframe(midnight.getTime() * 1000, Date.now() * 1000);
+  await PlacesUtils.history.removeByFilter({
+    beginDate: new Date(midnight.getTime()),
+    endDate: new Date(Date.now())
+  });
   Assert.equal(root.childCount, visibleContainers.length - 1);
 
   
@@ -406,7 +409,10 @@ async function task_test_date_liveupdate(aResultType) {
 
   Assert.equal(dateContainer.childCount, visibleContainers.length);
   
-  hs.removePagesByTimeframe(midnight.getTime() * 1000, Date.now() * 1000);
+  await PlacesUtils.history.removeByFilter({
+    beginDate: new Date(midnight.getTime()),
+    endDate: new Date(Date.now())
+  });
   Assert.equal(dateContainer.childCount, visibleContainers.length - 1);
   
   await task_add_normalized_visit(uri("http://www.mozilla.org/"), nowObj.getTime(), 0);

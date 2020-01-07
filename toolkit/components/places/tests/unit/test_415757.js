@@ -62,7 +62,7 @@ add_task(async function test_execute() {
                                             PlacesUtils.annotations.EXPIRE_WITH_HISTORY);
 
   
-  PlacesUtils.history.removePagesFromHost("www.test.com", false);
+  await PlacesUtils.history.removeByFilter({ host: "www.test.com" });
 
   
   for (let i = 0; i < TOTAL_SITES; i++) {

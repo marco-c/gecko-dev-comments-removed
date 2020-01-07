@@ -39,8 +39,9 @@ add_task(async function test_nsNavHistory_invalidateFrecencies_somePages() {
     url,
     title: "test"
   });
-  PlacesUtils.history.removePagesFromHost(url.host, false);
-  await onFrecencyChanged(url);
+  let promise = onFrecencyChanged(url);
+  await PlacesUtils.history.removeByFilter({ host: url.host });
+  await promise;
 });
 
 
