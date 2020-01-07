@@ -18,7 +18,7 @@ ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://testing-common/HandlerServiceTestUtils.jsm", this);
 ChromeUtils.import("resource://testing-common/TestUtils.jsm");
 
-XPCOMUtils.defineLazyServiceGetter(this, "gHandlerServiceJSON",
+XPCOMUtils.defineLazyServiceGetter(this, "gHandlerService",
                                    "@mozilla.org/uriloader/handler-service;1",
                                    "nsIHandlerService");
 
@@ -30,11 +30,11 @@ let jsonPath = OS.Path.join(OS.Constants.Path.profileDir, "handlers.json");
 
 
 
-let unloadHandlerStoreJSON = async function() {
+let unloadHandlerStore = async function() {
   
   
   
-  gHandlerServiceJSON;
+  gHandlerService;
 
   let promise = TestUtils.topicObserved("handlersvc-json-replace-complete");
   Services.obs.notifyObservers(null, "handlersvc-json-replace", null);
@@ -44,8 +44,8 @@ let unloadHandlerStoreJSON = async function() {
 
 
 
-let deleteHandlerStoreJSON = async function() {
-  await unloadHandlerStoreJSON();
+let deleteHandlerStore = async function() {
+  await unloadHandlerStore();
 
   await OS.File.remove(jsonPath, { ignoreAbsent: true });
 };
@@ -53,8 +53,8 @@ let deleteHandlerStoreJSON = async function() {
 
 
 
-let copyTestDataToHandlerStoreJSON = async function() {
-  await unloadHandlerStoreJSON();
+let copyTestDataToHandlerStore = async function() {
+  await unloadHandlerStore();
 
   await OS.File.copy(do_get_file("handlers.json").path, jsonPath);
 };
@@ -63,5 +63,5 @@ let copyTestDataToHandlerStoreJSON = async function() {
 
 
 registerCleanupFunction(async function test_terminate() {
-  await deleteHandlerStoreJSON();
+  await deleteHandlerStore();
 });

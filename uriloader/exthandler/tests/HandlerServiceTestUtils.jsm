@@ -22,16 +22,11 @@ XPCOMUtils.defineLazyServiceGetter(this, "gExternalProtocolService",
 XPCOMUtils.defineLazyServiceGetter(this, "gMIMEService",
                                    "@mozilla.org/mime;1",
                                    "nsIMIMEService");
+XPCOMUtils.defineLazyServiceGetter(this, "gHandlerService",
+                                  "@mozilla.org/uriloader/handler-service;1",
+                                  "nsIHandlerService");
 
 var HandlerServiceTestUtils = {
-  
-
-
-
-
-
-  handlerService: null,
-
   
 
 
@@ -41,7 +36,7 @@ var HandlerServiceTestUtils = {
 
   getAllHandlerInfoTypes() {
     let handlerInfoTypes = [];
-    let handlerInfoEnumerator = this.handlerService.enumerate();
+    let handlerInfoEnumerator = gHandlerService.enumerate();
     while (handlerInfoEnumerator.hasMoreElements()) {
       let handlerInfo = handlerInfoEnumerator.getNext()
                                              .QueryInterface(Ci.nsIHandlerInfo);
@@ -97,8 +92,8 @@ var HandlerServiceTestUtils = {
       }
       handlerInfo.setFileExtensions("");
       
-      if (this.handlerService.exists(handlerInfo)) {
-        this.handlerService.fillHandlerInfo(handlerInfo, "");
+      if (gHandlerService.exists(handlerInfo)) {
+        gHandlerService.fillHandlerInfo(handlerInfo, "");
       }
       return handlerInfo;
     }
@@ -109,8 +104,8 @@ var HandlerServiceTestUtils = {
     let osDefaultHandlerFound = {};
     let handlerInfo = gExternalProtocolService.getProtocolHandlerInfoFromOS(
                                                   type, osDefaultHandlerFound);
-    if (this.handlerService.exists(handlerInfo)) {
-      this.handlerService.fillHandlerInfo(handlerInfo, "");
+    if (gHandlerService.exists(handlerInfo)) {
+      gHandlerService.fillHandlerInfo(handlerInfo, "");
     } else {
       gExternalProtocolService.setProtocolHandlerDefaults(
                                   handlerInfo, osDefaultHandlerFound.value);

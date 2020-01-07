@@ -5,13 +5,6 @@
 
 
 
-let gHandlerService = gHandlerServiceJSON;
-let unloadHandlerStore = unloadHandlerStoreJSON;
-let deleteHandlerStore = deleteHandlerStoreJSON;
-let copyTestDataToHandlerStore = copyTestDataToHandlerStoreJSON;
-
-HandlerServiceTestUtils.handlerService = gHandlerService;
-
 
 let webHandlerApp = Cc["@mozilla.org/uriloader/web-handler-app;1"]
                       .createInstance(Ci.nsIWebHandlerApp);
