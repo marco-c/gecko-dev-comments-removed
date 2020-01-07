@@ -258,6 +258,7 @@ nsPluginInstanceOwner::GetCurrentImageSize()
 
 nsPluginInstanceOwner::nsPluginInstanceOwner()
   : mPluginWindow(nullptr)
+  , mLastEventloopNestingLevel(0)
 {
   
   
