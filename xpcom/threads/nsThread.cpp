@@ -197,7 +197,7 @@ NS_IMPL_CI_INTERFACE_GETTER(nsThread, nsIThread, nsIThreadInternal,
 
 
 
-class nsThreadStartupEvent : public Runnable
+class nsThreadStartupEvent final : public Runnable
 {
 public:
   nsThreadStartupEvent()
@@ -217,11 +217,9 @@ public:
     }
   }
 
-  
-  
-  virtual ~nsThreadStartupEvent() {}
-
 private:
+  ~nsThreadStartupEvent() = default;
+
   NS_IMETHOD Run() override
   {
     ReentrantMonitorAutoEnter mon(mMon);
