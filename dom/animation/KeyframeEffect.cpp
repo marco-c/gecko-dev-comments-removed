@@ -73,17 +73,6 @@ KeyframeEffect::KeyframeEffect(
   const Maybe<OwningAnimationTarget>& aTarget,
   const TimingParams& aTiming,
   const KeyframeEffectParams& aOptions)
-  : KeyframeEffect(aDocument, aTarget,
-                   new AnimationEffectTiming(aDocument, aTiming, this),
-                   aOptions)
-{
-}
-
-KeyframeEffect::KeyframeEffect(
-  nsIDocument* aDocument,
-  const Maybe<OwningAnimationTarget>& aTarget,
-  AnimationEffectTimingReadOnly* aTiming,
-  const KeyframeEffectParams& aOptions)
   : AnimationEffect(aDocument, aTiming)
   , mTarget(aTarget)
   , mEffectOptions(aOptions)
