@@ -91,9 +91,6 @@
 #elif defined(XP_LINUX)
 #include "mozilla/Sandbox.h"
 #include "mozilla/SandboxInfo.h"
-
-
-#include "CubebUtils.h"
 #elif defined(XP_MACOSX)
 #include "mozilla/Sandbox.h"
 #endif
@@ -1668,14 +1665,7 @@ ContentChild::RecvSetProcessSandbox(const MaybeFileDesc& aBroker)
 #if defined(XP_LINUX)
   
   if (!SandboxInfo::Get().CanSandboxContent()) {
-       sandboxEnabled = false;
-   } else {
-       
-       
-       
-       
-       
-       Unused << CubebUtils::GetCubebContext();
+    sandboxEnabled = false;
   }
 
   if (sandboxEnabled) {
