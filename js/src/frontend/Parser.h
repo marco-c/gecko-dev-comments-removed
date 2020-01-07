@@ -189,52 +189,9 @@ class ParserBase : public StrictModeGetter
 
     bool reportNoOffset(ParseReportKind kind, bool strict, unsigned errorNumber, ...);
 
-    
-    void error(unsigned errorNumber, ...);
-    void errorWithNotes(UniquePtr<JSErrorNotes> notes, unsigned errorNumber, ...);
-
-    
-    void errorAt(uint32_t offset, unsigned errorNumber, ...);
-    void errorWithNotesAt(UniquePtr<JSErrorNotes> notes, uint32_t offset,
-                          unsigned errorNumber, ...);
-
-    
-
-
-
-
-    MOZ_MUST_USE bool strictModeError(unsigned errorNumber, ...);
-
-    
-
-
-
-
-    MOZ_MUST_USE bool strictModeErrorAt(uint32_t offset, unsigned errorNumber, ...);
-
-    
-    MOZ_MUST_USE bool warning(unsigned errorNumber, ...);
-
-    
-    MOZ_MUST_USE bool warningAt(uint32_t offset, unsigned errorNumber, ...);
-
-    
-
-
-
-    MOZ_MUST_USE bool extraWarning(unsigned errorNumber, ...);
-
-    
-
-
-
-    MOZ_MUST_USE bool extraWarningAt(uint32_t offset, unsigned errorNumber, ...);
-
     bool isValidStrictBinding(PropertyName* name);
 
     void addTelemetry(DeprecatedLanguageExtension e);
-
-    bool warnOnceAboutExprClosure();
 
     bool hasValidSimpleStrictParameterNames();
 
@@ -495,6 +452,49 @@ class Parser final : public ParserBase, private JS::AutoGCRooter
                                 GeneratorKind generatorKind, FunctionAsyncKind asyncKind);
 
     void trace(JSTracer* trc);
+
+    
+    void error(unsigned errorNumber, ...);
+    void errorWithNotes(UniquePtr<JSErrorNotes> notes, unsigned errorNumber, ...);
+
+    
+    void errorAt(uint32_t offset, unsigned errorNumber, ...);
+    void errorWithNotesAt(UniquePtr<JSErrorNotes> notes, uint32_t offset,
+                          unsigned errorNumber, ...);
+
+    
+
+
+
+
+    MOZ_MUST_USE bool strictModeError(unsigned errorNumber, ...);
+
+    
+
+
+
+
+    MOZ_MUST_USE bool strictModeErrorAt(uint32_t offset, unsigned errorNumber, ...);
+
+    
+    MOZ_MUST_USE bool warning(unsigned errorNumber, ...);
+
+    
+    MOZ_MUST_USE bool warningAt(uint32_t offset, unsigned errorNumber, ...);
+
+    bool warnOnceAboutExprClosure();
+
+    
+
+
+
+    MOZ_MUST_USE bool extraWarning(unsigned errorNumber, ...);
+
+    
+
+
+
+    MOZ_MUST_USE bool extraWarningAt(uint32_t offset, unsigned errorNumber, ...);
 
   private:
     Parser* thisForCtor() { return this; }
