@@ -42,8 +42,6 @@ namespace {
 
 #endif  
 
-const int kBytesPerPixel = DesktopFrame::kBytesPerPixel;
-
 
 const uint32_t kPixelRgbaBlack = RGBA(0, 0, 0, 0xff);
 const uint32_t kPixelRgbaWhite = RGBA(0xff, 0xff, 0xff, 0xff);
@@ -76,7 +74,7 @@ void AddCursorOutline(int width, int height, uint32_t* data) {
 
 
 void AlphaMul(uint32_t* data, int width, int height) {
-  static_assert(sizeof(uint32_t) == kBytesPerPixel,
+  static_assert(sizeof(uint32_t) == DesktopFrame::kBytesPerPixel,
                 "size of uint32 should be the number of bytes per pixel");
 
   for (uint32_t* data_end = data + width * height; data != data_end; ++data) {
@@ -144,7 +142,7 @@ MouseCursor* CreateMouseCursorFromHCursor(HDC dc, HCURSOR cursor) {
   bmi.bV5Width = width;
   bmi.bV5Height = -height;  
   bmi.bV5Planes = 1;
-  bmi.bV5BitCount = kBytesPerPixel * 8;
+  bmi.bV5BitCount = DesktopFrame::kBytesPerPixel * 8;
   bmi.bV5Compression = BI_RGB;
   bmi.bV5AlphaMask = 0xff000000;
   bmi.bV5CSType = LCS_WINDOWS_COLOR_SPACE;
