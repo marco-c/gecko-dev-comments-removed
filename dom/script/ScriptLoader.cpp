@@ -3054,6 +3054,22 @@ ScriptLoader::NumberOfProcessors()
   return mNumberOfProcessors;
 }
 
+static bool
+IsInternalURIScheme(nsIURI* uri)
+{
+  bool isWebExt;
+  if (NS_SUCCEEDED(uri->SchemeIs("moz-extension", &isWebExt)) && isWebExt) {
+    return true;
+  }
+
+  bool isResource;
+  if (NS_SUCCEEDED(uri->SchemeIs("resource", &isResource)) && isResource) {
+    return true;
+  }
+
+  return false;
+}
+
 nsresult
 ScriptLoader::PrepareLoadedRequest(ScriptLoadRequest* aRequest,
                                    nsIIncrementalStreamLoader* aLoader,
@@ -3144,8 +3160,7 @@ ScriptLoader::PrepareLoadedRequest(ScriptLoadRequest* aRequest,
 
     
     
-    bool isWebExt = false;
-    if (uri && NS_SUCCEEDED(uri->SchemeIs("moz-extension", &isWebExt)) && isWebExt) {
+    if (uri && IsInternalURIScheme(uri)) {
       request->mBaseURL = uri;
     } else {
       channel->GetURI(getter_AddRefs(request->mBaseURL));
