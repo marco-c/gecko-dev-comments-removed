@@ -937,7 +937,9 @@ nsresult NS_CompareLoadInfoAndLoadContext(nsIChannel *aChannel);
 
 
 
-uint32_t NS_GetDefaultReferrerPolicy();
+
+
+uint32_t NS_GetDefaultReferrerPolicy(bool privateBrowsing = false);
 
 namespace mozilla {
 namespace net {

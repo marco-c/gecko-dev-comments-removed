@@ -1704,6 +1704,10 @@ pref("network.http.sendRefererHeader",      2);
 
 pref("network.http.referer.userControlPolicy", 3);
 
+
+
+pref("network.http.referer.defaultPolicy.pbmode", 2);
+
 pref("network.http.referer.spoofSource", false);
 
 pref("network.http.referer.hideOnionSource", false);
