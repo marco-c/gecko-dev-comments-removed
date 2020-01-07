@@ -1644,6 +1644,7 @@ CreateNativeGlobalForInner(JSContext* aCx,
   
   if (nsContentUtils::IsSystemPrincipal(aPrincipal)) {
     options.creationOptions().setAddonId(MapURIToAddonID(aURI));
+    options.creationOptions().setClampAndJitterTime(false);
   }
 
   options.creationOptions().setSecureContext(aIsSecureContext);

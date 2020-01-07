@@ -423,11 +423,6 @@ private:
       return false;
     }
 
-    
-    
-    
-    aWorkerPrivate->EnsurePerformanceStorage();
-
     ErrorResult rv;
     workerinternals::LoadMainScript(aWorkerPrivate, mScriptURL, WorkerScript, rv);
     rv.WouldReportJSException();
@@ -2671,8 +2666,12 @@ WorkerPrivate::WorkerPrivate(WorkerPrivate* aParent,
     if (mIsSecureContext) {
       mJSSettings.chrome.compartmentOptions
                  .creationOptions().setSecureContext(true);
+      mJSSettings.chrome.compartmentOptions
+                 .creationOptions().setClampAndJitterTime(false);
       mJSSettings.content.compartmentOptions
                  .creationOptions().setSecureContext(true);
+      mJSSettings.content.compartmentOptions
+                 .creationOptions().setClampAndJitterTime(false);
     }
 
     mIsInAutomation = xpc::IsInAutomation();
@@ -3441,16 +3440,6 @@ WorkerPrivate::EnsureClientSource()
   }
 
   return true;
-}
-
-void
-WorkerPrivate::EnsurePerformanceStorage()
-{
-  AssertIsOnWorkerThread();
-
-  if (!mPerformanceStorage) {
-    mPerformanceStorage = PerformanceStorageWorker::Create(this);
-  }
 }
 
 const ClientInfo&
@@ -5279,7 +5268,11 @@ PerformanceStorage*
 WorkerPrivate::GetPerformanceStorage()
 {
   AssertIsOnMainThread();
-  MOZ_ASSERT(mPerformanceStorage);
+
+  if (!mPerformanceStorage) {
+    mPerformanceStorage = PerformanceStorageWorker::Create(this);
+  }
+
   return mPerformanceStorage;
 }
 
