@@ -191,19 +191,29 @@ ToJSString(JSContext* cx, const nsAString& aStr)
   return JS_NewUCStringCopyN(cx, aStr.Data(), aStr.Length());
 }
 
+
+
+SupportedProduct gCurrentProduct = SupportedProduct::Firefox;
+
+void
+SetCurrentProduct()
+{
+#if defined(MOZ_WIDGET_ANDROID)
+  bool isGeckoview = Preferences::GetBool("toolkit.telemetry.isGeckoViewMode", false);
+  if (isGeckoview) {
+    gCurrentProduct = SupportedProduct::Geckoview;
+  } else {
+    gCurrentProduct = SupportedProduct::Fennec;
+  }
+#else
+  gCurrentProduct = SupportedProduct::Firefox;
+#endif
+}
+
 SupportedProduct
 GetCurrentProduct()
 {
-#if defined(MOZ_WIDGET_ANDROID)
-  static bool isGeckoview = Preferences::GetBool("toolkit.telemetry.isGeckoViewMode", false);
-  if (isGeckoview) {
-    return SupportedProduct::Geckoview;
-  } else {
-    return SupportedProduct::Fennec;
-  }
-#else
-  return SupportedProduct::Firefox;
-#endif
+  return gCurrentProduct;
 }
 
 } 

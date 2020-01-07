@@ -143,6 +143,15 @@ ToJSString(JSContext* cx, const nsAString& aStr);
 
 
 
+
+void
+SetCurrentProduct();
+
+
+
+
+
+
 SupportedProduct
 GetCurrentProduct();
 

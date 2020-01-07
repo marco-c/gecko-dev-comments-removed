@@ -345,6 +345,9 @@ if (runningInParent) {
   Services.prefs.setBoolPref(TelemetryUtils.Preferences.HealthPingEnabled, false);
 
   
+  Services.prefs.setBoolPref("toolkit.telemetry.isGeckoViewMode", false);
+
+  
   
   if (Services.prefs.getBoolPref(TelemetryUtils.Preferences.Unified, false)) {
     Services.prefs.setBoolPref(TelemetryUtils.Preferences.OverridePreRelease, true);
