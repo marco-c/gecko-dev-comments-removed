@@ -10,12 +10,6 @@ ChromeUtils.import("resource://gre/modules/AddonManager.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 
-var Experiments;
-try {
-  Experiments = ChromeUtils.import("resource:///modules/experiments/Experiments.jsm").Experiments;
-} catch (e) {
-}
-
 
 
 
@@ -303,19 +297,6 @@ var dataProviders = {
         }, {});
       }));
     });
-  },
-
-  experiments: function experiments(done) {
-    if (Experiments === undefined) {
-      done([]);
-      return;
-    }
-
-    
-    Experiments.instance().getExperiments().then(
-      experiments => done(experiments),
-      () => done([])
-    );
   },
 
   modifiedPreferences: function modifiedPreferences(done) {

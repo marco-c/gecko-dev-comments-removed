@@ -342,9 +342,6 @@ if (runningInParent) {
   Services.prefs.setBoolPref("toolkit.telemetry.newProfilePing.enabled", false);
   Services.prefs.setBoolPref(TelemetryUtils.Preferences.FirstShutdownPingEnabled, false);
   
-  
-  Services.prefs.setBoolPref("experiments.enabled", false);
-  
   Services.prefs.setBoolPref(TelemetryUtils.Preferences.HealthPingEnabled, false);
 
   

@@ -74,10 +74,6 @@ user_pref("ui.caretBlinkTime", -1);
 
 
 
-user_pref("experiments.manifest.uri", "http://%(server)s/experiments-dummy/manifest");
-
-
-
 user_pref("browser.tabs.disableBackgroundZombification", true);
 
 

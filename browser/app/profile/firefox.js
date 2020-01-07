@@ -1511,11 +1511,6 @@ pref("toolkit.telemetry.bhrPing.enabled", true);
 pref("toolkit.telemetry.hybridContent.enabled", true);
 
 
-pref("experiments.enabled", true);
-pref("experiments.manifest.fetchIntervalSeconds", 86400);
-pref("experiments.manifest.uri", "https://telemetry-experiment.cdn.mozilla.net/manifest/v1/firefox/%VERSION%/%CHANNEL%");
-
-
 pref("browser.ping-centre.telemetry", true);
 pref("browser.ping-centre.log", false);
 pref("browser.ping-centre.staging.endpoint", "https://onyx_tiles.stage.mozaws.net/v3/links/ping-centre");
