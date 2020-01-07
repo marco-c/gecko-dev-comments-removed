@@ -101,18 +101,7 @@ var XPCOMUtils = {
 
 
   generateQI: function XPCU_generateQI(interfaces) {
-    
-    let a = [];
-    if (interfaces) {
-      for (let i = 0; i < interfaces.length; i++) {
-        let iface = interfaces[i];
-        let name = (iface && iface.name) || String(iface);
-        if (name in Ci) {
-          a.push(name);
-        }
-      }
-    }
-    return makeQI(a);
+    return ChromeUtils.generateQI(interfaces);
   },
 
   
@@ -578,21 +567,3 @@ ChromeUtils.defineModuleGetter(this, "Services",
 XPCOMUtils.defineLazyServiceGetter(XPCOMUtils, "categoryManager",
                                    "@mozilla.org/categorymanager;1",
                                    "nsICategoryManager");
-
-
-
-
-function makeQI(interfaceNames) {
-  return function XPCOMUtils_QueryInterface(iid) {
-    if (iid.equals(Ci.nsISupports))
-      return this;
-    if (iid.equals(Ci.nsIClassInfo) && "classInfo" in this)
-      return this.classInfo;
-    for (let i = 0; i < interfaceNames.length; i++) {
-      if (Ci[interfaceNames[i]].equals(iid))
-        return this;
-    }
-
-    throw Cr.NS_ERROR_NO_INTERFACE;
-  };
-}
