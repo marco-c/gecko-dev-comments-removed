@@ -412,7 +412,11 @@ nsRFPService::RandomMidpoint(long long aClampedTimeUSec,
 
   
   
-  int byteOffset = ((aClampedTimeUSec - extraClampedTime) / aResolutionUSec) * 4;
+  
+  int byteOffset = abs(((aClampedTimeUSec - extraClampedTime) / aResolutionUSec) * 4);
+  if (MOZ_UNLIKELY(byteOffset > (HASH_DIGEST_SIZE_BYTES - 4))) {
+    byteOffset = 0;
+  }
   uint32_t deterministiclyRandomValue = *BitwiseCast<uint32_t*>(PromiseFlatCString(hashResult).get() + byteOffset);
   deterministiclyRandomValue %= aResolutionUSec;
   *aMidpointOut = deterministiclyRandomValue;
