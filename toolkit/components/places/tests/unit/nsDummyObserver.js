@@ -17,7 +17,7 @@ DummyObserver.prototype = {
   
   onBeginUpdateBatch() {},
   onEndUpdateBatch() {},
-  onVisit(aURI, aVisitID, aTime, aSessionID, aReferringID, aTransitionType) {
+  onVisits(aVisits) {
     Services.obs.notifyObservers(null, "dummy-observer-visited");
   },
   onTitleChanged() {},
