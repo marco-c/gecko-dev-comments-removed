@@ -241,7 +241,7 @@ DoesNotParticipateInAutoDirection(const Element* aElement)
           nodeInfo->Equals(nsGkAtoms::script) ||
           nodeInfo->Equals(nsGkAtoms::style) ||
           nodeInfo->Equals(nsGkAtoms::textarea) ||
-          (aElement->IsInAnonymousSubtree() && !aElement->HasDirAuto()));
+          aElement->IsInAnonymousSubtree());
 }
 
 
@@ -254,8 +254,7 @@ DoesNotAffectDirectionOfAncestors(const Element* aElement)
 {
   return (DoesNotParticipateInAutoDirection(aElement) ||
           aElement->IsHTMLElement(nsGkAtoms::bdi) ||
-          aElement->HasFixedDir() ||
-          aElement->IsInAnonymousSubtree());
+          aElement->HasFixedDir());
 }
 
 
@@ -281,14 +280,10 @@ inline static bool
 NodeAffectsDirAutoAncestor(nsINode* aTextNode)
 {
   Element* parent = aTextNode->GetParentElement();
-  
-  
-  
   return (parent &&
           !DoesNotParticipateInAutoDirection(parent) &&
           parent->NodeOrAncestorHasDirAuto() &&
-          (!aTextNode->IsInAnonymousSubtree() ||
-            parent->HasDirAuto()));
+          !aTextNode->IsInAnonymousSubtree());
 }
 
 Directionality
@@ -923,19 +918,14 @@ SetDirectionFromNewTextNode(nsTextNode* aTextNode)
 void
 ResetDirectionSetByTextNode(nsTextNode* aTextNode)
 {
-  
-  
-  
-  
-  if (!aTextNode->HasTextNodeDirectionalityMap()) {
+  if (!NodeAffectsDirAutoAncestor(aTextNode)) {
+    nsTextNodeDirectionalityMap::EnsureMapIsClearFor(aTextNode);
     return;
   }
 
   Directionality dir = GetDirectionFromText(aTextNode->GetText());
-  if (dir != eDir_NotSet) {
+  if (dir != eDir_NotSet && aTextNode->HasTextNodeDirectionalityMap()) {
     nsTextNodeDirectionalityMap::ResetTextNodeDirection(aTextNode, aTextNode);
-  } else {
-    nsTextNodeDirectionalityMap::EnsureMapIsClearFor(aTextNode);
   }
 }
 
