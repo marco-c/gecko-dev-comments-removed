@@ -339,6 +339,7 @@ typedef enum {
 
   
   MOZ_GTK_WINDOW_DECORATION,
+  MOZ_GTK_WINDOW_DECORATION_SOLID,
 
   MOZ_GTK_WIDGET_NODE_COUNT
 } WidgetNodeType;
@@ -627,7 +628,8 @@ GetGtkHeaderBarButtonLayout(WidgetNodeType* aButtonLayout, int aMaxButtonNums);
 
 
 
+
 bool
-GetCSDDecorationSize(GtkBorder* aDecorationSize);
+GetCSDDecorationSize(GtkWindow *aGtkWindow, GtkBorder* aDecorationSize);
 
 #endif

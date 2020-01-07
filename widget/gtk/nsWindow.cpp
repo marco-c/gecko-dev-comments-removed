@@ -6608,7 +6608,7 @@ nsWindow::UpdateClientOffsetForCSDWindow()
     
     
     GtkBorder decorationSize;
-    GetCSDDecorationSize(&decorationSize);
+    GetCSDDecorationSize(GTK_WINDOW(mShell), &decorationSize);
     mClientOffset = nsIntPoint(decorationSize.left, decorationSize.top);
 
     
