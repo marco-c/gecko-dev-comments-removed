@@ -532,6 +532,11 @@ class AnimationInspector {
 
 
   simulateAnimation(keyframes, effectTiming, isElementNeeded) {
+    
+    if (!this.win) {
+      return null;
+    }
+
     let targetEl = null;
 
     if (isElementNeeded) {
@@ -642,6 +647,11 @@ class AnimationInspector {
   }
 
   updateState(animations) {
+    
+    if (!this.inspector) {
+      return;
+    }
+
     this.stopAnimationsCurrentTimeTimer();
 
     this.inspector.store.dispatch(updateAnimations(animations));
