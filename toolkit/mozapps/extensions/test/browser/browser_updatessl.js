@@ -6,7 +6,7 @@ var tempScope = {};
 ChromeUtils.import("resource://gre/modules/addons/AddonUpdateChecker.jsm", tempScope);
 var AddonUpdateChecker = tempScope.AddonUpdateChecker;
 
-const updaterdf = RELATIVE_DIR + "browser_updatessl.rdf";
+const updatejson = RELATIVE_DIR + "browser_updatessl.json";
 const redirect = RELATIVE_DIR + "redirect.sjs?";
 const SUCCESS = 0;
 const DOWNLOAD_ERROR = AddonManager.ERROR_DOWNLOAD_ERROR;
@@ -78,11 +78,11 @@ function run_update_tests(callback) {
 
     let [mainURL, redirectURL, expectedStatus] = gTests.shift();
     if (redirectURL) {
-      var url = mainURL + redirect + redirectURL + updaterdf;
+      var url = mainURL + redirect + redirectURL + updatejson;
       var message = "Should have seen the right result for an update check redirected from " +
                     mainURL + " to " + redirectURL;
     } else {
-      url = mainURL + updaterdf;
+      url = mainURL + updatejson;
       message = "Should have seen the right result for an update check from " +
                 mainURL;
     }
