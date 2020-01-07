@@ -167,8 +167,16 @@ nsAbsoluteContainingBlock::Reflow(nsContainerFrame*        aDelegatingFrame,
       ReflowAbsoluteFrame(aDelegatingFrame, aPresContext, aReflowInput, cb,
                           aFlags, kidFrame, kidStatus, aOverflowAreas);
       nsIFrame* nextFrame = kidFrame->GetNextInFlow();
-      if (!kidStatus.IsFullyComplete() &&
+      if ((kidStatus.IsInlineBreakBefore() ||
+           !kidStatus.IsFullyComplete()) &&
           aDelegatingFrame->IsFrameOfType(nsIFrame::eCanContainOverflowContainers)) {
+        
+        
+        
+        if (kidStatus.IsInlineBreakBefore()) {
+          kidStatus.Reset();
+          kidStatus.SetIncomplete();
+        }
         
         if (!nextFrame) {
           nextFrame =
