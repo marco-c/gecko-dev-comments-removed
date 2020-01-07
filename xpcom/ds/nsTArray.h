@@ -1729,6 +1729,18 @@ public:
   void RemoveElementAt(index_type aIndex) { RemoveElementsAt(aIndex, 1); }
 
   
+  void RemoveLastElement() { RemoveElementAt(Length() - 1); }
+
+  
+  MOZ_MUST_USE
+  elem_type PopLastElement()
+  {
+    elem_type elem = mozilla::Move(LastElement());
+    RemoveLastElement();
+    return elem;
+  }
+
+  
   
   
   
