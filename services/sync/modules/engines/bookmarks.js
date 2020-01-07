@@ -4,7 +4,8 @@
 
 this.EXPORTED_SYMBOLS = ["BookmarksEngine", "PlacesItem", "Bookmark",
                          "BookmarkFolder", "BookmarkQuery",
-                         "Livemark", "BookmarkSeparator"];
+                         "Livemark", "BookmarkSeparator",
+                         "BufferedBookmarksEngine"];
 
 var Cc = Components.classes;
 var Ci = Components.interfaces;
@@ -18,23 +19,26 @@ Cu.import("resource://services-sync/engines.js");
 Cu.import("resource://services-sync/record.js");
 Cu.import("resource://services-sync/util.js");
 
-XPCOMUtils.defineLazyModuleGetter(this, "BookmarkValidator",
-                                  "resource://services-sync/bookmark_validator.js");
+XPCOMUtils.defineLazyModuleGetters(this, {
+  SyncedBookmarksMirror: "resource://gre/modules/SyncedBookmarksMirror.jsm",
+  BookmarkValidator: "resource://services-sync/bookmark_validator.js",
+  OS: "resource://gre/modules/osfile.jsm",
+  PlacesBackups: "resource://gre/modules/PlacesBackups.jsm",
+  PlacesSyncUtils: "resource://gre/modules/PlacesSyncUtils.jsm",
+  PlacesUtils: "resource://gre/modules/PlacesUtils.jsm",
+  Resource: "resource://services-sync/resource.js",
+});
+
 XPCOMUtils.defineLazyGetter(this, "PlacesBundle", () => {
   return Services.strings.createBundle("chrome://places/locale/places.properties");
 });
-XPCOMUtils.defineLazyModuleGetter(this, "PlacesUtils",
-                                  "resource://gre/modules/PlacesUtils.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "PlacesSyncUtils",
-                                  "resource://gre/modules/PlacesSyncUtils.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "PlacesBackups",
-                                  "resource://gre/modules/PlacesBackups.jsm");
 
-const ANNOS_TO_TRACK = [PlacesSyncUtils.bookmarks.DESCRIPTION_ANNO,
-                        PlacesSyncUtils.bookmarks.SIDEBAR_ANNO,
-                        PlacesUtils.LMANNO_FEEDURI, PlacesUtils.LMANNO_SITEURI];
+XPCOMUtils.defineLazyGetter(this, "ANNOS_TO_TRACK", () => [
+  PlacesSyncUtils.bookmarks.DESCRIPTION_ANNO,
+  PlacesSyncUtils.bookmarks.SIDEBAR_ANNO, PlacesUtils.LMANNO_FEEDURI,
+  PlacesUtils.LMANNO_SITEURI,
+]);
 
-const SERVICE_NOT_SUPPORTED = "Service not supported on this platform";
 const FOLDER_SORTINDEX = 1000000;
 const {
   SOURCE_SYNC,
@@ -42,10 +46,6 @@ const {
   SOURCE_IMPORT_REPLACE,
   SOURCE_SYNC_REPARENT_REMOVED_FOLDER_CHILDREN,
 } = Ci.nsINavBookmarksService;
-
-const ORGANIZERQUERY_ANNO = "PlacesOrganizer/OrganizerQuery";
-const ALLBOOKMARKS_ANNO = "AllBookmarks";
-const MOBILE_ANNO = "MobileBookmarks";
 
 
 
@@ -273,19 +273,123 @@ BookmarkSeparator.prototype = {
 
 Utils.deferGetSet(BookmarkSeparator, "cleartext", "pos");
 
-this.BookmarksEngine = function BookmarksEngine(service) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function BaseBookmarksEngine(service) {
   SyncEngine.call(this, "Bookmarks", service);
-};
-BookmarksEngine.prototype = {
+}
+BaseBookmarksEngine.prototype = {
   __proto__: SyncEngine.prototype,
   _recordObj: PlacesItem,
-  _storeObj: BookmarksStore,
   _trackerObj: BookmarksTracker,
   version: 2,
   _defaultSort: "index",
 
   syncPriority: 4,
   allowSkippedRecord: false,
+
+  async _syncFinish() {
+    await SyncEngine.prototype._syncFinish.call(this);
+    await PlacesSyncUtils.bookmarks.ensureMobileQuery();
+  },
+
+  async _createRecord(id) {
+    if (this._modified.isTombstone(id)) {
+      
+      
+      return this._createTombstone(id);
+    }
+    let record = await SyncEngine.prototype._createRecord.call(this, id);
+    if (record.deleted) {
+      
+      
+      
+      this._modified.setTombstone(record.id);
+    }
+    return record;
+  },
+
+  async pullAllChanges() {
+    return this.pullNewChanges();
+  },
+
+  async trackRemainingChanges() {
+    let changes = this._modified.changes;
+    await PlacesSyncUtils.bookmarks.pushChanges(changes);
+  },
+
+  _deleteId(id) {
+    this._noteDeletedId(id);
+  },
+
+  async _resetClient() {
+    await super._resetClient();
+    await PlacesSyncUtils.bookmarks.reset();
+  },
+
+  
+  
+  _shouldDeleteRemotely(incomingItem) {
+    return FORBIDDEN_INCOMING_IDS.includes(incomingItem.id) ||
+           FORBIDDEN_INCOMING_PARENT_IDS.includes(incomingItem.parentid);
+  },
+
+  getValidator() {
+    return new BookmarkValidator();
+  }
+};
+
+
+
+
+
+
+this.BookmarksEngine = function BookmarksEngine(service) {
+  BaseBookmarksEngine.apply(this, arguments);
+};
+
+BookmarksEngine.prototype = {
+  __proto__: BaseBookmarksEngine.prototype,
+  _storeObj: BookmarksStore,
 
   emptyChangeset() {
     return new BookmarksChangeset();
@@ -522,33 +626,20 @@ BookmarksEngine.prototype = {
     this._store._childrenToOrder = {};
   },
 
-  async _syncFinish() {
-    await SyncEngine.prototype._syncFinish.call(this);
-    await PlacesSyncUtils.bookmarks.ensureMobileQuery();
-  },
-
   async _syncCleanup() {
     await SyncEngine.prototype._syncCleanup.call(this);
     delete this._guidMap;
   },
 
   async _createRecord(id) {
-    if (this._modified.isTombstone(id)) {
-      
-      
-      return this._createTombstone(id);
+    let record = await super._createRecord(id);
+    if (record.deleted) {
+      return record;
     }
     
-    let record = await SyncEngine.prototype._createRecord.call(this, id);
     let entry = await this._mapDupe(record);
     if (entry != null && entry.hasDupe) {
       record.hasDupe = true;
-    }
-    if (record.deleted) {
-      
-      
-      
-      this._modified.setTombstone(record.id);
     }
     return record;
   },
@@ -569,26 +660,8 @@ BookmarksEngine.prototype = {
     return mapped ? mapped.toString() : mapped;
   },
 
-  async pullAllChanges() {
-    return this.pullNewChanges();
-  },
-
   async pullNewChanges() {
     return this._tracker.promiseChangedIDs();
-  },
-
-  async trackRemainingChanges() {
-    let changes = this._modified.changes;
-    await PlacesSyncUtils.bookmarks.pushChanges(changes);
-  },
-
-  _deleteId(id) {
-    this._noteDeletedId(id);
-  },
-
-  async _resetClient() {
-    await SyncEngine.prototype._resetClient.call(this);
-    await PlacesSyncUtils.bookmarks.reset();
   },
 
   
@@ -598,13 +671,6 @@ BookmarksEngine.prototype = {
                                                             incomingItem.id,
                                                             incomingItem.parentid);
     this._modified.insert(newChanges);
-  },
-
-  
-  
-  _shouldDeleteRemotely(incomingItem) {
-    return FORBIDDEN_INCOMING_IDS.includes(incomingItem.id) ||
-           FORBIDDEN_INCOMING_PARENT_IDS.includes(incomingItem.parentid);
   },
 
   beforeRecordDiscard(localRecord, remoteRecord, remoteIsNewer) {
@@ -629,18 +695,228 @@ BookmarksEngine.prototype = {
     this._log.debug("Recording children of " + localRecord.id, order);
     this._store._childrenToOrder[localRecord.id] = order;
   },
+};
 
-  getValidator() {
-    return new BookmarkValidator();
+
+
+
+
+
+
+this.BufferedBookmarksEngine = function BufferedBookmarksEngine() {
+  BaseBookmarksEngine.apply(this, arguments);
+};
+
+BufferedBookmarksEngine.prototype = {
+  __proto__: BaseBookmarksEngine.prototype,
+  _storeObj: BufferedBookmarksStore,
+
+  async getLastSync() {
+    let mirror = await this._store.ensureOpenMirror();
+    return mirror.getCollectionHighWaterMark();
+  },
+
+  async setLastSync(lastSync) {
+    let mirror = await this._store.ensureOpenMirror();
+    await mirror.setCollectionLastModified(lastSync);
+    
+    
+    super.lastSync = lastSync;
+  },
+
+  get lastSync() {
+    throw new TypeError("Use getLastSync");
+  },
+
+  set lastSync(value) {
+    throw new TypeError("Use setLastSync");
+  },
+
+  emptyChangeset() {
+    return new BufferedBookmarksChangeset();
+  },
+
+  async _processIncoming(newitems) {
+    try {
+      await super._processIncoming(newitems);
+    } finally {
+      let buf = await this._store.ensureOpenMirror();
+      let recordsToUpload = await buf.apply({
+        remoteTimeSeconds: Resource.serverTime,
+      });
+      this._modified.replace(recordsToUpload);
+    }
+  },
+
+  async _reconcile(item) {
+    return true;
+  },
+
+  async _createRecord(id) {
+    if (this._needWeakUpload.has(id)) {
+      return this._store.createRecord(id, this.name);
+    }
+    let change = this._modified.changes[id];
+    if (!change) {
+      this._log.error("Creating record for item ${id} not in strong " +
+                      "changeset", { id });
+      throw new TypeError("Can't create record for unchanged item");
+    }
+    let record = this._recordFromCleartext(id, change.cleartext);
+    record.sortindex = await this._store._calculateIndex(record);
+    return record;
+  },
+
+  _recordFromCleartext(id, cleartext) {
+    let recordObj = getTypeObject(cleartext.type);
+    if (!recordObj) {
+      this._log.warn("Creating record for item ${id} with unknown type ${type}",
+                     { id, type: cleartext.type });
+      recordObj = PlacesItem;
+    }
+    let record = new recordObj(this.name, id);
+    record.cleartext = cleartext;
+    return record;
+  },
+
+  async pullChanges() {
+    return {};
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async _onRecordsWritten(succeeded, failed, serverModifiedTime) {
+    let records = [];
+    for (let id of succeeded) {
+      let change = this._modified.changes[id];
+      if (!change) {
+        
+        this._log.info("Uploaded record not in strong changeset", id);
+        continue;
+      }
+      if (!change.synced) {
+        this._log.info("Record in strong changeset not uploaded", id);
+        continue;
+      }
+      let cleartext = change.cleartext;
+      if (!cleartext) {
+        this._log.error("Missing Sync record cleartext for ${id} in ${change}",
+                        { id, change });
+        throw new TypeError("Missing cleartext for uploaded Sync record");
+      }
+      let record = this._recordFromCleartext(id, cleartext);
+      record.modified = serverModifiedTime;
+      records.push(record);
+    }
+    let buf = await this._store.ensureOpenMirror();
+    await buf.store(records, { needsMerge: false });
+  },
+
+  async _resetClient() {
+    await super._resetClient();
+    let buf = await this._store.ensureOpenMirror();
+    await buf.reset();
+  },
+
+  async finalize() {
+    await super.finalize();
+    await this._store.finalize();
+  },
+};
+
+
+
+
+
+
+function BaseBookmarksStore(name, engine) {
+  Store.call(this, name, engine);
+}
+
+BaseBookmarksStore.prototype = {
+  __proto__: Store.prototype,
+
+  
+  async createRecord(id, collection) {
+    let item = await PlacesSyncUtils.bookmarks.fetch(id);
+    if (!item) { 
+      let record = new PlacesItem(collection, id);
+      record.deleted = true;
+      return record;
+    }
+
+    let recordObj = getTypeObject(item.kind);
+    if (!recordObj) {
+      this._log.warn("Unknown item type, cannot serialize: " + item.kind);
+      recordObj = PlacesItem;
+    }
+    let record = new recordObj(collection, id);
+    record.fromSyncBookmark(item);
+
+    record.sortindex = await this._calculateIndex(record);
+
+    return record;
+  },
+
+  async _calculateIndex(record) {
+    
+    if (record.type == "folder")
+      return FOLDER_SORTINDEX;
+
+    
+    
+    let index = 0;
+    if (record.parentid == "toolbar")
+      index += 150;
+
+    
+    if (record.bmkUri != null) {
+      let frecency = await PlacesSyncUtils.history.fetchURLFrecency(record.bmkUri);
+      if (frecency != -1)
+        index += frecency;
+    }
+
+    return index;
+  },
+
+  async wipe() {
+    
+    await PlacesBackups.create(null, true);
+    await PlacesSyncUtils.bookmarks.wipe();
   }
 };
 
-function BookmarksStore(name, engine) {
-  Store.call(this, name, engine);
+
+
+
+
+
+function BookmarksStore() {
+  BaseBookmarksStore.apply(this, arguments);
   this._itemsToDelete = new Set();
 }
 BookmarksStore.prototype = {
-  __proto__: Store.prototype,
+  __proto__: BaseBookmarksStore.prototype,
 
   async itemExists(id) {
     return (await this.idForGUID(id)) > 0;
@@ -777,29 +1053,6 @@ BookmarksStore.prototype = {
     this._itemsToDelete.clear();
   },
 
-  
-  async createRecord(id, collection) {
-    let item = await PlacesSyncUtils.bookmarks.fetch(id);
-    if (!item) { 
-      let record = new PlacesItem(collection, id);
-      record.deleted = true;
-      return record;
-    }
-
-    let recordObj = getTypeObject(item.kind);
-    if (!recordObj) {
-      this._log.warn("Unknown item type, cannot serialize: " + item.kind);
-      recordObj = PlacesItem;
-    }
-    let record = new recordObj(collection, id);
-    record.fromSyncBookmark(item);
-
-    record.sortindex = await this._calculateIndex(record);
-
-    return record;
-  },
-
-
   async GUIDForId(id) {
     let guid = await PlacesUtils.promiseItemGuid(id);
     return PlacesSyncUtils.bookmarks.guidToRecordId(guid);
@@ -816,33 +1069,72 @@ BookmarksStore.prototype = {
     }
   },
 
-  async _calculateIndex(record) {
-    
-    if (record.type == "folder")
-      return FOLDER_SORTINDEX;
-
-    
-    
-    let index = 0;
-    if (record.parentid == "toolbar")
-      index += 150;
-
-    
-    if (record.bmkUri != null) {
-      let frecency = await PlacesSyncUtils.history.fetchURLFrecency(record.bmkUri);
-      if (frecency != -1)
-        index += frecency;
-    }
-
-    return index;
-  },
-
   async wipe() {
     this.clearPendingDeletions();
-    
-    await PlacesBackups.create(null, true);
-    await PlacesSyncUtils.bookmarks.wipe();
+    await super.wipe();
   }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+function BufferedBookmarksStore() {
+  BaseBookmarksStore.apply(this, arguments);
+}
+
+BufferedBookmarksStore.prototype = {
+  __proto__: BaseBookmarksStore.prototype,
+  _openMirrorPromise: null,
+
+  ensureOpenMirror() {
+    if (!this._openMirrorPromise) {
+      this._openMirrorPromise = this._openMirror().catch(err => {
+        
+        
+        
+        this._openMirrorPromise = null;
+        throw err;
+      });
+    }
+    return this._openMirrorPromise;
+  },
+
+  async _openMirror() {
+    let mirrorPath = OS.Path.join(OS.Constants.Path.profileDir, "weave",
+                                  "bookmarks.sqlite");
+    await OS.File.makeDir(OS.Path.dirname(mirrorPath), {
+      from: OS.Constants.Path.profileDir,
+    });
+
+    return SyncedBookmarksMirror.open({
+      path: mirrorPath,
+      recordTelemetryEvent: (object, method, value, extra) => {
+        this.engine.service.recordTelemetryEvent(object, method, value,
+                                                 extra);
+      },
+    });
+  },
+
+  async applyIncoming(record) {
+    let buf = await this.ensureOpenMirror();
+    await buf.store([record]);
+  },
+
+  async finalize() {
+    if (!this._openMirrorPromise) {
+      return;
+    }
+    let buf = await this._openMirrorPromise;
+    await buf.finalize();
+  },
 };
 
 
@@ -853,7 +1145,6 @@ BookmarksStore.prototype = {
 function BookmarksTracker(name, engine) {
   this._batchDepth = 0;
   this._batchSawScoreIncrement = false;
-  this._migratedOldEntries = false;
   Tracker.call(this, name, engine);
 }
 BookmarksTracker.prototype = {
@@ -912,60 +1203,11 @@ BookmarksTracker.prototype = {
     throw new Error("Don't set initial changed bookmark IDs");
   },
 
-  
-  
-  async _migrateOldEntries() {
-    let existingIDs = await Utils.jsonLoad("changes/" + this.file, this);
-    if (existingIDs === null) {
-      
-      
-      
-      
-      this._log.debug("migrateOldEntries: Missing bookmarks tracker file; " +
-                      "skipping migration");
-      return null;
-    }
-
-    if (!this._needsMigration()) {
-      
-      
-      
-      this._log.debug("migrateOldEntries: Bookmarks engine disabled or " +
-                      "first sync; skipping migration");
-      return Utils.jsonRemove("changes/" + this.file, this);
-    }
-
-    
-    
-    this._log.debug("migrateOldEntries: Migrating old tracker entries");
-    let entries = [];
-    for (let id in existingIDs) {
-      let change = existingIDs[id];
-      
-      
-      let timestamp = typeof change == "number" ? change : change.modified;
-      entries.push({
-        recordId: id,
-        modified: timestamp * 1000,
-      });
-    }
-    await PlacesSyncUtils.bookmarks.migrateOldTrackerEntries(entries);
-    return Utils.jsonRemove("changes/" + this.file, this);
-  },
-
-  _needsMigration() {
-    return this.engine && this.engineIsEnabled() && this.engine.lastSync > 0;
-  },
-
   observe: function observe(subject, topic, data) {
     Tracker.prototype.observe.call(this, subject, topic, data);
 
     switch (topic) {
       case "weave:engine:start-tracking":
-        if (!this._migratedOldEntries) {
-          this._migratedOldEntries = true;
-          Async.promiseSpinningly(this._migrateOldEntries());
-        }
         break;
       case "bookmarks-restore-begin":
         this._log.debug("Ignoring changes from importing bookmarks.");
@@ -1078,16 +1320,46 @@ BookmarksTracker.prototype = {
   onItemVisited() {}
 };
 
-class BookmarksChangeset extends Changeset {
 
-  getStatus(id) {
-    let change = this.changes[id];
-    if (!change) {
-      return PlacesUtils.bookmarks.SYNC_STATUS.UNKNOWN;
-    }
-    return change.status;
+
+
+
+
+
+
+
+class BufferedBookmarksChangeset extends Changeset {
+  
+  
+  getModifiedTimestamp(id) {
+    throw new Error("Don't use timestamps to resolve bookmark conflicts");
   }
 
+  has(id) {
+    throw new Error("Don't use the changeset to resolve bookmark conflicts");
+  }
+
+  delete(id) {
+    let change = this.changes[id];
+    if (change) {
+      
+      
+      change.synced = true;
+    }
+  }
+
+  ids() {
+    let results = new Set();
+    for (let id in this.changes) {
+      if (!this.changes[id].synced) {
+        results.add(id);
+      }
+    }
+    return [...results];
+  }
+}
+
+class BookmarksChangeset extends BufferedBookmarksChangeset {
   getModifiedTimestamp(id) {
     let change = this.changes[id];
     if (change) {
@@ -1111,25 +1383,6 @@ class BookmarksChangeset extends Changeset {
     if (change) {
       change.tombstone = true;
     }
-  }
-
-  delete(id) {
-    let change = this.changes[id];
-    if (change) {
-      
-      
-      change.synced = true;
-    }
-  }
-
-  ids() {
-    let results = new Set();
-    for (let id in this.changes) {
-      if (!this.changes[id].synced) {
-        results.add(id);
-      }
-    }
-    return [...results];
   }
 
   isTombstone(id) {

@@ -5,6 +5,7 @@
 
 Cu.import("resource://gre/modules/Log.jsm");
 Cu.import("resource://gre/modules/osfile.jsm");
+Cu.import("resource://gre/modules/PlacesSyncUtils.jsm");
 Cu.import("resource://services-sync/bookmark_repair.js");
 Cu.import("resource://services-sync/constants.js");
 Cu.import("resource://services-sync/doctor.js");
@@ -12,15 +13,9 @@ Cu.import("resource://services-sync/service.js");
 Cu.import("resource://services-sync/engines/clients.js");
 Cu.import("resource://services-sync/engines/bookmarks.js");
 
-const LAST_BOOKMARK_SYNC_PREFS = [
-  "bookmarks.lastSync",
-  "bookmarks.lastSyncLocal",
-];
-
 const BOOKMARK_REPAIR_STATE_PREFS = [
   "client.GUID",
   "doctor.lastRepairAdvance",
-  ...LAST_BOOKMARK_SYNC_PREFS,
   ...Object.values(BookmarkRepairRequestor.PREF).map(name =>
     `repairs.bookmarks.${name}`
   ),
@@ -31,6 +26,9 @@ let bookmarksEngine;
 var recordedEvents = [];
 
 add_task(async function setup() {
+  await Service.engineManager.unregister("bookmarks");
+  await Service.engineManager.register(BufferedBookmarksEngine);
+
   clientsEngine = Service.clientsEngine;
   clientsEngine.ignoreLastModifiedOnProcessCommands = true;
   bookmarksEngine = Service.engineManager.get("bookmarks");
@@ -43,7 +41,9 @@ add_task(async function setup() {
 });
 
 function checkRecordedEvents(expected, message) {
-  deepEqual(recordedEvents, expected, message);
+  
+  let repairEvents = recordedEvents.filter(event => event.object != "mirror");
+  deepEqual(repairEvents, expected, message);
   
   recordedEvents = [];
 }
@@ -130,7 +130,16 @@ add_task(async function test_bookmark_repair_integration() {
     checkRecordedEvents([], "Should not start repair after first sync");
 
     _("Back up last sync timestamps for remote client");
-    let restoreRemoteLastBookmarkSync = backupPrefs(LAST_BOOKMARK_SYNC_PREFS);
+    let buf = await bookmarksEngine._store.ensureOpenMirror();
+    let metaRows = await buf.db.execute(`
+      SELECT key, value FROM meta`);
+    let metaInfos = [];
+    for (let row of metaRows) {
+      metaInfos.push({
+        key: row.getResultByName("key"),
+        value: row.getResultByName("value"),
+      });
+    }
 
     _(`Delete ${bookmarkInfo.guid} locally and on server`);
     
@@ -140,8 +149,28 @@ add_task(async function test_bookmark_repair_integration() {
     await PlacesUtils.bookmarks.remove(bookmarkInfo.guid, {
       source: PlacesUtils.bookmarks.SOURCE_SYNC,
     });
-    deepEqual((await bookmarksEngine.pullNewChanges()), {},
+    deepEqual((await PlacesSyncUtils.bookmarks.pullChanges()), {},
       `Should not upload tombstone for ${bookmarkInfo.guid}`);
+
+    
+    let itemRows = await buf.db.execute(`
+      SELECT guid, kind, title, urlId
+      FROM items
+      WHERE guid = :guid`,
+      { guid: bookmarkInfo.guid });
+    equal(itemRows.length, 1, `Bookmark ${
+      bookmarkInfo.guid} should exist in buffer`);
+    let bufInfos = [];
+    for (let row of itemRows) {
+      bufInfos.push({
+        guid: row.getResultByName("guid"),
+        kind: row.getResultByName("kind"),
+        title: row.getResultByName("title"),
+        urlId: row.getResultByName("urlId"),
+      });
+    }
+    await buf.db.execute(`DELETE FROM items WHERE guid = :guid`,
+                         { guid: bookmarkInfo.guid });
 
     
     _("Sync again to trigger repair");
@@ -204,7 +233,14 @@ add_task(async function test_bookmark_repair_integration() {
     
     bookmarkInfo.source = PlacesUtils.bookmarks.SOURCE_SYNC;
     await PlacesUtils.bookmarks.insert(bookmarkInfo);
-    restoreRemoteLastBookmarkSync();
+    await buf.db.execute(`
+      INSERT INTO items(guid, urlId, kind, title)
+      VALUES(:guid, :urlId, :kind, :title)`,
+      bufInfos);
+    await buf.db.execute(`
+      REPLACE INTO meta(key, value)
+      VALUES(:key, :value)`,
+      metaInfos);
 
     _("Sync as remote client");
     await Service.sync();
@@ -351,7 +387,12 @@ add_task(async function test_repair_client_missing() {
       source: PlacesUtils.bookmarks.SOURCE_SYNC,
     });
     
-    do_check_empty((await bookmarksEngine.pullNewChanges()));
+    let buf = await bookmarksEngine._store.ensureOpenMirror();
+    await buf.db.execute(`DELETE FROM items WHERE guid = :guid`,
+                         { guid: bookmarkInfo.guid });
+
+    
+    Assert.deepEqual((await PlacesSyncUtils.bookmarks.pullChanges()), {});
     
     Assert.equal(null, await PlacesUtils.bookmarks.fetch(bookmarkInfo.guid));
 
@@ -481,6 +522,7 @@ add_task(async function test_repair_server_deleted() {
     
     
     
+    _(`Adding server tombstone for ${bookmarkInfo.guid}`);
     server.insertWBO("foo", "bookmarks", new ServerWBO(bookmarkInfo.guid, encryptPayload({
       id: bookmarkInfo.guid,
       deleted: true,

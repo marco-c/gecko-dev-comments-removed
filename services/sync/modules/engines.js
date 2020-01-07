@@ -895,6 +895,12 @@ SyncEngine.prototype = {
   
 
 
+  async getLastSync() {
+    return this.lastSync;
+  },
+  async setLastSync(lastSync) {
+    this.lastSync = lastSync;
+  },
   get lastSync() {
     return this._lastSync;
   },
@@ -1029,13 +1035,7 @@ SyncEngine.prototype = {
     
     
     this.lastSyncLocal = Date.now();
-    let initialChanges;
-    if (this.lastSync) {
-      initialChanges = await this.pullNewChanges();
-    } else {
-      this._log.debug("First sync, uploading all items");
-      initialChanges = await this.pullAllChanges();
-    }
+    let initialChanges = await this.pullChanges();
     this._modified.replace(initialChanges);
     
     
@@ -1047,6 +1047,15 @@ SyncEngine.prototype = {
 
     
     this._delete = {};
+  },
+
+  async pullChanges() {
+    let lastSync = await this.getLastSync();
+    if (lastSync) {
+      return this.pullNewChanges();
+    }
+    this._log.debug("First sync, uploading all items");
+    return this.pullAllChanges();
   },
 
   
@@ -1080,8 +1089,9 @@ SyncEngine.prototype = {
     this._log.trace("Downloading & applying server changes");
 
     let newitems = this.itemSource();
+    let lastSync = await this.getLastSync();
 
-    newitems.newer = this.lastSync;
+    newitems.newer = lastSync;
     newitems.full  = true;
 
     let downloadLimit = Infinity;
@@ -1117,7 +1127,7 @@ SyncEngine.prototype = {
     let downloadedIDs = new Set();
 
     
-    if (this.lastModified == null || this.lastModified > this.lastSync) {
+    if (this.lastModified == null || this.lastModified > lastSync) {
       let { response, records } = await newitems.getBatched(this.downloadBatchSize);
       if (!response.success) {
         response.failureCode = ENGINE_DOWNLOAD_FAIL;
@@ -1164,7 +1174,7 @@ SyncEngine.prototype = {
     if (downloadedIDs.size == downloadLimit) {
       let guidColl = this.itemSource();
 
-      guidColl.newer = this.lastSync;
+      guidColl.newer = lastSync;
       guidColl.older = oldestModified;
       guidColl.sort  = "oldest";
 
@@ -1182,8 +1192,9 @@ SyncEngine.prototype = {
 
     
     
-    if (this.lastSync < this.lastModified) {
-      this.lastSync = this.lastModified;
+    if (lastSync < this.lastModified) {
+      lastSync = this.lastModified;
+      await this.setLastSync(lastSync);
     }
 
     
@@ -1245,8 +1256,9 @@ SyncEngine.prototype = {
       this.toFetch = Utils.setDeleteAll(this.toFetch, ids);
       this.previousFailed = Utils.setAddAll(this.previousFailed, failedInBackfill);
 
-      if (this.lastSync < this.lastModified) {
-        this.lastSync = this.lastModified;
+      if (lastSync < this.lastModified) {
+        lastSync = this.lastModified;
+        await this.setLastSync(lastSync);
       }
     }
 
@@ -1624,6 +1636,7 @@ SyncEngine.prototype = {
 
       let failed = [];
       let successful = [];
+      let lastSync = await this.getLastSync();
       let handleResponse = async (resp, batchOngoing = false) => {
         
         
@@ -1642,11 +1655,8 @@ SyncEngine.prototype = {
           
           return;
         }
-        
-        let modified = resp.headers["x-weave-timestamp"];
-        if (modified > this.lastSync) {
-          this.lastSync = modified;
-        }
+        let serverModifiedTime = parseFloat(resp.headers["x-weave-timestamp"]);
+
         if (failed.length && this._log.level <= Log.Level.Debug) {
           this._log.debug("Records that will be uploaded again because "
                           + "the server couldn't store them: "
@@ -1659,14 +1669,20 @@ SyncEngine.prototype = {
           this._modified.delete(id);
         }
 
-        await this._onRecordsWritten(successful, failed);
+        await this._onRecordsWritten(successful, failed, serverModifiedTime);
+
+        
+        if (serverModifiedTime > lastSync) {
+          lastSync = serverModifiedTime;
+          await this.setLastSync(lastSync);
+        }
 
         
         failed.length = 0;
         successful.length = 0;
       };
 
-      let postQueue = up.newPostQueue(this._log, this.lastSync, handleResponse);
+      let postQueue = up.newPostQueue(this._log, lastSync, handleResponse);
 
       for (let id of modifiedIDs) {
         let out;
@@ -1717,7 +1733,7 @@ SyncEngine.prototype = {
     }
   },
 
-  async _onRecordsWritten(succeeded, failed) {
+  async _onRecordsWritten(succeeded, failed, serverModifiedTime) {
     
     
   },
