@@ -2,6 +2,7 @@
 
 
 
+
 "use strict";
 
 
@@ -16,143 +17,29 @@ const require = window.windowRequire = BrowserLoader({
   window,
 }).require;
 
+const { NetMonitorAPI } = require("./src/api");
+const { NetMonitorApp } = require("./src/app");
 const EventEmitter = require("devtools/shared/event-emitter");
-const { createFactory } = require("devtools/client/shared/vendor/react");
-const { render, unmountComponentAtNode } = require("devtools/client/shared/vendor/react-dom");
-const Provider = createFactory(require("devtools/client/shared/vendor/react-redux").Provider);
-const { bindActionCreators } = require("devtools/client/shared/vendor/redux");
-const { Connector } = require("./src/connector/index");
-const { configureStore } = require("./src/create-store");
-const App = createFactory(require("./src/components/App"));
-const { EVENTS } = require("./src/constants");
-const {
-  getDisplayedRequestById,
-  getSortedRequests
-} = require("./src/selectors/index");
 
 
 EventEmitter.decorate(window);
 
 
-let connector = new Connector();
-const store = configureStore(connector);
-const actions = bindActionCreators(require("./src/actions/index"), store.dispatch);
-
-
-window.store = store;
-window.connector = connector;
-window.actions = actions;
 
 
 
 
-
-
-window.Netmonitor = {
-  bootstrap({ toolbox, panel }) {
-    this.mount = document.querySelector("#mount");
-    this.toolbox = toolbox;
-
-    const connection = {
-      tabConnection: {
-        tabTarget: toolbox.target,
-      },
-      toolbox,
-      panel,
-    };
-
-    const openLink = (link) => {
-      let parentDoc = toolbox.doc;
-      let iframe = parentDoc.getElementById("toolbox-panel-iframe-netmonitor");
-      let top = iframe.ownerDocument.defaultView.top;
-      top.openWebLinkIn(link, "tab");
-    };
-
-    const openSplitConsole = (err) => {
-      toolbox.openSplitConsole().then(() => {
-        toolbox.target.logErrorInPage(err, "har");
-      });
-    };
-
-    this.onRequestAdded = this.onRequestAdded.bind(this);
-    window.on(EVENTS.REQUEST_ADDED, this.onRequestAdded);
-
-    
-    const sourceMapService = toolbox.sourceMapURLService;
-    const app = App({
-      actions,
-      connector,
-      openLink,
-      openSplitConsole,
-      sourceMapService
-    });
-    render(Provider({ store }, app), this.mount);
-
-    
-    return connector.connectFirefox(connection, actions, store.getState);
-  },
-
-  destroy() {
-    unmountComponentAtNode(this.mount);
-    window.off(EVENTS.REQUEST_ADDED, this.onRequestAdded);
-    return connector.disconnect();
-  },
+function initialize(api) {
+  const app = new NetMonitorApp(api);
 
   
+  window.Netmonitor = app;
+  window.store = app.api.store;
+  window.connector = app.api.connector;
+  window.actions = app.api.actions;
 
-  
-
-
-  getHar() {
-    let { HarExporter } = require("devtools/client/netmonitor/src/har/har-exporter");
-    let state = store.getState();
-
-    let options = {
-      connector,
-      items: getSortedRequests(state),
-      
-      forceExport: true,
-    };
-
-    return HarExporter.getHar(options);
-  },
-
-  
-
-
-
-  onRequestAdded(requestId) {
-    let listeners = this.toolbox.getRequestFinishedListeners();
-    if (!listeners.size) {
-      return;
-    }
-
-    let { HarExporter } = require("devtools/client/netmonitor/src/har/har-exporter");
-    let options = {
-      connector,
-      includeResponseBodies: false,
-      items: [getDisplayedRequestById(store.getState(), requestId)],
-    };
-
-    
-    HarExporter.getHar(options).then(har => {
-      let harEntry = har.log.entries[0];
-      delete harEntry.pageref;
-      listeners.forEach(listener => listener({
-        harEntry,
-        requestId,
-      }));
-    });
-  },
-
-  
-
-
-  fetchResponseContent(requestId) {
-    return connector.requestData(requestId, "responseContent");
-  },
-
-  
+  return app;
+}
 
 
 
@@ -160,36 +47,16 @@ window.Netmonitor = {
 
 
 
-  inspectRequest(requestId) {
-    
-    
-    return new Promise((resolve) => {
-      let request = null;
-      let inspector = () => {
-        request = getDisplayedRequestById(store.getState(), requestId);
-        if (!request) {
-          
-          actions.toggleRequestFilterType("all");
-          request = getDisplayedRequestById(store.getState(), requestId);
-        }
 
-        
-        
-        if (request) {
-          window.off(EVENTS.REQUEST_ADDED, inspector);
-          actions.selectRequest(request.id);
-          resolve();
-        }
-      };
 
-      inspector();
 
-      if (!request) {
-        window.on(EVENTS.REQUEST_ADDED, inspector);
-      }
-    });
-  }
-};
+
+
+
+
+
+
+
 
 
 
@@ -222,7 +89,13 @@ if (window.location.protocol === "chrome:" && url.search.length > 1) {
         }
       };
 
-      window.Netmonitor.bootstrap({ toolbox });
+      let api = new NetMonitorAPI();
+      await api.connect(toolbox);
+      let app = window.initialize(api);
+      app.bootstrap({
+        toolbox,
+        document: window.document,
+      });
     } catch (err) {
       window.alert("Unable to start the network monitor:" + err);
     }
