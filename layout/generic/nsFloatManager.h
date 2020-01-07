@@ -10,6 +10,7 @@
 #define nsFloatManager_h_
 
 #include "mozilla/Attributes.h"
+#include "mozilla/TypedEnumBits.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WritingModes.h"
 #include "nsCoord.h"
@@ -26,6 +27,15 @@ struct ReflowInput;
 class StyleBasicShape;
 } 
 
+enum class nsFlowAreaRectFlags : uint32_t {
+  NO_FLAGS   = 0,
+  HAS_FLOATS = 1 << 0,
+  MAY_WIDEN  = 1 << 1
+};
+MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(nsFlowAreaRectFlags)
+
+
+
 
 
 
@@ -35,14 +45,22 @@ class StyleBasicShape;
 
 struct nsFlowAreaRect {
   mozilla::LogicalRect mRect;
-  bool mHasFloats;
+
+  nsFlowAreaRectFlags mAreaFlags;
 
   nsFlowAreaRect(mozilla::WritingMode aWritingMode,
                  nscoord aICoord, nscoord aBCoord,
                  nscoord aISize, nscoord aBSize,
-                 bool aHasFloats)
+                 nsFlowAreaRectFlags aAreaFlags)
     : mRect(aWritingMode, aICoord, aBCoord, aISize, aBSize)
-    , mHasFloats(aHasFloats) {}
+    , mAreaFlags(aAreaFlags) {}
+
+  bool HasFloats() const {
+    return (bool)(mAreaFlags & nsFlowAreaRectFlags::HAS_FLOATS);
+  }
+  bool MayWiden() const {
+    return (bool)(mAreaFlags & nsFlowAreaRectFlags::MAY_WIDEN);
+  }
 };
 
 #define NS_FLOAT_MANAGER_CACHE_SIZE 64

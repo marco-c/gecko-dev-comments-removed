@@ -144,7 +144,8 @@ nsFloatManager::GetFlowArea(WritingMode aWM, nscoord aBCoord, nscoord aBSize,
       (mFloats[floatCount-1].mLeftBEnd <= blockStart &&
        mFloats[floatCount-1].mRightBEnd <= blockStart)) {
     return nsFlowAreaRect(aWM, aContentArea.IStart(aWM), aBCoord,
-                          aContentArea.ISize(aWM), aBSize, false);
+                          aContentArea.ISize(aWM), aBSize,
+                          nsFlowAreaRectFlags::NO_FLAGS);
   }
 
   nscoord blockEnd;
@@ -170,6 +171,7 @@ nsFloatManager::GetFlowArea(WritingMode aWM, nscoord aBCoord, nscoord aBSize,
   
   
   bool haveFloats = false;
+  bool mayWiden = false;
   for (uint32_t i = floatCount; i > 0; --i) {
     const FloatInfo &fi = mFloats[i-1];
     if (fi.mLeftBEnd <= blockStart && fi.mRightBEnd <= blockStart) {
@@ -218,6 +220,10 @@ nsFloatManager::GetFlowArea(WritingMode aWM, nscoord aBCoord, nscoord aBSize,
           
           
           haveFloats = true;
+
+          
+          
+          mayWiden = mayWiden || fi.MayNarrowInBlockDirection(aShapeType);
         }
       } else {
         
@@ -227,6 +233,7 @@ nsFloatManager::GetFlowArea(WritingMode aWM, nscoord aBCoord, nscoord aBSize,
           lineRight = lineLeftEdge;
           
           haveFloats = true;
+          mayWiden = mayWiden || fi.MayNarrowInBlockDirection(aShapeType);
         }
       }
 
@@ -245,8 +252,12 @@ nsFloatManager::GetFlowArea(WritingMode aWM, nscoord aBCoord, nscoord aBSize,
                         : mLineLeft - lineRight +
                           LogicalSize(aWM, aContainerSize).ISize(aWM);
 
+  nsFlowAreaRectFlags flags =
+    (haveFloats ? nsFlowAreaRectFlags::HAS_FLOATS : nsFlowAreaRectFlags::NO_FLAGS) |
+    (mayWiden ? nsFlowAreaRectFlags::MAY_WIDEN : nsFlowAreaRectFlags::NO_FLAGS);
+
   return nsFlowAreaRect(aWM, inlineStart, blockStart - mBlockStart,
-                        lineRight - lineLeft, blockSize, haveFloats);
+                        lineRight - lineLeft, blockSize, flags);
 }
 
 void

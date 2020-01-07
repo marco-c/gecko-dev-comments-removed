@@ -2070,13 +2070,13 @@ nsBlockFrame::PropagateFloatDamage(BlockReflowInput& aState,
 
 #ifdef REALLY_NOISY_REFLOW
     printf("nsBlockFrame::PropagateFloatDamage %p was = %d, is=%d\n",
-           this, wasImpactedByFloat, floatAvailableSpace.mHasFloats);
+           this, wasImpactedByFloat, floatAvailableSpace.HasFloats());
 #endif
 
       
       
       
-      if (wasImpactedByFloat || floatAvailableSpace.mHasFloats) {
+      if (wasImpactedByFloat || floatAvailableSpace.HasFloats()) {
         aLine->MarkDirty();
       }
     }
@@ -2822,7 +2822,7 @@ nsBlockFrame::ReflowLine(BlockReflowInput& aState,
       nsFlowAreaRect r = aState.GetFloatAvailableSpaceForBSize(aLine->BStart(),
                                                                aLine->BSize(),
                                                                nullptr);
-      if (r.mHasFloats) {
+      if (r.HasFloats()) {
         LogicalRect so =
           aLine->GetOverflowArea(eScrollableOverflow, wm, aLine->mContainerSize);
         nscoord s = r.mRect.IStart(wm);
@@ -3433,7 +3433,7 @@ nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
     nsFloatManager::SavedState floatManagerState;
     nsReflowStatus frameReflowStatus;
     do {
-      if (floatAvailableSpace.mHasFloats) {
+      if (floatAvailableSpace.HasFloats()) {
         
         
         aLine->SetLineIsImpactedByFloat(true);
@@ -3600,7 +3600,7 @@ nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
       
       
       bool forceFit = aState.IsAdjacentWithTop() && clearance <= 0 &&
-        !floatAvailableSpace.mHasFloats;
+        !floatAvailableSpace.HasFloats();
       nsCollapsingMargin collapsedBEndMargin;
       nsOverflowAreas overflowAreas;
       *aKeepReflowGoing = brc.PlaceBlock(*blockHtmlRI, forceFit, aLine.get(),
@@ -3890,11 +3890,11 @@ nsBlockFrame::DoReflowInlineFrames(BlockReflowInput& aState,
 
   
   
-  if (aFloatAvailableSpace.mHasFloats)
+  if (aFloatAvailableSpace.HasFloats())
     aLine->SetLineIsImpactedByFloat(true);
 #ifdef REALLY_NOISY_REFLOW
   printf("nsBlockFrame::DoReflowInlineFrames %p impacted = %d\n",
-         this, aFloatAvailableSpace.mHasFloats);
+         this, aFloatAvailableSpace.HasFloats());
 #endif
 
   WritingMode outerWM = aState.mReflowInput.GetWritingMode();
@@ -3920,7 +3920,7 @@ nsBlockFrame::DoReflowInlineFrames(BlockReflowInput& aState,
 
   aLineLayout.BeginLineReflow(iStart, aState.mBCoord,
                               availISize, availBSize,
-                              aFloatAvailableSpace.mHasFloats,
+                              aFloatAvailableSpace.HasFloats(),
                               false, 
                               lineWM, aState.mContainerSize);
 
@@ -3942,7 +3942,7 @@ nsBlockFrame::DoReflowInlineFrames(BlockReflowInput& aState,
   int32_t i;
   nsIFrame* frame = aLine->mFirstChild;
 
-  if (aFloatAvailableSpace.mHasFloats) {
+  if (aFloatAvailableSpace.HasFloats()) {
     
     
     if (aLineLayout.NotifyOptionalBreakPosition(
@@ -4043,7 +4043,7 @@ nsBlockFrame::DoReflowInlineFrames(BlockReflowInput& aState,
 
     
     if (aFloatAvailableSpace.mRect.BSize(outerWM) > 0) {
-      NS_ASSERTION(aFloatAvailableSpace.mHasFloats,
+      NS_ASSERTION(aFloatAvailableSpace.HasFloats(),
                    "redo line on totally empty line with non-empty band...");
       
       
