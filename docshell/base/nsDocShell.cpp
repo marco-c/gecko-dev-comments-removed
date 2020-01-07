@@ -3413,7 +3413,7 @@ nsDocShell::MaybeCreateInitialClientSource(nsIPrincipal* aPrincipal)
   
   
   
-  if (!aPrincipal && (mSandboxFlags & SANDBOXED_ORIGIN)) {
+  if (!aPrincipal && mSandboxFlags) {
     return;
   }
 
@@ -3455,8 +3455,11 @@ nsDocShell::MaybeCreateInitialClientSource(nsIPrincipal* aPrincipal)
     return;
   }
 
+  
+  
+  
   Maybe<ServiceWorkerDescriptor> controller(parentInner->GetController());
-  if (controller.isNothing()) {
+  if (controller.isNothing() || mSandboxFlags) {
     return;
   }
 
