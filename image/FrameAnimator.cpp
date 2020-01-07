@@ -322,11 +322,7 @@ FrameAnimator::AdvanceFrame(AnimationState& aState,
     return ret;
   }
 
-  Maybe<FrameTimeout> nextFrameTimeout = GetTimeoutForFrame(aState, aFrames, nextFrameIndex);
-  
-  
-  MOZ_ASSERT(nextFrameTimeout.isSome());
-  if (*nextFrameTimeout == FrameTimeout::Forever()) {
+  if (nextFrame->GetTimeout() == FrameTimeout::Forever()) {
     ret.mAnimationFinished = true;
   }
 
@@ -334,9 +330,10 @@ FrameAnimator::AdvanceFrame(AnimationState& aState,
     ret.mDirtyRect = aState.FirstFrameRefreshArea();
   } else {
     MOZ_ASSERT(nextFrameIndex == currentFrameIndex + 1);
+    RawAccessFrameRef currentFrame = GetRawFrame(aFrames, currentFrameIndex);
 
     
-    if (!DoBlend(aFrames, &ret.mDirtyRect, currentFrameIndex, nextFrameIndex)) {
+    if (!DoBlend(currentFrame, nextFrame, nextFrameIndex, &ret.mDirtyRect)) {
       
       NS_WARNING("FrameAnimator::AdvanceFrame(): Compositing of frame failed");
       nextFrame->SetCompositingFailed(true);
@@ -560,8 +557,7 @@ FrameAnimator::GetTimeoutForFrame(AnimationState& aState,
 {
   RawAccessFrameRef frame = GetRawFrame(aFrames, aFrameNum);
   if (frame) {
-    AnimationData data = frame->GetAnimationData();
-    return Some(data.mTimeout);
+    return Some(frame->GetTimeout());
   }
 
   MOZ_ASSERT(aState.mHasRequestedDecode && !aState.mIsCurrentlyDecoded);
@@ -632,47 +628,40 @@ FrameAnimator::GetRawFrame(DrawableSurface& aFrames, uint32_t aFrameNum) const
 
 
 bool
-FrameAnimator::DoBlend(DrawableSurface& aFrames,
-                       IntRect* aDirtyRect,
-                       uint32_t aPrevFrameIndex,
-                       uint32_t aNextFrameIndex)
+FrameAnimator::DoBlend(const RawAccessFrameRef& aPrevFrame,
+                       const RawAccessFrameRef& aNextFrame,
+                       uint32_t aNextFrameIndex,
+                       IntRect* aDirtyRect)
 {
-  RawAccessFrameRef prevFrame = GetRawFrame(aFrames, aPrevFrameIndex);
-  RawAccessFrameRef nextFrame = GetRawFrame(aFrames, aNextFrameIndex);
+  MOZ_ASSERT(aPrevFrame && aNextFrame, "Should have frames here");
 
-  MOZ_ASSERT(prevFrame && nextFrame, "Should have frames here");
-
-  AnimationData prevFrameData = prevFrame->GetAnimationData();
-  if (prevFrameData.mDisposalMethod == DisposalMethod::RESTORE_PREVIOUS &&
+  DisposalMethod prevDisposalMethod = aPrevFrame->GetDisposalMethod();
+  bool prevHasAlpha = aPrevFrame->FormatHasAlpha();
+  if (prevDisposalMethod == DisposalMethod::RESTORE_PREVIOUS &&
       !mCompositingPrevFrame) {
-    prevFrameData.mDisposalMethod = DisposalMethod::CLEAR;
+    prevDisposalMethod = DisposalMethod::CLEAR;
   }
 
-  IntRect prevRect = prevFrameData.mBlendRect
-                   ? prevFrameData.mRect.Intersect(*prevFrameData.mBlendRect)
-                   : prevFrameData.mRect;
-
+  IntRect prevRect = aPrevFrame->GetBoundedBlendRect();
   bool isFullPrevFrame = prevRect.IsEqualRect(0, 0, mSize.width, mSize.height);
 
   
   
   if (isFullPrevFrame &&
-      (prevFrameData.mDisposalMethod == DisposalMethod::CLEAR)) {
-    prevFrameData.mDisposalMethod = DisposalMethod::CLEAR_ALL;
+      (prevDisposalMethod == DisposalMethod::CLEAR)) {
+    prevDisposalMethod = DisposalMethod::CLEAR_ALL;
   }
 
-  AnimationData nextFrameData = nextFrame->GetAnimationData();
+  DisposalMethod nextDisposalMethod = aNextFrame->GetDisposalMethod();
+  bool nextHasAlpha = aNextFrame->FormatHasAlpha();
 
-  IntRect nextRect = nextFrameData.mBlendRect
-                   ? nextFrameData.mRect.Intersect(*nextFrameData.mBlendRect)
-                   : nextFrameData.mRect;
-
+  IntRect nextRect = aNextFrame->GetBoundedBlendRect();
   bool isFullNextFrame = nextRect.IsEqualRect(0, 0, mSize.width, mSize.height);
 
-  if (!nextFrame->GetIsPaletted()) {
+  if (!aNextFrame->GetIsPaletted()) {
     
     
-    if (prevFrameData.mDisposalMethod == DisposalMethod::CLEAR_ALL) {
+    if (prevDisposalMethod == DisposalMethod::CLEAR_ALL) {
       aDirtyRect->SetRect(0, 0, mSize.width, mSize.height);
       return true;
     }
@@ -680,15 +669,15 @@ FrameAnimator::DoBlend(DrawableSurface& aFrames,
     
     
     if (isFullNextFrame &&
-        (nextFrameData.mDisposalMethod != DisposalMethod::RESTORE_PREVIOUS) &&
-        !nextFrameData.mHasAlpha) {
+        (nextDisposalMethod != DisposalMethod::RESTORE_PREVIOUS) &&
+        !nextHasAlpha) {
       aDirtyRect->SetRect(0, 0, mSize.width, mSize.height);
       return true;
     }
   }
 
   
-  switch (prevFrameData.mDisposalMethod) {
+  switch (prevDisposalMethod) {
     default:
       MOZ_FALLTHROUGH_ASSERT("Unexpected DisposalMethod");
     case DisposalMethod::NOT_SPECIFIED:
@@ -747,8 +736,6 @@ FrameAnimator::DoBlend(DrawableSurface& aFrames,
     needToBlankComposite = true;
   }
 
-  AnimationData compositingFrameData = mCompositingFrame->GetAnimationData();
-
   
   
   
@@ -756,8 +743,7 @@ FrameAnimator::DoBlend(DrawableSurface& aFrames,
   
   
   bool doDisposal = true;
-  if (!nextFrameData.mHasAlpha &&
-      nextFrameData.mDisposalMethod != DisposalMethod::RESTORE_PREVIOUS) {
+  if (!nextHasAlpha && nextDisposalMethod != DisposalMethod::RESTORE_PREVIOUS) {
     if (isFullNextFrame) {
       
       
@@ -777,46 +763,42 @@ FrameAnimator::DoBlend(DrawableSurface& aFrames,
 
   if (doDisposal) {
     
-    switch (prevFrameData.mDisposalMethod) {
+    switch (prevDisposalMethod) {
       case DisposalMethod::CLEAR:
         if (needToBlankComposite) {
           
           
-          ClearFrame(compositingFrameData.mRawData,
-                     compositingFrameData.mRect);
+          ClearFrame(mCompositingFrame.Data(),
+                     mCompositingFrame->GetRect());
         } else {
           
-          ClearFrame(compositingFrameData.mRawData,
-                     compositingFrameData.mRect,
+          ClearFrame(mCompositingFrame.Data(),
+                     mCompositingFrame->GetRect(),
                      prevRect);
         }
         break;
 
       case DisposalMethod::CLEAR_ALL:
-        ClearFrame(compositingFrameData.mRawData,
-                   compositingFrameData.mRect);
+        ClearFrame(mCompositingFrame.Data(),
+                   mCompositingFrame->GetRect());
         break;
 
       case DisposalMethod::RESTORE_PREVIOUS:
         
         
         if (mCompositingPrevFrame) {
-          AnimationData compositingPrevFrameData =
-            mCompositingPrevFrame->GetAnimationData();
-
-          CopyFrameImage(compositingPrevFrameData.mRawData,
-                         compositingPrevFrameData.mRect,
-                         compositingFrameData.mRawData,
-                         compositingFrameData.mRect);
+          CopyFrameImage(mCompositingPrevFrame.Data(),
+                         mCompositingPrevFrame->GetRect(),
+                         mCompositingFrame.Data(),
+                         mCompositingFrame->GetRect());
 
           
-          if (nextFrameData.mDisposalMethod !=
-              DisposalMethod::RESTORE_PREVIOUS) {
+          if (nextDisposalMethod != DisposalMethod::RESTORE_PREVIOUS) {
             mCompositingPrevFrame.reset();
           }
         } else {
-          ClearFrame(compositingFrameData.mRawData,
-                     compositingFrameData.mRect);
+          ClearFrame(mCompositingFrame.Data(),
+                     mCompositingFrame->GetRect());
         }
         break;
 
@@ -832,42 +814,42 @@ FrameAnimator::DoBlend(DrawableSurface& aFrames,
         
         
         if (mLastCompositedFrameIndex != int32_t(aNextFrameIndex - 1)) {
-          if (isFullPrevFrame && !prevFrame->GetIsPaletted()) {
+          if (isFullPrevFrame && !aPrevFrame->GetIsPaletted()) {
             
-            CopyFrameImage(prevFrameData.mRawData,
+            CopyFrameImage(aPrevFrame.Data(),
                            prevRect,
-                           compositingFrameData.mRawData,
-                           compositingFrameData.mRect);
+                           mCompositingFrame.Data(),
+                           mCompositingFrame->GetRect());
           } else {
             if (needToBlankComposite) {
               
-              if (prevFrameData.mHasAlpha || !isFullPrevFrame) {
-                ClearFrame(compositingFrameData.mRawData,
-                           compositingFrameData.mRect);
+              if (prevHasAlpha || !isFullPrevFrame) {
+                ClearFrame(mCompositingFrame.Data(),
+                           mCompositingFrame->GetRect());
               }
             }
-            DrawFrameTo(prevFrameData.mRawData, prevFrameData.mRect,
-                        prevFrameData.mPaletteDataLength,
-                        prevFrameData.mHasAlpha,
-                        compositingFrameData.mRawData,
-                        compositingFrameData.mRect,
-                        prevFrameData.mBlendMethod,
-                        prevFrameData.mBlendRect);
+            DrawFrameTo(aPrevFrame.Data(), aPrevFrame->GetRect(),
+                        aPrevFrame.PaletteDataLength(),
+                        prevHasAlpha,
+                        mCompositingFrame.Data(),
+                        mCompositingFrame->GetRect(),
+                        aPrevFrame->GetBlendMethod(),
+                        aPrevFrame->GetBlendRect());
           }
         }
     }
   } else if (needToBlankComposite) {
     
     
-    ClearFrame(compositingFrameData.mRawData,
-               compositingFrameData.mRect);
+    ClearFrame(mCompositingFrame.Data(),
+               mCompositingFrame->GetRect());
   }
 
   
   
   
-  if ((nextFrameData.mDisposalMethod == DisposalMethod::RESTORE_PREVIOUS) &&
-      (prevFrameData.mDisposalMethod != DisposalMethod::RESTORE_PREVIOUS)) {
+  if ((nextDisposalMethod == DisposalMethod::RESTORE_PREVIOUS) &&
+      (prevDisposalMethod != DisposalMethod::RESTORE_PREVIOUS)) {
     
     
     
@@ -883,25 +865,22 @@ FrameAnimator::DoBlend(DrawableSurface& aFrames,
       mCompositingPrevFrame = newFrame->RawAccessRef();
     }
 
-    AnimationData compositingPrevFrameData =
-      mCompositingPrevFrame->GetAnimationData();
-
-    CopyFrameImage(compositingFrameData.mRawData,
-                   compositingFrameData.mRect,
-                   compositingPrevFrameData.mRawData,
-                   compositingPrevFrameData.mRect);
+    CopyFrameImage(mCompositingFrame.Data(),
+                   mCompositingFrame->GetRect(),
+                   mCompositingPrevFrame.Data(),
+                   mCompositingPrevFrame->GetRect());
 
     mCompositingPrevFrame->Finish();
   }
 
   
-  DrawFrameTo(nextFrameData.mRawData, nextFrameData.mRect,
-              nextFrameData.mPaletteDataLength,
-              nextFrameData.mHasAlpha,
-              compositingFrameData.mRawData,
-              compositingFrameData.mRect,
-              nextFrameData.mBlendMethod,
-              nextFrameData.mBlendRect);
+  DrawFrameTo(aNextFrame.Data(), aNextFrame->GetRect(),
+              aNextFrame.PaletteDataLength(),
+              nextHasAlpha,
+              mCompositingFrame.Data(),
+              mCompositingFrame->GetRect(),
+              aNextFrame->GetBlendMethod(),
+              aNextFrame->GetBlendRect());
 
   
   mCompositingFrame->Finish();
@@ -970,7 +949,7 @@ nsresult
 FrameAnimator::DrawFrameTo(const uint8_t* aSrcData, const IntRect& aSrcRect,
                            uint32_t aSrcPaletteLength, bool aSrcHasAlpha,
                            uint8_t* aDstPixels, const IntRect& aDstRect,
-                           BlendMethod aBlendMethod, const Maybe<IntRect>& aBlendRect)
+                           BlendMethod aBlendMethod, const IntRect& aBlendRect)
 {
   NS_ENSURE_ARG_POINTER(aSrcData);
   NS_ENSURE_ARG_POINTER(aDstPixels);
@@ -1067,8 +1046,8 @@ FrameAnimator::DrawFrameTo(const uint8_t* aSrcData, const IntRect& aSrcRect,
     auto op = aBlendMethod == BlendMethod::SOURCE ? PIXMAN_OP_SRC
                                                   : PIXMAN_OP_OVER;
 
-    if (aBlendMethod == BlendMethod::OVER || !aBlendRect ||
-        (aBlendMethod == BlendMethod::SOURCE && aSrcRect.IsEqualEdges(*aBlendRect))) {
+    if (aBlendMethod == BlendMethod::OVER ||
+        (aBlendMethod == BlendMethod::SOURCE && aSrcRect.IsEqualEdges(aBlendRect))) {
       
       
       pixman_image_composite32(op,
@@ -1093,10 +1072,10 @@ FrameAnimator::DrawFrameTo(const uint8_t* aSrcData, const IntRect& aSrcRect,
                                src,
                                nullptr,
                                dst,
-                               aBlendRect->X(), aBlendRect->Y(),
+                               aBlendRect.X(), aBlendRect.Y(),
                                0, 0,
-                               aBlendRect->X(), aBlendRect->Y(),
-                               aBlendRect->Width(), aBlendRect->Height());
+                               aBlendRect.X(), aBlendRect.Y(),
+                               aBlendRect.Width(), aBlendRect.Height());
     }
 
     pixman_image_unref(src);
