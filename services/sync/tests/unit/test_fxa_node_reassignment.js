@@ -25,6 +25,13 @@ add_task(async function setup() {
 
   
   Status.__authManager = Service.identity = new BrowserIDManager();
+
+  
+  function onUIError() {
+    do_throw("Errors should not be presented in the UI.");
+  }
+  Svc.Obs.add("weave:ui:login:error", onUIError);
+  Svc.Obs.add("weave:ui:sync:error", onUIError);
 });
 
 

@@ -57,6 +57,7 @@ SyncScheduler.prototype = {
     this.idleInterval         = getThrottledIntervalPreference("scheduler.idleInterval");
     this.activeInterval       = getThrottledIntervalPreference("scheduler.activeInterval");
     this.immediateInterval    = getThrottledIntervalPreference("scheduler.immediateInterval");
+    this.eolInterval          = getThrottledIntervalPreference("scheduler.eolInterval");
 
     
     this.idle = false;
@@ -405,6 +406,12 @@ SyncScheduler.prototype = {
   },
 
   adjustSyncInterval: function adjustSyncInterval() {
+    if (Status.eol) {
+      this._log.debug("Server status is EOL; using eolInterval.");
+      this.syncInterval = this.eolInterval;
+      return;
+    }
+
     if (this.numClients <= 1) {
       this._log.trace("Adjusting syncInterval to singleDeviceInterval.");
       this.syncInterval = this.singleDeviceInterval;
@@ -654,7 +661,21 @@ function ErrorHandler(service) {
   this.init();
 }
 ErrorHandler.prototype = {
-  init() {
+  MINIMUM_ALERT_INTERVAL_MSEC: 604800000,   
+
+  
+
+
+  dontIgnoreErrors: false,
+
+  
+
+
+
+
+  didReportProlongedError: false,
+
+  init: function init() {
     Svc.Obs.add("weave:engine:sync:applied", this);
     Svc.Obs.add("weave:engine:sync:error", this);
     Svc.Obs.add("weave:service:login:error", this);
@@ -680,7 +701,7 @@ ErrorHandler.prototype = {
     this._logManager = new LogManager(Svc.Prefs, logs, "sync");
   },
 
-  observe(subject, topic, data) {
+  observe: function observe(subject, topic, data) {
     this._log.trace("Handling " + topic);
     switch (topic) {
       case "weave:engine:sync:applied":
@@ -711,6 +732,14 @@ ErrorHandler.prototype = {
       case "weave:service:login:error":
         this._log.error("Sync encountered a login error");
         this.resetFileLog();
+
+        if (this.shouldReportError()) {
+          this.notifyOnNextTick("weave:ui:login:error");
+        } else {
+          this.notifyOnNextTick("weave:ui:clear-error");
+        }
+
+        this.dontIgnoreErrors = false;
         break;
       case "weave:service:sync:error": {
         if (Status.sync == CREDENTIALS_CHANGED) {
@@ -729,6 +758,14 @@ ErrorHandler.prototype = {
         
         this._log.error("Sync encountered an error", exception);
         this.resetFileLog();
+
+        if (this.shouldReportError()) {
+          this.notifyOnNextTick("weave:ui:sync:error");
+        } else {
+          this.notifyOnNextTick("weave:ui:sync:finish");
+        }
+
+        this.dontIgnoreErrors = false;
         break;
       }
       case "weave:service:sync:finish":
@@ -747,14 +784,45 @@ ErrorHandler.prototype = {
 
         if (Status.service == SYNC_FAILED_PARTIAL) {
           this._log.error("Some engines did not sync correctly.");
+          this.resetFileLog();
+
+          if (this.shouldReportError()) {
+            this.dontIgnoreErrors = false;
+            this.notifyOnNextTick("weave:ui:sync:error");
+            break;
+          }
+        } else {
+          this.resetFileLog();
         }
-        this.resetFileLog();
+        this.dontIgnoreErrors = false;
+        this.notifyOnNextTick("weave:ui:sync:finish");
         break;
       case "weave:service:start-over:finish":
         
         this.resetFileLog();
         break;
     }
+  },
+
+  notifyOnNextTick: function notifyOnNextTick(topic) {
+    CommonUtils.nextTick(function() {
+      this._log.trace("Notifying " + topic +
+                      ". Status.login is " + Status.login +
+                      ". Status.sync is " + Status.sync);
+      Svc.Obs.notify(topic);
+    }, this);
+  },
+
+  
+
+
+  syncAndReportErrors: function syncAndReportErrors() {
+    this._log.debug("Beginning user-triggered sync.");
+
+    this.dontIgnoreErrors = true;
+    CommonUtils.nextTick(() => {
+      this.service.sync({why: "user"});
+    }, this);
   },
 
   async _dumpAddons() {
@@ -778,16 +846,170 @@ ErrorHandler.prototype = {
 
 
 
-  async resetFileLog() {
+  resetFileLog: function resetFileLog() {
+    let onComplete = logType => {
+      Svc.Obs.notify("weave:service:reset-file-log");
+      this._log.trace("Notified: " + Date.now());
+      if (logType == this._logManager.ERROR_LOG_WRITTEN) {
+        Cu.reportError("Sync encountered an error - see about:sync-log for the log file.");
+      }
+    };
+
     
+    let beforeResetLog;
     if (this._logManager.sawError) {
-      await this._dumpAddons();
+      beforeResetLog = this._dumpAddons();
+    } else {
+      beforeResetLog = Promise.resolve();
     }
-    const logType = await this._logManager.resetFileLog();
-    if (logType == this._logManager.ERROR_LOG_WRITTEN) {
-      Cu.reportError("Sync encountered an error - see about:sync-log for the log file.");
+    
+    
+    beforeResetLog
+      .then(() => this._logManager.resetFileLog())
+      .then(onComplete, onComplete);
+  },
+
+  
+
+
+
+
+
+  errorStr: function errorStr(code) {
+    switch (code.toString()) {
+    case "1":
+      return "illegal-method";
+    case "2":
+      return "invalid-captcha";
+    case "3":
+      return "invalid-username";
+    case "4":
+      return "cannot-overwrite-resource";
+    case "5":
+      return "userid-mismatch";
+    case "6":
+      return "json-parse-failure";
+    case "7":
+      return "invalid-password";
+    case "8":
+      return "invalid-record";
+    case "9":
+      return "weak-password";
+    default:
+      return "generic-server-error";
     }
-    Svc.Obs.notify("weave:service:reset-file-log");
+  },
+
+  
+  
+  
+  shouldReportError: function shouldReportError() {
+    if (Status.login == MASTER_PASSWORD_LOCKED) {
+      this._log.trace("shouldReportError: false (master password locked).");
+      return false;
+    }
+
+    if (this.dontIgnoreErrors) {
+      return true;
+    }
+
+    if (Status.login == LOGIN_FAILED_LOGIN_REJECTED) {
+      
+      this._log.trace("shouldReportError: true (login was rejected)");
+      return true;
+    }
+
+    let lastSync = Svc.Prefs.get("lastSync");
+    if (lastSync && ((Date.now() - Date.parse(lastSync)) >
+        Svc.Prefs.get("errorhandler.networkFailureReportTimeout") * 1000)) {
+      Status.sync = PROLONGED_SYNC_FAILURE;
+      if (this.didReportProlongedError) {
+        this._log.trace("shouldReportError: false (prolonged sync failure, but" +
+                        " we've already reported it).");
+        return false;
+      }
+      this._log.trace("shouldReportError: true (first prolonged sync failure).");
+      this.didReportProlongedError = true;
+      return true;
+    }
+
+    
+    
+    
+    if (!this.service.clusterURL) {
+      this._log.trace("shouldReportError: false (no cluster URL; " +
+                      "possible node reassignment).");
+      return false;
+    }
+
+
+    let result = (![Status.login, Status.sync].includes(SERVER_MAINTENANCE) &&
+                  ![Status.login, Status.sync].includes(LOGIN_FAILED_NETWORK_ERROR));
+    this._log.trace("shouldReportError: ${result} due to login=${login}, sync=${sync}",
+                    {result, login: Status.login, sync: Status.sync});
+    return result;
+  },
+
+  get currentAlertMode() {
+    return Svc.Prefs.get("errorhandler.alert.mode");
+  },
+
+  set currentAlertMode(str) {
+    return Svc.Prefs.set("errorhandler.alert.mode", str);
+  },
+
+  get earliestNextAlert() {
+    return Svc.Prefs.get("errorhandler.alert.earliestNext", 0) * 1000;
+  },
+
+  set earliestNextAlert(msec) {
+    return Svc.Prefs.set("errorhandler.alert.earliestNext", msec / 1000);
+  },
+
+  clearServerAlerts() {
+    
+    Svc.Prefs.resetBranch("errorhandler.alert");
+  },
+
+  
+
+
+
+
+
+
+
+
+  handleServerAlert(xwa) {
+    if (!xwa.code) {
+      this._log.warn("Got structured X-Weave-Alert, but no alert code.");
+      return;
+    }
+
+    switch (xwa.code) {
+      
+      
+      case "soft-eol":
+        
+
+      
+      
+      case "hard-eol":
+        
+        
+        if ((this.currentAlertMode != xwa.code) ||
+            (this.earliestNextAlert < Date.now())) {
+          CommonUtils.nextTick(function() {
+            Svc.Obs.notify("weave:eol", xwa);
+          }, this);
+          this._log.error("X-Weave-Alert: " + xwa.code + ": " + xwa.message);
+          this.earliestNextAlert = Date.now() + this.MINIMUM_ALERT_INTERVAL_MSEC;
+          this.currentAlertMode = xwa.code;
+        }
+        break;
+      default:
+        this._log.debug("Got unexpected X-Weave-Alert code: " + xwa.code);
+    }
   },
 
   
@@ -799,6 +1021,27 @@ ErrorHandler.prototype = {
   checkServerError(resp) {
     
     switch (resp.status) {
+      case 200:
+      case 404:
+      case 513:
+        let xwa = resp.headers["x-weave-alert"];
+
+        
+        if (!xwa || !xwa.startsWith("{")) {
+          this.clearServerAlerts();
+          return;
+        }
+
+        try {
+          xwa = JSON.parse(xwa);
+        } catch (ex) {
+          this._log.warn("Malformed X-Weave-Alert from server: " + xwa);
+          return;
+        }
+
+        this.handleServerAlert(xwa);
+        break;
+
       case 400:
         if (resp == RESPONSE_OVER_QUOTA) {
           Status.sync = OVER_QUOTA;

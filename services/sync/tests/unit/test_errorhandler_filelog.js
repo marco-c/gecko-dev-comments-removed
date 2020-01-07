@@ -18,7 +18,14 @@ const logsdir            = FileUtils.getDir("ProfD", ["weave", "logs"], true);
 const CLEANUP_DELAY      = 2000;
 const DELAY_BUFFER       = 500; 
 
+const PROLONGED_ERROR_DURATION =
+  (Svc.Prefs.get("errorhandler.networkFailureReportTimeout") * 2) * 1000;
+
 var errorHandler = Service.errorHandler;
+
+function setLastSync(lastSyncValue) {
+  Svc.Prefs.set("lastSync", (new Date(Date.now() - lastSyncValue)).toString());
+}
 
 function run_test() {
   validate_all_future_pings();
@@ -136,6 +143,7 @@ add_test(function test_sync_error_logOnError_false() {
   });
 
   
+  setLastSync(PROLONGED_ERROR_DURATION);
   Svc.Obs.notify("weave:service:sync:error");
 });
 
@@ -176,6 +184,7 @@ add_test(function test_sync_error_logOnError_true() {
   });
 
   
+  setLastSync(PROLONGED_ERROR_DURATION);
   Svc.Obs.notify("weave:service:sync:error");
 });
 
@@ -195,6 +204,7 @@ add_test(function test_login_error_logOnError_false() {
   });
 
   
+  setLastSync(PROLONGED_ERROR_DURATION);
   Svc.Obs.notify("weave:service:login:error");
 });
 
@@ -235,6 +245,7 @@ add_test(function test_login_error_logOnError_true() {
   });
 
   
+  setLastSync(PROLONGED_ERROR_DURATION);
   Svc.Obs.notify("weave:service:login:error");
 });
 
@@ -343,6 +354,7 @@ add_test(function test_errorLog_dumpAddons() {
   });
 
   
+  setLastSync(PROLONGED_ERROR_DURATION);
   Svc.Obs.notify("weave:service:sync:error");
 });
 
