@@ -1218,43 +1218,7 @@ public:
       mBuilder->mCurrentActiveScrolledRoot = mSavedActiveScrolledRoot;
     }
 
-    void SetCurrentActiveScrolledRoot(const ActiveScrolledRoot* aActiveScrolledRoot)
-    {
-      MOZ_ASSERT(!mUsed);
-
-      
-      mBuilder->mCurrentActiveScrolledRoot = aActiveScrolledRoot;
-
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-
-      
-      
-      const ActiveScrolledRoot* finiteBoundsASR = ActiveScrolledRoot::PickDescendant(
-        mContentClipASR, aActiveScrolledRoot);
-
-      
-      
-      mBuilder->mCurrentContainerASR = ActiveScrolledRoot::PickAncestor(
-        mBuilder->mCurrentContainerASR, finiteBoundsASR);
-
-      mUsed = true;
-    }
+    void SetCurrentActiveScrolledRoot(const ActiveScrolledRoot* aActiveScrolledRoot);
 
     void EnterScrollFrame(nsIScrollableFrame* aScrollableFrame)
     {

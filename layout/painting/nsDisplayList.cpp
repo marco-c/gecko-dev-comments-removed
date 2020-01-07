@@ -883,6 +883,46 @@ nsDisplayListBuilder::MergeItems(nsTArray<nsDisplayItem*>& aMergedItems)
 }
 
 void
+nsDisplayListBuilder::AutoCurrentActiveScrolledRootSetter::SetCurrentActiveScrolledRoot(
+    const ActiveScrolledRoot* aActiveScrolledRoot)
+{
+  MOZ_ASSERT(!mUsed);
+
+  
+  mBuilder->mCurrentActiveScrolledRoot = aActiveScrolledRoot;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  const ActiveScrolledRoot* finiteBoundsASR = ActiveScrolledRoot::PickDescendant(
+    mContentClipASR, aActiveScrolledRoot);
+
+  
+  
+  mBuilder->mCurrentContainerASR = ActiveScrolledRoot::PickAncestor(
+    mBuilder->mCurrentContainerASR, finiteBoundsASR);
+
+  mUsed = true;
+}
+
+void
 nsDisplayListBuilder::AutoCurrentActiveScrolledRootSetter::InsertScrollFrame(nsIScrollableFrame* aScrollableFrame)
 {
   MOZ_ASSERT(!mUsed);
