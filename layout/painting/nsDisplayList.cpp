@@ -2624,35 +2624,44 @@ already_AddRefed<LayerManager> nsDisplayList::PaintRoot(nsDisplayListBuilder* aB
       }
     }
 
-    
-    
-    
-    nsRootPresContext* rootPresContext = presContext->GetRootPresContext();
-    if (rootPresContext && XRE_IsContentProcess()) {
-      if (aBuilder->WillComputePluginGeometry()) {
-        rootPresContext->ComputePluginGeometryUpdates(aBuilder->RootReferenceFrame(), aBuilder, this);
-      }
-      
-      rootPresContext->CollectPluginGeometryUpdates(layerManager);
-    }
-
-    WebRenderLayerManager* wrManager = static_cast<WebRenderLayerManager*>(layerManager.get());
-
-    nsIDocShell* docShell = presContext->GetDocShell();
-    nsTArray<wr::WrFilterOp> wrFilters;
-    gfx::Matrix5x4* colorMatrix = nsDocShell::Cast(docShell)->GetColorMatrix();
-    if (colorMatrix) {
-      wr::WrFilterOp gs = {
-        wr::WrFilterOpType::ColorMatrix
-      };
-      MOZ_ASSERT(sizeof(gs.matrix) == sizeof(colorMatrix->components));
-      memcpy(&(gs.matrix), colorMatrix->components, sizeof(gs.matrix));
-      wrFilters.AppendElement(gs);
-    }
-
+    bool prevIsCompositingCheap =
+      aBuilder->SetIsCompositingCheap(layerManager->IsCompositingCheap());
     MaybeSetupTransactionIdAllocator(layerManager, presContext);
-    bool temp = aBuilder->SetIsCompositingCheap(layerManager->IsCompositingCheap());
-    wrManager->EndTransactionWithoutLayer(this, aBuilder, wrFilters);
+
+    bool sent = false;
+    if (aFlags & PAINT_IDENTICAL_DISPLAY_LIST) {
+      sent = layerManager->EndEmptyTransaction();
+    }
+
+    if (!sent) {
+      
+      
+      
+      nsRootPresContext* rootPresContext = presContext->GetRootPresContext();
+      if (rootPresContext && XRE_IsContentProcess()) {
+        if (aBuilder->WillComputePluginGeometry()) {
+          rootPresContext->ComputePluginGeometryUpdates(aBuilder->RootReferenceFrame(), aBuilder, this);
+        }
+        
+        rootPresContext->CollectPluginGeometryUpdates(layerManager);
+      }
+
+      WebRenderLayerManager* wrManager = static_cast<WebRenderLayerManager*>(layerManager.get());
+
+      nsIDocShell* docShell = presContext->GetDocShell();
+      nsTArray<wr::WrFilterOp> wrFilters;
+      gfx::Matrix5x4* colorMatrix = nsDocShell::Cast(docShell)->GetColorMatrix();
+      if (colorMatrix) {
+        wr::WrFilterOp gs = {
+          wr::WrFilterOpType::ColorMatrix
+        };
+        MOZ_ASSERT(sizeof(gs.matrix) == sizeof(colorMatrix->components));
+        memcpy(&(gs.matrix), colorMatrix->components, sizeof(gs.matrix));
+        wrFilters.AppendElement(gs);
+      }
+
+      wrManager->EndTransactionWithoutLayer(this, aBuilder, wrFilters);
+    }
 
     
     
@@ -2664,7 +2673,7 @@ already_AddRefed<LayerManager> nsDisplayList::PaintRoot(nsDisplayListBuilder* aB
       frame->ClearInvalidationStateBits();
     }
 
-    aBuilder->SetIsCompositingCheap(temp);
+    aBuilder->SetIsCompositingCheap(prevIsCompositingCheap);
     if (document && widgetTransaction) {
       TriggerPendingAnimations(document, layerManager->GetAnimationReadyTime());
     }
