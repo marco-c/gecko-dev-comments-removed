@@ -102,7 +102,6 @@ class GeckoEditableSupport final
     RefPtr<TextRangeArray> mIMERanges;
     int32_t mIMEMaskEventsCount; 
     int32_t mIMEFocusCount; 
-    bool mIMEUpdatingContext;
     bool mIMESelectionChanged;
     bool mIMETextChangedDuringFlush;
     bool mIMEMonitorCursor;
@@ -182,7 +181,6 @@ public:
         , mIMERanges(new TextRangeArray())
         , mIMEMaskEventsCount(1) 
         , mIMEFocusCount(0)
-        , mIMEUpdatingContext(false)
         , mIMESelectionChanged(false)
         , mIMETextChangedDuringFlush(false)
         , mIMEMonitorCursor(false)
