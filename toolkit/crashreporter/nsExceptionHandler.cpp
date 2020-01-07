@@ -498,7 +498,11 @@ void AnnotateTexturesSize(size_t size)
 
 #ifndef XP_WIN
 
-static bool
+
+
+
+
+bool
 copy_file(const char* from, const char* to)
 {
   const int kBufSize = 4096;
@@ -876,7 +880,13 @@ LaunchCrashReporterActivity(XP_CHAR* aProgramPath, XP_CHAR* aMinidumpPath,
 
 #endif
 
-static bool
+
+
+
+
+
+
+bool
 MinidumpCallback(
 #ifdef XP_LINUX
                       const MinidumpDescriptor& descriptor,
