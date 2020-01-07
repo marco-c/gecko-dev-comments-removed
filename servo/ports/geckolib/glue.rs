@@ -6,7 +6,7 @@ use cssparser::{Parser, ParserInput};
 use cssparser::ToCss as ParserToCss;
 use env_logger::LogBuilder;
 use malloc_size_of::MallocSizeOfOps;
-use selectors::Element;
+use selectors::{Element, NthIndexCache};
 use selectors::matching::{MatchingContext, MatchingMode, matches_selector};
 use servo_arc::{Arc, ArcBorrow, RawOffsetArc};
 use std::cell::RefCell;
@@ -4480,13 +4480,11 @@ pub extern "C" fn Servo_ProcessInvalidations(
     if let Some(ref mut data) = data {
         
         
-        
-        
         let result = data.invalidate_style_if_needed(
             element,
             &shared_style_context,
             None,
-            None,
+            &mut NthIndexCache::default(),
         );
 
         if result.has_invalidated_siblings() {
