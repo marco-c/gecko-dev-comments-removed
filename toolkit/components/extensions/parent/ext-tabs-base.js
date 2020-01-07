@@ -1051,6 +1051,15 @@ class WindowBase {
   
 
 
+
+
+  getHighlightedTabs() {
+    throw new Error("Not implemented");
+  }
+
+  
+
+
   get activeTab() {
     throw new Error("Not implemented");
   }
@@ -1843,7 +1852,7 @@ class TabManagerBase {
     function* candidates(windowWrapper) {
       if (queryInfo) {
         let {active, highlighted, index} = queryInfo;
-        if (active === true || highlighted === true) {
+        if (active === true) {
           yield windowWrapper.activeTab;
           return;
         }
@@ -1852,6 +1861,10 @@ class TabManagerBase {
           if (tabWrapper) {
             yield tabWrapper;
           }
+          return;
+        }
+        if (highlighted === true) {
+          yield* windowWrapper.getHighlightedTabs();
           return;
         }
       }
