@@ -172,6 +172,10 @@ public:
   already_AddRefed<nsIMessageSender> GetMessageManager();
 
   uint32_t EventMode() const { return mEventMode; }
+  void SetEventMode(uint32_t aEventMode)
+  {
+    mEventMode = aEventMode;
+  }
 
   already_AddRefed<Element> GetOwnerElement();
 
