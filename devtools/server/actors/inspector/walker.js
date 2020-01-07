@@ -202,7 +202,16 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     let filter = this.showAllAnonymousContent
                     ? allAnonymousContentTreeWalkerFilter
                     : standardTreeWalkerFilter;
-    return new DocumentWalker(node, this.rootWin, {whatToShow, filter, skipTo});
+
+    return new DocumentWalker(node, this.rootWin,
+      {whatToShow, filter, skipTo, showAnonymousContent: true});
+  },
+
+  getNonAnonymousWalker: function(node, whatToShow, skipTo) {
+    let nodeFilter = standardTreeWalkerFilter;
+
+    return new DocumentWalker(node, this.rootWin,
+      {whatToShow, nodeFilter, skipTo, showAnonymousContent: false});
   },
 
   destroy: function() {
@@ -576,12 +585,32 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       maxNodes = Number.MAX_VALUE;
     }
 
+    let isShadowHost = !!node.rawNode.shadowRoot;
+
+    if (isShadowHost) {
+      let shadowRoot = this._ref(node.rawNode.shadowRoot);
+      return {
+        hasFirst: true,
+        hasLast: true,
+        nodes: [shadowRoot],
+      };
+    }
+
+    let isShadowRoot = !!node.rawNode.host;
     
     
     let getFilteredWalker = documentWalkerNode => {
       let { whatToShow } = options;
       
       
+      if (isShadowRoot) {
+        
+        
+        
+        
+        return this.getNonAnonymousWalker(documentWalkerNode, whatToShow,
+          SKIP_TO_SIBLING);
+      }
       return this.getDocumentWalker(documentWalkerNode, whatToShow, SKIP_TO_SIBLING);
     };
 
