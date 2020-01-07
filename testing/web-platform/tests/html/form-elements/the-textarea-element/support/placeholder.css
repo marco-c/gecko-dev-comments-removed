@@ -1,0 +1,6 @@
+textarea.placeholder,
+textarea::placeholder {
+  
+  color: GrayText; 
+  opacity: 1.0; 
+}
