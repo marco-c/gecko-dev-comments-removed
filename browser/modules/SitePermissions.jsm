@@ -138,14 +138,11 @@ const TemporaryBlockedPermissions = {
 
 var SitePermissions = {
   
-  
-  
   UNKNOWN: Services.perms.UNKNOWN_ACTION,
   ALLOW: Services.perms.ALLOW_ACTION,
   BLOCK: Services.perms.DENY_ACTION,
   PROMPT: Services.perms.PROMPT_ACTION,
   ALLOW_COOKIES_FOR_SESSION: Ci.nsICookiePermission.ACCESS_SESSION,
-  PROMPT_HIDE: Ci.nsIObjectLoadingContent.PLUGIN_PERMISSION_PROMPT_ACTION_QUIET,
 
   
   SCOPE_REQUEST: "{SitePermissions.SCOPE_REQUEST}",
@@ -547,15 +544,7 @@ var SitePermissions = {
 
 
 
-
-
-  getCurrentStateLabel(state, id, scope = null) {
-    
-    
-    if (id.startsWith("plugin") && state == SitePermissions.PROMPT_HIDE) {
-      return gStringBundle.GetStringFromName("state.current.hide");
-    }
-
+  getCurrentStateLabel(state, scope = null) {
     switch (state) {
       case this.PROMPT:
         return gStringBundle.GetStringFromName("state.current.prompt");
@@ -577,8 +566,6 @@ var SitePermissions = {
 
 var gPermissionObject = {
   
-
-
 
 
 
@@ -668,11 +655,6 @@ var gPermissionObject = {
   },
 
   "canvas": {
-  },
-
-  "plugin:flash": {
-    labelID: "flash-plugin",
-    states: [ SitePermissions.UNKNOWN, SitePermissions.ALLOW, SitePermissions.BLOCK ],
   },
 
   "midi": {
