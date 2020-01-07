@@ -1855,6 +1855,7 @@ pref("network.http.active_tab_priority", true);
 
 pref("network.ftp.data.qos", 0);
 pref("network.ftp.control.qos", 0);
+pref("network.ftp.enabled", true);
 
 
 pref("network.sts.max_time_for_events_between_two_polls", 100);

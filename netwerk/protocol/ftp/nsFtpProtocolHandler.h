@@ -65,6 +65,7 @@ private:
     nsTArray<timerStruct*> mRootConnectionList;
 
     int32_t mIdleTimeout;
+    bool mEnabled;
 
     
     
