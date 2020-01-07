@@ -410,10 +410,40 @@ protected:
   WSPoint GetNextCharPointInternal(const EditorRawDOMPoint& aPoint);
   WSPoint GetPreviousCharPointInternal(const EditorRawDOMPoint& aPoint);
 
-  nsresult ConvertToNBSP(WSPoint aPoint);
-  void GetAsciiWSBounds(int16_t aDir, nsINode* aNode, int32_t aOffset,
-                        dom::Text** outStartNode, int32_t* outStartOffset,
-                        dom::Text** outEndNode, int32_t* outEndOffset);
+  
+
+
+
+  nsresult InsertNBSPAndRemoveFollowingASCIIWhitespaces(WSPoint aPoint);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  void GetASCIIWhitespacesBounds(int16_t aDir,
+                                 nsINode* aNode,
+                                 int32_t aOffset,
+                                 dom::Text** outStartNode,
+                                 int32_t* outStartOffset,
+                                 dom::Text** outEndNode,
+                                 int32_t* outEndOffset);
 
   
 
