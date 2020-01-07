@@ -189,8 +189,8 @@ public:
 
 
 
-  nsresult SetCSSBackgroundColor(const nsAString& aColor);
-  nsresult SetHTMLBackgroundColor(const nsAString& aColor);
+  nsresult SetCSSBackgroundColorWithTransaction(const nsAString& aColor);
+  nsresult SetHTMLBackgroundColorWithTransaction(const nsAString& aColor);
 
   
 
