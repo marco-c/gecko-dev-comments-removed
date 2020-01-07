@@ -1,7 +1,5 @@
 "use strict";
 
-
-
 function promiseSettingsDialogClose() {
   return new Promise(resolve => {
     let win = gBrowser.selectedBrowser.contentWindow;

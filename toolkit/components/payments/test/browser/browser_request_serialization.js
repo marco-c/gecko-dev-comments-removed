@@ -1,8 +1,5 @@
 "use strict";
 
-
-
-
 add_task(async function test_serializeRequest_displayItems() {
   const testTask = ({methodData, details}) => {
     let contentWin = Cu.waiveXrays(content);

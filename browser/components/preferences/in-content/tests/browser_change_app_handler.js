@@ -19,7 +19,6 @@ add_task(async function() {
 
   let prefs = await openPreferencesViaOpenPreferencesAPI("paneGeneral", {leaveOpen: true});
   is(prefs.selectedPane, "paneGeneral", "General pane was selected");
-  
   let win = gBrowser.selectedBrowser.contentWindow;
 
   let container = win.document.getElementById("handlersView");

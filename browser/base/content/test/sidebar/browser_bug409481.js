@@ -37,11 +37,9 @@ function runTest(event) {
   sidebar.contentDocument.removeEventListener("load", delayedRunTest, true);
 
   var browser = sidebar.contentDocument.getElementById("web-panels-browser");
-  
   var div = browser && browser.contentDocument.getElementById("test_bug409481");
   ok(div && div.textContent == "Content!", "Sidebar content loaded");
 
-  
   var link = browser && browser.contentDocument.getElementById("link");
   sidebar.contentDocument.addEventListener("popupshown", contextMenuOpened);
 
@@ -62,7 +60,6 @@ function copyLinkCommandExecuted(event) {
 
   var sidebar = document.getElementById("sidebar");
   var browser = sidebar.contentDocument.getElementById("web-panels-browser");
-  
   var textbox = browser && browser.contentDocument.getElementById("textbox");
   textbox.focus();
   document.commandDispatcher.getControllerForCommand("cmd_paste").doCommand("cmd_paste");

@@ -93,7 +93,6 @@ add_task(async function() {
 
       is(item.requestPostData.postData.text, "post-data",
         "The POST request has the right POST data");
-      
       is(item.responseContent.content.text, "Access-Control-Allow-Origin: *",
         "The POST response has the right content");
     }

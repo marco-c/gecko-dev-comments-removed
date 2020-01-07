@@ -174,7 +174,6 @@ function clickLink(aId, aCallback) {
     aCallback();
   };
 
-  
   var link = browser.contentDocument.getElementById(aId);
   EventUtils.sendMouseEvent({type: "click"}, link);
 

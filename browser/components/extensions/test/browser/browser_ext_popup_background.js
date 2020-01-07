@@ -59,11 +59,9 @@ add_task(async function testPopupBackground() {
       });
     }
 
-    
     let setBackground = color => {
       content.document.body.style.backgroundColor = color;
     };
-    
 
     await new Promise(resolve => setTimeout(resolve, 100));
 

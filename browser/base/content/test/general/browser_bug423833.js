@@ -84,7 +84,6 @@ function test2Setup() {
 }
 
 function testOpenFrameInTab() {
-  
   if (gBrowser.contentDocument.location.href == "about:blank")
     
     return;
@@ -93,7 +92,6 @@ function testOpenFrameInTab() {
 
   
   is(gBrowser.contentDocument.location.href, invalidPage, "New tab should have page url, not about:neterror");
-  
 
   
   gBrowser.removeCurrentTab();

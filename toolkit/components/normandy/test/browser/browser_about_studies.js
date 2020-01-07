@@ -15,7 +15,6 @@ return async (...args) => (
 decorate_task(
   withAboutStudies,
   async function testAboutStudiesWorks(browser) {
-    
     ok(browser.contentDocumentAsCPOW.getElementById("app"), "App element was found");
   }
 );

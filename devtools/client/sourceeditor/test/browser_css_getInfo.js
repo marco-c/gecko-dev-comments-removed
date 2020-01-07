@@ -128,9 +128,7 @@ function test() {
   waitForExplicitFinish();
   gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser);
   BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser).then(() => {
-    
     doc = gBrowser.contentDocumentAsCPOW;
-    
     runTests();
   });
   gBrowser.loadURI(TEST_URI);

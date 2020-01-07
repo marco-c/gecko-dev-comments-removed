@@ -37,7 +37,6 @@ add_task(async function test_clear_email() {
     await BrowserTestUtils.crashBrowser(browser,
                                          true,
                                          false);
-    
     let doc = browser.contentDocument;
 
     
@@ -49,7 +48,6 @@ add_task(async function test_clear_email() {
       Email: "",
     });
 
-    
     let restoreTab = browser.contentDocument.getElementById("restoreTab");
     restoreTab.click();
     await BrowserTestUtils.waitForEvent(tab, "SSTabRestored");

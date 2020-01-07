@@ -2,12 +2,6 @@
 
 "use strict";
 
-
-
-
-
-
-
 add_task(async function() {
   let keyword = "test";
 

@@ -51,13 +51,11 @@ add_task(async function testPageActionPopupResize() {
        "Panel body should be wide enough to fit its contents");
   }
 
-  
   function setSize(size) {
     let elem = content.document.body.firstChild;
     elem.style.height = `${size}px`;
     elem.style.width = `${size}px`;
   }
-  
 
   let sizes = [
     200,
@@ -124,11 +122,9 @@ add_task(async function testPageActionPopupReflow() {
 
   browser = await awaitExtensionPanel(extension);
 
-  
   function setSize(size) {
     content.document.body.style.fontSize = `${size}px`;
   }
-  
 
   let dims = await alterContent(browser, setSize, 18);
 

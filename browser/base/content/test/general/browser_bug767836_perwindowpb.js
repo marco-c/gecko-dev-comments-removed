@@ -75,7 +75,6 @@ function openNewTab(aWindow, aCallback) {
   aWindow.BrowserOpenTab();
 
   let browser = aWindow.gBrowser.selectedBrowser;
-  
   let doc = browser.contentDocumentAsCPOW;
   if (doc && doc.readyState === "complete") {
     executeSoon(aCallback);

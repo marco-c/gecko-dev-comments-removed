@@ -2,7 +2,6 @@
 add_task(async function() {
   let prefs = await openPreferencesViaOpenPreferencesAPI("search", {leaveOpen: true});
   is(prefs.selectedPane, "paneSearch", "Search pane is selected by default");
-  
   let doc = gBrowser.contentDocument;
 
   let tree = doc.querySelector("#engineList");

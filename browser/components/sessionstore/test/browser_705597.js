@@ -47,7 +47,6 @@ function test() {
       });
 
       
-      
       let doc = browser.contentDocument;
       let iframe = doc.createElement("iframe");
       doc.body.appendChild(iframe);

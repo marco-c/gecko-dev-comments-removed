@@ -6,7 +6,6 @@ add_task(async function() {
   let prefs = await openPreferencesViaOpenPreferencesAPI("paneGeneral", {leaveOpen: true});
   is(prefs.selectedPane, "paneGeneral", "General pane was selected");
 
-  
   let doc = gBrowser.contentDocument;
   let checkbox = doc.querySelector("#checkSpelling");
   is(checkbox.checked,

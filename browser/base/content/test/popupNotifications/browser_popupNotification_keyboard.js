@@ -192,7 +192,6 @@ var tests = [
         if (gMultiProcessBrowser) {
           is(Services.focus.focusedElement, browser);
         } else {
-          
           is(Services.focus.focusedElement, browser.contentDocument.getElementById("test-input"));
         }
 

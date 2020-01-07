@@ -1,8 +1,5 @@
 "use strict";
 
-
-
-
 const methodData = [PTU.MethodData.basicCard];
 const details = PTU.Details.total60USD;
 

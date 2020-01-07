@@ -34,18 +34,15 @@ async function doTest(parentTabSpec, childTabSpec, testTaskFn, waitForMetaRefres
     await promiseReloaded;
 
     
-    
     let testDiv = gBrowser.contentDocumentAsCPOW.getElementById("mctestdiv");
     await BrowserTestUtils.waitForCondition(
       () => testDiv.innerHTML == "Mixed Content Blocker disabled");
 
     
-    
     let mainDiv = gBrowser.contentDocumentAsCPOW.createElement("div");
     
     mainDiv.innerHTML =
       '<p><a id="linkToOpenInNewTab" href="' + childTabSpec + '">Link</a></p>';
-    
     gBrowser.contentDocumentAsCPOW.body.appendChild(mainDiv);
 
     
@@ -119,7 +116,6 @@ add_task(async function test_same_origin() {
       activeLoaded: true, activeBlocked: false, passiveLoaded: false,
     });
 
-    
     is(gBrowser.contentDocumentAsCPOW.getElementById("mctestdiv").innerHTML,
        "Mixed Content Blocker disabled", "OK: Executed mixed script");
   });
@@ -141,7 +137,6 @@ add_task(async function test_different_origin() {
       activeLoaded: false, activeBlocked: true, passiveLoaded: false,
     });
 
-    
     is(gBrowser.contentDocumentAsCPOW.getElementById("mctestdiv").innerHTML,
        "Mixed Content Blocker enabled", "OK: Blocked mixed script");
   });
@@ -163,7 +158,6 @@ add_task(async function test_same_origin_metarefresh_same_origin() {
       activeLoaded: true, activeBlocked: false, passiveLoaded: false,
     });
 
-    
     is(gBrowser.contentDocumentAsCPOW.getElementById("mctestdiv").innerHTML,
        "Mixed Content Blocker disabled", "OK: Executed mixed script");
   }, true);
@@ -184,7 +178,6 @@ add_task(async function test_same_origin_metarefresh_different_origin() {
       activeLoaded: false, activeBlocked: true, passiveLoaded: false,
     });
 
-    
     is(gBrowser.contentDocumentAsCPOW.getElementById("mctestdiv").innerHTML,
        "Mixed Content Blocker enabled", "OK: Blocked mixed script");
   }, true);
@@ -205,7 +198,6 @@ add_task(async function test_same_origin_302redirect_same_origin() {
     ok(!gIdentityHandler._identityBox.classList.contains("mixedActiveBlocked"),
        "OK: Mixed Content is NOT being blocked");
 
-    
     is(gBrowser.contentDocumentAsCPOW.getElementById("mctestdiv").innerHTML,
        "Mixed Content Blocker disabled", "OK: Executed mixed script");
   });
@@ -226,7 +218,6 @@ add_task(async function test_same_origin_302redirect_different_origin() {
       activeLoaded: false, activeBlocked: true, passiveLoaded: false,
     });
 
-    
     is(gBrowser.contentDocumentAsCPOW.getElementById("mctestdiv").innerHTML,
        "Mixed Content Blocker enabled", "OK: Blocked mixed script");
   });

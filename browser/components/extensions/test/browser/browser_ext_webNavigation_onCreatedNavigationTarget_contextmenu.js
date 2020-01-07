@@ -117,7 +117,7 @@ add_task(async function test_on_created_navigation_target_from_context_menu_subf
         pageElementSelector: function() {
           
           
-          return this.content.frames[0] 
+          return this.content.frames[0]
             .document.querySelector("#test-create-new-tab-from-context-menu-subframe");
         },
         contextMenuItemLabel: "Open Link in New Tab",
@@ -139,7 +139,7 @@ add_task(async function test_on_created_navigation_target_from_context_menu_subf
         pageElementSelector: function() {
           
           
-          return this.content.frames[0] 
+          return this.content.frames[0]
             .document.querySelector("#test-create-new-window-from-context-menu-subframe");
         },
         contextMenuItemLabel: "Open Link in New Window",

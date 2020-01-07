@@ -1,8 +1,6 @@
 add_task(async function() {
   await openPreferencesViaOpenPreferencesAPI("general", { leaveOpen: true });
-  
   const contentDocument = gBrowser.contentDocument;
-  
   const dialogOverlay = content.gSubDialog._preloadDialog._overlay;
 
   async function languagesSubdialogOpened() {

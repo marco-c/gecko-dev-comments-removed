@@ -3,8 +3,6 @@
 
 
 
-
-
 add_task(async function() {
   await SpecialPowers.pushPrefEnv({"set": [["browser.storageManager.enabled", false]]});
   await openPreferencesViaOpenPreferencesAPI("privacy", {leaveOpen: true});

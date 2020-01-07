@@ -1,5 +1,4 @@
 
-
 add_task(async function test_reports_section() {
   let prefs = await openPreferencesViaOpenPreferencesAPI("privacy-reports", {leaveOpen: true});
   is(prefs.selectedPane, "panePrivacy", "Privacy pane is selected by default");

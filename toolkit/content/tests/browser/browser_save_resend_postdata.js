@@ -27,7 +27,6 @@ function test() {
     
     
     gBrowser.addEventListener("DOMContentLoaded", handleOuterSubmit);
-    
     gBrowser.contentDocument.getElementById("postForm").submit();
   });
 
@@ -40,7 +39,6 @@ function test() {
 
     gBrowser.removeEventListener("DOMContentLoaded", handleOuterSubmit);
 
-    
     innerFrame = gBrowser.contentDocument.getElementById("innerFrame");
 
     

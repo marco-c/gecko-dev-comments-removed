@@ -1,7 +1,6 @@
 
 "use strict";
 
-
 function frameScript() {
   function getSelectedText() {
     let frame = this.content.frames[0].frames[1];
@@ -29,7 +28,6 @@ function frameScript() {
   }
   getSelectedText();
 }
-
 
 function waitForMessage(messageManager, topic) {
   return new Promise(resolve => {

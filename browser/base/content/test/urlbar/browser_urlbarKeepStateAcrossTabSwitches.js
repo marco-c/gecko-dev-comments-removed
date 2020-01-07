@@ -10,7 +10,6 @@ add_task(async function() {
   let browser = tab.linkedBrowser;
   
   
-  
   await BrowserTestUtils.waitForCondition(() => browser.contentDocumentAsCPOW && !browser.contentDocumentAsCPOW.hidden);
   let errorPageLoaded = BrowserTestUtils.waitForErrorPage(tab.linkedBrowser);
   gURLBar.value = input;
@@ -33,7 +32,6 @@ add_task(async function() {
   await SpecialPowers.pushPrefEnv({set: [["keyword.enabled", false]]});
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank", false);
   let browser = tab.linkedBrowser;
-  
   
   
   await BrowserTestUtils.waitForCondition(() => browser.contentDocumentAsCPOW && !browser.contentDocumentAsCPOW.hidden);

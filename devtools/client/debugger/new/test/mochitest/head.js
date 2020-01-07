@@ -782,7 +782,7 @@ function invokeInTab(fnc, ...args) {
     fnc,
     args
   }) {
-    content.wrappedJSObject[fnc](...args); 
+    content.wrappedJSObject[fnc](...args);
   });
 }
 

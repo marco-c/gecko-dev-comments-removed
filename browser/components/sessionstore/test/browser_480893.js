@@ -16,7 +16,6 @@ add_task(async function() {
   let browser = tab.linkedBrowser;
   await BrowserTestUtils.browserLoaded(browser, false, "about:sessionrestore");
 
-  
   let doc = browser.contentDocument;
 
   
@@ -36,7 +35,6 @@ add_task(async function() {
 
   browser.loadURI("about:sessionrestore");
   await BrowserTestUtils.browserLoaded(browser, false, "about:sessionrestore");
-  
   doc = browser.contentDocument;
 
   

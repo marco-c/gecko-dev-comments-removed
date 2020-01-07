@@ -111,7 +111,6 @@ add_task(async function() {
   let doc = gBrowser.selectedBrowser.contentDocument;
 
   let showBtn = doc.getElementById("showUpdateHistory");
-  
   let dialogOverlay = content.gSubDialog._preloadDialog._overlay;
 
   

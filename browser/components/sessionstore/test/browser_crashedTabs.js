@@ -390,7 +390,6 @@ add_task(async function test_hide_restore_all_button() {
   
   await BrowserTestUtils.crashBrowser(browser);
 
-  
   let doc = browser.contentDocument;
   let restoreAllButton = doc.getElementById("restoreAll");
   let restoreOneButton = doc.getElementById("restoreTab");
@@ -421,7 +420,6 @@ add_task(async function test_hide_restore_all_button() {
   await BrowserTestUtils.crashBrowser(browser);
   await otherBrowserReady;
 
-  
   doc = browser.contentDocument;
   restoreAllButton = doc.getElementById("restoreAll");
   restoreOneButton = doc.getElementById("restoreTab");

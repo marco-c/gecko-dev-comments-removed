@@ -67,7 +67,6 @@ function doTest() {
   info("Running test: " + gCurrTest.name);
 
   waitForLoad(function() {
-    
     let loadedText = gBrowser.contentDocumentAsCPOW.body.textContent;
     ok(loadedText, "search page loaded");
     let needle = "searchterms=" + gCurrTest.expectText;

@@ -2,8 +2,6 @@
 
 
 
-
-
 add_task(async function testBrowserErrorInitialValue() {
   
   if (!AppConstants.NIGHTLY_BUILD) {

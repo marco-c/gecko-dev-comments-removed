@@ -32,7 +32,6 @@ add_task(async function test_show_form() {
     
     await BrowserTestUtils.crashBrowser(browser);
 
-    
     let doc = browser.contentDocument;
 
     
@@ -77,7 +76,6 @@ add_task(async function test_show_form() {
     
     await BrowserTestUtils.crashBrowser(browser);
 
-    
     let doc = browser.contentDocument;
 
     
@@ -122,7 +120,6 @@ add_task(async function test_no_offer() {
     
     await BrowserTestUtils.crashBrowser(browser);
 
-    
     let doc = browser.contentDocument;
 
     

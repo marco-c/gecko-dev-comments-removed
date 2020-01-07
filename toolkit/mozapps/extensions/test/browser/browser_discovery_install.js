@@ -4,8 +4,6 @@
 
 
 
-
-
 const MAIN_URL = "https://example.com/" + RELATIVE_DIR + "discovery_install.html";
 const GOOD_FRAMED_URL = "https://example.com/" + RELATIVE_DIR + "discovery_frame.html";
 const BAD_FRAMED_URL = "https://example.org/" + RELATIVE_DIR + "discovery_frame.html";

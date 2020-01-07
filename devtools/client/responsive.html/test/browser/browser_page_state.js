@@ -46,7 +46,6 @@ add_task(async function() {
 
   
   let color = await spawnViewportTask(ui, {}, function() {
-    
     return content.getComputedStyle(content.document.body)
                   .getPropertyValue("background-color");
   });
@@ -57,7 +56,6 @@ add_task(async function() {
 
   
   color = await ContentTask.spawn(browser, {}, async function() {
-    
     return content.getComputedStyle(content.document.body)
                   .getPropertyValue("background-color");
   });
