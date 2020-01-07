@@ -34,9 +34,10 @@ public class TestRunnerActivity extends Activity {
         }
 
         @Override
-        public boolean onLoadRequest(GeckoSession session, String uri, int target) {
+        public void onLoadRequest(GeckoSession session, String uri,
+                                  int target, GeckoSession.Response<Boolean> response) {
             
-            return false;
+            response.respond(false);
         }
 
         @Override
