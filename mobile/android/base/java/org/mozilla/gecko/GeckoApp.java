@@ -970,11 +970,6 @@ public abstract class GeckoApp extends GeckoActivity
         earlyStartJavaSampler(intent);
 
         
-        
-        
-        GeckoLoader.setLastIntent(intent);
-
-        
         try {
             Class.forName("android.os.AsyncTask");
         } catch (ClassNotFoundException e) { }
@@ -1012,12 +1007,12 @@ public abstract class GeckoApp extends GeckoActivity
 
         } else {
             final String action = intent.getAction();
-            final String args = GeckoApplication.addDefaultGeckoArgs(
-                    intent.getStringExtra("args"));
+            final String[] args = GeckoApplication.getDefaultGeckoArgs();
             final int flags = ACTION_DEBUG.equals(action) ? GeckoThread.FLAG_DEBUGGING : 0;
 
             sAlreadyLoaded = true;
-            GeckoThread.initMainProcess( null, args, flags);
+            GeckoThread.initMainProcess( null, args,
+                                        intent.getExtras(), flags);
 
             
             ThreadUtils.postToBackgroundThread(new Runnable() {
