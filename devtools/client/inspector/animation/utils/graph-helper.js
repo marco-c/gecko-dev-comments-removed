@@ -8,6 +8,9 @@
 
 const BOUND_EXCLUDING_TIME = 0.001;
 
+
+const DEFAULT_GRAPH_HEIGHT = 100;
+
 const DEFAULT_MIN_PROGRESS_THRESHOLD = 0.1;
 
 
@@ -45,7 +48,8 @@ class SummaryGraphHelper {
               getValueFunc, toPathStringFunc) {
     this.totalDuration = totalDuration;
     this.minSegmentDuration = minSegmentDuration;
-    this.minProgressThreshold = getPreferredProgressThreshold(state, keyframes);
+    this.minProgressThreshold =
+      getPreferredProgressThreshold(state, keyframes) * DEFAULT_GRAPH_HEIGHT;
     this.durationResolution = getPreferredDurationResolution(keyframes);
     this.getValue = getValueFunc;
     this.toPathString = toPathStringFunc;
@@ -79,7 +83,7 @@ class SummaryGraphHelper {
 
   getSegment(time) {
     const value = this.getValue(time);
-    return { x: time, y: value };
+    return { x: time, y: value * DEFAULT_GRAPH_HEIGHT };
   }
 }
 
@@ -235,5 +239,6 @@ function toPathString(segments) {
   return pathString;
 }
 
+module.exports.DEFAULT_GRAPH_HEIGHT = DEFAULT_GRAPH_HEIGHT;
 exports.SummaryGraphHelper = SummaryGraphHelper;
 exports.toPathString = toPathString;
