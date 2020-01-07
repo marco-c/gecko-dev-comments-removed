@@ -46,7 +46,11 @@ class ToolboxToolbar extends Component {
       
       canCloseToolbox: PropTypes.bool,
       
+      isSplitConsoleActive: PropTypes.bool,
+      
       selectTool: PropTypes.func,
+      
+      toggleSplitConsole: PropTypes.func,
       
       closeToolbox: PropTypes.func,
       
@@ -188,6 +192,11 @@ function renderSeparator() {
 
 
 
+
+
+
+
+
 function renderToolboxControls(props) {
   const {
     focusedButton,
@@ -260,7 +269,24 @@ function renderToolboxControls(props) {
 
 
 
-function showMeatballMenu(menuButton, {hostTypes, selectTool, L10N, toolbox}) {
+
+
+
+
+
+
+function showMeatballMenu(
+  menuButton,
+  {
+    currentToolId,
+    hostTypes,
+    isSplitConsoleActive,
+    selectTool,
+    toggleSplitConsole,
+    L10N,
+    toolbox,
+  }
+) {
   const menu = new Menu({ id: "toolbox-meatball-menu" });
 
   
@@ -271,6 +297,20 @@ function showMeatballMenu(menuButton, {hostTypes, selectTool, L10N, toolbox}) {
         `toolbox.meatballMenu.dock.${hostType.position}.label`
       ),
       click: () => hostType.switchHost(),
+    }));
+  }
+
+  
+  if (currentToolId !== "webconsole") {
+    menu.append(new MenuItem({
+      id: "toolbox-meatball-menu-splitconsole",
+      label: L10N.getStr(
+        `toolbox.meatballMenu.${
+          isSplitConsoleActive ? "hideconsole" : "splitconsole"
+        }.label`
+      ),
+      accelerator: "Esc",
+      click: toggleSplitConsole,
     }));
   }
 
