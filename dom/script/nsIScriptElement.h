@@ -162,11 +162,17 @@ public:
 
   void LoseParserInsertedness()
   {
-    mFrozen = false;
     mUri = nullptr;
     mCreatorParser = nullptr;
     mParserCreated = mozilla::dom::NOT_FROM_PARSER;
     mForceAsync = !GetAsyncState();
+
+    
+    mFrozen = false;
+    mIsModule = false;
+    mExternal = false;
+    mAsync = false;
+    mDefer = false;
   }
 
   void SetCreatorParser(nsIParser* aParser)
