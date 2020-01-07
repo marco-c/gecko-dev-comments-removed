@@ -1415,10 +1415,6 @@ this.FormHistory = {
     return pending;
   },
 
-  get schemaVersion() {
-    return dbConnection.schemaVersion;
-  },
-
   
   get _supportsDeletedTable() {
     return supportsDeletedTable;
