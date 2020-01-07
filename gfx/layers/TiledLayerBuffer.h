@@ -26,8 +26,8 @@
 
 namespace mozilla {
 
-struct TileUnit {};
-template<> struct IsPixel<TileUnit> : mozilla::TrueType {};
+struct TileCoordUnit {};
+template<> struct IsPixel<TileCoordUnit> : mozilla::TrueType {};
 
 namespace layers {
 
@@ -82,8 +82,8 @@ static inline int floor_div(int a, int b)
 
 
 
-typedef gfx::IntSizeTyped<TileUnit> TileIntSize;
-typedef gfx::IntPointTyped<TileUnit> TileIntPoint;
+typedef gfx::IntSizeTyped<TileCoordUnit> TileCoordIntSize;
+typedef gfx::IntPointTyped<TileCoordUnit> TileCoordIntPoint;
 
 
 
@@ -96,8 +96,8 @@ typedef gfx::IntPointTyped<TileUnit> TileIntPoint;
 
 struct TilesPlacement {
   
-  TileIntPoint mFirst;
-  TileIntSize mSize;
+  TileCoordIntPoint mFirst;
+  TileCoordIntSize mSize;
 
   TilesPlacement(int aFirstX, int aFirstY,
                  int aRetainedWidth, int aRetainedHeight)
@@ -105,18 +105,18 @@ struct TilesPlacement {
   , mSize(aRetainedWidth, aRetainedHeight)
   {}
 
-  int TileIndex(TileIntPoint aPosition) const {
+  int TileIndex(TileCoordIntPoint aPosition) const {
     return (aPosition.x - mFirst.x) * mSize.height + aPosition.y - mFirst.y;
   }
 
-  TileIntPoint TilePosition(size_t aIndex) const {
-    return TileIntPoint(
+  TileCoordIntPoint TilePosition(size_t aIndex) const {
+    return TileCoordIntPoint(
       mFirst.x + aIndex / mSize.height,
       mFirst.y + aIndex % mSize.height
     );
   }
 
-  bool HasTile(TileIntPoint aPosition) const {
+  bool HasTile(TileCoordIntPoint aPosition) const {
     return aPosition.x >= mFirst.x && aPosition.x < mFirst.x + mSize.width &&
            aPosition.y >= mFirst.y && aPosition.y < mFirst.y + mSize.height;
   }
@@ -145,7 +145,7 @@ public:
 
   ~TiledLayerBuffer() {}
 
-  gfx::IntPoint GetTileOffset(TileIntPoint aPosition) const {
+  gfx::IntPoint GetTileOffset(TileCoordIntPoint aPosition) const {
     gfx::IntSize scaledTileSize = GetScaledTileSize();
     return gfx::IntPoint(aPosition.x * scaledTileSize.width,
                          aPosition.y * scaledTileSize.height) + mTileOrigin;
@@ -200,7 +200,7 @@ TiledLayerBuffer<Derived, Tile>::Dump(std::stringstream& aStream,
                                       TextureDumpMode aCompress)
 {
   for (size_t i = 0; i < mRetainedTiles.Length(); ++i) {
-    const TileIntPoint tilePosition = mTiles.TilePosition(i);
+    const TileCoordIntPoint tilePosition = mTiles.TilePosition(i);
     gfx::IntPoint tileOffset = GetTileOffset(tilePosition);
 
     aStream << "\n" << aPrefix << "Tile (x=" <<

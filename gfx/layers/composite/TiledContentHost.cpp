@@ -97,7 +97,7 @@ TiledLayerBufferComposite::AddAnimationInvalidation(nsIntRegion& aRegion)
   
   for (size_t i = 0; i < mRetainedTiles.Length(); i++) {
     if (!mRetainedTiles[i].mFadeStart.IsNull()) {
-      TileIntPoint position = mTiles.TilePosition(i);
+      TileCoordIntPoint position = mTiles.TilePosition(i);
       IntPoint offset = GetTileOffset(position);
       nsIntRegion tileRegion = IntRect(offset, GetScaledTileSize());
       aRegion.OrWith(tileRegion);
@@ -404,8 +404,8 @@ void
 TiledLayerBufferComposite::Clear()
 {
   mRetainedTiles.Clear();
-  mTiles.mFirst = TileIntPoint();
-  mTiles.mSize = TileIntSize();
+  mTiles.mFirst = TileCoordIntPoint();
+  mTiles.mSize = TileCoordIntSize();
   mValidRegion = nsIntRegion();
   mResolution = 1.0;
 }
@@ -610,7 +610,7 @@ TiledContentHost::RenderLayerBuffer(TiledLayerBufferComposite& aLayerBuffer,
       continue;
     }
 
-    TileIntPoint tilePosition = aLayerBuffer.GetPlacement().TilePosition(i);
+    TileCoordIntPoint tilePosition = aLayerBuffer.GetPlacement().TilePosition(i);
     
     MOZ_ASSERT(tilePosition.x == tile.mTilePosition.x && tilePosition.y == tile.mTilePosition.y);
 

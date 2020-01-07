@@ -115,7 +115,7 @@ public:
   mutable CompositableTextureSourceRef mTextureSource;
   mutable CompositableTextureSourceRef mTextureSourceOnWhite;
   
-  TileIntPoint mTilePosition;
+  TileCoordIntPoint mTilePosition;
   TimeStamp mFadeStart;
 };
 
