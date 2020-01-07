@@ -47,6 +47,9 @@ nsFileStreamBase::nsFileStreamBase()
 
 nsFileStreamBase::~nsFileStreamBase()
 {
+    
+    mBehaviorFlags &= ~nsIFileInputStream::REOPEN_ON_REWIND;
+
     Close();
 }
 
