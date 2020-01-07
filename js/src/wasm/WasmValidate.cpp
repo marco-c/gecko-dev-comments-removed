@@ -1226,7 +1226,12 @@ DecodeTableLimits(Decoder& d, TableDescVector* tables)
     if (!DecodeLimits(d, &limits))
         return false;
 
-    if (limits.initial > MaxTableInitialLength)
+    
+    
+    
+    if (limits.initial > MaxTableInitialLength ||
+        ((limits.maximum.isSome() &&
+          limits.maximum.value() > MaxTableMaximumLength)))
         return d.fail("too many table elements");
 
     if (tables->length())
