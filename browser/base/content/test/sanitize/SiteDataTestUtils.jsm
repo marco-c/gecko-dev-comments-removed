@@ -4,8 +4,16 @@ var EXPORTED_SYMBOLS = [
   "SiteDataTestUtils",
 ];
 
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
+ChromeUtils.import("resource://testing-common/ContentTask.jsm");
+ChromeUtils.import("resource://testing-common/BrowserTestUtils.jsm");
+
 const {Sanitizer} = ChromeUtils.import("resource:///modules/Sanitizer.jsm", {});
+
+XPCOMUtils.defineLazyServiceGetter(this, "swm",
+                                   "@mozilla.org/serviceworkers/manager;1",
+                                   "nsIServiceWorkerManager");
 
 
 
@@ -23,7 +31,9 @@ var SiteDataTestUtils = {
 
 
 
-  addToIndexedDB(origin) {
+
+
+  addToIndexedDB(origin, key = "foo", value = "bar") {
     return new Promise(resolve => {
       let uri = Services.io.newURI(origin);
       let principal = Services.scriptSecurityManager.createCodebasePrincipal(uri, {});
@@ -37,7 +47,7 @@ var SiteDataTestUtils = {
         let tx = db.transaction("TestStore", "readwrite");
         let store = tx.objectStore("TestStore");
         tx.oncomplete = resolve;
-        store.put({ id: performance.now().toString(), description: "IndexedDB Test"});
+        store.put({ id: key, description: value});
       };
     });
   },
@@ -49,10 +59,55 @@ var SiteDataTestUtils = {
 
 
 
-  addToCookies(origin, name, value) {
+
+  addToCookies(origin, name = "foo", value = "bar") {
     let uri = Services.io.newURI(origin);
     Services.cookies.add(uri.host, uri.pathQueryRef, name, value,
       false, false, false, Date.now() + 24000 * 60 * 60);
+  },
+
+  
+
+
+
+
+
+
+
+  addServiceWorker(path) {
+    let uri = Services.io.newURI(path);
+    
+    return BrowserTestUtils.withNewTab(uri.prePath, async function(browser) {
+      return ContentTask.spawn(browser, {path}, async ({path: p}) => {
+        let r = await content.navigator.serviceWorker.register(p);
+        return new Promise(resolve => {
+          let worker = r.installing;
+          worker.addEventListener("statechange", () => {
+            if (worker.state === "installed") {
+              resolve();
+            }
+          });
+        });
+      });
+    });
+  },
+
+  
+
+
+
+
+
+
+  hasServiceWorkers(origin) {
+    let serviceWorkers = swm.getAllRegistrations();
+    for (let i = 0; i < serviceWorkers.length; i++) {
+      let sw = serviceWorkers.queryElementAt(i, Ci.nsIServiceWorkerRegistrationInfo);
+      if (sw.principal.origin == origin) {
+        return true;
+      }
+    }
+    return false;
   },
 
   
