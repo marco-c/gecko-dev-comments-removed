@@ -693,6 +693,10 @@ BufferedBookmarksEngine.prototype = {
   
   overrideTelemetryName: "bookmarks-buffered",
 
+  
+  
+  _defaultSort: "oldest",
+
   async getLastSync() {
     let mirror = await this._store.ensureOpenMirror();
     return mirror.getCollectionHighWaterMark();
