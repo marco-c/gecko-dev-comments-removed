@@ -1779,6 +1779,10 @@ CompositorBridgeParent::AllocPWebRenderBridgeParent(const wr::PipelineId& aPipel
     
     mApzUpdater->SetWebRenderWindowId(windowId);
   }
+  if (mApzSampler) {
+    
+    mApzSampler->SetWebRenderWindowId(windowId);
+  }
   RefPtr<wr::WebRenderAPI> api = wr::WebRenderAPI::Create(this, Move(widget), windowId, aSize);
   if (!api) {
     mWrBridge = WebRenderBridgeParent::CreateDestroyed(aPipelineId);
