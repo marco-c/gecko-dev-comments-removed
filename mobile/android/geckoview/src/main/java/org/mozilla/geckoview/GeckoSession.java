@@ -100,6 +100,18 @@ public class GeckoSession extends LayerSession
     private String mId = UUID.randomUUID().toString().replace("-", "");
      String getId() { return mId; }
 
+    private static abstract class CallbackResult<T> extends GeckoResult<T> implements EventCallback {
+        @Override
+        public abstract void sendSuccess(Object response);
+
+        @Override
+        public void sendError(Object response) {
+            completeExceptionally(response != null ?
+                    new Exception(response.toString()) :
+                    new UnknownError());
+        }
+    }
+
     private final GeckoSessionHandler<ContentDelegate> mContentHandler =
         new GeckoSessionHandler<ContentDelegate>(
             "GeckoViewContent", this,
@@ -1149,20 +1161,15 @@ public class GeckoSession extends LayerSession
 
 
 
-
-    public void saveState(final GeckoResponse<SessionState> response) {
-        mEventDispatcher.dispatch("GeckoView:SaveState", null, new EventCallback() {
+    public @NonNull GeckoResult<SessionState> saveState() {
+        CallbackResult<SessionState> result = new CallbackResult<SessionState>() {
             @Override
-            public void sendSuccess(final Object result) {
-                response.respond(new SessionState((String) result));
+            public void sendSuccess(final Object value) {
+                complete(new SessionState((String)value));
             }
-
-            @Override
-            public void sendError(final Object result) {
-                Log.w(LOGTAG, "Failed to save state, as another save is already in progress.");
-                response.respond(null);
-            }
-        });
+        };
+        mEventDispatcher.dispatch("GeckoView:SaveState", null, result);
+        return result;
     }
 
     
