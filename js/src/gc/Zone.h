@@ -9,20 +9,19 @@
 
 #include "mozilla/Atomics.h"
 #include "mozilla/HashFunctions.h"
-#include "mozilla/MemoryReporting.h"
 
-#include "jscntxt.h"
-
-#include "ds/SplayTree.h"
 #include "gc/FindSCCs.h"
 #include "gc/GCRuntime.h"
 #include "js/GCHashTable.h"
-#include "js/TracingAPI.h"
 #include "vm/MallocProvider.h"
 #include "vm/RegExpShared.h"
-#include "vm/TypeInference.h"
+#include "vm/Runtime.h"
+
+struct JSContext;
 
 namespace js {
+
+class Debugger;
 
 namespace jit {
 class JitZone;
@@ -986,92 +985,6 @@ ZoneAllocPolicy::pod_realloc(T* p, size_t oldSize, size_t newSize)
 {
     return zone->pod_realloc<T>(p, oldSize, newSize);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <typename T>
-struct GCManagedDeletePolicy
-{
-    struct ClearEdgesTracer : public JS::CallbackTracer
-    {
-        explicit ClearEdgesTracer(JSContext* cx) : CallbackTracer(cx, TraceWeakMapKeysValues) {}
-#ifdef DEBUG
-        TracerKind getTracerKind() const override { return TracerKind::ClearEdges; }
-#endif
-
-        template <typename S>
-        void clearEdge(S** thingp) {
-            InternalBarrierMethods<S*>::preBarrier(*thingp);
-            InternalBarrierMethods<S*>::postBarrier(thingp, *thingp, nullptr);
-            *thingp = nullptr;
-        }
-
-        void onObjectEdge(JSObject** objp) override { clearEdge(objp); }
-        void onStringEdge(JSString** strp) override { clearEdge(strp); }
-        void onSymbolEdge(JS::Symbol** symp) override { clearEdge(symp); }
-        void onScriptEdge(JSScript** scriptp) override { clearEdge(scriptp); }
-        void onShapeEdge(js::Shape** shapep) override { clearEdge(shapep); }
-        void onObjectGroupEdge(js::ObjectGroup** groupp) override { clearEdge(groupp); }
-        void onBaseShapeEdge(js::BaseShape** basep) override { clearEdge(basep); }
-        void onJitCodeEdge(js::jit::JitCode** codep) override { clearEdge(codep); }
-        void onLazyScriptEdge(js::LazyScript** lazyp) override { clearEdge(lazyp); }
-        void onScopeEdge(js::Scope** scopep) override { clearEdge(scopep); }
-        void onRegExpSharedEdge(js::RegExpShared** sharedp) override { clearEdge(sharedp); }
-        void onChild(const JS::GCCellPtr& thing) override { MOZ_CRASH(); }
-    };
-
-    void operator()(const T* constPtr) {
-        if (constPtr) {
-            auto ptr = const_cast<T*>(constPtr);
-            ClearEdgesTracer trc(TlsContext.get());
-            ptr->trace(&trc);
-            js_delete(ptr);
-        }
-    }
-};
-
-#ifdef DEBUG
-inline bool
-IsClearEdgesTracer(JSTracer *trc)
-{
-    return trc->isCallbackTracer() &&
-           trc->asCallbackTracer()->getTracerKind() == JS::CallbackTracer::TracerKind::ClearEdges;
-}
-#endif
-
-} 
-
-namespace JS {
-
-
-
-
-
-template <>
-struct DeletePolicy<js::FunctionScope::Data>
-  : public js::GCManagedDeletePolicy<js::FunctionScope::Data>
-{ };
-
-template <>
-struct DeletePolicy<js::ModuleScope::Data>
-  : public js::GCManagedDeletePolicy<js::ModuleScope::Data>
-{ };
-
-template <>
-struct DeletePolicy<js::WasmInstanceScope::Data>
-  : public js::GCManagedDeletePolicy<js::WasmInstanceScope::Data>
-{ };
 
 } 
 
