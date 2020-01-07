@@ -376,9 +376,9 @@ public:
 
     bool DoDrawTitlebar() const;
 
-    typedef enum { CSD_SUPPORT_FULL,    
-                   CSD_SUPPORT_FLAT,    
-                   CSD_SUPPORT_NONE,    
+    typedef enum { CSD_SUPPORT_SYSTEM,    
+                   CSD_SUPPORT_CLIENT,    
+                   CSD_SUPPORT_NONE,      
                    CSD_SUPPORT_UNKNOWN
     } CSDSupportLevel;
     

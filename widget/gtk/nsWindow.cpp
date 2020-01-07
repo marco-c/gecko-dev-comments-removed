@@ -3747,7 +3747,7 @@ nsWindow::Create(nsIWidget* aParent,
         GtkStyleContext* style = gtk_widget_get_style_context(mShell);
         drawToContainer =
             !mIsX11Display ||
-            (mIsCSDAvailable && GetCSDSupportLevel() == CSD_SUPPORT_FLAT ) ||
+            (mIsCSDAvailable && GetCSDSupportLevel() == CSD_SUPPORT_CLIENT) ||
             gtk_style_context_has_class(style, "csd");
         eventWidget = (drawToContainer) ? container : mShell;
 
@@ -6540,7 +6540,7 @@ nsWindow::SetDrawsInTitlebar(bool aState)
       return;
 
   if (mShell) {
-      if (GetCSDSupportLevel() == CSD_SUPPORT_FULL) {
+      if (GetCSDSupportLevel() == CSD_SUPPORT_SYSTEM) {
           SetWindowDecoration(aState ? eBorderStyle_border : mBorderStyle);
       }
       else {
@@ -6887,40 +6887,40 @@ nsWindow::GetCSDSupportLevel() {
     if (currentDesktop) {
         
         if (strstr(currentDesktop, "GNOME-Flashback:GNOME") != nullptr) {
-            sCSDSupportLevel = CSD_SUPPORT_FLAT;
+            sCSDSupportLevel = CSD_SUPPORT_CLIENT;
         
         } else if (strstr(currentDesktop, "GNOME") != nullptr) {
-            sCSDSupportLevel = CSD_SUPPORT_FULL;
+            sCSDSupportLevel = CSD_SUPPORT_SYSTEM;
         } else if (strstr(currentDesktop, "XFCE") != nullptr) {
-            sCSDSupportLevel = CSD_SUPPORT_FLAT;
+            sCSDSupportLevel = CSD_SUPPORT_CLIENT;
         } else if (strstr(currentDesktop, "X-Cinnamon") != nullptr) {
-            sCSDSupportLevel = CSD_SUPPORT_FULL;
+            sCSDSupportLevel = CSD_SUPPORT_SYSTEM;
         
         } else if (strstr(currentDesktop, "KDE") != nullptr) {
-            sCSDSupportLevel = CSD_SUPPORT_FLAT;
+            sCSDSupportLevel = CSD_SUPPORT_CLIENT;
         } else if (strstr(currentDesktop, "LXDE") != nullptr) {
-            sCSDSupportLevel = CSD_SUPPORT_FLAT;
+            sCSDSupportLevel = CSD_SUPPORT_CLIENT;
         } else if (strstr(currentDesktop, "openbox") != nullptr) {
-            sCSDSupportLevel = CSD_SUPPORT_FLAT;
+            sCSDSupportLevel = CSD_SUPPORT_CLIENT;
         } else if (strstr(currentDesktop, "i3") != nullptr) {
             sCSDSupportLevel = CSD_SUPPORT_NONE;
         } else if (strstr(currentDesktop, "MATE") != nullptr) {
-            sCSDSupportLevel = CSD_SUPPORT_FLAT;
+            sCSDSupportLevel = CSD_SUPPORT_CLIENT;
         
         } else if (strstr(currentDesktop, "Unity") != nullptr) {
-            sCSDSupportLevel = CSD_SUPPORT_FLAT;
+            sCSDSupportLevel = CSD_SUPPORT_CLIENT;
         
         } else if (strstr(currentDesktop, "Pantheon") != nullptr) {
-            sCSDSupportLevel = CSD_SUPPORT_FULL;
+            sCSDSupportLevel = CSD_SUPPORT_SYSTEM;
         } else if (strstr(currentDesktop, "LXQt") != nullptr) {
-            sCSDSupportLevel = CSD_SUPPORT_FULL;
+            sCSDSupportLevel = CSD_SUPPORT_SYSTEM;
         } else {
 
 
 #if defined(RELEASE_OR_BETA)
             sCSDSupportLevel = CSD_SUPPORT_NONE;
 #else
-            sCSDSupportLevel = CSD_SUPPORT_FLAT;
+            sCSDSupportLevel = CSD_SUPPORT_CLIENT;
 #endif
         }
     } else {
@@ -6929,17 +6929,17 @@ nsWindow::GetCSDSupportLevel() {
 
     
     if (!GDK_IS_X11_DISPLAY(gdk_display_get_default()) &&
-        sCSDSupportLevel == CSD_SUPPORT_FULL) {
-        sCSDSupportLevel = CSD_SUPPORT_FLAT;
+        sCSDSupportLevel == CSD_SUPPORT_SYSTEM) {
+        sCSDSupportLevel = CSD_SUPPORT_CLIENT;
     }
 
     
     
     
-    if (sCSDSupportLevel == CSD_SUPPORT_FULL) {
+    if (sCSDSupportLevel == CSD_SUPPORT_SYSTEM) {
         const char* csdOverride = getenv("GTK_CSD");
         if (csdOverride && g_strcmp0(csdOverride, "1") == 0) {
-            sCSDSupportLevel = CSD_SUPPORT_FLAT;
+            sCSDSupportLevel = CSD_SUPPORT_CLIENT;
         }
     }
 
@@ -6949,9 +6949,9 @@ nsWindow::GetCSDSupportLevel() {
         if (strcmp(decorationOverride, "none") == 0) {
             sCSDSupportLevel = CSD_SUPPORT_NONE;
         } else if (strcmp(decorationOverride, "client") == 0) {
-            sCSDSupportLevel = CSD_SUPPORT_FLAT;
+            sCSDSupportLevel = CSD_SUPPORT_CLIENT;
         } else if (strcmp(decorationOverride, "system") == 0) {
-            sCSDSupportLevel = CSD_SUPPORT_FULL;
+            sCSDSupportLevel = CSD_SUPPORT_SYSTEM;
         }
     }
 
