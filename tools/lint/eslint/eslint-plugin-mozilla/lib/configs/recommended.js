@@ -34,7 +34,6 @@ module.exports = {
     "MatchPatternSet": false,
     "MenuBoxObject": false,
     
-    "MozSelfSupport": false,
     "SharedArrayBuffer": false,
     "SimpleGestureEvent": false,
     

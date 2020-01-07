@@ -103,9 +103,6 @@ with Files("DesktopNotification.webidl"):
 with Files("FakePluginTagInit.webidl"):
     BUG_COMPONENT = ("Core", "Plug-ins")
 
-with Files("Flex.webidl"):
-    BUG_COMPONENT = ("Core", "CSS Parsing and Computation")
-
 with Files("FocusEvent.webidl"):
     BUG_COMPONENT = ("Core", "DOM: Events")
 
@@ -213,9 +210,6 @@ with Files("Media*Track*"):
 
 with Files("Mouse*"):
     BUG_COMPONENT = ("Core", "DOM: Events")
-
-with Files("MozSelfSupport.webidl"):
-    BUG_COMPONENT = ("Firefox Health Report", "Client: Desktop")
 
 with Files("MozTimeManager.webidl"):
     BUG_COMPONENT = ("Core", "DOM: Device Interfaces")
@@ -527,7 +521,6 @@ WEBIDL_FILES = [
     'FileSystemDirectoryReader.webidl',
     'FileSystemEntry.webidl',
     'FileSystemFileEntry.webidl',
-    'Flex.webidl',
     'FocusEvent.webidl',
     'FontFace.webidl',
     'FontFaceSet.webidl',
@@ -693,7 +686,6 @@ WEBIDL_FILES = [
     'MimeTypeArray.webidl',
     'MouseEvent.webidl',
     'MouseScrollEvent.webidl',
-    'MozSelfSupport.webidl',
     'MozStorageAsyncStatementParams.webidl',
     'MozStorageStatementParams.webidl',
     'MozStorageStatementRow.webidl',
