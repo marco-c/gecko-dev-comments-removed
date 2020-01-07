@@ -284,8 +284,7 @@ nsSocketInputStream::OnSocketReady(nsresult condition)
 
         
         if (NS_FAILED(mCondition) || !(mCallbackFlags & WAIT_CLOSURE_ONLY)) {
-            callback = mCallback;
-            mCallback = nullptr;
+            callback = mCallback.forget();
             mCallbackFlags = 0;
         }
     }
@@ -545,8 +544,7 @@ nsSocketOutputStream::OnSocketReady(nsresult condition)
 
         
         if (NS_FAILED(mCondition) || !(mCallbackFlags & WAIT_CLOSURE_ONLY)) {
-            callback = mCallback;
-            mCallback = nullptr;
+            callback = mCallback.forget();
             mCallbackFlags = 0;
         }
     }
