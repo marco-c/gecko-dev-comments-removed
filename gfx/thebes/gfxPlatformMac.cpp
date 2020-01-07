@@ -103,6 +103,14 @@ gfxPlatformMac::~gfxPlatformMac()
     gfxCoreTextShaper::Shutdown();
 }
 
+bool
+gfxPlatformMac::UsesTiling() const
+{
+    
+    
+    return true;
+}
+
 gfxPlatformFontList*
 gfxPlatformMac::CreatePlatformFontList()
 {

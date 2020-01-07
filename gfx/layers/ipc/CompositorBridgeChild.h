@@ -250,7 +250,7 @@ public:
   
   
   template<typename CapturedState>
-  void NotifyFinishedAsyncPaint(CapturedState& aState)
+  bool NotifyFinishedAsyncWorkerPaint(CapturedState& aState)
   {
     MOZ_ASSERT(PaintThread::IsOnPaintThread());
 
@@ -261,13 +261,19 @@ public:
       aClient->DropPaintThreadRef();
     });
     aState->DropTextureClients();
+
+    
+    
+    return mOutstandingAsyncEndTransaction && mOutstandingAsyncPaints == 0;
   }
 
   
   
   
   
-  void NotifyBeginAsyncEndLayerTransaction();
+  
+  
+  bool NotifyBeginAsyncEndLayerTransaction(SyncObjectClient* aSyncObject);
 
   
   
@@ -406,6 +412,7 @@ private:
 
   
   bool mOutstandingAsyncEndTransaction;
+  RefPtr<SyncObjectClient> mOutstandingAsyncSyncObject;
 
   
   

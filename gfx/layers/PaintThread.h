@@ -15,6 +15,8 @@
 #include "RotatedBuffer.h"
 #include "nsThreadUtils.h"
 
+class nsIThreadPool;
+
 namespace mozilla {
 namespace gfx {
 class DrawTarget;
@@ -266,12 +268,7 @@ public:
 
   
   static bool IsOnPaintThread();
-
-  
-  
-  
-  
-  void BeginLayerTransaction();
+  bool IsOnPaintWorkerThread();
 
   void PrepareBuffer(CapturedBufferState* aState);
 
@@ -306,6 +303,8 @@ public:
 private:
   PaintThread();
 
+  static int32_t CalculatePaintWorkerCount();
+
   bool Init();
   void ShutdownOnPaintThread();
   void InitOnPaintThread();
@@ -317,15 +316,18 @@ private:
                           PrepDrawTargetForPaintingCallback aCallback);
   void AsyncPaintTiledContents(CompositorBridgeChild* aBridge,
                                CapturedTiledPaintState* aState);
+  void AsyncPaintTiledContentsFinished(CompositorBridgeChild* aBridge,
+                                       CapturedTiledPaintState* aState);
   void AsyncEndLayer();
-  void AsyncEndLayerTransaction(CompositorBridgeChild* aBridge,
-                                SyncObjectClient* aSyncObject);
+  void AsyncEndLayerTransaction(CompositorBridgeChild* aBridge);
+
+  void DispatchEndLayerTransaction(CompositorBridgeChild* aBridge);
 
   static StaticAutoPtr<PaintThread> sSingleton;
   static StaticRefPtr<nsIThread> sThread;
   static PlatformThreadId sThreadId;
 
-  bool mInAsyncPaintGroup;
+  RefPtr<nsIThreadPool> mPaintWorkers;
 
   
   

@@ -226,9 +226,6 @@ ClientLayerManager::BeginTransactionWithTarget(gfxContext* aTarget)
 {
   
   GetCompositorBridgeChild()->FlushAsyncPaints();
-  if (PaintThread::Get()) {
-    PaintThread::Get()->BeginLayerTransaction();
-  }
 
   MOZ_ASSERT(mForwarder, "ClientLayerManager::BeginTransaction without forwarder");
   if (!mForwarder->IPCOpen()) {
