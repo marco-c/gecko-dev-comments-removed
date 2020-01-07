@@ -524,29 +524,30 @@ HTMLEditor::OnMouseDown(int32_t aClientX,
                         nsIDOMElement* aTarget,
                         nsIDOMEvent* aEvent)
 {
-  bool anonElement = false;
-  if (aTarget && NS_SUCCEEDED(aTarget->HasAttribute(NS_LITERAL_STRING("_moz_anonclass"), &anonElement)))
-    
-    if (anonElement) {
-      nsAutoString anonclass;
-      nsresult rv =
-        aTarget->GetAttribute(NS_LITERAL_STRING("_moz_anonclass"), anonclass);
-      NS_ENSURE_SUCCESS(rv, rv);
-      if (anonclass.EqualsLiteral("mozResizer")) {
-        
-        aEvent->PreventDefault();
+  nsCOMPtr<Element> element = do_QueryInterface(aTarget);
+  NS_ENSURE_ARG_POINTER(element);
 
-        mOriginalX = aClientX;
-        mOriginalY = aClientY;
-        return StartResizing(aTarget);
-      }
-      if (anonclass.EqualsLiteral("mozGrabber")) {
-        
-        mOriginalX = aClientX;
-        mOriginalY = aClientY;
-        return GrabberClicked();
-      }
-    }
+  nsAutoString anonclass;
+  element->GetAttribute(NS_LITERAL_STRING("_moz_anonclass"), anonclass);
+
+  if (anonclass.EqualsLiteral("mozResizer")) {
+    
+    
+    aEvent->PreventDefault();
+
+    mOriginalX = aClientX;
+    mOriginalY = aClientY;
+    return StartResizing(aTarget);
+  }
+
+  if (anonclass.EqualsLiteral("mozGrabber")) {
+    
+    
+    mOriginalX = aClientX;
+    mOriginalY = aClientY;
+    return GrabberClicked();
+  }
+
   return NS_OK;
 }
 
