@@ -960,29 +960,20 @@ var PageInfoListener = {
     };
 
     if (computedStyle) {
-      let addImgFunc = (label, val) => {
-        if (val.primitiveType == content.CSSPrimitiveValue.CSS_URI) {
-          addImage(val.getStringValue(), label, strings.notSet, elem, true);
-        } else if (val.primitiveType == content.CSSPrimitiveValue.CSS_STRING) {
-          
-          
-          let strVal = val.getStringValue();
-          if (strVal.search(/^.*url\(\"?/) > -1) {
-            let url = strVal.replace(/^.*url\(\"?/, "").replace(/\"?\).*$/, "");
-            addImage(url, label, strings.notSet, elem, true);
-          }
-        } else if (val.cssValueType == content.CSSValue.CSS_VALUE_LIST) {
-          
-          for (let i = 0; i < val.length; i++) {
-            addImgFunc(label, val.item(i));
-          }
+      let addImgFunc = (label, urls) => {
+        for (let url of urls) {
+          addImage(url, label, strings.notSet, elem, true);
         }
       };
-
-      addImgFunc(strings.mediaBGImg, computedStyle.getPropertyCSSValue("background-image"));
-      addImgFunc(strings.mediaBorderImg, computedStyle.getPropertyCSSValue("border-image-source"));
-      addImgFunc(strings.mediaListImg, computedStyle.getPropertyCSSValue("list-style-image"));
-      addImgFunc(strings.mediaCursor, computedStyle.getPropertyCSSValue("cursor"));
+      
+      
+      
+      
+      
+      addImgFunc(strings.mediaBGImg, computedStyle.getCSSImageURLs("background-image"));
+      addImgFunc(strings.mediaBorderImg, computedStyle.getCSSImageURLs("border-image-source"));
+      addImgFunc(strings.mediaListImg, computedStyle.getCSSImageURLs("list-style-image"));
+      addImgFunc(strings.mediaCursor, computedStyle.getCSSImageURLs("cursor"));
     }
 
     
