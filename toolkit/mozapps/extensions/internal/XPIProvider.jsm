@@ -5005,22 +5005,6 @@ AddonInternal.prototype = {
 
 
 
-  getDataDirectory(callback) {
-    let parentPath = OS.Path.join(OS.Constants.Path.profileDir, "extension-data");
-    let dirPath = OS.Path.join(parentPath, this.id);
-
-    (async function() {
-      await OS.File.makeDir(parentPath, {ignoreExisting: true});
-      await OS.File.makeDir(dirPath, {ignoreExisting: true});
-    })().then(() => callback(dirPath, null),
-            e => callback(dirPath, e));
-  },
-
-  
-
-
-
-
 
 
 
@@ -5636,8 +5620,7 @@ function defineAddonWrapperProperty(name, getter) {
  "providesUpdatesSecurely", "blocklistState", "blocklistURL", "appDisabled",
  "softDisabled", "skinnable", "size", "foreignInstall",
  "strictCompatibility", "updateURL", "dependencies",
- "getDataDirectory", "signedState",
- "isCorrectlySigned"].forEach(function(aProp) {
+ "signedState", "isCorrectlySigned"].forEach(function(aProp) {
    defineAddonWrapperProperty(aProp, function() {
      let addon = addonFor(this);
      return (aProp in addon) ? addon[aProp] : undefined;
