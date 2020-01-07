@@ -537,6 +537,9 @@ private:
 
     bool NotifyVsync(TimeStamp aVsyncTimestamp) override
     {
+      
+      
+
       if (!NS_IsMainThread()) {
         MOZ_ASSERT(XRE_IsParentProcess());
         
@@ -571,6 +574,7 @@ private:
           return true;
         }
 
+        RefPtr<RefreshDriverVsyncObserver> kungFuDeathGrip(this);
         TickRefreshDriver(aVsyncTimestamp);
       }
 
