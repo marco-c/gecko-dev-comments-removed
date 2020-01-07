@@ -440,9 +440,16 @@ ActiveLayerTracker::IsStyleAnimated(nsDisplayListBuilder* aBuilder,
   LayerActivity* layerActivity = GetLayerActivity(aFrame);
   if (layerActivity) {
     LayerActivity::ActivityIndex activityIndex = LayerActivity::GetActivityIndexForProperty(aProperty);
-    if (layerActivity->mRestyleCounts[LayerActivity::ACTIVITY_TRIGGERED_REPAINT] < 2 &&
-        layerActivity->mRestyleCounts[activityIndex] >= 2) {
-      return true;
+    if (layerActivity->mRestyleCounts[activityIndex] >= 2) {
+      
+      
+      
+      
+      
+      if (layerActivity->mRestyleCounts[LayerActivity::ACTIVITY_TRIGGERED_REPAINT] < 2 ||
+          (aProperty == eCSSProperty_transform && IsScaleSubjectToAnimation(aFrame))) {
+        return true;
+      }
     }
     if (CheckScrollInducedActivity(layerActivity, activityIndex, aBuilder)) {
       return true;
