@@ -166,11 +166,7 @@ public:
 
 
   virtual nsINode* GetNode() const;
-  inline already_AddRefed<nsIDOMNode> DOMNode() const
-  {
-    nsCOMPtr<nsIDOMNode> DOMNode = do_QueryInterface(GetNode());
-    return DOMNode.forget();
-  }
+
   nsIContent* GetContent() const { return mContent; }
   mozilla::dom::Element* Elm() const
     { return mContent && mContent->IsElement() ? mContent->AsElement() : nullptr; }
