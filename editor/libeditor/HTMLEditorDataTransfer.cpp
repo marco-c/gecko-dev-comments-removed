@@ -1993,9 +1993,9 @@ nsresult FindTargetNode(nsINode *aStart, nsCOMPtr<nsINode> &aResult)
 
   do {
     
-    if (child->IsNodeOfType(nsINode::eCOMMENT)) {
+    if (auto* comment = Comment::FromNode(child)) {
       nsAutoString data;
-      static_cast<Comment*>(child.get())->GetData(data);
+      comment->GetData(data);
 
       if (data.EqualsLiteral(kInsertCookie)) {
         

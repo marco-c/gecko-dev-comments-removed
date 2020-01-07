@@ -417,8 +417,6 @@ public:
     
     ePROCESSING_INSTRUCTION = 1 << 4,
     
-    eCOMMENT             = 1 << 5,
-    
     eHTML_FORM_CONTROL   = 1 << 6,
     
     eANIMATION           = 1 << 10,
@@ -576,6 +574,14 @@ public:
            nodeType == CDATA_SECTION_NODE ||
            nodeType == PROCESSING_INSTRUCTION_NODE ||
            nodeType == COMMENT_NODE;
+  }
+
+  
+
+
+  bool IsComment() const
+  {
+    return NodeType() == COMMENT_NODE;
   }
 
   virtual nsIDOMNode* AsDOMNode() = 0;
