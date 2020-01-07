@@ -96,6 +96,9 @@ public:
     void PruneDeadConnectionsAfter(uint32_t time);
 
     
+    void AbortAndCloseAllConnections(int32_t, ARefBase *);
+
+    
     
     void ConditionallyStopPruneDeadConnectionsTimer();
 
