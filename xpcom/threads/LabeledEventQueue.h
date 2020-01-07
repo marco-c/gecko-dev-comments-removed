@@ -153,7 +153,7 @@ private:
   
   
   
-  int64_t mAvoidVisibleTabCount = 0;
+  int64_t mAvoidActiveTabCount = 0;
 };
 
 } 

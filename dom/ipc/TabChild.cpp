@@ -165,7 +165,7 @@ NS_IMPL_ISUPPORTS(TabChildSHistoryListener,
 
 static const char BEFORE_FIRST_PAINT[] = "before-first-paint";
 
-nsTHashtable<nsPtrHashKey<TabChild>>* TabChild::sVisibleTabs;
+nsTHashtable<nsPtrHashKey<TabChild>>* TabChild::sActiveTabs;
 
 typedef nsDataHashtable<nsUint64HashKey, TabChild*> TabChildMap;
 static TabChildMap* sTabChildren;
@@ -1150,11 +1150,11 @@ TabChild::ActorDestroy(ActorDestroyReason why)
 
 TabChild::~TabChild()
 {
-  if (sVisibleTabs) {
-    sVisibleTabs->RemoveEntry(this);
-    if (sVisibleTabs->IsEmpty()) {
-      delete sVisibleTabs;
-      sVisibleTabs = nullptr;
+  if (sActiveTabs) {
+    sActiveTabs->RemoveEntry(this);
+    if (sActiveTabs->IsEmpty()) {
+      delete sActiveTabs;
+      sActiveTabs = nullptr;
     }
   }
 
@@ -2666,6 +2666,23 @@ TabChild::RemovePendingDocShellBlocker()
 }
 
 void
+TabChild::OnDocShellActivated(bool aIsActive)
+{
+  if (aIsActive) {
+    if (!sActiveTabs) {
+      sActiveTabs = new nsTHashtable<nsPtrHashKey<TabChild>>();
+    }
+    sActiveTabs->PutEntry(this);
+  } else {
+    if (sActiveTabs) {
+      sActiveTabs->RemoveEntry(this);
+      
+      
+    }
+  }
+}
+
+void
 TabChild::InternalSetDocShellIsActive(bool aIsActive)
 {
   
@@ -2738,11 +2755,6 @@ TabChild::RecvRenderLayers(const bool& aEnabled, const uint64_t& aLayerObserverE
       }
     }
 
-    if (!sVisibleTabs) {
-      sVisibleTabs = new nsTHashtable<nsPtrHashKey<TabChild>>();
-    }
-    sVisibleTabs->PutEntry(this);
-
     MakeVisible();
 
     nsCOMPtr<nsIDocShell> docShell = do_GetInterface(WebNavigation());
@@ -2781,12 +2793,6 @@ TabChild::RecvRenderLayers(const bool& aEnabled, const uint64_t& aLayerObserverE
       APZCCallbackHelper::SuppressDisplayport(false, presShell);
     }
   } else {
-    if (sVisibleTabs) {
-      sVisibleTabs->RemoveEntry(this);
-      
-      
-    }
-
     MakeHidden();
   }
 
