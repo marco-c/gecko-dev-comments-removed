@@ -1920,6 +1920,15 @@ public:
 
 
 
+  typedef bool (*nsDocTestFunc)(const nsIDocument* aDocument);
+  virtual void CollectDescendantDocuments(
+    nsTArray<nsCOMPtr<nsIDocument>>& aDescendants,
+    nsDocTestFunc aCallback) const = 0;
+
+  
+
+
+
 
 
 
