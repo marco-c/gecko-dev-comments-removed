@@ -4,6 +4,7 @@
 
 "use strict";
 
+const { Cu } = require("chrome");
 const { Actor, ActorClassWithSpec } = require("devtools/shared/protocol");
 const { flexboxSpec, gridSpec, layoutSpec } = require("devtools/shared/specs/layout");
 const nodeFilterConstants = require("devtools/shared/dom-node-filter-constants");
@@ -143,58 +144,54 @@ const LayoutActor = ActorClassWithSpec(layoutSpec, {
 
 
 
-  getFlexbox(rootNode) {
-    let flexboxes = [];
 
-    if (!rootNode) {
-      return flexboxes;
+
+
+  getCurrentFlexbox(node) {
+    if (isNodeDead(node)) {
+      return null;
     }
 
-    let treeWalker = this.walker.getDocumentWalker(rootNode,
+    
+    if (node.rawNode) {
+      node = node.rawNode;
+    }
+
+    let treeWalker = this.walker.getDocumentWalker(node,
       nodeFilterConstants.SHOW_ELEMENT);
+    let currentNode = treeWalker.currentNode;
+    let displayType = this.walker.getNode(currentNode).displayType;
 
-    while (treeWalker.nextNode()) {
-      let currentNode = treeWalker.currentNode;
-      let computedStyle = CssLogic.getComputedStyle(currentNode);
+    if (!displayType) {
+      return null;
+    }
 
-      if (!computedStyle) {
-        continue;
+    
+    if (displayType == "inline-flex" || displayType == "flex") {
+      return new FlexboxActor(this, treeWalker.currentNode);
+    }
+
+    
+    while ((currentNode = treeWalker.parentNode())) {
+      if (!currentNode) {
+        break;
       }
 
-      if (computedStyle.display == "inline-flex" || computedStyle.display == "flex") {
-        let flexboxActor = new FlexboxActor(this, currentNode);
-        flexboxes.push(flexboxActor);
+      displayType = this.walker.getNode(currentNode).displayType;
+
+      switch (displayType) {
+        case "inline-flex":
+        case "flex":
+          return new FlexboxActor(this, currentNode);
+        case "contents":
+          
+          continue;
       }
+
+      break;
     }
 
-    return flexboxes;
-  },
-
-  
-
-
-
-
-
-
-
-
-  getAllFlexbox(rootNode, traverseFrames) {
-    let flexboxes = [];
-
-    if (!rootNode) {
-      return flexboxes;
-    }
-
-    if (!traverseFrames) {
-      return this.getFlexbox(rootNode.rawNode);
-    }
-
-    for (let {document} of this.tabActor.windows) {
-      flexboxes = [...flexboxes, ...this.getFlexbox(document.documentElement)];
-    }
-
-    return flexboxes;
+    return null;
   },
 
   
@@ -206,7 +203,7 @@ const LayoutActor = ActorClassWithSpec(layoutSpec, {
 
 
   getGrids(node) {
-    if (!node) {
+    if (isNodeDead(node)) {
       return [];
     }
 
@@ -231,6 +228,10 @@ const LayoutActor = ActorClassWithSpec(layoutSpec, {
     return gridActors;
   },
 });
+
+function isNodeDead(node) {
+  return !node || (node.rawNode && Cu.isDeadWrapper(node.rawNode));
+}
 
 exports.FlexboxActor = FlexboxActor;
 exports.GridActor = GridActor;
