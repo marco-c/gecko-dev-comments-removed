@@ -474,7 +474,7 @@ var LoginManagerContent = {
 
 
         fillsByRootElement: new WeakMap(),
-        loginFormRootElements: new Set(),
+        loginFormRootElements: new WeakSet(),
       };
       this.loginFormStateByDocument.set(document, loginFormState);
     }
@@ -491,7 +491,9 @@ var LoginManagerContent = {
     
     let hasInsecureLoginForms = (thisWindow) => {
       let doc = thisWindow.document;
-      let hasLoginForm = this.stateForDocument(doc).loginFormRootElements.size > 0;
+      let rootElsWeakSet = this.stateForDocument(doc).loginFormRootElements;
+      let hasLoginForm = ChromeUtils.nondeterministicGetWeakSetKeys(rootElsWeakSet)
+                                    .filter(el => el.isConnected).length > 0;
       return (hasLoginForm && !thisWindow.isSecureContext) ||
              Array.some(thisWindow.frames,
                         frame => hasInsecureLoginForms(frame));
@@ -880,11 +882,17 @@ var LoginManagerContent = {
 
   _onNavigation(aDocument) {
     let state = this.stateForDocument(aDocument);
-    let loginFormRootElements = state.loginFormRootElements;
-    log("_onNavigation: state:", state, "loginFormRootElements size:", loginFormRootElements.size,
+    let rootElsWeakSet = state.loginFormRootElements;
+    let weakLoginFormRootElements = ChromeUtils.nondeterministicGetWeakSetKeys(rootElsWeakSet);
+
+    log("_onNavigation: state:", state, "loginFormRootElements approx size:", weakLoginFormRootElements.length,
         "document:", aDocument);
 
-    for (let formRoot of state.loginFormRootElements) {
+    for (let formRoot of weakLoginFormRootElements) {
+      if (!formRoot.isConnected) {
+        continue;
+      }
+
       if (formRoot instanceof Ci.nsIDOMHTMLFormElement) {
         
         
