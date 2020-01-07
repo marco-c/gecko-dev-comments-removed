@@ -6,10 +6,28 @@ use std::fmt;
 use std::panic::UnwindSafe;
 
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum MacroParsingBehavior {
+    
+    
+    Ignore,
+    
+    Default,
+}
+
+impl Default for MacroParsingBehavior {
+    fn default() -> Self {
+        MacroParsingBehavior::Default
+    }
+}
+
+
 
 pub trait ParseCallbacks: fmt::Debug + UnwindSafe {
     
-    fn parsed_macro(&self, _name: &str) {}
+    fn will_parse_macro(&self, _name: &str) -> MacroParsingBehavior {
+        MacroParsingBehavior::Default
+    }
 
     
     

@@ -222,6 +222,11 @@ impl EnumVariant {
     }
 
     
+    pub fn comment(&self) -> Option<&str> {
+        self.comment.as_ref().map(|s| &**s)
+    }
+
+    
     
     pub fn force_constification(&self) -> bool {
         self.custom_behavior.map_or(false, |b| {

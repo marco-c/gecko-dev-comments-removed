@@ -238,6 +238,7 @@ impl<'ctx> MonotoneFramework for CannotDeriveCopy<'ctx> {
                         
                         
                         
+                        
                         trace!(
                             "    comp can always derive debug if it's a Union and no template parameters"
                         );
