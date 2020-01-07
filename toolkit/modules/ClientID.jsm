@@ -54,6 +54,7 @@ this.ClientID = Object.freeze({
 
 
 
+
   getClientID() {
     return ClientIDImpl.getClientID();
   },
@@ -95,15 +96,28 @@ var ClientIDImpl = {
     return this._loadClientIdTask;
   },
 
-  
-
-
-
   async _doLoadClientID() {
+    
+    
+    
+    
+
     
     try {
       let state = await CommonUtils.readJSON(gStateFilePath);
       if (state && this.updateClientID(state.clientID)) {
+        return this._clientID;
+      }
+    } catch (e) {
+      
+    }
+
+    
+    try {
+      let fhrStatePath = OS.Path.join(OS.Constants.Path.profileDir, "healthreport", "state.json");
+      let state = await CommonUtils.readJSON(fhrStatePath);
+      if (state && this.updateClientID(state.clientID)) {
+        this._saveClientID();
         return this._clientID;
       }
     } catch (e) {
@@ -136,6 +150,7 @@ var ClientIDImpl = {
   },
 
   
+
 
 
 
