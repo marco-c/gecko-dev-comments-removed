@@ -178,7 +178,7 @@ add_task(async function test_momentary_401_engine() {
                                       Service.storageURL + "rotary");
 
   tracker.clearChangedIDs();
-  Service.engineManager.unregister(engine);
+  await Service.engineManager.unregister(engine);
 });
 
 
@@ -491,5 +491,5 @@ add_task(async function test_loop_avoidance_engine() {
   await deferred.promise;
 
   tracker.clearChangedIDs();
-  Service.engineManager.unregister(engine);
+  await Service.engineManager.unregister(engine);
 });
