@@ -251,14 +251,6 @@ public:
   
 
 
-  bool InnerObjectsFreed() const
-  {
-    return mInnerObjectsFreed;
-  }
-
-  
-
-
   bool IsSecureContext() const;
   bool IsSecureContextIfOpenerIgnored() const;
 
@@ -660,10 +652,6 @@ protected:
   bool mMayHaveSelectionChangeEventListener;
   bool mMayHaveMouseEnterLeaveEventListener;
   bool mMayHavePointerEnterLeaveEventListener;
-
-  
-  
-  bool mInnerObjectsFreed;
 
   bool mAudioCaptured;
 

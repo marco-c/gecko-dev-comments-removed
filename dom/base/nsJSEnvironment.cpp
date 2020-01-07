@@ -243,7 +243,7 @@ FindExceptionStackForConsoleReport(nsPIDOMWindowInner* win,
     return nullptr;
   }
 
-  if (win && win->InnerObjectsFreed()) {
+  if (win && win->AsGlobal()->IsDying()) {
     
     
     return nullptr;
