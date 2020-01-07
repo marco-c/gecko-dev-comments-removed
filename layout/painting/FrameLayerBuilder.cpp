@@ -4445,8 +4445,9 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
     }
 
     
+    bool treatInactiveItemAsActive = (layerState == LAYER_INACTIVE && !mManager->IsWidgetLayerManager());
     if (layerState == LAYER_ACTIVE_FORCE ||
-        (layerState == LAYER_INACTIVE && !mManager->IsWidgetLayerManager()) ||
+        treatInactiveItemAsActive ||
         (!forceInactive &&
          (layerState == LAYER_ACTIVE_EMPTY ||
           layerState == LAYER_ACTIVE))) {
@@ -4595,7 +4596,48 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
       
       nsIntRect layerContentsVisibleRect(0, 0, -1, -1);
       params.mLayerContentsVisibleRect = &layerContentsVisibleRect;
+
+      
+      
+      
+      
+      
+      
+      
+      const DisplayItemClip* originalInactiveClip = nullptr;
+      DisplayItemClip combinedInactiveClip;
+      bool combineNestedClip = treatInactiveItemAsActive && mLayerBuilder->GetContainingPaintedLayerData();
+      if (combineNestedClip) {
+        originalInactiveClip = mLayerBuilder->GetInactiveLayerClip();
+        if (originalInactiveClip) {
+          combinedInactiveClip = *originalInactiveClip;
+        }
+        DisplayItemClip nestedClip = item->GetClip();
+        if (nestedClip.HasClip()) {
+          nsRect nestedClipRect = nestedClip.NonRoundedIntersection();
+
+          
+          
+          
+          nestedClipRect = nsLayoutUtils::TransformFrameRectToAncestor(
+              item->ReferenceFrame(),
+              nestedClipRect,
+              mLayerBuilder->GetContainingPaintedLayerData()->mReferenceFrame);
+
+          nestedClip.SetTo(nestedClipRect);
+          combinedInactiveClip.IntersectWith(nestedClip);
+          mLayerBuilder->SetInactiveLayerClip(&combinedInactiveClip);
+        }
+      }
+
       RefPtr<Layer> ownLayer = item->BuildLayer(mBuilder, mManager, params);
+
+      
+      
+      if (combineNestedClip) {
+        mLayerBuilder->SetInactiveLayerClip(originalInactiveClip);
+      }
+
       if (!ownLayer) {
         continue;
       }

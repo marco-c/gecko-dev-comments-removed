@@ -703,6 +703,17 @@ public:
     return mInactiveLayerClip;
   }
 
+  
+
+
+
+
+
+  void SetInactiveLayerClip(const DisplayItemClip* aClip)
+  {
+    mInactiveLayerClip = aClip;
+  }
+
   bool IsBuildingRetainedLayers()
   {
     return !mIsInactiveLayerManager && mRetainingManager;
