@@ -64,6 +64,8 @@ add_task(async function() {
     let request = Services.qms.clearStoragesForPrincipal(principal, null, true);
     request.callback = resolve;
   });
+
+  await SiteDataManager.removeAll();
   await BrowserTestUtils.removeTab(gBrowser.selectedTab);
 }).skip(); 
 
@@ -144,13 +146,12 @@ add_task(async function() {
   await acceptRemovePromise;
   await updatePromise;
   await promiseServiceWorkersCleared();
+  await SiteDataManager.removeAll();
   await BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
 
 
 add_task(async function() {
-  SiteDataManager.removeAll();
-
   
   let uri = Services.io.newURI("https://example.com");
   let uri2 = Services.io.newURI("https://example.org");
@@ -165,12 +166,28 @@ add_task(async function() {
   Services.cookies.add(uri.host, uri.pathQueryRef, "test3", "3",
     false, false, false, Date.now() + 1000 * 60 * 60, { privateBrowsingId: 1 });
 
+  
+  
+  let cookiesEnum1 = Services.cookies.getCookiesFromHost(uri.host);
+  
+  cookiesEnum1.getNext();
+  let cookiesEnum2 = Services.cookies.getCookiesFromHost(uri2.host);
+  let cookie1 = cookiesEnum1.getNext().QueryInterface(Ci.nsICookie2);
+  let cookie2 = cookiesEnum2.getNext().QueryInterface(Ci.nsICookie2);
+
+  let formatter = new Services.intl.DateTimeFormat(undefined, {
+    dateStyle: "short", timeStyle: "short",
+  });
+
+  let creationDate1 = formatter.format(new Date(cookie1.lastAccessed / 1000));
+  let creationDate2 = formatter.format(new Date(cookie2.lastAccessed / 1000));
+
   await openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
 
   
   await openSiteDataSettingsDialog();
   let removeDialogOpenPromise = promiseWindowDialogOpen("accept", REMOVE_DIALOG_URL);
-  ContentTask.spawn(gBrowser.selectedBrowser, null, function() {
+  await ContentTask.spawn(gBrowser.selectedBrowser, {creationDate1, creationDate2}, function(args) {
     let frameDoc = content.gSubDialog._topDialog._frame.contentDocument;
 
     let siteItems = frameDoc.getElementsByTagName("richlistitem");
@@ -183,11 +200,13 @@ add_task(async function() {
     is(columns[0].value, "example.com", "Should show the correct host.");
     is(columns[2].value, "2", "Should show the correct number of cookies.");
     is(columns[3].value, "", "Should show no site data.");
+    is(columns[4].value, args.creationDate1, "Should show the correct date.");
 
     columns = site2.querySelectorAll(".item-box > label");
     is(columns[0].value, "example.org", "Should show the correct host.");
     is(columns[2].value, "1", "Should show the correct number of cookies.");
     is(columns[3].value, "", "Should show no site data.");
+    is(columns[4].value, args.creationDate2, "Should show the correct date.");
 
     let removeBtn = frameDoc.getElementById("removeSelected");
     let saveBtn = frameDoc.getElementById("save");
@@ -203,7 +222,7 @@ add_task(async function() {
   
   await openSiteDataSettingsDialog();
   let acceptRemovePromise = promiseAlertDialogOpen("accept");
-  ContentTask.spawn(gBrowser.selectedBrowser, null, function() {
+  await ContentTask.spawn(gBrowser.selectedBrowser, {creationDate1}, function(args) {
     let frameDoc = content.gSubDialog._topDialog._frame.contentDocument;
 
     let siteItems = frameDoc.getElementsByTagName("richlistitem");
@@ -215,6 +234,7 @@ add_task(async function() {
     is(columns[0].value, "example.com", "Should show the correct host.");
     is(columns[2].value, "2", "Should show the correct number of cookies.");
     is(columns[3].value, "", "Should show no site data.");
+    is(columns[4].value, args.creationDate1, "Should show the correct date.");
 
     let removeBtn = frameDoc.getElementById("removeSelected");
     let saveBtn = frameDoc.getElementById("save");
