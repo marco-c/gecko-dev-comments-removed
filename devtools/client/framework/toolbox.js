@@ -504,7 +504,15 @@ Toolbox.prototype = {
       
       
       buttonsPromise.then(() => {
-        this.component.setCanRender();
+        
+        
+        
+        
+        
+        
+        this.win.requestIdleCallback(() => {
+          this.component.setCanRender();
+        }, {timeout: 16});
       });
 
       yield this.selectTool(this._defaultToolId);
