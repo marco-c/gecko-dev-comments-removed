@@ -20,7 +20,7 @@
 #include "nsIWidget.h"
 #include "nsThemeConstants.h"  
 
-#include "mozilla/dom/AnimationEffectReadOnlyBinding.h" 
+#include "mozilla/dom/AnimationEffectBinding.h" 
 #include "mozilla/LookAndFeel.h" 
 
 #include "nsString.h"
