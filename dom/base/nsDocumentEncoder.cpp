@@ -53,8 +53,6 @@
 using namespace mozilla;
 using namespace mozilla::dom;
 
-nsresult NS_NewDomSelection(nsISelection **aDomSelection);
-
 enum nsRangeIterationDirection {
   kDirectionOut = -1,
   kDirectionIn = 1
@@ -1345,8 +1343,7 @@ nsHTMLCopyEncoder::SetSelection(nsISelection* aSelection)
   
   
   
-  NS_NewDomSelection(getter_AddRefs(mSelection));
-  NS_ENSURE_TRUE(mSelection, NS_ERROR_FAILURE);
+  mSelection = new Selection();
 
   
   for (uint32_t rangeIdx = 0; rangeIdx < rangeCount; ++rangeIdx) {
