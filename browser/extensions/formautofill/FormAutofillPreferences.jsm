@@ -90,6 +90,7 @@ FormAutofillPreferences.prototype = {
 
     addressAutofill.setAttribute("data-subcategory", "address-autofill");
     addressAutofillCheckboxLabel.textContent = this.bundle.GetStringFromName("autofillAddressesCheckbox");
+    addressAutofillCheckbox.setAttribute("aria-label", addressAutofillCheckboxLabel.textContent);
     addressAutofillLearnMore.textContent = this.bundle.GetStringFromName("learnMoreLabel");
     savedAddressesBtn.setAttribute("label", this.bundle.GetStringFromName("savedAddressesBtnLabel"));
     
@@ -144,6 +145,7 @@ FormAutofillPreferences.prototype = {
 
       creditCardAutofill.setAttribute("data-subcategory", "credit-card-autofill");
       creditCardAutofillCheckboxLabel.textContent = this.bundle.GetStringFromName("autofillCreditCardsCheckbox");
+      creditCardAutofillCheckbox.setAttribute("aria-label", creditCardAutofillCheckboxLabel.textContent);
       creditCardAutofillLearnMore.textContent = this.bundle.GetStringFromName("learnMoreLabel");
       savedCreditCardsBtn.setAttribute("label", this.bundle.GetStringFromName("savedCreditCardsBtnLabel"));
       
