@@ -37,8 +37,9 @@ class MozXULElement extends XULElement {
 
 
 
-  static parseXULToFragment(str) {
+  static parseXULToFragment(str, entities = "") {
     let doc = gXULDOMParser.parseFromString(`
+      ${entities}
       <box xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
         ${str}
       </box>
@@ -55,7 +56,7 @@ class MozXULElement extends XULElement {
     
     
     let range = doc.createRange();
-    range.selectNodeContents(doc.firstChild);
+    range.selectNodeContents(doc.querySelector("box"));
     return range.extractContents();
   }
 }
@@ -69,5 +70,10 @@ for (let script of [
 ]) {
   Services.scriptloader.loadSubScript(script, window);
 }
+
+customElements.setElementCreationCallback("printpreview-toolbar", type => {
+  Services.scriptloader.loadSubScript(
+    "chrome://global/content/printPreviewToolbar.js", window);
+});
 
 }
