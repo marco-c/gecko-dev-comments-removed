@@ -259,7 +259,18 @@ protected:
   nsresult WillAlign(const nsAString& aAlignType,
                      bool* aCancel, bool* aHandled);
   nsresult WillAbsolutePosition(bool* aCancel, bool* aHandled);
-  nsresult WillRemoveAbsolutePosition(bool* aCancel, bool* aHandled);
+
+  
+
+
+
+
+
+
+
+
+  MOZ_MUST_USE nsresult
+  WillRemoveAbsolutePosition(bool* aCancel, bool* aHandled);
 
   
 
