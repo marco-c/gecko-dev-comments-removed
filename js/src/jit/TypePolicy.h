@@ -502,6 +502,13 @@ class StoreUnboxedObjectOrNullPolicy final : public TypePolicy
     virtual MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc, MInstruction* def) override;
 };
 
+class StoreUnboxedStringPolicy final : public TypePolicy
+{
+  public:
+    EMPTY_DATA_;
+    virtual MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc, MInstruction* def) override;
+};
+
 
 class ClampPolicy final : public TypePolicy
 {

@@ -11961,7 +11961,7 @@ IonBuilder::storeUnboxedValue(MDefinition* obj, MDefinition* elements, int32_t e
         break;
 
       case JSVAL_TYPE_STRING:
-        store = MStoreUnboxedString::New(alloc(), elements, scaledOffset, value,
+        store = MStoreUnboxedString::New(alloc(), elements, scaledOffset, value, obj,
                                          elementsOffset, preBarrier);
         break;
 
@@ -13693,7 +13693,7 @@ IonBuilder::setPropTryReferenceTypedObjectValue(bool* emitted,
       case ReferenceTypeDescr::TYPE_STRING:
         
         
-        store = MStoreUnboxedString::New(alloc(), elements, scaledOffset, value, adjustment);
+        store = MStoreUnboxedString::New(alloc(), elements, scaledOffset, value, typedObj, adjustment);
         break;
     }
 
