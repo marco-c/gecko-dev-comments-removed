@@ -1121,7 +1121,8 @@ void
 WebRenderBridgeParent::UpdateWebRender(CompositorVsyncScheduler* aScheduler,
                                        wr::WebRenderAPI* aApi,
                                        AsyncImagePipelineManager* aImageMgr,
-                                       CompositorAnimationStorage* aAnimStorage)
+                                       CompositorAnimationStorage* aAnimStorage,
+                                       const TextureFactoryIdentifier& aTextureFactoryIdentifier)
 {
   MOZ_ASSERT(!mWidget);
   MOZ_ASSERT(aScheduler);
@@ -1144,7 +1145,7 @@ WebRenderBridgeParent::UpdateWebRender(CompositorVsyncScheduler* aScheduler,
   
   
   
-  Unused << SendWrUpdated(mIdNamespace);
+  Unused << SendWrUpdated(mIdNamespace, aTextureFactoryIdentifier);
   CompositorBridgeParentBase* cBridge = mCompositorBridge;
   
   ClearResources();

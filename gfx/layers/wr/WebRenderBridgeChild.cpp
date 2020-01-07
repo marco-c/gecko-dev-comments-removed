@@ -542,11 +542,13 @@ WebRenderBridgeChild::InForwarderThread()
 }
 
 mozilla::ipc::IPCResult
-WebRenderBridgeChild::RecvWrUpdated(const wr::IdNamespace& aNewIdNamespace)
+WebRenderBridgeChild::RecvWrUpdated(const wr::IdNamespace& aNewIdNamespace,
+                                    const TextureFactoryIdentifier& textureFactoryIdentifier)
 {
   if (mManager) {
     mManager->WrUpdated();
   }
+  IdentifyTextureHost(textureFactoryIdentifier);
   
   
   mIdNamespace = aNewIdNamespace;
