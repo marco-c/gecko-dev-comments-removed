@@ -62,7 +62,6 @@ namespace ipc {
 
 class Shmem final
 {
-  friend struct IPC::ParamTraits<mozilla::ipc::Shmem>;
   friend struct IPDLParamTraits<mozilla::ipc::Shmem>;
 #ifdef DEBUG
   
@@ -279,44 +278,5 @@ struct IPDLParamTraits<Shmem>
 
 } 
 } 
-
-
-namespace IPC {
-
-
-
-
-template<>
-struct ParamTraits<mozilla::ipc::Shmem>
-{
-  typedef mozilla::ipc::Shmem paramType;
-
-  
-  
-  
-
-  static void Write(Message* aMsg, const paramType& aParam)
-  {
-    WriteParam(aMsg, aParam.mId);
-  }
-
-  static bool Read(const Message* aMsg, PickleIterator* aIter, paramType* aResult)
-  {
-    paramType::id_t id;
-    if (!ReadParam(aMsg, aIter, &id))
-      return false;
-    aResult->mId = id;
-    return true;
-  }
-
-  static void Log(const paramType& aParam, std::wstring* aLog)
-  {
-    aLog->append(L"(shmem segment)");
-  }
-};
-
-
-} 
-
 
 #endif 
