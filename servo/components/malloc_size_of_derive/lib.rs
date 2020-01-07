@@ -10,15 +10,9 @@
 
 
 
-#[macro_use] extern crate quote;
+extern crate quote;
 #[macro_use] extern crate syn;
-
-#[cfg(not(test))]
 #[macro_use] extern crate synstructure;
-
-#[cfg(test)]
-extern crate synstructure;
-
 
 #[cfg(not(test))]
 decl_derive!([MallocSizeOf, attributes(ignore_malloc_size_of)] => malloc_size_of_derive);
