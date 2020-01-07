@@ -1,16 +1,5 @@
 "use strict";
 
-
-
-
-
-
-
-ChromeUtils.import("resource://testing-common/PromiseTestUtils.jsm", this);
-PromiseTestUtils.whitelistRejectionsGlobally(/Missing host permission/);
-
-
-
 async function testHasNoPermission(params) {
   let contentSetup = params.contentSetup || (() => Promise.resolve());
 
@@ -20,22 +9,21 @@ async function testHasNoPermission(params) {
       browser.test.notifyPass("executeScript");
     });
 
-    browser.test.onMessage.addListener(msg => {
+    browser.test.onMessage.addListener(async msg => {
       browser.test.assertEq(msg, "execute-script");
 
-      browser.tabs.query({currentWindow: true}, tabs => {
-        browser.tabs.executeScript({
-          file: "script.js",
-        });
+      let tabs = await browser.tabs.query({currentWindow: true});
+      await browser.test.assertRejects(browser.tabs.executeScript({
+        file: "script.js",
+      }), /Missing host permission for the tab/);
 
-        
-        
-        
-        
-        
-        browser.tabs.executeScript(tabs[1].id, {
-          file: "second-script.js",
-        });
+      
+
+      
+      
+      
+      browser.tabs.executeScript(tabs[1].id, {
+        file: "second-script.js",
       });
     });
 
@@ -350,7 +338,6 @@ add_task(async function testBadURL() {
 
   await extension.unload();
 });
-
 
 
 
