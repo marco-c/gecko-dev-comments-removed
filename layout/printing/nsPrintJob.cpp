@@ -207,278 +207,25 @@ protected:
   bool                    mSuppressed;
 };
 
-
-
-
-
-static bool
-HasFramesetChild(nsIContent* aContent)
-{
-  if (!aContent) {
-    return false;
-  }
-
-  
-  for (nsIContent* child = aContent->GetFirstChild();
-       child;
-       child = child->GetNextSibling()) {
-    if (child->IsHTMLElement(nsGkAtoms::frameset)) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-static bool
-IsParentAFrameSet(nsIDocShell* aParent)
-{
-  
-  if (!aParent) return false;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  bool isFrameSet = false;
-  
-  
-  nsCOMPtr<nsIDocument> doc = aParent->GetDocument();
-  if (doc) {
-    nsIContent *rootElement = doc->GetRootElement();
-    if (rootElement) {
-      isFrameSet = HasFramesetChild(rootElement);
-    }
-  }
-  return isFrameSet;
-}
-
-static nsPrintObject*
-FindPrintObjectByDOMWin(nsPrintObject* aPO,
-                        nsPIDOMWindowOuter* aDOMWin)
-{
-  NS_ASSERTION(aPO, "Pointer is null!");
-
-  
-  
-  if (!aDOMWin) {
-    return nullptr;
-  }
-
-  nsCOMPtr<nsIDocument> doc = aDOMWin->GetDoc();
-  if (aPO->mDocument && aPO->mDocument->GetOriginalDocument() == doc) {
-    return aPO;
-  }
-
-  for (const UniquePtr<nsPrintObject>& kid : aPO->mKids) {
-    nsPrintObject* po = FindPrintObjectByDOMWin(kid.get(), aDOMWin);
-    if (po) {
-      return po;
-    }
-  }
-
-  return nullptr;
-}
-
-static void
-GetDocumentTitleAndURL(nsIDocument* aDoc,
-                       nsAString& aTitle,
-                       nsAString& aURLStr)
-{
-  NS_ASSERTION(aDoc, "Pointer is null!");
-
-  aTitle.Truncate();
-  aURLStr.Truncate();
-
-  nsCOMPtr<nsIDOMDocument> doc = do_QueryInterface(aDoc);
-  doc->GetTitle(aTitle);
-
-  nsIURI* url = aDoc->GetDocumentURI();
-  if (!url) return;
-
-  nsCOMPtr<nsIURIFixup> urifixup(do_GetService(NS_URIFIXUP_CONTRACTID));
-  if (!urifixup) return;
-
-  nsCOMPtr<nsIURI> exposableURI;
-  urifixup->CreateExposableURI(url, getter_AddRefs(exposableURI));
-
-  if (!exposableURI) return;
-
-  nsAutoCString urlCStr;
-  nsresult rv = exposableURI->GetSpec(urlCStr);
-  if (NS_FAILED(rv)) return;
-
-  nsCOMPtr<nsITextToSubURI> textToSubURI =
-    do_GetService(NS_ITEXTTOSUBURI_CONTRACTID, &rv);
-  if (NS_FAILED(rv)) return;
-
-  textToSubURI->UnEscapeURIForUI(NS_LITERAL_CSTRING("UTF-8"),
-                                 urlCStr, aURLStr);
-}
-
-static nsresult
-GetSeqFrameAndCountPagesInternal(const UniquePtr<nsPrintObject>& aPO,
-                                 nsIFrame*& aSeqFrame,
-                                 int32_t& aCount)
-{
-  NS_ENSURE_ARG_POINTER(aPO);
-
-  
-  
-  
-  if (!aPO->mPresShell) {
-    MOZ_DIAGNOSTIC_ASSERT(false,
-                          "GetSeqFrameAndCountPages needs a non-null pres shell");
-    return NS_ERROR_FAILURE;
-  }
-
-  
-  nsIPageSequenceFrame* seqFrame = aPO->mPresShell->GetPageSequenceFrame();
-  aSeqFrame = do_QueryFrame(seqFrame);
-  if (!aSeqFrame) {
-    return NS_ERROR_FAILURE;
-  }
-
-  
-  aCount = aSeqFrame->PrincipalChildList().GetLength();
-
-  return NS_OK;
-}
-
-
-
-
-
-static void
-SetPrintAsIs(nsPrintObject* aPO, bool aAsIs = true)
-{
-  NS_ASSERTION(aPO, "Pointer is null!");
-
-  aPO->mPrintAsIs = aAsIs;
-  for (const UniquePtr<nsPrintObject>& kid : aPO->mKids) {
-    SetPrintAsIs(kid.get(), aAsIs);
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-static void
-MapContentForPO(const UniquePtr<nsPrintObject>& aPO,
-                nsIContent* aContent)
-{
-  NS_PRECONDITION(aPO && aContent, "Null argument");
-
-  nsIDocument* doc = aContent->GetComposedDoc();
-
-  NS_ASSERTION(doc, "Content without a document from a document tree?");
-
-  nsIDocument* subDoc = doc->GetSubDocumentFor(aContent);
-
-  if (subDoc) {
-    nsCOMPtr<nsIDocShell> docShell(subDoc->GetDocShell());
-
-    if (docShell) {
-      nsPrintObject * po = nullptr;
-      for (const UniquePtr<nsPrintObject>& kid : aPO->mKids) {
-        if (kid->mDocument == subDoc) {
-          po = kid.get();
-          break;
-        }
-      }
-
-      
-      
-      if (po) {
-        
-        
-        if (aContent->IsHTMLElement(nsGkAtoms::frame) && po->mParent->mFrameType == eFrameSet) {
-          po->mFrameType = eFrame;
-        } else {
-          
-          po->mFrameType = eIFrame;
-          SetPrintAsIs(po, true);
-          NS_ASSERTION(po->mParent, "The root must be a parent");
-          po->mParent->mPrintAsIs = true;
-        }
-      }
-    }
-  }
-
-  
-  for (nsIContent* child = aContent->GetFirstChild();
-       child;
-       child = child->GetNextSibling()) {
-    MapContentForPO(aPO, child);
-  }
-}
-
-
-
-
-
-
-
-
-static void
-MapContentToWebShells(const UniquePtr<nsPrintObject>& aRootPO,
-                      const UniquePtr<nsPrintObject>& aPO)
-{
-  NS_ASSERTION(aRootPO, "Pointer is null!");
-  NS_ASSERTION(aPO, "Pointer is null!");
-
-  
-  
-  
-  nsCOMPtr<nsIContentViewer> viewer;
-  aPO->mDocShell->GetContentViewer(getter_AddRefs(viewer));
-  if (!viewer) return;
-
-  nsCOMPtr<nsIDOMDocument> domDoc;
-  viewer->GetDOMDocument(getter_AddRefs(domDoc));
-  nsCOMPtr<nsIDocument> doc = do_QueryInterface(domDoc);
-  if (!doc) return;
-
-  Element* rootElement = doc->GetRootElement();
-  if (rootElement) {
-    MapContentForPO(aPO, rootElement);
-  } else {
-    NS_WARNING("Null root content on (sub)document.");
-  }
-
-  
-  for (const UniquePtr<nsPrintObject>& kid : aPO->mKids) {
-    MapContentToWebShells(aRootPO, kid);
-  }
-
-}
-
-
-
-
 NS_IMPL_ISUPPORTS(nsPrintJob, nsIWebProgressListener,
                   nsISupportsWeakReference, nsIObserver)
+
+
+
+
+nsPrintJob::nsPrintJob()
+  : mIsCreatingPrintPreview(false)
+  , mIsDoingPrinting(false)
+  , mIsDoingPrintPreview(false)
+  , mProgressDialogIsShown(false)
+  , mScreenDPI(115.0f)
+  , mPagePrintTimer(nullptr)
+  , mLoadCounter(0)
+  , mDidLoadDataForPrinting(false)
+  , mIsDestroying(false)
+  , mDisallowSelectionPrint(false)
+{
+}
 
 
 nsPrintJob::~nsPrintJob()
@@ -500,6 +247,7 @@ nsPrintJob::Destroy()
 
 #ifdef NS_PRINT_PREVIEW
   mPrtPreview = nullptr;
+  mOldPrtPreview = nullptr;
 #endif
   mDocViewerPrint = nullptr;
 }
@@ -579,6 +327,36 @@ nsPrintJob::InstallPrintPreviewListener()
 
 
 nsresult
+nsPrintJob::GetSeqFrameAndCountPagesInternal(const UniquePtr<nsPrintObject>& aPO,
+                                             nsIFrame*&    aSeqFrame,
+                                             int32_t&      aCount)
+{
+  NS_ENSURE_ARG_POINTER(aPO);
+
+  
+  
+  
+  if (!aPO->mPresShell) {
+    MOZ_DIAGNOSTIC_ASSERT(false,
+                          "GetSeqFrameAndCountPages needs a non-null pres shell");
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  nsIPageSequenceFrame* seqFrame = aPO->mPresShell->GetPageSequenceFrame();
+  aSeqFrame = do_QueryFrame(seqFrame);
+  if (!aSeqFrame) {
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  aCount = aSeqFrame->PrincipalChildList().GetLength();
+
+  return NS_OK;
+}
+
+
+nsresult
 nsPrintJob::GetSeqFrameAndCountPages(nsIFrame*& aSeqFrame, int32_t& aCount)
 {
   MOZ_ASSERT(mPrtPreview);
@@ -628,7 +406,7 @@ nsPrintJob::CommonPrint(bool                    aIsPrintPreview,
                               aWebProgressListener, aDoc);
   if (NS_FAILED(rv)) {
     if (aIsPrintPreview) {
-      mIsCreatingPrintPreview = false;
+      SetIsCreatingPrintPreview(false);
       SetIsPrintPreview(false);
     } else {
       SetIsPrinting(false);
@@ -657,6 +435,10 @@ nsPrintJob::DoCommonPrint(bool                    aIsPrintPreview,
     
     nsCOMPtr<nsIPrintingPromptService> pps(do_QueryInterface(aWebProgressListener));
     mProgressDialogIsShown = pps != nullptr;
+
+    if (mIsDoingPrintPreview) {
+      mOldPrtPreview = Move(mPrtPreview);
+    }
   } else {
     mProgressDialogIsShown = false;
   }
@@ -681,7 +463,7 @@ nsPrintJob::DoCommonPrint(bool                    aIsPrintPreview,
   printData->mPrintSettings->GetShrinkToFit(&printData->mShrinkToFit);
 
   if (aIsPrintPreview) {
-    mIsCreatingPrintPreview = true;
+    SetIsCreatingPrintPreview(true);
     SetIsPrintPreview(true);
     nsCOMPtr<nsIContentViewer> viewer =
       do_QueryInterface(mDocViewerPrint);
@@ -766,7 +548,7 @@ nsPrintJob::DoCommonPrint(bool                    aIsPrintPreview,
   
   
   
-  if (mIsDestroying || (aIsPrintPreview && !mIsCreatingPrintPreview)) {
+  if (mIsDestroying || (aIsPrintPreview && !GetIsCreatingPrintPreview())) {
     return NS_ERROR_FAILURE;
   }
 
@@ -1381,6 +1163,39 @@ nsPrintJob::IsThereARangeSelection(nsPIDOMWindowOuter* aDOMWin)
 }
 
 
+bool
+nsPrintJob::IsParentAFrameSet(nsIDocShell* aParent)
+{
+  
+  if (!aParent) return false;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool isFrameSet = false;
+  
+  
+  nsCOMPtr<nsIDocument> doc = aParent->GetDocument();
+  if (doc) {
+    nsIContent *rootElement = doc->GetRootElement();
+    if (rootElement) {
+      isFrameSet = HasFramesetChild(rootElement);
+    }
+  }
+  return isFrameSet;
+}
+
+
+
 
 
 void
@@ -1418,6 +1233,82 @@ nsPrintJob::BuildDocTree(nsIDocShell*      aParentNode,
 }
 
 
+void
+nsPrintJob::GetDocumentTitleAndURL(nsIDocument* aDoc,
+                                   nsAString&   aTitle,
+                                   nsAString&   aURLStr)
+{
+  NS_ASSERTION(aDoc, "Pointer is null!");
+
+  aTitle.Truncate();
+  aURLStr.Truncate();
+
+  nsCOMPtr<nsIDOMDocument> doc = do_QueryInterface(aDoc);
+  doc->GetTitle(aTitle);
+
+  nsIURI* url = aDoc->GetDocumentURI();
+  if (!url) return;
+
+  nsCOMPtr<nsIURIFixup> urifixup(do_GetService(NS_URIFIXUP_CONTRACTID));
+  if (!urifixup) return;
+
+  nsCOMPtr<nsIURI> exposableURI;
+  urifixup->CreateExposableURI(url, getter_AddRefs(exposableURI));
+
+  if (!exposableURI) return;
+
+  nsAutoCString urlCStr;
+  nsresult rv = exposableURI->GetSpec(urlCStr);
+  if (NS_FAILED(rv)) return;
+
+  nsCOMPtr<nsITextToSubURI> textToSubURI =
+    do_GetService(NS_ITEXTTOSUBURI_CONTRACTID, &rv);
+  if (NS_FAILED(rv)) return;
+
+  textToSubURI->UnEscapeURIForUI(NS_LITERAL_CSTRING("UTF-8"),
+                                 urlCStr, aURLStr);
+}
+
+
+
+
+
+
+
+void
+nsPrintJob::MapContentToWebShells(const UniquePtr<nsPrintObject>& aRootPO,
+                                  const UniquePtr<nsPrintObject>& aPO)
+{
+  NS_ASSERTION(aRootPO, "Pointer is null!");
+  NS_ASSERTION(aPO, "Pointer is null!");
+
+  
+  
+  
+  nsCOMPtr<nsIContentViewer> viewer;
+  aPO->mDocShell->GetContentViewer(getter_AddRefs(viewer));
+  if (!viewer) return;
+
+  nsCOMPtr<nsIDOMDocument> domDoc;
+  viewer->GetDOMDocument(getter_AddRefs(domDoc));
+  nsCOMPtr<nsIDocument> doc = do_QueryInterface(domDoc);
+  if (!doc) return;
+
+  Element* rootElement = doc->GetRootElement();
+  if (rootElement) {
+    MapContentForPO(aPO, rootElement);
+  } else {
+    NS_WARNING("Null root content on (sub)document.");
+  }
+
+  
+  for (const UniquePtr<nsPrintObject>& kid : aPO->mKids) {
+    MapContentToWebShells(aRootPO, kid);
+  }
+
+}
+
+
 
 
 
@@ -1447,6 +1338,71 @@ nsPrintJob::CheckForChildFrameSets(const UniquePtr<nsPrintObject>& aPO)
 
   if (hasChildFrames && aPO->mFrameType == eFrame) {
     aPO->mFrameType = eFrameSet;
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void
+nsPrintJob::MapContentForPO(const UniquePtr<nsPrintObject>& aPO,
+                            nsIContent* aContent)
+{
+  NS_PRECONDITION(aPO && aContent, "Null argument");
+
+  nsIDocument* doc = aContent->GetComposedDoc();
+
+  NS_ASSERTION(doc, "Content without a document from a document tree?");
+
+  nsIDocument* subDoc = doc->GetSubDocumentFor(aContent);
+
+  if (subDoc) {
+    nsCOMPtr<nsIDocShell> docShell(subDoc->GetDocShell());
+
+    if (docShell) {
+      nsPrintObject * po = nullptr;
+      for (const UniquePtr<nsPrintObject>& kid : aPO->mKids) {
+        if (kid->mDocument == subDoc) {
+          po = kid.get();
+          break;
+        }
+      }
+
+      
+      
+      if (po) {
+        
+        
+        if (aContent->IsHTMLElement(nsGkAtoms::frame) && po->mParent->mFrameType == eFrameSet) {
+          po->mFrameType = eFrame;
+        } else {
+          
+          po->mFrameType = eIFrame;
+          SetPrintAsIs(po, true);
+          NS_ASSERTION(po->mParent, "The root must be a parent");
+          po->mParent->mPrintAsIs = true;
+        }
+      }
+    }
+  }
+
+  
+  for (nsIContent* child = aContent->GetFirstChild();
+       child;
+       child = child->GetNextSibling()) {
+    MapContentForPO(aPO, child);
   }
 }
 
@@ -1588,7 +1544,7 @@ nsPrintJob::CleanupOnFailure(nsresult aResult, bool aIsPrinting)
     SetIsPrinting(false);
   } else {
     SetIsPrintPreview(false);
-    mIsCreatingPrintPreview = false;
+    SetIsCreatingPrintPreview(false);
   }
 
   
@@ -2987,6 +2943,29 @@ nsPrintJob::CleanupDocTitleArray(char16_t**& aArray, int32_t& aCount)
 
 
 
+bool
+nsPrintJob::HasFramesetChild(nsIContent* aContent)
+{
+  if (!aContent) {
+    return false;
+  }
+
+  
+  for (nsIContent* child = aContent->GetFirstChild();
+       child;
+       child = child->GetNextSibling()) {
+    if (child->IsHTMLElement(nsGkAtoms::frameset)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+
+
+
+
 
 already_AddRefed<nsPIDOMWindowOuter>
 nsPrintJob::FindFocusedDOMWindow()
@@ -3091,6 +3070,49 @@ nsPrintJob::DonePrintingPages(nsPrintObject* aPO, nsresult aResult)
   DisconnectPagePrintTimer();
 
   return true;
+}
+
+
+
+
+void
+nsPrintJob::SetPrintAsIs(nsPrintObject* aPO, bool aAsIs)
+{
+  NS_ASSERTION(aPO, "Pointer is null!");
+
+  aPO->mPrintAsIs = aAsIs;
+  for (const UniquePtr<nsPrintObject>& kid : aPO->mKids) {
+    SetPrintAsIs(kid.get(), aAsIs);
+  }
+}
+
+
+
+nsPrintObject*
+nsPrintJob::FindPrintObjectByDOMWin(nsPrintObject* aPO,
+                                    nsPIDOMWindowOuter* aDOMWin)
+{
+  NS_ASSERTION(aPO, "Pointer is null!");
+
+  
+  
+  if (!aDOMWin) {
+    return nullptr;
+  }
+
+  nsCOMPtr<nsIDocument> doc = aDOMWin->GetDoc();
+  if (aPO->mDocument && aPO->mDocument->GetOriginalDocument() == doc) {
+    return aPO;
+  }
+
+  for (const UniquePtr<nsPrintObject>& kid : aPO->mKids) {
+    nsPrintObject* po = FindPrintObjectByDOMWin(kid.get(), aDOMWin);
+    if (po) {
+      return po;
+    }
+  }
+
+  return nullptr;
 }
 
 
@@ -3432,7 +3454,7 @@ nsPrintJob::FinishPrintPreview()
   
   
   
-  mIsCreatingPrintPreview = false;
+  SetIsCreatingPrintPreview(false);
 
   
   
@@ -3451,6 +3473,10 @@ nsPrintJob::FinishPrintPreview()
 
   
   
+
+  if (mIsDoingPrintPreview && mOldPrtPreview) {
+    mOldPrtPreview = nullptr;
+  }
 
   printData->OnEndPrinting();
   
