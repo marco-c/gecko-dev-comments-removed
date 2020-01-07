@@ -861,7 +861,7 @@ class HighlightersOverlay {
 
 
 
-  async onMarkupMutation(mutations) {
+  async onMarkupMutation(evt, mutations) {
     let hasInterestingMutation = mutations.some(mut => mut.type === "childList");
     if (!hasInterestingMutation) {
       

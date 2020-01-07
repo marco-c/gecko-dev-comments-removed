@@ -272,6 +272,6 @@ add_task(function* () {
 });
 
 
-function memorizeContainer(container) {
+function memorizeContainer(event, container) {
   elms[`container-${containerID++}`] = container;
 }
