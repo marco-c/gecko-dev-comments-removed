@@ -118,18 +118,23 @@ private:
 
   bool IsLiveStream() override final;
 
+  struct PlaybackRateInfo
+  {
+    uint32_t mRate; 
+    bool mReliable; 
+  };
   
-  void ComputePlaybackRate();
+  PlaybackRateInfo ComputePlaybackRate();
 
   
   
-  void UpdatePlaybackRate();
+  void UpdatePlaybackRate(const PlaybackRateInfo& aInfo);
 
   
   
   
   
-  MediaStatistics GetStatistics();
+  MediaStatistics GetStatistics(const PlaybackRateInfo& aInfo);
 
   bool ShouldThrottleDownload(const MediaStatistics& aStats);
 
@@ -137,12 +142,6 @@ private:
   
   
   MediaChannelStatistics mPlaybackStatistics;
-
-  
-  double mPlaybackBytesPerSecond = 0;
-
-  
-  bool mPlaybackRateReliable = true;
 
   
   
