@@ -7,7 +7,6 @@
 #include "DrawTargetSkia.h"
 #include "SourceSurfaceSkia.h"
 #include "ScaledFontBase.h"
-#include "ScaledFontCairo.h"
 #include "FilterNodeSoftware.h"
 #include "HelpersSkia.h"
 
@@ -990,6 +989,7 @@ DrawTargetSkia::ShouldLCDRenderText(FontType aFontType, AntialiasMode aAntialias
       case FontType::DWRITE:
       case FontType::FONTCONFIG:
         return true;
+      case FontType::FREETYPE:
       default:
         
         return false;
@@ -1352,8 +1352,7 @@ static bool
 CanDrawFont(ScaledFont* aFont)
 {
   switch (aFont->GetType()) {
-  case FontType::SKIA:
-  case FontType::CAIRO:
+  case FontType::FREETYPE:
   case FontType::FONTCONFIG:
   case FontType::MAC:
   case FontType::GDI:
@@ -1415,8 +1414,7 @@ DrawTargetSkia::DrawGlyphs(ScaledFont* aFont,
   bool useSubpixelText = true;
 
   switch (aFont->GetType()) {
-  case FontType::SKIA:
-  case FontType::CAIRO:
+  case FontType::FREETYPE:
   case FontType::FONTCONFIG:
     
     
