@@ -1489,17 +1489,17 @@ pref("privacy.trackingprotection.introCount", 0);
 pref("privacy.trackingprotection.introURL", "https://www.mozilla.org/%LOCALE%/firefox/%VERSION%/tracking-protection/start/");
 
 
+pref("privacy.usercontext.about_newtab_segregation.enabled", true);
+
 #ifdef NIGHTLY_BUILD
 pref("privacy.userContext.enabled", true);
 pref("privacy.userContext.ui.enabled", true);
-pref("privacy.usercontext.about_newtab_segregation.enabled", true);
 
 
 pref("privacy.userContext.longPressBehavior", 2);
 #else
 pref("privacy.userContext.enabled", false);
 pref("privacy.userContext.ui.enabled", false);
-pref("privacy.usercontext.about_newtab_segregation.enabled", false);
 
 
 pref("privacy.userContext.longPressBehavior", 0);
