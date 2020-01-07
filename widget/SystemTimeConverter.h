@@ -49,12 +49,17 @@ public:
   mozilla::TimeStamp
   GetTimeStampFromSystemTime(Time aTime,
                              CurrentTimeGetter& aCurrentTimeGetter) {
+    TimeStamp roughlyNow = TimeStamp::Now();
+
     
     
     if (mReferenceTimeStamp.IsNull()) {
+      
+      
+      if (!aTime)
+        return roughlyNow;
       UpdateReferenceTime(aTime, aCurrentTimeGetter);
     }
-    TimeStamp roughlyNow = TimeStamp::Now();
 
     
     
