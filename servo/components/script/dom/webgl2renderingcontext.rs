@@ -241,7 +241,7 @@ impl WebGL2RenderingContextMethods for WebGL2RenderingContext {
     }
 
     
-    fn BufferSubData(&self, target: u32, offset: i64, data: Option<ArrayBufferViewOrArrayBuffer>) {
+    fn BufferSubData(&self, target: u32, offset: i64, data: ArrayBufferViewOrArrayBuffer) {
         self.base.BufferSubData(target, offset, data)
     }
 
