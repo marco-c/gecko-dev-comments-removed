@@ -338,12 +338,34 @@ public:
   void ResetColors(mozilla::ErrorResult& aRv);
 
   
+
+
+
+
+
+  
+
+
+
+
+
+
   void Collapse(nsINode& aContainer, uint32_t aOffset, ErrorResult& aRv)
   {
     Collapse(RawRangeBoundary(&aContainer, aOffset), aRv);
   }
   void Collapse(const RawRangeBoundary& aPoint, ErrorResult& aRv);
+  
+
+
+
+
   void CollapseToStart(mozilla::ErrorResult& aRv);
+  
+
+
+
+
   void CollapseToEnd(mozilla::ErrorResult& aRv);
   void Extend(nsINode& aContainer, uint32_t aOffset, ErrorResult& aRv);
   void AddRange(nsRange& aRange, mozilla::ErrorResult& aRv);

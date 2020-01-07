@@ -333,7 +333,7 @@ HTMLEditor::DoInsertHTMLWithContext(const nsAString& aInputString,
       NS_ENSURE_SUCCESS(rv, rv);
     }
     
-    selection->CollapseToStart();
+    selection->CollapseToStart(IgnoreErrors());
   }
 
   

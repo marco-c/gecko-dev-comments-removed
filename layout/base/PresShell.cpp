@@ -3256,7 +3256,7 @@ PresShell::GoToAnchor(const nsAString& aAnchorName, bool aScroll,
       sel->AddRange(*jumpToRange, IgnoreErrors());
       if (!selectAnchor) {
         
-        sel->CollapseToStart();
+        sel->CollapseToStart(IgnoreErrors());
       }
     }
     

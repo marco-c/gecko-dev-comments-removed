@@ -1562,9 +1562,9 @@ HTMLEditor::InsertElementAtSelection(Element* aElement,
       
       
       if (HTMLEditUtils::IsNamedAnchor(aElement)) {
-        selection->CollapseToStart();
+        selection->CollapseToStart(IgnoreErrors());
       } else {
-        selection->CollapseToEnd();
+        selection->CollapseToEnd(IgnoreErrors());
       }
     }
 
