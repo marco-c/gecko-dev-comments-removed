@@ -1141,6 +1141,11 @@ pref("print.print_via_parent", false);
 
 
 
+pref("print.font-variations-as-paths", true);
+
+
+
+
 pref("extensions.spellcheck.inline.max-misspellings", 500);
 
 
