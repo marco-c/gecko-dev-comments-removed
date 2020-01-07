@@ -1943,8 +1943,26 @@ DefineNonexistentProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
         if (IsTypedArrayIndex(id, &index)) {
             
             
+
+            
+            
             MOZ_ASSERT(index >= obj->as<TypedArrayObject>().length());
 
+            
+
+            
+            
+            
+            double d;
+            if (!ToNumber(cx, v, &d))
+                return false;
+
+            
+            
+            if (obj->as<TypedArrayObject>().hasDetachedBuffer())
+                return result.failSoft(JSMSG_TYPED_ARRAY_DETACHED);
+
+            
             
             return result.failSoft(JSMSG_BAD_INDEX);
         }
@@ -2645,10 +2663,19 @@ SetDenseOrTypedArrayElement(JSContext* cx, HandleNativeObject obj, uint32_t inde
                             ObjectOpResult& result)
 {
     if (obj->is<TypedArrayObject>()) {
+        
+        
+
+        
+
+        
         double d;
         if (!ToNumber(cx, v, &d))
             return false;
 
+        
+
+        
         
         
         
@@ -2658,6 +2685,7 @@ SetDenseOrTypedArrayElement(JSContext* cx, HandleNativeObject obj, uint32_t inde
             return result.succeed();
         }
 
+        
         
         
         MOZ_ASSERT(obj->as<TypedArrayObject>().hasDetachedBuffer());
