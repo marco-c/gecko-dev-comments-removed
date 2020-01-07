@@ -1320,11 +1320,6 @@ nsStyleSVGReset::CalcDifference(const nsStyleSVGReset& aNewData) const
     hint |= nsChangeHint_RepaintFrame;
   }
 
-  if (HasMask() != aNewData.HasMask()) {
-    
-    hint |= nsChangeHint_UpdateContainingBlock;
-  }
-
   hint |= mMask.CalcDifference(aNewData.mMask,
                                nsStyleImageLayers::LayerType::Mask);
 
