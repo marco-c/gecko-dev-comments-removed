@@ -732,9 +732,6 @@ class LNode
         return numDefs_;
     }
 
-    
-    virtual LAllocation* getOperand(size_t index) = 0;
-
     bool isCall() const {
         return isCall_;
     }
@@ -832,6 +829,9 @@ class LInstruction
     void setOperand(size_t index, const LAllocation& a) {
         *getOperand(index) = a;
     }
+
+    
+    virtual LAllocation* getOperand(size_t index) = 0;
 
     
     
@@ -967,7 +967,7 @@ class LPhi final : public LNode
     size_t numOperands() const {
         return mir_->toPhi()->numOperands();
     }
-    LAllocation* getOperand(size_t index) override {
+    LAllocation* getOperand(size_t index) {
         MOZ_ASSERT(index < numOperands());
         return &inputs_[index];
     }
