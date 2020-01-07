@@ -16,7 +16,7 @@
   padding-inline-start: 14px;
 }
 
-panelmultiview .toolbaritem-combined-buttons > spacer {
+panelmultiview .toolbaritem-combined-buttons > spacer.before-label {
   width: 42px; 
 }
 
