@@ -1824,16 +1824,6 @@ js::NativeDefineProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
 }
 
 bool
-js::NativeDefineAccessorProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
-                                 GetterOp getter, SetterOp setter, unsigned attrs,
-                                 ObjectOpResult& result)
-{
-    Rooted<PropertyDescriptor> desc(cx);
-    desc.initFields(nullptr, UndefinedHandleValue, attrs, getter, setter);
-    return NativeDefineProperty(cx, obj, id, desc, result);
-}
-
-bool
 js::NativeDefineDataProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
                              HandleValue value, unsigned attrs, ObjectOpResult& result)
 {
@@ -1844,11 +1834,15 @@ js::NativeDefineDataProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
 
 bool
 js::NativeDefineAccessorProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
-                                 JSGetterOp getter, JSSetterOp setter, unsigned attrs)
+                                 GetterOp getter, SetterOp setter, unsigned attrs)
 {
+    Rooted<PropertyDescriptor> desc(cx);
+    desc.initFields(nullptr, UndefinedHandleValue, attrs, getter, setter);
+
     ObjectOpResult result;
-    if (!NativeDefineAccessorProperty(cx, obj, id, getter, setter, attrs, result))
+    if (!NativeDefineProperty(cx, obj, id, desc, result))
         return false;
+
     if (!result) {
         
         
@@ -1857,6 +1851,34 @@ js::NativeDefineAccessorProperty(JSContext* cx, HandleNativeObject obj, HandleId
         result.reportError(cx, obj, id);
         return false;
     }
+
+    return true;
+}
+
+bool
+js::NativeDefineAccessorProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
+                                 HandleObject getter, HandleObject setter, unsigned attrs)
+{
+    Rooted<PropertyDescriptor> desc(cx);
+    {
+        GetterOp getterOp = JS_DATA_TO_FUNC_PTR(GetterOp, getter.get());
+        SetterOp setterOp = JS_DATA_TO_FUNC_PTR(SetterOp, setter.get());
+        desc.initFields(nullptr, UndefinedHandleValue, attrs, getterOp, setterOp);
+    }
+
+    ObjectOpResult result;
+    if (!NativeDefineProperty(cx, obj, id, desc, result))
+        return false;
+
+    if (!result) {
+        
+        
+        
+        MOZ_ASSERT(!cx->helperThread());
+        result.reportError(cx, obj, id);
+        return false;
+    }
+
     return true;
 }
 
@@ -1876,14 +1898,6 @@ js::NativeDefineDataProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
         return false;
     }
     return true;
-}
-
-bool
-js::NativeDefineAccessorProperty(JSContext* cx, HandleNativeObject obj, PropertyName* name,
-                                 JSGetterOp getter, JSSetterOp setter, unsigned attrs)
-{
-    RootedId id(cx, NameToId(name));
-    return NativeDefineAccessorProperty(cx, obj, id, getter, setter, attrs);
 }
 
 bool
@@ -2692,18 +2706,6 @@ SetExistingProperty(JSContext* cx, HandleNativeObject obj, HandleId id, HandleVa
                 return ArraySetLength(cx, arr, id, shape->attributes(), v, result);
             }
             return NativeSetExistingDataProperty(cx, pobj, shape, v, result);
-        }
-
-        
-        
-        
-        if (!shape->isDataProperty() && !shape->hasShadowable()) {
-            
-            
-            if (shape->hasDefaultSetter())
-                return result.succeed();
-
-            return CallJSSetterOp(cx, shape->setterOp(), obj, id, v, result);
         }
 
         

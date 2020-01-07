@@ -390,11 +390,6 @@ class MOZ_RAII AutoKeepShapeTables
 
 
 
-#define JSPROP_SHADOWABLE       JSPROP_INTERNAL_USE_BIT
-
-
-
-
 
 
 
@@ -1077,8 +1072,6 @@ class Shape : public gc::TenuredCell
     bool isAccessorDescriptor() const {
         return (attrs & (JSPROP_SETTER | JSPROP_GETTER)) != 0;
     }
-
-    bool hasShadowable() const { return attrs & JSPROP_SHADOWABLE; }
 
     uint32_t entryCount() {
         JS::AutoCheckCannotGC nogc;

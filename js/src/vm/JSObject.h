@@ -1077,18 +1077,6 @@ CloneObject(JSContext* cx, HandleObject obj, Handle<js::TaggedProto> proto);
 extern JSObject*
 DeepCloneObjectLiteral(JSContext* cx, HandleObject obj, NewObjectKind newKind = GenericObject);
 
-inline JSGetterOp
-CastAsGetterOp(JSObject* object)
-{
-    return JS_DATA_TO_FUNC_PTR(JSGetterOp, object);
-}
-
-inline JSSetterOp
-CastAsSetterOp(JSObject* object)
-{
-    return JS_DATA_TO_FUNC_PTR(JSSetterOp, object);
-}
-
 
 bool
 ToPropertyDescriptor(JSContext* cx, HandleValue descval, bool checkAccessors,
