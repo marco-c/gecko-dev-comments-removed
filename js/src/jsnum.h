@@ -7,6 +7,7 @@
 #ifndef jsnum_h
 #define jsnum_h
 
+#include "mozilla/Compiler.h"
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/Range.h"
 
@@ -19,7 +20,7 @@
 
 
 
-#if __GNUC__ >= 5
+#if MOZ_IS_GCC
     
     #define BUILTIN_CHECKED_ARITHMETIC_SUPPORTED(x) 1
 #else

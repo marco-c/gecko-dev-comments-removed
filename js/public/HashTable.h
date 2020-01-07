@@ -1775,12 +1775,7 @@ class HashTable : private AllocPolicy
         
         
         
-#if MOZ_IS_GCC && __GNUC__ < 6
-        AddPtr p(lookup(l, keyHash, sCollisionBit), *this, keyHash);
-        return p;
-#else
         return AddPtr(lookup(l, keyHash, sCollisionBit), *this, keyHash);
-#endif
     }
 
     template <typename... Args>
