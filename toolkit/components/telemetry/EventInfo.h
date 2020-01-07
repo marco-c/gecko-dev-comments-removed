@@ -32,6 +32,9 @@ struct CommonEventInfo {
   mozilla::Telemetry::Common::RecordedProcessType record_in_processes;
 
   
+  mozilla::Telemetry::Common::SupportedProduct products;
+
+  
   const nsDependentCString expiration_version() const;
   const nsDependentCString category() const;
   const nsDependentCString extra_key(uint32_t index) const;
