@@ -26,8 +26,7 @@ function contextArg(context) {
 var ContentPrefServiceParent = {
   
   alwaysInit() {
-    let globalMM = Cc["@mozilla.org/parentprocessmessagemanager;1"]
-                     .getService(Ci.nsIMessageListenerManager);
+    let globalMM = Cc["@mozilla.org/parentprocessmessagemanager;1"].getService();
 
     globalMM.addMessageListener("child-process-shutdown", this);
   },
@@ -35,8 +34,7 @@ var ContentPrefServiceParent = {
   
   
   init() {
-    let globalMM = Cc["@mozilla.org/parentprocessmessagemanager;1"]
-                     .getService(Ci.nsIMessageListenerManager);
+    let globalMM = Cc["@mozilla.org/parentprocessmessagemanager;1"].getService();
 
     
     globalMM.addMessageListener("ContentPrefs:FunctionCall", this);

@@ -35,8 +35,7 @@ var PdfjsContentUtils = {
     
     
     if (!this._mm) {
-      this._mm = Cc["@mozilla.org/childprocessmessagemanager;1"].
-        getService(Ci.nsISyncMessageSender);
+      this._mm = Services.cpmm;
       this._mm.addMessageListener("PDFJS:Child:updateSettings", this);
 
       Services.obs.addObserver(this, "quit-application");

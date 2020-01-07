@@ -52,12 +52,10 @@ FormHistoryStartup.prototype = {
     Services.ppmm.loadProcessScript("chrome://satchel/content/formSubmitListener.js", true);
     Services.ppmm.addMessageListener("FormHistory:FormSubmitEntries", this);
 
-    let messageManager = Cc["@mozilla.org/globalmessagemanager;1"]
-                         .getService(Ci.nsIMessageListenerManager);
     
     
     
-    for (let manager of [messageManager, Services.ppmm]) {
+    for (let manager of [Services.mm, Services.ppmm]) {
       manager.addMessageListener("FormHistory:AutoCompleteSearchAsync", this);
       manager.addMessageListener("FormHistory:RemoveEntry", this);
     }
@@ -87,7 +85,10 @@ FormHistoryStartup.prototype = {
 
         let mm;
         let query = null;
-        if (message.target instanceof Ci.nsIMessageListenerManager) {
+        
+        
+        
+        if (message.target instanceof MessageListenerManager) {
           
           
           mm = message.target;

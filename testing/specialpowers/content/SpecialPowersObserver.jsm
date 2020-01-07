@@ -28,8 +28,7 @@ Services.scriptloader.loadSubScript("chrome://specialpowers/content/SpecialPower
 
 function SpecialPowersObserver() {
   this._isFrameScriptLoaded = false;
-  this._messageManager = Cc["@mozilla.org/globalmessagemanager;1"].
-                         getService(Ci.nsIMessageBroadcaster);
+  this._messageManager = Services.mm;
 }
 
 
