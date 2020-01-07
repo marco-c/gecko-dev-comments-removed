@@ -2878,18 +2878,6 @@ public:
 
 
 
-  static nsresult SendKeyEvent(nsIWidget* aWidget,
-                               const nsAString& aType,
-                               int32_t aKeyCode,
-                               int32_t aCharCode,
-                               int32_t aModifiers,
-                               uint32_t aAdditionalFlags,
-                               bool* aDefaultActionTaken);
-
-  
-
-
-
   static nsresult SendMouseEvent(const nsCOMPtr<nsIPresShell>& aPresShell,
                                  const nsAString& aType,
                                  float aX,
