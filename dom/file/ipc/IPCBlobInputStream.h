@@ -45,10 +45,11 @@ private:
   ~IPCBlobInputStream();
 
   nsresult
-  EnsureAsyncRemoteStream();
+  EnsureAsyncRemoteStream(const MutexAutoLock& aProofOfLock);
 
   void
-  InitWithExistingRange(uint64_t aStart, uint64_t aLength);
+  InitWithExistingRange(uint64_t aStart, uint64_t aLength,
+                        const MutexAutoLock& aProofOfLock);
 
   RefPtr<IPCBlobInputStreamChild> mActor;
 
@@ -80,7 +81,6 @@ private:
   nsCOMPtr<nsIAsyncInputStream> mAsyncRemoteStream;
 
   
-  
   nsCOMPtr<nsIInputStreamCallback> mInputStreamCallback;
   nsCOMPtr<nsIEventTarget> mInputStreamCallbackEventTarget;
 
@@ -88,6 +88,8 @@ private:
   nsCOMPtr<nsIFileMetadataCallback> mFileMetadataCallback;
   nsCOMPtr<nsIEventTarget> mFileMetadataCallbackEventTarget;
 
+  
+  
   Mutex mMutex;
 };
 
