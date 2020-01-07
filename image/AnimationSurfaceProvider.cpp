@@ -225,12 +225,16 @@ AnimationSurfaceProvider::Run()
 
       
       
-      if (continueDecoding) {
-        MOZ_ASSERT(mDecoder);
-        continue;
+      
+      
+      
+      if (!mDecoder || !continueDecoding ||
+          DecodePool::Singleton()->IsShuttingDown()) {
+        return;
       }
 
-      return;
+      
+      continue;
     }
 
     
@@ -246,8 +250,12 @@ AnimationSurfaceProvider::Run()
 
     
     
+    
+    
+    
     MOZ_ASSERT(result == LexerResult(Yield::OUTPUT_AVAILABLE));
-    if (!CheckForNewFrameAtYield()) {
+    if (!CheckForNewFrameAtYield() ||
+        DecodePool::Singleton()->IsShuttingDown()) {
       return;
     }
   }
@@ -294,10 +302,7 @@ AnimationSurfaceProvider::CheckForNewFrameAtYield()
     AnnounceSurfaceAvailable();
   }
 
-  
-  
-  
-  return continueDecoding && !DecodePool::Singleton()->IsShuttingDown();
+  return continueDecoding;
 }
 
 bool
@@ -347,10 +352,7 @@ AnimationSurfaceProvider::CheckForNewFrameAtTerminalState()
     AnnounceSurfaceAvailable();
   }
 
-  
-  
-  
-  return continueDecoding && !DecodePool::Singleton()->IsShuttingDown();
+  return continueDecoding;
 }
 
 void
@@ -379,14 +381,14 @@ AnimationSurfaceProvider::FinishDecoding()
   }
 
   
-  bool mayDiscard;
+  
+  bool recreateDecoder;
   {
     MutexAutoLock lock(mFramesMutex);
-    mayDiscard = mFrames.MayDiscard();
+    recreateDecoder = !mFrames.HasRedecodeError() && mFrames.MayDiscard();
   }
 
-  if (mayDiscard) {
-    
+  if (recreateDecoder) {
     mDecoder = DecoderFactory::CloneAnimationDecoder(mDecoder);
     MOZ_ASSERT(mDecoder);
   } else {
