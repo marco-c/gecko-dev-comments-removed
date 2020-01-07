@@ -1876,8 +1876,9 @@ FlexItem::FlexItem(ReflowInput& aFlexItemReflowInput,
   
   
   
-  if (aAxisTracker.IsRowOriented() ==
-      aAxisTracker.GetWritingMode().IsOrthogonalTo(mWM)) {
+  
+  
+  if (!IsBlockAxisCrossAxis()) {
     if (mAlignSelf == NS_STYLE_ALIGN_BASELINE) {
       mAlignSelf = NS_STYLE_ALIGN_FLEX_START;
     } else if (mAlignSelf == NS_STYLE_ALIGN_LAST_BASELINE) {
@@ -1966,13 +1967,17 @@ FlexItem::GetBaselineOffsetFromOuterCrossEdge(
   
   
   
-  MOZ_ASSERT(!aAxisTracker.IsCrossAxisHorizontal(),
+  
+  
+  MOZ_ASSERT(IsBlockAxisCrossAxis(),
              "Only expecting to be doing baseline computations when the "
-             "cross axis is vertical");
+             "cross axis is the block axis");
 
   AxisOrientationType crossAxis = aAxisTracker.GetCrossAxis();
   mozilla::Side sideToMeasureFrom = kAxisOrientationToSidesMap[crossAxis][aEdge];
 
+  
+  
   nscoord marginTopToBaseline = ResolvedAscent(aUseFirstLineBaseline) +
                                 mMargin.top;
 
