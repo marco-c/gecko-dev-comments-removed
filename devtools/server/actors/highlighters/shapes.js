@@ -879,10 +879,8 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
       let { unitX, unitY, valueX, valueY, ratioX, ratioY } = point;
       let vector = [valueX / ratioX, valueY / ratioY];
       let [newX, newY] = apply(this.transformMatrix, vector);
-      let precisionX = getDecimalPrecision(unitX);
-      let precisionY = getDecimalPrecision(unitY);
-      newX = (newX * ratioX).toFixed(precisionX);
-      newY = (newY * ratioY).toFixed(precisionY);
+      newX = round(newX * ratioX, unitX);
+      newY = round(newY * ratioY, unitY);
 
       return `${newX}${unitX} ${newY}${unitY}`;
     }).join(", ");
@@ -906,11 +904,14 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
       
       
       
-      radius = `${Math.abs((newCx - transX) * ratioRad)}${unitRad}`;
+      radius = round(Math.abs((newCx - transX) * ratioRad), unitRad);
+      radius = `${radius}${unitRad}`;
     }
 
-    let circleDef = `circle(${radius} at ${newCx * ratioX}${unitX} ` +
-        `${newCy * ratioY}${unitY}) ${this.geometryBox}`.trim();
+    newCx = round(newCx * ratioX, unitX);
+    newCy = round(newCy * ratioY, unitY);
+    let circleDef = `circle(${radius} at ${newCx}${unitX} ${newCy}${unitY})` +
+        ` ${this.geometryBox}`.trim();
     this.emit("highlighter-event", { type: "shape-change", value: circleDef });
   }
 
@@ -931,12 +932,17 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
       
       
       
-      rx = `${Math.abs((newCx - transX) * ratioRX)}${unitRX}`;
-      ry = `${Math.abs((newCy - transY) * ratioRY)}${unitRY}`;
+      rx = round(Math.abs((newCx - transX) * ratioRX), unitRX);
+      rx = `${rx}${unitRX}`;
+      ry = round(Math.abs((newCy - transY) * ratioRY), unitRY);
+      ry = `${ry}${unitRY}`;
     }
 
-    let ellipseDef = `ellipse(${rx} ${ry} at ${newCx * ratioX}${unitX} ` +
-          `${newCy * ratioY}${unitY}) ${this.geometryBox}`.trim();
+    newCx = round(newCx * ratioX, unitX);
+    newCy = round(newCy * ratioY, unitY);
+
+    let centerStr = `${newCx}${unitX} ${newCy}${unitY}`;
+    let ellipseDef = `ellipse(${rx} ${ry} at ${centerStr}) ${this.geometryBox}`.trim();
     this.emit("highlighter-event", { type: "shape-change", value: ellipseDef });
   }
 
@@ -949,8 +955,10 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
     let topLeft = [ left.value / left.ratio, top.value / top.ratio ];
     let [newLeft, newTop] = apply(this.transformMatrix, topLeft);
-    newLeft = `${newLeft * left.ratio}${left.unit}`;
-    newTop = `${newTop * top.ratio}${top.unit}`;
+    newLeft = round(newLeft * left.ratio, left.unit);
+    newLeft = `${newLeft}${left.unit}`;
+    newTop = round(newTop * top.ratio, top.unit);
+    newTop = `${newTop}${top.unit}`;
 
     
     
@@ -958,12 +966,14 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
     let bottomRight = [ width - right.value / right.ratio,
                         height - bottom.value / bottom.ratio ];
     let [newRight, newBottom] = apply(this.transformMatrix, bottomRight);
-    newRight = `${(width - newRight) * right.ratio}${right.unit}`;
-    newBottom = `${(height - newBottom) * bottom.ratio}${bottom.unit}`;
+    newRight = round((width - newRight) * right.ratio, right.unit);
+    newRight = `${newRight}${right.unit}`;
+    newBottom = round((height - newBottom) * bottom.ratio, bottom.unit);
+    newBottom = `${newBottom}${bottom.unit}`;
 
-    let round = this.insetRound;
-    let insetDef = (round) ?
-          `inset(${newTop} ${newRight} ${newBottom} ${newLeft} round ${round})` :
+    let insetDef = (this.insetRound) ?
+          `inset(${newTop} ${newRight} ${newBottom} ${newLeft} round ${this.insetRound})`
+          :
           `inset(${newTop} ${newRight} ${newBottom} ${newLeft})`;
     insetDef += (this.geometryBox) ? this.geometryBox : "";
 
@@ -1009,10 +1019,8 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
     let { point, unitX, unitY, valueX, valueY, ratioX, ratioY, x, y } = this[_dragging];
     let deltaX = (pageX - x) * ratioX;
     let deltaY = (pageY - y) * ratioY;
-    let precisionX = getDecimalPrecision(unitX);
-    let precisionY = getDecimalPrecision(unitY);
-    let newX = (valueX + deltaX).toFixed(precisionX);
-    let newY = (valueY + deltaY).toFixed(precisionY);
+    let newX = round(valueX + deltaX, unitX);
+    let newY = round(valueY + deltaY, unitY);
 
     let polygonDef = (this.fillRule) ? `${this.fillRule}, ` : "";
     polygonDef += this.coordUnits.map((coords, i) => {
@@ -1120,8 +1128,8 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
       let { unitX, unitY, valueX, valueY, ratioX, ratioY, x, y} = this[_dragging];
       let deltaX = (pageX - x) * ratioX;
       let deltaY = (pageY - y) * ratioY;
-      let newCx = `${valueX + deltaX}${unitX}`;
-      let newCy = `${valueY + deltaY}${unitY}`;
+      let newCx = `${round(valueX + deltaX, unitX)}${unitX}`;
+      let newCy = `${round(valueY + deltaY, unitY)}${unitY}`;
       
       let circleDef = `circle(${radius} at ${newCx} ${newCy}) ${this.geometryBox}`.trim();
 
@@ -1134,7 +1142,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
       let newRadiusPx = getDistance(pageCx, pageCy, pageX, pageY);
 
       let delta = (newRadiusPx - origRadius) * ratio;
-      let newRadius = `${value + delta}${unit}`;
+      let newRadius = `${round(value + delta, unit)}${unit}`;
 
       let circleDef = `circle(${newRadius} at ${cx} ${cy}) ${this.geometryBox}`.trim();
 
@@ -1208,8 +1216,8 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
       let { unitX, unitY, valueX, valueY, ratioX, ratioY, x, y} = this[_dragging];
       let deltaX = (pageX - x) * ratioX;
       let deltaY = (pageY - y) * ratioY;
-      let newCx = `${valueX + deltaX}${unitX}`;
-      let newCy = `${valueY + deltaY}${unitY}`;
+      let newCx = `${round(valueX + deltaX, unitX)}${unitX}`;
+      let newCy = `${round(valueY + deltaY, unitY)}${unitY}`;
       let ellipseDef =
         `ellipse(${rx} ${ry} at ${newCx} ${newCy}) ${this.geometryBox}`.trim();
 
@@ -1219,7 +1227,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
       let newRadiusPercent = Math.abs(percentX - this.coordinates.cx);
       let { width } = this.currentDimensions;
       let delta = ((newRadiusPercent / 100 * width) - origRadius) * ratio;
-      let newRadius = `${value + delta}${unit}`;
+      let newRadius = `${round(value + delta, unit)}${unit}`;
 
       let ellipseDef =
         `ellipse(${newRadius} ${ry} at ${cx} ${cy}) ${this.geometryBox}`.trim();
@@ -1230,7 +1238,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
       let newRadiusPercent = Math.abs(percentY - this.coordinates.cy);
       let { height } = this.currentDimensions;
       let delta = ((newRadiusPercent / 100 * height) - origRadius) * ratio;
-      let newRadius = `${value + delta}${unit}`;
+      let newRadius = `${round(value + delta, unit)}${unit}`;
 
       let ellipseDef =
         `ellipse(${rx} ${newRadius} at ${cx} ${cy}) ${this.geometryBox}`.trim();
@@ -1276,24 +1284,24 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
   _handleInsetMove(point, pageX, pageY) {
     let { top, left, right, bottom } = this.coordUnits;
-    let round = this.insetRound;
     let { value, origValue, unit, ratio } = this[_dragging];
 
     if (point === "left") {
       let delta = (pageX - origValue) * ratio;
-      left = `${value + delta}${unit}`;
+      left = `${round(value + delta, unit)}${unit}`;
     } else if (point === "right") {
       let delta = (pageX - origValue) * ratio;
-      right = `${value - delta}${unit}`;
+      right = `${round(value - delta, unit)}${unit}`;
     } else if (point === "top") {
       let delta = (pageY - origValue) * ratio;
-      top = `${value + delta}${unit}`;
+      top = `${round(value + delta, unit)}${unit}`;
     } else if (point === "bottom") {
       let delta = (pageY - origValue) * ratio;
-      bottom = `${value - delta}${unit}`;
+      bottom = `${round(value - delta, unit)}${unit}`;
     }
-    let insetDef = (round) ?
-      `inset(${top} ${right} ${bottom} ${left} round ${round})` :
+
+    let insetDef = (this.insetRound) ?
+      `inset(${top} ${right} ${bottom} ${left} round ${this.insetRound})` :
       `inset(${top} ${right} ${bottom} ${left})`;
 
     insetDef += (this.geometryBox) ? this.geometryBox : "";
@@ -1609,8 +1617,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
         
         let [newX, newY] = projection(x1, y1, x2, y2, pageX, pageY);
         
-        let precision = getDecimalPrecision("%");
-        this._addPolygonPoint(i, newX.toFixed(precision), newY.toFixed(precision));
+        this._addPolygonPoint(i, round(newX, "%"), round(newY, "%"));
         return;
       }
     }
@@ -2826,9 +2833,6 @@ const getAnchorPoint = (type) => {
 
 
 
-
-
-
 function getDecimalPrecision(unitType) {
   switch (unitType) {
     case "px":
@@ -2840,5 +2844,22 @@ function getDecimalPrecision(unitType) {
   }
 }
 exports.getDecimalPrecision = getDecimalPrecision;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function round(number, unitType) {
+  return number.toFixed(getDecimalPrecision(unitType));
+}
 
 exports.ShapesHighlighter = ShapesHighlighter;
