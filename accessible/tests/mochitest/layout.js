@@ -72,18 +72,6 @@ function zoomDocument(aDocument, aZoom) {
 
 
 
-function setResolution(aDocument, aZoom) {
-  var windowUtils = aDocument.defaultView.
-    QueryInterface(Ci.nsIInterfaceRequestor).
-    getInterface(Ci.nsIDOMWindowUtils);
-
-  windowUtils.setResolutionAndScaleTo(aZoom);
-}
-
-
-
-
-
 
 
 
@@ -205,14 +193,6 @@ function getBounds(aID) {
   var accessible = getAccessible(aID);
   var x = {}, y = {}, width = {}, height = {};
   accessible.getBounds(x, y, width, height);
-  return [x.value, y.value, width.value, height.value];
-}
-
-function getRangeExtents(aID, aStartOffset, aEndOffset, aCoordOrigin) {
-  var hyperText = getAccessible(aID, [nsIAccessibleText]);
-  var x = {}, y = {}, width = {}, height = {};
-  hyperText.getRangeExtents(aStartOffset, aEndOffset,
-                            x, y, width, height, aCoordOrigin);
   return [x.value, y.value, width.value, height.value];
 }
 

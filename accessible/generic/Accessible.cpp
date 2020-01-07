@@ -561,11 +561,6 @@ Accessible::ChildAtPoint(int32_t aX, int32_t aY,
   nsRect screenRect = startFrame->GetScreenRectInAppUnits();
   nsPoint offset(presContext->DevPixelsToAppUnits(aX) - screenRect.X(),
                  presContext->DevPixelsToAppUnits(aY) - screenRect.Y());
-
-  
-  
-  offset = offset.RemoveResolution(presContext->PresShell()->GetResolution());
-
   nsIFrame* foundFrame = nsLayoutUtils::GetFrameForPoint(startFrame, offset);
 
   nsIContent* content = nullptr;
@@ -684,10 +679,6 @@ Accessible::Bounds() const
                      presContext->AppUnitsToDevPixels(unionRectTwips.Width()),
                      presContext->AppUnitsToDevPixels(unionRectTwips.Height()));
 
-  
-  
-  
-  screenRect.ScaleRoundOut(presContext->PresShell()->GetResolution());
   
   
   nsIntRect orgRectPixels = boundingFrame->GetScreenRectInAppUnits().

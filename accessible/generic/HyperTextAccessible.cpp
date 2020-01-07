@@ -1272,16 +1272,6 @@ HyperTextAccessible::TextBounds(int32_t aStartOffset, int32_t aEndOffset,
     offset1 = 0;
   }
 
-  
-  
-  
-  nsPresContext* presContext = mDoc->PresContext();
-  nsIFrame* rootFrame = presContext->PresShell()->GetRootFrame();
-  nsIntRect orgRectPixels = rootFrame->GetScreenRectInAppUnits().ToNearestPixels(presContext->AppUnitsPerDevPixel());
-  bounds.MoveBy(-orgRectPixels.X(), -orgRectPixels.Y());
-  bounds.ScaleRoundOut(presContext->PresShell()->GetResolution());
-  bounds.MoveBy(orgRectPixels.X(), orgRectPixels.Y());
-
   auto boundsX = bounds.X();
   auto boundsY = bounds.Y();
   nsAccUtils::ConvertScreenCoordsTo(&boundsX, &boundsY, aCoordType, this);
