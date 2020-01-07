@@ -295,6 +295,8 @@ WebRenderAPI::GetNamespace() {
   return wr_api_get_namespace(mDocHandle);
 }
 
+extern void ClearBlobImageResources(WrIdNamespace aNamespace);
+
 WebRenderAPI::~WebRenderAPI()
 {
   if (!mRootApi) {
@@ -306,6 +308,10 @@ WebRenderAPI::~WebRenderAPI()
     RunOnRenderThread(Move(event));
     task.Wait();
   }
+
+  
+  
+  ClearBlobImageResources(GetNamespace());
 
   wr_api_delete(mDocHandle);
 }
