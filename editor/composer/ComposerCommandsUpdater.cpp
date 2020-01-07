@@ -7,6 +7,7 @@
 #include "mozilla/ComposerCommandsUpdater.h"
 
 #include "mozilla/mozalloc.h"           
+#include "mozilla/TransactionManager.h" 
 #include "mozilla/dom/Selection.h"
 #include "nsAString.h"
 #include "nsComponentManagerUtils.h"    
@@ -116,8 +117,7 @@ ComposerCommandsUpdater::DidDo(nsITransactionManager* aManager,
                                nsresult aDoResult)
 {
   
-  int32_t undoCount;
-  aManager->GetNumberOfUndoItems(&undoCount);
+  size_t undoCount = aManager->AsTransactionManager()->NumberOfUndoItems();
   if (undoCount == 1) {
     if (mFirstDoOfFirstUndo) {
       UpdateCommandGroup(NS_LITERAL_STRING("undo"));
@@ -142,11 +142,10 @@ ComposerCommandsUpdater::DidUndo(nsITransactionManager* aManager,
                                  nsITransaction* aTransaction,
                                  nsresult aUndoResult)
 {
-  int32_t undoCount;
-  aManager->GetNumberOfUndoItems(&undoCount);
-  if (undoCount == 0)
+  size_t undoCount = aManager->AsTransactionManager()->NumberOfUndoItems();
+  if (!undoCount) {
     mFirstDoOfFirstUndo = true;    
-
+  }
   UpdateCommandGroup(NS_LITERAL_STRING("undo"));
   return NS_OK;
 }

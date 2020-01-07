@@ -15,6 +15,7 @@
 #include "mozilla/SelectionState.h"     
 #include "mozilla/StyleSheet.h"         
 #include "mozilla/TextEditRules.h"      
+#include "mozilla/TransactionManager.h" 
 #include "mozilla/WeakPtr.h"            
 #include "mozilla/dom/Selection.h"
 #include "mozilla/dom/Text.h"
@@ -79,7 +80,6 @@ class TextComposition;
 class TextEditor;
 class TextInputListener;
 class TextServicesDocument;
-class TransactionManager;
 enum class EditAction : int32_t;
 
 namespace dom {
@@ -1102,9 +1102,34 @@ public:
   
 
 
+  size_t NumberOfUndoItems() const
+  {
+    return mTransactionManager ? mTransactionManager->NumberOfUndoItems() : 0;
+  }
+  size_t NumberOfRedoItems() const
+  {
+    return mTransactionManager ? mTransactionManager->NumberOfRedoItems() : 0;
+  }
 
-  int32_t NumberOfUndoItems() const;
-  int32_t NumberOfRedoItems() const;
+  
+
+
+  bool IsUndoRedoEnabled() const
+  {
+    return !!mTransactionManager;
+  }
+
+  
+
+
+  bool CanUndo() const
+  {
+    return IsUndoRedoEnabled() && NumberOfUndoItems() > 0;
+  }
+  bool CanRedo() const
+  {
+    return IsUndoRedoEnabled() && NumberOfRedoItems() > 0;
+  }
 
   
 
