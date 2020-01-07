@@ -122,7 +122,7 @@ public:
     : mLength(0)
     , mTaskQueue(new AutoTaskQueue(
         SharedThreadPool::Get(NS_LITERAL_CSTRING("VideoFrameConverter"))))
-    , last_img_(-1) 
+    , mLastImage(-1) 
 #ifdef DEBUG
     , mThrottleCount(0)
     , mThrottleRecord(0)
@@ -140,10 +140,10 @@ public:
 
     
     int32_t serial = aChunk.mFrame.GetImage()->GetSerial();
-    if (serial == last_img_) {
+    if (serial == mLastImage) {
       return;
     }
-    last_img_ = serial;
+    mLastImage = serial;
 
     
     
@@ -188,7 +188,7 @@ public:
     if (forceBlack) {
       
       
-      last_img_ = -1;
+      mLastImage = -1;
 
       
       
@@ -197,15 +197,14 @@ public:
       const double disabledMinFps = 1.0;
       TimeStamp t = aChunk.mTimeStamp;
       MOZ_ASSERT(!t.IsNull());
-      if (!disabled_frame_sent_.IsNull() &&
-          (t - disabled_frame_sent_).ToSeconds() < (1.0 / disabledMinFps)) {
+      if (!mDisabledFrameSent.IsNull() &&
+          (t - mDisabledFrameSent).ToSeconds() < (1.0 / disabledMinFps)) {
         return;
       }
-
-      disabled_frame_sent_ = t;
+      mDisabledFrameSent = t;
     } else {
       
-      disabled_frame_sent_ = TimeStamp();
+      mDisabledFrameSent = TimeStamp();
     }
 
     ++mLength; 
@@ -476,8 +475,8 @@ protected:
   RefPtr<AutoTaskQueue> mTaskQueue;
 
   
-  int32_t last_img_;              
-  TimeStamp disabled_frame_sent_; 
+  int32_t mLastImage;           
+  TimeStamp mDisabledFrameSent; 
 #ifdef DEBUG
   uint32_t mThrottleCount;
   uint32_t mThrottleRecord;
