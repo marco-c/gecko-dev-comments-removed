@@ -5962,6 +5962,13 @@ nsHttpChannel::AsyncOpen(nsIStreamListener *listener, nsISupports *context)
         return rv;
     }
 
+    if (!mLoadGroup && !mCallbacks) {
+        
+        
+        
+        UpdatePrivateBrowsing();
+    }
+
     if (WaitingForTailUnblock()) {
         
         
