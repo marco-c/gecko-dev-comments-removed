@@ -544,10 +544,6 @@ NS_InitXPCOM2(nsIServiceManager** aResult,
   }
 #endif
 
-#if defined(XP_UNIX)
-  NS_StartupNativeCharsetUtils();
-#endif
-
   NS_StartupLocalFile();
 
   nsDirectoryService::RealInit();
@@ -983,9 +979,6 @@ ShutdownXPCOM(nsIServiceManager* aServMgr)
 
   
   NS_ShutdownLocalFile();
-#ifdef XP_UNIX
-  NS_ShutdownNativeCharsetUtils();
-#endif
 
   
   
