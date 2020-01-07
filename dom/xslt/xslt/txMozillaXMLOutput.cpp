@@ -625,11 +625,10 @@ txMozillaXMLOutput::createTxWrapper()
       mDocument->CreateElem(nsDependentAtomString(nsGkAtoms::result),
                             nsGkAtoms::transformiix, namespaceID);
 
-    uint32_t j = 0;
 #ifdef DEBUG
     
     
-    uint32_t rootLocation = 0;
+    uint32_t j = 0, rootLocation = 0;
 #endif
     for (nsCOMPtr<nsIContent> childContent = mDocument->GetFirstChild();
          childContent; childContent = childContent->GetNextSibling()) {
@@ -645,11 +644,11 @@ txMozillaXMLOutput::createTxWrapper()
             
             
             rootLocation = std::max(rootLocation, j + 1);
-#endif
             ++j;
+#endif
         }
         else {
-            mDocument->RemoveChildAt_Deprecated(j, true);
+            mDocument->RemoveChildNode(childContent, true);
 
             rv = wrapper->AppendChildTo(childContent, true);
             NS_ENSURE_SUCCESS(rv, rv);
