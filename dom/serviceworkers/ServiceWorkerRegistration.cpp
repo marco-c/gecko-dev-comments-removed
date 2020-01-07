@@ -107,6 +107,16 @@ ServiceWorkerRegistration::RegistrationRemoved()
   
   
   
+  
+  
+  
+  UpdateStateInternal(Maybe<ServiceWorkerDescriptor>(),
+                      Maybe<ServiceWorkerDescriptor>(),
+                      Maybe<ServiceWorkerDescriptor>());
+
+  
+  
+  
   IgnoreKeepAliveIfHasListenersFor(NS_LITERAL_STRING("updatefound"));
 }
 
@@ -138,92 +148,9 @@ ServiceWorkerRegistration::UpdateState(const ServiceWorkerRegistrationDescriptor
 
   mDescriptor = aDescriptor;
 
-  nsCOMPtr<nsIGlobalObject> global = GetParentObject();
-
-  
-  
-  
-  
-  
-  AutoTArray<RefPtr<ServiceWorker>, 3> oldWorkerList({
-    mInstallingWorker.forget(),
-    mWaitingWorker.forget(),
-    mActiveWorker.forget(),
-  });
-
-  
-  
-  
-  
-  
-  auto scopeExit = MakeScopeExit([&] {
-    
-    
-    for (auto& oldWorker : oldWorkerList) {
-      if (!oldWorker ||
-           oldWorker == mInstallingWorker ||
-           oldWorker == mWaitingWorker ||
-           oldWorker == mActiveWorker) {
-        continue;
-      }
-
-      oldWorker->SetState(ServiceWorkerState::Redundant);
-    }
-
-    
-    if (mInstallingWorker) {
-      mInstallingWorker->MaybeDispatchStateChangeEvent();
-    }
-    if (mWaitingWorker) {
-      mWaitingWorker->MaybeDispatchStateChangeEvent();
-    }
-    if (mActiveWorker) {
-      mActiveWorker->MaybeDispatchStateChangeEvent();
-    }
-
-    
-    
-    
-    for (auto& oldWorker : oldWorkerList) {
-      if (!oldWorker) {
-        continue;
-      }
-
-      oldWorker->MaybeDispatchStateChangeEvent();
-    }
-  });
-
-  
-  
-  
-  
-  if (!global || !NS_IsMainThread()) {
-    return;
-  }
-
-  Maybe<ServiceWorkerDescriptor> active = aDescriptor.GetActive();
-  if (active.isSome()) {
-    mActiveWorker = global->GetOrCreateServiceWorker(active.ref());
-    mActiveWorker->SetState(active.ref().State());
-  } else {
-    mActiveWorker = nullptr;
-  }
-
-  Maybe<ServiceWorkerDescriptor> waiting = aDescriptor.GetWaiting();
-  if (waiting.isSome()) {
-    mWaitingWorker = global->GetOrCreateServiceWorker(waiting.ref());
-    mWaitingWorker->SetState(waiting.ref().State());
-  } else {
-    mWaitingWorker = nullptr;
-  }
-
-  Maybe<ServiceWorkerDescriptor> installing = aDescriptor.GetInstalling();
-  if (installing.isSome()) {
-    mInstallingWorker = global->GetOrCreateServiceWorker(installing.ref());
-    mInstallingWorker->SetState(installing.ref().State());
-  } else {
-    mInstallingWorker = nullptr;
-  }
+  UpdateStateInternal(aDescriptor.GetInstalling(),
+                      aDescriptor.GetWaiting(),
+                      aDescriptor.GetActive());
 }
 
 bool
@@ -404,6 +331,95 @@ const ServiceWorkerRegistrationDescriptor&
 ServiceWorkerRegistration::Descriptor() const
 {
   return mDescriptor;
+}
+
+void
+ServiceWorkerRegistration::UpdateStateInternal(const Maybe<ServiceWorkerDescriptor>& aInstalling,
+                                               const Maybe<ServiceWorkerDescriptor>& aWaiting,
+                                               const Maybe<ServiceWorkerDescriptor>& aActive)
+{
+  
+  
+  
+  
+  
+  AutoTArray<RefPtr<ServiceWorker>, 3> oldWorkerList({
+    mInstallingWorker.forget(),
+    mWaitingWorker.forget(),
+    mActiveWorker.forget(),
+  });
+
+  
+  
+  
+  
+  
+  auto scopeExit = MakeScopeExit([&] {
+    
+    
+    for (auto& oldWorker : oldWorkerList) {
+      if (!oldWorker ||
+          oldWorker == mInstallingWorker ||
+          oldWorker == mWaitingWorker ||
+          oldWorker == mActiveWorker) {
+        continue;
+      }
+
+      oldWorker->SetState(ServiceWorkerState::Redundant);
+    }
+
+    
+    if (mInstallingWorker) {
+      mInstallingWorker->MaybeDispatchStateChangeEvent();
+    }
+    if (mWaitingWorker) {
+      mWaitingWorker->MaybeDispatchStateChangeEvent();
+    }
+    if (mActiveWorker) {
+      mActiveWorker->MaybeDispatchStateChangeEvent();
+    }
+
+    
+    
+    
+    for (auto& oldWorker : oldWorkerList) {
+      if (!oldWorker) {
+        continue;
+      }
+
+      oldWorker->MaybeDispatchStateChangeEvent();
+    }
+  });
+
+  
+  
+  
+  
+  nsCOMPtr<nsIGlobalObject> global = GetParentObject();
+  if (!global || !NS_IsMainThread()) {
+    return;
+  }
+
+  if (aActive.isSome()) {
+    mActiveWorker = global->GetOrCreateServiceWorker(aActive.ref());
+    mActiveWorker->SetState(aActive.ref().State());
+  } else {
+    mActiveWorker = nullptr;
+  }
+
+  if (aWaiting.isSome()) {
+    mWaitingWorker = global->GetOrCreateServiceWorker(aWaiting.ref());
+    mWaitingWorker->SetState(aWaiting.ref().State());
+  } else {
+    mWaitingWorker = nullptr;
+  }
+
+  if (aInstalling.isSome()) {
+    mInstallingWorker = global->GetOrCreateServiceWorker(aInstalling.ref());
+    mInstallingWorker->SetState(aInstalling.ref().State());
+  } else {
+    mInstallingWorker = nullptr;
+  }
 }
 
 } 
