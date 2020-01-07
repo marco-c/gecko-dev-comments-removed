@@ -450,6 +450,12 @@ ClientLayerManager::EndEmptyTransaction(EndTransactionFlags aFlags)
     return false;
   }
 
+  if (mTransactionIncomplete) {
+    
+    
+    GetCompositorBridgeChild()->FlushAsyncPaints();
+  }
+
   if (!EndTransactionInternal(nullptr, nullptr, aFlags)) {
     
     
