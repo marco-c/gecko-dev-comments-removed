@@ -939,19 +939,7 @@ impl RenderBackend {
             &mut profile_counters.resources,
         );
 
-        
-        
-        
-        
-        
-        let force_build = if transaction_msg.generate_frame {
-            let doc = self.documents.get_mut(&document_id).unwrap();
-            doc.pending.scene.root_pipeline_id.is_some() && !doc.current.scene.root_pipeline_id.is_some()
-        } else {
-            false
-        };
-
-        if op.build || force_build {
+        if op.build {
             let doc = self.documents.get_mut(&document_id).unwrap();
             let _timer = profile_counters.total_time.timer();
             profile_scope!("build scene");
