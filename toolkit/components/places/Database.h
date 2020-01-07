@@ -19,7 +19,7 @@
 
 
 
-#define DATABASE_SCHEMA_VERSION 45
+#define DATABASE_SCHEMA_VERSION 46
 
 
 #define TOPIC_PLACES_INIT_COMPLETE "places-init-complete"
@@ -306,6 +306,7 @@ protected:
   nsresult MigrateV43Up();
   nsresult MigrateV44Up();
   nsresult MigrateV45Up();
+  nsresult MigrateV46Up();
 
   nsresult UpdateBookmarkRootTitles();
 
