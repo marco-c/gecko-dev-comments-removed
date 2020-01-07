@@ -872,7 +872,7 @@ function makeURLAbsolute(aBase, aUrl) {
 
 
 
-function openNewTabWith(aURL, aDocument, aPostData, aEvent,
+function openNewTabWith(aURL, aDocument, aPostData, aShiftKey,
                         aAllowThirdPartyFixup, aReferrer, aReferrerPolicy) {
 
   
@@ -881,7 +881,7 @@ function openNewTabWith(aURL, aDocument, aPostData, aEvent,
   if (document.documentElement.getAttribute("windowtype") == "navigator:browser")
     originCharset = gBrowser.selectedBrowser.characterSet;
 
-  openLinkIn(aURL, aEvent && aEvent.shiftKey ? "tabshifted" : "tab",
+  openLinkIn(aURL, aShiftKey ? "tabshifted" : "tab",
              { charset: originCharset,
                postData: aPostData,
                allowThirdPartyFixup: aAllowThirdPartyFixup,

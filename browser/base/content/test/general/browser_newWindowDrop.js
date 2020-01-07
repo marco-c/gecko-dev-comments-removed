@@ -66,11 +66,53 @@ add_task(async function() {
                 data: "mochi.test/11\nTITLE11"}]], 1);
 });
 
-function dropText(text, expectedWindowOpenCount = 0) {
-  return drop([[{type: "text/plain", data: text}]], expectedWindowOpenCount);
+
+add_task(async function multiple_tabs_under_max() {
+  let urls = [];
+  for (let i = 0; i < 5; i++) {
+    urls.push("mochi.test/multi" + i);
+  }
+  await dropText(urls.join("\n"), 5);
+});
+add_task(async function multiple_tabs_over_max_accept() {
+  await pushPrefs(["browser.tabs.maxOpenBeforeWarn", 4]);
+
+  let confirmPromise = BrowserTestUtils.promiseAlertDialog("accept");
+
+  let urls = [];
+  for (let i = 0; i < 5; i++) {
+    urls.push("mochi.test/accept" + i);
+  }
+  await dropText(urls.join("\n"), 5, true);
+
+  await confirmPromise;
+
+  await popPrefs();
+});
+add_task(async function multiple_tabs_over_max_cancel() {
+  await pushPrefs(["browser.tabs.maxOpenBeforeWarn", 4]);
+
+  let confirmPromise = BrowserTestUtils.promiseAlertDialog("cancel");
+
+  let urls = [];
+  for (let i = 0; i < 5; i++) {
+    urls.push("mochi.test/cancel" + i);
+  }
+  await dropText(urls.join("\n"), 0, true);
+
+  await confirmPromise;
+
+  await popPrefs();
+});
+
+function dropText(text, expectedWindowOpenCount = 0,
+                  ignoreFirstWindow = false) {
+  return drop([[{type: "text/plain", data: text}]], expectedWindowOpenCount,
+              ignoreFirstWindow);
 }
 
-async function drop(dragData, expectedWindowOpenCount = 0) {
+async function drop(dragData, expectedWindowOpenCount = 0,
+                    ignoreFirstWindow = false) {
   let dragDataString = JSON.stringify(dragData);
   info(`Starting test for datagData:${dragDataString}; expectedWindowOpenCount:${expectedWindowOpenCount}`);
   let EventUtils = {};
@@ -89,6 +131,14 @@ async function drop(dragData, expectedWindowOpenCount = 0) {
   let actualWindowOpenCount = 0;
   let openedWindows = [];
   let checkCount = function(window) {
+    if (ignoreFirstWindow) {
+      
+      
+      
+      ignoreFirstWindow = false;
+      return false;
+    }
+
     
     let awaitStartup = tmp.TestUtils.topicObserved("browser-delayed-startup-finished",
                                                    subject => subject == window);

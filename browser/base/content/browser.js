@@ -35,6 +35,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   Log: "resource://gre/modules/Log.jsm",
   LoginManagerParent: "resource://gre/modules/LoginManagerParent.jsm",
   NewTabUtils: "resource://gre/modules/NewTabUtils.jsm",
+  OpenInTabsUtils: "resource:///modules/OpenInTabsUtils.jsm",
   PageActions: "resource:///modules/PageActions.jsm",
   PageThumbs: "resource://gre/modules/PageThumbs.jsm",
   PanelMultiView: "resource:///modules/PanelMultiView.jsm",
@@ -221,7 +222,6 @@ XPCOMUtils.defineLazyGetter(this, "Win7Features", function() {
 
 const nsIWebNavigation = Ci.nsIWebNavigation;
 
-var gBrowser = null; 
 var gLastValidURLStr = "";
 var gInPrintPreviewMode = false;
 var gContextMenu = null; 
@@ -237,6 +237,7 @@ if (AppConstants.platform != "macosx") {
 
 
 [
+  ["gBrowser",            "content"],
   ["gNavToolbox",         "navigator-toolbox"],
   ["gURLBar",             "urlbar"],
 ].forEach(function(elementGlobal) {
@@ -1196,7 +1197,8 @@ var gBrowserInit = {
     window.QueryInterface(Ci.nsIDOMChromeWindow).browserDOMWindow =
       new nsBrowserAccess();
 
-    let initBrowser = gBrowser.initialBrowser;
+    let initBrowser =
+      document.getAnonymousElementByAttribute(gBrowser, "anonid", "initialBrowser");
 
     
     
@@ -1300,7 +1302,7 @@ var gBrowserInit = {
 
     if (!gMultiProcessBrowser) {
       
-      Services.els.addSystemEventListener(gBrowser.container, "click", contentAreaClick, true);
+      Services.els.addSystemEventListener(gBrowser, "click", contentAreaClick, true);
     }
 
     
@@ -3568,12 +3570,23 @@ var newTabButtonObserver = {
   },
   onDragExit(aEvent) {},
   async onDrop(aEvent) {
+    let shiftKey = aEvent.shiftKey;
     let links = browserDragAndDrop.dropLinks(aEvent);
+
+    if (links.length >= Services.prefs.getIntPref("browser.tabs.maxOpenBeforeWarn")) {
+      
+      let answer = await OpenInTabsUtils.promiseConfirmOpenInTabs(links.length,
+                                                                  window);
+      if (!answer) {
+        return;
+      }
+    }
+
     for (let link of links) {
       if (link.url) {
         let data = await getShortcutOrURIAndPostData(link.url);
         
-        openNewTabWith(data.url, null, data.postData, aEvent, true);
+        openNewTabWith(data.url, null, data.postData, shiftKey, true);
       }
     }
   }
@@ -3586,6 +3599,16 @@ var newWindowButtonObserver = {
   onDragExit(aEvent) {},
   async onDrop(aEvent) {
     let links = browserDragAndDrop.dropLinks(aEvent);
+
+    if (links.length >= Services.prefs.getIntPref("browser.tabs.maxOpenBeforeWarn")) {
+      
+      let answer = await OpenInTabsUtils.promiseConfirmOpenInTabs(links.length,
+                                                                  window);
+      if (!answer) {
+        return;
+      }
+    }
+
     for (let link of links) {
       if (link.url) {
         let data = await getShortcutOrURIAndPostData(link.url);
@@ -4341,11 +4364,15 @@ var XULBrowserWindow = {
   },
 
   forceInitialBrowserRemote(aRemoteType) {
-    gBrowser.updateBrowserRemoteness(gBrowser.initialBrowser, true, { remoteType: aRemoteType });
+    let initBrowser =
+      document.getAnonymousElementByAttribute(gBrowser, "anonid", "initialBrowser");
+    gBrowser.updateBrowserRemoteness(initBrowser, true, { remoteType: aRemoteType });
   },
 
   forceInitialBrowserNonRemote(aOpener) {
-    gBrowser.updateBrowserRemoteness(gBrowser.initialBrowser, false, { opener: aOpener });
+    let initBrowser =
+      document.getAnonymousElementByAttribute(gBrowser, "anonid", "initialBrowser");
+    gBrowser.updateBrowserRemoteness(initBrowser, false, { opener: aOpener });
   },
 
   setDefaultStatus(status) {
@@ -6108,6 +6135,15 @@ function handleDroppedLink(event, urlOrLinks, nameOrTriggeringPrincipal, trigger
   }
 
   (async function() {
+    if (links.length >= Services.prefs.getIntPref("browser.tabs.maxOpenBeforeWarn")) {
+      
+      let answer = await OpenInTabsUtils.promiseConfirmOpenInTabs(links.length,
+                                                                  window);
+      if (!answer) {
+        return;
+      }
+    }
+
     let urls = [];
     let postDatas = [];
     for (let link of links) {
