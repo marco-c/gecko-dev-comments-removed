@@ -1675,7 +1675,7 @@ Element::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
     SetSubtreeRootPointer(aParent->SubtreeRoot());
   }
 
-  if (CustomElementRegistry::IsCustomElementEnabled(OwnerDoc()) && IsInComposedDoc()) {
+  if (CustomElementRegistry::IsCustomElementEnabled() && IsInComposedDoc()) {
     
     
     CustomElementData* data = GetCustomElementData();
@@ -2017,7 +2017,7 @@ Element::UnbindFromTree(bool aDeep, bool aNullParent)
 
      
      
-    if (CustomElementRegistry::IsCustomElementEnabled(OwnerDoc())) {
+    if (CustomElementRegistry::IsCustomElementEnabled()) {
       CustomElementData* data  = GetCustomElementData();
       if (data) {
         if (data->mState == CustomElementData::State::eCustom) {
@@ -2689,7 +2689,7 @@ Element::SetAttrAndNotify(int32_t aNamespaceID,
     }
   }
 
-  if (CustomElementRegistry::IsCustomElementEnabled(OwnerDoc())) {
+  if (CustomElementRegistry::IsCustomElementEnabled()) {
     CustomElementDefinition* definition = GetCustomElementDefinition();
     
     
@@ -2863,7 +2863,7 @@ Element::OnAttrSetButNotChanged(int32_t aNamespaceID, nsAtom* aName,
                                 const nsAttrValueOrString& aValue,
                                 bool aNotify)
 {
-  if (CustomElementRegistry::IsCustomElementEnabled(OwnerDoc())) {
+  if (CustomElementRegistry::IsCustomElementEnabled()) {
     
     
     CustomElementDefinition* definition = GetCustomElementDefinition();
@@ -2996,7 +2996,7 @@ Element::UnsetAttr(int32_t aNameSpaceID, nsAtom* aName,
     }
   }
 
-  if (CustomElementRegistry::IsCustomElementEnabled(OwnerDoc())) {
+  if (CustomElementRegistry::IsCustomElementEnabled()) {
     CustomElementDefinition* definition = GetCustomElementDefinition();
     
     
