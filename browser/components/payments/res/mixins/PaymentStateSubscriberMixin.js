@@ -17,6 +17,8 @@ export let requestStore = new PaymentsStore({
   orderDetailsShowing: false,
   page: {
     id: "payment-summary",
+    
+    
   },
   request: {
     tabId: null,
