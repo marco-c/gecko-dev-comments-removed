@@ -2,6 +2,8 @@
 
 
 
+Components.utils.importGlobalProperties(["NodeFilter"]);
+
 const C_i = Components.interfaces;
 
 const UNORDERED_TYPE = 8; 
@@ -14,8 +16,8 @@ const UNORDERED_TYPE = 8;
 
 function isWhitespace(aNode) {
   return ((/\S/).test(aNode.nodeValue)) ?
-         3  :
-         1 ;
+         NodeFilter.FILTER_SKIP :
+         NodeFilter.FILTER_ACCEPT;
 }
 
 
@@ -82,23 +84,23 @@ function evalXPathInDocumentFragment(aContextNode, aPath) {
     prefix = prefix.substr(0, bracketIndex);
   }
 
-  var targetType = 1 ;
+  var targetType = NodeFilter.SHOW_ELEMENT;
   var targetNodeName = prefix;
   if (prefix.indexOf("processing-instruction(") == 0) {
-    targetType = 0x40 ;
+    targetType = NodeFilter.SHOW_PROCESSING_INSTRUCTION;
     targetNodeName = prefix.substring(prefix.indexOf("(") + 2, prefix.indexOf(")") - 1);
   }
   switch (prefix) {
     case "text()":
-      targetType = 4 | 8 ;
+      targetType = NodeFilter.SHOW_TEXT | NodeFilter.SHOW_CDATA_SECTION;
       targetNodeName = null;
       break;
     case "comment()":
-      targetType = 0x80 ;
+      targetType = NodeFilter.SHOW_COMMENT;
       targetNodeName = null;
       break;
     case "node()":
-      targetType = 0xFFFFFFFF ;
+      targetType = NodeFilter.SHOW_ALL;
       targetNodeName = null;
   }
 
@@ -109,19 +111,19 @@ function evalXPathInDocumentFragment(aContextNode, aPath) {
     acceptNode: function acceptNode(aNode) {
       if (aNode.parentNode != aContextNode) {
         
-        return 2 ;
+        return NodeFilter.FILTER_REJECT;
       }
 
       if (targetNodeName && targetNodeName != aNode.nodeName) {
-        return 3 ;
+        return NodeFilter.FILTER_SKIP;
       }
 
       this.count++;
       if (this.count != childIndex) {
-        return 3 ;
+        return NodeFilter.FILTER_SKIP;
       }
 
-      return 1 ;
+      return NodeFilter.FILTER_ACCEPT;
     }
   };
 
@@ -181,8 +183,8 @@ function processParsedDocument(doc) {
 
   
   var walker = doc.createTreeWalker(doc,
-                                    4 | 8 
-,
+                                    NodeFilter.SHOW_TEXT |
+                                    NodeFilter.SHOW_CDATA_SECTION,
                                     isWhitespace);
   while (walker.nextNode()) {
     var parent = walker.currentNode.parentNode;
@@ -276,8 +278,8 @@ function do_extract_test(doc) {
 
     dump("Ensure the original nodes weren't extracted - test " + i + "\n\n");
     var walker = doc.createTreeWalker(baseFrag,
-				      0xFFFFFFFF ,
-				      null);
+                                      NodeFilter.SHOW_ALL,
+                                      null);
     var foundStart = false;
     var foundEnd = false;
     do {
@@ -309,7 +311,7 @@ function do_extract_test(doc) {
 
     dump("Ensure the original nodes weren't deleted - test " + i + "\n\n");
     walker = doc.createTreeWalker(baseFrag,
-                                  0xFFFFFFFF ,
+                                  NodeFilter.SHOW_ALL,
                                   null);
     foundStart = false;
     foundEnd = false;
