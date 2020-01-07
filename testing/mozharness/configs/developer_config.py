@@ -27,10 +27,6 @@ config = {
     },
 
     
-    "find_links": ["http://pypi.pub.build.mozilla.org/pub"],
-    "pip_index": False,
-
-    
     "python_webserver": True,
     "virtualenv_path": '%s/build/venv' % os.getcwd(),
     "preflight_run_cmd_suites": [],
