@@ -56,17 +56,15 @@ private:
 class nsNestedAboutURI final
     : public nsSimpleNestedURI
 {
-public:
+private:
     nsNestedAboutURI(nsIURI* aInnerURI, nsIURI* aBaseURI)
         : nsSimpleNestedURI(aInnerURI)
         , mBaseURI(aBaseURI)
     {}
-
-    
     nsNestedAboutURI() : nsSimpleNestedURI() {}
-
     virtual ~nsNestedAboutURI() {}
 
+public:
     
     NS_IMETHOD QueryInterface(REFNSIID aIID, void** aInstancePtr) override;
 
@@ -94,6 +92,7 @@ public:
         : public nsIURIMutator
         , public BaseURIMutator<nsNestedAboutURI>
         , public nsISerializable
+        , public nsINestedAboutURIMutator
     {
         NS_DECL_ISUPPORTS
         NS_FORWARD_SAFE_NSIURISETTERS_RET(mURI)
@@ -135,6 +134,13 @@ public:
                 NS_ADDREF(*aMutator = this);
             }
             return InitFromSpec(aSpec);
+        }
+
+        MOZ_MUST_USE NS_IMETHOD
+        InitWithBase(nsIURI* aInnerURI, nsIURI* aBaseURI) override
+        {
+            mURI = new nsNestedAboutURI(aInnerURI, aBaseURI);
+            return NS_OK;
         }
 
         void ResetMutable()
