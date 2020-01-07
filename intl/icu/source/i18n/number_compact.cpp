@@ -262,7 +262,6 @@ void CompactHandler::precomputeAllModifiers(MutablePatternModifier &buildReferen
         buildReference.setPatternInfo(&patternInfo);
         info.mod = buildReference.createImmutable(status);
         if (U_FAILURE(status)) { return; }
-        info.numDigits = patternInfo.positive.integerTotal;
         info.patternString = patternString;
     }
 }
@@ -286,7 +285,6 @@ void CompactHandler::processQuantity(DecimalQuantity &quantity, MicroProps &micr
 
     StandardPlural::Form plural = quantity.getStandardPlural(rules);
     const UChar *patternString = data.getPattern(magnitude, plural);
-    int numDigits = -1;
     if (patternString == nullptr) {
         
         
@@ -299,7 +297,6 @@ void CompactHandler::processQuantity(DecimalQuantity &quantity, MicroProps &micr
             const CompactModInfo &info = precomputedMods[i];
             if (u_strcmp(patternString, info.patternString) == 0) {
                 info.mod->applyToMicros(micros, quantity);
-                numDigits = info.numDigits;
                 break;
             }
         }
@@ -313,11 +310,7 @@ void CompactHandler::processQuantity(DecimalQuantity &quantity, MicroProps &micr
         PatternParser::parseToPatternInfo(UnicodeString(patternString), patternInfo, status);
         static_cast<MutablePatternModifier*>(const_cast<Modifier*>(micros.modMiddle))
             ->setPatternInfo(&patternInfo);
-        numDigits = patternInfo.positive.integerTotal;
     }
-
-    
-    (void)numDigits;
 
     
     micros.rounding = Rounder::constructPassThrough();

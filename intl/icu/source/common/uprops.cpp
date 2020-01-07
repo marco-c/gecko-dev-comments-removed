@@ -38,8 +38,6 @@
 
 U_NAMESPACE_USE
 
-#define GET_BIDI_PROPS() ubidi_getSingleton()
-
 
 
 struct BinaryProperty;
@@ -62,15 +60,15 @@ static UBool caseBinaryPropertyContains(const BinaryProperty &, UChar32 c, UProp
 }
 
 static UBool isBidiControl(const BinaryProperty &, UChar32 c, UProperty ) {
-    return ubidi_isBidiControl(GET_BIDI_PROPS(), c);
+    return ubidi_isBidiControl(c);
 }
 
 static UBool isMirrored(const BinaryProperty &, UChar32 c, UProperty ) {
-    return ubidi_isMirrored(GET_BIDI_PROPS(), c);
+    return ubidi_isMirrored(c);
 }
 
 static UBool isJoinControl(const BinaryProperty &, UChar32 c, UProperty ) {
-    return ubidi_isJoinControl(GET_BIDI_PROPS(), c);
+    return ubidi_isJoinControl(c);
 }
 
 #if UCONFIG_NO_NORMALIZATION
@@ -329,11 +327,11 @@ static int32_t getBiDiClass(const IntProperty &, UChar32 c, UProperty ) {
 }
 
 static int32_t getBiDiPairedBracketType(const IntProperty &, UChar32 c, UProperty ) {
-    return (int32_t)ubidi_getPairedBracketType(GET_BIDI_PROPS(), c);
+    return (int32_t)ubidi_getPairedBracketType(c);
 }
 
 static int32_t biDiGetMaxValue(const IntProperty &, UProperty which) {
-    return ubidi_getMaxValue(GET_BIDI_PROPS(), which);
+    return ubidi_getMaxValue(which);
 }
 
 #if UCONFIG_NO_NORMALIZATION
@@ -351,11 +349,11 @@ static int32_t getGeneralCategory(const IntProperty &, UChar32 c, UProperty ) {
 }
 
 static int32_t getJoiningGroup(const IntProperty &, UChar32 c, UProperty ) {
-    return ubidi_getJoiningGroup(GET_BIDI_PROPS(), c);
+    return ubidi_getJoiningGroup(c);
 }
 
 static int32_t getJoiningType(const IntProperty &, UChar32 c, UProperty ) {
-    return ubidi_getJoiningType(GET_BIDI_PROPS(), c);
+    return ubidi_getJoiningType(c);
 }
 
 static int32_t getNumericType(const IntProperty &, UChar32 c, UProperty ) {

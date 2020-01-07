@@ -24,6 +24,7 @@ U_NAMESPACE_BEGIN
 
 class RBBIRuleScanner;
 class RBBIRuleBuilder;
+class UVector32;
 
 
 
@@ -42,9 +43,24 @@ public:
     void     build();
     int32_t  getTableSize() const;      
                                         
-    void     exportTable(void *where);  
-                                        
-                                        
+
+    
+
+    void     exportTable(void *where);
+
+    
+
+
+
+    bool     findDuplCharClassFrom(int &baseClass, int &duplClass);
+
+    
+
+
+    void     removeColumn(int32_t column);
+
+    
+    void     removeDuplicateStates();
 
 
 private:
@@ -60,7 +76,28 @@ private:
     void     flagTaggedStates();
     void     mergeRuleStatusVals();
 
+    
+
+
+
+    int32_t  mergeColumns();
+
     void     addRuleRootNodes(UVector *dest, RBBINode *node);
+
+    
+
+
+
+
+
+    bool findDuplicateState(int32_t &firstState, int32_t &duplicateState);
+
+    
+
+
+
+
+    void removeState(int32_t keepState, int32_t duplState);
 
     
     
@@ -112,7 +149,7 @@ public:
                                            
                                            
 
-    UVector          *fDtran;              
+    UVector32        *fDtran;              
                                            
                                            
                                            

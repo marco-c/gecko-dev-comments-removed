@@ -67,11 +67,17 @@ class PluralRules;
 class VisibleDigitsWithExponent;
 
 
-#if defined (_MSC_VER)
+
+#if U_PF_WINDOWS <= U_PLATFORM && U_PLATFORM <= U_PF_CYGWIN
 template class U_I18N_API    EnumSet<UNumberFormatAttribute,
             UNUM_MAX_NONBOOLEAN_ATTRIBUTE+1,
             UNUM_LIMIT_BOOLEAN_ATTRIBUTE>;
 #endif
+
+
+
+
+
 
 
 
@@ -692,9 +698,15 @@ public:
 
 
 
+
+
+
     DecimalFormat(UErrorCode& status);
 
     
+
+
+
 
 
 
@@ -712,6 +724,9 @@ public:
                   UErrorCode& status);
 
     
+
+
+
 
 
 
@@ -835,11 +850,17 @@ public:
 
 
 
+
+
+
     DecimalFormat(  const UnicodeString& pattern,
                     DecimalFormatSymbols* symbolsToAdopt,
                     UParseError& parseError,
                     UErrorCode& status);
     
+
+
+
 
 
 
@@ -1964,12 +1985,14 @@ public:
     UCurrencyUsage getCurrencyUsage() const;
 
 
+#ifndef U_HIDE_DEPRECATED_API
     
 
 
 
 
     static const char fgNumberPatterns[];
+#endif  
 
 #ifndef U_HIDE_INTERNAL_API
     

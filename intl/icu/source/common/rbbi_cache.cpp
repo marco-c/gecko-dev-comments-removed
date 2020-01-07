@@ -26,14 +26,11 @@ U_NAMESPACE_BEGIN
 
 
 RuleBasedBreakIterator::DictionaryCache::DictionaryCache(RuleBasedBreakIterator *bi, UErrorCode &status) :
-        fBI(bi), fBreaks(NULL), fPositionInCache(-1),
+        fBI(bi), fBreaks(status), fPositionInCache(-1),
         fStart(0), fLimit(0), fFirstRuleStatusIndex(0), fOtherRuleStatusIndex(0) {
-    fBreaks = new UVector32(status);
 }
 
 RuleBasedBreakIterator::DictionaryCache::~DictionaryCache() {
-    delete fBreaks;
-    fBreaks = NULL;
 }
 
 void RuleBasedBreakIterator::DictionaryCache::reset() {
@@ -42,7 +39,7 @@ void RuleBasedBreakIterator::DictionaryCache::reset() {
     fLimit = 0;
     fFirstRuleStatusIndex = 0;
     fOtherRuleStatusIndex = 0;
-    fBreaks->removeAllElements();
+    fBreaks.removeAllElements();
 }
 
 UBool RuleBasedBreakIterator::DictionaryCache::following(int32_t fromPos, int32_t *result, int32_t *statusIndex) {
@@ -54,13 +51,13 @@ UBool RuleBasedBreakIterator::DictionaryCache::following(int32_t fromPos, int32_
     
 
     int32_t r = 0;
-    if (fPositionInCache >= 0 && fPositionInCache < fBreaks->size() && fBreaks->elementAti(fPositionInCache) == fromPos) {
+    if (fPositionInCache >= 0 && fPositionInCache < fBreaks.size() && fBreaks.elementAti(fPositionInCache) == fromPos) {
         ++fPositionInCache;
-        if (fPositionInCache >= fBreaks->size()) {
+        if (fPositionInCache >= fBreaks.size()) {
             fPositionInCache = -1;
             return FALSE;
         }
-        r = fBreaks->elementAti(fPositionInCache);
+        r = fBreaks.elementAti(fPositionInCache);
         U_ASSERT(r > fromPos);
         *result = r;
         *statusIndex = fOtherRuleStatusIndex;
@@ -69,8 +66,8 @@ UBool RuleBasedBreakIterator::DictionaryCache::following(int32_t fromPos, int32_
 
     
 
-    for (fPositionInCache = 0; fPositionInCache < fBreaks->size(); ++fPositionInCache) {
-        r= fBreaks->elementAti(fPositionInCache);
+    for (fPositionInCache = 0; fPositionInCache < fBreaks.size(); ++fPositionInCache) {
+        r= fBreaks.elementAti(fPositionInCache);
         if (r > fromPos) {
             *result = r;
             *statusIndex = fOtherRuleStatusIndex;
@@ -90,16 +87,16 @@ UBool RuleBasedBreakIterator::DictionaryCache::preceding(int32_t fromPos, int32_
     }
 
     if (fromPos == fLimit) {
-        fPositionInCache = fBreaks->size() - 1;
+        fPositionInCache = fBreaks.size() - 1;
         if (fPositionInCache >= 0) {
-            U_ASSERT(fBreaks->elementAti(fPositionInCache) == fromPos);
+            U_ASSERT(fBreaks.elementAti(fPositionInCache) == fromPos);
         }
     }
 
     int32_t r;
-    if (fPositionInCache > 0 && fPositionInCache < fBreaks->size() && fBreaks->elementAti(fPositionInCache) == fromPos) {
+    if (fPositionInCache > 0 && fPositionInCache < fBreaks.size() && fBreaks.elementAti(fPositionInCache) == fromPos) {
         --fPositionInCache;
-        r = fBreaks->elementAti(fPositionInCache);
+        r = fBreaks.elementAti(fPositionInCache);
         U_ASSERT(r < fromPos);
         *result = r;
         *statusIndex = ( r== fStart) ? fFirstRuleStatusIndex : fOtherRuleStatusIndex;
@@ -111,8 +108,8 @@ UBool RuleBasedBreakIterator::DictionaryCache::preceding(int32_t fromPos, int32_
         return FALSE;
     }
 
-    for (fPositionInCache = fBreaks->size()-1; fPositionInCache >= 0; --fPositionInCache) {
-        r = fBreaks->elementAti(fPositionInCache);
+    for (fPositionInCache = fBreaks.size()-1; fPositionInCache >= 0; --fPositionInCache) {
+        r = fBreaks.elementAti(fPositionInCache);
         if (r < fromPos) {
             *result = r;
             *statusIndex = ( r == fStart) ? fFirstRuleStatusIndex : fOtherRuleStatusIndex;
@@ -141,7 +138,7 @@ void RuleBasedBreakIterator::DictionaryCache::populateDictionary(int32_t startPo
     int32_t     current;
     UErrorCode  status = U_ZERO_ERROR;
     int32_t     foundBreakCount = 0;
-    UText      *text = fBI->fText;
+    UText      *text = &fBI->fText;
 
     
     
@@ -168,7 +165,7 @@ void RuleBasedBreakIterator::DictionaryCache::populateDictionary(int32_t startPo
         
         
         if (lbe != NULL) {
-            foundBreakCount += lbe->findBreaks(text, rangeStart, rangeEnd, fBI->fBreakType, *fBreaks);
+            foundBreakCount += lbe->findBreaks(text, rangeStart, rangeEnd, fBreaks);
         }
 
         
@@ -182,21 +179,21 @@ void RuleBasedBreakIterator::DictionaryCache::populateDictionary(int32_t startPo
 
     
     if (foundBreakCount > 0) {
-        U_ASSERT(foundBreakCount == fBreaks->size());
-        if (startPos < fBreaks->elementAti(0)) {
+        U_ASSERT(foundBreakCount == fBreaks.size());
+        if (startPos < fBreaks.elementAti(0)) {
             
             
             
             
-            fBreaks->insertElementAt(startPos, 0, status);
+            fBreaks.insertElementAt(startPos, 0, status);
         }
-        if (endPos > fBreaks->peeki()) {
-            fBreaks->push(endPos, status);
+        if (endPos > fBreaks.peeki()) {
+            fBreaks.push(endPos, status);
         }
         fPositionInCache = 0;
         
-        fStart = fBreaks->elementAti(0);
-        fLimit = fBreaks->peeki();
+        fStart = fBreaks.elementAti(0);
+        fLimit = fBreaks.peeki();
     } else {
         
         

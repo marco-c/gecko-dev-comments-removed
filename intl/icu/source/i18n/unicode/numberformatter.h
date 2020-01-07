@@ -92,10 +92,6 @@
 
 
 
-
-
-
-
 typedef enum UNumberUnitWidth {
     
 
@@ -155,15 +151,110 @@ typedef enum UNumberUnitWidth {
 
 
 
-            UNUM_UNIT_WIDTH_HIDDEN,
+            UNUM_UNIT_WIDTH_HIDDEN
 
+#ifndef U_HIDE_INTERNAL_API
+    ,
     
 
 
 
 
             UNUM_UNIT_WIDTH_COUNT
+#endif  
 } UNumberUnitWidth;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef enum UGroupingStrategy {
+    
+
+
+
+
+    UNUM_GROUPING_OFF,
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+    UNUM_GROUPING_MIN2,
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    UNUM_GROUPING_AUTO,
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+    UNUM_GROUPING_ON_ALIGNED,
+
+    
+
+
+
+
+
+    UNUM_GROUPING_THOUSANDS
+
+} UGroupingStrategy;
+
 
 
 
@@ -190,21 +281,7 @@ typedef enum UNumberSignDisplay {
 
 
 
-            UNUM_SIGN_AUTO,
-
-    
-
-
-
-
-            UNUM_SIGN_ALWAYS,
-
-    
-
-
-
-
-            UNUM_SIGN_NEVER,
+    UNUM_SIGN_AUTO,
 
     
 
@@ -212,15 +289,14 @@ typedef enum UNumberSignDisplay {
 
 
 
+    UNUM_SIGN_ALWAYS,
+
+    
 
 
 
 
-
-
-
-
-            UNUM_SIGN_ACCOUNTING,
+    UNUM_SIGN_NEVER,
 
     
 
@@ -228,14 +304,52 @@ typedef enum UNumberSignDisplay {
 
 
 
-            UNUM_SIGN_ACCOUNTING_ALWAYS,
+
+
+
+
+
+
+
+
+    UNUM_SIGN_ACCOUNTING,
 
     
 
 
 
 
-            UNUM_SIGN_COUNT
+
+
+
+    UNUM_SIGN_ACCOUNTING_ALWAYS,
+
+    
+
+
+
+
+
+    UNUM_SIGN_EXCEPT_ZERO,
+
+    
+
+
+
+
+
+
+    UNUM_SIGN_ACCOUNTING_EXCEPT_ZERO
+
+#ifndef U_HIDE_INTERNAL_API
+    ,
+    
+
+
+
+
+    UNUM_SIGN_COUNT
+#endif  
 } UNumberSignDisplay;
 
 
@@ -261,14 +375,17 @@ typedef enum UNumberDecimalSeparatorDisplay {
 
 
 
-            UNUM_DECIMAL_SEPARATOR_ALWAYS,
+            UNUM_DECIMAL_SEPARATOR_ALWAYS
 
+#ifndef U_HIDE_INTERNAL_API
+    ,
     
 
 
 
 
             UNUM_DECIMAL_SEPARATOR_COUNT
+#endif  
 } UNumberDecimalMarkDisplay;
 
 U_NAMESPACE_BEGIN namespace number {  
@@ -283,10 +400,26 @@ class Rounder;
 class FractionRounder;
 class CurrencyRounder;
 class IncrementRounder;
-class Grouper;
 class IntegerWidth;
 
 namespace impl {
+
+#ifndef U_HIDE_INTERNAL_API
+
+
+
+
+
+typedef int16_t digits_t;
+
+
+
+
+
+
+
+static constexpr int32_t DEFAULT_THRESHOLD = 3;
+#endif  
 
 
 class Padder;
@@ -471,7 +604,7 @@ class U_I18N_API Notation : public UMemory {
         struct ScientificSettings {
             int8_t fEngineeringInterval;
             bool fRequireMinInt;
-            int8_t fMinExponentDigits;
+            impl::digits_t fMinExponentDigits;
             UNumberSignDisplay fExponentSignDisplay;
         } scientific;
 
@@ -786,14 +919,14 @@ class U_I18N_API Rounder : public UMemory {
     union RounderUnion {
         struct FractionSignificantSettings {
             
-            int8_t fMinFrac;
-            int8_t fMaxFrac;
-            int8_t fMinSig;
-            int8_t fMaxSig;
+            impl::digits_t fMinFrac;
+            impl::digits_t fMaxFrac;
+            impl::digits_t fMinSig;
+            impl::digits_t fMaxSig;
         } fracSig;
         struct IncrementSettings {
             double fIncrement;
-            int32_t fMinFrac;
+            impl::digits_t fMinFrac;
         } increment; 
         UCurrencyUsage currencyUsage; 
         UErrorCode errorCode; 
@@ -835,6 +968,20 @@ class U_I18N_API Rounder : public UMemory {
 
     
     void apply(impl::DecimalQuantity &value, int32_t minInt, UErrorCode status);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
 
     int32_t
     chooseMultiplierAndApply(impl::DecimalQuantity &input, const impl::MultiplierProducer &producer,
@@ -1005,53 +1152,6 @@ class U_I18N_API IncrementRounder : public Rounder {
 
 
 
-class U_I18N_API Grouper : public UMemory {
-  public:
-    
-
-
-    static Grouper defaults();
-
-    
-
-
-    static Grouper minTwoDigits();
-
-    
-
-
-    static Grouper none();
-
-  private:
-    int8_t fGrouping1; 
-    int8_t fGrouping2;
-    bool fMin2;
-
-    Grouper(int8_t grouping1, int8_t grouping2, bool min2)
-            : fGrouping1(grouping1), fGrouping2(grouping2), fMin2(min2) {}
-
-    Grouper() : fGrouping1(-3) {};
-
-    bool isBogus() const {
-        return fGrouping1 == -3;
-    }
-
-    
-    void setLocaleData(const impl::ParsedPatternInfo &patternInfo);
-
-    bool groupAtPosition(int32_t position, const impl::DecimalQuantity &value) const;
-
-    
-    friend struct impl::MacroProps;
-    friend struct impl::MicroProps;
-
-    
-    friend class impl::NumberFormatterImpl;
-};
-
-
-
-
 
 
 
@@ -1085,19 +1185,20 @@ class U_I18N_API IntegerWidth : public UMemory {
 
 
 
+
     IntegerWidth truncateAt(int32_t maxInt);
 
   private:
     union {
         struct {
-            int8_t fMinInt;
-            int8_t fMaxInt;
+            impl::digits_t fMinInt;
+            impl::digits_t fMaxInt;
         } minMaxInt;
         UErrorCode errorCode;
     } fUnion;
     bool fHasError = false;
 
-    IntegerWidth(int8_t minInt, int8_t maxInt);
+    IntegerWidth(impl::digits_t minInt, impl::digits_t maxInt);
 
     IntegerWidth(UErrorCode errorCode) { 
         fUnion.errorCode = errorCode;
@@ -1134,13 +1235,6 @@ namespace impl {
 
 
 
-
-
-
-
-static constexpr int32_t DEFAULT_THRESHOLD = 3;
-
-
 class U_I18N_API SymbolsWrapper : public UMemory {
   public:
     
@@ -1155,6 +1249,7 @@ class U_I18N_API SymbolsWrapper : public UMemory {
     
     SymbolsWrapper &operator=(const SymbolsWrapper &other);
 
+#ifndef U_HIDE_INTERNAL_API
     
 
 
@@ -1202,6 +1297,7 @@ class U_I18N_API SymbolsWrapper : public UMemory {
         }
         return FALSE;
     }
+#endif  
 
   private:
     enum SymbolsPointerType {
@@ -1219,13 +1315,71 @@ class U_I18N_API SymbolsWrapper : public UMemory {
 };
 
 
+
+class U_I18N_API Grouper : public UMemory {
+  public:
+#ifndef U_HIDE_INTERNAL_API
+    
+    static Grouper forStrategy(UGroupingStrategy grouping);
+
+    
+
+    
+    Grouper(int16_t grouping1, int16_t grouping2, int16_t minGrouping)
+            : fGrouping1(grouping1), fGrouping2(grouping2), fMinGrouping(minGrouping) {}
+#endif  
+
+  private:
+    
+
+
+
+
+
+
+
+    int16_t fGrouping1;
+    int16_t fGrouping2;
+
+    
+
+
+
+
+
+
+    int16_t fMinGrouping;
+
+    Grouper() : fGrouping1(-3) {};
+
+    bool isBogus() const {
+        return fGrouping1 == -3;
+    }
+
+    
+    void setLocaleData(const impl::ParsedPatternInfo &patternInfo, const Locale& locale);
+
+    bool groupAtPosition(int32_t position, const impl::DecimalQuantity &value) const;
+
+    
+    friend struct MacroProps;
+    friend struct MicroProps;
+
+    
+    friend class NumberFormatterImpl;
+};
+
+
+
 class U_I18N_API Padder : public UMemory {
   public:
+#ifndef U_HIDE_INTERNAL_API
     
     static Padder none();
 
     
     static Padder codePoints(UChar32 cp, int32_t targetWidth, UNumberFormatPadPosition position);
+#endif  
 
   private:
     UChar32 fWidth;  
@@ -1276,12 +1430,16 @@ class U_I18N_API Padder : public UMemory {
 };
 
 
+
 struct U_I18N_API MacroProps : public UMemory {
     
     Notation notation;
 
     
     MeasureUnit unit; 
+
+    
+    MeasureUnit perUnit; 
 
     
     Rounder rounder;  
@@ -1408,6 +1566,8 @@ class U_I18N_API NumberFormatterSettings {
 
 
 
+
+
     Derived unit(const icu::MeasureUnit &unit) const;
 
     
@@ -1421,7 +1581,49 @@ class U_I18N_API NumberFormatterSettings {
 
 
 
-    Derived adoptUnit(const icu::MeasureUnit *unit) const;
+
+
+
+
+    Derived adoptUnit(icu::MeasureUnit *unit) const;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    Derived perUnit(const icu::MeasureUnit &perUnit) const;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    Derived adoptPerUnit(icu::MeasureUnit *perUnit) const;
 
     
 
@@ -1456,8 +1658,6 @@ class U_I18N_API NumberFormatterSettings {
 
     Derived rounding(const Rounder &rounder) const;
 
-#ifndef U_HIDE_INTERNAL_API
-
     
 
 
@@ -1485,11 +1685,7 @@ class U_I18N_API NumberFormatterSettings {
 
 
 
-
-
-    Derived grouping(const Grouper &grouper) const;
-
-#endif  
+    Derived grouping(const UGroupingStrategy &strategy) const;
 
     
 
@@ -1592,7 +1788,7 @@ class U_I18N_API NumberFormatterSettings {
 
 
 
-    Derived adoptSymbols(const NumberingSystem *symbols) const;
+    Derived adoptSymbols(NumberingSystem *symbols) const;
 
     
 

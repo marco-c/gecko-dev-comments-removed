@@ -42,14 +42,6 @@
 
 #define GET_PROPS(c, result) ((result)=UTRIE2_GET16(&propsTrie, c));
 
-U_CFUNC UBool
-uprv_haveProperties(UErrorCode *pErrorCode) {
-    if(U_FAILURE(*pErrorCode)) {
-        return FALSE;
-    }
-    return TRUE;
-}
-
 
 
 

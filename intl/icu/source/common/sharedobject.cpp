@@ -8,7 +8,10 @@
 
 
 #include "sharedobject.h"
+#include "mutex.h"
 #include "uassert.h"
+#include "umutex.h"
+#include "unifiedcache.h"
 
 U_NAMESPACE_BEGIN
 
@@ -17,69 +20,41 @@ SharedObject::~SharedObject() {}
 UnifiedCacheBase::~UnifiedCacheBase() {}
 
 void
-SharedObject::addRef(UBool fromWithinCache) const {
-    umtx_atomic_inc(&totalRefCount);
-
-    
-    
-    if (umtx_atomic_inc(&hardRefCount) == 1 && cachePtr != NULL) {
-        
-        
-        
-        
-        
-        (void)fromWithinCache;   
-        U_ASSERT(fromWithinCache);
-        cachePtr->incrementItemsInUse();
-    }
+SharedObject::addRef() const {
+    umtx_atomic_inc(&hardRefCount);
 }
 
-void
-SharedObject::removeRef(UBool fromWithinCache) const {
-    UBool decrementItemsInUse = (umtx_atomic_dec(&hardRefCount) == 0);
-    UBool allReferencesGone = (umtx_atomic_dec(&totalRefCount) == 0);
 
-    
-    
-    if (decrementItemsInUse && cachePtr != NULL) {
-        if (fromWithinCache) {
-            cachePtr->decrementItemsInUse();
+
+
+
+
+
+
+
+void
+SharedObject::removeRef() const {
+    const UnifiedCacheBase *cache = this->cachePtr;
+    int32_t updatedRefCount = umtx_atomic_dec(&hardRefCount);
+    U_ASSERT(updatedRefCount >= 0);
+    if (updatedRefCount == 0) {
+        if (cache) {
+            cache->handleUnreferencedObject();
         } else {
-            cachePtr->decrementItemsInUseWithLockingAndEviction();
+            delete this;
         }
     }
-    if (allReferencesGone) {
-        delete this;
-    }
 }
 
-void
-SharedObject::addSoftRef() const {
-    umtx_atomic_inc(&totalRefCount);
-    ++softRefCount;
-}
-
-void
-SharedObject::removeSoftRef() const {
-    --softRefCount;
-    if (umtx_atomic_dec(&totalRefCount) == 0) {
-        delete this;
-    }
-}
 
 int32_t
 SharedObject::getRefCount() const {
-    return umtx_loadAcquire(totalRefCount);
-}
-
-int32_t
-SharedObject::getHardRefCount() const {
     return umtx_loadAcquire(hardRefCount);
 }
 
 void
 SharedObject::deleteIfZeroRefCount() const {
-    if(getRefCount() == 0) {
+    if (this->cachePtr == nullptr && getRefCount() == 0) {
         delete this;
     }
 }

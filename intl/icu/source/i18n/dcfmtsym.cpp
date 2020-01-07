@@ -38,6 +38,7 @@
 #include "uresimp.h"
 #include "ureslocs.h"
 #include "charstr.h"
+#include "uassert.h"
 
 
 
@@ -165,6 +166,7 @@ DecimalFormatSymbols::operator=(const DecimalFormatSymbols& rhs)
         uprv_strcpy(actualLocale, rhs.actualLocale);
         fIsCustomCurrencySymbol = rhs.fIsCustomCurrencySymbol; 
         fIsCustomIntlCurrencySymbol = rhs.fIsCustomIntlCurrencySymbol; 
+        fCodePointZero = rhs.fCodePointZero;
     }
     return *this;
 }
@@ -196,6 +198,7 @@ DecimalFormatSymbols::operator==(const DecimalFormatSymbols& that) const
             return FALSE;
         }
     }
+    
     return locale == that.locale &&
         uprv_strcmp(validLocale, that.validLocale) == 0 &&
         uprv_strcmp(actualLocale, that.actualLocale) == 0;
@@ -434,6 +437,24 @@ DecimalFormatSymbols::initialize(const Locale& loc, UErrorCode& status,
     sink.resolveMissingMonetarySeparators(fSymbols);
 
     
+    UChar32 tempCodePointZero;
+    for (int32_t i=0; i<=9; i++) {
+        const UnicodeString& stringDigit = getConstDigitSymbol(i);
+        if (stringDigit.countChar32() != 1) {
+            tempCodePointZero = -1;
+            break;
+        }
+        UChar32 cp = stringDigit.char32At(0);
+        if (i == 0) {
+            tempCodePointZero = cp;
+        } else if (cp != tempCodePointZero + i) {
+            tempCodePointZero = -1;
+            break;
+        }
+    }
+    fCodePointZero = tempCodePointZero;
+
+    
     
     
     UErrorCode internalStatus = U_ZERO_ERROR; 
@@ -530,6 +551,8 @@ DecimalFormatSymbols::initialize() {
     fSymbols[kExponentMultiplicationSymbol] = (UChar)0xd7; 
     fIsCustomCurrencySymbol = FALSE; 
     fIsCustomIntlCurrencySymbol = FALSE;
+    fCodePointZero = 0x30;
+    U_ASSERT(fCodePointZero == fSymbols[kZeroDigitSymbol].char32At(0));
 
 }
 

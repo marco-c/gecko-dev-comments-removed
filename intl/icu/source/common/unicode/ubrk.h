@@ -268,7 +268,6 @@ ubrk_openRules(const UChar     *rules,
                UParseError     *parseErr,
                UErrorCode      *status);
 
-#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -289,12 +288,10 @@ ubrk_openRules(const UChar     *rules,
 
 
 
-U_DRAFT UBreakIterator* U_EXPORT2
+U_STABLE UBreakIterator* U_EXPORT2
 ubrk_openBinaryRules(const uint8_t *binaryRules, int32_t rulesLength,
                      const UChar *  text, int32_t textLength,
                      UErrorCode *   status);
-
-#endif  
 
 
 
@@ -596,7 +593,6 @@ ubrk_refreshUText(UBreakIterator *bi,
                        UErrorCode     *status);
 
 
-#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -622,12 +618,10 @@ ubrk_refreshUText(UBreakIterator *bi,
 
 
 
-U_DRAFT int32_t U_EXPORT2
+U_STABLE int32_t U_EXPORT2
 ubrk_getBinaryRules(UBreakIterator *bi,
                     uint8_t *       binaryRules, int32_t rulesCapacity,
                     UErrorCode *    status);
-
-#endif  
 
 #endif 
 

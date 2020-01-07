@@ -4450,11 +4450,9 @@ UnicodeSet *RegexCompile::createSetForProperty(const UnicodeString &propName, UB
     
     
     
-    static const UChar IN[] = {0x49, 0x6E, 0};  
-    static const UChar BLOCK[] = {0x42, 0x6C, 0x6f, 0x63, 0x6b, 0x3d, 00};  
-    if (mPropName.startsWith(IN, 2) && propName.length()>=3) {
+    if (mPropName.startsWith(u"In", 2) && propName.length()>=3) {
         setExpr.truncate(4);   
-        setExpr.append(BLOCK, -1);
+        setExpr.append(u"Block=", -1);
         setExpr.append(UnicodeString(mPropName, 2));  
         setExpr.append(chRBrace);
         setExpr.append(chRBracket);

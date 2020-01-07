@@ -57,11 +57,9 @@ class LanguageBreakEngine : public UMemory {
 
 
 
-
-  virtual UBool handles(UChar32 c, int32_t breakType) const = 0;
+  virtual UBool handles(UChar32 c) const = 0;
 
  
-
 
 
 
@@ -75,7 +73,6 @@ class LanguageBreakEngine : public UMemory {
   virtual int32_t findBreaks( UText *text,
                               int32_t startPos,
                               int32_t endPos,
-                              int32_t breakType,
                               UVector32 &foundBreaks ) const = 0;
 
 };
@@ -127,9 +124,7 @@ class LanguageBreakFactory : public UMemory {
 
 
 
-
-
-  virtual const LanguageBreakEngine *getEngineFor(UChar32 c, int32_t breakType) = 0;
+  virtual const LanguageBreakEngine *getEngineFor(UChar32 c) = 0;
 
 };
 
@@ -156,7 +151,7 @@ class UnhandledEngine : public LanguageBreakEngine {
 
 
 
-  UnicodeSet    *fHandled[4];
+  UnicodeSet    *fHandled;
 
  public:
 
@@ -179,11 +174,9 @@ class UnhandledEngine : public LanguageBreakEngine {
 
 
 
-
-  virtual UBool handles(UChar32 c, int32_t breakType) const;
+  virtual UBool handles(UChar32 c) const;
 
  
-
 
 
 
@@ -197,7 +190,6 @@ class UnhandledEngine : public LanguageBreakEngine {
   virtual int32_t findBreaks( UText *text,
                               int32_t startPos,
                               int32_t endPos,
-                              int32_t breakType,
                               UVector32 &foundBreaks ) const;
 
  
@@ -205,8 +197,7 @@ class UnhandledEngine : public LanguageBreakEngine {
 
 
 
-
-  virtual void handleCharacter(UChar32 c, int32_t breakType);
+  virtual void handleCharacter(UChar32 c);
 
 };
 
@@ -252,9 +243,7 @@ class ICULanguageBreakFactory : public LanguageBreakFactory {
 
 
 
-
-
-  virtual const LanguageBreakEngine *getEngineFor(UChar32 c, int32_t breakType);
+  virtual const LanguageBreakEngine *getEngineFor(UChar32 c);
 
 protected:
  
@@ -265,9 +254,7 @@ protected:
 
 
 
-
-
-  virtual const LanguageBreakEngine *loadEngineFor(UChar32 c, int32_t breakType);
+  virtual const LanguageBreakEngine *loadEngineFor(UChar32 c);
 
   
 
@@ -275,9 +262,7 @@ protected:
 
 
 
-
-
-  virtual DictionaryMatcher *loadDictionaryMatcherFor(UScriptCode script, int32_t breakType);
+  virtual DictionaryMatcher *loadDictionaryMatcherFor(UScriptCode script);
 };
 
 U_NAMESPACE_END

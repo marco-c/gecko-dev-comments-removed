@@ -75,6 +75,11 @@ def parse_auto_props():
             
             
             prop_val = prop_val.replace(";;", ";");
+            
+            
+            match = re.match('^"(.+)"$', prop_val)
+            if match:
+                prop_val = match.group(1)
             proplist.append((prop_name, prop_val))
 
         file_types.append((file_type, proplist))

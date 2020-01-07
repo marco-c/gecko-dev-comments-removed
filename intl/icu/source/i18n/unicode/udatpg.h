@@ -95,6 +95,21 @@ typedef enum UDateTimePatternField {
     UDATPG_FIELD_COUNT
 } UDateTimePatternField;
 
+#ifndef U_HIDE_DRAFT_API
+
+
+
+
+typedef enum UDateTimePGDisplayWidth {
+    
+    UDATPG_WIDE,
+    
+    UDATPG_ABBREVIATED,
+    
+    UDATPG_NARROW
+} UDateTimePGDisplayWidth;
+#endif  
+
 
 
 
@@ -418,10 +433,46 @@ udatpg_setAppendItemName(UDateTimePatternGenerator *dtpg,
 
 
 
+
+
 U_STABLE const UChar * U_EXPORT2
 udatpg_getAppendItemName(const UDateTimePatternGenerator *dtpg,
                          UDateTimePatternField field,
                          int32_t *pLength);
+
+#ifndef U_HIDE_DRAFT_API
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+U_DRAFT int32_t U_EXPORT2
+udatpg_getFieldDisplayName(const UDateTimePatternGenerator *dtpg,
+                           UDateTimePatternField field,
+                           UDateTimePGDisplayWidth width,
+                           UChar *fieldName, int32_t capacity,
+                           UErrorCode *pErrorCode);
+#endif  
 
 
 

@@ -725,7 +725,7 @@ void AlphabeticIndex::addIndexExemplars(const Locale &locale, UErrorCode &status
     }
 
     
-    if (exemplars.containsSome(0x61, 0x7A)  || exemplars.size() == 0) {
+    if (exemplars.containsSome(0x61, 0x7A)  || exemplars.isEmpty()) {
         exemplars.add(0x61, 0x7A);
     }
     if (exemplars.containsSome(0xAC00, 0xD7A3)) {  
@@ -740,14 +740,9 @@ void AlphabeticIndex::addIndexExemplars(const Locale &locale, UErrorCode &status
         
         
         
-        UnicodeSet ethiopic(
-            UNICODE_STRING_SIMPLE("[[:Block=Ethiopic:]&[:Script=Ethiopic:]]"), status);
-        UnicodeSetIterator it(ethiopic);
-        while (it.next() && !it.isString()) {
-            if ((it.getCodepoint() & 0x7) != 0) {
-                exemplars.remove(it.getCodepoint());
-            }
-        }
+        UnicodeSet ethiopic(UnicodeString(u"[ሀለሐመሠረሰሸቀቈቐቘበቨተቸኀኈነኘአከኰኸዀወዐዘዠየደዸጀገጐጘጠጨጰጸፀፈፐፘ]"), status);
+        ethiopic.retainAll(exemplars);
+        exemplars.remove(u'ሀ', 0x137F).addAll(ethiopic);
     }
 
     

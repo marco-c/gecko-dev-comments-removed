@@ -153,9 +153,6 @@ ubidi_openSized(int32_t maxLength, int32_t maxRunCount, UErrorCode *pErrorCode) 
     uprv_memset(pBiDi, 0, sizeof(UBiDi));
 
     
-    pBiDi->bdp=ubidi_getSingleton();
-
-    
     if(maxLength>0) {
         if( !getInitialDirPropsMemory(pBiDi, maxLength) ||
             !getInitialLevelsMemory(pBiDi, maxLength)
@@ -925,7 +922,7 @@ bracketProcessChar(BracketData *bd, int32_t position) {
         else
             match=0;
         if(match!=c &&                  
-           ubidi_getPairedBracketType(bd->pBiDi->bdp, c)==U_BPT_OPEN) { 
+           ubidi_getPairedBracketType(c)==U_BPT_OPEN) { 
             
 
             if(match==0x232A) {     
@@ -3033,7 +3030,7 @@ ubidi_getCustomizedClass(UBiDi *pBiDi, UChar32 c)
     if( pBiDi->fnClassCallback == NULL ||
         (dir = (*pBiDi->fnClassCallback)(pBiDi->coClassCallback, c)) == U_BIDI_CLASS_DEFAULT )
     {
-        dir = ubidi_getClass(pBiDi->bdp, c);
+        dir = ubidi_getClass(c);
     }
     if(dir >= U_CHAR_DIRECTION_COUNT) {
         dir = (UCharDirection)ON;

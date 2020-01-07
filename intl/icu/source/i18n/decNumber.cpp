@@ -627,10 +627,12 @@ U_CAPI decNumber * U_EXPORT2 uprv_decNumberFromString(decNumber *dn, const char 
 
       for (; *c=='0' && *(c+1)!='\0';) c++;  
       firstexp=c;                            
+      uInt uexponent = 0;   
       for (; ;c++) {
         if (*c<'0' || *c>'9') break;         
-        exponent=X10(exponent)+(Int)*c-(Int)'0';
+        uexponent=X10(uexponent)+(uInt)*c-(uInt)'0';
         } 
+      exponent = (Int)uexponent;
       
       if (*c!='\0') break;
 

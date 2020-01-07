@@ -2716,7 +2716,6 @@ u_isgraph(UChar32 c);
 
 
 
-
 U_STABLE UBool U_EXPORT2
 u_isblank(UChar32 c);
 

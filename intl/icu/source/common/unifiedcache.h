@@ -341,60 +341,214 @@ class U_COMMON_API UnifiedCache : public UnifiedCacheBase {
 
    int32_t unusedCount() const;
 
-   virtual void incrementItemsInUse() const;
-   virtual void decrementItemsInUseWithLockingAndEviction() const;
-   virtual void decrementItemsInUse() const;
+   virtual void handleUnreferencedObject() const;
    virtual ~UnifiedCache();
+   
  private:
    UHashtable *fHashtable;
    mutable int32_t fEvictPos;
-   mutable int32_t fItemsInUseCount;
+   mutable int32_t fNumValuesTotal;
+   mutable int32_t fNumValuesInUse;
    int32_t fMaxUnused;
    int32_t fMaxPercentageOfInUse;
    mutable int64_t fAutoEvictedCount;
+   SharedObject *fNoValue;
+   
    UnifiedCache(const UnifiedCache &other);
    UnifiedCache &operator=(const UnifiedCache &other);
+   
+   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
    UBool _flush(UBool all) const;
+   
+   
+
+
+
+
+
+
+
+
+
+
    void _get(
            const CacheKeyBase &key,
            const SharedObject *&value,
            const void *creationContext,
            UErrorCode &status) const;
-   UBool _poll(
-           const CacheKeyBase &key,
-           const SharedObject *&value,
-           UErrorCode &status) const;
-   void _putNew(
-           const CacheKeyBase &key,
-           const SharedObject *value,
-           const UErrorCode creationStatus,
-           UErrorCode &status) const;
+
+    
+
+
+
+
+
+
+
+
+
+
+    UBool _poll(
+            const CacheKeyBase &key,
+            const SharedObject *&value,
+            UErrorCode &status) const;
+    
+    
+
+
+
+
+
+    void _putNew(
+        const CacheKeyBase &key,
+        const SharedObject *value,
+        const UErrorCode creationStatus,
+        UErrorCode &status) const;
+           
+    
+
+
+
+
+
+
+
+
+
+
+
+
    void _putIfAbsentAndGet(
            const CacheKeyBase &key,
            const SharedObject *&value,
            UErrorCode &status) const;
-   const UHashElement *_nextElement() const;
+
+    
+
+
+
+
+    const UHashElement *_nextElement() const;
+   
+   
+
+
+
+
+
+
+
    int32_t _computeCountOfItemsToEvict() const;
+   
+   
+
+
+
+
+
    void _runEvictionSlice() const;
-   void _registerMaster( 
-        const CacheKeyBase *theKey, const SharedObject *value) const;
+ 
+   
+
+
+
+
+
+
+
+
+
+
+   void _registerMaster(const CacheKeyBase *theKey, const SharedObject *value) const;
+        
+   
+
+
+
+
+
+
+
    void _put(
            const UHashElement *element,
            const SharedObject *value,
            const UErrorCode status) const;
+    
+
+
+
+
+
+   void removeSoftRef(const SharedObject *value) const;
+   
+   
+
+
+
+
+
+
+
+   int32_t addHardRef(const SharedObject *value) const;
+   
+  
+
+
+
+
+
+
+
+   int32_t removeHardRef(const SharedObject *value) const;
+
+   
 #ifdef UNIFIED_CACHE_DEBUG
    void _dumpContents() const;
 #endif
-   static void copyPtr(const SharedObject *src, const SharedObject *&dest);
-   static void clearPtr(const SharedObject *&ptr);
-   static void _fetch(
-           const UHashElement *element,
-           const SharedObject *&value,
-           UErrorCode &status);
-   static UBool _inProgress(const UHashElement *element);
-   static UBool _inProgress(
-           const SharedObject *theValue, UErrorCode creationStatus);
-   static UBool _isEvictable(const UHashElement *element);
+   
+   
+
+
+
+
+
+
+
+
+   void _fetch(const UHashElement *element, const SharedObject *&value,
+                       UErrorCode &status) const;
+                       
+    
+
+
+
+   UBool _inProgress(const UHashElement *element) const;
+   
+   
+
+
+
+   UBool _inProgress(const SharedObject *theValue, UErrorCode creationStatus) const;
+   
+   
+
+
+
+   UBool _isEvictable(const UHashElement *element) const;
 };
 
 U_NAMESPACE_END

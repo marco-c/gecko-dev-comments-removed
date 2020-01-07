@@ -42,27 +42,12 @@ class DictionaryBreakEngine : public LanguageBreakEngine {
 
   UnicodeSet    fSet;
 
-    
-
-
-
-
-  uint32_t      fTypes;
-
-  
-
-
-
-  DictionaryBreakEngine();
-
  public:
 
   
 
 
-
-
-  DictionaryBreakEngine( uint32_t breakTypes );
+  DictionaryBreakEngine();
 
   
 
@@ -77,11 +62,9 @@ class DictionaryBreakEngine : public LanguageBreakEngine {
 
 
 
-
-  virtual UBool handles( UChar32 c, int32_t breakType ) const;
+  virtual UBool handles(UChar32 c) const;
 
   
-
 
 
 
@@ -95,7 +78,6 @@ class DictionaryBreakEngine : public LanguageBreakEngine {
   virtual int32_t findBreaks( UText *text,
                               int32_t startPos,
                               int32_t endPos,
-                              int32_t breakType,
                               UVector32 &foundBreaks ) const;
 
  protected:
@@ -106,13 +88,6 @@ class DictionaryBreakEngine : public LanguageBreakEngine {
 
 
   virtual void setCharacters( const UnicodeSet &set );
-
- 
-
-
-
-
-
 
  
 

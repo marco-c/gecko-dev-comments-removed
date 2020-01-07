@@ -710,9 +710,15 @@ public:
 
 
 
+
+
+
     static NumberFormat* U_EXPORT2 createInstance(UErrorCode&);
 
     
+
+
+
 
 
 
@@ -722,6 +728,9 @@ public:
                                         UErrorCode&);
 
     
+
+
+
 
 
 
@@ -761,9 +770,15 @@ public:
 
 
 
+
+
+
     static NumberFormat* U_EXPORT2 createCurrencyInstance(UErrorCode&);
 
     
+
+
+
 
 
 
@@ -775,9 +790,15 @@ public:
 
 
 
+
+
+
     static NumberFormat* U_EXPORT2 createPercentInstance(UErrorCode&);
 
     
+
+
+
 
 
 
@@ -789,9 +810,15 @@ public:
 
 
 
+
+
+
     static NumberFormat* U_EXPORT2 createScientificInstance(UErrorCode&);
 
     
+
+
+
 
 
 

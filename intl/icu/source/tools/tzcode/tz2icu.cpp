@@ -830,7 +830,7 @@ struct FinalRulePart {
         if (mode != DOM && (dow < 0 || dow >= 7)) {
             os << "Invalid input day of week " << dow;
         }
-        if (offset < 0 || offset > (2 * HOUR)) {
+        if (offset < (-1 * HOUR) || offset > (2 * HOUR)) {
             os << "Invalid input offset " << offset;
         }
         if (isgmt && !isstd) {
@@ -903,7 +903,6 @@ map<string,FinalRule> finalRules;
 
 map<string, set<string> > links;
 map<string, string> reverseLinks;
-map<string, string> linkSource; 
 
 
 
@@ -975,9 +974,6 @@ void readFinalZonesAndRules(istream& in) {
 
             links[fromid].insert(toid);
             reverseLinks[toid] = fromid;
-
-            linkSource[fromid] = "Olson link";
-            linkSource[toid] = "Olson link";
         } else if (token.length() > 0 && token[0] == '#') {
             consumeLine(in);
         } else {
@@ -1430,6 +1426,9 @@ void FinalRule::print(ostream& os) const {
     os << part[whichpart].offset << endl;
 }
 
+#define ICU_ZONE_OVERRIDE_SUFFIX "--ICU"
+#define ICU_ZONE_OVERRIDE_SUFFIX_LEN 5
+
 int main(int argc, char *argv[]) {
     string rootpath, zonetab, version;
     bool validArgs = FALSE;
@@ -1493,6 +1492,82 @@ int main(int argc, char *argv[]) {
          << (ZONEINFO.begin())->first << ".."
          << (--ZONEINFO.end())->first << "]" << endl;
 
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    vector<string> customZones;
+    for (ZoneMapIter i = ZONEINFO.begin(); i != ZONEINFO.end(); ++i) {
+        const string& id = i->first;
+        size_t idx = id.rfind(ICU_ZONE_OVERRIDE_SUFFIX);
+        if (idx != string::npos && idx == id.length() - ICU_ZONE_OVERRIDE_SUFFIX_LEN) {
+            cout << "ICU zone override: " << id << endl;
+            customZones.push_back(id.substr(0, idx));
+        }
+    }
+
+    
+    
+    
+
+    
+    
+    for (vector<string>::iterator i = customZones.begin(); i != customZones.end(); i++) {
+        string& origId = *i;
+        string custId = origId + ICU_ZONE_OVERRIDE_SUFFIX;
+
+        map<string,ZoneInfo>::iterator origZi = ZONEINFO.find(origId);
+        map<string,ZoneInfo>::iterator custZi = ZONEINFO.find(custId);
+        if (origZi != ZONEINFO.end() && custZi != ZONEINFO.end()) {
+            
+            
+            cout << "Replacing ZoneInfo " << origId << " with " << custId << endl;
+            origZi->second = custZi->second;
+            ZONEINFO.erase(custZi);
+        }
+
+        
+        map<string,FinalZone>::iterator origFz = finalZones.find(origId);
+        map<string,FinalZone>::iterator custFz = finalZones.find(custId);
+        if (origFz != finalZones.end() && custFz != finalZones.end()) {
+            
+            
+            cout << "Replacing FinalZone for " << origId << " with " << custId << endl;
+            origFz->second = custFz->second;
+            finalZones.erase(custFz);
+        }
+    }
+
+    
+    for (map<string,set<string>>::const_iterator i = links.begin(); i != links.end(); ) {
+        const string& id = i->first;
+        size_t idx = id.rfind(ICU_ZONE_OVERRIDE_SUFFIX);
+        if (idx != string::npos && idx == id.length() - ICU_ZONE_OVERRIDE_SUFFIX_LEN) {
+            const set<string>& aliases = i->second;
+            
+            for (set<string>::const_iterator j = aliases.begin(); j != aliases.end(); j++) {
+                const string& alias = *j;
+                cout << "Removing alias " << alias << endl;
+                reverseLinks.erase(alias);
+            }
+
+            links.erase(i++);
+        } else {
+            i++;
+        }
+    }
+
+
+    
+    
+    
+
     try {
         for_each(finalZones.begin(), finalZones.end(), mergeFinalZone);
     } catch (const exception& error) {
@@ -1510,7 +1585,7 @@ int main(int argc, char *argv[]) {
         const string& olson = i->first;
         const set<string>& aliases = i->second;
         if (ZONEINFO.find(olson) == ZONEINFO.end()) {
-            cerr << "Error: Invalid " << linkSource[olson] << " to non-existent \""
+            cerr << "Error: Invalid 'Link' to non-existent \""
                  << olson << "\"" << endl;
             return 1;
         }

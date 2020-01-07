@@ -5,6 +5,7 @@
 
 #if !UCONFIG_NO_FORMATTING && !UPRV_INCOMPLETE_CPP11_SUPPORT
 
+#include "unicode/simpleformatter.h"
 #include "unicode/ures.h"
 #include "ureslocs.h"
 #include "charstr.h"
@@ -19,6 +20,37 @@ using namespace icu::number::impl;
 
 namespace {
 
+constexpr int32_t DNAM_INDEX = StandardPlural::Form::COUNT;
+constexpr int32_t PER_INDEX = StandardPlural::Form::COUNT + 1;
+constexpr int32_t ARRAY_LENGTH = StandardPlural::Form::COUNT + 2;
+
+static int32_t getIndex(const char* pluralKeyword, UErrorCode& status) {
+    
+    if (uprv_strcmp(pluralKeyword, "dnam") == 0) {
+        return DNAM_INDEX;
+    } else if (uprv_strcmp(pluralKeyword, "per") == 0) {
+        return PER_INDEX;
+    } else {
+        StandardPlural::Form plural = StandardPlural::fromString(pluralKeyword, status);
+        return plural;
+    }
+}
+
+static UnicodeString getWithPlural(
+        const UnicodeString* strings,
+        int32_t plural,
+        UErrorCode& status) {
+    UnicodeString result = strings[plural];
+    if (result.isBogus()) {
+        result = strings[StandardPlural::Form::OTHER];
+    }
+    if (result.isBogus()) {
+        
+        status = U_INTERNAL_PROGRAM_ERROR;
+    }
+    return result;
+}
+
 
 
 
@@ -28,7 +60,7 @@ class PluralTableSink : public ResourceSink {
   public:
     explicit PluralTableSink(UnicodeString *outArray) : outArray(outArray) {
         
-        for (int32_t i = 0; i < StandardPlural::Form::COUNT; i++) {
+        for (int32_t i = 0; i < ARRAY_LENGTH; i++) {
             outArray[i].setToBogus();
         }
     }
@@ -36,17 +68,13 @@ class PluralTableSink : public ResourceSink {
     void put(const char *key, ResourceValue &value, UBool , UErrorCode &status) U_OVERRIDE {
         ResourceTable pluralsTable = value.getTable(status);
         if (U_FAILURE(status)) { return; }
-        for (int i = 0; pluralsTable.getKeyAndValue(i, key, value); ++i) {
-            
-            if (uprv_strcmp(key, "dnam") == 0 || uprv_strcmp(key, "per") == 0) {
-                continue;
-            }
-            StandardPlural::Form plural = StandardPlural::fromString(key, status);
+        for (int32_t i = 0; pluralsTable.getKeyAndValue(i, key, value); ++i) {
+            int32_t index = getIndex(key, status);
             if (U_FAILURE(status)) { return; }
-            if (!outArray[plural].isBogus()) {
+            if (!outArray[index].isBogus()) {
                 continue;
             }
-            outArray[plural] = value.getUnicodeString(status);
+            outArray[index] = value.getUnicodeString(status);
             if (U_FAILURE(status)) { return; }
         }
     }
@@ -105,6 +133,22 @@ void getCurrencyLongNameData(const Locale &locale, const CurrencyUnit &currency,
     }
 }
 
+UnicodeString getPerUnitFormat(const Locale& locale, const UNumberUnitWidth &width, UErrorCode& status) {
+    LocalUResourceBundlePointer unitsBundle(ures_open(U_ICUDATA_UNIT, locale.getName(), &status));
+    if (U_FAILURE(status)) { return {}; }
+    CharString key;
+    key.append("units", status);
+    if (width == UNUM_UNIT_WIDTH_NARROW) {
+        key.append("Narrow", status);
+    } else if (width == UNUM_UNIT_WIDTH_SHORT) {
+        key.append("Short", status);
+    }
+    key.append("/compound/per", status);
+    int32_t len = 0;
+    const UChar* ptr = ures_getStringByKeyWithFallback(unitsBundle.getAlias(), key.data(), &len, &status);
+    return UnicodeString(ptr, len);
+}
+
 
 
 
@@ -112,15 +156,63 @@ void getCurrencyLongNameData(const Locale &locale, const CurrencyUnit &currency,
 } 
 
 LongNameHandler
-LongNameHandler::forMeasureUnit(const Locale &loc, const MeasureUnit &unit, const UNumberUnitWidth &width,
-                                const PluralRules *rules, const MicroPropsGenerator *parent,
-                                UErrorCode &status) {
+LongNameHandler::forMeasureUnit(const Locale &loc, const MeasureUnit &unitRef, const MeasureUnit &perUnit,
+                                const UNumberUnitWidth &width, const PluralRules *rules,
+                                const MicroPropsGenerator *parent, UErrorCode &status) {
+    MeasureUnit unit = unitRef;
+    if (uprv_strcmp(perUnit.getType(), "none") != 0) {
+        
+        bool isResolved = false;
+        MeasureUnit resolved = MeasureUnit::resolveUnitPerUnit(unit, perUnit, &isResolved);
+        if (isResolved) {
+            unit = resolved;
+        } else {
+            
+            return forCompoundUnit(loc, unit, perUnit, width, rules, parent, status);
+        }
+    }
+
     LongNameHandler result(rules, parent);
-    UnicodeString simpleFormats[StandardPlural::Form::COUNT];
+    UnicodeString simpleFormats[ARRAY_LENGTH];
     getMeasureData(loc, unit, width, simpleFormats, status);
     if (U_FAILURE(status)) { return result; }
     
     simpleFormatsToModifiers(simpleFormats, UNUM_FIELD_COUNT, result.fModifiers, status);
+    return result;
+}
+
+LongNameHandler
+LongNameHandler::forCompoundUnit(const Locale &loc, const MeasureUnit &unit, const MeasureUnit &perUnit,
+                                 const UNumberUnitWidth &width, const PluralRules *rules,
+                                 const MicroPropsGenerator *parent, UErrorCode &status) {
+    LongNameHandler result(rules, parent);
+    UnicodeString primaryData[ARRAY_LENGTH];
+    getMeasureData(loc, unit, width, primaryData, status);
+    if (U_FAILURE(status)) { return result; }
+    UnicodeString secondaryData[ARRAY_LENGTH];
+    getMeasureData(loc, perUnit, width, secondaryData, status);
+    if (U_FAILURE(status)) { return result; }
+
+    UnicodeString perUnitFormat;
+    if (!secondaryData[PER_INDEX].isBogus()) {
+        perUnitFormat = secondaryData[PER_INDEX];
+    } else {
+        UnicodeString rawPerUnitFormat = getPerUnitFormat(loc, width, status);
+        if (U_FAILURE(status)) { return result; }
+        
+        SimpleFormatter compiled(rawPerUnitFormat, 2, 2, status);
+        if (U_FAILURE(status)) { return result; }
+        UnicodeString secondaryFormat = getWithPlural(secondaryData, StandardPlural::Form::ONE, status);
+        if (U_FAILURE(status)) { return result; }
+        SimpleFormatter secondaryCompiled(secondaryFormat, 1, 1, status);
+        if (U_FAILURE(status)) { return result; }
+        UnicodeString secondaryString = secondaryCompiled.getTextWithNoArguments().trim();
+        
+        compiled.format(UnicodeString(u"{0}"), secondaryString, perUnitFormat, status);
+        if (U_FAILURE(status)) { return result; }
+    }
+    
+    multiSimpleFormatsToModifiers(primaryData, perUnitFormat, UNUM_FIELD_COUNT, result.fModifiers, status);
     return result;
 }
 
@@ -129,7 +221,7 @@ LongNameHandler LongNameHandler::forCurrencyLongNames(const Locale &loc, const C
                                                       const MicroPropsGenerator *parent,
                                                       UErrorCode &status) {
     LongNameHandler result(rules, parent);
-    UnicodeString simpleFormats[StandardPlural::Form::COUNT];
+    UnicodeString simpleFormats[ARRAY_LENGTH];
     getCurrencyLongNameData(loc, currency, simpleFormats, status);
     if (U_FAILURE(status)) { return result; }
     simpleFormatsToModifiers(simpleFormats, UNUM_CURRENCY_FIELD, result.fModifiers, status);
@@ -139,17 +231,27 @@ LongNameHandler LongNameHandler::forCurrencyLongNames(const Locale &loc, const C
 void LongNameHandler::simpleFormatsToModifiers(const UnicodeString *simpleFormats, Field field,
                                                SimpleModifier *output, UErrorCode &status) {
     for (int32_t i = 0; i < StandardPlural::Form::COUNT; i++) {
-        UnicodeString simpleFormat = simpleFormats[i];
-        if (simpleFormat.isBogus()) {
-            simpleFormat = simpleFormats[StandardPlural::Form::OTHER];
-        }
-        if (simpleFormat.isBogus()) {
-            
-            status = U_INTERNAL_PROGRAM_ERROR;
-            return;
-        }
-        SimpleFormatter compiledFormatter(simpleFormat, 1, 1, status);
+        UnicodeString simpleFormat = getWithPlural(simpleFormats, i, status);
+        if (U_FAILURE(status)) { return; }
+        SimpleFormatter compiledFormatter(simpleFormat, 0, 1, status);
+        if (U_FAILURE(status)) { return; }
         output[i] = SimpleModifier(compiledFormatter, field, false);
+    }
+}
+
+void LongNameHandler::multiSimpleFormatsToModifiers(const UnicodeString *leadFormats, UnicodeString trailFormat,
+                                                    Field field, SimpleModifier *output, UErrorCode &status) {
+    SimpleFormatter trailCompiled(trailFormat, 1, 1, status);
+    if (U_FAILURE(status)) { return; }
+    for (int32_t i = 0; i < StandardPlural::Form::COUNT; i++) {
+        UnicodeString leadFormat = getWithPlural(leadFormats, i, status);
+        if (U_FAILURE(status)) { return; }
+        UnicodeString compoundFormat;
+        trailCompiled.format(leadFormat, compoundFormat, status);
+        if (U_FAILURE(status)) { return; }
+        SimpleFormatter compoundCompiled(compoundFormat, 0, 1, status);
+        if (U_FAILURE(status)) { return; }
+        output[i] = SimpleModifier(compoundCompiled, field, false);
     }
 }
 

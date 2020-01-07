@@ -29,7 +29,6 @@
 #include "unicode/udata.h"
 #include "unicode/parseerr.h"
 #include "unicode/schriter.h"
-#include "unicode/uchriter.h"
 
 U_NAMESPACE_BEGIN
 
@@ -58,34 +57,18 @@ private:
 
 
 
-    UText  *fText;
+    UText  fText;
 
+#ifndef U_HIDE_INTERNAL_API
+public:
+#endif 
     
 
-
-
-
-    CharacterIterator  *fCharIter;
-
-    
-
-
-
-
-    StringCharacterIterator *fSCharIter;
-
-    
-
-
-
-
-    UCharCharacterIterator *fDCharIter;
-
-    
 
 
 
     RBBIDataWrapper    *fData;
+private:
 
     
 
@@ -108,21 +91,8 @@ private:
     
 
 
-    UBool           fDone;
-
-    
-
-
-  public:    
     class BreakCache;
     BreakCache         *fBreakCache;
-  private:
-    
-
-
-
-
-    uint32_t            fDictionaryCharCount;
 
     
 
@@ -154,7 +124,26 @@ private:
 
 
 
-    int32_t             fBreakType;
+    uint32_t            fDictionaryCharCount;
+
+    
+
+
+
+
+    CharacterIterator  *fCharIter;
+
+    
+
+
+
+
+    StringCharacterIterator fSCharIter;
+
+    
+
+
+    UBool           fDone;
 
     
     
@@ -501,8 +490,6 @@ public:
 
 
 
-
-
     virtual int32_t getRuleStatus() const;
 
    
@@ -649,12 +636,6 @@ private:
 
 
 
-    void setBreakType(int32_t type);
-
-    
-
-
-
     void init(UErrorCode &status);
 
     
@@ -697,6 +678,13 @@ private:
 
 
      void dumpCache();
+
+    
+
+
+
+    void dumpTables();
+
 #endif  
 };
 

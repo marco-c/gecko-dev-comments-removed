@@ -19,7 +19,7 @@ U_NAMESPACE_BEGIN
 
 
 
-#if defined (_MSC_VER)
+#if U_PF_WINDOWS <= U_PLATFORM && U_PLATFORM <= U_PF_CYGWIN
 
 #pragma warning(suppress: 4661)
 template class U_I18N_API LocalPointerBase<number::impl::ParameterizedModifier>;
@@ -131,7 +131,7 @@ class U_I18N_API MutablePatternModifier
 
 
 
-    void setNumberProperties(bool isNegative, StandardPlural::Form plural);
+    void setNumberProperties(int8_t signum, StandardPlural::Form plural);
 
     
 
@@ -211,7 +211,7 @@ class U_I18N_API MutablePatternModifier
     const PluralRules *rules;
 
     
-    bool isNegative;
+    int8_t signum;
     StandardPlural::Form plural;
 
     

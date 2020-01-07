@@ -81,10 +81,6 @@ U_NAMESPACE_BEGIN
 
 
 
-
-
-
-
 class U_I18N_API DecimalFormatSymbols : public UObject {
 public:
     
@@ -396,6 +392,13 @@ public:
     inline UBool isCustomIntlCurrencySymbol() const {
         return fIsCustomIntlCurrencySymbol;
     }
+
+    
+
+
+    inline UChar32 getCodePointZero() const {
+        return fCodePointZero;
+    }
 #endif  
 
     
@@ -410,9 +413,22 @@ public:
 
 
 
-    inline const UnicodeString &getConstSymbol(ENumberFormatSymbol symbol) const;
+    inline const UnicodeString& getConstSymbol(ENumberFormatSymbol symbol) const;
 
 #ifndef U_HIDE_INTERNAL_API
+    
+
+
+
+
+
+
+
+
+
+
+    inline const UnicodeString& getConstDigitSymbol(int32_t digit) const;
+
     
 
 
@@ -443,6 +459,22 @@ private:
 
 
     UnicodeString fNoSymbol;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+    UChar32 fCodePointZero;
 
     Locale locale;
 
@@ -481,6 +513,19 @@ DecimalFormatSymbols::getConstSymbol(ENumberFormatSymbol symbol) const {
     return *strPtr;
 }
 
+#ifndef U_HIDE_INTERNAL_API
+inline const UnicodeString& DecimalFormatSymbols::getConstDigitSymbol(int32_t digit) const {
+    if (digit < 0 || digit > 9) {
+        digit = 0;
+    }
+    if (digit == 0) {
+        return fSymbols[kZeroDigitSymbol];
+    }
+    ENumberFormatSymbol key = static_cast<ENumberFormatSymbol>(kOneDigitSymbol + digit - 1);
+    return fSymbols[key];
+}
+#endif
+
 
 
 inline void
@@ -497,14 +542,20 @@ DecimalFormatSymbols::setSymbol(ENumberFormatSymbol symbol, const UnicodeString 
 
     
     
-    if ( propogateDigits && symbol == kZeroDigitSymbol && value.countChar32() == 1 ) {
+    
+    if (symbol == kZeroDigitSymbol) {
         UChar32 sym = value.char32At(0);
-        if ( u_charDigitValue(sym) == 0 ) {
+        if ( propogateDigits && u_charDigitValue(sym) == 0 && value.countChar32() == 1 ) {
+            fCodePointZero = sym;
             for ( int8_t i = 1 ; i<= 9 ; i++ ) {
                 sym++;
                 fSymbols[(int)kOneDigitSymbol+i-1] = UnicodeString(sym);
             }
+        } else {
+            fCodePointZero = -1;
         }
+    } else if (symbol >= kOneDigitSymbol && symbol <= kNineDigitSymbol) {
+        fCodePointZero = -1;
     }
 }
 

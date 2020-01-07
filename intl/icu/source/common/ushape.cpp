@@ -342,18 +342,16 @@ static void
 _shapeToArabicDigitsWithContext(UChar *s, int32_t length,
                                 UChar digitBase,
                                 UBool isLogical, UBool lastStrongWasAL) {
-    const UBiDiProps *bdp;
     int32_t i;
     UChar c;
 
-    bdp=ubidi_getSingleton();
     digitBase-=0x30;
 
     
     if(isLogical) {
         for(i=0; i<length; ++i) {
             c=s[i];
-            switch(ubidi_getClass(bdp, c)) {
+            switch(ubidi_getClass(c)) {
             case U_LEFT_TO_RIGHT: 
             case U_RIGHT_TO_LEFT: 
                 lastStrongWasAL=FALSE;
@@ -373,7 +371,7 @@ _shapeToArabicDigitsWithContext(UChar *s, int32_t length,
     } else {
         for(i=length; i>0; ) {
             c=s[--i];
-            switch(ubidi_getClass(bdp, c)) {
+            switch(ubidi_getClass(c)) {
             case U_LEFT_TO_RIGHT: 
             case U_RIGHT_TO_LEFT: 
                 lastStrongWasAL=FALSE;

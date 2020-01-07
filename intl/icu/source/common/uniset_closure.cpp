@@ -129,7 +129,7 @@ UnicodeSet& UnicodeSet::applyPattern(const UnicodeString& pattern,
     
     UnicodeString rebuiltPat;
     RuleCharacterIterator chars(pattern, symbols, pos);
-    applyPattern(chars, symbols, rebuiltPat, options, &UnicodeSet::closeOver, status);
+    applyPattern(chars, symbols, rebuiltPat, options, &UnicodeSet::closeOver, 0, status);
     if (U_FAILURE(status)) return *this;
     if (chars.inVariable()) {
         

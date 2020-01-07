@@ -14,11 +14,14 @@
 #include "decContext.h"
 #include "decNumber.h"
 #include "number_roundingutils.h"
+#include "double-conversion.h"
 #include "unicode/plurrule.h"
 
 using namespace icu;
 using namespace icu::number;
 using namespace icu::number::impl;
+
+using icu::double_conversion::DoubleToStringConverter;
 
 namespace {
 
@@ -265,6 +268,10 @@ bool DecimalQuantity::isNegative() const {
     return (flags & NEGATIVE_FLAG) != 0;
 }
 
+int8_t DecimalQuantity::signum() const {
+    return isNegative() ? -1 : isZero() ? 0 : 1;
+}
+
 bool DecimalQuantity::isInfinite() const {
     return (flags & INFINITY_FLAG) != 0;
 }
@@ -392,31 +399,27 @@ void DecimalQuantity::_setToDoubleFast(double n) {
 }
 
 void DecimalQuantity::convertToAccurateDouble() {
-    double n = origDouble;
-    U_ASSERT(n != 0);
+    U_ASSERT(origDouble != 0);
     int32_t delta = origDelta;
+
+    
+    char buffer[DoubleToStringConverter::kBase10MaximalLength + 1];
+    bool sign; 
+    int32_t length;
+    int32_t point;
+    DoubleToStringConverter::DoubleToAscii(
+        origDouble,
+        DoubleToStringConverter::DtoaMode::SHORTEST,
+        0,
+        buffer,
+        sizeof(buffer),
+        &sign,
+        &length,
+        &point
+    );
+
     setBcdToZero();
-
-    
-    
-    
-    static constexpr size_t CAP = 1 + 14 + 8; 
-    char dstr[CAP];
-    snprintf(dstr, CAP, "%+1.14e", n);
-
-    
-    
-    
-    char *decimalSeparator = strchr(dstr, ',');
-    if (decimalSeparator != nullptr) {
-        *decimalSeparator = '.';
-    }
-
-    StringPiece sp(dstr);
-    DecNumberWithStorage dn;
-    stringToDecNumber(dstr, dn);
-    _setToDecNumber(dn.getAlias());
-
+    readDoubleConversionToBcd(buffer, length, point);
     scale += delta;
     explicitExactDouble = true;
 }
@@ -831,6 +834,26 @@ void DecimalQuantity::readDecNumberToBcd(decNumber *dn) {
     }
     scale = dn->exponent;
     precision = dn->digits;
+}
+
+void DecimalQuantity::readDoubleConversionToBcd(
+        const char* buffer, int32_t length, int32_t point) {
+    
+    
+    if (length > 16) {
+        ensureCapacity(length);
+        for (int32_t i = 0; i < length; i++) {
+            fBCD.bcdBytes.ptr[i] = buffer[length-i-1] - '0';
+        }
+    } else {
+        uint64_t result = 0L;
+        for (int32_t i = 0; i < length; i++) {
+            result |= static_cast<uint64_t>(buffer[length-i-1] - '0') << (4 * i);
+        }
+        fBCD.bcdLong = result;
+    }
+    scale = point - length;
+    precision = length;
 }
 
 void DecimalQuantity::compact() {

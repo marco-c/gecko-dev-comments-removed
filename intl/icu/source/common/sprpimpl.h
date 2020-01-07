@@ -90,7 +90,6 @@ struct UStringPrepProfile{
     UTrie sprepTrie;
     const uint16_t* mappingData;
     UDataMemory* sprepData;
-    const UBiDiProps *bdp; 
     int32_t refCount;
     UBool isDataLoaded;
     UBool doNFKC;

@@ -196,8 +196,8 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
 
-    static MeasureUnit *resolveUnitPerUnit(
-            const MeasureUnit &unit, const MeasureUnit &perUnit);
+    static MeasureUnit resolveUnitPerUnit(
+            const MeasureUnit &unit, const MeasureUnit &perUnit, bool* isResolved);
 #endif 
 
 
@@ -832,7 +832,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createPicometer(UErrorCode &status);
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -840,7 +839,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit *createPoint(UErrorCode &status);
-#endif  
 
     
 

@@ -56,7 +56,7 @@ class RuleBasedBreakIterator::DictionaryCache: public UMemory {
 
     RuleBasedBreakIterator *fBI;
     
-    UVector32          *fBreaks;                
+    UVector32           fBreaks;                
     int32_t             fPositionInCache;       
                                                 
     int32_t             fStart;                 

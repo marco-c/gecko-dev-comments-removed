@@ -33,14 +33,35 @@ Derived NumberFormatterSettings<Derived>::unit(const icu::MeasureUnit &unit) con
 }
 
 template<typename Derived>
-Derived NumberFormatterSettings<Derived>::adoptUnit(const icu::MeasureUnit *unit) const {
+Derived NumberFormatterSettings<Derived>::adoptUnit(icu::MeasureUnit *unit) const {
     Derived copy(*this);
     
     
     
     if (unit != nullptr) {
+      
         copy.fMacros.unit = *unit;
         delete unit;
+    }
+    return copy;
+}
+
+template<typename Derived>
+Derived NumberFormatterSettings<Derived>::perUnit(const icu::MeasureUnit &perUnit) const {
+    Derived copy(*this);
+    
+    copy.fMacros.perUnit = perUnit;
+    return copy;
+}
+
+template<typename Derived>
+Derived NumberFormatterSettings<Derived>::adoptPerUnit(icu::MeasureUnit *perUnit) const {
+    Derived copy(*this);
+    
+    if (perUnit != nullptr) {
+      
+        copy.fMacros.perUnit = *perUnit;
+        delete perUnit;
     }
     return copy;
 }
@@ -54,9 +75,11 @@ Derived NumberFormatterSettings<Derived>::rounding(const Rounder &rounder) const
 }
 
 template<typename Derived>
-Derived NumberFormatterSettings<Derived>::grouping(const Grouper &grouper) const {
+Derived NumberFormatterSettings<Derived>::grouping(const UGroupingStrategy &strategy) const {
     Derived copy(*this);
-    copy.fMacros.grouper = grouper;
+    
+    
+    copy.fMacros.grouper = Grouper::forStrategy(strategy);
     return copy;
 }
 
@@ -75,7 +98,7 @@ Derived NumberFormatterSettings<Derived>::symbols(const DecimalFormatSymbols &sy
 }
 
 template<typename Derived>
-Derived NumberFormatterSettings<Derived>::adoptSymbols(const NumberingSystem *ns) const {
+Derived NumberFormatterSettings<Derived>::adoptSymbols(NumberingSystem *ns) const {
     Derived copy(*this);
     copy.fMacros.symbols.setTo(ns);
     return copy;

@@ -764,10 +764,11 @@ UnicodeString &MeasureFormat::formatMeasurePerUnit(
     if (U_FAILURE(status)) {
         return appendTo;
     }
-    MeasureUnit *resolvedUnit =
-            MeasureUnit::resolveUnitPerUnit(measure.getUnit(), perUnit);
-    if (resolvedUnit != NULL) {
-        Measure newMeasure(measure.getNumber(), resolvedUnit, status);
+    bool isResolved = false;
+    MeasureUnit resolvedUnit =
+        MeasureUnit::resolveUnitPerUnit(measure.getUnit(), perUnit, &isResolved);
+    if (isResolved) {
+        Measure newMeasure(measure.getNumber(), new MeasureUnit(resolvedUnit), status);
         return formatMeasure(
                 newMeasure, **numberFormat, appendTo, pos, status);
     }
@@ -1061,9 +1062,13 @@ UnicodeString &MeasureFormat::formatNumeric(
     }
 
     
+    
     FieldPosition smallestFieldPosition(smallestField);
     UnicodeString draft;
+    static UMutex dateFmtMutex = U_MUTEX_INITIALIZER;
+    umtx_lock(&dateFmtMutex);
     dateFmt.format(date, draft, smallestFieldPosition, status);
+    umtx_unlock(&dateFmtMutex);
 
     
     

@@ -175,7 +175,6 @@ uplrules_selectWithFormat(const UPluralRules *uplrules,
 
 #endif  
 
-#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -186,10 +185,9 @@ uplrules_selectWithFormat(const UPluralRules *uplrules,
 
 
 
-U_DRAFT UEnumeration* U_EXPORT2
+U_STABLE UEnumeration* U_EXPORT2
 uplrules_getKeywords(const UPluralRules *uplrules,
                      UErrorCode *status);
-#endif  
 
 #endif 
 

@@ -155,6 +155,7 @@ public:
         double baseValue,
         double upperBound,
         UBool lenientParse,
+        uint32_t nonNumericalExecutedRuleMask,
         Formattable& result) const;
 
     virtual double composeRuleValue(double newRuleValue, double oldRuleValue) const {
@@ -221,6 +222,7 @@ public:
         double baseValue,
         double upperBound,
         UBool lenientParse,
+        uint32_t nonNumericalExecutedRuleMask,
         Formattable& result) const;
 
     virtual double composeRuleValue(double newRuleValue, double oldRuleValue) const { return newRuleValue + oldRuleValue; }
@@ -292,6 +294,7 @@ public:
         double baseValue,
         double upperBound,
         UBool ,
+        uint32_t nonNumericalExecutedRuleMask,
         Formattable& result) const;
 
     virtual double composeRuleValue(double newRuleValue, double oldRuleValue) const { return newRuleValue / oldRuleValue; }
@@ -689,6 +692,7 @@ NFSubstitution::doParse(const UnicodeString& text,
                         double baseValue,
                         double upperBound,
                         UBool lenientParse,
+                        uint32_t nonNumericalExecutedRuleMask,
                         Formattable& result) const
 {
 #ifdef RBNF_DEBUG
@@ -709,7 +713,7 @@ NFSubstitution::doParse(const UnicodeString& text,
     
     
     if (ruleSet != NULL) {
-        ruleSet->parse(text, parsePosition, upperBound, result);
+        ruleSet->parse(text, parsePosition, upperBound, nonNumericalExecutedRuleMask, result);
         if (lenientParse && !ruleSet->isFractionRuleSet() && parsePosition.getIndex() == 0) {
             UErrorCode status = U_ZERO_ERROR;
             NumberFormat* fmt = NumberFormat::createInstance(status);
@@ -931,18 +935,19 @@ ModulusSubstitution::doParse(const UnicodeString& text,
                              double baseValue,
                              double upperBound,
                              UBool lenientParse,
+                             uint32_t nonNumericalExecutedRuleMask,
                              Formattable& result) const
 {
     
     
     if (ruleToUse == NULL) {
-        return NFSubstitution::doParse(text, parsePosition, baseValue, upperBound, lenientParse, result);
+        return NFSubstitution::doParse(text, parsePosition, baseValue, upperBound, lenientParse, nonNumericalExecutedRuleMask, result);
 
         
         
         
     } else {
-        ruleToUse->doParse(text, parsePosition, FALSE, upperBound, result);
+        ruleToUse->doParse(text, parsePosition, FALSE, upperBound, nonNumericalExecutedRuleMask, result);
 
         if (parsePosition.getIndex() != 0) {
             UErrorCode status = U_ZERO_ERROR;
@@ -1118,12 +1123,13 @@ FractionalPartSubstitution::doParse(const UnicodeString& text,
                 double baseValue,
                 double ,
                 UBool lenientParse,
+                uint32_t nonNumericalExecutedRuleMask,
                 Formattable& resVal) const
 {
     
     
     if (!byDigits) {
-        return NFSubstitution::doParse(text, parsePosition, baseValue, 0, lenientParse, resVal);
+        return NFSubstitution::doParse(text, parsePosition, baseValue, 0, lenientParse, nonNumericalExecutedRuleMask, resVal);
 
         
         
@@ -1141,7 +1147,7 @@ FractionalPartSubstitution::doParse(const UnicodeString& text,
         while (workText.length() > 0 && workPos.getIndex() != 0) {
             workPos.setIndex(0);
             Formattable temp;
-            getRuleSet()->parse(workText, workPos, 10, temp);
+            getRuleSet()->parse(workText, workPos, 10, nonNumericalExecutedRuleMask, temp);
             UErrorCode status = U_ZERO_ERROR;
             digit = temp.getLong(status);
 
@@ -1249,6 +1255,7 @@ NumeratorSubstitution::doParse(const UnicodeString& text,
                                double baseValue,
                                double upperBound,
                                UBool ,
+                               uint32_t nonNumericalExecutedRuleMask,
                                Formattable& result) const
 {
     
@@ -1267,7 +1274,7 @@ NumeratorSubstitution::doParse(const UnicodeString& text,
 
         while (workText.length() > 0 && workPos.getIndex() != 0) {
             workPos.setIndex(0);
-            getRuleSet()->parse(workText, workPos, 1, temp); 
+            getRuleSet()->parse(workText, workPos, 1, nonNumericalExecutedRuleMask, temp); 
             if (workPos.getIndex() == 0) {
                 
                 
@@ -1289,7 +1296,7 @@ NumeratorSubstitution::doParse(const UnicodeString& text,
     }
 
     
-    NFSubstitution::doParse(workText, parsePosition, withZeros ? 1 : baseValue, upperBound, FALSE, result);
+    NFSubstitution::doParse(workText, parsePosition, withZeros ? 1 : baseValue, upperBound, FALSE, nonNumericalExecutedRuleMask, result);
 
     if (withZeros) {
         

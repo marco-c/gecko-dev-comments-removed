@@ -348,74 +348,59 @@ utf8_back1SafeBody(const uint8_t *s, int32_t start, int32_t i);
 
 
 
-#define U8_NEXT(s, i, length, c) { \
+#define U8_NEXT(s, i, length, c) U8_INTERNAL_NEXT_OR_SUB(s, i, length, c, U_SENTINEL)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define U8_NEXT_OR_FFFD(s, i, length, c) U8_INTERNAL_NEXT_OR_SUB(s, i, length, c, 0xfffd)
+
+
+#define U8_INTERNAL_NEXT_OR_SUB(s, i, length, c, sub) { \
     (c)=(uint8_t)(s)[(i)++]; \
     if(!U8_IS_SINGLE(c)) { \
-        uint8_t __t1, __t2; \
-        if( /* handle U+0800..U+FFFF inline */ \
-                (0xe0<=(c) && (c)<0xf0) && \
-                (((i)+1)<(length) || (length)<0) && \
-                U8_IS_VALID_LEAD3_AND_T1((c), __t1=(s)[i]) && \
-                (__t2=(s)[(i)+1]-0x80)<=0x3f) { \
-            (c)=(((c)&0xf)<<12)|((__t1&0x3f)<<6)|__t2; \
-            (i)+=2; \
-        } else if( /* handle U+0080..U+07FF inline */ \
-                ((c)<0xe0 && (c)>=0xc2) && \
-                ((i)!=(length)) && \
-                (__t1=(s)[i]-0x80)<=0x3f) { \
-            (c)=(((c)&0x1f)<<6)|__t1; \
-            ++(i); \
+        uint8_t __t = 0; \
+        if((i)!=(length) && \
+            /* fetch/validate/assemble all but last trail byte */ \
+            ((c)>=0xe0 ? \
+                ((c)<0xf0 ?  /* U+0800..U+FFFF except surrogates */ \
+                    U8_LEAD3_T1_BITS[(c)&=0xf]&(1<<((__t=(s)[i])>>5)) && \
+                    (__t&=0x3f, 1) \
+                :  /* U+10000..U+10FFFF */ \
+                    ((c)-=0xf0)<=4 && \
+                    U8_LEAD4_T1_BITS[(__t=(s)[i])>>4]&(1<<(c)) && \
+                    ((c)=((c)<<6)|(__t&0x3f), ++(i)!=(length)) && \
+                    (__t=(s)[i]-0x80)<=0x3f) && \
+                /* valid second-to-last trail byte */ \
+                ((c)=((c)<<6)|__t, ++(i)!=(length)) \
+            :  /* U+0080..U+07FF */ \
+                (c)>=0xc2 && ((c)&=0x1f, 1)) && \
+            /* last trail byte */ \
+            (__t=(s)[i]-0x80)<=0x3f && \
+            ((c)=((c)<<6)|__t, ++(i), 1)) { \
         } else { \
-            /* function call for "complicated" and error cases */ \
-            (c)=utf8_nextCharSafeBody((const uint8_t *)s, &(i), (length), c, -1); \
-        } \
-    } \
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#define U8_NEXT_OR_FFFD(s, i, length, c) { \
-    (c)=(uint8_t)(s)[(i)++]; \
-    if(!U8_IS_SINGLE(c)) { \
-        uint8_t __t1, __t2; \
-        if( /* handle U+0800..U+FFFF inline */ \
-                (0xe0<=(c) && (c)<0xf0) && \
-                (((i)+1)<(length) || (length)<0) && \
-                U8_IS_VALID_LEAD3_AND_T1((c), __t1=(s)[i]) && \
-                (__t2=(s)[(i)+1]-0x80)<=0x3f) { \
-            (c)=(((c)&0xf)<<12)|((__t1&0x3f)<<6)|__t2; \
-            (i)+=2; \
-        } else if( /* handle U+0080..U+07FF inline */ \
-                ((c)<0xe0 && (c)>=0xc2) && \
-                ((i)!=(length)) && \
-                (__t1=(s)[i]-0x80)<=0x3f) { \
-            (c)=(((c)&0x1f)<<6)|__t1; \
-            ++(i); \
-        } else { \
-            /* function call for "complicated" and error cases */ \
-            (c)=utf8_nextCharSafeBody((const uint8_t *)s, &(i), (length), c, -3); \
+            (c)=(sub);  /* ill-formed*/ \
         } \
     } \
 }
@@ -434,21 +419,22 @@ utf8_back1SafeBody(const uint8_t *s, int32_t start, int32_t i);
 
 
 #define U8_APPEND_UNSAFE(s, i, c) { \
-    if((uint32_t)(c)<=0x7f) { \
-        (s)[(i)++]=(uint8_t)(c); \
+    uint32_t __uc=(c); \
+    if(__uc<=0x7f) { \
+        (s)[(i)++]=(uint8_t)__uc; \
     } else { \
-        if((uint32_t)(c)<=0x7ff) { \
-            (s)[(i)++]=(uint8_t)(((c)>>6)|0xc0); \
+        if(__uc<=0x7ff) { \
+            (s)[(i)++]=(uint8_t)((__uc>>6)|0xc0); \
         } else { \
-            if((uint32_t)(c)<=0xffff) { \
-                (s)[(i)++]=(uint8_t)(((c)>>12)|0xe0); \
+            if(__uc<=0xffff) { \
+                (s)[(i)++]=(uint8_t)((__uc>>12)|0xe0); \
             } else { \
-                (s)[(i)++]=(uint8_t)(((c)>>18)|0xf0); \
-                (s)[(i)++]=(uint8_t)((((c)>>12)&0x3f)|0x80); \
+                (s)[(i)++]=(uint8_t)((__uc>>18)|0xf0); \
+                (s)[(i)++]=(uint8_t)(((__uc>>12)&0x3f)|0x80); \
             } \
-            (s)[(i)++]=(uint8_t)((((c)>>6)&0x3f)|0x80); \
+            (s)[(i)++]=(uint8_t)(((__uc>>6)&0x3f)|0x80); \
         } \
-        (s)[(i)++]=(uint8_t)(((c)&0x3f)|0x80); \
+        (s)[(i)++]=(uint8_t)((__uc&0x3f)|0x80); \
     } \
 }
 
@@ -470,17 +456,23 @@ utf8_back1SafeBody(const uint8_t *s, int32_t start, int32_t i);
 
 
 #define U8_APPEND(s, i, capacity, c, isError) { \
-    if((uint32_t)(c)<=0x7f) { \
-        (s)[(i)++]=(uint8_t)(c); \
-    } else if((uint32_t)(c)<=0x7ff && (i)+1<(capacity)) { \
-        (s)[(i)++]=(uint8_t)(((c)>>6)|0xc0); \
-        (s)[(i)++]=(uint8_t)(((c)&0x3f)|0x80); \
-    } else if((uint32_t)(c)<=0xd7ff && (i)+2<(capacity)) { \
-        (s)[(i)++]=(uint8_t)(((c)>>12)|0xe0); \
-        (s)[(i)++]=(uint8_t)((((c)>>6)&0x3f)|0x80); \
-        (s)[(i)++]=(uint8_t)(((c)&0x3f)|0x80); \
+    uint32_t __uc=(c); \
+    if(__uc<=0x7f) { \
+        (s)[(i)++]=(uint8_t)__uc; \
+    } else if(__uc<=0x7ff && (i)+1<(capacity)) { \
+        (s)[(i)++]=(uint8_t)((__uc>>6)|0xc0); \
+        (s)[(i)++]=(uint8_t)((__uc&0x3f)|0x80); \
+    } else if((__uc<=0xd7ff || (0xe000<=__uc && __uc<=0xffff)) && (i)+2<(capacity)) { \
+        (s)[(i)++]=(uint8_t)((__uc>>12)|0xe0); \
+        (s)[(i)++]=(uint8_t)(((__uc>>6)&0x3f)|0x80); \
+        (s)[(i)++]=(uint8_t)((__uc&0x3f)|0x80); \
+    } else if(0xffff<__uc && __uc<=0x10ffff && (i)+3<(capacity)) { \
+        (s)[(i)++]=(uint8_t)((__uc>>18)|0xf0); \
+        (s)[(i)++]=(uint8_t)(((__uc>>12)&0x3f)|0x80); \
+        (s)[(i)++]=(uint8_t)(((__uc>>6)&0x3f)|0x80); \
+        (s)[(i)++]=(uint8_t)((__uc&0x3f)|0x80); \
     } else { \
-        (i)=utf8_appendCharSafeBody(s, (i), (capacity), c, &(isError)); \
+        (isError)=TRUE; \
     } \
 }
 
@@ -608,11 +600,65 @@ utf8_back1SafeBody(const uint8_t *s, int32_t start, int32_t i);
 
 
 
+
+
+
 #define U8_SET_CP_START(s, start, i) { \
     if(U8_IS_TRAIL((s)[(i)])) { \
         (i)=utf8_back1SafeBody(s, start, (i)); \
     } \
 }
+
+#ifndef U_HIDE_DRAFT_API
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define U8_TRUNCATE_IF_INCOMPLETE(s, start, length) \
+    if((length)>(start)) { \
+        uint8_t __b1=s[(length)-1]; \
+        if(U8_IS_SINGLE(__b1)) { \
+            /* common ASCII character */ \
+        } else if(U8_IS_LEAD(__b1)) { \
+            --(length); \
+        } else if(U8_IS_TRAIL(__b1) && ((length)-2)>=(start)) { \
+            uint8_t __b2=s[(length)-2]; \
+            if(0xe0<=__b2 && __b2<=0xf4) { \
+                if(__b2<0xf0 ? U8_IS_VALID_LEAD3_AND_T1(__b2, __b1) : \
+                        U8_IS_VALID_LEAD4_AND_T1(__b2, __b1)) { \
+                    (length)-=2; \
+                } \
+            } else if(U8_IS_TRAIL(__b2) && ((length)-3)>=(start)) { \
+                uint8_t __b3=s[(length)-3]; \
+                if(0xf0<=__b3 && __b3<=0xf4 && U8_IS_VALID_LEAD4_AND_T1(__b3, __b2)) { \
+                    (length)-=3; \
+                } \
+            } \
+        } \
+    }
+#endif  
 
 
 

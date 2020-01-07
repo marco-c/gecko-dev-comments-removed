@@ -82,7 +82,8 @@ public:
     RBBISetBuilder(RBBIRuleBuilder *rb);
     ~RBBISetBuilder();
 
-    void     build();
+    void     buildRanges();
+    void     buildTrie();
     void     addValToSets(UVector *sets,      uint32_t val);
     void     addValToSet (RBBINode *usetNode, uint32_t val);
     int32_t  getNumCharCategories() const;   
@@ -93,6 +94,13 @@ public:
     UChar32  getFirstChar(int32_t  val) const;
     UBool    sawBOF() const;                 
                                              
+    
+
+
+    void     mergeCategories(int32_t left, int32_t right);
+
+    static constexpr int32_t DICT_BIT = 0x4000;
+
 #ifdef RBBI_DEBUG
     void     printSets();
     void     printRanges();

@@ -269,7 +269,22 @@ public:
 
 
 
+
+
     const UnicodeString& getAppendItemName(UDateTimePatternField field) const;
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+
+
+    UnicodeString getFieldDisplayName(UDateTimePatternField field, UDateTimePGDisplayWidth width) const;
+#endif  
 
     
 
@@ -507,13 +522,17 @@ private:
 
     DateTimePatternGenerator& operator=(const DateTimePatternGenerator& other);
 
+    
+    
+
     Locale pLocale;  
     FormatParser *fp;
     DateTimeMatcher* dtMatcher;
     DistanceInfo *distanceInfo;
     PatternMap *patternMap;
     UnicodeString appendItemFormats[UDATPG_FIELD_COUNT];
-    UnicodeString appendItemNames[UDATPG_FIELD_COUNT];
+    
+    UnicodeString fieldDisplayNames[UDATPG_FIELD_COUNT][3];
     UnicodeString dateTimeFormat;
     UnicodeString decimal;
     DateTimeMatcher *skipMatcher;
@@ -543,8 +562,11 @@ private:
     void setDateTimeFromCalendar(const Locale& locale, UErrorCode& status);
     void setDecimalSymbols(const Locale& locale, UErrorCode& status);
     UDateTimePatternField getAppendFormatNumber(const char* field) const;
-    UDateTimePatternField getAppendNameNumber(const char* field) const;
-    UnicodeString& getMutableAppendItemName(UDateTimePatternField field);
+#ifndef U_HIDE_DRAFT_API
+    UDateTimePatternField getFieldAndWidthIndices(const char* key, UDateTimePGDisplayWidth* widthP) const;
+    void setFieldDisplayName(UDateTimePatternField field, UDateTimePGDisplayWidth width, const UnicodeString& value);
+    UnicodeString& getMutableFieldDisplayName(UDateTimePatternField field, UDateTimePGDisplayWidth width);
+#endif  
     void getAppendName(UDateTimePatternField field, UnicodeString& value);
     UnicodeString mapSkeletonMetacharacters(const UnicodeString& patternForm, int32_t* flags, UErrorCode& status);
     int32_t getCanonicalIndex(const UnicodeString& field);

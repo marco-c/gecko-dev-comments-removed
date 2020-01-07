@@ -52,7 +52,11 @@ typedef struct {
 
 typedef struct {
     uint32_t count;
-    UDataOffsetTOCEntry entry[2];    
+    
+
+
+
+    UDataOffsetTOCEntry entry[1];
 } UDataOffsetTOC;
 
 

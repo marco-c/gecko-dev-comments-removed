@@ -134,6 +134,9 @@
 
 
 
+
+
+
 typedef void* UNumberFormat;
 
 
@@ -559,7 +562,6 @@ unum_formatDouble(    const    UNumberFormat*  fmt,
             UFieldPosition  *pos, 
             UErrorCode*     status);
 
-#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -602,7 +604,7 @@ unum_formatDouble(    const    UNumberFormat*  fmt,
 
 
 
-U_DRAFT int32_t U_EXPORT2
+U_STABLE int32_t U_EXPORT2
 unum_formatDoubleForFields(const UNumberFormat* format,
                            double number,
                            UChar* result,
@@ -610,7 +612,6 @@ unum_formatDoubleForFields(const UNumberFormat* format,
                            UFieldPositionIterator* fpositer,
                            UErrorCode* status);
 
-#endif  
 
 
 

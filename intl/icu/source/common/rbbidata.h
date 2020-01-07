@@ -116,7 +116,8 @@ struct  RBBIStateTableRow {
                                     
                                     
     int16_t          fReserved;
-    uint16_t         fNextState[2]; 
+    uint16_t         fNextState[1]; 
+                                    
                                     
                                     
                                     
@@ -129,7 +130,9 @@ struct RBBIStateTable {
     uint32_t         fRowLen;       
     uint32_t         fFlags;        
     uint32_t         fReserved;     
-    char             fTableData[4]; 
+    char             fTableData[1]; 
+                                    
+                                    
                                     
                                     
 };
@@ -162,13 +165,8 @@ public:
     UBool                 operator ==(const RBBIDataWrapper &other) const;
     int32_t               hashCode();
     const UnicodeString  &getRuleSourceString() const;
-#ifdef RBBI_DEBUG
     void                  printData();
     void                  printTable(const char *heading, const RBBIStateTable *table);
-#else
-    #define printData()
-    #define printTable(heading, table)
-#endif
 
     
     

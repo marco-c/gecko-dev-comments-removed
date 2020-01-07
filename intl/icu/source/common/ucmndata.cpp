@@ -77,7 +77,11 @@ typedef struct {
 typedef struct  {
     uint32_t          count;
     uint32_t          reserved;
-    PointerTOCEntry   entry[2];   
+    
+
+
+
+    PointerTOCEntry   entry[1];
 }  PointerTOC;
 
 

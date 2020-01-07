@@ -39,7 +39,7 @@ class UVector32;
 
 
 
-#if defined (_MSC_VER)
+#if U_PF_WINDOWS <= U_PLATFORM && U_PLATFORM <= U_PF_CYGWIN
 template class U_I18N_API MaybeStackArray<int64_t, CEBUFFER_INITIAL_CAPACITY>;
 #endif
 

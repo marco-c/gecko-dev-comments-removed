@@ -539,12 +539,15 @@ typedef enum UErrorCode {
     U_DEFAULT_KEYWORD_MISSING,        
     U_DECIMAL_NUMBER_SYNTAX_ERROR,    
     U_FORMAT_INEXACT_ERROR,           
+#ifndef U_HIDE_DRAFT_API
+    U_NUMBER_ARG_OUTOFBOUNDS_ERROR,   
+#endif  
 #ifndef U_HIDE_DEPRECATED_API
     
 
 
 
-    U_FMT_PARSE_ERROR_LIMIT,
+    U_FMT_PARSE_ERROR_LIMIT = 0x10113,
 #endif  
 
     

@@ -51,10 +51,18 @@ class PluralRules;
 
 
 
+
+
+
+
+
 class U_I18N_API CompactDecimalFormat : public DecimalFormat {
 public:
 
      
+
+
+
 
 
 

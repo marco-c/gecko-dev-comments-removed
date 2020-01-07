@@ -126,10 +126,19 @@ public:
         );
 
     virtual    ~RBBIRuleBuilder();
+
+    
+
+
+
+
+    void optimizeTables();
+
     char                          *fDebugEnv;        
     UErrorCode                    *fStatus;          
     UParseError                   *fParseError;      
     const UnicodeString           &fRules;           
+    UnicodeString                 fStrippedRules;    
 
     RBBIRuleScanner               *fScanner;         
     RBBINode                      *fForwardTree;     

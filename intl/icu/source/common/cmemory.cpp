@@ -41,30 +41,6 @@ static int n=0;
 static long b=0; 
 #endif
 
-#if U_DEBUG
-
-static char gValidMemorySink = 0;
-
-U_CAPI void uprv_checkValidMemory(const void *p, size_t n) {
-    
-
-
-
-
-
-
-    const char *s = (const char *)p;
-    char c = gValidMemorySink;
-    size_t i;
-    U_ASSERT(p != NULL);
-    for(i = 0; i < n; ++i) {
-        c ^= s[i];
-    }
-    gValidMemorySink = c;
-}
-
-#endif  
-
 U_CAPI void * U_EXPORT2
 uprv_malloc(size_t s) {
 #if U_DEBUG && defined(UPRV_MALLOC_COUNT)

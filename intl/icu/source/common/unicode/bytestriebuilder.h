@@ -154,7 +154,6 @@ private:
         const char *s;
     };
     
-    
     virtual Node *createLinearMatchNode(int32_t i, int32_t byteIndex, int32_t length,
                                         Node *nextNode) const;
 

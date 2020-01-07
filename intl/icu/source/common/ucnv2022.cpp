@@ -3512,14 +3512,14 @@ _ISO_2022_WriteSub(UConverterFromUnicodeArgs *args, int32_t offsetIndex, UErrorC
     case 'k':
         if(myConverterData->version == 0) {
             if(length == 1) {
-                if((UBool)args->converter->fromUnicodeStatus) {
+                if(args->converter->fromUnicodeStatus) {
                     
                     args->converter->fromUnicodeStatus = 0;
                     *p++ = UCNV_SI;
                 }
                 *p++ = subchar[0];
             } else  {
-                if(!(UBool)args->converter->fromUnicodeStatus) {
+                if(!args->converter->fromUnicodeStatus) {
                     
                     args->converter->fromUnicodeStatus = 1;
                     *p++ = UCNV_SO;

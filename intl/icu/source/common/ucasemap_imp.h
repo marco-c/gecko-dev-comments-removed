@@ -60,15 +60,6 @@ u_caseInsensitivePrefixMatch(const UChar *s1, int32_t length1,
                              int32_t *matchLen1, int32_t *matchLen2,
                              UErrorCode *pErrorCode);
 
-
-
-
-
-
-
-U_CFUNC UBool
-uprv_haveProperties(UErrorCode *pErrorCode);
-
 #ifdef __cplusplus
 
 U_NAMESPACE_BEGIN

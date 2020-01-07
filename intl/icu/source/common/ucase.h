@@ -26,6 +26,7 @@
 #include "putilimp.h"
 #include "uset_imp.h"
 #include "udataswp.h"
+#include "utrie2.h"
 
 #ifdef __cplusplus
 U_NAMESPACE_BEGIN
@@ -147,6 +148,33 @@ private:
     int32_t currentRow;
     int32_t rowCpIndex;
 };
+
+
+
+
+
+
+
+namespace LatinCase {
+
+
+constexpr UChar LIMIT = 0x180;
+
+constexpr UChar LONG_S = 0x17f;
+
+constexpr int8_t EXC = -0x80;
+
+
+extern const int8_t TO_LOWER_NORMAL[LIMIT];
+
+extern const int8_t TO_LOWER_TR_LT[LIMIT];
+
+
+extern const int8_t TO_UPPER_NORMAL[LIMIT];
+
+extern const int8_t TO_UPPER_TR[LIMIT];
+
+}  
 
 U_NAMESPACE_END
 #endif
@@ -308,6 +336,9 @@ enum {
 
 
 
+U_CFUNC const UTrie2 * U_EXPORT2
+ucase_getTrie();
+
 
 #define UCASE_TYPE_MASK     3
 enum {
@@ -320,9 +351,13 @@ enum {
 #define UCASE_GET_TYPE(props) ((props)&UCASE_TYPE_MASK)
 #define UCASE_GET_TYPE_AND_IGNORABLE(props) ((props)&7)
 
+#define UCASE_IS_UPPER_OR_TITLE(props) ((props)&2)
+
 #define UCASE_IGNORABLE         4
 #define UCASE_SENSITIVE         8
 #define UCASE_EXCEPTION         0x10
+
+#define UCASE_HAS_EXCEPTION(props) ((props)&UCASE_EXCEPTION)
 
 #define UCASE_DOT_MASK      0x60
 enum {

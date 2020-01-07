@@ -20,7 +20,7 @@ U_NAMESPACE_BEGIN
 
 
 
-#if defined (_MSC_VER)
+#if U_PF_WINDOWS <= U_PLATFORM && U_PLATFORM <= U_PF_CYGWIN
 
 #pragma warning(suppress: 4661)
 template class U_I18N_API LocalPointerBase<CurrencyPluralInfo>;

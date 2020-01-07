@@ -36,30 +36,9 @@
 #include <stdio.h>
 #endif
 
-#if U_DEBUG
-
-
-
-
-
-
-
-
-U_CAPI void uprv_checkValidMemory(const void *p, size_t n);
-
-#define uprv_memcpy(dst, src, size) ( \
-    uprv_checkValidMemory(src, 1), \
-    U_STANDARD_CPP_NAMESPACE memcpy(dst, src, size))
-#define uprv_memmove(dst, src, size) ( \
-    uprv_checkValidMemory(src, 1), \
-    U_STANDARD_CPP_NAMESPACE memmove(dst, src, size))
-
-#else
 
 #define uprv_memcpy(dst, src, size) U_STANDARD_CPP_NAMESPACE memcpy(dst, src, size)
 #define uprv_memmove(dst, src, size) U_STANDARD_CPP_NAMESPACE memmove(dst, src, size)
-
-#endif  
 
 
 

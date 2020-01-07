@@ -556,7 +556,7 @@ struct UNewTrie {
 
 
 
-    int32_t index[UTRIE_MAX_INDEX_LENGTH];
+    int32_t index[UTRIE_MAX_INDEX_LENGTH+UTRIE_SURROGATE_BLOCK_COUNT];
     uint32_t *data;
 
     uint32_t leadUnitValue;

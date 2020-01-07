@@ -299,6 +299,10 @@ typedef int8_t UBool;
 
 # include <uchar.h>
 # define U_CHAR16_IS_TYPEDEF 1
+#elif defined(_MSC_VER) && (_MSC_VER < 1900)
+
+
+# define U_CHAR16_IS_TYPEDEF 1
 #else
 # define U_CHAR16_IS_TYPEDEF 0
 #endif

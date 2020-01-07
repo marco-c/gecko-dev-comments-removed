@@ -116,6 +116,9 @@ class U_I18N_API DecimalQuantity : public IFixedDecimal, public UMemory {
     bool isNegative() const;
 
     
+    int8_t signum() const;
+
+    
     bool isInfinite() const U_OVERRIDE;
 
     
@@ -394,6 +397,8 @@ class U_I18N_API DecimalQuantity : public IFixedDecimal, public UMemory {
     void readLongToBcd(int64_t n);
 
     void readDecNumberToBcd(decNumber *dn);
+
+    void readDoubleConversionToBcd(const char* buffer, int32_t length, int32_t point);
 
     void copyBcdFrom(const DecimalQuantity &other);
 

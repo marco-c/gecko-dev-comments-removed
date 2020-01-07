@@ -2995,10 +2995,6 @@ public:
 
   UNISTR_FROM_STRING_EXPLICIT UnicodeString(const char16_t *text);
 
-  
-
-
-
 #if !U_CHAR16_IS_TYPEDEF
   
 
@@ -3013,10 +3009,6 @@ public:
   UNISTR_FROM_STRING_EXPLICIT UnicodeString(const uint16_t *text) :
       UnicodeString(ConstChar16Ptr(text)) {}
 #endif
-
-  
-
-
 
 #if U_SIZEOF_WCHAR_T==2 || defined(U_IN_DOXYGEN)
   
@@ -3033,10 +3025,6 @@ public:
   UNISTR_FROM_STRING_EXPLICIT UnicodeString(const wchar_t *text) :
       UnicodeString(ConstChar16Ptr(text)) {}
 #endif
-
-  
-
-
 
   
 
@@ -3060,10 +3048,6 @@ public:
   UnicodeString(const char16_t *text,
         int32_t textLength);
 
-  
-
-
-
 #if !U_CHAR16_IS_TYPEDEF
   
 
@@ -3075,10 +3059,6 @@ public:
   UnicodeString(const uint16_t *text, int32_t length) :
       UnicodeString(ConstChar16Ptr(text), length) {}
 #endif
-
-  
-
-
 
 #if U_SIZEOF_WCHAR_T==2 || defined(U_IN_DOXYGEN)
   
@@ -3092,10 +3072,6 @@ public:
   UnicodeString(const wchar_t *text, int32_t length) :
       UnicodeString(ConstChar16Ptr(text), length) {}
 #endif
-
-  
-
-
 
   
 
@@ -3152,10 +3128,6 @@ public:
 
   UnicodeString(char16_t *buffer, int32_t buffLength, int32_t buffCapacity);
 
-  
-
-
-
 #if !U_CHAR16_IS_TYPEDEF
   
 
@@ -3168,10 +3140,6 @@ public:
   UnicodeString(uint16_t *buffer, int32_t buffLength, int32_t buffCapacity) :
       UnicodeString(Char16Ptr(buffer), buffLength, buffCapacity) {}
 #endif
-
-  
-
-
 
 #if U_SIZEOF_WCHAR_T==2 || defined(U_IN_DOXYGEN)
   
@@ -3186,10 +3154,6 @@ public:
   UnicodeString(wchar_t *buffer, int32_t buffLength, int32_t buffCapacity) :
       UnicodeString(Char16Ptr(buffer), buffLength, buffCapacity) {}
 #endif
-
-  
-
-
 
   
 

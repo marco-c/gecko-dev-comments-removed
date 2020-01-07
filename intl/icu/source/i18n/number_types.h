@@ -31,7 +31,7 @@ typedef UNumberFormatPadPosition PadPosition;
 typedef UNumberCompactStyle CompactStyle;
 
 
-static constexpr int32_t kMaxIntFracSig = 100;
+static constexpr int32_t kMaxIntFracSig = 999;
 
 
 static constexpr RoundingMode kDefaultMode = RoundingMode::UNUM_FOUND_HALFEVEN;
@@ -41,10 +41,6 @@ static constexpr char16_t kFallbackPaddingString[] = u" ";
 
 
 static constexpr char16_t kDefaultCurrency[] = u"XXX";
-
-
-static constexpr UErrorCode U_NUMBER_DIGIT_WIDTH_OUTOFBOUNDS_ERROR = U_ILLEGAL_ARGUMENT_ERROR;
-static constexpr UErrorCode U_NUMBER_PADDING_WIDTH_OUTOFBOUNDS_ERROR = U_ILLEGAL_ARGUMENT_ERROR;
 
 
 
@@ -142,6 +138,13 @@ class U_I18N_API AffixPatternProvider {
     virtual bool negativeHasMinusSign() const = 0;
 
     virtual bool containsSymbolType(AffixPatternType, UErrorCode &) const = 0;
+
+    
+
+
+
+
+    virtual bool hasBody() const = 0;
 };
 
 
@@ -230,9 +233,20 @@ class U_I18N_API MicroPropsGenerator {
     virtual void processQuantity(DecimalQuantity& quantity, MicroProps& micros, UErrorCode& status) const = 0;
 };
 
+
+
+
 class MultiplierProducer {
   public:
     virtual ~MultiplierProducer() = default;
+
+    
+
+
+
+
+
+
 
     virtual int32_t getMultiplier(int32_t magnitude) const = 0;
 };

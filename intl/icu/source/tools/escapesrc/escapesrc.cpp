@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <string>
 #include <stdlib.h>
-#include <unistd.h>
 #include <errno.h>
 #include <string.h>
 #include <iostream>
@@ -13,30 +12,63 @@
 
 #include "unicode/utf8.h"
 
+
+
+#include "cptbl.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 static const char
   kSPACE   = 0x20,
   kTAB     = 0x09,
   kLF      = 0x0A,
   kCR      = 0x0D;
-  
-  
-  
 
-# include "cptbl.h"
 
 # define cp1047_to_8859(c) cp1047_8859_1[c]
 
+
 std::string prog;
+
+
+
 
 void usage() {
   fprintf(stderr, "%s: usage: %s infile.cpp outfile.cpp\n", prog.c_str(), prog.c_str());
 }
 
 
+
+
+
 int cleanup(const std::string &outfile) {
   const char *outstr = outfile.c_str();
   if(outstr && *outstr) {
-    int rc = unlink(outstr);
+    int rc = std::remove(outstr);
     if(rc == 0) {
       fprintf(stderr, "%s: deleted %s\n", prog.c_str(), outstr);
       return 0;
@@ -44,17 +76,13 @@ int cleanup(const std::string &outfile) {
       if( errno == ENOENT ) {
         return 0; 
       } else {
-        perror("unlink");
+        perror("std::remove");
         return 1;
       }
     }
   }
   return 0;
 }
-
-
-
-
 
 
 
@@ -82,31 +110,17 @@ inline const char *skipws(const char *p, const char *e) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 void appendByte(std::string &outstr,
                 uint8_t byte) {
     char tmp2[5];
     sprintf(tmp2, "\\x%02X", 0xFF & (int)(byte));
     outstr += tmp2;
 }
+
+
+
+
+
 
 
 
@@ -139,6 +153,7 @@ bool appendUtf8(std::string &outstr,
   }
   return false;
 }
+
 
 
 
@@ -182,6 +197,8 @@ bool fixu8(std::string &linestr, size_t origpos, size_t &endpos) {
   
   return false; 
 }
+
+
 
 
 
@@ -295,6 +312,10 @@ bool fixAt(std::string &linestr, size_t pos) {
 
 
 
+
+
+
+
 bool fixLine(int , std::string &linestr) {
   const char *line = linestr.c_str();
   size_t len = linestr.size();
@@ -303,17 +324,6 @@ bool fixLine(int , std::string &linestr) {
   if(!strstr(line, "u'") && !strstr(line, "u\"") && !strstr(line, "u8\"")) {
     return false; 
   }
-
-  
-  
-  
-  
-  
-
-  
-  
-  
-  
 
   
   size_t pos = len = linestr.size();
@@ -344,6 +354,12 @@ bool fixLine(int , std::string &linestr) {
   
   return false;
 }
+
+
+
+
+
+
 
 int convert(const std::string &infile, const std::string &outfile) {
   fprintf(stderr, "escapesrc: %s -> %s\n", infile.c_str(), outfile.c_str());
@@ -386,6 +402,9 @@ int convert(const std::string &infile, const std::string &outfile) {
   return 0;
 }
 
+
+
+
 int main(int argc, const char *argv[]) {
   prog = argv[0];
 
@@ -399,6 +418,3 @@ int main(int argc, const char *argv[]) {
 
   return convert(infile, outfile);
 }
-
-
-#include "utf_impl.cpp"

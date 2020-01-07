@@ -94,6 +94,7 @@ class DateFormat;
 
 
 
+
 class U_I18N_API MeasureFormat : public Format {
  public:
     using Format::parseObject;
@@ -103,10 +104,16 @@ class U_I18N_API MeasureFormat : public Format {
 
 
 
+
+
+
     MeasureFormat(
             const Locale &locale, UMeasureFormatWidth width, UErrorCode &status);
 
     
+
+
+
 
 
 
@@ -232,10 +239,16 @@ class U_I18N_API MeasureFormat : public Format {
 
 
 
+
+
+
     static MeasureFormat* U_EXPORT2 createCurrencyFormat(const Locale& locale,
                                                UErrorCode& ec);
 
     
+
+
+
 
 
 
