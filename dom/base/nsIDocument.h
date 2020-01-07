@@ -3077,6 +3077,11 @@ public:
   
   bool HasBeenUserActivated();
 
+  void MaybeNotifyUserActivation(nsIPrincipal* aPrincipal);
+
+  
+  nsIDocument* GetSameTypeParentDocument();
+
   
   
   nsIDocument* GetFirstParentDocumentWithSamePrincipal(nsIPrincipal* aPrincipal);
@@ -3269,9 +3274,6 @@ protected:
 
   
   bool IsPotentiallyScrollable(mozilla::dom::HTMLBodyElement* aBody);
-
-  
-  nsIDocument* GetSameTypeParentDocument(const nsIDocument* aDoc);
 
   
   static bool MatchNameAttribute(mozilla::dom::Element* aElement,
