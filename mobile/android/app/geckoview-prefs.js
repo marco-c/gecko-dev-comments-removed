@@ -1,0 +1,9 @@
+
+
+
+
+#filter substitution
+
+#include mobile.js
+
+pref("privacy.trackingprotection.pbmode.enabled", false);
