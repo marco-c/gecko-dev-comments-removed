@@ -785,9 +785,9 @@ TextEditor::InsertLineBreak()
     }
     if (NS_SUCCEEDED(rv)) {
       
-      MOZ_ASSERT(!pointAfterInsertedLineBreak.GetChildAtOffset(),
+      MOZ_ASSERT(!pointAfterInsertedLineBreak.GetChild(),
         "After inserting text into a text node, pointAfterInsertedLineBreak."
-        "GetChildAtOffset() should be nullptr");
+        "GetChild() should be nullptr");
       rv = selection->Collapse(pointAfterInsertedLineBreak);
       if (NS_SUCCEEDED(rv)) {
         

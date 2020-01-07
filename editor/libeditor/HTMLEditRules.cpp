@@ -5057,9 +5057,8 @@ HTMLEditRules::WillAlign(Selection& aSelection,
       
       
       nsCOMPtr<nsIContent> sibling;
-      if (pointToInsertDiv.GetChildAtOffset()) {
-        sibling =
-          htmlEditor->GetNextHTMLSibling(pointToInsertDiv.GetChildAtOffset());
+      if (pointToInsertDiv.GetChild()) {
+        sibling = htmlEditor->GetNextHTMLSibling(pointToInsertDiv.GetChild());
       }
       if (sibling && !IsBlockNode(*sibling)) {
         AutoEditorDOMPointChildInvalidator lockOffset(pointToInsertDiv);
@@ -7561,7 +7560,7 @@ HTMLEditRules::MaybeSplitAncestorsForInsert(
        pointToInsert.Set(pointToInsert.GetContainer())) {
     
     
-    if (NS_WARN_IF(pointToInsert.GetChildAtOffset() == host)) {
+    if (NS_WARN_IF(pointToInsert.GetChild() == host)) {
       return SplitNodeResult(NS_ERROR_FAILURE);
     }
 
@@ -7581,7 +7580,7 @@ HTMLEditRules::MaybeSplitAncestorsForInsert(
   }
 
   SplitNodeResult splitNodeResult =
-    htmlEditor->SplitNodeDeep(*pointToInsert.GetChildAtOffset(),
+    htmlEditor->SplitNodeDeep(*pointToInsert.GetChild(),
                               aStartOfDeepestRightNode,
                               SplitAtEdges::eAllowToCreateEmptyContainer);
   NS_WARNING_ASSERTION(splitNodeResult.Succeeded(),
@@ -7987,9 +7986,8 @@ HTMLEditRules::CheckInterlinePosition(Selection& aSelection)
   }
 
   
-  if (atStartOfSelection.GetChildAtOffset()) {
-    node =
-      htmlEditor->GetPriorHTMLSibling(atStartOfSelection.GetChildAtOffset());
+  if (atStartOfSelection.GetChild()) {
+    node = htmlEditor->GetPriorHTMLSibling(atStartOfSelection.GetChild());
   } else {
     node = nullptr;
   }
@@ -7999,9 +7997,8 @@ HTMLEditRules::CheckInterlinePosition(Selection& aSelection)
   }
 
   
-  if (atStartOfSelection.GetChildAtOffset()) {
-    node =
-      htmlEditor->GetNextHTMLSibling(atStartOfSelection.GetChildAtOffset());
+  if (atStartOfSelection.GetChild()) {
+    node = htmlEditor->GetNextHTMLSibling(atStartOfSelection.GetChild());
   } else {
     node = nullptr;
   }

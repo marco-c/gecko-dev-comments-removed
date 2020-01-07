@@ -65,7 +65,6 @@ class EditorDOMPointBase;
 
 
 
-
 typedef EditorDOMPointBase<nsCOMPtr<nsINode>,
                            nsCOMPtr<nsIContent>> EditorDOMPoint;
 typedef EditorDOMPointBase<nsINode*, nsIContent*> EditorRawDOMPoint;
@@ -255,8 +254,13 @@ public:
     return mParent && mParent->IsAnyOfHTMLElements(aFirst, aArgs...);
   }
 
+  
+
+
+
+
   nsIContent*
-  GetChildAtOffset() const
+  GetChild() const
   {
     if (!mParent || !mParent->IsContainerNode()) {
       return nullptr;
@@ -274,8 +278,10 @@ public:
 
 
 
+
+
   nsIContent*
-  GetNextSiblingOfChildAtOffset() const
+  GetNextSiblingOfChild() const
   {
     if (NS_WARN_IF(!mParent) || NS_WARN_IF(!mParent->IsContainerNode())) {
       return nullptr;
@@ -299,8 +305,10 @@ public:
 
 
 
+
+
   nsIContent*
-  GetPreviousSiblingOfChildAtOffset() const
+  GetPreviousSiblingOfChild() const
   {
     if (NS_WARN_IF(!mParent) || NS_WARN_IF(!mParent->IsContainerNode())) {
       return nullptr;
@@ -785,7 +793,7 @@ public:
   {
     MOZ_ASSERT(aPoint.IsSetAndValid());
     MOZ_ASSERT(mPoint.CanContainerHaveChildren());
-    mChild = mPoint.GetChildAtOffset();
+    mChild = mPoint.GetChild();
   }
 
   ~AutoEditorDOMPointOffsetInvalidator()

@@ -32,7 +32,7 @@ InsertNodeTransaction::InsertNodeTransaction(
 {
   MOZ_ASSERT(mPointToInsert.IsSetAndValid());
   
-  Unused << mPointToInsert.GetChildAtOffset();
+  Unused << mPointToInsert.GetChild();
 }
 
 InsertNodeTransaction::~InsertNodeTransaction()
@@ -61,8 +61,8 @@ InsertNodeTransaction::DoTransaction()
   if (!mPointToInsert.IsSetAndValid()) {
     
     
-    if (mPointToInsert.GetChildAtOffset()) {
-      EditorDOMPoint newPointToInsert(mPointToInsert.GetChildAtOffset());
+    if (mPointToInsert.GetChild()) {
+      EditorDOMPoint newPointToInsert(mPointToInsert.GetChild());
       if (!newPointToInsert.IsSet()) {
         
         
@@ -84,7 +84,7 @@ InsertNodeTransaction::DoTransaction()
 
   ErrorResult error;
   mPointToInsert.GetContainer()->InsertBefore(*mContentToInsert,
-                                              mPointToInsert.GetChildAtOffset(),
+                                              mPointToInsert.GetChild(),
                                               error);
   error.WouldReportJSException();
   if (NS_WARN_IF(error.Failed())) {

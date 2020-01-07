@@ -1555,9 +1555,9 @@ HTMLEditor::InsertNodeIntoProperAncestor(
 
   if (pointToInsert != aPointToInsert) {
     
-    MOZ_ASSERT(pointToInsert.GetChildAtOffset());
+    MOZ_ASSERT(pointToInsert.GetChild());
     SplitNodeResult splitNodeResult =
-      SplitNodeDeep(*pointToInsert.GetChildAtOffset(),
+      SplitNodeDeep(*pointToInsert.GetChild(),
                     aPointToInsert, aSplitAtEdges);
     if (NS_WARN_IF(splitNodeResult.Failed())) {
       return EditorDOMPoint();
@@ -1943,7 +1943,7 @@ HTMLEditor::MakeOrChangeList(const nsAString& aListType,
     if (pointToInsertList.GetContainer() != atStartOfSelection.GetContainer()) {
       
       SplitNodeResult splitNodeResult =
-        SplitNodeDeep(*pointToInsertList.GetChildAtOffset(),
+        SplitNodeDeep(*pointToInsertList.GetChild(),
                       atStartOfSelection,
                       SplitAtEdges::eAllowToCreateEmptyContainer);
       if (NS_WARN_IF(splitNodeResult.Failed())) {
@@ -2093,7 +2093,7 @@ HTMLEditor::InsertBasicBlock(const nsAString& aBlockType)
           atStartOfSelection.GetContainer()) {
       
       SplitNodeResult splitBlockResult =
-        SplitNodeDeep(*pointToInsertBlock.GetChildAtOffset(),
+        SplitNodeDeep(*pointToInsertBlock.GetChild(),
                       atStartOfSelection,
                       SplitAtEdges::eAllowToCreateEmptyContainer);
       if (NS_WARN_IF(splitBlockResult.Failed())) {
@@ -2176,7 +2176,7 @@ HTMLEditor::Indent(const nsAString& aIndent)
           atStartOfSelection.GetContainer()) {
       
       SplitNodeResult splitBlockquoteResult =
-        SplitNodeDeep(*pointToInsertBlockquote.GetChildAtOffset(),
+        SplitNodeDeep(*pointToInsertBlockquote.GetChild(),
                       atStartOfSelection,
                       SplitAtEdges::eAllowToCreateEmptyContainer);
       if (NS_WARN_IF(splitBlockquoteResult.Failed())) {
@@ -2256,7 +2256,7 @@ HTMLEditor::GetElementOrParentByTagName(const nsAString& aTagName,
     
     if (atAnchor.GetContainer()->HasChildNodes() &&
         atAnchor.GetContainerAsContent()) {
-      node = atAnchor.GetChildAtOffset();
+      node = atAnchor.GetChild();
     }
     
     if (!node) {
