@@ -4,6 +4,15 @@
 
 "use strict";
 
+
+
+
+
+
+
+
+
+
 var { Cr } = require("chrome");
 var {
   BrowsingContextTargetActor,
@@ -12,7 +21,14 @@ var {
 
 const { extend } = require("devtools/shared/extend");
 const { ActorClassWithSpec } = require("devtools/shared/protocol");
-const { browsingContextTargetSpec } = require("devtools/shared/specs/targets/browsing-context");
+const { frameTargetSpec } = require("devtools/shared/specs/targets/frame");
+
+
+
+
+
+
+const frameTargetPrototype = extend({}, browsingContextTargetPrototype);
 
 
 
@@ -25,24 +41,7 @@ const { browsingContextTargetSpec } = require("devtools/shared/specs/targets/bro
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-const contentPrototype = extend({}, browsingContextTargetPrototype);
-
-contentPrototype.initialize = function(connection, chromeGlobal) {
+frameTargetPrototype.initialize = function(connection, chromeGlobal) {
   this._chromeGlobal = chromeGlobal;
   BrowsingContextTargetActor.prototype.initialize.call(this, connection, chromeGlobal);
   this.traits.reconfigure = false;
@@ -55,7 +54,7 @@ contentPrototype.initialize = function(connection, chromeGlobal) {
   });
 };
 
-Object.defineProperty(contentPrototype, "title", {
+Object.defineProperty(frameTargetPrototype, "title", {
   get: function() {
     return this.window.document.title;
   },
@@ -63,7 +62,7 @@ Object.defineProperty(contentPrototype, "title", {
   configurable: true
 });
 
-contentPrototype.exit = function() {
+frameTargetPrototype.exit = function() {
   if (this._sendForm) {
     try {
       this._chromeGlobal.removeMessageListener("debug:form", this._sendForm);
@@ -87,8 +86,8 @@ contentPrototype.exit = function() {
 
 
 
-contentPrototype._sendForm = function() {
+frameTargetPrototype._sendForm = function() {
   this._chromeGlobal.sendAsyncMessage("debug:form", this.form());
 };
 
-exports.ContentActor = ActorClassWithSpec(browsingContextTargetSpec, contentPrototype);
+exports.FrameTargetActor = ActorClassWithSpec(frameTargetSpec, frameTargetPrototype);
