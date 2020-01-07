@@ -335,9 +335,9 @@ DebuggerClient.prototype = {
 
 
 
-  attachTab: function(tabActor, onResponse = noop) {
-    if (this._clients.has(tabActor)) {
-      const cachedTab = this._clients.get(tabActor);
+  attachTab: function(targetActor, onResponse = noop) {
+    if (this._clients.has(targetActor)) {
+      const cachedTab = this._clients.get(targetActor);
       const cachedResponse = {
         cacheDisabled: cachedTab.cacheDisabled,
         javascriptEnabled: cachedTab.javascriptEnabled,
@@ -348,7 +348,7 @@ DebuggerClient.prototype = {
     }
 
     const packet = {
-      to: tabActor,
+      to: targetActor,
       type: "attach"
     };
     return this.request(packet).then(response => {

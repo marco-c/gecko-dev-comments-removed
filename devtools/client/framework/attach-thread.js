@@ -96,7 +96,7 @@ function attachThread(toolbox) {
     });
   };
 
-  if (target.isTabActor) {
+  if (target.isBrowsingContext) {
     
     target.activeTab.attachThread(threadOptions, handleResponse);
   } else if (target.isAddon) {

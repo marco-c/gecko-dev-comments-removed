@@ -143,6 +143,7 @@ function waitUntilClientConnected(client) {
 
 
 
+
 function connectDebuggerClient(client) {
   return client.connect()
     .then(() => client.listTabs())
@@ -188,20 +189,6 @@ function forceCollections() {
   Cu.forceGC();
   Cu.forceCC();
   Cu.forceShrinkingGC();
-}
-
-
-
-
-
-
-
-
-function getMockTabActor(win) {
-  return {
-    window: win,
-    isRootActor: true
-  };
 }
 
 registerCleanupFunction(function tearDown() {

@@ -163,8 +163,8 @@ var onConnectionReady = async function([aType, aTraits]) {
 function buildAddonLink(addon, parent) {
   const a = document.createElement("a");
   a.onclick = async function() {
-    const isTabActor = addon.isWebExtension;
-    openToolbox(addon, true, "webconsole", isTabActor);
+    const isBrowsingContext = addon.isWebExtension;
+    openToolbox(addon, true, "webconsole", isBrowsingContext);
   };
 
   a.textContent = addon.name;
@@ -223,12 +223,12 @@ function handleConnectionTimeout() {
 
 
 
-function openToolbox(form, chrome = false, tool = "webconsole", isTabActor) {
+function openToolbox(form, chrome = false, tool = "webconsole", isBrowsingContext) {
   const options = {
     form: form,
     client: gClient,
     chrome: chrome,
-    isTabActor: isTabActor
+    isBrowsingContext: isBrowsingContext
   };
   TargetFactory.forRemoteTab(options).then((target) => {
     const hostType = Toolbox.HostType.WINDOW;

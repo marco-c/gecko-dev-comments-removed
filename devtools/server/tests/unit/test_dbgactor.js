@@ -36,10 +36,10 @@ function run_test() {
 }
 
 
-function test_attach_tab(tabActor) {
-  gClient.request({ to: tabActor, type: "attach" }, function(response) {
+function test_attach_tab(targetActor) {
+  gClient.request({ to: targetActor, type: "attach" }, function(response) {
     Assert.equal(false, "error" in response);
-    Assert.equal(response.from, tabActor);
+    Assert.equal(response.from, targetActor);
     Assert.equal(response.type, "tabAttached");
     Assert.ok(typeof response.threadActor === "string");
 

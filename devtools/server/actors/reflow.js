@@ -34,20 +34,20 @@ const {reflowSpec} = require("devtools/shared/specs/reflow");
 
 
 exports.ReflowActor = protocol.ActorClassWithSpec(reflowSpec, {
-  initialize: function(conn, tabActor) {
+  initialize: function(conn, targetActor) {
     protocol.Actor.prototype.initialize.call(this, conn);
 
-    this.tabActor = tabActor;
+    this.targetActor = targetActor;
     this._onReflow = this._onReflow.bind(this);
-    this.observer = getLayoutChangesObserver(tabActor);
+    this.observer = getLayoutChangesObserver(targetActor);
     this._isStarted = false;
   },
 
   destroy: function() {
     this.stop();
-    releaseLayoutChangesObserver(this.tabActor);
+    releaseLayoutChangesObserver(this.targetActor);
     this.observer = null;
-    this.tabActor = null;
+    this.targetActor = null;
 
     protocol.Actor.prototype.destroy.call(this);
   },
@@ -89,15 +89,15 @@ exports.ReflowActor = protocol.ActorClassWithSpec(reflowSpec, {
 
 
 
-function Observable(tabActor, callback) {
-  this.tabActor = tabActor;
+function Observable(targetActor, callback) {
+  this.targetActor = targetActor;
   this.callback = callback;
 
   this._onWindowReady = this._onWindowReady.bind(this);
   this._onWindowDestroyed = this._onWindowDestroyed.bind(this);
 
-  this.tabActor.on("window-ready", this._onWindowReady);
-  this.tabActor.on("window-destroyed", this._onWindowDestroyed);
+  this.targetActor.on("window-ready", this._onWindowReady);
+  this.targetActor.on("window-destroyed", this._onWindowDestroyed);
 }
 
 Observable.prototype = {
@@ -117,11 +117,11 @@ Observable.prototype = {
 
     this.stop();
 
-    this.tabActor.off("window-ready", this._onWindowReady);
-    this.tabActor.off("window-destroyed", this._onWindowDestroyed);
+    this.targetActor.off("window-ready", this._onWindowReady);
+    this.targetActor.off("window-destroyed", this._onWindowDestroyed);
 
     this.callback = null;
-    this.tabActor = null;
+    this.targetActor = null;
   },
 
   
@@ -133,7 +133,7 @@ Observable.prototype = {
     }
     this.isObserving = true;
 
-    this._startListeners(this.tabActor.windows);
+    this._startListeners(this.targetActor.windows);
   },
 
   
@@ -145,9 +145,9 @@ Observable.prototype = {
     }
     this.isObserving = false;
 
-    if (this.tabActor.attached && this.tabActor.docShell) {
+    if (this.targetActor.attached && this.targetActor.docShell) {
       
-      this._stopListeners(this.tabActor.windows);
+      this._stopListeners(this.targetActor.windows);
     }
   },
 
@@ -221,8 +221,8 @@ exports.setIgnoreLayoutChanges = function(ignore, syncReflowNode) {
 
 
 
-function LayoutChangesObserver(tabActor) {
-  this.tabActor = tabActor;
+function LayoutChangesObserver(targetActor) {
+  this.targetActor = targetActor;
 
   this._startEventLoop = this._startEventLoop.bind(this);
   this._onReflow = this._onReflow.bind(this);
@@ -231,8 +231,8 @@ function LayoutChangesObserver(tabActor) {
   
   
   
-  this.reflowObserver = new ReflowObserver(this.tabActor, this._onReflow);
-  this.resizeObserver = new WindowResizeObserver(this.tabActor, this._onResize);
+  this.reflowObserver = new ReflowObserver(this.targetActor, this._onReflow);
+  this.resizeObserver = new WindowResizeObserver(this.targetActor, this._onResize);
 
   EventEmitter.decorate(this);
 }
@@ -262,7 +262,7 @@ LayoutChangesObserver.prototype = {
     this.resizeObserver.destroy();
     this.hasResized = false;
 
-    this.tabActor = null;
+    this.targetActor = null;
   },
 
   start: function() {
@@ -303,7 +303,7 @@ LayoutChangesObserver.prototype = {
   _startEventLoop: function() {
     
     
-    if (!this.tabActor || !this.tabActor.attached) {
+    if (!this.targetActor || !this.targetActor.attached) {
       return;
     }
 
@@ -378,15 +378,15 @@ LayoutChangesObserver.prototype = {
 
 
 var observedWindows = new Map();
-function getLayoutChangesObserver(tabActor) {
-  const observerData = observedWindows.get(tabActor);
+function getLayoutChangesObserver(targetActor) {
+  const observerData = observedWindows.get(targetActor);
   if (observerData) {
     observerData.refCounting++;
     return observerData.observer;
   }
 
-  const obs = new LayoutChangesObserver(tabActor);
-  observedWindows.set(tabActor, {
+  const obs = new LayoutChangesObserver(targetActor);
+  observedWindows.set(targetActor, {
     observer: obs,
     
     
@@ -403,8 +403,8 @@ exports.getLayoutChangesObserver = getLayoutChangesObserver;
 
 
 
-function releaseLayoutChangesObserver(tabActor) {
-  const observerData = observedWindows.get(tabActor);
+function releaseLayoutChangesObserver(targetActor) {
+  const observerData = observedWindows.get(targetActor);
   if (!observerData) {
     return;
   }
@@ -412,7 +412,7 @@ function releaseLayoutChangesObserver(tabActor) {
   observerData.refCounting--;
   if (!observerData.refCounting) {
     observerData.observer.destroy();
-    observedWindows.delete(tabActor);
+    observedWindows.delete(targetActor);
   }
 }
 exports.releaseLayoutChangesObserver = releaseLayoutChangesObserver;
@@ -424,8 +424,8 @@ exports.releaseLayoutChangesObserver = releaseLayoutChangesObserver;
 
 
 class ReflowObserver extends Observable {
-  constructor(tabActor, callback) {
-    super(tabActor, callback);
+  constructor(targetActor, callback) {
+    super(targetActor, callback);
   }
 
   _startListeners(windows) {
@@ -470,8 +470,8 @@ ReflowObserver.prototype.QueryInterface = ChromeUtils
 
 
 class WindowResizeObserver extends Observable {
-  constructor(tabActor, callback) {
-    super(tabActor, callback);
+  constructor(targetActor, callback) {
+    super(targetActor, callback);
     this.onResize = this.onResize.bind(this);
   }
 
@@ -489,14 +489,11 @@ class WindowResizeObserver extends Observable {
 
   get listenerTarget() {
     
-    if (this.tabActor.isRootActor) {
-      return this.tabActor.window;
+    if (this.targetActor.isRootActor) {
+      return this.targetActor.window;
     }
 
     
-    return this.tabActor.window.QueryInterface(Ci.nsIInterfaceRequestor)
-                               .getInterface(Ci.nsIWebNavigation)
-                               .QueryInterface(Ci.nsIDocShell)
-                               .chromeEventHandler;
+    return this.targetActor.chromeEventHandler;
   }
 }

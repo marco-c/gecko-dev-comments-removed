@@ -7,12 +7,16 @@
 const { Ci } = require("chrome");
 const Services = require("Services");
 const { DebuggerServer } = require("../main");
-const { getChildDocShells, TabActor, tabPrototype } = require("./tab");
+const {
+  getChildDocShells,
+  BrowsingContextTargetActor,
+  browsingContextTargetPrototype
+} = require("devtools/server/actors/targets/browsing-context");
 const makeDebugger = require("./utils/make-debugger");
 
 const { extend } = require("devtools/shared/extend");
 const { ActorClassWithSpec } = require("devtools/shared/protocol");
-const { tabSpec } = require("devtools/shared/specs/tab");
+const { browsingContextTargetSpec } = require("devtools/shared/specs/targets/browsing-context");
 
 
 
@@ -40,11 +44,11 @@ const { tabSpec } = require("devtools/shared/specs/tab");
 
 
 
-
-const chromePrototype = extend({}, tabPrototype);
+const chromePrototype = extend({}, browsingContextTargetPrototype);
 
 chromePrototype.initialize = function(connection) {
-  TabActor.prototype.initialize.call(this, connection);
+  BrowsingContextTargetActor.prototype.initialize.call(this, connection);
+
   
   this.makeDebugger = makeDebugger.bind(null, {
     findDebuggees: dbg => dbg.findAllGlobals(),
@@ -107,7 +111,7 @@ Object.defineProperty(chromePrototype, "docShells", {
 });
 
 chromePrototype.observe = function(subject, topic, data) {
-  TabActor.prototype.observe.call(this, subject, topic, data);
+  BrowsingContextTargetActor.prototype.observe.call(this, subject, topic, data);
   if (!this.attached) {
     return;
   }
@@ -126,7 +130,7 @@ chromePrototype._attach = function() {
     return false;
   }
 
-  TabActor.prototype._attach.call(this);
+  BrowsingContextTargetActor.prototype._attach.call(this);
 
   
   Services.obs.addObserver(this, "chrome-webnavigation-create");
@@ -168,7 +172,7 @@ chromePrototype._detach = function() {
     this._progressListener.unwatch(docShell);
   }
 
-  TabActor.prototype._detach.call(this);
+  BrowsingContextTargetActor.prototype._detach.call(this);
   return undefined;
 };
 
@@ -206,4 +210,4 @@ chromePrototype.postNest = function(nestData) {
 
 chromePrototype.typeName = "Chrome";
 exports.chromePrototype = chromePrototype;
-exports.ChromeActor = ActorClassWithSpec(tabSpec, chromePrototype);
+exports.ChromeActor = ActorClassWithSpec(browsingContextTargetSpec, chromePrototype);

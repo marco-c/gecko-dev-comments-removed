@@ -211,8 +211,7 @@ exports.Toolbox = Toolbox;
 
 Toolbox.HostType = {
   BOTTOM: "bottom",
-  RIGHT: "right",
-  LEFT: "left",
+  SIDE: "side",
   WINDOW: "window",
   CUSTOM: "custom"
 };
@@ -692,10 +691,9 @@ Toolbox.prototype = {
   _getTelemetryHostId: function() {
     switch (this.hostType) {
       case Toolbox.HostType.BOTTOM: return 0;
-      case Toolbox.HostType.RIGHT: return 1;
+      case Toolbox.HostType.SIDE: return 1;
       case Toolbox.HostType.WINDOW: return 2;
       case Toolbox.HostType.CUSTOM: return 3;
-      case Toolbox.HostType.LEFT: return 4;
       default: return 9;
     }
   },
@@ -704,8 +702,7 @@ Toolbox.prototype = {
   _getTelemetryHostString: function() {
     switch (this.hostType) {
       case Toolbox.HostType.BOTTOM: return "bottom";
-      case Toolbox.HostType.LEFT: return "left";
-      case Toolbox.HostType.RIGHT: return "right";
+      case Toolbox.HostType.SIDE: return "side";
       case Toolbox.HostType.WINDOW: return "window";
       case Toolbox.HostType.CUSTOM: return "other";
       default: return "bottom";
@@ -1077,8 +1074,7 @@ Toolbox.prototype = {
     for (const type in Toolbox.HostType) {
       const position = Toolbox.HostType[type];
       if (position == Toolbox.HostType.CUSTOM ||
-          (!sideEnabled &&
-            (position == Toolbox.HostType.LEFT || position == Toolbox.HostType.RIGHT))) {
+          (!sideEnabled && position == Toolbox.HostType.SIDE)) {
         continue;
       }
 
@@ -1252,8 +1248,7 @@ Toolbox.prototype = {
 
   _onPickerClick: function() {
     const focus = this.hostType === Toolbox.HostType.BOTTOM ||
-                  this.hostType === Toolbox.HostType.LEFT ||
-                  this.hostType === Toolbox.HostType.RIGHT;
+                this.hostType === Toolbox.HostType.SIDE;
     const currentPanel = this.getCurrentPanel();
     if (currentPanel.togglePicker) {
       currentPanel.togglePicker(focus);

@@ -979,8 +979,6 @@ var DebuggerServer = {
 
 
 
-
-
   connectToFrame(connection, frame, onDestroy, {addonId} = {}) {
     return new Promise(resolve => {
       

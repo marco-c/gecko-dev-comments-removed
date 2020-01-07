@@ -132,15 +132,15 @@ add_task(async function() {
     const EventEmitter = require("devtools/shared/event-emitter");
 
     
-    const tabActor = DebuggerServer.searchAllConnectionsForActor(actorId);
+    const targetActor = DebuggerServer.searchAllConnectionsForActor(actorId);
     
-    EventEmitter.on(tabActor, "will-navigate", function(data) {
+    EventEmitter.on(targetActor, "will-navigate", function(data) {
       sendSyncMessage("devtools-test:event", {
         event: "will-navigate",
         data: { newURI: data.newURI }
       });
     });
-    EventEmitter.on(tabActor, "navigate", function(data) {
+    EventEmitter.on(targetActor, "navigate", function(data) {
       sendSyncMessage("devtools-test:event", {
         event: "navigate",
         data: { readyState: content.document.readyState }

@@ -186,9 +186,9 @@ var ProgramActor = protocol.ActorClassWithSpec(programSpec, {
 
 
 exports.WebGLActor = protocol.ActorClassWithSpec(webGLSpec, {
-  initialize: function(conn, tabActor) {
+  initialize: function(conn, targetActor) {
     protocol.Actor.prototype.initialize.call(this, conn);
-    this.tabActor = tabActor;
+    this.targetActor = targetActor;
     this._onGlobalCreated = this._onGlobalCreated.bind(this);
     this._onGlobalDestroyed = this._onGlobalDestroyed.bind(this);
     this._onProgramLinked = this._onProgramLinked.bind(this);
@@ -214,12 +214,12 @@ exports.WebGLActor = protocol.ActorClassWithSpec(webGLSpec, {
     this._programActorsCache = [];
     this._webglObserver = new WebGLObserver();
 
-    this.tabActor.on("window-ready", this._onGlobalCreated);
-    this.tabActor.on("window-destroyed", this._onGlobalDestroyed);
+    this.targetActor.on("window-ready", this._onGlobalCreated);
+    this.targetActor.on("window-destroyed", this._onGlobalDestroyed);
     EventEmitter.on(this._webglObserver, "program-linked", this._onProgramLinked);
 
     if (reload) {
-      this.tabActor.window.location.reload();
+      this.targetActor.window.location.reload();
     }
   },
 
@@ -234,8 +234,8 @@ exports.WebGLActor = protocol.ActorClassWithSpec(webGLSpec, {
     }
     this._initialized = false;
 
-    this.tabActor.off("window-ready", this._onGlobalCreated);
-    this.tabActor.off("window-destroyed", this._onGlobalDestroyed);
+    this.targetActor.off("window-ready", this._onGlobalCreated);
+    this.targetActor.off("window-destroyed", this._onGlobalDestroyed);
     EventEmitter.off(this._webglObserver, "program-linked", this._onProgramLinked);
 
     this._programActorsCache = null;
@@ -248,7 +248,7 @@ exports.WebGLActor = protocol.ActorClassWithSpec(webGLSpec, {
 
 
   getPrograms: function() {
-    const id = ContentObserver.GetInnerWindowID(this.tabActor.window);
+    const id = ContentObserver.GetInnerWindowID(this.targetActor.window);
     return this._programActorsCache.filter(e => e.ownerWindow == id);
   },
 
@@ -258,7 +258,7 @@ exports.WebGLActor = protocol.ActorClassWithSpec(webGLSpec, {
 
   waitForFrame: function() {
     const deferred = defer();
-    this.tabActor.window.requestAnimationFrame(deferred.resolve);
+    this.targetActor.window.requestAnimationFrame(deferred.resolve);
     return deferred.promise;
   },
 
@@ -277,12 +277,12 @@ exports.WebGLActor = protocol.ActorClassWithSpec(webGLSpec, {
 
   getPixel: function({ selector, position }) {
     const { x, y } = position;
-    const canvas = this.tabActor.window.document.querySelector(selector);
+    const canvas = this.targetActor.window.document.querySelector(selector);
     const context = XPCNativeWrapper.unwrap(canvas.getContext("webgl"));
     const { proxy } = this._webglObserver.for(context);
     const height = canvas.height;
 
-    let buffer = new this.tabActor.window.Uint8Array(4);
+    let buffer = new this.targetActor.window.Uint8Array(4);
     buffer = XPCNativeWrapper.unwrap(buffer);
 
     proxy.readPixels(

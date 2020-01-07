@@ -2,9 +2,16 @@
 
 
 
-
-
 "use strict";
+
+
+
+
+
+
+
+
+
 
 
 
@@ -21,14 +28,14 @@ var {
 var { DebuggerServer } = require("devtools/server/main");
 var DevToolsUtils = require("devtools/shared/DevToolsUtils");
 var { assert } = DevToolsUtils;
-var { TabSources } = require("./utils/TabSources");
-var makeDebugger = require("./utils/make-debugger");
+var { TabSources } = require("devtools/server/actors/utils/TabSources");
+var makeDebugger = require("devtools/server/actors/utils/make-debugger");
 const InspectorUtils = require("InspectorUtils");
 
 const EXTENSION_CONTENT_JSM = "resource://gre/modules/ExtensionContent.jsm";
 
 const { ActorClassWithSpec, Actor } = require("devtools/shared/protocol");
-const { tabSpec } = require("devtools/shared/specs/tab");
+const { browsingContextTargetSpec } = require("devtools/shared/specs/targets/browsing-context");
 
 loader.lazyRequireGetter(this, "ThreadActor", "devtools/server/actors/thread", true);
 loader.lazyRequireGetter(this, "unwrapDebuggerObjectGlobal", "devtools/server/actors/thread", true);
@@ -86,9 +93,16 @@ function getInnerId(window) {
                .getInterface(Ci.nsIDOMWindowUtils).currentInnerWindowID;
 }
 
-const tabPrototype = {
+const browsingContextTargetPrototype = {
 
   
+
+
+
+
+
+
+
 
 
 
@@ -282,7 +296,9 @@ const tabPrototype = {
   },
 
   
-  actorPrefix: "tab",
+
+
+  typeName: "browsingContextTarget",
 
   
 
@@ -308,8 +324,8 @@ const tabPrototype = {
 
 
   get docShell() {
-    throw new Error(
-      "The docShell getter should be implemented by a subclass of TabActor");
+    throw new Error("`docShell` getter should be overridden by a subclass of " +
+                    "`BrowsingContextTargetActor`");
   },
 
   
@@ -425,15 +441,11 @@ const tabPrototype = {
   
 
 
-
-
   get title() {
     return this.contentDocument.contentTitle;
   },
 
   
-
-
 
 
   get url() {
@@ -456,7 +468,7 @@ const tabPrototype = {
     assert(!this.exited,
                "form() shouldn't be called on exited browser actor.");
     assert(this.actorID,
-               "tab should have an actorID.");
+               "Actor should have an actorID.");
 
     const response = {
       actor: this.actorID
@@ -507,7 +519,8 @@ const tabPrototype = {
     
     
     if (this._attached) {
-      this.threadActor._tabClosed = true;
+      
+      this.threadActor._parentClosed = true;
     }
 
     this._detach();
@@ -759,7 +772,6 @@ const tabPrototype = {
 
     
     
-    
     if (webProgress.DOMWindow == this.window &&
         this.window != this._originalWindow) {
       this._changeTopLevelDocument(this._originalWindow);
@@ -993,7 +1005,7 @@ const tabPrototype = {
       this.webNavigation.reload(force ?
         Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CACHE :
         Ci.nsIWebNavigation.LOAD_FLAGS_NONE);
-    }, "TabActor.prototype.reload's delayed body"));
+    }, "BrowsingContextTargetActor.prototype.reload's delayed body"));
     return {};
   },
 
@@ -1005,7 +1017,7 @@ const tabPrototype = {
     
     Services.tm.dispatchToMainThread(DevToolsUtils.makeInfallible(() => {
       this.window.location = request.url;
-    }, "TabActor.prototype.navigateTo's delayed body"));
+    }, "BrowsingContextTargetActor.prototype.navigateTo's delayed body"));
     return {};
   },
 
@@ -1330,7 +1342,6 @@ const tabPrototype = {
     
     
     
-    
     this.emit("will-navigate", {
       window: window,
       isTopLevel: isTopLevel,
@@ -1464,8 +1475,9 @@ const tabPrototype = {
   },
 };
 
-exports.tabPrototype = tabPrototype;
-exports.TabActor = ActorClassWithSpec(tabSpec, tabPrototype);
+exports.browsingContextTargetPrototype = browsingContextTargetPrototype;
+exports.BrowsingContextTargetActor =
+  ActorClassWithSpec(browsingContextTargetSpec, browsingContextTargetPrototype);
 
 
 
@@ -1476,8 +1488,8 @@ exports.TabActor = ActorClassWithSpec(tabSpec, tabPrototype);
 
 
 
-function DebuggerProgressListener(tabActor) {
-  this._tabActor = tabActor;
+function DebuggerProgressListener(targetActor) {
+  this._targetActor = targetActor;
   this._onWindowCreated = this.onWindowCreated.bind(this);
   this._onWindowHidden = this.onWindowHidden.bind(this);
 
@@ -1525,7 +1537,7 @@ DebuggerProgressListener.prototype = {
 
     
     for (const win of this._getWindowsInDocShell(docShell)) {
-      this._tabActor._windowReady(win);
+      this._targetActor._windowReady(win);
       this._knownWindowIDs.set(getWindowID(win), win);
     }
   },
@@ -1565,7 +1577,7 @@ DebuggerProgressListener.prototype = {
   },
 
   onWindowCreated: DevToolsUtils.makeInfallible(function(evt) {
-    if (!this._tabActor.attached) {
+    if (!this._targetActor.attached) {
       return;
     }
 
@@ -1589,13 +1601,13 @@ DebuggerProgressListener.prototype = {
       return;
     }
 
-    this._tabActor._windowReady(window);
+    this._targetActor._windowReady(window);
 
     this._knownWindowIDs.set(innerID, window);
   }, "DebuggerProgressListener.prototype.onWindowCreated"),
 
   onWindowHidden: DevToolsUtils.makeInfallible(function(evt) {
-    if (!this._tabActor.attached) {
+    if (!this._targetActor.attached) {
       return;
     }
 
@@ -1614,12 +1626,12 @@ DebuggerProgressListener.prototype = {
     }
 
     const window = evt.target.defaultView;
-    this._tabActor._windowDestroyed(window, null, true);
+    this._targetActor._windowDestroyed(window, null, true);
     this._knownWindowIDs.delete(getWindowID(window));
   }, "DebuggerProgressListener.prototype.onWindowHidden"),
 
   observe: DevToolsUtils.makeInfallible(function(subject, topic) {
-    if (!this._tabActor.attached) {
+    if (!this._targetActor.attached) {
       return;
     }
 
@@ -1630,13 +1642,13 @@ DebuggerProgressListener.prototype = {
     const window = this._knownWindowIDs.get(innerID);
     if (window) {
       this._knownWindowIDs.delete(innerID);
-      this._tabActor._windowDestroyed(window, innerID);
+      this._targetActor._windowDestroyed(window, innerID);
     }
   }, "DebuggerProgressListener.prototype.observe"),
 
   onStateChange:
   DevToolsUtils.makeInfallible(function(progress, request, flag, status) {
-    if (!this._tabActor.attached) {
+    if (!this._targetActor.attached) {
       return;
     }
 
@@ -1649,7 +1661,7 @@ DebuggerProgressListener.prototype = {
     if (isDocument && isStop) {
       
       progress.QueryInterface(Ci.nsIDocShell);
-      this._tabActor._notifyDocShellsUpdate([progress]);
+      this._targetActor._notifyDocShellsUpdate([progress]);
     }
 
     const window = progress.DOMWindow;
@@ -1657,7 +1669,7 @@ DebuggerProgressListener.prototype = {
       
       
       const newURI = request instanceof Ci.nsIChannel ? request.URI.spec : null;
-      this._tabActor._willNavigate(window, newURI, request);
+      this._targetActor._willNavigate(window, newURI, request);
     }
     if (isWindow && isStop) {
       
@@ -1676,14 +1688,14 @@ DebuggerProgressListener.prototype = {
           
           if (evt.target === window.document) {
             handler.removeEventListener("DOMContentLoaded", onLoad, true);
-            this._tabActor._navigate(window);
+            this._targetActor._navigate(window);
           }
         };
         handler.addEventListener("DOMContentLoaded", onLoad, true);
       } else {
         
         
-        this._tabActor._navigate(window);
+        this._targetActor._navigate(window);
       }
     }
   }, "DebuggerProgressListener.prototype.onStateChange")

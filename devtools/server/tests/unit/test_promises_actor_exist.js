@@ -20,7 +20,7 @@ add_task(async function() {
     client.request({ to: targetTab.actor, type: "attach" }, response => {
       Assert.ok(!("error" in response), "Expect no error in response.");
       Assert.equal(response.from, targetTab.actor,
-        "Expect the target TabActor in response form field.");
+        "Expect the target BrowsingContextTargetActor in response form field.");
       Assert.equal(response.type, "tabAttached",
         "Expect tabAttached in the response type.");
       Assert.ok(typeof response.promisesActor === "string",

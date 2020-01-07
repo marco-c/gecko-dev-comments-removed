@@ -5,11 +5,14 @@
 "use strict";
 
 var { Cr } = require("chrome");
-var { TabActor, tabPrototype } = require("devtools/server/actors/tab");
+var {
+  BrowsingContextTargetActor,
+  browsingContextTargetPrototype
+} = require("devtools/server/actors/targets/browsing-context");
 
 const { extend } = require("devtools/shared/extend");
 const { ActorClassWithSpec } = require("devtools/shared/protocol");
-const { tabSpec } = require("devtools/shared/specs/tab");
+const { browsingContextTargetSpec } = require("devtools/shared/specs/targets/browsing-context");
 
 
 
@@ -37,11 +40,11 @@ const { tabSpec } = require("devtools/shared/specs/tab");
 
 
 
-const contentPrototype = extend({}, tabPrototype);
+const contentPrototype = extend({}, browsingContextTargetPrototype);
 
 contentPrototype.initialize = function(connection, chromeGlobal) {
   this._chromeGlobal = chromeGlobal;
-  TabActor.prototype.initialize.call(this, connection, chromeGlobal);
+  BrowsingContextTargetActor.prototype.initialize.call(this, connection, chromeGlobal);
   this.traits.reconfigure = false;
   this._sendForm = this._sendForm.bind(this);
   this._chromeGlobal.addMessageListener("debug:form", this._sendForm);
@@ -75,7 +78,7 @@ contentPrototype.exit = function() {
     this._sendForm = null;
   }
 
-  TabActor.prototype.exit.call(this);
+  BrowsingContextTargetActor.prototype.exit.call(this);
 
   this._chromeGlobal = null;
 };
@@ -88,4 +91,4 @@ contentPrototype._sendForm = function() {
   this._chromeGlobal.sendAsyncMessage("debug:form", this.form());
 };
 
-exports.ContentActor = ActorClassWithSpec(tabSpec, contentPrototype);
+exports.ContentActor = ActorClassWithSpec(browsingContextTargetSpec, contentPrototype);

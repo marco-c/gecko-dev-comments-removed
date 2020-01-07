@@ -86,15 +86,15 @@ exports.HighlighterActor = protocol.ActorClassWithSpec(highlighterSpec, {
     this._autohide = autohide;
     this._inspector = inspector;
     this._walker = this._inspector.walker;
-    this._tabActor = this._inspector.tabActor;
+    this._targetActor = this._inspector.targetActor;
     this._highlighterEnv = new HighlighterEnvironment();
-    this._highlighterEnv.initFromTabActor(this._tabActor);
+    this._highlighterEnv.initFromTargetActor(this._targetActor);
 
     this._highlighterReady = this._highlighterReady.bind(this);
     this._highlighterHidden = this._highlighterHidden.bind(this);
     this._onNavigate = this._onNavigate.bind(this);
 
-    const doc = this._tabActor.window.document;
+    const doc = this._targetActor.window.document;
     
     
     if (doc.documentElement && doc.readyState != "uninitialized") {
@@ -103,7 +103,7 @@ exports.HighlighterActor = protocol.ActorClassWithSpec(highlighterSpec, {
 
     
     
-    this._tabActor.on("navigate", this._onNavigate);
+    this._targetActor.on("navigate", this._onNavigate);
   },
 
   get conn() {
@@ -120,7 +120,7 @@ exports.HighlighterActor = protocol.ActorClassWithSpec(highlighterSpec, {
   },
 
   _createHighlighter: function() {
-    this._isPreviousWindowXUL = isXUL(this._tabActor.window);
+    this._isPreviousWindowXUL = isXUL(this._targetActor.window);
 
     if (!this._isPreviousWindowXUL) {
       this._highlighter = new BoxModelHighlighter(this._highlighterEnv,
@@ -146,12 +146,12 @@ exports.HighlighterActor = protocol.ActorClassWithSpec(highlighterSpec, {
   _onNavigate: function({isTopLevel}) {
     
     
-    if (!isTopLevel || !this._tabActor.window.document.documentElement) {
+    if (!isTopLevel || !this._targetActor.window.document.documentElement) {
       return;
     }
 
     
-    if (isXUL(this._tabActor.window) !== this._isPreviousWindowXUL) {
+    if (isXUL(this._targetActor.window) !== this._isPreviousWindowXUL) {
       this._destroyHighlighter();
       this._createHighlighter();
     }
@@ -162,7 +162,7 @@ exports.HighlighterActor = protocol.ActorClassWithSpec(highlighterSpec, {
 
     this.hideBoxModel();
     this._destroyHighlighter();
-    this._tabActor.off("navigate", this._onNavigate);
+    this._targetActor.off("navigate", this._onNavigate);
 
     this._highlighterEnv.destroy();
     this._highlighterEnv = null;
@@ -170,7 +170,7 @@ exports.HighlighterActor = protocol.ActorClassWithSpec(highlighterSpec, {
     this._autohide = null;
     this._inspector = null;
     this._walker = null;
-    this._tabActor = null;
+    this._targetActor = null;
   },
 
   
@@ -260,7 +260,7 @@ exports.HighlighterActor = protocol.ActorClassWithSpec(highlighterSpec, {
       this._stopPickerListeners();
       this._isPicking = false;
       if (this._autohide) {
-        this._tabActor.window.setTimeout(() => {
+        this._targetActor.window.setTimeout(() => {
           this._highlighter.hide();
         }, HIGHLIGHTER_PICKED_TIMER);
       }
@@ -455,9 +455,9 @@ exports.CustomHighlighterActor = protocol.ActorClassWithSpec(customHighlighterSp
     
     
     
-    if (!isXUL(this._parent.tabActor.window) || constructor.XULSupported) {
+    if (!isXUL(this._parent.targetActor.window) || constructor.XULSupported) {
       this._highlighterEnv = new HighlighterEnvironment();
-      this._highlighterEnv.initFromTabActor(parent.tabActor);
+      this._highlighterEnv.initFromTargetActor(parent.targetActor);
       this._highlighter = new constructor(this._highlighterEnv);
       if (this._highlighter.on) {
         this._highlighter.on("highlighter-event", this._onHighlighterEvent.bind(this));
@@ -555,9 +555,9 @@ exports.CustomHighlighterActor = protocol.ActorClassWithSpec(customHighlighterSp
 
 
 function HighlighterEnvironment() {
-  this.relayTabActorWindowReady = this.relayTabActorWindowReady.bind(this);
-  this.relayTabActorNavigate = this.relayTabActorNavigate.bind(this);
-  this.relayTabActorWillNavigate = this.relayTabActorWillNavigate.bind(this);
+  this.relayTargetActorWindowReady = this.relayTargetActorWindowReady.bind(this);
+  this.relayTargetActorNavigate = this.relayTargetActorNavigate.bind(this);
+  this.relayTargetActorWillNavigate = this.relayTargetActorWillNavigate.bind(this);
 
   EventEmitter.decorate(this);
 }
@@ -565,11 +565,11 @@ function HighlighterEnvironment() {
 exports.HighlighterEnvironment = HighlighterEnvironment;
 
 HighlighterEnvironment.prototype = {
-  initFromTabActor: function(tabActor) {
-    this._tabActor = tabActor;
-    this._tabActor.on("window-ready", this.relayTabActorWindowReady);
-    this._tabActor.on("navigate", this.relayTabActorNavigate);
-    this._tabActor.on("will-navigate", this.relayTabActorWillNavigate);
+  initFromTargetActor: function(targetActor) {
+    this._targetActor = targetActor;
+    this._targetActor.on("window-ready", this.relayTargetActorWindowReady);
+    this._targetActor.on("navigate", this.relayTargetActorNavigate);
+    this._targetActor.on("will-navigate", this.relayTargetActorWillNavigate);
   },
 
   initFromWindow: function(win) {
@@ -617,7 +617,7 @@ HighlighterEnvironment.prototype = {
   },
 
   get isInitialized() {
-    return this._win || this._tabActor;
+    return this._win || this._targetActor;
   },
 
   get isXUL() {
@@ -626,10 +626,10 @@ HighlighterEnvironment.prototype = {
 
   get window() {
     if (!this.isInitialized) {
-      throw new Error("Initialize HighlighterEnvironment with a tabActor " +
+      throw new Error("Initialize HighlighterEnvironment with a targetActor " +
         "or window first");
     }
-    const win = this._tabActor ? this._tabActor.window : this._win;
+    const win = this._targetActor ? this._targetActor.window : this._win;
 
     return Cu.isDeadWrapper(win) ? null : win;
   },
@@ -663,31 +663,30 @@ HighlighterEnvironment.prototype = {
 
 
 
-
   get pageListenerTarget() {
-    if (this._tabActor && this._tabActor.isRootActor) {
+    if (this._targetActor && this._targetActor.isRootActor) {
       return this.window;
     }
     return this.docShell && this.docShell.chromeEventHandler;
   },
 
-  relayTabActorWindowReady: function(data) {
+  relayTargetActorWindowReady: function(data) {
     this.emit("window-ready", data);
   },
 
-  relayTabActorNavigate: function(data) {
+  relayTargetActorNavigate: function(data) {
     this.emit("navigate", data);
   },
 
-  relayTabActorWillNavigate: function(data) {
+  relayTargetActorWillNavigate: function(data) {
     this.emit("will-navigate", data);
   },
 
   destroy: function() {
-    if (this._tabActor) {
-      this._tabActor.off("window-ready", this.relayTabActorWindowReady);
-      this._tabActor.off("navigate", this.relayTabActorNavigate);
-      this._tabActor.off("will-navigate", this.relayTabActorWillNavigate);
+    if (this._targetActor) {
+      this._targetActor.off("window-ready", this.relayTargetActorWindowReady);
+      this._targetActor.off("navigate", this.relayTargetActorNavigate);
+      this._targetActor.off("will-navigate", this.relayTargetActorWillNavigate);
     }
 
     
@@ -700,7 +699,7 @@ HighlighterEnvironment.prototype = {
       }
     }
 
-    this._tabActor = null;
+    this._targetActor = null;
     this._win = null;
   }
 };

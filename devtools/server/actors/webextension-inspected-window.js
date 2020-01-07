@@ -93,7 +93,7 @@ function logAccessDeniedWarning(window, callerInfo, extensionPolicy) {
 }
 
 function CustomizedReload(params) {
-  this.docShell = params.tabActor.window
+  this.docShell = params.targetActor.window
                         .QueryInterface(Ci.nsIInterfaceRequestor)
                         .getInterface(Ci.nsIDocShell);
   this.docShell.QueryInterface(Ci.nsIWebProgress);
@@ -263,9 +263,9 @@ var WebExtensionInspectedWindowActor = protocol.ActorClassWithSpec(
     
 
 
-    initialize(conn, tabActor) {
+    initialize(conn, targetActor) {
       protocol.Actor.prototype.initialize.call(this, conn);
-      this.tabActor = tabActor;
+      this.targetActor = targetActor;
     },
 
     destroy(conn) {
@@ -289,16 +289,16 @@ var WebExtensionInspectedWindowActor = protocol.ActorClassWithSpec(
         return this._dbg;
       }
 
-      this._dbg = this.tabActor.makeDebugger();
+      this._dbg = this.targetActor.makeDebugger();
       return this._dbg;
     },
 
     get window() {
-      return this.tabActor.window;
+      return this.targetActor.window;
     },
 
     get webNavigation() {
-      return this.tabActor.webNavigation;
+      return this.targetActor.webNavigation;
     },
 
     createEvalBindings(dbgWindow, options) {
@@ -400,7 +400,7 @@ var WebExtensionInspectedWindowActor = protocol.ActorClassWithSpec(
 
           try {
             this.customizedReload = new CustomizedReload({
-              tabActor: this.tabActor,
+              targetActor: this.targetActor,
               inspectedWindowEval: this.eval.bind(this),
               callerInfo, injectedScript, userAgent, ignoreCache,
             });

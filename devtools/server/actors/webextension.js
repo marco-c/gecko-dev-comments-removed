@@ -11,11 +11,13 @@ const Services = require("Services");
 const { ChromeActor, chromePrototype } = require("./chrome");
 const makeDebugger = require("./utils/make-debugger");
 const { ActorClassWithSpec } = require("devtools/shared/protocol");
-const { tabSpec } = require("devtools/shared/specs/tab");
+const { browsingContextTargetSpec } = require("devtools/shared/specs/targets/browsing-context");
 
 loader.lazyRequireGetter(this, "unwrapDebuggerObjectGlobal", "devtools/server/actors/thread", true);
 loader.lazyRequireGetter(this, "ChromeUtils");
 const FALLBACK_DOC_MESSAGE = "Your addon does not have any document opened yet.";
+
+
 
 
 
@@ -395,4 +397,5 @@ webExtensionChildPrototype._onParentExit = function(msg) {
   this.exit();
 };
 
-exports.WebExtensionChildActor = ActorClassWithSpec(tabSpec, webExtensionChildPrototype);
+exports.WebExtensionChildActor =
+  ActorClassWithSpec(browsingContextTargetSpec, webExtensionChildPrototype);

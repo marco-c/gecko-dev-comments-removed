@@ -51,7 +51,7 @@ exports.targetFromURL = async function targetFromURL(url) {
   
   let chrome = params.has("chrome");
 
-  let form, isTabActor;
+  let form, isBrowsingContext;
   if (type === "tab") {
     
     id = parseInt(id, 10);
@@ -80,7 +80,9 @@ exports.targetFromURL = async function targetFromURL(url) {
       chrome = true;
       if (id != 0) {
         
-        isTabActor = false;
+        
+        
+        isBrowsingContext = false;
       }
     } catch (ex) {
       if (ex.error == "noProcess") {
@@ -111,7 +113,7 @@ exports.targetFromURL = async function targetFromURL(url) {
     throw new Error(`targetFromURL, unsupported type '${type}' parameter`);
   }
 
-  return TargetFactory.forRemoteTab({ client, form, chrome, isTabActor });
+  return TargetFactory.forRemoteTab({ client, form, chrome, isBrowsingContext });
 };
 
 

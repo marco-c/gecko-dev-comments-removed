@@ -642,10 +642,10 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
     return { actor: this.actorID };
   },
 
-  initialize: function(conn, tabActor) {
+  initialize: function(conn, targetActor) {
     protocol.Actor.prototype.initialize.call(this, null);
 
-    this.parentActor = tabActor;
+    this.parentActor = targetActor;
 
     this._onNewStyleSheetActor = this._onNewStyleSheetActor.bind(this);
     this._onSheetAdded = this._onSheetAdded.bind(this);

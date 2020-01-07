@@ -134,10 +134,10 @@ function TabTarget(tab) {
     this._chrome = tab.chrome;
   }
   
-  if (typeof tab.isTabActor == "boolean") {
-    this._isTabActor = tab.isTabActor;
+  if (typeof tab.isBrowsingContext == "boolean") {
+    this._isBrowsingContext = tab.isBrowsingContext;
   } else {
-    this._isTabActor = true;
+    this._isBrowsingContext = true;
   }
 }
 
@@ -311,8 +311,10 @@ TabTarget.prototype = {
   
   
   
-  get isTabActor() {
-    return this._isTabActor;
+  
+  
+  get isBrowsingContext() {
+    return this._isBrowsingContext;
   },
 
   get window() {
@@ -476,7 +478,7 @@ TabTarget.prototype = {
 
           attachTab();
         }, e => this._remote.reject(e));
-    } else if (this.isTabActor) {
+    } else if (this.isBrowsingContext) {
       
       
       attachTab();
@@ -772,7 +774,7 @@ WorkerTarget.prototype = {
     return true;
   },
 
-  get isTabActor() {
+  get isBrowsingContext() {
     return true;
   },
 

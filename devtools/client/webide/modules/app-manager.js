@@ -252,12 +252,12 @@ var AppManager = exports.AppManager = {
                      });
                    });
       }
-        
+      
       return TargetFactory.forRemoteTab({
           form: this._listTabsResponse,
           client: this.connection.client,
           chrome: true,
-          isTabActor: false
+          isBrowsingContext: false
       });
     }
 

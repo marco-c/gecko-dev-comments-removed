@@ -60,7 +60,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     this._dbg = null;
     this._gripDepth = 0;
     this._threadLifetimePool = null;
-    this._tabClosed = false;
+    this._parentClosed = false;
     this._scripts = null;
     this._pauseOnDOMEvents = null;
 
@@ -395,7 +395,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     
     
     
-    return this._tabClosed ? null : undefined;
+    return this._parentClosed ? null : undefined;
   },
 
   _makeOnEnterFrame: function({ pauseAndRespond }) {
