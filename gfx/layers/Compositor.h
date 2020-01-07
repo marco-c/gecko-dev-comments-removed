@@ -306,6 +306,14 @@ public:
 
 
 
+
+
+  virtual CompositingRenderTarget* GetWindowRenderTarget() const { return nullptr; }
+
+  
+
+
+
   virtual void SetDestinationSurfaceSize(const gfx::IntSize& aSize) = 0;
 
   
