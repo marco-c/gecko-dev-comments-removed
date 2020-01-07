@@ -358,17 +358,6 @@ public:
   }
 
   
-  
-  
-  const nsStyleCoord& ComputedCrossSize(const nsIFrame* aFrame) const {
-    const nsStylePosition* stylePos = aFrame->StylePosition();
-
-    return IsCrossAxisHorizontal() ?
-      stylePos->mWidth :
-      stylePos->mHeight;
-  }
-
-  
 
 
 
@@ -555,6 +544,9 @@ public:
   
   
   bool HadMeasuringReflow() const  { return mHadMeasuringReflow; }
+
+  
+  bool IsCrossSizeAuto() const;
 
   
   
@@ -2000,6 +1992,18 @@ FlexItem::GetBaselineOffsetFromOuterCrossEdge(
   return GetOuterCrossSize(crossAxis) - marginTopToBaseline;
 }
 
+bool
+FlexItem::IsCrossSizeAuto() const
+{
+  const nsStylePosition* stylePos = mFrame->StylePosition();
+  
+  
+  
+  return eStyleUnit_Auto == (IsInlineAxisCrossAxis()
+                             ? stylePos->ISize(mWM).GetUnit()
+                             : stylePos->BSize(mWM).GetUnit());
+}
+
 uint32_t
 FlexItem::GetNumAutoMarginsInAxis(AxisOrientationType aAxis) const
 {
@@ -3280,7 +3284,7 @@ FlexItem::ResolveStretchedCrossSize(nscoord aLineCrossSize,
   
   if (mAlignSelf != NS_STYLE_ALIGN_STRETCH ||
       GetNumAutoMarginsInAxis(crossAxis) != 0 ||
-      eStyleUnit_Auto != aAxisTracker.ComputedCrossSize(mFrame).GetUnit()) {
+      !IsCrossSizeAuto()) {
     return;
   }
 
