@@ -210,6 +210,7 @@ static nsAtom*
 
 
 
+
 class nsAtomSubTable
 {
   friend class nsAtomTable;
@@ -253,7 +254,8 @@ public:
 
   
   
-  static void AtomTableClearEntry(PLDHashTable* aTable, PLDHashEntryHdr* aEntry);
+  static void AtomTableClearEntry(PLDHashTable* aTable,
+                                  PLDHashEntryHdr* aEntry);
 
   
   
@@ -479,7 +481,6 @@ nsAtomSubTable::GCLocked(GCKind aKind)
       
       
       
-      
       nsAutoCString name;
       atom->ToUTF8String(name);
       if (nonZeroRefcountAtomsCount == 0) {
@@ -651,7 +652,6 @@ nsAtomTable::RegisterStaticAtoms(const nsStaticAtomSetup* aSetup,
 
     nsStaticAtom* atom;
     if (he->mAtom) {
-      
       
       
       
