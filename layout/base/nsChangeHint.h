@@ -246,6 +246,14 @@ enum nsChangeHint : uint32_t {
   nsChangeHint_UpdateTableCellSpans = 1 << 30,
 
   
+
+
+
+
+
+  nsChangeHint_VisibilityChange = 1u << 31,
+
+  
   
   
   
@@ -260,7 +268,7 @@ enum nsChangeHint : uint32_t {
   
 
 
-  nsChangeHint_AllHints = (1u << 31) - 1,
+  nsChangeHint_AllHints = uint32_t((1ull << 32) - 1),
 };
 
 
@@ -342,7 +350,8 @@ inline nsChangeHint operator^=(nsChangeHint& aLeft, nsChangeHint aRight)
   nsChangeHint_SyncFrameView |                             \
   nsChangeHint_UpdateCursor |                              \
   nsChangeHint_UpdateSubtreeOverflow |                     \
-  nsChangeHint_UpdateTextPath                              \
+  nsChangeHint_UpdateTextPath |                            \
+  nsChangeHint_VisibilityChange                            \
 )
 
 
@@ -456,7 +465,8 @@ static_assert(!(nsChangeHint_Hints_AlwaysHandledForDescendants &
                nsChangeHint_AddOrRemoveTransform |         \
                nsChangeHint_UpdatePostTransformOverflow  | \
                nsChangeHint_UpdateTransformLayer |         \
-               nsChangeHint_UpdateUsesOpacity)
+               nsChangeHint_UpdateUsesOpacity |            \
+               nsChangeHint_VisibilityChange)
 
 
 
