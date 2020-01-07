@@ -7,6 +7,7 @@
 package org.mozilla.geckoview;
 
 import java.net.URLConnection;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.UUID;
@@ -40,6 +41,7 @@ import android.os.SystemClock;
 import android.support.annotation.IntDef;
 import android.support.annotation.Nullable;
 import android.support.annotation.NonNull;
+import android.util.Base64;
 import android.util.Log;
 
 public class GeckoSession extends LayerSession
@@ -831,6 +833,22 @@ public class GeckoSession extends LayerSession
         loadUri(uri, null, LOAD_FLAGS_NONE);
     }
 
+    private void loadUri(@NonNull String uri, @Nullable String referrer,
+                         @Nullable String baseUri, int flags) {
+        final GeckoBundle msg = new GeckoBundle();
+        msg.putString("uri", uri);
+        msg.putInt("flags", flags);
+
+        if (baseUri != null) {
+            msg.putString("baseUri", baseUri);
+        }
+
+        if (referrer != null) {
+            msg.putString("referrer", referrer);
+        }
+        mEventDispatcher.dispatch("GeckoView:LoadUri", msg);
+    }
+
     
 
 
@@ -849,13 +867,7 @@ public class GeckoSession extends LayerSession
 
 
     public void loadUri(@NonNull String uri, @Nullable String referrer, @LoadFlags int flags) {
-        final GeckoBundle msg = new GeckoBundle();
-        msg.putString("uri", uri);
-        msg.putInt("flags", flags);
-        if (referrer != null) {
-            msg.putString("referrer", referrer);
-        }
-        mEventDispatcher.dispatch("GeckoView:LoadUri", msg);
+        loadUri(uri, referrer, null, flags);
     }
 
     
@@ -883,6 +895,70 @@ public class GeckoSession extends LayerSession
 
     public void loadUri(@NonNull Uri uri, @Nullable Uri referrer, @LoadFlags int flags) {
         loadUri(uri.toString(), referrer != null ? referrer.toString() : null, flags);
+    }
+
+    
+
+
+
+
+
+
+    public void loadString(@NonNull final String data, @Nullable final String mimeType) {
+        if (data == null) {
+            throw new IllegalArgumentException("data cannot be null");
+        }
+
+        loadData(data.getBytes(Charset.forName("utf-8")), mimeType);
+    }
+
+    
+
+
+
+
+
+
+    public void loadData(@NonNull final byte[] bytes, @Nullable final String mimeType) {
+        loadData(bytes, mimeType, null);
+    }
+
+    
+
+
+
+
+
+
+
+    public void loadData(@NonNull final byte[] bytes, @Nullable final String mimeType,
+                         @Nullable final String baseUri) {
+        if (bytes == null) {
+            throw new IllegalArgumentException("data cannot be null");
+        }
+
+        loadUri(createDataUri(bytes, mimeType), null, baseUri, LOAD_FLAGS_NONE);
+    }
+
+    
+
+
+
+
+
+    public static String createDataUri(@NonNull final byte[] bytes, @Nullable final String mimeType) {
+        return String.format("data:%s,%s", mimeType != null ? mimeType : "",
+                             Base64.encodeToString(bytes, Base64.URL_SAFE | Base64.NO_WRAP));
+    }
+
+    
+
+
+
+
+
+    public static String createDataUri(@NonNull final String data, @Nullable final String mimeType) {
+        return createDataUri(data.getBytes(Charset.forName("utf-8")), mimeType);
     }
 
     
