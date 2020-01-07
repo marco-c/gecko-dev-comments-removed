@@ -126,7 +126,7 @@ CheckedInt64 FramesToUsecs(int64_t aFrames, uint32_t aRate);
 media::TimeUnit FramesToTimeUnit(int64_t aFrames, uint32_t aRate);
 
 
-CheckedInt64 SaferMultDiv(int64_t aValue, uint32_t aMul, uint32_t aDiv);
+CheckedInt64 SaferMultDiv(int64_t aValue, uint64_t aMul, uint64_t aDiv);
 
 
 
