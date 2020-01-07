@@ -16,6 +16,7 @@
 #include "nsIChannel.h"
 #include "nsIChannelEventSink.h"
 #include "nsIDocShell.h"
+#include "nsIHttpChannelInternal.h"
 #include "nsIInterfaceRequestor.h"
 #include "nsIInterfaceRequestorUtils.h"
 
@@ -125,6 +126,12 @@ class ClientChannelHelper final : public nsIInterfaceRequestor
       newLoadInfo->GiveReservedClientSource(Move(reservedClient));
     }
 
+    uint32_t redirectMode = nsIHttpChannelInternal::REDIRECT_MODE_MANUAL;
+    nsCOMPtr<nsIHttpChannelInternal> http = do_QueryInterface(aOldChannel);
+    if (http) {
+      MOZ_ALWAYS_SUCCEEDS(http->GetRedirectMode(&redirectMode));
+    }
+
     
     
     
@@ -135,7 +142,10 @@ class ClientChannelHelper final : public nsIInterfaceRequestor
     
     
     
-    if (!(aFlags & nsIChannelEventSink::REDIRECT_INTERNAL)) {
+    
+    
+    if (!(aFlags & nsIChannelEventSink::REDIRECT_INTERNAL) &&
+        redirectMode != nsIHttpChannelInternal::REDIRECT_MODE_FOLLOW) {
       newLoadInfo->ClearController();
     }
 

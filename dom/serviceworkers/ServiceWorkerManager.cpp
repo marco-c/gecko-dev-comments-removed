@@ -2395,6 +2395,18 @@ ServiceWorkerManager::DispatchFetchEvent(nsIInterceptedChannel* aChannel,
       StartControllingClient(clientInfo.ref(), registration);
     }
 
+    uint32_t redirectMode = nsIHttpChannelInternal::REDIRECT_MODE_MANUAL;
+    nsCOMPtr<nsIHttpChannelInternal> http = do_QueryInterface(internalChannel);
+    MOZ_ALWAYS_SUCCEEDS(http->GetRedirectMode(&redirectMode));
+
+    
+    
+    
+    
+    if (redirectMode == nsIHttpChannelInternal::REDIRECT_MODE_FOLLOW) {
+      loadInfo->ClearController();
+    }
+
     
     
     
