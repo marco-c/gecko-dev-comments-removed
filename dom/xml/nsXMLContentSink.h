@@ -153,6 +153,22 @@ protected:
                                     const nsAString& aMedia,
                                     const nsAString& aReferrerPolicy) override;
 
+  
+  
+  
+  
+  
+  
+  virtual nsresult MaybeProcessXSLTLink(
+    nsIContent* aProcessingInstruction,
+    const nsAString& aHref,
+    bool aAlternate,
+    const nsAString& aTitle,
+    const nsAString& aType,
+    const nsAString& aMedia,
+    const nsAString& aReferrerPolicy,
+    bool* aWasXSLT = nullptr);
+
   nsresult LoadXSLStyleSheet(nsIURI* aUrl);
 
   bool CanStillPrettyPrint();

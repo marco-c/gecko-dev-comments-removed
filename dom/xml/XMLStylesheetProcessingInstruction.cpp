@@ -161,6 +161,8 @@ XMLStylesheetProcessingInstruction::GetStyleSheetInfo(nsAString& aTitle,
 
   nsContentUtils::GetPseudoAttributeValue(data, nsGkAtoms::media, aMedia);
 
+  
+  
   nsAutoString type;
   nsContentUtils::GetPseudoAttributeValue(data, nsGkAtoms::type, type);
 

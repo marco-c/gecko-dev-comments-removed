@@ -659,7 +659,6 @@ nsXMLContentSink::ProcessStyleLink(nsIContent* aElement,
                                    const nsAString& aMedia,
                                    const nsAString& aReferrerPolicy)
 {
-  nsresult rv = NS_OK;
   mPrettyPrintXML = false;
 
   nsAutoCString cmd;
@@ -668,60 +667,84 @@ nsXMLContentSink::ProcessStyleLink(nsIContent* aElement,
   if (cmd.EqualsASCII(kLoadAsData))
     return NS_OK; 
 
-  NS_ConvertUTF16toUTF8 type(aType);
-  if (type.EqualsIgnoreCase(TEXT_XSL) ||
-      type.EqualsIgnoreCase(APPLICATION_XSLT_XML) ||
-      type.EqualsIgnoreCase(TEXT_XML) ||
-      type.EqualsIgnoreCase(APPLICATION_XML)) {
-    if (aAlternate) {
-      
-      return NS_OK;
-    }
+  bool wasXSLT;
+  nsresult rv = MaybeProcessXSLTLink(aElement, aHref, aAlternate, aType, aType,
+                                     aMedia, aReferrerPolicy, &wasXSLT);
+  NS_ENSURE_SUCCESS(rv, rv);
+  if (wasXSLT) {
     
-    if (!mDocShell)
-      return NS_OK;
-
-    nsCOMPtr<nsIURI> url;
-    rv = NS_NewURI(getter_AddRefs(url), aHref, nullptr,
-                   mDocument->GetDocBaseURI());
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    
-    nsIScriptSecurityManager *secMan = nsContentUtils::GetSecurityManager();
-    rv = secMan->
-      CheckLoadURIWithPrincipal(mDocument->NodePrincipal(), url,
-                                nsIScriptSecurityManager::ALLOW_CHROME);
-    NS_ENSURE_SUCCESS(rv, NS_OK);
-
-    
-    int16_t decision = nsIContentPolicy::ACCEPT;
-    rv = NS_CheckContentLoadPolicy(nsIContentPolicy::TYPE_XSLT,
-                                   url,
-                                   mDocument->NodePrincipal(), 
-                                   mDocument->NodePrincipal(), 
-                                   aElement,
-                                   type,
-                                   nullptr,
-                                   &decision,
-                                   nsContentUtils::GetContentPolicy());
-
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    if (NS_CP_REJECTED(decision)) {
-      return NS_OK;
-    }
-
-    return LoadXSLStyleSheet(url);
+    return NS_OK;
   }
 
   
-  rv = nsContentSink::ProcessStyleLink(aElement, aHref, aAlternate,
-                                       aTitle, aType, aMedia, aReferrerPolicy);
+  return nsContentSink::ProcessStyleLink(aElement, aHref, aAlternate,
+                                         aTitle, aType, aMedia, aReferrerPolicy);
+}
+
+nsresult
+nsXMLContentSink::MaybeProcessXSLTLink(nsIContent* aProcessingInstruction,
+                                       const nsAString& aHref,
+                                       bool aAlternate,
+                                       const nsAString& aTitle,
+                                       const nsAString& aType,
+                                       const nsAString& aMedia,
+                                       const nsAString& aReferrerPolicy,
+                                       bool* aWasXSLT)
+{
+  bool wasXSLT =
+    aType.LowerCaseEqualsLiteral(TEXT_XSL) ||
+    aType.LowerCaseEqualsLiteral(APPLICATION_XSLT_XML) ||
+    aType.LowerCaseEqualsLiteral(TEXT_XML) ||
+    aType.LowerCaseEqualsLiteral(APPLICATION_XML);
+
+  if (aWasXSLT) {
+    *aWasXSLT = wasXSLT;
+  }
+
+  if (!wasXSLT) {
+    return NS_OK;
+  }
+
+  if (aAlternate) {
+    
+    return NS_OK;
+  }
+  
+  if (!mDocShell) {
+    return NS_OK;
+  }
+
+  nsCOMPtr<nsIURI> url;
+  nsresult rv = NS_NewURI(getter_AddRefs(url), aHref, nullptr,
+                 mDocument->GetDocBaseURI());
+  NS_ENSURE_SUCCESS(rv, rv);
 
   
-  
+  nsIScriptSecurityManager *secMan = nsContentUtils::GetSecurityManager();
+  rv = secMan->
+    CheckLoadURIWithPrincipal(mDocument->NodePrincipal(), url,
+                              nsIScriptSecurityManager::ALLOW_CHROME);
+  NS_ENSURE_SUCCESS(rv, NS_OK);
 
-  return rv;
+  
+  int16_t decision = nsIContentPolicy::ACCEPT;
+  rv = NS_CheckContentLoadPolicy(nsIContentPolicy::TYPE_XSLT,
+                                 url,
+                                 mDocument->NodePrincipal(), 
+                                 mDocument->NodePrincipal(), 
+                                 aProcessingInstruction,
+                                 NS_ConvertUTF16toUTF8(aType),
+                                 nullptr,
+                                 &decision,
+                                 nsContentUtils::GetContentPolicy());
+
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  if (NS_CP_REJECTED(decision)) {
+    return NS_OK;
+  }
+
+  return LoadXSLStyleSheet(url);
 }
 
 void
@@ -1216,10 +1239,11 @@ nsXMLContentSink::HandleProcessingInstruction(const char16_t *aTarget,
   const nsDependentString target(aTarget);
   const nsDependentString data(aData);
 
-  nsCOMPtr<nsIContent> node =
+  RefPtr<ProcessingInstruction> node =
     NS_NewXMLProcessingInstruction(mNodeInfoManager, target, data);
 
-  nsCOMPtr<nsIStyleSheetLinkingElement> ssle(do_QueryInterface(node));
+  nsCOMPtr<nsIStyleSheetLinkingElement> ssle =
+    do_QueryInterface(ToSupports(node));
   if (ssle) {
     ssle->InitStyleLinkElement(false);
     ssle->SetEnableUpdates(false);
@@ -1253,16 +1277,23 @@ nsXMLContentSink::HandleProcessingInstruction(const char16_t *aTarget,
   }
 
   
+  
+  
   nsAutoString type;
   nsContentUtils::GetPseudoAttributeValue(data, nsGkAtoms::type, type);
+  nsAutoString mimeType, notUsed;
+  nsContentUtils::SplitMimeType(type, mimeType, notUsed);
 
   if (mState != eXMLContentSinkState_InProlog ||
       !target.EqualsLiteral("xml-stylesheet") ||
-      type.IsEmpty()                          ||
-      type.LowerCaseEqualsLiteral("text/css")) {
+      mimeType.IsEmpty()                          ||
+      mimeType.LowerCaseEqualsLiteral("text/css")) {
+    
+    
     return DidProcessATokenImpl();
   }
 
+  
   nsAutoString href, title, media;
   bool isAlternate = false;
 
@@ -1273,7 +1304,8 @@ nsXMLContentSink::HandleProcessingInstruction(const char16_t *aTarget,
 
   
   
-  rv = ProcessStyleLink(node, href, isAlternate, title, type, media, EmptyString());
+  rv = MaybeProcessXSLTLink(node, href, isAlternate, title, type, media,
+                            EmptyString());
   return NS_SUCCEEDED(rv) ? DidProcessATokenImpl() : rv;
 }
 
