@@ -97,6 +97,12 @@ public:
                                      const nsAString& aPseudo,
                                      ErrorResult& aRv);
 
+  
+  
+  
+  static bool IsInheritedProperty(GlobalObject& aGlobal,
+                                  const nsAString& aPropertyName);
+
 private:
   static already_AddRefed<nsStyleContext>
     GetCleanStyleContextForElement(Element* aElement, nsAtom* aPseudo);
