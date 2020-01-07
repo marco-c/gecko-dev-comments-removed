@@ -90,7 +90,7 @@ class StylishFormatter(object):
 
         
         for fail in failed:
-            message.append("{c}A failure occured in the {name} linter.".format(
+            message.append("{c}A failure occurred in the {name} linter.".format(
                 c=self.color('brightred'),
                 name=fail,
             ))
