@@ -83,14 +83,24 @@ class ExtensionControlledPopup {
 
 
 
+
+
+
+
+
+
+
+
   constructor(opts) {
     this.confirmedType = opts.confirmedType;
     this.observerTopic = opts.observerTopic;
+    this.anchorId = opts.anchorId;
     this.popupnotificationId = opts.popupnotificationId;
     this.settingType = opts.settingType;
     this.settingKey = opts.settingKey;
     this.descriptionId = opts.descriptionId;
     this.descriptionMessageId = opts.descriptionMessageId;
+    this.getLocalizedDescription = opts.getLocalizedDescription;
     this.learnMoreMessageId = opts.learnMoreMessageId;
     this.learnMoreLink = opts.learnMoreLink;
     this.onObserverAdded = opts.onObserverAdded;
@@ -150,21 +160,26 @@ class ExtensionControlledPopup {
     }
   }
 
-  async open(targetWindow) {
+  
+  
+  async open(targetWindow, extensionId) {
     await ExtensionSettingsStore.initialize();
 
     
     
     this.removeObserver();
 
-    let item = ExtensionSettingsStore.getSetting(
-      this.settingType, this.settingKey);
+    if (!extensionId) {
+      let item = ExtensionSettingsStore.getSetting(
+        this.settingType, this.settingKey);
+      extensionId = item && item.id;
+    }
 
     
     
     
     
-    if (!item || !item.id || this.userHasConfirmed(item.id)) {
+    if (!extensionId || this.userHasConfirmed(extensionId)) {
       return;
     }
 
@@ -179,7 +194,7 @@ class ExtensionControlledPopup {
       throw new Error(`No popupnotification found for id "${this.popupnotificationId}"`);
     }
 
-    let addon = await AddonManager.getAddonByID(item.id);
+    let addon = await AddonManager.getAddonByID(extensionId);
     this.populateDescription(doc, addon);
 
     
@@ -188,10 +203,12 @@ class ExtensionControlledPopup {
 
       if (event.originalTarget.getAttribute("anonid") == "button") {
         
-        await this.setConfirmation(item.id);
+        await this.setConfirmation(extensionId);
       } else {
         
-        await this.beforeDisableAddon(this, win);
+        if (this.beforeDisableAddon) {
+          await this.beforeDisableAddon(this, win);
+        }
         addon.userDisabled = true;
       }
 
@@ -209,17 +226,23 @@ class ExtensionControlledPopup {
       panel.removeEventListener("command", handleCommand);
     }, {once: true});
 
-    
-    let action = CustomizableUI.getWidget(
-      `${makeWidgetId(item.id)}-browser-action`);
-    if (action) {
-      action = action.areaType == "toolbar" && action.forWindow(win).node;
-    }
+    let anchorButton;
+    if (this.anchorId) {
+      
+      anchorButton = doc.getElementById(this.anchorId);
+    } else {
+      
+      let action = CustomizableUI.getWidget(
+        `${makeWidgetId(extensionId)}-browser-action`);
+      if (action) {
+        action = action.areaType == "toolbar" && action.forWindow(win).node;
+      }
 
-    
+      
+      anchorButton = action || doc.getElementById("PanelUI-menu-button");
+    }
     let anchor = doc.getAnonymousElementByAttribute(
-      action || doc.getElementById("PanelUI-menu-button"),
-      "class", "toolbarbutton-icon");
+      anchorButton, "class", "toolbarbutton-icon");
     panel.hidden = false;
     popupnotification.hidden = false;
     panel.openPopup(anchor);
@@ -245,8 +268,13 @@ class ExtensionControlledPopup {
 
     let addonDetails = this.getAddonDetails(doc, addon);
     let message = strBundle.GetStringFromName(this.descriptionMessageId);
-    description.appendChild(
-      BrowserUtils.getLocalizedFragment(doc, message, addonDetails));
+    if (this.getLocalizedDescription) {
+      description.appendChild(
+        this.getLocalizedDescription(doc, message, addonDetails));
+    } else {
+      description.appendChild(
+        BrowserUtils.getLocalizedFragment(doc, message, addonDetails));
+    }
 
     let link = doc.createElement("label");
     link.setAttribute("class", "learnMore text-link");

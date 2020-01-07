@@ -3,6 +3,7 @@
 
 
 %include downloads/indicator.inc.css
+%include addons/extension-controlled.inc.css
 
 %filter substitution
 %define navbarTabsShadowSize 1px
