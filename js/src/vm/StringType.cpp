@@ -472,6 +472,8 @@ JSRope::flattenInternal(JSContext* maybecx)
 
     AutoCheckCannotGC nogc;
 
+    gc::StoreBuffer* bufferIfNursery = storeBuffer();
+
     
     JSRope* leftMostRope = this;
     while (leftMostRope->leftChild()->isRope())
@@ -495,7 +497,7 @@ JSRope::flattenInternal(JSContext* maybecx)
                     JSString::writeBarrierPre(str->d.s.u3.right);
                 }
                 JSString* child = str->d.s.u2.left;
-                js::BarrierMethods<JSString*>::postBarrier(&str->d.s.u2.left, child, nullptr);
+                
                 MOZ_ASSERT(child->isRope());
                 str->setNonInlineChars(wholeChars);
                 child->d.u1.flattenData = uintptr_t(str) | Tag_VisitRightChild;
@@ -512,12 +514,19 @@ JSRope::flattenInternal(JSContext* maybecx)
             else
                 left.d.u1.flags = DEPENDENT_FLAGS | LATIN1_CHARS_BIT;
             left.d.s.u3.base = (JSLinearString*)this;  
-            BarrierMethods<JSString*>::postBarrier((JSString**)&left.d.s.u3.base, nullptr, this);
             Nursery& nursery = runtimeFromMainThread()->gc.nursery();
-            if (isTenured() && !left.isTenured())
-                nursery.removeMallocedBuffer(wholeChars);
-            else if (!isTenured() && left.isTenured())
+            bool inTenured = !bufferIfNursery;
+            if (!inTenured && left.isTenured()) {
+                
+                
                 nursery.registerMallocedBuffer(wholeChars);
+                
+                bufferIfNursery->putWholeCell(&left);
+            } else if (inTenured && !left.isTenured()) {
+                
+                
+                nursery.removeMallocedBuffer(wholeChars);
+            }
             goto visit_right_child;
         }
     }
@@ -546,7 +555,6 @@ JSRope::flattenInternal(JSContext* maybecx)
         }
 
         JSString& left = *str->d.s.u2.left;
-        js::BarrierMethods<JSString*>::postBarrier(&str->d.s.u2.left, &left, nullptr);
         str->setNonInlineChars(pos);
         if (left.isRope()) {
             
@@ -559,7 +567,6 @@ JSRope::flattenInternal(JSContext* maybecx)
     }
     visit_right_child: {
         JSString& right = *str->d.s.u3.right;
-        BarrierMethods<JSString*>::postBarrier(&str->d.s.u3.right, &right, nullptr);
         if (right.isRope()) {
             
             right.d.u1.flattenData = uintptr_t(str) | Tag_FinishNode;
@@ -590,7 +597,19 @@ JSRope::flattenInternal(JSContext* maybecx)
             str->d.u1.flags = DEPENDENT_FLAGS | LATIN1_CHARS_BIT;
         str->d.u1.length = pos - str->asLinear().nonInlineChars<CharT>(nogc);
         str->d.s.u3.base = (JSLinearString*)this;       
-        BarrierMethods<JSString*>::postBarrier((JSString**)&str->d.s.u3.base, nullptr, this);
+
+        
+        
+        
+        
+        
+        
+        
+        
+        gc::StoreBuffer* bufferIfNursery = storeBuffer();
+        if (bufferIfNursery && str->isTenured())
+            bufferIfNursery->putWholeCell(str);
+
         str = (JSString*)(flattenData & ~Tag_Mask);
         if ((flattenData & Tag_Mask) == Tag_VisitRightChild)
             goto visit_right_child;
