@@ -1135,10 +1135,10 @@ public class BrowserApp extends GeckoApp
     public void onAttachedToWindow() {
         final SafeIntent intent = new SafeIntent(getIntent());
 
-        
-        checkFirstrun(this, intent);
-
         if (!IntentUtils.getIsInAutomationFromEnvironment(intent)) {
+            
+            checkFirstrun(this, intent);
+
             DawnHelper.conditionallyNotifyDawn(this);
         }
     }
