@@ -14,7 +14,7 @@ function run_test() {
   const asyncUtils = require(path);
   
   
-  do_check_true(o.asyncUtils === asyncUtils);
+  Assert.ok(o.asyncUtils === asyncUtils);
 
   
   
@@ -26,11 +26,11 @@ function run_test() {
   loader.require("devtools/shared/DevToolsUtils");
 
   loader.lazyRequireGetter(o2, name, path);
-  do_check_true(o2.asyncUtils !== asyncUtils);
+  Assert.ok(o2.asyncUtils !== asyncUtils);
 
   
   
   let exposeLoader = loader.require("xpcshell-test/exposeLoader");
   const o3 = exposeLoader.exerciseLazyRequire(name, path);
-  do_check_true(o3.asyncUtils === o2.asyncUtils);
+  Assert.ok(o3.asyncUtils === o2.asyncUtils);
 }

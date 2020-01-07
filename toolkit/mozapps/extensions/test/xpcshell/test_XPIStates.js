@@ -88,11 +88,11 @@ var lastTimestamp = Date.now();
 
 
 function checkChange(XS, aPath, aChange) {
-  do_check_true(aPath.exists());
+  Assert.ok(aPath.exists());
   lastTimestamp += 10000;
   do_print("Touching file " + aPath.path + " with " + lastTimestamp);
   aPath.lastModifiedTime = lastTimestamp;
-  do_check_eq(XS.getInstallState(), aChange);
+  Assert.equal(XS.getInstallState(), aChange);
   
   XS.save();
 }
@@ -125,15 +125,15 @@ add_task(async function detect_touches() {
   let XS = getXS();
 
   
-  do_check_false(XS.getInstallState());
+  Assert.ok(!XS.getInstallState());
 
   let states = XS.getLocation("app-profile");
 
   
-  do_check_true(states.get("packed-enabled@tests.mozilla.org").enabled);
-  do_check_false(states.get("packed-disabled@tests.mozilla.org").enabled);
-  do_check_true(states.get("unpacked-enabled@tests.mozilla.org").enabled);
-  do_check_false(states.get("unpacked-disabled@tests.mozilla.org").enabled);
+  Assert.ok(states.get("packed-enabled@tests.mozilla.org").enabled);
+  Assert.ok(!states.get("packed-disabled@tests.mozilla.org").enabled);
+  Assert.ok(states.get("unpacked-enabled@tests.mozilla.org").enabled);
+  Assert.ok(!states.get("unpacked-disabled@tests.mozilla.org").enabled);
 
   
 
@@ -173,8 +173,8 @@ add_task(async function detect_touches() {
 
   ud.userDisabled = false;
   let xState = XS.getAddon("app-profile", ud.id);
-  do_check_true(xState.enabled);
-  do_check_eq(xState.mtime, ud.updateDate.getTime());
+  Assert.ok(xState.enabled);
+  Assert.equal(xState.mtime, ud.updateDate.getTime());
 });
 
 
@@ -191,7 +191,7 @@ add_task(async function uninstall_bootstrap() {
   pe.uninstall();
 
   let xpiState = await getXSJSON();
-  do_check_false("packed-enabled@tests.mozilla.org" in xpiState["app-profile"].addons);
+  Assert.equal(false, "packed-enabled@tests.mozilla.org" in xpiState["app-profile"].addons);
 });
 
 
@@ -205,9 +205,9 @@ add_task(async function install_bootstrap() {
 
   let newAddon = installer.addon;
   let xState = XS.getAddon("app-profile", newAddon.id);
-  do_check_true(!!xState);
-  do_check_true(xState.enabled);
-  do_check_eq(xState.mtime, newAddon.updateDate.getTime());
+  Assert.ok(!!xState);
+  Assert.ok(xState.enabled);
+  Assert.equal(xState.mtime, newAddon.updateDate.getTime());
   newAddon.uninstall();
 });
 
@@ -227,7 +227,7 @@ add_task(async function install_restart() {
   let newAddon = installer.addon;
   let newID = newAddon.id;
   let xState = XS.getAddon("app-profile", newID);
-  do_check_false(xState);
+  Assert.ok(!xState);
 
   
   
@@ -238,40 +238,40 @@ add_task(async function install_restart() {
 
   newAddon = await promiseAddonByID(newID);
   xState = XS.getAddon("app-profile", newID);
-  do_check_true(xState);
-  do_check_true(xState.enabled);
-  do_check_eq(xState.mtime, newAddon.updateDate.getTime());
+  Assert.ok(xState);
+  Assert.ok(xState.enabled);
+  Assert.equal(xState.mtime, newAddon.updateDate.getTime());
 
   
   
   newAddon.userDisabled = true;
-  do_check_false(xState.enabled);
+  Assert.ok(!xState.enabled);
   XS = null;
   newAddon = null;
   await promiseRestartManager();
   XS = getXS();
   xState = XS.getAddon("app-profile", newID);
-  do_check_true(xState);
-  do_check_false(xState.enabled);
+  Assert.ok(xState);
+  Assert.ok(!xState.enabled);
 
   newAddon = await promiseAddonByID(newID);
   newAddon.userDisabled = false;
-  do_check_true(xState.enabled);
+  Assert.ok(xState.enabled);
   XS = null;
   newAddon = null;
   await promiseRestartManager();
   XS = getXS();
   xState = XS.getAddon("app-profile", newID);
-  do_check_true(xState);
-  do_check_true(xState.enabled);
+  Assert.ok(xState);
+  Assert.ok(xState.enabled);
 
   
   
   newAddon = await promiseAddonByID(newID);
   newAddon.uninstall();
   xState = XS.getAddon("app-profile", newID);
-  do_check_true(xState);
-  do_check_false(xState.enabled);
+  Assert.ok(xState);
+  Assert.ok(!xState.enabled);
 
   
   XS = null;
@@ -279,5 +279,5 @@ add_task(async function install_restart() {
   await promiseRestartManager();
   XS = getXS();
   xState = XS.getAddon("app-profile", newID);
-  do_check_false(xState);
+  Assert.ok(!xState);
 });

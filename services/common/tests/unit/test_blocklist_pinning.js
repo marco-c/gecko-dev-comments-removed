@@ -82,7 +82,7 @@ add_task(async function test_something() {
   
   await PinningPreloadClient.openCollection(async (collection) => {
     const list = await collection.list();
-    do_check_eq(list.data.length, 1);
+    Assert.equal(list.data.length, 1);
   });
 
   
@@ -96,7 +96,7 @@ add_task(async function test_something() {
   
   await PinningPreloadClient.openCollection(async (collection) => {
     const list = await collection.list();
-    do_check_eq(list.data.length, 5);
+    Assert.equal(list.data.length, 5);
   });
 
   
@@ -124,7 +124,7 @@ add_task(async function test_something() {
   Services.prefs.setIntPref("services.blocklist.onecrl.checked", 0);
   await PinningPreloadClient.maybeSync(3000, Date.now());
   let newValue = Services.prefs.getIntPref("services.blocklist.pinning.checked");
-  do_check_neq(newValue, 0);
+  Assert.notEqual(newValue, 0);
 
   
   ok(sss.isSecureURI(sss.HEADER_HSTS,

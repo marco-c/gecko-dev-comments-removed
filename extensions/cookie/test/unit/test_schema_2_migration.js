@@ -93,17 +93,17 @@ function* do_run_test() {
   do_load_profile();
 
   
-  do_check_eq(Services.cookiemgr.countCookiesFromHost("foo.com"), 20);
+  Assert.equal(Services.cookiemgr.countCookiesFromHost("foo.com"), 20);
 
   
-  do_check_eq(Services.cookiemgr.countCookiesFromHost("bar.com"), 20);
+  Assert.equal(Services.cookiemgr.countCookiesFromHost("bar.com"), 20);
 
   
   
-  do_check_eq(Services.cookiemgr.countCookiesFromHost("baz.com"), 1);
+  Assert.equal(Services.cookiemgr.countCookiesFromHost("baz.com"), 1);
   let enumerator = Services.cookiemgr.getCookiesFromHost("baz.com", {});
   let cookie = enumerator.getNext().QueryInterface(Ci.nsICookie2);
-  do_check_eq(cookie.expiry, futureExpiry + 44);
+  Assert.equal(cookie.expiry, futureExpiry + 44);
 
   do_close_profile(test_generator);
   yield;
@@ -134,7 +134,7 @@ function* do_run_test() {
   schema2db.insertCookie(cookie);
 
   
-  do_check_eq(do_count_cookies_in_db(schema2db.db, "baz.com"), 1);
+  Assert.equal(do_count_cookies_in_db(schema2db.db, "baz.com"), 1);
 
   
   schema2db.close();
@@ -153,19 +153,19 @@ function* do_run_test() {
   yield;
 
   
-  do_check_eq(Services.cookiemgr.countCookiesFromHost("foo.com"), 20);
-  do_check_eq(Services.cookiemgr.countCookiesFromHost("bar.com"), 20);
-  do_check_eq(Services.cookiemgr.countCookiesFromHost("baz.com"), 0);
-  do_check_eq(Services.cookiemgr.countCookiesFromHost("cat.com"), 0);
+  Assert.equal(Services.cookiemgr.countCookiesFromHost("foo.com"), 20);
+  Assert.equal(Services.cookiemgr.countCookiesFromHost("bar.com"), 20);
+  Assert.equal(Services.cookiemgr.countCookiesFromHost("baz.com"), 0);
+  Assert.equal(Services.cookiemgr.countCookiesFromHost("cat.com"), 0);
 
   do_close_profile(test_generator);
   yield;
 
   
   schema2db = new CookieDatabaseConnection(do_get_cookie_file(profile), 2);
-  do_check_eq(do_count_cookies_in_db(schema2db.db), 40);
-  do_check_eq(do_count_cookies_in_db(schema2db.db, "foo.com"), 20);
-  do_check_eq(do_count_cookies_in_db(schema2db.db, "bar.com"), 20);
+  Assert.equal(do_count_cookies_in_db(schema2db.db), 40);
+  Assert.equal(do_count_cookies_in_db(schema2db.db, "foo.com"), 20);
+  Assert.equal(do_count_cookies_in_db(schema2db.db, "bar.com"), 20);
   schema2db.close();
 
   
@@ -176,19 +176,19 @@ function* do_run_test() {
   do_load_profile();
 
   
-  do_check_eq(Services.cookiemgr.countCookiesFromHost("foo.com"), 20);
-  do_check_eq(Services.cookiemgr.countCookiesFromHost("bar.com"), 20);
-  do_check_eq(Services.cookiemgr.countCookiesFromHost("baz.com"), 0);
-  do_check_eq(Services.cookiemgr.countCookiesFromHost("cat.com"), 0);
+  Assert.equal(Services.cookiemgr.countCookiesFromHost("foo.com"), 20);
+  Assert.equal(Services.cookiemgr.countCookiesFromHost("bar.com"), 20);
+  Assert.equal(Services.cookiemgr.countCookiesFromHost("baz.com"), 0);
+  Assert.equal(Services.cookiemgr.countCookiesFromHost("cat.com"), 0);
 
   do_close_profile(test_generator);
   yield;
 
   
   schema2db = new CookieDatabaseConnection(do_get_cookie_file(profile), 2);
-  do_check_eq(do_count_cookies_in_db(schema2db.db), 40);
-  do_check_eq(do_count_cookies_in_db(schema2db.db, "foo.com"), 20);
-  do_check_eq(do_count_cookies_in_db(schema2db.db, "bar.com"), 20);
+  Assert.equal(do_count_cookies_in_db(schema2db.db), 40);
+  Assert.equal(do_count_cookies_in_db(schema2db.db, "foo.com"), 20);
+  Assert.equal(do_count_cookies_in_db(schema2db.db, "bar.com"), 20);
   schema2db.close();
 
   
@@ -197,22 +197,22 @@ function* do_run_test() {
 
   
   do_load_profile();
-  do_check_eq(do_count_cookies(), 40);
+  Assert.equal(do_count_cookies(), 40);
 
   
-  do_check_eq(Services.cookiemgr.countCookiesFromHost("foo.com"), 20);
-  do_check_eq(Services.cookiemgr.countCookiesFromHost("bar.com"), 20);
-  do_check_eq(Services.cookiemgr.countCookiesFromHost("baz.com"), 0);
-  do_check_eq(Services.cookiemgr.countCookiesFromHost("cat.com"), 0);
+  Assert.equal(Services.cookiemgr.countCookiesFromHost("foo.com"), 20);
+  Assert.equal(Services.cookiemgr.countCookiesFromHost("bar.com"), 20);
+  Assert.equal(Services.cookiemgr.countCookiesFromHost("baz.com"), 0);
+  Assert.equal(Services.cookiemgr.countCookiesFromHost("cat.com"), 0);
 
   do_close_profile(test_generator);
   yield;
 
   
   schema2db = new CookieDatabaseConnection(do_get_cookie_file(profile), 2);
-  do_check_eq(do_count_cookies_in_db(schema2db.db), 40);
-  do_check_eq(do_count_cookies_in_db(schema2db.db, "foo.com"), 20);
-  do_check_eq(do_count_cookies_in_db(schema2db.db, "bar.com"), 20);
+  Assert.equal(do_count_cookies_in_db(schema2db.db), 40);
+  Assert.equal(do_count_cookies_in_db(schema2db.db, "foo.com"), 20);
+  Assert.equal(do_count_cookies_in_db(schema2db.db, "bar.com"), 20);
   schema2db.close();
 
   finish_test();

@@ -14,11 +14,11 @@ function run_test() {
   }
 
   
-  do_check_true(prefetch.hasMoreElements());
+  Assert.ok(prefetch.hasMoreElements());
 
   
   prefs.setBoolPref("network.prefetch-next", false);
-  do_check_false(prefetch.hasMoreElements());
+  Assert.ok(!prefetch.hasMoreElements());
 
   
   prefs.setBoolPref("network.prefetch-next", true);
@@ -26,5 +26,5 @@ function run_test() {
     var uri = ios.newURI("http://localhost/" + i);
     prefetch.prefetchURI(uri, uri, null, true);
   }
-  do_check_true(prefetch.hasMoreElements());
+  Assert.ok(prefetch.hasMoreElements());
 }

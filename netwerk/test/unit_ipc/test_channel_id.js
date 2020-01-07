@@ -56,7 +56,7 @@ function observer(subject, topic, data) {
 
   
   let expected = expectedParentChannels.shift();
-  do_check_true(!!expected);
+  Assert.ok(!!expected);
 
   
   for (let event of expected) {

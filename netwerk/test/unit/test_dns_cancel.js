@@ -21,7 +21,7 @@ var listener1 = {
     
     if (inRequest == requestList1NotCanceled) {
       
-      do_check_neq(inStatus, Cr.NS_ERROR_ABORT);
+      Assert.notEqual(inStatus, Cr.NS_ERROR_ABORT);
 
       do_test_finished();
     }
@@ -40,7 +40,7 @@ var listener2 = {
     
     if (inRequest == requestList2NotCanceled) {
       
-      do_check_neq(inStatus, Cr.NS_ERROR_ABORT);
+      Assert.notEqual(inStatus, Cr.NS_ERROR_ABORT);
 
       do_test_finished();
     }

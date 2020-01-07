@@ -25,7 +25,7 @@ function test_sanity() {
   do_test_pending();
 
   jwcrypto.generateKeyPair("DS160", function(err, kp) {
-    do_check_null(err);
+    Assert.equal(null, err);
 
     do_test_finished();
     run_next_test();
@@ -35,8 +35,8 @@ function test_sanity() {
 function test_generate() {
   do_test_pending();
   jwcrypto.generateKeyPair("DS160", function(err, kp) {
-    do_check_null(err);
-    do_check_neq(kp, null);
+    Assert.equal(null, err);
+    Assert.notEqual(kp, null);
 
     do_test_finished();
     run_next_test();
@@ -50,10 +50,10 @@ function test_get_assertion() {
     "DS160",
     function(err, kp) {
       jwcrypto.generateAssertion("fake-cert", kp, RP_ORIGIN, (err2, backedAssertion) => {
-        do_check_null(err2);
+        Assert.equal(null, err2);
 
-        do_check_eq(backedAssertion.split("~").length, 2);
-        do_check_eq(backedAssertion.split(".").length, 3);
+        Assert.equal(backedAssertion.split("~").length, 2);
+        Assert.equal(backedAssertion.split(".").length, 3);
 
         do_test_finished();
         run_next_test();
@@ -64,10 +64,10 @@ function test_get_assertion() {
 function test_rsa() {
   do_test_pending();
   function checkRSA(err, kpo) {
-    do_check_neq(kpo, undefined);
+    Assert.notEqual(kpo, undefined);
     do_print(kpo.serializedPublicKey);
     let pk = JSON.parse(kpo.serializedPublicKey);
-    do_check_eq(pk.algorithm, "RS");
+    Assert.equal(pk.algorithm, "RS");
 
 
 
@@ -94,10 +94,10 @@ function test_rsa() {
 function test_dsa() {
   do_test_pending();
   function checkDSA(err, kpo) {
-    do_check_neq(kpo, undefined);
+    Assert.notEqual(kpo, undefined);
     do_print(kpo.serializedPublicKey);
     let pk = JSON.parse(kpo.serializedPublicKey);
-    do_check_eq(pk.algorithm, "DS");
+    Assert.equal(pk.algorithm, "DS");
 
 
 
@@ -143,21 +143,21 @@ function test_get_assertion_with_offset() {
           localtimeOffsetMsec,
           now: localMsec},
           function(err2, backedAssertion) {
-            do_check_null(err2);
+            Assert.equal(null, err2);
 
             
             let cert;
             let assertion;
             [cert, assertion] = backedAssertion.split("~");
 
-            do_check_eq(cert, "fake-cert");
-            do_check_eq(assertion.split(".").length, 3);
+            Assert.equal(cert, "fake-cert");
+            Assert.equal(assertion.split(".").length, 3);
 
             let components = extractComponents(assertion);
 
             
             let exp = parseInt(components.payload.exp, 10);
-            do_check_true(exp - serverMsec === MINUTE_MS);
+            Assert.ok(exp - serverMsec === MINUTE_MS);
 
             do_test_finished();
             run_next_test();
@@ -176,22 +176,22 @@ function test_assertion_lifetime() {
       jwcrypto.generateAssertion("fake-cert", kp, RP_ORIGIN,
         {duration: MINUTE_MS},
         function(err2, backedAssertion) {
-          do_check_null(err2);
+          Assert.equal(null, err2);
 
           
           let cert;
           let assertion;
           [cert, assertion] = backedAssertion.split("~");
 
-          do_check_eq(cert, "fake-cert");
-          do_check_eq(assertion.split(".").length, 3);
+          Assert.equal(cert, "fake-cert");
+          Assert.equal(assertion.split(".").length, 3);
 
           let components = extractComponents(assertion);
 
           
           let exp = parseInt(components.payload.exp, 10);
-          do_check_true(Math.abs(Date.now() - exp) > 50 * SECOND_MS);
-          do_check_true(Math.abs(Date.now() - exp) <= MINUTE_MS);
+          Assert.ok(Math.abs(Date.now() - exp) > 50 * SECOND_MS);
+          Assert.ok(Math.abs(Date.now() - exp) <= MINUTE_MS);
 
           do_test_finished();
           run_next_test();
@@ -207,14 +207,14 @@ function test_audience_encoding_bug972582() {
   jwcrypto.generateKeyPair(
     "DS160",
     function(err, kp) {
-      do_check_null(err);
+      Assert.equal(null, err);
       jwcrypto.generateAssertion("fake-cert", kp, audience,
         function(err2, backedAssertion) {
-          do_check_null(err2);
+          Assert.equal(null, err2);
 
           let [, assertion] = backedAssertion.split("~");
           let components = extractComponents(assertion);
-          do_check_eq(components.payload.aud, audience);
+          Assert.equal(components.payload.aud, audience);
 
           do_test_finished();
           run_next_test();
@@ -245,12 +245,12 @@ function extractComponents(signedObject) {
   let payload = JSON.parse(base64UrlDecode(payloadSegment));
 
   
-  do_check_eq(Object.keys(header).length, 1);
-  do_check_true(!!header.alg);
+  Assert.equal(Object.keys(header).length, 1);
+  Assert.ok(!!header.alg);
 
   
   for (let field of ["exp", "aud"]) {
-    do_check_true(!!payload[field]);
+    Assert.ok(!!payload[field]);
   }
 
   return {header,

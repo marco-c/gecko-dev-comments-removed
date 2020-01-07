@@ -11,7 +11,7 @@ add_task(async function run_test() {
 
   let file = dir.clone();
   file.append("bug645970.xml");
-  do_check_true(file.exists());
+  Assert.ok(file.exists());
 
   await asyncInit();
 
@@ -37,9 +37,9 @@ add_task(async function run_test() {
 
   
   let engine = Services.search.getEngineByName("bug645970");
-  do_check_neq(engine, null);
+  Assert.notEqual(engine, null);
 
   
   Services.search.removeEngine(engine);
-  do_check_false(file.exists());
+  Assert.ok(!file.exists());
 });

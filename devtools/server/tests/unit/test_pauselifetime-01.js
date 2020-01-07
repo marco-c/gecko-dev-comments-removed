@@ -33,13 +33,13 @@ function test_pause_frame() {
     
     
     gClient.request({ to: pauseActor, type: "bogusRequest" }, function (response) {
-      do_check_eq(response.error, "unrecognizedPacketType");
+      Assert.equal(response.error, "unrecognizedPacketType");
 
       gThreadClient.resume(function () {
         
         
         gClient.request({ to: pauseActor, type: "bogusRequest" }, function (response) {
-          do_check_eq(response.error, "noSuchActor");
+          Assert.equal(response.error, "noSuchActor");
           finishClient(gClient);
         });
       });

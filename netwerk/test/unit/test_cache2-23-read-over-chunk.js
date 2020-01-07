@@ -18,9 +18,9 @@ function run_test()
     new OpenCallback(NEW|WAITFORWRITE, "", payload, function(entry) {
       var is = entry.openInputStream(0);
       pumpReadStream(is, function(read) {
-        do_check_eq(read.length, kChunkSize + 10);
+        Assert.equal(read.length, kChunkSize + 10);
         is.close();
-        do_check_true(read == payload); 
+        Assert.ok(read == payload); 
         finish_cache2_test();
       });
     })

@@ -46,8 +46,8 @@ function* do_run_test() {
   cookieFile.append("cookies.sqlite");
   this.backupFile = profile.clone();
   backupFile.append("cookies.sqlite.bak");
-  do_check_false(cookieFile.exists());
-  do_check_false(backupFile.exists());
+  Assert.ok(!cookieFile.exists());
+  Assert.ok(!backupFile.exists());
 
   
   this.now = Date.now() * 1000;
@@ -113,8 +113,8 @@ function create_garbage_file(file)
 {
   
   file.create(Ci.nsIFile.NORMAL_FILE_TYPE, -1);
-  do_check_true(file.exists());
-  do_check_eq(file.fileSize, 0);
+  Assert.ok(file.exists());
+  Assert.equal(file.fileSize, 0);
 
   
   let ostream = Cc["@mozilla.org/network/file-output-stream;1"].
@@ -125,15 +125,15 @@ function create_garbage_file(file)
   ostream.close();
 
   file = file.clone(); 
-  do_check_eq(file.fileSize, garbage.length);
+  Assert.equal(file.fileSize, garbage.length);
 }
 
 function check_garbage_file(file)
 {
-  do_check_true(file.exists());
-  do_check_eq(file.fileSize, garbage.length);
+  Assert.ok(file.exists());
+  Assert.equal(file.fileSize, garbage.length);
   file.remove(false);
-  do_check_false(file.exists());
+  Assert.ok(!file.exists());
 }
 
 function* run_test_1(generator)
@@ -152,7 +152,7 @@ function* run_test_1(generator)
 
   
   
-  do_check_eq(do_count_cookies(), 1);
+  Assert.equal(do_count_cookies(), 1);
   check_garbage_file(backupFile);
 
   
@@ -161,7 +161,7 @@ function* run_test_1(generator)
 
   
   cookieFile.remove(false);
-  do_check_false(cookieFile.exists());
+  Assert.ok(!cookieFile.exists());
   do_run_generator(generator);
 }
 
@@ -183,8 +183,8 @@ function* run_test_2(generator)
 
   
   do_load_profile();
-  do_check_eq(do_count_cookies(), 0);
-  do_check_false(backupFile.exists());
+  Assert.equal(do_count_cookies(), 0);
+  Assert.ok(!backupFile.exists());
 
   
   do_close_profile(sub_generator);
@@ -192,7 +192,7 @@ function* run_test_2(generator)
 
   
   cookieFile.remove(false);
-  do_check_false(cookieFile.exists());
+  Assert.ok(!cookieFile.exists());
   do_run_generator(generator);
 }
 
@@ -207,7 +207,7 @@ function* run_test_3(generator, schema)
 
   
   do_load_profile();
-  do_check_eq(do_count_cookies(), 0);
+  Assert.equal(do_count_cookies(), 0);
 
   
   do_close_profile(sub_generator);
@@ -215,12 +215,12 @@ function* run_test_3(generator, schema)
 
   
   let db = Services.storage.openDatabase(cookieFile);
-  do_check_eq(db.schemaVersion, COOKIE_DATABASE_SCHEMA_CURRENT);
+  Assert.equal(db.schemaVersion, COOKIE_DATABASE_SCHEMA_CURRENT);
   db.close();
 
   
   cookieFile.remove(false);
-  do_check_false(cookieFile.exists());
+  Assert.ok(!cookieFile.exists());
   do_run_generator(generator);
 }
 
@@ -234,7 +234,7 @@ function* run_test_4_exists(generator, schema, stmt)
 
   
   do_load_profile();
-  do_check_eq(do_count_cookies(), 0);
+  Assert.equal(do_count_cookies(), 0);
 
   
   do_close_profile(sub_generator);
@@ -242,15 +242,15 @@ function* run_test_4_exists(generator, schema, stmt)
 
   
   db = Services.storage.openDatabase(cookieFile);
-  do_check_eq(db.schemaVersion, COOKIE_DATABASE_SCHEMA_CURRENT);
+  Assert.equal(db.schemaVersion, COOKIE_DATABASE_SCHEMA_CURRENT);
   db.close();
-  do_check_true(backupFile.exists());
+  Assert.ok(backupFile.exists());
 
   
   cookieFile.remove(false);
   backupFile.remove(false);
-  do_check_false(cookieFile.exists());
-  do_check_false(backupFile.exists());
+  Assert.ok(!cookieFile.exists());
+  Assert.ok(!backupFile.exists());
   do_run_generator(generator);
 }
 
@@ -265,7 +265,7 @@ function* run_test_4_baseDomain(generator)
 
   
   do_load_profile();
-  do_check_eq(do_count_cookies(), 0);
+  Assert.equal(do_count_cookies(), 0);
 
   
   do_close_profile(sub_generator);
@@ -273,14 +273,14 @@ function* run_test_4_baseDomain(generator)
 
   
   db = Services.storage.openDatabase(cookieFile);
-  do_check_eq(db.schemaVersion, COOKIE_DATABASE_SCHEMA_CURRENT);
+  Assert.equal(db.schemaVersion, COOKIE_DATABASE_SCHEMA_CURRENT);
   db.close();
-  do_check_true(backupFile.exists());
+  Assert.ok(backupFile.exists());
 
   
   cookieFile.remove(false);
   backupFile.remove(false);
-  do_check_false(cookieFile.exists());
-  do_check_false(backupFile.exists());
+  Assert.ok(!cookieFile.exists());
+  Assert.ok(!backupFile.exists());
   do_run_generator(generator);
 }

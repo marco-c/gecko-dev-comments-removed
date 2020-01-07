@@ -48,14 +48,14 @@ add_task(async function test_savedsearches_bookmarks() {
     let rootNode = result.root;
     rootNode.containerOpen = true;
     let cc = rootNode.childCount;
-    do_check_eq(cc, 1);
+    Assert.equal(cc, 1);
     for (let i = 0; i < cc; i++) {
       let node = rootNode.getChild(i);
       
-      do_check_true(node.itemId > 0);
+      Assert.ok(node.itemId > 0);
       
       node.QueryInterface(Ci.nsINavHistoryContainerResultNode);
-      do_check_eq(node.containerOpen, false);
+      Assert.equal(node.containerOpen, false);
     }
     rootNode.containerOpen = false;
   } catch (ex) {
@@ -74,24 +74,24 @@ add_task(async function test_savedsearches_bookmarks() {
     let rootNode = result.root;
     rootNode.containerOpen = true;
     let cc = rootNode.childCount;
-    do_check_eq(cc, 1);
+    Assert.equal(cc, 1);
     for (let i = 0; i < cc; i++) {
       let node = rootNode.getChild(i);
       
-      do_check_eq(node.type, node.RESULT_TYPE_QUERY);
+      Assert.equal(node.type, node.RESULT_TYPE_QUERY);
       
-      do_check_true(node.itemId > 0);
+      Assert.ok(node.itemId > 0);
       node.QueryInterface(Ci.nsINavHistoryContainerResultNode);
       node.containerOpen = true;
 
       
       
       
-      do_check_eq(node.childCount, 1);
+      Assert.equal(node.childCount, 1);
 
       
       var item = node.getChild(0);
-      do_check_eq(item.bookmarkGuid, bookmark.guid);
+      Assert.equal(item.bookmarkGuid, bookmark.guid);
 
       
       
@@ -109,14 +109,14 @@ add_task(async function test_savedsearches_bookmarks() {
         title: searchTerm + "zaa",
         type: PlacesUtils.bookmarks.TYPE_FOLDER,
       });
-      do_check_eq(node.childCount, 1);
+      Assert.equal(node.childCount, 1);
       
       await PlacesUtils.bookmarks.insert({
         parentGuid: PlacesUtils.bookmarks.menuGuid,
         title: searchTerm + "blah",
         url: "place:terms=foo&excludeQueries=1&expandQueries=1&queryType=1",
       });
-      do_check_eq(node.childCount, 1);
+      Assert.equal(node.childCount, 1);
     }
     rootNode.containerOpen = false;
   } catch (ex) {
@@ -150,37 +150,37 @@ add_task(async function test_savedsearches_history() {
     var rootNode = result.root;
     rootNode.containerOpen = true;
     var cc = rootNode.childCount;
-    do_check_eq(cc, 1);
+    Assert.equal(cc, 1);
     for (var i = 0; i < cc; i++) {
       var node = rootNode.getChild(i);
       
-      do_check_eq(node.type, node.RESULT_TYPE_QUERY);
+      Assert.equal(node.type, node.RESULT_TYPE_QUERY);
       
-      do_check_eq(node.bookmarkGuid, searchItem.guid);
+      Assert.equal(node.bookmarkGuid, searchItem.guid);
       node.QueryInterface(Ci.nsINavHistoryContainerResultNode);
       node.containerOpen = true;
 
       
       
       
-      do_check_eq(node.childCount, 1);
+      Assert.equal(node.childCount, 1);
 
       
       var item = node.getChild(0);
-      do_check_eq(item.type, item.RESULT_TYPE_URI);
-      do_check_eq(item.itemId, -1); 
-      do_check_eq(item.uri, testURI.spec); 
+      Assert.equal(item.type, item.RESULT_TYPE_URI);
+      Assert.equal(item.itemId, -1); 
+      Assert.equal(item.uri, testURI.spec); 
 
       
       await PlacesTestUtils.addVisits({
         uri: uri("http://foo.com"),
         title: searchTerm + "blah"
       });
-      do_check_eq(node.childCount, 2);
+      Assert.equal(node.childCount, 2);
 
       
       await PlacesUtils.history.remove("http://foo.com");
-      do_check_eq(node.childCount, 1);
+      Assert.equal(node.childCount, 1);
       node.containerOpen = false;
     }
 
@@ -194,15 +194,15 @@ add_task(async function test_savedsearches_history() {
     searchItem.parentGuid = tmpFolder.guid;
     await PlacesUtils.bookmarks.update(searchItem);
     var tmpFolderNode = rootNode.getChild(0);
-    do_check_eq(tmpFolderNode.bookmarkGuid, tmpFolder.guid);
+    Assert.equal(tmpFolderNode.bookmarkGuid, tmpFolder.guid);
     tmpFolderNode.QueryInterface(Ci.nsINavHistoryContainerResultNode);
     tmpFolderNode.containerOpen = true;
-    do_check_eq(tmpFolderNode.childCount, 1);
+    Assert.equal(tmpFolderNode.childCount, 1);
 
     
     searchItem.title = "foo";
     await PlacesUtils.bookmarks.update(searchItem);
-    do_check_eq(tmpFolderNode.title, "foo");
+    Assert.equal(tmpFolderNode.title, "foo");
 
     
     await PlacesUtils.bookmarks.remove(searchItem);

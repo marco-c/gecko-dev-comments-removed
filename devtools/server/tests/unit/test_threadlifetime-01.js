@@ -33,14 +33,14 @@ function test_thread_lifetime() {
     
     gClient.request({ to: pauseGrip.actor, type: "threadGrip" }, function (response) {
       
-      do_check_eq(response.error, undefined);
+      Assert.equal(response.error, undefined);
       gThreadClient.addOneTimeListener("paused", function (event, packet) {
         
-        do_check_eq(pauseGrip.actor, packet.frame.arguments[0].actor);
+        Assert.equal(pauseGrip.actor, packet.frame.arguments[0].actor);
         
         
         gClient.request({to: pauseGrip.actor, type: "bogusRequest"}, function (response) {
-          do_check_eq(response.error, "unrecognizedPacketType");
+          Assert.equal(response.error, "unrecognizedPacketType");
           gThreadClient.resume(function () {
             finishClient(gClient);
           });

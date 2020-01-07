@@ -137,7 +137,7 @@ var PluginHost = {
 var WindowWatcher = {
   openWindow(parent, url, name, features, windowArguments) {
     
-    do_check_eq(url, URI_EXTENSION_BLOCKLIST_DIALOG);
+    Assert.equal(url, URI_EXTENSION_BLOCKLIST_DIALOG);
 
     if (gNotificationCheck) {
       var args = windowArguments.wrappedJSObject;
@@ -239,20 +239,20 @@ function run_test() {
 
 function check_initial_state(callback) {
   AddonManager.getAddonsByIDs(ADDONS.map(a => a.id), function(addons) {
-    do_check_eq(check_addon_state(addons[0]), "true,false,false");
-    do_check_eq(check_addon_state(addons[1]), "false,false,false");
-    do_check_eq(check_addon_state(addons[2]), "false,false,false");
-    do_check_eq(check_addon_state(addons[3]), "true,true,false");
-    do_check_eq(check_addon_state(addons[4]), "false,false,false");
-    do_check_eq(check_addon_state(addons[5]), "false,false,true");
-    do_check_eq(check_addon_state(addons[6]), "false,false,true");
+    Assert.equal(check_addon_state(addons[0]), "true,false,false");
+    Assert.equal(check_addon_state(addons[1]), "false,false,false");
+    Assert.equal(check_addon_state(addons[2]), "false,false,false");
+    Assert.equal(check_addon_state(addons[3]), "true,true,false");
+    Assert.equal(check_addon_state(addons[4]), "false,false,false");
+    Assert.equal(check_addon_state(addons[5]), "false,false,true");
+    Assert.equal(check_addon_state(addons[6]), "false,false,true");
 
-    do_check_eq(check_plugin_state(PLUGINS[0]), "true,false");
-    do_check_eq(check_plugin_state(PLUGINS[1]), "false,false");
-    do_check_eq(check_plugin_state(PLUGINS[2]), "false,false");
-    do_check_eq(check_plugin_state(PLUGINS[3]), "true,false");
-    do_check_eq(check_plugin_state(PLUGINS[4]), "false,false");
-    do_check_eq(check_plugin_state(PLUGINS[5]), "false,true");
+    Assert.equal(check_plugin_state(PLUGINS[0]), "true,false");
+    Assert.equal(check_plugin_state(PLUGINS[1]), "false,false");
+    Assert.equal(check_plugin_state(PLUGINS[2]), "false,false");
+    Assert.equal(check_plugin_state(PLUGINS[3]), "true,false");
+    Assert.equal(check_plugin_state(PLUGINS[4]), "false,false");
+    Assert.equal(check_plugin_state(PLUGINS[5]), "false,true");
 
     callback();
   });
@@ -268,17 +268,17 @@ function check_test_pt1() {
         do_throw("Addon " + (i + 1) + " did not get installed correctly");
     }
 
-    do_check_eq(check_addon_state(addons[0]), "false,false,false");
-    do_check_eq(check_addon_state(addons[1]), "false,false,false");
-    do_check_eq(check_addon_state(addons[2]), "false,false,false");
+    Assert.equal(check_addon_state(addons[0]), "false,false,false");
+    Assert.equal(check_addon_state(addons[1]), "false,false,false");
+    Assert.equal(check_addon_state(addons[2]), "false,false,false");
 
     
-    do_check_eq(check_addon_state(addons[3]), "true,true,false");
-    do_check_eq(check_addon_state(addons[4]), "true,true,false");
+    Assert.equal(check_addon_state(addons[3]), "true,true,false");
+    Assert.equal(check_addon_state(addons[4]), "true,true,false");
 
     
-    do_check_eq(check_addon_state(addons[5]), "false,false,true");
-    do_check_eq(check_addon_state(addons[6]), "false,false,true");
+    Assert.equal(check_addon_state(addons[5]), "false,false,true");
+    Assert.equal(check_addon_state(addons[6]), "false,false,true");
 
     
     
@@ -298,16 +298,16 @@ function check_test_pt1() {
 
 function check_notification_pt2(args) {
   dump("Checking notification pt 2\n");
-  do_check_eq(args.list.length, 4);
+  Assert.equal(args.list.length, 4);
 
   for (let addon of args.list) {
     if (addon.item instanceof Ci.nsIPluginTag) {
       switch (addon.item.name) {
         case "test_bug455906_2":
-          do_check_false(addon.blocked);
+          Assert.ok(!addon.blocked);
           break;
         case "test_bug455906_3":
-          do_check_false(addon.blocked);
+          Assert.ok(!addon.blocked);
           addon.disable = true;
           break;
         default:
@@ -316,10 +316,10 @@ function check_notification_pt2(args) {
     } else {
       switch (addon.item.id) {
         case "test_bug455906_2@tests.mozilla.org":
-          do_check_false(addon.blocked);
+          Assert.ok(!addon.blocked);
           break;
         case "test_bug455906_3@tests.mozilla.org":
-          do_check_false(addon.blocked);
+          Assert.ok(!addon.blocked);
           addon.disable = true;
           break;
         default:
@@ -335,23 +335,23 @@ function check_test_pt2() {
 
   AddonManager.getAddonsByIDs(ADDONS.map(a => a.id), callback_soon(function(addons) {
     
-    do_check_eq(check_addon_state(addons[2]), "true,true,false");
-    do_check_eq(check_plugin_state(PLUGINS[2]), "true,false");
+    Assert.equal(check_addon_state(addons[2]), "true,true,false");
+    Assert.equal(check_plugin_state(PLUGINS[2]), "true,false");
 
     
-    do_check_eq(check_addon_state(addons[5]), "true,true,false");
-    do_check_eq(check_addon_state(addons[6]), "true,true,true");
-    do_check_eq(check_plugin_state(PLUGINS[5]), "true,false");
+    Assert.equal(check_addon_state(addons[5]), "true,true,false");
+    Assert.equal(check_addon_state(addons[6]), "true,true,true");
+    Assert.equal(check_plugin_state(PLUGINS[5]), "true,false");
 
     
-    do_check_eq(check_addon_state(addons[0]), "true,false,false");
-    do_check_eq(check_addon_state(addons[1]), "false,false,false");
-    do_check_eq(check_addon_state(addons[3]), "true,true,false");
-    do_check_eq(check_addon_state(addons[4]), "false,false,false");
-    do_check_eq(check_plugin_state(PLUGINS[0]), "true,false");
-    do_check_eq(check_plugin_state(PLUGINS[1]), "false,false");
-    do_check_eq(check_plugin_state(PLUGINS[3]), "true,false");
-    do_check_eq(check_plugin_state(PLUGINS[4]), "false,false");
+    Assert.equal(check_addon_state(addons[0]), "true,false,false");
+    Assert.equal(check_addon_state(addons[1]), "false,false,false");
+    Assert.equal(check_addon_state(addons[3]), "true,true,false");
+    Assert.equal(check_addon_state(addons[4]), "false,false,false");
+    Assert.equal(check_plugin_state(PLUGINS[0]), "true,false");
+    Assert.equal(check_plugin_state(PLUGINS[1]), "false,false");
+    Assert.equal(check_plugin_state(PLUGINS[3]), "true,false");
+    Assert.equal(check_plugin_state(PLUGINS[4]), "false,false");
 
     
     addons[2].userDisabled = false;
@@ -376,19 +376,19 @@ function run_test_pt3() {
 
 function check_notification_pt3(args) {
   dump("Checking notification pt 3\n");
-  do_check_eq(args.list.length, 6);
+  Assert.equal(args.list.length, 6);
 
   for (let addon of args.list) {
     if (addon.item instanceof Ci.nsIPluginTag) {
       switch (addon.item.name) {
         case "test_bug455906_2":
-          do_check_true(addon.blocked);
+          Assert.ok(addon.blocked);
           break;
         case "test_bug455906_3":
-          do_check_true(addon.blocked);
+          Assert.ok(addon.blocked);
           break;
         case "test_bug455906_5":
-          do_check_true(addon.blocked);
+          Assert.ok(addon.blocked);
           break;
         default:
           do_throw("Unknown addon: " + addon.item.name);
@@ -396,13 +396,13 @@ function check_notification_pt3(args) {
     } else {
       switch (addon.item.id) {
         case "test_bug455906_2@tests.mozilla.org":
-          do_check_true(addon.blocked);
+          Assert.ok(addon.blocked);
           break;
         case "test_bug455906_3@tests.mozilla.org":
-          do_check_true(addon.blocked);
+          Assert.ok(addon.blocked);
           break;
         case "test_bug455906_5@tests.mozilla.org":
-          do_check_true(addon.blocked);
+          Assert.ok(addon.blocked);
           break;
         default:
           do_throw("Unknown addon: " + addon.item.id);
@@ -417,37 +417,37 @@ function check_test_pt3() {
 
   AddonManager.getAddonsByIDs(ADDONS.map(a => a.id), function(addons) {
     
-    do_check_eq(check_addon_state(addons[0]), "true,false,true");
-    do_check_eq(check_addon_state(addons[1]), "false,false,true");
-    do_check_eq(check_addon_state(addons[2]), "false,false,true");
-    do_check_eq(check_addon_state(addons[4]), "false,false,true");
-    do_check_eq(check_plugin_state(PLUGINS[0]), "true,true");
-    do_check_eq(check_plugin_state(PLUGINS[1]), "false,true");
-    do_check_eq(check_plugin_state(PLUGINS[2]), "false,true");
-    do_check_eq(check_plugin_state(PLUGINS[3]), "true,true");
-    do_check_eq(check_plugin_state(PLUGINS[4]), "false,true");
+    Assert.equal(check_addon_state(addons[0]), "true,false,true");
+    Assert.equal(check_addon_state(addons[1]), "false,false,true");
+    Assert.equal(check_addon_state(addons[2]), "false,false,true");
+    Assert.equal(check_addon_state(addons[4]), "false,false,true");
+    Assert.equal(check_plugin_state(PLUGINS[0]), "true,true");
+    Assert.equal(check_plugin_state(PLUGINS[1]), "false,true");
+    Assert.equal(check_plugin_state(PLUGINS[2]), "false,true");
+    Assert.equal(check_plugin_state(PLUGINS[3]), "true,true");
+    Assert.equal(check_plugin_state(PLUGINS[4]), "false,true");
 
     
-    do_check_eq(check_addon_state(addons[3]), "false,false,true");
+    Assert.equal(check_addon_state(addons[3]), "false,false,true");
 
     
-    do_check_eq(Services.blocklist.getAddonBlocklistURL(addons[0]), create_blocklistURL(addons[0].id));
-    do_check_eq(Services.blocklist.getAddonBlocklistURL(addons[1]), create_blocklistURL(addons[1].id));
-    do_check_eq(Services.blocklist.getAddonBlocklistURL(addons[2]), create_blocklistURL(addons[2].id));
-    do_check_eq(Services.blocklist.getAddonBlocklistURL(addons[3]), create_blocklistURL(addons[3].id));
-    do_check_eq(Services.blocklist.getAddonBlocklistURL(addons[4]), create_blocklistURL(addons[4].id));
+    Assert.equal(Services.blocklist.getAddonBlocklistURL(addons[0]), create_blocklistURL(addons[0].id));
+    Assert.equal(Services.blocklist.getAddonBlocklistURL(addons[1]), create_blocklistURL(addons[1].id));
+    Assert.equal(Services.blocklist.getAddonBlocklistURL(addons[2]), create_blocklistURL(addons[2].id));
+    Assert.equal(Services.blocklist.getAddonBlocklistURL(addons[3]), create_blocklistURL(addons[3].id));
+    Assert.equal(Services.blocklist.getAddonBlocklistURL(addons[4]), create_blocklistURL(addons[4].id));
 
     
-    do_check_eq(Services.blocklist.getPluginBlocklistURL(PLUGINS[0]), create_blocklistURL("test_bug455906_plugin"));
-    do_check_eq(Services.blocklist.getPluginBlocklistURL(PLUGINS[1]), create_blocklistURL("test_bug455906_plugin"));
-    do_check_eq(Services.blocklist.getPluginBlocklistURL(PLUGINS[2]), create_blocklistURL("test_bug455906_plugin"));
-    do_check_eq(Services.blocklist.getPluginBlocklistURL(PLUGINS[3]), create_blocklistURL("test_bug455906_plugin"));
-    do_check_eq(Services.blocklist.getPluginBlocklistURL(PLUGINS[4]), create_blocklistURL("test_bug455906_plugin"));
+    Assert.equal(Services.blocklist.getPluginBlocklistURL(PLUGINS[0]), create_blocklistURL("test_bug455906_plugin"));
+    Assert.equal(Services.blocklist.getPluginBlocklistURL(PLUGINS[1]), create_blocklistURL("test_bug455906_plugin"));
+    Assert.equal(Services.blocklist.getPluginBlocklistURL(PLUGINS[2]), create_blocklistURL("test_bug455906_plugin"));
+    Assert.equal(Services.blocklist.getPluginBlocklistURL(PLUGINS[3]), create_blocklistURL("test_bug455906_plugin"));
+    Assert.equal(Services.blocklist.getPluginBlocklistURL(PLUGINS[4]), create_blocklistURL("test_bug455906_plugin"));
 
     
-    do_check_eq(check_addon_state(addons[5]), "false,false,true");
-    do_check_eq(check_addon_state(addons[6]), "false,false,true");
-    do_check_eq(check_plugin_state(PLUGINS[5]), "false,true");
+    Assert.equal(check_addon_state(addons[5]), "false,false,true");
+    Assert.equal(check_addon_state(addons[6]), "false,false,true");
+    Assert.equal(check_plugin_state(PLUGINS[5]), "false,true");
 
     
     gNotificationCheck = null;
@@ -473,9 +473,9 @@ function check_notification_pt4(args) {
   dump("Checking notification pt 4\n");
 
   
-  do_check_eq(args.list.length, 1);
-  do_check_false(args.list[0].item instanceof Ci.nsIPluginTag);
-  do_check_eq(args.list[0].item.id, "dummy_bug455906_2@tests.mozilla.org");
+  Assert.equal(args.list.length, 1);
+  Assert.equal(false, args.list[0].item instanceof Ci.nsIPluginTag);
+  Assert.equal(args.list[0].item.id, "dummy_bug455906_2@tests.mozilla.org");
 }
 
 function check_test_pt4() {
@@ -484,23 +484,23 @@ function check_test_pt4() {
 
   AddonManager.getAddonsByIDs(ADDONS.map(a => a.id), function(addons) {
     
-    do_check_eq(check_addon_state(addons[5]), "false,false,false");
-    do_check_eq(check_plugin_state(PLUGINS[5]), "false,false");
+    Assert.equal(check_addon_state(addons[5]), "false,false,false");
+    Assert.equal(check_plugin_state(PLUGINS[5]), "false,false");
 
     
-    do_check_eq(check_addon_state(addons[3]), "false,false,false");
+    Assert.equal(check_addon_state(addons[3]), "false,false,false");
 
     
-    do_check_eq(check_addon_state(addons[0]), "true,false,false");
-    do_check_eq(check_addon_state(addons[1]), "false,false,false");
-    do_check_eq(check_addon_state(addons[2]), "false,false,false");
-    do_check_eq(check_addon_state(addons[4]), "false,false,false");
-    do_check_eq(check_addon_state(addons[6]), "false,false,true");
-    do_check_eq(check_plugin_state(PLUGINS[0]), "true,false");
-    do_check_eq(check_plugin_state(PLUGINS[1]), "false,false");
-    do_check_eq(check_plugin_state(PLUGINS[2]), "false,false");
-    do_check_eq(check_plugin_state(PLUGINS[3]), "true,false");
-    do_check_eq(check_plugin_state(PLUGINS[4]), "false,false");
+    Assert.equal(check_addon_state(addons[0]), "true,false,false");
+    Assert.equal(check_addon_state(addons[1]), "false,false,false");
+    Assert.equal(check_addon_state(addons[2]), "false,false,false");
+    Assert.equal(check_addon_state(addons[4]), "false,false,false");
+    Assert.equal(check_addon_state(addons[6]), "false,false,true");
+    Assert.equal(check_plugin_state(PLUGINS[0]), "true,false");
+    Assert.equal(check_plugin_state(PLUGINS[1]), "false,false");
+    Assert.equal(check_plugin_state(PLUGINS[2]), "false,false");
+    Assert.equal(check_plugin_state(PLUGINS[3]), "true,false");
+    Assert.equal(check_plugin_state(PLUGINS[4]), "false,false");
 
     finish();
   });

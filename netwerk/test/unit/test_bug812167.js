@@ -58,30 +58,30 @@ function contentHandler(metadata, response)
 
 function check_response(path, request, buffer, expectedExpiration, continuation)
 {
-  do_check_eq(buffer, responseBody);
+  Assert.equal(buffer, responseBody);
 
   
   
   asyncOpenCacheEntry(path, "disk", Ci.nsICacheStorage.OPEN_READONLY, null, function(status, entry) {
-    do_check_eq(status, 0);
+    Assert.equal(status, 0);
 
     
-    do_check_eq(entry.persistent, expectedExpiration);
+    Assert.equal(entry.persistent, expectedExpiration);
 
     
     var chan = make_channel(path);
     chan.asyncOpen2(new ChannelListener(function(request, buffer) {
-      do_check_eq(buffer, responseBody);
+      Assert.equal(buffer, responseBody);
 
       if (expectedExpiration) {
         
-        do_check_eq(redirectHandler_ExpiresInPast_calls, 2);
+        Assert.equal(redirectHandler_ExpiresInPast_calls, 2);
       }
       else {
         
         
-        do_check_eq(redirectHandler_NoStore_calls, 2);
-        do_check_true(!entry.persistent);
+        Assert.equal(redirectHandler_NoStore_calls, 2);
+        Assert.ok(!entry.persistent);
       }
 
       continuation();

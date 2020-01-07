@@ -45,42 +45,42 @@ function test_nesting() {
 
     executeSoon(function () {
       
-      do_check_eq(++currentStep, 2);
+      Assert.equal(++currentStep, 2);
       
       
-      do_check_eq(thread._nestedEventLoops.size, 2);
+      Assert.equal(thread._nestedEventLoops.size, 2);
 
       executeSoon(function () {
         
-        do_check_eq(++currentStep, 3);
+        Assert.equal(++currentStep, 3);
         
         
-        do_check_eq(thread._nestedEventLoops.size, 2);
+        Assert.equal(thread._nestedEventLoops.size, 2);
         
-        do_check_true(!!eventLoop);
+        Assert.ok(!!eventLoop);
         eventLoop.resolve();
       });
 
       resolve(true);
       
       
-      do_check_eq(thread._nestedEventLoops.size, 2);
+      Assert.equal(thread._nestedEventLoops.size, 2);
     });
 
     
-    do_check_eq(++currentStep, 1);
+    Assert.equal(++currentStep, 1);
     
-    do_check_eq(thread._nestedEventLoops.size, 1);
+    Assert.equal(thread._nestedEventLoops.size, 1);
     eventLoop = thread._nestedEventLoops.push();
     eventLoop.enter();
   });
 
-  do_check_eq(thread.unsafeSynchronize(p), true);
+  Assert.equal(thread.unsafeSynchronize(p), true);
 
   
-  do_check_eq(++currentStep, 4);
+  Assert.equal(++currentStep, 4);
   
-  do_check_eq(thread._nestedEventLoops.size, 0);
+  Assert.equal(thread._nestedEventLoops.size, 0);
 
   finishClient(gClient);
 }

@@ -38,109 +38,109 @@ add_task(async function test_parseSubmissionURL() {
   
   let url = "http://www.google.com/search?foo=bar&q=caff%C3%A8";
   let result = Services.search.parseSubmissionURL(url);
-  do_check_eq(result.engine, engine1);
-  do_check_eq(result.terms, "caff\u00E8");
-  do_check_true(url.slice(result.termsOffset).startsWith("caff%C3%A8"));
-  do_check_eq(result.termsLength, "caff%C3%A8".length);
+  Assert.equal(result.engine, engine1);
+  Assert.equal(result.terms, "caff\u00E8");
+  Assert.ok(url.slice(result.termsOffset).startsWith("caff%C3%A8"));
+  Assert.equal(result.termsLength, "caff%C3%A8".length);
 
   
   
   
   url = "http://www.google.fr/search?q=caff%E8";
   result = Services.search.parseSubmissionURL(url);
-  do_check_eq(result.engine, engine2);
-  do_check_eq(result.terms, "caff\u00E8");
-  do_check_true(url.slice(result.termsOffset).startsWith("caff%E8"));
-  do_check_eq(result.termsLength, "caff%E8".length);
+  Assert.equal(result.engine, engine2);
+  Assert.equal(result.terms, "caff\u00E8");
+  Assert.ok(url.slice(result.termsOffset).startsWith("caff%E8"));
+  Assert.equal(result.termsLength, "caff%E8".length);
 
   
   
   url = "http://www.google.co.uk/search?q=caff%C3%A8";
   result = Services.search.parseSubmissionURL(url);
-  do_check_eq(result.engine, engine1);
-  do_check_eq(result.terms, "caff\u00E8");
-  do_check_true(url.slice(result.termsOffset).startsWith("caff%C3%A8"));
-  do_check_eq(result.termsLength, "caff%C3%A8".length);
+  Assert.equal(result.engine, engine1);
+  Assert.equal(result.terms, "caff\u00E8");
+  Assert.ok(url.slice(result.termsOffset).startsWith("caff%C3%A8"));
+  Assert.equal(result.termsLength, "caff%C3%A8".length);
 
   
   
   url = "http://www.bacon.test/find?q=caff%E8";
   result = Services.search.parseSubmissionURL(url);
-  do_check_eq(result.engine, engine3);
-  do_check_eq(result.terms, "caff\u00E8");
-  do_check_true(url.slice(result.termsOffset).startsWith("caff%E8"));
-  do_check_eq(result.termsLength, "caff%E8".length);
+  Assert.equal(result.engine, engine3);
+  Assert.equal(result.terms, "caff\u00E8");
+  Assert.ok(url.slice(result.termsOffset).startsWith("caff%E8"));
+  Assert.equal(result.termsLength, "caff%E8".length);
 
   
   url = "http://www.google.com/search?q=foo+b\u00E4r";
   result = Services.search.parseSubmissionURL(url);
-  do_check_eq(result.engine, engine1);
-  do_check_eq(result.terms, "foo b\u00E4r");
-  do_check_true(url.slice(result.termsOffset).startsWith("foo+b\u00E4r"));
-  do_check_eq(result.termsLength, "foo+b\u00E4r".length);
+  Assert.equal(result.engine, engine1);
+  Assert.equal(result.terms, "foo b\u00E4r");
+  Assert.ok(url.slice(result.termsOffset).startsWith("foo+b\u00E4r"));
+  Assert.equal(result.termsLength, "foo+b\u00E4r".length);
 
   
   url = "http://www.b\u00FCcher.ch/search?q=foo+bar";
   result = Services.search.parseSubmissionURL(url);
-  do_check_eq(result.engine, engine4);
-  do_check_eq(result.terms, "foo bar");
-  do_check_true(url.slice(result.termsOffset).startsWith("foo+bar"));
-  do_check_eq(result.termsLength, "foo+bar".length);
+  Assert.equal(result.engine, engine4);
+  Assert.equal(result.terms, "foo bar");
+  Assert.ok(url.slice(result.termsOffset).startsWith("foo+bar"));
+  Assert.equal(result.termsLength, "foo+bar".length);
 
   
   url = "http://www.xn--bcher-kva.ch/search?q=foo+bar";
   result = Services.search.parseSubmissionURL(url);
-  do_check_eq(result.engine, engine4);
-  do_check_eq(result.terms, "foo bar");
-  do_check_true(url.slice(result.termsOffset).startsWith("foo+bar"));
-  do_check_eq(result.termsLength, "foo+bar".length);
+  Assert.equal(result.engine, engine4);
+  Assert.equal(result.terms, "foo bar");
+  Assert.ok(url.slice(result.termsOffset).startsWith("foo+bar"));
+  Assert.equal(result.termsLength, "foo+bar".length);
 
   
-  do_check_eq(Services.search.parseSubmissionURL(
-                              "http://www.bacon.moz/search?q=").engine, null);
-  do_check_eq(Services.search.parseSubmissionURL(
-                              "https://duckduckgo.com?q=test").engine, null);
-  do_check_eq(Services.search.parseSubmissionURL(
-                              "https://duckduckgo.com/?q=test").engine, null);
+  Assert.equal(Services.search.parseSubmissionURL(
+                               "http://www.bacon.moz/search?q=").engine, null);
+  Assert.equal(Services.search.parseSubmissionURL(
+                               "https://duckduckgo.com?q=test").engine, null);
+  Assert.equal(Services.search.parseSubmissionURL(
+                               "https://duckduckgo.com/?q=test").engine, null);
 
   
   url = "https://www.google.com/search?q=caff%C3%A8";
   result = Services.search.parseSubmissionURL(url);
-  do_check_eq(result.engine, engine1);
-  do_check_eq(result.terms, "caff\u00E8");
-  do_check_true(url.slice(result.termsOffset).startsWith("caff%C3%A8"));
+  Assert.equal(result.engine, engine1);
+  Assert.equal(result.terms, "caff\u00E8");
+  Assert.ok(url.slice(result.termsOffset).startsWith("caff%C3%A8"));
 
   
   result = Services.search.parseSubmissionURL(
              "http://www.google.com/search?q=+with++spaces+");
-  do_check_eq(result.engine, engine1);
-  do_check_eq(result.terms, " with  spaces ");
+  Assert.equal(result.engine, engine1);
+  Assert.equal(result.terms, " with  spaces ");
 
   
   url = "http://www.google.com/search?q=";
   result = Services.search.parseSubmissionURL(url);
-  do_check_eq(result.engine, engine1);
-  do_check_eq(result.terms, "");
-  do_check_eq(result.termsOffset, url.length);
+  Assert.equal(result.engine, engine1);
+  Assert.equal(result.terms, "");
+  Assert.equal(result.termsOffset, url.length);
 
   
   result = Services.search.parseSubmissionURL(
              "http://www.google.com/search/?q=test");
-  do_check_eq(result.engine, null);
-  do_check_eq(result.terms, "");
-  do_check_eq(result.termsOffset, -1);
+  Assert.equal(result.engine, null);
+  Assert.equal(result.terms, "");
+  Assert.equal(result.termsOffset, -1);
 
   
   result = Services.search.parseSubmissionURL(
              "http://www.google.com/search?q2=test");
-  do_check_eq(result.engine, null);
-  do_check_eq(result.terms, "");
-  do_check_eq(result.termsOffset, -1);
+  Assert.equal(result.engine, null);
+  Assert.equal(result.terms, "");
+  Assert.equal(result.termsOffset, -1);
 
   
   result = Services.search.parseSubmissionURL(
              "file://localhost/search?q=test");
-  do_check_eq(result.engine, null);
-  do_check_eq(result.terms, "");
-  do_check_eq(result.termsOffset, -1);
+  Assert.equal(result.engine, null);
+  Assert.equal(result.terms, "");
+  Assert.equal(result.termsOffset, -1);
 });

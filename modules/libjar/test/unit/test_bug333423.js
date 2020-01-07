@@ -18,5 +18,5 @@ function run_test() {
   zipreader.open(file);
   zipreader.close();
   var entries = zipreader.findEntries('*.*');
-  do_check_true(!entries.hasMore()); 
+  Assert.ok(!entries.hasMore()); 
 }

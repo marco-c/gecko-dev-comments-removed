@@ -5,7 +5,7 @@ function run_test() {
   do_load_manifest("data/chrome.manifest");
 
   configureToLoadJarEngines();
-  do_check_false(Services.search.isInitialized);
+  Assert.ok(!Services.search.isInitialized);
 
   run_next_test();
 }
@@ -15,7 +15,7 @@ add_task(async function ignore_cache_files_without_engines() {
   await asyncInit();
 
   let engineCount = Services.search.getEngines().length;
-  do_check_eq(engineCount, 1);
+  Assert.equal(engineCount, 1);
 
   
   await commitPromise;
@@ -28,7 +28,7 @@ add_task(async function ignore_cache_files_without_engines() {
   
   commitPromise = promiseAfterCache();
   await asyncReInit();
-  do_check_eq(engineCount, Services.search.getEngines().length);
+  Assert.equal(engineCount, Services.search.getEngines().length);
   await commitPromise;
 
   
@@ -36,10 +36,10 @@ add_task(async function ignore_cache_files_without_engines() {
   let unInitPromise = waitForSearchNotification("uninit-complete");
   let reInitPromise = asyncReInit();
   await unInitPromise;
-  do_check_false(Services.search.isInitialized);
+  Assert.ok(!Services.search.isInitialized);
   
-  do_check_eq(engineCount, Services.search.getEngines().length);
-  do_check_true(Services.search.isInitialized);
+  Assert.equal(engineCount, Services.search.getEngines().length);
+  Assert.ok(Services.search.isInitialized);
   await reInitPromise;
 });
 
@@ -49,7 +49,7 @@ add_task(async function skip_writing_cache_without_engines() {
   await unInitPromise;
 
   
-  do_check_true(removeCacheFile());
+  Assert.ok(removeCacheFile());
   let resProt = Services.io.getProtocolHandler("resource")
                         .QueryInterface(Ci.nsIResProtocolHandler);
   resProt.setSubstitution("search-plugins",
@@ -57,7 +57,7 @@ add_task(async function skip_writing_cache_without_engines() {
 
   
   await reInitPromise;
-  do_check_eq(0, Services.search.getEngines().length);
+  Assert.equal(0, Services.search.getEngines().length);
 
   
   unInitPromise = waitForSearchNotification("uninit-complete");
@@ -65,7 +65,7 @@ add_task(async function skip_writing_cache_without_engines() {
   await unInitPromise;
 
   
-  do_check_false(removeCacheFile());
+  Assert.ok(!removeCacheFile());
 
   await reInitPromise;
 });

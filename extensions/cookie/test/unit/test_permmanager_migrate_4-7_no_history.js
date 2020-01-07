@@ -49,9 +49,9 @@ add_task(function test() {
   
   try {
     Cc['@mozilla.org/browser/nav-history-service;1'].getService(Ci.nsINavHistoryService);
-    do_check_true(false, "There shouldn't have been a nsINavHistoryService");
+    Assert.ok(false, "There shouldn't have been a nsINavHistoryService");
   } catch (e) {
-    do_check_true(true, "There wasn't a nsINavHistoryService");
+    Assert.ok(true, "There wasn't a nsINavHistoryService");
   }
 
   let db = Services.storage.openDatabase(GetPermissionsFile(profile));
@@ -192,33 +192,33 @@ add_task(function test() {
       }
     });
 
-    do_check_true(isExpected,
-                  "Permission " + (isExpected ? "should" : "shouldn't") +
-                  " be in permission database: " +
-                  permission.principal.origin + ", " +
-                  permission.type + ", " +
-                  permission.capability + ", " +
-                  permission.expireType + ", " +
-                  permission.expireTime);
+    Assert.ok(isExpected,
+              "Permission " + (isExpected ? "should" : "shouldn't") +
+              " be in permission database: " +
+              permission.principal.origin + ", " +
+              permission.type + ", " +
+              permission.capability + ", " +
+              permission.expireType + ", " +
+              permission.expireTime);
   }
 
   found.forEach((count, i) => {
-    do_check_true(count == 1, "Expected count = 1, got count = " + count + " for permission " + expected[i]);
+    Assert.ok(count == 1, "Expected count = 1, got count = " + count + " for permission " + expected[i]);
   });
 
   
   {
     let db = Services.storage.openDatabase(GetPermissionsFile(profile));
-    do_check_true(db.tableExists("moz_perms"));
-    do_check_true(db.tableExists("moz_hosts"));
-    do_check_false(db.tableExists("moz_hosts_is_backup"));
-    do_check_false(db.tableExists("moz_perms_v6"));
+    Assert.ok(db.tableExists("moz_perms"));
+    Assert.ok(db.tableExists("moz_hosts"));
+    Assert.ok(!db.tableExists("moz_hosts_is_backup"));
+    Assert.ok(!db.tableExists("moz_perms_v6"));
 
     
     let mozHostsCount = db.createStatement("SELECT count(*) FROM moz_hosts");
     try {
       mozHostsCount.executeStep();
-      do_check_eq(mozHostsCount.getInt64(0), 0);
+      Assert.equal(mozHostsCount.getInt64(0), 0);
     } finally {
       mozHostsCount.finalize();
     }

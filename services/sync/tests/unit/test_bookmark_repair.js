@@ -359,7 +359,7 @@ add_task(async function test_repair_client_missing() {
     
     do_check_empty((await bookmarksEngine.pullNewChanges()));
     
-    do_check_false(await PlacesUtils.bookmarks.fetch(bookmarkInfo.guid));
+    Assert.equal(false, await PlacesUtils.bookmarks.fetch(bookmarkInfo.guid));
 
     
     _("Syncing again.");
@@ -377,7 +377,7 @@ add_task(async function test_repair_client_missing() {
     await Service.sync();
 
     
-    do_check_true(await PlacesUtils.bookmarks.fetch(bookmarkInfo.guid));
+    Assert.ok(await PlacesUtils.bookmarks.fetch(bookmarkInfo.guid));
   } finally {
     await cleanup(server);
   }
@@ -441,7 +441,7 @@ add_task(async function test_repair_server_missing() {
     await Service.sync();
 
     
-    do_check_true(user.collection("bookmarks").wbo(bookmarkInfo.guid));
+    Assert.ok(user.collection("bookmarks").wbo(bookmarkInfo.guid));
   } finally {
     await cleanup(server);
   }
@@ -509,7 +509,7 @@ add_task(async function test_repair_server_deleted() {
     await Service.sync();
 
     
-    do_check_true(!(await PlacesUtils.bookmarks.fetch(bookmarkInfo.guid)));
+    Assert.ok(!(await PlacesUtils.bookmarks.fetch(bookmarkInfo.guid)));
   } finally {
     await cleanup(server);
   }

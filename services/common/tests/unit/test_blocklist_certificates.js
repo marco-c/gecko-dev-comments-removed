@@ -53,7 +53,7 @@ add_task(async function test_something() {
     const list = await collection.list();
     
     
-    do_check_true(list.data.length >= 363);
+    Assert.ok(list.data.length >= 363);
   });
 
   
@@ -62,7 +62,7 @@ add_task(async function test_something() {
   
   await OneCRLBlocklistClient.maybeSync(123456, Date.now());
   
-  do_check_neq(0, Services.prefs.getIntPref("services.blocklist.onecrl.checked"));
+  Assert.notEqual(0, Services.prefs.getIntPref("services.blocklist.onecrl.checked"));
 
   
   Services.prefs.setCharPref("services.settings.server", dummyServerURL);
@@ -82,7 +82,7 @@ add_task(async function test_something() {
     
     
     const list = await collection.list();
-    do_check_eq(list.data.length, 1);
+    Assert.equal(list.data.length, 1);
   });
 
   
@@ -92,7 +92,7 @@ add_task(async function test_something() {
     
     
     const list = await collection.list();
-    do_check_eq(list.data.length, 3);
+    Assert.equal(list.data.length, 3);
   });
 
   
@@ -109,7 +109,7 @@ add_task(async function test_something() {
   Services.prefs.setIntPref("services.blocklist.onecrl.checked", 0);
   await OneCRLBlocklistClient.maybeSync(3000, Date.now());
   let newValue = Services.prefs.getIntPref("services.blocklist.onecrl.checked");
-  do_check_neq(newValue, 0);
+  Assert.notEqual(newValue, 0);
 
   
   

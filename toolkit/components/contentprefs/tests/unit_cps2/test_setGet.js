@@ -160,8 +160,8 @@ var tests = [
       },
       handleCompletion() {
         
-        do_check_true(!!fetchedPref);
-        do_check_eq(fetchedPref.value, 2);
+        Assert.ok(!!fetchedPref);
+        Assert.equal(fetchedPref.value, 2);
         next();
       },
     });

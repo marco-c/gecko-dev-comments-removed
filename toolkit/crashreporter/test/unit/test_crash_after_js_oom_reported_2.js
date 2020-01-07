@@ -13,13 +13,13 @@ function run_test() {
       Components.utils.getJSTestingFunctions().reportOutOfMemory();
     },
     function(mdump, extra) {
-      do_check_eq(extra.TestingOOMCrash, "Yes");
+      Assert.equal(extra.TestingOOMCrash, "Yes");
 
       
       
       
       
-      do_check_eq(extra.JSOutOfMemory, "Reported");
+      Assert.equal(extra.JSOutOfMemory, "Reported");
     },
     true);
 }

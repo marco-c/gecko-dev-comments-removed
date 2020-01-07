@@ -25,7 +25,7 @@ var test = {
     
     var rootNode = PlacesUtils.getFolderContents(PlacesUtils.placesRootId,
                                                  false, false).root;
-    do_check_eq(rootNode.childCount, PLACES_ROOTS_COUNT );
+    Assert.equal(rootNode.childCount, PLACES_ROOTS_COUNT );
     rootNode.containerOpen = false;
 
     var idx = PlacesUtils.bookmarks.DEFAULT_INDEX;
@@ -72,31 +72,31 @@ var test = {
     if (!aEmptyBookmarks) {
       
       
-      do_check_eq(rootNode.childCount, PLACES_ROOTS_COUNT + 2);
+      Assert.equal(rootNode.childCount, PLACES_ROOTS_COUNT + 2);
       
       var restoreRootIndex = PLACES_ROOTS_COUNT;
       var excludeRootIndex = PLACES_ROOTS_COUNT + 1;
       var excludeRootNode = rootNode.getChild(excludeRootIndex);
-      do_check_eq(this._excludeRootTitle, excludeRootNode.title);
+      Assert.equal(this._excludeRootTitle, excludeRootNode.title);
       excludeRootNode.QueryInterface(Ci.nsINavHistoryQueryResultNode);
       excludeRootNode.containerOpen = true;
-      do_check_eq(excludeRootNode.childCount, 1);
+      Assert.equal(excludeRootNode.childCount, 1);
       var excludeRootChildNode = excludeRootNode.getChild(0);
-      do_check_eq(excludeRootChildNode.uri, this._restoreRootExcludeURI.spec);
+      Assert.equal(excludeRootChildNode.uri, this._restoreRootExcludeURI.spec);
       excludeRootNode.containerOpen = false;
     } else {
       
-      do_check_eq(rootNode.childCount, PLACES_ROOTS_COUNT + 1);
+      Assert.equal(rootNode.childCount, PLACES_ROOTS_COUNT + 1);
       restoreRootIndex = PLACES_ROOTS_COUNT;
     }
 
     var restoreRootNode = rootNode.getChild(restoreRootIndex);
-    do_check_eq(this._restoreRootTitle, restoreRootNode.title);
+    Assert.equal(this._restoreRootTitle, restoreRootNode.title);
     restoreRootNode.QueryInterface(Ci.nsINavHistoryQueryResultNode);
     restoreRootNode.containerOpen = true;
-    do_check_eq(restoreRootNode.childCount, 1);
+    Assert.equal(restoreRootNode.childCount, 1);
     var restoreRootChildNode = restoreRootNode.getChild(0);
-    do_check_eq(restoreRootChildNode.uri, this._restoreRootURI.spec);
+    Assert.equal(restoreRootChildNode.uri, this._restoreRootURI.spec);
     restoreRootNode.containerOpen = false;
 
     rootNode.containerOpen = false;

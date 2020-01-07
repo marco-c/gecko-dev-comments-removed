@@ -13,15 +13,15 @@ function run_test()
   zipW.close();
 
   
-  do_check_true(tmpFile.exists());
+  Assert.ok(tmpFile.exists());
 
   
   
-  do_check_eq(tmpFile.fileSize, ZIP_EOCDR_HEADER_SIZE + DATA.length);
+  Assert.equal(tmpFile.fileSize, ZIP_EOCDR_HEADER_SIZE + DATA.length);
 
   zipW.open(tmpFile, PR_RDWR);
   
-  do_check_eq(zipW.comment, DATA);
+  Assert.equal(zipW.comment, DATA);
   zipW.comment = DATA2;
   zipW.close();
 
@@ -30,5 +30,5 @@ function run_test()
 
   
   
-  do_check_eq(tmpFile.fileSize, ZIP_EOCDR_HEADER_SIZE + DATA2.length);
+  Assert.equal(tmpFile.fileSize, ZIP_EOCDR_HEADER_SIZE + DATA2.length);
 }

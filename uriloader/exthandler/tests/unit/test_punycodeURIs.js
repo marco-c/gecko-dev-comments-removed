@@ -57,7 +57,7 @@ function checkFile() {
   
   
   if (data.substring(0, 7) != "-psn_0_")
-    do_check_eq(data, kExpectedURI);
+    Assert.equal(data, kExpectedURI);
 
   do_test_finished();
 }
@@ -116,7 +116,7 @@ function run_test() {
 
   
   
-  do_check_eq(uri.asciiSpec, kExpectedURI);
+  Assert.equal(uri.asciiSpec, kExpectedURI);
 
   localHandler.executable = exe;
   localHandler.launchWithURI(uri);

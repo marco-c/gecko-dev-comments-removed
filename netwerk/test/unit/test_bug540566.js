@@ -3,7 +3,7 @@
 
 
 function continue_test(status, entry) {
-  do_check_eq(status, Components.results.NS_OK);
+  Assert.equal(status, Components.results.NS_OK);
   
   
   

@@ -37,8 +37,8 @@ function run_test() {
       
       
       ok(response.redirected === false, 'each response.redirected in list should be false');
-      do_check_eq(response.headers.get('Content-Type'), 'text/plain;charset=UTF-8',
-                  'the response should have the correct header');
+      Assert.equal(response.headers.get('Content-Type'), 'text/plain;charset=UTF-8',
+                   'the response should have the correct header');
     });
   }).then(function() {
     do_test_finished();

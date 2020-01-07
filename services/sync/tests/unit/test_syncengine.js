@@ -50,9 +50,9 @@ add_task(async function test_url_attributes() {
   Service.clusterURL = "https://cluster/1.1/foo/";
   let engine = await makeSteamEngine();
   try {
-    do_check_eq(engine.storageURL, "https://cluster/1.1/foo/storage/");
-    do_check_eq(engine.engineURL, "https://cluster/1.1/foo/storage/steam");
-    do_check_eq(engine.metaURL, "https://cluster/1.1/foo/storage/meta/global");
+    Assert.equal(engine.storageURL, "https://cluster/1.1/foo/storage/");
+    Assert.equal(engine.engineURL, "https://cluster/1.1/foo/storage/steam");
+    Assert.equal(engine.metaURL, "https://cluster/1.1/foo/storage/meta/global");
   } finally {
     Svc.Prefs.resetBranch("");
   }
@@ -64,15 +64,15 @@ add_task(async function test_syncID() {
   let engine = await makeSteamEngine();
   try {
     
-    do_check_eq(Svc.Prefs.get("steam.syncID"), undefined);
+    Assert.equal(Svc.Prefs.get("steam.syncID"), undefined);
 
     
-    do_check_eq(engine.syncID, "fake-guid-00");
-    do_check_eq(Svc.Prefs.get("steam.syncID"), "fake-guid-00");
+    Assert.equal(engine.syncID, "fake-guid-00");
+    Assert.equal(Svc.Prefs.get("steam.syncID"), "fake-guid-00");
 
     Svc.Prefs.set("steam.syncID", Utils.makeGUID());
-    do_check_eq(Svc.Prefs.get("steam.syncID"), "fake-guid-01");
-    do_check_eq(engine.syncID, "fake-guid-01");
+    Assert.equal(Svc.Prefs.get("steam.syncID"), "fake-guid-01");
+    Assert.equal(engine.syncID, "fake-guid-01");
   } finally {
     Svc.Prefs.resetBranch("");
   }
@@ -84,25 +84,25 @@ add_task(async function test_lastSync() {
   let engine = await makeSteamEngine();
   try {
     
-    do_check_eq(Svc.Prefs.get("steam.lastSync"), undefined);
-    do_check_eq(engine.lastSync, 0);
-    do_check_eq(Svc.Prefs.get("steam.lastSyncLocal"), undefined);
-    do_check_eq(engine.lastSyncLocal, 0);
+    Assert.equal(Svc.Prefs.get("steam.lastSync"), undefined);
+    Assert.equal(engine.lastSync, 0);
+    Assert.equal(Svc.Prefs.get("steam.lastSyncLocal"), undefined);
+    Assert.equal(engine.lastSyncLocal, 0);
 
     
     engine.lastSync = 123.45;
-    do_check_eq(engine.lastSync, 123.45);
-    do_check_eq(Svc.Prefs.get("steam.lastSync"), "123.45");
+    Assert.equal(engine.lastSync, 123.45);
+    Assert.equal(Svc.Prefs.get("steam.lastSync"), "123.45");
 
     
     engine.lastSyncLocal = 67890;
-    do_check_eq(engine.lastSyncLocal, 67890);
-    do_check_eq(Svc.Prefs.get("steam.lastSyncLocal"), "67890");
+    Assert.equal(engine.lastSyncLocal, 67890);
+    Assert.equal(Svc.Prefs.get("steam.lastSyncLocal"), "67890");
 
     
     engine.resetLastSync();
-    do_check_eq(engine.lastSync, 0);
-    do_check_eq(Svc.Prefs.get("steam.lastSync"), "0");
+    Assert.equal(engine.lastSync, 0);
+    Assert.equal(Svc.Prefs.get("steam.lastSync"), "0");
   } finally {
     Svc.Prefs.resetBranch("");
   }
@@ -117,15 +117,15 @@ add_task(async function test_toFetch() {
     toFetch: [Utils.makeGUID(), Utils.makeGUID(), Utils.makeGUID()],
     setup(engine) {
       
-      do_check_eq(engine.toFetch.length, 0);
+      Assert.equal(engine.toFetch.length, 0);
 
       
       engine.toFetch = this.toFetch;
-      do_check_eq(engine.toFetch, this.toFetch);
+      Assert.equal(engine.toFetch, this.toFetch);
     },
     check(engine) {
       
-      do_check_matches(engine.toFetch, this.toFetch);
+      Assert.deepEqual(engine.toFetch, this.toFetch);
     },
   });
 
@@ -135,13 +135,13 @@ add_task(async function test_toFetch() {
     setup(engine) {
       
       engine.toFetch = this.toFetch;
-      do_check_eq(engine.toFetch, this.toFetch);
+      Assert.equal(engine.toFetch, this.toFetch);
 
       engine.toFetch = this.toFetch2;
-      do_check_eq(engine.toFetch, this.toFetch2);
+      Assert.equal(engine.toFetch, this.toFetch2);
     },
     check(engine) {
-      do_check_matches(engine.toFetch, this.toFetch2);
+      Assert.deepEqual(engine.toFetch, this.toFetch2);
     },
   });
 
@@ -155,7 +155,7 @@ add_task(async function test_toFetch() {
     },
     check(engine) {
       
-      do_check_matches(engine.toFetch, this.toFetch);
+      Assert.deepEqual(engine.toFetch, this.toFetch);
     },
   });
 });
@@ -169,15 +169,15 @@ add_task(async function test_previousFailed() {
     previousFailed: [Utils.makeGUID(), Utils.makeGUID(), Utils.makeGUID()],
     setup(engine) {
       
-      do_check_eq(engine.previousFailed.length, 0);
+      Assert.equal(engine.previousFailed.length, 0);
 
       
       engine.previousFailed = this.previousFailed;
-      do_check_eq(engine.previousFailed, this.previousFailed);
+      Assert.equal(engine.previousFailed, this.previousFailed);
     },
     check(engine) {
       
-      do_check_matches(engine.previousFailed, this.previousFailed);
+      Assert.deepEqual(engine.previousFailed, this.previousFailed);
     },
   });
 
@@ -187,13 +187,13 @@ add_task(async function test_previousFailed() {
     setup(engine) {
       
       engine.previousFailed = this.previousFailed;
-      do_check_eq(engine.previousFailed, this.previousFailed);
+      Assert.equal(engine.previousFailed, this.previousFailed);
 
       engine.previousFailed = this.previousFailed2;
-      do_check_eq(engine.previousFailed, this.previousFailed2);
+      Assert.equal(engine.previousFailed, this.previousFailed2);
     },
     check(engine) {
-      do_check_matches(engine.previousFailed, this.previousFailed2);
+      Assert.deepEqual(engine.previousFailed, this.previousFailed2);
     },
   });
 
@@ -208,7 +208,7 @@ add_task(async function test_previousFailed() {
     },
     check(engine) {
       
-      do_check_matches(engine.previousFailed, this.previousFailed);
+      Assert.deepEqual(engine.previousFailed, this.previousFailed);
     },
   });
 });
@@ -219,9 +219,9 @@ add_task(async function test_resetClient() {
   let engine = await makeSteamEngine();
   try {
     
-    do_check_eq(Svc.Prefs.get("steam.lastSync"), undefined);
-    do_check_eq(Svc.Prefs.get("steam.lastSyncLocal"), undefined);
-    do_check_eq(engine.toFetch.length, 0);
+    Assert.equal(Svc.Prefs.get("steam.lastSync"), undefined);
+    Assert.equal(Svc.Prefs.get("steam.lastSyncLocal"), undefined);
+    Assert.equal(engine.toFetch.length, 0);
 
     engine.lastSync = 123.45;
     engine.lastSyncLocal = 67890;
@@ -229,10 +229,10 @@ add_task(async function test_resetClient() {
     engine.previousFailed = [Utils.makeGUID(), Utils.makeGUID(), Utils.makeGUID()];
 
     await engine.resetClient();
-    do_check_eq(engine.lastSync, 0);
-    do_check_eq(engine.lastSyncLocal, 0);
-    do_check_eq(engine.toFetch.length, 0);
-    do_check_eq(engine.previousFailed.length, 0);
+    Assert.equal(engine.lastSync, 0);
+    Assert.equal(engine.lastSyncLocal, 0);
+    Assert.equal(engine.toFetch.length, 0);
+    Assert.equal(engine.previousFailed.length, 0);
   } finally {
     Svc.Prefs.resetBranch("");
   }
@@ -257,9 +257,9 @@ add_task(async function test_wipeServer() {
 
     _("Wipe server data and reset client.");
     await engine.wipeServer();
-    do_check_eq(steamCollection.payload, undefined);
-    do_check_eq(engine.lastSync, 0);
-    do_check_eq(engine.toFetch.length, 0);
+    Assert.equal(steamCollection.payload, undefined);
+    Assert.equal(engine.lastSync, 0);
+    Assert.equal(engine.toFetch.length, 0);
 
   } finally {
     steamServer.stop(do_test_finished);

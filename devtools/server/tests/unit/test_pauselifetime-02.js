@@ -30,19 +30,19 @@ function test_pause_frame() {
   gThreadClient.addOneTimeListener("paused", function (event, packet) {
     let args = packet.frame.arguments;
     let objActor = args[0].actor;
-    do_check_eq(args[0].class, "Object");
-    do_check_true(!!objActor);
+    Assert.equal(args[0].class, "Object");
+    Assert.ok(!!objActor);
 
     
     
     gClient.request({ to: objActor, type: "bogusRequest" }, function (response) {
-      do_check_eq(response.error, "unrecognizedPacketType");
+      Assert.equal(response.error, "unrecognizedPacketType");
 
       gThreadClient.resume(function () {
         
         
         gClient.request({ to: objActor, type: "bogusRequest" }, function (response) {
-          do_check_eq(response.error, "noSuchActor");
+          Assert.equal(response.error, "noSuchActor");
           finishClient(gClient);
         });
       });

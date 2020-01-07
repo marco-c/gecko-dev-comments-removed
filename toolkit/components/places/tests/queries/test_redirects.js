@@ -17,7 +17,7 @@ var visits = [];
 
 function check_results_callback(aSequence) {
   
-  do_check_eq(aSequence.length, 3);
+  Assert.equal(aSequence.length, 3);
   let includeHidden = aSequence[0];
   let maxResults = aSequence[1];
   let sortingMode = aSequence[2];

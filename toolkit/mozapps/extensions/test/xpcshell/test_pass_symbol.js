@@ -21,22 +21,22 @@ add_task(async function() {
 
   let addon = await promiseAddonByID(ADDON_ID);
 
-  do_check_neq(addon, null);
-  do_check_eq(addon.version, "1.0");
-  do_check_eq(addon.name, "Test Symbol");
-  do_check_true(addon.isCompatible);
-  do_check_false(addon.appDisabled);
-  do_check_true(addon.isActive);
-  do_check_eq(addon.type, "extension");
+  Assert.notEqual(addon, null);
+  Assert.equal(addon.version, "1.0");
+  Assert.equal(addon.name, "Test Symbol");
+  Assert.ok(addon.isCompatible);
+  Assert.ok(!addon.appDisabled);
+  Assert.ok(addon.isActive);
+  Assert.equal(addon.type, "extension");
 
   
   
   
   do_execute_soon(function() {
     
-    do_check_true(Services.prefs.getBoolPref(PASS_PREF));
-    do_check_true(Services.prefs.getBoolPref(FAIL_BOGUS_PREF));
-    do_check_true(Services.prefs.getBoolPref(FAIL_ID_PREF));
+    Assert.ok(Services.prefs.getBoolPref(PASS_PREF));
+    Assert.ok(Services.prefs.getBoolPref(FAIL_BOGUS_PREF));
+    Assert.ok(Services.prefs.getBoolPref(FAIL_ID_PREF));
   });
 
   await promiseRestartManager();

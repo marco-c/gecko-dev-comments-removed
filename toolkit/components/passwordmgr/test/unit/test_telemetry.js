@@ -97,8 +97,8 @@ function testHistogram(histogramId, expectedNonZeroRanges) {
 
   
   do_print("Testing histogram: " + histogramId);
-  do_check_eq(JSON.stringify(actualNonZeroRanges),
-              JSON.stringify(expectedNonZeroRanges));
+  Assert.equal(JSON.stringify(actualNonZeroRanges),
+               JSON.stringify(expectedNonZeroRanges));
 }
 
 

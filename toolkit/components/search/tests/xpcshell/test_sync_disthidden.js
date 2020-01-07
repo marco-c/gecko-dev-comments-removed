@@ -17,16 +17,16 @@ function run_test() {
                         .QueryInterface(Ci.nsIResProtocolHandler);
   resProt.setSubstitution("search-plugins", Services.io.newURI(url));
 
-  do_check_false(Services.search.isInitialized);
+  Assert.ok(!Services.search.isInitialized);
 
   let engines = Services.search.getEngines();
   
   
-  do_check_eq(engines.length, 5);
+  Assert.equal(engines.length, 5);
 
-  do_check_true(Services.search.isInitialized);
+  Assert.ok(Services.search.isInitialized);
 
   
   let engine = Services.search.getEngineByName("Test search engine");
-  do_check_eq(engine, null);
+  Assert.equal(engine, null);
 }

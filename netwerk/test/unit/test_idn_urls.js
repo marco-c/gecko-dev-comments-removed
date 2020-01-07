@@ -342,18 +342,18 @@ function run_test() {
             if (punycodeURL.substr(0, 4) == "xn--" || punycodeURL.indexOf(".xn--") > 0) {
                 
                 
-                do_check_eq(escape(result),
-                            expectedUnicode ? escape(URL) : escape(punycodeURL));
+                Assert.equal(escape(result),
+                             expectedUnicode ? escape(URL) : escape(punycodeURL));
 
                 result = idnService.convertToDisplayIDN(punycodeURL, isASCII);
-                do_check_eq(escape(result),
-                            expectedUnicode ? escape(URL) : escape(punycodeURL));
+                Assert.equal(escape(result),
+                             expectedUnicode ? escape(URL) : escape(punycodeURL));
             } else {
                 
                 
                 
                 
-                do_check_eq(escape(result), escape(punycodeURL));
+                Assert.equal(escape(result), escape(punycodeURL));
             }
         }
     }

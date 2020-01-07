@@ -4,35 +4,35 @@ function run_test() {
 
   var uri1 = ios.newURI("http://example.com#bar");
   var uri2 = ios.newURI("http://example.com/#bar");
-  do_check_true(uri1.equals(uri2));
+  Assert.ok(uri1.equals(uri2));
 
   uri1.spec = "http://example.com?bar";
   uri2.spec = "http://example.com/?bar";
-  do_check_true(uri1.equals(uri2));
+  Assert.ok(uri1.equals(uri2));
 
   
   
   
   uri1.spec = "http://example.com;bar";
   uri2.spec = "http://example.com/;bar";
-  do_check_false(uri1.equals(uri2));
+  Assert.ok(!uri1.equals(uri2));
 
   uri1.spec = "http://example.com#";
   uri2.spec = "http://example.com/#";
-  do_check_true(uri1.equals(uri2));
+  Assert.ok(uri1.equals(uri2));
 
   uri1.spec = "http://example.com?";
   uri2.spec = "http://example.com/?";
-  do_check_true(uri1.equals(uri2));
+  Assert.ok(uri1.equals(uri2));
 
   
   
   
   uri1.spec = "http://example.com;";
   uri2.spec = "http://example.com/;";
-  do_check_false(uri1.equals(uri2));
+  Assert.ok(!uri1.equals(uri2));
 
   uri1.spec = "http://example.com";
   uri2.spec = "http://example.com/";
-  do_check_true(uri1.equals(uri2));
+  Assert.ok(uri1.equals(uri2));
 }

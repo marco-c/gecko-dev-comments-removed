@@ -102,7 +102,7 @@ function completeCheckCookie(request, data, context) {
   }
   
   do_print("Saw only correct cookie '" + expectedCookie + "'");
-  do_check_true(true);
+  Assert.ok(true);
 
 
   if (++i == tests.length) {

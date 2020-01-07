@@ -45,16 +45,16 @@ add_task(async function test_setAnnotationsFor() {
   PlacesUtils.setAnnotationsForItem(itemId, testAnnos);
   
   testAnnos.forEach(function(anno) {
-    do_check_true(as.itemHasAnnotation(itemId, anno.name));
-    do_check_eq(as.getItemAnnotation(itemId, anno.name), anno.value);
+    Assert.ok(as.itemHasAnnotation(itemId, anno.name));
+    Assert.equal(as.getItemAnnotation(itemId, anno.name), anno.value);
   });
 
   
   PlacesUtils.setAnnotationsForURI(testURI, testAnnos);
   
   testAnnos.forEach(function(anno) {
-    do_check_true(as.pageHasAnnotation(testURI, anno.name));
-    do_check_eq(as.getPageAnnotation(testURI, anno.name), anno.value);
+    Assert.ok(as.pageHasAnnotation(testURI, anno.name));
+    Assert.equal(as.getPageAnnotation(testURI, anno.name), anno.value);
   });
 
   
@@ -68,15 +68,15 @@ add_task(async function test_setAnnotationsFor() {
   PlacesUtils.setAnnotationsForItem(itemId, testAnnos);
   
   testAnnos.forEach(function(anno) {
-    do_check_false(as.itemHasAnnotation(itemId, anno.name));
+    Assert.ok(!as.itemHasAnnotation(itemId, anno.name));
     
-    do_check_true(as.pageHasAnnotation(testURI, anno.name));
+    Assert.ok(as.pageHasAnnotation(testURI, anno.name));
   });
 
   
   PlacesUtils.setAnnotationsForURI(testURI, testAnnos);
   
   testAnnos.forEach(function(anno) {
-    do_check_false(as.pageHasAnnotation(testURI, anno.name));
+    Assert.ok(!as.pageHasAnnotation(testURI, anno.name));
   });
 });

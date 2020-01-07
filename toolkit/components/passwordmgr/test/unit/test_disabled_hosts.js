@@ -54,20 +54,20 @@ add_task(function test_setLoginSavingEnabled_getLoginSavingEnabled()
   let hostname2 = "https://disabled.example.com";
 
   
-  do_check_true(Services.logins.getLoginSavingEnabled(hostname1));
-  do_check_true(Services.logins.getLoginSavingEnabled(hostname2));
+  Assert.ok(Services.logins.getLoginSavingEnabled(hostname1));
+  Assert.ok(Services.logins.getLoginSavingEnabled(hostname2));
 
   
   Services.logins.setLoginSavingEnabled(hostname1, false);
   Services.logins.setLoginSavingEnabled(hostname2, true);
-  do_check_false(Services.logins.getLoginSavingEnabled(hostname1));
-  do_check_true(Services.logins.getLoginSavingEnabled(hostname2));
+  Assert.ok(!Services.logins.getLoginSavingEnabled(hostname1));
+  Assert.ok(Services.logins.getLoginSavingEnabled(hostname2));
 
   
   Services.logins.setLoginSavingEnabled(hostname1, true);
   Services.logins.setLoginSavingEnabled(hostname2, false);
-  do_check_true(Services.logins.getLoginSavingEnabled(hostname1));
-  do_check_false(Services.logins.getLoginSavingEnabled(hostname2));
+  Assert.ok(Services.logins.getLoginSavingEnabled(hostname1));
+  Assert.ok(!Services.logins.getLoginSavingEnabled(hostname2));
 
   
   Services.logins.setLoginSavingEnabled(hostname2, true);
@@ -96,12 +96,12 @@ add_task(function test_rememberSignons()
   let hostname2 = "http://localhost";
 
   
-  do_check_true(Services.prefs.getBoolPref("signon.rememberSignons"));
+  Assert.ok(Services.prefs.getBoolPref("signon.rememberSignons"));
 
   
   Services.logins.setLoginSavingEnabled(hostname1, false);
-  do_check_false(Services.logins.getLoginSavingEnabled(hostname1));
-  do_check_true(Services.logins.getLoginSavingEnabled(hostname2));
+  Assert.ok(!Services.logins.getLoginSavingEnabled(hostname1));
+  Assert.ok(Services.logins.getLoginSavingEnabled(hostname2));
 
   
   Services.prefs.setBoolPref("signon.rememberSignons", false);
@@ -109,8 +109,8 @@ add_task(function test_rememberSignons()
     () => Services.prefs.clearUserPref("signon.rememberSignons"));
 
   
-  do_check_false(Services.logins.getLoginSavingEnabled(hostname1));
-  do_check_false(Services.logins.getLoginSavingEnabled(hostname2));
+  Assert.ok(!Services.logins.getLoginSavingEnabled(hostname1));
+  Assert.ok(!Services.logins.getLoginSavingEnabled(hostname2));
 
   
   LoginTestUtils.assertDisabledHostsEqual(Services.logins.getAllDisabledHosts(),
@@ -121,8 +121,8 @@ add_task(function test_rememberSignons()
   Services.logins.setLoginSavingEnabled(hostname2, false);
 
   
-  do_check_false(Services.logins.getLoginSavingEnabled(hostname1));
-  do_check_false(Services.logins.getLoginSavingEnabled(hostname2));
+  Assert.ok(!Services.logins.getLoginSavingEnabled(hostname1));
+  Assert.ok(!Services.logins.getLoginSavingEnabled(hostname2));
 
   
   LoginTestUtils.assertDisabledHostsEqual(Services.logins.getAllDisabledHosts(),
@@ -132,8 +132,8 @@ add_task(function test_rememberSignons()
   Services.prefs.setBoolPref("signon.rememberSignons", true);
 
   
-  do_check_true(Services.logins.getLoginSavingEnabled(hostname1));
-  do_check_false(Services.logins.getLoginSavingEnabled(hostname2));
+  Assert.ok(Services.logins.getLoginSavingEnabled(hostname1));
+  Assert.ok(!Services.logins.getLoginSavingEnabled(hostname2));
 
   
   Services.logins.setLoginSavingEnabled(hostname2, true);

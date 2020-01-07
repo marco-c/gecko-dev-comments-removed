@@ -60,7 +60,7 @@ const gTextDecoder = new TextDecoder();
 const TEST_256_CHARS = new Array(257).join("-");
 const DESIRED_LENGTH = REQUEST_SUSPEND_AT * 2;
 const TEST_DATA_LONG = new Array(1 + DESIRED_LENGTH / 256).join(TEST_256_CHARS);
-do_check_eq(TEST_DATA_LONG.length, DESIRED_LENGTH);
+Assert.equal(TEST_DATA_LONG.length, DESIRED_LENGTH);
 
 
 
@@ -103,15 +103,15 @@ function promiseVerifyContents(aFile, aExpectedContents) {
       uri: NetUtil.newURI(aFile),
       loadUsingSystemPrincipal: true
     }, function(aInputStream, aStatus) {
-      do_check_true(Components.isSuccessCode(aStatus));
+      Assert.ok(Components.isSuccessCode(aStatus));
       let contents = NetUtil.readInputStreamToString(aInputStream,
                                                      aInputStream.available());
       if (contents.length <= TEST_DATA_SHORT.length * 2) {
-        do_check_eq(contents, aExpectedContents);
+        Assert.equal(contents, aExpectedContents);
       } else {
         
-        do_check_eq(contents.length, aExpectedContents.length);
-        do_check_true(contents == aExpectedContents);
+        Assert.equal(contents.length, aExpectedContents.length);
+        Assert.ok(contents == aExpectedContents);
       }
       resolve();
     });
@@ -265,7 +265,7 @@ add_task(async function test_normal()
   
   let receivedOnTargetChange = false;
   function onTargetChange(aTarget) {
-    do_check_true(destFile.equals(aTarget));
+    Assert.ok(destFile.equals(aTarget));
     receivedOnTargetChange = true;
   }
   let completionPromise = promiseSaverComplete(saver, onTargetChange);
@@ -282,7 +282,7 @@ add_task(async function test_normal()
 
   
   
-  do_check_true(receivedOnTargetChange);
+  Assert.ok(receivedOnTargetChange);
 
   
   destFile.remove(false);
@@ -368,21 +368,21 @@ add_task(async function test_combinations()
 
     if (!cancelAtSomePoint) {
       
-      do_check_true(currentFile.exists());
+      Assert.ok(currentFile.exists());
       let expectedContents = testData + testData;
       await promiseVerifyContents(currentFile, expectedContents);
-      do_check_eq(EXPECTED_HASHES[expectedContents.length],
-                  toHex(saver.sha256Hash));
+      Assert.equal(EXPECTED_HASHES[expectedContents.length],
+                   toHex(saver.sha256Hash));
       currentFile.remove(false);
 
       
       if (renamedFile.equals(currentFile)) {
-        do_check_false(initialFile.exists());
+        Assert.ok(!initialFile.exists());
       }
     } else if (!keepPartialOnFailure) {
       
-      do_check_false(initialFile.exists());
-      do_check_false(renamedFile.exists());
+      Assert.ok(!initialFile.exists());
+      Assert.ok(!renamedFile.exists());
     } else {
       
       
@@ -425,8 +425,8 @@ add_task(async function test_setTarget_after_close_stream()
 
     
     await promiseVerifyContents(destFile, TEST_DATA_SHORT);
-    do_check_eq(EXPECTED_HASHES[TEST_DATA_SHORT.length],
-                toHex(saver.sha256Hash));
+    Assert.equal(EXPECTED_HASHES[TEST_DATA_SHORT.length],
+                 toHex(saver.sha256Hash));
   }
 
   
@@ -451,7 +451,7 @@ add_task(async function test_setTarget_fast()
   await completionPromise;
 
   
-  do_check_false(destFile1.exists());
+  Assert.ok(!destFile1.exists());
   await promiseVerifyContents(destFile2, TEST_DATA_SHORT);
   destFile2.remove(false);
 });
@@ -475,8 +475,8 @@ add_task(async function test_setTarget_multiple()
   await completionPromise;
 
   
-  do_check_false(getTempFile(TEST_FILE_NAME_2).exists());
-  do_check_false(getTempFile(TEST_FILE_NAME_3).exists());
+  Assert.ok(!getTempFile(TEST_FILE_NAME_2).exists());
+  Assert.ok(!getTempFile(TEST_FILE_NAME_3).exists());
   await promiseVerifyContents(destFile, TEST_DATA_SHORT);
   destFile.remove(false);
 });
@@ -536,7 +536,7 @@ add_task(async function test_enableAppend_setTarget_fast()
     await completionPromise;
 
     
-    do_check_false(firstFile.exists());
+    Assert.ok(!firstFile.exists());
     let expectedContents = (i == 0 ? TEST_DATA_SHORT
                                    : TEST_DATA_SHORT + TEST_DATA_SHORT);
     await promiseVerifyContents(secondFile, expectedContents);
@@ -570,8 +570,8 @@ add_task(async function test_enableAppend_hash()
     let expectedContents = (i == 0 ? TEST_DATA_LONG
                                    : TEST_DATA_LONG + TEST_DATA_LONG);
     await promiseVerifyContents(destFile, expectedContents);
-    do_check_eq(EXPECTED_HASHES[expectedContents.length],
-                toHex(saver.sha256Hash));
+    Assert.equal(EXPECTED_HASHES[expectedContents.length],
+                 toHex(saver.sha256Hash));
   }
 
   
@@ -606,8 +606,8 @@ add_task(async function test_empty()
   await completionPromise;
 
   
-  do_check_true(destFile.exists());
-  do_check_eq(destFile.fileSize, 0);
+  Assert.ok(destFile.exists());
+  Assert.equal(destFile.fileSize, 0);
 
   
   destFile.remove(false);
@@ -634,8 +634,8 @@ add_task(async function test_empty_hash()
     await completionPromise;
 
     
-    do_check_eq(destFile.fileSize, 0);
-    do_check_eq(EXPECTED_HASHES[0], toHex(saver.sha256Hash));
+    Assert.equal(destFile.fileSize, 0);
+    Assert.equal(EXPECTED_HASHES[0], toHex(saver.sha256Hash));
   }
 
   
@@ -710,7 +710,7 @@ add_task(async function test_signature()
   await promiseVerifyContents(destFile, TEST_DATA_SHORT);
 
   
-  do_check_eq(0, saver.signatureInfo.length);
+  Assert.equal(0, saver.signatureInfo.length);
 
   
   destFile.remove(false);

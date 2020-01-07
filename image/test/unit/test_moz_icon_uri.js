@@ -31,14 +31,14 @@ function run_test() {
   } catch (e) {
     exception = true;
   }
-  do_check_eq(exception, false);
+  Assert.equal(exception, false);
   exception = false; 
 
   iconURI = uri.QueryInterface(Ci.nsIMozIconURI);
-  do_check_eq(iconURI.iconSize, "button");
-  do_check_eq(iconURI.iconState, "normal");
-  do_check_eq(iconURI.contentType, "bar");
-  do_check_eq(iconURI.fileExtension, ".html");
+  Assert.equal(iconURI.iconSize, "button");
+  Assert.equal(iconURI.iconState, "normal");
+  Assert.equal(iconURI.contentType, "bar");
+  Assert.equal(iconURI.fileExtension, ".html");
 
   
   
@@ -48,12 +48,12 @@ function run_test() {
   } catch (e) {
     exception = true;
   }
-  do_check_eq(exception, false);
+  Assert.equal(exception, false);
   exception = false; 
 
   iconURI = uri.QueryInterface(Ci.nsIMozIconURI);
-  do_check_eq(iconURI.iconSize, "");
-  do_check_eq(iconURI.imageSize, 3);
+  Assert.equal(iconURI.iconSize, "");
+  Assert.equal(iconURI.imageSize, 3);
 
   
   
@@ -63,11 +63,11 @@ function run_test() {
   } catch (e) {
     exception = true;
   }
-  do_check_eq(exception, false);
+  Assert.equal(exception, false);
   exception = false; 
 
   iconURI = uri.QueryInterface(Ci.nsIMozIconURI);
-  do_check_eq(iconURI.stockIcon, "foo");
+  Assert.equal(iconURI.stockIcon, "foo");
 
   
   currentSpec = "moz-icon://stock/?size=3";
@@ -76,7 +76,7 @@ function run_test() {
   } catch (e) {
     exception = true;
   }
-  do_check_true(exception);
+  Assert.ok(exception);
   exception = false; 
 
   
@@ -87,7 +87,7 @@ function run_test() {
   } catch (e) {
     exception = true;
   }
-  do_check_eq(exception, false);
+  Assert.equal(exception, false);
   exception = false; 
 
   iconURI = uri.QueryInterface(Ci.nsIMozIconURI);
@@ -97,10 +97,10 @@ function run_test() {
   } catch (e) {
     exception = true;
   }
-  do_check_eq(exception, false);
+  Assert.equal(exception, false);
   exception = false; 
 
-  do_check_neq(fileURL, null);
+  Assert.notEqual(fileURL, null);
 
   
   currentSpec = "moz-icon://file://foo.txt";
@@ -109,7 +109,7 @@ function run_test() {
   } catch (e) {
     exception = true;
   }
-  do_check_eq(exception, false);
+  Assert.equal(exception, false);
   exception = false; 
 
   iconURI = uri.QueryInterface(Ci.nsIMozIconURI);
@@ -119,10 +119,10 @@ function run_test() {
   } catch (e) {
     exception = true;
   }
-  do_check_eq(exception, false);
+  Assert.equal(exception, false);
   exception = false; 
 
-  do_check_neq(fileURL, null);
+  Assert.notEqual(fileURL, null);
 
   
   currentSpec = "moz-icon:foo";
@@ -131,7 +131,7 @@ function run_test() {
   } catch (e) {
     exception = true;
   }
-  do_check_eq(exception, true);
+  Assert.equal(exception, true);
   exception = false; 
 
   
@@ -142,7 +142,7 @@ function run_test() {
   } catch (e) {
     exception = true;
   }
-  do_check_eq(exception, true);
+  Assert.equal(exception, true);
   exception = false; 
 
   
@@ -152,6 +152,6 @@ function run_test() {
   } catch (e) {
     exception = true;
   }
-  do_check_eq(exception, true);
+  Assert.equal(exception, true);
   exception = false; 
 };

@@ -39,20 +39,20 @@ function test_thread_lifetime() {
     
     gThreadClient.threadGrips(actors, function (response) {
       
-      do_check_eq(response.error, undefined);
+      Assert.equal(response.error, undefined);
 
       gThreadClient.addOneTimeListener("paused", function (event, packet) {
         
         actors.forEach(function (actor, i) {
-          do_check_eq(actor, packet.frame.arguments[i].actor);
+          Assert.equal(actor, packet.frame.arguments[i].actor);
         });
         
         gThreadClient.releaseMany(actors, function (response) {
           
-          do_check_eq(response.error, undefined);
+          Assert.equal(response.error, undefined);
 
           gClient.request({ to: last, type: "bogusRequest" }, function (response) {
-            do_check_eq(response.error, "noSuchActor");
+            Assert.equal(response.error, "noSuchActor");
             gThreadClient.resume(function (response) {
               finishClient(gClient);
             });

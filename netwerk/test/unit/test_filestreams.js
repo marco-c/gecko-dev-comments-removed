@@ -64,7 +64,7 @@ function check_access(aContractId, aDeferOpen, aTrickDeferredOpen)
   ensure_unique(file);
   let ostream = Cc[aContractId].createInstance(Ci.nsIFileOutputStream);
   ostream.init(file, -1, -1, aDeferOpen ? Ci.nsIFileOutputStream.DEFER_OPEN : 0);
-  do_check_eq(aDeferOpen, !file.clone().exists()); 
+  Assert.equal(aDeferOpen, !file.clone().exists()); 
   if (aDeferOpen) {
     
     if (aTrickDeferredOpen) {
@@ -76,7 +76,7 @@ function check_access(aContractId, aDeferOpen, aTrickDeferredOpen)
       file.leafName = LEAF_NAME;
     }
     
-    do_check_true(file.clone().exists());
+    Assert.ok(file.clone().exists());
   }
   ostream.close();
 
@@ -107,8 +107,8 @@ function check_access(aContractId, aDeferOpen, aTrickDeferredOpen)
   
   
   
-  do_check_true( (aDeferOpen && initOk && !getOk) ||
-                 (!aDeferOpen && !initOk && !getOk) );
+  Assert.ok( (aDeferOpen && initOk && !getOk) ||
+             (!aDeferOpen && !initOk && !getOk) );
   istream.close();
 }
 
@@ -150,7 +150,7 @@ function sync_operations(aDeferOpen)
   cstream.close();
   fstream.close();
 
-  do_check_eq(string.value, TEST_DATA);
+  Assert.equal(string.value, TEST_DATA);
 }
 
 
@@ -237,21 +237,21 @@ function do_test_zero_size_buffered(disableBuffering)
                 createInstance(Ci.nsIConverterInputStream);
   cstream.init(buffered, "UTF-8", 0, 0);
 
-  do_check_eq(buffered.available(), 0);
+  Assert.equal(buffered.available(), 0);
 
   
   let string = {};
-  do_check_eq(cstream.readString(BUFFERSIZE, string), 0);
-  do_check_eq(string.value, "");
+  Assert.equal(cstream.readString(BUFFERSIZE, string), 0);
+  Assert.equal(string.value, "");
 
   
   var exceptionThrown = false;
   try {
-    do_check_eq(buffered.available(), 0);
+    Assert.equal(buffered.available(), 0);
   } catch (e) {
     exceptionThrown = true;
   }
-  do_check_true(exceptionThrown);
+  Assert.ok(exceptionThrown);
 
   
   buffered.seek(Ci.nsISeekableStream.NS_SEEK_SET, 0);
@@ -259,11 +259,11 @@ function do_test_zero_size_buffered(disableBuffering)
   
   exceptionThrown = false;
   try {
-    do_check_eq(buffered.available(), 0);
+    Assert.equal(buffered.available(), 0);
   } catch (e) {
     exceptionThrown = true;
   }
-  do_check_false(exceptionThrown);
+  Assert.ok(!exceptionThrown);
 }
 
 function test_zero_size_buffered()

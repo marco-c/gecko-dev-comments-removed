@@ -30,18 +30,18 @@ function test_simple_eval() {
   gThreadClient.addOneTimeListener("paused", function (event, packet) {
     let arg1Actor = packet.frame.arguments[0].actor;
     gThreadClient.eval(null, "({ obj: true })", function (response) {
-      do_check_eq(response.type, "resumed");
+      Assert.equal(response.type, "resumed");
       
       gThreadClient.addOneTimeListener("paused", function (event, packet) {
         
-        do_check_eq(packet.type, "paused");
-        do_check_eq(packet.why.type, "clientEvaluated");
-        do_check_eq(packet.why.frameFinished.return.type, "object");
-        do_check_eq(packet.why.frameFinished.return.class, "Object");
+        Assert.equal(packet.type, "paused");
+        Assert.equal(packet.why.type, "clientEvaluated");
+        Assert.equal(packet.why.frameFinished.return.type, "object");
+        Assert.equal(packet.why.frameFinished.return.class, "Object");
 
         
         gClient.request({ to: arg1Actor, type: "bogusRequest" }, function (response) {
-          do_check_eq(response.error, "noSuchActor");
+          Assert.equal(response.error, "noSuchActor");
           gThreadClient.resume(function () {
             finishClient(gClient);
           });

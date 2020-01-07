@@ -22,7 +22,7 @@ add_test_pair(async function ordering() {
   await OS.File.writeAtomic(SHARED_PATH, string1);
   OS.File.writeAtomic(SHARED_PATH, string2);
   let string3 = await OS.File.read(SHARED_PATH, { encoding: "utf-8" });
-  do_check_eq(string3, string2);
+  Assert.equal(string3, string2);
 });
 
 add_test_pair(async function read_write_all() {
@@ -40,18 +40,18 @@ add_test_pair(async function read_write_all() {
       let currentDir = await OS.File.getCurrentDirectory();
       let pathSource = OS.Path.join(currentDir, EXISTING_FILE);
       let contents = await OS.File.read(pathSource);
-      do_check_true(!!contents); 
+      Assert.ok(!!contents); 
       let bytesRead = contents.byteLength;
 
       let bytesWritten = await OS.File.writeAtomic(DEST_PATH, contents, options);
-      do_check_eq(bytesRead, bytesWritten); 
+      Assert.equal(bytesRead, bytesWritten); 
 
       
-      do_check_eq(JSON.stringify(options), JSON.stringify(optionsBackup));
+      Assert.equal(JSON.stringify(options), JSON.stringify(optionsBackup));
       await reference_compare_files(pathSource, DEST_PATH, TEST);
 
       
-      do_check_false(new FileUtils.File(TMP_PATH).exists());
+      Assert.ok(!new FileUtils.File(TMP_PATH).exists());
 
       
       
@@ -72,7 +72,7 @@ add_test_pair(async function read_write_all() {
       await reference_compare_files(pathSource, DEST_PATH, TEST);
 
       
-      do_check_false(new FileUtils.File(TMP_PATH).exists());
+      Assert.ok(!new FileUtils.File(TMP_PATH).exists());
 
       
       let START = 10;
@@ -82,12 +82,12 @@ add_test_pair(async function read_write_all() {
         contents[i] = i % 256;
       view = new Uint8Array(contents.buffer, START, LENGTH);
       bytesWritten = await OS.File.writeAtomic(DEST_PATH, view, options);
-      do_check_eq(bytesWritten, LENGTH);
+      Assert.equal(bytesWritten, LENGTH);
 
       let array2 = await OS.File.read(DEST_PATH);
-      do_check_eq(LENGTH, array2.length);
+      Assert.equal(LENGTH, array2.length);
       for (let j = 0; j < LENGTH; j++)
-        do_check_eq(array2[j], (j + START) % 256);
+        Assert.equal(array2[j], (j + START) % 256);
 
       
       await OS.File.remove(DEST_PATH);

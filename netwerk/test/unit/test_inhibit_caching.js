@@ -42,8 +42,8 @@ function test_first_response() {
 
 function check_first_response(request, buffer) {
   request.QueryInterface(Ci.nsIHttpChannel);
-  do_check_eq(request.responseStatus, 200);
-  do_check_eq(buffer, "first");
+  Assert.equal(request.responseStatus, 200);
+  Assert.equal(buffer, "first");
   
   asyncOpenCacheEntry(uri+"/test","disk", Ci.nsICacheStorage.OPEN_READONLY, null, cache_entry_callback);
 }
@@ -69,8 +69,8 @@ function test_inhibit_caching() {
 
 function check_second_response(request, buffer) {
   request.QueryInterface(Ci.nsIHttpChannel);
-  do_check_eq(request.responseStatus, 200);
-  do_check_eq(buffer, "second");
+  Assert.equal(request.responseStatus, 200);
+  Assert.equal(buffer, "second");
   
   asyncOpenCacheEntry(uri+"/test","disk", Ci.nsICacheStorage.OPEN_READONLY, null, cache_entry_callback);
 }

@@ -51,7 +51,7 @@ add_test(function test_delete_removes_data() {
   
   
   let contents = getFileContents(file);
-  do_check_neq(-1, contents.indexOf(TEST_STRING));
+  Assert.notEqual(-1, contents.indexOf(TEST_STRING));
 
   
   stmt = db.createStatement("DELETE FROM test WHERE data = :data");
@@ -65,7 +65,7 @@ add_test(function test_delete_removes_data() {
 
   
   contents = getFileContents(file);
-  do_check_eq(-1, contents.indexOf(TEST_STRING));
+  Assert.equal(-1, contents.indexOf(TEST_STRING));
 
   run_next_test();
 });

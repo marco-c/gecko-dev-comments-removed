@@ -28,7 +28,7 @@ function authHandler(metadata, response) {
     if (!metadata.hasHeader("Authorization")) {
       noAuthHeader = true;
     }
-    do_check_true(noAuthHeader);
+    Assert.ok(noAuthHeader);
   } else {
     
     if (!metadata.hasHeader("Authorization")) {

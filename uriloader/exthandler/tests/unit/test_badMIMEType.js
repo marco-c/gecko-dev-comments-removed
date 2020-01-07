@@ -10,7 +10,7 @@ function run_test() {
   
   
   var badMimeType = "text/plainÿ";
-  do_check_eq(badMimeType.length, 11);
+  Assert.equal(badMimeType.length, 11);
 
   try {
     var type = Cc["@mozilla.org/mime;1"].
@@ -25,5 +25,5 @@ function run_test() {
   } finally {
   }
   
-  do_check_eq(true, true);
+  Assert.equal(true, true);
 }

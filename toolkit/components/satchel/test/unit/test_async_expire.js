@@ -11,14 +11,14 @@ function triggerExpiration() {
   Services.obs.notifyObservers(null, "formhistory-expire-now");
 }
 
-var checkExists = function(num) { do_check_true(num > 0); next_test(); };
-var checkNotExists = function(num) { do_check_true(!num); next_test(); };
+var checkExists = function(num) { Assert.ok(num > 0); next_test(); };
+var checkNotExists = function(num) { Assert.ok(!num); next_test(); };
 
 var TestObserver = {
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver, Ci.nsISupportsWeakReference]),
 
   observe(subject, topic, data) {
-    do_check_eq(topic, "satchel-storage-changed");
+    Assert.equal(topic, "satchel-storage-changed");
 
     if (data == "formhistory-expireoldentries") {
       next_test();
@@ -61,17 +61,17 @@ function* tests() {
   }
 
   testfile.copyTo(profileDir, "formhistory.sqlite");
-  do_check_true(dbFile.exists());
+  Assert.ok(dbFile.exists());
 
   
-  do_check_false(Services.prefs.prefHasUserValue("browser.formfill.expire_days"));
+  Assert.ok(!Services.prefs.prefHasUserValue("browser.formfill.expire_days"));
 
   
-  yield countEntries(null, null, function(num) { do_check_eq(508, num); next_test(); });
+  yield countEntries(null, null, function(num) { Assert.equal(508, num); next_test(); });
   yield countEntries("name-A", "value-A", checkExists); 
   yield countEntries("name-B", "value-B", checkExists); 
 
-  do_check_eq(CURRENT_SCHEMA, FormHistory.schemaVersion);
+  Assert.equal(CURRENT_SCHEMA, FormHistory.schemaVersion);
 
   
   yield countEntries("name-C", "value-C", checkNotExists);
@@ -112,7 +112,7 @@ function* tests() {
   yield countEntries("name-A", "value-A", checkExists);
   yield countEntries("181DaysOld", "foo", checkExists);
   yield countEntries("179DaysOld", "foo", checkExists);
-  yield countEntries(null, null, function(num) { do_check_eq(509, num); next_test(); });
+  yield countEntries(null, null, function(num) { Assert.equal(509, num); next_test(); });
 
   
   triggerExpiration();
@@ -121,20 +121,20 @@ function* tests() {
   yield countEntries("name-A", "value-A", checkNotExists);
   yield countEntries("181DaysOld", "foo", checkNotExists);
   yield countEntries("179DaysOld", "foo", checkExists);
-  yield countEntries(null, null, function(num) { do_check_eq(507, num); next_test(); });
+  yield countEntries(null, null, function(num) { Assert.equal(507, num); next_test(); });
 
   
   triggerExpiration();
   yield;
 
-  yield countEntries(null, null, function(num) { do_check_eq(507, num); next_test(); });
+  yield countEntries(null, null, function(num) { Assert.equal(507, num); next_test(); });
 
   
   Services.prefs.setIntPref("browser.formfill.expire_days", 30);
   yield countEntries("179DaysOld", "foo", checkExists);
   yield countEntries("bar", "31days", checkExists);
   yield countEntries("bar", "29days", checkExists);
-  yield countEntries(null, null, function(num) { do_check_eq(507, num); next_test(); });
+  yield countEntries(null, null, function(num) { Assert.equal(507, num); next_test(); });
 
   triggerExpiration();
   yield;
@@ -142,7 +142,7 @@ function* tests() {
   yield countEntries("179DaysOld", "foo", checkNotExists);
   yield countEntries("bar", "31days", checkNotExists);
   yield countEntries("bar", "29days", checkExists);
-  yield countEntries(null, null, function(num) { do_check_eq(505, num); next_test(); });
+  yield countEntries(null, null, function(num) { Assert.equal(505, num); next_test(); });
 
   
   
@@ -150,7 +150,7 @@ function* tests() {
 
   yield countEntries("bar", "29days", checkExists);
   yield countEntries("9DaysOld", "foo", checkExists);
-  yield countEntries(null, null, function(num) { do_check_eq(505, num); next_test(); });
+  yield countEntries(null, null, function(num) { Assert.equal(505, num); next_test(); });
 
   triggerExpiration();
   yield;
@@ -159,7 +159,7 @@ function* tests() {
   yield countEntries("9DaysOld", "foo", checkExists);
   yield countEntries("name-B", "value-B", checkExists);
   yield countEntries("name-C", "value-C", checkExists);
-  yield countEntries(null, null, function(num) { do_check_eq(3, num); next_test(); });
+  yield countEntries(null, null, function(num) { Assert.equal(3, num); next_test(); });
 
   test_finished();
 }

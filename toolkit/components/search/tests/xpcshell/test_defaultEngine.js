@@ -25,25 +25,25 @@ add_task(async function test_defaultEngine() {
   ]);
 
   search.defaultEngine = engine1;
-  do_check_eq(search.defaultEngine, engine1);
+  Assert.equal(search.defaultEngine, engine1);
   search.defaultEngine = engine2;
-  do_check_eq(search.defaultEngine, engine2);
+  Assert.equal(search.defaultEngine, engine2);
   search.defaultEngine = engine1;
-  do_check_eq(search.defaultEngine, engine1);
+  Assert.equal(search.defaultEngine, engine1);
 
   
   
   engine1.hidden = true;
-  do_check_eq(search.defaultEngine, originalDefault);
+  Assert.equal(search.defaultEngine, originalDefault);
 
   
   
   search.moveEngine(engine2, 0);
   originalDefault.hidden = true;
-  do_check_eq(search.defaultEngine, engine2);
+  Assert.equal(search.defaultEngine, engine2);
 
   
   
   search.defaultEngine = engine1;
-  do_check_eq(search.defaultEngine, engine2);
+  Assert.equal(search.defaultEngine, engine2);
 });

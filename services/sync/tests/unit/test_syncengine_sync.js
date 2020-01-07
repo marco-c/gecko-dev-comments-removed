@@ -99,11 +99,11 @@ add_task(async function test_syncStartup_emptyOrOutdatedGlobalsResetsSync() {
   try {
 
     
-    do_check_eq(engine._tracker.changedIDs.rekolok, undefined);
+    Assert.equal(engine._tracker.changedIDs.rekolok, undefined);
     let metaGlobal = await Service.recordManager.get(engine.metaURL);
-    do_check_eq(metaGlobal.payload.engines, undefined);
-    do_check_true(!!collection.payload("flying"));
-    do_check_true(!!collection.payload("scotsman"));
+    Assert.equal(metaGlobal.payload.engines, undefined);
+    Assert.ok(!!collection.payload("flying"));
+    Assert.ok(!!collection.payload("scotsman"));
 
     engine.lastSync = Date.now() / 1000;
     engine.lastSyncLocal = Date.now();
@@ -114,13 +114,13 @@ add_task(async function test_syncStartup_emptyOrOutdatedGlobalsResetsSync() {
 
     
     let engineData = metaGlobal.payload.engines.rotary;
-    do_check_eq(engineData.version, engine.version);
-    do_check_eq(engineData.syncID, engine.syncID);
+    Assert.equal(engineData.version, engine.version);
+    Assert.equal(engineData.syncID, engine.syncID);
 
     
-    do_check_eq(engine.lastSync, 0);
-    do_check_eq(collection.payload("flying"), undefined);
-    do_check_eq(collection.payload("scotsman"), undefined);
+    Assert.equal(engine.lastSync, 0);
+    Assert.equal(collection.payload("flying"), undefined);
+    Assert.equal(collection.payload("scotsman"), undefined);
 
   } finally {
     await cleanAndGo(engine, server);
@@ -148,7 +148,7 @@ add_task(async function test_syncStartup_serverHasNewerVersion() {
     } catch (ex) {
       error = ex;
     }
-    do_check_eq(error.failureCode, VERSION_OUT_OF_DATE);
+    Assert.equal(error.failureCode, VERSION_OUT_OF_DATE);
 
   } finally {
     await cleanAndGo(engine, server);
@@ -173,18 +173,18 @@ add_task(async function test_syncStartup_syncIDMismatchResetsClient() {
   try {
 
     
-    do_check_eq(engine.syncID, "fake-guid-00");
-    do_check_eq(engine._tracker.changedIDs.rekolok, undefined);
+    Assert.equal(engine.syncID, "fake-guid-00");
+    Assert.equal(engine._tracker.changedIDs.rekolok, undefined);
 
     engine.lastSync = Date.now() / 1000;
     engine.lastSyncLocal = Date.now();
     await engine._syncStartup();
 
     
-    do_check_eq(engine.syncID, "foobar");
+    Assert.equal(engine.syncID, "foobar");
 
     
-    do_check_eq(engine.lastSync, 0);
+    Assert.equal(engine.lastSync, 0);
 
   } finally {
     await cleanAndGo(engine, server);
@@ -207,7 +207,7 @@ add_task(async function test_processIncoming_emptyServer() {
 
     
     await engine._processIncoming();
-    do_check_eq(engine.lastSync, 0);
+    Assert.equal(engine.lastSync, 0);
 
   } finally {
     await cleanAndGo(engine, server);
@@ -251,23 +251,23 @@ add_task(async function test_processIncoming_createFromServer() {
   try {
 
     
-    do_check_eq(engine.lastSync, 0);
-    do_check_eq(engine.lastModified, null);
-    do_check_eq(engine._store.items.flying, undefined);
-    do_check_eq(engine._store.items.scotsman, undefined);
-    do_check_eq(engine._store.items["../pathological"], undefined);
+    Assert.equal(engine.lastSync, 0);
+    Assert.equal(engine.lastModified, null);
+    Assert.equal(engine._store.items.flying, undefined);
+    Assert.equal(engine._store.items.scotsman, undefined);
+    Assert.equal(engine._store.items["../pathological"], undefined);
 
     await engine._syncStartup();
     await engine._processIncoming();
 
     
-    do_check_true(engine.lastSync > 0);
-    do_check_true(engine.lastModified > 0);
+    Assert.ok(engine.lastSync > 0);
+    Assert.ok(engine.lastModified > 0);
 
     
-    do_check_eq(engine._store.items.flying, "LNER Class A3 4472");
-    do_check_eq(engine._store.items.scotsman, "Flying Scotsman");
-    do_check_eq(engine._store.items["../pathological"], "Pathological Case");
+    Assert.equal(engine._store.items.flying, "LNER Class A3 4472");
+    Assert.equal(engine._store.items.scotsman, "Flying Scotsman");
+    Assert.equal(engine._store.items["../pathological"], "Pathological Case");
 
   } finally {
     await cleanAndGo(engine, server);
@@ -344,41 +344,41 @@ add_task(async function test_processIncoming_reconcile() {
   try {
 
     
-    do_check_eq(engine._store.items.newrecord, undefined);
-    do_check_eq(engine._store.items.newerserver, "New data, but not as new as server!");
-    do_check_eq(engine._store.items.olderidentical, "Older but identical");
-    do_check_eq(engine._store.items.updateclient, "Got data?");
-    do_check_eq(engine._store.items.nukeme, "Nuke me!");
-    do_check_true(engine._tracker.changedIDs.olderidentical > 0);
+    Assert.equal(engine._store.items.newrecord, undefined);
+    Assert.equal(engine._store.items.newerserver, "New data, but not as new as server!");
+    Assert.equal(engine._store.items.olderidentical, "Older but identical");
+    Assert.equal(engine._store.items.updateclient, "Got data?");
+    Assert.equal(engine._store.items.nukeme, "Nuke me!");
+    Assert.ok(engine._tracker.changedIDs.olderidentical > 0);
 
     await engine._syncStartup();
     await engine._processIncoming();
 
     
-    do_check_true(engine.lastSync > 0);
-    do_check_true(engine.lastModified > 0);
+    Assert.ok(engine.lastSync > 0);
+    Assert.ok(engine.lastModified > 0);
 
     
-    do_check_eq(engine._store.items.newrecord, "New stuff...");
+    Assert.equal(engine._store.items.newrecord, "New stuff...");
 
     
-    do_check_eq(engine._store.items.newerserver, "New data!");
+    Assert.equal(engine._store.items.newerserver, "New data!");
 
     
     
-    do_check_eq(engine._store.items.olderidentical, "Older but identical");
-    do_check_eq(engine._tracker.changedIDs.olderidentical, undefined);
+    Assert.equal(engine._store.items.olderidentical, "Older but identical");
+    Assert.equal(engine._tracker.changedIDs.olderidentical, undefined);
 
     
-    do_check_eq(engine._store.items.updateclient, "Get this!");
+    Assert.equal(engine._store.items.updateclient, "Get this!");
 
     
-    do_check_eq(engine._store.items.original, undefined);
-    do_check_eq(engine._store.items.duplication, "Original Entry");
-    do_check_neq(engine._delete.ids.indexOf("original"), -1);
+    Assert.equal(engine._store.items.original, undefined);
+    Assert.equal(engine._store.items.duplication, "Original Entry");
+    Assert.notEqual(engine._delete.ids.indexOf("original"), -1);
 
     
-    do_check_eq(engine._store.items.nukeme, undefined);
+    Assert.equal(engine._store.items.nukeme, undefined);
   } finally {
     await cleanAndGo(engine, server);
   }
@@ -404,17 +404,17 @@ add_task(async function test_processIncoming_reconcile_local_deleted() {
   server.insertWBO(user, "rotary", wbo);
 
   await engine._store.create({id: "DUPE_LOCAL", denomination: "local"});
-  do_check_true((await engine._store.itemExists("DUPE_LOCAL")));
-  do_check_eq("DUPE_LOCAL", (await engine._findDupe({id: "DUPE_INCOMING"})));
+  Assert.ok((await engine._store.itemExists("DUPE_LOCAL")));
+  Assert.equal("DUPE_LOCAL", (await engine._findDupe({id: "DUPE_INCOMING"})));
 
   await engine._sync();
 
   do_check_attribute_count(engine._store.items, 1);
-  do_check_true("DUPE_INCOMING" in engine._store.items);
+  Assert.ok("DUPE_INCOMING" in engine._store.items);
 
   let collection = server.getCollection(user, "rotary");
-  do_check_eq(1, collection.count());
-  do_check_neq(undefined, collection.wbo("DUPE_INCOMING"));
+  Assert.equal(1, collection.count());
+  Assert.notEqual(undefined, collection.wbo("DUPE_INCOMING"));
 
   await cleanAndGo(engine, server);
 });
@@ -433,7 +433,7 @@ add_task(async function test_processIncoming_reconcile_equivalent() {
   server.insertWBO(user, "rotary", wbo);
 
   engine._store.items = {entry: "denomination"};
-  do_check_true((await engine._store.itemExists("entry")));
+  Assert.ok((await engine._store.itemExists("entry")));
 
   await engine._sync();
 
@@ -462,9 +462,9 @@ add_task(async function test_processIncoming_reconcile_locally_deleted_dupe_new(
   
   engine._store.items = {};
   engine._tracker.addChangedID("DUPE_LOCAL", now + 3);
-  do_check_false((await engine._store.itemExists("DUPE_LOCAL")));
-  do_check_false((await engine._store.itemExists("DUPE_INCOMING")));
-  do_check_eq("DUPE_LOCAL", (await engine._findDupe({id: "DUPE_INCOMING"})));
+  Assert.equal(false, (await engine._store.itemExists("DUPE_LOCAL")));
+  Assert.equal(false, (await engine._store.itemExists("DUPE_INCOMING")));
+  Assert.equal("DUPE_LOCAL", (await engine._findDupe({id: "DUPE_INCOMING"})));
 
   engine.lastModified = server.getCollection(user, engine.name).timestamp;
   await engine._sync();
@@ -473,11 +473,11 @@ add_task(async function test_processIncoming_reconcile_locally_deleted_dupe_new(
   
   do_check_empty(engine._store.items);
   let collection = server.getCollection(user, "rotary");
-  do_check_eq(1, collection.count());
+  Assert.equal(1, collection.count());
   wbo = collection.wbo("DUPE_INCOMING");
-  do_check_neq(null, wbo);
+  Assert.notEqual(null, wbo);
   let payload = JSON.parse(JSON.parse(wbo.payload).ciphertext);
-  do_check_true(payload.deleted);
+  Assert.ok(payload.deleted);
 
   await cleanAndGo(engine, server);
 });
@@ -501,22 +501,22 @@ add_task(async function test_processIncoming_reconcile_locally_deleted_dupe_old(
   
   engine._store.items = {};
   engine._tracker.addChangedID("DUPE_LOCAL", now + 1);
-  do_check_false((await engine._store.itemExists("DUPE_LOCAL")));
-  do_check_false((await engine._store.itemExists("DUPE_INCOMING")));
-  do_check_eq("DUPE_LOCAL", (await engine._findDupe({id: "DUPE_INCOMING"})));
+  Assert.equal(false, (await engine._store.itemExists("DUPE_LOCAL")));
+  Assert.equal(false, (await engine._store.itemExists("DUPE_INCOMING")));
+  Assert.equal("DUPE_LOCAL", (await engine._findDupe({id: "DUPE_INCOMING"})));
 
   await engine._sync();
 
   
   do_check_attribute_count(engine._store.items, 1);
-  do_check_true("DUPE_INCOMING" in engine._store.items);
-  do_check_eq("incoming", engine._store.items.DUPE_INCOMING);
+  Assert.ok("DUPE_INCOMING" in engine._store.items);
+  Assert.equal("incoming", engine._store.items.DUPE_INCOMING);
 
   let collection = server.getCollection(user, "rotary");
-  do_check_eq(1, collection.count());
+  Assert.equal(1, collection.count());
   wbo = collection.wbo("DUPE_INCOMING");
   let payload = JSON.parse(JSON.parse(wbo.payload).ciphertext);
-  do_check_eq("incoming", payload.denomination);
+  Assert.equal("incoming", payload.denomination);
 
   await cleanAndGo(engine, server);
 });
@@ -537,24 +537,24 @@ add_task(async function test_processIncoming_reconcile_changed_dupe() {
 
   await engine._store.create({id: "DUPE_LOCAL", denomination: "local"});
   engine._tracker.addChangedID("DUPE_LOCAL", now + 3);
-  do_check_true((await engine._store.itemExists("DUPE_LOCAL")));
-  do_check_eq("DUPE_LOCAL", (await engine._findDupe({id: "DUPE_INCOMING"})));
+  Assert.ok((await engine._store.itemExists("DUPE_LOCAL")));
+  Assert.equal("DUPE_LOCAL", (await engine._findDupe({id: "DUPE_INCOMING"})));
 
   engine.lastModified = server.getCollection(user, engine.name).timestamp;
   await engine._sync();
 
   
   do_check_attribute_count(engine._store.items, 1);
-  do_check_true("DUPE_INCOMING" in engine._store.items);
+  Assert.ok("DUPE_INCOMING" in engine._store.items);
 
   
   
   let collection = server.getCollection(user, "rotary");
-  do_check_eq(1, collection.count());
+  Assert.equal(1, collection.count());
   wbo = collection.wbo("DUPE_INCOMING");
-  do_check_neq(undefined, wbo);
+  Assert.notEqual(undefined, wbo);
   let payload = JSON.parse(JSON.parse(wbo.payload).ciphertext);
-  do_check_eq("local", payload.denomination);
+  Assert.equal("local", payload.denomination);
 
   await cleanAndGo(engine, server);
 });
@@ -576,24 +576,24 @@ add_task(async function test_processIncoming_reconcile_changed_dupe_new() {
 
   await engine._store.create({id: "DUPE_LOCAL", denomination: "local"});
   engine._tracker.addChangedID("DUPE_LOCAL", now + 1);
-  do_check_true((await engine._store.itemExists("DUPE_LOCAL")));
-  do_check_eq("DUPE_LOCAL", (await engine._findDupe({id: "DUPE_INCOMING"})));
+  Assert.ok((await engine._store.itemExists("DUPE_LOCAL")));
+  Assert.equal("DUPE_LOCAL", (await engine._findDupe({id: "DUPE_INCOMING"})));
 
   engine.lastModified = server.getCollection(user, engine.name).timestamp;
   await engine._sync();
 
   
   do_check_attribute_count(engine._store.items, 1);
-  do_check_true("DUPE_INCOMING" in engine._store.items);
+  Assert.ok("DUPE_INCOMING" in engine._store.items);
 
   
   
   let collection = server.getCollection(user, "rotary");
-  do_check_eq(1, collection.count());
+  Assert.equal(1, collection.count());
   wbo = collection.wbo("DUPE_INCOMING");
-  do_check_neq(undefined, wbo);
+  Assert.notEqual(undefined, wbo);
   let payload = JSON.parse(JSON.parse(wbo.payload).ciphertext);
-  do_check_eq("incoming", payload.denomination);
+  Assert.equal("incoming", payload.denomination);
   await cleanAndGo(engine, server);
 });
 
@@ -644,21 +644,21 @@ add_task(async function test_processIncoming_resume_toFetch() {
   try {
 
     
-    do_check_eq(engine._store.items.flying, undefined);
-    do_check_eq(engine._store.items.scotsman, undefined);
-    do_check_eq(engine._store.items.rekolok, undefined);
+    Assert.equal(engine._store.items.flying, undefined);
+    Assert.equal(engine._store.items.scotsman, undefined);
+    Assert.equal(engine._store.items.rekolok, undefined);
 
     await engine._syncStartup();
     await engine._processIncoming();
 
     
-    do_check_eq(engine._store.items.flying, "LNER Class A3 4472");
-    do_check_eq(engine._store.items.scotsman, "Flying Scotsman");
-    do_check_eq(engine._store.items.rekolok, "Rekonstruktionslokomotive");
-    do_check_eq(engine._store.items.failed0, "Record No. 0");
-    do_check_eq(engine._store.items.failed1, "Record No. 1");
-    do_check_eq(engine._store.items.failed2, "Record No. 2");
-    do_check_eq(engine.previousFailed.length, 0);
+    Assert.equal(engine._store.items.flying, "LNER Class A3 4472");
+    Assert.equal(engine._store.items.scotsman, "Flying Scotsman");
+    Assert.equal(engine._store.items.rekolok, "Rekonstruktionslokomotive");
+    Assert.equal(engine._store.items.failed0, "Record No. 0");
+    Assert.equal(engine._store.items.failed1, "Record No. 1");
+    Assert.equal(engine._store.items.failed2, "Record No. 2");
+    Assert.equal(engine.previousFailed.length, 0);
   } finally {
     await cleanAndGo(engine, server);
   }
@@ -703,9 +703,9 @@ add_task(async function test_processIncoming_notify_count() {
                                          syncID: engine.syncID}};
   try {
     
-    do_check_eq(engine.lastSync, 0);
-    do_check_eq(engine.toFetch.length, 0);
-    do_check_eq(engine.previousFailed.length, 0);
+    Assert.equal(engine.lastSync, 0);
+    Assert.equal(engine.toFetch.length, 0);
+    Assert.equal(engine.previousFailed.length, 0);
     do_check_empty(engine._store.items);
 
     let called = 0;
@@ -723,28 +723,28 @@ add_task(async function test_processIncoming_notify_count() {
 
     
     do_check_attribute_count(engine._store.items, 12);
-    do_check_matches(engine.previousFailed, ["record-no-00", "record-no-05",
+    Assert.deepEqual(engine.previousFailed, ["record-no-00", "record-no-05",
       "record-no-10"]);
 
     
-    do_check_eq(called, 1);
-    do_check_eq(counts.failed, 3);
-    do_check_eq(counts.applied, 15);
-    do_check_eq(counts.newFailed, 3);
-    do_check_eq(counts.succeeded, 12);
+    Assert.equal(called, 1);
+    Assert.equal(counts.failed, 3);
+    Assert.equal(counts.applied, 15);
+    Assert.equal(counts.newFailed, 3);
+    Assert.equal(counts.succeeded, 12);
 
     
     await engine._processIncoming();
 
     
     do_check_attribute_count(engine._store.items, 14);
-    do_check_matches(engine.previousFailed, ["record-no-00"]);
+    Assert.deepEqual(engine.previousFailed, ["record-no-00"]);
 
-    do_check_eq(called, 2);
-    do_check_eq(counts.failed, 1);
-    do_check_eq(counts.applied, 3);
-    do_check_eq(counts.newFailed, 0);
-    do_check_eq(counts.succeeded, 2);
+    Assert.equal(called, 2);
+    Assert.equal(counts.failed, 1);
+    Assert.equal(counts.applied, 3);
+    Assert.equal(counts.newFailed, 0);
+    Assert.equal(counts.succeeded, 2);
 
     Svc.Obs.remove("weave:engine:sync:applied", onApplied);
   } finally {
@@ -792,15 +792,15 @@ add_task(async function test_processIncoming_previousFailed() {
                                          syncID: engine.syncID}};
   try {
     
-    do_check_eq(engine.lastSync, 0);
-    do_check_eq(engine.toFetch.length, 0);
-    do_check_eq(engine.previousFailed.length, 0);
+    Assert.equal(engine.lastSync, 0);
+    Assert.equal(engine.toFetch.length, 0);
+    Assert.equal(engine.previousFailed.length, 0);
     do_check_empty(engine._store.items);
 
     
     let previousFailed = [Utils.makeGUID(), Utils.makeGUID(), Utils.makeGUID()];
     engine.previousFailed = previousFailed;
-    do_check_eq(engine.previousFailed, previousFailed);
+    Assert.equal(engine.previousFailed, previousFailed);
 
     
     await engine._syncStartup();
@@ -808,7 +808,7 @@ add_task(async function test_processIncoming_previousFailed() {
 
     
     do_check_attribute_count(engine._store.items, 6);
-    do_check_matches(engine.previousFailed, ["record-no-00", "record-no-01",
+    Assert.deepEqual(engine.previousFailed, ["record-no-00", "record-no-01",
       "record-no-04", "record-no-05", "record-no-08", "record-no-09",
       "record-no-12", "record-no-13"]);
 
@@ -818,14 +818,14 @@ add_task(async function test_processIncoming_previousFailed() {
     
     
     do_check_attribute_count(engine._store.items, 10);
-    do_check_matches(engine.previousFailed, ["record-no-00", "record-no-01",
+    Assert.deepEqual(engine.previousFailed, ["record-no-00", "record-no-01",
       "record-no-08", "record-no-09"]);
 
     
-    do_check_eq(engine._store.items["record-no-04"], "Record No. 4");
-    do_check_eq(engine._store.items["record-no-05"], "Record No. 5");
-    do_check_eq(engine._store.items["record-no-12"], "Record No. 12");
-    do_check_eq(engine._store.items["record-no-13"], "Record No. 13");
+    Assert.equal(engine._store.items["record-no-04"], "Record No. 4");
+    Assert.equal(engine._store.items["record-no-05"], "Record No. 5");
+    Assert.equal(engine._store.items["record-no-12"], "Record No. 12");
+    Assert.equal(engine._store.items["record-no-13"], "Record No. 13");
   } finally {
     await cleanAndGo(engine, server);
   }
@@ -900,9 +900,9 @@ add_task(async function test_processIncoming_failed_records() {
   try {
 
     
-    do_check_eq(engine.lastSync, 0);
-    do_check_eq(engine.toFetch.length, 0);
-    do_check_eq(engine.previousFailed.length, 0);
+    Assert.equal(engine.lastSync, 0);
+    Assert.equal(engine.toFetch.length, 0);
+    Assert.equal(engine.previousFailed.length, 0);
     do_check_empty(engine._store.items);
 
     let observerSubject;
@@ -921,13 +921,13 @@ add_task(async function test_processIncoming_failed_records() {
                              NUMBER_OF_RECORDS - BOGUS_RECORDS.length);
 
     
-    do_check_eq(engine.previousFailed.length, BOGUS_RECORDS.length);
-    do_check_matches(engine.previousFailed.sort(), BOGUS_RECORDS.sort());
+    Assert.equal(engine.previousFailed.length, BOGUS_RECORDS.length);
+    Assert.deepEqual(engine.previousFailed.sort(), BOGUS_RECORDS.sort());
 
     
-    do_check_eq(observerData, engine.name);
-    do_check_eq(observerSubject.failed, BOGUS_RECORDS.length);
-    do_check_eq(observerSubject.newFailed, BOGUS_RECORDS.length);
+    Assert.equal(observerData, engine.name);
+    Assert.equal(observerSubject.failed, BOGUS_RECORDS.length);
+    Assert.equal(observerSubject.newFailed, BOGUS_RECORDS.length);
 
     
     
@@ -943,11 +943,11 @@ add_task(async function test_processIncoming_failed_records() {
 
     
     _("Test batching with ID batch size 3, normal mobile batch size.");
-    do_check_eq((await batchDownload(3)), 3);
+    Assert.equal((await batchDownload(3)), 3);
 
     
     _("Test batching with sufficient ID batch size.");
-    do_check_eq((await batchDownload(BOGUS_RECORDS.length)), 1);
+    Assert.equal((await batchDownload(BOGUS_RECORDS.length)), 1);
   } finally {
     await cleanAndGo(engine, server);
   }
@@ -1000,8 +1000,8 @@ add_task(async function test_processIncoming_decrypt_failed() {
   try {
 
     
-    do_check_eq(engine.toFetch.length, 0);
-    do_check_eq(engine.previousFailed.length, 0);
+    Assert.equal(engine.toFetch.length, 0);
+    Assert.equal(engine.previousFailed.length, 0);
 
     let observerSubject;
     let observerData;
@@ -1013,20 +1013,20 @@ add_task(async function test_processIncoming_decrypt_failed() {
 
     engine.lastSync = collection.wbo("nojson").modified - 1;
     let ping = await sync_engine_and_validate_telem(engine, true);
-    do_check_eq(ping.engines[0].incoming.applied, 2);
-    do_check_eq(ping.engines[0].incoming.failed, 4);
-    do_check_eq(ping.engines[0].incoming.newFailed, 4);
+    Assert.equal(ping.engines[0].incoming.applied, 2);
+    Assert.equal(ping.engines[0].incoming.failed, 4);
+    Assert.equal(ping.engines[0].incoming.newFailed, 4);
 
-    do_check_eq(engine.previousFailed.length, 4);
-    do_check_eq(engine.previousFailed[0], "nojson");
-    do_check_eq(engine.previousFailed[1], "nojson2");
-    do_check_eq(engine.previousFailed[2], "nodecrypt");
-    do_check_eq(engine.previousFailed[3], "nodecrypt2");
+    Assert.equal(engine.previousFailed.length, 4);
+    Assert.equal(engine.previousFailed[0], "nojson");
+    Assert.equal(engine.previousFailed[1], "nojson2");
+    Assert.equal(engine.previousFailed[2], "nodecrypt");
+    Assert.equal(engine.previousFailed[3], "nodecrypt2");
 
     
-    do_check_eq(observerData, engine.name);
-    do_check_eq(observerSubject.applied, 2);
-    do_check_eq(observerSubject.failed, 4);
+    Assert.equal(observerData, engine.name);
+    Assert.equal(observerSubject.applied, 2);
+    Assert.equal(observerSubject.failed, 4);
 
   } finally {
     await promiseClean(engine, server);
@@ -1065,26 +1065,26 @@ add_task(async function test_uploadOutgoing_toEmptyServer() {
   try {
 
     
-    do_check_eq(engine.lastSyncLocal, 0);
-    do_check_eq(collection.payload("flying"), undefined);
-    do_check_eq(collection.payload("scotsman"), undefined);
+    Assert.equal(engine.lastSyncLocal, 0);
+    Assert.equal(collection.payload("flying"), undefined);
+    Assert.equal(collection.payload("scotsman"), undefined);
 
     await engine._syncStartup();
     await engine._uploadOutgoing();
 
     
-    do_check_true(engine.lastSyncLocal > 0);
+    Assert.ok(engine.lastSyncLocal > 0);
 
     
     
-    do_check_eq(collection.payload("flying"), undefined);
-    do_check_true(!!collection.payload("scotsman"));
-    do_check_eq(JSON.parse(collection.wbo("scotsman").data.ciphertext).id,
-                "scotsman");
-    do_check_eq(engine._tracker.changedIDs.scotsman, undefined);
+    Assert.equal(collection.payload("flying"), undefined);
+    Assert.ok(!!collection.payload("scotsman"));
+    Assert.equal(JSON.parse(collection.wbo("scotsman").data.ciphertext).id,
+                 "scotsman");
+    Assert.equal(engine._tracker.changedIDs.scotsman, undefined);
 
     
-    do_check_eq(collection.payload("flying"), undefined);
+    Assert.equal(collection.payload("flying"), undefined);
 
   } finally {
     await cleanAndGo(engine, server);
@@ -1121,9 +1121,9 @@ async function test_uploadOutgoing_max_record_payload_bytes(allowSkippedRecord) 
 
   try {
     
-    do_check_eq(engine.lastSyncLocal, 0);
-    do_check_eq(collection.payload("flying"), undefined);
-    do_check_eq(collection.payload("scotsman"), undefined);
+    Assert.equal(engine.lastSyncLocal, 0);
+    Assert.equal(collection.payload("flying"), undefined);
+    Assert.equal(collection.payload("scotsman"), undefined);
 
     await engine._syncStartup();
     await engine._uploadOutgoing();
@@ -1135,9 +1135,9 @@ async function test_uploadOutgoing_max_record_payload_bytes(allowSkippedRecord) 
     await engine.trackRemainingChanges();
 
     
-    do_check_true(collection.payload("scotsman"));
+    Assert.ok(collection.payload("scotsman"));
     
-    do_check_eq(engine._tracker.changedIDs.flying, undefined);
+    Assert.equal(engine._tracker.changedIDs.flying, undefined);
 
   } catch (e) {
     if (allowSkippedRecord) {
@@ -1147,10 +1147,10 @@ async function test_uploadOutgoing_max_record_payload_bytes(allowSkippedRecord) 
     await engine.trackRemainingChanges();
 
     
-    do_check_eq(engine._tracker.changedIDs.flying, 1000);
+    Assert.equal(engine._tracker.changedIDs.flying, 1000);
   } finally {
     
-    do_check_eq(collection.payload("flying"), undefined);
+    Assert.equal(collection.payload("flying"), undefined);
     await cleanAndGo(engine, server);
   }
 }
@@ -1201,26 +1201,26 @@ add_task(async function test_uploadOutgoing_failed() {
   try {
 
     
-    do_check_eq(engine.lastSyncLocal, 0);
-    do_check_eq(collection.payload("flying"), undefined);
-    do_check_eq(engine._tracker.changedIDs.flying, FLYING_CHANGED);
-    do_check_eq(engine._tracker.changedIDs.scotsman, SCOTSMAN_CHANGED);
-    do_check_eq(engine._tracker.changedIDs.peppercorn, PEPPERCORN_CHANGED);
+    Assert.equal(engine.lastSyncLocal, 0);
+    Assert.equal(collection.payload("flying"), undefined);
+    Assert.equal(engine._tracker.changedIDs.flying, FLYING_CHANGED);
+    Assert.equal(engine._tracker.changedIDs.scotsman, SCOTSMAN_CHANGED);
+    Assert.equal(engine._tracker.changedIDs.peppercorn, PEPPERCORN_CHANGED);
 
     engine.enabled = true;
     await sync_engine_and_validate_telem(engine, true);
 
     
-    do_check_true(engine.lastSyncLocal > 0);
+    Assert.ok(engine.lastSyncLocal > 0);
 
     
-    do_check_true(!!collection.payload("flying"));
-    do_check_eq(engine._tracker.changedIDs.flying, undefined);
+    Assert.ok(!!collection.payload("flying"));
+    Assert.equal(engine._tracker.changedIDs.flying, undefined);
 
     
     
-    do_check_eq(engine._tracker.changedIDs.scotsman, SCOTSMAN_CHANGED);
-    do_check_eq(engine._tracker.changedIDs.peppercorn, PEPPERCORN_CHANGED);
+    Assert.equal(engine._tracker.changedIDs.scotsman, SCOTSMAN_CHANGED);
+    Assert.equal(engine._tracker.changedIDs.peppercorn, PEPPERCORN_CHANGED);
 
   } finally {
     await promiseClean(engine, server);
@@ -1265,10 +1265,10 @@ async function createRecordFailTelemetry(allowSkippedRecord) {
   let ping;
   try {
     
-    do_check_eq(engine.lastSyncLocal, 0);
-    do_check_eq(collection.payload("flying"), undefined);
-    do_check_eq(engine._tracker.changedIDs.flying, FLYING_CHANGED);
-    do_check_eq(engine._tracker.changedIDs.scotsman, SCOTSMAN_CHANGED);
+    Assert.equal(engine.lastSyncLocal, 0);
+    Assert.equal(collection.payload("flying"), undefined);
+    Assert.equal(engine._tracker.changedIDs.flying, FLYING_CHANGED);
+    Assert.equal(engine._tracker.changedIDs.scotsman, SCOTSMAN_CHANGED);
 
     engine.enabled = true;
     ping = await sync_engine_and_validate_telem(engine, true, onErrorPing => {
@@ -1280,27 +1280,27 @@ async function createRecordFailTelemetry(allowSkippedRecord) {
     }
 
     
-    do_check_true(!!collection.payload("flying"));
-    do_check_eq(engine._tracker.changedIDs.flying, undefined);
+    Assert.ok(!!collection.payload("flying"));
+    Assert.equal(engine._tracker.changedIDs.flying, undefined);
   } catch (err) {
     if (allowSkippedRecord) {
       do_throw("should not get here");
     }
 
     
-    do_check_false(collection.payload("flying"));
-    do_check_true(engine._tracker.changedIDs.flying);
+    Assert.ok(!collection.payload("flying"));
+    Assert.ok(engine._tracker.changedIDs.flying);
   } finally {
     
-    do_check_true(engine.lastSyncLocal > 0);
+    Assert.ok(engine.lastSyncLocal > 0);
 
     
-    do_check_eq(ping.engines[0].outgoing[0].failed, 1);
+    Assert.equal(ping.engines[0].outgoing[0].failed, 1);
 
     
     
-    do_check_false(collection.payload("scotsman"));
-    do_check_eq(engine._tracker.changedIDs.scotsman, SCOTSMAN_CHANGED);
+    Assert.ok(!collection.payload("scotsman"));
+    Assert.equal(engine._tracker.changedIDs.scotsman, SCOTSMAN_CHANGED);
 
     engine._store.createRecord = oldCreateRecord;
     await promiseClean(engine, server);
@@ -1381,12 +1381,12 @@ add_task(async function test_syncFinish_deleteByIds() {
 
     
     
-    do_check_eq(collection.payload("flying"), undefined);
-    do_check_true(!!collection.payload("scotsman"));
-    do_check_eq(collection.payload("rekolok"), undefined);
+    Assert.equal(collection.payload("flying"), undefined);
+    Assert.ok(!!collection.payload("scotsman"));
+    Assert.equal(collection.payload("rekolok"), undefined);
 
     
-    do_check_eq(engine._delete.ids, undefined);
+    Assert.equal(engine._delete.ids, undefined);
 
   } finally {
     await cleanAndGo(engine, server);
@@ -1428,7 +1428,7 @@ add_task(async function test_syncFinish_deleteLotsInBatches() {
   try {
 
     
-    do_check_eq(noOfUploads, 0);
+    Assert.equal(noOfUploads, 0);
 
     
     
@@ -1446,17 +1446,17 @@ add_task(async function test_syncFinish_deleteLotsInBatches() {
     for (i = 0; i < 234; i++) {
       let id = "record-no-" + i;
       if (i <= 90 || i >= 100) {
-        do_check_eq(collection.payload(id), undefined);
+        Assert.equal(collection.payload(id), undefined);
       } else {
-        do_check_true(!!collection.payload(id));
+        Assert.ok(!!collection.payload(id));
       }
     }
 
     
-    do_check_eq(noOfUploads, 2 + 1);
+    Assert.equal(noOfUploads, 2 + 1);
 
     
-    do_check_eq(engine._delete.ids, undefined);
+    Assert.equal(engine._delete.ids, undefined);
 
   } finally {
     await cleanAndGo(engine, server);
@@ -1522,7 +1522,7 @@ add_task(async function test_sync_partialUpload() {
     ok(!!error);
 
     
-    do_check_true(engine.lastSyncLocal > 456);
+    Assert.ok(engine.lastSyncLocal > 456);
 
     for (let i = 0; i < 234; i++) {
       let id = "record-no-" + i;
@@ -1531,9 +1531,9 @@ add_task(async function test_sync_partialUpload() {
       
       
       if ((i == 23) || (i == 42) || (i >= 200))
-        do_check_eq(engine._tracker.changedIDs[id], i);
+        Assert.equal(engine._tracker.changedIDs[id], i);
       else
-        do_check_false(id in engine._tracker.changedIDs);
+        Assert.equal(false, id in engine._tracker.changedIDs);
     }
 
   } finally {
@@ -1561,7 +1561,7 @@ add_task(async function test_canDecrypt_noCryptoKeys() {
   let engine = makeRotaryEngine();
   try {
 
-    do_check_false((await engine.canDecrypt()));
+    Assert.equal(false, (await engine.canDecrypt()));
 
   } finally {
     await cleanAndGo(engine, server);
@@ -1586,7 +1586,7 @@ add_task(async function test_canDecrypt_true() {
   let engine = makeRotaryEngine();
   try {
 
-    do_check_true((await engine.canDecrypt()));
+    Assert.ok((await engine.canDecrypt()));
 
   } finally {
     await cleanAndGo(engine, server);
@@ -1638,11 +1638,11 @@ add_task(async function test_syncapplied_observer() {
 
     do_check_attribute_count(engine._store.items, 10);
 
-    do_check_eq(numApplyCalls, 1);
-    do_check_eq(engine_name, "rotary");
-    do_check_eq(count.applied, 10);
+    Assert.equal(numApplyCalls, 1);
+    Assert.equal(engine_name, "rotary");
+    Assert.equal(count.applied, 10);
 
-    do_check_true(Service.scheduler.hasIncomingItems);
+    Assert.ok(Service.scheduler.hasIncomingItems);
   } finally {
     await cleanAndGo(engine, server);
     Service.scheduler.hasIncomingItems = false;

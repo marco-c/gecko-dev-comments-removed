@@ -32,67 +32,67 @@ function run_test() {
     });
   }
 
-  do_check_false(stack.canUndo());
-  do_check_false(stack.canRedo());
+  Assert.ok(!stack.canUndo());
+  Assert.ok(!stack.canRedo());
 
   
   add("a");
-  do_check_true(stack.canUndo());
-  do_check_false(stack.canRedo());
+  Assert.ok(stack.canUndo());
+  Assert.ok(!stack.canRedo());
 
   add("b");
   add("c");
   add("d");
   add("e");
 
-  do_check_eq(str, "abcde");
+  Assert.equal(str, "abcde");
 
   
   stack.undo();
 
-  do_check_eq(str, "abcd");
-  do_check_true(stack.canRedo());
+  Assert.equal(str, "abcd");
+  Assert.ok(stack.canRedo());
 
   stack.redo();
-  do_check_eq(str, "abcde");
-  do_check_false(stack.canRedo());
+  Assert.equal(str, "abcde");
+  Assert.ok(!stack.canRedo());
 
   
   stack.undo();
-  do_check_eq(str, "abcd");
+  Assert.equal(str, "abcd");
 
   add("q");
-  do_check_eq(str, "abcdq");
-  do_check_false(stack.canRedo());
+  Assert.equal(str, "abcdq");
+  Assert.ok(!stack.canRedo());
 
   stack.undo();
-  do_check_eq(str, "abcd");
+  Assert.equal(str, "abcd");
   stack.redo();
-  do_check_eq(str, "abcdq");
+  Assert.equal(str, "abcdq");
 
   
   while (stack.canUndo()) {
     stack.undo();
   }
-  do_check_eq(str, "");
+  Assert.equal(str, "");
 
   
   while (stack.canRedo()) {
     stack.redo();
   }
-  do_check_eq(str, "abcdq");
+  Assert.equal(str, "abcdq");
 
   
   add("1");
   add("2");
   add("3");
 
-  do_check_eq(str, "abcdq123");
+  Assert.equal(str, "abcdq123");
 
   
   while (stack.canUndo()) {
     stack.undo();
   }
 
-  do_check_eq(str, "abc");
+  Assert.equal(str, "abc");
 }

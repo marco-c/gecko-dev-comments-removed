@@ -11,15 +11,15 @@ add_task(async function() {
     title: "A title"
   });
   await PlacesTestUtils.promiseAsyncUpdates();
-  do_check_true(frecencyForUrl(TEST_URI) > 0);
+  Assert.ok(frecencyForUrl(TEST_URI) > 0);
 
   
   
   await PlacesUtils.bookmarks.remove(bookmark.guid);
   await PlacesTestUtils.promiseAsyncUpdates();
-  do_check_eq(frecencyForUrl(TEST_URI), 0);
+  Assert.equal(frecencyForUrl(TEST_URI), 0);
 
   
   await PlacesTestUtils.addVisits({ uri: TEST_URI });
-  do_check_true(frecencyForUrl(TEST_URI) > 0);
+  Assert.ok(frecencyForUrl(TEST_URI) > 0);
 });

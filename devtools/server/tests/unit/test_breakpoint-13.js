@@ -44,48 +44,48 @@ function test_simple_breakpoint() {
       const testCallbacks = [
         function (packet) {
           
-          do_check_eq(packet.frame.where.line, gDebuggee.line0 + 5);
-          do_check_eq(packet.why.type, "resumeLimit");
+          Assert.equal(packet.frame.where.line, gDebuggee.line0 + 5);
+          Assert.equal(packet.why.type, "resumeLimit");
         },
         function (packet) {
           
-          do_check_eq(packet.frame.where.line, location.line);
-          do_check_neq(packet.why.type, "breakpoint");
-          do_check_eq(packet.why.type, "resumeLimit");
+          Assert.equal(packet.frame.where.line, location.line);
+          Assert.notEqual(packet.why.type, "breakpoint");
+          Assert.equal(packet.why.type, "resumeLimit");
         },
         function (packet) {
           
-          do_check_eq(packet.frame.where.line, gDebuggee.line0 + 3);
-          do_check_neq(packet.why.type, "breakpoint");
-          do_check_eq(packet.why.type, "resumeLimit");
+          Assert.equal(packet.frame.where.line, gDebuggee.line0 + 3);
+          Assert.notEqual(packet.why.type, "breakpoint");
+          Assert.equal(packet.why.type, "resumeLimit");
         },
         function (packet) {
           
           
-          do_check_eq(packet.frame.where.line, gDebuggee.line0 + 3);
-          do_check_neq(packet.why.type, "breakpoint");
-          do_check_eq(packet.why.type, "resumeLimit");
-          do_check_eq(packet.why.frameFinished.return.type, "undefined");
+          Assert.equal(packet.frame.where.line, gDebuggee.line0 + 3);
+          Assert.notEqual(packet.why.type, "breakpoint");
+          Assert.equal(packet.why.type, "resumeLimit");
+          Assert.equal(packet.why.frameFinished.return.type, "undefined");
         },
         function (packet) {
           
-          do_check_eq(gDebuggee.a, 1);
-          do_check_eq(gDebuggee.b, undefined);
-          do_check_eq(packet.frame.where.line, gDebuggee.line0 + 5);
-          do_check_eq(packet.why.type, "resumeLimit");
-          do_check_eq(packet.poppedFrames.length, 1);
+          Assert.equal(gDebuggee.a, 1);
+          Assert.equal(gDebuggee.b, undefined);
+          Assert.equal(packet.frame.where.line, gDebuggee.line0 + 5);
+          Assert.equal(packet.why.type, "resumeLimit");
+          Assert.equal(packet.poppedFrames.length, 1);
         },
         function (packet) {
           
-          do_check_eq(packet.frame.where.line, gDebuggee.line0 + 6);
-          do_check_neq(packet.why.type, "debuggerStatement");
-          do_check_eq(packet.why.type, "resumeLimit");
+          Assert.equal(packet.frame.where.line, gDebuggee.line0 + 6);
+          Assert.notEqual(packet.why.type, "debuggerStatement");
+          Assert.equal(packet.why.type, "resumeLimit");
         },
         function (packet) {
           
-          do_check_eq(packet.frame.where.line, gDebuggee.line0 + 7);
-          do_check_neq(packet.why.type, "debuggerStatement");
-          do_check_eq(packet.why.type, "resumeLimit");
+          Assert.equal(packet.frame.where.line, gDebuggee.line0 + 7);
+          Assert.notEqual(packet.why.type, "debuggerStatement");
+          Assert.equal(packet.why.type, "resumeLimit");
         },
       ];
 

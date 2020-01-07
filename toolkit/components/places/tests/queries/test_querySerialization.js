@@ -740,7 +740,7 @@ function serializeDeserialize(aQueryArr, aQueryOptions) {
   opts2 = opts2.value;
 
   
-  do_check_eq(aQueryArr.length, queryArr2.length);
+  Assert.equal(aQueryArr.length, queryArr2.length);
 
   
   
@@ -758,10 +758,10 @@ function serializeDeserialize(aQueryArr, aQueryOptions) {
     if (j < queryArr2.length)
       queryArr2.splice(j, 1);
   }
-  do_check_eq(queryArr2.length, 0);
+  Assert.equal(queryArr2.length, 0);
 
   
-  do_check_true(queryObjsEqual(queryOptionSwitches, aQueryOptions, opts2));
+  Assert.ok(queryObjsEqual(queryOptionSwitches, aQueryOptions, opts2));
 }
 
 

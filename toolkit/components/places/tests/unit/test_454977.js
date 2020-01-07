@@ -43,10 +43,10 @@ async function task_add_visit(aURI, aVisitType) {
     let sql = "SELECT place_id FROM moz_historyvisits WHERE id = ?1";
     let stmt = DBConn().createStatement(sql);
     stmt.bindByIndex(0, visitId);
-    do_check_true(stmt.executeStep());
+    Assert.ok(stmt.executeStep());
     let placeId = stmt.getInt64(0);
     stmt.finalize();
-    do_check_true(placeId > 0);
+    Assert.ok(placeId > 0);
     return placeId;
   }
   return 0;
@@ -69,7 +69,7 @@ function check_results(aExpectedCount, aExpectedCountWithHidden) {
   let root = PlacesUtils.history.executeQuery(query, options).root;
   root.containerOpen = true;
   
-  do_check_eq(root.childCount, aExpectedCount);
+  Assert.equal(root.childCount, aExpectedCount);
   root.containerOpen = false;
 
   
@@ -78,7 +78,7 @@ function check_results(aExpectedCount, aExpectedCountWithHidden) {
   root = PlacesUtils.history.executeQuery(query, options).root;
   root.containerOpen = true;
   
-  do_check_eq(root.childCount, aExpectedCountWithHidden);
+  Assert.equal(root.childCount, aExpectedCountWithHidden);
   root.containerOpen = false;
 }
 
@@ -97,15 +97,15 @@ add_task(async function test_execute() {
   
   
   
-  do_check_eq((await task_add_visit(TEST_URI, TRANSITION_TYPED)), placeId);
+  Assert.equal((await task_add_visit(TEST_URI, TRANSITION_TYPED)), placeId);
   check_results(1, 1);
 
   
-  do_check_eq((await task_add_visit(TEST_URI, TRANSITION_RELOAD)), placeId);
+  Assert.equal((await task_add_visit(TEST_URI, TRANSITION_RELOAD)), placeId);
   check_results(1, 1);
 
   
-  do_check_eq((await task_add_visit(TEST_URI, TRANSITION_DOWNLOAD)), placeId);
+  Assert.equal((await task_add_visit(TEST_URI, TRANSITION_DOWNLOAD)), placeId);
   check_results(1, 1);
 
   

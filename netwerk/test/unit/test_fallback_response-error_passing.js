@@ -57,7 +57,7 @@ function errorHandler(metadata, response)
 
 function finish_test(request, buffer)
 {
-  do_check_eq(buffer, responseBody);
+  Assert.equal(buffer, responseBody);
   httpServer.stop(do_test_finished);
 }
 

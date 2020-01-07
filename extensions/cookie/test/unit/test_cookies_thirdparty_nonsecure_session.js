@@ -51,8 +51,8 @@ function* do_run_test() {
   do_close_profile(test_generator);
   yield;
   do_load_profile();
-  do_check_eq(Services.cookies.countCookiesFromHost(uri1.host), 4); 
-  do_check_eq(Services.cookies.countCookiesFromHost(uri2.host), 4); 
+  Assert.equal(Services.cookies.countCookiesFromHost(uri1.host), 4); 
+  Assert.equal(Services.cookies.countCookiesFromHost(uri2.host), 4); 
 
   
   Services.prefs.setBoolPref("network.cookie.thirdparty.nonsecureSessionOnly", true);
@@ -64,8 +64,8 @@ function* do_run_test() {
   do_close_profile(test_generator);
   yield;
   do_load_profile();
-  do_check_eq(Services.cookies.countCookiesFromHost(uri1.host), 0); 
-  do_check_eq(Services.cookies.countCookiesFromHost(uri2.host), 4); 
+  Assert.equal(Services.cookies.countCookiesFromHost(uri1.host), 0); 
+  Assert.equal(Services.cookies.countCookiesFromHost(uri2.host), 4); 
 
   finish_test();
 }

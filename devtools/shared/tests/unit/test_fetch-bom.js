@@ -71,6 +71,6 @@ function* test_one(url, encoding) {
   
   
   yield DevToolsUtils.fetch(url, { charset: "ISO-8859-1" }).then(({content}) => {
-    do_check_eq(content, "hı", "The content looks correct for " + encoding);
+    Assert.equal(content, "hı", "The content looks correct for " + encoding);
   });
 }

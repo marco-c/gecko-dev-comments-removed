@@ -42,15 +42,15 @@ function test_breakpoint_running() {
 
     
     gThreadClient.addOneTimeListener("paused", function (event, packet) {
-      do_check_eq(packet.type, "paused");
-      do_check_eq(packet.why.type, "interrupted");
+      Assert.equal(packet.type, "paused");
+      Assert.equal(packet.why.type, "interrupted");
     });
 
     let source = gThreadClient.source(packet.frame.where.source);
     source.setBreakpoint(location, function (response) {
       
       
-      do_check_neq(response.error, "noScript");
+      Assert.notEqual(response.error, "noScript");
 
       do_execute_soon(function () {
         gClient.close().then(gCallback);

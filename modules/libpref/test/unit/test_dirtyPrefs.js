@@ -23,53 +23,53 @@ function run_test() {
   
   
   ps.savePrefFile(null);
-  do_check_false(ps.dirty);
+  Assert.ok(!ps.dirty);
 
   
   userBranch.setBoolPref("DirtyTest.new.bool", true);
-  do_check_true(ps.dirty);
+  Assert.ok(ps.dirty);
   ps.savePrefFile(null);
   
   userBranch.setBoolPref("DirtyTest.new.bool", true);
-  do_check_false(ps.dirty);
+  Assert.ok(!ps.dirty);
 
   
   userBranch.setIntPref("DirtyTest.new.int", 1);
-  do_check_true(ps.dirty);
+  Assert.ok(ps.dirty);
   ps.savePrefFile(null);
   
   userBranch.setIntPref("DirtyTest.new.int", 1);
-  do_check_false(ps.dirty);
+  Assert.ok(!ps.dirty);
 
   userBranch.setCharPref("DirtyTest.new.char", "oop");
-  do_check_true(ps.dirty);
+  Assert.ok(ps.dirty);
   ps.savePrefFile(null);
   
   userBranch.setCharPref("DirtyTest.new.char", "oop");
-  do_check_false(ps.dirty);
+  Assert.ok(!ps.dirty);
 
   
   userBranch.setBoolPref("DirtyTest.new.char", false);
-  do_check_true(ps.dirty);
+  Assert.ok(ps.dirty);
   ps.savePrefFile(null);
 
   
   defaultBranch.setBoolPref("DirtyTest.existing.bool", true);
-  do_check_false(ps.dirty);
+  Assert.ok(!ps.dirty);
   
   do_check_throws(function() {
     userBranch.setCharPref("DirtyTest.existing.bool", "boo"); }, Cr.NS_ERROR_UNEXPECTED);
-  do_check_false(ps.dirty);
+  Assert.ok(!ps.dirty);
 
   
   userBranch.setBoolPref("DirtyTest.existing.bool", true);
-  do_check_false(ps.dirty);
+  Assert.ok(!ps.dirty);
   
   userBranch.setBoolPref("DirtyTest.existing.bool", false);
-  do_check_true(ps.dirty);
+  Assert.ok(ps.dirty);
   ps.savePrefFile(null);
   
   userBranch.setBoolPref("DirtyTest.existing.bool", true);
-  do_check_true(ps.dirty);
+  Assert.ok(ps.dirty);
   ps.savePrefFile(null);
 }

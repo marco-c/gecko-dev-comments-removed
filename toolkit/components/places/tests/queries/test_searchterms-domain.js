@@ -86,14 +86,14 @@ add_task(async function test_searchterms_domain() {
   var change1 = [{isVisit: true, isDetails: true, uri: "http://foo.com/added.htm",
                   title: "moz", transType: PlacesUtils.history.TRANSITION_LINK}];
   await task_populateDB(change1);
-  do_check_true(isInResult(change1, root));
+  Assert.ok(isInResult(change1, root));
 
   
   do_print("Updating Item");
   var change2 = [{isDetails: true, uri: "http://foo.com/changeme1.htm",
                   title: "moz" }];
   await task_populateDB(change2);
-  do_check_true(isInResult(change2, root));
+  Assert.ok(isInResult(change2, root));
 
   
   
@@ -104,16 +104,16 @@ add_task(async function test_searchterms_domain() {
                   title: "moz now updated"},
                  {isDetails: true, uri: "ftp://foo.com/ftp", title: "gone"}];
   await task_populateDB(change3);
-  do_check_true(isInResult({uri: "http://foo.com/changeme2.htm"}, root));
-  do_check_true(isInResult({uri: "http://mail.foo.com/yiihah"}, root));
-  do_check_false(isInResult({uri: "ftp://foo.com/ftp"}, root));
+  Assert.ok(isInResult({uri: "http://foo.com/changeme2.htm"}, root));
+  Assert.ok(isInResult({uri: "http://mail.foo.com/yiihah"}, root));
+  Assert.ok(!isInResult({uri: "ftp://foo.com/ftp"}, root));
 
   
   do_print("Deleting items");
   var change4 = [{isDetails: true, uri: "https://foo.com/",
                   title: "mo,z"}];
   await task_populateDB(change4);
-  do_check_false(isInResult(change4, root));
+  Assert.ok(!isInResult(change4, root));
 
   root.containerOpen = false;
 });

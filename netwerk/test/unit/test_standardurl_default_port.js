@@ -25,27 +25,27 @@ function run_test() {
   var origUrlStr = "http://foo.com/";
   var stdUrl = stringToURL(origUrlStr);
   var stdUrlAsUri = stdUrl.QueryInterface(Ci.nsIURI);
-  do_check_eq(-1, stdUrlAsUri.port);
+  Assert.equal(-1, stdUrlAsUri.port);
 
   
   
   stdUrl.setDefaultPort(100);
-  do_check_eq(-1, stdUrlAsUri.port);
-  do_check_eq(stdUrlAsUri.spec, origUrlStr);
+  Assert.equal(-1, stdUrlAsUri.port);
+  Assert.equal(stdUrlAsUri.spec, origUrlStr);
 
   
   stdUrlAsUri.port = "200";
-  do_check_eq(200, stdUrlAsUri.port);
-  do_check_eq(stdUrlAsUri.spec, "http://foo.com:200/");
+  Assert.equal(200, stdUrlAsUri.port);
+  Assert.equal(stdUrlAsUri.spec, "http://foo.com:200/");
 
   
   
   stdUrl.setDefaultPort(200);
-  do_check_eq(-1, stdUrlAsUri.port);
-  do_check_eq(stdUrlAsUri.spec, origUrlStr);
+  Assert.equal(-1, stdUrlAsUri.port);
+  Assert.equal(stdUrlAsUri.spec, origUrlStr);
 
   
   stdUrl.setDefaultPort(300);
-  do_check_eq(-1, stdUrlAsUri.port);
-  do_check_eq(stdUrlAsUri.spec, origUrlStr);
+  Assert.equal(-1, stdUrlAsUri.port);
+  Assert.equal(stdUrlAsUri.spec, origUrlStr);
 }

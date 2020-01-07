@@ -12,23 +12,23 @@ const time = 1199145600000;
 function testpass(source)
 {
   
-  do_check_true(source.hasEntry(FILENAME));
+  Assert.ok(source.hasEntry(FILENAME));
 
   var entry = source.getEntry(FILENAME);
-  do_check_neq(entry, null);
+  Assert.notEqual(entry, null);
 
-  do_check_false(entry.isDirectory);
-
-  
-  do_check_eq(entry.compression, ZIP_METHOD_DEFLATE);
-
-  do_check_eq(entry.lastModifiedTime / PR_USEC_PER_MSEC, time);
+  Assert.ok(!entry.isDirectory);
 
   
-  do_check_eq(entry.realSize, DATA.length);
+  Assert.equal(entry.compression, ZIP_METHOD_DEFLATE);
+
+  Assert.equal(entry.lastModifiedTime / PR_USEC_PER_MSEC, time);
 
   
-  do_check_eq(entry.CRC32, CRC);
+  Assert.equal(entry.realSize, DATA.length);
+
+  
+  Assert.equal(entry.CRC32, CRC);
 }
 
 function run_test()
@@ -36,9 +36,9 @@ function run_test()
   zipW.open(tmpFile, PR_RDWR | PR_CREATE_FILE | PR_TRUNCATE);
 
   
-  do_check_false(zipW.hasEntry(FILENAME));
+  Assert.ok(!zipW.hasEntry(FILENAME));
 
-  do_check_false(zipW.inQueue);
+  Assert.ok(!zipW.inQueue);
 
   var stream = Cc["@mozilla.org/io/string-input-stream;1"]
                 .createInstance(Ci.nsIStringInputStream);
@@ -66,5 +66,5 @@ function run_test()
   stream.close();
   zipR.close();
 
-  do_check_eq(result, DATA);
+  Assert.equal(result, DATA);
 }

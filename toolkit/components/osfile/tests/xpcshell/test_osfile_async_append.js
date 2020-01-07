@@ -45,7 +45,7 @@ async function test_append(mode) {
       await file.write(new Uint8Array(100));
       
       let stat = await file.stat();
-      do_check_eq(1100, stat.size);
+      Assert.equal(1100, stat.size);
     } finally {
       await file.close();
     }
@@ -78,7 +78,7 @@ async function test_no_append(mode) {
       await file.write(new Uint8Array(100));
       
       let stat = await file.stat();
-      do_check_eq(1000, stat.size);
+      Assert.equal(1000, stat.size);
     } finally {
       await file.close();
     }

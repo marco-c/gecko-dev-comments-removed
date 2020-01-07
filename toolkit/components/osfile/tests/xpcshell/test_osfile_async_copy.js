@@ -67,7 +67,7 @@ var reference_compare_files = async function reference_compare_files(a, b) {
   let b_contents = await reference_fetch_file(b);
   
   
-  do_check_true(a_contents === b_contents);
+  Assert.ok(a_contents === b_contents);
 };
 
 
@@ -88,7 +88,7 @@ async function test_copymove(options = {}) {
     await OS.File.move(dest, dest2);
     await reference_compare_files(source, dest2);
     
-    do_check_eq((await OS.File.exists(dest)), false);
+    Assert.equal((await OS.File.exists(dest)), false);
   } finally {
     await removeTestFile(dest);
     await removeTestFile(dest2);

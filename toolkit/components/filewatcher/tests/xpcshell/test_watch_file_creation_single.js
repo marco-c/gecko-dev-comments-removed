@@ -40,7 +40,7 @@ add_task(async function test_watch_single_path_file_creation() {
 
   
   let changed = await deferred.promise;
-  do_check_eq(changed, tmpFilePath);
+  Assert.equal(changed, tmpFilePath);
 
   
   

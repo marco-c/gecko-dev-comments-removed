@@ -22,14 +22,14 @@ function run_test() {
   };
   XPIProvider.doing(getsCancelled);
   XPIProvider.cancelAll();
-  do_check_true(getsCancelled.isCancelled);
+  Assert.ok(getsCancelled.isCancelled);
 
   
   let doesntGetCancelled = {
     cancel: () => do_throw("This should not have been cancelled")
   };
   XPIProvider.doing(doesntGetCancelled);
-  do_check_true(XPIProvider.done(doesntGetCancelled));
+  Assert.ok(XPIProvider.done(doesntGetCancelled));
   XPIProvider.cancelAll();
 
   
@@ -45,8 +45,8 @@ function run_test() {
   };
   XPIProvider.doing(addsAnother);
   XPIProvider.cancelAll();
-  do_check_true(addsAnother.isCancelled);
-  do_check_true(getsCancelled.isCancelled);
+  Assert.ok(addsAnother.isCancelled);
+  Assert.ok(getsCancelled.isCancelled);
 
   
   
@@ -62,5 +62,5 @@ function run_test() {
   XPIProvider.doing(removesAnother);
   XPIProvider.doing(doesntGetCancelled);
   XPIProvider.cancelAll();
-  do_check_true(removesAnother.isCancelled);
+  Assert.ok(removesAnother.isCancelled);
 }

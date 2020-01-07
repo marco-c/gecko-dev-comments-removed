@@ -6,11 +6,11 @@ function run_test()
 
   asyncOpenCacheEntry("http://mem-first/", "memory", Ci.nsICacheStorage.OPEN_NORMALLY, null,
     new OpenCallback(NEW, "mem1-meta", "mem1-data", function(entryM1) {
-      do_check_false(entryM1.persistent);
+      Assert.ok(!entryM1.persistent);
       asyncOpenCacheEntry("http://mem-first/", "disk", Ci.nsICacheStorage.OPEN_NORMALLY, null,
         new OpenCallback(NORMAL, "mem1-meta", "mem1-data", function(entryM2) {
-          do_check_false(entryM1.persistent);
-          do_check_false(entryM2.persistent);
+          Assert.ok(!entryM1.persistent);
+          Assert.ok(!entryM2.persistent);
 
           
 
@@ -19,19 +19,19 @@ function run_test()
             
             
             new OpenCallback(NEW|WAITFORWRITE, "disk1-meta", "disk1-data", function(entryD1) {
-              do_check_true(entryD1.persistent);
+              Assert.ok(entryD1.persistent);
               
               asyncOpenCacheEntry("http://disk-first/", "memory", Ci.nsICacheStorage.OPEN_NORMALLY, null,
                 
                 new OpenCallback(NEW, "mem2-meta", "mem2-data", function(entryD2) {
-                  do_check_true(entryD1.persistent);
-                  do_check_false(entryD2.persistent);
+                  Assert.ok(entryD1.persistent);
+                  Assert.ok(!entryD2.persistent);
                   
                   asyncOpenCacheEntry("http://disk-first/", "disk", Ci.nsICacheStorage.OPEN_NORMALLY, null,
                     new OpenCallback(NORMAL, "mem2-meta", "mem2-data", function(entryD3) {
-                      do_check_true(entryD1.persistent);
-                      do_check_false(entryD2.persistent);
-                      do_check_false(entryD3.persistent);
+                      Assert.ok(entryD1.persistent);
+                      Assert.ok(!entryD2.persistent);
+                      Assert.ok(!entryD3.persistent);
                       finish_cache2_test();
                     })
                   );

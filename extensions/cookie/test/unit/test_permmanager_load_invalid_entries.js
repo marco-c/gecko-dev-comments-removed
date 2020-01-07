@@ -16,7 +16,7 @@ function run_test() {
   
   var connection = storage.openDatabase(file);
   
-  do_check_true(file.exists());
+  Assert.ok(file.exists());
 
   connection.schemaVersion = 3;
   connection.executeSimpleSQL(
@@ -121,22 +121,22 @@ function run_test() {
 
   
   
-  do_check_eq(connection.schemaVersion, 9);
+  Assert.equal(connection.schemaVersion, 9);
 
   let select = connection.createStatement("SELECT modificationTime FROM moz_perms")
   let numMigrated = 0;
   while (select.executeStep()) {
     let thisModTime = select.getInt64(0);
-    do_check_true(thisModTime == 0, "new modifiedTime field is correct");
+    Assert.ok(thisModTime == 0, "new modifiedTime field is correct");
     numMigrated += 1;
   }
   
-  do_check_true(numMigrated > 0, "we found at least 1 record that was migrated");
+  Assert.ok(numMigrated > 0, "we found at least 1 record that was migrated");
 
   
   let ssm = Cc["@mozilla.org/scriptsecuritymanager;1"]
               .getService(Ci.nsIScriptSecurityManager);
   let uri = NetUtil.newURI("http://example.org");
   let principal = ssm.createCodebasePrincipal(uri, {});
-  do_check_eq(pm.testPermissionFromPrincipal(principal, 'test-load-invalid-entries'), Ci.nsIPermissionManager.ALLOW_ACTION);
+  Assert.equal(pm.testPermissionFromPrincipal(principal, 'test-load-invalid-entries'), Ci.nsIPermissionManager.ALLOW_ACTION);
 }

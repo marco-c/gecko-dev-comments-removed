@@ -44,30 +44,30 @@ function* tests() {
     }
 
     testfile.copyTo(profileDir, "formhistory.sqlite");
-    do_check_eq(999, getDBVersion(testfile));
+    Assert.equal(999, getDBVersion(testfile));
 
-    let checkZero = function(num) { do_check_eq(num, 0); next_test(); };
-    let checkOne = function(num) { do_check_eq(num, 1); next_test(); };
+    let checkZero = function(num) { Assert.equal(num, 0); next_test(); };
+    let checkOne = function(num) { Assert.equal(num, 1); next_test(); };
 
     
     testnum++;
 
     
     
-    do_check_false(bakFile.exists());
+    Assert.ok(!bakFile.exists());
     
     yield countEntries("", "", next_test);
 
-    do_check_true(bakFile.exists());
+    Assert.ok(bakFile.exists());
     bakFile.remove(false);
 
     
     testnum++;
     
-    yield countEntries(null, null, function(num) { do_check_false(num); next_test(); });
+    yield countEntries(null, null, function(num) { Assert.ok(!num); next_test(); });
     yield countEntries("name-A", "value-A", checkZero);
     
-    do_check_eq(CURRENT_SCHEMA, FormHistory.schemaVersion);
+    Assert.equal(CURRENT_SCHEMA, FormHistory.schemaVersion);
 
     
     testnum++;

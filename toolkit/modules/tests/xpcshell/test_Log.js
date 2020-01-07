@@ -40,20 +40,20 @@ add_task(function test_Logger() {
   log.info("info test");
   log.debug("this should be logged but not appended.");
 
-  do_check_eq(appender.messages.length, 1);
+  Assert.equal(appender.messages.length, 1);
 
   let msgRe = /\d+\ttest.logger\t\INFO\tinfo test/;
-  do_check_true(msgRe.test(appender.messages[0]));
+  Assert.ok(msgRe.test(appender.messages[0]));
 });
 
 add_task(function test_Logger_parent() {
   
   let grandparentLog = Log.repository.getLogger("grandparent");
   let childLog = Log.repository.getLogger("grandparent.parent.child");
-  do_check_eq(childLog.parent.name, "grandparent");
+  Assert.equal(childLog.parent.name, "grandparent");
 
   Log.repository.getLogger("grandparent.parent");
-  do_check_eq(childLog.parent.name, "grandparent.parent");
+  Assert.equal(childLog.parent.name, "grandparent.parent");
 
   
   let gpAppender = new MockAppender(new Log.BasicFormatter());
@@ -62,8 +62,8 @@ add_task(function test_Logger_parent() {
   childLog.info("child info test");
   Log.repository.rootLogger.info("this shouldn't show up in gpAppender");
 
-  do_check_eq(gpAppender.messages.length, 1);
-  do_check_true(gpAppender.messages[0].indexOf("child info test") > 0);
+  Assert.equal(gpAppender.messages.length, 1);
+  Assert.ok(gpAppender.messages[0].indexOf("child info test") > 0);
 });
 
 add_test(function test_LoggerWithMessagePrefix() {
@@ -93,21 +93,21 @@ add_test(function test_LoggerWithMessagePrefix() {
 
 
 function checkObjects(expected, actual) {
-  do_check_true(expected instanceof Object);
-  do_check_true(actual instanceof Object);
+  Assert.ok(expected instanceof Object);
+  Assert.ok(actual instanceof Object);
   for (let key in expected) {
-    do_check_neq(actual[key], undefined);
+    Assert.notEqual(actual[key], undefined);
     if (expected[key] instanceof RegExp) {
-      do_check_true(expected[key].test(actual[key].toString()));
+      Assert.ok(expected[key].test(actual[key].toString()));
     } else if (expected[key] instanceof Object) {
       checkObjects(expected[key], actual[key]);
     } else {
-      do_check_eq(expected[key], actual[key]);
+      Assert.equal(expected[key], actual[key]);
     }
   }
 
   for (let key in actual) {
-    do_check_neq(expected[key], undefined);
+    Assert.notEqual(expected[key], undefined);
   }
 }
 
@@ -160,9 +160,9 @@ add_task(function test_StructuredLogCommands() {
     logger.logStructured("", {_message: "invalid message"});
   } catch (e) {
     errored = true;
-    do_check_eq(e, "An action is required when logging a structured message.");
+    Assert.equal(e, "An action is required when logging a structured message.");
   } finally {
-    do_check_true(errored);
+    Assert.ok(errored);
   }
 
   errored = false;
@@ -170,9 +170,9 @@ add_task(function test_StructuredLogCommands() {
     logger.logStructured("message_action", "invalid params");
   } catch (e) {
     errored = true;
-    do_check_eq(e, "The params argument is required to be an object.");
+    Assert.equal(e, "The params argument is required to be an object.");
   } finally {
-    do_check_true(errored);
+    Assert.ok(errored);
   }
 
   
@@ -193,7 +193,7 @@ add_task(function test_StructuredLogCommands() {
 
 add_task(function test_StorageStreamAppender() {
   let appender = new Log.StorageStreamAppender(testFormatter);
-  do_check_eq(appender.getInputStream(), null);
+  Assert.equal(appender.getInputStream(), null);
 
   
   
@@ -203,22 +203,22 @@ add_task(function test_StorageStreamAppender() {
   let inputStream = appender.getInputStream();
   let data = NetUtil.readInputStreamToString(inputStream,
                                              inputStream.available());
-  do_check_eq(data, "test.StorageStreamAppender\tINFO\tOHAI\n");
+  Assert.equal(data, "test.StorageStreamAppender\tINFO\tOHAI\n");
 
   
   let sndInputStream = appender.getInputStream();
   let sameData = NetUtil.readInputStreamToString(sndInputStream,
                                                  sndInputStream.available());
-  do_check_eq(data, sameData);
+  Assert.equal(data, sameData);
 
   
   appender.reset();
-  do_check_eq(appender.getInputStream(), null);
+  Assert.equal(appender.getInputStream(), null);
   logger.debug("wut?!?");
   inputStream = appender.getInputStream();
   data = NetUtil.readInputStreamToString(inputStream,
                                          inputStream.available());
-  do_check_eq(data, "test.StorageStreamAppender\tDEBUG\twut?!?\n");
+  Assert.equal(data, "test.StorageStreamAppender\tDEBUG\twut?!?\n");
 });
 
 function fileContents(path) {
@@ -231,38 +231,38 @@ function fileContents(path) {
 add_task(async function test_FileAppender() {
   
   let dir = OS.Path.join(do_get_profile().path, "test_Log");
-  do_check_false(await OS.File.exists(dir));
+  Assert.equal(false, await OS.File.exists(dir));
   let path = OS.Path.join(dir, "test_FileAppender");
   let appender = new Log.FileAppender(path, testFormatter);
   let logger = Log.repository.getLogger("test.FileAppender");
   logger.addAppender(appender);
 
   
-  do_check_false(await OS.File.exists(path));
+  Assert.equal(false, await OS.File.exists(path));
   logger.info("OHAI!");
 
   await OS.File.makeDir(dir);
   logger.info("OHAI");
   await appender._lastWritePromise;
 
-  do_check_eq((await fileContents(path)),
-              "test.FileAppender\tINFO\tOHAI\n");
+  Assert.equal((await fileContents(path)),
+               "test.FileAppender\tINFO\tOHAI\n");
 
   logger.info("OHAI");
   await appender._lastWritePromise;
 
-  do_check_eq((await fileContents(path)),
-              "test.FileAppender\tINFO\tOHAI\n" +
-              "test.FileAppender\tINFO\tOHAI\n");
+  Assert.equal((await fileContents(path)),
+               "test.FileAppender\tINFO\tOHAI\n" +
+               "test.FileAppender\tINFO\tOHAI\n");
 
   
   await appender.reset();
-  do_check_false(await OS.File.exists(path));
+  Assert.equal(false, await OS.File.exists(path));
 
   logger.debug("O RLY?!?");
   await appender._lastWritePromise;
-  do_check_eq((await fileContents(path)),
-              "test.FileAppender\tDEBUG\tO RLY?!?\n");
+  Assert.equal((await fileContents(path)),
+               "test.FileAppender\tDEBUG\tO RLY?!?\n");
 
   await appender.reset();
   logger.debug("1");
@@ -274,12 +274,12 @@ add_task(async function test_FileAppender() {
   await appender._lastWritePromise;
 
   
-  do_check_eq((await fileContents(path)),
-              "test.FileAppender\tDEBUG\t1\n" +
-              "test.FileAppender\tINFO\t2\n" +
-              "test.FileAppender\tINFO\t3\n" +
-              "test.FileAppender\tINFO\t4\n" +
-              "test.FileAppender\tINFO\t5\n");
+  Assert.equal((await fileContents(path)),
+               "test.FileAppender\tDEBUG\t1\n" +
+               "test.FileAppender\tINFO\t2\n" +
+               "test.FileAppender\tINFO\t3\n" +
+               "test.FileAppender\tINFO\t4\n" +
+               "test.FileAppender\tINFO\t5\n");
 });
 
 add_task(async function test_BoundedFileAppender() {
@@ -299,20 +299,20 @@ add_task(async function test_BoundedFileAppender() {
   logger.info("TWO");
   await appender._lastWritePromise;
 
-  do_check_eq((await fileContents(path)),
-              "test.BoundedFileAppender\tINFO\tONE\n" +
-              "test.BoundedFileAppender\tINFO\tTWO\n");
+  Assert.equal((await fileContents(path)),
+               "test.BoundedFileAppender\tINFO\tONE\n" +
+               "test.BoundedFileAppender\tINFO\tTWO\n");
 
   logger.info("THREE");
   logger.info("FOUR");
 
-  do_check_neq(appender._removeFilePromise, undefined);
+  Assert.notEqual(appender._removeFilePromise, undefined);
   await appender._removeFilePromise;
   await appender._lastWritePromise;
 
-  do_check_eq((await fileContents(path)),
-              "test.BoundedFileAppender\tINFO\tTHREE\n" +
-              "test.BoundedFileAppender\tINFO\tFOUR\n");
+  Assert.equal((await fileContents(path)),
+               "test.BoundedFileAppender\tINFO\tTHREE\n" +
+               "test.BoundedFileAppender\tINFO\tFOUR\n");
 
   await appender.reset();
   logger.info("ONE");
@@ -320,13 +320,13 @@ add_task(async function test_BoundedFileAppender() {
   logger.info("THREE");
   logger.info("FOUR");
 
-  do_check_neq(appender._removeFilePromise, undefined);
+  Assert.notEqual(appender._removeFilePromise, undefined);
   await appender._removeFilePromise;
   await appender._lastWritePromise;
 
-  do_check_eq((await fileContents(path)),
-              "test.BoundedFileAppender\tINFO\tTHREE\n" +
-              "test.BoundedFileAppender\tINFO\tFOUR\n");
+  Assert.equal((await fileContents(path)),
+               "test.BoundedFileAppender\tINFO\tTHREE\n" +
+               "test.BoundedFileAppender\tINFO\tFOUR\n");
 
 });
 
@@ -342,80 +342,80 @@ add_task(async function log_message_with_params() {
   }
 
   
-  do_check_eq(formatMessage("String is ${foo}", {foo: "bar"}),
-              "String is bar");
+  Assert.equal(formatMessage("String is ${foo}", {foo: "bar"}),
+               "String is bar");
 
   
-  do_check_eq(formatMessage("Number is ${number}", {number: 47}),
-              "Number is 47");
+  Assert.equal(formatMessage("Number is ${number}", {number: 47}),
+               "Number is 47");
 
   
-  do_check_eq(formatMessage("Object is ${}", {foo: "bar"}),
-              'Object is {"foo":"bar"}');
+  Assert.equal(formatMessage("Object is ${}", {foo: "bar"}),
+               'Object is {"foo":"bar"}');
 
   
-  do_check_eq(formatMessage("Sub object is ${sub}", {sub: {foo: "bar"}}),
-                'Sub object is {"foo":"bar"}');
+  Assert.equal(formatMessage("Sub object is ${sub}", {sub: {foo: "bar"}}),
+                 'Sub object is {"foo":"bar"}');
 
   
   
-  do_check_eq(formatMessage("Missing object is ${missing}", {}),
-              "Missing object is ${missing}");
+  Assert.equal(formatMessage("Missing object is ${missing}", {}),
+               "Missing object is ${missing}");
 
   
-  do_check_eq(formatMessage("False is ${false}", {false: true}),
-              "False is true");
+  Assert.equal(formatMessage("False is ${false}", {false: true}),
+               "False is true");
 
   
   let ob = function() {};
   ob.toJSON = function() {return {sneaky: "value"};};
-  do_check_eq(formatMessage("JSON is ${sub}", {sub: ob}),
-              'JSON is {"sneaky":"value"}');
+  Assert.equal(formatMessage("JSON is ${sub}", {sub: ob}),
+               'JSON is {"sneaky":"value"}');
 
   
   ob = function() {};
   ob.toJSON = function() {throw "oh noes JSON";};
-  do_check_eq(formatMessage("Fail is ${sub}", {sub: ob}),
-              "Fail is (function() {})");
+  Assert.equal(formatMessage("Fail is ${sub}", {sub: ob}),
+               "Fail is (function() {})");
 
   
   ob.toSource = function() {throw "oh noes SOURCE";};
-  do_check_eq(formatMessage("Fail is ${sub}", {sub: ob}),
-              "Fail is function() {}");
+  Assert.equal(formatMessage("Fail is ${sub}", {sub: ob}),
+               "Fail is function() {}");
 
   
   ob.toString = function() {throw "oh noes STRING";};
-  do_check_eq(formatMessage("Fail is ${sub}", {sub: ob}),
-              "Fail is [object]");
+  Assert.equal(formatMessage("Fail is ${sub}", {sub: ob}),
+               "Fail is [object]");
 
   
   
-  do_check_eq(formatMessage("Text with no subs", {a: "b", c: "d"}),
-              'Text with no subs: {"a":"b","c":"d"}');
+  Assert.equal(formatMessage("Text with no subs", {a: "b", c: "d"}),
+               'Text with no subs: {"a":"b","c":"d"}');
 
   
   
-  do_check_eq(formatMessage("Text with partial sub ${a}", {a: "b", c: "d"}),
-              "Text with partial sub b");
+  Assert.equal(formatMessage("Text with partial sub ${a}", {a: "b", c: "d"}),
+               "Text with partial sub b");
 
   
-  do_check_eq(formatMessage("Params with _ ${}", {a: "b", _c: "d", _level: 20, _message: "froo",
-                                                  _time: 123456, _namespace: "here.there"}),
-              'Params with _ {"a":"b","_c":"d"}');
+  Assert.equal(formatMessage("Params with _ ${}", {a: "b", _c: "d", _level: 20, _message: "froo",
+                                                   _time: 123456, _namespace: "here.there"}),
+               'Params with _ {"a":"b","_c":"d"}');
 
   
-  do_check_eq(formatMessage("All params internal", {_level: 20, _message: "froo",
-                                                    _time: 123456, _namespace: "here.there"}),
-              "All params internal");
+  Assert.equal(formatMessage("All params internal", {_level: 20, _message: "froo",
+                                                     _time: 123456, _namespace: "here.there"}),
+               "All params internal");
 
   
-  do_check_eq(formatMessage("Null ${n} undefined ${u}", {n: null, u: undefined}),
-              "Null null undefined undefined");
+  Assert.equal(formatMessage("Null ${n} undefined ${u}", {n: null, u: undefined}),
+               "Null null undefined undefined");
 
   
-  do_check_eq(formatMessage("number ${n} boolean ${b} boxed Boolean ${bx} String ${s}",
-                            {n: 45, b: false, bx: Boolean(true), s: String("whatevs")}),
-              "number 45 boolean false boxed Boolean true String whatevs");
+  Assert.equal(formatMessage("number ${n} boolean ${b} boxed Boolean ${bx} String ${s}",
+                             {n: 45, b: false, bx: Boolean(true), s: String("whatevs")}),
+               "number 45 boolean false boxed Boolean true String whatevs");
 
   
 
@@ -424,58 +424,58 @@ add_task(async function log_message_with_params() {
 
   let err = Components.Exception("test exception", Components.results.NS_ERROR_FAILURE);
   let str = formatMessage("Exception is ${}", err);
-  do_check_true(str.includes('Exception is [Exception... "test exception"'));
-  do_check_true(str.includes("(NS_ERROR_FAILURE)"));
+  Assert.ok(str.includes('Exception is [Exception... "test exception"'));
+  Assert.ok(str.includes("(NS_ERROR_FAILURE)"));
   str = formatMessage("Exception is", err);
-  do_check_true(str.includes('Exception is: [Exception... "test exception"'));
+  Assert.ok(str.includes('Exception is: [Exception... "test exception"'));
   str = formatMessage("Exception is ${error}", {error: err});
-  do_check_true(str.includes('Exception is [Exception... "test exception"'));
+  Assert.ok(str.includes('Exception is [Exception... "test exception"'));
   str = formatMessage("Exception is", {_error: err});
   do_print(str);
   
-  do_check_true(str.includes('Exception is: {"_error":{}'));
+  Assert.ok(str.includes('Exception is: {"_error":{}'));
   
   str = formatMessage(null, err);
-  do_check_true(str.startsWith('[Exception... "test exception"'));
+  Assert.ok(str.startsWith('[Exception... "test exception"'));
   
   str = formatMessage(null, "String in place of params");
-  do_check_eq(str, "String in place of params");
+  Assert.equal(str, "String in place of params");
 
   
   
   
   let vOf = {a: 1, valueOf: function() {throw "oh noes valueOf";}};
-  do_check_eq(formatMessage("Broken valueOf ${}", vOf),
-              'Broken valueOf ({a:1, valueOf:(function() {throw "oh noes valueOf";})})');
+  Assert.equal(formatMessage("Broken valueOf ${}", vOf),
+               'Broken valueOf ({a:1, valueOf:(function() {throw "oh noes valueOf";})})');
   
 
   
   
-  do_check_eq(formatMessage("non-object no subst", 1),
-              "non-object no subst: 1");
-  do_check_eq(formatMessage("non-object all subst ${}", 2),
-              "non-object all subst 2");
-  do_check_eq(formatMessage("false no subst", false),
-              "false no subst: false");
-  do_check_eq(formatMessage("null no subst", null),
-              "null no subst: null");
+  Assert.equal(formatMessage("non-object no subst", 1),
+               "non-object no subst: 1");
+  Assert.equal(formatMessage("non-object all subst ${}", 2),
+               "non-object all subst 2");
+  Assert.equal(formatMessage("false no subst", false),
+               "false no subst: false");
+  Assert.equal(formatMessage("null no subst", null),
+               "null no subst: null");
   
   
-  do_check_eq(formatMessage("undefined no subst", undefined),
-              "undefined no subst");
+  Assert.equal(formatMessage("undefined no subst", undefined),
+               "undefined no subst");
   
   
-  do_check_eq(formatMessage("non-object named subst ${junk} space", 3),
-              "non-object named subst ${junk} space: 3");
+  Assert.equal(formatMessage("non-object named subst ${junk} space", 3),
+               "non-object named subst ${junk} space: 3");
   
-  do_check_eq(formatMessage("no params ${missing}", undefined),
-              "no params ${missing}");
+  Assert.equal(formatMessage("no params ${missing}", undefined),
+               "no params ${missing}");
   
   
-  do_check_eq(formatMessage("object missing tag ${missing} space", {mising: "not here"}),
-              'object missing tag ${missing} space: {"mising":"not here"}');
+  Assert.equal(formatMessage("object missing tag ${missing} space", {mising: "not here"}),
+               'object missing tag ${missing} space: {"mising":"not here"}');
   
-  do_check_eq(formatMessage(null), "");
+  Assert.equal(formatMessage(null), "");
 });
 
 
@@ -502,8 +502,8 @@ add_task(async function test_log_err_only() {
   } catch (e) {
     log.error(e);
     let msg = appender.messages.pop();
-    do_check_eq(msg.message, null);
-    do_check_eq(msg.params, e);
+    Assert.equal(msg.message, null);
+    Assert.equal(msg.params, e);
   }
 });
 
@@ -521,15 +521,15 @@ add_task(async function test_structured_basic() {
   
   
   log.logStructured("action", {data: "structure"});
-  do_check_eq(appender.messages.length, 1);
-  do_check_true(appender.messages[0].includes('{"data":"structure","action":"action"}'));
+  Assert.equal(appender.messages.length, 1);
+  Assert.ok(appender.messages[0].includes('{"data":"structure","action":"action"}'));
 
   
   
   log.logStructured("action", {_message: "Structured sub ${data}", data: "structure"});
-  do_check_eq(appender.messages.length, 2);
+  Assert.equal(appender.messages.length, 2);
   do_print(appender.messages[1]);
-  do_check_true(appender.messages[1].includes("Structured sub structure"));
+  Assert.ok(appender.messages[1].includes("Structured sub structure"));
 });
 
 
@@ -549,10 +549,10 @@ add_task(async function log_message_with_params() {
   log.config("Test config", testParams);
   log.debug("Test debug", testParams);
   log.trace("Test trace", testParams);
-  do_check_eq(appender.messages.length, 7);
+  Assert.equal(appender.messages.length, 7);
   for (let msg of appender.messages) {
-    do_check_true(msg.params === testParams);
-    do_check_true(msg.message.startsWith("Test "));
+    Assert.ok(msg.params === testParams);
+    Assert.ok(msg.message.startsWith("Test "));
   }
 });
 
@@ -566,9 +566,9 @@ add_task(function* format_errors() {
   
   let err = new ReferenceError("Ref Error", "ERROR_FILE", 28);
   let str = pFormat.format(err);
-  do_check_true(str.includes("ReferenceError"));
-  do_check_true(str.includes("ERROR_FILE:28"));
-  do_check_true(str.includes("Ref Error"));
+  Assert.ok(str.includes("ReferenceError"));
+  Assert.ok(str.includes("ERROR_FILE:28"));
+  Assert.ok(str.includes("Ref Error"));
 
   
   try {
@@ -577,15 +577,15 @@ add_task(function* format_errors() {
     eval("javascript syntax error");
   } catch (e) {
     str = pFormat.format(e);
-    do_check_true(str.includes("SyntaxError: unexpected token"));
+    Assert.ok(str.includes("SyntaxError: unexpected token"));
     
     
-    do_check_true(str.includes(":1:11)"));
+    Assert.ok(str.includes(":1:11)"));
     
     
-    do_check_false(str.includes("Promise.jsm"));
-    do_check_false(str.includes("Task.jsm"));
-    do_check_true(str.includes("format_errors"));
+    Assert.ok(!str.includes("Promise.jsm"));
+    Assert.ok(!str.includes("Task.jsm"));
+    Assert.ok(str.includes("format_errors"));
   }
 });
 

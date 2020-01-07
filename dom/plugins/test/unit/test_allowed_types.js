@@ -38,103 +38,103 @@ function run_test() {
 
   
   reload_plugins_with_allowed_types();
-  do_check_eq(get_status_for_type("application/x-test"), pluginDefaultState);
-  do_check_eq(get_status_for_type("application/x-Second-Test"), pluginDefaultState);
-  do_check_eq(get_status_for_type("application/x-nonexistent"), undefined);
+  Assert.equal(get_status_for_type("application/x-test"), pluginDefaultState);
+  Assert.equal(get_status_for_type("application/x-Second-Test"), pluginDefaultState);
+  Assert.equal(get_status_for_type("application/x-nonexistent"), undefined);
 
   
   reload_plugins_with_allowed_types("");
-  do_check_eq(get_status_for_type("application/x-test"), pluginDefaultState);
-  do_check_eq(get_status_for_type("application/x-Second-Test"), pluginDefaultState);
-  do_check_eq(get_status_for_type("application/x-nonexistent"), undefined);
+  Assert.equal(get_status_for_type("application/x-test"), pluginDefaultState);
+  Assert.equal(get_status_for_type("application/x-Second-Test"), pluginDefaultState);
+  Assert.equal(get_status_for_type("application/x-nonexistent"), undefined);
 
   
   
   
   reload_plugins_with_allowed_types(" ");
-  do_check_eq(get_status_for_type("application/x-test"), undefined);
-  do_check_eq(get_status_for_type("application/x-Second-Test"), undefined);
-  do_check_eq(get_status_for_type("application/x-nonexistent"), undefined);
+  Assert.equal(get_status_for_type("application/x-test"), undefined);
+  Assert.equal(get_status_for_type("application/x-Second-Test"), undefined);
+  Assert.equal(get_status_for_type("application/x-nonexistent"), undefined);
 
   
   
 
   reload_plugins_with_allowed_types("application/x-test");
-  do_check_eq(get_status_for_type("application/x-test"), pluginDefaultState);
-  do_check_eq(get_status_for_type("application/x-Second-Test"), undefined);
-  do_check_eq(get_status_for_type("application/x-nonexistent"), undefined);
+  Assert.equal(get_status_for_type("application/x-test"), pluginDefaultState);
+  Assert.equal(get_status_for_type("application/x-Second-Test"), undefined);
+  Assert.equal(get_status_for_type("application/x-nonexistent"), undefined);
 
   reload_plugins_with_allowed_types("application/x-Second-Test");
-  do_check_eq(get_status_for_type("application/x-test"), undefined);
-  do_check_eq(get_status_for_type("application/x-Second-Test"), pluginDefaultState);
-  do_check_eq(get_status_for_type("application/x-nonexistent"), undefined);
+  Assert.equal(get_status_for_type("application/x-test"), undefined);
+  Assert.equal(get_status_for_type("application/x-Second-Test"), pluginDefaultState);
+  Assert.equal(get_status_for_type("application/x-nonexistent"), undefined);
 
   reload_plugins_with_allowed_types("application/x-nonexistent");
-  do_check_eq(get_status_for_type("application/x-test"), undefined);
-  do_check_eq(get_status_for_type("application/x-Second-Test"), undefined);
-  do_check_eq(get_status_for_type("application/x-nonexistent"), undefined);
+  Assert.equal(get_status_for_type("application/x-test"), undefined);
+  Assert.equal(get_status_for_type("application/x-Second-Test"), undefined);
+  Assert.equal(get_status_for_type("application/x-nonexistent"), undefined);
 
   reload_plugins_with_allowed_types("application/x-test,application/x-Second-Test");
-  do_check_eq(get_status_for_type("application/x-test"), pluginDefaultState);
-  do_check_eq(get_status_for_type("application/x-Second-Test"), pluginDefaultState);
-  do_check_eq(get_status_for_type("application/x-nonexistent"), undefined);
+  Assert.equal(get_status_for_type("application/x-test"), pluginDefaultState);
+  Assert.equal(get_status_for_type("application/x-Second-Test"), pluginDefaultState);
+  Assert.equal(get_status_for_type("application/x-nonexistent"), undefined);
 
   reload_plugins_with_allowed_types("application/x-Second-Test,application/x-test");
-  do_check_eq(get_status_for_type("application/x-test"), pluginDefaultState);
-  do_check_eq(get_status_for_type("application/x-Second-Test"), pluginDefaultState);
-  do_check_eq(get_status_for_type("application/x-nonexistent"), undefined);
+  Assert.equal(get_status_for_type("application/x-test"), pluginDefaultState);
+  Assert.equal(get_status_for_type("application/x-Second-Test"), pluginDefaultState);
+  Assert.equal(get_status_for_type("application/x-nonexistent"), undefined);
 
   reload_plugins_with_allowed_types("application/x-test,application/x-nonexistent");
-  do_check_eq(get_status_for_type("application/x-test"), pluginDefaultState);
-  do_check_eq(get_status_for_type("application/x-Second-Test"), undefined);
-  do_check_eq(get_status_for_type("application/x-nonexistent"), undefined);
+  Assert.equal(get_status_for_type("application/x-test"), pluginDefaultState);
+  Assert.equal(get_status_for_type("application/x-Second-Test"), undefined);
+  Assert.equal(get_status_for_type("application/x-nonexistent"), undefined);
 
   reload_plugins_with_allowed_types("application/x-nonexistent,application/x-test");
-  do_check_eq(get_status_for_type("application/x-test"), pluginDefaultState);
-  do_check_eq(get_status_for_type("application/x-Second-Test"), undefined);
-  do_check_eq(get_status_for_type("application/x-nonexistent"), undefined);
+  Assert.equal(get_status_for_type("application/x-test"), pluginDefaultState);
+  Assert.equal(get_status_for_type("application/x-Second-Test"), undefined);
+  Assert.equal(get_status_for_type("application/x-nonexistent"), undefined);
 
   reload_plugins_with_allowed_types("application/x-test,application/x-Second-Test,application/x-nonexistent");
-  do_check_eq(get_status_for_type("application/x-test"), pluginDefaultState);
-  do_check_eq(get_status_for_type("application/x-Second-Test"), pluginDefaultState);
-  do_check_eq(get_status_for_type("application/x-nonexistent"), undefined);
+  Assert.equal(get_status_for_type("application/x-test"), pluginDefaultState);
+  Assert.equal(get_status_for_type("application/x-Second-Test"), pluginDefaultState);
+  Assert.equal(get_status_for_type("application/x-nonexistent"), undefined);
 
   reload_plugins_with_allowed_types("application/x-test,application/x-nonexistent,application/x-Second-Test");
-  do_check_eq(get_status_for_type("application/x-test"), pluginDefaultState);
-  do_check_eq(get_status_for_type("application/x-Second-Test"), pluginDefaultState);
-  do_check_eq(get_status_for_type("application/x-nonexistent"), undefined);
+  Assert.equal(get_status_for_type("application/x-test"), pluginDefaultState);
+  Assert.equal(get_status_for_type("application/x-Second-Test"), pluginDefaultState);
+  Assert.equal(get_status_for_type("application/x-nonexistent"), undefined);
 
   reload_plugins_with_allowed_types("application/x-Second-Test,application/x-test,application/x-nonexistent");
-  do_check_eq(get_status_for_type("application/x-test"), pluginDefaultState);
-  do_check_eq(get_status_for_type("application/x-Second-Test"), pluginDefaultState);
-  do_check_eq(get_status_for_type("application/x-nonexistent"), undefined);
+  Assert.equal(get_status_for_type("application/x-test"), pluginDefaultState);
+  Assert.equal(get_status_for_type("application/x-Second-Test"), pluginDefaultState);
+  Assert.equal(get_status_for_type("application/x-nonexistent"), undefined);
 
   reload_plugins_with_allowed_types("application/x-Second-Test,application/x-nonexistent,application/x-test");
-  do_check_eq(get_status_for_type("application/x-test"), pluginDefaultState);
-  do_check_eq(get_status_for_type("application/x-Second-Test"), pluginDefaultState);
-  do_check_eq(get_status_for_type("application/x-nonexistent"), undefined);
+  Assert.equal(get_status_for_type("application/x-test"), pluginDefaultState);
+  Assert.equal(get_status_for_type("application/x-Second-Test"), pluginDefaultState);
+  Assert.equal(get_status_for_type("application/x-nonexistent"), undefined);
 
   reload_plugins_with_allowed_types("application/x-nonexistent,application/x-test,application/x-Second-Test");
-  do_check_eq(get_status_for_type("application/x-test"), pluginDefaultState);
-  do_check_eq(get_status_for_type("application/x-Second-Test"), pluginDefaultState);
-  do_check_eq(get_status_for_type("application/x-nonexistent"), undefined);
+  Assert.equal(get_status_for_type("application/x-test"), pluginDefaultState);
+  Assert.equal(get_status_for_type("application/x-Second-Test"), pluginDefaultState);
+  Assert.equal(get_status_for_type("application/x-nonexistent"), undefined);
 
   reload_plugins_with_allowed_types("application/x-nonexistent,application/x-Second-Test,application/x-test");
-  do_check_eq(get_status_for_type("application/x-test"), pluginDefaultState);
-  do_check_eq(get_status_for_type("application/x-Second-Test"), pluginDefaultState);
-  do_check_eq(get_status_for_type("application/x-nonexistent"), undefined);
+  Assert.equal(get_status_for_type("application/x-test"), pluginDefaultState);
+  Assert.equal(get_status_for_type("application/x-Second-Test"), pluginDefaultState);
+  Assert.equal(get_status_for_type("application/x-nonexistent"), undefined);
 
   
   reload_plugins_with_allowed_types("APPLICATION/X-TEST");
-  do_check_eq(get_status_for_type("application/x-test"), pluginDefaultState);
+  Assert.equal(get_status_for_type("application/x-test"), pluginDefaultState);
   reload_plugins_with_allowed_types("application/x-test");
-  do_check_eq(get_status_for_type("APPLICATION/X-TEST"), pluginDefaultState);
+  Assert.equal(get_status_for_type("APPLICATION/X-TEST"), pluginDefaultState);
 
   
   reload_plugins_with_allowed_types("application/x-test-superset");
-  do_check_eq(get_status_for_type("application/x-test"), undefined);
+  Assert.equal(get_status_for_type("application/x-test"), undefined);
   reload_plugins_with_allowed_types("superset-application/x-test");
-  do_check_eq(get_status_for_type("application/x-test"), undefined);
+  Assert.equal(get_status_for_type("application/x-test"), undefined);
 
   
   Services.prefs.clearUserPref("plugin.allowed_types");

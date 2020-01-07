@@ -26,7 +26,7 @@ function run_test()
     do_throw("Should not be able to add the same file twice");
   }
   catch (e) {
-    do_check_eq(e.result, Components.results.NS_ERROR_FILE_ALREADY_EXISTS);
+    Assert.equal(e.result, Components.results.NS_ERROR_FILE_ALREADY_EXISTS);
   }
 
   
@@ -38,5 +38,5 @@ function run_test()
 
   
   var newTmpFile = tmpFile.clone();
-  do_check_eq(newTmpFile.fileSize, ZIP_EOCDR_HEADER_SIZE);
+  Assert.equal(newTmpFile.fileSize, ZIP_EOCDR_HEADER_SIZE);
 }

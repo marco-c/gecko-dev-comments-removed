@@ -12,16 +12,16 @@ function run_test() {
   
   var sb = new Cu.Sandbox(this);
   sb.eval('function fun(x) { return x; }');
-  do_check_eq(sb.fun("foo"), "foo");
+  Assert.equal(sb.fun("foo"), "foo");
 
   
   var utils = Cc["@mozilla.org/js/xpc/test/js/TestUtils;1"].createInstance(Ci.nsIXPCTestUtils);
   var doubleWrapped = utils.doubleWrapFunction(sb.fun);
-  do_check_eq(doubleWrapped.echo("foo"), "foo");
+  Assert.equal(doubleWrapped.echo("foo"), "foo");
 
   
   Cu.forceGC();
 
   
-  do_check_eq(doubleWrapped.echo("foo"), "foo");
+  Assert.equal(doubleWrapped.echo("foo"), "foo");
 }

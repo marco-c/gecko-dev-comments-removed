@@ -226,25 +226,25 @@ add_task(async function test_frecency() {
   var numSearchesStarted = 0;
   input.onSearchBegin = function() {
     numSearchesStarted++;
-    do_check_eq(numSearchesStarted, 1);
+    Assert.equal(numSearchesStarted, 1);
   };
 
   await new Promise(resolve => {
     input.onSearchComplete = function() {
-      do_check_eq(numSearchesStarted, 1);
-      do_check_eq(controller.searchStatus,
-                  Ci.nsIAutoCompleteController.STATUS_COMPLETE_MATCH);
+      Assert.equal(numSearchesStarted, 1);
+      Assert.equal(controller.searchStatus,
+                   Ci.nsIAutoCompleteController.STATUS_COMPLETE_MATCH);
 
       
-      do_check_eq(controller.matchCount, results.length);
+      Assert.equal(controller.matchCount, results.length);
 
       
       for (var i = 0; i < controller.matchCount; i++) {
         let searchURL = controller.getValueAt(i);
         let expectURL = results[i][0].spec;
         if (searchURL == expectURL) {
-          do_check_eq(controller.getValueAt(i), results[i][0].spec);
-          do_check_eq(controller.getCommentAt(i), results[i][2]);
+          Assert.equal(controller.getValueAt(i), results[i][0].spec);
+          Assert.equal(controller.getCommentAt(i), results[i][2]);
         } else {
           
           
@@ -253,7 +253,7 @@ add_task(async function test_frecency() {
           let getFrecency = aURL => aURL.match(/frecency:(-?\d+)$/)[1];
           print("### checking for same frecency between '" + searchURL +
                 "' and '" + expectURL + "'");
-          do_check_eq(getFrecency(searchURL), getFrecency(expectURL));
+          Assert.equal(getFrecency(searchURL), getFrecency(expectURL));
         }
       }
       resolve();

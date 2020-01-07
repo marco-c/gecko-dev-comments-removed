@@ -3,7 +3,7 @@ const Cu = Components.utils;
 function run_test() {
   
   var isXrayWrapper = Components.utils.isXrayWrapper;
-  do_check_true(!isXrayWrapper({}), "Didn't throw");
+  Assert.ok(!isXrayWrapper({}), "Didn't throw");
 
   
   var isSuccessCode = Components.isSuccessCode;

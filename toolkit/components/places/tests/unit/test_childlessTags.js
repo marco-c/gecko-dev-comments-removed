@@ -81,14 +81,14 @@ function ensureTagsExist(aTags) {
 
   
   
-  do_check_eq(resultRoot.childCount, tags.length);
+  Assert.equal(resultRoot.childCount, tags.length);
 
   
   
   for (let i = 0; i < resultRoot.childCount; i++) {
     var tag = resultRoot.getChild(i).title;
     var indexOfTag = tags.indexOf(tag);
-    do_check_true(indexOfTag >= 0);
+    Assert.ok(indexOfTag >= 0);
     tags.splice(indexOfTag, 1);
   }
 

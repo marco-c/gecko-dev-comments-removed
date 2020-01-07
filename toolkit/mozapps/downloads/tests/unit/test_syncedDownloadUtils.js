@@ -21,5 +21,5 @@ function run_test() {
   
   let lastSec = 314;
   for (let [time, text] of Object.entries(downloadTimes))
-    do_check_eq(DownloadUtils.getTimeLeft(time, lastSec)[0], text);
+    Assert.equal(DownloadUtils.getTimeLeft(time, lastSec)[0], text);
 }

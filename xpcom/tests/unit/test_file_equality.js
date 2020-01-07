@@ -16,7 +16,7 @@ function test_normalized_vs_non_normalized() {
   
   var tmp1 = Services.dirsvc.get("TmpD", Ci.nsIFile);
   var exists = tmp1.exists();
-  do_check_true(exists);
+  Assert.ok(exists);
   if (!exists)
     return;
 
@@ -26,13 +26,13 @@ function test_normalized_vs_non_normalized() {
 
   
   var tmp2 = new LocalFile(tmp1.path);
-  do_check_true(tmp1.equals(tmp2));
+  Assert.ok(tmp1.equals(tmp2));
 
   
   tmp2.appendRelativePath(".");
-  do_check_false(tmp1.equals(tmp2));
+  Assert.ok(!tmp1.equals(tmp2));
 
   
   tmp2.normalize();
-  do_check_true(tmp1.equals(tmp2));
+  Assert.ok(tmp1.equals(tmp2));
 }

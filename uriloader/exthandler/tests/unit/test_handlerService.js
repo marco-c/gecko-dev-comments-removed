@@ -95,24 +95,24 @@ function run_test() {
   var handlerInfo = mimeSvc.getFromTypeAndExtension("nonexistent/type", null);
 
   
-  do_check_true(handlerInfo instanceof Ci.nsIHandlerInfo);
+  Assert.ok(handlerInfo instanceof Ci.nsIHandlerInfo);
 
-  do_check_eq(handlerInfo.type, "nonexistent/type");
-
-  
-  do_check_eq(handlerInfo.MIMEType, "nonexistent/type");
+  Assert.equal(handlerInfo.type, "nonexistent/type");
 
   
-  do_check_eq(handlerInfo.preferredAction, Ci.nsIHandlerInfo.saveToDisk);
-  do_check_eq(handlerInfo.preferredApplicationHandler, null);
-  do_check_eq(handlerInfo.possibleApplicationHandlers.length, 0);
-  do_check_true(handlerInfo.alwaysAskBeforeHandling);
+  Assert.equal(handlerInfo.MIMEType, "nonexistent/type");
+
+  
+  Assert.equal(handlerInfo.preferredAction, Ci.nsIHandlerInfo.saveToDisk);
+  Assert.equal(handlerInfo.preferredApplicationHandler, null);
+  Assert.equal(handlerInfo.possibleApplicationHandlers.length, 0);
+  Assert.ok(handlerInfo.alwaysAskBeforeHandling);
 
   
   
-  do_check_eq(handlerInfo.description, "");
-  do_check_eq(handlerInfo.hasDefaultHandler, false);
-  do_check_eq(handlerInfo.defaultDescription, "");
+  Assert.equal(handlerInfo.description, "");
+  Assert.equal(handlerInfo.hasDefaultHandler, false);
+  Assert.equal(handlerInfo.defaultDescription, "");
 
   
   var haveDefaultHandlersVersion = false;
@@ -134,16 +134,16 @@ function run_test() {
   
   
   var protoInfo = protoSvc.getProtocolHandlerInfo("x-moz-rheet");
-  do_check_eq(protoInfo.preferredAction, protoInfo.alwaysAsk);
-  do_check_true(protoInfo.alwaysAskBeforeHandling);
+  Assert.equal(protoInfo.preferredAction, protoInfo.alwaysAsk);
+  Assert.ok(protoInfo.alwaysAskBeforeHandling);
   
   
   
   const kExternalWarningPrefPrefix = "network.protocol-handler.warn-external.";
   prefSvc.setBoolPref(kExternalWarningPrefPrefix + "http", false);
   protoInfo = protoSvc.getProtocolHandlerInfo("http");
-  do_check_eq(0, protoInfo.possibleApplicationHandlers.length);
-  do_check_false(protoInfo.alwaysAskBeforeHandling);
+  Assert.equal(0, protoInfo.possibleApplicationHandlers.length);
+  Assert.ok(!protoInfo.alwaysAskBeforeHandling);
   
   
   
@@ -152,41 +152,41 @@ function run_test() {
   
   
   
-  do_check_eq(0, protoInfo.possibleApplicationHandlers.length);
-  do_check_true(protoInfo.alwaysAskBeforeHandling);
+  Assert.equal(0, protoInfo.possibleApplicationHandlers.length);
+  Assert.ok(protoInfo.alwaysAskBeforeHandling);
 
   
   prefSvc.setBoolPref(kExternalWarningPrefPrefix + "mailto", false);
   protoInfo = protoSvc.getProtocolHandlerInfo("mailto");
   if (haveDefaultHandlersVersion)
-    do_check_eq(2, protoInfo.possibleApplicationHandlers.length);
+    Assert.equal(2, protoInfo.possibleApplicationHandlers.length);
   else
-    do_check_eq(0, protoInfo.possibleApplicationHandlers.length);
+    Assert.equal(0, protoInfo.possibleApplicationHandlers.length);
 
   
   if (noMailto)
-    do_check_true(protoInfo.alwaysAskBeforeHandling);
+    Assert.ok(protoInfo.alwaysAskBeforeHandling);
   else
-    do_check_false(protoInfo.alwaysAskBeforeHandling);
+    Assert.ok(!protoInfo.alwaysAskBeforeHandling);
 
   
   prefSvc.setBoolPref(kExternalWarningPrefPrefix + "mailto", true);
   protoInfo = protoSvc.getProtocolHandlerInfo("mailto");
   if (haveDefaultHandlersVersion) {
-    do_check_eq(2, protoInfo.possibleApplicationHandlers.length);
+    Assert.equal(2, protoInfo.possibleApplicationHandlers.length);
     
     
     
     
     
     if (noMailto)
-      do_check_true(protoInfo.alwaysAskBeforeHandling);
+      Assert.ok(protoInfo.alwaysAskBeforeHandling);
     else
-      do_check_false(protoInfo.alwaysAskBeforeHandling);
+      Assert.ok(!protoInfo.alwaysAskBeforeHandling);
 
   } else {
-    do_check_eq(0, protoInfo.possibleApplicationHandlers.length);
-    do_check_true(protoInfo.alwaysAskBeforeHandling);
+    Assert.equal(0, protoInfo.possibleApplicationHandlers.length);
+    Assert.ok(protoInfo.alwaysAskBeforeHandling);
   }
 
   if (haveDefaultHandlersVersion) {
@@ -197,8 +197,8 @@ function run_test() {
     protoInfo.alwaysAskBeforeHandling = true;
     handlerSvc.store(protoInfo);
     protoInfo = protoSvc.getProtocolHandlerInfo("mailto");
-    do_check_eq(2, protoInfo.possibleApplicationHandlers.length);
-    do_check_true(protoInfo.alwaysAskBeforeHandling);
+    Assert.equal(2, protoInfo.possibleApplicationHandlers.length);
+    Assert.ok(protoInfo.alwaysAskBeforeHandling);
   }
 
 
@@ -218,17 +218,17 @@ function run_test() {
 
   handlerInfo = mimeSvc.getFromTypeAndExtension("nonexistent/type", null);
 
-  do_check_eq(handlerInfo.preferredAction, Ci.nsIHandlerInfo.useHelperApp);
+  Assert.equal(handlerInfo.preferredAction, Ci.nsIHandlerInfo.useHelperApp);
 
-  do_check_neq(handlerInfo.preferredApplicationHandler, null);
+  Assert.notEqual(handlerInfo.preferredApplicationHandler, null);
   var preferredHandler = handlerInfo.preferredApplicationHandler;
-  do_check_eq(typeof preferredHandler, "object");
-  do_check_eq(preferredHandler.name, "Local Handler");
-  do_check_true(preferredHandler instanceof Ci.nsILocalHandlerApp);
+  Assert.equal(typeof preferredHandler, "object");
+  Assert.equal(preferredHandler.name, "Local Handler");
+  Assert.ok(preferredHandler instanceof Ci.nsILocalHandlerApp);
   preferredHandler.QueryInterface(Ci.nsILocalHandlerApp);
-  do_check_eq(preferredHandler.executable.path, localHandler.executable.path);
+  Assert.equal(preferredHandler.executable.path, localHandler.executable.path);
 
-  do_check_false(handlerInfo.alwaysAskBeforeHandling);
+  Assert.ok(!handlerInfo.alwaysAskBeforeHandling);
 
   
   var handlerInfo2 = mimeSvc.getFromTypeAndExtension("nonexistent/type2", null);
@@ -243,17 +243,17 @@ function run_test() {
   var handlers = handlerSvc.enumerate();
   while (handlers.hasMoreElements()) {
     var handler = handlers.getNext().QueryInterface(Ci.nsIHandlerInfo);
-    do_check_neq(handlerTypes.indexOf(handler.type), -1);
+    Assert.notEqual(handlerTypes.indexOf(handler.type), -1);
     handlerTypes.splice(handlerTypes.indexOf(handler.type), 1);
   }
-  do_check_eq(handlerTypes.length, 0);
+  Assert.equal(handlerTypes.length, 0);
 
   
   handlerSvc.remove(handlerInfo2);
   handlers = handlerSvc.enumerate();
   while (handlers.hasMoreElements())
-    do_check_neq(handlers.getNext().QueryInterface(Ci.nsIHandlerInfo).type,
-                 handlerInfo2.type);
+    Assert.notEqual(handlers.getNext().QueryInterface(Ci.nsIHandlerInfo).type,
+                    handlerInfo2.type);
 
   
   
@@ -262,7 +262,7 @@ function run_test() {
   handlerSvc.store(noPreferredHandlerInfo);
   noPreferredHandlerInfo =
     mimeSvc.getFromTypeAndExtension("nonexistent/no-preferred-handler", null);
-  do_check_eq(noPreferredHandlerInfo.preferredApplicationHandler, null);
+  Assert.equal(noPreferredHandlerInfo.preferredApplicationHandler, null);
 
   
   
@@ -276,7 +276,7 @@ function run_test() {
   handlerSvc.store(removePreferredHandlerInfo);
   removePreferredHandlerInfo =
     mimeSvc.getFromTypeAndExtension("nonexistent/rem-preferred-handler", null);
-  do_check_eq(removePreferredHandlerInfo.preferredApplicationHandler, null);
+  Assert.equal(removePreferredHandlerInfo.preferredApplicationHandler, null);
 
   
   
@@ -284,14 +284,14 @@ function run_test() {
   
   var possibleHandlersInfo =
     mimeSvc.getFromTypeAndExtension("nonexistent/possible-handlers", null);
-  do_check_eq(possibleHandlersInfo.possibleApplicationHandlers.length, 0);
+  Assert.equal(possibleHandlersInfo.possibleApplicationHandlers.length, 0);
 
   
   
   handlerSvc.store(possibleHandlersInfo);
   possibleHandlersInfo =
     mimeSvc.getFromTypeAndExtension("nonexistent/possible-handlers", null);
-  do_check_eq(possibleHandlersInfo.possibleApplicationHandlers.length, 0);
+  Assert.equal(possibleHandlersInfo.possibleApplicationHandlers.length, 0);
 
   
   
@@ -300,7 +300,7 @@ function run_test() {
   handlerSvc.store(possibleHandlersInfo);
   possibleHandlersInfo =
     mimeSvc.getFromTypeAndExtension("nonexistent/possible-handlers", null);
-  do_check_eq(possibleHandlersInfo.possibleApplicationHandlers.length, 2);
+  Assert.equal(possibleHandlersInfo.possibleApplicationHandlers.length, 2);
 
   
   
@@ -322,10 +322,10 @@ function run_test() {
   webPossibleHandler.QueryInterface(Ci.nsIWebHandlerApp);
 
   
-  do_check_eq(localPossibleHandler.name, localHandler.name);
-  do_check_true(localPossibleHandler.equals(localHandler));
-  do_check_eq(webPossibleHandler.name, webHandler.name);
-  do_check_true(webPossibleHandler.equals(webHandler));
+  Assert.equal(localPossibleHandler.name, localHandler.name);
+  Assert.ok(localPossibleHandler.equals(localHandler));
+  Assert.equal(webPossibleHandler.name, webHandler.name);
+  Assert.ok(webPossibleHandler.equals(webHandler));
 
   
   
@@ -333,13 +333,13 @@ function run_test() {
   handlerSvc.store(possibleHandlersInfo);
   possibleHandlersInfo =
     mimeSvc.getFromTypeAndExtension("nonexistent/possible-handlers", null);
-  do_check_eq(possibleHandlersInfo.possibleApplicationHandlers.length, 1);
+  Assert.equal(possibleHandlersInfo.possibleApplicationHandlers.length, 1);
 
   
   webPossibleHandler = possibleHandlersInfo.possibleApplicationHandlers.
                        queryElementAt(0, Ci.nsIWebHandlerApp);
-  do_check_eq(webPossibleHandler.name, webHandler.name);
-  do_check_true(webPossibleHandler.equals(webHandler));
+  Assert.equal(webPossibleHandler.name, webHandler.name);
+  Assert.ok(webPossibleHandler.equals(webHandler));
 
   
   
@@ -347,20 +347,20 @@ function run_test() {
                  createInstance(Ci.nsILocalHandlerApp);
   var handlerApp = localApp.QueryInterface(Ci.nsIHandlerApp);
 
-  do_check_true(handlerApp.equals(localApp));
+  Assert.ok(handlerApp.equals(localApp));
 
   localApp.executable = executable;
 
-  do_check_eq(0, localApp.parameterCount);
+  Assert.equal(0, localApp.parameterCount);
   localApp.appendParameter("-test1");
-  do_check_eq(1, localApp.parameterCount);
+  Assert.equal(1, localApp.parameterCount);
   localApp.appendParameter("-test2");
-  do_check_eq(2, localApp.parameterCount);
-  do_check_true(localApp.parameterExists("-test1"));
-  do_check_true(localApp.parameterExists("-test2"));
-  do_check_false(localApp.parameterExists("-false"));
+  Assert.equal(2, localApp.parameterCount);
+  Assert.ok(localApp.parameterExists("-test1"));
+  Assert.ok(localApp.parameterExists("-test2"));
+  Assert.ok(!localApp.parameterExists("-false"));
   localApp.clearParameters();
-  do_check_eq(0, localApp.parameterCount);
+  Assert.equal(0, localApp.parameterCount);
 
   var localApp2 = Cc["@mozilla.org/uriloader/local-handler-app;1"].
                   createInstance(Ci.nsILocalHandlerApp);
@@ -368,7 +368,7 @@ function run_test() {
   localApp2.executable = executable;
 
   localApp.clearParameters();
-  do_check_true(localApp.equals(localApp2));
+  Assert.ok(localApp.equals(localApp2));
 
   
   
@@ -380,7 +380,7 @@ function run_test() {
   localApp2.appendParameter("-test1");
   localApp2.appendParameter("-test2");
   localApp2.appendParameter("-test3");
-  do_check_true(localApp.equals(localApp2));
+  Assert.ok(localApp.equals(localApp2));
 
   
   
@@ -395,15 +395,15 @@ function run_test() {
   localApp2.appendParameter("-test2");
   localApp2.appendParameter("-test1");
   localApp2.appendParameter("-test3");
-  do_check_false(localApp2.equals(localApp));
+  Assert.ok(!localApp2.equals(localApp));
 
   var str;
   str = localApp.getParameter(0)
-  do_check_eq(str, "-test1");
+  Assert.equal(str, "-test1");
   str = localApp.getParameter(1)
-  do_check_eq(str, "-test2");
+  Assert.equal(str, "-test2");
   str = localApp.getParameter(2)
-  do_check_eq(str, "-test3");
+  Assert.equal(str, "-test3");
 
   
   
@@ -413,32 +413,32 @@ function run_test() {
 
   
   var lolType = handlerSvc.getTypeFromExtension("lolcat");
-  do_check_eq(lolType, "");
+  Assert.equal(lolType, "");
 
 
   
   var lolHandler = mimeSvc.getFromTypeAndExtension("application/lolcat", null);
 
-  do_check_false(lolHandler.extensionExists("lolcat"));
+  Assert.ok(!lolHandler.extensionExists("lolcat"));
   lolHandler.preferredAction = Ci.nsIHandlerInfo.useHelperApp;
   lolHandler.preferredApplicationHandler = localHandler;
   lolHandler.alwaysAskBeforeHandling = false;
   lolHandler.appendExtension("lolcat");
 
   
-  do_check_false(handlerSvc.exists(lolHandler));
+  Assert.ok(!handlerSvc.exists(lolHandler));
   handlerSvc.store(lolHandler);
-  do_check_true(handlerSvc.exists(lolHandler));
+  Assert.ok(handlerSvc.exists(lolHandler));
 
   
   lolType = handlerSvc.getTypeFromExtension("lolcat");
-  do_check_eq(lolType, "application/lolcat");
+  Assert.equal(lolType, "application/lolcat");
 
   
   if (mozinfo.os != "win" && mozinfo.os != "mac") {
     env.set('PERSONAL_MAILCAP', do_get_file('mailcap').path);
     handlerInfo = mimeSvc.getFromTypeAndExtension("text/plain", null);
-    do_check_eq(handlerInfo.preferredAction, Ci.nsIHandlerInfo.useSystemDefault);
-    do_check_eq(handlerInfo.defaultDescription, "sed");
+    Assert.equal(handlerInfo.preferredAction, Ci.nsIHandlerInfo.useSystemDefault);
+    Assert.equal(handlerInfo.defaultDescription, "sed");
   }
 }

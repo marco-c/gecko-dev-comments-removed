@@ -14,16 +14,16 @@ const {PluralForm} = require("devtools/shared/plural-form");
 
 function run_test() {
   
-  do_check_eq(2, PluralForm.numForms());
+  Assert.equal(2, PluralForm.numForms());
 
   
   for (let num = 0; num <= 200; num++) {
-    do_check_eq(num == 1 ? "word" : "words", PluralForm.get(num, "word;words"));
+    Assert.equal(num == 1 ? "word" : "words", PluralForm.get(num, "word;words"));
   }
 
   
-  do_check_eq("word", PluralForm.get(2, "word"));
+  Assert.equal("word", PluralForm.get(2, "word"));
 
   
-  do_check_eq("word", PluralForm.get(2, "word;"));
+  Assert.equal("word", PluralForm.get(2, "word;"));
 }

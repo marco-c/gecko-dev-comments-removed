@@ -33,18 +33,18 @@ add_task(async function test_execute() {
   await PlacesUtils.setCharsetForURI(TEST_BOOKMARKED_URI, charset);
 
   
-  do_check_eq(PlacesUtils.annotations.getPageAnnotation(TEST_URI, CHARSET_ANNO), charset);
+  Assert.equal(PlacesUtils.annotations.getPageAnnotation(TEST_URI, CHARSET_ANNO), charset);
 
   
-  do_check_eq((await PlacesUtils.getCharsetForURI(TEST_URI)), charset);
+  Assert.equal((await PlacesUtils.getCharsetForURI(TEST_URI)), charset);
 
   
-  do_check_eq((await PlacesUtils.getCharsetForURI(TEST_BOOKMARKED_URI)), charset);
+  Assert.equal((await PlacesUtils.getCharsetForURI(TEST_BOOKMARKED_URI)), charset);
 
   await PlacesTestUtils.clearHistory();
 
   
-  do_check_neq((await PlacesUtils.getCharsetForURI(TEST_URI)), charset);
+  Assert.notEqual((await PlacesUtils.getCharsetForURI(TEST_URI)), charset);
 
   
   try {
@@ -53,9 +53,9 @@ add_task(async function test_execute() {
   } catch (e) {}
 
   
-  do_check_eq((await PlacesUtils.getCharsetForURI(TEST_BOOKMARKED_URI)), charset);
+  Assert.equal((await PlacesUtils.getCharsetForURI(TEST_BOOKMARKED_URI)), charset);
 
   
   await PlacesUtils.setCharsetForURI(TEST_BOOKMARKED_URI, "");
-  do_check_neq((await PlacesUtils.getCharsetForURI(TEST_BOOKMARKED_URI)), charset);
+  Assert.notEqual((await PlacesUtils.getCharsetForURI(TEST_BOOKMARKED_URI)), charset);
 });

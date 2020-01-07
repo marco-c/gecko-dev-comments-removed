@@ -21,11 +21,11 @@ function run_test() {
                                  bs.DEFAULT_INDEX,
                                  "");
   
-  do_check_eq(bs.getItemTitle(itemId), "");
+  Assert.equal(bs.getItemTitle(itemId), "");
   
   bs.setItemTitle(itemId, null);
   
-  do_check_eq(bs.getItemTitle(itemId), "");
+  Assert.equal(bs.getItemTitle(itemId), "");
   
   bs.removeItem(itemId);
 
@@ -35,11 +35,11 @@ function run_test() {
                              bs.DEFAULT_INDEX,
                              null);
   
-  do_check_eq(bs.getItemTitle(itemId), "");
+  Assert.equal(bs.getItemTitle(itemId), "");
   
   bs.setItemTitle(itemId, "");
   
-  do_check_eq(bs.getItemTitle(itemId), "");
+  Assert.equal(bs.getItemTitle(itemId), "");
   
   bs.removeItem(itemId);
 }

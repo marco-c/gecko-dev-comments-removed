@@ -62,9 +62,9 @@ add_test(function test_generateCI()
         var ci = x.QueryInterface(Components.interfaces.nsIClassInfo);
         ci = ci.QueryInterface(Components.interfaces.nsISupports);
         ci = ci.QueryInterface(Components.interfaces.nsIClassInfo);
-        do_check_eq(ci.classID, classID);
-        do_check_eq(ci.flags, flags);
-        do_check_eq(ci.classDescription, classDescription);
+        Assert.equal(ci.classID, classID);
+        Assert.equal(ci.flags, flags);
+        Assert.equal(ci.classDescription, classDescription);
     } catch(e) {
         do_throw("Classinfo for x should not be missing or broken");
     }
@@ -83,17 +83,17 @@ add_test(function test_defineLazyGetter()
         this.inScope = true;
         return TEST_VALUE;
     });
-    do_check_eq(accessCount, 0);
+    Assert.equal(accessCount, 0);
 
     
-    do_check_eq(obj.foo, TEST_VALUE);
-    do_check_eq(accessCount, 1);
-    do_check_true(obj.inScope);
+    Assert.equal(obj.foo, TEST_VALUE);
+    Assert.equal(accessCount, 1);
+    Assert.ok(obj.inScope);
 
     
     
-    do_check_eq(obj.foo, TEST_VALUE);
-    do_check_eq(accessCount, 1);
+    Assert.equal(obj.foo, TEST_VALUE);
+    Assert.equal(accessCount, 1);
     run_next_test();
 });
 
@@ -110,9 +110,9 @@ add_test(function test_defineLazyServiceGetter()
     
     
     for (let prop in obj.service)
-        do_check_true(prop in service);
+        Assert.ok(prop in service);
     for (let prop in service)
-        do_check_true(prop in obj.service);
+        Assert.ok(prop in obj.service);
     run_next_test();
 });
 
@@ -209,11 +209,11 @@ add_test(function test_categoryRegistration()
   for (let [name, value] of XPCOMUtils.enumerateCategoryEntries(CATEGORY_NAME)) {
     print("Verify that the name/value pair exists in the expected entries.");
     ok(EXPECTED_ENTRIES.has(name));
-    do_check_eq(EXPECTED_ENTRIES.get(name), value);
+    Assert.equal(EXPECTED_ENTRIES.get(name), value);
     EXPECTED_ENTRIES.delete(name);
   }
   print("Check that all of the expected entries have been deleted.");
-  do_check_eq(EXPECTED_ENTRIES.size, 0);
+  Assert.equal(EXPECTED_ENTRIES.size, 0);
   run_next_test();
 });
 
@@ -240,11 +240,11 @@ add_test(function test_generateSingletonFactory()
   
   let instance = Cc[XPCCOMPONENT_CONTRACTID].createInstance(Ci.nsISupports);
   
-  do_check_eq(instance,
-              Cc[XPCCOMPONENT_CONTRACTID].createInstance(Ci.nsISupports));
+  Assert.equal(instance,
+               Cc[XPCCOMPONENT_CONTRACTID].createInstance(Ci.nsISupports));
   
-  do_check_eq(instance,
-              Cc[XPCCOMPONENT_CONTRACTID].getService(Ci.nsISupports));
+  Assert.equal(instance,
+               Cc[XPCCOMPONENT_CONTRACTID].getService(Ci.nsISupports));
 
   run_next_test();
 });

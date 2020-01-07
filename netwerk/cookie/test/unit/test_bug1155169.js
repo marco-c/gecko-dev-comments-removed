@@ -51,13 +51,13 @@ function setCookie(value, expected) {
       }
 
       
-      do_check_eq(data, expected.type);
+      Assert.equal(data, expected.type);
 
       
       let cookie = subject.QueryInterface(Ci.nsICookie2);
-      do_check_eq(cookie.isSession, expected.isSession);
-      do_check_eq(cookie.isSecure, expected.isSecure);
-      do_check_eq(cookie.isHttpOnly, expected.isHttpOnly);
+      Assert.equal(cookie.isSession, expected.isSession);
+      Assert.equal(cookie.isSecure, expected.isSecure);
+      Assert.equal(cookie.isHttpOnly, expected.isHttpOnly);
     }
 
     Services.obs.addObserver(observer, "cookie-changed");

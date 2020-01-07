@@ -8,13 +8,13 @@
 Cu.import("resource://gre/modules/AppConstants.jsm");
 
 function testSanitize(leafName, expectedLeafName) {
-  do_check_eq(DownloadPaths.sanitize(leafName), expectedLeafName);
+  Assert.equal(DownloadPaths.sanitize(leafName), expectedLeafName);
 }
 
 function testSplitBaseNameAndExtension(aLeafName, [aBase, aExt]) {
   var [base, ext] = DownloadPaths.splitBaseNameAndExtension(aLeafName);
-  do_check_eq(base, aBase);
-  do_check_eq(ext, aExt);
+  Assert.equal(base, aBase);
+  Assert.equal(ext, aExt);
 
   
   
@@ -23,13 +23,13 @@ function testSplitBaseNameAndExtension(aLeafName, [aBase, aExt]) {
   
   
   [base, ext] = DownloadPaths.splitBaseNameAndExtension("(" + base + ")" + ext);
-  do_check_eq(base, "(" + aBase + ")");
-  do_check_eq(ext, aExt);
+  Assert.equal(base, "(" + aBase + ")");
+  Assert.equal(ext, aExt);
 }
 
 function testCreateNiceUniqueFile(aTempFile, aExpectedLeafName) {
   var createdFile = DownloadPaths.createNiceUniqueFile(aTempFile);
-  do_check_eq(createdFile.leafName, aExpectedLeafName);
+  Assert.equal(createdFile.leafName, aExpectedLeafName);
 }
 
 add_task(async function test_sanitize() {
@@ -137,8 +137,8 @@ add_task(async function test_createNiceUniqueFile() {
   
   tempFile.leafName = new Array(256).join("T") + ".txt";
   var newFile = DownloadPaths.createNiceUniqueFile(tempFile);
-  do_check_true(newFile.leafName.length < tempFile.leafName.length);
-  do_check_eq(newFile.leafName.slice(-4), ".txt");
+  Assert.ok(newFile.leafName.length < tempFile.leafName.length);
+  Assert.equal(newFile.leafName.slice(-4), ".txt");
 
   
   tempFile.append("file-under-long-directory.txt");

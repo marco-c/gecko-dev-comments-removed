@@ -25,12 +25,12 @@ function test_pause_frame() {
   gThreadClient.addOneTimeListener("paused", function (event, packet) {
     
     gThreadClient.addOneTimeListener("framesadded", function () {
-      do_check_false(gThreadClient.moreFrames);
+      Assert.ok(!gThreadClient.moreFrames);
       gThreadClient.resume(function () {
         finishClient(gClient);
       });
     });
-    do_check_true(gThreadClient.fillFrames(3));
+    Assert.ok(gThreadClient.fillFrames(3));
   });
 
   

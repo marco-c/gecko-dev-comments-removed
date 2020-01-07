@@ -38,7 +38,7 @@ add_task(async function test_watch_single_path_directory_creation() {
 
   
   let changed = await deferred.promise;
-  do_check_eq(changed, tmpDirPath);
+  Assert.equal(changed, tmpDirPath);
 
   
   

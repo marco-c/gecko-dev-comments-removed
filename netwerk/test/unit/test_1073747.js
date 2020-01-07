@@ -16,11 +16,11 @@ var test = function(s, funcName){
 	up[funcName].apply(up, args);
 	return args;
 	} catch (x) {
-	    do_check_true(true); 
+	    Assert.ok(true); 
 	    return x;
 	}
     
-    do_check_true(false);
+    Assert.ok(false);
 };
 var s = null;
 var funcs = ["parseAuthority", "parseFileName", "parseFilePath", "parsePath", "parseServerInfo", "parseURL", "parseUserInfo"];

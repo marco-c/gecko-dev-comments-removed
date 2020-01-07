@@ -75,8 +75,8 @@ function init() {
 function test_client_events() {
   
   gTestClient.on("foo", function (type, data) {
-    do_check_eq(type, "foo");
-    do_check_eq(data.hello, "world");
+    Assert.equal(type, "foo");
+    Assert.equal(data.hello, "world");
     run_next_test();
   });
   gTestClient.start();
@@ -85,7 +85,7 @@ function test_client_events() {
 function close_client() {
   gClient.close().then(() => {
     
-    do_check_true(gTestClient.detached);
+    Assert.ok(gTestClient.detached);
     run_next_test();
   });
 }

@@ -2,5 +2,5 @@
 
 
 function run_test() {
-  do_check_null(null);
+  Assert.equal(null, null);
 }

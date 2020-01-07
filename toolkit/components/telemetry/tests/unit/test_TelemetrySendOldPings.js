@@ -106,7 +106,7 @@ function getSavePathForPingId(aPingId) {
 
 
 function assertReceivedPings(aExpectedNum) {
-  do_check_eq(gSeenPings, aExpectedNum);
+  Assert.equal(gSeenPings, aExpectedNum);
 }
 
 

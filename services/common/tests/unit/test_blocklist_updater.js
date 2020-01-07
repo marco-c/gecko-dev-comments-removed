@@ -64,8 +64,8 @@ add_task(async function test_check_maybeSync() {
   updater.addTestBlocklistClient("test-collection", {
     bucketName: "blocklists",
     maybeSync(lastModified, serverTime) {
-      do_check_eq(lastModified, 1000);
-      do_check_eq(serverTime, 2000);
+      Assert.equal(lastModified, 1000);
+      Assert.equal(serverTime, 2000);
     }
   });
 
@@ -85,20 +85,20 @@ add_task(async function test_check_maybeSync() {
 
   await updater.checkVersions();
 
-  do_check_true(notificationObserved, "a notification should have been observed");
+  Assert.ok(notificationObserved, "a notification should have been observed");
 
   
-  do_check_eq(Services.prefs.getIntPref(PREF_LAST_UPDATE), 2);
+  Assert.equal(Services.prefs.getIntPref(PREF_LAST_UPDATE), 2);
 
   
   let endTime = Date.now();
   let clockDifference = Services.prefs.getIntPref(PREF_CLOCK_SKEW_SECONDS);
   
-  do_check_true(clockDifference <= endTime / 1000
+  Assert.ok(clockDifference <= endTime / 1000
               && clockDifference >= Math.floor(startTime / 1000) - 2);
   
   let lastEtag = Services.prefs.getCharPref(PREF_LAST_ETAG);
-  do_check_eq(lastEtag, "\"1100\"");
+  Assert.equal(lastEtag, "\"1100\"");
 
   
   Services.prefs.setIntPref(PREF_LAST_UPDATE, 0);
@@ -108,7 +108,7 @@ add_task(async function test_check_maybeSync() {
   });
   await updater.checkVersions();
   
-  do_check_eq(Services.prefs.getIntPref(PREF_LAST_UPDATE), 2);
+  Assert.equal(Services.prefs.getIntPref(PREF_LAST_UPDATE), 2);
 
 
   
@@ -133,10 +133,10 @@ add_task(async function test_check_maybeSync() {
   } catch (e) {
     error = e;
   }
-  do_check_false(notificationObserved, "a notification should not have been observed");
-  do_check_true(/Polling for changes failed/.test(error.message));
+  Assert.ok(!notificationObserved, "a notification should not have been observed");
+  Assert.ok(/Polling for changes failed/.test(error.message));
   
-  do_check_eq(Services.prefs.getIntPref(PREF_LAST_UPDATE), 2);
+  Assert.equal(Services.prefs.getIntPref(PREF_LAST_UPDATE), 2);
 
   
 
@@ -147,7 +147,7 @@ add_task(async function test_check_maybeSync() {
 
   clockDifference = Services.prefs.getIntPref(PREF_CLOCK_SKEW_SECONDS);
   
-  do_check_true(clockDifference <= 0 && clockDifference >= -10);
+  Assert.ok(clockDifference <= 0 && clockDifference >= -10);
 
   
   
@@ -165,16 +165,16 @@ add_task(async function test_check_maybeSync() {
   try {
     await updater.checkVersions();
     
-    do_check_true(false);
+    Assert.ok(false);
   } catch (e) {
-    do_check_true(/Server is asking clients to back off; retry in \d+s./.test(e.message));
+    Assert.ok(/Server is asking clients to back off; retry in \d+s./.test(e.message));
   }
   
   server.registerPathHandler(changesPath, handleResponse.bind(null, 2000));
   Services.prefs.setCharPref(PREF_SETTINGS_SERVER_BACKOFF, `${Date.now() - 1000}`);
   await updater.checkVersions();
   
-  do_check_false(Services.prefs.prefHasUserValue(PREF_SETTINGS_SERVER_BACKOFF));
+  Assert.ok(!Services.prefs.prefHasUserValue(PREF_SETTINGS_SERVER_BACKOFF));
 
 
   

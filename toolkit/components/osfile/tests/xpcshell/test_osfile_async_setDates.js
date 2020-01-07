@@ -26,8 +26,8 @@ add_task(async function test_nonproto() {
     {
       await OS.File.setDates(path, accDate, modDate);
       let stat = await OS.File.stat(path);
-      do_check_eq(accDate, stat.lastAccessDate.getTime());
-      do_check_eq(modDate, stat.lastModificationDate.getTime());
+      Assert.equal(accDate, stat.lastAccessDate.getTime());
+      Assert.equal(modDate, stat.lastModificationDate.getTime());
     }
 
     
@@ -35,8 +35,8 @@ add_task(async function test_nonproto() {
     {
       await OS.File.setDates(path, accDate);
       let stat = await OS.File.stat(path);
-      do_check_eq(accDate, stat.lastAccessDate.getTime());
-      do_check_neq(modDate, stat.lastModificationDate.getTime());
+      Assert.equal(accDate, stat.lastAccessDate.getTime());
+      Assert.notEqual(modDate, stat.lastModificationDate.getTime());
     }
 
     
@@ -44,16 +44,16 @@ add_task(async function test_nonproto() {
     {
       await OS.File.setDates(path);
       let stat = await OS.File.stat(path);
-      do_check_neq(accDate, stat.lastAccessDate.getTime());
-      do_check_neq(modDate, stat.lastModificationDate.getTime());
+      Assert.notEqual(accDate, stat.lastAccessDate.getTime());
+      Assert.notEqual(modDate, stat.lastModificationDate.getTime());
     }
 
     
     {
       await OS.File.setDates(path, new Date(accDate), new Date(modDate));
       let stat = await OS.File.stat(path);
-      do_check_eq(accDate, stat.lastAccessDate.getTime());
-      do_check_eq(modDate, stat.lastModificationDate.getTime());
+      Assert.equal(accDate, stat.lastAccessDate.getTime());
+      Assert.equal(modDate, stat.lastModificationDate.getTime());
     }
 
     
@@ -64,24 +64,24 @@ add_task(async function test_nonproto() {
           do_throw("Invalid access date should have thrown for: " + p);
         } catch (ex) {
           let stat = await OS.File.stat(path);
-          do_check_eq(accDate, stat.lastAccessDate.getTime());
-          do_check_eq(modDate, stat.lastModificationDate.getTime());
+          Assert.equal(accDate, stat.lastAccessDate.getTime());
+          Assert.equal(modDate, stat.lastModificationDate.getTime());
         }
         try {
           await OS.File.setDates(path, accDate, p);
           do_throw("Invalid modification date should have thrown for: " + p);
         } catch (ex) {
           let stat = await OS.File.stat(path);
-          do_check_eq(accDate, stat.lastAccessDate.getTime());
-          do_check_eq(modDate, stat.lastModificationDate.getTime());
+          Assert.equal(accDate, stat.lastAccessDate.getTime());
+          Assert.equal(modDate, stat.lastModificationDate.getTime());
         }
         try {
           await OS.File.setDates(path, p, p);
           do_throw("Invalid dates should have thrown for: " + p);
         } catch (ex) {
           let stat = await OS.File.stat(path);
-          do_check_eq(accDate, stat.lastAccessDate.getTime());
-          do_check_eq(modDate, stat.lastModificationDate.getTime());
+          Assert.equal(accDate, stat.lastAccessDate.getTime());
+          Assert.equal(modDate, stat.lastModificationDate.getTime());
         }
       }
     }
@@ -95,7 +95,7 @@ add_task(async function test_nonproto() {
 add_task(async function test_proto() {
   if (OS.Constants.Sys.Name == "Android") {
     do_print("File.prototype.setDates is not implemented for Android");
-    do_check_eq(OS.File.prototype.setDates, undefined);
+    Assert.equal(OS.File.prototype.setDates, undefined);
     return;
   }
 
@@ -116,8 +116,8 @@ add_task(async function test_proto() {
       {
         await fd.setDates(accDate, modDate);
         let stat = await fd.stat();
-        do_check_eq(accDate, stat.lastAccessDate.getTime());
-        do_check_eq(modDate, stat.lastModificationDate.getTime());
+        Assert.equal(accDate, stat.lastAccessDate.getTime());
+        Assert.equal(modDate, stat.lastModificationDate.getTime());
       }
 
       
@@ -125,8 +125,8 @@ add_task(async function test_proto() {
       {
         await fd.setDates(accDate);
         let stat = await fd.stat();
-        do_check_eq(accDate, stat.lastAccessDate.getTime());
-        do_check_neq(modDate, stat.lastModificationDate.getTime());
+        Assert.equal(accDate, stat.lastAccessDate.getTime());
+        Assert.notEqual(modDate, stat.lastModificationDate.getTime());
       }
 
       
@@ -134,16 +134,16 @@ add_task(async function test_proto() {
       {
         await fd.setDates();
         let stat = await fd.stat();
-        do_check_neq(accDate, stat.lastAccessDate.getTime());
-        do_check_neq(modDate, stat.lastModificationDate.getTime());
+        Assert.notEqual(accDate, stat.lastAccessDate.getTime());
+        Assert.notEqual(modDate, stat.lastModificationDate.getTime());
       }
 
       
       {
         await fd.setDates(new Date(accDate), new Date(modDate));
         let stat = await fd.stat();
-        do_check_eq(accDate, stat.lastAccessDate.getTime());
-        do_check_eq(modDate, stat.lastModificationDate.getTime());
+        Assert.equal(accDate, stat.lastAccessDate.getTime());
+        Assert.equal(modDate, stat.lastModificationDate.getTime());
       }
 
       
@@ -154,24 +154,24 @@ add_task(async function test_proto() {
             do_throw("Invalid access date should have thrown for: " + p);
           } catch (ex) {
             let stat = await fd.stat();
-            do_check_eq(accDate, stat.lastAccessDate.getTime());
-            do_check_eq(modDate, stat.lastModificationDate.getTime());
+            Assert.equal(accDate, stat.lastAccessDate.getTime());
+            Assert.equal(modDate, stat.lastModificationDate.getTime());
           }
           try {
             await fd.setDates(accDate, p);
             do_throw("Invalid modification date should have thrown for: " + p);
           } catch (ex) {
             let stat = await fd.stat();
-            do_check_eq(accDate, stat.lastAccessDate.getTime());
-            do_check_eq(modDate, stat.lastModificationDate.getTime());
+            Assert.equal(accDate, stat.lastAccessDate.getTime());
+            Assert.equal(modDate, stat.lastModificationDate.getTime());
           }
           try {
             await fd.setDates(p, p);
             do_throw("Invalid dates should have thrown for: " + p);
           } catch (ex) {
             let stat = await fd.stat();
-            do_check_eq(accDate, stat.lastAccessDate.getTime());
-            do_check_eq(modDate, stat.lastModificationDate.getTime());
+            Assert.equal(accDate, stat.lastAccessDate.getTime());
+            Assert.equal(modDate, stat.lastModificationDate.getTime());
           }
         }
       }
@@ -199,8 +199,8 @@ add_task(async function test_dirs() {
     {
       await OS.File.setDates(path, accDate, modDate);
       let stat = await OS.File.stat(path);
-      do_check_eq(accDate, stat.lastAccessDate.getTime());
-      do_check_eq(modDate, stat.lastModificationDate.getTime());
+      Assert.equal(accDate, stat.lastAccessDate.getTime());
+      Assert.equal(modDate, stat.lastModificationDate.getTime());
     }
   } finally {
     await OS.File.removeEmptyDir(path);

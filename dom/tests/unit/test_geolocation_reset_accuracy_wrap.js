@@ -63,9 +63,9 @@ function run_test()
 function check_results()
 {
   
-  do_check_true(provider._seenHigh);
+  Assert.ok(provider._seenHigh);
   
-  do_check_false(provider._isHigh);
+  Assert.ok(!provider._isHigh);
 
   do_test_finished();
 }

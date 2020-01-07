@@ -27,7 +27,7 @@ profileDir.append("extensions");
 var WindowWatcher = {
   openWindow(parent, url, name, features, args) {
     
-    do_check_eq(url, URI_EXTENSION_BLOCKLIST_DIALOG);
+    Assert.equal(url, URI_EXTENSION_BLOCKLIST_DIALOG);
 
     
     var list = args.wrappedJSObject.list;
@@ -109,13 +109,13 @@ function run_test() {
   
   AddonManager.getAddonsByIDs(["block1@tests.mozilla.org",
                                "block2@tests.mozilla.org"], function([a1, a2]) {
-    do_check_eq(a1.blocklistState, Ci.nsIBlocklistService.STATE_NOT_BLOCKED);
-    do_check_eq(a2.blocklistState, Ci.nsIBlocklistService.STATE_NOT_BLOCKED);
+    Assert.equal(a1.blocklistState, Ci.nsIBlocklistService.STATE_NOT_BLOCKED);
+    Assert.equal(a2.blocklistState, Ci.nsIBlocklistService.STATE_NOT_BLOCKED);
 
-    do_check_eq(Services.prefs.getIntPref("test.blocklist.pref1"), 15);
-    do_check_eq(Services.prefs.getIntPref("test.blocklist.pref2"), 15);
-    do_check_eq(Services.prefs.getBoolPref("test.blocklist.pref3"), true);
-    do_check_eq(Services.prefs.getBoolPref("test.blocklist.pref4"), true);
+    Assert.equal(Services.prefs.getIntPref("test.blocklist.pref1"), 15);
+    Assert.equal(Services.prefs.getIntPref("test.blocklist.pref2"), 15);
+    Assert.equal(Services.prefs.getBoolPref("test.blocklist.pref3"), true);
+    Assert.equal(Services.prefs.getBoolPref("test.blocklist.pref4"), true);
     run_test_1();
   });
 }
@@ -127,16 +127,16 @@ function run_test_1() {
     
     AddonManager.getAddonsByIDs(["block1@tests.mozilla.org",
                                  "block2@tests.mozilla.org"], function([a1, a2]) {
-      do_check_neq(a1, null);
-      do_check_eq(a1.blocklistState, Ci.nsIBlocklistService.STATE_SOFTBLOCKED);
-      do_check_neq(a2, null);
-      do_check_eq(a2.blocklistState, Ci.nsIBlocklistService.STATE_BLOCKED);
+      Assert.notEqual(a1, null);
+      Assert.equal(a1.blocklistState, Ci.nsIBlocklistService.STATE_SOFTBLOCKED);
+      Assert.notEqual(a2, null);
+      Assert.equal(a2.blocklistState, Ci.nsIBlocklistService.STATE_BLOCKED);
 
       
-      do_check_eq(Services.prefs.prefHasUserValue("test.blocklist.pref1"), false);
-      do_check_eq(Services.prefs.prefHasUserValue("test.blocklist.pref2"), false);
-      do_check_eq(Services.prefs.prefHasUserValue("test.blocklist.pref3"), false);
-      do_check_eq(Services.prefs.prefHasUserValue("test.blocklist.pref4"), false);
+      Assert.equal(Services.prefs.prefHasUserValue("test.blocklist.pref1"), false);
+      Assert.equal(Services.prefs.prefHasUserValue("test.blocklist.pref2"), false);
+      Assert.equal(Services.prefs.prefHasUserValue("test.blocklist.pref3"), false);
+      Assert.equal(Services.prefs.prefHasUserValue("test.blocklist.pref4"), false);
       end_test();
     });
   });

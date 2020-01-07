@@ -61,13 +61,13 @@ var PluginHost = {
 var WindowWatcher = {
   openWindow(parent, url, name, features, args) {
     
-    do_check_eq(url, URI_EXTENSION_BLOCKLIST_DIALOG);
+    Assert.equal(url, URI_EXTENSION_BLOCKLIST_DIALOG);
     
-    do_check_eq(args.wrappedJSObject.list.length, 1);
+    Assert.equal(args.wrappedJSObject.list.length, 1);
     
     var item = args.wrappedJSObject.list[0];
-    do_check_true(item.item instanceof Ci.nsIPluginTag);
-    do_check_neq(item.name, "test_bug514327_outdated");
+    Assert.ok(item.item instanceof Ci.nsIPluginTag);
+    Assert.notEqual(item.name, "test_bug514327_outdated");
 
     
     do_timeout(0, gNextTestPart);
@@ -109,7 +109,7 @@ function run_test() {
   gBlocklist = Cc["@mozilla.org/extensions/blocklist;1"].getService(nsIBLS);
 
   
-  do_check_true(gBlocklist.getPluginBlocklistState(PLUGINS[0], "1", "1.9") == nsIBLS.STATE_NOT_BLOCKED);
+  Assert.ok(gBlocklist.getPluginBlocklistState(PLUGINS[0], "1", "1.9") == nsIBLS.STATE_NOT_BLOCKED);
 
   do_test_pending();
 
@@ -119,7 +119,7 @@ function run_test() {
 
 function test_part_1() {
   
-  do_check_true(gBlocklist.getPluginBlocklistState(PLUGINS[0], "1", "1.9") == nsIBLS.STATE_OUTDATED);
+  Assert.ok(gBlocklist.getPluginBlocklistState(PLUGINS[0], "1", "1.9") == nsIBLS.STATE_OUTDATED);
 
   
   do_update_blocklist("test_bug514327_3_outdated_2.xml", test_part_2);
@@ -127,7 +127,7 @@ function test_part_1() {
 
 function test_part_2() {
   
-  do_check_true(gBlocklist.getPluginBlocklistState(PLUGINS[0], "1", "1.9") == nsIBLS.STATE_OUTDATED);
+  Assert.ok(gBlocklist.getPluginBlocklistState(PLUGINS[0], "1", "1.9") == nsIBLS.STATE_OUTDATED);
 
   finish();
 }

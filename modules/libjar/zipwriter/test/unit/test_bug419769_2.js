@@ -11,21 +11,21 @@ const time = Date.now();
 function testpass(source)
 {
   
-  do_check_true(source.hasEntry(FILENAME));
+  Assert.ok(source.hasEntry(FILENAME));
 
   var entry = source.getEntry(FILENAME);
-  do_check_neq(entry, null);
+  Assert.notEqual(entry, null);
 
-  do_check_false(entry.isDirectory);
-
-  
-  do_check_eq(entry.compression, ZIP_METHOD_DEFLATE);
+  Assert.ok(!entry.isDirectory);
 
   
-  do_check_eq(entry.realSize, DATA.length);
+  Assert.equal(entry.compression, ZIP_METHOD_DEFLATE);
 
   
-  do_check_eq(entry.CRC32, CRC);
+  Assert.equal(entry.realSize, DATA.length);
+
+  
+  Assert.equal(entry.CRC32, CRC);
 }
 
 function run_test()
@@ -33,9 +33,9 @@ function run_test()
   zipW.open(tmpFile, PR_RDWR | PR_CREATE_FILE | PR_TRUNCATE);
 
   
-  do_check_false(zipW.hasEntry(FILENAME));
+  Assert.ok(!zipW.hasEntry(FILENAME));
 
-  do_check_false(zipW.inQueue);
+  Assert.ok(!zipW.inQueue);
 
   var file = do_get_file(DATA_DIR + "emptyfile.txt");
   zipW.addEntryFile(FILENAME, Ci.nsIZipWriter.COMPRESSION_BEST, file, false);
@@ -60,5 +60,5 @@ function run_test()
   stream.close();
   zipR.close();
 
-  do_check_eq(result, DATA);
+  Assert.equal(result, DATA);
 }

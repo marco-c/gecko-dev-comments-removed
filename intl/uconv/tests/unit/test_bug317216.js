@@ -96,7 +96,7 @@ function testCase(testText, expectedText, bufferLength, charset)
   } while (more);
 
   
-  do_check_eq(escape(outStr), escape(expectedText));
+  Assert.equal(escape(outStr), escape(expectedText));
 }
 
 

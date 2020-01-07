@@ -29,22 +29,22 @@ add_task(async function test_query_node_tags_property() {
 
   
   var node = toolbarNode.getChild(toolbarNode.childCount - 1);
-  do_check_eq(node.bookmarkGuid, bookmark.guid);
+  Assert.equal(node.bookmarkGuid, bookmark.guid);
 
   
-  do_check_eq(node.tags, null);
+  Assert.equal(node.tags, null);
 
   
   tagssvc.tagURI(bookmarkURI, ["foo"]);
-  do_check_eq(node.tags, "foo");
+  Assert.equal(node.tags, "foo");
 
   
   tagssvc.tagURI(bookmarkURI, ["bar"]);
-  do_check_eq(node.tags, "bar, foo");
+  Assert.equal(node.tags, "bar, foo");
 
   
   tagssvc.untagURI(bookmarkURI, null);
-  do_check_eq(node.tags, null);
+  Assert.equal(node.tags, null);
 
   toolbarNode.containerOpen = false;
 });

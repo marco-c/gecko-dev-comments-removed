@@ -42,24 +42,24 @@ function test_child_breakpoint() {
 
     source.setBreakpoint(location, function (response, bpClient) {
       
-      do_check_eq(response.actualLocation, undefined);
+      Assert.equal(response.actualLocation, undefined);
 
       gThreadClient.addOneTimeListener("paused", function (event, packet) {
         
-        do_check_eq(packet.type, "paused");
-        do_check_eq(packet.why.type, "breakpoint");
-        do_check_eq(packet.why.actors[0], bpClient.actor);
+        Assert.equal(packet.type, "paused");
+        Assert.equal(packet.why.type, "breakpoint");
+        Assert.equal(packet.why.actors[0], bpClient.actor);
         
-        do_check_eq(gDebuggee.a, undefined);
+        Assert.equal(gDebuggee.a, undefined);
 
         gThreadClient.addOneTimeListener("paused", function (event, packet) {
           
-          do_check_eq(packet.type, "paused");
-          do_check_eq(packet.why.type, "breakpoint");
-          do_check_eq(packet.why.actors[0], bpClient.actor);
+          Assert.equal(packet.type, "paused");
+          Assert.equal(packet.why.type, "breakpoint");
+          Assert.equal(packet.why.actors[0], bpClient.actor);
           
-          do_check_eq(gDebuggee.a.b, 1);
-          do_check_eq(gDebuggee.res, undefined);
+          Assert.equal(gDebuggee.a.b, 1);
+          Assert.equal(gDebuggee.res, undefined);
 
           
           bpClient.remove(function (response) {

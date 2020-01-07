@@ -45,11 +45,11 @@ function run_test() {
 
   
   var type = mimeService.getTypeFromExtension(kTestExtension);
-  do_check_eq(type, kTestMimeType);
+  Assert.equal(type, kTestMimeType);
 
   
   type = mimeService.getTypeFromExtension(kTestExtensionMixedCase);
-  do_check_eq(type, kTestMimeType);
+  Assert.equal(type, kTestMimeType);
 
   
   categoryManager.deleteCategoryEntry("ext-to-type-mapping", kTestExtension, false);

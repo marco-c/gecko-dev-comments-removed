@@ -9,8 +9,8 @@ function run_test()
   zipW.close();
 
   
-  do_check_true(tmpFile.exists());
+  Assert.ok(tmpFile.exists());
 
   
-  do_check_eq(tmpFile.fileSize, ZIP_EOCDR_HEADER_SIZE);
+  Assert.equal(tmpFile.fileSize, ZIP_EOCDR_HEADER_SIZE);
 }

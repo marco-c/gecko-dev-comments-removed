@@ -30,7 +30,7 @@ add_task(async function test_search() {
   });
   Services.search.init();
   await observerPromise;
-  do_check_true(Services.search.isInitialized);
+  Assert.ok(Services.search.isInitialized);
 
   
   let state = await NewTabSearchProvider.search.asyncGetState();

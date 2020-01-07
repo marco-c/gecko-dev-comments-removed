@@ -9,12 +9,12 @@ const TEST_SUBDOMAIN_URI = NetUtil.newURI("http://foobar.mozilla.com/");
 
 add_task(async function test_addPage() {
   await PlacesTestUtils.addVisits(TEST_URI);
-  do_check_eq(1, PlacesUtils.history.hasHistoryEntries);
+  Assert.equal(1, PlacesUtils.history.hasHistoryEntries);
 });
 
 add_task(async function test_removePage() {
   await PlacesUtils.history.remove(TEST_URI);
-  do_check_eq(0, PlacesUtils.history.hasHistoryEntries);
+  Assert.equal(0, PlacesUtils.history.hasHistoryEntries);
 });
 
 add_task(async function test_removePages() {
@@ -42,13 +42,13 @@ add_task(async function test_removePages() {
                                             Ci.nsIAnnotationService.EXPIRE_NEVER);
 
   await PlacesUtils.history.remove(pages);
-  do_check_eq(0, PlacesUtils.history.hasHistoryEntries);
+  Assert.equal(0, PlacesUtils.history.hasHistoryEntries);
 
   
   let folder = await PlacesUtils.getFolderContents(PlacesUtils.unfiledBookmarksFolderId);
-  do_check_eq(folder.root.childCount, 1);
-  do_check_eq(PlacesUtils.annotations.getPageAnnotation(pages[BOOKMARK_INDEX], ANNO_NAME),
-              ANNO_VALUE);
+  Assert.equal(folder.root.childCount, 1);
+  Assert.equal(PlacesUtils.annotations.getPageAnnotation(pages[BOOKMARK_INDEX], ANNO_NAME),
+               ANNO_VALUE);
 
   
   try {
@@ -78,36 +78,36 @@ add_task(async function test_removePagesByTimeframe() {
 
   
   for (let i = 0; i < 10; i++) {
-    do_check_eq(page_in_database(NetUtil.newURI(TEST_URI.spec + i)) == 0,
-                i > 0 && i < 9);
+    Assert.equal(page_in_database(NetUtil.newURI(TEST_URI.spec + i)) == 0,
+                 i > 0 && i < 9);
   }
 
   
   PlacesUtils.history.removePagesByTimeframe(startDate, startDate + 9000);
-  do_check_eq(0, PlacesUtils.history.hasHistoryEntries);
+  Assert.equal(0, PlacesUtils.history.hasHistoryEntries);
 });
 
 add_task(async function test_removePagesFromHost() {
   await PlacesTestUtils.addVisits(TEST_URI);
   PlacesUtils.history.removePagesFromHost("mozilla.com", true);
-  do_check_eq(0, PlacesUtils.history.hasHistoryEntries);
+  Assert.equal(0, PlacesUtils.history.hasHistoryEntries);
 });
 
 add_task(async function test_removePagesFromHost_keepSubdomains() {
   await PlacesTestUtils.addVisits([{ uri: TEST_URI }, { uri: TEST_SUBDOMAIN_URI }]);
   PlacesUtils.history.removePagesFromHost("mozilla.com", false);
-  do_check_eq(1, PlacesUtils.history.hasHistoryEntries);
+  Assert.equal(1, PlacesUtils.history.hasHistoryEntries);
 });
 
 add_task(async function test_history_clear() {
   await PlacesTestUtils.clearHistory();
-  do_check_eq(0, PlacesUtils.history.hasHistoryEntries);
+  Assert.equal(0, PlacesUtils.history.hasHistoryEntries);
 });
 
 add_task(async function test_getObservers() {
   
   await PlacesTestUtils.addVisits(TEST_URI);
-  do_check_eq(1, PlacesUtils.history.hasHistoryEntries);
+  Assert.equal(1, PlacesUtils.history.hasHistoryEntries);
   
   return new Promise((resolve, reject) => {
     DBConn().executeSimpleSQLAsync("DELETE FROM moz_historyvisits", {
@@ -119,7 +119,7 @@ add_task(async function test_getObservers() {
       handleCompletion(result) {
         
         PlacesUtils.history.getObservers();
-        do_check_eq(0, PlacesUtils.history.hasHistoryEntries);
+        Assert.equal(0, PlacesUtils.history.hasHistoryEntries);
         resolve();
       }
     });

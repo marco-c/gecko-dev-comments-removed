@@ -75,17 +75,17 @@ function getHttpHandler(path) {
 
 function isIdentical(actual, expected) {
   if (expected == null) {
-    do_check_eq(actual, expected);
+    Assert.equal(actual, expected);
   } else if (typeof expected == "object") {
     
-    do_check_eq(Object.keys(actual).sort() + "", Object.keys(expected).sort());
+    Assert.equal(Object.keys(actual).sort() + "", Object.keys(expected).sort());
 
     
     Object.keys(expected).forEach(key => {
       isIdentical(actual[key], expected[key]);
     });
   } else {
-    do_check_eq(actual, expected);
+    Assert.equal(actual, expected);
   }
 }
 
@@ -140,7 +140,7 @@ function promiseSetupDirectoryLinksProvider(options = {}) {
     await DirectoryLinksProvider.init();
     Services.locale.setRequestedLocales([options.locale || "en-US"]);
     await promiseDirectoryDownloadOnPrefChange(kSourceUrlPref, linksURL);
-    do_check_eq(DirectoryLinksProvider._linksURL, linksURL);
+    Assert.equal(DirectoryLinksProvider._linksURL, linksURL);
     DirectoryLinksProvider._lastDownloadMS = options.lastDownloadMS || 0;
   })();
 }
@@ -202,7 +202,7 @@ add_task(async function test_fetchAndCacheLinks_remote() {
   await cleanJsonFile();
   
   await promiseDirectoryDownloadOnPrefChange(kSourceUrlPref, kExampleURL + "%LOCALE%");
-  do_check_eq(gLastRequestPath, kExamplePath + "en-US");
+  Assert.equal(gLastRequestPath, kExamplePath + "en-US");
   let data = await readJsonFile();
   isIdentical(data, kHttpHandlerData[kExamplePath]);
 });
@@ -215,7 +215,7 @@ add_task(async function test_fetchAndCacheLinks_malformedURI() {
     await DirectoryLinksProvider._fetchAndCacheLinks(someJunk);
     do_throw("Malformed URIs should fail");
   } catch (e) {
-    do_check_eq(e, "Error fetching " + someJunk);
+    Assert.equal(e, "Error fetching " + someJunk);
   }
 
   
@@ -231,7 +231,7 @@ add_task(async function test_fetchAndCacheLinks_unknownHost() {
     await DirectoryLinksProvider._fetchAndCacheLinks(nonExistentServer);
     do_throw("BAD URIs should fail");
   } catch (e) {
-    do_check_true(e.startsWith("Fetching " + nonExistentServer + " results in error code: "));
+    Assert.ok(e.startsWith("Fetching " + nonExistentServer + " results in error code: "));
   }
 
   
@@ -243,7 +243,7 @@ add_task(async function test_fetchAndCacheLinks_non200Status() {
   await DirectoryLinksProvider.init();
   await cleanJsonFile();
   await promiseDirectoryDownloadOnPrefChange(kSourceUrlPref, kFailURL);
-  do_check_eq(gLastRequestPath, kFailPath);
+  Assert.equal(gLastRequestPath, kFailPath);
   let data = await readJsonFile();
   isIdentical(data, {});
 });
@@ -254,12 +254,12 @@ add_task(async function test_DirectoryLinksProvider__linkObservers() {
 
   let testObserver = new LinksChangeObserver();
   DirectoryLinksProvider.addObserver(testObserver);
-  do_check_eq(DirectoryLinksProvider._observers.size, 1);
+  Assert.equal(DirectoryLinksProvider._observers.size, 1);
   DirectoryLinksProvider._fetchAndCacheLinksIfNecessary(true);
 
   await testObserver.deferred.promise;
   DirectoryLinksProvider._removeObservers();
-  do_check_eq(DirectoryLinksProvider._observers.size, 0);
+  Assert.equal(DirectoryLinksProvider._observers.size, 0);
 
   await promiseCleanDirectoryLinksProvider();
 });
@@ -268,7 +268,7 @@ add_task(async function test_DirectoryLinksProvider__prefObserver_url() {
   await promiseSetupDirectoryLinksProvider({linksURL: kTestURL});
 
   let links = await fetchData();
-  do_check_eq(links.length, 1);
+  Assert.equal(links.length, 1);
   let expectedData =  [{url: "http://example.com", title: "LocalSource", frecency: DIRECTORY_FRECENCY, lastVisitDate: 1}];
   isIdentical(links, expectedData);
 
@@ -277,7 +277,7 @@ add_task(async function test_DirectoryLinksProvider__prefObserver_url() {
   
   let exampleUrl = "http://localhost:56789/bad";
   await promiseDirectoryDownloadOnPrefChange(kSourceUrlPref, exampleUrl);
-  do_check_eq(DirectoryLinksProvider._linksURL, exampleUrl);
+  Assert.equal(DirectoryLinksProvider._linksURL, exampleUrl);
 
   
   let newLinks = await fetchData();
@@ -301,7 +301,7 @@ add_task(async function test_DirectoryLinksProvider_getLinks_noDirectoryData() {
   await promiseSetupDirectoryLinksProvider({linksURL: dataURI});
 
   let links = await fetchData();
-  do_check_eq(links.length, 0);
+  Assert.equal(links.length, 0);
   await promiseCleanDirectoryLinksProvider();
 });
 
@@ -316,18 +316,18 @@ add_task(async function test_DirectoryLinksProvider_getLinks_badData() {
 
   
   let links = await fetchData();
-  do_check_eq(links.length, 0);
+  Assert.equal(links.length, 0);
   await promiseCleanDirectoryLinksProvider();
 });
 
 add_task(function test_DirectoryLinksProvider_needsDownload() {
   
   DirectoryLinksProvider._lastDownloadMS = 0;
-  do_check_true(DirectoryLinksProvider._needsDownload);
+  Assert.ok(DirectoryLinksProvider._needsDownload);
   DirectoryLinksProvider._lastDownloadMS = Date.now();
-  do_check_false(DirectoryLinksProvider._needsDownload);
+  Assert.ok(!DirectoryLinksProvider._needsDownload);
   DirectoryLinksProvider._lastDownloadMS = Date.now() - (60 * 60 * 24 + 1) * 1000;
-  do_check_true(DirectoryLinksProvider._needsDownload);
+  Assert.ok(DirectoryLinksProvider._needsDownload);
   DirectoryLinksProvider._lastDownloadMS = 0;
 });
 
@@ -340,7 +340,7 @@ add_task(async function test_DirectoryLinksProvider_fetchAndCacheLinksIfNecessar
 
   
   let lastDownloadMS = DirectoryLinksProvider._lastDownloadMS;
-  do_check_true((Date.now() - lastDownloadMS) < 5000);
+  Assert.ok((Date.now() - lastDownloadMS) < 5000);
 
   
   let data = await readJsonFile();
@@ -348,7 +348,7 @@ add_task(async function test_DirectoryLinksProvider_fetchAndCacheLinksIfNecessar
 
   
   await DirectoryLinksProvider._fetchAndCacheLinksIfNecessary();
-  do_check_eq(DirectoryLinksProvider._lastDownloadMS, lastDownloadMS);
+  Assert.equal(DirectoryLinksProvider._lastDownloadMS, lastDownloadMS);
 
   
   await cleanJsonFile();
@@ -362,12 +362,12 @@ add_task(async function test_DirectoryLinksProvider_fetchAndCacheLinksIfNecessar
   await DirectoryLinksProvider._fetchAndCacheLinksIfNecessary(true);
   data = await readJsonFile();
   isIdentical(data, kURLData);
-  do_check_eq(DirectoryLinksProvider._lastDownloadMS, lastDownloadMS);
+  Assert.equal(DirectoryLinksProvider._lastDownloadMS, lastDownloadMS);
 
   
   let downloadPromise = DirectoryLinksProvider._fetchAndCacheLinksIfNecessary(true);
   let anotherPromise = DirectoryLinksProvider._fetchAndCacheLinksIfNecessary(true);
-  do_check_true(downloadPromise === anotherPromise);
+  Assert.ok(downloadPromise === anotherPromise);
   await downloadPromise;
 
   await promiseCleanDirectoryLinksProvider();
@@ -381,13 +381,13 @@ add_task(async function test_DirectoryLinksProvider_fetchDirectoryOnPrefChange()
 
   await cleanJsonFile();
   
-  do_check_false(DirectoryLinksProvider._needsDownload);
+  Assert.ok(!DirectoryLinksProvider._needsDownload);
 
   
   await promiseDirectoryDownloadOnPrefChange(kSourceUrlPref, kExampleURL);
   
   await testObserver.deferred.promise;
-  do_check_eq(gLastRequestPath, kExamplePath);
+  Assert.equal(gLastRequestPath, kExamplePath);
   let data = await readJsonFile();
   isIdentical(data, kHttpHandlerData[kExamplePath]);
 
@@ -434,11 +434,11 @@ add_task(async function test_DirectoryLinksProvider_getAllowedLinks() {
   await promiseSetupDirectoryLinksProvider({linksURL: dataURI});
 
   let links = await fetchData();
-  do_check_eq(links.length, 2);
+  Assert.equal(links.length, 2);
 
   
-  do_check_eq(links[0].url, data.directory[1].url);
-  do_check_eq(links[1].url, data.directory[3].url);
+  Assert.equal(links[0].url, data.directory[1].url);
+  Assert.equal(links[1].url, data.directory[3].url);
 });
 
 add_task(async function test_DirectoryLinksProvider_getAllowedImages() {
@@ -455,11 +455,11 @@ add_task(async function test_DirectoryLinksProvider_getAllowedImages() {
   await promiseSetupDirectoryLinksProvider({linksURL: dataURI});
 
   let links = await fetchData();
-  do_check_eq(links.length, 2);
+  Assert.equal(links.length, 2);
 
   
-  do_check_eq(links[0].imageURI, data.directory[3].imageURI);
-  do_check_eq(links[1].imageURI, data.directory[5].imageURI);
+  Assert.equal(links[0].imageURI, data.directory[3].imageURI);
+  Assert.equal(links[1].imageURI, data.directory[5].imageURI);
 });
 
 add_task(async function test_DirectoryLinksProvider_getAllowedImages_base() {
@@ -477,13 +477,13 @@ add_task(async function test_DirectoryLinksProvider_getAllowedImages_base() {
   DirectoryLinksProvider.__linksURLModified = false;
 
   let links = await fetchData();
-  do_check_eq(links.length, 4);
+  Assert.equal(links.length, 4);
 
   
-  do_check_eq(links[0].url, data.directory[1].url);
-  do_check_eq(links[1].url, data.directory[2].url);
-  do_check_eq(links[2].url, data.directory[3].url);
-  do_check_eq(links[3].url, data.directory[4].url);
+  Assert.equal(links[0].url, data.directory[1].url);
+  Assert.equal(links[1].url, data.directory[2].url);
+  Assert.equal(links[2].url, data.directory[3].url);
+  Assert.equal(links[3].url, data.directory[4].url);
 });
 
 add_task(async function test_DirectoryLinksProvider_getAllowedEnhancedImages() {
@@ -500,17 +500,17 @@ add_task(async function test_DirectoryLinksProvider_getAllowedEnhancedImages() {
   await promiseSetupDirectoryLinksProvider({linksURL: dataURI});
 
   let links = await fetchData();
-  do_check_eq(links.length, 2);
+  Assert.equal(links.length, 2);
 
   
-  do_check_eq(links[0].enhancedImageURI, data.directory[3].enhancedImageURI);
-  do_check_eq(links[1].enhancedImageURI, data.directory[5].enhancedImageURI);
+  Assert.equal(links[0].enhancedImageURI, data.directory[3].enhancedImageURI);
+  Assert.equal(links[1].enhancedImageURI, data.directory[5].enhancedImageURI);
 });
 
 add_task(function test_DirectoryLinksProvider_setDefaultEnhanced() {
   function checkDefault(expected) {
     Services.prefs.clearUserPref(kNewtabEnhancedPref);
-    do_check_eq(Services.prefs.getBoolPref(kNewtabEnhancedPref), expected);
+    Assert.equal(Services.prefs.getBoolPref(kNewtabEnhancedPref), expected);
   }
 
   
@@ -530,5 +530,5 @@ add_task(function test_DirectoryLinksProvider_setDefaultEnhanced() {
 });
 
 add_task(function test_DirectoryLinksProvider_anonymous() {
-  do_check_true(DirectoryLinksProvider._newXHR().mozAnon);
+  Assert.ok(DirectoryLinksProvider._newXHR().mozAnon);
 });

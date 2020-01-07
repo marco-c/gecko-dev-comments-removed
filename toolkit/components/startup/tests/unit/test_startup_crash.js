@@ -53,130 +53,130 @@ function ms_to_s(ms) {
 
 function test_trackStartupCrashBegin() {
   let max_resumed = prefService.getIntPref(pref_max_resumed_crashes);
-  do_check_false(gAppInfo.inSafeMode);
+  Assert.ok(!gAppInfo.inSafeMode);
 
   
   let replacedLockTime = Date.now();
   resetTestEnv(replacedLockTime);
-  do_check_false(prefService.prefHasUserValue(pref_recent_crashes));
-  do_check_false(prefService.prefHasUserValue(pref_last_success));
-  do_check_eq(replacedLockTime, gAppInfo.replacedLockTime);
+  Assert.ok(!prefService.prefHasUserValue(pref_recent_crashes));
+  Assert.ok(!prefService.prefHasUserValue(pref_last_success));
+  Assert.equal(replacedLockTime, gAppInfo.replacedLockTime);
   try {
-    do_check_false(appStartup.trackStartupCrashBegin());
+    Assert.ok(!appStartup.trackStartupCrashBegin());
     do_throw("Should have thrown since last_success is not set");
   } catch (x) { }
 
-  do_check_false(prefService.prefHasUserValue(pref_last_success));
-  do_check_false(prefService.prefHasUserValue(pref_recent_crashes));
-  do_check_false(appStartup.automaticSafeModeNecessary);
+  Assert.ok(!prefService.prefHasUserValue(pref_last_success));
+  Assert.ok(!prefService.prefHasUserValue(pref_recent_crashes));
+  Assert.ok(!appStartup.automaticSafeModeNecessary);
 
   
   replacedLockTime = 0;
   resetTestEnv(replacedLockTime);
-  do_check_false(prefService.prefHasUserValue(pref_recent_crashes));
-  do_check_false(prefService.prefHasUserValue(pref_last_success));
-  do_check_eq(replacedLockTime, gAppInfo.replacedLockTime);
+  Assert.ok(!prefService.prefHasUserValue(pref_recent_crashes));
+  Assert.ok(!prefService.prefHasUserValue(pref_last_success));
+  Assert.equal(replacedLockTime, gAppInfo.replacedLockTime);
   try {
-    do_check_false(appStartup.trackStartupCrashBegin());
+    Assert.ok(!appStartup.trackStartupCrashBegin());
     do_throw("Should have thrown since last_success is not set");
   } catch (x) { }
 
-  do_check_false(prefService.prefHasUserValue(pref_last_success));
-  do_check_false(prefService.prefHasUserValue(pref_recent_crashes));
-  do_check_false(appStartup.automaticSafeModeNecessary);
+  Assert.ok(!prefService.prefHasUserValue(pref_last_success));
+  Assert.ok(!prefService.prefHasUserValue(pref_recent_crashes));
+  Assert.ok(!appStartup.automaticSafeModeNecessary);
 
   
   replacedLockTime = Date.now();
   resetTestEnv(replacedLockTime);
-  do_check_false(prefService.prefHasUserValue(pref_recent_crashes));
+  Assert.ok(!prefService.prefHasUserValue(pref_recent_crashes));
   prefService.setIntPref(pref_last_success, ms_to_s(replacedLockTime));
-  do_check_eq(ms_to_s(replacedLockTime), prefService.getIntPref(pref_last_success));
-  do_check_false(appStartup.trackStartupCrashBegin());
-  do_check_eq(ms_to_s(replacedLockTime), prefService.getIntPref(pref_last_success));
-  do_check_false(prefService.prefHasUserValue(pref_recent_crashes));
-  do_check_false(appStartup.automaticSafeModeNecessary);
+  Assert.equal(ms_to_s(replacedLockTime), prefService.getIntPref(pref_last_success));
+  Assert.ok(!appStartup.trackStartupCrashBegin());
+  Assert.equal(ms_to_s(replacedLockTime), prefService.getIntPref(pref_last_success));
+  Assert.ok(!prefService.prefHasUserValue(pref_recent_crashes));
+  Assert.ok(!appStartup.automaticSafeModeNecessary);
 
   
   resetTestEnv(replacedLockTime);
   prefService.setIntPref(pref_recent_crashes, 1);
   prefService.setIntPref(pref_last_success, ms_to_s(replacedLockTime));
-  do_check_false(appStartup.trackStartupCrashBegin());
-  do_check_eq(ms_to_s(replacedLockTime), prefService.getIntPref(pref_last_success));
-  do_check_eq(1, prefService.getIntPref(pref_recent_crashes));
-  do_check_false(appStartup.automaticSafeModeNecessary);
+  Assert.ok(!appStartup.trackStartupCrashBegin());
+  Assert.equal(ms_to_s(replacedLockTime), prefService.getIntPref(pref_last_success));
+  Assert.equal(1, prefService.getIntPref(pref_recent_crashes));
+  Assert.ok(!appStartup.automaticSafeModeNecessary);
 
   
   resetTestEnv(replacedLockTime);
   prefService.setIntPref(pref_recent_crashes, max_resumed);
   prefService.setIntPref(pref_last_success, ms_to_s(replacedLockTime));
-  do_check_false(appStartup.trackStartupCrashBegin());
-  do_check_eq(ms_to_s(replacedLockTime), prefService.getIntPref(pref_last_success));
-  do_check_eq(max_resumed, prefService.getIntPref(pref_recent_crashes));
-  do_check_false(appStartup.automaticSafeModeNecessary);
+  Assert.ok(!appStartup.trackStartupCrashBegin());
+  Assert.equal(ms_to_s(replacedLockTime), prefService.getIntPref(pref_last_success));
+  Assert.equal(max_resumed, prefService.getIntPref(pref_recent_crashes));
+  Assert.ok(!appStartup.automaticSafeModeNecessary);
 
   
   resetTestEnv(replacedLockTime);
   prefService.setIntPref(pref_recent_crashes, max_resumed + 1);
   prefService.setIntPref(pref_last_success, ms_to_s(replacedLockTime));
-  do_check_true(appStartup.trackStartupCrashBegin());
+  Assert.ok(appStartup.trackStartupCrashBegin());
   
-  do_check_eq(max_resumed + 1, prefService.getIntPref(pref_recent_crashes));
-  do_check_true(appStartup.automaticSafeModeNecessary);
+  Assert.equal(max_resumed + 1, prefService.getIntPref(pref_recent_crashes));
+  Assert.ok(appStartup.automaticSafeModeNecessary);
 
   
   resetTestEnv(replacedLockTime);
   prefService.setIntPref(pref_max_resumed_crashes, -1);
   prefService.setIntPref(pref_recent_crashes, max_resumed + 1);
   prefService.setIntPref(pref_last_success, ms_to_s(replacedLockTime));
-  do_check_false(appStartup.trackStartupCrashBegin());
+  Assert.ok(!appStartup.trackStartupCrashBegin());
   
-  do_check_eq(max_resumed + 1, prefService.getIntPref(pref_recent_crashes));
+  Assert.equal(max_resumed + 1, prefService.getIntPref(pref_recent_crashes));
   
-  do_check_false(appStartup.automaticSafeModeNecessary);
-  do_check_eq(-1, prefService.getIntPref(pref_max_resumed_crashes));
+  Assert.ok(!appStartup.automaticSafeModeNecessary);
+  Assert.equal(-1, prefService.getIntPref(pref_max_resumed_crashes));
 
   
   replacedLockTime = Date.now() - 365 * 24 * 60 * 60 * 1000;
   resetTestEnv(replacedLockTime);
   prefService.setIntPref(pref_last_success, ms_to_s(replacedLockTime) - 365 * 24 * 60 * 60);
-  do_check_false(appStartup.trackStartupCrashBegin());
+  Assert.ok(!appStartup.trackStartupCrashBegin());
   
-  do_check_false(prefService.prefHasUserValue(pref_recent_crashes));
-  do_check_false(appStartup.automaticSafeModeNecessary);
+  Assert.ok(!prefService.prefHasUserValue(pref_recent_crashes));
+  Assert.ok(!appStartup.automaticSafeModeNecessary);
 
   
   replacedLockTime = Date.now() - 60 * 1000;
   resetTestEnv(replacedLockTime);
   prefService.setIntPref(pref_last_success, ms_to_s(replacedLockTime) - 60 * 60); 
-  do_check_false(appStartup.trackStartupCrashBegin());
+  Assert.ok(!appStartup.trackStartupCrashBegin());
   
-  do_check_eq(1, prefService.getIntPref(pref_recent_crashes));
-  do_check_false(appStartup.automaticSafeModeNecessary);
+  Assert.equal(1, prefService.getIntPref(pref_recent_crashes));
+  Assert.ok(!appStartup.automaticSafeModeNecessary);
 
   
   prefService.setIntPref(pref_last_success, ms_to_s(replacedLockTime) - 60 * 60); 
   replacedLockTime = Date.now() - 60 * 1000;
   gAppInfo.replacedLockTime = replacedLockTime;
-  do_check_false(appStartup.trackStartupCrashBegin());
+  Assert.ok(!appStartup.trackStartupCrashBegin());
   
-  do_check_eq(2, prefService.getIntPref(pref_recent_crashes));
-  do_check_false(appStartup.automaticSafeModeNecessary);
+  Assert.equal(2, prefService.getIntPref(pref_recent_crashes));
+  Assert.ok(!appStartup.automaticSafeModeNecessary);
 
   
   prefService.setIntPref(pref_last_success, ms_to_s(replacedLockTime) - 60 * 60); 
-  do_check_true(appStartup.trackStartupCrashBegin());
+  Assert.ok(appStartup.trackStartupCrashBegin());
   
-  do_check_eq(3, prefService.getIntPref(pref_recent_crashes));
-  do_check_true(appStartup.automaticSafeModeNecessary);
+  Assert.equal(3, prefService.getIntPref(pref_recent_crashes));
+  Assert.ok(appStartup.automaticSafeModeNecessary);
 
   
   replacedLockTime = Date.now() - 365 * 24 * 60 * 60 * 1000;
   resetTestEnv(replacedLockTime);
   prefService.setIntPref(pref_last_success, ms_to_s(replacedLockTime) - 60 * 60); 
-  do_check_false(appStartup.trackStartupCrashBegin());
+  Assert.ok(!appStartup.trackStartupCrashBegin());
   
-  do_check_false(prefService.prefHasUserValue(pref_recent_crashes));
-  do_check_false(appStartup.automaticSafeModeNecessary);
+  Assert.ok(!prefService.prefHasUserValue(pref_recent_crashes));
+  Assert.ok(!appStartup.automaticSafeModeNecessary);
 }
 
 function test_trackStartupCrashEnd() {
@@ -188,8 +188,8 @@ function test_trackStartupCrashEnd() {
     do_throw("Should have thrown since last_success is not set");
   } catch (x) { }
   appStartup.trackStartupCrashEnd();
-  do_check_false(prefService.prefHasUserValue(pref_recent_crashes));
-  do_check_false(prefService.prefHasUserValue(pref_last_success));
+  Assert.ok(!prefService.prefHasUserValue(pref_recent_crashes));
+  Assert.ok(!prefService.prefHasUserValue(pref_last_success));
 
   
   replacedLockTime = Date.now() - 10 * 1000; 
@@ -199,9 +199,9 @@ function test_trackStartupCrashEnd() {
   appStartup.trackStartupCrashEnd();
   
   
-  do_check_true(prefService.getIntPref(pref_last_success) <= now_seconds());
-  do_check_true(prefService.getIntPref(pref_last_success) >= now_seconds() - 4 * 60 * 60);
-  do_check_false(prefService.prefHasUserValue(pref_recent_crashes));
+  Assert.ok(prefService.getIntPref(pref_last_success) <= now_seconds());
+  Assert.ok(prefService.getIntPref(pref_last_success) >= now_seconds() - 4 * 60 * 60);
+  Assert.ok(!prefService.prefHasUserValue(pref_recent_crashes));
 
   
   resetTestEnv(replacedLockTime);
@@ -210,7 +210,7 @@ function test_trackStartupCrashEnd() {
   appStartup.trackStartupCrashBegin(); 
   appStartup.trackStartupCrashEnd();
   
-  do_check_false(prefService.prefHasUserValue(pref_recent_crashes));
+  Assert.ok(!prefService.prefHasUserValue(pref_recent_crashes));
 }
 
 function test_trackStartupCrashBegin_safeMode() {
@@ -223,13 +223,13 @@ function test_trackStartupCrashBegin_safeMode() {
   resetTestEnv(replacedLockTime);
   prefService.setIntPref(pref_last_success, ms_to_s(replacedLockTime));
 
-  do_check_false(prefService.prefHasUserValue(pref_recent_crashes));
-  do_check_true(prefService.prefHasUserValue(pref_last_success));
-  do_check_false(appStartup.automaticSafeModeNecessary);
-  do_check_false(appStartup.trackStartupCrashBegin());
-  do_check_false(prefService.prefHasUserValue(pref_recent_crashes));
-  do_check_true(prefService.prefHasUserValue(pref_last_success));
-  do_check_false(appStartup.automaticSafeModeNecessary);
+  Assert.ok(!prefService.prefHasUserValue(pref_recent_crashes));
+  Assert.ok(prefService.prefHasUserValue(pref_last_success));
+  Assert.ok(!appStartup.automaticSafeModeNecessary);
+  Assert.ok(!appStartup.trackStartupCrashBegin());
+  Assert.ok(!prefService.prefHasUserValue(pref_recent_crashes));
+  Assert.ok(prefService.prefHasUserValue(pref_last_success));
+  Assert.ok(!appStartup.automaticSafeModeNecessary);
 
   
   replacedLockTime = Date.now() - 10 * 1000; 
@@ -237,13 +237,13 @@ function test_trackStartupCrashBegin_safeMode() {
   prefService.setIntPref(pref_last_success, ms_to_s(replacedLockTime));
   prefService.setIntPref(pref_recent_crashes, max_resumed + 1);
 
-  do_check_eq(max_resumed + 1, prefService.getIntPref(pref_recent_crashes));
-  do_check_true(prefService.prefHasUserValue(pref_last_success));
-  do_check_false(appStartup.automaticSafeModeNecessary);
-  do_check_true(appStartup.trackStartupCrashBegin());
-  do_check_eq(max_resumed + 1, prefService.getIntPref(pref_recent_crashes));
-  do_check_true(prefService.prefHasUserValue(pref_last_success));
-  do_check_true(appStartup.automaticSafeModeNecessary);
+  Assert.equal(max_resumed + 1, prefService.getIntPref(pref_recent_crashes));
+  Assert.ok(prefService.prefHasUserValue(pref_last_success));
+  Assert.ok(!appStartup.automaticSafeModeNecessary);
+  Assert.ok(appStartup.trackStartupCrashBegin());
+  Assert.equal(max_resumed + 1, prefService.getIntPref(pref_recent_crashes));
+  Assert.ok(prefService.prefHasUserValue(pref_last_success));
+  Assert.ok(appStartup.automaticSafeModeNecessary);
 
   
   replacedLockTime = Date.now() - 365 * 24 * 60 * 60 * 1000;
@@ -252,13 +252,13 @@ function test_trackStartupCrashBegin_safeMode() {
   let last_success = ms_to_s(replacedLockTime) - 365 * 24 * 60 * 60;
   prefService.setIntPref(pref_last_success, last_success);
   prefService.setIntPref(pref_recent_crashes, max_resumed + 1);
-  do_check_eq(max_resumed + 1, prefService.getIntPref(pref_recent_crashes));
-  do_check_true(prefService.prefHasUserValue(pref_last_success));
-  do_check_true(appStartup.automaticSafeModeNecessary);
-  do_check_true(appStartup.trackStartupCrashBegin());
-  do_check_eq(max_resumed + 1, prefService.getIntPref(pref_recent_crashes));
-  do_check_eq(last_success, prefService.getIntPref(pref_last_success));
-  do_check_true(appStartup.automaticSafeModeNecessary);
+  Assert.equal(max_resumed + 1, prefService.getIntPref(pref_recent_crashes));
+  Assert.ok(prefService.prefHasUserValue(pref_last_success));
+  Assert.ok(appStartup.automaticSafeModeNecessary);
+  Assert.ok(appStartup.trackStartupCrashBegin());
+  Assert.equal(max_resumed + 1, prefService.getIntPref(pref_recent_crashes));
+  Assert.equal(last_success, prefService.getIntPref(pref_last_success));
+  Assert.ok(appStartup.automaticSafeModeNecessary);
 }
 
 function test_trackStartupCrashEnd_safeMode() {
@@ -272,14 +272,14 @@ function test_trackStartupCrashEnd_safeMode() {
   prefService.setIntPref(pref_recent_crashes, 1);
   appStartup.trackStartupCrashBegin(); 
   appStartup.trackStartupCrashEnd();
-  do_check_eq(1, prefService.getIntPref(pref_recent_crashes));
+  Assert.equal(1, prefService.getIntPref(pref_recent_crashes));
 
   
   
   prefService.setIntPref(pref_recent_crashes, max_resumed + 1);
   appStartup.trackStartupCrashBegin(); 
   appStartup.trackStartupCrashEnd();
-  do_check_eq(max_resumed, prefService.getIntPref(pref_recent_crashes));
+  Assert.equal(max_resumed, prefService.getIntPref(pref_recent_crashes));
 }
 
 function test_maxResumed() {
@@ -294,6 +294,6 @@ function test_maxResumed() {
   prefService.setIntPref(pref_last_success, ms_to_s(replacedLockTime) - 24 * 60 * 60);
   appStartup.trackStartupCrashBegin();
   
-  do_check_eq(max_resumed + 2, prefService.getIntPref(pref_recent_crashes));
-  do_check_false(appStartup.automaticSafeModeNecessary);
+  Assert.equal(max_resumed + 2, prefService.getIntPref(pref_recent_crashes));
+  Assert.ok(!appStartup.automaticSafeModeNecessary);
 }

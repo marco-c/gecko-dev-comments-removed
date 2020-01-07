@@ -68,14 +68,14 @@ add_task(async function test_execute() {
   for (let i = 0; i < TOTAL_SITES; i++) {
     let site = "http://www.test.com/" + i + "/";
     let testURI = uri(site);
-    do_check_false(uri_in_db(testURI));
+    Assert.ok(!uri_in_db(testURI));
   }
 
   
   for (let i = 0; i < TOTAL_SITES; i++) {
     let site = "http://www.test-" + i + ".com/";
     let testURI = uri(site);
-    do_check_true(uri_in_db(testURI));
+    Assert.ok(uri_in_db(testURI));
   }
 
   
@@ -91,6 +91,6 @@ add_task(async function test_execute() {
   } catch (ex) {
     do_throw("The annotation has been removed erroneously");
   }
-  do_check_eq(annoVal, testAnnoRetainedValue);
+  Assert.equal(annoVal, testAnnoRetainedValue);
 
 });

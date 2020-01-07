@@ -61,25 +61,25 @@ function test_accepted_languages() {
 
     if (i == 0) {
       
-      do_check_eq(qualityValue, undefined);
+      Assert.equal(qualityValue, undefined);
     } else {
       let decimalPlaces;
 
       
       
       if (acceptedLanguagesLength < 10) {
-        do_check_true(qualityValue.length == 3);
+        Assert.ok(qualityValue.length == 3);
 
         decimalPlaces = 1;
       } else {
-        do_check_true(qualityValue.length >= 3);
-        do_check_true(qualityValue.length <= 4);
+        Assert.ok(qualityValue.length >= 3);
+        Assert.ok(qualityValue.length <= 4);
 
         decimalPlaces = 2;
       }
 
       
-      do_check_eq(parseFloat(qualityValue).toFixed(decimalPlaces), (1.0 - ((1 / acceptedLanguagesLength) * i)).toFixed(decimalPlaces));
+      Assert.equal(parseFloat(qualityValue).toFixed(decimalPlaces), (1.0 - ((1 / acceptedLanguagesLength) * i)).toFixed(decimalPlaces));
     }
   }
 }

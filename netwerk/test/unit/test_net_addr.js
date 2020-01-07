@@ -89,11 +89,11 @@ TestServer.prototype = {
 
 
 function checkAddrEqual(lhs, rhs) {
-  do_check_eq(lhs.family, rhs.family);
+  Assert.equal(lhs.family, rhs.family);
 
   if (lhs.family === Ci.nsINetAddr.FAMILY_INET) {
-    do_check_eq(lhs.address, rhs.address);
-    do_check_eq(lhs.port, rhs.port);
+    Assert.equal(lhs.address, rhs.address);
+    Assert.equal(lhs.port, rhs.port);
   }
   
   
@@ -142,14 +142,14 @@ function testIpv4() {
     var peerAddr = testDataStore.transport.getScriptablePeerAddr();
 
     
-    do_check_eq(peerAddr.family, Ci.nsINetAddr.FAMILY_INET);
-    do_check_eq(peerAddr.port, testDataStore.transport.port);
-    do_check_eq(peerAddr.port, serv.port);
-    do_check_eq(peerAddr.address, "127.0.0.1");
+    Assert.equal(peerAddr.family, Ci.nsINetAddr.FAMILY_INET);
+    Assert.equal(peerAddr.port, testDataStore.transport.port);
+    Assert.equal(peerAddr.port, serv.port);
+    Assert.equal(peerAddr.address, "127.0.0.1");
 
     
-    do_check_eq(selfAddr.family, Ci.nsINetAddr.FAMILY_INET);
-    do_check_eq(selfAddr.address, "127.0.0.1");
+    Assert.equal(selfAddr.family, Ci.nsINetAddr.FAMILY_INET);
+    Assert.equal(selfAddr.address, "127.0.0.1");
 
     
     checkAddrEqual(selfAddr, serv.peerAddr);

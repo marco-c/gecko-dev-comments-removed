@@ -15,7 +15,7 @@ const tempDir = do_get_tempdir();
 
 
 function compareBinaryData(arr1, arr2) {
-  do_check_eq(arr1.length, arr2.length);
+  Assert.equal(arr1.length, arr2.length);
   for (let i = 0; i < arr1.length; i++) {
     if (arr1[i] != arr2[i]) {
       throw "Data differs at index " + i + 
@@ -87,7 +87,7 @@ function run_tests(obj) {
 
 function createMAR(outMAR, dataDir, files) {
   
-  do_check_true(files.length > 0);
+  Assert.ok(files.length > 0);
 
   
   let process = Cc["@mozilla.org/process/util;1"].
@@ -95,8 +95,8 @@ function createMAR(outMAR, dataDir, files) {
   let signmarBin = do_get_file("signmar" + BIN_SUFFIX);
 
   
-  do_check_true(signmarBin.exists());
-  do_check_true(signmarBin.isExecutable());
+  Assert.ok(signmarBin.exists());
+  Assert.ok(signmarBin.isExecutable());
 
   
   
@@ -119,10 +119,10 @@ function createMAR(outMAR, dataDir, files) {
   process.run(true, args, args.length);
 
   
-  do_check_eq(process.exitValue, 0);
+  Assert.equal(process.exitValue, 0);
 
   
-  do_check_true(outMAR.exists());
+  Assert.ok(outMAR.exists());
 }
 
 
@@ -138,8 +138,8 @@ function extractMAR(mar, dataDir) {
   let signmarBin = do_get_file("signmar" + BIN_SUFFIX);
 
   
-  do_check_true(signmarBin.exists());
-  do_check_true(signmarBin.isExecutable());
+  Assert.ok(signmarBin.exists());
+  Assert.ok(signmarBin.isExecutable());
 
   
   let args = ["-C", dataDir.path, "-x", mar.path];
@@ -149,5 +149,5 @@ function extractMAR(mar, dataDir) {
   process.run(true, args, args.length);
 
   
-  do_check_eq(process.exitValue, 0);
+  Assert.equal(process.exitValue, 0);
 }

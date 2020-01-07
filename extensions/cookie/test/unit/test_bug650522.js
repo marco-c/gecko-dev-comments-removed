@@ -11,6 +11,6 @@ function run_test() {
   
   
   cm.add("e.mail.com", "/", "foo", "bar", false, false, true, expiry, {});
-  do_check_eq(cm.countCookiesFromHost("e.mail.com"), 1);
-  do_check_eq(cs.getCookieString(NetUtil.newURI("http://e.mail.com"), null), "foo=bar");
+  Assert.equal(cm.countCookiesFromHost("e.mail.com"), 1);
+  Assert.equal(cs.getCookieString(NetUtil.newURI("http://e.mail.com"), null), "foo=bar");
 }

@@ -66,22 +66,22 @@ add_task(async function do_test() {
   attrs = {userContextId: 1, firstPartyDomain: "cnn.com"};
   let principal8 = Services.scriptSecurityManager.createCodebasePrincipal(TEST_ORIGIN, attrs);
 
-  do_check_eq(Ci.nsIPermissionManager.ALLOW_ACTION,
-              pm.testPermissionFromPrincipal(principal, TEST_PERMISSION));
-  do_check_eq(Ci.nsIPermissionManager.ALLOW_ACTION,
-              pm.testPermissionFromPrincipal(principalHttps, TEST_PERMISSION));
-  do_check_eq(Ci.nsIPermissionManager.ALLOW_ACTION,
-              pm.testPermissionFromPrincipal(principal3, TEST_PERMISSION));
-  do_check_eq(Ci.nsIPermissionManager.ALLOW_ACTION,
-              pm.testPermissionFromPrincipal(principal4, TEST_PERMISSION));
+  Assert.equal(Ci.nsIPermissionManager.ALLOW_ACTION,
+               pm.testPermissionFromPrincipal(principal, TEST_PERMISSION));
+  Assert.equal(Ci.nsIPermissionManager.ALLOW_ACTION,
+               pm.testPermissionFromPrincipal(principalHttps, TEST_PERMISSION));
+  Assert.equal(Ci.nsIPermissionManager.ALLOW_ACTION,
+               pm.testPermissionFromPrincipal(principal3, TEST_PERMISSION));
+  Assert.equal(Ci.nsIPermissionManager.ALLOW_ACTION,
+               pm.testPermissionFromPrincipal(principal4, TEST_PERMISSION));
 
   
-  do_check_eq(Ci.nsIPermissionManager.UNKNOWN_ACTION,
-              pm.testPermissionFromPrincipal(principal5, TEST_PERMISSION));
+  Assert.equal(Ci.nsIPermissionManager.UNKNOWN_ACTION,
+               pm.testPermissionFromPrincipal(principal5, TEST_PERMISSION));
 
   
-  do_check_eq(Ci.nsIPermissionManager.ALLOW_ACTION, findCapabilityViaEnum(TEST_ORIGIN));
-  do_check_eq(Ci.nsIPermissionManager.ALLOW_ACTION, findCapabilityViaEnum(TEST_ORIGIN_3));
+  Assert.equal(Ci.nsIPermissionManager.ALLOW_ACTION, findCapabilityViaEnum(TEST_ORIGIN));
+  Assert.equal(Ci.nsIPermissionManager.ALLOW_ACTION, findCapabilityViaEnum(TEST_ORIGIN_3));
 
   
   await checkCapabilityViaDB(null);
@@ -89,66 +89,66 @@ add_task(async function do_test() {
   
   pm.removeAll();
 
-  do_check_eq(Ci.nsIPermissionManager.ALLOW_ACTION,
-              pm.testPermissionFromPrincipal(principal, TEST_PERMISSION));
-  do_check_eq(Ci.nsIPermissionManager.ALLOW_ACTION,
-              pm.testPermissionFromPrincipal(principal3, TEST_PERMISSION));
-  do_check_eq(Ci.nsIPermissionManager.ALLOW_ACTION,
-              pm.testPermissionFromPrincipal(principal4, TEST_PERMISSION));
+  Assert.equal(Ci.nsIPermissionManager.ALLOW_ACTION,
+               pm.testPermissionFromPrincipal(principal, TEST_PERMISSION));
+  Assert.equal(Ci.nsIPermissionManager.ALLOW_ACTION,
+               pm.testPermissionFromPrincipal(principal3, TEST_PERMISSION));
+  Assert.equal(Ci.nsIPermissionManager.ALLOW_ACTION,
+               pm.testPermissionFromPrincipal(principal4, TEST_PERMISSION));
   
-  do_check_eq(Ci.nsIPermissionManager.ALLOW_ACTION,
-              pm.testPermissionFromPrincipal(principal6, TEST_PERMISSION));
-  do_check_eq(Ci.nsIPermissionManager.ALLOW_ACTION,
-              pm.testPermissionFromPrincipal(principal7, TEST_PERMISSION));
-  do_check_eq(Ci.nsIPermissionManager.ALLOW_ACTION,
-              pm.testPermissionFromPrincipal(principal8, TEST_PERMISSION));
+  Assert.equal(Ci.nsIPermissionManager.ALLOW_ACTION,
+               pm.testPermissionFromPrincipal(principal6, TEST_PERMISSION));
+  Assert.equal(Ci.nsIPermissionManager.ALLOW_ACTION,
+               pm.testPermissionFromPrincipal(principal7, TEST_PERMISSION));
+  Assert.equal(Ci.nsIPermissionManager.ALLOW_ACTION,
+               pm.testPermissionFromPrincipal(principal8, TEST_PERMISSION));
 
   
   
   pm.removeFromPrincipal(principal, TEST_PERMISSION);
-  do_check_eq(Ci.nsIPermissionManager.UNKNOWN_ACTION,
-              pm.testPermissionFromPrincipal(principal, TEST_PERMISSION));
+  Assert.equal(Ci.nsIPermissionManager.UNKNOWN_ACTION,
+               pm.testPermissionFromPrincipal(principal, TEST_PERMISSION));
   
-  do_check_eq(Ci.nsIPermissionManager.UNKNOWN_ACTION,
-              pm.testPermissionFromPrincipal(principal6, TEST_PERMISSION));
-  do_check_eq(Ci.nsIPermissionManager.UNKNOWN_ACTION,
-              pm.testPermissionFromPrincipal(principal7, TEST_PERMISSION));
-  do_check_eq(Ci.nsIPermissionManager.UNKNOWN_ACTION,
-              pm.testPermissionFromPrincipal(principal8, TEST_PERMISSION));
+  Assert.equal(Ci.nsIPermissionManager.UNKNOWN_ACTION,
+               pm.testPermissionFromPrincipal(principal6, TEST_PERMISSION));
+  Assert.equal(Ci.nsIPermissionManager.UNKNOWN_ACTION,
+               pm.testPermissionFromPrincipal(principal7, TEST_PERMISSION));
+  Assert.equal(Ci.nsIPermissionManager.UNKNOWN_ACTION,
+               pm.testPermissionFromPrincipal(principal8, TEST_PERMISSION));
   
   await checkCapabilityViaDB(Ci.nsIPermissionManager.UNKNOWN_ACTION);
   
-  do_check_eq(null, findCapabilityViaEnum());
+  Assert.equal(null, findCapabilityViaEnum());
 
   
   pm.removeAll();
 
-  do_check_eq(Ci.nsIPermissionManager.ALLOW_ACTION,
-              pm.testPermissionFromPrincipal(principal, TEST_PERMISSION));
+  Assert.equal(Ci.nsIPermissionManager.ALLOW_ACTION,
+               pm.testPermissionFromPrincipal(principal, TEST_PERMISSION));
   
-  do_check_eq(Ci.nsIPermissionManager.ALLOW_ACTION,
-              pm.testPermissionFromPrincipal(principal6, TEST_PERMISSION));
-  do_check_eq(Ci.nsIPermissionManager.ALLOW_ACTION,
-              pm.testPermissionFromPrincipal(principal7, TEST_PERMISSION));
-  do_check_eq(Ci.nsIPermissionManager.ALLOW_ACTION,
-              pm.testPermissionFromPrincipal(principal8, TEST_PERMISSION));
+  Assert.equal(Ci.nsIPermissionManager.ALLOW_ACTION,
+               pm.testPermissionFromPrincipal(principal6, TEST_PERMISSION));
+  Assert.equal(Ci.nsIPermissionManager.ALLOW_ACTION,
+               pm.testPermissionFromPrincipal(principal7, TEST_PERMISSION));
+  Assert.equal(Ci.nsIPermissionManager.ALLOW_ACTION,
+               pm.testPermissionFromPrincipal(principal8, TEST_PERMISSION));
   
-  do_check_eq(Ci.nsIPermissionManager.ALLOW_ACTION, findCapabilityViaEnum());
+  Assert.equal(Ci.nsIPermissionManager.ALLOW_ACTION, findCapabilityViaEnum());
 
   
   pm.addFromPrincipal(principal, TEST_PERMISSION, Ci.nsIPermissionManager.DENY_ACTION);
 
   
-  do_check_eq(Ci.nsIPermissionManager.DENY_ACTION,
-              pm.testPermissionFromPrincipal(principal, TEST_PERMISSION));
+  Assert.equal(Ci.nsIPermissionManager.DENY_ACTION,
+               pm.testPermissionFromPrincipal(principal, TEST_PERMISSION));
   
-  do_check_eq(Ci.nsIPermissionManager.DENY_ACTION,
-              pm.testPermissionFromPrincipal(principal6, TEST_PERMISSION));
-  do_check_eq(Ci.nsIPermissionManager.DENY_ACTION,
-              pm.testPermissionFromPrincipal(principal7, TEST_PERMISSION));
-  do_check_eq(Ci.nsIPermissionManager.DENY_ACTION,
-              pm.testPermissionFromPrincipal(principal8, TEST_PERMISSION));
-  do_check_eq(Ci.nsIPermissionManager.DENY_ACTION, findCapabilityViaEnum());
+  Assert.equal(Ci.nsIPermissionManager.DENY_ACTION,
+               pm.testPermissionFromPrincipal(principal6, TEST_PERMISSION));
+  Assert.equal(Ci.nsIPermissionManager.DENY_ACTION,
+               pm.testPermissionFromPrincipal(principal7, TEST_PERMISSION));
+  Assert.equal(Ci.nsIPermissionManager.DENY_ACTION,
+               pm.testPermissionFromPrincipal(principal8, TEST_PERMISSION));
+  Assert.equal(Ci.nsIPermissionManager.DENY_ACTION, findCapabilityViaEnum());
   await checkCapabilityViaDB(Ci.nsIPermissionManager.DENY_ACTION);
 
   
@@ -156,16 +156,16 @@ add_task(async function do_test() {
   pm.addFromPrincipal(principal, TEST_PERMISSION, Ci.nsIPermissionManager.PROMPT_ACTION);
 
   
-  do_check_eq(Ci.nsIPermissionManager.PROMPT_ACTION,
-              pm.testPermissionFromPrincipal(principal, TEST_PERMISSION));
+  Assert.equal(Ci.nsIPermissionManager.PROMPT_ACTION,
+               pm.testPermissionFromPrincipal(principal, TEST_PERMISSION));
   
-  do_check_eq(Ci.nsIPermissionManager.PROMPT_ACTION,
-              pm.testPermissionFromPrincipal(principal6, TEST_PERMISSION));
-  do_check_eq(Ci.nsIPermissionManager.PROMPT_ACTION,
-              pm.testPermissionFromPrincipal(principal7, TEST_PERMISSION));
-  do_check_eq(Ci.nsIPermissionManager.PROMPT_ACTION,
-              pm.testPermissionFromPrincipal(principal8, TEST_PERMISSION));
-  do_check_eq(Ci.nsIPermissionManager.PROMPT_ACTION, findCapabilityViaEnum());
+  Assert.equal(Ci.nsIPermissionManager.PROMPT_ACTION,
+               pm.testPermissionFromPrincipal(principal6, TEST_PERMISSION));
+  Assert.equal(Ci.nsIPermissionManager.PROMPT_ACTION,
+               pm.testPermissionFromPrincipal(principal7, TEST_PERMISSION));
+  Assert.equal(Ci.nsIPermissionManager.PROMPT_ACTION,
+               pm.testPermissionFromPrincipal(principal8, TEST_PERMISSION));
+  Assert.equal(Ci.nsIPermissionManager.PROMPT_ACTION, findCapabilityViaEnum());
   await checkCapabilityViaDB(Ci.nsIPermissionManager.PROMPT_ACTION);
 
   
@@ -173,16 +173,16 @@ add_task(async function do_test() {
   pm.removeAll(); 
 
   
-  do_check_eq(Ci.nsIPermissionManager.ALLOW_ACTION,
-              pm.testPermissionFromPrincipal(principal, TEST_PERMISSION));
-  do_check_eq(Ci.nsIPermissionManager.ALLOW_ACTION,
-              pm.testPermissionFromPrincipal(principal2, TEST_PERMISSION));
+  Assert.equal(Ci.nsIPermissionManager.ALLOW_ACTION,
+               pm.testPermissionFromPrincipal(principal, TEST_PERMISSION));
+  Assert.equal(Ci.nsIPermissionManager.ALLOW_ACTION,
+               pm.testPermissionFromPrincipal(principal2, TEST_PERMISSION));
 
   
   
   pm.addFromPrincipal(principal2, TEST_PERMISSION, Ci.nsIPermissionManager.DENY_ACTION);
-  do_check_eq(Ci.nsIPermissionManager.DENY_ACTION,
-              pm.testPermissionFromPrincipal(principal2, TEST_PERMISSION));
+  Assert.equal(Ci.nsIPermissionManager.DENY_ACTION,
+               pm.testPermissionFromPrincipal(principal2, TEST_PERMISSION));
   await promiseTimeout(20);
 
   let since = Number(Date.now());
@@ -191,20 +191,20 @@ add_task(async function do_test() {
   
   
   pm.addFromPrincipal(principal, TEST_PERMISSION, Ci.nsIPermissionManager.DENY_ACTION);
-  do_check_eq(Ci.nsIPermissionManager.DENY_ACTION,
-              pm.testPermissionFromPrincipal(principal, TEST_PERMISSION));
+  Assert.equal(Ci.nsIPermissionManager.DENY_ACTION,
+               pm.testPermissionFromPrincipal(principal, TEST_PERMISSION));
 
   
   pm.removeAllSince(since);
 
   
   
-  do_check_eq(Ci.nsIPermissionManager.ALLOW_ACTION,
-              pm.testPermissionFromPrincipal(principal, TEST_PERMISSION));
+  Assert.equal(Ci.nsIPermissionManager.ALLOW_ACTION,
+               pm.testPermissionFromPrincipal(principal, TEST_PERMISSION));
 
   
-  do_check_eq(Ci.nsIPermissionManager.DENY_ACTION,
-              pm.testPermissionFromPrincipal(principal2, TEST_PERMISSION));
+  Assert.equal(Ci.nsIPermissionManager.DENY_ACTION,
+               pm.testPermissionFromPrincipal(principal2, TEST_PERMISSION));
 
   
   file.remove(false);
@@ -243,14 +243,14 @@ function checkCapabilityViaDB(expected, origin = TEST_ORIGIN, type = TEST_PERMIS
       let got = findCapabilityViaDB(origin, type);
       if (got == expected) {
         
-        do_check_eq(got, expected, "The database has the expected value");
+        Assert.equal(got, expected, "The database has the expected value");
         resolve();
         return;
       }
       
       if (count++ == max) {
         
-        do_check_eq(got, expected, "The database wasn't updated with the expected value");
+        Assert.equal(got, expected, "The database wasn't updated with the expected value");
         resolve();
         return;
       }

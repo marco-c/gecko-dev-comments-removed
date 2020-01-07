@@ -46,8 +46,8 @@ add_task(async function test_save_reload() {
 
   await storeForSave.load();
 
-  do_check_true(storeForSave.dataReady);
-  do_check_matches(storeForSave.data, {});
+  Assert.ok(storeForSave.dataReady);
+  Assert.deepEqual(storeForSave.data, {});
 
   Object.assign(storeForSave.data, TEST_DATA);
 
@@ -106,7 +106,7 @@ add_task(async function test_load_with_dataPostProcessor() {
 
   await storeForLoad.load();
 
-  do_check_eq(storeForLoad.data.test, random);
+  Assert.equal(storeForLoad.data.test, random);
 });
 
 add_task(async function test_load_with_dataPostProcessor_fails() {
@@ -119,7 +119,7 @@ add_task(async function test_load_with_dataPostProcessor_fails() {
 
   await Assert.rejects(store.load(), /dataPostProcessor fails\./);
 
-  do_check_false(store.dataReady);
+  Assert.ok(!store.dataReady);
 });
 
 add_task(async function test_load_sync_with_dataPostProcessor_fails() {
@@ -132,7 +132,7 @@ add_task(async function test_load_sync_with_dataPostProcessor_fails() {
 
   Assert.throws(() => store.ensureDataReady(), /dataPostProcessor fails\./);
 
-  do_check_false(store.dataReady);
+  Assert.ok(!store.dataReady);
 });
 
 
@@ -171,12 +171,12 @@ add_task(async function test_load_string_malformed() {
   await store.load();
 
   
-  do_check_true(await OS.File.exists(store.path + ".corrupt"));
+  Assert.ok(await OS.File.exists(store.path + ".corrupt"));
   await OS.File.remove(store.path + ".corrupt");
 
   
-  do_check_true(store.dataReady);
-  do_check_matches(store.data, {});
+  Assert.ok(store.dataReady);
+  Assert.deepEqual(store.data, {});
 });
 
 
@@ -196,12 +196,12 @@ add_task(async function test_load_string_malformed_sync() {
   store.ensureDataReady();
 
   
-  do_check_true(await OS.File.exists(store.path + ".corrupt"));
+  Assert.ok(await OS.File.exists(store.path + ".corrupt"));
   await OS.File.remove(store.path + ".corrupt");
 
   
-  do_check_true(store.dataReady);
-  do_check_matches(store.data, {});
+  Assert.ok(store.dataReady);
+  Assert.deepEqual(store.data, {});
 });
 
 add_task(async function test_overwrite_data() {
@@ -290,7 +290,7 @@ add_task(async function test_finalize() {
   let promiseFinalize = storeForSave.finalize();
   await Assert.rejects(storeForSave.finalize(), /has already been finalized$/);
   await promiseFinalize;
-  do_check_false(storeForSave.dataReady);
+  Assert.ok(!storeForSave.dataReady);
 
   
   
@@ -298,7 +298,7 @@ add_task(async function test_finalize() {
 
   let storeForLoad = new JSONFile({ path });
   await storeForLoad.load();
-  do_check_matches(storeForLoad.data, TEST_DATA);
+  Assert.deepEqual(storeForLoad.data, TEST_DATA);
 });
 
 add_task(async function test_finalize_on_shutdown() {
@@ -322,9 +322,9 @@ add_task(async function test_finalize_on_shutdown() {
   
   
   await Assert.rejects(storeForSave.finalize(), /has already been finalized$/);
-  do_check_false(storeForSave.dataReady);
+  Assert.ok(!storeForSave.dataReady);
 
   let storeForLoad = new JSONFile({ path });
   await storeForLoad.load();
-  do_check_matches(storeForLoad.data, TEST_DATA);
+  Assert.deepEqual(storeForLoad.data, TEST_DATA);
 });

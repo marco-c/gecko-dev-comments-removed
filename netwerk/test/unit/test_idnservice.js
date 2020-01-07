@@ -17,9 +17,9 @@ function run_test() {
      
      
      
-     do_check_eq(idnService.convertUTF8toACE(reference[i][0]), reference[i][1]);
-     do_check_eq(idnService.convertUTF8toACE(reference[i][1]), reference[i][1]);
-     do_check_eq(idnService.convertACEtoUTF8(reference[i][1]), reference[i][0]);
-     do_check_eq(idnService.isACE(reference[i][1]), reference[i][2]);
+     Assert.equal(idnService.convertUTF8toACE(reference[i][0]), reference[i][1]);
+     Assert.equal(idnService.convertUTF8toACE(reference[i][1]), reference[i][1]);
+     Assert.equal(idnService.convertACEtoUTF8(reference[i][1]), reference[i][0]);
+     Assert.equal(idnService.isACE(reference[i][1]), reference[i][2]);
   }
 }

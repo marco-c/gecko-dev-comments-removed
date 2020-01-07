@@ -4,14 +4,14 @@ function run_test() {
   allow_all_plugins();
   let pluginDefaultState = Services.prefs.getIntPref("plugin.default.state");
   
-  do_check_neq(pluginDefaultState, Ci.nsIPluginTag.STATE_DISABLED);
+  Assert.notEqual(pluginDefaultState, Ci.nsIPluginTag.STATE_DISABLED);
   let nonDefaultState = (pluginDefaultState != Ci.nsIPluginTag.STATE_ENABLED ?
                          Ci.nsIPluginTag.STATE_ENABLED :
                          Ci.nsIPluginTag.STATE_CLICKTOPLAY);
   let ph = Cc["@mozilla.org/plugin/host;1"].getService(Ci.nsIPluginHost);
   let testPlugin = get_test_plugintag();
   
-  do_check_eq(testPlugin.enabledState, pluginDefaultState);
+  Assert.equal(testPlugin.enabledState, pluginDefaultState);
 
   let secondTestPlugin = get_test_plugintag("Second Test Plug-in");
   
@@ -19,9 +19,9 @@ function run_test() {
   
   Services.prefs.setIntPref("plugin.default.state", nonDefaultState);
   
-  do_check_eq(testPlugin.enabledState, nonDefaultState);
+  Assert.equal(testPlugin.enabledState, nonDefaultState);
   
-  do_check_eq(secondTestPlugin.enabledState, Ci.nsIPluginTag.STATE_DISABLED);
+  Assert.equal(secondTestPlugin.enabledState, Ci.nsIPluginTag.STATE_DISABLED);
 
   
   testPlugin.enabledState = pluginDefaultState;

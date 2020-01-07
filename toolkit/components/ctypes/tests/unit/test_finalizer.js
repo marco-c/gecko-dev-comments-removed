@@ -272,7 +272,7 @@ function test_cycles(size, tc) {
   Components.utils.schedulePreciseGC(
     function after_gc() {
       
-      do_check_true(count_finalized(size, tc) > 0);
+      Assert.ok(count_finalized(size, tc) > 0);
       do_test_finished();
     }
   );
@@ -305,7 +305,7 @@ function test_executing_finalizers(size, tc, cleanup) {
   trigger_gc(); 
 
   
-  do_check_true(count_finalized(size, tc) > 0);
+  Assert.ok(count_finalized(size, tc) > 0);
 }
 
 
@@ -321,18 +321,18 @@ function test_result_dispose(size, tc, cleanup) {
     cleanup.add(value);
     ref.push(value);
   }
-  do_check_eq(count_finalized(size, tc), 0);
+  Assert.equal(count_finalized(size, tc), 0);
 
   for (let i = 0; i < size; ++i) {
     let witness = ref[i].dispose();
     ref[i] = null;
     if (!tc.released(i, witness)) {
       do_print("test_result_dispose failure at index " + i);
-      do_check_true(false);
+      Assert.ok(false);
     }
   }
 
-  do_check_eq(count_finalized(size, tc), size);
+  Assert.equal(count_finalized(size, tc), size);
 }
 
 
@@ -350,7 +350,7 @@ function test_executing_dispose(size, tc, cleanup) {
     cleanup.add(value);
     ref.push(value);
   }
-  do_check_eq(count_finalized(size, tc), 0);
+  Assert.equal(count_finalized(size, tc), 0);
 
   
   ref.forEach(
@@ -358,7 +358,7 @@ function test_executing_dispose(size, tc, cleanup) {
       v.dispose();
     }
   );
-  do_check_eq(count_finalized(size, tc), size);
+  Assert.equal(count_finalized(size, tc), size);
 
   
   ref = [];
@@ -368,13 +368,13 @@ function test_executing_dispose(size, tc, cleanup) {
     tc.acquire(i);
   }
 
-  do_check_eq(count_finalized(size, tc), 0);
+  Assert.equal(count_finalized(size, tc), 0);
 
 
   
   trigger_gc();
 
-  do_check_eq(count_finalized(size, tc), 0);
+  Assert.equal(count_finalized(size, tc), 0);
 }
 
 
@@ -398,9 +398,9 @@ function test_executing_forget(size, tc, cleanup) {
       }
     );
     cleanup.add(finalizer);
-    do_check_true(tc.compare(original, finalizer));
+    Assert.ok(tc.compare(original, finalizer));
   }
-  do_check_eq(count_finalized(size, tc), 0);
+  Assert.equal(count_finalized(size, tc), 0);
 
   
   ref.forEach(
@@ -408,13 +408,13 @@ function test_executing_forget(size, tc, cleanup) {
       let original  = v.original;
       let recovered = v.finalizer.forget();
       
-      do_check_true(tc.compare(original, recovered));
-      do_check_eq(original.constructor, recovered.constructor);
+      Assert.ok(tc.compare(original, recovered));
+      Assert.equal(original.constructor, recovered.constructor);
     }
   );
 
   
-  do_check_eq(count_finalized(size, tc), 0);
+  Assert.equal(count_finalized(size, tc), 0);
 
   
   ref = [];
@@ -422,7 +422,7 @@ function test_executing_forget(size, tc, cleanup) {
   
   trigger_gc();
 
-  do_check_eq(count_finalized(size, tc), 0);
+  Assert.equal(count_finalized(size, tc), 0);
 }
 
 
@@ -442,5 +442,5 @@ function test_do_not_execute_finalizers_on_referenced_stuff(size, tc, cleanup) {
   trigger_gc(); 
 
   
-  do_check_eq(count_finalized(size, tc), 0);
+  Assert.equal(count_finalized(size, tc), 0);
 }

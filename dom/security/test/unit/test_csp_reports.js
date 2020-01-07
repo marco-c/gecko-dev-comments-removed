@@ -52,7 +52,7 @@ function makeReportHandler(testpath, message, expectedJSON) {
     
 
     for (var i in expectedJSON)
-      do_check_eq(expectedJSON[i], reportObj['csp-report'][i]);
+      Assert.equal(expectedJSON[i], reportObj['csp-report'][i]);
 
     testsToFinish--;
     httpServer.registerPathHandler(testpath, null);
@@ -121,7 +121,7 @@ function run_test() {
                                        0); 
 
         
-        do_check_false(inlineOK);
+        Assert.ok(!inlineOK);
       });
 
   
@@ -133,9 +133,9 @@ function run_test() {
         evalOK = csp.getAllowsEval(oReportViolation);
 
         
-        do_check_false(evalOK);
+        Assert.ok(!evalOK);
         
-        do_check_true(oReportViolation.value);
+        Assert.ok(oReportViolation.value);
 
         if (oReportViolation.value) {
           
@@ -171,7 +171,7 @@ function run_test() {
                                        0); 
 
         
-        do_check_true(inlineOK);
+        Assert.ok(inlineOK);
       });
 
   
@@ -181,9 +181,9 @@ function run_test() {
         evalOK = csp.getAllowsEval(oReportViolation);
 
         
-        do_check_true(evalOK);
+        Assert.ok(evalOK);
         
-        do_check_true(oReportViolation.value);
+        Assert.ok(oReportViolation.value);
 
         if (oReportViolation.value) {
           

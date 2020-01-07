@@ -8,13 +8,13 @@ const PR_RDONLY = 0x1;
 function test_stream(stream) {
   
   
-  do_check_eq(stream.isNonBlocking(), false);
+  Assert.equal(stream.isNonBlocking(), false);
 
   
-  do_check_eq(Components.classes["@mozilla.org/io-util;1"]
-                         .getService(Components.interfaces.nsIIOUtil)
-                         .inputStreamIsBuffered(stream),
-              false);
+  Assert.equal(Components.classes["@mozilla.org/io-util;1"]
+                          .getService(Components.interfaces.nsIIOUtil)
+                          .inputStreamIsBuffered(stream),
+               false);
   
   
   
@@ -24,14 +24,14 @@ function test_stream(stream) {
 
   var numread = 0;
   for (;;) {
-    do_check_eq(stream.available(), binstream.available());
+    Assert.equal(stream.available(), binstream.available());
     var avail = stream.available();
-    do_check_neq(avail, -1);
+    Assert.notEqual(avail, -1);
 
     
     
-    do_check_neq(avail, Math.pow(2, 32) - 1);
-    do_check_neq(avail, Math.pow(2, 31) - 1);
+    Assert.notEqual(avail, Math.pow(2, 32) - 1);
+    Assert.notEqual(avail, Math.pow(2, 31) - 1);
 
     if (!avail) {
       
@@ -79,8 +79,8 @@ function run_test() {
   
   var file = do_get_file("../unit/data/test_readline6.txt");
   var len = file.fileSize;
-  do_check_eq(test_stream(stream_for_file(file)), len);
-  do_check_eq(test_stream(stream_from_channel(file)), len);
+  Assert.equal(test_stream(stream_for_file(file)), len);
+  Assert.equal(test_stream(stream_from_channel(file)), len);
   var dir = file.parent;
   test_stream(stream_from_channel(dir)); 
 }

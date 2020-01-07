@@ -26,7 +26,7 @@ function* next_test() {
     }
 
     testfile.copyTo(profileDir, "formhistory.sqlite");
-    do_check_eq(3, getDBVersion(testfile));
+    Assert.equal(3, getDBVersion(testfile));
 
     
     testnum++;
@@ -36,18 +36,18 @@ function* next_test() {
     let dbConnection = Services.storage.openUnsharedDatabase(destFile);
 
     
-    do_check_eq(CURRENT_SCHEMA, FormHistory.schemaVersion);
+    Assert.equal(CURRENT_SCHEMA, FormHistory.schemaVersion);
 
     
-    do_check_true(dbConnection.tableExists("moz_deleted_formhistory"));
+    Assert.ok(dbConnection.tableExists("moz_deleted_formhistory"));
     dbConnection.close();
 
     
-    do_check_eq(CURRENT_SCHEMA, FormHistory.schemaVersion);
+    Assert.equal(CURRENT_SCHEMA, FormHistory.schemaVersion);
     
     yield countEntries("name-A", "value-A",
                        function(num) {
-                         do_check_true(num > 0);
+                         Assert.ok(num > 0);
                          do_test_finished();
                        }
     );

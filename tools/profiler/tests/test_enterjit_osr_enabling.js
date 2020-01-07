@@ -7,7 +7,7 @@ function run_test() {
     if (!p)
       return;
 
-    do_check_true(!p.IsActive());
+    Assert.ok(!p.IsActive());
 
     
     (function() {

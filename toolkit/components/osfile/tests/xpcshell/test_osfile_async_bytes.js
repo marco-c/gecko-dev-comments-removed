@@ -20,13 +20,13 @@ add_task(async function test_bytes() {
       
       
       await file.write(new Uint8Array(2048), {bytes: 1024});
-      do_check_eq((await file.stat()).size, 1024);
+      Assert.equal((await file.stat()).size, 1024);
 
       
       await file.setPosition(0, OS.File.POS_END);
       await file.write(new Uint8Array(1024), null);
       await file.write(new Uint8Array(1024), undefined);
-      do_check_eq((await file.stat()).size, 3072);
+      Assert.equal((await file.stat()).size, 3072);
     } finally {
       await file.close();
     }

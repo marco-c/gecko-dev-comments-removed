@@ -21,19 +21,19 @@ dir.create(dir.DIRECTORY_TYPE, -1);
 var gListener = {
   onSearchResult(aSearch, aResult) {
     
-    do_check_eq(aResult.searchString, "test");
+    Assert.equal(aResult.searchString, "test");
     
-    do_check_eq(aResult.searchResult, aResult.RESULT_SUCCESS);
+    Assert.equal(aResult.searchResult, aResult.RESULT_SUCCESS);
     
-    do_check_eq(aResult.matchCount, 2);
+    Assert.equal(aResult.matchCount, 2);
     
-    do_check_eq(aResult.getValueAt(0), "test_dir");
+    Assert.equal(aResult.getValueAt(0), "test_dir");
     
-    do_check_eq(aResult.getStyleAt(0), "directory");
+    Assert.equal(aResult.getStyleAt(0), "directory");
     
-    do_check_eq(aResult.getValueAt(1), "test_file");
+    Assert.equal(aResult.getValueAt(1), "test_file");
     
-    do_check_eq(aResult.getStyleAt(1), "file");
+    Assert.equal(aResult.getStyleAt(1), "file");
   }
 };
 

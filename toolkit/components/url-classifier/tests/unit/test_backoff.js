@@ -17,76 +17,76 @@ function run_test() {
   var rb = new jslib.RequestBackoff(3, 1, 3, 10, 5, 19, 0);
   setNow(1);
   rb.noteServerResponse(200);
-  do_check_true(rb.canMakeRequest());
+  Assert.ok(rb.canMakeRequest());
   setNow(2);
-  do_check_true(rb.canMakeRequest());
+  Assert.ok(rb.canMakeRequest());
 
   
   rb.noteServerResponse(500);
-  do_check_false(rb.canMakeRequest());
-  do_check_eq(rb.nextRequestTime_, 3);
+  Assert.ok(!rb.canMakeRequest());
+  Assert.equal(rb.nextRequestTime_, 3);
   setNow(3);
-  do_check_true(rb.canMakeRequest());
+  Assert.ok(rb.canMakeRequest());
 
   
   rb.noteServerResponse(500);
-  do_check_false(rb.canMakeRequest());
-  do_check_eq(rb.nextRequestTime_, 4);
+  Assert.ok(!rb.canMakeRequest());
+  Assert.equal(rb.nextRequestTime_, 4);
   setNow(4);
-  do_check_true(rb.canMakeRequest());
+  Assert.ok(rb.canMakeRequest());
 
   
   rb.noteServerResponse(500);
-  do_check_false(rb.canMakeRequest());
-  do_check_eq(rb.nextRequestTime_, 9);
+  Assert.ok(!rb.canMakeRequest());
+  Assert.equal(rb.nextRequestTime_, 9);
   setNow(9);
-  do_check_true(rb.canMakeRequest());
+  Assert.ok(rb.canMakeRequest());
 
   
   rb.noteServerResponse(503);
-  do_check_false(rb.canMakeRequest());
-  do_check_eq(rb.nextRequestTime_, 19);
+  Assert.ok(!rb.canMakeRequest());
+  Assert.equal(rb.nextRequestTime_, 19);
   setNow(19);
-  do_check_true(rb.canMakeRequest());
+  Assert.ok(rb.canMakeRequest());
 
   
   rb.noteServerResponse(302);
-  do_check_false(rb.canMakeRequest());
-  do_check_eq(rb.nextRequestTime_, 38);
+  Assert.ok(!rb.canMakeRequest());
+  Assert.equal(rb.nextRequestTime_, 38);
   setNow(38);
-  do_check_true(rb.canMakeRequest());
+  Assert.ok(rb.canMakeRequest());
 
   
   rb.noteServerResponse(400);
-  do_check_false(rb.canMakeRequest());
-  do_check_eq(rb.nextRequestTime_, 57);
+  Assert.ok(!rb.canMakeRequest());
+  Assert.equal(rb.nextRequestTime_, 57);
   setNow(57);
-  do_check_true(rb.canMakeRequest());
+  Assert.ok(rb.canMakeRequest());
 
   
   rb.noteServerResponse(200);
-  do_check_true(rb.canMakeRequest());
-  do_check_eq(rb.nextRequestTime_, 0);
+  Assert.ok(rb.canMakeRequest());
+  Assert.equal(rb.nextRequestTime_, 0);
   setNow(58);
   rb.noteServerResponse(500);
 
   
-  do_check_false(rb.canMakeRequest());
-  do_check_eq(rb.nextRequestTime_, 59);
+  Assert.ok(!rb.canMakeRequest());
+  Assert.equal(rb.nextRequestTime_, 59);
 
   setNow(59);
-  do_check_true(rb.canMakeRequest());
+  Assert.ok(rb.canMakeRequest());
 
   setNow(200);
   rb.noteRequest();
   setNow(201);
   rb.noteRequest();
   setNow(202);
-  do_check_true(rb.canMakeRequest());
+  Assert.ok(rb.canMakeRequest());
   rb.noteRequest();
-  do_check_false(rb.canMakeRequest());
+  Assert.ok(!rb.canMakeRequest());
   setNow(211);
-  do_check_true(rb.canMakeRequest());
+  Assert.ok(rb.canMakeRequest());
 
   jslibDate.now = _Datenow;
 }

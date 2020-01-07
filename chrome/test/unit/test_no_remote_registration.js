@@ -192,11 +192,11 @@ function run_test() {
         }
 
         if (protocol.shouldRegister) {
-          do_check_eq(expectedURI, uri);
+          Assert.equal(expectedURI, uri);
         } else {
           
           
-          do_check_neq(expectedURI, uri);
+          Assert.notEqual(expectedURI, uri);
         }
       } catch (e) {
         if (protocol.shouldRegister) {

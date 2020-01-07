@@ -34,19 +34,19 @@ function test_different_frames_eval() {
 
       
       gThreadClient.eval(frame0.actor, "arg", function (response) {
-        do_check_eq(response.type, "resumed");
+        Assert.equal(response.type, "resumed");
         gThreadClient.addOneTimeListener("paused", function (event, packet) {
           
-          do_check_eq(packet.type, "paused");
-          do_check_eq(packet.why.type, "clientEvaluated");
-          do_check_eq(packet.why.frameFinished.return, "arg0");
+          Assert.equal(packet.type, "paused");
+          Assert.equal(packet.why.type, "clientEvaluated");
+          Assert.equal(packet.why.frameFinished.return, "arg0");
 
           
           gThreadClient.eval(frame1.actor, "arg", function (response) {
             gThreadClient.addOneTimeListener("paused", function (event, packet) {
               
-              do_check_eq(packet.type, "paused");
-              do_check_eq(packet.why.frameFinished.return, "arg1");
+              Assert.equal(packet.type, "paused");
+              Assert.equal(packet.why.frameFinished.return, "arg1");
 
               gThreadClient.resume(function () {
                 finishClient(gClient);

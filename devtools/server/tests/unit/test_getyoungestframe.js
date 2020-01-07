@@ -10,13 +10,13 @@ function run_test() {
 
   dbg.addDebuggee(g);
   dbg.onDebuggerStatement = function (frame) {
-    do_check_true(frame === dbg.getNewestFrame());
+    Assert.ok(frame === dbg.getNewestFrame());
     
     
 
     do_execute_soon(function () {
       try {
-        do_check_true(frame === dbg.getNewestFrame());
+        Assert.ok(frame === dbg.getNewestFrame());
       } finally {
         xpcInspector.exitNestedEventLoop("test");
       }

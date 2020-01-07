@@ -13,7 +13,7 @@ function run_test() {
     
     
     
-    do_check_true(!p.IsActive());
+    Assert.ok(!p.IsActive());
 
     const ms = 5;
     p.StartProfiler(100, ms, ["js"], 1);
@@ -39,7 +39,7 @@ function run_test() {
 
     var profile = arbitrary_name();
 
-    do_check_neq(profile.samples.data.length, 0);
+    Assert.notEqual(profile.samples.data.length, 0);
     var lastSample = profile.samples.data[profile.samples.data.length - 1];
     var stack = getInflatedStackLocations(profile, lastSample);
     do_print(stack);
@@ -49,11 +49,11 @@ function run_test() {
     var gotName = false;
     for (var i = 0; i < stack.length; i++) {
         if (stack[i].match(/arbitrary_name/)) {
-            do_check_eq(gotName, false);
+            Assert.equal(gotName, false);
             gotName = true;
         }
     }
-    do_check_eq(gotName, true);
+    Assert.equal(gotName, true);
 
     p.StopProfiler();
 }

@@ -10,7 +10,7 @@ function run_test()
       
       asyncOpenCacheEntry("http://a/", "disk", Ci.nsICacheStorage.OPEN_BYPASS_IF_BUSY, null,
         new OpenCallback(NOTFOUND, "", "", function(entry) {
-          do_check_false(bypassed);
+          Assert.ok(!bypassed);
           bypassed = true;
         })
       );
@@ -20,7 +20,7 @@ function run_test()
       
       
       do_execute_soon(function() {
-        do_check_true(bypassed);
+        Assert.ok(bypassed);
         finish_cache2_test();
       });
     })

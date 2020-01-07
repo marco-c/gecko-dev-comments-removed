@@ -49,14 +49,14 @@ function run_test() {
 }
 
 function checkNoRequest() {
-  do_check_eq(requests.length, 0);
+  Assert.equal(requests.length, 0);
 }
 
 function checkRequest(cohort = "") {
-  do_check_eq(requests.length, 1);
+  Assert.equal(requests.length, 1);
   let req = requests.pop();
-  do_check_eq(req._method, "GET");
-  do_check_eq(req._queryString, cohort ? "/" + cohort : "");
+  Assert.equal(req._method, "GET");
+  Assert.equal(req._queryString, cohort ? "/" + cohort : "");
 }
 
 add_task(async function no_request_if_prefed_off() {
@@ -71,13 +71,13 @@ add_task(async function no_request_if_prefed_off() {
   await promiseAfterCache();
 
   
-  do_check_eq(Services.search.currentEngine.name, getDefaultEngineName(false));
+  Assert.equal(Services.search.currentEngine.name, getDefaultEngineName(false));
 
   
   let metadata = await promiseGlobalMetadata();
-  do_check_eq(typeof metadata.searchDefaultExpir, "undefined");
-  do_check_eq(typeof metadata.searchDefault, "undefined");
-  do_check_eq(typeof metadata.searchDefaultHash, "undefined");
+  Assert.equal(typeof metadata.searchDefaultExpir, "undefined");
+  Assert.equal(typeof metadata.searchDefault, "undefined");
+  Assert.equal(typeof metadata.searchDefaultHash, "undefined");
 
   Services.prefs.setBoolPref("browser.search.geoSpecificDefaults", true);
 });
@@ -86,26 +86,26 @@ add_task(async function should_get_geo_defaults_only_once() {
   
   
   
-  do_check_true(Services.prefs.prefHasUserValue("browser.search.countryCode"));
-  do_check_eq(Services.prefs.getCharPref("browser.search.countryCode"), "FR");
+  Assert.ok(Services.prefs.prefHasUserValue("browser.search.countryCode"));
+  Assert.equal(Services.prefs.getCharPref("browser.search.countryCode"), "FR");
   await asyncReInit();
   checkRequest();
-  do_check_eq(Services.search.currentEngine.name, kTestEngineName);
+  Assert.equal(Services.search.currentEngine.name, kTestEngineName);
   await promiseAfterCache();
 
   
   let metadata = await promiseGlobalMetadata();
-  do_check_eq(typeof metadata.searchDefaultExpir, "number");
-  do_check_true(metadata.searchDefaultExpir > Date.now());
-  do_check_eq(typeof metadata.searchDefault, "string");
-  do_check_eq(metadata.searchDefault, "Test search engine");
-  do_check_eq(typeof metadata.searchDefaultHash, "string");
-  do_check_eq(metadata.searchDefaultHash.length, 44);
+  Assert.equal(typeof metadata.searchDefaultExpir, "number");
+  Assert.ok(metadata.searchDefaultExpir > Date.now());
+  Assert.equal(typeof metadata.searchDefault, "string");
+  Assert.equal(metadata.searchDefault, "Test search engine");
+  Assert.equal(typeof metadata.searchDefaultHash, "string");
+  Assert.equal(metadata.searchDefaultHash.length, 44);
 
   
   await asyncReInit();
   checkNoRequest();
-  do_check_eq(Services.search.currentEngine.name, kTestEngineName);
+  Assert.equal(Services.search.currentEngine.name, kTestEngineName);
 });
 
 add_task(async function should_request_when_countryCode_not_set() {
@@ -125,15 +125,15 @@ add_task(async function should_recheck_if_interval_expired() {
 
   
   let metadata = await promiseGlobalMetadata();
-  do_check_eq(typeof metadata.searchDefaultExpir, "number");
-  do_check_true(metadata.searchDefaultExpir >= date + kYearInSeconds * 1000);
-  do_check_true(metadata.searchDefaultExpir < date + (kYearInSeconds + 3600) * 1000);
+  Assert.equal(typeof metadata.searchDefaultExpir, "number");
+  Assert.ok(metadata.searchDefaultExpir >= date + kYearInSeconds * 1000);
+  Assert.ok(metadata.searchDefaultExpir < date + (kYearInSeconds + 3600) * 1000);
 });
 
 add_task(async function should_recheck_if_appversion_changed() {
   let data = await promiseCacheData();
 
-  do_check_eq(data.appVersion, Services.appinfo.version);
+  Assert.equal(data.appVersion, Services.appinfo.version);
 
   
   data.appVersion = "1";
@@ -145,13 +145,13 @@ add_task(async function should_recheck_if_appversion_changed() {
 
   
   data = await promiseCacheData();
-  do_check_eq(data.appVersion, Services.appinfo.version);
+  Assert.equal(data.appVersion, Services.appinfo.version);
 });
 
 add_task(async function should_recheck_if_appversion_changed_sync() {
   let data = await promiseCacheData();
 
-  do_check_eq(data.appVersion, Services.appinfo.version);
+  Assert.equal(data.appVersion, Services.appinfo.version);
 
   
   data.appVersion = "1";
@@ -164,9 +164,9 @@ add_task(async function should_recheck_if_appversion_changed_sync() {
 
   
   
-  do_check_false(Services.search.isInitialized);
+  Assert.ok(!Services.search.isInitialized);
   Services.search.getEngines();
-  do_check_true(Services.search.isInitialized);
+  Assert.ok(Services.search.isInitialized);
 
   await reInitPromise;
   checkRequest();
@@ -174,7 +174,7 @@ add_task(async function should_recheck_if_appversion_changed_sync() {
 
   
   data = await promiseCacheData();
-  do_check_eq(data.appVersion, Services.appinfo.version);
+  Assert.equal(data.appVersion, Services.appinfo.version);
 });
 
 add_task(async function should_recheck_when_broken_hash() {
@@ -197,9 +197,9 @@ add_task(async function should_recheck_when_broken_hash() {
 
   
   
-  do_check_false(Services.search.isInitialized);
-  do_check_eq(Services.search.currentEngine.name, getDefaultEngineName(false));
-  do_check_true(Services.search.isInitialized);
+  Assert.ok(!Services.search.isInitialized);
+  Assert.equal(Services.search.currentEngine.name, getDefaultEngineName(false));
+  Assert.ok(Services.search.isInitialized);
 
   await reInitPromise;
   checkRequest();
@@ -207,7 +207,7 @@ add_task(async function should_recheck_when_broken_hash() {
 
   
   metadata = await promiseGlobalMetadata();
-  do_check_eq(typeof metadata.searchDefaultHash, "string");
+  Assert.equal(typeof metadata.searchDefaultHash, "string");
   if (metadata.searchDefaultHash == "broken") {
     
     
@@ -216,22 +216,22 @@ add_task(async function should_recheck_when_broken_hash() {
     await promiseAfterCache();
     metadata = await promiseGlobalMetadata();
   }
-  do_check_eq(metadata.searchDefaultHash, hash);
+  Assert.equal(metadata.searchDefaultHash, hash);
 
   
-  do_check_eq(Services.search.currentEngine.name, getDefaultEngineName(false));
+  Assert.equal(Services.search.currentEngine.name, getDefaultEngineName(false));
 
   
   
   await asyncReInit();
   checkNoRequest();
-  do_check_eq(Services.search.currentEngine.name, kTestEngineName);
+  Assert.equal(Services.search.currentEngine.name, kTestEngineName);
 });
 
 add_task(async function should_remember_cohort_id() {
   
   const cohortPref = "browser.search.cohort";
-  do_check_eq(Services.prefs.getPrefType(cohortPref), Services.prefs.PREF_INVALID);
+  Assert.equal(Services.prefs.getPrefType(cohortPref), Services.prefs.PREF_INVALID);
 
   
   let cohort = gServerCohort = "xpcshell";
@@ -244,8 +244,8 @@ add_task(async function should_remember_cohort_id() {
   await commitPromise;
 
   
-  do_check_eq(Services.prefs.getPrefType(cohortPref), Services.prefs.PREF_STRING);
-  do_check_eq(Services.prefs.getCharPref(cohortPref), cohort);
+  Assert.equal(Services.prefs.getPrefType(cohortPref), Services.prefs.PREF_STRING);
+  Assert.equal(Services.prefs.getCharPref(cohortPref), cohort);
 
   
   gServerCohort = "";
@@ -257,7 +257,7 @@ add_task(async function should_remember_cohort_id() {
   await asyncReInit();
   checkRequest(cohort);
   await commitPromise;
-  do_check_eq(Services.prefs.getPrefType(cohortPref), Services.prefs.PREF_INVALID);
+  Assert.equal(Services.prefs.getPrefType(cohortPref), Services.prefs.PREF_INVALID);
 });
 
 add_task(async function should_retry_after_failure() {
@@ -291,9 +291,9 @@ add_task(async function should_honor_retry_after_header() {
 
   
   let metadata = await promiseGlobalMetadata();
-  do_check_eq(typeof metadata.searchDefaultExpir, "number");
-  do_check_true(metadata.searchDefaultExpir >= date + kDayInSeconds * 1000);
-  do_check_true(metadata.searchDefaultExpir < date + (kDayInSeconds + 3600) * 1000);
+  Assert.equal(typeof metadata.searchDefaultExpir, "number");
+  Assert.ok(metadata.searchDefaultExpir >= date + kDayInSeconds * 1000);
+  Assert.ok(metadata.searchDefaultExpir < date + (kDayInSeconds + 3600) * 1000);
 
   
   await asyncReInit();

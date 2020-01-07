@@ -57,13 +57,13 @@ function* do_run_test() {
   pm.removeAllSince(since);
 
   
-  do_check_eq(1, pm.testPermissionFromPrincipal(principal1, "test/remove-since"));
+  Assert.equal(1, pm.testPermissionFromPrincipal(principal1, "test/remove-since"));
   
-  do_check_eq(0, pm.testPermissionFromPrincipal(principal1, "test/remove-since-2"));
+  Assert.equal(0, pm.testPermissionFromPrincipal(principal1, "test/remove-since-2"));
 
   
-  do_check_eq(0, pm.testPermissionFromPrincipal(principal2, "test/remove-since"));
-  do_check_eq(0, pm.testPermissionFromPrincipal(principal2, "test/remove-since-2"));
+  Assert.equal(0, pm.testPermissionFromPrincipal(principal2, "test/remove-since"));
+  Assert.equal(0, pm.testPermissionFromPrincipal(principal2, "test/remove-since-2"));
 
   do_finish_generator_test(test_generator);
 }

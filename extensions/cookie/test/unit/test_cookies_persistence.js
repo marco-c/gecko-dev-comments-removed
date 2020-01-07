@@ -49,16 +49,16 @@ function* do_run_test() {
   do_close_profile(test_generator);
   yield;
   do_load_profile();
-  do_check_eq(Services.cookies.countCookiesFromHost(uri1.host), 4);
-  do_check_eq(Services.cookies.countCookiesFromHost(uri2.host), 0);
+  Assert.equal(Services.cookies.countCookiesFromHost(uri1.host), 4);
+  Assert.equal(Services.cookies.countCookiesFromHost(uri2.host), 0);
 
   
   
   
   do_close_profile();
   do_load_profile();
-  do_check_eq(Services.cookies.countCookiesFromHost(uri1.host), 4);
-  do_check_eq(Services.cookies.countCookiesFromHost(uri2.host), 0);
+  Assert.equal(Services.cookies.countCookiesFromHost(uri1.host), 4);
+  Assert.equal(Services.cookies.countCookiesFromHost(uri2.host), 0);
 
   
   Services.prefs.setIntPref("network.cookie.lifetimePolicy", 2);
@@ -70,8 +70,8 @@ function* do_run_test() {
   do_close_profile(test_generator);
   yield;
   do_load_profile();
-  do_check_eq(Services.cookies.countCookiesFromHost(uri1.host), 0);
-  do_check_eq(Services.cookies.countCookiesFromHost(uri2.host), 0);
+  Assert.equal(Services.cookies.countCookiesFromHost(uri1.host), 0);
+  Assert.equal(Services.cookies.countCookiesFromHost(uri2.host), 0);
 
   finish_test();
 }

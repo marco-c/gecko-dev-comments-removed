@@ -35,7 +35,7 @@ function* do_run_test() {
 
   
   Services.cookies.setCookieString(uri1, null, "oh=hai; max-age=1000", null);
-  do_check_eq(Services.cookiemgr.countCookiesFromHost(uri1.host), 1);
+  Assert.equal(Services.cookiemgr.countCookiesFromHost(uri1.host), 1);
 
   
   var chan1 = make_channel(uri1.spec);
@@ -47,21 +47,21 @@ function* do_run_test() {
   chan2.setPrivate(true);
 
   Services.cookies.setCookieString(uri2, null, "oh=hai; max-age=1000", chan2);
-  do_check_eq(Services.cookiemgr.getCookieString(uri1, chan1), null);
-  do_check_eq(Services.cookiemgr.getCookieString(uri2, chan2), "oh=hai");
+  Assert.equal(Services.cookiemgr.getCookieString(uri1, chan1), null);
+  Assert.equal(Services.cookiemgr.getCookieString(uri2, chan2), "oh=hai");
 
   
   Services.obs.notifyObservers(null, "last-pb-context-exited");
-  do_check_eq(Services.cookiemgr.getCookieString(uri1, chan1), null);
-  do_check_eq(Services.cookiemgr.getCookieString(uri2, chan2), null);
+  Assert.equal(Services.cookiemgr.getCookieString(uri1, chan1), null);
+  Assert.equal(Services.cookiemgr.getCookieString(uri2, chan2), null);
 
   Services.cookies.setCookieString(uri2, null, "oh=hai; max-age=1000", chan2);
-  do_check_eq(Services.cookiemgr.getCookieString(uri2, chan2), "oh=hai");
+  Assert.equal(Services.cookiemgr.getCookieString(uri2, chan2), "oh=hai");
 
   
   Services.obs.notifyObservers(null, "last-pb-context-exited");
-  do_check_eq(Services.cookiemgr.countCookiesFromHost(uri1.host), 1);
-  do_check_eq(Services.cookiemgr.countCookiesFromHost(uri2.host), 0);
+  Assert.equal(Services.cookiemgr.countCookiesFromHost(uri1.host), 1);
+  Assert.equal(Services.cookiemgr.countCookiesFromHost(uri2.host), 0);
 
   
   do_close_profile(test_generator);
@@ -69,14 +69,14 @@ function* do_run_test() {
   do_load_profile();
 
   
-  do_check_eq(Services.cookiemgr.countCookiesFromHost(uri1.host), 1);
-  do_check_eq(Services.cookiemgr.countCookiesFromHost(uri2.host), 0);
+  Assert.equal(Services.cookiemgr.countCookiesFromHost(uri1.host), 1);
+  Assert.equal(Services.cookiemgr.countCookiesFromHost(uri2.host), 0);
 
   
-  do_check_eq(Services.cookiemgr.getCookieString(uri1, chan1), null);
-  do_check_eq(Services.cookiemgr.getCookieString(uri2, chan2), null);
+  Assert.equal(Services.cookiemgr.getCookieString(uri1, chan1), null);
+  Assert.equal(Services.cookiemgr.getCookieString(uri2, chan2), null);
   Services.cookies.setCookieString(uri2, null, "oh=hai; max-age=1000", chan2);
-  do_check_eq(Services.cookiemgr.getCookieString(uri2, chan2), "oh=hai");
+  Assert.equal(Services.cookiemgr.getCookieString(uri2, chan2), "oh=hai");
 
   
   do_close_profile(test_generator);
@@ -85,13 +85,13 @@ function* do_run_test() {
 
   
   
-  do_check_eq(Services.cookiemgr.getCookieString(uri1, chan1), null);
-  do_check_eq(Services.cookiemgr.getCookieString(uri2, chan2), null);
+  Assert.equal(Services.cookiemgr.getCookieString(uri1, chan1), null);
+  Assert.equal(Services.cookiemgr.getCookieString(uri2, chan2), null);
 
   
   Services.obs.notifyObservers(null, "last-pb-context-exited");
-  do_check_eq(Services.cookiemgr.countCookiesFromHost(uri1.host), 1);
-  do_check_eq(Services.cookiemgr.countCookiesFromHost(uri2.host), 0);
+  Assert.equal(Services.cookiemgr.countCookiesFromHost(uri1.host), 1);
+  Assert.equal(Services.cookiemgr.countCookiesFromHost(uri2.host), 0);
 
   
 
@@ -103,13 +103,13 @@ function* do_run_test() {
 
   
   
-  do_check_eq(Services.cookiemgr.getCookieString(uri1, chan1), null);
-  do_check_eq(Services.cookiemgr.getCookieString(uri2, chan2), null);
+  Assert.equal(Services.cookiemgr.getCookieString(uri1, chan1), null);
+  Assert.equal(Services.cookiemgr.getCookieString(uri2, chan2), null);
 
   
   Services.obs.notifyObservers(null, "last-pb-context-exited");
-  do_check_eq(Services.cookiemgr.countCookiesFromHost(uri1.host), 1);
-  do_check_eq(Services.cookiemgr.countCookiesFromHost(uri2.host), 0);
+  Assert.equal(Services.cookiemgr.countCookiesFromHost(uri1.host), 1);
+  Assert.equal(Services.cookiemgr.countCookiesFromHost(uri2.host), 0);
 
   finish_test();
 }

@@ -11,23 +11,23 @@ add_task(async function test_execute() {
   var uri1 = uri("http://mozilla.com");
   await PlacesTestUtils.addVisits({uri: uri1, referrer});
   do_check_guid_for_uri(uri1);
-  do_check_true(await promiseIsURIVisited(uri1));
+  Assert.ok(await promiseIsURIVisited(uri1));
 
   
   var uri2 = uri("https://etrade.com");
   await PlacesTestUtils.addVisits({uri: uri2, referrer});
   do_check_guid_for_uri(uri2);
-  do_check_true(await promiseIsURIVisited(uri2));
+  Assert.ok(await promiseIsURIVisited(uri2));
 
   
   var uri3 = uri("ftp://ftp.mozilla.org");
   await PlacesTestUtils.addVisits({uri: uri3, referrer});
   do_check_guid_for_uri(uri3);
-  do_check_true(await promiseIsURIVisited(uri3));
+  Assert.ok(await promiseIsURIVisited(uri3));
 
   
   var uri4 = uri("http://foobarcheese.com");
-  do_check_false(await promiseIsURIVisited(uri4));
+  Assert.equal(false, await promiseIsURIVisited(uri4));
 
   
   
@@ -59,9 +59,9 @@ add_task(async function test_execute() {
       PlacesTestUtils.addVisits({uri: cantAddUri, referrer}).then(() => {
         do_throw("Should not have added history for invalid URI.");
       }, error => {
-        do_check_true(error.message.includes("No items were added to history"));
+        Assert.ok(error.message.includes("No items were added to history"));
       });
-      do_check_false(await promiseIsURIVisited(cantAddUri));
+      Assert.equal(false, await promiseIsURIVisited(cantAddUri));
     }
   }
 });

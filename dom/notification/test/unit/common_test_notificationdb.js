@@ -55,6 +55,6 @@ function compareNotification(notif1, notif2) {
   
   for (let prop in notif1) {
     
-    do_check_eq(notif1[prop], notif2[prop]);
+    Assert.equal(notif1[prop], notif2[prop]);
   }
 }

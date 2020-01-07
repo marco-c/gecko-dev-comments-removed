@@ -19,7 +19,7 @@ function testAddrInUse()
   
   
   let listener = ServerSocket(-1, true, -1);
-  do_check_true(listener instanceof Ci.nsIServerSocket);
+  Assert.ok(listener instanceof Ci.nsIServerSocket);
 
   
   do_check_throws_nsIException(() => ServerSocket(listener.port, true, -1),

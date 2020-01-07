@@ -16,7 +16,7 @@ function run_test() {
  let url = "data:application/json,{\"interval\": 31536000, \"settings\": {\"searchDefault\": \"hidden\", \"visibleDefaultEngines\": [\"hidden\"]}}";
   Services.prefs.getDefaultBranch(BROWSER_SEARCH_PREF).setCharPref(kUrlPref, url);
 
-  do_check_false(Services.search.isInitialized);
+  Assert.ok(!Services.search.isInitialized);
 
   run_next_test();
 }
@@ -26,15 +26,15 @@ add_task(async function async_init() {
   await asyncInit();
 
   let engines = Services.search.getEngines();
-  do_check_eq(engines.length, 1);
+  Assert.equal(engines.length, 1);
 
   
   let engine = Services.search.getEngineByName("bug645970");
-  do_check_eq(engine, null);
+  Assert.equal(engine, null);
 
   
   engine = Services.search.getEngineByName("hidden");
-  do_check_neq(engine, null);
+  Assert.notEqual(engine, null);
 
   
   
@@ -45,22 +45,22 @@ add_task(async function sync_init() {
   let unInitPromise = waitForSearchNotification("uninit-complete");
   let reInitPromise = asyncReInit();
   await unInitPromise;
-  do_check_false(Services.search.isInitialized);
+  Assert.ok(!Services.search.isInitialized);
 
   
-  do_check_eq(Services.search.currentEngine.name, "hidden");
-  do_check_true(Services.search.isInitialized);
+  Assert.equal(Services.search.currentEngine.name, "hidden");
+  Assert.ok(Services.search.isInitialized);
 
   let engines = Services.search.getEngines();
-  do_check_eq(engines.length, 1);
+  Assert.equal(engines.length, 1);
 
   
   let engine = Services.search.getEngineByName("bug645970");
-  do_check_eq(engine, null);
+  Assert.equal(engine, null);
 
   
   engine = Services.search.getEngineByName("hidden");
-  do_check_neq(engine, null);
+  Assert.notEqual(engine, null);
 
   await reInitPromise;
 });
@@ -78,13 +78,13 @@ add_task(async function invalid_engine() {
   await asyncReInit();
 
   let engines = Services.search.getEngines();
-  do_check_eq(engines.length, 1);
+  Assert.equal(engines.length, 1);
 
   
   let engine = Services.search.getEngineByName("bug645970");
-  do_check_neq(engine, null);
+  Assert.notEqual(engine, null);
 
   
   engine = Services.search.getEngineByName("hidden");
-  do_check_eq(engine, null);
+  Assert.equal(engine, null);
 });

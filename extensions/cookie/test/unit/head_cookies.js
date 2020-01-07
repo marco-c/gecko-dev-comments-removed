@@ -64,7 +64,7 @@ function _observer(generator, topic) {
 
 _observer.prototype = {
   observe: function (subject, topic, data) {
-    do_check_eq(this.topic, topic);
+    Assert.equal(this.topic, topic);
 
     Services.obs.removeObserver(this, this.topic);
 
@@ -103,7 +103,7 @@ function do_load_profile(generator) {
 
 function do_set_single_http_cookie(uri, channel, expected) {
   Services.cookies.setCookieStringFromHttp(uri, null, null, "foo=bar", null, channel);
-  do_check_eq(Services.cookiemgr.countCookiesFromHost(uri.host), expected);
+  Assert.equal(Services.cookiemgr.countCookiesFromHost(uri.host), expected);
 }
 
 
@@ -113,16 +113,16 @@ function do_set_cookies(uri, channel, session, expected) {
 
   
   Services.cookies.setCookieString(uri, null, "oh=hai" + suffix, null);
-  do_check_eq(Services.cookiemgr.countCookiesFromHost(uri.host), expected[0]);
+  Assert.equal(Services.cookiemgr.countCookiesFromHost(uri.host), expected[0]);
   
   Services.cookies.setCookieString(uri, null, "can=has" + suffix, channel);
-  do_check_eq(Services.cookiemgr.countCookiesFromHost(uri.host), expected[1]);
+  Assert.equal(Services.cookiemgr.countCookiesFromHost(uri.host), expected[1]);
   
   Services.cookies.setCookieStringFromHttp(uri, null, null, "cheez=burger" + suffix, null, null);
-  do_check_eq(Services.cookiemgr.countCookiesFromHost(uri.host), expected[2]);
+  Assert.equal(Services.cookiemgr.countCookiesFromHost(uri.host), expected[2]);
   
   Services.cookies.setCookieStringFromHttp(uri, null, null, "hot=dog" + suffix, null, channel);
-  do_check_eq(Services.cookiemgr.countCookiesFromHost(uri.host), expected[3]);
+  Assert.equal(Services.cookiemgr.countCookiesFromHost(uri.host), expected[3]);
 }
 
 function do_count_enumerator(enumerator) {

@@ -7,9 +7,9 @@ function run_test() {
                                 .getService(Components.interfaces.nsINetworkLinkService);
 
     
-    do_check_neq(ioService.offline, linkService.isLinkUp);
+    Assert.notEqual(ioService.offline, linkService.isLinkUp);
   } catch (e) {
     
-    do_check_eq(ioService.offline, false);
+    Assert.equal(ioService.offline, false);
   }
 }

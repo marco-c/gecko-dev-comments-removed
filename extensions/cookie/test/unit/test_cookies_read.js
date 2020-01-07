@@ -33,7 +33,7 @@ function* do_run_test() {
   
   
   
-  do_check_true(do_get_cookie_file(profile).exists());
+  Assert.ok(do_get_cookie_file(profile).exists());
   let db = new CookieDatabaseConnection(do_get_cookie_file(profile), 4);
 
   for (let i = 0; i < CMAX; ++i) {
@@ -41,7 +41,7 @@ function* do_run_test() {
     Services.cookies.setCookieString(uri, null, "oh=hai; max-age=1000", null);
   }
 
-  do_check_eq(do_count_cookies(), CMAX);
+  Assert.equal(do_count_cookies(), CMAX);
 
   
   while (do_count_cookies_in_db(db.db) < CMAX) {
@@ -54,8 +54,8 @@ function* do_run_test() {
   
   
   let file = db.db.databaseFile;
-  do_check_true(file.exists());
-  do_check_true(file.fileSize < 1e6);
+  Assert.ok(file.exists());
+  Assert.ok(file.fileSize < 1e6);
   db.close();
 
   
@@ -64,19 +64,19 @@ function* do_run_test() {
   do_load_profile();
 
   
-  do_check_eq(Services.cookiemgr.countCookiesFromHost("999.com"), 1);
-  do_check_eq(Services.cookiemgr.countCookiesFromHost("abc.com"), 0);
-  do_check_eq(Services.cookiemgr.countCookiesFromHost("100.com"), 1);
-  do_check_eq(Services.cookiemgr.countCookiesFromHost("400.com"), 1);
-  do_check_eq(Services.cookiemgr.countCookiesFromHost("xyz.com"), 0);
+  Assert.equal(Services.cookiemgr.countCookiesFromHost("999.com"), 1);
+  Assert.equal(Services.cookiemgr.countCookiesFromHost("abc.com"), 0);
+  Assert.equal(Services.cookiemgr.countCookiesFromHost("100.com"), 1);
+  Assert.equal(Services.cookiemgr.countCookiesFromHost("400.com"), 1);
+  Assert.equal(Services.cookiemgr.countCookiesFromHost("xyz.com"), 0);
 
   
-  do_check_eq(do_count_cookies(), CMAX);
+  Assert.equal(do_count_cookies(), CMAX);
 
   
   for (let i = 0; i < CMAX; ++i) {
     let host = i.toString() + ".com";
-    do_check_eq(Services.cookiemgr.countCookiesFromHost(host), 1);
+    Assert.equal(Services.cookiemgr.countCookiesFromHost(host), 1);
   }
 
   
@@ -95,7 +95,7 @@ function* do_run_test() {
   }
 
   
-  do_check_eq(do_count_cookies(), CMAX - 200);
+  Assert.equal(do_count_cookies(), CMAX - 200);
 
   
   do_close_profile(test_generator);
@@ -103,7 +103,7 @@ function* do_run_test() {
   do_load_profile();
 
   
-  do_check_eq(do_count_cookies(), CMAX - 200);
+  Assert.equal(do_count_cookies(), CMAX - 200);
 
   
   do_close_profile(test_generator);
@@ -112,10 +112,10 @@ function* do_run_test() {
   yield;
 
   
-  do_check_eq(do_count_cookies(), CMAX - 200);
+  Assert.equal(do_count_cookies(), CMAX - 200);
   for (let i = 100; i < CMAX - 100; ++i) {
     let host = i.toString() + ".com";
-    do_check_eq(Services.cookiemgr.countCookiesFromHost(host), 1);
+    Assert.equal(Services.cookiemgr.countCookiesFromHost(host), 1);
   }
 
   finish_test();

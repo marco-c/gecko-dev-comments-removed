@@ -49,7 +49,7 @@ function run_test() {
     function testAutoConfig(test) {
       
       for (let prefName in test.prefs) {
-        do_check_eq(Ci.nsIPrefBranch.PREF_INVALID, prefs.getPrefType(prefName));
+        Assert.equal(Ci.nsIPrefBranch.PREF_INVALID, prefs.getPrefType(prefName));
       }
 
       let autoConfigCfg = testDir.clone();
@@ -59,14 +59,14 @@ function run_test() {
       obsvc.notifyObservers(ps, "prefservice:before-read-userprefs");
 
       for (let prefName in test.prefs) {
-        do_check_eq(test.prefs[prefName],
-                    prefs.getStringPref(prefName));
+        Assert.equal(test.prefs[prefName],
+                     prefs.getStringPref(prefName));
       }
 
       ps.resetPrefs();
       
       for (let prefName in test.prefs) {
-        do_check_eq(Ci.nsIPrefBranch.PREF_INVALID, prefs.getPrefType(prefName));
+        Assert.equal(Ci.nsIPrefBranch.PREF_INVALID, prefs.getPrefType(prefName));
       }
     }
 

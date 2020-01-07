@@ -32,9 +32,9 @@ add_task(async function test_expire_orphans() {
   await promiseForceExpirationStep(0);
 
   
-  do_check_eq(visits_in_database("http://page1.mozilla.org/"), 1);
-  do_check_eq(visits_in_database("http://page2.mozilla.org/"), 1);
-  do_check_false(page_in_database("http://page3.mozilla.org/"));
+  Assert.equal(visits_in_database("http://page1.mozilla.org/"), 1);
+  Assert.equal(visits_in_database("http://page2.mozilla.org/"), 1);
+  Assert.ok(!page_in_database("http://page3.mozilla.org/"));
 
   
   await PlacesTestUtils.clearHistory();
@@ -62,9 +62,9 @@ add_task(async function test_expire_orphans_optionalarg() {
   await promiseForceExpirationStep();
 
   
-  do_check_eq(visits_in_database("http://page1.mozilla.org/"), 1);
-  do_check_eq(visits_in_database("http://page2.mozilla.org/"), 1);
-  do_check_false(page_in_database("http://page3.mozilla.org/"));
+  Assert.equal(visits_in_database("http://page1.mozilla.org/"), 1);
+  Assert.equal(visits_in_database("http://page2.mozilla.org/"), 1);
+  Assert.ok(!page_in_database("http://page3.mozilla.org/"));
 
   
   await PlacesTestUtils.clearHistory();
@@ -86,9 +86,9 @@ add_task(async function test_expire_limited() {
   await promiseForceExpirationStep(1);
 
   
-  do_check_eq(visits_in_database("http://new.mozilla.org/"), 1);
+  Assert.equal(visits_in_database("http://new.mozilla.org/"), 1);
   
-  do_check_false(page_in_database("http://old.mozilla.org/"));
+  Assert.ok(!page_in_database("http://old.mozilla.org/"));
 
   
   await PlacesTestUtils.clearHistory();
@@ -114,9 +114,9 @@ add_task(async function test_expire_limited_longurl() {
   await promiseForceExpirationStep(1);
 
   
-  do_check_eq(visits_in_database(longurl), 1);
+  Assert.equal(visits_in_database(longurl), 1);
   
-  do_check_false(page_in_database("http://old.mozilla.org/"));
+  Assert.ok(!page_in_database("http://old.mozilla.org/"));
 
   
   await PlacesTestUtils.clearHistory();
@@ -143,13 +143,13 @@ add_task(async function test_expire_limited_exoticurl() {
   await promiseForceExpirationStep(1);
 
   
-  do_check_eq(visits_in_database("http://nonexpirable-download.mozilla.org/"), 1);
+  Assert.equal(visits_in_database("http://nonexpirable-download.mozilla.org/"), 1);
   
   
   
-  do_check_eq(visits_in_database("http://download.mozilla.org/"), 0);
+  Assert.equal(visits_in_database("http://download.mozilla.org/"), 0);
   
-  do_check_false(page_in_database("http://old.mozilla.org/"));
+  Assert.ok(!page_in_database("http://old.mozilla.org/"));
 
   
   await PlacesTestUtils.clearHistory();
@@ -196,13 +196,13 @@ add_task(async function test_expire_unlimited() {
   await promiseForceExpirationStep(-1);
 
   
-  do_check_eq(visits_in_database("http://nonexpirable.mozilla.org/"), 1);
-  do_check_eq(visits_in_database("http://nonexpirable-download.mozilla.org/"), 1);
-  do_check_eq(visits_in_database(longurl), 1);
+  Assert.equal(visits_in_database("http://nonexpirable.mozilla.org/"), 1);
+  Assert.equal(visits_in_database("http://nonexpirable-download.mozilla.org/"), 1);
+  Assert.equal(visits_in_database(longurl), 1);
   
-  do_check_false(page_in_database("http://old.mozilla.org/"));
-  do_check_false(page_in_database("http://download.mozilla.org/"));
-  do_check_false(page_in_database("http://new.mozilla.org/"));
+  Assert.ok(!page_in_database("http://old.mozilla.org/"));
+  Assert.ok(!page_in_database("http://download.mozilla.org/"));
+  Assert.ok(!page_in_database("http://new.mozilla.org/"));
 
   
   await PlacesTestUtils.clearHistory();

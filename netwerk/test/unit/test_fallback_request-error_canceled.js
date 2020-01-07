@@ -57,7 +57,7 @@ function redirectHandler(metadata, response)
 
 function finish_test(request, buffer)
 {
-  do_check_eq(buffer, "");
+  Assert.equal(buffer, "");
   do_test_finished();
 }
 

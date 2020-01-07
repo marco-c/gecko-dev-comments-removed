@@ -43,13 +43,13 @@ function test_remove_breakpoint() {
     source.setBreakpoint(location, function (response, bpClient) {
       gThreadClient.addOneTimeListener("paused", function (event, packet) {
         
-        do_check_eq(packet.type, "paused");
-        do_check_eq(packet.frame.where.source.actor, source.actor);
-        do_check_eq(packet.frame.where.line, location.line);
-        do_check_eq(packet.why.type, "breakpoint");
-        do_check_eq(packet.why.actors[0], bpClient.actor);
+        Assert.equal(packet.type, "paused");
+        Assert.equal(packet.frame.where.source.actor, source.actor);
+        Assert.equal(packet.frame.where.line, location.line);
+        Assert.equal(packet.why.type, "breakpoint");
+        Assert.equal(packet.why.actors[0], bpClient.actor);
         
-        do_check_eq(gDebuggee.a, undefined);
+        Assert.equal(gDebuggee.a, undefined);
 
         
         bpClient.remove(function (response) {
@@ -58,7 +58,7 @@ function test_remove_breakpoint() {
                                            function (event, packet) {
             
                                              gThreadClient.resume(function () {
-                                               do_check_true(false);
+                                               Assert.ok(false);
                                              });
                                            });
           gThreadClient.resume();
@@ -82,7 +82,7 @@ function test_remove_breakpoint() {
                    gDebuggee);
   
   if (!done) {
-    do_check_true(false);
+    Assert.ok(false);
   }
   gClient.close().then(gCallback);
 }
