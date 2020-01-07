@@ -61,21 +61,19 @@ u_short ip_id = 0;
 userland_mutex_t atomic_mtx;
 
 
-static int read_random_phony(void *, int);
-
-static int (*read_func)(void *, int) = read_random_phony;
 
 
-int
-read_random(void *buf, int count)
+
+#if defined(__Userspace_os_FreeBSD) || defined(__Userspace_os_Darwin)
+static int
+read_random_phony(void *buf, int count)
 {
-	return ((*read_func)(buf, count));
+	if (count >= 0) {
+		arc4random_buf(buf, count);
+	}
+	return (count);
 }
-
-
-
-
-
+#else
 static int
 read_random_phony(void *buf, int count)
 {
@@ -92,5 +90,15 @@ read_random_phony(void *buf, int count)
 	}
 
 	return (count);
+}
+#endif
+
+static int (*read_func)(void *, int) = read_random_phony;
+
+
+int
+read_random(void *buf, int count)
+{
+	return ((*read_func)(buf, count));
 }
 

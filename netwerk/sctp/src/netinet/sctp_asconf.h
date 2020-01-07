@@ -30,9 +30,11 @@
 
 
 
+
+
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_asconf.h 237715 2012-06-28 16:01:08Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_asconf.h 324056 2017-09-27 13:05:23Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_ASCONF_H_
@@ -71,9 +73,6 @@ extern void sctp_asconf_iterator_end(void *ptr, uint32_t val);
 extern int32_t
 sctp_set_primary_ip_address_sa(struct sctp_tcb *,
     struct sockaddr *);
-
-extern void
-sctp_set_primary_ip_address(struct sctp_ifa *ifa);
 
 extern void
 sctp_check_address_list(struct sctp_tcb *, struct mbuf *, int, int,
