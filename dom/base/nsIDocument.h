@@ -4594,13 +4594,29 @@ nsINode::OwnerDocAsNode() const
   return OwnerDoc();
 }
 
+
+
+
+
+
+
+
+
+
+template<typename T>
+inline bool ShouldUseXBLScope(const T* aNode)
+{
+  return aNode->IsInAnonymousSubtree() &&
+         !aNode->IsAnonymousContentInSVGUseSubtree();
+}
+
 inline mozilla::dom::ParentObject
 nsINode::GetParentObject() const
 {
   mozilla::dom::ParentObject p(OwnerDoc());
     
     
-  p.mUseXBLScope = IsInAnonymousSubtree() && !IsAnonymousContentInSVGUseSubtree();
+  p.mUseXBLScope = ShouldUseXBLScope(this);
   return p;
 }
 
