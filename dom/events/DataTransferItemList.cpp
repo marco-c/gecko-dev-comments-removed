@@ -360,10 +360,8 @@ DataTransferItemList::SetDataWithPrincipal(const nsAString& aType,
 
         DataTransferItem::eKind oldKind = item->Kind();
         item->SetData(aData);
-        if (oldKind != item->Kind()) {
-          
-          mDataTransfer->TypesListMayHaveChanged();
-        }
+
+        mDataTransfer->TypesListMayHaveChanged();
 
         if (aIndex != 0) {
           
