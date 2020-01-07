@@ -197,9 +197,6 @@ pref("dom.performance.enable_user_timing_logging", false);
 pref("dom.performance.enable_notify_performance_timing", false);
 
 
-pref("dom.performance.enable_scheduler_timing", false);
-
-
 pref("dom.permissions.revoke.enable", false);
 
 
@@ -3089,7 +3086,7 @@ pref("layout.css.prefixes.webkit", true);
 
 
 
-pref("layout.css.prefixes.device-pixel-ratio-webkit", true);
+pref("layout.css.prefixes.device-pixel-ratio-webkit", false);
 
 
 pref("layout.css.scope-pseudo.enabled", true);
@@ -4557,13 +4554,6 @@ pref("ui.panel.default_level_parent", true);
 pref("mousewheel.system_scroll_override_on_root_content.enabled", false);
 
 pref("intl.ime.use_simple_context_on_password_field", false);
-
-
-
-
-
-
-pref("intl.ime.hack.uim.using_key_snooper", true);
 
 #ifdef MOZ_WIDGET_GTK
 
