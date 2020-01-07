@@ -459,10 +459,15 @@ WebRenderProgramCache::~WebRenderProgramCache()
 
 extern "C" {
 
-void wr_notifier_new_frame_ready(mozilla::wr::WrWindowId aWindowId)
+static void NewFrameReady(mozilla::wr::WrWindowId aWindowId)
 {
   mozilla::wr::RenderThread::Get()->IncRenderingFrameCount(aWindowId);
   mozilla::wr::RenderThread::Get()->NewFrameReady(mozilla::wr::WindowId(aWindowId));
+}
+
+void wr_notifier_new_frame_ready(mozilla::wr::WrWindowId aWindowId)
+{
+  NewFrameReady(aWindowId);
 }
 
 void wr_notifier_new_scroll_frame_ready(mozilla::wr::WrWindowId aWindowId, bool aCompositeNeeded)
@@ -471,6 +476,9 @@ void wr_notifier_new_scroll_frame_ready(mozilla::wr::WrWindowId aWindowId, bool 
   
   
   
+  if (aCompositeNeeded) {
+    NewFrameReady(aWindowId);
+  }
 }
 
 void wr_notifier_external_event(mozilla::wr::WrWindowId aWindowId, size_t aRawEvent)
