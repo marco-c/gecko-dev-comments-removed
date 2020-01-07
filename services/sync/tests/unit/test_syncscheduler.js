@@ -1,6 +1,7 @@
 
 
 
+Cu.import("resource://gre/modules/FxAccounts.jsm");
 Cu.import("resource://services-sync/browserid_identity.js");
 Cu.import("resource://services-sync/constants.js");
 Cu.import("resource://services-sync/engines.js");
@@ -526,8 +527,12 @@ add_task(async function test_autoconnect_mp_locked() {
     _("Faking Master Password entry cancelation.");
     return false;
   };
-  let origCanFetchKeys = Service.identity._canFetchKeys;
-  Service.identity._canFetchKeys = () => false;
+  let origFxA = Service.identity._fxaService;
+  Service.identity._fxaService = new FxAccounts({
+    canGetKeys() {
+      return false;
+    }
+  });
 
   
   
@@ -542,7 +547,7 @@ add_task(async function test_autoconnect_mp_locked() {
 
   Utils.mpLocked = origLocked;
   Utils.ensureMPUnlocked = origEnsureMPUnlocked;
-  Service.identity._canFetchKeys = origCanFetchKeys;
+  Service.identity._fxaService = origFxA;
 
   await cleanUpAndGo(server);
 });

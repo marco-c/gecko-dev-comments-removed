@@ -205,6 +205,8 @@ exports.ERROR_INVALID_PARAMETER              = "INVALID_PARAMETER";
 exports.ERROR_CODE_METHOD_NOT_ALLOWED        = 405;
 exports.ERROR_MSG_METHOD_NOT_ALLOWED         = "METHOD_NOT_ALLOWED";
 
+exports.DERIVED_KEYS_NAMES = ["kSync", "kXCS", "kExtSync", "kExtKbHash"];
+
 
 
 
@@ -218,7 +220,7 @@ exports.FXA_PWDMGR_PLAINTEXT_FIELDS = new Set(
 
 
 exports.FXA_PWDMGR_SECURE_FIELDS = new Set(
-  ["kA", "kB", "keyFetchToken", "unwrapBKey", "assertion"]);
+  [...exports.DERIVED_KEYS_NAMES, "keyFetchToken", "unwrapBKey", "assertion"]);
 
 
 exports.FXA_PWDMGR_MEMORY_FIELDS = new Set(

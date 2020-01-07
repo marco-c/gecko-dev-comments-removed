@@ -517,10 +517,12 @@ const assertExtensionRecord = async function(fxaService, post, extension, key) {
 const defaultExtensionId = "{13bdde76-4dc7-11e6-9bdc-54ee758d6342}";
 const defaultExtension = {id: defaultExtensionId};
 
-const BORING_KB = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+const kExtSync = "63f9057577c04bbbb9f0c3fd85b5d4032b60e13edc1f8dd309bf4305d66f2cc312dde16ce46021a496f713950d0a6c566ce181521a44726e7be97cf577b31b31";
+const KB_HASH = "2350cba8fced5a2fbae3b1f180baf860f78f6542bef7be709fda96cd3e3dc800";
 const loggedInUser = {
   uid: "0123456789abcdef0123456789abcdef",
-  kB: BORING_KB,
+  kExtSync,
+  kExtKbHash: KB_HASH,
   oauthTokens: {
     "sync:addon-storage": {
       token: "some-access-token",
@@ -894,15 +896,16 @@ add_task(async function checkSyncKeyRing_reuploads_keys() {
 
     
     
-    const NOVEL_KB = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdee";
-    const newUser = Object.assign({}, loggedInUser, {kB: NOVEL_KB});
+    const NEW_KB_HASH = "2350cba8fced5a2fbae3b1f180baf860f78f6542bef7be709fda96cd3e3dc801";
+    const NEW_KEXT = "63f9057577c04bbbb9f0c3fd85b5d4032b60e13edc1f8dd309bf4305d66f2cc312dde16ce46021a496f713950d0a6c566ce181521a44726e7be97cf577b31b30";
+    const newUser = Object.assign({}, loggedInUser, {kExtKbHash: NEW_KB_HASH, kExtSync: NEW_KEXT});
     let postedKeys;
     await withSignedInUser(newUser, async function(extensionStorageSync, fxaService) {
       await extensionStorageSync.checkSyncKeyRing();
 
       let posts = server.getPosts();
       equal(posts.length, 2,
-            "when kB changes, checkSyncKeyRing should post the keyring reencrypted with the new kB");
+            "when kBHash changes, checkSyncKeyRing should post the keyring reencrypted with the new kBHash");
       postedKeys = posts[1];
       assertPostedUpdatedRecord(postedKeys, 765);
 
@@ -921,9 +924,9 @@ add_task(async function checkSyncKeyRing_reuploads_keys() {
       } catch (e) {
         error = e;
       }
-      ok(error, "decrypting the keyring with the old kB should fail");
+      ok(error, "decrypting the keyring with the old kBHash should fail");
       ok(Utils.isHMACMismatch(error) || KeyRingEncryptionRemoteTransformer.isOutdatedKB(error),
-         "decrypting the keyring with the old kB should throw an HMAC mismatch");
+         "decrypting the keyring with the old kBHash should throw an HMAC mismatch");
     });
   });
 });
@@ -938,8 +941,9 @@ add_task(async function checkSyncKeyRing_overwrites_on_conflict() {
     await withServer(async function(server) {
       
       
-      const NOVEL_KB = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdee";
-      const oldUser = Object.assign({}, loggedInUser, {kB: NOVEL_KB});
+      const NEW_KB_HASH = "2350cba8fced5a2fbae3b1f180baf860f78f6542bef7be709fda96cd3e3dc801";
+      const NEW_KEXT = "63f9057577c04bbbb9f0c3fd85b5d4032b60e13edc1f8dd309bf4305d66f2cc312dde16ce46021a496f713950d0a6c566ce181521a44726e7be97cf577b31b30";
+      const oldUser = Object.assign({}, loggedInUser, {kExtKbHash: NEW_KB_HASH, kExtSync: NEW_KEXT});
       server.installDeleteBucket();
       await withSignedInUser(oldUser, async function(extensionStorageSync, fxaService) {
         await server.installKeyRing(fxaService, {}, {}, 765);

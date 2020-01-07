@@ -137,16 +137,6 @@ this.telemetryHelper = {
 };
 
 
-function deriveKeyBundle(kB) {
-  let out = CryptoUtils.hkdf(kB, undefined,
-                             "identity.mozilla.com/picl/v1/oldsync", 2 * 32);
-  let bundle = new BulkKeyBundle();
-  
-  bundle.keyPair = [out.slice(0, 32), out.slice(32, 64)];
-  return bundle;
-}
-
-
 
 
 
@@ -255,7 +245,7 @@ this.BrowserIDManager.prototype = {
     this._signedInUser = null;
   },
 
-  initializeWithCurrentIdentity(isInitialSync = false) {
+  async initializeWithCurrentIdentity(isInitialSync = false) {
     
     
     
@@ -274,7 +264,8 @@ this.BrowserIDManager.prototype = {
     this.resetCredentials();
     this._authFailureReason = null;
 
-    return this._fxaService.getSignedInUser().then(accountData => {
+    try {
+      let accountData = await this._fxaService.getSignedInUser();
       if (!accountData) {
         this._log.info("initializeWithCurrentIdentity has no user logged in");
         
@@ -288,42 +279,44 @@ this.BrowserIDManager.prototype = {
       
       
       
-      this._log.info("Waiting for user to be verified.");
-      if (!accountData.verified) {
-        telemetryHelper.maybeRecordLoginState(telemetryHelper.STATES.NOTVERIFIED);
-      }
-      this._fxaService.whenVerified(accountData).then(accountData => {
-        this._updateSignedInUser(accountData);
+      CommonUtils.nextTick(async () => {
+        try {
+          this._log.info("Waiting for user to be verified.");
+          if (!accountData.verified) {
+            telemetryHelper.maybeRecordLoginState(telemetryHelper.STATES.NOTVERIFIED);
+          }
+          accountData = await this._fxaService.whenVerified(accountData);
+          this._updateSignedInUser(accountData);
 
-        this._log.info("Starting fetch for key bundle.");
-        return this._fetchTokenForUser();
-      }).then(token => {
-        this._token = token;
-        if (token) {
+          this._log.info("Starting fetch for key bundle.");
+          let token = await this._fetchTokenForUser();
+          this._token = token;
+          if (token) {
+            
+            
+            this._hashedUID = token.hashed_fxa_uid; 
+          }
+          this._shouldHaveSyncKeyBundle = true; 
+          this.whenReadyToAuthenticate.resolve();
+          this._log.info("Background fetch for key bundle done");
+          Weave.Status.login = LOGIN_SUCCEEDED;
+          if (isInitialSync) {
+            this._log.info("Doing initial sync actions");
+            Svc.Prefs.set("firstSync", "resetClient");
+            Services.obs.notifyObservers(null, "weave:service:setup-complete");
+            CommonUtils.nextTick(Weave.Service.sync, Weave.Service);
+          }
+        } catch (authErr) {
           
-          
-          this._hashedUID = token.hashed_fxa_uid; 
+          this._log.error("Background fetch for key bundle failed", authErr);
+          this._shouldHaveSyncKeyBundle = true; 
+          this.whenReadyToAuthenticate.reject(authErr);
         }
-        this._shouldHaveSyncKeyBundle = true; 
-        this.whenReadyToAuthenticate.resolve();
-        this._log.info("Background fetch for key bundle done");
-        Weave.Status.login = LOGIN_SUCCEEDED;
-        if (isInitialSync) {
-          this._log.info("Doing initial sync actions");
-          Svc.Prefs.set("firstSync", "resetClient");
-          Services.obs.notifyObservers(null, "weave:service:setup-complete");
-          CommonUtils.nextTick(Weave.Service.sync, Weave.Service);
-        }
-      }).catch(authErr => {
         
-        this._log.error("Background fetch for key bundle failed", authErr);
-        this._shouldHaveSyncKeyBundle = true; 
-        this.whenReadyToAuthenticate.reject(authErr);
       });
-      
-    }).catch(err => {
+    } catch (err) {
       this._log.error("Processing logged in account", err);
-    });
+    }
   },
 
   _updateSignedInUser(userData) {
@@ -399,25 +392,6 @@ this.BrowserIDManager.prototype = {
         this._log.error("Error while fetching a new token", err));
       break;
     }
-  },
-
-  
-
-
-  _sha256(message) {
-    let hasher = Cc["@mozilla.org/security/hash;1"]
-                    .createInstance(Ci.nsICryptoHash);
-    hasher.init(hasher.SHA256);
-    return CryptoUtils.digestBytes(message, hasher);
-  },
-
-  
-
-
-
-
-  _computeXClientState(kBbytes) {
-    return CommonUtils.bytesAsHex(this._sha256(kBbytes).slice(0, 16), false);
   },
 
   
@@ -538,49 +512,37 @@ this.BrowserIDManager.prototype = {
   },
 
   
-  
-  _canFetchKeys() {
-    let userData = this._signedInUser;
-    
-    
-    return userData && (userData.keyFetchToken || (userData.kA && userData.kB));
-  },
-
-  
 
 
 
 
 
-  unlockAndVerifyAuthState() {
-    if (this._canFetchKeys()) {
+  async unlockAndVerifyAuthState() {
+    if ((await this._fxaService.canGetKeys())) {
       log.debug("unlockAndVerifyAuthState already has (or can fetch) sync keys");
-      return Promise.resolve(STATUS_OK);
+      return STATUS_OK;
     }
     
     if (!Utils.ensureMPUnlocked()) {
       
       log.debug("unlockAndVerifyAuthState: user declined to unlock master-password");
-      return Promise.resolve(MASTER_PASSWORD_LOCKED);
+      return MASTER_PASSWORD_LOCKED;
     }
     
     
-    return this._fxaService.getSignedInUser().then(
-      accountData => {
-        this._updateSignedInUser(accountData);
-        
-        
-        
-        let result;
-        if (this._canFetchKeys()) {
-          result = STATUS_OK;
-        } else {
-          result = LOGIN_FAILED_LOGIN_REJECTED;
-        }
-        log.debug("unlockAndVerifyAuthState re-fetched credentials and is returning", result);
-        return result;
-      }
-    );
+    const accountData = await this._fxaService.getSignedInUser();
+    this._updateSignedInUser(accountData);
+    
+    
+    
+    let result;
+    if ((await this._fxaService.canGetKeys())) {
+      result = STATUS_OK;
+    } else {
+      result = LOGIN_FAILED_LOGIN_REJECTED;
+    }
+    log.debug("unlockAndVerifyAuthState re-fetched credentials and is returning", result);
+    return result;
   },
 
   
@@ -620,7 +582,7 @@ this.BrowserIDManager.prototype = {
   
   
   
-  _fetchTokenForUser() {
+  async _fetchTokenForUser() {
     
     let tokenServerURI = this._tokenServerUrl;
     let log = this._log;
@@ -631,18 +593,13 @@ this.BrowserIDManager.prototype = {
     
     
     
-    if (!this._canFetchKeys()) {
+    if (!(await this._fxaService.canGetKeys())) {
       log.info("Unable to fetch keys (master-password locked?), so aborting token fetch");
       return Promise.resolve(null);
     }
 
     let maybeFetchKeys = () => {
-      
-      
-      if (userData.kA && userData.kB) {
-        return null;
-      }
-      log.info("Fetching new keys");
+      log.info("Getting keys");
       return this._fxaService.getKeys().then(
         newUserData => {
           userData = newUserData;
@@ -662,8 +619,7 @@ this.BrowserIDManager.prototype = {
         return deferred.resolve(token);
       };
 
-      let kBbytes = CommonUtils.hexToBytes(userData.kB);
-      let headers = {"X-Client-State": this._computeXClientState(kBbytes)};
+      let headers = {"X-Client-State": userData.kXCS};
       client.getTokenFromBrowserIDAssertion(tokenServerURI, assertion, cb, headers);
       return deferred.promise;
     };
@@ -697,8 +653,7 @@ this.BrowserIDManager.prototype = {
         
         token.expiration = this._now() + (token.duration * 1000) * 0.80;
         if (!this._syncKeyBundle) {
-          
-          this._syncKeyBundle = deriveKeyBundle(CommonUtils.hexToBytes(userData.kB));
+          this._syncKeyBundle = BulkKeyBundle.fromHexKey(userData.kSync);
         }
         telemetryHelper.maybeRecordLoginState(telemetryHelper.STATES.SUCCESS);
         return token;
