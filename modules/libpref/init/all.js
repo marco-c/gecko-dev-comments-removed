@@ -710,6 +710,10 @@ pref("apz.overscroll.stretch_factor", "0.35");
 pref("apz.paint_skipping.enabled", true);
 
 pref("apz.peek_messages.enabled", true);
+pref("apz.pinch_lock.mode", 1);
+pref("apz.pinch_lock.scoll_lock_threshold", "0.03125");  
+pref("apz.pinch_lock.span_breakout_threshold", "0.03125");  
+pref("apz.pinch_lock.span_lock_threshold", "0.03125");  
 pref("apz.popups.enabled", false);
 
 

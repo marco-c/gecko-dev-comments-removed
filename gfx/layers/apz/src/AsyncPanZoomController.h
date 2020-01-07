@@ -658,6 +658,11 @@ protected:
   
 
 
+  void HandlePinchLocking(ScreenCoord spanDistance, ScreenPoint focusChange);
+
+  
+
+
 
   nsEventStatus StartPanning(const ParentLayerPoint& aStartPoint);
 
@@ -723,6 +728,14 @@ protected:
   };
 
   static AxisLockMode GetAxisLockMode();
+
+  enum PinchLockMode {
+    PINCH_FREE,     
+    PINCH_STANDARD, 
+    PINCH_STICKY,   
+  };
+
+  static PinchLockMode GetPinchLockMode();
 
   
   
@@ -799,6 +812,10 @@ private:
   
   
   bool mPanDirRestricted;
+
+  
+  
+  bool mPinchLocked;
 
   
   
