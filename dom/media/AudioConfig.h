@@ -97,8 +97,7 @@ public:
     
     
     
-    
-    bool MappingTable(const ChannelLayout& aOther, uint8_t* aMap = nullptr) const;
+    bool MappingTable(const ChannelLayout& aOther, nsTArray<uint8_t>* aMap = nullptr) const;
     bool IsValid() const { return mValid; }
     bool HasChannel(Channel aChannel) const
     {

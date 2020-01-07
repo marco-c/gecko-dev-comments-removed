@@ -235,7 +235,9 @@ public:
 private:
   const AudioConfig mIn;
   const AudioConfig mOut;
-  uint8_t mChannelOrderMap[MAX_AUDIO_CHANNELS];
+  
+  
+  AutoTArray<uint8_t, AudioConfig::ChannelLayout::MAX_CHANNELS> mChannelOrderMap;
   
 
 
