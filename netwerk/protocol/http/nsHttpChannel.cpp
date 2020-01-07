@@ -8682,6 +8682,12 @@ nsHttpChannel::MaybeWarnAboutAppCache()
     GetCallback(warner);
     if (warner) {
         warner->IssueWarning(nsIDocument::eAppCache, false);
+        
+        
+        if (!IsHTTPS() &&
+            Preferences::GetBool("browser.cache.offline.insecure.enable")) {
+            warner->IssueWarning(nsIDocument::eAppCacheInsecure, true);
+        }
     }
 }
 
