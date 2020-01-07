@@ -6,6 +6,7 @@
 
 #include "frontend/NameFunctions.h"
 
+#include "mozilla/MemoryChecking.h"
 #include "mozilla/Sprintf.h"
 
 #include "jsfun.h"
@@ -350,7 +351,7 @@ class NameResolver
 
 
 
-    bool resolve(ParseNode* cur, HandleAtom prefixArg = nullptr) {
+    bool resolve(ParseNode* const cur, HandleAtom prefixArg = nullptr) {
         RootedAtom prefix(cx, prefixArg);
         if (cur == nullptr)
             return true;
@@ -370,9 +371,13 @@ class NameResolver
             if (!isDirectCall(nparents - 1, cur))
                 prefix = prefix2;
         }
+
         if (nparents >= MaxParents)
             return true;
-        parents[nparents++] = cur;
+
+        auto initialParents = nparents;
+        parents[initialParents] = cur;
+        nparents++;
 
         switch (cur->getKind()) {
           
@@ -815,6 +820,18 @@ class NameResolver
         }
 
         nparents--;
+        MOZ_ASSERT(initialParents == nparents, "nparents imbalance detected");
+
+        
+        
+        
+        
+        MOZ_ASSERT(parents[initialParents] == cur,
+                   "pushed child shouldn't change underneath us");
+
+        JS_POISON(&parents[initialParents], 0xFF, sizeof(parents[initialParents]));
+        MOZ_MAKE_MEM_UNDEFINED(&parents[initialParents], sizeof(parents[initialParents]));
+
         return true;
     }
 };
