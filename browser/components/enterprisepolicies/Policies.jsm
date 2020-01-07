@@ -32,6 +32,32 @@ XPCOMUtils.defineLazyGetter(this, "log", () => {
 
 var EXPORTED_SYMBOLS = ["Policies"];
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 var Policies = {
   "BlockAboutAddons": {
     onBeforeUIStartup(manager, param) {
@@ -206,6 +232,19 @@ var Policies = {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 function setAndLockPref(prefName, prefValue) {
   if (Services.prefs.prefIsLocked(prefName)) {
     Services.prefs.unlockPref(prefName);
@@ -233,6 +272,19 @@ function setAndLockPref(prefName, prefValue) {
 
   Services.prefs.lockPref(prefName);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 function addAllowDenyPermissions(permissionName, allowList, blockList) {
   allowList = allowList || [];

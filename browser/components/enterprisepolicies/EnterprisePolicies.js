@@ -8,7 +8,6 @@ ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   WindowsGPOParser: "resource:///modules/policies/WindowsGPOParser.jsm",
-  NetUtil: "resource://gre/modules/NetUtil.jsm",
   Policies: "resource:///modules/policies/Policies.jsm",
   PoliciesValidator: "resource:///modules/policies/PoliciesValidator.jsm",
 });
@@ -140,11 +139,11 @@ EnterprisePoliciesManager.prototype = {
       let policyImpl = Policies[policyName];
 
       for (let timing of Object.keys(this._callbacks)) {
-        let policyCallback = policyImpl["on" + timing];
+        let policyCallback = policyImpl[timing];
         if (policyCallback) {
           this._schedulePolicyCallback(
             timing,
-            policyCallback.bind(null,
+            policyCallback.bind(policyImpl,
                                 this, 
                                 parsedParameters));
         }
@@ -153,10 +152,24 @@ EnterprisePoliciesManager.prototype = {
   },
 
   _callbacks: {
-    BeforeAddons: [],
-    ProfileAfterChange: [],
-    BeforeUIStartup: [],
-    AllWindowsRestored: [],
+    
+    
+    
+    onBeforeAddons: [],
+
+    
+    
+    onProfileAfterChange: [],
+
+    
+    onBeforeUIStartup: [],
+
+    
+    
+    
+    
+    
+    onAllWindowsRestored: [],
   },
 
   _schedulePolicyCallback(timing, callback) {
@@ -216,22 +229,23 @@ EnterprisePoliciesManager.prototype = {
   observe: function BG_observe(subject, topic, data) {
     switch (topic) {
       case "policies-startup":
+        
+        
         this._initialize();
-        this._runPoliciesCallbacks("BeforeAddons");
+
+        this._runPoliciesCallbacks("onBeforeAddons");
         break;
 
       case "profile-after-change":
-        
-        
-        this._runPoliciesCallbacks("ProfileAfterChange");
+        this._runPoliciesCallbacks("onProfileAfterChange");
         break;
 
       case "final-ui-startup":
-        this._runPoliciesCallbacks("BeforeUIStartup");
+        this._runPoliciesCallbacks("onBeforeUIStartup");
         break;
 
       case "sessionstore-windows-restored":
-        this._runPoliciesCallbacks("AllWindowsRestored");
+        this._runPoliciesCallbacks("onAllWindowsRestored");
 
         
         Services.obs.notifyObservers(null,
