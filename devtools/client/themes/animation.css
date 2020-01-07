@@ -20,6 +20,18 @@
 }
 
 
+#animation-container {
+  height: 100%;
+}
+
+
+.animation-list-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+
 .animation-list-header {
   display: flex;
   justify-content: flex-end;
@@ -41,8 +53,10 @@
 
 
 .animation-list {
+  flex: 1;
   list-style-type: none;
   margin-top: 0;
+  overflow: auto;
   padding: 0;
 }
 
