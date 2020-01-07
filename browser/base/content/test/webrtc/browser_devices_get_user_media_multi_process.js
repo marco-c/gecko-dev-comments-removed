@@ -86,7 +86,10 @@ var gTests = [
     is(webrtcUI.getActiveStreams(true, true, true).length, 2, "2 active streams");
 
     info("removing the second tab");
-    await BrowserTestUtils.removeTab(tab);
+    
+    let sessionStorePromise = BrowserTestUtils.waitForSessionStoreUpdate(tab);
+    BrowserTestUtils.removeTab(tab);
+    await sessionStorePromise;
 
     
     await TestUtils.waitForCondition(() => !webrtcUI.showCameraIndicator);
@@ -189,7 +192,10 @@ var gTests = [
     is(webrtcUI.getActiveStreams(true, true, true).length, 2, "2 active streams");
 
     info("removing the second tab");
-    await BrowserTestUtils.removeTab(tab);
+    
+    let sessionStorePromise = BrowserTestUtils.waitForSessionStoreUpdate(tab);
+    BrowserTestUtils.removeTab(tab);
+    await sessionStorePromise;
 
     
     await TestUtils.waitForCondition(() => webrtcUI.showCameraIndicator);
@@ -304,7 +310,7 @@ var gTests = [
     is(webrtcUI.getActiveStreams(true, true, true).length, 2, "2 active streams");
 
     info("removing the second tab");
-    await BrowserTestUtils.removeTab(tab);
+    BrowserTestUtils.removeTab(tab);
 
     
     

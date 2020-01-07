@@ -234,8 +234,10 @@ async function doTest(aTestPage, aExpectedCookies, aFaviconURL) {
   
   await promiseFaviconLoaded;
 
+  BrowserTestUtils.removeTab(tabInfo.tab);
   
-  await BrowserTestUtils.removeTab(tabInfo.tab);
+  
+  await new Promise(executeSoon);
 
   
   promiseObserveFavicon = observeFavicon(FIRST_PARTY_TWO, aExpectedCookies[1], secondPageURI);
