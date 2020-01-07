@@ -4,34 +4,13 @@
 
 
 
-use values::computed::Percentage;
-
 
 #[cfg_attr(feature = "servo", derive(MallocSizeOf))]
-#[derive(Clone, Copy, Debug, PartialEq, ToComputedValue, ToCss)]
-pub enum FlexBasis<LengthOrPercentage> {
-    
-    Auto,
+#[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug, PartialEq)]
+#[derive(ToAnimatedValue, ToAnimatedZero, ToComputedValue, ToCss)]
+pub enum FlexBasis<Width> {
     
     Content,
     
-    Length(LengthOrPercentage),
-}
-
-impl<L> FlexBasis<L> {
-    
-    #[inline]
-    pub fn auto() -> Self {
-        FlexBasis::Auto
-    }
-}
-
-impl<L> FlexBasis<L>
-where Percentage: Into<L>,
-{
-    
-    #[inline]
-    pub fn zero_percent() -> Self {
-        FlexBasis::Length(Percentage(0.).into())
-    }
+    Width(Width),
 }

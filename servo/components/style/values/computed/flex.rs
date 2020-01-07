@@ -4,8 +4,23 @@
 
 
 
-use values::computed::length::LengthOrPercentage;
 use values::generics::flex::FlexBasis as GenericFlexBasis;
 
 
-pub type FlexBasis = GenericFlexBasis<LengthOrPercentage>;
+#[cfg(feature = "servo")]
+pub type Width = ::values::computed::NonNegativeLengthOrPercentageOrAuto;
+
+
+#[cfg(feature = "gecko")]
+pub type Width = ::values::computed::MozLength;
+
+
+pub type FlexBasis = GenericFlexBasis<Width>;
+
+impl FlexBasis {
+    
+    #[inline]
+    pub fn auto() -> Self {
+        GenericFlexBasis::Width(Width::auto())
+    }
+}

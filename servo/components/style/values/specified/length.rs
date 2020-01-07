@@ -914,6 +914,16 @@ impl LengthOrPercentageOrAuto {
     pub fn zero_percent() -> Self {
         LengthOrPercentageOrAuto::Percentage(computed::Percentage::zero())
     }
+
+    
+    #[inline]
+    pub fn parse_quirky<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+        allow_quirks: AllowQuirks,
+    ) -> Result<Self, ParseError<'i>> {
+        Self::parse_internal(context, input, AllowedNumericType::All, allow_quirks)
+    }
 }
 
 impl Parse for LengthOrPercentageOrAuto {
@@ -923,14 +933,33 @@ impl Parse for LengthOrPercentageOrAuto {
     }
 }
 
-impl LengthOrPercentageOrAuto {
+
+pub type NonNegativeLengthOrPercentageOrAuto = NonNegative<LengthOrPercentageOrAuto>;
+
+impl NonNegativeLengthOrPercentageOrAuto {
     
     #[inline]
-    pub fn parse_quirky<'i, 't>(context: &ParserContext,
-                                input: &mut Parser<'i, 't>,
-                                allow_quirks: AllowQuirks)
-                                -> Result<Self, ParseError<'i>> {
-        Self::parse_internal(context, input, AllowedNumericType::All, allow_quirks)
+    pub fn zero() -> Self {
+        NonNegative(LengthOrPercentageOrAuto::zero())
+    }
+
+    
+    #[inline]
+    pub fn zero_percent() -> Self {
+        NonNegative(LengthOrPercentageOrAuto::zero_percent())
+    }
+
+    
+    #[inline]
+    pub fn auto() -> Self {
+        NonNegative(LengthOrPercentageOrAuto::Auto)
+    }
+}
+
+impl Parse for NonNegativeLengthOrPercentageOrAuto {
+    #[inline]
+    fn parse<'i, 't>(context: &ParserContext, input: &mut Parser<'i, 't>) -> Result<Self, ParseError<'i>> {
+        Ok(NonNegative(LengthOrPercentageOrAuto::parse_non_negative(context, input)?))
     }
 }
 
@@ -1088,6 +1117,9 @@ impl LengthOrNumber {
         Either::Second(Number::new(0.))
     }
 }
+
+
+
 
 
 
