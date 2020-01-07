@@ -659,7 +659,7 @@ class BookmarkRepairResponder extends CollectionRepairResponder {
     if (!itemsResponse.success) {
       throw new Error(`request for server IDs failed: ${itemsResponse.status}`);
     }
-    let existRemotely = new Set(JSON.parse(itemsResponse));
+    let existRemotely = new Set(itemsResponse.obj);
     
     
     

@@ -46,7 +46,7 @@ WBORecord.prototype = {
 
     let r = await resource.get();
     if (r.success) {
-      this.deserialize(r); 
+      this.deserialize(r.obj); 
     }
     this.response = r;
     return this;
@@ -72,8 +72,10 @@ WBORecord.prototype = {
   },
 
   deserialize: function deserialize(json) {
-    this.data = json.constructor.toString() == String ? JSON.parse(json) : json;
-
+    if (!json || typeof json !== "object") {
+      throw new TypeError("Can't deserialize record from: " + json);
+    }
+    this.data = json;
     try {
       
       this.payload = JSON.parse(this.payload);
@@ -238,7 +240,7 @@ RecordManager.prototype = {
         return null;
 
       let record = new this._recordType(url);
-      record.deserialize(this.response);
+      record.deserialize(this.response.obj);
 
       return this.set(url, record);
     } catch (ex) {

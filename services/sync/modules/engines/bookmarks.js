@@ -520,11 +520,10 @@ BookmarksEngine.prototype = {
         guidMap[parentName] = {};
 
       
-
-      
-      
-      let entry = new String(guid);
-      entry.hasDupe = guidMap[parentName][key] != null;
+      let entry = {
+        guid,
+        hasDupe: guidMap[parentName][key] != null,
+      };
 
       
       guidMap[parentName][key] = entry;
@@ -581,14 +580,14 @@ BookmarksEngine.prototype = {
     let dupe = parent[key];
 
     if (dupe) {
-      this._log.trace("Mapped dupe: " + dupe);
+      this._log.trace("Mapped dupe", dupe);
       return dupe;
     }
 
     if (altKey) {
       dupe = parent[altKey];
       if (dupe) {
-        this._log.trace("Mapped dupe using altKey " + altKey + ": " + dupe);
+        this._log.trace("Mapped dupe using altKey " + altKey, dupe);
         return dupe;
       }
     }
@@ -717,10 +716,8 @@ BookmarksEngine.prototype = {
       return null;
     }
     let mapped = await this._mapDupe(item);
-    this._log.debug(item.id + " mapped to " + mapped);
-    
-    
-    return mapped ? mapped.toString() : mapped;
+    this._log.debug(item.id + " mapped to", mapped);
+    return mapped ? mapped.guid : null;
   },
 
   

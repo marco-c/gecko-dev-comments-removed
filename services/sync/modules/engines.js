@@ -1008,9 +1008,7 @@ SyncEngine.prototype = {
     } else if (engineData.version > this.version) {
       
 
-      
-      
-      let error = new String("New data: " + [engineData.version, this.version]);
+      let error = new Error("New data: " + [engineData.version, this.version]);
       error.failureCode = VERSION_OUT_OF_DATE;
       throw error;
     } else {
