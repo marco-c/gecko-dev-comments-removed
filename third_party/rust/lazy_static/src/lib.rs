@@ -103,7 +103,7 @@
 #![cfg_attr(feature="spin_no_std", feature(const_fn))]
 #![cfg_attr(feature="nightly", feature(unreachable))]
 
-#![doc(html_root_url = "https://docs.rs/lazy_static/1.0.0")]
+#![doc(html_root_url = "https://docs.rs/lazy_static/1.0.1")]
 #![no_std]
 
 #[cfg(not(feature="nightly"))]
