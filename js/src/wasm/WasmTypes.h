@@ -108,6 +108,7 @@ typedef UniquePtr<Bytes> UniqueBytes;
 typedef UniquePtr<const Bytes> UniqueConstBytes;
 typedef Vector<char, 0, SystemAllocPolicy> UTF8Bytes;
 typedef Vector<Instance*, 0, SystemAllocPolicy> InstanceVector;
+typedef Vector<UniqueChars, 0, SystemAllocPolicy> UniqueCharsVector;
 
 
 

@@ -86,7 +86,10 @@ EstimateCompiledCodeSize(Tier tier, size_t bytecodeSize);
 
 
 SharedModule
-CompileBuffer(const CompileArgs& args, const ShareableBytes& bytecode, UniqueChars* error);
+CompileBuffer(const CompileArgs& args,
+              const ShareableBytes& bytecode,
+              UniqueChars* error,
+              UniqueCharsVector* warnings);
 
 
 
@@ -121,7 +124,8 @@ CompileStreaming(const CompileArgs& args,
                  const ExclusiveStreamEnd& codeStreamEnd,
                  const ExclusiveTailBytesPtr& tailBytesPtr,
                  const Atomic<bool>& cancelled,
-                 UniqueChars* error);
+                 UniqueChars* error,
+                 UniqueCharsVector* warnings);
 
 }  
 }  
