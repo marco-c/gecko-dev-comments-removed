@@ -363,8 +363,6 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
         use properties::longhands::font_weight::computed_value::T as FontWeight;
         if self.style.get_font().clone__moz_math_variant() != MozMathVariant::None {
             let font_style = self.style.mutate_font();
-            
-            
             font_style.set_font_weight(FontWeight::normal());
             font_style.set_font_style(FontStyle::Normal);
         }

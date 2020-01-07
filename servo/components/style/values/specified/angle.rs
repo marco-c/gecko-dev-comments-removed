@@ -41,13 +41,19 @@ impl ToCss for Angle {
     }
 }
 
+
+
+
+
 impl ToComputedValue for Angle {
     type ComputedValue = ComputedAngle;
 
+    #[inline]
     fn to_computed_value(&self, _context: &Context) -> Self::ComputedValue {
         self.value
     }
 
+    #[inline]
     fn from_computed_value(computed: &Self::ComputedValue) -> Self {
         Angle {
             value: *computed,
@@ -87,6 +93,12 @@ impl Angle {
             value: ComputedAngle::Rad(value),
             was_calc,
         }
+    }
+
+    
+    #[inline]
+    pub fn was_calc(&self) -> bool {
+        self.was_calc
     }
 
     
