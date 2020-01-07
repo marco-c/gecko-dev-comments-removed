@@ -112,9 +112,6 @@ struct GCPolicy<mozilla::Variant<Ts...>>
 {
     using Impl = detail::GCVariantImplementation<Ts...>;
 
-    
-    
-
     static void trace(JSTracer* trc, mozilla::Variant<Ts...>* v, const char* name) {
         Impl::trace(trc, v, name);
     }
