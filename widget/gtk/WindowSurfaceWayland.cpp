@@ -521,7 +521,7 @@ WindowBackBuffer::SetImageDataFromBackBuffer(
     Resize(aSourceBuffer->mWidth, aSourceBuffer->mHeight);
   }
 
-  mShmPool.SetImageDataFromPool(aSourceBuffer->mShmPool,
+  mShmPool.SetImageDataFromPool(&aSourceBuffer->mShmPool,
     aSourceBuffer->mWidth * aSourceBuffer->mHeight * BUFFER_BPP);
   return true;
 }
@@ -551,7 +551,7 @@ static const struct wl_callback_listener frame_listener = {
 
 WindowSurfaceWayland::WindowSurfaceWayland(nsWindow *aWindow)
   : mWindow(aWindow)
-  , mWaylandDisplay(WaylandDisplayGet(aWidget->GetWaylandDisplay()))
+  , mWaylandDisplay(WaylandDisplayGet(aWindow->GetWaylandDisplay()))
   , mFrontBuffer(nullptr)
   , mBackBuffer(nullptr)
   , mFrameCallback(nullptr)
@@ -615,7 +615,7 @@ WindowSurfaceWayland::GetBufferToDraw(int aWidth, int aHeight)
     
     
     
-    mFrontBuffer->Sync(mBackBuffer);
+    mFrontBuffer->SetImageDataFromBackBuffer(mBackBuffer);
     
     
     mFullScreenDamage = true;
