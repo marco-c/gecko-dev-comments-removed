@@ -100,15 +100,6 @@ def main(argv):
                 mk.create_rule([args.dep_target]).add_dependencies(deps)
                 with FileAvoidWrite(args.dep_file) as dep_file:
                     mk.dump(dep_file)
-        
-        
-        
-        try:
-            os.utime(args.output_file, None)
-        except:
-            print('Error processing file "{0}"'.format(args.output_file),
-                  file=sys.stderr)
-            traceback.print_exc()
     except IOError as e:
         print('Error opening file "{0}"'.format(e.filename), file=sys.stderr)
         traceback.print_exc()
