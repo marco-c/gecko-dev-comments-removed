@@ -11,6 +11,7 @@
 
 
 
+#include "mozilla/ArrayUtils.h"
 #include "mozilla/MemoryReporting.h"
 
 #include "gc/Barrier.h"
@@ -31,22 +32,33 @@ class PropertyIteratorObject;
 
 struct NativeIterator
 {
+  public:
     
     GCPtrObject obj = {};
 
+  private:
     
     JSObject* iterObj_ = nullptr;
 
     
     
-    GCPtrFlatString* props_cursor; 
+    
+    
+    HeapReceiverGuard* guardsEnd_; 
+
+  public:
+    
+    
+    
+    
+    GCPtrFlatString* propertyCursor_; 
 
     
     
     
-    GCPtrFlatString* props_end; 
+    
+    GCPtrFlatString* propertiesEnd_; 
 
-    uint32_t guard_length = 0;
     uint32_t guard_key = 0;
     uint32_t flags = 0;
 
@@ -76,42 +88,55 @@ struct NativeIterator
     
     NativeIterator();
 
-    GCPtrFlatString* begin() const {
+    HeapReceiverGuard* guardsBegin() const {
+        static_assert(alignof(HeapReceiverGuard) <= alignof(NativeIterator),
+                      "NativeIterator must be aligned to begin storing "
+                      "HeapReceiverGuards immediately after it with no "
+                      "required padding");
+        const NativeIterator* immediatelyAfter = this + 1;
+        auto* afterNonConst = const_cast<NativeIterator*>(immediatelyAfter);
+        return reinterpret_cast<HeapReceiverGuard*>(afterNonConst);
+    }
+
+    HeapReceiverGuard* guardsEnd() const {
+        return guardsEnd_;
+    }
+
+    uint32_t guardCount() const {
+        return mozilla::PointerRangeSize(guardsBegin(), guardsEnd());
+    }
+
+    GCPtrFlatString* propertiesBegin() const {
+        static_assert(alignof(HeapReceiverGuard) >= alignof(GCPtrFlatString),
+                      "GCPtrFlatStrings for properties must be able to appear "
+                      "directly after any HeapReceiverGuards after this "
+                      "NativeIterator, with no padding space required for "
+                      "correct alignment");
         static_assert(alignof(NativeIterator) >= alignof(GCPtrFlatString),
                       "GCPtrFlatStrings for properties must be able to appear "
-                      "directly after NativeIterator, with no padding space "
+                      "directly after this NativeIterator when no "
+                      "HeapReceiverGuards are present, with no padding space "
                       "required for correct alignment");
 
         
         
-        const NativeIterator* immediatelyAfter = this + 1;
-        auto* afterNonConst = const_cast<NativeIterator*>(immediatelyAfter);
-        return reinterpret_cast<GCPtrFlatString*>(afterNonConst);
+        return reinterpret_cast<GCPtrFlatString*>(guardsEnd_);
     }
 
-    GCPtrFlatString* end() const {
-        return props_end;
-    }
-
-    HeapReceiverGuard* guardArray() const {
-        static_assert(alignof(ReceiverGuard) == alignof(GCPtrFlatString),
-                      "the end of all properties must be exactly aligned "
-                      "adequate to begin storing ReceiverGuards, else the "
-                      "full tacked-on memory won't be enough to store all "
-                      "properties/guards");
-        return reinterpret_cast<HeapReceiverGuard*>(props_end);
+    GCPtrFlatString* propertiesEnd() const {
+        return propertiesEnd_;
     }
 
     size_t numKeys() const {
-        return end() - begin();
+        return mozilla::PointerRangeSize(propertiesBegin(), propertiesEnd());
     }
 
     JSObject* iterObj() const {
         return iterObj_;
     }
-    GCPtrFlatString* current() const {
-        MOZ_ASSERT(props_cursor < props_end);
-        return props_cursor;
+    GCPtrFlatString* currentProperty() const {
+        MOZ_ASSERT(propertyCursor_ < propertiesEnd());
+        return propertyCursor_;
     }
 
     NativeIterator* next() {
@@ -126,7 +151,7 @@ struct NativeIterator
     }
 
     void incCursor() {
-        props_cursor = props_cursor + 1;
+        propertyCursor_++;
     }
     void link(NativeIterator* other) {
         
@@ -147,6 +172,18 @@ struct NativeIterator
     static NativeIterator* allocateSentinel(JSContext* maybecx);
 
     void trace(JSTracer* trc);
+
+    static constexpr size_t offsetOfGuardsEnd() {
+        return offsetof(NativeIterator, guardsEnd_);
+    }
+
+    static constexpr size_t offsetOfPropertyCursor() {
+        return offsetof(NativeIterator, propertyCursor_);
+    }
+
+    static constexpr size_t offsetOfPropertiesEnd() {
+        return offsetof(NativeIterator, propertiesEnd_);
+    }
 };
 
 class PropertyIteratorObject : public NativeObject

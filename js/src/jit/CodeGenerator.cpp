@@ -9879,8 +9879,8 @@ CodeGenerator::visitIteratorMore(LIteratorMore* lir)
     
     
     Label iterDone;
-    Address cursorAddr(outputScratch, offsetof(NativeIterator, props_cursor));
-    Address cursorEndAddr(outputScratch, offsetof(NativeIterator, props_end));
+    Address cursorAddr(outputScratch, NativeIterator::offsetOfPropertyCursor());
+    Address cursorEndAddr(outputScratch, NativeIterator::offsetOfPropertiesEnd());
     masm.loadPtr(cursorAddr, temp);
     masm.branchPtr(Assembler::BelowOrEqual, cursorEndAddr, temp, &iterDone);
 
@@ -9932,9 +9932,8 @@ CodeGenerator::visitIteratorEnd(LIteratorEnd* lir)
     masm.and32(Imm32(~JSITER_ACTIVE), Address(temp1, offsetof(NativeIterator, flags)));
 
     
-    Address propCursor(temp1, offsetof(NativeIterator, props_cursor));
-    masm.computeEffectiveAddress(Address(temp1, sizeof(NativeIterator)), temp2);
-    masm.storePtr(temp2, propCursor);
+    masm.loadPtr(Address(temp1, NativeIterator::offsetOfGuardsEnd()), temp2);
+    masm.storePtr(temp2, Address(temp1, NativeIterator::offsetOfPropertyCursor()));
 
     
     const Register next = temp2;

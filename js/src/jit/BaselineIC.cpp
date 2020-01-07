@@ -4049,8 +4049,8 @@ ICIteratorMore_Native::Compiler::generateStubCode(MacroAssembler& masm)
     
     
     Label iterDone;
-    Address cursorAddr(nativeIterator, offsetof(NativeIterator, props_cursor));
-    Address cursorEndAddr(nativeIterator, offsetof(NativeIterator, props_end));
+    Address cursorAddr(nativeIterator, NativeIterator::offsetOfPropertyCursor());
+    Address cursorEndAddr(nativeIterator, NativeIterator::offsetOfPropertiesEnd());
     masm.loadPtr(cursorAddr, scratch);
     masm.branchPtr(Assembler::BelowOrEqual, cursorEndAddr, scratch, &iterDone);
 

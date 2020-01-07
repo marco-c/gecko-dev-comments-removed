@@ -14,6 +14,7 @@
 #include "mozilla/PodOperations.h"
 #include "mozilla/Unused.h"
 
+#include <algorithm>
 #include <new>
 
 #include "jstypes.h"
@@ -56,18 +57,22 @@ static const gc::AllocKind ITERATOR_FINALIZE_KIND = gc::AllocKind::OBJECT2_BACKG
 void
 NativeIterator::trace(JSTracer* trc)
 {
-    for (GCPtrFlatString* str = begin(); str < end(); str++)
-        TraceNullableEdge(trc, str, "prop");
     TraceNullableEdge(trc, &obj, "obj");
-
-    HeapReceiverGuard* guards = guardArray();
-    for (size_t i = 0; i < guard_length; i++)
-        guards[i].trace(trc);
 
     
     
     if (iterObj_)
         TraceManuallyBarrieredEdge(trc, &iterObj_, "iterObj");
+
+    std::for_each(guardsBegin(), guardsEnd(),
+                  [trc](HeapReceiverGuard& guard) {
+                      guard.trace(trc);
+                  });
+
+    std::for_each(propertiesBegin(), propertiesEnd(),
+                  [trc](GCPtrFlatString& prop) {
+                      TraceNullableEdge(trc, &prop, "prop");
+                  });
 }
 
 typedef HashSet<jsid, DefaultHasher<jsid>> IdSet;
@@ -653,10 +658,11 @@ NativeIterator::NativeIterator(JSContext* cx, Handle<PropertyIteratorObject*> pr
   : obj(objBeingIterated),
     iterObj_(propIter),
     
-    props_cursor(begin()),
-    props_end(props_cursor),
     
-    guard_length(0),
+    guardsEnd_(guardsBegin()),
+    
+    propertyCursor_(reinterpret_cast<GCPtrFlatString*>(guardsBegin() + numGuards)),
+    propertiesEnd_(propertyCursor_),
     guard_key(guardKey),
     flags(0)
 {
@@ -675,12 +681,12 @@ NativeIterator::NativeIterator(JSContext* cx, Handle<PropertyIteratorObject*> pr
 
         
         
-        GCPtrFlatString* loc = props_end;
+        GCPtrFlatString* loc = propertiesEnd_;
 
         
         
         
-        props_end++;
+        propertiesEnd_++;
 
         new (loc) GCPtrFlatString(str);
     }
@@ -691,21 +697,26 @@ NativeIterator::NativeIterator(JSContext* cx, Handle<PropertyIteratorObject*> pr
         
         
         JSObject* pobj = objBeingIterated;
+#ifdef DEBUG
+        uint32_t i = 0;
+#endif
         uint32_t key = 0;
-        HeapReceiverGuard* guards = guardArray();
         do {
             ReceiverGuard guard(pobj);
 
             
             
-            uint32_t index = guard_length;
+            HeapReceiverGuard* loc = guardsEnd_;
 
             
             
             
-            guard_length++;
+            guardsEnd_++;
+#ifdef DEBUG
+            i++;
+#endif
 
-            new (&guards[index]) HeapReceiverGuard(guard);
+            new (loc) HeapReceiverGuard(guard);
 
             key = mozilla::AddToHash(key, guard.hash());
 
@@ -716,9 +727,10 @@ NativeIterator::NativeIterator(JSContext* cx, Handle<PropertyIteratorObject*> pr
         } while (pobj);
 
         guard_key = key;
-        MOZ_ASSERT(guard_length == numGuards);
+        MOZ_ASSERT(i == numGuards);
     }
 
+    MOZ_ASSERT(static_cast<void*>(guardsEnd_) == propertyCursor_);
     MOZ_ASSERT(!*hadError);
 }
 
@@ -751,11 +763,11 @@ js::NewEmptyPropertyIterator(JSContext* cx)
 IteratorHashPolicy::match(PropertyIteratorObject* obj, const Lookup& lookup)
 {
     NativeIterator* ni = obj->getNativeIterator();
-    if (ni->guard_key != lookup.key || ni->guard_length != lookup.numGuards)
+    if (ni->guard_key != lookup.key || ni->guardCount() != lookup.numGuards)
         return false;
 
-    return PodEqual(reinterpret_cast<ReceiverGuard*>(ni->guardArray()), lookup.guards,
-                    ni->guard_length);
+    return PodEqual(reinterpret_cast<ReceiverGuard*>(ni->guardsBegin()), lookup.guards,
+                    ni->guardCount());
 }
 
 static inline void
@@ -852,10 +864,10 @@ StoreInIteratorCache(JSContext* cx, JSObject* obj, PropertyIteratorObject* itero
     MOZ_ASSERT(CanStoreInIteratorCache(obj));
 
     NativeIterator* ni = iterobj->getNativeIterator();
-    MOZ_ASSERT(ni->guard_length > 0);
+    MOZ_ASSERT(ni->guardCount() > 0);
 
-    IteratorHashPolicy::Lookup lookup(reinterpret_cast<ReceiverGuard*>(ni->guardArray()),
-                                      ni->guard_length,
+    IteratorHashPolicy::Lookup lookup(reinterpret_cast<ReceiverGuard*>(ni->guardsBegin()),
+                                      ni->guardCount(),
                                       ni->guard_key);
 
     JSCompartment::IteratorCache& cache = cx->compartment()->iteratorCache;
@@ -1012,10 +1024,11 @@ Realm::getOrCreateIterResultTemplateObject(JSContext* cx)
 MOZ_ALWAYS_INLINE void
 NativeIteratorNext(NativeIterator* ni, MutableHandleValue rval)
 {
-    if (ni->props_cursor >= ni->props_end) {
+    if (ni->propertyCursor_ >= ni->propertiesEnd()) {
+        MOZ_ASSERT(ni->propertyCursor_ == ni->propertiesEnd());
         rval.setMagic(JS_NO_ITER_VALUE);
     } else {
-        rval.setString(*ni->current());
+        rval.setString(*ni->currentProperty());
         ni->incCursor();
     }
 }
@@ -1170,7 +1183,7 @@ js::CloseIterator(JSObject* obj)
 
 
 
-        ni->props_cursor = ni->begin();
+        ni->propertyCursor_ = ni->propertiesBegin();
     }
 }
 
@@ -1248,16 +1261,16 @@ SuppressDeletedProperty(JSContext* cx, NativeIterator* ni, HandleObject obj,
     
     
     
-    if (ni->props_cursor > ni->begin() && ni->props_cursor[-1] == str)
+    if (ni->propertyCursor_ > ni->propertiesBegin() && ni->propertyCursor_[-1] == str)
         return true;
 
     while (true) {
         bool restart = false;
 
         
-        GCPtrFlatString* const props_cursor = ni->props_cursor;
-        GCPtrFlatString* const props_end = ni->end();
-        for (GCPtrFlatString* idp = props_cursor; idp < props_end; ++idp) {
+        GCPtrFlatString* const cursor = ni->propertyCursor_;
+        GCPtrFlatString* const end = ni->propertiesEnd();
+        for (GCPtrFlatString* idp = cursor; idp < end; ++idp) {
             
             if ((*idp)->isAtom() && str->isAtom()) {
                 if (*idp != str)
@@ -1288,7 +1301,7 @@ SuppressDeletedProperty(JSContext* cx, NativeIterator* ni, HandleObject obj,
 
             
             
-            if (props_end != ni->props_end || props_cursor != ni->props_cursor) {
+            if (end != ni->propertiesEnd() || cursor != ni->propertyCursor_) {
                 restart = true;
                 break;
             }
@@ -1296,17 +1309,17 @@ SuppressDeletedProperty(JSContext* cx, NativeIterator* ni, HandleObject obj,
             
             
             
-            if (idp == props_cursor) {
+            if (idp == cursor) {
                 ni->incCursor();
             } else {
-                for (GCPtrFlatString* p = idp; p + 1 != props_end; p++)
+                for (GCPtrFlatString* p = idp; p + 1 != end; p++)
                     *p = *(p + 1);
-                ni->props_end = ni->end() - 1;
+                ni->propertiesEnd_--;
 
                 
                 
                 
-                *ni->props_end = nullptr;
+                *ni->propertiesEnd_ = nullptr;
             }
 
             
