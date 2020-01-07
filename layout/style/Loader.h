@@ -489,6 +489,10 @@ private:
   void BlockOnload();
   void UnblockOnload(bool aFireSync);
 
+  
+  
+  already_AddRefed<nsISerialEventTarget> DispatchTarget();
+
   nsresult CheckContentPolicy(nsIPrincipal* aLoadingPrincipal,
                               nsIPrincipal* aTriggeringPrincipal,
                               nsIURI* aTargetURI,
