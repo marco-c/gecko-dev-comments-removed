@@ -615,31 +615,37 @@ impl<'le> GeckoElement<'le> {
     
     
     
+    #[inline]
     fn set_flags(&self, flags: u32) {
         unsafe { Gecko_SetNodeFlags(self.as_node().0, flags) }
     }
 
+    #[inline]
     unsafe fn unset_flags(&self, flags: u32) {
         Gecko_UnsetNodeFlags(self.as_node().0, flags)
     }
 
     
+    #[inline]
     pub fn descendants_need_frames(&self) -> bool {
         self.flags() & (NODE_DESCENDANTS_NEED_FRAMES as u32) != 0
     }
 
     
+    #[inline]
     pub fn needs_frame(&self) -> bool {
         self.flags() & (NODE_NEEDS_FRAME as u32) != 0
     }
 
     
+    #[inline]
     fn dom_slots(&self) -> Option<&structs::FragmentOrElement_nsDOMSlots> {
         let slots = self.as_node().0.mSlots as *const structs::FragmentOrElement_nsDOMSlots;
         unsafe { slots.as_ref() }
     }
 
     
+    #[inline]
     fn extended_slots(&self) -> Option<&structs::FragmentOrElement_nsExtendedDOMSlots> {
         self.dom_slots().and_then(|s| unsafe {
             (s._base.mExtendedSlots.mPtr as *const structs::FragmentOrElement_nsExtendedDOMSlots)
@@ -697,6 +703,7 @@ impl<'le> GeckoElement<'le> {
         }
     }
 
+    #[inline]
     fn non_xul_xbl_binding_parent_raw_content(&self) -> *mut nsIContent {
         debug_assert!(!self.is_xul_element());
         self.extended_slots()
