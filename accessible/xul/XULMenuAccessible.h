@@ -25,7 +25,7 @@ public:
 
   
   virtual void Description(nsString& aDescription) override;
-  virtual a11y::role NativeRole() override;
+  virtual a11y::role NativeRole() const override;
   virtual uint64_t NativeState() override;
   virtual uint64_t NativeInteractiveState() const override;
   virtual int32_t GetLevelInternal() override;
@@ -56,7 +56,7 @@ public:
   XULMenuSeparatorAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
   
-  virtual a11y::role NativeRole() override;
+  virtual a11y::role NativeRole() const override;
   virtual uint64_t NativeState() override;
 
   
@@ -79,7 +79,7 @@ public:
   XULMenupopupAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
   
-  virtual a11y::role NativeRole() override;
+  virtual a11y::role NativeRole() const override;
   virtual uint64_t NativeState() override;
 
   
@@ -103,7 +103,7 @@ public:
   XULMenubarAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
   
-  virtual a11y::role NativeRole() override;
+  virtual a11y::role NativeRole() const override;
 
   
   virtual bool IsActiveWidget() const override;

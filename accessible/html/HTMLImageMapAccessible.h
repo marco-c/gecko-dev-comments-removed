@@ -25,7 +25,7 @@ public:
                                        ImageAccessibleWrap)
 
   
-  virtual a11y::role NativeRole() override;
+  virtual a11y::role NativeRole() const override;
 
   
   virtual uint32_t AnchorCount() override;

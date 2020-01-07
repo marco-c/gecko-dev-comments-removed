@@ -30,7 +30,7 @@ XULSliderAccessible::
 
 
 role
-XULSliderAccessible::NativeRole()
+XULSliderAccessible::NativeRole() const
 {
   return roles::SLIDER;
 }
@@ -207,7 +207,7 @@ XULThumbAccessible::
 
 
 role
-XULThumbAccessible::NativeRole()
+XULThumbAccessible::NativeRole() const
 {
   return roles::INDICATOR;
 }

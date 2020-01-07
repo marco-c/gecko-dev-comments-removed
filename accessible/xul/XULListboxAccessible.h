@@ -27,7 +27,7 @@ public:
   XULColumAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
   
-  virtual a11y::role NativeRole() override;
+  virtual a11y::role NativeRole() const override;
   virtual uint64_t NativeState() override;
 };
 
@@ -41,7 +41,7 @@ public:
   XULColumnItemAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
   
-  virtual a11y::role NativeRole() override;
+  virtual a11y::role NativeRole() const override;
   virtual uint64_t NativeState() override;
 
   
@@ -82,7 +82,7 @@ public:
   
   virtual void Value(nsString& aValue) override;
   virtual TableAccessible* AsTable() override { return this; }
-  virtual a11y::role NativeRole() override;
+  virtual a11y::role NativeRole() const override;
   virtual uint64_t NativeState() override;
 
   
@@ -113,7 +113,7 @@ public:
 
   
   virtual void Description(nsString& aDesc) override;
-  virtual a11y::role NativeRole() override;
+  virtual a11y::role NativeRole() const override;
   virtual uint64_t NativeState() override;
   virtual uint64_t NativeInteractiveState() const override;
 
@@ -156,7 +156,7 @@ public:
   
   virtual TableCellAccessible* AsTableCell() override { return this; }
   virtual already_AddRefed<nsIPersistentProperties> NativeAttributes() override;
-  virtual a11y::role NativeRole() override;
+  virtual a11y::role NativeRole() const override;
 
   
   virtual TableAccessible* Table() const override;

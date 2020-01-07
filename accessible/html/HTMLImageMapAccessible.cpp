@@ -36,7 +36,7 @@ HTMLImageMapAccessible::
 
 
 role
-HTMLImageMapAccessible::NativeRole()
+HTMLImageMapAccessible::NativeRole() const
 {
   return roles::IMAGE_MAP;
 }

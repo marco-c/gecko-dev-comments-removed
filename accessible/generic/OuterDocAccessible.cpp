@@ -54,7 +54,7 @@ OuterDocAccessible::~OuterDocAccessible()
 
 
 role
-OuterDocAccessible::NativeRole()
+OuterDocAccessible::NativeRole() const
 {
   return roles::INTERNAL_FRAME;
 }

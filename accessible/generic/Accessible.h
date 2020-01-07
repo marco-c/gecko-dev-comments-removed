@@ -251,7 +251,7 @@ public:
 
 
 
-  virtual mozilla::a11y::role NativeRole();
+  virtual mozilla::a11y::role NativeRole() const;
 
   
 
@@ -308,7 +308,7 @@ public:
   
 
 
-  uint64_t VisibilityState();
+  uint64_t VisibilityState() const;
 
   
 

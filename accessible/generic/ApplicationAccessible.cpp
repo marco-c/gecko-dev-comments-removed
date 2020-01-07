@@ -14,6 +14,7 @@
 #include "States.h"
 
 #include "nsIComponentManager.h"
+#include "nsIDOMDocument.h"
 #include "nsIWindowMediator.h"
 #include "nsServiceManagerUtils.h"
 #include "mozilla/Services.h"
@@ -142,7 +143,7 @@ ApplicationAccessible::ApplyARIAState(uint64_t* aState) const
 }
 
 role
-ApplicationAccessible::NativeRole()
+ApplicationAccessible::NativeRole() const
 {
   return roles::APP_ROOT;
 }

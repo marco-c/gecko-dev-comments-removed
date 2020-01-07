@@ -23,6 +23,7 @@
 #include "nsICommandManager.h"
 #include "nsIDocShell.h"
 #include "nsIDocument.h"
+#include "nsIDOMDocument.h"
 #include "nsPIDOMWindow.h"
 #include "nsIEditingSession.h"
 #include "nsIFrame.h"
@@ -193,7 +194,7 @@ DocAccessible::Name(nsString& aName)
 
 
 role
-DocAccessible::NativeRole()
+DocAccessible::NativeRole() const
 {
   nsCOMPtr<nsIDocShell> docShell = nsCoreUtils::GetDocShellFor(mDocumentNode);
   if (docShell) {

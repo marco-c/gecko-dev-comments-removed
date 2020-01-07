@@ -153,7 +153,7 @@ XULTreeAccessible::Shutdown()
 }
 
 role
-XULTreeAccessible::NativeRole()
+XULTreeAccessible::NativeRole() const
 {
   
   
@@ -1118,7 +1118,7 @@ XULTreeItemAccessible::Shutdown()
 }
 
 role
-XULTreeItemAccessible::NativeRole()
+XULTreeItemAccessible::NativeRole() const
 {
   nsCOMPtr<nsITreeColumns> columns;
   mTree->GetColumns(getter_AddRefs(columns));
