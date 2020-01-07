@@ -17,7 +17,6 @@
 #include "nsIDOMDocumentFragment.h"
 #include "nsIContent.h"
 #include "nsIDocument.h"
-#include "nsIDOMText.h"
 #include "nsError.h"
 #include "nsIContentIterator.h"
 #include "nsINodeList.h"
@@ -3109,20 +3108,23 @@ nsRange::ToString(nsAString& aReturn)
 
   
   if (mStart.Container() == mEnd.Container()) {
-    nsCOMPtr<nsIDOMText> textNode = do_QueryInterface(mStart.Container());
+    Text* textNode = mStart.Container() ? mStart.Container()->GetAsText() : nullptr;
 
     if (textNode)
     {
 #ifdef DEBUG_range
       
-      nsCOMPtr<nsIContent> cN = do_QueryInterface(mStart.Container());
-      if (cN) cN->List(stdout);
+      textNode->List(stdout);
       printf("End Range dump: -----------------------\n");
 #endif 
 
       
-      if (NS_FAILED(textNode->SubstringData(mStart.Offset(),mEnd.Offset()-mStart.Offset(),aReturn)))
+      IgnoredErrorResult rv;
+      textNode->SubstringData(mStart.Offset(), mEnd.Offset() - mStart.Offset(),
+                              aReturn, rv);
+      if (rv.Failed()) {
         return NS_ERROR_UNEXPECTED;
+      }
       return NS_OK;
     }
   }
@@ -3147,16 +3149,16 @@ nsRange::ToString(nsAString& aReturn)
     
     n->List(stdout);
 #endif 
-    nsCOMPtr<nsIDOMText> textNode(do_QueryInterface(n));
+    Text* textNode = n->GetAsText();
     if (textNode) 
     {
       if (n == mStart.Container()) { 
-        uint32_t strLength;
-        textNode->GetLength(&strLength);
-        textNode->SubstringData(mStart.Offset(),strLength-mStart.Offset(),tempString);
+        uint32_t strLength = textNode->Length();
+        textNode->SubstringData(mStart.Offset(), strLength-mStart.Offset(),
+                                tempString, IgnoreErrors());
         aReturn += tempString;
       } else if (n == mEnd.Container()) { 
-        textNode->SubstringData(0,mEnd.Offset(),tempString);
+        textNode->SubstringData(0, mEnd.Offset(), tempString, IgnoreErrors());
         aReturn += tempString;
       } else { 
         textNode->GetData(tempString);
