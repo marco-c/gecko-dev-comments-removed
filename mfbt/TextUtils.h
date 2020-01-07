@@ -9,6 +9,7 @@
 #ifndef mozilla_TextUtils_h
 #define mozilla_TextUtils_h
 
+#include "mozilla/Assertions.h"
 #include "mozilla/TypeTraits.h"
 
 namespace mozilla {
@@ -44,11 +45,82 @@ public:
 
 template<typename Char>
 constexpr bool
-IsAsciiAlpha(Char aChar)
+IsAsciiLowercaseAlpha(Char aChar)
 {
   using UnsignedChar = typename detail::MakeUnsignedChar<Char>::Type;
   auto uc = static_cast<UnsignedChar>(aChar);
-  return ('a' <= uc && uc <= 'z') || ('A' <= uc && uc <= 'Z');
+  return 'a' <= uc && uc <= 'z';
+}
+
+
+
+
+
+
+
+template<typename Char>
+constexpr bool
+IsAsciiUppercaseAlpha(Char aChar)
+{
+  using UnsignedChar = typename detail::MakeUnsignedChar<Char>::Type;
+  auto uc = static_cast<UnsignedChar>(aChar);
+  return 'A' <= uc && uc <= 'Z';
+}
+
+
+
+
+
+
+
+template<typename Char>
+constexpr bool
+IsAsciiAlpha(Char aChar)
+{
+  return IsAsciiLowercaseAlpha(aChar) || IsAsciiUppercaseAlpha(aChar);
+}
+
+
+
+
+
+
+
+template<typename Char>
+constexpr bool
+IsAsciiAlphanumeric(Char aChar)
+{
+  using UnsignedChar = typename detail::MakeUnsignedChar<Char>::Type;
+  auto uc = static_cast<UnsignedChar>(aChar);
+  return ('0' <= uc && uc <= '9') || IsAsciiAlpha(uc);
+}
+
+
+
+
+
+template<typename Char>
+uint8_t
+AsciiAlphanumericToNumber(Char aChar)
+{
+  using UnsignedChar = typename detail::MakeUnsignedChar<Char>::Type;
+  auto uc = static_cast<UnsignedChar>(aChar);
+
+  if ('0' <= uc && uc <= '9') {
+    return uc - '0';
+  }
+
+  if ('A' <= uc && uc <= 'Z') {
+    return uc - 'A' + 10;
+  }
+
+  
+  
+  
+  
+  MOZ_ASSERT('a' <= uc && uc <= 'z',
+             "non-ASCII alphanumeric character can't be converted to number");
+  return uc - 'a' + 10;
 }
 
 } 
