@@ -4276,7 +4276,7 @@ GCRuntime::prepareZonesForCollection(JS::gcreason::Reason reason, bool* isFullOu
 }
 
 static void
-DiscardJITCodeForIncrementalGC(JSRuntime* rt)
+DiscardJITCodeForGC(JSRuntime* rt)
 {
     js::CancelOffThreadIonCompile(rt, JS::Zone::Mark);
     for (GCZonesIter zone(rt); !zone.done(); zone.next()) {
@@ -4382,11 +4382,8 @@ GCRuntime::beginMarkPhase(JS::gcreason::Reason reason, AutoTraceSession& session
         AutoUnlockHelperThreadState unlock(helperLock);
 
         
-
-
-
-        if (isIncremental)
-            DiscardJITCodeForIncrementalGC(rt);
+        
+        DiscardJITCodeForGC(rt);
 
         
 
@@ -5428,6 +5425,13 @@ SweepObjectGroups(JSRuntime* runtime)
 }
 
 static void
+SweepRegExps(JSRuntime* runtime)
+{
+    for (SweepGroupCompartmentsIter c(runtime); !c.done(); c.next())
+        c->sweepRegExps();
+}
+
+static void
 SweepMisc(JSRuntime* runtime)
 {
     for (SweepGroupCompartmentsIter c(runtime); !c.done(); c.next()) {
@@ -5436,7 +5440,6 @@ SweepMisc(JSRuntime* runtime)
         c->sweepSavedStacks();
         c->sweepSelfHostingScriptSource();
         c->sweepNativeIterators();
-        c->sweepRegExps();
     }
 }
 
@@ -5544,8 +5547,12 @@ GCRuntime::sweepJitDataOnMainThread(FreeOp* fop)
     {
         gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::SWEEP_JIT_DATA);
 
-        
-        js::CancelOffThreadIonCompile(rt, JS::Zone::Sweep);
+        if (initialState != State::NotActive) {
+            
+            
+            
+            js::CancelOffThreadIonCompile(rt, JS::Zone::Sweep);
+        }
 
         for (SweepGroupCompartmentsIter c(rt); !c.done(); c.next())
             c->sweepJitCompartment();
@@ -5563,7 +5570,7 @@ GCRuntime::sweepJitDataOnMainThread(FreeOp* fop)
         jit::JitRuntime::SweepJitcodeGlobalTable(rt);
     }
 
-    {
+    if (initialState != State::NotActive) {
         gcstats::AutoPhase apdc(stats(), gcstats::PhaseKind::SWEEP_DISCARD_CODE);
         for (SweepGroupZonesIter zone(rt); !zone.done(); zone.next())
             zone->discardJitCode(fop);
@@ -5708,6 +5715,7 @@ GCRuntime::beginSweepingSweepGroup(FreeOp* fop, SliceBudget& budget)
 
         AutoRunParallelTask sweepCCWrappers(rt, SweepCCWrappers, PhaseKind::SWEEP_CC_WRAPPER, lock);
         AutoRunParallelTask sweepObjectGroups(rt, SweepObjectGroups, PhaseKind::SWEEP_TYPE_OBJECT, lock);
+        AutoRunParallelTask sweepRegExps(rt, SweepRegExps, PhaseKind::SWEEP_REGEXP, lock);
         AutoRunParallelTask sweepMisc(rt, SweepMisc, PhaseKind::SWEEP_MISC, lock);
         AutoRunParallelTask sweepCompTasks(rt, SweepCompressionTasks, PhaseKind::SWEEP_COMPRESSION, lock);
         AutoRunParallelTask sweepWeakMaps(rt, SweepWeakMaps, PhaseKind::SWEEP_WEAKMAPS, lock);
