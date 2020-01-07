@@ -96,6 +96,7 @@ public:
                                     int16_t aStretch,
                                     uint8_t aStyle,
                                     const uint8_t *aData,
+                                    uint32_t aLength,
                                     FT_Face aFace);
 
     
@@ -163,6 +164,7 @@ protected:
 
     
     const uint8_t* mFontData;
+    uint32_t       mLength;
 
     class UnscaledFontCache
     {
