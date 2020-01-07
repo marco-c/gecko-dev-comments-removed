@@ -823,6 +823,8 @@ add_task(async function() {
 
 
 add_task(async function() {
+  AddonTestUtils.usePrivilegedSignatures = false;
+
   const API_ID = "apiexperiment@tests.mozilla.org";
   let xpi = createTempXPIFile({
     id: API_ID,
@@ -836,8 +838,13 @@ add_task(async function() {
     }],
   });
 
-  await AddonManager.installTemporaryAddon(xpi);
-  let addon = await promiseAddonByID(API_ID);
+  let addon = null;
+  try {
+    await AddonManager.installTemporaryAddon(xpi);
+    addon = await promiseAddonByID(API_ID);
+  } catch (err) {
+    
+  }
 
   if (AppConstants.MOZ_ALLOW_LEGACY_EXTENSIONS) {
     notEqual(addon, null, "Temporary install of WebExtension experiment succeeded");
