@@ -431,7 +431,13 @@ public:
 
 
 
-     eIntID_GTKCSDCloseButton
+     eIntID_GTKCSDCloseButton,
+
+     
+
+
+
+     eIntID_SystemUsesDarkTheme
   };
 
   

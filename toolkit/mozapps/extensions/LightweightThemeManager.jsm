@@ -17,6 +17,7 @@ const ADDON_TYPE_WEBEXT      = "webextension-theme";
 
 const URI_EXTENSION_STRINGS  = "chrome://mozapps/locale/extensions/extensions.properties";
 
+const DARK_THEME_ID    = "firefox-compact-dark@mozilla.org";
 const DEFAULT_THEME_ID = "default-theme@mozilla.org";
 const DEFAULT_MAX_USED_THEMES_COUNT = 30;
 
@@ -71,6 +72,10 @@ var _themeIDBeingDisabled = null;
 
 
 var _fallbackThemeData = null;
+
+
+
+var _defaultThemeIsInDarkMode = false;
 
 
 
@@ -362,23 +367,29 @@ var LightweightThemeManager = {
     }
 
     if (aData) {
-      let usedThemes = _usedThemesExceptId(aData.id);
-      usedThemes.unshift(aData);
+      _prefs.setCharPref("selectedThemeID", aData.id);
+    } else {
+      _prefs.setCharPref("selectedThemeID", "");
+    }
+
+    let themeToSwitchTo = aData;
+    if (aData && aData.id == DEFAULT_THEME_ID && _defaultThemeIsInDarkMode) {
+      themeToSwitchTo = LightweightThemeManager.getUsedTheme(DARK_THEME_ID);
+    }
+
+    if (themeToSwitchTo) {
+      let usedThemes = _usedThemesExceptId(themeToSwitchTo.id);
+      usedThemes.unshift(themeToSwitchTo);
       _updateUsedThemes(usedThemes);
       if (PERSIST_ENABLED) {
         LightweightThemeImageOptimizer.purge();
-        _persistImages(aData, () => {
+        _persistImages(themeToSwitchTo, () => {
           _notifyWindows(this.currentThemeForDisplay);
         });
       }
     }
 
-    if (aData)
-      _prefs.setCharPref("selectedThemeID", aData.id);
-    else
-      _prefs.setCharPref("selectedThemeID", "");
-
-    _notifyWindows(aData);
+    _notifyWindows(themeToSwitchTo);
     Services.obs.notifyObservers(null, "lightweight-theme-changed");
   },
 
@@ -444,6 +455,58 @@ var LightweightThemeManager = {
       AddonManagerPrivate.callAddonListeners("onEnabled", wrapper);
 
       _themeIDBeingEnabled = null;
+    }
+  },
+
+  
+
+
+
+
+
+
+  systemThemeChanged(aEvent) {
+    let themeToSwitchTo = null;
+    if (aEvent.matches && !_defaultThemeIsInDarkMode) {
+      themeToSwitchTo = this.getUsedTheme(DARK_THEME_ID);
+      _defaultThemeIsInDarkMode = true;
+    } else if (!aEvent.matches && _defaultThemeIsInDarkMode) {
+      themeToSwitchTo = this.getUsedTheme(DEFAULT_THEME_ID);
+      _defaultThemeIsInDarkMode = false;
+    } else {
+      
+      return;
+    }
+
+    if (_prefs.getStringPref("selectedThemeID", "") != DEFAULT_THEME_ID) {
+      return;
+    }
+
+    if (themeToSwitchTo) {
+      let usedThemes = _usedThemesExceptId(themeToSwitchTo.id);
+      usedThemes.unshift(themeToSwitchTo);
+      _updateUsedThemes(usedThemes);
+      if (PERSIST_ENABLED) {
+        LightweightThemeImageOptimizer.purge();
+        _persistImages(themeToSwitchTo, () => {
+          _notifyWindows(this.currentThemeForDisplay);
+        });
+      }
+    }
+
+    _notifyWindows(themeToSwitchTo);
+    Services.obs.notifyObservers(null, "lightweight-theme-changed");
+  },
+
+  
+
+
+
+
+
+  handleEvent(aEvent) {
+    if (aEvent.media == "(-moz-system-dark-theme)") {
+      this.systemThemeChanged(aEvent);
     }
   },
 
