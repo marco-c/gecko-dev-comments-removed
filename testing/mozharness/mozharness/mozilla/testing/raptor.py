@@ -10,6 +10,7 @@ import os
 import re
 import sys
 import subprocess
+import time
 
 from shutil import copyfile
 
@@ -27,6 +28,7 @@ from mozharness.mozilla.testing.codecoverage import (
 
 scripts_path = os.path.abspath(os.path.dirname(os.path.dirname(mozharness.__file__)))
 external_tools_path = os.path.join(scripts_path, 'external_tools')
+here = os.path.abspath(os.path.dirname(__file__))
 
 RaptorErrorList = PythonErrorList + [
     {'regex': re.compile(r'''run-as: Package '.*' is unknown'''), 'level': DEBUG},
@@ -52,6 +54,12 @@ class Raptor(TestingMixin, MercurialScript, Python3Virtualenv, CodeCoverageMixin
           "dest": "test",
           "help": "Raptor test to run"
           }],
+        [["--app"],
+         {"default": "firefox",
+          "choices": ["firefox", "chrome"],
+          "dest": "app",
+          "help": "name of the application we are testing (default: firefox)"
+          }],
         [["--branch-name"],
          {"action": "store",
           "dest": "branch",
@@ -59,7 +67,7 @@ class Raptor(TestingMixin, MercurialScript, Python3Virtualenv, CodeCoverageMixin
           }],
         [["--add-option"],
          {"action": "extend",
-          "dest": "raptor_extra_options",
+          "dest": "raptor_cmd_line_args",
           "default": None,
           "help": "extra options to raptor"
           }],
@@ -70,6 +78,7 @@ class Raptor(TestingMixin, MercurialScript, Python3Virtualenv, CodeCoverageMixin
         kwargs.setdefault('all_actions', ['clobber',
                                           'download-and-extract',
                                           'populate-webroot',
+                                          'install-chrome',
                                           'create-virtualenv',
                                           'install',
                                           'run-tests',
@@ -77,6 +86,7 @@ class Raptor(TestingMixin, MercurialScript, Python3Virtualenv, CodeCoverageMixin
         kwargs.setdefault('default_actions', ['clobber',
                                               'download-and-extract',
                                               'populate-webroot',
+                                              'install-chrome',
                                               'create-virtualenv',
                                               'install',
                                               'run-tests',
@@ -87,25 +97,34 @@ class Raptor(TestingMixin, MercurialScript, Python3Virtualenv, CodeCoverageMixin
         self.workdir = self.query_abs_dirs()['abs_work_dir']  
 
         self.run_local = self.config.get('run_local')
+
+        
+        self.app = "firefox"
+
+        if self.run_local:
+            
+            
+            self.app = "firefox"
+            if 'raptor_cmd_line_args' in self.config:
+                for next_arg in self.config['raptor_cmd_line_args']:
+                    if "chrome" in next_arg:
+                        self.app = "chrome"
+                        break
+        else:
+            
+            self.test = self.config['test']
+            self.app = self.config.get("app", "firefox")
+
         self.installer_url = self.config.get("installer_url")
         self.raptor_json_url = self.config.get("raptor_json_url")
         self.raptor_json = self.config.get("raptor_json")
         self.raptor_json_config = self.config.get("raptor_json_config")
         self.repo_path = self.config.get("repo_path")
         self.obj_path = self.config.get("obj_path")
-        self.tests = None
+        self.test = None
         self.gecko_profile = self.config.get('gecko_profile')
         self.gecko_profile_interval = self.config.get('gecko_profile_interval')
-        
-        self.mitmproxy_rel_bin = None
-        
-        self.mitmproxy_pageset = None
-        
-        self.mitmproxy_recordings_file_list = self.config.get('mitmproxy', None)
-        
-        self.mitmdump = None
 
-    
     
     
     
@@ -130,19 +149,77 @@ class Raptor(TestingMixin, MercurialScript, Python3Virtualenv, CodeCoverageMixin
         self.abs_dirs = abs_dirs
         return self.abs_dirs
 
+    def install_chrome(self):
+        
+        if self.app != "chrome":
+            self.info("Google Chrome is not required")
+            return
+
+        if self.config.get("run_local"):
+            self.info("expecting Google Chrome to be pre-installed locally")
+            return
+
+        chrome_url = "https://dl.google.com/chrome/mac/stable/GGRO/googlechrome.dmg"
+        
+        self.chrome_dest = os.path.join(here, 'chrome')
+        chrome_dmg = os.path.join(self.chrome_dest, 'googlechrome.dmg')
+
+        self.info("installing google chrome - temporary install hack")
+        self.info("chrome_dest is: %s" % self.chrome_dest)
+
+        self.chrome_path = os.path.join(self.chrome_dest, 'Google Chrome.app',
+                                        'Contents', 'MacOS', 'Google Chrome')
+
+        if os.path.exists(self.chrome_path):
+            self.info("google chrome binary already exists at: %s" % self.chrome_path)
+            return
+
+        if not os.path.exists(chrome_dmg):
+            
+            self.download_file(chrome_url, parent_dir=self.chrome_dest)
+
+        command = ["open", "googlechrome.dmg"]
+        return_code = self.run_command(command, cwd=self.chrome_dest)
+        if return_code not in [0]:
+            self.info("abort: failed to open %s/googlechrome.dmg" % self.chrome_dest)
+            return
+        
+        time.sleep(30)
+
+        
+        command = ["cp", "-r", "/Volumes/Google Chrome/Google Chrome.app", "."]
+        return_code = self.run_command(command, cwd=self.chrome_dest)
+        if return_code not in [0]:
+            self.info("abort: failed to open %s/googlechrome.dmg" % self.chrome_dest)
+            return
+
+        
+        if os.path.exists(self.chrome_path):
+            self.info("successfully installed Google Chrome to: %s" % self.chrome_path)
+        else:
+            self.info("abort: failed to install Google Chrome")
+
     def raptor_options(self, args=None, **kw):
         """return options to raptor"""
-        
-        binary_path = self.binary_path or self.config.get('binary_path')
-        if not binary_path:
-            msg = """Raptor requires a path to the binary. You can specify binary_path or add
-            download-and-extract to your action list."""
-            self.fatal(msg)
-        
-        if binary_path.endswith('.exe'):
-            binary_path = binary_path[:-4]
         options = []
-        kw_options = {'binary': binary_path}
+        kw_options = {}
+
+        
+        
+        kw_options['app'] = self.app
+        if self.app == "firefox":
+            binary_path = self.binary_path or self.config.get('binary_path')
+            if not binary_path:
+                self.fatal("Raptor requires a path to the binary.")
+            if binary_path.endswith('.exe'):
+                binary_path = binary_path[:-4]
+            kw_options['binary'] = binary_path
+        else:
+            if not self.run_local:
+                
+                
+                kw_options['binary'] = self.chrome_path
+
         
         if 'test' in self.config:
             kw_options['test'] = self.config['test']
@@ -160,12 +237,13 @@ class Raptor(TestingMixin, MercurialScript, Python3Virtualenv, CodeCoverageMixin
             options += args
         if self.config.get('run_local', False):
             options.extend(['--run-local'])
-        if 'raptor_extra_options' in self.config:
-            options += self.config['raptor_extra_options']
+        if 'raptor_cmd_line_args' in self.config:
+            options += self.config['raptor_cmd_line_args']
         if self.config.get('code_coverage', False):
             options.extend(['--code-coverage'])
         for key, value in kw_options.items():
             options.extend(['--%s' % key, value])
+
         return options
 
     def populate_webroot(self):
@@ -173,21 +251,8 @@ class Raptor(TestingMixin, MercurialScript, Python3Virtualenv, CodeCoverageMixin
         self.raptor_path = os.path.join(
             self.query_abs_dirs()['abs_test_install_dir'], 'raptor'
         )
-
         if self.config.get('run_local'):
-            
             self.raptor_path = os.path.join(self.repo_path, 'testing', 'raptor')
-            if 'raptor_extra_options' in self.config:
-                if '--test' in self.config['raptor_extra_options']:
-                    
-                    test_name_index = self.config['raptor_extra_options'].index('--test') + 1
-                    if test_name_index < len(self.config['raptor_extra_options']):
-                        self.test = self.config['raptor_extra_options'][test_name_index]
-                    else:
-                        self.fatal("Test name not provided")
-        else:
-            
-            self.test = self.config['test']
 
     
     

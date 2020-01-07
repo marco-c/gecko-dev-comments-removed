@@ -120,7 +120,9 @@ class Raptor(object):
         raptor_webext = os.path.join(webext_dir, 'raptor')
         self.log.info("installing webext %s" % raptor_webext)
         self.profile.addons.install(raptor_webext)
-        webext_id = self.profile.addons.addon_details(raptor_webext)['id']
+        
+        if self.config['app'] == "firefox":
+            webext_id = self.profile.addons.addon_details(raptor_webext)['id']
 
         
         if test.get('playback', None) is not None:
@@ -146,8 +148,10 @@ class Raptor(object):
             self.playback.stop()
 
         
-        self.log.info("removing webext %s" % raptor_webext)
-        self.profile.addons.remove_addon(webext_id)
+        
+        if self.config['app'] == "firefox":
+            self.log.info("removing webext %s" % raptor_webext)
+            self.profile.addons.remove_addon(webext_id)
 
         if self.runner.is_running():
             self.log("Application timed out after {} seconds".format(timeout))
@@ -178,6 +182,8 @@ def main(args=sys.argv[1:]):
     args = parse_args()
     commandline.setup_logging('raptor', args, {'tbpl': sys.stdout})
     LOG = get_default_logger(component='raptor-main')
+
+    LOG.info("received command line arguments: %s" % str(args))
 
     
     
