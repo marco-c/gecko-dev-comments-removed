@@ -8,6 +8,8 @@
 #include "jscntxt.h" 
 #include "jsobj.h" 
 
+#include "gc/FreeOp.h"
+
 using namespace js;
 using JS::PerfMeasurement;
 

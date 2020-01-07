@@ -61,6 +61,7 @@
 #include "frontend/BytecodeCompiler.h"
 #include "frontend/FullParseHandler.h"  
 #include "frontend/Parser.h" 
+#include "gc/FreeOp.h"
 #include "gc/Marking.h"
 #include "gc/Policy.h"
 #include "jit/JitCommon.h"
