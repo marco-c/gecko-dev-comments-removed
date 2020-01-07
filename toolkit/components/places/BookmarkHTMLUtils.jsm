@@ -687,23 +687,8 @@ BookmarkImporter.prototype = {
 
     
     
-    
     if (frame.inDescription) {
-      
-      frame.previousText = frame.previousText.trim(); 
-      if (frame.previousText) {
-        let item = frame.previousLink ? frame.previousItem : frame.folder;
-        if (!item.hasOwnProperty("annos")) {
-          item.annos = [];
-        }
-        item.annos.push({
-          "name": DESCRIPTION_ANNO,
-          "flags": 0,
-          "expires": 4,
-          "value": frame.previousText
-        });
-        frame.previousText = "";
-      }
+      frame.previousText = "";
       frame.inDescription = false;
     }
 

@@ -36,7 +36,6 @@ function PlacesItemProps(props) {
   this.uri = null;
   this.keyword = null;
   this.title = null;
-  this.description = null;
   this.after = null;
   this.before = null;
   this.folder = null;
@@ -271,31 +270,6 @@ PlacesItem.prototype = {
 
 
 
-  async CheckDescription(expectedDescription) {
-    if (expectedDescription != null) {
-      
-      let info = await PlacesSyncUtils.bookmarks.fetch(this.props.guid);
-      if (info.description != expectedDescription) {
-        Logger.logPotentialError("Invalid description, expected: " +
-          expectedDescription + ", actual: " + info.description + " for " +
-          this.toString());
-        return false;
-      }
-    }
-    return true;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
 
 
   async CheckPosition(before, after, last_item_pos) {
@@ -336,31 +310,6 @@ PlacesItem.prototype = {
         index: PlacesUtils.bookmarks.DEFAULT_INDEX,
       });
       this.props.parentGuid = newfolderGuid;
-    }
-  },
-
-  
-
-
-
-
-
-
-
-
-  async SetDescription(description) {
-    let itemId = await PlacesUtils.promiseItemId(this.props.guid);
-
-    if (description != null) {
-      if (description != "")
-        PlacesUtils.annotations.setItemAnnotation(itemId,
-                                      "bookmarkProperties/description",
-                                      description,
-                                      0,
-                                      PlacesUtils.annotations.EXPIRE_NEVER);
-      else
-        PlacesUtils.annotations.removeItemAnnotation(itemId,
-                                         "bookmarkProperties/description");
     }
   },
 
@@ -495,7 +444,6 @@ Bookmark.prototype = {
                                                      title: this.props.title});
     this.props.guid = guid;
     await this.SetKeyword(this.props.keyword);
-    await this.SetDescription(this.props.description);
     await this.SetTags(this.props.tags);
     return this.props.guid;
   },
@@ -510,7 +458,6 @@ Bookmark.prototype = {
 
   async Update() {
     Logger.AssertTrue(this.props.guid, "Invalid guid during Update");
-    await this.SetDescription(this.updateProps.description);
     await this.SetTitle(this.updateProps.title);
     await this.SetUri(this.updateProps.uri);
     await this.SetKeyword(this.updateProps.keyword);
@@ -541,9 +488,6 @@ Bookmark.prototype = {
 
     if (!this.props.guid) {
       Logger.logPotentialError(this.toString() + " not found");
-      return null;
-    }
-    if (!(await this.CheckDescription(this.props.description))) {
       return null;
     }
     if (this.props.keyword != null) {
@@ -624,7 +568,6 @@ BookmarkFolder.prototype = {
                                                      type: PlacesUtils.bookmarks.TYPE_FOLDER,
                                                      });
     this.props.guid = guid;
-    await this.SetDescription(this.props.description);
     return this.props.parentGuid;
   },
 
@@ -647,9 +590,6 @@ BookmarkFolder.prototype = {
                               PlacesUtils.bookmarks.TYPE_FOLDER,
                               this.props.folder);
     if (this.props.guid == null) {
-      return null;
-    }
-    if (!(await this.CheckDescription(this.props.description))) {
       return null;
     }
     if (!(await this.CheckPosition(this.props.before,
@@ -686,7 +626,6 @@ BookmarkFolder.prototype = {
     await this.SetLocation(this.updateProps.location);
     await this.SetPosition(this.updateProps.position);
     await this.SetTitle(this.updateProps.folder);
-    await this.SetDescription(this.updateProps.description);
   },
 };
 

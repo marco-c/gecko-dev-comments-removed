@@ -378,7 +378,6 @@ const HistorySyncUtils = PlacesSyncUtils.history = Object.freeze({
 
 const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
   SMART_BOOKMARKS_ANNO: "Places/SmartBookmark",
-  DESCRIPTION_ANNO: "bookmarkProperties/description",
   SYNC_PARENT_ANNO: "sync/parent",
 
   SYNC_ID_META_KEY: "sync/bookmarks/syncId",
@@ -1124,7 +1123,6 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
 
 
 
-
   update(info) {
     let updateInfo = validateSyncBookmarkObject("BookmarkSyncUtils: update",
       info, { recordId: { required: true } });
@@ -1157,7 +1155,6 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
 
 
 
-
   insert(info) {
     let insertInfo = validateNewBookmark("BookmarkSyncUtils: insert", info);
 
@@ -1166,8 +1163,6 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
   },
 
   
-
-
 
 
 
@@ -1602,14 +1597,6 @@ async function insertBookmarkMetadata(db, bookmarkItem, insertInfo) {
     newItem.keyword = insertInfo.keyword;
   }
 
-  if (insertInfo.description) {
-    PlacesUtils.annotations.setItemAnnotation(itemId,
-      BookmarkSyncUtils.DESCRIPTION_ANNO, insertInfo.description, 0,
-      PlacesUtils.annotations.EXPIRE_NEVER,
-      SOURCE_SYNC);
-    newItem.description = insertInfo.description;
-  }
-
   return newItem;
 }
 
@@ -1823,19 +1810,6 @@ async function updateBookmarkMetadata(db, oldBookmarkItem,
     newItem.keyword = updateInfo.keyword;
   }
 
-  if (updateInfo.hasOwnProperty("description")) {
-    if (updateInfo.description) {
-      PlacesUtils.annotations.setItemAnnotation(itemId,
-        BookmarkSyncUtils.DESCRIPTION_ANNO, updateInfo.description, 0,
-        PlacesUtils.annotations.EXPIRE_NEVER,
-        SOURCE_SYNC);
-    } else {
-      PlacesUtils.annotations.removeItemAnnotation(itemId,
-        BookmarkSyncUtils.DESCRIPTION_ANNO, SOURCE_SYNC);
-    }
-    newItem.description = updateInfo.description;
-  }
-
   if (updateInfo.hasOwnProperty("query")) {
     PlacesUtils.annotations.setItemAnnotation(itemId,
       BookmarkSyncUtils.SMART_BOOKMARKS_ANNO, updateInfo.query, 0,
@@ -1867,10 +1841,6 @@ function validateNewBookmark(name, info) {
                               BookmarkSyncUtils.KINDS.QUERY ].includes(b.kind) },
       keyword: { validIf: b => [ BookmarkSyncUtils.KINDS.BOOKMARK,
                                  BookmarkSyncUtils.KINDS.QUERY ].includes(b.kind) },
-      description: { validIf: b => [ BookmarkSyncUtils.KINDS.BOOKMARK,
-                                     BookmarkSyncUtils.KINDS.QUERY,
-                                     BookmarkSyncUtils.KINDS.FOLDER,
-                                     BookmarkSyncUtils.KINDS.LIVEMARK ].includes(b.kind) },
       feed: { validIf: b => b.kind == BookmarkSyncUtils.KINDS.LIVEMARK },
       site: { validIf: b => b.kind == BookmarkSyncUtils.KINDS.LIVEMARK },
       dateAdded: { required: false }
@@ -1987,7 +1957,6 @@ async function placesBookmarkToSyncBookmark(db, bookmarkItem) {
 
 
 
-
 function syncBookmarkToPlacesBookmark(info) {
   let bookmarkInfo = {
     source: SOURCE_SYNC,
@@ -2058,15 +2027,8 @@ var fetchBookmarkItem = async function(db, bookmarkItem) {
     item.keyword = keywordEntry.keyword;
   }
 
-  let description = await getAnno(db, bookmarkItem.guid,
-                                  BookmarkSyncUtils.DESCRIPTION_ANNO);
-  if (description) {
-    item.description = description;
-  }
-
   return item;
 };
-
 
 
 async function fetchFolderItem(db, bookmarkItem) {
@@ -2074,12 +2036,6 @@ async function fetchFolderItem(db, bookmarkItem) {
 
   if (!item.title) {
     item.title = "";
-  }
-
-  let description = await getAnno(db, bookmarkItem.guid,
-                                  BookmarkSyncUtils.DESCRIPTION_ANNO);
-  if (description) {
-    item.description = description;
   }
 
   let childGuids = await fetchChildGuids(db, bookmarkItem.guid);
@@ -2099,12 +2055,6 @@ async function fetchLivemarkItem(db, bookmarkItem) {
     item.title = "";
   }
 
-  let description = await getAnno(db, bookmarkItem.guid,
-                                  BookmarkSyncUtils.DESCRIPTION_ANNO);
-  if (description) {
-    item.description = description;
-  }
-
   let feedAnno = await getAnno(db, bookmarkItem.guid,
                                PlacesUtils.LMANNO_FEEDURI);
   item.feed = new URL(feedAnno);
@@ -2122,12 +2072,6 @@ async function fetchLivemarkItem(db, bookmarkItem) {
 
 async function fetchQueryItem(db, bookmarkItem) {
   let item = await placesBookmarkToSyncBookmark(db, bookmarkItem);
-
-  let description = await getAnno(db, bookmarkItem.guid,
-                                  BookmarkSyncUtils.DESCRIPTION_ANNO);
-  if (description) {
-    item.description = description;
-  }
 
   let params = new URLSearchParams(bookmarkItem.url.pathname);
   let tags = params.getAll("tag");
