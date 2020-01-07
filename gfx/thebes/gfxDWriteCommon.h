@@ -142,7 +142,10 @@ public:
 
 
 
-    static HRESULT CreateCustomFontFile(FallibleTArray<uint8_t>& aFontData,
+
+
+    static HRESULT CreateCustomFontFile(const uint8_t* aFontData,
+                                        uint32_t aLength,
                                         IDWriteFontFile** aFontFile,
                                         IDWriteFontFileStream** aFontFileStream);
 
