@@ -16,6 +16,36 @@ const onXULFrameLoaderCreated = ({target}) => {
   target.messageManager.sendAsyncMessage("AllowScriptsToClose", {});
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function WindowEventManager(context, name, event, listener) {
+  let register = fire => {
+    let listener2 = listener.bind(null, fire);
+
+    windowTracker.addListener(event, listener2);
+    return () => {
+      windowTracker.removeListener(event, listener2);
+    };
+  };
+
+  return new EventManager({context, name, register}).api();
+}
+
 this.windows = class extends ExtensionAPI {
   getAPI(context) {
     let {extension} = context;
@@ -24,38 +54,40 @@ this.windows = class extends ExtensionAPI {
 
     return {
       windows: {
-        onCreated:
-        new WindowEventManager(context, "windows.onCreated", "domwindowopened", (fire, window) => {
+        onCreated: WindowEventManager(context, "windows.onCreated", "domwindowopened", (fire, window) => {
           fire.async(windowManager.convert(window));
-        }).api(),
+        }),
 
-        onRemoved:
-        new WindowEventManager(context, "windows.onRemoved", "domwindowclosed", (fire, window) => {
+        onRemoved: WindowEventManager(context, "windows.onRemoved", "domwindowclosed", (fire, window) => {
           fire.async(windowTracker.getId(window));
-        }).api(),
+        }),
 
-        onFocusChanged: new EventManager(context, "windows.onFocusChanged", fire => {
-          
-          let lastOnFocusChangedWindowId;
+        onFocusChanged: new EventManager({
+          context,
+          name: "windows.onFocusChanged",
+          register: fire => {
+            
+            let lastOnFocusChangedWindowId;
 
-          let listener = event => {
-            
-            
-            Promise.resolve().then(() => {
-              let window = Services.focus.activeWindow;
-              let windowId = window ? windowTracker.getId(window) : Window.WINDOW_ID_NONE;
-              if (windowId !== lastOnFocusChangedWindowId) {
-                fire.async(windowId);
-                lastOnFocusChangedWindowId = windowId;
-              }
-            });
-          };
-          windowTracker.addListener("focus", listener);
-          windowTracker.addListener("blur", listener);
-          return () => {
-            windowTracker.removeListener("focus", listener);
-            windowTracker.removeListener("blur", listener);
-          };
+            let listener = event => {
+              
+              
+              Promise.resolve().then(() => {
+                let window = Services.focus.activeWindow;
+                let windowId = window ? windowTracker.getId(window) : Window.WINDOW_ID_NONE;
+                if (windowId !== lastOnFocusChangedWindowId) {
+                  fire.async(windowId);
+                  lastOnFocusChangedWindowId = windowId;
+                }
+              });
+            };
+            windowTracker.addListener("focus", listener);
+            windowTracker.addListener("blur", listener);
+            return () => {
+              windowTracker.removeListener("focus", listener);
+              windowTracker.removeListener("blur", listener);
+            };
+          },
         }).api(),
 
         get: function(windowId, getInfo) {

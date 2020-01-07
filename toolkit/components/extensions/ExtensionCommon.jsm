@@ -1760,21 +1760,37 @@ defineLazyGetter(LocaleData.prototype, "availableLocales", function() {
 
 
 
+class EventManager {
+  
 
 
 
 
 
 
-function EventManager(context, name, register) {
-  this.context = context;
-  this.name = name;
-  this.register = register;
-  this.unregister = new Map();
-  this.inputHandling = false;
-}
 
-EventManager.prototype = {
+
+
+
+
+
+  constructor(params) {
+    
+    
+    
+    if (arguments.length > 1) {
+      [this.context, this.name, this.register] = arguments;
+      this.inputHandling = false;
+    } else {
+      let {context, name, register, inputHandling = false} = params;
+      this.context = context;
+      this.name = name;
+      this.register = register;
+      this.inputHandling = inputHandling;
+    }
+    this.unregister = new Map();
+  }
+
   addListener(callback, ...args) {
     if (this.unregister.has(callback)) {
       return;
@@ -1819,11 +1835,10 @@ EventManager.prototype = {
       },
     };
 
-
     let unregister = this.register(fire, ...args);
     this.unregister.set(callback, unregister);
     this.context.callOnClose(this);
-  },
+  }
 
   removeListener(callback) {
     if (!this.unregister.has(callback)) {
@@ -1840,21 +1855,21 @@ EventManager.prototype = {
     if (this.unregister.size == 0) {
       this.context.forgetOnClose(this);
     }
-  },
+  }
 
   hasListener(callback) {
     return this.unregister.has(callback);
-  },
+  }
 
   revoke() {
     for (let callback of this.unregister.keys()) {
       this.removeListener(callback);
     }
-  },
+  }
 
   close() {
     this.revoke();
-  },
+  }
 
   api() {
     return {
@@ -1864,8 +1879,8 @@ EventManager.prototype = {
       setUserInput: this.inputHandling,
       [Schemas.REVOKE]: () => this.revoke(),
     };
-  },
-};
+  }
+}
 
 
 function ignoreEvent(context, name) {

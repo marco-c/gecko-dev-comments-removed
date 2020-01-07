@@ -203,9 +203,13 @@ class WindowTracker extends WindowTrackerBase {
 
 
 
-global.GlobalEventManager = class extends EventManager {
-  constructor(context, name, event, listener) {
-    super(context, name, fire => {
+
+
+global.makeGlobalEvent = function makeGlobalEvent(context, name, event, listener) {
+  return new EventManager({
+    context,
+    name,
+    register: fire => {
       let listener2 = {
         onEvent(event, data, callback) {
           listener(fire, data);
@@ -216,36 +220,8 @@ global.GlobalEventManager = class extends EventManager {
       return () => {
         GlobalEventDispatcher.unregisterListener(listener2, [event]);
       };
-    });
-  }
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-global.WindowEventManager = class extends EventManager {
-  constructor(context, name, event, listener) {
-    super(context, name, fire => {
-      let listener2 = listener.bind(null, fire);
-
-      windowTracker.addListener(event, listener2);
-      return () => {
-        windowTracker.removeListener(event, listener2);
-      };
-    });
-  }
+    },
+  }).api();
 };
 
 class TabTracker extends TabTrackerBase {
