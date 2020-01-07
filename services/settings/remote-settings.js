@@ -164,7 +164,10 @@ async function fetchLatestChanges(url, lastEtag) {
   
   
   const currentEtag = response.headers.has("ETag") ? response.headers.get("ETag") : undefined;
-  const serverTimeMillis = Date.parse(response.headers.get("Date"));
+  let serverTimeMillis = Date.parse(response.headers.get("Date"));
+  
+  const ageSeconds = response.headers.has("Age") ? parseInt(response.headers.get("Age"), 10) : 0;
+  serverTimeMillis += ageSeconds * 1000;
 
   
   let backoffSeconds;
