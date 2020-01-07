@@ -2821,16 +2821,11 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
   
   
   
-  bool needEventRegions =
-    aBuilder->IsBuildingLayerEventRegions() &&
-    StyleUserInterface()->GetEffectivePointerEvents(this) !=
-      NS_STYLE_POINTER_EVENTS_NONE;
   bool opacityItemForEventsAndPluginsOnly = false;
   if (effects->mOpacity == 0.0 && aBuilder->IsForPainting() &&
       !(disp->mWillChangeBitField & NS_STYLE_WILL_CHANGE_OPACITY) &&
       !nsLayoutUtils::HasAnimationOfProperty(effectSet, eCSSProperty_opacity)) {
-    if (needEventRegions ||
-        aBuilder->WillComputePluginGeometry()) {
+    if (aBuilder->WillComputePluginGeometry()) {
       opacityItemForEventsAndPluginsOnly = true;
     } else {
       return;
@@ -3069,13 +3064,6 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
 
     aBuilder->AdjustWindowDraggingRegion(this);
 
-    nsDisplayLayerEventRegions* eventRegions = nullptr;
-    if (aBuilder->IsBuildingLayerEventRegions()) {
-      eventRegions = MakeDisplayItem<nsDisplayLayerEventRegions>(aBuilder, this);
-      eventRegions->AddFrame(aBuilder, this);
-      aBuilder->SetLayerEventRegions(eventRegions);
-    }
-
     aBuilder->BuildCompositorHitTestInfoIfNeeded(this, set.BorderBackground(),
                                                  true);
 
@@ -3108,18 +3096,6 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
         aBuilder->SetPartialBuildFailed(true);
       } else {
         aBuilder->SetDisablePartialUpdates(true);
-      }
-    }
-
-    if (eventRegions) {
-      
-      
-      if (!eventRegions->IsEmpty()) {
-        set.BorderBackground()->AppendToBottom(eventRegions);
-      } else {
-        aBuilder->SetLayerEventRegions(nullptr);
-        eventRegions->Destroy(aBuilder);
-        eventRegions = nullptr;
       }
     }
   }
@@ -3535,8 +3511,7 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
   aBuilder->ClearWillChangeBudget(child);
 
   const bool shortcutPossible = aBuilder->IsPaintingToWindow() &&
-    (aBuilder->IsBuildingLayerEventRegions() ||
-     aBuilder->BuildCompositorHitTestInfo());
+     aBuilder->BuildCompositorHitTestInfo();
 
   const bool doingShortcut = shortcutPossible &&
     (child->GetStateBits() & NS_FRAME_SIMPLE_DISPLAYLIST) &&
@@ -3570,11 +3545,6 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
     aBuilder->BuildCompositorHitTestInfoIfNeeded(child,
                                                  aLists.BorderBackground(),
                                                  false);
-
-    nsDisplayLayerEventRegions* eventRegions = aBuilder->GetLayerEventRegions();
-    if (eventRegions) {
-      eventRegions->AddFrame(aBuilder, child);
-    }
 
     child->MarkAbsoluteFramesForDisplayList(aBuilder);
     aBuilder->AdjustWindowDraggingRegion(child);
@@ -3784,30 +3754,6 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
     }
 
     child->MarkAbsoluteFramesForDisplayList(aBuilder);
-
-    if (aBuilder->IsBuildingLayerEventRegions()) {
-      
-      
-      if (buildingForChild.IsAnimatedGeometryRoot() || isPositioned) {
-        nsDisplayLayerEventRegions* eventRegions =
-          MakeDisplayItem<nsDisplayLayerEventRegions>(aBuilder, child);
-        eventRegions->AddFrame(aBuilder, child);
-        aBuilder->SetLayerEventRegions(eventRegions);
-
-        if (isPositioned) {
-          
-          
-          list.AppendToTop(eventRegions);
-        } else {
-          aLists.BorderBackground()->AppendToTop(eventRegions);
-        }
-      } else {
-        nsDisplayLayerEventRegions* eventRegions = aBuilder->GetLayerEventRegions();
-        if (eventRegions) {
-          eventRegions->AddFrame(aBuilder, child);
-        }
-      }
-    }
 
     const bool differentAGR =
       buildingForChild.IsAnimatedGeometryRoot() || isPositioned;

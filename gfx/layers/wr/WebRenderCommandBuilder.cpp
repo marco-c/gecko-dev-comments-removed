@@ -241,7 +241,6 @@ IsContainerLayerItem(nsDisplayItem* aItem)
 {
   switch (aItem->GetType()) {
     case DisplayItemType::TYPE_TRANSFORM:
-    case DisplayItemType::TYPE_LAYER_EVENT_REGIONS:
     case DisplayItemType::TYPE_OPACITY:
     case DisplayItemType::TYPE_FILTER:
     case DisplayItemType::TYPE_BLEND_CONTAINER:
@@ -1236,10 +1235,6 @@ WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(nsDisplayList* a
   while (nsDisplayItem* i = iter.GetNext()) {
     nsDisplayItem* item = i;
     DisplayItemType itemType = item->GetType();
-
-    
-    
-    MOZ_ASSERT(itemType != DisplayItemType::TYPE_LAYER_EVENT_REGIONS);
 
     
     
