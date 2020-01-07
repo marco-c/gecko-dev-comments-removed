@@ -314,7 +314,7 @@ CookieServiceChild::GetCookieStringFromCookieHashTable(nsIURI                 *a
 
     int32_t sameSiteAttr = 0;
     cookie->GetSameSite(&sameSiteAttr);
-    if (aIsSameSiteForeign) {
+    if (aIsSameSiteForeign && nsCookieService::IsSameSiteEnabled()) {
       
       
       if (sameSiteAttr == nsICookie2::SAMESITE_STRICT) {

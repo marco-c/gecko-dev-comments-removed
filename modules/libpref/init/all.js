@@ -2239,6 +2239,7 @@ pref("network.cookie.cookieBehavior",       0);
 pref("network.cookie.thirdparty.sessionOnly", false);
 pref("network.cookie.thirdparty.nonsecureSessionOnly", false);
 pref("network.cookie.leave-secure-alone",   true);
+pref("network.cookie.same-site.enabled",    true); 
 pref("network.cookie.ipc.sync",             false);
 pref("network.cookie.lifetimePolicy",       0); 
 pref("network.cookie.prefsMigrated",        false);
@@ -4856,7 +4857,6 @@ pref("layers.low-precision-buffer", false);
 pref("layers.progressive-paint", false);
 pref("layers.tile-width", 256);
 pref("layers.tile-height", 256);
-pref("layers.tiles.retain-back-buffer", true);
 pref("layers.child-process-shutdown", true);
 
 pref("layers.max-active", -1);
@@ -5861,7 +5861,6 @@ pref("layers.omtp.paint-workers", -1);
 #else
 pref("layers.omtp.paint-workers", 1);
 #endif
-pref("layers.enable-tiles-if-skia-pomtp", false);
 pref("layers.omtp.release-capture-on-main-thread", false);
 pref("layers.omtp.dump-capture", false);
 

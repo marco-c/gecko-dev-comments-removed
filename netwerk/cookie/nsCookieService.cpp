@@ -76,6 +76,7 @@ using namespace mozilla::net;
 
 
 static StaticRefPtr<nsCookieService> gCookieService;
+bool nsCookieService::sSameSiteEnabled = false;
 
 
 
@@ -3075,6 +3076,18 @@ nsCookieService::DomainMatches(nsCookie* aCookie,
 }
 
 bool
+nsCookieService::IsSameSiteEnabled()
+{
+  static bool prefInitialized = false;
+  if (!prefInitialized) {
+    Preferences::AddBoolVarCache(&sSameSiteEnabled,
+                                 "network.cookie.same-site.enabled", false);
+    prefInitialized = true;
+  }
+  return sSameSiteEnabled;
+}
+
+bool
 nsCookieService::PathMatches(nsCookie* aCookie,
                              const nsACString& aPath)
 {
@@ -3204,7 +3217,7 @@ nsCookieService::GetCookiesForURI(nsIURI *aHostURI,
 
     int32_t sameSiteAttr = 0;
     cookie->GetSameSite(&sameSiteAttr);
-    if (aIsSameSiteForeign) {
+    if (aIsSameSiteForeign && IsSameSiteEnabled()) {
       
       
       if (sameSiteAttr == nsICookie2::SAMESITE_STRICT) {
@@ -3471,10 +3484,9 @@ nsCookieService::CanSetCookie(nsIURI*             aHostURI,
 
   
   
-  if (aCookieAttributes.sameSite != nsICookie2::SAMESITE_UNSET &&
-      aThirdPartyUtil) {
-    bool isThirdParty = false;
-    aThirdPartyUtil->IsThirdPartyChannel(aChannel, aHostURI, &isThirdParty);
+  if ((aCookieAttributes.sameSite != nsICookie2::SAMESITE_UNSET) &&
+      IsSameSiteEnabled()) {
+    bool isThirdParty = NS_IsSameSiteForeign(aChannel, aHostURI);
     if (isThirdParty) {
       COOKIE_LOGFAILURE(SET_COOKIE, aHostURI, savedCookieHeader,
                         "failed the samesite tests");
