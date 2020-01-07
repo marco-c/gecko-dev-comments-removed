@@ -942,6 +942,24 @@ Geolocation::~Geolocation()
   }
 }
 
+StaticRefPtr<Geolocation> Geolocation::sNonWindowSingleton;
+
+already_AddRefed<Geolocation>
+Geolocation::NonWindowSingleton()
+{
+  if (sNonWindowSingleton) {
+    return do_AddRef(sNonWindowSingleton);
+  }
+
+  RefPtr<Geolocation> result = new Geolocation();
+  DebugOnly<nsresult> rv = result->Init();
+  MOZ_ASSERT(NS_SUCCEEDED(rv), "How can this fail?");
+
+  ClearOnShutdown(&sNonWindowSingleton);
+  sNonWindowSingleton = result;
+  return result.forget();
+}
+
 nsresult
 Geolocation::Init(nsPIDOMWindowInner* aContentDom)
 {
@@ -1164,7 +1182,7 @@ Geolocation::GetCurrentPosition(PositionCallback& aCallback,
 {
   nsresult rv = GetCurrentPosition(GeoPositionCallback(&aCallback),
                                    GeoPositionErrorCallback(aErrorCallback),
-                                   CreatePositionOptionsCopy(aOptions),
+                                   std::move(CreatePositionOptionsCopy(aOptions)),
                                    aCallerType);
 
   if (NS_FAILED(rv)) {
@@ -1242,7 +1260,7 @@ Geolocation::WatchPosition(PositionCallback& aCallback,
   int32_t ret = 0;
   nsresult rv = WatchPosition(GeoPositionCallback(&aCallback),
                               GeoPositionErrorCallback(aErrorCallback),
-                              CreatePositionOptionsCopy(aOptions),
+                              std::move(CreatePositionOptionsCopy(aOptions)),
                               aCallerType,
                               &ret);
 

@@ -178,6 +178,9 @@ public:
   
   bool HighAccuracyRequested();
 
+  
+  static already_AddRefed<Geolocation> NonWindowSingleton();
+
 private:
 
   ~Geolocation();
@@ -233,6 +236,9 @@ private:
 
   
   nsTArray<int32_t> mClearedWatchIDs;
+
+  
+  static mozilla::StaticRefPtr<Geolocation> sNonWindowSingleton;
 };
 
 } 
