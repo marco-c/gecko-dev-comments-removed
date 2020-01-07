@@ -605,18 +605,25 @@ AddAnimationsForProperty(nsIFrame* aFrame, nsDisplayListBuilder* aBuilder,
     aAnimationInfo.ClearAnimations();
   }
 
+  nsIFrame* styleFrame = nsLayoutUtils::GetStyleFrame(aFrame);
+  if (!styleFrame) {
+    return;
+  }
+
   
   
   
   
   
   uint64_t animationGeneration =
-    RestyleManager::GetAnimationGenerationForFrame(aFrame);
+    
+    
+    RestyleManager::GetAnimationGenerationForFrame(styleFrame);
   aAnimationInfo.SetAnimationGeneration(animationGeneration);
 
-  EffectCompositor::ClearIsRunningOnCompositor(aFrame, aProperty);
+  EffectCompositor::ClearIsRunningOnCompositor(styleFrame, aProperty);
   nsTArray<RefPtr<dom::Animation>> compositorAnimations =
-    EffectCompositor::GetAnimationsForCompositor(aFrame, aProperty);
+    EffectCompositor::GetAnimationsForCompositor(styleFrame, aProperty);
   if (compositorAnimations.IsEmpty()) {
     return;
   }
@@ -707,7 +714,7 @@ AddAnimationsForProperty(nsIFrame* aFrame, nsDisplayListBuilder* aBuilder,
     
     MOZ_ASSERT(anim->CascadeLevel() !=
                  EffectCompositor::CascadeLevel::Animations ||
-               !EffectSet::GetEffectSet(aFrame)->PropertiesWithImportantRules()
+               !EffectSet::GetEffectSet(styleFrame)->PropertiesWithImportantRules()
                   .HasProperty(aProperty),
                "GetEffectiveAnimationOfProperty already tested the property "
                "is not overridden by !important rules");
