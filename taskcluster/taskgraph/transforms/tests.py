@@ -189,7 +189,7 @@ test_description_schema = Schema({
     
     
     
-    Optional('run-on-projects'): optionally_keyed_by(
+    Optional('run-on-projects', default='built-projects'): optionally_keyed_by(
         'test-platform',
         Any([basestring], 'built-projects')),
 
@@ -201,7 +201,7 @@ test_description_schema = Schema({
     
     
     
-    Required('chunks'): optionally_keyed_by(
+    Required('chunks', default=1): optionally_keyed_by(
         'test-platform',
         int),
 
@@ -213,27 +213,27 @@ test_description_schema = Schema({
     
     
     
-    Required('e10s'): optionally_keyed_by(
+    Required('e10s', default='true'): optionally_keyed_by(
         'test-platform', 'project',
         Any(bool, 'both')),
 
     
-    Optional('webrender'): bool,
+    Optional('webrender', default=False): bool,
 
     
-    Required('instance-size'): optionally_keyed_by(
+    Required('instance-size', default='default'): optionally_keyed_by(
         'test-platform',
         Any('default', 'large', 'xlarge')),
 
     
-    Required('virtualization'): optionally_keyed_by(
+    Required('virtualization', default='virtual'): optionally_keyed_by(
         'test-platform',
         Any('virtual', 'virtual-with-gpu', 'hardware')),
 
     
     
-    Required('loopback-audio'): bool,
-    Required('loopback-video'): bool,
+    Required('loopback-audio', default=False): bool,
+    Required('loopback-video', default=False): bool,
 
     
     
@@ -245,7 +245,7 @@ test_description_schema = Schema({
     
     
     
-    Required('docker-image'): optionally_keyed_by(
+    Required('docker-image', default={'in-tree': 'desktop1604-test'}): optionally_keyed_by(
         'test-platform',
         Any(
             
@@ -259,7 +259,7 @@ test_description_schema = Schema({
 
     
     
-    Required('max-run-time'): optionally_keyed_by(
+    Required('max-run-time', default=3600): optionally_keyed_by(
         'test-platform',
         int),
 
@@ -267,10 +267,10 @@ test_description_schema = Schema({
     Optional('retry-exit-status'): int,
 
     
-    Required('checkout'): bool,
+    Required('checkout', default=False): bool,
 
     
-    Optional('reboot'):
+    Optional('reboot', default=False):
         Any(False, 'always', 'on-exception', 'on-failure'),
 
     
@@ -293,7 +293,7 @@ test_description_schema = Schema({
 
         
         
-        Required('extra-options'): optionally_keyed_by(
+        Required('extra-options', default=[]): optionally_keyed_by(
             'test-platform',
             [basestring]),
 
@@ -302,11 +302,11 @@ test_description_schema = Schema({
         Optional('build-artifact-name'): basestring,
 
         
-        Required('tooltool-downloads'): bool,
+        Required('tooltool-downloads', default=False): bool,
 
         
         
-        Required('no-read-buildbot-config'): bool,
+        Required('no-read-buildbot-config', default=False): bool,
 
         
         Optional('include-blob-upload-branch'): bool,
@@ -319,16 +319,16 @@ test_description_schema = Schema({
         
         
         
-        Required('set-moz-node-path'): bool,
+        Required('set-moz-node-path', default=False): bool,
 
         
         
-        Required('chunked'): optionally_keyed_by(
+        Required('chunked', default=False): optionally_keyed_by(
             'test-platform',
             bool),
 
         
-        Required('chunking-args'): Any(
+        Required('chunking-args', default='this-chunk'): Any(
             
             'this-chunk',
             
@@ -340,7 +340,7 @@ test_description_schema = Schema({
         
         Optional('chunk-suffix'): basestring,
 
-        Required('requires-signed-builds'): optionally_keyed_by(
+        Required('requires-signed-builds', default=False): optionally_keyed_by(
             'test-platform',
             bool),
     },
@@ -350,7 +350,7 @@ test_description_schema = Schema({
 
     
     
-    Optional('os-groups'): optionally_keyed_by(
+    Optional('os-groups', default=[]): optionally_keyed_by(
         'test-platform',
         [basestring]),
 
@@ -392,6 +392,13 @@ test_description_schema = Schema({
 
 
 @transforms.add
+def validate(config, tests):
+    for test in tests:
+        yield validate_schema(test_description_schema, test,
+                              "In test {!r}:".format(test['test-name']))
+
+
+@transforms.add
 def handle_keyed_by_mozharness(config, tests):
     """Resolve a mozharness field if it is keyed by something"""
     for test in tests:
@@ -415,7 +422,7 @@ def set_defaults(config, tests):
         else:
             
             test['mozharness']['set-moz-node-path'] = True
-            test.setdefault('e10s', True)
+            test.setdefault('e10s', 'true')
 
         
         if test['test-platform'].startswith('linux') and test['suite'] != 'talos':
@@ -439,32 +446,8 @@ def set_defaults(config, tests):
         test.setdefault('run-on-projects', 'built-projects')
         test.setdefault('instance-size', 'default')
         test.setdefault('max-run-time', 3600)
-        test.setdefault('reboot', False)
-        test.setdefault('virtualization', 'virtual')
-        test.setdefault('run-on-projects', 'built-projects')
-        test.setdefault('chunks', 1)
-        test.setdefault('instance-size', 'default')
-        test.setdefault('loopback-audio', False)
-        test.setdefault('loopback-video', False)
-        test.setdefault('docker-image', {'in-tree': 'desktop1604-test'})
-        test.setdefault('max-run-time', 3600)
-        test.setdefault('checkout', False)
-
+        test.setdefault('reboot', True)
         test['mozharness'].setdefault('extra-options', [])
-        test['mozharness'].setdefault('requires-signed-builds', False)
-        test['mozharness'].setdefault('tooltool-downloads', False)
-        test['mozharness'].setdefault('no-read-buildbot-config', False)
-        test['mozharness'].setdefault('set-moz-node-path', False)
-        test['mozharness'].setdefault('chunked', False)
-        test['mozharness'].setdefault('chunking-args', 'this-chunk')
-        yield test
-
-
-@transforms.add
-def validate(config, tests):
-    for test in tests:
-        validate_schema(test_description_schema, test,
-                        "In test {!r}:".format(test['test-name']))
         yield test
 
 

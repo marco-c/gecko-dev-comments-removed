@@ -62,7 +62,7 @@ mozharness_run_schema = Schema({
 
     
     
-    Required('tooltool-downloads'): Any(
+    Required('tooltool-downloads', default=False): Any(
         False,
         'public',
         'internal',
@@ -73,53 +73,39 @@ mozharness_run_schema = Schema({
     
     
     
-    Required('secrets'): Any(bool, [basestring]),
+    Required('secrets', default=False): Any(bool, [basestring]),
 
     
     
-    Required('taskcluster-proxy'): bool,
+    Required('taskcluster-proxy', default=False): bool,
 
     
-    Required('need-xvfb'): bool,
+    Required('need-xvfb', default=False): bool,
 
     
     
-    Required('keep-artifacts'): bool,
+    Required('keep-artifacts', default=True): bool,
 
     
     Optional('job-script'): basestring,
 
-    Required('requires-signed-builds'): bool,
+    Required('requires-signed-builds', default=False): bool,
 
     
     
-    Required('use-simple-package'): bool,
+    Required('use-simple-package', default=True): bool,
 
     
     
-    Required('use-magic-mh-args'): bool,
+    Required('use-magic-mh-args', default=True): bool,
 
     
     
-    Required('comm-checkout'): bool,
+    Required('comm-checkout', default=False): bool,
 })
 
 
-mozharness_defaults = {
-    'tooltool-downloads': False,
-    'secrets': False,
-    'taskcluster-proxy': False,
-    'need-xvfb': False,
-    'keep-artifacts': True,
-    'requires-signed-builds': False,
-    'use-simple-package': True,
-    'use-magic-mh-args': True,
-    'comm-checkout': False,
-}
-
-
-@run_job_using("docker-worker", "mozharness", schema=mozharness_run_schema,
-               defaults=mozharness_defaults)
+@run_job_using("docker-worker", "mozharness", schema=mozharness_run_schema)
 def mozharness_on_docker_worker_setup(config, job, taskdesc):
     run = job['run']
 
@@ -217,8 +203,7 @@ def mozharness_on_docker_worker_setup(config, job, taskdesc):
     worker['command'] = command
 
 
-@run_job_using("generic-worker", "mozharness", schema=mozharness_run_schema,
-               defaults=mozharness_defaults)
+@run_job_using("generic-worker", "mozharness", schema=mozharness_run_schema)
 def mozharness_on_generic_worker(config, job, taskdesc):
     assert job['worker']['os'] == 'windows', 'only supports windows right now'
 
@@ -351,8 +336,7 @@ def mozharness_on_generic_worker(config, job, taskdesc):
     ])
 
 
-@run_job_using('buildbot-bridge', 'mozharness', schema=mozharness_run_schema,
-               defaults=mozharness_defaults)
+@run_job_using('buildbot-bridge', 'mozharness', schema=mozharness_run_schema)
 def mozharness_on_buildbot_bridge(config, job, taskdesc):
     run = job['run']
     worker = taskdesc['worker']
