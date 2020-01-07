@@ -662,10 +662,6 @@ nsInputStreamPump::OnStateStop()
     if (!NS_IsMainThread()) {
         
         
-        
-        
-        MOZ_ASSERT(NS_IsMainThread(),
-                   "OnStateStop should only be called on the main thread.");
         nsresult rv = NS_DispatchToMainThread(
           NewRunnableMethod("nsInputStreamPump::CallOnStateStop",
                             this,
