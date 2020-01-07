@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "mozilla/layers/WebRenderBridgeParent.h"
 
@@ -145,8 +145,8 @@ public:
   {
     mWebRenderBridgeParent->SendPendingAsyncMessages();
     if (mActorsToDestroy) {
-      // Destroy the actors after sending the async messages because the latter may contain
-      // references to some actors.
+      
+      
       for (const auto& op : *mActorsToDestroy) {
         mWebRenderBridgeParent->DestroyActor(op);
       }
@@ -201,7 +201,7 @@ WebRenderBridgeParent::WebRenderBridgeParent(const wr::PipelineId& aPipelineId)
 {
 }
 
-/* static */ WebRenderBridgeParent*
+ WebRenderBridgeParent*
 WebRenderBridgeParent::CreateDestroyed(const wr::PipelineId& aPipelineId)
 {
   return new WebRenderBridgeParent(aPipelineId);
@@ -221,13 +221,13 @@ WebRenderBridgeParent::RecvCreate(const gfx::IntSize& aSize)
   MOZ_ASSERT(mApi);
 
 #ifdef MOZ_WIDGET_ANDROID
-  // XXX temporary hack.
-  // XXX Remove it when APZ is supported.
-  // XXX Broken by Dynamic Toolbar v3. See: Bug 1335895
-//  RefPtr<UiCompositorControllerParent> uiController = UiCompositorControllerParent::GetFromRootLayerTreeId(/* Root Layer Tree ID */);
-//  if (uiController) {
-//    uiController->ToolbarAnimatorMessageFromCompositor(/*FIRST_PAINT*/ 5);
-//  }
+  
+  
+  
+
+
+
+
 #endif
 
   return IPC_OK();
@@ -277,9 +277,20 @@ WebRenderBridgeParent::DeallocShmems(nsTArray<ipc::Shmem>& aShmems)
   aShmems.Clear();
 }
 
+void
+WebRenderBridgeParent::DeallocShmems(nsTArray<RefCountedShmem>& aShmems)
+{
+  if (IPCOpen()) {
+    for (auto& shm : aShmems) {
+       RefCountedShm::Dealloc(this, shm);
+    }
+  }
+  aShmems.Clear();
+}
+
 bool
 WebRenderBridgeParent::UpdateResources(const nsTArray<OpUpdateResource>& aResourceUpdates,
-                                       const nsTArray<ipc::Shmem>& aSmallShmems,
+                                       const nsTArray<RefCountedShmem>& aSmallShmems,
                                        const nsTArray<ipc::Shmem>& aLargeShmems,
                                        wr::ResourceUpdateQueue& aUpdates)
 {
@@ -388,7 +399,7 @@ WebRenderBridgeParent::AddExternalImage(wr::ExternalImageId aExtId, wr::ImageKey
                                         wr::ResourceUpdateQueue& aResources)
 {
   Range<wr::ImageKey> keys(&aKey, 1);
-  // Check if key is obsoleted.
+  
   if (keys[0].mNamespace != mIdNamespace) {
     return true;
   }
@@ -450,7 +461,7 @@ WebRenderBridgeParent::AddExternalImage(wr::ExternalImageId aExtId, wr::ImageKey
 
 mozilla::ipc::IPCResult
 WebRenderBridgeParent::RecvUpdateResources(nsTArray<OpUpdateResource>&& aResourceUpdates,
-                                           nsTArray<ipc::Shmem>&& aSmallShmems,
+                                           nsTArray<RefCountedShmem>&& aSmallShmems,
                                            nsTArray<ipc::Shmem>&& aLargeShmems)
 {
   if (mDestroyed) {
@@ -502,14 +513,14 @@ WebRenderBridgeParent::GetRootCompositorBridgeParent() const
   }
 
   if (mWidget) {
-    // This WebRenderBridgeParent is attached to the root
-    // CompositorBridgeParent.
+    
+    
     return static_cast<CompositorBridgeParent*>(mCompositorBridge);
   }
 
-  // Otherwise, this WebRenderBridgeParent is attached to a
-  // CrossProcessCompositorBridgeParent so we have an extra level of
-  // indirection to unravel.
+  
+  
+  
   CompositorBridgeParent::LayerTreeState* lts =
       CompositorBridgeParent::GetIndirectShadowTree(GetLayersId());
   if (!lts) {
@@ -552,8 +563,8 @@ WebRenderBridgeParent::PushAPZStateToWR(nsTArray<wr::WrTransformProperty>& aTran
     TimeStamp animationTime = cbp->GetTestingTimeStamp().valueOr(
         mCompositorScheduler->GetLastComposeTime());
     TimeDuration frameInterval = cbp->GetVsyncInterval();
-    // As with the non-webrender codepath in AsyncCompositionManager, we want to
-    // use the timestamp for the next vsync when advancing animations.
+    
+    
     if (frameInterval != TimeDuration::Forever()) {
       animationTime += frameInterval;
     }
@@ -580,7 +591,7 @@ WebRenderBridgeParent::RecvSetDisplayList(const gfx::IntSize& aSize,
                                           const wr::BuiltDisplayListDescriptor& dlDesc,
                                           const WebRenderScrollData& aScrollData,
                                           nsTArray<OpUpdateResource>&& aResourceUpdates,
-                                          nsTArray<ipc::Shmem>&& aSmallShmems,
+                                          nsTArray<RefCountedShmem>&& aSmallShmems,
                                           nsTArray<ipc::Shmem>&& aLargeShmems,
                                           const wr::IdNamespace& aIdNamespace,
                                           const TimeStamp& aTxnStartTime,
@@ -599,8 +610,8 @@ WebRenderBridgeParent::RecvSetDisplayList(const gfx::IntSize& aSize,
   UpdateFwdTransactionId(aFwdTransactionId);
   AutoClearReadLocks clearLocks(mReadLocks);
 
-  // This ensures that destroy operations are always processed. It is not safe
-  // to early-return from RecvDPEnd without doing so.
+  
+  
   AutoWebRenderBridgeParentAsyncMessageSender autoAsyncMessageSender(this, &aToDestroy);
 
   uint32_t wrEpoch = GetNextWrEpoch();
@@ -619,9 +630,9 @@ WebRenderBridgeParent::RecvSetDisplayList(const gfx::IntSize& aSize,
 
   wr::Vec<uint8_t> dlData(Move(dl));
 
-  // If id namespaces do not match, it means the command is obsolete, probably
-  // because the tab just moved to a new window.
-  // In that case do not send the commands to webrender.
+  
+  
+  
   if (mIdNamespace == aIdNamespace) {
     if (mWidget) {
       LayoutDeviceIntSize size = mWidget->GetClientSize();
@@ -647,8 +658,8 @@ WebRenderBridgeParent::RecvSetDisplayList(const gfx::IntSize& aSize,
   UpdateAPZ(true);
 
   if (mIdNamespace != aIdNamespace) {
-    // Pretend we composited since someone is wating for this event,
-    // though DisplayList was not pushed to webrender.
+    
+    
     TimeStamp now = TimeStamp::Now();
     mCompositorBridge->DidComposite(wr::AsUint64(mPipelineId), now, now);
   }
@@ -679,8 +690,8 @@ WebRenderBridgeParent::RecvEmptyTransaction(const FocusTarget& aFocusTarget,
   UpdateFwdTransactionId(aFwdTransactionId);
   AutoClearReadLocks clearLocks(mReadLocks);
 
-  // This ensures that destroy operations are always processed. It is not safe
-  // to early-return without doing so.
+  
+  
   AutoWebRenderBridgeParentAsyncMessageSender autoAsyncMessageSender(this, &aToDestroy);
 
   if (!aCommands.IsEmpty()) {
@@ -705,8 +716,8 @@ WebRenderBridgeParent::RecvEmptyTransaction(const FocusTarget& aFocusTarget,
       sendDidComposite = true;
     }
     HoldPendingTransactionId(mWrEpoch, aTransactionId, aTxnStartTime, aFwdTime);
-    // If WebRenderBridgeParent does not have pending DidComposites,
-    // send DidComposite now.
+    
+    
     if (sendDidComposite) {
       TimeStamp now = TimeStamp::Now();
       mCompositorBridge->DidComposite(wr::AsUint64(mPipelineId), now, now);
@@ -762,11 +773,11 @@ WebRenderBridgeParent::ProcessWebRenderParentCommands(const InfallibleTArray<Web
         if (data.animations().Length()) {
           mAnimStorage->SetAnimations(data.id(), data.animations());
           mActiveAnimations.insert(data.id());
-          // Store the default opacity
+          
           if (op.opacity().type() == OptionalOpacity::Tfloat) {
             mAnimStorage->SetAnimatedValue(data.id(), op.opacity().get_float());
           }
-          // Store the default transform
+          
           if (op.transform().type() == OptionalTransform::TMatrix4x4) {
             Matrix4x4 transform(Move(op.transform().get_Matrix4x4()));
             mAnimStorage->SetAnimatedValue(data.id(), Move(transform));
@@ -775,7 +786,7 @@ WebRenderBridgeParent::ProcessWebRenderParentCommands(const InfallibleTArray<Web
         break;
       }
       default: {
-        // other commands are handle on the child
+        
         break;
       }
     }
@@ -792,19 +803,19 @@ WebRenderBridgeParent::RecvGetSnapshot(PTextureParent* aTexture)
 
   RefPtr<TextureHost> texture = TextureHost::AsTextureHost(aTexture);
   if (!texture) {
-    // We kill the content process rather than have it continue with an invalid
-    // snapshot, that may be too harsh and we could decide to return some sort
-    // of error to the child process and let it deal with it...
+    
+    
+    
     return IPC_FAIL_NO_REASON(this);
   }
 
-  // XXX Add other TextureHost supports.
-  // Only BufferTextureHost is supported now.
+  
+  
   BufferTextureHost* bufferTexture = texture->AsBufferTextureHost();
   if (!bufferTexture) {
-    // We kill the content process rather than have it continue with an invalid
-    // snapshot, that may be too harsh and we could decide to return some sort
-    // of error to the child process and let it deal with it...
+    
+    
+    
     return IPC_FAIL_NO_REASON(this);
   }
 
@@ -813,12 +824,12 @@ WebRenderBridgeParent::RecvGetSnapshot(PTextureParent* aTexture)
   uint8_t* buffer = bufferTexture->GetBuffer();
   IntSize size = bufferTexture->GetSize();
 
-  // We only support B8G8R8A8 for now.
+  
   MOZ_ASSERT(buffer);
   MOZ_ASSERT(bufferTexture->GetFormat() == SurfaceFormat::B8G8R8A8);
   uint32_t buffer_size = size.width * size.height * 4;
 
-  // Assert the stride of the buffer is what webrender expects
+  
   MOZ_ASSERT((uint32_t)(size.width * 4) == stride);
 
   mForceRendering = true;
@@ -963,13 +974,13 @@ WebRenderBridgeParent::RecvClearCachedResources()
   }
   mCompositorBridge->ObserveLayerUpdate(GetLayersId(), GetChildLayerObserverEpoch(), false);
 
-  // Clear resources
+  
   wr::TransactionBuilder txn;
   txn.ClearDisplayList(wr::NewEpoch(GetNextWrEpoch()), mPipelineId);
   mApi->SendTransaction(txn);
-  // Schedule generate frame to clean up Pipeline
+  
   ScheduleGenerateFrame();
-  // Remove animations.
+  
   for (std::unordered_set<uint64_t>::iterator iter = mActiveAnimations.begin(); iter != mActiveAnimations.end(); iter++) {
     mAnimStorage->ClearById(*iter);
   }
@@ -993,20 +1004,20 @@ WebRenderBridgeParent::UpdateWebRender(CompositorVsyncScheduler* aScheduler,
     return;
   }
 
-  // Update id name space to identify obsoleted keys.
-  // Since usage of invalid keys could cause crash in webrender.
+  
+  
   mIdNamespace = aApi->GetNamespace();
-  // XXX Remove it when webrender supports sharing/moving Keys between different webrender instances.
-  // XXX It requests client to update/reallocate webrender related resources,
-  // but parent side does not wait end of the update.
-  // The code could become simpler if we could serialise old keys deallocation and new keys allocation.
-  // But we do not do it, it is because client side deallocate old layers/webrender keys
-  // after new layers/webrender keys allocation.
-  // Without client side's layout refactoring, we could not finish all old layers/webrender keys removals
-  // before new layer/webrender keys allocation. In future, we could address the problem.
+  
+  
+  
+  
+  
+  
+  
+  
   Unused << SendWrUpdated(mIdNamespace);
   CompositorBridgeParentBase* cBridge = mCompositorBridge;
-  // XXX Stop to clear resources if webreder supports resources sharing between different webrender instances.
+  
   ClearResources();
   mCompositorBridge = cBridge;
   mCompositorScheduler = aScheduler;
@@ -1014,8 +1025,8 @@ WebRenderBridgeParent::UpdateWebRender(CompositorVsyncScheduler* aScheduler,
   mAsyncImageManager = aImageMgr;
   mAnimStorage = aAnimStorage;
 
-  Unused << GetNextWrEpoch(); // Update webrender epoch
-  // Register pipeline to updated AsyncImageManager.
+  Unused << GetNextWrEpoch(); 
+  
   mAsyncImageManager->AddPipeline(mPipelineId);
 }
 
@@ -1176,9 +1187,9 @@ WebRenderBridgeParent::AdvanceAnimations()
                                     !mPreviousFrameTimeStamp.IsNull() ?
                                     mPreviousFrameTimeStamp : animTime);
 
-  // Reset the previous time stamp if we don't already have any running
-  // animations to avoid using the time which is far behind for newly
-  // started animations.
+  
+  
+  
   mPreviousFrameTimeStamp =
     mAnimStorage->AnimatedValueCount() ? animTime : TimeStamp();
 }
@@ -1189,7 +1200,7 @@ WebRenderBridgeParent::SampleAnimations(nsTArray<wr::WrOpacityProperty>& aOpacit
 {
   AdvanceAnimations();
 
-  // return the animated data if has
+  
   if (mAnimStorage->AnimatedValueCount()) {
     for(auto iter = mAnimStorage->ConstAnimatedValueTableIter();
         !iter.Done(); iter.Next()) {
@@ -1215,7 +1226,7 @@ WebRenderBridgeParent::CompositeToTarget(gfx::DrawTarget* aTarget, const gfx::In
 
   if (!mForceRendering &&
       wr::RenderThread::Get()->TooManyPendingFrames(mApi->GetId())) {
-    // Render thread is busy, try next time.
+    
     mCompositorScheduler->ScheduleComposition();
     return;
   }
@@ -1224,15 +1235,15 @@ WebRenderBridgeParent::CompositeToTarget(gfx::DrawTarget* aTarget, const gfx::In
   mAsyncImageManager->ApplyAsyncImages();
 
   if (!mAsyncImageManager->GetCompositeUntilTime().IsNull()) {
-    // Trigger another CompositeToTarget() call because there might be another
-    // frame that we want to generate after this one.
-    // It will check if we actually want to generate the frame or not.
+    
+    
+    
     mCompositorScheduler->ScheduleComposition();
   }
 
   if (!mAsyncImageManager->GetAndResetWillGenerateFrame() &&
       !mForceRendering) {
-    // Could skip generating frame now.
+    
     return;
   }
 
@@ -1272,11 +1283,11 @@ WebRenderBridgeParent::HoldPendingTransactionId(uint32_t aWrEpoch,
                                                 const TimeStamp& aTxnStartTime,
                                                 const TimeStamp& aFwdTime)
 {
-  // The transaction ID might get reset to 1 if the page gets reloaded, see
-  // https://bugzilla.mozilla.org/show_bug.cgi?id=1145295#c41
-  // Otherwise, it should be continually increasing.
+  
+  
+  
   MOZ_ASSERT(aTransactionId == 1 || aTransactionId > LastPendingTransactionId());
-  // Handle TransactionIdAllocator(RefreshDriver) change.
+  
   if (aTransactionId == 1) {
     FlushPendingTransactionIds();
   }
@@ -1407,9 +1418,9 @@ WebRenderBridgeParent::ClearResources()
   wr::TransactionBuilder txn;
   txn.ClearDisplayList(wr::NewEpoch(wrEpoch), mPipelineId);
 
-  // Schedule generate frame to clean up Pipeline
+  
   ScheduleGenerateFrame();
-  // WrFontKeys and WrImageKeys are deleted during WebRenderAPI destruction.
+  
   for (auto iter = mExternalImageIds.Iter(); !iter.Done(); iter.Next()) {
     iter.Data()->ClearWrBridge();
   }
@@ -1498,7 +1509,7 @@ WebRenderBridgeParent::RecvNewCompositable(const CompositableHandle& aHandle,
   if (mDestroyed) {
     return IPC_OK();
   }
-  if (!AddCompositable(aHandle, aInfo, /* aUseWebRender */ true)) {
+  if (!AddCompositable(aHandle, aInfo,  true)) {
     return IPC_FAIL_NO_REASON(this);
   }
   return IPC_OK();
@@ -1558,5 +1569,5 @@ WebRenderBridgeParent::ExtractImageCompositeNotifications(nsTArray<ImageComposit
   mAsyncImageManager->FlushImageNotifications(aNotifications);
 }
 
-} // namespace layers
-} // namespace mozilla
+} 
+} 
