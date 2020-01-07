@@ -701,6 +701,13 @@ public:
 
 
 
+  bool ExtractPendingInput(StreamTime aDesiredUpToTime,
+                           bool* aEnsureNextIteration);
+
+  
+
+
+
 
   void NotifyListenersEventImpl(MediaStreamGraphEvent aEvent);
   void NotifyListenersEvent(MediaStreamGraphEvent aEvent);
