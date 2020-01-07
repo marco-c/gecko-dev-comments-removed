@@ -401,7 +401,19 @@ protected:
                           const EditorDOMPointBase<PT, CT>& aStartOfRightNode,
                           nsIContent* aBRNode);
 
-  nsresult ReturnInListItem(Element& aHeader, nsINode& aNode, int32_t aOffset);
+  
+
+
+
+
+
+
+
+
+
+  MOZ_MUST_USE nsresult
+  ReturnInListItem(Element& aListItem, nsINode& aNode, int32_t aOffset);
+
   nsresult AfterEditInner(EditAction action,
                           nsIEditor::EDirection aDirection);
   nsresult RemovePartOfBlock(Element& aBlock, nsIContent& aStartChild,
