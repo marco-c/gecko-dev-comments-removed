@@ -911,20 +911,6 @@ DebuggerClient.prototype = {
     }
 
     
-    if (!this.traits.noNeedToFakeResumptionOnNavigation) {
-      
-      
-      
-      if (packet.type == UnsolicitedNotifications.tabNavigated &&
-          this._clients.has(packet.from) &&
-          this._clients.get(packet.from).thread) {
-        let thread = this._clients.get(packet.from).thread;
-        let resumption = { from: thread._actor, type: "resumed" };
-        thread._onThreadState(resumption);
-      }
-    }
-
-    
     
     if (packet.type) {
       this.emit(packet.type, packet);

@@ -170,9 +170,6 @@ RootActor.prototype = {
     memoryActorAllocations: true,
     
     
-    noNeedToFakeResumptionOnNavigation: true,
-    
-    
     webConsoleCommands: true,
     
     
