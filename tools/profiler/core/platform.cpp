@@ -1566,10 +1566,6 @@ StreamMetaJSCustomObject(PSLockRef aLock, SpliceableJSONWriter& aWriter,
 
   aWriter.IntProperty("version", 10);
 
-#if defined(MOZ_SOURCE_URL)
-  aWriter.StringProperty("sourceURL", "@MOZ_SOURCE_URL@");
-#endif
-
   
   
   
@@ -1660,6 +1656,10 @@ StreamMetaJSCustomObject(PSLockRef aLock, SpliceableJSONWriter& aWriter,
     res = appInfo->GetAppBuildID(string);
     if (!NS_FAILED(res))
       aWriter.StringProperty("appBuildID", string.Data());
+
+    res = appInfo->GetSourceURL(string);
+    if (!NS_FAILED(res))
+      aWriter.StringProperty("sourceURL", string.Data());
   }
 
   
