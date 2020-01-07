@@ -53,11 +53,11 @@ class AtomMarkingRuntime
 
     
     
-    void updateZoneBitmap(Zone* zone, const DenseBitmap& bitmap);
+    void refineZoneBitmapForCollectedZone(Zone* zone, const DenseBitmap& bitmap);
 
     
     
-    void updateChunkMarkBits(JSRuntime* runtime);
+    void markAtomsUsedByUncollectedZones(JSRuntime* runtime);
 
     
     template <typename T> void markAtom(JSContext* cx, T* thing);

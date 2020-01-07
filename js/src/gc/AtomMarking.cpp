@@ -96,8 +96,10 @@ AtomMarkingRuntime::computeBitmapFromChunkMarkBits(JSRuntime* runtime, DenseBitm
 }
 
 void
-AtomMarkingRuntime::updateZoneBitmap(Zone* zone, const DenseBitmap& bitmap)
+AtomMarkingRuntime::refineZoneBitmapForCollectedZone(Zone* zone, const DenseBitmap& bitmap)
 {
+    MOZ_ASSERT(zone->isCollectingFromAnyThread());
+
     if (zone->isAtomsZone())
         return;
 
@@ -110,7 +112,7 @@ AtomMarkingRuntime::updateZoneBitmap(Zone* zone, const DenseBitmap& bitmap)
 
 template <typename Bitmap>
 static void
-AddBitmapToChunkMarkBits(JSRuntime* runtime, Bitmap& bitmap)
+BitwiseOrIntoChunkMarkBits(JSRuntime* runtime, Bitmap& bitmap)
 {
     
     
@@ -128,7 +130,7 @@ AddBitmapToChunkMarkBits(JSRuntime* runtime, Bitmap& bitmap)
 }
 
 void
-AtomMarkingRuntime::updateChunkMarkBits(JSRuntime* runtime)
+AtomMarkingRuntime::markAtomsUsedByUncollectedZones(JSRuntime* runtime)
 {
     MOZ_ASSERT(CurrentThreadIsPerformingGC());
     MOZ_ASSERT(!runtime->hasHelperThreadZones());
@@ -145,11 +147,11 @@ AtomMarkingRuntime::updateChunkMarkBits(JSRuntime* runtime)
             if (!zone->isCollectingFromAnyThread())
                 zone->markedAtoms().bitwiseOrInto(markedUnion);
         }
-        AddBitmapToChunkMarkBits(runtime, markedUnion);
+        BitwiseOrIntoChunkMarkBits(runtime, markedUnion);
     } else {
         for (ZonesIter zone(runtime, SkipAtoms); !zone.done(); zone.next()) {
             if (!zone->isCollectingFromAnyThread())
-                AddBitmapToChunkMarkBits(runtime, zone->markedAtoms());
+                BitwiseOrIntoChunkMarkBits(runtime, zone->markedAtoms());
         }
     }
 }
