@@ -62,7 +62,7 @@ var Addons = {
 
 
   async install(addonUrl, options) {
-    const installObj = await AddonManager.getInstallForURL(addonUrl, null, "application/x-xpinstall");
+    const installObj = await AddonManager.getInstallForURL(addonUrl, "application/x-xpinstall");
     return this.applyInstall(installObj, options);
   },
 

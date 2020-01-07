@@ -53,7 +53,7 @@ async function run_test_3() {
 
 async function run_test_4() {
   let url = Services.io.newFileURI(do_get_file("data/unsigned.xpi")).spec;
-  let install = await AddonManager.getInstallForURL(url, null, "application/x-xpinstall", "sha1:foo");
+  let install = await AddonManager.getInstallForURL(url, "application/x-xpinstall", "sha1:foo");
   Assert.notEqual(install, null);
   Assert.equal(install.state, AddonManager.STATE_DOWNLOAD_FAILED);
   Assert.equal(install.error, AddonManager.ERROR_INCORRECT_HASH);

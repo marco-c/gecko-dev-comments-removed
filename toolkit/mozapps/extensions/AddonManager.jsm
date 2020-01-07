@@ -176,48 +176,6 @@ function safeCall(aCallback, ...aArgs) {
 
 
 
-
-
-
-
-function makeSafe(aCallback) {
-  return function(...aArgs) {
-    safeCall(aCallback, ...aArgs);
-  };
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function promiseOrCallback(promise, callback) {
-  if (!callback)
-    return promise;
-
-  if (typeof callback !== "function")
-    throw Components.Exception("Callback must be a function",
-                               Cr.NS_ERROR_INVALID_ARG);
-
-  promise.then(makeSafe(callback)).catch(error => {
-    logger.error(error);
-  });
-
-  return undefined;
-}
-
-
-
-
 function reportProviderError(aProvider, aMethod, aError) {
   let method = `provider ${providerName(aProvider)}.${aMethod}`;
   AddonManagerPrivate.recordException("AMI", method, aError);
@@ -3386,19 +3344,14 @@ var AddonManager = {
     return err ? this._errorToString.get(err) : null;
   },
 
-  getInstallForURL(aUrl, aCallback, aMimetype,
-                                                 aHash, aName, aIcons,
-                                                 aVersion, aBrowser) {
-    return promiseOrCallback(
-      AddonManagerInternal.getInstallForURL(aUrl, aMimetype, aHash,
-                                            aName, aIcons, aVersion, aBrowser),
-      aCallback);
+  getInstallForURL(aUrl, aMimetype, aHash, aName, aIcons,
+                   aVersion, aBrowser) {
+    return AddonManagerInternal.getInstallForURL(aUrl, aMimetype, aHash,
+                                                 aName, aIcons, aVersion, aBrowser);
   },
 
-  getInstallForFile(aFile, aCallback, aMimetype) {
-    return promiseOrCallback(
-      AddonManagerInternal.getInstallForFile(aFile, aMimetype),
-      aCallback);
+  getInstallForFile(aFile, aMimetype) {
+      return AddonManagerInternal.getInstallForFile(aFile, aMimetype);
   },
 
   
