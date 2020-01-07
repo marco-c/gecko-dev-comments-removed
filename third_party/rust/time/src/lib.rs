@@ -38,12 +38,10 @@
 
 #[cfg(target_os = "redox")] extern crate syscall;
 #[cfg(unix)] extern crate libc;
-#[cfg(windows)] extern crate kernel32;
 #[cfg(windows)] extern crate winapi;
 #[cfg(feature = "rustc-serialize")] extern crate rustc_serialize;
 
 #[cfg(test)] #[macro_use] extern crate log;
-#[cfg(all(windows, test))] extern crate advapi32;
 
 use std::cmp::Ordering;
 use std::error::Error;
@@ -158,6 +156,7 @@ pub fn get_time() -> Timespec {
 
 
 
+#[inline]
 pub fn precise_time_ns() -> u64 {
     sys::get_precise_ns()
 }
