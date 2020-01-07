@@ -950,8 +950,8 @@ MacroAssembler::nurseryAllocateString(Register result, Register temp, gc::AllocK
     
     
     
-    auto nurseryPosAddr = intptr_t(zone->addressOfNurseryPosition());
-    auto nurseryEndAddr = intptr_t(zone->addressOfNurseryCurrentEnd());
+    auto nurseryPosAddr = intptr_t(zone->addressOfStringNurseryPosition());
+    auto nurseryEndAddr = intptr_t(zone->addressOfStringNurseryCurrentEnd());
     auto zoneAddr = intptr_t(zone);
 
     intptr_t maxOffset = std::max(std::abs(nurseryPosAddr - zoneAddr),
