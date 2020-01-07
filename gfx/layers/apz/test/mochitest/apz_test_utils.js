@@ -536,7 +536,12 @@ function getHitTestConfig() {
 }
 
 
+
+
 function centerOf(element) {
+  if (typeof element === "string") {
+    element = document.getElementById(element);
+  }
   var bounds = element.getBoundingClientRect();
   return { x: bounds.x + (bounds.width / 2), y: bounds.y + (bounds.height / 2) };
 }
