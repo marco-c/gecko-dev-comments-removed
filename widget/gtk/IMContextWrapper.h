@@ -310,6 +310,17 @@ protected:
     
     
     bool mRetrieveSurroundingSignalReceived;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    bool mMaybeInDeadKeySequence;
 
     
     
