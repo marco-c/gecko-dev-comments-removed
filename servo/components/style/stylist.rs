@@ -1953,12 +1953,7 @@ pub struct CascadeData {
 
     
     
-    
-    
-    
-    
-    
-    host_rules: Option<Box<SelectorMap<Rule>>>,
+    host_rules: Option<Box<ElementAndPseudoRules>>,
 
     
     
@@ -2122,11 +2117,7 @@ impl CascadeData {
 
     #[inline]
     fn host_rules(&self, pseudo: Option<&PseudoElement>) -> Option<&SelectorMap<Rule>> {
-        if pseudo.is_some() {
-            return None;
-        }
-
-        self.host_rules.as_ref().map(|rules| &**rules)
+        self.host_rules.as_ref().and_then(|d| d.rules(pseudo))
     }
 
     #[inline]
@@ -2258,20 +2249,20 @@ impl CascadeData {
                             }
                         }
 
-                        if selector.is_featureless_host_selector() {
-                            let host_rules = self.host_rules
-                                .get_or_insert_with(|| Box::new(Default::default()));
-                            host_rules.insert(rule, quirks_mode)?;
+                        
+                        
+                        
+                        let rules = if selector.is_featureless_host_selector_or_pseudo_element() {
+                            self.host_rules
+                                .get_or_insert_with(|| Box::new(Default::default()))
+                        } else if selector.is_slotted() {
+                            self.slotted_rules
+                                .get_or_insert_with(|| Box::new(Default::default()))
                         } else {
-                            let rules = if selector.is_slotted() {
-                                self.slotted_rules
-                                    .get_or_insert_with(|| Box::new(Default::default()))
-                            } else {
-                                &mut self.normal_rules
-                            };
+                            &mut self.normal_rules
+                        };
 
-                            rules.insert(rule, pseudo_element, quirks_mode)?;
-                        }
+                        rules.insert(rule, pseudo_element, quirks_mode)?;
                     }
                     self.rules_source_order += 1;
                 },

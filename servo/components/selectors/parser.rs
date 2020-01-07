@@ -545,9 +545,25 @@ impl<Impl: SelectorImpl> Selector<Impl> {
 
     
     
+    
     #[inline]
-    pub fn is_featureless_host_selector(&self) -> bool {
-        self.iter().is_featureless_host_selector()
+    pub fn is_featureless_host_selector_or_pseudo_element(&self) -> bool {
+        let mut iter = self.iter();
+        if !self.has_pseudo_element() {
+            return iter.is_featureless_host_selector();
+        }
+
+        
+        for _ in &mut iter { }
+
+        match iter.next_sequence() {
+            None => return false,
+            Some(combinator) => {
+                debug_assert_eq!(combinator, Combinator::PseudoElement);
+            }
+        }
+
+        iter.is_featureless_host_selector()
     }
 
     
