@@ -146,7 +146,6 @@ function serializeNode(aNode, aIsLivemark) {
   data.instanceId = PlacesUtils.instanceId;
 
   let guid = aNode.bookmarkGuid;
-  let grandParentId;
 
   
   
@@ -155,11 +154,6 @@ function serializeNode(aNode, aIsLivemark) {
     if (aNode.parent) {
       data.parent = aNode.parent.itemId;
       data.parentGuid = aNode.parent.bookmarkGuid;
-    }
-
-    let grandParent = aNode.parent && aNode.parent.parent;
-    if (grandParent) {
-      grandParentId = grandParent.itemId;
     }
 
     data.dateAdded = aNode.dateAdded;
@@ -172,46 +166,24 @@ function serializeNode(aNode, aIsLivemark) {
 
   if (PlacesUtils.nodeIsURI(aNode)) {
     
-    NetUtil.newURI(aNode.uri);
-
-    
-    if (data.parent == PlacesUtils.tagsFolderId)
-      throw new Error("Unexpected node type");
-
+    new URL(aNode.uri);
     data.type = PlacesUtils.TYPE_X_MOZ_PLACE;
     data.uri = aNode.uri;
-
     if (aNode.tags)
       data.tags = aNode.tags;
-  } else if (PlacesUtils.nodeIsContainer(aNode)) {
-    
-    if (grandParentId == PlacesUtils.tagsFolderId)
-      throw new Error("Unexpected node type");
-
-    let concreteId = PlacesUtils.getConcreteItemId(aNode);
-    if (concreteId != -1) {
-      
-      if (PlacesUtils.nodeIsQuery(aNode) || concreteId != aNode.itemId) {
-        
-        data.type = PlacesUtils.TYPE_X_MOZ_PLACE;
-        data.uri = aNode.uri;
-        data.concreteId = concreteId;
-        data.concreteGuid = PlacesUtils.getConcreteItemGuid(aNode);
-      } else {
-        
-        data.type = PlacesUtils.TYPE_X_MOZ_PLACE_CONTAINER;
-      }
-    } else {
-      
+  } else if (PlacesUtils.nodeIsFolder(aNode)) {
+    if (aNode.type == Ci.nsINavHistoryResultNode.RESULT_TYPE_FOLDER_SHORTCUT) {
       data.type = PlacesUtils.TYPE_X_MOZ_PLACE;
       data.uri = aNode.uri;
+      data.concreteId = PlacesUtils.getConcreteItemId(aNode);
+      data.concreteGuid = PlacesUtils.getConcreteItemGuid(aNode);
+    } else {
+      data.type = PlacesUtils.TYPE_X_MOZ_PLACE_CONTAINER;
     }
+  } else if (PlacesUtils.nodeIsQuery(aNode)) {
+    data.type = PlacesUtils.TYPE_X_MOZ_PLACE;
+    data.uri = aNode.uri;
   } else if (PlacesUtils.nodeIsSeparator(aNode)) {
-    
-    if (data.parent == PlacesUtils.tagsFolderId ||
-        grandParentId == PlacesUtils.tagsFolderId)
-      throw new Error("Unexpected node type");
-
     data.type = PlacesUtils.TYPE_X_MOZ_PLACE_SEPARATOR;
   }
 
@@ -837,8 +809,6 @@ var PlacesUtils = {
   },
 
   
-
-
 
 
 
