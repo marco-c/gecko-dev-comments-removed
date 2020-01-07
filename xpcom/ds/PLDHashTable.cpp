@@ -225,15 +225,15 @@ PLDHashTable::operator=(PLDHashTable&& aOther)
   }
 
   
-  this->~PLDHashTable();
-
-  
-  
   
   
   
   MOZ_RELEASE_ASSERT(mOps == aOther.mOps);
   MOZ_RELEASE_ASSERT(mEntrySize == aOther.mEntrySize);
+
+  
+  this->~PLDHashTable();
+  new (KnownNotNull, this) PLDHashTable(aOther.mOps, aOther.mEntrySize, 0);
 
   
   mHashShift = Move(aOther.mHashShift);
