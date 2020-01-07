@@ -261,6 +261,12 @@ public:
   
 
 
+
+  static bool ShouldSetInputScopeOfURLBarToDefault();
+
+  
+
+
   static bool DoNotReturnErrorFromGetSelection();
 
 #ifdef DEBUG

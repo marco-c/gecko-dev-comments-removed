@@ -649,7 +649,7 @@ IMEHandler::SetInputScopeForIMM32(nsWindow* aWindow,
       
       
       
-      if (IMMHandler::IsGoogleJapaneseInputActive()) {
+      if (TSFTextStore::ShouldSetInputScopeOfURLBarToDefault()) {
         static const InputScope inputScopes[] = { IS_DEFAULT };
         scopes = &inputScopes[0];
         arraySize = ArrayLength(inputScopes);

@@ -1097,12 +1097,21 @@ public:
   DECL_AND_IMPL_IS_TIP_ACTIVE(IsATOK2015Active)
   DECL_AND_IMPL_IS_TIP_ACTIVE(IsATOK2016Active)
 
+  DECL_AND_IMPL_IS_TIP_ACTIVE(IsMSBopomofoActive)
   DECL_AND_IMPL_IS_TIP_ACTIVE(IsMSChangJieActive)
+  DECL_AND_IMPL_IS_TIP_ACTIVE(IsMSPhoneticActive)
   DECL_AND_IMPL_IS_TIP_ACTIVE(IsMSQuickActive)
+  DECL_AND_IMPL_IS_TIP_ACTIVE(IsMSNewChangJieActive)
+  DECL_AND_IMPL_IS_TIP_ACTIVE(IsMSNewPhoneticActive)
+  DECL_AND_IMPL_IS_TIP_ACTIVE(IsMSNewQuickActive)
   DECL_AND_IMPL_IS_TIP_ACTIVE(IsFreeChangJieActive)
 
   DECL_AND_IMPL_IS_TIP_ACTIVE(IsMSPinyinActive)
+  DECL_AND_IMPL_IS_TIP_ACTIVE(IsMSPinyinNewExperienceInputStyleActive)
   DECL_AND_IMPL_IS_TIP_ACTIVE(IsMSWubiActive)
+
+  DECL_AND_IMPL_IS_TIP_ACTIVE(IsMSKoreanIMEActive)
+  DECL_AND_IMPL_IS_TIP_ACTIVE(IsMSOldHangulActive)
 
 #undef DECL_AND_IMPL_IS_TIP_ACTIVE
 
@@ -1238,12 +1247,32 @@ private:
 
 
 
+  bool IsMSBopomofoActiveInternal() const
+  {
+    
+    static const GUID kGUID = {
+      0xB2F9C502, 0x1742, 0x11D4,
+        { 0x97, 0x90, 0x00, 0x80, 0xC8, 0x82, 0x68, 0x7E }
+    };
+    return mActiveTIPGUID == kGUID;
+  }
+
   bool IsMSChangJieActiveInternal() const
   {
     
     static const GUID kGUID = {
       0x4BDF9F03, 0xC7D3, 0x11D4,
         { 0xB2, 0xAB, 0x00, 0x80, 0xC8, 0x82, 0x68, 0x7E }
+    };
+    return mActiveTIPGUID == kGUID;
+  }
+
+  bool IsMSPhoneticActiveInternal() const
+  {
+    
+    static const GUID kGUID = {
+      0x761309DE, 0x317A, 0x11D4,
+        { 0x9B, 0x5D, 0x00, 0x80, 0xC8, 0x82, 0x68, 0x7E }
     };
     return mActiveTIPGUID == kGUID;
   }
@@ -1258,16 +1287,36 @@ private:
     return mActiveTIPGUID == kGUID;
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  bool IsMSNewChangJieActiveInternal() const
+  {
+    
+    static const GUID kGUID = {
+      0xF3BA907A, 0x6C7E, 0x11D4,
+        { 0x97, 0xFA, 0x00, 0x80, 0xC8, 0x82, 0x68, 0x7E }
+    };
+    return mActiveTIPGUID == kGUID;
+  }
+
+  bool IsMSNewPhoneticActiveInternal() const
+  {
+    
+    static const GUID kGUID = {
+      0xB2F9C502, 0x1742, 0x11D4,
+        { 0x97, 0x90, 0x00, 0x80, 0xC8, 0x82, 0x68, 0x7E }
+    };
+    return mActiveTIPGUID == kGUID;
+  }
+
+  bool IsMSNewQuickActiveInternal() const
+  {
+    
+    static const GUID kGUID = {
+      0x0B883BA0, 0xC1C7, 0x11D4,
+        { 0x87, 0xF9, 0x00, 0x80, 0xC8, 0x82, 0x68, 0x7E }
+    };
+    return mActiveTIPGUID == kGUID;
+  }
+
   
   
   
@@ -1301,6 +1350,16 @@ private:
     return mActiveTIPGUID == kGUID;
   }
 
+  bool IsMSPinyinNewExperienceInputStyleActiveInternal() const
+  {
+    
+    static const GUID kGUID = {
+      0xF3BA9077, 0x6C7E, 0x11D4,
+        { 0x97, 0xFA, 0x00, 0x80, 0xC8, 0x82, 0x68, 0x7E }
+    };
+    return mActiveTIPGUID == kGUID;
+  }
+
   bool IsMSWubiActiveInternal() const
   {
     
@@ -1319,6 +1378,32 @@ private:
   
   
   
+  
+
+  
+
+
+
+  bool IsMSKoreanIMEActiveInternal() const
+  {
+    
+    static const GUID kGUID = {
+      0xB5FE1F02, 0xD5F2, 0x4445,
+        { 0x9C, 0x03, 0xC5, 0x68, 0xF2, 0x3C, 0x99, 0xA1 }
+    };
+    return mActiveTIPGUID == kGUID;
+  }
+
+  bool IsMSOldHangulActiveInternal() const
+  {
+    
+    static const GUID kGUID = {
+      0xB60AF051, 0x257A, 0x46BC,
+        { 0xB9, 0xD3, 0x84, 0xDA, 0xD8, 0x19, 0xBA, 0xFB }
+    };
+    return mActiveTIPGUID == kGUID;
+  }
+
   
   
   
@@ -1604,6 +1689,9 @@ public:
     return s ## aName ## Value;                                                \
   }
 
+  DECL_AND_IMPL_BOOL_PREF(
+    "intl.ime.hack.set_input_scope_of_url_bar_to_default",
+    ShouldSetInputScopeOfURLBarToDefault, true)
   DECL_AND_IMPL_BOOL_PREF(
     "intl.tsf.hack.atok.create_native_caret",
     NeedToCreateNativeCaretForLegacyATOK, true)
@@ -3619,6 +3707,34 @@ TSFTextStore::InsertEmbedded(DWORD dwFlags,
   return E_NOTIMPL;
 }
 
+
+bool
+TSFTextStore::ShouldSetInputScopeOfURLBarToDefault()
+{
+  
+  
+  
+  
+  
+  return TSFPrefs::ShouldSetInputScopeOfURLBarToDefault() &&
+         (IMMHandler::IsGoogleJapaneseInputActive() ||
+          (!TSFTextStore::IsIMM_IMEActive() &&
+           (TSFStaticSink::IsMSJapaneseIMEActive() ||
+            TSFStaticSink::IsGoogleJapaneseInputActive() ||
+            TSFStaticSink::IsMSBopomofoActive() ||
+            TSFStaticSink::IsMSChangJieActive() ||
+            TSFStaticSink::IsMSPhoneticActive() ||
+            TSFStaticSink::IsMSQuickActive() ||
+            TSFStaticSink::IsMSNewChangJieActive() ||
+            TSFStaticSink::IsMSNewPhoneticActive() ||
+            TSFStaticSink::IsMSNewQuickActive() ||
+            TSFStaticSink::IsMSPinyinActive() ||
+            TSFStaticSink::IsMSPinyinNewExperienceInputStyleActive() ||
+            (IsWin8OrLater() && TSFStaticSink::IsMSKoreanIMEActive()) ||
+            TSFStaticSink::IsMSOldHangulActive() ||
+            TSFStaticSink::IsMSWubiActive())));
+}
+
 void
 TSFTextStore::SetInputScope(const nsString& aHTMLInputType,
                             const nsString& aHTMLInputInputMode)
@@ -3638,14 +3754,7 @@ TSFTextStore::SetInputScope(const nsString& aHTMLInputType,
       
       
       
-      
-      
-      
-      
-      
-      if (TSFStaticSink::IsMSJapaneseIMEActive() ||
-          TSFStaticSink::IsGoogleJapaneseInputActive() ||
-          IMMHandler::IsGoogleJapaneseInputActive()) {
+      if (TSFTextStore::ShouldSetInputScopeOfURLBarToDefault()) {
         return;
       }
       
