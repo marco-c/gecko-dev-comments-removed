@@ -391,10 +391,7 @@ PaintThread::AsyncPaintTiledContents(CompositorBridgeChild* aBridge,
 
   
   target->DrawCapturedDT(capture, Matrix());
-
-  if (!mDrawTargetsToFlush.Contains(target)) {
-    mDrawTargetsToFlush.AppendElement(target);
-  }
+  target->Flush();
 
   if (gfxPrefs::LayersOMTPReleaseCaptureOnMainThread()) {
     
