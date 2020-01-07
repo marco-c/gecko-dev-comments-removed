@@ -1272,6 +1272,12 @@ ArrayJoinDenseKernel(JSContext* cx, SeparatorOp sepOp, HandleNativeObject obj, u
 
 
             break;
+        } else if (IF_BIGINT(elem.isBigInt(), false)) {
+            
+            
+            
+            
+            break;
         } else {
             MOZ_ASSERT(elem.isMagic(JS_ELEMENTS_HOLE) || elem.isNullOrUndefined());
         }
