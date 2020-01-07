@@ -1029,12 +1029,27 @@ void
 ServoStyleSet::SetStylistStyleSheetsDirty()
 {
   mStylistState |= StylistState::StyleSheetsDirty;
+
+  
+  
+  
+  if (mPresContext) {
+    
+    
+    mPresContext->RestyleManager()->AsServo()->IncrementUndisplayedRestyleGeneration();
+  }
 }
 
 void
 ServoStyleSet::SetStylistXBLStyleSheetsDirty()
 {
   mStylistState |= StylistState::XBLStyleSheetsDirty;
+
+  
+  
+  
+  MOZ_ASSERT(mPresContext);
+  mPresContext->RestyleManager()->AsServo()->IncrementUndisplayedRestyleGeneration();
 }
 
 void
