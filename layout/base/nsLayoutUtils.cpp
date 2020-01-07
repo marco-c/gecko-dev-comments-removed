@@ -3588,6 +3588,10 @@ nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext, nsIFrame* aFrame,
       !(aFlags & PaintFrameFlags::PAINT_DOCUMENT_RELATIVE) &&
       rootPresContext->NeedToComputePluginGeometryUpdates()) {
     builder.SetWillComputePluginGeometry(true);
+
+    
+    
+    builder.SetDisablePartialUpdates(true);
   }
 
   nsRect canvasArea(nsPoint(0, 0), aFrame->GetSize());
@@ -3939,6 +3943,10 @@ nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext, nsIFrame* aFrame,
     if (layerManager) {
       layerManager->ScheduleComposite();
     }
+
+    
+    
+    builder.SetDisablePartialUpdates(true);
   }
 
   builder.Check();
