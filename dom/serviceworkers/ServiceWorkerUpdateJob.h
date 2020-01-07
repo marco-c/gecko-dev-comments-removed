@@ -99,7 +99,7 @@ private:
 
   
   void
-  Install(ServiceWorkerManager* aSWM);
+  Install();
 
   
   void
