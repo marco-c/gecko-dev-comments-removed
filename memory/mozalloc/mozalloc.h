@@ -19,10 +19,8 @@
 
 
 #  include <cstdlib>
-#  include <cstring>
 #else
 #  include <stdlib.h>
-#  include <string.h>
 #endif
 
 #if defined(__cplusplus)
