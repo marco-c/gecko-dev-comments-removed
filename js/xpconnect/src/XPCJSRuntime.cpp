@@ -206,14 +206,14 @@ RealmPrivate::RealmPrivate(JS::Realm* realm)
 
 static bool
 TryParseLocationURICandidate(const nsACString& uristr,
-                             CompartmentPrivate::LocationHint aLocationHint,
+                             RealmPrivate::LocationHint aLocationHint,
                              nsIURI** aURI)
 {
     static NS_NAMED_LITERAL_CSTRING(kGRE, "resource:
     static NS_NAMED_LITERAL_CSTRING(kToolkit, "chrome:
     static NS_NAMED_LITERAL_CSTRING(kBrowser, "chrome:
 
-    if (aLocationHint == CompartmentPrivate::LocationHintAddon) {
+    if (aLocationHint == RealmPrivate::LocationHintAddon) {
         
         if (StringBeginsWith(uristr, kGRE) ||
             StringBeginsWith(uristr, kToolkit) ||
@@ -249,8 +249,9 @@ TryParseLocationURICandidate(const nsACString& uristr,
     return true;
 }
 
-bool CompartmentPrivate::TryParseLocationURI(CompartmentPrivate::LocationHint aLocationHint,
-                                             nsIURI** aURI)
+bool
+RealmPrivate::TryParseLocationURI(RealmPrivate::LocationHint aLocationHint,
+                                  nsIURI** aURI)
 {
     if (!aURI)
         return false;
@@ -1093,9 +1094,9 @@ GetCompartmentName(JSCompartment* c, nsCString& name, int* anonymizeID,
         
         
         
-        CompartmentPrivate* compartmentPrivate = CompartmentPrivate::Get(c);
-        if (compartmentPrivate) {
-            const nsACString& location = compartmentPrivate->GetLocation();
+        RealmPrivate* realmPrivate = RealmPrivate::Get(realm);
+        if (realmPrivate) {
+            const nsACString& location = realmPrivate->GetLocation();
             if (!location.IsEmpty() && !location.Equals(name)) {
                 name.AppendLiteral(", ");
                 name.Append(location);
