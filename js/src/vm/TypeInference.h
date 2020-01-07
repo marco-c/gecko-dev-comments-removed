@@ -1106,17 +1106,21 @@ ClassCanHaveExtraProperties(const Class* clasp);
 
 class IonCompilationId
 {
-    uint64_t id_;
+    
+    
+    uint32_t idLo_;
+    uint32_t idHi_;
 
   public:
     explicit IonCompilationId(uint64_t id)
-      : id_(id)
+      : idLo_(id & UINT32_MAX),
+        idHi_(id >> 32)
     {}
     bool operator==(const IonCompilationId& other) const {
-        return id_ == other.id_;
+        return idLo_ == other.idLo_ && idHi_ == other.idHi_;
     }
     bool operator!=(const IonCompilationId& other) const {
-        return id_ != other.id_;
+        return !operator==(other);
     }
 };
 
