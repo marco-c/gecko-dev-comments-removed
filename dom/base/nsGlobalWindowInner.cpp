@@ -1750,8 +1750,32 @@ nsGlobalWindowInner::EnsureClientSource()
 
   bool newClientSource = false;
 
+  
+  
+  
+  
+  
+  nsCOMPtr<nsILoadInfo> loadInfo;
   nsCOMPtr<nsIChannel> channel = mDoc->GetChannel();
-  nsCOMPtr<nsILoadInfo> loadInfo = channel ? channel->GetLoadInfo() : nullptr;
+  if (channel) {
+    nsCOMPtr<nsIURI> uri;
+    Unused << channel->GetURI(getter_AddRefs(uri));
+
+    bool ignoreLoadInfo = false;
+
+    
+    
+    bool isAbout = false;
+    if (NS_SUCCEEDED(uri->SchemeIs("about", &isAbout)) && isAbout) {
+      nsCString spec = uri->GetSpecOrDefault();
+      ignoreLoadInfo = spec.EqualsLiteral("about:blank") ||
+                       spec.EqualsLiteral("about:srcdoc");
+    }
+
+    if (!ignoreLoadInfo) {
+      loadInfo = channel->GetLoadInfo();
+    }
+  }
 
   
   
