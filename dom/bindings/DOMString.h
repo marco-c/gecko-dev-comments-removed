@@ -44,19 +44,21 @@ namespace dom {
 
 
 
+
+
+
 class MOZ_STACK_CLASS DOMString {
 public:
   DOMString()
     : mStringBuffer(nullptr)
     , mLength(0)
-    , mIsNull(false)
-    , mStringBufferOwned(false)
+    , mState(State::Empty)
   {}
   ~DOMString()
   {
     MOZ_ASSERT(!mString || !mStringBuffer,
                "Shouldn't have both present!");
-    if (mStringBufferOwned) {
+    if (mState == State::OwnedStringBuffer) {
       MOZ_ASSERT(mStringBuffer);
       mStringBuffer->Release();
     }
@@ -74,10 +76,12 @@ public:
 
   nsString& AsAString()
   {
+    MOZ_ASSERT(mState == State::Empty || mState == State::String,
+               "Moving from nonempty state to another nonempty state?");
     MOZ_ASSERT(!mStringBuffer, "We already have a stringbuffer?");
-    MOZ_ASSERT(!mIsNull, "We're already set as null");
     if (!mString) {
       mString.emplace();
+      mState = State::String;
     }
     return *mString;
   }
@@ -86,23 +90,21 @@ public:
   {
     MOZ_ASSERT(!mString || !mStringBuffer,
                "Shouldn't have both present!");
-    MOZ_ASSERT(!mIsNull, "Caller should have checked IsNull() first");
-    return !mString;
+    MOZ_ASSERT(mState > State::Null,
+               "Caller should have checked IsNull() and IsEmpty() first");
+    return mState >= State::OwnedStringBuffer;
   }
 
   
   
   
   
-  
   nsStringBuffer* StringBuffer() const
   {
-    MOZ_ASSERT(!mIsNull, "Caller should have checked IsNull() first");
     MOZ_ASSERT(HasStringBuffer(),
                "Don't ask for the stringbuffer if we don't have it");
-    MOZ_ASSERT(StringBufferLength() != 0, "Why are you asking for this?");
     MOZ_ASSERT(mStringBuffer,
-               "If our length is nonzero, we better have a stringbuffer.");
+               "We better have a stringbuffer if we claim to");
     return mStringBuffer;
   }
 
@@ -119,9 +121,9 @@ public:
   void RelinquishBufferOwnership()
   {
     MOZ_ASSERT(HasStringBuffer(), "Don't call this if there is no stringbuffer");
-    if (mStringBufferOwned) {
+    if (mState == State::OwnedStringBuffer) {
       
-      mStringBufferOwned = false;
+      mState = State::UnownedStringBuffer;
     } else {
       
       mStringBuffer->AddRef();
@@ -133,35 +135,40 @@ public:
   
   void SetKnownLiveStringBuffer(nsStringBuffer* aStringBuffer, uint32_t aLength)
   {
-    MOZ_ASSERT(mString.isNothing(), "We already have a string?");
-    MOZ_ASSERT(!mIsNull, "We're already set as null");
-    MOZ_ASSERT(!mStringBuffer, "Setting stringbuffer twice?");
-    MOZ_ASSERT(aStringBuffer, "Why are we getting null?");
-    mStringBuffer = aStringBuffer;
-    mLength = aLength;
+    MOZ_ASSERT(mState == State::Empty, "We're already set to a value");
+    if (aLength != 0) {
+      SetStringBufferInternal(aStringBuffer, aLength);
+      mState = State::UnownedStringBuffer;
+    }
+    
   }
 
   
   void SetStringBuffer(nsStringBuffer* aStringBuffer, uint32_t aLength)
   {
+    MOZ_ASSERT(mState == State::Empty, "We're already set to a value");
+    if (aLength != 0) {
+      SetStringBufferInternal(aStringBuffer, aLength);
+      aStringBuffer->AddRef();
+      mState = State::OwnedStringBuffer;
+    }
     
-    SetKnownLiveStringBuffer(aStringBuffer, aLength);
-    aStringBuffer->AddRef();
-    mStringBufferOwned = true;
   }
 
   void SetKnownLiveString(const nsAString& aString)
   {
     MOZ_ASSERT(mString.isNothing(), "We already have a string?");
-    MOZ_ASSERT(!mIsNull, "We're already set as null");
+    MOZ_ASSERT(mState == State::Empty, "We're already set to a value");
     MOZ_ASSERT(!mStringBuffer, "Setting stringbuffer twice?");
-    nsStringBuffer* buf = nsStringBuffer::FromString(aString);
-    if (buf) {
-      SetKnownLiveStringBuffer(buf, aString.Length());
-    } else if (aString.IsVoid()) {
+    if (MOZ_UNLIKELY(aString.IsVoid())) {
       SetNull();
     } else if (!aString.IsEmpty()) {
-      AsAString() = aString;
+      nsStringBuffer* buf = nsStringBuffer::FromString(aString);
+      if (buf) {
+        SetKnownLiveStringBuffer(buf, aString.Length());
+      } else {
+        AsAString() = aString;
+      }
     }
   }
 
@@ -175,7 +182,7 @@ public:
   void SetKnownLiveAtom(nsAtom* aAtom, NullHandling aNullHandling)
   {
     MOZ_ASSERT(mString.isNothing(), "We already have a string?");
-    MOZ_ASSERT(!mIsNull, "We're already set as null");
+    MOZ_ASSERT(mState == State::Empty, "We're already set to a value");
     MOZ_ASSERT(!mStringBuffer, "Setting stringbuffer twice?");
     MOZ_ASSERT(aAtom || aNullHandling != eNullNotExpected);
     if (aNullHandling == eNullNotExpected || aAtom) {
@@ -184,6 +191,7 @@ public:
         
         AsAString().AssignLiteral(aAtom->GetUTF16String(), aAtom->GetLength());
       } else {
+        
         
         SetKnownLiveStringBuffer(aAtom->GetStringBuffer(), aAtom->GetLength());
       }
@@ -196,36 +204,45 @@ public:
   {
     MOZ_ASSERT(!mStringBuffer, "Should have no stringbuffer if null");
     MOZ_ASSERT(mString.isNothing(), "Should have no string if null");
-    mIsNull = true;
+    MOZ_ASSERT(mState == State::Empty, "Already set to a value?");
+    mState = State::Null;
   }
 
   bool IsNull() const
   {
     MOZ_ASSERT(!mStringBuffer || mString.isNothing(),
                "How could we have a stringbuffer and a nonempty string?");
-    return mIsNull || (mString && mString->IsVoid());
+    return mState == State::Null || (mString && mString->IsVoid());
+  }
+
+  bool IsEmpty() const
+  {
+    MOZ_ASSERT(!mStringBuffer || mString.isNothing(),
+               "How could we have a stringbuffer and a nonempty string?");
+    
+    
+    
+    return mState == State::Empty;
   }
 
   void ToString(nsAString& aString)
   {
     if (IsNull()) {
       SetDOMStringToNull(aString);
+    } else if (IsEmpty()) {
+      aString.Truncate();
     } else if (HasStringBuffer()) {
-      if (StringBufferLength() == 0) {
-        aString.Truncate();
+      
+      
+      nsStringBuffer* buf = StringBuffer();
+      uint32_t len = StringBufferLength();
+      auto chars = static_cast<char16_t*>(buf->Data());
+      if (chars[len] == '\0') {
+        
+        buf->ToString(len, aString);
       } else {
         
-        
-        nsStringBuffer* buf = StringBuffer();
-        uint32_t len = StringBufferLength();
-        auto chars = static_cast<char16_t*>(buf->Data());
-        if (chars[len] == '\0') {
-          
-          buf->ToString(len, aString);
-        } else {
-          
-          aString.Assign(chars, len);
-        }
+        aString.Assign(chars, len);
       }
     } else {
       aString = AsAString();
@@ -233,17 +250,43 @@ public:
   }
 
 private:
+  void SetStringBufferInternal(nsStringBuffer* aStringBuffer, uint32_t aLength)
+  {
+    MOZ_ASSERT(mString.isNothing(), "We already have a string?");
+    MOZ_ASSERT(mState == State::Empty, "We're already set to a value");
+    MOZ_ASSERT(!mStringBuffer, "Setting stringbuffer twice?");
+    MOZ_ASSERT(aStringBuffer, "Why are we getting null?");
+    MOZ_ASSERT(aLength != 0, "Should not have empty string here");
+    mStringBuffer = aStringBuffer;
+    mLength = aLength;
+  }
+
+  enum class State : uint8_t
+  {
+    Empty, 
+    Null,  
+
+    
+    
+
+    String, 
+    OwnedStringBuffer, 
+    UnownedStringBuffer, 
+    
+    
+  };
+
   
   Maybe<nsAutoString> mString;
 
   
-  
   nsStringBuffer* MOZ_UNSAFE_REF("The ways in which this can be safe are "
                                  "documented above and enforced through "
                                  "assertions") mStringBuffer;
+  
   uint32_t mLength;
-  bool mIsNull;
-  bool mStringBufferOwned;
+
+  State mState;
 };
 
 } 
