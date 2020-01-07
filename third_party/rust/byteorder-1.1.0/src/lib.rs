@@ -40,7 +40,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(feature = "i128", feature(i128_type))]
 #![cfg_attr(all(feature = "i128", test), feature(i128))]
-#![doc(html_root_url = "https://docs.rs/byteorder/1.2.1")]
+#![doc(html_root_url = "https://docs.rs/byteorder/1.0.0")]
 
 #[cfg(feature = "std")]
 extern crate core;
@@ -627,9 +627,12 @@ pub trait ByteOrder
     
     
     
+    
+    
+    
     #[inline]
     fn read_f32(buf: &[u8]) -> f32 {
-        unsafe { transmute(Self::read_u32(buf)) }
+        safe_u32_bits_to_f32(Self::read_u32(buf))
     }
 
     
@@ -650,9 +653,12 @@ pub trait ByteOrder
     
     
     
+    
+    
+    
     #[inline]
     fn read_f64(buf: &[u8]) -> f64 {
-        unsafe { transmute(Self::read_u64(buf)) }
+        safe_u64_bits_to_f64(Self::read_u64(buf))
     }
 
     
@@ -1079,9 +1085,17 @@ pub trait ByteOrder
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
-    fn read_f32_into_unchecked(src: &[u8], dst: &mut [f32]) {
-        Self::read_u32_into(src, unsafe { transmute(dst) });
+    unsafe fn read_f32_into_unchecked(src: &[u8], dst: &mut [f32]) {
+        Self::read_u32_into(src, transmute(dst));
     }
 
     
@@ -1106,9 +1120,17 @@ pub trait ByteOrder
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
-    fn read_f64_into_unchecked(src: &[u8], dst: &mut [f64]) {
-        Self::read_u64_into(src, unsafe { transmute(dst) });
+    unsafe fn read_f64_into_unchecked(src: &[u8], dst: &mut [f64]) {
+        Self::read_u64_into(src, transmute(dst));
     }
 
     
@@ -1568,8 +1590,16 @@ pub trait ByteOrder
     
     
     
+    
+    
+    
+    
     fn from_slice_f32(numbers: &mut [f32]);
 
+    
+    
+    
+    
     
     
     
@@ -1934,7 +1964,7 @@ impl ByteOrder for BigEndian {
         if cfg!(target_endian = "little") {
             for n in numbers {
                 let int: u32 = unsafe { transmute(*n) };
-                *n = unsafe { transmute(int.to_be()) };
+                *n = safe_u32_bits_to_f32(int.to_be());
             }
         }
     }
@@ -1944,7 +1974,7 @@ impl ByteOrder for BigEndian {
         if cfg!(target_endian = "little") {
             for n in numbers {
                 let int: u64 = unsafe { transmute(*n) };
-                *n = unsafe { transmute(int.to_be()) };
+                *n = safe_u64_bits_to_f64(int.to_be());
             }
         }
     }
@@ -2137,7 +2167,7 @@ impl ByteOrder for LittleEndian {
         if cfg!(target_endian = "big") {
             for n in numbers {
                 let int: u32 = unsafe { transmute(*n) };
-                *n = unsafe { transmute(int.to_le()) };
+                *n = safe_u32_bits_to_f32(int.to_le());
             }
         }
     }
@@ -2147,9 +2177,47 @@ impl ByteOrder for LittleEndian {
         if cfg!(target_endian = "big") {
             for n in numbers {
                 let int: u64 = unsafe { transmute(*n) };
-                *n = unsafe { transmute(int.to_le()) };
+                *n = safe_u64_bits_to_f64(int.to_le());
             }
         }
+    }
+}
+
+#[inline]
+fn safe_u32_bits_to_f32(u: u32) -> f32 {
+    use core::f32::NAN;
+
+    const EXP_MASK: u32 = 0x7F800000;
+    const FRACT_MASK: u32 = 0x007FFFFF;
+
+    if u & EXP_MASK == EXP_MASK && u & FRACT_MASK != 0 {
+        
+        
+        
+        
+        
+        NAN
+    } else {
+        unsafe { transmute(u) }
+    }
+}
+
+#[inline]
+fn safe_u64_bits_to_f64(u: u64) -> f64 {
+    use core::f64::NAN;
+
+    const EXP_MASK: u64 = 0x7FF0000000000000;
+    const FRACT_MASK: u64 = 0x000FFFFFFFFFFFFF;
+
+    if u & EXP_MASK == EXP_MASK && u & FRACT_MASK != 0 {
+        
+        
+        
+        
+        
+        NAN
+    } else {
+        unsafe { transmute(u) }
     }
 }
 
@@ -2728,6 +2796,35 @@ mod test {
         let n = LittleEndian::read_uint(&[1, 2, 3, 4, 5, 6, 7, 8], 5);
         assert_eq!(n, 0x0504030201);
     }
+
+    #[test]
+    fn read_snan() {
+        use core::f32;
+        use core::f64;
+        use core::mem::transmute;
+
+        use {ByteOrder, BigEndian, LittleEndian};
+
+        let sf = BigEndian::read_f32(&[0xFF, 0x80, 0x00, 0x01]);
+        let sbits: u32 = unsafe { transmute(sf) };
+        assert_eq!(sbits, unsafe { transmute(f32::NAN) });
+        assert_eq!(sf.classify(), ::core::num::FpCategory::Nan);
+
+        let df = BigEndian::read_f64(&[0x7F, 0xF0, 0, 0, 0, 0, 0, 0x01]);
+        let dbits: u64 = unsafe { ::core::mem::transmute(df) };
+        assert_eq!(dbits, unsafe { transmute(f64::NAN) });
+        assert_eq!(df.classify(), ::core::num::FpCategory::Nan);
+
+        let sf = LittleEndian::read_f32(&[0x01, 0x00, 0x80, 0xFF]);
+        let sbits: u32 = unsafe { transmute(sf) };
+        assert_eq!(sbits, unsafe { transmute(f32::NAN) });
+        assert_eq!(sf.classify(), ::core::num::FpCategory::Nan);
+
+        let df = LittleEndian::read_f64(&[0x01, 0, 0, 0, 0, 0, 0xF0, 0x7F]);
+        let dbits: u64 = unsafe { ::core::mem::transmute(df) };
+        assert_eq!(dbits, unsafe { transmute(f64::NAN) });
+        assert_eq!(df.classify(), ::core::num::FpCategory::Nan);
+    }
 }
 
 #[cfg(test)]
@@ -2768,8 +2865,9 @@ mod stdtests {
                     fn prop(n: $ty_int) -> bool {
                         let mut wtr = vec![];
                         wtr.$write::<BigEndian>(n.clone()).unwrap();
-                        let offset = wtr.len() - $bytes;
-                        let mut rdr = Cursor::new(&mut wtr[offset..]);
+                        let mut rdr = Vec::new();
+                        rdr.extend(wtr[wtr.len()-$bytes..].iter().map(|&x| x));
+                        let mut rdr = Cursor::new(rdr);
                         n == rdr.$read::<BigEndian>($bytes).unwrap()
                     }
                     qc_sized(prop as fn($ty_int) -> bool, $max);
@@ -2791,12 +2889,7 @@ mod stdtests {
                     fn prop(n: $ty_int) -> bool {
                         let mut wtr = vec![];
                         wtr.$write::<NativeEndian>(n.clone()).unwrap();
-                        let offset = if cfg!(target_endian = "big") {
-                            wtr.len() - $bytes
-                        } else {
-                            0
-                        };
-                        let mut rdr = Cursor::new(&mut wtr[offset..]);
+                        let mut rdr = Cursor::new(wtr);
                         n == rdr.$read::<NativeEndian>($bytes).unwrap()
                     }
                     qc_sized(prop as fn($ty_int) -> bool, $max);
