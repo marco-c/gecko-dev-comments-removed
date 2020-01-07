@@ -3111,7 +3111,7 @@ struct AutoNestedPaintCount {
 nsIFrame*
 nsLayoutUtils::GetFrameForPoint(nsIFrame* aFrame, nsPoint aPt, uint32_t aFlags)
 {
-  AUTO_PROFILER_LABEL("nsLayoutUtils::GetFrameForPoint", GRAPHICS);
+  AUTO_PROFILER_LABEL("nsLayoutUtils::GetFrameForPoint", LAYOUT);
 
   nsresult rv;
   AutoTArray<nsIFrame*,8> outFrames;
@@ -3125,7 +3125,7 @@ nsLayoutUtils::GetFramesForArea(nsIFrame* aFrame, const nsRect& aRect,
                                 nsTArray<nsIFrame*> &aOutFrames,
                                 uint32_t aFlags)
 {
-  AUTO_PROFILER_LABEL("nsLayoutUtils::GetFramesForArea", GRAPHICS);
+  AUTO_PROFILER_LABEL("nsLayoutUtils::GetFramesForArea", LAYOUT);
 
   nsDisplayListBuilder builder(aFrame,
                                nsDisplayListBuilderMode::EVENT_DELIVERY,
@@ -5091,21 +5091,6 @@ FormControlShrinksForPercentISize(nsIFrame* aFrame)
 
 
 
-static bool
-IsReplacedBoxResolvedAgainstZero(nsIFrame* aFrame,
-                                 const nsStyleCoord& aStyleSize,
-                                 const nsStyleCoord& aStyleMaxSize)
-{
-  const bool sizeHasPercent = aStyleSize.HasPercent();
-  return ((sizeHasPercent || aStyleMaxSize.HasPercent()) &&
-          aFrame->IsFrameOfType(nsIFrame::eReplacedSizing)) ||
-         (sizeHasPercent &&
-          FormControlShrinksForPercentISize(aFrame));
-}
-
-
-
-
 
 
 
@@ -5164,7 +5149,15 @@ AddIntrinsicSizeOffset(gfxContext* aRenderingContext,
 
   nscoord size;
   if (aType == nsLayoutUtils::MIN_ISIZE &&
-      ::IsReplacedBoxResolvedAgainstZero(aFrame, aStyleSize, aStyleMaxSize)) {
+      (((aStyleSize.HasPercent() || aStyleMaxSize.HasPercent()) &&
+        aFrame->IsFrameOfType(nsIFrame::eReplacedSizing)) ||
+       (aStyleSize.HasPercent() &&
+        FormControlShrinksForPercentISize(aFrame)))) {
+    
+    
+    
+    
+    
     
     result = 0; 
   } else if (GetAbsoluteCoord(aStyleSize, size) ||
@@ -5528,12 +5521,6 @@ nsLayoutUtils::MinSizeContributionForAxis(PhysicalAxis       aAxis,
       if (GetAbsoluteCoord(*style, minSize)) {
         
         
-        fixedMinSize = &minSize;
-      } else if (::IsReplacedBoxResolvedAgainstZero(aFrame, *style,
-                     eAxisHorizontal ? stylePos->mMaxWidth
-                                     : stylePos->mMaxHeight)) {
-        
-        minSize = 0;
         fixedMinSize = &minSize;
       }
       
@@ -7864,16 +7851,14 @@ nsLayoutUtils::AssertTreeOnlyEmptyNextInFlows(nsIFrame *aSubtreeRoot)
 static void
 GetFontFacesForFramesInner(nsIFrame* aFrame,
                            nsLayoutUtils::UsedFontFaceTable& aFontFaces,
-                           uint32_t aMaxRanges,
-                           bool aSkipCollapsedWhitespace)
+                           uint32_t aMaxRanges)
 {
   MOZ_ASSERT(aFrame, "NULL frame pointer");
 
   if (aFrame->IsTextFrame()) {
     if (!aFrame->GetPrevContinuation()) {
       nsLayoutUtils::GetFontFacesForText(aFrame, 0, INT32_MAX, true,
-                                         aFontFaces, aMaxRanges,
-                                         aSkipCollapsedWhitespace);
+                                         aFontFaces, aMaxRanges);
     }
     return;
   }
@@ -7885,8 +7870,7 @@ GetFontFacesForFramesInner(nsIFrame* aFrame,
     for (nsFrameList::Enumerator e(children); !e.AtEnd(); e.Next()) {
       nsIFrame* child = e.get();
       child = nsPlaceholderFrame::GetRealFrameFor(child);
-      GetFontFacesForFramesInner(child, aFontFaces, aMaxRanges,
-                                 aSkipCollapsedWhitespace);
+      GetFontFacesForFramesInner(child, aFontFaces, aMaxRanges);
     }
   }
 }
@@ -7894,14 +7878,12 @@ GetFontFacesForFramesInner(nsIFrame* aFrame,
  nsresult
 nsLayoutUtils::GetFontFacesForFrames(nsIFrame* aFrame,
                                      UsedFontFaceTable& aFontFaces,
-                                     uint32_t aMaxRanges,
-                                     bool aSkipCollapsedWhitespace)
+                                     uint32_t aMaxRanges)
 {
   MOZ_ASSERT(aFrame, "NULL frame pointer");
 
   while (aFrame) {
-    GetFontFacesForFramesInner(aFrame, aFontFaces, aMaxRanges,
-                               aSkipCollapsedWhitespace);
+    GetFontFacesForFramesInner(aFrame, aFontFaces, aMaxRanges);
     aFrame = GetNextContinuationOrIBSplitSibling(aFrame);
   }
 
@@ -7972,8 +7954,7 @@ nsLayoutUtils::GetFontFacesForText(nsIFrame* aFrame,
                                    int32_t aEndOffset,
                                    bool aFollowContinuations,
                                    UsedFontFaceTable& aFontFaces,
-                                   uint32_t aMaxRanges,
-                                   bool aSkipCollapsedWhitespace)
+                                   uint32_t aMaxRanges)
 {
   MOZ_ASSERT(aFrame, "NULL frame pointer");
 
@@ -8013,13 +7994,9 @@ nsLayoutUtils::GetFontFacesForText(nsIFrame* aFrame,
       }
     }
 
-    if (!aSkipCollapsedWhitespace ||
-        (curr->HasAnyNoncollapsedCharacters() &&
-         curr->HasNonSuppressedText())) {
-      gfxTextRun::Range range(iter.ConvertOriginalToSkipped(fstart),
-                              iter.ConvertOriginalToSkipped(fend));
-      AddFontsFromTextRun(textRun, curr, iter, range, aFontFaces, aMaxRanges);
-    }
+    gfxTextRun::Range range(iter.ConvertOriginalToSkipped(fstart),
+                            iter.ConvertOriginalToSkipped(fend));
+    AddFontsFromTextRun(textRun, curr, iter, range, aFontFaces, aMaxRanges);
 
     curr = next;
   } while (aFollowContinuations && curr);
