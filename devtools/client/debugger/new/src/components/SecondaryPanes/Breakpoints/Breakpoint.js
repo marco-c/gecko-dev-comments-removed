@@ -152,6 +152,8 @@ class Breakpoint extends _react.PureComponent {
       __html: node.innerHTML
     };
   }
+  
+
 
   render() {
     const {

@@ -103,11 +103,16 @@ function update(state = initialASTState(), action) {
 
         if (!action.value) {
           return state.set("preview", null);
+        } 
+
+
+        if (state.get("preview")) {
+          return state.set("preview", _objectSpread({}, action.value, {
+            updating: false
+          }));
         }
 
-        return state.set("preview", _objectSpread({}, action.value, {
-          updating: false
-        }));
+        return state;
       }
 
     case "RESUME":

@@ -11,8 +11,6 @@ var _preview = require("../utils/preview");
 
 var _ast = require("../utils/ast");
 
-var _editor = require("../utils/editor/index");
-
 var _devtoolsSourceMap = require("devtools/client/shared/source-map/index.js");
 
 var _promise = require("./utils/middleware/promise");
@@ -25,74 +23,37 @@ var _expressions = require("./expressions");
 
 var _pause = require("./pause/index");
 
-var _lodash = require("devtools/client/shared/vendor/lodash");
 
 
 
+function findExpressionMatch(state, codeMirror, tokenPos) {
+  const source = (0, _selectors.getSelectedSource)(state);
+  const symbols = (0, _selectors.getSymbols)(state, source);
+  let match;
 
-function isInvalidTarget(target) {
-  if (!target || !target.innerText) {
-    return true;
+  if (!symbols || symbols.loading) {
+    match = (0, _getExpression.getExpressionFromCoords)(codeMirror, tokenPos);
+  } else {
+    match = (0, _ast.findBestMatchExpression)(symbols, tokenPos);
   }
 
-  const tokenText = target.innerText.trim();
-  const cursorPos = target.getBoundingClientRect(); 
-
-  const invalidType = ["cm-atom", ""].includes(target.className); 
-
-  const invalidToken = tokenText === "" || tokenText.match(/^[(){}\|&%,.;=<>\+-/\*\s](?=)/);
-  const isPresentation = target.attributes.role && target.attributes.getNamedItem("role").value == "presentation"; 
-
-  const invalidTarget = target.parentElement && !target.parentElement.closest(".CodeMirror-line") || cursorPos.top == 0;
-  return invalidTarget || invalidToken || invalidType || isPresentation;
+  return match;
 }
 
-function updatePreview(target, editor) {
+function updatePreview(target, tokenPos, codeMirror) {
   return ({
     dispatch,
     getState,
     client,
     sourceMaps
   }) => {
-    const tokenPos = (0, _editor.getTokenLocation)(editor.codeMirror, target);
     const cursorPos = target.getBoundingClientRect();
-    const preview = (0, _selectors.getPreview)(getState());
 
-    if ((0, _selectors.getCanRewind)(getState())) {
+    if ((0, _selectors.getCanRewind)(getState()) || !(0, _selectors.isSelectedFrameVisible)(getState()) || !(0, _selectors.isLineInScope)(getState(), tokenPos.line)) {
       return;
     }
 
-    if (preview) {
-      
-      
-      if (preview.updating || (0, _lodash.isEqual)(preview.tokenPos, tokenPos)) {
-        return;
-      } 
-
-
-      if (!target.classList.contains("debug-expression")) {
-        dispatch(clearPreview());
-      }
-    }
-
-    if (isInvalidTarget(target)) {
-      dispatch(clearPreview());
-      return;
-    }
-
-    if (!(0, _selectors.isSelectedFrameVisible)(getState()) || !(0, _selectors.isLineInScope)(getState(), tokenPos.line)) {
-      return;
-    }
-
-    const source = (0, _selectors.getSelectedSource)(getState());
-    const symbols = (0, _selectors.getSymbols)(getState(), source);
-    let match;
-
-    if (!symbols || symbols.loading) {
-      match = (0, _getExpression.getExpressionFromCoords)(editor.codeMirror, tokenPos);
-    } else {
-      match = (0, _ast.findBestMatchExpression)(symbols, tokenPos);
-    }
+    const match = findExpressionMatch(getState(), codeMirror, tokenPos);
 
     if (!match) {
       return;

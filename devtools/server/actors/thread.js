@@ -536,6 +536,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       
       
       const pausePoint = findPausePointForLocation(pausePoints, newLocation);
+
       if (pausePoint) {
         if (pausePoint.step) {
           return pauseAndRespond(this);
