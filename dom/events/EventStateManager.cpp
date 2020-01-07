@@ -1337,8 +1337,7 @@ EventStateManager::DispatchCrossProcessEvent(WidgetEvent* aEvent,
       dragSession->DragEventDispatchedToChildProcess();
       dragSession->GetDragAction(&action);
       dragSession->GetTriggeringPrincipalURISpec(principalURISpec);
-      nsCOMPtr<nsIDOMDataTransfer> initialDataTransfer;
-      dragSession->GetDataTransfer(getter_AddRefs(initialDataTransfer));
+      RefPtr<DataTransfer> initialDataTransfer = dragSession->GetDataTransfer();
       if (initialDataTransfer) {
         initialDataTransfer->GetDropEffectInt(&dropEffect);
       }
@@ -3534,8 +3533,7 @@ EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
       
       
       nsCOMPtr<nsIDOMDataTransfer> dataTransfer;
-      nsCOMPtr<nsIDOMDataTransfer> initialDataTransfer;
-      dragSession->GetDataTransfer(getter_AddRefs(initialDataTransfer));
+      RefPtr<DataTransfer> initialDataTransfer = dragSession->GetDataTransfer();
 
       WidgetDragEvent *dragEvent = aEvent->AsDragEvent();
 
@@ -4781,8 +4779,7 @@ EventStateManager::UpdateDragDataTransfer(WidgetDragEvent* dragEvent)
   if (dragSession) {
     
     
-    nsCOMPtr<nsIDOMDataTransfer> initialDataTransfer;
-    dragSession->GetDataTransfer(getter_AddRefs(initialDataTransfer));
+    RefPtr<DataTransfer> initialDataTransfer = dragSession->GetDataTransfer();
     if (initialDataTransfer) {
       
       nsAutoString mozCursor;

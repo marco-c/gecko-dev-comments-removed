@@ -6034,15 +6034,9 @@ nsContentUtils::SetDataTransferInEvent(WidgetDragEvent* aDragEvent)
   nsCOMPtr<nsIDragSession> dragSession = GetDragSession();
   NS_ENSURE_TRUE(dragSession, NS_OK); 
 
-  nsCOMPtr<nsIDOMDataTransfer> dataTransfer;
-  nsCOMPtr<DataTransfer> initialDataTransfer;
-  dragSession->GetDataTransfer(getter_AddRefs(dataTransfer));
-  if (dataTransfer) {
-    initialDataTransfer = do_QueryInterface(dataTransfer);
-    if (!initialDataTransfer) {
-      return NS_ERROR_FAILURE;
-    }
-  } else {
+  RefPtr<DataTransfer> initialDataTransfer =
+    dragSession->GetDataTransfer();
+  if (!initialDataTransfer) {
     
     
     

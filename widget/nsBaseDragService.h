@@ -10,7 +10,6 @@
 #include "nsIDragSession.h"
 #include "nsITransferable.h"
 #include "nsIDOMDocument.h"
-#include "nsIDOMDataTransfer.h"
 #include "nsCOMPtr.h"
 #include "nsRect.h"
 #include "nsPoint.h"
@@ -32,6 +31,10 @@ class nsIImageLoadingContent;
 namespace mozilla {
 namespace gfx {
 class SourceSurface;
+} 
+
+namespace dom {
+class DataTransfer;
 } 
 } 
 
@@ -165,7 +168,7 @@ protected:
                                                   
   nsContentPolicyType mContentPolicyType;         
                                                   
-  nsCOMPtr<nsIDOMDataTransfer> mDataTransfer;
+  RefPtr<mozilla::dom::DataTransfer> mDataTransfer;
 
   
   nsCOMPtr<nsIDOMNode> mImage;
