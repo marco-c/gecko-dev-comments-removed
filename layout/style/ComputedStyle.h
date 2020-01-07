@@ -25,7 +25,7 @@
 
 
 
-#define NS_STYLE_INHERIT_MASK              0x000ffffff
+#define NS_STYLE_INHERIT_MASK              0x0007fffff
 
 
 #define NS_STYLE_INHERITED_STRUCT_MASK \
@@ -34,6 +34,7 @@
 #define NS_STYLE_RESET_STRUCT_MASK \
   (((nsStyleStructID_size_t(1) << nsStyleStructID_Reset_Count) - 1) \
    << nsStyleStructID_Inherited_Count)
+
 
 
 
@@ -353,7 +354,6 @@ public:
 
 
 
-
   nsChangeHint CalcStyleDifference(ComputedStyle* aNewContext,
                                    uint32_t* aEqualStructs);
 
@@ -433,7 +433,6 @@ protected:
   
   RefPtr<nsAtom> mPseudoTag;
 
-  
   
   
   

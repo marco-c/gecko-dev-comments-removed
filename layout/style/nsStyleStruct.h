@@ -3289,20 +3289,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleSVGReset
   uint8_t          mMaskType;         
 };
 
-
-struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleVariables
-{
-  nsStyleVariables();
-  explicit nsStyleVariables(const nsPresContext* aContext);
-  nsStyleVariables(const nsStyleVariables& aSource);
-  ~nsStyleVariables();
-  void FinishStyle(nsPresContext*, const nsStyleVariables*) {}
-  const static bool kHasFinishStyle = false;
-
-  nsChangeHint CalcDifference(const nsStyleVariables& aNewData) const;
-
-};
-
 struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleEffects
 {
   explicit nsStyleEffects(const nsPresContext* aContext);
