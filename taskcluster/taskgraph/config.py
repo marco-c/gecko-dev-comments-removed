@@ -30,6 +30,9 @@ graph_config_schema = Schema({
         
         Required('ridealong-builds', default={}): {basestring: [basestring]},
     },
+    Required('release-promotion'): {
+        Required('products'): [basestring],
+    },
     Required('scriptworker'): {
         
         Required('scope-prefix'): basestring,
