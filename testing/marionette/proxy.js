@@ -321,51 +321,6 @@ proxy.AsyncMessageChannel.ReplyType = {
   Error: 2,
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-proxy.toChrome = function(sendSyncMessageFn) {
-  let sender = new proxy.SyncChromeSender(sendSyncMessageFn);
-  return new Proxy(sender, ownPriorityGetterTrap);
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-proxy.SyncChromeSender = class {
-  constructor(sendSyncMessage) {
-    this.sendSyncMessage_ = sendSyncMessage;
-  }
-
-  send(func, args) {
-    let name = "Marionette:" + func.toString();
-    return this.sendSyncMessage_(name, marshal(args));
-  }
-};
-
 function marshal(args) {
   if (args.length == 1 && typeof args[0] == "object") {
     return args[0];
