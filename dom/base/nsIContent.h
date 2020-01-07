@@ -398,19 +398,6 @@ public:
 
 
 
-  virtual void AppendTextTo(nsAString& aResult) = 0;
-
-  
-
-
-
-  MOZ_MUST_USE
-  virtual bool AppendTextTo(nsAString& aResult, const mozilla::fallible_t&) = 0;
-
-  
-
-
-
 
 
 
