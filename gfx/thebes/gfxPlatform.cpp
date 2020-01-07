@@ -92,6 +92,10 @@
 #include "GLContextProvider.h"
 #include "mozilla/gfx/Logging.h"
 
+#ifdef MOZ_WIDGET_ANDROID
+#include "TexturePoolOGL.h"
+#endif
+
 #ifdef USE_SKIA
 # ifdef __GNUC__
 #  pragma GCC diagnostic push
@@ -816,6 +820,11 @@ gfxPlatform::Init()
 
     GLContext::PlatformStartup();
 
+#ifdef MOZ_WIDGET_ANDROID
+    
+    TexturePoolOGL::Init();
+#endif
+
     Preferences::RegisterCallbackAndCall(RecordingPrefChanged, "gfx.2d.recording");
 
     CreateCMSOutputProfile();
@@ -967,6 +976,11 @@ gfxPlatform::Shutdown()
     }
 
     gPlatform->mVsyncSource = nullptr;
+
+#ifdef MOZ_WIDGET_ANDROID
+    
+    TexturePoolOGL::Shutdown();
+#endif
 
     
     GLContextProvider::Shutdown();
