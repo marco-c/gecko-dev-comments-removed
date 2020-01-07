@@ -1494,19 +1494,16 @@ impl Stylist {
         E: TElement,
     {
         use font_metrics::get_metrics_provider_for_product;
+        use std::iter;
 
         
         
         
-        
-        
-        let v = vec![ApplicableDeclarationBlock::from_declarations(
-            declarations.clone(),
-            CascadeLevel::StyleAttributeNormal
-        )];
-
         let rule_node =
-            self.rule_tree.insert_ordered_rules(v.into_iter().map(|a| a.order_and_level()));
+            self.rule_tree.insert_ordered_rules(iter::once((
+                StyleSource::Declarations(declarations),
+                CascadeLevel::StyleAttributeNormal,
+            )));
 
         
         
