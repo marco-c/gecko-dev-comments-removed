@@ -9,6 +9,7 @@ import json
 import re
 import sys
 
+
 def MergeProfiles(files):
     threads = []
     fileData = []
@@ -108,6 +109,3 @@ if len(sys.argv) > 1:
     sys.exit(0)
 
 print "Usage: merge-profile.py profile_<pid1>_<pname1>.sym profile_<pid2>_<pname2>.sym > merged.sym"
-
-
-

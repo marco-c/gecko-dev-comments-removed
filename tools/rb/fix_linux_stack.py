@@ -16,7 +16,10 @@ import pty
 import termios
 from StringIO import StringIO
 
-objdump_section_re = re.compile("^ [0-9a-f]* ([0-9a-f ]{8}) ([0-9a-f ]{8}) ([0-9a-f ]{8}) ([0-9a-f ]{8}).*")
+objdump_section_re = re.compile(
+    "^ [0-9a-f]* ([0-9a-f ]{8}) ([0-9a-f ]{8}) ([0-9a-f ]{8}) ([0-9a-f ]{8}).*")
+
+
 def elf_section(file, section):
     """
     Return the requested ELF section of the file as a str, representing
@@ -44,11 +47,12 @@ def elf_section(file, section):
                 word = m.groups()[gnum]
                 if word != "        ":
                     for idx in [0, 2, 4, 6]:
-                        result += chr(int(word[idx:idx+2], 16))
+                        result += chr(int(word[idx:idx + 2], 16))
     return result
 
 
-global_debug_dir = '/usr/lib/debug';
+
+global_debug_dir = '/usr/lib/debug'
 
 endian_re = re.compile("\s*Data:\s+.*(little|big) endian.*$")
 
@@ -108,6 +112,7 @@ gnu_debuglink_crc32_table = [
     0x2d02ef8d
 ]
 
+
 def gnu_debuglink_crc32(stream):
     
     
@@ -121,6 +126,7 @@ def gnu_debuglink_crc32(stream):
         for byte in bytes:
             crc = gnu_debuglink_crc32_table[(crc ^ ord(byte)) & 0xff] ^ (crc >> 8)
     return ~crc & 0xffffffff
+
 
 def separate_debug_file_for(file):
     """
@@ -153,7 +159,7 @@ def separate_debug_file_for(file):
             s.reverse()
         return sum(map(lambda idx: ord(s[idx]) * (256 ** idx), range(0, 4)))
 
-    buildid = elf_section(file, ".note.gnu.build-id");
+    buildid = elf_section(file, ".note.gnu.build-id")
     if buildid is not None:
         
         
@@ -171,7 +177,7 @@ def separate_debug_file_for(file):
             if have_debug_file(f):
                 return f
 
-    debuglink = elf_section(file, ".gnu_debuglink");
+    debuglink = elf_section(file, ".gnu_debuglink")
     if debuglink is not None:
         
         
@@ -202,8 +208,10 @@ def separate_debug_file_for(file):
                     return f
     return None
 
+
 elf_type_re = re.compile("^\s*Type:\s+(\S+)")
 elf_text_section_re = re.compile("^\s*\[\s*\d+\]\s+\.text\s+\w+\s+(\w+)\s+(\w+)\s+")
+
 
 def address_adjustment_for(file):
     """
@@ -236,7 +244,7 @@ def address_adjustment_for(file):
         if m:
             
             
-            adjustment = int(m.groups()[0], 16) - int(m.groups()[1], 16);
+            adjustment = int(m.groups()[0], 16) - int(m.groups()[1], 16)
             break
     readelf.terminate()
     return adjustment
@@ -244,6 +252,7 @@ def address_adjustment_for(file):
 
 devnull = open(os.devnull)
 file_stuff = {}
+
 
 def addressToSymbol(file, address):
     if not file in file_stuff:
@@ -267,13 +276,15 @@ def addressToSymbol(file, address):
     
     addr2line.stdin.write(hex(int(address, 16) + address_adjustment) + '\n')
     addr2line.stdin.flush()
-    result = (addr2line.stdout.readline().rstrip("\r\n"), \
+    result = (addr2line.stdout.readline().rstrip("\r\n"),
               addr2line.stdout.readline().rstrip("\r\n"))
     cache[address] = result
     return result
 
 
+
 line_re = re.compile("^(.*#\d+: )(.+)\[(.+) \+(0x[0-9A-Fa-f]+)\](.*)$")
+
 
 def fixSymbols(line):
     result = line_re.match(line)
@@ -296,6 +307,7 @@ def fixSymbols(line):
             return line
     else:
         return line
+
 
 if __name__ == "__main__":
     for line in sys.stdin:
