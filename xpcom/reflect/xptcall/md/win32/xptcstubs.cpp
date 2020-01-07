@@ -95,6 +95,11 @@ PrepareAndDispatch(nsXPTCStubBase* self, uint32_t methodIndex,
 #if !defined(__GNUC__)
 static
 __declspec(naked)
+
+
+#if defined(__clang__)
+__attribute__((no_instrument_function))
+#endif
 void SharedStub(void)
 {
     __asm {
