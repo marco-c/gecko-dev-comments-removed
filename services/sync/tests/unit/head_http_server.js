@@ -8,8 +8,6 @@ var Cm = Components.manager;
 ChromeUtils.import("resource://gre/modules/Log.jsm");
 ChromeUtils.import("resource://services-common/utils.js");
 ChromeUtils.import("resource://testing-common/TestUtils.jsm");
-ChromeUtils.import("resource://testing-common/services/sync/utils.js");
-
 const SYNC_HTTP_LOGGER = "Sync.Test.Server";
 
 
@@ -147,27 +145,7 @@ ServerWBO.prototype = {
       response.setStatusLine(request.httpVersion, statusCode, status);
       response.bodyOutputStream.write(body, body.length);
     };
-  },
-
-  
-
-
-
-
-
-  getCleartext() {
-    return JSON.parse(JSON.parse(this.payload).ciphertext);
-  },
-
-  
-
-
-
-  setCleartext(cleartext, modifiedTimestamp = this.modified) {
-    this.payload = JSON.stringify(encryptPayload(cleartext));
-    this.modified = modifiedTimestamp;
-    return this;
-  },
+  }
 
 };
 
@@ -255,8 +233,10 @@ ServerCollection.prototype = {
 
 
 
-  cleartextPayloads() {
-    return this.wbos().map(wbo => wbo.getCleartext());
+  payloads() {
+    return this.wbos().map(function(wbo) {
+      return JSON.parse(JSON.parse(wbo.payload).ciphertext);
+    });
   },
 
   
@@ -268,10 +248,6 @@ ServerCollection.prototype = {
     return this.wbo(id).payload;
   },
 
-  cleartext(id) {
-    return this.wbo(id).getCleartext();
-  },
-
   
 
 
@@ -280,40 +256,6 @@ ServerCollection.prototype = {
   insertWBO: function insertWBO(wbo) {
     this.timestamp = Math.max(this.timestamp, wbo.modified);
     return this._wbos[wbo.id] = wbo;
-  },
-
-  
-
-
-
-  updateRecord(id, updateCallback, optTimestamp) {
-    let wbo = this.wbo(id);
-    if (!wbo) {
-      throw new Error("No record with provided ID");
-    }
-    let curCleartext = wbo.getCleartext();
-    
-    let newCleartext = updateCallback(curCleartext) || curCleartext;
-    wbo.setCleartext(newCleartext, optTimestamp);
-    
-    
-    return this.insertWBO(wbo);
-  },
-
-  
-
-
-
-  insertRecord(record, timestamp = Date.now() / 1000) {
-    if (typeof timestamp != "number") {
-      throw new TypeError("insertRecord: Timestamp is not a number.");
-    }
-    if (!record.id) {
-      throw new Error("Attempt to insert record with no id");
-    }
-    
-    let cleartext = record.cleartext || record;
-    return this.insert(record.id, encryptPayload(cleartext), timestamp);
   },
 
   
