@@ -836,7 +836,7 @@ SyncEngine.prototype = {
     if (Array.isArray(json)) {
       
       
-      return { ids: json };
+      json = { ids: json };
     }
     if (!json.ids) {
       json.ids = [];
