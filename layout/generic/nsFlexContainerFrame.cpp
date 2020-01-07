@@ -1946,16 +1946,16 @@ FlexItem::CheckForMinSizeAuto(const ReflowInput& aFlexItemReflowInput,
   
   
   
-  const nsStyleCoord& minSize = GET_MAIN_COMPONENT(aAxisTracker,
-                                                   pos->mMinWidth,
-                                                   pos->mMinHeight);
+  const nsStyleCoord& mainMinSize = aAxisTracker.IsRowOriented()
+    ? pos->MinISize(aAxisTracker.GetWritingMode())
+    : pos->MinBSize(aAxisTracker.GetWritingMode());
 
-  const uint8_t overflowVal = GET_MAIN_COMPONENT(aAxisTracker,
-                                                 disp->mOverflowX,
-                                                 disp->mOverflowY);
-
-  mNeedsMinSizeAutoResolution = (minSize.GetUnit() == eStyleUnit_Auto &&
-                                 overflowVal == NS_STYLE_OVERFLOW_VISIBLE);
+  
+  
+  
+  
+  mNeedsMinSizeAutoResolution = (mainMinSize.GetUnit() == eStyleUnit_Auto &&
+                                 disp->mOverflowX == NS_STYLE_OVERFLOW_VISIBLE);
 }
 
 nscoord
