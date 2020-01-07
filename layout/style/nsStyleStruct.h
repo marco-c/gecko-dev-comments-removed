@@ -3233,9 +3233,9 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleSVGReset
 
   nsStyleImageLayers    mMask;
   mozilla::StyleShapeSource mClipPath;
-  nscolor          mStopColor;        
-  nscolor          mFloodColor;       
-  nscolor          mLightingColor;    
+  mozilla::StyleComplexColor mStopColor;     
+  mozilla::StyleComplexColor mFloodColor;    
+  mozilla::StyleComplexColor mLightingColor; 
 
   float            mStopOpacity;      
   float            mFloodOpacity;     
