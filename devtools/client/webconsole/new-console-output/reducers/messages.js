@@ -347,11 +347,11 @@ function messages(state = MessageState(), action, filtersState, prefsState) {
   return state;
 }
 
-function getNewCurrentGroup(currentGoup, groupsById) {
+function getNewCurrentGroup(currentGroup, groupsById) {
   let newCurrentGroup = null;
-  if (currentGoup) {
+  if (currentGroup) {
     
-    let parents = groupsById.get(currentGoup);
+    let parents = groupsById.get(currentGroup);
     if (Array.isArray(parents) && parents.length > 0) {
       
       newCurrentGroup = parents[0];
