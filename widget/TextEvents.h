@@ -164,6 +164,7 @@ protected:
     , mIsRepeat(false)
     , mIsComposing(false)
     , mIsSynthesizedByTIP(false)
+    , mMaybeSkippableInRemoteProcess(true)
     , mEditCommandsForSingleLineEditorInitialized(false)
     , mEditCommandsForMultiLineEditorInitialized(false)
     , mEditCommandsForRichTextEditorInitialized(false)
@@ -192,6 +193,7 @@ public:
     , mIsRepeat(false)
     , mIsComposing(false)
     , mIsSynthesizedByTIP(false)
+    , mMaybeSkippableInRemoteProcess(true)
     , mEditCommandsForSingleLineEditorInitialized(false)
     , mEditCommandsForMultiLineEditorInitialized(false)
     , mEditCommandsForRichTextEditorInitialized(false)
@@ -393,6 +395,25 @@ public:
   
   
   bool mIsSynthesizedByTIP;
+  
+  
+  
+  bool mMaybeSkippableInRemoteProcess;
+
+  bool CanSkipInRemoteProcess() const
+  {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    return mIsRepeat && mMaybeSkippableInRemoteProcess;
+  }
 
   
 
@@ -621,6 +642,7 @@ public:
     mPluginTextEventString.Assign(aEvent.mPluginTextEventString);
 #endif
     mIsSynthesizedByTIP = aEvent.mIsSynthesizedByTIP;
+    mMaybeSkippableInRemoteProcess = aEvent.mMaybeSkippableInRemoteProcess;
 
     
     

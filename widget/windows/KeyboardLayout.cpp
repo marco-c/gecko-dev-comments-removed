@@ -1146,6 +1146,7 @@ VirtualKey::FillKbdState(PBYTE aKbdState,
 uint8_t NativeKey::sDispatchedKeyOfAppCommand = 0;
 NativeKey* NativeKey::sLatestInstance = nullptr;
 const MSG NativeKey::sEmptyMSG = {};
+MSG NativeKey::sLastKeyOrCharMSG = {};
 MSG NativeKey::sLastKeyMSG = {};
 
 LazyLogModule sNativeKeyLogger("NativeKeyWidgets");
@@ -1172,7 +1173,10 @@ NativeKey::NativeKey(nsWindowBase* aWidget,
   , mUnshiftedLatinChar(0)
   , mScanCode(0)
   , mIsExtended(false)
+  , mIsRepeat(false)
   , mIsDeadKey(false)
+  , mIsPrintableKey(false)
+  , mIsSkippableInRemoteProcess(false)
   , mCharMessageHasGone(false)
   , mCanIgnoreModifierStateAtKeyPress(true)
   , mFakeCharMsgs(aFakeCharMsgs && aFakeCharMsgs->Length() ?
@@ -1196,13 +1200,13 @@ NativeKey::NativeKey(nsWindowBase* aWidget,
     mIsOverridingKeyboardLayout = true;
   } else {
     mIsOverridingKeyboardLayout = false;
-    sLastKeyMSG = aMessage;
+    sLastKeyOrCharMSG = aMessage;
   }
 
   if (mMsg.message == WM_APPCOMMAND) {
     InitWithAppCommand();
   } else {
-    InitWithKeyChar();
+    InitWithKeyOrChar();
   }
 
   MOZ_LOG(sNativeKeyLogger, LogLevel::Info,
@@ -1213,7 +1217,8 @@ NativeKey::NativeKey(nsWindowBase* aWidget,
      "mCommittedCharsAndModifiers=%s, mInputtingStringAndModifiers=%s, "
      "mShiftedString=%s, mUnshiftedString=%s, mShiftedLatinChar=%s, "
      "mUnshiftedLatinChar=%s, mScanCode=0x%04X, mIsExtended=%s, "
-     "mIsDeadKey=%s, mIsPrintableKey=%s, mCharMessageHasGone=%s, "
+     "mIsRepeat=%s, mIsDeadKey=%s, mIsPrintableKey=%s, "
+     "mIsSkippableInRemoteProcess=%s, mCharMessageHasGone=%s, "
      "mIsOverridingKeyboardLayout=%s",
      this, mKeyboardLayout, mFocusedWndBeforeDispatch,
      GetDOMKeyCodeName(mDOMKeyCode).get(), ToString(mKeyNameIndex).get(),
@@ -1226,14 +1231,103 @@ NativeKey::NativeKey(nsWindowBase* aWidget,
      ToString(mShiftedString).get(), ToString(mUnshiftedString).get(),
      GetCharacterCodeName(mShiftedLatinChar).get(),
      GetCharacterCodeName(mUnshiftedLatinChar).get(),
-     mScanCode, GetBoolName(mIsExtended), GetBoolName(mIsDeadKey),
-     GetBoolName(mIsPrintableKey), GetBoolName(mCharMessageHasGone),
+     mScanCode, GetBoolName(mIsExtended),
+     GetBoolName(mIsRepeat), GetBoolName(mIsDeadKey),
+     GetBoolName(mIsPrintableKey), GetBoolName(mIsSkippableInRemoteProcess),
+     GetBoolName(mCharMessageHasGone),
      GetBoolName(mIsOverridingKeyboardLayout)));
 }
 
 void
-NativeKey::InitWithKeyChar()
+NativeKey::InitIsSkippableForKeyOrChar(const MSG& aLastKeyMSG)
 {
+  mIsSkippableInRemoteProcess = false;
+
+  if (!mIsRepeat) {
+    
+    
+    return;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  if (mCodeNameIndex == CODE_NAME_INDEX_UNKNOWN) {
+    
+    
+    
+    
+    return;
+  }
+
+  if (mOriginalVirtualKeyCode == VK_PACKET) {
+    
+    
+    return;
+  }
+
+  switch (mMsg.message) {
+    case WM_KEYDOWN:
+    case WM_SYSKEYDOWN:
+    case MOZ_WM_KEYDOWN:
+    case WM_CHAR:
+    case WM_SYSCHAR:
+    case WM_DEADCHAR:
+    case WM_SYSDEADCHAR:
+      
+      
+      
+      
+      
+      switch (aLastKeyMSG.message) {
+        case WM_KEYDOWN:
+        case WM_SYSKEYDOWN:
+        case MOZ_WM_KEYDOWN:
+          if (aLastKeyMSG.wParam == VK_PACKET) {
+            
+            
+            
+            return;
+          }
+          
+          
+          mIsSkippableInRemoteProcess =
+            mScanCode == WinUtils::GetScanCode(aLastKeyMSG.lParam) &&
+            mIsExtended == WinUtils::IsExtendedScanCode(aLastKeyMSG.lParam);
+          return;
+        default:
+          
+          
+          return;
+      }
+      return;
+    case WM_APPCOMMAND:
+      MOZ_ASSERT_UNREACHABLE("WM_APPCOMMAND should be handled in "
+                             "InitWithAppCommand()");
+      return;
+    default:
+      
+      return;
+  }
+}
+
+void
+NativeKey::InitWithKeyOrChar()
+{
+  MSG lastKeyMSG = sLastKeyMSG;
   mScanCode = WinUtils::GetScanCode(mMsg.lParam);
   mIsExtended = WinUtils::IsExtendedScanCode(mMsg.lParam);
   switch (mMsg.message) {
@@ -1243,6 +1337,10 @@ NativeKey::InitWithKeyChar()
     case WM_SYSKEYUP:
     case MOZ_WM_KEYDOWN:
     case MOZ_WM_KEYUP: {
+      
+      
+      
+      sLastKeyMSG = mMsg;
       
       
       if (mMsg.wParam == VK_PROCESSKEY) {
@@ -1355,7 +1453,7 @@ NativeKey::InitWithKeyChar()
         
         MOZ_ASSERT(IsEmptyMSG(mLastInstance->mReceivedMsg));
         MOZ_LOG(sNativeKeyLogger, LogLevel::Warning,
-          ("%p   NativeKey::InitWithKeyChar(), WARNING, detecting another "
+          ("%p   NativeKey::InitWithKeyOrChar(), WARNING, detecting another "
            "instance is trying to remove a char message, so, this instance "
            "should do nothing, mLastInstance=0x%p, mRemovingMsg=%s, "
            "mReceivedMsg=%s",
@@ -1416,7 +1514,7 @@ NativeKey::InitWithKeyChar()
         continue;
       }
       MOZ_LOG(sNativeKeyLogger, LogLevel::Info,
-        ("%p   NativeKey::InitWithKeyChar(), removed char message, %s",
+        ("%p   NativeKey::InitWithKeyOrChar(), removed char message, %s",
          this, ToString(charMsg).get()));
       Unused << NS_WARN_IF(charMsg.hwnd != mMsg.hwnd);
       mFollowingCharMsgs.AppendElement(charMsg);
@@ -1431,6 +1529,13 @@ NativeKey::InitWithKeyChar()
   mIsPrintableKey =
     mKeyNameIndex == KEY_NAME_INDEX_USE_STRING ||
     KeyboardLayout::IsPrintableCharKey(mOriginalVirtualKeyCode);
+  
+  
+  
+  
+  
+  mIsRepeat = (mMsg.lParam & (1 << 30)) != 0;
+  InitIsSkippableForKeyOrChar(lastKeyMSG);
 
   if (IsKeyDownMessage()) {
     
@@ -1573,7 +1678,21 @@ NativeKey::InitWithAppCommand()
       ConvertNativeKeyCodeToDOMKeyCode(mOriginalVirtualKeyCode);
   mCodeNameIndex =
     KeyboardLayout::ConvertScanCodeToCodeNameIndex(
-      GetScanCodeWithExtendedFlag());
+  GetScanCodeWithExtendedFlag());
+  
+  
+  
+  
+  
+  
+  
+  
+  if (mVirtualKeyCode) {
+    BYTE kbdState[256];
+    memset(kbdState, 0, sizeof(kbdState));
+    ::GetKeyboardState(kbdState);
+    mIsSkippableInRemoteProcess = mIsRepeat = !!kbdState[mVirtualKeyCode];
+  }
 }
 
 
@@ -1875,7 +1994,8 @@ NativeKey::InitKeyEvent(WidgetKeyboardEvent& aKeyEvent,
       MOZ_CRASH("Invalid event message");
   }
 
-  aKeyEvent.mIsRepeat = IsRepeat();
+  aKeyEvent.mIsRepeat = mIsRepeat;
+  aKeyEvent.mMaybeSkippableInRemoteProcess = mIsSkippableInRemoteProcess;
   aKeyEvent.mKeyNameIndex = mKeyNameIndex;
   if (mKeyNameIndex == KEY_NAME_INDEX_USE_STRING) {
     aKeyEvent.mKeyValue = mCommittedCharsAndModifiers.ToString();

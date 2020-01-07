@@ -417,25 +417,31 @@ private:
   uint32_t mShiftedLatinChar;
   uint32_t mUnshiftedLatinChar;
 
-  WORD    mScanCode;
-  bool    mIsExtended;
-  bool    mIsDeadKey;
+  WORD mScanCode;
+  bool mIsExtended;
+  
+  
+  bool mIsRepeat;
+  bool mIsDeadKey;
   
   
   
   
-  bool    mIsPrintableKey;
+  bool mIsPrintableKey;
+  
+  
+  bool mIsSkippableInRemoteProcess;
   
   
   
   
-  bool    mCharMessageHasGone;
+  bool mCharMessageHasGone;
   
   
-  bool    mIsOverridingKeyboardLayout;
+  bool mIsOverridingKeyboardLayout;
   
   
-  bool    mCanIgnoreModifierStateAtKeyPress;
+  bool mCanIgnoreModifierStateAtKeyPress;
 
   nsTArray<FakeCharMsg>* mFakeCharMsgs;
 
@@ -451,7 +457,14 @@ private:
   }
 
   void InitWithAppCommand();
-  void InitWithKeyChar();
+  void InitWithKeyOrChar();
+
+  
+
+
+
+
+  void InitIsSkippableForKeyOrChar(const MSG& aLastKeyMSG);
 
   
 
@@ -461,40 +474,6 @@ private:
 
   void InitCommittedCharsAndModifiersWithFollowingCharMessages(
          const ModifierKeyState& aModKeyState);
-
-  
-
-
-  bool IsRepeat() const
-  {
-    switch (mMsg.message) {
-      case WM_KEYDOWN:
-      case WM_SYSKEYDOWN:
-      case WM_CHAR:
-      case WM_SYSCHAR:
-      case WM_DEADCHAR:
-      case WM_SYSDEADCHAR:
-      case MOZ_WM_KEYDOWN:
-        return ((mMsg.lParam & (1 << 30)) != 0);
-      case WM_APPCOMMAND:
-        if (mVirtualKeyCode) {
-          
-          
-          BYTE kbdState[256];
-          memset(kbdState, 0, sizeof(kbdState));
-          ::GetKeyboardState(kbdState);
-          return !!kbdState[mVirtualKeyCode];
-        }
-        
-        
-        
-        
-        
-        return false;
-      default:
-        return false;
-    }
-  }
 
   UINT GetScanCodeWithExtendedFlag() const;
 
@@ -714,6 +693,8 @@ private:
 
   static const MSG sEmptyMSG;
 
+  static MSG sLastKeyOrCharMSG;
+
   static MSG sLastKeyMSG;
 
   static bool IsEmptyMSG(const MSG& aMSG)
@@ -731,7 +712,7 @@ public:
 
 
 
-  static const MSG& LastKeyMSG() { return sLastKeyMSG; }
+  static const MSG& LastKeyOrCharMSG() { return sLastKeyOrCharMSG; }
 };
 
 class KeyboardLayout
