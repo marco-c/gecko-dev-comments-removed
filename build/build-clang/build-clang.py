@@ -112,15 +112,7 @@ def delete(path):
 
 
 def install_libgcc(gcc_dir, clang_dir):
-    gcc_bin_dir = os.path.join(gcc_dir, 'bin')
-    clang_bin_dir = os.path.join(clang_dir, 'bin')
-
-    
-    
-    
-    shutil.copy2(os.path.join(gcc_bin_dir, 'ld'), clang_bin_dir)
-
-    out = subprocess.check_output([os.path.join(gcc_bin_dir, "gcc"),
+    out = subprocess.check_output([os.path.join(gcc_dir, "bin", "gcc"),
                                    '-print-libgcc-file-name'])
 
     libgcc_dir = os.path.dirname(out.rstrip())
@@ -519,29 +511,11 @@ if __name__ == "__main__":
     elif is_linux():
         extra_cflags = ["-static-libgcc"]
         extra_cxxflags = ["-static-libgcc", "-static-libstdc++"]
+        extra_cflags2 = ["-fPIC"]
         
-        
-        
-        
-        extra_cflags2 = ["-fPIC",
-                         '-gcc-toolchain', stage1_inst_dir]
-        
-        extra_cxxflags2 = ["-fPIC", '-Qunused-arguments', "-static-libstdc++",
-                           '-gcc-toolchain', stage1_inst_dir]
+        extra_cxxflags2 = ["-fPIC", '-Qunused-arguments', "-static-libstdc++"]
         extra_asmflags = []
         extra_ldflags = []
-
-        
-        
-        
-        
-        binutils_flags = ['-B', os.path.dirname(cc)]
-        if cc.endswith('gcc'):
-            extra_cflags += binutils_flags
-        if cxx.endswith('g++'):
-            extra_cxxflags += binutils_flags
-        if asm.endswith('gcc'):
-            extra_asmflags += binutils_flags
 
         if 'LD_LIBRARY_PATH' in os.environ:
             os.environ['LD_LIBRARY_PATH'] = ('%s/lib64/:%s' %
