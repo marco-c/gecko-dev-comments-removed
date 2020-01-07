@@ -279,6 +279,18 @@ typedef struct _NPAudioDeviceChangeDetails
 
 #endif 
 
+
+
+
+typedef struct _NPAudioDeviceStateChanged
+{
+  
+
+
+  const wchar_t* device;
+  uint32_t newState;
+} NPAudioDeviceStateChanged;
+
 typedef enum {
   NPDrawingModelDUMMY
 #if defined(XP_MACOSX)
@@ -468,6 +480,7 @@ typedef enum {
   , NPNVmuteAudioBool = 4000 
 #if defined(XP_WIN)
   , NPNVaudioDeviceChangeDetails = 4001 
+  , NPNVaudioDeviceStateChanged = 4002 
 #endif
 #if defined(XP_MACOSX)
   , NPNVsupportsCompositingCoreAnimationPluginsBool = 74656 
