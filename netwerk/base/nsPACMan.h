@@ -7,23 +7,24 @@
 #ifndef nsPACMan_h__
 #define nsPACMan_h__
 
-#include "nsIStreamLoader.h"
-#include "nsIInterfaceRequestor.h"
-#include "nsIChannelEventSink.h"
-#include "ProxyAutoConfig.h"
-#include "nsThreadUtils.h"
-#include "nsIURI.h"
-#include "nsCOMPtr.h"
-#include "nsString.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/LinkedList.h"
-#include "nsAutoPtr.h"
-#include "mozilla/TimeStamp.h"
 #include "mozilla/Logging.h"
-#include "mozilla/Atomics.h"
 #include "mozilla/net/NeckoTargetHolder.h"
+#include "mozilla/TimeStamp.h"
+#include "nsAutoPtr.h"
+#include "nsCOMPtr.h"
+#include "nsIChannelEventSink.h"
+#include "nsIInterfaceRequestor.h"
+#include "nsIStreamLoader.h"
+#include "nsThreadUtils.h"
+#include "nsIURI.h"
+#include "nsString.h"
+#include "ProxyAutoConfig.h"
 
 class nsISystemProxySettings;
+class nsIDHCPClient;
 class nsIThread;
 
 namespace mozilla {
@@ -52,8 +53,8 @@ public:
 
 
   virtual void OnQueryComplete(nsresult status,
-                               const nsCString &pacString,
-                               const nsCString &newPACURL) = 0;
+                               const nsACString &pacString,
+                               const nsACString &newPACURL) = 0;
 };
 
 class PendingPACQuery final : public Runnable,
@@ -65,8 +66,8 @@ public:
                   bool mainThreadResponse);
 
   
-  void Complete(nsresult status, const nsCString &pacString);
-  void UseAlternatePACFile(const nsCString &pacURL);
+  void Complete(nsresult status, const nsACString &pacString);
+  void UseAlternatePACFile(const nsACString &pacURL);
 
   nsCString                  mSpec;
   nsCString                  mScheme;
@@ -131,7 +132,7 @@ public:
 
 
 
-  nsresult LoadPACFromURI(const nsCString &pacSpec);
+  nsresult LoadPACFromURI(const nsACString &aSpec, bool aIsScheduledReload = false);
 
   
 
@@ -166,12 +167,18 @@ public:
     return IsPACURI(tmp);
   }
 
+  bool IsUsingWPAD() {
+    return mAutoDetect;
+  }
+
   nsresult Init(nsISystemProxySettings *);
   static nsPACMan *sInstance;
 
   
   void ProcessPendingQ();
   void CancelPendingQ(nsresult);
+
+  void SetWPADOverDHCPEnabled(bool aValue) { mWPADOverDHCPEnabled = aValue; }
 
 private:
   NS_DECL_NSISTREAMLOADEROBSERVER
@@ -180,8 +187,10 @@ private:
 
   friend class PendingPACQuery;
   friend class PACLoadComplete;
+  friend class ConfigureWPADComplete;
   friend class ExecutePACThreadAction;
   friend class WaitForThreadShutdown;
+  friend class TestPACMan;
 
   ~nsPACMan();
 
@@ -194,6 +203,11 @@ private:
 
 
   void StartLoading();
+
+  
+
+
+  void ContinueLoadingAfterPACUriKnown();
 
   
 
@@ -213,14 +227,21 @@ private:
   nsresult PostQuery(PendingPACQuery *query);
 
   
+  
+  void AssignPACURISpec(const nsACString &aSpec);
+
+  
   void PostProcessPendingQ();
   void PostCancelPendingQ(nsresult);
   bool ProcessPending();
+  nsresult GetPACFromDHCP(nsACString &aSpec);
+  nsresult ConfigureWPAD(nsACString &aSpec);
 
 private:
   ProxyAutoConfig mPAC;
   nsCOMPtr<nsIThread>           mPACThread;
   nsCOMPtr<nsISystemProxySettings> mSystemProxySettings;
+  nsCOMPtr<nsIDHCPClient> mDHCPClient;
 
   LinkedList<PendingPACQuery> mPendingQ; 
 
@@ -239,6 +260,9 @@ private:
 
   bool                         mInProgress;
   bool                         mIncludePath;
+  bool                         mAutoDetect;
+  bool                         mWPADOverDHCPEnabled;
+  int32_t                      mProxyConfigType;
 };
 
 extern LazyLogModule gProxyLog;

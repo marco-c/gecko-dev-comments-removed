@@ -2164,6 +2164,7 @@ pref("network.cookie.lifetimePolicy",       0);
 pref("network.cookie.prefsMigrated",        false);
 pref("network.cookie.lifetime.days",        90); 
 
+pref("network.proxy.enable_wpad_over_dhcp", true);
 
 pref("network.proxy.autoconfig_url", "");
 
