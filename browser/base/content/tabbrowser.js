@@ -1322,7 +1322,7 @@ window._gBrowser = {
         } catch (ex) {  }
       } else {
         
-        title = gTabBrowserBundle.GetStringFromName("tabs.emptyTabTitle");
+        title = this.tabContainer.emptyTabTitle;
       }
     }
 
@@ -2254,7 +2254,7 @@ window._gBrowser = {
 
     if (!aNoInitialLabel) {
       if (isBlankPageURL(aURI)) {
-        t.setAttribute("label", gTabBrowserBundle.GetStringFromName("tabs.emptyTabTitle"));
+        t.setAttribute("label", this.tabContainer.emptyTabTitle);
       } else {
         
         this.setInitialTabTitle(t, aURI, { beforeTabOpen: true });
