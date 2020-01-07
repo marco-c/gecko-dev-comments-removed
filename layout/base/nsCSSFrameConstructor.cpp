@@ -20,6 +20,7 @@
 #include "mozilla/EventStates.h"
 #include "mozilla/Likely.h"
 #include "mozilla/LinkedList.h"
+#include "mozilla/MemoryReporting.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ServoBindings.h"
 #include "nsAbsoluteContainingBlock.h"
@@ -13148,4 +13149,23 @@ nsCSSFrameConstructor::FreeFCItem(FrameConstructionItem* aItem)
     item->mNext = mFirstFreeFCItem;
     mFirstFreeFCItem = item;
   }
+}
+
+void
+nsCSSFrameConstructor::AddSizeOfIncludingThis(nsWindowSizes& aSizes) const
+{
+  if (nsIFrame* rootFrame = GetRootFrame()) {
+    rootFrame->AddSizeOfExcludingThisForTree(aSizes);
+  }
+
+  
+  
+  
+  nsFrameManager::AddSizeOfIncludingThis(aSizes);
+
+  
+  
+  
+  
+  
 }

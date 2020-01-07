@@ -29,6 +29,8 @@
 #include "nsIStatefulFrame.h"
 #include "nsContainerFrame.h"
 
+#include "mozilla/MemoryReporting.h"
+
 
 
 
@@ -92,6 +94,8 @@ public:
 
 
   static nsIContent* GetApplicableParent(nsIContent* aParent);
+
+  void AddSizeOfIncludingThis(nsWindowSizes& aSizes, bool aIsServo) const;
 
 protected:
   LinkedList<UndisplayedNode>* GetListFor(nsIContent* aParentContent);
@@ -696,6 +700,19 @@ nsFrameManager::DestroyAnonymousContent(already_AddRefed<nsIContent> aContent)
   }
 }
 
+void
+nsFrameManager::AddSizeOfIncludingThis(nsWindowSizes& aSizes) const
+{
+  bool isServo = mPresShell->StyleSet()->IsServo();
+  aSizes.mLayoutPresShellSize += aSizes.mState.mMallocSizeOf(this);
+  if (mDisplayNoneMap) {
+    mDisplayNoneMap->AddSizeOfIncludingThis(aSizes, isServo);
+  }
+  if (mDisplayContentsMap) {
+    mDisplayContentsMap->AddSizeOfIncludingThis(aSizes, isServo);
+  }
+}
+
 
 
 nsFrameManagerBase::UndisplayedMap::UndisplayedMap()
@@ -829,4 +846,32 @@ nsFrameManagerBase::UndisplayedMap::RemoveNodesFor(nsIContent* aParentContent)
       delete node;
     }
   }
+}
+
+void
+nsFrameManagerBase::UndisplayedMap::
+AddSizeOfIncludingThis(nsWindowSizes& aSizes, bool aIsServo) const
+{
+  MallocSizeOf mallocSizeOf = aSizes.mState.mMallocSizeOf;
+  aSizes.mLayoutPresShellSize += ShallowSizeOfIncludingThis(mallocSizeOf);
+
+  nsWindowSizes staleSizes(aSizes.mState);
+  for (auto iter = ConstIter(); !iter.Done(); iter.Next()) {
+    const LinkedList<UndisplayedNode>* list = iter.UserData();
+    aSizes.mLayoutPresShellSize += list->sizeOfExcludingThis(mallocSizeOf);
+    if (!aIsServo) {
+      
+      
+      continue;
+    }
+    for (const UndisplayedNode* node = list->getFirst();
+          node; node = node->getNext()) {
+      ServoStyleContext* sc = node->mStyle->AsServo();
+      if (!aSizes.mState.HaveSeenPtr(sc)) {
+        sc->AddSizeOfIncludingThis(
+          staleSizes, &aSizes.mLayoutComputedValuesStale);
+      }
+    }
+  }
+  aSizes.mLayoutComputedValuesStale += staleSizes.getTotalSize();
 }
