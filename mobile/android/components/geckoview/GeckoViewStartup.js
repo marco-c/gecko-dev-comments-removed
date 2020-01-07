@@ -18,9 +18,27 @@ GeckoViewStartup.prototype = {
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver]),
 
   
+
+
+
+
+  setResourceSubstitutions: function() {
+    let registry = Cc["@mozilla.org/chrome/chrome-registry;1"].getService(Ci.nsIChromeRegistry);
+    
+    let url = registry.convertChromeURL(Services.io.newURI("chrome://geckoview/content/geckoview.js")).spec;
+    
+    url = url.substring(4, url.indexOf("!/") + 2);
+
+    let protocolHandler = Services.io.getProtocolHandler("resource").QueryInterface(Ci.nsIResProtocolHandler);
+    protocolHandler.setSubstitution("android", Services.io.newURI(url));
+  },
+
+  
   observe: function(aSubject, aTopic, aData) {
     switch (aTopic) {
       case "app-startup": {
+        this.setResourceSubstitutions();
+
         
         Services.obs.addObserver(this, "chrome-document-global-created");
         Services.obs.addObserver(this, "content-document-global-created");
