@@ -75,7 +75,120 @@ XPCOMUtils.defineLazyGetter(this, "ROOTS", () =>
   Object.keys(ROOT_RECORD_ID_TO_GUID)
 );
 
-PlacesSyncUtils.history = Object.freeze({
+const HistorySyncUtils = PlacesSyncUtils.history = Object.freeze({
+  SYNC_ID_META_KEY: "sync/history/syncId",
+  LAST_SYNC_META_KEY: "sync/history/lastSync",
+
+  
+
+
+  async getSyncId() {
+    let syncId = await PlacesUtils.metadata.get(
+      HistorySyncUtils.SYNC_ID_META_KEY);
+    return syncId || "";
+  },
+
+  
+
+
+
+
+
+
+  resetSyncId() {
+    return PlacesUtils.withConnectionWrapper(
+      "HistorySyncUtils: resetSyncId",
+      function(db) {
+        let newSyncId = PlacesUtils.history.makeGuid();
+        return db.executeTransaction(async function() {
+          await setHistorySyncId(db, newSyncId);
+          return newSyncId;
+        });
+      }
+    );
+  },
+
+  
+
+
+
+
+
+
+
+  async ensureCurrentSyncId(newSyncId) {
+    if (!newSyncId || typeof newSyncId != "string") {
+      throw new TypeError("Invalid new history sync ID");
+    }
+    await PlacesUtils.withConnectionWrapper(
+      "HistorySyncUtils: ensureCurrentSyncId",
+      async function(db) {
+        let existingSyncId = await PlacesUtils.metadata.getWithConnection(
+          db, HistorySyncUtils.SYNC_ID_META_KEY);
+
+        if (existingSyncId == newSyncId) {
+          HistorySyncLog.debug("History sync ID up-to-date",
+                               { existingSyncId });
+          return;
+        }
+
+        HistorySyncLog.debug("History sync ID changed; resetting metadata",
+                             { existingSyncId, newSyncId });
+        await db.executeTransaction(function() {
+          return setHistorySyncId(db, newSyncId);
+        });
+      }
+    );
+  },
+
+  
+
+
+
+  async getLastSync() {
+    let lastSync = await PlacesUtils.metadata.get(
+      HistorySyncUtils.LAST_SYNC_META_KEY);
+    return lastSync ? lastSync / 1000 : 0;
+  },
+
+  
+
+
+
+
+
+  async setLastSync(lastSyncSeconds) {
+    let lastSync = Math.floor(lastSyncSeconds * 1000);
+    if (!Number.isInteger(lastSync)) {
+      throw new TypeError("Invalid history last sync timestamp");
+    }
+    await PlacesUtils.metadata.set(HistorySyncUtils.LAST_SYNC_META_KEY,
+                                   lastSync);
+  },
+
+  
+
+
+
+
+
+
+  async wipe() {
+    await PlacesUtils.history.clear();
+    await HistorySyncUtils.reset();
+  },
+
+  
+
+
+
+
+
+  reset() {
+    return PlacesUtils.metadata.delete(HistorySyncUtils.SYNC_ID_META_KEY,
+      HistorySyncUtils.LAST_SYNC_META_KEY);
+  },
+
   
 
 
@@ -1229,6 +1342,10 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
     let db = await PlacesUtils.promiseDBConnection();
     return fetchGuidsWithAnno(db, anno, val);
   },
+});
+
+XPCOMUtils.defineLazyGetter(this, "HistorySyncLog", () => {
+  return Log.repository.getLogger("Sync.Engine.History.HistorySyncUtils");
 });
 
 XPCOMUtils.defineLazyGetter(this, "BookmarkSyncLog", () => {
@@ -2436,6 +2553,15 @@ function notify(observers, notification, args = []) {
       observer[notification](...args);
     } catch (ex) {}
   }
+}
+
+
+async function setHistorySyncId(db, newSyncId) {
+  await PlacesUtils.metadata.setWithConnection(db,
+    HistorySyncUtils.SYNC_ID_META_KEY, newSyncId);
+
+  await PlacesUtils.metadata.deleteWithConnection(db,
+    HistorySyncUtils.LAST_SYNC_META_KEY);
 }
 
 
