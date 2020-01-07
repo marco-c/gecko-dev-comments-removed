@@ -1282,6 +1282,9 @@ protected:
   void UpdateRootElement();
 
   
+  
+  
+  bool mHasShownResizers;
   bool mIsObjectResizingEnabled;
   bool mIsResizing;
   bool mPreserveRatio;
@@ -1290,13 +1293,18 @@ protected:
   
   bool mIsAbsolutelyPositioningEnabled;
   bool mResizedObjectIsAbsolutelyPositioned;
-
+  
+  
+  bool mHasShownGrabber;
   bool mGrabberClicked;
   bool mIsMoving;
 
   bool mSnapToGridEnabled;
 
   
+  
+  
+  bool mHasShownInlineTableEditor;
   bool mIsInlineTableEditingEnabled;
 
   
@@ -1336,6 +1344,12 @@ protected:
   int32_t mYIncrementFactor;
   int32_t mWidthIncrementFactor;
   int32_t mHeightIncrementFactor;
+
+  
+  
+  uint32_t mResizerUsedCount;
+  uint32_t mGrabberUsedCount;
+  uint32_t mInlineTableEditorUsedCount;
 
   int8_t  mInfoXIncrement;
   int8_t  mInfoYIncrement;
