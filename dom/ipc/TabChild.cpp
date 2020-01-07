@@ -1486,6 +1486,12 @@ TabChild::ZoomToRect(const uint32_t& aPresShellId,
 mozilla::ipc::IPCResult
 TabChild::RecvActivate()
 {
+  
+  
+  
+  nsCOMPtr<nsIPresShell> presShell = GetPresShell();
+  MOZ_ASSERT(presShell);
+
   nsCOMPtr<nsIWebBrowserFocus> browser = do_QueryInterface(WebNavigation());
   browser->Activate();
   return IPC_OK();
