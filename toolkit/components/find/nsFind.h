@@ -14,7 +14,7 @@
 #include "nsIDOMNode.h"
 #include "nsIDOMRange.h"
 #include "nsIContentIterator.h"
-#include "nsIWordBreaker.h"
+#include "mozilla/intl/WordBreaker.h"
 
 class nsIContent;
 
@@ -44,7 +44,7 @@ protected:
 
   
   
-  nsCOMPtr<nsIWordBreaker> mWordBreaker;
+  RefPtr<mozilla::intl::WordBreaker> mWordBreaker;
 
   int32_t mIterOffset;
   nsCOMPtr<nsIDOMNode> mIterNode;
