@@ -6,32 +6,29 @@
 
 
 
-
-
-
 "use strict";
 
-const TEST_URI = "data:text/html;charset=utf8,<p>hello";
+const TEST_URI = "data:text/html;charset=utf8,<p>Test console input focus";
 
 add_task(async function() {
-  await loadTab(TEST_URI);
-  let hud = await openConsole();
-  hud.jsterm.clearOutput();
+  let hud = await openNewTabAndConsole(TEST_URI);
 
-  is(hud.jsterm.inputNode.hasAttribute("focused"), true,
-     "inputNode should be focused");
+  let inputNode = hud.jsterm.inputNode;
+  const filterInput = hud.ui.outputNode.querySelector(".text-filter");
 
-  hud.ui.filterBox.focus();
+  info("Focus after console is opened");
+  ok(hasFocus(inputNode), "input node is focused after console is opened");
 
-  is(hud.ui.filterBox.hasAttribute("focused"), true,
-     "filterBox should be focused");
+  filterInput.focus();
+  ok(hasFocus(filterInput), "filter input should be focused");
 
-  is(hud.jsterm.inputNode.hasAttribute("focused"), false,
-     "inputNode shouldn't be focused");
+  is(hasFocus(inputNode), false, "input node is not focused anymore");
 
+  info("Go to the inspector panel");
   await openInspector();
-  hud = await openConsole();
 
-  is(hud.jsterm.inputNode.hasAttribute("focused"), true,
-     "inputNode should be focused");
+  info("Go back to the console");
+  await openConsole();
+
+  ok(hasFocus(inputNode), "input node is focused when coming from a different panel");
 });
