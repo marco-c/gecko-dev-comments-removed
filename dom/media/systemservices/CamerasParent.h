@@ -141,7 +141,7 @@ protected:
   
   
   
-  static RefPtr<VideoEngine> sEngines[CaptureEngine::MaxEngine];
+  static StaticRefPtr<VideoEngine> sEngines[CaptureEngine::MaxEngine];
   static int32_t sNumOfOpenCamerasParentEngines;
   static int32_t sNumOfCamerasParents;
   nsTArray<CallbackHelper*> mCallbacks;
