@@ -333,20 +333,14 @@ class Nursery
     JS::gcreason::Reason minorGCTriggerReason() const { return minorGCTriggerReason_; }
     void clearMinorGCRequest() { minorGCTriggerReason_ = JS::gcreason::NO_REASON; }
 
-    bool needIdleTimeCollection() const {
-        return minorGCRequested() ||
-               (freeSpace() < kIdleTimeCollectionThreshold);
-    }
+    bool needIdleTimeCollection() const;
 
     bool enableProfiling() const { return enableProfiling_; }
 
-  private:
     
     static const size_t NurseryChunkUsableSize = gc::ChunkSize - gc::ChunkTrailerSize;
 
-    
-    static constexpr size_t kIdleTimeCollectionThreshold = NurseryChunkUsableSize / 4;
-
+  private:
     JSRuntime* runtime_;
 
     
