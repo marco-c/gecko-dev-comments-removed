@@ -41,7 +41,7 @@ nsInProcessTabChildGlobal::DoSendBlockingMessage(JSContext* aCx,
     RefPtr<nsFrameMessageManager> mm = mChromeMessageManager;
     RefPtr<nsFrameLoader> fl = GetFrameLoader();
     mm->ReceiveMessage(mOwner, fl, aMessage, true, &aData, &cpows, aPrincipal,
-                       aRetVal);
+                       aRetVal, IgnoreErrors());
   }
   return true;
 }
@@ -116,11 +116,11 @@ nsInProcessTabChildGlobal::~nsInProcessTabChildGlobal()
 
 
 
-NS_IMETHODIMP_(bool)
+void
 nsInProcessTabChildGlobal::MarkForCC()
 {
   MarkScopesForCC();
-  return MessageManagerGlobal::MarkForCC();
+  MessageManagerGlobal::MarkForCC();
 }
 
 nsresult
@@ -160,7 +160,6 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(nsInProcessTabChildGlobal,
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(nsInProcessTabChildGlobal)
-  NS_INTERFACE_MAP_ENTRY(nsIMessageListenerManager)
   NS_INTERFACE_MAP_ENTRY(nsIMessageSender)
   NS_INTERFACE_MAP_ENTRY(nsIContentFrameMessageManager)
   NS_INTERFACE_MAP_ENTRY(nsIInProcessContentFrameMessageManager)

@@ -51,8 +51,7 @@ function EnterprisePoliciesManagerContent() {
 EnterprisePoliciesManagerContent.prototype = {
   
   classID:          Components.ID("{dc6358f8-d167-4566-bf5b-4350b5e6a7a2}"),
-  QueryInterface: XPCOMUtils.generateQI([Ci.nsIMessageListener,
-                                         Ci.nsIEnterprisePolicies]),
+  QueryInterface: XPCOMUtils.generateQI([Ci.nsIEnterprisePolicies]),
 
   
   _xpcom_factory: EnterprisePoliciesFactory,

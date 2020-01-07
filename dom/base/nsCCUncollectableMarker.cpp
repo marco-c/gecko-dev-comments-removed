@@ -290,7 +290,7 @@ MarkWindowList(nsISimpleEnumerator* aWindowList, bool aCleanupJS)
 
       RefPtr<TabChild> tabChild = TabChild::GetFrom(rootDocShell);
       if (tabChild) {
-        nsCOMPtr<nsIContentFrameMessageManager> mm = tabChild->GetMessageManager();
+        RefPtr<TabChildGlobal> mm = tabChild->GetMessageManager();
         if (mm) {
           
           
