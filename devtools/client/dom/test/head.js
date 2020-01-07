@@ -11,7 +11,7 @@ const FRAME_SCRIPT_UTILS_URL =
 
 
 Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/devtools/client/framework/test/shared-head.js", this);
+  "chrome://mochitests/content/browser/devtools/client/shared/test/shared-head.js", this);
 
 
 const constants = require("devtools/client/dom/content/constants");
