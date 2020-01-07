@@ -177,7 +177,7 @@ protected:
 
   
   
-  virtual void UnlinkHelper() final
+  virtual void UnlinkHelper() final override
   {
     mIterableObj = nullptr;
   }

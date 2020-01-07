@@ -478,9 +478,9 @@ protected:
     static const char* GetGenericName(mozilla::FontFamilyType aGenericType);
 
     
-    virtual void InitLoader();
-    virtual bool LoadFontInfo();
-    virtual void CleanupLoader();
+    virtual void InitLoader() override;
+    virtual bool LoadFontInfo() override;
+    virtual void CleanupLoader() override;
 
     
     void GetPrefsAndStartLoader();

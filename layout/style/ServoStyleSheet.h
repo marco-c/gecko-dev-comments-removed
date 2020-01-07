@@ -112,11 +112,11 @@ public:
   already_AddRefed<StyleSheet> Clone(StyleSheet* aCloneParent,
     dom::CSSImportRule* aCloneOwnerRule,
     nsIDocument* aCloneDocument,
-    nsINode* aCloneOwningNode) const final;
+    nsINode* aCloneOwningNode) const final override;
 
   
   NS_IMETHOD StyleSheetLoaded(StyleSheet* aSheet, bool aWasAlternate,
-                              nsresult aStatus) final;
+                              nsresult aStatus) final override;
 
   
   

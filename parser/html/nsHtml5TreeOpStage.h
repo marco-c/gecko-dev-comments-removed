@@ -22,8 +22,8 @@ class nsHtml5TreeOpStage : public nsAHtml5TreeOpSink {
 
 
 
-    virtual void MoveOpsFrom(nsTArray<nsHtml5TreeOperation>& aOpQueue);
-    
+    virtual void MoveOpsFrom(nsTArray<nsHtml5TreeOperation>& aOpQueue) override;
+
     
 
 

@@ -166,8 +166,8 @@ class nsMIMEInfoImpl : public nsMIMEInfoBase {
     virtual ~nsMIMEInfoImpl() {}
 
     
-    NS_IMETHOD GetHasDefaultHandler(bool *_retval);
-    NS_IMETHOD GetDefaultDescription(nsAString& aDefaultDescription);
+    NS_IMETHOD GetHasDefaultHandler(bool *_retval) override;
+    NS_IMETHOD GetDefaultDescription(nsAString& aDefaultDescription) override;
 
     
     
@@ -182,13 +182,13 @@ class nsMIMEInfoImpl : public nsMIMEInfoBase {
 
 
 
-    virtual nsresult LaunchDefaultWithFile(nsIFile* aFile);
+    virtual nsresult LaunchDefaultWithFile(nsIFile* aFile) override;
 
     
 
 
 
-    virtual nsresult LoadUriInternal(nsIURI *aURI) = 0;
+    virtual nsresult LoadUriInternal(nsIURI *aURI) override = 0;
 
     nsCOMPtr<nsIFile>      mDefaultApplication; 
 };

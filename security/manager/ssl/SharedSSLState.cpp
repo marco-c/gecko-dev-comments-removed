@@ -33,7 +33,7 @@ class MainThreadClearer : public SyncRunnableBase
 public:
   MainThreadClearer() : mShouldClearSessionCache(false) {}
 
-  void RunOnTargetThread() {
+  void RunOnTargetThread() override {
     
     
     

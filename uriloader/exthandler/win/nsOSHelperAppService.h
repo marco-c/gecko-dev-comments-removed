@@ -33,7 +33,7 @@ public:
   
   nsresult OSProtocolHandlerExists(const char * aProtocolScheme, bool * aHandlerExists);
   nsresult LoadUriInternal(nsIURI * aURL);
-  NS_IMETHOD GetApplicationDescription(const nsACString& aScheme, nsAString& _retval);
+  NS_IMETHOD GetApplicationDescription(const nsACString& aScheme, nsAString& _retval) override;
 
   
   already_AddRefed<nsIMIMEInfo> GetMIMEInfoFromOS(const nsACString& aMIMEType, const nsACString& aFileExt, bool *aFound);

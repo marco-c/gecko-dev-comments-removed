@@ -27,20 +27,20 @@ public:
   
   already_AddRefed<nsIMIMEInfo> GetMIMEInfoFromOS(const nsACString& aMimeType,
                                                   const nsACString& aFileExt,
-                                                  bool       *aFound);
+                                                  bool       *aFound) override;
   NS_IMETHOD GetProtocolHandlerInfoFromOS(const nsACString &aScheme,
                                           bool *found,
-                                          nsIHandlerInfo **_retval);
+                                          nsIHandlerInfo **_retval) override;
 
   
-  nsresult OSProtocolHandlerExists(const char * aProtocolScheme, bool * aHandlerExists);
-  NS_IMETHOD GetApplicationDescription(const nsACString& aScheme, nsAString& _retval);
+  nsresult OSProtocolHandlerExists(const char * aProtocolScheme, bool * aHandlerExists) override;
+  NS_IMETHOD GetApplicationDescription(const nsACString& aScheme, nsAString& _retval) override;
 
   
   
   
   
-  virtual nsresult GetFileTokenForPath(const char16_t * platformAppPath, nsIFile ** aFile);
+  virtual nsresult GetFileTokenForPath(const char16_t * platformAppPath, nsIFile ** aFile) override;
 
 protected:
   already_AddRefed<nsMIMEInfoBase> GetFromType(const nsCString& aMimeType);

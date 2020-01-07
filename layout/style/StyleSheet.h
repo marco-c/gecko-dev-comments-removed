@@ -232,7 +232,8 @@ public:
 
   
   inline dom::ParentObject GetParentObject() const;
-  JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) final;
+  JSObject* WrapObject(JSContext* aCx,
+                       JS::Handle<JSObject*> aGivenProto) final override;
 
   
   

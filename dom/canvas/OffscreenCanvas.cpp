@@ -258,7 +258,7 @@ OffscreenCanvas::ToBlob(JSContext* aCx,
       , mPromise(aPromise) {}
 
     
-    nsresult ReceiveBlob(already_AddRefed<Blob> aBlob)
+    nsresult ReceiveBlob(already_AddRefed<Blob> aBlob) override
     {
       RefPtr<Blob> blob = aBlob;
 

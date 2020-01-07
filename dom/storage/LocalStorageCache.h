@@ -76,7 +76,7 @@ protected:
 class LocalStorageCache : public LocalStorageCacheBridge
 {
 public:
-  NS_IMETHOD_(void) Release(void);
+  NS_IMETHOD_(void) Release(void) override;
 
   enum MutationSource {
     
@@ -133,14 +133,14 @@ public:
 
   
 
-  virtual const nsCString Origin() const;
-  virtual const nsCString& OriginNoSuffix() const { return mOriginNoSuffix; }
-  virtual const nsCString& OriginSuffix() const { return mOriginSuffix; }
-  virtual bool Loaded() { return mLoaded; }
-  virtual uint32_t LoadedCount();
-  virtual bool LoadItem(const nsAString& aKey, const nsString& aValue);
-  virtual void LoadDone(nsresult aRv);
-  virtual void LoadWait();
+  const nsCString Origin() const override;
+  const nsCString& OriginNoSuffix() const override { return mOriginNoSuffix; }
+  const nsCString& OriginSuffix() const override { return mOriginSuffix; }
+  bool Loaded() override { return mLoaded; }
+  uint32_t LoadedCount() override;
+  bool LoadItem(const nsAString& aKey, const nsString& aValue) override;
+  void LoadDone(nsresult aRv) override;
+  void LoadWait() override;
 
   
   
@@ -279,8 +279,8 @@ public:
                                   const LocalStorageCache::MutationSource aSource);
 
 private:
-  virtual const nsCString& OriginScope() { return mOriginScope; }
-  virtual void LoadUsage(const int64_t aUsage);
+  const nsCString& OriginScope() override { return mOriginScope; }
+  void LoadUsage(const int64_t aUsage) override;
 
   nsCString mOriginScope;
   int64_t mUsage[LocalStorageCache::kDataSetCount];

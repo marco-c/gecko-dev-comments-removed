@@ -73,7 +73,7 @@ public:
   nsCString                  mHost;
   int32_t                    mPort;
 
-  NS_IMETHOD Run(void);     
+  NS_IMETHOD Run(void) override;     
 
 private:
   nsPACMan                  *mPACMan;  

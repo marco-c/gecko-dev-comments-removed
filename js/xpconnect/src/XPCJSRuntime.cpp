@@ -2814,7 +2814,7 @@ ReadSourceFromFilename(JSContext* cx, const char* filename, char16_t** src, size
 
 
 class XPCJSSourceHook: public js::SourceHook {
-    bool load(JSContext* cx, const char* filename, char16_t** src, size_t* length) {
+    bool load(JSContext* cx, const char* filename, char16_t** src, size_t* length) override {
         *src = nullptr;
         *length = 0;
 

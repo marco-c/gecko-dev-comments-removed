@@ -33,10 +33,10 @@ public:
 
 class bar : public foo{
 public:
-  NS_IMETHOD ignored();
-  NS_IMETHOD callme1(int i, int j);
-  NS_IMETHOD callme2(int i, int j);
-  NS_IMETHOD callme3(int i, int j);
+  NS_IMETHOD ignored() override;
+  NS_IMETHOD callme1(int i, int j) override;
+  NS_IMETHOD callme2(int i, int j) override;
+  NS_IMETHOD callme3(int i, int j) override;
 };
 
 

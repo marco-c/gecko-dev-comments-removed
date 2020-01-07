@@ -454,7 +454,7 @@ private:
 
     static void DispatchIfNeeded(RasterImage* aImage);
 
-    NS_IMETHOD Run();
+    NS_IMETHOD Run() override;
 
   private:
     explicit HandleErrorWorker(RasterImage* aImage);

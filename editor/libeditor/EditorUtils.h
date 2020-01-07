@@ -522,7 +522,7 @@ class TrivialFunctor final : public BoolDomIterFunctor
 {
 public:
   
-  virtual bool operator()(nsINode* aNode) const
+  virtual bool operator()(nsINode* aNode) const override
   {
     return true;
   }

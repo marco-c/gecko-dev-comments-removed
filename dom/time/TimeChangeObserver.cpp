@@ -31,11 +31,11 @@ public:
   virtual ~nsSystemTimeChangeObserver();
 
   
-  void Notify(const int64_t& aClockDeltaMS);
+  void Notify(const int64_t& aClockDeltaMS) override;
 
   
   void Notify(
-    const mozilla::hal::SystemTimezoneChangeInformation& aSystemTimezoneChangeInfo);
+    const mozilla::hal::SystemTimezoneChangeInformation& aSystemTimezoneChangeInfo) override;
 
   nsresult AddWindowListenerImpl(nsPIDOMWindowInner* aWindow);
   nsresult RemoveWindowListenerImpl(nsPIDOMWindowInner* aWindow);

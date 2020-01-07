@@ -128,7 +128,7 @@ class GradientCache final : public nsExpirationTracker<GradientCacheData,4>
       srand(time(nullptr));
     }
 
-    virtual void NotifyExpired(GradientCacheData* aObject)
+    virtual void NotifyExpired(GradientCacheData* aObject) override
     {
       
       RemoveObject(aObject);

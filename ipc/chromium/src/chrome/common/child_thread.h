@@ -34,13 +34,13 @@ class ChildThread : public IPC::Channel::Listener,
   IPC::Channel* channel() { return channel_.get(); }
 
   
-  virtual void Init();
-  virtual void CleanUp();
+  virtual void Init() override;
+  virtual void CleanUp() override;
 
  private:
   
-  virtual void OnMessageReceived(IPC::Message&& msg);
-  virtual void OnChannelError();
+  virtual void OnMessageReceived(IPC::Message&& msg) override;
+  virtual void OnChannelError() override;
 
   
   MessageLoop* owner_loop_;

@@ -37,7 +37,7 @@ CanvasRenderingContextHelper::ToBlob(JSContext* aCx,
       , mBlobCallback(aCallback) {}
 
     
-    nsresult ReceiveBlob(already_AddRefed<Blob> aBlob)
+    nsresult ReceiveBlob(already_AddRefed<Blob> aBlob) override
     {
       RefPtr<Blob> blob = aBlob;
 

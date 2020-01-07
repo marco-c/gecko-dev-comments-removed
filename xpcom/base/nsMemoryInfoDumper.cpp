@@ -451,7 +451,7 @@ public:
     : mGZWriter(aGZWriter)
   {}
 
-  void Write(const char* aStr)
+  void Write(const char* aStr) override
   {
     
     

@@ -276,10 +276,10 @@ public:
     NS_DECL_ISUPPORTS_INHERITED
 
     
-    NS_IMETHOD Start( bool *aResult );
-    NS_IMETHOD Stop( bool *aResult );
-    NS_IMETHOD Quit();
-    NS_IMETHOD Enable();
+    NS_IMETHOD Start( bool *aResult ) override;
+    NS_IMETHOD Stop( bool *aResult ) override;
+    NS_IMETHOD Quit() override;
+    NS_IMETHOD Enable() override;
     
     NS_IMETHOD StartDDE();
     

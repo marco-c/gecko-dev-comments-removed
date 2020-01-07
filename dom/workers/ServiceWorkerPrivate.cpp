@@ -609,7 +609,7 @@ public:
   }
 
   void
-  PostRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate, bool aRunResult)
+  PostRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate, bool aRunResult) override
   {
     
     if (mRegistration) {

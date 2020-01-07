@@ -47,8 +47,7 @@ public:
     
   }
 
-  
-  virtual void OnSignal(int sig)
+  virtual void OnSignal(int sig) override
   {
     DCHECK(SIGCHLD == sig);
     DCHECK(process_);
@@ -141,8 +140,7 @@ public:
     DCHECK(!process_);
   }
 
-  
-  virtual void OnSignal(int sig)
+  virtual void OnSignal(int sig) override
   {
     ChildReaper::OnSignal(sig);
 
@@ -152,8 +150,7 @@ public:
     }
   }
 
-  
-  virtual void WillDestroyCurrentMessageLoop()
+  virtual void WillDestroyCurrentMessageLoop() override
   {
     DCHECK(process_);
 

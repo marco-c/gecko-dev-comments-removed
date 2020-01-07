@@ -72,7 +72,7 @@ public:
   }
 
   
-  NS_IMETHOD Notify(nsITimer* aTimer) final
+  NS_IMETHOD Notify(nsITimer* aTimer) final override
   {
     SystemGroup::Dispatch(TaskCategory::Other,
                           do_AddRef(this));

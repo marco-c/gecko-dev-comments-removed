@@ -182,7 +182,7 @@ private:
     uint32_t               mTlsFlags;
 
 
-    NS_INLINE_DECL_THREADSAFE_REFCOUNTING(nsHttpConnectionInfo)
+    NS_INLINE_DECL_THREADSAFE_REFCOUNTING(nsHttpConnectionInfo, override)
 };
 
 } 

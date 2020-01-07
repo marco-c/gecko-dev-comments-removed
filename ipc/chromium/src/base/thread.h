@@ -143,7 +143,7 @@ class Thread : PlatformThread::Delegate {
 
  private:
   
-  virtual void ThreadMain();
+  virtual void ThreadMain() override;
 
   
   

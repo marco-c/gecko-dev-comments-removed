@@ -1,14 +1,14 @@
-//
-// Copyright (c) 2017 The ANGLE Project Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-//
-// MultiviewPerfTest:
-//   Performance tests for multiview rendering.
-//   - MultiviewCPUBoundBenchmark issues many draw calls and state changes to stress the CPU.
-//   - MultiviewGPUBoundBenchmark draws half a million quads with multiple attributes per vertex in
-//   order to stress the GPU's memory system.
-//
+
+
+
+
+
+
+
+
+
+
+
 
 #include "ANGLEPerfTest.h"
 #include "common/vector_utils.h"
@@ -121,7 +121,7 @@ class MultiviewBenchmark : public ANGLERenderTest,
     }
 
     void initializeBenchmark() override;
-    void drawBenchmark() final;
+    void drawBenchmark() final override;
 
     void overrideWorkaroundsD3D(WorkaroundsD3D *workarounds) override
     {
@@ -236,7 +236,7 @@ void MultiviewBenchmark::drawBenchmark()
     {
         case MultiviewOption::NoAcceleration:
             glEnable(GL_SCISSOR_TEST);
-            // Iterate over each view and render the scene.
+            
             for (int i = 0; i < params->numViews; ++i)
             {
                 glViewport(viewWidth * i, 0, viewWidth, viewHeight);
@@ -309,7 +309,7 @@ void MultiviewCPUBoundBenchmark::initializeBenchmark()
     glVertexAttribPointer(posLoc, 4, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(posLoc);
 
-    // Render once to guarantee that the program is compiled and linked.
+    
     drawBenchmark();
 
     ASSERT_GL_NO_ERROR();
@@ -398,7 +398,7 @@ void MultiviewGPUBoundBenchmark::initializeBenchmark()
     createProgram(vs, fs);
     ASSERT_GL_NO_ERROR();
 
-    // Generate a vertex buffer of triangulated quads so that we have one quad per pixel.
+    
     const int viewWidth           = params->windowWidth / params->numViews;
     const int viewHeight          = params->windowHeight;
     const float quadWidth         = 2.f / static_cast<float>(viewWidth);
@@ -458,7 +458,7 @@ void MultiviewGPUBoundBenchmark::initializeBenchmark()
         glEnableVertexAttribArray(i + 1);
     }
 
-    // Render once to guarantee that the program is compiled and linked.
+    
     drawBenchmark();
 }
 
@@ -506,7 +506,7 @@ MultiviewPerfParams SelectViewInVertexShader(const EGLPlatformParameters &eglPar
     return MultiviewPerfParams(eglParameters, workload,
                                MultiviewOption::InstancedMultiviewVertexShader);
 }
-}  // namespace
+}  
 
 TEST_P(MultiviewCPUBoundBenchmark, Run)
 {
@@ -532,4 +532,4 @@ ANGLE_INSTANTIATE_TEST(MultiviewGPUBoundBenchmark,
                        SelectViewInVertexShader(egl_platform::OPENGL(), BigWorkload()),
                        SelectViewInVertexShader(egl_platform::D3D11(), BigWorkload()));
 
-}  // anonymous namespace
+}  

@@ -90,7 +90,7 @@ class SyncWaiter : public WaitableEvent::Waiter {
         signaling_event_(NULL) {
   }
 
-  bool Fire(WaitableEvent *signaling_event) {
+  bool Fire(WaitableEvent *signaling_event) override {
     lock_->Acquire();
       const bool previous_value = fired_;
       fired_ = true;
@@ -115,7 +115,7 @@ class SyncWaiter : public WaitableEvent::Waiter {
   
   
   
-  bool Compare(void* tag) {
+  bool Compare(void* tag) override {
     return this == tag;
   }
 

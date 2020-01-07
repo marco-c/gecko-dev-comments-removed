@@ -1175,7 +1175,7 @@ class CompilerConstraintInstance : public CompilerConstraint
       : CompilerConstraint(alloc, property), data(data)
     {}
 
-    bool generateTypeConstraint(JSContext* cx, RecompileInfo recompileInfo);
+    bool generateTypeConstraint(JSContext* cx, RecompileInfo recompileInfo) override;
 };
 
 
@@ -1192,19 +1192,19 @@ class TypeCompilerConstraint : public TypeConstraint
       : compilation(compilation), data(data)
     {}
 
-    const char* kind() { return data.kind(); }
+    const char* kind() override { return data.kind(); }
 
-    void newType(JSContext* cx, TypeSet* source, TypeSet::Type type) {
+    void newType(JSContext* cx, TypeSet* source, TypeSet::Type type) override {
         if (data.invalidateOnNewType(type))
             cx->zone()->types.addPendingRecompile(cx, compilation);
     }
 
-    void newPropertyState(JSContext* cx, TypeSet* source) {
+    void newPropertyState(JSContext* cx, TypeSet* source) override {
         if (data.invalidateOnNewPropertyState(source))
             cx->zone()->types.addPendingRecompile(cx, compilation);
     }
 
-    void newObjectState(JSContext* cx, ObjectGroup* group) {
+    void newObjectState(JSContext* cx, ObjectGroup* group) override {
         
         
         
@@ -1212,14 +1212,14 @@ class TypeCompilerConstraint : public TypeConstraint
             cx->zone()->types.addPendingRecompile(cx, compilation);
     }
 
-    bool sweep(TypeZone& zone, TypeConstraint** res) {
+    bool sweep(TypeZone& zone, TypeConstraint** res) override {
         if (data.shouldSweep() || compilation.shouldSweep(zone))
             return false;
         *res = zone.typeLifoAlloc().new_<TypeCompilerConstraint<T> >(compilation, data);
         return true;
     }
 
-    JSCompartment* maybeCompartment() {
+    JSCompartment* maybeCompartment() override {
         return data.maybeCompartment();
     }
 };
@@ -1389,9 +1389,9 @@ class TypeConstraintFreezeStack : public TypeConstraint
         : script_(script)
     {}
 
-    const char* kind() { return "freezeStack"; }
+    const char* kind() override { return "freezeStack"; }
 
-    void newType(JSContext* cx, TypeSet* source, TypeSet::Type type) {
+    void newType(JSContext* cx, TypeSet* source, TypeSet::Type type) override {
         
 
 
@@ -1399,14 +1399,14 @@ class TypeConstraintFreezeStack : public TypeConstraint
         cx->zone()->types.addPendingRecompile(cx, script_);
     }
 
-    bool sweep(TypeZone& zone, TypeConstraint** res) {
+    bool sweep(TypeZone& zone, TypeConstraint** res) override {
         if (IsAboutToBeFinalizedUnbarriered(&script_))
             return false;
         *res = zone.typeLifoAlloc().new_<TypeConstraintFreezeStack>(script_);
         return true;
     }
 
-    JSCompartment* maybeCompartment() {
+    JSCompartment* maybeCompartment() override {
         return script_->compartment();
     }
 };
@@ -2020,7 +2020,9 @@ class ConstraintDataFreezePropertyState
       : which(which)
     {}
 
-    const char* kind() { return (which == NON_DATA) ? "freezeNonDataProperty" : "freezeNonWritableProperty"; }
+    const char* kind() {
+        return (which == NON_DATA) ? "freezeNonDataProperty" : "freezeNonWritableProperty";
+    }
 
     bool invalidateOnNewType(TypeSet::Type type) { return false; }
     bool invalidateOnNewPropertyState(TypeSet* property) {
@@ -3134,9 +3136,9 @@ class TypeConstraintClearDefiniteGetterSetter : public TypeConstraint
       : group(group)
     {}
 
-    const char* kind() { return "clearDefiniteGetterSetter"; }
+    const char* kind() override { return "clearDefiniteGetterSetter"; }
 
-    void newPropertyState(JSContext* cx, TypeSet* source) {
+    void newPropertyState(JSContext* cx, TypeSet* source) override {
         
 
 
@@ -3146,16 +3148,16 @@ class TypeConstraintClearDefiniteGetterSetter : public TypeConstraint
             group->clearNewScript(cx);
     }
 
-    void newType(JSContext* cx, TypeSet* source, TypeSet::Type type) {}
+    void newType(JSContext* cx, TypeSet* source, TypeSet::Type type) override {}
 
-    bool sweep(TypeZone& zone, TypeConstraint** res) {
+    bool sweep(TypeZone& zone, TypeConstraint** res) override {
         if (IsAboutToBeFinalizedUnbarriered(&group))
             return false;
         *res = zone.typeLifoAlloc().new_<TypeConstraintClearDefiniteGetterSetter>(group);
         return true;
     }
 
-    JSCompartment* maybeCompartment() {
+    JSCompartment* maybeCompartment() override {
         return group->compartment();
     }
 };
@@ -3200,21 +3202,21 @@ class TypeConstraintClearDefiniteSingle : public TypeConstraint
       : group(group)
     {}
 
-    const char* kind() { return "clearDefiniteSingle"; }
+    const char* kind() override { return "clearDefiniteSingle"; }
 
-    void newType(JSContext* cx, TypeSet* source, TypeSet::Type type) {
+    void newType(JSContext* cx, TypeSet* source, TypeSet::Type type) override {
         if (source->baseFlags() || source->getObjectCount() > 1)
             group->clearNewScript(cx);
     }
 
-    bool sweep(TypeZone& zone, TypeConstraint** res) {
+    bool sweep(TypeZone& zone, TypeConstraint** res) override {
         if (IsAboutToBeFinalizedUnbarriered(&group))
             return false;
         *res = zone.typeLifoAlloc().new_<TypeConstraintClearDefiniteSingle>(group);
         return true;
     }
 
-    JSCompartment* maybeCompartment() {
+    JSCompartment* maybeCompartment() override {
         return group->compartment();
     }
 };
