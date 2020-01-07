@@ -722,10 +722,34 @@ TabTarget.prototype = {
 
 
   logErrorInPage: function (text, category) {
-    if (this.activeTab && this.activeTab.traits.logErrorInPage) {
+    if (this.activeTab && this.activeTab.traits.logInPage) {
+      const errorFlag = 0;
       let packet = {
         to: this.form.actor,
-        type: "logErrorInPage",
+        type: "logInPage",
+        flags: errorFlag,
+        text,
+        category,
+      };
+      this.client.request(packet);
+    }
+  },
+
+  
+
+
+
+
+
+
+
+  logWarningInPage: function (text, category) {
+    if (this.activeTab && this.activeTab.traits.logInPage) {
+      const warningFlag = 1;
+      let packet = {
+        to: this.form.actor,
+        type: "logInPage",
+        flags: warningFlag,
         text,
         category,
       };
@@ -885,6 +909,10 @@ WorkerTarget.prototype = {
   },
 
   logErrorInPage: function () {
+    
+  },
+
+  logWarningInPage: function () {
     
   },
 };
