@@ -9,7 +9,7 @@ const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 
 
 
-exports.font = {
+const font = exports.font = {
   
   CSSFamilyName: PropTypes.string,
 
@@ -35,4 +35,15 @@ exports.font = {
 exports.fontOptions = {
   
   previewText: PropTypes.string,
+};
+
+
+
+
+exports.fontData = {
+  
+  fonts: PropTypes.arrayOf(PropTypes.shape(font)),
+
+  
+  otherFonts: PropTypes.arrayOf(PropTypes.shape(font)),
 };
