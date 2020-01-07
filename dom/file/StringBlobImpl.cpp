@@ -4,7 +4,7 @@
 
 
 
-#include "StreamBlobImpl.h"
+#include "StringBlobImpl.h"
 #include "nsStringStream.h"
 
 namespace mozilla {
