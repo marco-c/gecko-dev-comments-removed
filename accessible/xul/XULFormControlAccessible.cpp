@@ -170,11 +170,6 @@ XULButtonAccessible::IsAcceptableChild(nsIContent* aEl) const
   
 
   
-  
-  nsAutoString role;
-  nsCoreUtils::XBLBindingRole(aEl, role);
-
-  
   if (aEl->IsXULElement(nsGkAtoms::menupopup) ||
       aEl->IsXULElement(nsGkAtoms::popup)) {
     return true;
@@ -182,8 +177,8 @@ XULButtonAccessible::IsAcceptableChild(nsIContent* aEl) const
 
   
   
-  if ((!role.EqualsLiteral("xul:button") &&
-       !role.EqualsLiteral("xul:toolbarbutton")) ||
+  if ((!aEl->IsXULElement(nsGkAtoms::button) &&
+       !aEl->IsXULElement(nsGkAtoms::toolbarbutton)) ||
       aEl->IsXULElement(nsGkAtoms::dropMarker)) {
     return false;
   }
