@@ -2,7 +2,6 @@
 
 
 
-extern crate gfx;
 extern crate gfx_traits;
 extern crate ipc_channel;
 #[macro_use]
@@ -17,8 +16,7 @@ extern crate servo_config;
 extern crate servo_url;
 extern crate time;
 
-use gfx::display_list::{DisplayItem, DisplayList};
-use gfx_traits::Epoch;
+use gfx_traits::{Epoch, DisplayList};
 use ipc_channel::ipc::IpcSender;
 use msg::constellation_msg::PipelineId;
 use profile_traits::time::{ProfilerChan, ProfilerCategory, send_profile_data};
@@ -324,24 +322,9 @@ impl PaintTimeMetrics {
             return;
         }
 
-        let mut is_contentful = false;
-        
-        
-        
-        for item in &display_list.list {
-            match item {
-                &DisplayItem::Text(_) |
-                &DisplayItem::Image(_) => {
-                    is_contentful = true;
-                    break;
-                }
-                _ => (),
-            }
-        }
-
         self.pending_metrics.borrow_mut().insert(epoch, (
             profiler_metadata_factory.new_metadata(),
-            is_contentful,
+            display_list.is_contentful(),
         ));
 
         

@@ -105,3 +105,8 @@ pub fn node_id_from_clip_id(id: usize) -> Option<usize> {
     }
     None
 }
+
+pub trait DisplayList {
+    
+    fn is_contentful(&self) -> bool;
+}
