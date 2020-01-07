@@ -19,7 +19,14 @@ let TEST_AUDIO_FREQ = 1000;
 
 function updateConfigFromFakeAndLoopbackPrefs() {
   let audioDevice = SpecialPowers.getCharPref("media.audio_loopback_dev", "");
-  if (audioDevice) {
+  
+  const isLinux = navigator.userAgent.includes("Linux");
+  if (isLinux && SpecialPowers.isDebugBuild) {
+    
+    WANT_FAKE_AUDIO = true;
+    SpecialPowers.setCharPref("media.audio_loopback_dev", "");
+    dump("TEST DEVICES: On Linux Debug use fake audio devices.\n");
+  } else if (audioDevice) {
     WANT_FAKE_AUDIO = false;
     dump("TEST DEVICES: Got loopback audio: " + audioDevice + "\n");
   } else {
