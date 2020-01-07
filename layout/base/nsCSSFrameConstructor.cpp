@@ -1748,15 +1748,7 @@ nsCSSFrameConstructor::CreateGeneratedContent(nsFrameConstructorState& aState,
       
       
 
-      RefPtr<NodeInfo> nodeInfo;
-      nodeInfo = mDocument->NodeInfoManager()->
-        GetNodeInfo(nsGkAtoms::mozgeneratedcontentimage, nullptr,
-                    kNameSpaceID_XHTML, nsINode::ELEMENT_NODE);
-
-      nsCOMPtr<nsIContent> content;
-      NS_NewGenConImageContent(getter_AddRefs(content), nodeInfo.forget(),
-                               image);
-      return content.forget();
+      return CreateGenConImageContent(mDocument, image);
     }
 
     case eStyleContentType_String:
