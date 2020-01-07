@@ -1,0 +1,8 @@
+
+
+
+function _dummy() {
+  sendAsyncMessage("PageLoader:LoadEvent", {});
+}
+
+addEventListener("load", contentLoadHandlerCallback(_dummy), true); 
