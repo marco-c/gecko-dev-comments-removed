@@ -228,7 +228,7 @@ CheckInterrupt(JSContext* cx, JitActivation* activation)
     if (!CheckForInterrupt(cx))
         return nullptr;
 
-    void* resumePC = activation->wasmTrapResumePC();
+    void* resumePC = activation->wasmTrapData().resumePC;
     activation->finishWasmTrap();
     return resumePC;
 }
@@ -298,7 +298,7 @@ WasmOldReportTrap(int32_t trapIndex)
 static void*
 WasmHandleTrap()
 {
-    return HandleTrap(TlsContext.get()->runtime()->wasmTrapData->trap);
+    return HandleTrap(CallingActivation()->wasmTrapData().trap);
 }
 
 static void
