@@ -31,29 +31,51 @@ class PropertyIteratorObject;
 
 struct NativeIterator
 {
-    GCPtrObject obj;    
-    JSObject* iterObj_; 
-    GCPtrFlatString* props_cursor;
+    
+    GCPtrObject obj = {};
+
+    
+    JSObject* iterObj_ = nullptr;
+
+    
+    
+    GCPtrFlatString* props_cursor; 
+
+    
+    
+    
     GCPtrFlatString* props_end; 
-    uint32_t guard_length;
-    uint32_t guard_key;
-    uint32_t flags;
+
+    uint32_t guard_length = 0;
+    uint32_t guard_key = 0;
+    uint32_t flags = 0;
 
   private:
     
-    NativeIterator* next_;
-    NativeIterator* prev_;
+    NativeIterator* next_ = nullptr;
+    NativeIterator* prev_ = nullptr;
 
-    
-    
-    
-    
     
     
     
     
 
   public:
+    
+
+
+
+
+
+
+
+    NativeIterator(JSContext* cx, Handle<PropertyIteratorObject*> propIter,
+                   Handle<JSObject*> objBeingIterated, const AutoIdVector& props,
+                   uint32_t numGuards, uint32_t guardKey, bool* hadError);
+
+    
+    NativeIterator();
+
     GCPtrFlatString* begin() const {
         static_assert(alignof(NativeIterator) >= alignof(GCPtrFlatString),
                       "GCPtrFlatStrings for properties must be able to appear "
@@ -123,16 +145,8 @@ struct NativeIterator
     }
 
     static NativeIterator* allocateSentinel(JSContext* maybecx);
-    static NativeIterator* allocateIterator(JSContext* cx, uint32_t slength, uint32_t plength);
-    void init(JSObject* obj, JSObject* iterObj, uint32_t slength, uint32_t key);
-    bool initProperties(JSContext* cx, Handle<PropertyIteratorObject*> obj,
-                        const js::AutoIdVector& props);
 
     void trace(JSTracer* trc);
-
-    static void destroy(NativeIterator* iter) {
-        js_free(iter);
-    }
 };
 
 class PropertyIteratorObject : public NativeObject
