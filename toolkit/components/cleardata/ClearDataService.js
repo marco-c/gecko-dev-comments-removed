@@ -7,6 +7,7 @@
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/Timer.jsm");
+ChromeUtils.import("resource://gre/modules/Downloads.jsm");
 
 
 
@@ -171,6 +172,32 @@ const PluginDataCleaner = {
   },
 };
 
+const DownloadsCleaner = {
+  deleteByHost(aHost, aOriginAttributes) {
+    return Downloads.getList(Downloads.ALL).then(aList => {
+      aList.removeFinished(aDownload => hasRootDomain(
+        Services.io.newURI(aDownload.source.url).host, aHost));
+    });
+  },
+
+  deleteByRange(aFrom, aTo) {
+    
+    let rangeBeginMs = aFrom / 1000;
+    let rangeEndMs = aTo / 1000;
+
+    return Downloads.getList(Downloads.ALL).then(aList => {
+      aList.removeFinished(aDownload => aDownload.startTime >= rangeBeginMs &&
+                                        aDownload.startTime <= rangeEndMs);
+    });
+  },
+
+  deleteAll() {
+    return Downloads.getList(Downloads.ALL).then(aList => {
+      aList.removeFinished(null);
+    });
+  },
+};
+
 
 const FLAGS_MAP = [
  { flag: Ci.nsIClearDataService.CLEAR_COOKIES,
@@ -184,6 +211,9 @@ const FLAGS_MAP = [
 
  { flag: Ci.nsIClearDataService.CLEAR_PLUGIN_DATA,
    cleaner: PluginDataCleaner, },
+
+ { flag: Ci.nsIClearDataService.CLEAR_DOWNLOADS,
+   cleaner: DownloadsCleaner, },
 ];
 
 this.ClearDataService = function() {};
@@ -281,3 +311,27 @@ ClearDataService.prototype = Object.freeze({
 });
 
 this.NSGetFactory = XPCOMUtils.generateNSGetFactory([ClearDataService]);
+
+
+
+
+
+
+
+function hasRootDomain(str, aDomain) {
+  let index = str.indexOf(aDomain);
+  
+  if (index == -1)
+    return false;
+
+  
+  if (str == aDomain)
+    return true;
+
+  
+  
+  
+  let prevChar = str[index - 1];
+  return (index == (str.length - aDomain.length)) &&
+         (prevChar == "." || prevChar == "/");
+}
