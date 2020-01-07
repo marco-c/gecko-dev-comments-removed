@@ -31,26 +31,9 @@ const {FIELD_STATES} = FormAutofillUtils;
 
 class FormAutofillSection {
   constructor(fieldDetails, winUtils) {
-    this.address = {
-      
-
-
-      fieldDetails: [],
-      
-
-
-      filledRecordGUID: null,
-    };
-    this.creditCard = {
-      
-
-
-      fieldDetails: [],
-      
-
-
-      filledRecordGUID: null,
-    };
+    this.fieldDetails = fieldDetails;
+    this.filledRecordGUID = null;
+    this.winUtils = winUtils;
 
     
 
@@ -64,140 +47,15 @@ class FormAutofillSection {
       [FIELD_STATES.PREVIEW]: "-moz-autofill-preview",
     };
 
-    this.winUtils = winUtils;
-
-    this.address.fieldDetails = fieldDetails.filter(
-      detail => FormAutofillUtils.isAddressField(detail.fieldName)
-    );
-    if (this.address.fieldDetails.length < FormAutofillUtils.AUTOFILL_FIELDS_THRESHOLD) {
-      log.debug("Ignoring address related fields since the section has only",
-                this.address.fieldDetails.length,
-                "field(s)");
-      this.address.fieldDetails = [];
-    }
-
-    this.creditCard.fieldDetails = fieldDetails.filter(
-      detail => FormAutofillUtils.isCreditCardField(detail.fieldName)
-    );
-    if (!this._isValidCreditCardForm(this.creditCard.fieldDetails)) {
-      log.debug("Invalid credit card section.");
-      this.creditCard.fieldDetails = [];
+    if (!this.isValidSection()) {
+      this.fieldDetails = [];
+      log.debug(`Ignoring ${this.constructor.name} related fields since it is an invalid section`);
     }
 
     this._cacheValue = {
       allFieldNames: null,
-      oneLineStreetAddress: null,
       matchingSelectOption: null,
     };
-
-    this._validDetails = Array.of(...(this.address.fieldDetails),
-                                  ...(this.creditCard.fieldDetails));
-    log.debug(this._validDetails.length, "valid fields in the section is collected.");
-  }
-
-  get validDetails() {
-    return this._validDetails;
-  }
-
-  set focusedInput(element) {
-    this._focusedDetail = this.getFieldDetailByElement(element);
-  }
-
-  getFieldDetailByElement(element) {
-    return this._validDetails.find(
-      detail => detail.elementWeakRef.get() == element
-    );
-  }
-
-  _isValidCreditCardForm(fieldDetails) {
-    let ccNumberReason = "";
-    let hasCCNumber = false;
-    let hasExpiryDate = false;
-
-    for (let detail of fieldDetails) {
-      switch (detail.fieldName) {
-        case "cc-number":
-          hasCCNumber = true;
-          ccNumberReason = detail._reason;
-          break;
-        case "cc-exp":
-        case "cc-exp-month":
-        case "cc-exp-year":
-          hasExpiryDate = true;
-          break;
-      }
-    }
-
-    return hasCCNumber && (ccNumberReason == "autocomplete" || hasExpiryDate);
-  }
-
-  get allFieldNames() {
-    if (!this._cacheValue.allFieldNames) {
-      this._cacheValue.allFieldNames = this._validDetails.map(record => record.fieldName);
-    }
-    return this._cacheValue.allFieldNames;
-  }
-
-  _getFieldDetailByName(fieldName) {
-    return this._validDetails.find(detail => detail.fieldName == fieldName);
-  }
-
-  _getTargetSet() {
-    let fieldDetail = this._focusedDetail;
-    if (!fieldDetail) {
-      return null;
-    }
-    if (FormAutofillUtils.isAddressField(fieldDetail.fieldName)) {
-      return this.address;
-    }
-    if (FormAutofillUtils.isCreditCardField(fieldDetail.fieldName)) {
-      return this.creditCard;
-    }
-    return null;
-  }
-
-  _getFieldDetails() {
-    let targetSet = this._getTargetSet();
-    return targetSet ? targetSet.fieldDetails : [];
-  }
-
-  getFilledRecordGUID() {
-    let targetSet = this._getTargetSet();
-    return targetSet ? targetSet.filledRecordGUID : null;
-  }
-
-  _getOneLineStreetAddress(address) {
-    if (!this._cacheValue.oneLineStreetAddress) {
-      this._cacheValue.oneLineStreetAddress = {};
-    }
-    if (!this._cacheValue.oneLineStreetAddress[address]) {
-      this._cacheValue.oneLineStreetAddress[address] = FormAutofillUtils.toOneLineAddress(address);
-    }
-    return this._cacheValue.oneLineStreetAddress[address];
-  }
-
-  _addressTransformer(profile) {
-    if (profile["street-address"]) {
-      
-      
-      profile["-moz-street-address-one-line"] = this._getOneLineStreetAddress(profile["street-address"]);
-      let streetAddressDetail = this._getFieldDetailByName("street-address");
-      if (streetAddressDetail &&
-          (streetAddressDetail.elementWeakRef.get() instanceof Ci.nsIDOMHTMLInputElement)) {
-        profile["street-address"] = profile["-moz-street-address-one-line"];
-      }
-
-      let waitForConcat = [];
-      for (let f of ["address-line3", "address-line2", "address-line1"]) {
-        waitForConcat.unshift(profile[f]);
-        if (this._getFieldDetailByName(f)) {
-          if (waitForConcat.length > 1) {
-            profile[f] = FormAutofillUtils.toOneLineAddress(waitForConcat);
-          }
-          waitForConcat = [];
-        }
-      }
-    }
   }
 
   
@@ -206,61 +64,114 @@ class FormAutofillSection {
 
 
 
-  _telTransformer(profile) {
-    if (!profile.tel || !profile["tel-national"]) {
-      return;
-    }
 
-    let detail = this._getFieldDetailByName("tel");
-    if (!detail) {
-      return;
-    }
-
-    let element = detail.elementWeakRef.get();
-    let _pattern;
-    let testPattern = str => {
-      if (!_pattern) {
-        
-        _pattern = new RegExp("^(?:" + element.pattern + ")$", "u");
-      }
-      return _pattern.test(str);
-    };
-    if (element.pattern) {
-      if (testPattern(profile.tel)) {
-        return;
-      }
-    } else if (element.maxLength) {
-      if (detail._reason == "autocomplete" && profile.tel.length <= element.maxLength) {
-        return;
-      }
-    }
-
-    if (detail._reason != "autocomplete") {
-      
-      
-      
-      
-      
-      
-      profile.tel = profile["tel-national"];
-    } else if (element.pattern) {
-      if (testPattern(profile["tel-national"])) {
-        profile.tel = profile["tel-national"];
-      }
-    } else if (element.maxLength) {
-      if (profile["tel-national"].length <= element.maxLength) {
-        profile.tel = profile["tel-national"];
-      }
-    }
+  isValidSection() {
+    throw new TypeError("isValidSection method must be overrided");
   }
 
-  _matchSelectOptions(profile) {
+  
+
+
+
+
+
+
+  isEnabled() {
+    throw new TypeError("isEnabled method must be overrided");
+  }
+
+  
+
+
+
+
+
+
+
+  isRecordCreatable(record) {
+    throw new TypeError("isRecordCreatable method must be overrided");
+  }
+
+  
+
+
+
+
+
+  applyTransformers(profile) {}
+
+  
+
+
+
+
+
+
+  preparePreviewProfile(profile) {}
+
+  
+
+
+
+
+
+
+  async prepareFillingProfile(profile) {}
+
+  
+
+
+
+
+
+
+  normalizeCreatingRecord(data) {}
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  computeFillingValue(value, fieldName, element) {
+    return value;
+  }
+
+  set focusedInput(element) {
+    this._focusedDetail = this.getFieldDetailByElement(element);
+  }
+
+  getFieldDetailByElement(element) {
+    return this.fieldDetails.find(
+      detail => detail.elementWeakRef.get() == element
+    );
+  }
+
+  get allFieldNames() {
+    if (!this._cacheValue.allFieldNames) {
+      this._cacheValue.allFieldNames = this.fieldDetails.map(record => record.fieldName);
+    }
+    return this._cacheValue.allFieldNames;
+  }
+
+  getFieldDetailByName(fieldName) {
+    return this.fieldDetails.find(detail => detail.fieldName == fieldName);
+  }
+
+  matchSelectOptions(profile) {
     if (!this._cacheValue.matchingSelectOption) {
       this._cacheValue.matchingSelectOption = new WeakMap();
     }
 
     for (let fieldName in profile) {
-      let fieldDetail = this._getFieldDetailByName(fieldName);
+      let fieldDetail = this.getFieldDetailByName(fieldName);
       if (!fieldDetail) {
         continue;
       }
@@ -292,45 +203,9 @@ class FormAutofillSection {
     }
   }
 
-  _creditCardExpDateTransformer(profile) {
-    if (!profile["cc-exp"]) {
-      return;
-    }
-
-    let detail = this._getFieldDetailByName("cc-exp");
-    if (!detail) {
-      return;
-    }
-
-    let element = detail.elementWeakRef.get();
-    if (element.tagName != "INPUT" || !element.placeholder) {
-      return;
-    }
-
-    let result,
-      ccExpMonth = profile["cc-exp-month"],
-      ccExpYear = profile["cc-exp-year"],
-      placeholder = element.placeholder;
-
-    result = /(?:[^m]|\b)(m{1,2})\s*([-/\\]*)\s*(y{2,4})(?!y)/i.exec(placeholder);
-    if (result) {
-      profile["cc-exp"] = String(ccExpMonth).padStart(result[1].length, "0") +
-                          result[2] +
-                          String(ccExpYear).substr(-1 * result[3].length);
-      return;
-    }
-
-    result = /(?:[^y]|\b)(y{2,4})\s*([-/\\]*)\s*(m{1,2})(?!m)/i.exec(placeholder);
-    if (result) {
-      profile["cc-exp"] = String(ccExpYear).substr(-1 * result[1].length) +
-                          result[2] +
-                          String(ccExpMonth).padStart(result[3].length, "0");
-    }
-  }
-
-  _adaptFieldMaxLength(profile) {
+  adaptFieldMaxLength(profile) {
     for (let key in profile) {
-      let detail = this._getFieldDetailByName(key);
+      let detail = this.getFieldDetailByName(key);
       if (!detail) {
         continue;
       }
@@ -355,11 +230,7 @@ class FormAutofillSection {
 
   getAdaptedProfiles(originalProfiles) {
     for (let profile of originalProfiles) {
-      this._addressTransformer(profile);
-      this._telTransformer(profile);
-      this._matchSelectOptions(profile);
-      this._creditCardExpDateTransformer(profile);
-      this._adaptFieldMaxLength(profile);
+      this.applyTransformers(profile);
     }
     return originalProfiles;
   }
@@ -376,28 +247,12 @@ class FormAutofillSection {
     if (!focusedDetail) {
       throw new Error("No fieldDetail for the focused input.");
     }
-    let targetSet = this._getTargetSet();
-    if (FormAutofillUtils.isCreditCardField(focusedDetail.fieldName)) {
-      
-      
-      
-      
-      if (profile["cc-number-encrypted"]) {
-        let decrypted = await this._decrypt(profile["cc-number-encrypted"], true);
 
-        if (!decrypted) {
-          
-          return;
-        }
-
-        profile["cc-number"] = decrypted;
-      }
-    }
-
+    await this.prepareFillingProfile(profile);
     log.debug("profile in autofillFields:", profile);
 
-    targetSet.filledRecordGUID = profile.guid;
-    for (let fieldDetail of targetSet.fieldDetails) {
+    this.filledRecordGUID = profile.guid;
+    for (let fieldDetail of this.fieldDetails) {
       
       
       
@@ -450,14 +305,9 @@ class FormAutofillSection {
   previewFormFields(profile) {
     log.debug("preview profile: ", profile);
 
-    
-    
-    if (profile["cc-number-decrypted"]) {
-      profile["cc-number"] = profile["cc-number-decrypted"];
-    }
+    this.preparePreviewProfile(profile);
 
-    let fieldDetails = this._getFieldDetails();
-    for (let fieldDetail of fieldDetails) {
+    for (let fieldDetail of this.fieldDetails) {
       let element = fieldDetail.elementWeakRef.get();
       let value = profile[fieldDetail.fieldName] || "";
 
@@ -493,8 +343,7 @@ class FormAutofillSection {
   clearPreviewedFormFields() {
     log.debug("clear previewed fields in:", this.form);
 
-    let fieldDetails = this._getFieldDetails();
-    for (let fieldDetail of fieldDetails) {
+    for (let fieldDetail of this.fieldDetails) {
       let element = fieldDetail.elementWeakRef.get();
       if (!element) {
         log.warn(fieldDetail.fieldName, "is unreachable");
@@ -517,8 +366,7 @@ class FormAutofillSection {
 
 
   clearPopulatedForm() {
-    let fieldDetails = this._getFieldDetails();
-    for (let fieldDetail of fieldDetails) {
+    for (let fieldDetail of this.fieldDetails) {
       let element = fieldDetail.elementWeakRef.get();
       if (!element) {
         log.warn(fieldDetail.fieldName, "is unreachable");
@@ -587,20 +435,123 @@ class FormAutofillSection {
   }
 
   resetFieldStates() {
-    for (let fieldDetail of this._validDetails) {
+    for (let fieldDetail of this.fieldDetails) {
       const element = fieldDetail.elementWeakRef.get();
       element.removeEventListener("input", this, {mozSystemGroup: true});
       this._changeFieldState(fieldDetail, FIELD_STATES.NORMAL);
     }
-    this.address.filledRecordGUID = null;
-    this.creditCard.filledRecordGUID = null;
+    this.filledRecordGUID = null;
   }
 
   isFilled() {
-    return !!(this.address.filledRecordGUID || this.creditCard.filledRecordGUID);
+    return !!this.filledRecordGUID;
   }
 
-  _isAddressRecordCreatable(record) {
+  
+
+
+
+
+
+
+
+
+
+
+  createRecord() {
+    let details = this.fieldDetails;
+    if (!this.isEnabled() || !details || details.length == 0) {
+      return null;
+    }
+
+    let data = {
+      guid: this.filledRecordGUID,
+      record: {},
+      untouchedFields: [],
+    };
+
+    details.forEach(detail => {
+      let element = detail.elementWeakRef.get();
+      
+      let value = element && element.value.trim();
+      value = this.computeFillingValue(value, detail, element);
+
+      if (!value || value.length > FormAutofillUtils.MAX_FIELD_VALUE_LENGTH) {
+        
+        data.record[detail.fieldName] = "";
+        return;
+      }
+
+      data.record[detail.fieldName] = value;
+
+      if (detail.state == FIELD_STATES.AUTO_FILLED) {
+        data.untouchedFields.push(detail.fieldName);
+      }
+    });
+
+    this.normalizeCreatingRecord(data);
+
+    if (!this.isRecordCreatable(data.record)) {
+      return null;
+    }
+
+    return data;
+  }
+
+  handleEvent(event) {
+    switch (event.type) {
+      case "input": {
+        if (!event.isTrusted) {
+          return;
+        }
+        const target = event.target;
+        const targetFieldDetail = this.getFieldDetailByElement(target);
+
+        this._changeFieldState(targetFieldDetail, FIELD_STATES.NORMAL);
+
+        let isAutofilled = false;
+        let dimFieldDetails = [];
+        for (const fieldDetail of this.fieldDetails) {
+          const element = fieldDetail.elementWeakRef.get();
+
+          if (ChromeUtils.getClassName(element) === "HTMLSelectElement") {
+            
+            
+            dimFieldDetails.push(fieldDetail);
+          } else {
+            isAutofilled |= fieldDetail.state == FIELD_STATES.AUTO_FILLED;
+          }
+        }
+        if (!isAutofilled) {
+          
+          
+          for (const fieldDetail of dimFieldDetails) {
+            this._changeFieldState(fieldDetail, FIELD_STATES.NORMAL);
+          }
+          this.filledRecordGUID = null;
+        }
+        break;
+      }
+    }
+  }
+}
+
+class FormAutofillAddressSection extends FormAutofillSection {
+  constructor(fieldDetails, winUtils) {
+    super(fieldDetails, winUtils);
+
+    this._cacheValue.oneLineStreetAddress = null;
+  }
+
+  isValidSection() {
+    return this.fieldDetails.length >= FormAutofillUtils.AUTOFILL_FIELDS_THRESHOLD;
+  }
+
+  isEnabled() {
+    return FormAutofillUtils.isAutofillAddressesEnabled;
+  }
+
+  isRecordCreatable(record) {
     let hasName = 0;
     let length = 0;
     for (let key of Object.keys(record)) {
@@ -616,8 +567,92 @@ class FormAutofillSection {
     return (length + hasName) >= FormAutofillUtils.AUTOFILL_FIELDS_THRESHOLD;
   }
 
-  _isCreditCardRecordCreatable(record) {
-    return record["cc-number"] && FormAutofillUtils.isCCNumber(record["cc-number"]);
+  _getOneLineStreetAddress(address) {
+    if (!this._cacheValue.oneLineStreetAddress) {
+      this._cacheValue.oneLineStreetAddress = {};
+    }
+    if (!this._cacheValue.oneLineStreetAddress[address]) {
+      this._cacheValue.oneLineStreetAddress[address] = FormAutofillUtils.toOneLineAddress(address);
+    }
+    return this._cacheValue.oneLineStreetAddress[address];
+  }
+
+  addressTransformer(profile) {
+    if (profile["street-address"]) {
+      
+      
+      profile["-moz-street-address-one-line"] = this._getOneLineStreetAddress(profile["street-address"]);
+      let streetAddressDetail = this.getFieldDetailByName("street-address");
+      if (streetAddressDetail &&
+          (streetAddressDetail.elementWeakRef.get() instanceof Ci.nsIDOMHTMLInputElement)) {
+        profile["street-address"] = profile["-moz-street-address-one-line"];
+      }
+
+      let waitForConcat = [];
+      for (let f of ["address-line3", "address-line2", "address-line1"]) {
+        waitForConcat.unshift(profile[f]);
+        if (this.getFieldDetailByName(f)) {
+          if (waitForConcat.length > 1) {
+            profile[f] = FormAutofillUtils.toOneLineAddress(waitForConcat);
+          }
+          waitForConcat = [];
+        }
+      }
+    }
+  }
+
+  
+
+
+
+
+
+  telTransformer(profile) {
+    if (!profile.tel || !profile["tel-national"]) {
+      return;
+    }
+
+    let detail = this.getFieldDetailByName("tel");
+    if (!detail) {
+      return;
+    }
+
+    let element = detail.elementWeakRef.get();
+    let _pattern;
+    let testPattern = str => {
+      if (!_pattern) {
+        
+        _pattern = new RegExp("^(?:" + element.pattern + ")$", "u");
+      }
+      return _pattern.test(str);
+    };
+    if (element.pattern) {
+      if (testPattern(profile.tel)) {
+        return;
+      }
+    } else if (element.maxLength) {
+      if (detail._reason == "autocomplete" && profile.tel.length <= element.maxLength) {
+        return;
+      }
+    }
+
+    if (detail._reason != "autocomplete") {
+      
+      
+      
+      
+      
+      
+      profile.tel = profile["tel-national"];
+    } else if (element.pattern) {
+      if (testPattern(profile["tel-national"])) {
+        profile.tel = profile["tel-national"];
+      }
+    } else if (element.maxLength) {
+      if (profile["tel-national"].length <= element.maxLength) {
+        profile.tel = profile["tel-national"];
+      }
+    }
   }
 
   
@@ -627,101 +662,39 @@ class FormAutofillSection {
 
 
 
-
-
-
-
-
-  createRecords() {
-    let data = {};
-    let target = [];
-
-    if (FormAutofillUtils.isAutofillAddressesEnabled) {
-      target.push("address");
-    }
-    if (FormAutofillUtils.isAutofillCreditCardsEnabled) {
-      target.push("creditCard");
-    }
-
-    target.forEach(type => {
-      let details = this[type].fieldDetails;
-      if (!details || details.length == 0) {
-        return;
-      }
-
-      data[type] = {
-        guid: this[type].filledRecordGUID,
-        record: {},
-        untouchedFields: [],
-      };
-
-      details.forEach(detail => {
-        let element = detail.elementWeakRef.get();
-        
-        let value = element && element.value.trim();
-
-        
-        if (type == "address" &&
-            detail.fieldName == "address-level1" &&
-            ChromeUtils.getClassName(element) === "HTMLSelectElement") {
-          
-          
-          
-          if (!value || element.selectedOptions.length != 1) {
-            
-            data[type].record[detail.fieldName] = "";
-            return;
-          }
-
-          let text = element.selectedOptions[0].text.trim();
-          value = FormAutofillUtils.getAbbreviatedSubregionName([value, text]) || text;
-        }
-
-        if (!value || value.length > FormAutofillUtils.MAX_FIELD_VALUE_LENGTH) {
-          
-          data[type].record[detail.fieldName] = "";
-          return;
-        }
-
-        data[type].record[detail.fieldName] = value;
-
-        if (detail.state == FIELD_STATES.AUTO_FILLED) {
-          data[type].untouchedFields.push(detail.fieldName);
-        }
-      });
-    });
-
-    this._normalizeAddress(data.address);
-
-    if (data.address && !this._isAddressRecordCreatable(data.address.record)) {
-      log.debug("No address record saving since there are only",
-                Object.keys(data.address.record).length,
-                "usable fields");
-      delete data.address;
-    }
-
-    if (data.creditCard && !this._isCreditCardRecordCreatable(data.creditCard.record)) {
-      log.debug("No credit card record saving since card number is invalid");
-      delete data.creditCard;
-    }
-
-    
-    
-    if (data.address && data.creditCard) {
-      this.timeStartedFillingMS = null;
-    }
-
-    return data;
+  applyTransformers(profile) {
+    this.addressTransformer(profile);
+    this.telTransformer(profile);
+    this.matchSelectOptions(profile);
+    this.adaptFieldMaxLength(profile);
   }
 
-  _normalizeAddress(address) {
+  computeFillingValue(value, fieldDetail, element) {
+    
+    if (fieldDetail.fieldName == "address-level1" &&
+      ChromeUtils.getClassName(element) === "HTMLSelectElement") {
+      
+      
+      
+      if (!value || element.selectedOptions.length != 1) {
+        
+        value = "";
+      } else {
+        let text = element.selectedOptions[0].text.trim();
+        value = FormAutofillUtils.getAbbreviatedSubregionName([value, text]) || text;
+      }
+    }
+    return value;
+  }
+
+  normalizeCreatingRecord(address) {
     if (!address) {
       return;
     }
 
     
     if (address.record.country) {
-      let detail = this._getFieldDetailByName("country");
+      let detail = this.getFieldDetailByName("country");
       
       
       if (detail._reason != "autocomplete") {
@@ -756,6 +729,78 @@ class FormAutofillSection {
       }
     }
   }
+}
+
+class FormAutofillCreditCardSection extends FormAutofillSection {
+  constructor(fieldDetails, winUtils) {
+    super(fieldDetails, winUtils);
+  }
+
+  isValidSection() {
+    let ccNumberReason = "";
+    let hasCCNumber = false;
+    let hasExpiryDate = false;
+
+    for (let detail of this.fieldDetails) {
+      switch (detail.fieldName) {
+        case "cc-number":
+          hasCCNumber = true;
+          ccNumberReason = detail._reason;
+          break;
+        case "cc-exp":
+        case "cc-exp-month":
+        case "cc-exp-year":
+          hasExpiryDate = true;
+          break;
+      }
+    }
+
+    return hasCCNumber && (ccNumberReason == "autocomplete" || hasExpiryDate);
+  }
+
+  isEnabled() {
+    return FormAutofillUtils.isAutofillCreditCardsEnabled;
+  }
+
+  isRecordCreatable(record) {
+    return record["cc-number"] && FormAutofillUtils.isCCNumber(record["cc-number"]);
+  }
+
+  creditCardExpDateTransformer(profile) {
+    if (!profile["cc-exp"]) {
+      return;
+    }
+
+    let detail = this.getFieldDetailByName("cc-exp");
+    if (!detail) {
+      return;
+    }
+
+    let element = detail.elementWeakRef.get();
+    if (element.tagName != "INPUT" || !element.placeholder) {
+      return;
+    }
+
+    let result,
+      ccExpMonth = profile["cc-exp-month"],
+      ccExpYear = profile["cc-exp-year"],
+      placeholder = element.placeholder;
+
+    result = /(?:[^m]|\b)(m{1,2})\s*([-/\\]*)\s*(y{2,4})(?!y)/i.exec(placeholder);
+    if (result) {
+      profile["cc-exp"] = String(ccExpMonth).padStart(result[1].length, "0") +
+                          result[2] +
+                          String(ccExpYear).substr(-1 * result[3].length);
+      return;
+    }
+
+    result = /(?:[^y]|\b)(y{2,4})\s*([-/\\]*)\s*(m{1,2})(?!m)/i.exec(placeholder);
+    if (result) {
+      profile["cc-exp"] = String(ccExpYear).substr(-1 * result[1].length) +
+                          result[2] +
+                          String(ccExpMonth).padStart(result[3].length, "0");
+    }
+  }
 
   async _decrypt(cipherText, reauth) {
     return new Promise((resolve) => {
@@ -768,41 +813,55 @@ class FormAutofillSection {
     });
   }
 
-  handleEvent(event) {
-    switch (event.type) {
-      case "input": {
-        if (!event.isTrusted) {
-          return;
-        }
-        const target = event.target;
-        const targetFieldDetail = this.getFieldDetailByElement(target);
-        const targetSet = this._getTargetSet(target);
+  
 
-        this._changeFieldState(targetFieldDetail, FIELD_STATES.NORMAL);
 
-        let isAutofilled = false;
-        let dimFieldDetails = [];
-        for (const fieldDetail of targetSet.fieldDetails) {
-          const element = fieldDetail.elementWeakRef.get();
 
-          if (ChromeUtils.getClassName(element) === "HTMLSelectElement") {
-            
-            
-            dimFieldDetails.push(fieldDetail);
-          } else {
-            isAutofilled |= fieldDetail.state == FIELD_STATES.AUTO_FILLED;
-          }
-        }
-        if (!isAutofilled) {
-          
-          
-          for (const fieldDetail of dimFieldDetails) {
-            this._changeFieldState(fieldDetail, FIELD_STATES.NORMAL);
-          }
-          targetSet.filledRecordGUID = null;
-        }
-        break;
+
+
+
+  applyTransformers(profile) {
+    this.matchSelectOptions(profile);
+    this.creditCardExpDateTransformer(profile);
+    this.adaptFieldMaxLength(profile);
+  }
+
+  
+
+
+
+
+
+
+  preparePreviewProfile(profile) {
+    
+    
+    if (profile["cc-number-decrypted"]) {
+      profile["cc-number"] = profile["cc-number-decrypted"];
+    }
+  }
+
+  
+
+
+
+
+
+
+  async prepareFillingProfile(profile) {
+    
+    
+    
+    
+    if (profile["cc-number-encrypted"]) {
+      let decrypted = await this._decrypt(profile["cc-number-encrypted"], true);
+
+      if (!decrypted) {
+        
+        return;
       }
+
+      profile["cc-number"] = decrypted;
     }
   }
 }
@@ -935,10 +994,17 @@ class FormAutofillHandler {
   collectFormFields(allowDuplicates = false) {
     let sections = FormAutofillHeuristics.getFormInfo(this.form, allowDuplicates);
     let allValidDetails = [];
-    for (let fieldDetails of sections) {
-      let section = new FormAutofillSection(fieldDetails, this.winUtils);
+    for (let {fieldDetails, type} of sections) {
+      let section;
+      if (type == FormAutofillUtils.SECTION_TYPES.ADDRESS) {
+        section = new FormAutofillAddressSection(fieldDetails, this.winUtils);
+      } else if (type == FormAutofillUtils.SECTION_TYPES.CREDIT_CARD) {
+        section = new FormAutofillCreditCardSection(fieldDetails, this.winUtils);
+      } else {
+        throw new Error("Unknown field type.");
+      }
       this.sections.push(section);
-      allValidDetails.push(...section.validDetails);
+      allValidDetails.push(...section.fieldDetails);
     }
 
     for (let detail of allValidDetails) {
@@ -1026,9 +1092,16 @@ class FormAutofillHandler {
     };
 
     for (const section of this.sections) {
-      const secRecords = section.createRecords();
-      for (const [type, record] of Object.entries(secRecords)) {
-        records[type].push(record);
+      const secRecord = section.createRecord();
+      if (!secRecord) {
+        continue;
+      }
+      if (section instanceof FormAutofillAddressSection) {
+        records.address.push(secRecord);
+      } else if (section instanceof FormAutofillCreditCardSection) {
+        records.creditCard.push(secRecord);
+      } else {
+        throw new Error("Unknown section type");
       }
     }
     log.debug("Create records:", records);
