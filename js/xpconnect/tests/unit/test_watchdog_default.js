@@ -2,8 +2,8 @@
 
 
 
-async function testBody() {
+function testBody() {
   
   
-  await checkWatchdog(isWatchdogEnabled());
+  return checkWatchdog(isWatchdogEnabled());
 }

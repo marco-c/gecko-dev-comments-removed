@@ -65,29 +65,33 @@ function executeSoon(fn) {
 
 
 
-function checkWatchdog(expectInterrupt, continuation) {
+function checkWatchdog(expectInterrupt) {
   var oldTimeout = setScriptTimeout(1);
   var lastWatchdogWakeup = Cu.getWatchdogTimestamp("WatchdogWakeup");
-  setInterruptCallback(function() {
-    
-    
-    
-    if (lastWatchdogWakeup == Cu.getWatchdogTimestamp("WatchdogWakeup")) {
-      return true;
-    }
-    Assert.ok(expectInterrupt);
-    setInterruptCallback(undefined);
-    setScriptTimeout(oldTimeout);
-    
-    executeSoon(continuation);
-    return false;
-  });
-  executeSoon(function() {
-    busyWait(3000);
-    Assert.ok(!expectInterrupt);
-    setInterruptCallback(undefined);
-    setScriptTimeout(oldTimeout);
-    continuation();
+
+  return new Promise(resolve => {
+    setInterruptCallback(function() {
+      
+      
+      
+      if (lastWatchdogWakeup == Cu.getWatchdogTimestamp("WatchdogWakeup")) {
+        return true;
+      }
+      Assert.ok(expectInterrupt, "Interrupt callback fired");
+      setInterruptCallback(undefined);
+      setScriptTimeout(oldTimeout);
+      
+      executeSoon(resolve);
+      return false;
+    });
+
+    executeSoon(function() {
+      busyWait(3000);
+      Assert.ok(!expectInterrupt, "Interrupt callback didn't fire");
+      setInterruptCallback(undefined);
+      setScriptTimeout(oldTimeout);
+      resolve();
+    });
   });
 }
 

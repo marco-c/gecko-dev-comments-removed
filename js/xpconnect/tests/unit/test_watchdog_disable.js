@@ -2,7 +2,7 @@
 
 
 
-async function testBody() {
+function testBody() {
   setWatchdogEnabled(false);
-  await checkWatchdog(false);
+  return checkWatchdog(false);
 }

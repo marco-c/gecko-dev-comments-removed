@@ -2,9 +2,9 @@
 
 
 
-async function testBody() {
+function testBody() {
   var defaultBehavior = isWatchdogEnabled();
   setWatchdogEnabled(!defaultBehavior);
   setWatchdogEnabled(defaultBehavior);
-  await checkWatchdog(defaultBehavior);
+  return checkWatchdog(defaultBehavior);
 }
