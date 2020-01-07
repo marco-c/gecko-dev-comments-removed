@@ -382,18 +382,11 @@ AppendToLibPath(const char *pathToAppend)
     
     char *s = Smprintf("%s=%s", LD_LIBRARY_PATH_ENVVAR_NAME, pathToAppend).release();
     PR_SetEnv(s);
-  } else {
+  } else if (!strstr(pathValue, pathToAppend)) {
     
-    
-    
-    char *pathValue_sep = Smprintf(PATH_SEPARATOR "%s" PATH_SEPARATOR, pathValue).get();
-    char *pathToAppend_sep = Smprintf(PATH_SEPARATOR "%s" PATH_SEPARATOR, pathToAppend).get();
-    if (!strstr(pathValue_sep, pathToAppend_sep)) {
-      
-      char *s = Smprintf("%s=%s" PATH_SEPARATOR "%s",
-                         LD_LIBRARY_PATH_ENVVAR_NAME, pathToAppend, pathValue).release();
-      PR_SetEnv(s);
-    }
+    char *s = Smprintf("%s=%s" PATH_SEPARATOR "%s",
+                       LD_LIBRARY_PATH_ENVVAR_NAME, pathToAppend, pathValue).release();
+    PR_SetEnv(s);
   }
 }
 #endif
