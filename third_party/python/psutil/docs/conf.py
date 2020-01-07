@@ -12,12 +12,22 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
 import datetime
 import os
 
 
 PROJECT_NAME = "psutil"
-AUTHOR = "Giampaolo Rodola'"
+AUTHOR = u"Giampaolo Rodola"
 THIS_YEAR = str(datetime.datetime.now().year)
 HERE = os.path.abspath(os.path.dirname(__file__))
 
@@ -35,25 +45,31 @@ def get_version():
         else:
             raise ValueError("couldn't find version string")
 
+
 VERSION = get_version()
 
 
-needs_sphinx = '1.0'
+
+
 
 
 
 
 extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.coverage',
-              'sphinx.ext.pngmath',
+              'sphinx.ext.imgmath',
               'sphinx.ext.viewcode',
               'sphinx.ext.intersphinx']
 
 
-templates_path = ['_template']
+templates_path = ['_templates']
+
+
+
 
 
 source_suffix = '.rst'
+
 
 
 
@@ -64,6 +80,7 @@ master_doc = 'index'
 
 project = PROJECT_NAME
 copyright = '2009-%s, %s' % (THIS_YEAR, AUTHOR)
+author = AUTHOR
 
 
 
@@ -72,6 +89,14 @@ copyright = '2009-%s, %s' % (THIS_YEAR, AUTHOR)
 
 version = VERSION
 
+release = VERSION
+
+
+
+
+
+
+language = None
 
 
 
@@ -84,19 +109,23 @@ version = VERSION
 
 
 
-exclude_patterns = ['_build']
+
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 
 
 
 
 
-add_function_parentheses = True
 
 
 
 
-autodoc_docstring_signature = True
+
+
+
+
+
 
 
 
@@ -112,21 +141,15 @@ pygments_style = 'sphinx'
 
 
 
+todo_include_todos = False
 
 
 
 
 
-html_theme = 'pydoctheme'
-html_theme_options = {'collapsiblesidebar': True}
 
 
-html_theme_path = ["_themes"]
-
-
-
-html_title = "{project} {version} documentation".format(**locals())
-
+html_theme = 'sphinx_rtd_theme'
 
 
 
@@ -137,7 +160,24 @@ html_title = "{project} {version} documentation".format(**locals())
 
 
 
-html_favicon = '_static/favicon.ico'
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -146,20 +186,6 @@ html_static_path = ['_static']
 
 
 
-html_last_updated_fmt = '%b %d, %Y'
-
-
-
-html_use_smartypants = True
-
-
-html_sidebars = {
-    'index': 'indexsidebar.html',
-    '**': ['globaltoc.html',
-           'relations.html',
-           'sourcelink.html',
-           'searchbox.html']
-}
 
 
 
@@ -168,10 +194,52 @@ html_sidebars = {
 
 
 
-html_domain_indices = False
 
 
-html_use_index = True
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -198,19 +266,40 @@ htmlhelp_basename = '%s-doc' % PROJECT_NAME
 
 
 
+latex_elements = {
+     
+     
+     
 
+     
+     
+     
 
+     
+     
+     
 
-
-
+     
+     
+     
+}
 
 
 
 
 latex_documents = [
-    ('index', '%s.tex' % PROJECT_NAME,
-     '%s documentation' % PROJECT_NAME, AUTHOR),
+    (master_doc, 'psutil.tex', u'psutil Documentation',
+     AUTHOR, 'manual'),
 ]
+
+
+
+
+
+
+
+
+
 
 
 
@@ -241,8 +330,47 @@ latex_documents = [
 
 
 man_pages = [
-    ('index', PROJECT_NAME, '%s documentation' % PROJECT_NAME, [AUTHOR], 1)
+    (master_doc, 'psutil', u'psutil Documentation',
+     [author], 1)
 ]
 
 
 
+
+
+
+
+
+
+
+
+texinfo_documents = [
+    (master_doc, 'psutil', u'psutil Documentation',
+     author, 'psutil', 'One line description of project.',
+     'Miscellaneous'),
+]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+html_context = {
+    'css_files': [
+        'https://media.readthedocs.org/css/sphinx_rtd_theme.css',
+        'https://media.readthedocs.org/css/readthedocs-doc-embed.css',
+        '_static/css/custom.css',
+    ],
+}

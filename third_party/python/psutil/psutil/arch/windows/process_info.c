@@ -25,34 +25,263 @@
 
 
 
-HANDLE
-psutil_handle_from_pid_waccess(DWORD pid, DWORD dwDesiredAccess)
-{
-    HANDLE hProcess;
+#ifndef NT_SUCCESS
+#define NT_SUCCESS(Status) ((NTSTATUS)(Status) >= 0)
+#endif
+
+
+typedef struct {
+    BYTE Reserved1[16];
+    PVOID Reserved2[5];
+    UNICODE_STRING CurrentDirectoryPath;
+    PVOID CurrentDirectoryHandle;
+    UNICODE_STRING DllPath;
+    UNICODE_STRING ImagePathName;
+    UNICODE_STRING CommandLine;
+    LPCWSTR env;
+} RTL_USER_PROCESS_PARAMETERS_, *PRTL_USER_PROCESS_PARAMETERS_;
+
+
+#ifdef _WIN64
+typedef struct {
+    BYTE Reserved1[2];
+    BYTE BeingDebugged;
+    BYTE Reserved2[21];
+    PVOID LoaderData;
+    PRTL_USER_PROCESS_PARAMETERS_ ProcessParameters;
+    
+} PEB_;
+#else
+typedef struct {
+    BYTE Reserved1[2];
+    BYTE BeingDebugged;
+    BYTE Reserved2[1];
+    PVOID Reserved3[2];
+    PVOID Ldr;
+    PRTL_USER_PROCESS_PARAMETERS_ ProcessParameters;
+    
+} PEB_;
+#endif
+
+#ifdef _WIN64
+
+
+typedef struct {
+    USHORT Length;
+    USHORT MaxLength;
+    DWORD Buffer;
+} UNICODE_STRING32;
+
+typedef struct {
+    BYTE Reserved1[16];
+    DWORD Reserved2[5];
+    UNICODE_STRING32 CurrentDirectoryPath;
+    DWORD CurrentDirectoryHandle;
+    UNICODE_STRING32 DllPath;
+    UNICODE_STRING32 ImagePathName;
+    UNICODE_STRING32 CommandLine;
+    DWORD env;
+} RTL_USER_PROCESS_PARAMETERS32;
+
+typedef struct {
+    BYTE Reserved1[2];
+    BYTE BeingDebugged;
+    BYTE Reserved2[1];
+    DWORD Reserved3[2];
+    DWORD Ldr;
+    DWORD ProcessParameters;
+    
+} PEB32;
+#else
+
+
+
+typedef NTSTATUS (NTAPI *_NtWow64ReadVirtualMemory64)(
+        IN HANDLE ProcessHandle,
+        IN PVOID64 BaseAddress,
+        OUT PVOID Buffer,
+        IN ULONG64 Size,
+        OUT PULONG64 NumberOfBytesRead);
+
+typedef enum {
+    MemoryInformationBasic
+} MEMORY_INFORMATION_CLASS;
+
+typedef NTSTATUS (NTAPI *_NtWow64QueryVirtualMemory64)(
+    IN HANDLE ProcessHandle,
+    IN PVOID64 BaseAddress,
+    IN MEMORY_INFORMATION_CLASS MemoryInformationClass,
+    OUT PMEMORY_BASIC_INFORMATION64 MemoryInformation,
+    IN ULONG64 Size,
+    OUT PULONG64 ReturnLength OPTIONAL);
+
+typedef struct {
+    PVOID Reserved1[2];
+    PVOID64 PebBaseAddress;
+    PVOID Reserved2[4];
+    PVOID UniqueProcessId[2];
+    PVOID Reserved3[2];
+} PROCESS_BASIC_INFORMATION64;
+
+typedef struct {
+    USHORT Length;
+    USHORT MaxLength;
+    PVOID64 Buffer;
+} UNICODE_STRING64;
+
+typedef struct {
+    BYTE Reserved1[16];
+    PVOID64 Reserved2[5];
+    UNICODE_STRING64 CurrentDirectoryPath;
+    PVOID64 CurrentDirectoryHandle;
+    UNICODE_STRING64 DllPath;
+    UNICODE_STRING64 ImagePathName;
+    UNICODE_STRING64 CommandLine;
+    PVOID64 env;
+} RTL_USER_PROCESS_PARAMETERS64;
+
+typedef struct {
+    BYTE Reserved1[2];
+    BYTE BeingDebugged;
+    BYTE Reserved2[21];
+    PVOID64 LoaderData;
+    PVOID64 ProcessParameters;
+    
+} PEB64;
+#endif
+
+
+#define PSUTIL_FIRST_PROCESS(Processes) ( \
+    (PSYSTEM_PROCESS_INFORMATION)(Processes))
+#define PSUTIL_NEXT_PROCESS(Process) ( \
+   ((PSYSTEM_PROCESS_INFORMATION)(Process))->NextEntryOffset ? \
+   (PSYSTEM_PROCESS_INFORMATION)((PCHAR)(Process) + \
+        ((PSYSTEM_PROCESS_INFORMATION)(Process))->NextEntryOffset) : NULL)
+
+const int STATUS_INFO_LENGTH_MISMATCH = 0xC0000004;
+const int STATUS_BUFFER_TOO_SMALL = 0xC0000023L;
+
+
+
+
+
+
+
+
+
+
+int
+psutil_pid_in_pids(DWORD pid) {
+    DWORD *proclist = NULL;
+    DWORD numberOfReturnedPIDs;
+    DWORD i;
+
+    proclist = psutil_get_pids(&numberOfReturnedPIDs);
+    if (proclist == NULL)
+        return -1;
+    for (i = 0; i < numberOfReturnedPIDs; i++) {
+        if (proclist[i] == pid) {
+            free(proclist);
+            return 1;
+        }
+    }
+    free(proclist);
+    return 0;
+}
+
+
+
+
+
+
+
+
+
+
+int
+psutil_is_phandle_running(HANDLE hProcess, DWORD pid) {
     DWORD processExitCode = 0;
+
+    if (hProcess == NULL) {
+        if (GetLastError() == ERROR_INVALID_PARAMETER) {
+            
+            
+            if (! psutil_assert_pid_not_exists(
+                    pid, "iphr: OpenProcess() -> ERROR_INVALID_PARAMETER")) {
+                return -2;
+            }
+            return 0;
+        }
+        return -1;
+    }
+
+    if (GetExitCodeProcess(hProcess, &processExitCode)) {
+        
+        
+        if (processExitCode == STILL_ACTIVE) {
+            if (! psutil_assert_pid_exists(
+                    pid, "iphr: GetExitCodeProcess() -> STILL_ACTIVE")) {
+                return -2;
+            }
+            return 1;
+        }
+        else {
+            
+            if (psutil_pid_in_pids(pid) == 1) {
+                return 1;
+            }
+            else {
+                CloseHandle(hProcess);
+                return 0;
+            }
+        }
+    }
+
+    CloseHandle(hProcess);
+    if (! psutil_assert_pid_not_exists( pid, "iphr: exit fun")) {
+        return -2;
+    }
+    return -1;
+}
+
+
+
+
+
+
+
+HANDLE
+psutil_check_phandle(HANDLE hProcess, DWORD pid) {
+    int ret = psutil_is_phandle_running(hProcess, pid);
+    if (ret == 1)
+        return hProcess;
+    else if (ret == 0)
+        return NoSuchProcess("");
+    else if (ret == -1)
+        return PyErr_SetFromWindowsErr(0);
+    else  
+        return NULL;
+}
+
+
+
+
+
+
+
+
+
+HANDLE
+psutil_handle_from_pid_waccess(DWORD pid, DWORD dwDesiredAccess) {
+    HANDLE hProcess;
 
     if (pid == 0) {
         
-        return AccessDenied();
+        return AccessDenied("");
     }
 
     hProcess = OpenProcess(dwDesiredAccess, FALSE, pid);
-    if (hProcess == NULL) {
-        if (GetLastError() == ERROR_INVALID_PARAMETER)
-            NoSuchProcess();
-        else
-            PyErr_SetFromWindowsErr(0);
-        return NULL;
-    }
-
-    
-    GetExitCodeProcess(hProcess, &processExitCode);
-    if (processExitCode == 0) {
-        NoSuchProcess();
-        CloseHandle(hProcess);
-        return NULL;
-    }
-    return hProcess;
+    return psutil_check_phandle(hProcess, pid);
 }
 
 
@@ -65,20 +294,6 @@ HANDLE
 psutil_handle_from_pid(DWORD pid) {
     DWORD dwDesiredAccess = PROCESS_QUERY_INFORMATION | PROCESS_VM_READ;
     return psutil_handle_from_pid_waccess(pid, dwDesiredAccess);
-}
-
-
-
-PVOID
-psutil_get_peb_address(HANDLE ProcessHandle)
-{
-    _NtQueryInformationProcess NtQueryInformationProcess =
-        (_NtQueryInformationProcess)GetProcAddress(
-            GetModuleHandleA("ntdll.dll"), "NtQueryInformationProcess");
-    PROCESS_BASIC_INFORMATION pbi;
-
-    NtQueryInformationProcess(ProcessHandle, 0, &pbi, sizeof(pbi), NULL);
-    return pbi.PebBaseAddress;
 }
 
 
@@ -121,239 +336,559 @@ psutil_get_pids(DWORD *numberOfReturnedPIDs) {
 
 
 int
-psutil_pid_is_running(DWORD pid)
-{
+psutil_assert_pid_exists(DWORD pid, char *err) {
+    if (PSUTIL_TESTING) {
+        if (psutil_pid_in_pids(pid) == 0) {
+            PyErr_SetString(PyExc_AssertionError, err);
+            return 0;
+        }
+    }
+    return 1;
+}
+
+
+int
+psutil_assert_pid_not_exists(DWORD pid, char *err) {
+    if (PSUTIL_TESTING) {
+        if (psutil_pid_in_pids(pid) == 1) {
+            PyErr_SetString(PyExc_AssertionError, err);
+            return 0;
+        }
+    }
+    return 1;
+}
+
+
+
+
+
+
+
+
+
+int
+psutil_pid_is_running(DWORD pid) {
     HANDLE hProcess;
     DWORD exitCode;
+    DWORD err;
 
     
     if (pid == 0)
         return 1;
     if (pid < 0)
         return 0;
-
     hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
                            FALSE, pid);
     if (NULL == hProcess) {
+        err = GetLastError();
         
-        if (GetLastError() == ERROR_INVALID_PARAMETER) {
-            CloseHandle(hProcess);
+        if (err == ERROR_INVALID_PARAMETER) {
+            if (! psutil_assert_pid_not_exists(
+                    pid, "pir: OpenProcess() -> INVALID_PARAMETER")) {
+                return -1;
+            }
             return 0;
         }
-
         
-        if (GetLastError() == ERROR_ACCESS_DENIED) {
-            CloseHandle(hProcess);
+        else if (err == ERROR_ACCESS_DENIED) {
+            if (! psutil_assert_pid_exists(
+                    pid, "pir: OpenProcess() ACCESS_DENIED")) {
+                return -1;
+            }
             return 1;
         }
-
-        CloseHandle(hProcess);
-        PyErr_SetFromWindowsErr(0);
-        return -1;
+        
+        
+        else {
+            PyErr_SetFromWindowsErr(err);
+            return -1;
+        }
     }
 
     if (GetExitCodeProcess(hProcess, &exitCode)) {
         CloseHandle(hProcess);
-        return (exitCode == STILL_ACTIVE);
+        
+        
+        if (exitCode == STILL_ACTIVE) {
+            if (! psutil_assert_pid_exists(
+                    pid, "pir: GetExitCodeProcess() -> STILL_ACTIVE")) {
+                return -1;
+            }
+            return 1;
+        }
+        
+        else {
+            return psutil_pid_in_pids(pid);
+        }
     }
-
-    
-    
-    if (GetLastError() == ERROR_ACCESS_DENIED) {
+    else {
+        err = GetLastError();
         CloseHandle(hProcess);
-        return 1;
+        
+        
+        if (err == ERROR_ACCESS_DENIED) {
+            if (! psutil_assert_pid_exists(
+                    pid, "pir: GetExitCodeProcess() -> ERROR_ACCESS_DENIED")) {
+                return -1;
+            }
+            return 1;
+        }
+        else {
+            PyErr_SetFromWindowsErr(0);
+            return -1;
+        }
     }
-
-    PyErr_SetFromWindowsErr(0);
-    CloseHandle(hProcess);
-    return -1;
 }
 
 
-int
-psutil_pid_in_proclist(DWORD pid)
-{
-    DWORD *proclist = NULL;
-    DWORD numberOfReturnedPIDs;
-    DWORD i;
 
-    proclist = psutil_get_pids(&numberOfReturnedPIDs);
-    if (proclist == NULL)
+
+static int psutil_get_process_region_size(HANDLE hProcess,
+                                          LPCVOID src,
+                                          SIZE_T *psize) {
+    MEMORY_BASIC_INFORMATION info;
+
+    if (!VirtualQueryEx(hProcess, src, &info, sizeof(info))) {
+        PyErr_SetFromWindowsErr(0);
         return -1;
-    for (i = 0; i < numberOfReturnedPIDs; i++) {
-        if (pid == proclist[i]) {
-            free(proclist);
-            return 1;
+    }
+
+    *psize = info.RegionSize - ((char*)src - (char*)info.BaseAddress);
+    return 0;
+}
+
+
+#ifndef _WIN64
+
+
+static int psutil_get_process_region_size64(HANDLE hProcess,
+                                           const PVOID64 src64,
+                                           PULONG64 psize) {
+    static _NtWow64QueryVirtualMemory64 NtWow64QueryVirtualMemory64 = NULL;
+    MEMORY_BASIC_INFORMATION64 info64;
+
+    if (NtWow64QueryVirtualMemory64 == NULL) {
+        NtWow64QueryVirtualMemory64 =
+            (_NtWow64QueryVirtualMemory64)GetProcAddress(
+                    GetModuleHandleA("ntdll.dll"),
+                    "NtWow64QueryVirtualMemory64");
+
+        if (NtWow64QueryVirtualMemory64 == NULL) {
+            PyErr_SetString(PyExc_NotImplementedError,
+                    "NtWow64QueryVirtualMemory64 missing");
+            return -1;
         }
     }
 
-    free(proclist);
-    return 0;
-}
-
-
-
-
-int
-handlep_is_running(HANDLE hProcess)
-{
-    DWORD dwCode;
-
-    if (NULL == hProcess)
-        return 0;
-    if (GetExitCodeProcess(hProcess, &dwCode)) {
-        if (dwCode == STILL_ACTIVE)
-            return 1;
+    if (!NT_SUCCESS(NtWow64QueryVirtualMemory64(
+                    hProcess,
+                    src64,
+                    0,
+                    &info64,
+                    sizeof(info64),
+                    NULL))) {
+        PyErr_SetFromWindowsErr(0);
+        return -1;
     }
+
+    *psize = info64.RegionSize - ((char*)src64 - (char*)info64.BaseAddress);
     return 0;
 }
+#endif
 
+
+enum psutil_process_data_kind {
+    KIND_CMDLINE,
+    KIND_CWD,
+    KIND_ENVIRON,
+};
+
+
+
+
+
+
+
+static int psutil_get_process_data(long pid,
+                                   enum psutil_process_data_kind kind,
+                                   WCHAR **pdata,
+                                   SIZE_T *psize) {
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static _NtQueryInformationProcess NtQueryInformationProcess = NULL;
+#ifndef _WIN64
+    static _NtQueryInformationProcess NtWow64QueryInformationProcess64 = NULL;
+    static _NtWow64ReadVirtualMemory64 NtWow64ReadVirtualMemory64 = NULL;
+#endif
+    HANDLE hProcess = NULL;
+    LPCVOID src;
+    SIZE_T size;
+    WCHAR *buffer = NULL;
+#ifdef _WIN64
+    LPVOID ppeb32 = NULL;
+#else
+    PVOID64 src64;
+    BOOL weAreWow64;
+    BOOL theyAreWow64;
+#endif
+
+    hProcess = psutil_handle_from_pid(pid);
+    if (hProcess == NULL)
+        return -1;
+
+    if (NtQueryInformationProcess == NULL) {
+        NtQueryInformationProcess = (_NtQueryInformationProcess)GetProcAddress(
+                GetModuleHandleA("ntdll.dll"), "NtQueryInformationProcess");
+    }
+
+#ifdef _WIN64
+    
+
+    if (!NT_SUCCESS(NtQueryInformationProcess(hProcess,
+                                              ProcessWow64Information,
+                                              &ppeb32,
+                                              sizeof(LPVOID),
+                                              NULL))) {
+        PyErr_SetFromWindowsErr(0);
+        goto error;
+    }
+
+    if (ppeb32 != NULL) {
+        
+        PEB32 peb32;
+        RTL_USER_PROCESS_PARAMETERS32 procParameters32;
+
+        
+        if (!ReadProcessMemory(hProcess, ppeb32, &peb32, sizeof(peb32), NULL)) {
+            PyErr_SetFromWindowsErr(0);
+            goto error;
+        }
+
+        
+        if (!ReadProcessMemory(hProcess,
+                              UlongToPtr(peb32.ProcessParameters),
+                              &procParameters32,
+                              sizeof(procParameters32),
+                              NULL)) {
+            PyErr_SetFromWindowsErr(0);
+            goto error;
+        }
+
+        switch (kind) {
+            case KIND_CMDLINE:
+                src = UlongToPtr(procParameters32.CommandLine.Buffer),
+                size = procParameters32.CommandLine.Length;
+                break;
+            case KIND_CWD:
+                src = UlongToPtr(procParameters32.CurrentDirectoryPath.Buffer);
+                size = procParameters32.CurrentDirectoryPath.Length;
+                break;
+            case KIND_ENVIRON:
+                src = UlongToPtr(procParameters32.env);
+                break;
+        }
+    } else
+#else
+    
+    if (!IsWow64Process(GetCurrentProcess(), &weAreWow64) ||
+        !IsWow64Process(hProcess, &theyAreWow64)) {
+        PyErr_SetFromWindowsErr(0);
+        goto error;
+    }
+
+    if (weAreWow64 && !theyAreWow64) {
+        
+        PROCESS_BASIC_INFORMATION64 pbi64;
+        PEB64 peb64;
+        RTL_USER_PROCESS_PARAMETERS64 procParameters64;
+
+        if (NtWow64QueryInformationProcess64 == NULL) {
+            NtWow64QueryInformationProcess64 =
+                (_NtQueryInformationProcess)GetProcAddress(
+                        GetModuleHandleA("ntdll.dll"),
+                        "NtWow64QueryInformationProcess64");
+
+            if (NtWow64QueryInformationProcess64 == NULL) {
+                PyErr_SetString(PyExc_NotImplementedError,
+                                "NtWow64QueryInformationProcess64 missing");
+                goto error;
+            }
+        }
+
+        if (!NT_SUCCESS(NtWow64QueryInformationProcess64(
+                        hProcess,
+                        ProcessBasicInformation,
+                        &pbi64,
+                        sizeof(pbi64),
+                        NULL))) {
+            PyErr_SetFromWindowsErr(0);
+            goto error;
+        }
+
+        
+        if (NtWow64ReadVirtualMemory64 == NULL) {
+            NtWow64ReadVirtualMemory64 =
+                (_NtWow64ReadVirtualMemory64)GetProcAddress(
+                        GetModuleHandleA("ntdll.dll"),
+                        "NtWow64ReadVirtualMemory64");
+
+            if (NtWow64ReadVirtualMemory64 == NULL) {
+                PyErr_SetString(PyExc_NotImplementedError,
+                                "NtWow64ReadVirtualMemory64 missing");
+                goto error;
+            }
+        }
+
+        if (!NT_SUCCESS(NtWow64ReadVirtualMemory64(hProcess,
+                                                   pbi64.PebBaseAddress,
+                                                   &peb64,
+                                                   sizeof(peb64),
+                                                   NULL))) {
+            PyErr_SetFromWindowsErr(0);
+            goto error;
+        }
+
+        
+        if (!NT_SUCCESS(NtWow64ReadVirtualMemory64(hProcess,
+                                                   peb64.ProcessParameters,
+                                                   &procParameters64,
+                                                   sizeof(procParameters64),
+                                                   NULL))) {
+            PyErr_SetFromWindowsErr(0);
+            goto error;
+        }
+
+        switch (kind) {
+            case KIND_CMDLINE:
+                src64 = procParameters64.CommandLine.Buffer;
+                size = procParameters64.CommandLine.Length;
+                break;
+            case KIND_CWD:
+                src64 = procParameters64.CurrentDirectoryPath.Buffer,
+                size = procParameters64.CurrentDirectoryPath.Length;
+                break;
+            case KIND_ENVIRON:
+                src64 = procParameters64.env;
+                break;
+        }
+    } else
+#endif
+
+    
+    {
+        PROCESS_BASIC_INFORMATION pbi;
+        PEB_ peb;
+        RTL_USER_PROCESS_PARAMETERS_ procParameters;
+
+        if (!NT_SUCCESS(NtQueryInformationProcess(hProcess,
+                                                  ProcessBasicInformation,
+                                                  &pbi,
+                                                  sizeof(pbi),
+                                                  NULL))) {
+            PyErr_SetFromWindowsErr(0);
+            goto error;
+        }
+
+        
+        if (!ReadProcessMemory(hProcess,
+                               pbi.PebBaseAddress,
+                               &peb,
+                               sizeof(peb),
+                               NULL)) {
+            PyErr_SetFromWindowsErr(0);
+            goto error;
+        }
+
+        
+        if (!ReadProcessMemory(hProcess,
+                               peb.ProcessParameters,
+                               &procParameters,
+                               sizeof(procParameters),
+                               NULL)) {
+            PyErr_SetFromWindowsErr(0);
+            goto error;
+        }
+
+        switch (kind) {
+            case KIND_CMDLINE:
+                src = procParameters.CommandLine.Buffer;
+                size = procParameters.CommandLine.Length;
+                break;
+            case KIND_CWD:
+                src = procParameters.CurrentDirectoryPath.Buffer;
+                size = procParameters.CurrentDirectoryPath.Length;
+                break;
+            case KIND_ENVIRON:
+                src = procParameters.env;
+                break;
+        }
+    }
+
+    if (kind == KIND_ENVIRON) {
+#ifndef _WIN64
+        if (weAreWow64 && !theyAreWow64) {
+            ULONG64 size64;
+
+            if (psutil_get_process_region_size64(hProcess, src64, &size64) != 0)
+                goto error;
+
+            size = (SIZE_T)size64;
+        }
+        else
+#endif
+        if (psutil_get_process_region_size(hProcess, src, &size) != 0)
+            goto error;
+    }
+
+    buffer = calloc(size + 2, 1);
+
+    if (buffer == NULL) {
+        PyErr_NoMemory();
+        goto error;
+    }
+
+#ifndef _WIN64
+    if (weAreWow64 && !theyAreWow64) {
+        if (!NT_SUCCESS(NtWow64ReadVirtualMemory64(hProcess,
+                                                   src64,
+                                                   buffer,
+                                                   size,
+                                                   NULL))) {
+            PyErr_SetFromWindowsErr(0);
+            goto error;
+        }
+    } else
+#endif
+    if (!ReadProcessMemory(hProcess, src, buffer, size, NULL)) {
+        PyErr_SetFromWindowsErr(0);
+        goto error;
+    }
+
+    CloseHandle(hProcess);
+
+    *pdata = buffer;
+    *psize = size;
+
+    return 0;
+
+error:
+    if (hProcess != NULL)
+        CloseHandle(hProcess);
+    if (buffer != NULL)
+        free(buffer);
+    return -1;
+}
 
 
 
 
 
 PyObject *
-psutil_get_arg_list(long pid)
-{
-    int nArgs, i;
+psutil_get_cmdline(long pid) {
+    PyObject *ret = NULL;
+    WCHAR *data = NULL;
+    SIZE_T size;
+    PyObject *py_retlist = NULL;
+    PyObject *py_unicode = NULL;
     LPWSTR *szArglist = NULL;
-    HANDLE hProcess = NULL;
-    PVOID pebAddress;
-    PVOID rtlUserProcParamsAddress;
-    UNICODE_STRING commandLine;
-    WCHAR *commandLineContents = NULL;
-    PyObject *arg = NULL;
-    PyObject *arg_from_wchar = NULL;
-    PyObject *argList = NULL;
+    int nArgs, i;
 
-    hProcess = psutil_handle_from_pid(pid);
-    if (hProcess == NULL)
-        return NULL;
-    pebAddress = psutil_get_peb_address(hProcess);
+    if (psutil_get_process_data(pid, KIND_CMDLINE, &data, &size) != 0)
+        goto out;
 
     
-#ifdef _WIN64
-    if (!ReadProcessMemory(hProcess, (PCHAR)pebAddress + 32,
-                           &rtlUserProcParamsAddress, sizeof(PVOID), NULL))
-#else
-    if (!ReadProcessMemory(hProcess, (PCHAR)pebAddress + 0x10,
-                           &rtlUserProcParamsAddress, sizeof(PVOID), NULL))
-#endif
-    {
-        
+    szArglist = CommandLineToArgvW(data, &nArgs);
+    if (szArglist == NULL) {
         PyErr_SetFromWindowsErr(0);
-        goto error;
-    }
-
-    
-#ifdef _WIN64
-    if (!ReadProcessMemory(hProcess, (PCHAR)rtlUserProcParamsAddress + 112,
-                           &commandLine, sizeof(commandLine), NULL))
-#else
-    if (!ReadProcessMemory(hProcess, (PCHAR)rtlUserProcParamsAddress + 0x40,
-                           &commandLine, sizeof(commandLine), NULL))
-#endif
-    {
-        PyErr_SetFromWindowsErr(0);
-        goto error;
-    }
-
-
-    
-    commandLineContents = (WCHAR *)malloc(commandLine.Length + 1);
-    if (commandLineContents == NULL) {
-        PyErr_NoMemory();
-        goto error;
-    }
-
-    
-    if (!ReadProcessMemory(hProcess, commandLine.Buffer,
-                           commandLineContents, commandLine.Length, NULL))
-    {
-        PyErr_SetFromWindowsErr(0);
-        goto error;
+        goto out;
     }
 
     
     
-    
-    commandLineContents[(commandLine.Length / sizeof(WCHAR))] = '\0';
-
-    
-    
-    szArglist = CommandLineToArgvW(commandLineContents, &nArgs);
-    if (NULL == szArglist) {
-        
-        
-        arg_from_wchar = PyUnicode_FromWideChar(commandLineContents,
-                                                commandLine.Length / 2);
-        if (arg_from_wchar == NULL)
-            goto error;
-#if PY_MAJOR_VERSION >= 3
-        argList = Py_BuildValue("N", PyUnicode_AsUTF8String(arg_from_wchar));
-#else
-        argList = Py_BuildValue("N", PyUnicode_FromObject(arg_from_wchar));
-#endif
-        if (!argList)
-            goto error;
-    }
-    else {
-        
-        
-        argList = Py_BuildValue("[]");
-        if (argList == NULL)
-            goto error;
-        for (i = 0; i < nArgs; i++) {
-            arg_from_wchar = NULL;
-            arg = NULL;
-            arg_from_wchar = PyUnicode_FromWideChar(szArglist[i],
-                                                    wcslen(szArglist[i]));
-            if (arg_from_wchar == NULL)
-                goto error;
-#if PY_MAJOR_VERSION >= 3
-            arg = PyUnicode_FromObject(arg_from_wchar);
-#else
-            arg = PyUnicode_AsUTF8String(arg_from_wchar);
-#endif
-            if (arg == NULL)
-                goto error;
-            Py_XDECREF(arg_from_wchar);
-            if (PyList_Append(argList, arg))
-                goto error;
-            Py_XDECREF(arg);
-        }
+    py_retlist = PyList_New(nArgs);
+    if (py_retlist == NULL)
+        goto out;
+    for (i = 0; i < nArgs; i++) {
+        py_unicode = PyUnicode_FromWideChar(szArglist[i],
+                                            wcslen(szArglist[i]));
+        if (py_unicode == NULL)
+            goto out;
+        PyList_SET_ITEM(py_retlist, i, py_unicode);
+        py_unicode = NULL;
     }
 
-    if (szArglist != NULL)
-        LocalFree(szArglist);
-    free(commandLineContents);
-    CloseHandle(hProcess);
-    return argList;
+    ret = py_retlist;
+    py_retlist = NULL;
 
-error:
-    Py_XDECREF(arg);
-    Py_XDECREF(arg_from_wchar);
-    Py_XDECREF(argList);
-    if (hProcess != NULL)
-        CloseHandle(hProcess);
-    if (commandLineContents != NULL)
-        free(commandLineContents);
-    if (szArglist != NULL)
-        LocalFree(szArglist);
-    return NULL;
+out:
+    LocalFree(szArglist);
+    free(data);
+    Py_XDECREF(py_unicode);
+    Py_XDECREF(py_retlist);
+
+    return ret;
+}
+
+PyObject *psutil_get_cwd(long pid) {
+    PyObject *ret = NULL;
+    WCHAR *data = NULL;
+    SIZE_T size;
+
+    if (psutil_get_process_data(pid, KIND_CWD, &data, &size) != 0)
+        goto out;
+
+    
+    ret = PyUnicode_FromWideChar(data, wcslen(data));
+
+out:
+    free(data);
+
+    return ret;
 }
 
 
-#define PH_FIRST_PROCESS(Processes) ((PSYSTEM_PROCESS_INFORMATION)(Processes))
-#define PH_NEXT_PROCESS(Process) ( \
-   ((PSYSTEM_PROCESS_INFORMATION)(Process))->NextEntryOffset ? \
-   (PSYSTEM_PROCESS_INFORMATION)((PCHAR)(Process) + \
-        ((PSYSTEM_PROCESS_INFORMATION)(Process))->NextEntryOffset) : \
-   NULL)
 
-const int STATUS_INFO_LENGTH_MISMATCH = 0xC0000004;
-const int STATUS_BUFFER_TOO_SMALL = 0xC0000023L;
+
+
+PyObject *psutil_get_environ(long pid) {
+    PyObject *ret = NULL;
+    WCHAR *data = NULL;
+    SIZE_T size;
+
+    if (psutil_get_process_data(pid, KIND_ENVIRON, &data, &size) != 0)
+        goto out;
+
+    
+    ret = PyUnicode_FromWideChar(data, size / 2);
+
+out:
+    free(data);
+
+    return ret;
+}
+
 
 
 
@@ -365,8 +900,7 @@ const int STATUS_BUFFER_TOO_SMALL = 0xC0000023L;
 
 int
 psutil_get_proc_info(DWORD pid, PSYSTEM_PROCESS_INFORMATION *retProcess,
-                 PVOID *retBuffer)
-{
+                     PVOID *retBuffer) {
     static ULONG initialBufferSize = 0x4000;
     NTSTATUS status;
     PVOID buffer;
@@ -408,23 +942,24 @@ psutil_get_proc_info(DWORD pid, PSYSTEM_PROCESS_INFORMATION *retProcess,
     }
 
     if (status != 0) {
-        PyErr_Format(PyExc_RuntimeError, "NtQuerySystemInformation() failed");
+        PyErr_Format(
+            PyExc_RuntimeError, "NtQuerySystemInformation() syscall failed");
         goto error;
     }
 
     if (bufferSize <= 0x20000)
         initialBufferSize = bufferSize;
 
-    process = PH_FIRST_PROCESS(buffer);
+    process = PSUTIL_FIRST_PROCESS(buffer);
     do {
         if (process->UniqueProcessId == (HANDLE)pid) {
             *retProcess = process;
             *retBuffer = buffer;
             return 1;
         }
-    } while ( (process = PH_NEXT_PROCESS(process)) );
+    } while ( (process = PSUTIL_NEXT_PROCESS(process)) );
 
-    NoSuchProcess();
+    NoSuchProcess("");
     goto error;
 
 error:
