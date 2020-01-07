@@ -4,10 +4,29 @@ use std::ffi::{CStr, OsStr};
 use std::{fmt, io, marker, mem, ptr};
 use std::os::raw;
 use std::os::unix::ffi::OsStrExt;
-use std::sync::Mutex;
 
-lazy_static! {
-    static ref DLERROR_MUTEX: Mutex<()> = Mutex::new(());
+extern "C" {
+    fn rust_libloading_dlerror_mutex_lock();
+    fn rust_libloading_dlerror_mutex_unlock();
+}
+
+struct DlerrorMutexGuard(());
+
+impl DlerrorMutexGuard {
+    fn new() -> DlerrorMutexGuard {
+        unsafe {
+            rust_libloading_dlerror_mutex_lock();
+        }
+        DlerrorMutexGuard(())
+    }
+}
+
+impl Drop for DlerrorMutexGuard {
+    fn drop(&mut self) {
+        unsafe {
+            rust_libloading_dlerror_mutex_unlock();
+        }
+    }
 }
 
 
@@ -19,7 +38,7 @@ fn with_dlerror<T, F>(closure: F) -> Result<T, Option<io::Error>>
 where F: FnOnce() -> Option<T> {
     
     
-    let _lock = DLERROR_MUTEX.lock();
+    let _lock = DlerrorMutexGuard::new();
     
     
     
@@ -200,6 +219,20 @@ impl fmt::Debug for Library {
 pub struct Symbol<T> {
     pointer: *mut raw::c_void,
     pd: marker::PhantomData<T>
+}
+
+impl<T> Symbol<Option<T>> {
+    
+    pub fn lift_option(self) -> Option<Symbol<T>> {
+        if self.pointer.is_null() {
+            None
+        } else {
+            Some(Symbol {
+                pointer: self.pointer,
+                pd: marker::PhantomData,
+            })
+        }
+    }
 }
 
 unsafe impl<T: Send> Send for Symbol<T> {}

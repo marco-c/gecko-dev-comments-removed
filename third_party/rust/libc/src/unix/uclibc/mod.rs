@@ -653,21 +653,24 @@ pub const MADV_MERGEABLE: ::c_int = 12;
 pub const MADV_UNMERGEABLE: ::c_int = 13;
 pub const MADV_HWPOISON: ::c_int = 100;
 
-pub const IFF_UP: ::c_int = 0x1;
-pub const IFF_BROADCAST: ::c_int = 0x2;
-pub const IFF_DEBUG: ::c_int = 0x4;
-pub const IFF_LOOPBACK: ::c_int = 0x8;
-pub const IFF_POINTOPOINT: ::c_int = 0x10;
-pub const IFF_NOTRAILERS: ::c_int = 0x20;
-pub const IFF_RUNNING: ::c_int = 0x40;
-pub const IFF_NOARP: ::c_int = 0x80;
-pub const IFF_PROMISC: ::c_int = 0x100;
-pub const IFF_ALLMULTI: ::c_int = 0x200;
-pub const IFF_MASTER: ::c_int = 0x400;
-pub const IFF_SLAVE: ::c_int = 0x800;
-pub const IFF_MULTICAST: ::c_int = 0x1000;
-pub const IFF_PORTSEL: ::c_int = 0x2000;
-pub const IFF_AUTOMEDIA: ::c_int = 0x4000;
+
+pub const IFF_UP: ::c_int = 0x1; 
+pub const IFF_BROADCAST: ::c_int = 0x2; 
+pub const IFF_DEBUG: ::c_int = 0x4; 
+pub const IFF_LOOPBACK: ::c_int = 0x8; 
+pub const IFF_POINTOPOINT: ::c_int = 0x10; 
+pub const IFF_NOTRAILERS: ::c_int = 0x20; 
+pub const IFF_RUNNING: ::c_int = 0x40; 
+pub const IFF_NOARP: ::c_int = 0x80; 
+pub const IFF_PROMISC: ::c_int = 0x100; 
+
+pub const IFF_ALLMULTI: ::c_int = 0x200; 
+pub const IFF_MASTER: ::c_int = 0x400; 
+pub const IFF_SLAVE: ::c_int = 0x800; 
+pub const IFF_MULTICAST: ::c_int = 0x1000; 
+pub const IFF_PORTSEL: ::c_int = 0x2000; 
+pub const IFF_AUTOMEDIA: ::c_int = 0x4000; 
+
 pub const IFF_DYNAMIC: ::c_int = 0x8000;
 
 pub const SOL_IP: ::c_int = 0;
@@ -787,6 +790,8 @@ pub const IP_TTL: ::c_int = 2;
 pub const IP_HDRINCL: ::c_int = 3;
 pub const IP_ADD_MEMBERSHIP: ::c_int = 35;
 pub const IP_DROP_MEMBERSHIP: ::c_int = 36;
+pub const IPV6_ADD_MEMBERSHIP: ::c_int = 20;
+pub const IPV6_DROP_MEMBERSHIP: ::c_int = 21;
 
 pub const IPV6_JOIN_GROUP: ::c_int = 20;
 pub const IPV6_LEAVE_GROUP: ::c_int = 21;

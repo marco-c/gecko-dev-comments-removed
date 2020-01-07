@@ -517,6 +517,26 @@ pub const SOCK_CLOEXEC: ::c_int = O_CLOEXEC;
 
 pub const INET_ADDRSTRLEN: ::c_int = 16;
 
+
+
+pub const IFF_UP: ::c_int = 0x1; 
+pub const IFF_BROADCAST: ::c_int = 0x2; 
+pub const IFF_DEBUG: ::c_int = 0x4; 
+pub const IFF_LOOPBACK: ::c_int = 0x8; 
+pub const IFF_POINTOPOINT: ::c_int = 0x10; 
+pub const IFF_NOTRAILERS: ::c_int = 0x20; 
+pub const IFF_RUNNING: ::c_int = 0x40; 
+pub const IFF_NOARP: ::c_int = 0x80; 
+pub const IFF_PROMISC: ::c_int = 0x100; 
+pub const IFF_ALLMULTI: ::c_int = 0x200; 
+pub const IFF_OACTIVE: ::c_int = 0x400; 
+pub const IFF_SIMPLEX: ::c_int = 0x800; 
+pub const IFF_LINK0: ::c_int = 0x1000; 
+pub const IFF_LINK1: ::c_int = 0x2000; 
+pub const IFF_LINK2: ::c_int = 0x4000; 
+pub const IFF_ALTPHYS: ::c_int = IFF_LINK2; 
+pub const IFF_MULTICAST: ::c_int = 0x8000; 
+
 pub const IPPROTO_IP: ::c_int = 0;
 pub const IPPROTO_UDP: ::c_int = 17;
 pub const IPPROTO_TCP: ::c_int = 6;
@@ -659,6 +679,9 @@ cfg_if! {
     if #[cfg(target_arch = "arm")] {
         mod arm;
         pub use self::arm::*;
+    } else if #[cfg(target_arch = "aarch64")] {
+        mod aarch64;
+        pub use self::aarch64::*;
     } else {
         // Only tested on ARM so far. Other platforms might have different
         // definitions for types and constants.

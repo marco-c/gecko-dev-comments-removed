@@ -673,7 +673,7 @@ impl Builder {
 
     
     
-    #[deprecated = "Use blacklist_type instead"]
+    #[deprecated(note = "Use blacklist_type instead")]
     pub fn hide_type<T: AsRef<str>>(self, arg: T) -> Builder {
         self.blacklist_type(arg)
     }
@@ -695,7 +695,7 @@ impl Builder {
     
     
     
-    #[deprecated = "use whitelist_type instead"]
+    #[deprecated(note = "use whitelist_type instead")]
     pub fn whitelisted_type<T: AsRef<str>>(self, arg: T) -> Builder {
         self.whitelist_type(arg)
     }
@@ -719,7 +719,7 @@ impl Builder {
     
     
     
-    #[deprecated = "use whitelist_function instead"]
+    #[deprecated(note = "use whitelist_function instead")]
     pub fn whitelisted_function<T: AsRef<str>>(self, arg: T) -> Builder {
         self.whitelist_function(arg)
     }
@@ -735,7 +735,7 @@ impl Builder {
     
     
     
-    #[deprecated = "use whitelist_var instead"]
+    #[deprecated(note = "use whitelist_var instead")]
     pub fn whitelisted_var<T: AsRef<str>>(self, arg: T) -> Builder {
         self.whitelist_var(arg)
     }
@@ -1648,7 +1648,7 @@ impl Bindings {
         {
             let _t = time::Timer::new("parse")
                                   .with_output(time_phases);
-            try!(parse(&mut context));
+            parse(&mut context)?;
         }
 
         let (items, options) = codegen::codegen(context);

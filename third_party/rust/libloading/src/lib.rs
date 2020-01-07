@@ -42,10 +42,6 @@ use std::ops;
 use std::marker;
 
 #[cfg(unix)]
-#[macro_use]
-extern crate lazy_static;
-
-#[cfg(unix)]
 use self::os::unix as imp;
 #[cfg(windows)]
 use self::os::windows as imp;
@@ -60,6 +56,18 @@ pub type Result<T> = ::std::io::Result<T>;
 pub struct Library(imp::Library);
 
 impl Library {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -251,6 +259,27 @@ impl<'lib, T> Symbol<'lib, T> {
             inner: sym,
             pd: marker::PhantomData
         }
+    }
+}
+
+impl<'lib, T> Symbol<'lib, Option<T>> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn lift_option(self) -> Option<Symbol<'lib, T>> {
+        self.inner.lift_option().map(|is| Symbol {
+            inner: is,
+            pd: marker::PhantomData,
+        })
     }
 }
 

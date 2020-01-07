@@ -215,6 +215,13 @@ fn find(library: Library, files: &[String], env: &str) -> Result<PathBuf, String
     }
 
     
+    if let Ok(path) = env::var("LD_LIBRARY_PATH") {
+        for directory in path.split(":").map(Path::new) {
+            search_directory!(directory);
+        }
+    }
+
+    
     let search = if cfg!(any(target_os="freebsd", target_os="linux")) {
         SEARCH_LINUX
     } else if cfg!(target_os="macos") {
