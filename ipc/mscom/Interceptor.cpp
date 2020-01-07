@@ -689,6 +689,12 @@ Interceptor::GetInterceptorForIID(REFIID aIid, void** aOutInterceptor)
     
     MapEntry* entry = Lookup(interceptorIid);
     if (entry && entry->mInterceptor) {
+      
+      
+      
+      
+      
+      interceptor = nullptr;
       unkInterceptor = entry->mInterceptor;
     } else {
       
