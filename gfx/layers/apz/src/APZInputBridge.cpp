@@ -139,7 +139,8 @@ APZInputBridge::ReceiveInputEvent(
                                                      wheelEvent.mDeltaMode),
                                  origin,
                                  wheelEvent.mDeltaX, wheelEvent.mDeltaY,
-                                 wheelEvent.mAllowToOverrideSystemScrollSpeed);
+                                 wheelEvent.mAllowToOverrideSystemScrollSpeed,
+                                 strategy);
 
           
           

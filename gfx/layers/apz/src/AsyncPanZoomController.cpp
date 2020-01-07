@@ -13,6 +13,7 @@
 
 #include "APZCTreeManager.h"            
 #include "AsyncPanZoomAnimation.h"      
+#include "AutoDirWheelDeltaAdjuster.h"  
 #include "AutoscrollAnimation.h"        
 #include "Axis.h"                       
 #include "CheckerboardEvent.h"          
@@ -1733,6 +1734,19 @@ AllowsScrollingMoreThanOnePage(double aMultiplier)
 ParentLayerPoint
 AsyncPanZoomController::GetScrollWheelDelta(const ScrollWheelInput& aEvent) const
 {
+  return GetScrollWheelDelta(aEvent,
+                             aEvent.mDeltaX, aEvent.mDeltaY,
+                             aEvent.mUserDeltaMultiplierX,
+                             aEvent.mUserDeltaMultiplierY);
+}
+
+ParentLayerPoint
+AsyncPanZoomController::GetScrollWheelDelta(const ScrollWheelInput& aEvent,
+                                            double aDeltaX,
+                                            double aDeltaY,
+                                            double aMultiplierX,
+                                            double aMultiplierY) const
+{
   ParentLayerSize scrollAmount;
   ParentLayerSize pageScrollSize;
 
@@ -1750,24 +1764,25 @@ AsyncPanZoomController::GetScrollWheelDelta(const ScrollWheelInput& aEvent) cons
   ParentLayerPoint delta;
   switch (aEvent.mDeltaType) {
     case ScrollWheelInput::SCROLLDELTA_LINE: {
-      delta.x = aEvent.mDeltaX * scrollAmount.width;
-      delta.y = aEvent.mDeltaY * scrollAmount.height;
+      delta.x = aDeltaX * scrollAmount.width;
+      delta.y = aDeltaY * scrollAmount.height;
       break;
     }
     case ScrollWheelInput::SCROLLDELTA_PAGE: {
-      delta.x = aEvent.mDeltaX * pageScrollSize.width;
-      delta.y = aEvent.mDeltaY * pageScrollSize.height;
+      delta.x = aDeltaX * pageScrollSize.width;
+      delta.y = aDeltaY * pageScrollSize.height;
       break;
     }
     case ScrollWheelInput::SCROLLDELTA_PIXEL: {
-      delta = ToParentLayerCoordinates(ScreenPoint(aEvent.mDeltaX, aEvent.mDeltaY), aEvent.mOrigin);
+      delta = ToParentLayerCoordinates(ScreenPoint(aDeltaX, aDeltaY),
+                                       aEvent.mOrigin);
       break;
     }
   }
 
   
-  delta.x *= aEvent.mUserDeltaMultiplierX;
-  delta.y *= aEvent.mUserDeltaMultiplierY;
+  delta.x *= aMultiplierX;
+  delta.y *= aMultiplierY;
 
   
   
@@ -1798,13 +1813,13 @@ AsyncPanZoomController::GetScrollWheelDelta(const ScrollWheelInput& aEvent) cons
 
   
   
-  if (!AllowsScrollingMoreThanOnePage(aEvent.mUserDeltaMultiplierX) &&
+  if (!AllowsScrollingMoreThanOnePage(aMultiplierX) &&
       Abs(delta.x) > pageScrollSize.width) {
     delta.x = (delta.x >= 0)
               ? pageScrollSize.width
               : -pageScrollSize.width;
   }
-  if (!AllowsScrollingMoreThanOnePage(aEvent.mUserDeltaMultiplierY) &&
+  if (!AllowsScrollingMoreThanOnePage(aMultiplierY) &&
       Abs(delta.y) > pageScrollSize.height) {
     delta.y = (delta.y >= 0)
               ? pageScrollSize.height
@@ -1987,6 +2002,26 @@ AsyncPanZoomController::CanScroll(const InputData& aEvent) const
   }
 
   if (SCROLLWHEEL_INPUT == aEvent.mInputType) {
+    const ScrollWheelInput& scrollWheelInput = aEvent.AsScrollWheelInput();
+    
+    
+    
+    
+    
+    
+    if (scrollWheelInput.IsAutoDir()) {
+      RecursiveMutexAutoLock lock(mRecursiveMutex);
+      auto deltaX = scrollWheelInput.mDeltaX;
+      auto deltaY = scrollWheelInput.mDeltaY;
+      bool isRTL = IsContentOfHonouredTargetRightToLeft(
+                     scrollWheelInput.HonoursRoot());
+      APZAutoDirWheelDeltaAdjuster adjuster(deltaX, deltaY, mX, mY, isRTL);
+      if (adjuster.ShouldBeAdjusted()) {
+        
+        
+        return true;
+      }
+    }
     return CanScrollWithWheel(delta);
   }
   return CanScroll(delta);
@@ -2046,6 +2081,16 @@ AsyncPanZoomController::CanScroll(ScrollDirection aDirection) const
 }
 
 bool
+AsyncPanZoomController::IsContentOfHonouredTargetRightToLeft(
+                          bool aHonoursRoot) const
+{
+  
+  
+  RecursiveMutexAutoLock lock(mRecursiveMutex);
+  return mFrameMetrics.IsHorizontalContentRightToLeft();
+}
+
+bool
 AsyncPanZoomController::AllowScrollHandoffInCurrentBlock() const
 {
   bool result = mInputQueue->AllowScrollHandoff();
@@ -2084,10 +2129,52 @@ AdjustDeltaForAllowedScrollDirections(
 
 nsEventStatus AsyncPanZoomController::OnScrollWheel(const ScrollWheelInput& aEvent)
 {
-  ParentLayerPoint delta = GetScrollWheelDelta(aEvent);
-  APZC_LOG("%p got a scroll-wheel with delta %s\n", this, Stringify(delta).c_str());
+  
+  
+  
+  
+  
+  bool adjustedByAutoDir = false;
+  ParentLayerPoint delta;
+  if (aEvent.IsAutoDir()) {
+    
+    
+    RecursiveMutexAutoLock lock(mRecursiveMutex);
+    auto deltaX = aEvent.mDeltaX;
+    auto deltaY = aEvent.mDeltaY;
+    bool isRTL = IsContentOfHonouredTargetRightToLeft(aEvent.HonoursRoot());
+    APZAutoDirWheelDeltaAdjuster adjuster(deltaX, deltaY, mX, mY, isRTL);
+    if (adjuster.ShouldBeAdjusted()) {
+      adjuster.Adjust();
+      
+      
+      
+      
+      
+      
+      delta = GetScrollWheelDelta(aEvent,
+                                  deltaX, deltaY,
+                                  aEvent.mUserDeltaMultiplierY,
+                                  aEvent.mUserDeltaMultiplierX);
+      adjustedByAutoDir = true;
+    }
+  }
+  if (!adjustedByAutoDir) {
+    
+    
+    
+    delta = GetScrollWheelDelta(aEvent);
+  }
 
-  if ((delta.x || delta.y) && !CanScrollWithWheel(delta)) {
+  APZC_LOG("%p got a scroll-wheel with delta in parent-layer pixels: %s\n",
+           this, Stringify(delta).c_str());
+
+  if (adjustedByAutoDir) {
+    MOZ_ASSERT(delta.x || delta.y,
+               "Adjusted auto-dir delta values can never be all-zero.");
+    APZC_LOG("%p got a scroll-wheel with adjusted auto-dir delta values\n",
+             this);
+  } else if ((delta.x || delta.y) && !CanScrollWithWheel(delta)) {
     
     if (mInputQueue->GetActiveWheelTransaction() &&
         gfxPrefs::MouseScrollTestingEnabled()) {

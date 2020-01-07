@@ -17,7 +17,7 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Atomics.h"
 #include "InputData.h"
-#include "Axis.h"
+#include "Axis.h"                       
 #include "InputQueue.h"
 #include "APZUtils.h"
 #include "Layers.h"                     
@@ -509,6 +509,13 @@ public:
 
   bool OverscrollBehaviorAllowsSwipe() const;
 
+private:
+  
+  
+  
+  
+  bool IsContentOfHonouredTargetRightToLeft(bool aHonoursRoot) const;
+
 protected:
   
   virtual ~AsyncPanZoomController();
@@ -575,7 +582,39 @@ protected:
 
   nsEventStatus OnScrollWheel(const ScrollWheelInput& aEvent);
 
+  
+
+
+
   ParentLayerPoint GetScrollWheelDelta(const ScrollWheelInput& aEvent) const;
+
+  
+
+
+
+
+
+
+  ParentLayerPoint
+  GetScrollWheelDelta(const ScrollWheelInput& aEvent,
+                      double aDeltaX,
+                      double aDeltaY,
+                      double aMultiplierX,
+                      double aMultiplierY) const;
+
+  
+
+
+
+
+
+
+
+
+
+  template <typename T>
+  ParentLayerPoint
+  GetScrollWheelDelta(ScrollWheelInput&, T, T, T, T) = delete;
 
   
 

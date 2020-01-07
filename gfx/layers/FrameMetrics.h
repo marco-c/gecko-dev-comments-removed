@@ -487,6 +487,17 @@ public:
     mScrollableRect = aScrollableRect;
   }
 
+  
+  
+  
+  
+  
+  
+  
+  bool IsHorizontalContentRightToLeft() {
+    return mScrollableRect.x < 0;
+  }
+
   void SetPaintRequestTime(const TimeStamp& aTime) {
     mPaintRequestTime = aTime;
   }

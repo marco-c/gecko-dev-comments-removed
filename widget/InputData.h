@@ -14,6 +14,7 @@
 #include "mozilla/DefineEnum.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/WheelHandlingHelper.h"   
 #include "mozilla/gfx/MatrixFwd.h"
 #include "mozilla/layers/KeyboardScrollAction.h"
 
@@ -532,7 +533,8 @@ public:
   ScrollWheelInput(uint32_t aTime, TimeStamp aTimeStamp, Modifiers aModifiers,
                    ScrollMode aScrollMode, ScrollDeltaType aDeltaType,
                    const ScreenPoint& aOrigin, double aDeltaX, double aDeltaY,
-                   bool aAllowToOverrideSystemScrollSpeed);
+                   bool aAllowToOverrideSystemScrollSpeed,
+                   WheelDeltaAdjustmentStrategy aWheelDeltaAdjustmentStrategy);
   explicit ScrollWheelInput(const WidgetWheelEvent& aEvent);
 
   static ScrollDeltaType DeltaTypeForDeltaMode(uint32_t aDeltaMode);
@@ -543,6 +545,34 @@ public:
   bool TransformToLocal(const ScreenToParentLayerMatrix4x4& aTransform);
 
   bool IsCustomizedByUserPrefs() const;
+
+  
+  
+  bool IsAutoDir() const
+  {
+    switch (mWheelDeltaAdjustmentStrategy) {
+      case WheelDeltaAdjustmentStrategy::eAutoDir:
+      case WheelDeltaAdjustmentStrategy::eAutoDirWithRootHonour:
+        return true;
+      default:
+        
+        break;
+    }
+    return false;
+  }
+  
+  
+  
+  
+  
+  
+  
+  
+  bool HonoursRoot() const
+  {
+    return WheelDeltaAdjustmentStrategy::eAutoDirWithRootHonour ==
+             mWheelDeltaAdjustmentStrategy;
+  }
 
   
   
@@ -582,6 +612,10 @@ public:
   bool mMayHaveMomentum;
   bool mIsMomentum;
   bool mAllowToOverrideSystemScrollSpeed;
+
+  
+  
+  WheelDeltaAdjustmentStrategy mWheelDeltaAdjustmentStrategy;
 };
 
 class KeyboardInput : public InputData

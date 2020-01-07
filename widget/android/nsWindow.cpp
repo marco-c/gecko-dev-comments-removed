@@ -15,6 +15,7 @@
 #include "mozilla/TouchEvents.h"
 #include "mozilla/TypeTraits.h"
 #include "mozilla/WeakPtr.h"
+#include "mozilla/WheelHandlingHelper.h"    
 
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/ContentChild.h"
@@ -488,7 +489,13 @@ public:
                                ScrollWheelInput::SCROLLDELTA_PIXEL,
                                origin,
                                aHScroll, aVScroll,
-                               false);
+                               false,
+                               
+                               
+                               
+                               
+                               
+                               WheelDeltaAdjustmentStrategy::eNone);
 
         ScrollableLayerGuid guid;
         uint64_t blockId;

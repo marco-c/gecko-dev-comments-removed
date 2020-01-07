@@ -258,6 +258,9 @@ enum class WheelDeltaAdjustmentStrategy : uint8_t
   
   eAutoDir,
   eAutoDirWithRootHonour,
+  
+  
+  eSentinel,
 };
 
 
