@@ -192,6 +192,8 @@ add_test(function test_getGethashUrl() {
 });
 
 function run_test() {
+  throwOnUpdateErrors();
+
   
   gHttpServ = new HttpServer();
   gHttpServ.registerDirectory("/", do_get_cwd());
