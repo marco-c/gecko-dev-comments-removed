@@ -6,7 +6,7 @@
 
 
 use {Atom, LocalName};
-use applicable_declarations::ApplicableDeclarationBlock;
+use applicable_declarations::ApplicableDeclarationList;
 use context::QuirksMode;
 use dom::TElement;
 use fallible::FallibleVec;
@@ -18,7 +18,7 @@ use rule_tree::CascadeLevel;
 use selector_parser::SelectorImpl;
 use selectors::matching::{matches_selector, MatchingContext, ElementSelectorFlags};
 use selectors::parser::{Component, Combinator, SelectorIter};
-use smallvec::{SmallVec, VecLike};
+use smallvec::SmallVec;
 use std::hash::{BuildHasherDefault, Hash, Hasher};
 use stylist::Rule;
 
@@ -146,11 +146,11 @@ impl SelectorMap<Rule> {
     
     
     
-    pub fn get_all_matching_rules<E, V, F>(
+    pub fn get_all_matching_rules<E, F>(
         &self,
         element: &E,
         rule_hash_target: &E,
-        matching_rules_list: &mut V,
+        matching_rules_list: &mut ApplicableDeclarationList,
         context: &mut MatchingContext<E::Impl>,
         quirks_mode: QuirksMode,
         flags_setter: &mut F,
@@ -158,7 +158,6 @@ impl SelectorMap<Rule> {
     )
     where
         E: TElement,
-        V: VecLike<ApplicableDeclarationBlock>,
         F: FnMut(&E, ElementSelectorFlags),
     {
         if self.is_empty() {
@@ -210,17 +209,16 @@ impl SelectorMap<Rule> {
     }
 
     
-    fn get_matching_rules<E, V, F>(
+    fn get_matching_rules<E, F>(
         element: &E,
         rules: &[Rule],
-        matching_rules: &mut V,
+        matching_rules: &mut ApplicableDeclarationList,
         context: &mut MatchingContext<E::Impl>,
         flags_setter: &mut F,
         cascade_level: CascadeLevel,
     )
     where
         E: TElement,
-        V: VecLike<ApplicableDeclarationBlock>,
         F: FnMut(&E, ElementSelectorFlags),
     {
         for rule in rules {

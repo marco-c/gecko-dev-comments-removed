@@ -32,13 +32,10 @@ use selectors::matching::{ElementSelectorFlags, matches_selector, MatchingContex
 use selectors::matching::VisitedHandlingMode;
 use selectors::parser::{AncestorHashes, Combinator, Component, Selector};
 use selectors::parser::{SelectorIter, SelectorMethods};
-use selectors::sink::Push;
 use selectors::visitor::SelectorVisitor;
 use servo_arc::{Arc, ArcBorrow};
 use shared_lock::{Locked, SharedRwLockReadGuard, StylesheetGuards};
 use smallbitvec::SmallBitVec;
-use smallvec::VecLike;
-use std::fmt::Debug;
 use std::ops;
 use std::sync::Mutex;
 use style_traits::viewport::ViewportConstraints;
@@ -1205,7 +1202,7 @@ impl Stylist {
     
     
     
-    pub fn push_applicable_declarations<E, V, F>(
+    pub fn push_applicable_declarations<E, F>(
         &self,
         element: &E,
         pseudo_element: Option<&PseudoElement>,
@@ -1213,13 +1210,12 @@ impl Stylist {
         smil_override: Option<ArcBorrow<Locked<PropertyDeclarationBlock>>>,
         animation_rules: AnimationRules,
         rule_inclusion: RuleInclusion,
-        applicable_declarations: &mut V,
+        applicable_declarations: &mut ApplicableDeclarationList,
         context: &mut MatchingContext<E::Impl>,
         flags_setter: &mut F,
     )
     where
         E: TElement,
-        V: Push<ApplicableDeclarationBlock> + VecLike<ApplicableDeclarationBlock> + Debug,
         F: FnMut(&E, ElementSelectorFlags),
     {
         
@@ -1343,8 +1339,7 @@ impl Stylist {
         if !only_default_rules {
             
             if let Some(sa) = style_attribute {
-                Push::push(
-                    applicable_declarations,
+                applicable_declarations.push(
                     ApplicableDeclarationBlock::from_declarations(
                         sa.clone_arc(),
                         CascadeLevel::StyleAttributeNormal
@@ -1355,8 +1350,7 @@ impl Stylist {
             
             
             if let Some(so) = smil_override {
-                Push::push(
-                    applicable_declarations,
+                applicable_declarations.push(
                     ApplicableDeclarationBlock::from_declarations(
                         so.clone_arc(),
                         CascadeLevel::SMILOverride
@@ -1368,8 +1362,7 @@ impl Stylist {
             
             
             if let Some(anim) = animation_rules.0 {
-                Push::push(
-                    applicable_declarations,
+                applicable_declarations.push(
                     ApplicableDeclarationBlock::from_declarations(
                         anim.clone(),
                         CascadeLevel::Animations
@@ -1389,8 +1382,7 @@ impl Stylist {
             
             
             if let Some(anim) = animation_rules.1 {
-                Push::push(
-                    applicable_declarations,
+                applicable_declarations.push(
                     ApplicableDeclarationBlock::from_declarations(
                         anim.clone(),
                         CascadeLevel::Transitions
