@@ -272,7 +272,7 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock>
 
     
     
-    void addPredecessorSameInputsAs(MBasicBlock* pred, MBasicBlock* existingPred);
+    MOZ_MUST_USE bool addPredecessorSameInputsAs(MBasicBlock* pred, MBasicBlock* existingPred);
 
     
     MOZ_MUST_USE bool addPredecessorWithoutPhis(MBasicBlock* pred);
