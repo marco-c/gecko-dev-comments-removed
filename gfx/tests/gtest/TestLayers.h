@@ -8,6 +8,22 @@
 
 #include "Layers.h"
 #include "nsTArray.h"
+#include "mozilla/layers/ISurfaceAllocator.h"
+
+namespace mozilla {
+namespace layers {
+
+class TestSurfaceAllocator final : public ISurfaceAllocator
+{
+public:
+  TestSurfaceAllocator() {}
+  ~TestSurfaceAllocator() override {}
+
+  bool IsSameProcess() const override { return true; }
+};
+
+} 
+} 
 
 
 
