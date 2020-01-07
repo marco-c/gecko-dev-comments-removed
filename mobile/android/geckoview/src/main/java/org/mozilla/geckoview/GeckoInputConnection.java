@@ -44,7 +44,7 @@ import java.lang.reflect.Proxy;
 
  final class GeckoInputConnection
     extends BaseInputConnection
-    implements SessionTextInput.Delegate,
+    implements SessionTextInput.InputConnectionClient,
                SessionTextInput.EditableListener {
 
     private static final boolean DEBUG = false;
@@ -83,18 +83,18 @@ import java.lang.reflect.Proxy;
     private volatile boolean mSoftInputReentrancyGuard;
      boolean mShowSoftInputOnFocus = true;
 
-    public static SessionTextInput.Delegate create(
+    public static SessionTextInput.InputConnectionClient create(
             final GeckoSession session,
             final View targetView,
             final SessionTextInput.EditableClient editable) {
-        SessionTextInput.Delegate ic = new GeckoInputConnection(session, targetView, editable);
+        SessionTextInput.InputConnectionClient ic = new GeckoInputConnection(session, targetView, editable);
         if (DEBUG) {
             ic = wrapForDebug(ic);
         }
         return ic;
     }
 
-    private static SessionTextInput.Delegate wrapForDebug(final SessionTextInput.Delegate ic) {
+    private static SessionTextInput.InputConnectionClient wrapForDebug(final SessionTextInput.InputConnectionClient ic) {
         final InvocationHandler handler = new InvocationHandler() {
             private final StringBuilder mCallLevel = new StringBuilder();
 
@@ -144,11 +144,11 @@ import java.lang.reflect.Proxy;
             }
         };
 
-        return (SessionTextInput.Delegate) Proxy.newProxyInstance(
+        return (SessionTextInput.InputConnectionClient) Proxy.newProxyInstance(
                 GeckoInputConnection.class.getClassLoader(),
                 new Class<?>[] {
                         InputConnection.class,
-                        SessionTextInput.Delegate.class,
+                        SessionTextInput.InputConnectionClient.class,
                         SessionTextInput.EditableListener.class
                 }, handler);
     }
