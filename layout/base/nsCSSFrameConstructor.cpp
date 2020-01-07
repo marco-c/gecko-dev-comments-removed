@@ -25,7 +25,6 @@
 #include "mozilla/PresShell.h"
 #include "mozilla/ServoBindings.h"
 #include "mozilla/ServoStyleSetInlines.h"
-#include "mozilla/StaticPrefs.h"
 #include "nsAbsoluteContainingBlock.h"
 #include "nsCSSPseudoElements.h"
 #include "nsAtom.h"
@@ -90,6 +89,7 @@
 #include "nsPageContentFrame.h"
 #include "mozilla/RestyleManager.h"
 #include "mozilla/RestyleManagerInlines.h"
+#include "mozilla/StylePrefs.h"
 #include "StickyScrollContainer.h"
 #include "nsFieldSetFrame.h"
 #include "nsInlineFrame.h"
@@ -2558,7 +2558,7 @@ nsCSSFrameConstructor::ConstructDocElementFrame(Element*                 aDocEle
     NS_ASSERTION(frameItems.OnlyChild(), "multiple root element frames");
   } else if (display->mDisplay == StyleDisplay::Flex ||
              display->mDisplay == StyleDisplay::WebkitBox ||
-             (StaticPrefs::layout_css_emulate_moz_box_with_flex() &&
+             (StylePrefs::sEmulateMozBoxWithFlex &&
               display->mDisplay == StyleDisplay::MozBox)) {
     contentFrame = NS_NewFlexContainerFrame(mPresShell, computedStyle);
     InitAndRestoreFrame(state, aDocElement, mDocElementContainingBlock,
@@ -4250,9 +4250,9 @@ static
 bool IsXULDisplayType(const nsStyleDisplay* aDisplay)
 {
   
-  if (!StaticPrefs::layout_css_emulate_moz_box_with_flex() &&
-      (aDisplay->mDisplay == StyleDisplay::MozInlineBox ||
-       aDisplay->mDisplay == StyleDisplay::MozBox)) {
+  if  (!StylePrefs::sEmulateMozBoxWithFlex &&
+       (aDisplay->mDisplay == StyleDisplay::MozInlineBox ||
+        aDisplay->mDisplay == StyleDisplay::MozBox)) {
     return true;
   }
 
@@ -4521,7 +4521,7 @@ nsCSSFrameConstructor::FindXULDisplayData(const nsStyleDisplay* aDisplay,
   
   
   
-  if (StaticPrefs::layout_css_emulate_moz_box_with_flex() &&
+  if (StylePrefs::sEmulateMozBoxWithFlex &&
       aElement && !aElement->IsXULElement(nsGkAtoms::scrollcorner) &&
       (aDisplay->mDisplay == StyleDisplay::MozBox ||
        aDisplay->mDisplay == StyleDisplay::MozInlineBox)) {
@@ -4749,7 +4749,7 @@ nsCSSFrameConstructor::FindDisplayData(const nsStyleDisplay* aDisplay,
   if (propagatedScrollToViewport && aDisplay->IsScrollableOverflow()) {
     if (aDisplay->mDisplay == StyleDisplay::Flex ||
         aDisplay->mDisplay == StyleDisplay::WebkitBox ||
-        (StaticPrefs::layout_css_emulate_moz_box_with_flex() &&
+        (StylePrefs::sEmulateMozBoxWithFlex &&
          aDisplay->mDisplay == StyleDisplay::MozBox)) {
       static const FrameConstructionData sNonScrollableFlexData =
         FCDATA_DECL(0, NS_NewFlexContainerFrame);
@@ -4850,7 +4850,7 @@ nsCSSFrameConstructor::FindDisplayData(const nsStyleDisplay* aDisplay,
   };
   static_assert(ArrayLength(sDisplayData) == size_t(StyleDisplay::MozInlineBox) + 1,
                 "Be sure to update sDisplayData if you touch StyleDisplay");
-  MOZ_ASSERT(StaticPrefs::layout_css_emulate_moz_box_with_flex() ||
+  MOZ_ASSERT(StylePrefs::sEmulateMozBoxWithFlex ||
              (aDisplay->mDisplay != StyleDisplay::MozBox &&
               aDisplay->mDisplay != StyleDisplay::MozInlineBox),
              "-moz-{inline-}box as XUL should have already been handled");
@@ -7121,20 +7121,6 @@ nsCSSFrameConstructor::ContentAppended(nsIContent* aContainer,
                  "asked to construct a frame for a node that already has a frame");
   }
 #endif
-
-#ifdef MOZ_XUL
-  if (aContainer) {
-    int32_t namespaceID;
-    nsAtom* tag =
-      mDocument->BindingManager()->ResolveTag(aContainer, &namespaceID);
-
-    
-    if (tag == nsGkAtoms::treechildren ||
-        tag == nsGkAtoms::treeitem ||
-        tag == nsGkAtoms::treerow)
-      return;
-  }
-#endif 
 
   
   if (!GetContentInsertionFrameFor(aContainer) &&
