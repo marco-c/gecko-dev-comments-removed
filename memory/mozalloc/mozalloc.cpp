@@ -38,16 +38,14 @@ MOZ_MEMORY_API char *strndup_impl(const char *, size_t);
 #endif 
 #include <stdlib.h>             
 #if defined(XP_UNIX)
-#  include <unistd.h>           
+#  include <unistd.h>
 #endif 
 
 #define malloc_impl malloc
-#define posix_memalign_impl posix_memalign
 #define calloc_impl calloc
 #define realloc_impl realloc
 #define free_impl free
 #define memalign_impl memalign
-#define valloc_impl valloc
 #define malloc_usable_size_impl malloc_usable_size
 #define strdup_impl strdup
 #define strndup_impl strndup
@@ -129,21 +127,12 @@ moz_xstrndup(const char* str, size_t strsize)
 }
 #endif  
 
-#if defined(HAVE_POSIX_MEMALIGN)
-int
-moz_xposix_memalign(void **ptr, size_t alignment, size_t size)
-{
-    int err = posix_memalign_impl(ptr, alignment, size);
-    if (UNLIKELY(err && ENOMEM == err)) {
-        mozalloc_handle_oom(size);
-        return moz_xposix_memalign(ptr, alignment, size);
-    }
-    
-    return err;
-}
-#endif 
+#ifndef HAVE_MEMALIGN
 
-#if defined(HAVE_MEMALIGN)
+
+extern "C" void* memalign(size_t, size_t);
+#endif
+
 void*
 moz_xmemalign(size_t boundary, size_t size)
 {
@@ -155,20 +144,6 @@ moz_xmemalign(size_t boundary, size_t size)
     
     return ptr;
 }
-#endif 
-
-#if defined(HAVE_VALLOC)
-void*
-moz_xvalloc(size_t size)
-{
-    void* ptr = valloc_impl(size);
-    if (UNLIKELY(!ptr)) {
-        mozalloc_handle_oom(size);
-        return moz_xvalloc(size);
-    }
-    return ptr;
-}
-#endif 
 
 size_t
 moz_malloc_usable_size(void *ptr)
