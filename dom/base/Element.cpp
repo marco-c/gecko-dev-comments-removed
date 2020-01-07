@@ -565,8 +565,7 @@ Element::WrapObject(JSContext *aCx, JS::Handle<JSObject*> aGivenProto)
     return nullptr;
   }
 
-  nsIDocument* doc =
-    HasFlag(NODE_FORCE_XBL_BINDINGS) ? OwnerDoc() : GetComposedDoc();
+  nsIDocument* doc = GetComposedDoc();
   if (!doc) {
     
     
@@ -1571,9 +1570,6 @@ Element::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
                   (!aBindingParent && aParent &&
                    aParent->GetBindingParent() == GetBindingParent()),
                   "Already have a binding parent.  Unbind first!");
-  NS_PRECONDITION(!aParent || !aDocument ||
-                  !aParent->HasFlag(NODE_FORCE_XBL_BINDINGS),
-                  "Parent in document but flagged as forcing XBL");
   NS_PRECONDITION(aBindingParent != this,
                   "Content must not be its own binding parent");
   NS_PRECONDITION(!IsRootOfNativeAnonymousSubtree() ||
@@ -1624,8 +1620,6 @@ Element::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
     }
   }
 
-  bool hadForceXBL = HasFlag(NODE_FORCE_XBL_BINDINGS);
-
   bool hadParent = !!GetParentNode();
 
   
@@ -1634,10 +1628,6 @@ Element::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
       NS_ADDREF(aParent);
     }
     mParent = aParent;
-
-    if (aParent->HasFlag(NODE_FORCE_XBL_BINDINGS)) {
-      SetFlags(NODE_FORCE_XBL_BINDINGS);
-    }
   }
   else {
     mParent = aDocument;
@@ -1665,9 +1655,7 @@ Element::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
     SetIsInDocument();
 
     
-    UnsetFlags(NODE_FORCE_XBL_BINDINGS |
-               
-               NODE_NEEDS_FRAME | NODE_DESCENDANTS_NEED_FRAMES |
+    UnsetFlags(NODE_NEEDS_FRAME | NODE_DESCENDANTS_NEED_FRAMES |
                
                
                
@@ -1684,8 +1672,8 @@ Element::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
     
     
     
-    UnsetFlags(NODE_FORCE_XBL_BINDINGS | NODE_NEEDS_FRAME |
-               NODE_DESCENDANTS_NEED_FRAMES | ELEMENT_ALL_RESTYLE_FLAGS);
+    UnsetFlags(NODE_NEEDS_FRAME | NODE_DESCENDANTS_NEED_FRAMES |
+               ELEMENT_ALL_RESTYLE_FLAGS);
   } else {
     
     
@@ -1728,8 +1716,7 @@ Element::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
   
   
   
-  if (hadForceXBL ||
-      (HasFlag(NODE_MAY_BE_IN_BINDING_MNGR) && !GetShadowRoot())) {
+  if (HasFlag(NODE_MAY_BE_IN_BINDING_MNGR) && !GetShadowRoot()) {
     nsXBLBinding* binding =
       OwnerDoc()->BindingManager()->GetBindingWithContent(this);
 
@@ -1890,8 +1877,7 @@ Element::UnbindFromTree(bool aDeep, bool aNullParent)
   RemoveFromIdTable();
 
   
-  nsIDocument* document =
-    HasFlag(NODE_FORCE_XBL_BINDINGS) ? OwnerDoc() : GetComposedDoc();
+  nsIDocument* document = GetComposedDoc();
 
   if (HasPointerLock()) {
     nsIDocument::UnlockPointer();
@@ -1995,8 +1981,6 @@ Element::UnbindFromTree(bool aDeep, bool aNullParent)
     SetSubtreeRootPointer(aNullParent ? this : mParent->SubtreeRoot());
   }
 
-  
-  UnsetFlags(NODE_FORCE_XBL_BINDINGS);
   bool clearBindingParent = true;
 
 #ifdef MOZ_XUL
@@ -2703,7 +2687,7 @@ Element::SetAttrAndNotify(int32_t aNamespaceID,
     oldValue = aOldValue;
   }
 
-  if (aComposedDocument || HasFlag(NODE_FORCE_XBL_BINDINGS)) {
+  if (aComposedDocument) {
     RefPtr<nsXBLBinding> binding = GetXBLBinding();
     if (binding) {
       binding->AttributeChanged(aName, aNamespaceID, false, aNotify);
@@ -3010,7 +2994,7 @@ Element::UnsetAttr(int32_t aNameSpaceID, nsAtom* aName,
 
   PostIdMaybeChange(aNameSpaceID, aName, nullptr);
 
-  if (document || HasFlag(NODE_FORCE_XBL_BINDINGS)) {
+  if (document) {
     RefPtr<nsXBLBinding> binding = GetXBLBinding();
     if (binding) {
       binding->AttributeChanged(aName, aNameSpaceID, true, aNotify);

@@ -361,17 +361,8 @@ nsNodeUtils::LastRelease(nsINode* aNode)
     Element* elem = aNode->AsElement();
     ownerDoc->ClearBoxObjectFor(elem);
 
-    NS_ASSERTION(aNode->HasFlag(NODE_FORCE_XBL_BINDINGS) ||
-                 !elem->GetXBLBinding(),
-                 "Non-forced node has binding on destruction");
-
-    
-    
-    if (aNode->HasFlag(NODE_FORCE_XBL_BINDINGS) &&
-        ownerDoc->BindingManager()) {
-      ownerDoc->BindingManager()->RemovedFromDocument(elem, ownerDoc,
-                                                      nsBindingManager::eRunDtor);
-    }
+    NS_ASSERTION(!elem->GetXBLBinding(),
+                 "Node has binding on destruction");
   }
 
   aNode->ReleaseWrapper(aNode);
@@ -721,25 +712,6 @@ nsNodeUtils::CloneAndAdopt(nsINode *aNode, bool aClone, bool aDeep,
       }
     }
   }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-#ifdef MOZ_XUL
-  if (aClone && !aParent && aNode->IsXULElement()) {
-    if (!aNode->OwnerDoc()->IsLoadedAsInteractiveData()) {
-      clone->SetFlags(NODE_FORCE_XBL_BINDINGS);
-    }
-  }
-#endif
 
   return clone.forget();
 }
