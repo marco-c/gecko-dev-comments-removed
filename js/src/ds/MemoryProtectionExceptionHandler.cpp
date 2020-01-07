@@ -193,6 +193,7 @@ VectoredExceptionHandler(EXCEPTION_POINTERS* ExceptionInfo)
             
             
             MOZ_ALWAYS_TRUE(RemoveVectoredExceptionHandler(sVectoredExceptionHandler));
+            sExceptionHandlerInstalled = false;
 
             
             uintptr_t address = uintptr_t(ExceptionRecord->ExceptionInformation[1]);
