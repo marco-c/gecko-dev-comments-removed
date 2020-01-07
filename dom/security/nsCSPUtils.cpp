@@ -848,11 +848,8 @@ nsCSPKeywordSrc::allows(enum CSPKeyword aKeyword, const nsAString& aHashOrNonce,
   }
   
   
-  
-  
   return ((mKeyword == aKeyword) ||
-          ((mKeyword == CSP_STRICT_DYNAMIC) && !aParserCreated &&
-            aKeyword != CSP_UNSAFE_EVAL));
+          ((mKeyword == CSP_STRICT_DYNAMIC) && !aParserCreated));
 }
 
 bool
