@@ -2197,10 +2197,10 @@ public:
 
 
 
-  virtual already_AddRefed<Element> CreateElem(const nsAString& aName,
-                                               nsAtom* aPrefix,
-                                               int32_t aNamespaceID,
-                                               const nsAString* aIs = nullptr) = 0;
+  already_AddRefed<Element> CreateElem(const nsAString& aName,
+                                       nsAtom* aPrefix,
+                                       int32_t aNamespaceID,
+                                       const nsAString* aIs = nullptr);
 
   
 
