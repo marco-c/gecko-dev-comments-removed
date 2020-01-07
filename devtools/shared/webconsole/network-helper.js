@@ -538,7 +538,6 @@ var NetworkHelper = {
 
 
 
-
   parseSecurityInfo: function(securityInfo, httpActivity) {
     const info = {
       state: "insecure",
@@ -710,7 +709,7 @@ var NetworkHelper = {
     } else {
       
       info.state = "broken";
-      info.errorMessage = securityInfo.errorMessage;
+      info.errorMessage = securityInfo.errorCodeString;
     }
 
     return info;

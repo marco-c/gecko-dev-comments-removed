@@ -4620,9 +4620,6 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
       } else if (securityState & nsIWebProgressListener::STATE_USES_WEAK_CRYPTO) {
         error = "weakCryptoUsed";
         addHostPort = true;
-      } else {
-        
-        tsi->GetErrorMessage(getter_Copies(messageStr));
       }
     } else {
       
@@ -4630,78 +4627,79 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
         nsserr->GetErrorMessage(aError, messageStr);
       }
     }
-    if (!messageStr.IsEmpty()) {
-      if (errorClass == nsINSSErrorsService::ERROR_CLASS_BAD_CERT) {
-        error = "nssBadCert";
+    
+    
+    messageStr.Truncate();
+    messageStr.AssignLiteral(u" ");
+    if (errorClass == nsINSSErrorsService::ERROR_CLASS_BAD_CERT) {
+      error = "nssBadCert";
 
-        
-        
-        
-        uint32_t flags =
-          UsePrivateBrowsing() ? nsISocketProvider::NO_PERMANENT_STORAGE : 0;
-        bool isStsHost = false;
-        bool isPinnedHost = false;
-        if (XRE_IsParentProcess()) {
-          nsCOMPtr<nsISiteSecurityService> sss =
-            do_GetService(NS_SSSERVICE_CONTRACTID, &rv);
-          NS_ENSURE_SUCCESS(rv, rv);
-          rv = sss->IsSecureURI(nsISiteSecurityService::HEADER_HSTS, aURI,
-                                flags, mOriginAttributes, nullptr, nullptr,
-                                &isStsHost);
-          NS_ENSURE_SUCCESS(rv, rv);
-          rv = sss->IsSecureURI(nsISiteSecurityService::HEADER_HPKP, aURI,
-                                flags, mOriginAttributes, nullptr, nullptr,
-                                &isPinnedHost);
-          NS_ENSURE_SUCCESS(rv, rv);
-        } else {
-          mozilla::dom::ContentChild* cc =
-            mozilla::dom::ContentChild::GetSingleton();
-          mozilla::ipc::URIParams uri;
-          SerializeURI(aURI, uri);
-          cc->SendIsSecureURI(nsISiteSecurityService::HEADER_HSTS, uri, flags,
-                              mOriginAttributes, &isStsHost);
-          cc->SendIsSecureURI(nsISiteSecurityService::HEADER_HPKP, uri, flags,
-                              mOriginAttributes, &isPinnedHost);
-        }
-
-        if (Preferences::GetBool(
-              "browser.xul.error_pages.expert_bad_cert", false)) {
-          cssClass.AssignLiteral("expertBadCert");
-        }
-
-        
-        
-        
-        
-        if (isStsHost || isPinnedHost) {
-          cssClass.AssignLiteral("badStsCert");
-        }
-
-        uint32_t bucketId;
-        if (isStsHost) {
-          
-          
-          bucketId = nsISecurityUITelemetry::WARNING_BAD_CERT_TOP_STS;
-        } else {
-          bucketId = nsISecurityUITelemetry::WARNING_BAD_CERT_TOP;
-        }
-
-        
-        nsAutoCString alternateErrorPage;
-        nsresult rv =
-          Preferences::GetCString("security.alternate_certificate_error_page",
-                                  alternateErrorPage);
-        if (NS_SUCCEEDED(rv)) {
-          errorPage.Assign(alternateErrorPage);
-        }
-
-        if (!IsFrame() && errorPage.EqualsIgnoreCase("certerror")) {
-          Telemetry::Accumulate(mozilla::Telemetry::SECURITY_UI, bucketId);
-        }
-
+      
+      
+      
+      uint32_t flags =
+        UsePrivateBrowsing() ? nsISocketProvider::NO_PERMANENT_STORAGE : 0;
+      bool isStsHost = false;
+      bool isPinnedHost = false;
+      if (XRE_IsParentProcess()) {
+        nsCOMPtr<nsISiteSecurityService> sss =
+          do_GetService(NS_SSSERVICE_CONTRACTID, &rv);
+        NS_ENSURE_SUCCESS(rv, rv);
+        rv = sss->IsSecureURI(nsISiteSecurityService::HEADER_HSTS, aURI,
+                              flags, mOriginAttributes, nullptr, nullptr,
+                              &isStsHost);
+        NS_ENSURE_SUCCESS(rv, rv);
+        rv = sss->IsSecureURI(nsISiteSecurityService::HEADER_HPKP, aURI,
+                              flags, mOriginAttributes, nullptr, nullptr,
+                              &isPinnedHost);
+        NS_ENSURE_SUCCESS(rv, rv);
       } else {
-        error = "nssFailure2";
+        mozilla::dom::ContentChild* cc =
+          mozilla::dom::ContentChild::GetSingleton();
+        mozilla::ipc::URIParams uri;
+        SerializeURI(aURI, uri);
+        cc->SendIsSecureURI(nsISiteSecurityService::HEADER_HSTS, uri, flags,
+                            mOriginAttributes, &isStsHost);
+        cc->SendIsSecureURI(nsISiteSecurityService::HEADER_HPKP, uri, flags,
+                            mOriginAttributes, &isPinnedHost);
       }
+
+      if (Preferences::GetBool(
+            "browser.xul.error_pages.expert_bad_cert", false)) {
+        cssClass.AssignLiteral("expertBadCert");
+      }
+
+      
+      
+      
+      
+      if (isStsHost || isPinnedHost) {
+        cssClass.AssignLiteral("badStsCert");
+      }
+
+      uint32_t bucketId;
+      if (isStsHost) {
+        
+        
+        bucketId = nsISecurityUITelemetry::WARNING_BAD_CERT_TOP_STS;
+      } else {
+        bucketId = nsISecurityUITelemetry::WARNING_BAD_CERT_TOP;
+      }
+
+      
+      nsAutoCString alternateErrorPage;
+      nsresult rv =
+        Preferences::GetCString("security.alternate_certificate_error_page",
+                                alternateErrorPage);
+      if (NS_SUCCEEDED(rv)) {
+        errorPage.Assign(alternateErrorPage);
+      }
+
+      if (!IsFrame() && errorPage.EqualsIgnoreCase("certerror")) {
+        Telemetry::Accumulate(mozilla::Telemetry::SECURITY_UI, bucketId);
+      }
+    } else {
+      error = "nssFailure2";
     }
   } else if (NS_ERROR_PHISHING_URI == aError ||
              NS_ERROR_MALWARE_URI == aError ||

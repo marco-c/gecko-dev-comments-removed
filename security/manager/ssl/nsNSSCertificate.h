@@ -7,6 +7,7 @@
 #define nsNSSCertificate_h
 
 #include <functional>
+#include <vector>
 
 #include "ScopedNSSTypes.h"
 #include "certt.h"
@@ -51,12 +52,14 @@ private:
   mozilla::UniqueCERTCertificate mCert;
   bool             mPermDelete;
   uint32_t         mCertType;
+  std::vector<nsString> mSubjectAltNames;
   nsresult CreateASN1Struct(nsIASN1Object** aRetVal);
   nsresult CreateTBSCertificateASN1Struct(nsIASN1Sequence** retSequence);
   nsresult GetSortableDate(PRTime aTime, nsAString& _aSortableDate);
   bool InitFromDER(char* certDER, int derLen);  
 
   nsresult GetCertificateHash(nsAString& aFingerprint, SECOidTag aHashAlg);
+  void GetSubjectAltNames();
 };
 
 namespace mozilla {

@@ -157,14 +157,12 @@ function add_simple_tests() {
   
   add_cert_override_test("mismatch.example.com",
                          Ci.nsICertOverrideService.ERROR_MISMATCH,
-                         SSL_ERROR_BAD_CERT_DOMAIN,
-                         /The certificate is only valid for the following names:\s*doesntmatch\.example\.com, \*\.alsodoesntmatch\.example\.com/);
+                         SSL_ERROR_BAD_CERT_DOMAIN);
   
   
   add_cert_override_test("mismatch-CN.example.com",
                          Ci.nsICertOverrideService.ERROR_MISMATCH,
-                         SSL_ERROR_BAD_CERT_DOMAIN,
-                         /The certificate is not valid for the name mismatch-CN\.example\.com/);
+                         SSL_ERROR_BAD_CERT_DOMAIN);
 
   
   
@@ -246,8 +244,7 @@ function add_simple_tests() {
                          SSL_ERROR_BAD_CERT_DOMAIN);
   add_cert_override_test("noValidNames.example.com",
                          Ci.nsICertOverrideService.ERROR_MISMATCH,
-                         SSL_ERROR_BAD_CERT_DOMAIN,
-                         /The certificate is not valid for the name noValidNames\.example\.com/);
+                         SSL_ERROR_BAD_CERT_DOMAIN);
   add_cert_override_test("badSubjectAltNames.example.com",
                          Ci.nsICertOverrideService.ERROR_MISMATCH,
                          SSL_ERROR_BAD_CERT_DOMAIN);
@@ -287,8 +284,7 @@ function add_combo_tests() {
   add_cert_override_test("mismatch-expired.example.com",
                          Ci.nsICertOverrideService.ERROR_MISMATCH |
                          Ci.nsICertOverrideService.ERROR_TIME,
-                         SSL_ERROR_BAD_CERT_DOMAIN,
-                         /The certificate is only valid for <a id="cert_domain_link" title="doesntmatch\.example\.com">doesntmatch\.example\.com<\/a>/);
+                         SSL_ERROR_BAD_CERT_DOMAIN);
   add_cert_override_test("mismatch-notYetValid.example.com",
                          Ci.nsICertOverrideService.ERROR_MISMATCH |
                          Ci.nsICertOverrideService.ERROR_TIME,

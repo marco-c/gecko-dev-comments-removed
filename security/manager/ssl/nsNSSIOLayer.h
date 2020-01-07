@@ -89,9 +89,7 @@ public:
   };
   void SetCertVerificationWaiting();
   
-  
-  void SetCertVerificationResult(PRErrorCode errorCode,
-              ::mozilla::psm::SSLErrorMessageType errorMessageType);
+  void SetCertVerificationResult(PRErrorCode errorCode);
 
   
   PRBool IsWaitingForCertVerification() const
