@@ -19,6 +19,10 @@ module.exports = {
     "eslint:recommended",
     "plugin:mozilla/recommended" 
   ],
+  "globals": {
+    
+    "RPMSendAsyncMessage": true
+  },
   "overrides": [{
     
     "files": "**/*.jsm",

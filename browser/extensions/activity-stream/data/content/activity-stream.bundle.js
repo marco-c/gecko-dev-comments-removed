@@ -395,16 +395,16 @@ var g;
 
 
 g = (function() {
- return this;
+	return this;
 })();
 
 try {
- 
- g = g || Function("return this")() || (1,eval)("this");
+	
+	g = g || Function("return this")() || (1,eval)("this");
 } catch(e) {
- 
- if(typeof window === "object")
-   g = window;
+	
+	if(typeof window === "object")
+		g = window;
 }
 
 
@@ -412,6 +412,7 @@ try {
 
 
 module.exports = g;
+
 
  }),
 
@@ -967,6 +968,20 @@ const ASRouterUtils = {
   sendTelemetry(ping) {
     const payload = __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].ASRouterUserEvent(ping);
     global.RPMSendAsyncMessage(__WEBPACK_IMPORTED_MODULE_2_content_src_lib_init_store__["a" ], payload);
+  },
+  getEndpoint() {
+    if (window.location.href.includes("endpoint")) {
+      const params = new URLSearchParams(window.location.href.slice(window.location.href.indexOf("endpoint")));
+      try {
+        const endpoint = new URL(params.get("endpoint"));
+        return {
+          url: endpoint.href,
+          snippetId: params.get("snippetId")
+        };
+      } catch (e) {}
+    }
+
+    return null;
   }
 };
  __webpack_exports__["b"] = ASRouterUtils;
@@ -1095,8 +1110,15 @@ class ASRouterUISurface extends __WEBPACK_IMPORTED_MODULE_6_react___default.a.Pu
   }
 
   componentWillMount() {
+    const endpoint = ASRouterUtils.getEndpoint();
     ASRouterUtils.addListener(this.onMessageFromParent);
-    ASRouterUtils.sendMessage({ type: "CONNECT_UI_REQUEST" });
+
+    
+    if (this.props.document.location.href === "about:welcome") {
+      ASRouterUtils.sendMessage({ type: "TRIGGER", data: { trigger: "firstRun" } });
+    } else {
+      ASRouterUtils.sendMessage({ type: "CONNECT_UI_REQUEST", data: { endpoint } });
+    }
   }
 
   componentWillUnmount() {
@@ -6663,6 +6685,12 @@ class _Base extends __WEBPACK_IMPORTED_MODULE_8_react___default.a.PureComponent 
       return null;
     }
 
+    
+    
+    if (prefs.asrouterOnboardingCohort > 0) {
+      global.document.body.classList.add("hide-onboarding");
+    }
+
     return __WEBPACK_IMPORTED_MODULE_8_react___default.a.createElement(
       __WEBPACK_IMPORTED_MODULE_1_react_intl__["IntlProvider"],
       { locale: locale, messages: strings },
@@ -6768,7 +6796,8 @@ class ASRouterAdmin extends __WEBPACK_IMPORTED_MODULE_1_react___default.a.PureCo
   }
 
   componentWillMount() {
-    __WEBPACK_IMPORTED_MODULE_0__asrouter_asrouter_content__["b" ].sendMessage({ type: "ADMIN_CONNECT_STATE" });
+    const endpoint = __WEBPACK_IMPORTED_MODULE_0__asrouter_asrouter_content__["b" ].getEndpoint();
+    __WEBPACK_IMPORTED_MODULE_0__asrouter_asrouter_content__["b" ].sendMessage({ type: "ADMIN_CONNECT_STATE", data: { endpoint } });
     __WEBPACK_IMPORTED_MODULE_0__asrouter_asrouter_content__["b" ].addListener(this.onMessage);
   }
 
@@ -8706,6 +8735,7 @@ class _StartupOverlay extends __WEBPACK_IMPORTED_MODULE_3_react___default.a.Pure
     this.clickSkip = this.clickSkip.bind(this);
     this.initScene = this.initScene.bind(this);
     this.removeOverlay = this.removeOverlay.bind(this);
+    this.onInputInvalid = this.onInputInvalid.bind(this);
 
     this.state = { emailInput: "" };
     this.initScene();
@@ -8729,7 +8759,10 @@ class _StartupOverlay extends __WEBPACK_IMPORTED_MODULE_3_react___default.a.Pure
   }
 
   onInputChange(e) {
+    let error = e.target.previousSibling;
     this.setState({ emailInput: e.target.value });
+    error.classList.remove("active");
+    e.target.classList.remove("invalid");
   }
 
   onSubmit() {
@@ -8740,6 +8773,13 @@ class _StartupOverlay extends __WEBPACK_IMPORTED_MODULE_3_react___default.a.Pure
   clickSkip() {
     this.props.dispatch(__WEBPACK_IMPORTED_MODULE_1_common_Actions_jsm__["b" ].UserEvent({ event: "SKIPPED_SIGNIN" }));
     this.removeOverlay();
+  }
+
+  onInputInvalid(e) {
+    let error = e.target.previousSibling;
+    error.classList.add("active");
+    e.target.classList.add("invalid");
+    e.preventDefault(); 
   }
 
   render() {
@@ -8804,7 +8844,12 @@ class _StartupOverlay extends __WEBPACK_IMPORTED_MODULE_3_react___default.a.Pure
               __WEBPACK_IMPORTED_MODULE_3_react___default.a.createElement("input", { name: "entrypoint", type: "hidden", value: "activity-stream-firstrun" }),
               __WEBPACK_IMPORTED_MODULE_3_react___default.a.createElement("input", { name: "utm_source", type: "hidden", value: "activity-stream" }),
               __WEBPACK_IMPORTED_MODULE_3_react___default.a.createElement("input", { name: "utm_campaign", type: "hidden", value: "firstrun" }),
-              __WEBPACK_IMPORTED_MODULE_3_react___default.a.createElement("input", { className: "email-input", name: "email", type: "email", required: "true", placeholder: this.props.intl.formatMessage({ id: "firstrun_email_input_placeholder" }), onChange: this.onInputChange }),
+              __WEBPACK_IMPORTED_MODULE_3_react___default.a.createElement(
+                "span",
+                { className: "error" },
+                this.props.intl.formatMessage({ id: "firstrun_invalid_input" })
+              ),
+              __WEBPACK_IMPORTED_MODULE_3_react___default.a.createElement("input", { className: "email-input", name: "email", type: "email", required: "true", onInvalid: this.onInputInvalid, placeholder: this.props.intl.formatMessage({ id: "firstrun_email_input_placeholder" }), onChange: this.onInputChange }),
               __WEBPACK_IMPORTED_MODULE_3_react___default.a.createElement(
                 "div",
                 { className: "extra-links" },
