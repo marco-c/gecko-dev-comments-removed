@@ -1394,7 +1394,7 @@ IonBuilder::inlineMathRandom(CallInfo& callInfo)
     
     
     
-    script()->compartment()->ensureRandomNumberGenerator();
+    script()->realm()->getOrCreateRandomNumberGenerator();
 
     callInfo.setImplicitlyUsedUnchecked();
 
