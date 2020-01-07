@@ -673,7 +673,8 @@ ApplyAnimatedValue(Layer* aLayer,
 static bool
 SampleAnimations(Layer* aLayer,
                  CompositorAnimationStorage* aStorage,
-                 TimeStamp aTime)
+                 TimeStamp aPreviousFrameTime,
+                 TimeStamp aCurrentFrameTime)
 {
   bool isAnimating = false;
 
@@ -689,7 +690,8 @@ SampleAnimations(Layer* aLayer,
         RefPtr<RawServoAnimationValue> animationValue =
           layer->GetBaseAnimationStyle();
         AnimationHelper::SampleResult sampleResult =
-          AnimationHelper::SampleAnimationForEachNode(aTime,
+          AnimationHelper::SampleAnimationForEachNode(aPreviousFrameTime,
+                                                      aCurrentFrameTime,
                                                       animations,
                                                       layer->GetAnimationData(),
                                                       animationValue);
@@ -1259,15 +1261,11 @@ AsyncCompositionManager::TransformShadowTree(TimeStamp aCurrentFrame,
   
   
   
-  
-  
-  
-  
   bool wantNextFrame =
     SampleAnimations(root,
                      storage,
-                     !mPreviousFrameTimeStamp.IsNull() ?
-                       mPreviousFrameTimeStamp : aCurrentFrame);
+                     mPreviousFrameTimeStamp,
+                     aCurrentFrame);
 
   if (!wantNextFrame) {
     

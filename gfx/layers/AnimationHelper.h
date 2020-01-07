@@ -221,8 +221,12 @@ public:
 
 
 
+
+
+
   static SampleResult
-  SampleAnimationForEachNode(TimeStamp aTime,
+  SampleAnimationForEachNode(TimeStamp aPreviousFrameTime,
+                             TimeStamp aCurrentFrameTime,
                              AnimationArray& aAnimations,
                              InfallibleTArray<AnimData>& aAnimationData,
                              RefPtr<RawServoAnimationValue>& aAnimationValue);
@@ -251,7 +255,8 @@ public:
 
   static void
   SampleAnimations(CompositorAnimationStorage* aStorage,
-                   TimeStamp aTime);
+                   TimeStamp aPreviousFrameTime,
+                   TimeStamp aCurrentFrameTime);
 };
 
 } 

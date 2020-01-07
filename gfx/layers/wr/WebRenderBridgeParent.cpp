@@ -1222,18 +1222,17 @@ WebRenderBridgeParent::AdvanceAnimations()
       
       
       
-      AnimationHelper::SampleAnimations(mAnimStorage, *testingTimeStamp);
+      AnimationHelper::SampleAnimations(mAnimStorage,
+                                        *testingTimeStamp,
+                                        *testingTimeStamp);
       return;
     }
   }
 
   TimeStamp lastComposeTime = mCompositorScheduler->GetLastComposeTime();
-  
-  
   AnimationHelper::SampleAnimations(mAnimStorage,
-      !mPreviousFrameTimeStamp.IsNull()
-      ? mPreviousFrameTimeStamp
-      : lastComposeTime);
+                                    mPreviousFrameTimeStamp,
+                                    lastComposeTime);
 
   
   
