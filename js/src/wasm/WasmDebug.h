@@ -48,39 +48,14 @@ struct ExprLoc
     {}
 };
 
-typedef Vector<ExprLoc, 0, SystemAllocPolicy> ExprLocVector;
-typedef Vector<uint32_t, 0, SystemAllocPolicy> ExprLocIndexVector;
-
-
-
-
-class GeneratedSourceMap
-{
-    ExprLocVector exprlocs_;
-    UniquePtr<ExprLocIndexVector> sortedByOffsetExprLocIndices_;
-    uint32_t totalLines_;
-
-  public:
-    explicit GeneratedSourceMap() : totalLines_(0) {}
-    ExprLocVector& exprlocs() { return exprlocs_; }
-
-    uint32_t totalLines() { return totalLines_; }
-    void setTotalLines(uint32_t val) { totalLines_ = val; }
-
-    bool searchLineByOffset(JSContext* cx, uint32_t offset, size_t* exprlocIndex);
-
-    size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
-};
-
-typedef UniquePtr<GeneratedSourceMap> UniqueGeneratedSourceMap;
 typedef HashMap<uint32_t, uint32_t, DefaultHasher<uint32_t>, SystemAllocPolicy> StepModeCounters;
-typedef HashMap<uint32_t, WasmBreakpointSite*, DefaultHasher<uint32_t>, SystemAllocPolicy> WasmBreakpointSiteMap;
+typedef HashMap<uint32_t, WasmBreakpointSite*, DefaultHasher<uint32_t>, SystemAllocPolicy>
+    WasmBreakpointSiteMap;
 
 class DebugState
 {
     const SharedCode         code_;
     const SharedBytes        maybeBytecode_;
-    UniqueGeneratedSourceMap maybeSourceMap_;
     bool                     binarySource_;
 
     
@@ -92,7 +67,6 @@ class DebugState
     StepModeCounters         stepModeCounters_;
 
     void toggleDebugTrap(uint32_t offset, bool enabled);
-    bool ensureSourceMap(JSContext* cx);
 
   public:
     DebugState(SharedCode code,
@@ -101,10 +75,6 @@ class DebugState
 
     const Bytes* maybeBytecode() const { return maybeBytecode_ ? &maybeBytecode_->bytes : nullptr; }
     bool binarySource() const { return binarySource_; }
-
-    
-    
-    
 
     JSString* createText(JSContext* cx);
     bool getLineOffsets(JSContext* cx, size_t lineno, Vector<uint32_t>* offsets);
