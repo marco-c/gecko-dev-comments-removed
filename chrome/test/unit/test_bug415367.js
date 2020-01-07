@@ -3,15 +3,12 @@
 
 
 
-var gIOS = Cc["@mozilla.org/network/io-service;1"]
-            .getService(Ci.nsIIOService);
-
 function test_uri(obj) {
   var uri = null;
   var failed = false;
   var message = "";
   try {
-    uri = gIOS.newURI(obj.uri);
+    uri = Services.io.newURI(obj.uri);
     if (!obj.result) {
       failed = true;
       message = obj.uri + " should not be accepted as a valid URI";

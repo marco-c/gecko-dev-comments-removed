@@ -178,13 +178,11 @@ function run_test() {
           break;
       }
       try {
-        let ios = Cc["@mozilla.org/network/io-service;1"].
-                  getService(Ci.nsIIOService);
-        sourceURI = ios.newURI(sourceURI);
+        sourceURI = Services.io.newURI(sourceURI);
         let uri;
         if (type == "resource") {
           
-          let rph = ios.getProtocolHandler("resource").
+          let rph = Services.io.getProtocolHandler("resource").
                     QueryInterface(Ci.nsIResProtocolHandler);
           
           uri = rph.resolveURI(sourceURI);
