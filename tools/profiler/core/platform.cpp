@@ -3027,10 +3027,16 @@ locked_profiler_stop(PSLockRef aLock)
     RegisteredThread* registeredThread = thread.mRegisteredThread;
     if (ActivePS::FeatureJS(aLock)) {
       registeredThread->StopJSSampling();
-      if (registeredThread->Info()->ThreadId() == tid) {
+      RefPtr<ThreadInfo> info = registeredThread->Info();
+      if (info->ThreadId() == tid) {
         
         
         registeredThread->PollJSSampling();
+      } else if (info->IsMainThread()) {
+        
+        
+        
+        TriggerPollJSSamplingOnMainThread();
       }
     }
   }
