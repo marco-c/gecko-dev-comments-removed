@@ -7,45 +7,88 @@
 #ifndef IOActivityMonitor_h___
 #define IOActivityMonitor_h___
 
-#include "mozilla/dom/ChromeUtilsBinding.h"
 #include "nsCOMPtr.h"
 #include "nscore.h"
 #include "nsClassHashtable.h"
 #include "nsDataHashtable.h"
 #include "nsHashKeys.h"
+#include "nsIIOActivityData.h"
 #include "nsISupports.h"
+#include "nsITimer.h"
 #include "prinrval.h"
 #include "prio.h"
 #include "private/pprio.h"
 #include <stdint.h>
 
-namespace mozilla {
-
-namespace dom {
-  class Promise;
-}
-
-namespace net {
+namespace mozilla { namespace net {
 
 #define IO_ACTIVITY_ENABLED_PREF "io.activity.enabled"
+#define IO_ACTIVITY_INTERVAL_PREF "io.activity.intervalMilliseconds"
 
-typedef nsDataHashtable<nsCStringHashKey, dom::IOActivityDataDictionary> Activities;
+
+
+
+
+struct IOActivity {
+  
+  
+  
+  nsCString location;
+
+  
+  uint32_t rx;
+  uint32_t tx;
+
+  explicit IOActivity(const nsACString& aLocation) {
+    location.Assign(aLocation);
+    rx = 0;
+    tx = 0;
+  }
+
+  
+  bool Inactive() {
+    return rx == 0 && tx == 0;
+  }
+
+  
+  void Reset() {
+    rx = 0;
+    tx = 0;
+  }
+};
+
+typedef nsClassHashtable<nsCStringHashKey, IOActivity> Activities;
+
+
+class IOActivityData final : public nsIIOActivityData
+{
+public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIIOACTIVITYDATA
+  explicit IOActivityData(IOActivity aActivity)
+      : mActivity(aActivity) {}
+private:
+  ~IOActivityData() = default;
+  IOActivity mActivity;
+};
 
 
 
 
 
 class IOActivityMonitor final
-    : public nsINamed
+    : public nsITimerCallback
+    , public nsINamed
 {
 public:
   IOActivityMonitor();
 
   NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSITIMERCALLBACK
   NS_DECL_NSINAMED
 
   
-  static nsresult Init();
+  static nsresult Init(int32_t aInterval);
   static nsresult Shutdown();
 
   
@@ -58,17 +101,25 @@ public:
   static nsresult Write(PRFileDesc *fd, uint32_t aAmount);
 
   static bool IsActive();
-  static void RequestActivities(dom::Promise* aPromise);
+
+  
+  
+  static nsresult NotifyActivities();
 private:
-  ~IOActivityMonitor() = default;
-  nsresult InitInternal();
-  nsresult ShutdownInternal();
-  bool IncrementActivity(const nsACString& location, uint32_t aRx, uint32_t aTx);
-  nsresult WriteInternal(const nsACString& location, uint32_t aAmount);
-  nsresult ReadInternal(const nsACString& location, uint32_t aAmount);
-  void RequestActivitiesInternal(dom::Promise* aPromise);
+  virtual ~IOActivityMonitor() = default;
+  nsresult Init_Internal(int32_t aInterval);
+  nsresult Shutdown_Internal();
+
+  IOActivity* GetActivity(const nsACString& location);
+  nsresult Write_Internal(const nsACString& location, uint32_t aAmount);
+  nsresult Read_Internal(const nsACString& location, uint32_t aAmount);
+  nsresult NotifyActivities_Internal();
 
   Activities mActivities;
+
+  
+  uint32_t mInterval;
+  nsCOMPtr<nsITimer> mTimer;
   
   Mutex mLock;
 };
