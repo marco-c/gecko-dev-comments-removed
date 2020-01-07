@@ -1158,6 +1158,8 @@ function ArrayFlat() {
     return A;
 }
 
+
+
 function FlattenIntoArray(target, source, sourceLen, start, depth, mapperFunction, thisArg) {
     
     var targetIndex = start;
@@ -1178,10 +1180,16 @@ function FlattenIntoArray(target, source, sourceLen, start, depth, mapperFunctio
             }
 
             
-            var flattenable = IsArray(element);
+            var shouldFlatten = false;
 
             
-            if (flattenable && depth > 0) {
+            if (depth > 0) {
+                
+                shouldFlatten = IsArray(element);
+            }
+
+            
+            if (shouldFlatten) {
                 
                 var elementLen = ToLength(element.length);
 
