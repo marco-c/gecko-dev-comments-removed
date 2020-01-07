@@ -195,6 +195,9 @@ const HarExporter = {
       form: { title, url }
     } = getTabTarget();
 
+    
+    connector.enableActions(false);
+
     options = {
       ...options,
       title: title || url,
@@ -206,6 +209,9 @@ const HarExporter = {
     
     let builder = new HarBuilder(options);
     let result = await builder.build();
+
+    
+    connector.enableActions(true);
 
     return result;
   },
