@@ -4037,7 +4037,7 @@ nsDisplayBackgroundImage::CreateWebRenderCommands(mozilla::wr::DisplayListBuilde
                                                   StyleFrame(), mImageFlags, mLayer,
                                                   CompositionOp::OP_OVER);
   params.bgClipRect = &mBounds;
-  ImgDrawResult result =
+  DrawResult result =
     nsCSSRendering::BuildWebRenderDisplayItemsForStyleImageLayer(params, aBuilder, aResources, aSc, aManager, this);
   nsDisplayBackgroundGeometry::UpdateDrawResult(this, result);
 
@@ -4200,7 +4200,7 @@ nsDisplayBackgroundImage::PaintInternal(nsDisplayListBuilder* aBuilder,
                                                   StyleFrame(), mImageFlags, mLayer,
                                                   CompositionOp::OP_OVER);
   params.bgClipRect = aClipRect;
-  ImgDrawResult result = nsCSSRendering::PaintStyleImageLayer(params, *aCtx);
+  DrawResult result = nsCSSRendering::PaintStyleImageLayer(params, *aCtx);
 
   if (clip == StyleGeometryBox::Text) {
     ctx->PopGroupAndBlend();
@@ -4501,7 +4501,7 @@ nsDisplayImageContainer::ConfigureLayer(ImageLayer* aLayer,
   if (imageWidth > 0 && imageHeight > 0) {
     
     
-    nsDisplayBackgroundGeometry::UpdateDrawResult(this, ImgDrawResult::SUCCESS);
+    nsDisplayBackgroundGeometry::UpdateDrawResult(this, DrawResult::SUCCESS);
   }
 
   
@@ -5677,7 +5677,7 @@ nsDisplayBorder::Paint(nsDisplayListBuilder* aBuilder,
                          ? PaintBorderFlags::SYNC_DECODE_IMAGES
                          : PaintBorderFlags();
 
-  ImgDrawResult result =
+  DrawResult result =
     nsCSSRendering::PaintBorder(mFrame->PresContext(), *aCtx, mFrame,
                                 mVisibleRect,
                                 nsRect(offset, mFrame->GetSize()),
@@ -9584,7 +9584,7 @@ nsDisplayMask::PaintMask(nsDisplayListBuilder* aBuilder,
 
   nsDisplayMaskGeometry::UpdateDrawResult(this, imgParmas.result);
 
-  return imgParmas.result == mozilla::image::ImgDrawResult::SUCCESS;
+  return imgParmas.result == mozilla::image::DrawResult::SUCCESS;
 }
 
 LayerState
@@ -9969,6 +9969,34 @@ nsDisplayFilter::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuild
               filter.GetFilterParameter().GetCoordValue(),
               appUnitsPerDevPixel)),
         };
+        wrFilters.AppendElement(filterOp);
+        break;
+      }
+      case NS_STYLE_FILTER_DROP_SHADOW: {
+        float appUnitsPerDevPixel = mFrame->PresContext()->AppUnitsPerDevPixel();
+        nsCSSShadowArray* shadows = filter.GetDropShadow();
+        if (!shadows || shadows->Length() != 1) {
+          NS_NOTREACHED("Exactly one drop shadow should have been parsed.");
+          return false;
+        }
+
+        nsCSSShadowItem* shadow = shadows->ShadowAt(0);
+        nscolor color = shadow->mColor;
+        if (!shadow->mHasColor) {
+          color = mFrame->StyleColor()->mColor;
+        }
+
+        mozilla::wr::WrFilterOp filterOp = {
+          wr::ToWrFilterOpType(filter.GetType()),
+          NSAppUnitsToFloatPixels(shadow->mRadius, appUnitsPerDevPixel),
+          NSAppUnitsToFloatPixels(shadow->mXOffset, appUnitsPerDevPixel),
+          NSAppUnitsToFloatPixels(shadow->mYOffset, appUnitsPerDevPixel),
+          NS_GET_R(color) / 255.0f,
+          NS_GET_G(color) / 255.0f,
+          NS_GET_B(color) / 255.0f,
+          NS_GET_A(color) / 255.0f,
+        };
+
         wrFilters.AppendElement(filterOp);
         break;
       }
