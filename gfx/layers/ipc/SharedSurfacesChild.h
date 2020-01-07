@@ -46,6 +46,14 @@ public:
 
 
 
+  static nsresult Share(gfx::SourceSurface* aSurface,
+                        wr::ExternalImageId& aId);
+
+  
+
+
+
+
   static nsresult Share(gfx::SourceSurfaceSharedData* aSurface,
                         WebRenderLayerManager* aManager,
                         wr::IpcResourceUpdateQueue& aResources,
