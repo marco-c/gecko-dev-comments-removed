@@ -27,7 +27,9 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = ["FormAutofillParent"];
+
+
+this.EXPORTED_SYMBOLS = ["formAutofillParent"];
 
 const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 
@@ -81,7 +83,27 @@ FormAutofillParent.prototype = {
   
 
 
+  _initialized: false,
+
+  
+
+
+
+
+
+  get initialized() {
+    return this._initialized;
+  },
+
+  
+
+
   async init() {
+    if (this._initialized) {
+      return;
+    }
+    this._initialized = true;
+
     Services.obs.addObserver(this, "sync-pane-loaded");
     Services.ppmm.addMessageListener("FormAutofill:InitStorage", this);
     Services.ppmm.addMessageListener("FormAutofill:GetRecords", this);
@@ -552,3 +574,5 @@ FormAutofillParent.prototype = {
     histogram.add(`${formType}-${fillingType}`, Date.now() - startedFillingMS);
   },
 };
+
+this.formAutofillParent = new FormAutofillParent();
