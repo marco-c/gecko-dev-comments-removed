@@ -1453,6 +1453,10 @@ GfxInfo::GetFeatureStatusImpl(int32_t aFeature,
   if (aOS)
     *aOS = os;
 
+  if (mShutdownOccurred) {
+    return NS_OK;
+  }
+
   
   if (!aDriverInfo.Length()) {
     nsAutoString adapterVendorID;
