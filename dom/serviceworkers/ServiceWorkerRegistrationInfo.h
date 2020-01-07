@@ -234,6 +234,9 @@ public:
   uint64_t
   Id() const;
 
+  uint64_t
+  Version() const;
+
   uint32_t
   GetUpdateDelay();
 
@@ -250,6 +253,9 @@ private:
   void
   UpdateRegistrationState();
 
+  void
+  UpdateRegistrationState(ServiceWorkerUpdateViaCache aUpdateViaCache);
+
   
   
   
@@ -259,6 +265,9 @@ private:
 
   static uint64_t
   GetNextId();
+
+  static uint64_t
+  GetNextVersion();
 };
 
 } 
