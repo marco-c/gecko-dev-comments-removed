@@ -661,13 +661,21 @@ HandleException(ResumeFromException* rfe)
     
     
     DebugModeOSRVolatileJitFrameIter iter(cx);
-    while (!iter.done()) {
+    while (true) {
+        iter.skipNonScriptedJSFrames();
+        if (iter.done())
+            break;
+
         if (iter.isWasm()) {
             HandleExceptionWasm(cx, &iter.asWasm(), rfe);
             if (!iter.done())
                 ++iter;
             continue;
         }
+
+        
+        
+        cx->setRealmForJitExceptionHandler(iter.realm());
 
         const JSJitFrameIter& frame = iter.asJSJit();
 
