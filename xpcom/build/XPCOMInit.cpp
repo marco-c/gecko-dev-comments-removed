@@ -468,7 +468,10 @@ NS_InitXPCOM2(nsIServiceManager** aResult,
 
   NS_InitAtomTable();
 
-  mozilla::LogModule::Init();
+  
+  
+  
+  mozilla::LogModule::Init(0, nullptr);
 
   nsresult rv = NS_OK;
 
@@ -728,7 +731,11 @@ NS_InitMinimalXPCOM()
   mozilla::TimeStamp::Startup();
   NS_LogInit();
   NS_InitAtomTable();
-  mozilla::LogModule::Init();
+
+  
+  
+  
+  mozilla::LogModule::Init(0, nullptr);
 
   nsresult rv = nsThreadManager::get().Init();
   if (NS_WARN_IF(NS_FAILED(rv))) {

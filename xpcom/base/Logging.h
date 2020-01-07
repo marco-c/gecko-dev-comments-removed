@@ -76,7 +76,15 @@ public:
 
   static LogModule* Get(const char* aName);
 
-  static void Init();
+  
+
+
+
+
+
+
+
+  static void Init(int argc, char* argv[]);
 
   
 

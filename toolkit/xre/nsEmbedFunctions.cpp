@@ -402,7 +402,7 @@ XRE_InitChildProcess(int aArgc,
   
   ScopedLogging logger;
 
-  mozilla::LogModule::Init();
+  mozilla::LogModule::Init(aArgc, aArgv);
 
   AUTO_PROFILER_INIT;
   AUTO_PROFILER_LABEL("XRE_InitChildProcess", OTHER);
@@ -784,7 +784,7 @@ XRE_InitParentProcess(int aArgc,
   
   NS_SetMainThread();
 
-  mozilla::LogModule::Init();
+  mozilla::LogModule::Init(aArgc, aArgv);
 
   AUTO_PROFILER_INIT;
 
