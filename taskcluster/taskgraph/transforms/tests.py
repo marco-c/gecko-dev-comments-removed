@@ -427,7 +427,7 @@ def set_defaults(config, tests):
         
         
         
-        if test['test-platform'].startswith('linux64-qr'):
+        if "-qr/" in test['test-platform']:
             test['webrender'] = True
         else:
             test.setdefault('webrender', False)
