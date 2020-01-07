@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+
+
+let frameScriptPath = "content/tabswitch-content-process.js";
+
+browser.tps.setup({ frameScriptPath });
