@@ -979,6 +979,10 @@ TraceParser(JSTracer* trc, AutoGCRooter* parser)
 bool
 ParserBase::setSourceMapInfo()
 {
+    
+    if (!ss)
+        return true;
+
     if (anyChars.hasDisplayURL()) {
         if (!ss->setDisplayURL(context, anyChars.displayURL()))
             return false;
