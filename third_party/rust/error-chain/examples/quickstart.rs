@@ -14,14 +14,17 @@ extern crate error_chain;
 
 mod errors {
     
-    error_chain! { }
+    error_chain!{}
 }
+
+
+
 
 use errors::*;
 
 fn main() {
     if let Err(ref e) = run() {
-        use ::std::io::Write;
+        use std::io::Write;
         let stderr = &mut ::std::io::stderr();
         let errmsg = "Error writing to stderr";
 
@@ -53,7 +56,7 @@ fn alternative_main() {
         let stderr = &mut ::std::io::stderr();
         let errmsg = "Error writing to stderr";
 
-        writeln!(stderr, "{}", e.display()).expect(errmsg);
+        writeln!(stderr, "{}", e.display_chain()).expect(errmsg);
         ::std::process::exit(1);
     }
 }

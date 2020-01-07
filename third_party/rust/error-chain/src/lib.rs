@@ -1,4 +1,176 @@
 #![deny(missing_docs)]
+#![allow(unknown_lints)] 
+#![doc(html_root_url = "https://docs.rs/error-chain/0.11.0")]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -381,7 +553,7 @@ pub use backtrace::Backtrace;
 pub type Backtrace = ();
 
 #[macro_use]
-mod quick_error;
+mod impl_error_chain_kind;
 #[macro_use]
 mod error_chain;
 #[macro_use]
@@ -390,10 +562,18 @@ pub use quick_main::ExitCode;
 #[cfg(feature = "example_generated")]
 pub mod example_generated;
 
+#[derive(Debug)]
 
-pub struct ErrorChainIter<'a>(pub Option<&'a error::Error>);
+pub struct Iter<'a>(Option<&'a error::Error>);
 
-impl<'a> Iterator for ErrorChainIter<'a> {
+impl<'a> Iter<'a> {
+    
+    pub fn new(err: Option<&'a error::Error>) -> Iter<'a> {
+        Iter(err)
+    }
+}
+
+impl<'a> Iterator for Iter<'a> {
     type Item = &'a error::Error;
 
     fn next<'b>(&'b mut self) -> Option<&'a error::Error> {
@@ -413,9 +593,29 @@ impl<'a> Iterator for ErrorChainIter<'a> {
 #[cfg(feature = "backtrace")]
 #[doc(hidden)]
 pub fn make_backtrace() -> Option<Arc<Backtrace>> {
-    match std::env::var_os("RUST_BACKTRACE") {
-        Some(ref val) if val != "0" => Some(Arc::new(Backtrace::new())),
-        _ => None,
+    use std::sync::atomic::{ATOMIC_USIZE_INIT, AtomicUsize, Ordering};
+
+    
+    
+    static BACKTRACE_ENABLED_CACHE: AtomicUsize = ATOMIC_USIZE_INIT;
+
+    let enabled = match BACKTRACE_ENABLED_CACHE.load(Ordering::Relaxed) {
+        0 => {
+            let enabled = match std::env::var_os("RUST_BACKTRACE") {
+                Some(ref val) if val != "0" => true,
+                _ => false
+            };
+            let encoded = ((enabled as usize) << 1) | 1;
+            BACKTRACE_ENABLED_CACHE.store(encoded, Ordering::Relaxed);
+            enabled
+        }
+        encoded => (encoded >> 1) != 0
+    };
+
+    if enabled {
+        Some(Arc::new(Backtrace::new()))
+    } else {
+        None
     }
 }
 
@@ -438,7 +638,7 @@ pub trait ChainedError: error::Error + Send + 'static {
     fn kind(&self) -> &Self::ErrorKind;
 
     
-    fn iter(&self) -> ErrorChainIter;
+    fn iter(&self) -> Iter;
 
     
     fn backtrace(&self) -> Option<&Backtrace>;
@@ -447,9 +647,14 @@ pub trait ChainedError: error::Error + Send + 'static {
     
     
     
-    fn display<'a>(&'a self) -> Display<'a, Self> {
-        Display(self)
+    fn display_chain<'a>(&'a self) -> DisplayChain<'a, Self> {
+        DisplayChain(self)
     }
+
+    
+    fn chain_err<F, EK>(self, error: F) -> Self
+        where F: FnOnce() -> EK,
+              EK: Into<Self::ErrorKind>;
 
     
     #[doc(hidden)]
@@ -465,12 +670,13 @@ pub trait ChainedError: error::Error + Send + 'static {
 
 
 #[derive(Debug)]
-pub struct Display<'a, T: 'a + ?Sized>(&'a T);
+pub struct DisplayChain<'a, T: 'a + ?Sized>(&'a T);
 
-impl<'a, T> fmt::Display for Display<'a, T>
+impl<'a, T> fmt::Display for DisplayChain<'a, T>
     where T: ChainedError
 {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        
         try!(writeln!(fmt, "Error: {}", self.0));
 
         for e in self.0.iter().skip(1) {

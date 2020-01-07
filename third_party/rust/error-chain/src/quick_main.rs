@@ -47,7 +47,7 @@ macro_rules! quick_main {
             ::std::process::exit(match $main() {
                 Ok(ret) => $crate::ExitCode::code(ret),
                 Err(ref e) => {
-                    write!(&mut ::std::io::stderr(), "{}", $crate::ChainedError::display(e))
+                    write!(&mut ::std::io::stderr(), "{}", $crate::ChainedError::display_chain(e))
                         .expect("Error writing to stderr");
 
                     1
@@ -65,9 +65,13 @@ pub trait ExitCode {
 }
 
 impl ExitCode for i32 {
-    fn code(self) -> i32 { self }
+    fn code(self) -> i32 {
+        self
+    }
 }
 
 impl ExitCode for () {
-    fn code(self) -> i32 { 0 }
+    fn code(self) -> i32 {
+        0
+    }
 }
