@@ -6240,7 +6240,8 @@ nsCSSFrameConstructor::AddFrameConstructionItemsInternal(nsFrameConstructorState
     aFlags & ITEM_IS_ANONYMOUSCONTENTCREATOR_CONTENT;
   if (isGeneratedContent) {
     
-    NS_ADDREF(item->mContent);
+    
+    item->mContent->AddRef();
   }
   item->mIsRootPopupgroup =
     aNameSpaceID == kNameSpaceID_XUL && aTag == nsGkAtoms::popupgroup &&
