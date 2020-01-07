@@ -3617,6 +3617,7 @@ function resolveRelativeTimeFormatInternals(lazyRelativeTimeFormatData) {
     
     internalProps.locale = r.locale;
     internalProps.style = lazyRelativeTimeFormatData.style;
+    internalProps.type = lazyRelativeTimeFormatData.type;
 
     return internalProps;
 }
@@ -3673,6 +3674,7 @@ function InitializeRelativeTimeFormat(relativeTimeFormat, locales, options) {
     
     
     
+    
     const lazyRelativeTimeFormatData = std_Object_create(null);
 
     
@@ -3697,6 +3699,11 @@ function InitializeRelativeTimeFormat(relativeTimeFormat, locales, options) {
     
     const style = GetOption(options, "style", "string", ["long", "short", "narrow"], "long");
     lazyRelativeTimeFormatData.style = style;
+
+    
+    
+    const type = GetOption(options, "type", "string", ["numeric", "text"], "numeric");
+    lazyRelativeTimeFormatData.type = type;
 
     initializeIntlObject(relativeTimeFormat, "RelativeTimeFormat", lazyRelativeTimeFormatData);
 }
@@ -3780,6 +3787,7 @@ function Intl_RelativeTimeFormat_resolvedOptions() {
     var result = {
         locale: internals.locale,
         style: internals.style,
+        type: internals.type,
     };
 
     return result;
