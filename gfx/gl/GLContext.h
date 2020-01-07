@@ -3576,12 +3576,6 @@ public:
         return mScreen.get();
     }
 
-    
-
-
-
-    void ClearSafely();
-
     bool WorkAroundDriverBugs() const { return mWorkAroundDriverBugs; }
 
     bool IsDrawingToDefaultFramebuffer();
