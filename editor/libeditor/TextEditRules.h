@@ -9,7 +9,6 @@
 #include "mozilla/EditorBase.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
-#include "nsIEditRules.h"
 #include "nsIEditor.h"
 #include "nsINamed.h"
 #include "nsISupportsImpl.h"
@@ -22,6 +21,8 @@ class nsIDOMNode;
 namespace mozilla {
 
 class AutoLockRulesSniffing;
+class HTMLEditRules;
+class RulesInfo;
 class TextEditor;
 namespace dom {
 class Selection;
@@ -39,8 +40,7 @@ class Selection;
 
 
 
-class TextEditRules : public nsIEditRules
-                    , public nsITimerCallback
+class TextEditRules : public nsITimerCallback
                     , public nsINamed
 {
 public:
@@ -50,28 +50,31 @@ public:
   template<typename T> using OwningNonNull = OwningNonNull<T>;
 
   NS_DECL_NSITIMERCALLBACK
+  NS_DECL_NSINAMED
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(TextEditRules, nsIEditRules)
+  NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(TextEditRules, nsITimerCallback)
 
   TextEditRules();
 
-  
-  NS_IMETHOD Init(TextEditor* aTextEditor) override;
-  NS_IMETHOD SetInitialValue(const nsAString& aValue) override;
-  NS_IMETHOD DetachEditor() override;
-  NS_IMETHOD BeforeEdit(EditAction action,
-                        nsIEditor::EDirection aDirection) override;
-  NS_IMETHOD AfterEdit(EditAction action,
-                       nsIEditor::EDirection aDirection) override;
-  NS_IMETHOD WillDoAction(Selection* aSelection, RulesInfo* aInfo,
-                          bool* aCancel, bool* aHandled) override;
-  NS_IMETHOD DidDoAction(Selection* aSelection, RulesInfo* aInfo,
-                         nsresult aResult) override;
-  NS_IMETHOD_(bool) DocumentIsEmpty() override;
-  NS_IMETHOD DocumentModified() override;
+  HTMLEditRules* AsHTMLEditRules();
+  const HTMLEditRules* AsHTMLEditRules() const;
 
-  
-  NS_DECL_NSINAMED
+  virtual nsresult Init(TextEditor* aTextEditor);
+  virtual nsresult SetInitialValue(const nsAString& aValue);
+  virtual nsresult DetachEditor();
+  virtual nsresult BeforeEdit(EditAction aAction,
+                              nsIEditor::EDirection aDirection);
+  virtual nsresult AfterEdit(EditAction aAction,
+                             nsIEditor::EDirection aDirection);
+  virtual nsresult WillDoAction(Selection* aSelection,
+                                RulesInfo* aInfo,
+                                bool* aCancel,
+                                bool* aHandled);
+  virtual nsresult DidDoAction(Selection* aSelection,
+                               RulesInfo* aInfo,
+                               nsresult aResult);
+  virtual bool DocumentIsEmpty();
+  virtual nsresult DocumentModified();
 
 protected:
   virtual ~TextEditRules();
@@ -297,6 +300,7 @@ protected:
   
   
   bool mDeleteBidiImmediately;
+  bool mIsHTMLEditRules;
   
   EditAction mTheAction;
   nsCOMPtr<nsITimer> mTimer;
@@ -309,11 +313,15 @@ protected:
 
 
 
-class TextRulesInfo final : public RulesInfo
+
+
+
+
+class RulesInfo final
 {
 public:
-  explicit TextRulesInfo(EditAction aAction)
-    : RulesInfo(aAction)
+  explicit RulesInfo(EditAction aAction)
+    : action(aAction)
     , inString(nullptr)
     , outString(nullptr)
     , outputFormat(nullptr)
@@ -327,6 +335,8 @@ public:
     , alignType(nullptr)
     , blockType(nullptr)
   {}
+
+  EditAction action;
 
   
   const nsAString* inString;
