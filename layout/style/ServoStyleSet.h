@@ -132,7 +132,7 @@ public:
   CreateXBLServoStyleSet(nsPresContext* aPresContext,
                          const nsTArray<RefPtr<ServoStyleSheet>>& aNewSheets);
 
-  void Init(nsPresContext* aPresContext, nsBindingManager* aBindingManager);
+  void Init(nsPresContext* aPresContext);
   void BeginShutdown() {}
   void Shutdown();
 
@@ -648,9 +648,6 @@ private:
   
   
   UniquePtr<ServoStyleRuleMap> mStyleRuleMap;
-
-  
-  RefPtr<nsBindingManager> mBindingManager;
 
   static ServoStyleSet* sInServoTraversal;
 };
