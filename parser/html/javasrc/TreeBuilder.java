@@ -1167,7 +1167,6 @@ public abstract class TreeBuilder<T> implements TokenHandler,
 
                                     continue;
                             }
-                            
                         default:
                             
 
