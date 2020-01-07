@@ -83,6 +83,11 @@ var paymentRequest = {
   onPaymentRequestLoad(requestId) {
     window.addEventListener("unload", this, {once: true});
     this.sendMessageToChrome("paymentDialogReady");
+
+    
+    if (new URLSearchParams(location.search).get("debug")) {
+      document.getElementById("debugging-console").hidden = false;
+    }
   },
 
   async onShowPaymentRequest(detail) {

@@ -144,6 +144,10 @@ let ADDRESSES_1 = {
 };
 
 let buttonActions = {
+  debugFrame() {
+    window.parent.paymentRequest.sendMessageToChrome("debugFrame");
+  },
+
   delete1Address() {
     let savedAddresses = Object.assign({}, requestStore.getState().savedAddresses);
     delete savedAddresses[Object.keys(savedAddresses)[0]];
@@ -189,4 +193,14 @@ window.addEventListener("click", function onButtonClick(evt) {
   }
 
   buttonActions[id]();
+});
+
+window.addEventListener("DOMContentLoaded", function onDCL() {
+  if (window.location.protocol == "resource:") {
+    
+    
+    
+    
+    document.getElementById("debugFrame").hidden = false;
+  }
 });
