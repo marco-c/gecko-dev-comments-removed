@@ -24,6 +24,24 @@ Services.scriptloader.loadSubScript(NetUtil.newURI(scriptFile).spec);
 
 
 
+add_task(async function test_error_target_downloadingToSameFile() {
+  let targetFile = getTempFile(TEST_TARGET_FILE_NAME);
+  targetFile.create(Ci.nsIFile.NORMAL_FILE_TYPE, FileUtils.PERMS_FILE);
+
+  let download = await Downloads.createDownload({
+    source: NetUtil.newURI(targetFile),
+    target: targetFile,
+  });
+  await Assert.rejects(download.start(), ex => ex instanceof Downloads.Error &&
+                                               ex.becauseTargetFailed);
+
+  Assert.ok(await OS.File.exists(download.target.path),
+            "The file should not have been deleted.");
+});
+
+
+
+
 add_task(function test_DownloadError() {
   let error = new DownloadError({ result: Cr.NS_ERROR_NOT_RESUMABLE,
                                   message: "Not resumable."});
