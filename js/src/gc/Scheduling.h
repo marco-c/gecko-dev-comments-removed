@@ -538,9 +538,6 @@ class MemoryCounter
 
     void updateOnGCStart();
     void updateOnGCEnd(const GCSchedulingTunables& tunables, const AutoLockGC& lock);
-
-  private:
-    void reset();
 };
 
 
