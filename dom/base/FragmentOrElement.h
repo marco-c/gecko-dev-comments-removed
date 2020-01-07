@@ -32,6 +32,7 @@ class nsDOMAttributeMap;
 class nsDOMTokenList;
 class nsIControllers;
 class nsICSSDeclaration;
+class nsDOMCSSAttributeDeclaration;
 class nsIDocument;
 class nsDOMStringMap;
 class nsIURI;
@@ -253,7 +254,7 @@ public:
 
 
 
-    nsCOMPtr<nsICSSDeclaration> mSMILOverrideStyle;
+    RefPtr<nsDOMCSSAttributeDeclaration> mSMILOverrideStyle;
 
     
 

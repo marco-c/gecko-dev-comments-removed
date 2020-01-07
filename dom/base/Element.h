@@ -57,7 +57,7 @@ struct nsRect;
 class nsFocusManager;
 class nsGlobalWindowInner;
 class nsGlobalWindowOuter;
-class nsICSSDeclaration;
+class nsDOMCSSAttributeDeclaration;
 class nsISMILAttr;
 class nsDocument;
 class nsDOMStringMap;
@@ -414,7 +414,7 @@ public:
 
 
 
-  nsICSSDeclaration* GetSMILOverrideStyle();
+  nsDOMCSSAttributeDeclaration* GetSMILOverrideStyle();
 
   
 
