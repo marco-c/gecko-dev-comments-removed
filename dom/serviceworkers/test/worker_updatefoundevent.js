@@ -6,7 +6,9 @@
 registration.onupdatefound = function(e) {
   clients.matchAll().then(function(clients) {
     if (!clients.length) {
-      reject("No clients found");
+      
+      
+      return;
     }
 
     if (registration.scope.match(/updatefoundevent\.html$/)) {
