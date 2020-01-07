@@ -9,6 +9,7 @@
 #include "ClientHandleChild.h"
 #include "ClientHandleOpChild.h"
 #include "ClientManager.h"
+#include "ClientPrincipalUtils.h"
 #include "ClientState.h"
 #include "mozilla/dom/PClientManagerChild.h"
 #include "mozilla/dom/ServiceWorkerDescriptor.h"
@@ -121,6 +122,11 @@ ClientHandle::Control(const ServiceWorkerDescriptor& aServiceWorker)
 {
   RefPtr<GenericPromise::Private> outerPromise =
     new GenericPromise::Private(__func__);
+
+  
+  
+  MOZ_RELEASE_ASSERT(ClientMatchPrincipalInfo(mClientInfo.PrincipalInfo(),
+                                              aServiceWorker.PrincipalInfo()));
 
   StartOp(ClientControlledArgs(aServiceWorker.ToIPC()),
     [outerPromise](const ClientOpResult& aResult) {
