@@ -119,6 +119,21 @@
             }
 
             return window.test_driver_internal.send_keys(element, keys);
+        },
+
+        
+
+
+
+
+
+
+
+
+
+
+        freeze: function() {
+            return window.test_driver_internal.freeze();
         }
     };
 
@@ -142,6 +157,16 @@
 
 
         send_keys: function(element, keys) {
+            return Promise.reject(new Error("unimplemented"));
+        },
+
+        
+
+
+
+
+
+        freeze: function() {
             return Promise.reject(new Error("unimplemented"));
         }
     };
