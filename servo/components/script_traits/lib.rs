@@ -678,7 +678,7 @@ pub enum ConstellationMsg {
     
     TraverseHistory(TopLevelBrowsingContextId, TraversalDirection),
     
-    WindowSize(TopLevelBrowsingContextId, WindowSizeData, WindowSizeType),
+    WindowSize(Option<TopLevelBrowsingContextId>, WindowSizeData, WindowSizeType),
     
     TickAnimation(PipelineId, AnimationTickType),
     
