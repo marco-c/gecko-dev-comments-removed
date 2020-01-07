@@ -17,36 +17,52 @@ namespace layers {
 
 
 
+
+
+
+
+
+
 class MOZ_STACK_CLASS InputAPZContext
 {
 private:
+  
+  
   static ScrollableLayerGuid sGuid;
   static uint64_t sBlockId;
   static nsEventStatus sApzResponse;
-  static bool sRoutedToChildProcess;
   static bool sPendingLayerization;
 
+  
+  static bool sRoutedToChildProcess;
+
 public:
+  
   static ScrollableLayerGuid GetTargetLayerGuid();
   static uint64_t GetInputBlockId();
   static nsEventStatus GetApzResponse();
-  static void SetRoutedToChildProcess();
-  static void SetPendingLayerization();
+  static bool HavePendingLayerization();
 
+  
+  static bool WasRoutedToChildProcess();
+
+  
   InputAPZContext(const ScrollableLayerGuid& aGuid,
                   const uint64_t& aBlockId,
-                  const nsEventStatus& aApzResponse);
+                  const nsEventStatus& aApzResponse,
+                  bool aPendingLayerization = false);
   ~InputAPZContext();
 
-  static bool WasRoutedToChildProcess();
-  static bool HavePendingLayerization();
+  
+  static void SetRoutedToChildProcess();
 
 private:
   ScrollableLayerGuid mOldGuid;
   uint64_t mOldBlockId;
   nsEventStatus mOldApzResponse;
-  bool mOldRoutedToChildProcess;
   bool mOldPendingLayerization;
+
+  bool mOldRoutedToChildProcess;
 };
 
 } 
