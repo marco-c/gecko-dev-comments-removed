@@ -197,6 +197,21 @@ public:
 
   static nsFlexContainerFrame* GetFlexFrameWithComputedInfo(nsIFrame* aFrame);
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  static bool IsItemInlineAxisMainAxis(nsIFrame* aFrame);
+
 protected:
   
   explicit nsFlexContainerFrame(ComputedStyle* aStyle)

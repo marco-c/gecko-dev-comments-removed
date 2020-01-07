@@ -5665,23 +5665,8 @@ nsFrame::ComputeSize(gfxContext*         aRenderingContext,
     
     
     
-    
-    uint32_t flexDirection = GetParent()->StylePosition()->mFlexDirection;
-    const bool flexContainerIsRowOriented =
-      flexDirection == NS_STYLE_FLEX_DIRECTION_ROW ||
-      flexDirection == NS_STYLE_FLEX_DIRECTION_ROW_REVERSE;
-    const bool inlineAxisSameAsParent =
-      !aWM.IsOrthogonalTo(parentFrame->GetWritingMode());
-
-    
-    
-    
-    
-    
-    
-    
     usingFlexBasisForISize =
-      (flexContainerIsRowOriented == inlineAxisSameAsParent);
+      nsFlexContainerFrame::IsItemInlineAxisMainAxis(this);
 
     
     
@@ -5903,17 +5888,8 @@ nsFrame::ComputeSizeWithIntrinsicDimensions(gfxContext*          aRenderingConte
   
   
   if (isFlexItem) {
-    uint32_t flexDirection =
-      GetParent()->StylePosition()->mFlexDirection;
-    const bool flexContainerIsRowOriented =
-      flexDirection == NS_STYLE_FLEX_DIRECTION_ROW ||
-      flexDirection == NS_STYLE_FLEX_DIRECTION_ROW_REVERSE;
-    const bool inlineAxisSameAsParent =
-      !aWM.IsOrthogonalTo(parentFrame->GetWritingMode());
-
-    
     usingFlexBasisForISize =
-      (flexContainerIsRowOriented == inlineAxisSameAsParent);
+      nsFlexContainerFrame::IsItemInlineAxisMainAxis(this);
 
     
     

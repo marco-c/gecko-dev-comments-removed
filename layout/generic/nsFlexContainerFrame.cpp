@@ -1823,6 +1823,10 @@ FlexItem::FlexItem(ReflowInput& aFlexItemReflowInput,
              "placeholder frames should not be treated as flex items");
   MOZ_ASSERT(!(mFrame->GetStateBits() & NS_FRAME_OUT_OF_FLOW),
              "out-of-flow frames should not be treated as flex items");
+  MOZ_ASSERT(mIsInlineAxisMainAxis ==
+             nsFlexContainerFrame::IsItemInlineAxisMainAxis(mFrame),
+             "public API should be consistent with internal state (about "
+             "whether flex item's inline axis is flex container's main axis)");
 
   const ReflowInput* containerRS = aFlexItemReflowInput.mParentReflowInput;
   if (IsLegacyBox(containerRS->mFrame)) {
@@ -4379,6 +4383,41 @@ nsFlexContainerFrame::GetFlexFrameWithComputedInfo(nsIFrame* aFrame)
     }
   }
   return flexFrame;
+}
+
+
+bool
+nsFlexContainerFrame::IsItemInlineAxisMainAxis(nsIFrame* aFrame)
+{
+  MOZ_ASSERT(aFrame && aFrame->IsFlexItem(), "expecting arg to be a flex item");
+  const WritingMode flexItemWM = aFrame->GetWritingMode();
+  const nsIFrame* flexContainer = aFrame->GetParent();
+
+  if (IsLegacyBox(flexContainer)) {
+    
+    
+    
+    bool boxOrientIsVertical =
+      (flexContainer->StyleXUL()->mBoxOrient == StyleBoxOrient::Vertical);
+    return flexItemWM.IsVertical() == boxOrientIsVertical;
+  }
+
+  
+  
+  
+  bool itemInlineAxisIsParallelToParent =
+    !flexItemWM.IsOrthogonalTo(flexContainer->GetWritingMode());
+
+  
+  
+  auto flexDirection = flexContainer->StylePosition()->mFlexDirection;
+  bool flexContainerIsRowOriented =
+    flexDirection == NS_STYLE_FLEX_DIRECTION_ROW ||
+    flexDirection == NS_STYLE_FLEX_DIRECTION_ROW_REVERSE;
+
+  
+  
+  return flexContainerIsRowOriented == itemInlineAxisIsParallelToParent;
 }
 
 void
