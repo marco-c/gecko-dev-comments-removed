@@ -25,10 +25,11 @@
 
 
 
-class nsHostObjectURI : public mozilla::net::nsSimpleURI
-                      , public nsIURIWithPrincipal
-                      , public nsIURIWithBlobImpl
-                      , public nsSupportsWeakReference
+class nsHostObjectURI final
+  : public mozilla::net::nsSimpleURI
+  , public nsIURIWithPrincipal
+  , public nsIURIWithBlobImpl
+  , public nsSupportsWeakReference
 {
 public:
   nsHostObjectURI(nsIPrincipal* aPrincipal,
