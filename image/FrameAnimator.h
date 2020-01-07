@@ -37,6 +37,7 @@ public:
     , mHasRequestedDecode(false)
     , mIsCurrentlyDecoded(false)
     , mCompositedFrameInvalid(false)
+    , mCompositedFrameRequested(false)
     , mDiscarded(false)
   { }
 
@@ -144,6 +145,13 @@ public:
   
 
 
+
+
+  bool MaybeAdvanceAnimationFrameTime(const TimeStamp& aTime);
+
+  
+
+
   uint32_t GetCurrentAnimationFrameIndex() const;
 
   
@@ -237,6 +245,10 @@ private:
   
   
   bool mCompositedFrameInvalid;
+
+  
+  
+  bool mCompositedFrameRequested;
 
   
   

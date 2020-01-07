@@ -2175,9 +2175,6 @@ pref("network.cookie.lifetime.days",        90);
 
 pref("network.cookie.move.interval_sec",    10);
 
-pref("network.cookie.maxNumber", 3000);
-pref("network.cookie.maxPerHost", 180);
-
 
 pref("network.proxy.autoconfig_url", "");
 
@@ -4519,6 +4516,10 @@ pref("image.animated.decode-on-demand.threshold-kb", 4194303);
 
 
 pref("image.animated.decode-on-demand.batch-size", 6);
+
+
+
+pref("image.animated.resume-from-last-displayed", true);
 
 
 

@@ -168,6 +168,21 @@ AnimationState::SetAnimationFrameTime(const TimeStamp& aTime)
   mCurrentAnimationFrameTime = aTime;
 }
 
+bool
+AnimationState::MaybeAdvanceAnimationFrameTime(const TimeStamp& aTime)
+{
+  if (!gfxPrefs::ImageAnimatedResumeFromLastDisplayed() ||
+      mCurrentAnimationFrameTime >= aTime) {
+    return false;
+  }
+
+  
+  
+  
+  mCurrentAnimationFrameTime = aTime;
+  return true;
+}
+
 uint32_t
 AnimationState::GetCurrentAnimationFrameIndex() const
 {
@@ -329,6 +344,7 @@ FrameAnimator::AdvanceFrame(AnimationState& aState,
       MOZ_ASSERT(currentFrameEndTime.isSome());
       aState.mCurrentAnimationFrameTime = *currentFrameEndTime;
       aState.mCurrentAnimationFrameIndex = nextFrameIndex;
+      aState.mCompositedFrameRequested = false;
       aFrames.Advance(nextFrameIndex);
 
       return ret;
@@ -375,6 +391,7 @@ FrameAnimator::AdvanceFrame(AnimationState& aState,
 
   
   aState.mCurrentAnimationFrameIndex = nextFrameIndex;
+  aState.mCompositedFrameRequested = false;
   aFrames.Advance(nextFrameIndex);
 
   
@@ -411,6 +428,7 @@ FrameAnimator::RequestRefresh(AnimationState& aState,
   RefreshResult ret;
 
   if (aState.IsDiscarded()) {
+    aState.MaybeAdvanceAnimationFrameTime(aTime);
     return ret;
   }
 
@@ -426,6 +444,7 @@ FrameAnimator::RequestRefresh(AnimationState& aState,
 
   ret.mDirtyRect = aState.UpdateStateInternal(result, aAnimationFinished, mSize);
   if (aState.IsDiscarded() || !result) {
+    aState.MaybeAdvanceAnimationFrameTime(aTime);
     if (!ret.mDirtyRect.IsEmpty()) {
       ret.mFrameAdvanced = true;
     }
@@ -442,6 +461,15 @@ FrameAnimator::RequestRefresh(AnimationState& aState,
     MOZ_ASSERT(aState.mCompositedFrameInvalid);
     
     
+    aState.MaybeAdvanceAnimationFrameTime(aTime);
+    return ret;
+  }
+
+  
+  
+  
+  if (!aState.mCompositedFrameRequested &&
+      aState.MaybeAdvanceAnimationFrameTime(aTime)) {
     return ret;
   }
 
@@ -479,6 +507,8 @@ FrameAnimator::RequestRefresh(AnimationState& aState,
 LookupResult
 FrameAnimator::GetCompositedFrame(AnimationState& aState)
 {
+  aState.mCompositedFrameRequested = true;
+
   LookupResult result =
     SurfaceCache::Lookup(ImageKey(mImage),
                          RasterSurfaceKey(mSize,
