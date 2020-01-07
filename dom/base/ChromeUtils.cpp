@@ -769,12 +769,20 @@ ChromeUtils::CreateError(const GlobalObject& aGlobal, const nsAString& aMessage,
   aRetVal.set(retVal);
 }
 
- void
-ChromeUtils::RequestIOActivity(GlobalObject&)
+ already_AddRefed<Promise>
+ChromeUtils::RequestIOActivity(GlobalObject& aGlobal, ErrorResult& aRv)
 {
   MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_ASSERT(Preferences::GetBool(IO_ACTIVITY_ENABLED_PREF, false));
-  mozilla::Unused << mozilla::net::IOActivityMonitor::NotifyActivities();
+  nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(aGlobal.GetAsSupports());
+  MOZ_ASSERT(global);
+  RefPtr<Promise> domPromise = Promise::Create(global, aRv);
+  if (NS_WARN_IF(aRv.Failed())) {
+    return nullptr;
+  }
+  MOZ_ASSERT(domPromise);
+  mozilla::net::IOActivityMonitor::RequestActivities(domPromise);
+  return domPromise.forget();
 }
 
 } 
