@@ -596,8 +596,7 @@ HTMLEditor::MaybeCollapseSelectionAtFirstEditableNode(
     int32_t visOffset = 0;
     WSType visType;
     nsCOMPtr<nsINode> visNode;
-    wsObj.NextVisibleNode(pointToPutCaret.GetContainer(),
-                          pointToPutCaret.Offset(),
+    wsObj.NextVisibleNode(pointToPutCaret,
                           address_of(visNode), &visOffset, &visType);
 
     
@@ -1007,8 +1006,8 @@ HTMLEditor::IsVisibleBRElement(nsINode* aNode)
   nsCOMPtr<nsINode> unused;
   int32_t visOffset = 0;
   WSType visType;
-  wsObj.NextVisibleNode(selNode, selOffset, address_of(unused),
-                        &visOffset, &visType);
+  wsObj.NextVisibleNode(EditorRawDOMPoint(selNode, selOffset),
+                        address_of(unused), &visOffset, &visType);
   if (visType & WSType::block) {
     return false;
   }
@@ -1476,8 +1475,7 @@ HTMLEditor::GetBetterInsertionPointFor(nsINode& aNodeToInsert,
   nsCOMPtr<nsINode> nextVisibleNode;
   int32_t nextVisibleOffset = 0;
   WSType nextVisibleType;
-  wsObj.NextVisibleNode(aPointToInsert.GetContainer(), aPointToInsert.Offset(),
-                        address_of(nextVisibleNode),
+  wsObj.NextVisibleNode(aPointToInsert, address_of(nextVisibleNode),
                         &nextVisibleOffset, &nextVisibleType);
   
   
@@ -1493,8 +1491,7 @@ HTMLEditor::GetBetterInsertionPointFor(nsINode& aNodeToInsert,
   nsCOMPtr<nsINode> previousVisibleNode;
   int32_t previousVisibleOffset = 0;
   WSType previousVisibleType;
-  wsObj.PriorVisibleNode(aPointToInsert.GetContainer(), aPointToInsert.Offset(),
-                         address_of(previousVisibleNode),
+  wsObj.PriorVisibleNode(aPointToInsert, address_of(previousVisibleNode),
                          &previousVisibleOffset, &previousVisibleType);
   
   
@@ -4007,7 +4004,8 @@ HTMLEditor::IsVisibleTextNode(Text& aText)
   nsCOMPtr<nsINode> nextVisibleNode;
   int32_t unused = 0;
   WSType visibleNodeType;
-  wsRunObj.NextVisibleNode(&aText, 0, address_of(nextVisibleNode),
+  wsRunObj.NextVisibleNode(EditorRawDOMPoint(&aText, 0),
+                           address_of(nextVisibleNode),
                            &unused, &visibleNodeType);
   return (visibleNodeType == WSType::normalWS ||
           visibleNodeType == WSType::text) &&

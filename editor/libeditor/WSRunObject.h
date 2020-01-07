@@ -276,8 +276,8 @@ public:
   
   
   
-  void PriorVisibleNode(nsINode* aNode,
-                        int32_t aOffset,
+  template<typename PT, typename CT>
+  void PriorVisibleNode(const EditorDOMPointBase<PT, CT>& aPoint,
                         nsCOMPtr<nsINode>* outVisNode,
                         int32_t* outVisOffset,
                         WSType* outType);
@@ -286,8 +286,8 @@ public:
   
   
   
-  void NextVisibleNode(nsINode* aNode,
-                       int32_t aOffset,
+  template<typename PT, typename CT>
+  void NextVisibleNode(const EditorDOMPointBase<PT, CT>& aPoint,
                        nsCOMPtr<nsINode>* outVisNode,
                        int32_t* outVisOffset,
                        WSType* outType);
@@ -388,14 +388,16 @@ protected:
 
 
 
-  WSPoint GetNextCharPoint(const EditorRawDOMPoint& aPoint);
+  template<typename PT, typename CT>
+  WSPoint GetNextCharPoint(const EditorDOMPointBase<PT, CT>& aPoint);
   WSPoint GetNextCharPoint(const WSPoint& aPoint);
 
   
 
 
 
-  WSPoint GetPreviousCharPoint(const EditorRawDOMPoint& aPoint);
+  template<typename PT, typename CT>
+  WSPoint GetPreviousCharPoint(const EditorDOMPointBase<PT, CT>& aPoint);
   WSPoint GetPreviousCharPoint(const WSPoint& aPoint);
 
   
@@ -407,8 +409,11 @@ protected:
 
 
 
-  WSPoint GetNextCharPointInternal(const EditorRawDOMPoint& aPoint);
-  WSPoint GetPreviousCharPointInternal(const EditorRawDOMPoint& aPoint);
+  template<typename PT, typename CT>
+  WSPoint GetNextCharPointInternal(const EditorDOMPointBase<PT, CT>& aPoint);
+  template<typename PT, typename CT>
+  WSPoint
+  GetPreviousCharPointInternal(const EditorDOMPointBase<PT, CT>& aPoint);
 
   
 
@@ -466,7 +471,9 @@ protected:
 
 
 
-  WSFragment* FindNearestRun(const EditorRawDOMPoint& aPoint, bool aForward);
+  template<typename PT, typename CT>
+  WSFragment* FindNearestRun(const EditorDOMPointBase<PT, CT>& aPoint,
+                             bool aForward);
 
   char16_t GetCharAt(dom::Text* aTextNode, int32_t aOffset);
   nsresult CheckTrailingNBSPOfRun(WSFragment *aRun);
