@@ -6,7 +6,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = [
+var EXPORTED_SYMBOLS = [
   "Promise"
 ];
 
@@ -89,14 +89,10 @@ this.EXPORTED_SYMBOLS = [
 
 
 
+var Cc = Components.classes;
+var Ci = Components.interfaces;
 
 
-this.Cc = Components.classes;
-this.Ci = Components.interfaces;
-this.Cu = Components.utils;
-this.Cr = Components.results;
-
-
-this.Cc["@mozilla.org/moz/jssubscript-loader;1"]
-    .getService(this.Ci.mozIJSSubScriptLoader)
+Cc["@mozilla.org/moz/jssubscript-loader;1"]
+    .getService(Ci.mozIJSSubScriptLoader)
     .loadSubScript("resource://gre/modules/Promise-backend.js", this);
