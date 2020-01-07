@@ -9162,7 +9162,11 @@ void
 GeneralParser<ParseHandler, CharT>::checkDestructuringAssignmentName(Node name, TokenPos namePos,
                                                                      PossibleError* possibleError)
 {
-    MOZ_ASSERT(handler.isName(name));
+#ifdef DEBUG
+    
+    bool isName = handler.isName(name);
+    MOZ_ASSERT(isName);
+#endif
 
     
     if (possibleError->hasPendingDestructuringError())
