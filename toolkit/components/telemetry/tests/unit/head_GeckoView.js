@@ -61,6 +61,24 @@ async function waitForHistogramSnapshotData(aHistogramName, aProcessName, aKeyed
   });
 }
 
+
+
+
+
+
+
+
+async function waitForScalarSnapshotData(aScalarName, aProcessName, aKeyed) {
+  await ContentTaskUtils.waitForCondition(() => {
+    const data = aKeyed
+      ? Telemetry.snapshotKeyedScalars(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN, false)
+      : Telemetry.snapshotScalars(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN, false);
+
+    return (aProcessName in data)
+           && (aScalarName in data[aProcessName]);
+  });
+}
+
 if (runningInParent) {
   Services.prefs.setBoolPref(TelemetryUtils.Preferences.OverridePreRelease, true);
 }
