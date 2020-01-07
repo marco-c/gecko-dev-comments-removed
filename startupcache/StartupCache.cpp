@@ -302,16 +302,13 @@ StartupCache::GetBuffer(const char* id, UniquePtr<char[]>* outbuf, uint32_t* len
 
 
 nsresult
-StartupCache::PutBuffer(const char* id, const char* inbuf, uint32_t len)
+StartupCache::PutBuffer(const char* id, UniquePtr<char[]>&& inbuf, uint32_t len)
 {
   NS_ASSERTION(NS_IsMainThread(), "Startup cache only available on main thread");
   WaitOnWriteThread();
   if (StartupCache::gShutdownInitiated) {
     return NS_ERROR_NOT_AVAILABLE;
   }
-
-  auto data = MakeUnique<char[]>(len);
-  memcpy(data.get(), inbuf, len);
 
   nsCString idStr(id);
   
@@ -330,7 +327,7 @@ StartupCache::PutBuffer(const char* id, const char* inbuf, uint32_t len)
   }
 #endif
 
-  entry = new CacheEntry(Move(data), len);
+  entry = new CacheEntry(Move(inbuf), len);
   mTable.Put(idStr, entry);
   mPendingWrites.AppendElement(idStr);
   return ResetStartupWriteTimer();
