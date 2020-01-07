@@ -32,6 +32,9 @@ void WebRenderCommandBuilder::Destroy()
 {
   mLastCanvasDatas.Clear();
   RemoveUnusedAndResetWebRenderUserData();
+  
+  
+  MOZ_RELEASE_ASSERT(mWebRenderUserDatas.Count() == 0);
 }
 
 void
