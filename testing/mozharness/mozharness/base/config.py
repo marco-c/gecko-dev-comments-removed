@@ -285,8 +285,9 @@ class BaseConfig(object):
             type="string", help="Specify additional paths to search for config files.",
         )
         self.config_parser.add_option(
-            "-c", "--config-file", "--cfg", action="extend", dest="config_files",
-            type="string", help="Specify a config file; can be repeated"
+            "-c", "--config-file", "--cfg", action="extend",
+            dest="config_files", default=[], type="string",
+            help="Specify a config file; can be repeated",
         )
         self.config_parser.add_option(
             "-C", "--opt-config-file", "--opt-cfg", action="extend",
@@ -489,35 +490,36 @@ class BaseConfig(object):
                     self.list_actions()
                 print("Required config file not set! (use --config-file option)")
                 raise SystemExit(-1)
+
+        
+        
+        
+        
+        self.all_cfg_files_and_dicts.extend(self.get_cfgs_from_files(
+            
+            options.config_files + options.opt_config_files, options=options
+        ))
+        config = {}
+        if (self.append_env_variables_from_configs
+                or options.append_env_variables_from_configs):
+            
+            
+            for i, (c_file, c_dict) in enumerate(self.all_cfg_files_and_dicts):
+                for v in c_dict.keys():
+                    if v == 'env' and v in config:
+                        config[v].update(c_dict[v])
+                    else:
+                        config[v] = c_dict[v]
         else:
-            
-            
-            
-            
-            self.all_cfg_files_and_dicts.extend(self.get_cfgs_from_files(
-                
-                options.config_files + options.opt_config_files, options=options
-            ))
-            config = {}
-            if (self.append_env_variables_from_configs
-                    or options.append_env_variables_from_configs):
-                
-                
-                for i, (c_file, c_dict) in enumerate(self.all_cfg_files_and_dicts):
-                    for v in c_dict.keys():
-                        if v == 'env' and v in config:
-                            config[v].update(c_dict[v])
-                        else:
-                            config[v] = c_dict[v]
-            else:
-                for i, (c_file, c_dict) in enumerate(self.all_cfg_files_and_dicts):
-                    config.update(c_dict)
-            
-            
-            
-            
-            
-            self.set_config(config)
+            for i, (c_file, c_dict) in enumerate(self.all_cfg_files_and_dicts):
+                config.update(c_dict)
+        
+        
+        
+        
+        
+        self.set_config(config)
+
         for key in defaults.keys():
             value = getattr(options, key)
             if value is None:
