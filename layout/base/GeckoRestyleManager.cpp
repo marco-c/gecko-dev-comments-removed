@@ -1861,7 +1861,6 @@ ElementRestyler::Restyle(nsRestyleHint aRestyleHint)
       
       
       mContent->GetPrimaryFrame() == mFrame) {
-    mContent->OwnerDoc()->FlushPendingLinkUpdates();
     nsAutoPtr<RestyleTracker::RestyleData> restyleData;
     if (mRestyleTracker.GetRestyleData(mContent->AsElement(), restyleData)) {
       nsChangeHint changeToAppend =
