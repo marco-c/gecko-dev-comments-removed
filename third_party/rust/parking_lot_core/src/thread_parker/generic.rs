@@ -5,7 +5,7 @@
 
 
 
-use std::sync::{Mutex, MutexGuard, Condvar};
+use std::sync::{Condvar, Mutex, MutexGuard};
 use std::cell::Cell;
 use std::time::Instant;
 
