@@ -483,12 +483,8 @@ _ContextualIdentityService.prototype = {
 
   migrate2to3(data) {
     
-    data.version = 3;
-
     
-    if (AppConstants.NIGHTLY_BUILD) {
-      this.deleteContainerData();
-    }
+    data.version = 3;
 
     return data;
   },
