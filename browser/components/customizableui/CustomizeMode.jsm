@@ -820,8 +820,6 @@ CustomizeMode.prototype = {
     } else {
       wrapper = this.document.createElement("toolbarpaletteitem");
       
-      
-      
       wrapper.setAttribute("place", aPlace);
     }
 

@@ -153,9 +153,11 @@ var whitelist = [
   {file: "resource://gre/modules/PerformanceWatcher.jsm"},
   
   {file: "resource://gre/modules/Promise.jsm"},
-
   
   {file: "resource://gre/modules/ZipUtils.jsm"},
+  
+  {file: "chrome://global/content/bindings/toolbar.xml",
+   platforms: ["macosx"]},
 ];
 
 whitelist = new Set(whitelist.filter(item =>
