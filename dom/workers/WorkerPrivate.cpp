@@ -1928,6 +1928,10 @@ WorkerPrivate::ParentWindowResumed()
 
   
   
+  
+  
+  
+  
   if (!IsFrozen() && !mQueuedRunnables.IsEmpty()) {
     MOZ_ASSERT(IsDedicatedWorker());
 
@@ -1935,7 +1939,7 @@ WorkerPrivate::ParentWindowResumed()
     mQueuedRunnables.SwapElements(runnables);
 
     for (uint32_t index = 0; index < runnables.Length(); index++) {
-      runnables[index]->Run();
+      MOZ_ALWAYS_SUCCEEDS(DispatchToMainThread(runnables[index].forget()));
     }
   }
 }
