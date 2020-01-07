@@ -40,9 +40,16 @@ IdlePeriod::GetIdlePeriodHint(TimeStamp* aIdleDeadline)
   return NS_OK;
 }
 
+
+
+
+#ifdef RELEASE_OR_BETA
+NS_IMPL_ISUPPORTS(Runnable, nsIRunnable, nsINamed)
+#else
 NS_IMPL_NAMED_ADDREF(Runnable, mName)
 NS_IMPL_NAMED_RELEASE(Runnable, mName)
 NS_IMPL_QUERY_INTERFACE(Runnable, nsIRunnable, nsINamed)
+#endif
 
 NS_IMETHODIMP
 Runnable::Run()
