@@ -388,15 +388,9 @@ EventSourceImpl::Close()
   if (IsClosed()) {
     return;
   }
+
   SetReadyState(CLOSED);
-  
-  
-  DebugOnly<nsresult> rv =
-    Dispatch(NewRunnableMethod("dom::EventSourceImpl::CloseInternal",
-                               this,
-                               &EventSourceImpl::CloseInternal),
-             NS_DISPATCH_NORMAL);
-  MOZ_ASSERT(NS_SUCCEEDED(rv));
+  CloseInternal();
 }
 
 void
