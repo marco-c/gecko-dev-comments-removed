@@ -350,56 +350,10 @@ class InvalidSessionIDError extends WebDriverError {
 }
 
 
-
-
-
-
-
 class JavaScriptError extends WebDriverError {
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  constructor(x,
-      {fnName = null, file = null, line = null, script = null} = {}) {
-    let msg = String(x);
-    let trace = "";
-
-    if (fnName !== null) {
-      trace += fnName;
-      if (file !== null) {
-        trace += ` @${file}`;
-        if (line !== null) {
-          trace += `, line ${line}`;
-        }
-      }
-    }
-
-    if (error.isError(x)) {
-      let jsStack = x.stack.split("\n");
-      let match = jsStack[0].match(/:(\d+):\d+$/);
-      let jsLine = match ? parseInt(match[1]) : 0;
-      if (script !== null) {
-        let src = script.split("\n")[jsLine];
-        trace += "\n" +
-          `inline javascript, line ${jsLine}\n` +
-          `src: "${src}"`;
-      }
-      trace += "\nStack:\n" + x.stack;
-    }
-
-    super(msg);
+  constructor(x) {
+    super(x);
     this.status = "javascript error";
-    this.stack = trace;
   }
 }
 
