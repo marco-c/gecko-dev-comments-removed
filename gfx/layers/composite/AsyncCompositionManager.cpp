@@ -6,7 +6,6 @@
 
 #include "mozilla/layers/AsyncCompositionManager.h"
 #include <stdint.h>                     
-#include "apz/src/AsyncPanZoomController.h"
 #include "FrameMetrics.h"               
 #include "LayerManagerComposite.h"      
 #include "Layers.h"                     
@@ -708,8 +707,7 @@ AsyncCompositionManager::RecordShadowTransforms(Layer* aLayer)
       [this] (Layer* layer)
       {
         for (uint32_t i = 0; i < layer->GetScrollMetadataCount(); i++) {
-          AsyncPanZoomController* apzc = layer->GetAsyncPanZoomController(i);
-          if (!apzc) {
+          if (!layer->GetFrameMetrics(i).IsScrollable()) {
             continue;
           }
           gfx::Matrix4x4 shadowTransform = layer->AsHostLayer()->GetShadowBaseTransform();
@@ -885,144 +883,146 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
           }
         }
 
-        for (uint32_t i = 0; i < layer->GetScrollMetadataCount(); i++) {
-          AsyncPanZoomController* controller = layer->GetAsyncPanZoomController(i);
-          if (!controller) {
-            continue;
-          }
+        if (RefPtr<APZSampler> sampler = mCompositorBridge->GetAPZSampler()) {
+          for (uint32_t i = 0; i < layer->GetScrollMetadataCount(); i++) {
+            LayerMetricsWrapper wrapper(layer, i);
+            const FrameMetrics& metrics = wrapper.Metrics();
+            if (!metrics.IsScrollable()) {
+              continue;
+            }
 
-          hasAsyncTransform = true;
+            hasAsyncTransform = true;
 
-          AsyncTransform asyncTransformWithoutOverscroll =
-              controller->GetCurrentAsyncTransform(AsyncPanZoomController::eForCompositing);
-          AsyncTransformComponentMatrix overscrollTransform =
-              controller->GetOverscrollTransform(AsyncPanZoomController::eForCompositing);
-          AsyncTransformComponentMatrix asyncTransform =
-              AsyncTransformComponentMatrix(asyncTransformWithoutOverscroll)
-            * overscrollTransform;
+            AsyncTransform asyncTransformWithoutOverscroll =
+                sampler->GetCurrentAsyncTransform(wrapper);
+            AsyncTransformComponentMatrix overscrollTransform =
+                sampler->GetOverscrollTransform(wrapper);
+            AsyncTransformComponentMatrix asyncTransform =
+                AsyncTransformComponentMatrix(asyncTransformWithoutOverscroll)
+              * overscrollTransform;
 
-          if (!layer->IsScrollableWithoutContent()) {
-            controller->MarkAsyncTransformAppliedToContent();
-          }
+            if (!layer->IsScrollableWithoutContent()) {
+              sampler->MarkAsyncTransformAppliedToContent(wrapper);
+            }
 
-          const ScrollMetadata& scrollMetadata = layer->GetScrollMetadata(i);
-          const FrameMetrics& metrics = scrollMetadata.GetMetrics();
+            const ScrollMetadata& scrollMetadata = wrapper.Metadata();
 
 #if defined(MOZ_WIDGET_ANDROID)
-          
-          
-          
-          
-          
-          
-          if (!(*aOutFoundRoot)) {
-            *aOutFoundRoot = metrics.IsRootContent() ||       
-                  (layer->GetParent() == nullptr &&          
-                   i + 1 >= layer->GetScrollMetadataCount());
-            if (*aOutFoundRoot) {
-              mRootScrollableId = metrics.GetScrollId();
-              Compositor* compositor = mLayerManager->GetCompositor();
-              if (CompositorBridgeParent* bridge = compositor->GetCompositorBridgeParent()) {
-                AndroidDynamicToolbarAnimator* animator = bridge->GetAndroidDynamicToolbarAnimator();
-                MOZ_ASSERT(animator);
-                if (mIsFirstPaint) {
-                  animator->UpdateRootFrameMetrics(metrics);
-                  animator->FirstPaint();
-                  mIsFirstPaint = false;
+            
+            
+            
+            
+            
+            
+            if (!(*aOutFoundRoot)) {
+              *aOutFoundRoot = metrics.IsRootContent() ||       
+                    (layer->GetParent() == nullptr &&          
+                     i + 1 >= layer->GetScrollMetadataCount());
+              if (*aOutFoundRoot) {
+                mRootScrollableId = metrics.GetScrollId();
+                Compositor* compositor = mLayerManager->GetCompositor();
+                if (CompositorBridgeParent* bridge = compositor->GetCompositorBridgeParent()) {
+                  AndroidDynamicToolbarAnimator* animator = bridge->GetAndroidDynamicToolbarAnimator();
+                  MOZ_ASSERT(animator);
+                  if (mIsFirstPaint) {
+                    animator->UpdateRootFrameMetrics(metrics);
+                    animator->FirstPaint();
+                    mIsFirstPaint = false;
+                  }
+                  if (mLayersUpdated) {
+                    animator->NotifyLayersUpdated();
+                    mLayersUpdated = false;
+                  }
+                  
+                  
+                  if (!metrics.IsRootContent()) {
+                    animator->MaybeUpdateCompositionSizeAndRootFrameMetrics(metrics);
+                  }
                 }
-                if (mLayersUpdated) {
-                  animator->NotifyLayersUpdated();
-                  mLayersUpdated = false;
-                }
-                
-                
-                if (!metrics.IsRootContent()) {
-                  animator->MaybeUpdateCompositionSizeAndRootFrameMetrics(metrics);
-                }
+                fixedLayerMargins = mFixedLayerMargins;
               }
-              fixedLayerMargins = mFixedLayerMargins;
             }
-          }
 #else
-          *aOutFoundRoot = false;
-          
-          
-          mIsFirstPaint = false;
+            *aOutFoundRoot = false;
+            
+            
+            mIsFirstPaint = false;
 #endif
 
-          
-          
-          
-          if (!scrollMetadata.UsesContainerScrolling()) {
-            MOZ_ASSERT(asyncTransform.Is2D());
-            if (clipParts.mFixedClip) {
-              *clipParts.mFixedClip = TransformBy(asyncTransform, *clipParts.mFixedClip);
+            
+            
+            
+            if (!scrollMetadata.UsesContainerScrolling()) {
+              MOZ_ASSERT(asyncTransform.Is2D());
+              if (clipParts.mFixedClip) {
+                *clipParts.mFixedClip = TransformBy(asyncTransform, *clipParts.mFixedClip);
+              }
+              if (clipParts.mScrolledClip) {
+                *clipParts.mScrolledClip = TransformBy(asyncTransform, *clipParts.mScrolledClip);
+              }
             }
-            if (clipParts.mScrolledClip) {
-              *clipParts.mScrolledClip = TransformBy(asyncTransform, *clipParts.mScrolledClip);
+            
+            
+            
+
+            combinedAsyncTransform *= asyncTransform;
+
+            
+            
+            
+            
+            
+            
+            
+            LayerToParentLayerMatrix4x4 transformWithoutOverscrollOrOmta =
+                layer->GetTransformTyped()
+              * CompleteAsyncTransform(
+                  AdjustForClip(asyncTransformWithoutOverscroll, layer));
+
+            AlignFixedAndStickyLayers(layer, layer, metrics.GetScrollId(), oldTransform,
+                                      transformWithoutOverscrollOrOmta, fixedLayerMargins,
+                                      &clipPartsCache);
+
+            
+            
+            
+            if (scrollMetadata.HasScrollClip()) {
+              ParentLayerIntRect clip = scrollMetadata.ScrollClip().GetClipRect();
+              if (layer->GetParent() && layer->GetParent()->GetTransformIsPerspective()) {
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                MOZ_ASSERT(!stackDeferredClips.top());
+                stackDeferredClips.top().emplace(clip);
+              } else {
+                clipParts.mScrolledClip = IntersectMaybeRects(Some(clip),
+                    clipParts.mScrolledClip);
+              }
             }
-          }
-          
-          
-          
 
-          combinedAsyncTransform *= asyncTransform;
-
-          
-          
-          
-          
-          
-          
-          
-          LayerToParentLayerMatrix4x4 transformWithoutOverscrollOrOmta =
-              layer->GetTransformTyped()
-            * CompleteAsyncTransform(
-                AdjustForClip(asyncTransformWithoutOverscroll, layer));
-
-          AlignFixedAndStickyLayers(layer, layer, metrics.GetScrollId(), oldTransform,
-                                    transformWithoutOverscrollOrOmta, fixedLayerMargins,
-                                    &clipPartsCache);
-
-          
-          
-          
-          if (scrollMetadata.HasScrollClip()) {
-            ParentLayerIntRect clip = scrollMetadata.ScrollClip().GetClipRect();
-            if (layer->GetParent() && layer->GetParent()->GetTransformIsPerspective()) {
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              MOZ_ASSERT(!stackDeferredClips.top());
-              stackDeferredClips.top().emplace(clip);
-            } else {
-              clipParts.mScrolledClip = IntersectMaybeRects(Some(clip),
-                  clipParts.mScrolledClip);
+            
+            
+            
+            for (Layer* ancestorMaskLayer : ancestorMaskLayers) {
+              SetShadowTransform(ancestorMaskLayer,
+                  ancestorMaskLayer->GetLocalTransformTyped() * asyncTransform);
             }
-          }
 
-          
-          
-          
-          for (Layer* ancestorMaskLayer : ancestorMaskLayers) {
-            SetShadowTransform(ancestorMaskLayer,
-                ancestorMaskLayer->GetLocalTransformTyped() * asyncTransform);
-          }
-
-          
-          if (scrollMetadata.HasScrollClip()) {
-            const LayerClip& scrollClip = scrollMetadata.ScrollClip();
-            if (scrollClip.GetMaskLayerIndex()) {
-              size_t maskLayerIndex = scrollClip.GetMaskLayerIndex().value();
-              Layer* ancestorMaskLayer = layer->GetAncestorMaskLayerAt(maskLayerIndex);
-              ancestorMaskLayers.AppendElement(ancestorMaskLayer);
+            
+            if (scrollMetadata.HasScrollClip()) {
+              const LayerClip& scrollClip = scrollMetadata.ScrollClip();
+              if (scrollClip.GetMaskLayerIndex()) {
+                size_t maskLayerIndex = scrollClip.GetMaskLayerIndex().value();
+                Layer* ancestorMaskLayer = layer->GetAncestorMaskLayerAt(maskLayerIndex);
+                ancestorMaskLayers.AppendElement(ancestorMaskLayer);
+              }
             }
           }
         }
@@ -1069,11 +1069,10 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
 static bool
 LayerIsScrollbarTarget(const LayerMetricsWrapper& aTarget, Layer* aScrollbar)
 {
-  AsyncPanZoomController* apzc = aTarget.GetApzc();
-  if (!apzc) {
+  const FrameMetrics& metrics = aTarget.Metrics();
+  if (!metrics.IsScrollable()) {
     return false;
   }
-  const FrameMetrics& metrics = aTarget.Metrics();
   if (metrics.GetScrollId() != aScrollbar->GetScrollbarTargetContainerId()) {
     return false;
   }
