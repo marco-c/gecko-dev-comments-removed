@@ -355,6 +355,7 @@ public:
                 EmptyString(), EmptyString(), true, 1)
     , mRate(0)
     , mChannels(0)
+    , mChannelMap(AudioConfig::ChannelLayout::UNKNOWN_MAP)
     , mBitDepth(0)
     , mProfile(0)
     , mExtendedProfile(0)
@@ -367,6 +368,7 @@ public:
     : TrackInfo(aOther)
     , mRate(aOther.mRate)
     , mChannels(aOther.mChannels)
+    , mChannelMap(aOther.mChannelMap)
     , mBitDepth(aOther.mBitDepth)
     , mProfile(aOther.mProfile)
     , mExtendedProfile(aOther.mExtendedProfile)
@@ -403,6 +405,11 @@ public:
 
   
   uint32_t mChannels;
+  
+  
+  
+  
+  AudioConfig::ChannelLayout::ChannelMap mChannelMap;
 
   
   uint32_t mBitDepth;

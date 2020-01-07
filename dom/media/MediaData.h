@@ -395,9 +395,11 @@ public:
             uint32_t aFrames,
             AlignedAudioBuffer&& aData,
             uint32_t aChannels,
-            uint32_t aRate)
+            uint32_t aRate,
+            uint32_t aChannelMap = AudioConfig::ChannelLayout::UNKNOWN_MAP)
     : MediaData(sType, aOffset, aTime, aDuration, aFrames)
     , mChannels(aChannels)
+    , mChannelMap(aChannelMap)
     , mRate(aRate)
     , mAudioData(Move(aData))
   {
@@ -425,6 +427,11 @@ public:
   bool IsAudible() const;
 
   const uint32_t mChannels;
+  
+  
+  
+  
+  const AudioConfig::ChannelLayout::ChannelMap mChannelMap;
   const uint32_t mRate;
   
   
