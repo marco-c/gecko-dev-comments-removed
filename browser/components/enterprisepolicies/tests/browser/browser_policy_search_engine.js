@@ -192,3 +192,39 @@ add_task(async function test_AddSearchProvider() {
   is(mockPrompter.promptCount, 1,
      "Should have alerted the user of an error when installing new search engine");
 });
+
+add_task(async function test_install_and_remove() {
+  is(Services.search.getEngineByName("Foo"), null,
+     "Engine \"Foo\" should not be present when test starts");
+
+  await setupPolicyEngineWithJson({
+  "policies": {
+      "SearchEngines": {
+        "Add": [
+          {
+            "Name": "Foo",
+            "URLTemplate": "http://example.com/?q={searchTerms}"
+          }
+        ]
+      }
+    }
+  });
+
+  
+  isnot(Services.search.getEngineByName("Foo"), null,
+     "Specified search engine should be installed");
+
+  await setupPolicyEngineWithJson({
+  "policies": {
+      "SearchEngines": {
+        "Remove": ["Foo"]
+      }
+    }
+  });
+
+  
+  is(Services.search.getEngineByName("Foo"), null,
+     "Specified search engine should not be installed");
+
+  EnterprisePolicyTesting.resetRunOnceState();
+});

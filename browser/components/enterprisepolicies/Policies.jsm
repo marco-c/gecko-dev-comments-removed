@@ -646,6 +646,23 @@ var Policies = {
     },
     onAllWindowsRestored(manager, param) {
       Services.search.init(() => {
+        if (param.Remove) {
+          
+          runOncePerModification("removeSearchEngines",
+                                 JSON.stringify(param.Remove),
+                                 () => {
+            for (let engineName of param.Remove) {
+              let engine = Services.search.getEngineByName(engineName);
+              if (engine) {
+                try {
+                  Services.search.removeEngine(engine);
+                } catch (ex) {
+                  log.error("Unable to remove the search engine", ex);
+                }
+              }
+            }
+          });
+        }
         if (param.Add) {
           
           let engineNameList = param.Add.map(engine => engine.Name);
