@@ -18,7 +18,8 @@ namespace mozilla {
 
 
 
-class ProfilerChild final : public PProfilerChild
+class ProfilerChild final : public PProfilerChild,
+                            public mozilla::ipc::IShmemAllocator
 {
   NS_INLINE_DECL_REFCOUNTING(ProfilerChild)
 
@@ -43,6 +44,9 @@ private:
   mozilla::ipc::IPCResult RecvGatherProfile(GatherProfileResolver&& aResolve) override;
 
   void ActorDestroy(ActorDestroyReason aActorDestroyReason) override;
+  Shmem ConvertProfileStringToShmem(const nsCString& profile);
+
+  FORWARD_SHMEM_ALLOCATOR_TO(PProfilerChild)
 
   nsCOMPtr<nsIThread> mThread;
   bool mDestroyed;
