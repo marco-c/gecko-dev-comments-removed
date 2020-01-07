@@ -225,7 +225,11 @@ pref("dom.gamepad.haptic_feedback.enabled", true);
 
 
 
+#ifdef EARLY_BETA_OR_EARLIER
+pref("dom.keyboardevent.dispatch_during_composition", true);
+#else
 pref("dom.keyboardevent.dispatch_during_composition", false);
+#endif
 
 
 
