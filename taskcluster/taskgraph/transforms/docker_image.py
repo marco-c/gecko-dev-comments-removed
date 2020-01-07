@@ -1,11 +1,6 @@
 
 
 
-"""
-Transform the upload-symbols task description template,
-  taskcluster/ci/upload-symbols/job-template.yml
-into an actual task description.
-"""
 
 from __future__ import absolute_import, print_function, unicode_literals
 
@@ -18,8 +13,36 @@ from taskgraph.util.docker import (
     generate_context_hash,
 )
 from taskgraph.util.cached_tasks import add_optimization
+from taskgraph.util.schema import (
+    Schema,
+    validate_schema,
+)
+from voluptuous import (
+    Optional,
+    Required,
+)
 
 transforms = TransformSequence()
+
+docker_image_schema = Schema({
+    
+    Required('name'): basestring,
+
+    
+    Required('symbol'): basestring,
+
+    
+    
+    Optional('job-from'): basestring,
+})
+
+
+@transforms.add
+def validate(config, tasks):
+    for task in tasks:
+        yield validate_schema(
+            docker_image_schema, task,
+            "In docker image {!r}:".format(task.get('name', 'unknown')))
 
 
 @transforms.add
