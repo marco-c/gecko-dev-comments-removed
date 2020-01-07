@@ -1042,6 +1042,19 @@ this.MigrationUtils = Object.freeze({
     return PlacesUtils.asyncHistory.updatePlaces(places, options, true);
   },
 
+  insertLoginWrapper(login) {
+    this._importQuantities.logins++;
+    let insertedLogin = LoginHelper.maybeImportLogin(login);
+    
+    
+    
+    
+    if (insertedLogin && gKeepUndoData) {
+      let {guid, timePasswordChanged} = insertedLogin;
+      gUndoData.get("logins").push({guid, timePasswordChanged});
+    }
+  },
+
   async insertLoginsWrapper(logins) {
     this._importQuantities.logins += logins.length;
     let inserted = await LoginHelper.maybeImportLogins(logins);
