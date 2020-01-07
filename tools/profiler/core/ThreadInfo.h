@@ -23,8 +23,9 @@
 class RacyThreadInfo final : public PseudoStack
 {
 public:
-  RacyThreadInfo()
+  explicit RacyThreadInfo(int aThreadId)
     : PseudoStack()
+    , mThreadId(aThreadId)
     , mSleep(AWAKE)
   {
     MOZ_COUNT_CTOR(RacyThreadInfo);
@@ -113,9 +114,15 @@ public:
 
   bool IsSleeping() { return mSleep != AWAKE; }
 
+  int ThreadId() const { return mThreadId; }
+
 private:
   
   ProfilerSignalSafeLinkedList<ProfilerMarker> mPendingMarkers;
+
+  
+  
+  const int mThreadId;
 
   
   
@@ -173,7 +180,10 @@ public:
   ~ThreadInfo();
 
   const char* Name() const { return mName.get(); }
-  int ThreadId() const { return mThreadId; }
+
+  
+  
+  int ThreadId() const { return RacyInfo()->ThreadId(); }
 
   bool IsMainThread() const { return mIsMainThread; }
 
@@ -196,7 +206,6 @@ private:
   mozilla::UniqueFreePtr<char> mName;
   mozilla::TimeStamp mRegisterTime;
   mozilla::TimeStamp mUnregisterTime;
-  int mThreadId;
   const bool mIsMainThread;
 
   
