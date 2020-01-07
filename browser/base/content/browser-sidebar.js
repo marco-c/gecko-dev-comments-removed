@@ -119,6 +119,25 @@ var SidebarUI = {
     this._switcherTarget.classList.add("active");
   },
 
+  updateShortcut({button, key}) {
+    
+    
+    if (!this._addedShortcuts) {
+      return;
+    }
+    if (key) {
+      let keyId = key.getAttribute("id");
+      button = this._switcherPanel.querySelector(`[key="${keyId}"]`);
+    } else if (button) {
+      let keyId = button.getAttribute("key");
+      key = document.getElementById(keyId);
+    }
+    if (!button || !key) {
+      return;
+    }
+    button.setAttribute("shortcut", ShortcutUtils.prettifyShortcut(key));
+  },
+
   _addedShortcuts: false,
   _ensureShortcutsShown() {
     if (this._addedShortcuts) {
@@ -126,12 +145,7 @@ var SidebarUI = {
     }
     this._addedShortcuts = true;
     for (let button of this._switcherPanel.querySelectorAll("toolbarbutton[key]")) {
-      let keyId = button.getAttribute("key");
-      let key = document.getElementById(keyId);
-      if (!key) {
-        continue;
-      }
-      button.setAttribute("shortcut", ShortcutUtils.prettifyShortcut(key));
+      this.updateShortcut({button});
     }
   },
 
