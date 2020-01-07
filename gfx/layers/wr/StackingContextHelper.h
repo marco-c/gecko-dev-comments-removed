@@ -59,6 +59,11 @@ public:
     return mInheritedTransform;
   }
 
+  const gfx::Matrix& GetSnappingSurfaceTransform() const
+  {
+    return mSnappingSurfaceTransform;
+  }
+
   const Maybe<gfx::Matrix4x4>& GetTransformForScrollData() const;
 
   bool AffectsClipPositioning() const { return mAffectsClipPositioning; }
@@ -68,6 +73,13 @@ private:
   wr::DisplayListBuilder* mBuilder;
   gfx::Size mScale;
   gfx::Matrix mInheritedTransform;
+
+  
+  
+  
+  
+  
+  gfx::Matrix mSnappingSurfaceTransform;
   bool mAffectsClipPositioning;
   Maybe<wr::WrClipId> mReferenceFrameId;
   Maybe<gfx::Matrix4x4> mTransformForScrollData;
