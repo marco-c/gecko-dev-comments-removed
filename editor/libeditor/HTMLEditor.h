@@ -461,9 +461,10 @@ public:
 
   template<typename PT, typename CT>
   EditorDOMPoint
-  InsertNodeIntoProperAncestor(nsIContent& aNode,
-                               const EditorDOMPointBase<PT, CT>& aPointToInsert,
-                               SplitAtEdges aSplitAtEdges);
+  InsertNodeIntoProperAncestorWithTransaction(
+    nsIContent& aNode,
+    const EditorDOMPointBase<PT, CT>& aPointToInsert,
+    SplitAtEdges aSplitAtEdges);
 
   
 
