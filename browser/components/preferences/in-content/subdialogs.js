@@ -257,9 +257,23 @@ SubDialog.prototype = {
     this._overlay.style.opacity = "0.01";
   },
 
-  _onLoad(aEvent) {
+  async _onLoad(aEvent) {
     if (aEvent.target.contentWindow.location == "about:blank") {
       return;
+    }
+
+    
+    
+    if (aEvent.target.contentDocument.l10n) {
+      await aEvent.target.contentDocument.l10n.ready;
+    }
+
+    
+    
+    
+    
+    if (aEvent.target.contentDocument.mozSubdialogReady) {
+      await aEvent.target.contentDocument.mozSubdialogReady;
     }
 
     

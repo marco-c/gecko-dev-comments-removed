@@ -7,7 +7,11 @@
 var gAppManagerDialog = {
   _removed: [],
 
-  init: function appManager_init() {
+  onLoad() {
+    document.mozSubdialogReady = this.init();
+  },
+
+  async init() {
     this.handlerInfo = window.arguments[0];
     Services.scriptloader.loadSubScript("chrome://browser/content/preferences/in-content/main.js",
       window);
@@ -40,7 +44,15 @@ var gAppManagerDialog = {
       item.app = app;
     }
 
+    
     list.selectedIndex = 0;
+
+    
+    
+    await document.l10n.translateElements([
+      appDescElem,
+      document.getElementById("appType")
+    ]);
   },
 
   onOK: function appManager_onOK() {
