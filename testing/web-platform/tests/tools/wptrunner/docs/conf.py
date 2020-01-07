@@ -186,22 +186,22 @@ htmlhelp_basename = 'wptrunnerdoc'
 
 
 latex_elements = {
-    
-    
 
-    
-    
 
-    
-    
+
+
+
+
+
+
 }
 
 
 
 
 latex_documents = [
-    ('index', 'wptrunner.tex', u'wptrunner Documentation',
-     u'James Graham', 'manual'),
+  ('index', 'wptrunner.tex', u'wptrunner Documentation',
+   u'James Graham', 'manual'),
 ]
 
 
@@ -244,9 +244,9 @@ man_pages = [
 
 
 texinfo_documents = [
-    ('index', 'wptrunner', u'wptrunner Documentation',
-     u'James Graham', 'wptrunner', 'One line description of project.',
-     'Miscellaneous'),
+  ('index', 'wptrunner', u'wptrunner Documentation',
+   u'James Graham', 'wptrunner', 'One line description of project.',
+   'Miscellaneous'),
 ]
 
 
