@@ -1264,18 +1264,24 @@ protected:
   bool PostToDispatchThread(uint32_t& aWinError, ResultType& aRet, ParamTypes&... aParameters) const;
 
   static void
-  PostToDispatchHelper(const SelfType* bmhi, Monitor* monitor, bool* ok, uint32_t* winErr, ResultType* r, ParamTypes*... p)
+  PostToDispatchHelper(const SelfType* bmhi, Monitor* monitor, bool* notified,
+                       bool* ok, uint32_t* winErr, ResultType* r, ParamTypes*... p)
   {
     
-    MOZ_ASSERT(bmhi && monitor && ok && winErr && r);
+    MOZ_ASSERT(bmhi && monitor && notified && ok && winErr && r);
+    MOZ_ASSERT(*notified == false);
     *ok = bmhi->BrokerCallClient(*winErr, *r, *p...);
-    {
-      
-      
-      
-      MonitorAutoLock lock(*monitor);
-    }
-    *ok &= NS_SUCCEEDED(monitor->Notify());
+
+    
+    
+    
+    
+    
+    
+    
+    MonitorAutoLock lock(*monitor);
+    *notified = true;
+    monitor->Notify();
   };
 
   template<typename ... VarParams>
@@ -1446,11 +1452,17 @@ PostToDispatchThread(uint32_t& aWinError, ResultType& aRet,
   Monitor monitor("FunctionDispatchThread Lock");
   MonitorAutoLock lock(monitor);
   bool success = false;
+  bool notified = false;
   FunctionBrokerChild::GetInstance()->PostToDispatchThread(
     NewRunnableFunction("FunctionDispatchThreadRunnable", &PostToDispatchHelper,
-                        this, &monitor, &success, &aWinError, &aRet,
+                        this, &monitor, &notified, &success, &aWinError, &aRet,
                         &aParameters...));
-  monitor.Wait();
+
+  
+  
+  while (!notified) {
+    monitor.Wait();
+  }
   return success;
 }
 
