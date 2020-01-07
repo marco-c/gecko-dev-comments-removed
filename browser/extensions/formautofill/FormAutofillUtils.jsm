@@ -602,6 +602,10 @@ this.FormAutofillUtils = {
     let collators = this.getCollators(country);
     for (let metadata of this.getCountryAddressDataWithLocales(country)) {
       let {sub_keys: subKeys, sub_names: subNames, sub_lnames: subLnames} = metadata;
+      if (!subKeys) {
+        
+        continue;
+      }
       
       subNames = subNames || subLnames;
 
@@ -665,6 +669,10 @@ this.FormAutofillUtils = {
         }
         for (let dataset of this.getCountryAddressDataWithLocales(country)) {
           let keys = dataset.sub_keys;
+          if (!keys) {
+            
+            continue;
+          }
           
           let names = dataset.sub_names || dataset.sub_lnames;
 
