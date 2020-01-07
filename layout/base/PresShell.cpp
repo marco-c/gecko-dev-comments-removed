@@ -4063,7 +4063,8 @@ bool
 nsIPresShell::IsSafeToFlush() const
 {
   
-  if (mIsReflowing || mChangeNestCount) {
+  
+  if (mIsReflowing || mChangeNestCount || mIsDestroying) {
     return false;
   }
 
@@ -4102,8 +4103,6 @@ PresShell::DoFlushPendingNotifications(mozilla::ChangesToFlush aFlush)
   FlushType flushType = aFlush.mFlushType;
 
   MOZ_ASSERT(NeedFlush(flushType), "Why did we get called?");
-  MOZ_DIAGNOSTIC_ASSERT(mDocument->HasShellOrBFCacheEntry());
-  MOZ_DIAGNOSTIC_ASSERT(mDocument->GetShell() == this);
 
 #ifdef MOZ_GECKO_PROFILER
   static const EnumeratedArray<FlushType,
@@ -4153,12 +4152,16 @@ PresShell::DoFlushPendingNotifications(mozilla::ChangesToFlush aFlush)
     isSafeToFlush = isSafeToFlush && nsContentUtils::IsSafeToRunScript();
   }
 
-  NS_ASSERTION(!isSafeToFlush || mViewManager, "Must have view manager");
+  MOZ_DIAGNOSTIC_ASSERT(!mIsDestroying || !isSafeToFlush);
+  MOZ_DIAGNOSTIC_ASSERT(mIsDestroying || mViewManager);
+  MOZ_DIAGNOSTIC_ASSERT(mIsDestroying || mDocument->HasShellOrBFCacheEntry());
+  MOZ_DIAGNOSTIC_ASSERT(mIsDestroying || mDocument->GetShell() == this);
+
   
   RefPtr<nsViewManager> viewManager = mViewManager;
   bool didStyleFlush = false;
   bool didLayoutFlush = false;
-  if (isSafeToFlush && viewManager) {
+  if (isSafeToFlush) {
     
     
     
