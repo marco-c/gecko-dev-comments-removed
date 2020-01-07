@@ -153,12 +153,13 @@ AudioContext::AudioContext(nsPIDOMWindowInner* aWindow,
 
   
   
-  bool allowToStart = AutoplayPolicy::IsAudioContextAllowedToPlay(WrapNotNull(this));
-  mDestination = new AudioDestinationNode(this, aIsOffline,
+  bool allowedToStart = AutoplayPolicy::IsAudioContextAllowedToPlay(WrapNotNull(this));
+  mDestination = new AudioDestinationNode(this,
+                                          aIsOffline,
+                                          allowedToStart,
                                           aNumberOfChannels,
                                           aLength,
-                                          aSampleRate,
-                                          allowToStart);
+                                          aSampleRate);
 
   
   if (mute) {
@@ -167,7 +168,7 @@ AudioContext::AudioContext(nsPIDOMWindowInner* aWindow,
 
   
   
-  if (!allowToStart) {
+  if (!allowedToStart) {
     ErrorResult rv;
     RefPtr<Promise> dummy = Suspend(rv);
     MOZ_ASSERT(!rv.Failed(), "can't create promise");
