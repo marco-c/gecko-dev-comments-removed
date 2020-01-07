@@ -275,8 +275,8 @@ class RemoteSettingsClient {
     
     if (timestamp == null) {
       try {
-        const { data } = await this._loadDumpFile();
-        await c.loadDump(data);
+         const { data } = await this._loadDumpFile();
+         await c.loadDump(data);
       } catch (e) {
         
         Cu.reportError(e);
