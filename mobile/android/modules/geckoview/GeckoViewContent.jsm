@@ -11,27 +11,24 @@ ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 class GeckoViewContent extends GeckoViewModule {
   onInit() {
-    this.eventDispatcher.registerListener(this, [
-      "GeckoView:SetActive",
-      "GeckoView:SaveState",
-      "GeckoView:RestoreState"
+    this.registerListener([
+        "GeckoViewContent:ExitFullScreen",
+        "GeckoView:RestoreState",
+        "GeckoView:SaveState",
+        "GeckoView:SetActive",
+        "GeckoView:ZoomToInput",
     ]);
 
     this.messageManager.addMessageListener("GeckoView:SaveStateFinish", this);
+
+    this.registerContent("chrome://geckoview/content/GeckoViewContent.js");
   }
 
   onEnable() {
-    this.registerContent("chrome://geckoview/content/GeckoViewContent.js");
-
     this.window.addEventListener("MozDOMFullScreen:Entered", this,
                                   true,  false);
     this.window.addEventListener("MozDOMFullScreen:Exited", this,
                                   true,  false);
-
-    this.registerListener([
-        "GeckoViewContent:ExitFullScreen",
-        "GeckoView:ZoomToInput",
-    ]);
 
     this.messageManager.addMessageListener("GeckoView:DOMFullscreenExit", this);
     this.messageManager.addMessageListener("GeckoView:DOMFullscreenRequest", this);
@@ -42,8 +39,6 @@ class GeckoViewContent extends GeckoViewModule {
                                      true);
     this.window.removeEventListener("MozDOMFullScreen:Exited", this,
                                      true);
-
-    this.unregisterListener();
 
     this.messageManager.removeMessageListener("GeckoView:DOMFullscreenExit", this);
     this.messageManager.removeMessageListener("GeckoView:DOMFullscreenRequest", this);

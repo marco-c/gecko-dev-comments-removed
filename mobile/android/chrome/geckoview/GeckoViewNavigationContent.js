@@ -13,6 +13,10 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
 
 class GeckoViewNavigationContent extends GeckoViewContentModule {
+  onInit() {
+    this.onEnable();
+  }
+
   onEnable() {
     debug `onEnable`;
 
