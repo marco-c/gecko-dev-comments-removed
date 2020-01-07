@@ -2634,6 +2634,11 @@ js::AsyncFromSyncIteratorMethod(JSContext* cx, CallArgs& args, CompletionKind co
     
     if (!thisVal.isObject() || !thisVal.toObject().is<AsyncFromSyncIteratorObject>()) {
         
+        
+        
+        
+
+        
         RootedValue badGeneratorError(cx);
         if (!GetTypeError(cx, JSMSG_NOT_AN_ASYNC_ITERATOR, &badGeneratorError))
             return false;
@@ -2657,8 +2662,7 @@ js::AsyncFromSyncIteratorMethod(JSContext* cx, CallArgs& args, CompletionKind co
     RootedValue func(cx);
     if (completionKind == CompletionKind::Normal) {
         
-        if (!GetProperty(cx, iter, iter, cx->names().next, &func))
-            return AbruptRejectPromise(cx, args, resultPromise, nullptr);
+        func.set(asyncIter->nextMethod());
     } else if (completionKind == CompletionKind::Return) {
         
         if (!GetProperty(cx, iter, iter, cx->names().return_, &func))

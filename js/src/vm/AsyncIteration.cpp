@@ -168,18 +168,18 @@ const Class AsyncFromSyncIteratorObject::class_ = {
 
 
 JSObject*
-js::CreateAsyncFromSyncIterator(JSContext* cx, HandleObject iter)
+js::CreateAsyncFromSyncIterator(JSContext* cx, HandleObject iter, HandleValue nextMethod)
 {
     
     
 
     
-    return AsyncFromSyncIteratorObject::create(cx, iter);
+    return AsyncFromSyncIteratorObject::create(cx, iter, nextMethod);
 }
 
 
  JSObject*
-AsyncFromSyncIteratorObject::create(JSContext* cx, HandleObject iter)
+AsyncFromSyncIteratorObject::create(JSContext* cx, HandleObject iter, HandleValue nextMethod)
 {
     
     RootedObject proto(cx, GlobalObject::getOrCreateAsyncFromSyncIteratorPrototype(cx,
@@ -195,6 +195,10 @@ AsyncFromSyncIteratorObject::create(JSContext* cx, HandleObject iter)
 
     
     asyncIter->setIterator(iter);
+
+    
+    
+    asyncIter->setNextMethod(nextMethod);
 
     
     return asyncIter;
