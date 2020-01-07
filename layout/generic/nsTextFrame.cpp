@@ -2007,10 +2007,6 @@ BuildTextRunsScanner::GetNextBreakBeforeFrame(uint32_t* aIndex)
   return static_cast<nsTextFrame*>(mLineBreakBeforeFrames.ElementAt(index));
 }
 
-
-#if defined(_MSC_VER) && defined(_M_IX86)
-#pragma optimize("", off)
-#endif
 static gfxFontGroup*
 GetFontGroupForFrame(const nsIFrame* aFrame, float aFontSizeInflation,
                      nsFontMetrics** aOutFontMetrics = nullptr)
@@ -2029,9 +2025,6 @@ GetFontGroupForFrame(const nsIFrame* aFrame, float aFontSizeInflation,
   
   return fontGroup;
 }
-#if defined(_MSC_VER) && defined(_M_IX86)
-#pragma optimize("", on)
-#endif
 
 static already_AddRefed<DrawTarget>
 CreateReferenceDrawTarget(const nsTextFrame* aTextFrame)
