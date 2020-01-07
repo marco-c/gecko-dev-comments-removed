@@ -65,7 +65,7 @@ registerCleanupFunction(function() {
 
 
 const ConsoleObserver = {
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIObserver]),
+  QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver]),
 
   observe: function(subject) {
     let message = subject.wrappedJSObject.arguments[0];
@@ -462,6 +462,19 @@ function waitUntil(predicate, interval = 10) {
       waitUntil(predicate, interval).then(() => resolve(true));
     }, interval);
   });
+}
+
+
+
+
+async function asyncWaitUntil(predicate, interval = 10) {
+  let success = await predicate();
+  while (!success) {
+    
+    await new Promise(resolve => setTimeout(resolve, interval));
+    
+    success = await predicate();
+  }
 }
 
 
