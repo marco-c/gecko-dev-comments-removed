@@ -38,7 +38,7 @@ MOZ_MTLOG_MODULE("jsep")
     std::ostringstream os;                                                     \
     os << error;                                                               \
     mLastError = os.str();                                                     \
-    MOZ_MTLOG(ML_ERROR, mLastError);                                           \
+    MOZ_MTLOG(ML_ERROR, "[" << mName << "]: " <<  mLastError);                  \
   } while (0);
 
 static std::bitset<128> GetForbiddenSdpPayloadTypes() {
@@ -72,7 +72,7 @@ nsresult
 JsepSessionImpl::AddTransceiver(RefPtr<JsepTransceiver> transceiver)
 {
   mLastError.clear();
-  MOZ_MTLOG(ML_DEBUG, "Adding transceiver.");
+  MOZ_MTLOG(ML_DEBUG, "[" << mName << "]: Adding transceiver.");
 
   if (transceiver->GetMediaType() != SdpMediaSection::kApplication) {
     
@@ -636,8 +636,8 @@ JsepSessionImpl::SetLocalDescription(JsepSdpType type, const std::string& sdp)
 {
   mLastError.clear();
 
-  MOZ_MTLOG(ML_DEBUG, "SetLocalDescription type=" << type << "\nSDP=\n"
-                                                  << sdp);
+  MOZ_MTLOG(ML_DEBUG, "[" << mName << "]: SetLocalDescription type=" << type
+                      << "\nSDP=\n" << sdp);
 
   if (type == kJsepSdpRollback) {
     if (mState != kJsepStateHaveLocalOffer) {
@@ -756,8 +756,8 @@ JsepSessionImpl::SetRemoteDescription(JsepSdpType type, const std::string& sdp)
 {
   mLastError.clear();
 
-  MOZ_MTLOG(ML_DEBUG, "SetRemoteDescription type=" << type << "\nSDP=\n"
-                                                   << sdp);
+  MOZ_MTLOG(ML_DEBUG, "[" << mName << "]: SetRemoteDescription type=" << type
+                      << "\nSDP=\n" << sdp);
 
   if (type == kJsepSdpRollback) {
     if (mState != kJsepStateHaveRemoteOffer) {
@@ -970,7 +970,7 @@ JsepSessionImpl::MakeNegotiatedTransceiver(const SdpMediaSection& remote,
     }
   }
 
-  MOZ_MTLOG(ML_DEBUG, "Negotiated m= line"
+  MOZ_MTLOG(ML_DEBUG, "[" << mName << "]: Negotiated m= line"
                           << " index=" << local.GetLevel()
                           << " type=" << local.GetMediaType()
                           << " sending=" << sending
@@ -1017,15 +1017,16 @@ JsepSessionImpl::MakeNegotiatedTransceiver(const SdpMediaSection& remote,
       
       
       
-      MOZ_MTLOG(ML_ERROR, "Bundled m-section has no ssrc attributes. "
-                          "This may cause media packets to be dropped.");
+      MOZ_MTLOG(ML_ERROR, "[" << mName << "]: Bundled m-section has no ssrc "
+                          "attributes. This may cause media packets to be "
+                          "dropped.");
     }
   }
 
   if (transceiver->mTransport->mComponents == 2) {
     
     
-    MOZ_MTLOG(ML_DEBUG, "RTCP-MUX is off");
+    MOZ_MTLOG(ML_DEBUG, "[" << mName << "]: RTCP-MUX is off");
   }
 
   if (local.GetMediaType() != SdpMediaSection::kApplication) {
@@ -1789,9 +1790,9 @@ JsepSessionImpl::ValidateAnswer(const Sdp& offer, const Sdp& answer)
               
               
               
-              MOZ_MTLOG(ML_WARNING, "Answer has inconsistent direction on extmap "
-                             "attribute at level " << i << " ("
-                             << ansExt.extensionname << "). Offer had "
+              MOZ_MTLOG(ML_WARNING, "[" << mName << "]: Answer has inconsistent"
+                             " direction on extmap attribute at level " << i
+                             << " (" << ansExt.extensionname << "). Offer had "
                              << offExt.direction << ", answer had "
                              << ansExt.direction << ".");
               
@@ -1801,10 +1802,10 @@ JsepSessionImpl::ValidateAnswer(const Sdp& offer, const Sdp& answer)
               
               
               
-              MOZ_MTLOG(ML_WARNING, "Answer changed id for extmap attribute at"
-                        " level " << i << " (" << offExt.extensionname << ") "
-                        "from " << offExt.entry << " to "
-                        << ansExt.entry << ".");
+              MOZ_MTLOG(ML_WARNING, "[" << mName << "]: Answer changed id for "
+                        "extmap attribute at level " << i << " ("
+                        << offExt.extensionname << ") from " << offExt.entry
+                        << " to " << ansExt.entry << ".");
               
             }
 
