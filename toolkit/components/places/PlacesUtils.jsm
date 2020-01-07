@@ -782,9 +782,20 @@ var PlacesUtils = {
 
 
   nodeIsTagQuery: function PU_nodeIsTagQuery(aNode) {
-    return aNode.type == Ci.nsINavHistoryResultNode.RESULT_TYPE_QUERY &&
-           asQuery(aNode).queryOptions.resultType ==
-             Ci.nsINavHistoryQueryOptions.RESULTS_AS_TAG_CONTENTS;
+    if (aNode.type != Ci.nsINavHistoryResultNode.RESULT_TYPE_QUERY)
+      return false;
+    
+    let parent = aNode.parent;
+    if (parent && PlacesUtils.asQuery(parent).queryOptions.resultType ==
+                    Ci.nsINavHistoryQueryOptions.RESULTS_AS_TAG_QUERY)
+      return true;
+    
+    
+    
+    if (!parent && aNode == aNode.parentResult.root &&
+        PlacesUtils.asQuery(aNode).query.tags.length == 1)
+      return true;
+    return false;
   },
 
   
@@ -822,15 +833,8 @@ var PlacesUtils = {
 
 
   getConcreteItemId: function PU_getConcreteItemId(aNode) {
-    if (aNode.type == Ci.nsINavHistoryResultNode.RESULT_TYPE_FOLDER_SHORTCUT)
-      return asQuery(aNode).folderItemId;
-    else if (PlacesUtils.nodeIsTagQuery(aNode)) {
-      
-      
-      let folders = aNode.query.getFolders();
-      return folders[0];
-    }
-    return aNode.itemId;
+    return aNode.type == Ci.nsINavHistoryResultNode.RESULT_TYPE_FOLDER_SHORTCUT ?
+             asQuery(aNode).folderItemId : aNode.itemId;
   },
 
   

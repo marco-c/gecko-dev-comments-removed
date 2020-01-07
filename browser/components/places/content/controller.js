@@ -175,7 +175,8 @@ PlacesController.prototype = {
                  Ci.nsINavHistoryQueryOptions.SORT_BY_NONE;
     case "placesCmd_show:info": {
       let selectedNode = this._view.selectedNode;
-      return selectedNode && PlacesUtils.getConcreteItemId(selectedNode) != -1;
+      return selectedNode && (PlacesUtils.nodeIsTagQuery(selectedNode) ||
+                              PlacesUtils.getConcreteItemId(selectedNode) != -1);
     }
     case "placesCmd_reload": {
       
@@ -807,18 +808,27 @@ PlacesController.prototype = {
       if (PlacesUtils.nodeIsTagQuery(node.parent)) {
         
         
-        let tag = node.parent.title;
+        let tag = node.parent.title || "";
         if (!tag) {
           
-          let tagItemId = PlacesUtils.getConcreteItemId(node.parent);
-          let tagGuid = await PlacesUtils.promiseItemGuid(tagItemId);
-          tag = (await PlacesUtils.bookmarks.fetch(tagGuid)).title;
+          
+          if (node.parent.queryOptions.resultType ==
+                Ci.nsINavHistoryQueryOptions.RESULTS_AS_TAG_CONTENTS) {
+            
+            let tagItemId = PlacesUtils.getConcreteItemId(node.parent);
+            let tagGuid = await PlacesUtils.promiseItemGuid(tagItemId);
+            tag = (await PlacesUtils.bookmarks.fetch(tagGuid)).title;
+          } else {
+            
+            tag = node.parent.query.tags[0];
+          }
         }
         transactions.push(PlacesTransactions.Untag({ urls: [node.uri], tag }));
-      } else if (PlacesUtils.nodeIsTagQuery(node) && node.parent &&
-               PlacesUtils.nodeIsQuery(node.parent) &&
-               PlacesUtils.asQuery(node.parent).queryOptions.resultType ==
-                 Ci.nsINavHistoryQueryOptions.RESULTS_AS_TAG_QUERY) {
+      } else if (PlacesUtils.nodeIsTagQuery(node) &&
+                 node.parent &&
+                 PlacesUtils.nodeIsQuery(node.parent) &&
+                 PlacesUtils.asQuery(node.parent).queryOptions.resultType ==
+                   Ci.nsINavHistoryQueryOptions.RESULTS_AS_TAG_QUERY) {
         
         
         
@@ -827,16 +837,16 @@ PlacesController.prototype = {
         let URIs = PlacesUtils.tagging.getURIsForTag(tag);
         transactions.push(PlacesTransactions.Untag({ tag, urls: URIs }));
       } else if (PlacesUtils.nodeIsURI(node) &&
-               PlacesUtils.nodeIsQuery(node.parent) &&
-               PlacesUtils.asQuery(node.parent).queryOptions.queryType ==
-                 Ci.nsINavHistoryQueryOptions.QUERY_TYPE_HISTORY) {
+                 PlacesUtils.nodeIsQuery(node.parent) &&
+                 PlacesUtils.asQuery(node.parent).queryOptions.queryType ==
+                   Ci.nsINavHistoryQueryOptions.QUERY_TYPE_HISTORY) {
         
         PlacesUtils.history.remove(node.uri).catch(Cu.reportError);
         
       } else if (node.itemId == -1 &&
-               PlacesUtils.nodeIsQuery(node) &&
-               PlacesUtils.asQuery(node).queryOptions.queryType ==
-                 Ci.nsINavHistoryQueryOptions.QUERY_TYPE_HISTORY) {
+                 PlacesUtils.nodeIsQuery(node) &&
+                 PlacesUtils.asQuery(node).queryOptions.queryType ==
+                   Ci.nsINavHistoryQueryOptions.QUERY_TYPE_HISTORY) {
         
         
         
