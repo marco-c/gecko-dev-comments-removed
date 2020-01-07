@@ -178,20 +178,29 @@ var PdfjsChromeUtils = {
 
 
 
-  _findbarFromMessage(aMsg) {
+  _updateControlState(aMsg) {
+    let data = aMsg.data;
     let browser = aMsg.target;
     let tabbrowser = browser.getTabBrowser();
     let tab = tabbrowser.getTabForBrowser(browser);
-    return tabbrowser.getFindBar(tab);
-  },
-
-  _updateControlState(aMsg) {
-    let data = aMsg.data;
-    this._findbarFromMessage(aMsg)
-        .updateControlState(data.result, data.findPrevious);
+    tabbrowser.getFindBar(tab).then(fb => {
+      if (!fb) {
+        
+        return;
+      }
+      fb.updateControlState(data.result, data.findPrevious);
+    });
   },
 
   handleEvent(aEvent) {
+    
+    if (aEvent.type == "TabFindInitialized") {
+      let browser = aEvent.target.linkedBrowser;
+      this._hookupEventListeners(browser);
+      aEvent.target.removeEventListener(aEvent.type, this);
+      return;
+    }
+
     
     
     let type = aEvent.type;
@@ -229,12 +238,28 @@ var PdfjsChromeUtils = {
     
     this._browsers.add(browser);
 
-    
-    for (var i = 0; i < this._types.length; i++) {
-      var type = this._types[i];
-      this._findbarFromMessage(aMsg)
-          .addEventListener(type, this, true);
+    this._hookupEventListeners(browser);
+  },
+
+  
+
+
+
+
+  _hookupEventListeners(aBrowser) {
+    let tabbrowser = aBrowser.getTabBrowser();
+    let tab = tabbrowser.getTabForBrowser(aBrowser);
+    let findbar = tabbrowser.getCachedFindBar(tab);
+    if (findbar) {
+      
+      for (var i = 0; i < this._types.length; i++) {
+        var type = this._types[i];
+        findbar.addEventListener(type, this, true);
+      }
+    } else {
+      tab.addEventListener("TabFindInitialized", this);
     }
+    return !!findbar;
   },
 
   _removeEventListener(aMsg) {
@@ -245,11 +270,16 @@ var PdfjsChromeUtils = {
 
     this._browsers.delete(browser);
 
-    
-    for (var i = 0; i < this._types.length; i++) {
-      var type = this._types[i];
-      this._findbarFromMessage(aMsg)
-          .removeEventListener(type, this, true);
+    let tabbrowser = browser.getTabBrowser();
+    let tab = tabbrowser.getTabForBrowser(browser);
+    tab.removeEventListener("TabFindInitialized", this);
+    let findbar = tabbrowser.getCachedFindBar(tab);
+    if (findbar) {
+      
+      for (var i = 0; i < this._types.length; i++) {
+        var type = this._types[i];
+        findbar.removeEventListener(type, this, true);
+      }
     }
   },
 

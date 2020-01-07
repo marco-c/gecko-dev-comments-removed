@@ -26,11 +26,6 @@ var PdfjsContentUtils = {
 
 
 
-  get isRemote() {
-    return (Services.appinfo.processType ===
-            Services.appinfo.PROCESS_TYPE_CONTENT);
-  },
-
   init() {
     
     
