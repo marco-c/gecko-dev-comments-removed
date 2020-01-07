@@ -700,6 +700,11 @@ GeckoEditableSupport::SendIMEDummyKeyEvent(nsIWidget* aWidget, EventMessage msg)
     
     event.mKeyCode = NS_VK_PROCESSKEY;
     event.mKeyNameIndex = KEY_NAME_INDEX_Process;
+    
+    
+    
+    
+    event.PreventNativeKeyBindings();
     NS_ENSURE_SUCCESS_VOID(BeginInputTransaction(mDispatcher));
     mDispatcher->DispatchKeyboardEvent(msg, event, status);
 }
