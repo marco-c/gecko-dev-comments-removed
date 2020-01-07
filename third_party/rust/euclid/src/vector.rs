@@ -372,6 +372,16 @@ impl<T: NumCast + Copy, U> TypedVector2D<T, U> {
     
     
     #[inline]
+    pub fn to_u32(&self) -> TypedVector2D<u32, U> {
+        self.cast().unwrap()
+    }
+
+    
+    
+    
+    
+    
+    #[inline]
     pub fn to_i32(&self) -> TypedVector2D<i32, U> {
         self.cast().unwrap()
     }
@@ -766,6 +776,16 @@ impl<T: NumCast + Copy, U> TypedVector3D<T, U> {
     
     #[inline]
     pub fn to_usize(&self) -> TypedVector3D<usize, U> {
+        self.cast().unwrap()
+    }
+
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn to_u32(&self) -> TypedVector3D<u32, U> {
         self.cast().unwrap()
     }
 

@@ -249,6 +249,15 @@ impl<T: NumCast + Copy, Unit> TypedSize2D<T, Unit> {
     
     
     
+    pub fn to_u32(&self) -> TypedSize2D<u32, Unit> {
+        self.cast().unwrap()
+    }
+
+    
+    
+    
+    
+    
     pub fn to_i32(&self) -> TypedSize2D<i32, Unit> {
         self.cast().unwrap()
     }

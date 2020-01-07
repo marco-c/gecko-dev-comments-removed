@@ -526,6 +526,15 @@ impl<T: NumCast + Copy, Unit> TypedRect<T, Unit> {
     
     
     
+    pub fn to_u32(&self) -> TypedRect<u32, Unit> {
+        self.cast().unwrap()
+    }
+
+    
+    
+    
+    
+    
     pub fn to_i32(&self) -> TypedRect<i32, Unit> {
         self.cast().unwrap()
     }

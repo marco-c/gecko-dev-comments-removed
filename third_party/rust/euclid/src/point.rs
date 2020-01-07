@@ -63,7 +63,7 @@ impl<T: fmt::Display, U> fmt::Display for TypedPoint2D<T, U> {
     }
 }
 
-impl<T: Copy, U> TypedPoint2D<T, U> {
+impl<T, U> TypedPoint2D<T, U> {
     
     #[inline]
     pub fn new(x: T, y: T) -> Self {
@@ -73,7 +73,9 @@ impl<T: Copy, U> TypedPoint2D<T, U> {
             _unit: PhantomData,
         }
     }
+}
 
+impl<T: Copy, U> TypedPoint2D<T, U> {
     
     #[inline]
     pub fn from_lengths(x: Length<T, U>, y: Length<T, U>) -> Self {
@@ -312,6 +314,16 @@ impl<T: NumCast + Copy, U> TypedPoint2D<T, U> {
     
     #[inline]
     pub fn to_usize(&self) -> TypedPoint2D<usize, U> {
+        self.cast().unwrap()
+    }
+
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn to_u32(&self) -> TypedPoint2D<u32, U> {
         self.cast().unwrap()
     }
 
@@ -670,6 +682,16 @@ impl<T: NumCast + Copy, U> TypedPoint3D<T, U> {
     
     #[inline]
     pub fn to_usize(&self) -> TypedPoint3D<usize, U> {
+        self.cast().unwrap()
+    }
+
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn to_u32(&self) -> TypedPoint3D<u32, U> {
         self.cast().unwrap()
     }
 

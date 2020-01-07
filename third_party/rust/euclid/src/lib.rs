@@ -7,7 +7,7 @@
 
 
 
-#![cfg_attr(feature = "unstable", feature(cfg_target_feature, test, fn_must_use))]
+#![cfg_attr(feature = "unstable", feature(fn_must_use))]
 
 
 
@@ -62,8 +62,6 @@ extern crate serde;
 extern crate num_traits;
 #[cfg(test)]
 extern crate rand;
-#[cfg(feature = "unstable")]
-extern crate test;
 
 pub use length::Length;
 pub use scale::TypedScale;
