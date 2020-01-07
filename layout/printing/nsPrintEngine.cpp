@@ -64,6 +64,7 @@ static const char kPrintingPromptService[] = "@mozilla.org/embedcomp/printingpro
 
 
 #include "nsIDocument.h"
+#include "nsIDocumentInlines.h"
 
 
 #include "nsISelectionController.h"
@@ -84,6 +85,7 @@ static const char kPrintingPromptService[] = "@mozilla.org/embedcomp/printingpro
 #include "nsIPresShell.h"
 #include "nsLayoutUtils.h"
 #include "mozilla/Preferences.h"
+#include "Text.h"
 
 #include "nsWidgetsCID.h"
 #include "nsIDeviceContextSpec.h"
@@ -150,6 +152,11 @@ static const char * gFrameTypesStr[]       = {"eDoc", "eFrame", "eIFrame", "eFra
 static const char * gPrintFrameTypeStr[]   = {"kNoFrames", "kFramesAsIs", "kSelectedFrame", "kEachFrameSep"};
 static const char * gFrameHowToEnableStr[] = {"kFrameEnableNone", "kFrameEnableAll", "kFrameEnableAsIsAndEach"};
 static const char * gPrintRangeStr[]       = {"kRangeAllPages", "kRangeSpecifiedPageRange", "kRangeSelection", "kRangeFocusFrame"};
+
+
+
+
+static nsresult DeleteUnselectedNodes(nsIDocument* aOrigDoc, nsIDocument* aDoc);
 
 #ifdef EXTENDED_DEBUG_PRINTING
 
@@ -2274,6 +2281,14 @@ nsPrintEngine::ReflowPrintObject(const UniquePtr<nsPrintObject>& aPO)
     return NS_ERROR_FAILURE;
   }
 
+  
+  
+  int16_t printRangeType = nsIPrintSettings::kRangeAllPages;
+  printData->mPrintSettings->GetPrintRange(&printRangeType);
+  if (printRangeType == nsIPrintSettings::kRangeSelection) {
+    DeleteUnselectedNodes(aPO->mDocument->GetOriginalDocument(), aPO->mDocument);
+  }
+
   styleSet->EndUpdate();
 
   
@@ -2425,78 +2440,40 @@ nsPrintEngine::PrintDocContent(const UniquePtr<nsPrintObject>& aPO,
   return false;
 }
 
-static already_AddRefed<nsIDOMNode>
-GetEqualNodeInCloneTree(nsIDOMNode* aNode, nsIDocument* aDoc)
+static nsINode*
+GetCorrespondingNodeInDocument(const nsINode* aNode, nsIDocument* aDoc)
 {
-  nsCOMPtr<nsIContent> content = do_QueryInterface(aNode);
+  MOZ_ASSERT(aNode);
+  MOZ_ASSERT(aDoc);
+
   
-  if (content && content->IsInAnonymousSubtree()) {
+  if (aNode->IsInAnonymousSubtree()) {
     return nullptr;
   }
 
-  nsCOMPtr<nsINode> node = do_QueryInterface(aNode);
-  NS_ENSURE_TRUE(node, nullptr);
-
   nsTArray<int32_t> indexArray;
-  nsINode* current = node;
-  NS_ENSURE_TRUE(current, nullptr);
-  while (current) {
-    nsINode* parent = current->GetParentNode();
-    if (!parent) {
-     break;
-    }
-    int32_t index = parent->IndexOf(current);
-    NS_ENSURE_TRUE(index >= 0, nullptr);
+  const nsINode* child = aNode;
+  while (const nsINode* parent = child->GetParentNode()) {
+    int32_t index = parent->IndexOf(child);
+    MOZ_ASSERT(index >= 0);
     indexArray.AppendElement(index);
-    current = parent;
+    child = parent;
   }
-  NS_ENSURE_TRUE(current->IsNodeOfType(nsINode::eDOCUMENT), nullptr);
+  MOZ_ASSERT(child->IsNodeOfType(nsINode::eDOCUMENT));
 
-  current = aDoc;
+  nsINode* correspondingNode = aDoc;
   for (int32_t i = indexArray.Length() - 1; i >= 0; --i) {
-    current = current->GetChildAt(indexArray[i]);
-    NS_ENSURE_TRUE(current, nullptr);
+    correspondingNode = correspondingNode->GetChildAt(indexArray[i]);
+    NS_ENSURE_TRUE(correspondingNode, nullptr);
   }
-  nsCOMPtr<nsIDOMNode> result = do_QueryInterface(current);
-  return result.forget();
+
+  return correspondingNode;
 }
 
-static void
-CloneRangeToSelection(nsRange* aRange, nsIDocument* aDoc,
-                      Selection* aSelection)
-{
-  if (aRange->Collapsed()) {
-    return;
-  }
+static NS_NAMED_LITERAL_STRING(kEllipsis, u"\x2026");
 
-  nsCOMPtr<nsIDOMNode> startContainer, endContainer;
-  aRange->GetStartContainer(getter_AddRefs(startContainer));
-  int32_t startOffset = aRange->StartOffset();
-  aRange->GetEndContainer(getter_AddRefs(endContainer));
-  int32_t endOffset = aRange->EndOffset();
-  NS_ENSURE_TRUE_VOID(startContainer && endContainer);
-
-  nsCOMPtr<nsIDOMNode> newStart = GetEqualNodeInCloneTree(startContainer, aDoc);
-  nsCOMPtr<nsIDOMNode> newEnd = GetEqualNodeInCloneTree(endContainer, aDoc);
-  NS_ENSURE_TRUE_VOID(newStart && newEnd);
-
-  nsCOMPtr<nsINode> newStartNode = do_QueryInterface(newStart);
-  nsCOMPtr<nsINode> newEndNode = do_QueryInterface(newEnd);
-  if (NS_WARN_IF(!newStartNode) || NS_WARN_IF(!newEndNode)) {
-    return;
-  }
-
-  RefPtr<nsRange> range = new nsRange(newStartNode);
-  nsresult rv =
-    range->SetStartAndEnd(newStartNode, startOffset, newEndNode, endOffset);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return;
-  }
-
-  aSelection->AddRange(range);
-}
-
-static nsresult CloneSelection(nsIDocument* aOrigDoc, nsIDocument* aDoc)
+static nsresult
+DeleteUnselectedNodes(nsIDocument* aOrigDoc, nsIDocument* aDoc)
 {
   nsIPresShell* origShell = aOrigDoc->GetShell();
   nsIPresShell* shell = aDoc->GetShell();
@@ -2508,10 +2485,72 @@ static nsresult CloneSelection(nsIDocument* aOrigDoc, nsIDocument* aDoc)
     shell->GetCurrentSelection(SelectionType::eNormal);
   NS_ENSURE_STATE(origSelection && selection);
 
+  nsINode* bodyNode = aDoc->GetBodyElement();
+  nsINode* startNode = bodyNode;
+  uint32_t startOffset = 0;
+  uint32_t ellipsisOffset = 0;
+
   int32_t rangeCount = origSelection->RangeCount();
   for (int32_t i = 0; i < rangeCount; ++i) {
-      CloneRangeToSelection(origSelection->GetRangeAt(i), aDoc, selection);
+    nsRange* origRange = origSelection->GetRangeAt(i);
+
+    
+    nsINode* endNode =
+      GetCorrespondingNodeInDocument(origRange->GetStartContainer(), aDoc);
+
+    
+    if (endNode != startNode) {
+      ellipsisOffset = 0;
+    }
+    uint32_t endOffset = origRange->StartOffset() + ellipsisOffset;
+
+    
+    
+    RefPtr<nsRange> range;
+    nsresult rv = nsRange::CreateRange(startNode, startOffset, endNode,
+                                       endOffset, getter_AddRefs(range));
+
+    if (NS_SUCCEEDED(rv) && !range->Collapsed()) {
+      selection->AddRange(range);
+
+      
+      
+      Text* text = endNode->GetAsText();
+      if (!ellipsisOffset && text && endOffset && endOffset < text->Length()) {
+        text->InsertData(endOffset, kEllipsis);
+        ellipsisOffset += kEllipsis.Length();
+      }
+    }
+
+    
+    startNode =
+      GetCorrespondingNodeInDocument(origRange->GetEndContainer(), aDoc);
+
+    
+    if (startNode != endNode) {
+      ellipsisOffset = 0;
+    }
+    startOffset = origRange->EndOffset() + ellipsisOffset;
+
+    
+    Text* text = startNode ? startNode->GetAsText() : nullptr;
+    if (text && startOffset && startOffset < text->Length()) {
+      text->InsertData(startOffset, kEllipsis);
+      startOffset += kEllipsis.Length();
+      ellipsisOffset += kEllipsis.Length();
+    }
   }
+
+  
+  RefPtr<nsRange> lastRange;
+  nsresult rv = nsRange::CreateRange(startNode, startOffset, bodyNode,
+                                     bodyNode->GetChildCount(),
+                                     getter_AddRefs(lastRange));
+  if (NS_SUCCEEDED(rv) && !lastRange->Collapsed()) {
+    selection->AddRange(lastRange);
+  }
+
+  selection->DeleteFromDocument();
   return NS_OK;
 }
 
@@ -2540,12 +2579,6 @@ nsPrintEngine::DoPrint(const UniquePtr<nsPrintObject>& aPO)
   }
 
   {
-    int16_t printRangeType = nsIPrintSettings::kRangeAllPages;
-    nsresult rv;
-    if (printData->mPrintSettings) {
-      printData->mPrintSettings->GetPrintRange(&printRangeType);
-    }
-
     
     nsIPageSequenceFrame* pageSequence = poPresShell->GetPageSequenceFrame();
     NS_ASSERTION(nullptr != pageSequence, "no page sequence frame");
@@ -2573,77 +2606,6 @@ nsPrintEngine::DoPrint(const UniquePtr<nsPrintObject>& aPO)
     nsAutoString docTitleStr;
     nsAutoString docURLStr;
     GetDisplayTitleAndURL(aPO, docTitleStr, docURLStr, eDocTitleDefBlank);
-
-    if (nsIPrintSettings::kRangeSelection == printRangeType) {
-      CloneSelection(aPO->mDocument->GetOriginalDocument(), aPO->mDocument);
-
-      poPresContext->SetIsRenderingOnlySelection(true);
-      
-      
-      
-
-      
-      
-      nsIFrame* startFrame;
-      nsIFrame* endFrame;
-      int32_t   startPageNum;
-      int32_t   endPageNum;
-      nsRect    startRect;
-      nsRect    endRect;
-
-      rv = GetPageRangeForSelection(pageSequence,
-                                    &startFrame, startPageNum, startRect,
-                                    &endFrame, endPageNum, endRect);
-      if (NS_SUCCEEDED(rv)) {
-        printData->mPrintSettings->SetStartPageRange(startPageNum);
-        printData->mPrintSettings->SetEndPageRange(endPageNum);
-        nsIntMargin marginTwips(0,0,0,0);
-        nsIntMargin unwrtMarginTwips(0,0,0,0);
-        printData->mPrintSettings->GetMarginInTwips(marginTwips);
-        printData->mPrintSettings->GetUnwriteableMarginInTwips(
-                                     unwrtMarginTwips);
-        nsMargin totalMargin = poPresContext->CSSTwipsToAppUnits(marginTwips +
-                                                                 unwrtMarginTwips);
-        if (startPageNum == endPageNum) {
-          startRect.y -= totalMargin.top;
-          endRect.y   -= totalMargin.top;
-
-          
-          if (startRect.y < 0) {
-            
-            
-            startRect.height = std::max(0, startRect.YMost());
-            startRect.y = 0;
-          }
-          if (endRect.y < 0) {
-            
-            
-            endRect.height = std::max(0, endRect.YMost());
-            endRect.y = 0;
-          }
-          NS_ASSERTION(endRect.y >= startRect.y,
-                       "Selection end point should be after start point");
-          NS_ASSERTION(startRect.height >= 0,
-                       "rect should have non-negative height.");
-          NS_ASSERTION(endRect.height >= 0,
-                       "rect should have non-negative height.");
-
-          nscoord selectionHgt = endRect.y + endRect.height - startRect.y;
-          
-          pageSequence->SetSelectionHeight(startRect.y * aPO->mZoomRatio,
-                                           selectionHgt * aPO->mZoomRatio);
-
-          
-          
-          nscoord pageWidth, pageHeight;
-          printData->mPrintDC->GetDeviceSurfaceDimensions(pageWidth,
-                                                          pageHeight);
-          pageHeight -= totalMargin.top + totalMargin.bottom;
-          int32_t totalPages = NSToIntCeil(float(selectionHgt) * aPO->mZoomRatio / float(pageHeight));
-          pageSequence->SetTotalNumPages(totalPages);
-        }
-      }
-    }
 
     nsIFrame * seqFrame = do_QueryFrame(pageSequence);
     if (!seqFrame) {

@@ -226,12 +226,6 @@ nsSimplePageSequenceFrame::Reflow(nsPresContext*     aPresContext,
   nsSize pageSize = aPresContext->GetPageSize();
 
   mPageData->mReflowSize = pageSize;
-  
-  
-  
-  if (nsIPrintSettings::kRangeSelection == mPrintRangeType) {
-    mPageData->mReflowSize.height = NS_UNCONSTRAINEDSIZE;
-  }
   mPageData->mReflowMargin = mMargin;
 
   
@@ -428,15 +422,14 @@ nsSimplePageSequenceFrame::StartPrint(nsPresContext*    aPresContext,
   aPrintSettings->GetEndPageRange(&mToPageNum);
   aPrintSettings->GetPageRanges(mPageRanges);
 
-  mDoingPageRange = nsIPrintSettings::kRangeSpecifiedPageRange == mPrintRangeType ||
-                    nsIPrintSettings::kRangeSelection == mPrintRangeType;
+  mDoingPageRange = nsIPrintSettings::kRangeSpecifiedPageRange == mPrintRangeType;
 
   
   
-  int32_t totalPages = mFrames.GetLength();
+  mTotalPages = mFrames.GetLength();
 
   if (mDoingPageRange) {
-    if (mFromPageNum > totalPages) {
+    if (mFromPageNum > mTotalPages) {
       return NS_ERROR_INVALID_ARG;
     }
   }
@@ -444,41 +437,7 @@ nsSimplePageSequenceFrame::StartPrint(nsPresContext*    aPresContext,
   
   nsresult rv = NS_OK;
 
-  
-  aPresContext->SetIsRenderingOnlySelection(nsIPrintSettings::kRangeSelection == mPrintRangeType);
-
-
-  if (mDoingPageRange) {
-    
-    
-    nscoord height = aPresContext->GetPageSize().height;
-
-    int32_t pageNum = 1;
-    nscoord y = 0;
-
-    for (nsFrameList::Enumerator e(mFrames); !e.AtEnd(); e.Next()) {
-      nsIFrame* page = e.get();
-      if (pageNum >= mFromPageNum && pageNum <= mToPageNum) {
-        nsRect rect = page->GetRect();
-        rect.y = y;
-        rect.height = height;
-        page->SetRect(rect);
-        y += rect.height + mMargin.top + mMargin.bottom;
-      }
-      pageNum++;
-    }
-
-    
-    if (nsIPrintSettings::kRangeSelection != mPrintRangeType) {
-      totalPages = pageNum - 1;
-    }
-  }
-
   mPageNum = 1;
-
-  if (mTotalPages == -1) {
-    mTotalPages = totalPages;
-  }
 
   return rv;
 }
@@ -570,10 +529,6 @@ nsSimplePageSequenceFrame::DetermineWhetherToPrintPage()
     if (!printEvenPages) {
       mPrintThisPage = false;  
     }
-  }
-
-  if (nsIPrintSettings::kRangeSelection == mPrintRangeType) {
-    mPrintThisPage = true;
   }
 }
 
@@ -696,17 +651,6 @@ nsSimplePageSequenceFrame::PrintNextPage()
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
 
   nsIFrame* currentPageFrame = GetCurrentPageFrame();
   if (!currentPageFrame) {
@@ -720,82 +664,30 @@ nsSimplePageSequenceFrame::PrintNextPage()
   if (mPrintThisPage) {
     nsDeviceContext* dc = PresContext()->DeviceContext();
 
-    nsPageFrame * pf = static_cast<nsPageFrame*>(currentPageFrame);
-    pf->SetPageNumInfo(mPageNum, mTotalPages);
-    pf->SetSharedPageData(mPageData);
-
-    
-    nsIFrame* selectionContentFrame = nullptr;
-    nscoord pageContentHeight =
-      PresContext()->GetPageSize().height - (mMargin.top + mMargin.bottom);
-    nscoord selectionY = pageContentHeight;
-    int32_t selectionCurrentPageNum = 1;
-    bool haveUnfinishedSelectionToPrint = false;
-
-    if (mSelectionHeight >= 0) {
-      selectionContentFrame = currentPageFrame->PrincipalChildList().FirstChild();
-      MOZ_ASSERT(selectionContentFrame->IsPageContentFrame() &&
-                 !selectionContentFrame->GetNextSibling(),
-                 "Unexpected frame tree");
-      
-      
-      
-      
-      selectionContentFrame->SetPosition(selectionContentFrame->GetPosition() +
-                                         nsPoint(0, -mYSelOffset));
-      nsContainerFrame::PositionChildViews(selectionContentFrame);
+    if (PresContext()->IsRootPaginatedDocument()) {
+      if (!mCalledBeginPage) {
+        
+        
+        
+        PR_PL(("\n"));
+        PR_PL(("***************** BeginPage *****************\n"));
+        rv = dc->BeginPage();
+        NS_ENSURE_SUCCESS(rv, rv);
+      }
     }
 
-    do {
-      if (PresContext()->IsRootPaginatedDocument()) {
-        if (!mCalledBeginPage) {
-          
-          
-          
-          PR_PL(("\n"));
-          PR_PL(("***************** BeginPage *****************\n"));
-          rv = dc->BeginPage();
-          NS_ENSURE_SUCCESS(rv, rv);
-        }
+    PR_PL(("SeqFr::PrintNextPage -> %p PageNo: %d", currentPageFrame, mPageNum));
 
-        
-        
-        
-        mCalledBeginPage = false;
-      }
+    
+    RefPtr<gfxContext> gCtx = dc->CreateRenderingContext();
+    NS_ENSURE_TRUE(gCtx, NS_ERROR_OUT_OF_MEMORY);
 
-      PR_PL(("SeqFr::PrintNextPage -> %p PageNo: %d", pf, mPageNum));
-
-      
-      RefPtr<gfxContext> gCtx = dc->CreateRenderingContext();
-      NS_ENSURE_TRUE(gCtx, NS_ERROR_OUT_OF_MEMORY);
-
-      nsRect drawingRect(nsPoint(0, 0), currentPageFrame->GetSize());
-      nsRegion drawingRegion(drawingRect);
-      nsLayoutUtils::PaintFrame(gCtx, currentPageFrame,
-                                drawingRegion, NS_RGBA(0,0,0,0),
-                                nsDisplayListBuilderMode::PAINTING,
-                                nsLayoutUtils::PaintFrameFlags::PAINT_SYNC_DECODE_IMAGES);
-
-      if (mSelectionHeight >= 0) {
-        haveUnfinishedSelectionToPrint = (selectionY < mSelectionHeight);
-        if (haveUnfinishedSelectionToPrint) {
-          selectionY += pageContentHeight;
-          selectionCurrentPageNum++;
-          pf->SetPageNumInfo(selectionCurrentPageNum, mTotalPages);
-          selectionContentFrame->SetPosition(selectionContentFrame->GetPosition() +
-                                             nsPoint(0, -pageContentHeight));
-          nsContainerFrame::PositionChildViews(selectionContentFrame);
-
-          
-          
-          
-          PR_PL(("***************** End Page (PrintNextPage) *****************\n"));
-          rv = dc->EndPage();
-          NS_ENSURE_SUCCESS(rv, rv);
-        }
-      }
-    } while (haveUnfinishedSelectionToPrint);
+    nsRect drawingRect(nsPoint(0, 0), currentPageFrame->GetSize());
+    nsRegion drawingRegion(drawingRect);
+    nsLayoutUtils::PaintFrame(gCtx, currentPageFrame,
+                              drawingRegion, NS_RGBA(0,0,0,0),
+                              nsDisplayListBuilderMode::PAINTING,
+                              nsLayoutUtils::PaintFrameFlags::PAINT_SYNC_DECODE_IMAGES);
   }
   return rv;
 }
@@ -811,6 +703,7 @@ nsSimplePageSequenceFrame::DoPageEnd()
   }
 
   ResetPrintCanvasList();
+  mCalledBeginPage = false;
 
   mPageNum++;
 
