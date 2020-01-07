@@ -133,6 +133,22 @@ public:
 
 
 
+
+
+  int32_t ToInteger(nsresult* aErrorCode, uint32_t aRadix = 10) const;
+
+  
+
+
+
+
+
+  int64_t ToInteger64(nsresult* aErrorCode, uint32_t aRadix = 10) const;
+
+  
+
+
+
   iterator& BeginWriting(iterator& aIter)
   {
     char_type* data = BeginWriting();
