@@ -20,6 +20,7 @@
 #include "mozilla/dom/DOMException.h"
 #include "mozilla/dom/DOMExceptionBinding.h"
 #include "mozilla/dom/DOMPrefs.h"
+#include "mozilla/dom/MozQueryInterface.h"
 #include "mozilla/jsipc/CrossProcessObjectWrappers.h"
 
 #include "jsapi.h"
@@ -232,8 +233,14 @@ nsXPCWrappedJSClass::CallQueryInterfaceOnJSObject(JSContext* cx,
         }
     }
 
-    id = xpc_NewIDObject(cx, jsobj, aIID);
-    if (id) {
+    dom::MozQueryInterface* mozQI = nullptr;
+    if (NS_SUCCEEDED(UNWRAP_OBJECT(MozQueryInterface, &fun, mozQI))) {
+        if (mozQI->QueriesTo(aIID))
+            return jsobj.get();
+        return nullptr;
+    }
+
+    if ((id = xpc_NewIDObject(cx, jsobj, aIID))) {
         
         
         
@@ -275,10 +282,10 @@ nsXPCWrappedJSClass::CallQueryInterfaceOnJSObject(JSContext* cx,
         } else if (!success) {
             NS_WARNING("QI hook ran OOMed - this is probably a bug!");
         }
-    }
 
-    if (success)
-        success = JS_ValueToObject(cx, retval, &retObj);
+        if (success)
+            success = JS_ValueToObject(cx, retval, &retObj);
+    }
 
     return success ? retObj.get() : nullptr;
 }
