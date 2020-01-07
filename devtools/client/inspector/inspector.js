@@ -607,11 +607,6 @@ Inspector.prototype = {
       ruleViewSidebar.style.display = "block";
 
       
-      if (this.sidebarToggle) {
-        this.sidebarToggle.setState({ collapsed: false });
-      }
-
-      
       this.sidebarSplitBox.setState({ splitterSize: 1 });
 
       
@@ -629,11 +624,6 @@ Inspector.prototype = {
       
       
       ruleViewSidebar.style.display = "none";
-
-      
-      if (this.sidebarToggle) {
-        this.sidebarToggle.setState({ collapsed: true });
-      }
 
       
       this.sidebarSplitBox.setState({ splitterSize: 0 });
@@ -686,9 +676,18 @@ Inspector.prototype = {
 
   async setupSidebar() {
     let sidebar = this.panelDoc.getElementById("inspector-sidebar");
-    this.sidebar = new ToolSidebar(sidebar, this, "inspector", {
-      showAllTabsMenu: true
-    });
+    let options = { showAllTabsMenu: true };
+
+    if (this.showSplitSidebarToggle) {
+      options.sidebarToggleButton = {
+        collapsed: !this.isSplitRuleViewEnabled,
+        collapsePaneTitle: INSPECTOR_L10N.getStr("inspector.hideSplitRulesView"),
+        expandPaneTitle: INSPECTOR_L10N.getStr("inspector.showSplitRulesView"),
+        onClick: this.onSidebarToggle,
+      };
+    }
+
+    this.sidebar = new ToolSidebar(sidebar, this, "inspector", options);
 
     let ruleSideBar = this.panelDoc.getElementById("inspector-rules-sidebar");
     this.ruleViewSideBar = new ToolSidebar(ruleSideBar, this, "inspector", {
@@ -1002,22 +1001,6 @@ Inspector.prototype = {
       let eyeDropperButton = this.panelDoc.getElementById("inspector-eyedropper-toggle");
       eyeDropperButton.disabled = true;
       eyeDropperButton.title = INSPECTOR_L10N.getStr("eyedropper.disabled.title");
-    }
-
-    
-    if (this.showSplitSidebarToggle && !this.sidebarToggle) {
-      let SidebarToggle = this.React.createFactory(this.browserRequire(
-        "devtools/client/shared/components/SidebarToggle"));
-
-      let sidebarToggle = SidebarToggle({
-        collapsed: !this.isSplitRuleViewEnabled,
-        collapsePaneTitle: INSPECTOR_L10N.getStr("inspector.hideSplitRulesView"),
-        expandPaneTitle: INSPECTOR_L10N.getStr("inspector.showSplitRulesView"),
-        onClick: this.onSidebarToggle
-      });
-
-      let parentBox = this.panelDoc.getElementById("inspector-sidebar-toggle-box");
-      this.sidebarToggle = this.ReactDOM.render(sidebarToggle, parentBox);
     }
   },
 
