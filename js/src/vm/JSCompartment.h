@@ -646,9 +646,6 @@ struct JSCompartment
     }
 
   public:
-    
-    int64_t                      lastAnimationTime;
-
     js::RegExpCompartment        regExps;
 
     js::ArraySpeciesLookup       arraySpeciesLookup;
@@ -1063,6 +1060,9 @@ class JS::Realm : public JSCompartment
     js::ScriptCountsMap* scriptCountsMap = nullptr;
     js::ScriptNameMap* scriptNameMap = nullptr;
     js::DebugScriptMap* debugScriptMap = nullptr;
+
+    
+    int64_t lastAnimationTime = 0;
 
     uint32_t warnedAboutStringGenericsMethods = 0;
 #ifdef DEBUG
