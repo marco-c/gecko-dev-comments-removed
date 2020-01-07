@@ -8198,12 +8198,9 @@ nsTableFrame::UpdateStyleOfOwnedAnonBoxesForTableWrapper(
   
   
   
-  uint32_t equalStructs, samePointerStructs; 
-  nsChangeHint wrapperHint = aWrapperFrame->Style()->CalcStyleDifference(
-    newStyle,
-    &equalStructs,
-    &samePointerStructs,
-     true);
+  uint32_t equalStructs; 
+  nsChangeHint wrapperHint =
+    aWrapperFrame->Style()->CalcStyleDifference(newStyle, &equalStructs);
 
   
   

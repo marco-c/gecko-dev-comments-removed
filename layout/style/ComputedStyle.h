@@ -302,9 +302,7 @@ public:
 
 
   nsChangeHint CalcStyleDifference(ComputedStyle* aNewContext,
-                                   uint32_t* aEqualStructs,
-                                   uint32_t* aSamePointerStructs,
-				   bool aIgnoreVariables = false);
+                                   uint32_t* aEqualStructs);
 
 public:
   

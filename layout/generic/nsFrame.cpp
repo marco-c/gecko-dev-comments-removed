@@ -3042,12 +3042,11 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
     if (aBuilder->ContainsBlendMode() != BuiltBlendContainer() &&
         aBuilder->IsRetainingDisplayList()) {
       SetBuiltBlendContainer(aBuilder->ContainsBlendMode());
-      aBuilder->MarkCurrentFrameModifiedDuringBuilding();
 
       
       
       if (!aBuilder->GetDirtyRect().Contains(aBuilder->GetVisibleRect())) {
-        aBuilder->SetDirtyRect(aBuilder->GetVisibleRect());
+        aBuilder->MarkCurrentFrameModifiedDuringBuilding();
         set.DeleteAll(aBuilder);
 
         if (eventRegions) {
@@ -10763,12 +10762,9 @@ nsIFrame::UpdateStyleOfOwnedChildFrame(
   
   
   
-  uint32_t equalStructs, samePointerStructs; 
-  nsChangeHint childHint = aChildFrame->Style()->CalcStyleDifference(
-    aNewComputedStyle,
-    &equalStructs,
-    &samePointerStructs,
-     true);
+  uint32_t equalStructs; 
+  nsChangeHint childHint =
+    aChildFrame->Style()->CalcStyleDifference(aNewComputedStyle, &equalStructs);
 
   
   

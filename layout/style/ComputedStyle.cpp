@@ -26,12 +26,11 @@
 #include "nsIDocument.h"
 #include "nsPrintfCString.h"
 #include "RubyUtils.h"
-#include "mozilla/Preferences.h"
 #include "mozilla/ArenaObjectID.h"
+#include "mozilla/ComputedStyleInlines.h"
+#include "mozilla/Preferences.h"
 #include "mozilla/StyleSetHandle.h"
 #include "mozilla/StyleSetHandleInlines.h"
-#include "mozilla/ComputedStyle.h"
-#include "mozilla/ComputedStyleInlines.h"
 
 #include "mozilla/ReflowInput.h"
 #include "nsLayoutUtils.h"
@@ -107,12 +106,9 @@ ComputedStyle::ComputedStyle(nsPresContext* aPresContext,
 #endif
 }
 
-
 nsChangeHint
 ComputedStyle::CalcStyleDifference(ComputedStyle* aNewContext,
-                                    uint32_t* aEqualStructs,
-                                    uint32_t* aSamePointerStructs,
-                                    bool aIgnoreVariables)
+                                   uint32_t* aEqualStructs)
 {
   AUTO_PROFILER_LABEL("ComputedStyle::CalcStyleDifference", CSS);
 
@@ -120,7 +116,6 @@ ComputedStyle::CalcStyleDifference(ComputedStyle* aNewContext,
                 "aEqualStructs is not big enough");
 
   *aEqualStructs = 0;
-  *aSamePointerStructs = 0;
 
   nsChangeHint hint = nsChangeHint(0);
   NS_ENSURE_TRUE(aNewContext, hint);
@@ -135,13 +130,7 @@ ComputedStyle::CalcStyleDifference(ComputedStyle* aNewContext,
 
   DebugOnly<uint32_t> structsFound = 0;
 
-  if (aIgnoreVariables ||
-      Servo_ComputedValues_EqualCustomProperties(
-        ComputedData(),
-        aNewContext->ComputedData())) {
-    *aEqualStructs |= NS_STYLE_INHERIT_BIT(Variables);
-  }
-
+  *aEqualStructs |= NS_STYLE_INHERIT_BIT(Variables);
   DebugOnly<int> styleStructCount = 1;  
 
   
@@ -153,13 +142,8 @@ ComputedStyle::CalcStyleDifference(ComputedStyle* aNewContext,
   
   
   
-  
-  
-  
-  
-  
-#define PEEK(struct_)                                                         \
-   ComputedData()->GetStyle##struct_()                                        \
+#define PEEK(struct_) \
+   ComputedData()->GetStyle##struct_()
 
 #define EXPAND(...) __VA_ARGS__
 #define DO_STRUCT_DIFFERENCE_WITH_ARGS(struct_, extra_args_)                  \
@@ -244,28 +228,6 @@ ComputedStyle::CalcStyleDifference(ComputedStyle* aNewContext,
   
   
   
-  *aSamePointerStructs = 0;
-
-#define STYLE_STRUCT_LIST_IGNORE_VARIABLES
-#define STYLE_STRUCT(name_, callback_)                                        \
-  {                                                                           \
-    const nsStyle##name_* data = PEEK(name_);                                 \
-    if (!data || data == aNewContext->ThreadsafeStyle##name_()) {             \
-      *aSamePointerStructs |= NS_STYLE_INHERIT_BIT(name_);                    \
-    }                                                                         \
-  }
-#include "nsStyleStructList.h"
-#undef STYLE_STRUCT_LIST_IGNORE_VARIABLES
-#undef STYLE_STRUCT
-
-  
-  
-  
-  
-  
-  
-  
-  
   
   
   
@@ -279,8 +241,7 @@ ComputedStyle::CalcStyleDifference(ComputedStyle* aNewContext,
   if (!thisVis != !otherVis) {
     
     
-#define STYLE_STRUCT(name_, fields_)                                \
-    *aSamePointerStructs &= ~NS_STYLE_INHERIT_BIT(name_);           \
+#define STYLE_STRUCT(name_, fields_) \
     *aEqualStructs &= ~NS_STYLE_INHERIT_BIT(name_);
 #include "nsCSSVisitedDependentPropList.h"
 #undef STYLE_STRUCT
@@ -302,7 +263,6 @@ ComputedStyle::CalcStyleDifference(ComputedStyle* aNewContext,
       const nsStyle##name_* otherVisStruct =                            \
         otherVis->ThreadsafeStyle##name_();                             \
       if (MOZ_FOR_EACH_SEPARATED(STYLE_FIELD, (||), (), fields_)) {     \
-        *aSamePointerStructs &= ~NS_STYLE_INHERIT_BIT(name_);           \
         *aEqualStructs &= ~NS_STYLE_INHERIT_BIT(name_);                 \
         change = true;                                                  \
       }                                                                 \
