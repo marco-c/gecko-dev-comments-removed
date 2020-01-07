@@ -182,6 +182,20 @@ namespace dom {
 class Selection;
 class SelectionChangeListener;
 } 
+
+
+
+
+
+enum class TableSelection : uint32_t {
+  None, 
+  Cell, 
+  Row,  
+  Column, 
+  Table, 
+  AllCells, 
+};
+
 } 
 class nsIScrollableFrame;
 
@@ -253,7 +267,7 @@ public:
   
   nsresult HandleTableSelection(nsINode* aParentContent,
                                 int32_t aContentOffset,
-                                int32_t aTarget,
+                                mozilla::TableSelection aTarget,
                                 mozilla::WidgetMouseEvent* aMouseEvent);
 
   
@@ -355,8 +369,14 @@ public:
   
 
 
-  bool GetTableCellSelection() const { return mSelectingTableCellMode != 0; }
-  void ClearTableCellSelection() { mSelectingTableCellMode = 0; }
+  bool GetTableCellSelection() const
+  {
+    return mSelectingTableCellMode != mozilla::TableSelection::None;
+  }
+  void ClearTableCellSelection()
+  {
+    mSelectingTableCellMode = mozilla::TableSelection::None;
+  }
 
   
 
@@ -707,7 +727,8 @@ private:
   nsITableCellLayout* GetCellLayout(nsIContent *aCellContent) const;
 
   nsresult SelectBlockOfCells(nsIContent *aStartNode, nsIContent *aEndNode);
-  nsresult SelectRowOrColumn(nsIContent *aCellContent, uint32_t aTarget);
+  nsresult SelectRowOrColumn(nsIContent *aCellContent,
+                             mozilla::TableSelection aTarget);
   nsresult UnselectCells(nsIContent *aTable,
                          int32_t aStartRowIndex, int32_t aStartColumnIndex,
                          int32_t aEndRowIndex, int32_t aEndColumnIndex,
@@ -741,7 +762,7 @@ private:
   nsCOMPtr<nsIContent> mEndSelectedCell;
   nsCOMPtr<nsIContent> mAppendStartSelectedCell;
   nsCOMPtr<nsIContent> mUnselectCellOnMouseUp;
-  int32_t  mSelectingTableCellMode = 0;
+  mozilla::TableSelection mSelectingTableCellMode = mozilla::TableSelection::None;
   int32_t  mSelectedCellIndex = 0;
 
   

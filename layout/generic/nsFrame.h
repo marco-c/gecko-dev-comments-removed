@@ -20,6 +20,10 @@
 #include "nsHTMLParts.h"
 #include "nsISelectionDisplay.h"
 
+namespace mozilla {
+enum class TableSelection : uint32_t;
+} 
+
 
 
 
@@ -667,12 +671,12 @@ protected:
   
   
   
-  NS_IMETHOD GetDataForTableSelection(const nsFrameSelection* aFrameSelection,
-                                      nsIPresShell* aPresShell,
-                                      mozilla::WidgetMouseEvent* aMouseEvent,
-                                      nsIContent** aParentContent,
-                                      int32_t* aContentOffset,
-                                      int32_t* aTarget);
+  nsresult GetDataForTableSelection(const nsFrameSelection* aFrameSelection,
+                                    nsIPresShell* aPresShell,
+                                    mozilla::WidgetMouseEvent* aMouseEvent,
+                                    nsIContent** aParentContent,
+                                    int32_t* aContentOffset,
+                                    mozilla::TableSelection* aTarget);
 
   
   static void FillCursorInformationFromStyle(const nsStyleUserInterface* ui,

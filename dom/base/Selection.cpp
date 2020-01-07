@@ -563,13 +563,13 @@ Selection::SetCaretBidiLevel(const Nullable<int16_t>& aCaretBidiLevel, mozilla::
 
 nsresult
 Selection::GetTableCellLocationFromRange(nsRange* aRange,
-                                         int32_t* aSelectionType,
+                                         TableSelection* aSelectionType,
                                          int32_t* aRow, int32_t* aCol)
 {
   if (!aRange || !aSelectionType || !aRow || !aCol)
     return NS_ERROR_NULL_POINTER;
 
-  *aSelectionType = nsISelectionPrivate::TABLESELECTION_NONE;
+  *aSelectionType = TableSelection::None;
   *aRow = 0;
   *aCol = 0;
 
@@ -581,8 +581,9 @@ Selection::GetTableCellLocationFromRange(nsRange* aRange,
 
   
   
-  if (*aSelectionType  != nsISelectionPrivate::TABLESELECTION_CELL)
+  if (*aSelectionType  != TableSelection::Cell) {
     return NS_OK;
+  }
 
   
   
@@ -630,12 +631,13 @@ Selection::AddTableCellRange(nsRange* aRange, bool* aDidAddRange,
   nsresult result;
 
   
-  int32_t newRow, newCol, tableMode;
+  int32_t newRow, newCol;
+  TableSelection tableMode;
   result = GetTableCellLocationFromRange(aRange, &tableMode, &newRow, &newCol);
   if (NS_FAILED(result)) return result;
 
   
-  if (tableMode != nsISelectionPrivate::TABLESELECTION_CELL)
+  if (tableMode != TableSelection::Cell)
   {
     mFrameSelection->mSelectingTableCellMode = tableMode;
     
@@ -644,7 +646,7 @@ Selection::AddTableCellRange(nsRange* aRange, bool* aDidAddRange,
 
   
   
-  if (mFrameSelection->mSelectingTableCellMode == TABLESELECTION_NONE)
+  if (mFrameSelection->mSelectingTableCellMode == TableSelection::None)
     mFrameSelection->mSelectingTableCellMode = tableMode;
 
   *aDidAddRange = true;
@@ -653,31 +655,30 @@ Selection::AddTableCellRange(nsRange* aRange, bool* aDidAddRange,
 
 
 nsresult
-Selection::GetTableSelectionType(nsIDOMRange* aDOMRange,
-                                 int32_t* aTableSelectionType)
+Selection::GetTableSelectionType(nsRange* aRange,
+                                 TableSelection* aTableSelectionType)
 {
-  if (!aDOMRange || !aTableSelectionType)
+  if (!aRange || !aTableSelectionType)
     return NS_ERROR_NULL_POINTER;
-  nsRange* range = static_cast<nsRange*>(aDOMRange);
 
-  *aTableSelectionType = nsISelectionPrivate::TABLESELECTION_NONE;
+  *aTableSelectionType = TableSelection::None;
 
   
   if(!mFrameSelection) return NS_OK;
 
-  nsINode* startNode = range->GetStartContainer();
+  nsINode* startNode = aRange->GetStartContainer();
   if (!startNode) return NS_ERROR_FAILURE;
 
-  nsINode* endNode = range->GetEndContainer();
+  nsINode* endNode = aRange->GetEndContainer();
   if (!endNode) return NS_ERROR_FAILURE;
 
   
   if (startNode != endNode) return NS_OK;
 
-  nsIContent* child = range->GetChildAtStartOffset();
+  nsIContent* child = aRange->GetChildAtStartOffset();
 
   
-  if (!child || child->GetNextSibling() != range->GetChildAtEndOffset()) {
+  if (!child || child->GetNextSibling() != aRange->GetChildAtEndOffset()) {
     return NS_OK;
   }
 
@@ -690,14 +691,14 @@ Selection::GetTableSelectionType(nsIDOMRange* aDOMRange,
 
   if (startContent->IsHTMLElement(nsGkAtoms::tr))
   {
-    *aTableSelectionType = nsISelectionPrivate::TABLESELECTION_CELL;
+    *aTableSelectionType = TableSelection::Cell;
   }
   else 
   {
     if (child->IsHTMLElement(nsGkAtoms::table))
-      *aTableSelectionType = nsISelectionPrivate::TABLESELECTION_TABLE;
+      *aTableSelectionType = TableSelection::Table;
     else if (child->IsHTMLElement(nsGkAtoms::tr))
-      *aTableSelectionType = nsISelectionPrivate::TABLESELECTION_ROW;
+      *aTableSelectionType = TableSelection::Row;
   }
 
   return NS_OK;

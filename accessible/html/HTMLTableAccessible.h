@@ -14,6 +14,9 @@ class nsITableCellLayout;
 class nsTableCellFrame;
 
 namespace mozilla {
+
+enum class TableSelection : uint32_t;
+
 namespace a11y {
 
 
@@ -181,7 +184,7 @@ protected:
 
 
 
-  nsresult AddRowOrColumnToSelection(int32_t aIndex, uint32_t aTarget);
+  nsresult AddRowOrColumnToSelection(int32_t aIndex, TableSelection aTarget);
 
   
 
@@ -193,7 +196,7 @@ protected:
 
 
   nsresult RemoveRowsOrColumnsFromSelection(int32_t aIndex,
-                                            uint32_t aTarget,
+                                            TableSelection aTarget,
                                             bool aIsOuter);
 
   

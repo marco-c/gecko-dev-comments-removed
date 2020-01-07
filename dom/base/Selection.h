@@ -36,6 +36,7 @@ class nsHTMLCopyEncoder;
 namespace mozilla {
 class ErrorResult;
 class HTMLEditor;
+enum class TableSelection : uint32_t;
 struct AutoPrepareFocusRange;
 namespace dom {
 class DocGroup;
@@ -52,13 +53,13 @@ struct RangeData
   mozilla::TextRangeStyle mTextRangeStyle;
 };
 
-
-
-
-
-
 namespace mozilla {
 namespace dom {
+
+
+
+
+
 
 class Selection final : public nsISelection,
                         public nsWrapperCache,
@@ -456,8 +457,16 @@ private:
   nsresult SelectFrames(nsPresContext* aPresContext,
                         nsRange* aRange,
                         bool aSelect);
+
+  
+
+
+
+
+  nsresult GetTableSelectionType(nsRange* aRange,
+                                 TableSelection* aTableSelectionType);
   nsresult GetTableCellLocationFromRange(nsRange* aRange,
-                                         int32_t* aSelectionType,
+                                         TableSelection* aSelectionType,
                                          int32_t* aRow,
                                          int32_t* aCol);
   nsresult AddTableCellRange(nsRange* aRange,
