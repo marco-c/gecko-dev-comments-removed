@@ -20,6 +20,80 @@ class JSTracer;
 
 class PseudoStack;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 namespace js {
 
 
@@ -33,22 +107,36 @@ class ProfileEntry
 
     
     
-    const char* label_;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    mozilla::Atomic<const char*, mozilla::ReleaseAcquire> label_;
 
     
     
     
-    const char* dynamicString_;
+    mozilla::Atomic<const char*, mozilla::ReleaseAcquire> dynamicString_;
 
     
-    void* spOrScript;
+    mozilla::Atomic<void*, mozilla::ReleaseAcquire> spOrScript;
 
     
-    int32_t lineOrPcOffset;
+    mozilla::Atomic<int32_t, mozilla::ReleaseAcquire> lineOrPcOffset;
 
     
     
-    uint32_t kindAndCategory_;
+    mozilla::Atomic<uint32_t, mozilla::ReleaseAcquire> kindAndCategory_;
 
     static int32_t pcToOffset(JSScript* aScript, jsbytecode* aPc);
 
@@ -160,7 +248,8 @@ class ProfileEntry
     
     JSScript* rawScript() const {
         MOZ_ASSERT(isJs());
-        return (JSScript*)spOrScript;
+        void* script = spOrScript;
+        return static_cast<JSScript*>(script);
     }
 
     
@@ -185,6 +274,7 @@ JS_FRIEND_API(void)
 RegisterContextProfilingEventMarker(JSContext* cx, void (*fn)(const char*));
 
 } 
+
 
 
 
@@ -231,6 +321,7 @@ class PseudoStack
         
         
         
+        
         uint32_t oldStackPointer = stackPointer;
         stackPointer = oldStackPointer + 1;
     }
@@ -241,6 +332,8 @@ class PseudoStack
             entries[stackPointer].initJsFrame(label, dynamicString, script, pc);
         }
 
+        
+        
         
         
         
@@ -280,7 +373,13 @@ class PseudoStack
     
     
     
-    mozilla::Atomic<uint32_t, mozilla::SequentiallyConsistent> stackPointer;
+    
+    
+    
+    
+    
+    
+    mozilla::Atomic<uint32_t, mozilla::ReleaseAcquire> stackPointer;
 };
 
 #endif  
