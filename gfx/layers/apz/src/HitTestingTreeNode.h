@@ -49,6 +49,13 @@ class AsyncPanZoomController;
 
 
 
+
+
+
+
+
+
+
 class HitTestingTreeNode {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(HitTestingTreeNode);
 
@@ -137,6 +144,12 @@ public:
   void Dump(const char* aPrefix = "") const;
 
 private:
+  friend class HitTestingTreeNodeAutoLock;
+  
+  void Lock(const RecursiveMutexAutoLock& aProofOfTreeLock);
+  void Unlock(const RecursiveMutexAutoLock& aProofOfTreeLock);
+
+
   void SetApzcParent(AsyncPanZoomController* aApzc);
 
   RefPtr<HitTestingTreeNode> mLastChild;
@@ -145,6 +158,7 @@ private:
 
   RefPtr<AsyncPanZoomController> mApzc;
   bool mIsPrimaryApzcHolder;
+  bool mLocked;
 
   LayersId mLayersId;
 
@@ -191,6 +205,33 @@ private:
   
 
   EventRegionsOverride mOverride;
+};
+
+
+
+
+
+
+
+
+
+class MOZ_RAII HitTestingTreeNodeAutoLock
+{
+public:
+  HitTestingTreeNodeAutoLock();
+  HitTestingTreeNodeAutoLock(const HitTestingTreeNodeAutoLock&) = delete;
+  HitTestingTreeNodeAutoLock& operator=(const HitTestingTreeNodeAutoLock&) = delete;
+  HitTestingTreeNodeAutoLock(HitTestingTreeNodeAutoLock&&) = delete;
+  ~HitTestingTreeNodeAutoLock();
+
+  void Initialize(const RecursiveMutexAutoLock& aProofOfTreeLock,
+                  already_AddRefed<HitTestingTreeNode> aNode,
+                  RecursiveMutex& aTreeMutex);
+  void Clear();
+
+private:
+  RefPtr<HitTestingTreeNode> mNode;
+  RecursiveMutex* mTreeMutex;
 };
 
 } 
