@@ -36,6 +36,26 @@ function checkEventFormat(events) {
   }
 }
 
+
+
+
+
+
+function checkEventSummary(summaries, clearScalars) {
+  let scalars = Telemetry.snapshotKeyedScalars(OPTOUT, clearScalars);
+  dump(JSON.stringify(summaries));
+  for (let [process, [category, eObject, method], count] of summaries) {
+    let uniqueEventName = `${category}#${eObject}#${method}`;
+    let summaryCount;
+    if (process === "dynamic") {
+      summaryCount = scalars.dynamic["telemetry.dynamic_event_counts"][uniqueEventName];
+    } else {
+      summaryCount = scalars[process]["telemetry.event_counts"][uniqueEventName];
+    }
+    Assert.equal(summaryCount, count, `${uniqueEventName} had wrong summary count`);
+  }
+}
+
 add_task(async function test_recording_state() {
   const events = [
     ["telemetry.test", "test1", "object1"],
@@ -46,6 +66,7 @@ add_task(async function test_recording_state() {
   events.forEach(e => Telemetry.recordEvent(...e));
   let snapshot = Telemetry.snapshotEvents(OPTIN, true);
   Assert.equal(Object.keys(snapshot).length, 0, "Should not have recorded any events.");
+  checkEventSummary(events.map(e => (["parent", e, 1])), true);
 
   
   Telemetry.setEventRecordingEnabled("telemetry.test", true);
@@ -54,6 +75,7 @@ add_task(async function test_recording_state() {
   Assert.ok(("parent" in snapshot), "Should have entry for main process.");
   Assert.equal(snapshot.parent.length, 1, "Should have recorded one event.");
   Assert.equal(snapshot.parent[0][1], "telemetry.test", "Should have recorded one event in telemetry.test");
+  checkEventSummary(events.map(e => (["parent", e, 1])), true);
 
   
   Telemetry.setEventRecordingEnabled("telemetry.test.second", true);
@@ -63,6 +85,7 @@ add_task(async function test_recording_state() {
   Assert.equal(snapshot.parent.length, 2, "Should have recorded two events.");
   Assert.equal(snapshot.parent[0][1], "telemetry.test", "Should have recorded one event in telemetry.test");
   Assert.equal(snapshot.parent[1][1], "telemetry.test.second", "Should have recorded one event in telemetry.test.second");
+  checkEventSummary(events.map(e => (["parent", e, 1])), true);
 
   
   Telemetry.setEventRecordingEnabled("telemetry.test", false);
@@ -71,6 +94,7 @@ add_task(async function test_recording_state() {
   Assert.ok(("parent" in snapshot), "Should have entry for main process.");
   Assert.equal(snapshot.parent.length, 1, "Should have recorded one event.");
   Assert.equal(snapshot.parent[0][1], "telemetry.test.second", "Should have recorded one event in telemetry.test.second");
+  checkEventSummary(events.map(e => (["parent", e, 1])), true);
 });
 
 add_task(async function recording_setup() {
@@ -81,6 +105,7 @@ add_task(async function recording_setup() {
 });
 
 add_task(async function test_recording() {
+  Telemetry.clearScalars();
   Telemetry.clearEvents();
 
   
@@ -115,6 +140,19 @@ add_task(async function test_recording() {
       e.pop();
     }
   }
+
+  
+  let summaries = {};
+  expected.forEach(({optout, event}) => {
+    let [category, eObject, method] = event;
+    let uniqueEventName = `${category}#${eObject}#${method}`;
+    if (!(uniqueEventName in summaries)) {
+      summaries[uniqueEventName] = ["parent", event, 1];
+    } else {
+      summaries[uniqueEventName][2]++;
+    }
+  });
+  checkEventSummary(Object.values(summaries), true);
 
   
   Assert.throws(() => Telemetry.recordEvent("unknown.category", "test1", "object1"),
@@ -299,6 +337,7 @@ add_task(async function test_unicodeValues() {
 
 add_task(async function test_dynamicEvents() {
   Telemetry.clearEvents();
+  Telemetry.clearScalars();
   Telemetry.canRecordExtended = true;
 
   
@@ -359,6 +398,9 @@ add_task(async function test_dynamicEvents() {
     Assert.deepEqual(events[i].slice(1), expected[i],
                      "Should have recorded the expected event data.");
   }
+
+  
+  checkEventSummary(expected.map(ev => ["dynamic", ev, 1]), true);
 
   
   snapshot = Telemetry.snapshotEvents(OPTOUT, false);
