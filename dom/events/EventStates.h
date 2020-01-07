@@ -244,6 +244,7 @@ private:
 
 #define NS_EVENT_STATE_OPTIONAL      NS_DEFINE_EVENT_STATE_MACRO(22)
 
+#define NS_EVENT_STATE_DEFINED       NS_DEFINE_EVENT_STATE_MACRO(23)
 
 #define NS_EVENT_STATE_VISITED       NS_DEFINE_EVENT_STATE_MACRO(24)
 
@@ -354,6 +355,7 @@ private:
   DISABLED_STATES |                           \
   REQUIRED_STATES |                           \
   NS_EVENT_STATE_ACTIVE |                     \
+  NS_EVENT_STATE_DEFINED |                    \
   NS_EVENT_STATE_DRAGOVER |                   \
   NS_EVENT_STATE_FOCUS |                      \
   NS_EVENT_STATE_FOCUSRING |                  \

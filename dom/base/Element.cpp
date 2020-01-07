@@ -4284,18 +4284,18 @@ void
 Element::SetCustomElementData(CustomElementData* aData)
 {
   SetHasCustomElementData();
+
+  if (aData->mState != CustomElementData::State::eCustom) {
+    SetDefined(false);
+  }
+
   nsExtendedDOMSlots *slots = ExtendedDOMSlots();
   MOZ_ASSERT(!slots->mCustomElementData, "Custom element data may not be changed once set.");
   #if DEBUG
-    nsAtom* name = NodeInfo()->NameAtom();
-    nsAtom* type = aData->GetCustomElementType();
-    if (NodeInfo()->NamespaceID() == kNameSpaceID_XHTML) {
-      if (nsContentUtils::IsCustomElementName(name, kNameSpaceID_XHTML)) {
-        MOZ_ASSERT(type == name);
-      } else {
-        MOZ_ASSERT(type != name);
-      }
-    } else { 
+    
+    if (NodeInfo()->NamespaceID() == kNameSpaceID_XUL) {
+      nsAtom* name = NodeInfo()->NameAtom();
+      nsAtom* type = aData->GetCustomElementType();
       
       if (nsContentUtils::IsNameWithDash(name)) {
         

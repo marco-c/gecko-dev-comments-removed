@@ -1155,6 +1155,7 @@ CustomElementRegistry::Upgrade(Element* aElement,
 
   
   data->mState = CustomElementData::State::eCustom;
+  aElement->SetDefined(true);
 
   
   aElement->SetCustomElementDefinition(aDefinition);

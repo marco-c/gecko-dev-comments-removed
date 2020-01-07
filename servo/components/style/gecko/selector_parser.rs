@@ -187,6 +187,9 @@ impl NonTSPseudoClass {
             NonTSPseudoClass::Fullscreen => unsafe {
                 mozilla::StaticPrefs_sVarCache_full_screen_api_unprefix_enabled
             },
+            NonTSPseudoClass::Defined => unsafe {
+                structs::nsContentUtils_sIsCustomElementsEnabled
+            },
             
             
             _ => !self.has_any_flag(
