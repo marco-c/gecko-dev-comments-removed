@@ -146,9 +146,13 @@ function onBrowserReady() {
     if (rows <= 0) {
       Services.prefs.setBoolPref("browser.newtabpage.activity-stream.showTopSites", false);
     } else {
-      
-      Services.prefs.setIntPref("browser.newtabpage.activity-stream.topSitesCount", rows * 6);
+      Services.prefs.setIntPref("browser.newtabpage.activity-stream.topSitesRows", rows);
     }
+  });
+
+  
+  migratePref("browser.newtabpage.activity-stream.topSitesCount", count => {
+    Services.prefs.setIntPref("browser.newtabpage.activity-stream.topSitesRows", Math.ceil(count / 6));
   });
 }
 

@@ -2,9 +2,7 @@
 "use strict";
 
 
-
-
-if (typeof Window === "undefined" && typeof Components !== "undefined" && Components.utils) {
+if (typeof ChromeUtils !== "undefined") {
   ChromeUtils.import("resource://gre/modules/Services.jsm");
 }
 

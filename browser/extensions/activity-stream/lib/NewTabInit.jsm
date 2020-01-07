@@ -23,7 +23,7 @@ this.NewTabInit = class NewTabInit {
     }
 
     const action = {type: at.NEW_TAB_INITIAL_STATE, data: this.store.getState()};
-    this.store.dispatch(ac.SendToContent(action, target));
+    this.store.dispatch(ac.AlsoToOneContent(action, target));
 
     
     

@@ -64,7 +64,7 @@ this.ActivityStreamMessageChannel = class ActivityStreamMessageChannel {
         next(action);
         return;
       }
-      if (au.isSendToContent(action)) {
+      if (au.isSendToOneContent(action)) {
         this.send(action);
       } else if (au.isBroadcastToContent(action)) {
         this.broadcast(action);
@@ -85,7 +85,7 @@ this.ActivityStreamMessageChannel = class ActivityStreamMessageChannel {
 
 
   onActionFromContent(action, targetId) {
-    this.dispatch(ac.SendToMain(action, targetId));
+    this.dispatch(ac.AlsoToMain(action, targetId));
   }
 
   

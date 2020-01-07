@@ -106,7 +106,7 @@ const actionTypes = {};
  __webpack_exports__["b"] = actionTypes;
 
 
-for (const type of ["BLOCK_URL", "BOOKMARK_URL", "DELETE_BOOKMARK_BY_ID", "DELETE_HISTORY_URL", "DELETE_HISTORY_URL_CONFIRM", "DIALOG_CANCEL", "DIALOG_OPEN", "DISABLE_ONBOARDING", "INIT", "MIGRATION_CANCEL", "MIGRATION_COMPLETED", "MIGRATION_START", "NEW_TAB_INIT", "NEW_TAB_INITIAL_STATE", "NEW_TAB_LOAD", "NEW_TAB_REHYDRATED", "NEW_TAB_STATE_REQUEST", "NEW_TAB_UNLOAD", "OPEN_LINK", "OPEN_NEW_WINDOW", "OPEN_PRIVATE_WINDOW", "PAGE_PRERENDERED", "PLACES_BOOKMARK_ADDED", "PLACES_BOOKMARK_CHANGED", "PLACES_BOOKMARK_REMOVED", "PLACES_HISTORY_CLEARED", "PLACES_LINKS_DELETED", "PLACES_LINK_BLOCKED", "PREFS_INITIAL_VALUES", "PREF_CHANGED", "RICH_ICON_MISSING", "SAVE_SESSION_PERF_DATA", "SAVE_TO_POCKET", "SCREENSHOT_UPDATED", "SECTION_DEREGISTER", "SECTION_DISABLE", "SECTION_ENABLE", "SECTION_OPTIONS_CHANGED", "SECTION_REGISTER", "SECTION_UPDATE", "SECTION_UPDATE_CARD", "SETTINGS_CLOSE", "SETTINGS_OPEN", "SET_PREF", "SHOW_FIREFOX_ACCOUNTS", "SNIPPETS_BLOCKLIST_UPDATED", "SNIPPETS_DATA", "SNIPPETS_RESET", "SNIPPET_BLOCKED", "SYSTEM_TICK", "TELEMETRY_IMPRESSION_STATS", "TELEMETRY_PERFORMANCE_EVENT", "TELEMETRY_UNDESIRED_EVENT", "TELEMETRY_USER_EVENT", "TOP_SITES_CANCEL_EDIT", "TOP_SITES_EDIT", "TOP_SITES_INSERT", "TOP_SITES_PIN", "TOP_SITES_UNPIN", "TOP_SITES_UPDATED", "UNINIT"]) {
+for (const type of ["BLOCK_URL", "BOOKMARK_URL", "DELETE_BOOKMARK_BY_ID", "DELETE_HISTORY_URL", "DELETE_HISTORY_URL_CONFIRM", "DIALOG_CANCEL", "DIALOG_OPEN", "DISABLE_ONBOARDING", "INIT", "MIGRATION_CANCEL", "MIGRATION_COMPLETED", "MIGRATION_START", "NEW_TAB_INIT", "NEW_TAB_INITIAL_STATE", "NEW_TAB_LOAD", "NEW_TAB_REHYDRATED", "NEW_TAB_STATE_REQUEST", "NEW_TAB_UNLOAD", "OPEN_LINK", "OPEN_NEW_WINDOW", "OPEN_PRIVATE_WINDOW", "PAGE_PRERENDERED", "PLACES_BOOKMARK_ADDED", "PLACES_BOOKMARK_CHANGED", "PLACES_BOOKMARK_REMOVED", "PLACES_HISTORY_CLEARED", "PLACES_LINKS_DELETED", "PLACES_LINK_BLOCKED", "PREFS_INITIAL_VALUES", "PREF_CHANGED", "RICH_ICON_MISSING", "SAVE_SESSION_PERF_DATA", "SAVE_TO_POCKET", "SCREENSHOT_UPDATED", "SECTION_DEREGISTER", "SECTION_DISABLE", "SECTION_ENABLE", "SECTION_OPTIONS_CHANGED", "SECTION_REGISTER", "SECTION_UPDATE", "SECTION_UPDATE_CARD", "SETTINGS_CLOSE", "SETTINGS_OPEN", "SET_PREF", "SHOW_FIREFOX_ACCOUNTS", "SNIPPETS_BLOCKLIST_UPDATED", "SNIPPETS_DATA", "SNIPPETS_RESET", "SNIPPET_BLOCKED", "SYSTEM_TICK", "TELEMETRY_IMPRESSION_STATS", "TELEMETRY_PERFORMANCE_EVENT", "TELEMETRY_UNDESIRED_EVENT", "TELEMETRY_USER_EVENT", "TOP_SITES_CANCEL_EDIT", "TOP_SITES_EDIT", "TOP_SITES_INSERT", "TOP_SITES_PIN", "TOP_SITES_UNPIN", "TOP_SITES_UPDATED", "UNINIT", "WEBEXT_CLICK", "WEBEXT_DISMISS"]) {
   actionTypes[type] = type;
 }
 
@@ -119,7 +119,7 @@ function _RouteMessage(action, options) {
   }
   
   
-  ["from", "to", "toTarget", "fromTarget", "skipOrigin"].forEach(o => {
+  ["from", "to", "toTarget", "fromTarget", "skipMain", "skipLocal"].forEach(o => {
     if (typeof options[o] !== "undefined") {
       meta[o] = options[o];
     } else if (meta[o]) {
@@ -137,12 +137,26 @@ function _RouteMessage(action, options) {
 
 
 
-function SendToMain(action, fromTarget) {
+
+function AlsoToMain(action, fromTarget, skipLocal) {
   return _RouteMessage(action, {
     from: CONTENT_MESSAGE_TYPE,
     to: MAIN_MESSAGE_TYPE,
-    fromTarget
+    fromTarget,
+    skipLocal
   });
+}
+
+
+
+
+
+
+
+
+
+function OnlyToMain(action, fromTarget) {
+  return AlsoToMain(action, fromTarget, true);
 }
 
 
@@ -165,14 +179,17 @@ function BroadcastToContent(action) {
 
 
 
-function SendToContent(action, target) {
+
+
+function AlsoToOneContent(action, target, skipMain) {
   if (!target) {
-    throw new Error("You must provide a target ID as the second parameter of SendToContent. If you want to send to all content processes, use BroadcastToContent");
+    throw new Error("You must provide a target ID as the second parameter of AlsoToOneContent. If you want to send to all content processes, use BroadcastToContent");
   }
   return _RouteMessage(action, {
     from: MAIN_MESSAGE_TYPE,
     to: CONTENT_MESSAGE_TYPE,
-    toTarget: target
+    toTarget: target,
+    skipMain
   });
 }
 
@@ -182,7 +199,19 @@ function SendToContent(action, target) {
 
 
 
-function SendToPreloaded(action) {
+
+
+function OnlyToOneContent(action, target) {
+  return AlsoToOneContent(action, target, true);
+}
+
+
+
+
+
+
+
+function AlsoToPreloaded(action) {
   return _RouteMessage(action, {
     from: MAIN_MESSAGE_TYPE,
     to: PRELOAD_MESSAGE_TYPE
@@ -197,7 +226,7 @@ function SendToPreloaded(action) {
 
 
 function UserEvent(data) {
-  return SendToMain({
+  return AlsoToMain({
     type: actionTypes.TELEMETRY_USER_EVENT,
     data
   });
@@ -215,7 +244,7 @@ function UndesiredEvent(data, importContext = globalImportContext) {
     type: actionTypes.TELEMETRY_UNDESIRED_EVENT,
     data
   };
-  return importContext === UI_CODE ? SendToMain(action) : action;
+  return importContext === UI_CODE ? AlsoToMain(action) : action;
 }
 
 
@@ -230,7 +259,7 @@ function PerfEvent(data, importContext = globalImportContext) {
     type: actionTypes.TELEMETRY_PERFORMANCE_EVENT,
     data
   };
-  return importContext === UI_CODE ? SendToMain(action) : action;
+  return importContext === UI_CODE ? AlsoToMain(action) : action;
 }
 
 
@@ -245,12 +274,20 @@ function ImpressionStats(data, importContext = globalImportContext) {
     type: actionTypes.TELEMETRY_IMPRESSION_STATS,
     data
   };
-  return importContext === UI_CODE ? SendToMain(action) : action;
+  return importContext === UI_CODE ? AlsoToMain(action) : action;
 }
 
 function SetPref(name, value, importContext = globalImportContext) {
   const action = { type: actionTypes.SET_PREF, data: { name, value } };
-  return importContext === UI_CODE ? SendToMain(action) : action;
+  return importContext === UI_CODE ? AlsoToMain(action) : action;
+}
+
+function WebExtEvent(type, data, importContext = globalImportContext) {
+  if (!data || !data.source) {
+    throw new Error("WebExtEvent actions should include a property \"source\", the id of the webextension that should receive the event.");
+  }
+  const action = { type, data };
+  return importContext === UI_CODE ? AlsoToMain(action) : action;
 }
 
 var actionCreators = {
@@ -259,10 +296,13 @@ var actionCreators = {
   UndesiredEvent,
   PerfEvent,
   ImpressionStats,
-  SendToContent,
-  SendToMain,
-  SendToPreloaded,
-  SetPref
+  AlsoToOneContent,
+  OnlyToOneContent,
+  AlsoToMain,
+  OnlyToMain,
+  AlsoToPreloaded,
+  SetPref,
+  WebExtEvent
 };
 
 
@@ -283,7 +323,7 @@ var actionUtils = {
     }
     return false;
   },
-  isSendToContent(action) {
+  isSendToOneContent(action) {
     if (!action.meta) {
       return false;
     }
@@ -399,7 +439,7 @@ class Dedupe {
 }
 
 
- __webpack_require__.d(__webpack_exports__, "c", function() { return reducers; });
+ __webpack_require__.d(__webpack_exports__, "b", function() { return reducers; });
 
 
 
@@ -407,11 +447,11 @@ class Dedupe {
 
 
 
-const TOP_SITES_DEFAULT_LENGTH = 6;
- __webpack_exports__["a"] = TOP_SITES_DEFAULT_LENGTH;
+const TOP_SITES_DEFAULT_ROWS = 2;
 
-const TOP_SITES_SHOWMORE_LENGTH = 12;
- __webpack_exports__["b"] = TOP_SITES_SHOWMORE_LENGTH;
+
+const TOP_SITES_MAX_SITES_PER_ROW = 6;
+ __webpack_exports__["a"] = TOP_SITES_MAX_SITES_PER_ROW;
 
 
 
@@ -431,11 +471,7 @@ const INITIAL_STATE = {
     
     rows: [],
     
-    
-    editForm: {
-      visible: false,
-      index: -1
-    }
+    editForm: null
   },
   Prefs: {
     initialized: false,
@@ -507,9 +543,9 @@ function TopSites(prevState = INITIAL_STATE.TopSites, action) {
       }
       return Object.assign({}, prevState, { initialized: true, rows: action.data });
     case Actions["b" ].TOP_SITES_EDIT:
-      return Object.assign({}, prevState, { editForm: { visible: true, index: action.data.index } });
+      return Object.assign({}, prevState, { editForm: { index: action.data.index } });
     case Actions["b" ].TOP_SITES_CANCEL_EDIT:
-      return Object.assign({}, prevState, { editForm: { visible: false } });
+      return Object.assign({}, prevState, { editForm: null });
     case Actions["b" ].SCREENSHOT_UPDATED:
       newRows = prevState.rows.map(row => {
         if (row && row.url === action.data.url) {
@@ -853,7 +889,7 @@ const LinkMenuOptions = {
   RemoveBookmark: site => ({
     id: "menu_action_remove_bookmark",
     icon: "bookmark-added",
-    action: Actions["a" ].SendToMain({
+    action: Actions["a" ].AlsoToMain({
       type: Actions["b" ].DELETE_BOOKMARK_BY_ID,
       data: site.bookmarkGuid
     }),
@@ -862,7 +898,7 @@ const LinkMenuOptions = {
   AddBookmark: site => ({
     id: "menu_action_bookmark",
     icon: "bookmark-hollow",
-    action: Actions["a" ].SendToMain({
+    action: Actions["a" ].AlsoToMain({
       type: Actions["b" ].BOOKMARK_URL,
       data: { url: site.url, title: site.title, type: site.type }
     }),
@@ -871,7 +907,7 @@ const LinkMenuOptions = {
   OpenInNewWindow: site => ({
     id: "menu_action_open_new_window",
     icon: "new-window",
-    action: Actions["a" ].SendToMain({
+    action: Actions["a" ].AlsoToMain({
       type: Actions["b" ].OPEN_NEW_WINDOW,
       data: { url: site.url, referrer: site.referrer }
     }),
@@ -880,7 +916,7 @@ const LinkMenuOptions = {
   OpenInPrivateWindow: site => ({
     id: "menu_action_open_private_window",
     icon: "new-window-private",
-    action: Actions["a" ].SendToMain({
+    action: Actions["a" ].AlsoToMain({
       type: Actions["b" ].OPEN_PRIVATE_WINDOW,
       data: { url: site.url, referrer: site.referrer }
     }),
@@ -889,7 +925,7 @@ const LinkMenuOptions = {
   BlockUrl: (site, index, eventSource) => ({
     id: "menu_action_dismiss",
     icon: "dismiss",
-    action: Actions["a" ].SendToMain({
+    action: Actions["a" ].AlsoToMain({
       type: Actions["b" ].BLOCK_URL,
       data: site.url
     }),
@@ -900,13 +936,26 @@ const LinkMenuOptions = {
     }),
     userEvent: "BLOCK"
   }),
+
+  
+  
+  WebExtDismiss: (site, index, eventSource) => ({
+    id: "menu_action_webext_dismiss",
+    string_id: "menu_action_dismiss",
+    icon: "dismiss",
+    action: Actions["a" ].WebExtEvent(Actions["b" ].WEBEXT_DISMISS, {
+      source: eventSource,
+      url: site.url,
+      action_position: index
+    })
+  }),
   DeleteUrl: site => ({
     id: "menu_action_delete",
     icon: "delete",
     action: {
       type: Actions["b" ].DIALOG_OPEN,
       data: {
-        onConfirm: [Actions["a" ].SendToMain({ type: Actions["b" ].DELETE_HISTORY_URL, data: { url: site.url, forceBlock: site.bookmarkGuid } }), Actions["a" ].UserEvent({ event: "DELETE" })],
+        onConfirm: [Actions["a" ].AlsoToMain({ type: Actions["b" ].DELETE_HISTORY_URL, data: { url: site.url, forceBlock: site.bookmarkGuid } }), Actions["a" ].UserEvent({ event: "DELETE" })],
         body_string_id: ["confirm_history_delete_p1", "confirm_history_delete_notice_p2"],
         confirm_button_string_id: "menu_action_delete",
         cancel_button_string_id: "topsites_form_cancel_button",
@@ -918,7 +967,7 @@ const LinkMenuOptions = {
   PinTopSite: (site, index) => ({
     id: "menu_action_pin",
     icon: "pin",
-    action: Actions["a" ].SendToMain({
+    action: Actions["a" ].AlsoToMain({
       type: Actions["b" ].TOP_SITES_PIN,
       data: { site: { url: site.url }, index }
     }),
@@ -927,7 +976,7 @@ const LinkMenuOptions = {
   UnpinTopSite: site => ({
     id: "menu_action_unpin",
     icon: "unpin",
-    action: Actions["a" ].SendToMain({
+    action: Actions["a" ].AlsoToMain({
       type: Actions["b" ].TOP_SITES_UNPIN,
       data: { site: { url: site.url } }
     }),
@@ -936,7 +985,7 @@ const LinkMenuOptions = {
   SaveToPocket: (site, index, eventSource) => ({
     id: "menu_action_save_to_pocket",
     icon: "pocket",
-    action: Actions["a" ].SendToMain({
+    action: Actions["a" ].AlsoToMain({
       type: Actions["b" ].SAVE_TO_POCKET,
       data: { site: { url: site.url, title: site.title } }
     }),
@@ -976,9 +1025,9 @@ class LinkMenu__LinkMenu extends external__React__default.a.PureComponent {
     const propOptions = !site.isDefault ? props.options : DEFAULT_SITE_MENU_OPTIONS;
 
     const options = propOptions.map(o => LinkMenuOptions[o](site, index, source)).map(option => {
-      const { action, impression, id, type, userEvent } = option;
+      const { action, impression, id, string_id, type, userEvent } = option;
       if (!type && id) {
-        option.label = props.intl.formatMessage(option);
+        option.label = props.intl.formatMessage({ id: string_id || id });
         option.onClick = () => {
           props.dispatch(action);
           if (userEvent) {
@@ -1454,7 +1503,7 @@ class ComponentPerfTimer extends __WEBPACK_IMPORTED_MODULE_2_react___default.a.C
       const firstRenderKey = `${this.props.id}_first_render_ts`;
       
       const value = parseInt(this.perfSvc.getMostRecentAbsMarkStartByName(dataReadyKey) - this.perfSvc.getMostRecentAbsMarkStartByName(firstRenderKey), 10);
-      this.props.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].SendToMain({
+      this.props.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].OnlyToMain({
         type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].SAVE_SESSION_PERF_DATA,
         
         data: { [`${this.props.id}_data_late_by_ms`]: value }
@@ -1479,7 +1528,7 @@ class ComponentPerfTimer extends __WEBPACK_IMPORTED_MODULE_2_react___default.a.C
       const data = {};
       data[key] = this.perfSvc.getMostRecentAbsMarkStartByName(key);
 
-      this.props.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].SendToMain({
+      this.props.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].OnlyToMain({
         type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].SAVE_SESSION_PERF_DATA,
         data
       }));
@@ -1513,9 +1562,7 @@ class ComponentPerfTimer extends __WEBPACK_IMPORTED_MODULE_2_react___default.a.C
 
 
 
-
-
-if (typeof Window === "undefined" && typeof Components !== "undefined" && Components.utils) {
+if (typeof ChromeUtils !== "undefined") {
   ChromeUtils.import("resource://gre/modules/Services.jsm");
 }
 
@@ -1665,7 +1712,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 
 
 
-const store = Object(__WEBPACK_IMPORTED_MODULE_4_content_src_lib_init_store__["a" ])(__WEBPACK_IMPORTED_MODULE_8_common_Reducers_jsm__["c" ], global.gActivityStreamPrerenderedState);
+const store = Object(__WEBPACK_IMPORTED_MODULE_4_content_src_lib_init_store__["a" ])(__WEBPACK_IMPORTED_MODULE_8_common_Reducers_jsm__["b" ], global.gActivityStreamPrerenderedState);
 
 new __WEBPACK_IMPORTED_MODULE_3_content_src_lib_detect_user_session_start__["a" ](store).sendEventOrAddListener();
 
@@ -1673,7 +1720,7 @@ new __WEBPACK_IMPORTED_MODULE_3_content_src_lib_detect_user_session_start__["a" 
 
 
 if (!global.gActivityStreamPrerenderedState) {
-  store.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].SendToMain({ type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].NEW_TAB_STATE_REQUEST }));
+  store.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].AlsoToMain({ type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].NEW_TAB_STATE_REQUEST }));
 }
 
 __WEBPACK_IMPORTED_MODULE_7_react_dom___default.a.render(__WEBPACK_IMPORTED_MODULE_6_react___default.a.createElement(
@@ -1755,17 +1802,17 @@ class SnippetsMap extends Map {
     const { blockList } = this;
     if (!blockList.includes(id)) {
       blockList.push(id);
-      this._dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].SendToMain({ type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].SNIPPETS_BLOCKLIST_UPDATED, data: blockList }));
+      this._dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].AlsoToMain({ type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].SNIPPETS_BLOCKLIST_UPDATED, data: blockList }));
       await this.set("blockList", blockList);
     }
   }
 
   disableOnboarding() {
-    this._dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].SendToMain({ type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].DISABLE_ONBOARDING }));
+    this._dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].AlsoToMain({ type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].DISABLE_ONBOARDING }));
   }
 
   showFirefoxAccounts() {
-    this._dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].SendToMain({ type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].SHOW_FIREFOX_ACCOUNTS }));
+    this._dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].AlsoToMain({ type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].SHOW_FIREFOX_ACCOUNTS }));
   }
 
   
@@ -2205,12 +2252,12 @@ class ManualMigration__ManualMigration extends external__React__default.a.PureCo
   }
 
   onLaunchTour() {
-    this.props.dispatch(Actions["a" ].SendToMain({ type: Actions["b" ].MIGRATION_START }));
+    this.props.dispatch(Actions["a" ].AlsoToMain({ type: Actions["b" ].MIGRATION_START }));
     this.props.dispatch(Actions["a" ].UserEvent({ event: Actions["b" ].MIGRATION_START }));
   }
 
   onCancelTour() {
-    this.props.dispatch(Actions["a" ].SendToMain({ type: Actions["b" ].MIGRATION_CANCEL }));
+    this.props.dispatch(Actions["a" ].AlsoToMain({ type: Actions["b" ].MIGRATION_CANCEL }));
     this.props.dispatch(Actions["a" ].UserEvent({ event: Actions["b" ].MIGRATION_CANCEL }));
   }
 
@@ -2243,10 +2290,6 @@ class ManualMigration__ManualMigration extends external__React__default.a.PureCo
 }
 
 const ManualMigration = Object(external__ReactRedux_["connect"])()(ManualMigration__ManualMigration);
-
-var Reducers = __webpack_require__(5);
-
-
 
 
 
@@ -2314,8 +2357,8 @@ class PreferencesPane__PreferencesPane extends external__React__default.a.PureCo
 
   handlePrefChange({ target: { name, checked } }) {
     let value = checked;
-    if (name === "topSitesCount") {
-      value = checked ? Reducers["b" ] : Reducers["a" ];
+    if (name === "topSitesRows") {
+      value = checked ? 2 : 1;
     }
     this.props.dispatch(Actions["a" ].SetPref(name, value));
   }
@@ -2323,7 +2366,7 @@ class PreferencesPane__PreferencesPane extends external__React__default.a.PureCo
   handleSectionChange({ target }) {
     const id = target.name;
     const type = target.checked ? Actions["b" ].SECTION_ENABLE : Actions["b" ].SECTION_DISABLE;
-    this.props.dispatch(Actions["a" ].SendToMain({ type, data: id }));
+    this.props.dispatch(Actions["a" ].AlsoToMain({ type, data: id }));
   }
 
   togglePane() {
@@ -2394,9 +2437,9 @@ class PreferencesPane__PreferencesPane extends external__React__default.a.PureCo
                 descString: { id: "settings_pane_topsites_body" } },
               external__React__default.a.createElement(PreferencesInput, {
                 className: "showMoreTopSites",
-                prefName: "topSitesCount",
+                prefName: "topSitesRows",
                 disabled: !prefs.showTopSites,
-                value: prefs.topSitesCount !== Reducers["a" ],
+                value: prefs.topSitesRows === 2,
                 onChange: this.handlePrefChange,
                 titleString: { id: "settings_pane_topsites_options_showmore" },
                 labelClassName: "icon icon-topsites" })
@@ -2499,7 +2542,7 @@ var PrerenderData = new _PrerenderData({
     "migrationExpired": true,
     "showTopSites": true,
     "showSearch": true,
-    "topSitesCount": 12,
+    "topSitesRows": 2,
     "collapseTopSites": false,
     "section.highlights.collapsed": false,
     "section.topstories.collapsed": false,
@@ -2512,7 +2555,7 @@ var PrerenderData = new _PrerenderData({
   
   
   
-  validation: ["showTopSites", "showSearch", "topSitesCount", "collapseTopSites", "section.highlights.collapsed", "section.topstories.collapsed",
+  validation: ["showTopSites", "showSearch", "topSitesRows", "collapseTopSites", "section.highlights.collapsed", "section.topstories.collapsed",
   
   
   { oneOf: ["feeds.section.topstories", "feeds.section.highlights"] }],
@@ -2652,6 +2695,9 @@ var CollapsibleSection = __webpack_require__(7);
 var ComponentPerfTimer = __webpack_require__(8);
 
 
+var Reducers = __webpack_require__(5);
+
+
 
 
 
@@ -2660,16 +2706,16 @@ var ComponentPerfTimer = __webpack_require__(8);
 class TopSiteForm_TopSiteForm extends external__React__default.a.PureComponent {
   constructor(props) {
     super(props);
+    const { site } = props;
     this.state = {
-      label: props.label || "",
-      url: props.url || "",
+      label: site ? site.label || site.hostname : "",
+      url: site ? site.url : "",
       validationError: false
     };
     this.onLabelChange = this.onLabelChange.bind(this);
     this.onUrlChange = this.onUrlChange.bind(this);
     this.onCancelButtonClick = this.onCancelButtonClick.bind(this);
-    this.onAddButtonClick = this.onAddButtonClick.bind(this);
-    this.onSaveButtonClick = this.onSaveButtonClick.bind(this);
+    this.onDoneButtonClick = this.onDoneButtonClick.bind(this);
     this.onUrlInputMount = this.onUrlInputMount.bind(this);
   }
 
@@ -2688,41 +2734,26 @@ class TopSiteForm_TopSiteForm extends external__React__default.a.PureComponent {
     this.props.onClose();
   }
 
-  onAddButtonClick(ev) {
+  onDoneButtonClick(ev) {
     ev.preventDefault();
-    if (this.validateForm()) {
-      let site = { url: this.cleanUrl() };
-      if (this.state.label !== "") {
-        site.label = this.state.label;
-      }
-      this.props.dispatch(Actions["a" ].SendToMain({
-        type: Actions["b" ].TOP_SITES_INSERT,
-        data: { site }
-      }));
-      this.props.dispatch(Actions["a" ].UserEvent({
-        source: TOP_SITES_SOURCE,
-        event: "TOP_SITES_ADD"
-      }));
-      this.props.onClose();
-    }
-  }
 
-  onSaveButtonClick(ev) {
-    ev.preventDefault();
     if (this.validateForm()) {
-      let site = { url: this.cleanUrl() };
+      const site = { url: this.cleanUrl() };
+      const { index } = this.props;
       if (this.state.label !== "") {
         site.label = this.state.label;
       }
-      this.props.dispatch(Actions["a" ].SendToMain({
+
+      this.props.dispatch(Actions["a" ].AlsoToMain({
         type: Actions["b" ].TOP_SITES_PIN,
-        data: { site, index: this.props.index }
+        data: { site, index }
       }));
       this.props.dispatch(Actions["a" ].UserEvent({
         source: TOP_SITES_SOURCE,
         event: "TOP_SITES_EDIT",
-        action_position: this.props.index
+        action_position: index
       }));
+
       this.props.onClose();
     }
   }
@@ -2766,6 +2797,9 @@ class TopSiteForm_TopSiteForm extends external__React__default.a.PureComponent {
   }
 
   render() {
+    
+    const showAsAdd = !this.props.site;
+
     return external__React__default.a.createElement(
       "form",
       { className: "topsite-form" },
@@ -2778,7 +2812,7 @@ class TopSiteForm_TopSiteForm extends external__React__default.a.PureComponent {
           external__React__default.a.createElement(
             "h3",
             { className: "section-title" },
-            external__React__default.a.createElement(external__ReactIntl_["FormattedMessage"], { id: this.props.editMode ? "topsites_form_edit_header" : "topsites_form_add_header" })
+            external__React__default.a.createElement(external__ReactIntl_["FormattedMessage"], { id: showAsAdd ? "topsites_form_add_header" : "topsites_form_edit_header" })
           ),
           external__React__default.a.createElement(
             "div",
@@ -2814,15 +2848,10 @@ class TopSiteForm_TopSiteForm extends external__React__default.a.PureComponent {
           { className: "cancel", type: "button", onClick: this.onCancelButtonClick },
           external__React__default.a.createElement(external__ReactIntl_["FormattedMessage"], { id: "topsites_form_cancel_button" })
         ),
-        this.props.editMode && external__React__default.a.createElement(
+        external__React__default.a.createElement(
           "button",
-          { className: "done save", type: "submit", onClick: this.onSaveButtonClick },
-          external__React__default.a.createElement(external__ReactIntl_["FormattedMessage"], { id: "topsites_form_save_button" })
-        ),
-        !this.props.editMode && external__React__default.a.createElement(
-          "button",
-          { className: "done add", type: "submit", onClick: this.onAddButtonClick },
-          external__React__default.a.createElement(external__ReactIntl_["FormattedMessage"], { id: "topsites_form_add_button" })
+          { className: "done", type: "submit", onClick: this.onDoneButtonClick },
+          external__React__default.a.createElement(external__ReactIntl_["FormattedMessage"], { id: showAsAdd ? "topsites_form_add_button" : "topsites_form_save_button" })
         )
       )
     );
@@ -2830,16 +2859,15 @@ class TopSiteForm_TopSiteForm extends external__React__default.a.PureComponent {
 }
 
 TopSiteForm_TopSiteForm.defaultProps = {
-  label: "",
-  url: "",
-  index: 0,
-  editMode: false 
+  TopSite: null,
+  index: -1
 };
 
 var LinkMenu = __webpack_require__(6);
 
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
 
 
 
@@ -3051,11 +3079,6 @@ class TopSite_TopSitePlaceholder extends external__React__default.a.PureComponen
   }
 
   onEditButtonClick() {
-    if (this.props.onEdit) {
-      this.props.onEdit(this.props.index);
-      return;
-    }
-
     this.props.dispatch({ type: Actions["b" ].TOP_SITES_EDIT, data: { index: this.props.index } });
   }
 
@@ -3135,7 +3158,7 @@ class TopSite__TopSiteList extends external__React__default.a.PureComponent {
       case "drop":
         if (index !== this.state.draggedIndex) {
           this.dropped = true;
-          this.props.dispatch(Actions["a" ].SendToMain({
+          this.props.dispatch(Actions["a" ].AlsoToMain({
             type: Actions["b" ].TOP_SITES_INSERT,
             data: { site: { url: this.state.draggedSite.url, label: this.state.draggedTitle }, index, draggedFromIndex: this.state.draggedIndex }
           }));
@@ -3148,7 +3171,7 @@ class TopSite__TopSiteList extends external__React__default.a.PureComponent {
   _getTopSites() {
     
     let topSites = this.props.TopSites.rows.slice();
-    topSites.length = this.props.TopSitesCount;
+    topSites.length = this.props.TopSitesRows * Reducers["a" ];
     return topSites;
   }
 
@@ -3218,11 +3241,8 @@ class TopSite__TopSiteList extends external__React__default.a.PureComponent {
         key: link ? link.url : holeIndex++,
         index: i
       };
-      topSitesUI.push(!link ? external__React__default.a.createElement(TopSite_TopSitePlaceholder, _extends({
-        onEdit: props.onEdit
-      }, slotProps, commonProps)) : external__React__default.a.createElement(TopSite_TopSite, _extends({
+      topSitesUI.push(!link ? external__React__default.a.createElement(TopSite_TopSitePlaceholder, _extends({}, slotProps, commonProps)) : external__React__default.a.createElement(TopSite_TopSite, _extends({
         link: link,
-        onEdit: props.onEdit,
         activeIndex: this.state.activeIndex,
         onActivate: this.onActivate
       }, slotProps, commonProps)));
@@ -3236,6 +3256,7 @@ class TopSite__TopSiteList extends external__React__default.a.PureComponent {
 }
 
 const TopSiteList = Object(external__ReactIntl_["injectIntl"])(TopSite__TopSiteList);
+
 
 
 
@@ -3279,17 +3300,8 @@ function countTopSitesIconsTypes(topSites) {
 }
 
 class TopSites__TopSites extends external__React__default.a.PureComponent {
-  static get DEFAULT_STATE() {
-    return {
-      showAddForm: false,
-      showEditForm: false,
-      editIndex: -1 
-    };
-  }
-
   constructor(props) {
     super(props);
-    this.state = TopSites__TopSites.DEFAULT_STATE;
     this.onAddButtonClick = this.onAddButtonClick.bind(this);
     this.onFormClose = this.onFormClose.bind(this);
   }
@@ -3302,7 +3314,7 @@ class TopSites__TopSites extends external__React__default.a.PureComponent {
     const topSitesIconsStats = countTopSitesIconsTypes(topSites);
     const topSitesPinned = topSites.filter(site => !!site.isPinned).length;
     
-    this.props.dispatch(Actions["a" ].SendToMain({
+    this.props.dispatch(Actions["a" ].AlsoToMain({
       type: Actions["b" ].SAVE_SESSION_PERF_DATA,
       data: { topsites_icon_stats: topSitesIconsStats, topsites_pinned: topSitesPinned }
     }));
@@ -3312,7 +3324,7 @@ class TopSites__TopSites extends external__React__default.a.PureComponent {
 
 
   _getTopSites() {
-    return this.props.TopSites.rows.slice(0, this.props.TopSitesCount);
+    return this.props.TopSites.rows.slice(0, this.props.TopSitesRows * Reducers["a" ]);
   }
 
   componentDidUpdate() {
@@ -3324,15 +3336,15 @@ class TopSites__TopSites extends external__React__default.a.PureComponent {
   }
 
   onAddButtonClick() {
-    this.setState({ showAddForm: true });
     this.props.dispatch(Actions["a" ].UserEvent({
       source: TOP_SITES_SOURCE,
       event: "TOP_SITES_ADD_FORM_OPEN"
     }));
+    
+    this.props.dispatch({ type: Actions["b" ].TOP_SITES_EDIT, data: { index: -1 } });
   }
 
   onFormClose() {
-    this.setState(TopSites__TopSites.DEFAULT_STATE);
     this.props.dispatch(Actions["a" ].UserEvent({
       source: TOP_SITES_SOURCE,
       event: "TOP_SITES_EDIT_CLOSE"
@@ -3346,21 +3358,15 @@ class TopSites__TopSites extends external__React__default.a.PureComponent {
       header: { id: "settings_pane_topsites_header" },
       body: { id: "settings_pane_topsites_body" }
     };
-    const { showAddForm } = this.state;
-    const { editForm } = this.props.TopSites;
-    const showEditForm = editForm && editForm.visible || this.state.showEditForm;
-    let { editIndex } = this.state;
-    if (editIndex < 0 && editForm) {
-      editIndex = editForm.index;
-    }
-    const editSite = this.props.TopSites.rows[editIndex] || {};
+    const { editForm } = props.TopSites;
+
     return external__React__default.a.createElement(
       ComponentPerfTimer["a" ],
       { id: "topsites", initialized: props.TopSites.initialized, dispatch: props.dispatch },
       external__React__default.a.createElement(
         CollapsibleSection["a" ],
         { className: "top-sites", icon: "topsites", title: external__React__default.a.createElement(external__ReactIntl_["FormattedMessage"], { id: "header_top_sites" }), infoOption: infoOption, prefName: "collapseTopSites", Prefs: props.Prefs, dispatch: props.dispatch },
-        external__React__default.a.createElement(TopSiteList, { TopSites: props.TopSites, TopSitesCount: props.TopSitesCount, dispatch: props.dispatch, intl: props.intl }),
+        external__React__default.a.createElement(TopSiteList, { TopSites: props.TopSites, TopSitesRows: props.TopSitesRows, dispatch: props.dispatch, intl: props.intl }),
         external__React__default.a.createElement(
           "div",
           { className: "edit-topsites-wrapper" },
@@ -3376,17 +3382,7 @@ class TopSites__TopSites extends external__React__default.a.PureComponent {
               external__React__default.a.createElement(external__ReactIntl_["FormattedMessage"], { id: "edit_topsites_add_button" })
             )
           ),
-          showAddForm && external__React__default.a.createElement(
-            "div",
-            { className: "edit-topsites" },
-            external__React__default.a.createElement("div", { className: "modal-overlay", onClick: this.onFormClose }),
-            external__React__default.a.createElement(
-              "div",
-              { className: "modal" },
-              external__React__default.a.createElement(TopSiteForm_TopSiteForm, { onClose: this.onFormClose, dispatch: this.props.dispatch, intl: this.props.intl })
-            )
-          ),
-          showEditForm && external__React__default.a.createElement(
+          editForm && external__React__default.a.createElement(
             "div",
             { className: "edit-topsites" },
             external__React__default.a.createElement("div", { className: "modal-overlay", onClick: this.onFormClose }),
@@ -3394,10 +3390,8 @@ class TopSites__TopSites extends external__React__default.a.PureComponent {
               "div",
               { className: "modal" },
               external__React__default.a.createElement(TopSiteForm_TopSiteForm, {
-                label: editSite.label || editSite.hostname || "",
-                url: editSite.url || "",
-                index: editIndex,
-                editMode: true,
+                site: props.TopSites.rows[editForm.index],
+                index: editForm.index,
                 onClose: this.onFormClose,
                 dispatch: this.props.dispatch,
                 intl: this.props.intl })
@@ -3412,7 +3406,7 @@ class TopSites__TopSites extends external__React__default.a.PureComponent {
 const TopSites = Object(external__ReactRedux_["connect"])(state => ({
   TopSites: state.TopSites,
   Prefs: state.Prefs,
-  TopSitesCount: state.Prefs.values.topSitesCount
+  TopSitesRows: state.Prefs.values.topSitesRows
 }))(Object(external__ReactIntl_["injectIntl"])(TopSites__TopSites));
 
 
@@ -3446,8 +3440,8 @@ class Base__Base extends external__React__default.a.PureComponent {
     
     
     if (this.props.isPrerendered) {
-      this.props.dispatch(Actions["a" ].SendToMain({ type: Actions["b" ].NEW_TAB_STATE_REQUEST }));
-      this.props.dispatch(Actions["a" ].SendToMain({ type: Actions["b" ].PAGE_PRERENDERED }));
+      this.props.dispatch(Actions["a" ].AlsoToMain({ type: Actions["b" ].NEW_TAB_STATE_REQUEST }));
+      this.props.dispatch(Actions["a" ].AlsoToMain({ type: Actions["b" ].PAGE_PRERENDERED }));
     }
   }
 
@@ -3460,7 +3454,7 @@ class Base__Base extends external__React__default.a.PureComponent {
   
   sendNewTabRehydrated(App) {
     if (App && App.initialized && !this.renderNotified) {
-      this.props.dispatch(Actions["a" ].SendToMain({ type: Actions["b" ].NEW_TAB_REHYDRATED, data: {} }));
+      this.props.dispatch(Actions["a" ].AlsoToMain({ type: Actions["b" ].NEW_TAB_REHYDRATED, data: {} }));
       this.renderNotified = true;
     }
   }
@@ -3697,7 +3691,7 @@ class Section extends __WEBPACK_IMPORTED_MODULE_6_react___default.a.PureComponen
           "ul",
           { className: "section-list", style: { padding: 0 } },
           realRows.map((link, index) => link && __WEBPACK_IMPORTED_MODULE_6_react___default.a.createElement(__WEBPACK_IMPORTED_MODULE_0_content_src_components_Card_Card__["a" ], { key: index, index: index, dispatch: dispatch, link: link, contextMenuOptions: contextMenuOptions,
-            eventSource: eventSource, shouldSendImpressionStats: this.props.shouldSendImpressionStats })),
+            eventSource: eventSource, shouldSendImpressionStats: this.props.shouldSendImpressionStats, isWebExtension: this.props.isWebExtension })),
           placeholders > 0 && [...new Array(placeholders)].map((_, i) => __WEBPACK_IMPORTED_MODULE_6_react___default.a.createElement(__WEBPACK_IMPORTED_MODULE_0_content_src_components_Card_Card__["b" ], { key: i }))
         ),
         shouldShowEmptyState && __WEBPACK_IMPORTED_MODULE_6_react___default.a.createElement(
@@ -3864,21 +3858,31 @@ class Card_Card extends external__React__default.a.PureComponent {
   onLinkClick(event) {
     event.preventDefault();
     const { altKey, button, ctrlKey, metaKey, shiftKey } = event;
-    this.props.dispatch(Actions["a" ].SendToMain({
+    this.props.dispatch(Actions["a" ].AlsoToMain({
       type: Actions["b" ].OPEN_LINK,
       data: Object.assign(this.props.link, { event: { altKey, button, ctrlKey, metaKey, shiftKey } })
     }));
-    this.props.dispatch(Actions["a" ].UserEvent({
-      event: "CLICK",
-      source: this.props.eventSource,
-      action_position: this.props.index
-    }));
-    if (this.props.shouldSendImpressionStats) {
-      this.props.dispatch(Actions["a" ].ImpressionStats({
+
+    if (this.props.isWebExtension) {
+      this.props.dispatch(Actions["a" ].WebExtEvent(Actions["b" ].WEBEXT_CLICK, {
         source: this.props.eventSource,
-        click: 0,
-        tiles: [{ id: this.props.link.guid, pos: this.props.index }]
+        url: this.props.link.url,
+        action_position: this.props.index
       }));
+    } else {
+      this.props.dispatch(Actions["a" ].UserEvent({
+        event: "CLICK",
+        source: this.props.eventSource,
+        action_position: this.props.index
+      }));
+
+      if (this.props.shouldSendImpressionStats) {
+        this.props.dispatch(Actions["a" ].ImpressionStats({
+          source: this.props.eventSource,
+          click: 0,
+          tiles: [{ id: this.props.link.guid, pos: this.props.index }]
+        }));
+      }
     }
   }
 
@@ -4101,7 +4105,7 @@ class DetectUserSessionStart {
     try {
       let visibility_event_rcvd_ts = this._perfService.getMostRecentAbsMarkStartByName("visibility_event_rcvd_ts");
 
-      this._store.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].SendToMain({
+      this._store.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].AlsoToMain({
         type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].SAVE_SESSION_PERF_DATA,
         data: { visibility_event_rcvd_ts }
       }));
@@ -4183,10 +4187,13 @@ function mergeStateReducer(mainReducer) {
 
 
 const messageMiddleware = store => next => action => {
+  const skipLocal = action.meta && action.meta.skipLocal;
   if (__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].isSendToMain(action)) {
     sendAsyncMessage(OUTGOING_MESSAGE_NAME, action);
   }
-  next(action);
+  if (!skipLocal) {
+    next(action);
+  }
 };
 
 const rehydrationMiddleware = store => next => action => {
@@ -4209,10 +4216,10 @@ const rehydrationMiddleware = store => next => action => {
 
   
   if (store._didRequestInitialState && action.type === __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].INIT) {
-    return next(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].SendToMain({ type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].NEW_TAB_STATE_REQUEST }));
+    return next(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].AlsoToMain({ type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].NEW_TAB_STATE_REQUEST }));
   }
 
-  if (__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].isBroadcastToContent(action) || __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].isSendToContent(action) || __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].isSendToPreloaded(action)) {
+  if (__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].isBroadcastToContent(action) || __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].isSendToOneContent(action) || __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].isSendToPreloaded(action)) {
     
     
     

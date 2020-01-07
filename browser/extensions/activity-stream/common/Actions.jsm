@@ -85,7 +85,9 @@ for (const type of [
   "TOP_SITES_PIN",
   "TOP_SITES_UNPIN",
   "TOP_SITES_UPDATED",
-  "UNINIT"
+  "UNINIT",
+  "WEBEXT_CLICK",
+  "WEBEXT_DISMISS"
 ]) {
   actionTypes[type] = type;
 }
@@ -99,7 +101,7 @@ function _RouteMessage(action, options) {
   }
   
   
-  ["from", "to", "toTarget", "fromTarget", "skipOrigin"].forEach(o => {
+  ["from", "to", "toTarget", "fromTarget", "skipMain", "skipLocal"].forEach(o => {
     if (typeof options[o] !== "undefined") {
       meta[o] = options[o];
     } else if (meta[o]) {
@@ -117,12 +119,26 @@ function _RouteMessage(action, options) {
 
 
 
-function SendToMain(action, fromTarget) {
+
+function AlsoToMain(action, fromTarget, skipLocal) {
   return _RouteMessage(action, {
     from: CONTENT_MESSAGE_TYPE,
     to: MAIN_MESSAGE_TYPE,
-    fromTarget
+    fromTarget,
+    skipLocal
   });
+}
+
+
+
+
+
+
+
+
+
+function OnlyToMain(action, fromTarget) {
+  return AlsoToMain(action, fromTarget, true);
 }
 
 
@@ -145,14 +161,17 @@ function BroadcastToContent(action) {
 
 
 
-function SendToContent(action, target) {
+
+
+function AlsoToOneContent(action, target, skipMain) {
   if (!target) {
-    throw new Error("You must provide a target ID as the second parameter of SendToContent. If you want to send to all content processes, use BroadcastToContent");
+    throw new Error("You must provide a target ID as the second parameter of AlsoToOneContent. If you want to send to all content processes, use BroadcastToContent");
   }
   return _RouteMessage(action, {
     from: MAIN_MESSAGE_TYPE,
     to: CONTENT_MESSAGE_TYPE,
-    toTarget: target
+    toTarget: target,
+    skipMain
   });
 }
 
@@ -162,7 +181,19 @@ function SendToContent(action, target) {
 
 
 
-function SendToPreloaded(action) {
+
+
+function OnlyToOneContent(action, target) {
+  return AlsoToOneContent(action, target, true);
+}
+
+
+
+
+
+
+
+function AlsoToPreloaded(action) {
   return _RouteMessage(action, {
     from: MAIN_MESSAGE_TYPE,
     to: PRELOAD_MESSAGE_TYPE
@@ -177,7 +208,7 @@ function SendToPreloaded(action) {
 
 
 function UserEvent(data) {
-  return SendToMain({
+  return AlsoToMain({
     type: actionTypes.TELEMETRY_USER_EVENT,
     data
   });
@@ -195,7 +226,7 @@ function UndesiredEvent(data, importContext = globalImportContext) {
     type: actionTypes.TELEMETRY_UNDESIRED_EVENT,
     data
   };
-  return importContext === UI_CODE ? SendToMain(action) : action;
+  return importContext === UI_CODE ? AlsoToMain(action) : action;
 }
 
 
@@ -210,7 +241,7 @@ function PerfEvent(data, importContext = globalImportContext) {
     type: actionTypes.TELEMETRY_PERFORMANCE_EVENT,
     data
   };
-  return importContext === UI_CODE ? SendToMain(action) : action;
+  return importContext === UI_CODE ? AlsoToMain(action) : action;
 }
 
 
@@ -225,12 +256,20 @@ function ImpressionStats(data, importContext = globalImportContext) {
     type: actionTypes.TELEMETRY_IMPRESSION_STATS,
     data
   };
-  return importContext === UI_CODE ? SendToMain(action) : action;
+  return importContext === UI_CODE ? AlsoToMain(action) : action;
 }
 
 function SetPref(name, value, importContext = globalImportContext) {
   const action = {type: actionTypes.SET_PREF, data: {name, value}};
-  return importContext === UI_CODE ? SendToMain(action) : action;
+  return importContext === UI_CODE ? AlsoToMain(action) : action;
+}
+
+function WebExtEvent(type, data, importContext = globalImportContext) {
+  if (!data || !data.source) {
+    throw new Error("WebExtEvent actions should include a property \"source\", the id of the webextension that should receive the event.");
+  }
+  const action = {type, data};
+  return importContext === UI_CODE ? AlsoToMain(action) : action;
 }
 
 this.actionTypes = actionTypes;
@@ -241,10 +280,13 @@ this.actionCreators = {
   UndesiredEvent,
   PerfEvent,
   ImpressionStats,
-  SendToContent,
-  SendToMain,
-  SendToPreloaded,
-  SetPref
+  AlsoToOneContent,
+  OnlyToOneContent,
+  AlsoToMain,
+  OnlyToMain,
+  AlsoToPreloaded,
+  SetPref,
+  WebExtEvent
 };
 
 
@@ -264,7 +306,7 @@ this.actionUtils = {
     }
     return false;
   },
-  isSendToContent(action) {
+  isSendToOneContent(action) {
     if (!action.meta) {
       return false;
     }

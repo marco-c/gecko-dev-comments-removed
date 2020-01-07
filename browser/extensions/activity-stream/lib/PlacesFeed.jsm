@@ -247,7 +247,10 @@ class PlacesFeed {
 
 
   openLink(action, where = "", isPrivate = false) {
-    const params = {private: isPrivate};
+    const params = {
+      private: isPrivate,
+      triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({})
+    };
 
     
     const {event, referrer} = action.data;
