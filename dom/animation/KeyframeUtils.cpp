@@ -1188,7 +1188,7 @@ HandleMissingFinalKeyframe(nsTArray<AnimationProperty>& aResult,
     
     
     if (aCurrentAnimationProperty) {
-      aResult.RemoveElementAt(aResult.Length() - 1);
+      aResult.RemoveLastElement();
     }
     return;
   }

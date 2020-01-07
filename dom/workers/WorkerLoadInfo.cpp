@@ -529,7 +529,7 @@ InterfaceRequestor::GetAnyLiveTabChild()
     }
 
     
-    mTabChildList.RemoveElementAt(mTabChildList.Length() - 1);
+    mTabChildList.RemoveLastElement();
   }
 
   return nullptr;

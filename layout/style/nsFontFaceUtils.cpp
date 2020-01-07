@@ -115,16 +115,14 @@ nsFontFaceUtils::MarkDirtyForFontChange(nsIFrame* aSubtreeRoot,
   
   
   do {
-    nsIFrame* subtreeRoot = subtrees.ElementAt(subtrees.Length() - 1);
-    subtrees.RemoveElementAt(subtrees.Length() - 1);
+    nsIFrame* subtreeRoot = subtrees.PopLastElement();
 
     
     AutoTArray<nsIFrame*, 32> stack;
     stack.AppendElement(subtreeRoot);
 
     do {
-      nsIFrame* f = stack.ElementAt(stack.Length() - 1);
-      stack.RemoveElementAt(stack.Length() - 1);
+      nsIFrame* f = stack.PopLastElement();
 
       
       

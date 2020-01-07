@@ -455,7 +455,7 @@ nsXHTMLContentSerializer::CheckElementEnd(mozilla::dom::Element* aElement,
     
 
     if (!mOLStateStack.IsEmpty()) {
-        mOLStateStack.RemoveElementAt(mOLStateStack.Length() -1);
+      mOLStateStack.RemoveLastElement();
     }
   }
 

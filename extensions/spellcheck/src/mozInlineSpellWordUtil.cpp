@@ -845,7 +845,7 @@ mozInlineSpellWordUtil::BuildSoftText()
                                          mozilla::fallible);
         if (!ok) {
             
-            mSoftTextDOMMapping.RemoveElementAt(mSoftTextDOMMapping.Length() - 1);
+            mSoftTextDOMMapping.RemoveLastElement();
             exit = true;
         }
       }

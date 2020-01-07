@@ -328,7 +328,7 @@ nsHTMLContentSerializer::AppendElementEnd(Element* aElement, nsAString& aStr)
     
 
     if (!mOLStateStack.IsEmpty()) {
-      mOLStateStack.RemoveElementAt(mOLStateStack.Length() -1);
+      mOLStateStack.RemoveLastElement();
     }
   }
 

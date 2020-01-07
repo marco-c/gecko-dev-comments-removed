@@ -460,7 +460,7 @@ void TiledTextureImage::Resize(const gfx::IntSize& aSize)
     
     unsigned int length = mImages.Length();
     for (; i < length; i++)
-      mImages.RemoveElementAt(mImages.Length()-1);
+      mImages.RemoveLastElement();
 
     
     mRows = rows;
