@@ -58,7 +58,7 @@ module.exports = {
     "comma-dangle": ["error", "always-multiline"],
 
     
-    "complexity": ["error", {"max": 20}],
+    "complexity": ["error", {"max": 26}],
 
     
     "dot-location": ["error", "property"],

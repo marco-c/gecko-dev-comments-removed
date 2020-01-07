@@ -81,7 +81,7 @@ module.exports = {
     
     "comma-dangle": "off",
     
-    "complexity": ["error", 35],
+    "complexity": ["error", 53],
     
     
     "consistent-this": "off",

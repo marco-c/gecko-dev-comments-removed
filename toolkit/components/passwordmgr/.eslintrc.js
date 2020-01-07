@@ -5,7 +5,7 @@ module.exports = {
   "rules": {
     
     
-    "complexity": ["error", 43],
+    "complexity": ["error", 56],
 
     "no-unused-vars": ["error", {"args": "none", "vars": "local", "varsIgnorePattern": "^(ids|ignored|unused)$"}],
   }

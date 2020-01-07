@@ -3,7 +3,7 @@
 module.exports = {
   "rules": {
     
-    "complexity": ["error", 42],
+    "complexity": ["error", 47],
 
     
     
