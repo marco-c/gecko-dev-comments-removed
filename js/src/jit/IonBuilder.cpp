@@ -8649,12 +8649,6 @@ IonBuilder::jsop_getelem_dense(MDefinition* obj, MDefinition* index)
     TemporaryTypeSet* types = bytecodeTypes(pc);
 
     MOZ_ASSERT(index->type() == MIRType::Int32 || index->type() == MIRType::Double);
-    if (JSOp(*pc) == JSOP_CALLELEM) {
-        
-        
-        
-        AddObjectsForPropertyRead(alloc(), obj, nullptr, types);
-    }
 
     BarrierKind barrier = PropertyReadNeedsTypeBarrier(analysisContext, alloc(), constraints(),
                                                        obj, nullptr, types);
