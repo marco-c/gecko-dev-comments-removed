@@ -22,7 +22,6 @@
 #include "nsIClipboard.h"               
 #include "nsICommandParams.h"           
 #include "nsID.h"
-#include "nsIDOMElement.h"              
 #include "nsIEditor.h"                  
 #include "nsIHTMLEditor.h"              
 #include "nsLiteralString.h"            

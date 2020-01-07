@@ -74,7 +74,6 @@
 #include "nsAtom.h"                    
 #include "nsIContent.h"                 
 #include "nsIDOMDocument.h"             
-#include "nsIDOMElement.h"              
 #include "nsIDOMEventListener.h"        
 #include "nsIDOMNode.h"                 
 #include "nsIDocumentStateListener.h"   

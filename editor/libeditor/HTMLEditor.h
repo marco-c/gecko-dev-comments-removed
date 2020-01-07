@@ -39,7 +39,6 @@ class nsHTMLDocument;
 class nsITransferable;
 class nsIClipboard;
 class nsIDOMDocument;
-class nsIDOMElement;
 class nsILinkHandler;
 class nsTableWrapperFrame;
 class nsIDOMRange;
@@ -576,7 +575,7 @@ public:
 
 
 
-  nsresult OnMouseUp(int32_t aX, int32_t aY, nsIDOMElement* aTarget);
+  nsresult OnMouseUp(int32_t aX, int32_t aY, Element* aTarget);
 
   
 
