@@ -16,6 +16,19 @@
 #include <stdint.h>
 #include "mozilla/Assertions.h"
 
+
+
+
+
+
+
+
+
+
+
+
+struct XPTHeader;
+struct XPTInterfaceDirectoryEntry;
 struct XPTInterfaceDescriptor;
 struct XPTConstDescriptor;
 struct XPTMethodDescriptor;
@@ -23,17 +36,50 @@ struct XPTParamDescriptor;
 struct XPTTypeDescriptor;
 struct XPTTypeDescriptorPrefix;
 
+
+
+
 struct XPTHeader {
-  static const uint16_t kNumInterfaces;
-  static const XPTInterfaceDescriptor kInterfaces[];
-  static const XPTTypeDescriptor kTypes[];
-  static const XPTParamDescriptor kParams[];
-  static const XPTMethodDescriptor kMethods[];
-  static const XPTConstDescriptor kConsts[];
+  
+  
+  
+
+  
+  uint8_t mMajorVersion;
+  
+  uint16_t mNumInterfaces;
+  
+  const XPTInterfaceDirectoryEntry* mInterfaceDirectory;
+  
+};
+
+
+
+
+
+
+
+
+
+
+
+#define XPT_MAJOR_INCOMPATIBLE_VERSION 0x02
+
+
+
+
+
+
+
+struct XPTInterfaceDirectoryEntry {
+  nsID mIID;
+  const char* mName;
 
   
   
-  static const char kStrings[];
+  
+
+  const XPTInterfaceDescriptor* mInterfaceDescriptor;
 };
 
 
@@ -51,22 +97,38 @@ struct XPTInterfaceDescriptor {
   bool IsBuiltinClass() const { return !!(mFlags & kBuiltinClassMask); }
   bool IsMainProcessScriptableOnly() const { return !!(mFlags & kMainProcessScriptableOnlyMask); }
 
-  inline const char* Name() const;
-  inline const XPTMethodDescriptor& Method(size_t aIndex) const;
-  inline const XPTConstDescriptor& Const(size_t aIndex) const;
-
   
 
 
-  nsID mIID;
-  uint32_t mName; 
-  uint16_t mMethodDescriptors; 
-  uint16_t mConstDescriptors; 
+
+
+  const XPTMethodDescriptor* mMethodDescriptors;
+  const XPTConstDescriptor* mConstDescriptors;
+  const XPTTypeDescriptor* mAdditionalTypes;
   uint16_t mParentInterface;
   uint16_t mNumMethods;
   uint16_t mNumConstants;
   uint8_t mFlags;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  uint8_t mNumAdditionalTypes;
 };
+
 
 
 
@@ -141,9 +203,9 @@ struct XPTTypeDescriptor {
     return mData1;
   }
 
-  const XPTTypeDescriptor* ArrayElementType() const {
+  const XPTTypeDescriptor* ArrayElementType(const XPTInterfaceDescriptor* aDescriptor) const {
     MOZ_ASSERT(Tag() == TD_ARRAY);
-    return &XPTHeader::kTypes[mData2];
+    return &aDescriptor->mAdditionalTypes[mData2];
   }
 
   
@@ -173,30 +235,19 @@ struct XPTTypeDescriptor {
 
 
 
+
+
 union XPTConstValue {
   int16_t i16;
   uint16_t ui16;
   int32_t i32;
   uint32_t ui32;
-
-  
-  
-  
-  
-  explicit constexpr XPTConstValue(int16_t aInt) : i16(aInt) {}
-  explicit constexpr XPTConstValue(uint16_t aInt) : ui16(aInt) {}
-  explicit constexpr XPTConstValue(int32_t aInt) : i32(aInt) {}
-  explicit constexpr XPTConstValue(uint32_t aInt) : ui32(aInt) {}
-};
+}; 
 
 struct XPTConstDescriptor {
-  const char* Name() const {
-    return &XPTHeader::kStrings[mName];
-  }
-
-  uint32_t mName; 
+  const char* mName;
   XPTTypeDescriptor mType;
-  XPTConstValue mValue;
+  union XPTConstValue mValue;
 };
 
 
@@ -211,33 +262,13 @@ struct XPTParamDescriptor {
 
 
 
-struct XPTMethodDescriptor {
-  const char* Name() const {
-    return &XPTHeader::kStrings[mName];
-  }
-  const XPTParamDescriptor& Param(uint8_t aIndex) const {
-    return XPTHeader::kParams[mParams + aIndex];
-  }
 
-  uint32_t mName; 
-  uint32_t mParams; 
+struct XPTMethodDescriptor {
+  const char* mName;
+  const XPTParamDescriptor* mParams;
+  
   uint8_t mFlags;
   uint8_t mNumArgs;
 };
-
-const char*
-XPTInterfaceDescriptor::Name() const {
-  return &XPTHeader::kStrings[mName];
-}
-
-const XPTMethodDescriptor&
-XPTInterfaceDescriptor::Method(size_t aIndex) const {
-  return XPTHeader::kMethods[mMethodDescriptors + aIndex];
-}
-
-const XPTConstDescriptor&
-XPTInterfaceDescriptor::Const(size_t aIndex) const {
-  return XPTHeader::kConsts[mConstDescriptors + aIndex];
-}
 
 #endif 
