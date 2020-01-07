@@ -96,10 +96,16 @@ nssSlot_ResetDelay(
 }
 
 static PRBool
-within_token_delay_period(const NSSSlot *slot)
+token_status_checked(const NSSSlot *slot)
 {
     PRIntervalTime time;
     int lastPingState = slot->lastTokenPingState;
+    
+
+
+    if (slot->isPresentThread == PR_GetCurrentThread()) {
+        return PR_TRUE;
+    }
     
     if (s_token_delay_time == 0) {
         s_token_delay_time = PR_SecondsToInterval(NSSSLOT_TOKEN_DELAY_TIME);
@@ -130,7 +136,7 @@ nssSlot_IsTokenPresent(
 
     
     PZ_Lock(slot->isPresentLock);
-    if (within_token_delay_period(slot)) {
+    if (token_status_checked(slot)) {
         CK_FLAGS ckFlags = slot->ckFlags;
         PZ_Unlock(slot->isPresentLock);
         return ((ckFlags & CKF_TOKEN_PRESENT) != 0);
@@ -146,12 +152,12 @@ nssSlot_IsTokenPresent(
 
     
     PZ_Lock(slot->isPresentLock);
-    while (slot->inIsPresent) {
+    while (slot->isPresentThread) {
         PR_WaitCondVar(slot->isPresentCondition, 0);
     }
     
 
-    if (within_token_delay_period(slot)) {
+    if (token_status_checked(slot)) {
         CK_FLAGS ckFlags = slot->ckFlags;
         PZ_Unlock(slot->isPresentLock);
         return ((ckFlags & CKF_TOKEN_PRESENT) != 0);
@@ -159,7 +165,7 @@ nssSlot_IsTokenPresent(
     
 
     slot->lastTokenPingState = nssSlotLastPingState_Update;
-    slot->inIsPresent = PR_TRUE;
+    slot->isPresentThread = PR_GetCurrentThread();
 
     PZ_Unlock(slot->isPresentLock);
 
@@ -257,7 +263,7 @@ done:
         slot->lastTokenPingTime = PR_IntervalNow();
         slot->lastTokenPingState = nssSlotLastPingState_Valid;
     }
-    slot->inIsPresent = PR_FALSE;
+    slot->isPresentThread = NULL;
     PR_NotifyAllCondVar(slot->isPresentCondition);
     PZ_Unlock(slot->isPresentLock);
     return isPresent;
