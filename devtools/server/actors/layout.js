@@ -152,7 +152,10 @@ const LayoutActor = ActorClassWithSpec(layoutSpec, {
 
 
 
-  getCurrentFlexbox(node) {
+
+
+
+  getCurrentDisplay(node, type) {
     if (isNodeDead(node)) {
       return null;
     }
@@ -171,9 +174,12 @@ const LayoutActor = ActorClassWithSpec(layoutSpec, {
       return null;
     }
 
-    
-    if (displayType == "inline-flex" || displayType == "flex") {
-      return new FlexboxActor(this, treeWalker.currentNode);
+    if (type == "flex" &&
+        (displayType == "inline-flex" || displayType == "flex")) {
+      return new FlexboxActor(this, currentNode);
+    } else if (type == "grid" &&
+               (displayType == "inline-grid" || displayType == "grid")) {
+      return new GridActor(this, currentNode);
     }
 
     
@@ -184,19 +190,51 @@ const LayoutActor = ActorClassWithSpec(layoutSpec, {
 
       displayType = this.walker.getNode(currentNode).displayType;
 
-      switch (displayType) {
-        case "inline-flex":
-        case "flex":
-          return new FlexboxActor(this, currentNode);
-        case "contents":
-          
-          continue;
+      if (type == "flex" &&
+          (displayType == "inline-flex" || displayType == "flex")) {
+        return new FlexboxActor(this, currentNode);
+      } else if (type == "grid" &&
+                 (displayType == "inline-grid" || displayType == "grid")) {
+        return new GridActor(this, currentNode);
+      } else if (displayType == "contents") {
+        
+        continue;
       }
 
       break;
     }
 
     return null;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  getCurrentGrid(node) {
+    return this.getCurrentDisplay(node, "grid");
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  getCurrentFlexbox(node) {
+    return this.getCurrentDisplay(node, "flex");
   },
 
   

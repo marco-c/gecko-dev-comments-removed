@@ -51,6 +51,14 @@ const isWordChar = function(str) {
   return str && WORD_REGEXP.test(str);
 };
 
+const GRID_PROPERTY_NAMES = ["grid-area", "grid-row", "grid-row-start",
+                             "grid-row-end", "grid-column", "grid-column-start",
+                             "grid-column-end"];
+const GRID_ROW_PROPERTY_NAMES = ["grid-area", "grid-row", "grid-row-start",
+                                 "grid-row-end"];
+const GRID_COL_PROPERTY_NAMES = ["grid-area", "grid-column", "grid-column-start",
+                                 "grid-column-end"];
+
 
 
 
@@ -66,6 +74,9 @@ function isKeyIn(key, ...keys) {
     return key === KeyCodes["DOM_VK_" + expectedKey];
   });
 }
+
+
+
 
 
 
@@ -295,10 +306,6 @@ function InplaceEditor(options, event) {
     this.input.select();
   }
 
-  if (this.contentType == CONTENT_TYPES.CSS_VALUE && this.input.value == "") {
-    this._maybeSuggestCompletion(false);
-  }
-
   this.input.addEventListener("blur", this._onBlur);
   this.input.addEventListener("keypress", this._onKeyPress);
   this.input.addEventListener("input", this._onInput);
@@ -321,6 +328,8 @@ function InplaceEditor(options, event) {
   if (options.start) {
     options.start(this, event);
   }
+
+  this._getGridNamesBeforeCompletion(options.getGridLineNames);
 }
 
 exports.InplaceEditor = InplaceEditor;
@@ -996,6 +1005,25 @@ InplaceEditor.prototype = {
 
 
 
+
+
+
+  _getGridNamesBeforeCompletion: async function(getGridLineNames) {
+    if (getGridLineNames && this.property &&
+        GRID_PROPERTY_NAMES.includes(this.property.name)) {
+      this.gridLineNames = await getGridLineNames();
+    }
+
+    if (this.contentType == CONTENT_TYPES.CSS_VALUE && this.input &&
+        this.input.value == "") {
+      this._maybeSuggestCompletion(false);
+    }
+  },
+
+  
+
+
+
   _onAutocompletePopupClick: function() {
     this._acceptPopupSuggestion();
   },
@@ -1567,7 +1595,18 @@ InplaceEditor.prototype = {
 
 
   _getCSSValuesForPropertyName: function(propertyName) {
-    return this.cssProperties.getValues(propertyName);
+    let gridLineList = [];
+    if (this.gridLineNames) {
+      if (GRID_ROW_PROPERTY_NAMES.includes(this.property.name)) {
+        gridLineList.push(...this.gridLineNames.rows);
+      }
+      if (GRID_COL_PROPERTY_NAMES.includes(this.property.name)) {
+        gridLineList.push(...this.gridLineNames.cols);
+      }
+    }
+    
+    
+    return gridLineList.concat(this.cssProperties.getValues(propertyName)).sort();
   },
 
   
