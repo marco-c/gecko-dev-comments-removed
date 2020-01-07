@@ -1327,9 +1327,6 @@ class MediaPipelineTransmit::PipelineListener : public MediaStreamVideoSink
 public:
   explicit PipelineListener(const RefPtr<MediaSessionConduit>& aConduit)
     : mConduit(aConduit)
-    , mTrackId(TRACK_INVALID)
-    , mMutex("MediaPipelineTransmit::PipelineListener")
-    , mTrackIdexternal(TRACK_INVALID)
     , mActive(false)
     , mEnabled(false)
     , mDirectConnect(false)
@@ -1344,12 +1341,6 @@ public:
       mConverter->Shutdown();
     }
   }
-
-  
-  
-  
-  
-  void UnsetTrackId(MediaStreamGraphImpl* aGraph);
 
   void SetActive(bool aActive) { mActive = aActive; }
   void SetEnabled(bool aEnabled) { mEnabled = aEnabled; }
@@ -1407,24 +1398,11 @@ public:
   void ClearFrames() override {}
 
 private:
-  void UnsetTrackIdImpl()
-  {
-    MutexAutoLock lock(mMutex);
-    mTrackId = mTrackIdexternal = TRACK_INVALID;
-  }
-
   void NewData(const MediaSegment& aMedia, TrackRate aRate = 0);
 
   RefPtr<MediaSessionConduit> mConduit;
   RefPtr<AudioProxyThread> mAudioProcessing;
   RefPtr<VideoFrameConverter> mConverter;
-
-  
-  TrackID mTrackId; 
-  Mutex mMutex;
-  
-  
-  TrackID mTrackIdexternal; 
 
   
   mozilla::Atomic<bool> mActive;
@@ -1446,8 +1424,8 @@ class MediaPipelineTransmit::VideoFrameFeeder : public VideoConverterListener
 {
 public:
   explicit VideoFrameFeeder(const RefPtr<PipelineListener>& aListener)
-    : mListener(aListener)
-    , mMutex("VideoFrameFeeder")
+    : mMutex("VideoFrameFeeder")
+    , mListener(aListener)
   {
     MOZ_COUNT_CTOR(VideoFrameFeeder);
   }
@@ -1494,8 +1472,8 @@ public:
 protected:
   virtual ~VideoFrameFeeder() { MOZ_COUNT_DTOR(VideoFrameFeeder); }
 
+  Mutex mMutex; 
   RefPtr<PipelineListener> mListener;
-  Mutex mMutex;
 };
 
 MediaPipelineTransmit::MediaPipelineTransmit(
@@ -1711,11 +1689,6 @@ MediaPipelineTransmit::ReplaceTrack(RefPtr<MediaStreamTrack>& aDomTrack)
   mDomTrack = aDomTrack;
   SetDescription();
 
-  if (oldTrack) {
-    
-    mListener->UnsetTrackId(oldTrack->GraphImpl());
-  }
-
   if (wasTransmitting) {
     Start();
   }
@@ -1892,23 +1865,6 @@ MediaPipeline::PipelineTransport::SendRtcpPacket(const uint8_t* aData,
   return NS_OK;
 }
 
-void
-MediaPipelineTransmit::PipelineListener::UnsetTrackId(
-  MediaStreamGraphImpl* aGraph)
-{
-  class Message : public ControlMessage
-  {
-  public:
-    explicit Message(PipelineListener* listener)
-      : ControlMessage(nullptr)
-      , mListener(listener)
-    {
-    }
-    virtual void Run() override { mListener->UnsetTrackIdImpl(); }
-    RefPtr<PipelineListener> mListener;
-  };
-  aGraph->AppendMessage(MakeUnique<Message>(this));
-}
 
 void
 MediaPipelineTransmit::PipelineListener::NotifyRealtimeTrackData(
@@ -2035,6 +1991,7 @@ class GenericReceiveListener : public MediaStreamListener
 public:
   explicit GenericReceiveListener(dom::MediaStreamTrack* aTrack)
     : mTrack(aTrack)
+    , mTrackId(aTrack->GetInputTrackId())
     , mSource(mTrack->GetInputStream()->AsSourceStream())
     , mPlayedTicks(0)
     , mPrincipalHandle(PRINCIPAL_HANDLE_NONE)
@@ -2093,18 +2050,19 @@ public:
     class Message : public ControlMessage
     {
     public:
-      explicit Message(dom::MediaStreamTrack* aTrack)
-        : ControlMessage(aTrack->GetInputStream())
-        , mTrackId(aTrack->GetInputTrackId())
+      explicit Message(SourceMediaStream* aStream, TrackID aTrackId)
+        : ControlMessage(aStream)
+        , mTrackId(aTrackId)
       {
       }
 
       void Run() override { mStream->AsSourceStream()->EndTrack(mTrackId); }
 
+
       const TrackID mTrackId;
     };
 
-    mTrack->GraphImpl()->AppendMessage(MakeUnique<Message>(mTrack));
+    mTrack->GraphImpl()->AppendMessage(MakeUnique<Message>(mSource, mTrackId));
     
     mSource->RemoveListener(this);
   }
@@ -2144,6 +2102,7 @@ public:
 
 protected:
   RefPtr<dom::MediaStreamTrack> mTrack;
+  const TrackID mTrackId;
   const RefPtr<SourceMediaStream> mSource;
   TrackTicks mPlayedTicks;
   PrincipalHandle mPrincipalHandle;
@@ -2173,7 +2132,6 @@ public:
                    const RefPtr<MediaSessionConduit>& aConduit)
     : GenericReceiveListener(aTrack)
     , mConduit(aConduit)
-    , mTrackId(mTrack->GetInputTrackId())
     
     
     
@@ -2312,7 +2270,6 @@ private:
   }
 
   RefPtr<MediaSessionConduit> mConduit;
-  const TrackID mTrackId;
   const TrackRate mRate;
   const RefPtr<AutoTaskQueue> mTaskQueue;
   
