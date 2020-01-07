@@ -266,11 +266,11 @@ struct XPTParamDescriptor {
 
 
 struct XPTMethodDescriptor {
-  const char* name;
-  const XPTParamDescriptor* params;
+  const char* mName;
+  const XPTParamDescriptor* mParams;
   
-  uint8_t flags;
-  uint8_t num_args;
+  uint8_t mFlags;
+  uint8_t mNumArgs;
 };
 
 #endif 
