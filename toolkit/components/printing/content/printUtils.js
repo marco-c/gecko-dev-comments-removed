@@ -669,10 +669,11 @@ var PrintUtils = {
       }
 
       
-      if (document.documentElement.hasAttribute("onclose"))
+      if (document.documentElement.hasAttribute("onclose")) {
         this._closeHandlerPP = document.documentElement.getAttribute("onclose");
-      else
+      } else {
         this._closeHandlerPP = null;
+      }
       document.documentElement.setAttribute("onclose", "PrintUtils.exitPrintPreview(); return false;");
 
       
@@ -699,7 +700,11 @@ var PrintUtils = {
     window.removeEventListener("keypress", this.onKeyPressPP, true);
 
     
-    document.documentElement.setAttribute("onclose", this._closeHandlerPP);
+    if (this._closeHandlerPP) {
+      document.documentElement.setAttribute("onclose", this._closeHandlerPP);
+    } else {
+      document.documentElement.removeAttribute("onclose");
+    }
     this._closeHandlerPP = null;
 
     
