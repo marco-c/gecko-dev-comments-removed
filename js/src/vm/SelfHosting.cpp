@@ -1252,6 +1252,11 @@ DangerouslyUnwrapTypedArray(JSContext* cx, JSObject* obj)
     
     
     JSObject* unwrapped = CheckedUnwrap(obj);
+    if (!unwrapped) {
+        ReportAccessDenied(cx);
+        return nullptr;
+    }
+
     if (!unwrapped->is<TypedArrayObject>()) {
         
         
@@ -1585,6 +1590,113 @@ intrinsic_SetOverlappingTypedElements(JSContext* cx, unsigned argc, Value* vp)
                         unsafeSrcTypeCrossCompartment, count);
 
     args.rval().setUndefined();
+    return true;
+}
+
+
+
+
+
+static bool
+IsTypedArrayBitwiseSlice(Scalar::Type sourceType, Scalar::Type targetType)
+{
+    switch (sourceType) {
+      case Scalar::Int8:
+        return targetType == Scalar::Int8 || targetType == Scalar::Uint8;
+
+      case Scalar::Uint8:
+      case Scalar::Uint8Clamped:
+        return targetType == Scalar::Int8 || targetType == Scalar::Uint8 ||
+               targetType == Scalar::Uint8Clamped;
+
+      case Scalar::Int16:
+      case Scalar::Uint16:
+        return targetType == Scalar::Int16 || targetType == Scalar::Uint16;
+
+      case Scalar::Int32:
+      case Scalar::Uint32:
+        return targetType == Scalar::Int32 || targetType == Scalar::Uint32;
+
+      case Scalar::Float32:
+        return targetType == Scalar::Float32;
+
+      case Scalar::Float64:
+        return targetType == Scalar::Float64;
+
+      default:
+        MOZ_CRASH("IsTypedArrayBitwiseSlice with a bogus typed array type");
+    }
+}
+
+static bool
+intrinsic_TypedArrayBitwiseSlice(JSContext* cx, unsigned argc, Value* vp)
+{
+    CallArgs args = CallArgsFromVp(argc, vp);
+    MOZ_ASSERT(args.length() == 4);
+    MOZ_ASSERT(args[0].isObject());
+    MOZ_ASSERT(args[1].isObject());
+    MOZ_ASSERT(args[2].isInt32());
+    MOZ_ASSERT(args[3].isInt32());
+
+    Rooted<TypedArrayObject*> source(cx, &args[0].toObject().as<TypedArrayObject>());
+    MOZ_ASSERT(!source->hasDetachedBuffer());
+
+    
+    
+    Rooted<TypedArrayObject*> unsafeTypedArrayCrossCompartment(cx);
+    unsafeTypedArrayCrossCompartment = DangerouslyUnwrapTypedArray(cx, &args[1].toObject());
+    if (!unsafeTypedArrayCrossCompartment)
+        return false;
+    MOZ_ASSERT(!unsafeTypedArrayCrossCompartment->hasDetachedBuffer());
+
+    Scalar::Type sourceType = source->type();
+    if (!IsTypedArrayBitwiseSlice(sourceType, unsafeTypedArrayCrossCompartment->type())) {
+        args.rval().setBoolean(false);
+        return true;
+    }
+
+    MOZ_ASSERT(args[2].toInt32() >= 0);
+    uint32_t sourceOffset = uint32_t(args[2].toInt32());
+
+    MOZ_ASSERT(args[3].toInt32() >= 0);
+    uint32_t count = uint32_t(args[3].toInt32());
+
+    MOZ_ASSERT(count > 0 && count <= source->length());
+    MOZ_ASSERT(sourceOffset <= source->length() - count);
+    MOZ_ASSERT(count <= unsafeTypedArrayCrossCompartment->length());
+
+    size_t elementSize = TypedArrayElemSize(sourceType);
+    MOZ_ASSERT(elementSize == TypedArrayElemSize(unsafeTypedArrayCrossCompartment->type()));
+
+    SharedMem<uint8_t*> sourceData =
+        source->viewDataEither().cast<uint8_t*>() + sourceOffset * elementSize;
+
+    SharedMem<uint8_t*> unsafeTargetDataCrossCompartment =
+        unsafeTypedArrayCrossCompartment->viewDataEither().cast<uint8_t*>();
+
+    uint32_t byteLength = count * elementSize;
+
+    
+    
+    
+    
+    
+    
+    
+    if (!TypedArrayObject::sameBuffer(source, unsafeTypedArrayCrossCompartment)) {
+        jit::AtomicOperations::memcpySafeWhenRacy(unsafeTargetDataCrossCompartment,
+                                                  sourceData,
+                                                  byteLength);
+    } else {
+        using namespace jit;
+
+        for (; byteLength > 0; byteLength--) {
+            AtomicOperations::storeSafeWhenRacy(unsafeTargetDataCrossCompartment++,
+                                                AtomicOperations::loadSafeWhenRacy(sourceData++));
+        }
+    }
+
+    args.rval().setBoolean(true);
     return true;
 }
 
@@ -2472,6 +2584,8 @@ static const JSFunctionSpec intrinsic_functions[] = {
 
     JS_INLINABLE_FN("SetDisjointTypedElements",intrinsic_SetDisjointTypedElements,3,0,
                     IntrinsicSetDisjointTypedElements),
+
+    JS_FN("TypedArrayBitwiseSlice", intrinsic_TypedArrayBitwiseSlice, 4, 0),
 
     JS_FN("CallArrayBufferMethodIfWrapped",
           CallNonGenericSelfhostedMethod<Is<ArrayBufferObject>>, 2, 0),

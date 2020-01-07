@@ -1026,12 +1026,7 @@ function TypedArraySlice(start, end) {
     var A = TypedArraySpeciesCreateWithLength(O, count);
 
     
-
-    
     if (count > 0) {
-        
-        var n = 0;
-
         
         if (buffer === null) {
             
@@ -1043,12 +1038,19 @@ function TypedArraySlice(start, end) {
             ThrowTypeError(JSMSG_TYPED_ARRAY_DETACHED);
 
         
-        while (k < final) {
-            
-            A[n++] = O[k++];
-        }
+        var sliced = TypedArrayBitwiseSlice(O, A, k | 0, count | 0);
 
         
+        if (!sliced) {
+            
+            var n = 0;
+
+            
+            while (k < final) {
+                
+                A[n++] = O[k++];
+            }
+        }
     }
 
     
