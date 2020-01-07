@@ -45,9 +45,10 @@ use js::rust::Runtime;
 use msg::constellation_msg::PipelineId;
 use net_traits::image::base::PixelFormat;
 use net_traits::image_cache::ImageCache;
-use script_traits::DrawAPaintImageResult;
+use script_traits::{DrawAPaintImageResult, PaintWorkletError};
 use script_traits::Painter;
 use servo_atoms::Atom;
+use servo_config::prefs::PREFS;
 use servo_url::ServoUrl;
 use std::cell::Cell;
 use std::collections::HashMap;
@@ -58,6 +59,8 @@ use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::mpsc;
 use std::sync::mpsc::Sender;
+use std::thread;
+use std::time::Duration;
 use style_traits::CSSPixel;
 use style_traits::DevicePixel;
 use style_traits::SpeculativePainter;
@@ -343,7 +346,7 @@ impl PaintWorkletGlobalScope {
                                   device_pixel_ratio: TypedScale<f32, CSSPixel, DevicePixel>,
                                   properties: Vec<(Atom, String)>,
                                   arguments: Vec<String>)
-                                  -> DrawAPaintImageResult {
+                                  -> Result<DrawAPaintImageResult, PaintWorkletError> {
                 let name = self.name.clone();
                 let (sender, receiver) = mpsc::channel();
                 let task = PaintWorkletTask::DrawAPaintImage(name,
@@ -354,13 +357,74 @@ impl PaintWorkletGlobalScope {
                                                              sender);
                 self.executor.lock().expect("Locking a painter.")
                     .schedule_a_worklet_task(WorkletTask::Paint(task));
-                receiver.recv().expect("Worklet thread died?")
+
+                let timeout = PREFS.get("dom.worklet.timeout_ms")
+                                   .as_u64()
+                                   .unwrap_or(10u64);
+
+                let timeout_duration = Duration::from_millis(timeout);
+                receiver.recv_timeout(timeout_duration)
+                        .map_err(|e| PaintWorkletError::from(e))
             }
         }
         Box::new(WorkletPainter {
             name: name,
             executor: Mutex::new(self.worklet_global.executor()),
         })
+    }
+}
+
+
+pub enum PaintWorkletTask {
+    DrawAPaintImage(Atom,
+                    TypedSize2D<f32, CSSPixel>,
+                    TypedScale<f32, CSSPixel, DevicePixel>,
+                    Vec<(Atom, String)>,
+                    Vec<String>,
+                    Sender<DrawAPaintImageResult>),
+    SpeculativelyDrawAPaintImage(Atom,
+                                 Vec<(Atom, String)>,
+                                 Vec<String>),
+}
+
+
+
+
+
+#[derive(JSTraceable, MallocSizeOf)]
+#[must_root]
+struct PaintDefinition {
+    class_constructor: Heap<JSVal>,
+    paint_function: Heap<JSVal>,
+    constructor_valid_flag: Cell<bool>,
+    context_alpha_flag: bool,
+    
+    input_arguments_len: usize,
+    
+    
+    
+    context: Dom<PaintRenderingContext2D>,
+}
+
+impl PaintDefinition {
+    fn new(class_constructor: HandleValue,
+           paint_function: HandleValue,
+           alpha: bool,
+           input_arguments_len: usize,
+           context: &PaintRenderingContext2D)
+           -> Box<PaintDefinition>
+    {
+        let result = Box::new(PaintDefinition {
+            class_constructor: Heap::default(),
+            paint_function: Heap::default(),
+            constructor_valid_flag: Cell::new(true),
+            context_alpha_flag: alpha,
+            input_arguments_len: input_arguments_len,
+            context: Dom::from_ref(context),
+        });
+        result.class_constructor.set(class_constructor.get());
+        result.paint_function.set(paint_function.get());
+        result
     }
 }
 
@@ -445,58 +509,14 @@ impl PaintWorkletGlobalScopeMethods for PaintWorkletGlobalScope {
 
         Ok(())
     }
-}
 
-
-pub enum PaintWorkletTask {
-    DrawAPaintImage(Atom,
-                    TypedSize2D<f32, CSSPixel>,
-                    TypedScale<f32, CSSPixel, DevicePixel>,
-                    Vec<(Atom, String)>,
-                    Vec<String>,
-                    Sender<DrawAPaintImageResult>),
-    SpeculativelyDrawAPaintImage(Atom,
-                                 Vec<(Atom, String)>,
-                                 Vec<String>),
-}
-
-
-
-
-
-#[derive(JSTraceable, MallocSizeOf)]
-#[must_root]
-struct PaintDefinition {
-    class_constructor: Heap<JSVal>,
-    paint_function: Heap<JSVal>,
-    constructor_valid_flag: Cell<bool>,
-    context_alpha_flag: bool,
-    
-    input_arguments_len: usize,
     
     
     
-    context: Dom<PaintRenderingContext2D>,
-}
-
-impl PaintDefinition {
-    fn new(class_constructor: HandleValue,
-           paint_function: HandleValue,
-           alpha: bool,
-           input_arguments_len: usize,
-           context: &PaintRenderingContext2D)
-           -> Box<PaintDefinition>
-    {
-        let result = Box::new(PaintDefinition {
-            class_constructor: Heap::default(),
-            paint_function: Heap::default(),
-            constructor_valid_flag: Cell::new(true),
-            context_alpha_flag: alpha,
-            input_arguments_len: input_arguments_len,
-            context: Dom::from_ref(context),
-        });
-        result.class_constructor.set(class_constructor.get());
-        result.paint_function.set(paint_function.get());
-        result
+    
+    
+    
+    fn Sleep(&self, ms: u64) {
+        thread::sleep(Duration::from_millis(ms));
     }
 }
