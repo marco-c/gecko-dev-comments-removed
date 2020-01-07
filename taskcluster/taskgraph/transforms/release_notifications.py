@@ -9,6 +9,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.scriptworker import get_release_config, RELEASE_NOTIFICATION_PHASES
+from taskgraph.util.schema import resolve_keyed_by
 
 
 transforms = TransformSequence()
@@ -18,6 +19,7 @@ EMAIL_DESTINATIONS = {
     'mozilla-release': ["release-automation-notifications@mozilla.com"],
     'mozilla-esr60': ["release-automation-notifications@mozilla.com"],
     'maple': ["release+tcstaging@mozilla.com"],
+    'birch': ["release+tcstaging@mozilla.com"],
     'jamun': ["release+tcstaging@mozilla.com"],
     
 }
@@ -46,20 +48,40 @@ def add_notifications(config, jobs):
         label = job.get('label') or '{}-{}'.format(config.kind, job['name'])
 
         
-        if shipping_phase in RELEASE_NOTIFICATION_PHASES and \
-                config.params['target_tasks_method'].startswith(RELEASE_NOTIFICATION_PHASES):
-
+        notifications = job.get('notifications')
+        if notifications:
+            resolve_keyed_by(notifications, 'emails', label, project=config.params['project'])
+            emails = notifications['emails']
+            format_kwargs = dict(
+                task=job,
+                config=config.__dict__,
+                release_config=release_config,
+            )
+            subject = notifications['subject'].format(**format_kwargs)
+            message = notifications['message'].format(**format_kwargs)
+            routes = ['notify.email.{email_dest}.on-any']
+            
+            del job['notifications']
+        else:
+            emails = email_dest
             format_kwargs = dict(
                 label=label,
                 shipping_product=shipping_product,
                 config=config.__dict__,
                 release_config=release_config,
             )
+            subject = SUBJECT_TEMPLATE.format(**format_kwargs)
+            message = None
+            routes = DEFAULT_ROUTES
+
+        
+        if shipping_phase in RELEASE_NOTIFICATION_PHASES and \
+                config.params['target_tasks_method'].startswith(RELEASE_NOTIFICATION_PHASES):
 
             
-            for dest in email_dest:
+            for dest in emails:
                 job.setdefault('routes', []).extend(
-                    [r.format(email_dest=dest) for r in DEFAULT_ROUTES]
+                    [r.format(email_dest=dest) for r in routes]
                 )
 
             
@@ -67,10 +89,12 @@ def add_notifications(config, jobs):
                 {
                    'notify': {
                        'email': {
-                            'subject': SUBJECT_TEMPLATE.format(**format_kwargs)
+                            'subject': subject,
                         }
                     }
                 }
             )
+            if message:
+                job['extra']['notify']['email']['message'] = message
 
         yield job
