@@ -2912,9 +2912,6 @@ pref("layout.css.prefixes.font-features", true);
 pref("layout.css.background-blend-mode.enabled", true);
 
 
-pref("layout.css.text-combine-upright-digits.enabled", false);
-
-
 
 #ifdef XP_MACOSX
 pref("layout.css.osx-font-smoothing.enabled", true);
