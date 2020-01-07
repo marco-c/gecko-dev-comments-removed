@@ -61,7 +61,7 @@ included_inclnames_to_ignore = set([
     'ffi.h',                    
     'devtools/sharkctl.h',      
     'devtools/Instruments.h',   
-    'double-conversion.h',      
+    'double-conversion/double-conversion.h', 
     'javascript-trace.h',       
     'frontend/ReservedWordsGenerated.h', 
     'gc/StatsPhasesGenerated.h',         
