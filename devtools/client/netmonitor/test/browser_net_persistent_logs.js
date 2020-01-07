@@ -8,8 +8,8 @@
 
 
 
-add_task(function* () {
-  let { tab, monitor } = yield initNetMonitor(SINGLE_GET_URL);
+add_task(async function () {
+  let { tab, monitor } = await initNetMonitor(SINGLE_GET_URL);
   info("Starting test... ");
 
   let { document, store, windowRequire } = monitor.panelWin;
@@ -19,19 +19,19 @@ add_task(function* () {
 
   Services.prefs.setBoolPref("devtools.netmonitor.persistlog", false);
 
-  yield reloadAndWait();
+  await reloadAndWait();
 
   
   
   
   
-  yield waitUntil(() => document.querySelectorAll(".request-list-item").length === 2);
+  await waitUntil(() => document.querySelectorAll(".request-list-item").length === 2);
   is(document.querySelectorAll(".request-list-item").length, 2,
     "The request list should have two items at this point.");
 
-  yield reloadAndWait();
+  await reloadAndWait();
 
-  yield waitUntil(() => document.querySelectorAll(".request-list-item").length === 2);
+  await waitUntil(() => document.querySelectorAll(".request-list-item").length === 2);
   
   is(document.querySelectorAll(".request-list-item").length, 2,
     "The request list should still have two items at this point.");
@@ -39,9 +39,9 @@ add_task(function* () {
   
   Services.prefs.setBoolPref("devtools.netmonitor.persistlog", true);
 
-  yield reloadAndWait();
+  await reloadAndWait();
 
-  yield waitUntil(() => document.querySelectorAll(".request-list-item").length === 4);
+  await waitUntil(() => document.querySelectorAll(".request-list-item").length === 4);
   
   is(document.querySelectorAll(".request-list-item").length, 4,
     "The request list should now have four items at this point.");

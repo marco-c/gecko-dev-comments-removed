@@ -6,8 +6,8 @@
 
 
 
-add_task(function* () {
-  let { tab, monitor } = yield initNetMonitor(PAUSE_URL);
+add_task(async function () {
+  let { tab, monitor } = await initNetMonitor(PAUSE_URL);
   info("Starting test... ");
 
   let { document, store, windowRequire, connector } = monitor.panelWin;
@@ -20,7 +20,7 @@ add_task(function* () {
   assertRequestCount(store, 0);
 
   
-  yield performRequestAndWait(tab, monitor);
+  await performRequestAndWait(tab, monitor);
   assertRequestCount(store, 1);
 
   let noRequest = true;
@@ -34,21 +34,21 @@ add_task(function* () {
 
   
   EventUtils.sendMouseEvent({ type: "click" }, pauseButton);
-  yield performPausedRequest(connector, tab, monitor);
+  await performPausedRequest(connector, tab, monitor);
   ok(noRequest, "There should be no activity when paused.");
   assertRequestCount(store, 1);
 
   
   
   EventUtils.sendMouseEvent({ type: "click" }, pauseButton);
-  yield performRequestAndWait(tab, monitor);
+  await performRequestAndWait(tab, monitor);
   assertRequestCount(store, 2);
 
   
   
   EventUtils.sendMouseEvent({ type: "click" }, pauseButton);
   tab.linkedBrowser.reload();
-  yield waitForNetworkEvents(monitor, 1);
+  await waitForNetworkEvents(monitor, 1);
   assertRequestCount(store, 1);
 
   return teardown(monitor);
@@ -65,23 +65,23 @@ function assertRequestCount(store, count) {
 
 
 
-function* performRequestAndWait(tab, monitor) {
+async function performRequestAndWait(tab, monitor) {
   let wait = waitForNetworkEvents(monitor, 1);
-  yield ContentTask.spawn(tab.linkedBrowser, SIMPLE_SJS, function* (url) {
-    yield content.wrappedJSObject.performRequests(url);
+  await ContentTask.spawn(tab.linkedBrowser, SIMPLE_SJS, async function (url) {
+    await content.wrappedJSObject.performRequests(url);
   });
-  yield wait;
+  await wait;
 }
 
 
 
 
-function* performPausedRequest(connector, tab, monitor) {
+async function performPausedRequest(connector, tab, monitor) {
   let wait = waitForWebConsoleNetworkEvent(connector);
-  yield ContentTask.spawn(tab.linkedBrowser, SIMPLE_SJS, function* (url) {
-    yield content.wrappedJSObject.performRequests(url);
+  await ContentTask.spawn(tab.linkedBrowser, SIMPLE_SJS, async function (url) {
+    await content.wrappedJSObject.performRequests(url);
   });
-  yield wait;
+  await wait;
 }
 
 

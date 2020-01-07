@@ -7,10 +7,10 @@
 
 
 
-add_task(function* () {
+add_task(async function () {
   let { L10N } = require("devtools/client/netmonitor/src/utils/l10n");
 
-  let { tab, monitor } = yield initNetMonitor(JSON_LONG_URL);
+  let { tab, monitor } = await initNetMonitor(JSON_LONG_URL);
   info("Starting test... ");
 
   let { document, store, windowRequire } = monitor.panelWin;
@@ -24,46 +24,46 @@ add_task(function* () {
 
   
   let wait = waitForNetworkEvents(monitor, 1);
-  yield ContentTask.spawn(tab.linkedBrowser, {}, function* () {
+  await ContentTask.spawn(tab.linkedBrowser, {}, async function () {
     content.wrappedJSObject.performRequests();
   });
-  yield wait;
+  await wait;
 
-  yield verifyRequest(0);
+  await verifyRequest(0);
 
   
   let onWebConsole = monitor.toolbox.once("webconsole-selected");
   monitor.toolbox.selectTool("webconsole");
-  yield onWebConsole;
+  await onWebConsole;
 
   
   let onNetMonitor = monitor.toolbox.once("netmonitor-selected");
   monitor.toolbox.selectTool("netmonitor");
-  yield onNetMonitor;
+  await onNetMonitor;
 
   
   wait = waitForNetworkEvents(monitor, 1);
   tab.linkedBrowser.reload();
-  yield wait;
+  await wait;
 
   
   wait = waitForNetworkEvents(monitor, 1);
-  yield ContentTask.spawn(tab.linkedBrowser, {}, function* () {
+  await ContentTask.spawn(tab.linkedBrowser, {}, async function () {
     content.wrappedJSObject.performRequests();
   });
-  yield wait;
+  await wait;
 
-  yield verifyRequest(1);
+  await verifyRequest(1);
 
   return teardown(monitor);
 
-  function* verifyRequest(index) {
+  async function verifyRequest(index) {
     let requestItems = document.querySelectorAll(".request-list-item");
     for (let requestItem of requestItems) {
       requestItem.scrollIntoView();
       let requestsListStatus = requestItem.querySelector(".requests-list-status");
       EventUtils.sendMouseEvent({ type: "mouseover" }, requestsListStatus);
-      yield waitUntil(() => requestsListStatus.title);
+      await waitUntil(() => requestsListStatus.title);
     }
     verifyRequestItemTarget(
       document,

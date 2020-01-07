@@ -6,12 +6,12 @@
 
 
 
-add_task(function* () {
+add_task(async function () {
   
   
   
   Services.prefs.setBoolPref("network.tcp.tcp_fastopen_enable", false);
-  let { tab, monitor } = yield initNetMonitor(SIMPLE_URL);
+  let { tab, monitor } = await initNetMonitor(SIMPLE_URL);
 
   info("Starting test... ");
 
@@ -26,11 +26,11 @@ add_task(function* () {
 
   let wait = waitForNetworkEvents(monitor, 1);
   tab.linkedBrowser.reload();
-  yield wait;
+  await wait;
 
   let contextMenu = new RequestListContextMenu({ connector });
 
-  yield contextMenu.copyAllAsHar(getSortedRequests(store.getState()));
+  await contextMenu.copyAllAsHar(getSortedRequests(store.getState()));
 
   let jsonString = SpecialPowers.getClipboardData("text/unicode");
   let har = JSON.parse(jsonString);

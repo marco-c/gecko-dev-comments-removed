@@ -7,10 +7,10 @@
 
 
 
-add_task(function* () {
+add_task(async function () {
   let { L10N } = require("devtools/client/netmonitor/src/utils/l10n");
 
-  let { tab, monitor } = yield initNetMonitor(STATUS_CODES_URL);
+  let { tab, monitor } = await initNetMonitor(STATUS_CODES_URL);
 
   info("Starting test... ");
 
@@ -99,15 +99,15 @@ add_task(function* () {
   ];
 
   let wait = waitForNetworkEvents(monitor, 5);
-  yield ContentTask.spawn(tab.linkedBrowser, {}, function* () {
+  await ContentTask.spawn(tab.linkedBrowser, {}, async function () {
     content.wrappedJSObject.performRequests();
   });
-  yield wait;
+  await wait;
 
   info("Performing tests");
-  yield verifyRequests();
-  yield testTab(0, testHeaders);
-  yield testTab(2, testParams);
+  await verifyRequests();
+  await testTab(0, testHeaders);
+  await testTab(2, testParams);
 
   return teardown(monitor);
 
@@ -115,13 +115,13 @@ add_task(function* () {
 
 
 
-  function* verifyRequests() {
+  async function verifyRequests() {
     let requestListItems = document.querySelectorAll(".request-list-item");
     for (let requestItem of requestListItems) {
       requestItem.scrollIntoView();
       let requestsListStatus = requestItem.querySelector(".requests-list-status");
       EventUtils.sendMouseEvent({ type: "mouseover" }, requestsListStatus);
-      yield waitUntil(() => requestsListStatus.title);
+      await waitUntil(() => requestsListStatus.title);
     }
 
     info("Verifying requests contain correct information.");
@@ -131,7 +131,7 @@ add_task(function* () {
       requestItems[index] = item;
 
       info("Verifying request #" + index);
-      yield verifyRequestItemTarget(
+      await verifyRequestItemTarget(
         document,
         getDisplayedRequests(store.getState()),
         item,
@@ -155,11 +155,11 @@ add_task(function* () {
 
 
 
-  function* testTab(tabIdx, testFn) {
+  async function testTab(tabIdx, testFn) {
     let counter = 0;
     for (let item of REQUEST_DATA) {
       info("Testing tab #" + tabIdx + " to update with request #" + counter);
-      yield testFn(item, counter);
+      await testFn(item, counter);
 
       counter++;
     }
@@ -168,11 +168,11 @@ add_task(function* () {
   
 
 
-  function* testHeaders(data, index) {
+  async function testHeaders(data, index) {
     EventUtils.sendMouseEvent({ type: "mousedown" },
       document.querySelectorAll(".request-list-item")[index]);
 
-    yield waitUntil(() => document.querySelector(
+    await waitUntil(() => document.querySelector(
       "#headers-panel .tabpanel-summary-value.textbox-input"));
 
     let panel = document.querySelector("#headers-panel");
@@ -191,7 +191,7 @@ add_task(function* () {
   
 
 
-  function* testParams(data, index) {
+  function testParams(data, index) {
     EventUtils.sendMouseEvent({ type: "mousedown" },
       document.querySelectorAll(".request-list-item")[index]);
     EventUtils.sendMouseEvent({ type: "click" },

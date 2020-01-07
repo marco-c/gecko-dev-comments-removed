@@ -136,8 +136,8 @@ const EXPECTED_REQUESTS = [
   },
 ];
 
-add_task(function* () {
-  let { monitor } = yield initNetMonitor(FILTERING_URL);
+add_task(async function () {
+  let { monitor } = await initNetMonitor(FILTERING_URL);
   let { document, store, windowRequire } = monitor.panelWin;
   let Actions = windowRequire("devtools/client/netmonitor/src/actions/index");
   let {
@@ -167,201 +167,201 @@ add_task(function* () {
 
   let waitNetwork = waitForNetworkEvents(monitor, REQUESTS.length);
   loadCommonFrameScript();
-  yield performRequestsInContent(REQUESTS);
-  yield waitNetwork;
+  await performRequestsInContent(REQUESTS);
+  await waitNetwork;
 
   
   setFreetextFilter("is:running");
-  yield testContents([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+  await testContents([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
 
   
   setFreetextFilter("is:from-cache");
-  yield testContents([0, 0, 0, 0, 0, 0, 0, 0, 0, 1]);
+  await testContents([0, 0, 0, 0, 0, 0, 0, 0, 0, 1]);
 
   setFreetextFilter("is:cached");
-  yield testContents([0, 0, 0, 0, 0, 0, 0, 0, 0, 1]);
+  await testContents([0, 0, 0, 0, 0, 0, 0, 0, 0, 1]);
 
   
   setFreetextFilter("-is:from-cache");
-  yield testContents([1, 1, 1, 1, 1, 1, 1, 1, 1, 0]);
+  await testContents([1, 1, 1, 1, 1, 1, 1, 1, 1, 0]);
 
   setFreetextFilter("-is:cached");
-  yield testContents([1, 1, 1, 1, 1, 1, 1, 1, 1, 0]);
+  await testContents([1, 1, 1, 1, 1, 1, 1, 1, 1, 0]);
 
   
   setFreetextFilter("status-code:200");
-  yield testContents([1, 1, 1, 1, 1, 1, 1, 1, 1, 0]);
+  await testContents([1, 1, 1, 1, 1, 1, 1, 1, 1, 0]);
 
   
   setFreetextFilter("-status-code:200");
-  yield testContents([0, 0, 0, 0, 0, 0, 0, 0, 0, 1]);
+  await testContents([0, 0, 0, 0, 0, 0, 0, 0, 0, 1]);
 
   
   setFreetextFilter("mime-type:HtmL");
-  yield testContents([1, 1, 0, 0, 0, 0, 0, 0, 0, 0]);
+  await testContents([1, 1, 0, 0, 0, 0, 0, 0, 0, 0]);
 
   
   setFreetextFilter("-mime-type:HtmL");
-  yield testContents([0, 0, 1, 1, 1, 1, 1, 1, 1, 1]);
+  await testContents([0, 0, 1, 1, 1, 1, 1, 1, 1, 1]);
 
   
   setFreetextFilter("method:get");
-  yield testContents([1, 1, 1, 1, 1, 1, 1, 1, 1, 1]);
+  await testContents([1, 1, 1, 1, 1, 1, 1, 1, 1, 1]);
 
   
   setFreetextFilter("method:post");
-  yield testContents([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+  await testContents([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
 
   
   setFreetextFilter("scheme:http");
-  yield testContents([1, 1, 1, 1, 1, 1, 1, 1, 1, 1]);
+  await testContents([1, 1, 1, 1, 1, 1, 1, 1, 1, 1]);
 
   setFreetextFilter("scheme:https");
-  yield testContents([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+  await testContents([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
 
   
   setFreetextFilter("regexp:content.*?Sam");
-  yield testContents([1, 1, 0, 0, 0, 0, 0, 0, 0, 0]);
+  await testContents([1, 1, 0, 0, 0, 0, 0, 0, 0, 0]);
 
   
   setFreetextFilter("set-cookie-name:name2");
-  yield testContents([0, 1, 0, 0, 0, 0, 0, 0, 0, 0]);
+  await testContents([0, 1, 0, 0, 0, 0, 0, 0, 0, 0]);
 
   setFreetextFilter("set-cookie-name:not-existing");
-  yield testContents([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+  await testContents([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
 
   
   setFreetextFilter("set-cookie-value:value2");
-  yield testContents([0, 1, 0, 0, 0, 0, 0, 0, 0, 0]);
+  await testContents([0, 1, 0, 0, 0, 0, 0, 0, 0, 0]);
 
   setFreetextFilter("set-cookie-value:not-existing");
-  yield testContents([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+  await testContents([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
 
   
   setFreetextFilter("set-cookie-domain:.example.com");
-  yield testContents([0, 1, 0, 0, 0, 0, 0, 0, 0, 0]);
+  await testContents([0, 1, 0, 0, 0, 0, 0, 0, 0, 0]);
 
   setFreetextFilter("set-cookie-domain:.foo.example.com");
-  yield testContents([0, 1, 0, 0, 0, 0, 0, 0, 0, 0]);
+  await testContents([0, 1, 0, 0, 0, 0, 0, 0, 0, 0]);
 
   setFreetextFilter("set-cookie-domain:.not-existing.example.com");
-  yield testContents([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+  await testContents([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
 
   
   setFreetextFilter("size:-1");
-  yield testContents([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+  await testContents([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
 
   setFreetextFilter("size:0");
-  yield testContents([0, 0, 0, 0, 1, 1, 1, 1, 0, 1]);
+  await testContents([0, 0, 0, 0, 1, 1, 1, 1, 0, 1]);
 
   setFreetextFilter("size:34");
-  yield testContents([0, 0, 1, 1, 0, 0, 0, 0, 0, 0]);
+  await testContents([0, 0, 1, 1, 0, 0, 0, 0, 0, 0]);
 
   
   setFreetextFilter("size:9.659k");
-  yield testContents([0, 0, 0, 0, 0, 0, 0, 0, 1, 0]);
+  await testContents([0, 0, 0, 0, 0, 0, 0, 0, 1, 0]);
 
   
   setFreetextFilter("size:10989");
-  yield testContents([0, 0, 0, 0, 0, 0, 0, 0, 1, 0]);
+  await testContents([0, 0, 0, 0, 0, 0, 0, 0, 1, 0]);
 
   
   setFreetextFilter("size:11.804k");
-  yield testContents([0, 0, 0, 0, 0, 0, 0, 0, 1, 0]);
+  await testContents([0, 0, 0, 0, 0, 0, 0, 0, 1, 0]);
 
   
   setFreetextFilter("transferred:200");
-  yield testContents([0, 0, 0, 0, 1, 1, 1, 1, 0, 0]);
+  await testContents([0, 0, 0, 0, 1, 1, 1, 1, 0, 0]);
 
   setFreetextFilter("transferred:234");
-  yield testContents([1, 0, 1, 0, 0, 0, 0, 0, 0, 1]);
+  await testContents([1, 0, 1, 0, 0, 0, 0, 0, 0, 1]);
 
   setFreetextFilter("transferred:248");
-  yield testContents([0, 0, 1, 1, 0, 0, 0, 0, 0, 1]);
+  await testContents([0, 0, 1, 1, 0, 0, 0, 0, 0, 1]);
 
   
   setFreetextFilter("larger-than:-1");
-  yield testContents([1, 1, 1, 1, 1, 1, 1, 1, 1, 1]);
+  await testContents([1, 1, 1, 1, 1, 1, 1, 1, 1, 1]);
 
   setFreetextFilter("larger-than:0");
-  yield testContents([1, 1, 1, 1, 0, 0, 0, 0, 1, 0]);
+  await testContents([1, 1, 1, 1, 0, 0, 0, 0, 1, 0]);
 
   setFreetextFilter("larger-than:33");
-  yield testContents([0, 0, 1, 1, 0, 0, 0, 0, 1, 0]);
+  await testContents([0, 0, 1, 1, 0, 0, 0, 0, 1, 0]);
 
   setFreetextFilter("larger-than:34");
-  yield testContents([0, 0, 0, 0, 0, 0, 0, 0, 1, 0]);
+  await testContents([0, 0, 0, 0, 0, 0, 0, 0, 1, 0]);
 
   setFreetextFilter("larger-than:10.73k");
-  yield testContents([0, 0, 0, 0, 0, 0, 0, 0, 1, 0]);
+  await testContents([0, 0, 0, 0, 0, 0, 0, 0, 1, 0]);
 
   setFreetextFilter("larger-than:10.732k");
-  yield testContents([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+  await testContents([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
 
   
   setFreetextFilter("transferred-larger-than:-1");
-  yield testContents([1, 1, 1, 1, 1, 1, 1, 1, 1, 1]);
+  await testContents([1, 1, 1, 1, 1, 1, 1, 1, 1, 1]);
 
   setFreetextFilter("transferred-larger-than:214");
-  yield testContents([1, 1, 1, 1, 0, 0, 0, 0, 1, 1]);
+  await testContents([1, 1, 1, 1, 0, 0, 0, 0, 1, 1]);
 
   setFreetextFilter("transferred-larger-than:247");
-  yield testContents([0, 1, 1, 1, 0, 0, 0, 0, 1, 0]);
+  await testContents([0, 1, 1, 1, 0, 0, 0, 0, 1, 0]);
 
   setFreetextFilter("transferred-larger-than:248");
-  yield testContents([0, 1, 0, 1, 0, 0, 0, 0, 1, 0]);
+  await testContents([0, 1, 0, 1, 0, 0, 0, 0, 1, 0]);
 
   setFreetextFilter("transferred-larger-than:10.73k");
-  yield testContents([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+  await testContents([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
 
   
   setFreetextFilter("cause:xhr");
-  yield testContents([1, 1, 1, 1, 1, 1, 1, 1, 1, 1]);
+  await testContents([1, 1, 1, 1, 1, 1, 1, 1, 1, 1]);
 
   setFreetextFilter("cause:script");
-  yield testContents([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+  await testContents([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
 
   
   setFreetextFilter("has-response-header:Content-Type");
-  yield testContents([1, 1, 1, 1, 1, 1, 1, 1, 1, 1]);
+  await testContents([1, 1, 1, 1, 1, 1, 1, 1, 1, 1]);
 
   setFreetextFilter("has-response-header:Last-Modified");
-  yield testContents([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+  await testContents([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
 
   
   setFreetextFilter("remote-ip:127.0.0.1");
-  yield testContents([1, 1, 1, 1, 1, 1, 1, 1, 1, 1]);
+  await testContents([1, 1, 1, 1, 1, 1, 1, 1, 1, 1]);
 
   setFreetextFilter("remote-ip:192.168.1.2");
-  yield testContents([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+  await testContents([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
 
   
   setFreetextFilter("domain:example.com");
-  yield testContents([1, 1, 1, 1, 1, 1, 1, 1, 1, 1]);
+  await testContents([1, 1, 1, 1, 1, 1, 1, 1, 1, 1]);
 
   setFreetextFilter("domain:wrongexample.com");
-  yield testContents([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+  await testContents([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
 
   
   setFreetextFilter("protocol:http/1");
-  yield testContents([1, 1, 1, 1, 1, 1, 1, 1, 1, 1]);
+  await testContents([1, 1, 1, 1, 1, 1, 1, 1, 1, 1]);
 
   setFreetextFilter("protocol:http/2");
-  yield testContents([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+  await testContents([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
 
   
   setFreetextFilter("-mime-type:HtmL status-code:200");
-  yield testContents([0, 0, 1, 1, 1, 1, 1, 1, 1, 0]);
+  await testContents([0, 0, 1, 1, 1, 1, 1, 1, 1, 0]);
 
-  yield teardown(monitor);
+  await teardown(monitor);
 
-  function* testContents(visibility) {
+  async function testContents(visibility) {
     let requestItems = document.querySelectorAll(".request-list-item");
     for (let requestItem of requestItems) {
       requestItem.scrollIntoView();
       let requestsListStatus = requestItem.querySelector(".requests-list-status");
       EventUtils.sendMouseEvent({ type: "mouseover" }, requestsListStatus);
-      yield waitUntil(() => requestsListStatus.title);
+      await waitUntil(() => requestsListStatus.title);
     }
 
     let items = getSortedRequests(store.getState());
@@ -369,7 +369,7 @@ add_task(function* () {
 
     
     
-    yield waitUntil(() => {
+    await waitUntil(() => {
       visibleItems = getDisplayedRequests(store.getState());
       return visibleItems.size === visibility.filter(e => e).length;
     });
@@ -386,7 +386,7 @@ add_task(function* () {
 
       
       
-      yield waitUntil(() => {
+      await waitUntil(() => {
         visibleItems = getDisplayedRequests(store.getState());
         isThere = visibleItems.some(r => r.id == itemId);
         return isThere === shouldBeVisible;

@@ -7,11 +7,11 @@
 
 
 
-add_task(function* () {
+add_task(async function () {
   
   
   
-  let { monitor } = yield initNetMonitor("about:config", true);
+  let { monitor } = await initNetMonitor("about:config", true);
   ok(monitor, "The network monitor was opened");
-  yield teardown(monitor);
+  await teardown(monitor);
 });

@@ -146,9 +146,9 @@ const EXPECTED_REQUESTS_SUB = [
 
 const REQUEST_COUNT = EXPECTED_REQUESTS_TOP.length + EXPECTED_REQUESTS_SUB.length;
 
-add_task(function* () {
+add_task(async function () {
   
-  yield SpecialPowers.pushPrefEnv({ set: [["javascript.options.asyncstack", true]] });
+  await SpecialPowers.pushPrefEnv({ set: [["javascript.options.asyncstack", true]] });
 
   
   
@@ -156,7 +156,7 @@ add_task(function* () {
   
   
   
-  let { tab, monitor } = yield initNetMonitor(SIMPLE_URL);
+  let { tab, monitor } = await initNetMonitor(SIMPLE_URL);
 
   let { document, store, windowRequire, connector } = monitor.panelWin;
   let Actions = windowRequire("devtools/client/netmonitor/src/actions/index");
@@ -169,7 +169,7 @@ add_task(function* () {
 
   tab.linkedBrowser.loadURI(TOP_URL, null, null);
 
-  yield waitForNetworkEvents(monitor, REQUEST_COUNT);
+  await waitForNetworkEvents(monitor, REQUEST_COUNT);
 
   is(store.getState().requests.requests.size, REQUEST_COUNT,
     "All the page events should be recorded.");
@@ -177,7 +177,7 @@ add_task(function* () {
   
   
   let requests = getSortedRequests(store.getState());
-  yield Promise.all(requests.map(requestItem =>
+  await Promise.all(requests.map(requestItem =>
     connector.requestData(requestItem.id, "stackTrace")));
 
   
@@ -233,5 +233,5 @@ add_task(function* () {
     }
   }
 
-  yield teardown(monitor);
+  await teardown(monitor);
 });
