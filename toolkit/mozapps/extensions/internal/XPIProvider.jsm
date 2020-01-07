@@ -782,8 +782,13 @@ class XPIStateLocation extends Map {
 
     for (let [id, data] of Object.entries(saved.addons || {})) {
       let xpiState = this._addState(id, data);
+
       
-      xpiState.wasRestored = true;
+      
+      
+      if (!path || path == saved.path) {
+        xpiState.wasRestored = true;
+      }
     }
   }
 
@@ -1179,18 +1184,6 @@ var XPIStates = {
         if (entry.enabled) {
           yield entry;
         }
-      }
-    }
-  },
-
-  
-
-
-
-  * initialEnabledAddons() {
-    for (let addon of this.enabledAddons()) {
-      if (addon.wasRestored) {
-        yield addon;
       }
     }
   },

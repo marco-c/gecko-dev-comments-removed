@@ -25,6 +25,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   AddonSettings: "resource://gre/modules/addons/AddonSettings.jsm",
   AppConstants: "resource://gre/modules/AppConstants.jsm",
   DeferredTask: "resource://gre/modules/DeferredTask.jsm",
+  ExtensionUtils: "resource://gre/modules/ExtensionUtils.jsm",
   FileUtils: "resource://gre/modules/FileUtils.jsm",
   OS: "resource://gre/modules/osfile.jsm",
   Services: "resource://gre/modules/Services.jsm",
@@ -1325,10 +1326,7 @@ this.XPIDatabase = {
   initialized: false,
   
   jsonFile: FileUtils.getFile(KEY_PROFILEDIR, [FILE_JSON_DB], true),
-  
-  migrateData: null,
-  
-  activeBundles: null,
+  rebuildingDatabase: false,
 
   _saveTask: null,
 
@@ -1442,7 +1440,6 @@ this.XPIDatabase = {
 
 
   syncLoadDB(aRebuildOnError) {
-    this.migrateData = null;
     let fstream = null;
     let data = "";
     try {
@@ -1676,8 +1673,6 @@ this.XPIDatabase = {
 
 
 
-
-
   rebuildDatabase(aRebuildOnError) {
     this.addonDB = new Map();
     this.initialized = true;
@@ -1688,15 +1683,7 @@ this.XPIDatabase = {
       return;
     }
 
-    
-    
-    if (!this.migrateData) {
-      this.activeBundles = Array.from(XPIStates.initialEnabledAddons(),
-                                      addon => addon.path);
-      if (!this.activeBundles.length)
-        this.activeBundles = null;
-    }
-
+    this.rebuildingDatabase = !!aRebuildOnError;
 
     if (aRebuildOnError) {
       logger.warn("Rebuilding add-ons database from installed extensions.");
@@ -2473,7 +2460,11 @@ this.XPIDatabaseReconcile = {
     
     
     
-    let isNewInstall = !!aNewAddon || !XPIDatabase.activeBundles;
+    
+    
+    
+    
+    let isNewInstall = !!aNewAddon || !XPIDatabase.rebuildingDatabase;
 
     
     
@@ -2689,6 +2680,75 @@ this.XPIDatabaseReconcile = {
 
 
 
+  isAppBundledLocation(location) {
+    return (location.name == KEY_APP_GLOBAL ||
+            location.name == KEY_APP_SYSTEM_DEFAULTS);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  updateExistingAddon(oldAddon, xpiState, newAddon, aUpdateCompatibility, aSchemaChange) {
+    XPIDatabase.recordAddonTelemetry(oldAddon);
+
+    let installLocation = oldAddon._installLocation;
+
+    if (xpiState.mtime < oldAddon.updateDate) {
+      XPIProvider.setTelemetry(oldAddon.id, "olderFile", {
+        mtime: xpiState.mtime,
+        oldtime: oldAddon.updateDate
+      });
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    if (newAddon ||
+        oldAddon.updateDate != xpiState.mtime ||
+        (aUpdateCompatibility && this.isAppBundledLocation(installLocation))) {
+      newAddon = this.updateMetadata(installLocation, oldAddon, xpiState, newAddon);
+    } else if (oldAddon.path != xpiState.path) {
+      newAddon = this.updatePath(installLocation, oldAddon, xpiState);
+    } else if (aUpdateCompatibility || aSchemaChange) {
+      newAddon = this.updateCompatibility(installLocation, oldAddon, xpiState,
+                                          aSchemaChange);
+    } else {
+      newAddon = oldAddon;
+    }
+    return newAddon;
+  },
+
+  
+
+
+
+
+
+
+
+
+
 
 
 
@@ -2706,35 +2766,19 @@ this.XPIDatabaseReconcile = {
 
   processFileChanges(aManifests, aUpdateCompatibility, aOldAppVersion, aOldPlatformVersion,
                      aSchemaChange) {
-    let loadedManifest = (aInstallLocation, aId) => {
-      if (!(aInstallLocation.name in aManifests))
-        return null;
-      if (!(aId in aManifests[aInstallLocation.name]))
-        return null;
-      return aManifests[aInstallLocation.name][aId];
+    let findManifest = (aInstallLocation, aId) => {
+      return (aManifests[aInstallLocation.name] &&
+              aManifests[aInstallLocation.name][aId]) || null;
     };
 
-    
-    
-    let exists = (aAddon) => {
-      try {
-        return aAddon._sourceBundle.exists();
-      } catch (e) {
-        if (e.result == Cr.NS_ERROR_NOT_INITIALIZED)
-          return false;
-        throw e;
-      }
-    };
+    let addonExists = addon => addon._sourceBundle.exists();
+
+    let previousAddons = new ExtensionUtils.DefaultMap(() => new Map());
+    let currentAddons = new ExtensionUtils.DefaultMap(() => new Map());
 
     
-    let previousAddons = new Map();
-    for (let a of XPIDatabase.getAddons()) {
-      let locationAddonMap = previousAddons.get(a.location);
-      if (!locationAddonMap) {
-        locationAddonMap = new Map();
-        previousAddons.set(a.location, locationAddonMap);
-      }
-      locationAddonMap.set(a.id, a);
+    for (let addon of XPIDatabase.getAddons()) {
+      previousAddons.get(addon.location).set(addon.id, addon);
     }
 
     
@@ -2744,98 +2788,47 @@ this.XPIDatabaseReconcile = {
     
     
     
-    let currentAddons = new Map();
+    let addonStates = new Map();
     for (let installLocation of XPIProvider.installLocations) {
-      let locationAddonMap = new Map();
-      currentAddons.set(installLocation.name, locationAddonMap);
+      let locationAddons = currentAddons.get(installLocation.name);
 
       
       
-      let states = XPIStates.getLocation(installLocation.name);
-
-      
-      
-      let dbAddons = previousAddons.get(installLocation.name);
-      if (dbAddons) {
-        for (let [id, oldAddon] of dbAddons) {
-          
-          let xpiState = states && states.get(id);
-          if (xpiState) {
-            
-            XPIDatabase.recordAddonTelemetry(oldAddon);
-
-            
-            if (oldAddon.updateDate != xpiState.mtime) {
-              
-              if (xpiState.mtime < oldAddon.updateDate) {
-                XPIProvider.setTelemetry(oldAddon.id, "olderFile", {
-                  mtime: xpiState.mtime,
-                  oldtime: oldAddon.updateDate
-                });
-              }
-            }
-
-            let oldPath = oldAddon.path || descriptorToPath(oldAddon.descriptor);
+      let states = XPIStates.getLocation(installLocation.name) || new Map();
+      let dbAddons = previousAddons.get(installLocation.name) || new Map();
+      for (let [id, oldAddon] of dbAddons) {
+        
+        let xpiState = states.get(id);
+        if (xpiState) {
+          let newAddon = this.updateExistingAddon(oldAddon, xpiState,
+                                                  findManifest(installLocation, id),
+                                                  aUpdateCompatibility, aSchemaChange);
+          if (newAddon) {
+            locationAddons.set(newAddon.id, newAddon);
 
             
             
-            
-            
-            
-            
-            let newAddon = loadedManifest(installLocation, id);
-            if (newAddon || oldAddon.updateDate != xpiState.mtime ||
-                (aUpdateCompatibility && (installLocation.name == KEY_APP_GLOBAL ||
-                                          installLocation.name == KEY_APP_SYSTEM_DEFAULTS))) {
-              newAddon = this.updateMetadata(installLocation, oldAddon, xpiState, newAddon);
-            } else if (oldPath != xpiState.path) {
-              newAddon = this.updatePath(installLocation, oldAddon, xpiState);
-            } else if (aUpdateCompatibility || aSchemaChange) {
-              
-              
-              
-              newAddon = this.updateCompatibility(installLocation, oldAddon, xpiState,
-                                                  aSchemaChange);
-              
-              
-              addonsToCheckAgainstBlocklist.push(newAddon.id);
-            } else {
-              
-              newAddon = oldAddon;
-            }
-
-            if (newAddon)
-              locationAddonMap.set(newAddon.id, newAddon);
-          } else {
-            
-            this.removeMetadata(oldAddon);
+            addonsToCheckAgainstBlocklist.push(newAddon.id);
           }
+        } else {
+          
+          this.removeMetadata(oldAddon);
         }
       }
 
-      
-      
-      
-      
-      let locMigrateData = {};
-      if (XPIDatabase.migrateData && installLocation.name in XPIDatabase.migrateData)
-        locMigrateData = XPIDatabase.migrateData[installLocation.name];
-
-      if (states) {
-        for (let [id, xpiState] of states) {
-          if (locationAddonMap.has(id))
-            continue;
-          let migrateData = id in locMigrateData ? locMigrateData[id] : null;
-          let newAddon = loadedManifest(installLocation, id);
-          let addon = this.addMetadata(installLocation, id, xpiState, newAddon,
-                                       aOldAppVersion, aOldPlatformVersion, migrateData);
-          if (addon)
-            locationAddonMap.set(addon.id, addon);
+      for (let [id, xpiState] of states) {
+        if (locationAddons.has(id))
+          continue;
+        let newAddon = findManifest(installLocation, id);
+        let addon = this.addMetadata(installLocation, id, xpiState, newAddon,
+                                     aOldAppVersion, aOldPlatformVersion);
+        if (addon) {
+          locationAddons.set(addon.id, addon);
+          addonStates.set(addon, xpiState);
         }
       }
     }
 
-    
     
     
     for (let [locationName, addons] of previousAddons) {
@@ -2846,175 +2839,165 @@ this.XPIDatabaseReconcile = {
     }
 
     
-    let systemAddonLocation = XPIProvider.installLocationsByName[KEY_APP_SYSTEM_ADDONS];
-    let addons = currentAddons.get(KEY_APP_SYSTEM_ADDONS) || new Map();
-
     let hideLocation;
+    {
+      let systemAddonLocation = XPIProvider.installLocationsByName[KEY_APP_SYSTEM_ADDONS];
+      let addons = currentAddons.get(systemAddonLocation.name);
 
-    if (!systemAddonLocation.isValid(addons)) {
-      
-      logger.info("One or more updated system add-ons invalid, falling back to defaults.");
-      hideLocation = KEY_APP_SYSTEM_ADDONS;
+      if (!systemAddonLocation.isValid(addons)) {
+        
+        logger.info("One or more updated system add-ons invalid, falling back to defaults.");
+        hideLocation = systemAddonLocation.name;
+      }
     }
 
+    
+    
     let previousVisible = this.getVisibleAddons(previousAddons);
     let currentVisible = this.flattenByID(currentAddons, hideLocation);
 
-    
-    
-    for (let [id, currentAddon] of currentVisible) {
-      let previousAddon = previousVisible.get(id);
+    for (let [id, addon] of currentVisible) {
+      
+      
+      let xpiState = (!findManifest(addon._installLocation, id) &&
+                      addonStates.get(addon));
 
-      let isActive = !currentAddon.disabled && !currentAddon.pendingUninstall;
-      let wasActive = previousAddon ? previousAddon.active : currentAddon.active;
-
-      if (!previousAddon) {
-        
-        
-        let wasStaged = !!loadedManifest(currentAddon._installLocation, id);
-
-        
-        
-        if (!wasStaged && XPIDatabase.activeBundles) {
-          isActive = XPIDatabase.activeBundles.includes(currentAddon.path);
-
-          if (currentAddon.type == "webextension-theme")
-            currentAddon.userDisabled = !isActive;
-
-          
-          
-          if (!isActive && !currentAddon.disabled) {
-            
-            if (currentAddon.blocklistState == Services.blocklist.STATE_SOFTBLOCKED)
-              currentAddon.softDisabled = true;
-            else
-              currentAddon.userDisabled = true;
-          }
-        } else {
-          
-          if (currentAddon.foreignInstall)
-            AddonManagerPrivate.addStartupChange(AddonManager.STARTUP_CHANGE_INSTALLED, id);
-
-          if (currentAddon.bootstrap) {
-            AddonManagerPrivate.addStartupChange(AddonManager.STARTUP_CHANGE_INSTALLED, id);
-            
-            XPIProvider.callBootstrapMethod(currentAddon, currentAddon._sourceBundle,
-                                            "install", BOOTSTRAP_REASONS.ADDON_INSTALL);
-            if (!isActive)
-              XPIProvider.unloadBootstrapScope(currentAddon.id);
-          }
-        }
-      } else {
-        if (previousAddon !== currentAddon) {
-          
-          
-          AddonManagerPrivate.addStartupChange(AddonManager.STARTUP_CHANGE_CHANGED, id);
-
-          let installReason = Services.vc.compare(previousAddon.version, currentAddon.version) < 0 ?
-                              BOOTSTRAP_REASONS.ADDON_UPGRADE :
-                              BOOTSTRAP_REASONS.ADDON_DOWNGRADE;
-
-          
-          
-          if (previousAddon.bootstrap && previousAddon._installLocation &&
-              exists(previousAddon) &&
-              currentAddon._sourceBundle.path != previousAddon._sourceBundle.path) {
-
-            XPIProvider.callBootstrapMethod(previousAddon, previousAddon._sourceBundle,
-                                            "uninstall", installReason,
-                                            { newVersion: currentAddon.version });
-            XPIProvider.unloadBootstrapScope(previousAddon.id);
-          }
-
-          
-          XPIInstall.flushChromeCaches();
-
-          if (currentAddon.bootstrap) {
-            
-            let file = currentAddon._sourceBundle.clone();
-            XPIProvider.callBootstrapMethod(currentAddon, file,
-                                            "install", installReason,
-                                            { oldVersion: previousAddon.version });
-            if (currentAddon.disabled)
-              XPIProvider.unloadBootstrapScope(currentAddon.id);
-          }
-        }
-
-        if (isActive != wasActive) {
-          let change = isActive ? AddonManager.STARTUP_CHANGE_ENABLED
-                                : AddonManager.STARTUP_CHANGE_DISABLED;
-          AddonManagerPrivate.addStartupChange(change, id);
-        }
-      }
-
-      XPIDatabase.makeAddonVisible(currentAddon);
-      currentAddon.active = isActive;
+      this.applyStartupChange(addon, previousVisible.get(id), xpiState);
+      previousVisible.delete(id);
     }
 
-    
-    
-    for (let [id, previousAddon] of previousVisible) {
-      if (currentVisible.has(id))
-        continue;
-
-      
-
-      
-      
-      if (previousAddon.bootstrap && exists(previousAddon)) {
-        XPIProvider.callBootstrapMethod(previousAddon, previousAddon._sourceBundle,
-                                        "uninstall", BOOTSTRAP_REASONS.ADDON_UNINSTALL);
-        XPIProvider.unloadBootstrapScope(previousAddon.id);
+    for (let [id, addon] of previousVisible) {
+      if (addon.bootstrap && addonExists(addon)) {
+        this.callBootstrapUninstall(addon, BOOTSTRAP_REASONS.ADDON_UNINSTALL);
       }
       AddonManagerPrivate.addStartupChange(AddonManager.STARTUP_CHANGE_UNINSTALLED, id);
-      XPIStates.removeAddon(previousAddon.location, id);
+      XPIStates.removeAddon(addon.location, id);
 
-      
+      addon.visible = false;
+      addon.active = false;
+    }
+    if (previousVisible.size) {
       XPIInstall.flushChromeCaches();
     }
 
     
-    let locationAddonMap = currentAddons.get(hideLocation);
-    if (locationAddonMap) {
-      for (let addon of locationAddonMap.values()) {
-        addon.visible = false;
-        addon.active = false;
-      }
-    }
-
-    
-    for (let [locationName, locationAddonMap] of currentAddons) {
-      for (let [id, addon] of locationAddonMap) {
+    for (let [locationName, locationAddons] of currentAddons) {
+      for (let [id, addon] of locationAddons) {
         let xpiState = XPIStates.getAddon(locationName, id);
         xpiState.syncWithDB(addon);
       }
     }
     XPIStates.save();
-
-    
-    XPIDatabase.migrateData = null;
     XPIDatabase.saveChanges();
+    XPIDatabase.rebuildingDatabase = false;
 
-    
-    
-    
-    AddonManager.shutdown.addBlocker(
-      "Update add-on blocklist state into add-on DB",
-      (async () => {
-        
-        
-        await Promise.resolve();
-        let addons = await AddonManager.getAddonsByIDs(addonsToCheckAgainstBlocklist);
-        await Promise.all(addons.map(addon => {
-          if (addon) {
-            return addon.updateBlocklistState({updateDatabase: false});
-          }
-          return null;
-        }));
-        XPIDatabase.saveChanges();
-      })().catch(Cu.reportError)
-    );
+    if (aUpdateCompatibility || aSchemaChange) {
+      
+      
+      
+      AddonManager.shutdown.addBlocker(
+        "Update add-on blocklist state into add-on DB",
+        (async () => {
+          
+          
+          await Promise.resolve();
+
+          let addons = await AddonManager.getAddonsByIDs(addonsToCheckAgainstBlocklist);
+          await Promise.all(addons.map(addon => {
+            return addon && addon.updateBlocklistState({updateDatabase: false});
+          }));
+
+          XPIDatabase.saveChanges();
+        })());
+    }
 
     return true;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  applyStartupChange(currentAddon, previousAddon, xpiState) {
+    let {id} = currentAddon;
+
+    let isActive = !currentAddon.disabled;
+    let wasActive = previousAddon ? previousAddon.active : currentAddon.active;
+
+    if (previousAddon) {
+      if (previousAddon !== currentAddon) {
+        AddonManagerPrivate.addStartupChange(AddonManager.STARTUP_CHANGE_CHANGED, id);
+
+        let installReason = Services.vc.compare(previousAddon.version, currentAddon.version) < 0 ?
+                            BOOTSTRAP_REASONS.ADDON_UPGRADE :
+                            BOOTSTRAP_REASONS.ADDON_DOWNGRADE;
+
+        if (previousAddon.bootstrap &&
+            previousAddon._installLocation &&
+            previousAddon._sourceBundle.exists() &&
+            !previousAddon._sourceBundle.equals(currentAddon._sourceBundle)) {
+          this.callBootstrapUninstall(previousAddon, installReason,
+                                      { newVersion: currentAddon.version });
+        }
+
+        XPIInstall.flushChromeCaches();
+
+        if (currentAddon.bootstrap) {
+          let file = currentAddon._sourceBundle.clone();
+          XPIProvider.callBootstrapMethod(currentAddon, file, "install", installReason,
+                                          { oldVersion: previousAddon.version });
+          if (currentAddon.disabled)
+            XPIProvider.unloadBootstrapScope(currentAddon.id);
+        }
+      }
+
+      if (isActive != wasActive) {
+        let change = isActive ? AddonManager.STARTUP_CHANGE_ENABLED
+                              : AddonManager.STARTUP_CHANGE_DISABLED;
+        AddonManagerPrivate.addStartupChange(change, id);
+      }
+    } else if (xpiState && xpiState.wasRestored) {
+      isActive = xpiState.enabled;
+
+      if (currentAddon.type == "webextension-theme")
+        currentAddon.userDisabled = !isActive;
+
+      
+      
+      if (!isActive && !currentAddon.disabled) {
+        
+        if (currentAddon.blocklistState == Services.blocklist.STATE_SOFTBLOCKED)
+          currentAddon.softDisabled = true;
+        else
+          currentAddon.userDisabled = true;
+      }
+    } else {
+      
+      if (currentAddon.foreignInstall)
+        AddonManagerPrivate.addStartupChange(AddonManager.STARTUP_CHANGE_INSTALLED, id);
+
+      if (currentAddon.bootstrap) {
+        AddonManagerPrivate.addStartupChange(AddonManager.STARTUP_CHANGE_INSTALLED, id);
+        
+        XPIProvider.callBootstrapMethod(currentAddon, currentAddon._sourceBundle,
+                                        "install", BOOTSTRAP_REASONS.ADDON_INSTALL);
+        if (!isActive)
+          XPIProvider.unloadBootstrapScope(currentAddon.id);
+      }
+    }
+
+    XPIDatabase.makeAddonVisible(currentAddon);
+    currentAddon.active = isActive;
+  },
+
+  callBootstrapUninstall(addon, reason, extraArgs) {
+    XPIProvider.callBootstrapMethod(addon, addon._sourceBundle, "uninstall", reason, extraArgs);
+    XPIProvider.unloadBootstrapScope(addon.id);
   },
 };
