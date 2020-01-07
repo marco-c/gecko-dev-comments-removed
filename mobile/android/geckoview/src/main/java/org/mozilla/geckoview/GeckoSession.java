@@ -31,13 +31,11 @@ import android.content.res.Resources;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Binder;
-import android.os.Bundle;
 import android.os.IBinder;
 import android.os.IInterface;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.os.SystemClock;
-import android.support.annotation.Nullable;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
@@ -153,11 +151,17 @@ public class GeckoSession extends LayerSession
                         new Response<GeckoSession>() {
                             @Override
                             public void respond(GeckoSession session) {
-                                if (session != null && session.isOpen() && session.isReady()) {
-                                    throw new IllegalArgumentException("Must use a new GeckoSession instance");
+                                if (session == null) {
+                                    callback.sendSuccess(null);
+                                    return;
                                 }
 
-                                callback.sendSuccess(session != null ? session.getId() : null);
+                                if (session.isOpen()) {
+                                    throw new IllegalArgumentException("Must use an unopened GeckoSession instance");
+                                }
+
+                                session.openWindow(null);
+                                callback.sendSuccess(session.getId());
                             }
                         });
                 }
@@ -547,9 +551,8 @@ public class GeckoSession extends LayerSession
 
 
 
-    public static void preload(final @NonNull Context context) {
-        preload(context,  null,
-                 null,  false);
+    public static void preload(final Context context) {
+        preload(context,  null,  false);
     }
 
     
@@ -560,21 +563,15 @@ public class GeckoSession extends LayerSession
 
 
 
-    public static void preload(final @NonNull Context context,
-                               final @Nullable String[] geckoArgs,
-                               final @Nullable Bundle extras,
+    public static void preload(final Context context, final String geckoArgs,
                                final boolean multiprocess) {
         final Context appContext = context.getApplicationContext();
-        if (!appContext.equals(GeckoAppShell.getApplicationContext())) {
+        if (GeckoAppShell.getApplicationContext() == null) {
             GeckoAppShell.setApplicationContext(appContext);
         }
 
-        if (GeckoThread.isLaunched()) {
-            return;
-        }
-
         final int flags = multiprocess ? GeckoThread.FLAG_PRELOAD_CHILD : 0;
-        if (GeckoThread.initMainProcess( null, geckoArgs, extras, flags)) {
+        if (GeckoThread.initMainProcess( null, geckoArgs, flags)) {
             GeckoThread.launch();
         }
     }
@@ -587,23 +584,19 @@ public class GeckoSession extends LayerSession
         return mNativeQueue.isReady();
     }
 
-    public void openWindow(final @Nullable Context appContext) {
+    public void openWindow(final Context appContext) {
         ThreadUtils.assertOnUiThread();
 
         if (isOpen()) {
             throw new IllegalStateException("Session is open");
         }
 
-        if (appContext != null) {
+        if (!GeckoThread.isLaunched()) {
             final boolean multiprocess =
                     mSettings.getBoolean(GeckoSessionSettings.USE_MULTIPROCESS);
-            preload(appContext,  null,  null, multiprocess);
+            preload(appContext,  null, multiprocess);
         }
 
-        openWindow();
-    }
-
-    private void openWindow() {
         final String chromeUri = mSettings.getString(GeckoSessionSettings.CHROME_URI);
         final int screenId = mSettings.getInt(GeckoSessionSettings.SCREEN_ID);
         final boolean isPrivate = mSettings.getBoolean(GeckoSessionSettings.USE_PRIVATE_MODE);
