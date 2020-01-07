@@ -217,6 +217,12 @@ PointerEvent::GetCoalescedEvents(nsTArray<RefPtr<PointerEvent>>& aPointerEvents)
         NS_NewDOMPointerEvent(nullptr, nullptr, &event);
 
       
+      
+      
+      domEvent->mEvent->AsGUIEvent()->mWidget = widgetEvent->mWidget;
+      domEvent->mPresContext = mPresContext;
+
+      
       MOZ_ASSERT(!domEvent->mEvent->mTarget);
       
       domEvent->mEvent->mTarget = mEvent->mTarget;
@@ -224,6 +230,10 @@ PointerEvent::GetCoalescedEvents(nsTArray<RefPtr<PointerEvent>>& aPointerEvents)
       
       
       domEvent->DuplicatePrivateData();
+
+      
+      
+      domEvent->mPresContext = mPresContext;
       mCoalescedEvents.AppendElement(domEvent);
     }
   }
