@@ -1242,9 +1242,10 @@ pref("services.sync.syncedTabs.showRemoteIcons", true);
 
 
 #ifdef MOZ_DEV_EDITION
-sticky_pref("lightweightThemes.selectedThemeID", "firefox-compact-dark@mozilla.org");
+pref("lightweightThemes.selectedThemeID", "firefox-compact-dark@mozilla.org",
+     sticky);
 #else
-sticky_pref("lightweightThemes.selectedThemeID", "");
+pref("lightweightThemes.selectedThemeID", "", sticky);
 #endif
 
 
@@ -1266,7 +1267,7 @@ pref("browser.newtabpage.introShown", false);
 pref("browser.newtabpage.enabled", true);
 
 
-sticky_pref("browser.newtabpage.enhanced", true);
+pref("browser.newtabpage.enhanced", true, sticky);
 
 
 pref("browser.newtabpage.compact", false);

@@ -1089,23 +1089,23 @@ pref("devtools.errorconsole.deprecation_warnings", true);
 
 #ifdef NIGHTLY_BUILD
 
-sticky_pref("devtools.debugger.prompt-connection", false);
+pref("devtools.debugger.prompt-connection", false, sticky);
 #else
-sticky_pref("devtools.debugger.prompt-connection", true);
+pref("devtools.debugger.prompt-connection", true, sticky);
 #endif
 
 #ifdef MOZILLA_OFFICIAL
 
-sticky_pref("devtools.chrome.enabled", false);
+pref("devtools.chrome.enabled", false, sticky);
 
-sticky_pref("devtools.debugger.remote-enabled", false);
+pref("devtools.debugger.remote-enabled", false, sticky);
 
-sticky_pref("browser.dom.window.dump.enabled", false);
+pref("browser.dom.window.dump.enabled", false, sticky);
 #else
 
-sticky_pref("devtools.chrome.enabled", true);
-sticky_pref("devtools.debugger.remote-enabled", true);
-sticky_pref("browser.dom.window.dump.enabled", true);
+pref("devtools.chrome.enabled", true, sticky);
+pref("devtools.debugger.remote-enabled", true, sticky);
+pref("browser.dom.window.dump.enabled", true, sticky);
 #endif
 
 
@@ -5491,8 +5491,6 @@ pref("network.trr.bootstrapAddress", "");
 pref("network.trr.blacklist-duration", 259200);
 
 pref("network.trr.request-timeout", 3000);
-
-pref("network.trr.early-AAAA", false);
 
 pref("captivedetect.canonicalURL", "http://detectportal.firefox.com/success.txt");
 pref("captivedetect.canonicalContent", "success\n");
