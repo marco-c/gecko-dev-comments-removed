@@ -134,7 +134,7 @@ public:
   
   
   
-  virtual void Seek(double aTime, SeekTarget::Type aSeekType);
+  void Seek(double aTime, SeekTarget::Type aSeekType);
 
   
   nsresult InitializeStateMachine();
