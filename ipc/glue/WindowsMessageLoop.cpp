@@ -1037,7 +1037,7 @@ MessageChannel::WaitForSyncNotify(bool aHandleWindowsMessages)
 
     
     
-    return WaitResponse(status == CVStaus::Timeout);
+    return WaitResponse(status == CVStatus::Timeout);
   }
 
   NS_ASSERTION(mFlags & REQUIRE_DEFERRED_MESSAGE_PROTECTION,
