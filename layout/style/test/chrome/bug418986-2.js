@@ -287,7 +287,6 @@ var sleep = function (timeoutMs) {
 
 
 
-
 var testMediaQueriesInPictureElements = async function(resisting) {
   let picture = document.createElementNS(HTML_NS, "picture");
   for (let [key, offVal, onVal] of expected_values) {
@@ -325,7 +324,6 @@ var pushPref = function (key, value) {
     SpecialPowers.pushPrefEnv({"set": [[key, value]]}, resolve);
   });
 };
-
 
 
 
