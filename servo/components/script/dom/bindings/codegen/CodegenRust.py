@@ -422,7 +422,8 @@ class CGMethodCall(CGThing):
                         template,
                         {"val": distinguishingArg},
                         declType,
-                        "arg%d" % distinguishingIndex)
+                        "arg%d" % distinguishingIndex,
+                        needsAutoRoot=type_needs_auto_root(type))
 
                     
                     caseBody.append(CGIndenter(testCode, 4))
@@ -1211,7 +1212,8 @@ def getJSToNativeConversionInfo(type, descriptorProvider, failureCode=None,
 
 
 def instantiateJSToNativeConversionTemplate(templateBody, replacements,
-                                            declType, declName):
+                                            declType, declName,
+                                            needsAutoRoot=False):
     """
     Take the templateBody and declType as returned by
     getJSToNativeConversionInfo, a set of replacements as required by the
@@ -1236,6 +1238,8 @@ def instantiateJSToNativeConversionTemplate(templateBody, replacements,
     else:
         result.append(conversion)
 
+    if needsAutoRoot:
+        result.append(CGGeneric("auto_root!(in(cx) let %s = %s);" % (declName, declName)))
     
     
     result.append(CGGeneric(""))
@@ -1318,11 +1322,8 @@ class CGArgumentConverter(CGThing):
             arg = "arg%d" % index
 
             self.converter = instantiateJSToNativeConversionTemplate(
-                template, replacementVariables, declType, arg)
-
-            
-            if type_needs_auto_root(argument.type):
-                self.converter.append(CGGeneric("auto_root!(in(cx) let %s = %s);" % (arg, arg)))
+                template, replacementVariables, declType, arg,
+                needsAutoRoot=type_needs_auto_root(argument.type))
 
         else:
             assert argument.optional
