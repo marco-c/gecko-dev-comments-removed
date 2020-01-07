@@ -31,7 +31,15 @@ AddonUtilsInternal.prototype = {
 
 
 
-  getInstallFromSearchResult(addon) {
+
+
+
+
+
+
+  getInstallFromSearchResult:
+    function getInstallFromSearchResult(addon, cb) {
+
     this._log.debug("Obtaining install for " + addon.id);
 
     
@@ -39,9 +47,11 @@ AddonUtilsInternal.prototype = {
     
     
     
-    return AddonManager.getInstallForURL(
+    AddonManager.getInstallForURL(
       addon.sourceURI.spec,
-      null,
+      function handleInstall(install) {
+        cb(null, install);
+      },
       "application/x-xpinstall",
       undefined,
       addon.name,
@@ -71,19 +81,32 @@ AddonUtilsInternal.prototype = {
 
 
 
-  async installAddonFromSearchResult(addon, options) {
+
+
+
+
+
+
+
+  installAddonFromSearchResult:
+    function installAddonFromSearchResult(addon, options, cb) {
     this._log.info("Trying to install add-on from search result: " + addon.id);
 
-    const install = await this.getInstallFromSearchResult(addon);
-    if (!install) {
-      throw new Error("AddonInstall not available: " + addon.id);
-    }
+    this.getInstallFromSearchResult(addon, (error, install) => {
+      if (error) {
+        cb(error, null);
+        return;
+      }
 
-    try {
-      this._log.info("Installing " + addon.id);
-      let log = this._log;
+      if (!install) {
+        cb(new Error("AddonInstall not available: " + addon.id), null);
+        return;
+      }
 
-      return new Promise((res, rej) => {
+      try {
+        this._log.info("Installing " + addon.id);
+        let log = this._log;
+
         let listener = {
           onInstallStarted: function onInstallStarted(install) {
             if (!options) {
@@ -107,26 +130,26 @@ AddonUtilsInternal.prototype = {
           onInstallEnded(install, addon) {
             install.removeListener(listener);
 
-            res({id: addon.id, install, addon});
+            cb(null, {id: addon.id, install, addon});
           },
           onInstallFailed(install) {
             install.removeListener(listener);
 
-            rej(new Error("Install failed: " + install.error));
+            cb(new Error("Install failed: " + install.error), null);
           },
           onDownloadFailed(install) {
             install.removeListener(listener);
 
-            rej(new Error("Download failed: " + install.error));
+            cb(new Error("Download failed: " + install.error), null);
           }
         };
         install.addListener(listener);
         install.install();
-      });
-    } catch (ex) {
-      this._log.error("Error installing add-on", ex);
-      throw ex;
-    }
+      } catch (ex) {
+        this._log.error("Error installing add-on", ex);
+        cb(ex, null);
+      }
+    });
   },
 
   
@@ -198,119 +221,132 @@ AddonUtilsInternal.prototype = {
 
 
 
-  async installAddons(installs) {
+
+
+  installAddons: function installAddons(installs, cb) {
+    if (!cb) {
+      throw new Error("Invalid argument: cb is not defined.");
+    }
+
     let ids = [];
     for (let addon of installs) {
       ids.push(addon.id);
     }
 
-    const {addons, addonsLength} = await new Promise((res, rej) => {
-      AddonRepository.getAddonsByIDs(ids, {
-        searchSucceeded: (addons, addonsLength, total) => {
-          res({addons, addonsLength});
-        },
-        searchFailed() {
-          rej(new Error("AddonRepository search failed"));
-        }
-      });
-    });
-
-    this._log.info("Found " + addonsLength + "/" + ids.length +
+    AddonRepository.getAddonsByIDs(ids, {
+      searchSucceeded: (addons, addonsLength, total) => {
+        this._log.info("Found " + addonsLength + "/" + ids.length +
                        " add-ons during repository search.");
 
-    let ourResult = {
-      installedIDs: [],
-      installs:     [],
-      addons:       [],
-      skipped:      [],
-      errors:       []
-    };
+        let ourResult = {
+          installedIDs: [],
+          installs:     [],
+          addons:       [],
+          skipped:      [],
+          errors:       []
+        };
 
-    if (!addonsLength) {
-      return ourResult;
-    }
-
-    let toInstall = [];
-
-    
-    
-    
-    
-    
-    for (let addon of addons) {
-      
-      let options;
-      for (let install of installs) {
-        if (install.id == addon.id) {
-          options = install;
-          break;
+        if (!addonsLength) {
+          cb(null, ourResult);
+          return;
         }
-      }
-      if (!this.canInstallAddon(addon, options)) {
-        ourResult.skipped.push(addon.id);
-        continue;
-      }
 
-      
-      toInstall.push(addon);
+        let expectedInstallCount = 0;
+        let finishedCount = 0;
+        let installCallback = function installCallback(error, result) {
+          finishedCount++;
 
-      
-      
-      
-      try {
-        addon.sourceURI.QueryInterface(Ci.nsIURL);
-      } catch (ex) {
-        this._log.warn("Unable to QI sourceURI to nsIURL: " +
-                       addon.sourceURI.spec);
-        continue;
-      }
+          if (error) {
+            ourResult.errors.push(error);
+          } else {
+            ourResult.installedIDs.push(result.id);
+            ourResult.installs.push(result.install);
+            ourResult.addons.push(result.addon);
+          }
 
-      let params = addon.sourceURI.query.split("&").map(
-        function rewrite(param) {
+          if (finishedCount >= expectedInstallCount) {
+            if (ourResult.errors.length > 0) {
+              cb(new Error("1 or more add-ons failed to install"), ourResult);
+            } else {
+              cb(null, ourResult);
+            }
+          }
+        };
 
-        if (param.indexOf("src=") == 0) {
-          return "src=sync";
+        let toInstall = [];
+
+        
+        
+        
+        
+        
+        for (let addon of addons) {
+          
+          let options;
+          for (let install of installs) {
+            if (install.id == addon.id) {
+              options = install;
+              break;
+            }
+          }
+          if (!this.canInstallAddon(addon, options)) {
+            ourResult.skipped.push(addon.id);
+            continue;
+          }
+
+          
+          toInstall.push(addon);
+
+          
+          
+          
+          try {
+            addon.sourceURI.QueryInterface(Ci.nsIURL);
+          } catch (ex) {
+            this._log.warn("Unable to QI sourceURI to nsIURL: " +
+                           addon.sourceURI.spec);
+            continue;
+          }
+
+          let params = addon.sourceURI.query.split("&").map(
+            function rewrite(param) {
+
+            if (param.indexOf("src=") == 0) {
+              return "src=sync";
+            }
+            return param;
+          });
+
+          addon.sourceURI.query = params.join("&");
         }
-        return param;
-      });
 
-      addon.sourceURI.query = params.join("&");
-    }
+        expectedInstallCount = toInstall.length;
 
-    if (!toInstall.length) {
-      return ourResult;
-    }
-
-    const installPromises = [];
-    
-    
-    for (let addon of toInstall) {
-      let options = {};
-      for (let install of installs) {
-        if (install.id == addon.id) {
-          options = install;
-          break;
+        if (!expectedInstallCount) {
+          cb(null, ourResult);
+          return;
         }
-      }
 
-      installPromises.push((async () => {
-        try {
-          const result = await this.installAddonFromSearchResult(addon, options);
-          ourResult.installedIDs.push(result.id);
-          ourResult.installs.push(result.install);
-          ourResult.addons.push(result.addon);
-        } catch (error) {
-          ourResult.errors.push(error);
+        
+        
+        for (let addon of toInstall) {
+          let options = {};
+          for (let install of installs) {
+            if (install.id == addon.id) {
+              options = install;
+              break;
+            }
+          }
+
+          this.installAddonFromSearchResult(addon, options, installCallback);
         }
-      })());
-    }
 
-    await Promise.all(installPromises);
+      },
 
-    if (ourResult.errors.length > 0) {
-      throw new Error("1 or more add-ons failed to install");
-    }
-    return ourResult;
+      searchFailed: function searchFailed() {
+        cb(new Error("AddonRepository search failed"), null);
+      },
+    });
   },
 
   

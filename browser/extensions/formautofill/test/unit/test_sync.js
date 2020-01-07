@@ -142,7 +142,6 @@ add_task(async function test_outgoing() {
       },
     ]);
 
-    await engine._tracker.asyncObserver.promiseObserversComplete();
     
     equal(engine._tracker.score, SCORE_INCREMENT_XLARGE * 2);
 

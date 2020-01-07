@@ -64,7 +64,7 @@ add_task(async function run_test() {
 
   _("Test listeners are registered on windows");
   logs = fakeSvcWinMediator();
-  tracker.start();
+  Svc.Obs.notify("weave:engine:start-tracking");
   Assert.equal(logs.length, 2);
   for (let log of logs) {
     Assert.equal(log.addTopics.length, 5);
@@ -80,7 +80,7 @@ add_task(async function run_test() {
 
   _("Test listeners are unregistered on windows");
   logs = fakeSvcWinMediator();
-  await tracker.stop();
+  Svc.Obs.notify("weave:engine:stop-tracking");
   Assert.equal(logs.length, 2);
   for (let log of logs) {
     Assert.equal(log.addTopics.length, 0);
@@ -97,7 +97,7 @@ add_task(async function run_test() {
   _("Test tab listener");
   for (let evttype of ["TabOpen", "TabClose", "TabSelect"]) {
     
-    await tracker.clearChangedIDs();
+    tracker.clearChangedIDs();
     Assert.ok(!tracker.modified);
 
     
@@ -108,7 +108,7 @@ add_task(async function run_test() {
   }
 
   
-  await tracker.clearChangedIDs();
+  tracker.clearChangedIDs();
   Assert.ok(!tracker.modified);
 
   tracker.onTab({type: "pageshow", originalTarget: "pageshow"});
@@ -116,7 +116,7 @@ add_task(async function run_test() {
                              [clientsEngine.localID]));
 
   
-  await tracker.clearChangedIDs();
+  tracker.clearChangedIDs();
   Assert.ok(!tracker.modified);
   tracker.onLocationChange({ isTopLevel: false }, undefined, undefined, 0);
   Assert.ok(!tracker.modified, "non-toplevel request didn't flag as modified");

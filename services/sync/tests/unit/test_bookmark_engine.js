@@ -69,7 +69,7 @@ add_bookmark_test(async function test_delete_invalid_roots_from_server(engine) {
 
   let collection = server.user("foo").collection("bookmarks");
 
-  engine._tracker.start();
+  Svc.Obs.notify("weave:engine:start-tracking");
 
   try {
     let placesRecord = await store.createRecord("places");
@@ -116,7 +116,7 @@ add_bookmark_test(async function test_delete_invalid_roots_from_server(engine) {
     Svc.Prefs.resetBranch("");
     Service.recordManager.clearCache();
     await promiseStopServer(server);
-    await engine._tracker.stop();
+    Svc.Obs.notify("weave:engine:stop-tracking");
   }
 });
 
@@ -254,7 +254,7 @@ async function test_restoreOrImport(engine, { replace }) {
 
   let collection = server.user("foo").collection("bookmarks");
 
-  engine._tracker.start(); 
+  Svc.Obs.notify("weave:engine:start-tracking"); 
 
   try {
 
@@ -308,7 +308,6 @@ async function test_restoreOrImport(engine, { replace }) {
 
     _(`Now ${verb} from a backup.`);
     await bookmarkUtils.importFromFile(backupFilePath, replace);
-    await engine._tracker.asyncObserver.promiseObserversComplete();
 
     let bookmarksCollection = server.user("foo").collection("bookmarks");
     if (replace) {
@@ -701,7 +700,7 @@ add_bookmark_test(async function test_sync_dateAdded(engine) {
   
   await engine.setLastSync(1);
 
-  engine._tracker.start(); 
+  Svc.Obs.notify("weave:engine:start-tracking"); 
 
   
   let now = Date.now();
@@ -850,7 +849,7 @@ add_task(async function test_sync_imap_URLs() {
 
   let collection = server.user("foo").collection("bookmarks");
 
-  engine._tracker.start(); 
+  Svc.Obs.notify("weave:engine:start-tracking"); 
 
   try {
     collection.insert("menu", encryptPayload({

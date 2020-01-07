@@ -21,7 +21,7 @@ ChromeUtils.import("resource://gre/modules/PromiseUtils.jsm");
 add_task(async function setup() {
   
   
-  await Service.engineManager.clear();
+  Service.engineManager.clear();
 
   
   Status.__authManager = Service.identity = new BrowserIDManager();
@@ -71,22 +71,20 @@ function prepareServer(cbAfterTokenFetch) {
   let numReassigns = 0;
   return configureIdentity(config).then(() => {
     Service.identity._tokenServerClient = {
-      getTokenFromBrowserIDAssertion(uri, assertion) {
-        return new Promise(res => {
-          
-          
-          
-          numReassigns += 1;
-          let trailingZeros = new Array(numReassigns + 1).join("0");
-          let token = config.fxaccount.token;
-          token.endpoint = server.baseURI + "1.1" + trailingZeros + "/johndoe";
-          token.uid = config.username;
-          numTokenRequests += 1;
-          res(token);
-          if (cbAfterTokenFetch) {
-            cbAfterTokenFetch();
-          }
-        });
+      getTokenFromBrowserIDAssertion(uri, assertion, cb) {
+        
+        
+        
+        numReassigns += 1;
+        let trailingZeros = new Array(numReassigns + 1).join("0");
+        let token = config.fxaccount.token;
+        token.endpoint = server.baseURI + "1.1" + trailingZeros + "/johndoe";
+        token.uid = config.username;
+        numTokenRequests += 1;
+        cb(null, token);
+        if (cbAfterTokenFetch) {
+          cbAfterTokenFetch();
+        }
       },
     };
     return server;
@@ -252,8 +250,8 @@ add_task(async function test_momentary_401_engine() {
                                       "weave:service:sync:finish",
                                       Service.storageURL + "rotary");
 
-  await tracker.clearChangedIDs();
-  await Service.engineManager.unregister(engine);
+  tracker.clearChangedIDs();
+  Service.engineManager.unregister(engine);
 });
 
 
