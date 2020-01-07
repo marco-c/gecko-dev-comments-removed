@@ -194,15 +194,9 @@ WebRenderLayerManager::EndEmptyTransaction(EndTransactionFlags aFlags)
   
   mAnimationReadyTime = TimeStamp::Now();
 
-  
-  
-  
-  
-  
-  
-
   if (aFlags & EndTransactionFlags::END_NO_COMPOSITE && 
-      !mWebRenderCommandBuilder.NeedsEmptyTransaction()) {
+      !mWebRenderCommandBuilder.NeedsEmptyTransaction() &&
+      mPendingScrollUpdates.empty()) {
     MOZ_ASSERT(!mTarget);
     WrBridge()->SendSetFocusTarget(mFocusTarget);
     return true;
@@ -225,7 +219,9 @@ WebRenderLayerManager::EndEmptyTransaction(EndTransactionFlags aFlags)
     }
   }
 
-  WrBridge()->EndEmptyTransaction(mFocusTarget, mLatestTransactionId, transactionStart);
+  WrBridge()->EndEmptyTransaction(mFocusTarget, mPendingScrollUpdates,
+      mPaintSequenceNumber, mLatestTransactionId, transactionStart);
+  ClearPendingScrollInfoUpdate();
 
   MakeSnapshotIfRequired(size);
   return true;
@@ -293,6 +289,10 @@ WebRenderLayerManager::EndTransactionWithoutLayer(nsDisplayList* aDisplayList,
     }
     mScrollData.SetPaintSequenceNumber(mPaintSequenceNumber);
   }
+  
+  
+  
+  ClearPendingScrollInfoUpdate();
 
   mLatestTransactionId = mTransactionIdAllocator->GetTransactionId( true);
   TimeStamp transactionStart = mTransactionIdAllocator->GetTransactionStart();
@@ -626,15 +626,6 @@ WebRenderLayerManager::SetRoot(Layer* aLayer)
 {
   
   MOZ_ASSERT(false);
-}
-
-bool
-WebRenderLayerManager::SetPendingScrollUpdateForNextTransaction(FrameMetrics::ViewID aScrollId,
-                                                                const ScrollUpdateInfo& aUpdateInfo)
-{
-  
-  
-  return false;
 }
 
 already_AddRefed<PersistentBufferProvider>

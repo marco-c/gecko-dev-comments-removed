@@ -564,6 +564,20 @@ WebRenderBridgeParent::UpdateAPZScrollData(const wr::Epoch& aEpoch,
 }
 
 void
+WebRenderBridgeParent::UpdateAPZScrollOffsets(ScrollUpdatesMap&& aUpdates,
+                                              uint32_t aPaintSequenceNumber)
+{
+  CompositorBridgeParent* cbp = GetRootCompositorBridgeParent();
+  if (!cbp) {
+    return;
+  }
+  LayersId rootLayersId = cbp->RootLayerTreeId();
+  if (RefPtr<APZUpdater> apz = cbp->GetAPZUpdater()) {
+    apz->UpdateScrollOffsets(rootLayersId, GetLayersId(), Move(aUpdates), aPaintSequenceNumber);
+  }
+}
+
+void
 WebRenderBridgeParent::SetAPZSampleTime()
 {
   CompositorBridgeParent* cbp = GetRootCompositorBridgeParent();
@@ -686,6 +700,8 @@ WebRenderBridgeParent::RecvSetDisplayList(const gfx::IntSize& aSize,
 
 mozilla::ipc::IPCResult
 WebRenderBridgeParent::RecvEmptyTransaction(const FocusTarget& aFocusTarget,
+                                            const ScrollUpdatesMap& aUpdates,
+                                            const uint32_t& aPaintSequenceNumber,
                                             InfallibleTArray<WebRenderParentCommand>&& aCommands,
                                             InfallibleTArray<OpDestroy>&& aToDestroy,
                                             const uint64_t& aFwdTransactionId,
@@ -717,6 +733,13 @@ WebRenderBridgeParent::RecvEmptyTransaction(const FocusTarget& aFocusTarget,
   }
 
   UpdateAPZFocusState(aFocusTarget);
+  if (!aUpdates.empty()) {
+    
+    
+    
+    
+    UpdateAPZScrollOffsets(Move(const_cast<ScrollUpdatesMap&>(aUpdates)), aPaintSequenceNumber);
+  }
 
   if (!aCommands.IsEmpty()) {
     wr::TransactionBuilder txn;

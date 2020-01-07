@@ -83,6 +83,16 @@ public:
                                     LayersId aOriginatingLayersId,
                                     const wr::Epoch& aEpoch,
                                     WebRenderScrollData&& aScrollData);
+  
+
+
+
+
+
+  void UpdateScrollOffsets(LayersId aRootLayerTreeId,
+                           LayersId aOriginatingLayersId,
+                           ScrollUpdatesMap&& aUpdates,
+                           uint32_t aPaintSequenceNumber);
 
   void NotifyLayerTreeAdopted(LayersId aLayersId,
                               const RefPtr<APZUpdater>& aOldUpdater);
