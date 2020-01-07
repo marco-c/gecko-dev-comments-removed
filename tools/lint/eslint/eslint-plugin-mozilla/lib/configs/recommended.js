@@ -264,7 +264,7 @@ module.exports = {
     "no-lonely-if": "error",
 
     
-    "no-mixed-spaces-and-tabs": ["error", "smart-tabs"],
+    
 
     
     "no-multi-spaces": ["error", { exceptions: {
