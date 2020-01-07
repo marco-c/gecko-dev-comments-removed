@@ -71,6 +71,7 @@ SessionStore.prototype = {
   _pendingWrite: 0,
   _pendingWritePrivateOnly: 0,
   _scrollSavePending: null,
+  _formdataSavePending: null,
   _writeInProgress: false,
 
   
@@ -520,8 +521,20 @@ SessionStore.prototype = {
       case "input":
       case "DOMAutoComplete": {
         let browser = aEvent.currentTarget;
-        log("TabInput for tab " + window.BrowserApp.getTabForBrowser(browser).id);
-        this.onTabInput(window, browser);
+        
+        if (loggingEnabled) {
+          log("TabInput for tab " + window.BrowserApp.getTabForBrowser(browser).id);
+        }
+        
+        
+        
+        if (!this._formdataSavePending) {
+          this._formdataSavePending =
+            window.setTimeout(() => {
+              this._formdataSavePending = null;
+              this.onTabInput(window, browser);
+            }, 2000);
+        }
         break;
       }
       case "resize":
@@ -843,6 +856,13 @@ SessionStore.prototype = {
   },
 
   onTabInput: function ss_onTabInput(aWindow, aBrowser) {
+    
+    if (this._formdataSavePending) {
+      aWindow.clearTimeout(this._formdataSavePending);
+      this._formdataSavePending = null;
+      log("onTabInput() clearing pending timeout");
+    }
+
     
     
     if (aBrowser.__SS_restore || !this._startupRestoreFinished || aBrowser.__SS_restoreReloadPending) {
