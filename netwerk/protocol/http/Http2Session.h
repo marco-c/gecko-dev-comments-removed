@@ -563,6 +563,9 @@ private:
   
   RefPtr<nsHttpTransaction> mFirstHttpTransaction;
   bool mTlsHandshakeFinished;
+
+  bool mCheckNetworkStallsWithTFO;
+  PRIntervalTime mLastRequestBytesSentTime;
 private:
 
   void DispatchOnTunnel(nsAHttpTransaction *, nsIInterfaceRequestor *);

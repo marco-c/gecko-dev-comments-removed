@@ -90,6 +90,8 @@ nsHttpConnection::nsHttpConnection()
     , mFastOpenStatus(TFO_NOT_SET)
     , mForceSendDuringFastOpenPending(false)
     , mReceivedSocketWouldBlockDuringFastOpen(false)
+    , mCheckNetworkStallsWithTFO(false)
+    , mLastRequestBytesSentTime(0)
 {
     LOG(("Creating nsHttpConnection @%p\n", this));
 
@@ -641,6 +643,18 @@ nsHttpConnection::Activate(nsAHttpTransaction *trans, uint32_t caps, int32_t pri
     NS_ENSURE_ARG_POINTER(trans);
     NS_ENSURE_TRUE(!mTransaction, NS_ERROR_IN_PROGRESS);
 
+    
+    
+    if (mNPNComplete && (mFastOpenStatus == TFO_DATA_SENT) &&
+        gHttpHandler->CheckIfConnectionIsStalledOnlyIfIdleForThisAmountOfSeconds() &&
+        IdleTime() >= gHttpHandler->CheckIfConnectionIsStalledOnlyIfIdleForThisAmountOfSeconds()) {
+        
+        
+        mCheckNetworkStallsWithTFO = true;
+        
+        
+        mLastRequestBytesSentTime = 0;
+    }
     
     mLastWriteTime = mLastReadTime = PR_IntervalNow();
 
@@ -1355,6 +1369,19 @@ nsHttpConnection::ReadTimeoutTick(PRIntervalTime now)
         nextTickAfter = std::max(nextTickAfter, 1U);
     }
 
+    
+    if (mCheckNetworkStallsWithTFO && mLastRequestBytesSentTime) {
+        PRIntervalTime initialResponseDelta = now - mLastRequestBytesSentTime;
+        if (initialResponseDelta >= gHttpHandler->FastOpenStallsTimeout()) {
+            gHttpHandler->IncrementFastOpenStallsCounter();
+            mCheckNetworkStallsWithTFO = false;
+        } else {
+            uint32_t next = PR_IntervalToSeconds(gHttpHandler->FastOpenStallsTimeout()) -
+                            PR_IntervalToSeconds(initialResponseDelta);
+            nextTickAfter = std::min(nextTickAfter, next);
+        }
+    }
+
     if (!mNPNComplete) {
       
       
@@ -1856,6 +1883,9 @@ nsHttpConnection::OnSocketWritable()
                 mTransaction->OnTransportStatus(mSocketTransport,
                                                 NS_NET_STATUS_WAITING_FOR,
                                                 0);
+                if (mCheckNetworkStallsWithTFO) {
+                    mLastRequestBytesSentTime = PR_IntervalNow();
+                }
 
                 rv = ResumeRecv(); 
             }
@@ -1897,6 +1927,8 @@ nsHttpConnection::OnWriteSegment(char *buf,
         mSocketInCondition = NS_BASE_STREAM_CLOSED;
     else
         mSocketInCondition = NS_OK; 
+
+    mCheckNetworkStallsWithTFO = false;
 
     return mSocketInCondition;
 }

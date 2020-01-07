@@ -3874,30 +3874,6 @@ pref("plugin.mousewheel.enabled", true);
 
 pref("intl.keyboard.per_window_layout", false);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-pref("intl.ime.hack.set_input_scope_of_url_bar_to_default", true);
-
 #ifdef NS_ENABLE_TSF
 
 pref("intl.tsf.enable", true);
@@ -4808,6 +4784,16 @@ pref("network.tcp.keepalive.probe_count", 4);
 
 pref("network.tcp.tcp_fastopen_enable", false);
 pref("network.tcp.tcp_fastopen_consecutive_failure_limit", 5);
+
+
+
+
+
+
+
+pref("network.tcp.tcp_fastopen_http_check_for_stalls_only_if_idle_for", 10);
+pref("network.tcp.tcp_fastopen_http_stalls_limit", 3);
+pref("network.tcp.tcp_fastopen_http_stalls_timeout", 20);
 
 
 pref("layers.acceleration.disabled", false);
