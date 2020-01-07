@@ -269,7 +269,6 @@ var gSearchResultsPane = {
         if (!child.classList.contains("header") &&
             !child.classList.contains("subcategory") &&
             await this.searchWithinNode(child, this.query)) {
-          child.hidden = false;
           child.classList.remove("visually-hidden");
 
           
@@ -280,8 +279,8 @@ var gSearchResultsPane = {
           }
 
           resultsFound = true;
-        } else if (!child.hidden) {
-          child.hidden = true;
+        } else {
+          child.classList.add("visually-hidden");
         }
       }
 
@@ -314,9 +313,7 @@ var gSearchResultsPane = {
 
       
       for (let element of document.querySelectorAll("caption.search-header")) {
-        if (!element.hidden) {
-          element.hidden = true;
-        }
+        element.hidden = true;
       }
     }
 
@@ -516,7 +513,7 @@ var gSearchResultsPane = {
     }
     let searchTooltip = anchorNode.ownerDocument.createElement("span");
     let searchTooltipText = anchorNode.ownerDocument.createElement("span");
-    searchTooltip.setAttribute("class", "search-tooltip");
+    searchTooltip.className = "search-tooltip";
     searchTooltipText.textContent = query;
     searchTooltip.appendChild(searchTooltipText);
 
@@ -541,12 +538,8 @@ var gSearchResultsPane = {
 
 
   removeAllSearchTooltips() {
-    let searchTooltips = Array.from(document.querySelectorAll(".search-tooltip"));
-    for (let searchTooltip of searchTooltips) {
-      searchTooltip.parentElement.classList.remove("search-tooltip-parent");
-      searchTooltip.remove();
-    }
     for (let anchorNode of this.listSearchTooltips) {
+      anchorNode.parentElement.classList.remove("search-tooltip-parent");
       anchorNode.tooltipNode.remove();
       anchorNode.tooltipNode = null;
     }

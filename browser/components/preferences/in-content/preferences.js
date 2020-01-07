@@ -193,8 +193,6 @@ function search(aQuery, aAttribute) {
   for (let element of elements) {
     
     
-    
-    
     if (element.getAttribute("data-hidden-from-search") != "true" ||
         element.getAttribute("data-subpanel") == "true") {
       let attributeValue = element.getAttribute(aAttribute);
@@ -203,6 +201,9 @@ function search(aQuery, aAttribute) {
       } else {
         element.hidden = true;
       }
+    } else if (element.getAttribute("data-hidden-from-search") == "true" &&
+               !element.hidden) {
+      element.hidden = true;
     }
     element.classList.remove("visually-hidden");
   }
