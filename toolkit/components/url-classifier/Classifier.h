@@ -52,7 +52,7 @@ public:
   
 
 
-  nsresult ActiveTables(nsTArray<nsCString>& aTables);
+  nsresult ActiveTables(nsTArray<nsCString>& aTables) const;
 
   
 
@@ -172,7 +172,7 @@ private:
 
   nsresult LoadMetadata(nsIFile* aDirectory, nsACString& aResult);
 
-  nsCString GetProvider(const nsACString& aTableName);
+  static nsCString GetProvider(const nsACString& aTableName);
 
   
 

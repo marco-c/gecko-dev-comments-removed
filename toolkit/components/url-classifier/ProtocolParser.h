@@ -52,7 +52,7 @@ public:
   
   TableUpdate *GetTableUpdate(const nsACString& aTable);
   void ForgetTableUpdates() { mTableUpdates.Clear(); }
-  nsTArray<TableUpdate*> &GetTableUpdates() { return mTableUpdates; }
+  const nsTArray<TableUpdate*>& GetTableUpdates() { return mTableUpdates; }
 
   
   
