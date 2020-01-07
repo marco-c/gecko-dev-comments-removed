@@ -644,6 +644,7 @@ nsWebBrowserPersist::SerializeNextFile()
             if (rv == NS_OK) {
                 
                 
+                
                 data->mFile = fileAsURI;
                 data->mSaved = true;
             } else {
@@ -868,6 +869,19 @@ NS_IMETHODIMP nsWebBrowserPersist::OnStartRequest(
             rv = CalculateUniqueFilename(data->mFile, uniqueFilenameURI);
             if (NS_SUCCEEDED(rv)) {
                 data->mFile = uniqueFilenameURI;
+            }
+
+            
+            
+            nsCOMPtr<nsIURI> chanURI;
+            rv = channel->GetOriginalURI(getter_AddRefs(chanURI));
+            if (NS_SUCCEEDED(rv)) {
+                nsAutoCString spec;
+                chanURI->GetSpec(spec);
+                URIData *uridata;
+                if (mURIMap.Get(spec, &uridata)) {
+                    uridata->mFile = data->mFile;
+                }
             }
         }
 
@@ -2113,18 +2127,15 @@ nsWebBrowserPersist::CalculateUniqueFilename(nsIURI *aURI, nsCOMPtr<nsIURI>& aOu
             localFile->SetLeafName(filenameAsUnichar);
 
             
-            nsresult rv;
-            nsCOMPtr<nsIFileURL> fileURL = do_QueryInterface(aURI, &rv);
-            NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
-            fileURL->SetFile(localFile);  
+            return NS_MutateURI(aURI)
+                     .Apply(NS_MutatorMethod(&nsIFileURLMutator::SetFile,
+                                             localFile))
+                     .Finalize(aOutURI);
         }
-        else
-        {
-          return NS_MutateURI(url)
-                   .Apply(NS_MutatorMethod(&nsIURLMutator::SetFileName,
-                                           filename, nullptr))
-                   .Finalize(aOutURI);
-        }
+        return NS_MutateURI(url)
+                 .Apply(NS_MutatorMethod(&nsIURLMutator::SetFileName,
+                                         filename, nullptr))
+                 .Finalize(aOutURI);
     }
 
     
@@ -2291,17 +2302,15 @@ nsWebBrowserPersist::CalculateAndAppendFileExt(nsIURI *aURI,
                     localFile->SetLeafName(NS_ConvertUTF8toUTF16(newFileName));
 
                     
-                    nsCOMPtr<nsIFileURL> fileURL = do_QueryInterface(aURI, &rv);
-                    NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
-                    fileURL->SetFile(localFile);  
+                    return NS_MutateURI(url)
+                             .Apply(NS_MutatorMethod(&nsIFileURLMutator::SetFile,
+                                                     localFile))
+                             .Finalize(aOutURI);
                 }
-                else
-                {
-                  return NS_MutateURI(url)
-                           .Apply(NS_MutatorMethod(&nsIURLMutator::SetFileName,
-                                                   newFileName, nullptr))
-                           .Finalize(aOutURI);
-                }
+                return NS_MutateURI(url)
+                         .Apply(NS_MutatorMethod(&nsIURLMutator::SetFileName,
+                                                 newFileName, nullptr))
+                         .Finalize(aOutURI);
             }
 
         }
