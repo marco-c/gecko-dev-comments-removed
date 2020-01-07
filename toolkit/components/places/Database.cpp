@@ -989,12 +989,19 @@ Database::SetupDatabaseConnection(nsCOMPtr<mozIStorageService>& aStorage)
   
   
   
+  nsresult rv = mMainConn->SetDefaultTransactionType(
+    mozIStorageConnection::TRANSACTION_IMMEDIATE);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  
+  
 
   {
     
     
     nsCOMPtr<mozIStorageStatement> statement;
-    nsresult rv = mMainConn->CreateStatement(NS_LITERAL_CSTRING(
+    rv = mMainConn->CreateStatement(NS_LITERAL_CSTRING(
       MOZ_STORAGE_UNIQUIFY_QUERY_STR "PRAGMA page_size"
     ), getter_AddRefs(statement));
     NS_ENSURE_SUCCESS(rv, rv);
@@ -1006,7 +1013,7 @@ Database::SetupDatabaseConnection(nsCOMPtr<mozIStorageService>& aStorage)
   }
 
   
-  nsresult rv = mMainConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+  rv = mMainConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
     MOZ_STORAGE_UNIQUIFY_QUERY_STR "PRAGMA temp_store = MEMORY")
   );
   NS_ENSURE_SUCCESS(rv, rv);
