@@ -668,17 +668,22 @@ AudioContext::CurrentTime()
 {
   MediaStream* stream = Destination()->Stream();
 
-  if (!mIsStarted &&
-    stream->StreamTimeToSeconds(stream->GetCurrentTime()) == 0) {
-      return 0;
+  double rawTime = stream->StreamTimeToSeconds(stream->GetCurrentTime());
+
+  
+  
+  
+  
+  
+  if ((128/mSampleRate) * 1000.0 > nsRFPService::TimerResolution() / 1000.0) {
+    return rawTime;
   }
 
   
   
   
   return nsRFPService::ReduceTimePrecisionAsSecs(
-    stream->StreamTimeToSeconds(stream->GetCurrentTime()),
-    GetRandomTimelineSeed());
+    rawTime, GetRandomTimelineSeed());
 }
 
 void AudioContext::DisconnectFromOwner()
