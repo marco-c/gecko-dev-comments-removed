@@ -183,9 +183,6 @@ private:
   DECL_MEDIA_PREF("media.hls.enabled",                        HLSEnabled, bool, false);
 
   
-  DECL_MEDIA_PREF("media.rust.test_mode",                     RustTestMode, bool, false);
-
-  
   
   DECL_MEDIA_PREF("media.rust.mp4parser",                     EnableRustMP4Parser, bool, true);
 
