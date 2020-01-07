@@ -17,6 +17,10 @@ add_task(async function() {
       let destination = tabs[0];
       let source = tabs[1]; 
 
+      browser.tabs.onUpdated.addListener(() => {
+        
+      });
+
       
       await browser.test.assertRejects(
         browser.tabs.move(source.id, {windowId: 123144576, index: 0}),
@@ -28,6 +32,8 @@ add_task(async function() {
       tabs = await browser.tabs.query({url: "<all_urls>"});
       browser.test.assertEq(tabs[0].url, "http://example.com/");
       browser.test.assertEq(tabs[0].windowId, destination.windowId);
+      browser.test.assertEq(tabs[0].id, source.id);
+
       browser.test.notifyPass("tabs.move.window");
     },
   });

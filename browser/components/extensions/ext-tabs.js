@@ -203,8 +203,12 @@ class TabsUpdateFilterEventManager extends EventManager {
           needed.push("pinned");
         } else if (event.type == "TabUnpinned") {
           needed.push("pinned");
-        } else if (event.type == "TabBrowserInserted" &&
-                   !event.detail.insertedOnTabCreation) {
+        } else if (event.type == "TabBrowserInserted") {
+          
+          
+          if (event.detail.insertedOnTabCreation) {
+            return;
+          }
           needed.push("discarded");
         } else if (event.type == "TabBrowserDiscarded") {
           needed.push("discarded");
