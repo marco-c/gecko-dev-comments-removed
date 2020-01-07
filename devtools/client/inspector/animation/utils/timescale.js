@@ -40,10 +40,22 @@ class TimeScale {
 
       const toRate = v => v / playbackRate;
       const startTime = createdTime + toRate(Math.min(delay, 0));
-      const endTime = createdTime +
-                      toRate(delay +
-                             duration * (iterationCount || 1) +
-                             Math.max(endDelay, 0));
+      let endTime = 0;
+
+      if (duration === Infinity) {
+        
+        
+        
+        
+        
+        endTime = createdTime + (delay > 0 ? delay * 2 : 1);
+      } else {
+        endTime = createdTime +
+                  toRate(delay +
+                         duration * (iterationCount || 1) +
+                         Math.max(endDelay, 0));
+      }
+
       minStartTime = Math.min(minStartTime, startTime);
       maxEndTime = Math.max(maxEndTime, endTime);
       animationsCurrentTime =

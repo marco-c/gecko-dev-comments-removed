@@ -44,6 +44,11 @@ class TimingPath extends PureComponent {
       }
     }
 
+    if (state.duration === Infinity) {
+      this.renderInfinityDuration(pathList, state, mainIterationStartTime, helper);
+      return pathList;
+    }
+
     
     
     
@@ -285,6 +290,32 @@ class TimingPath extends PureComponent {
         )
       );
     }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  renderInfinityDuration(pathList, state, mainIterationStartTime, helper) {
+    const startSegment = helper.getSegment(mainIterationStartTime);
+    const endSegment = { x: helper.totalDuration, y: startSegment.y };
+    const segments = [startSegment, endSegment];
+    pathList.push(
+      dom.path(
+        {
+          className: "animation-iteration-path infinity-duration",
+          d: helper.toPathString(segments),
+        }
+      )
+    );
   }
 
   
