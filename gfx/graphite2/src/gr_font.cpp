@@ -47,16 +47,10 @@ gr_font* gr_make_font(float ppm, const gr_face *face)
 
 gr_font* gr_make_font_with_ops(float ppm, const void* appFontHandle, const gr_font_ops * font_ops, const gr_face * face)
 {                 
-    if (face == 0 || ppm <= 0)  return 0;
+    if (face == 0)  return 0;
 
     Font * const res = new Font(ppm, *face, appFontHandle, font_ops);
-    if (*res)
-        return static_cast<gr_font*>(res);
-    else
-    {
-        delete res;
-        return 0;
-    }
+    return static_cast<gr_font*>(res);
 }
 
 gr_font* gr_make_font_with_advance_fn(float ppm, const void* appFontHandle, gr_advance_fn getAdvance, const gr_face * face)
@@ -67,7 +61,7 @@ gr_font* gr_make_font_with_advance_fn(float ppm, const void* appFontHandle, gr_a
 
 void gr_font_destroy(gr_font *font)
 {
-    delete static_cast<Font*>(font);
+    delete font;
 }
 
 

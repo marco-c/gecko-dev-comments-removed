@@ -32,7 +32,6 @@
 
 #pragma once
 #include <cstring>
-#include <limits>
 #include <graphite2/Types.h>
 #include "inc/Main.h"
 
@@ -57,13 +56,6 @@
 #define     REGPARM(n)
 #endif
 
-#if defined(__MINGW32__)
-
-
-
-#undef DELETE
-#endif
-
 namespace graphite2 {
 
 
@@ -72,7 +64,7 @@ class Slot;
 class SlotMap;
 
 
-namespace vm
+namespace vm 
 {
 
 
@@ -120,12 +112,12 @@ enum opcode {
     PUT_GLYPH,                      PUSH_GLYPH_ATTR,    PUSH_ATT_TO_GLYPH_ATTR,
     BITOR,                          BITAND,             BITNOT,
     BITSET,                         SET_FEAT,
-    MAX_OPCODE,
+    MAX_OPCODE,                     
     
     TEMP_COPY = MAX_OPCODE
 };
 
-struct opcode_t
+struct opcode_t 
 {
     instr           impl[2];
     uint8           param_sz;
@@ -194,8 +186,6 @@ inline Machine::status_t Machine::status() const throw()
 
 inline void Machine::check_final_stack(const stack_t * const sp)
 {
-    if (_status != finished) return;
-
     stack_t const * const base  = _stack + STACK_GUARD,
                   * const limit = base + STACK_MAX;
     if      (sp <  base)    _status = stack_underflow;       
@@ -205,3 +195,6 @@ inline void Machine::check_final_stack(const stack_t * const sp)
 
 } 
 } 
+
+
+

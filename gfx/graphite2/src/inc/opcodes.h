@@ -65,7 +65,7 @@
      
 
 
-
+#define NOT_IMPLEMENTED
 
 #define binop(op)           const uint32 a = pop(); *sp = uint32(*sp) op a
 #define sbinop(op)          const int32 a = pop(); *sp = int32(*sp) op a
@@ -130,10 +130,8 @@ STARTOP(mul)
 ENDOP
 
 STARTOP(div_)
-    const int32 b = pop();
-    const int32 a = int32(*sp);
-    if (b == 0 || (a == std::numeric_limits<int32>::min() && b == -1)) DIE;
-    *sp = int32(*sp) / b;
+    if (*sp == 0) DIE;
+    sbinop(/);
 ENDOP
 
 STARTOP(min_)
@@ -210,12 +208,12 @@ STARTOP(next)
     ++map;
 ENDOP
 
-
-
-
+STARTOP(next_n)
+    use_params(1);
+    NOT_IMPLEMENTED;
     
     
-
+ENDOP
 
 
 
@@ -339,7 +337,6 @@ STARTOP(delete_)
     else
         seg.last(is->prev());
     
-
     if (is == smap.highwater())
             smap.highwater(is->next());
     if (is->prev())
