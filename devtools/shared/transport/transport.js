@@ -30,7 +30,6 @@
   require("devtools/shared/transport/packets");
   const promise = require("promise");
   const defer = require("devtools/shared/defer");
-  const EventEmitter = require("devtools/shared/event-emitter");
 
   DevToolsUtils.defineLazyGetter(this, "Pipe", () => {
     return CC("@mozilla.org/pipe;1", "nsIPipe", "init");
@@ -101,8 +100,6 @@
 
 
   function DebuggerTransport(input, output) {
-    EventEmitter.decorate(this);
-
     this._input = input;
     this._scriptableInput = new ScriptableInputStream(input);
     this._output = output;
@@ -134,8 +131,6 @@
 
 
     send: function(object) {
-      this.emit("send", object);
-
       let packet = new JSONPacket(this);
       packet.object = object;
       this._outgoing.push(packet);
@@ -184,8 +179,6 @@
 
 
     startBulkSend: function(header) {
-      this.emit("startbulksend", header);
-
       let packet = new BulkPacket(this);
       packet.header = header;
       this._outgoing.push(packet);
@@ -200,8 +193,6 @@
 
 
     close: function(reason) {
-      this.emit("close", reason);
-
       this.active = false;
       this._input.close();
       this._scriptableInput.close();
@@ -478,7 +469,6 @@
       DevToolsUtils.executeSoon(DevToolsUtils.makeInfallible(() => {
       
         if (this.active) {
-          this.emit("packet", object);
           this.hooks.onPacket(object);
         }
       }, "DebuggerTransport instance's this.hooks.onPacket"));
@@ -494,7 +484,6 @@
       DevToolsUtils.executeSoon(DevToolsUtils.makeInfallible(() => {
       
         if (this.active) {
-          this.emit("bulkpacket", ...args);
           this.hooks.onBulkPacket(...args);
         }
       }, "DebuggerTransport instance's this.hooks.onBulkPacket"));
@@ -528,8 +517,6 @@
 
 
   function LocalDebuggerTransport(other) {
-    EventEmitter.decorate(this);
-
     this.other = other;
     this.hooks = null;
 
@@ -545,8 +532,6 @@
 
 
     send: function(packet) {
-      this.emit("send", packet);
-
       let serial = this._serial.count++;
       if (flags.wantLogging) {
         
@@ -565,7 +550,6 @@
             dumpn("Received packet " + serial + ": " + JSON.stringify(packet, null, 2));
           }
           if (other.hooks) {
-            other.emit("packet", packet);
             other.hooks.onPacket(packet);
           }
         }, "LocalDebuggerTransport instance's this.other.hooks.onPacket"));
@@ -582,8 +566,6 @@
 
 
     startBulkSend: function({actor, type, length}) {
-      this.emit("startbulksend", {actor, type, length});
-
       let serial = this._serial.count++;
 
       dumpn("Sent bulk packet " + serial + " for actor " + actor);
@@ -616,7 +598,6 @@
           done: deferred
         };
 
-        this.other.emit("bulkpacket", packet);
         this.other.hooks.onBulkPacket(packet);
 
         
@@ -653,8 +634,6 @@
 
 
     close: function() {
-      this.emit("close");
-
       if (this.other) {
         
         
@@ -712,8 +691,6 @@
 
 
   function ChildDebuggerTransport(mm, prefix) {
-    EventEmitter.decorate(this);
-
     this._mm = mm;
     this._messageName = "debug:" + prefix + ":packet";
   }
@@ -751,12 +728,10 @@
 
     close: function() {
       this._removeListener();
-      this.emit("close");
       this.hooks.onClosed();
     },
 
     receiveMessage: function({data}) {
-      this.emit("packet", data);
       this.hooks.onPacket(data);
     },
 
@@ -789,7 +764,6 @@
     },
 
     send: function(packet) {
-      this.emit("send", packet);
       if (flags.testing && !this._canBeSerialized(packet)) {
         let attributes = this.pathToUnserializable(packet);
         let msg = "Following packet can't be serialized: " + JSON.stringify(packet);

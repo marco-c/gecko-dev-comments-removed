@@ -174,11 +174,6 @@ DebuggerClient.prototype = {
 
   connect: function(onConnected) {
     let deferred = promise.defer();
-    this.emit("connect");
-
-    
-    
-    EventEmitter.emit(DebuggerClient, "connect", this);
 
     this.addOneTimeListener("connected", (name, applicationType, traits) => {
       this.traits = traits;
