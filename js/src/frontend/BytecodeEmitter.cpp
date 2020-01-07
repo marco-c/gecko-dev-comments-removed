@@ -1977,7 +1977,7 @@ class MOZ_STACK_CLASS TryEmitter
 
 
 
-class MOZ_STACK_CLASS IfThenElseEmitter
+class MOZ_STACK_CLASS IfEmitter
 {
     BytecodeEmitter* bce_;
 
@@ -2045,7 +2045,7 @@ class MOZ_STACK_CLASS IfThenElseEmitter
 #endif
 
   public:
-    explicit IfThenElseEmitter(BytecodeEmitter* bce)
+    explicit IfEmitter(BytecodeEmitter* bce)
       : bce_(bce),
         thenDepth_(0)
 #ifdef DEBUG
@@ -2055,7 +2055,7 @@ class MOZ_STACK_CLASS IfThenElseEmitter
 #endif
     {}
 
-    ~IfThenElseEmitter()
+    ~IfEmitter()
     {}
 
   private:
@@ -2303,7 +2303,7 @@ class ForOfLoopControl : public LoopControl
         if (!bce->emit1(JSOP_STRICTNE))           
             return false;
 
-        IfThenElseEmitter ifIteratorIsNotClosed(bce);
+        IfEmitter ifIteratorIsNotClosed(bce);
         if (!ifIteratorIsNotClosed.emitThen())    
             return false;
 
@@ -2327,7 +2327,7 @@ class ForOfLoopControl : public LoopControl
             if (!tryCatch_->emitFinally())
                 return false;
 
-            IfThenElseEmitter ifGeneratorClosing(bce);
+            IfEmitter ifGeneratorClosing(bce);
             if (!bce->emit1(JSOP_ISGENCLOSING))   
                 return false;
             if (!ifGeneratorClosing.emitThen())   
@@ -5506,7 +5506,7 @@ BytecodeEmitter::emitIteratorCloseInScope(EmitterScope& currentScope,
     
     
     
-    IfThenElseEmitter ifReturnMethodIsDefined(this);
+    IfEmitter ifReturnMethodIsDefined(this);
     if (!emitPushNotUndefinedOrNull())                    
         return false;
 
@@ -5885,7 +5885,7 @@ BytecodeEmitter::emitDestructuringOpsArray(ParseNode* pattern, DestructuringFlav
         }
 
         if (member->isKind(ParseNodeKind::Spread)) {
-            IfThenElseEmitter ifThenElse(this);
+            IfEmitter ifThenElse(this);
             if (!isFirst) {
                 
                 
@@ -5942,7 +5942,7 @@ BytecodeEmitter::emitDestructuringOpsArray(ParseNode* pattern, DestructuringFlav
 
         MOZ_ASSERT(!member->isKind(ParseNodeKind::Spread));
 
-        IfThenElseEmitter ifAlreadyDone(this);
+        IfEmitter ifAlreadyDone(this);
         if (!isFirst) {
                                                                   
             if (!ifAlreadyDone.emitThenElse())                    
@@ -5979,7 +5979,7 @@ BytecodeEmitter::emitDestructuringOpsArray(ParseNode* pattern, DestructuringFlav
         if (!emit2(JSOP_UNPICK, emitted + 2))                     
             return false;
 
-        IfThenElseEmitter ifDone(this);
+        IfEmitter ifDone(this);
         if (!ifDone.emitThenElse())                               
             return false;
 
@@ -6031,7 +6031,7 @@ BytecodeEmitter::emitDestructuringOpsArray(ParseNode* pattern, DestructuringFlav
     
     
                                                                   
-    IfThenElseEmitter ifDone(this);
+    IfEmitter ifDone(this);
     if (!ifDone.emitThenElse())                                   
         return false;
     if (!emitPopN(2))                                             
@@ -6929,7 +6929,7 @@ BytecodeEmitter::emitTry(ParseNode* pn)
 bool
 BytecodeEmitter::emitIf(ParseNode* pn)
 {
-    IfThenElseEmitter ifThenElse(this);
+    IfEmitter ifThenElse(this);
 
   if_again:
     
@@ -7159,7 +7159,7 @@ BytecodeEmitter::emitAsyncIterator()
     if (!emitElemOpBase(JSOP_CALLELEM))                           
         return false;
 
-    IfThenElseEmitter ifAsyncIterIsUndefined(this);
+    IfEmitter ifAsyncIterIsUndefined(this);
     if (!emitPushNotUndefinedOrNull())                            
         return false;
     if (!emit1(JSOP_NOT))                                         
@@ -7477,7 +7477,7 @@ BytecodeEmitter::emitForOf(ParseNode* forOfLoop, EmitterScope* headLexicalEmitte
         if (!emitAtomOp(cx->names().done, JSOP_GETPROP))  
             return false;
 
-        IfThenElseEmitter ifDone(this);
+        IfEmitter ifDone(this);
 
         if (!ifDone.emitThen())                           
             return false;
@@ -8671,7 +8671,7 @@ BytecodeEmitter::emitYieldStar(ParseNode* iter)
     if (!emit1(JSOP_EQ))                                  
         return false;
 
-    IfThenElseEmitter ifThrowMethodIsNotDefined(this);
+    IfEmitter ifThrowMethodIsNotDefined(this);
     if (!ifThrowMethodIsNotDefined.emitThen())            
         return false;
     savedDepthTemp = stackDepth;
@@ -8727,7 +8727,7 @@ BytecodeEmitter::emitYieldStar(ParseNode* iter)
     
     
 
-    IfThenElseEmitter ifGeneratorClosing(this);
+    IfEmitter ifGeneratorClosing(this);
     if (!emit1(JSOP_ISGENCLOSING))                        
         return false;
     if (!ifGeneratorClosing.emitThen())                   
@@ -8746,7 +8746,7 @@ BytecodeEmitter::emitYieldStar(ParseNode* iter)
     
     
     
-    IfThenElseEmitter ifReturnMethodIsDefined(this);
+    IfEmitter ifReturnMethodIsDefined(this);
     if (!emitPushNotUndefinedOrNull())                    
         return false;
 
@@ -8779,7 +8779,7 @@ BytecodeEmitter::emitYieldStar(ParseNode* iter)
     
     
     
-    IfThenElseEmitter ifReturnDone(this);
+    IfEmitter ifReturnDone(this);
     if (!emit1(JSOP_DUP))                                 
         return false;
     if (!emitAtomOp(cx->names().done, JSOP_GETPROP))      
@@ -9519,7 +9519,7 @@ BytecodeEmitter::emitCallOrNew(ParseNode* pn, ValueUsage valueUsage )
     } else {
         ParseNode* args = pn2->pn_next;
         bool emitOptCode = (argc == 1) && isRestParameter(args->pn_kid);
-        IfThenElseEmitter ifNotOptimizable(this);
+        IfEmitter ifNotOptimizable(this);
 
         if (emitOptCode) {
             
@@ -9794,7 +9794,7 @@ BytecodeEmitter::emitConditionalExpression(ConditionalExpression& conditional,
     if (!emitTree(&conditional.condition()))
         return false;
 
-    IfThenElseEmitter ifThenElse(this);
+    IfEmitter ifThenElse(this);
     if (!ifThenElse.emitCond())
         return false;
 
@@ -10653,7 +10653,7 @@ BytecodeEmitter::emitClass(ParseNode* pn)
     
     
     if (heritageExpression) {
-        IfThenElseEmitter ifThenElse(this);
+        IfEmitter ifThenElse(this);
 
         if (!emitTree(heritageExpression))                      
             return false;
