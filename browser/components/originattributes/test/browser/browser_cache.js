@@ -161,7 +161,7 @@ async function doTest(aBrowser) {
       let trackLoaded = false;
 
       let audioListener = () => {
-        audio.removeEventListener("canplaythrough", audioListener);
+        audio.removeEventListener("suspend", audioListener);
 
         audioLoaded = true;
         if (audioLoaded && trackLoaded) {
@@ -180,7 +180,7 @@ async function doTest(aBrowser) {
 
       
       audioTrack.addEventListener("load", trackListener);
-      audio.addEventListener("canplaythrough", audioListener);
+      audio.addEventListener("suspend", audioListener);
 
       
       audioSource.setAttribute("src", audioURL + URLSuffix);
@@ -198,12 +198,12 @@ async function doTest(aBrowser) {
     
     await new Promise(resolve => {
       let listener = () => {
-        video.removeEventListener("canplaythrough", listener);
+        video.removeEventListener("suspend", listener);
         resolve();
       };
 
       
-      video.addEventListener("canplaythrough", listener);
+      video.addEventListener("suspend", listener);
 
       
       video.setAttribute("src", videoURL + URLSuffix);
