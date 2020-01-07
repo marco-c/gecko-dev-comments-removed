@@ -72,8 +72,6 @@ private:
   bool mNeedKeyframe = true;
   MozPromiseRequestHolder<MediaDataDecoder::DecodePromise> mDecodeRequest;
 
-  Monitor mMonitor;
-  
   MediaResult mError = NS_OK;
   MediaDataDecoder::DecodedData mResults;
 };
