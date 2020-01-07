@@ -5023,6 +5023,9 @@ pref("extensions.webextensions.remote", false);
 pref("extensions.webextensions.protocol.remote", true);
 
 
+pref("extensions.webextensions.tabhide.enabled", false);
+
+
 pref("extensions.webcompat-reporter.newIssueEndpoint", "https://webcompat.com/issues/new");
 #if defined(MOZ_DEV_EDITION) || defined(NIGHTLY_BUILD)
 pref("extensions.webcompat-reporter.enabled", true);
