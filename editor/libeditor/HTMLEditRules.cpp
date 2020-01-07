@@ -7973,11 +7973,11 @@ HTMLEditRules::GetNodesFromPoint(
     return NS_ERROR_INVALID_ARG;
   }
   RefPtr<nsRange> range = new nsRange(aPoint.GetContainer());
-  ErrorResult error;
-  range->SetStart(aPoint, error);
+  IgnoredErrorResult ignoredError;
+  range->SetStart(aPoint, ignoredError);
   
   
-  MOZ_ASSERT(!error.Failed());
+  MOZ_ASSERT(!ignoredError.Failed());
 
   
   PromoteRange(*range, aOperation);
