@@ -5,6 +5,7 @@
 
 
 #include "TimeoutManager.h"
+#include "nsContentUtils.h"
 #include "nsGlobalWindow.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Telemetry.h"
