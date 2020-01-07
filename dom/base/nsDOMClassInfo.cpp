@@ -1341,6 +1341,9 @@ nsWindowSH::GlobalResolve(nsGlobalWindowInner *aWin, JSContext *cx,
 
   if (name_struct->mType == nsGlobalNameStruct::eTypeClassConstructor) {
     
+    MOZ_ASSERT(name.EqualsLiteral("DOMConstructor"));
+
+    
     
     
     JS::Rooted<JSObject*> dot_prototype(cx);
@@ -1349,21 +1352,9 @@ nsWindowSH::GlobalResolve(nsGlobalWindowInner *aWin, JSContext *cx,
     NS_ENSURE_SUCCESS(rv, rv);
     MOZ_ASSERT(dot_prototype);
 
-    bool isXray = xpc::WrapperFactory::IsXrayWrapper(obj);
-    MOZ_ASSERT_IF(obj != aWin->GetGlobalJSObject(), isXray);
-    if (!isXray) {
-      
-      FillPropertyDescriptor(desc, obj, JS::UndefinedValue(), false);
-      return NS_OK;
-    }
-
     
-    
-    return ResolvePrototype(nsDOMClassInfo::sXPConnect, aWin, cx, obj,
-                            class_name,
-                            &sClassInfoData[name_struct->mDOMClassInfoID],
-                            name_struct, nameSpaceManager, dot_prototype,
-                            desc);
+    FillPropertyDescriptor(desc, obj, JS::UndefinedValue(), false);
+    return NS_OK;
   }
 
   if (name_struct->mType == nsGlobalNameStruct::eTypeProperty) {
