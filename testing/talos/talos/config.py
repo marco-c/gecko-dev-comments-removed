@@ -101,8 +101,6 @@ DEFAULTS = dict(
         'network.proxy.type': 1,
         
         'idle.lastDailyNotification': int(time.time()),
-        
-        'privacy.reduceTimerPrecision' : False,
         'places.database.lastMaintenance': FAR_IN_FUTURE,
         'security.enable_java': False,
         'security.fileuri.strict_origin_policy': False,
