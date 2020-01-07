@@ -225,6 +225,54 @@ var BrowserTestUtils = {
 
 
 
+  is_hidden(element) {
+    var style = element.ownerGlobal.getComputedStyle(element);
+    if (style.display == "none")
+      return true;
+    if (style.visibility != "visible")
+      return true;
+    if (style.display == "-moz-popup")
+      return ["hiding", "closed"].includes(element.state);
+
+    
+    if (element.parentNode != element.ownerDocument)
+      return BrowserTestUtils.is_hidden(element.parentNode);
+
+    return false;
+  },
+
+  
+
+
+
+
+
+
+
+  is_visible(element) {
+    var style = element.ownerGlobal.getComputedStyle(element);
+    if (style.display == "none")
+      return false;
+    if (style.visibility != "visible")
+      return false;
+    if (style.display == "-moz-popup" && element.state != "open")
+      return false;
+
+    
+    if (element.parentNode != element.ownerDocument)
+      return BrowserTestUtils.is_visible(element.parentNode);
+
+    return true;
+  },
+
+  
+
+
+
+
+
+
+
 
 
 

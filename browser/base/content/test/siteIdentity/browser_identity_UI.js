@@ -103,7 +103,7 @@ function nextTest() {
       gIdentityHandler._identityBox.click();
       info("Waiting for the Control Center to be shown");
       popupShown.then(async () => {
-        ok(!is_hidden(gIdentityHandler._identityPopup), "Control Center is visible");
+        ok(!BrowserTestUtils.is_hidden(gIdentityHandler._identityPopup), "Control Center is visible");
         
         
         let promiseViewShown = BrowserTestUtils.waitForEvent(gIdentityHandler._identityPopup, "ViewShown");
@@ -141,7 +141,7 @@ function checkResult() {
     info("Waiting for the Control Center to hide");
     gPopupHidden.then(() => {
       gPopupHidden = null;
-      ok(is_hidden(gIdentityHandler._identityPopup), "Control Center is hidden");
+      ok(BrowserTestUtils.is_hidden(gIdentityHandler._identityPopup), "Control Center is hidden");
       executeSoon(nextTest);
     });
   } else {
