@@ -6,8 +6,8 @@
 
 "use strict";
 
-const Services = require("Services");
 const EventEmitter = require("devtools/shared/event-emitter");
+const { getCurrentZoom } = require("devtools/shared/layout/utils");
 
 
 
@@ -62,10 +62,7 @@ Menu.prototype.insert = function(pos, menuItem) {
 
 
 Menu.prototype.popupWithZoom = function(x, y, toolbox) {
-  let zoom = parseFloat(Services.prefs.getCharPref("devtools.toolbox.zoomValue"));
-  if (!zoom || isNaN(zoom)) {
-    zoom = 1.0;
-  }
+  const zoom = getCurrentZoom(toolbox.doc);
   this.popup(x * zoom, y * zoom, toolbox);
 };
 
