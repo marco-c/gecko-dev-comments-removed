@@ -8,6 +8,8 @@
 %define fieldHoverBorderColor hsla(240,5%,5%,.35)
 
 :root {
+  --toolbar-field-focus-border-color: Highlight;
+
   
   --urlbar-icon-padding: 6px;
 }
@@ -63,11 +65,15 @@
   background-color: var(--url-and-searchbar-background-color, white);
 }
 
+#urlbar[focused="true"],
+.searchbar-textbox[focused="true"] {
+  border-color: var(--toolbar-field-focus-border-color);
+}
+
 #urlbar:-moz-lwtheme[focused="true"],
 #navigator-toolbox .searchbar-textbox:-moz-lwtheme[focused="true"] {
   background-color: var(--lwt-toolbar-field-focus, var(--url-and-searchbar-background-color, white));
   color: var(--lwt-toolbar-field-focus-color, var(--url-and-searchbar-color, black));
-  border-color: var(--lwt-toolbar-field-focus-border-color, var(--lwt-toolbar-field-border-color, @fieldBorderColor@));
 }
 
 :root[uidensity=compact] #urlbar,
