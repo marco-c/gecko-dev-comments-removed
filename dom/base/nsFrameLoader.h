@@ -173,12 +173,6 @@ public:
 
   already_AddRefed<nsIMessageSender> GetMessageManager();
 
-  uint32_t EventMode() const { return mEventMode; }
-  void SetEventMode(uint32_t aEventMode)
-  {
-    mEventMode = aEventMode;
-  }
-
   already_AddRefed<Element> GetOwnerElement();
 
   uint32_t LazyWidth() const;
@@ -478,10 +472,6 @@ private:
   uint64_t mChildID;
 
   int32_t mJSPluginID;
-
-  
-  
-  uint32_t mEventMode;
 
   
   mozilla::ScreenIntSize mLazySize;
