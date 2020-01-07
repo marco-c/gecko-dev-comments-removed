@@ -40,7 +40,7 @@ ApproverDocOf(const nsIDocument& aDocument)
 }
 
 static bool
-IsAllowedToPlay(nsPIDOMWindowInner* aWindow)
+IsWindowAllowedToPlay(nsPIDOMWindowInner* aWindow)
 {
   if (!aWindow) {
     return false;
@@ -88,31 +88,36 @@ AutoplayPolicy::RequestFor(const nsIDocument& aDocument)
   return window->GetAutoplayRequest();
 }
 
- bool
-AutoplayPolicy::IsMediaElementAllowedToPlay(NotNull<HTMLMediaElement*> aElement)
+ Authorization
+AutoplayPolicy::IsAllowedToPlay(const HTMLMediaElement& aElement)
 {
   if (Preferences::GetBool("media.autoplay.enabled")) {
-    return true;
+    return Authorization::Allowed;
   }
 
   
   
   if (!Preferences::GetBool("media.autoplay.enabled.user-gestures-needed", false)) {
     
-    return aElement->IsBlessed() ||
-           EventStateManager::IsHandlingUserInput();
+    return (aElement.IsBlessed() || EventStateManager::IsHandlingUserInput())
+             ? Authorization::Allowed
+             : Authorization::Blocked;
   }
 
   
-  if (aElement->Volume() == 0.0 || aElement->Muted()) {
-    return true;
+  if (aElement.Volume() == 0.0 || aElement.Muted()) {
+    return Authorization::Allowed;
   }
 
-  if (IsAllowedToPlay(aElement->OwnerDoc()->GetInnerWindow())) {
-    return true;
+  if (IsWindowAllowedToPlay(aElement.OwnerDoc()->GetInnerWindow())) {
+    return Authorization::Allowed;
   }
 
-  return false;
+  if (Preferences::GetBool("media.autoplay.ask-permission", false)) {
+    return Authorization::Prompt;
+  }
+
+  return Authorization::Blocked;
 }
 
  bool
@@ -131,7 +136,7 @@ AutoplayPolicy::IsAudioContextAllowedToPlay(NotNull<AudioContext*> aContext)
     return true;
   }
 
-  if (IsAllowedToPlay(aContext->GetOwner())) {
+  if (IsWindowAllowedToPlay(aContext->GetOwner())) {
     return true;
   }
 

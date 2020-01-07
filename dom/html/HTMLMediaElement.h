@@ -1284,7 +1284,7 @@ protected:
   void AudioCaptureStreamChange(bool aCapture);
 
   
-  bool IsAllowedToPlay();
+  bool AudioChannelAgentBlockedPlay();
 
   
   void MaybeDoLoad();

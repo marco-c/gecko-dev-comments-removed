@@ -20,6 +20,13 @@ namespace dom {
 class HTMLMediaElement;
 class AudioContext;
 
+enum class Authorization
+{
+  Allowed,
+  Blocked,
+  Prompt
+};
+
 
 
 
@@ -36,7 +43,7 @@ class AutoplayPolicy
 {
 public:
   
-  static bool IsMediaElementAllowedToPlay(NotNull<HTMLMediaElement*> aElement);
+  static Authorization IsAllowedToPlay(const HTMLMediaElement& aElement);
 
   
   static bool IsAudioContextAllowedToPlay(NotNull<AudioContext*> aContext);
