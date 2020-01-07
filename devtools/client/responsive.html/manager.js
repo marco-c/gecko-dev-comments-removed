@@ -6,7 +6,6 @@
 
 const { Ci } = require("chrome");
 const promise = require("promise");
-const { Task } = require("devtools/shared/task");
 const EventEmitter = require("devtools/shared/old-event-emitter");
 
 const TOOL_URL = "chrome://devtools/content/responsive.html/index.xhtml";
@@ -337,25 +336,25 @@ ResponsiveUI.prototype = {
       async getInnerBrowser(containerBrowser) {
         let toolWindow = ui.toolWindow = containerBrowser.contentWindow;
         toolWindow.addEventListener("message", ui);
-        debug("Yield to init from inner");
+        debug("Wait until init from inner");
         await message.request(toolWindow, "init");
         toolWindow.addInitialViewport("about:blank");
-        debug("Yield to browser mounted");
+        debug("Wait until browser mounted");
         await message.wait(toolWindow, "browser-mounted");
         return ui.getViewportBrowser();
       }
     });
-    debug("Yield to swap start");
+    debug("Wait until swap start");
     await this.swap.start();
 
     this.tab.addEventListener("BeforeTabRemotenessChange", this);
 
     
-    debug("Yield to start frame script");
+    debug("Wait until start frame script");
     await message.request(this.toolWindow, "start-frame-script");
 
     
-    debug("Yield to RDP server connect");
+    debug("Wait until RDP server connect");
     await this.connectToServer();
 
     
