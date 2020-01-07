@@ -47,7 +47,6 @@ const links = {
     "Africa/Nouakchott": "Africa/Nouakchott",
     "Africa/Ouagadougou": "Africa/Ouagadougou",
     "Africa/Porto-Novo": "Africa/Porto-Novo",
-    "Africa/Sao_Tome": "Africa/Sao_Tome",
     "Africa/Timbuktu": "Africa/Timbuktu",
     "America/Anguilla": "America/Anguilla",
     "America/Antigua": "America/Antigua",
