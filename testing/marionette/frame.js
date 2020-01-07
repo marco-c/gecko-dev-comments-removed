@@ -4,7 +4,7 @@
 
 "use strict";
 
-const {classes: Cc, interfaces: Ci, results: Cr, utils: Cu} = Components;
+const {interfaces: Ci, results: Cr, utils: Cu} = Components;
 
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -51,8 +51,6 @@ frame.Manager = class {
     this.currentRemoteFrame = null;
     
     this.previousRemoteFrame = null;
-    
-    this.handledModal = false;
     this.driver = driver;
   }
 
@@ -62,32 +60,6 @@ frame.Manager = class {
   
   receiveMessage(message) {
     switch (message.name) {
-      case "MarionetteFrame:getInterruptedState":
-        
-        if (this.previousRemoteFrame) {
-          
-          let interruptedFrame = Services.wm.getOuterWindowWithId(
-              this.previousRemoteFrame.windowId);
-
-          if (this.previousRemoteFrame.frameId !== null) {
-            
-            let iframes = interruptedFrame.document.getElementsByTagName("iframe");
-            interruptedFrame = iframes[this.previousRemoteFrame.frameId];
-          }
-
-          
-          if (interruptedFrame.src == message.target.src) {
-            return {value: this.handledModal};
-          }
-
-        
-        
-        
-        } else if (this.currentRemoteFrame === null) {
-          return {value: this.handledModal};
-        }
-        return {value: false};
-
       case "MarionetteFrame:getCurrentFrameId":
         if (this.currentRemoteFrame !== null) {
           return this.currentRemoteFrame.frameId;
@@ -162,8 +134,6 @@ frame.Manager = class {
 
 
 
-
-
   addMessageManagerListeners(mm) {
     mm.addWeakMessageListener("Marionette:ok", this.driver);
     mm.addWeakMessageListener("Marionette:done", this.driver);
@@ -175,13 +145,9 @@ frame.Manager = class {
     mm.addWeakMessageListener("Marionette:listenersAttached", this.driver);
     mm.addWeakMessageListener("Marionette:GetLogLevel", this.driver);
     mm.addWeakMessageListener("MarionetteFrame:getCurrentFrameId", this);
-    mm.addWeakMessageListener("MarionetteFrame:getInterruptedState", this);
   }
 
   
-
-
-
 
 
 
