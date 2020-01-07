@@ -7,8 +7,6 @@ function run_test() {
     equal(Services.prefs.getCharPref("browser.search.countryCode"), "AU", "got the correct country code.");
     equal(Services.prefs.getCharPref("browser.search.region"), "AU", "region pref also set to the countryCode.");
     
-    ok(!Services.prefs.prefHasUserValue("browser.search.isUS"), "no isUS pref");
-    
     checkCountryResultTelemetry(TELEMETRY_RESULT_ENUM.SUCCESS);
     
     for (let hid of ["SEARCH_SERVICE_COUNTRY_TIMEOUT",

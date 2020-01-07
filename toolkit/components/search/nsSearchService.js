@@ -390,38 +390,6 @@ function geoSpecificDefaultsEnabled() {
 
 
 
-function migrateRegionPrefs() {
-  
-  if (Services.prefs.prefHasUserValue("browser.search.region")) {
-    return;
-  }
-
-  
-  
-  
-  
-  
-  try {
-    if (Services.prefs.getBoolPref("browser.search.isUS") &&
-        !Services.prefs.prefHasUserValue("browser.search.countryCode")) {
-      Services.prefs.setCharPref("browser.search.region", "US");
-    }
-  } catch (ex) {
-    
-  }
-  
-  
-  try {
-    let countryCode = Services.prefs.getCharPref("browser.search.countryCode");
-    if (!Services.prefs.prefHasUserValue("browser.search.region")) {
-      Services.prefs.setCharPref("browser.search.region", countryCode);
-    }
-  } catch (ex) {
-    
-  }
-}
-
-
 
 
 
@@ -2677,7 +2645,6 @@ SearchService.prototype = {
   _syncInit: function SRCH_SVC__syncInit() {
     LOG("_syncInit start");
     this._initStarted = true;
-    migrateRegionPrefs();
 
     let cache = this._readCacheFile();
     if (cache.metaData)
@@ -2711,8 +2678,6 @@ SearchService.prototype = {
 
   async _asyncInit() {
     LOG("_asyncInit start");
-
-    migrateRegionPrefs();
 
     
     

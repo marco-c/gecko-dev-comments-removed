@@ -26,13 +26,11 @@ function run_test() {
   Services.search.init(() => {
     ok(!Services.prefs.prefHasUserValue("browser.search.countryCode"), "should be no countryCode pref");
     ok(!Services.prefs.prefHasUserValue("browser.search.region"), "should be no region pref");
-    ok(!Services.prefs.prefHasUserValue("browser.search.isUS"), "should never be an isUS pref");
     
     
     Services.search.getEngines();
     ok(!Services.prefs.prefHasUserValue("browser.search.countryCode"), "should be no countryCode pref");
     ok(!Services.prefs.prefHasUserValue("browser.search.region"), "should be no region pref");
-    ok(!Services.prefs.prefHasUserValue("browser.search.isUS"), "should never be an isUS pref");
     
     checkCountryResultTelemetry(TELEMETRY_RESULT_ENUM.SUCCESS_WITHOUT_DATA);
     

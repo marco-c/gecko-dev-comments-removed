@@ -9,14 +9,6 @@ function getCountryCodePref() {
   }
 }
 
-function getIsUSPref() {
-  try {
-    return Services.prefs.getBoolPref("browser.search.isUS");
-  } catch (_) {
-    return undefined;
-  }
-}
-
 
 function promiseTimezoneMessage() {
   return new Promise(resolve => {
@@ -37,7 +29,6 @@ function promiseTimezoneMessage() {
 
 add_task(async function test_simple() {
   deepEqual(getCountryCodePref(), undefined, "no countryCode pref");
-  deepEqual(getIsUSPref(), undefined, "no isUS pref");
 
   
   Services.prefs.setCharPref("browser.search.geoip.url", 'data:application/json,{"country_code": "AU"}');
