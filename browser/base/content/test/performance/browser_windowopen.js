@@ -1,0 +1,134 @@
+
+
+
+"use strict";
+
+
+
+
+
+
+
+
+
+
+const EXPECTED_REFLOWS = [
+  
+
+
+];
+
+if (Services.appinfo.OS == "WINNT") {
+  EXPECTED_REFLOWS.push(
+    {
+      stack: [
+        "verticalMargins@chrome://browser/content/browser-tabsintitlebar.js",
+        "_update@chrome://browser/content/browser-tabsintitlebar.js",
+        "onDOMContentLoaded@chrome://browser/content/browser-tabsintitlebar.js",
+        "onDOMContentLoaded@chrome://browser/content/browser.js",
+      ],
+      maxCount: 2, 
+    },
+  );
+}
+
+if (Services.appinfo.OS == "WINNT" || Services.appinfo.OS == "Darwin") {
+  EXPECTED_REFLOWS.push(
+    {
+      stack: [
+        "rect@chrome://browser/content/browser-tabsintitlebar.js",
+        "_update@chrome://browser/content/browser-tabsintitlebar.js",
+        "onDOMContentLoaded@chrome://browser/content/browser-tabsintitlebar.js",
+        "onDOMContentLoaded@chrome://browser/content/browser.js",
+      ],
+      
+      maxCount: Services.appinfo.OS == "WINNT" ? 5 : 4,
+    },
+  );
+}
+
+
+
+
+
+add_task(async function() {
+  
+  
+  
+  Services.obs.notifyObservers(null, "startupcache-invalidate");
+  Services.obs.notifyObservers(null, "chrome-flush-skin-caches");
+  Services.obs.notifyObservers(null, "chrome-flush-caches");
+
+  let win = window.openDialog("chrome://browser/content/", "_blank",
+                              "chrome,all,dialog=no,remote,suppressanimation",
+                              "about:home");
+
+  let alreadyFocused = false;
+  let inRange = (val, min, max) => min <= val && val <= max;
+  let expectations = {
+    expectedReflows: EXPECTED_REFLOWS,
+    frames: {
+      filter(rects, frame, previousFrame) {
+        
+        
+        
+        
+        
+        
+        if (!alreadyFocused && rects.length > 5 && rects.every(r => r.y2 < 100)) {
+          alreadyFocused = true;
+          todo(false,
+               "bug 1445161 - the window should be focused at first paint, " +
+               rects.toSource());
+          return [];
+        }
+
+        return rects;
+      },
+      exceptions: [
+        {name: "bug 1421463 - reload toolbar icon shouldn't flicker",
+         condition: r => r.h == 13 && inRange(r.w, 14, 16) && 
+                         inRange(r.y1, 40, 80) && 
+                         
+                         
+                         
+                         AppConstants.MOZ_DEV_EDITION ? inRange(r.x1, 100, 120) :
+                                                        inRange(r.x1, 65, 100)
+        },
+      ]
+    }
+  };
+
+  await withPerfObserver(async function() {
+    
+    await new Promise(resolve => {
+      win.addEventListener("DOMContentLoaded", () => {
+        delete win.Marionette;
+        win.Marionette = {running: false};
+        resolve();
+      }, {once: true});
+    });
+
+    await TestUtils.topicObserved("browser-delayed-startup-finished",
+                                  subject => subject == win);
+
+    await BrowserTestUtils.firstBrowserLoaded(win, false);
+    await BrowserTestUtils.browserStopped(win.gBrowser.selectedBrowser, "about:home");
+
+    await new Promise(resolve => {
+      
+      
+      (function waitForIdle(count = 10) {
+        if (!count) {
+          resolve();
+          return;
+        }
+        Services.tm.idleDispatchToMainThread(() => {
+          waitForIdle(count - 1);
+        });
+      })();
+    });
+  }, expectations, win);
+
+  await BrowserTestUtils.closeWindow(win);
+});
