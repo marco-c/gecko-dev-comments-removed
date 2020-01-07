@@ -2711,24 +2711,6 @@ already_AddRefed<LayerManager> nsDisplayList::PaintRoot(nsDisplayListBuilder* aB
     }
   }
 
-  
-  FrameLayerBuilder *oldBuilder = layerManager->GetLayerBuilder();
-  FrameLayerBuilder *layerBuilder = BuildLayers(aBuilder, layerManager,
-                                                aFlags, widgetTransaction);
-
-  if (!layerBuilder) {
-    layerManager->SetUserData(&gLayerManagerLayerBuilder, oldBuilder);
-    return nullptr;
-  }
-
-  if (widgetTransaction ||
-      
-      
-      
-      (document && document->IsBeingUsedAsImage())) {
-    frame->ClearInvalidationStateBits();
-  }
-
   bool temp = aBuilder->SetIsCompositingCheap(layerManager->IsCompositingCheap());
   LayerManager::EndTransactionFlags flags = LayerManager::END_DEFAULT;
   if (layerManager->NeedsWidgetInvalidation()) {
@@ -2743,25 +2725,53 @@ already_AddRefed<LayerManager> nsDisplayList::PaintRoot(nsDisplayListBuilder* aB
     }
   }
 
-  
-  
-  nsRootPresContext* rootPresContext = presContext->GetRootPresContext();
-  if (rootPresContext && XRE_IsContentProcess()) {
-    if (aBuilder->WillComputePluginGeometry()) {
-      rootPresContext->ComputePluginGeometryUpdates(aBuilder->RootReferenceFrame(), aBuilder, this);
-    }
-    
-    
-    
-    rootPresContext->CollectPluginGeometryUpdates(layerManager);
-  }
-
   MaybeSetupTransactionIdAllocator(layerManager, presContext);
 
-  layerManager->EndTransaction(FrameLayerBuilder::DrawPaintedLayer,
-                               aBuilder, flags);
+  
+  FrameLayerBuilder *oldBuilder = layerManager->GetLayerBuilder();
+  FrameLayerBuilder *layerBuilder = nullptr;
+
+  bool sent = false;
+  if (aFlags & PAINT_IDENTICAL_DISPLAY_LIST) {
+    sent = layerManager->EndEmptyTransaction(flags);
+  }
+
+  if (!sent) {
+    layerBuilder = BuildLayers(aBuilder, layerManager,
+                               aFlags, widgetTransaction);
+
+    if (!layerBuilder) {
+      layerManager->SetUserData(&gLayerManagerLayerBuilder, oldBuilder);
+      return nullptr;
+    }
+
+    
+    
+    nsRootPresContext* rootPresContext = presContext->GetRootPresContext();
+    if (rootPresContext && XRE_IsContentProcess()) {
+      if (aBuilder->WillComputePluginGeometry()) {
+        rootPresContext->ComputePluginGeometryUpdates(aBuilder->RootReferenceFrame(), aBuilder, this);
+      }
+      
+      
+      
+      rootPresContext->CollectPluginGeometryUpdates(layerManager);
+    }
+
+    layerManager->EndTransaction(FrameLayerBuilder::DrawPaintedLayer,
+                                 aBuilder, flags);
+    layerBuilder->DidEndTransaction();
+  }
+
+  if (widgetTransaction ||
+      
+      
+      
+      (document && document->IsBeingUsedAsImage())) {
+    frame->ClearInvalidationStateBits();
+  }
+
   aBuilder->SetIsCompositingCheap(temp);
-  layerBuilder->DidEndTransaction();
 
   if (document && widgetTransaction) {
     TriggerPendingAnimations(document, layerManager->GetAnimationReadyTime());
