@@ -742,11 +742,6 @@ AsyncFetchAndSetIconForPage::OnStopRequest(nsIRequest* aRequest,
 
   
   if (NS_FAILED(aStatusCode) || mIcon.payloads.Length() == 0) {
-    nsCOMPtr<nsIURI> iconURI;
-    rv = NS_NewURI(getter_AddRefs(iconURI), mIcon.spec);
-    NS_ENSURE_SUCCESS(rv, rv);
-    rv = favicons->AddFailedFavicon(iconURI);
-    NS_ENSURE_SUCCESS(rv, rv);
     return NS_OK;
   }
 
@@ -771,11 +766,6 @@ AsyncFetchAndSetIconForPage::OnStopRequest(nsIRequest* aRequest,
 
   
   if (payload.mimeType.IsEmpty()) {
-    nsCOMPtr<nsIURI> iconURI;
-    rv = NS_NewURI(getter_AddRefs(iconURI), mIcon.spec);
-    NS_ENSURE_SUCCESS(rv, rv);
-    rv = favicons->AddFailedFavicon(iconURI);
-    NS_ENSURE_SUCCESS(rv, rv);
     return NS_OK;
   }
 

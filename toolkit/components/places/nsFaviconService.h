@@ -150,9 +150,6 @@ private:
 
   nsCOMPtr<nsIURI> mDefaultIcon;
 
-  uint32_t mFailedFaviconSerial;
-  nsDataHashtable<nsCStringHashKey, uint32_t> mFailedFavicons;
-
   
   friend class mozilla::places::AsyncReplaceFaviconData;
   nsTHashtable<UnassociatedIconHashKey> mUnassociatedIcons;
