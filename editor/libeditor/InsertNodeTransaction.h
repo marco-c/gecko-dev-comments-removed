@@ -7,6 +7,7 @@
 #define InsertNodeTransaction_h
 
 #include "mozilla/EditTransactionBase.h" 
+#include "mozilla/EditorDOMPoint.h"     
 #include "nsCOMPtr.h"                   
 #include "nsCycleCollectionParticipant.h"
 #include "nsIContent.h"                 
@@ -28,8 +29,11 @@ public:
 
 
 
-  InsertNodeTransaction(nsIContent& aNode, nsINode& aParent, int32_t aOffset,
-                        EditorBase& aEditorBase);
+
+
+  InsertNodeTransaction(EditorBase& aEditorBase,
+                        nsIContent& aContentToInsert,
+                        const EditorRawDOMPoint& aPointToInsert);
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(InsertNodeTransaction,
@@ -41,13 +45,10 @@ protected:
   virtual ~InsertNodeTransaction();
 
   
-  nsCOMPtr<nsIContent> mNode;
+  nsCOMPtr<nsIContent> mContentToInsert;
 
   
-  nsCOMPtr<nsINode> mParent;
-
-  
-  int32_t mOffset;
+  EditorDOMPoint mPointToInsert;
 
   
   RefPtr<EditorBase> mEditorBase;
