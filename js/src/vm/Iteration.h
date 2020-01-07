@@ -50,8 +50,7 @@ struct NativeIterator
     
     GCPtrFlatString* propertiesEnd_; 
 
-  public:
-    uint32_t guard_key = 0;
+    uint32_t guardKey_; 
 
   public:
     
@@ -69,6 +68,8 @@ struct NativeIterator
     
     NativeIterator* next_ = nullptr;
     NativeIterator* prev_ = nullptr;
+
+    
 
     
     
@@ -188,6 +189,10 @@ struct NativeIterator
 
     void incCursor() {
         propertyCursor_++;
+    }
+
+    uint32_t guardKey() const {
+        return guardKey_;
     }
 
     bool isActive() const {
