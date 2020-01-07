@@ -665,6 +665,22 @@ var interfaceNamesInGlobalScope =
 
     {name: "MessagePort", insecureContext: true},
 
+    {name: "MIDIAccess", disabled: true},
+
+    {name: "MIDIConnectionEvent", disabled: true},
+
+    {name: "MIDIInputMap", disabled: true},
+
+    {name: "MIDIInput", disabled: true},
+
+    {name: "MIDIMessageEvent", disabled: true},
+
+    {name: "MIDIOutputMap", disabled: true},
+
+    {name: "MIDIOutput", disabled: true},
+
+    {name: "MIDIPort", disabled: true},
+
     {name: "MimeType", insecureContext: true},
 
     {name: "MimeTypeArray", insecureContext: true},
