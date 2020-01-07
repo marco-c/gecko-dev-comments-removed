@@ -1384,14 +1384,6 @@ nsCSPContext::AsyncReportViolation(nsISupports* aBlockedContentSource,
                                 aLineNum,
                                 this);
 
-  
-  
-  nsCOMPtr<nsIDocument> doc = do_QueryReferent(mLoadingContext);
-  if (doc && doc->ShouldBufferCSPViolations()) {
-    doc->BufferCSPViolation(task);
-    return NS_OK;
-  }
-
   if (XRE_IsContentProcess()) {
     if (mEventTarget) {
       mEventTarget->Dispatch(task.forget(), NS_DISPATCH_NORMAL);

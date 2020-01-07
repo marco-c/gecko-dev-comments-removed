@@ -1113,54 +1113,6 @@ public:
 
 
 
-
-
-
-
-
-  void StartBufferingCSPViolations()
-  {
-    MOZ_ASSERT(!mBufferingCSPViolations);
-    mBufferingCSPViolations = true;
-  }
-
-  
-
-
-
-  void StopBufferingCSPViolations(nsTArray<nsCOMPtr<nsIRunnable>>& aResult)
-  {
-    MOZ_ASSERT(mBufferingCSPViolations);
-    mBufferingCSPViolations = false;
-
-    aResult.SwapElements(mBufferedCSPViolations);
-    mBufferedCSPViolations.Clear();
-  }
-
-  
-
-
-  bool ShouldBufferCSPViolations() const
-  {
-    return mBufferingCSPViolations;
-  }
-
-  
-
-
-
-  void BufferCSPViolation(nsIRunnable* aReportingRunnable)
-  {
-    MOZ_ASSERT(mBufferingCSPViolations);
-
-    
-    mBufferedCSPViolations.AppendElement(aReportingRunnable, mozilla::fallible);
-  }
-
-  
-
-
-
   void DisableEncodingMenu()
   {
     mEncodingMenuDisabled = true;
@@ -3211,6 +3163,8 @@ public:
     CreateAttributeNS(const nsAString& aNamespaceURI,
                       const nsAString& aQualifiedName,
                       mozilla::ErrorResult& rv);
+  void SetAllowUnsafeHTML(bool aAllow) { mAllowUnsafeHTML = aAllow; }
+  bool AllowUnsafeHTML() const;
   void GetInputEncoding(nsAString& aInputEncoding) const;
   already_AddRefed<mozilla::dom::Location> GetLocation() const;
   void GetReferrer(nsAString& aReferrer) const;
@@ -4026,10 +3980,6 @@ protected:
   bool mDidCallBeginLoad : 1;
 
   
-  
-  bool mBufferingCSPViolations : 1;
-
-  
   bool mAllowPaymentRequest : 1;
 
   
@@ -4041,6 +3991,10 @@ protected:
 
   
   bool mIsSVGGlyphsDocument : 1;
+
+  
+  
+  bool mAllowUnsafeHTML : 1;
 
   
   bool mInDestructor: 1;
@@ -4310,10 +4264,6 @@ protected:
   
   
   nsTHashtable<nsCStringHashKey> mTrackingScripts;
-
-  
-  
-  nsTArray<nsCOMPtr<nsIRunnable>> mBufferedCSPViolations;
 
   
   
