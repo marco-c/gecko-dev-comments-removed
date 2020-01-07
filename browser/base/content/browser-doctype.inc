@@ -1,4 +1,3 @@
-<!DOCTYPE window [
 <!ENTITY % brandDTD SYSTEM "chrome:
 %brandDTD;
 <!ENTITY % browserDTD SYSTEM "chrome:
@@ -23,5 +22,3 @@
 %reportphishDTD;
 <!ENTITY % editBookmarkOverlayDTD SYSTEM "chrome:
 %editBookmarkOverlayDTD;
-]>
-
