@@ -362,6 +362,10 @@ public:
   nsresult SetTextRangeStyle(nsRange* aRange,
                              const TextRangeStyle& aTextRangeStyle);
 
+  
+  nsIContent* GetAncestorLimiter() const;
+  void SetAncestorLimiter(nsIContent* aLimiter);
+
 private:
   friend class ::nsAutoScrollTimer;
 

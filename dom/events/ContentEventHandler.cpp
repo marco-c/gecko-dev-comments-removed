@@ -270,11 +270,7 @@ ContentEventHandler::InitRootContent(Selection* aNormalSelection)
   if (!aNormalSelection->RangeCount()) {
     
     
-    nsresult rv =
-      aNormalSelection->GetAncestorLimiter(getter_AddRefs(mRootContent));
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return NS_ERROR_FAILURE;
-    }
+    mRootContent = aNormalSelection->GetAncestorLimiter();
     if (!mRootContent) {
       mRootContent = mDocument->GetRootElement();
       if (NS_WARN_IF(!mRootContent)) {
