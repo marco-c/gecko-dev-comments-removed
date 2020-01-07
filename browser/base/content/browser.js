@@ -7994,8 +7994,10 @@ var gIdentityHandler = {
 
       for (let state of SitePermissions.getAvailableStates(aPermission.id)) {
         let menuitem = document.createElement("menuitem");
+        
+        
         if (state == SitePermissions.getDefault(aPermission.id)) {
-          menuitem.setAttribute("value", 0);
+          menuitem.setAttribute("value", "0");
         } else {
           menuitem.setAttribute("value", state);
         }
@@ -8004,7 +8006,12 @@ var gIdentityHandler = {
       }
 
       menulist.appendChild(menupopup);
-      menulist.setAttribute("value", aPermission.state);
+
+      if (aPermission.state == SitePermissions.getDefault(aPermission.id)) {
+        menulist.value = "0";
+      } else {
+        menulist.value = aPermission.state;
+      }
 
       
       menulist.addEventListener("command", () => {
