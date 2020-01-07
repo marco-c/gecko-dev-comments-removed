@@ -123,6 +123,18 @@ WebGLTransformFeedback::EndTransformFeedback()
     const auto& gl = mContext->gl;
     gl->fEndTransformFeedback();
 
+    if (gl->WorkAroundDriverBugs()) {
+#ifdef XP_MACOSX
+        
+        
+        
+        
+        
+        
+        gl->fFlush();
+#endif
+    }
+
     
 
     mIsActive = false;
