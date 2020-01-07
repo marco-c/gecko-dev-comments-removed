@@ -192,15 +192,9 @@ class Assembler : public vixl::Assembler
     typedef vixl::Condition Condition;
 
     void finish();
-    bool appendRawCode(const uint8_t* code, size_t numBytes) {
-        MOZ_CRASH("NYI");
-    }
-    bool reserve(size_t size) {
-        MOZ_CRASH("NYI");
-    }
-    bool swapBuffer(wasm::Bytes& bytes) {
-        MOZ_CRASH("NYI");
-    }
+    bool appendRawCode(const uint8_t* code, size_t numBytes);
+    bool reserve(size_t size);
+    bool swapBuffer(wasm::Bytes& bytes);
     void trace(JSTracer* trc);
 
     
@@ -220,9 +214,7 @@ class Assembler : public vixl::Assembler
     void bind(Label* label) { bind(label, nextOffset()); }
     void bind(Label* label, BufferOffset boff);
     void bind(RepatchLabel* label);
-    void bindLater(Label* label, wasm::OldTrapDesc target) {
-        MOZ_CRASH("NYI");
-    }
+    void bindLater(Label* label, wasm::OldTrapDesc target);
 
     bool oom() const {
         return AssemblerShared::oom() ||
@@ -474,7 +466,7 @@ static constexpr Register ABINonArgReturnVolatileReg = lr;
 
 
 
-static constexpr Register WasmTlsReg { Registers::x17 };
+static constexpr Register WasmTlsReg { Registers::x23 };
 
 
 

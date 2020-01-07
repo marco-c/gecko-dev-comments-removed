@@ -1482,7 +1482,23 @@ class MacroAssembler : public js::jit::Assembler {
 #else
     
     
-    blr(xzr);
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+
+    Emit(0xd4a00000);		
 #endif
   }
   void Uxtb(const Register& rd, const Register& rn) {
