@@ -127,6 +127,7 @@ impl<T: Sized + 'static> Hash for NonZeroPtrMut<T> {
     }
 }
 
+#[repr(C)]
 pub struct Arc<T: ?Sized + 'static> {
     p: NonZeroPtrMut<ArcInner<T>>,
 }
@@ -168,6 +169,7 @@ impl<T> DerefMut for UniqueArc<T> {
 unsafe impl<T: ?Sized + Sync + Send> Send for Arc<T> {}
 unsafe impl<T: ?Sized + Sync + Send> Sync for Arc<T> {}
 
+#[repr(C)]
 struct ArcInner<T: ?Sized> {
     count: atomic::AtomicUsize,
     data: T,
@@ -186,13 +188,15 @@ impl<T> Arc<T> {
         Arc { p: NonZeroPtrMut::new(Box::into_raw(x)) }
     }
 
+    #[inline]
     pub fn into_raw(this: Self) -> *const T {
         let ptr = unsafe { &((*this.ptr()).data) as *const _ };
         mem::forget(this);
         ptr
     }
 
-    pub unsafe fn from_raw(ptr: *const T) -> Self {
+    #[inline]
+    unsafe fn from_raw(ptr: *const T) -> Self {
         
         
         let ptr = (ptr as *const u8).offset(-offset_of!(ArcInner<T>, data));
@@ -203,6 +207,7 @@ impl<T> Arc<T> {
 
     
     
+    #[inline]
     pub fn borrow_arc<'a>(&'a self) -> ArcBorrow<'a, T> {
         ArcBorrow(&**self)
     }
@@ -454,18 +459,21 @@ impl<T: ?Sized + Hash> Hash for Arc<T> {
 }
 
 impl<T> From<T> for Arc<T> {
+    #[inline]
     fn from(t: T) -> Self {
         Arc::new(t)
     }
 }
 
 impl<T: ?Sized> borrow::Borrow<T> for Arc<T> {
+    #[inline]
     fn borrow(&self) -> &T {
         &**self
     }
 }
 
 impl<T: ?Sized> AsRef<T> for Arc<T> {
+    #[inline]
     fn as_ref(&self) -> &T {
         &**self
     }
@@ -652,7 +660,7 @@ fn thin_to_thick<H, T>(thin: *mut ArcInner<HeaderSliceWithLength<H, [T; 1]>>)
 impl<H: 'static, T: 'static> ThinArc<H, T> {
     
     
-    #[inline(always)]
+    #[inline]
     pub fn with_arc<F, U>(&self, f: F) -> U
         where F: FnOnce(&Arc<HeaderSliceWithLength<H, [T]>>) -> U
     {
@@ -675,6 +683,7 @@ impl<H: 'static, T: 'static> ThinArc<H, T> {
 
     
     
+    #[inline]
     pub fn heap_ptr(&self) -> *const c_void {
         self.ptr as *const ArcInner<T> as *const c_void
     }
@@ -682,18 +691,22 @@ impl<H: 'static, T: 'static> ThinArc<H, T> {
 
 impl<H, T> Deref for ThinArc<H, T> {
     type Target = HeaderSliceWithLength<H, [T]>;
+
+    #[inline]
     fn deref(&self) -> &Self::Target {
         unsafe { &(*thin_to_thick(self.ptr)).data }
     }
 }
 
 impl<H: 'static, T: 'static> Clone for ThinArc<H, T> {
+    #[inline]
     fn clone(&self) -> Self {
         ThinArc::with_arc(self, |a| Arc::into_thin(a.clone()))
     }
 }
 
 impl<H: 'static, T: 'static> Drop for ThinArc<H, T> {
+    #[inline]
     fn drop(&mut self) {
         let _ = Arc::from_thin(ThinArc { ptr: self.ptr });
     }
@@ -702,6 +715,7 @@ impl<H: 'static, T: 'static> Drop for ThinArc<H, T> {
 impl<H: 'static, T: 'static> Arc<HeaderSliceWithLength<H, [T]>> {
     
     
+    #[inline]
     pub fn into_thin(a: Self) -> ThinArc<H, T> {
         assert!(a.header.length == a.slice.len(),
                 "Length needs to be correct for ThinArc to work");
@@ -715,6 +729,7 @@ impl<H: 'static, T: 'static> Arc<HeaderSliceWithLength<H, [T]>> {
 
     
     
+    #[inline]
     pub fn from_thin(a: ThinArc<H, T>) -> Self {
         let ptr = thin_to_thick(a.ptr);
         mem::forget(a);
@@ -725,6 +740,7 @@ impl<H: 'static, T: 'static> Arc<HeaderSliceWithLength<H, [T]>> {
 }
 
 impl<H: PartialEq + 'static, T: PartialEq + 'static> PartialEq for ThinArc<H, T> {
+    #[inline]
     fn eq(&self, other: &ThinArc<H, T>) -> bool {
         ThinArc::with_arc(self, |a| {
             ThinArc::with_arc(other, |b| {
@@ -752,6 +768,7 @@ impl<H: Eq + 'static, T: Eq + 'static> Eq for ThinArc<H, T> {}
 
 
 #[derive(Eq)]
+#[repr(C)]
 pub struct RawOffsetArc<T: 'static> {
     ptr: NonZeroPtrMut<T>,
 }
@@ -767,6 +784,7 @@ impl<T: 'static> Deref for RawOffsetArc<T> {
 }
 
 impl<T: 'static> Clone for RawOffsetArc<T> {
+    #[inline]
     fn clone(&self) -> Self {
         Arc::into_raw_offset(self.clone_arc())
     }
@@ -798,7 +816,7 @@ impl<T: PartialEq> PartialEq for RawOffsetArc<T> {
 impl<T: 'static> RawOffsetArc<T> {
     
     
-    #[inline(always)]
+    #[inline]
     pub fn with_arc<F, U>(&self, f: F) -> U
         where F: FnOnce(&Arc<T>) -> U
     {
@@ -819,6 +837,7 @@ impl<T: 'static> RawOffsetArc<T> {
 
     
     
+    #[inline]
     pub fn make_mut(&mut self) -> &mut T where T: Clone {
         unsafe {
             
@@ -836,12 +855,14 @@ impl<T: 'static> RawOffsetArc<T> {
     }
 
     
+    #[inline]
     pub fn clone_arc(&self) -> Arc<T> {
         RawOffsetArc::with_arc(self, |a| a.clone())
     }
 
     
     
+    #[inline]
     pub fn borrow_arc<'a>(&'a self) -> ArcBorrow<'a, T> {
         ArcBorrow(&**self)
     }
@@ -886,12 +907,14 @@ pub struct ArcBorrow<'a, T: 'a>(&'a T);
 
 impl<'a, T> Copy for ArcBorrow<'a, T> {}
 impl<'a, T> Clone for ArcBorrow<'a, T> {
+    #[inline]
     fn clone(&self) -> Self {
         *self
     }
 }
 
 impl<'a, T> ArcBorrow<'a, T> {
+    #[inline]
     pub fn clone_arc(&self) -> Arc<T> {
         let arc = unsafe { Arc::from_raw(self.0) };
         
@@ -901,10 +924,12 @@ impl<'a, T> ArcBorrow<'a, T> {
 
     
     
+    #[inline]
     pub unsafe fn from_ref(r: &'a T) -> Self {
         ArcBorrow(r)
     }
 
+    #[inline]
     pub fn with_arc<F, U>(&self, f: F) -> U where F: FnOnce(&Arc<T>) -> U, T: 'static {
         
         let transient = unsafe { NoDrop::new(Arc::from_raw(self.0)) };
@@ -924,6 +949,8 @@ impl<'a, T> ArcBorrow<'a, T> {
 
 impl<'a, T> Deref for ArcBorrow<'a, T> {
     type Target = T;
+
+    #[inline]
     fn deref(&self) -> &T {
         &*self.0
     }
