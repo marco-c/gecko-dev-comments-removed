@@ -59,7 +59,7 @@ HitTestingTreeNode::~HitTestingTreeNode()
 void
 HitTestingTreeNode::Destroy()
 {
-  APZThreadUtils::AssertOnCompositorThread();
+  APZThreadUtils::AssertOnSamplerThread();
 
   mPrevSibling = nullptr;
   mLastChild = nullptr;

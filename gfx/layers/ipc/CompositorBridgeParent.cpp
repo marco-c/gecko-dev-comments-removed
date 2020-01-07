@@ -2097,8 +2097,7 @@ UpdateIndirectTree(uint64_t aId, Layer* aRoot, const TargetConfig& aTargetConfig
 CompositorBridgeParent::GetIndirectShadowTree(uint64_t aId)
 {
   
-  
-  APZThreadUtils::AssertOnCompositorThread();
+  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
 
   MonitorAutoLock lock(*sIndirectLayerTreesLock);
   LayerTreeMap::iterator cit = sIndirectLayerTrees.find(aId);

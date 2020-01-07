@@ -45,7 +45,7 @@ public:
 
 
 
-  static void AssertOnCompositorThread();
+  static void AssertOnSamplerThread();
 
   
 

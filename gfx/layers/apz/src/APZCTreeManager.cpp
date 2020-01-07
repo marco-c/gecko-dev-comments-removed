@@ -269,7 +269,7 @@ void
 APZCTreeManager::NotifyLayerTreeAdopted(uint64_t aLayersId,
                                         const RefPtr<APZCTreeManager>& aOldApzcTreeManager)
 {
-  APZThreadUtils::AssertOnCompositorThread();
+  APZThreadUtils::AssertOnSamplerThread();
 
   MOZ_ASSERT(aOldApzcTreeManager);
   aOldApzcTreeManager->mFocusState.RemoveFocusTarget(aLayersId);
@@ -295,7 +295,7 @@ APZCTreeManager::NotifyLayerTreeAdopted(uint64_t aLayersId,
 void
 APZCTreeManager::NotifyLayerTreeRemoved(uint64_t aLayersId)
 {
-  APZThreadUtils::AssertOnCompositorThread();
+  APZThreadUtils::AssertOnSamplerThread();
 
   mFocusState.RemoveFocusTarget(aLayersId);
 
@@ -333,7 +333,7 @@ APZCTreeManager::UpdateHitTestingTreeImpl(uint64_t aRootLayerTreeId,
                                           uint64_t aOriginatingLayersId,
                                           uint32_t aPaintSequenceNumber)
 {
-  APZThreadUtils::AssertOnCompositorThread();
+  APZThreadUtils::AssertOnSamplerThread();
 
   RecursiveMutexAutoLock lock(mTreeLock);
 
@@ -528,7 +528,7 @@ APZCTreeManager::PushStateToWR(wr::TransactionBuilder& aTxn,
                                const TimeStamp& aSampleTime,
                                nsTArray<wr::WrTransformProperty>& aTransformArray)
 {
-  APZThreadUtils::AssertOnCompositorThread();
+  APZThreadUtils::AssertOnSamplerThread();
 
   RecursiveMutexAutoLock lock(mTreeLock);
 
@@ -2982,7 +2982,7 @@ bool
 APZCTreeManager::GetAPZTestData(uint64_t aLayersId,
                                 APZTestData* aOutData)
 {
-  APZThreadUtils::AssertOnCompositorThread();
+  APZThreadUtils::AssertOnSamplerThread();
   MutexAutoLock lock(mTestDataLock);
   auto it = mTestData.find(aLayersId);
   if (it == mTestData.end()) {

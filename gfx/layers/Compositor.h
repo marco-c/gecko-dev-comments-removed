@@ -498,12 +498,6 @@ public:
   widget::CompositorWidget* GetWidget() const { return mWidget; }
 
   
-
-
-
-  static void AssertOnCompositorThread();
-
-  
   virtual void GetFrameStats(GPUStats* aStats);
 
   ScreenRotation GetScreenRotation() const {
