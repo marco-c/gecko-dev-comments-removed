@@ -3008,28 +3008,6 @@ MaxZIndexInList(nsDisplayList* aList, nsDisplayListBuilder* aBuilder)
   return maxZIndex;
 }
 
-
-
-
-
-static int32_t
-MaxZIndexInListOfItemsContainedInFrame(nsDisplayList* aList, nsIFrame* aFrame)
-{
-  int32_t maxZIndex = -1;
-  for (nsDisplayItem* item = aList->GetBottom(); item; item = item->GetAbove()) {
-    nsIFrame* itemFrame = item->Frame();
-    
-    
-    if (item->GetType() == DisplayItemType::TYPE_PERSPECTIVE) {
-      itemFrame = static_cast<nsDisplayPerspective*>(item)->TransformFrame();
-    }
-    if (nsLayoutUtils::IsProperAncestorFrame(aFrame, itemFrame)) {
-      maxZIndex = std::max(maxZIndex, item->ZIndex());
-    }
-  }
-  return maxZIndex;
-}
-
 template<class T>
 static void
 AppendInternalItemToTop(const nsDisplayListSet& aLists,
@@ -3710,8 +3688,6 @@ ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
     
     
     if (!mWillBuildScrollableLayer) {
-      int32_t zIndex =
-        MaxZIndexInListOfItemsContainedInFrame(scrolledContent.PositionedDescendants(), mOuter);
       if (aBuilder->BuildCompositorHitTestInfo()) {
         CompositorHitTestInfo info = CompositorHitTestInfo::eVisibleToHitTest
                                    | CompositorHitTestInfo::eDispatchToContent;
@@ -3729,13 +3705,13 @@ ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
         nsDisplayCompositorHitTestInfo* hitInfo =
             MakeDisplayItem<nsDisplayCompositorHitTestInfo>(aBuilder, mScrolledFrame, info, 1,
                 Some(mScrollPort + aBuilder->ToReferenceFrame(mOuter)));
-        AppendInternalItemToTop(scrolledContent, hitInfo, zIndex);
+        AppendInternalItemToTop(scrolledContent, hitInfo, INT32_MAX);
       }
       if (aBuilder->IsBuildingLayerEventRegions()) {
         nsDisplayLayerEventRegions* inactiveRegionItem =
             MakeDisplayItem<nsDisplayLayerEventRegions>(aBuilder, mScrolledFrame, 1);
         inactiveRegionItem->AddInactiveScrollPort(mScrolledFrame, mScrollPort + aBuilder->ToReferenceFrame(mOuter));
-        AppendInternalItemToTop(scrolledContent, inactiveRegionItem, zIndex);
+        AppendInternalItemToTop(scrolledContent, inactiveRegionItem, INT32_MAX);
       }
     }
 
