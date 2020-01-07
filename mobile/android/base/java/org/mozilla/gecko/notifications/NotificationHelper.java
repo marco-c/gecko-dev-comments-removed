@@ -32,6 +32,7 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.graphics.Bitmap;
 import android.net.Uri;
+import android.os.StrictMode;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.util.SimpleArrayMap;
 import android.util.Log;
@@ -294,8 +295,14 @@ public final class NotificationHelper implements BundleEventListener {
         
         final Intent viewFileIntent = createIntentIfDownloadCompleted(message);
         if (builder != null && viewFileIntent != null && mContext != null) {
+            
+            
+            
+            StrictMode.VmPolicy prevPolicy = StrictMode.getVmPolicy();
+            StrictMode.setVmPolicy(StrictMode.VmPolicy.LAX);
             final PendingIntent pIntent = PendingIntent.getActivity(
                     mContext, 0, viewFileIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+            StrictMode.setVmPolicy(prevPolicy);
             builder.setAutoCancel(true);
             builder.setContentIntent(pIntent);
 
