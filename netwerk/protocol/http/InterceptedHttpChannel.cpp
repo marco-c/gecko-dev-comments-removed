@@ -650,6 +650,12 @@ InterceptedHttpChannel::DoNotifyListenerCleanup()
   
 }
 
+void
+InterceptedHttpChannel::DoAsyncAbort(nsresult aStatus)
+{
+  Unused << AsyncAbort(aStatus);
+}
+
 
 NS_IMETHODIMP
 InterceptedHttpChannel::ResetInterception(void)

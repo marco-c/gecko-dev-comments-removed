@@ -387,6 +387,11 @@ public:
       mUploadStream = uploadStream;
     }
 
+    void InternalSetUploadStreamLength(uint64_t aLength)
+    {
+      mReqContentLength = aLength;
+    }
+
     void SetUploadStreamHasHeaders(bool hasHeaders)
     {
       mUploadStreamHasHeaders = hasHeaders;
@@ -419,6 +424,10 @@ protected:
 
   
   virtual void ReleaseListeners();
+
+  
+  virtual void
+  DoAsyncAbort(nsresult aStatus) = 0;
 
   
   
@@ -482,6 +491,10 @@ protected:
   nsresult
   CheckRedirectLimit(uint32_t aRedirectFlags) const;
 
+  bool
+  MaybeWaitForUploadStreamLength(nsIStreamListener *aListener,
+                                 nsISupports *aContext);
+
   friend class PrivateBrowsingChannel<HttpBaseChannel>;
   friend class InterceptFailedOnStop;
 
@@ -511,6 +524,13 @@ private:
   void ReleaseMainThreadOnlyReferences();
 
   bool IsCrossOriginWithReferrer();
+
+  nsresult
+  ExplicitSetUploadStreamLength(uint64_t aContentLength,
+                                bool aStreamHasHeaders);
+
+  void
+  MaybeResumeAsyncOpen();
 
 protected:
   
@@ -597,6 +617,11 @@ protected:
   
   
   uint32_t                          mAddedAsNonTailRequest : 1;
+
+  
+  
+  
+  uint32_t                          mAsyncOpenWaitingForStreamLength : 1;
 
   
   
@@ -716,7 +741,6 @@ protected:
   uint32_t mLastRedirectFlags;
 
   uint64_t mReqContentLength;
-  bool mReqContentLengthDetermined;
 
   nsString mIntegrityMetadata;
 
@@ -724,6 +748,10 @@ protected:
   nsCString mMatchedList;
   nsCString mMatchedProvider;
   nsCString mMatchedFullHash;
+
+  
+  
+  bool mPendingInputStreamLengthOperation;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(HttpBaseChannel, HTTP_BASE_CHANNEL_IID)

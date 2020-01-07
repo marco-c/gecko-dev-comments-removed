@@ -40,14 +40,11 @@ public:
 
 
 
-
-
   NS_IMETHOD OnLinkClick(nsIContent* aContent,
                          nsIURI* aURI,
                          const char16_t* aTargetSpec,
                          const nsAString& aFileName,
                          nsIInputStream* aPostDataStream,
-                         int64_t aPostDataStreamLength,
                          nsIInputStream* aHeadersDataStream,
                          bool aIsUserTriggered,
                          bool aIsTrusted,
@@ -72,13 +69,11 @@ public:
 
 
 
-
   NS_IMETHOD OnLinkClickSync(nsIContent* aContent,
                              nsIURI* aURI,
                              const char16_t* aTargetSpec,
                              const nsAString& aFileName,
                              nsIInputStream* aPostDataStream = 0,
-                             int64_t aPostDataStreamLength = -1,
                              nsIInputStream* aHeadersDataStream = 0,
                              bool aNoOpenerImplied = false,
                              nsIDocShell** aDocShell = 0,

@@ -15,6 +15,7 @@
 #include "mozilla/dom/ServiceWorkerUtils.h"
 #include "mozilla/dom/TabParent.h"
 #include "mozilla/net/NeckoParent.h"
+#include "mozilla/InputStreamLengthHelper.h"
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
@@ -401,47 +402,6 @@ HttpChannelParent::InvokeAsyncOpen(nsresult rv)
   }
 }
 
-namespace {
-class InvokeAsyncOpen : public Runnable
-{
-  nsMainThreadPtrHandle<nsIInterfaceRequestor> mChannel;
-  nsresult mStatus;
-public:
-  InvokeAsyncOpen(const nsMainThreadPtrHandle<nsIInterfaceRequestor>& aChannel,
-                  nsresult aStatus)
-    : Runnable("net::InvokeAsyncOpen")
-    , mChannel(aChannel)
-    , mStatus(aStatus)
-  {
-  }
-
-  NS_IMETHOD Run() override
-  {
-    RefPtr<HttpChannelParent> channel = do_QueryObject(mChannel.get());
-    channel->TryInvokeAsyncOpen(mStatus);
-    return NS_OK;
-  }
-};
-
-struct UploadStreamClosure {
-  nsMainThreadPtrHandle<nsIInterfaceRequestor> mChannel;
-
-  explicit UploadStreamClosure(const nsMainThreadPtrHandle<nsIInterfaceRequestor>& aChannel)
-  : mChannel(aChannel)
-  {
-  }
-};
-
-void
-UploadCopyComplete(void* aClosure, nsresult aStatus) {
-  
-  MOZ_ASSERT(!NS_IsMainThread());
-  UniquePtr<UploadStreamClosure> closure(static_cast<UploadStreamClosure*>(aClosure));
-  nsCOMPtr<nsIRunnable> event = new InvokeAsyncOpen(closure->mChannel, aStatus);
-  NS_DispatchToMainThread(event);
-}
-} 
-
 bool
 HttpChannelParent::DoAsyncOpen(  const URIParams&           aURI,
                                  const OptionalURIParams&   aOriginalURI,
@@ -602,62 +562,24 @@ HttpChannelParent::DoAsyncOpen(  const URIParams&           aURI,
 
   nsCOMPtr<nsIInputStream> stream = DeserializeIPCStream(uploadStream);
   if (stream) {
-    
-    
-    
-    nsCOMPtr<nsIIPCSerializableInputStream> completeStream = do_QueryInterface(stream);
-    if (!completeStream) {
+    int64_t length;
+    if (InputStreamLengthHelper::GetSyncLength(stream, &length)) {
+      httpChannel->InternalSetUploadStreamLength(length >= 0 ? length : 0);
+    } else {
       
       ++mAsyncOpenBarrier;
 
       
-      const uint32_t kBufferSize = 32768;
-
-      nsCOMPtr<nsIStorageStream> storageStream;
-      nsresult rv = NS_NewStorageStream(kBufferSize, UINT32_MAX,
-                                        getter_AddRefs(storageStream));
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return SendFailedAsyncOpen(rv);
-      }
-
-      nsCOMPtr<nsIInputStream> newUploadStream;
-      rv = storageStream->NewInputStream(0, getter_AddRefs(newUploadStream));
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return SendFailedAsyncOpen(rv);
-      }
-
-      nsCOMPtr<nsIOutputStream> sink;
-      rv = storageStream->GetOutputStream(0, getter_AddRefs(sink));
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return SendFailedAsyncOpen(rv);
-      }
-
-      nsCOMPtr<nsIEventTarget> target =
-          do_GetService(NS_STREAMTRANSPORTSERVICE_CONTRACTID, &rv);
-      if (NS_FAILED(rv) || !target) {
-        return SendFailedAsyncOpen(rv);
-      }
-
-      nsCOMPtr<nsIInterfaceRequestor> iir = static_cast<nsIInterfaceRequestor*>(this);
-      nsMainThreadPtrHandle<nsIInterfaceRequestor> handle =
-          nsMainThreadPtrHandle<nsIInterfaceRequestor>(
-              new nsMainThreadPtrHolder<nsIInterfaceRequestor>(
-                "nsIInterfaceRequestor", iir));
-      UniquePtr<UploadStreamClosure> closure(new UploadStreamClosure(handle));
-
       
-      
-      rv = NS_AsyncCopy(stream, sink, target, NS_ASYNCCOPY_VIA_READSEGMENTS,
-                        kBufferSize, 
-                        UploadCopyComplete, closure.release());
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return SendFailedAsyncOpen(rv);
-      }
-
-      httpChannel->InternalSetUploadStream(newUploadStream);
-    } else {
-      httpChannel->InternalSetUploadStream(stream);
+      RefPtr<HttpChannelParent> self = this;
+      InputStreamLengthHelper::GetAsyncLength(stream,
+        [self, httpChannel](int64_t aLength) {
+          httpChannel->InternalSetUploadStreamLength(aLength >= 0 ? aLength : 0);
+          self->TryInvokeAsyncOpen(NS_OK);
+        });
     }
+
+    httpChannel->InternalSetUploadStream(stream);
     httpChannel->SetUploadStreamHasHeaders(uploadStreamHasHeaders);
   }
 

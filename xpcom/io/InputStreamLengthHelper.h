@@ -21,9 +21,15 @@ public:
 
   
   
+  static bool
+  GetSyncLength(nsIInputStream* aStream,
+                int64_t* aLength);
+
+  
+  
   static void
-  GetLength(nsIInputStream* aStream,
-            const std::function<void(int64_t aLength)>& aCallback);
+  GetAsyncLength(nsIInputStream* aStream,
+                 const std::function<void(int64_t aLength)>& aCallback);
 
 private:
   NS_DECL_NSIINPUTSTREAMLENGTHCALLBACK

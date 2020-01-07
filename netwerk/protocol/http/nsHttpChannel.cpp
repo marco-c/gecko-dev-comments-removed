@@ -638,73 +638,9 @@ nsHttpChannel::ConnectOnTailUnblock()
     return TriggerNetwork();
 }
 
-
-NS_IMETHODIMP
-nsHttpChannel::OnInputAvailableComplete(uint64_t size, nsresult status)
-{
-    MOZ_ASSERT(NS_IsMainThread(), "Wrong thread.");
-    LOG(("nsHttpChannel::OnInputAvailableComplete %p %" PRIx32 "\n",
-         this, static_cast<uint32_t>(status)));
-    if (NS_SUCCEEDED(status)) {
-        mReqContentLength = size;
-    } else {
-        
-        if (NS_SUCCEEDED(mUploadStream->Available(&size))) {
-            mReqContentLength = size;
-        }
-    }
-
-    LOG(("nsHttpChannel::DetermineContentLength %p from sts\n", this));
-    mReqContentLengthDetermined = true;
-    nsresult rv = mCanceled ? mStatus : ContinueConnect();
-    if (NS_FAILED(rv)) {
-        CloseCacheEntry(false);
-        Unused << AsyncAbort(rv);
-    }
-    return NS_OK;
-}
-
-void
-nsHttpChannel::DetermineContentLength()
-{
-    nsCOMPtr<nsIStreamTransportService> sts(services::GetStreamTransportService());
-
-    if (!mUploadStream || !sts) {
-        LOG(("nsHttpChannel::DetermineContentLength %p no body\n", this));
-        mReqContentLength = 0U;
-        mReqContentLengthDetermined = true;
-        return;
-    }
-
-    
-    
-    bool nonBlocking = false;
-    if (NS_FAILED(mUploadStream->IsNonBlocking(&nonBlocking)) || nonBlocking) {
-        mUploadStream->Available(&mReqContentLength);
-        LOG(("nsHttpChannel::DetermineContentLength %p from mem\n", this));
-        mReqContentLengthDetermined = true;
-        return;
-    }
-
-    LOG(("nsHttpChannel::DetermineContentLength Async [this=%p]\n", this));
-    sts->InputAvailable(mUploadStream, this);
-}
-
 nsresult
 nsHttpChannel::ContinueConnect()
 {
-    
-    
-    
-    if (!mReqContentLengthDetermined) {
-        
-        
-        DetermineContentLength();
-    }
-    if (!mReqContentLengthDetermined) {
-        return NS_OK;
-    }
-
     
     
     if (!mIsCorsPreflightDone && mRequireCORSPreflight) {
@@ -832,6 +768,12 @@ nsHttpChannel::ReleaseListeners()
     HttpBaseChannel::ReleaseListeners();
     mChannelClassifier = nullptr;
     mWarningReporter = nullptr;
+}
+
+void
+nsHttpChannel::DoAsyncAbort(nsresult aStatus)
+{
+    Unused << AsyncAbort(aStatus);
 }
 
 void
@@ -5837,7 +5779,6 @@ NS_INTERFACE_MAP_BEGIN(nsHttpChannel)
     NS_INTERFACE_MAP_ENTRY(nsITransportEventSink)
     NS_INTERFACE_MAP_ENTRY(nsISupportsPriority)
     NS_INTERFACE_MAP_ENTRY(nsIProtocolProxyCallback)
-    NS_INTERFACE_MAP_ENTRY(nsIInputAvailableCallback)
     NS_INTERFACE_MAP_ENTRY(nsIProxiedChannel)
     NS_INTERFACE_MAP_ENTRY(nsIHttpAuthenticableChannel)
     NS_INTERFACE_MAP_ENTRY(nsIApplicationCacheContainer)
@@ -5988,6 +5929,10 @@ nsHttpChannel::AsyncOpen(nsIStreamListener *listener, nsISupports *context)
     NS_ENSURE_ARG_POINTER(listener);
     NS_ENSURE_TRUE(!mIsPending, NS_ERROR_IN_PROGRESS);
     NS_ENSURE_TRUE(!mWasOpened, NS_ERROR_ALREADY_OPENED);
+
+    if (MaybeWaitForUploadStreamLength(listener, context)) {
+        return NS_OK;
+    }
 
     nsresult rv;
 
@@ -6177,8 +6122,9 @@ nsHttpChannel::BeginConnect()
     RefPtr<AltSvcMapping> mapping;
     if (!mConnectionInfo && mAllowAltSvc && 
         !(mLoadFlags & LOAD_FRESH_CONNECTION) &&
-        AltSvcMapping::AcceptableProxy(proxyInfo) &&
-        (scheme.EqualsLiteral("http") || scheme.EqualsLiteral("https")) &&
+        (scheme.EqualsLiteral("http") ||
+         scheme.EqualsLiteral("https")) &&
+        (!proxyInfo || proxyInfo->IsDirect()) &&
         (mapping = gHttpHandler->GetAltServiceMapping(scheme,
                                                       host, port,
                                                       mPrivateBrowsing,

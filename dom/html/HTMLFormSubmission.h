@@ -86,10 +86,8 @@ public:
 
 
 
-
   virtual nsresult
   GetEncodedSubmission(nsIURI* aURI, nsIInputStream** aPostDataStream,
-                       int64_t* aPostDataStreamLength,
                        nsCOMPtr<nsIURI>& aOutURI) = 0;
 
   
@@ -170,7 +168,7 @@ public:
 
   virtual nsresult
   GetEncodedSubmission(nsIURI* aURI, nsIInputStream** aPostDataStream,
-                       int64_t* aPostDataStreamLength, nsCOMPtr<nsIURI>& aOutURI) override;
+                       nsCOMPtr<nsIURI>& aOutURI) override;
 
   void GetContentType(nsACString& aContentType)
   {
