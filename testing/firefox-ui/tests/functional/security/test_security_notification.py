@@ -17,11 +17,11 @@ class TestSecurityNotification(PuppeteerMixin, MarionetteTestCase):
 
         self.urls = [
             
-            'https://ssl-expired.mozqa.com',
+            'https://expired.badssl.com',
             
-            'https://ssl-ev.mozqa.com/',
+            'https://ssl-ev.mozqa.com',
             
-            'http://no-ssl.mozqa.com'
+            'http://http.badssl.com'
         ]
 
         self.identity_box = self.browser.navbar.locationbar.identity_box
