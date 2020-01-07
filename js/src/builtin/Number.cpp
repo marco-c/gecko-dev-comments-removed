@@ -8,14 +8,14 @@
 
 
 
-#include "jsnum.h"
+#include "builtin/Number.h"
 
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/RangedPtr.h"
 
 #ifdef HAVE_LOCALECONV
-#include <locale.h>
+# include <locale.h>
 #endif
 #include <math.h>
 #include <string.h>

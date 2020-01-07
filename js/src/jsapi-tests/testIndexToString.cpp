@@ -5,8 +5,7 @@
 
 
 
-#include "jsnum.h"
-
+#include "builtin/Number.h"
 #include "builtin/String.h"
 #include "jsapi-tests/tests.h"
 #include "vm/JSCompartment.h"

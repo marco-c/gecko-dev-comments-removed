@@ -4,8 +4,8 @@
 
 
 
-#ifndef jsnum_h
-#define jsnum_h
+#ifndef builtin_Number_h
+#define builtin_Number_h
 
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/Range.h"
