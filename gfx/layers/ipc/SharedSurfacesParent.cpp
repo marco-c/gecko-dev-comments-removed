@@ -75,7 +75,7 @@ SharedSurfacesParent::Acquire(const wr::ExternalImageId& aId)
  bool
 SharedSurfacesParent::Release(const wr::ExternalImageId& aId)
 {
-  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
+  
   if (!sInstance) {
     return false;
   }
@@ -196,7 +196,7 @@ SharedSurfacesParent::Add(const wr::ExternalImageId& aId,
  void
 SharedSurfacesParent::Remove(const wr::ExternalImageId& aId)
 {
-  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
+  
   DebugOnly<bool> rv = Release(aId);
   MOZ_ASSERT(rv);
 }
