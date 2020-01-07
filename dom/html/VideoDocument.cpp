@@ -28,6 +28,14 @@ public:
                                      nsIContentSink*     aSink = nullptr);
   virtual void SetScriptGlobalObject(nsIScriptGlobalObject* aScriptGlobalObject);
 
+  virtual void Destroy()
+  {
+    if (mStreamListener) {
+      mStreamListener->DropDocumentRef();
+    }
+    MediaDocument::Destroy();
+  }
+
 protected:
 
   
