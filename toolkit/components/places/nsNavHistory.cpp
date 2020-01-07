@@ -1248,7 +1248,7 @@ PlacesSQLQueryBuilder::Select()
       NS_ENSURE_SUCCESS(rv, rv);
       break;
 
-    case nsINavHistoryQueryOptions::RESULTS_AS_TAG_QUERY:
+    case nsINavHistoryQueryOptions::RESULTS_AS_TAGS_ROOT:
       rv = SelectAsTag();
       NS_ENSURE_SUCCESS(rv, rv);
       break;
@@ -1720,7 +1720,7 @@ PlacesSQLQueryBuilder::SelectAsLeftPane()
     nsINavHistoryQueryOptions::SORT_BY_DATE_DESCENDING,
     nsINavHistoryService::TRANSITION_DOWNLOAD,
     nsINavHistoryQueryOptions::SORT_BY_DATE_DESCENDING,
-    nsINavHistoryQueryOptions::RESULTS_AS_TAG_QUERY,
+    nsINavHistoryQueryOptions::RESULTS_AS_TAGS_ROOT,
     nsINavHistoryQueryOptions::SORT_BY_TITLE_ASCENDING,
     nsINavHistoryQueryOptions::RESULTS_AS_ROOTS_QUERY);
   return NS_OK;
@@ -3500,7 +3500,7 @@ nsNavHistory::RowToResult(mozIStorageValueArray* aRow,
     NS_ENSURE_SUCCESS(rv, rv);
 
     if (itemId != -1 ||
-        aOptions->ResultType() == nsNavHistoryQueryOptions::RESULTS_AS_TAG_QUERY) {
+        aOptions->ResultType() == nsNavHistoryQueryOptions::RESULTS_AS_TAGS_ROOT) {
       
       resultNode->mDateAdded = aRow->AsInt64(kGetInfoIndex_ItemDateAdded);
       resultNode->mLastModified = aRow->AsInt64(kGetInfoIndex_ItemLastModified);

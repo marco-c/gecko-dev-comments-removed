@@ -18,7 +18,7 @@ var resultTypes = [
   {value: Ci.nsINavHistoryQueryOptions.RESULTS_AS_DATE_QUERY, name: "RESULTS_AS_DATE_QUERY"},
   {value: Ci.nsINavHistoryQueryOptions.RESULTS_AS_SITE_QUERY, name: "RESULTS_AS_SITE_QUERY"},
   {value: Ci.nsINavHistoryQueryOptions.RESULTS_AS_DATE_SITE_QUERY, name: "RESULTS_AS_DATE_SITE_QUERY"},
-  {value: Ci.nsINavHistoryQueryOptions.RESULTS_AS_TAG_QUERY, name: "RESULTS_AS_TAG_QUERY"},
+  {value: Ci.nsINavHistoryQueryOptions.RESULTS_AS_TAGS_ROOT, name: "RESULTS_AS_TAGS_ROOT"},
 ];
 
 var sortingModes = [
@@ -140,7 +140,7 @@ function test_query_callback(aSequence) {
   print("\n\n*** Testing default sorting for resultType (" + resultType.name + ") and sortingMode (" + sortingMode.name + ")");
 
   
-  if (resultType.value == Ci.nsINavHistoryQueryOptions.RESULTS_AS_TAG_QUERY &&
+  if (resultType.value == Ci.nsINavHistoryQueryOptions.RESULTS_AS_TAGS_ROOT &&
       (sortingMode.value == Ci.nsINavHistoryQueryOptions.SORT_BY_DATE_ASCENDING ||
        sortingMode.value == Ci.nsINavHistoryQueryOptions.SORT_BY_DATE_DESCENDING)) {
     
@@ -193,7 +193,7 @@ function test_query_callback(aSequence) {
     check_children_sorting(innerContainer,
                            Ci.nsINavHistoryQueryOptions.SORT_BY_TITLE_ASCENDING);
     innerContainer.containerOpen = false;
-  } else if (resultType.value == Ci.nsINavHistoryQueryOptions.RESULTS_AS_TAG_QUERY) {
+  } else if (resultType.value == Ci.nsINavHistoryQueryOptions.RESULTS_AS_TAGS_ROOT) {
     
     
     check_children_sorting(container,

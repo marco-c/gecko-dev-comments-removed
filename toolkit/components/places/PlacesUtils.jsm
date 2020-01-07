@@ -786,7 +786,7 @@ var PlacesUtils = {
     
     let parent = aNode.parent;
     if (parent && PlacesUtils.asQuery(parent).queryOptions.resultType ==
-                    Ci.nsINavHistoryQueryOptions.RESULTS_AS_TAG_QUERY)
+                    Ci.nsINavHistoryQueryOptions.RESULTS_AS_TAGS_ROOT)
       return true;
     
     

@@ -805,7 +805,7 @@ PlacesController.prototype = {
                  node.parent &&
                  PlacesUtils.nodeIsQuery(node.parent) &&
                  PlacesUtils.asQuery(node.parent).queryOptions.resultType ==
-                   Ci.nsINavHistoryQueryOptions.RESULTS_AS_TAG_QUERY) {
+                   Ci.nsINavHistoryQueryOptions.RESULTS_AS_TAGS_ROOT) {
         
         
         
