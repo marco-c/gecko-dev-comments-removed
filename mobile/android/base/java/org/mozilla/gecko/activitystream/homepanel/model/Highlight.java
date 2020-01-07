@@ -226,5 +226,4 @@ public class Highlight implements WebpageRowModel {
 
     
     @Override
-    public void onStateCommitted() {}
-}
+    public void onStateCommitted() {}}
