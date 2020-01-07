@@ -252,6 +252,17 @@ public:
   }
 
   
+  
+  
+  
+  mozilla::dom::Event* SetEvent(mozilla::dom::Event* aEvent)
+  {
+    mozilla::dom::Event* old = mEvent;
+    mEvent = aEvent;
+    return old;
+  }
+
+  
 
 
   bool IsSecureContext() const;
@@ -705,6 +716,10 @@ protected:
   
   
   RefPtr<mozilla::AutoplayRequest> mAutoplayRequest;
+
+  
+  
+  mozilla::dom::Event* mEvent;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsPIDOMWindowInner, NS_PIDOMWINDOWINNER_IID)

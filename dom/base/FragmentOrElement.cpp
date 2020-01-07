@@ -878,6 +878,10 @@ nsIContent::GetEventTargetParent(EventChainPreVisitor& aVisitor)
   aVisitor.mCanHandle = true;
   aVisitor.mMayHaveListenerManager = HasListenerManager();
 
+  if (IsInShadowTree()) {
+    aVisitor.mItemInShadowTree = true;
+  }
+
   
   
   bool isAnonForEvents = IsRootOfChromeAccessOnlySubtree();

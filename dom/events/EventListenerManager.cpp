@@ -1161,6 +1161,30 @@ EventListenerManager::GetLegacyEventMessage(EventMessage aEventMessage) const
   }
 }
 
+already_AddRefed<nsPIDOMWindowInner>
+EventListenerManager::WindowFromListener(Listener* aListener,
+                                         bool aItemInShadowTree)
+{
+  nsCOMPtr<nsPIDOMWindowInner> innerWindow;
+  if (!aItemInShadowTree) {
+    if (aListener->mListener.HasWebIDLCallback()) {
+      CallbackObject* callback = aListener->mListener.GetWebIDLCallback();
+      nsIGlobalObject* global = nullptr;
+      if (callback) {
+        global = callback->IncumbentGlobalOrNull();
+      }
+      innerWindow = global->AsInnerWindow(); 
+    } else {
+      
+      
+      
+      
+      innerWindow = GetInnerWindowForTarget(); 
+    }
+  }
+  return innerWindow.forget();
+}
+
 
 
 
@@ -1171,7 +1195,8 @@ EventListenerManager::HandleEventInternal(nsPresContext* aPresContext,
                                           WidgetEvent* aEvent,
                                           Event** aDOMEvent,
                                           EventTarget* aCurrentTarget,
-                                          nsEventStatus* aEventStatus)
+                                          nsEventStatus* aEventStatus,
+                                          bool aItemInShadowTree)
 {
   
   if (!aEvent->DefaultPrevented() &&
@@ -1264,6 +1289,12 @@ EventListenerManager::HandleEventInternal(nsPresContext* aPresContext,
             }
 
             nsresult rv = NS_OK;
+            nsCOMPtr<nsPIDOMWindowInner> innerWindow =
+              WindowFromListener(listener, aItemInShadowTree);
+            mozilla::dom::Event* oldWindowEvent = nullptr;
+            if (innerWindow) {
+              oldWindowEvent = innerWindow->SetEvent(*aDOMEvent);
+            }
 #ifdef MOZ_GECKO_PROFILER
             if (profiler_is_active()) {
               
@@ -1296,6 +1327,9 @@ EventListenerManager::HandleEventInternal(nsPresContext* aPresContext,
 #endif
             {
               rv = HandleEventSubType(listener, *aDOMEvent, aCurrentTarget);
+            }
+            if (innerWindow) {
+              Unused << innerWindow->SetEvent(oldWindowEvent);
             }
 
             if (NS_FAILED(rv)) {
