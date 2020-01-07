@@ -286,8 +286,11 @@ TrackBuffersManager::ProcessTasks()
       mType = task->As<ChangeTypeTask>()->mType;
       mChangeTypeReceived = true;
       mInitData = nullptr;
+      
+      
+      
+      mCurrentInputBuffer = nullptr;
       CompleteResetParserState();
-      CreateDemuxerforMIMEType();
       break;
     default:
       NS_WARNING("Invalid Task");
