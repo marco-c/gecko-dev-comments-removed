@@ -644,6 +644,7 @@ public:
                 nsresult aStatus) override
   {
     mChannel->SendDivertOnStopRequest(aStatus);
+    mChannel->SendDivertComplete();
     return NS_OK;
   }
 
@@ -1884,7 +1885,11 @@ HttpChannelChild::FlushedForDiversion()
   
   mFlushedForDiversion = true;
 
-  SendDivertComplete();
+  
+  
+  if (!mSynthesizedResponse) {
+    SendDivertComplete();
+  }
 }
 
 void
