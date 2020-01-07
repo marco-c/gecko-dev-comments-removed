@@ -218,7 +218,7 @@ RegisterErrorTable()
       "The certificate is not trusted because it is self-signed." },
     { "MOZILLA_PKIX_ERROR_MITM_DETECTED",
       "Your connection is being intercepted by a TLS proxy. Uninstall it if "
-      "possible or configure Firefox to trust its root certificate." },
+      "possible or configure your device to trust its root certificate." },
   };
   
   
