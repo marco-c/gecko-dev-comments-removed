@@ -145,7 +145,8 @@ nsPagePrintTimer::Notify(nsITimer *timer)
 
   if (mDocViewerPrint) {
     bool donePrePrint = true;
-    if (mPrintEngine) {
+    
+    if (mPrintEngine && !mWaitingForRemotePrint) {
       donePrePrint = mPrintEngine->PrePrintPage();
     }
 

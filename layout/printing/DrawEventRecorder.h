@@ -25,9 +25,10 @@ public:
   PRFileDescStream() : mFd(nullptr), mBuffer(nullptr), mBufferPos(0),
                        mGood(true) {}
 
-  void Open(const char* aFilename) {
+  void OpenFD(PRFileDesc* aFd)
+  {
     MOZ_ASSERT(!IsOpen());
-    mFd = PR_Open(aFilename, PR_RDWR | PR_CREATE_FILE, PR_IRUSR | PR_IWUSR);
+    mFd = aFd;
     mGood = true;
     mBuffer.reset(new uint8_t[kBufferSize]);
     mBufferPos = 0;
@@ -118,7 +119,7 @@ class DrawEventRecorderPRFileDesc : public gfx::DrawEventRecorderPrivate
 {
 public:
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(DrawEventRecorderPRFileDesc, override)
-  explicit DrawEventRecorderPRFileDesc(const char* aFilename);
+  explicit DrawEventRecorderPRFileDesc(){};
   ~DrawEventRecorderPRFileDesc();
 
   void RecordEvent(const gfx::RecordedEvent& aEvent) override;
@@ -131,9 +132,7 @@ public:
   
 
 
-
-
-  void OpenNew(const char* aFilename);
+  void OpenFD(PRFileDesc* aFd);
 
   
 
