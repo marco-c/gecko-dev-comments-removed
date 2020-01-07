@@ -1162,18 +1162,35 @@ Loader::PrepareSheet(StyleSheet* aSheet,
 
 
 
-nsresult
-Loader::InsertSheetInDoc(StyleSheet* aSheet,
-                         nsIContent* aLinkingContent,
-                         nsIDocument* aDocument)
+
+
+
+void
+Loader::InsertSheetInTree(StyleSheet& aSheet, nsIContent* aLinkingContent)
 {
-  LOG(("css::Loader::InsertSheetInDoc"));
-  MOZ_ASSERT(aSheet, "Nothing to insert");
-  MOZ_ASSERT(aDocument, "Must have a document to insert into");
+  LOG(("css::Loader::InsertSheetInTree"));
+  MOZ_ASSERT(mDocument, "Must have a document to insert into");
+  MOZ_ASSERT(!aLinkingContent ||
+             aLinkingContent->IsInUncomposedDoc() ||
+             aLinkingContent->IsInShadowTree(),
+             "Why would we insert it anywhere?");
+
+  nsCOMPtr<nsIStyleSheetLinkingElement> linkingElement =
+    do_QueryInterface(aLinkingContent);
+  if (linkingElement) {
+    linkingElement->SetStyleSheet(&aSheet);
+  }
+
+  ShadowRoot* shadow =
+    aLinkingContent ? aLinkingContent->GetContainingShadow() : nullptr;
+
+  auto& target = shadow
+    ? static_cast<DocumentOrShadowRoot&>(*shadow)
+    : static_cast<DocumentOrShadowRoot&>(*mDocument);
 
   
 
-  int32_t sheetCount = aDocument->SheetCount();
+  int32_t sheetCount = target.SheetCount();
 
   
 
@@ -1183,11 +1200,9 @@ Loader::InsertSheetInDoc(StyleSheet* aSheet,
 
 
 
-  int32_t insertionPoint;
-  for (insertionPoint = sheetCount - 1; insertionPoint >= 0; --insertionPoint) {
-    StyleSheet* curSheet = aDocument->SheetAt(insertionPoint);
-    NS_ASSERTION(curSheet, "There must be a sheet here!");
-    nsCOMPtr<nsINode> sheetOwner = curSheet->GetOwnerNode();
+  int32_t insertionPoint = sheetCount - 1;
+  for (; insertionPoint >= 0; --insertionPoint) {
+    nsINode* sheetOwner = target.SheetAt(insertionPoint)->GetOwnerNode();
     if (sheetOwner && !aLinkingContent) {
       
       
@@ -1200,8 +1215,8 @@ Loader::InsertSheetInDoc(StyleSheet* aSheet,
       break;
     }
 
-    NS_ASSERTION(aLinkingContent != sheetOwner,
-                 "Why do we still have our old sheet?");
+    MOZ_ASSERT(aLinkingContent != sheetOwner,
+               "Why do we still have our old sheet?");
 
     
     if (nsContentUtils::PositionIsBefore(sheetOwner, aLinkingContent)) {
@@ -1211,20 +1226,15 @@ Loader::InsertSheetInDoc(StyleSheet* aSheet,
     }
   }
 
-  ++insertionPoint; 
+  ++insertionPoint;
 
-  
-  
-  nsCOMPtr<nsIStyleSheetLinkingElement>
-    linkingElement = do_QueryInterface(aLinkingContent);
-  if (linkingElement) {
-    linkingElement->SetStyleSheet(aSheet); 
+  if (shadow) {
+    shadow->InsertSheetAt(insertionPoint, aSheet);
+  } else {
+    mDocument->InsertSheetAt(insertionPoint, aSheet);
   }
 
-  aDocument->InsertStyleSheetAt(aSheet, insertionPoint);
-  LOG(("  Inserting into document at position %d", insertionPoint));
-
-  return NS_OK;
+  LOG(("  Inserting into target (doc: %d) at position %d", target.AsNode().IsDocument(), insertionPoint));
 }
 
 
@@ -1918,14 +1928,7 @@ Loader::LoadInlineStyle(const SheetInfo& aInfo,
   auto matched =
     PrepareSheet(sheet, aInfo.mTitle, aInfo.mMedia, nullptr, isAlternate);
 
-  if (aInfo.mContent->IsInShadowTree()) {
-    aInfo.mContent->GetContainingShadow()->InsertSheet(sheet, aInfo.mContent);
-  } else {
-    rv = InsertSheetInDoc(sheet, aInfo.mContent, mDocument);
-    if (NS_FAILED(rv)) {
-      return Err(rv);
-    }
-  }
+  InsertSheetInTree(*sheet, aInfo.mContent);
 
   nsIPrincipal* principal = aInfo.mContent->NodePrincipal();
   if (aInfo.mTriggeringPrincipal) {
@@ -2035,14 +2038,7 @@ Loader::LoadStyleLink(const SheetInfo& aInfo, nsICSSLoaderObserver* aObserver)
   auto matched =
     PrepareSheet(sheet, aInfo.mTitle, aInfo.mMedia, nullptr, isAlternate);
 
-  if (aInfo.mContent && aInfo.mContent->IsInShadowTree()) {
-    aInfo.mContent->GetContainingShadow()->InsertSheet(sheet, aInfo.mContent);
-  } else {
-    rv = InsertSheetInDoc(sheet, aInfo.mContent, mDocument);
-    if (NS_FAILED(rv)) {
-      return Err(rv);
-    }
-  }
+  InsertSheetInTree(*sheet, aInfo.mContent);
 
   nsCOMPtr<nsIStyleSheetLinkingElement> owningElement(
     do_QueryInterface(aInfo.mContent));

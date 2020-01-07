@@ -1495,14 +1495,7 @@ public:
     return &DocumentOrShadowRoot::EnsureDOMStyleSheets();
   }
 
-  
-
-
-
-
-
-  void InsertStyleSheetAt(mozilla::StyleSheet* aSheet, size_t aIndex);
-
+  void InsertSheetAt(size_t aIndex, mozilla::StyleSheet&);
 
   
 
@@ -1519,7 +1512,14 @@ public:
   
 
 
-  void AddStyleSheet(mozilla::StyleSheet* aSheet);
+
+
+
+  void AddStyleSheet(mozilla::StyleSheet* aSheet)
+  {
+    MOZ_ASSERT(aSheet);
+    InsertSheetAt(SheetCount(), *aSheet);
+  }
 
   
 

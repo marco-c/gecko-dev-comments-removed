@@ -508,9 +508,8 @@ private:
                             dom::MediaList* aMediaList,
                             IsAlternate);
 
-  nsresult InsertSheetInDoc(StyleSheet* aSheet,
-                            nsIContent* aLinkingContent,
-                            nsIDocument* aDocument);
+  
+  void InsertSheetInTree(StyleSheet& aSheet, nsIContent* aLinkingContent);
 
   nsresult InsertChildSheet(StyleSheet* aSheet,
                             StyleSheet* aParentSheet);
