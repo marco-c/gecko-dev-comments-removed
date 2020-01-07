@@ -1440,15 +1440,21 @@ EmitCheckPropertyTypes(MacroAssembler& masm, const PropertyTypeCheckInfo* typeCh
     Register scratch1 = obj;
 
     
+    
+    
     Register objScratch = InvalidReg;
+    Register spectreRegToZero = InvalidReg;
     if (propTypes && !propTypes->unknownObject() && propTypes->getObjectCount() > 0) {
         AllocatableGeneralRegisterSet regs(GeneralRegisterSet::All());
         if (!val.constant()) {
             TypedOrValueRegister valReg = val.reg();
-            if (valReg.hasValue())
+            if (valReg.hasValue()) {
                 regs.take(valReg.valueReg());
-            else if (!valReg.typedReg().isFloat())
+                spectreRegToZero = valReg.valueReg().payloadOrValueReg();
+            } else if (!valReg.typedReg().isFloat()) {
                 regs.take(valReg.typedReg().gpr());
+                spectreRegToZero = valReg.typedReg().gpr();
+            }
         }
         regs.take(scratch1);
         objScratch = regs.takeAny();
@@ -1485,7 +1491,7 @@ EmitCheckPropertyTypes(MacroAssembler& masm, const PropertyTypeCheckInfo* typeCh
             
             TypeSet::readBarrier(propTypes);
             masm.guardTypeSet(valReg, propTypes, BarrierKind::TypeSet, scratch1, objScratch,
-                              &failedFastPath);
+                              spectreRegToZero, &failedFastPath);
             masm.jump(&done);
         } else {
             masm.jump(&failedFastPath);

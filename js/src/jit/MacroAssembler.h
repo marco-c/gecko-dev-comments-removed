@@ -1368,6 +1368,10 @@ class MacroAssembler : public MacroAssemblerSpecific
         DEFINED_ON(arm, arm64, mips_shared, x86, x64);
 
     
+    inline void spectreMovePtr(Condition cond, Register src, Register dest)
+        DEFINED_ON(arm, arm64, x86, x64);
+
+    
     
     inline void boundsCheck32ForLoad(Register index, Register length, Register scratch,
                                      Label* failure)
@@ -1934,9 +1938,11 @@ class MacroAssembler : public MacroAssemblerSpecific
     
     template <typename Source>
     void guardTypeSet(const Source& address, const TypeSet* types, BarrierKind kind,
-                      Register unboxScratch, Register objScratch, Label* miss);
+                      Register unboxScratch, Register objScratch, Register spectreRegToZero,
+                      Label* miss);
 
-    void guardObjectType(Register obj, const TypeSet* types, Register scratch, Label* miss);
+    void guardObjectType(Register obj, const TypeSet* types, Register scratch,
+                         Register spectreRegToZero, Label* miss);
 
 #ifdef DEBUG
     void guardTypeSetMightBeIncomplete(const TypeSet* types, Register obj, Register scratch,

@@ -2806,16 +2806,23 @@ LIRGenerator::visitTypeBarrier(MTypeBarrier* ins)
         return;
     }
 
-    bool needObjTemp = !types->unknownObject() && types->getObjectCount() > 0;
+    bool hasSpecificObjects = !types->unknownObject() && types->getObjectCount() > 0;
 
     
     if (inputType == MIRType::Value) {
-        LDefinition objTemp = needObjTemp ? temp() : LDefinition::BogusTemp();
-        LTypeBarrierV* barrier = new(alloc()) LTypeBarrierV(useBox(ins->input()), tempToUnbox(),
-                                                            objTemp);
-        assignSnapshot(barrier, Bailout_TypeBarrierV);
-        add(barrier, ins);
-        redefine(ins, ins->input());
+        LDefinition objTemp = hasSpecificObjects ? temp() : LDefinition::BogusTemp();
+        if (ins->canRedefineInput()) {
+            LTypeBarrierV* barrier =
+                new(alloc()) LTypeBarrierV(useBox(ins->input()), tempToUnbox(), objTemp);
+            assignSnapshot(barrier, Bailout_TypeBarrierV);
+            add(barrier, ins);
+            redefine(ins, ins->input());
+        } else {
+            LTypeBarrierV* barrier =
+                new(alloc()) LTypeBarrierV(useBoxAtStart(ins->input()), tempToUnbox(), objTemp);
+            assignSnapshot(barrier, Bailout_TypeBarrierV);
+            defineBoxReuseInput(barrier, ins, 0);
+        }
         return;
     }
 
@@ -2831,32 +2838,24 @@ LIRGenerator::visitTypeBarrier(MTypeBarrier* ins)
     }
 
     if (needsObjectBarrier) {
-        LDefinition tmp = needObjTemp ? temp() : LDefinition::BogusTemp();
-        LTypeBarrierO* barrier = new(alloc()) LTypeBarrierO(useRegister(ins->getOperand(0)), tmp);
-        assignSnapshot(barrier, Bailout_TypeBarrierO);
-        add(barrier, ins);
-        redefine(ins, ins->getOperand(0));
+        LDefinition tmp = hasSpecificObjects ? temp() : LDefinition::BogusTemp();
+        if (ins->canRedefineInput()) {
+            LTypeBarrierO* barrier =
+                new(alloc()) LTypeBarrierO(useRegister(ins->input()), tmp);
+            assignSnapshot(barrier, Bailout_TypeBarrierO);
+            add(barrier, ins);
+            redefine(ins, ins->getOperand(0));
+        } else {
+            LTypeBarrierO* barrier =
+                new(alloc()) LTypeBarrierO(useRegisterAtStart(ins->input()), tmp);
+            assignSnapshot(barrier, Bailout_TypeBarrierO);
+            defineReuseInput(barrier, ins, 0);
+        }
         return;
     }
 
     
     redefine(ins, ins->getOperand(0));
-}
-
-void
-LIRGenerator::visitMonitorTypes(MMonitorTypes* ins)
-{
-    
-    
-
-    const TemporaryTypeSet* types = ins->typeSet();
-
-    bool needObjTemp = !types->unknownObject() && types->getObjectCount() > 0;
-    LDefinition objTemp = needObjTemp ? temp() : LDefinition::BogusTemp();
-
-    LMonitorTypes* lir = new(alloc()) LMonitorTypes(useBox(ins->input()), tempToUnbox(), objTemp);
-    assignSnapshot(lir, Bailout_MonitorTypes);
-    add(lir, ins);
 }
 
 
