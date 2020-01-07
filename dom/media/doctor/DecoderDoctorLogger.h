@@ -285,7 +285,8 @@ public:
   }
 
   template<typename Subject>
-  static void LogConstruction(const Subject* aSubject)
+  static void
+  LogConstruction(const Subject* aSubject)
   {
     using Traits = DDLoggedTypeTraits<Subject>;
     if (!Traits::HasBase::value) {
@@ -478,10 +479,20 @@ template<typename T>
 class DecoderDoctorLifeLogger
 {
 public:
+#if defined(__clang__)
+  
+  
+  __attribute__((no_sanitize("vptr")))
+#endif
   DecoderDoctorLifeLogger()
   {
     DecoderDoctorLogger::LogConstruction(static_cast<const T*>(this));
   }
+#if defined(__clang__)
+  
+  
+  __attribute__((no_sanitize("vptr")))
+#endif
   ~DecoderDoctorLifeLogger()
   {
     DecoderDoctorLogger::LogDestruction(static_cast<const T*>(this));
