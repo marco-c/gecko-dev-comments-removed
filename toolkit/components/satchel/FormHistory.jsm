@@ -333,6 +333,41 @@ function prepareInsertQuery(change, now) {
 
 
 
+this.InProgressInserts = {
+  _inProgress: new Map(),
+
+  add(fieldname, value) {
+    let fieldnameSet = this._inProgress.get(fieldname);
+    if (!fieldnameSet) {
+      this._inProgress.set(fieldname, new Set([value]));
+      return true;
+    }
+
+    if (!fieldnameSet.has(value)) {
+      fieldnameSet.add(value);
+      return true;
+    }
+
+    return false;
+  },
+
+  clear(fieldnamesAndValues) {
+    for (let [fieldname, value] of fieldnamesAndValues) {
+      let fieldnameSet = this._inProgress.get(fieldname);
+      if (fieldnameSet &&
+          fieldnameSet.delete(value) &&
+          fieldnameSet.size == 0) {
+        this._inProgress.delete(fieldname);
+      }
+    }
+  },
+};
+
+
+
+
+
+
 
 
 
@@ -344,6 +379,7 @@ async function updateFormHistoryWrite(aChanges, aPreparedHandlers) {
   let now = Date.now() * 1000;
   let queries = [];
   let notifications = [];
+  let adds = [];
   let conn = await FormHistory.db;
 
   for (let change of aChanges) {
@@ -436,6 +472,12 @@ async function updateFormHistoryWrite(aChanges, aPreparedHandlers) {
           queries.push({ query, params: queryParams });
           notifications.push(["formhistory-update", change.guid]);
         } else {
+          if (!InProgressInserts.add(change.fieldname, change.value)) {
+            
+            
+            continue;
+          }
+          adds.push([change.fieldname, change.value]);
           change.guid = generateGUID();
           let { query, updatedChange } = prepareInsertQuery(change, now);
           queries.push({ query, params: updatedChange });
@@ -444,6 +486,13 @@ async function updateFormHistoryWrite(aChanges, aPreparedHandlers) {
         break;
       }
       case "add": {
+        if (!InProgressInserts.add(change.fieldname, change.value)) {
+          
+          
+          continue;
+        }
+        adds.push([change.fieldname, change.value]);
+
         log("Add to form history " + change);
         if (!change.guid) {
           change.guid = generateGUID();
@@ -464,18 +513,18 @@ async function updateFormHistoryWrite(aChanges, aPreparedHandlers) {
 
   try {
     await runUpdateQueries(conn, queries);
+    for (let [notification, param] of notifications) {
+      
+      sendNotification(notification, param);
+    }
+
+    aPreparedHandlers.handleCompletion(0);
   } catch (e) {
     aPreparedHandlers.handleError(e);
     aPreparedHandlers.handleCompletion(1);
-    return;
+  } finally {
+    InProgressInserts.clear(adds);
   }
-
-  for (let [notification, param] of notifications) {
-    
-    sendNotification(notification, param);
-  }
-
-  aPreparedHandlers.handleCompletion(0);
 }
 
 
