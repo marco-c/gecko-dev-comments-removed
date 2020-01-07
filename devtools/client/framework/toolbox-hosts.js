@@ -30,13 +30,6 @@ const MIN_PAGE_SIZE = 25;
 
 
 
-exports.Hosts = {
-  "bottom": BottomHost,
-  "side": SidebarHost,
-  "window": WindowHost,
-  "custom": CustomHost
-};
-
 
 
 
@@ -130,25 +123,23 @@ BottomHost.prototype = {
 
 
 
-function SidebarHost(hostTab) {
-  this.hostTab = hostTab;
+class SidebarHost {
+  constructor(hostTab, hostType) {
+    this.hostTab = hostTab;
+    this.type = hostType;
+    this.widthPref = "devtools.toolbox.sidebar.width";
 
-  EventEmitter.decorate(this);
-}
-
-SidebarHost.prototype = {
-  type: "side",
-
-  widthPref: "devtools.toolbox.sidebar.width",
+    EventEmitter.decorate(this);
+  }
 
   
 
 
-  create: async function() {
+  async create() {
     await gDevToolsBrowser.loadBrowserStyleSheet(this.hostTab.ownerGlobal);
-
     const gBrowser = this.hostTab.ownerDocument.defaultView.gBrowser;
     const ownerDocument = gBrowser.ownerDocument;
+    this._browser = gBrowser.getBrowserContainer(this.hostTab.linkedBrowser);
     this._sidebar = gBrowser.getSidebarContainer(this.hostTab.linkedBrowser);
 
     this._splitter = ownerDocument.createElement("splitter");
@@ -163,8 +154,13 @@ SidebarHost.prototype = {
       this._sidebar.clientWidth - MIN_PAGE_SIZE
     );
 
-    this._sidebar.appendChild(this._splitter);
-    this._sidebar.appendChild(this.frame);
+    if (this.hostType == "right") {
+      this._sidebar.appendChild(this._splitter);
+      this._sidebar.appendChild(this.frame);
+    } else {
+      this._sidebar.insertBefore(this.frame, this._browser);
+      this._sidebar.insertBefore(this._splitter, this._browser);
+    }
 
     this.frame.tooltip = "aHTMLTooltip";
     this.frame.setAttribute("src", "about:blank");
@@ -180,25 +176,25 @@ SidebarHost.prototype = {
     });
 
     return frame;
-  },
+  }
 
   
 
 
-  raise: function() {
+  raise() {
     focusTab(this.hostTab);
-  },
+  }
 
   
 
 
 
-  setTitle: function() {},
+  setTitle() {}
 
   
 
 
-  destroy: function() {
+  destroy() {
     if (!this._destroyed) {
       this._destroyed = true;
 
@@ -209,7 +205,25 @@ SidebarHost.prototype = {
 
     return promise.resolve(null);
   }
-};
+}
+
+
+
+
+class LeftHost extends SidebarHost {
+  constructor(hostTab) {
+    super(hostTab, "left");
+  }
+}
+
+
+
+
+class RightHost extends SidebarHost {
+  constructor(hostTab) {
+    super(hostTab, "right");
+  }
+}
 
 
 
@@ -369,3 +383,12 @@ function focusTab(tab) {
   browserWindow.focus();
   browserWindow.gBrowser.selectedTab = tab;
 }
+
+exports.Hosts = {
+  "bottom": BottomHost,
+  "left": LeftHost,
+  "right": RightHost,
+  "window": WindowHost,
+  "custom": CustomHost
+};
+

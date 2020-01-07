@@ -161,7 +161,7 @@ ToolboxHostManager.prototype = {
       
       if (hostType === this.hostType) {
         if (hostType === Toolbox.HostType.BOTTOM) {
-          hostType = Toolbox.HostType.SIDE;
+          hostType = Toolbox.HostType.RIGHT;
         } else {
           hostType = Toolbox.HostType.BOTTOM;
         }

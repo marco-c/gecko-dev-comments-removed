@@ -179,7 +179,7 @@ var DebuggerView = {
   _destroyPanes: function () {
     dumpn("Destroying the DebuggerView panes");
 
-    if (gHostType != "side") {
+    if (gHostType != "right" && gHostType != "left") {
       Prefs.workersAndSourcesWidth = this._workersAndSourcesPane.getAttribute("width");
       Prefs.instrumentsWidth = this._instrumentsPane.getAttribute("width");
     }
@@ -723,7 +723,9 @@ var DebuggerView = {
 
 
   updateLayoutMode: function () {
-    if (this._isSmallWindowHost() || this._hostType == "side") {
+    if (this._isSmallWindowHost() ||
+        this._hostType == "left" ||
+        this._hostType == "right") {
       this._setLayoutMode("vertical");
     } else {
       this._setLayoutMode("horizontal");
