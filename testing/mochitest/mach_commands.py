@@ -233,7 +233,8 @@ def setup_argument_parser():
         
         
         from mozrunner.devices.android_device import verify_android_device
-        verify_android_device(build_obj, install=True, xre=True)
+        
+        verify_android_device(build_obj, install=False, xre=True)
 
     global parser
     parser = MochitestArgumentParser()
@@ -391,6 +392,9 @@ class MachCommands(MachCommandBase):
 
         if buildapp == 'android':
             from mozrunner.devices.android_device import grant_runtime_permissions
+            from mozrunner.devices.android_device import verify_android_device
+            
+            verify_android_device(self, install=True, xre=False, app=kwargs['app'])
             grant_runtime_permissions(self)
             run_mochitest = mochitest.run_android_test
         else:
@@ -461,6 +465,9 @@ class RobocopCommands(MachCommandBase):
             return 1
 
         from mozrunner.devices.android_device import grant_runtime_permissions, get_adb_path
+        from mozrunner.devices.android_device import verify_android_device
+        
+        verify_android_device(self, install=True, xre=False, app=kwargs['app'])
         grant_runtime_permissions(self)
 
         if not kwargs['adbPath']:
