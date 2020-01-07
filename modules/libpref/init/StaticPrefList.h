@@ -118,6 +118,14 @@ PREF("dom.serviceWorkers.parent_intercept", bool, false)
 
 
 
+VARCACHE_PREF(
+  "dom.payments.response.timeout",
+   dom_payments_response_timeout,
+  uint32_t, 5000
+)
+
+
+
 
 
 #ifdef NIGHTLY
