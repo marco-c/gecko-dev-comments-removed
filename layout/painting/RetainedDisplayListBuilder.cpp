@@ -1021,15 +1021,30 @@ ClearFrameProps(nsTArray<nsIFrame*>& aFrames)
   }
 }
 
+class AutoClearFramePropsArray
+{
+public:
+  AutoClearFramePropsArray() = default;
+
+  ~AutoClearFramePropsArray()
+  {
+    ClearFrameProps(mFrames);
+  }
+
+  nsTArray<nsIFrame*>& Frames() { return mFrames; }
+
+  bool IsEmpty() const { return mFrames.IsEmpty(); }
+
+private:
+  nsTArray<nsIFrame*> mFrames;
+};
+
 void
 RetainedDisplayListBuilder::ClearFramesWithProps()
 {
-  nsTArray<nsIFrame*> modifiedFrames;
-  nsTArray<nsIFrame*> framesWithProps;
-  GetModifiedAndFramesWithProps(&mBuilder, &modifiedFrames, &framesWithProps);
-
-  ClearFrameProps(modifiedFrames);
-  ClearFrameProps(framesWithProps);
+  AutoClearFramePropsArray modifiedFrames;
+  AutoClearFramePropsArray framesWithProps;
+  GetModifiedAndFramesWithProps(&mBuilder, &modifiedFrames.Frames(), &framesWithProps.Frames());
 }
 
 bool
@@ -1046,24 +1061,27 @@ RetainedDisplayListBuilder::AttemptPartialUpdate(
 
   mBuilder.EnterPresShell(mBuilder.RootReferenceFrame());
 
-  nsTArray<nsIFrame*> modifiedFrames;
-  nsTArray<nsIFrame*> framesWithProps;
-  GetModifiedAndFramesWithProps(&mBuilder, &modifiedFrames, &framesWithProps);
+  
+  
+  
+  AutoClearFramePropsArray modifiedFrames;
+  AutoClearFramePropsArray framesWithProps;
+  GetModifiedAndFramesWithProps(&mBuilder, &modifiedFrames.Frames(), &framesWithProps.Frames());
 
   
   
-  const bool shouldBuildPartial = !mList.IsEmpty() && ShouldBuildPartial(modifiedFrames);
+  const bool shouldBuildPartial = !mList.IsEmpty() && ShouldBuildPartial(modifiedFrames.Frames());
 
   if (mPreviousCaret != mBuilder.GetCaretFrame()) {
     if (mPreviousCaret) {
       if (mBuilder.MarkFrameModifiedDuringBuilding(mPreviousCaret)) {
-        modifiedFrames.AppendElement(mPreviousCaret);
+        modifiedFrames.Frames().AppendElement(mPreviousCaret);
       }
     }
 
     if (mBuilder.GetCaretFrame()) {
       if (mBuilder.MarkFrameModifiedDuringBuilding(mBuilder.GetCaretFrame())) {
-        modifiedFrames.AppendElement(mBuilder.GetCaretFrame());
+        modifiedFrames.Frames().AppendElement(mBuilder.GetCaretFrame());
       }
     }
 
@@ -1072,61 +1090,54 @@ RetainedDisplayListBuilder::AttemptPartialUpdate(
 
   nsRect modifiedDirty;
   AnimatedGeometryRoot* modifiedAGR = nullptr;
-  bool merged = false;
-  if (shouldBuildPartial &&
-      ComputeRebuildRegion(modifiedFrames, &modifiedDirty,
-                           &modifiedAGR, framesWithProps)) {
-    modifiedDirty.IntersectRect(modifiedDirty, mBuilder.RootReferenceFrame()->GetVisualOverflowRectRelativeToSelf());
-
-    PreProcessDisplayList(&mList, modifiedAGR);
-
-    nsDisplayList modifiedDL;
-    if (!modifiedDirty.IsEmpty() || !framesWithProps.IsEmpty()) {
-      mBuilder.SetDirtyRect(modifiedDirty);
-      mBuilder.SetPartialUpdate(true);
-      mBuilder.RootReferenceFrame()->BuildDisplayListForStackingContext(&mBuilder, &modifiedDL);
-      nsLayoutUtils::AddExtraBackgroundItems(mBuilder, modifiedDL, mBuilder.RootReferenceFrame(),
-                                             nsRect(nsPoint(0, 0), mBuilder.RootReferenceFrame()->GetSize()),
-                                             mBuilder.RootReferenceFrame()->GetVisualOverflowRectRelativeToSelf(),
-                                             aBackstop);
-      mBuilder.SetPartialUpdate(false);
-
-      
-      
-      
-
-    } else {
-      
-      
-      
-      
-    }
-
-    if (aChecker) {
-      aChecker->Set(&modifiedDL, "TM");
-    }
-
-    
-    
-    
-    
-    
-    Maybe<const ActiveScrolledRoot*> dummy;
-    MergeDisplayLists(&modifiedDL, &mList, &mList, dummy);
-
-    
-    
-
-    merged = true;
+  if (!shouldBuildPartial ||
+      !ComputeRebuildRegion(modifiedFrames.Frames(), &modifiedDirty,
+                           &modifiedAGR, framesWithProps.Frames())) {
+    mBuilder.LeavePresShell(mBuilder.RootReferenceFrame(), &mList);
+    return false;
   }
 
+  modifiedDirty.IntersectRect(modifiedDirty, mBuilder.RootReferenceFrame()->GetVisualOverflowRectRelativeToSelf());
+
+  PreProcessDisplayList(&mList, modifiedAGR);
+
+  nsDisplayList modifiedDL;
+  if (!modifiedDirty.IsEmpty() || !framesWithProps.IsEmpty()) {
+    mBuilder.SetDirtyRect(modifiedDirty);
+    mBuilder.SetPartialUpdate(true);
+    mBuilder.RootReferenceFrame()->BuildDisplayListForStackingContext(&mBuilder, &modifiedDL);
+    nsLayoutUtils::AddExtraBackgroundItems(mBuilder, modifiedDL, mBuilder.RootReferenceFrame(),
+                                           nsRect(nsPoint(0, 0), mBuilder.RootReferenceFrame()->GetSize()),
+                                           mBuilder.RootReferenceFrame()->GetVisualOverflowRectRelativeToSelf(),
+                                           aBackstop);
+    mBuilder.SetPartialUpdate(false);
+
+    
+    
+    
+
+  } else {
+    
+    
+    
+    
+  }
+    
+  if (aChecker) {
+    aChecker->Set(&modifiedDL, "TM");
+  }
+
+  
+  
+  
+  
+  
+  Maybe<const ActiveScrolledRoot*> dummy;
+  MergeDisplayLists(&modifiedDL, &mList, &mList, dummy);
+
+  
+  
+
   mBuilder.LeavePresShell(mBuilder.RootReferenceFrame(), &mList);
-
-  
-  
-  
-  ClearFrameProps(modifiedFrames);
-  ClearFrameProps(framesWithProps);
-
-  return merged;
+  return true;
 }
