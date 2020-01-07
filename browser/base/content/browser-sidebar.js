@@ -449,6 +449,17 @@ var SidebarUI = {
 
 
 
+  setWebPageIcon(url) {
+    let iconURL = "url(page-icon:" + url + ")";
+    if (this._box.getAttribute("sidebarcommand") == "viewWebPanelsSidebar") {
+      this._icon.style.setProperty("--sidebar-webpage-icon", iconURL);
+    }
+  },
+
+  
+
+
+
 
 
   hide(triggerNode) {
