@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+  var bnc = Number.bind(null);
+  var n = bnc(42);
+
+assert.sameValue(n, 42, 'n');
+
+reportCompare(0, 0);

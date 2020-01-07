@@ -19,171 +19,26 @@
 
 
 
-function testBuiltInObject(obj, isFunction, isConstructor, properties, length) {
-
-  if (obj === undefined) {
-    $ERROR("Object being tested is undefined.");
-  }
-
-  var objString = Object.prototype.toString.call(obj);
-  if (isFunction) {
-    if (objString !== "[object Function]") {
-      $ERROR("The [[Class]] internal property of a built-in function must be " +
-          "\"Function\", but toString() returns " + objString);
-    }
-  } else {
-    if (objString !== "[object Object]") {
-      $ERROR("The [[Class]] internal property of a built-in non-function object must be " +
-          "\"Object\", but toString() returns " + objString);
-    }
-  }
-
-  if (!Object.isExtensible(obj)) {
-    $ERROR("Built-in objects must be extensible.");
-  }
-
-  if (isFunction && Object.getPrototypeOf(obj) !== Function.prototype) {
-    $ERROR("Built-in functions must have Function.prototype as their prototype.");
-  }
-
-  if (isConstructor && Object.getPrototypeOf(obj.prototype) !== Object.prototype) {
-    $ERROR("Built-in prototype objects must have Object.prototype as their prototype.");
-  }
-
-  
-  
-
-  
-  
-
-  if (isFunction) {
-
-    if (typeof obj.length !== "number" || obj.length !== Math.floor(obj.length)) {
-      $ERROR("Built-in functions must have a length property with an integer value.");
-    }
-
-    if (obj.length !== length) {
-      $ERROR("Function's length property doesn't have specified value; expected " +
-        length + ", got " + obj.length + ".");
-    }
-
-    var desc = Object.getOwnPropertyDescriptor(obj, "length");
-    if (desc.writable) {
-      $ERROR("The length property of a built-in function must not be writable.");
-    }
-    if (desc.enumerable) {
-      $ERROR("The length property of a built-in function must not be enumerable.");
-    }
-    if (!desc.configurable) {
-      $ERROR("The length property of a built-in function must be configurable.");
-    }
-  }
-
-  properties.forEach(function(prop) {
-    var desc = Object.getOwnPropertyDescriptor(obj, prop);
-    if (desc === undefined) {
-      $ERROR("Missing property " + prop + ".");
-    }
-    
-    if (desc.hasOwnProperty("writable") && !desc.writable) {
-      $ERROR("The " + prop + " property of this built-in object must be writable.");
-    }
-    if (desc.enumerable) {
-      $ERROR("The " + prop + " property of this built-in object must not be enumerable.");
-    }
-    if (!desc.configurable) {
-      $ERROR("The " + prop + " property of this built-in object must be configurable.");
-    }
-  });
-
-  
-  
-  
-  
-
-  var exception;
-  if (isFunction && !isConstructor) {
-    
-    
-    
-    
-    try {
-      
-      var instance = new obj();
-    } catch (e) {
-      exception = e;
-    }
-    if (exception === undefined || exception.name !== "TypeError") {
-      $ERROR("Built-in functions that aren't constructors must throw TypeError when " +
-        "used in a \"new\" statement.");
-    }
-  }
-
-  if (isFunction && !isConstructor && obj.hasOwnProperty("prototype")) {
-    $ERROR("Built-in functions that aren't constructors must not have a prototype property.");
-  }
-
-  
-  return true;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 function testWithIntlConstructors(f) {
   var constructors = ["Collator", "NumberFormat", "DateTimeFormat"];
-  return constructors.every(function (constructor) {
+
+  
+  ["PluralRules"].forEach(function(constructor) {
+    if (typeof Intl[constructor] === "function") {
+      constructors[constructors.length] = constructor;
+    }
+  });
+
+  constructors.forEach(function (constructor) {
     var Constructor = Intl[constructor];
-    var result;
     try {
-      result = f(Constructor);
+      f(Constructor);
     } catch (e) {
       e.message += " (Testing with " + constructor + ".)";
       throw e;
     }
-    return result;
   });
-}
-
-
-
-
-
-
-
-
-function getConstructorName(Constructor) {
-  switch (Constructor) {
-    case Intl.Collator:
-      return "Collator";
-    case Intl.NumberFormat:
-      return "NumberFormat";
-    case Intl.DateTimeFormat:
-      return "DateTimeFormat";
-    default:
-      $ERROR("test internal error: unknown Constructor");
-  }
 }
 
 
@@ -252,13 +107,6 @@ function taintArray() {
 
 
 
-var languages = ["zh", "es", "en", "hi", "ur", "ar", "ja", "pa"];
-var scripts = ["Latn", "Hans", "Deva", "Arab", "Jpan", "Hant"];
-var countries = ["CN", "IN", "US", "PK", "JP", "TW", "HK", "SG"];
-var localeSupportInfo = {};
-
-
-
 
 
 
@@ -268,10 +116,9 @@ var localeSupportInfo = {};
 
 
 function getLocaleSupportInfo(Constructor) {
-  var constructorName = getConstructorName(Constructor);
-  if (localeSupportInfo[constructorName] !== undefined) {
-    return localeSupportInfo[constructorName];
-  }
+  var languages = ["zh", "es", "en", "hi", "ur", "ar", "ja", "pa"];
+  var scripts = ["Latn", "Hans", "Deva", "Arab", "Jpan", "Hant"];
+  var countries = ["CN", "IN", "US", "PK", "JP", "TW", "HK", "SG"];
 
   var allTags = [];
   var i, j, k;
@@ -299,7 +146,7 @@ function getLocaleSupportInfo(Constructor) {
   for (i = 0; i < allTags.length; i++) {
     var request = allTags[i];
     var result = new Constructor([request], {localeMatcher: "lookup"}).resolvedOptions().locale;
-     if (request === result) {
+    if (request === result) {
       supported.push(request);
     } else if (request.indexOf(result) === 0) {
       byFallback.push(request);
@@ -308,13 +155,11 @@ function getLocaleSupportInfo(Constructor) {
     }
   }
 
-  localeSupportInfo[constructorName] = {
+  return {
     supported: supported,
     byFallback: byFallback,
     unsupported: unsupported
   };
-
-  return localeSupportInfo[constructorName];
 }
 
 
@@ -382,7 +227,7 @@ function isCanonicalizedStructurallyValidLanguageTag(locale) {
     
     "art-lojban": "jbo",
     "cel-gaulish": "cel-gaulish",
-    "en-gb-oed": "en-GB-oed",
+    "en-gb-oed": "en-GB-oxendict",
     "i-ami": "ami",
     "i-bnn": "bnn",
     "i-default": "i-default",
@@ -450,17 +295,78 @@ function isCanonicalizedStructurallyValidLanguageTag(locale) {
     "ji": "yi",
     "jw": "jv",
     "mo": "ro",
+    "aam": "aas",
+    "adp": "dz",
+    "aue": "ktz",
     "ayx": "nun",
+    "bgm": "bcg",
+    "bjd": "drl",
+    "ccq": "rki",
     "cjr": "mom",
+    "cka": "cmr",
     "cmk": "xch",
+    "coy": "pij",
+    "cqu": "quh",
     "drh": "khk",
     "drw": "prs",
     "gav": "dev",
+    "gfx": "vaj",
+    "ggn": "gvr",
+    "gti": "nyc",
+    "guv": "duz",
+    "hrr": "jal",
+    "ibi": "opa",
+    "ilw": "gal",
+    "jeg": "oyb",
+    "kgc": "tdf",
+    "kgh": "kml",
+    "koj": "kwv",
+    "krm": "bmf",
+    "ktr": "dtp",
+    "kvs": "gdj",
+    "kwq": "yam",
+    "kxe": "tvd",
+    "kzj": "dtp",
+    "kzt": "dtp",
+    "lii": "raq",
+    "lmm": "rmx",
+    "meg": "cir",
     "mst": "mry",
+    "mwj": "vaj",
     "myt": "mry",
+    "nad": "xny",
+    "nnx": "ngv",
+    "nts": "pij",
+    "oun": "vaj",
+    "pcr": "adx",
+    "pmc": "huw",
+    "pmu": "phr",
+    "ppa": "bfy",
+    "ppr": "lcq",
+    "pry": "prt",
+    "puz": "pub",
+    "sca": "hle",
+    "skk": "oyb",
+    "tdu": "dtp",
+    "thc": "tpo",
+    "thx": "oyb",
     "tie": "ras",
     "tkk": "twm",
+    "tlw": "weo",
+    "tmp": "tyj",
+    "tne": "kak",
     "tnf": "prs",
+    "tsf": "taj",
+    "uok": "ema",
+    "xba": "cax",
+    "xia": "acn",
+    "xkh": "waw",
+    "xsj": "suj",
+    "ybd": "rki",
+    "yma": "lrr",
+    "ymt": "mtm",
+    "yos": "zom",
+    "yuu": "yug",
     
     "BU": "MM",
     "DD": "DE",
@@ -557,6 +463,7 @@ function isCanonicalizedStructurallyValidLanguageTag(locale) {
     "fsl": ["fsl", "sgn"],
     "fss": ["fss", "sgn"],
     "gan": ["gan", "zh"],
+    "gds": ["gds", "sgn"],
     "gom": ["gom", "kok"],
     "gse": ["gse", "sgn"],
     "gsg": ["gsg", "sgn"],
@@ -575,6 +482,7 @@ function isCanonicalizedStructurallyValidLanguageTag(locale) {
     "hsl": ["hsl", "sgn"],
     "hsn": ["hsn", "zh"],
     "icl": ["icl", "sgn"],
+    "iks": ["iks", "sgn"],
     "ils": ["ils", "sgn"],
     "inl": ["inl", "sgn"],
     "ins": ["ins", "sgn"],
@@ -639,6 +547,7 @@ function isCanonicalizedStructurallyValidLanguageTag(locale) {
     "ors": ["ors", "ms"],
     "pel": ["pel", "ms"],
     "pga": ["pga", "ar"],
+    "pgz": ["pgz", "sgn"],
     "pks": ["pks", "sgn"],
     "prl": ["prl", "sgn"],
     "prz": ["prz", "sgn"],
@@ -652,8 +561,8 @@ function isCanonicalizedStructurallyValidLanguageTag(locale) {
     "psr": ["psr", "sgn"],
     "pys": ["pys", "sgn"],
     "rms": ["rms", "sgn"],
-    "rsi": ["rsi", "sgn"],
     "rsl": ["rsl", "sgn"],
+    "rsm": ["rsm", "sgn"],
     "sdl": ["sdl", "sgn"],
     "sfb": ["sfb", "sgn"],
     "sfs": ["sfs", "sgn"],
@@ -662,6 +571,7 @@ function isCanonicalizedStructurallyValidLanguageTag(locale) {
     "shu": ["shu", "ar"],
     "slf": ["slf", "sgn"],
     "sls": ["sls", "sgn"],
+    "sqk": ["sqk", "sgn"],
     "sqs": ["sqs", "sgn"],
     "ssh": ["ssh", "ar"],
     "ssp": ["ssp", "sgn"],
@@ -671,6 +581,7 @@ function isCanonicalizedStructurallyValidLanguageTag(locale) {
     "swh": ["swh", "sw"],
     "swl": ["swl", "sgn"],
     "syy": ["syy", "sgn"],
+    "szs": ["szs", "sgn"],
     "tmw": ["tmw", "ms"],
     "tse": ["tse", "sgn"],
     "tsm": ["tsm", "sgn"],
@@ -691,19 +602,21 @@ function isCanonicalizedStructurallyValidLanguageTag(locale) {
     "vsi": ["vsi", "sgn"],
     "vsl": ["vsl", "sgn"],
     "vsv": ["vsv", "sgn"],
+    "wbs": ["wbs", "sgn"],
     "wuu": ["wuu", "zh"],
     "xki": ["xki", "sgn"],
     "xml": ["xml", "sgn"],
     "xmm": ["xmm", "ms"],
     "xms": ["xms", "sgn"],
-    "yds": ["yds", "sgn"],
+    "ygs": ["ygs", "sgn"],
+    "yhs": ["yhs", "sgn"],
     "ysl": ["ysl", "sgn"],
     "yue": ["yue", "zh"],
     "zib": ["zib", "sgn"],
     "zlm": ["zlm", "ms"],
     "zmi": ["zmi", "ms"],
     "zsl": ["zsl", "sgn"],
-    "zsm": ["zsm", "ms"]
+    "zsm": ["zsm", "ms"],
   };
 
 
@@ -788,7 +701,6 @@ function isCanonicalizedStructurallyValidLanguageTag(locale) {
   return typeof locale === "string" && isStructurallyValidLanguageTag(locale) &&
       canonicalizeLanguageTag(locale) === locale;
 }
-
 
 
 
@@ -914,82 +826,6 @@ function testOption(Constructor, property, type, values, fallback, testOptions) 
       }
     }
   }
-
-  return true;
-}
-
-
-
-
-
-
-
-
-
-
-
-function testProperty(obj, property, valid) {
-  var desc = Object.getOwnPropertyDescriptor(obj, property);
-  if (!desc.writable) {
-    $ERROR("Property " + property + " must be writable.");
-  }
-  if (!desc.enumerable) {
-    $ERROR("Property " + property + " must be enumerable.");
-  }
-  if (!desc.configurable) {
-    $ERROR("Property " + property + " must be configurable.");
-  }
-  var value = desc.value;
-  var isValid = (typeof valid === "function") ? valid(value) : (valid.indexOf(value) !== -1);
-  if (!isValid) {
-    $ERROR("Property value " + value + " is not allowed for property " + property + ".");
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-function mayHaveProperty(obj, property, valid) {
-  if (obj.hasOwnProperty(property)) {
-    testProperty(obj, property, valid);
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-function mustHaveProperty(obj, property, valid) {
-  if (!obj.hasOwnProperty(property)) {
-    $ERROR("Object is missing property " + property + ".");
-  }
-  testProperty(obj, property, valid);
-}
-
-
-
-
-
-
-
-
-function mustNotHaveProperty(obj, property) {
-  if (obj.hasOwnProperty(property)) {
-    $ERROR("Object has property it mustn't have: " + property + ".");
-  }
 }
 
 
@@ -1043,67 +879,87 @@ function isValidNumberingSystem(name) {
 
   
   var numberingSystems = [
+    "adlm",
+    "ahom",
     "arab",
     "arabext",
     "armn",
     "armnlow",
     "bali",
     "beng",
+    "bhks",
     "brah",
     "cakm",
     "cham",
+    "cyrl",
     "deva",
     "ethi",
     "finance",
     "fullwide",
     "geor",
+    "gonm",
     "grek",
     "greklow",
     "gujr",
     "guru",
+    "hanidays",
     "hanidec",
     "hans",
     "hansfin",
     "hant",
     "hantfin",
     "hebr",
+    "hmng",
     "java",
     "jpan",
     "jpanfin",
     "kali",
     "khmr",
     "knda",
-    "osma",
     "lana",
     "lanatham",
     "laoo",
     "latn",
     "lepc",
     "limb",
+    "mathbold",
+    "mathdbl",
+    "mathmono",
+    "mathsanb",
+    "mathsans",
     "mlym",
+    "modi",
     "mong",
+    "mroo",
     "mtei",
     "mymr",
     "mymrshan",
+    "mymrtlng",
     "native",
+    "newa",
     "nkoo",
     "olck",
     "orya",
+    "osma",
     "roman",
     "romanlow",
     "saur",
     "shrd",
+    "sind",
+    "sinh",
     "sora",
     "sund",
-    "talu",
     "takr",
+    "talu",
     "taml",
     "tamldec",
     "telu",
     "thai",
+    "tirh",
     "tibt",
     "traditio",
-    "vaii"
+    "vaii",
+    "wara",
   ];
 
   var excluded = [
@@ -1125,6 +981,7 @@ function isValidNumberingSystem(name) {
 var numberingSystemDigits = {
   arab: "٠١٢٣٤٥٦٧٨٩",
   arabext: "۰۱۲۳۴۵۶۷۸۹",
+  bali: "\u1B50\u1B51\u1B52\u1B53\u1B54\u1B55\u1B56\u1B57\u1B58\u1B59",
   beng: "০১২৩৪৫৬৭৮৯",
   deva: "०१२३४५६७८९",
   fullwide: "０１２３４５６７８９",
@@ -1135,6 +992,7 @@ var numberingSystemDigits = {
   knda: "೦೧೨೩೪೫೬೭೮೯",
   laoo: "໐໑໒໓໔໕໖໗໘໙",
   latn: "0123456789",
+  limb: "\u1946\u1947\u1948\u1949\u194A\u194B\u194C\u194D\u194E\u194F",
   mlym: "൦൧൨൩൪൫൬൭൮൯",
   mong: "᠐᠑᠒᠓᠔᠕᠖᠗᠘᠙",
   mymr: "၀၁၂၃၄၅၆၇၈၉",
@@ -1272,22 +1130,6 @@ function getDateTimeComponentValues(component) {
 
 
 
-function testValidDateTimeComponentValue(component, value) {
-  if (getDateTimeComponentValues(component).indexOf(value) === -1) {
-    $ERROR("Invalid value " + value + " for date-time component " + component + ".");
-  }
-  return true;
-}
-
-
-
-
-
-
-
-
-
-
 
 function isCanonicalizedStructurallyValidTimeZoneName(timeZone) {
   
@@ -1299,7 +1141,7 @@ function isCanonicalizedStructurallyValidTimeZoneName(timeZone) {
   var fileName = fileNameComponent + "(?:/" + fileNameComponent + ")*";
   var etcName = "(?:Etc/)?GMT[+-]\\d{1,2}";
   var systemVName = "SystemV/[A-Z]{3}\\d{1,2}(?:[A-Z]{3})?";
-  var legacyName = etcName + "|" + systemVName + "|CST6CDT|EST5EDT|MST7MDT|PST8PDT|NZ|Canada/East-Saskatchewan";
+  var legacyName = etcName + "|" + systemVName + "|CST6CDT|EST5EDT|MST7MDT|PST8PDT|NZ";
   var zoneNamePattern = new RegExp("^(?:" + fileName + "|" + legacyName + ")$");
 
   if (typeof timeZone !== "string") {
@@ -1314,24 +1156,4 @@ function isCanonicalizedStructurallyValidTimeZoneName(timeZone) {
     return false;
   }
   return zoneNamePattern.test(timeZone);
-}
-
-
-
-
-
-
-
-
-
-
-function testArraysAreSame(expected, actual) {
-  var i;
-  for (i = 0; i < Math.max(actual.length, expected.length); i++) {
-    if (actual[i] !== expected[i]) {
-      $ERROR("Result array element at index " + i + " should be \"" +
-        expected[i] + "\" but is \"" + actual[i] + "\".");
-    }
-  }
-  return true;
 }

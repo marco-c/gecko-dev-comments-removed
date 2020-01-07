@@ -1,0 +1,40 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var r = /a/y;
+r.lastIndex = 1;
+
+r[Symbol.match]('aba');
+
+assert.sameValue(r.lastIndex, 0);
+
+reportCompare(0, 0);

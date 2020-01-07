@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Reflect, 'getOwnPropertyDescriptor');
+verifyWritable(Reflect, 'getOwnPropertyDescriptor');
+verifyConfigurable(Reflect, 'getOwnPropertyDescriptor');
+
+reportCompare(0, 0);

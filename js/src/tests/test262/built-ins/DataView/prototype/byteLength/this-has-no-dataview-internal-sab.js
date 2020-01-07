@@ -18,6 +18,7 @@
 
 
 
+
 var getter = Object.getOwnPropertyDescriptor(
   DataView.prototype, "byteLength"
 ).get;

@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(SyntaxError.prototype.name, "SyntaxError");
+
+verifyNotEnumerable(SyntaxError.prototype, "name");
+verifyWritable(SyntaxError.prototype, "name");
+verifyConfigurable(SyntaxError.prototype, "name");
+
+reportCompare(0, 0);

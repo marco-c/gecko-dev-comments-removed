@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(RangeError, function() {
+  'foo'.normalize('bar');
+});
+
+assert.throws(RangeError, function() {
+  'foo'.normalize('NFC1');
+});
+
+assert.throws(RangeError, function() {
+  'foo'.normalize(null);
+});
+
+reportCompare(0, 0);

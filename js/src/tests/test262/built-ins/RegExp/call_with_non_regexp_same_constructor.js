@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = {
+  constructor: RegExp
+};
+obj[Symbol.match] = true;
+
+assert.sameValue(RegExp(obj), obj, "RegExp returns its input argument");
+
+reportCompare(0, 0);

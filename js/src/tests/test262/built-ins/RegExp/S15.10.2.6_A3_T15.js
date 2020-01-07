@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+var __executed = /\be/.test("pilot\nsoviet robot\topenoffic\u0065");
+
+
+if (__executed) {
+	$ERROR('#1: /\\be/.test("pilot\\nsoviet robot\\topenoffic\\u0065") === false');
+}
+
+reportCompare(0, 0);

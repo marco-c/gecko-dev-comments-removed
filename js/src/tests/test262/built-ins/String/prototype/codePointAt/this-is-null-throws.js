@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  String.prototype.codePointAt.call(null, 1);
+});
+
+reportCompare(0, 0);

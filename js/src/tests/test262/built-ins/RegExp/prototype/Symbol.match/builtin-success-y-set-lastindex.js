@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var r = /a/y;
+
+r[Symbol.match]('a');
+
+assert.sameValue(r.lastIndex, 1);
+
+reportCompare(0, 0);

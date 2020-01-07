@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Math.sinh.name, "sinh");
+
+verifyNotEnumerable(Math.sinh, "name");
+verifyNotWritable(Math.sinh, "name");
+verifyConfigurable(Math.sinh, "name");
+
+reportCompare(0, 0);

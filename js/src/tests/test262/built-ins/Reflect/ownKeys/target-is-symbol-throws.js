@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  Reflect.ownKeys(Symbol(1));
+});
+
+reportCompare(0, 0);

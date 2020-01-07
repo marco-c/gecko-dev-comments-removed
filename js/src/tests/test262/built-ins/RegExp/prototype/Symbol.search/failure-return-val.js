@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(/z/[Symbol.search]('a'), -1);
+
+reportCompare(0, 0);

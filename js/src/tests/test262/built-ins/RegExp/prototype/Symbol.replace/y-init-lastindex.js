@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var r = /./y;
+r.lastIndex = 1;
+assert.sameValue(r[Symbol.replace]('aaa', 'x'), 'axa');
+
+reportCompare(0, 0);

@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Number.NEGATIVE_INFINITY, -Infinity);
+
+reportCompare(0, 0);

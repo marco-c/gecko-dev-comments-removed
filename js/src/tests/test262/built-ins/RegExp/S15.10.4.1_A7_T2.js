@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+var __re = new RegExp();
+
+
+if (RegExp.prototype.isPrototypeOf(__re) !== true) {
+	$ERROR('#1: __re = new RegExp(); RegExp.prototype.isPrototypeOf(__re) === true. Actual: ' + (RegExp.prototype.isPrototypeOf(__re)));
+}
+
+reportCompare(0, 0);

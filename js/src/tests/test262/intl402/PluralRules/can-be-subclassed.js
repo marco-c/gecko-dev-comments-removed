@@ -25,6 +25,6 @@ class MyPluralRules extends Intl.PluralRules {
 
 var pr = new MyPluralRules(locales);
 var actual = a.map(pr.select.bind(pr));
-testArraysAreSame(referenceSelected, actual);
+assert.compareArray(actual, referenceSelected);
 
 reportCompare(0, 0);

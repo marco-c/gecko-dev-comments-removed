@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var r = /./g;
+
+r.lastIndex = 1;
+
+assert.notSameValue(r[Symbol.match]('a'), null);
+
+reportCompare(0, 0);

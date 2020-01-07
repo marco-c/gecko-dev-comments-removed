@@ -42,9 +42,6 @@
 
 
 
-
-
-
 function fn() {
   throw new Test262Error();
 }

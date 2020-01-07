@@ -1,0 +1,33 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(/b/y[Symbol.replace]('ab', 'x'), 'ab');
+
+reportCompare(0, 0);

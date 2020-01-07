@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Math.cos.name, "cos");
+
+verifyNotEnumerable(Math.cos, "name");
+verifyNotWritable(Math.cos, "name");
+verifyConfigurable(Math.cos, "name");
+
+reportCompare(0, 0);

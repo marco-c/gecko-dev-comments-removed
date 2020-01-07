@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+testWithTypedArrayConstructors(function(ctor) {
+  var sample = new ctor().buffer;
+
+  assert.sameValue(ArrayBuffer.isView(sample), false);
+});
+
+reportCompare(0, 0);

@@ -1,0 +1,37 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var r = /c/y;
+r.lastIndex = 1;
+
+r[Symbol.replace]('abc', 'x');
+
+assert.sameValue(r.lastIndex, 0);
+
+reportCompare(0, 0);

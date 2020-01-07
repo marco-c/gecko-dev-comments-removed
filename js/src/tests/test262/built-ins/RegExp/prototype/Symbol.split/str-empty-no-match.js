@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var result = /./[Symbol.split]('');
+
+assert(Array.isArray(result));
+assert.sameValue(result.length, 1);
+assert.sameValue(result[0], '');
+
+reportCompare(0, 0);

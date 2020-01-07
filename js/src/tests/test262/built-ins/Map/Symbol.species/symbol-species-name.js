@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var descriptor = Object.getOwnPropertyDescriptor(Map, Symbol.species);
+
+assert.sameValue(
+  descriptor.get.name,
+  'get [Symbol.species]'
+);
+
+reportCompare(0, 0);

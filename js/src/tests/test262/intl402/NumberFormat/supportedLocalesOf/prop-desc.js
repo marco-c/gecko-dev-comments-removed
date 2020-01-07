@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Intl.NumberFormat, "supportedLocalesOf");
+verifyWritable(Intl.NumberFormat, "supportedLocalesOf");
+verifyConfigurable(Intl.NumberFormat, "supportedLocalesOf");
+
+reportCompare(0, 0);

@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Intl.NumberFormat.prototype, "resolvedOptions");
+verifyWritable(Intl.NumberFormat.prototype, "resolvedOptions");
+verifyConfigurable(Intl.NumberFormat.prototype, "resolvedOptions");
+
+reportCompare(0, 0);

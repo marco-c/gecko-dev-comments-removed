@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+var r = Proxy.revocable({}, {});
+
+assert.sameValue(r.revoke(), undefined);
+
+reportCompare(0, 0);

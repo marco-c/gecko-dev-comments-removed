@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  Reflect.getPrototypeOf(Symbol(1));
+});
+
+reportCompare(0, 0);

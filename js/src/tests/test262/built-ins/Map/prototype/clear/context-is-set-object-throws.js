@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  Map.prototype.clear.call(new Set());
+});
+
+reportCompare(0, 0);

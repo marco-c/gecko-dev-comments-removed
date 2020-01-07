@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  Reflect.getOwnPropertyDescriptor(Symbol(1), 'p');
+});
+
+reportCompare(0, 0);

@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Object.defineProperty.name, "defineProperty");
+
+verifyNotEnumerable(Object.defineProperty, "name");
+verifyNotWritable(Object.defineProperty, "name");
+verifyConfigurable(Object.defineProperty, "name");
+
+reportCompare(0, 0);

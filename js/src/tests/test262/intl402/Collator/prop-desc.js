@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Intl, "Collator");
+verifyWritable(Intl, "Collator");
+verifyConfigurable(Intl, "Collator");
+
+reportCompare(0, 0);

@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Reflect, 'construct');
+verifyWritable(Reflect, 'construct');
+verifyConfigurable(Reflect, 'construct');
+
+reportCompare(0, 0);

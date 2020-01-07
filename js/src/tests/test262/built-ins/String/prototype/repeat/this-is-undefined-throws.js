@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  String.prototype.repeat.call(undefined);
+});
+
+reportCompare(0, 0);

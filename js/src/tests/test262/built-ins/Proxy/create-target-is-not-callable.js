@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var p = new Proxy({}, {});
+
+assert.throws(TypeError, function() {
+    p.call();
+});
+
+reportCompare(0, 0);

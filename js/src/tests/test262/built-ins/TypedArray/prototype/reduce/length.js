@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(TypedArray.prototype.reduce.length, 1);
+
+verifyNotEnumerable(TypedArray.prototype.reduce, "length");
+verifyNotWritable(TypedArray.prototype.reduce, "length");
+verifyConfigurable(TypedArray.prototype.reduce, "length");
+
+reportCompare(0, 0);

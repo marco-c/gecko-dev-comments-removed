@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Object.getPrototypeOf.name, "getPrototypeOf");
+
+verifyNotEnumerable(Object.getPrototypeOf, "name");
+verifyNotWritable(Object.getPrototypeOf, "name");
+verifyConfigurable(Object.getPrototypeOf, "name");
+
+reportCompare(0, 0);

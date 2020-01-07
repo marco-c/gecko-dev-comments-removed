@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Object.prototype.valueOf.name, "valueOf");
+
+verifyNotEnumerable(Object.prototype.valueOf, "name");
+verifyNotWritable(Object.prototype.valueOf, "name");
+verifyConfigurable(Object.prototype.valueOf, "name");
+
+reportCompare(0, 0);

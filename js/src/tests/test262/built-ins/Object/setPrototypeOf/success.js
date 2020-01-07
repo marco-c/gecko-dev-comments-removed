@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var propValue = {};
+var newProto = {
+  test262prop: propValue
+};
+var obj = {};
+var result;
+
+result = Object.setPrototypeOf(obj, newProto);
+
+assert.sameValue(result, obj, 'Return value');
+assert.sameValue(Object.hasOwnProperty.call(obj, 'test262prop'), false);
+assert.sameValue(obj.test262prop, propValue);
+
+reportCompare(0, 0);

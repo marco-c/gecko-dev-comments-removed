@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+var p = Promise.resolve(obj);
+
+p.then(undefined, undefined)
+    .then(function (arg) {
+        if (arg !== obj) {
+            $ERROR("Expected resolution object to be passed through, got " + arg);
+        }
+    }).then($DONE, $DONE);

@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  String.prototype.normalize.call(undefined);
+});
+
+reportCompare(0, 0);

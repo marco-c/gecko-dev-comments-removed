@@ -8,16 +8,22 @@
 
 
 
+var sequence = [];
 var original = {};
 var replacement = {};
 
 var p = Promise.reject(original);
 
-p.finally(function () {
+p.finally(function() {
+  sequence.push(1);
   assert.sameValue(arguments.length, 0, 'onFinally receives zero args');
   return replacement;
-}).then(function () {
+}).then(function() {
   $ERROR('promise is rejected pre-finally; onFulfill should not be called');
-}).catch(function (reason) {
+}).catch(function(reason) {
+  sequence.push(2);
   assert.sameValue(reason, original, 'onFinally can not override the rejection value by returning');
-}).then($DONE).catch($ERROR);
+}).then(function() {
+  checkSequence(sequence, "All expected callbacks called in correct order");
+  $DONE();
+}).catch($ERROR);

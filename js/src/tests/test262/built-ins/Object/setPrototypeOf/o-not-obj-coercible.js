@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  Object.setPrototypeOf(null);
+});
+
+assert.throws(TypeError, function() {
+  Object.setPrototypeOf(undefined);
+});
+
+reportCompare(0, 0);

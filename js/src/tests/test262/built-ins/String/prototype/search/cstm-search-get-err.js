@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var poisonedSearch = {};
+Object.defineProperty(poisonedSearch, Symbol.search, {
+  get: function() {
+    throw new Test262Error();
+  }
+});
+
+assert.throws(Test262Error, function() {
+  ''.search(poisonedSearch);
+});
+
+reportCompare(0, 0);

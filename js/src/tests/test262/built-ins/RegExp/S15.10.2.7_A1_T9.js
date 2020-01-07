@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+var __executed = /b{42,93}c/.test("aaabbbbcccddeeeefffff");
+
+
+if (__executed) {
+	$ERROR('#1: /b{42,93}c/.test("aaabbbbcccddeeeefffff") === false');
+}
+
+reportCompare(0, 0);

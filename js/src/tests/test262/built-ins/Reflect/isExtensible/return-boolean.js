@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+var o = {};
+assert.sameValue(Reflect.isExtensible(o), true);
+
+Object.preventExtensions(o);
+assert.sameValue(Reflect.isExtensible(o), false);
+
+reportCompare(0, 0);

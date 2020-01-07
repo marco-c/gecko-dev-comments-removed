@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Object.keys.name, "keys");
+
+verifyNotEnumerable(Object.keys, "name");
+verifyNotWritable(Object.keys, "name");
+verifyConfigurable(Object.keys, "name");
+
+reportCompare(0, 0);

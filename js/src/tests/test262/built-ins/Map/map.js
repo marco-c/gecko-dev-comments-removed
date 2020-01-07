@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(this, 'Map');
+verifyWritable(this, 'Map');
+verifyConfigurable(this, 'Map');
+
+reportCompare(0, 0);

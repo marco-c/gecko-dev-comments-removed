@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Function.prototype[Symbol.hasInstance].length, 1);
+
+verifyNotEnumerable(Function.prototype[Symbol.hasInstance], 'length');
+verifyNotWritable(Function.prototype[Symbol.hasInstance], 'length');
+verifyConfigurable(Function.prototype[Symbol.hasInstance], 'length');
+
+reportCompare(0, 0);

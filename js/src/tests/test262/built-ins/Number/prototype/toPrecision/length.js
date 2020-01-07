@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Number.prototype.toPrecision.length, 1);
+
+verifyNotEnumerable(Number.prototype.toPrecision, "length");
+verifyNotWritable(Number.prototype.toPrecision, "length");
+verifyConfigurable(Number.prototype.toPrecision, "length");
+
+reportCompare(0, 0);

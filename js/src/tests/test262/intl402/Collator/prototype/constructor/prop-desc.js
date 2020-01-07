@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Intl.Collator.prototype, "constructor");
+verifyWritable(Intl.Collator.prototype, "constructor");
+verifyConfigurable(Intl.Collator.prototype, "constructor");
+
+reportCompare(0, 0);

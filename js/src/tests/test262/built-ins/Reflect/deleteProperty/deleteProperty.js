@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Reflect, 'deleteProperty');
+verifyWritable(Reflect, 'deleteProperty');
+verifyConfigurable(Reflect, 'deleteProperty');
+
+reportCompare(0, 0);

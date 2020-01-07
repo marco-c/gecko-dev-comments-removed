@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  Reflect.ownKeys(1);
+});
+
+assert.throws(TypeError, function() {
+  Reflect.ownKeys(null);
+});
+
+assert.throws(TypeError, function() {
+  Reflect.ownKeys(undefined);
+});
+
+assert.throws(TypeError, function() {
+  Reflect.ownKeys('');
+});
+
+reportCompare(0, 0);

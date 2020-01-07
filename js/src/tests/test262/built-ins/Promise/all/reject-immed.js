@@ -1,0 +1,37 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var thenable = {
+  then: function(_, reject) {
+    reject();
+  }
+};
+
+Promise.all([thenable])
+  .then(function() {
+    $DONE('The promise should not be fulfilled.');
+  }, function(x) {
+    $DONE();
+  });

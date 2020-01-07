@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = new Proxy({}, {
+  setPrototypeOf: function() {
+    throw new Test262Error();
+  }
+});
+
+assert.throws(Test262Error, function() {
+  Object.setPrototypeOf(obj, null);
+});
+
+reportCompare(0, 0);

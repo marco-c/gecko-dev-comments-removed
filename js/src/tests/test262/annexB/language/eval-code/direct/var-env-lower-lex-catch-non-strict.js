@@ -1,0 +1,34 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+try {
+  throw null;
+} catch (err) {
+  eval('function err() {}');
+  eval('var err;');
+  eval('for (var err; false; ) {}');
+  eval('for (var err in []) {}');
+}
+
+reportCompare(0, 0);

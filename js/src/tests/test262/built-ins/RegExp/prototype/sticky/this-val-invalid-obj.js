@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var sticky = Object.getOwnPropertyDescriptor(RegExp.prototype, 'sticky').get;
+
+assert.throws(TypeError, function() {
+  sticky.call({});
+}, 'ordinary object');
+
+assert.throws(TypeError, function() {
+  sticky.call([]);
+}, 'array exotic object');
+
+assert.throws(TypeError, function() {
+  sticky.call(arguments);
+}, 'arguments object');
+
+reportCompare(0, 0);

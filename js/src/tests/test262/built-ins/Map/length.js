@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Map.length, 0, 'The value of Map.length is 0');
+
+verifyNotEnumerable(Map, 'length');
+verifyNotWritable(Map, 'length');
+verifyConfigurable(Map, 'length');
+
+reportCompare(0, 0);

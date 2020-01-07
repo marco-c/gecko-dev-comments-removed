@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Promise, 'race');
+verifyWritable(Promise, 'race');
+verifyConfigurable(Promise, 'race');
+
+reportCompare(0, 0);

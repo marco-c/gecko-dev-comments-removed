@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+
+Object.preventExtensions(obj);
+
+assert.throws(TypeError, function() {
+  Object.setPrototypeOf(obj, null);
+});
+
+reportCompare(0, 0);

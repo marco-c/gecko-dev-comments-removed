@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var o = {};
+assert.sameValue(
+  Reflect.preventExtensions(o), true,
+  'returns true after preventing extentions on an object'
+);
+assert.sameValue(
+  Reflect.preventExtensions(o), true,
+  'returns true even if the object already prevents extentions'
+);
+
+reportCompare(0, 0);

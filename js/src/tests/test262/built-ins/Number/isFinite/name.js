@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Number.isFinite.name, "isFinite");
+
+verifyNotEnumerable(Number.isFinite, "name");
+verifyNotWritable(Number.isFinite, "name");
+verifyConfigurable(Number.isFinite, "name");
+
+reportCompare(0, 0);

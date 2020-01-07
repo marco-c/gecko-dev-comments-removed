@@ -1,0 +1,41 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var r = /b/g;
+Object.defineProperty(r, 'global', { value: false });
+
+r[Symbol.match]('abc');
+
+assert.sameValue(r.lastIndex, 2);
+
+reportCompare(0, 0);

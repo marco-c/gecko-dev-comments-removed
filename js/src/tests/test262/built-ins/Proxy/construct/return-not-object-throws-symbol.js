@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+function Target() {
+    this.attr = "done";
+};
+var P = new Proxy(Target, {
+    construct: function() {
+        return Symbol();
+    }
+});
+
+assert.throws(TypeError, function() {
+    new P();
+});
+
+reportCompare(0, 0);

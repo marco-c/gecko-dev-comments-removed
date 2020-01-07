@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var s = Symbol(1);
+
+assert.throws(TypeError, function() {
+  'abc'.codePointAt(s);
+});
+
+reportCompare(0, 0);

@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(String.fromCharCode.name, "fromCharCode");
+
+verifyNotEnumerable(String.fromCharCode, "name");
+verifyNotWritable(String.fromCharCode, "name");
+verifyConfigurable(String.fromCharCode, "name");
+
+reportCompare(0, 0);

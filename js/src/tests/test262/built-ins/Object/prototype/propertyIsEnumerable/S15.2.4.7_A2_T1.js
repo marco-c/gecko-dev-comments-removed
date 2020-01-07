@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+if (typeof Object.prototype.propertyIsEnumerable !== "function") {
+  $ERROR('#1: hasOwnProperty method is defined');
+}
+
+
+if (Object.prototype.propertyIsEnumerable("propertyIsEnumerable")) {
+  $ERROR('#2: hasOwnProperty method works properly');
+}
+
+
+reportCompare(0, 0);

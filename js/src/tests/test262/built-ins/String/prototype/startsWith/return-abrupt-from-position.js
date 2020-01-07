@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var position = {
+  valueOf: function() {
+    throw new Test262Error();
+  }
+};
+
+assert.throws(Test262Error, function() {
+  ''.startsWith('', position);
+});
+
+reportCompare(0, 0);

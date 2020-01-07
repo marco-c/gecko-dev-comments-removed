@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Function.prototype.toString.name, "toString");
+
+verifyNotEnumerable(Function.prototype.toString, "name");
+verifyNotWritable(Function.prototype.toString, "name");
+verifyConfigurable(Function.prototype.toString, "name");
+
+reportCompare(0, 0);

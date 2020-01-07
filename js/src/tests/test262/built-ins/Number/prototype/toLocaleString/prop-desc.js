@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Number.prototype, "toLocaleString");
+verifyWritable(Number.prototype, "toLocaleString");
+verifyConfigurable(Number.prototype, "toLocaleString");
+
+reportCompare(0, 0);

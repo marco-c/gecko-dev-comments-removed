@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    var o = {};
+    
+    
+    var setter = true;
+    var desc = { set: setter };
+assert.throws(TypeError, function() {
+      Object.defineProperty(o, "foo", desc);
+});
+assert.sameValue(o.hasOwnProperty("foo"), false, 'o.hasOwnProperty("foo")');
+
+reportCompare(0, 0);

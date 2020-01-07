@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+var TypedArrayPrototype = TypedArray.prototype;
+
+verifyNotEnumerable(TypedArrayPrototype, 'filter');
+verifyWritable(TypedArrayPrototype, 'filter');
+verifyConfigurable(TypedArrayPrototype, 'filter');
+
+reportCompare(0, 0);

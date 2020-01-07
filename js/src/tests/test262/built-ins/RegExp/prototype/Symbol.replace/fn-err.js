@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var replacer = function() {
+  throw new Test262Error();
+};
+
+assert.throws(Test262Error, function() {
+  /./[Symbol.replace]('a', replacer);
+});
+
+reportCompare(0, 0);

@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(JSON.parse.name, "parse");
+
+verifyNotEnumerable(JSON.parse, "name");
+verifyNotWritable(JSON.parse, "name");
+verifyConfigurable(JSON.parse, "name");
+
+reportCompare(0, 0);

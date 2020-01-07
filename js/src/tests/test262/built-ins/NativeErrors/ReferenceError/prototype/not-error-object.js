@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Object.prototype.toString.call(ReferenceError.prototype), "[object Object]");
+
+reportCompare(0, 0);

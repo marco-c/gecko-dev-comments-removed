@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Promise.all.name, 'all');
+
+verifyNotEnumerable(Promise.all, 'name');
+verifyNotWritable(Promise.all, 'name');
+verifyConfigurable(Promise.all, 'name');
+
+reportCompare(0, 0);

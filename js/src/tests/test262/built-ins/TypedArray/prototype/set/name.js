@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(TypedArray.prototype.set.name, "set");
+
+verifyNotEnumerable(TypedArray.prototype.set, "name");
+verifyNotWritable(TypedArray.prototype.set, "name");
+verifyConfigurable(TypedArray.prototype.set, "name");
+
+reportCompare(0, 0);

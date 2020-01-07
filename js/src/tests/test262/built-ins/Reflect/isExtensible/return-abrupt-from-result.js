@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var o1 = {};
+var p = new Proxy(o1, {
+  isExtensible: function() {
+    throw new Test262Error();
+  }
+});
+
+assert.throws(Test262Error, function() {
+  Reflect.isExtensible(p);
+});
+
+reportCompare(0, 0);

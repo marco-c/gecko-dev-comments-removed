@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  Object.getPrototypeOf(Map),
+  Function.prototype,
+  '`Object.getPrototypeOf(Map)` returns `Function.prototype`'
+);
+
+reportCompare(0, 0);

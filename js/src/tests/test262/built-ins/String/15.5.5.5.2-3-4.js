@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+  var s = new String("hello world");
+
+assert.sameValue(s[Infinity], undefined, 's[Infinity]');
+
+reportCompare(0, 0);

@@ -1,0 +1,22 @@
+'use strict';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Boolean.prototype.toString = function() {
+  return typeof this;
+};
+
+assert.sameValue(true.toLocaleString(), "boolean");
+
+reportCompare(0, 0);

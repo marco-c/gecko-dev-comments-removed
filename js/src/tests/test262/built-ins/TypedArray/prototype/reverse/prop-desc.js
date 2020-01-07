@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+var TypedArrayPrototype = TypedArray.prototype;
+
+verifyNotEnumerable(TypedArrayPrototype, 'reverse');
+verifyWritable(TypedArrayPrototype, 'reverse');
+verifyConfigurable(TypedArrayPrototype, 'reverse');
+
+reportCompare(0, 0);

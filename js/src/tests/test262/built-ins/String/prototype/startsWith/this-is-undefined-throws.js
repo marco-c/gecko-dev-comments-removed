@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  String.prototype.startsWith.call(undefined, '');
+});
+
+reportCompare(0, 0);

@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var p = new Proxy({}, {
+    isExtensible: function(t) {
+        return false;
+    }
+});
+
+assert.throws(TypeError, function() {
+    Object.isExtensible(p);
+});
+
+reportCompare(0, 0);

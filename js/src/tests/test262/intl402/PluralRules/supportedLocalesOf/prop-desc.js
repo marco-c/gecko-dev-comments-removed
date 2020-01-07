@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Intl.PluralRules, "supportedLocalesOf");
+verifyWritable(Intl.PluralRules, "supportedLocalesOf");
+verifyConfigurable(Intl.PluralRules, "supportedLocalesOf");
+
+reportCompare(0, 0);

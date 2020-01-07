@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var result = /(?:)/[Symbol.split]('');
+
+assert(Array.isArray(result));
+assert.sameValue(result.length, 0);
+
+reportCompare(0, 0);

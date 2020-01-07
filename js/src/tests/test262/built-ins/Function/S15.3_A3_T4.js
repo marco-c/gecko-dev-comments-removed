@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+var f=Function.call(this, "return planet;");
+
+
+if (f() !== undefined) {
+  $ERROR('#1: ');
+}  
+
+var planet="mars";
+
+
+if (f() !== "mars") {
+  $ERROR('#2: ');
+}
+
+reportCompare(0, 0);

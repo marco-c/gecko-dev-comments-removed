@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(TypedArray.prototype.entries.name, "entries");
+
+verifyNotEnumerable(TypedArray.prototype.entries, "name");
+verifyNotWritable(TypedArray.prototype.entries, "name");
+verifyConfigurable(TypedArray.prototype.entries, "name");
+
+reportCompare(0, 0);

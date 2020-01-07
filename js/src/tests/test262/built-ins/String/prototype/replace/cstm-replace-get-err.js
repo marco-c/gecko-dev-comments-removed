@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var poisonedReplace = {};
+Object.defineProperty(poisonedReplace, Symbol.replace, {
+  get: function() {
+    throw new Test262Error();
+  }
+});
+
+assert.throws(Test262Error, function() {
+  ''.replace(poisonedReplace);
+});
+
+reportCompare(0, 0);

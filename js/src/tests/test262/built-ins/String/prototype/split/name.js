@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(String.prototype.split.name, "split");
+
+verifyNotEnumerable(String.prototype.split, "name");
+verifyNotWritable(String.prototype.split, "name");
+verifyConfigurable(String.prototype.split, "name");
+
+reportCompare(0, 0);

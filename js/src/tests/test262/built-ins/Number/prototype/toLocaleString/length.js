@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Number.prototype.toLocaleString.length, 0);
+
+verifyNotEnumerable(Number.prototype.toLocaleString, "length");
+verifyNotWritable(Number.prototype.toLocaleString, "length");
+verifyConfigurable(Number.prototype.toLocaleString, "length");
+
+reportCompare(0, 0);

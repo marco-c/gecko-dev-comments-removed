@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Object.getPrototypeOf(ReferenceError), Error);
+
+reportCompare(0, 0);

@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Number.prototype, "toString");
+verifyWritable(Number.prototype, "toString");
+verifyConfigurable(Number.prototype, "toString");
+
+reportCompare(0, 0);

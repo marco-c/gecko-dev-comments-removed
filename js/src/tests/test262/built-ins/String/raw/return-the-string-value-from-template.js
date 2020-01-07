@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(String.raw`123\u0065`, '123\\u0065');
+
+reportCompare(0, 0);

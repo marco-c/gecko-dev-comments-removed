@@ -1,0 +1,40 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(RangeError, function() {
+  String.fromCodePoint(-1);
+});
+
+assert.throws(RangeError, function() {
+  String.fromCodePoint(1, -1);
+});
+
+assert.throws(RangeError, function() {
+  String.fromCodePoint(1114112);
+});
+
+assert.throws(RangeError, function() {
+  String.fromCodePoint(Infinity);
+});
+
+reportCompare(0, 0);

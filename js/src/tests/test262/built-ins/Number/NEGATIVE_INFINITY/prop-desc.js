@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Number, "NEGATIVE_INFINITY");
+verifyNotWritable(Number, "NEGATIVE_INFINITY");
+verifyNotConfigurable(Number, "NEGATIVE_INFINITY");
+
+reportCompare(0, 0);

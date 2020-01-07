@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+var ℘; 
+var ℮; 
+var ゛; 
+var ゜; 
+
+
+var ᢅ; 
+var ᢆ; 
+
+reportCompare(0, 0);

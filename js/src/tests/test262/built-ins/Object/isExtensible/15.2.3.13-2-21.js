@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  var e = Object.isExtensible(Error.prototype);
+
+assert.sameValue(e, true, 'e');
+
+reportCompare(0, 0);

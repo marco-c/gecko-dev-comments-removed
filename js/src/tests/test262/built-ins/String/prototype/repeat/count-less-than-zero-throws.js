@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(RangeError, function() {
+  ''.repeat(-1);
+});
+
+assert.throws(RangeError, function() {
+  ''.repeat(-Infinity);
+});
+
+reportCompare(0, 0);

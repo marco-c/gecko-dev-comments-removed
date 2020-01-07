@@ -15,8 +15,13 @@
 
 
 
+
+
 let counter = 0;
-Object.defineProperty(Array.prototype, "groups", {set() { counter++; }});
+Object.defineProperty(Array.prototype, "groups", {
+  set() { counter++; }
+});
+
 let match = /(?<x>.)/.exec("a");
 assert.sameValue(counter, 0);
 

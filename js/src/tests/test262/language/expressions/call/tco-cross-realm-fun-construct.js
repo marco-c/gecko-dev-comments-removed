@@ -1,0 +1,41 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var code = "'use strict'; (function() { return (class {})(); });";
+
+var otherRealm = $262.createRealm();
+var tco = otherRealm.evalScript(code);
+
+assert.throws(TypeError, function() {
+  new tco();
+});
+
+reportCompare(0, 0);

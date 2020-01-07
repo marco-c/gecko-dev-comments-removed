@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Object.prototype.toString.call(new URIError), "[object Error]");
+
+reportCompare(0, 0);

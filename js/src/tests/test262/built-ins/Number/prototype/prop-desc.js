@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Number, "prototype");
+verifyNotWritable(Number, "prototype");
+verifyNotConfigurable(Number, "prototype");
+
+reportCompare(0, 0);

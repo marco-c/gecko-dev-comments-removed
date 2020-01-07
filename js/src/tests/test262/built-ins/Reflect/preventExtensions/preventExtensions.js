@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Reflect, 'preventExtensions');
+verifyWritable(Reflect, 'preventExtensions');
+verifyConfigurable(Reflect, 'preventExtensions');
+
+reportCompare(0, 0);

@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var p = new Proxy({}, {
+    has: function() {
+        throw new Test262Error();
+    }
+});
+
+assert.throws(Test262Error, function() {
+    "attr" in p;
+});
+
+reportCompare(0, 0);

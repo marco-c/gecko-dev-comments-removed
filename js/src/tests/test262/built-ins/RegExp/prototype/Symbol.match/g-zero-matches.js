@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(/a/g[Symbol.match]('b'), null);
+
+reportCompare(0, 0);

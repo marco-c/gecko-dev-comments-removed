@@ -1,0 +1,34 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var m = new Map();
+
+assert.throws(TypeError, function() {
+  Map.prototype.get.call([], 1);
+});
+
+assert.throws(TypeError, function() {
+  m.get.call([], 1);
+});
+
+assert.throws(TypeError, function() {
+  Map.prototype.get.call({}, 1);
+});
+
+assert.throws(TypeError, function() {
+  m.get.call({}, 1);
+});
+
+reportCompare(0, 0);

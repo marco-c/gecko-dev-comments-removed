@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Object.getOwnPropertySymbols.name, "getOwnPropertySymbols");
+
+verifyNotEnumerable(Object.getOwnPropertySymbols, "name");
+verifyNotWritable(Object.getOwnPropertySymbols, "name");
+verifyConfigurable(Object.getOwnPropertySymbols, "name");
+
+reportCompare(0, 0);

@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var position = Symbol();
+
+assert.throws(TypeError, function() {
+  ''.startsWith('', position);
+});
+
+reportCompare(0, 0);

@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+var executorFunction;
+function NotPromise(executor) {
+  executorFunction = executor;
+  executor(function(){}, function(){});
+}
+Promise.resolve.call(NotPromise);
+
+assert(Object.isExtensible(executorFunction));
+
+reportCompare(0, 0);

@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Number.prototype.toFixed.name, "toFixed");
+
+verifyNotEnumerable(Number.prototype.toFixed, "name");
+verifyNotWritable(Number.prototype.toFixed, "name");
+verifyConfigurable(Number.prototype.toFixed, "name");
+
+reportCompare(0, 0);

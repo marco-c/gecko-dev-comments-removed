@@ -1,0 +1,33 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Intl.NumberFormat.prototype.resolvedOptions.length, 0);
+
+verifyNotEnumerable(Intl.NumberFormat.prototype.resolvedOptions, "length");
+verifyNotWritable(Intl.NumberFormat.prototype.resolvedOptions, "length");
+verifyConfigurable(Intl.NumberFormat.prototype.resolvedOptions, "length");
+
+reportCompare(0, 0);

@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+var get = Object.getOwnPropertyDescriptor(Object.prototype, '__proto__').get;
+var thrower = function() {
+  throw new Test262Error();
+};
+
+var subject = new Proxy({}, { getPrototypeOf: thrower });
+
+assert.throws(Test262Error, function() {
+  get.call(subject);
+});
+
+reportCompare(0, 0);

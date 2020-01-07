@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(TypedArray.prototype.find.name, "find");
+
+verifyNotEnumerable(TypedArray.prototype.find, "name");
+verifyNotWritable(TypedArray.prototype.find, "name");
+verifyConfigurable(TypedArray.prototype.find, "name");
+
+reportCompare(0, 0);

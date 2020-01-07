@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+function BadPromiseConstructor(f) { f(undefined, undefined); }
+
+assert.throws(TypeError, function() {
+  Promise.race.call(BadPromiseConstructor, []);
+});
+
+reportCompare(0, 0);

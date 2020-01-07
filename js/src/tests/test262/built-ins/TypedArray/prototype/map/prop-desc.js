@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+var TypedArrayPrototype = TypedArray.prototype;
+
+verifyNotEnumerable(TypedArrayPrototype, 'map');
+verifyWritable(TypedArrayPrototype, 'map');
+verifyConfigurable(TypedArrayPrototype, 'map');
+
+reportCompare(0, 0);

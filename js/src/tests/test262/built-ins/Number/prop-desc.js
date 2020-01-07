@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(this, "Number");
+verifyWritable(this, "Number");
+verifyConfigurable(this, "Number");
+
+reportCompare(0, 0);

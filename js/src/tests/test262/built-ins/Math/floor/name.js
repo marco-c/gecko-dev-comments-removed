@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Math.floor.name, "floor");
+
+verifyNotEnumerable(Math.floor, "name");
+verifyNotWritable(Math.floor, "name");
+verifyConfigurable(Math.floor, "name");
+
+reportCompare(0, 0);

@@ -1,0 +1,33 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Intl.Collator.prototype.resolvedOptions.length, 0);
+
+verifyNotEnumerable(Intl.Collator.prototype.resolvedOptions, "length");
+verifyNotWritable(Intl.Collator.prototype.resolvedOptions, "length");
+verifyConfigurable(Intl.Collator.prototype.resolvedOptions, "length");
+
+reportCompare(0, 0);

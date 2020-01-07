@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var result = Reflect.getOwnPropertyDescriptor({}, undefined);
+assert.sameValue(result, undefined);
+
+reportCompare(0, 0);

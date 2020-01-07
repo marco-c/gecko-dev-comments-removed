@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(URIError.prototype.message, "");
+
+verifyNotEnumerable(URIError.prototype, "message");
+verifyWritable(URIError.prototype, "message");
+verifyConfigurable(URIError.prototype, "message");
+
+reportCompare(0, 0);

@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  Reflect.setPrototypeOf(1, {});
+});
+
+assert.throws(TypeError, function() {
+  Reflect.setPrototypeOf(null, {});
+});
+
+assert.throws(TypeError, function() {
+  Reflect.setPrototypeOf(undefined, {});
+});
+
+assert.throws(TypeError, function() {
+  Reflect.setPrototypeOf('', {});
+});
+
+reportCompare(0, 0);

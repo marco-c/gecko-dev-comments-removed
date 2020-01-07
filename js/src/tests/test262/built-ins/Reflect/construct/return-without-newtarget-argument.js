@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var o = {};
+function fn() {
+  this.o = o;
+}
+
+var result = Reflect.construct(fn, []);
+
+assert.sameValue(result.o, o);
+assert(result instanceof fn);
+
+reportCompare(0, 0);

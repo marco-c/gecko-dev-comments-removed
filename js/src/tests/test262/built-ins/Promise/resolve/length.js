@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Promise.resolve.length, 1);
+
+verifyNotEnumerable(Promise.resolve, 'length');
+verifyNotWritable(Promise.resolve, 'length');
+verifyConfigurable(Promise.resolve, 'length');
+
+reportCompare(0, 0);

@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Math.pow.name, "pow");
+
+verifyNotEnumerable(Math.pow, "name");
+verifyNotWritable(Math.pow, "name");
+verifyConfigurable(Math.pow, "name");
+
+reportCompare(0, 0);

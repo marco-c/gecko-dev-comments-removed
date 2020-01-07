@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Object.getPrototypeOf(SyntaxError.prototype), Error.prototype);
+
+reportCompare(0, 0);

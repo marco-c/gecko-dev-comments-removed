@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Math.trunc.name, "trunc");
+
+verifyNotEnumerable(Math.trunc, "name");
+verifyNotWritable(Math.trunc, "name");
+verifyConfigurable(Math.trunc, "name");
+
+reportCompare(0, 0);

@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var custom = {};
+custom[Symbol.toStringTag] = 'test262';
+
+assert.sameValue(Object.prototype.toString.call(custom), '[object test262]');
+
+reportCompare(0, 0);

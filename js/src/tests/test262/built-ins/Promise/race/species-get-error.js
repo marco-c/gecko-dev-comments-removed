@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function C(executor) {
+  executor(function(){}, function(){});
+}
+Object.defineProperty(C, Symbol.species, {
+  get: function() {
+    $ERROR("Getter for Symbol.species called");
+  }
+});
+
+Promise.race.call(C, []);
+
+reportCompare(0, 0);

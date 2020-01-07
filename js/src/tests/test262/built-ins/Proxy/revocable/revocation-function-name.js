@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var revocationFunction = Proxy.revocable({}, {}).revoke;
+
+assert.sameValue(Object.prototype.hasOwnProperty.call(revocationFunction, "name"), false);
+
+reportCompare(0, 0);

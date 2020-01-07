@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Math.random.name, "random");
+
+verifyNotEnumerable(Math.random, "name");
+verifyNotWritable(Math.random, "name");
+verifyConfigurable(Math.random, "name");
+
+reportCompare(0, 0);

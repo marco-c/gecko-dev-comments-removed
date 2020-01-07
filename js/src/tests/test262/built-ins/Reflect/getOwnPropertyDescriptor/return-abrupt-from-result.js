@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var o1 = {};
+var p = new Proxy(o1, {
+  getOwnPropertyDescriptor: function() {
+    throw new Test262Error();
+  }
+});
+
+assert.throws(Test262Error, function() {
+  Reflect.getOwnPropertyDescriptor(p, 'p1');
+});
+
+reportCompare(0, 0);

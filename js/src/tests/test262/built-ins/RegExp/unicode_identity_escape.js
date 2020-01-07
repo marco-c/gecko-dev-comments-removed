@@ -1,0 +1,55 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert(/\^/u.test("^"), "IdentityEscape in AtomEscape: /\\^/");
+assert(/\$/u.test("$"), "IdentityEscape in AtomEscape: /\\$/");
+assert(/\\/u.test("\\"), "IdentityEscape in AtomEscape: /\\\\/");
+assert(/\./u.test("."), "IdentityEscape in AtomEscape: /\\./");
+assert(/\*/u.test("*"), "IdentityEscape in AtomEscape: /\\*/");
+assert(/\+/u.test("+"), "IdentityEscape in AtomEscape: /\\+/");
+assert(/\?/u.test("?"), "IdentityEscape in AtomEscape: /\\?/");
+assert(/\(/u.test("("), "IdentityEscape in AtomEscape: /\\(/");
+assert(/\)/u.test(")"), "IdentityEscape in AtomEscape: /\\)/");
+assert(/\[/u.test("["), "IdentityEscape in AtomEscape: /\\[/");
+assert(/\]/u.test("]"), "IdentityEscape in AtomEscape: /\\]/");
+assert(/\{/u.test("{"), "IdentityEscape in AtomEscape: /\\{/");
+assert(/\}/u.test("}"), "IdentityEscape in AtomEscape: /\\}/");
+assert(/\|/u.test("|"), "IdentityEscape in AtomEscape: /\\|/");
+assert(/\//u.test("/"), "IdentityEscape in AtomEscape: /\\//");
+
+
+
+assert(/[\^]/u.test("^"), "IdentityEscape in ClassEscape: /[\\^]/");
+assert(/[\$]/u.test("$"), "IdentityEscape in ClassEscape: /[\\$]/");
+assert(/[\\]/u.test("\\"), "IdentityEscape in ClassEscape: /[\\\\]/");
+assert(/[\.]/u.test("."), "IdentityEscape in ClassEscape: /[\\.]/");
+assert(/[\*]/u.test("*"), "IdentityEscape in ClassEscape: /[\\*]/");
+assert(/[\+]/u.test("+"), "IdentityEscape in ClassEscape: /[\\+]/");
+assert(/[\?]/u.test("?"), "IdentityEscape in ClassEscape: /[\\?]/");
+assert(/[\(]/u.test("("), "IdentityEscape in ClassEscape: /[\\(]/");
+assert(/[\)]/u.test(")"), "IdentityEscape in ClassEscape: /[\\)]/");
+assert(/[\[]/u.test("["), "IdentityEscape in ClassEscape: /[\\[]/");
+assert(/[\]]/u.test("]"), "IdentityEscape in ClassEscape: /[\\]]/");
+assert(/[\{]/u.test("{"), "IdentityEscape in ClassEscape: /[\\{]/");
+assert(/[\}]/u.test("}"), "IdentityEscape in ClassEscape: /[\\}]/");
+assert(/[\|]/u.test("|"), "IdentityEscape in ClassEscape: /[\\|]/");
+assert(/[\/]/u.test("/"), "IdentityEscape in ClassEscape: /[\\/]/");
+
+reportCompare(0, 0);

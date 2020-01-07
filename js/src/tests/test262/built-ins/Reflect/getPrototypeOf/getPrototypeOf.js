@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Reflect, 'getPrototypeOf');
+verifyWritable(Reflect, 'getPrototypeOf');
+verifyConfigurable(Reflect, 'getPrototypeOf');
+
+reportCompare(0, 0);

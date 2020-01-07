@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(String, 'raw');
+verifyWritable(String, 'raw');
+verifyConfigurable(String, 'raw');
+
+reportCompare(0, 0);

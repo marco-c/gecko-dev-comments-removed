@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Math.acos.length, 1);
+
+verifyNotEnumerable(Math.acos, "length");
+verifyNotWritable(Math.acos, "length");
+verifyConfigurable(Math.acos, "length");
+
+reportCompare(0, 0);

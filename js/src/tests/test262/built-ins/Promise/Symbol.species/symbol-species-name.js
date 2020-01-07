@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var descriptor = Object.getOwnPropertyDescriptor(Promise, Symbol.species);
+
+assert.sameValue(
+  descriptor.get.name,
+  'get [Symbol.species]'
+);
+
+reportCompare(0, 0);

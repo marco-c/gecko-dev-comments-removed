@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Intl, "getCanonicalLocales");
+verifyWritable(Intl, "getCanonicalLocales");
+verifyConfigurable(Intl, "getCanonicalLocales");
+
+reportCompare(0, 0);

@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+  var o = JSON;
+
+assert.sameValue(typeof(o), "object", 'typeof(o)');
+
+reportCompare(0, 0);

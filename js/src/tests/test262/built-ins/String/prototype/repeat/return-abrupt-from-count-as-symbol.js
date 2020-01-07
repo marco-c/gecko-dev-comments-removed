@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var s = Symbol('');
+
+assert.throws(TypeError, function() {
+  ''.repeat(s);
+});
+
+reportCompare(0, 0);

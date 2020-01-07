@@ -1,0 +1,36 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var match;
+
+match = /[--\d]+/.exec('.-0123456789-.');
+assert.sameValue(match[0], '-0123456789-');
+
+match = /[--\dz]+/.exec('.-0123456789z-.');
+assert.sameValue(match[0], '-0123456789z-');
+
+reportCompare(0, 0);

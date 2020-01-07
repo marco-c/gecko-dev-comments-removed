@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  Map();
+});
+
+assert.throws(TypeError, function() {
+  Map([]);
+});
+
+reportCompare(0, 0);

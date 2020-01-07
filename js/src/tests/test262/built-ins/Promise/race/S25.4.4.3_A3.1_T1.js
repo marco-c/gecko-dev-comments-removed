@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+function ZeroArgConstructor() {
+}
+
+assert.throws(TypeError, function() {
+  Promise.race.call(ZeroArgConstructor, [3]);
+});
+
+reportCompare(0, 0);

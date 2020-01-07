@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+var __executed = /ab[erst]de/.test("abcde");
+
+
+if (__executed) {
+	$ERROR('#1: /ab[erst]de/.test("abcde") === false');
+}
+
+reportCompare(0, 0);

@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof Math.E, 'number');
+assert.notSameValue(Math.E, NaN);
+
+reportCompare(0, 0);

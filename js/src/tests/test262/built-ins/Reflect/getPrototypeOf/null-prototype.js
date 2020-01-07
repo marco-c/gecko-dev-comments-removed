@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+var o = Object.create(null);
+assert.sameValue(Reflect.getPrototypeOf(o), null);
+
+reportCompare(0, 0);

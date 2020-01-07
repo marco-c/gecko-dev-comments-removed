@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  String.prototype[Symbol.iterator].call(undefined);
+});
+
+assert.throws(TypeError, function() {
+  String.prototype[Symbol.iterator].call(null);
+});
+
+reportCompare(0, 0);

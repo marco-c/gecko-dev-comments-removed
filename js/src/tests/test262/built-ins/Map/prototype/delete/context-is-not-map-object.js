@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  Map.prototype.delete.call({}, 'attr');
+});
+
+assert.throws(TypeError, function() {
+  Map.prototype.delete.call([], 'attr');
+});
+
+reportCompare(0, 0);

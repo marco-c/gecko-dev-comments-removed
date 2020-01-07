@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Object.isFrozen.name, "isFrozen");
+
+verifyNotEnumerable(Object.isFrozen, "name");
+verifyNotWritable(Object.isFrozen, "name");
+verifyConfigurable(Object.isFrozen, "name");
+
+reportCompare(0, 0);

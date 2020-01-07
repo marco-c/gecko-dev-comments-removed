@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(/a/y[Symbol.search]('ba'), -1);
+
+reportCompare(0, 0);

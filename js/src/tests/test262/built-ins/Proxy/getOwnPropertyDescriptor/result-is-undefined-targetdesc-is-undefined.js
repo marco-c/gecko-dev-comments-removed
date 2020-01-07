@@ -1,0 +1,33 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var t = {};
+var trapped;
+var p = new Proxy(t, {
+    getOwnPropertyDescriptor: function(target, prop) {
+        trapped = true;
+        return;
+    }
+});
+
+assert.sameValue(
+    Object.getOwnPropertyDescriptor(p, "attr"),
+    undefined
+);
+
+assert(trapped);
+
+reportCompare(0, 0);

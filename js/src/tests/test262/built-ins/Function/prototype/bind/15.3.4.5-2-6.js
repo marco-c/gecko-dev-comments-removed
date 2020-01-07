@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+  var boc = Object.bind(null);
+  var o = boc(42);
+
+assert((o == 42), '(o == 42) !== true');
+
+reportCompare(0, 0);

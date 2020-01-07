@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var sample = new ArrayBuffer(1);
+
+assert.sameValue(ArrayBuffer.isView(sample), false);
+
+reportCompare(0, 0);

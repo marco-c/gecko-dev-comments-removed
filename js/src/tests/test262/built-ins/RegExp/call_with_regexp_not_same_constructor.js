@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var regExpObj = /(?:)/;
+regExpObj.constructor = null;
+
+assert.notSameValue(RegExp(regExpObj), regExpObj, "RegExp returns new object");
+
+reportCompare(0, 0);

@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Number.prototype.valueOf.length, 0);
+
+verifyNotEnumerable(Number.prototype.valueOf, "length");
+verifyNotWritable(Number.prototype.valueOf, "length");
+verifyConfigurable(Number.prototype.valueOf, "length");
+
+reportCompare(0, 0);

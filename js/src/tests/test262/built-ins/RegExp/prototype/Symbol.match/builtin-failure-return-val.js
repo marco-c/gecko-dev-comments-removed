@@ -1,0 +1,38 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var r = /a/;
+
+assert.sameValue(r[Symbol.match]('b'), null);
+
+reportCompare(0, 0);

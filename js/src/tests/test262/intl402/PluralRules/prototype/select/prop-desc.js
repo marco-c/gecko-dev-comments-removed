@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Intl.PluralRules.prototype, "select");
+verifyWritable(Intl.PluralRules.prototype, "select");
+verifyConfigurable(Intl.PluralRules.prototype, "select");
+
+reportCompare(0, 0);

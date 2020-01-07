@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  Map.prototype.has.call(new Set(), 1);
+});
+
+assert.throws(TypeError, function() {
+  var m = new Map();
+  m.has.call(new Set(), 1);
+});
+
+reportCompare(0, 0);

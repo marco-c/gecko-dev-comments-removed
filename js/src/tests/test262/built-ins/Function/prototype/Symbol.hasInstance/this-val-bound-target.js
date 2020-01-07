@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var BC = function() {};
+var bc = new BC();
+var bound = BC.bind();
+
+assert.sameValue(bound[Symbol.hasInstance](bc), true);
+
+reportCompare(0, 0);

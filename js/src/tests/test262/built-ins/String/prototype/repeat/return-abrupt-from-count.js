@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+var o = {
+  toString: function() {
+    throw new Test262Error();
+  }
+}
+
+assert.throws(Test262Error, function() {
+  ''.repeat(o);
+});
+
+reportCompare(0, 0);

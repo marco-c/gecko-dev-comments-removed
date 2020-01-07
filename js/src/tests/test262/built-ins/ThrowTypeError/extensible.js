@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var ThrowTypeError = Object.getOwnPropertyDescriptor(function(){ "use strict"; return arguments; }(), "callee").get;
+
+assert.sameValue(Object.isExtensible(ThrowTypeError), false);
+
+reportCompare(0, 0);

@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Object.isExtensible.name, "isExtensible");
+
+verifyNotEnumerable(Object.isExtensible, "name");
+verifyNotWritable(Object.isExtensible, "name");
+verifyConfigurable(Object.isExtensible, "name");
+
+reportCompare(0, 0);

@@ -7,10 +7,11 @@
 
 
 
-var desc = Object.getOwnPropertyDescriptor(Intl.PluralRules, "prototype");
-assert.notSameValue(desc, undefined, "Intl.PluralRules.prototype is not defined.");
-assert.sameValue(desc.writable, false, "Intl.PluralRules.prototype must not be writable.");
-assert.sameValue(desc.enumerable, false, "Intl.PluralRules.prototype must not be enumerable.");
-assert.sameValue(desc.configurable, false, "Intl.PluralRules.prototype must not be configurable.");
+
+verifyProperty(Intl.PluralRules, "prototype", {
+    writable: false,
+    enumerable: false,
+    configurable: false,
+});
 
 reportCompare(0, 0);

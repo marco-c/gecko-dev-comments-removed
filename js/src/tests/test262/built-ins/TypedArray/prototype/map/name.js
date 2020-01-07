@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(TypedArray.prototype.map.name, "map");
+
+verifyNotEnumerable(TypedArray.prototype.map, "name");
+verifyNotWritable(TypedArray.prototype.map, "name");
+verifyConfigurable(TypedArray.prototype.map, "name");
+
+reportCompare(0, 0);

@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(String.prototype.lastIndexOf.name, "lastIndexOf");
+
+verifyNotEnumerable(String.prototype.lastIndexOf, "name");
+verifyNotWritable(String.prototype.lastIndexOf, "name");
+verifyConfigurable(String.prototype.lastIndexOf, "name");
+
+reportCompare(0, 0);

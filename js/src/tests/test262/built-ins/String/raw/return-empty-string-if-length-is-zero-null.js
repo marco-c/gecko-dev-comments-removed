@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var result = String.raw({
+  raw: {
+    length: null
+  }
+});
+
+assert.sameValue(result, '');
+
+reportCompare(0, 0);

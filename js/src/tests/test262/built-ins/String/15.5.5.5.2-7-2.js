@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+  var s = String("hello world");
+
+assert.sameValue(s[-1], undefined, 's[-1]');
+
+reportCompare(0, 0);

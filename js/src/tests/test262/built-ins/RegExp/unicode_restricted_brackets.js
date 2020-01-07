@@ -1,0 +1,33 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(SyntaxError, function() {
+  RegExp("(", "u");
+}, 'RegExp("(", "u"): ');
+assert.throws(SyntaxError, function() {
+  RegExp(")", "u");
+}, 'RegExp(")", "u"): ');
+assert.throws(SyntaxError, function() {
+  RegExp("[", "u");
+}, 'RegExp("[", "u"): ');
+assert.throws(SyntaxError, function() {
+  RegExp("]", "u");
+}, 'RegExp("]", "u"): ');
+assert.throws(SyntaxError, function() {
+  RegExp("{", "u");
+}, 'RegExp("{", "u"): ');
+assert.throws(SyntaxError, function() {
+  RegExp("}", "u");
+}, 'RegExp("}", "u"): ');
+
+reportCompare(0, 0);

@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var replacer = function() {
+  return {
+    toString: function() {
+      return 'toString value';
+    }
+  };
+};
+
+assert.sameValue(/x/[Symbol.replace]('[x]', replacer), '[toString value]');
+
+reportCompare(0, 0);

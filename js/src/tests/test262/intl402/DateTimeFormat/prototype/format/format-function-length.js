@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var formatFn = new Intl.DateTimeFormat().format;
+
+assert.sameValue(formatFn.length, 1);
+
+verifyNotEnumerable(formatFn, "length");
+verifyNotWritable(formatFn, "length");
+verifyConfigurable(formatFn, "length");
+
+reportCompare(0, 0);

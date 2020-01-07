@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(RangeError.name, "RangeError");
+
+verifyNotEnumerable(RangeError, "name");
+verifyNotWritable(RangeError, "name");
+verifyConfigurable(RangeError, "name");
+
+reportCompare(0, 0);

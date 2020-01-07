@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  Map.prototype.keys.call(new Set());
+});
+
+assert.throws(TypeError, function() {
+  var m = new Map();
+  m.keys.call(new Set());
+});
+
+reportCompare(0, 0);

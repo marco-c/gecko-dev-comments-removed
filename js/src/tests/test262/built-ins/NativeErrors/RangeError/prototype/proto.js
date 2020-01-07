@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Object.getPrototypeOf(RangeError.prototype), Error.prototype);
+
+reportCompare(0, 0);

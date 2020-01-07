@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Promise, 'all');
+verifyWritable(Promise, 'all');
+verifyConfigurable(Promise, 'all');
+
+reportCompare(0, 0);

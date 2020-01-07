@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(DataView, "prototype");
+verifyNotWritable(DataView, "prototype");
+verifyNotConfigurable(DataView, "prototype");
+
+reportCompare(0, 0);

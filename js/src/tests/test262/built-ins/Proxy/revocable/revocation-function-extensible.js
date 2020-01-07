@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+var revocationFunction = Proxy.revocable({}, {}).revoke;
+
+assert(Object.isExtensible(revocationFunction));
+
+reportCompare(0, 0);

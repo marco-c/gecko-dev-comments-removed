@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Promise.prototype.then.length, 2);
+
+verifyNotEnumerable(Promise.prototype.then, 'length');
+verifyNotWritable(Promise.prototype.then, 'length');
+verifyConfigurable(Promise.prototype.then, 'length');
+
+reportCompare(0, 0);

@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(RegExp.prototype.exec.name, "exec");
+
+verifyNotEnumerable(RegExp.prototype.exec, "name");
+verifyNotWritable(RegExp.prototype.exec, "name");
+verifyConfigurable(RegExp.prototype.exec, "name");
+
+reportCompare(0, 0);

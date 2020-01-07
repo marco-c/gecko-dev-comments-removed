@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var searchString = /./;
+
+assert.throws(TypeError, function() {
+  ''.startsWith(searchString);
+});
+
+reportCompare(0, 0);

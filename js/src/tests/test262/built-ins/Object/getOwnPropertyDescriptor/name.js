@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Object.getOwnPropertyDescriptor.name, "getOwnPropertyDescriptor");
+
+verifyNotEnumerable(Object.getOwnPropertyDescriptor, "name");
+verifyNotWritable(Object.getOwnPropertyDescriptor, "name");
+verifyConfigurable(Object.getOwnPropertyDescriptor, "name");
+
+reportCompare(0, 0);

@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  function foo() {}
+  var f = new foo();
+  f.bind = Function.prototype.bind;
+assert.throws(TypeError, function() {
+    f.bind();
+});
+
+reportCompare(0, 0);

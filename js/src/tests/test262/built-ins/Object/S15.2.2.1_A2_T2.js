@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+var func = function(){return 1;};
+
+var n_obj = new Object(func);
+
+
+if (n_obj !== func) {
+  $ERROR('#1: When the Object constructor is called and if the value is an Object simply value returns');
+}
+
+
+if (n_obj() !== 1) {
+  $ERROR('When the Object constructor is called and if the value is an Object simply value returns');
+}
+
+
+reportCompare(0, 0);

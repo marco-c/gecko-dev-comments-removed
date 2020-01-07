@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(SyntaxError.name, "SyntaxError");
+
+verifyNotEnumerable(SyntaxError, "name");
+verifyNotWritable(SyntaxError, "name");
+verifyConfigurable(SyntaxError, "name");
+
+reportCompare(0, 0);

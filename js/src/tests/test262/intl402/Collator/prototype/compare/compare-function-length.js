@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var compareFn = new Intl.Collator().compare;
+
+assert.sameValue(compareFn.length, 2);
+
+verifyNotEnumerable(compareFn, "length");
+verifyNotWritable(compareFn, "length");
+verifyConfigurable(compareFn, "length");
+
+reportCompare(0, 0);

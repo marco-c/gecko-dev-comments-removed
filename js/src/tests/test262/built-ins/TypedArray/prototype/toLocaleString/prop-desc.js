@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+var TypedArrayPrototype = TypedArray.prototype;
+
+verifyNotEnumerable(TypedArrayPrototype, 'toLocaleString');
+verifyWritable(TypedArrayPrototype, 'toLocaleString');
+verifyConfigurable(TypedArrayPrototype, 'toLocaleString');
+
+reportCompare(0, 0);

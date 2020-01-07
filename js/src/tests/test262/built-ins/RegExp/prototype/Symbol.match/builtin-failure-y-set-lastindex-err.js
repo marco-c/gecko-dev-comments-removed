@@ -1,0 +1,44 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var r = /a/y;
+
+Object.defineProperty(r, 'lastIndex', { writable: false });
+
+assert.throws(TypeError, function() {
+  r[Symbol.match]('ba');
+});
+
+reportCompare(0, 0);

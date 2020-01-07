@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Function.prototype.bind.name, "bind");
+
+verifyNotEnumerable(Function.prototype.bind, "name");
+verifyNotWritable(Function.prototype.bind, "name");
+verifyConfigurable(Function.prototype.bind, "name");
+
+reportCompare(0, 0);

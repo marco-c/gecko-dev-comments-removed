@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Reflect, 'ownKeys');
+verifyWritable(Reflect, 'ownKeys');
+verifyConfigurable(Reflect, 'ownKeys');
+
+reportCompare(0, 0);

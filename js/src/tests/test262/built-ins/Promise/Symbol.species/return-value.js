@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+var desc = Object.getOwnPropertyDescriptor(Promise, Symbol.species);
+var thisValue = {};
+
+assert.sameValue(desc.get.call(thisValue), thisValue);
+
+reportCompare(0, 0);

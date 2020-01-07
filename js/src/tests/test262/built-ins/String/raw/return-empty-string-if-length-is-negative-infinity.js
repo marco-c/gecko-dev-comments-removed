@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var result = String.raw({
+  raw: {
+    length: -Infinity
+  }
+});
+
+assert.sameValue(result, '');
+
+reportCompare(0, 0);

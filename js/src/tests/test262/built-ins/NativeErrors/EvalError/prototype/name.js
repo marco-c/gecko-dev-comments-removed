@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(EvalError.prototype.name, "EvalError");
+
+verifyNotEnumerable(EvalError.prototype, "name");
+verifyWritable(EvalError.prototype, "name");
+verifyConfigurable(EvalError.prototype, "name");
+
+reportCompare(0, 0);

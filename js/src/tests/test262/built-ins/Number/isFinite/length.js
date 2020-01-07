@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Number.isFinite.length, 1);
+
+verifyNotEnumerable(Number.isFinite, "length");
+verifyNotWritable(Number.isFinite, "length");
+verifyConfigurable(Number.isFinite, "length");
+
+reportCompare(0, 0);

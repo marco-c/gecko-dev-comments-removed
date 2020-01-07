@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(this, 'Reflect');
+verifyWritable(this, 'Reflect');
+verifyConfigurable(this, 'Reflect');
+
+reportCompare(0, 0);

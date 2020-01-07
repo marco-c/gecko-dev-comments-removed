@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof Symbol.split, 'symbol');
+verifyNotEnumerable(Symbol, 'split');
+verifyNotWritable(Symbol, 'split');
+verifyNotConfigurable(Symbol, 'split');
+
+reportCompare(0, 0);

@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Intl.DateTimeFormat.prototype, "resolvedOptions");
+verifyWritable(Intl.DateTimeFormat.prototype, "resolvedOptions");
+verifyConfigurable(Intl.DateTimeFormat.prototype, "resolvedOptions");
+
+reportCompare(0, 0);

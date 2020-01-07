@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+var TypedArrayPrototype = TypedArray.prototype;
+
+verifyNotEnumerable(TypedArrayPrototype, 'forEach');
+verifyWritable(TypedArrayPrototype, 'forEach');
+verifyConfigurable(TypedArrayPrototype, 'forEach');
+
+reportCompare(0, 0);

@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+var poisonedToStringTag = Object.defineProperty({}, Symbol.toStringTag, {
+  get: function() {
+    throw new Test262Error();
+  }
+});
+
+assert.throws(Test262Error, function() {
+  poisonedToStringTag.toString();
+});
+
+reportCompare(0, 0);

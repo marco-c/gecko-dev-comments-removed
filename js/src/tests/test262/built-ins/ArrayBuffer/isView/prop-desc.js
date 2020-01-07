@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(ArrayBuffer, "isView");
+verifyWritable(ArrayBuffer, "isView");
+verifyConfigurable(ArrayBuffer, "isView");
+
+reportCompare(0, 0);

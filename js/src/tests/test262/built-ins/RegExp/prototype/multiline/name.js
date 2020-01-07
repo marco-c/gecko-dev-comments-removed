@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var descriptor = Object.getOwnPropertyDescriptor(RegExp.prototype, 'multiline');
+
+assert.sameValue(
+  descriptor.get.name,
+  'get multiline'
+);
+
+verifyNotEnumerable(descriptor.get, 'name');
+verifyNotWritable(descriptor.get, 'name');
+verifyConfigurable(descriptor.get, 'name');
+
+reportCompare(0, 0);

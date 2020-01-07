@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  Reflect.defineProperty.name, 'defineProperty',
+  'The value of `Reflect.defineProperty.name` is `"defineProperty"`'
+);
+
+verifyNotEnumerable(Reflect.defineProperty, 'name');
+verifyNotWritable(Reflect.defineProperty, 'name');
+verifyConfigurable(Reflect.defineProperty, 'name');
+
+reportCompare(0, 0);

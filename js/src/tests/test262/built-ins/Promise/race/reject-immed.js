@@ -1,0 +1,36 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var thenable = {
+  then: function(_, reject) {
+    reject();
+  }
+};
+
+Promise.race([thenable])
+  .then(function() {
+    $DONE('The promise should not be fulfilled.');
+  }, function() {
+    $DONE();
+  });

@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+function test() {
+  
+  if ( Math === null ) {
+    $ERROR("#27: Math === null");
+  }
+}
+
+test();
+
+reportCompare(0, 0);

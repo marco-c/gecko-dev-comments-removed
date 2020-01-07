@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+var o = {
+  prop: 42
+};
+
+Reflect.deleteProperty(o, 'prop');
+
+assert.sameValue(o.hasOwnProperty('prop'), false);
+
+reportCompare(0, 0);

@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  Promise.resolve.call(eval);
+});
+
+reportCompare(0, 0);

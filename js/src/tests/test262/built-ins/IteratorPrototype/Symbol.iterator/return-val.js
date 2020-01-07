@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+var IteratorPrototype = Object.getPrototypeOf(
+  Object.getPrototypeOf([][Symbol.iterator]())
+);
+var thisValue = {};
+
+assert.sameValue(
+  IteratorPrototype[Symbol.iterator].call(thisValue),
+  thisValue
+);
+
+reportCompare(0, 0);

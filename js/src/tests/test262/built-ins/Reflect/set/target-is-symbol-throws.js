@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  Reflect.set(Symbol(1), 'p', 42);
+});
+
+reportCompare(0, 0);

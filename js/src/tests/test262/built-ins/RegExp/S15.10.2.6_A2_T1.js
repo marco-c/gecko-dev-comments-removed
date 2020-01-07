@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+var __executed = /^m/.test("pairs\nmakes\tdouble");
+
+
+if (__executed) {
+	$ERROR('#1: /^m/.test("pairs\\nmakes\\tdouble") === false');
+}
+
+reportCompare(0, 0);

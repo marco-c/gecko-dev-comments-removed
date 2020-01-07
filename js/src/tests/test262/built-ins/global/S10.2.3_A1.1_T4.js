@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+if ( Math === null ) {
+  $ERROR("#27: Math === null");
+}
+
+reportCompare(0, 0);

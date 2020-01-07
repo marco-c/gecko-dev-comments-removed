@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var o = {};
+var p = new Proxy(o, {
+  deleteProperty: function() {
+    throw new Test262Error();
+  }
+});
+
+assert.throws(Test262Error, function() {
+  Reflect.deleteProperty(p, 'p1');
+});
+
+reportCompare(0, 0);

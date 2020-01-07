@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Math.acosh.name, "acosh");
+
+verifyNotEnumerable(Math.acosh, "name");
+verifyNotWritable(Math.acosh, "name");
+verifyConfigurable(Math.acosh, "name");
+
+reportCompare(0, 0);

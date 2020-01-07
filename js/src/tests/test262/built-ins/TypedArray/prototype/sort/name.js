@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(TypedArray.prototype.sort.name, "sort");
+
+verifyNotEnumerable(TypedArray.prototype.sort, "name");
+verifyNotWritable(TypedArray.prototype.sort, "name");
+verifyConfigurable(TypedArray.prototype.sort, "name");
+
+reportCompare(0, 0);

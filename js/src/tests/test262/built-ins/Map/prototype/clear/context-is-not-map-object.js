@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  Map.prototype.clear.call({});
+});
+
+assert.throws(TypeError, function() {
+  Map.prototype.clear.call([]);
+});
+
+reportCompare(0, 0);

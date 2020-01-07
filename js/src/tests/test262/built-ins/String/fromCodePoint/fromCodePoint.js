@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(String, 'fromCodePoint');
+verifyWritable(String, 'fromCodePoint');
+verifyConfigurable(String, 'fromCodePoint');
+
+reportCompare(0, 0);

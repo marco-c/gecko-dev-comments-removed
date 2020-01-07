@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue('foo'.repeat(0), '');
+
+reportCompare(0, 0);

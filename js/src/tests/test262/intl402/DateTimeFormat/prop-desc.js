@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Intl, "DateTimeFormat");
+verifyWritable(Intl, "DateTimeFormat");
+verifyConfigurable(Intl, "DateTimeFormat");
+
+reportCompare(0, 0);

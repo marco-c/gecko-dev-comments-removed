@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+if (Object.prototype.isPrototypeOf(RegExp.prototype) !== true) {
+	$ERROR('#1: Object.prototype.isPrototypeOf(RegExp.prototype) === true');
+}
+
+reportCompare(0, 0);

@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var map = new Map([[0, 0]]);
+
+assert.throws(Test262Error, function() {
+  map.forEach(function() {
+    throw new Test262Error();
+  });
+});
+
+reportCompare(0, 0);

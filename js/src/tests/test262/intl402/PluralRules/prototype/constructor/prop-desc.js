@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Intl.PluralRules.prototype, "constructor");
+verifyWritable(Intl.PluralRules.prototype, "constructor");
+verifyConfigurable(Intl.PluralRules.prototype, "constructor");
+
+reportCompare(0, 0);

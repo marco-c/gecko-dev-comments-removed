@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(TypeError.prototype.constructor, TypeError);
+
+verifyNotEnumerable(TypeError.prototype, "constructor");
+verifyWritable(TypeError.prototype, "constructor");
+verifyConfigurable(TypeError.prototype, "constructor");
+
+reportCompare(0, 0);

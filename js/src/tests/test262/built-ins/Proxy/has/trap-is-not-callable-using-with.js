@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var target = {};
+var p = new Proxy(target, {
+    has: {}
+});
+
+assert.throws(TypeError, function() {
+    with (p) {
+        (attr);
+    }
+});
+
+reportCompare(0, 0);

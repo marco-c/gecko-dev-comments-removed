@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var r = /./;
+r.exec = function() {
+  throw new Test262Error();
+};
+
+assert.throws(Test262Error, function() {
+  r[Symbol.replace]('', '');
+});
+
+reportCompare(0, 0);

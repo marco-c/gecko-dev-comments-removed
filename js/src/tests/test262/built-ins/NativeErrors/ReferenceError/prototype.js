@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(ReferenceError.prototype, Object.getPrototypeOf(new ReferenceError));
+
+verifyNotEnumerable(ReferenceError, "prototype");
+verifyNotWritable(ReferenceError, "prototype");
+verifyNotConfigurable(ReferenceError, "prototype");
+
+reportCompare(0, 0);

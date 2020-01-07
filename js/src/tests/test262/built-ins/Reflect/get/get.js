@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Reflect, 'get');
+verifyWritable(Reflect, 'get');
+verifyConfigurable(Reflect, 'get');
+
+reportCompare(0, 0);

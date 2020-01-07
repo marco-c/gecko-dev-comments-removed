@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof Function.prototype[Symbol.hasInstance], 'function');
+
+verifyNotEnumerable(Function.prototype, Symbol.hasInstance);
+verifyNotWritable(Function.prototype, Symbol.hasInstance);
+verifyNotConfigurable(Function.prototype, Symbol.hasInstance);
+
+reportCompare(0, 0);

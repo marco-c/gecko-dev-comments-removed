@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(ArrayBuffer.isView(), false);
+
+reportCompare(0, 0);

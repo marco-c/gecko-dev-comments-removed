@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var source = new Proxy({}, {
+  ownKeys: function() {
+    throw new Test262Error();
+  }
+});
+
+assert.throws(Test262Error, function() {
+  Object.assign({}, source);
+});
+
+reportCompare(0, 0);

@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+    JSON.bind();
+});
+
+reportCompare(0, 0);

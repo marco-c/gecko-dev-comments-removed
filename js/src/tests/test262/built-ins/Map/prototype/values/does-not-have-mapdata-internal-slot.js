@@ -1,0 +1,40 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var m = new Map();
+
+assert.throws(TypeError, function() {
+  Map.prototype.values.call([]);
+});
+
+assert.throws(TypeError, function() {
+  m.values.call([]);
+});
+
+assert.throws(TypeError, function() {
+  Map.prototype.values.call({});
+});
+
+assert.throws(TypeError, function() {
+  m.values.call({});
+});
+
+reportCompare(0, 0);

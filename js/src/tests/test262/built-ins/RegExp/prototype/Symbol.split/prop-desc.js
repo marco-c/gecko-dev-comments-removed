@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(RegExp.prototype, Symbol.split);
+verifyWritable(RegExp.prototype, Symbol.split);
+verifyConfigurable(RegExp.prototype, Symbol.split);
+
+reportCompare(0, 0);

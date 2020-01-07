@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Reflect, 'isExtensible');
+verifyWritable(Reflect, 'isExtensible');
+verifyConfigurable(Reflect, 'isExtensible');
+
+reportCompare(0, 0);

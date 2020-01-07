@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Math[Symbol.toStringTag], 'Math');
+
+verifyNotEnumerable(Math, Symbol.toStringTag);
+verifyNotWritable(Math, Symbol.toStringTag);
+verifyConfigurable(Math, Symbol.toStringTag);
+
+reportCompare(0, 0);

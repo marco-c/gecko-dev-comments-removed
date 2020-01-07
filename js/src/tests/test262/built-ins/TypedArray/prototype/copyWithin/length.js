@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(TypedArray.prototype.copyWithin.length, 2);
+
+verifyNotEnumerable(TypedArray.prototype.copyWithin, "length");
+verifyNotWritable(TypedArray.prototype.copyWithin, "length");
+verifyConfigurable(TypedArray.prototype.copyWithin, "length");
+
+reportCompare(0, 0);

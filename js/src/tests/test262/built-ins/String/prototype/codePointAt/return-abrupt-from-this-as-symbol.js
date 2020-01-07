@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var s = Symbol();
+
+assert.throws(TypeError, function() {
+  String.prototype.codePointAt.call(s, 1);
+});
+
+reportCompare(0, 0);

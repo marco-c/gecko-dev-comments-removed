@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(String.prototype.indexOf.name, "indexOf");
+
+verifyNotEnumerable(String.prototype.indexOf, "name");
+verifyNotWritable(String.prototype.indexOf, "name");
+verifyConfigurable(String.prototype.indexOf, "name");
+
+reportCompare(0, 0);

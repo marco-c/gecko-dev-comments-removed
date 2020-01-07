@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var o = {};
+function fn() {
+  return o;
+}
+
+var result = Reflect.apply(fn, 1, []);
+
+assert.sameValue(result, o);
+
+reportCompare(0, 0);

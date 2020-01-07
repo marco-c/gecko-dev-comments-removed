@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+var TypedArrayPrototype = TypedArray.prototype;
+
+verifyNotEnumerable(TypedArrayPrototype, 'copyWithin');
+verifyWritable(TypedArrayPrototype, 'copyWithin');
+verifyConfigurable(TypedArrayPrototype, 'copyWithin');
+
+reportCompare(0, 0);

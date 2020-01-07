@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  Map.prototype.delete.call(new WeakMap(), 'attr');
+});
+
+reportCompare(0, 0);

@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof Object.setPrototypeOf, 'function');
+
+verifyNotEnumerable(Object, 'setPrototypeOf');
+verifyWritable(Object, 'setPrototypeOf');
+verifyConfigurable(Object, 'setPrototypeOf');
+
+reportCompare(0, 0);

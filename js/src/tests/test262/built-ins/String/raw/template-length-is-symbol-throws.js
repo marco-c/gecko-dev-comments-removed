@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  String.raw({
+    raw: {
+      length: Symbol(1)
+    }
+  });
+});
+
+reportCompare(0, 0);

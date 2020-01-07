@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  Reflect.set(1, 'p', 42);
+});
+
+assert.throws(TypeError, function() {
+  Reflect.set(null, 'p', 42);
+});
+
+assert.throws(TypeError, function() {
+  Reflect.set(undefined, 'p', 42);
+});
+
+assert.throws(TypeError, function() {
+  Reflect.set('', 'p', 42);
+});
+
+reportCompare(0, 0);

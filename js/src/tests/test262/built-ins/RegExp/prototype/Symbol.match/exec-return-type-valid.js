@@ -1,0 +1,36 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var r = /./;
+var retValue;
+r.exec = function() {
+  return retValue;
+};
+
+retValue = null;
+assert.sameValue(r[Symbol.match](''), retValue);
+
+retValue = {};
+assert.sameValue(r[Symbol.match](''), retValue);
+
+reportCompare(0, 0);

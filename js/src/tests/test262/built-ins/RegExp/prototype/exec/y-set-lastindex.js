@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var r = /abc/y;
+r.exec('abc');
+
+assert.sameValue(r.lastIndex, 3);
+
+reportCompare(0, 0);

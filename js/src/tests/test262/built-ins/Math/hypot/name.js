@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Math.hypot.name, "hypot");
+
+verifyNotEnumerable(Math.hypot, "name");
+verifyNotWritable(Math.hypot, "name");
+verifyConfigurable(Math.hypot, "name");
+
+reportCompare(0, 0);

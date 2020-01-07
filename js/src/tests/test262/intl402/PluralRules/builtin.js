@@ -10,7 +10,12 @@
 
 
 
+assert.sameValue(Object.prototype.toString.call(Intl.PluralRules), "[object Function]",
+                 "The [[Class]] internal property of a built-in function must be " +
+                 "\"Function\".");
 
-testBuiltInObject(Intl.PluralRules, true, true, ["supportedLocalesOf"], 0);
+assert(Object.isExtensible(Intl.PluralRules), "Built-in objects must be extensible.");
+
+assert.sameValue(Object.getPrototypeOf(Intl.PluralRules), Function.prototype);
 
 reportCompare(0, 0);

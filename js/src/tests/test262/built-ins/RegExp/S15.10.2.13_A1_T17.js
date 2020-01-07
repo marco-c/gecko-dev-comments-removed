@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+var __executed = /[]/.exec("a[b\n[]\tc]d");
+
+
+if (__executed !== null) {
+	$ERROR('#1: /[]/.exec("a[b\\n[]\\tc]d") === false');
+}
+
+reportCompare(0, 0);

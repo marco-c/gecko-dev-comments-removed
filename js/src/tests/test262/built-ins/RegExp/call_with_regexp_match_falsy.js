@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var regExpObj = /(?:)/;
+regExpObj[Symbol.match] = false;
+
+assert.notSameValue(RegExp(regExpObj), regExpObj, "RegExp returns new object");
+
+reportCompare(0, 0);

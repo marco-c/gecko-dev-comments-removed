@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(/.4?./[Symbol.replace]('abc', '[$&]'), '[ab]c');
+
+reportCompare(0, 0);

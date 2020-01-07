@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(RegExp.prototype, Symbol.search);
+verifyWritable(RegExp.prototype, Symbol.search);
+verifyConfigurable(RegExp.prototype, Symbol.search);
+
+reportCompare(0, 0);

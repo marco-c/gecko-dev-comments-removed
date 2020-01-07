@@ -9,6 +9,7 @@
 
 
 
+
 testWithAtomicsNonViewValues(function(view) {
     assert.throws(TypeError, (() => Atomics.and(view, 0, 0)));
 });

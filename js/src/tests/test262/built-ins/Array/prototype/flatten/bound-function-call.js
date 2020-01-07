@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+var a = [[0],[1]];
+var actual = [].flatten.bind(a)();
+
+assert.compareArray(actual, [0, 1], 'bound flatten');
+
+reportCompare(0, 0);

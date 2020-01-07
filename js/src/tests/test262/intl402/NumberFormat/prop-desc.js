@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Intl, "NumberFormat");
+verifyWritable(Intl, "NumberFormat");
+verifyConfigurable(Intl, "NumberFormat");
+
+reportCompare(0, 0);

@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  Reflect.isExtensible(Symbol(1));
+});
+
+reportCompare(0, 0);

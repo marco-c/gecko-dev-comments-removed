@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var TypedArrayPrototype = TypedArray.prototype;
+var desc = Object.getOwnPropertyDescriptor(TypedArrayPrototype, "buffer");
+
+assert.sameValue(desc.set, undefined);
+assert.sameValue(typeof desc.get, "function");
+
+verifyNotEnumerable(TypedArrayPrototype, "buffer");
+verifyConfigurable(TypedArrayPrototype, "buffer");
+
+reportCompare(0, 0);

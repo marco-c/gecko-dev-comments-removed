@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof Symbol.isConcatSpreadable, 'symbol');
+verifyNotEnumerable(Symbol, 'isConcatSpreadable');
+verifyNotWritable(Symbol, 'isConcatSpreadable');
+verifyNotConfigurable(Symbol, 'isConcatSpreadable');
+
+reportCompare(0, 0);

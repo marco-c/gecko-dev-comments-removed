@@ -1,0 +1,46 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var fulfiller = {
+  then: function(resolve) {
+    resolve();
+  }
+};
+var rejector = {
+  then: function(_, reject) {
+    reject();
+  }
+};
+
+Promise.race([fulfiller, rejector])
+  .then(function() {
+    $DONE();
+  }, function() {
+    $DONE('The promise should not be rejected.');
+  });

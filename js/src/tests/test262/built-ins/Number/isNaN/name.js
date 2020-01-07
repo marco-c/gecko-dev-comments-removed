@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Number.isNaN.name, "isNaN");
+
+verifyNotEnumerable(Number.isNaN, "name");
+verifyNotWritable(Number.isNaN, "name");
+verifyConfigurable(Number.isNaN, "name");
+
+reportCompare(0, 0);

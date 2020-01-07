@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Number.isInteger.name, "isInteger");
+
+verifyNotEnumerable(Number.isInteger, "name");
+verifyNotWritable(Number.isInteger, "name");
+verifyConfigurable(Number.isInteger, "name");
+
+reportCompare(0, 0);

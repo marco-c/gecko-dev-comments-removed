@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Map.prototype.constructor, Map);
+assert.sameValue((new Map()).constructor, Map);
+
+verifyNotEnumerable(Map.prototype, 'constructor');
+verifyWritable(Map.prototype, 'constructor');
+verifyConfigurable(Map.prototype, 'constructor');
+
+reportCompare(0, 0);

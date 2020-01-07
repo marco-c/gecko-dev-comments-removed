@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var p = new Proxy({}, {
+    deleteProperty: {}
+});
+
+assert.throws(TypeError, function() {
+    delete p.attr;
+});
+
+reportCompare(0, 0);

@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  Reflect.construct(function() {}, [], 1);
+});
+
+assert.throws(TypeError, function() {
+  Reflect.construct(function() {}, [], null);
+});
+
+assert.throws(TypeError, function() {
+  Reflect.construct(function() {}, [], {});
+});
+
+assert.throws(TypeError, function() {
+  Reflect.construct(function() {}, [], Date.now);
+});
+
+reportCompare(0, 0);

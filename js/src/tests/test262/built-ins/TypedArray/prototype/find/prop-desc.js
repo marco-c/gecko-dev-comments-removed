@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+var TypedArrayPrototype = TypedArray.prototype;
+
+verifyNotEnumerable(TypedArrayPrototype, 'find');
+verifyWritable(TypedArrayPrototype, 'find');
+verifyConfigurable(TypedArrayPrototype, 'find');
+
+reportCompare(0, 0);

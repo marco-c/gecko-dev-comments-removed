@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+var p = new Promise(function () {});
+
+assert.throws(TypeError, function() {
+  p.then.call(3, function () {}, function () {});
+});
+
+reportCompare(0, 0);

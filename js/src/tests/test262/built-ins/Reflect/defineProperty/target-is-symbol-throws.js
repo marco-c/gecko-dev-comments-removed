@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  Reflect.defineProperty(Symbol(1), 'p', {});
+});
+
+reportCompare(0, 0);

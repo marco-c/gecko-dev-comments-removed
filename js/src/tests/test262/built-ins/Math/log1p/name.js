@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Math.log1p.name, "log1p");
+
+verifyNotEnumerable(Math.log1p, "name");
+verifyNotWritable(Math.log1p, "name");
+verifyConfigurable(Math.log1p, "name");
+
+reportCompare(0, 0);

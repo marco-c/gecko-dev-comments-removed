@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(RangeError.prototype.message, "");
+
+verifyNotEnumerable(RangeError.prototype, "message");
+verifyWritable(RangeError.prototype, "message");
+verifyConfigurable(RangeError.prototype, "message");
+
+reportCompare(0, 0);

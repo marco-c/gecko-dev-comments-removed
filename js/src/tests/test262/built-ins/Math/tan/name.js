@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Math.tan.name, "tan");
+
+verifyNotEnumerable(Math.tan, "name");
+verifyNotWritable(Math.tan, "name");
+verifyConfigurable(Math.tan, "name");
+
+reportCompare(0, 0);

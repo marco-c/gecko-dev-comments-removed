@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  String.raw({
+    raw: undefined
+  });
+});
+
+assert.throws(TypeError, function() {
+  String.raw({
+    raw: null
+  });
+});
+
+reportCompare(0, 0);

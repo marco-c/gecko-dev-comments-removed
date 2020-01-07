@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(TypedArray, 'from');
+verifyWritable(TypedArray, 'from');
+verifyConfigurable(TypedArray, 'from');
+
+reportCompare(0, 0);

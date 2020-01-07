@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Date.prototype.toGMTString, Date.prototype.toUTCString);
+
+reportCompare(0, 0);

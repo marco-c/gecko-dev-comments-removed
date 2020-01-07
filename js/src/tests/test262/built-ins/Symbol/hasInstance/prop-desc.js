@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof Symbol.hasInstance, 'symbol');
+verifyNotEnumerable(Symbol, 'hasInstance');
+verifyNotWritable(Symbol, 'hasInstance');
+verifyNotConfigurable(Symbol, 'hasInstance');
+
+reportCompare(0, 0);

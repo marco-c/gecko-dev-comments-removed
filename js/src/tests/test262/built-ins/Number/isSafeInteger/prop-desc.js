@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Number, "isSafeInteger");
+verifyWritable(Number, "isSafeInteger");
+verifyConfigurable(Number, "isSafeInteger");
+
+reportCompare(0, 0);

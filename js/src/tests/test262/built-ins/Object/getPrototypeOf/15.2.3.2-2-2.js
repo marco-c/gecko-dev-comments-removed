@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+  function base() {}
+
+  function derived() {}
+  derived.prototype = new base();
+
+  var d = new derived();
+  var x = Object.getPrototypeOf(d);
+
+assert.sameValue(x.isPrototypeOf(d), true, 'x.isPrototypeOf(d)');
+
+reportCompare(0, 0);

@@ -1,0 +1,48 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var fulfiller = {
+  then: function(resolve) {
+    resolve();
+  }
+};
+var lateRejector = {
+  then: function(resolve, reject) {
+    resolve();
+    reject();
+  }
+};
+
+Promise.all([fulfiller, lateRejector])
+  .then(function() {
+    $DONE();
+  }, function() {
+    $DONE('The promise should not be rejected.');
+  });

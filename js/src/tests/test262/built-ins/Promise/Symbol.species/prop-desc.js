@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var desc = Object.getOwnPropertyDescriptor(Promise, Symbol.species);
+
+assert.sameValue(desc.set, undefined);
+assert.sameValue(typeof desc.get, 'function');
+
+verifyNotEnumerable(Promise, Symbol.species);
+verifyConfigurable(Promise, Symbol.species);
+
+reportCompare(0, 0);

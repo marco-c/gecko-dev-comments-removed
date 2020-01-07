@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+var obj=Function();
+
+new Function("this.touched= true; return this;").call(obj);
+
+
+if (!(obj.touched)) {
+  $ERROR('#1: If thisArg is not null(defined) the called function is passed ToObject(thisArg) as the this value');
+}
+
+reportCompare(0, 0);

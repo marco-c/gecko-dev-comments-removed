@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var arg = {
+  valueOf: function() {
+    $ERROR('This method should not be invoked.');
+  },
+  toString: function() {
+    return 'toString value';
+  }
+};
+
+assert.sameValue(/./[Symbol.replace]('string', arg), 'toString valuetring');
+
+reportCompare(0, 0);

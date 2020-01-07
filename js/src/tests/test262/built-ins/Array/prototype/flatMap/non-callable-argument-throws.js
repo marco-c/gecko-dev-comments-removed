@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function () {
+  [].flatMap({});
+}, 'non callable argument');
+
+reportCompare(0, 0);

@@ -14,42 +14,36 @@
 
 
 
-
-
-
-
-
-const hcValuePairs = [
-  ["h11", "h12"],
-  ["h23", "h24"]
-];
-
+const hcValues = ['h11', 'h12', 'h23', 'h24'];
 const hour12Values = ['h11', 'h12'];
-const hour24Values = ['h23', 'h24'];
 
-for (const hcValuePair of hcValuePairs) {
-  for (const hcValue of hcValuePair) {
-    const resolvedOptions = new Intl.DateTimeFormat(`de-u-hc-${hcValue}`, {
-      hour: 'numeric'
-    }).resolvedOptions();
+const dataPropertyDesc = { writable: true, enumerable: true, configurable: true };
 
-    mustHaveProperty(resolvedOptions, 'hourCycle', hcValuePair);
-    mustHaveProperty(resolvedOptions, 'hour12', [hour12Values.includes(hcValue)]);
-  }
+for (const hcValue of hcValues) {
+  const resolvedOptions = new Intl.DateTimeFormat(`de-u-hc-${hcValue}`, {
+    hour: 'numeric'
+  }).resolvedOptions();
+
+  assert.sameValue(resolvedOptions.hourCycle, hcValue);
+  assert.sameValue(resolvedOptions.hour12, hour12Values.includes(hcValue));
+
+  verifyProperty(resolvedOptions, 'hourCycle', dataPropertyDesc);
+  verifyProperty(resolvedOptions, 'hour12', dataPropertyDesc);
 }
 
 
 
-for (const hcValuePair of hcValuePairs) {
-  for (const hcValue of hcValuePair) {
-    const resolvedOptions = new Intl.DateTimeFormat(`en-US`, {
-      hour: 'numeric',
-      hourCycle: hcValue
-    }).resolvedOptions();
+for (const hcValue of hcValues) {
+  const resolvedOptions = new Intl.DateTimeFormat(`en-US`, {
+    hour: 'numeric',
+    hourCycle: hcValue
+  }).resolvedOptions();
 
-    mustHaveProperty(resolvedOptions, 'hourCycle', hcValuePair);
-    mustHaveProperty(resolvedOptions, 'hour12', [hour12Values.includes(hcValue)]);
-  }
+  assert.sameValue(resolvedOptions.hourCycle, hcValue);
+  assert.sameValue(resolvedOptions.hour12, hour12Values.includes(hcValue));
+
+  verifyProperty(resolvedOptions, 'hourCycle', dataPropertyDesc);
+  verifyProperty(resolvedOptions, 'hour12', dataPropertyDesc);
 }
 
 
@@ -59,8 +53,11 @@ let resolvedOptions = new Intl.DateTimeFormat(`en-US-u-hc-h12`, {
   hourCycle: 'h23'
 }).resolvedOptions();
 
-mustHaveProperty(resolvedOptions, 'hourCycle', ['h23', 'h24']);
-mustHaveProperty(resolvedOptions, 'hour12', [false]);
+assert.sameValue(resolvedOptions.hourCycle, 'h23');
+assert.sameValue(resolvedOptions.hour12, false);
+
+verifyProperty(resolvedOptions, 'hourCycle', dataPropertyDesc);
+verifyProperty(resolvedOptions, 'hour12', dataPropertyDesc);
 
 
 
@@ -70,8 +67,11 @@ resolvedOptions = new Intl.DateTimeFormat(`fr`, {
   hourCycle: 'h23'
 }).resolvedOptions();
 
-mustHaveProperty(resolvedOptions, 'hourCycle', ['h11', 'h12']);
-mustHaveProperty(resolvedOptions, 'hour12', [true]);
+assert(hour12Values.includes(resolvedOptions.hourCycle));
+assert.sameValue(resolvedOptions.hour12, true);
+
+verifyProperty(resolvedOptions, 'hourCycle', dataPropertyDesc);
+verifyProperty(resolvedOptions, 'hour12', dataPropertyDesc);
 
 
 
@@ -80,7 +80,10 @@ resolvedOptions = new Intl.DateTimeFormat(`fr-u-hc-h24`, {
   hour12: true,
 }).resolvedOptions();
 
-mustHaveProperty(resolvedOptions, 'hourCycle', ['h11', 'h12']);
-mustHaveProperty(resolvedOptions, 'hour12', [true]);
+assert(hour12Values.includes(resolvedOptions.hourCycle));
+assert.sameValue(resolvedOptions.hour12, true);
+
+verifyProperty(resolvedOptions, 'hourCycle', dataPropertyDesc);
+verifyProperty(resolvedOptions, 'hour12', dataPropertyDesc);
 
 reportCompare(0, 0);

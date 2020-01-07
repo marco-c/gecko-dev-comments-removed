@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var o = {};
+var s = Symbol('1');
+o[s] = 42;
+
+assert.sameValue(Reflect.get(o, s), 42);
+
+reportCompare(0, 0);

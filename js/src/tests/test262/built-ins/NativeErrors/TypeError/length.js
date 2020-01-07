@@ -1,0 +1,34 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(TypeError.length, 1);
+
+verifyNotEnumerable(TypeError, "length");
+verifyNotWritable(TypeError, "length");
+verifyConfigurable(TypeError, "length");
+
+reportCompare(0, 0);

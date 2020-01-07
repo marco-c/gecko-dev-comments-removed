@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  new Promise("not callable");
+});
+
+reportCompare(0, 0);

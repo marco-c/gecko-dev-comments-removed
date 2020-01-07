@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Math.exp.length, 1);
+
+verifyNotEnumerable(Math.exp, "length");
+verifyNotWritable(Math.exp, "length");
+verifyConfigurable(Math.exp, "length");
+
+reportCompare(0, 0);

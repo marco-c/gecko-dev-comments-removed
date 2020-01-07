@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  String.fromCodePoint(Symbol());
+});
+
+assert.throws(TypeError, function() {
+  String.fromCodePoint(42, Symbol());
+});
+
+reportCompare(0, 0);

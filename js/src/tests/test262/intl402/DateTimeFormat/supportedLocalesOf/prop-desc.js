@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Intl.DateTimeFormat, "supportedLocalesOf");
+verifyWritable(Intl.DateTimeFormat, "supportedLocalesOf");
+verifyConfigurable(Intl.DateTimeFormat, "supportedLocalesOf");
+
+reportCompare(0, 0);

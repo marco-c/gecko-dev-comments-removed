@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var target = {};
+var p = new Proxy(target, {
+    setPrototypeOf: {}
+});
+
+assert.throws(TypeError, function() {
+    Reflect.setPrototypeOf(p, {
+        value: 1
+    });
+});
+
+reportCompare(0, 0);

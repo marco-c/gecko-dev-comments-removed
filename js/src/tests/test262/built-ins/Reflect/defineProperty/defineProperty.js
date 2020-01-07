@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Reflect, 'defineProperty');
+verifyWritable(Reflect, 'defineProperty');
+verifyConfigurable(Reflect, 'defineProperty');
+
+reportCompare(0, 0);

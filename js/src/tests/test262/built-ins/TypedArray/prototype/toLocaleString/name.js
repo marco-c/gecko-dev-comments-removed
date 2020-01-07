@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(TypedArray.prototype.toLocaleString.name, "toLocaleString");
+
+verifyNotEnumerable(TypedArray.prototype.toLocaleString, "name");
+verifyNotWritable(TypedArray.prototype.toLocaleString, "name");
+verifyConfigurable(TypedArray.prototype.toLocaleString, "name");
+
+reportCompare(0, 0);

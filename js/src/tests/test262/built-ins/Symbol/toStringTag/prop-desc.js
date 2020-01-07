@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof Symbol.toStringTag, 'symbol');
+verifyNotEnumerable(Symbol, 'toStringTag');
+verifyNotWritable(Symbol, 'toStringTag');
+verifyNotConfigurable(Symbol, 'toStringTag');
+
+reportCompare(0, 0);

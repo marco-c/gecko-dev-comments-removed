@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = {toString: Function.prototype.toString};
+
+assert.throws(TypeError, function() {
+  String(obj);
+});
+
+reportCompare(0, 0);

@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue('abc'.codePointAt(-1), undefined);
+assert.sameValue('abc'.codePointAt(-Infinity), undefined);
+
+reportCompare(0, 0);

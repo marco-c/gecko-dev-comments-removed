@@ -1,0 +1,39 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var r = /c/y;
+r.lastIndex = 1;
+
+r[Symbol.match]('abc');
+
+assert.sameValue(r.lastIndex, 0);
+
+reportCompare(0, 0);

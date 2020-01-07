@@ -10,7 +10,6 @@
 
 
 
-
 var ArrayIteratorProto = Object.getPrototypeOf([][Symbol.iterator]());
 
 verifyNotEnumerable(ArrayIteratorProto, 'next');

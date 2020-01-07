@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var descriptor = Object.getOwnPropertyDescriptor(Map.prototype, 'size');
+
+var map = new Map();
+
+
+descriptor.get.call(map);
+
+assert.throws(TypeError, function() {
+  descriptor.get.call([]);
+});
+
+reportCompare(0, 0);

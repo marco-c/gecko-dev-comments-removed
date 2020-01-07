@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var s = Symbol('foo');
+
+assert.throws(TypeError, function() {
+  'foo'.normalize(s);
+});
+
+reportCompare(0, 0);

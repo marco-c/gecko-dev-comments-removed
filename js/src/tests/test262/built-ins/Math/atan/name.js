@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Math.atan.name, "atan");
+
+verifyNotEnumerable(Math.atan, "name");
+verifyNotWritable(Math.atan, "name");
+verifyConfigurable(Math.atan, "name");
+
+reportCompare(0, 0);

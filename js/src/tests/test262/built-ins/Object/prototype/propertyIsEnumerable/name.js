@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Object.prototype.propertyIsEnumerable.name, "propertyIsEnumerable");
+
+verifyNotEnumerable(Object.prototype.propertyIsEnumerable, "name");
+verifyNotWritable(Object.prototype.propertyIsEnumerable, "name");
+verifyConfigurable(Object.prototype.propertyIsEnumerable, "name");
+
+reportCompare(0, 0);

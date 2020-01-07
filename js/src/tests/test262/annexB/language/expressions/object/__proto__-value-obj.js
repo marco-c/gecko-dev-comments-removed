@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var proto = {};
+
+var object = {
+  __proto__: proto
+};
+
+assert.sameValue(Object.getPrototypeOf(object), proto);
+assert.sameValue(
+  Object.getOwnPropertyDescriptor(object, '__proto__'), undefined
+);
+
+reportCompare(0, 0);

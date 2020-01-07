@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+var o = {};
+assert.sameValue(
+  Reflect.getPrototypeOf(o), Object.prototype,
+  'return default prototypes'
+);
+
+reportCompare(0, 0);

@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+  var bbc = Boolean.bind(null);
+  var b = bbc(true);
+
+assert.sameValue(b, true, 'b');
+
+reportCompare(0, 0);

@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Intl.DateTimeFormat.prototype, "constructor");
+verifyWritable(Intl.DateTimeFormat.prototype, "constructor");
+verifyConfigurable(Intl.DateTimeFormat.prototype, "constructor");
+
+reportCompare(0, 0);

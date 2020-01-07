@@ -1,0 +1,45 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var template = {
+  raw: ['a', 'b', 'c']
+};
+
+assert.throws(TypeError, function() {
+  String.raw(template, '', Symbol(''));
+});
+
+assert.throws(TypeError, function() {
+  String.raw(template, Symbol(''), '');
+});
+
+reportCompare(0, 0);

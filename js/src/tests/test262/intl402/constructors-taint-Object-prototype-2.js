@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+taintProperties(["dataLocale", "nu", "ca", "co", "locale"]);
+
+testWithIntlConstructors(function (Constructor) {
+    var locale = new Constructor(undefined, {localeMatcher: "lookup"}).resolvedOptions().locale;
+    assert(isCanonicalizedStructurallyValidLanguageTag(locale), "Constructor returns invalid locale " + locale + ".");
+});
+
+reportCompare(0, 0);

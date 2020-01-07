@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Promise, 'prototype');
+verifyNotWritable(Promise, 'prototype');
+verifyNotConfigurable(Promise, 'prototype');
+
+reportCompare(0, 0);

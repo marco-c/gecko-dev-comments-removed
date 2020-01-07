@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Number, "isFinite");
+verifyWritable(Number, "isFinite");
+verifyConfigurable(Number, "isFinite");
+
+reportCompare(0, 0);

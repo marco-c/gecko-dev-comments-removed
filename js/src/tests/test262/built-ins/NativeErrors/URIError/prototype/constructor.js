@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(URIError.prototype.constructor, URIError);
+
+verifyNotEnumerable(URIError.prototype, "constructor");
+verifyWritable(URIError.prototype, "constructor");
+verifyConfigurable(URIError.prototype, "constructor");
+
+reportCompare(0, 0);

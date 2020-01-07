@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Intl.NumberFormat.prototype, "constructor");
+verifyWritable(Intl.NumberFormat.prototype, "constructor");
+verifyConfigurable(Intl.NumberFormat.prototype, "constructor");
+
+reportCompare(0, 0);

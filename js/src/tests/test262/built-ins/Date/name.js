@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Date.name, "Date");
+
+verifyNotEnumerable(Date, "name");
+verifyNotWritable(Date, "name");
+verifyConfigurable(Date, "name");
+
+reportCompare(0, 0);

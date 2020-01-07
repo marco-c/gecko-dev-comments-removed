@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Object.getPrototypeOf(new RangeError), RangeError.prototype);
+
+reportCompare(0, 0);

@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(ArrayBuffer.isView(DataView), false, "DataView");
+
+reportCompare(0, 0);

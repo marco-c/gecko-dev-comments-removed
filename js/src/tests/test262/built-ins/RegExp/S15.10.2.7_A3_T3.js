@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+var __executed = /\s+java\s+/.test("\t javax package");
+
+
+if (__executed) {
+	$ERROR('#1: /\\s+java\\s+/.test("\\t javax package") === false');
+}
+
+reportCompare(0, 0);

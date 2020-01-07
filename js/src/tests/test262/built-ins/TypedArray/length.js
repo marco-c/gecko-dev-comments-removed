@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(TypedArray.length, 0);
+
+verifyNotEnumerable(TypedArray, 'length');
+verifyNotWritable(TypedArray, 'length');
+verifyConfigurable(TypedArray, 'length');
+
+reportCompare(0, 0);

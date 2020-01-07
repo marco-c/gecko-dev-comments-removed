@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var match;
+
+match = /]/.exec(' ]{}');
+assert.sameValue(match[0], ']');
+
+match = /{/.exec(' ]{}');
+assert.sameValue(match[0], '{');
+
+match = /}/.exec(' ]{}');
+assert.sameValue(match[0], '}');
+
+match = /x{o}x/.exec('x{o}x');
+assert.sameValue(match[0], 'x{o}x');
+
+reportCompare(0, 0);

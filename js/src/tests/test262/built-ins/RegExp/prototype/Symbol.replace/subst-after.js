@@ -1,0 +1,34 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(/c/[Symbol.replace]('abc', '[$\']'), 'ab[]');
+assert.sameValue(/b/[Symbol.replace]('abc', '[$\']'), 'a[c]c');
+
+reportCompare(0, 0);

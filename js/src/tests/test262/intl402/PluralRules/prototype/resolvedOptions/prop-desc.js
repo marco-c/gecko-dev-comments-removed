@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Intl.PluralRules.prototype, "resolvedOptions");
+verifyWritable(Intl.PluralRules.prototype, "resolvedOptions");
+verifyConfigurable(Intl.PluralRules.prototype, "resolvedOptions");
+
+reportCompare(0, 0);

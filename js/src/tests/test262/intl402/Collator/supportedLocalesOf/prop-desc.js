@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Intl.Collator, "supportedLocalesOf");
+verifyWritable(Intl.Collator, "supportedLocalesOf");
+verifyConfigurable(Intl.Collator, "supportedLocalesOf");
+
+reportCompare(0, 0);

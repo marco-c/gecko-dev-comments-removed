@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Object.prototype.toString.call(new EvalError), "[object Error]");
+
+reportCompare(0, 0);

@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  [].flatMap.call(null);
+}, 'null value');
+
+assert.throws(TypeError, function() {
+  [].flatMap.call();
+}, 'missing');
+
+assert.throws(TypeError, function() {
+  [].flatMap.call(void 0);
+}, 'undefined');
+
+
+reportCompare(0, 0);

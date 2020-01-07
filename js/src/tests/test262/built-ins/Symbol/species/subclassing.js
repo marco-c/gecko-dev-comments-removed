@@ -11,7 +11,6 @@
 
 
 
-
 class MyRegExp extends RegExp {
 };
 

@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(/x/[Symbol.replace]('abc', 'X'), 'abc');
+
+reportCompare(0, 0);

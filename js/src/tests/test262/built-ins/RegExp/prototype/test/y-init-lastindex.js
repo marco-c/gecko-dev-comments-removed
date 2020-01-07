@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var r = /./y;
+r.lastIndex = 1;
+
+assert.sameValue(r.test('a'), false);
+
+reportCompare(0, 0);

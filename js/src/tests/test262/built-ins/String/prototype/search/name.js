@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(String.prototype.search.name, "search");
+
+verifyNotEnumerable(String.prototype.search, "name");
+verifyNotWritable(String.prototype.search, "name");
+verifyConfigurable(String.prototype.search, "name");
+
+reportCompare(0, 0);

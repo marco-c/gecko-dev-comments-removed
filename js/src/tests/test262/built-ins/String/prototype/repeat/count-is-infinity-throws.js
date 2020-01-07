@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(RangeError, function() {
+  ''.repeat(Infinity);
+});
+
+reportCompare(0, 0);

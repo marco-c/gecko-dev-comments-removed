@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(String.prototype.charCodeAt.name, "charCodeAt");
+
+verifyNotEnumerable(String.prototype.charCodeAt, "name");
+verifyNotWritable(String.prototype.charCodeAt, "name");
+verifyConfigurable(String.prototype.charCodeAt, "name");
+
+reportCompare(0, 0);

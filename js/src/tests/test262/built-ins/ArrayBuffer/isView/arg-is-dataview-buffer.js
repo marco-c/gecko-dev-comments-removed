@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var sample = new DataView(new ArrayBuffer(1), 0, 0).buffer;
+
+assert.sameValue(ArrayBuffer.isView(sample), false);
+
+reportCompare(0, 0);

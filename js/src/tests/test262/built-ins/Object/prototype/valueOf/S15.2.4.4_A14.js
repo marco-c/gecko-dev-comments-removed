@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+    (1,Object.prototype.valueOf)();
+});
+
+reportCompare(0, 0);

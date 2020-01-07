@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+var rejectFunction;
+new Promise(function(resolve, reject) {
+  rejectFunction = reject;
+});
+
+assert(Object.isExtensible(rejectFunction));
+
+reportCompare(0, 0);

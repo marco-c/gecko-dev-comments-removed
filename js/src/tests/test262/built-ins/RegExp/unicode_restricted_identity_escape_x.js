@@ -1,0 +1,36 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(SyntaxError, function() {
+  RegExp("\\x", "u");
+}, 'RegExp("\\x", "u"): ');
+assert.throws(SyntaxError, function() {
+  RegExp("\\x1", "u");
+}, 'RegExp("\\x1", "u"): ');
+
+
+
+
+
+
+assert.throws(SyntaxError, function() {
+  RegExp("[\\x]", "u");
+}, 'RegExp("[\\x]", "u"): ');
+assert.throws(SyntaxError, function() {
+  RegExp("[\\x1]", "u");
+}, 'RegExp("[\\x1]", "u"): ');
+
+reportCompare(0, 0);
