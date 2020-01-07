@@ -12,8 +12,9 @@
 
 
 
+
 use iter::*;
-use iter::internal::*;
+use iter::plumbing::*;
 use split_producer::*;
 
 
@@ -50,10 +51,29 @@ pub trait ParallelString {
     fn as_parallel_string(&self) -> &str;
 
     
+    
+    
+    
+    
+    
+    
+    
+    
     fn par_chars(&self) -> Chars {
         Chars { chars: self.as_parallel_string() }
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -70,6 +90,16 @@ pub trait ParallelString {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn par_split_terminator<P: Pattern>(&self, terminator: P) -> SplitTerminator<P> {
         SplitTerminator::new(self.as_parallel_string(), terminator)
     }
@@ -78,10 +108,31 @@ pub trait ParallelString {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn par_lines(&self) -> Lines {
         Lines(self.as_parallel_string())
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -107,7 +158,7 @@ impl ParallelString for str {
 
 
 mod private {
-    use iter::internal::Folder;
+    use iter::plumbing::Folder;
 
     
     
@@ -183,6 +234,7 @@ impl<FN: Sync + Send + Fn(char) -> bool> Pattern for FN {
 
 
 
+#[derive(Debug, Clone)]
 pub struct Chars<'ch> {
     chars: &'ch str,
 }
@@ -226,6 +278,7 @@ impl<'ch> UnindexedProducer for CharsProducer<'ch> {
 
 
 
+#[derive(Debug, Clone)]
 pub struct Split<'ch, P: Pattern> {
     chars: &'ch str,
     separator: P,
@@ -288,6 +341,7 @@ impl<'ch, P: Pattern> Fissile<P> for &'ch str {
 
 
 
+#[derive(Debug, Clone)]
 pub struct SplitTerminator<'ch, P: Pattern> {
     chars: &'ch str,
     terminator: P,
@@ -355,6 +409,7 @@ impl<'ch, 'sep, P: Pattern + 'sep> UnindexedProducer for SplitTerminatorProducer
 
 
 
+#[derive(Debug, Clone)]
 pub struct Lines<'ch>(&'ch str);
 
 impl<'ch> ParallelIterator for Lines<'ch> {
@@ -378,6 +433,7 @@ impl<'ch> ParallelIterator for Lines<'ch> {
 
 
 
+#[derive(Debug, Clone)]
 pub struct SplitWhitespace<'ch>(&'ch str);
 
 impl<'ch> ParallelIterator for SplitWhitespace<'ch> {

@@ -141,8 +141,8 @@ fn find_last_octillion() {
     
     
     
-    let config = ::Configuration::new().num_threads(2);
-    let pool = ::ThreadPool::new(config).unwrap();
+    let builder = ::ThreadPoolBuilder::new().num_threads(2);
+    let pool = builder.build().unwrap();
 
     let x = pool.install(|| octillion().find_last(|_| true));
     assert_eq!(x, Some(999999999999999999999999999));

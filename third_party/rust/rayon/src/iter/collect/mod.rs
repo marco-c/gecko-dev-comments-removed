@@ -12,7 +12,7 @@ mod test;
 
 
 
-pub fn collect_into<I, T>(mut pi: I, v: &mut Vec<T>)
+pub fn collect_into_vec<I, T>(pi: I, v: &mut Vec<T>)
     where I: IndexedParallelIterator<Item = T>,
           T: Send
 {
@@ -45,7 +45,7 @@ fn special_extend<I, T>(pi: I, len: usize, v: &mut Vec<T>)
 
 
 
-pub fn unzip_into<I, A, B>(mut pi: I, left: &mut Vec<A>, right: &mut Vec<B>)
+pub fn unzip_into_vecs<I, A, B>(pi: I, left: &mut Vec<A>, right: &mut Vec<B>)
     where I: IndexedParallelIterator<Item = (A, B)>,
           A: Send,
           B: Send
@@ -94,7 +94,7 @@ impl<'c, T: Send + 'c> Collect<'c, T> {
     }
 
     
-    fn complete(mut self) {
+    fn complete(self) {
         unsafe {
             
             
@@ -123,7 +123,7 @@ impl<T> ParallelExtend<T> for Vec<T>
         where I: IntoParallelIterator<Item = T>
     {
         
-        let mut par_iter = par_iter.into_par_iter();
+        let par_iter = par_iter.into_par_iter();
         match par_iter.opt_len() {
             Some(len) => {
                 
@@ -138,7 +138,15 @@ impl<T> ParallelExtend<T> for Vec<T>
                         vec.push(elem);
                         vec
                     })
-                    .collect();
+                    .map(|vec| {
+                        let mut list = LinkedList::new();
+                        list.push_back(vec);
+                        list
+                    })
+                    .reduce(LinkedList::new, |mut list1, mut list2| {
+                        list1.append(&mut list2);
+                        list1
+                    });
 
                 self.reserve(list.iter().map(Vec::len).sum());
                 for mut vec in list {

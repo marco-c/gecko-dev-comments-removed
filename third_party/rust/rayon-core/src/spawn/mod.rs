@@ -1,10 +1,5 @@
-#[cfg(rayon_unstable)]
-use future::{self, Future, RayonFuture};
-#[allow(unused_imports)]
-use latch::{Latch, SpinLatch};
 use job::*;
 use registry::Registry;
-use std::any::Any;
 use std::mem;
 use std::sync::Arc;
 use unwind;
@@ -94,80 +89,6 @@ pub unsafe fn spawn_in<F>(func: F, registry: &Arc<Registry>)
     let job_ref = HeapJob::as_job_ref(async_job);
     registry.inject_or_push(job_ref);
     mem::forget(abort_guard);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[cfg(rayon_unstable)]
-pub fn spawn_future<F>(future: F) -> RayonFuture<F::Item, F::Error>
-    where F: Future + Send + 'static
-{
-    
-    unsafe { spawn_future_in(future, Registry::current()) }
-}
-
-
-
-
-#[cfg(rayon_unstable)]
-pub unsafe fn spawn_future_in<F>(future: F, registry: Arc<Registry>) -> RayonFuture<F::Item, F::Error>
-    where F: Future + Send + 'static
-{
-    let scope = StaticFutureScope::new(registry.clone());
-
-    future::new_rayon_future(future, scope)
-}
-
-#[cfg(rayon_unstable)]
-struct StaticFutureScope {
-    registry: Arc<Registry>
-}
-
-#[cfg(rayon_unstable)]
-impl StaticFutureScope {
-    
-    unsafe fn new(registry: Arc<Registry>) -> Self {
-        registry.increment_terminate_count();
-        StaticFutureScope { registry: registry }
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-#[cfg(rayon_unstable)]
-unsafe impl future::FutureScope<'static> for StaticFutureScope {
-    fn registry(&self) -> Arc<Registry> {
-        self.registry.clone()
-    }
-
-    fn future_panicked(self, err: Box<Any + Send>) {
-        self.registry.handle_panic(err);
-        self.registry.terminate();
-    }
-
-    fn future_completed(self) {
-        self.registry.terminate();
-    }
 }
 
 #[cfg(test)]

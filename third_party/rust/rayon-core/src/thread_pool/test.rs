@@ -3,15 +3,17 @@
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
+#[allow(deprecated)]
 use Configuration;
+use ThreadPoolBuilder;
 use join;
-use super::ThreadPool;
+use thread_pool::ThreadPool;
 use unwind;
 
 #[test]
 #[should_panic(expected = "Hello, world!")]
 fn panic_propagate() {
-    let thread_pool = ThreadPool::new(Configuration::new()).unwrap();
+    let thread_pool = ThreadPoolBuilder::new().build().unwrap();
     thread_pool.install(|| {
                             panic!("Hello, world!");
                         });
@@ -23,7 +25,7 @@ fn workers_stop() {
 
     {
         
-        let thread_pool = ThreadPool::new(Configuration::new().num_threads(22)).unwrap();
+        let thread_pool = ThreadPoolBuilder::new().num_threads(22).build().unwrap();
         registry = thread_pool.install(|| {
                                            
                                            join_a_lot(22);
@@ -52,7 +54,7 @@ fn sleeper_stop() {
 
     {
         
-        let thread_pool = ThreadPool::new(Configuration::new().num_threads(22)).unwrap();
+        let thread_pool = ThreadPoolBuilder::new().num_threads(22).build().unwrap();
         registry = thread_pool.registry.clone();
 
         
@@ -98,13 +100,13 @@ fn failed_thread_stack() {
 
     let (start_count, start_handler) = count_handler();
     let (exit_count, exit_handler) = count_handler();
-    let config = Configuration::new()
+    let builder = ThreadPoolBuilder::new()
         .num_threads(10)
         .stack_size(stack_size)
         .start_handler(move |i| start_handler(i))
         .exit_handler(move |i| exit_handler(i));
 
-    let pool = ThreadPool::new(config);
+    let pool = builder.build();
     assert!(pool.is_err(), "thread stack should have failed!");
 
     
@@ -118,7 +120,7 @@ fn failed_thread_stack() {
 fn panic_thread_name() {
     let (start_count, start_handler) = count_handler();
     let (exit_count, exit_handler) = count_handler();
-    let config = Configuration::new()
+    let builder = ThreadPoolBuilder::new()
         .num_threads(10)
         .start_handler(move |i| start_handler(i))
         .exit_handler(move |i| exit_handler(i))
@@ -129,11 +131,72 @@ fn panic_thread_name() {
                          format!("panic_thread_name#{}", i)
                      });
 
-    let pool = unwind::halt_unwinding(|| ThreadPool::new(config));
+    let pool = unwind::halt_unwinding(|| builder.build());
     assert!(pool.is_err(), "thread-name panic should propagate!");
 
     
     
     assert_eq!(5, wait_for_counter(start_count));
     assert_eq!(5, wait_for_counter(exit_count));
+}
+
+#[test]
+fn self_install() {
+    let pool = ThreadPoolBuilder::new().num_threads(1).build().unwrap();
+
+    
+    assert!(pool.install(|| pool.install(|| true)));
+}
+
+#[test]
+fn mutual_install() {
+    let pool1 = ThreadPoolBuilder::new().num_threads(1).build().unwrap();
+    let pool2 = ThreadPoolBuilder::new().num_threads(1).build().unwrap();
+
+    let ok = pool1.install(|| {
+        
+        pool2.install(|| {
+            
+            pool1.install(|| {
+               
+               
+               true
+            })
+        })
+    });
+    assert!(ok);
+}
+
+#[test]
+fn mutual_install_sleepy() {
+    use std::{thread, time};
+
+    let pool1 = ThreadPoolBuilder::new().num_threads(1).build().unwrap();
+    let pool2 = ThreadPoolBuilder::new().num_threads(1).build().unwrap();
+
+    let ok = pool1.install(|| {
+        
+        pool2.install(|| {
+            
+            thread::sleep(time::Duration::from_secs(1));
+
+            
+            pool1.install(|| {
+               
+               thread::sleep(time::Duration::from_secs(1));
+
+               
+               
+               true
+            })
+        })
+    });
+    assert!(ok);
+}
+
+#[test]
+#[allow(deprecated)]
+fn check_thread_pool_new() {
+    let pool = ThreadPool::new(Configuration::new().num_threads(22)).unwrap();
+    assert_eq!(pool.current_num_threads(), 22);
 }

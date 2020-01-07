@@ -1,4 +1,4 @@
-use super::internal::*;
+use super::plumbing::*;
 use super::*;
 use std::iter;
 use std::ops::Range;
@@ -10,6 +10,7 @@ use std::usize;
 
 
 #[must_use = "iterator adaptors are lazy and do nothing unless consumed"]
+#[derive(Debug, Clone)]
 pub struct Enumerate<I: IndexedParallelIterator> {
     base: I,
 }
@@ -34,7 +35,7 @@ impl<I> ParallelIterator for Enumerate<I>
         bridge(self, consumer)
     }
 
-    fn opt_len(&mut self) -> Option<usize> {
+    fn opt_len(&self) -> Option<usize> {
         Some(self.len())
     }
 }
@@ -46,7 +47,7 @@ impl<I> IndexedParallelIterator for Enumerate<I>
         bridge(self, consumer)
     }
 
-    fn len(&mut self) -> usize {
+    fn len(&self) -> usize {
         self.base.len()
     }
 
@@ -95,7 +96,13 @@ impl<P> Producer for EnumerateProducer<P>
         
         
         
-        (self.offset..usize::MAX).zip(self.base.into_iter())
+        
+        
+        
+        
+        let base = self.base.into_iter();
+        let end = self.offset + base.len();
+        (self.offset..end).zip(base)
     }
 
     fn min_len(&self) -> usize {

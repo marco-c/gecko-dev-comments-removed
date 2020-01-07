@@ -1,13 +1,86 @@
-#![allow(non_camel_case_types)] 
+#![doc(html_root_url = "https://docs.rs/rayon/1.0")]
+#![deny(missing_debug_implementations)]
 #![cfg_attr(test, feature(conservative_impl_trait))]
 #![cfg_attr(test, feature(i128_type))]
+#![deny(missing_docs)]
 
 
 
 
-#![cfg_attr(not(feature = "unstable"), allow(warnings))]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 extern crate rayon_core;
+extern crate either;
 
 #[cfg(test)]
 extern crate rand;
@@ -30,18 +103,15 @@ pub mod slice;
 pub mod str;
 pub mod vec;
 
+mod par_either;
+mod math;
 mod test;
 
-pub use iter::split;
-
 pub use rayon_core::current_num_threads;
-pub use rayon_core::Configuration;
-pub use rayon_core::initialize;
 pub use rayon_core::ThreadPool;
-pub use rayon_core::join;
+pub use rayon_core::ThreadPoolBuilder;
+pub use rayon_core::ThreadPoolBuildError;
+pub use rayon_core::{join, join_context};
+pub use rayon_core::FnContext;
 pub use rayon_core::{scope, Scope};
 pub use rayon_core::spawn;
-#[cfg(rayon_unstable)]
-pub use rayon_core::spawn_future;
-#[cfg(rayon_unstable)]
-pub use rayon_core::RayonFuture;

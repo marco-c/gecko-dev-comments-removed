@@ -1,0 +1,9 @@
+extern crate rayon;
+
+use rayon::*;
+
+
+
+fn main() {
+    join(|| {}, || panic!("should panic"));
+}

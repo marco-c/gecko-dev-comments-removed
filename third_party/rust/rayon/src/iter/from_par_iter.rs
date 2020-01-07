@@ -1,4 +1,4 @@
-use super::{FromParallelIterator, IntoParallelIterator, ParallelExtend};
+use super::{FromParallelIterator, IntoParallelIterator, ParallelIterator, ParallelExtend};
 
 use std::borrow::Cow;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
@@ -155,6 +155,15 @@ impl FromParallelIterator<String> for String {
 }
 
 
+impl<'a> FromParallelIterator<Cow<'a, str>> for String {
+    fn from_par_iter<I>(par_iter: I) -> Self
+        where I: IntoParallelIterator<Item = Cow<'a, str>>
+    {
+        collect_extended(par_iter)
+    }
+}
+
+
 
 
 
@@ -168,5 +177,28 @@ impl<'a, C: ?Sized, T> FromParallelIterator<T> for Cow<'a, C>
         where I: IntoParallelIterator<Item = T>
     {
         Cow::Owned(C::Owned::from_par_iter(par_iter))
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+impl FromParallelIterator<()> for () {
+    fn from_par_iter<I>(par_iter: I) -> Self
+        where I: IntoParallelIterator<Item = ()>
+    {
+        par_iter.into_par_iter().for_each(|()| {})
     }
 }

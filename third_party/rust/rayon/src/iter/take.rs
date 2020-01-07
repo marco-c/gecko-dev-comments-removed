@@ -1,4 +1,4 @@
-use super::internal::*;
+use super::plumbing::*;
 use super::*;
 use std::cmp::min;
 
@@ -8,6 +8,7 @@ use std::cmp::min;
 
 
 #[must_use = "iterator adaptors are lazy and do nothing unless consumed"]
+#[derive(Debug, Clone)]
 pub struct Take<I> {
     base: I,
     n: usize,
@@ -16,7 +17,7 @@ pub struct Take<I> {
 
 
 
-pub fn new<I>(mut base: I, n: usize) -> Take<I>
+pub fn new<I>(base: I, n: usize) -> Take<I>
     where I: IndexedParallelIterator
 {
     let n = min(base.len(), n);
@@ -34,7 +35,7 @@ impl<I> ParallelIterator for Take<I>
         bridge(self, consumer)
     }
 
-    fn opt_len(&mut self) -> Option<usize> {
+    fn opt_len(&self) -> Option<usize> {
         Some(self.len())
     }
 }
@@ -42,7 +43,7 @@ impl<I> ParallelIterator for Take<I>
 impl<I> IndexedParallelIterator for Take<I>
     where I: IndexedParallelIterator
 {
-    fn len(&mut self) -> usize {
+    fn len(&self) -> usize {
         self.n
     }
 

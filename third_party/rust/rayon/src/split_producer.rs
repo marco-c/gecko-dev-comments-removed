@@ -2,7 +2,7 @@
 
 
 
-use iter::internal::{UnindexedProducer, Folder};
+use iter::plumbing::{UnindexedProducer, Folder};
 
 
 pub struct SplitProducer<'p, P: 'p, V> {

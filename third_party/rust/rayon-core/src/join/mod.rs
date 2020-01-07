@@ -1,13 +1,67 @@
 use latch::{LatchProbe, SpinLatch};
-#[allow(unused_imports)]
 use log::Event::*;
 use job::StackJob;
 use registry::{self, WorkerThread};
 use std::any::Any;
 use unwind;
 
+use FnContext;
+
 #[cfg(test)]
 mod test;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -43,18 +97,36 @@ pub fn join<A, B, RA, RB>(oper_a: A, oper_b: B) -> (RA, RB)
           RA: Send,
           RB: Send
 {
-    registry::in_worker(|worker_thread| unsafe {
+    join_context(|_| oper_a(), |_| oper_b())
+}
+
+
+
+
+
+
+
+
+pub fn join_context<A, B, RA, RB>(oper_a: A, oper_b: B) -> (RA, RB)
+    where A: FnOnce(FnContext) -> RA + Send,
+          B: FnOnce(FnContext) -> RB + Send,
+          RA: Send,
+          RB: Send
+{
+    registry::in_worker(|worker_thread, injected| unsafe {
         log!(Join { worker: worker_thread.index() });
 
         
         
         
-        let job_b = StackJob::new(oper_b, SpinLatch::new());
+        let job_b = StackJob::new(|migrated| oper_b(FnContext::new(migrated)),
+                                  SpinLatch::new());
         let job_b_ref = job_b.as_job_ref();
         worker_thread.push(job_b_ref);
 
         
-        let result_a = match unwind::halt_unwinding(oper_a) {
+        let status_a = unwind::halt_unwinding(move || oper_a(FnContext::new(injected)));
+        let result_a = match status_a {
             Ok(v) => v,
             Err(err) => join_recover_from_panic(worker_thread, &job_b.latch, err),
         };
@@ -71,7 +143,7 @@ pub fn join<A, B, RA, RB>(oper_a: A, oper_b: B) -> (RA, RB)
                     
                     
                     log!(PoppedRhs { worker: worker_thread.index() });
-                    let result_b = job_b.run_inline();
+                    let result_b = job_b.run_inline(injected);
                     return (result_a, result_b);
                 } else {
                     log!(PoppedJob { worker: worker_thread.index() });

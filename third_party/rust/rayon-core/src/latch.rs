@@ -1,5 +1,8 @@
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Mutex, Condvar};
+use std::usize;
+
+use sleep::Sleep;
 
 
 
@@ -113,6 +116,7 @@ impl Latch for LockLatch {
 
 
 
+#[derive(Debug)]
 pub struct CountLatch {
     counter: AtomicUsize,
 }
@@ -143,5 +147,39 @@ impl Latch for CountLatch {
     #[inline]
     fn set(&self) {
         self.counter.fetch_sub(1, Ordering::SeqCst);
+    }
+}
+
+
+
+
+
+pub struct TickleLatch<'a, L: Latch> {
+    inner: L,
+    sleep: &'a Sleep,
+}
+
+impl<'a, L: Latch> TickleLatch<'a, L> {
+    #[inline]
+    pub fn new(latch: L, sleep: &'a Sleep) -> Self {
+        TickleLatch {
+            inner: latch,
+            sleep: sleep,
+        }
+    }
+}
+
+impl<'a, L: Latch> LatchProbe for TickleLatch<'a, L> {
+    #[inline]
+    fn probe(&self) -> bool {
+        self.inner.probe()
+    }
+}
+
+impl<'a, L: Latch> Latch for TickleLatch<'a, L> {
+    #[inline]
+    fn set(&self) {
+        self.inner.set();
+        self.sleep.tickle(usize::MAX);
     }
 }

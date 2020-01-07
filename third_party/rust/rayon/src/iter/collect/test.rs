@@ -5,7 +5,7 @@
 
 
 
-use iter::internal::*;
+use iter::plumbing::*;
 use super::Collect;
 
 

@@ -1,38 +1,23 @@
-use ::{Configuration, ExitHandler, PanicHandler, StartHandler};
-use coco::deque::{self, Worker, Stealer};
+use ::{ExitHandler, PanicHandler, StartHandler, ThreadPoolBuilder, ThreadPoolBuildError, ErrorKind};
+use crossbeam_deque::{Deque, Steal, Stealer};
 use job::{JobRef, StackJob};
-use latch::{LatchProbe, Latch, CountLatch, LockLatch};
-#[allow(unused_imports)]
+#[cfg(rayon_unstable)]
+use job::Job;
+#[cfg(rayon_unstable)]
+use internal::task::Task;
+use latch::{LatchProbe, Latch, CountLatch, LockLatch, SpinLatch, TickleLatch};
 use log::Event::*;
 use rand::{self, Rng};
 use sleep::Sleep;
 use std::any::Any;
-use std::error::Error;
 use std::cell::{Cell, UnsafeCell};
 use std::sync::{Arc, Mutex, Once, ONCE_INIT};
 use std::thread;
 use std::mem;
-use std::fmt;
 use std::u32;
 use std::usize;
 use unwind;
 use util::leak;
-
-
-#[derive(Debug,PartialEq)]
-struct GlobalPoolAlreadyInitialized;
-
-impl fmt::Display for GlobalPoolAlreadyInitialized {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.write_str(self.description())
-    }
-}
-
-impl Error for GlobalPoolAlreadyInitialized {
-    fn description(&self) -> &str {
-        "The global thread pool has already been initialized."
-    }
-}
 
 pub struct Registry {
     thread_infos: Vec<ThreadInfo>,
@@ -60,7 +45,7 @@ pub struct Registry {
 }
 
 struct RegistryState {
-    job_injector: Worker<JobRef>,
+    job_injector: Deque<JobRef>,
 }
 
 
@@ -73,23 +58,23 @@ static THE_REGISTRY_SET: Once = ONCE_INIT;
 
 
 fn global_registry() -> &'static Arc<Registry> {
-    THE_REGISTRY_SET.call_once(|| unsafe { init_registry(Configuration::new()).unwrap() });
+    THE_REGISTRY_SET.call_once(|| unsafe { init_registry(ThreadPoolBuilder::new()).unwrap() });
     unsafe { THE_REGISTRY.expect("The global thread pool has not been initialized.") }
 }
 
 
 
-pub fn init_global_registry(config: Configuration) -> Result<&'static Registry, Box<Error>> {
+pub fn init_global_registry(builder: ThreadPoolBuilder) -> Result<&'static Registry, ThreadPoolBuildError> {
     let mut called = false;
     let mut init_result = Ok(());;
     THE_REGISTRY_SET.call_once(|| unsafe {
-        init_result = init_registry(config);
+        init_result = init_registry(builder);
         called = true;
     });
     if called {
         init_result.map(|()| &**global_registry())
     } else {
-        Err(Box::new(GlobalPoolAlreadyInitialized))
+        Err(ThreadPoolBuildError::new(ErrorKind::GlobalPoolAlreadyInitialized))
     }
 }
 
@@ -97,8 +82,8 @@ pub fn init_global_registry(config: Configuration) -> Result<&'static Registry, 
 
 
 
-unsafe fn init_registry(config: Configuration) -> Result<(), Box<Error>> {
-    Registry::new(config).map(|registry| THE_REGISTRY = Some(leak(registry)))
+unsafe fn init_registry(builder: ThreadPoolBuilder) -> Result<(), ThreadPoolBuildError> {
+    Registry::new(builder).map(|registry| THE_REGISTRY = Some(leak(registry)))
 }
 
 struct Terminator<'a>(&'a Arc<Registry>);
@@ -110,12 +95,16 @@ impl<'a> Drop for Terminator<'a> {
 }
 
 impl Registry {
-    pub fn new(mut configuration: Configuration) -> Result<Arc<Registry>, Box<Error>> {
-        let n_threads = configuration.get_num_threads();
-        let breadth_first = configuration.get_breadth_first();
+    pub fn new(mut builder: ThreadPoolBuilder) -> Result<Arc<Registry>, ThreadPoolBuildError> {
+        let n_threads = builder.get_num_threads();
+        let breadth_first = builder.get_breadth_first();
 
-        let (inj_worker, inj_stealer) = deque::new();
-        let (workers, stealers): (Vec<_>, Vec<_>) = (0..n_threads).map(|_| deque::new()).unzip();
+        let inj_worker = Deque::new();
+        let inj_stealer = inj_worker.stealer();
+        let workers: Vec<_> = (0..n_threads)
+            .map(|_| Deque::new())
+            .collect();
+        let stealers: Vec<_> = workers.iter().map(|d| d.stealer()).collect();
 
         let registry = Arc::new(Registry {
             thread_infos: stealers.into_iter()
@@ -125,9 +114,9 @@ impl Registry {
             sleep: Sleep::new(),
             job_uninjector: inj_stealer,
             terminate_latch: CountLatch::new(),
-            panic_handler: configuration.take_panic_handler(),
-            start_handler: configuration.take_start_handler(),
-            exit_handler: configuration.take_exit_handler(),
+            panic_handler: builder.take_panic_handler(),
+            start_handler: builder.take_start_handler(),
+            exit_handler: builder.take_exit_handler(),
         });
 
         
@@ -136,13 +125,15 @@ impl Registry {
         for (index, worker) in workers.into_iter().enumerate() {
             let registry = registry.clone();
             let mut b = thread::Builder::new();
-            if let Some(name) = configuration.get_thread_name(index) {
+            if let Some(name) = builder.get_thread_name(index) {
                 b = b.name(name);
             }
-            if let Some(stack_size) = configuration.get_stack_size() {
+            if let Some(stack_size) = builder.get_stack_size() {
                 b = b.stack_size(stack_size);
             }
-            try!(b.spawn(move || unsafe { main_loop(worker, registry, index, breadth_first) }));
+            if let Err(e) = b.spawn(move || unsafe { main_loop(worker, registry, index, breadth_first) }) {
+                return Err(ThreadPoolBuildError::new(ErrorKind::IOError(e)))
+            }
         }
 
         
@@ -151,6 +142,7 @@ impl Registry {
         Ok(registry.clone())
     }
 
+    #[cfg(rayon_unstable)]
     pub fn global() -> Arc<Registry> {
         global_registry().clone()
     }
@@ -237,8 +229,8 @@ impl Registry {
     
     
     pub fn inject_or_push(&self, job_ref: JobRef) {
+        let worker_thread = WorkerThread::current();
         unsafe {
-            let worker_thread = WorkerThread::current();
             if !worker_thread.is_null() && (*worker_thread).registry().id() == self.id() {
                 (*worker_thread).push(job_ref);
             } else {
@@ -249,7 +241,54 @@ impl Registry {
 
     
     
-    pub unsafe fn inject(&self, injected_jobs: &[JobRef]) {
+    #[cfg(rayon_unstable)]
+    pub unsafe fn submit_task<T>(&self, task: Arc<T>)
+        where T: Task
+    {
+        let task_job = TaskJob::new(task);
+        let task_job_ref = TaskJob::into_job_ref(task_job);
+        return self.inject_or_push(task_job_ref);
+
+        
+        
+        struct TaskJob<T: Task> {
+            _data: T
+        }
+
+        impl<T: Task> TaskJob<T> {
+            fn new(arc: Arc<T>) -> Arc<Self> {
+                
+                
+                
+                
+                
+                unsafe { mem::transmute(arc) }
+            }
+
+            pub fn into_task(this: Arc<TaskJob<T>>) -> Arc<T> {
+                
+                unsafe { mem::transmute(this) }
+            }
+
+            unsafe fn into_job_ref(this: Arc<Self>) -> JobRef {
+                let this: *const Self = mem::transmute(this);
+                JobRef::new(this)
+            }
+        }
+
+        impl<T: Task> Job for TaskJob<T> {
+            unsafe fn execute(this: *const Self) {
+                let this: Arc<Self> = mem::transmute(this);
+                let task: Arc<T> = TaskJob::into_task(this);
+                Task::execute(task);
+            }
+        }
+    }
+
+    
+    
+    
+    pub fn inject(&self, injected_jobs: &[JobRef]) {
         log!(InjectJobs { count: injected_jobs.len() });
         {
             let state = self.state.lock().unwrap();
@@ -269,11 +308,73 @@ impl Registry {
     }
 
     fn pop_injected_job(&self, worker_index: usize) -> Option<JobRef> {
-        let stolen = self.job_uninjector.steal();
-        if stolen.is_some() {
-            log!(UninjectedWork { worker: worker_index });
+        loop {
+            match self.job_uninjector.steal() {
+                Steal::Empty => return None,
+                Steal::Data(d) => {
+                    log!(UninjectedWork { worker: worker_index });
+                    return Some(d);
+                },
+                Steal::Retry => {},
+            }
         }
-        stolen
+    }
+
+    
+    
+    
+    
+    
+    pub fn in_worker<OP, R>(&self, op: OP) -> R
+        where OP: FnOnce(&WorkerThread, bool) -> R + Send, R: Send
+    {
+        unsafe {
+            let worker_thread = WorkerThread::current();
+            if worker_thread.is_null() {
+                self.in_worker_cold(op)
+            } else if (*worker_thread).registry().id() != self.id() {
+                self.in_worker_cross(&*worker_thread, op)
+            } else {
+                
+                
+                
+                op(&*worker_thread, false)
+            }
+        }
+    }
+
+    #[cold]
+    unsafe fn in_worker_cold<OP, R>(&self, op: OP) -> R
+        where OP: FnOnce(&WorkerThread, bool) -> R + Send, R: Send
+    {
+        
+        debug_assert!(WorkerThread::current().is_null());
+        let job = StackJob::new(|injected| {
+            let worker_thread = WorkerThread::current();
+            assert!(injected && !worker_thread.is_null());
+            op(&*worker_thread, true)
+        }, LockLatch::new());
+        self.inject(&[job.as_job_ref()]);
+        job.latch.wait();
+        job.into_result()
+    }
+
+    #[cold]
+    unsafe fn in_worker_cross<OP, R>(&self, current_thread: &WorkerThread, op: OP) -> R
+        where OP: FnOnce(&WorkerThread, bool) -> R + Send, R: Send
+    {
+        
+        
+        debug_assert!(current_thread.registry().id() != self.id());
+        let latch = TickleLatch::new(SpinLatch::new(), &current_thread.registry().sleep);
+        let job = StackJob::new(|injected| {
+            let worker_thread = WorkerThread::current();
+            assert!(injected && !worker_thread.is_null());
+            op(&*worker_thread, true)
+        }, latch);
+        self.inject(&[job.as_job_ref()]);
+        current_thread.wait_until(&job.latch);
+        job.into_result()
     }
 
     
@@ -309,13 +410,13 @@ impl Registry {
     }
 }
 
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct RegistryId {
     addr: usize
 }
 
 impl RegistryState {
-    pub fn new(job_injector: Worker<JobRef>) -> RegistryState {
+    pub fn new(job_injector: Deque<JobRef>) -> RegistryState {
         RegistryState {
             job_injector: job_injector,
         }
@@ -351,7 +452,7 @@ impl ThreadInfo {
 
 pub struct WorkerThread {
     
-    worker: Worker<JobRef>,
+    worker: Deque<JobRef>,
 
     index: usize,
 
@@ -423,7 +524,13 @@ impl WorkerThread {
         if !self.breadth_first {
             self.worker.pop()
         } else {
-            self.worker.steal()
+            loop {
+                match self.worker.steal() {
+                    Steal::Empty => return None,
+                    Steal::Data(d) => return Some(d),
+                    Steal::Retry => {},
+                }
+            }
         }
     }
 
@@ -511,11 +618,19 @@ impl WorkerThread {
             .filter(|&i| i != self.index)
             .filter_map(|victim_index| {
                 let victim = &self.registry.thread_infos[victim_index];
-                let stolen = victim.stealer.steal();
-                if stolen.is_some() {
-                    log!(StoleWork { worker: self.index, victim: victim_index });
+                loop {
+                    match victim.stealer.steal() {
+                        Steal::Empty => return None,
+                        Steal::Data(d) => {
+                            log!(StoleWork {
+                                worker: self.index,
+                                victim: victim_index
+                            });
+                            return Some(d);
+                        },
+                        Steal::Retry => {},
+                    }
                 }
-                stolen
             })
             .next()
     }
@@ -523,7 +638,7 @@ impl WorkerThread {
 
 
 
-unsafe fn main_loop(worker: Worker<JobRef>,
+unsafe fn main_loop(worker: Deque<JobRef>,
                     registry: Arc<Registry>,
                     index: usize,
                     breadth_first: bool) {
@@ -585,8 +700,9 @@ unsafe fn main_loop(worker: Worker<JobRef>,
 
 
 
+
 pub fn in_worker<OP, R>(op: OP) -> R
-    where OP: FnOnce(&WorkerThread) -> R + Send, R: Send
+    where OP: FnOnce(&WorkerThread, bool) -> R + Send, R: Send
 {
     unsafe {
         let owner_thread = WorkerThread::current();
@@ -594,21 +710,9 @@ pub fn in_worker<OP, R>(op: OP) -> R
             
             
             
-            return op(&*owner_thread);
+            op(&*owner_thread, false)
         } else {
-            return in_worker_cold(op);
+            global_registry().in_worker_cold(op)
         }
     }
-}
-
-#[cold]
-unsafe fn in_worker_cold<OP, R>(op: OP) -> R
-    where OP: FnOnce(&WorkerThread) -> R + Send, R: Send
-{
-    
-    debug_assert!(WorkerThread::current().is_null());
-    let job = StackJob::new(|| in_worker(op), LockLatch::new());
-    global_registry().inject(&[job.as_job_ref()]);
-    job.latch.wait();
-    job.into_result()
 }

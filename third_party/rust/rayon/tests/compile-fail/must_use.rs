@@ -15,9 +15,15 @@ fn main() {
     v.par_iter().filter(|_| true);          
     v.par_iter().filter_map(|x| *x);        
     v.par_iter().flat_map(|x| *x);          
+    v.par_iter().flatten();                 
     v.par_iter().fold(|| 0, |x, _| x);      
     v.par_iter().fold_with(0, |x, _| x);    
     v.par_iter().inspect(|_| {});           
+    v.par_iter().update(|_| {});            
+    v.par_iter().interleave(&v);            
+    v.par_iter().interleave_shortest(&v);   
+    v.par_iter().intersperse(&None);        
+    v.par_iter().chunks(2);                 
     v.par_iter().map(|x| x);                
     v.par_iter().map_with(0, |_, x| x);     
     v.par_iter().rev();                     
@@ -27,4 +33,5 @@ fn main() {
     v.par_iter().with_max_len(1);           
     v.par_iter().with_min_len(1);           
     v.par_iter().zip(&v);                   
+    v.par_iter().zip_eq(&v);                
 }

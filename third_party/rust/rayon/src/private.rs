@@ -6,6 +6,7 @@
 
 
 
+#[allow(missing_debug_implementations)]
 pub struct PrivateMarker;
 
 macro_rules! private_decl {

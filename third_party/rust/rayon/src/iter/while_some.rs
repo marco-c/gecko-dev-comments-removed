@@ -1,5 +1,5 @@
 use std::sync::atomic::{AtomicBool, Ordering};
-use super::internal::*;
+use super::plumbing::*;
 use super::*;
 
 
@@ -10,6 +10,7 @@ use super::*;
 
 
 #[must_use = "iterator adaptors are lazy and do nothing unless consumed"]
+#[derive(Debug, Clone)]
 pub struct WhileSome<I: ParallelIterator> {
     base: I,
 }

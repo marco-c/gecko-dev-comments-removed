@@ -1,18 +1,22 @@
+
+
+
+
+
+#[allow(deprecated)]
 use Configuration;
-#[cfg(rayon_unstable)]
-use future::{Future, RayonFuture};
-use latch::LockLatch;
-#[allow(unused_imports)]
-use log::Event::*;
-use job::StackJob;
+use {ThreadPoolBuilder, ThreadPoolBuildError};
 use join;
 use {scope, Scope};
 use spawn;
 use std::sync::Arc;
 use std::error::Error;
+use std::fmt;
 use registry::{Registry, WorkerThread};
 
+mod internal;
 mod test;
+
 
 
 
@@ -48,13 +52,17 @@ pub struct ThreadPool {
     registry: Arc<Registry>,
 }
 
+pub fn build(builder: ThreadPoolBuilder) -> Result<ThreadPool, ThreadPoolBuildError> {
+    let registry = try!(Registry::new(builder));
+    Ok(ThreadPool { registry: registry })
+}
+
 impl ThreadPool {
-    
-    
+    #[deprecated(note = "Use `ThreadPoolBuilder::build`")]
+    #[allow(deprecated)]
     
     pub fn new(configuration: Configuration) -> Result<ThreadPool, Box<Error>> {
-        let registry = try!(Registry::new(configuration));
-        Ok(ThreadPool { registry: registry })
+        build(configuration.into_builder()).map_err(|e| e.into())
     }
 
     
@@ -110,16 +118,13 @@ impl ThreadPool {
     
     
     pub fn install<OP, R>(&self, op: OP) -> R
-        where OP: FnOnce() -> R + Send
+        where OP: FnOnce() -> R + Send,
+              R: Send
     {
-        unsafe {
-            let job_a = StackJob::new(op, LockLatch::new());
-            self.registry.inject(&[job_a.as_job_ref()]);
-            job_a.latch.wait();
-            job_a.into_result()
-        }
+        self.registry.in_worker(|_, _| op())
     }
 
+    
     
     
     
@@ -242,50 +247,20 @@ impl ThreadPool {
         
         unsafe { spawn::spawn_in(op, &self.registry) }
     }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[cfg(rayon_unstable)]
-    pub fn spawn_future<F>(&self, future: F) -> RayonFuture<F::Item, F::Error>
-        where F: Future + Send + 'static
-    {
-        
-        unsafe { spawn::spawn_future_in(future, self.registry.clone()) }
-    }
 }
 
 impl Drop for ThreadPool {
     fn drop(&mut self) {
         self.registry.terminate();
+    }
+}
+
+impl fmt::Debug for ThreadPool {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        fmt.debug_struct("ThreadPool")
+            .field("num_threads", &self.current_num_threads())
+            .field("id", &self.registry.id())
+            .finish()
     }
 }
 

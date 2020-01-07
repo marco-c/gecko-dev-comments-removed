@@ -1,5 +1,7 @@
-use super::internal::*;
+use super::plumbing::*;
 use super::*;
+
+use std::fmt::{self, Debug};
 
 
 
@@ -7,9 +9,18 @@ use super::*;
 
 
 #[must_use = "iterator adaptors are lazy and do nothing unless consumed"]
+#[derive(Clone)]
 pub struct FlatMap<I: ParallelIterator, F> {
     base: I,
     map_op: F,
+}
+
+impl<I: ParallelIterator + Debug, F> Debug for FlatMap<I, F> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("FlatMap")
+            .field("base", &self.base)
+            .finish()
+    }
 }
 
 

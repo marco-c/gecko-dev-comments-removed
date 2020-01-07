@@ -1,5 +1,7 @@
-use super::internal::*;
+use super::plumbing::*;
 use super::*;
+
+use std::fmt::{self, Debug};
 
 
 
@@ -7,9 +9,18 @@ use super::*;
 
 
 #[must_use = "iterator adaptors are lazy and do nothing unless consumed"]
+#[derive(Clone)]
 pub struct FilterMap<I: ParallelIterator, P> {
     base: I,
     filter_op: P,
+}
+
+impl<I: ParallelIterator + Debug, P> Debug for FilterMap<I, P> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("FilterMap")
+            .field("base", &self.base)
+            .finish()
+    }
 }
 
 

@@ -2,10 +2,27 @@
 
 
 
+
+
+
 use iter::*;
-use iter::internal::*;
+use iter::plumbing::*;
 use std;
 use std::sync::atomic::{AtomicBool, Ordering};
+
+
+
+
+
+
+
+
+
+
+#[derive(Debug, Clone)]
+pub struct IntoIter<T: Send> {
+    opt: Option<T>,
+}
 
 impl<T: Send> IntoParallelIterator for Option<T> {
     type Item = T;
@@ -16,40 +33,16 @@ impl<T: Send> IntoParallelIterator for Option<T> {
     }
 }
 
-impl<'a, T: Sync> IntoParallelIterator for &'a Option<T> {
-    type Item = &'a T;
-    type Iter = Iter<'a, T>;
-
-    fn into_par_iter(self) -> Self::Iter {
-        Iter { inner: self.as_ref().into_par_iter() }
-    }
-}
-
-impl<'a, T: Send> IntoParallelIterator for &'a mut Option<T> {
-    type Item = &'a mut T;
-    type Iter = IterMut<'a, T>;
-
-    fn into_par_iter(self) -> Self::Iter {
-        IterMut { inner: self.as_mut().into_par_iter() }
-    }
-}
-
-
-
-pub struct IntoIter<T: Send> {
-    opt: Option<T>,
-}
-
 impl<T: Send> ParallelIterator for IntoIter<T> {
     type Item = T;
 
     fn drive_unindexed<C>(self, consumer: C) -> C::Result
         where C: UnindexedConsumer<Self::Item>
     {
-        bridge(self, consumer)
+        self.drive(consumer)
     }
 
-    fn opt_len(&mut self) -> Option<usize> {
+    fn opt_len(&self) -> Option<usize> {
         Some(self.len())
     }
 }
@@ -58,10 +51,14 @@ impl<T: Send> IndexedParallelIterator for IntoIter<T> {
     fn drive<C>(self, consumer: C) -> C::Result
         where C: Consumer<Self::Item>
     {
-        bridge(self, consumer)
+        let mut folder = consumer.into_folder();
+        if let Some(item) = self.opt {
+            folder = folder.consume(item);
+        }
+        folder.complete()
     }
 
-    fn len(&mut self) -> usize {
+    fn len(&self) -> usize {
         match self.opt {
             Some(_) => 1,
             None => 0,
@@ -76,16 +73,65 @@ impl<T: Send> IndexedParallelIterator for IntoIter<T> {
 }
 
 
+
+
+
+
+
+
+
+
+#[derive(Debug)]
+pub struct Iter<'a, T: Sync + 'a> {
+    inner: IntoIter<&'a T>,
+}
+
+impl<'a, T: Sync> Clone for Iter<'a, T> {
+    fn clone(&self) -> Self {
+        Iter { inner: self.inner.clone() }
+    }
+}
+
+impl<'a, T: Sync> IntoParallelIterator for &'a Option<T> {
+    type Item = &'a T;
+    type Iter = Iter<'a, T>;
+
+    fn into_par_iter(self) -> Self::Iter {
+        Iter { inner: self.as_ref().into_par_iter() }
+    }
+}
+
 delegate_indexed_iterator!{
-    #[doc = "Parallel iterator over an immutable reference to an option"]
-    Iter<'a, T> => IntoIter<&'a T>,
+    Iter<'a, T> => &'a T,
     impl<'a, T: Sync + 'a>
 }
 
 
+
+
+
+
+
+
+
+
+
+#[derive(Debug)]
+pub struct IterMut<'a, T: Send + 'a> {
+    inner: IntoIter<&'a mut T>,
+}
+
+impl<'a, T: Send> IntoParallelIterator for &'a mut Option<T> {
+    type Item = &'a mut T;
+    type Iter = IterMut<'a, T>;
+
+    fn into_par_iter(self) -> Self::Iter {
+        IterMut { inner: self.as_mut().into_par_iter() }
+    }
+}
+
 delegate_indexed_iterator!{
-    #[doc = "Parallel iterator over a mutable reference to an option"]
-    IterMut<'a, T> => IntoIter<&'a mut T>,
+    IterMut<'a, T> => &'a mut T,
     impl<'a, T: Send + 'a>
 }
 
@@ -104,6 +150,7 @@ impl<T: Send> Producer for OptionProducer<T> {
     }
 
     fn split_at(self, index: usize) -> (Self, Self) {
+        debug_assert!(index <= 1);
         let none = OptionProducer { opt: None };
         if index == 0 {
             (none, self)

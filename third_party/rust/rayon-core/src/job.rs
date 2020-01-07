@@ -16,6 +16,9 @@ pub enum JobResult<T> {
 
 
 pub trait Job {
+    
+    
+    
     unsafe fn execute(this: *const Self);
 }
 
@@ -35,6 +38,8 @@ unsafe impl Send for JobRef {}
 unsafe impl Sync for JobRef {}
 
 impl JobRef {
+    
+    
     pub unsafe fn new<T>(data: *const T) -> JobRef
         where T: Job
     {
@@ -59,14 +64,21 @@ impl JobRef {
 
 
 
-pub struct StackJob<L: Latch, F, R> {
+
+pub struct StackJob<L, F, R>
+    where L: Latch + Sync,
+          F: FnOnce(bool) -> R + Send,
+          R: Send
+{
     pub latch: L,
     func: UnsafeCell<Option<F>>,
     result: UnsafeCell<JobResult<R>>,
 }
 
-impl<L: Latch, F, R> StackJob<L, F, R>
-    where F: FnOnce() -> R + Send
+impl<L, F, R> StackJob<L, F, R>
+    where L: Latch + Sync,
+          F: FnOnce(bool) -> R + Send,
+          R: Send
 {
     pub fn new(func: F, latch: L) -> StackJob<L, F, R> {
         StackJob {
@@ -80,8 +92,8 @@ impl<L: Latch, F, R> StackJob<L, F, R>
         JobRef::new(self)
     }
 
-    pub unsafe fn run_inline(self) -> R {
-        self.func.into_inner().unwrap()()
+    pub unsafe fn run_inline(self, stolen: bool) -> R {
+        self.func.into_inner().unwrap()(stolen)
     }
 
     pub unsafe fn into_result(self) -> R {
@@ -89,14 +101,16 @@ impl<L: Latch, F, R> StackJob<L, F, R>
     }
 }
 
-impl<L: Latch, F, R> Job for StackJob<L, F, R>
-    where F: FnOnce() -> R
+impl<L, F, R> Job for StackJob<L, F, R>
+    where L: Latch + Sync,
+          F: FnOnce(bool) -> R + Send,
+          R: Send
 {
     unsafe fn execute(this: *const Self) {
         let this = &*this;
         let abort = unwind::AbortIfPanic;
         let func = (*this.func.get()).take().unwrap();
-        (*this.result.get()) = match unwind::halt_unwinding(|| func()) {
+        (*this.result.get()) = match unwind::halt_unwinding(|| func(true)) {
             Ok(x) => JobResult::Ok(x),
             Err(x) => JobResult::Panic(x),
         };
@@ -112,13 +126,13 @@ impl<L: Latch, F, R> Job for StackJob<L, F, R>
 
 
 pub struct HeapJob<BODY>
-    where BODY: FnOnce()
+    where BODY: FnOnce() + Send
 {
     job: UnsafeCell<Option<BODY>>,
 }
 
 impl<BODY> HeapJob<BODY>
-    where BODY: FnOnce()
+    where BODY: FnOnce() + Send
 {
     pub fn new(func: BODY) -> Self {
         HeapJob { job: UnsafeCell::new(Some(func)) }
@@ -134,7 +148,7 @@ impl<BODY> HeapJob<BODY>
 }
 
 impl<BODY> Job for HeapJob<BODY>
-    where BODY: FnOnce()
+    where BODY: FnOnce() + Send
 {
     unsafe fn execute(this: *const Self) {
         let this: Box<Self> = mem::transmute(this);

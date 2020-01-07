@@ -18,58 +18,10 @@
 
 
 macro_rules! delegate_iterator {
-    ($( #[ $attr:meta ] )+
-     $iter:ident < $( $i:tt ),* > => $( $inner:ident )::+ < $item:ty > ,
+    ($iter:ty => $item:ty ,
      impl $( $args:tt )*
      ) => {
-        delegate_iterator_item!{
-            $( #[ $attr ] )+
-            $iter < $( $i ),* > => $( $inner )::+ < $item > : $item ,
-            impl $( $args )*
-        }
-    }
-}
-
-
-
-macro_rules! delegate_indexed_iterator {
-    ($( #[ $attr:meta ] )+
-     $iter:ident < $( $i:tt ),* > => $( $inner:ident )::+ < $item:ty > ,
-     impl $( $args:tt )*
-     ) => {
-        delegate_indexed_iterator_item!{
-            $( #[ $attr ] )+
-            $iter < $( $i ),* > => $( $inner )::+ < $item > : $item ,
-            impl $( $args )*
-        }
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-macro_rules! delegate_iterator_item {
-    ($( #[ $attr:meta ] )+
-     $iter:ident < $( $i:tt ),* > => $inner:ty : $item:ty,
-     impl $( $args:tt )*
-     ) => {
-        $( #[ $attr ] )+
-        pub struct $iter $( $args )* {
-            inner: $inner,
-        }
-
-        impl $( $args )* ParallelIterator for $iter < $( $i ),* > {
+        impl $( $args )* ParallelIterator for $iter {
             type Item = $item;
 
             fn drive_unindexed<C>(self, consumer: C) -> C::Result
@@ -78,7 +30,7 @@ macro_rules! delegate_iterator_item {
                 self.inner.drive_unindexed(consumer)
             }
 
-            fn opt_len(&mut self) -> Option<usize> {
+            fn opt_len(&self) -> Option<usize> {
                 self.inner.opt_len()
             }
         }
@@ -87,25 +39,24 @@ macro_rules! delegate_iterator_item {
 
 
 
-macro_rules! delegate_indexed_iterator_item {
-    ($( #[ $attr:meta ] )+
-     $iter:ident < $( $i:tt ),* > => $inner:ty : $item:ty,
+
+macro_rules! delegate_indexed_iterator {
+    ($iter:ty => $item:ty ,
      impl $( $args:tt )*
      ) => {
-        delegate_iterator_item!{
-            $( #[ $attr ] )+
-            $iter < $( $i ),* > => $inner : $item ,
+        delegate_iterator!{
+            $iter => $item ,
             impl $( $args )*
         }
 
-        impl $( $args )* IndexedParallelIterator for $iter < $( $i ),* > {
+        impl $( $args )* IndexedParallelIterator for $iter {
             fn drive<C>(self, consumer: C) -> C::Result
                 where C: Consumer<Self::Item>
             {
                 self.inner.drive(consumer)
             }
 
-            fn len(&mut self) -> usize {
+            fn len(&self) -> usize {
                 self.inner.len()
             }
 
