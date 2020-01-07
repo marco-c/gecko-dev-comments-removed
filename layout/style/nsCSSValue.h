@@ -10,6 +10,7 @@
 #define nsCSSValue_h___
 
 #include "mozilla/Attributes.h"
+#include "mozilla/CORSMode.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/ServoTypes.h"
 #include "mozilla/SheetType.h"
@@ -204,10 +205,16 @@ protected:
   
   
   bool mLoadedImage = false;
+  CORSMode mCORSMode = CORSMode::CORS_NONE;
 
   virtual ~URLValueData();
 
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
+
+public:
+  void SetCORSMode(CORSMode aCORSMode) {
+    mCORSMode = aCORSMode;
+  }
 
 private:
   URLValueData(const URLValueData& aOther) = delete;
@@ -237,7 +244,9 @@ struct URLValue final : public URLValueData
 
 struct ImageValue final : public URLValueData
 {
-  static ImageValue* CreateFromURLValue(URLValue* url, nsIDocument* aDocument);
+  static ImageValue* CreateFromURLValue(URLValue* url,
+                                        nsIDocument* aDocument,
+                                        CORSMode aCORSMode);
 
   
   
@@ -246,22 +255,26 @@ struct ImageValue final : public URLValueData
   
   ImageValue(nsIURI* aURI, const nsAString& aString,
              already_AddRefed<URLExtraData> aExtraData,
-             nsIDocument* aDocument);
+             nsIDocument* aDocument,
+             CORSMode aCORSMode);
 
   
   ImageValue(nsIURI* aURI, ServoRawOffsetArc<RustString> aString,
              already_AddRefed<URLExtraData> aExtraData,
-             nsIDocument* aDocument);
+             nsIDocument* aDocument,
+             CORSMode aCORSMode);
 
   
   
   ImageValue(const nsAString& aString,
-             already_AddRefed<URLExtraData> aExtraData);
+             already_AddRefed<URLExtraData> aExtraData,
+             CORSMode aCORSMode);
 
   
   
   ImageValue(ServoRawOffsetArc<RustString> aURIString,
-             already_AddRefed<URLExtraData> aExtraData);
+             already_AddRefed<URLExtraData> aExtraData,
+             CORSMode aCORSMode);
 
   ImageValue(const ImageValue&) = delete;
   ImageValue& operator=(const ImageValue&) = delete;
