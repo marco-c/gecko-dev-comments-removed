@@ -12,9 +12,8 @@ XPCOMUtils.defineLazyGetter(this, "log", Log.get);
 
 this.EXPORTED_SYMBOLS = ["pprint", "truncate"];
 
+const ELEMENT_NODE = 1;
 const MAX_STRING_LENGTH = 250;
-
-
 
 
 
@@ -36,8 +35,8 @@ const MAX_STRING_LENGTH = 250;
 function pprint(ss, ...values) {
   function pretty(val) {
     let proto = Object.prototype.toString.call(val);
-
-    if (val && val.nodeType === 1) {
+    if (typeof val == "object" && val !== null &&
+        "nodeType" in val && val.nodeType === ELEMENT_NODE) {
       return prettyElement(val);
     } else if (["[object Window]", "[object ChromeWindow]"].includes(proto)) {
       return prettyWindowGlobal(val);
