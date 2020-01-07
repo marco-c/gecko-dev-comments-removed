@@ -745,6 +745,29 @@ var BrowserTestUtils = {
 
 
 
+  waitForSessionStoreUpdate(tab) {
+    return new Promise(resolve => {
+      let {messageManager: mm, frameLoader} = tab.linkedBrowser;
+      mm.addMessageListener("SessionStore:update", function onMessage(msg) {
+        if (msg.targetFrameLoader == frameLoader && msg.data.isFinal) {
+          mm.removeMessageListener("SessionStore:update", onMessage);
+          
+          
+          TestUtils.executeSoon(() => resolve());
+        }
+      }, true);
+    });
+  },
+
+  
+
+
+
+
+
+
+
+
 
 
 
@@ -1141,6 +1164,18 @@ var BrowserTestUtils = {
         }
       }, true);
     });
+  },
+
+  
+
+
+
+
+
+
+
+  waitForTabClosing(tab) {
+    return this.waitForEvent(tab, "TabClose");
   },
 
   
