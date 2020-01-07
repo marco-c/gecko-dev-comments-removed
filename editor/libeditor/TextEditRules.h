@@ -42,6 +42,18 @@ class Selection;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 class TextEditRules : public nsITimerCallback
                     , public nsINamed
 {
@@ -75,7 +87,14 @@ public:
   virtual nsresult DidDoAction(Selection* aSelection,
                                RulesInfo* aInfo,
                                nsresult aResult);
+
+  
+
+
+
+
   virtual bool DocumentIsEmpty();
+
   virtual nsresult DocumentModified();
 
 protected:

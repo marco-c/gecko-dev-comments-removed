@@ -3390,16 +3390,6 @@ HTMLEditRules::InsertBRIfNeeded()
   return NS_OK;
 }
 
-
-
-
-
-
-
-
-
-
-
 EditorDOMPoint
 HTMLEditRules::GetGoodSelPointForNode(nsINode& aNode,
                                       nsIEditor::EDirection aAction)
@@ -6790,13 +6780,6 @@ HTMLEditRules::CheckForInvisibleBR(Element& aBlock,
   return nullptr;
 }
 
-
-
-
-
-
-
-
 void
 HTMLEditRules::GetInnerContent(
                  nsINode& aNode,
@@ -7150,10 +7133,6 @@ HTMLEditRules::NormalizeSelection()
   return NS_OK;
 }
 
-
-
-
-
 EditorDOMPoint
 HTMLEditRules::GetPromotedPoint(RulesEndpoint aWhere,
                                 nsINode& aNode,
@@ -7348,10 +7327,6 @@ HTMLEditRules::GetPromotedPoint(RulesEndpoint aWhere,
   return point;
 }
 
-
-
-
-
 void
 HTMLEditRules::GetPromotedRanges(nsTArray<RefPtr<nsRange>>& outArrayOfRanges,
                                  EditAction inOperationType)
@@ -7375,10 +7350,6 @@ HTMLEditRules::GetPromotedRanges(nsTArray<RefPtr<nsRange>>& outArrayOfRanges,
     outArrayOfRanges.AppendElement(opRange);
   }
 }
-
-
-
-
 
 void
 HTMLEditRules::PromoteRange(nsRange& aRange,
@@ -7477,13 +7448,6 @@ public:
 private:
   nsTArray<OwningNonNull<nsINode>>& mArray;
 };
-
-
-
-
-
-
-
 
 nsresult
 HTMLEditRules::GetNodesForOperation(
@@ -8002,10 +7966,6 @@ HTMLEditRules::GetHighestInlineParent(nsINode& aNode)
   return content;
 }
 
-
-
-
-
 nsresult
 HTMLEditRules::GetNodesFromPoint(
                  const EditorDOMPoint& aPoint,
@@ -8043,10 +8003,6 @@ HTMLEditRules::GetNodesFromPoint(
   return NS_OK;
 }
 
-
-
-
-
 nsresult
 HTMLEditRules::GetNodesFromSelection(
                  EditAction aOperation,
@@ -8069,10 +8025,6 @@ HTMLEditRules::GetNodesFromSelection(
   return NS_OK;
 }
 
-
-
-
-
 void
 HTMLEditRules::MakeTransitionList(nsTArray<OwningNonNull<nsINode>>& aNodeArray,
                                   nsTArray<bool>& aTransitionArray)
@@ -8091,11 +8043,6 @@ HTMLEditRules::MakeTransitionList(nsTArray<OwningNonNull<nsINode>>& aNodeArray,
     prevParent = aNodeArray[i]->GetParentNode();
   }
 }
-
-
-
-
-
 
 Element*
 HTMLEditRules::IsInListItem(nsINode* aNode)
@@ -10197,9 +10144,6 @@ HTMLEditRules::SelectionEndpointInNode(nsINode* aNode,
   return NS_OK;
 }
 
-
-
-
 bool
 HTMLEditRules::IsEmptyInline(nsINode& aNode)
 {
@@ -10767,10 +10711,6 @@ HTMLEditRules::WillDeleteSelection(Selection& aSelection)
   UpdateDocChangeRange(mUtilRange);
 }
 
-
-
-
-
 nsresult
 HTMLEditRules::RemoveAlignment(nsINode& aNode,
                                const nsAString& aAlignType,
@@ -10791,6 +10731,11 @@ HTMLEditRules::RemoveAlignment(nsINode& aNode,
 
   bool useCSS = HTMLEditorRef().IsCSSEnabled();
 
+
+  
+  
+  
+  
   while (child) {
     if (aDescendantsOnly) {
       

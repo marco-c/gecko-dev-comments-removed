@@ -70,6 +70,20 @@ struct StyleCache final : public PropItem
   }
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #define SIZE_STYLE_TABLE 19
 
 class HTMLEditRules : public TextEditRules
@@ -283,6 +297,16 @@ protected:
 
   MOZ_MUST_USE nsresult
   InsertBRIfNeededInternal(nsINode& aNode, bool aInsertMozBR);
+
+  
+
+
+
+
+
+
+
+
 
   EditorDOMPoint GetGoodSelPointForNode(nsINode& aNode,
                                         nsIEditor::EDirection aAction);
@@ -578,13 +602,28 @@ protected:
   nsresult AppendInnerFormatNodes(nsTArray<OwningNonNull<nsINode>>& aArray,
                                   nsINode* aNode);
   nsresult GetFormatString(nsINode* aNode, nsAString &outFormat);
+
+  
+
+
+
+
+
+
   enum class Lists { no, yes };
   enum class Tables { no, yes };
   void GetInnerContent(nsINode& aNode,
                        nsTArray<OwningNonNull<nsINode>>& aOutArrayOfNodes,
                        int32_t* aIndex, Lists aLists = Lists::yes,
                        Tables aTables = Tables::yes);
+
+  
+
+
+
+
   Element* IsInListItem(nsINode* aNode);
+
   nsAtom& DefaultParagraphSeparator();
 
   
@@ -845,27 +884,61 @@ protected:
 
   MOZ_MUST_USE nsresult NormalizeSelection();
 
+  
+
+
+
   EditorDOMPoint GetPromotedPoint(RulesEndpoint aWhere, nsINode& aNode,
                                   int32_t aOffset, EditAction actionID);
+
+  
+
+
+
   void GetPromotedRanges(nsTArray<RefPtr<nsRange>>& outArrayOfRanges,
                          EditAction inOperationType);
+
+  
+
+
+
   void PromoteRange(nsRange& aRange, EditAction inOperationType);
+
+  
+
+
+
+
+
+
   enum class TouchContent { no, yes };
   MOZ_MUST_USE nsresult
   GetNodesForOperation(nsTArray<RefPtr<nsRange>>& aArrayOfRanges,
                        nsTArray<OwningNonNull<nsINode>>& aOutArrayOfNodes,
                        EditAction aOperationType, TouchContent aTouchContent);
+
   void GetChildNodesForOperation(
          nsINode& aNode,
          nsTArray<OwningNonNull<nsINode>>& outArrayOfNodes);
+
+  
+
+
+
   MOZ_MUST_USE nsresult
   GetNodesFromPoint(const EditorDOMPoint& aPoint, EditAction aOperation,
                     nsTArray<OwningNonNull<nsINode>>& outArrayOfNodes,
                     TouchContent aTouchContent);
+
+  
+
+
+
   MOZ_MUST_USE nsresult
   GetNodesFromSelection(EditAction aOperation,
                         nsTArray<OwningNonNull<nsINode>>& outArrayOfNodes,
                         TouchContent aTouchContent);
+
   enum class EntireList { no, yes };
   MOZ_MUST_USE nsresult
   GetListActionNodes(nsTArray<OwningNonNull<nsINode>>& aOutArrayOfNodes,
@@ -908,6 +981,12 @@ protected:
 
 
   nsIContent* GetHighestInlineParent(nsINode& aNode);
+
+  
+
+
+
+
   void MakeTransitionList(nsTArray<OwningNonNull<nsINode>>& aNodeArray,
                           nsTArray<bool>& aTransitionArray);
 
@@ -1132,7 +1211,11 @@ protected:
 
   MOZ_MUST_USE nsresult ConfirmSelectionInBody();
 
+  
+
+
   bool IsEmptyInline(nsINode& aNode);
+
   bool ListIsEmptyLine(nsTArray<OwningNonNull<nsINode>>& arrayOfNodes);
 
   

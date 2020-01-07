@@ -393,11 +393,6 @@ TextEditRules::DidDoAction(Selection* aSelection,
   }
 }
 
-
-
-
-
-
 bool
 TextEditRules::DocumentIsEmpty()
 {
@@ -1196,13 +1191,6 @@ TextEditRules::WillUndo(bool* aCancel,
   return NS_OK;
 }
 
-
-
-
-
-
-
-
 nsresult
 TextEditRules::DidUndo(nsresult aResult)
 {
@@ -1217,6 +1205,12 @@ TextEditRules::DidUndo(nsresult aResult)
   if (NS_WARN_IF(!rootElement)) {
     return NS_ERROR_FAILURE;
   }
+
+  
+  
+  
+  
+  
   nsIContent* node = TextEditorRef().GetLeftmostChild(rootElement);
   if (node && TextEditorRef().IsMozEditorBogusNode(node)) {
     mBogusNode = node;
