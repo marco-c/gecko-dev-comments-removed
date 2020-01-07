@@ -392,11 +392,23 @@ this.geckoProfiler = class extends ExtensionAPI {
           }
 
           const cachedLibInfo = symbolCache.get(`${debugName}/${breakpadId}`);
+          if (!cachedLibInfo) {
+            throw new Error(
+              `The library ${debugName} ${breakpadId} is not in the Services.profiler.sharedLibraries list, ` +
+              "so the local path for it is not known and symbols for it can not be obtained. " +
+              "This usually happens if a content process uses a library that's not used in the parent " +
+              "process - Services.profiler.sharedLibraries only knows about libraries in the parent process.");
+          }
+
+          const {path, debugPath, arch} = cachedLibInfo;
+          if (!OS.Path.split(path).absolute) {
+            throw new Error(
+              `Services.profiler.sharedLibraries did not contain an absolute path for the library ${debugName} ${breakpadId}, ` +
+              "so symbols for this library can not be obtained.");
+          }
 
           const symbolRules = Services.prefs.getCharPref(PREF_GET_SYMBOL_RULES, "localBreakpad");
-          const haveAbsolutePath = cachedLibInfo && OS.Path.split(cachedLibInfo.path).absolute;
 
-          
           
           
           
@@ -407,40 +419,30 @@ this.geckoProfiler = class extends ExtensionAPI {
             try {
               switch (rule) {
                 case "localBreakpad":
-                  if (haveAbsolutePath) {
-                    const {path} = cachedLibInfo;
-                    const filepath = filePathForSymFileInObjDir(path, debugName, breakpadId);
-                    if (filepath) {
-                      
-                      
-                      
-                      return await parseSym({filepath});
-                    }
+                  const filepath = filePathForSymFileInObjDir(path, debugName, breakpadId);
+                  if (filepath) {
+                    
+                    
+                    
+                    return await parseSym({filepath});
                   }
                   break;
                 case "nm":
-                  if (haveAbsolutePath) {
-                    const {path, arch} = cachedLibInfo;
-                    return await getSymbolsFromNM(path, arch);
-                  }
-                  break;
+                  return await getSymbolsFromNM(path, arch);
                 case "dump_syms.exe":
-                  if (haveAbsolutePath) {
-                    const {path, debugPath} = cachedLibInfo;
-                    let dumpSymsPath = dumpSymsPathInObjDir(path);
-                    if (!dumpSymsPath && previouslySuccessfulDumpSymsPath) {
-                      
-                      
-                      
-                      
-                      dumpSymsPath = previouslySuccessfulDumpSymsPath;
-                    }
-                    if (dumpSymsPath) {
-                      const result =
-                        await getSymbolsUsingWindowsDumpSyms(dumpSymsPath, debugPath);
-                      previouslySuccessfulDumpSymsPath = dumpSymsPath;
-                      return result;
-                    }
+                  let dumpSymsPath = dumpSymsPathInObjDir(path);
+                  if (!dumpSymsPath && previouslySuccessfulDumpSymsPath) {
+                    
+                    
+                    
+                    
+                    dumpSymsPath = previouslySuccessfulDumpSymsPath;
+                  }
+                  if (dumpSymsPath) {
+                    const result =
+                      await getSymbolsUsingWindowsDumpSyms(dumpSymsPath, debugPath);
+                    previouslySuccessfulDumpSymsPath = dumpSymsPath;
+                    return result;
                   }
                   break;
               }
