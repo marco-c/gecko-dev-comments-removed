@@ -4193,22 +4193,6 @@ MacroAssemblerARMCompat::computePointer<Address>(const Address& src, Register r)
 } 
 } 
 
-template<typename T>
-void
-MacroAssemblerARMCompat::compareExchange(int nbytes, bool signExtend, const T& mem,
-                                         Register oldval, Register newval, Register output)
-{
-    
-    
-    
-    
-    
-    if (nbytes < 4 && !HasLDSTREXBHD())
-        compareExchangeARMv6(nbytes, signExtend, mem, oldval, newval, output);
-    else
-        compareExchangeARMv7(nbytes, signExtend, mem, oldval, newval, output);
-}
-
 
 
 
@@ -4232,8 +4216,8 @@ MacroAssemblerARMCompat::compareExchange(int nbytes, bool signExtend, const T& m
 
 template<typename T>
 void
-MacroAssemblerARMCompat::compareExchangeARMv7(int nbytes, bool signExtend, const T& mem,
-                                              Register oldval, Register newval, Register output)
+MacroAssemblerARMCompat::compareExchange(int nbytes, bool signExtend, const T& mem,
+                                         Register oldval, Register newval, Register output)
 {
     Label again;
     Label done;
@@ -4293,16 +4277,6 @@ MacroAssemblerARMCompat::compareExchangeARMv7(int nbytes, bool signExtend, const
     asMasm().memoryBarrier(MembarFull);
 }
 
-template<typename T>
-void
-MacroAssemblerARMCompat::compareExchangeARMv6(int nbytes, bool signExtend, const T& mem,
-                                              Register oldval, Register newval, Register output)
-{
-    
-    MOZ_ASSERT(nbytes == 1 || nbytes == 2);
-    MOZ_CRASH("NYI");
-}
-
 template void
 js::jit::MacroAssemblerARMCompat::compareExchange(int nbytes, bool signExtend,
                                                   const Address& address, Register oldval,
@@ -4318,21 +4292,6 @@ MacroAssemblerARMCompat::atomicExchange(int nbytes, bool signExtend, const T& me
                                         Register value, Register output)
 {
     
-    
-    
-    
-    
-    if (nbytes < 4 && !HasLDSTREXBHD())
-        atomicExchangeARMv6(nbytes, signExtend, mem, value, output);
-    else
-        atomicExchangeARMv7(nbytes, signExtend, mem, value, output);
-}
-
-template<typename T>
-void
-MacroAssemblerARMCompat::atomicExchangeARMv7(int nbytes, bool signExtend, const T& mem,
-                                             Register value, Register output)
-{
     Label again;
     Label done;
 
@@ -4370,16 +4329,6 @@ MacroAssemblerARMCompat::atomicExchangeARMv7(int nbytes, bool signExtend, const 
     bind(&done);
 
     asMasm().memoryBarrier(MembarFull);
-}
-
-template<typename T>
-void
-MacroAssemblerARMCompat::atomicExchangeARMv6(int nbytes, bool signExtend, const T& mem,
-                                             Register value, Register output)
-{
-    
-    MOZ_ASSERT(nbytes == 1 || nbytes == 2);
-    MOZ_CRASH("NYI");
 }
 
 template void
@@ -4428,21 +4377,6 @@ void
 MacroAssemblerARMCompat::atomicFetchOp(int nbytes, bool signExtend, AtomicOp op,
                                        const Register& value, const T& mem, Register flagTemp,
                                        Register output)
-{
-    
-    
-    
-    if (nbytes < 4 && !HasLDSTREXBHD())
-        atomicFetchOpARMv6(nbytes, signExtend, op, value, mem, flagTemp, output);
-    else
-        atomicFetchOpARMv7(nbytes, signExtend, op, value, mem, flagTemp, output);
-}
-
-template<typename T>
-void
-MacroAssemblerARMCompat::atomicFetchOpARMv7(int nbytes, bool signExtend, AtomicOp op,
-                                            const Register& value, const T& mem, Register flagTemp,
-                                            Register output)
 {
     MOZ_ASSERT(flagTemp != InvalidReg);
     MOZ_ASSERT(output != value);
@@ -4508,59 +4442,22 @@ MacroAssemblerARMCompat::atomicFetchOpARMv7(int nbytes, bool signExtend, AtomicO
     asMasm().memoryBarrier(MembarFull);
 }
 
-template<typename T>
-void
-MacroAssemblerARMCompat::atomicFetchOpARMv6(int nbytes, bool signExtend, AtomicOp op,
-                                            const Register& value, const T& mem, Register flagTemp,
-                                            Register output)
-{
-    
-    MOZ_ASSERT(nbytes == 1 || nbytes == 2);
-    MOZ_CRASH("NYI");
-}
+
+
+
+
+
+
+
+
+
+
+
+
 template<typename T>
 void
 MacroAssemblerARMCompat::atomicEffectOp(int nbytes, AtomicOp op, const Register& value,
                                         const T& mem, Register flagTemp)
-{
-    
-    
-    
-    if (nbytes < 4 && !HasLDSTREXBHD())
-        atomicEffectOpARMv6(nbytes, op, value, mem, flagTemp);
-    else
-        atomicEffectOpARMv7(nbytes, op, value, mem, flagTemp);
-}
-
-template<typename T>
-void
-MacroAssemblerARMCompat::atomicEffectOp(int nbytes, AtomicOp op, const Imm32& value,
-                                        const T& mem, Register flagTemp)
-{
-    
-    
-    
-    
-    
-    MOZ_CRASH("NYI");
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-template<typename T>
-void
-MacroAssemblerARMCompat::atomicEffectOpARMv7(int nbytes, AtomicOp op, const Register& value,
-                                             const T& mem, Register flagTemp)
 {
     MOZ_ASSERT(flagTemp != InvalidReg);
 
@@ -4622,11 +4519,14 @@ MacroAssemblerARMCompat::atomicEffectOpARMv7(int nbytes, AtomicOp op, const Regi
 
 template<typename T>
 void
-MacroAssemblerARMCompat::atomicEffectOpARMv6(int nbytes, AtomicOp op, const Register& value,
-                                             const T& mem, Register flagTemp)
+MacroAssemblerARMCompat::atomicEffectOp(int nbytes, AtomicOp op, const Imm32& value,
+                                        const T& mem, Register flagTemp)
 {
     
-    MOZ_ASSERT(nbytes == 1 || nbytes == 2);
+    
+    
+    
+    
     MOZ_CRASH("NYI");
 }
 
