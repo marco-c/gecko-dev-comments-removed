@@ -201,10 +201,6 @@ public:
     return mUndisplayedRestyleGeneration;
   }
 
-  
-  
-  uint32_t GetHoverGeneration() const { return mHoverGeneration; }
-
   void Disconnect() { mPresContext = nullptr; }
 
   static nsCString RestyleHintToString(nsRestyleHint aHint);
@@ -469,10 +465,6 @@ protected:
 
   bool IsDisconnected() const { return !mPresContext; }
 
-  void IncrementHoverGeneration() {
-    ++mHoverGeneration;
-  }
-
   void IncrementRestyleGeneration() {
     if (++mRestyleGeneration == 0) {
       
@@ -504,7 +496,6 @@ private:
   nsPresContext* mPresContext; 
   uint64_t mRestyleGeneration;
   uint64_t mUndisplayedRestyleGeneration;
-  uint32_t mHoverGeneration;
 
   
   
