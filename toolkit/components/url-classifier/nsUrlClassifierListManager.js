@@ -101,7 +101,8 @@ PROT_ListManager.prototype.registerTable = function(tableName,
     
     this.requestBackoffs_[updateUrl] = new RequestBackoffV4(
                                             4 ,
-                               60 * 60 * 1000 );
+                               60 * 60 * 1000 ,
+                                 providerName );
   }
   this.needsUpdate_[updateUrl][tableName] = false;
 
