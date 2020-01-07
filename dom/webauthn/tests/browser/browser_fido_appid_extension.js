@@ -18,7 +18,7 @@ function expectError(aType) {
 }
 
 let expectNotSupportedError = expectError("NotSupported");
-let expectNotAllowedError = expectError("NotAllowed");
+let expectInvalidStateError = expectError("InvalidState");
 let expectSecurityError = expectError("Security");
 
 function promiseU2FRegister(tab, app_id) {
@@ -111,9 +111,11 @@ add_task(async function test_appid() {
     .catch(expectNotSupportedError);
 
   
+  
+  
   await promiseWebAuthnSign(tab, keyHandle)
     .then(arrivingHereIsBad)
-    .catch(expectNotAllowedError);
+    .catch(expectInvalidStateError);
 
   
   await promiseWebAuthnSign(tab, keyHandle, {appid: "https://bogus.com/appId"})
@@ -121,9 +123,10 @@ add_task(async function test_appid() {
     .catch(expectSecurityError);
 
   
+  
   await promiseWebAuthnSign(tab, keyHandle, {appid: appid + "2"})
     .then(arrivingHereIsBad)
-    .catch(expectNotAllowedError);
+    .catch(expectInvalidStateError);
 
   let rpId = new TextEncoder("utf-8").encode(appid);
   let rpIdHash = await crypto.subtle.digest("SHA-256", rpId);
