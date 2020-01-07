@@ -454,14 +454,29 @@ FT2FontEntry::CairoFontFace(const gfxFontStyle* aStyle)
     
     
     
-    if (aStyle && !aStyle->variationSettings.IsEmpty() &&
-        mFTFace->face_flags & FT_FACE_FLAG_MULTIPLE_MASTERS) {
+    if ((!mVariationSettings.IsEmpty() ||
+        (aStyle && !aStyle->variationSettings.IsEmpty())) &&
+        (mFTFace->face_flags & FT_FACE_FLAG_MULTIPLE_MASTERS)) {
         int flags = gfxPlatform::GetPlatform()->FontHintingEnabled() ?
                     FT_LOAD_DEFAULT :
                     (FT_LOAD_NO_AUTOHINT | FT_LOAD_NO_HINTING);
+        
+        const nsTArray<gfxFontVariation>* settings;
+        AutoTArray<gfxFontVariation,8> mergedSettings;
+        if (aStyle) {
+            if (mVariationSettings.IsEmpty()) {
+                settings = &aStyle->variationSettings;
+            } else {
+                gfxFontUtils::MergeVariations(mVariationSettings,
+                                              aStyle->variationSettings,
+                                              &mergedSettings);
+                settings = &mergedSettings;
+            }
+        } else {
+            settings = &mVariationSettings;
+        }
         AutoTArray<FT_Fixed,8> coords;
-        gfxFT2FontBase::SetupVarCoords(mFTFace, aStyle->variationSettings,
-                                       &coords);
+        gfxFT2FontBase::SetupVarCoords(mFTFace, *settings, &coords);
         
         
         FT_Face ftFace;
@@ -473,7 +488,8 @@ FT2FontEntry::CairoFontFace(const gfxFontStyle* aStyle)
             ftFace = Factory::NewFTFaceFromData(nullptr, ufd->FontData(),
                                                 ufd->Length(), mFTFontIndex);
         }
-        FT_Set_Var_Design_Coordinates(ftFace, coords.Length(), coords.Elements());
+        
+        
         cairo_font_face_t* cairoFace =
             cairo_ft_font_face_create_for_ft_face(ftFace, flags,
                                                   coords.Elements(),
