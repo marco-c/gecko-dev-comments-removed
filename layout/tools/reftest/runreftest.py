@@ -282,6 +282,58 @@ class RefTest(object):
         locations.add_host(server, scheme='http', port=port)
         locations.add_host(server, scheme='https', port=port)
 
+        sandbox_whitelist_paths = options.sandboxReadWhitelist
+        if (platform.system() == "Linux" or
+            platform.system() in ("Windows", "Microsoft")):
+            
+            sandbox_whitelist_paths = map(lambda p: os.path.join(p, ""),
+                                          sandbox_whitelist_paths)
+
+        addons = []
+        if not self.use_marionette:
+            addons.append(options.reftestExtensionPath)
+
+        if options.specialPowersExtensionPath is not None:
+            if not self.use_marionette:
+                addons.append(options.specialPowersExtensionPath)
+
+        
+        distExtDir = os.path.join(options.app[:options.app.rfind(os.sep)],
+                                  "distribution", "extensions")
+        if os.path.isdir(distExtDir):
+            for f in os.listdir(distExtDir):
+                addons.append(os.path.join(distExtDir, f))
+
+        
+        for f in options.extensionsToInstall:
+            addons.append(self.getFullPath(f))
+
+        kwargs = {'addons': addons,
+                  'locations': locations,
+                  'whitelistpaths': sandbox_whitelist_paths}
+        if profile_to_clone:
+            profile = mozprofile.Profile.clone(profile_to_clone, **kwargs)
+        else:
+            profile = mozprofile.Profile(**kwargs)
+
+        
+        profile_data_dir = os.path.join(SCRIPT_DIRECTORY, 'profile_data')
+
+        
+        
+        
+        if build_obj:
+            path = os.path.join(build_obj.topsrcdir, 'testing', 'profiles')
+            if os.path.isdir(path):
+                profile_data_dir = path
+
+        with open(os.path.join(profile_data_dir, 'profiles.json'), 'r') as fh:
+            base_profiles = json.load(fh)['reftest']
+
+        for name in base_profiles:
+            path = os.path.join(profile_data_dir, name)
+            profile.merge(path)
+
         
         
         
@@ -307,6 +359,15 @@ class RefTest(object):
         prefs['reftest.runSlower'] = options.runSlower
 
         
+        if tests:
+            testlist = os.path.join(profile.profile, 'reftests.json')
+            with open(testlist, 'w') as fh:
+                json.dump(tests, fh)
+            prefs['reftest.tests'] = testlist
+        elif manifests:
+            prefs['reftest.manifests'] = json.dumps(manifests)
+
+        
         if options.e10s:
             prefs['browser.tabs.remote.autostart'] = True
         else:
@@ -323,13 +384,6 @@ class RefTest(object):
            '5.1' in platform.version() and options.e10s:
             prefs['layers.acceleration.disabled'] = True
 
-        sandbox_whitelist_paths = options.sandboxReadWhitelist
-        if (platform.system() == "Linux" or
-            platform.system() in ("Windows", "Microsoft")):
-            
-            sandbox_whitelist_paths = map(lambda p: os.path.join(p, ""),
-                                          sandbox_whitelist_paths)
-
         
         
         if platform.system() in ("Windows", "Microsoft") and \
@@ -345,9 +399,7 @@ class RefTest(object):
         
         prefs["marionette.log.level"] = "TRACE"
 
-        preference_file = os.path.join(here, 'reftest-preferences.js')
-        prefs.update(mozprofile.Preferences.read_prefs(preference_file))
-
+        
         for v in options.extraPrefs:
             thispref = v.split('=')
             if len(thispref) < 2:
@@ -355,44 +407,9 @@ class RefTest(object):
                 sys.exit(1)
             prefs[thispref[0]] = thispref[1].strip()
 
-        addons = []
-        if not self.use_marionette:
-            addons.append(options.reftestExtensionPath)
-
-        if options.specialPowersExtensionPath is not None:
-            if not self.use_marionette:
-                addons.append(options.specialPowersExtensionPath)
-
         for pref in prefs:
             prefs[pref] = mozprofile.Preferences.cast(prefs[pref])
-
-        
-        distExtDir = os.path.join(options.app[:options.app.rfind(os.sep)],
-                                  "distribution", "extensions")
-        if os.path.isdir(distExtDir):
-            for f in os.listdir(distExtDir):
-                addons.append(os.path.join(distExtDir, f))
-
-        
-        for f in options.extensionsToInstall:
-            addons.append(self.getFullPath(f))
-
-        kwargs = {'addons': addons,
-                  'preferences': prefs,
-                  'locations': locations,
-                  'whitelistpaths': sandbox_whitelist_paths}
-        if profile_to_clone:
-            profile = mozprofile.Profile.clone(profile_to_clone, **kwargs)
-        else:
-            profile = mozprofile.Profile(**kwargs)
-
-        if tests:
-            testlist = os.path.join(profile.profile, 'reftests.json')
-            with open(testlist, 'w') as fh:
-                json.dump(tests, fh)
-            profile.set_preferences({'reftest.tests': testlist})
-        elif manifests:
-            profile.set_preferences({'reftest.manifests': json.dumps(manifests)})
+        profile.set_preferences(prefs)
 
         if os.path.join(here, 'chrome') not in options.extraProfileFiles:
             options.extraProfileFiles.append(os.path.join(here, 'chrome'))
