@@ -312,13 +312,6 @@ protected:
 
   
   
-  AccessibleCaret::Appearance mFirstCaretAppearanceOnScrollStart =
-                                 AccessibleCaret::Appearance::None;
-  AccessibleCaret::Appearance mSecondCaretAppearanceOnScrollStart =
-                                 AccessibleCaret::Appearance::None;
-
-  
-  
   
   
   uint16_t mLastInputSource = dom::MouseEventBinding::MOZ_SOURCE_UNKNOWN;
@@ -354,11 +347,6 @@ protected:
   
   
   static bool sCaretsAlwaysTilt;
-
-  
-  
-  
-  static bool sCaretsAlwaysShowWhenScrolling;
 
   
   

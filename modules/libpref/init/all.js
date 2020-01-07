@@ -839,7 +839,7 @@ pref("gfx.downloadable_fonts.otl_validation", true);
 pref("gfx.downloadable_fonts.keep_color_bitmaps", false);
 
 
-pref("gfx.downloadable_fonts.validate_variation_tables", true);
+pref("gfx.downloadable_fonts.keep_variation_tables", true);
 
 #ifdef ANDROID
 pref("gfx.bundled_fonts.enabled", true);
@@ -2616,11 +2616,6 @@ pref("security.notification_enable_delay", 500);
 pref("security.csp.enable", true);
 pref("security.csp.experimentalEnabled", false);
 pref("security.csp.enableStrictDynamic", true);
-
-#if defined(DEBUG) && !defined(ANDROID)
-pref("csp.content_privileged_about_uris_without_csp", "blank,blocked,cache,certerror,checkerboard,credits,home,logo,neterror,newtab,printpreview,rights,srcdoc,studies");
-#endif
-
 #ifdef NIGHTLY_BUILD
 pref("security.csp.enable_violation_events", true);
 #else
@@ -5572,10 +5567,6 @@ pref("layout.accessiblecaret.use_long_tap_injector", false);
 
 
 pref("layout.accessiblecaret.always_tilt", false);
-
-
-
-pref("layout.accessiblecaret.always_show_when_scrolling", true);
 
 
 

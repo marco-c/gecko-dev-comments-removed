@@ -78,8 +78,6 @@ AccessibleCaretManager::sCaretShownWhenLongTappingOnEmptyContent = false;
  bool
 AccessibleCaretManager::sCaretsAlwaysTilt = false;
  bool
-AccessibleCaretManager::sCaretsAlwaysShowWhenScrolling = true;
- bool
 AccessibleCaretManager::sCaretsScriptUpdates = false;
  bool
 AccessibleCaretManager::sCaretsAllowDraggingAcrossOtherCaret = true;
@@ -108,8 +106,6 @@ AccessibleCaretManager::AccessibleCaretManager(nsIPresShell* aPresShell)
       "layout.accessiblecaret.caret_shown_when_long_tapping_on_empty_content");
     Preferences::AddBoolVarCache(&sCaretsAlwaysTilt,
                                  "layout.accessiblecaret.always_tilt");
-    Preferences::AddBoolVarCache(&sCaretsAlwaysShowWhenScrolling,
-      "layout.accessiblecaret.always_show_when_scrolling", true);
     Preferences::AddBoolVarCache(&sCaretsScriptUpdates,
       "layout.accessiblecaret.allow_script_change_updates");
     Preferences::AddBoolVarCache(&sCaretsAllowDraggingAcrossOtherCaret,
@@ -652,15 +648,6 @@ AccessibleCaretManager::OnScrollStart()
 
   mIsScrollStarted = true;
 
-  if (!sCaretsAlwaysShowWhenScrolling) {
-    
-    
-    mFirstCaretAppearanceOnScrollStart = mFirstCaret->GetAppearance();
-    mSecondCaretAppearanceOnScrollStart = mSecondCaret->GetAppearance();
-    HideCarets();
-    return;
-  }
-
   if (mFirstCaret->IsLogicallyVisible() || mSecondCaret->IsLogicallyVisible()) {
     
     
@@ -676,12 +663,6 @@ AccessibleCaretManager::OnScrollEnd()
   }
 
   mIsScrollStarted = false;
-
-  if (!sCaretsAlwaysShowWhenScrolling) {
-    
-    mFirstCaret->SetAppearance(mFirstCaretAppearanceOnScrollStart);
-    mSecondCaret->SetAppearance(mSecondCaretAppearanceOnScrollStart);
-  }
 
   if (GetCaretMode() == CaretMode::Cursor) {
     if (!mFirstCaret->IsLogicallyVisible()) {
