@@ -25,6 +25,10 @@ class ClientOpConstructorArgs;
 class PClientManagerChild;
 class ServiceWorkerDescriptor;
 
+namespace ipc {
+class StructuredCloneData;
+}
+
 
 
 
@@ -75,6 +79,16 @@ public:
   
   RefPtr<ClientStatePromise>
   Focus();
+
+  
+  
+  
+  
+  
+  
+  RefPtr<GenericPromise>
+  PostMessage(ipc::StructuredCloneData& aData,
+              const ServiceWorkerDescriptor& aSource);
 
   NS_INLINE_DECL_REFCOUNTING(ClientHandle);
 };

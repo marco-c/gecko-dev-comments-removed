@@ -8,6 +8,7 @@
 
 #include "ClientHandleParent.h"
 #include "ClientSourceParent.h"
+#include "mozilla/dom/PClientManagerParent.h"
 
 namespace mozilla {
 namespace dom {
@@ -34,7 +35,33 @@ ClientHandleOpParent::Init(const ClientOpConstructorArgs& aArgs)
     return;
   }
 
-  RefPtr<ClientOpPromise> p = source->StartOp(aArgs);
+  RefPtr<ClientOpPromise> p;
+
+  
+  
+  
+  
+  if (aArgs.type() == ClientOpConstructorArgs::TClientPostMessageArgs) {
+    const ClientPostMessageArgs& orig = aArgs.get_ClientPostMessageArgs();
+
+    ClientPostMessageArgs rebuild;
+    rebuild.serviceWorker() = orig.serviceWorker();
+
+    StructuredCloneData data;
+    data.BorrowFromClonedMessageDataForBackgroundParent(orig.clonedData());
+    if (!data.BuildClonedMessageDataForBackgroundParent(source->Manager()->Manager(),
+                                                        rebuild.clonedData())) {
+      Unused << PClientHandleOpParent::Send__delete__(this, NS_ERROR_DOM_ABORT_ERR);
+      return;
+    }
+
+    p = source->StartOp(rebuild);
+  }
+
+  
+  else {
+    p = source->StartOp(aArgs);
+  }
 
   
   
