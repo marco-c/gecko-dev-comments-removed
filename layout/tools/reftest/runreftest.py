@@ -331,12 +331,13 @@ class RefTest(object):
             prefs['reftest.nocache'] = True
 
         if options.marionette:
+            
             port = options.marionette.split(":")[1]
             prefs["marionette.port"] = int(port)
 
-            
-            
-            prefs["marionette.log.level"] = "TRACE"
+        
+        
+        prefs["marionette.log.level"] = "TRACE"
 
         preference_file = os.path.join(here, 'reftest-preferences.js')
         prefs.update(mozprofile.Preferences.read_prefs(preference_file))
