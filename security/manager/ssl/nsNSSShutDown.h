@@ -14,7 +14,6 @@
 #include "nspr.h"
 
 class nsNSSShutDownObject;
-class nsOnPK11LogoutCancelObject;
 
 
 class nsNSSActivityState
@@ -76,16 +75,7 @@ public:
 
   
   
-  static void remember(nsOnPK11LogoutCancelObject *o);
-  static void forget(nsOnPK11LogoutCancelObject *o);
-
-  
-  
   static nsresult evaporateAllNSSResourcesAndShutDown();
-
-  
-  
-  static nsresult doPK11Logout();
 
   
   
@@ -101,7 +91,6 @@ private:
 
 protected:
   PLDHashTable mObjects;
-  PLDHashTable mPK11LogoutCancelObjects;
   nsNSSActivityState mActivityState;
 };
 
@@ -241,38 +230,6 @@ protected:
   virtual void virtualDestroyNSSReference() = 0;
 private:
   volatile bool mAlreadyShutDown;
-};
-
-class nsOnPK11LogoutCancelObject
-{
-public:
-  nsOnPK11LogoutCancelObject()
-    : mIsLoggedOut(false)
-  {
-    nsNSSShutDownList::remember(this);
-  }
-
-  virtual ~nsOnPK11LogoutCancelObject()
-  {
-    nsNSSShutDownList::forget(this);
-  }
-
-  void logout()
-  {
-    
-    
-    
-    
-    mIsLoggedOut = true;
-  }
-
-  bool isPK11LoggedOut()
-  {
-    return mIsLoggedOut;
-  }
-
-private:
-  volatile bool mIsLoggedOut;
 };
 
 #endif 

@@ -43,7 +43,6 @@ nsNSSShutDownList *singleton = nullptr;
 
 nsNSSShutDownList::nsNSSShutDownList()
   : mObjects(&gSetOps, sizeof(ObjectHashEntry))
-  , mPK11LogoutCancelObjects(&gSetOps, sizeof(ObjectHashEntry))
 {
 }
 
@@ -75,57 +74,6 @@ void nsNSSShutDownList::forget(nsNSSShutDownObject *o)
 
   MOZ_ASSERT(o);
   singleton->mObjects.Remove(o);
-}
-
-void nsNSSShutDownList::remember(nsOnPK11LogoutCancelObject *o)
-{
-  StaticMutexAutoLock lock(sListLock);
-  if (!nsNSSShutDownList::construct(lock)) {
-    return;
-  }
-
-  MOZ_ASSERT(o);
-  singleton->mPK11LogoutCancelObjects.Add(o, fallible);
-}
-
-void nsNSSShutDownList::forget(nsOnPK11LogoutCancelObject *o)
-{
-  StaticMutexAutoLock lock(sListLock);
-  if (!singleton) {
-    return;
-  }
-
-  MOZ_ASSERT(o);
-  singleton->mPK11LogoutCancelObjects.Remove(o);
-}
-
-nsresult nsNSSShutDownList::doPK11Logout()
-{
-  StaticMutexAutoLock lock(sListLock);
-  if (!singleton) {
-    return NS_OK;
-  }
-
-  MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-          ("canceling all open SSL sockets to disallow future IO\n"));
-
-  
-  
-  
-  
-
-  for (auto iter = singleton->mPK11LogoutCancelObjects.Iter();
-       !iter.Done();
-       iter.Next()) {
-    auto entry = static_cast<ObjectHashEntry*>(iter.Get());
-    nsOnPK11LogoutCancelObject* pklco =
-      BitwiseCast<nsOnPK11LogoutCancelObject*, nsNSSShutDownObject*>(entry->obj);
-    if (pklco) {
-      pklco->logout();
-    }
-  }
-
-  return NS_OK;
 }
 
 nsresult nsNSSShutDownList::evaporateAllNSSResourcesAndShutDown()
