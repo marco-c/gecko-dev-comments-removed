@@ -5782,6 +5782,7 @@
     FT_F26Dot6  distance;
 #ifdef TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
     FT_F26Dot6  control_value_cutin = 0;
+    FT_F26Dot6  delta;
 
 
     if ( SUBPIXEL_HINTING_INFINALITY )
@@ -5817,11 +5818,15 @@
     distance = PROJECT( exc->zp1.cur + point, exc->zp0.cur + exc->GS.rp0 );
 
 #ifdef TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
+    delta = SUB_LONG( distance, args[1] );
+    if ( delta < 0 )
+      delta = NEG_LONG( delta );
+
     
-    if ( SUBPIXEL_HINTING_INFINALITY                                    &&
-         exc->ignore_x_mode                                             &&
-         exc->GS.freeVector.x != 0                                      &&
-         FT_ABS( SUB_LONG( distance, args[1] ) ) >= control_value_cutin )
+    if ( SUBPIXEL_HINTING_INFINALITY  &&
+         exc->ignore_x_mode           &&
+         exc->GS.freeVector.x != 0    &&
+         delta >= control_value_cutin )
       distance = args[1];
 #endif 
 
@@ -5978,7 +5983,14 @@
 
     if ( ( exc->opcode & 1 ) != 0 )   
     {
-      if ( FT_ABS( distance - org_dist ) > control_value_cutin )
+      FT_F26Dot6  delta;
+
+
+      delta = SUB_LONG( distance, org_dist );
+      if ( delta < 0 )
+        delta = NEG_LONG( delta );
+
+      if ( delta > control_value_cutin )
         distance = org_dist;
 
 #ifdef TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
@@ -6259,6 +6271,9 @@
 
       if ( exc->GS.gep0 == exc->GS.gep1 )
       {
+        FT_F26Dot6  delta;
+
+
         
         
         
@@ -6271,7 +6286,11 @@
         
         
 
-        if ( FT_ABS( cvt_dist - org_dist ) > control_value_cutin )
+        delta = SUB_LONG( cvt_dist, org_dist );
+        if ( delta < 0 )
+          delta = NEG_LONG( delta );
+
+        if ( delta > control_value_cutin )
           cvt_dist = org_dist;
       }
 
@@ -6289,7 +6308,14 @@
            exc->ignore_x_mode           &&
            exc->GS.gep0 == exc->GS.gep1 )
       {
-        if ( FT_ABS( cvt_dist - org_dist ) > control_value_cutin )
+        FT_F26Dot6  delta;
+
+
+        delta = SUB_LONG( cvt_dist, org_dist );
+        if ( delta < 0 )
+          delta = NEG_LONG( delta );
+
+        if ( delta > control_value_cutin )
           cvt_dist = org_dist;
       }
 #endif 
@@ -7532,8 +7558,16 @@
       return;
     }
 
-    for ( i = 0; i < num_axes; i++ )
-      args[i] = coords[i] >> 2; 
+    if ( coords )
+    {
+      for ( i = 0; i < num_axes; i++ )
+        args[i] = coords[i] >> 2; 
+    }
+    else
+    {
+      for ( i = 0; i < num_axes; i++ )
+        args[i] = 0;
+    }
   }
 
 

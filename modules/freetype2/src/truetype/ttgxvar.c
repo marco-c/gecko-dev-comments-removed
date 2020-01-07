@@ -2763,7 +2763,8 @@
     }
 
     
-    if ( !have_diff )
+    
+    if ( blend->normalizedcoords && !have_diff )
       return -1;
 
     if ( FT_NEW_ARRAY( normalized, mmvar->num_axis ) )
