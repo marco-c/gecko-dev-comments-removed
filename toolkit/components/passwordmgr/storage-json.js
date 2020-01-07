@@ -113,8 +113,23 @@ this.LoginManagerStorage_json.prototype = {
     
     loginClone.QueryInterface(Ci.nsILoginMetaInfo);
     if (loginClone.guid) {
-      if (!this._isGuidUnique(loginClone.guid))
-        throw new Error("specified GUID already exists");
+      let guid = loginClone.guid;
+      if (!this._isGuidUnique(guid)) {
+        
+        
+        
+        let existing = this._searchLogins({guid})[0];
+        if (this._decryptLogins(existing).length) {
+          
+          throw new Error("specified GUID already exists");
+        }
+        
+        let foundIndex = this._store.data.logins.findIndex(l => l.guid == guid);
+        if (foundIndex == -1) {
+          throw new Error("can't find a matching GUID to remove");
+        }
+        this._store.data.logins.splice(foundIndex, 1);
+      }
     } else {
       loginClone.guid = gUUIDGenerator.generateUUID().toString();
     }
