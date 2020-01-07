@@ -30,6 +30,22 @@ add_connection_test("symantec-not-whitelisted-before-cutoff.example.com",
                     SEC_ERROR_UNKNOWN_ISSUER, null, null);
 
 
+add_test(function() {
+  clearSessionCache();
+  Services.prefs.setIntPref("security.pki.distrust_ca_policy",
+                             0);
+  run_next_test();
+});
+
+add_connection_test("symantec-not-whitelisted-before-cutoff.example.com",
+                    PRErrorCodeSuccess, null, shouldBeImminentlyDistrusted);
+
+add_test(function() {
+  clearSessionCache();
+  Services.prefs.clearUserPref("security.pki.distrust_ca_policy");
+  run_next_test();
+});
+
 
 
 function run_test() {
@@ -39,6 +55,9 @@ function run_test() {
   
   
   Services.prefs.setIntPref("security.OCSP.enabled", 0);
+
+  Services.prefs.setIntPref("security.pki.distrust_ca_policy",
+                             1);
 
   
   const VALIDATION_TIME = 1518739200;

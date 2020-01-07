@@ -62,6 +62,7 @@ NSSCertDBTrustDomain::NSSCertDBTrustDomain(SECTrustType certDBTrustType,
                                            ValidityCheckingMode validityCheckingMode,
                                            CertVerifier::SHA1Mode sha1Mode,
                                            NetscapeStepUpPolicy netscapeStepUpPolicy,
+                                           DistrustedCAPolicy distrustedCAPolicy,
                                            const OriginAttributes& originAttributes,
                                            UniqueCERTCertList& builtChain,
                                PinningTelemetryInfo* pinningTelemetryInfo,
@@ -79,6 +80,7 @@ NSSCertDBTrustDomain::NSSCertDBTrustDomain(SECTrustType certDBTrustType,
   , mValidityCheckingMode(validityCheckingMode)
   , mSHA1Mode(sha1Mode)
   , mNetscapeStepUpPolicy(netscapeStepUpPolicy)
+  , mDistrustedCAPolicy(distrustedCAPolicy)
   , mOriginAttributes(originAttributes)
   , mBuiltChain(builtChain)
   , mPinningTelemetryInfo(pinningTelemetryInfo)
@@ -887,7 +889,9 @@ NSSCertDBTrustDomain::IsChainValid(const DERArray& certArray, Time time,
   
   
   
-  if (mHostname && CertDNIsInList(root.get(), RootSymantecDNs)) {
+  if (mHostname && CertDNIsInList(root.get(), RootSymantecDNs) &&
+      mDistrustedCAPolicy == DistrustedCAPolicy::DistrustSymantecRoots) {
+
     rootCert = nullptr; 
     nsCOMPtr<nsIX509CertList> intCerts;
     nsCOMPtr<nsIX509Cert> eeCert;
