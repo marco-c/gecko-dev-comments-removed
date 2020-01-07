@@ -180,6 +180,10 @@ XPCOMUtils.defineLazyGetter(this, "gBrowserBundle", function() {
   return Services.strings.createBundle("chrome://browser/locale/browser.properties");
 });
 
+XPCOMUtils.defineLazyGetter(this, "gTabbrowserBundle", function() {
+  return Services.strings.createBundle("chrome://browser/locale/tabbrowser.properties");
+});
+
 const global = this;
 
 const listeners = {
@@ -1370,31 +1374,22 @@ BrowserGlue.prototype = {
     
     
     
-    
-    
-    
-    
 
     if (aQuitType == "restart" || aQuitType == "os-restart")
       return;
 
     var windowcount = 0;
     var pagecount = 0;
-    var browserEnum = Services.wm.getEnumerator("navigator:browser");
-    let allWindowsPrivate = true;
-    while (browserEnum.hasMoreElements()) {
-      
+    for (let win of BrowserWindowTracker.orderedWindows) {
+      if (win.closed) {
+        continue;
+      }
       windowcount++;
-
-      var browser = browserEnum.getNext();
-      if (!PrivateBrowsingUtils.isWindowPrivate(browser))
-        allWindowsPrivate = false;
-      var tabbrowser = browser.ownerGlobal.gBrowser;
+      let tabbrowser = win.gBrowser;
       if (tabbrowser)
         pagecount += tabbrowser.browsers.length - tabbrowser._numPinnedTabs;
     }
 
-    this._saveSession = false;
     if (pagecount < 2)
       return;
 
@@ -1407,80 +1402,26 @@ BrowserGlue.prototype = {
 
     var sessionWillBeRestored = Services.prefs.getIntPref("browser.startup.page") == 3 ||
                                 Services.prefs.getBoolPref("browser.sessionstore.resume_session_once");
-    if (sessionWillBeRestored || !Services.prefs.getBoolPref("browser.warnOnQuit"))
+    if (sessionWillBeRestored || !Services.prefs.getBoolPref("browser.warnOnQuit") ||
+        !Services.prefs.getBoolPref("browser.tabs.warnOnClose"))
       return;
 
-    let win = Services.wm.getMostRecentWindow("navigator:browser");
+    let win = BrowserWindowTracker.getTopWindow();
 
     
     
-    if (!Services.prefs.getBoolPref("browser.showQuitWarning")) {
-      if (aQuitType == "lastwindow") {
-        
-        
-        
-        
-        aCancelQuit.data =
-          !win.gBrowser.warnAboutClosingTabs(win.gBrowser.closingTabsEnum.ALL);
-      }
-      return;
-    }
-
-    let prompt = Services.prompt;
-    let quitBundle = Services.strings.createBundle("chrome://browser/locale/quitDialog.properties");
-    let appName = gBrandBundle.GetStringFromName("brandShortName");
-    let quitDialogTitle = quitBundle.formatStringFromName("quitDialogTitle",
-                                                          [appName], 1);
-    let neverAskText = quitBundle.GetStringFromName("neverAsk2");
-    let neverAsk = {value: false};
-
-    let choice;
-    if (allWindowsPrivate) {
-      let text = quitBundle.formatStringFromName("messagePrivate", [appName], 1);
-      let flags = prompt.BUTTON_TITLE_IS_STRING * prompt.BUTTON_POS_0 +
-                  prompt.BUTTON_TITLE_IS_STRING * prompt.BUTTON_POS_1 +
-                  prompt.BUTTON_POS_0_DEFAULT;
-      choice = prompt.confirmEx(win, quitDialogTitle, text, flags,
-                                quitBundle.GetStringFromName("quitTitle"),
-                                quitBundle.GetStringFromName("cancelTitle"),
-                                null,
-                                neverAskText, neverAsk);
-
-      
-      
-      if (choice == 0) {
-        choice = 2;
-      }
+    if (windowcount == 1) {
+      aCancelQuit.data =
+        !win.gBrowser.warnAboutClosingTabs(win.gBrowser.closingTabsEnum.ALL);
     } else {
-      let text = quitBundle.formatStringFromName(
-        windowcount == 1 ? "messageNoWindows" : "message", [appName], 1);
-      let flags = prompt.BUTTON_TITLE_IS_STRING * prompt.BUTTON_POS_0 +
-                  prompt.BUTTON_TITLE_IS_STRING * prompt.BUTTON_POS_1 +
-                  prompt.BUTTON_TITLE_IS_STRING * prompt.BUTTON_POS_2 +
-                  prompt.BUTTON_POS_0_DEFAULT;
-      choice = prompt.confirmEx(win, quitDialogTitle, text, flags,
-                                quitBundle.GetStringFromName("saveTitle"),
-                                quitBundle.GetStringFromName("cancelTitle"),
-                                quitBundle.GetStringFromName("quitTitle"),
-                                neverAskText, neverAsk);
-    }
-
-    switch (choice) {
-    case 2: 
-      if (neverAsk.value)
-        Services.prefs.setBoolPref("browser.showQuitWarning", false);
-      break;
-    case 1: 
-      aCancelQuit.QueryInterface(Ci.nsISupportsPRBool);
-      aCancelQuit.data = true;
-      break;
-    case 0: 
-      this._saveSession = true;
-      if (neverAsk.value) {
-        
-        Services.prefs.setIntPref("browser.startup.page", 3);
-      }
-      break;
+      
+      let tabSubstring = gTabbrowserBundle.GetStringFromName("tabs.closeWarningMultipleWindowsTabSnippet");
+      tabSubstring = PluralForm.get(pagecount, tabSubstring).replace(/#1/, pagecount);
+      let windowString = gTabbrowserBundle.GetStringFromName("tabs.closeWarningMultipleWindows");
+      windowString = PluralForm.get(windowcount, windowString).replace(/#1/, windowcount);
+      windowString = windowString.replace(/%(?:1$)?S/i, tabSubstring);
+      aCancelQuit.data =
+        !win.gBrowser.warnAboutClosingTabs(win.gBrowser.closingTabsEnum.ALL, null, windowString);
     }
   },
 

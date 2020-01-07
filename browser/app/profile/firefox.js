@@ -271,9 +271,6 @@ pref("browser.chrome.site_icons", true);
 pref("browser.chrome.favicons", true);
 
 pref("browser.warnOnQuit", true);
-
-
-pref("browser.showQuitWarning", false);
 pref("browser.fullscreen.autohide", true);
 pref("browser.overlink-delay", 80);
 

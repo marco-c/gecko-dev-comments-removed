@@ -109,9 +109,6 @@ const RECOMMENDED_PREFS = new Map([
   ["browser.shell.checkDefaultBrowser", false],
 
   
-  ["browser.showQuitWarning", false],
-
-  
   ["browser.startup.homepage_override.mstone", "ignore"],
 
   
