@@ -141,9 +141,11 @@ async function fetchLatestChanges(url, lastEtag) {
   
 
   
+  
   const headers = {};
   if (lastEtag) {
     headers["If-None-Match"] = lastEtag;
+    url += `?_since=${lastEtag}`;
   }
   const response = await fetch(url, {headers});
 
