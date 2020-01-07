@@ -104,6 +104,8 @@ function Inspector(toolbox) {
   this.panelWin = window;
   this.panelWin.inspector = this;
 
+  this.store = Store();
+
   
   
   this._panels = new Map();
@@ -112,7 +114,6 @@ function Inspector(toolbox) {
   this.prefsObserver = new PrefObserver("devtools.");
   this.reflowTracker = new ReflowTracker(this._target);
   this.styleChangeTracker = new InspectorStyleChangeTracker(this);
-  this.store = Store();
   this.telemetry = new Telemetry();
 
   
