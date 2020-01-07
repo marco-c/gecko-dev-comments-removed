@@ -416,8 +416,6 @@ public:
     
     eATTRIBUTE           = 1 << 2,
     
-    eTEXT                = 1 << 3,
-    
     ePROCESSING_INSTRUCTION = 1 << 4,
     
     eCOMMENT             = 1 << 5,
