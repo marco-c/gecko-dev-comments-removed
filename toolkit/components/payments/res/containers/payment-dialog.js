@@ -55,11 +55,11 @@ class PaymentDialog extends PaymentStateSubscriberMixin(HTMLElement) {
   }
 
   cancelRequest() {
-    PaymentRequest.cancel();
+    paymentRequest.cancel();
   }
 
   pay() {
-    PaymentRequest.pay({
+    paymentRequest.pay({
       methodName: "basic-card",
       methodData: {
         cardholderName: "John Doe",
