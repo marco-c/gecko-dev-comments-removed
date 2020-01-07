@@ -16,6 +16,11 @@
 #undef FF
 #endif
 #include "webrtc/modules/audio_device/opensl/single_rw_fifo.h"
+#include "webrtc/voice_engine/voice_engine_defines.h"
+#include "webrtc/modules/audio_processing/include/audio_processing.h"
+#include "webrtc/common_audio/include/audio_util.h"
+
+using namespace webrtc;
 
 #define CHANNELS 1
 #define ENCODING "L16"
@@ -63,7 +68,7 @@ AudioOutputObserver::AudioOutputObserver()
   , mDownmixBuffer(MAX_SAMPLING_FREQ * MAX_CHANNELS / 100)
 {
   
-  mPlayoutFifo = new webrtc::SingleRwFifo(MAX_AEC_FIFO_DEPTH/10);
+  mPlayoutFifo = new SingleRwFifo(MAX_AEC_FIFO_DEPTH/10);
 }
 
 AudioOutputObserver::~AudioOutputObserver()
@@ -191,6 +196,7 @@ MediaEngineWebRTCMicrophoneSource::MediaEngineWebRTCMicrophoneSource(
     bool aExtendedFilter)
   : MediaEngineAudioSource(kReleased)
   , mAudioInput(aAudioInput)
+  , mAudioProcessing(AudioProcessing::Create())
   , mMonitor("WebRTCMic.Monitor")
   , mCapIndex(aIndex)
   , mDelayAgnostic(aDelayAgnostic)
@@ -266,6 +272,140 @@ bool operator == (const MediaEnginePrefs& a, const MediaEnginePrefs& b)
   return !memcmp(&a, &b, sizeof(MediaEnginePrefs));
 };
 
+
+#define HANDLE_APM_ERROR(fn)                                \
+do {                                                        \
+  int rv = fn;                                              \
+  if (rv != AudioProcessing::kNoError) {                    \
+    MOZ_ASSERT_UNREACHABLE("APM error in " #fn);            \
+    return;                                                 \
+  }                                                         \
+} while(0);
+
+void MediaEngineWebRTCMicrophoneSource::UpdateAECSettingsIfNeeded(bool aEnable, EcModes aMode)
+{
+  using webrtc::EcModes;
+
+  EchoCancellation::SuppressionLevel level;
+
+  switch(aMode) {
+    case EcModes::kEcUnchanged:
+      level = mAudioProcessing->echo_cancellation()->suppression_level();
+      break;
+    case EcModes::kEcConference:
+      level = EchoCancellation::kHighSuppression;
+      break;
+    case EcModes::kEcDefault:
+      level = EchoCancellation::kModerateSuppression;
+      break;
+    case EcModes::kEcAec:
+      level = EchoCancellation::kModerateSuppression;
+      break;
+    case EcModes::kEcAecm:
+      
+      break;
+    default:
+      MOZ_LOG(GetMediaManagerLog(), LogLevel::Error, ("Bad EcMode value"));
+      MOZ_ASSERT_UNREACHABLE("Bad pref set in all.js or in about:config"
+                             " for the echo cancelation mode.");
+      
+      level = EchoCancellation::kModerateSuppression;
+      break;
+  }
+
+  
+  if (aMode == EcModes::kEcAecm) {
+    HANDLE_APM_ERROR(mAudioProcessing->echo_cancellation()->Enable(false));
+    HANDLE_APM_ERROR(mAudioProcessing->echo_control_mobile()->Enable(aEnable));
+  } else {
+    HANDLE_APM_ERROR(mAudioProcessing->echo_control_mobile()->Enable(false));
+    HANDLE_APM_ERROR(mAudioProcessing->echo_cancellation()->Enable(aEnable));
+    HANDLE_APM_ERROR(mAudioProcessing->echo_cancellation()->set_suppression_level(level));
+  }
+}
+
+void
+MediaEngineWebRTCMicrophoneSource::UpdateAGCSettingsIfNeeded(bool aEnable, AgcModes aMode)
+{
+#if defined(WEBRTC_IOS) || defined(ATA) || defined(WEBRTC_ANDROID)
+  if (aMode == kAgcAdaptiveAnalog) {
+    MOZ_LOG(GetMediaManagerLog(),
+            LogLevel::Error,
+            ("Invalid AGC mode kAgcAdaptiveAnalog on mobile"));
+    MOZ_ASSERT_UNREACHABLE("Bad pref set in all.js or in about:config"
+                           " for the auto gain, on mobile.");
+    aMode = kAgcDefault;
+  }
+#endif
+  GainControl::Mode mode = kDefaultAgcMode;
+
+  switch (aMode) {
+    case AgcModes::kAgcDefault:
+      mode = kDefaultAgcMode;
+      break;
+    case AgcModes::kAgcUnchanged:
+      mode = mAudioProcessing->gain_control()->mode();
+      break;
+    case AgcModes::kAgcFixedDigital:
+      mode = GainControl::Mode::kFixedDigital;
+      break;
+    case AgcModes::kAgcAdaptiveAnalog:
+      mode = GainControl::Mode::kAdaptiveAnalog;
+      break;
+    case AgcModes::kAgcAdaptiveDigital:
+      mode = GainControl::Mode::kAdaptiveDigital;
+      break;
+    default:
+      MOZ_ASSERT_UNREACHABLE("Bad pref set in all.js or in about:config"
+                             " for the auto gain.");
+      
+      mode = GainControl::Mode::kAdaptiveDigital;
+      break;
+  }
+
+  HANDLE_APM_ERROR(mAudioProcessing->gain_control()->set_mode(mode));
+  HANDLE_APM_ERROR(mAudioProcessing->gain_control()->Enable(aEnable));
+}
+
+void
+MediaEngineWebRTCMicrophoneSource::UpdateNSSettingsIfNeeded(bool aEnable, NsModes aMode)
+{
+  NoiseSuppression::Level nsLevel;
+
+  switch (aMode) {
+    case NsModes::kNsDefault:
+      nsLevel = kDefaultNsMode;
+      break;
+    case NsModes::kNsUnchanged:
+      nsLevel = mAudioProcessing->noise_suppression()->level();
+      break;
+    case NsModes::kNsConference:
+      nsLevel = NoiseSuppression::kHigh;
+      break;
+    case NsModes::kNsLowSuppression:
+      nsLevel = NoiseSuppression::kLow;
+      break;
+    case NsModes::kNsModerateSuppression:
+      nsLevel = NoiseSuppression::kModerate;
+      break;
+    case NsModes::kNsHighSuppression:
+      nsLevel = NoiseSuppression::kHigh;
+      break;
+    case NsModes::kNsVeryHighSuppression:
+      nsLevel = NoiseSuppression::kVeryHigh;
+      break;
+    default:
+      MOZ_ASSERT_UNREACHABLE("Bad pref set in all.js or in about:config"
+                             " for the noise suppression.");
+      
+      nsLevel = NoiseSuppression::kModerate;
+  }
+  HANDLE_APM_ERROR(mAudioProcessing->noise_suppression()->set_level(nsLevel));
+  HANDLE_APM_ERROR(mAudioProcessing->noise_suppression()->Enable(aEnable));
+}
+
+#undef HANDLE_APM_ERROR
+
 nsresult
 MediaEngineWebRTCMicrophoneSource::UpdateSingleSource(
     const AllocationHandle* aHandle,
@@ -314,23 +454,11 @@ MediaEngineWebRTCMicrophoneSource::UpdateSingleSource(
         
         return NS_ERROR_FAILURE;
       }
-      if (mAudioInput->SetRecordingDevice(mCapIndex)) {
-         return NS_ERROR_FAILURE;
-      }
       mAudioInput->SetUserChannelCount(prefs.mChannels);
       if (!AllocChannel()) {
         FreeChannel();
         LOG(("Audio device is not initalized"));
         return NS_ERROR_FAILURE;
-      }
-      LOG(("Audio device %d allocated", mCapIndex));
-      {
-        
-        
-        uint32_t channelCount = 0;
-        mAudioInput->GetChannelCount(channelCount);
-        MOZ_ASSERT(channelCount > 0);
-        prefs.mChannels = channelCount;
       }
       break;
 
@@ -341,19 +469,19 @@ MediaEngineWebRTCMicrophoneSource::UpdateSingleSource(
 
       if (prefs.mChannels != mLastPrefs.mChannels) {
         MOZ_ASSERT(mSources.Length() > 0);
+        
+        
         auto& source = mSources.LastElement();
         mAudioInput->SetUserChannelCount(prefs.mChannels);
         
         uint32_t channelCount = 0;
         mAudioInput->GetChannelCount(channelCount);
         MOZ_ASSERT(channelCount > 0 && mLastPrefs.mChannels > 0);
-        
-        if (static_cast<uint32_t>(mLastPrefs.mChannels) != channelCount &&
+        if (mLastPrefs.mChannels != prefs.mChannels &&
             !source->OpenNewAudioCallbackDriver(mListener)) {
+          MOZ_LOG(GetMediaManagerLog(), LogLevel::Error, ("Could not open a new AudioCallbackDriver for input"));
           return NS_ERROR_FAILURE;
         }
-        
-        prefs.mChannels = channelCount;
       }
 
       if (MOZ_LOG_TEST(GetMediaManagerLog(), LogLevel::Debug)) {
@@ -372,45 +500,21 @@ MediaEngineWebRTCMicrophoneSource::UpdateSingleSource(
   }
 
   if (sChannelsOpen > 0) {
-    int error;
+    UpdateAGCSettingsIfNeeded(prefs.mAgcOn, static_cast<AgcModes>(prefs.mAgc));
+    UpdateNSSettingsIfNeeded(prefs.mNoiseOn, static_cast<NsModes>(prefs.mNoise));
+    UpdateAECSettingsIfNeeded(prefs.mAecOn, static_cast<EcModes>(prefs.mAec));
 
-    error = mVoEProcessing->SetEcStatus(prefs.mAecOn, (webrtc::EcModes)prefs.mAec);
-    if (error) {
-      LOG(("%s Error setting Echo Status: %d ",__FUNCTION__, error));
-      
-      if (prefs.mAecOn) {
-        error = mVoEProcessing->SetEcMetricsStatus(true);
-        if (error) {
-          LOG(("%s Error setting Echo Metrics: %d ",__FUNCTION__, error));
-        }
-      }
-    }
-    error = mVoEProcessing->SetAgcStatus(prefs.mAgcOn, (webrtc::AgcModes)prefs.mAgc);
-    if (error) {
-      LOG(("%s Error setting AGC Status: %d ",__FUNCTION__, error));
-    }
-    error = mVoEProcessing->SetNsStatus(prefs.mNoiseOn, (webrtc::NsModes)prefs.mNoise);
-    if (error) {
-      LOG(("%s Error setting NoiseSuppression Status: %d ",__FUNCTION__, error));
-    }
+    webrtc::Config config;
+    config.Set<webrtc::ExtendedFilter>(new webrtc::ExtendedFilter(mExtendedFilter));
+    config.Set<webrtc::DelayAgnostic>(new webrtc::DelayAgnostic(mDelayAgnostic));
+    mAudioProcessing->SetExtraOptions(config);
   }
 
-  
-  if (mState != kStarted) {
-    mSkipProcessing = !(prefs.mAecOn || prefs.mAgcOn || prefs.mNoiseOn);
-    if (mSkipProcessing) {
-      mSampleFrequency = MediaEngine::USE_GRAPH_RATE;
-    } else {
-      
-      
-      if (!mAudioOutputObserver) {
-        mAudioOutputObserver = new AudioOutputObserver();
-      }
-    }
-  }
   SetLastPrefs(prefs);
   return NS_OK;
 }
+
+#undef HANDLE_APM_ERROR
 
 void
 MediaEngineWebRTCMicrophoneSource::SetLastPrefs(
@@ -579,13 +683,25 @@ MediaEngineWebRTCMicrophoneSource::PacketizeAndProcess(MediaStreamGraph* aGraph,
                                                        TrackRate aRate,
                                                        uint32_t aChannels)
 {
-  
+  MOZ_ASSERT(!PassThrough(), "This should be bypassed when in PassThrough mode.");
+  size_t offset = 0;
+
   if (!mPacketizer ||
       mPacketizer->PacketSize() != aRate/100u ||
       mPacketizer->Channels() != aChannels) {
     
     mPacketizer =
-      new AudioPacketizer<AudioDataValue, int16_t>(aRate/100, aChannels);
+      new AudioPacketizer<AudioDataValue, AudioDataValue>(aRate/100, aChannels);
+  }
+
+  
+  
+  
+  if (!mStarted) {
+    mStarted  = true;
+    while (mAudioOutputObserver->Size() > 1) {
+      free(mAudioOutputObserver->Pop()); 
+    }
   }
 
   mPacketizer->Input(aBuffer, static_cast<uint32_t>(aFrames));
@@ -704,38 +820,31 @@ MediaEngineWebRTCMicrophoneSource::NotifyInputData(MediaStreamGraph* aGraph,
 
 #define ResetProcessingIfNeeded(_processing)                        \
 do {                                                                \
-  webrtc::_processing##Modes mode;                                  \
-  int rv = mVoEProcessing->Get##_processing##Status(enabled, mode); \
-  if (rv) {                                                         \
-    NS_WARNING("Could not get the status of the "                   \
-     #_processing " on device change.");                            \
-    return;                                                         \
-  }                                                                 \
+  bool enabled = mAudioProcessing->_processing()->is_enabled();     \
                                                                     \
   if (enabled) {                                                    \
-    rv = mVoEProcessing->Set##_processing##Status(!enabled);        \
+    int rv = mAudioProcessing->_processing()->Enable(!enabled);     \
+    if (rv) {                                                       \
+      NS_WARNING("Could not reset the status of the "               \
+      #_processing " on device change.");                           \
+      return;                                                       \
+    }                                                               \
+    rv = mAudioProcessing->_processing()->Enable(enabled);          \
     if (rv) {                                                       \
       NS_WARNING("Could not reset the status of the "               \
       #_processing " on device change.");                           \
       return;                                                       \
     }                                                               \
                                                                     \
-    rv = mVoEProcessing->Set##_processing##Status(enabled);         \
-    if (rv) {                                                       \
-      NS_WARNING("Could not reset the status of the "               \
-      #_processing " on device change.");                           \
-      return;                                                       \
-    }                                                               \
   }                                                                 \
 }  while(0)
 
 void
 MediaEngineWebRTCMicrophoneSource::DeviceChanged() {
   
-  bool enabled;
-  ResetProcessingIfNeeded(Agc);
-  ResetProcessingIfNeeded(Ec);
-  ResetProcessingIfNeeded(Ns);
+  ResetProcessingIfNeeded(gain_control);
+  ResetProcessingIfNeeded(echo_cancellation);
+  ResetProcessingIfNeeded(noise_suppression);
 }
 
 
@@ -796,8 +905,6 @@ MediaEngineWebRTCMicrophoneSource::Shutdown()
     Deallocate(mRegisteredHandles[0].get());
   }
   MOZ_ASSERT(mState == kReleased);
-
-  mAudioInput = nullptr;
 }
 
 void

@@ -510,7 +510,7 @@ pref("media.getusermedia.noise_enabled", true);
 pref("media.getusermedia.aec_extended_filter", true);
 pref("media.getusermedia.noise", 1);
 pref("media.getusermedia.agc_enabled", false);
-pref("media.getusermedia.agc", 1);
+pref("media.getusermedia.agc", 3); 
 
 
 
