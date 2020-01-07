@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 package org.mozilla.gecko.tests;
 
@@ -31,14 +31,15 @@ public abstract class SessionTest extends UITest {
     private static final String PREFS_NAME = "GeckoApp";
     protected final static int SESSION_TIMEOUT = 25000;
 
-    /**
-     * A generic session object representing a collection of items that has a
-     * selected index.
-     */
+    
+
+
+
     protected abstract class SessionObject<T> {
         private final int mIndex;
         private final T[] mItems;
 
+        @SuppressWarnings({"unchecked", "varargs"})
         public SessionObject(int index, T... items) {
             mIndex = index;
             mItems = items;
@@ -82,9 +83,9 @@ public abstract class SessionTest extends UITest {
         }
     }
 
-    /**
-     * Walker for visiting items in a browser-like navigation order.
-     */
+    
+
+
     protected abstract class NavigationWalker<T> {
         private final T[] mItems;
         private final int mIndex;
@@ -94,14 +95,14 @@ public abstract class SessionTest extends UITest {
             mIndex = obj.getIndex();
         }
 
-        /**
-         * Walks over the list of items, calling the onItem() callback for each.
-         *
-         * The selected item is the first item visited. Each item after the
-         * selected item is then visited in ascending index order. Finally, the
-         * list is iterated in reverse, and each item before the selected item
-         * is visited in descending index order.
-         */
+        
+
+
+
+
+
+
+
         public void walk() {
             onItem(mItems[mIndex], mIndex);
             for (int i = mIndex + 1; i < mItems.length; i++) {
@@ -118,21 +119,21 @@ public abstract class SessionTest extends UITest {
             }
         }
 
-        /**
-         * Callback when an item is visited during a walk.
-         *
-         * Only one callback is executed per item.
-         */
+        
+
+
+
+
         public abstract void onItem(T item, int currentIndex);
 
-        /**
-         * Callback executed for each back step of the walk.
-         */
+        
+
+
         public void goBack() {}
 
-        /**
-         * Callback executed for each forward step of the walk.
-         */
+        
+
+
         public void goForward() {}
     }
 
@@ -156,8 +157,8 @@ public abstract class SessionTest extends UITest {
         String sessionString = buildSessionJSON(session);
         writeProfileFile("sessionstore.js", sessionString);
 
-        // This feature is pref-protected to prevent other apps from injecting
-        // a state bundle, so enable it here.
+        
+        
         SharedPreferences prefs = getInstrumentation().getTargetContext()
                 .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         prefs.edit().putBoolean(PREFS_ALLOW_STATE_BUNDLE, true).apply();
@@ -167,13 +168,13 @@ public abstract class SessionTest extends UITest {
         intent.putExtra("stateBundle", bundle);
     }
 
-    /**
-     * Loads a set of tabs in the browser specified by the given session.
-     *
-     * @param session Session to load
-     */
+    
+
+
+
+
     protected void loadSessionTabs(Session session) {
-        // Verify initial about:home tab
+        
         mToolbar.assertTabCount(1);
         mToolbar.assertTitle(mStringHelper.ABOUT_HOME_URL);
 
@@ -182,14 +183,14 @@ public abstract class SessionTest extends UITest {
             final SessionTab tab = tabs[i];
             final PageInfo[] pages = tab.getItems();
 
-            // New tabs always start with about:home, so make sure about:home
-            // is always the first entry.
+            
+            
             mAsserter.is(pages[0].url, mStringHelper.ABOUT_HOME_URL, "first page in tab is " +
                     mStringHelper.ABOUT_HOME_URL);
 
-            // If this is the first tab, the tab already exists, so no need to
-            // create a new one. Otherwise, create a new tab if we're loading
-            // the first the first page in the set.
+            
+            
+            
             if (i > 0) {
                 mAppMenu.pressMenuItem(MenuItem.NEW_TAB);
             }
@@ -207,11 +208,11 @@ public abstract class SessionTest extends UITest {
         mTabsPanel.selectTabAt(session.getIndex());
     }
 
-    /**
-     * Verifies that the set of open tabs matches the given session.
-     *
-     * @param session Session to verify
-     */
+    
+
+
+
+
     protected void verifySessionTabs(Session session) {
         mToolbar.assertTabCount(session.getItems().length);
 
@@ -220,7 +221,7 @@ public abstract class SessionTest extends UITest {
 
             @Override
             public void onItem(SessionTab tab, int currentIndex) {
-                // The first tab to check should already be selected at startup
+                
                 if (mFirstTabVisited) {
                     mTabsPanel.selectTabAt(currentIndex);
                 } else {
@@ -247,15 +248,15 @@ public abstract class SessionTest extends UITest {
         }).walk();
     }
 
-    /**
-     * Gets session restore JSON corresponding to the open session.
-     *
-     * The JSON format follows the format used in Gecko for session restore and
-     * should be interchangeable with the Gecko's generated sessionstore.js.
-     *
-     * @param session Session to serialize
-     * @return JSON string of session
-     */
+    
+
+
+
+
+
+
+
+
     protected String buildSessionJSON(Session session) {
         final SessionTab[] sessionTabs = session.getItems();
         String sessionString = null;
@@ -321,30 +322,30 @@ public abstract class SessionTest extends UITest {
             return true;
         }
 
-        /**
-         * Gets the last AssertException thrown by verifySessionJSON().
-         *
-         * This is useful to get the stack trace if the test fails.
-         */
+        
+
+
+
+
         public AssertException getLastException() {
             return mLastException;
         }
     }
 
-    /**
-     * @see SessionTest#verifySessionJSON(Session, String, Assert)
-     */
+    
+
+
     protected void verifySessionJSON(Session session, String sessionString) {
         verifySessionJSON(session, sessionString, mAsserter);
     }
 
-    /**
-     * Verifies a session JSON string against the given session.
-     *
-     * @param session       Session to verify against
-     * @param sessionString JSON string to verify
-     * @param asserter      Assert class to use during verification
-     */
+    
+
+
+
+
+
+
     protected void verifySessionJSON(Session session, String sessionString, Assert asserter) {
         final SessionTab[] sessionTabs = session.getItems();
 
@@ -387,22 +388,22 @@ public abstract class SessionTest extends UITest {
         }
     }
 
-    /**
-     * Exception thrown by NonFatalAsserter for assertion failures.
-     */
+    
+
+
     public static class AssertException extends RuntimeException {
         public AssertException(String msg) {
             super(msg);
         }
     }
 
-    /**
-     * Asserter that throws an AssertException on failure instead of aborting
-     * the test.
-     *
-     * This can be used in methods called via waitForCondition() where an assertion
-     * might not immediately succeed.
-     */
+    
+
+
+
+
+
+
     public class NonFatalAsserter extends FennecMochitestAssert {
         @Override
         public void ok(boolean condition, String name, String diag) {
@@ -414,15 +415,15 @@ public abstract class SessionTest extends UITest {
         }
     }
 
-    /**
-     * Gets a URL for a dynamically-generated page.
-     *
-     * The page will have a URL unique to the given ID, and the page's title
-     * will match the given ID.
-     *
-     * @param id ID used to generate page URL
-     * @return URL of the page
-     */
+    
+
+
+
+
+
+
+
+
     protected String getPage(String id) {
         return getAbsoluteHostnameUrl("/robocop/robocop_dynamic.sjs?id=" + id);
     }

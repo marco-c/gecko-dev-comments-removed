@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 package org.mozilla.gecko.tests;
 
@@ -42,10 +42,10 @@ abstract class MediaPlaybackTest extends OldBaseTest {
         return mContext;
     }
 
-    /**
-     * Get the system active notification and check whether its UI icon has
-     * been changed.
-     */
+    
+
+
+
     protected final void waitUntilNotificationUIChanged() {
         if (!isAvailableToCheckNotification()) {
             return;
@@ -56,14 +56,14 @@ abstract class MediaPlaybackTest extends OldBaseTest {
                 NotificationManager notificationManager = (NotificationManager)
                     getContext().getSystemService(Context.NOTIFICATION_SERVICE);
                 StatusBarNotification[] sbns = notificationManager.getActiveNotifications();
-                /**
-                 * Make sure the notification content changed.
-                 * (1) icon changed :
-                 * same website, but playback state changed. eg. play -> pause
-                 * (2) title changed :
-                 * play new media from different tab, and change notification
-                 * content for the new tab.
-                 */
+                
+
+
+
+
+
+
+
                 boolean findCorrectNotification = false;
                 for (int idx = 0; idx < sbns.length; idx++) {
                     if (sbns[idx].getId() != R.id.mediaControlNotification) {
@@ -80,7 +80,7 @@ abstract class MediaPlaybackTest extends OldBaseTest {
                     }
                 }
 
-                // The notification was cleared.
+                
                 if (!findCorrectNotification && mPrevIcon != 0) {
                     mPrevIcon = 0;
                     mPrevURL = "";
@@ -91,9 +91,9 @@ abstract class MediaPlaybackTest extends OldBaseTest {
         }, UI_CHANGED_WAIT_MS);
     }
 
-    /**
-     * Use these methods to wait the tab playing related states changed.
-     */
+    
+
+
     private final void waitUntilTabAudioPlayingStateChanged(final Tab tab,
                                                             final boolean isTabPlaying) {
         if (tab.isAudioPlaying() == isTabPlaying) {
@@ -120,11 +120,11 @@ abstract class MediaPlaybackTest extends OldBaseTest {
         }, MEDIA_PLAYBACK_CHANGED_WAIT_MS);
     }
 
-    /**
-     * These methods are used to check Tab's playing related attributes.
-     * isMediaPlaying : is any media playing (might be audible or non-audbile)
-     * isAudioPlaying : is any audible media playing
-     */
+    
+
+
+
+
     protected final void checkTabMediaPlayingState(final Tab tab,
                                                    final boolean isTabPlaying) {
         waitUntilTabMediaPlaybackChanged(tab, isTabPlaying);
@@ -141,21 +141,21 @@ abstract class MediaPlaybackTest extends OldBaseTest {
                      "Tab's audio playing state is correct.");
     }
 
-    /**
-     * Since we can't testing media control via clicking the media control, we
-     * directly send intent to service to simulate the behavior.
-     */
+    
+
+
+
     protected final void notifyMediaControlService(String action) {
         Intent intent = new Intent(getContext(), MediaControlService.class);
         intent.setAction(action);
         getContext().startService(intent);
     }
 
-    /**
-     * Use these methods when both media control and audio focus state should
-     * be changed and you want to check whether the changing are correct or not.
-     * Checking selected tab is default option.
-     */
+    
+
+
+
+
     protected final void checkIfMediaPlayingSuccess(boolean isTabPlaying) {
         checkIfMediaPlayingSuccess(isTabPlaying, false);
     }
@@ -170,10 +170,10 @@ abstract class MediaPlaybackTest extends OldBaseTest {
         checkAudioFocusStateAfterChanged(isTabPlaying);
     }
 
-    /**
-     * This method is used to check whether notification states are correct or
-     * not after notification UI changed.
-     */
+    
+
+
+
     protected final void checkMediaNotificationStatesAfterChanged(final Tab tab,
                                                                   final boolean isTabPlaying) {
         checkMediaNotificationStatesAfterChanged(tab, isTabPlaying, false);
@@ -251,10 +251,10 @@ abstract class MediaPlaybackTest extends OldBaseTest {
                      "Check system notification.");
     }
 
-    /**
-     * This method is used to check whether audio focus state are correct or
-     * not after tab's audio playing state changed.
-     */
+    
+
+
+
     protected final void checkAudioFocusStateAfterChanged(boolean isTabPlaying) {
         if (isTabPlaying) {
             mAsserter.is(AudioFocusAgent.getInstance().getAudioFocusState(),
@@ -275,26 +275,26 @@ abstract class MediaPlaybackTest extends OldBaseTest {
     }
 
     protected final void requestAudioFocus() {
-        getAudioFocusAgent().notifyStartedPlaying();
+        AudioFocusAgent.notifyStartedPlaying();
         if (getAudioFocusAgent().getAudioFocusState() == State.OWN_FOCUS) {
             return;
         }
 
-        // Request audio focus might fail, depend on the andriod's audio mode.
+        
         waitForCondition(new Condition() {
             @Override
             public boolean isSatisfied() {
-                getAudioFocusAgent().notifyStartedPlaying();
+                AudioFocusAgent.notifyStartedPlaying();
                 return getAudioFocusAgent().getAudioFocusState() == State.OWN_FOCUS;
             }
         }, MAX_WAIT_MS);
     }
 
-    /**
-     * The method NotificationManager.getActiveNotifications() is only avaiable
-     * after version 23, so we need to check version ensure running the test on
-     * the correct version.
-     */
+    
+
+
+
+
     protected final void checkAndroidVersionForMediaControlTest() {
         mAsserter.ok(isAvailableToCheckNotification(),
                      "Checking the android version for media control testing",
@@ -305,10 +305,10 @@ abstract class MediaPlaybackTest extends OldBaseTest {
         return Build.VERSION.SDK_INT >= 23;
     }
 
-     /**
-     * Can communicte with JS bey getJS(), but caller should create and destroy
-     * JSBridge manually.
-     */
+     
+
+
+
     protected JavascriptBridge getJS() {
         mAsserter.ok(mJs != null,
                      "JSBridege existence check",
