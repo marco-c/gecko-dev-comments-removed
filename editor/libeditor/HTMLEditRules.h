@@ -531,12 +531,21 @@ protected:
 
   nsresult RemovePartOfBlock(Element& aBlock, nsIContent& aStartChild,
                              nsIContent& aEndChild);
-  void SplitBlock(Element& aBlock,
-                  nsIContent& aStartChild,
-                  nsIContent& aEndChild,
-                  nsIContent** aOutLeftNode = nullptr,
-                  nsIContent** aOutRightNode = nullptr,
-                  nsIContent** aOutMiddleNode = nullptr);
+
+  
+
+
+
+
+
+
+
+
+  MOZ_MUST_USE SplitRangeOffFromNodeResult
+  SplitRangeOffFromBlock(Element& aBlockElement,
+                         nsIContent& aStartOfMiddleElement,
+                         nsIContent& aEndOfMiddleElement);
+
   nsresult OutdentPartOfBlock(Element& aBlock,
                               nsIContent& aStartChild,
                               nsIContent& aEndChild,
