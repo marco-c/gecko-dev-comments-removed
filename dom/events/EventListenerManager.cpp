@@ -884,6 +884,7 @@ EventListenerManager::SetEventHandler(nsAtom* aName,
                                 true, 
                                 sampleIString,
                                 0,             
+                                0,             
                                 &allowsInlineScript);
       NS_ENSURE_SUCCESS(rv, rv);
 

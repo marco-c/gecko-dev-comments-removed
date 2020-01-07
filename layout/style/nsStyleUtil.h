@@ -209,11 +209,15 @@ public:
 
 
 
+
+
+
   static bool CSPAllowsInlineStyle(mozilla::dom::Element* aContent,
                                    nsIPrincipal* aPrincipal,
                                    nsIPrincipal* aTriggeringPrincipal,
                                    nsIURI* aSourceURI,
                                    uint32_t aLineNumber,
+                                   uint32_t aColumnNumber,
                                    const nsAString& aStyleText,
                                    nsresult* aRv);
 

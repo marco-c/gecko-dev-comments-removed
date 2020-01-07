@@ -182,6 +182,7 @@ nsresult nsJSThunk::EvaluateScript(nsIChannel *aChannel,
                                   true,         
                                   nullptr, 
                                   0,             
+                                  0,             
                                   &allowsInlineScript);
 
         

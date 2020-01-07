@@ -277,6 +277,7 @@ nsCSPContext::permitsInternal(CSPDirective aDir,
                                    EmptyString(), 
                                    EmptyString(), 
                                    EmptyString(), 
+                                   0,             
                                    0);            
       }
     }
@@ -457,7 +458,8 @@ nsCSPContext::reportInlineViolation(nsContentPolicyType aContentType,
                                     const nsAString& aContent,
                                     const nsAString& aViolatedDirective,
                                     uint32_t aViolatedPolicyIndex, 
-                                    uint32_t aLineNumber)
+                                    uint32_t aLineNumber,
+                                    uint32_t aColumnNumber)
 {
   nsString observerSubject;
   
@@ -499,7 +501,8 @@ nsCSPContext::reportInlineViolation(nsContentPolicyType aContentType,
                        observerSubject,                    
                        NS_ConvertUTF8toUTF16(sourceFile),  
                        codeSample,                         
-                       aLineNumber);                       
+                       aLineNumber,                        
+                       aColumnNumber);                     
 }
 
 NS_IMETHODIMP
@@ -508,6 +511,7 @@ nsCSPContext::GetAllowsInline(nsContentPolicyType aContentType,
                               bool aParserCreated,
                               nsISupports* aElementOrContent,
                               uint32_t aLineNumber,
+                              uint32_t aColumnNumber,
                               bool* outAllowsInline)
 {
   *outAllowsInline = true;
@@ -565,11 +569,13 @@ nsCSPContext::GetAllowsInline(nsContentPolicyType aContentType,
                             content,
                             violatedDirective,
                             i,
-                            aLineNumber);
+                            aLineNumber,
+                            aColumnNumber);
     }
   }
   return NS_OK;
 }
+
 
 
 
@@ -612,10 +618,13 @@ nsCSPContext::GetAllowsInline(nsContentPolicyType aContentType,
                         violatedDirective);                                    \
       this->AsyncReportViolation(selfISupports, nullptr, violatedDirective, p, \
                                  NS_LITERAL_STRING(observerTopic),             \
-                                 aSourceFile, aScriptSample, aLineNum);        \
+                                 aSourceFile, aScriptSample, aLineNum,         \
+                                 aColumnNum);                                  \
     }                                                                          \
     PR_END_MACRO;                                                              \
     break
+
+
 
 
 
@@ -644,6 +653,7 @@ nsCSPContext::LogViolationDetails(uint16_t aViolationType,
                                   const nsAString& aSourceFile,
                                   const nsAString& aScriptSample,
                                   int32_t aLineNum,
+                                  int32_t aColumnNum,
                                   const nsAString& aNonce,
                                   const nsAString& aContent)
 {
@@ -860,6 +870,7 @@ nsCSPContext::GatherSecurityPolicyViolationEventData(
   nsAString& aSourceFile,
   nsAString& aScriptSample,
   uint32_t aLineNum,
+  uint32_t aColumnNum,
   mozilla::dom::SecurityPolicyViolationEventInit& aViolationEventInit)
 {
   NS_ENSURE_ARG_MAX(aViolatedPolicyIndex, mPolicies.Length() - 1);
@@ -940,8 +951,7 @@ nsCSPContext::GatherSecurityPolicyViolationEventData(
   aViolationEventInit.mLineNumber = aLineNum;
 
   
-  
-  aViolationEventInit.mColumnNumber = 0;
+  aViolationEventInit.mColumnNumber = aColumnNum;
 
   aViolationEventInit.mBubbles = true;
   aViolationEventInit.mComposed = true;
@@ -991,6 +1001,11 @@ nsCSPContext::SendReports(
     report.mCsp_report.mLine_number.Value() = aViolationEventInit.mLineNumber;
   }
 
+  if (aViolationEventInit.mLineNumber != 0) {
+    report.mCsp_report.mColumn_number.Construct();
+    report.mCsp_report.mColumn_number.Value() = aViolationEventInit.mColumnNumber;
+  }
+
   nsString csp_report;
   if (!report.ToJSON(csp_report)) {
     return NS_ERROR_FAILURE;
@@ -1016,7 +1031,9 @@ nsCSPContext::SendReports(
                      reportURICstring.get()));
       logToConsole("triedToSendReport", params, ArrayLength(params),
                    aViolationEventInit.mSourceFile, aViolationEventInit.mSample,
-                   aViolationEventInit.mLineNumber, 0, nsIScriptError::errorFlag);
+                   aViolationEventInit.mLineNumber,
+                   aViolationEventInit.mColumnNumber,
+                   nsIScriptError::errorFlag);
       continue; 
     }
 
@@ -1060,7 +1077,9 @@ nsCSPContext::SendReports(
       const char16_t* params[] = { reportURIs[r].get() };
       logToConsole("reportURInotHttpsOrHttp2", params, ArrayLength(params),
                    aViolationEventInit.mSourceFile, aViolationEventInit.mSample,
-                   aViolationEventInit.mLineNumber, 0, nsIScriptError::errorFlag);
+                   aViolationEventInit.mLineNumber,
+                   aViolationEventInit.mColumnNumber,
+                   nsIScriptError::errorFlag);
       continue;
     }
 
@@ -1126,7 +1145,9 @@ nsCSPContext::SendReports(
       CSPCONTEXTLOG(("AsyncOpen failed for report URI %s", NS_ConvertUTF16toUTF8(params[0]).get()));
       logToConsole("triedToSendReport", params, ArrayLength(params),
                    aViolationEventInit.mSourceFile, aViolationEventInit.mSample,
-                   aViolationEventInit.mLineNumber, 0, nsIScriptError::errorFlag);
+                   aViolationEventInit.mLineNumber,
+                   aViolationEventInit.mColumnNumber,
+                   nsIScriptError::errorFlag);
     } else {
       CSPCONTEXTLOG(("Sent violation report to URI %s", reportURICstring.get()));
     }
@@ -1174,6 +1195,7 @@ class CSPReportSenderRunnable final : public Runnable
                             const nsAString& aSourceFile,
                             const nsAString& aScriptSample,
                             uint32_t aLineNum,
+                            uint32_t aColumnNum,
                             nsCSPContext* aCSPContext)
       : mozilla::Runnable("CSPReportSenderRunnable")
       , mBlockedContentSource(aBlockedContentSource)
@@ -1184,6 +1206,7 @@ class CSPReportSenderRunnable final : public Runnable
       , mSourceFile(aSourceFile)
       , mScriptSample(aScriptSample)
       , mLineNum(aLineNum)
+      , mColumnNum(aColumnNum)
       , mCSPContext(aCSPContext)
     {
       NS_ASSERTION(!aViolatedDirective.IsEmpty(), "Can not send reports without a violated directive");
@@ -1214,7 +1237,7 @@ class CSPReportSenderRunnable final : public Runnable
       rv = mCSPContext->GatherSecurityPolicyViolationEventData(
         blockedURI, mOriginalURI,
         mViolatedDirective, mViolatedPolicyIndex,
-        mSourceFile, mScriptSample, mLineNum,
+        mSourceFile, mScriptSample, mLineNum, mColumnNum,
         init);
       NS_ENSURE_SUCCESS(rv, rv);
 
@@ -1222,8 +1245,8 @@ class CSPReportSenderRunnable final : public Runnable
       nsCOMPtr<nsIObserverService> observerService = mozilla::services::GetObserverService();
       NS_ASSERTION(observerService, "needs observer service");
       rv = observerService->NotifyObservers(mObserverSubject,
-                                                     CSP_VIOLATION_TOPIC,
-                                                     mViolatedDirective.get());
+                                            CSP_VIOLATION_TOPIC,
+                                            mViolatedDirective.get());
       NS_ENSURE_SUCCESS(rv, rv);
 
       
@@ -1256,7 +1279,7 @@ class CSPReportSenderRunnable final : public Runnable
         mCSPContext->logToConsole(mReportOnlyFlag ? "CSPROViolationWithURI" :
                                                     "CSPViolationWithURI",
                                   params, ArrayLength(params), mSourceFile, mScriptSample,
-                                  mLineNum, 0, nsIScriptError::errorFlag);
+                                  mLineNum, mColumnNum, nsIScriptError::errorFlag);
       }
 
       
@@ -1275,8 +1298,11 @@ class CSPReportSenderRunnable final : public Runnable
     nsString                mSourceFile;
     nsString                mScriptSample;
     uint32_t                mLineNum;
+    uint32_t                mColumnNum;
     RefPtr<nsCSPContext>    mCSPContext;
 };
+
+
 
 
 
@@ -1311,7 +1337,8 @@ nsCSPContext::AsyncReportViolation(nsISupports* aBlockedContentSource,
                                    const nsAString& aObserverSubject,
                                    const nsAString& aSourceFile,
                                    const nsAString& aScriptSample,
-                                   uint32_t aLineNum)
+                                   uint32_t aLineNum,
+                                   uint32_t aColumnNum)
 {
   NS_ENSURE_ARG_MAX(aViolatedPolicyIndex, mPolicies.Length() - 1);
 
@@ -1325,6 +1352,7 @@ nsCSPContext::AsyncReportViolation(nsISupports* aBlockedContentSource,
                                 aSourceFile,
                                 aScriptSample,
                                 aLineNum,
+                                aColumnNum,
                                 this);
 
   if (XRE_IsContentProcess()) {

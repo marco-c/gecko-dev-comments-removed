@@ -202,6 +202,19 @@ public:
 
 
   virtual uint32_t GetLineNumber() = 0;
+
+  
+  
+  
+  virtual void SetColumnNumber(uint32_t aColumnNumber) = 0;
+
+  
+
+
+
+
+
+  virtual uint32_t GetColumnNumber() = 0;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsIStyleSheetLinkingElement,

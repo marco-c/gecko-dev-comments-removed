@@ -79,6 +79,8 @@ class nsCSPContext : public nsIContentSecurityPolicy
 
 
 
+
+
     nsresult GatherSecurityPolicyViolationEventData(
       nsIURI* aBlockedURI,
       nsIURI* aOriginalURI,
@@ -87,6 +89,7 @@ class nsCSPContext : public nsIContentSecurityPolicy
       nsAString& aSourceFile,
       nsAString& aScriptSample,
       uint32_t aLineNum,
+      uint32_t aColumnNum,
       mozilla::dom::SecurityPolicyViolationEventInit& aViolationEventInit);
 
     nsresult SendReports(
@@ -103,7 +106,8 @@ class nsCSPContext : public nsIContentSecurityPolicy
                                   const nsAString& aObserverSubject,
                                   const nsAString& aSourceFile,
                                   const nsAString& aScriptSample,
-                                  uint32_t aLineNum);
+                                  uint32_t aLineNum,
+                                  uint32_t aColumnNum);
 
     
     
@@ -134,7 +138,8 @@ class nsCSPContext : public nsIContentSecurityPolicy
                                const nsAString& aContent,
                                const nsAString& aViolatedDirective,
                                uint32_t aViolatedPolicyIndex,
-                               uint32_t aLineNumber);
+                               uint32_t aLineNumber,
+                               uint32_t aColumnNumber);
 
     static int32_t sScriptSampleMaxLength;
 

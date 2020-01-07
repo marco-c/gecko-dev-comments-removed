@@ -11949,6 +11949,7 @@ nsIDocument::InlineScriptAllowedByCSP()
                                        true,          
                                        nullptr, 
                                        0,             
+                                       0,             
                                        &allowsInlineScript);
     NS_ENSURE_SUCCESS(rv, true);
   }
