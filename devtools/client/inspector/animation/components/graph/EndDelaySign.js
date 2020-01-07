@@ -22,20 +22,25 @@ class EndDelaySign extends PureComponent {
       timeScale,
     } = this.props;
     const {
+      createdTime,
       delay,
       duration,
+      endDelay,
       fill,
       iterationCount,
       playbackRate,
-      previousStartTime = 0,
     } = animation.state;
 
-    const endDelay = animation.state.endDelay / playbackRate;
-    const startTime = previousStartTime - timeScale.minStartTime;
-    const endTime =
-      (duration * iterationCount + delay) / playbackRate + (endDelay < 0 ? endDelay : 0);
+    const toRate = v => v / playbackRate;
+    
+    
+    const baseTime = typeof createdTime === "undefined"
+                       ? (animation.state.previousStartTime || 0)
+                       : createdTime;
+    const startTime = baseTime - timeScale.minStartTime;
+    const endTime = toRate(delay + duration * iterationCount + Math.min(endDelay, 0));
     const offset = (startTime + endTime) / timeScale.getDuration() * 100;
-    const width = Math.abs(endDelay) / timeScale.getDuration() * 100;
+    const width = Math.abs(toRate(endDelay)) / timeScale.getDuration() * 100;
 
     return dom.div(
       {

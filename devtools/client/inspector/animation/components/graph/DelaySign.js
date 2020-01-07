@@ -22,16 +22,21 @@ class DelaySign extends PureComponent {
       timeScale,
     } = this.props;
     const {
+      createdTime,
+      delay,
       fill,
       playbackRate,
-      previousStartTime = 0,
     } = animation.state;
 
-    const delay = animation.state.delay / playbackRate;
-    const startTime =
-      previousStartTime - timeScale.minStartTime + (delay < 0 ? delay : 0);
+    const toRate = v => v / playbackRate;
+    
+    
+    const baseTime = typeof createdTime === "undefined"
+                       ? (animation.state.previousStartTime || 0)
+                       : createdTime;
+    const startTime = baseTime + toRate(Math.min(delay, 0)) - timeScale.minStartTime;
     const offset = startTime / timeScale.getDuration() * 100;
-    const width = Math.abs(delay) / timeScale.getDuration() * 100;
+    const width = Math.abs(toRate(delay)) / timeScale.getDuration() * 100;
 
     return dom.div(
       {
