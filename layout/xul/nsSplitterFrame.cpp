@@ -249,15 +249,7 @@ nsSplitterFrame::AttributeChanged(int32_t aNameSpaceID,
 {
   nsresult rv = nsBoxFrame::AttributeChanged(aNameSpaceID, aAttribute,
                                              aModType);
-  
-  if (aAttribute == nsGkAtoms::align) {
-    
-    
-    nsIFrame* grippy = nullptr;
-    nsScrollbarButtonFrame::GetChildWithTag(nsGkAtoms::grippy, this, grippy);
-    if (grippy)
-      grippy->AttributeChanged(aNameSpaceID, aAttribute, aModType);
-  } else if (aAttribute == nsGkAtoms::state) {
+  if (aAttribute == nsGkAtoms::state) {
     mInner->UpdateState();
   }
 
