@@ -32,9 +32,6 @@ class ShutdownTicket;
 
 template <typename T>
 class LinkedList;
-#ifdef MOZ_WEBRTC
-class AudioOutputObserver;
-#endif
 
 
 
@@ -818,9 +815,6 @@ public:
   AudioMixer mMixer;
   const RefPtr<AbstractThread> mAbstractMainThread;
   RefPtr<SharedThreadPool> mThreadPool;
-#ifdef MOZ_WEBRTC
-  RefPtr<AudioOutputObserver> mFarendObserverRef;
-#endif
 
   
   

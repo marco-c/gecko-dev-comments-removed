@@ -2,7 +2,6 @@
 
 
 
-
 #include "MediaStreamGraphImpl.h"
 #include "MediaStreamListener.h"
 #include "mozilla/MathAlgorithms.h"
@@ -29,9 +28,6 @@
 #include <algorithm>
 #include "DOMMediaStream.h"
 #include "GeckoProfiler.h"
-#ifdef MOZ_WEBRTC
-#include "AudioOutputObserver.h"
-#endif
 
 using namespace mozilla::layers;
 using namespace mozilla::dom;

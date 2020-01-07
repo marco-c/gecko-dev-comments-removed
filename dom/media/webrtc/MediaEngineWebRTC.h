@@ -59,7 +59,6 @@
 #include "webrtc/modules/video_capture/video_capture_defines.h"
 
 #include "NullTransport.h"
-#include "AudioOutputObserver.h"
 
 namespace mozilla {
 
@@ -522,10 +521,10 @@ private:
   static int sChannelsOpen;
 
   const UniquePtr<webrtc::AudioProcessing> mAudioProcessing;
-  const RefPtr<AudioOutputObserver> mAudioOutputObserver;
 
   
   nsAutoPtr<AudioPacketizer<AudioDataValue, float>> mPacketizerInput;
+  nsAutoPtr<AudioPacketizer<AudioDataValue, float>> mPacketizerOutput;
 
   
   
@@ -557,9 +556,12 @@ private:
   
   MediaEnginePrefs mLastPrefs;
 
+  
+  AlignedFloatBuffer mOutputBuffer;
+
   AlignedFloatBuffer mInputBuffer;
   AlignedFloatBuffer mDeinterleavedBuffer;
-  AlignedAudioBuffer mInputDownmixBuffer;
+  AlignedFloatBuffer mInputDownmixBuffer;
 };
 
 class MediaEngineWebRTC : public MediaEngine
