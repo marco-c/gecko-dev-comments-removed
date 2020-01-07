@@ -6934,6 +6934,16 @@ nsWindow::GetCSDSupportLevel() {
     }
 
     
+    
+    
+    if (sCSDSupportLevel == CSD_SUPPORT_FULL) {
+        const char* csdOverride = getenv("GTK_CSD");
+        if (csdOverride && g_strcmp0(csdOverride, "1") == 0) {
+            sCSDSupportLevel = CSD_SUPPORT_FLAT;
+        }
+    }
+
+    
     const char* decorationOverride = getenv("MOZ_GTK_TITLEBAR_DECORATION");
     if (decorationOverride) {
         if (strcmp(decorationOverride, "none") == 0) {
