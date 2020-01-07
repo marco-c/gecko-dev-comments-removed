@@ -653,7 +653,6 @@ EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
         if (Prefs::ClickHoldContextMenu()) {
           KillClickHoldTimer();
         }
-        mInTouchDrag = false;
         StopTrackingDragGesture();
         sNormalLMouseEventInProcess = false;
         
@@ -5453,22 +5452,22 @@ EventStateManager::ContentRemoved(nsIDocument* aDocument, nsIContent* aContent)
     fm->ContentRemoved(aDocument, aContent);
 
   if (mHoverContent &&
-      nsContentUtils::ContentIsDescendantOf(mHoverContent, aContent)) {
+      nsContentUtils::ContentIsFlattenedTreeDescendantOf(mHoverContent, aContent)) {
     
     
-    SetContentState(aContent->GetParent(), NS_EVENT_STATE_HOVER);
+    SetContentState(aContent->GetFlattenedTreeParent(), NS_EVENT_STATE_HOVER);
   }
 
   if (mActiveContent &&
-      nsContentUtils::ContentIsDescendantOf(mActiveContent, aContent)) {
+      nsContentUtils::ContentIsFlattenedTreeDescendantOf(mActiveContent, aContent)) {
     
     
-    SetContentState(aContent->GetParent(), NS_EVENT_STATE_ACTIVE);
+    SetContentState(aContent->GetFlattenedTreeParent(), NS_EVENT_STATE_ACTIVE);
   }
 
   if (sDragOverContent &&
       sDragOverContent->OwnerDoc() == aContent->OwnerDoc() &&
-      nsContentUtils::ContentIsDescendantOf(sDragOverContent, aContent)) {
+      nsContentUtils::ContentIsFlattenedTreeDescendantOf(sDragOverContent, aContent)) {
     sDragOverContent = nullptr;
   }
 
