@@ -2,9 +2,6 @@
 
 
 
-const CC = Components.classes;
-const CI = Components.interfaces;
-
 const TPS_ID                         = "tps@mozilla.org";
 const TPS_CMDLINE_CONTRACTID         = "@mozilla.org/commandlinehandler/general-startup;1?type=tps";
 const TPS_CMDLINE_CLSID              = Components.ID("{4e5bd3f0-41d3-11df-9879-0800200c9a66}");
