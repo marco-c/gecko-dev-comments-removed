@@ -40,6 +40,10 @@ public:
   void AssignErrorNote(JSErrorNotes::Note* aNote);
 };
 
+namespace workers {
+class WorkerPrivate;
+}
+
 class WorkerErrorReport : public WorkerErrorBase
 {
 public:
@@ -56,27 +60,22 @@ public:
   { }
 
   void AssignErrorReport(JSErrorReport* aReport);
+
+  
+  
+  
+  static void
+  ReportError(JSContext* aCx, workers::WorkerPrivate* aWorkerPrivate,
+              bool aFireAtScope, DOMEventTargetHelper* aTarget,
+              const WorkerErrorReport& aReport, uint64_t aInnerWindowId,
+              JS::Handle<JS::Value> aException = JS::NullHandleValue);
+
+  static void
+  LogErrorToConsole(const WorkerErrorReport& aReport, uint64_t aInnerWindowId);
+
 };
 
 } 
 } 
-
-BEGIN_WORKERS_NAMESPACE
-
-class WorkerPrivate;
-
-
-
-
-void
-ReportError(JSContext* aCx, WorkerPrivate* aWorkerPrivate,
-            bool aFireAtScope, DOMEventTargetHelper* aTarget,
-            const WorkerErrorReport& aReport, uint64_t aInnerWindowId,
-            JS::Handle<JS::Value> aException = JS::NullHandleValue);
-
-void
-LogErrorToConsole(const WorkerErrorReport& aReport, uint64_t aInnerWindowId);
-
-END_WORKERS_NAMESPACE
 
 #endif 

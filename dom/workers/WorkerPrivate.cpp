@@ -2610,7 +2610,7 @@ WorkerPrivateParent<Derived>::BroadcastErrorToSharedWorkers(
     
     
     MOZ_ASSERT(aReport);
-    LogErrorToConsole(*aReport, 0);
+    WorkerErrorReport::LogErrorToConsole(*aReport, 0);
     return;
   }
 
@@ -2729,7 +2729,7 @@ WorkerPrivateParent<Derived>::BroadcastErrorToSharedWorkers(
   
   if (shouldLogErrorToConsole) {
     MOZ_ASSERT(aReport);
-    LogErrorToConsole(*aReport, 0);
+    WorkerErrorReport::LogErrorToConsole(*aReport, 0);
   }
 }
 
@@ -5047,7 +5047,8 @@ WorkerPrivate::ReportError(JSContext* aCx, JS::ConstUTF8CharsZ aToStringResult,
                      report.mErrorNumber != JSMSG_OUT_OF_MEMORY &&
                      JS::CurrentGlobalOrNull(aCx);
 
-  workers::ReportError(aCx, this, fireAtScope, nullptr, report, 0, exn);
+  WorkerErrorReport::ReportError(aCx, this, fireAtScope, nullptr, report, 0,
+                                 exn);
 
   mErrorHandlerRecursionCount--;
 }

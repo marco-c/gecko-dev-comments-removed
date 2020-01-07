@@ -157,7 +157,7 @@ public:
     }
 
     
-    LogErrorToConsole(aReport, aInnerWindowId);
+    WorkerErrorReport::LogErrorToConsole(aReport, aInnerWindowId);
   }
 
   ReportErrorRunnable(WorkerPrivate* aWorkerPrivate,
@@ -287,16 +287,15 @@ WorkerErrorReport::AssignErrorReport(JSErrorReport* aReport)
   }
 }
 
-namespace workers {
 
 
 
-
-void
-ReportError(JSContext* aCx, WorkerPrivate* aWorkerPrivate,
-            bool aFireAtScope, DOMEventTargetHelper* aTarget,
-            const WorkerErrorReport& aReport, uint64_t aInnerWindowId,
-            JS::Handle<JS::Value> aException)
+ void
+WorkerErrorReport::ReportError(JSContext* aCx, WorkerPrivate* aWorkerPrivate,
+                               bool aFireAtScope, DOMEventTargetHelper* aTarget,
+                               const WorkerErrorReport& aReport,
+                               uint64_t aInnerWindowId,
+                               JS::Handle<JS::Value> aException)
 {
   if (aWorkerPrivate) {
     aWorkerPrivate->AssertIsOnWorkerThread();
@@ -414,11 +413,12 @@ ReportError(JSContext* aCx, WorkerPrivate* aWorkerPrivate,
   }
 
   
-  LogErrorToConsole(aReport, aInnerWindowId);
+  WorkerErrorReport::LogErrorToConsole(aReport, aInnerWindowId);
 }
 
-void
-LogErrorToConsole(const WorkerErrorReport& aReport, uint64_t aInnerWindowId)
+ void
+WorkerErrorReport::LogErrorToConsole(const WorkerErrorReport& aReport,
+                                     uint64_t aInnerWindowId)
 {
   AssertIsOnMainThread();
 
@@ -480,6 +480,5 @@ LogErrorToConsole(const WorkerErrorReport& aReport, uint64_t aInnerWindowId)
   fflush(stderr);
 }
 
-} 
 } 
 } 
