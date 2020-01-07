@@ -8634,14 +8634,14 @@ nsDisplayTransform::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBu
   }
 
   nsTArray<mozilla::wr::WrFilterOp> filters;
-  Maybe<Matrix4x4> transformForScrollData;
+  Maybe<nsDisplayTransform*> deferredTransformItem;
   if (!mFrame->HasPerspective()) {
     
     
     
     
     
-    transformForScrollData = Some(GetTransform().GetMatrix());
+    deferredTransformItem = Some(this);
   }
 
   
@@ -8661,7 +8661,7 @@ nsDisplayTransform::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBu
                            gfx::CompositionOp::OP_OVER,
                            !BackfaceIsHidden(),
                            mFrame->Extend3DContext() && !mNoExtendContext,
-                           transformForScrollData,
+                           deferredTransformItem,
                            nullptr,
                            rasterizeLocally);
 
