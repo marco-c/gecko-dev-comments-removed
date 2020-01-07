@@ -310,6 +310,11 @@ class SyncedBookmarksMirror {
 
   async apply({ localTimeSeconds = Date.now() / 1000,
                 remoteTimeSeconds = 0 } = {}) {
+    let hasChanges = await this.hasChanges();
+    if (!hasChanges) {
+      MirrorLog.debug("No changes detected in both mirror and Places");
+      return {};
+    }
     
     
     
@@ -801,6 +806,46 @@ class SyncedBookmarksMirror {
     }
 
     return infos;
+  }
+
+  
+
+
+
+
+
+  async hasChanges() {
+    
+    
+    
+    let rows = await this.db.execute(`
+      SELECT
+      EXISTS (
+       SELECT 1
+       FROM items v
+       LEFT JOIN moz_bookmarks b ON v.guid = b.guid
+       WHERE v.needsMerge AND
+       (NOT v.isDeleted OR b.guid NOT NULL)
+      ) OR EXISTS (
+       WITH RECURSIVE
+       syncedItems(id, syncChangeCounter) AS (
+         SELECT b.id, b.syncChangeCounter FROM moz_bookmarks b
+         WHERE b.guid IN ('menu________', 'toolbar_____', 'unfiled_____',
+                          'mobile______')
+         UNION ALL
+         SELECT b.id, b.syncChangeCounter FROM moz_bookmarks b
+         JOIN syncedItems s ON b.parent = s.id
+       )
+       SELECT 1
+       FROM syncedItems
+       WHERE syncChangeCounter > 0
+      ) OR EXISTS (
+       SELECT 1
+       FROM moz_bookmarks_deleted
+      )
+      AS hasChanges
+    `);
+    return !!rows[0].getResultByName("hasChanges");
   }
 
   
