@@ -574,6 +574,13 @@ nsContentUtils::Init()
   NS_ENSURE_TRUE(sNameSpaceManager, NS_ERROR_OUT_OF_MEMORY);
 
   sXPConnect = nsXPConnect::XPConnect();
+  
+  
+  
+  
+  
+  
+  NS_ADDREF(sXPConnect);
 
   sSecurityManager = nsScriptSecurityManager::GetScriptSecurityManager();
   if(!sSecurityManager)
@@ -2092,7 +2099,7 @@ nsContentUtils::Shutdown()
 
   NS_IF_RELEASE(sStringBundleService);
   NS_IF_RELEASE(sConsoleService);
-  sXPConnect = nullptr;
+  NS_IF_RELEASE(sXPConnect);
   NS_IF_RELEASE(sSecurityManager);
   NS_IF_RELEASE(sSystemPrincipal);
   NS_IF_RELEASE(sNullSubjectPrincipal);

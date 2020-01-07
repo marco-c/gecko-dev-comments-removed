@@ -15,10 +15,6 @@
 #include "js/Id.h"
 #include "nsIXPConnect.h"
 
-#ifdef XP_WIN
-#undef GetClassName
-#endif
-
 struct nsGlobalNameStruct;
 class nsGlobalWindowInner;
 class nsGlobalWindowOuter;
@@ -34,19 +30,8 @@ public:
   static void ShutDown();
 
 protected:
-  static nsIXPConnect *sXPConnect;
-
-  
-  static nsresult DefineStaticJSVals();
-
   static bool sIsInitialized;
-
-public:
-  static jsid sConstructor_id;
-  static jsid sWrappedJSObject_id;
 };
-
-typedef nsDOMClassInfo nsDOMGenericSH;
 
 
 
