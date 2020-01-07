@@ -793,10 +793,6 @@ class RTCPeerConnection {
     }
 
     
-    
-    this._ensureTransceiversForOfferToReceive(options);
-
-    
     if (onSuccess) {
       return this._legacy(onSuccess, onErr, () => this._createOffer(options));
     }
@@ -846,6 +842,7 @@ class RTCPeerConnection {
 
   async _createOffer(options) {
     this._checkClosed();
+    this._ensureTransceiversForOfferToReceive(options);
     this._syncTransceivers();
     let origin = Cu.getWebIDLCallerPrincipal().origin;
     return this._chain(async () => {
