@@ -60,7 +60,7 @@ struct BaseRect {
   
   
   
-  MOZ_ALWAYS_INLINE bool IsZero() const { return height == 0 || width == 0; }
+  MOZ_ALWAYS_INLINE bool IsZeroArea() const { return height == 0 || width == 0; }
   MOZ_ALWAYS_INLINE bool IsEmpty() const { return height <= 0 || width <= 0; }
   void SetEmpty() { width = height = 0; }
 
