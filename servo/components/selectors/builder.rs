@@ -23,7 +23,7 @@ use sink::Push;
 use smallvec::{self, SmallVec};
 use std::cmp;
 use std::iter;
-use std::ops::Add;
+use std::ops::{AddAssign, Add};
 use std::ptr;
 use std::slice;
 
@@ -228,6 +228,16 @@ struct Specificity {
     element_selectors: u32,
 }
 
+
+impl AddAssign for Specificity {
+    #[inline]
+    fn add_assign(&mut self, rhs: Self) {
+        self.id_selectors += rhs.id_selectors;
+        self.class_like_selectors += rhs.class_like_selectors;
+        self.element_selectors += rhs.element_selectors;
+    }
+}
+
 impl Add for Specificity {
     type Output = Specificity;
 
@@ -251,6 +261,7 @@ impl Default for Specificity {
 }
 
 impl From<u32> for Specificity {
+    #[inline]
     fn from(value: u32) -> Specificity {
         assert!(value <= MAX_10BIT << 20 | MAX_10BIT << 10 | MAX_10BIT);
         Specificity {
@@ -262,6 +273,7 @@ impl From<u32> for Specificity {
 }
 
 impl From<Specificity> for u32 {
+    #[inline]
     fn from(specificity: Specificity) -> u32 {
         cmp::min(specificity.id_selectors, MAX_10BIT) << 20 |
             cmp::min(specificity.class_like_selectors, MAX_10BIT) << 10 |
@@ -298,17 +310,29 @@ where
                     builder,
                 );
             }
-            
-            
-            
-            
-            
-            
-            
-            Component::Slotted(..) | Component::PseudoElement(..) | Component::LocalName(..) => {
+            Component::PseudoElement(..) | Component::LocalName(..) => {
                 specificity.element_selectors += 1
             },
-            Component::ID(..) => specificity.id_selectors += 1,
+            Component::Slotted(ref selector) => {
+                specificity.element_selectors += 1;
+                
+                
+                
+                
+                
+                
+                *specificity += Specificity::from(selector.specificity());
+            },
+            Component::Host(ref selector) => {
+                specificity.class_like_selectors += 1;
+                if let Some(ref selector) = *selector {
+                    
+                    *specificity += Specificity::from(selector.specificity());
+                }
+            }
+            Component::ID(..) => {
+                specificity.id_selectors += 1;
+            },
             Component::Class(..) |
             Component::AttributeInNoNamespace { .. } |
             Component::AttributeInNoNamespaceExists { .. } |
@@ -319,7 +343,6 @@ where
             Component::Root |
             Component::Empty |
             Component::Scope |
-            Component::Host(..) |
             Component::NthChild(..) |
             Component::NthLastChild(..) |
             Component::NthOfType(..) |
@@ -327,7 +350,9 @@ where
             Component::FirstOfType |
             Component::LastOfType |
             Component::OnlyOfType |
-            Component::NonTSPseudoClass(..) => specificity.class_like_selectors += 1,
+            Component::NonTSPseudoClass(..) => {
+                specificity.class_like_selectors += 1;
+            },
             Component::ExplicitUniversalType |
             Component::ExplicitAnyNamespace |
             Component::ExplicitNoNamespace |
