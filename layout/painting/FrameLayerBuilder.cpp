@@ -4353,30 +4353,30 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
     
     MOZ_ASSERT(!(hadLayerEventRegions && hadCompositorHitTestInfo));
 
-    
-    
-    AutoTArray<nsDisplayItem*, 1> mergedItems;
-
     if (marker == DisplayItemEntryType::ITEM) {
-      mergedItems.AppendElement(item);
+      
+      
+      nsDisplayItem* peek = iter.PeekNext();
+      if (peek && item->CanMerge(peek)) {
+        
+        AutoTArray<nsDisplayItem*, 2> mergedItems { item };
+        while ((peek = iter.PeekNext())) {
+          if (!item->CanMerge(peek)) {
+            break;
+          }
 
-      while (nsDisplayItem* peek = iter.PeekNext()) {
-        if (!item->CanMerge(peek)) {
-          break;
+          mergedItems.AppendElement(peek);
+
+          
+          i = iter.GetNext();
         }
 
-        mergedItems.AppendElement(peek);
-
         
-        i = iter.GetNext();
+        
+        MOZ_ASSERT(mergedItems.Length() > 1);
+        item = mBuilder->MergeItems(mergedItems);
+        MOZ_ASSERT(item && itemType == item->GetType());
       }
-    }
-
-    if (mergedItems.Length() > 1) {
-      
-      
-      item = mBuilder->MergeItems(mergedItems);
-      MOZ_ASSERT(item && itemType == item->GetType());
     }
 
     MOZ_ASSERT(item->GetType() != DisplayItemType::TYPE_WRAP_LIST);
