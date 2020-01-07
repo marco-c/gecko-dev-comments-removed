@@ -558,9 +558,6 @@ public:
   virtual void DisableOrientationChangeListener() = 0;
 #endif
 
-  virtual void EnableTimeChangeNotifications() = 0;
-  virtual void DisableTimeChangeNotifications() = 0;
-
   
 
 
