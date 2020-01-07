@@ -14,7 +14,7 @@ import subprocess
 import sys
 
 import mozfile
-from . import xtalos
+import xtalos
 
 EVENTNAME_INDEX = 0
 PROCESS_INDEX = 2
@@ -29,16 +29,7 @@ NUMBYTES_COL = "NumBytes"
 CEVT_WINDOWS_RESTORED = "{917b96b1-ecad-4dab-a760-8d49027748ae}"
 CEVT_XPCOM_SHUTDOWN = "{26d1e091-0ae7-4f49-a554-4214445c505c}"
 NAME_SUBSTITUTIONS = [
-    
-    
-    
-    
-    (re.compile(r'{\w{8}-\w{4}-\w{4}-\w{4}-\w{12}}'), '{uuid}'),
-    (re.compile(r'talos\\tests\\tp5n\\.*'), r'talos\\tests\{tp5n_files}'),
-    (re.compile(r'nvidia corporation\\3d vision\\.*'), '{nvidia_3d_vision}'),
-    (re.compile(r'cltbld\.t-w732-ix-\d+\.\d+'), '{cltbld}'),
-    (re.compile(r'venv\\lib\\site-packages\\pip\\_vendor\\.*'),
-     r'venv\lib\\site-packages\\{pip_vendor}'),
+    (re.compile(r'{\w{8}-\w{4}-\w{4}-\w{4}-\w{12}}'), '{uuid}')
 ]
 stages = ["startup", "normal", "shutdown"]
 net_events = {
@@ -377,19 +368,19 @@ def etlparser(xperf_path, etl_filename, processID, approot=None,
 
     
     
-    whitelist_path = None
+    filename = None
     wl_temp = {}
     dirname = os.path.dirname(__file__)
     if os.path.exists(os.path.join(dirname, 'xperf_whitelist.json')):
-        whitelist_path = os.path.join(dirname, 'xperf_whitelist.json')
+        filename = os.path.join(dirname, 'xperf_whitelist.json')
     elif os.path.exists(os.path.join(dirname, 'xtalos')) and \
             os.path.exists(os.path.join(dirname, 'xtalos',
                                         'xperf_whitelist.json')):
-        whitelist_path = os.path.join(dirname, 'xtalos', 'xperf_whitelist.json')
+        filename = os.path.join(dirname, 'xtalos', 'xperf_whitelist.json')
 
     wl_temp = {}
-    if whitelist_path:
-        with open(whitelist_path, 'r') as fHandle:
+    if filename:
+        with open(filename, 'r') as fHandle:
             wl_temp = json.load(fHandle)
 
     
@@ -411,7 +402,7 @@ def etlparser(xperf_path, etl_filename, processID, approot=None,
 
     errors = []
     for row in filekeys:
-        filename = original_filename = row[0]
+        filename = row[0]
         filename = filename.lower()
         
         filename = filename.replace(" (x86)", '')
@@ -474,11 +465,10 @@ def etlparser(xperf_path, etl_filename, processID, approot=None,
 
 
         else:
-            errors.append("File '%s' (normalized from '%s') was accessed and we were not expecting"
+            errors.append("File '%s' was accessed and we were not expecting"
                           " it.  DiskReadCount: %s, DiskWriteCount: %s,"
                           " DiskReadBytes: %s, DiskWriteBytes: %s"
                           % (filename,
-                             original_filename,
                              files[row]['DiskReadCount'],
                              files[row]['DiskWriteCount'],
                              files[row]['DiskReadBytes'],

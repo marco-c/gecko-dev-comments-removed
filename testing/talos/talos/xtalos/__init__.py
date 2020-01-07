@@ -1,6 +1,6 @@
 
 from __future__ import absolute_import
 
-from . import etlparser  
-from .start_xperf import start  
-from .start_xperf import start_from_config  
+from start_xperf import start  
+from start_xperf import start_from_config  
+import etlparser  
