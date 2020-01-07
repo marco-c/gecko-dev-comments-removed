@@ -2956,11 +2956,7 @@ pref("layout.css.report_errors", true);
 pref("layout.css.visited_links_enabled", true);
 
 
-#ifdef EARLY_BETA_OR_EARLIER
 pref("layout.css.moz-document.content.enabled",  false);
-#else
-pref("layout.css.moz-document.content.enabled",  true);
-#endif
 
 
 
