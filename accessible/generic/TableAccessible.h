@@ -173,7 +173,7 @@ public:
   
 
 
-  virtual bool IsProbablyLayoutTable() { return false; }
+  virtual bool IsProbablyLayoutTable();
 
   
 
