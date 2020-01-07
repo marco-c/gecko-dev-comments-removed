@@ -2322,22 +2322,22 @@ CheckFrame(JSContext* cx, BaselineFrame* frame)
 }
 
 static bool
-CheckScript(JSContext* cx, JSScript* script)
+CanIonCompileOrInlineScript(JSScript* script, const char** reason)
 {
     if (script->isForEval()) {
         
         
         
-        TrackAndSpewIonAbort(cx, script, "eval script");
+        *reason = "eval script";
         return false;
     }
 
     if (script->isGenerator()) {
-        TrackAndSpewIonAbort(cx, script, "generator script");
+        *reason = "generator script";
         return false;
     }
     if (script->isAsync()) {
-        TrackAndSpewIonAbort(cx, script, "async script");
+        *reason = "async script";
         return false;
     }
 
@@ -2346,7 +2346,7 @@ CheckScript(JSContext* cx, JSScript* script)
         
         
         
-        TrackAndSpewIonAbort(cx, script, "has non-syntactic global scope");
+        *reason = "has non-syntactic global scope";
         return false;
     }
 
@@ -2355,25 +2355,25 @@ CheckScript(JSContext* cx, JSScript* script)
     {
         
         
-        TrackAndSpewIonAbort(cx, script, "has extra var environment");
+        *reason = "has extra var environment";
         return false;
     }
 
     if (script->nTypeSets() >= UINT16_MAX) {
         
         
-        TrackAndSpewIonAbort(cx, script, "too many typesets");
+        *reason = "too many typesets";
         return false;
     }
 
     return true;
 }
 
-static MethodStatus
-CheckScriptSize(JSContext* cx, JSScript* script)
+static bool
+ScriptIsTooLarge(JSContext* cx, JSScript* script)
 {
     if (!JitOptions.limitScriptSize)
-        return Method_Compiled;
+        return false;
 
     uint32_t numLocalsAndArgs = NumLocalsAndArgs(script);
 
@@ -2384,20 +2384,44 @@ CheckScriptSize(JSContext* cx, JSScript* script)
             JitSpew(JitSpew_IonAbort, "Script too large (%zu bytes) (%u locals/args)",
                     script->length(), numLocalsAndArgs);
             TrackIonAbort(cx, script, script->code(), "too large");
-            return Method_CantCompile;
+            return true;
         }
     }
 
-    return Method_Compiled;
+    return false;
 }
 
 bool
 CanIonCompileScript(JSContext* cx, JSScript* script)
 {
-    if (!script->canIonCompile() || !CheckScript(cx, script))
+    if (!script->canIonCompile())
         return false;
 
-    return CheckScriptSize(cx, script) == Method_Compiled;
+    const char* reason = nullptr;
+    if (!CanIonCompileOrInlineScript(script, &reason)) {
+        TrackAndSpewIonAbort(cx, script, reason);
+        return false;
+    }
+
+    if (ScriptIsTooLarge(cx, script))
+        return false;
+
+    return true;
+}
+
+bool
+CanIonInlineScript(JSScript* script)
+{
+    if (!script->canIonCompile())
+        return false;
+
+    const char* reason = nullptr;
+    if (!CanIonCompileOrInlineScript(script, &reason)) {
+        JitSpew(JitSpew_Inlining, "Cannot Ion compile script (%s)", reason);
+        return false;
+    }
+
+    return true;
 }
 
 static OptimizationLevel
@@ -2422,15 +2446,9 @@ Compile(JSContext* cx, HandleScript script, BaselineFrame* osrFrame, jsbytecode*
         return Method_Skipped;
     }
 
-    if (!CheckScript(cx, script)) {
+    if (!CanIonCompileScript(cx, script)) {
         JitSpew(JitSpew_IonAbort, "Aborted compilation of %s:%zu", script->filename(), script->lineno());
         return Method_CantCompile;
-    }
-
-    MethodStatus status = CheckScriptSize(cx, script);
-    if (status != Method_Compiled) {
-        JitSpew(JitSpew_IonAbort, "Aborted compilation of %s:%zu", script->filename(), script->lineno());
-        return status;
     }
 
     bool recompile = false;

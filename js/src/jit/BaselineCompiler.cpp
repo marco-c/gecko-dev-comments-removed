@@ -727,7 +727,7 @@ BaselineCompiler::emitWarmUpCounterIncrement(bool allowOsr)
     
     
 
-    if (!ionCompileable_ && !ionOSRCompileable_)
+    if (!ionCompileable_)
         return true;
 
     frame.assertSyncedStack();
