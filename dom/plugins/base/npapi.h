@@ -473,6 +473,7 @@ typedef enum {
   , NPNVsupportsCompositingCoreAnimationPluginsBool = 74656 
 
 #endif
+  , NPNVLast
 } NPNVariable;
 
 typedef enum {
