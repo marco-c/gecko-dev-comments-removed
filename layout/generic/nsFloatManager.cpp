@@ -533,6 +533,14 @@ public:
   virtual bool IsEmpty() const = 0;
 
   
+  
+  
+  
+  
+  
+  virtual bool MayNarrowInBlockDirection() const = 0;
+
+  
   virtual void Translate(nscoord aLineLeft, nscoord aBlockStart) = 0;
 
   static LogicalRect ComputeShapeBoxRect(
@@ -734,6 +742,9 @@ public:
     
     
     return false;
+  }
+  bool MayNarrowInBlockDirection() const override {
+    return true;
   }
 
   void Translate(nscoord aLineLeft, nscoord aBlockStart) override
@@ -1091,6 +1102,10 @@ public:
     
     return false;
   }
+  bool MayNarrowInBlockDirection() const override {
+    
+    return !!mRadii;
+  }
 
   void Translate(nscoord aLineLeft, nscoord aBlockStart) override
   {
@@ -1284,6 +1299,7 @@ public:
     
     return false;
   }
+  bool MayNarrowInBlockDirection() const override { return true; }
 
   void Translate(nscoord aLineLeft, nscoord aBlockStart) override;
 
@@ -1809,6 +1825,7 @@ public:
   nscoord BStart() const override { return mBStart; }
   nscoord BEnd() const override { return mBEnd; }
   bool IsEmpty() const override { return mIntervals.IsEmpty(); }
+  bool MayNarrowInBlockDirection() const override { return true; }
 
   void Translate(nscoord aLineLeft, nscoord aBlockStart) override;
 
@@ -2517,6 +2534,26 @@ nsFloatManager::FloatInfo::IsEmpty(ShapeType aShapeType) const
     return IsEmpty();
   }
   return mShapeInfo->IsEmpty();
+}
+
+bool
+nsFloatManager::FloatInfo::MayNarrowInBlockDirection(ShapeType aShapeType) const
+{
+  
+  
+  
+  
+  
+  if (aShapeType == ShapeType::Margin) {
+    return false;
+  }
+
+  MOZ_ASSERT(aShapeType == ShapeType::ShapeOutside);
+  if (!mShapeInfo) {
+    return false;
+  }
+
+  return mShapeInfo->MayNarrowInBlockDirection();
 }
 
 
