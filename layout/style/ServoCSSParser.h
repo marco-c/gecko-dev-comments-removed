@@ -9,7 +9,19 @@
 #ifndef mozilla_ServoCSSParser_h
 #define mozilla_ServoCSSParser_h
 
-#include "mozilla/ServoBindings.h"
+#include "mozilla/gfx/Types.h"
+#include "mozilla/RefPtr.h"
+#include "mozilla/ServoTypes.h"
+#include "nsColor.h"
+#include "nsCSSPropertyID.h"
+#include "nsDOMCSSDeclaration.h"
+#include "nsString.h"
+
+class nsCSSValue;
+class nsIDocument;
+struct nsCSSRect;
+
+using RawGeckoGfxMatrix4x4 = mozilla::gfx::Float[16];
 
 namespace mozilla {
 namespace css {
@@ -19,9 +31,15 @@ class Loader;
 
 namespace mozilla {
 
+class ServoStyleSet;
+class SharedFontList;
+struct URLExtraData;
+
 class ServoCSSParser
 {
 public:
+  using ParsingEnvironment = nsDOMCSSDeclaration::ServoCSSParsingEnvironment;
+
   
 
 
@@ -87,6 +105,98 @@ public:
                               const nsAString& aValue,
                               URLExtraData* aURLExtraData,
                               nsCSSValue& aResult);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  static already_AddRefed<RawServoDeclarationBlock> ParseProperty(
+    nsCSSPropertyID aProperty,
+    const nsAString& aValue,
+    const ParsingEnvironment& aParsingEnvironment,
+    ParsingMode aParsingMode = ParsingMode::Default);
+
+  
+
+
+
+
+
+
+
+  static bool ParseEasing(const nsAString& aValue,
+                          URLExtraData* aUrl,
+                          nsTimingFunction& aResult);
+
+  
+
+
+
+
+
+
+
+
+  static bool ParseTransformIntoMatrix(const nsAString& aValue,
+                                       bool& aContains3DTransform,
+                                       RawGeckoGfxMatrix4x4& aResult);
+
+  
+
+
+
+
+
+
+
+
+  static bool ParseFontDescriptor(nsCSSFontDesc aDescID,
+                                  const nsAString& aValue,
+                                  URLExtraData* aUrl,
+                                  nsCSSValue& aResult);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  static bool ParseFontShorthandForMatching(const nsAString& aValue,
+                                            URLExtraData* aUrl,
+                                            RefPtr<SharedFontList>& aList,
+                                            nsCSSValue& aStyle,
+                                            nsCSSValue& aStretch,
+                                            nsCSSValue& aWeight);
+
+  
+
+
+
+
+
+  static already_AddRefed<URLExtraData> GetURLExtraData(nsIDocument* aDocument);
+
+  
+
+
+
+
+
+  static ParsingEnvironment GetParsingEnvironment(nsIDocument* aDocument);
 };
 
 } 

@@ -107,22 +107,6 @@ public:
 
   static bool IsAnimatableProperty(nsCSSPropertyID aProperty,
                                    StyleBackendType aBackend);
-
-  
-
-
-
-
-
-
-
-
-
-
-  static already_AddRefed<RawServoDeclarationBlock> ParseProperty(
-    nsCSSPropertyID aProperty,
-    const nsAString& aValue,
-    nsIDocument* aDocument);
 };
 
 } 
