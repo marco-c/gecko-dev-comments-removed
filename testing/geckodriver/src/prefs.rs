@@ -8,7 +8,7 @@ use mozprofile::preferences::Pref;
 
 
 lazy_static! {
-    pub static ref DEFAULT: [(&'static str, Pref); 54] = [
+    pub static ref DEFAULT: Vec<(&'static str, Pref)> = vec![
         // Make sure Shield doesn't hit the network.
         ("app.normandy.api_url", Pref::new("")),
 
