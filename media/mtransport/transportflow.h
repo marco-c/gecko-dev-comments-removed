@@ -66,7 +66,7 @@ class TransportFlow final : public nsISupports {
   
   
   
-  nsresult PushLayer(TransportLayer* layer);
+  void PushLayer(TransportLayer* layer);
 
   TransportLayer *GetLayer(const std::string& id) const;
 

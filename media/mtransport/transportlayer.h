@@ -51,8 +51,9 @@ class TransportLayer : public sigslot::has_slots<> {
   nsresult Init();  
   virtual nsresult InitInternal() { return NS_OK; } 
 
-  
-  virtual void Inserted(TransportFlow *flow, TransportLayer *downward);
+  void SetFlowId(const std::string& flow_id) {flow_id_ = flow_id;}
+
+  virtual void Chain(TransportLayer *downward);
 
   
   TransportLayer *downward() { return downward_; }
