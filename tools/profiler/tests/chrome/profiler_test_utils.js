@@ -42,12 +42,38 @@ function end(error) {
   SimpleTest.finish();
 }
 
-async function runTest(settings, workload) {
+function getBufferInfo() {
+  let position = {}, totalSize = {}, generation = {};
+  Services.profiler.GetBufferInfo(position, totalSize, generation);
+  return {
+    position: position.value,
+    totalSize: totalSize.value,
+    generation: generation.value
+  };
+}
+
+async function runTest(settings, workload,
+                       checkProfileCallback = function(profile) {}) {
   SimpleTest.waitForExplicitFinish();
   try {
     await startProfiler(settings);
-    await workload();
-    await getProfile();
+
+    
+    const bufferInfoAtStart = getBufferInfo();
+    while (true) {
+      await workload();
+      const bufferInfoAfterWorkload = getBufferInfo();
+      if (bufferInfoAfterWorkload.generation > bufferInfoAtStart.generation ||
+          bufferInfoAfterWorkload.position > bufferInfoAtStart.position) {
+        
+        
+        
+        break;
+      }
+    }
+
+    const profile = await getProfile();
+    await checkProfileCallback(profile);
     await stopProfiler();
     await end();
   } catch (e) {
