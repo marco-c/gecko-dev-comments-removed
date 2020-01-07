@@ -33,6 +33,7 @@ BUILDER_NAME_PREFIX = {
     'linux64-devedition-nightly': 'Ubuntu VM 12.04 x64',
     'macosx64': 'Rev7 MacOSX Yosemite 10.10.5',
     'macosx64-devedition': 'Rev7 MacOSX Yosemite 10.10.5 DevEdition',
+    'macosx64-ccov': 'Rev7 MacOSX Yosemite 10.10.5 Code Coverage',
     'android-4.3-arm7-api-16': 'Android 4.3 armv7 api-16+',
     'android-4.2-x86': 'Android 4.2 x86 Emulator',
     'android-4.3-arm7-api-16-gradle': 'Android 4.3 armv7 api-16+',
@@ -82,8 +83,6 @@ test_description_schema = {str(k): v for k, v in test_description_schema.schema.
 mozharness_test_run_schema = Schema({
     Required('using'): 'mozharness-test',
     Required('test'): test_description_schema,
-    
-    Required('workdir'): basestring,
 })
 
 
@@ -95,7 +94,6 @@ def test_packages_url(taskdesc):
 @run_job_using('docker-engine', 'mozharness-test', schema=mozharness_test_run_schema)
 @run_job_using('docker-worker', 'mozharness-test', schema=mozharness_test_run_schema)
 def mozharness_test_on_docker(config, job, taskdesc):
-    run = job['run']
     test = taskdesc['run']['test']
     mozharness = test['mozharness']
     worker = taskdesc['worker']
@@ -110,9 +108,9 @@ def mozharness_test_on_docker(config, job, taskdesc):
 
     artifacts = [
         
-        ("public/logs/", "{workdir}/workspace/build/upload/logs/".format(**run)),
-        ("public/test", "{workdir}/artifacts/".format(**run)),
-        ("public/test_info/", "{workdir}/workspace/build/blobber_upload_dir/".format(**run)),
+        ("public/logs/", "/builds/worker/workspace/build/upload/logs/"),
+        ("public/test", "/builds/worker/artifacts/"),
+        ("public/test_info/", "/builds/worker/workspace/build/blobber_upload_dir/"),
     ]
 
     installer_url = get_artifact_url('<build>', mozharness['build-artifact-name'])
@@ -121,7 +119,7 @@ def mozharness_test_on_docker(config, job, taskdesc):
 
     worker['artifacts'] = [{
         'name': prefix,
-        'path': os.path.join('{workdir}/workspace'.format(**run), path),
+        'path': os.path.join('/builds/worker/workspace', path),
         'type': 'directory',
     } for (prefix, path) in artifacts]
 
@@ -129,7 +127,7 @@ def mozharness_test_on_docker(config, job, taskdesc):
         'type': 'persistent',
         'name': 'level-{}-{}-test-workspace'.format(
             config.params['level'], config.params['project']),
-        'mount-point': "{workdir}/workspace".format(**run),
+        'mount-point': "/builds/worker/workspace",
     }]
 
     env = worker['env'] = {
@@ -164,7 +162,7 @@ def mozharness_test_on_docker(config, job, taskdesc):
 
     
     command = [
-        '{workdir}/bin/run-task'.format(**run),
+        '/builds/worker/bin/run-task',
     ]
 
     
@@ -174,14 +172,14 @@ def mozharness_test_on_docker(config, job, taskdesc):
     
     
     if test['checkout']:
-        command.extend(['--vcs-checkout', '{workdir}/checkouts/gecko'.format(**run)])
-        env['MOZHARNESS_PATH'] = '{workdir}/checkouts/gecko/testing/mozharness'.format(**run)
+        command.extend(['--vcs-checkout', '/builds/worker/checkouts/gecko'])
+        env['MOZHARNESS_PATH'] = '/builds/worker/checkouts/gecko/testing/mozharness'
     else:
         env['MOZHARNESS_URL'] = {'task-reference': mozharness_url}
 
     command.extend([
         '--',
-        '{workdir}/bin/test-linux.sh'.format(**run),
+        '/builds/worker/bin/test-linux.sh',
     ])
 
     command.extend([
