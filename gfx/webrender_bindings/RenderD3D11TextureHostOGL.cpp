@@ -67,7 +67,7 @@ RenderDXGITextureHostOGL::EnsureLockable()
     return true;
   }
 
-  const auto& egl = &gl::sEGLLibrary;
+  auto* egl = gl::GLLibraryEGL::Get();
 
   
   
@@ -203,7 +203,7 @@ RenderDXGITextureHostOGL::DeleteTextureHandle()
     mTextureHandle[i] = 0;
   }
 
-  const auto& egl = &gl::sEGLLibrary;
+  auto* egl = gl::GLLibraryEGL::Get();
   if (mSurface) {
     egl->fDestroySurface(egl->Display(), mSurface);
     mSurface = 0;
@@ -273,7 +273,7 @@ RenderDXGIYCbCrTextureHostOGL::EnsureLockable()
     return true;
   }
 
-  const auto& egl = &gl::sEGLLibrary;
+  auto* egl = gl::GLLibraryEGL::Get();
 
   
   
@@ -413,7 +413,7 @@ RenderDXGIYCbCrTextureHostOGL::DeleteTextureHandle()
     mTextures[i] = nullptr;
     mKeyedMutexs[i] = nullptr;
 
-    const auto& egl = &gl::sEGLLibrary;
+    auto* egl = gl::GLLibraryEGL::Get();
     if (mSurfaces[i]) {
       egl->fDestroySurface(egl->Display(), mSurfaces[i]);
       mSurfaces[i] = 0;
