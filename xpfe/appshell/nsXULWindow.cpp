@@ -2261,12 +2261,8 @@ NS_IMETHODIMP
 nsXULWindow::BeforeStartLayout()
 {
   ApplyChromeFlags();
-  
-  
-  if (Preferences::GetBool("xul.size_window_before_layout")) {
-    SyncAttributesToWidget();
-    SizeShell();
-  }
+  SyncAttributesToWidget();
+  SizeShell();
   return NS_OK;
 }
 
