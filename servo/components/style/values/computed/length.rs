@@ -898,6 +898,9 @@ pub type NonNegativeLengthOrAuto = Either<NonNegativeLength, Auto>;
 pub type NonNegativeLengthOrNormal = Either<NonNegativeLength, Normal>;
 
 
+pub type NonNegativeLengthOrPercentageOrNormal = Either<NonNegativeLengthOrPercentage, Normal>;
+
+
 
 #[allow(missing_docs)]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
