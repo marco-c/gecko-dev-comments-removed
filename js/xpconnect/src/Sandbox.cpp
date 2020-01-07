@@ -756,6 +756,19 @@ bool WrapAccessorFunction(JSContext* cx, Op& op, PropertyDescriptor* desc,
     return true;
 }
 
+static bool
+IsMaybeWrappedDOMConstructor(JSObject* obj)
+{
+    
+    
+    obj = js::CheckedUnwrap(obj);
+    if (!obj) {
+        return false;
+    }
+
+    return dom::IsDOMConstructor(obj);
+}
+
 bool
 xpc::SandboxProxyHandler::getPropertyDescriptor(JSContext* cx,
                                                 JS::Handle<JSObject*> proxy,
@@ -780,7 +793,11 @@ xpc::SandboxProxyHandler::getPropertyDescriptor(JSContext* cx,
         return false;
     if (desc.value().isObject()) {
         RootedObject val (cx, &desc.value().toObject());
-        if (JS::IsCallable(val)) {
+        if (JS::IsCallable(val) &&
+            
+            
+            
+            !IsMaybeWrappedDOMConstructor(val)) {
             val = WrapCallable(cx, val, proxy);
             if (!val)
                 return false;

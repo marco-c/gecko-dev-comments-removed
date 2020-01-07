@@ -2617,6 +2617,20 @@ UseDOMXray(JSObject* obj)
          IsDOMIfaceAndProtoClass(clasp);
 }
 
+inline bool
+IsDOMConstructor(JSObject* obj)
+{
+  if (JS_IsNativeFunction(obj, dom::Constructor)) {
+    
+    return true;
+  }
+
+  const js::Class* clasp = js::GetObjectClass(obj);
+  
+  return dom::IsDOMIfaceAndProtoClass(clasp) &&
+         dom::DOMIfaceAndProtoJSClass::FromJSClass(clasp)->mType == dom::eInterface;
+}
+
 #ifdef DEBUG
 inline bool
 HasConstructor(JSObject* obj)
