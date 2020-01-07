@@ -336,9 +336,6 @@ var AddonTestUtils = {
     Services.prefs.setBoolPref("extensions.getAddons.cache.enabled", false);
 
     
-    Services.prefs.setBoolPref("extensions.showMismatchUI", false);
-
-    
     Services.prefs.setCharPref("extensions.update.url", "http://127.0.0.1/updateURL");
     Services.prefs.setCharPref("extensions.update.background.url", "http://127.0.0.1/updateBackgroundURL");
     Services.prefs.setCharPref("extensions.blocklist.url", "http://127.0.0.1/blocklistURL");
@@ -787,8 +784,13 @@ var AddonTestUtils = {
 
         AddonManagerPrivate.unregisterProvider(XPIscope.XPIProvider);
         Cu.unload("resource://gre/modules/addons/XPIProvider.jsm");
-        Cu.unload("resource://gre/modules/addons/XPIDatabase.jsm");
         Cu.unload("resource://gre/modules/addons/XPIInstall.jsm");
+
+        
+        
+        Services.prefs.setBoolPref(PREF_DISABLE_SECURITY, true);
+
+        aomStartup.reset();
 
         if (shutdownError)
           throw shutdownError;
@@ -954,8 +956,6 @@ var AddonTestUtils = {
     var zipW = ZipWriter(zipFile, FileUtils.MODE_WRONLY | FileUtils.MODE_CREATE | flags);
 
     for (let [path, data] of Object.entries(files)) {
-      if (typeof data === "object" && ChromeUtils.getClassName(data) === "Object")
-        data = JSON.stringify(data);
       if (!(data instanceof ArrayBuffer))
         data = new TextEncoder("utf-8").encode(data).buffer;
 
