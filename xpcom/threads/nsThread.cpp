@@ -992,7 +992,8 @@ nsThread::ProcessNextEvent(bool aMayWait, bool* aResult)
 
           
           
-          if (!labeled && priority == EventPriority::Normal) {
+          if (!labeled && (priority == EventPriority::Normal ||
+                           priority == EventPriority::Idle)) {
             TimeStamp now = TimeStamp::Now();
             double diff = (now - mLastUnlabeledRunnable).ToMilliseconds();
             Telemetry::Accumulate(Telemetry::TIME_BETWEEN_UNLABELED_RUNNABLES_MS, diff);
