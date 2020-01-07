@@ -29,21 +29,21 @@ function run_test() {
 function test_pause_frame() {
   gThreadClient.pauseOnExceptions(true, false, function() {
     gThreadClient.addOneTimeListener("paused", function(event, packet) {
-      Assert.equal(packet.why.type, "exception");
-      Assert.equal(packet.why.exception, 42);
-      gThreadClient.resume(function() {
-        finishClient(gClient);
-      });
+      Assert.equal(packet.why.type, "debuggerStatement");
+      Assert.equal(packet.frame.where.line, 8);
+      gThreadClient.resume(() => finishClient(gClient));
     });
 
     
-    gDebuggee.eval("(" + function () {
-      function stopMe() {
-        throw 42;
-      }
-      try {
-        stopMe();
-      } catch (e) {}
+    gDebuggee.eval("(" + function () {   
+      function stopMe() {                
+        throw 42;                        
+      }                                  
+      try {                              
+        stopMe();                        
+      } catch (e) {                      
+        debugger;                        
+      }                                  
     } + ")()");
     
   });

@@ -1,6 +1,7 @@
 
 
 
+
 "use strict";
 
 
@@ -27,14 +28,13 @@ function run_test_with_server(server, callback) {
 
 async function test_pause_frame() {
   const [,, threadClient] = await attachTestTabAndResume(gClient, "test-pausing");
-
-  await threadClient.pauseOnExceptions(true, false);
   await executeOnNextTickAndWaitForPause(evaluateTestCode, gClient);
 
+  threadClient.pauseOnExceptions(true);
   await resume(threadClient);
   const paused = await waitForPause(gClient);
   Assert.equal(paused.why.type, "exception");
-  equal(paused.frame.where.line, 12, "paused at throw");
+  equal(paused.frame.where.line, 4, "paused at throw");
 
   await resume(threadClient);
   finishClient(gClient);
@@ -42,22 +42,18 @@ async function test_pause_frame() {
 
 function evaluateTestCode() {
   
-  Cu.evalInSandbox(`                    // 1
-    function QueryInterface() {         // 2
-      throw Cr.NS_ERROR_NO_INTERFACE;   // 3
-    }                                   // 4
-    function stopMe() {                 // 5
-      throw 42;                         // 6
-    }                                   // 7
-    try {                               // 8
-      QueryInterface();                 // 9
-    } catch (e) {}                      // 10
-    try {                               // 11
-      stopMe();                         // 12
+  Cu.evalInSandbox(
+    `                                   // 1
+    function stopMe() {                 // 2
+      debugger;                         // 3
+      throw 42;                         // 4
+    }                                   // 5
+    try {                               // 6
+      stopMe();                         // 7
     } catch (e) {}`,                    
     gDebuggee,
     "1.8",
-    "test_ignore_no_interface_exceptions.js",
+    "test_pause_exceptions-03.js",
     1
   );
   
