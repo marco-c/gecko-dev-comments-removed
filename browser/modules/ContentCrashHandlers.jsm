@@ -229,13 +229,9 @@ var TabCrashHandler = {
 
     let sentBrowser = false;
     for (let weakBrowser of browserQueue) {
-      let browser = weakBrowser.browser.get();
+      let browser = weakBrowser.get();
       if (browser) {
-        if (weakBrowser.restartRequired) {
-          this.sendToRestartRequiredPage(browser);
-        } else {
-          this.sendToTabCrashedPage(browser);
-        }
+        this.sendToTabCrashedPage(browser);
         sentBrowser = true;
       }
     }
@@ -251,9 +247,7 @@ var TabCrashHandler = {
 
 
 
-
-
-  onSelectedBrowserCrash(browser, restartRequired) {
+  onSelectedBrowserCrash(browser) {
     if (!browser.isRemoteBrowser) {
       Cu.reportError("Selected crashed browser is not remote.");
       return;
@@ -275,8 +269,7 @@ var TabCrashHandler = {
     
     
     
-    browserQueue.push({browser: Cu.getWeakReference(browser),
-                       restartRequired});
+    browserQueue.push(Cu.getWeakReference(browser));
   },
 
   
@@ -317,23 +310,6 @@ var TabCrashHandler = {
     }
 
     return false;
-  },
-
-  sendToRestartRequiredPage(browser) {
-    let uri = browser.currentURI;
-    let gBrowser = browser.ownerGlobal.gBrowser;
-    let tab = gBrowser.getTabForBrowser(browser);
-    
-    gBrowser.updateBrowserRemoteness(browser, false);
-
-    browser.docShell.displayLoadError(Cr.NS_ERROR_BUILDID_MISMATCH, uri, null);
-    tab.setAttribute("crashed", true);
-
-    
-    
-    if (this._crashedTabCount == 1) {
-      Services.telemetry.getHistogramById("FX_CONTENT_BUILDID_MISMATCH").add(1);
-    }
   },
 
   

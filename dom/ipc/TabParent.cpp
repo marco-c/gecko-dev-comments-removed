@@ -468,16 +468,10 @@ TabParent::ActorDestroy(ActorDestroyReason why)
         
         
         if (currentFrameLoader == frameLoader) {
-          MessageChannel* channel = GetIPCChannel();
-          if (channel && !channel->DoBuildIDsMatch()) {
-            nsContentUtils::DispatchTrustedEvent(
-              frameElement->OwnerDoc(), frameElement,
-              NS_LITERAL_STRING("oop-browser-buildid-mismatch"), true, true);
-          } else {
-            nsContentUtils::DispatchTrustedEvent(
-              frameElement->OwnerDoc(), frameElement,
-              NS_LITERAL_STRING("oop-browser-crashed"), true, true);
-          }
+          nsContentUtils::DispatchTrustedEvent(frameElement->OwnerDoc(), frameElement,
+                                               NS_LITERAL_STRING("oop-browser-crashed"),
+                                               true, true);
+
         }
       }
     }

@@ -4751,16 +4751,6 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
     if (messageStr.IsEmpty()) {
       messageStr.AssignLiteral(u" ");
     }
-  } else if (NS_ERROR_BUILDID_MISMATCH == aError) {
-    errorPage.AssignLiteral("restartrequired");
-    error = "restartrequired";
-
-    
-    
-    
-    if (messageStr.IsEmpty()) {
-      messageStr.AssignLiteral(u" ");
-    }
   } else {
     
     switch (aError) {

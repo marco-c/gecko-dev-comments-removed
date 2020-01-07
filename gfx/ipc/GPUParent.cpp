@@ -84,7 +84,6 @@ GPUParent::GetSingleton()
 
 bool
 GPUParent::Init(base::ProcessId aParentPid,
-                const char* aParentBuildID,
                 MessageLoop* aIOLoop,
                 IPC::Channel* aChannel)
 {
@@ -104,12 +103,7 @@ GPUParent::Init(base::ProcessId aParentPid,
   
   
   
-  MessageChannel* channel = GetIPCChannel();
-  if (channel && !channel->SendBuildIDsMatchMessage(aParentBuildID)) {
-    
-    
-    ProcessChild::QuickExit();
-  }
+  GetIPCChannel()->SendBuildID();
 
   
   CrashReporterClient::InitSingleton(this);
