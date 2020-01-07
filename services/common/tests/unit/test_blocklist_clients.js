@@ -104,10 +104,8 @@ add_task(async function test_initial_dump_is_loaded_as_synced_when_collection_is
     await client.maybeSync(1, Date.now());
 
     
-    await client.openCollection(async (collection) => {
-      const list = await collection.list();
-      equal(list.data[0]._status, "synced");
-    });
+    const list = await client.get();
+    equal(list[0]._status, "synced");
   }
 });
 add_task(clear_state);
@@ -119,10 +117,8 @@ add_task(async function test_records_obtained_from_server_are_stored_in_db() {
 
     
     
-    await client.openCollection(async (collection) => {
-      const list = await collection.list();
-      equal(list.data.length, 1);
-    });
+    const list = await client.get();
+    equal(list.length, 1);
   }
 });
 add_task(clear_state);

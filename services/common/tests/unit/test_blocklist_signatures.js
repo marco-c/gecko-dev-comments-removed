@@ -51,11 +51,9 @@ function getCertChain() {
 }
 
 async function checkRecordCount(client, count) {
-  await client.openCollection(async (collection) => {
-    
-    const records = await collection.list();
-    Assert.equal(count, records.data.length);
-  });
+  
+  const records = await client.get();
+  Assert.equal(count, records.length);
 }
 
 

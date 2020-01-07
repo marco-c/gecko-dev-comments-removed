@@ -84,10 +84,8 @@ add_task(async function test_something() {
 
   
   
-  await PinningPreloadClient.openCollection(async (collection) => {
-    const list = await collection.list();
-    Assert.equal(list.data.length, 1);
-  });
+  const before = await PinningPreloadClient.get();
+  Assert.equal(before.length, 1);
 
   
   ok(sss.isSecureURI(sss.HEADER_HPKP,
@@ -98,10 +96,8 @@ add_task(async function test_something() {
 
   
   
-  await PinningPreloadClient.openCollection(async (collection) => {
-    const list = await collection.list();
-    Assert.equal(list.data.length, 5);
-  });
+  const after = await PinningPreloadClient.get();
+  Assert.equal(after.length, 5);
 
   
   ok(sss.isSecureURI(sss.HEADER_HPKP,

@@ -53,13 +53,11 @@ add_task(async function test_something() {
   
   await OneCRLBlocklistClient.maybeSync(2000, Date.now());
 
-  await OneCRLBlocklistClient.openCollection(async (collection) => {
-    
-    const list = await collection.list();
-    
-    
-    Assert.ok(list.data.length >= 363);
-  });
+  
+  const list = await OneCRLBlocklistClient.get();
+  
+  
+  Assert.ok(list.length >= 363);
 
   
   Services.prefs.clearUserPref("services.settings.server");
@@ -83,22 +81,18 @@ add_task(async function test_something() {
 
   await OneCRLBlocklistClient.maybeSync(2000, Date.now());
 
-  await OneCRLBlocklistClient.openCollection(async (collection) => {
-    
-    
-    const list = await collection.list();
-    Assert.equal(list.data.length, 1);
-  });
+  
+  
+  const before = await OneCRLBlocklistClient.get();
+  Assert.equal(before.length, 1);
 
   
   await OneCRLBlocklistClient.maybeSync(4000, Date.now());
 
-  await OneCRLBlocklistClient.openCollection(async (collection) => {
-    
-    
-    const list = await collection.list();
-    Assert.equal(list.data.length, 3);
-  });
+  
+  
+  const after = await OneCRLBlocklistClient.get();
+  Assert.equal(after.length, 3);
 
   
   
