@@ -694,10 +694,14 @@ class MOZ_STACK_CLASS TokenStream final : public TokenStreamAnyChars
     
     
     
+    
+    
+    
+    
     bool reportStrictModeErrorNumberVA(UniquePtr<JSErrorNotes> notes, uint32_t offset,
-                                       bool strictMode, unsigned errorNumber, va_list args);
+                                       bool strictMode, unsigned errorNumber, va_list* args);
     bool reportExtraWarningErrorNumberVA(UniquePtr<JSErrorNotes> notes, uint32_t offset,
-                                         unsigned errorNumber, va_list args);
+                                         unsigned errorNumber, va_list* args);
 
     JSAtom* getRawTemplateStringAtom() {
         MOZ_ASSERT(currentToken().type == TOK_TEMPLATE_HEAD ||

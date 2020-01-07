@@ -3584,7 +3584,7 @@ BytecodeEmitter::reportExtraWarning(ParseNode* pn, unsigned errorNumber, ...)
     
     
     bool result = parser.tokenStream()
-                        .reportExtraWarningErrorNumberVA(nullptr, pos.begin, errorNumber, args);
+                        .reportExtraWarningErrorNumberVA(nullptr, pos.begin, errorNumber, &args);
 
     va_end(args);
     return result;
