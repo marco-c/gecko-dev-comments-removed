@@ -1137,6 +1137,10 @@ private:
   void FreezeInternal();
   void ThawInternal();
 
+  CallState ShouldReportForServiceWorkerScopeInternal(const nsACString& aScope,
+                                                      bool* aResultOut);
+
+
 public:
   
   

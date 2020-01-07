@@ -3720,33 +3720,6 @@ ServiceWorkerManager::ShouldReportToWindow(mozIDOMWindowProxy* aWindow,
   }
 
   
-  for (auto iter = mControlledDocuments.Iter(); !iter.Done(); iter.Next()) {
-    ServiceWorkerRegistrationInfo* reg = iter.UserData();
-    MOZ_ASSERT(reg);
-    if (!reg->mScope.Equals(aScope)) {
-      continue;
-    }
-
-    nsCOMPtr<nsIDocument> doc = do_QueryInterface(iter.Key());
-    if (!doc || !doc->IsCurrentActiveDocument()) {
-      continue;
-    }
-
-    nsCOMPtr<nsPIDOMWindowOuter> win = doc->GetWindow();
-    if (!win) {
-      continue;
-    }
-
-    win = win->GetScriptableTop();
-
-    
-    if (win && winId == win->WindowID()) {
-      *aResult = true;
-      return NS_OK;
-    }
-  }
-
-  
   return NS_OK;
 }
 

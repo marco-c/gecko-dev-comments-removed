@@ -2334,16 +2334,51 @@ nsPIDOMWindowInner::GetController() const
 bool
 nsGlobalWindowInner::ShouldReportForServiceWorkerScope(const nsAString& aScope)
 {
+  bool result = false;
+
+  nsPIDOMWindowOuter* topOuter = GetScriptableTop();
+  NS_ENSURE_TRUE(topOuter, false);
+
+  nsGlobalWindowInner* topInner =
+    nsGlobalWindowInner::Cast(topOuter->GetCurrentInnerWindow());
+  NS_ENSURE_TRUE(topInner, false);
+
+  topInner->ShouldReportForServiceWorkerScopeInternal(NS_ConvertUTF16toUTF8(aScope),
+                                                      &result);
+  if (result) {
+    return true;
+  }
+
   RefPtr<workers::ServiceWorkerManager> swm =
     workers::ServiceWorkerManager::GetInstance();
   NS_ENSURE_TRUE(swm, false);
 
   bool aResult = false;
-  nsresult rv = swm->ShouldReportToWindow(GetOuterWindowInternal(),
+  nsresult rv = swm->ShouldReportToWindow(topOuter,
                                           NS_ConvertUTF16toUTF8(aScope), &aResult);
   NS_ENSURE_SUCCESS(rv, false);
 
   return aResult;
+}
+
+nsGlobalWindowInner::CallState
+nsGlobalWindowInner::ShouldReportForServiceWorkerScopeInternal(const nsACString& aScope,
+                                                               bool* aResultOut)
+{
+  MOZ_DIAGNOSTIC_ASSERT(aResultOut);
+
+  
+  
+  const Maybe<ServiceWorkerDescriptor> swd = GetController();
+  if (swd.isSome() && swd.ref().Scope() == aScope) {
+    *aResultOut = true;
+    return CallState::Stop;
+  }
+
+  
+  
+  return CallOnChildren(&nsGlobalWindowInner::ShouldReportForServiceWorkerScopeInternal,
+                        aScope, aResultOut);
 }
 
 void
