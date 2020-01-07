@@ -948,7 +948,8 @@ public:
 
   
   
-  void ResolveFlexibleLengths(nscoord aFlexContainerMainSize);
+  void ResolveFlexibleLengths(nscoord aFlexContainerMainSize,
+                              ComputedFlexLineInfo* aLineInfo);
 
   void PositionItemsInMainAxis(uint8_t aJustifyContent,
                                nscoord aContentBoxMainSize,
@@ -2380,7 +2381,8 @@ FlexLine::FreezeOrRestoreEachFlexibleSize(const nscoord aTotalViolation,
 }
 
 void
-FlexLine::ResolveFlexibleLengths(nscoord aFlexContainerMainSize)
+FlexLine::ResolveFlexibleLengths(nscoord aFlexContainerMainSize,
+                                 ComputedFlexLineInfo* aLineInfo)
 {
   MOZ_LOG(gFlexContainerLog, LogLevel::Debug, ("ResolveFlexibleLengths\n"));
 
@@ -2392,11 +2394,13 @@ FlexLine::ResolveFlexibleLengths(nscoord aFlexContainerMainSize)
   
   FreezeItemsEarly(isUsingFlexGrow);
 
-  if (mNumFrozenItems == mNumItems) {
+  if ((mNumFrozenItems == mNumItems) && !aLineInfo) {
+    
     
     return;
   }
-  MOZ_ASSERT(!IsEmpty(), "empty lines should take the early-return above");
+  MOZ_ASSERT(!IsEmpty() || aLineInfo,
+             "empty lines should take the early-return above");
 
   
   
@@ -2428,6 +2432,21 @@ FlexLine::ResolveFlexibleLengths(nscoord aFlexContainerMainSize)
         item->SetMainSize(item->GetFlexBaseSize());
       }
       availableFreeSpace -= item->GetMainSize();
+    }
+
+    
+    
+    
+    
+    
+    
+    if (aLineInfo && (iterationCounter == 0)) {
+      uint32_t itemIndex = 0;
+      for (FlexItem* item = mItems.getFirst(); item; item = item->getNext(),
+                                                     ++itemIndex) {
+        aLineInfo->mItems[itemIndex].mMainBaseSize = item->GetMainSize();
+        aLineInfo->mItems[itemIndex].mMainDeltaSize = 0;
+      }
     }
 
     MOZ_LOG(gFlexContainerLog, LogLevel::Debug,
@@ -2593,6 +2612,45 @@ FlexLine::ResolveFlexibleLengths(nscoord aFlexContainerMainSize)
             MOZ_LOG(gFlexContainerLog, LogLevel::Debug,
                    ("  child %p receives %d, for a total of %d\n",
                     item, sizeDelta, item->GetMainSize()));
+          }
+        }
+
+        
+        
+        
+        
+        if (aLineInfo) {
+          uint32_t itemIndex = 0;
+          for (FlexItem* item = mItems.getFirst(); item; item = item->getNext(),
+                                                         ++itemIndex) {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            nscoord deltaSize = item->GetMainSize() -
+              aLineInfo->mItems[itemIndex].mMainBaseSize;
+
+            aLineInfo->mItems[itemIndex].mMainDeltaSize = deltaSize;
+            
+            
+            
+            if (deltaSize > 0) {
+              MOZ_ASSERT(aLineInfo->mGrowthState !=
+                         ComputedFlexLineInfo::GrowthState::SHRINKING);
+              aLineInfo->mGrowthState =
+                ComputedFlexLineInfo::GrowthState::GROWING;
+            } else if (deltaSize < 0) {
+              MOZ_ASSERT(aLineInfo->mGrowthState !=
+                         ComputedFlexLineInfo::GrowthState::GROWING);
+              aLineInfo->mGrowthState =
+                ComputedFlexLineInfo::GrowthState::SHRINKING;
+            }
           }
         }
       }
@@ -3976,6 +4034,24 @@ nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
 
   
   
+  if (HasAnyStateBits(NS_STATE_FLEX_GENERATE_COMPUTED_VALUES)) {
+    
+    
+    
+
+    
+    ComputedFlexContainerInfo* info = GetProperty(FlexContainerInfo());
+    if (info) {
+      
+      info->mLines.Clear();
+    } else {
+      info = new ComputedFlexContainerInfo();
+      SetProperty(FlexContainerInfo(), info);
+    }
+  }
+
+  
+  
   
   
   nscoord availableBSizeForContent = aReflowInput.AvailableBSize();
@@ -4117,6 +4193,59 @@ nsFlexContainerFrame::CalculatePackingSpace(uint32_t aNumThingsToPack,
   *aPackingSpaceRemaining -= totalEdgePackingSpace;
 }
 
+nsFlexContainerFrame*
+nsFlexContainerFrame::GetFlexFrameWithComputedInfo(nsIFrame* aFrame)
+{
+  
+  auto GetFlexContainerFrame = [](nsIFrame *aFrame) {
+    
+    
+    nsFlexContainerFrame* flexFrame = nullptr;
+
+    if (aFrame) {
+      nsIFrame* contentFrame = aFrame->GetContentInsertionFrame();
+      if (contentFrame && (contentFrame->IsFlexContainerFrame())) {
+        flexFrame = static_cast<nsFlexContainerFrame*>(contentFrame);
+      }
+    }
+    return flexFrame;
+  };
+
+  nsFlexContainerFrame* flexFrame = GetFlexContainerFrame(aFrame);
+  if (flexFrame) {
+    
+    bool reflowNeeded = !flexFrame->HasProperty(FlexContainerInfo());
+
+    if (reflowNeeded) {
+      
+      
+      AutoWeakFrame weakFrameRef(aFrame);
+
+      nsIPresShell* shell = flexFrame->PresContext()->PresShell();
+      flexFrame->AddStateBits(NS_STATE_FLEX_GENERATE_COMPUTED_VALUES);
+      shell->FrameNeedsReflow(flexFrame,
+                              nsIPresShell::eResize,
+                              NS_FRAME_IS_DIRTY);
+      shell->FlushPendingNotifications(FlushType::Layout);
+
+      
+      
+      
+      if (!weakFrameRef.IsAlive()) {
+        return nullptr;
+      }
+
+      flexFrame = GetFlexContainerFrame(weakFrameRef.GetFrame());
+
+      MOZ_ASSERT(!flexFrame ||
+                  flexFrame->HasProperty(FlexContainerInfo()),
+                  "The state bit should've made our forced-reflow "
+                  "generate a FlexContainerInfo object");
+    }
+  }
+  return flexFrame;
+}
+
 void
 nsFlexContainerFrame::DoFlexLayout(nsPresContext*           aPresContext,
                                    ReflowOutput&     aDesiredSize,
@@ -4147,13 +4276,70 @@ nsFlexContainerFrame::DoFlexLayout(nsPresContext*           aPresContext,
     RemoveStateBits(NS_STATE_FLEX_SYNTHESIZE_BASELINE);
   }
 
+  
+  
+  
+  
+  
+  ComputedFlexContainerInfo* containerInfo = nullptr;
+  if (HasAnyStateBits(NS_STATE_FLEX_GENERATE_COMPUTED_VALUES)) {
+    containerInfo = GetProperty(FlexContainerInfo());
+    MOZ_ASSERT(containerInfo,
+               "::Reflow() should have created container info.");
+
+    if (!aStruts.IsEmpty()) {
+      
+      containerInfo->mLines.Clear();
+    } else {
+      MOZ_ASSERT(containerInfo->mLines.IsEmpty(),
+                 "Shouldn't have lines yet.");
+    }
+
+    for (const FlexLine* line = lines.getFirst(); line;
+         line = line->getNext()) {
+      ComputedFlexLineInfo* lineInfo =
+        containerInfo->mLines.AppendElement();
+      
+      
+      
+      lineInfo->mGrowthState =
+        ComputedFlexLineInfo::GrowthState::UNCHANGED;
+
+      
+      
+      
+      
+      for (const FlexItem* item = line->GetFirstItem(); item;
+           item = item->getNext()) {
+        ComputedFlexItemInfo* itemInfo =
+          lineInfo->mItems.AppendElement();
+
+        itemInfo->mNode = item->Frame()->GetContent();
+
+        
+        
+
+        
+        itemInfo->mMainMinSize = item->GetMainMinSize();
+        itemInfo->mMainMaxSize = item->GetMainMaxSize();
+        itemInfo->mCrossMinSize = item->GetCrossMinSize();
+        itemInfo->mCrossMaxSize = item->GetCrossMaxSize();
+      }
+    }
+  }
+
   aContentBoxMainSize =
     ResolveFlexContainerMainSize(aReflowInput, aAxisTracker,
                                  aContentBoxMainSize, aAvailableBSizeForContent,
                                  lines.getFirst(), aStatus);
 
-  for (FlexLine* line = lines.getFirst(); line; line = line->getNext()) {
-    line->ResolveFlexibleLengths(aContentBoxMainSize);
+  uint32_t lineIndex = 0;
+  for (FlexLine* line = lines.getFirst(); line; line = line->getNext(),
+                                                ++lineIndex) {
+    ComputedFlexLineInfo* lineInfo = containerInfo ?
+                                     &containerInfo->mLines[lineIndex] :
+                                     nullptr;
+    line->ResolveFlexibleLengths(aContentBoxMainSize, lineInfo);
   }
 
   
@@ -4463,6 +4649,19 @@ nsFlexContainerFrame::DoFlexLayout(nsPresContext*           aPresContext,
                                  aReflowInput, aStatus);
 
   NS_FRAME_SET_TRUNCATION(aStatus, aReflowInput, aDesiredSize)
+
+  
+  if (containerInfo) {
+    uint32_t lineIndex = 0;
+    for (const FlexLine* line = lines.getFirst(); line;
+         line = line->getNext(), ++lineIndex) {
+      ComputedFlexLineInfo* lineInfo = &containerInfo->mLines[lineIndex];
+
+      lineInfo->mCrossSize = line->GetLineCrossSize();
+      lineInfo->mFirstBaselineOffset = line->GetFirstBaselineOffset();
+      lineInfo->mLastBaselineOffset = line->GetLastBaselineOffset();
+    }
+  }
 }
 
 void
