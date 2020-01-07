@@ -555,10 +555,14 @@ Renderer11::Renderer11(egl::Display *display)
         ASSERT(mEGLDevice != nullptr);
         mCreatedWithDeviceEXT = true;
 
+        const auto &attributes = mDisplay->getAttributeMap();
+        const EGLenum presentPath = static_cast<EGLenum>(attributes.get(
+            EGL_EXPERIMENTAL_PRESENT_PATH_ANGLE, EGL_EXPERIMENTAL_PRESENT_PATH_COPY_ANGLE));
+        mPresentPathFastEnabled = (presentPath == EGL_EXPERIMENTAL_PRESENT_PATH_FAST_ANGLE);
+
         
         
         mRequestedDriverType    = D3D_DRIVER_TYPE_UNKNOWN;
-        mPresentPathFastEnabled = false;
     }
 
 
