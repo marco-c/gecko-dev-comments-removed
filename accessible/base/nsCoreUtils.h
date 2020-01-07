@@ -21,7 +21,6 @@ class nsTreeColumn;
 class nsIBoxObject;
 class nsIFrame;
 class nsIDocShell;
-class nsITreeColumn;
 class nsITreeBoxObject;
 class nsIWidget;
 
@@ -268,18 +267,18 @@ public:
 
 
   static already_AddRefed<nsTreeColumn>
-    GetNextSensibleColumn(nsITreeColumn *aColumn);
+    GetNextSensibleColumn(nsTreeColumn *aColumn);
 
   
 
 
   static already_AddRefed<nsTreeColumn>
-    GetPreviousSensibleColumn(nsITreeColumn *aColumn);
+    GetPreviousSensibleColumn(nsTreeColumn *aColumn);
 
   
 
 
-  static bool IsColumnHidden(nsITreeColumn *aColumn);
+  static bool IsColumnHidden(nsTreeColumn *aColumn);
 
   
 
