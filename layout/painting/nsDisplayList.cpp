@@ -2504,100 +2504,6 @@ nsDisplayListBuilder::GetWidgetLayerManager(nsView** aView)
   return nullptr;
 }
 
-FrameLayerBuilder*
-nsDisplayList::BuildLayers(nsDisplayListBuilder* aBuilder,
-                           LayerManager* aLayerManager,
-                           uint32_t aFlags,
-                           bool aIsWidgetTransaction)
-{
-  nsIFrame* frame = aBuilder->RootReferenceFrame();
-  nsPresContext* presContext = frame->PresContext();
-  nsIPresShell* presShell = presContext->PresShell();
-
-  FrameLayerBuilder *layerBuilder = new FrameLayerBuilder();
-  layerBuilder->Init(aBuilder, aLayerManager);
-
-  if (aFlags & PAINT_COMPRESSED) {
-    layerBuilder->SetLayerTreeCompressionMode();
-  }
-
-  RefPtr<ContainerLayer> root;
-  {
-    AUTO_PROFILER_TRACING("Paint", "LayerBuilding");
-
-    if (XRE_IsContentProcess() && gfxPrefs::AlwaysPaint()) {
-      FrameLayerBuilder::InvalidateAllLayers(aLayerManager);
-    }
-
-    if (aIsWidgetTransaction) {
-      layerBuilder->DidBeginRetainedLayerTransaction(aLayerManager);
-    }
-
-    
-    
-    
-    if (Layer* rootLayer = aLayerManager->GetRoot()) {
-      rootLayer->SetScrollMetadata(nsTArray<ScrollMetadata>());
-    }
-
-    ContainerLayerParameters containerParameters
-      (presShell->GetResolution(), presShell->GetResolution());
-
-    {
-      PaintTelemetry::AutoRecord record(PaintTelemetry::Metric::Layerization);
-
-      root = layerBuilder->
-        BuildContainerLayerFor(aBuilder, aLayerManager, frame, nullptr, this,
-                               containerParameters, nullptr);
-
-      if (!record.GetStart().IsNull() && gfxPrefs::LayersDrawFPS()) {
-        if (PaintTiming* pt = ClientLayerManager::MaybeGetPaintTiming(aLayerManager)) {
-          pt->flbMs() = (TimeStamp::Now() - record.GetStart()).ToMilliseconds();
-        }
-      }
-    }
-
-    if (!root) {
-      return nullptr;
-    }
-    
-    root->SetPostScale(1.0f/containerParameters.mXScale,
-                       1.0f/containerParameters.mYScale);
-    root->SetScaleToResolution(presShell->ScaleToResolution(),
-        containerParameters.mXScale);
-
-    auto callback = [root](FrameMetrics::ViewID aScrollId) -> bool {
-      return nsLayoutUtils::ContainsMetricsWithId(root, aScrollId);
-    };
-    if (Maybe<ScrollMetadata> rootMetadata = nsLayoutUtils::GetRootMetadata(
-          aBuilder, root->Manager(), containerParameters, callback)) {
-      root->SetScrollMetadata(rootMetadata.value());
-    }
-
-    
-    
-#ifdef DEBUG
-    bool usingDisplayport = false;
-    if (nsIFrame* rootScrollFrame = presShell->GetRootScrollFrame()) {
-      nsIContent* content = rootScrollFrame->GetContent();
-      if (content) {
-        usingDisplayport = nsLayoutUtils::HasDisplayPort(content);
-      }
-    }
-    if (usingDisplayport &&
-        !(root->GetContentFlags() & Layer::CONTENT_OPAQUE) &&
-        SpammyLayoutWarningsEnabled()) {
-      
-      NS_WARNING("Transparent content with displayports can be expensive.");
-    }
-#endif
-
-    aLayerManager->SetRoot(root);
-    layerBuilder->WillEndTransaction();
-  }
-  return layerBuilder;
-}
-
 
 
 
@@ -2690,25 +2596,119 @@ already_AddRefed<LayerManager> nsDisplayList::PaintRoot(nsDisplayListBuilder* aB
     presContext->MayHavePaintEventListenerInSubDocument() ? nsPresContext::NotifySubDocInvalidation : 0;
 
   UniquePtr<LayerProperties> props;
+  RefPtr<ContainerLayer> root;
 
-  bool computeInvalidRect = (computeInvalidFunc ||
-                             (!layerManager->IsCompositingCheap() && layerManager->NeedsWidgetInvalidation())) &&
-                            widgetTransaction;
+  
+  FrameLayerBuilder *oldBuilder = layerManager->GetLayerBuilder();
 
-  if (computeInvalidRect) {
-    props = Move(LayerProperties::CloneFrom(layerManager->GetRoot()));
+  FrameLayerBuilder *layerBuilder = new FrameLayerBuilder();
+  layerBuilder->Init(aBuilder, layerManager);
+
+  if (aFlags & PAINT_COMPRESSED) {
+    layerBuilder->SetLayerTreeCompressionMode();
   }
 
-  if (doBeginTransaction) {
-    if (aCtx) {
-      if (!layerManager->BeginTransactionWithTarget(aCtx)) {
-        return nullptr;
-      }
-    } else {
-      if (!layerManager->BeginTransaction()) {
-        return nullptr;
+  {
+    AUTO_PROFILER_TRACING("Paint", "LayerBuilding");
+
+    if (doBeginTransaction) {
+      if (aCtx) {
+        if (!layerManager->BeginTransactionWithTarget(aCtx)) {
+          return nullptr;
+        }
+      } else {
+        if (!layerManager->BeginTransaction()) {
+          return nullptr;
+        }
       }
     }
+
+    if (XRE_IsContentProcess() && gfxPrefs::AlwaysPaint()) {
+      FrameLayerBuilder::InvalidateAllLayers(layerManager);
+    }
+
+    if (widgetTransaction) {
+      layerBuilder->DidBeginRetainedLayerTransaction(layerManager);
+    }
+
+    bool computeInvalidRect = (computeInvalidFunc ||
+                               (!layerManager->IsCompositingCheap() && layerManager->NeedsWidgetInvalidation())) &&
+                              widgetTransaction;
+
+    if (computeInvalidRect) {
+      props = Move(LayerProperties::CloneFrom(layerManager->GetRoot()));
+    }
+
+    
+    
+    
+    if (Layer* rootLayer = layerManager->GetRoot()) {
+      rootLayer->SetScrollMetadata(nsTArray<ScrollMetadata>());
+    }
+
+    ContainerLayerParameters containerParameters
+      (presShell->GetResolution(), presShell->GetResolution());
+
+    {
+      PaintTelemetry::AutoRecord record(PaintTelemetry::Metric::Layerization);
+
+      root = layerBuilder->
+        BuildContainerLayerFor(aBuilder, layerManager, frame, nullptr, this,
+                               containerParameters, nullptr);
+
+      if (!record.GetStart().IsNull() && gfxPrefs::LayersDrawFPS()) {
+        if (PaintTiming* pt = ClientLayerManager::MaybeGetPaintTiming(layerManager)) {
+          pt->flbMs() = (TimeStamp::Now() - record.GetStart()).ToMilliseconds();
+        }
+      }
+    }
+
+    if (!root) {
+      layerManager->SetUserData(&gLayerManagerLayerBuilder, oldBuilder);
+      return nullptr;
+    }
+    
+    root->SetPostScale(1.0f/containerParameters.mXScale,
+                       1.0f/containerParameters.mYScale);
+    root->SetScaleToResolution(presShell->ScaleToResolution(),
+        containerParameters.mXScale);
+
+    auto callback = [root](FrameMetrics::ViewID aScrollId) -> bool {
+      return nsLayoutUtils::ContainsMetricsWithId(root, aScrollId);
+    };
+    if (Maybe<ScrollMetadata> rootMetadata = nsLayoutUtils::GetRootMetadata(
+          aBuilder, root->Manager(), containerParameters, callback)) {
+      root->SetScrollMetadata(rootMetadata.value());
+    }
+
+    
+    
+#ifdef DEBUG
+    bool usingDisplayport = false;
+    if (nsIFrame* rootScrollFrame = presShell->GetRootScrollFrame()) {
+      nsIContent* content = rootScrollFrame->GetContent();
+      if (content) {
+        usingDisplayport = nsLayoutUtils::HasDisplayPort(content);
+      }
+    }
+    if (usingDisplayport &&
+        !(root->GetContentFlags() & Layer::CONTENT_OPAQUE) &&
+        SpammyLayoutWarningsEnabled()) {
+      
+      NS_WARNING("Transparent content with displayports can be expensive.");
+    }
+#endif
+
+    layerManager->SetRoot(root);
+    layerBuilder->WillEndTransaction();
+  }
+
+  if (widgetTransaction ||
+      
+      
+      
+      (document && document->IsBeingUsedAsImage())) {
+    frame->ClearInvalidationStateBits();
   }
 
   bool temp = aBuilder->SetIsCompositingCheap(layerManager->IsCompositingCheap());
@@ -2725,53 +2725,25 @@ already_AddRefed<LayerManager> nsDisplayList::PaintRoot(nsDisplayListBuilder* aB
     }
   }
 
+  
+  
+  nsRootPresContext* rootPresContext = presContext->GetRootPresContext();
+  if (rootPresContext && XRE_IsContentProcess()) {
+    if (aBuilder->WillComputePluginGeometry()) {
+      rootPresContext->ComputePluginGeometryUpdates(aBuilder->RootReferenceFrame(), aBuilder, this);
+    }
+    
+    
+    
+    rootPresContext->CollectPluginGeometryUpdates(layerManager);
+  }
+
   MaybeSetupTransactionIdAllocator(layerManager, presContext);
 
-  
-  FrameLayerBuilder *oldBuilder = layerManager->GetLayerBuilder();
-  FrameLayerBuilder *layerBuilder = nullptr;
-
-  bool sent = false;
-  if (aFlags & PAINT_IDENTICAL_DISPLAY_LIST) {
-    sent = layerManager->EndEmptyTransaction(flags);
-  }
-
-  if (!sent) {
-    layerBuilder = BuildLayers(aBuilder, layerManager,
-                               aFlags, widgetTransaction);
-
-    if (!layerBuilder) {
-      layerManager->SetUserData(&gLayerManagerLayerBuilder, oldBuilder);
-      return nullptr;
-    }
-
-    
-    
-    nsRootPresContext* rootPresContext = presContext->GetRootPresContext();
-    if (rootPresContext && XRE_IsContentProcess()) {
-      if (aBuilder->WillComputePluginGeometry()) {
-        rootPresContext->ComputePluginGeometryUpdates(aBuilder->RootReferenceFrame(), aBuilder, this);
-      }
-      
-      
-      
-      rootPresContext->CollectPluginGeometryUpdates(layerManager);
-    }
-
-    layerManager->EndTransaction(FrameLayerBuilder::DrawPaintedLayer,
-                                 aBuilder, flags);
-    layerBuilder->DidEndTransaction();
-  }
-
-  if (widgetTransaction ||
-      
-      
-      
-      (document && document->IsBeingUsedAsImage())) {
-    frame->ClearInvalidationStateBits();
-  }
-
+  layerManager->EndTransaction(FrameLayerBuilder::DrawPaintedLayer,
+                               aBuilder, flags);
   aBuilder->SetIsCompositingCheap(temp);
+  layerBuilder->DidEndTransaction();
 
   if (document && widgetTransaction) {
     TriggerPendingAnimations(document, layerManager->GetAnimationReadyTime());
@@ -2780,11 +2752,11 @@ already_AddRefed<LayerManager> nsDisplayList::PaintRoot(nsDisplayListBuilder* aB
   nsIntRegion invalid;
   bool areaOverflowed = false;
   if (props) {
-    if (!props->ComputeDifferences(layerManager->GetRoot(), invalid, computeInvalidFunc)) {
+    if (!props->ComputeDifferences(root, invalid, computeInvalidFunc)) {
       areaOverflowed = true;
     }
   } else if (widgetTransaction) {
-    LayerProperties::ClearInvalidations(layerManager->GetRoot());
+    LayerProperties::ClearInvalidations(root);
   }
 
   bool shouldInvalidate = layerManager->NeedsWidgetInvalidation();
