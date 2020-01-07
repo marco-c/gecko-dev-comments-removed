@@ -1646,6 +1646,7 @@ class MConstant : public MNullaryInstruction
 
     
     
+    
     bool valueToBooleanInfallible() const {
         bool res;
         MOZ_ALWAYS_TRUE(valueToBoolean(&res));

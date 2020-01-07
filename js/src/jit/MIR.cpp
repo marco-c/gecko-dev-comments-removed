@@ -1286,8 +1286,11 @@ MConstant::valueToBoolean(bool* res) const
         *res = toString()->length() != 0;
         return true;
       case MIRType::Object:
-        *res = !EmulatesUndefined(&toObject());
-        return true;
+        
+        
+        
+        
+        return false;
       default:
         MOZ_ASSERT(IsMagicType(type()));
         return false;
