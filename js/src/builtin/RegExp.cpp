@@ -25,9 +25,7 @@
 using namespace js;
 using namespace js::unicode;
 
-using mozilla::ArrayLength;
 using mozilla::CheckedInt;
-using mozilla::Maybe;
 
 
 

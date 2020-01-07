@@ -16,7 +16,6 @@
 using namespace js;
 
 using JS::IsArrayAnswer;
-using mozilla::ArrayLength;
 
 
 

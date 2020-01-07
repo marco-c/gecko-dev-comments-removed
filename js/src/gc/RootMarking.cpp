@@ -4,8 +4,6 @@
 
 
 
-#include "mozilla/ArrayUtils.h"
-
 #ifdef MOZ_VALGRIND
 # include <valgrind/memcheck.h>
 #endif
@@ -29,8 +27,6 @@
 
 using namespace js;
 using namespace js::gc;
-
-using mozilla::ArrayEnd;
 
 using JS::AutoGCRooter;
 
