@@ -44,7 +44,6 @@ public final class GeckoProfile {
 
     
     private static final String CLIENT_ID_FILE_PATH = "datareporting/state.json";
-    private static final String FHR_CLIENT_ID_FILE_PATH = "healthreport/state.json";
     
     private static final String CLIENT_ID_JSON_ATTR = "clientID";
 
@@ -454,17 +453,10 @@ public final class GeckoProfile {
             return getValidClientIdFromDisk(CLIENT_ID_FILE_PATH);
         } catch (final IOException e) {
             
-            Log.d(LOGTAG, "Could not get client ID - attempting to migrate ID from FHR: " + e.getLocalizedMessage());
+            Log.d(LOGTAG, "Could not get client ID - creating a new one: " + e.getLocalizedMessage());
         }
 
-        String clientIdToWrite;
-        try {
-            clientIdToWrite = getValidClientIdFromDisk(FHR_CLIENT_ID_FILE_PATH);
-        } catch (final IOException e) {
-            
-            Log.d(LOGTAG, "Could not migrate client ID from FHR - creating a new one: " + e.getLocalizedMessage());
-            clientIdToWrite = generateNewClientId();
-        }
+        String clientIdToWrite = generateNewClientId();
 
         
         
