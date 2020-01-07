@@ -503,19 +503,6 @@ public:
   virtual void
     EnumerateExternalResources(nsSubDocEnumFunc aCallback, void* aData) override;
 
-  
-  
-  nsSMILAnimationController* GetAnimationController() override;
-
-  virtual mozilla::PendingAnimationTracker*
-  GetPendingAnimationTracker() final
-  {
-    return mPendingAnimationTracker;
-  }
-
-  virtual mozilla::PendingAnimationTracker*
-  GetOrCreatePendingAnimationTracker() override;
-
   virtual void SuppressEventHandling(uint32_t aIncrease) override;
 
   virtual void UnsuppressEventHandlingAndFireEvents(bool aFireEvents) override;
@@ -643,10 +630,6 @@ protected:
   virtual ~nsDocument();
 
   void EnsureOnloadBlocker();
-
-  
-  
-  RefPtr<mozilla::PendingAnimationTracker> mPendingAnimationTracker;
 
 public:
   RefPtr<mozilla::EventListenerManager> mListenerManager;

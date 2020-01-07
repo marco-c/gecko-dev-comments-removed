@@ -2533,19 +2533,23 @@ public:
   
   
   
-  virtual nsSMILAnimationController* GetAnimationController() = 0;
+  
+  
+  nsSMILAnimationController* GetAnimationController();
 
   
   
   
   
-  virtual mozilla::PendingAnimationTracker* GetPendingAnimationTracker() = 0;
+  mozilla::PendingAnimationTracker* GetPendingAnimationTracker()
+  {
+    return mPendingAnimationTracker;
+  }
 
   
   
   
-  virtual mozilla::PendingAnimationTracker*
-  GetOrCreatePendingAnimationTracker() = 0;
+  mozilla::PendingAnimationTracker* GetOrCreatePendingAnimationTracker();
 
   
 
@@ -4177,6 +4181,10 @@ protected:
 
   nsRefPtrHashtable<nsPtrHashKey<nsIContent>, mozilla::dom::BoxObject>*
     mBoxObjectTable;
+
+  
+  
+  RefPtr<mozilla::PendingAnimationTracker> mPendingAnimationTracker;
 
 public:
   js::ExpandoAndGeneration mExpandoAndGeneration;
