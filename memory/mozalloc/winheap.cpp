@@ -8,13 +8,7 @@
 #include "mozilla/Types.h"
 #include <windows.h>
 
-
-
-#if defined(_MT) && !defined(_DLL)
-#define MOZ_STATIC_RUNTIME
-#endif
-
-#if defined(MOZ_MEMORY) && !defined(MOZ_STATIC_RUNTIME)
+#if defined(MOZ_MEMORY)
 
 
 #define MOZ_MEMORY_IMPL

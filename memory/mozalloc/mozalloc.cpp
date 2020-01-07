@@ -7,13 +7,7 @@
 
 #include <stddef.h>             
 
-
-
-#if defined(_MT) && !defined(_DLL)
-#define MOZ_STATIC_RUNTIME
-#endif
-
-#if defined(MOZ_MEMORY) && !defined(MOZ_STATIC_RUNTIME)
+#if defined(MOZ_MEMORY)
 
 
 #define MOZ_MEMORY_IMPL
@@ -176,7 +170,6 @@ moz_xvalloc(size_t size)
 }
 #endif 
 
-#ifndef MOZ_STATIC_RUNTIME
 size_t
 moz_malloc_usable_size(void *ptr)
 {
@@ -220,4 +213,3 @@ moz_malloc_enclosing_size_of(const void *ptr)
     return 0;
 #endif
 }
-#endif
