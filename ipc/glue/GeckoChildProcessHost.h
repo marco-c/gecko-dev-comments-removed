@@ -182,7 +182,8 @@ private:
 
   
   
-  void GetChildLogName(const char* origLogName, nsACString &buffer);
+  void SetChildLogName(const char* varName, const char* origLogName,
+                       nsACString &buffer);
 
   
   
@@ -192,6 +193,13 @@ private:
   
   
   std::queue<IPC::Message> mQueue;
+
+  
+  
+  
+  nsCString mRestoreOrigNSPRLogName;
+  nsCString mRestoreOrigMozLogName;
+  nsCString mRestoreOrigRustLog;
 
   static uint32_t sNextUniqueID;
 

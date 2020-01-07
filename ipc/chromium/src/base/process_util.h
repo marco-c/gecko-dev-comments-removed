@@ -44,7 +44,6 @@
 #endif
 
 #include "mozilla/UniquePtr.h"
-#include "mozilla/ipc/EnvironmentMap.h"
 
 #if defined(OS_MACOSX)
 struct kinfo_proc;
@@ -108,13 +107,12 @@ struct LaunchOptions {
 
 #if defined(OS_WIN)
   bool start_hidden = false;
-
-  
-  
-  EnvironmentMap env_map;
 #endif
+
 #if defined(OS_POSIX)
-  environment_map env_map;
+  
+  
+  environment_map environ;
 
   
   
