@@ -80,7 +80,7 @@ public:
   
 
 
-  nsresult ApplyFullHashes(TableUpdateArray& aUpdates);
+  nsresult ApplyFullHashes(ConstTableUpdateArray& aUpdates);
 
   
 
@@ -154,7 +154,7 @@ private:
   nsresult UpdateTableV4(TableUpdateArray& aUpdates,
                          const nsACString& aTable);
 
-  nsresult UpdateCache(RefPtr<TableUpdate> aUpdates);
+  nsresult UpdateCache(RefPtr<const TableUpdate> aUpdates);
 
   LookupCache *GetLookupCacheForUpdate(const nsACString& aTable) {
     return GetLookupCache(aTable, true);

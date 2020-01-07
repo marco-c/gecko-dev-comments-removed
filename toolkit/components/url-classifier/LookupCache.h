@@ -288,8 +288,8 @@ public:
 
   
   
-  void AddGethashResultToCache(AddCompleteArray& aAddCompletes,
-                               MissPrefixArray& aMissPrefixes,
+  void AddGethashResultToCache(const AddCompleteArray& aAddCompletes,
+                               const MissPrefixArray& aMissPrefixes,
                                int64_t aExpirySec = 0);
 
 #if DEBUG
