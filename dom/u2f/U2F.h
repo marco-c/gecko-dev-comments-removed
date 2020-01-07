@@ -31,16 +31,40 @@ struct RegisteredKey;
 
 class U2FTransaction
 {
+  typedef Variant<nsMainThreadPtrHandle<U2FRegisterCallback>,
+                  nsMainThreadPtrHandle<U2FSignCallback>> U2FCallback;
+
 public:
-  explicit U2FTransaction(const nsCString& aClientData)
+  explicit U2FTransaction(const nsCString& aClientData,
+                          const U2FCallback&& aCallback)
     : mClientData(aClientData)
+    , mCallback(Move(aCallback))
     , mId(NextId())
   {
     MOZ_ASSERT(mId > 0);
   }
 
+  bool HasRegisterCallback() {
+    return mCallback.is<nsMainThreadPtrHandle<U2FRegisterCallback>>();
+  }
+
+  auto& GetRegisterCallback() {
+    return mCallback.as<nsMainThreadPtrHandle<U2FRegisterCallback>>();
+  }
+
+  bool HasSignCallback() {
+    return mCallback.is<nsMainThreadPtrHandle<U2FSignCallback>>();
+  }
+
+  auto& GetSignCallback() {
+    return mCallback.as<nsMainThreadPtrHandle<U2FSignCallback>>();
+  }
+
   
   nsCString mClientData;
+
+  
+  U2FCallback mCallback;
 
   
   uint64_t mId;
@@ -117,16 +141,15 @@ protected:
 private:
   ~U2F();
 
+  template<typename T, typename C>
+  void ExecuteCallback(T& aResp, nsMainThreadPtrHandle<C>& aCb);
+
   
   void ClearTransaction();
   
   void RejectTransaction(const nsresult& aError);
 
   nsString mOrigin;
-
-  
-  Maybe<nsMainThreadPtrHandle<U2FRegisterCallback>> mRegisterCallback;
-  Maybe<nsMainThreadPtrHandle<U2FSignCallback>> mSignCallback;
 
   
   Maybe<U2FTransaction> mTransaction;
