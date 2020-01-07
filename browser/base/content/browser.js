@@ -6127,6 +6127,11 @@ function handleLinkClick(event, href, linkNode) {
   return true;
 }
 
+
+
+
+
+
 function middleMousePaste(event) {
   let clipboard = readFromClipboard();
   if (!clipboard)
@@ -6170,7 +6175,9 @@ function middleMousePaste(event) {
     }
   });
 
-  event.stopPropagation();
+  if (event instanceof Event) {
+    event.stopPropagation();
+  }
 }
 
 function stripUnsafeProtocolOnPaste(pasteData) {

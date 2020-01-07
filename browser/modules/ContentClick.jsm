@@ -25,6 +25,12 @@ var ContentClick = {
     }
   },
 
+  
+
+
+
+
+
   contentAreaClick(json, browser) {
     
     

@@ -88,6 +88,16 @@ function doGetProtocolFlags(aURI) {
 
 
 
+
+
+
+
+
+
+
+
+
+
 function openUILink(url, event, aIgnoreButton, aIgnoreAlt, aAllowThirdPartyFixup,
                     aPostData, aReferrerURI) {
   let params;
@@ -113,6 +123,12 @@ function openUILink(url, event, aIgnoreButton, aIgnoreAlt, aAllowThirdPartyFixup
   let where = whereToOpenLink(event, aIgnoreButton, aIgnoreAlt);
   openUILinkIn(url, where, params);
 }
+
+
+
+
+
+
 
 
 
