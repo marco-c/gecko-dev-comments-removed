@@ -26,8 +26,7 @@ this.DOMHelpers = function DOMHelpers(aWindow) {
 };
 
 DOMHelpers.prototype = {
-  getParentObject: function Helpers_getParentObject(node)
-  {
+  getParentObject: function Helpers_getParentObject(node) {
     let parentNode = node ? node.parentNode : null;
 
     if (!parentNode) {
@@ -37,12 +36,13 @@ DOMHelpers.prototype = {
         
         if (node.defaultView) {
           let embeddingFrame = node.defaultView.frameElement;
-          if (embeddingFrame)
+          if (embeddingFrame) {
             return embeddingFrame.parentNode;
+          }
         }
       }
       
-      return null;  
+      return null; 
     }
 
     if (parentNode.nodeType == this.window.Node.DOCUMENT_NODE) {
@@ -53,22 +53,23 @@ DOMHelpers.prototype = {
       return null;
     }
 
-    if (!parentNode.localName)
+    if (!parentNode.localName) {
       return null;
+    }
 
     return parentNode;
   },
 
   getChildObject: function Helpers_getChildObject(node, index, previousSibling,
-                                                showTextNodesWithWhitespace)
-  {
-    if (!node)
+                                                showTextNodesWithWhitespace) {
+    if (!node) {
       return null;
+    }
 
     if (node.contentDocument) {
       
       if (index == 0) {
-        return node.contentDocument.documentElement;  
+        return node.contentDocument.documentElement; 
       }
       return null;
     }
@@ -78,55 +79,56 @@ DOMHelpers.prototype = {
       if (svgDocument) {
         
         if (index == 0) {
-          return svgDocument.documentElement;  
+          return svgDocument.documentElement; 
         }
         return null;
       }
     }
 
     let child = null;
-    if (previousSibling)  
+    if (previousSibling) 
+      {
       child = this.getNextSibling(previousSibling);
-    else
+    } else {
       child = this.getFirstChild(node);
-
-    if (showTextNodesWithWhitespace)
-      return child;
-
-    for (; child; child = this.getNextSibling(child)) {
-      if (!this.isWhitespaceText(child))
-        return child;
     }
 
-    return null;  
+    if (showTextNodesWithWhitespace) {
+      return child;
+    }
+
+    for (; child; child = this.getNextSibling(child)) {
+      if (!this.isWhitespaceText(child)) {
+        return child;
+      }
+    }
+
+    return null; 
   },
 
-  getFirstChild: function Helpers_getFirstChild(node)
-  {
+  getFirstChild: function Helpers_getFirstChild(node) {
     let SHOW_ALL = nodeFilterConstants.SHOW_ALL;
     this.treeWalker = node.ownerDocument.createTreeWalker(node,
       SHOW_ALL, null);
     return this.treeWalker.firstChild();
   },
 
-  getNextSibling: function Helpers_getNextSibling(node)
-  {
+  getNextSibling: function Helpers_getNextSibling(node) {
     let next = this.treeWalker.nextSibling();
 
-    if (!next)
+    if (!next) {
       delete this.treeWalker;
+    }
 
     return next;
   },
 
-  isWhitespaceText: function Helpers_isWhitespaceText(node)
-  {
+  isWhitespaceText: function Helpers_isWhitespaceText(node) {
     return node.nodeType == this.window.Node.TEXT_NODE &&
                             !/[^\s]/.exec(node.nodeValue);
   },
 
-  destroy: function Helpers_destroy()
-  {
+  destroy: function Helpers_destroy() {
     delete this.window;
     delete this.treeWalker;
   },
@@ -144,7 +146,7 @@ DOMHelpers.prototype = {
     let docShell = window.QueryInterface(Ci.nsIInterfaceRequestor)
                          .getInterface(Ci.nsIWebNavigation)
                          .QueryInterface(Ci.nsIDocShell);
-    let onReady = function (event) {
+    let onReady = function(event) {
       if (event.target == window.document) {
         docShell.chromeEventHandler.removeEventListener("DOMContentLoaded", onReady);
         

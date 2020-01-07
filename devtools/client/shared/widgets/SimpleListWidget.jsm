@@ -49,7 +49,7 @@ SimpleListWidget.prototype = {
 
 
 
-  insertItemAt: function (aIndex, aContents) {
+  insertItemAt: function(aIndex, aContents) {
     aContents.classList.add("simple-list-widget-item");
 
     let list = this._list;
@@ -64,7 +64,7 @@ SimpleListWidget.prototype = {
 
 
 
-  getItemAtIndex: function (aIndex) {
+  getItemAtIndex: function(aIndex) {
     return this._list.childNodes[aIndex];
   },
 
@@ -74,7 +74,7 @@ SimpleListWidget.prototype = {
 
 
 
-  removeChild: function (aChild) {
+  removeChild: function(aChild) {
     this._list.removeChild(aChild);
 
     if (this._selectedItem == aChild) {
@@ -85,7 +85,7 @@ SimpleListWidget.prototype = {
   
 
 
-  removeAllItems: function () {
+  removeAllItems: function() {
     let list = this._list;
     let parent = this._parent;
 
@@ -134,7 +134,7 @@ SimpleListWidget.prototype = {
 
 
 
-  setAttribute: function (aName, aValue) {
+  setAttribute: function(aName, aValue) {
     this._parent.setAttribute(aName, aValue);
 
     if (aName == "emptyText") {
@@ -150,7 +150,7 @@ SimpleListWidget.prototype = {
 
 
 
-  removeAttribute: function (aName) {
+  removeAttribute: function(aName) {
     this._parent.removeAttribute(aName);
 
     if (aName == "emptyText") {
@@ -164,7 +164,7 @@ SimpleListWidget.prototype = {
 
 
 
-  ensureElementIsVisible: function (aElement) {
+  ensureElementIsVisible: function(aElement) {
     if (!aElement) {
       return;
     }
@@ -202,7 +202,7 @@ SimpleListWidget.prototype = {
   
 
 
-  _showHeaderText: function () {
+  _showHeaderText: function() {
     if (this._headerTextNode || !this._headerTextValue) {
       return;
     }
@@ -217,7 +217,7 @@ SimpleListWidget.prototype = {
   
 
 
-  _showEmptyText: function () {
+  _showEmptyText: function() {
     if (this._emptyTextNode || !this._emptyTextValue) {
       return;
     }
@@ -232,7 +232,7 @@ SimpleListWidget.prototype = {
   
 
 
-  _removeEmptyText: function () {
+  _removeEmptyText: function() {
     if (!this._emptyTextNode) {
       return;
     }
