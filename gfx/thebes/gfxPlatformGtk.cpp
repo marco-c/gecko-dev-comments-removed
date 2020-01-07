@@ -741,8 +741,10 @@ gfxPlatformGtk::CreateHardwareVsyncSource()
   
   
   
+  
   if (gfxConfig::IsEnabled(Feature::HW_COMPOSITING)) {
-    if (gl::sGLXLibrary.SupportsVideoSync()) {
+    if (GDK_IS_X11_DISPLAY(gdk_display_get_default()) &&
+        gl::sGLXLibrary.SupportsVideoSync()) {
       RefPtr<VsyncSource> vsyncSource = new GLXVsyncSource();
       VsyncSource::Display& display = vsyncSource->GetGlobalDisplay();
       if (!static_cast<GLXVsyncSource::GLXDisplay&>(display).Setup()) {
