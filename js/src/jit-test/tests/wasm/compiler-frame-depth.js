@@ -21,6 +21,6 @@ try {
     
     
     
+    
     assertEq(e.message.includes('out of memory'), true);
-    assertEq(getBuildConfiguration().asan, true);
 }
