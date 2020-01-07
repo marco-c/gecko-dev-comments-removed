@@ -628,6 +628,12 @@ MarkupView.prototype = {
       "node-inserted"
     ];
 
+    
+    
+    if (reason && reason.endsWith("-keyboard")) {
+      this.getContainer(this._rootNode).elt.focus();
+    }
+
     if (reasonsToNavigate.includes(reason)) {
       this.getContainer(this._rootNode).elt.focus();
       this.navigate(this.getContainer(nodeFront));
