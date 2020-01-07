@@ -378,11 +378,6 @@ test_description_schema = Schema({
     
     Optional('product'): basestring,
 
-    
-    Optional('when'): Any({
-        Optional('files-changed'): [basestring],
-    }),
-
     Optional('worker-type'): optionally_keyed_by(
         'test-platform',
         Any(basestring, None),
@@ -671,7 +666,7 @@ def handle_suite_category(config, tests):
 
         script = test['mozharness']['script']
         category_arg = None
-        if suite == 'test-verification':
+        if suite == 'test-verify':
             pass
         elif script == 'android_emulator_unittest.py':
             category_arg = '--test-suite'
@@ -694,7 +689,6 @@ def enable_code_coverage(config, tests):
     for test in tests:
         if 'ccov' in test['build-platform'] and not test['test-name'].startswith('test-verify'):
             test['mozharness'].setdefault('extra-options', []).append('--code-coverage')
-            test['when'] = {}
             test['instance-size'] = 'xlarge'
             
             if 'mozilla-central' in test['run-on-projects'] or \
@@ -1008,24 +1002,21 @@ def make_job_description(config, tests):
             'platform': test.get('treeherder-machine-platform', test['build-platform']),
         }
 
-        if test.get('when'):
-            jobdesc['when'] = test['when']
+        suite = attributes['unittest_suite']
+        if suite in INCLUSIVE_COMPONENTS:
+            
+            
+            
+            schedules = [suite]
         else:
-            suite = attributes['unittest_suite']
-            if suite in INCLUSIVE_COMPONENTS:
-                
-                
-                
-                schedules = [suite]
-            else:
-                schedules = [suite, platform_family(test['build-platform'])]
+            schedules = [suite, platform_family(test['build-platform'])]
 
-            if config.params['project'] != 'try':
-                
-                jobdesc['optimization'] = {'skip-unless-schedules-or-seta': schedules}
-            else:
-                
-                jobdesc['optimization'] = {'skip-unless-schedules': schedules}
+        if config.params['project'] != 'try':
+            
+            jobdesc['optimization'] = {'skip-unless-schedules-or-seta': schedules}
+        else:
+            
+            jobdesc['optimization'] = {'skip-unless-schedules': schedules}
 
         run = jobdesc['run'] = {}
         run['using'] = 'mozharness-test'
