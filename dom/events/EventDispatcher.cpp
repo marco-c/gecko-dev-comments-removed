@@ -749,10 +749,29 @@ EventDispatcher::Dispatch(nsISupports* aTarget,
       aEvent->mMessage != eVoidEvent &&
       !nsContentUtils::IsSafeToRunScript()) {
     nsCOMPtr<nsINode> node = do_QueryInterface(target);
-    if (node && nsContentUtils::IsChromeDoc(node->OwnerDoc())) {
-      NS_WARNING("Fix the caller!");
-    } else {
+    if (!node) {
+      
+      
+      
       NS_ERROR("This is unsafe! Fix the caller!");
+    } else {
+      
+      
+      
+      
+      
+      
+      nsIDocument* doc = node->OwnerDoc();
+      bool hasHadScriptHandlingObject;
+      nsIGlobalObject* global =
+        doc->GetScriptHandlingObject(hasHadScriptHandlingObject);
+      if (global || hasHadScriptHandlingObject) {
+        if (nsContentUtils::IsChromeDoc(doc)) {
+          NS_WARNING("Fix the caller!");
+        } else {
+          NS_ERROR("This is unsafe! Fix the caller!");
+        }
+      }
     }
   }
 
