@@ -3,102 +3,63 @@
 
 "use strict";
 
-var gClient;
-var gActors;
-
-
-
-
-
-
-
-
-function run_test() {
-  DebuggerServer.addActors("resource://test/pre_init_global_actors.js");
-  DebuggerServer.addActors("resource://test/pre_init_tab_actors.js");
-
-  DebuggerServer.init();
-  DebuggerServer.registerAllActors();
-
-  DebuggerServer.addActors("resource://test/post_init_global_actors.js");
-  DebuggerServer.addActors("resource://test/post_init_tab_actors.js");
-
-  add_test(init);
-  add_test(test_pre_init_global_actor);
-  add_test(test_pre_init_tab_actor);
-  add_test(test_post_init_global_actor);
-  add_test(test_post_init_tab_actor);
-  add_test(test_stable_global_actor_instances);
-  add_test(close_client);
-  run_next_test();
-}
-
-function init() {
-  gClient = new DebuggerClient(DebuggerServer.connectPipe());
-  gClient.connect()
-    .then(() => gClient.listTabs())
-    .then(response => {
-      gActors = response;
-      run_next_test();
-    });
-}
-
-function test_pre_init_global_actor() {
-  gClient.request({ to: gActors.preInitGlobalActor, type: "ping" },
-    function onResponse(response) {
-      Assert.equal(response.message, "pong");
-      run_next_test();
-    }
-  );
-}
-
-function test_pre_init_tab_actor() {
-  gClient.request({ to: gActors.preInitTabActor, type: "ping" },
-    function onResponse(response) {
-      Assert.equal(response.message, "pong");
-      run_next_test();
-    }
-  );
-}
-
-function test_post_init_global_actor() {
-  gClient.request({ to: gActors.postInitGlobalActor, type: "ping" },
-    function onResponse(response) {
-      Assert.equal(response.message, "pong");
-      run_next_test();
-    }
-  );
-}
-
-function test_post_init_tab_actor() {
-  gClient.request({ to: gActors.postInitTabActor, type: "ping" },
-    function onResponse(response) {
-      Assert.equal(response.message, "pong");
-      run_next_test();
-    }
-  );
-}
-
 
 function getActorInstance(connID, actorID) {
   return DebuggerServer._connections[connID].getActor(actorID);
 }
 
-function test_stable_global_actor_instances() {
-  
+
+
+
+
+
+
+
+add_task(async function() {
+  DebuggerServer.addActors("resource://test/pre_init_global_actors.js");
+  DebuggerServer.addActors("resource://test/pre_init_tab_actors.js");
+
+  const client = await startTestDebuggerServer("example tab");
+
+  DebuggerServer.addActors("resource://test/post_init_global_actors.js");
+  DebuggerServer.addActors("resource://test/post_init_tab_actors.js");
+
+  let actors = await client.listTabs();
+  Assert.equal(actors.tabs.length, 1);
+
+  let reply = await client.request({
+    to: actors.preInitGlobalActor,
+    type: "ping",
+  });
+  Assert.equal(reply.message, "pong");
+
+  reply = await client.request({
+    to: actors.tabs[0].preInitTabActor,
+    type: "ping",
+  });
+  Assert.equal(reply.message, "pong");
+
+  reply = await client.request({
+    to: actors.postInitGlobalActor,
+    type: "ping",
+  });
+  Assert.equal(reply.message, "pong");
+
+  reply = await client.request({
+    to: actors.tabs[0].postInitTabActor,
+    type: "ping",
+  });
+  Assert.equal(reply.message, "pong");
+
   
   const connID = Object.keys(DebuggerServer._connections)[0];
-  const postInitGlobalActor = getActorInstance(connID, gActors.postInitGlobalActor);
-  const preInitGlobalActor = getActorInstance(connID, gActors.preInitGlobalActor);
-  gClient.listTabs().then(function onListTabs(response) {
-    Assert.equal(postInitGlobalActor,
-                 getActorInstance(connID, response.postInitGlobalActor));
-    Assert.equal(preInitGlobalActor,
-                 getActorInstance(connID, response.preInitGlobalActor));
-    run_next_test();
-  });
-}
+  const postInitGlobalActor = getActorInstance(connID, actors.postInitGlobalActor);
+  const preInitGlobalActor = getActorInstance(connID, actors.preInitGlobalActor);
+  actors = await client.listTabs();
+  Assert.equal(postInitGlobalActor,
+    getActorInstance(connID, actors.postInitGlobalActor));
+  Assert.equal(preInitGlobalActor,
+    getActorInstance(connID, actors.preInitGlobalActor));
 
-function close_client() {
-  gClient.close().then(() => run_next_test());
-}
+  await client.close();
+});

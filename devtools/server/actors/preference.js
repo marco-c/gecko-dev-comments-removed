@@ -9,13 +9,6 @@ const protocol = require("devtools/shared/protocol");
 const Services = require("Services");
 const {preferenceSpec} = require("devtools/shared/specs/preference");
 
-exports.register = function(handle) {
-  handle.addGlobalActor(PreferenceActor, "preferenceActor");
-};
-
-exports.unregister = function(handle) {
-};
-
 
 
 

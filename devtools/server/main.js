@@ -1236,11 +1236,10 @@ var DebuggerServer = {
 
 
 
-
-
-
-
-  addTabActor(actor, name = actor.prototype.actorPrefix) {
+  addTabActor(actor, name) {
+    if (!name) {
+      throw Error("addTabActor requires the `name` argument");
+    }
     if (["title", "url", "actor"].includes(name)) {
       throw Error(name + " is not allowed");
     }
@@ -1262,18 +1261,29 @@ var DebuggerServer = {
 
 
 
-  removeTabActor(actor) {
-    for (const name in DebuggerServer.tabActorFactories) {
-      const handler = DebuggerServer.tabActorFactories[name];
-      if ((handler.name && handler.name == actor.name) ||
-          (handler.id && handler.id == actor.id)) {
-        delete DebuggerServer.tabActorFactories[name];
-        for (const connID of Object.getOwnPropertyNames(this._connections)) {
-          
-          if (this._connections[connID].rootActor) {
-            this._connections[connID].rootActor.removeActorByName(name);
-          }
+  removeTabActor(actorOrName) {
+    let name;
+    if (typeof actorOrName == "string") {
+      name = actorOrName;
+    } else {
+      const actor = actorOrName;
+      for (const factoryName in DebuggerServer.tabActorFactories) {
+        const handler = DebuggerServer.tabActorFactories[factoryName];
+        if ((handler.name && handler.name == actor.name) ||
+            (handler.id && handler.id == actor.id)) {
+          name = factoryName;
+          break;
         }
+      }
+    }
+    if (!name) {
+      return;
+    }
+    delete DebuggerServer.tabActorFactories[name];
+    for (const connID of Object.getOwnPropertyNames(this._connections)) {
+      
+      if (this._connections[connID].rootActor) {
+        this._connections[connID].rootActor.removeActorByName(name);
       }
     }
   },
@@ -1297,11 +1307,10 @@ var DebuggerServer = {
 
 
 
-
-
-
-
-  addGlobalActor(actor, name = actor.prototype.actorPrefix) {
+  addGlobalActor(actor, name) {
+    if (!name) {
+      throw Error("addGlobalActor requires the `name` argument");
+    }
     if (["from", "tabs", "selected"].includes(name)) {
       throw Error(name + " is not allowed");
     }
@@ -1323,15 +1332,29 @@ var DebuggerServer = {
 
 
 
-  removeGlobalActor(actor) {
-    for (const name in DebuggerServer.globalActorFactories) {
-      const handler = DebuggerServer.globalActorFactories[name];
-      if ((handler.name && handler.name == actor.name) ||
-          (handler.id && handler.id == actor.id)) {
-        delete DebuggerServer.globalActorFactories[name];
-        for (const connID of Object.getOwnPropertyNames(this._connections)) {
-          this._connections[connID].rootActor.removeActorByName(name);
+  removeGlobalActor(actorOrName) {
+    let name;
+    if (typeof actorOrName == "string") {
+      name = actorOrName;
+    } else {
+      const actor = actorOrName;
+      for (const factoryName in DebuggerServer.globalActorFactories) {
+        const handler = DebuggerServer.globalActorFactories[factoryName];
+        if ((handler.name && handler.name == actor.name) ||
+            (handler.id && handler.id == actor.id)) {
+          name = factoryName;
+          break;
         }
+      }
+    }
+    if (!name) {
+      return;
+    }
+    delete DebuggerServer.globalActorFactories[name];
+    for (const connID of Object.getOwnPropertyNames(this._connections)) {
+      
+      if (this._connections[connID].rootActor) {
+        this._connections[connID].rootActor.removeActorByName(name);
       }
     }
   },

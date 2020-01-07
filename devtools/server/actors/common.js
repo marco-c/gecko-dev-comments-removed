@@ -27,55 +27,36 @@ const { method } = require("devtools/shared/protocol");
 
 
 
-
-
-
-
 function RegisteredActorFactory(options, prefix) {
   
   this._prefix = prefix;
-  if (typeof (options) != "function") {
+  if (options.constructorFun) {
     
-    if (options.constructorFun) {
-      this._getConstructor = () => options.constructorFun;
-    } else {
-      
-      
-      this._getConstructor = function() {
-        
-        let mod;
-        try {
-          mod = require(options.id);
-        } catch (e) {
-          throw new Error("Unable to load actor module '" + options.id + "'.\n" +
-                          e.message + "\n" + e.stack + "\n");
-        }
-        
-        const c = mod[options.constructorName];
-        if (!c) {
-          throw new Error("Unable to find actor constructor named '" +
-                          options.constructorName + "'. (Is it exported?)");
-        }
-        return c;
-      };
-    }
-    
-    
-    this.name = options.constructorName;
+    this._getConstructor = () => options.constructorFun;
   } else {
     
-    this._getConstructor = () => options;
     
-    
-    this.name = options.name;
-
-    
-    
-    
-    if (options.prototype && options.prototype.actorPrefix) {
-      this._prefix = options.prototype.actorPrefix;
-    }
+    this._getConstructor = function() {
+      
+      let mod;
+      try {
+        mod = require(options.id);
+      } catch (e) {
+        throw new Error("Unable to load actor module '" + options.id + "'.\n" +
+                        e.message + "\n" + e.stack + "\n");
+      }
+      
+      const c = mod[options.constructorName];
+      if (!c) {
+        throw new Error("Unable to find actor constructor named '" +
+                        options.constructorName + "'. (Is it exported?)");
+      }
+      return c;
+    };
   }
+  
+  
+  this.name = options.constructorName;
 }
 RegisteredActorFactory.prototype.createObservedActorFactory = function(conn,
   parentActor) {
