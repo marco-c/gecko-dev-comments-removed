@@ -69,6 +69,16 @@ function memoryAddressToString(address, code) {
         case 55 :
         case 43 :
         case 57 :
+        case 65026 :
+        case 65041 :
+        case 65048 :
+        case 65055 :
+        case 65062 :
+        case 65069 :
+        case 65076 :
+        case 65083 :
+        case 65090 :
+        case 65097 :
             defaultAlignFlags = 3;
             break;
         case 40 :
@@ -78,6 +88,26 @@ function memoryAddressToString(address, code) {
         case 62 :
         case 42 :
         case 56 :
+        case 65024 :
+        case 65025 :
+        case 65040 :
+        case 65046 :
+        case 65047 :
+        case 65053 :
+        case 65054 :
+        case 65060 :
+        case 65061 :
+        case 65067 :
+        case 65068 :
+        case 65074 :
+        case 65075 :
+        case 65081 :
+        case 65082 :
+        case 65088 :
+        case 65089 :
+        case 65095 :
+        case 65096 :
+        case 65102 :
             defaultAlignFlags = 2;
             break;
         case 46 :
@@ -86,6 +116,24 @@ function memoryAddressToString(address, code) {
         case 51 :
         case 59 :
         case 61 :
+        case 65043 :
+        case 65045 :
+        case 65050 :
+        case 65052 :
+        case 65057 :
+        case 65059 :
+        case 65064 :
+        case 65066 :
+        case 65071 :
+        case 65073 :
+        case 65078 :
+        case 65080 :
+        case 65085 :
+        case 65087 :
+        case 65092 :
+        case 65094 :
+        case 65099 :
+        case 65101 :
             defaultAlignFlags = 1;
             break;
         case 44 :
@@ -94,6 +142,24 @@ function memoryAddressToString(address, code) {
         case 49 :
         case 58 :
         case 60 :
+        case 65042 :
+        case 65044 :
+        case 65049 :
+        case 65051 :
+        case 65056 :
+        case 65058 :
+        case 65063 :
+        case 65065 :
+        case 65070 :
+        case 65072 :
+        case 65077 :
+        case 65079 :
+        case 65084 :
+        case 65086 :
+        case 65091 :
+        case 65093 :
+        case 65098 :
+        case 65100 :
             defaultAlignFlags = 0;
             break;
     }
@@ -384,7 +450,7 @@ var WasmDisassembler = (function () {
         return backrefLabel.label || '' + depth;
     };
     WasmDisassembler.prototype.printOperator = function (operator) {
-        var code = operator.code;
+        var code = operator.code | 0;
         this.appendBuffer(getOperatorName(code));
         switch (code) {
             case 2 :
@@ -476,6 +542,72 @@ var WasmDisassembler = (function () {
             case 60 :
             case 61 :
             case 62 :
+            case 65024 :
+            case 65025 :
+            case 65026 :
+            case 65040 :
+            case 65041 :
+            case 65042 :
+            case 65043 :
+            case 65044 :
+            case 65045 :
+            case 65046 :
+            case 65047 :
+            case 65048 :
+            case 65049 :
+            case 65050 :
+            case 65051 :
+            case 65052 :
+            case 65053 :
+            case 65054 :
+            case 65055 :
+            case 65056 :
+            case 65057 :
+            case 65058 :
+            case 65059 :
+            case 65060 :
+            case 65061 :
+            case 65062 :
+            case 65063 :
+            case 65064 :
+            case 65065 :
+            case 65066 :
+            case 65067 :
+            case 65068 :
+            case 65069 :
+            case 65070 :
+            case 65071 :
+            case 65072 :
+            case 65073 :
+            case 65074 :
+            case 65075 :
+            case 65076 :
+            case 65077 :
+            case 65078 :
+            case 65079 :
+            case 65080 :
+            case 65081 :
+            case 65082 :
+            case 65083 :
+            case 65084 :
+            case 65085 :
+            case 65086 :
+            case 65087 :
+            case 65088 :
+            case 65089 :
+            case 65090 :
+            case 65091 :
+            case 65092 :
+            case 65093 :
+            case 65094 :
+            case 65095 :
+            case 65096 :
+            case 65097 :
+            case 65098 :
+            case 65099 :
+            case 65100 :
+            case 65101 :
+            case 65102 :
                 var memoryAddress = memoryAddressToString(operator.memoryAddress, operator.code);
                 if (memoryAddress !== null) {
                     this.appendBuffer(' ');
@@ -620,9 +752,12 @@ var WasmDisassembler = (function () {
                 case 15 :
                     var memoryInfo = reader.result;
                     var memoryName = this._nameResolver.getMemoryName(this._memoryCount++, false);
-                    this.appendBuffer("  (memory " + memoryName + " " + memoryInfo.limits.initial);
-                    if (memoryInfo.limits.maximum !== undefined) {
-                        this.appendBuffer(" " + memoryInfo.limits.maximum);
+                    this.appendBuffer("  (memory " + memoryName + " ");
+                    if (memoryInfo.shared) {
+                        this.appendBuffer("(shared " + limitsToString(memoryInfo.limits) + ")");
+                    }
+                    else {
+                        this.appendBuffer(limitsToString(memoryInfo.limits));
                     }
                     this.appendBuffer(')');
                     this.newLine();
@@ -681,7 +816,14 @@ var WasmDisassembler = (function () {
                         case 2 :
                             var memoryImportInfo = importInfo.type;
                             var memoryName = this._nameResolver.getMemoryName(this._memoryCount++, false);
-                            this.appendBuffer(" (memory " + memoryName + " " + limitsToString(memoryImportInfo.limits) + ")");
+                            this.appendBuffer(" (memory " + memoryName + " ");
+                            if (memoryImportInfo.shared) {
+                                this.appendBuffer("(shared " + limitsToString(memoryImportInfo.limits) + ")");
+                            }
+                            else {
+                                this.appendBuffer(limitsToString(memoryImportInfo.limits));
+                            }
+                            this.appendBuffer(')');
                             break;
                         case 3 :
                             var globalImportInfo = importInfo.type;
