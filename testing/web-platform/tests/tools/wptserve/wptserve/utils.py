@@ -67,6 +67,7 @@ def is_bad_port(port):
         143,   
         179,   
         389,   
+        427,   
         465,   
         512,   
         513,   
@@ -77,6 +78,7 @@ def is_bad_port(port):
         531,   
         532,   
         540,   
+        548,   
         556,   
         563,   
         587,   
@@ -93,6 +95,7 @@ def is_bad_port(port):
         6667,  
         6668,  
         6669,  
+        6697,  
     ]
 
 def get_port(host):
