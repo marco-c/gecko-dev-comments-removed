@@ -129,16 +129,6 @@ XPCOMUtils.defineLazyGetter(this, "gABI", function() {
   } catch (e) {
     LOG("BlockList Global gABI: XPCOM ABI unknown.");
   }
-
-  if (AppConstants.platform == "macosx") {
-    
-    
-    let macutils = Cc["@mozilla.org/xpcom/mac-utils;1"].
-                   getService(Ci.nsIMacUtils);
-
-    if (macutils.isUniversalBinary)
-      abi += "-u-" + macutils.architecturesInBinary;
-  }
   return abi;
 });
 

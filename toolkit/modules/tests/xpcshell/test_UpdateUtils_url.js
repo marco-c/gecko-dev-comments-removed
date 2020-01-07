@@ -201,17 +201,7 @@ add_task(async function test_build_target() {
     do_throw("nsIXULAppInfo:XPCOMABI not defined\n");
   }
 
-  if (AppConstants.platform == "macosx") {
-    
-    
-    
-    let macutils = Cc["@mozilla.org/xpcom/mac-utils;1"].
-                   getService(Ci.nsIMacUtils);
-
-    if (macutils.isUniversalBinary) {
-      abi += "-u-" + macutils.architecturesInBinary;
-    }
-  } else if (AppConstants.platform == "win") {
+  if (AppConstants.platform == "win") {
     
     abi += "-" + getProcArchitecture();
   }

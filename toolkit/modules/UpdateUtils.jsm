@@ -246,16 +246,7 @@ XPCOMUtils.defineLazyGetter(UpdateUtils, "ABI", function() {
     Cu.reportError("XPCOM ABI unknown");
   }
 
-  if (AppConstants.platform == "macosx") {
-    
-    
-    let macutils = Cc["@mozilla.org/xpcom/mac-utils;1"].
-                   getService(Ci.nsIMacUtils);
-
-    if (macutils.isUniversalBinary) {
-      abi += "-u-" + macutils.architecturesInBinary;
-    }
-  } else if (AppConstants.platform == "win") {
+  if (AppConstants.platform == "win") {
     
     abi += "-" + gWinCPUArch;
   }

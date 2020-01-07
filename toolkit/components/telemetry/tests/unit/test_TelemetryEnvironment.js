@@ -401,13 +401,6 @@ function checkBuildSection(data) {
   
   Assert.ok(checkString(data.build.architecture));
 
-  if (gIsMac) {
-    let macUtils = Cc["@mozilla.org/xpcom/mac-utils;1"].getService(Ci.nsIMacUtils);
-    if (macUtils && macUtils.isUniversalBinary) {
-      Assert.ok(checkString(data.build.architecturesInBinary));
-    }
-  }
-
   Assert.equal(data.build.updaterAvailable, AppConstants.MOZ_UPDATER,
                "build.updaterAvailable must equal AppConstants.MOZ_UPDATER");
 }
