@@ -28,6 +28,65 @@ struct Nothing { };
 
 namespace detail {
 
+
+
+
+
+
+
+
+
+
+template<size_t offset>
+inline void
+WritePoisonAtOffset(void* p, const uintptr_t poisonValue)
+{
+    memcpy(static_cast<char*>(p) + offset*sizeof(poisonValue),
+           &poisonValue, sizeof(poisonValue));
+}
+
+
+template<size_t Offset, size_t NOffsets>
+struct InlinePoisoner
+{
+    static void poison(void* p, const uintptr_t poisonValue)
+    {
+        WritePoisonAtOffset<Offset>(p, poisonValue);
+        InlinePoisoner<Offset+1, NOffsets>::poison(p, poisonValue);
+    }
+};
+
+template<size_t N>
+struct InlinePoisoner<N, N>
+{
+    static void poison(void*, const uintptr_t)
+    {
+        
+    }
+};
+
+
+
+
+template<size_t ObjectSize>
+struct OutOfLinePoisoner
+{
+  static void poison(void* p, const uintptr_t)
+  {
+    mozWritePoison(p, ObjectSize);
+  }
+};
+
+template<typename T>
+inline void
+PoisonObject(T* p)
+{
+  const uintptr_t POISON = mozPoisonValue();
+  Conditional<(sizeof(T) <= 8*sizeof(POISON)),
+    InlinePoisoner<0, sizeof(T) / sizeof(POISON)>,
+    OutOfLinePoisoner<sizeof(T)>>::Type::poison(p, POISON);
+}
+
 template<typename T>
 struct MaybePoisoner
 {
@@ -36,9 +95,8 @@ struct MaybePoisoner
   static void poison(void* aPtr)
   {
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
-    
     if (N >= sizeof(uintptr_t)) {
-      mozWritePoison(aPtr, N);
+      PoisonObject(static_cast<typename RemoveCV<T>::Type*>(aPtr));
     }
 #endif
     MOZ_MAKE_MEM_UNDEFINED(aPtr, N);
