@@ -10,9 +10,41 @@
 namespace mozilla {
 namespace dom {
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class DOMPreferences final
 {
 public:
+  
+  
+  static void Initialize();
+
   
   static bool DumpEnabled();
 
