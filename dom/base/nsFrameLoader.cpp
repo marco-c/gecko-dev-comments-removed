@@ -151,8 +151,13 @@ NS_IMPL_CYCLE_COLLECTING_ADDREF(nsFrameLoader)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(nsFrameLoader)
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(nsFrameLoader)
-  NS_INTERFACE_MAP_ENTRY(nsIFrameLoader)
   NS_WRAPPERCACHE_INTERFACE_MAP_ENTRY
+  NS_INTERFACE_MAP_ENTRY(nsIFrameLoader)
+  if (aIID.Equals(NS_GET_IID(nsFrameLoader))) {
+      
+      
+      foundInterface = reinterpret_cast<nsISupports*>(this);
+  } else
   NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIFrameLoader)
   NS_INTERFACE_MAP_ENTRY(nsIWebBrowserPersistable)
 NS_INTERFACE_MAP_END
@@ -1930,14 +1935,6 @@ nsFrameLoader::OwnerIsMozBrowserFrame()
 {
   nsCOMPtr<nsIMozBrowserFrame> browserFrame = do_QueryInterface(mOwnerContent);
   return browserFrame ? browserFrame->GetReallyIsBrowser() : false;
-}
-
-
-NS_IMETHODIMP
-nsFrameLoader::GetOwnerIsMozBrowserFrame(bool* aResult)
-{
-  *aResult = OwnerIsMozBrowserFrame();
-  return NS_OK;
 }
 
 bool
