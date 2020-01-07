@@ -532,12 +532,12 @@ WebRenderBridgeParent::UpdateAPZScrollData(const wr::Epoch& aEpoch,
   }
 }
 
-bool
-WebRenderBridgeParent::PushAPZStateToWR(wr::TransactionBuilder& aTxn)
+void
+WebRenderBridgeParent::SetAPZSampleTime()
 {
   CompositorBridgeParent* cbp = GetRootCompositorBridgeParent();
   if (!cbp) {
-    return false;
+    return;
   }
   if (RefPtr<APZSampler> apz = cbp->GetAPZSampler()) {
     TimeStamp animationTime = cbp->GetTestingTimeStamp().valueOr(
@@ -549,13 +549,7 @@ WebRenderBridgeParent::PushAPZStateToWR(wr::TransactionBuilder& aTxn)
       animationTime += frameInterval;
     }
     apz->SetSampleTime(animationTime);
-    
-    
-    
-    wr::TransactionWrapper txn(aTxn.Raw());
-    return apz->PushStateToWR(txn);
   }
-  return false;
 }
 
 mozilla::ipc::IPCResult
@@ -1249,14 +1243,9 @@ WebRenderBridgeParent::CompositeToTarget(gfx::DrawTarget* aTarget, const gfx::In
   }
   
   
-  
-  
-  
   txn.UpdateDynamicProperties(opacityArray, transformArray);
 
-  if (PushAPZStateToWR(txn)) {
-    ScheduleGenerateFrame();
-  }
+  SetAPZSampleTime();
 
   wr::RenderThread::Get()->IncPendingFrameCount(mApi->GetId());
 

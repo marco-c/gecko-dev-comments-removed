@@ -221,11 +221,8 @@ public:
 
 
 
-
-
-
-  bool PushStateToWR(wr::TransactionWrapper& aTxn,
-                     const TimeStamp& aSampleTime);
+  void SampleForWebRender(wr::TransactionWrapper& aTxn,
+                          const TimeStamp& aSampleTime);
 
   
 

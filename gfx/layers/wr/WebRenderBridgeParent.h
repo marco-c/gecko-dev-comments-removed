@@ -221,10 +221,7 @@ private:
   CompositorBridgeParent* GetRootCompositorBridgeParent() const;
 
   
-  
-  
-  
-  bool PushAPZStateToWR(wr::TransactionBuilder& aTxn);
+  void SetAPZSampleTime();
 
   wr::Epoch GetNextWrEpoch();
 
