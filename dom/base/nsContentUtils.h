@@ -1344,9 +1344,7 @@ public:
 
 
 
-
-  static void MaybeFireNodeRemoved(nsINode* aChild, nsINode* aParent,
-                                   nsIDocument* aOwnerDoc);
+  static void MaybeFireNodeRemoved(nsINode* aChild, nsINode* aParent);
 
   
 
