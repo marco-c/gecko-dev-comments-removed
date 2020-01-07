@@ -21,7 +21,7 @@ use values::computed::{Angle as ComputedAngle, Percentage as ComputedPercentage}
 use values::computed::{font as computed, Context, Length, NonNegativeLength, ToComputedValue};
 use values::computed::font::{FamilyName, FontFamilyList, SingleFontFamily};
 use values::generics::NonNegative;
-use values::generics::font::{FeatureTagValue, FontSettings, FontTag};
+use values::generics::font::{self as generics, FeatureTagValue, FontSettings, FontTag};
 use values::generics::font::{KeywordInfo as GenericKeywordInfo, KeywordSize, VariationValue};
 use values::specified::{AllowQuirks, Angle, Integer, LengthOrPercentage, NoCalcLength, Number, Percentage};
 use values::specified::length::{FontBaseSize, AU_PER_PT, AU_PER_PX};
@@ -193,51 +193,70 @@ impl Parse for AbsoluteFontWeight {
 
 
 
+pub type SpecifiedFontStyle = generics::FontStyle<Angle>;
 
-
-
-
-#[allow(missing_docs)]
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq)]
-pub enum FontStyle {
-    Normal,
-    Italic,
-    Oblique(Angle),
-    System(SystemFont),
+impl ToCss for SpecifiedFontStyle {
+    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
+    where
+        W: Write,
+    {
+        match *self {
+            generics::FontStyle::Normal => dest.write_str("normal"),
+            generics::FontStyle::Italic => dest.write_str("italic"),
+            generics::FontStyle::Oblique(ref angle) => {
+                dest.write_str("oblique")?;
+                if *angle != Self::default_angle() {
+                    dest.write_char(' ')?;
+                    angle.to_css(dest)?;
+                }
+                Ok(())
+            }
+        }
+    }
 }
 
-impl ToComputedValue for FontStyle {
+impl Parse for SpecifiedFontStyle {
+    fn parse<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Self, ParseError<'i>> {
+        Ok(try_match_ident_ignore_ascii_case! { input,
+            "normal" => generics::FontStyle::Normal,
+            "italic" => generics::FontStyle::Italic,
+            "oblique" => {
+                let angle = input.try(|input| Self::parse_angle(context, input))
+                    .unwrap_or_else(|_| Self::default_angle());
+
+                generics::FontStyle::Oblique(angle)
+            }
+        })
+    }
+}
+
+impl ToComputedValue for SpecifiedFontStyle {
     type ComputedValue = computed::FontStyle;
 
-    fn to_computed_value(&self, context: &Context) -> Self::ComputedValue {
+    fn to_computed_value(&self, _: &Context) -> Self::ComputedValue {
         match *self {
-            FontStyle::Normal => computed::FontStyle::Normal,
-            FontStyle::Italic => computed::FontStyle::Italic,
-            FontStyle::Oblique(ref angle) => {
-                computed::FontStyle::Oblique(angle.to_computed_value(context))
+            generics::FontStyle::Normal => generics::FontStyle::Normal,
+            generics::FontStyle::Italic => generics::FontStyle::Italic,
+            generics::FontStyle::Oblique(ref angle) => {
+                generics::FontStyle::Oblique(Self::compute_angle(angle))
             }
-            #[cfg(feature = "gecko")]
-            FontStyle::System(..) => context
-                .cached_system_font
-                .as_ref()
-                .unwrap()
-                .font_style
-                .clone(),
-            #[cfg(not(feature = "gecko"))]
-            FontStyle::System(_) => unreachable!(),
         }
     }
 
     fn from_computed_value(computed: &Self::ComputedValue) -> Self {
         match *computed {
-            computed::FontStyle::Normal => FontStyle::Normal,
-            computed::FontStyle::Italic => FontStyle::Italic,
-            computed::FontStyle::Oblique(ref angle) => {
-                FontStyle::Oblique(Angle::from_computed_value(angle))
+            generics::FontStyle::Normal => generics::FontStyle::Normal,
+            generics::FontStyle::Italic => generics::FontStyle::Italic,
+            generics::FontStyle::Oblique(ref angle) => {
+                generics::FontStyle::Oblique(Angle::from_computed_value(angle))
             }
         }
     }
 }
+
 
 
 
@@ -258,21 +277,7 @@ pub const FONT_STYLE_OBLIQUE_MAX_ANGLE_DEGREES: f32 = 90.;
 
 pub const FONT_STYLE_OBLIQUE_MIN_ANGLE_DEGREES: f32 = -90.;
 
-impl FontStyle {
-    
-    pub fn system_font(f: SystemFont) -> Self {
-        FontStyle::System(f)
-    }
-
-    
-    pub fn get_system(&self) -> Option<SystemFont> {
-        if let FontStyle::System(s) = *self {
-            Some(s)
-        } else {
-            None
-        }
-    }
-
+impl SpecifiedFontStyle {
     
     pub fn compute_angle(angle: &Angle) -> ComputedAngle {
         ComputedAngle::Deg(
@@ -312,24 +317,56 @@ impl FontStyle {
     }
 }
 
-impl ToCss for FontStyle {
-    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
-    where
-        W: Write,
-    {
-        match *self {
-            FontStyle::Normal => dest.write_str("normal"),
-            FontStyle::Italic => dest.write_str("italic"),
-            FontStyle::Oblique(ref angle) => {
-                dest.write_str("oblique")?;
-                if *angle != Self::default_angle() {
-                    dest.write_char(' ')?;
-                    angle.to_css(dest)?;
-                }
-                Ok(())
-            }
-            FontStyle::System(ref s) => s.to_css(dest),
+
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToCss)]
+#[allow(missing_docs)]
+pub enum FontStyle {
+    Specified(SpecifiedFontStyle),
+    System(SystemFont),
+}
+
+impl FontStyle {
+    
+    #[inline]
+    pub fn normal() -> Self {
+        FontStyle::Specified(generics::FontStyle::Normal)
+    }
+
+    
+    pub fn system_font(f: SystemFont) -> Self {
+        FontStyle::System(f)
+    }
+
+    
+    pub fn get_system(&self) -> Option<SystemFont> {
+        if let FontStyle::System(s) = *self {
+            Some(s)
+        } else {
+            None
         }
+    }
+}
+
+impl ToComputedValue for FontStyle {
+    type ComputedValue = computed::FontStyle;
+
+    fn to_computed_value(&self, context: &Context) -> Self::ComputedValue {
+        match *self {
+            FontStyle::Specified(ref specified) => specified.to_computed_value(context),
+            #[cfg(feature = "gecko")]
+            FontStyle::System(..) => context
+                .cached_system_font
+                .as_ref()
+                .unwrap()
+                .font_style
+                .clone(),
+            #[cfg(not(feature = "gecko"))]
+            FontStyle::System(_) => unreachable!(),
+        }
+    }
+
+    fn from_computed_value(computed: &Self::ComputedValue) -> Self {
+        FontStyle::Specified(SpecifiedFontStyle::from_computed_value(computed))
     }
 }
 
@@ -338,16 +375,7 @@ impl Parse for FontStyle {
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
-        Ok(try_match_ident_ignore_ascii_case! { input,
-            "normal" => FontStyle::Normal,
-            "italic" => FontStyle::Italic,
-            "oblique" => {
-                let angle = input.try(|input| Self::parse_angle(context, input))
-                    .unwrap_or_else(|_| Self::default_angle());
-
-                FontStyle::Oblique(angle)
-            }
-        })
+        Ok(FontStyle::Specified(SpecifiedFontStyle::parse(context, input)?))
     }
 }
 

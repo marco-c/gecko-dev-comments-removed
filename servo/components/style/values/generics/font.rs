@@ -231,3 +231,17 @@ impl ToCss for KeywordSize {
         })
     }
 }
+
+
+
+
+#[allow(missing_docs)]
+#[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug, MallocSizeOf,
+         PartialEq, ToAnimatedValue, ToAnimatedZero)]
+pub enum FontStyle<Angle> {
+    #[animation(error)]
+    Normal,
+    #[animation(error)]
+    Italic,
+    Oblique(Angle),
+}
