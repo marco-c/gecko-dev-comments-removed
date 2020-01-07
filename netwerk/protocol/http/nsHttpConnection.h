@@ -272,7 +272,7 @@ private:
     void     SetupSSL();
 
     
-    void     StartSpdy(uint8_t versionLevel);
+    void     StartSpdy(nsISSLSocketControl *ssl, uint8_t versionLevel);
     
     
     void     Start0RTTSpdy(uint8_t versionLevel);
