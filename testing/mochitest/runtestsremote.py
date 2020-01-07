@@ -15,7 +15,6 @@ from automation import Automation
 from remoteautomation import RemoteAutomation, fennecLogcatFilters
 from runtests import MochitestDesktop, MessageLogger
 from mochitest_options import MochitestArgumentParser
-from shutil import copyfile
 
 import mozdevice
 import mozinfo
@@ -205,21 +204,12 @@ class MochiRemote(MochitestDesktop):
         
         if options.flavor == 'chrome':
             
-            chrome = """
-component {791cb384-ba12-464e-82cd-d0e269da1b8f} RemoteMochitestStartup.js
-contract @mozilla.org/mochitest/startup;1 {791cb384-ba12-464e-82cd-d0e269da1b8f}
-category profile-after-change RemoteMochitestStartup @mozilla.org/mochitest/startup;1 process=main
-"""
-
+            chrome = ("overlay chrome://browser/content/browser.xul "
+                      "chrome://mochikit/content/browser-test-overlay.xul")
             path = os.path.join(options.profilePath, 'extensions', 'staged',
                                 'mochikit@mozilla.org', 'chrome.manifest')
             with open(path, "a") as f:
                 f.write(chrome)
-
-            copyfile(os.path.join(SCRIPT_DIR, 'RemoteMochitestStartup.js'),
-                     os.path.join(options.profilePath, 'extensions', 'staged',
-                                  'mochikit@mozilla.org', "RemoteMochitestStartup.js"))
-
         return manifest
 
     def buildURLOptions(self, options, env):
