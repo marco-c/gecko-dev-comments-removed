@@ -11,6 +11,9 @@ const LDAPSyncQueryContractID = "@mozilla.org/ldapsyncquery;1";
 const nsIPrefService = Ci.nsIPrefService;
 const PrefServiceContractID = "@mozilla.org/preferences-service;1";
 
+
+
+
 var gVersion;
 var gIsUTF8;
 

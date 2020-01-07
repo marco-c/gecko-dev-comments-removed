@@ -39,15 +39,6 @@ module.exports = {
     "env": {
       "mozilla/browser-window": true
     }
-  },{
-    
-    
-    "files": [
-      "extensions/pref/**",
-    ],
-    "rules": {
-      "mozilla/use-services": "off",
-    }
   }, {
     
     
