@@ -851,16 +851,16 @@ exports.AnimationsActor = protocol.ActorClassWithSpec(animationsSpec, {
 
 
   playAll: function() {
-    let readyPromises = [];
     
     
     for (let player of
-         this.getAllAnimations(this.tabActor.window.document, true)) {
-      player.play();
-      readyPromises.push(player.ready);
+      this.getAllAnimations(this.tabActor.window.document, true)) {
+      
+      
+      player.startTime =
+        player.timeline.currentTime - player.currentTime / player.playbackRate;
     }
     this.allAnimationsPaused = false;
-    return Promise.all(readyPromises);
   },
 
   toggleAll: function() {
@@ -888,11 +888,29 @@ exports.AnimationsActor = protocol.ActorClassWithSpec(animationsSpec, {
 
 
 
-  setCurrentTimes: function(players, time, shouldPause) {
-    return Promise.all(players.map(player => {
-      let pause = shouldPause ? player.pause() : Promise.resolve();
-      return pause.then(() => player.setCurrentTime(time));
-    }));
+
+
+  setCurrentTimes: function(players, time, shouldPause, options) {
+    
+    
+    if (!options.relativeToCreatedTime) {
+      return Promise.all(players.map(player => {
+        let pause = shouldPause ? player.pause() : Promise.resolve();
+        return pause.then(() => player.setCurrentTime(time));
+      }));
+    }
+
+    for (const actor of players) {
+      const player = actor.player;
+
+      if (shouldPause) {
+        player.startTime = null;
+      }
+
+      player.currentTime = (time - actor.createdTime) * player.playbackRate;
+    }
+
+    return Promise.resolve();
   },
 
   
