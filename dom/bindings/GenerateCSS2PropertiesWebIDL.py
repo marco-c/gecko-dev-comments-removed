@@ -5,6 +5,7 @@
 import sys
 import string
 import argparse
+import runpy
 
 
 
@@ -13,18 +14,19 @@ def generateLine(propName, extendedAttrs):
     return "  [%s] attribute DOMString %s;\n" % (", ".join(extendedAttrs),
                                                  propName)
 def generate(output, idlFilename, dataFile):
-    with open(dataFile, "r") as f:
-        propList = eval(f.read())
+    propList = runpy.run_path(dataFile)["data"]
     props = ""
-    for name, prop, id, flags, pref, proptype in propList:
-        if "CSSPropFlags::Internal" in flags:
+    for p in propList:
+        if "CSSPropFlags::Internal" in p.flags:
             continue
         
         
         extendedAttrs = ["CEReactions", "Throws", "TreatNullAs=EmptyString",
                          "SetterNeedsSubjectPrincipal=NonSystem"]
-        if pref is not "":
-            extendedAttrs.append('Pref="%s"' % pref)
+        if p.pref is not "":
+            extendedAttrs.append('Pref="%s"' % p.pref)
+
+        prop = p.method
 
         
         
@@ -52,8 +54,8 @@ def generate(output, idlFilename, dataFile):
         
         
         
-        if prop != name:
-            extendedAttrs.append('BindingAlias="%s"' % name)
+        if prop != p.name:
+            extendedAttrs.append('BindingAlias="%s"' % p.name)
 
         props += generateLine(prop, extendedAttrs)
 
