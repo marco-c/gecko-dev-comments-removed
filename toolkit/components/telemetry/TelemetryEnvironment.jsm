@@ -1601,31 +1601,6 @@ EnvironmentCache.prototype = {
 
 
 
-  _getSecurityAppData() {
-    const maxStringLength = 256;
-
-    const keys = [ ["registeredAntiVirus", "antivirus"],
-                   ["registeredAntiSpyware", "antispyware"],
-                   ["registeredFirewall", "firewall"] ];
-
-    let result = {};
-
-    for (let [inKey, outKey] of keys) {
-      let prop = getSysinfoProperty(inKey, null);
-      if (prop) {
-        prop = limitStringToLength(prop, maxStringLength).split(";");
-      }
-
-      result[outKey] = prop;
-    }
-
-    return result;
-  },
-
-  
-
-
-
   _getGFXData() {
     let gfxData = {
       D2DEnabled: getGfxField("D2DEnabled", null),
@@ -1707,11 +1682,6 @@ EnvironmentCache.prototype = {
       data.isWow64 = getSysinfoProperty("isWow64", null);
     } else if (AppConstants.platform == "android") {
       data.device = this._getDeviceData();
-    }
-
-    
-    if (AppConstants.isPlatformAndVersionAtLeast("win", "6.2")) {
-      data.sec = this._getSecurityAppData();
     }
 
     return data;
