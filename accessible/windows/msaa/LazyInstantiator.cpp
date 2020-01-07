@@ -195,7 +195,7 @@ static const DllBlockInfo gBlockedInprocDlls[] = {
 
 
 static const char* gBlockedRemoteClients[] = {
-  "tbnnotifier.exe" 
+  "tbnotifier.exe" 
 };
 
 
