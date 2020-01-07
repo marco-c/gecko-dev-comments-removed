@@ -1281,7 +1281,9 @@ FireForgetSkippable(uint32_t aSuspected, bool aRemoveChildless,
     if (!aDeadline.IsNull()) {
       if (aDeadline < now) {
         
-        idleDuration = aDeadline - startTimeStamp;
+        if (aDeadline > startTimeStamp) {
+          idleDuration = aDeadline - startTimeStamp;
+        }
       } else {
         idleDuration = duration;
       }
