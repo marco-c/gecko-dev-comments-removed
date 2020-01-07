@@ -9,10 +9,7 @@ ChromeUtils.import("resource://gre/modules/FileUtils.jsm");
 
 const {UnknownError} = ChromeUtils.import("chrome://marionette/content/error.js", {});
 
-this.EXPORTED_SYMBOLS = ["addon"];
-
-
-this.addon = {};
+this.EXPORTED_SYMBOLS = ["Addon"];
 
 
 const ERRORS = {
@@ -61,6 +58,8 @@ async function installAddon(file) {
 }
 
 
+class Addon {
+  
 
 
 
@@ -80,33 +79,35 @@ async function installAddon(file) {
 
 
 
-addon.install = async function(path, temporary = false) {
-  let addon;
-  let file;
+  static async install(path, temporary = false) {
+    let addon;
+    let file;
 
-  try {
-    file = new FileUtils.File(path);
-  } catch (e) {
-    throw new UnknownError(`Expected absolute path: ${e}`, e);
-  }
-
-  if (!file.exists()) {
-    throw new UnknownError(`No such file or directory: ${path}`);
-  }
-
-  try {
-    if (temporary) {
-      addon = await AddonManager.installTemporaryAddon(file);
-    } else {
-      addon = await installAddon(file);
+    try {
+      file = new FileUtils.File(path);
+    } catch (e) {
+      throw new UnknownError(`Expected absolute path: ${e}`, e);
     }
-  } catch (e) {
-    throw new UnknownError(
-        `Could not install add-on: ${path}: ${e.message}`, e);
+
+    if (!file.exists()) {
+      throw new UnknownError(`No such file or directory: ${path}`);
+    }
+
+    try {
+      if (temporary) {
+        addon = await AddonManager.installTemporaryAddon(file);
+      } else {
+        addon = await installAddon(file);
+      }
+    } catch (e) {
+      throw new UnknownError(
+          `Could not install add-on: ${path}: ${e.message}`, e);
+    }
+
+    return addon.id;
   }
 
-  return addon.id;
-};
+  
 
 
 
@@ -120,29 +121,29 @@ addon.install = async function(path, temporary = false) {
 
 
 
+  static async uninstall(id) {
+    let candidate = await AddonManager.getAddonByID(id);
 
+    return new Promise(resolve => {
+      let listener = {
+        onOperationCancelled: addon => {
+          if (addon.id === candidate.id) {
+            AddonManager.removeAddonListener(listener);
+            throw new UnknownError(`Uninstall of ${candidate.id} has been canceled`);
+          }
+        },
 
-addon.uninstall = async function(id) {
-  let candidate = await AddonManager.getAddonByID(id);
+        onUninstalled: addon => {
+          if (addon.id === candidate.id) {
+            AddonManager.removeAddonListener(listener);
+            resolve();
+          }
+        },
+      };
 
-  return new Promise(resolve => {
-    let listener = {
-      onOperationCancelled: addon => {
-        if (addon.id === candidate.id) {
-          AddonManager.removeAddonListener(listener);
-          throw new UnknownError(`Uninstall of ${candidate.id} has been canceled`);
-        }
-      },
-
-      onUninstalled: addon => {
-        if (addon.id === candidate.id) {
-          AddonManager.removeAddonListener(listener);
-          resolve();
-        }
-      },
-    };
-
-    AddonManager.addAddonListener(listener);
-    addon.uninstall();
-  });
-};
+      AddonManager.addAddonListener(listener);
+      candidate.uninstall();
+    });
+  }
+}
+this.Addon = Addon;
