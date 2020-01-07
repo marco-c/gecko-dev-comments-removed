@@ -1284,10 +1284,18 @@ nsEventStatus AsyncPanZoomController::OnTouchMove(const MultiTouchInput& aEvent)
 
     case TOUCHING: {
       ScreenCoord panThreshold = GetTouchStartTolerance();
-      UpdateWithTouchAtDevicePoint(aEvent);
 
-      if (PanDistance() < panThreshold) {
-        return nsEventStatus_eIgnore;
+      
+      
+      
+      
+      
+      
+      if (panThreshold > 0.0f) {
+        UpdateWithTouchAtDevicePoint(aEvent);
+        if (PanDistance() < panThreshold) {
+          return nsEventStatus_eIgnore;
+        }
       }
 
       ParentLayerPoint touchPoint = GetFirstTouchPoint(aEvent);

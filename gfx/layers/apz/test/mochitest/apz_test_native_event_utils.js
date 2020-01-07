@@ -283,12 +283,6 @@ function* synthesizeNativeTouchSequences(aElement, aPositions, aObserver = null,
 
 
 
-
-
-
-
-
-const TOUCH_SLOP = 1;
 function synthesizeNativeTouchDrag(aElement, aX, aY, aDeltaX, aDeltaY, aObserver = null, aTouchId = 0) {
   var steps = Math.max(Math.abs(aDeltaX), Math.abs(aDeltaY));
   var positions = new Array();
