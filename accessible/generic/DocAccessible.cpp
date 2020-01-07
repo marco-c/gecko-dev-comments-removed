@@ -2351,7 +2351,7 @@ DocAccessible::CacheChildrenInSubtree(Accessible* aRoot,
   
   
   roles::Role role = aRoot->ARIARole();
-  if (!aRoot->IsDoc() && (role == roles::DIALOG || role == roles::DOCUMENT)) {
+  if (!aRoot->IsDoc() && (role == roles::DIALOG || role == roles::NON_NATIVE_DOCUMENT)) {
     FireDelayedEvent(nsIAccessibleEvent::EVENT_DOCUMENT_LOAD_COMPLETE, aRoot);
   }
 }

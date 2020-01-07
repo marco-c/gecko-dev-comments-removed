@@ -578,7 +578,7 @@ static const nsRoleMapEntry sWAIRoleMaps[] =
   },
   { 
     &nsGkAtoms::document,
-    roles::DOCUMENT,
+    roles::NON_NATIVE_DOCUMENT,
     kUseMapRole,
     eNoValue,
     eNoAction,
@@ -619,7 +619,7 @@ static const nsRoleMapEntry sWAIRoleMaps[] =
   },
   { 
     &nsGkAtoms::graphicsDocument,
-    roles::DOCUMENT,
+    roles::NON_NATIVE_DOCUMENT,
     kUseMapRole,
     eNoValue,
     eNoAction,

@@ -648,8 +648,7 @@ enum Role {
 
 
 
-
-  DOCUMENT_FRAME = 104,
+  NON_NATIVE_DOCUMENT = 104,
 
   
 
