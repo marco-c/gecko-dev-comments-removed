@@ -1403,6 +1403,7 @@ GfxInfo::GetFeatureStatusImpl(int32_t aFeature,
         !adapterVendorID.Equals(GfxDriverInfo::GetDeviceVendor(VendorAMD), nsCaseInsensitiveStringComparator()) &&
         !adapterVendorID.Equals(GfxDriverInfo::GetDeviceVendor(VendorATI), nsCaseInsensitiveStringComparator()) &&
         !adapterVendorID.Equals(GfxDriverInfo::GetDeviceVendor(VendorMicrosoft), nsCaseInsensitiveStringComparator()) &&
+        !adapterVendorID.Equals(GfxDriverInfo::GetDeviceVendor(VendorParallels), nsCaseInsensitiveStringComparator()) &&
         
         
         

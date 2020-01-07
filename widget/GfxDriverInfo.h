@@ -101,12 +101,13 @@ enum DeviceFamily {
 };
 
 enum DeviceVendor {
-  VendorAll,
+  VendorAll, 
   VendorIntel,
   VendorNVIDIA,
   VendorAMD,
   VendorATI,
   VendorMicrosoft,
+  VendorParallels,
   DeviceVendorMax
 };
 
