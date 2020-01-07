@@ -30,7 +30,7 @@ public:
   virtual ~DrawEventRecorderPrivate() { }
   virtual bool Finish() override { ClearResources(); return true; }
   virtual void FlushItem(IntRect) { }
-  void DetatchResources() {
+  void DetachResources() {
     
     
     for (auto font = mStoredFonts.begin(); font != mStoredFonts.end(); ) {

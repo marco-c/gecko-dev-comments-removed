@@ -100,7 +100,7 @@ DrawEventRecorderMemory::FlushItem(IntRect aRect)
   
   
   
-  DetatchResources();
+  DetachResources();
 
   
   WriteElement(mIndex, mOutputStream.mLength);
