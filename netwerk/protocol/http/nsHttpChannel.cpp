@@ -7326,7 +7326,7 @@ nsHttpChannel::OnStopRequest(nsIRequest *request, nsISupports *ctxt, nsresult st
         }
         
         chanDisposition = static_cast<ChannelDisposition>(chanDisposition + kHttpsCanceled);
-    } else if (mLoadInfo->GetBrowserWouldUpgradeInsecureRequests()) {
+    } else if (mLoadInfo && mLoadInfo->GetBrowserWouldUpgradeInsecureRequests()) {
         
         upgradeKey = NS_LITERAL_CSTRING("disabledUpgrade");
     } else {
