@@ -156,18 +156,9 @@ XPTInterfaceInfoManager::VerifyAndAddEntryIfNew(const XPTInterfaceDirectoryEntry
 
     
 
-    entry = xptiInterfaceEntry::Create(iface->mName,
-                                       iface->mIID,
-                                       iface->mInterfaceDescriptor,
-                                       typelib);
+    entry = xptiInterfaceEntry::Create(iface, typelib);
     if (!entry)
         return;
-
-    
-    entry->SetScriptableFlag(iface->mInterfaceDescriptor->IsScriptable());
-    entry->SetBuiltinClassFlag(iface->mInterfaceDescriptor->IsBuiltinClass());
-    entry->SetMainProcessScriptableOnlyFlag(
-      iface->mInterfaceDescriptor->IsMainProcessScriptableOnly());
 
     mWorkingSet.mIIDTable.Put(entry->IID(), entry);
     mWorkingSet.mNameTable.Put(entry->GetTheName(), entry);
