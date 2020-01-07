@@ -32,7 +32,6 @@ const CONNECTION_PROTOCOLS = (function() {
 XPCOMUtils.defineLazyServiceGetter(this, "gPushNotifier",
                                    "@mozilla.org/push/Notifier;1",
                                    "nsIPushNotifier");
-ChromeUtils.defineModuleGetter(this, "pushBroadcastService", "resource://gre/modules/PushBroadcastService.jsm");
 
 var EXPORTED_SYMBOLS = ["PushService"];
 
@@ -241,19 +240,14 @@ var PushService = {
     }
 
     let records = await this.getAllUnexpired();
-    let broadcastListeners = await pushBroadcastService.getListeners();
 
-    
-    
-    
-    
-    
-    
-    
-    
     this._setState(PUSH_SERVICE_RUNNING);
 
-    this._service.connect(records, broadcastListeners);
+    if (records.length > 0 || prefs.get("alwaysConnect")) {
+      
+      
+      this._service.connect(records);
+    }
   },
 
   _changeStateConnectionEnabledEvent: function(enabled) {
@@ -492,13 +486,13 @@ var PushService = {
     if (options.serverURI) {
       
 
-      return this._stateChangeProcessEnqueue(_ =>
+      this._stateChangeProcessEnqueue(_ =>
         this._changeServerURL(options.serverURI, STARTING_SERVICE_EVENT, options));
 
     } else {
       
       
-      return this._stateChangeProcessEnqueue(_ =>
+      this._stateChangeProcessEnqueue(_ =>
         this._changeServerURL(prefs.get("serverURL"), STARTING_SERVICE_EVENT));
     }
   },
@@ -768,16 +762,6 @@ var PushService = {
       console.error("receivedPushMessage: Error notifying app", error);
       return Ci.nsIPushErrorReporter.ACK_NOT_DELIVERED;
     });
-  },
-
-  
-
-
-  receivedBroadcastMessage(message) {
-    pushBroadcastService.receivedBroadcastMessage(message.broadcasts)
-      .catch(e => {
-        console.error(e);
-      });;
   },
 
   
@@ -1096,21 +1080,6 @@ var PushService = {
       }
       return record.toSubscription();
     });
-  },
-
-  
-
-
-
-  async subscribeBroadcast(broadcastId, version) {
-    if (this._state != PUSH_SERVICE_RUNNING) {
-      
-      
-      
-      return;
-    }
-
-    await this._service.sendSubscribeBroadcast(broadcastId, version);
   },
 
   
