@@ -80,9 +80,7 @@ impl MediaList {
 
             
             let query_match = media_match &&
-                mq.expressions
-                    .iter()
-                    .all(|expression| expression.matches(&device, quirks_mode));
+                mq.condition.as_ref().map_or(true, |c| c.matches(device, quirks_mode));
 
             
             match mq.qualifier {
