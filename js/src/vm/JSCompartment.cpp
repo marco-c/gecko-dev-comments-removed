@@ -130,6 +130,23 @@ JSCompartment::~JSCompartment()
 bool
 JSCompartment::init(JSContext* maybecx)
 {
+    if (!crossCompartmentWrappers.init(0)) {
+        if (maybecx)
+            ReportOutOfMemory(maybecx);
+        return false;
+    }
+
+    return true;
+}
+
+bool
+Realm::init(JSContext* maybecx)
+{
+    
+    
+    if (!JSCompartment::init(maybecx))
+        return false;
+
     
 
 
@@ -140,12 +157,6 @@ JSCompartment::init(JSContext* maybecx)
 
 
     JS::ResetTimeZone();
-
-    if (!crossCompartmentWrappers.init(0)) {
-        if (maybecx)
-            ReportOutOfMemory(maybecx);
-        return false;
-    }
 
     enumerators = NativeIterator::allocateSentinel(maybecx);
     if (!enumerators)
@@ -602,10 +613,10 @@ JSCompartment::getNonSyntacticLexicalEnvironment(JSObject* enclosing) const
 }
 
 bool
-JSCompartment::addToVarNames(JSContext* cx, JS::Handle<JSAtom*> name)
+Realm::addToVarNames(JSContext* cx, JS::Handle<JSAtom*> name)
 {
     MOZ_ASSERT(name);
-    MOZ_ASSERT(!JS::GetRealmForCompartment(this)->isAtomsRealm());
+    MOZ_ASSERT(!isAtomsRealm());
 
     if (varNames_.put(name))
         return true;
@@ -829,7 +840,7 @@ JSCompartment::sweepCrossCompartmentWrappers()
 }
 
 void
-JSCompartment::sweepVarNames()
+Realm::sweepVarNames()
 {
     varNames_.sweep();
 }
@@ -1301,35 +1312,47 @@ JSCompartment::clearBreakpointsIn(FreeOp* fop, js::Debugger* dbg, HandleObject h
 }
 
 void
-JSCompartment::addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf,
-                                      size_t* tiAllocationSiteTables,
-                                      size_t* tiArrayTypeTables,
-                                      size_t* tiObjectTypeTables,
-                                      size_t* compartmentObject,
-                                      size_t* compartmentTables,
-                                      size_t* innerViewsArg,
-                                      size_t* lazyArrayBuffersArg,
-                                      size_t* objectMetadataTablesArg,
-                                      size_t* crossCompartmentWrappersArg,
-                                      size_t* savedStacksSet,
-                                      size_t* varNamesSet,
-                                      size_t* nonSyntacticLexicalEnvironmentsArg,
-                                      size_t* jitCompartment,
-                                      size_t* privateData,
-                                      size_t* scriptCountsMapArg)
+JSCompartment::addSizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf,
+                                      size_t* crossCompartmentWrappersArg)
 {
-    *compartmentObject += mallocSizeOf(this);
+    
+    
+
+    *crossCompartmentWrappersArg += crossCompartmentWrappers.sizeOfExcludingThis(mallocSizeOf);
+}
+
+void
+Realm::addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf,
+                              size_t* tiAllocationSiteTables,
+                              size_t* tiArrayTypeTables,
+                              size_t* tiObjectTypeTables,
+                              size_t* realmObject,
+                              size_t* realmTables,
+                              size_t* innerViewsArg,
+                              size_t* lazyArrayBuffersArg,
+                              size_t* objectMetadataTablesArg,
+                              size_t* crossCompartmentWrappersArg,
+                              size_t* savedStacksSet,
+                              size_t* varNamesSet,
+                              size_t* nonSyntacticLexicalEnvironmentsArg,
+                              size_t* jitCompartment,
+                              size_t* privateData,
+                              size_t* scriptCountsMapArg)
+{
+    
+    JSCompartment::addSizeOfExcludingThis(mallocSizeOf, crossCompartmentWrappersArg);
+
+    *realmObject += mallocSizeOf(this);
     objectGroups.addSizeOfExcludingThis(mallocSizeOf, tiAllocationSiteTables,
                                         tiArrayTypeTables, tiObjectTypeTables,
-                                        compartmentTables);
-    wasm.addSizeOfExcludingThis(mallocSizeOf, compartmentTables);
+                                        realmTables);
+    wasm.addSizeOfExcludingThis(mallocSizeOf, realmTables);
     *innerViewsArg += innerViews.sizeOfExcludingThis(mallocSizeOf);
 
     if (lazyArrayBuffers)
         *lazyArrayBuffersArg += lazyArrayBuffers->sizeOfIncludingThis(mallocSizeOf);
     if (objectMetadataTable)
         *objectMetadataTablesArg += objectMetadataTable->sizeOfIncludingThis(mallocSizeOf);
-    *crossCompartmentWrappersArg += crossCompartmentWrappers.sizeOfExcludingThis(mallocSizeOf);
     *savedStacksSet += savedStacks_.sizeOfExcludingThis(mallocSizeOf);
     *varNamesSet += varNames_.sizeOfExcludingThis(mallocSizeOf);
     if (nonSyntacticLexicalEnvironments_)

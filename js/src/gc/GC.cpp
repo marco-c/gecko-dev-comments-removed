@@ -5402,8 +5402,8 @@ UpdateAtomsBitmap(GCParallelTask* task)
     
     
     runtime->unsafeSymbolRegistry().sweep();
-    for (CompartmentsIter comp(runtime, SkipAtoms); !comp.done(); comp.next())
-        comp->sweepVarNames();
+    for (RealmsIter realm(runtime, SkipAtoms); !realm.done(); realm.next())
+        realm->sweepVarNames();
 }
 
 static void
