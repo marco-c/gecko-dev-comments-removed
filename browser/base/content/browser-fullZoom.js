@@ -39,8 +39,7 @@ var FullZoom = {
 
   
 
-  QueryInterface: XPCOMUtils.generateQI([Ci.nsIDOMEventListener,
-                                         Ci.nsIObserver,
+  QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver,
                                          Ci.nsIContentPrefObserver,
                                          Ci.nsISupportsWeakReference,
                                          Ci.nsISupports]),

@@ -155,8 +155,7 @@ function PreviewController(win, tab) {
 }
 
 PreviewController.prototype = {
-  QueryInterface: XPCOMUtils.generateQI([Ci.nsITaskbarPreviewController,
-                                         Ci.nsIDOMEventListener]),
+  QueryInterface: XPCOMUtils.generateQI([Ci.nsITaskbarPreviewController]),
 
   destroy() {
     this.tab.removeEventListener("TabAttrModified", this);

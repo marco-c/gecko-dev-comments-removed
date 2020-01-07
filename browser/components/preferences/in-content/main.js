@@ -1295,7 +1295,7 @@ var gMainPane = {
 
   
 
-  QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver, Ci.nsIDOMEventListener]),
+  QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver]),
 
   
 

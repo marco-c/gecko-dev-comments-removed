@@ -429,7 +429,6 @@ Object.freeze(SessionStore);
 
 var SessionStoreInternal = {
   QueryInterface: XPCOMUtils.generateQI([
-    Ci.nsIDOMEventListener,
     Ci.nsIObserver,
     Ci.nsISupportsWeakReference
   ]),
