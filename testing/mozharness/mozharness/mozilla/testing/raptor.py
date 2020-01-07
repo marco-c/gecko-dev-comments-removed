@@ -164,39 +164,77 @@ class Raptor(TestingMixin, MercurialScript, CodeCoverageMixin):
             self.info("expecting Google Chrome to be pre-installed locally")
             return
 
-        chrome_url = "https://dl.google.com/chrome/mac/stable/GGRO/googlechrome.dmg"
         
         self.chrome_dest = os.path.join(here, 'chrome')
-        chrome_dmg = os.path.join(self.chrome_dest, 'googlechrome.dmg')
+
+        
+        
+
+        if 'mac' in self.platform_name():
+            chrome_archive_file = "googlechrome.dmg"
+            chrome_url = "https://dl.google.com/chrome/mac/stable/GGRO/%s" % chrome_archive_file
+            self.chrome_path = os.path.join(self.chrome_dest, 'Google Chrome.app',
+                                            'Contents', 'MacOS', 'Google Chrome')
+
+        elif 'linux' in self.platform_name():
+            chrome_archive_file = "google-chrome-stable_current_amd64.deb"
+            chrome_url = "https://dl.google.com/linux/direct/%s" % chrome_archive_file
+            self.chrome_path = os.path.join(self.chrome_dest, 'opt', 'google',
+                                            'chrome', 'google-chrome')
+
+        else:
+            
+            if '64' in self.platform_name():
+                chrome_archive_file = "standalonesetup64.exe"
+            else:
+                chrome_archive_file = "standalonesetup.exe"
+            chrome_url = "https://dl.google.com/chrome/install/%s" % chrome_archive_file
+
+        chrome_archive = os.path.join(self.chrome_dest, chrome_archive_file)
 
         self.info("installing google chrome - temporary install hack")
-        self.info("chrome_dest is: %s" % self.chrome_dest)
-
-        self.chrome_path = os.path.join(self.chrome_dest, 'Google Chrome.app',
-                                        'Contents', 'MacOS', 'Google Chrome')
+        self.info("chrome archive is: %s" % chrome_archive)
+        self.info("chrome dest is: %s" % self.chrome_dest)
 
         if os.path.exists(self.chrome_path):
             self.info("google chrome binary already exists at: %s" % self.chrome_path)
             return
 
-        if not os.path.exists(chrome_dmg):
+        if not os.path.exists(chrome_archive):
             
             self.download_file(chrome_url, parent_dir=self.chrome_dest)
 
-        command = ["open", "googlechrome.dmg"]
-        return_code = self.run_command(command, cwd=self.chrome_dest)
-        if return_code not in [0]:
-            self.info("abort: failed to open %s/googlechrome.dmg" % self.chrome_dest)
-            return
-        
-        time.sleep(30)
+        commands = []
+
+        if 'mac' in self.platform_name():
+            
+            commands.append(["open", chrome_archive_file])
+
+            
+            commands.append(["cp", "-r", "/Volumes/Google Chrome/Google Chrome.app", "."])
+
+        elif 'linux' in self.platform_name():
+            
+            
+            commands.append(["ar", "x", chrome_archive_file])
+
+            
+            
+            commands.append(['tar', '-xJf',
+                            os.path.join(self.chrome_dest, 'data.tar.xz'),
+                            '-C', self.chrome_dest])
+
+        else:
+            
+            pass
 
         
-        command = ["cp", "-r", "/Volumes/Google Chrome/Google Chrome.app", "."]
-        return_code = self.run_command(command, cwd=self.chrome_dest)
-        if return_code not in [0]:
-            self.info("abort: failed to open %s/googlechrome.dmg" % self.chrome_dest)
-            return
+        for next_command in commands:
+            return_code = self.run_command(next_command, cwd=self.chrome_dest)
+            time.sleep(30)
+            if return_code not in [0]:
+                self.info("abort: failed to install %s to %s with command: %s"
+                          % (chrome_archive_file, self.chrome_dest, next_command))
 
         
         if os.path.exists(self.chrome_path):
