@@ -871,7 +871,7 @@ wasapi_stream_render_loop(LPVOID stream)
 
 
   unsigned timeout_count = 0;
-  const unsigned timeout_limit = 5;
+  const unsigned timeout_limit = 3;
   while (is_playing) {
     
     
