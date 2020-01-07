@@ -20,7 +20,7 @@
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/ServoBindingTypes.h"
 #include "mozilla/ServoUtils.h"
-#include "mozilla/DeclarationBlockInlines.h"
+#include "mozilla/DeclarationBlock.h"
 #include "nsContentUtils.h"
 #include "nsReadableUtils.h"
 #include "nsHTMLCSSStyleSheet.h"
@@ -1701,7 +1701,7 @@ nsAttrValue::ParseStyleAttribute(const nsAString& aString,
 
   RefPtr<URLExtraData> data = new URLExtraData(baseURI, docURI,
                                                 principal);
-  RefPtr<DeclarationBlock> decl = ServoDeclarationBlock::
+  RefPtr<DeclarationBlock> decl = DeclarationBlock::
     FromCssText(aString, data,
                 ownerDoc->GetCompatibilityMode(),
                 ownerDoc->CSSLoader());

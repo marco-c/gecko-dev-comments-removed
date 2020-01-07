@@ -11,10 +11,10 @@
 
 #include "nsMappedAttributes.h"
 #include "nsHTMLStyleSheet.h"
+#include "mozilla/DeclarationBlock.h"
 #include "mozilla/GenericSpecifiedValues.h"
 #include "mozilla/HashFunctions.h"
 #include "mozilla/MemoryReporting.h"
-#include "mozilla/ServoDeclarationBlock.h"
 #include "mozilla/ServoSpecifiedValues.h"
 
 using namespace mozilla;
