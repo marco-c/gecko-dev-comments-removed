@@ -218,23 +218,6 @@ SandboxBrokerPolicyFactory::SandboxBrokerPolicyFactory()
   policy->AddDir(rdwr, "/dev/snd");
 #endif
 
-#ifdef MOZ_WIDGET_GTK
-  if (const auto userDir = g_get_user_runtime_dir()) {
-    
-    
-    nsPrintfCString shmPath("%s/dconf/", userDir);
-    policy->AddPrefix(rdwrcr, shmPath.get());
-    policy->AddAncestors(shmPath.get());
-#ifdef MOZ_PULSEAUDIO
-    
-    
-    
-    nsPrintfCString pulsePath("%s/pulse", userDir);
-    policy->AddPath(rdonly, pulsePath.get());
-#endif 
-  }
-#endif 
-
   
   policy->AddPath(rdonly, "/dev/urandom");
   policy->AddPath(rdonly, "/proc/cpuinfo");
@@ -247,9 +230,6 @@ SandboxBrokerPolicyFactory::SandboxBrokerPolicyFactory()
   policy->AddDir(rdonly, "/usr/lib32");
   policy->AddDir(rdonly, "/usr/lib64");
   policy->AddDir(rdonly, "/etc");
-#ifdef MOZ_PULSEAUDIO
-  policy->AddPath(rdonly, "/var/lib/dbus/machine-id");
-#endif
   policy->AddDir(rdonly, "/usr/share");
   policy->AddDir(rdonly, "/usr/local/share");
   policy->AddDir(rdonly, "/usr/tmp");
@@ -265,13 +245,6 @@ SandboxBrokerPolicyFactory::SandboxBrokerPolicyFactory()
 
   
   policy->AddPath(rdonly, "/proc/modules");
-
-#ifdef MOZ_PULSEAUDIO
-  
-  if (const auto xauth = PR_GetEnv("XAUTHORITY")) {
-    policy->AddPath(rdonly, xauth);
-  }
-#endif
 
   
   if (const auto xdgConfigPath = PR_GetEnv("XDG_CONFIG_PATH")) {
@@ -429,6 +402,8 @@ SandboxBrokerPolicyFactory::GetContentPolicy(int aPid, bool aFileProcess)
   UniquePtr<SandboxBroker::Policy>
     policy(new SandboxBroker::Policy(*mCommonContentPolicy));
 
+  const int level = GetEffectiveContentSandboxLevel();
+
   
   
   AddDynamicPathList(policy.get(),
@@ -444,7 +419,7 @@ SandboxBrokerPolicyFactory::GetContentPolicy(int aPid, bool aFileProcess)
   
   
   
-  if (GetEffectiveContentSandboxLevel() <= 2 || aFileProcess) {
+  if (level <= 2 || aFileProcess) {
     policy->AddDir(rdonly, "/");
     
     
@@ -496,6 +471,38 @@ SandboxBrokerPolicyFactory::GetContentPolicy(int aPid, bool aFileProcess)
           }
         }
       }
+  }
+
+  bool allowPulse = false;
+  if (level < 4) {
+#ifdef MOZ_PULSEAUDIO
+    allowPulse = true;
+#endif
+  }
+
+#ifdef MOZ_WIDGET_GTK
+  if (const auto userDir = g_get_user_runtime_dir()) {
+    
+    
+    nsPrintfCString shmPath("%s/dconf/", userDir);
+    policy->AddPrefix(rdwrcr, shmPath.get());
+    policy->AddAncestors(shmPath.get());
+    if (allowPulse) {
+      
+      
+      
+      nsPrintfCString pulsePath("%s/pulse", userDir);
+      policy->AddPath(rdonly, pulsePath.get());
+    }
+  }
+#endif 
+
+  if (allowPulse) {
+    
+    if (const auto xauth = PR_GetEnv("XAUTHORITY")) {
+      policy->AddPath(rdonly, xauth);
+    }
+    policy->AddPath(rdonly, "/var/lib/dbus/machine-id");
   }
 
   
