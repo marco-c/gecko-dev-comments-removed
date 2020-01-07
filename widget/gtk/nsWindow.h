@@ -400,8 +400,6 @@ public:
 
     virtual bool WidgetTypeSupportsAcceleration() override;
 
-    bool DoDrawTitlebar() const;
-
     typedef enum { CSD_SUPPORT_SYSTEM,    
                    CSD_SUPPORT_CLIENT,    
                    CSD_SUPPORT_NONE,      
@@ -411,7 +409,7 @@ public:
 
 
 
-    static CSDSupportLevel GetCSDSupportLevel();
+    static CSDSupportLevel GetSystemCSDSupportLevel();
 
 protected:
     virtual ~nsWindow();
@@ -517,9 +515,11 @@ private:
     
     unsigned int mPendingConfigures;
 
-    bool               mIsCSDAvailable;
     
-    bool               mIsCSDEnabled;
+    
+    CSDSupportLevel    mCSDSupportLevel;
+    
+    bool               mDrawInTitlebar;
     
     LayoutDeviceIntRegion mDraggableRegion;
 

@@ -479,8 +479,8 @@ nsWindow::nsWindow()
     mLastScrollEventTime = GDK_CURRENT_TIME;
 #endif
     mPendingConfigures = 0;
-    mIsCSDAvailable = false;
-    mIsCSDEnabled = false;
+    mCSDSupportLevel = CSD_SUPPORT_NONE;
+    mDrawInTitlebar = false;
 }
 
 nsWindow::~nsWindow()
@@ -2819,7 +2819,7 @@ nsWindow::OnButtonReleaseEvent(GdkEventButton *aEvent)
     
     
     if (!defaultPrevented
-             && mIsCSDEnabled
+             && mDrawInTitlebar
              && event.button == WidgetMouseEvent::eLeftButton
              && event.mClickCount == 2
              && mDraggableRegion.Contains(pos.x, pos.y)) {
@@ -3767,12 +3767,8 @@ nsWindow::Create(nsIWidget* aParent,
             gtk_window_group_add_window(group, GTK_WINDOW(mShell));
             g_object_unref(group);
 
-            int32_t isCSDAvailable = false;
-            nsresult rv = LookAndFeel::GetInt(LookAndFeel::eIntID_GTKCSDAvailable,
-                                              &isCSDAvailable);
-            if (NS_SUCCEEDED(rv)) {
-               mIsCSDAvailable = isCSDAvailable;
-            }
+            
+            mCSDSupportLevel = GetSystemCSDSupportLevel();
         }
 
         
@@ -3797,7 +3793,7 @@ nsWindow::Create(nsIWidget* aParent,
         GtkStyleContext* style = gtk_widget_get_style_context(mShell);
         drawToContainer =
             !mIsX11Display ||
-            (mIsCSDAvailable && GetCSDSupportLevel() == CSD_SUPPORT_CLIENT) ||
+            (mCSDSupportLevel == CSD_SUPPORT_CLIENT) ||
             gtk_style_context_has_class(style, "csd");
         eventWidget = (drawToContainer) ? container : mShell;
 
@@ -6590,80 +6586,81 @@ nsWindow::ClearCachedResources()
 nsresult
 nsWindow::SetNonClientMargins(LayoutDeviceIntMargin &aMargins)
 {
-  SetDrawsInTitlebar(aMargins.top == 0);
-  return NS_OK;
+    SetDrawsInTitlebar(aMargins.top == 0);
+    return NS_OK;
 }
 
 void
 nsWindow::SetDrawsInTitlebar(bool aState)
 {
-  if (!mIsCSDAvailable || aState == mIsCSDEnabled)
-      return;
+    if (!mShell ||
+        mCSDSupportLevel == CSD_SUPPORT_NONE ||
+        aState == mDrawInTitlebar) {
+        return;
+    }
 
-  if (mShell) {
-      if (GetCSDSupportLevel() == CSD_SUPPORT_SYSTEM) {
-          SetWindowDecoration(aState ? eBorderStyle_border : mBorderStyle);
-      }
-      else {
-          
-
-
-
-
+    if (mCSDSupportLevel == CSD_SUPPORT_SYSTEM) {
+        SetWindowDecoration(aState ? eBorderStyle_border : mBorderStyle);
+    }
+    else if (mCSDSupportLevel == CSD_SUPPORT_CLIENT) {
+        
 
 
 
 
 
-          NativeShow(false);
-
-          
-          
-          
-          GtkWidget* tmpWindow = gtk_window_new(GTK_WINDOW_POPUP);
-          gtk_widget_realize(tmpWindow);
-
-          gtk_widget_reparent(GTK_WIDGET(mContainer), tmpWindow);
-          gtk_widget_unrealize(GTK_WIDGET(mShell));
-
-          
-          static auto sGtkWindowSetTitlebar = (void (*)(GtkWindow*, GtkWidget*))
-              dlsym(RTLD_DEFAULT, "gtk_window_set_titlebar");
-          MOZ_ASSERT(sGtkWindowSetTitlebar,
-              "Missing gtk_window_set_titlebar(), old Gtk+ library?");
-
-          if (aState) {
-              
-              
-              
-              
-              sGtkWindowSetTitlebar(GTK_WINDOW(mShell), gtk_fixed_new());
-          } else {
-              sGtkWindowSetTitlebar(GTK_WINDOW(mShell), nullptr);
-          }
-
-          
 
 
 
 
-          GtkAllocation allocation = {0, 0, 0, 0};
-          gtk_widget_get_preferred_width(GTK_WIDGET(mShell), nullptr,
-                                         &allocation.width);
-          gtk_widget_get_preferred_height(GTK_WIDGET(mShell), nullptr,
-                                          &allocation.height);
-          gtk_widget_size_allocate(GTK_WIDGET(mShell), &allocation);
+        NativeShow(false);
 
-          gtk_widget_realize(GTK_WIDGET(mShell));
-          gtk_widget_reparent(GTK_WIDGET(mContainer), GTK_WIDGET(mShell));
-          mNeedsShow = true;
-          NativeResize();
+        
+        
+        
+        GtkWidget* tmpWindow = gtk_window_new(GTK_WINDOW_POPUP);
+        gtk_widget_realize(tmpWindow);
 
-          gtk_widget_destroy(tmpWindow);
-      }
-  }
+        gtk_widget_reparent(GTK_WIDGET(mContainer), tmpWindow);
+        gtk_widget_unrealize(GTK_WIDGET(mShell));
 
-  mIsCSDEnabled = aState;
+        
+        static auto sGtkWindowSetTitlebar = (void (*)(GtkWindow*, GtkWidget*))
+            dlsym(RTLD_DEFAULT, "gtk_window_set_titlebar");
+        MOZ_ASSERT(sGtkWindowSetTitlebar,
+            "Missing gtk_window_set_titlebar(), old Gtk+ library?");
+
+        if (aState) {
+            
+            
+            
+            
+            sGtkWindowSetTitlebar(GTK_WINDOW(mShell), gtk_fixed_new());
+        } else {
+            sGtkWindowSetTitlebar(GTK_WINDOW(mShell), nullptr);
+        }
+
+        
+
+
+
+
+        GtkAllocation allocation = {0, 0, 0, 0};
+        gtk_widget_get_preferred_width(GTK_WIDGET(mShell), nullptr,
+                                       &allocation.width);
+        gtk_widget_get_preferred_height(GTK_WIDGET(mShell), nullptr,
+                                        &allocation.height);
+        gtk_widget_size_allocate(GTK_WIDGET(mShell), &allocation);
+
+        gtk_widget_realize(GTK_WIDGET(mShell));
+        gtk_widget_reparent(GTK_WIDGET(mContainer), GTK_WIDGET(mShell));
+        mNeedsShow = true;
+        NativeResize();
+
+        gtk_widget_destroy(tmpWindow);
+    }
+
+    mDrawInTitlebar = aState;
 }
 
 gint
@@ -6932,15 +6929,15 @@ nsWindow::SynthesizeNativeTouchPoint(uint32_t aPointerId,
 }
 #endif
 
-bool
-nsWindow::DoDrawTitlebar() const
-{
-    return mIsCSDEnabled && mSizeState == nsSizeMode_Normal;
-}
-
 nsWindow::CSDSupportLevel
-nsWindow::GetCSDSupportLevel() {
+nsWindow::GetSystemCSDSupportLevel() {
     if (sCSDSupportLevel != CSD_SUPPORT_UNKNOWN) {
+        return sCSDSupportLevel;
+    }
+
+    
+    if (gtk_check_version(3, 10, 0) != nullptr) {
+        sCSDSupportLevel = CSD_SUPPORT_NONE;
         return sCSDSupportLevel;
     }
 
