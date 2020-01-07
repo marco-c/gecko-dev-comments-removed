@@ -255,12 +255,31 @@ ProgressGraphHelper.prototype = {
 
 
 
-  createPathSegments: function (startTime, endTime,
-                                minSegmentDuration, minProgressThreshold) {
-    return !this.valueHelperFunction
-           ? createKeyframesPathSegments(endTime - startTime, this.devtoolsKeyframes)
-           : createPathSegments(startTime, endTime,
-                                minSegmentDuration, minProgressThreshold, this);
+  createPathSegments: function (duration, minSegmentDuration, minProgressThreshold) {
+    if (!this.valueHelperFunction) {
+      return createKeyframesPathSegments(duration, this.devtoolsKeyframes);
+    }
+
+    const segments = [];
+
+    for (let i = 0; i < this.devtoolsKeyframes.length - 1; i++) {
+      const startKeyframe = this.devtoolsKeyframes[i];
+      const endKeyframe = this.devtoolsKeyframes[i + 1];
+
+      let threshold = getPreferredProgressThreshold(startKeyframe.easing);
+      if (threshold !== DEFAULT_MIN_PROGRESS_THRESHOLD) {
+        
+        threshold *= (endKeyframe.offset - startKeyframe.offset);
+      }
+
+      const startTime = startKeyframe.offset * duration;
+      const endTime = endKeyframe.offset * duration;
+
+      segments.push(...createPathSegments(startTime, endTime,
+                                          minSegmentDuration, threshold, this));
+    }
+
+    return segments;
   },
 
   

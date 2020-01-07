@@ -8,7 +8,7 @@
 
 const {createNode, createSVGNode} =
   require("devtools/client/animationinspector/utils");
-const {ProgressGraphHelper, getPreferredKeyframesProgressThreshold} =
+const { ProgressGraphHelper, } =
   require("devtools/client/animationinspector/graph-helper.js");
 
 
@@ -64,8 +64,7 @@ Keyframes.prototype = {
     const graphHelper =
       new ProgressGraphHelper(win, propertyName, animationType, keyframes, totalDuration);
 
-    renderPropertyGraph(graphEl, totalDuration, minSegmentDuration,
-                        getPreferredKeyframesProgressThreshold(keyframes), graphHelper);
+    renderPropertyGraph(graphEl, totalDuration, minSegmentDuration, graphHelper);
 
     
     graphHelper.destroy();
@@ -107,11 +106,8 @@ Keyframes.prototype = {
 
 
 
-
-function renderPropertyGraph(parentEl, duration, minSegmentDuration,
-                             minProgressThreshold, graphHelper) {
-  const segments = graphHelper.createPathSegments(0, duration, minSegmentDuration,
-                                                  minProgressThreshold);
+function renderPropertyGraph(parentEl, duration, minSegmentDuration, graphHelper) {
+  const segments = graphHelper.createPathSegments(duration, minSegmentDuration);
 
   const graphType = graphHelper.getGraphType();
   if (graphType !== "color") {
@@ -168,32 +164,17 @@ function renderEasingHint(parentEl, segments, helper) {
   
   for (let i = 0, indexOfSegments = 0; i < keyframes.length - 1; i++) {
     const startKeyframe = keyframes[i];
-    const startTime = startKeyframe.offset * duration;
     const endKeyframe = keyframes[i + 1];
     const endTime = endKeyframe.offset * duration;
 
     const keyframeSegments = [];
     for (; indexOfSegments < segments.length; indexOfSegments++) {
       const segment = segments[indexOfSegments];
-      if (segment.x < startTime) {
-        
-        continue;
-      }
-      if (segment.x > endTime) {
-        indexOfSegments -= 1;
+      keyframeSegments.push(segment);
+
+      if (segment.x === endTime) {
         break;
       }
-      keyframeSegments.push(segment);
-    }
-
-    
-    
-    if (keyframeSegments[0].x !== startTime) {
-      keyframeSegments.unshift(helper.getSegment(startTime));
-    }
-    
-    if (keyframeSegments[keyframeSegments.length - 1].x !== endTime) {
-      keyframeSegments.push(helper.getSegment(endTime));
     }
 
     
