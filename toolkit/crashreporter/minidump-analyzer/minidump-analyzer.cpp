@@ -3,6 +3,8 @@
 
 
 
+#include "minidump-analyzer.h"
+
 #include <cstdio>
 #include <cstring>
 #include <fstream>
@@ -232,7 +234,8 @@ ConvertModulesToJSON(const ProcessState& aProcessState,
 
 
 static void
-ConvertProcessStateToJSON(const ProcessState& aProcessState, Json::Value& aRoot)
+ConvertProcessStateToJSON(const ProcessState& aProcessState, Json::Value& aRoot,
+                          const bool aFullStacks)
 {
   
   OrderedModulesMap orderedModules;
@@ -249,8 +252,7 @@ ConvertProcessStateToJSON(const ProcessState& aProcessState, Json::Value& aRoot)
       
       
       
-      crashInfo["crashing_thread"] =
-        gMinidumpAnalyzerOptions.fullMinidump ? requestingThread : 0;
+      crashInfo["crashing_thread"] = aFullStacks ? requestingThread : 0;
     }
   } else {
     crashInfo["type"] = Json::Value(Json::nullValue);
@@ -278,7 +280,7 @@ ConvertProcessStateToJSON(const ProcessState& aProcessState, Json::Value& aRoot)
   Json::Value threads(Json::arrayValue);
   int threadCount = aProcessState.threads()->size();
 
-  if (!gMinidumpAnalyzerOptions.fullMinidump && (requestingThread != -1)) {
+  if (!aFullStacks && (requestingThread != -1)) {
     
     Json::Value thread;
     Json::Value stack(Json::arrayValue);
@@ -306,7 +308,7 @@ ConvertProcessStateToJSON(const ProcessState& aProcessState, Json::Value& aRoot)
 
 
 static bool
-ProcessMinidump(Json::Value& aRoot, const string& aDumpFile) {
+ProcessMinidump(Json::Value& aRoot, const string& aDumpFile, const bool aFullStacks) {
 #if XP_WIN && HAVE_64BIT_BUILD
   MozStackFrameSymbolizer symbolizer;
   MinidumpProcessor minidumpProcessor(&symbolizer, false);
@@ -327,7 +329,7 @@ ProcessMinidump(Json::Value& aRoot, const string& aDumpFile) {
   rv = minidumpProcessor.Process(&dump, &processState);
   aRoot["status"] = ResultString(rv);
 
-  ConvertProcessStateToJSON(processState, aRoot);
+  ConvertProcessStateToJSON(processState, aRoot, aFullStacks);
 
   return true;
 }
@@ -356,28 +358,43 @@ OpenAppend(const string& aFilename)
 
 
 
-static void
+static bool
 UpdateExtraDataFile(const string &aDumpPath, const Json::Value& aRoot)
 {
   string extraDataPath(aDumpPath);
   int dot = extraDataPath.rfind('.');
 
   if (dot < 0) {
-    return; 
+    return false; 
   }
 
   extraDataPath.replace(dot, extraDataPath.length() - dot, kExtraDataExtension);
   ofstream* f = OpenAppend(extraDataPath.c_str());
+  bool res = false;
 
   if (f->is_open()) {
     Json::FastWriter writer;
 
     *f << "StackTraces=" << writer.write(aRoot);
+    res = !f->fail();
 
     f->close();
   }
 
   delete f;
+
+  return res;
+}
+
+bool
+GenerateStacks(const string& aDumpPath, const bool aFullStacks) {
+  Json::Value root;
+
+  if (!ProcessMinidump(root, aDumpPath, aFullStacks)) {
+    return false;
+  }
+
+  return UpdateExtraDataFile(aDumpPath , root);
 }
 
 } 
@@ -408,15 +425,8 @@ int main(int argc, char** argv)
 {
   ParseArguments(argc, argv);
 
-  if (!FileExists(gMinidumpPath)) {
-    
+  if (!GenerateStacks(gMinidumpPath, gMinidumpAnalyzerOptions.fullMinidump)) {
     exit(EXIT_FAILURE);
-  }
-
-  
-  Json::Value root;
-  if (ProcessMinidump(root, gMinidumpPath)) {
-    UpdateExtraDataFile(gMinidumpPath, root);
   }
 
   exit(EXIT_SUCCESS);
