@@ -199,13 +199,6 @@ public:
   virtual void BeginLoad() override;
   virtual void EndLoad() override;
 
-  virtual void SetXMLDeclaration(const char16_t *aVersion,
-                                 const char16_t *aEncoding,
-                                 const int32_t aStandalone) override;
-  virtual void GetXMLDeclaration(nsAString& aVersion,
-                                 nsAString& aEncoding,
-                                 nsAString& Standalone) override;
-
   
   NS_IMETHOD WalkRadioGroup(const nsAString& aName,
                             nsIRadioVisitor* aVisitor,
@@ -403,8 +396,6 @@ public:
   
   
   bool mReportedUseCounters:1;
-
-  uint8_t mXMLDeclarationBits;
 
   
   
