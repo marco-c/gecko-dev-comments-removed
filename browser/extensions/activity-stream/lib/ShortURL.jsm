@@ -41,7 +41,6 @@ function getETLD(host) {
 
 
 
-
 function shortURL({url}) {
   if (!url) {
     return "";
@@ -68,4 +67,4 @@ function shortURL({url}) {
     parsed.pathname || parsed.href;
 }
 
-var EXPORTED_SYMBOLS = ["shortURL", "getETLD"];
+const EXPORTED_SYMBOLS = ["shortURL", "getETLD"];

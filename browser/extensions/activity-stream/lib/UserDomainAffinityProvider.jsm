@@ -72,7 +72,7 @@ function merge(...args) {
 
 
 
-var UserDomainAffinityProvider = class UserDomainAffinityProvider {
+this.UserDomainAffinityProvider = class UserDomainAffinityProvider {
   constructor(
     timeSegments = DEFAULT_TIME_SEGMENTS,
     parameterSets = DEFAULT_PARAMETER_SETS,
@@ -326,4 +326,4 @@ var UserDomainAffinityProvider = class UserDomainAffinityProvider {
   }
 };
 
-var EXPORTED_SYMBOLS = ["UserDomainAffinityProvider"];
+const EXPORTED_SYMBOLS = ["UserDomainAffinityProvider"];

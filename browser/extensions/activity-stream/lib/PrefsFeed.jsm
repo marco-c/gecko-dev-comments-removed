@@ -8,9 +8,12 @@ const {Prefs} = ChromeUtils.import("resource://activity-stream/lib/ActivityStrea
 const {PrerenderData} = ChromeUtils.import("resource://activity-stream/common/PrerenderData.jsm", {});
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 
+ChromeUtils.defineModuleGetter(this, "PrivateBrowsingUtils",
+  "resource://gre/modules/PrivateBrowsingUtils.jsm");
+
 const ONBOARDING_FINISHED_PREF = "browser.onboarding.notification.finished";
 
-var PrefsFeed = class PrefsFeed {
+this.PrefsFeed = class PrefsFeed {
   constructor(prefMap) {
     this._prefMap = prefMap;
     this._prefs = new Prefs();
@@ -64,6 +67,9 @@ var PrefsFeed = class PrefsFeed {
     }
 
     
+    values.isPrivateBrowsingEnabled = PrivateBrowsingUtils.enabled;
+
+    
     this.store.dispatch(ac.BroadcastToContent({type: at.PREFS_INITIAL_VALUES, data: values}));
 
     this._setPrerenderPref();
@@ -93,4 +99,4 @@ var PrefsFeed = class PrefsFeed {
   }
 };
 
-var EXPORTED_SYMBOLS = ["PrefsFeed"];
+const EXPORTED_SYMBOLS = ["PrefsFeed"];

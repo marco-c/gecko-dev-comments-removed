@@ -21,7 +21,7 @@ const DEFAULT_OPTIONS = {
   incomingMessageName: "ActivityStream:ContentToMain"
 };
 
-var ActivityStreamMessageChannel = class ActivityStreamMessageChannel {
+this.ActivityStreamMessageChannel = class ActivityStreamMessageChannel {
   
 
 
@@ -256,4 +256,4 @@ var ActivityStreamMessageChannel = class ActivityStreamMessageChannel {
 };
 
 this.DEFAULT_OPTIONS = DEFAULT_OPTIONS;
-var EXPORTED_SYMBOLS = ["ActivityStreamMessageChannel", "DEFAULT_OPTIONS"];
+const EXPORTED_SYMBOLS = ["ActivityStreamMessageChannel", "DEFAULT_OPTIONS"];

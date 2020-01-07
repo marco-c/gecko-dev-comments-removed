@@ -46,7 +46,7 @@ function filterAdult(links) {
   });
 }
 
-var EXPORTED_SYMBOLS = ["filterAdult"];
+const EXPORTED_SYMBOLS = ["filterAdult"];
 
 
 

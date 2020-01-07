@@ -3,14 +3,14 @@
 
 
 
-var EXPORTED_SYMBOLS = ["redux"];
+const EXPORTED_SYMBOLS = ["redux"];
 
 
 
 const self = this;
 this.Object = Object;
 
-var redux =
+this.redux =
  (function(modules) { 
  	
  	var installedModules = {};

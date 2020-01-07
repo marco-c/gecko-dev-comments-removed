@@ -3,7 +3,7 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["LinksCache"];
+const EXPORTED_SYMBOLS = ["LinksCache"];
 
 
 
@@ -18,7 +18,7 @@ const EXPIRATION_TIME = 4.5 * 60 * 1000;
 
 
 
-var LinksCache = class LinksCache {
+this.LinksCache = class LinksCache {
   
 
 

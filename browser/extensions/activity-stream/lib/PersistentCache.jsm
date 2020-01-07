@@ -11,7 +11,7 @@ XPCOMUtils.defineLazyGetter(this, "gTextDecoder", () => new TextDecoder());
 
 
 
-var PersistentCache = class PersistentCache {
+this.PersistentCache = class PersistentCache {
   
 
 
@@ -79,4 +79,4 @@ var PersistentCache = class PersistentCache {
   }
 };
 
-var EXPORTED_SYMBOLS = ["PersistentCache"];
+const EXPORTED_SYMBOLS = ["PersistentCache"];
