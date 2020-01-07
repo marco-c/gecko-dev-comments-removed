@@ -88,6 +88,8 @@ mozilla::LazyLogModule ApplicationReputationService::prlog("ApplicationReputatio
 #define LOG(args) MOZ_LOG(ApplicationReputationService::prlog, mozilla::LogLevel::Debug, args)
 #define LOG_ENABLED() MOZ_LOG_TEST(ApplicationReputationService::prlog, mozilla::LogLevel::Debug)
 
+enum class LookupType { AllowlistOnly, BlocklistOnly, BothLists };
+
 class PendingDBLookup;
 
 
@@ -145,6 +147,8 @@ private:
   nsTArray<nsCString> mAllowlistSpecs;
   
   nsTArray<nsCString> mAnylistSpecs;
+  
+  nsTArray<nsCString> mBlocklistSpecs;
 
   
   TimeStamp mStartTime;
@@ -254,7 +258,7 @@ public:
   
   
   
-  nsresult LookupSpec(const nsACString& aSpec, bool aAllowlistOnly);
+  nsresult LookupSpec(const nsACString& aSpec, const LookupType& aLookupType);
 
 private:
   ~PendingDBLookup();
@@ -268,7 +272,7 @@ private:
   };
 
   nsCString mSpec;
-  bool mAllowlistOnly;
+  LookupType mLookupType;
   RefPtr<PendingLookup> mPendingLookup;
   nsresult LookupSpecInternal(const nsACString& aSpec);
 };
@@ -277,7 +281,7 @@ NS_IMPL_ISUPPORTS(PendingDBLookup,
                   nsIUrlClassifierCallback)
 
 PendingDBLookup::PendingDBLookup(PendingLookup* aPendingLookup) :
-  mAllowlistOnly(false),
+  mLookupType(LookupType::BothLists),
   mPendingLookup(aPendingLookup)
 {
   LOG(("Created pending DB lookup [this = %p]", this));
@@ -291,11 +295,11 @@ PendingDBLookup::~PendingDBLookup()
 
 nsresult
 PendingDBLookup::LookupSpec(const nsACString& aSpec,
-                            bool aAllowlistOnly)
+                            const LookupType& aLookupType)
 {
   LOG(("Checking principal %s [this=%p]", aSpec.Data(), this));
   mSpec = aSpec;
-  mAllowlistOnly = aAllowlistOnly;
+  mLookupType = aLookupType;
   nsresult rv = LookupSpecInternal(aSpec);
   if (NS_FAILED(rv)) {
     nsAutoCString errorName;
@@ -336,13 +340,15 @@ PendingDBLookup::LookupSpecInternal(const nsACString& aSpec)
   nsAutoCString tables;
   nsAutoCString allowlist;
   Preferences::GetCString(PREF_DOWNLOAD_ALLOW_TABLE, allowlist);
-  if (!allowlist.IsEmpty()) {
+  if ((mLookupType != LookupType::BlocklistOnly) && !allowlist.IsEmpty()) {
     tables.Append(allowlist);
   }
   nsAutoCString blocklist;
   Preferences::GetCString(PREF_DOWNLOAD_BLOCK_TABLE, blocklist);
-  if (!mAllowlistOnly && !blocklist.IsEmpty()) {
-    tables.Append(',');
+  if ((mLookupType != LookupType::AllowlistOnly) && !blocklist.IsEmpty()) {
+    if (!tables.IsEmpty()) {
+      tables.Append(',');
+    }
     tables.Append(blocklist);
   }
   return dbService->Lookup(principal, tables, this);
@@ -357,7 +363,7 @@ PendingDBLookup::HandleEvent(const nsACString& tables)
   
   nsAutoCString blockList;
   Preferences::GetCString(PREF_DOWNLOAD_BLOCK_TABLE, blockList);
-  if (!mAllowlistOnly && FindInReadable(blockList, tables)) {
+  if ((mLookupType != LookupType::AllowlistOnly) && FindInReadable(blockList, tables)) {
     mPendingLookup->mBlocklistCount++;
     Accumulate(mozilla::Telemetry::APPLICATION_REPUTATION_LOCAL, BLOCK_LIST);
     LOG(("Found principal %s on blocklist [this = %p]", mSpec.get(), this));
@@ -367,16 +373,16 @@ PendingDBLookup::HandleEvent(const nsACString& tables)
 
   nsAutoCString allowList;
   Preferences::GetCString(PREF_DOWNLOAD_ALLOW_TABLE, allowList);
-  if (FindInReadable(allowList, tables)) {
+  if ((mLookupType != LookupType::BlocklistOnly) && FindInReadable(allowList, tables)) {
     mPendingLookup->mAllowlistCount++;
     Accumulate(mozilla::Telemetry::APPLICATION_REPUTATION_LOCAL, ALLOW_LIST);
     LOG(("Found principal %s on allowlist [this = %p]", mSpec.get(), this));
     
-  } else {
-    LOG(("Didn't find principal %s on any list [this = %p]", mSpec.get(),
-         this));
-    Accumulate(mozilla::Telemetry::APPLICATION_REPUTATION_LOCAL, NO_LIST);
+    return mPendingLookup->LookupNext();
   }
+
+  LOG(("Didn't find principal %s on any list [this = %p]", mSpec.get(), this));
+  Accumulate(mozilla::Telemetry::APPLICATION_REPUTATION_LOCAL, NO_LIST);
   return mPendingLookup->LookupNext();
 }
 
@@ -773,10 +779,14 @@ PendingLookup::LookupNext()
   
   
   
+
+  
+  
   if (mBlocklistCount > 0) {
     return OnComplete(true, NS_OK,
                       nsIApplicationReputationService::VERDICT_DANGEROUS);
   }
+
   int index = mAnylistSpecs.Length() - 1;
   nsCString spec;
   if (index >= 0) {
@@ -784,17 +794,25 @@ PendingLookup::LookupNext()
     spec = mAnylistSpecs[index];
     mAnylistSpecs.RemoveElementAt(index);
     RefPtr<PendingDBLookup> lookup(new PendingDBLookup(this));
-    return lookup->LookupSpec(spec, false);
+    return lookup->LookupSpec(spec, LookupType::BothLists);
   }
+
+  index = mBlocklistSpecs.Length() - 1;
+  if (index >= 0) {
+    
+    spec = mBlocklistSpecs[index];
+    mBlocklistSpecs.RemoveElementAt(index);
+    RefPtr<PendingDBLookup> lookup(new PendingDBLookup(this));
+    return lookup->LookupSpec(spec, LookupType::BlocklistOnly);
+  }
+
   
-  if (mBlocklistCount > 0) {
-    return OnComplete(true, NS_OK,
-                      nsIApplicationReputationService::VERDICT_DANGEROUS);
-  }
+  
   
   if (mAllowlistCount > 0) {
     return OnComplete(false, NS_OK);
   }
+
   
   index = mAllowlistSpecs.Length() - 1;
   if (index >= 0) {
@@ -802,8 +820,9 @@ PendingLookup::LookupNext()
     LOG(("PendingLookup::LookupNext: checking %s on allowlist", spec.get()));
     mAllowlistSpecs.RemoveElementAt(index);
     RefPtr<PendingDBLookup> lookup(new PendingDBLookup(this));
-    return lookup->LookupSpec(spec, true);
+    return lookup->LookupSpec(spec, LookupType::AllowlistOnly);
   }
+
   
   
   if (!IsBinaryFile()) {
@@ -986,7 +1005,7 @@ PendingLookup::AddRedirects(nsIArray* aRedirects)
     nsCString spec;
     rv = GetStrippedSpec(uri, spec);
     NS_ENSURE_SUCCESS(rv, rv);
-    mAnylistSpecs.AppendElement(spec);
+    mBlocklistSpecs.AppendElement(spec);
     LOG(("ApplicationReputation: Appending redirect %s\n", spec.get()));
 
     
@@ -1132,7 +1151,7 @@ PendingLookup::DoLookupInternal()
     nsCString referrerSpec;
     rv = GetStrippedSpec(referrer, referrerSpec);
     NS_ENSURE_SUCCESS(rv, rv);
-    mAnylistSpecs.AppendElement(referrerSpec);
+    mBlocklistSpecs.AppendElement(referrerSpec);
     resource->set_referrer(referrerSpec.get());
   }
   nsCOMPtr<nsIArray> redirects;
