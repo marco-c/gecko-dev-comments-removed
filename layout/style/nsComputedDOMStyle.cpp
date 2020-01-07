@@ -760,6 +760,7 @@ nsComputedDOMStyle::GetCSSImageURLs(const nsAString& aPropertyName,
   }
 
   CollectImageURLsForProperty(prop, *mComputedStyle, aImageURLs);
+  ClearCurrentStyleSources();
 }
 
 
