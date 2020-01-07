@@ -1400,6 +1400,35 @@ public:
   mozilla::Maybe<mozilla::dom::ClientState> GetClientState() const;
   mozilla::Maybe<mozilla::dom::ServiceWorkerDescriptor> GetController() const;
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  long BlockedTrackingNodeCount() const
+  {
+    return mBlockedTrackingNodes.Length();
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  already_AddRefed<nsSimpleContentList> BlockedTrackingNodes() const;
+
 protected:
   void DispatchContentLoadedEvents();
 

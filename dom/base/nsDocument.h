@@ -292,32 +292,6 @@ public:
   
   void AsyncBlockOnload();
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  long BlockedTrackingNodeCount() const;
-
-  
-  
-  
-  
-  
-  
-  
-  already_AddRefed<nsSimpleContentList> BlockedTrackingNodes() const;
-
   virtual void DocAddSizeOfExcludingThis(nsWindowSizes& aWindowSizes) const override;
   
 
