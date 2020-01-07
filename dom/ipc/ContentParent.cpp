@@ -3116,12 +3116,10 @@ ContentParent::KillHard(const char* aReason)
   mCalledKillHard = true;
   mForceKillTimer = nullptr;
 
-#ifdef NIGHTLY_BUILD
   MessageChannel* channel = GetIPCChannel();
   if (channel) {
     channel->SetInKillHardShutdown();
   }
-#endif
 
   
   
