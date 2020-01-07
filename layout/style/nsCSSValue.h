@@ -407,7 +407,6 @@ enum nsCSSUnit {
                                        
 
   eCSSUnit_Pair         = 50,     
-  eCSSUnit_Triplet      = 51,     
   eCSSUnit_Rect         = 52,     
   eCSSUnit_List         = 53,     
   eCSSUnit_ListDep      = 54,     
@@ -478,8 +477,6 @@ struct nsCSSValueList_heap;
 struct nsCSSValueSharedList;
 struct nsCSSValuePairList;
 struct nsCSSValuePairList_heap;
-struct nsCSSValueTriplet;
-struct nsCSSValueTriplet_heap;
 
 class nsCSSValue {
 public:
@@ -673,10 +670,6 @@ public:
   inline nsCSSValuePairList* GetPairListValue();
   inline const nsCSSValuePairList* GetPairListValue() const;
 
-  inline nsCSSValueTriplet& GetTripletValue();
-  inline const nsCSSValueTriplet& GetTripletValue() const;
-
-
   mozilla::css::URLValue* GetURLStructValue() const
   {
     
@@ -758,8 +751,6 @@ public:
   void SetSharedListValue(nsCSSValueSharedList* aList);
   void SetDependentListValue(nsCSSValueList* aList);
   void SetDependentPairListValue(nsCSSValuePairList* aList);
-  void SetTripletValue(const nsCSSValueTriplet* aTriplet);
-  void SetTripletValue(const nsCSSValue& xValue, const nsCSSValue& yValue, const nsCSSValue& zValue);
   void SetAutoValue();
   void SetInheritValue();
   void SetInitialValue();
@@ -827,7 +818,6 @@ protected:
     mozilla::css::GridTemplateAreasValue* MOZ_OWNING_REF mGridTemplateAreas;
     nsCSSValuePair_heap* MOZ_OWNING_REF mPair;
     nsCSSRect_heap* MOZ_OWNING_REF mRect;
-    nsCSSValueTriplet_heap* MOZ_OWNING_REF mTriplet;
     nsCSSValueList_heap* MOZ_OWNING_REF mList;
     nsCSSValueList* mListDependent;
     nsCSSValueSharedList* MOZ_OWNING_REF mSharedList;
@@ -1194,94 +1184,6 @@ private:
   }
 };
 
-struct nsCSSValueTriplet {
-    nsCSSValueTriplet()
-    {
-        MOZ_COUNT_CTOR(nsCSSValueTriplet);
-    }
-    explicit nsCSSValueTriplet(nsCSSUnit aUnit)
-        : mXValue(aUnit), mYValue(aUnit), mZValue(aUnit)
-    {
-        MOZ_COUNT_CTOR(nsCSSValueTriplet);
-    }
-    nsCSSValueTriplet(const nsCSSValue& aXValue,
-                      const nsCSSValue& aYValue,
-                      const nsCSSValue& aZValue)
-        : mXValue(aXValue), mYValue(aYValue), mZValue(aZValue)
-    {
-        MOZ_COUNT_CTOR(nsCSSValueTriplet);
-    }
-    nsCSSValueTriplet(const nsCSSValueTriplet& aCopy)
-        : mXValue(aCopy.mXValue), mYValue(aCopy.mYValue), mZValue(aCopy.mZValue)
-    {
-        MOZ_COUNT_CTOR(nsCSSValueTriplet);
-    }
-    ~nsCSSValueTriplet()
-    {
-        MOZ_COUNT_DTOR(nsCSSValueTriplet);
-    }
-
-    bool operator==(const nsCSSValueTriplet& aOther) const {
-        return mXValue == aOther.mXValue &&
-               mYValue == aOther.mYValue &&
-               mZValue == aOther.mZValue;
-    }
-
-    bool operator!=(const nsCSSValueTriplet& aOther) const {
-        return mXValue != aOther.mXValue ||
-               mYValue != aOther.mYValue ||
-               mZValue != aOther.mZValue;
-    }
-
-    bool AllValuesEqualTo(const nsCSSValue& aValue) const {
-        return mXValue == aValue &&
-               mYValue == aValue &&
-               mZValue == aValue;
-    }
-
-    void SetAllValuesTo(const nsCSSValue& aValue) {
-        mXValue = aValue;
-        mYValue = aValue;
-        mZValue = aValue;
-    }
-
-    void Reset() {
-        mXValue.Reset();
-        mYValue.Reset();
-        mZValue.Reset();
-    }
-
-    bool HasValue() const {
-        return mXValue.GetUnit() != eCSSUnit_Null ||
-               mYValue.GetUnit() != eCSSUnit_Null ||
-               mZValue.GetUnit() != eCSSUnit_Null;
-    }
-
-    nsCSSValue mXValue;
-    nsCSSValue mYValue;
-    nsCSSValue mZValue;
-};
-
-
-
-
-struct nsCSSValueTriplet_heap final : public nsCSSValueTriplet {
-  
-  nsCSSValueTriplet_heap(const nsCSSValue& aXValue, const nsCSSValue& aYValue, const nsCSSValue& aZValue)
-    : nsCSSValueTriplet(aXValue, aYValue, aZValue)
-  {}
-
-  NS_INLINE_DECL_REFCOUNTING(nsCSSValueTriplet_heap)
-
-  size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
-
-private:
-  
-  ~nsCSSValueTriplet_heap()
-  {
-  }
-};
-
 
 
 inline nsCSSValuePair&
@@ -1296,20 +1198,6 @@ nsCSSValue::GetPairValue() const
 {
   MOZ_ASSERT(mUnit == eCSSUnit_Pair, "not a pair value");
   return *mValue.mPair;
-}
-
-inline nsCSSValueTriplet&
-nsCSSValue::GetTripletValue()
-{
-    MOZ_ASSERT(mUnit == eCSSUnit_Triplet, "not a triplet value");
-    return *mValue.mTriplet;
-}
-
-inline const nsCSSValueTriplet&
-nsCSSValue::GetTripletValue() const
-{
-    MOZ_ASSERT(mUnit == eCSSUnit_Triplet, "not a triplet value");
-    return *mValue.mTriplet;
 }
 
 
