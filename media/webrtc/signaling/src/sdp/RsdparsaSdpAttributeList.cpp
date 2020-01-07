@@ -688,13 +688,6 @@ RsdparsaSdpAttributeList::LoadRtpmap(RustAttributeList* attributeList)
     std::string name = convertStringView(rtpmap.codecName);
     auto codec = strToCodecType(name);
     uint32_t channels = rtpmap.channels;
-    if (mIsVideo) {
-      
-      
-      
-      
-      channels = 0;
-    }
     rtpmapList->PushEntry(payloadType, codec, name,
                           rtpmap.frequency, channels);
   }
