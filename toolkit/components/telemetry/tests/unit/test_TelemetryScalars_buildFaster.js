@@ -15,7 +15,7 @@ ChromeUtils.import("resource://services-common/utils.js");
 function getDefinitionsPath() {
   
   let definitionFile = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
-  definitionFile = Services.dirsvc.get("GreBinD", Ci.nsIFile);
+  definitionFile = Services.dirsvc.get("GreD", Ci.nsIFile);
   definitionFile.append("ScalarArtifactDefinitions.json");
   return definitionFile.path;
 }
