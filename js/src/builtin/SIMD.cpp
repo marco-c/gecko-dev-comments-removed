@@ -755,7 +755,15 @@ struct Abs {
 template<typename T>
 struct Neg {
     using MaybeUnsignedT = typename detail::MaybeMakeUnsigned<T>::Type;
-    static T apply(T x) { return MaybeUnsignedT(-1) * MaybeUnsignedT(x); }
+    static T apply(T x) {
+        
+        
+        
+        
+        
+        
+        return static_cast<MaybeUnsignedT>(1U * MaybeUnsignedT(-1) * MaybeUnsignedT(x));
+    }
 };
 template<typename T>
 struct Not {
