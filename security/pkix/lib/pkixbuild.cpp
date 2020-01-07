@@ -36,7 +36,8 @@ static Result BuildForward(TrustDomain& trustDomain,
                            KeyPurposeId requiredEKUIfPresent,
                            const CertPolicyId& requiredPolicy,
                             const Input* stapledOCSPResponse,
-                           unsigned int subCACount);
+                           unsigned int subCACount,
+                           unsigned int& buildForwardCallBudget);
 
 TrustDomain::IssuerChecker::IssuerChecker() { }
 TrustDomain::IssuerChecker::~IssuerChecker() { }
@@ -50,7 +51,8 @@ public:
                    Time aTime, KeyPurposeId aRequiredEKUIfPresent,
                    const CertPolicyId& aRequiredPolicy,
                     const Input* aStapledOCSPResponse,
-                   unsigned int aSubCACount, Result aDeferredSubjectError)
+                   unsigned int aSubCACount, Result aDeferredSubjectError,
+                   unsigned int& aBuildForwardCallBudget)
     : trustDomain(aTrustDomain)
     , subject(aSubject)
     , time(aTime)
@@ -61,6 +63,7 @@ public:
     , deferredSubjectError(aDeferredSubjectError)
     , result(Result::FATAL_ERROR_LIBRARY_FAILURE)
     , resultWasSet(false)
+    , buildForwardCallBudget(aBuildForwardCallBudget)
   {
   }
 
@@ -88,6 +91,7 @@ private:
   Result RecordResult(Result currentResult,  bool& keepGoing);
   Result result;
   bool resultWasSet;
+  unsigned int& buildForwardCallBudget;
 
   PathBuildingStep(const PathBuildingStep&) = delete;
   void operator=(const PathBuildingStep&) = delete;
@@ -193,10 +197,19 @@ PathBuildingStep::Check(Input potentialIssuerDER,
   }
 
   
+  if (buildForwardCallBudget == 0) {
+    Result savedRv = RecordResult(Result::ERROR_UNKNOWN_ISSUER, keepGoing);
+    keepGoing = false;
+    return savedRv;
+  }
+  buildForwardCallBudget--;
+
+  
   
   
   rv = BuildForward(trustDomain, potentialIssuer, time, KeyUsage::keyCertSign,
-                    requiredEKUIfPresent, requiredPolicy, nullptr, subCACount);
+                    requiredEKUIfPresent, requiredPolicy, nullptr, subCACount,
+                    buildForwardCallBudget);
   if (rv != Success) {
     return RecordResult(rv, keepGoing);
   }
@@ -285,7 +298,8 @@ BuildForward(TrustDomain& trustDomain,
              KeyPurposeId requiredEKUIfPresent,
              const CertPolicyId& requiredPolicy,
               const Input* stapledOCSPResponse,
-             unsigned int subCACount)
+             unsigned int subCACount,
+             unsigned int& buildForwardCallBudget)
 {
   Result rv;
 
@@ -343,7 +357,7 @@ BuildForward(TrustDomain& trustDomain,
   PathBuildingStep pathBuilder(trustDomain, subject, time,
                                requiredEKUIfPresent, requiredPolicy,
                                stapledOCSPResponse, subCACount,
-                               deferredEndEntityError);
+                               deferredEndEntityError, buildForwardCallBudget);
 
   
   rv = trustDomain.FindIssuer(subject.GetIssuer(), pathBuilder, time);
@@ -382,9 +396,22 @@ BuildCertChain(TrustDomain& trustDomain, Input certDER,
     return rv;
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  unsigned int buildForwardCallBudget = 200000;
   return BuildForward(trustDomain, cert, time, requiredKeyUsageIfPresent,
                       requiredEKUIfPresent, requiredPolicy, stapledOCSPResponse,
-                      0);
+                      0, buildForwardCallBudget);
 }
 
 } } 
