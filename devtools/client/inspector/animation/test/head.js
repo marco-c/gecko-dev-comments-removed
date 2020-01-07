@@ -90,6 +90,16 @@ addTab = async function(url) {
 
 
 
+const removeAnimatedElementsExcept = async function(selectors) {
+  return executeInContent("Test:RemoveAnimatedElementsExcept", { selectors });
+};
+
+
+
+
+
+
+
 
 
 
