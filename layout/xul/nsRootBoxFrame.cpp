@@ -38,6 +38,15 @@ nsIRootBox::GetRootBox(nsIPresShell* aShell)
   }
 
   nsIRootBox* rootBox = do_QueryFrame(rootFrame);
+
+  
+  if (rootFrame && !rootBox) {
+    
+    
+    rootFrame = rootFrame->GetContentInsertionFrame();
+    rootBox = do_QueryFrame(rootFrame);
+  }
+
   return rootBox;
 }
 
@@ -221,11 +230,9 @@ nsRootBoxFrame::SetPopupSetFrame(nsPopupSetFrame* aPopupSet)
   
   
   
-  if (!mPopupSetFrame || !aPopupSet) {
-    mPopupSetFrame = aPopupSet;
-  } else {
-    MOZ_ASSERT_UNREACHABLE("Popup set is already defined! Only 1 allowed.");
-  }
+  MOZ_ASSERT(!aPopupSet || !mPopupSetFrame,
+             "Popup set is already defined! Only 1 allowed.");
+  mPopupSetFrame = aPopupSet;
 }
 
 Element*
