@@ -18,7 +18,8 @@ use values::specified::grid::parse_line_names;
 
 
 
-#[derive(Clone, Debug, Default, MallocSizeOf, PartialEq, ToComputedValue)]
+#[derive(Clone, Debug, Default, MallocSizeOf, PartialEq, SpecifiedValueInfo,
+         ToComputedValue)]
 pub struct GridLine<Integer> {
     
     pub is_span: bool,
@@ -148,7 +149,8 @@ impl Parse for GridLine<specified::Integer> {
 
 #[allow(missing_docs)]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
-#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, Parse, PartialEq, ToComputedValue, ToCss)]
+#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, Parse, PartialEq,
+         SpecifiedValueInfo, ToComputedValue, ToCss)]
 pub enum TrackKeyword {
     Auto,
     MaxContent,
@@ -159,7 +161,8 @@ pub enum TrackKeyword {
 
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToCss)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo,
+         ToComputedValue, ToCss)]
 pub enum TrackBreadth<L> {
     
     Breadth(L),
@@ -187,7 +190,7 @@ impl<L> TrackBreadth<L> {
 
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo)]
 pub enum TrackSize<L> {
     
     Breadth(TrackBreadth<L>),
@@ -343,7 +346,8 @@ where
 
 
 
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToCss)]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo,
+         ToComputedValue, ToCss)]
 pub enum RepeatCount<Integer> {
     
     Number(Integer),
@@ -378,7 +382,8 @@ impl Parse for RepeatCount<specified::Integer> {
 
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToComputedValue)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo,
+         ToComputedValue)]
 pub struct TrackRepeat<L, I> {
     
     pub count: RepeatCount<I>,
@@ -464,7 +469,8 @@ impl<L: Clone> TrackRepeat<L, specified::Integer> {
 }
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToCss)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo,
+         ToComputedValue, ToCss)]
 pub enum TrackListValue<LengthOrPercentage, Integer> {
     
     TrackSize(TrackSize<LengthOrPercentage>),
@@ -475,7 +481,8 @@ pub enum TrackListValue<LengthOrPercentage, Integer> {
 
 
 
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToComputedValue)]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo,
+         ToComputedValue)]
 pub enum TrackListType {
     
     
@@ -497,7 +504,7 @@ pub enum TrackListType {
 
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo)]
 pub struct TrackList<LengthOrPercentage, Integer> {
     
     
@@ -569,7 +576,8 @@ impl<L: ToCss, I: ToCss> ToCss for TrackList<L, I> {
 
 
 
-#[derive(Clone, Debug, Default, MallocSizeOf, PartialEq, ToComputedValue)]
+#[derive(Clone, Debug, Default, MallocSizeOf, PartialEq, SpecifiedValueInfo,
+         ToComputedValue)]
 pub struct LineNameList {
     
     pub names: Box<[Box<[CustomIdent]>]>,
@@ -672,7 +680,8 @@ impl ToCss for LineNameList {
 
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToCss)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo,
+         ToComputedValue, ToCss)]
 pub enum GridTemplateComponent<L, I> {
     
     None,

@@ -13,7 +13,7 @@ use font_metrics::FontMetricsQueryResult;
 use parser::{Parse, ParserContext};
 use std::cmp;
 use std::ops::{Add, Mul};
-use style_traits::{ParseError, StyleParseErrorKind};
+use style_traits::{ParseError, SpecifiedValueInfo, StyleParseErrorKind};
 use style_traits::values::specified::AllowedNumericType;
 use super::{AllowQuirks, Number, Percentage, ToComputedValue};
 use values::{Auto, CSSFloat, Either, Normal};
@@ -494,11 +494,13 @@ impl NoCalcLength {
     }
 }
 
+impl SpecifiedValueInfo for NoCalcLength {}
 
 
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToCss)]
+
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss)]
 pub enum Length {
     
     NoCalc(NoCalcLength),
@@ -699,7 +701,7 @@ pub type NonNegativeLengthOrAuto = Either<NonNegativeLength, Auto>;
 
 
 #[allow(missing_docs)]
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToCss)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss)]
 pub enum LengthOrPercentage {
     Length(NoCalcLength),
     Percentage(computed::Percentage),
@@ -845,7 +847,7 @@ impl LengthOrPercentage {
 
 
 #[allow(missing_docs)]
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToCss)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss)]
 pub enum LengthOrPercentageOrAuto {
     Length(NoCalcLength),
     Percentage(computed::Percentage),
@@ -1015,7 +1017,7 @@ impl Parse for NonNegativeLengthOrPercentageOrAuto {
 }
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToCss)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss)]
 #[allow(missing_docs)]
 pub enum LengthOrPercentageOrNone {
     Length(NoCalcLength),
@@ -1195,7 +1197,7 @@ impl LengthOrNumber {
 
 
 #[allow(missing_docs)]
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToCss)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss)]
 pub enum MozLength {
     LengthOrPercentageOrAuto(LengthOrPercentageOrAuto),
     ExtremumLength(ExtremumLength),
@@ -1252,7 +1254,7 @@ impl MozLength {
 
 
 #[allow(missing_docs)]
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToCss)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss)]
 pub enum MaxLength {
     LengthOrPercentageOrNone(LengthOrPercentageOrNone),
     ExtremumLength(ExtremumLength),

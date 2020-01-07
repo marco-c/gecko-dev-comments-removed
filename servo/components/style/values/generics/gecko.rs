@@ -7,7 +7,8 @@
 
 
 #[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[derive(Clone, Copy, Debug, PartialEq, ToComputedValue, ToCss)]
+#[derive(Clone, Copy, Debug, PartialEq, SpecifiedValueInfo, ToComputedValue,
+         ToCss)]
 pub enum ScrollSnapPoint<LengthOrPercentage> {
     
     None,

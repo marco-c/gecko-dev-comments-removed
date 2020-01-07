@@ -73,11 +73,13 @@ pub enum CSSPixel {}
 
 
 pub mod cursor;
+pub mod specified_value_info;
 #[macro_use]
 pub mod values;
 #[macro_use]
 pub mod viewport;
 
+pub use specified_value_info::{CssType, SpecifiedValueInfo};
 pub use values::{Comma, CommaWithSpace, CssWriter, OneOrMoreSeparated, Separator, Space, ToCss};
 
 

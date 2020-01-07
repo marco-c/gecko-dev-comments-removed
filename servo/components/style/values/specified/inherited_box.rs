@@ -15,7 +15,7 @@ use values::specified::Angle;
 
 
 
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq)]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo)]
 pub struct ImageOrientation {
     
     pub angle: Option<Angle>,

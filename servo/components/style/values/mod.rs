@@ -93,8 +93,9 @@ impl Parse for Impossible {
 }
 
 
-#[derive(Animate, Clone, ComputeSquaredDistance, Copy, MallocSizeOf, PartialEq, ToAnimatedValue,
-         ToAnimatedZero, ToComputedValue, ToCss)]
+#[derive(Animate, Clone, ComputeSquaredDistance, Copy, MallocSizeOf, PartialEq,
+         SpecifiedValueInfo, ToAnimatedValue, ToAnimatedZero, ToComputedValue,
+         ToCss)]
 pub enum Either<A, B> {
     
     First(A),
@@ -125,7 +126,8 @@ impl<A: Parse, B: Parse> Parse for Either<A, B> {
 }
 
 
-#[derive(Clone, Debug, Eq, Hash, MallocSizeOf, PartialEq, ToComputedValue)]
+#[derive(Clone, Debug, Eq, Hash, MallocSizeOf, PartialEq, SpecifiedValueInfo,
+         ToComputedValue)]
 pub struct CustomIdent(pub Atom);
 
 impl CustomIdent {
@@ -160,7 +162,7 @@ impl ToCss for CustomIdent {
 }
 
 
-#[derive(Clone, Debug, MallocSizeOf, ToComputedValue)]
+#[derive(Clone, Debug, MallocSizeOf, ToComputedValue, SpecifiedValueInfo)]
 pub enum KeyframesName {
     
     Ident(CustomIdent),

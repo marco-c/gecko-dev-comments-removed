@@ -20,7 +20,7 @@ use values::specified::{AllowQuirks, Number, NumberOrPercentage};
 use values::specified::length::{Length, LengthOrPercentage, NonNegativeLength};
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToCss)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss)]
 pub enum BorderSideWidth {
     
     Thin,
@@ -189,7 +189,8 @@ impl Parse for BorderSpacing {
 
 #[allow(missing_docs)]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
-#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, Parse, PartialEq, ToCss)]
+#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, Parse, PartialEq,
+         SpecifiedValueInfo, ToCss)]
 pub enum BorderImageRepeatKeyword {
     Stretch,
     Repeat,
@@ -200,7 +201,8 @@ pub enum BorderImageRepeatKeyword {
 
 
 
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToComputedValue)]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo,
+         ToComputedValue)]
 pub struct BorderImageRepeat(pub BorderImageRepeatKeyword, pub BorderImageRepeatKeyword);
 
 impl ToCss for BorderImageRepeat {

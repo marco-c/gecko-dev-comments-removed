@@ -10,7 +10,8 @@ use values::generics::rect::Rect;
 use values::generics::size::Size;
 
 
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToCss)]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo,
+         ToComputedValue, ToCss)]
 pub enum BorderImageSideWidth<LengthOrPercentage, Number> {
     
     Length(LengthOrPercentage),
@@ -21,7 +22,8 @@ pub enum BorderImageSideWidth<LengthOrPercentage, Number> {
 }
 
 
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToComputedValue)]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo,
+         ToComputedValue)]
 pub struct BorderImageSlice<NumberOrPercentage> {
     
     pub offsets: Rect<NumberOrPercentage>,
@@ -30,8 +32,8 @@ pub struct BorderImageSlice<NumberOrPercentage> {
 }
 
 
-#[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug, MallocSizeOf, PartialEq,
-         ToComputedValue, ToCss)]
+#[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug, MallocSizeOf,
+         PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss)]
 pub struct BorderCornerRadius<L>(#[css(field_bound)] pub Size<L>);
 
 impl<L> BorderCornerRadius<L> {
@@ -42,8 +44,9 @@ impl<L> BorderCornerRadius<L> {
 }
 
 
-#[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug, MallocSizeOf, PartialEq,
-         ToAnimatedValue, ToAnimatedZero, ToComputedValue, ToCss)]
+#[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug, MallocSizeOf,
+         PartialEq, SpecifiedValueInfo, ToAnimatedValue, ToAnimatedZero,
+         ToComputedValue, ToCss)]
 pub struct BorderSpacing<L>(#[css(field_bound)] pub Size<L>);
 
 impl<L> BorderSpacing<L> {
@@ -56,8 +59,8 @@ impl<L> BorderSpacing<L> {
 
 
 
-#[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug, MallocSizeOf, PartialEq,
-         ToComputedValue)]
+#[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug, MallocSizeOf,
+         PartialEq, SpecifiedValueInfo, ToComputedValue)]
 pub struct BorderRadius<LengthOrPercentage> {
     
     pub top_left: BorderCornerRadius<LengthOrPercentage>,

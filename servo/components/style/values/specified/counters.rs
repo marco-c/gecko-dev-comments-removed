@@ -99,7 +99,8 @@ fn is_decimal(counter_type: &CounterStyleType) -> bool {
 
 
 
-#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, ToComputedValue, ToCss)]
+#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo,
+         ToComputedValue, ToCss)]
 pub enum Content {
     
     Normal,
@@ -113,7 +114,8 @@ pub enum Content {
 }
 
 
-#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, ToComputedValue, ToCss)]
+#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo,
+         ToComputedValue, ToCss)]
 pub enum ContentItem {
     
     String(Box<str>),

@@ -11,11 +11,12 @@ use num_traits::One;
 use parser::{Parse, ParserContext};
 use std::fmt::{self, Write};
 use std::io::Cursor;
-use style_traits::{CssWriter, ParseError, StyleParseErrorKind, ToCss};
+use style_traits::{CssWriter, ParseError, SpecifiedValueInfo, StyleParseErrorKind, ToCss};
 use values::distance::{ComputeSquaredDistance, SquaredDistance};
 
 
-#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, ToComputedValue)]
+#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo,
+         ToComputedValue)]
 pub struct FeatureTagValue<Integer> {
     
     pub tag: FontTag,
@@ -45,7 +46,8 @@ where
 
 
 
-#[derive(Animate, Clone, Debug, Eq, MallocSizeOf, PartialEq, ToComputedValue, ToCss)]
+#[derive(Animate, Clone, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo,
+         ToComputedValue, ToCss)]
 pub struct VariationValue<Number> {
     
     #[animation(constant)]
@@ -69,7 +71,8 @@ where
 
 
 #[css(comma)]
-#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, ToComputedValue, ToCss)]
+#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo,
+         ToComputedValue, ToCss)]
 pub struct FontSettings<T>(#[css(if_empty = "normal", iterable)] pub Box<[T]>);
 
 impl<T> FontSettings<T> {
@@ -105,7 +108,8 @@ impl<T: Parse> Parse for FontSettings<T> {
 
 
 
-#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, ToComputedValue)]
+#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo,
+         ToComputedValue)]
 pub struct FontTag(pub u32);
 
 impl ToCss for FontTag {
@@ -177,9 +181,13 @@ where
     }
 }
 
+impl<Length> SpecifiedValueInfo for KeywordInfo<Length> {
+    const SUPPORTED_TYPES: u8 = <KeywordSize as SpecifiedValueInfo>::SUPPORTED_TYPES;
+}
+
 
 #[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug, MallocSizeOf, PartialEq,
-         ToAnimatedValue, ToAnimatedZero)]
+         ToAnimatedValue, ToAnimatedZero, SpecifiedValueInfo)]
 #[allow(missing_docs)]
 pub enum KeywordSize {
     XXSmall,
@@ -237,7 +245,7 @@ impl ToCss for KeywordSize {
 
 #[allow(missing_docs)]
 #[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug, MallocSizeOf,
-         PartialEq, ToAnimatedValue, ToAnimatedZero)]
+         PartialEq, SpecifiedValueInfo, ToAnimatedValue, ToAnimatedZero)]
 pub enum FontStyle<Angle> {
     #[animation(error)]
     Normal,

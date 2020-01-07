@@ -10,7 +10,8 @@ use style_traits::values::{CssWriter, SequenceWriter, ToCss};
 use values::specified::url::SpecifiedUrl;
 
 
-#[derive(Animate, Clone, Debug, MallocSizeOf, PartialEq, ToAnimatedValue, ToAnimatedZero)]
+#[derive(Animate, Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo,
+         ToAnimatedValue, ToAnimatedZero)]
 pub struct BoxShadow<Color, SizeLength, BlurShapeLength, ShapeLength> {
     
     pub base: SimpleShadow<Color, SizeLength, BlurShapeLength>,
@@ -23,8 +24,8 @@ pub struct BoxShadow<Color, SizeLength, BlurShapeLength, ShapeLength> {
 
 
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
-#[derive(Clone, ComputeSquaredDistance, Debug, MallocSizeOf, PartialEq, ToAnimatedValue,
-         ToComputedValue, ToCss)]
+#[derive(Clone, ComputeSquaredDistance, Debug, MallocSizeOf, PartialEq,
+         SpecifiedValueInfo, ToAnimatedValue, ToComputedValue, ToCss)]
 pub enum Filter<Angle, Factor, Length, DropShadow> {
     
     #[css(function)]
@@ -66,8 +67,8 @@ pub enum Filter<Angle, Factor, Length, DropShadow> {
 
 
 
-#[derive(Animate, Clone, ComputeSquaredDistance, Debug, MallocSizeOf, PartialEq, ToAnimatedValue,
-         ToAnimatedZero, ToCss)]
+#[derive(Animate, Clone, ComputeSquaredDistance, Debug, MallocSizeOf, PartialEq,
+         SpecifiedValueInfo, ToAnimatedValue, ToAnimatedZero, ToCss)]
 pub struct SimpleShadow<Color, SizeLength, ShapeLength> {
     
     pub color: Color,

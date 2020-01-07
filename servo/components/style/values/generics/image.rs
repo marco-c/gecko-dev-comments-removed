@@ -16,7 +16,7 @@ use values::serialize_atom_identifier;
 
 
 
-#[derive(Clone, MallocSizeOf, PartialEq, ToComputedValue)]
+#[derive(Clone, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue)]
 pub enum Image<Gradient, MozImageRect, ImageUrl> {
     
     Url(ImageUrl),
@@ -164,7 +164,8 @@ impl ToCss for PaintWorklet {
 
 #[allow(missing_docs)]
 #[css(comma, function)]
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToCss)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo,
+         ToComputedValue, ToCss)]
 pub struct MozImageRect<NumberOrPercentage, MozImageRectUrl> {
     pub url: MozImageRectUrl,
     pub top: NumberOrPercentage,

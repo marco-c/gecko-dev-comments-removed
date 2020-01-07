@@ -15,7 +15,7 @@ use malloc_size_of::{MallocSizeOf, MallocSizeOfOps};
 use parser::{Parse, ParserContext};
 use servo_arc::{Arc, RawOffsetArc};
 use std::mem;
-use style_traits::ParseError;
+use style_traits::{ParseError, SpecifiedValueInfo};
 
 
 #[css(function = "url")]
@@ -120,8 +120,10 @@ impl MallocSizeOf for CssUrl {
     }
 }
 
+impl SpecifiedValueInfo for CssUrl {}
 
-#[derive(Clone, Debug, ToComputedValue, ToCss)]
+
+#[derive(Clone, Debug, SpecifiedValueInfo, ToComputedValue, ToCss)]
 pub struct SpecifiedUrl {
     
     pub url: CssUrl,
@@ -179,7 +181,7 @@ impl MallocSizeOf for SpecifiedUrl {
 
 
 
-#[derive(Clone, Debug, ToComputedValue, ToCss)]
+#[derive(Clone, Debug, SpecifiedValueInfo, ToComputedValue, ToCss)]
 pub struct SpecifiedImageUrl {
     
     pub url: CssUrl,

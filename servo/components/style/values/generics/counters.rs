@@ -11,7 +11,8 @@ use style_traits::{CssWriter, ToCss};
 use values::CustomIdent;
 
 
-#[derive(Clone, Debug, Default, MallocSizeOf, PartialEq, ToComputedValue, ToCss)]
+#[derive(Clone, Debug, Default, MallocSizeOf, PartialEq, SpecifiedValueInfo,
+         ToComputedValue, ToCss)]
 pub struct CounterIncrement<I>(Counters<I>);
 
 impl<I> CounterIncrement<I> {
@@ -32,7 +33,8 @@ impl<I> Deref for CounterIncrement<I> {
 }
 
 
-#[derive(Clone, Debug, Default, MallocSizeOf, PartialEq, ToComputedValue, ToCss)]
+#[derive(Clone, Debug, Default, MallocSizeOf, PartialEq, SpecifiedValueInfo,
+         ToComputedValue, ToCss)]
 pub struct CounterReset<I>(Counters<I>);
 
 impl<I> CounterReset<I> {
@@ -55,7 +57,8 @@ impl<I> Deref for CounterReset<I> {
 
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToComputedValue)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo,
+         ToComputedValue)]
 pub struct Counters<I>(Box<[(CustomIdent, I)]>);
 
 impl<I> Default for Counters<I> {

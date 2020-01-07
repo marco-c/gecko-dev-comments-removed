@@ -79,7 +79,8 @@ impl SymbolsType {
 
 
 #[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[derive(Clone, Debug, Eq, PartialEq, ToComputedValue, ToCss)]
+#[derive(Clone, Debug, Eq, PartialEq, SpecifiedValueInfo, ToComputedValue,
+         ToCss)]
 pub enum CounterStyleOrNone {
     
     None,
@@ -139,12 +140,14 @@ impl Parse for CounterStyleOrNone {
 
 
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
-#[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug, MallocSizeOf, PartialEq,
-         PartialOrd, ToAnimatedZero, ToComputedValue, ToCss)]
+#[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug, MallocSizeOf,
+         PartialEq, PartialOrd, SpecifiedValueInfo, ToAnimatedZero,
+         ToComputedValue, ToCss)]
 pub struct NonNegative<T>(pub T);
 
 
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
-#[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug, MallocSizeOf, PartialEq,
-         PartialOrd, ToAnimatedZero, ToComputedValue, ToCss)]
+#[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug, MallocSizeOf,
+         PartialEq, PartialOrd, SpecifiedValueInfo, ToAnimatedZero,
+         ToComputedValue, ToCss)]
 pub struct GreaterThanOrEqualToOne<T>(pub T);
