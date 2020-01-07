@@ -174,6 +174,7 @@ const query = function* (detailsIn, props, context) {
 
   
   let enumerator;
+  let host;
   let url;
   let originAttributes = {
     userContextId,
@@ -185,15 +186,21 @@ const query = function* (detailsIn, props, context) {
   if ("url" in details) {
     try {
       url = new URL(details.url);
-      enumerator = Services.cookies.getCookiesFromHost(url.hostname, originAttributes);
+      host = url.hostname;
     } catch (ex) {
       
       return;
     }
   } else if ("domain" in details) {
-    enumerator = Services.cookies.getCookiesFromHost(details.domain, originAttributes);
+    host = details.domain;
+  }
+
+  if (host && ("firstPartyDomain" in originAttributes)) {
+    
+    
+    enumerator = Services.cookies.getCookiesFromHost(host, originAttributes);
   } else {
-    enumerator = Services.cookies.getCookiesWithOriginAttributes(JSON.stringify(originAttributes));
+    enumerator = Services.cookies.getCookiesWithOriginAttributes(JSON.stringify(originAttributes), host);
   }
 
   
