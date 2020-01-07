@@ -84,6 +84,13 @@ pub trait Element: Sized + Clone + Debug {
     
     fn is_link(&self) -> bool;
 
+    
+    
+    
+    fn assigned_slot(&self) -> Option<Self> {
+        None
+    }
+
     fn has_id(&self,
               id: &<Self::Impl as SelectorImpl>::Identifier,
               case_sensitivity: CaseSensitivity)

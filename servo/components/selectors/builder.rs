@@ -264,12 +264,23 @@ fn complex_selector_specificity<Impl>(mut iter: slice::Iter<Component<Impl>>)
                                       -> Specificity
     where Impl: SelectorImpl
 {
-    fn simple_selector_specificity<Impl>(simple_selector: &Component<Impl>,
-                                         specificity: &mut Specificity)
-        where Impl: SelectorImpl
+    fn simple_selector_specificity<Impl>(
+        simple_selector: &Component<Impl>,
+        specificity: &mut Specificity,
+    )
+    where
+        Impl: SelectorImpl
     {
         match *simple_selector {
             Component::Combinator(..) => unreachable!(),
+            
+            
+            
+            
+            
+            
+            
+            Component::Slotted(..) |
             Component::PseudoElement(..) |
             Component::LocalName(..) => {
                 specificity.element_selectors += 1
