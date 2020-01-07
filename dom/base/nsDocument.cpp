@@ -9356,7 +9356,7 @@ public:
     }
 
     
-    if (mTopWindow->GetFocusedNode()) {
+    if (mTopWindow->GetFocusedElement()) {
       return NS_OK;
     }
 
