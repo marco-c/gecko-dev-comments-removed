@@ -29,6 +29,11 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/Atomics.h"
 
+#ifdef XP_WIN
+#include "WinUtils.h"
+#include <wincrypt.h>
+#endif
+
 #define QUERYUPDATE_TIME 0
 #define QUERYUPDATE_SIMPLE 1
 #define QUERYUPDATE_COMPLEX 2
@@ -488,6 +493,17 @@ public:
     return mBatchLevel > 0;
   }
 
+#ifdef XP_WIN
+  
+
+
+  nsresult GetCryptoProvider(HCRYPTPROV& aCryptoProvider) const {
+    NS_ENSURE_STATE(mCryptoProviderInitialized);
+    aCryptoProvider = mCryptoProvider;
+    return NS_OK;
+  }
+#endif
+
 private:
   ~nsNavHistory();
 
@@ -642,6 +658,13 @@ protected:
   
   bool mCanNotify;
   nsCategoryCache<nsINavHistoryObserver> mCacheObservers;
+
+  
+  
+#ifdef XP_WIN
+  HCRYPTPROV mCryptoProvider;
+  bool mCryptoProviderInitialized;
+#endif
 };
 
 
