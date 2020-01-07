@@ -60,6 +60,8 @@ ChromeUtils.defineModuleGetter(this, "XPIInternal",
 ChromeUtils.defineModuleGetter(this, "XPIProvider",
                                "resource://gre/modules/addons/XPIProvider.jsm");
 
+const PREF_ALLOW_NON_RESTARTLESS      = "extensions.legacy.non-restartless.enabled";
+
 
 const XPI_INTERNAL_SYMBOLS = [
   "AddonInternal",
@@ -550,6 +552,8 @@ async function loadManifestFromRDF(aUri, aStream) {
   
   if (addon.type == "extension") {
     addon.bootstrap = getRDFProperty(ds, root, "bootstrap") == "true";
+    if (!addon.bootstrap && !Services.prefs.getBoolPref(PREF_ALLOW_NON_RESTARTLESS, false))
+        throw new Error(`Non-restartless extensions no longer supported`);
 
     addon.hasEmbeddedWebExtension = getRDFProperty(ds, root, "hasEmbeddedWebExtension") == "true";
 
