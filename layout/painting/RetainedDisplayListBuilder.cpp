@@ -6,6 +6,8 @@
 
 
 #include "RetainedDisplayListBuilder.h"
+
+#include "DisplayListChecker.h"
 #include "nsPlaceholderFrame.h"
 #include "nsSubDocumentFrame.h"
 #include "nsViewManager.h"
@@ -999,7 +1001,9 @@ RetainedDisplayListBuilder::ClearFramesWithProps()
 }
 
 bool
-RetainedDisplayListBuilder::AttemptPartialUpdate(nscolor aBackstop)
+RetainedDisplayListBuilder::AttemptPartialUpdate(
+  nscolor aBackstop,
+  mozilla::DisplayListChecker* aChecker)
 {
   mBuilder.RemoveModifiedWindowRegions();
   mBuilder.ClearWindowOpaqueRegion();
@@ -1064,6 +1068,10 @@ RetainedDisplayListBuilder::AttemptPartialUpdate(nscolor aBackstop)
       
       
       
+    }
+
+    if (aChecker) {
+      aChecker->Set(&modifiedDL, "TM");
     }
 
     
