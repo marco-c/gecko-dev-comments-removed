@@ -9831,9 +9831,7 @@ GetCorrectedParent(const nsIFrame* aFrame)
   
   if (pseudo) {
     MOZ_ASSERT(aFrame->GetContent());
-    Element* element =
-      aFrame->GetContent()->IsElement()
-        ? aFrame->GetContent()->AsElement() : nullptr;
+    Element* element = Element::FromNode(aFrame->GetContent());
     
     
     if (element &&

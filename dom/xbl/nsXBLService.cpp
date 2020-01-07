@@ -404,17 +404,18 @@ EnsureSubtreeStyled(Element* aElement)
   for (nsIContent* child = iter.GetNextChild();
        child;
        child = iter.GetNextChild()) {
-    if (!child->IsElement()) {
+    Element* element = Element::FromNode(child);
+    if (!element) {
       continue;
     }
 
-    if (child->AsElement()->HasServoData()) {
+    if (element->HasServoData()) {
       
       
       return;
     }
 
-    servoSet->StyleNewSubtree(child->AsElement());
+    servoSet->StyleNewSubtree(element);
   }
 }
 
@@ -615,8 +616,7 @@ nsXBLService::AttachGlobalKeyHandler(EventTarget* aTarget)
   if (contentNode && contentNode->GetProperty(nsGkAtoms::listener))
     return NS_OK;
 
-  Element* elt =
-   contentNode && contentNode->IsElement() ? contentNode->AsElement() : nullptr;
+  Element* elt = Element::FromNodeOrNull(contentNode);
 
   
   RefPtr<nsXBLWindowKeyHandler> handler =

@@ -226,16 +226,16 @@ XULPopupElement::GetTriggerNode() const
   return nsMenuPopupFrame::GetTriggerContent(menuPopupFrame);
 }
 
+
 Element*
 XULPopupElement::GetAnchorNode() const
 {
-  nsMenuPopupFrame *menuPopupFrame = do_QueryFrame(GetPrimaryFrame());
+  nsMenuPopupFrame* menuPopupFrame = do_QueryFrame(GetPrimaryFrame());
   if (!menuPopupFrame) {
     return nullptr;
   }
 
-  nsIContent* anchor = menuPopupFrame->GetAnchor();
-  return anchor && anchor->IsElement() ? anchor->AsElement() : nullptr;
+  return Element::FromNodeOrNull(menuPopupFrame->GetAnchor());
 }
 
 already_AddRefed<DOMRect>

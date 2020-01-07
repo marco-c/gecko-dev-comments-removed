@@ -1419,11 +1419,10 @@ XULDocument::AddSubtreeToDocument(nsIContent* aContent)
 {
     NS_ASSERTION(aContent->GetUncomposedDoc() == this, "Element not in doc!");
     
-    if (!aContent->IsElement()) {
+    Element* aElement = Element::FromNode(aContent);
+    if (!aElement) {
         return NS_OK;
     }
-
-    Element* aElement = aContent->AsElement();
 
     
     nsresult rv = AddElementToDocumentPre(aElement);
@@ -1447,11 +1446,10 @@ nsresult
 XULDocument::RemoveSubtreeFromDocument(nsIContent* aContent)
 {
     
-    if (!aContent->IsElement()) {
+    Element* aElement = Element::FromNode(aContent);
+    if (!aElement) {
         return NS_OK;
     }
-
-    Element* aElement = aContent->AsElement();
 
     
     
@@ -3709,7 +3707,7 @@ XULDocument::FindBroadcaster(Element* aElement,
             return NS_FINDBROADCASTER_AWAIT_OVERLAYS;
         }
 
-        *aListener = parent->IsElement() ? parent->AsElement() : nullptr;
+        *aListener = Element::FromNode(parent);
         NS_IF_ADDREF(*aListener);
 
         aElement->GetAttr(kNameSpaceID_None, nsGkAtoms::element, aBroadcasterID);
@@ -3841,14 +3839,14 @@ XULDocument::InsertElement(nsINode* aParent, nsIContent* aChild, bool aNotify)
     bool wasInserted = false;
 
     
-    if (aChild->IsElement()) {
-        aChild->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::insertafter, posStr);
+    if (Element* element = Element::FromNode(aChild)) {
+        element->GetAttr(kNameSpaceID_None, nsGkAtoms::insertafter, posStr);
     }
 
     bool isInsertAfter = true;
     if (posStr.IsEmpty()) {
-        if (aChild->IsElement()) {
-            aChild->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::insertbefore, posStr);
+        if (Element* element = Element::FromNode(aChild)) {
+            element->GetAttr(kNameSpaceID_None, nsGkAtoms::insertbefore, posStr);
         }
         isInsertAfter = false;
     }
