@@ -12,7 +12,6 @@
 #ifndef xpt_struct_h
 #define xpt_struct_h
 
-#include "xpt_arena.h"
 #include "nsID.h"
 #include <stdint.h>
 
@@ -46,18 +45,12 @@ struct XPTHeader {
 
   
   uint8_t major_version;
-  uint8_t minor_version;
+  
   uint16_t num_interfaces;
   
   XPTInterfaceDirectoryEntry* interface_directory;
   
 };
-
-#define XPT_MAGIC "XPCOM\nTypeLib\r\n\032"
-
-#define XPT_MAGIC_STRING "XPCOM\\nTypeLib\\r\\n\\032"
-#define XPT_MAJOR_VERSION 0x01
-#define XPT_MINOR_VERSION 0x02
 
 
 
@@ -129,7 +122,6 @@ struct XPTInterfaceDescriptor {
 #define XPT_ID_FUNCTION                     0x40
 #define XPT_ID_BUILTINCLASS                 0x20
 #define XPT_ID_MAIN_PROCESS_SCRIPTABLE_ONLY 0x10
-#define XPT_ID_FLAGMASK                     0xf0
 
 #define XPT_ID_IS_SCRIPTABLE(flags) (!!(flags & XPT_ID_SCRIPTABLE))
 #define XPT_ID_IS_FUNCTION(flags) (!!(flags & XPT_ID_FUNCTION))
@@ -273,7 +265,6 @@ struct XPTParamDescriptor {
 #define XPT_PD_SHARED   0x10
 #define XPT_PD_DIPPER   0x08
 #define XPT_PD_OPTIONAL 0x04
-#define XPT_PD_FLAGMASK 0xfc
 
 #define XPT_PD_IS_IN(flags) (flags & XPT_PD_IN)
 #define XPT_PD_IS_OUT(flags) (flags & XPT_PD_OUT)
@@ -301,7 +292,6 @@ struct XPTMethodDescriptor {
 #define XPT_MD_HIDDEN   0x08
 #define XPT_MD_OPT_ARGC 0x04
 #define XPT_MD_CONTEXT  0x02
-#define XPT_MD_FLAGMASK 0xfe
 
 #define XPT_MD_IS_GETTER(flags) (flags & XPT_MD_GETTER)
 #define XPT_MD_IS_SETTER(flags) (flags & XPT_MD_SETTER)
@@ -309,33 +299,5 @@ struct XPTMethodDescriptor {
 #define XPT_MD_IS_HIDDEN(flags) (flags & XPT_MD_HIDDEN)
 #define XPT_MD_WANTS_OPT_ARGC(flags) (flags & XPT_MD_OPT_ARGC)
 #define XPT_MD_WANTS_CONTEXT(flags) (flags & XPT_MD_CONTEXT)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#define XPT_ANN_LAST    0x80
-#define XPT_ANN_PRIVATE 0x40
-
-#define XPT_ANN_IS_LAST(flags) (flags & XPT_ANN_LAST)
-#define XPT_ANN_IS_PRIVATE(flags)(flags & XPT_ANN_PRIVATE)
 
 #endif 

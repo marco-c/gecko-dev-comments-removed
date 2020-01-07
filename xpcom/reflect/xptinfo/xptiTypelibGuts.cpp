@@ -6,6 +6,7 @@
 
 
 #include "xptiprivate.h"
+#include "xpt_arena.h"
 #include "mozilla/XPTInterfaceInfoManager.h"
 
 using namespace mozilla;

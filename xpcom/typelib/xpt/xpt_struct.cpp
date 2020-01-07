@@ -14,6 +14,38 @@
 
 using mozilla::WrapNotNull;
 
+#define XPT_MAGIC "XPCOM\nTypeLib\r\n\032"
+#define XPT_MAGIC_STRING "XPCOM\\nTypeLib\\r\\n\\032"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define XPT_ANN_LAST    0x80
+#define XPT_ANN_PRIVATE 0x40
+
+#define XPT_ANN_IS_LAST(flags) (flags & XPT_ANN_LAST)
+#define XPT_ANN_IS_PRIVATE(flags)(flags & XPT_ANN_PRIVATE)
+
+
 
 
 
@@ -77,8 +109,9 @@ XPT_DoHeader(XPTArena *arena, NotNull<XPTCursor*> cursor, XPTHeader **headerp)
         return false;
     }
 
+    uint8_t minor_version;
     if (!XPT_Do8(cursor, &header->major_version) ||
-        !XPT_Do8(cursor, &header->minor_version)) {
+        !XPT_Do8(cursor, &minor_version)) {
         return false;
     }
 
