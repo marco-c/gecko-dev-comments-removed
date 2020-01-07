@@ -95,9 +95,6 @@ public:
   using nsDocument::MozSetImageElement;
 
   
-  NS_FORWARD_NSIDOMNODE_TO_NSINODE
-
-  
   NS_DECL_NSIDOMHTMLDOCUMENT
 
   mozilla::dom::HTMLAllCollection* All();

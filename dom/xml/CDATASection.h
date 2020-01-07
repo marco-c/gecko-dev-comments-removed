@@ -44,9 +44,6 @@ public:
   NS_DECL_ISUPPORTS_INHERITED
 
   
-  NS_FORWARD_NSIDOMNODE_TO_NSINODE
-
-  
   NS_FORWARD_NSIDOMCHARACTERDATA(nsGenericDOMDataNode::)
   using nsGenericDOMDataNode::SetData; 
 

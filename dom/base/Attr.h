@@ -42,7 +42,6 @@ public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
 
   
-  NS_FORWARD_NSIDOMNODE_TO_NSINODE
   virtual void GetTextContentInternal(nsAString& aTextContent,
                                       OOMReporter& aError) override;
   virtual void SetTextContentInternal(const nsAString& aTextContent,

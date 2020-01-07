@@ -395,12 +395,6 @@ public:
     NS_IMETHOD_(bool) IsAttributeMapped(const nsAtom* aAttribute) const override;
 
     
-    NS_FORWARD_NSIDOMNODE_TO_NSINODE
-    
-    
-    using nsStyledElement::GetParentElement;
-
-    
     NS_FORWARD_NSIDOMELEMENT_TO_GENERIC
 
     

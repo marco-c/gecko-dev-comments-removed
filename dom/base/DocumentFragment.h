@@ -46,9 +46,6 @@ public:
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(DocumentFragment, FragmentOrElement)
 
   
-  NS_FORWARD_NSIDOMNODE_TO_NSINODE
-
-  
   NS_DECL_NSIDOMDOCUMENTFRAGMENT
 
   explicit DocumentFragment(already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo)
