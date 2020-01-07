@@ -4,7 +4,7 @@
 
 
 import PaymentStateSubscriberMixin from "../mixins/PaymentStateSubscriberMixin.js";
-
+import paymentRequest from "../paymentRequest.js";
 
 
 
