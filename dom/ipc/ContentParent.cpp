@@ -2013,8 +2013,7 @@ ContentParent::LaunchSubprocess(ProcessPriority aInitialPriority )
 
   
   base::SharedMemory shm;
-  if (!shm.Create("",  false,  false,
-                  prefs.Length())) {
+  if (!shm.Create(prefs.Length())) {
     NS_ERROR("failed to create shared memory in the parent");
     MarkAsDead();
     return false;
