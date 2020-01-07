@@ -52,4 +52,16 @@ async function testEditedInputHistory(hud) {
   EventUtils.synthesizeKey("KEY_ArrowDown");
   is(jsterm.getInputValue(), '"editing input 2"',
      "test history down restores new in-progress input again");
+
+  
+  
+  
+  await jsterm.execute('"second item"');
+  await jsterm.execute('  "second item"    ');
+  EventUtils.synthesizeKey("KEY_ArrowUp");
+  is(jsterm.getInputValue(), '"second item"',
+    "test history up reaches duplicated entry just once");
+  EventUtils.synthesizeKey("KEY_ArrowUp");
+  is(jsterm.getInputValue(), '"first item"',
+    "test history up reaches the previous value");
 }

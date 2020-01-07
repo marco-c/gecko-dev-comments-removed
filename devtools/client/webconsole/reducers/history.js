@@ -54,7 +54,15 @@ function appendToHistory(state, prefsState, expression) {
   state.entries = [...state.entries];
 
   
-  state.entries[state.index++] = expression;
+  
+  
+  
+  if (expression.trim() != state.entries[state.index - 1]) {
+    state.entries[state.index++] = expression;
+  } else if (state.index < state.entries.length) {
+    state.entries.pop();
+  }
+
   state.placeHolder = state.entries.length;
 
   
