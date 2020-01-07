@@ -6,23 +6,103 @@ from __future__ import absolute_import
 
 import os
 import platform
-import time
 import tempfile
+import time
 import uuid
-
-from .addons import AddonManager
-import mozfile
-from .permissions import Permissions
-from .prefs import Preferences
+from abc import ABCMeta, abstractmethod
 from shutil import copytree
 
-__all__ = ['Profile',
+import mozfile
+
+from .addons import AddonManager
+from .permissions import Permissions
+from .prefs import Preferences
+
+__all__ = ['BaseProfile',
+           'Profile',
            'FirefoxProfile',
            'ThunderbirdProfile',
            'create_profile']
 
 
-class Profile(object):
+class BaseProfile(object):
+    __metaclass__ = ABCMeta
+
+    def __init__(self, profile=None, addons=None, preferences=None, restore=True):
+        self._addons = addons
+
+        
+        if preferences:
+            if isinstance(preferences, dict):
+                
+                preferences = preferences.items()
+
+            
+            assert not [i for i in preferences if len(i) != 2]
+        else:
+            preferences = []
+        self._preferences = preferences
+
+        
+        self.restore = restore
+        self.create_new = not profile
+        if profile:
+            
+            self.profile = os.path.abspath(os.path.expanduser(profile))
+        else:
+            self.profile = tempfile.mkdtemp(suffix='.mozrunner')
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.cleanup()
+
+    def __del__(self):
+        self.cleanup()
+
+    def cleanup(self):
+        """Cleanup operations for the profile."""
+
+        if self.restore:
+            
+            if self.create_new:
+                mozfile.remove(self.profile)
+
+    @abstractmethod
+    def _reset(self):
+        pass
+
+    def reset(self):
+        """
+        reset the profile to the beginning state
+        """
+        self.cleanup()
+        self._reset()
+
+    @classmethod
+    def clone(cls, path_from, path_to=None, ignore=None, **kwargs):
+        """Instantiate a temporary profile via cloning
+        - path: path of the basis to clone
+        - ignore: callable passed to shutil.copytree
+        - kwargs: arguments to the profile constructor
+        """
+        if not path_to:
+            tempdir = tempfile.mkdtemp()  
+            mozfile.remove(tempdir)  
+            path_to = tempdir
+        copytree(path_from, path_to, ignore=ignore)
+
+        c = cls(path_to, **kwargs)
+        c.create_new = True  
+        return c
+
+    def exists(self):
+        """returns whether the profile exists or not"""
+        return os.path.exists(self.profile)
+
+
+class Profile(BaseProfile):
     """Handles all operations regarding profile.
 
     Creating new profiles, installing add-ons, setting preferences and
@@ -58,37 +138,17 @@ class Profile(object):
         :param whitelistpaths: List of paths to pass to Firefox to allow read
             access to from the content process sandbox.
         """
-        self._addons = addons
+        super(Profile, self).__init__(
+            profile=profile, addons=addons, preferences=preferences, restore=restore)
+
         self._locations = locations
         self._proxy = proxy
-
-        
-        if preferences:
-            if isinstance(preferences, dict):
-                
-                preferences = preferences.items()
-
-            
-            assert not [i for i in preferences if len(i) != 2]
-        else:
-            preferences = []
-        self._preferences = preferences
         self._whitelistpaths = whitelistpaths
 
         
-        self.create_new = not profile
-        if profile:
-            
-            self.profile = os.path.abspath(os.path.expanduser(profile))
-        else:
-            self.profile = tempfile.mkdtemp(suffix='.mozrunner')
+        self._reset()
 
-        self.restore = restore
-
-        
-        self._internal_init()
-
-    def _internal_init(self):
+    def _reset(self):
         """Internal: Initialize all class members to their default value"""
 
         if not os.path.exists(self.profile):
@@ -136,17 +196,6 @@ class Profile(object):
         self.addons = AddonManager(self.profile, restore=self.restore)
         self.addons.install(self._addons)
 
-    def __enter__(self):
-        return self
-
-    def __exit__(self, type, value, traceback):
-        self.cleanup()
-
-    def __del__(self):
-        self.cleanup()
-
-    
-
     def cleanup(self):
         """Cleanup operations for the profile."""
 
@@ -158,18 +207,7 @@ class Profile(object):
                 self.addons.clean()
             if getattr(self, 'permissions', None) is not None:
                 self.permissions.clean_db()
-
-            
-            if self.create_new:
-                mozfile.remove(self.profile)
-
-    def reset(self):
-        """
-        reset the profile to the beginning state
-        """
-        self.cleanup()
-
-        self._internal_init()
+        super(Profile, self).cleanup()
 
     def clean_preferences(self):
         """Removed preferences added by mozrunner."""
@@ -180,27 +218,6 @@ class Profile(object):
             while True:
                 if not self.pop_preferences(filename):
                     break
-
-    @classmethod
-    def clone(cls, path_from, path_to=None, ignore=None, **kwargs):
-        """Instantiate a temporary profile via cloning
-        - path: path of the basis to clone
-        - ignore: callable passed to shutil.copytree
-        - kwargs: arguments to the profile constructor
-        """
-        if not path_to:
-            tempdir = tempfile.mkdtemp()  
-            mozfile.remove(tempdir)  
-            path_to = tempdir
-        copytree(path_from, path_to, ignore=ignore)
-
-        c = cls(path_to, **kwargs)
-        c.create_new = True  
-        return c
-
-    def exists(self):
-        """returns whether the profile exists or not"""
-        return os.path.exists(self.profile)
 
     
 
