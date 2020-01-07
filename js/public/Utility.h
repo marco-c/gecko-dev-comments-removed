@@ -471,6 +471,15 @@ static inline void js_free(void* p)
 
 
 
+
+
+
+
+
+
+
+
+
 #define JS_DECLARE_NEW_METHODS(NEWNAME, ALLOCATOR, QUALIFIERS) \
     template <class T, typename... Args> \
     QUALIFIERS T * \
