@@ -43,7 +43,6 @@ class FrameLayerBuilder;
 class LayerManagerData;
 class PaintedLayerData;
 class ContainerState;
-class PaintedDisplayItemLayerUserData;
 
 
 
@@ -69,7 +68,6 @@ public:
   uint32_t GetDisplayItemKey() { return mDisplayItemKey; }
   layers::Layer* GetLayer() const { return mLayer; }
   nsDisplayItemGeometry* GetGeometry() const { return mGeometry.get(); }
-  const DisplayItemClip& GetClip() const { return mClip; }
   void Invalidate() { mIsInvalid = true; }
   void ClearAnimationCompositorState();
 
@@ -156,8 +154,6 @@ private:
 
   void BeginUpdate(layers::Layer* aLayer, LayerState aState,
                    nsDisplayItem* aItem = nullptr);
-  void BeginUpdate(layers::Layer* aLayer, LayerState aState,
-                   nsDisplayItem* aItem, bool aIsReused, bool aIsMerged);
 
   
 
@@ -214,14 +210,17 @@ struct AssignedDisplayItem
 {
   AssignedDisplayItem(nsDisplayItem* aItem,
                       const DisplayItemClip& aClip,
-                      LayerState aLayerState,
-                      DisplayItemData* aData);
+                      LayerState aLayerState)
+    : mItem(aItem)
+    , mClip(aClip)
+    , mLayerState(aLayerState)
+  {}
+
   ~AssignedDisplayItem();
 
   nsDisplayItem* mItem;
   DisplayItemClip mClip;
   LayerState mLayerState;
-  DisplayItemData* mDisplayItemData;
 
   
 
@@ -229,9 +228,6 @@ struct AssignedDisplayItem
 
 
   RefPtr<layers::LayerManager> mInactiveLayerManager;
-
-  bool mReused;
-  bool mMerged;
 };
 
 
@@ -510,10 +506,29 @@ public:
 
 
 
+
+
+  void AddLayerDisplayItem(Layer* aLayer,
+                           nsDisplayItem* aItem,
+                           LayerState aLayerState,
+                           BasicLayerManager* aManager,
+                           DisplayItemData* aData);
+
+  
+
+
+
+
+
+
   void AddPaintedDisplayItem(PaintedLayerData* aLayer,
-                             AssignedDisplayItem& aAssignedDisplayItem,
-                             ContainerState& aContainerState,
-                             const nsPoint& aTopLeft);
+                            nsDisplayItem* aItem,
+                            const DisplayItemClip& aClip,
+                            ContainerState& aContainerState,
+                            LayerState aLayerState,
+                            const nsPoint& aTopLeft,
+                            DisplayItemData* aData,
+                            AssignedDisplayItem& aAssignedDisplayItem);
 
   
 
@@ -579,6 +594,12 @@ public:
 
 
 
+  void SavePreviousDataForLayer(PaintedLayer* aLayer, uint32_t aClipCount);
+  
+
+
+
+
   nsIntPoint GetLastPaintOffset(PaintedLayer* aLayer);
 
   
@@ -610,6 +631,10 @@ public:
 
   DisplayItemData* GetOldLayerForFrame(nsIFrame* aFrame, uint32_t aDisplayItemKey, DisplayItemData* aOldData = nullptr);
 
+protected:
+
+  friend class LayerManagerData;
+
   
 
 
@@ -620,9 +645,6 @@ public:
                          uint32_t aDisplayItemKey,
                          Layer* aLayer,
                          LayerState aState);
-
-protected:
-  friend class LayerManagerData;
 
   
   static void FlashPaint(gfxContext *aContext);
@@ -682,11 +704,37 @@ protected:
 
 
 public:
+  class PaintedLayerItemsEntry : public nsPtrHashKey<PaintedLayer> {
+  public:
+    explicit PaintedLayerItemsEntry(const PaintedLayer *key);
+    PaintedLayerItemsEntry(const PaintedLayerItemsEntry&);
+    ~PaintedLayerItemsEntry();
+
+    nsTArray<AssignedDisplayItem> mItems;
+    nsIFrame* mContainerLayerFrame;
+    
+    
+    nsIntPoint mLastPaintOffset;
+    uint32_t mLastCommonClipCount;
+
+    bool mHasExplicitLastPaintOffset;
+    
+
+
+
+    uint32_t mCommonClipCount;
+
+    enum { ALLOW_MEMMOVE = true };
+  };
+
   
 
 
 
-  void AddPaintedLayerItemsEntry(PaintedDisplayItemLayerUserData* aData);
+  PaintedLayerItemsEntry* AddPaintedLayerItemsEntry(PaintedLayer* aLayer)
+  {
+    return mPaintedLayerItems.PutEntry(aLayer);
+  }
 
   PaintedLayerData* GetContainingPaintedLayerData()
   {
@@ -731,9 +779,7 @@ protected:
 
 
 
-
-
-  AutoTArray<RefPtr<PaintedDisplayItemLayerUserData>, 5> mPaintedLayerItems;
+  nsTHashtable<PaintedLayerItemsEntry> mPaintedLayerItems;
 
   
 
