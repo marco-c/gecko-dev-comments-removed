@@ -4449,7 +4449,7 @@ JSScript::AutoDelazify::holdScript(JS::HandleFunction fun)
             
             script_ = fun->nonLazyScript();
         } else {
-            JSAutoCompartment ac(cx_, fun);
+            JSAutoRealm ar(cx_, fun);
             script_ = JSFunction::getOrCreateScript(cx_, fun);
             if (script_) {
                 oldDoNotRelazify_ = script_->doNotRelazify_;

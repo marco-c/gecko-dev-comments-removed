@@ -778,7 +778,7 @@ CustomElementRegistry::Define(const nsAString& aName,
       
 
 
-      JSAutoCompartment ac(cx, constructor);
+      JSAutoRealm ar(cx, constructor);
       
       
       
@@ -806,7 +806,7 @@ CustomElementRegistry::Define(const nsAString& aName,
     }
 
     { 
-      JSAutoCompartment ac(cx, constructorProtoUnwrapped);
+      JSAutoRealm ar(cx, constructorProtoUnwrapped);
 
       
 
@@ -848,7 +848,7 @@ CustomElementRegistry::Define(const nsAString& aName,
 
       if (callbacksHolder->mAttributeChangedCallback.WasPassed()) {
         
-        JSAutoCompartment ac(cx, constructor);
+        JSAutoRealm ar(cx, constructor);
         JS::Rooted<JS::Value> observedAttributesIterable(cx);
 
         if (!JS_GetProperty(cx, constructor, "observedAttributes",

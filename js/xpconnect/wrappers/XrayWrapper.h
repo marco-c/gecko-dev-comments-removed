@@ -305,7 +305,7 @@ public:
         }
 
         {
-            JSAutoCompartment ac(cx, target);
+            JSAutoRealm ar(cx, target);
             if (!JS_GetClassPrototype(cx, key, protop))
                 return false;
         }
@@ -419,7 +419,7 @@ public:
         
         
         {
-            JSAutoCompartment ac(cx, target);
+            JSAutoRealm ar(cx, target);
             if (!JS_GetClassPrototype(cx, JSProto_Object, protop))
                 return false;
         }

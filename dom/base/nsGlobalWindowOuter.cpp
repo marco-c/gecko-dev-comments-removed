@@ -793,7 +793,7 @@ nsChromeOuterWindowProxy::singleton;
 static JSObject*
 NewOuterWindowProxy(JSContext *cx, JS::Handle<JSObject*> global, bool isChrome)
 {
-  JSAutoCompartment ac(cx, global);
+  JSAutoRealm ar(cx, global);
   MOZ_ASSERT(js::GetGlobalForObjectCrossCompartment(global) == global);
 
   js::WrapperOptions options;
@@ -1535,7 +1535,7 @@ static const JSFunctionSpec EnablePrivilegeSpec[] = {
 static bool
 InitializeLegacyNetscapeObject(JSContext* aCx, JS::Handle<JSObject*> aGlobal)
 {
-  JSAutoCompartment ac(aCx, aGlobal);
+  JSAutoRealm ar(aCx, aGlobal);
 
   
   JS::Rooted<JSObject*> obj(aCx);
@@ -1873,7 +1873,7 @@ nsGlobalWindowOuter::SetNewDocument(nsIDocument* aDocument,
     }
 
     
-    JSAutoCompartment ac(cx, GetWrapperPreserveColor());
+    JSAutoRealm ar(cx, GetWrapperPreserveColor());
 
     {
       JS::Rooted<JSObject*> outer(cx, GetWrapperPreserveColor());
@@ -1905,7 +1905,7 @@ nsGlobalWindowOuter::SetNewDocument(nsIDocument* aDocument,
     }
   }
 
-  JSAutoCompartment ac(cx, GetWrapperPreserveColor());
+  JSAutoRealm ar(cx, GetWrapperPreserveColor());
 
   if (!aState && !reUseInnerWindow) {
     
@@ -3808,7 +3808,7 @@ nsGlobalWindowOuter::DispatchResizeEvent(const CSSIntSize& aSize)
   AutoJSAPI jsapi;
   jsapi.Init();
   JSContext* cx = jsapi.cx();
-  JSAutoCompartment ac(cx, GetWrapperPreserveColor());
+  JSAutoRealm ar(cx, GetWrapperPreserveColor());
 
   DOMWindowResizeEventDetail detail;
   detail.mWidth = aSize.width;
@@ -5604,7 +5604,7 @@ nsGlobalWindowOuter::CallerInnerWindow()
   
   
   if (xpc::IsSandbox(scope)) {
-    JSAutoCompartment ac(cx, scope);
+    JSAutoRealm ar(cx, scope);
     JS::Rooted<JSObject*> scopeProto(cx);
     bool ok = JS_GetPrototype(cx, scope, &scopeProto);
     NS_ENSURE_TRUE(ok, nullptr);
@@ -7152,7 +7152,7 @@ nsGlobalWindowOuter::SecurityCheckURL(const char *aURL)
   }
   AutoJSContext cx;
   nsGlobalWindowInner* sourceWin = nsGlobalWindowInner::Cast(sourceWindow);
-  JSAutoCompartment ac(cx, sourceWin->GetGlobalJSObject());
+  JSAutoRealm ar(cx, sourceWin->GetGlobalJSObject());
 
   
   

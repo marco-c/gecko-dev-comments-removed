@@ -1128,7 +1128,7 @@ DoGetOrCreateDOMReflector(JSContext* cx, T* value,
 
   if (wrapBehavior == eDontWrapIntoContextCompartment) {
     if (TypeNeedsOuterization<T>::value) {
-      JSAutoCompartment ac(cx, obj);
+      JSAutoRealm ar(cx, obj);
       return TryToOuterize(rval);
     }
 
@@ -1193,7 +1193,7 @@ WrapNewBindingNonWrapperCachedObject(JSContext* cx,
   {
     
     
-    Maybe<JSAutoCompartment> ac;
+    Maybe<JSAutoRealm> ar;
     
     
     
@@ -1203,7 +1203,7 @@ WrapNewBindingNonWrapperCachedObject(JSContext* cx,
       scope = js::CheckedUnwrap(scope,  false);
       if (!scope)
         return false;
-      ac.emplace(cx, scope);
+      ar.emplace(cx, scope);
       if (!JS_WrapObject(cx, &proto)) {
         return false;
       }
@@ -1244,7 +1244,7 @@ WrapNewBindingNonWrapperCachedObject(JSContext* cx,
   {
     
     
-    Maybe<JSAutoCompartment> ac;
+    Maybe<JSAutoRealm> ar;
     
     
     
@@ -1254,7 +1254,7 @@ WrapNewBindingNonWrapperCachedObject(JSContext* cx,
       scope = js::CheckedUnwrap(scope,  false);
       if (!scope)
         return false;
-      ac.emplace(cx, scope);
+      ar.emplace(cx, scope);
       if (!JS_WrapObject(cx, &proto)) {
         return false;
       }
@@ -2510,7 +2510,7 @@ XrayGetNativeProto(JSContext* cx, JS::Handle<JSObject*> obj,
 {
   JS::Rooted<JSObject*> global(cx, js::GetGlobalForObjectCrossCompartment(obj));
   {
-    JSAutoCompartment ac(cx, global);
+    JSAutoRealm ar(cx, global);
     const DOMJSClass* domClass = GetDOMClass(obj);
     if (domClass) {
       ProtoHandleGetter protoGetter = domClass->mGetProto;
@@ -3151,7 +3151,7 @@ CreateGlobal(JSContext* aCx, T* aNative, nsWrapperCache* aCache,
     return false;
   }
 
-  JSAutoCompartment ac(aCx, aGlobal);
+  JSAutoRealm ar(aCx, aGlobal);
 
   {
     js::SetReservedSlot(aGlobal, DOM_OBJECT_SLOT, JS::PrivateValue(aNative));
@@ -3340,7 +3340,7 @@ WrappedJSToDictionary(JSContext* aCx, nsISupports* aObject, T& aDictionary)
     return false;
   }
 
-  JSAutoCompartment ac(aCx, obj);
+  JSAutoRealm ar(aCx, obj);
   JS::Rooted<JS::Value> v(aCx, JS::ObjectValue(*obj));
   return aDictionary.Init(aCx, v);
 }

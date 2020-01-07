@@ -213,9 +213,9 @@ StackScopedClone(JSContext* cx, StackScopedCloneOptions& options,
     {
         
         
-        Maybe<JSAutoCompartment> ac;
+        Maybe<JSAutoRealm> ar;
         if (val.isObject()) {
-            ac.emplace(cx, &val.toObject());
+            ar.emplace(cx, &val.toObject());
         } else if (val.isString() && !JS_WrapValue(cx, val)) {
             return false;
         }
@@ -300,7 +300,7 @@ FunctionForwarder(JSContext* cx, unsigned argc, Value* vp)
         
         
         
-        JSAutoCompartment ac(cx, unwrappedFun);
+        JSAutoRealm ar(cx, unwrappedFun);
         if (!CheckSameOriginArg(cx, options, thisVal) || !JS_WrapValue(cx, &thisVal))
             return false;
 
@@ -400,7 +400,7 @@ ExportFunction(JSContext* cx, HandleValue vfunction, HandleValue vscope, HandleV
     {
         
         
-        JSAutoCompartment ac(cx, targetScope);
+        JSAutoRealm ar(cx, targetScope);
 
         
         funObj = UncheckedUnwrap(funObj);
@@ -483,7 +483,7 @@ CreateObjectIn(JSContext* cx, HandleValue vobj, CreateObjectInOptions& options,
 
     RootedObject obj(cx);
     {
-        JSAutoCompartment ac(cx, scope);
+        JSAutoRealm ar(cx, scope);
         JS_MarkCrossZoneId(cx, options.defineAs);
 
         obj = JS_NewPlainObject(cx);

@@ -316,13 +316,13 @@ IDBRequest::SetResultCallback(ResultCallback* aCallback)
   }
 
   AutoJSAPI autoJS;
-  Maybe<JSAutoCompartment> ac;
+  Maybe<JSAutoRealm> ar;
 
   if (GetScriptOwner()) {
     
     
     autoJS.Init();
-    ac.emplace(autoJS.cx(), GetScriptOwner());
+    ar.emplace(autoJS.cx(), GetScriptOwner());
   } else {
     
     MOZ_ASSERT(GetOwner());

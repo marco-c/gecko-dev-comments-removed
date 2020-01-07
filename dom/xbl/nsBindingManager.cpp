@@ -640,7 +640,7 @@ nsBindingManager::GetBindingImplementation(nsIContent* aContent, REFNSIID aIID,
       
       JS::Rooted<JSObject*> xblScope(cx, xpc::GetXBLScopeOrGlobal(cx, jsobj));
       NS_ENSURE_TRUE(xblScope, NS_ERROR_UNEXPECTED);
-      JSAutoCompartment ac(cx, xblScope);
+      JSAutoRealm ar(cx, xblScope);
       bool ok = JS_WrapObject(cx, &jsobj);
       NS_ENSURE_TRUE(ok, NS_ERROR_OUT_OF_MEMORY);
       MOZ_ASSERT_IF(js::IsWrapper(jsobj), xpc::IsXrayWrapper(jsobj));

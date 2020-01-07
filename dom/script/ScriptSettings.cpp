@@ -379,7 +379,7 @@ AutoJSAPI::InitInternal(nsIGlobalObject* aGlobalObject, JSObject* aGlobal,
       
       
       exnObj = js::UncheckedUnwrap(exnObj);
-      JSAutoCompartment ac(aCx, exnObj);
+      JSAutoRealm ar(aCx, exnObj);
 
       nsAutoJSString stack, filename, name, message;
       int32_t line;
@@ -569,7 +569,7 @@ AutoJSAPI::ReportException()
       errorGlobal = GetCurrentThreadWorkerGlobal();
     }
   }
-  JSAutoCompartment ac(cx(), errorGlobal);
+  JSAutoRealm ar(cx(), errorGlobal);
   JS::Rooted<JS::Value> exn(cx());
   js::ErrorReport jsReport(cx());
   if (StealException(&exn) &&
@@ -821,7 +821,7 @@ AutoSlowOperation::CheckForInterrupt()
   
   if (mIsMainThread) {
     
-    JSAutoCompartment ac(cx(), xpc::UnprivilegedJunkScope());
+    JSAutoRealm ar(cx(), xpc::UnprivilegedJunkScope());
     JS_CheckForInterrupt(cx());
   }
 }

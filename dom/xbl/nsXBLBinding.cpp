@@ -737,7 +737,7 @@ nsXBLBinding::ChangeDocument(nsIDocument* aOldDocument, nsIDocument* aNewDocumen
         
 
         
-        JSAutoCompartment ac(cx, scriptObject);
+        JSAutoRealm ar(cx, scriptObject);
 
         JS::Rooted<JSObject*> base(cx, scriptObject);
         JS::Rooted<JSObject*> proto(cx);
@@ -895,7 +895,7 @@ GetOrCreateMapEntryForPrototype(JSContext *cx, JS::Handle<JSObject*> proto)
   MOZ_ASSERT(js::GetGlobalForObjectCrossCompartment(scope) == scope);
 
   JS::Rooted<JSObject*> wrappedProto(cx, proto);
-  JSAutoCompartment ac(cx, scope);
+  JSAutoRealm ar(cx, scope);
   if (!JS_WrapObject(cx, &wrappedProto)) {
     return nullptr;
   }
@@ -974,14 +974,14 @@ nsXBLBinding::DoInitJSClass(JSContext *cx,
   if (parent_proto) {
     holder = GetOrCreateMapEntryForPrototype(cx, parent_proto);
   } else {
-    JSAutoCompartment innerAC(cx, xblScope);
+    JSAutoRealm innerAR(cx, xblScope);
     holder = GetOrCreateClassObjectMap(cx, xblScope, "__ContentClassObjectMap__");
   }
   if (NS_WARN_IF(!holder)) {
     return NS_ERROR_FAILURE;
   }
   js::AssertSameCompartment(holder, xblScope);
-  JSAutoCompartment ac(cx, holder);
+  JSAutoRealm ar(cx, holder);
 
   
   
@@ -1001,7 +1001,7 @@ nsXBLBinding::DoInitJSClass(JSContext *cx,
 
     
     
-    JSAutoCompartment ac2(cx, global);
+    JSAutoRealm ar2(cx, global);
     proto = JS_NewObjectWithGivenProto(cx, &gPrototypeJSClass, parent_proto);
     if (!proto) {
       return NS_ERROR_OUT_OF_MEMORY;
@@ -1020,7 +1020,7 @@ nsXBLBinding::DoInitJSClass(JSContext *cx,
 
     
     
-    JSAutoCompartment ac3(cx, holder);
+    JSAutoRealm ar3(cx, holder);
     if (!JS_WrapObject(cx, &proto) ||
         !JS_DefineUCProperty(cx, holder, aClassName.get(), -1, proto,
                              JSPROP_READONLY | JSPROP_PERMANENT))
@@ -1031,7 +1031,7 @@ nsXBLBinding::DoInitJSClass(JSContext *cx,
 
   
   
-  JSAutoCompartment ac4(cx, obj);
+  JSAutoRealm ar4(cx, obj);
   if (!JS_WrapObject(cx, &proto) || !JS_SetPrototype(cx, obj, proto)) {
     return NS_ERROR_FAILURE;
   }
@@ -1110,7 +1110,7 @@ nsXBLBinding::LookupMember(JSContext* aCx, JS::Handle<jsid> aId,
 
   
   {
-    JSAutoCompartment ac(aCx, xblScope);
+    JSAutoRealm ar(aCx, xblScope);
     JS::Rooted<jsid> id(aCx, aId);
     if (!LookupMemberInternal(aCx, name, id, aDesc, xblScope)) {
       return false;

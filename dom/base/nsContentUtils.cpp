@@ -7071,7 +7071,7 @@ nsContentUtils::IsPatternMatching(nsAString& aValue, nsAString& aPattern,
 
   
   
-  JSAutoCompartment ac(cx, xpc::UnprivilegedJunkScope());
+  JSAutoRealm ar(cx, xpc::UnprivilegedJunkScope());
 
   
   aPattern.InsertLiteral(u"^(?:", 0);

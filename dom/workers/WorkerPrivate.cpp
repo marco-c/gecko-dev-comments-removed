@@ -470,7 +470,7 @@ private:
     
     
     
-    JSAutoCompartment ac(aCx, globalScope->GetGlobalJSObject());
+    JSAutoRealm ar(aCx, globalScope->GetGlobalJSObject());
     if (rv.MaybeSetPendingException(aCx)) {
       return false;
     }
@@ -3218,7 +3218,7 @@ WorkerPrivate::DoRunLoop(JSContext* aCx)
 
   InitializeGCTimers();
 
-  Maybe<JSAutoCompartment> workerCompartment;
+  Maybe<JSAutoRealm> workerCompartment;
 
   for (;;) {
     WorkerStatus currentStatus, previousStatus;
@@ -3332,7 +3332,7 @@ WorkerPrivate::DoRunLoop(JSContext* aCx)
         MOZ_ASSERT(globalScope);
 
         
-        JSAutoCompartment ac(aCx, globalScope->GetGlobalJSObject());
+        JSAutoRealm ar(aCx, globalScope->GetGlobalJSObject());
         JS_MaybeGC(aCx);
       }
     } else if (normalRunnablesPending) {
@@ -3342,7 +3342,7 @@ WorkerPrivate::DoRunLoop(JSContext* aCx)
       normalRunnablesPending = NS_HasPendingEvents(mThread);
       if (normalRunnablesPending && GlobalScope()) {
         
-        JSAutoCompartment ac(aCx, GlobalScope()->GetGlobalJSObject());
+        JSAutoRealm ar(aCx, GlobalScope()->GetGlobalJSObject());
         JS_MaybeGC(aCx);
       }
     }
@@ -5297,7 +5297,7 @@ WorkerPrivate::GetOrCreateGlobalScope(JSContext* aCx)
     JS::Rooted<JSObject*> global(aCx);
     NS_ENSURE_TRUE(globalScope->WrapGlobalObject(aCx, &global), nullptr);
 
-    JSAutoCompartment ac(aCx, global);
+    JSAutoRealm ar(aCx, global);
 
     
     
@@ -5327,7 +5327,7 @@ WorkerPrivate::CreateDebuggerGlobalScope(JSContext* aCx)
   JS::Rooted<JSObject*> global(aCx);
   NS_ENSURE_TRUE(globalScope->WrapGlobalObject(aCx, &global), nullptr);
 
-  JSAutoCompartment ac(aCx, global);
+  JSAutoRealm ar(aCx, global);
 
   
   

@@ -78,7 +78,7 @@ public:
     JSContext* mCx;
 
     
-    JSAutoCompartment mCompartment;
+    JSAutoRealm mRealm;
 
     
     JS::Rooted<JS::Value> mRetValue;

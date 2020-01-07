@@ -1029,7 +1029,7 @@ EventListenerManager::CompileEventHandlerInternal(Listener* aListener,
   JS::Rooted<JSObject*> wrapScope(cx, global->GetGlobalJSObject());
   JS::Rooted<JS::Value> v(cx);
   {
-    JSAutoCompartment ac(cx, wrapScope);
+    JSAutoRealm ar(cx, wrapScope);
     nsresult rv = nsContentUtils::WrapNative(cx, mTarget, &v,
                                               false);
     if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -1038,7 +1038,7 @@ EventListenerManager::CompileEventHandlerInternal(Listener* aListener,
   }
 
   JS::Rooted<JSObject*> target(cx, &v.toObject());
-  JSAutoCompartment ac(cx, target);
+  JSAutoRealm ar(cx, target);
 
   
   

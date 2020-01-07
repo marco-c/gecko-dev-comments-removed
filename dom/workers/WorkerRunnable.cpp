@@ -348,7 +348,7 @@ WorkerRunnable::Run()
   
   
   
-  Maybe<JSAutoCompartment> ac;
+  Maybe<JSAutoRealm> ar;
   if (!targetIsWorkerThread &&
       mWorkerPrivate->IsDedicatedWorker() &&
       mWorkerPrivate->ParentEventTargetRef()->GetWrapper()) {
@@ -373,7 +373,7 @@ WorkerRunnable::Run()
                "Must either be in the null compartment or in our reflector "
                "compartment");
 
-    ac.emplace(cx, wrapper);
+    ar.emplace(cx, wrapper);
   }
 
   MOZ_ASSERT(!jsapi->HasException());

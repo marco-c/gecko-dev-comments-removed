@@ -67,7 +67,7 @@ AttachNewConstructorObject(JSContext* aCx, JS::HandleObject aGlobalObject)
 {
   
   
-  JSAutoCompartment ac(aCx, aGlobalObject);
+  JSAutoRealm ar(aCx, aGlobalObject);
   JSFunction* xpcnativewrapper =
     JS_DefineFunction(aCx, aGlobalObject, "XPCNativeWrapper",
                       XrayWrapperConstructor, 1,

@@ -609,7 +609,7 @@ impl GCMethods for JS::Value {
 
 
 
-impl Drop for JSAutoCompartment {
+impl Drop for JSAutoRealm {
     fn drop(&mut self) {
         unsafe { JS_LeaveCompartment(self.cx_, self.oldCompartment_); }
     }

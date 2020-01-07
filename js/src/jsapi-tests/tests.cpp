@@ -92,7 +92,7 @@ JSObject* JSAPITest::createGlobal(JSPrincipals* principals)
     if (!newGlobal)
         return nullptr;
 
-    JSAutoCompartment ac(cx, newGlobal);
+    JSAutoRealm ar(cx, newGlobal);
 
     
     

@@ -4130,7 +4130,7 @@ nsGlobalWindowInner::CallerInnerWindow()
   
   
   if (xpc::IsSandbox(scope)) {
-    JSAutoCompartment ac(cx, scope);
+    JSAutoRealm ar(cx, scope);
     JS::Rooted<JSObject*> scopeProto(cx);
     bool ok = JS_GetPrototype(cx, scope, &scopeProto);
     NS_ENSURE_TRUE(ok, nullptr);

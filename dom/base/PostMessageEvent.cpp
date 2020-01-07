@@ -77,7 +77,7 @@ PostMessageEvent::Run()
       targetWindow->IsDying())
     return NS_OK;
 
-  JSAutoCompartment ac(cx, targetWindow->GetWrapper());
+  JSAutoRealm ar(cx, targetWindow->GetWrapper());
 
   
   

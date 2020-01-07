@@ -82,13 +82,13 @@ main(int argc, const char** argv)
     checkBool(JS::InitSelfHostedCode(cx));
     JS::SetWarningReporter(cx, reportWarning);
 
-    JSAutoRequest ar(cx);
+    JSAutoRequest areq(cx);
 
     
     JS::CompartmentOptions options;
     RootedObject global(cx, checkPtr(JS_NewGlobalObject(cx, &global_class,
                         nullptr, JS::FireOnNewGlobalHook, options)));
-    JSAutoCompartment ac(cx, global);
+    JSAutoRealm ar(cx, global);
 
     
 

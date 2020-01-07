@@ -1971,7 +1971,7 @@ PerformPromiseAll(JSContext *cx, JS::ForOfIterator& iterator, HandleObject C,
     
     RootedObject valuesArray(cx);
     if (unwrappedPromiseObj) {
-        JSAutoCompartment ac(cx, unwrappedPromiseObj);
+        JSAutoRealm ar(cx, unwrappedPromiseObj);
         valuesArray = NewDenseFullyAllocatedArray(cx, 0);
     } else {
         valuesArray = NewDenseFullyAllocatedArray(cx, 0);
@@ -2033,7 +2033,7 @@ PerformPromiseAll(JSContext *cx, JS::ForOfIterator& iterator, HandleObject C,
         { 
             
             
-            JSAutoCompartment ac(cx, valuesArray);
+            JSAutoRealm ar(cx, valuesArray);
             indexId = INT_TO_JSID(index);
             if (!DefineDataProperty(cx, valuesArray, indexId, UndefinedHandleValue))
                 return false;

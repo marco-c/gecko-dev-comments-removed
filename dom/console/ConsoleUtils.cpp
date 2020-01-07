@@ -80,7 +80,7 @@ ConsoleUtils::ReportForServiceWorkerScopeInternal(const nsAString& aScope,
   
   global = js::UncheckedUnwrap(global);
 
-  JSAutoCompartment ac(cx, global);
+  JSAutoRealm ar(cx, global);
 
   RootedDictionary<ConsoleEvent> event(cx);
 

@@ -3685,10 +3685,10 @@ Element::Animate(const Nullable<ElementOrCSSPseudoElement>& aTarget,
 
   
   
-  Maybe<JSAutoCompartment> ac;
+  Maybe<JSAutoRealm> ar;
   if (js::GetContextCompartment(aContext) !=
       js::GetObjectCompartment(ownerGlobal->GetGlobalJSObject())) {
-    ac.emplace(aContext, ownerGlobal->GetGlobalJSObject());
+    ar.emplace(aContext, ownerGlobal->GetGlobalJSObject());
   }
 
   AnimationTimeline* timeline = referenceElement->OwnerDoc()->Timeline();

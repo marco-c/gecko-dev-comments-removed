@@ -94,7 +94,7 @@ struct DevTools : public ::testing::Test {
     if (!newGlobal)
       return nullptr;
 
-    JSAutoCompartment ac(cx, newGlobal);
+    JSAutoRealm ar(cx, newGlobal);
 
     
 

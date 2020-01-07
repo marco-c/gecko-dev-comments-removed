@@ -251,7 +251,7 @@ CallbackObject::CallSetup::CallSetup(CallbackObject* aCallback,
   
   
   
-  mAc.emplace(cx, *mRootedCallable);
+  mAr.emplace(cx, *mRootedCallable);
 
   
   mCx = cx;
@@ -307,7 +307,7 @@ CallbackObject::CallSetup::~CallSetup()
   
   
   
-  mAc.reset();
+  mAr.reset();
 
   
   
@@ -376,7 +376,7 @@ CallbackObjectHolderBase::ToXPCOMCallback(CallbackObject* aCallback,
     return nullptr;
   }
 
-  JSAutoCompartment ac(cx, callback);
+  JSAutoRealm ar(cx, callback);
   RefPtr<nsXPCWrappedJS> wrappedJS;
   nsresult rv =
     nsXPCWrappedJS::GetNewOrUsed(callback, aIID, getter_AddRefs(wrappedJS));

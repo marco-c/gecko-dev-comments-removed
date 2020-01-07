@@ -1696,7 +1696,7 @@ CallObjFunc(RetT(*ObjFunc)(JSContext*, HandleObject), JSContext* cx, HandleObjec
 
     
     
-    JSAutoCompartment ac(cx, unwrappedObj);
+    JSAutoRealm ar(cx, unwrappedObj);
     return ObjFunc(cx, unwrappedObj);
 }
 
@@ -1711,7 +1711,7 @@ CallObjFunc(bool(*ObjFunc)(JSContext *cx, HandleObject obj, HandleValue key, boo
     
     RootedObject unwrappedObj(cx);
     unwrappedObj = UncheckedUnwrap(obj);
-    JSAutoCompartment ac(cx, unwrappedObj);
+    JSAutoRealm ar(cx, unwrappedObj);
 
     
     
@@ -1739,7 +1739,7 @@ CallObjFunc(bool(*ObjFunc)(JSContext* cx, Iter kind,
     {
         
         
-        JSAutoCompartment ac(cx, unwrappedObj);
+        JSAutoRealm ar(cx, unwrappedObj);
         if (!ObjFunc(cx, iterType, unwrappedObj, rval))
             return false;
     }
@@ -1778,7 +1778,7 @@ JS::MapGet(JSContext* cx, HandleObject obj, HandleValue key, MutableHandleValue 
     RootedObject unwrappedObj(cx);
     unwrappedObj = UncheckedUnwrap(obj);
     {
-        JSAutoCompartment ac(cx, unwrappedObj);
+        JSAutoRealm ar(cx, unwrappedObj);
         RootedValue wrappedKey(cx, key);
 
         
@@ -1809,7 +1809,7 @@ JS::MapSet(JSContext *cx, HandleObject obj, HandleValue key, HandleValue val)
     RootedObject unwrappedObj(cx);
     unwrappedObj = UncheckedUnwrap(obj);
     {
-        JSAutoCompartment ac(cx, unwrappedObj);
+        JSAutoRealm ar(cx, unwrappedObj);
 
         
         
@@ -1890,7 +1890,7 @@ JS::SetAdd(JSContext *cx, HandleObject obj, HandleValue key)
     RootedObject unwrappedObj(cx);
     unwrappedObj = UncheckedUnwrap(obj);
     {
-        JSAutoCompartment ac(cx, unwrappedObj);
+        JSAutoRealm ar(cx, unwrappedObj);
 
         
         RootedValue wrappedKey(cx, key);

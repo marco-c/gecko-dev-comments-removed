@@ -41,7 +41,7 @@ testPreserveJitCode(bool preserveJitCode, unsigned remainingIonScripts)
 
     RootedObject global(cx, createTestGlobal(preserveJitCode));
     CHECK(global);
-    JSAutoCompartment ac(cx, global);
+    JSAutoRealm ar(cx, global);
 
     
     

@@ -1286,16 +1286,14 @@ JS_RefreshCrossCompartmentWrappers(JSContext* cx, JS::Handle<JSObject*> obj);
 
 
 
-class MOZ_RAII JS_PUBLIC_API(JSAutoCompartment)
+class MOZ_RAII JS_PUBLIC_API(JSAutoRealm)
 {
     JSContext* cx_;
     JSCompartment* oldCompartment_;
   public:
-    JSAutoCompartment(JSContext* cx, JSObject* target
-                      MOZ_GUARD_OBJECT_NOTIFIER_PARAM);
-    JSAutoCompartment(JSContext* cx, JSScript* target
-                      MOZ_GUARD_OBJECT_NOTIFIER_PARAM);
-    ~JSAutoCompartment();
+    JSAutoRealm(JSContext* cx, JSObject* target MOZ_GUARD_OBJECT_NOTIFIER_PARAM);
+    JSAutoRealm(JSContext* cx, JSScript* target MOZ_GUARD_OBJECT_NOTIFIER_PARAM);
+    ~JSAutoRealm();
 
     MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 };

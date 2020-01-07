@@ -341,7 +341,7 @@ protected:
     
     
     
-    Maybe<JSAutoCompartment> mAc;
+    Maybe<JSAutoRealm> mAr;
 
     
     
