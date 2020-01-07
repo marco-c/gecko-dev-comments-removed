@@ -828,7 +828,6 @@ private:
   nsClassHashtable<nsUint64HashKey, AnonymousTemporaryFileCallback> mPendingAnonymousTemporaryFiles;
 
   mozilla::Atomic<bool> mShuttingDown;
-  int32_t mShutdownTimeout;
 
 #ifdef NIGHTLY_BUILD
   
