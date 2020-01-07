@@ -9,8 +9,7 @@ const { Cu } = require("chrome");
 const ObjectClient = require("devtools/shared/client/object-client");
 
 const defer = require("devtools/shared/defer");
-const EventEmitter = require("devtools/shared/old-event-emitter");
-const { Task } = require("devtools/shared/task");
+const EventEmitter = require("devtools/shared/event-emitter");
 
 
 
@@ -36,7 +35,7 @@ DomPanel.prototype = {
 
 
 
-  open: Task.async(function* () {
+  async open() {
     if (this._opening) {
       return this._opening;
     }
@@ -46,7 +45,7 @@ DomPanel.prototype = {
 
     
     if (!this.target.isRemote) {
-      yield this.target.makeRemote();
+      await this.target.makeRemote();
     }
 
     this.initialize();
@@ -56,11 +55,11 @@ DomPanel.prototype = {
     deferred.resolve(this);
 
     return this._opening;
-  }),
+  },
 
   
 
-  initialize: function () {
+  initialize: function() {
     this.panelWin.addEventListener("devtools/content/message",
       this.onContentMessage, true);
 
@@ -78,7 +77,7 @@ DomPanel.prototype = {
     this.shouldRefresh = true;
   },
 
-  destroy: Task.async(function* () {
+  async destroy() {
     if (this._destroying) {
       return this._destroying;
     }
@@ -93,11 +92,11 @@ DomPanel.prototype = {
 
     deferred.resolve();
     return this._destroying;
-  }),
+  },
 
   
 
-  refresh: function () {
+  refresh: function() {
     
     if (!this.isPanelVisible()) {
       return;
@@ -121,7 +120,7 @@ DomPanel.prototype = {
 
 
 
-  onTabNavigated: function () {
+  onTabNavigated: function() {
     this.shouldRefresh = true;
     this.refresh();
   },
@@ -129,7 +128,7 @@ DomPanel.prototype = {
   
 
 
-  onPanelVisibilityChange: function () {
+  onPanelVisibilityChange: function() {
     this.refresh();
   },
 
@@ -138,11 +137,11 @@ DomPanel.prototype = {
   
 
 
-  isPanelVisible: function () {
+  isPanelVisible: function() {
     return this._toolbox.currentToolId === "dom";
   },
 
-  getPrototypeAndProperties: function (grip) {
+  getPrototypeAndProperties: function(grip) {
     let deferred = defer();
 
     if (!grip.actor) {
@@ -179,14 +178,14 @@ DomPanel.prototype = {
     return deferred.promise;
   },
 
-  openLink: function (url) {
+  openLink: function(url) {
     let parentDoc = this._toolbox.doc;
     let iframe = parentDoc.getElementById("this._toolbox");
     let top = iframe.ownerDocument.defaultView.top;
     top.openUILinkIn(url, "tab");
   },
 
-  getRootGrip: function () {
+  getRootGrip: function() {
     let deferred = defer();
 
     
@@ -198,7 +197,7 @@ DomPanel.prototype = {
     return deferred.promise;
   },
 
-  postContentMessage: function (type, args) {
+  postContentMessage: function(type, args) {
     let data = {
       type: type,
       args: args,
@@ -213,7 +212,7 @@ DomPanel.prototype = {
     this.panelWin.dispatchEvent(event);
   },
 
-  onContentMessage: function (event) {
+  onContentMessage: function(event) {
     let data = event.data;
     let method = data.type;
     if (typeof this[method] == "function") {
