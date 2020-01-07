@@ -5,6 +5,8 @@
 
 
 
+const nodeConstants = require("devtools/shared/dom-node-constants");
+
 
 const { createFactory, createElement } = require("devtools/client/shared/vendor/react");
 const ReactDOM = require("devtools/client/shared/vendor/react-dom");
@@ -73,7 +75,22 @@ AccessibilityView.prototype = {
   },
 
   async selectNodeAccessible(walker, node) {
-    const accessible = await walker.getAccessibleFor(node);
+    let accessible = await walker.getAccessibleFor(node);
+    
+    
+    
+    
+    if (!accessible || accessible.indexInParent < 0) {
+      const { nodes: children } = await gToolbox.walker.children(node);
+      for (let child of children) {
+        if (child.nodeType === nodeConstants.TEXT_NODE) {
+          accessible = await walker.getAccessibleFor(child);
+          if (accessible && accessible.indexInParent >= 0) {
+            break;
+          }
+        }
+      }
+    }
 
     await this.store.dispatch(select(walker, accessible));
     window.emit(EVENTS.NEW_ACCESSIBLE_FRONT_HIGHLIGHTED);

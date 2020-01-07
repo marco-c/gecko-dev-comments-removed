@@ -2023,7 +2023,16 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
     const accService = Cc["@mozilla.org/accessibilityService;1"].getService(
       Ci.nsIAccessibilityService);
-    const acc = accService.getAccessibleFor(node.rawNode);
+    let acc = accService.getAccessibleFor(node.rawNode);
+    
+    
+    if (!acc || acc.indexInParent < 0) {
+      const inlineTextChild = this.inlineTextChild(node);
+      if (inlineTextChild) {
+        acc = accService.getAccessibleFor(inlineTextChild.rawNode);
+      }
+    }
+
     return acc && acc.indexInParent > -1;
   },
 });
