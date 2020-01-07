@@ -133,7 +133,6 @@ nsHttpTransaction::nsHttpTransaction()
     , mWaitingOnPipeOut(false)
     , mReportedStart(false)
     , mReportedResponseHeader(false)
-    , mForTakeResponseHead(nullptr)
     , mResponseHeadTaken(false)
     , mForTakeResponseTrailers(nullptr)
     , mResponseTrailersTaken(false)
@@ -230,7 +229,6 @@ nsHttpTransaction::~nsHttpTransaction()
     mConnection = nullptr;
 
     delete mResponseHead;
-    delete mForTakeResponseHead;
     delete mChunkedDecoder;
     ReleaseBlockingTransaction();
 }
@@ -469,21 +467,12 @@ nsHttpTransaction::TakeResponseHead()
 
     
     
-    nsHttpResponseHead *head;
-    if (mForTakeResponseHead) {
-        head = mForTakeResponseHead;
-        mForTakeResponseHead = nullptr;
-        return head;
-    }
-
-    
-    
     if (!mHaveAllHeaders) {
         NS_WARNING("response headers not available or incomplete");
         return nullptr;
     }
 
-    head = mResponseHead;
+    nsHttpResponseHead *head = mResponseHead;
     mResponseHead = nullptr;
     return head;
 }
@@ -633,7 +622,7 @@ nsHttpTransaction::OnTransportStatus(nsITransport* transport,
                 
                 
                 
-                if ((mFastOpenStatus != TFO_DATA_SENT) && 
+                if ((mFastOpenStatus != TFO_DATA_SENT) &&
                     !mTimings.secureConnectionStart.IsNull()) {
                     mTimings.secureConnectionStart = tnow;
                 }

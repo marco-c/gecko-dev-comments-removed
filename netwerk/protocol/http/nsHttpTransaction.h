@@ -381,7 +381,6 @@ private:
     bool                            mReportedResponseHeader;
 
     
-    nsHttpResponseHead             *mForTakeResponseHead;
     bool                            mResponseHeadTaken;
     nsAutoPtr<nsHttpHeaderArray>    mForTakeResponseTrailers;
     bool                            mResponseTrailersTaken;
