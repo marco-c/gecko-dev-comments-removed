@@ -9,6 +9,9 @@ var gSearchResultsPane = {
   listSearchTooltips: new Set(),
   listSearchMenuitemIndicators: new Set(),
   searchInput: null,
+  
+  
+  searchKeywords: new WeakMap(),
   inited: false,
 
   init() {
@@ -264,7 +267,7 @@ var gSearchResultsPane = {
 
         if (!child.classList.contains("header") &&
             !child.classList.contains("subcategory") &&
-            this.searchWithinNode(child, this.query)) {
+            await this.searchWithinNode(child, this.query)) {
           child.hidden = false;
           child.classList.remove("visually-hidden");
 
@@ -327,7 +330,7 @@ var gSearchResultsPane = {
 
 
 
-  searchWithinNode(nodeObject, searchPhrase) {
+  async searchWithinNode(nodeObject, searchPhrase) {
     let matchesFound = false;
     if (nodeObject.childElementCount == 0 ||
         nodeObject.tagName == "label" ||
@@ -367,7 +370,19 @@ var gSearchResultsPane = {
         this.queryMatchesContent(nodeObject.getAttribute("value"), searchPhrase) : false;
 
       
-      let keywordsResult = this.queryMatchesContent(nodeObject.getAttribute("searchkeywords"), searchPhrase);
+      
+      let keywordsResult =
+        nodeObject.hasAttribute("search-l10n-ids") &&
+        await this.matchesSearchL10nIDs(nodeObject, searchPhrase);
+
+      if (!keywordsResult) {
+        
+        
+        keywordsResult =
+          !keywordsResult &&
+          nodeObject.hasAttribute("searchkeywords") &&
+          this.queryMatchesContent(nodeObject.getAttribute("searchkeywords"), searchPhrase);
+      }
 
       
       if (keywordsResult && (nodeObject.tagName === "button" || nodeObject.tagName == "menulist")) {
@@ -398,12 +413,12 @@ var gSearchResultsPane = {
     if (nodeObject.tagName == "deck" && nodeObject.id != "historyPane") {
       let index = nodeObject.selectedIndex;
       if (index != -1) {
-        let result = this.searchChildNodeIfVisible(nodeObject, index, searchPhrase);
+        let result = await this.searchChildNodeIfVisible(nodeObject, index, searchPhrase);
         matchesFound = matchesFound || result;
       }
     } else {
       for (let i = 0; i < nodeObject.childNodes.length; i++) {
-        let result = this.searchChildNodeIfVisible(nodeObject, i, searchPhrase);
+        let result = await this.searchChildNodeIfVisible(nodeObject, i, searchPhrase);
         matchesFound = matchesFound || result;
       }
     }
@@ -421,16 +436,66 @@ var gSearchResultsPane = {
 
 
 
-  searchChildNodeIfVisible(nodeObject, index, searchPhrase) {
+  async searchChildNodeIfVisible(nodeObject, index, searchPhrase) {
     let result = false;
     if (!nodeObject.childNodes[index].hidden && nodeObject.getAttribute("data-hidden-from-search") !== "true") {
-      result = this.searchWithinNode(nodeObject.childNodes[index], searchPhrase);
+      result = await this.searchWithinNode(nodeObject.childNodes[index], searchPhrase);
       
       if (result && nodeObject.tagName === "menulist") {
         this.listSearchTooltips.add(nodeObject);
       }
     }
     return result;
+  },
+
+  
+
+
+
+
+
+
+
+
+  async matchesSearchL10nIDs(nodeObject, searchPhrase) {
+    if (!this.searchKeywords.has(nodeObject)) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      const refs = nodeObject.getAttribute("search-l10n-ids")
+        .split(",")
+        .map(s => s.trim().split(".")).filter(s => s[0].length > 0);
+
+      const messages = await document.l10n.formatMessages(refs.map(ref => [ref[0]]));
+
+      
+      
+      let keywords = messages.map((msg, i) => {
+        if (msg === null) {
+          console.warn(`Missing search l10n id "${refs[i][0]}"`);
+          return null;
+        }
+        if (refs[i][1]) {
+          let attr = msg.attrs.find(a => a.name === refs[i][1]);
+          if (attr) {
+            return attr.value;
+          }
+          return null;
+        }
+        return msg.value;
+      }).filter(keyword => keyword !== null).join(" ");
+
+      this.searchKeywords.set(nodeObject, keywords);
+      return this.queryMatchesContent(keywords, searchPhrase);
+    }
+
+    return this.queryMatchesContent(this.searchKeywords.get(nodeObject), searchPhrase);
   },
 
   
