@@ -14,37 +14,27 @@ function shouldBeImminentlyDistrusted(aTransportSecurityInfo) {
   Assert.ok(isDistrust, "This host should be imminently distrusted");
 }
 
-do_get_profile();
+function shouldNotBeImminentlyDistrusted(aTransportSecurityInfo) {
+  let isDistrust = aTransportSecurityInfo.securityState &
+                     Ci.nsIWebProgressListener.STATE_CERT_DISTRUST_IMMINENT;
+  Assert.ok(!isDistrust, "This host should not be imminently distrusted");
+}
 
-const certDB = Cc["@mozilla.org/security/x509certdb;1"]
-                 .getService(Ci.nsIX509CertDB);
+do_get_profile();
 
 add_tls_server_setup("SymantecSanctionsServer", "test_symantec_apple_google");
 
 
+add_connection_test("symantec-whitelist-after-cutoff.example.com",
+                    PRErrorCodeSuccess, null, shouldNotBeImminentlyDistrusted);
+
+add_connection_test("symantec-whitelist-before-cutoff.example.com",
+                    PRErrorCodeSuccess, null, shouldNotBeImminentlyDistrusted);
+
+
 add_connection_test("symantec-not-whitelisted-after-cutoff.example.com",
-                    PRErrorCodeSuccess, null, shouldBeImminentlyDistrusted);
+                    PRErrorCodeSuccess, null, shouldNotBeImminentlyDistrusted);
 
 
 add_connection_test("symantec-not-whitelisted-before-cutoff.example.com",
-                    SEC_ERROR_UNKNOWN_ISSUER, null, null);
-
-
-
-
-function run_test() {
-  addCertFromFile(certDB, "test_symantec_apple_google/real-google-g2-intermediate.pem", ",,");
-  let whitelistedCert = constructCertFromFile("test_symantec_apple_google/real-googlecom.pem");
-
-  
-  
-  Services.prefs.setIntPref("security.OCSP.enabled", 0);
-
-  
-  const VALIDATION_TIME = 1518739200;
-
-  checkCertErrorGenericAtTime(certDB, whitelistedCert, PRErrorCodeSuccess,
-                              certificateUsageSSLServer, VALIDATION_TIME);
-
-  run_next_test();
-}
+                    PRErrorCodeSuccess, null, shouldBeImminentlyDistrusted);

@@ -23,7 +23,6 @@
 #include "mozilla/Unused.h"
 #include "nsCRTGlue.h"
 #include "nsNSSCertificate.h"
-#include "nsNSSCertValidity.h"
 #include "nsServiceManagerUtils.h"
 #include "nsThreadUtils.h"
 #include "nss.h"
@@ -37,8 +36,6 @@
 #include "TrustOverrideUtils.h"
 #include "TrustOverride-StartComAndWoSignData.inc"
 #include "TrustOverride-GlobalSignData.inc"
-#include "TrustOverride-SymantecData.inc"
-#include "TrustOverride-AppleGoogleDigiCertData.inc"
 
 using namespace mozilla;
 using namespace mozilla::pkix;
@@ -856,7 +853,7 @@ NSSCertDBTrustDomain::IsChainValid(const DERArray& certArray, Time time,
 
     bool foundRequiredIntermediate = false;
     RefPtr<nsNSSCertList> intCertList = intCerts->GetCertList();
-    nsrv = intCertList->ForEachCertificateInChain(
+    intCertList->ForEachCertificateInChain(
       [&foundRequiredIntermediate] (nsCOMPtr<nsIX509Cert> aCert, bool aHasMore,
                                      bool& aContinue) {
         
@@ -871,45 +868,8 @@ NSSCertDBTrustDomain::IsChainValid(const DERArray& certArray, Time time,
         return NS_OK;
     });
 
-    if (NS_FAILED(nsrv)) {
-      return Result::FATAL_ERROR_LIBRARY_FAILURE;
-    }
-
     if (!foundRequiredIntermediate) {
       return Result::ERROR_POLICY_VALIDATION_FAILED;
-    }
-  }
-
-  
-  
-  
-
-  
-  
-  
-  if (mHostname && CertDNIsInList(root.get(), RootSymantecDNs)) {
-    rootCert = nullptr; 
-    nsCOMPtr<nsIX509CertList> intCerts;
-    nsCOMPtr<nsIX509Cert> eeCert;
-
-    nsrv = nssCertList->SegmentCertificateChain(rootCert, intCerts, eeCert);
-    if (NS_FAILED(nsrv)) {
-      
-      return Result::FATAL_ERROR_LIBRARY_FAILURE;
-    }
-
-    
-    
-    static const PRTime JUNE_1_2016 = 1464739200000000;
-
-    bool isDistrusted = false;
-    nsrv = CheckForSymantecDistrust(intCerts, eeCert, JUNE_1_2016,
-                                    RootAppleAndGoogleSPKIs, isDistrusted);
-    if (NS_FAILED(nsrv)) {
-      return Result::FATAL_ERROR_LIBRARY_FAILURE;
-    }
-    if (isDistrusted) {
-      return Result::ERROR_UNKNOWN_ISSUER;
     }
   }
 

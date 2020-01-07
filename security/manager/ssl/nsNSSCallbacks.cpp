@@ -38,8 +38,8 @@
 
 #include "TrustOverrideUtils.h"
 #include "TrustOverride-SymantecData.inc"
-#include "TrustOverride-AppleGoogleDigiCertData.inc"
-#include "TrustOverride-TestImminentDistrustData.inc"
+#include "TrustOverride-AppleGoogleData.inc"
+
 
 using namespace mozilla;
 using namespace mozilla::pkix;
@@ -1240,7 +1240,7 @@ DetermineEVAndCTStatusAndSetNewCert(RefPtr<nsSSLStatus> sslStatus,
 
 static nsresult
 IsCertificateDistrustImminent(nsIX509CertList* aCertList,
-                               bool& isDistrusted) {
+                               bool& aResult) {
   if (!aCertList) {
     return NS_ERROR_INVALID_POINTER;
   }
@@ -1256,38 +1256,55 @@ IsCertificateDistrustImminent(nsIX509CertList* aCertList,
   }
 
   
-  
-  
-  
-  
-  UniqueCERTCertificate nssEECert(eeCert->GetCert());
-  if (!nssEECert) {
-    return NS_ERROR_FAILURE;
+  nsCOMPtr<nsIX509CertValidity> validity;
+  rv = eeCert->GetValidity(getter_AddRefs(validity));
+  if (NS_FAILED(rv)) {
+    return rv;
   }
-  isDistrusted = CertDNIsInList(nssEECert.get(),
-                                TestImminentDistrustEndEntityDNs);
-  if (isDistrusted) {
-    
+
+  PRTime notBefore;
+  rv = validity->GetNotBefore(&notBefore);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  
+  
+  static const PRTime JUNE_1_2016 = 1464739200000000;
+
+  
+  
+  if (notBefore >= JUNE_1_2016) {
+    aResult = false;
     return NS_OK;
   }
 
+  
   UniqueCERTCertificate nssRootCert(rootCert->GetCert());
-  if (!nssRootCert) {
-    return NS_ERROR_FAILURE;
+  
+  if (!CertDNIsInList(nssRootCert.get(), RootSymantecDNs)) {
+    aResult = false;
+    return NS_OK;
   }
 
   
-  
-  
-  if (CertDNIsInList(nssRootCert.get(), RootSymantecDNs)) {
-    static const PRTime NULL_TIME = 0;
+  bool foundInWhitelist = false;
+  RefPtr<nsNSSCertList> intCertList = intCerts->GetCertList();
 
-    rv = CheckForSymantecDistrust(intCerts, eeCert, NULL_TIME,
-                                  RootAppleAndGoogleSPKIs, isDistrusted);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-  }
+  intCertList->ForEachCertificateInChain(
+    [&foundInWhitelist] (nsCOMPtr<nsIX509Cert> aCert, bool aHasMore,
+                          bool& aContinue) {
+      
+      UniqueCERTCertificate nssCert(aCert->GetCert());
+      if (CertDNIsInList(nssCert.get(), RootAppleAndGoogleDNs)) {
+        foundInWhitelist = true;
+        aContinue = false;
+      }
+      return NS_OK;
+  });
+
+  
+  aResult = !foundInWhitelist;
   return NS_OK;
 }
 
