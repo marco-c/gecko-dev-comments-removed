@@ -206,6 +206,8 @@ add_task(async function test_sendPendingPings() {
 
   await TelemetrySend.testWaitOnOutgoingPings();
   PingServer.resetPingHandler();
+  
+  fakeGeneratePingId(() => TelemetryUtils.generateUUID());
 });
 
 add_task(async function test_sendDateHeader() {
@@ -313,6 +315,9 @@ add_task(async function test_backoffTimeout() {
                "Should have recorded sending success in histograms.");
   Assert.equal(histogramValueCount(histSendTimeFail.snapshot()), sendAttempts,
                "Should have recorded send failure times in histograms.");
+
+  
+  fakeGeneratePingId(() => TelemetryUtils.generateUUID());
 });
 
 add_task(async function test_discardBigPings() {
@@ -480,6 +485,9 @@ add_task(async function test_persistCurrentPingsOnShutdown() {
   
   await TelemetrySend.reset();
   Assert.equal(TelemetrySend.pendingPingCount, PING_COUNT, "Should have the correct pending ping count");
+
+  
+  fakeGeneratePingId(() => TelemetryUtils.generateUUID());
 });
 
 add_task(async function test_sendCheckOverride() {
