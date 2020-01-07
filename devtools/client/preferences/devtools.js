@@ -75,6 +75,8 @@ pref("devtools.flexboxinspector.enabled", false);
 
 pref("devtools.new-animationinspector.enabled", false);
 
+pref("devtools.inspector.fonteditor.enabled", false);
+
 
 pref("devtools.gridinspector.gridOutlineMaxColumns", 50);
 pref("devtools.gridinspector.gridOutlineMaxRows", 50);
