@@ -708,13 +708,14 @@ function CreateArrayIterator(obj, kind) {
 
 function ArrayIteratorNext() {
     
-    if (!IsObject(this) || !IsArrayIterator(this)) {
+    var obj;
+    if (!IsObject(this) || (obj = GuardToArrayIterator(this)) === null) {
         return callFunction(CallArrayIteratorMethodIfWrapped, this,
                             "ArrayIteratorNext");
     }
 
     
-    var a = UnsafeGetReservedSlot(this, ITERATOR_SLOT_TARGET);
+    var a = UnsafeGetReservedSlot(obj, ITERATOR_SLOT_TARGET);
     var result = { value: undefined, done: false };
 
     
@@ -725,10 +726,10 @@ function ArrayIteratorNext() {
 
     
     
-    var index = UnsafeGetReservedSlot(this, ITERATOR_SLOT_NEXT_INDEX);
+    var index = UnsafeGetReservedSlot(obj, ITERATOR_SLOT_NEXT_INDEX);
 
     
-    var itemKind = UnsafeGetInt32FromReservedSlot(this, ITERATOR_SLOT_ITEM_KIND);
+    var itemKind = UnsafeGetInt32FromReservedSlot(obj, ITERATOR_SLOT_ITEM_KIND);
 
     
     var len;
@@ -746,13 +747,13 @@ function ArrayIteratorNext() {
 
     
     if (index >= len) {
-        UnsafeSetReservedSlot(this, ITERATOR_SLOT_TARGET, null);
+        UnsafeSetReservedSlot(obj, ITERATOR_SLOT_TARGET, null);
         result.done = true;
         return result;
     }
 
     
-    UnsafeSetReservedSlot(this, ITERATOR_SLOT_NEXT_INDEX, index + 1);
+    UnsafeSetReservedSlot(obj, ITERATOR_SLOT_NEXT_INDEX, index + 1);
 
     
     if (itemKind === ITEM_KIND_VALUE) {
