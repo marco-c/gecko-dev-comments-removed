@@ -634,7 +634,7 @@ public:
   {
     sThreadInfo.set(aInfo);
     AutoProfilerLabel::sPseudoStack.set(
-      aInfo ? aInfo->RacyInfo().get() : nullptr);  
+      aInfo ? &aInfo->RacyInfo()->PseudoStack() : nullptr);
   }
 
 private:
@@ -742,9 +742,9 @@ MergeStacks(uint32_t aFeatures, bool aIsSynchronous,
   
   
 
-  NotNull<RacyThreadInfo*> racyInfo = aThreadInfo.RacyInfo();
-  js::ProfileEntry* pseudoEntries = racyInfo->entries;
-  uint32_t pseudoCount = racyInfo->stackSize();
+  PseudoStack& pseudoStack = aThreadInfo.RacyInfo()->PseudoStack();
+  js::ProfileEntry* pseudoEntries = pseudoStack.entries;
+  uint32_t pseudoCount = pseudoStack.stackSize();
   JSContext* context = aThreadInfo.mContext;
 
   
@@ -872,7 +872,7 @@ MergeStacks(uint32_t aFeatures, bool aIsSynchronous,
       if (pseudoEntry.kind() != js::ProfileEntry::Kind::CPP_MARKER_FOR_JS) {
         
         MOZ_ASSERT_IF(pseudoEntry.isJs() && pseudoEntry.script() && !pseudoEntry.pc(),
-                      &pseudoEntry == &racyInfo->entries[racyInfo->stackSize() - 1]);
+                      &pseudoEntry == &pseudoStack.entries[pseudoStack.stackSize() - 1]);
         aCollector.CollectPseudoEntry(pseudoEntry);
       }
       pseudoIndex++;
@@ -1011,16 +1011,16 @@ DoEHABIBacktrace(PSLockRef aLock, const ThreadInfo& aThreadInfo,
 
   const mcontext_t* mcontext = &aRegs.mContext->uc_mcontext;
   mcontext_t savedContext;
-  NotNull<RacyThreadInfo*> racyInfo = aThreadInfo.RacyInfo();
+  PseudoStack& pseudoStack = aThreadInfo.RacyInfo()->PseudoStack();
 
   
   
   
   
-  for (uint32_t i = racyInfo->stackSize(); i > 0; --i) {
+  for (uint32_t i = pseudoStack.stackSize(); i > 0; --i) {
     
     
-    js::ProfileEntry& entry = racyInfo->entries[i - 1];
+    js::ProfileEntry& entry = pseudoStack.entries[i - 1];
     if (!entry.isJs() && strcmp(entry.label(), "EnterJIT") == 0) {
       
       
