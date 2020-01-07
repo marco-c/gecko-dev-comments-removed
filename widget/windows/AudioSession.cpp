@@ -21,6 +21,7 @@
 #include "nsXULAppAPI.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Mutex.h"
+#include "mozilla/WindowsVersion.h"
 
 #include <objbase.h>
 
@@ -287,6 +288,26 @@ AudioSession::Start()
 }
 
 void
+SpawnASCReleaseThread(RefPtr<IAudioSessionControl>&& aASC)
+{
+  
+  
+  
+  IAudioSessionControl* rawPtr = nullptr;
+  aASC.forget(&rawPtr);
+  MOZ_ASSERT(rawPtr);
+  PRThread* thread =
+    PR_CreateThread(PR_USER_THREAD,
+                    [](void* aRawPtr) { static_cast<IAudioSessionControl*>(aRawPtr)->Release(); },
+                    rawPtr, PR_PRIORITY_NORMAL, PR_LOCAL_THREAD, PR_UNJOINABLE_THREAD, 0);
+  if (!thread) {
+    
+    rawPtr->Release();
+  }
+}
+
+
+void
 AudioSession::StopInternal()
 {
   mMutex.AssertCurrentThreadOwns();
@@ -296,7 +317,16 @@ AudioSession::StopInternal()
     
     mAudioSessionControl->UnregisterAudioSessionNotification(this);
   }
-  mAudioSessionControl = nullptr;
+
+  
+  if (mAudioSessionControl && !IsWin8OrLater()) {
+    
+    
+    
+    SpawnASCReleaseThread(Move(mAudioSessionControl));
+  } else {
+    mAudioSessionControl = nullptr;
+  }
 }
 
 nsresult
