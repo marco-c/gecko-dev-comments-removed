@@ -504,6 +504,10 @@ NS_InitXPCOM2(nsIServiceManager** aResult,
   
   gXPCOMShuttingDown = false;
 
+  
+  
+  mozilla::AvailableMemoryTracker::Init();
+
 #ifdef XP_UNIX
   
   
@@ -715,7 +719,7 @@ NS_InitXPCOM2(nsIServiceManager** aResult,
 
   mozilla::ScriptPreloader::GetSingleton();
   mozilla::scache::StartupCache::GetSingleton();
-  mozilla::AvailableMemoryTracker::Init();
+  mozilla::AvailableMemoryTracker::Activate();
 
   
   NS_CreateServicesFromCategory(NS_XPCOM_STARTUP_CATEGORY,
