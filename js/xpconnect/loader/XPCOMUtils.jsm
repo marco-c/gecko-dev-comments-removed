@@ -274,7 +274,7 @@ var XPCOMUtils = {
       
       
       
-      this.defineLazyServiceGetter(aObject, name, service[0], service[1]);
+      this.defineLazyServiceGetter(aObject, name, service[0], service[1] || null);
     }
   },
 
