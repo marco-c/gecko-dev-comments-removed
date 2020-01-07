@@ -271,6 +271,10 @@ var interfaceNamesInGlobalScope =
 
     "DelayNode",
 
+    "DesktopNotification",
+
+    "DesktopNotificationCenter",
+
     "DeviceLightEvent",
 
     "DeviceMotionEvent",
