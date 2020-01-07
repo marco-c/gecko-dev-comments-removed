@@ -713,7 +713,7 @@ nsXPCWrappedJSClass::GetRootJSObject(JSContext* cx, JSObject* aJSObjArg)
 
 bool
 nsXPCWrappedJSClass::GetArraySizeFromParam(JSContext* cx,
-                                           const XPTMethodDescriptor* method,
+                                           const nsXPTMethodInfo* method,
                                            const nsXPTParamInfo& param,
                                            uint16_t methodIndex,
                                            uint8_t paramIndex,
@@ -727,7 +727,7 @@ nsXPCWrappedJSClass::GetArraySizeFromParam(JSContext* cx,
     if (NS_FAILED(rv))
         return false;
 
-    const nsXPTParamInfo& arg_param = method->params[argnum];
+    const nsXPTParamInfo& arg_param = method->GetParam(argnum);
 
     
     
@@ -744,7 +744,7 @@ nsXPCWrappedJSClass::GetArraySizeFromParam(JSContext* cx,
 
 bool
 nsXPCWrappedJSClass::GetInterfaceTypeFromParam(JSContext* cx,
-                                               const XPTMethodDescriptor* method,
+                                               const nsXPTMethodInfo* method,
                                                const nsXPTParamInfo& param,
                                                uint16_t methodIndex,
                                                const nsXPTType& type,
@@ -766,7 +766,7 @@ nsXPCWrappedJSClass::GetInterfaceTypeFromParam(JSContext* cx,
         if (NS_FAILED(rv))
             return false;
 
-        const nsXPTParamInfo& arg_param = method->params[argnum];
+        const nsXPTParamInfo& arg_param = method->GetParam(argnum);
         const nsXPTType& arg_type = arg_param.GetType();
 
         if (arg_type.TagPart() == nsXPTType::T_IID) {
@@ -828,7 +828,7 @@ nsXPCWrappedJSClass::CleanupOutparams(JSContext* cx, uint16_t methodIndex,
 {
     
     for (uint8_t i = 0; i < n; i++) {
-        const nsXPTParamInfo& param = info->params[i];
+        const nsXPTParamInfo& param = info->GetParam(i);
         if (!param.IsOut())
             continue;
 
@@ -1027,7 +1027,7 @@ nsXPCWrappedJSClass::CheckForException(XPCCallContext & ccx,
 
 NS_IMETHODIMP
 nsXPCWrappedJSClass::CallMethod(nsXPCWrappedJS* wrapper, uint16_t methodIndex,
-                                const XPTMethodDescriptor* info_,
+                                const nsXPTMethodInfo* info,
                                 nsXPTCMiniVariant* nativeParams)
 {
     Value* sp = nullptr;
@@ -1037,8 +1037,7 @@ nsXPCWrappedJSClass::CallMethod(nsXPCWrappedJS* wrapper, uint16_t methodIndex,
     bool success;
     bool readyToDoTheCall = false;
     nsID  param_iid;
-    const nsXPTMethodInfo* info = static_cast<const nsXPTMethodInfo*>(info_);
-    const char* name = info->name;
+    const char* name = info->GetName();
     bool foundDependentParam;
 
     
@@ -1086,9 +1085,9 @@ nsXPCWrappedJSClass::CallMethod(nsXPCWrappedJS* wrapper, uint16_t methodIndex,
     AutoSavePendingResult apr(xpccx);
 
     
-    uint8_t paramCount = info->num_args;
+    uint8_t paramCount = info->GetParamCount();
     uint8_t argc = paramCount -
-        (paramCount && XPT_PD_IS_RETVAL(info->params[paramCount-1].flags) ? 1 : 0);
+        (paramCount && XPT_PD_IS_RETVAL(info->GetParam(paramCount - 1).flags) ? 1 : 0);
 
     if (!scriptEval.StartEvaluating(obj))
         goto pre_call_clean_up;
@@ -1101,7 +1100,7 @@ nsXPCWrappedJSClass::CallMethod(nsXPCWrappedJS* wrapper, uint16_t methodIndex,
     
 
     
-    if (!(XPT_MD_IS_SETTER(info->flags) || XPT_MD_IS_GETTER(info->flags))) {
+    if (!(info->IsSetter() || info->IsGetter())) {
         
         
         
@@ -1131,7 +1130,7 @@ nsXPCWrappedJSClass::CallMethod(nsXPCWrappedJS* wrapper, uint16_t methodIndex,
             
 
             if (paramCount) {
-                const nsXPTParamInfo& firstParam = info->params[0];
+                const nsXPTParamInfo& firstParam = info->GetParam(0);
                 if (firstParam.IsIn()) {
                     const nsXPTType& firstType = firstParam.GetType();
 
@@ -1195,7 +1194,7 @@ nsXPCWrappedJSClass::CallMethod(nsXPCWrappedJS* wrapper, uint16_t methodIndex,
     
     
     for (i = 0; i < argc; i++) {
-        const nsXPTParamInfo& param = info->params[i];
+        const nsXPTParamInfo& param = info->GetParam(i);
         const nsXPTType& type = param.GetType();
         nsXPTType datum_type;
         uint32_t array_count;
@@ -1297,9 +1296,9 @@ pre_call_clean_up:
 
     RefPtr<Exception> syntheticException;
     RootedValue rval(cx);
-    if (XPT_MD_IS_GETTER(info->flags)) {
+    if (info->IsGetter()) {
         success = JS_GetProperty(cx, obj, name, &rval);
-    } else if (XPT_MD_IS_SETTER(info->flags)) {
+    } else if (info->IsSetter()) {
         rval = *argv;
         success = JS_SetProperty(cx, obj, name, rval);
     } else {
@@ -1340,7 +1339,7 @@ pre_call_clean_up:
 
     foundDependentParam = false;
     for (i = 0; i < paramCount; i++) {
-        const nsXPTParamInfo& param = info->params[i];
+        const nsXPTParamInfo& param = info->GetParam(i);
         MOZ_ASSERT(!param.IsShared(), "[shared] implies [noscript]!");
         if (!param.IsOut() && !param.IsDipper())
             continue;
@@ -1389,7 +1388,7 @@ pre_call_clean_up:
     
     if (foundDependentParam && i == paramCount) {
         for (i = 0; i < paramCount; i++) {
-            const nsXPTParamInfo& param = info->params[i];
+            const nsXPTParamInfo& param = info->GetParam(i);
             if (!param.IsOut())
                 continue;
 
