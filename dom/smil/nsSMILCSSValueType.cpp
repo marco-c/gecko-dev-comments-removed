@@ -579,33 +579,6 @@ nsSMILCSSValueType::ValueFromAnimationValue(nsCSSPropertyID aPropID,
 }
 
 
-void
-nsSMILCSSValueType::ValueToString(const nsSMILValue& aValue,
-                                  nsAString& aString)
-{
-  MOZ_ASSERT(aValue.mType == &nsSMILCSSValueType::sSingleton,
-             "Unexpected SMIL value type");
-  const ValueWrapper* wrapper = ExtractValueWrapper(aValue);
-  if (!wrapper) {
-    return;
-  }
-
-  if (nsCSSProps::IsShorthand(wrapper->mPropID)) {
-    
-    
-    
-    Servo_Shorthand_AnimationValues_Serialize(wrapper->mPropID,
-                                              &wrapper->mServoValues,
-                                              &aString);
-    return;
-  }
-
-  Servo_AnimationValue_Serialize(wrapper->mServoValues[0],
-                                 wrapper->mPropID,
-                                 &aString);
-}
-
-
 bool
 nsSMILCSSValueType::SetPropertyValues(const nsSMILValue& aValue,
                                       DeclarationBlock& aDecl)
