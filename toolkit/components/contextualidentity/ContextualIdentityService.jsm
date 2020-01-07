@@ -7,6 +7,9 @@ var EXPORTED_SYMBOLS = ["ContextualIdentityService"];
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 
+
+const MAX_USER_CONTEXT_ID = -1 >>> 0;
+const LAST_CONTAINERS_JSON_VERSION = 4;
 const SAVE_DELAY_MS = 1500;
 const CONTEXTUAL_IDENTITY_ENABLED_PREF = "privacy.userContext.enabled";
 
@@ -62,6 +65,8 @@ function _ContextualIdentityService(path) {
 }
 
 _ContextualIdentityService.prototype = {
+  LAST_CONTAINERS_JSON_VERSION,
+
   _defaultIdentities: [
     { userContextId: 1,
       public: true,
@@ -100,7 +105,19 @@ _ContextualIdentityService.prototype = {
       icon: "",
       color: "",
       name: "userContextIdInternal.thumbnail",
-      accessKey: "" },
+      accessKey: "",
+    },
+    
+    
+    
+    
+    { userContextId: MAX_USER_CONTEXT_ID,
+      public: false,
+      icon: "",
+      color: "",
+      name: "userContextIdInternal.webextStorageLocal",
+      accessKey: "",
+    },
   ],
 
   _identities: null,
@@ -148,10 +165,19 @@ _ContextualIdentityService.prototype = {
 
   resetDefault() {
     this._identities = [];
+
     
-    this._lastUserContextId = this._defaultIdentities.length;
-    for (let i = 0; i < this._lastUserContextId; i++) {
-      this._identities.push(Object.assign({}, this._defaultIdentities[i]));
+    
+    
+    this._lastUserContextId = this._defaultIdentities
+      .filter(identity => identity.userContextId < MAX_USER_CONTEXT_ID)
+      .map(identity => identity.userContextId)
+      .sort((a, b) => a >= b)
+      .pop();
+
+    
+    for (let identity of this._defaultIdentities) {
+      this._identities.push(Object.assign({}, identity));
     }
     this._openedIdentities = new Set();
 
@@ -202,7 +228,7 @@ _ContextualIdentityService.prototype = {
     this._saverCallback = null;
 
     let object = {
-      version: 3,
+      version: LAST_CONTAINERS_JSON_VERSION,
       lastUserContextId: this._lastUserContextId,
       identities: this._identities
     };
@@ -215,8 +241,18 @@ _ContextualIdentityService.prototype = {
   create(name, icon, color) {
     this.ensureDataReady();
 
+    
+    let userContextId = ++this._lastUserContextId;
+
+    
+    
+    
+    if (userContextId >= MAX_USER_CONTEXT_ID) {
+      throw new Error(`Unable to create a new userContext with id '${userContextId}'`);
+    }
+
     let identity = {
-      userContextId: ++this._lastUserContextId,
+      userContextId,
       public: true,
       icon,
       color,
@@ -296,7 +332,12 @@ _ContextualIdentityService.prototype = {
       saveNeeded = true;
     }
 
-    if (data.version != 3) {
+    if (data.version == 3) {
+      data = this.migrate3to4(data);
+      saveNeeded = true;
+    }
+
+    if (data.version != LAST_CONTAINERS_JSON_VERSION) {
       dump("ERROR - ContextualIdentityService - Unknown version found in " + this._path + "\n");
       this.loadError(null);
       return;
@@ -335,6 +376,12 @@ _ContextualIdentityService.prototype = {
     }
   },
 
+  getPrivateUserContextIds() {
+    return this._identities
+      .filter(identity => !identity.public)
+      .map(identity => identity.userContextId);
+  },
+
   getPublicIdentities() {
     this.ensureDataReady();
     return Cu.cloneInto(this._identities.filter(info => info.public), {});
@@ -343,6 +390,13 @@ _ContextualIdentityService.prototype = {
   getPrivateIdentity(name) {
     this.ensureDataReady();
     return Cu.cloneInto(this._identities.find(info => !info.public && info.name == name), {});
+  },
+
+  
+  
+  
+  getDefaultPrivateIdentity(name) {
+    return Cu.cloneInto(this._defaultIdentities.find(info => !info.public && info.name == name), {});
   },
 
   getPublicIdentityFromId(userContextId) {
@@ -408,6 +462,11 @@ _ContextualIdentityService.prototype = {
 
   notifyAllContainersCleared() {
     for (let identity of this._identities) {
+      
+      
+      if (!identity.public) {
+        continue;
+      }
       Services.obs.notifyObservers(null, "clear-origin-attributes-data",
                                    JSON.stringify({ userContextId: identity.userContextId }));
     }
@@ -460,19 +519,31 @@ _ContextualIdentityService.prototype = {
   },
 
   deleteContainerData() {
+    
+    
     let minUserContextId = 1;
-    let maxUserContextId = minUserContextId;
+
+    
+    
+    const keepDataContextIds = this.getPrivateUserContextIds();
+
+    
+    let cookiesUserContextIds = new Set();
+
     const enumerator = Services.cookies.enumerator;
     while (enumerator.hasMoreElements()) {
       const cookie = enumerator.getNext().QueryInterface(Ci.nsICookie);
-      if (cookie.originAttributes.userContextId > maxUserContextId) {
-        maxUserContextId = cookie.originAttributes.userContextId;
+
+      
+      if (cookie.originAttributes.userContextId >= minUserContextId &&
+          !keepDataContextIds.includes(cookie.originAttributes.userContextId)) {
+        cookiesUserContextIds.add(cookie.originAttributes.userContextId);
       }
     }
 
-    for (let i = minUserContextId; i <= maxUserContextId; ++i) {
+    for (let userContextId of cookiesUserContextIds) {
       Services.obs.notifyObservers(null, "clear-origin-attributes-data",
-                                   JSON.stringify({ userContextId: i }));
+                                   JSON.stringify({ userContextId }));
     }
   },
 
@@ -480,6 +551,23 @@ _ContextualIdentityService.prototype = {
     
     
     data.version = 3;
+
+    return data;
+  },
+
+  migrate3to4(data) {
+    
+    
+    
+    
+    
+    
+    const webextStorageLocalIdentity = this.getDefaultPrivateIdentity(
+      "userContextIdInternal.webextStorageLocal");
+
+    data.identities.push(webextStorageLocalIdentity);
+
+    data.version = 4;
 
     return data;
   },
