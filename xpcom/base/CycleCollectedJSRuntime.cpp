@@ -408,6 +408,12 @@ void
 TraversalTracer::onChild(const JS::GCCellPtr& aThing)
 {
   
+  
+  if (aThing.is<JSString>() || aThing.is<JS::Symbol>()) {
+    return;
+  }
+
+  
   if (!JS::GCThingIsMarkedGray(aThing) && !mCb.WantAllTraces()) {
     return;
   }
@@ -435,7 +441,7 @@ TraversalTracer::onChild(const JS::GCCellPtr& aThing)
     
     
     JS_TraceObjectGroupCycleCollectorChildren(this, aThing);
-  } else if (!aThing.is<JSString>()) {
+  } else {
     JS::TraceChildren(this, aThing);
   }
 }
