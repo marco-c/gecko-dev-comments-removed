@@ -345,10 +345,7 @@ function cleanUp() {
   }
   window.onload = null;
   
-  
-  if (browserName === "firefox")
-    window.dump("\n__raptor_shutdownBrowser\n");
-
+  postToControlServer("status", "__raptor_shutdownBrowser");
 }
 
 function runner() {
