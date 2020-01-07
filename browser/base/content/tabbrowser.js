@@ -6,11 +6,24 @@
 
 
 class TabBrowser {
-  constructor() {
+  constructor(container) {
+    this.container = container;
     this.requiresAddonInterpositions = true;
 
-    ChromeUtils.defineModuleGetter(this, "AsyncTabSwitcher",
-      "resource:///modules/AsyncTabSwitcher.jsm");
+    
+    
+    this.addEventListener = this.container.addEventListener.bind(this.container);
+    this.removeEventListener = this.container.removeEventListener.bind(this.container);
+    this.dispatchEvent = this.container.dispatchEvent.bind(this.container);
+    this.getAttribute = this.container.getAttribute.bind(this.container);
+    this.hasAttribute = this.container.hasAttribute.bind(this.container);
+    this.setAttribute = this.container.setAttribute.bind(this.container);
+    this.removeAttribute = this.container.removeAttribute.bind(this.container);
+    this.appendChild = this.container.appendChild.bind(this.container);
+    this.ownerGlobal = this.container.ownerGlobal;
+    this.ownerDocument = this.container.ownerDocument;
+    this.namespaceURI = this.container.namespaceURI;
+    this.style = this.container.style;
 
     XPCOMUtils.defineLazyServiceGetters(this, {
       _unifiedComplete: ["@mozilla.org/autocomplete/search;1?name=unifiedcomplete", "mozIPlacesAutoComplete"],
@@ -18,21 +31,21 @@ class TabBrowser {
       mURIFixup: ["@mozilla.org/docshell/urifixup;1", "nsIURIFixup"],
     });
 
-    this.ownerGlobal = window;
-    this.ownerDocument = document;
-
-    this.mPanelContainer = document.getElementById("tabbrowser-tabpanels");
-    this.addEventListener = this.mPanelContainer.addEventListener.bind(this.mPanelContainer);
-    this.removeEventListener = this.mPanelContainer.removeEventListener.bind(this.mPanelContainer);
-    this.dispatchEvent = this.mPanelContainer.dispatchEvent.bind(this.mPanelContainer);
-
-    this.initialBrowser = document.getElementById("tabbrowser-initialBrowser");
-
-    this.tabContainer = document.getElementById("tabbrowser-tabs");
-
-    this.tabs = this.tabContainer.childNodes;
-
-    this.tabbox = document.getElementById("tabbrowser-tabbox");
+    XPCOMUtils.defineLazyGetter(this, "initialBrowser", () => {
+      return document.getAnonymousElementByAttribute(this.container, "anonid", "initialBrowser");
+    });
+    XPCOMUtils.defineLazyGetter(this, "tabContainer", () => {
+      return document.getElementById(this.getAttribute("tabcontainer"));
+    });
+    XPCOMUtils.defineLazyGetter(this, "tabs", () => {
+      return this.tabContainer.childNodes;
+    });
+    XPCOMUtils.defineLazyGetter(this, "tabbox", () => {
+      return document.getAnonymousElementByAttribute(this.container, "anonid", "tabbox");
+    });
+    XPCOMUtils.defineLazyGetter(this, "mPanelContainer", () => {
+      return document.getAnonymousElementByAttribute(this.container, "anonid", "panelcontainer");
+    });
 
     this.closingTabsEnum = { ALL: 0, OTHER: 1, TO_END: 2 };
 
@@ -67,8 +80,6 @@ class TabBrowser {
     this._contentWaitingCount = 0;
 
     this.tabAnimationsInProgress = 0;
-
-    this._XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 
     
 
@@ -105,7 +116,7 @@ class TabBrowser {
       "resumeMedia", "mute", "unmute", "blockedPopups", "lastURI",
       "purgeSessionHistory", "stopScroll", "startScroll",
       "userTypedValue", "userTypedClear", "mediaBlocked",
-      "didStartLoadSinceLastUserTyping"
+      "didStartLoadSinceLastUserTyping", "audioMuted"
     ];
 
     this._removingTabs = [];
@@ -153,7 +164,7 @@ class TabBrowser {
 
     this._hoverTabTimer = null;
 
-    this.mCurrentBrowser = this.initialBrowser;
+    this.mCurrentBrowser = document.getAnonymousElementByAttribute(this.container, "anonid", "initialBrowser");
     this.mCurrentBrowser.permanentKey = {};
 
     CustomizableUI.addListener(this);
@@ -185,7 +196,7 @@ class TabBrowser {
     
     this._autoScrollPopup = this.mCurrentBrowser._createAutoScrollPopup();
     this._autoScrollPopup.id = "autoscroller";
-    document.getElementById("mainPopupSet").appendChild(this._autoScrollPopup);
+    this.appendChild(this._autoScrollPopup);
     this.mCurrentBrowser.setAttribute("autoscrollpopup", this._autoScrollPopup.id);
     this.mCurrentBrowser.droppedLinkHandler = handleDroppedLink;
 
@@ -199,12 +210,10 @@ class TabBrowser {
     this._tabFilters.set(this.mCurrentTab, filter);
     this.webProgress.addProgressListener(filter, nsIWebProgress.NOTIFY_ALL);
 
-    if (Services.prefs.getBoolPref("browser.display.use_system_colors")) {
-      this.mPanelContainer.style.backgroundColor = "-moz-default-background-color";
-    } else if (Services.prefs.getIntPref("browser.display.document_color_use") == 2) {
-      this.mPanelContainer.style.backgroundColor =
-        Services.prefs.getCharPref("browser.display.background_color");
-    }
+    if (Services.prefs.getBoolPref("browser.display.use_system_colors"))
+      this.style.backgroundColor = "-moz-default-background-color";
+    else if (Services.prefs.getIntPref("browser.display.document_color_use") == 2)
+      this.style.backgroundColor = Services.prefs.getCharPref("browser.display.background_color");
 
     let messageManager = window.getGroupMessageManager("browsers");
 
@@ -281,7 +290,8 @@ class TabBrowser {
     }
     let stack = this.mCurrentBrowser.parentNode;
     
-    let popupAnchor = document.createElementNS(this._XUL_NS, "hbox");
+    const NS_XUL = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
+    let popupAnchor = document.createElementNS(NS_XUL, "hbox");
     popupAnchor.className = "popup-anchor";
     popupAnchor.hidden = true;
     stack.appendChild(popupAnchor);
@@ -477,7 +487,7 @@ class TabBrowser {
     if (aTab._findBar)
       return aTab._findBar;
 
-    let findBar = document.createElementNS(this._XUL_NS, "findbar");
+    let findBar = document.createElementNS(this.namespaceURI, "findbar");
     let browser = this.getBrowserForTab(aTab);
     let browserContainer = this.getBrowserContainer(browser);
     browserContainer.appendChild(findBar);
@@ -499,7 +509,7 @@ class TabBrowser {
 
   getStatusPanel() {
     if (!this._statusPanel) {
-      this._statusPanel = document.createElementNS(this._XUL_NS, "statuspanel");
+      this._statusPanel = document.createElementNS(this.namespaceURI, "statuspanel");
       this._statusPanel.setAttribute("inactive", "true");
       this._statusPanel.setAttribute("layer", "true");
       this._appendStatusPanel();
@@ -852,7 +862,7 @@ class TabBrowser {
 
   getWindowTitleForBrowser(aBrowser) {
     var newTitle = "";
-    var docElement = document.documentElement;
+    var docElement = this.ownerDocument.documentElement;
     var sep = docElement.getAttribute("titlemenuseparator");
     let tab = this.getTabForBrowser(aBrowser);
     let docTitle;
@@ -894,7 +904,7 @@ class TabBrowser {
   }
 
   updateTitlebar() {
-    document.title = this.getWindowTitleForBrowser(this.mCurrentBrowser);
+    this.ownerDocument.title = this.getWindowTitleForBrowser(this.mCurrentBrowser);
   }
 
   updateCurrentBrowser(aForceUpdate) {
@@ -1167,7 +1177,8 @@ class TabBrowser {
 
     
     if (newBrowser.hasAttribute("tabmodalPromptShowing")) {
-      let prompts = newBrowser.parentNode.getElementsByTagNameNS(this._XUL_NS, "tabmodalprompt");
+      let XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
+      let prompts = newBrowser.parentNode.getElementsByTagNameNS(XUL_NS, "tabmodalprompt");
       let prompt = prompts[prompts.length - 1];
       prompt.Dialog.setDefaultFocus();
       return;
@@ -1773,7 +1784,9 @@ class TabBrowser {
     
     if (browser) {
       browser.setAttribute("preloadedState", "consumed");
-      browser.setAttribute("autocompletepopup", "PopupAutoComplete");
+      if (this.hasAttribute("autocompletepopup")) {
+        browser.setAttribute("autocompletepopup", this.getAttribute("autocompletepopup"));
+      }
     }
 
     return browser;
@@ -1823,13 +1836,15 @@ class TabBrowser {
     
     
 
-    let b = document.createElementNS(this._XUL_NS, "browser");
+    const NS_XUL = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
+
+    let b = document.createElementNS(NS_XUL, "browser");
     b.permanentKey = {};
     b.setAttribute("type", "content");
     b.setAttribute("message", "true");
     b.setAttribute("messagemanagergroup", "browsers");
-    b.setAttribute("contextmenu", "contentAreaContextMenu");
-    b.setAttribute("tooltip", "aHTMLTooltip");
+    b.setAttribute("contextmenu", this.getAttribute("contentcontextmenu"));
+    b.setAttribute("tooltip", this.getAttribute("contenttooltip"));
 
     if (aParams.userContextId) {
       b.setAttribute("usercontextid", aParams.userContextId);
@@ -1852,8 +1867,8 @@ class TabBrowser {
       b.presetOpenerWindow(aParams.openerWindow);
     }
 
-    if (!aParams.isPreloadBrowser) {
-      b.setAttribute("autocompletepopup", "PopupAutoComplete");
+    if (!aParams.isPreloadBrowser && this.hasAttribute("autocompletepopup")) {
+      b.setAttribute("autocompletepopup", this.getAttribute("autocompletepopup"));
     }
 
     
@@ -1875,9 +1890,12 @@ class TabBrowser {
       b.setAttribute("preloadedState", "preloaded");
     }
 
-    b.setAttribute("selectmenulist", "ContentSelectDropdown");
+    if (this.hasAttribute("selectmenulist"))
+      b.setAttribute("selectmenulist", this.getAttribute("selectmenulist"));
 
-    b.setAttribute("datetimepicker", "DateTimePickerPanel");
+    if (this.hasAttribute("datetimepicker")) {
+      b.setAttribute("datetimepicker", this.getAttribute("datetimepicker"));
+    }
 
     b.setAttribute("autoscrollpopup", this._autoScrollPopup.id);
 
@@ -1902,25 +1920,27 @@ class TabBrowser {
     }
 
     
-    let stack = document.createElementNS(this._XUL_NS, "stack");
+    var stack = document.createElementNS(NS_XUL, "stack");
     stack.className = "browserStack";
     stack.appendChild(b);
     stack.setAttribute("flex", "1");
 
     
-    let browserContainer = document.createElementNS(this._XUL_NS, "vbox");
+    var browserContainer = document.createElementNS(NS_XUL, "vbox");
     browserContainer.className = "browserContainer";
     browserContainer.appendChild(stack);
     browserContainer.setAttribute("flex", "1");
 
     
-    let browserSidebarContainer = document.createElementNS(this._XUL_NS, "hbox");
+    var browserSidebarContainer = document.createElementNS(NS_XUL,
+      "hbox");
     browserSidebarContainer.className = "browserSidebarContainer";
     browserSidebarContainer.appendChild(browserContainer);
     browserSidebarContainer.setAttribute("flex", "1");
 
     
-    let notificationbox = document.createElementNS(this._XUL_NS, "notificationbox");
+    var notificationbox = document.createElementNS(NS_XUL,
+      "notificationbox");
     notificationbox.setAttribute("flex", "1");
     notificationbox.setAttribute("notificationside", "top");
     notificationbox.appendChild(browserSidebarContainer);
@@ -1945,7 +1965,7 @@ class TabBrowser {
       let setter;
       switch (name) {
         case "audioMuted":
-          getter = () => false;
+          getter = () => aTab.hasAttribute("muted");
           break;
         case "contentTitle":
           getter = () => SessionStore.getLazyTabValue(aTab, "title");
@@ -2155,6 +2175,7 @@ class TabBrowser {
   addTab(aURI, aReferrerURI, aCharset, aPostData, aOwner, aAllowThirdPartyFixup) {
     "use strict";
 
+    const NS_XUL = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
     var aTriggeringPrincipal;
     var aReferrerPolicy;
     var aFromExternal;
@@ -2232,7 +2253,7 @@ class TabBrowser {
     let openerTab = ((aOpenerBrowser && this.getTabForBrowser(aOpenerBrowser)) ||
       (relatedToCurrent && this.selectedTab));
 
-    var t = document.createElementNS(this._XUL_NS, "tab");
+    var t = document.createElementNS(NS_XUL, "tab");
 
     t.openerTab = openerTab;
 
@@ -3533,13 +3554,12 @@ class TabBrowser {
   }
 
   moveTabOver(aEvent) {
-    let direction = window.getComputedStyle(document.documentElement).direction;
+    var direction = window.getComputedStyle(this.container.parentNode).direction;
     if ((direction == "ltr" && aEvent.keyCode == KeyEvent.DOM_VK_RIGHT) ||
-        (direction == "rtl" && aEvent.keyCode == KeyEvent.DOM_VK_LEFT)) {
+      (direction == "rtl" && aEvent.keyCode == KeyEvent.DOM_VK_LEFT))
       this.moveTabForward();
-    } else {
+    else
       this.moveTabBackward();
-    }
   }
 
   
@@ -3581,11 +3601,1085 @@ class TabBrowser {
             this._printPreviewBrowsers.has(aBrowser);
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   _getSwitcher() {
-    if (!this._switcher) {
-      this._switcher = new this.AsyncTabSwitcher(this);
+    if (this._switcher) {
+      return this._switcher;
     }
-    return this._switcher;
+
+    let switcher = {
+      
+      
+      
+      TAB_SWITCH_TIMEOUT: 400 ,
+
+      
+      
+      UNLOAD_DELAY: 300 ,
+
+      
+      
+
+      
+      requestedTab: this.selectedTab,
+
+      
+      loadingTab: null,
+
+      
+      lastVisibleTab: this.selectedTab,
+
+      
+
+      visibleTab: this.selectedTab, 
+      spinnerTab: null, 
+      blankTab: null, 
+      lastPrimaryTab: this.selectedTab, 
+
+      tabbrowser: this, 
+      loadTimer: null, 
+      unloadTimer: null, 
+
+      
+      tabState: new Map(),
+
+      
+      switchInProgress: false,
+
+      
+      
+      
+      activeSuppressDisplayport: new Set(),
+
+      
+      
+      
+      
+      
+      maybeVisibleTabs: new Set([this.selectedTab]),
+
+      
+      
+      
+      
+      warmingTabs: new WeakSet(),
+
+      STATE_UNLOADED: 0,
+      STATE_LOADING: 1,
+      STATE_LOADED: 2,
+      STATE_UNLOADING: 3,
+
+      
+      _processing: false,
+
+      
+      
+      
+      setTimer(callback, timeout) {
+        let event = {
+          notify: callback
+        };
+
+        var timer = Cc["@mozilla.org/timer;1"]
+          .createInstance(Ci.nsITimer);
+        timer.initWithCallback(event, timeout, Ci.nsITimer.TYPE_ONE_SHOT);
+        return timer;
+      },
+
+      clearTimer(timer) {
+        timer.cancel();
+      },
+
+      getTabState(tab) {
+        let state = this.tabState.get(tab);
+
+        
+        
+        
+        if (state === undefined) {
+          state = this.STATE_UNLOADED;
+
+          if (tab && tab.linkedPanel) {
+            let b = tab.linkedBrowser;
+            if (b.renderLayers && b.hasLayers) {
+              state = this.STATE_LOADED;
+            } else if (b.renderLayers && !b.hasLayers) {
+              state = this.STATE_LOADING;
+            } else if (!b.renderLayers && b.hasLayers) {
+              state = this.STATE_UNLOADING;
+            }
+          }
+
+          this.setTabStateNoAction(tab, state);
+        }
+
+        return state;
+      },
+
+      setTabStateNoAction(tab, state) {
+        if (state == this.STATE_UNLOADED) {
+          this.tabState.delete(tab);
+        } else {
+          this.tabState.set(tab, state);
+        }
+      },
+
+      setTabState(tab, state) {
+        if (state == this.getTabState(tab)) {
+          return;
+        }
+
+        this.setTabStateNoAction(tab, state);
+
+        let browser = tab.linkedBrowser;
+        let { tabParent } = browser.frameLoader;
+        if (state == this.STATE_LOADING) {
+          this.assert(!this.minimizedOrFullyOccluded);
+
+          if (!this.tabbrowser.tabWarmingEnabled) {
+            browser.docShellIsActive = true;
+          }
+
+          if (tabParent) {
+            browser.renderLayers = true;
+          } else {
+            this.onLayersReady(browser);
+          }
+        } else if (state == this.STATE_UNLOADING) {
+          this.unwarmTab(tab);
+          
+          
+          browser.docShellIsActive = false;
+          if (!tabParent) {
+            this.onLayersCleared(browser);
+          }
+        } else if (state == this.STATE_LOADED) {
+          this.maybeActivateDocShell(tab);
+        }
+
+        if (!tab.linkedBrowser.isRemoteBrowser) {
+          
+          
+          let nonRemoteState = this.getTabState(tab);
+          
+          
+          
+          
+          
+          this.assert(nonRemoteState == this.STATE_UNLOADED ||
+            nonRemoteState == this.STATE_LOADED);
+        }
+      },
+
+      get minimizedOrFullyOccluded() {
+        return window.windowState == window.STATE_MINIMIZED ||
+          window.isFullyOccluded;
+      },
+
+      init() {
+        this.log("START");
+
+        window.addEventListener("MozAfterPaint", this);
+        window.addEventListener("MozLayerTreeReady", this);
+        window.addEventListener("MozLayerTreeCleared", this);
+        window.addEventListener("TabRemotenessChange", this);
+        window.addEventListener("sizemodechange", this);
+        window.addEventListener("occlusionstatechange", this);
+        window.addEventListener("SwapDocShells", this, true);
+        window.addEventListener("EndSwapDocShells", this, true);
+
+        let initialTab = this.requestedTab;
+        let initialBrowser = initialTab.linkedBrowser;
+
+        let tabIsLoaded = !initialBrowser.isRemoteBrowser ||
+          initialBrowser.frameLoader.tabParent.hasLayers;
+
+        
+        
+        
+        initialBrowser.preserveLayers(false);
+
+        if (!this.minimizedOrFullyOccluded) {
+          this.log("Initial tab is loaded?: " + tabIsLoaded);
+          this.setTabState(initialTab, tabIsLoaded ? this.STATE_LOADED
+                                                   : this.STATE_LOADING);
+        }
+
+        for (let ppBrowser of this.tabbrowser._printPreviewBrowsers) {
+          let ppTab = this.tabbrowser.getTabForBrowser(ppBrowser);
+          let state = ppBrowser.hasLayers ? this.STATE_LOADED
+                                          : this.STATE_LOADING;
+          this.setTabState(ppTab, state);
+        }
+      },
+
+      destroy() {
+        if (this.unloadTimer) {
+          this.clearTimer(this.unloadTimer);
+          this.unloadTimer = null;
+        }
+        if (this.loadTimer) {
+          this.clearTimer(this.loadTimer);
+          this.loadTimer = null;
+        }
+
+        window.removeEventListener("MozAfterPaint", this);
+        window.removeEventListener("MozLayerTreeReady", this);
+        window.removeEventListener("MozLayerTreeCleared", this);
+        window.removeEventListener("TabRemotenessChange", this);
+        window.removeEventListener("sizemodechange", this);
+        window.removeEventListener("occlusionstatechange", this);
+        window.removeEventListener("SwapDocShells", this, true);
+        window.removeEventListener("EndSwapDocShells", this, true);
+
+        this.tabbrowser._switcher = null;
+
+        this.activeSuppressDisplayport.forEach(function(tabParent) {
+          tabParent.suppressDisplayport(false);
+        });
+        this.activeSuppressDisplayport.clear();
+      },
+
+      finish() {
+        this.log("FINISH");
+
+        this.assert(this.tabbrowser._switcher);
+        this.assert(this.tabbrowser._switcher === this);
+        this.assert(!this.spinnerTab);
+        this.assert(!this.blankTab);
+        this.assert(!this.loadTimer);
+        this.assert(!this.loadingTab);
+        this.assert(this.lastVisibleTab === this.requestedTab);
+        this.assert(this.minimizedOrFullyOccluded ||
+          this.getTabState(this.requestedTab) == this.STATE_LOADED);
+
+        this.destroy();
+
+        document.commandDispatcher.unlock();
+
+        let event = new CustomEvent("TabSwitchDone", {
+          bubbles: true,
+          cancelable: true
+        });
+        this.tabbrowser.dispatchEvent(event);
+      },
+
+      
+      
+      updateDisplay() {
+        let requestedTabState = this.getTabState(this.requestedTab);
+        let requestedBrowser = this.requestedTab.linkedBrowser;
+
+        
+        
+        
+        
+        
+        
+        let shouldBeBlank = false;
+        if (requestedBrowser.isRemoteBrowser) {
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          let hasSufficientlyLoaded = !this.requestedTab.hasAttribute("busy") &&
+            !this.tabbrowser._isLocalAboutURI(requestedBrowser.currentURI);
+
+          let fl = requestedBrowser.frameLoader;
+          shouldBeBlank = !this.minimizedOrFullyOccluded &&
+            (!fl.tabParent ||
+              (!hasSufficientlyLoaded && !fl.tabParent.hasPresented));
+        }
+
+        this.log("Tab should be blank: " + shouldBeBlank);
+        this.log("Requested tab is remote?: " + requestedBrowser.isRemoteBrowser);
+
+        
+        let showTab = null;
+        if (requestedTabState != this.STATE_LOADED &&
+            this.lastVisibleTab && this.loadTimer && !shouldBeBlank) {
+          
+          
+          showTab = this.lastVisibleTab;
+        } else {
+          
+          showTab = this.requestedTab;
+        }
+
+        
+        
+        
+        if (!shouldBeBlank && this.blankTab) {
+          this.blankTab.linkedBrowser.removeAttribute("blank");
+          this.blankTab = null;
+        } else if (shouldBeBlank && this.blankTab !== showTab) {
+          if (this.blankTab) {
+            this.blankTab.linkedBrowser.removeAttribute("blank");
+          }
+          this.blankTab = showTab;
+          this.blankTab.linkedBrowser.setAttribute("blank", "true");
+        }
+
+        
+        let needSpinner = this.getTabState(showTab) != this.STATE_LOADED &&
+                          !this.minimizedOrFullyOccluded &&
+                          !shouldBeBlank;
+
+        if (!needSpinner && this.spinnerTab) {
+          this.spinnerHidden();
+          this.tabbrowser.removeAttribute("pendingpaint");
+          this.spinnerTab.linkedBrowser.removeAttribute("pendingpaint");
+          this.spinnerTab = null;
+        } else if (needSpinner && this.spinnerTab !== showTab) {
+          if (this.spinnerTab) {
+            this.spinnerTab.linkedBrowser.removeAttribute("pendingpaint");
+          } else {
+            this.spinnerDisplayed();
+          }
+          this.spinnerTab = showTab;
+          this.tabbrowser.setAttribute("pendingpaint", "true");
+          this.spinnerTab.linkedBrowser.setAttribute("pendingpaint", "true");
+        }
+
+        
+        if (this.visibleTab !== showTab) {
+          this.tabbrowser._adjustFocusBeforeTabSwitch(this.visibleTab, showTab);
+          this.visibleTab = showTab;
+
+          this.maybeVisibleTabs.add(showTab);
+
+          let tabs = this.tabbrowser.tabbox.tabs;
+          let tabPanel = this.tabbrowser.mPanelContainer;
+          let showPanel = tabs.getRelatedElement(showTab);
+          let index = Array.indexOf(tabPanel.childNodes, showPanel);
+          if (index != -1) {
+            this.log(`Switch to tab ${index} - ${this.tinfo(showTab)}`);
+            tabPanel.setAttribute("selectedIndex", index);
+            if (showTab === this.requestedTab) {
+              if (this._requestingTab) {
+                
+
+
+
+
+
+
+                this.tabbrowser.addEventListener("select", () => {
+                  this.tabbrowser._adjustFocusAfterTabSwitch(showTab);
+                }, { once: true });
+              } else {
+                this.tabbrowser._adjustFocusAfterTabSwitch(showTab);
+              }
+
+              this.maybeActivateDocShell(this.requestedTab);
+            }
+          }
+
+          
+          if (this.lastVisibleTab)
+            this.lastVisibleTab._visuallySelected = false;
+
+          this.visibleTab._visuallySelected = true;
+        }
+
+        this.lastVisibleTab = this.visibleTab;
+      },
+
+      assert(cond) {
+        if (!cond) {
+          dump("Assertion failure\n" + Error().stack);
+
+          
+          if (AppConstants.DEBUG) {
+            throw new Error("Assertion failure");
+          }
+        }
+      },
+
+      
+      loadRequestedTab() {
+        this.assert(!this.loadTimer);
+        this.assert(!this.minimizedOrFullyOccluded);
+
+        
+        
+        this.loadingTab = this.requestedTab;
+        this.log("Loading tab " + this.tinfo(this.loadingTab));
+
+        this.loadTimer = this.setTimer(() => this.onLoadTimeout(), this.TAB_SWITCH_TIMEOUT);
+        this.setTabState(this.requestedTab, this.STATE_LOADING);
+      },
+
+      maybeActivateDocShell(tab) {
+        
+        
+        
+        let browser = tab.linkedBrowser;
+        let state = this.getTabState(tab);
+        let canCheckDocShellState = !browser.mDestroyed &&
+          (browser.docShell || browser.frameLoader.tabParent);
+        if (tab == this.requestedTab &&
+            canCheckDocShellState &&
+            state == this.STATE_LOADED &&
+            !browser.docShellIsActive &&
+            !this.minimizedOrFullyOccluded) {
+          browser.docShellIsActive = true;
+          this.logState("Set requested tab docshell to active and preserveLayers to false");
+          
+          
+          
+          browser.preserveLayers(false);
+        }
+      },
+
+      
+      
+      preActions() {
+        this.assert(this.tabbrowser._switcher);
+        this.assert(this.tabbrowser._switcher === this);
+
+        for (let [tab, ] of this.tabState) {
+          if (!tab.linkedBrowser) {
+            this.tabState.delete(tab);
+            this.unwarmTab(tab);
+          }
+        }
+
+        if (this.lastVisibleTab && !this.lastVisibleTab.linkedBrowser) {
+          this.lastVisibleTab = null;
+        }
+        if (this.lastPrimaryTab && !this.lastPrimaryTab.linkedBrowser) {
+          this.lastPrimaryTab = null;
+        }
+        if (this.blankTab && !this.blankTab.linkedBrowser) {
+          this.blankTab = null;
+        }
+        if (this.spinnerTab && !this.spinnerTab.linkedBrowser) {
+          this.spinnerHidden();
+          this.spinnerTab = null;
+        }
+        if (this.loadingTab && !this.loadingTab.linkedBrowser) {
+          this.loadingTab = null;
+          this.clearTimer(this.loadTimer);
+          this.loadTimer = null;
+        }
+      },
+
+      
+      
+      
+      
+      postActions() {
+        
+        
+        this.assert(!this.loadingTab ||
+          this.getTabState(this.loadingTab) == this.STATE_LOADING);
+
+        
+        
+        this.assert(!this.loadTimer || this.loadingTab);
+        this.assert(!this.loadingTab || this.loadTimer);
+
+        
+        
+        
+        
+        if (!this.requestedTab.linkedBrowser.isRemoteBrowser) {
+          this.loadingTab = null;
+          if (this.loadTimer) {
+            this.clearTimer(this.loadTimer);
+            this.loadTimer = null;
+          }
+        }
+
+        
+        let stateOfRequestedTab = this.getTabState(this.requestedTab);
+        if (!this.loadTimer && !this.minimizedOrFullyOccluded &&
+            (stateOfRequestedTab == this.STATE_UNLOADED ||
+            stateOfRequestedTab == this.STATE_UNLOADING ||
+            this.warmingTabs.has(this.requestedTab))) {
+          this.assert(stateOfRequestedTab != this.STATE_LOADED);
+          this.loadRequestedTab();
+        }
+
+        
+        let numPending = 0;
+        let numWarming = 0;
+        for (let [tab, state] of this.tabState) {
+          
+          if (this.tabbrowser._printPreviewBrowsers.has(tab.linkedBrowser)) {
+            continue;
+          }
+
+          if (state == this.STATE_LOADED && tab !== this.requestedTab) {
+            numPending++;
+
+            if (tab !== this.visibleTab) {
+              numWarming++;
+            }
+          }
+          if (state == this.STATE_LOADING || state == this.STATE_UNLOADING) {
+            numPending++;
+          }
+        }
+
+        this.updateDisplay();
+
+        
+        
+        
+        if (!this.tabbrowser._switcher) {
+          return;
+        }
+
+        this.maybeFinishTabSwitch();
+
+        if (numWarming > this.tabbrowser.tabWarmingMax) {
+          this.logState("Hit tabWarmingMax");
+          if (this.unloadTimer) {
+            this.clearTimer(this.unloadTimer);
+          }
+          this.unloadNonRequiredTabs();
+        }
+
+        if (numPending == 0) {
+          this.finish();
+        }
+
+        this.logState("done");
+      },
+
+      
+      onUnloadTimeout() {
+        this.logState("onUnloadTimeout");
+        this.preActions();
+        this.unloadTimer = null;
+
+        this.unloadNonRequiredTabs();
+
+        this.postActions();
+      },
+
+      
+      
+      
+      
+      unloadNonRequiredTabs() {
+        this.warmingTabs = new WeakSet();
+        let numPending = 0;
+
+        
+        for (let [tab, state] of this.tabState) {
+          if (this.tabbrowser._printPreviewBrowsers.has(tab.linkedBrowser)) {
+            continue;
+          }
+
+          if (state == this.STATE_LOADED &&
+              !this.maybeVisibleTabs.has(tab) &&
+              tab !== this.lastVisibleTab &&
+              tab !== this.loadingTab &&
+              tab !== this.requestedTab) {
+            this.setTabState(tab, this.STATE_UNLOADING);
+          }
+
+          if (state != this.STATE_UNLOADED && tab !== this.requestedTab) {
+            numPending++;
+          }
+        }
+
+        if (numPending) {
+          
+          this.unloadTimer = this.setTimer(() => this.onUnloadTimeout(), this.UNLOAD_DELAY);
+        }
+      },
+
+      
+      onLoadTimeout() {
+        this.logState("onLoadTimeout");
+        this.preActions();
+        this.loadTimer = null;
+        this.loadingTab = null;
+        this.postActions();
+      },
+
+      
+      onLayersReady(browser) {
+        let tab = this.tabbrowser.getTabForBrowser(browser);
+        if (!tab) {
+          
+          
+          
+          return;
+        }
+
+        this.logState(`onLayersReady(${tab._tPos}, ${browser.isRemoteBrowser})`);
+
+        this.assert(this.getTabState(tab) == this.STATE_LOADING ||
+          this.getTabState(tab) == this.STATE_LOADED);
+        this.setTabState(tab, this.STATE_LOADED);
+        this.unwarmTab(tab);
+
+        if (this.loadingTab === tab) {
+          this.clearTimer(this.loadTimer);
+          this.loadTimer = null;
+          this.loadingTab = null;
+        }
+      },
+
+      
+      
+      
+      onPaint() {
+        this.maybeVisibleTabs.clear();
+      },
+
+      
+      onLayersCleared(browser) {
+        let tab = this.tabbrowser.getTabForBrowser(browser);
+        if (tab) {
+          this.logState(`onLayersCleared(${tab._tPos})`);
+          this.assert(this.getTabState(tab) == this.STATE_UNLOADING ||
+            this.getTabState(tab) == this.STATE_UNLOADED);
+          this.setTabState(tab, this.STATE_UNLOADED);
+        }
+      },
+
+      
+      
+      
+      onRemotenessChange(tab) {
+        this.logState(`onRemotenessChange(${tab._tPos}, ${tab.linkedBrowser.isRemoteBrowser})`);
+        if (!tab.linkedBrowser.isRemoteBrowser) {
+          if (this.getTabState(tab) == this.STATE_LOADING) {
+            this.onLayersReady(tab.linkedBrowser);
+          } else if (this.getTabState(tab) == this.STATE_UNLOADING) {
+            this.onLayersCleared(tab.linkedBrowser);
+          }
+        } else if (this.getTabState(tab) == this.STATE_LOADED) {
+          
+          
+          
+          this.setTabState(tab, this.STATE_LOADING);
+        }
+      },
+
+      
+      
+      onTabRemoved(tab) {
+        if (this.lastVisibleTab == tab) {
+          
+          
+          
+          this.preActions();
+          this.lastVisibleTab = null;
+          this.postActions();
+        }
+      },
+
+      onSizeModeOrOcclusionStateChange() {
+        if (this.minimizedOrFullyOccluded) {
+          for (let [tab, state] of this.tabState) {
+            
+            if (this.tabbrowser._printPreviewBrowsers.has(tab.linkedBrowser)) {
+              continue;
+            }
+
+            if (state == this.STATE_LOADING || state == this.STATE_LOADED) {
+              this.setTabState(tab, this.STATE_UNLOADING);
+            }
+          }
+          if (this.loadTimer) {
+            this.clearTimer(this.loadTimer);
+            this.loadTimer = null;
+          }
+          this.loadingTab = null;
+        } else {
+          
+          
+          this.maybeActivateDocShell(gBrowser.selectedTab);
+        }
+      },
+
+      onSwapDocShells(ourBrowser, otherBrowser) {
+        
+        
+        
+
+        let otherTabbrowser = otherBrowser.ownerGlobal.gBrowser;
+        let otherState;
+        if (otherTabbrowser && otherTabbrowser._switcher) {
+          let otherTab = otherTabbrowser.getTabForBrowser(otherBrowser);
+          let otherSwitcher = otherTabbrowser._switcher;
+          otherState = otherSwitcher.getTabState(otherTab);
+        } else {
+          otherState = otherBrowser.docShellIsActive ? this.STATE_LOADED : this.STATE_UNLOADED;
+        }
+        if (!this.swapMap) {
+          this.swapMap = new WeakMap();
+        }
+        this.swapMap.set(otherBrowser, {
+          state: otherState,
+        });
+      },
+
+      onEndSwapDocShells(ourBrowser, otherBrowser) {
+        
+        
+        
+
+        if (this.loadTimer) {
+          
+          
+          
+          
+          
+          this.clearTimer(this.loadTimer);
+          this.loadTimer = null;
+        }
+        this.loadingTab = null;
+
+        let { state: otherState } = this.swapMap.get(otherBrowser);
+
+        this.swapMap.delete(otherBrowser);
+
+        let ourTab = this.tabbrowser.getTabForBrowser(ourBrowser);
+        if (ourTab) {
+          this.setTabStateNoAction(ourTab, otherState);
+        }
+      },
+
+      shouldActivateDocShell(browser) {
+        let tab = this.tabbrowser.getTabForBrowser(browser);
+        let state = this.getTabState(tab);
+        return state == this.STATE_LOADING || state == this.STATE_LOADED;
+      },
+
+      activateBrowserForPrintPreview(browser) {
+        let tab = this.tabbrowser.getTabForBrowser(browser);
+        let state = this.getTabState(tab);
+        if (state != this.STATE_LOADING &&
+            state != this.STATE_LOADED) {
+          this.setTabState(tab, this.STATE_LOADING);
+          this.logState("Activated browser " + this.tinfo(tab) + " for print preview");
+        }
+      },
+
+      canWarmTab(tab) {
+        if (!this.tabbrowser.tabWarmingEnabled) {
+          return false;
+        }
+
+        if (!tab) {
+          return false;
+        }
+
+        
+        
+        
+        if (this.minimizedOrFullyOccluded ||
+          !tab.linkedPanel ||
+          tab.closing ||
+          !tab.linkedBrowser.isRemoteBrowser ||
+          !tab.linkedBrowser.frameLoader.tabParent) {
+          return false;
+        }
+
+        
+        
+        
+        let state = this.getTabState(tab);
+        if (state === this.STATE_LOADING ||
+          state === this.STATE_LOADED) {
+          return false;
+        }
+
+        return true;
+      },
+
+      unwarmTab(tab) {
+        this.warmingTabs.delete(tab);
+      },
+
+      warmupTab(tab) {
+        if (!this.canWarmTab(tab)) {
+          return;
+        }
+
+        this.logState("warmupTab " + this.tinfo(tab));
+
+        this.warmingTabs.add(tab);
+        this.setTabState(tab, this.STATE_LOADING);
+        this.suppressDisplayPortAndQueueUnload(tab,
+          this.tabbrowser.tabWarmingUnloadDelay);
+      },
+
+      
+      requestTab(tab) {
+        if (tab === this.requestedTab) {
+          return;
+        }
+
+        if (this.tabbrowser.tabWarmingEnabled) {
+          let warmingState = "disqualified";
+
+          if (this.warmingTabs.has(tab)) {
+            let tabState = this.getTabState(tab);
+            if (tabState == this.STATE_LOADING) {
+              warmingState = "stillLoading";
+            } else if (tabState == this.STATE_LOADED) {
+              warmingState = "loaded";
+            }
+          } else if (this.canWarmTab(tab)) {
+            warmingState = "notWarmed";
+          }
+
+          Services.telemetry
+            .getHistogramById("FX_TAB_SWITCH_REQUEST_TAB_WARMING_STATE")
+            .add(warmingState);
+        }
+
+        this._requestingTab = true;
+        this.logState("requestTab " + this.tinfo(tab));
+        this.startTabSwitch();
+
+        this.requestedTab = tab;
+
+        tab.linkedBrowser.setAttribute("primary", "true");
+        if (this.lastPrimaryTab && this.lastPrimaryTab != tab) {
+          this.lastPrimaryTab.linkedBrowser.removeAttribute("primary");
+        }
+        this.lastPrimaryTab = tab;
+
+        this.suppressDisplayPortAndQueueUnload(this.requestedTab, this.UNLOAD_DELAY);
+        this._requestingTab = false;
+      },
+
+      suppressDisplayPortAndQueueUnload(tab, unloadTimeout) {
+        let browser = tab.linkedBrowser;
+        let fl = browser.frameLoader;
+
+        if (fl && fl.tabParent && !this.activeSuppressDisplayport.has(fl.tabParent)) {
+          fl.tabParent.suppressDisplayport(true);
+          this.activeSuppressDisplayport.add(fl.tabParent);
+        }
+
+        this.preActions();
+
+        if (this.unloadTimer) {
+          this.clearTimer(this.unloadTimer);
+        }
+        this.unloadTimer = this.setTimer(() => this.onUnloadTimeout(), unloadTimeout);
+
+        this.postActions();
+      },
+
+      handleEvent(event, delayed = false) {
+        if (this._processing) {
+          this.setTimer(() => this.handleEvent(event, true), 0);
+          return;
+        }
+        if (delayed && this.tabbrowser._switcher != this) {
+          
+          
+          return;
+        }
+        this._processing = true;
+        this.preActions();
+
+        if (event.type == "MozLayerTreeReady") {
+          this.onLayersReady(event.originalTarget);
+        }
+        if (event.type == "MozAfterPaint") {
+          this.onPaint();
+        } else if (event.type == "MozLayerTreeCleared") {
+          this.onLayersCleared(event.originalTarget);
+        } else if (event.type == "TabRemotenessChange") {
+          this.onRemotenessChange(event.target);
+        } else if (event.type == "sizemodechange" ||
+          event.type == "occlusionstatechange") {
+          this.onSizeModeOrOcclusionStateChange();
+        } else if (event.type == "SwapDocShells") {
+          this.onSwapDocShells(event.originalTarget, event.detail);
+        } else if (event.type == "EndSwapDocShells") {
+          this.onEndSwapDocShells(event.originalTarget, event.detail);
+        }
+
+        this.postActions();
+        this._processing = false;
+      },
+
+      
+
+
+
+
+      startTabSwitch() {
+        TelemetryStopwatch.cancel("FX_TAB_SWITCH_TOTAL_E10S_MS", window);
+        TelemetryStopwatch.start("FX_TAB_SWITCH_TOTAL_E10S_MS", window);
+        this.addMarker("AsyncTabSwitch:Start");
+        this.switchInProgress = true;
+      },
+
+      
+
+
+
+
+
+      maybeFinishTabSwitch() {
+        if (this.switchInProgress && this.requestedTab &&
+            (this.getTabState(this.requestedTab) == this.STATE_LOADED ||
+              this.requestedTab === this.blankTab)) {
+          
+          
+          let time = TelemetryStopwatch.timeElapsed("FX_TAB_SWITCH_TOTAL_E10S_MS", window);
+          if (time != -1) {
+            TelemetryStopwatch.finish("FX_TAB_SWITCH_TOTAL_E10S_MS", window);
+            this.log("DEBUG: tab switch time = " + time);
+            this.addMarker("AsyncTabSwitch:Finish");
+          }
+          this.switchInProgress = false;
+        }
+      },
+
+      spinnerDisplayed() {
+        this.assert(!this.spinnerTab);
+        let browser = this.requestedTab.linkedBrowser;
+        this.assert(browser.isRemoteBrowser);
+        TelemetryStopwatch.start("FX_TAB_SWITCH_SPINNER_VISIBLE_MS", window);
+        
+        
+        TelemetryStopwatch.start("FX_TAB_SWITCH_SPINNER_VISIBLE_LONG_MS", window);
+        this.addMarker("AsyncTabSwitch:SpinnerShown");
+      },
+
+      spinnerHidden() {
+        this.assert(this.spinnerTab);
+        this.log("DEBUG: spinner time = " +
+          TelemetryStopwatch.timeElapsed("FX_TAB_SWITCH_SPINNER_VISIBLE_MS", window));
+        TelemetryStopwatch.finish("FX_TAB_SWITCH_SPINNER_VISIBLE_MS", window);
+        TelemetryStopwatch.finish("FX_TAB_SWITCH_SPINNER_VISIBLE_LONG_MS", window);
+        this.addMarker("AsyncTabSwitch:SpinnerHidden");
+        
+      },
+
+      addMarker(marker) {
+        if (Services.profiler) {
+          Services.profiler.AddMarker(marker);
+        }
+      },
+
+      
+
+
+
+      _useDumpForLogging: false,
+      _logInit: false,
+
+      logging() {
+        if (this._useDumpForLogging)
+          return true;
+        if (this._logInit)
+          return this._shouldLog;
+        let result = Services.prefs.getBoolPref("browser.tabs.remote.logSwitchTiming", false);
+        this._shouldLog = result;
+        this._logInit = true;
+        return this._shouldLog;
+      },
+
+      tinfo(tab) {
+        if (tab) {
+          return tab._tPos + "(" + tab.linkedBrowser.currentURI.spec + ")";
+        }
+        return "null";
+      },
+
+      log(s) {
+        if (!this.logging())
+          return;
+        if (this._useDumpForLogging) {
+          dump(s + "\n");
+        } else {
+          Services.console.logStringMessage(s);
+        }
+      },
+
+      logState(prefix) {
+        if (!this.logging())
+          return;
+
+        let accum = prefix + " ";
+        for (let i = 0; i < this.tabbrowser.tabs.length; i++) {
+          let tab = this.tabbrowser.tabs[i];
+          let state = this.getTabState(tab);
+          let isWarming = this.warmingTabs.has(tab);
+
+          accum += i + ":";
+          if (tab === this.lastVisibleTab) accum += "V";
+          if (tab === this.loadingTab) accum += "L";
+          if (tab === this.requestedTab) accum += "R";
+          if (tab === this.blankTab) accum += "B";
+          if (isWarming) accum += "(W)";
+          if (state == this.STATE_LOADED) accum += "(+)";
+          if (state == this.STATE_LOADING) accum += "(+?)";
+          if (state == this.STATE_UNLOADED) accum += "(-)";
+          if (state == this.STATE_UNLOADING) accum += "(-?)";
+          accum += " ";
+        }
+        if (this._useDumpForLogging) {
+          dump(accum + "\n");
+        } else {
+          Services.console.logStringMessage(accum);
+        }
+      },
+    };
+    this._switcher = switcher;
+    switcher.init();
+    return switcher;
   }
 
   warmupTab(aTab) {
@@ -3647,7 +4741,7 @@ class TabBrowser {
         case "}".charCodeAt(0):
           offset = -1;
         case "{".charCodeAt(0):
-          if (window.getComputedStyle(document.documentElement).direction == "ltr")
+          if (window.getComputedStyle(this.container).direction == "ltr")
             offset *= -1;
           this.tabContainer.advanceSelectedTab(offset, true);
           aEvent.preventDefault();
@@ -3950,7 +5044,7 @@ class TabBrowser {
     return "panel-" + outerID + "-" + (++this._uniquePanelIDCounter);
   }
 
-  destroy() {
+  disconnectedCallback() {
     Services.obs.removeObserver(this, "contextual-identity-updated");
 
     CustomizableUI.removeListener(this);
