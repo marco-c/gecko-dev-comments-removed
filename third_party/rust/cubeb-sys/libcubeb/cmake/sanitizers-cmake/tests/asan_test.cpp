@@ -1,0 +1,39 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+int
+main(int argc, char **argv)
+{
+	
+	int *array = new int[argc];
+	delete[] array;
+
+	
+
+
+	return array[argc];
+}
