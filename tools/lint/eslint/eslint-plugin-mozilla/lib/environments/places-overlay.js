@@ -20,23 +20,22 @@ var modules = helpers.modulesGlobalData;
 
 const placesOverlayFiles = [
   "toolkit/content/globalOverlay.js",
-  "browser/base/content/utilityOverlay.js",
-  "browser/components/places/content/controller.js",
-  "browser/components/places/content/treeView.js"
+  "browser/base/content/utilityOverlay.js"
 ];
 
 const extraPlacesDefinitions = [
   
-  {name: "Cc", writable: false},
-  {name: "Ci", writable: false},
-  {name: "Cr", writable: false},
-  {name: "Cu", writable: false},
   
   
   {name: "XPCOMUtils", writable: false},
   {name: "Task", writable: false},
   {name: "PlacesUIUtils", writable: false},
-  {name: "PlacesTransactions", writable: false}
+  {name: "PlacesTransactions", writable: false},
+  {name: "ForgetAboutSite", writable: false},
+  {name: "PlacesTreeView", writable: false},
+  {name: "PlacesInsertionPoint", writable: false},
+  {name: "PlacesController", writable: false},
+  {name: "PlacesControllerDragHelper", writable: false}
 ];
 
 const placesOverlayModules = [
