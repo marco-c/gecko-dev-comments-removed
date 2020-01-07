@@ -519,7 +519,8 @@ RootActor.prototype = {
       }
       if (!this._parentProcessTargetActor) {
         
-        const { ParentProcessTargetActor } = require("devtools/server/actors/targets/parent-process");
+        const { ParentProcessTargetActor } =
+          require("devtools/server/actors/targets/parent-process");
         this._parentProcessTargetActor = new ParentProcessTargetActor(this.conn);
         this._globalActorPool.addActor(this._parentProcessTargetActor);
       }
