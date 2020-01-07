@@ -79,6 +79,8 @@ ScrollingLayersHelper::BeginItem(nsDisplayItem* aItem,
   SLH_LOG("processing item %p\n", aItem);
 
   const DisplayItemClipChain* clip = aItem->GetClipChain();
+  clip = ExtendChain(clip);
+
   ItemClips clips(aItem->GetActiveScrolledRoot(), clip);
   MOZ_ASSERT(!mItemClipStack.empty());
   if (clips.HasSameInputs(mItemClipStack.back())) {
@@ -474,6 +476,71 @@ ScrollingLayersHelper::RecurseAndDefineAsr(nsDisplayItem* aItem,
 
   ids.first = Some(scrollId);
   return ids;
+}
+
+const DisplayItemClipChain*
+ScrollingLayersHelper::ExtendChain(const DisplayItemClipChain* aClip)
+{
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  if (!aClip) {
+    return aClip;
+  }
+  
+  size_t clipDepth = mItemClipStack.size();
+  MOZ_ASSERT(clipDepth > 0);
+  while (--clipDepth > 0) {
+    const DisplayItemClipChain* enclosingClip = mItemClipStack[clipDepth - 1].mChain;
+    if (!enclosingClip) {
+      
+      
+      continue;
+    }
+    if (aClip == enclosingClip) {
+      
+      
+      
+      
+      return aClip;
+    }
+    const ClipIdMap& cache = mCacheStack.back();
+    if (cache.find(enclosingClip) == cache.end()) {
+      
+      
+      
+      return aClip;
+    }
+    for (const DisplayItemClipChain* i = enclosingClip->mParent; i; i = i->mParent) {
+      if (i == aClip) {
+        
+        
+        
+        
+        SLH_LOG("extending clip %p to %p\n", aClip, enclosingClip);
+        return enclosingClip;
+      }
+    }
+    break;
+  }
+  return aClip;
 }
 
 Maybe<ScrollingLayersHelper::ClipAndScroll>

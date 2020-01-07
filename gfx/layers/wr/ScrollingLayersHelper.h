@@ -70,6 +70,7 @@ private:
                       int32_t aAppUnitsPerDevPixel,
                       const StackingContextHelper& aSc);
 
+  const DisplayItemClipChain* ExtendChain(const DisplayItemClipChain* aClip);
   Maybe<ClipAndScroll> EnclosingClipAndScroll() const;
 
   
