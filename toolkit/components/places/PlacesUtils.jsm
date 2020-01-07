@@ -78,13 +78,11 @@ async function notifyKeywordChange(url, keyword, source) {
   
   let bookmarks = [];
   await PlacesUtils.bookmarks.fetch({ url }, b => bookmarks.push(b));
-  
   for (let bookmark of bookmarks) {
     bookmark.id = await PlacesUtils.promiseItemId(bookmark.guid);
     bookmark.parentId = await PlacesUtils.promiseItemId(bookmark.parentGuid);
   }
   let observers = PlacesUtils.bookmarks.getObservers();
-  gIgnoreKeywordNotifications = true;
   for (let bookmark of bookmarks) {
     notify(observers, "onItemChanged", [ bookmark.id, "keyword", false,
                                          keyword,
@@ -95,7 +93,6 @@ async function notifyKeywordChange(url, keyword, source) {
                                          "", source
                                        ]);
   }
-  gIgnoreKeywordNotifications = false;
 }
 
 
@@ -1889,11 +1886,6 @@ XPCOMUtils.defineLazyServiceGetter(PlacesUtils, "livemarks",
                                    "@mozilla.org/browser/livemark-service;2",
                                    "mozIAsyncLivemarks");
 
-XPCOMUtils.defineLazyGetter(PlacesUtils, "keywords", () => {
-  gKeywordsCachePromise.catch(Cu.reportError);
-  return Keywords;
-});
-
 XPCOMUtils.defineLazyGetter(this, "bundle", function() {
   const PLACES_STRING_BUNDLE_URI = "chrome://places/locale/places.properties";
   return Services.strings.createBundle(PLACES_STRING_BUNDLE_URI);
@@ -1984,7 +1976,7 @@ XPCOMUtils.defineLazyGetter(this, "gAsyncDBWrapperPromised",
 
 
 
-var Keywords = {
+PlacesUtils.keywords = {
   
 
 
@@ -2029,7 +2021,7 @@ var Keywords = {
       }
     };
 
-    return gKeywordsCachePromise.then(cache => {
+    return promiseKeywordsCache().then(cache => {
       let entries = [];
       if (hasKeyword) {
         let entry = cache.get(keywordOrEntry.keyword);
@@ -2091,8 +2083,8 @@ var Keywords = {
     
     url = new URL(url);
 
-    return PlacesUtils.withConnectionWrapper("Keywords.insert", async db => {
-        let cache = await gKeywordsCachePromise;
+    return PlacesUtils.withConnectionWrapper("PlacesUtils.keywords.insert", async db => {
+        let cache = await promiseKeywordsCache();
 
         
         let oldEntry = cache.get(keyword);
@@ -2184,8 +2176,8 @@ var Keywords = {
     let { keyword,
           source = Ci.nsINavBookmarksService.SOURCE_DEFAULT } = keywordOrEntry;
     keyword = keywordOrEntry.keyword.trim().toLowerCase();
-    return PlacesUtils.withConnectionWrapper("Keywords.remove", async function(db) {
-      let cache = await gKeywordsCachePromise;
+    return PlacesUtils.withConnectionWrapper("PlacesUtils.keywords.remove", async db => {
+      let cache = await promiseKeywordsCache();
       if (!cache.has(keyword))
         return;
       let { url } = cache.get(keyword);
@@ -2200,145 +2192,238 @@ var Keywords = {
       
       await notifyKeywordChange(url.href, "", source);
     });
-  }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  reassign(oldURL, newURL, source = PlacesUtils.bookmarks.SOURCES.DEFAULT) {
+    try {
+      oldURL = BOOKMARK_VALIDATORS.url(oldURL);
+    } catch (ex) {
+      throw new Error(oldURL + " is not a valid source URL");
+    }
+    try {
+      newURL = BOOKMARK_VALIDATORS.url(newURL);
+    } catch (ex) {
+      throw new Error(oldURL + " is not a valid destination URL");
+    }
+    return PlacesUtils.withConnectionWrapper("PlacesUtils.keywords.reassign",
+                                             async function(db) {
+      let keywordsToReassign = [];
+      let keywordsToRemove = [];
+      let cache = await promiseKeywordsCache();
+      for (let [keyword, entry] of cache) {
+        if (entry.url.href == oldURL.href) {
+          keywordsToReassign.push(keyword);
+        }
+        if (entry.url.href == newURL.href) {
+          keywordsToRemove.push(keyword);
+        }
+      }
+      if (!keywordsToReassign.length) {
+        return;
+      }
+
+      await db.executeTransaction(async function() {
+        
+        await db.executeCached(
+          `DELETE FROM moz_keywords WHERE keyword = :keyword`,
+          keywordsToRemove.map(keyword => ({ keyword })));
+
+        
+        await db.executeCached(`
+          UPDATE moz_keywords SET
+            place_id = (SELECT id FROM moz_places
+                        WHERE url_hash = hash(:newURL) AND
+                              url = :newURL)
+          WHERE place_id = (SELECT id FROM moz_places
+                            WHERE url_hash = hash(:oldURL) AND
+                                  url = :oldURL)`,
+          { newURL: newURL.href, oldURL: oldURL.href });
+      });
+      for (let keyword of keywordsToReassign) {
+        let entry = cache.get(keyword);
+        entry.url = newURL;
+      }
+      for (let keyword of keywordsToRemove) {
+        cache.delete(keyword);
+      }
+
+      if (keywordsToReassign.length) {
+        
+        
+        await notifyKeywordChange(oldURL, "", source);
+        await notifyKeywordChange(newURL, "", source);
+        for (let keyword of keywordsToReassign) {
+          await notifyKeywordChange(newURL, keyword, source);
+        }
+      } else if (keywordsToRemove.length) {
+        
+        
+        await notifyKeywordChange(oldURL, "", source);
+      }
+    });
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  removeFromURLsIfNotBookmarked(urls) {
+    let hrefs = new Set();
+    for (let url of urls) {
+      try {
+        url = BOOKMARK_VALIDATORS.url(url);
+      } catch (ex) {
+        throw new Error(url + " is not a valid URL");
+      }
+      hrefs.add(url.href);
+    }
+    return PlacesUtils.withConnectionWrapper(
+      "PlacesUtils.keywords.removeFromURLsIfNotBookmarked",
+      async function(db) {
+        let keywordsByHref = new Map();
+        let cache = await promiseKeywordsCache();
+        for (let [keyword, entry] of cache) {
+          let href = entry.url.href;
+          if (!hrefs.has(href)) {
+            continue;
+          }
+          if (!keywordsByHref.has(href)) {
+            keywordsByHref.set(href, [keyword]);
+            continue;
+          }
+          let existingKeywords = keywordsByHref.get(href);
+          existingKeywords.push(keyword);
+        }
+        if (!keywordsByHref.size) {
+          return;
+        }
+
+        let placeInfosToRemove = [];
+        let rows = await db.execute(`
+          SELECT h.id, h.url
+          FROM moz_places h
+          JOIN moz_keywords k ON k.place_id = h.id
+          GROUP BY h.id
+          HAVING h.foreign_count = COUNT(*)`);
+        for (let row of rows) {
+          placeInfosToRemove.push({
+            placeId: row.getResultByName("id"),
+            href: row.getResultByName("url"),
+          });
+        }
+        if (!placeInfosToRemove.length) {
+          return;
+        }
+
+        await db.execute(`DELETE FROM moz_keywords WHERE place_id IN (${
+          Array.from(placeInfosToRemove.map(info => info.placeId)).join()})`);
+        for (let { href } of placeInfosToRemove) {
+          let keywords = keywordsByHref.get(href);
+          for (let keyword of keywords) {
+            cache.delete(keyword);
+          }
+        }
+    });
+  },
+
+  
+
+
+
+
+
+  eraseEverything() {
+    return PlacesUtils.withConnectionWrapper(
+      "PlacesUtils.keywords.eraseEverything",
+      async function(db) {
+        let cache = await promiseKeywordsCache();
+        if (!cache.size) {
+          return;
+        }
+        await db.executeCached(`DELETE FROM moz_keywords`);
+        cache.clear();
+      }
+    );
+  },
+
+  
+
+
+
+
+
+
+  invalidateCachedKeywords() {
+    gKeywordsCachePromise = gKeywordsCachePromise.then(_ => null);
+    return gKeywordsCachePromise;
+  },
 };
 
+var gKeywordsCachePromise = Promise.resolve();
 
-
-var gIgnoreKeywordNotifications = false;
-
-XPCOMUtils.defineLazyGetter(this, "gKeywordsCachePromise", () =>
-  PlacesUtils.withConnectionWrapper("PlacesUtils: gKeywordsCachePromise",
-    async function(db) {
-      let cache = new Map();
-
-      
-      
-      
-      let observer = {
-        QueryInterface: XPCOMUtils.generateQI(Ci.nsINavBookmarkObserver),
-        onBeginUpdateBatch() {},
-        onEndUpdateBatch() {},
-        onItemAdded() {},
-        onItemVisited() {},
-        onItemMoved() {},
-
-        onItemRemoved(id, parentId, index, itemType, uri, guid, parentGuid,
-                      source) {
-          if (itemType != PlacesUtils.bookmarks.TYPE_BOOKMARK)
-            return;
-
-          let keywords = keywordsForHref(uri.spec);
-          
-          if (keywords.length == 0)
-            return;
-
-          (async function() {
-            
-            let bookmark = await PlacesUtils.bookmarks.fetch({ url: uri });
-            if (!bookmark) {
-              for (let keyword of keywords) {
-                await PlacesUtils.keywords.remove({ keyword, source });
-              }
-            }
-          })().catch(Cu.reportError);
-        },
-
-        onItemChanged(id, prop, isAnno, val, lastMod, itemType, parentId, guid,
-                      parentGuid, oldVal, source) {
-          if (gIgnoreKeywordNotifications) {
-            return;
-          }
-
-          if (prop == "keyword") {
-            this._onKeywordChanged(guid, val, oldVal);
-          } else if (prop == "uri") {
-            this._onUrlChanged(guid, val, oldVal, source).catch(Cu.reportError);
-          }
-        },
-
-        _onKeywordChanged(guid, keyword, href) {
-          if (keyword.length == 0) {
-            
-            let keywords = keywordsForHref(href);
-            for (let kw of keywords) {
-              cache.delete(kw);
-            }
-          } else {
-            
-            cache.set(keyword, { keyword, url: new URL(href) });
-          }
-        },
-
-        async _onUrlChanged(guid, url, oldUrl, source) {
-          
-          let entries = [];
-          await PlacesUtils.keywords.fetch({ url: oldUrl }, e => entries.push(e));
-          if (entries.length == 0) {
-            return;
-          }
-
-          
-          for (let entry of entries) {
-            await PlacesUtils.keywords.remove({
-              keyword: entry.keyword,
-              source,
-            });
-            await PlacesUtils.keywords.insert({
-              keyword: entry.keyword,
-              url,
-              postData: entry.postData,
-              source,
-            });
-          }
-        },
-      };
-
-      PlacesUtils.bookmarks.addObserver(observer);
-      PlacesUtils.registerShutdownFunction(() => {
-        PlacesUtils.bookmarks.removeObserver(observer);
-      });
-
-      let rows = await db.execute(
-        `SELECT keyword, url, post_data
-         FROM moz_keywords k
-         JOIN moz_places h ON h.id = k.place_id
-        `);
-      let brokenKeywords = [];
-      for (let row of rows) {
-        let keyword = row.getResultByName("keyword");
-        try {
-          let entry = { keyword,
-                        url: new URL(row.getResultByName("url")),
-                        postData: row.getResultByName("post_data") || null };
-          cache.set(keyword, entry);
-        } catch (ex) {
-          
-          
-          brokenKeywords.push(keyword);
-        }
-      }
-
-      if (brokenKeywords.length) {
-        await db.execute(
-          `DELETE FROM moz_keywords
-           WHERE keyword IN (${brokenKeywords.map(JSON.stringify).join(",")})
-          `);
-      }
-
-      
-      function keywordsForHref(href) {
-        let keywords = [];
-        for (let [ key, val ] of cache) {
-          if (val.url.href == href)
-            keywords.push(key);
-        }
-        return keywords;
-      }
-
+function promiseKeywordsCache() {
+  let promise = gKeywordsCachePromise.then(function(cache) {
+    if (cache) {
       return cache;
     }
-));
+    return PlacesUtils.withConnectionWrapper(
+      "PlacesUtils: promiseKeywordsCache",
+      async db => {
+        let cache = new Map();
+        let rows = await db.execute(
+          `SELECT keyword, url, post_data
+           FROM moz_keywords k
+           JOIN moz_places h ON h.id = k.place_id
+          `);
+        let brokenKeywords = [];
+        for (let row of rows) {
+          let keyword = row.getResultByName("keyword");
+          try {
+            let entry = { keyword,
+                          url: new URL(row.getResultByName("url")),
+                          postData: row.getResultByName("post_data") || null };
+            cache.set(keyword, entry);
+          } catch (ex) {
+            
+            
+            brokenKeywords.push(keyword);
+          }
+        }
+        if (brokenKeywords.length) {
+          await db.execute(
+            `DELETE FROM moz_keywords
+             WHERE keyword IN (${brokenKeywords.map(JSON.stringify).join(",")})
+            `);
+        }
+        return cache;
+      }
+    );
+  });
+  gKeywordsCachePromise = promise.catch(_ => {});
+  return promise;
+}
 
 
 

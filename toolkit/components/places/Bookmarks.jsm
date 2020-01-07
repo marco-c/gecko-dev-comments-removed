@@ -765,6 +765,8 @@ var Bookmarks = Object.freeze({
           }
         }
         if (updateInfo.hasOwnProperty("url")) {
+          await PlacesUtils.keywords.reassign(item.url, updatedItem.url,
+                                              updatedItem.source);
           notify(observers, "onItemChanged", [ updatedItem._id, "uri",
                                                false, updatedItem.url.href,
                                                PlacesUtils.toPRTime(updatedItem.lastModified),
@@ -919,6 +921,7 @@ var Bookmarks = Object.freeze({
 
         
         if (urls && urls.length) {
+          await PlacesUtils.keywords.eraseEverything();
           updateFrecency(db, urls, true).catch(Cu.reportError);
         }
       }
@@ -1956,18 +1959,14 @@ function removeBookmarks(items, options) {
 
     
     
-    for (let item of items) {
+    urls = urls.concat(items.filter(item => {
       let isUntagging = item._grandParentId == PlacesUtils.tagsFolderId;
-
-      
-      if (item.type == Bookmarks.TYPE_BOOKMARK && !isUntagging) {
-        
-        updateFrecency(db, [item.url]).catch(Cu.reportError);
-      }
-    }
+      return !isUntagging && "url" in item;
+    }).map(item => item.url));
 
     if (urls.length) {
-      updateFrecency(db, urls, true).catch(Cu.reportError);
+      await PlacesUtils.keywords.removeFromURLsIfNotBookmarked(urls);
+      updateFrecency(db, urls, urls.length > 1).catch(Cu.reportError);
     }
   });
 }

@@ -39,10 +39,6 @@ PlacesCategoriesStarter.prototype = {
       case TOPIC_GATHER_TELEMETRY:
         PlacesDBUtils.telemetry();
         break;
-      case PlacesUtils.TOPIC_INIT_COMPLETE:
-        
-        PlacesUtils.keywords;
-        break;
       case "idle-daily":
         
         let lastMaintenance =
