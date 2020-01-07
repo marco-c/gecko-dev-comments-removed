@@ -61,14 +61,14 @@ public:
 
 
 
-  static nsresult GetNameFromSubtree(Accessible* aAccessible,
+  static nsresult GetNameFromSubtree(const Accessible* aAccessible,
                                      nsAString& aName);
 
   
 
 
 
-  static void GetTextEquivFromSubtree(Accessible* aAccessible,
+  static void GetTextEquivFromSubtree(const Accessible* aAccessible,
                                       nsString& aTextEquiv)
   {
     aTextEquiv.Truncate();
@@ -85,7 +85,7 @@ public:
 
 
 
-  static nsresult GetTextEquivFromIDRefs(Accessible* aAccessible,
+  static nsresult GetTextEquivFromIDRefs(const Accessible* aAccessible,
                                          nsAtom *aIDRefsAttr,
                                          nsAString& aTextEquiv);
 
@@ -100,7 +100,7 @@ public:
 
 
 
-  static nsresult AppendTextEquivFromContent(Accessible* aInitiatorAcc,
+  static nsresult AppendTextEquivFromContent(const Accessible* aInitiatorAcc,
                                              nsIContent *aContent,
                                              nsAString *aString);
 
@@ -119,7 +119,7 @@ private:
 
 
 
-  static nsresult AppendFromAccessibleChildren(Accessible* aAccessible,
+  static nsresult AppendFromAccessibleChildren(const Accessible* aAccessible,
                                                nsAString *aString);
 
   
