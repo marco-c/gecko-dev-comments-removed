@@ -56,36 +56,13 @@ typedef void (*EnterJitCode)(void* code, unsigned argc, Value* argv, Interpreter
 
 class JitcodeGlobalTable;
 
-
-
-
-class PatchableBackedge : public InlineListNode<PatchableBackedge>
-{
-    friend class JitZoneGroup;
-
-    CodeLocationJump backedge;
-    CodeLocationLabel loopHeader;
-    CodeLocationLabel interruptCheck;
-
-  public:
-    PatchableBackedge(CodeLocationJump backedge,
-                      CodeLocationLabel loopHeader,
-                      CodeLocationLabel interruptCheck)
-      : backedge(backedge), loopHeader(loopHeader), interruptCheck(interruptCheck)
-    {}
-};
-
 class JitRuntime
 {
   private:
     friend class JitCompartment;
 
     
-    
     ActiveThreadData<ExecutableAllocator> execAlloc_;
-
-    
-    ActiveThreadData<ExecutableAllocator> backedgeExecAlloc_;
 
     ActiveThreadData<uint64_t> nextCompilationId_;
 #ifdef DEBUG
@@ -159,10 +136,6 @@ class JitRuntime
     ExclusiveAccessLockWriteOnceData<VMWrapperMap*> functionWrappers_;
 
     
-    
-    mozilla::Atomic<bool> preventBackedgePatching_;
-
-    
     UnprotectedData<JitcodeGlobalTable*> jitcodeGlobalTable_;
 
   private:
@@ -201,7 +174,7 @@ class JitRuntime
     }
 
   public:
-    explicit JitRuntime(JSRuntime* rt);
+    JitRuntime();
     ~JitRuntime();
     MOZ_MUST_USE bool initialize(JSContext* cx, js::AutoLockForExclusiveAccess& lock);
 
@@ -213,9 +186,6 @@ class JitRuntime
     ExecutableAllocator& execAlloc() {
         return execAlloc_.ref();
     }
-    ExecutableAllocator& backedgeExecAlloc() {
-        return backedgeExecAlloc_.ref();
-    }
 
     IonCompilationId nextCompilationId() {
         return IonCompilationId(nextCompilationId_++);
@@ -225,41 +195,6 @@ class JitRuntime
         return currentCompilationId_.ref();
     }
 #endif
-
-    class AutoPreventBackedgePatching
-    {
-        mozilla::DebugOnly<JSRuntime*> rt_;
-        JitRuntime* jrt_;
-        bool prev_;
-
-      public:
-        
-        
-        AutoPreventBackedgePatching(JSRuntime* rt, JitRuntime* jrt)
-          : rt_(rt),
-            jrt_(jrt),
-            prev_(false)  
-        {
-            if (jrt_) {
-                prev_ = jrt_->preventBackedgePatching_;
-                jrt_->preventBackedgePatching_ = true;
-            }
-        }
-        explicit AutoPreventBackedgePatching(JSRuntime* rt)
-          : AutoPreventBackedgePatching(rt, rt->jitRuntime())
-        {}
-        ~AutoPreventBackedgePatching() {
-            MOZ_ASSERT(jrt_ == rt_->jitRuntime());
-            if (jrt_) {
-                MOZ_ASSERT(jrt_->preventBackedgePatching_);
-                jrt_->preventBackedgePatching_ = prev_;
-            }
-        }
-    };
-
-    bool preventBackedgePatching() const {
-        return preventBackedgePatching_;
-    }
 
     TrampolinePtr getVMWrapper(const VMFunction& f) const;
     JitCode* debugTrapHandler(JSContext* cx);
@@ -348,44 +283,6 @@ class JitRuntime
     bool isOptimizationTrackingEnabled(ZoneGroup* group) {
         return isProfilerInstrumentationEnabled(group->runtime);
     }
-};
-
-class JitZoneGroup
-{
-  public:
-    enum BackedgeTarget {
-        BackedgeLoopHeader,
-        BackedgeInterruptCheck
-    };
-
-  private:
-    
-    
-    ZoneGroupData<BackedgeTarget> backedgeTarget_;
-
-    
-    
-    
-    
-    ZoneGroupData<InlineList<PatchableBackedge>> backedgeList_;
-    InlineList<PatchableBackedge>& backedgeList() { return backedgeList_.ref(); }
-
-  public:
-    explicit JitZoneGroup(ZoneGroup* group);
-
-    BackedgeTarget backedgeTarget() const {
-        return backedgeTarget_;
-    }
-    void addPatchableBackedge(JitRuntime* jrt, PatchableBackedge* backedge) {
-        MOZ_ASSERT(jrt->preventBackedgePatching());
-        backedgeList().pushFront(backedge);
-    }
-    void removePatchableBackedge(JitRuntime* jrt, PatchableBackedge* backedge) {
-        MOZ_ASSERT(jrt->preventBackedgePatching());
-        backedgeList().remove(backedge);
-    }
-
-    void patchIonBackedges(JSContext* cx, BackedgeTarget target);
 };
 
 enum class CacheKind : uint8_t;
@@ -707,16 +604,13 @@ const unsigned WINDOWS_BIG_FRAME_TOUCH_INCREMENT = 4096 - 1;
 
 class MOZ_STACK_CLASS AutoWritableJitCode
 {
-    
-    
-    JitRuntime::AutoPreventBackedgePatching preventPatching_;
     JSRuntime* rt_;
     void* addr_;
     size_t size_;
 
   public:
     AutoWritableJitCode(JSRuntime* rt, void* addr, size_t size)
-      : preventPatching_(rt), rt_(rt), addr_(addr), size_(size)
+      : rt_(rt), addr_(addr), size_(size)
     {
         rt_->toggleAutoWritableJitCodeActive(true);
         if (!ExecutableAllocator::makeWritable(addr_, size_))
@@ -749,20 +643,6 @@ class MOZ_STACK_CLASS MaybeAutoWritableJitCode
             awjc_.emplace(code);
     }
 };
-
-
-
-
-void
-EnsureAsyncInterrupt(JSContext* cx);
-
-
-bool
-HaveAsyncInterrupt();
-
-
-extern void
-InterruptRunningCode(JSContext* cx);
 
 } 
 } 

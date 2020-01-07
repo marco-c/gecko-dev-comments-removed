@@ -3059,56 +3059,9 @@ CodeGenerator::visitGoto(LGoto* lir)
     jumpToBlock(lir->target());
 }
 
-
-
-class OutOfLineInterruptCheckImplicit : public OutOfLineCodeBase<CodeGenerator>
-{
-  public:
-    LBlock* block;
-    LInterruptCheck* lir;
-
-    OutOfLineInterruptCheckImplicit(LBlock* block, LInterruptCheck* lir)
-      : block(block), lir(lir)
-    { }
-
-    void accept(CodeGenerator* codegen) override {
-        codegen->visitOutOfLineInterruptCheckImplicit(this);
-    }
-};
-
 typedef bool (*InterruptCheckFn)(JSContext*);
 static const VMFunction InterruptCheckInfo =
     FunctionInfo<InterruptCheckFn>(InterruptCheck, "InterruptCheck");
-
-void
-CodeGenerator::visitOutOfLineInterruptCheckImplicit(OutOfLineInterruptCheckImplicit* ool)
-{
-#ifdef CHECK_OSIPOINT_REGISTERS
-    
-    
-    
-    
-    resetOsiPointRegs(ool->lir->safepoint());
-#endif
-
-    LInstructionIterator iter = ool->block->begin();
-    for (; iter != ool->block->end(); iter++) {
-        if (iter->isMoveGroup()) {
-            
-            
-            
-            visitMoveGroup(iter->toMoveGroup());
-        } else {
-            break;
-        }
-    }
-    MOZ_ASSERT(*iter == ool->lir);
-
-    saveLive(ool->lir);
-    callVM(InterruptCheckInfo, ool->lir);
-    restoreLive(ool->lir);
-    masm.jump(ool->rejoin());
-}
 
 void
 CodeGenerator::visitTableSwitch(LTableSwitch* ins)
@@ -10325,8 +10278,8 @@ CodeGenerator::link(JSContext* cx, CompilerConstraintList* constraints)
                        recovers_.size(), bailouts_.length(), graph.numConstants(),
                        safepointIndices_.length(), osiIndices_.length(),
                        icList_.length(), runtimeData_.length(),
-                       safepoints_.size(), patchableBackedges_.length(),
-                       sharedStubs_.length(), optimizationLevel);
+                       safepoints_.size(), sharedStubs_.length(),
+                       optimizationLevel);
     if (!ionScript)
         return false;
     auto guardIonScript = mozilla::MakeScopeExit([&ionScript] {
@@ -10337,7 +10290,7 @@ CodeGenerator::link(JSContext* cx, CompilerConstraintList* constraints)
 
     Linker linker(masm);
     AutoFlushICache afc("IonLink");
-    JitCode* code = linker.newCode(cx, CodeKind::Ion, !patchableBackedges_.empty());
+    JitCode* code = linker.newCode(cx, CodeKind::Ion);
     if (!code)
         return false;
 
@@ -10543,8 +10496,6 @@ CodeGenerator::link(JSContext* cx, CompilerConstraintList* constraints)
             }
         }
     }
-    if (patchableBackedges_.length() > 0)
-        ionScript->copyPatchableBackedges(cx, code, patchableBackedges_.begin(), masm);
 
     
     if (IonScriptCounts* counts = extractScriptCounts())
@@ -12898,15 +12849,6 @@ CodeGenerator::visitAssertRangeV(LAssertRangeV* ins)
 void
 CodeGenerator::visitInterruptCheck(LInterruptCheck* lir)
 {
-    if (lir->implicit()) {
-        OutOfLineInterruptCheckImplicit* ool = new(alloc()) OutOfLineInterruptCheckImplicit(current, lir);
-        addOutOfLineCode(ool, lir->mir());
-
-        lir->setOolEntry(ool->entry());
-        masm.bind(ool->rejoin());
-        return;
-    }
-
     OutOfLineCode* ool = oolCallVM(InterruptCheckInfo, lir, ArgList(), StoreNothing());
 
     const void* interruptAddr = gen->runtime->addressOfInterrupt();

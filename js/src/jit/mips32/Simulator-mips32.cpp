@@ -516,8 +516,6 @@ class AutoLockSimulatorCache : public LockGuard<Mutex>
 
 mozilla::Atomic<size_t, mozilla::ReleaseAcquire>
     SimulatorProcess::ICacheCheckingDisableCount(1); 
-mozilla::Atomic<bool, mozilla::ReleaseAcquire>
-    SimulatorProcess::cacheInvalidatedBySignalHandler_(false);
 SimulatorProcess* SimulatorProcess::singleton_ = nullptr;
 
 int Simulator::StopSimAt = -1;
@@ -1206,25 +1204,11 @@ SimulatorProcess::checkICacheLocked(SimInstruction* instr)
     bool cache_hit = (*cache_valid_byte == CachePage::LINE_VALID);
     char* cached_line = cache_page->cachedData(offset & ~CachePage::kLineMask);
 
-    
-    int cmpret = 0;
     if (cache_hit) {
         
-        cmpret = memcmp(reinterpret_cast<void*>(instr),
-                        cache_page->cachedData(offset),
-                        SimInstruction::kInstrSize);
-    }
-
-    
-    
-    
-    if (cacheInvalidatedBySignalHandler_) {
-        icache().clear();
-        cacheInvalidatedBySignalHandler_ = false;
-        return;
-    }
-
-    if (cache_hit) {
+        int cmpret = memcmp(reinterpret_cast<void*>(instr),
+                            cache_page->cachedData(offset),
+                            SimInstruction::kInstrSize);
         MOZ_ASSERT(cmpret == 0);
     } else {
         

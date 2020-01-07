@@ -483,12 +483,6 @@ class SimulatorProcess
     static mozilla::Atomic<size_t, mozilla::ReleaseAcquire> ICacheCheckingDisableCount;
     static void FlushICache(void* start, size_t size);
 
-    
-    
-    
-    
-    static mozilla::Atomic<bool, mozilla::ReleaseAcquire> cacheInvalidatedBySignalHandler_;
-
     static void checkICacheLocked(SimInstruction* instr);
 
     static bool initialize() {

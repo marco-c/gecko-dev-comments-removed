@@ -1580,64 +1580,8 @@ MacroAssemblerMIPS64Compat::extractTag(const BaseIndex& address, Register scratc
     return extractTag(Address(scratch, address.offset), scratch);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 CodeOffsetJump
-MacroAssemblerMIPS64Compat::backedgeJump(RepatchLabel* label, Label* documentation)
-{
-    
-    MOZ_ASSERT(!label->used());
-
-    BufferOffset bo = nextOffset();
-    label->use(bo.getOffset());
-
-    
-    m_buffer.ensureSpace(16 * sizeof(uint32_t));
-    
-    as_b(BOffImm16(2 * sizeof(uint32_t)));
-    
-    ma_liPatchable(ScratchRegister, ImmWord(LabelBase::INVALID_OFFSET));
-    MOZ_ASSERT(nextOffset().getOffset() - bo.getOffset() == 5 * sizeof(uint32_t));
-    as_jr(ScratchRegister);
-    
-    ma_liPatchable(ScratchRegister, ImmWord(LabelBase::INVALID_OFFSET));
-    as_jr(ScratchRegister);
-    as_nop();
-    MOZ_ASSERT(nextOffset().getOffset() - bo.getOffset() == 12 * sizeof(uint32_t));
-    return CodeOffsetJump(bo.getOffset());
-}
-
-CodeOffsetJump
-MacroAssemblerMIPS64Compat::jumpWithPatch(RepatchLabel* label, Label* documentation)
+MacroAssemblerMIPS64Compat::jumpWithPatch(RepatchLabel* label)
 {
     
     MOZ_ASSERT(!label->used());

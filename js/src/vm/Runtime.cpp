@@ -418,10 +418,8 @@ JSRuntime::addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf, JS::Runtim
             rtSizes->scriptData += mallocSizeOf(r.front());
     }
 
-    if (jitRuntime_) {
+    if (jitRuntime_)
         jitRuntime_->execAlloc().addSizeOfCode(&rtSizes->code);
-        jitRuntime_->backedgeExecAlloc().addSizeOfCode(&rtSizes->code);
-    }
 
     rtSizes->wasmRuntime += wasmInstances.lock()->sizeOfExcludingThis(mallocSizeOf);
 }
@@ -507,13 +505,11 @@ JSContext::requestInterrupt(InterruptMode mode)
         
         
         
-        
         interruptRegExpJit_ = true;
         FutexThread::lock();
         if (fx.isWaiting())
             fx.wake(FutexThread::WakeForJSInterrupt);
         fx.unlock();
-        jit::InterruptRunningCode(this);
         wasm::InterruptRunningCode(this);
     }
 }

@@ -39,7 +39,7 @@ class Linker
     
     
     
-    JitCode* newCode(JSContext* cx, CodeKind kind, bool hasPatchableBackedges = false);
+    JitCode* newCode(JSContext* cx, CodeKind kind);
 };
 
 } 

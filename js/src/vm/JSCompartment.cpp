@@ -174,14 +174,12 @@ JSRuntime::createJitRuntime(JSContext* cx)
         return nullptr;
     }
 
-    jit::JitRuntime* jrt = cx->new_<jit::JitRuntime>(cx->runtime());
+    jit::JitRuntime* jrt = cx->new_<jit::JitRuntime>();
     if (!jrt)
         return nullptr;
 
     
     
-    
-    JitRuntime::AutoPreventBackedgePatching apbp(cx->runtime(), jrt);
     jitRuntime_ = jrt;
 
     AutoEnterOOMUnsafeRegion noOOM;

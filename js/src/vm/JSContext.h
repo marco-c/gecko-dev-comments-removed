@@ -108,9 +108,6 @@ struct JSContext : public JS::RootingContext,
     js::WriteOnceData<js::ContextKind> kind_;
 
     
-    js::WriteOnceData<size_t> threadNative_;
-
-    
     js::ThreadLocalData<js::HelperThread*> helperThread_;
 
     friend class js::gc::AutoSuppressNurseryCellAlloc;
@@ -126,7 +123,6 @@ struct JSContext : public JS::RootingContext,
     void setRuntime(JSRuntime* rt);
 
     bool isCooperativelyScheduled() const { return kind_ == js::ContextKind::Cooperative; }
-    size_t threadNative() const { return threadNative_; }
 
     inline js::gc::ArenaLists* arenas() const { return arenas_; }
 
@@ -841,25 +837,7 @@ struct JSContext : public JS::RootingContext,
         return interrupt_;
     }
 
-  private:
-    
-    
-    mozilla::Atomic<bool> handlingJitInterrupt_;
-
   public:
-    bool startHandlingJitInterrupt() {
-        
-        
-        return handlingJitInterrupt_.compareExchange(false, true);
-    }
-    void finishHandlingJitInterrupt() {
-        MOZ_ASSERT(handlingJitInterrupt_);
-        handlingJitInterrupt_ = false;
-    }
-    bool handlingJitInterrupt() const {
-        return handlingJitInterrupt_;
-    }
-
     void* addressOfInterrupt() {
         return &interrupt_;
     }

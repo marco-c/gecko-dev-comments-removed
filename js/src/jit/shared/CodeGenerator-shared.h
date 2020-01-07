@@ -34,17 +34,6 @@ class OutOfLineCallVM;
 
 class OutOfLineTruncateSlow;
 
-struct PatchableBackedgeInfo
-{
-    CodeOffsetJump backedge;
-    Label* loopHeader;
-    Label* interruptCheck;
-
-    PatchableBackedgeInfo(CodeOffsetJump backedge, Label* loopHeader, Label* interruptCheck)
-      : backedge(backedge), loopHeader(loopHeader), interruptCheck(interruptCheck)
-    {}
-};
-
 struct ReciprocalMulConstants {
     int64_t multiplier;
     int32_t shiftAmount;
@@ -109,9 +98,6 @@ class CodeGeneratorShared : public LElementVisitor
         CodeOffset icOffsetForPush;
     };
     js::Vector<CompileTimeICInfo, 0, SystemAllocPolicy> icInfo_;
-
-    
-    Vector<PatchableBackedgeInfo, 0, SystemAllocPolicy> patchableBackedges_;
 
 #ifdef JS_TRACE_LOGGING
     struct PatchableTLEvent {
@@ -487,12 +473,7 @@ class CodeGeneratorShared : public LElementVisitor
     
     
     
-    
     void jumpToBlock(MBasicBlock* mir);
-
-    
-    
-    Label* labelForBackedgeWithImplicitCheck(MBasicBlock* mir);
 
 
 #if !defined(JS_CODEGEN_MIPS32) && !defined(JS_CODEGEN_MIPS64)

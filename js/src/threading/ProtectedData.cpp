@@ -52,17 +52,11 @@ template <AllowedHelperThread Helper>
 void
 CheckActiveThread<Helper>::check() const
 {
-    
-    
-    
-    
-#ifndef XP_WIN
     if (OnHelperThread<Helper>())
         return;
 
     JSContext* cx = TlsContext.get();
     MOZ_ASSERT(CurrentThreadCanAccessRuntime(cx->runtime()));
-#endif 
 }
 
 template class CheckActiveThread<AllowedHelperThread::None>;
@@ -83,9 +77,6 @@ CheckZoneGroup<Helper>::check() const
         } else {
             
             
-#ifndef XP_WIN
-            
-            
             
             
             
@@ -94,7 +85,6 @@ CheckZoneGroup<Helper>::check() const
             
             
             MOZ_ASSERT(CurrentThreadCanAccessRuntime(cx->runtime()));
-#endif
         }
     } else {
         

@@ -1513,32 +1513,6 @@ CodeGeneratorShared::emitPreBarrier(Address address)
     masm.guardedCallPreBarrier(address, MIRType::Value);
 }
 
-Label*
-CodeGeneratorShared::labelForBackedgeWithImplicitCheck(MBasicBlock* mir)
-{
-    
-    
-    
-    
-    
-    if (!gen->compilingWasm() && mir->isLoopHeader() && mir->id() <= current->mir()->id()) {
-        for (LInstructionIterator iter = mir->lir()->begin(); iter != mir->lir()->end(); iter++) {
-            if (iter->isMoveGroup()) {
-                
-            } else {
-                
-                
-                MOZ_ASSERT(iter->isInterruptCheck());
-                if (iter->toInterruptCheck()->implicit())
-                    return iter->toInterruptCheck()->oolEntry();
-                return nullptr;
-            }
-        }
-    }
-
-    return nullptr;
-}
-
 void
 CodeGeneratorShared::jumpToBlock(MBasicBlock* mir)
 {
@@ -1549,40 +1523,14 @@ CodeGeneratorShared::jumpToBlock(MBasicBlock* mir)
     if (isNextBlock(mir->lir()))
         return;
 
-    if (Label* oolEntry = labelForBackedgeWithImplicitCheck(mir)) {
-        
-        
-        RepatchLabel rejoin;
-        CodeOffsetJump backedge = masm.backedgeJump(&rejoin, mir->lir()->label());
-        masm.bind(&rejoin);
-
-        masm.propagateOOM(patchableBackedges_.append(PatchableBackedgeInfo(backedge, mir->lir()->label(), oolEntry)));
-    } else {
-        masm.jump(mir->lir()->label());
-    }
+    masm.jump(mir->lir()->label());
 }
 
 Label*
 CodeGeneratorShared::getJumpLabelForBranch(MBasicBlock* block)
 {
     
-    block = skipTrivialBlocks(block);
-
-    if (!labelForBackedgeWithImplicitCheck(block))
-        return block->lir()->label();
-
-    
-    
-    
-    
-    
-    Label* res = alloc().lifoAlloc()->newInfallible<Label>();
-    Label after;
-    masm.jump(&after);
-    masm.bind(res);
-    jumpToBlock(block);
-    masm.bind(&after);
-    return res;
+    return skipTrivialBlocks(block)->lir()->label();
 }
 
 
@@ -1591,19 +1539,7 @@ void
 CodeGeneratorShared::jumpToBlock(MBasicBlock* mir, Assembler::Condition cond)
 {
     
-    mir = skipTrivialBlocks(mir);
-
-    if (Label* oolEntry = labelForBackedgeWithImplicitCheck(mir)) {
-        
-        
-        RepatchLabel rejoin;
-        CodeOffsetJump backedge = masm.jumpWithPatch(&rejoin, cond, mir->lir()->label());
-        masm.bind(&rejoin);
-
-        masm.propagateOOM(patchableBackedges_.append(PatchableBackedgeInfo(backedge, mir->lir()->label(), oolEntry)));
-    } else {
-        masm.j(cond, mir->lir()->label());
-    }
+    masm.j(cond, skipTrivialBlocks(mir)->lir()->label());
 }
 #endif
 
