@@ -2685,7 +2685,7 @@ Element::SetAttrAndNotify(int32_t aNamespaceID,
   
   
   nsAttrValue valueForAfterSetAttr;
-  if (aCallAfterSetAttr) {
+  if (aCallAfterSetAttr || GetCustomElementData()) {
     valueForAfterSetAttr.SetTo(aParsedValue);
   }
 
