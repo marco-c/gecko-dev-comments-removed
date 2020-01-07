@@ -1,17 +1,7 @@
-<!DOCTYPE HTML>
-<html>
-<head>
-  <title>Test for content script</title>
-  <script type="text/javascript" src="/tests/SimpleTest/SimpleTest.js"></script>
-  <script type="text/javascript" src="/tests/SimpleTest/SpawnTask.js"></script>
-  <script type="text/javascript" src="/tests/SimpleTest/ExtensionTestUtils.js"></script>
-  <script type="text/javascript" src="head.js"></script>
-  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css">
-</head>
-<body>
-
-<script>
 "use strict";
+
+const server = createHttpServer({hosts: ["example.com"]});
+server.registerDirectory("/data/", do_get_file("data"));
 
 add_task(async function test_contentscript_exportHelpers() {
   function contentScript() {
@@ -19,7 +9,7 @@ add_task(async function test_contentscript_exportHelpers() {
     browser.test.assertTrue(typeof createObjectIn === "function");
     browser.test.assertTrue(typeof exportFunction === "function");
 
-    /* globals exportFunction, precisePi, reportPi */
+    
     let value = 3.14;
     exportFunction(() => value, window, {defineAs: "precisePi"});
 
@@ -51,7 +41,7 @@ add_task(async function test_contentscript_exportHelpers() {
     }})();`;
 
     document.documentElement.appendChild(s);
-    // Inline script ought to run synchronously.
+    
 
     browser.test.assertEq(3.14, results[0],
                           "exportFunction on window should define a global function");
@@ -68,7 +58,7 @@ add_task(async function test_contentscript_exportHelpers() {
     manifest: {
       content_scripts: [{
         js: ["contentscript.js"],
-        matches: ["http://mochi.test/*/file_sample.html"],
+        matches: ["http://example.com/data/file_sample.html"],
         run_at: "document_start",
       }],
     },
@@ -79,17 +69,12 @@ add_task(async function test_contentscript_exportHelpers() {
   };
 
   let extension = ExtensionTestUtils.loadExtension(extensionData);
-
   await extension.startup();
 
-  let win = window.open("file_sample.html");
+  let contentPage = await ExtensionTestUtils.loadContentPage(
+    "http://example.com/data/file_sample.html");
 
   await extension.awaitFinish("export helper test completed");
-  win.close();
-
+  await contentPage.close();
   await extension.unload();
 });
-</script>
-
-</body>
-</html>
