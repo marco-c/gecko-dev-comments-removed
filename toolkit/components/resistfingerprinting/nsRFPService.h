@@ -158,15 +158,17 @@ class nsRFPService final : public nsIObserver
 public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIOBSERVER
+
   static nsRFPService* GetOrCreate();
   static bool IsResistFingerprintingEnabled();
   static bool IsTimerPrecisionReductionEnabled(TimerPrecisionType aType);
-  static double TimerResolution();
+
   enum TimeScale {
     Seconds      = 1,
     MilliSeconds = 1000,
     MicroSeconds = 1000000
   };
+
   
   static double ReduceTimePrecisionAsUSecs(
     double aTime,

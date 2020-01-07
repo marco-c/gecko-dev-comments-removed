@@ -662,26 +662,25 @@ AudioContext::DestinationStream() const
   }
   return nullptr;
 }
+
 double
 AudioContext::CurrentTime()
 {
   MediaStream* stream = Destination()->Stream();
-  double rawTime = stream->StreamTimeToSeconds(stream->GetCurrentTime());
+
+  if (!mIsStarted &&
+    stream->StreamTimeToSeconds(stream->GetCurrentTime()) == 0) {
+      return 0;
+  }
 
   
   
   
-  
-  
-  if ((128/mSampleRate) * 1000.0 > nsRFPService::TimerResolution() / 1000.0) {
-    return rawTime;
-  }
-  
-  
-  
   return nsRFPService::ReduceTimePrecisionAsSecs(
-    rawTime, GetRandomTimelineSeed());
+    stream->StreamTimeToSeconds(stream->GetCurrentTime()),
+    GetRandomTimelineSeed());
 }
+
 void AudioContext::DisconnectFromOwner()
 {
   mIsDisconnecting = true;
