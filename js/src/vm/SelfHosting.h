@@ -34,9 +34,20 @@ ReportIncompatibleSelfHostedMethod(JSContext* cx, const CallArgs& args);
 void
 FillSelfHostingCompileOptions(JS::CompileOptions& options);
 
+#ifdef DEBUG
+
+
+
+
+
+
 bool
 CallSelfHostedFunction(JSContext* cx, char const* name, HandleValue thisv,
                        const AnyInvokeArgs& args, MutableHandleValue rval);
+#endif
+
+
+
 
 bool
 CallSelfHostedFunction(JSContext* cx, HandlePropertyName name, HandleValue thisv,

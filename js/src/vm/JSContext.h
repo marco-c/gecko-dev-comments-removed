@@ -981,15 +981,6 @@ enum ErrorArgumentsType {
 
 
 
-
-
-JSFunction*
-SelfHostedFunction(JSContext* cx, HandlePropertyName propName);
-
-
-
-
-
 #ifdef va_start
 extern bool
 ReportErrorVA(JSContext* cx, unsigned flags, const char* format,
