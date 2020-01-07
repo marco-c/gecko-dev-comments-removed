@@ -5,12 +5,15 @@
 
 
 #include "nsIGlobalObject.h"
+
+#include "mozilla/dom/ServiceWorker.h"
 #include "nsContentUtils.h"
 #include "nsThreadUtils.h"
 #include "nsHostObjectProtocolHandler.h"
 
 using mozilla::Maybe;
 using mozilla::dom::ClientInfo;
+using mozilla::dom::ServiceWorker;
 using mozilla::dom::ServiceWorkerDescriptor;
 
 nsIGlobalObject::~nsIGlobalObject()
@@ -131,4 +134,23 @@ nsIGlobalObject::GetController() const
   
   
   return Maybe<ServiceWorkerDescriptor>();
+}
+
+RefPtr<ServiceWorker>
+nsIGlobalObject::GetOrCreateServiceWorker(const ServiceWorkerDescriptor& aDescriptor)
+{
+  MOZ_DIAGNOSTIC_ASSERT(false, "this global should not have any service workers");
+  return nullptr;
+}
+
+void
+nsIGlobalObject::AddServiceWorker(ServiceWorker* aServiceWorker)
+{
+  MOZ_DIAGNOSTIC_ASSERT(false, "this global should not have any service workers");
+}
+
+void
+nsIGlobalObject::RemoveServiceWorker(ServiceWorker* aServiceWorker)
+{
+  MOZ_DIAGNOSTIC_ASSERT(false, "this global should not have any service workers");
 }

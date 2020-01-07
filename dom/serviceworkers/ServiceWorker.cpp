@@ -134,5 +134,16 @@ ServiceWorker::PostMessage(JSContext* aCx, JS::Handle<JS::Value> aMessage,
   mInner->PostMessage(GetParentObject(), aCx, aMessage, aTransferable, aRv);
 }
 
+bool
+ServiceWorker::MatchesDescriptor(const ServiceWorkerDescriptor& aDescriptor) const
+{
+  
+  
+  return mDescriptor.PrincipalInfo() == aDescriptor.PrincipalInfo() &&
+         mDescriptor.Scope() == aDescriptor.Scope() &&
+         mDescriptor.ScriptURL() == aDescriptor.ScriptURL() &&
+         mDescriptor.Id() == aDescriptor.Id();
+}
+
 } 
 } 

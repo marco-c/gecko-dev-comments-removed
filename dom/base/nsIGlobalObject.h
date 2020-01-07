@@ -24,6 +24,12 @@
 class nsCycleCollectionTraversalCallback;
 class nsIPrincipal;
 
+namespace mozilla {
+namespace dom {
+class ServiceWorker;
+} 
+} 
+
 class nsIGlobalObject : public nsISupports,
                         public mozilla::dom::DispatcherTrait
 {
@@ -85,6 +91,21 @@ public:
 
   virtual mozilla::Maybe<mozilla::dom::ServiceWorkerDescriptor>
   GetController() const;
+
+  
+  
+  virtual RefPtr<mozilla::dom::ServiceWorker>
+  GetOrCreateServiceWorker(const mozilla::dom::ServiceWorkerDescriptor& aDescriptor);
+
+  
+  
+  
+  virtual void
+  AddServiceWorker(mozilla::dom::ServiceWorker* aServiceWorker);
+
+  
+  virtual void
+  RemoveServiceWorker(mozilla::dom::ServiceWorker* aServiceWorker);
 
 protected:
   virtual ~nsIGlobalObject();
