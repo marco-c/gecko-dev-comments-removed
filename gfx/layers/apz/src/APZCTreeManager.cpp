@@ -79,6 +79,8 @@ struct APZCTreeManager::TreeBuildingState {
   {
   }
 
+  typedef std::unordered_map<AsyncPanZoomController*, gfx::Matrix4x4> DeferredTransformMap;
+
   
   const LayerTreeState* const mLayerTreeState;
   const bool mIsFirstPaint;
@@ -105,6 +107,12 @@ struct APZCTreeManager::TreeBuildingState {
   
   
   std::stack<bool> mParentHasPerspective;
+
+  
+  
+  
+  
+  DeferredTransformMap mPerspectiveTransformsDeferredToChildren;
 };
 
 class APZCTreeManager::CheckerboardFlushObserver : public nsIObserver {
@@ -394,6 +402,37 @@ APZCTreeManager::UpdateHitTestingTreeImpl(uint64_t aRootLayerTreeId,
         });
 
     mApzcTreeLog << "[end]\n";
+
+    
+    
+    
+    
+    
+    
+    if (!state.mPerspectiveTransformsDeferredToChildren.empty()) {
+      ForEachNode<ReverseIterator>(mRootNode.get(),
+          [&state](HitTestingTreeNode* aNode) {
+            AsyncPanZoomController* apzc = aNode->GetApzc();
+            if (!apzc) {
+              return;
+            }
+            if (!aNode->IsPrimaryHolder()) {
+              return;
+            }
+
+            AsyncPanZoomController* parent = apzc->GetParent();
+            if (!parent) {
+              return;
+            }
+
+            auto it = state.mPerspectiveTransformsDeferredToChildren.find(parent);
+            if (it != state.mPerspectiveTransformsDeferredToChildren.end()) {
+              apzc->SetAncestorTransform(AncestorTransform{
+                it->second * apzc->GetAncestorTransform(), false
+              });
+            }
+          });
+    }
   }
 
   
@@ -956,12 +995,19 @@ APZCTreeManager::PrepareNodeForLayer(const ScrollNode& aLayer,
     
     
     
-    if (!aAncestorTransform.mTransform.FuzzyEqualsMultiplicative(apzc->GetAncestorTransform())) {
-      if (!aAncestorTransform.mContainsPerspectiveTransform &&
+    
+    if (!aAncestorTransform.CombinedTransform().FuzzyEqualsMultiplicative(apzc->GetAncestorTransform())) {
+      typedef TreeBuildingState::DeferredTransformMap::value_type PairType;
+      if (!aAncestorTransform.ContainsPerspectiveTransform() &&
           !apzc->AncestorTransformContainsPerspective()) {
         MOZ_ASSERT(false, "Two layers that scroll together have different ancestor transforms");
-      } else if (!aAncestorTransform.mContainsPerspectiveTransform) {
+      } else if (!aAncestorTransform.ContainsPerspectiveTransform()) {
+        aState.mPerspectiveTransformsDeferredToChildren.insert(
+            PairType{apzc, apzc->GetAncestorTransformPerspective()});
         apzc->SetAncestorTransform(aAncestorTransform);
+      } else {
+        aState.mPerspectiveTransformsDeferredToChildren.insert(
+            PairType{apzc, aAncestorTransform.GetPerspectiveTransform()});
       }
     }
 
