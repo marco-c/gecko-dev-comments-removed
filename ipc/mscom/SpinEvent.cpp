@@ -8,6 +8,7 @@
 
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/TimeStamp.h"
 #include "nsServiceManagerUtils.h"
 #include "nsString.h"
 #include "nsSystemInfo.h"
@@ -24,19 +25,26 @@
 namespace mozilla {
 namespace mscom {
 
+static const TimeDuration kMaxSpinTime = TimeDuration::FromMilliseconds(30);
+bool SpinEvent::sIsMulticore = false;
+
+ bool
+SpinEvent::InitStatics()
+{
+  SYSTEM_INFO sysInfo;
+  ::GetSystemInfo(&sysInfo);
+  sIsMulticore = sysInfo.dwNumberOfProcessors > 1;
+  return true;
+}
+
 SpinEvent::SpinEvent()
   : mDone(false)
 {
-  static const bool sIsMulticore = []() {
-    SYSTEM_INFO sysInfo;
-    ::GetSystemInfo(&sysInfo);
-    return sysInfo.dwNumberOfProcessors > 1;
-  }();
+  static const bool gotStatics = InitStatics();
+  MOZ_ASSERT(gotStatics);
 
-  if (!sIsMulticore) {
-    mDoneEvent.own(::CreateEventW(nullptr, FALSE, FALSE, nullptr));
-    MOZ_ASSERT(mDoneEvent);
-  }
+  mDoneEvent.own(::CreateEventW(nullptr, FALSE, FALSE, nullptr));
+  MOZ_ASSERT(mDoneEvent);
 }
 
 bool
@@ -47,30 +55,41 @@ SpinEvent::Wait(HANDLE aTargetThread)
     return false;
   }
 
-  if (mDoneEvent) {
-    HANDLE handles[] = {mDoneEvent, aTargetThread};
-    DWORD waitResult = ::WaitForMultipleObjects(mozilla::ArrayLength(handles),
-                                                handles, FALSE, INFINITE);
-    return waitResult == WAIT_OBJECT_0;
+  if (sIsMulticore) {
+    
+    
+    
+    
+    
+    
+    TimeStamp start(TimeStamp::Now());
+    while (!mDone) {
+      TimeDuration elapsed(TimeStamp::Now() - start);
+      if (elapsed >= kMaxSpinTime) {
+        break;
+      }
+      
+      
+      
+      CPU_PAUSE();
+    }
+    if (mDone) {
+      return true;
+    }
   }
 
-  while (!mDone) {
-    
-    
-    
-    CPU_PAUSE();
-  }
-  return true;
+  MOZ_ASSERT(mDoneEvent);
+  HANDLE handles[] = {mDoneEvent, aTargetThread};
+  DWORD waitResult = ::WaitForMultipleObjects(mozilla::ArrayLength(handles),
+                                              handles, FALSE, INFINITE);
+  return waitResult == WAIT_OBJECT_0;
 }
 
 void
 SpinEvent::Signal()
 {
-  if (mDoneEvent) {
-    ::SetEvent(mDoneEvent);
-  } else {
-    mDone = true;
-  }
+  ::SetEvent(mDoneEvent);
+  mDone = true;
 }
 
 } 
