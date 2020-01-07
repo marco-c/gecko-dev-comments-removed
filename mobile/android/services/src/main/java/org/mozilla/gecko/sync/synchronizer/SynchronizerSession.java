@@ -5,23 +5,33 @@
 package org.mozilla.gecko.sync.synchronizer;
 
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.mozilla.gecko.background.common.log.Logger;
+import org.mozilla.gecko.sync.ReflowIsNecessaryException;
 import org.mozilla.gecko.sync.SyncException;
 import org.mozilla.gecko.sync.synchronizer.StoreBatchTracker.Batch;
+import org.mozilla.gecko.sync.repositories.FetchFailedException;
 import org.mozilla.gecko.sync.repositories.InactiveSessionException;
 import org.mozilla.gecko.sync.repositories.InvalidSessionTransitionException;
 import org.mozilla.gecko.sync.repositories.RepositorySession;
 import org.mozilla.gecko.sync.repositories.RepositorySessionBundle;
+import org.mozilla.gecko.sync.repositories.StoreFailedException;
 import org.mozilla.gecko.sync.repositories.delegates.DeferredRepositorySessionFinishDelegate;
 import org.mozilla.gecko.sync.repositories.delegates.RepositorySessionFinishDelegate;
 
 import android.content.Context;
+
+
+
+
+
+
+
+
 
 
 
@@ -307,6 +317,34 @@ public class SynchronizerSession implements RecordsChannelDelegate, RepositorySe
 
 
   public void onFirstFlowCompleted(RecordsChannel recordsChannel) {
+    
+    final ReflowIsNecessaryException reflowException = recordsChannel.getReflowException();
+    if (reflowException != null) {
+      final String message = "Reflow is necessary: " + reflowException;
+      Logger.warn(LOG_TAG, message + " Aborting session.");
+      delegate.onSynchronizeFailed(this, reflowException, message);
+      return;
+    }
+
+    
+    int numRemoteFetchFailed = recordsChannel.getFetchFailureCount();
+    if (numRemoteFetchFailed > 0) {
+      final String message = "Got " + numRemoteFetchFailed + " failures fetching remote records!";
+      Logger.warn(LOG_TAG, message + " Aborting session.");
+      delegate.onSynchronizeFailed(this, new FetchFailedException(), message);
+      return;
+    }
+    Logger.trace(LOG_TAG, "No failures fetching remote records.");
+
+    
+    int numLocalStoreFailed = recordsChannel.getStoreFailureCount();
+    if (numLocalStoreFailed > 0) {
+      final String message = "Got " + numLocalStoreFailed + " failures storing local records!";
+      Logger.warn(LOG_TAG, message + " Ignoring local store failures and continuing synchronizer session.");
+    } else {
+      Logger.trace(LOG_TAG, "No failures storing local records.");
+    }
+
     Logger.trace(LOG_TAG, "First RecordsChannel onFlowCompleted.");
     pendingATimestamp = sessionA.getLastFetchTimestamp();
     storeEndBTimestamp = sessionB.getLastStoreTimestamp();
@@ -326,6 +364,35 @@ public class SynchronizerSession implements RecordsChannelDelegate, RepositorySe
 
 
   public void onSecondFlowCompleted(RecordsChannel recordsChannel) {
+    
+    final ReflowIsNecessaryException reflowException = recordsChannel.getReflowException();
+    if (reflowException != null) {
+      final String message = "Reflow is necessary: " + reflowException;
+      Logger.warn(LOG_TAG, message + " Aborting session.");
+      delegate.onSynchronizeFailed(this, reflowException, message);
+      return;
+    }
+
+    
+    int numLocalFetchFailed = recordsChannel.getFetchFailureCount();
+    if (numLocalFetchFailed > 0) {
+      final String message = "Got " + numLocalFetchFailed + " failures fetching local records!";
+      Logger.warn(LOG_TAG, message + " Aborting session.");
+      delegate.onSynchronizeFailed(this, new FetchFailedException(), message);
+      return;
+    }
+    Logger.trace(LOG_TAG, "No failures fetching local records.");
+
+    
+    int numRemoteStoreFailed = recordsChannel.getStoreFailureCount();
+    if (numRemoteStoreFailed > 0) {
+      final String message = "Got " + numRemoteStoreFailed + " failures storing remote records!";
+      Logger.warn(LOG_TAG, message + " Aborting session.");
+      delegate.onSynchronizeFailed(this, new StoreFailedException(), message);
+      return;
+    }
+    Logger.trace(LOG_TAG, "No failures storing remote records.");
+
     Logger.trace(LOG_TAG, "Second RecordsChannel onFlowCompleted.");
     pendingBTimestamp = sessionB.getLastFetchTimestamp();
     storeEndATimestamp = sessionA.getLastStoreTimestamp();
