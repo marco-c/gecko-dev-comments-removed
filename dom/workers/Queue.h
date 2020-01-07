@@ -4,17 +4,17 @@
 
 
 
-#ifndef mozilla_dom_workers_queue_h__
-#define mozilla_dom_workers_queue_h__
+#ifndef mozilla_dom_workerinternal_Queue_h
+#define mozilla_dom_workerinternal_Queue_h
 
-#include "mozilla/dom/workers/WorkerCommon.h"
+#include "mozilla/dom/WorkerCommon.h"
 
 #include "mozilla/Mutex.h"
 #include "nsTArray.h"
 
 namespace mozilla {
 namespace dom {
-namespace workersinternals {
+namespace workerinternals {
 
 template <typename T, int TCount>
 struct StorageWithTArray
