@@ -1282,7 +1282,7 @@ FracNumberToCString(JSContext* cx, ToCStringBuf* cbuf, double d, int base = 10)
 #ifdef DEBUG
     {
         int32_t _;
-        MOZ_ASSERT(!mozilla::NumberIsInt32(d, &_));
+        MOZ_ASSERT(!mozilla::NumberEqualsInt32(d, &_));
     }
 #endif
 
@@ -1313,7 +1313,7 @@ js::NumberToCString(JSContext* cx, ToCStringBuf* cbuf, double d, int base)
 {
     int32_t i;
     size_t len;
-    return mozilla::NumberIsInt32(d, &i)
+    return mozilla::NumberEqualsInt32(d, &i)
            ? Int32ToCString(cbuf, i, &len, base)
            : FracNumberToCString(cx, cbuf, d, base);
 }
@@ -1322,22 +1322,16 @@ template <AllowGC allowGC>
 static JSString*
 NumberToStringWithBase(JSContext* cx, double d, int base)
 {
+    MOZ_ASSERT(2 <= base && base <= 36);
+
     ToCStringBuf cbuf;
     char* numStr;
-
-    
-
-
-
-
-    if (base < 2 || base > 36)
-        return nullptr;
 
     JSCompartment* comp = cx->compartment();
 
     int32_t i;
     bool isBase10Int = false;
-    if (mozilla::NumberIsInt32(d, &i)) {
+    if (mozilla::NumberEqualsInt32(d, &i)) {
         isBase10Int = (base == 10);
         if (isBase10Int && StaticStrings::hasInt(i))
             return cx->staticStrings().getInt(i);
@@ -1398,7 +1392,7 @@ JSAtom*
 js::NumberToAtom(JSContext* cx, double d)
 {
     int32_t si;
-    if (mozilla::NumberIsInt32(d, &si))
+    if (mozilla::NumberEqualsInt32(d, &si))
         return Int32ToAtom(cx, si);
 
     if (JSFlatString* str = LookupDtoaCache(cx, d))

@@ -661,37 +661,19 @@ js::Stringify(JSContext* cx, MutableHandleValue vp, JSObject* replacer_, const V
                 if (!GetElement(cx, replacer, k, &item))
                     return false;
 
-                RootedId id(cx);
-
                 
-                if (item.isNumber()) {
-                    
-                    int32_t n;
-                    if (ValueFitsInInt32(item, &n) && INT_FITS_IN_JSID(n)) {
-                        id = INT_TO_JSID(n);
-                    } else {
-                        if (!ValueToId<CanGC>(cx, item, &id))
-                            return false;
-                    }
-                } else {
-                    bool shouldAdd = item.isString();
-                    if (!shouldAdd) {
-                        ESClass cls;
-                        if (!GetClassOfValue(cx, item, &cls))
-                            return false;
+                if (!item.isNumber() && !item.isString()) {
+                    ESClass cls;
+                    if (!GetClassOfValue(cx, item, &cls))
+                        return false;
 
-                        shouldAdd = cls == ESClass::String || cls == ESClass::Number;
-                    }
-
-                    if (shouldAdd) {
-                        
-                        if (!ValueToId<CanGC>(cx, item, &id))
-                            return false;
-                    } else {
-                        
+                    if (cls != ESClass::String && cls != ESClass::Number)
                         continue;
-                    }
                 }
+
+                RootedId id(cx);
+                if (!ValueToId<CanGC>(cx, item, &id))
+                    return false;
 
                 
                 auto p = idSet.lookupForAdd(id);
