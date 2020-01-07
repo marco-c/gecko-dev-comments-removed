@@ -20,11 +20,56 @@ let gSiteDataSettings = {
   
   
   
+  
   _sites: null,
 
   _list: null,
   _searchBox: null,
   _prefStrBundle: null,
+
+  _createSiteListItem(site) {
+    let item = document.createElement("richlistitem");
+    item.setAttribute("host", site.host);
+    let container = document.createElement("hbox");
+
+    
+    function addColumnItem(value, flexWidth) {
+      let box = document.createElement("hbox");
+      box.className = "item-box";
+      box.setAttribute("flex", flexWidth);
+      let label = document.createElement("label");
+      label.setAttribute("crop", "end");
+      if (value) {
+        box.setAttribute("tooltiptext", value);
+        label.setAttribute("value", value);
+      }
+      box.appendChild(label);
+      container.appendChild(box);
+    }
+
+    
+    addColumnItem(site.host, "4");
+
+    
+    addColumnItem(site.persisted ?
+      this._prefStrBundle.getString("persistent") : null, "2");
+
+    
+    addColumnItem(site.cookies.length, "1");
+
+    
+    if (site.usage > 0) {
+      let size = DownloadUtils.convertByteUnits(site.usage);
+      let str = this._prefStrBundle.getFormattedString("siteUsage", size);
+      addColumnItem(str, "1");
+    } else {
+      
+      addColumnItem(null, "1");
+    }
+
+    item.appendChild(container);
+    return item;
+  },
 
   init() {
     function setEventListener(id, eventType, callback) {
@@ -50,6 +95,7 @@ let gSiteDataSettings = {
     setEventListener("sitesList", "select", this.onSelect);
     setEventListener("hostCol", "click", this.onClickTreeCol);
     setEventListener("usageCol", "click", this.onClickTreeCol);
+    setEventListener("cookiesCol", "click", this.onClickTreeCol);
     setEventListener("statusCol", "click", this.onClickTreeCol);
     setEventListener("cancel", "command", this.close);
     setEventListener("save", "command", this.saveChanges);
@@ -91,8 +137,8 @@ let gSiteDataSettings = {
     switch (col.id) {
       case "hostCol":
         sortFunc = (a, b) => {
-          let aHost = a.host.toLowerCase();
-          let bHost = b.host.toLowerCase();
+          let aHost = a.baseDomain.toLowerCase();
+          let bHost = b.baseDomain.toLowerCase();
           return aHost.localeCompare(bHost);
         };
         break;
@@ -106,6 +152,10 @@ let gSiteDataSettings = {
           }
           return 0;
         };
+        break;
+
+      case "cookiesCol":
+        sortFunc = (a, b) => a.cookies.length - b.cookies.length;
         break;
 
       case "usageCol":
@@ -149,13 +199,7 @@ let gSiteDataSettings = {
         continue;
       }
 
-      let size = DownloadUtils.convertByteUnits(site.usage);
-      let item = document.createElement("richlistitem");
-      item.setAttribute("host", host);
-      item.setAttribute("usage", this._prefStrBundle.getFormattedString("siteUsage", size));
-      if (site.persisted) {
-        item.setAttribute("status", this._prefStrBundle.getString("persistent"));
-      }
+      let item = this._createSiteListItem(site);
       this._list.appendChild(item);
     }
     this._updateButtonsState();
