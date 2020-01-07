@@ -1092,17 +1092,23 @@ var ActivityStreamProvider = {
 
 
 
+
+
   async getTopFrecentSites(aOptions) {
     const options = Object.assign({
       ignoreBlocked: false,
       numItems: ACTIVITY_STREAM_DEFAULT_LIMIT,
-      topsiteFrecency: ACTIVITY_STREAM_DEFAULT_FRECENCY
+      topsiteFrecency: ACTIVITY_STREAM_DEFAULT_FRECENCY,
+      onePerDomain: true,
+      includeFavicon: true,
     }, aOptions || {});
 
     
     
     const origNumItems = options.numItems;
-    options.numItems *= 2 * 10;
+    if (options.onePerDomain) {
+      options.numItems *= 2 * 10;
+    }
 
     
     
@@ -1114,7 +1120,8 @@ var ActivityStreamProvider = {
         last_visit_date / 1000 AS lastVisitDate,
         rev_host,
         title,
-        url
+        url,
+        "history" as type
       FROM moz_places h
       WHERE frecency >= :frecencyThreshold
         ${this._commonPlacesWhere}
@@ -1129,7 +1136,8 @@ var ActivityStreamProvider = {
         "guid",
         "lastVisitDate",
         "title",
-        "url"
+        "url",
+        "type"
       ],
       params: this._getCommonParams(options, {
         frecencyThreshold: options.topsiteFrecency
@@ -1158,31 +1166,36 @@ var ActivityStreamProvider = {
     }
 
     
-    const exactHosts = new Map();
-    for (const link of links) {
-      if (!options.ignoreBlocked && BlockedLinks.isBlocked(link)) {
-        continue;
+    if (!options.ignoreBlocked) {
+      links = links.filter(link => !BlockedLinks.isBlocked(link));
+    }
+
+    if (options.onePerDomain) {
+      
+      const exactHosts = new Map();
+      for (const link of links) {
+        
+        setBetterLink(exactHosts, link, url => url.match(/:\/\/([^\/]+)/));
       }
 
-      link.type = "history";
-
       
-      setBetterLink(exactHosts, link, url => url.match(/:\/\/([^\/]+)/));
+      const hosts = new Map();
+      for (const link of exactHosts.values()) {
+        setBetterLink(hosts, link, url => url.match(/:\/\/(?:www\.)?([^\/]+)/),
+          
+          (targetLink, otherLink) => {
+            targetLink.frecency = link.frecency + otherLink.frecency;
+          });
+      }
+
+      links = [...hosts.values()];
     }
-
     
-    const hosts = new Map();
-    for (const link of exactHosts.values()) {
-      setBetterLink(hosts, link, url => url.match(/:\/\/(?:www\.)?([^\/]+)/),
-        
-        (targetLink, otherLink) => {
-          targetLink.frecency = link.frecency + otherLink.frecency;
-        });
+    links = links.sort(isOtherBetter).slice(0, origNumItems);
+
+    if (!options.includeFavicon) {
+      return links;
     }
-
-    
-    links = [...hosts.values()].sort(isOtherBetter).slice(0, origNumItems);
-
     
     return this._faviconBytesToDataURI(await this._addFavicons(links));
   },
