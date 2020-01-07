@@ -43,15 +43,12 @@ public:
 
   
   
+  
+  
+  
+  
   nsAtom* NameSpaceURIAtom(int32_t aNameSpaceID) {
     MOZ_ASSERT(aNameSpaceID > 0);
-    return NameSpaceURIAtomForServo(aNameSpaceID);
-  }
-
-  
-  
-  nsAtom* NameSpaceURIAtomForServo(int32_t aNameSpaceID) {
-    MOZ_ASSERT(aNameSpaceID >= 0);
     MOZ_ASSERT((int64_t) aNameSpaceID < (int64_t) mURIArray.Length());
     return mURIArray.ElementAt(aNameSpaceID);
   }
