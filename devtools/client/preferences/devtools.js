@@ -166,9 +166,6 @@ pref("devtools.netmonitor.visibleColumns",
 );
 
 
-pref("devtools.netmonitor.saveRequestAndResponseBodies", true);
-
-
 pref("devtools.netmonitor.har.defaultLogDir", "");
 pref("devtools.netmonitor.har.defaultFileName", "Archive %date");
 pref("devtools.netmonitor.har.jsonp", false);
