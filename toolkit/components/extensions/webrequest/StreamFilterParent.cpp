@@ -372,7 +372,6 @@ StreamFilterParent::RecvWrite(Data&& aData)
 {
   AssertIsActorThread();
 
-
   RunOnIOThread(
     NewRunnableMethod<Data&&>("StreamFilterParent::WriteMove",
                               this,
@@ -430,16 +429,6 @@ StreamFilterParent::OnStartRequest(nsIRequest* aRequest, nsISupports* aContext)
     });
   }
 
-  if (!mDisconnected) {
-    RefPtr<StreamFilterParent> self(this);
-    RunOnActorThread(FUNC, [=] {
-      if (self->IPCActive()) {
-        self->mState = State::TransferringData;
-        self->CheckResult(self->SendStartRequest());
-      }
-    });
-  }
-
   nsresult rv = mOrigListener->OnStartRequest(aRequest, aContext);
 
   
@@ -450,6 +439,20 @@ StreamFilterParent::OnStartRequest(nsIRequest* aRequest, nsISupports* aContext)
     if (thread) {
       mIOThread = Move(thread);
     }
+  }
+
+  
+  
+  
+  
+  if (!mDisconnected) {
+    RefPtr<StreamFilterParent> self(this);
+    RunOnActorThread(FUNC, [=] {
+      if (self->IPCActive()) {
+        self->mState = State::TransferringData;
+        self->CheckResult(self->SendStartRequest());
+      }
+    });
   }
 
   return rv;
