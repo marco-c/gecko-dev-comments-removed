@@ -20,11 +20,11 @@
 
 
 #define DEFINE_VK_INTERNAL(aKeyName) \
-  NS_DEFINE_VK(VK##aKeyName, nsIDOMKeyEvent::DOM_VK##aKeyName)
+  NS_DEFINE_VK(VK##aKeyName, mozilla::dom::KeyboardEventBinding::DOM_VK##aKeyName)
 
 
 #define DEFINE_VK_INTERNAL2(aKeyName, aKeyCodeName) \
-  NS_DEFINE_VK(VK##aKeyName, nsIDOMKeyEvent::DOM_VK##aKeyCodeName)
+  NS_DEFINE_VK(VK##aKeyName, mozilla::dom::KeyboardEventBinding::DOM_VK##aKeyCodeName)
 
 DEFINE_VK_INTERNAL(_CANCEL)
 DEFINE_VK_INTERNAL(_HELP)
