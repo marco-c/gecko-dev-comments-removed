@@ -69,6 +69,20 @@ static bool isValidIdentifier(std::string Input) {
   return true;
 }
 
+struct RAIITracer {
+  RAIITracer(const char *log) : mLog(log) {
+    printf("<%s>\n", mLog);
+  }
+
+  ~RAIITracer() {
+    printf("</%s>\n", mLog);
+  }
+
+  const char* mLog;
+};
+
+#define TRACEFUNC RAIITracer tracer(__FUNCTION__);
+
 class IndexConsumer;
 
 
@@ -444,6 +458,10 @@ public:
       
       char Buffer[65536];
       FILE *Fp = Lock.openFile("r");
+      if (!Fp) {
+        fprintf(stderr, "Unable to open input file %s\n", Filename.c_str());
+        exit(1);
+      }
       while (fgets(Buffer, sizeof(Buffer), Fp)) {
         Lines.push_back(std::string(Buffer));
       }
@@ -460,6 +478,10 @@ public:
       
       
       Fp = Lock.openFile("w");
+      if (!Fp) {
+        fprintf(stderr, "Unable to open output file %s\n", Filename.c_str());
+        exit(1);
+      }
       size_t Length = 0;
       for (std::string &Line : Nodupes) {
         Length += Line.length();
