@@ -208,8 +208,7 @@ NS_IMPL_CYCLE_COLLECTION_INHERITED(nsHTMLDocument, nsDocument,
 
 NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED(nsHTMLDocument,
                                              nsDocument,
-                                             nsIHTMLDocument,
-                                             nsIDOMHTMLDocument)
+                                             nsIHTMLDocument)
 
 JSObject*
 nsHTMLDocument::WrapNode(JSContext* aCx, JS::Handle<JSObject*> aGivenProto)
@@ -881,9 +880,6 @@ nsHTMLDocument::GetUnfocusedKeyEventTarget()
   return nsDocument::GetUnfocusedKeyEventTarget();
 }
 
-
-
-
 already_AddRefed<nsIURI>
 nsHTMLDocument::GetDomainURI()
 {
@@ -1303,8 +1299,8 @@ nsHTMLDocument::Open(JSContext* ,
                      bool aReplace,
                      ErrorResult& rv)
 {
-  NS_ASSERTION(nsContentUtils::CanCallerAccess(static_cast<nsIDOMHTMLDocument*>(this)),
-               "XOW should have caught this!");
+  MOZ_ASSERT(nsContentUtils::CanCallerAccess(static_cast<nsIDOMDocument*>(this)),
+             "XOW should have caught this!");
 
   nsCOMPtr<nsPIDOMWindowInner> window = GetInnerWindow();
   if (!window) {
@@ -1333,8 +1329,8 @@ nsHTMLDocument::Open(JSContext* cx,
   
   
 
-  NS_ASSERTION(nsContentUtils::CanCallerAccess(static_cast<nsIDOMHTMLDocument*>(this)),
-               "XOW should have caught this!");
+  MOZ_ASSERT(nsContentUtils::CanCallerAccess(static_cast<nsIDOMDocument*>(this)),
+             "XOW should have caught this!");
   if (!IsHTMLDocument() || mDisableDocWrite) {
     
     aError.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
