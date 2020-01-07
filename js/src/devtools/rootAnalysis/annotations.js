@@ -200,7 +200,7 @@ var ignoreFunctions = {
 
     
     
-    "void js::AutoCompartment::~AutoCompartment(int32)" : true,
+    "void js::AutoRealm::~AutoRealm(int32)" : true,
     "void JSAutoRealm::~JSAutoRealm(int32)" : true,
 
     

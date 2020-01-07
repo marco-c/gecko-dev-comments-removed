@@ -1622,7 +1622,7 @@ jit::JitActivation::getRematerializedFrame(JSContext* cx, const JSJitFrameIter& 
         
         
         
-        AutoCompartmentUnchecked ac(cx, compartment_);
+        AutoRealmUnchecked ar(cx, compartment_);
 
         if (!RematerializedFrame::RematerializeInlineFrames(cx, top, inlineIter, recover, frames))
             return nullptr;

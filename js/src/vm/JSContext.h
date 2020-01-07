@@ -25,7 +25,7 @@ struct DtoaState;
 
 namespace js {
 
-class AutoCompartment;
+class AutoRealm;
 
 namespace jit {
 class JitContext;
@@ -224,7 +224,7 @@ struct JSContext : public JS::RootingContext,
     inline void enterAtomsCompartment(JSCompartment* c,
                                       const js::AutoLockForExclusiveAccess& lock);
 
-    friend class js::AutoCompartment;
+    friend class js::AutoRealm;
 
   public:
     template <typename T>

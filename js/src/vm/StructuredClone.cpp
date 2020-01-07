@@ -1782,7 +1782,7 @@ JSStructuredCloneWriter::write(HandleValue v)
 
     while (!counts.empty()) {
         RootedObject obj(context(), &objs.back().toObject());
-        AutoCompartment ac(context(), obj);
+        AutoRealm ar(context(), obj);
         if (counts.back()) {
             counts.back()--;
             RootedValue key(context(), entries.back());
@@ -2796,7 +2796,7 @@ JS_StructuredClone(JSContext* cx, HandleValue value, MutableHandleValue vp,
         
         
         if (value.isObject()) {
-            AutoCompartment ac(cx, &value.toObject());
+            AutoRealm ar(cx, &value.toObject());
             if (!buf.write(cx, value, callbacks, closure))
                 return false;
         } else {

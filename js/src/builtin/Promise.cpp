@@ -668,7 +668,7 @@ EnqueuePromiseReactionJob(JSContext* cx, HandleObject reactionObj,
     
     Rooted<PromiseReactionRecord*> reaction(cx);
     RootedValue handlerArg(cx, handlerArg_);
-    mozilla::Maybe<AutoCompartment> ac;
+    mozilla::Maybe<AutoRealm> ar;
     if (!IsProxy(reactionObj)) {
         MOZ_RELEASE_ASSERT(reactionObj->is<PromiseReactionRecord>());
         reaction = &reactionObj->as<PromiseReactionRecord>();
@@ -679,7 +679,7 @@ EnqueuePromiseReactionJob(JSContext* cx, HandleObject reactionObj,
         }
         reaction = &UncheckedUnwrap(reactionObj)->as<PromiseReactionRecord>();
         MOZ_RELEASE_ASSERT(reaction->is<PromiseReactionRecord>());
-        ac.emplace(cx, reaction);
+        ar.emplace(cx, reaction);
         if (!reaction->compartment()->wrap(cx, &handlerArg))
             return false;
     }
@@ -700,7 +700,7 @@ EnqueuePromiseReactionJob(JSContext* cx, HandleObject reactionObj,
     
     
     
-    mozilla::Maybe<AutoCompartment> ac2;
+    mozilla::Maybe<AutoRealm> ar2;
     if (handler.isObject()) {
         RootedObject handlerObj(cx, &handler.toObject());
 
@@ -710,7 +710,7 @@ EnqueuePromiseReactionJob(JSContext* cx, HandleObject reactionObj,
         
         handlerObj = UncheckedUnwrap(handlerObj);
         MOZ_ASSERT(handlerObj);
-        ac2.emplace(cx, handlerObj);
+        ar2.emplace(cx, handlerObj);
 
         
         if (!cx->compartment()->wrap(cx, &reactionVal))
@@ -818,7 +818,7 @@ FulfillMaybeWrappedPromise(JSContext *cx, HandleObject promiseObj, HandleValue v
     Rooted<PromiseObject*> promise(cx);
     RootedValue value(cx, value_);
 
-    mozilla::Maybe<AutoCompartment> ac;
+    mozilla::Maybe<AutoRealm> ar;
     if (!IsProxy(promiseObj)) {
         promise = &promiseObj->as<PromiseObject>();
     } else {
@@ -827,7 +827,7 @@ FulfillMaybeWrappedPromise(JSContext *cx, HandleObject promiseObj, HandleValue v
             return false;
         }
         promise = &UncheckedUnwrap(promiseObj)->as<PromiseObject>();
-        ac.emplace(cx, promise);
+        ar.emplace(cx, promise);
         if (!promise->compartment()->wrap(cx, &value))
             return false;
     }
@@ -1001,7 +1001,7 @@ RejectMaybeWrappedPromise(JSContext *cx, HandleObject promiseObj, HandleValue re
     Rooted<PromiseObject*> promise(cx);
     RootedValue reason(cx, reason_);
 
-    mozilla::Maybe<AutoCompartment> ac;
+    mozilla::Maybe<AutoRealm> ar;
     if (!IsProxy(promiseObj)) {
         promise = &promiseObj->as<PromiseObject>();
     } else {
@@ -1010,7 +1010,7 @@ RejectMaybeWrappedPromise(JSContext *cx, HandleObject promiseObj, HandleValue re
             return false;
         }
         promise = &UncheckedUnwrap(promiseObj)->as<PromiseObject>();
-        ac.emplace(cx, promise);
+        ar.emplace(cx, promise);
 
         
         
@@ -1179,7 +1179,7 @@ PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp)
     
     
     
-    mozilla::Maybe<AutoCompartment> ac;
+    mozilla::Maybe<AutoRealm> ar;
     if (!IsProxy(reactionObj)) {
         MOZ_RELEASE_ASSERT(reactionObj->is<PromiseReactionRecord>());
     } else {
@@ -1189,7 +1189,7 @@ PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp)
             return false;
         }
         MOZ_RELEASE_ASSERT(reactionObj->is<PromiseReactionRecord>());
-        ac.emplace(cx, reactionObj);
+        ar.emplace(cx, reactionObj);
     }
 
     
@@ -1344,7 +1344,7 @@ EnqueuePromiseResolveThenableJob(JSContext* cx, HandleValue promiseToResolve_,
     
     
     RootedObject then(cx, CheckedUnwrap(&thenVal.toObject()));
-    AutoCompartment ac(cx, then);
+    AutoRealm ar(cx, then);
 
     RootedAtom funName(cx, cx->names().empty);
     RootedFunction job(cx, NewNativeFunction(cx, PromiseResolveThenableJob, 0, funName,
@@ -1474,9 +1474,9 @@ CreatePromiseObjectInternal(JSContext* cx, HandleObject proto ,
     
     
     
-    mozilla::Maybe<AutoCompartment> ac;
+    mozilla::Maybe<AutoRealm> ar;
     if (protoIsWrapped)
-        ac.emplace(cx, proto);
+        ar.emplace(cx, proto);
 
     PromiseObject* promise = NewObjectWithClassProto<PromiseObject>(cx, proto);
     if (!promise)
@@ -1567,7 +1567,7 @@ PromiseConstructor(JSContext* cx, unsigned argc, Value* vp)
 
         newTarget = unwrappedNewTarget;
         {
-            AutoCompartment ac(cx, newTarget);
+            AutoRealm ar(cx, newTarget);
             Handle<GlobalObject*> global = cx->global();
             RootedObject promiseCtor(cx, GlobalObject::getOrCreatePromiseConstructor(cx, global));
             if (!promiseCtor)
@@ -1646,7 +1646,7 @@ PromiseObject::create(JSContext* cx, HandleObject executor, HandleObject proto ,
     MOZ_ASSERT(promise->getFixedSlot(PromiseSlot_RejectFunction).isUndefined(),
                "Slot must be undefined so initFixedSlot can be used");
     if (needsWrapping) {
-        AutoCompartment ac(cx, promise);
+        AutoRealm ar(cx, promise);
         RootedObject wrappedRejectFn(cx, rejectFn);
         if (!cx->compartment()->wrap(cx, &wrappedRejectFn))
             return nullptr;
@@ -2132,7 +2132,7 @@ PromiseAllResolveElementFunction(JSContext* cx, unsigned argc, Value* vp)
     
     
     if (valuesListIsWrapped) {
-        AutoCompartment ac(cx, values);
+        AutoRealm ar(cx, values);
         if (!cx->compartment()->wrap(cx, &xVal))
             return false;
     }
@@ -3325,7 +3325,7 @@ BlockOnPromise(JSContext* cx, HandleValue promiseVal, HandleObject blockedPromis
     RootedObject unwrappedPromiseObj(cx, promiseObj);
     RootedObject blockedPromise(cx, blockedPromise_);
 
-    mozilla::Maybe<AutoCompartment> ac;
+    mozilla::Maybe<AutoRealm> ar;
     if (IsProxy(promiseObj)) {
         unwrappedPromiseObj = CheckedUnwrap(promiseObj);
         if (!unwrappedPromiseObj) {
@@ -3336,7 +3336,7 @@ BlockOnPromise(JSContext* cx, HandleValue promiseVal, HandleObject blockedPromis
             JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_DEAD_OBJECT);
             return false;
         }
-        ac.emplace(cx, unwrappedPromiseObj);
+        ar.emplace(cx, unwrappedPromiseObj);
         if (!cx->compartment()->wrap(cx, &blockedPromise))
             return false;
     }
@@ -3367,9 +3367,9 @@ AddPromiseReaction(JSContext* cx, Handle<PromiseObject*> promise,
     
     
     
-    mozilla::Maybe<AutoCompartment> ac;
+    mozilla::Maybe<AutoRealm> ar;
     if (promise->compartment() != cx->compartment()) {
-        ac.emplace(cx, promise);
+        ar.emplace(cx, promise);
         if (!cx->compartment()->wrap(cx, &reactionVal))
             return false;
     }
@@ -3625,7 +3625,7 @@ OffThreadPromiseTask::run(JSContext* cx, MaybeShuttingDown maybeShuttingDown)
         
         
         
-        AutoCompartment ac(cx, promise_);
+        AutoRealm ar(cx, promise_);
         if (!resolve(cx, promise_))
             cx->clearPendingException();
     }

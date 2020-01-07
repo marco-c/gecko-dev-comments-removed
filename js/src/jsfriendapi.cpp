@@ -805,7 +805,7 @@ FormatValue(JSContext* cx, const Value& vArg, JSAutoByteString& bytes)
 
     RootedString str(cx);
     if (v.isObject()) {
-        AutoCompartment ac(cx, &v.toObject());
+        AutoRealm ar(cx, &v.toObject());
         str = ToString<CanGC>(cx, v);
     } else {
         str = ToString<CanGC>(cx, v);

@@ -1984,7 +1984,7 @@ JS_StealArrayBufferContents(JSContext* cx, HandleObject objArg)
     
     bool hasStealableContents = buffer->hasStealableContents() && buffer->isPlain();
 
-    AutoCompartment ac(cx, buffer);
+    AutoRealm ar(cx, buffer);
     return ArrayBufferObject::stealContents(cx, buffer, hasStealableContents).data();
 }
 

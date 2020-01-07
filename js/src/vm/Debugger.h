@@ -563,7 +563,7 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
 
 
 
-    ResumeMode reportUncaughtException(mozilla::Maybe<AutoCompartment>& ac);
+    ResumeMode reportUncaughtException(mozilla::Maybe<AutoRealm>& ar);
 
     
 
@@ -579,13 +579,13 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
 
 
 
-    ResumeMode handleUncaughtException(mozilla::Maybe<AutoCompartment>& ac);
-    ResumeMode handleUncaughtException(mozilla::Maybe<AutoCompartment>& ac,
+    ResumeMode handleUncaughtException(mozilla::Maybe<AutoRealm>& ar);
+    ResumeMode handleUncaughtException(mozilla::Maybe<AutoRealm>& ar,
                                        MutableHandleValue vp,
                                        const mozilla::Maybe<HandleValue>& thisVForCheck = mozilla::Nothing(),
                                        AbstractFramePtr frame = NullFramePtr());
 
-    ResumeMode handleUncaughtExceptionHelper(mozilla::Maybe<AutoCompartment>& ac,
+    ResumeMode handleUncaughtExceptionHelper(mozilla::Maybe<AutoRealm>& ar,
                                              MutableHandleValue* vp,
                                              const mozilla::Maybe<HandleValue>& thisVForCheck,
                                              AbstractFramePtr frame);
@@ -621,21 +621,21 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
 
 
 
-    ResumeMode processHandlerResult(mozilla::Maybe<AutoCompartment>& ac, bool success, const Value& rv,
+    ResumeMode processHandlerResult(mozilla::Maybe<AutoRealm>& ar, bool success, const Value& rv,
                                     AbstractFramePtr frame, jsbytecode* pc, MutableHandleValue vp);
 
-    ResumeMode processParsedHandlerResult(mozilla::Maybe<AutoCompartment>& ac,
+    ResumeMode processParsedHandlerResult(mozilla::Maybe<AutoRealm>& ar,
                                           AbstractFramePtr frame, jsbytecode* pc,
                                           bool success, ResumeMode resumeMode,
                                           MutableHandleValue vp);
 
-    ResumeMode processParsedHandlerResultHelper(mozilla::Maybe<AutoCompartment>& ac,
+    ResumeMode processParsedHandlerResultHelper(mozilla::Maybe<AutoRealm>& ar,
                                                 AbstractFramePtr frame,
                                                 const mozilla::Maybe<HandleValue>& maybeThisv,
                                                 bool success, ResumeMode resumeMode,
                                                 MutableHandleValue vp);
 
-    bool processResumptionValue(mozilla::Maybe<AutoCompartment>& ac, AbstractFramePtr frame,
+    bool processResumptionValue(mozilla::Maybe<AutoRealm>& ar, AbstractFramePtr frame,
                                 const mozilla::Maybe<HandleValue>& maybeThis, HandleValue rval,
                                 ResumeMode& resumeMode, MutableHandleValue vp);
 
@@ -1080,7 +1080,7 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
 
 
 
-    MOZ_MUST_USE bool receiveCompletionValue(mozilla::Maybe<AutoCompartment>& ac, bool ok,
+    MOZ_MUST_USE bool receiveCompletionValue(mozilla::Maybe<AutoRealm>& ar, bool ok,
                                              HandleValue val,
                                              MutableHandleValue vp);
 
