@@ -4,24 +4,15 @@
 
 
 ChromeUtils.import("resource://gre/modules/GeckoViewContentModule.jsm");
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-
-XPCOMUtils.defineLazyGetter(this, "dump", () =>
-    ChromeUtils.import("resource://gre/modules/AndroidLog.jsm",
-                       {}).AndroidLog.d.bind(null, "ViewScrollContent"));
-
-function debug(aMsg) {
-  
-}
 
 class GeckoViewScrollContent extends GeckoViewContentModule {
   onEnable() {
-    debug("onEnable");
+    debug `onEnable`;
     addEventListener("scroll", this, false);
   }
 
   onDisable() {
-    debug("onDisable");
+    debug `onDisable`;
     removeEventListener("scroll", this);
   }
 
@@ -30,7 +21,7 @@ class GeckoViewScrollContent extends GeckoViewContentModule {
       return;
     }
 
-    debug("handleEvent " + aEvent.type);
+    debug `handleEvent: ${aEvent.type}`;
 
     switch (aEvent.type) {
       case "scroll":
