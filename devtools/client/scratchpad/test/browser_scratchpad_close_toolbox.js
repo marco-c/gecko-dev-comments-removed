@@ -4,7 +4,6 @@
 
 
 
-var {Task} = require("devtools/shared/task");
 var {TargetFactory} = require("devtools/client/framework/target");
 
 function test() {
@@ -12,27 +11,27 @@ function test() {
     tabContent: "test closing toolbox and then reusing scratchpad"
   };
   openTabAndScratchpad(options)
-    .then(Task.async(runTests))
+    .then(runTests)
     .then(finish, console.error);
 }
 
-function* runTests([win, sp]) {
+async function runTests([win, sp]) {
   
   const source = "window.foobar = 7;";
   sp.setText(source);
-  let [,, result] = yield sp.display();
+  let [,, result] = await sp.display();
   is(result, 7, "Display produced the expected output.");
 
   
   let target = TargetFactory.forTab(gBrowser.selectedTab);
-  let toolbox = yield gDevTools.showToolbox(target, "webconsole");
+  let toolbox = await gDevTools.showToolbox(target, "webconsole");
   ok(toolbox, "Toolbox was opened.");
-  let closed = yield gDevTools.closeToolbox(target);
+  let closed = await gDevTools.closeToolbox(target);
   is(closed, true, "Toolbox was closed.");
 
   
   sp.setText(source);
-  let [,, result2] = yield sp.display();
+  let [,, result2] = await sp.display();
   is(result2, 7,
      "Display produced the expected output after the toolbox was gone.");
 }

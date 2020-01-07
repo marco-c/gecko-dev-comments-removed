@@ -223,7 +223,7 @@ var { helpers, assert } = (function () {
 
 
 
-  helpers.navigate = Task.async(function* (url, options) {
+  helpers.navigate = async function(url, options) {
     options = options || {};
     options.chromeWindow = options.chromeWindow || window;
     options.tab = options.tab || options.chromeWindow.gBrowser.selectedTab;
@@ -233,10 +233,10 @@ var { helpers, assert } = (function () {
 
     let onLoaded = BrowserTestUtils.browserLoaded(options.browser);
     options.browser.loadURI(url);
-    yield onLoaded;
+    await onLoaded;
 
     return options;
-  });
+  };
 
 
 
@@ -419,15 +419,15 @@ var { helpers, assert } = (function () {
 
 
   helpers.runTestModule = function (exports, name) {
-    return Task.spawn(function* () {
+    return (async function() {
       const uri = "data:text/html;charset=utf-8," +
                 "<style>div{color:red;}</style>" +
                 "<div id='gcli-root'>" + name + "</div>";
 
-      const options = yield helpers.openTab(uri);
+      const options = await helpers.openTab(uri);
       options.isRemote = true;
 
-      yield helpers.openToolbar(options);
+      await helpers.openToolbar(options);
 
       const system = options.requisition.system;
 
@@ -452,30 +452,30 @@ var { helpers, assert } = (function () {
       });
 
     
-      const front = yield GcliFront.create(options.target);
-      yield front._testOnlyAddItemsByModule(MOCK_COMMANDS_URI);
+      const front = await GcliFront.create(options.target);
+      await front._testOnlyAddItemsByModule(MOCK_COMMANDS_URI);
 
     
     
-      yield addedDeferred.promise;
+      await addedDeferred.promise;
 
     
       const converters = mockCommands.items.filter(item => item.item === "converter");
       system.addItems(converters);
 
     
-      yield helpers.runTests(options, exports);
+      await helpers.runTests(options, exports);
 
     
       system.removeItems(converters);
       const removePromise = system.commands.onCommandsChange.once();
-      yield front._testOnlyRemoveItemsByModule(MOCK_COMMANDS_URI);
-      yield removedDeferred.promise;
+      await front._testOnlyRemoveItemsByModule(MOCK_COMMANDS_URI);
+      await removedDeferred.promise;
 
     
-      yield helpers.closeToolbar(options);
-      yield helpers.closeTab(options);
-    }).then(finish, helpers.handleError);
+      await helpers.closeToolbar(options);
+      await helpers.closeTab(options);
+    })().then(finish, helpers.handleError);
   };
 
 
