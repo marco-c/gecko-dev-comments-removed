@@ -163,7 +163,24 @@ public:
   }
   void SetDropEffect(const nsAString& aDropEffect);
 
-  void GetEffectAllowed(nsString& aEffectAllowed)
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  void GetEffectAllowed(nsAString& aEffectAllowed)
   {
     if (mEffectAllowed == nsIDragService::DRAGDROP_ACTION_UNINITIALIZED) {
       aEffectAllowed.AssignLiteral("uninitialized");
@@ -171,6 +188,25 @@ public:
       aEffectAllowed.AssignASCII(sEffects[mEffectAllowed]);
     }
   }
+  void SetEffectAllowed(const nsAString& aEffectAllowed);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   void SetDragImage(Element& aElement, int32_t aX, int32_t aY);
   void UpdateDragImage(Element& aElement, int32_t aX, int32_t aY);
