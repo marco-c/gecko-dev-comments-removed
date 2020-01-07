@@ -492,8 +492,7 @@ mozilla::UniquePtr<char[]> profiler_get_profile(double aSinceTime = 0,
 
 bool profiler_stream_json_for_this_process(SpliceableJSONWriter& aWriter,
                                            double aSinceTime = 0,
-                                           bool aIsShuttingDown = false,
-                                           mozilla::TimeStamp* aOutFirstSampleTime = nullptr);
+                                           bool aIsShuttingDown = false);
 
 
 

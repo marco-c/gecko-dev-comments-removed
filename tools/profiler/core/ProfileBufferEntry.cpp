@@ -707,7 +707,6 @@ private:
 bool
 ProfileBuffer::StreamSamplesToJSON(SpliceableJSONWriter& aWriter, int aThreadId,
                                    double aSinceTime,
-                                   double* aOutFirstSampleTime,
                                    JSContext* aContext,
                                    UniqueStacks& aUniqueStacks) const
 {
@@ -724,7 +723,6 @@ ProfileBuffer::StreamSamplesToJSON(SpliceableJSONWriter& aWriter, int aThreadId,
     }
 
   EntryGetter e(*this);
-  bool seenFirstSample = false;
   bool haveSamples = false;
 
   for (;;) {
@@ -774,13 +772,6 @@ ProfileBuffer::StreamSamplesToJSON(SpliceableJSONWriter& aWriter, int aThreadId,
       
       if (sample.mTime < aSinceTime) {
         continue;
-      }
-
-      if (!seenFirstSample) {
-        if (aOutFirstSampleTime) {
-          *aOutFirstSampleTime = sample.mTime;
-        }
-        seenFirstSample = true;
       }
     } else {
       ERROR_AND_CONTINUE("expected a Time entry");
