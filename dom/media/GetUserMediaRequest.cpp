@@ -2,8 +2,9 @@
 
 
 
-#include "base/basictypes.h"
 #include "GetUserMediaRequest.h"
+
+#include "base/basictypes.h"
 #include "mozilla/dom/MediaStreamBinding.h"
 #include "mozilla/dom/GetUserMediaRequestBinding.h"
 #include "nsIScriptGlobalObject.h"

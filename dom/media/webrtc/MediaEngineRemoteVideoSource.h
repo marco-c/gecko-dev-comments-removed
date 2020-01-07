@@ -13,7 +13,6 @@
 #include "nsIRunnable.h"
 
 #include "mozilla/Mutex.h"
-#include "mozilla/Monitor.h"
 #include "nsCOMPtr.h"
 #include "nsThreadUtils.h"
 #include "DOMMediaStream.h"
@@ -23,7 +22,7 @@
 
 #include "ipc/IPCMessageUtils.h"
 #include "VideoUtils.h"
-#include "MediaEngineCameraVideoSource.h"
+#include "MediaEngineSource.h"
 #include "VideoSegment.h"
 #include "AudioSegment.h"
 #include "StreamTracks.h"
@@ -37,90 +36,210 @@
 
 #include "NullTransport.h"
 
+
+#include "webrtc/modules/video_capture/video_capture_defines.h"
+
+namespace webrtc {
+using CaptureCapability = VideoCaptureCapability;
+}
+
 namespace mozilla {
 
 
 
 
-class MediaEngineRemoteVideoSource : public MediaEngineCameraVideoSource,
+
+
+
+
+
+
+enum DistanceCalculation {
+  kFitness,
+  kFeasibility
+};
+
+
+
+
+class MediaEngineRemoteVideoSource : public MediaEngineSource,
                                      public camera::FrameRelay
 {
-  typedef MediaEngineCameraVideoSource Super;
-public:
-  NS_DECL_THREADSAFE_ISUPPORTS
+  ~MediaEngineRemoteVideoSource() = default;
 
-  
-  void FrameSizeChange(unsigned int w, unsigned int h) override;
+  struct CapabilityCandidate {
+    explicit CapabilityCandidate(uint8_t index, uint32_t distance = 0)
+    : mIndex(index), mDistance(distance) {}
+
+    size_t mIndex;
+    uint32_t mDistance;
+  };
+  typedef nsTArray<CapabilityCandidate> CapabilitySet;
+
+  bool ChooseCapability(const NormalizedConstraints& aConstraints,
+                        const MediaEnginePrefs& aPrefs,
+                        const nsString& aDeviceId,
+                        webrtc::CaptureCapability& aCapability,
+                        const DistanceCalculation aCalculate);
+
+  uint32_t GetDistance(const webrtc::CaptureCapability& aCandidate,
+                       const NormalizedConstraintSet &aConstraints,
+                       const nsString& aDeviceId,
+                       const DistanceCalculation aCalculate) const;
+
+  uint32_t GetFitnessDistance(const webrtc::CaptureCapability& aCandidate,
+                              const NormalizedConstraintSet &aConstraints,
+                              const nsString& aDeviceId) const;
+
+  uint32_t GetFeasibilityDistance(const webrtc::CaptureCapability& aCandidate,
+                              const NormalizedConstraintSet &aConstraints,
+                              const nsString& aDeviceId) const;
+
+  static void TrimLessFitCandidates(CapabilitySet& set);
+
+  uint32_t GetBestFitnessDistance(
+      const nsTArray<const NormalizedConstraintSet*>& aConstraintSets,
+      const nsString& aDeviceId) const override;
+
+public:
+  MediaEngineRemoteVideoSource(int aIndex,
+                               camera::CaptureEngine aCapEngine,
+                               dom::MediaSourceEnum aMediaSource,
+                               bool aScary);
+
   
   int DeliverFrame(uint8_t* buffer,
                    const camera::VideoFrameProperties& properties) override;
 
   
-  MediaEngineRemoteVideoSource(int aIndex, mozilla::camera::CaptureEngine aCapEngine,
-                               dom::MediaSourceEnum aMediaSource,
-                               bool aScary = false,
-                               const char* aMonitorName = "RemoteVideo.Monitor");
-
-  nsresult Allocate(const dom::MediaTrackConstraints& aConstraints,
-                    const MediaEnginePrefs& aPrefs,
-                    const nsString& aDeviceId,
-                    const mozilla::ipc::PrincipalInfo& aPrincipalInfo,
-                    AllocationHandle** aOutHandle,
-                    const char** aOutBadConstraint) override;
-  nsresult Deallocate(AllocationHandle* aHandle) override;
-  nsresult Start(SourceMediaStream*, TrackID, const PrincipalHandle&) override;
-  nsresult Stop(SourceMediaStream*, TrackID) override;
-  nsresult Restart(AllocationHandle* aHandle,
-                   const dom::MediaTrackConstraints& aConstraints,
-                   const MediaEnginePrefs &aPrefs,
-                   const nsString& aDeviceId,
-                   const char** aOutBadConstraint) override;
-  void NotifyPull(MediaStreamGraph* aGraph,
-                  SourceMediaStream* aSource,
-                  TrackID aId,
-                  StreamTime aDesiredTime,
-                  const PrincipalHandle& aPrincipalHandle) override;
-  dom::MediaSourceEnum GetMediaSource() const override {
+  bool IsAvailable() const override
+  {
+    AssertIsOnOwningThread();
+    return mState == kReleased;
+  }
+  dom::MediaSourceEnum GetMediaSource() const override
+  {
     return mMediaSource;
   }
+  nsresult Allocate(const dom::MediaTrackConstraints &aConstraints,
+                    const MediaEnginePrefs &aPrefs,
+                    const nsString& aDeviceId,
+                    const ipc::PrincipalInfo& aPrincipalInfo,
+                    AllocationHandle** aOutHandle,
+                    const char** aOutBadConstraint) override;
+  nsresult Deallocate(const RefPtr<const AllocationHandle>& aHandle) override;
+  nsresult Start(SourceMediaStream*, TrackID, const PrincipalHandle&) override;
+  nsresult Reconfigure(const RefPtr<AllocationHandle>& aHandle,
+                       const dom::MediaTrackConstraints& aConstraints,
+                       const MediaEnginePrefs& aPrefs,
+                       const nsString& aDeviceId,
+                       const char** aOutBadConstraint) override;
+  nsresult Stop(SourceMediaStream*, TrackID) override;
+  void Pull(const RefPtr<const AllocationHandle>& aHandle,
+            const RefPtr<SourceMediaStream>& aStream,
+            TrackID aTrackID,
+            StreamTime aDesiredTime,
+            const PrincipalHandle& aPrincipalHandle) override;
 
-  bool ChooseCapability(
-    const NormalizedConstraints &aConstraints,
-    const MediaEnginePrefs &aPrefs,
-    const nsString& aDeviceId,
-    webrtc::CaptureCapability& aCapability,
-    const DistanceCalculation aCalculate) override;
+
+  void GetSettings(dom::MediaTrackSettings& aOutSettings) const override;
 
   void Refresh(int aIndex);
 
   void Shutdown() override;
 
-  bool GetScary() const override { return mScary; }
+  nsString GetName() const override;
+  void SetName(nsString aName);
 
-protected:
-  ~MediaEngineRemoteVideoSource() { }
+  nsCString GetUUID() const override;
+  void SetUUID(const char* aUUID);
+
+  bool GetScary() const override { return mScary; }
 
 private:
   
   void Init();
-  size_t NumCapabilities() const override;
-  void GetCapability(size_t aIndex, webrtc::CaptureCapability& aOut) const override;
-  void SetLastCapability(const webrtc::CaptureCapability& aCapability);
-
-  nsresult
-  UpdateSingleSource(const AllocationHandle* aHandle,
-                     const NormalizedConstraints& aNetConstraints,
-                     const NormalizedConstraints& aNewConstraint,
-                     const MediaEnginePrefs& aPrefs,
-                     const nsString& aDeviceId,
-                     const char** aOutBadConstraint) override;
-
-  dom::MediaSourceEnum mMediaSource; 
-  mozilla::camera::CaptureEngine mCapEngine;
 
   
-  webrtc::CaptureCapability mLastCapability;
-  bool mScary;
+
+
+
+
+  size_t NumCapabilities() const;
+
+  
+
+
+
+
+
+  void GetCapability(size_t aIndex, webrtc::CaptureCapability& aOut) const;
+
+  int mCaptureIndex;
+  const dom::MediaSourceEnum mMediaSource; 
+  const camera::CaptureEngine mCapEngine;
+  const bool mScary;
+
+  
+  
+  Mutex mMutex;
+
+  
+  
+  MediaEngineSourceState mState = kReleased;
+
+  
+  
+  RefPtr<SourceMediaStream> mStream;
+
+  
+  
+  TrackID mTrackID = TRACK_NONE;
+
+  
+  
+  PrincipalHandle mPrincipal = PRINCIPAL_HANDLE_NONE;
+
+  
+  
+  
+  RefPtr<layers::ImageContainer> mImageContainer;
+
+  
+  
+  RefPtr<layers::Image> mImage;
+
+  
+  
+  
+  gfx::IntSize mImageSize = gfx::IntSize(0, 0);
+
+  
+  
+  
+  
+  const RefPtr<media::Refcountable<dom::MediaTrackSettings>> mSettings;
+
+  
+  
+  webrtc::CaptureCapability mCapability;
+
+  
+
+
+
+
+
+  mutable nsTArray<webrtc::CaptureCapability> mHardcodedCapabilities;
+
+  nsString mDeviceName;
+  nsCString mUniqueId;
+  nsString mFacingMode;
+
+  
+  
+  
+  bool mInitDone = false;
 };
 
 }

@@ -4,30 +4,27 @@
 
 
 
-#include "nsIPrefService.h"
-#include "nsIPrefBranch.h"
-
-#include "CSFLog.h"
-#include "prenv.h"
-
-#include "mozilla/Logging.h"
-
-static mozilla::LazyLogModule sGetUserMediaLog("GetUserMedia");
-
 #include "MediaEngineWebRTC.h"
-#include "ImageContainer.h"
-#include "nsIComponentRegistrar.h"
+
+#include "AllocationHandle.h"
+#include "CamerasChild.h"
+#include "CSFLog.h"
 #include "MediaEngineTabVideoSource.h"
 #include "MediaEngineRemoteVideoSource.h"
-#include "CamerasChild.h"
-#include "nsITabSource.h"
 #include "MediaTrackConstraints.h"
+#include "mozilla/Logging.h"
+#include "nsIComponentRegistrar.h"
+#include "nsIPrefService.h"
+#include "nsIPrefBranch.h"
+#include "nsITabSource.h"
+#include "prenv.h"
 
 #ifdef MOZ_WIDGET_ANDROID
-#include "VideoEngine.h"
 #include "AndroidBridge.h"
+#include "VideoEngine.h"
 #endif
 
+static mozilla::LazyLogModule sGetUserMediaLog("GetUserMedia");
 #undef LOG
 #define LOG(args) MOZ_LOG(sGetUserMediaLog, mozilla::LogLevel::Debug, args)
 
@@ -106,7 +103,7 @@ void AudioInputCubeb::UpdateDeviceList()
 }
 
 MediaEngineWebRTC::MediaEngineWebRTC(MediaEnginePrefs &aPrefs)
-  : mMutex("mozilla::MediaEngineWebRTC"),
+  : mMutex("MediaEngineWebRTC::mMutex"),
     mAudioInput(nullptr),
     mFullDuplex(aPrefs.mFullDuplex),
     mDelayAgnostic(aPrefs.mDelayAgnostic),
@@ -132,129 +129,190 @@ MediaEngineWebRTC::SetFakeDeviceChangeEvents()
 }
 
 void
-MediaEngineWebRTC::EnumerateVideoDevices(dom::MediaSourceEnum aMediaSource,
-                                         nsTArray<RefPtr<MediaEngineVideoSource> >* aVSources)
+MediaEngineWebRTC::EnumerateDevices(dom::MediaSourceEnum aMediaSource,
+                                    nsTArray<RefPtr<MediaEngineSource> >* aSources)
 {
-  
-  MutexAutoLock lock(mMutex);
+  if (MediaEngineSource::IsVideo(aMediaSource)) {
+    
+    MutexAutoLock lock(mMutex);
 
-  mozilla::camera::CaptureEngine capEngine = mozilla::camera::InvalidEngine;
+    mozilla::camera::CaptureEngine capEngine = mozilla::camera::InvalidEngine;
 
 #ifdef MOZ_WIDGET_ANDROID
-  
-  JavaVM* jvm;
-  JNIEnv* const env = jni::GetEnvForThread();
-  MOZ_ALWAYS_TRUE(!env->GetJavaVM(&jvm));
+    
+    JavaVM* jvm;
+    JNIEnv* const env = jni::GetEnvForThread();
+    MOZ_ALWAYS_TRUE(!env->GetJavaVM(&jvm));
 
-  if (!jvm || mozilla::camera::VideoEngine::SetAndroidObjects(jvm)) {
-    LOG(("VideoEngine::SetAndroidObjects Failed"));
-    return;
-  }
+    if (!jvm || mozilla::camera::VideoEngine::SetAndroidObjects(jvm)) {
+      LOG(("VideoEngine::SetAndroidObjects Failed"));
+      return;
+    }
 #endif
-  bool scaryKind = false; 
+    bool scaryKind = false; 
 
-  switch (aMediaSource) {
-    case dom::MediaSourceEnum::Window:
-      capEngine = mozilla::camera::WinEngine;
-      break;
-    case dom::MediaSourceEnum::Application:
-      capEngine = mozilla::camera::AppEngine;
-      break;
-    case dom::MediaSourceEnum::Screen:
-      capEngine = mozilla::camera::ScreenEngine;
-      scaryKind = true;
-      break;
-    case dom::MediaSourceEnum::Browser:
-      capEngine = mozilla::camera::BrowserEngine;
-      scaryKind = true;
-      break;
-    case dom::MediaSourceEnum::Camera:
-      capEngine = mozilla::camera::CameraEngine;
-      break;
-    default:
-      
-      MOZ_CRASH("No valid video engine");
-      break;
-  }
-
-  
-
-
-
-
-
-
-
-  int num;
-  num = mozilla::camera::GetChildAndCall(
-    &mozilla::camera::CamerasChild::NumberOfCaptureDevices,
-    capEngine);
-
-  for (int i = 0; i < num; i++) {
-    char deviceName[MediaEngineSource::kMaxDeviceNameLength];
-    char uniqueId[MediaEngineSource::kMaxUniqueIdLength];
-    bool scarySource = false;
+    switch (aMediaSource) {
+      case dom::MediaSourceEnum::Window:
+        capEngine = mozilla::camera::WinEngine;
+        break;
+      case dom::MediaSourceEnum::Application:
+        capEngine = mozilla::camera::AppEngine;
+        break;
+      case dom::MediaSourceEnum::Screen:
+        capEngine = mozilla::camera::ScreenEngine;
+        scaryKind = true;
+        break;
+      case dom::MediaSourceEnum::Browser:
+        capEngine = mozilla::camera::BrowserEngine;
+        scaryKind = true;
+        break;
+      case dom::MediaSourceEnum::Camera:
+        capEngine = mozilla::camera::CameraEngine;
+        break;
+      default:
+        MOZ_CRASH("No valid video engine");
+        break;
+    }
 
     
-    deviceName[0] = '\0';
-    uniqueId[0] = '\0';
-    int error;
 
-    error =  mozilla::camera::GetChildAndCall(
-      &mozilla::camera::CamerasChild::GetCaptureDevice,
-      capEngine,
-      i, deviceName,
-      sizeof(deviceName), uniqueId,
-      sizeof(uniqueId),
-      &scarySource);
-    if (error) {
-      LOG(("camera:GetCaptureDevice: Failed %d", error ));
-      continue;
-    }
-#ifdef DEBUG
-    LOG(("  Capture Device Index %d, Name %s", i, deviceName));
 
-    webrtc::CaptureCapability cap;
-    int numCaps = mozilla::camera::GetChildAndCall(
-      &mozilla::camera::CamerasChild::NumberOfCapabilities,
-      capEngine,
-      uniqueId);
-    LOG(("Number of Capabilities %d", numCaps));
-    for (int j = 0; j < numCaps; j++) {
-      if (mozilla::camera::GetChildAndCall(
-            &mozilla::camera::CamerasChild::GetCaptureCapability,
-            capEngine,
-            uniqueId,
-            j, cap) != 0) {
-       break;
+
+
+
+
+
+    int num;
+    num = mozilla::camera::GetChildAndCall(
+      &mozilla::camera::CamerasChild::NumberOfCaptureDevices,
+      capEngine);
+
+    for (int i = 0; i < num; i++) {
+      char deviceName[MediaEngineSource::kMaxDeviceNameLength];
+      char uniqueId[MediaEngineSource::kMaxUniqueIdLength];
+      bool scarySource = false;
+
+      
+      deviceName[0] = '\0';
+      uniqueId[0] = '\0';
+      int error;
+
+      error =  mozilla::camera::GetChildAndCall(
+        &mozilla::camera::CamerasChild::GetCaptureDevice,
+        capEngine,
+        i, deviceName,
+        sizeof(deviceName), uniqueId,
+        sizeof(uniqueId),
+        &scarySource);
+      if (error) {
+        LOG(("camera:GetCaptureDevice: Failed %d", error ));
+        continue;
       }
-      LOG(("type=%d width=%d height=%d maxFPS=%d",
-           cap.rawType, cap.width, cap.height, cap.maxFPS ));
-    }
+#ifdef DEBUG
+      LOG(("  Capture Device Index %d, Name %s", i, deviceName));
+
+      webrtc::CaptureCapability cap;
+      int numCaps = mozilla::camera::GetChildAndCall(
+        &mozilla::camera::CamerasChild::NumberOfCapabilities,
+        capEngine,
+        uniqueId);
+      LOG(("Number of Capabilities %d", numCaps));
+      for (int j = 0; j < numCaps; j++) {
+        if (mozilla::camera::GetChildAndCall(
+              &mozilla::camera::CamerasChild::GetCaptureCapability,
+              capEngine,
+              uniqueId,
+              j, cap) != 0) {
+         break;
+        }
+        LOG(("type=%d width=%d height=%d maxFPS=%d",
+             cap.rawType, cap.width, cap.height, cap.maxFPS ));
+      }
 #endif
 
-    if (uniqueId[0] == '\0') {
-      
-      strncpy(uniqueId, deviceName, sizeof(uniqueId));
-      uniqueId[sizeof(uniqueId)-1] = '\0'; 
+      if (uniqueId[0] == '\0') {
+        
+        strncpy(uniqueId, deviceName, sizeof(uniqueId));
+        uniqueId[sizeof(uniqueId)-1] = '\0'; 
+      }
+
+      NS_ConvertUTF8toUTF16 uuid(uniqueId);
+      RefPtr<MediaEngineSource> vSource = mVideoSources.Get(uuid);
+      if (vSource && vSource->RequiresSharing()) {
+        
+        static_cast<MediaEngineRemoteVideoSource*>(vSource.get())->Refresh(i);
+        aSources->AppendElement(vSource.get());
+      } else {
+        vSource = new MediaEngineRemoteVideoSource(i, capEngine, aMediaSource,
+                                                   scaryKind || scarySource);
+        mVideoSources.Put(uuid, vSource);
+        aSources->AppendElement(vSource);
+      }
     }
 
-    RefPtr<MediaEngineVideoSource> vSource;
-    NS_ConvertUTF8toUTF16 uuid(uniqueId);
-    if (mVideoSources.Get(uuid, getter_AddRefs(vSource))) {
-      
-      static_cast<MediaEngineRemoteVideoSource*>(vSource.get())->Refresh(i);
-      aVSources->AppendElement(vSource.get());
-    } else {
-      vSource = new MediaEngineRemoteVideoSource(i, capEngine, aMediaSource,
-                                                 scaryKind || scarySource);
-      mVideoSources.Put(uuid, vSource); 
-      aVSources->AppendElement(vSource);
+    if (mHasTabVideoSource || dom::MediaSourceEnum::Browser == aMediaSource) {
+      aSources->AppendElement(new MediaEngineTabVideoSource());
     }
-  }
+  } else {
+    
+    MutexAutoLock lock(mMutex);
 
-  if (mHasTabVideoSource || dom::MediaSourceEnum::Browser == aMediaSource) {
-    aVSources->AppendElement(new MediaEngineTabVideoSource());
+    if (aMediaSource == dom::MediaSourceEnum::AudioCapture) {
+      RefPtr<MediaEngineWebRTCAudioCaptureSource> audioCaptureSource =
+        new MediaEngineWebRTCAudioCaptureSource(nullptr);
+      aSources->AppendElement(audioCaptureSource);
+      return;
+    }
+
+    if (!mAudioInput) {
+      if (!SupportsDuplex()) {
+        return;
+      }
+      mAudioInput = new mozilla::AudioInputCubeb();
+    }
+
+    int nDevices = 0;
+    mAudioInput->GetNumOfRecordingDevices(nDevices);
+    int i;
+#if defined(MOZ_WIDGET_ANDROID)
+    i = 0; 
+#else
+    
+    i = -1;
+#endif
+    for (; i < nDevices; i++) {
+      
+      char deviceName[128];
+      char uniqueId[128];
+      
+      deviceName[0] = '\0';
+      uniqueId[0] = '\0';
+
+      int error = mAudioInput->GetRecordingDeviceName(i, deviceName, uniqueId);
+      if (error) {
+        LOG((" AudioInput::GetRecordingDeviceName: Failed %d", error));
+        continue;
+      }
+
+      if (uniqueId[0] == '\0') {
+        
+        strcpy(uniqueId, deviceName); 
+      }
+
+      NS_ConvertUTF8toUTF16 uuid(uniqueId);
+      RefPtr<MediaEngineSource> aSource = mAudioSources.Get(uuid);
+      if (aSource && aSource->RequiresSharing()) {
+        
+        aSources->AppendElement(aSource.get());
+      } else {
+        aSource = new MediaEngineWebRTCMicrophoneSource(
+            new mozilla::AudioInputCubeb(i),
+            i, deviceName, uniqueId,
+            mDelayAgnostic, mExtendedFilter);
+        mAudioSources.Put(uuid, aSource); 
+        aSources->AppendElement(aSource);
+      }
+    }
   }
 }
 
@@ -262,71 +320,6 @@ bool
 MediaEngineWebRTC::SupportsDuplex()
 {
   return mFullDuplex;
-}
-
-void
-MediaEngineWebRTC::EnumerateAudioDevices(dom::MediaSourceEnum aMediaSource,
-                                         nsTArray<RefPtr<MediaEngineAudioSource> >* aASources)
-{
-  ScopedCustomReleasePtr<webrtc::VoEBase> ptrVoEBase;
-  
-  MutexAutoLock lock(mMutex);
-
-  if (aMediaSource == dom::MediaSourceEnum::AudioCapture) {
-    RefPtr<MediaEngineWebRTCAudioCaptureSource> audioCaptureSource =
-      new MediaEngineWebRTCAudioCaptureSource(nullptr);
-    aASources->AppendElement(audioCaptureSource);
-    return;
-  }
-
-  if (!mAudioInput) {
-    if (!SupportsDuplex()) {
-      return;
-    }
-    mAudioInput = new mozilla::AudioInputCubeb();
-  }
-
-  int nDevices = 0;
-  mAudioInput->GetNumOfRecordingDevices(nDevices);
-  int i;
-#if defined(MOZ_WIDGET_ANDROID)
-  i = 0; 
-#else
-  
-  i = -1;
-#endif
-  for (; i < nDevices; i++) {
-    
-    char deviceName[128];
-    char uniqueId[128];
-    
-    deviceName[0] = '\0';
-    uniqueId[0] = '\0';
-
-    int error = mAudioInput->GetRecordingDeviceName(i, deviceName, uniqueId);
-    if (error) {
-      LOG((" AudioInput::GetRecordingDeviceName: Failed %d", error));
-      continue;
-    }
-
-    if (uniqueId[0] == '\0') {
-      
-      strcpy(uniqueId, deviceName); 
-    }
-
-    RefPtr<MediaEngineAudioSource> aSource;
-    NS_ConvertUTF8toUTF16 uuid(uniqueId);
-    if (mAudioSources.Get(uuid, getter_AddRefs(aSource))) {
-      
-      aASources->AppendElement(aSource.get());
-    } else {
-      aSource = new MediaEngineWebRTCMicrophoneSource(new mozilla::AudioInputCubeb(i),
-                                                      i, deviceName, uniqueId,
-                                                      mDelayAgnostic, mExtendedFilter);
-      mAudioSources.Put(uuid, aSource); 
-      aASources->AppendElement(aSource);
-    }
-  }
 }
 
 void
@@ -344,13 +337,13 @@ MediaEngineWebRTC::Shutdown()
   
   
   for (auto iter = mVideoSources.Iter(); !iter.Done(); iter.Next()) {
-    MediaEngineVideoSource* source = iter.UserData();
+    MediaEngineSource* source = iter.UserData();
     if (source) {
       source->Shutdown();
     }
   }
   for (auto iter = mAudioSources.Iter(); !iter.Done(); iter.Next()) {
-    MediaEngineAudioSource* source = iter.UserData();
+    MediaEngineSource* source = iter.UserData();
     if (source) {
       source->Shutdown();
     }

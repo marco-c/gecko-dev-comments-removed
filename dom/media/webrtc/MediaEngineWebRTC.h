@@ -5,39 +5,39 @@
 #ifndef MEDIAENGINEWEBRTC_H_
 #define MEDIAENGINEWEBRTC_H_
 
-#include "prcvar.h"
-#include "prthread.h"
-#include "nsIThread.h"
-#include "nsIRunnable.h"
-
-#include "mozilla/dom/File.h"
-#include "mozilla/Mutex.h"
-#include "mozilla/StaticMutex.h"
-#include "mozilla/Monitor.h"
-#include "mozilla/Sprintf.h"
-#include "mozilla/UniquePtr.h"
-#include "nsAutoPtr.h"
-#include "nsCOMPtr.h"
-#include "nsThreadUtils.h"
-#include "DOMMediaStream.h"
-#include "nsDirectoryServiceDefs.h"
-#include "nsComponentManagerUtils.h"
-#include "nsRefPtrHashtable.h"
-
-#include "ipc/IPCMessageUtils.h"
-#include "VideoUtils.h"
-#include "MediaEngineCameraVideoSource.h"
-#include "VideoSegment.h"
+#include "AudioPacketizer.h"
 #include "AudioSegment.h"
-#include "StreamTracks.h"
-#include "MediaStreamGraph.h"
+#include "CamerasChild.h"
 #include "cubeb/cubeb.h"
 #include "CubebUtils.h"
-#include "AudioPacketizer.h"
-
+#include "DOMMediaStream.h"
+#include "ipc/IPCMessageUtils.h"
+#include "MediaEngine.h"
+#include "MediaEnginePrefs.h"
+#include "MediaEngineSource.h"
 #include "MediaEngineWrapper.h"
+#include "MediaStreamGraph.h"
+#include "mozilla/dom/File.h"
 #include "mozilla/dom/MediaStreamTrackBinding.h"
-#include "CamerasChild.h"
+#include "mozilla/Mutex.h"
+#include "mozilla/Mutex.h"
+#include "mozilla/Sprintf.h"
+#include "mozilla/StaticMutex.h"
+#include "mozilla/UniquePtr.h"
+#include "nsAutoPtr.h"
+#include "nsComponentManagerUtils.h"
+#include "nsCOMPtr.h"
+#include "nsDirectoryServiceDefs.h"
+#include "nsIThread.h"
+#include "nsIRunnable.h"
+#include "nsRefPtrHashtable.h"
+#include "nsThreadUtils.h"
+#include "NullTransport.h"
+#include "prcvar.h"
+#include "prthread.h"
+#include "StreamTracks.h"
+#include "VideoSegment.h"
+#include "VideoUtils.h"
 
 
 
@@ -52,31 +52,30 @@
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 
 
-
 #undef FF
-
-
 #include "webrtc/modules/video_capture/video_capture_defines.h"
-
-#include "NullTransport.h"
 
 namespace mozilla {
 
-class MediaEngineWebRTCAudioCaptureSource : public MediaEngineAudioSource
+class MediaEngineWebRTCMicrophoneSource;
+
+class MediaEngineWebRTCAudioCaptureSource : public MediaEngineSource
 {
 public:
-  NS_DECL_THREADSAFE_ISUPPORTS
-
   explicit MediaEngineWebRTCAudioCaptureSource(const char* aUuid)
-    : MediaEngineAudioSource(kReleased)
   {
   }
-  void GetName(nsAString& aName) const override;
-  void GetUUID(nsACString& aUUID) const override;
-  nsresult Allocate(const dom::MediaTrackConstraints& aConstraints,
-                    const MediaEnginePrefs& aPrefs,
+  nsString GetName() const override;
+  nsCString GetUUID() const override;
+  bool IsAvailable() const override
+  {
+    AssertIsOnOwningThread();
+    return false;
+  }
+  nsresult Allocate(const dom::MediaTrackConstraints &aConstraints,
+                    const MediaEnginePrefs &aPrefs,
                     const nsString& aDeviceId,
-                    const mozilla::ipc::PrincipalInfo& aPrincipalInfo,
+                    const ipc::PrincipalInfo& aPrincipalInfo,
                     AllocationHandle** aOutHandle,
                     const char** aOutBadConstraint) override
   {
@@ -84,66 +83,55 @@ public:
     *aOutHandle = nullptr;
     return NS_OK;
   }
-  nsresult Deallocate(AllocationHandle* aHandle) override
+  nsresult Deallocate(const RefPtr<const AllocationHandle>& aHandle) override
   {
     
     MOZ_ASSERT(!aHandle);
     return NS_OK;
   }
-  nsresult Start(SourceMediaStream* aMediaStream,
-                 TrackID aId,
+  nsresult Start(SourceMediaStream* aStream,
+                 TrackID aTrackID,
                  const PrincipalHandle& aPrincipalHandle) override;
-  nsresult Stop(SourceMediaStream* aMediaStream, TrackID aId) override;
-  nsresult Restart(AllocationHandle* aHandle,
-                   const dom::MediaTrackConstraints& aConstraints,
-                   const MediaEnginePrefs &aPrefs,
-                   const nsString& aDeviceId,
-                   const char** aOutBadConstraint) override;
-  void NotifyOutputData(MediaStreamGraph* aGraph,
-                        AudioDataValue* aBuffer, size_t aFrames,
-                        TrackRate aRate, uint32_t aChannels) override
-  {}
-  void DeviceChanged() override
-  {}
-  void NotifyInputData(MediaStreamGraph* aGraph,
-                       const AudioDataValue* aBuffer, size_t aFrames,
-                       TrackRate aRate, uint32_t aChannels) override
-  {}
-  void NotifyPull(MediaStreamGraph* aGraph,
-                  SourceMediaStream* aSource,
-                  TrackID aID,
-                  StreamTime aDesiredTime,
-                  const PrincipalHandle& aPrincipalHandle) override
+  nsresult Stop(SourceMediaStream* aStream, TrackID aTrackID) override;
+  nsresult Reconfigure(const RefPtr<AllocationHandle>& aHandle,
+                       const dom::MediaTrackConstraints& aConstraints,
+                       const MediaEnginePrefs& aPrefs,
+                       const nsString& aDeviceId,
+                       const char** aOutBadConstraint) override;
+
+  void Pull(const RefPtr<const AllocationHandle>& aHandle,
+            const RefPtr<SourceMediaStream>& aStream,
+            TrackID aTrackID,
+            StreamTime aDesiredTime,
+            const PrincipalHandle& aPrincipalHandle) override
   {
     
     
     
-    StreamTime delta = aDesiredTime - aSource->GetEndOfAppendedData(aID);
+    StreamTime delta = aDesiredTime - aStream->GetEndOfAppendedData(aTrackID);
     if (delta > 0) {
       AudioSegment segment;
       segment.AppendNullData(delta);
-      aSource->AppendToTrack(aID, &segment);
+      aStream->AppendToTrack(aTrackID, &segment);
     }
   }
+
   dom::MediaSourceEnum GetMediaSource() const override
   {
     return dom::MediaSourceEnum::AudioCapture;
   }
-  bool IsFake() override
-  {
-    return false;
-  }
+
   nsresult TakePhoto(MediaEnginePhotoCallback* aCallback) override
   {
     return NS_ERROR_NOT_IMPLEMENTED;
   }
+
   uint32_t GetBestFitnessDistance(
     const nsTArray<const NormalizedConstraintSet*>& aConstraintSets,
     const nsString& aDeviceId) const override;
 
 protected:
-  virtual ~MediaEngineWebRTCAudioCaptureSource() {}
-  nsCString mUUID;
+  virtual ~MediaEngineWebRTCAudioCaptureSource() = default;
 };
 
 
@@ -168,7 +156,7 @@ public:
 
 protected:
   
-  virtual ~AudioInput() {}
+  virtual ~AudioInput() = default;
 };
 
 class AudioInputCubeb final : public AudioInput
@@ -376,52 +364,36 @@ protected:
   virtual ~WebRTCAudioDataListener() {}
 
 public:
-  explicit WebRTCAudioDataListener(MediaEngineAudioSource* aAudioSource)
-    : mMutex("WebRTCAudioDataListener")
+  explicit WebRTCAudioDataListener(MediaEngineWebRTCMicrophoneSource* aAudioSource)
+    : mMutex("WebRTCAudioDataListener::mMutex")
     , mAudioSource(aAudioSource)
   {}
 
   
-  virtual void NotifyOutputData(MediaStreamGraph* aGraph,
-                                AudioDataValue* aBuffer, size_t aFrames,
-                                TrackRate aRate, uint32_t aChannels) override
-  {
-    MutexAutoLock lock(mMutex);
-    if (mAudioSource) {
-      mAudioSource->NotifyOutputData(aGraph, aBuffer, aFrames, aRate, aChannels);
-    }
-  }
-  virtual void NotifyInputData(MediaStreamGraph* aGraph,
-                               const AudioDataValue* aBuffer, size_t aFrames,
-                               TrackRate aRate, uint32_t aChannels) override
-  {
-    MutexAutoLock lock(mMutex);
-    if (mAudioSource) {
-      mAudioSource->NotifyInputData(aGraph, aBuffer, aFrames, aRate, aChannels);
-    }
-  }
-  virtual void DeviceChanged() override
-  {
-    MutexAutoLock lock(mMutex);
-    if (mAudioSource) {
-      mAudioSource->DeviceChanged();
-    }
-  }
+  void NotifyOutputData(MediaStreamGraph* aGraph,
+                        AudioDataValue* aBuffer,
+                        size_t aFrames,
+                        TrackRate aRate,
+                        uint32_t aChannels) override;
 
-  void Shutdown()
-  {
-    MutexAutoLock lock(mMutex);
-    mAudioSource = nullptr;
-  }
+  void NotifyInputData(MediaStreamGraph* aGraph,
+                       const AudioDataValue* aBuffer,
+                       size_t aFrames,
+                       TrackRate aRate,
+                       uint32_t aChannels) override;
+
+  void DeviceChanged() override;
+
+  void Shutdown();
 
 private:
   Mutex mMutex;
-  RefPtr<MediaEngineAudioSource> mAudioSource;
+  RefPtr<MediaEngineWebRTCMicrophoneSource> mAudioSource;
 };
 
-class MediaEngineWebRTCMicrophoneSource : public MediaEngineAudioSource
+class MediaEngineWebRTCMicrophoneSource : public MediaEngineSource,
+                                          public AudioDataListenerInterface
 {
-  typedef MediaEngineAudioSource Super;
 public:
   MediaEngineWebRTCMicrophoneSource(mozilla::AudioInput* aAudioInput,
                                     int aIndex,
@@ -430,25 +402,42 @@ public:
                                     bool aDelayAgnostic,
                                     bool aExtendedFilter);
 
-  void GetName(nsAString& aName) const override;
-  void GetUUID(nsACString& aUUID) const override;
+  bool RequiresSharing() const override
+  {
+    return true;
+  }
 
-  nsresult Deallocate(AllocationHandle* aHandle) override;
+  nsString GetName() const override;
+  nsCString GetUUID() const override;
+
+  bool IsAvailable() const override
+  {
+    AssertIsOnOwningThread();
+    return mState == kReleased;
+  }
+
+  nsresult Allocate(const dom::MediaTrackConstraints &aConstraints,
+                    const MediaEnginePrefs& aPrefs,
+                    const nsString& aDeviceId,
+                    const ipc::PrincipalInfo& aPrincipalInfo,
+                    AllocationHandle** aOutHandle,
+                    const char** aOutBadConstraint) override;
+  nsresult Deallocate(const RefPtr<const AllocationHandle>& aHandle) override;
   nsresult Start(SourceMediaStream* aStream,
-                 TrackID aID,
+                 TrackID aTrackID,
                  const PrincipalHandle& aPrincipalHandle) override;
-  nsresult Stop(SourceMediaStream* aSource, TrackID aID) override;
-  nsresult Restart(AllocationHandle* aHandle,
-                   const dom::MediaTrackConstraints& aConstraints,
-                   const MediaEnginePrefs &aPrefs,
-                   const nsString& aDeviceId,
-                   const char** aOutBadConstraint) override;
+  nsresult Stop(SourceMediaStream* aStream, TrackID aTrackID) override;
+  nsresult Reconfigure(const RefPtr<AllocationHandle>& aHandle,
+                       const dom::MediaTrackConstraints& aConstraints,
+                       const MediaEnginePrefs& aPrefs,
+                       const nsString& aDeviceId,
+                       const char** aOutBadConstraint) override;
 
-  void NotifyPull(MediaStreamGraph* aGraph,
-                  SourceMediaStream* aSource,
-                  TrackID aId,
-                  StreamTime aDesiredTime,
-                  const PrincipalHandle& aPrincipalHandle) override;
+  void Pull(const RefPtr<const AllocationHandle>& aHandle,
+            const RefPtr<SourceMediaStream>& aStream,
+            TrackID aTrackID,
+            StreamTime aDesiredTime,
+            const PrincipalHandle& aPrincipalHandle) override;
 
   
   void NotifyOutputData(MediaStreamGraph* aGraph,
@@ -460,11 +449,8 @@ public:
 
   void DeviceChanged() override;
 
-  bool IsFake() override {
-    return false;
-  }
-
-  dom::MediaSourceEnum GetMediaSource() const override {
+  dom::MediaSourceEnum GetMediaSource() const override
+  {
     return dom::MediaSourceEnum::Microphone;
   }
 
@@ -474,24 +460,65 @@ public:
   }
 
   uint32_t GetBestFitnessDistance(
-      const nsTArray<const NormalizedConstraintSet*>& aConstraintSets,
-      const nsString& aDeviceId) const override;
+    const nsTArray<const NormalizedConstraintSet*>& aConstraintSets,
+    const nsString& aDeviceId) const override;
 
   void Shutdown() override;
-
-  NS_DECL_THREADSAFE_ISUPPORTS
 
 protected:
   ~MediaEngineWebRTCMicrophoneSource() {}
 
 private:
-  nsresult
-  UpdateSingleSource(const AllocationHandle* aHandle,
-                     const NormalizedConstraints& aNetConstraints,
-                     const NormalizedConstraints& aNewConstraint,
-                     const MediaEnginePrefs& aPrefs,
-                     const nsString& aDeviceId,
-                     const char** aOutBadConstraint) override;
+  
+
+
+  struct Allocation {
+    Allocation() = delete;
+    explicit Allocation(const RefPtr<AllocationHandle>& aHandle);
+    ~Allocation();
+
+    const RefPtr<AllocationHandle> mHandle;
+    RefPtr<SourceMediaStream> mStream;
+    TrackID mTrackID = TRACK_NONE;
+    PrincipalHandle mPrincipal = PRINCIPAL_HANDLE_NONE;
+  };
+
+  
+
+
+  class AllocationHandleComparator {
+  public:
+    bool Equals(const Allocation& aAllocation,
+                const RefPtr<const AllocationHandle>& aHandle) const
+    {
+      return aHandle == aAllocation.mHandle;
+    }
+  };
+
+  
+
+
+
+
+
+
+
+  nsresult ReevaluateAllocation(const RefPtr<AllocationHandle>& aHandle,
+                                const NormalizedConstraints* aConstraintsUpdate,
+                                const MediaEnginePrefs& aPrefs,
+                                const nsString& aDeviceId,
+                                const char** aOutBadConstraint);
+
+  
+
+
+
+
+  nsresult UpdateSingleSource(const RefPtr<const AllocationHandle>& aHandle,
+                              const NormalizedConstraints& aNetConstraints,
+                              const MediaEnginePrefs& aPrefs,
+                              const nsString& aDeviceId,
+                              const char** aOutBadConstraint);
 
 
   void UpdateAECSettingsIfNeeded(bool aEnable, webrtc::EcModes aMode);
@@ -503,6 +530,7 @@ private:
   
   bool AllocChannel();
   void FreeChannel();
+
   template<typename T>
   void InsertInGraph(const T* aBuffer,
                      size_t aFrames,
@@ -517,12 +545,11 @@ private:
 
   
   
-  bool PassThrough() {
-    return mSkipProcessing;
-  }
-  void SetPassThrough(bool aPassThrough) {
-    mSkipProcessing = aPassThrough;
-  }
+  
+  bool PassThrough() const;
+
+  
+  void SetPassThrough(bool aPassThrough);
 
   RefPtr<mozilla::AudioInput> mAudioInput;
   RefPtr<WebRTCAudioDataListener> mListener;
@@ -537,21 +564,28 @@ private:
   nsAutoPtr<AudioPacketizer<AudioDataValue, float>> mPacketizerOutput;
 
   
+  Mutex mMutex;
+
   
   
   
-  Monitor mMonitor;
-  nsTArray<RefPtr<SourceMediaStream>> mSources;
-  nsTArray<PrincipalHandle> mPrincipalHandles; 
+  nsTArray<Allocation> mAllocations;
+
+  
+  
+  MediaEngineSourceState mState = kReleased;
 
   int mCapIndex;
   bool mDelayAgnostic;
   bool mExtendedFilter;
-  MOZ_INIT_OUTSIDE_CTOR TrackID mTrackID;
   bool mStarted;
 
-  nsString mDeviceName;
-  nsCString mDeviceUUID;
+  const nsString mDeviceName;
+  const nsCString mDeviceUUID;
+
+  
+  
+  const nsMainThreadPtrHandle<media::Refcountable<dom::MediaTrackSettings>> mSettings;
 
   uint64_t mTotalFrames;
   uint64_t mLastLogFrames;
@@ -562,6 +596,7 @@ private:
   
   bool mSkipProcessing;
 
+  
   
   MediaEnginePrefs mLastPrefs;
 
@@ -588,12 +623,10 @@ public:
   
   bool SupportsDuplex();
 
-  void EnumerateVideoDevices(dom::MediaSourceEnum,
-                             nsTArray<RefPtr<MediaEngineVideoSource>>*) override;
-  void EnumerateAudioDevices(dom::MediaSourceEnum,
-                             nsTArray<RefPtr<MediaEngineAudioSource>>*) override;
+  void EnumerateDevices(dom::MediaSourceEnum,
+                        nsTArray<RefPtr<MediaEngineSource>>*) override;
 private:
-  ~MediaEngineWebRTC() {}
+  ~MediaEngineWebRTC() = default;
 
   nsCOMPtr<nsIThread> mThread;
 
@@ -607,8 +640,8 @@ private:
 
   
   
-  nsRefPtrHashtable<nsStringHashKey, MediaEngineVideoSource> mVideoSources;
-  nsRefPtrHashtable<nsStringHashKey, MediaEngineAudioSource> mAudioSources;
+  nsRefPtrHashtable<nsStringHashKey, MediaEngineSource> mVideoSources;
+  nsRefPtrHashtable<nsStringHashKey, MediaEngineSource> mAudioSources;
 };
 
 }
