@@ -250,14 +250,14 @@ public:
 
   
   static nsresult RegisterCallback(PrefChangedFunc aCallback,
-                                   const char* aPref,
+                                   const nsACString& aPref,
                                    void* aClosure = nullptr)
   {
     return RegisterCallback(aCallback, aPref, aClosure, ExactMatch);
   }
 
   static nsresult UnregisterCallback(PrefChangedFunc aCallback,
-                                     const char* aPref,
+                                     const nsACString& aPref,
                                      void* aClosure = nullptr)
   {
     return UnregisterCallback(aCallback, aPref, aClosure, ExactMatch);
@@ -266,7 +266,7 @@ public:
   
   
   static nsresult RegisterCallbackAndCall(PrefChangedFunc aCallback,
-                                          const char* aPref,
+                                          const nsACString& aPref,
                                           void* aClosure = nullptr)
   {
     return RegisterCallbackAndCall(aCallback, aPref, aClosure, ExactMatch);
@@ -275,7 +275,7 @@ public:
   
   
   static nsresult RegisterPrefixCallback(PrefChangedFunc aCallback,
-                                         const char* aPref,
+                                         const nsACString& aPref,
                                          void* aClosure = nullptr)
   {
     return RegisterCallback(aCallback, aPref, aClosure, PrefixMatch);
@@ -284,7 +284,7 @@ public:
   
   
   static nsresult RegisterPrefixCallbackAndCall(PrefChangedFunc aCallback,
-                                                const char* aPref,
+                                                const nsACString& aPref,
                                                 void* aClosure = nullptr)
   {
     return RegisterCallbackAndCall(aCallback, aPref, aClosure, PrefixMatch);
@@ -293,10 +293,64 @@ public:
   
   
   static nsresult UnregisterPrefixCallback(PrefChangedFunc aCallback,
-                                           const char* aPref,
+                                           const nsACString& aPref,
                                            void* aClosure = nullptr)
   {
     return UnregisterCallback(aCallback, aPref, aClosure, PrefixMatch);
+  }
+
+  template<int N>
+  static nsresult RegisterCallback(PrefChangedFunc aCallback,
+                                   const char (&aPref)[N],
+                                   void* aClosure = nullptr)
+  {
+    return RegisterCallback(
+      aCallback, nsLiteralCString(aPref), aClosure, ExactMatch);
+  }
+
+  template<int N>
+  static nsresult UnregisterCallback(PrefChangedFunc aCallback,
+                                     const char (&aPref)[N],
+                                     void* aClosure = nullptr)
+  {
+    return UnregisterCallback(
+      aCallback, nsLiteralCString(aPref), aClosure, ExactMatch);
+  }
+
+  template<int N>
+  static nsresult RegisterCallbackAndCall(PrefChangedFunc aCallback,
+                                          const char (&aPref)[N],
+                                          void* aClosure = nullptr)
+  {
+    return RegisterCallbackAndCall(
+      aCallback, nsLiteralCString(aPref), aClosure, ExactMatch);
+  }
+
+  template<int N>
+  static nsresult RegisterPrefixCallback(PrefChangedFunc aCallback,
+                                         const char (&aPref)[N],
+                                         void* aClosure = nullptr)
+  {
+    return RegisterCallback(
+      aCallback, nsLiteralCString(aPref), aClosure, PrefixMatch);
+  }
+
+  template<int N>
+  static nsresult RegisterPrefixCallbackAndCall(PrefChangedFunc aCallback,
+                                                const char (&aPref)[N],
+                                                void* aClosure = nullptr)
+  {
+    return RegisterCallbackAndCall(
+      aCallback, nsLiteralCString(aPref), aClosure, PrefixMatch);
+  }
+
+  template<int N>
+  static nsresult UnregisterPrefixCallback(PrefChangedFunc aCallback,
+                                           const char (&aPref)[N],
+                                           void* aClosure = nullptr)
+  {
+    return UnregisterCallback(
+      aCallback, nsLiteralCString(aPref), aClosure, PrefixMatch);
   }
 
   
@@ -405,18 +459,44 @@ private:
     bool aIsStartup);
 
   static nsresult RegisterCallback(PrefChangedFunc aCallback,
-                                   const char* aPref,
+                                   const nsACString& aPref,
                                    void* aClosure,
                                    MatchKind aMatchKind,
                                    bool aIsPriority = false);
   static nsresult UnregisterCallback(PrefChangedFunc aCallback,
-                                     const char* aPref,
+                                     const nsACString& aPref,
                                      void* aClosure,
                                      MatchKind aMatchKind);
   static nsresult RegisterCallbackAndCall(PrefChangedFunc aCallback,
-                                          const char* aPref,
+                                          const nsACString& aPref,
                                           void* aClosure,
                                           MatchKind aMatchKind);
+
+  static nsresult RegisterCallback(PrefChangedFunc aCallback,
+                                   const char* aPref,
+                                   void* aClosure,
+                                   MatchKind aMatchKind,
+                                   bool aIsPriority = false)
+  {
+    return RegisterCallback(
+      aCallback, nsDependentCString(aPref), aClosure, aMatchKind, aIsPriority);
+  }
+  static nsresult UnregisterCallback(PrefChangedFunc aCallback,
+                                     const char* aPref,
+                                     void* aClosure,
+                                     MatchKind aMatchKind)
+  {
+    return UnregisterCallback(
+      aCallback, nsDependentCString(aPref), aClosure, aMatchKind);
+  }
+  static nsresult RegisterCallbackAndCall(PrefChangedFunc aCallback,
+                                          const char* aPref,
+                                          void* aClosure,
+                                          MatchKind aMatchKind)
+  {
+    return RegisterCallbackAndCall(
+      aCallback, nsDependentCString(aPref), aClosure, aMatchKind);
+  }
 
 private:
   nsCOMPtr<nsIFile> mCurrentFile;

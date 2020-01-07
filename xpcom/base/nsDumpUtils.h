@@ -110,7 +110,10 @@ public:
   
 
 
-  static const char* const kPrefName;
+  
+  
+  
+  static const char kPrefName[38];
 
   static FifoWatcher* GetSingleton();
 

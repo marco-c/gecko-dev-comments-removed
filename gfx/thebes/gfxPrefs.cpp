@@ -281,14 +281,17 @@ OnGfxPrefChanged(const char* aPrefname, void* aClosure)
 void gfxPrefs::WatchChanges(const char* aPrefname, Pref* aPref)
 {
   MOZ_ASSERT(IsPrefsServiceAvailable());
-  Preferences::RegisterCallback(OnGfxPrefChanged, aPrefname, aPref);
+  nsCString name;
+  name.AssignLiteral(aPrefname, strlen(aPrefname));
+  Preferences::RegisterCallback(OnGfxPrefChanged, name, aPref);
 }
 
 void gfxPrefs::UnwatchChanges(const char* aPrefname, Pref* aPref)
 {
   
   if (IsPrefsServiceAvailable()) {
-    Preferences::UnregisterCallback(OnGfxPrefChanged, aPrefname, aPref);
+    Preferences::UnregisterCallback(OnGfxPrefChanged, nsDependentCString(aPrefname),
+                                    aPref);
   }
 }
 

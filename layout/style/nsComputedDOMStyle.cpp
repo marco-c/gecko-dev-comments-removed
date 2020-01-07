@@ -3397,6 +3397,14 @@ nsComputedDOMStyle::DoGetTextEmphasisStyle()
 }
 
 already_AddRefed<CSSValue>
+nsComputedDOMStyle::DoGetTextIndent()
+{
+  RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
+  SetValueToCoord(val, StyleText()->mTextIndent, false);
+  return val.forget();
+}
+
+already_AddRefed<CSSValue>
 nsComputedDOMStyle::DoGetTextOverflow()
 {
   const nsStyleTextReset *style = StyleTextReset();
@@ -5081,6 +5089,14 @@ nsComputedDOMStyle::DoGetClipPath()
 }
 
 already_AddRefed<CSSValue>
+nsComputedDOMStyle::DoGetShapeMargin()
+{
+  RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
+  SetValueToCoord(val, StyleDisplay()->mShapeMargin, true);
+  return val.forget();
+}
+
+already_AddRefed<CSSValue>
 nsComputedDOMStyle::DoGetShapeOutside()
 {
   return GetShapeSource(StyleDisplay()->mShapeOutside,
@@ -5523,7 +5539,9 @@ nsComputedDOMStyle::RegisterPrefChangeCallbacks()
   ComputedStyleMap* data = GetComputedStyleMap();
   for (const auto* p = nsCSSProps::kPropertyPrefTable;
        p->mPropID != eCSSProperty_UNKNOWN; p++) {
-    Preferences::RegisterCallback(MarkComputedStyleMapDirty, p->mPref, data);
+    nsCString name;
+    name.AssignLiteral(p->mPref, strlen(p->mPref));
+    Preferences::RegisterCallback(MarkComputedStyleMapDirty, name, data);
   }
 }
 
@@ -5533,6 +5551,7 @@ nsComputedDOMStyle::UnregisterPrefChangeCallbacks()
   ComputedStyleMap* data = GetComputedStyleMap();
   for (const auto* p = nsCSSProps::kPropertyPrefTable;
        p->mPropID != eCSSProperty_UNKNOWN; p++) {
-    Preferences::UnregisterCallback(MarkComputedStyleMapDirty, p->mPref, data);
+    Preferences::UnregisterCallback(MarkComputedStyleMapDirty,
+                                    nsDependentCString(p->mPref), data);
   }
 }
