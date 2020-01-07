@@ -53,6 +53,7 @@ private:
   bool mIsChannelSuspended = false;
 };
 
+DDLoggedTypeDeclNameAndBase(ChannelMediaResource, BaseMediaResource);
 
 
 
@@ -61,7 +62,10 @@ private:
 
 
 
-class ChannelMediaResource : public BaseMediaResource
+
+class ChannelMediaResource
+  : public BaseMediaResource
+  , public DecoderDoctorLifeLogger<ChannelMediaResource>
 {
 public:
   ChannelMediaResource(MediaResourceCallback* aDecoder,

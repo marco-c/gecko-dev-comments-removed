@@ -498,6 +498,7 @@ MediaKeys::CreateSession(JSContext* aCx,
   if (aRv.Failed()) {
     return nullptr;
   }
+  DDLINKCHILD("session", session.get());
 
   
   mPendingSessions.Put(session->Token(), session);

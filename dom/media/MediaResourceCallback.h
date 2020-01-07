@@ -7,6 +7,7 @@
 #ifndef MediaResourceCallback_h_
 #define MediaResourceCallback_h_
 
+#include "DecoderDoctorLogger.h"
 #include "nsError.h"
 #include "nsISupportsImpl.h"
 #include "MediaResult.h"
@@ -17,6 +18,7 @@ class AbstractThread;
 class MediaDecoderOwner;
 class MediaResource;
 
+DDLoggedTypeDeclName(MediaResourceCallback);
 
 
 
@@ -26,7 +28,10 @@ class MediaResource;
 
 
 
-class MediaResourceCallback {
+
+class MediaResourceCallback
+  : public DecoderDoctorLifeLogger<MediaResourceCallback>
+{
 public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaResourceCallback);
 

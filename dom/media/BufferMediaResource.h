@@ -12,11 +12,15 @@
 
 namespace mozilla {
 
+DDLoggedTypeDeclNameAndBase(BufferMediaResource, MediaResource);
 
 
 
 
-class BufferMediaResource : public MediaResource
+
+class BufferMediaResource
+  : public MediaResource
+  , public DecoderDoctorLifeLogger<BufferMediaResource>
 {
 public:
   BufferMediaResource(const uint8_t* aBuffer, uint32_t aLength)

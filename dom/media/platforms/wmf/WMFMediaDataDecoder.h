@@ -79,12 +79,16 @@ protected:
   Maybe<media::TimeUnit> mSeekTargetThreshold;
 };
 
+DDLoggedTypeDeclNameAndBase(WMFMediaDataDecoder, MediaDataDecoder);
 
 
 
 
 
-class WMFMediaDataDecoder : public MediaDataDecoder
+
+class WMFMediaDataDecoder
+  : public MediaDataDecoder
+  , public DecoderDoctorLifeLogger<WMFMediaDataDecoder>
 {
 public:
   WMFMediaDataDecoder(MFTManager* aOutputSource, TaskQueue* aTaskQueue);

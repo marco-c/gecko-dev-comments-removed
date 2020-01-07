@@ -7,6 +7,7 @@
 #if !defined(PlatformDecoderModule_h_)
 #define PlatformDecoderModule_h_
 
+#include "DecoderDoctorLogger.h"
 #include "GMPCrashHelper.h"
 #include "MediaEventSource.h"
 #include "MediaInfo.h"
@@ -226,6 +227,7 @@ protected:
   CreateAudioDecoder(const CreateDecoderParams& aParams) = 0;
 };
 
+DDLoggedTypeDeclName(MediaDataDecoder);
 
 
 
@@ -243,7 +245,8 @@ protected:
 
 
 
-class MediaDataDecoder
+
+class MediaDataDecoder : public DecoderDoctorLifeLogger<MediaDataDecoder>
 {
 protected:
   virtual ~MediaDataDecoder() { }

@@ -6,6 +6,7 @@
 #if !defined(MediaResource_h_)
 #define MediaResource_h_
 
+#include "DecoderDoctorLogger.h"
 #include "Intervals.h"
 #include "MediaData.h"
 #include "mozilla/Attributes.h"
@@ -22,6 +23,7 @@ namespace mozilla {
 typedef media::Interval<int64_t> MediaByteRange;
 typedef media::IntervalSet<int64_t> MediaByteRangeSet;
 
+DDLoggedTypeDeclName(MediaResource);
 
 
 
@@ -45,7 +47,8 @@ typedef media::IntervalSet<int64_t> MediaByteRangeSet;
 
 
 
-class MediaResource
+
+class MediaResource : public DecoderDoctorLifeLogger<MediaResource>
 {
 public:
   
@@ -147,6 +150,7 @@ private:
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 };
 
+DDLoggedTypeDeclName(MediaResourceIndex);
 
 
 
@@ -154,7 +158,8 @@ private:
 
 
 
-class MediaResourceIndex
+
+class MediaResourceIndex : public DecoderDoctorLifeLogger<MediaResourceIndex>
 {
 public:
   explicit MediaResourceIndex(MediaResource* aResource);

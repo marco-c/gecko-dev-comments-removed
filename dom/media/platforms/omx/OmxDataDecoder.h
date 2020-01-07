@@ -30,6 +30,7 @@ typedef OmxPromiseLayer::OmxCommandFailureHolder OmxCommandFailureHolder;
 typedef OmxPromiseLayer::BufferData BufferData;
 typedef OmxPromiseLayer::BUFFERLIST BUFFERLIST;
 
+DDLoggedTypeDeclNameAndBase(OmxDataDecoder, MediaDataDecoder);
 
 
 
@@ -56,7 +57,10 @@ typedef OmxPromiseLayer::BUFFERLIST BUFFERLIST;
 
 
 
-class OmxDataDecoder : public MediaDataDecoder
+
+class OmxDataDecoder
+  : public MediaDataDecoder
+  , public DecoderDoctorLifeLogger<OmxDataDecoder>
 {
 protected:
   virtual ~OmxDataDecoder();

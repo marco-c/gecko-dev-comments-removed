@@ -14,6 +14,7 @@ namespace mozilla {
 
 class DecoderDoctorDiagnostics;
 
+DDLoggedTypeDeclNameAndBase(H264Converter, MediaDataDecoder);
 
 
 
@@ -21,7 +22,10 @@ class DecoderDoctorDiagnostics;
 
 
 
-class H264Converter : public MediaDataDecoder
+
+class H264Converter
+  : public MediaDataDecoder
+  , public DecoderDoctorLifeLogger<H264Converter>
 {
 public:
 

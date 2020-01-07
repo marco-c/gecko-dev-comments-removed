@@ -7,6 +7,7 @@
 #ifndef MediaCache_h_
 #define MediaCache_h_
 
+#include "DecoderDoctorLogger.h"
 #include "Intervals.h"
 #include "mozilla/Result.h"
 #include "mozilla/UniquePtr.h"
@@ -181,13 +182,16 @@ class ReentrantMonitorAutoEnter;
 
 class MediaCache;
 
+DDLoggedTypeDeclName(MediaCacheStream);
 
 
 
 
 
 
-class MediaCacheStream {
+
+class MediaCacheStream : public DecoderDoctorLifeLogger<MediaCacheStream>
+{
   using AutoLock = ReentrantMonitorAutoEnter;
 
 public:

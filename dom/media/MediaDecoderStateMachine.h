@@ -156,6 +156,8 @@ enum class VideoDecodeMode : uint8_t
   Suspend
 };
 
+DDLoggedTypeDeclName(MediaDecoderStateMachine);
+
 
 
 
@@ -168,6 +170,7 @@ enum class VideoDecodeMode : uint8_t
 
 
 class MediaDecoderStateMachine
+  : public DecoderDoctorLifeLogger<MediaDecoderStateMachine>
 {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaDecoderStateMachine)
 

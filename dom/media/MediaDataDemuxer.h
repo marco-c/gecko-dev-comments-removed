@@ -7,6 +7,7 @@
 #if !defined(MediaDataDemuxer_h)
 #define MediaDataDemuxer_h
 
+#include "DecoderDoctorLogger.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/UniquePtr.h"
 
@@ -23,11 +24,14 @@ namespace mozilla {
 class MediaTrackDemuxer;
 class TrackMetadataHolder;
 
+DDLoggedTypeDeclName(MediaDataDemuxer);
+DDLoggedTypeName(MediaTrackDemuxer);
 
 
 
 
-class MediaDataDemuxer
+
+class MediaDataDemuxer : public DecoderDoctorLifeLogger<MediaDataDemuxer>
 {
 public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaDataDemuxer)
@@ -94,7 +98,7 @@ protected:
   }
 };
 
-class MediaTrackDemuxer
+class MediaTrackDemuxer : public DecoderDoctorLifeLogger<MediaTrackDemuxer>
 {
 public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaTrackDemuxer)

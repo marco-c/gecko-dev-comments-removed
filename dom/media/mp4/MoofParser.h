@@ -14,6 +14,7 @@
 #include "MediaResource.h"
 
 namespace mozilla {
+
 typedef int64_t Microseconds;
 
 class Box;
@@ -283,7 +284,9 @@ private:
   uint64_t mMaxRoundingError;
 };
 
-class MoofParser
+DDLoggedTypeDeclName(MoofParser);
+
+class MoofParser : public DecoderDoctorLifeLogger<MoofParser>
 {
 public:
   MoofParser(ByteStream* aSource, uint32_t aTrackId, bool aIsAudio)
@@ -295,6 +298,7 @@ public:
   {
     
     
+    DDLINKCHILD("source", aSource);
   }
   bool RebuildFragmentedIndex(
     const mozilla::MediaByteRangeSet& aByteRanges);

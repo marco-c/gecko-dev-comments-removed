@@ -26,8 +26,12 @@ class SourceBuffer;
 
 } 
 
+DDLoggedTypeDeclNameAndBase(SourceBufferResource, MediaResource);
 
-class SourceBufferResource final : public MediaResource
+
+class SourceBufferResource final
+  : public MediaResource
+  , public DecoderDoctorLifeLogger<SourceBufferResource>
 {
 public:
   SourceBufferResource();
