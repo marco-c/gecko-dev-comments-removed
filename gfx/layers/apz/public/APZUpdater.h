@@ -7,12 +7,20 @@
 #ifndef mozilla_layers_APZUpdater_h
 #define mozilla_layers_APZUpdater_h
 
+#include <unordered_map>
+
 #include "LayersTypes.h"
 #include "mozilla/layers/APZTestData.h"
+#include "mozilla/StaticMutex.h"
 #include "nsThreadUtils.h"
 #include "Units.h"
 
 namespace mozilla {
+
+namespace wr {
+struct WrWindowId;
+} 
+
 namespace layers {
 
 class APZCTreeManager;
@@ -34,6 +42,7 @@ public:
   explicit APZUpdater(const RefPtr<APZCTreeManager>& aApz);
 
   bool HasTreeManager(const RefPtr<APZCTreeManager>& aApz);
+  void SetWebRenderWindowId(const wr::WindowId& aWindowId);
 
   void ClearTree();
   void UpdateFocusState(LayersId aRootLayerTreeId,
@@ -97,6 +106,13 @@ protected:
 
 private:
   RefPtr<APZCTreeManager> mApz;
+
+  
+  
+  
+  static StaticMutex sWindowIdLock;
+  static std::unordered_map<uint64_t, APZUpdater*> sWindowIdMap;
+  Maybe<wr::WrWindowId> mWindowId;
 };
 
 } 
