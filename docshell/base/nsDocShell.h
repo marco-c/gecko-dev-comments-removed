@@ -139,7 +139,7 @@ public:
   bool mRepeat;
   bool mMetaRefresh;
 
-protected:
+private:
   virtual ~nsRefreshTimer();
 };
 
@@ -172,20 +172,38 @@ class nsDocShell final
   , public nsIDeprecationWarner
   , public mozilla::SupportsWeakPtr<nsDocShell>
 {
-  friend class nsDSURIContentListener;
-  friend class FramingChecker;
-  using Encoding = mozilla::Encoding;
-
 public:
+  
+  class RestorePresentationEvent : public mozilla::Runnable
+  {
+  public:
+    NS_DECL_NSIRUNNABLE
+    explicit RestorePresentationEvent(nsDocShell* aDs)
+      : mozilla::Runnable("nsDocShell::RestorePresentationEvent")
+      , mDocShell(aDs)
+    {
+    }
+    void Revoke() { mDocShell = nullptr; }
+  private:
+    RefPtr<nsDocShell> mDocShell;
+  };
+
+  class InterfaceRequestorProxy : public nsIInterfaceRequestor
+  {
+  public:
+    explicit InterfaceRequestorProxy(nsIInterfaceRequestor* aRequestor);
+    NS_DECL_THREADSAFE_ISUPPORTS
+    NS_DECL_NSIINTERFACEREQUESTOR
+
+  private:
+    virtual ~InterfaceRequestorProxy();
+    InterfaceRequestorProxy() {}
+    nsWeakPtr mWeakPtr;
+  };
+
   MOZ_DECLARE_WEAKREFERENCE_TYPENAME(nsDocShell)
-
-  nsDocShell();
-
-  virtual nsresult Init() override;
-
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(nsDocShell, nsDocLoader)
-
   NS_DECL_NSIDOCSHELL
   NS_DECL_NSIDOCSHELLTREEITEM
   NS_DECL_NSIWEBNAVIGATION
@@ -203,7 +221,15 @@ public:
   NS_DECL_NSIWEBSHELLSERVICES
   NS_DECL_NSINETWORKINTERCEPTCONTROLLER
   NS_DECL_NSIDEPRECATIONWARNER
+
   NS_FORWARD_SAFE_NSIDOMSTORAGEMANAGER(TopSessionStorageManager())
+
+  
+  
+  NS_FORWARD_NSISECURITYEVENTSINK(nsDocLoader::)
+
+  nsDocShell();
+  virtual nsresult Init() override;
 
   NS_IMETHOD Stop() override
   {
@@ -211,10 +237,6 @@ public:
     
     return nsDocLoader::Stop();
   }
-
-  
-  
-  NS_FORWARD_NSISECURITYEVENTSINK(nsDocLoader::)
 
   
   NS_IMETHOD OnLinkClick(nsIContent* aContent,
@@ -259,6 +281,7 @@ public:
   NS_IMETHOD GetUseRemoteTabs(bool*) override;
   NS_IMETHOD SetRemoteTabs(bool) override;
   NS_IMETHOD GetScriptableOriginAttributes(JS::MutableHandle<JS::Value>) override;
+  NS_IMETHOD_(void) GetOriginAttributes(mozilla::OriginAttributes& aAttrs) override;
 
   
   
@@ -273,10 +296,6 @@ public:
                                     int32_t aDelay,
                                     bool aMetaRefresh, nsITimer* aTimer);
 
-  friend class OnLinkClickEvent;
-
-  static bool SandboxFlagsImplyCookies(const uint32_t &aSandboxFlags);
-
   
   
   void FireDummyOnLocationChange()
@@ -290,6 +309,7 @@ public:
   
   
   void NotifyAsyncPanZoomStarted();
+
   
   
   void NotifyAsyncPanZoomStopped();
@@ -300,12 +320,14 @@ public:
   }
   bool InFrameSwap();
 
-  const Encoding* GetForcedCharset() { return mForcedCharset; }
+  const mozilla::Encoding* GetForcedCharset() { return mForcedCharset; }
 
   mozilla::HTMLEditor* GetHTMLEditorInternal();
   nsresult SetHTMLEditorInternal(mozilla::HTMLEditor* aHTMLEditor);
 
   nsDOMNavigationTiming* GetNavigationTiming() const;
+
+  nsresult SetOriginAttributes(const mozilla::OriginAttributes& aAttrs);
 
   
 
@@ -364,21 +386,28 @@ public:
     mAncestorOuterWindowIDs = mozilla::Move(aAncestorOuterWindowIDs);
   }
 
-private:
-  bool CanSetOriginAttributes();
-
-public:
-  const mozilla::OriginAttributes&
-  GetOriginAttributes()
+  const mozilla::OriginAttributes& GetOriginAttributes()
   {
     return mOriginAttributes;
   }
 
-  nsresult SetOriginAttributes(const mozilla::OriginAttributes& aAttrs);
+  static bool SandboxFlagsImplyCookies(const uint32_t &aSandboxFlags);
 
-private:
   
-  mozilla::UniquePtr<mozilla::ObservedDocShell> mObserved;
+  static void CopyFavicon(nsIURI* aOldURI,
+                          nsIURI* aNewURI,
+                          nsIPrincipal* aLoadingPrincipal,
+                          bool aInPrivateBrowsing);
+
+  static nsDocShell* Cast(nsIDocShell* aDocShell)
+  {
+    return static_cast<nsDocShell*>(aDocShell);
+  }
+
+private: 
+  friend class nsDSURIContentListener;
+  friend class FramingChecker;
+  friend class OnLinkClickEvent;
 
   
   
@@ -397,42 +426,121 @@ private:
   friend void mozilla::TimelineConsumers::PopMarkers(nsDocShell*,
     JSContext*, nsTArray<dom::ProfileTimelineMarker>&);
 
-public:
   
-  static void CopyFavicon(nsIURI* aOldURI,
-                          nsIURI* aNewURI,
-                          nsIPrincipal* aLoadingPrincipal,
-                          bool aInPrivateBrowsing);
+  
+  
+  
+  typedef nsresult(*WalkHistoryEntriesFunc)(nsISHEntry* aEntry,
+                                            nsDocShell* aShell,
+                                            int32_t aChildIndex,
+                                            void* aData);
 
-  static nsDocShell* Cast(nsIDocShell* aDocShell)
+  
+  
+  
+  
+  
+  
+  
+  
+  static nsresult CloneAndReplace(nsISHEntry* aSrcEntry,
+                                  nsDocShell* aSrcShell,
+                                  uint32_t aCloneID,
+                                  nsISHEntry* aReplaceEntry,
+                                  bool aCloneChildren,
+                                  nsISHEntry** aDestEntry);
+
+  
+  static nsresult CloneAndReplaceChild(nsISHEntry* aEntry, nsDocShell* aShell,
+                                       int32_t aChildIndex, void* aData);
+
+
+  
+  static nsresult SetChildHistoryEntry(nsISHEntry* aEntry, nsDocShell* aShell,
+                                       int32_t aEntryIndex, void* aData);
+
+  
+  
+  
+  static nsresult WalkHistoryEntries(nsISHEntry* aRootEntry,
+                                     nsDocShell* aRootShell,
+                                     WalkHistoryEntriesFunc aCallback,
+                                     void* aData);
+
+  
+  
+  static bool CanAccessItem(nsIDocShellTreeItem* aTargetItem,
+                            nsIDocShellTreeItem* aAccessingItem,
+                            bool aConsiderOpener = true);
+  static bool ValidateOrigin(nsIDocShellTreeItem* aOriginTreeItem,
+                             nsIDocShellTreeItem* aTargetTreeItem);
+
+  static inline uint32_t PRTimeToSeconds(PRTime aTimeUsec)
   {
-    return static_cast<nsDocShell*>(aDocShell);
+    PRTime usecPerSec = PR_USEC_PER_SEC;
+    return uint32_t(aTimeUsec /= usecPerSec);
   }
 
-protected:
+  static const nsCString FrameTypeToString(uint32_t aFrameType)
+  {
+    switch (aFrameType) {
+      case FRAME_TYPE_BROWSER:
+        return NS_LITERAL_CSTRING("browser");
+      case FRAME_TYPE_REGULAR:
+        return NS_LITERAL_CSTRING("regular");
+      default:
+        NS_ERROR("Unknown frame type");
+        return EmptyCString();
+    }
+  }
+
   virtual ~nsDocShell();
+
+  
+  
+  
+
   virtual void DestroyChildren() override;
 
   
+  
+  virtual void OnRedirectStateChange(nsIChannel* aOldChannel,
+                                     nsIChannel* aNewChannel,
+                                     uint32_t aRedirectFlags,
+                                     uint32_t aStateFlags) override;
+
+  
+  virtual nsresult SetDocLoaderParent(nsDocLoader* aLoader) override;
+
+  
+  
+  
+
   nsresult EnsureContentViewer();
+
   
   
   nsresult CreateAboutBlankContentViewer(nsIPrincipal* aPrincipal,
                                          nsIURI* aBaseURI,
                                          bool aTryToSaveOldPresentation = true,
                                          bool aCheckPermitUnload = true);
+
   nsresult CreateContentViewer(const nsACString& aContentType,
                                nsIRequest* aRequest,
                                nsIStreamListener** aContentHandler);
+
   nsresult NewContentViewerObj(const nsACString& aContentType,
                                nsIRequest* aRequest, nsILoadGroup* aLoadGroup,
                                nsIStreamListener** aContentHandler,
                                nsIContentViewer** aViewer);
+
   nsresult SetupNewViewer(nsIContentViewer* aNewViewer);
 
-  void SetupReferrerFromChannel(nsIChannel* aChannel);
+  
+  
+  
 
-  nsresult GetEldestPresContext(nsPresContext** aPresContext);
+  bool ShouldAddToSessionHistory(nsIURI* aURI, nsIChannel* aChannel);
 
   
   
@@ -440,7 +548,38 @@ protected:
   
   
   
-  nsIPrincipal* GetInheritedPrincipal(bool aConsiderCurrentDocument);
+
+  nsresult AddToSessionHistory(nsIURI* aURI, nsIChannel* aChannel,
+                               nsIPrincipal* aTriggeringPrincipal,
+                               nsIPrincipal* aPrincipalToInherit,
+                               bool aCloneChildren,
+                               nsISHEntry** aNewEntry);
+
+  nsresult AddChildSHEntryToParent(nsISHEntry* aNewEntry, int32_t aChildOffset,
+                                   bool aCloneChildren);
+
+  nsresult AddChildSHEntryInternal(nsISHEntry* aCloneRef, nsISHEntry* aNewEntry,
+                                   int32_t aChildOffset, uint32_t aLoadType,
+                                   bool aCloneChildren);
+
+  
+  
+  bool HasHistoryEntry(nsISHEntry* aEntry) const
+  {
+    return aEntry && (aEntry == mOSHE || aEntry == mLSHE);
+  }
+
+  
+  void SwapHistoryEntries(nsISHEntry* aOldEntry, nsISHEntry* aNewEntry);
+
+  
+  
+  
+  void SetHistoryEntry(nsCOMPtr<nsISHEntry>* aPtr, nsISHEntry* aEntry);
+
+  
+  
+  
 
   
   
@@ -479,8 +618,10 @@ protected:
                      const nsAString& aSrcdoc,
                      nsIURI* aBaseURI,
                      nsContentPolicyType aContentPolicyType);
+
   nsresult AddHeadersToChannel(nsIInputStream* aHeadersData,
                                nsIChannel* aChannel);
+
   nsresult DoChannelLoad(nsIChannel* aChannel,
                          nsIURILoader* aURILoader,
                          bool aBypassClassifier);
@@ -516,97 +657,42 @@ protected:
                 bool aAddToGlobalHistory,
                 bool aCloneSHChildren);
 
-  void SetReferrerURI(nsIURI* aURI);
-  void SetReferrerPolicy(uint32_t aReferrerPolicy);
+  
+  
+  nsresult EndPageLoad(nsIWebProgress* aProgress,
+                       nsIChannel* aChannel,
+                       nsresult aResult);
 
-  
-  bool ShouldAddToSessionHistory(nsIURI* aURI, nsIChannel* aChannel);
-  
-  
-  
-  
-  
-  
-  nsresult AddToSessionHistory(nsIURI* aURI, nsIChannel* aChannel,
-                               nsIPrincipal* aTriggeringPrincipal,
-                               nsIPrincipal* aPrincipalToInherit,
-                               bool aCloneChildren,
-                               nsISHEntry** aNewEntry);
-  nsresult AddChildSHEntryToParent(nsISHEntry* aNewEntry, int32_t aChildOffset,
-                                   bool aCloneChildren);
 
-  nsresult AddChildSHEntryInternal(nsISHEntry* aCloneRef, nsISHEntry* aNewEntry,
-                                   int32_t aChildOffset, uint32_t aLoadType,
-                                   bool aCloneChildren);
+  nsresult LoadErrorPage(nsIURI* aURI, const char16_t* aURL,
+                           const char* aErrorPage,
+                           const char* aErrorType,
+                           const char16_t* aDescription,
+                           const char* aCSSClass,
+                           nsIChannel* aFailedChannel);
 
-  nsresult LoadHistoryEntry(nsISHEntry* aEntry, uint32_t aLoadType);
-  nsresult PersistLayoutHistoryState();
-
-  
-  
-  
-  
-  
-  
-  
-  
-  static nsresult CloneAndReplace(nsISHEntry* aSrcEntry,
-                                  nsDocShell* aSrcShell,
-                                  uint32_t aCloneID,
-                                  nsISHEntry* aReplaceEntry,
-                                  bool aCloneChildren,
-                                  nsISHEntry** aDestEntry);
-
-  
-  static nsresult CloneAndReplaceChild(nsISHEntry* aEntry, nsDocShell* aShell,
-                                       int32_t aChildIndex, void* aData);
-
-  nsresult GetRootSessionHistory(nsISHistory** aReturn);
-  nsresult GetHttpChannel(nsIChannel* aChannel, nsIHttpChannel** aReturn);
-  bool ShouldDiscardLayoutState(nsIHttpChannel* aChannel);
-
-  
-  
-  bool HasHistoryEntry(nsISHEntry* aEntry) const
+  bool DisplayLoadError(nsresult aError, nsIURI* aURI, const char16_t* aURL,
+                        nsIChannel* aFailedChannel)
   {
-    return aEntry && (aEntry == mOSHE || aEntry == mLSHE);
+    bool didDisplayLoadError = false;
+    DisplayLoadError(aError, aURI, aURL, aFailedChannel, &didDisplayLoadError);
+    return didDisplayLoadError;
   }
 
   
-  void SwapHistoryEntries(nsISHEntry* aOldEntry, nsISHEntry* aNewEntry);
-
   
   
-  
-  void SetHistoryEntry(nsCOMPtr<nsISHEntry>* aPtr, nsISHEntry* aEntry);
-
-  
-  static nsresult SetChildHistoryEntry(nsISHEntry* aEntry, nsDocShell* aShell,
-                                       int32_t aEntryIndex, void* aData);
 
   
   
   
   
-  typedef nsresult(*WalkHistoryEntriesFunc)(nsISHEntry* aEntry,
-                                            nsDocShell* aShell,
-                                            int32_t aChildIndex,
-                                            void* aData);
+  
+  
+  nsIPrincipal* GetInheritedPrincipal(bool aConsiderCurrentDocument);
 
-  
-  
-  
-  static nsresult WalkHistoryEntries(nsISHEntry* aRootEntry,
-                                     nsDocShell* aRootShell,
-                                     WalkHistoryEntriesFunc aCallback,
-                                     void* aData);
-
-  
-  
-  virtual void OnRedirectStateChange(nsIChannel* aOldChannel,
-                                     nsIChannel* aNewChannel,
-                                     uint32_t aRedirectFlags,
-                                     uint32_t aStateFlags) override;
+  nsresult CreatePrincipalFromReferrer(nsIURI* aReferrer,
+                                       nsIPrincipal** aResult);
 
   
 
@@ -684,64 +770,9 @@ protected:
                    uint32_t aResponseStatus = 0);
 
   
-  nsresult ConfirmRepost(bool* aRepost);
-  NS_IMETHOD GetPromptAndStringBundle(nsIPrompt** aPrompt,
-                                      nsIStringBundle** aStringBundle);
-  NS_IMETHOD GetChildOffset(nsIDOMNode* aChild, nsIDOMNode* aParent,
-                            int32_t* aOffset);
-  nsIScrollableFrame* GetRootScrollFrame();
-  NS_IMETHOD EnsureScriptEnvironment();
-  NS_IMETHOD EnsureEditorData();
-  nsresult EnsureTransferableHookData();
-  NS_IMETHOD EnsureFind();
-  nsresult RefreshURIFromQueue();
-  NS_IMETHOD LoadErrorPage(nsIURI* aURI, const char16_t* aURL,
-                           const char* aErrorPage,
-                           const char* aErrorType,
-                           const char16_t* aDescription,
-                           const char* aCSSClass,
-                           nsIChannel* aFailedChannel);
-  bool IsPrintingOrPP(bool aDisplayErrorDialog = true);
-  bool IsNavigationAllowed(bool aDisplayPrintErrorDialog = true,
-                           bool aCheckIfUnloadFired = true);
-
-  nsresult SetBaseUrlForWyciwyg(nsIContentViewer* aContentViewer);
-
-  static inline uint32_t PRTimeToSeconds(PRTime aTimeUsec)
-  {
-    PRTime usecPerSec = PR_USEC_PER_SEC;
-    return uint32_t(aTimeUsec /= usecPerSec);
-  }
-
-  inline bool UseErrorPages()
-  {
-    return (mObserveErrorPages ? sUseErrorPages : mUseErrorPages);
-  }
-
-  bool IsFrame();
-
-  
-  
-  
-  
-  virtual nsresult EndPageLoad(nsIWebProgress* aProgress,
-                               nsIChannel* aChannel,
-                               nsresult aResult);
-
-  
   
   
   nsresult SetDocCurrentStateObj(nsISHEntry* aShEntry);
-
-  nsresult CheckLoadingPermissions();
-
-  
-  
-  static bool CanAccessItem(nsIDocShellTreeItem* aTargetItem,
-                            nsIDocShellTreeItem* aAccessingItem,
-                            bool aConsiderOpener = true);
-  static bool ValidateOrigin(nsIDocShellTreeItem* aOriginTreeItem,
-                             nsIDocShellTreeItem* aTargetTreeItem);
 
   
   
@@ -812,22 +843,9 @@ protected:
   
   bool IsOKToLoadURI(nsIURI* aURI);
 
-  void ReattachEditorToWindow(nsISHEntry* aSHEntry);
-
-  nsCOMPtr<nsIDOMStorageManager> mSessionStorageManager;
-  nsIDOMStorageManager* TopSessionStorageManager();
-
   
   nsresult GetControllerForCommand(const char* aCommand,
                                    nsIController** aResult);
-  nsresult EnsureCommandHandler();
-
-  nsIChannel* GetCurrentDocChannel();
-
-  bool ShouldBlockLoadingForBackButton();
-
-  
-  already_AddRefed<nsDocShell> GetParentDocshell();
 
   
   
@@ -849,16 +867,6 @@ protected:
   
   mozilla::Maybe<mozilla::dom::ClientInfo> GetInitialClientInfo() const;
 
-protected:
-  nsresult GetCurScrollPos(int32_t aScrollOrientation, int32_t* aCurPos);
-  nsresult SetCurScrollPosEx(int32_t aCurHorizontalPos,
-                             int32_t aCurVerticalPos);
-
-  
-  virtual nsresult SetDocLoaderParent(nsDocLoader* aLoader) override;
-
-  void ClearFrameHistory(nsISHEntry* aEntry);
-
   
 
 
@@ -871,88 +879,143 @@ protected:
   MOZ_MUST_USE bool MaybeInitTiming();
   void MaybeResetInitTiming(bool aReset);
 
-  bool DisplayLoadError(nsresult aError, nsIURI* aURI, const char16_t* aURL,
-                        nsIChannel* aFailedChannel)
-  {
-    bool didDisplayLoadError = false;
-    DisplayLoadError(aError, aURI, aURL, aFailedChannel, &didDisplayLoadError);
-    return didDisplayLoadError;
-  }
-
-public:
   
-  class RestorePresentationEvent : public mozilla::Runnable
-  {
-  public:
-    NS_DECL_NSIRUNNABLE
-    explicit RestorePresentationEvent(nsDocShell* aDs)
-      : mozilla::Runnable("nsDocShell::RestorePresentationEvent")
-      , mDocShell(aDs)
-    {
-    }
-    void Revoke() { mDocShell = nullptr; }
-  private:
-    RefPtr<nsDocShell> mDocShell;
-  };
+  
+  nsresult DoFindItemWithName(const nsAString& aName,
+                              nsIDocShellTreeItem* aRequestor,
+                              nsIDocShellTreeItem* aOriginalRequestor,
+                              bool aSkipTabGroup,
+                              nsIDocShellTreeItem** aResult);
 
-protected:
-  bool JustStartedNetworkLoad();
+  
+  already_AddRefed<nsDocShell> GetParentDocshell();
 
-  nsresult CreatePrincipalFromReferrer(nsIURI* aReferrer,
-                                       nsIPrincipal** aResult);
+  
+  
+  void AssertOriginAttributesMatchPrivateBrowsing();
 
-  static const nsCString FrameTypeToString(uint32_t aFrameType)
-  {
-    switch (aFrameType) {
-      case FRAME_TYPE_BROWSER:
-        return NS_LITERAL_CSTRING("browser");
-      case FRAME_TYPE_REGULAR:
-        return NS_LITERAL_CSTRING("regular");
-      default:
-        NS_ERROR("Unknown frame type");
-        return EmptyCString();
-    }
-  }
+  
+  void MaybeNotifyKeywordSearchLoading(const nsString& aProvider,
+                                       const nsString& aKeyword);
 
-  uint32_t GetInheritedFrameType();
+  
+  
+  
+  
+  void FirePageHideNotificationInternal(bool aIsUnload,
+                                        bool aSkipCheckingDynEntries);
 
-  bool HasUnloadedParent();
+  
+  nsresult DispatchToTabGroup(mozilla::TaskCategory aCategory,
+                              already_AddRefed<nsIRunnable>&& aRunnable);
 
+  NS_IMETHOD GetChildOffset(nsIDOMNode* aChild, nsIDOMNode* aParent,
+                            int32_t* aOffset);
+
+  void SetupReferrerFromChannel(nsIChannel* aChannel);
+  void SetReferrerURI(nsIURI* aURI);
+  void SetReferrerPolicy(uint32_t aReferrerPolicy);
+  void ReattachEditorToWindow(nsISHEntry* aSHEntry);
+  void RecomputeCanExecuteScripts();
+  void ClearFrameHistory(nsISHEntry* aEntry);
   void UpdateGlobalHistoryTitle(nsIURI* aURI);
+  bool IsFrame();
+  bool CanSetOriginAttributes();
+  bool ShouldBlockLoadingForBackButton();
+  bool ShouldDiscardLayoutState(nsIHttpChannel* aChannel);
+  bool HasUnloadedParent();
+  bool JustStartedNetworkLoad();
+  bool IsPrintingOrPP(bool aDisplayErrorDialog = true);
+  bool IsNavigationAllowed(bool aDisplayPrintErrorDialog = true,
+                           bool aCheckIfUnloadFired = true);
+  uint32_t GetInheritedFrameType();
+  nsIScrollableFrame* GetRootScrollFrame();
+  nsIDOMStorageManager* TopSessionStorageManager();
+  nsIChannel* GetCurrentDocChannel();
+  nsresult EnsureScriptEnvironment();
+  nsresult EnsureEditorData();
+  nsresult EnsureTransferableHookData();
+  nsresult EnsureFind();
+  nsresult EnsureCommandHandler();
+  nsresult RefreshURIFromQueue();
+  nsresult GetEldestPresContext(nsPresContext** aPresContext);
+  nsresult CheckLoadingPermissions();
+  nsresult PersistLayoutHistoryState();
+  nsresult LoadHistoryEntry(nsISHEntry* aEntry, uint32_t aLoadType);
+  nsresult SetBaseUrlForWyciwyg(nsIContentViewer* aContentViewer);
+  nsresult GetRootSessionHistory(nsISHistory** aReturn);
+  nsresult GetHttpChannel(nsIChannel* aChannel, nsIHttpChannel** aReturn);
+  nsresult ConfirmRepost(bool* aRepost);
+  nsresult GetPromptAndStringBundle(nsIPrompt** aPrompt,
+                                    nsIStringBundle** aStringBundle);
+  nsresult GetCurScrollPos(int32_t aScrollOrientation, int32_t* aCurPos);
+  nsresult SetCurScrollPosEx(int32_t aCurHorizontalPos,
+                             int32_t aCurVerticalPos);
 
-  NS_IMETHOD_(void) GetOriginAttributes(mozilla::OriginAttributes& aAttrs) override;
+  inline bool UseErrorPages()
+  {
+    return (mObserveErrorPages ? sUseErrorPages : mUseErrorPages);
+  }
+
+private: 
+  static nsIURIFixup* sURIFixup;
 
   
-  nsIntRect mBounds;
+  static bool sUseErrorPages;
+
+#ifdef DEBUG
+  
+  static unsigned long gNumberOfDocShells;
+#endif 
+
+  nsID mHistoryID;
   nsString mName;
   nsString mTitle;
   nsString mCustomUserAgent;
+  nsCString mOriginalUriString;
+  nsWeakPtr mOnePermittedSandboxedNavigator;
+  nsWeakPtr mOpener;
+  nsTObserverArray<nsWeakPtr> mPrivacyObservers;
+  nsTObserverArray<nsWeakPtr> mReflowObservers;
+  nsTObserverArray<nsWeakPtr> mScrollObservers;
+  mozilla::OriginAttributes mOriginAttributes;
+  mozilla::UniquePtr<mozilla::dom::PendingGlobalHistoryEntry> mPrerenderGlobalHistory;
+  mozilla::UniquePtr<mozilla::dom::ClientSource> mInitialClientSource;
+  RefPtr<nsDOMNavigationTiming> mTiming;
+  RefPtr<nsDSURIContentListener> mContentListener;
+  RefPtr<nsGlobalWindowOuter> mScriptGlobal;
+  nsCOMPtr<nsIPrincipal> mParentCharsetPrincipal;
+  nsCOMPtr<nsILoadURIDelegate> mLoadURIDelegate;
+  nsCOMPtr<nsIMutableArray> mRefreshURIList;
+  nsCOMPtr<nsIMutableArray> mSavedRefreshURIList;
+  nsCOMPtr<nsIDOMStorageManager> mSessionStorageManager;
+  nsCOMPtr<nsIContentViewer> mContentViewer;
+  nsCOMPtr<nsIWidget> mParentWidget;
+  nsCOMPtr<nsISHistory> mSessionHistory;
+  nsCOMPtr<nsIGlobalHistory2> mGlobalHistory;
+  nsCOMPtr<nsIWebBrowserFind> mFind;
+  nsCOMPtr<nsICommandManager> mCommandManager;
+
+  
+  nsIntRect mBounds;
 
   
 
 
 
   nsCString mContentTypeHint;
-  nsIntPoint mDefaultScrollbarPref; 
 
-  nsCOMPtr<nsIMutableArray> mRefreshURIList;
-  nsCOMPtr<nsIMutableArray> mSavedRefreshURIList;
-  RefPtr<nsDSURIContentListener> mContentListener;
-  nsCOMPtr<nsIContentViewer> mContentViewer;
-  nsCOMPtr<nsIWidget> mParentWidget;
+  
+  mozilla::UniquePtr<mozilla::ObservedDocShell> mObserved;
 
   
   nsCOMPtr<nsIURI> mCurrentURI;
   nsCOMPtr<nsIURI> mReferrerURI;
-  uint32_t mReferrerPolicy;
-  RefPtr<nsGlobalWindowOuter> mScriptGlobal;
-  nsCOMPtr<nsISHistory> mSessionHistory;
-  nsCOMPtr<nsIGlobalHistory2> mGlobalHistory;
-  nsCOMPtr<nsIWebBrowserFind> mFind;
-  nsCOMPtr<nsICommandManager> mCommandManager;
+
   
   
   nsCOMPtr<nsISHEntry> mOSHE;
+
   
   
   
@@ -983,16 +1046,24 @@ protected:
   nsCOMPtr<nsIURI> mLoadingURI;
 
   
+  nsTArray<nsCOMPtr<nsIPrincipal>> mAncestorPrincipals;
+
+  
+  nsTArray<uint64_t> mAncestorOuterWindowIDs;
+
+  
   
   
   nsCOMPtr<nsIURI> mFailedURI;
   nsCOMPtr<nsIChannel> mFailedChannel;
-  uint32_t mFailedLoadType;
 
   
   
   
   nsCOMPtr<nsIChannel> mMixedContentChannel;
+
+  const mozilla::Encoding* mForcedCharset;
+  const mozilla::Encoding* mParentCharset;
 
   
   
@@ -1001,17 +1072,15 @@ protected:
   nsIDocShellTreeOwner* mTreeOwner; 
   mozilla::dom::EventTarget* mChromeEventHandler; 
 
+  nsIntPoint mDefaultScrollbarPref; 
+
   eCharsetReloadState mCharsetReloadState;
 
-  nsCOMPtr<nsILoadURIDelegate> mLoadURIDelegate;
-
   
   
-  int32_t mChildOffset;
-  uint32_t mBusyFlags;
-  uint32_t mAppType;
-  uint32_t mLoadType;
+  mozilla::dom::ScreenOrientationInternal mOrientationLock;
 
+  int32_t mParentCharsetSource;
   int32_t mMarginWidth;
   int32_t mMarginHeight;
 
@@ -1025,12 +1094,47 @@ protected:
   int32_t mPreviousTransIndex;
   int32_t mLoadedTransIndex;
 
+  
+  
+  int32_t mChildOffset;
+
   uint32_t mSandboxFlags;
-  nsWeakPtr mOnePermittedSandboxedNavigator;
+  uint32_t mBusyFlags;
+  uint32_t mAppType;
+  uint32_t mLoadType;
+  uint32_t mDefaultLoadFlags;
+  uint32_t mReferrerPolicy;
+  uint32_t mFailedLoadType;
+
+  
+  uint32_t mFrameType;
 
   
   
-  mozilla::dom::ScreenOrientationInternal mOrientationLock;
+  
+  
+  
+  uint32_t mPrivateBrowsingId;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  uint32_t mDisplayMode;
+
+  
+  
+  uint32_t mJSRunToCompletionDepth;
+
+  
+  
+  uint32_t mTouchEventsOverride;
 
   
   
@@ -1053,7 +1157,11 @@ protected:
   FullscreenAllowedState mFullscreenAllowed;
 
   
-  static bool sUseErrorPages;
+  
+  bool mCreatingDocument; 
+#ifdef DEBUG
+  bool mInEnsureScriptEnv;
+#endif
 
   bool mCreated : 1;
   bool mAllowSubframes : 1;
@@ -1087,7 +1195,6 @@ protected:
   
   
   bool mCanExecuteScripts : 1;
-  void RecomputeCanExecuteScripts();
 
   
   
@@ -1123,117 +1230,6 @@ protected:
   
   
   bool mBlankTiming : 1;
-
-  
-  
-  bool mCreatingDocument; 
-#ifdef DEBUG
-  bool mInEnsureScriptEnv;
-#endif
-
-  nsID mHistoryID;
-  uint32_t mDefaultLoadFlags;
-
-  static nsIURIFixup* sURIFixup;
-
-  RefPtr<nsDOMNavigationTiming> mTiming;
-
-  
-  uint32_t mFrameType;
-
-  
-  
-  
-  
-  
-  uint32_t mPrivateBrowsingId;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  uint32_t mDisplayMode;
-
-private:
-  const Encoding* mForcedCharset;
-  const Encoding* mParentCharset;
-  int32_t mParentCharsetSource;
-  nsCOMPtr<nsIPrincipal> mParentCharsetPrincipal;
-  nsTObserverArray<nsWeakPtr> mPrivacyObservers;
-  nsTObserverArray<nsWeakPtr> mReflowObservers;
-  nsTObserverArray<nsWeakPtr> mScrollObservers;
-  nsCString mOriginalUriString;
-  nsWeakPtr mOpener;
-  mozilla::OriginAttributes mOriginAttributes;
-
-  mozilla::UniquePtr<mozilla::dom::PendingGlobalHistoryEntry> mPrerenderGlobalHistory;
-
-  mozilla::UniquePtr<mozilla::dom::ClientSource> mInitialClientSource;
-
-  
-  
-  uint32_t mJSRunToCompletionDepth;
-
-  
-  
-  uint32_t mTouchEventsOverride;
-
-  
-  nsTArray<nsCOMPtr<nsIPrincipal>> mAncestorPrincipals;
-  
-  nsTArray<uint64_t> mAncestorOuterWindowIDs;
-
-  
-  
-  nsresult DoFindItemWithName(const nsAString& aName,
-                              nsIDocShellTreeItem* aRequestor,
-                              nsIDocShellTreeItem* aOriginalRequestor,
-                              bool aSkipTabGroup,
-                              nsIDocShellTreeItem** aResult);
-
-  
-  
-  void AssertOriginAttributesMatchPrivateBrowsing();
-
-  
-  void MaybeNotifyKeywordSearchLoading(const nsString& aProvider,
-                                       const nsString& aKeyword);
-
-  
-  
-  
-  
-  void FirePageHideNotificationInternal(bool aIsUnload,
-                                        bool aSkipCheckingDynEntries);
-
-  
-  nsresult DispatchToTabGroup(mozilla::TaskCategory aCategory,
-                              already_AddRefed<nsIRunnable>&& aRunnable);
-
-#ifdef DEBUG
-  
-  static unsigned long gNumberOfDocShells;
-#endif 
-
-public:
-  class InterfaceRequestorProxy : public nsIInterfaceRequestor
-  {
-  public:
-    explicit InterfaceRequestorProxy(nsIInterfaceRequestor* aRequestor);
-    NS_DECL_THREADSAFE_ISUPPORTS
-    NS_DECL_NSIINTERFACEREQUESTOR
-
-  protected:
-    virtual ~InterfaceRequestorProxy();
-    InterfaceRequestorProxy() {}
-    nsWeakPtr mWeakPtr;
-  };
 };
 
 #endif 
