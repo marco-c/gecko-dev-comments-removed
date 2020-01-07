@@ -44,15 +44,31 @@ class nsIIdleServiceInternal;
 namespace mozilla {
 namespace widget {
 
-static const uint32_t sModifierKeyMap[][3] = {
-  { nsIWidget::CAPS_LOCK, VK_CAPITAL, 0 },
-  { nsIWidget::NUM_LOCK,  VK_NUMLOCK, 0 },
-  { nsIWidget::SHIFT_L,   VK_SHIFT,   VK_LSHIFT },
-  { nsIWidget::SHIFT_R,   VK_SHIFT,   VK_RSHIFT },
-  { nsIWidget::CTRL_L,    VK_CONTROL, VK_LCONTROL },
-  { nsIWidget::CTRL_R,    VK_CONTROL, VK_RCONTROL },
-  { nsIWidget::ALT_L,     VK_MENU,    VK_LMENU },
-  { nsIWidget::ALT_R,     VK_MENU,    VK_RMENU }
+enum ScanCode : uint16_t
+{
+  eCapsLock =                   0x003A,
+  eNumLock =                    0xE045,
+  eShiftLeft =                  0x002A,
+  eShiftRight =                 0x0036,
+  eControlLeft =                0x001D,
+  eControlRight =               0xE01D,
+  eAltLeft =                    0x0038,
+  eAltRight =                   0xE038,
+};
+
+
+
+
+
+static const uint32_t sModifierKeyMap[][4] = {
+  { nsIWidget::CAPS_LOCK, VK_CAPITAL, 0,           ScanCode::eCapsLock },
+  { nsIWidget::NUM_LOCK,  VK_NUMLOCK, 0,           ScanCode::eNumLock },
+  { nsIWidget::SHIFT_L,   VK_SHIFT,   VK_LSHIFT,   ScanCode::eShiftLeft },
+  { nsIWidget::SHIFT_R,   VK_SHIFT,   VK_RSHIFT,   ScanCode::eShiftRight },
+  { nsIWidget::CTRL_L,    VK_CONTROL, VK_LCONTROL, ScanCode::eControlLeft },
+  { nsIWidget::CTRL_R,    VK_CONTROL, VK_RCONTROL, ScanCode::eControlRight },
+  { nsIWidget::ALT_L,     VK_MENU,    VK_LMENU,    ScanCode::eAltLeft },
+  { nsIWidget::ALT_R,     VK_MENU,    VK_RMENU,    ScanCode::eAltRight }
 };
 
 class KeyboardLayout;
@@ -203,6 +219,10 @@ public:
     STATE_CONTROL  = 0x02,
     STATE_ALT      = 0x04,
     STATE_CAPSLOCK = 0x08,
+    
+    
+    STATE_ALTGRAPH = 0x80,
+    
     STATE_CONTROL_ALT = STATE_CONTROL | STATE_ALT,
   };
 
@@ -237,12 +257,24 @@ private:
   KeyShiftState mShiftStates[16];
   uint16_t mIsDeadKey;
 
+  static uint8_t ToShiftStateIndex(ShiftState aShiftState)
+  {
+    if (!(aShiftState & STATE_ALTGRAPH)) {
+      MOZ_ASSERT(aShiftState <= eAltGrShiftWithCapsLock);
+      return static_cast<uint8_t>(aShiftState);
+    }
+    uint8_t index = aShiftState & ~STATE_ALTGRAPH;
+    index |= (STATE_ALT | STATE_CONTROL);
+    MOZ_ASSERT(index <= eAltGrShiftWithCapsLock);
+    return index;
+  }
+
   void SetDeadKey(ShiftState aShiftState, bool aIsDeadKey)
   {
     if (aIsDeadKey) {
-      mIsDeadKey |= 1 << aShiftState;
+      mIsDeadKey |= 1 << ToShiftStateIndex(aShiftState);
     } else {
-      mIsDeadKey &= ~(1 << aShiftState);
+      mIsDeadKey &= ~(1 << ToShiftStateIndex(aShiftState));
     }
   }
 
@@ -251,7 +283,7 @@ public:
 
   bool IsDeadKey(ShiftState aShiftState) const
   {
-    return (mIsDeadKey & (1 << aShiftState)) != 0;
+    return (mIsDeadKey & (1 << ToShiftStateIndex(aShiftState))) != 0;
   }
 
   
@@ -264,6 +296,7 @@ public:
 
   bool IsChangedByAltGr(ShiftState aShiftState) const
   {
+    MOZ_ASSERT(aShiftState == ToShiftStateIndex(aShiftState));
     MOZ_ASSERT(IsAltGrIndex(aShiftState));
     MOZ_ASSERT(IsDeadKey(aShiftState) ||
                mShiftStates[aShiftState].Normal.Chars[0]);
@@ -292,6 +325,7 @@ public:
   void AttachDeadKeyTable(ShiftState aShiftState,
                           const DeadKeyTable* aDeadKeyTable)
   {
+    MOZ_ASSERT(aShiftState == ToShiftStateIndex(aShiftState));
     mShiftStates[aShiftState].DeadKey.Table = aDeadKeyTable;
   }
 
@@ -303,7 +337,8 @@ public:
   inline char16_t GetCompositeChar(ShiftState aShiftState,
                                     char16_t aBaseChar) const
   {
-    return mShiftStates[aShiftState].DeadKey.Table->GetCompositeChar(aBaseChar);
+    return mShiftStates[ToShiftStateIndex(aShiftState)].
+             DeadKey.Table->GetCompositeChar(aBaseChar);
   }
 
   char16_t GetCompositeChar(const ModifierKeyState& aModKeyState,
@@ -312,12 +347,44 @@ public:
     return GetCompositeChar(ModifierKeyStateToShiftState(aModKeyState),
                             aBaseChar);
   }
+
+  
+
+
+
+
   UniCharsAndModifiers GetNativeUniChars(ShiftState aShiftState) const;
   UniCharsAndModifiers GetNativeUniChars(
                          const ModifierKeyState& aModKeyState) const
   {
     return GetNativeUniChars(ModifierKeyStateToShiftState(aModKeyState));
   }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   UniCharsAndModifiers GetUniChars(ShiftState aShiftState) const;
   UniCharsAndModifiers GetUniChars(const ModifierKeyState& aModKeyState) const
   {

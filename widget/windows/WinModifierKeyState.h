@@ -18,7 +18,6 @@ class MOZ_STACK_CLASS ModifierKeyState final
 {
 public:
   ModifierKeyState();
-  ModifierKeyState(bool aIsShiftDown, bool aIsControlDown, bool aIsAltDown);
   explicit ModifierKeyState(Modifiers aModifiers);
 
   void Update();
@@ -28,10 +27,15 @@ public:
 
   void InitInputEvent(WidgetInputEvent& aInputEvent) const;
 
+  
+  
+  
+  
+  
+  
   bool IsShift() const;
   bool IsControl() const;
   bool IsAlt() const;
-  bool IsAltGr() const;
   bool IsWin() const;
 
   bool MaybeMatchShortcutKey() const;
@@ -47,8 +51,6 @@ public:
 
 private:
   Modifiers mModifiers;
-
-  MOZ_ALWAYS_INLINE void EnsureAltGr();
 
   void InitMouseEvent(WidgetInputEvent& aMouseEvent) const;
 };

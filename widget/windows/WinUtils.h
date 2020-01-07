@@ -453,7 +453,8 @@ public:
 
 
   static void SetupKeyModifiersSequence(nsTArray<KeyPair>* aArray,
-                                        uint32_t aModifiers);
+                                        uint32_t aModifiers,
+                                        UINT aMessage);
 
   
 

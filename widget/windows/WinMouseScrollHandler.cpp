@@ -297,7 +297,8 @@ MouseScrollHandler::SynthesizeNativeMouseScrollEvent(nsWindowBase* aWidget,
   memset(kbdState, 0, sizeof(kbdState));
 
   AutoTArray<KeyPair,10> keySequence;
-  WinUtils::SetupKeyModifiersSequence(&keySequence, aModifierFlags);
+  WinUtils::SetupKeyModifiersSequence(&keySequence, aModifierFlags,
+                                      aNativeMessage);
 
   for (uint32_t i = 0; i < keySequence.Length(); ++i) {
     uint8_t key = keySequence[i].mGeneral;
@@ -351,6 +352,9 @@ MouseScrollHandler::GetModifierKeyState(UINT aMessage)
   
   if ((aMessage == MOZ_WM_MOUSEVWHEEL || aMessage == WM_MOUSEWHEEL) &&
       !result.IsControl() && Device::Elantech::IsZooming()) {
+    
+    
+    result.Unset(MODIFIER_ALTGRAPH);
     result.Set(MODIFIER_CONTROL);
   }
   return result;

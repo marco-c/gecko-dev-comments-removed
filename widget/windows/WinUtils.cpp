@@ -1763,12 +1763,40 @@ WinUtils::IsIMEEnabled(IMEState::Enabled aIMEState)
 
 void
 WinUtils::SetupKeyModifiersSequence(nsTArray<KeyPair>* aArray,
-                                    uint32_t aModifiers)
+                                    uint32_t aModifiers,
+                                    UINT aMessage)
 {
-  for (uint32_t i = 0; i < ArrayLength(sModifierKeyMap); ++i) {
-    const uint32_t* map = sModifierKeyMap[i];
-    if (aModifiers & map[0]) {
-      aArray->AppendElement(KeyPair(map[1], map[2]));
+  MOZ_ASSERT(!(aModifiers & nsIWidget::ALTGRAPH) ||
+             !(aModifiers & (nsIWidget::CTRL_L | nsIWidget::ALT_R)));
+  if (aMessage == WM_KEYUP) {
+    
+    
+    if (aModifiers & nsIWidget::ALTGRAPH) {
+      aArray->AppendElement(
+                KeyPair(VK_CONTROL, VK_LCONTROL, ScanCode::eControlLeft));
+      aArray->AppendElement(
+                KeyPair(VK_MENU, VK_RMENU, ScanCode::eAltRight));
+    }
+    for (uint32_t i = ArrayLength(sModifierKeyMap); i; --i) {
+      const uint32_t* map = sModifierKeyMap[i - 1];
+      if (aModifiers & map[0]) {
+        aArray->AppendElement(KeyPair(map[1], map[2], map[3]));
+      }
+    }
+  } else {
+    for (uint32_t i = 0; i < ArrayLength(sModifierKeyMap); ++i) {
+      const uint32_t* map = sModifierKeyMap[i];
+      if (aModifiers & map[0]) {
+        aArray->AppendElement(KeyPair(map[1], map[2], map[3]));
+      }
+    }
+    
+    
+    if (aModifiers & nsIWidget::ALTGRAPH) {
+      aArray->AppendElement(
+                KeyPair(VK_CONTROL, VK_LCONTROL, ScanCode::eControlLeft));
+      aArray->AppendElement(
+                KeyPair(VK_MENU, VK_RMENU, ScanCode::eAltRight));
     }
   }
 }
