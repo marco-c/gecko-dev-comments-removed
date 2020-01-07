@@ -3442,6 +3442,9 @@ nsDocShell::MaybeCreateInitialClientSource(nsIPrincipal* aPrincipal)
     ClientManager::CreateSource(ClientType::Window,
                                 win->EventTargetFor(TaskCategory::Other),
                                 principal);
+  if (NS_WARN_IF(!mInitialClientSource)) {
+    return;
+  }
 
   
   
