@@ -2227,7 +2227,7 @@ TryAttachCallStub(JSContext* cx, ICCall_Fallback* stub, HandleScript script, jsb
             return true;
         }
 
-        if (stub->scriptedStubCount() >= ICCall_Fallback::MAX_SCRIPTED_STUBS) {
+        if (stub->state().mode() == ICState::Mode::Megamorphic) {
             
             JitSpew(JitSpew_BaselineIC, "  Generating Call_AnyScripted stub (cons=%s, spread=%s)",
                     constructing ? "yes" : "no", isSpread ? "yes" : "no");
@@ -2335,9 +2335,9 @@ TryAttachCallStub(JSContext* cx, ICCall_Fallback* stub, HandleScript script, jsb
                 return true;
         }
 
-        if (stub->nativeStubCount() >= ICCall_Fallback::MAX_NATIVE_STUBS) {
+        if (stub->state().mode() == ICState::Mode::Megamorphic) {
             JitSpew(JitSpew_BaselineIC,
-                    "  Too many Call_Native stubs. TODO: add Call_AnyNative!");
+                    "  Megamorphic Call_Native stubs. TODO: add Call_AnyNative!");
             return true;
         }
 
@@ -2518,18 +2518,16 @@ DoCallFallback(JSContext* cx, BaselineFrame* frame, ICCall_Fallback* stub_, uint
                     SetUpdateStubData(newStub->toCacheIR_Updated(), gen.typeCheckInfo());
             }
         }
-        if (!handled)
-            stub->state().trackNotAttached();
-    }
 
-    
-    
-    if (!handled) {
-        bool createSingleton = ObjectGroup::useSingletonForNewObject(cx, script, pc);
-        if (!TryAttachCallStub(cx, stub, script, pc, op, argc, vp, constructing, false,
-                               createSingleton, &handled))
-        {
-            return false;
+        
+        
+        if (!handled) {
+            bool createSingleton = ObjectGroup::useSingletonForNewObject(cx, script, pc);
+            if (!TryAttachCallStub(cx, stub, script, pc, op, argc, vp, constructing, false,
+                                   createSingleton, &handled))
+            {
+                return false;
+            }
         }
     }
 
@@ -2573,7 +2571,12 @@ DoCallFallback(JSContext* cx, BaselineFrame* frame, ICCall_Fallback* stub_, uint
     if (!stub->addMonitorStubForValue(cx, frame, types, res))
         return false;
 
-    if (!handled) {
+    
+    if (stub->state().maybeTransition())
+        stub->discardStubs(cx);
+    canAttachStub = stub->state().canAttachStub();
+
+    if (!handled && canAttachStub) {
         
         
         
@@ -2581,8 +2584,11 @@ DoCallFallback(JSContext* cx, BaselineFrame* frame, ICCall_Fallback* stub_, uint
             return false;
     }
 
-    if (!handled)
+    if (!handled) {
         stub->noteUnoptimizableCall();
+        if (canAttachStub)
+            stub->state().trackNotAttached();
+    }
     return true;
 }
 
