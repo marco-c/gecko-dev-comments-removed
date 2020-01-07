@@ -1850,6 +1850,15 @@ nsGlobalWindowOuter::SetNewDocument(nsIDocument* aDocument,
                                              currentInner->mPerformance->GetDOMTiming(),
                                              currentInner->mPerformance->GetChannel());
         }
+
+        
+        
+        
+        
+        currentInner->ForEachEventTargetObject(
+          [&] (DOMEventTargetHelper* aDETH, bool* aDoneOut) {
+            aDETH->BindToOwner(newInnerWindow->AsGlobal());
+          });
       }
 
       
