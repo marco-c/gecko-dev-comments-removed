@@ -150,6 +150,14 @@ impl NormalBorderHelpers for NormalBorder {
             }
 
             
+            (BorderStyle::None, _) |
+            (_, BorderStyle::None) |
+            (BorderStyle::Hidden, _) |
+            (_, BorderStyle::Hidden) => {
+                BorderCornerKind::Clip(BorderCornerInstance::Single)
+            }
+
+            
             
             (BorderStyle::Solid, BorderStyle::Solid) => {
                 if edge0.color == edge1.color && radius.width == 0.0 && radius.height == 0.0 {
@@ -237,12 +245,12 @@ pub fn ensure_no_corner_overlap(
     let bottom_right_radius = &mut radius.bottom_right;
     let bottom_left_radius = &mut radius.bottom_left;
 
-    let sum = top_left_radius.width + bottom_left_radius.width;
+    let sum = top_left_radius.width + top_right_radius.width;
     if rect.size.width < sum {
         ratio = f32::min(ratio, rect.size.width / sum);
     }
 
-    let sum = top_right_radius.width + bottom_right_radius.width;
+    let sum = bottom_left_radius.width + bottom_right_radius.width;
     if rect.size.width < sum {
         ratio = f32::min(ratio, rect.size.width / sum);
     }
@@ -280,6 +288,7 @@ impl FrameBuilder {
         widths: &BorderWidths,
         clip_and_scroll: ClipAndScrollInfo,
         corner_instances: [BorderCornerInstance; 4],
+        edges: [BorderEdgeKind; 4],
         clip_sources: Vec<ClipSource>,
     ) {
         let radius = &border.radius;
@@ -296,6 +305,7 @@ impl FrameBuilder {
 
         let prim_cpu = BorderPrimitiveCpu {
             corner_instances,
+            edges,
 
             
             
@@ -536,6 +546,7 @@ impl FrameBuilder {
                 widths,
                 clip_and_scroll,
                 corner_instances,
+                edges,
                 extra_clips,
             );
         }
