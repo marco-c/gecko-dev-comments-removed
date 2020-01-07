@@ -73,6 +73,17 @@ PopupBoxObject::OpenPopup(Element* aAnchorElement,
 
   nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
   if (pm && mContent) {
+    
+    
+    
+    if (!aAnchorElement && position.IsEmpty() && mContent->GetPrimaryFrame()) {
+      nsMenuFrame* menu = do_QueryFrame(mContent->GetPrimaryFrame()->GetParent());
+      if (menu) {
+        pm->ShowMenu(menu->GetContent(), false, false);
+        return;
+      }
+    }
+
     nsCOMPtr<nsIContent> anchorContent(do_QueryInterface(aAnchorElement));
     pm->ShowPopup(mContent, anchorContent, position, aXPos, aYPos,
                   aIsContextMenu, aAttributesOverride, false, aTriggerEvent);
@@ -149,6 +160,13 @@ PopupBoxObject::SizeTo(int32_t aWidth, int32_t aHeight)
 
   element->SetAttr(kNameSpaceID_None, nsGkAtoms::width, width, heightSame);
   element->SetAttr(kNameSpaceID_None, nsGkAtoms::height, height, true);
+
+  
+  
+  nsMenuPopupFrame *menuPopupFrame = do_QueryFrame(mContent->GetPrimaryFrame());
+  if (menuPopupFrame && menuPopupFrame->PopupState() == ePopupShown) {
+    menuPopupFrame->SetPopupPosition(nullptr, false, false, true);
+  }
 }
 
 bool
