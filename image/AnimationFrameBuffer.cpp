@@ -77,18 +77,10 @@ AnimationFrameBuffer::Insert(RawAccessFrameRef&& aFrame)
       MOZ_ASSERT(!mFrames[mInsertIndex]);
       mFrames[mInsertIndex] = Move(aFrame);
     }
-  } else {
-    if (mInsertIndex == mFrames.Length()) {
-      
-      
-      mFrames.AppendElement(Move(aFrame));
-    } else if (mInsertIndex > 0) {
-      
-      
-      MOZ_ASSERT(mInsertIndex < mFrames.Length());
-      MOZ_ASSERT(!mFrames[mInsertIndex]);
-      mFrames[mInsertIndex] = Move(aFrame);
-    }
+  } else if (mInsertIndex == mFrames.Length()) {
+    
+    
+    mFrames.AppendElement(Move(aFrame));
 
     if (mInsertIndex == mThreshold) {
       
@@ -100,6 +92,19 @@ AnimationFrameBuffer::Insert(RawAccessFrameRef&& aFrame)
         RawAccessFrameRef discard = Move(mFrames[i]);
       }
     }
+  } else if (mInsertIndex > 0) {
+    
+    
+    
+    MOZ_ASSERT(mInsertIndex < mFrames.Length());
+    MOZ_ASSERT(!mFrames[mInsertIndex]);
+    MOZ_ASSERT(MayDiscard());
+    mFrames[mInsertIndex] = Move(aFrame);
+  } else { 
+    
+    
+    
+    MOZ_ASSERT(MayDiscard());
   }
 
   MOZ_ASSERT(mFrames[mInsertIndex]);
