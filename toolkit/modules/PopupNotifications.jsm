@@ -456,6 +456,7 @@ PopupNotifications.prototype = {
 
 
 
+
   show: function PopupNotifications_show(browser, id, message, anchorID,
                                          mainAction, secondaryActions, options) {
     function isInvalidAction(a) {
@@ -751,6 +752,33 @@ PopupNotifications.prototype = {
     }
   },
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  _formatDescriptionMessage(n) {
+    let text = {};
+    let array = n.message.split("<>");
+    text.start = array[0] || "";
+    text.name = n.options.name || "";
+    text.end = array[1] || "";
+    return text;
+  },
+
   _refreshPanel: function PopupNotifications_refreshPanel(notificationsToShow) {
     this._clearPanel();
 
@@ -772,15 +800,10 @@ PopupNotifications.prototype = {
         popupnotification = doc.createElementNS(XUL_NS, "popupnotification");
 
       
-
-      
-      if (typeof n.message == "string") {
-        popupnotification.setAttribute("label", n.message);
-      } else {
-        popupnotification.setAttribute("label", n.message.start || "");
-        popupnotification.setAttribute("hostname", n.message.host || "");
-        popupnotification.setAttribute("endlabel", n.message.end || "");
-      }
+      let desc = this._formatDescriptionMessage(n);
+      popupnotification.setAttribute("label", desc.start);
+      popupnotification.setAttribute("name", desc.name);
+      popupnotification.setAttribute("endlabel", desc.end);
 
       popupnotification.setAttribute("id", popupnotificationID);
       popupnotification.setAttribute("popupid", n.id);
