@@ -28,7 +28,7 @@ add_task(async function test_duping_local_newer() {
 
   
   
-  deepEqual(await buf.fetchInconsistencies(), {
+  deepEqual(await buf.fetchSyncStatusMismatches(), {
     missingLocal: ["bookmarkAAA5"],
     missingRemote: [],
     wrongSyncStatus: [],
