@@ -525,7 +525,7 @@ impl PicturePrimitive {
         }
     }
 
-    pub fn write_gpu_blocks(&self, mut _request: GpuDataRequest) {
+    pub fn write_gpu_blocks(&self, _request: &mut GpuDataRequest) {
         
         
         
