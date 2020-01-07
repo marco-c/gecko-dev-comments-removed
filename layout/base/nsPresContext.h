@@ -1250,6 +1250,10 @@ protected:
   static bool NotifyDidPaintSubdocumentCallback(nsIDocument* aDocument, void* aData);
 
 public:
+  
+  
+  void ForceReflowForFontInfoUpdate();
+
   void DoChangeCharSet(NotNull<const Encoding*> aCharSet);
 
   

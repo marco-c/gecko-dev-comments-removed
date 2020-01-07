@@ -233,6 +233,15 @@ nsPresContext::PrefChangedUpdateTimerCallback(nsITimer *aTimer, void *aClosure)
     presContext->UpdateAfterPreferencesChanged();
 }
 
+void
+nsPresContext::ForceReflowForFontInfoUpdate()
+{
+  
+  
+  
+  PreferenceChanged("font.internaluseonly.changed");
+}
+
 static bool
 IsVisualCharset(NotNull<const Encoding*> aCharset)
 {

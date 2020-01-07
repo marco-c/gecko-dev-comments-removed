@@ -2177,10 +2177,21 @@ gfxPlatform::FlushFontAndWordCaches()
  void
 gfxPlatform::ForceGlobalReflow()
 {
-    
-    static const char kPrefName[] = "font.internaluseonly.changed";
-    bool fontInternalChange = Preferences::GetBool(kPrefName, false);
-    Preferences::SetBool(kPrefName, !fontInternalChange);
+    MOZ_ASSERT(NS_IsMainThread());
+    if (XRE_IsParentProcess()) {
+        
+        
+        static const char kPrefName[] = "font.internaluseonly.changed";
+        bool fontInternalChange = Preferences::GetBool(kPrefName, false);
+        Preferences::SetBool(kPrefName, !fontInternalChange);
+    } else {
+        
+        
+        nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
+        if (obs) {
+            obs->NotifyObservers(nullptr, "font-info-updated", nullptr);
+        }
+    }
 }
 
 void
