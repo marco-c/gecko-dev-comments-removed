@@ -28,6 +28,7 @@
 #include "jsstr.h"
 #include "jsutil.h"
 
+#include "builtin/intl/ScopedICUObject.h"
 #include "builtin/IntlTimeZoneData.h"
 #include "ds/Sort.h"
 #include "gc/FreeOp.h"
@@ -930,33 +931,6 @@ icuLocale(const char* locale)
         return ""; 
     return locale;
 }
-
-
-
-template <typename T, void (Delete)(T*)>
-class ScopedICUObject
-{
-    T* ptr_;
-
-  public:
-    explicit ScopedICUObject(T* ptr)
-      : ptr_(ptr)
-    {}
-
-    ~ScopedICUObject() {
-        if (ptr_)
-            Delete(ptr_);
-    }
-
-    
-    
-    
-    T* forget() {
-        T* tmp = ptr_;
-        ptr_ = nullptr;
-        return tmp;
-    }
-};
 
 
 static_assert(mozilla::IsSame<UChar, char16_t>::value,
