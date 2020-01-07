@@ -42,13 +42,6 @@ const DownloadsButton = {
   
 
 
-  get kIndicatorOverlay() {
-    return "chrome://browser/content/downloads/indicatorOverlay.xul";
-  },
-
-  
-
-
 
   get _placeholder() {
     return document.getElementById("downloads-button");
@@ -79,7 +72,6 @@ const DownloadsButton = {
     let indicator = DownloadsIndicatorView.indicator;
     if (!indicator) {
       
-      
       return null;
     }
 
@@ -108,18 +100,14 @@ const DownloadsButton = {
 
 
 
-
-  getAnchor(aCallback) {
+  getAnchor() {
     
     if (this._customizing) {
-      aCallback(null);
-      return;
+      return null;
     }
 
-    DownloadsOverlayLoader.ensureOverlayLoaded(this.kIndicatorOverlay, () => {
-      this._anchorRequested = true;
-      aCallback(this._getAnchorInternal());
-    });
+    this._anchorRequested = true;
+    return this._getAnchorInternal();
   },
 
   
@@ -302,11 +290,8 @@ const DownloadsIndicatorView = {
 
 
 
-  _ensureOperational(aCallback) {
+  _ensureOperational() {
     if (this._operational) {
-      if (aCallback) {
-        aCallback();
-      }
       return;
     }
 
@@ -316,23 +301,13 @@ const DownloadsIndicatorView = {
       return;
     }
 
-    DownloadsOverlayLoader.ensureOverlayLoaded(
-      DownloadsButton.kIndicatorOverlay,
-      () => {
-        this._operational = true;
+    this._operational = true;
 
-        
-        
-        
-        
-        if (this._initialized && DownloadsButton._placeholder) {
-          DownloadsCommon.getIndicatorData(window).refreshView(this);
-        }
-
-        if (aCallback) {
-          aCallback();
-        }
-      });
+    
+    
+    if (this._initialized) {
+      DownloadsCommon.getIndicatorData(window).refreshView(this);
+    }
   },
 
   
