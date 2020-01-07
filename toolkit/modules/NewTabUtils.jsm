@@ -22,6 +22,9 @@ ChromeUtils.defineModuleGetter(this, "BinarySearch",
 ChromeUtils.defineModuleGetter(this, "pktApi",
   "chrome://pocket/content/pktApi.jsm");
 
+ChromeUtils.defineModuleGetter(this, "Pocket",
+  "chrome://pocket/content/Pocket.jsm");
+
 XPCOMUtils.defineLazyGetter(this, "gCryptoHash", function() {
   return Cc["@mozilla.org/security/hash;1"].createInstance(Ci.nsICryptoHash);
 });
@@ -61,6 +64,7 @@ const ACTIVITY_STREAM_DEFAULT_LIMIT = 12;
 
 const ACTIVITY_STREAM_DEFAULT_RECENT = 5 * 24 * 60 * 60;
 
+const POCKET_UPDATE_TIME = 60 * 60 * 1000; 
 
 
 
@@ -1037,13 +1041,6 @@ var ActivityStreamProvider = {
                     pocket_id: item.item_id
                   }));
 
-    
-    for (let item of items) {
-      const bookmarkData = await this.getBookmark({url: item.url});
-      if (bookmarkData) {
-        item.bookmarkGuid = bookmarkData.bookmarkGuid;
-      }
-    }
     return this._processHighlights(items, aOptions, "pocket");
   },
 
@@ -1305,7 +1302,10 @@ var ActivityStreamProvider = {
 
 
 var ActivityStreamLinks = {
-  
+  _savedPocketStories: null,
+  _pocketLastUpdated: 0,
+
+ 
 
 
 
@@ -1376,6 +1376,7 @@ var ActivityStreamLinks = {
 
 
   deletePocketEntry(aItemID) {
+    this._savedPocketStories = null;
     return new Promise((success, error) => pktApi.deleteItem(aItemID, {success, error}));
   },
 
@@ -1389,7 +1390,41 @@ var ActivityStreamLinks = {
 
 
   archivePocketEntry(aItemID) {
+    this._savedPocketStories = null;
     return new Promise((success, error) => pktApi.archiveItem(aItemID, {success, error}));
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  addPocketEntry(aUrl, aTitle, aBrowser) {
+    
+    if (!pktApi.isUserLoggedIn()) {
+      Pocket.savePage(aBrowser, aUrl, aTitle);
+      return Promise.resolve(null);
+    }
+
+    
+    
+    this._savedPocketStories = null;
+    return new Promise((success, error) => {
+      pktApi.addLink(aUrl, {
+        title: aTitle,
+        success,
+        error
+      });
+    });
   },
 
   
@@ -1415,7 +1450,14 @@ var ActivityStreamLinks = {
 
     
     if (aOptions.numItems - results.length > 0 && !aOptions.excludePocket) {
-      results.push(...await ActivityStreamProvider.getRecentlyPocketed(aOptions));
+      
+      
+      
+      if (!this._savedPocketStories || (Date.now() - this._pocketLastUpdated > POCKET_UPDATE_TIME)) {
+        this._savedPocketStories = await ActivityStreamProvider.getRecentlyPocketed(aOptions);
+        this._pocketLastUpdated = Date.now();
+      }
+      results.push(...this._savedPocketStories);
     }
 
     
