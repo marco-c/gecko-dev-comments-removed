@@ -78,10 +78,12 @@ nsChromeProtocolHandler::NewURI(const nsACString &aSpec,
     
     nsresult rv;
     nsCOMPtr<nsIURL> surl;
+    nsCOMPtr<nsIURI> base(aBaseURI);
     rv = NS_MutateURI(new mozilla::net::nsStandardURL::Mutator())
-           .Apply<nsIStandardURLMutator>(&nsIStandardURLMutator::Init,
-                                         nsIStandardURL::URLTYPE_STANDARD, -1,
-                                         nsCString(aSpec), aCharset, aBaseURI, nullptr)
+           .Apply(NS_MutatorMethod(&nsIStandardURLMutator::Init,
+                                   nsIStandardURL::URLTYPE_STANDARD,
+                                   -1, nsCString(aSpec), aCharset,
+                                   base, nullptr))
            .Finalize(surl);
     if (NS_FAILED(rv)) {
         return rv;
