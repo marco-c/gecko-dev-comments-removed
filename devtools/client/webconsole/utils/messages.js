@@ -83,6 +83,7 @@ function transformConsoleAPICallPacket(packet) {
       parameters = [l10n.getStr("consoleCleared")];
       break;
     case "count":
+    case "countReset":
       
       type = MESSAGE_TYPE.LOG;
       let {counter} = message;
@@ -90,6 +91,10 @@ function transformConsoleAPICallPacket(packet) {
       if (!counter) {
         
         type = MESSAGE_TYPE.NULL_MESSAGE;
+      } else if (counter.error) {
+        messageText = l10n.getFormatStr(counter.error, [counter.label]);
+        level = MESSAGE_LEVEL.WARN;
+        parameters = null;
       } else {
         let label = counter.label ? counter.label : l10n.getStr("noCounterLabel");
         messageText = `${label}: ${counter.count}`;
@@ -106,26 +111,16 @@ function transformConsoleAPICallPacket(packet) {
         type = MESSAGE_TYPE.NULL_MESSAGE;
       }
       break;
-    case "timeLog":
     case "timeEnd":
+      parameters = null;
       if (timer && timer.error) {
-        parameters = null;
         messageText = l10n.getFormatStr(timer.error, [timer.name]);
         level = MESSAGE_LEVEL.WARN;
       } else if (timer) {
         
         
         let duration = Math.round(timer.duration * 100) / 100;
-        if (type === "timeEnd") {
-          messageText = l10n.getFormatStr("timeEnd", [timer.name, duration]);
-          parameters = null;
-        } else if (type === "timeLog") {
-          const [, ...rest] = parameters;
-          parameters = [
-            l10n.getFormatStr("timeLog", [timer.name, duration]),
-            ...rest,
-          ];
-        }
+        messageText = l10n.getFormatStr("timeEnd", [timer.name, duration]);
       } else {
         
         type = MESSAGE_TYPE.NULL_MESSAGE;
