@@ -4,6 +4,7 @@ const BASE = getRootDirectory(gTestPath)
 
 ChromeUtils.import("resource:///modules/ExtensionsUI.jsm");
 XPCOMUtils.defineLazyGetter(this, "Management", () => {
+  
   const {Management} = ChromeUtils.import("resource://gre/modules/Extension.jsm", {});
   return Management;
 });

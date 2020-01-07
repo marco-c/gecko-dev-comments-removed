@@ -304,6 +304,7 @@ var PdfJs = {
 
     this.updateRegistration();
     let jsm = "resource://pdf.js/PdfjsChromeUtils.jsm";
+    
     let PdfjsChromeUtils = ChromeUtils.import(jsm, {}).PdfjsChromeUtils;
     PdfjsChromeUtils.notifyChildOfSettingsChange(this.enabled);
   },

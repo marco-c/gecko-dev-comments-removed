@@ -6,7 +6,6 @@
 
 ChromeUtils.import("resource://normandy/actions/BaseAction.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
-ChromeUtils.defineModuleGetter(this, "IndexedDB", "resource://gre/modules/IndexedDB.jsm");
 ChromeUtils.defineModuleGetter(this, "TelemetryEnvironment", "resource://gre/modules/TelemetryEnvironment.jsm");
 ChromeUtils.defineModuleGetter(this, "PreferenceRollouts", "resource://normandy/lib/PreferenceRollouts.jsm");
 ChromeUtils.defineModuleGetter(this, "PrefUtils", "resource://normandy/lib/PrefUtils.jsm");
@@ -39,7 +38,7 @@ class PreferenceRolloutAction extends BaseAction {
       preferences: args.preferences.map(({preferenceName, value}) => ({
         preferenceName,
         value,
-        previousValue: PrefUtils.getPref("default", preferenceName),
+        previousValue: null,
       })),
     };
 
@@ -71,6 +70,9 @@ class PreferenceRolloutAction extends BaseAction {
       }
 
     } else { 
+      for (const prefSpec of newRollout.preferences) {
+        prefSpec.previousValue = PrefUtils.getPref("default", prefSpec.preferenceName);
+      }
       await PreferenceRollouts.add(newRollout);
 
       for (const {preferenceName, value} of args.preferences) {
@@ -133,7 +135,6 @@ class PreferenceRolloutAction extends BaseAction {
     
     for (const {preferenceName, previousValue} of oldPrefSpecs.values()) {
       if (!newPrefSpecs.has(preferenceName)) {
-        this.log.debug(`updating ${existingRollout.slug}: ${preferenceName} no longer exists`);
         anyChanged = true;
         PrefUtils.setPref("default", preferenceName, previousValue);
       }
@@ -145,7 +146,6 @@ class PreferenceRolloutAction extends BaseAction {
       if (oldPrefSpecs.has(prefSpec.preferenceName)) {
         let oldPrefSpec = oldPrefSpecs.get(prefSpec.preferenceName);
         if (oldPrefSpec.previousValue !== prefSpec.previousValue) {
-          this.log.debug(`updating ${existingRollout.slug}: ${prefSpec.preferenceName} previous value changed from ${oldPrefSpec.previousValue} to ${prefSpec.previousValue}`);
           prefSpec.previousValue = oldPrefSpec.previousValue;
           anyChanged = true;
         }
@@ -153,7 +153,6 @@ class PreferenceRolloutAction extends BaseAction {
       }
       if (oldValue !== newPrefSpecs.get(prefSpec.preferenceName).value) {
         anyChanged = true;
-        this.log.debug(`updating ${existingRollout.slug}: ${prefSpec.preferenceName} value changed from ${oldValue} to ${prefSpec.value}`);
         PrefUtils.setPref("default", prefSpec.preferenceName, prefSpec.value);
       }
     }

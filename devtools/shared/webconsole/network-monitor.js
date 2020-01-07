@@ -16,8 +16,6 @@ loader.lazyRequireGetter(this, "DevToolsUtils",
                          "devtools/shared/DevToolsUtils");
 loader.lazyRequireGetter(this, "flags",
                          "devtools/shared/flags");
-loader.lazyRequireGetter(this, "DebuggerServer",
-                         "devtools/server/main", true);
 loader.lazyImporter(this, "NetUtil", "resource://gre/modules/NetUtil.jsm");
 loader.lazyServiceGetter(this, "gActivityDistributor",
                          "@mozilla.org/network/http-activity-distributor;1",
@@ -133,6 +131,7 @@ ChannelEventSink.prototype = {
     }
   },
 
+  
   asyncOnChannelRedirect(oldChannel, newChannel, flags, callback) {
     for (let collector of this.collectors) {
       try {
@@ -225,6 +224,7 @@ StackTraceCollector.prototype = {
     this._saveStackTrace(channel, stacktrace);
   },
 
+  
   onChannelRedirect(oldChannel, newChannel, flags) {
     
     try {

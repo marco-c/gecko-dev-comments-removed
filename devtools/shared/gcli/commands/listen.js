@@ -22,6 +22,7 @@ XPCOMUtils.defineLazyGetter(this, "debuggerServer", () => {
   
   let serverLoader = new DevToolsLoader();
   serverLoader.invisibleToDebugger = true;
+  
   let { DebuggerServer: debuggerServer } = serverLoader.require("devtools/server/main");
   debuggerServer.init();
   debuggerServer.registerAllActors();

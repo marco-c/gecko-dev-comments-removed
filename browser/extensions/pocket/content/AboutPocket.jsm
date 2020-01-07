@@ -11,6 +11,7 @@ ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 const PREF_LOG_LEVEL = "loop.debug.loglevel";
 
+
 XPCOMUtils.defineLazyGetter(this, "log", () => {
   let ConsoleAPI = ChromeUtils.import("resource://gre/modules/Console.jsm", {}).ConsoleAPI;
   let consoleOptions = {

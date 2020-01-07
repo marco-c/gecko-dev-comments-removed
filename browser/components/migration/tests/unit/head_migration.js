@@ -15,10 +15,13 @@ ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://testing-common/TestUtils.jsm");
 ChromeUtils.import("resource://testing-common/PlacesTestUtils.jsm");
 
+
 ChromeUtils.defineModuleGetter(this, "FileUtils",
                                "resource://gre/modules/FileUtils.jsm");
+
 ChromeUtils.defineModuleGetter(this, "Sqlite",
                                "resource://gre/modules/Sqlite.jsm");
+
 
 var gProfD = do_get_profile();
 

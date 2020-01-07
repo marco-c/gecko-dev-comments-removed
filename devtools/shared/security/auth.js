@@ -294,6 +294,7 @@ OOBCert.Client.prototype = {
 
 
 
+  
   validateConnection({ cert, socket }) {
     
     
@@ -327,6 +328,7 @@ OOBCert.Client.prototype = {
 
 
 
+  
   authenticate({ host, port, cert, transport }) {
     let deferred = defer();
     let oobData;

@@ -13,8 +13,6 @@ ChromeUtils.defineModuleGetter(this, "PivotContext",
   "resource://gre/modules/accessibility/Utils.jsm");
 ChromeUtils.defineModuleGetter(this, "UtteranceGenerator", 
   "resource://gre/modules/accessibility/OutputGenerator.jsm");
-ChromeUtils.defineModuleGetter(this, "Roles", 
-  "resource://gre/modules/accessibility/Constants.jsm");
 ChromeUtils.defineModuleGetter(this, "States", 
   "resource://gre/modules/accessibility/Constants.jsm");
 ChromeUtils.defineModuleGetter(this, "AndroidEvents", 

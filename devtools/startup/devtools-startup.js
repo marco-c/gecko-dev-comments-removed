@@ -49,6 +49,7 @@ ChromeUtils.defineModuleGetter(this, "CustomizableWidgets",
 
 XPCOMUtils.defineLazyGetter(this, "Telemetry", function() {
   const { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
+  
   const Telemetry = require("devtools/client/shared/telemetry");
 
   return Telemetry;

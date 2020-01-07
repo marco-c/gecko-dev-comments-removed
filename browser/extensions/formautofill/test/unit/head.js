@@ -17,8 +17,10 @@ ChromeUtils.import("resource://testing-common/FileTestUtils.jsm");
 ChromeUtils.import("resource://testing-common/MockDocument.jsm");
 ChromeUtils.import("resource://testing-common/TestUtils.jsm");
 
+
 ChromeUtils.defineModuleGetter(this, "DownloadPaths",
                                "resource://gre/modules/DownloadPaths.jsm");
+
 ChromeUtils.defineModuleGetter(this, "FileUtils",
                                "resource://gre/modules/FileUtils.jsm");
 

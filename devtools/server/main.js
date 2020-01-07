@@ -18,6 +18,7 @@ var DevToolsUtils = require("devtools/shared/DevToolsUtils");
 var { dumpn } = DevToolsUtils;
 
 DevToolsUtils.defineLazyGetter(this, "DebuggerSocket", () => {
+  
   let { DebuggerSocket } = require("devtools/shared/security/socket");
   return DebuggerSocket;
 });
@@ -25,10 +26,12 @@ DevToolsUtils.defineLazyGetter(this, "Authentication", () => {
   return require("devtools/shared/security/auth");
 });
 DevToolsUtils.defineLazyGetter(this, "generateUUID", () => {
+  
   let { generateUUID } = Cc["@mozilla.org/uuid-generator;1"]
                            .getService(Ci.nsIUUIDGenerator);
   return generateUUID;
 });
+
 
 
 

@@ -10,6 +10,9 @@
 
 "use strict";
 
+ChromeUtils.defineModuleGetter(this, "ContentTaskUtils",
+                               "resource://testing-common/ContentTaskUtils.jsm");
+
 
 
 

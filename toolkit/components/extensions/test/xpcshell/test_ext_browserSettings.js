@@ -2,8 +2,6 @@
 
 "use strict";
 
-ChromeUtils.defineModuleGetter(this, "ExtensionPreferencesManager",
-                               "resource://gre/modules/ExtensionPreferencesManager.jsm");
 ChromeUtils.defineModuleGetter(this, "Preferences",
                                "resource://gre/modules/Preferences.jsm");
 

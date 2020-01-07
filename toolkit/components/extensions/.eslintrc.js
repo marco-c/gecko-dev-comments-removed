@@ -93,7 +93,7 @@ module.exports = {
 
     
     "no-unused-vars": ["error", {
-      "args": "none", "vars": "all"
+      "args": "none", "vars": "all", "varsIgnorePattern": "^console$"
     }],
 
     

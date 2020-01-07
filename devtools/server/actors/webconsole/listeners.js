@@ -10,10 +10,6 @@ const Services = require("Services");
 const {XPCOMUtils} = require("resource://gre/modules/XPCOMUtils.jsm");
 const {CONSOLE_WORKER_IDS, WebConsoleUtils} = require("devtools/server/actors/webconsole/utils");
 
-XPCOMUtils.defineLazyServiceGetter(this,
-                                   "swm",
-                                   "@mozilla.org/serviceworkers/manager;1",
-                                   "nsIServiceWorkerManager");
 loader.lazyRequireGetter(this, "EventEmitter", "devtools/shared/event-emitter");
 
 

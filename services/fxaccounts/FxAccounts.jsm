@@ -3,8 +3,6 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["fxAccounts", "FxAccounts"];
-
 Cu.importGlobalProperties(["URL"]);
 
 ChromeUtils.import("resource://gre/modules/Log.jsm");
@@ -1866,3 +1864,5 @@ XPCOMUtils.defineLazyGetter(this, "fxAccounts", function() {
 
   return a;
 });
+
+var EXPORTED_SYMBOLS = ["fxAccounts", "FxAccounts"];

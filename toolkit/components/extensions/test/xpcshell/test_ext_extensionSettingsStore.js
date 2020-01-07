@@ -2,8 +2,6 @@
 
 "use strict";
 
-ChromeUtils.defineModuleGetter(this, "AddonManager",
-                               "resource://gre/modules/AddonManager.jsm");
 ChromeUtils.defineModuleGetter(this, "ExtensionSettingsStore",
                                "resource://gre/modules/ExtensionSettingsStore.jsm");
 

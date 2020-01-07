@@ -5,9 +5,6 @@
 
 
 
-ChromeUtils.defineModuleGetter(this, "Services",
-                               "resource://gre/modules/Services.jsm");
-
 
 ChromeUtils.defineModuleGetter(this, "BrowserActions",
                                "resource://gre/modules/BrowserActions.jsm");

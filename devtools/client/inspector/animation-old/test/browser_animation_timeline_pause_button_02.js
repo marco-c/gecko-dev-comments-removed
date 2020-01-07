@@ -6,8 +6,6 @@
 "use strict";
 
 requestLongerTimeout(2);
-ChromeUtils.defineModuleGetter(this, "Preferences",
-  "resource://gre/modules/Preferences.jsm");
 
 
 

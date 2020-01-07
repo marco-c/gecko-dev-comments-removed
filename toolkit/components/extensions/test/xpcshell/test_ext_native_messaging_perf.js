@@ -2,11 +2,6 @@
 
 "use strict";
 
-ChromeUtils.defineModuleGetter(this, "MockRegistry",
-                               "resource://testing-common/MockRegistry.jsm");
-ChromeUtils.defineModuleGetter(this, "OS",
-                               "resource://gre/modules/osfile.jsm");
-
 ChromeUtils.import("resource://gre/modules/Subprocess.jsm");
 
 const MAX_ROUND_TRIP_TIME_MS = AppConstants.DEBUG || AppConstants.ASAN ? 60 : 30;
