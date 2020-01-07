@@ -45,8 +45,16 @@ class VerifyToolsMixin(object):
         for (path, suite) in manifests:
             if os.path.exists(path):
                 man = TestManifest([path], strict=False)
-                active = man.active_tests(exists=False, disabled=False, filters=[], **mozinfo.info)
-                tests_by_path.update({t['relpath']:(suite,t.get('subsuite')) for t in active})
+                active = man.active_tests(exists=False, disabled=True, filters=[], **mozinfo.info)
+                
+                
+                
+                
+                disabled = [t['relpath'] for t in active if 'disabled' in t]
+                new_by_path = {t['relpath']:(suite,t.get('subsuite')) \
+                               for t in active if 'disabled' not in t and \
+                               t['relpath'] not in disabled}
+                tests_by_path.update(new_by_path)
                 self.info("Verification updated with manifest %s" % path)
 
         ref_manifests = [
