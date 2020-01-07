@@ -79,7 +79,9 @@ public:
 
 
 
-  NS_IMETHOD GetCharset(nsAString& aCharset) = 0;
+
+
+  virtual void GetCharset(nsAString& aCharset) = 0;
 
   
 
