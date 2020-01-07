@@ -18,12 +18,7 @@ const {
 
 XPCOMUtils.defineLazyGlobalGetters(this, ["URL"]);
 
-this.EXPORTED_SYMBOLS = [
-  "Capabilities",
-  "PageLoadStrategy",
-  "Proxy",
-  "Timeouts",
-];
+this.EXPORTED_SYMBOLS = ["session"];
 
 
 
@@ -32,7 +27,14 @@ try { appinfo.name = Services.appinfo.name.toLowerCase(); } catch (e) {}
 try { appinfo.version = Services.appinfo.version; } catch (e) {}
 
 
-class Timeouts {
+
+
+
+
+this.session = {};
+
+
+session.Timeouts = class {
   constructor() {
     
     this.implicit = 0;
@@ -42,7 +44,7 @@ class Timeouts {
     this.script = 30000;
   }
 
-  toString() { return "[object Timeouts]"; }
+  toString() { return "[object session.Timeouts]"; }
 
   
   toJSON() {
@@ -56,7 +58,7 @@ class Timeouts {
   static fromJSON(json) {
     assert.object(json,
         pprint`Expected "timeouts" to be an object, got ${json}`);
-    let t = new Timeouts();
+    let t = new session.Timeouts();
 
     for (let [type, ms] of Object.entries(json)) {
       switch (type) {
@@ -82,14 +84,14 @@ class Timeouts {
 
     return t;
   }
-}
+};
 
 
 
 
 
 
-const PageLoadStrategy = {
+session.PageLoadStrategy = {
   
   None: "none",
   
@@ -105,7 +107,7 @@ const PageLoadStrategy = {
 };
 
 
-class Proxy {
+session.Proxy = class {
   
   constructor() {
     this.proxyType = null;
@@ -255,7 +257,7 @@ class Proxy {
       return [hostname, port];
     }
 
-    let p = new Proxy();
+    let p = new session.Proxy();
     if (typeof json == "undefined" || json === null) {
       return p;
     }
@@ -354,23 +356,23 @@ class Proxy {
     });
   }
 
-  toString() { return "[object Proxy]"; }
-}
+  toString() { return "[object session.Proxy]"; }
+};
 
 
-class Capabilities extends Map {
+session.Capabilities = class extends Map {
   
   constructor() {
     super([
       
       ["browserName", appinfo.name],
       ["browserVersion", appinfo.version],
-      ["platformName", getWebDriverPlatformName()],
+      ["platformName", Services.sysinfo.getProperty("name").toLowerCase()],
       ["platformVersion", Services.sysinfo.getProperty("version")],
-      ["pageLoadStrategy", PageLoadStrategy.Normal],
+      ["pageLoadStrategy", session.PageLoadStrategy.Normal],
       ["acceptInsecureCerts", false],
-      ["timeouts", new Timeouts()],
-      ["proxy", new Proxy()],
+      ["timeouts", new session.Timeouts()],
+      ["proxy", new session.Proxy()],
 
       
       ["rotatable", appinfo.name == "B2G"],
@@ -392,16 +394,17 @@ class Capabilities extends Map {
 
 
   set(key, value) {
-    if (key === "timeouts" && !(value instanceof Timeouts)) {
+    if (key === "timeouts" && !(value instanceof session.Timeouts)) {
       throw new TypeError();
-    } else if (key === "proxy" && !(value instanceof Proxy)) {
+    } else if (key === "proxy" && !(value instanceof session.Proxy)) {
       throw new TypeError();
     }
 
     return super.set(key, value);
   }
 
-  toString() { return "[object Capabilities]"; }
+  
+  toString() { return "[object session.Capabilities]"; }
 
   
 
@@ -428,12 +431,12 @@ class Capabilities extends Map {
     assert.object(json,
         pprint`Expected "capabilities" to be an object, got ${json}"`);
 
-    return Capabilities.match_(json);
+    return session.Capabilities.match_(json);
   }
 
   
   static match_(json = {}) {
-    let matched = new Capabilities();
+    let matched = new session.Capabilities();
 
     for (let [k, v] of Object.entries(json)) {
       switch (k) {
@@ -445,12 +448,12 @@ class Capabilities extends Map {
 
         case "pageLoadStrategy":
           if (v === null) {
-            matched.set("pageLoadStrategy", PageLoadStrategy.Normal);
+            matched.set("pageLoadStrategy", session.PageLoadStrategy.Normal);
           } else {
             assert.string(v,
                 pprint`Expected ${k} to be a string, got ${v}`);
 
-            if (Object.values(PageLoadStrategy).includes(v)) {
+            if (Object.values(session.PageLoadStrategy).includes(v)) {
               matched.set("pageLoadStrategy", v);
             } else {
               throw new InvalidArgumentError(
@@ -461,12 +464,12 @@ class Capabilities extends Map {
           break;
 
         case "proxy":
-          let proxy = Proxy.fromJSON(v);
+          let proxy = session.Proxy.fromJSON(v);
           matched.set("proxy", proxy);
           break;
 
         case "timeouts":
-          let timeouts = Timeouts.fromJSON(v);
+          let timeouts = session.Timeouts.fromJSON(v);
           matched.set("timeouts", timeouts);
           break;
 
@@ -492,27 +495,7 @@ class Capabilities extends Map {
 
     return matched;
   }
-}
-
-this.Capabilities = Capabilities;
-this.PageLoadStrategy = PageLoadStrategy;
-this.Proxy = Proxy;
-this.Timeouts = Timeouts;
-
-function getWebDriverPlatformName() {
-  let name = Services.sysinfo.getProperty("name");
-
-  switch (name) {
-    case "Windows_NT":
-      return "windows";
-
-    case "Darwin":
-      return "mac";
-
-    default:
-      return name.toLowerCase();
-  }
-}
+};
 
 
 

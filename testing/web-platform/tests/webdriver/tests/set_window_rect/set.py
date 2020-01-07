@@ -334,7 +334,7 @@ def test_negative_x_y(session):
     
     
     
-    elif os == "mac":
+    elif os == "darwin":
         assert_success(response, {"x": -8,
                                   "y": 23,
                                   "width": original["width"],
@@ -342,7 +342,7 @@ def test_negative_x_y(session):
 
     
     
-    elif os == "windows":
+    elif os == "windows_nt":
         assert_success(response, {"x": -8,
                                   "y": -8,
                                   "width": original["width"],
