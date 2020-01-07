@@ -9,6 +9,7 @@
 
 #include "mozilla/dom/DocumentFragment.h"
 #include "mozilla/dom/DocumentOrShadowRoot.h"
+#include "mozilla/ServoStyleRuleMap.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsIdentifierMapEntry.h"
@@ -60,9 +61,8 @@ public:
   NS_DECL_NSIMUTATIONOBSERVER_CONTENTINSERTED
   NS_DECL_NSIMUTATIONOBSERVER_CONTENTREMOVED
 
-  ShadowRoot(Element* aElement, bool aClosed,
-             already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
-             nsXBLPrototypeBinding* aProtoBinding);
+  ShadowRoot(Element* aElement, ShadowRootMode aMode,
+             already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
 
   
   Element* Host() const
@@ -117,7 +117,20 @@ public:
   void AddSlot(HTMLSlotElement* aSlot);
   void RemoveSlot(HTMLSlotElement* aSlot);
 
-  void SetAssociatedBinding(nsXBLBinding* aBinding) { mAssociatedBinding = aBinding; }
+  const RawServoAuthorStyles* ServoStyles() const
+  {
+    return mServoStyles.get();
+  }
+
+  RawServoAuthorStyles* ServoStyles()
+  {
+    return mServoStyles.get();
+  }
+
+  
+  void StyleSheetChanged();
+
+  mozilla::ServoStyleRuleMap& ServoStyleRuleMap();
 
   JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
 
@@ -130,7 +143,6 @@ public:
   Element* GetActiveElement();
   void GetInnerHTML(nsAString& aInnerHTML);
   void SetInnerHTML(const nsAString& aInnerHTML, ErrorResult& aError);
-  void StyleSheetChanged();
 
   bool IsComposedDocParticipant() const
   {
@@ -147,19 +159,19 @@ public:
 protected:
   virtual ~ShadowRoot();
 
-  ShadowRootMode mMode;
+  void SyncServoStyles();
+
+  const ShadowRootMode mMode;
+
+  
+  UniquePtr<RawServoAuthorStyles> mServoStyles;
+  UniquePtr<mozilla::ServoStyleRuleMap> mStyleRuleMap;
 
   using SlotArray = AutoTArray<HTMLSlotElement*, 1>;
   
   
   
   nsClassHashtable<nsStringHashKey, SlotArray> mSlotMap;
-  nsXBLPrototypeBinding* mProtoBinding;
-
-  
-  
-  
-  RefPtr<nsXBLBinding> mAssociatedBinding;
 
   
   
@@ -167,7 +179,7 @@ protected:
   
   bool mIsComposedDocParticipant;
 
-  nsresult Clone(mozilla::dom::NodeInfo *aNodeInfo, nsINode **aResult,
+  nsresult Clone(mozilla::dom::NodeInfo* aNodeInfo, nsINode** aResult,
                  bool aPreallocateChildren) const override;
 };
 

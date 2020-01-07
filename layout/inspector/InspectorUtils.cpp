@@ -238,9 +238,6 @@ InspectorUtils::GetCSSStyleRules(GlobalObject& aGlobalObject,
          bindingContent = bindingContent->GetBindingParent()) {
       for (nsXBLBinding* binding = bindingContent->GetXBLBinding();
            binding; binding = binding->GetBaseBinding()) {
-        
-        
-        
         if (auto* map = binding->PrototypeBinding()->GetServoStyleRuleMap()) {
           maps.AppendElement(map);
         }
@@ -250,6 +247,17 @@ InspectorUtils::GetCSSStyleRules(GlobalObject& aGlobalObject,
       
       
       
+    }
+
+    
+    if (auto* shadow = aElement.GetShadowRoot()) {
+      maps.AppendElement(&shadow->ServoStyleRuleMap());
+    }
+
+    for (auto* shadow = aElement.GetContainingShadow();
+         shadow;
+         shadow = shadow->Host()->GetContainingShadow()) {
+      maps.AppendElement(&shadow->ServoStyleRuleMap());
     }
 
     

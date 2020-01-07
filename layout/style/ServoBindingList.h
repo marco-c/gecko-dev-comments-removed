@@ -185,6 +185,13 @@ SERVO_BINDING_FUNC(Servo_AuthorStyles_Drop, void,
 SERVO_BINDING_FUNC(Servo_AuthorStyles_AppendStyleSheet, void,
                    RawServoAuthorStylesBorrowedMut self,
                    const mozilla::ServoStyleSheet* gecko_sheet)
+SERVO_BINDING_FUNC(Servo_AuthorStyles_RemoveStyleSheet, void,
+                   RawServoAuthorStylesBorrowedMut self,
+                   const mozilla::ServoStyleSheet* gecko_sheet)
+SERVO_BINDING_FUNC(Servo_AuthorStyles_InsertStyleSheetBefore, void,
+                   RawServoAuthorStylesBorrowedMut self,
+                   const mozilla::ServoStyleSheet* gecko_sheet,
+                   const mozilla::ServoStyleSheet* before)
 SERVO_BINDING_FUNC(Servo_AuthorStyles_ForceDirty, void,
                    RawServoAuthorStylesBorrowedMut self)
 

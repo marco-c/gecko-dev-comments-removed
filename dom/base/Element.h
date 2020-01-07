@@ -637,8 +637,8 @@ protected:
     mState &= ~aStates;
   }
 
-  already_AddRefed<ShadowRoot> AttachShadowInternal(bool aClosed,
-                                                    ErrorResult& aError);
+  already_AddRefed<ShadowRoot> AttachShadowInternal(
+    ShadowRootMode, ErrorResult& aError);
 
 private:
   

@@ -1218,17 +1218,17 @@ Element::AttachShadow(const ShadowRootInit& aInit, ErrorResult& aError)
     return nullptr;
   }
 
-  return AttachShadowInternal(aInit.mMode == ShadowRootMode::Closed, aError);
+  return AttachShadowInternal(aInit.mMode, aError);
 }
 
 already_AddRefed<ShadowRoot>
 Element::CreateShadowRoot(ErrorResult& aError)
 {
-  return AttachShadowInternal(false, aError);
+  return AttachShadowInternal(ShadowRootMode::Open, aError);
 }
 
 already_AddRefed<ShadowRoot>
-Element::AttachShadowInternal(bool aClosed, ErrorResult& aError)
+Element::AttachShadowInternal(ShadowRootMode aMode, ErrorResult& aError)
 {
   
 
@@ -1241,20 +1241,10 @@ Element::AttachShadowInternal(bool aClosed, ErrorResult& aError)
 
   nsAutoScriptBlocker scriptBlocker;
 
-  RefPtr<mozilla::dom::NodeInfo> nodeInfo;
-  nodeInfo = mNodeInfo->NodeInfoManager()->GetNodeInfo(
-    nsGkAtoms::documentFragmentNodeName, nullptr, kNameSpaceID_None,
-    DOCUMENT_FRAGMENT_NODE);
-
-  RefPtr<nsXBLDocumentInfo> docInfo = new nsXBLDocumentInfo(OwnerDoc());
-
-  nsXBLPrototypeBinding* protoBinding = new nsXBLPrototypeBinding();
-  aError = protoBinding->Init(NS_LITERAL_CSTRING("shadowroot"),
-                              docInfo, nullptr, true);
-  if (aError.Failed()) {
-    delete protoBinding;
-    return nullptr;
-  }
+  RefPtr<mozilla::dom::NodeInfo> nodeInfo =
+    mNodeInfo->NodeInfoManager()->GetNodeInfo(
+      nsGkAtoms::documentFragmentNodeName, nullptr, kNameSpaceID_None,
+      DOCUMENT_FRAGMENT_NODE);
 
   if (nsIDocument* doc = GetComposedDoc()) {
     if (nsIPresShell* shell = doc->GetShell()) {
@@ -1265,18 +1255,12 @@ Element::AttachShadowInternal(bool aClosed, ErrorResult& aError)
   MOZ_ASSERT(!GetPrimaryFrame());
 
   
-  protoBinding->SetInheritsStyle(false);
-
-  
-  docInfo->SetPrototypeBinding(NS_LITERAL_CSTRING("shadowroot"), protoBinding);
-
-  
 
 
 
 
   RefPtr<ShadowRoot> shadowRoot =
-    new ShadowRoot(this, aClosed, nodeInfo.forget(), protoBinding);
+    new ShadowRoot(this, aMode, nodeInfo.forget());
 
   shadowRoot->SetIsComposedDocParticipant(IsInComposedDoc());
 
@@ -1284,13 +1268,6 @@ Element::AttachShadowInternal(bool aClosed, ErrorResult& aError)
 
 
   SetShadowRoot(shadowRoot);
-
-  
-  RefPtr<nsXBLBinding> xblBinding = new nsXBLBinding(shadowRoot, protoBinding);
-  shadowRoot->SetAssociatedBinding(xblBinding);
-  xblBinding->SetBoundElement(this);
-
-  SetXBLBinding(xblBinding);
 
   
 
