@@ -1565,6 +1565,14 @@ nsEventStatus AsyncPanZoomController::OnScaleEnd(const PinchGestureInput& aEvent
     }
   } else {
     
+
+    
+    
+    
+    
+    StateChangeNotificationBlocker blocker(this);
+    SetState(NOTHING);
+
     if (mZoomConstraints.mAllowZoom) {
       RecursiveMutexAutoLock lock(mRecursiveMutex);
 
