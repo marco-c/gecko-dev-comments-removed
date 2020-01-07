@@ -233,6 +233,7 @@ DefaultJitOptions::DefaultJitOptions()
     }
 
     SET_DEFAULT(spectreIndexMasking, true);
+    SET_DEFAULT(spectreStringMitigations, false);
 
     
     SET_DEFAULT(disableUnboxedObjects, false);
