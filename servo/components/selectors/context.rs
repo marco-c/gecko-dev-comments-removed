@@ -48,6 +48,26 @@ pub enum VisitedHandlingMode {
     RelevantLinkVisited,
 }
 
+impl VisitedHandlingMode {
+    #[inline]
+    pub fn matches_visited(&self) -> bool {
+        matches!(
+            *self,
+            VisitedHandlingMode::RelevantLinkVisited |
+            VisitedHandlingMode::AllLinksVisitedAndUnvisited
+        )
+    }
+
+    #[inline]
+    pub fn matches_unvisited(&self) -> bool {
+        matches!(
+            *self,
+            VisitedHandlingMode::AllLinksUnvisited |
+            VisitedHandlingMode::AllLinksVisitedAndUnvisited
+        )
+    }
+}
+
 
 
 
@@ -91,12 +111,6 @@ where
     
     
     
-    pub relevant_link_found: bool,
-
-    
-    
-    
-    
     
     
     
@@ -106,6 +120,9 @@ where
     
     pub scope_element: Option<OpaqueElement>,
 
+    
+    
+    
     
     pub nesting_level: usize,
 
@@ -152,7 +169,6 @@ where
             visited_handling,
             nth_index_cache,
             quirks_mode,
-            relevant_link_found: false,
             classes_and_ids_case_sensitivity: quirks_mode.classes_and_ids_case_sensitivity(),
             scope_element: None,
             nesting_level: 0,
