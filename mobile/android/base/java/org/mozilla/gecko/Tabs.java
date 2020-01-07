@@ -1096,6 +1096,7 @@ public class Tabs implements BundleEventListener {
     
 
 
+    @RobocopTarget
     public Tab addPrivateTab() {
         return addTab(Tabs.LOADURL_PRIVATE);
     }
