@@ -244,7 +244,7 @@ Interceptor::Create(STAUniquePtr<IUnknown> aTarget, IInterceptorSink* aSink,
 
   detail::LiveSetAutoLock lock(GetLiveSet());
 
-  RefPtr<IWeakReference> existingWeak(std::move(GetLiveSet().Get(aTarget.get())));
+  RefPtr<IWeakReference> existingWeak(GetLiveSet().Get(aTarget.get()));
   if (existingWeak) {
     RefPtr<IWeakReferenceSource> existingStrong;
     if (SUCCEEDED(existingWeak->ToStrongRef(getter_AddRefs(existingStrong)))) {
@@ -891,7 +891,7 @@ Interceptor::DisconnectRemotesForTarget(IUnknown* aTarget)
 
   
   
-  RefPtr<IWeakReference> existingWeak(std::move(GetLiveSet().Get(aTarget)));
+  RefPtr<IWeakReference> existingWeak(GetLiveSet().Get(aTarget));
   if (!existingWeak) {
     return S_FALSE;
   }
