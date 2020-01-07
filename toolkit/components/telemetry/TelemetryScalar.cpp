@@ -1276,6 +1276,29 @@ void internal_ApplyPendingOperations(const StaticMutexAutoLock& lock);
 
 
 
+void internal_RecordHighwatermarkReached(const StaticMutexAutoLock& lock)
+{
+  MOZ_ASSERT(gIsDeserializing);
+  MOZ_ASSERT(gScalarsActions);
+
+  
+  
+  
+  ScalarID id = ScalarID::TELEMETRY_PENDING_OPERATIONS_HIGHWATERMARK_REACHED;
+  ScalarAction action{
+    static_cast<uint32_t>(id), false, ScalarActionType::eAdd,
+    Some(ScalarVariant(1u)), ProcessID::Parent
+  };
+  gScalarsActions->AppendElement(action);
+}
+
+
+
+
+
+
+
+
 
 void
 internal_RecordScalarAction(const StaticMutexAutoLock& lock,
@@ -1294,6 +1317,7 @@ internal_RecordScalarAction(const StaticMutexAutoLock& lock,
   
   
   if (gScalarsActions->Length() > kScalarActionsArrayHighWaterMark) {
+    internal_RecordHighwatermarkReached(lock);
     internal_ApplyPendingOperations(lock);
     return;
   }
@@ -1346,6 +1370,7 @@ internal_RecordKeyedScalarAction(const StaticMutexAutoLock& lock,
   
   
   if (gKeyedScalarsActions->Length() > kScalarActionsArrayHighWaterMark) {
+    internal_RecordHighwatermarkReached(lock);
     internal_ApplyPendingOperations(lock);
     return;
   }
