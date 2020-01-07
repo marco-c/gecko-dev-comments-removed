@@ -508,15 +508,6 @@ nsComputedDOMStyle::DoGetComputedStyleNoFlush(Element* aElement,
     }
   }
 
-  
-  
-  
-  MOZ_RELEASE_ASSERT((aStyleType == eAll && aAnimationFlag == eWithAnimation) ||
-                     !aElement->OwnerDoc()->GetBFCacheEntry(),
-                     "nsComputedDOMStyle doesn't support getting styles without "
-                     "document rules or without animation for documents in the "
-                     "bfcache");
-
   auto pseudoType = CSSPseudoElementType::NotPseudo;
   if (aPseudo) {
     pseudoType = nsCSSPseudoElements::
