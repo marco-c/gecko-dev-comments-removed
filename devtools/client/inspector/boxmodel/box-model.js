@@ -86,8 +86,7 @@ BoxModel.prototype = {
   isPanelVisible() {
     return this.inspector.toolbox && this.inspector.sidebar &&
            this.inspector.toolbox.currentToolId === "inspector" &&
-           (this.inspector.sidebar.getCurrentTabID() === "layoutview" ||
-            this.inspector.sidebar.getCurrentTabID() === "computedview");
+           (this.inspector.sidebar.getCurrentTabID() === "layoutview");
   },
 
   

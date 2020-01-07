@@ -56,9 +56,7 @@ var openInspectorSidebarTab = Task.async(function* (id) {
   if (id === "layoutview") {
     
     let onBoxModelViewReady = inspector.once("boxmodel-view-updated");
-    
-    let onGridPanelReady = id === "layoutview" ?
-      inspector.once("grid-panel-updated") : Promise.resolve();
+    let onGridPanelReady = inspector.once("grid-panel-updated");
     inspector.sidebar.select(id);
     yield onBoxModelViewReady;
     yield onGridPanelReady;
