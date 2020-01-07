@@ -1473,6 +1473,10 @@ class NativeObject : public ShapedObject
     void updateDictionaryListPointerAfterMinorGC(NativeObject* old);
 
     
+    
+    inline js::GlobalObject& global() const;
+
+    
     static size_t offsetOfElements() { return offsetof(NativeObject, elements_); }
     static size_t offsetOfFixedElements() {
         return sizeof(NativeObject) + sizeof(ObjectElements);
