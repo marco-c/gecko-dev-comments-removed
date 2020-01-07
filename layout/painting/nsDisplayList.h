@@ -1458,6 +1458,23 @@ public:
     nsRect mVisibleRect;
     nsRect mDirtyRect;
 
+    static bool
+    AnyContentAncestorModified(nsIFrame* aFrame,
+                               nsIFrame* aStopAtFrame = nullptr)
+    {
+      for (nsIFrame* f = aFrame; f;
+           f = nsLayoutUtils::GetParentOrPlaceholderForCrossDoc(f)) {
+        if (f->IsFrameModified()) {
+          return true;
+        }
+
+        if (aStopAtFrame && f == aStopAtFrame) {
+          break;
+        }
+      }
+
+      return false;
+    }
 
     static nsRect ComputeVisibleRectForFrame(nsDisplayListBuilder* aBuilder,
                                              nsIFrame* aFrame,
@@ -1503,6 +1520,14 @@ public:
 
       visible.IntersectRect(visible, overflowRect);
       aOutDirtyRect->IntersectRect(*aOutDirtyRect, overflowRect);
+
+      
+      
+      
+      
+      if (AnyContentAncestorModified(aFrame, aFrame->GetParent())) {
+        *aOutDirtyRect = visible;
+      }
       return visible;
     }
 
