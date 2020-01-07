@@ -3007,7 +3007,7 @@ public:
 
 
   static nsresult NewXULOrHTMLElement(Element** aResult, mozilla::dom::NodeInfo* aNodeInfo,
-                                      mozilla::dom::FromParser aFromParser, const nsAString* aIs,
+                                      mozilla::dom::FromParser aFromParser, nsAtom* aIsAtom,
                                       mozilla::dom::CustomElementDefinition* aDefinition);
 
   
