@@ -516,10 +516,6 @@ protected:
 
   
   
-  virtual void DownloadProgressed();
-
-  
-  
   void NotifyPrincipalChanged();
 
   MozPromiseRequestHolder<SeekPromise> mSeekRequest;
