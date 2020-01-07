@@ -190,7 +190,21 @@ void
 RsdparsaSdpMediaSection::AddDataChannel(const std::string& name, uint16_t port,
                                         uint16_t streams, uint32_t message_size)
 {
-  
+  StringView rustName{name.c_str(), name.size()};
+  auto nr = sdp_media_add_datachannel(mSection, rustName, port,
+                                      streams, message_size);
+  if (NS_SUCCEEDED(nr)) {
+    
+    mFormats.clear();
+    LoadFormats();
+
+    
+    RsdparsaSessionHandle sessHandle(sdp_new_reference(mSession.get()));
+    auto sessAttributes = mAttributeList->mSessionAttributes;
+    mAttributeList.reset(new RsdparsaSdpAttributeList(std::move(sessHandle),
+                                                      mSection,
+                                                      sessAttributes));
+  }
 }
 
 void
