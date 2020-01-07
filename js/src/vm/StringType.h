@@ -700,6 +700,13 @@ class JSRope : public JSString
     template <typename CharT>
     bool copyChars(JSContext* cx, js::ScopedJSFreePtr<CharT>& out) const;
 
+    
+    
+    
+    
+    
+    MOZ_MUST_USE bool hash(uint32_t* outhHash) const;
+
     JSString* leftChild() const {
         MOZ_ASSERT(isRope());
         return d.s.u2.left;
