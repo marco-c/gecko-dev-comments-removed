@@ -328,6 +328,7 @@ class Nursery
 
     void* addressOfCurrentEnd() const { return (void*)&currentEnd_; }
     void* addressOfPosition() const { return (void*)&position_; }
+    void* addressOfCurrentStringEnd() const { return (void*)&currentStringEnd_; }
 
     void requestMinorGC(JS::gcreason::Reason reason) const;
 
@@ -363,6 +364,12 @@ class Nursery
 
     
     uintptr_t currentEnd_;
+
+    
+
+
+
+    uintptr_t currentStringEnd_;
 
     
     unsigned currentChunk_;
