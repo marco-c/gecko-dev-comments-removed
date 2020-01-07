@@ -346,6 +346,23 @@ setupPrototype(RTCStatsReport, {
   }
 });
 
+
+
+class RTCRtpSourceCache {
+  constructor() {
+    
+    this.tsNowInRtpSourceTime = null;
+    
+    this.jsTimestamp = null;
+    
+    this.timestampOffset = null;
+    
+    this.rtpSourcesByTrackId = new Map();
+    
+    this.scheduledClear = null;
+  }
+}
+
 class RTCPeerConnection {
   constructor() {
     this._receiveStreams = new Map();
@@ -366,10 +383,13 @@ class RTCPeerConnection {
 
     this._hasStunServer = this._hasTurnServer = false;
     this._iceGatheredRelayCandidates = false;
-
-  
-  
-  this._onGetStatsIsLegacy = false;
+    
+    this._storedRtpSourceReferenceTime = null;
+    
+    
+    this._onGetStatsIsLegacy = false;
+    
+    this._rtpSourceCache = new RTCRtpSourceCache();
   }
 
   init(win) {
@@ -1225,6 +1245,45 @@ class RTCPeerConnection {
     this._transceivers.push(transceiver);
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+  _getRtpSources(receiver) {
+    let cache = this._rtpSourceCache;
+    
+    if (!cache.scheduledClear) {
+      cache.scheduledClear = true;
+      Promise.resolve().then(() => {
+        this._rtpSourceCache = new RTCRtpSourceCache();
+      });
+    }
+    
+    
+    if (cache.tsNowInRtpSourceTime !== undefined) {
+      cache.tsNowInRtpSourceTime = this._impl.getNowInRtpSourceReferenceTime();
+      cache.jsTimestamp = new Date().getTime();
+      cache.timestampOffset = cache.jsTimestamp - cache.tsNowInRtpSourceTime;
+    }
+    let id = receiver.track.id;
+    if (cache.rtpSourcesByTrackId[id] === undefined) {
+      cache.rtpSourcesByTrackId[id] =
+          this._impl.getRtpSources(receiver.track, cache.tsNowInRtpSourceTime);
+    }
+    return {
+      sources: cache.rtpSourcesByTrackId[id],
+      sourceClockOffset: cache.timestampOffset,
+      jsTimestamp: cache.jsTimestamp,
+    };
+  }
+
   addTransceiver(sendTrackOrKind, init) {
     let transceiver = this._addTransceiverNoEvents(sendTrackOrKind, init);
     this.updateNegotiationNeeded();
@@ -1321,6 +1380,24 @@ class RTCPeerConnection {
 
   getReceivers() {
     return this.getTransceivers().map(transceiver => transceiver.receiver);
+  }
+
+  
+  mozGetNowInRtpSourceReferenceTime() {
+    return this._impl.getNowInRtpSourceReferenceTime();
+  }
+
+  
+  mozInsertAudioLevelForContributingSource(receiver,
+                                           source,
+                                           timestamp,
+                                           hasLevel,
+                                           level) {
+    this._impl.insertAudioLevelForContributingSource(receiver.track,
+                                                     source,
+                                                     timestamp,
+                                                     hasLevel,
+                                                     level);
   }
 
   mozAddRIDExtension(receiver, extensionId) {
@@ -1988,7 +2065,12 @@ class RTCRtpReceiver {
         {
           _pc: pc,
           _transceiverImpl: transceiverImpl,
-          track: transceiverImpl.getReceiveTrack()
+          track: transceiverImpl.getReceiveTrack(),
+          
+          
+          
+          _rtpSources: new Map(),
+          _rtpSourcesJsTimestamp: null,
         });
   }
 
@@ -1998,6 +2080,79 @@ class RTCRtpReceiver {
     return this._pc._async(
       async () => this._pc.getStats(this.track));
   }
+
+  _getRtpSource(source, type) {
+    this._fetchRtpSources();
+    return this._rtpSources.get(type + source).entry;
+  }
+
+  
+
+
+  _fetchRtpSources() {
+    if (this._rtpSourcesJsTimestamp !== null) {
+      return;
+    }
+    
+    Promise.resolve().then(() => this._rtpSourcesJsTimestamp = null);
+    let {sources, sourceClockOffset, jsTimestamp} =
+        this._pc._getRtpSources(this);
+    this._rtpSourcesJsTimestamp = jsTimestamp;
+    for (let entry of sources) {
+      
+      entry.sourceClockOffset = sourceClockOffset;
+      
+      let key =  entry.source + entry.sourceType;
+      let cached = this._rtpSources.get(key);
+      if (cached === undefined) {
+        this._rtpSources.set(key, entry);
+      } else if (cached.timestamp != entry.timestamp) {
+        
+        
+        
+        
+        this._rtpSources.set(key, entry);
+      }
+    }
+    
+    let cutoffTime = this._rtpSourcesJsTimestamp - 10 * 1000;
+    let removeKeys = [];
+    for (let entry of this._rtpSources.values()) {
+      if ((entry.timestamp + entry.sourceClockOffset) < cutoffTime) {
+        removeKeys.push(entry.source + entry.sourceType);
+      }
+    }
+    for (let delKey of removeKeys) {
+      this._rtpSources.delete(delKey);
+    }
+  }
+
+
+
+  _getRtpSourcesByType(type) {
+    this._fetchRtpSources();
+    
+    let cutoffTime = this._rtpSourcesJsTimestamp - 10 * 1000;
+    let sources = [...this._rtpSources.values()].filter(
+      (entry) => {
+        return entry.sourceType == type &&
+            (entry.timestamp + entry.sourceClockOffset) >= cutoffTime;
+      }).map(e => ({
+        source: e.source,
+        timestamp: e.timestamp + e.sourceClockOffset,
+        audioLevel: e.audioLevel,
+      }));
+      return sources;
+  }
+
+  getContributingSources() {
+    return this._getRtpSourcesByType("contributing");
+  }
+
+  getSynchronizationSources() {
+    return this._getRtpSourcesByType("synchronization");
+  }
+
 }
 setupPrototype(RTCRtpReceiver, {
   classID: PC_RECEIVER_CID,
