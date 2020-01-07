@@ -500,7 +500,7 @@ MP4TrackDemuxer::GetNextSample()
   }
 
   if (sample->mCrypto.mValid) {
-    nsAutoPtr<MediaRawDataWriter> writer(sample->CreateWriter());
+    UniquePtr<MediaRawDataWriter> writer(sample->CreateWriter());
     writer->mCrypto.mMode = mInfo->mCrypto.mMode;
 
     

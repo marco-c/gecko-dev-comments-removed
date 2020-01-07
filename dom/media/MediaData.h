@@ -703,7 +703,7 @@ public:
   virtual already_AddRefed<MediaRawData> Clone() const;
   
   
-  virtual MediaRawDataWriter* CreateWriter();
+  virtual UniquePtr<MediaRawDataWriter> CreateWriter();
   virtual size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
 
 protected:
