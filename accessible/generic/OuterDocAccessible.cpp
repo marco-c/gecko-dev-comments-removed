@@ -53,12 +53,6 @@ OuterDocAccessible::~OuterDocAccessible()
 
 
 
-NS_IMPL_ISUPPORTS_INHERITED0(OuterDocAccessible,
-                             Accessible)
-
-
-
-
 role
 OuterDocAccessible::NativeRole()
 {

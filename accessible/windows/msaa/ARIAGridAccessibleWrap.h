@@ -32,6 +32,8 @@ public:
   DECL_IUNKNOWN_INHERITED
 
   
+  
+  
   NS_DECL_ISUPPORTS_INHERITED
 
   virtual void Shutdown() override;
@@ -53,6 +55,8 @@ public:
   
   DECL_IUNKNOWN_INHERITED
 
+  
+  
   
   NS_DECL_ISUPPORTS_INHERITED
 

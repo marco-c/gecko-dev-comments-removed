@@ -25,8 +25,6 @@ namespace dom {
 
 static const float MAX_LATENCY_S = 0.5;
 
-NS_IMPL_ISUPPORTS_INHERITED0(ScriptProcessorNode, AudioNode)
-
 
 
 class SharedBuffers final

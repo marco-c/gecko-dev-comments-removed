@@ -27,8 +27,6 @@ LeafAccessible::
   mStateFlags |= eNoKidsFromDOM;
 }
 
-NS_IMPL_ISUPPORTS_INHERITED0(LeafAccessible, Accessible)
-
 
 
 
@@ -65,8 +63,6 @@ LeafAccessible::IsAcceptableChild(nsIContent* aEl) const
 
 
 
-
-NS_IMPL_ISUPPORTS_INHERITED0(LinkableAccessible, AccessibleWrap)
 
 
 

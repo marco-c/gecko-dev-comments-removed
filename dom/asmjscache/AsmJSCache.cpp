@@ -433,6 +433,8 @@ class ParentRunnable final
   , public PAsmJSCacheEntryParent
 {
 public:
+  
+  
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_NSIRUNNABLE
 

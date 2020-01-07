@@ -25,6 +25,8 @@ class MultipartImage
 {
 public:
   MOZ_DECLARE_REFCOUNTED_TYPENAME(MultipartImage)
+  
+  
   NS_DECL_ISUPPORTS_INHERITED
 
   void BeginTransitionToPart(Image* aNextPart);

@@ -36,10 +36,6 @@ HTMLLabelElement::WrapNode(JSContext *aCx, JS::Handle<JSObject*> aGivenProto)
 
 
 
-NS_IMPL_ISUPPORTS_INHERITED0(HTMLLabelElement, nsGenericHTMLElement)
-
-
-
 NS_IMPL_ELEMENT_CLONE(HTMLLabelElement)
 
 HTMLFormElement*

@@ -220,6 +220,8 @@ class MediaRecorder::Session: public PrincipalChangeObserver<MediaStreamTrack>,
                          , public MutableBlobStorageCallback
   {
   public:
+    
+    
     NS_DECL_ISUPPORTS_INHERITED
 
     

@@ -57,7 +57,8 @@ public:
   HTMLLabelAccessible(nsIContent* aContent, DocAccessible* aDoc) :
     HyperTextAccessibleWrap(aContent, aDoc) {}
 
-  NS_DECL_ISUPPORTS_INHERITED
+  NS_INLINE_DECL_REFCOUNTING_INHERITED(HTMLLabelAccessible,
+                                       HyperTextAccessibleWrap)
 
   
   virtual Relation RelationByType(RelationType aType) override;
@@ -82,7 +83,8 @@ public:
   HTMLOutputAccessible(nsIContent* aContent, DocAccessible* aDoc) :
     HyperTextAccessibleWrap(aContent, aDoc) {}
 
-  NS_DECL_ISUPPORTS_INHERITED
+  NS_INLINE_DECL_REFCOUNTING_INHERITED(HTMLOutputAccessible,
+                                       HyperTextAccessibleWrap)
 
   
   virtual Relation RelationByType(RelationType aType) override;
@@ -124,7 +126,8 @@ public:
   HTMLHeaderOrFooterAccessible(nsIContent* aContent, DocAccessible* aDoc) :
     HyperTextAccessibleWrap(aContent, aDoc) {}
 
-  NS_DECL_ISUPPORTS_INHERITED
+  NS_INLINE_DECL_REFCOUNTING_INHERITED(HTMLHeaderOrFooterAccessible,
+                                       HyperTextAccessibleWrap)
 
   
   virtual nsAtom* LandmarkRole() const override;

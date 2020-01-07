@@ -52,7 +52,7 @@ using namespace mozilla::dom;
 
 
 
-NS_IMPL_ISUPPORTS_INHERITED0(RootAccessible, DocAccessible)
+NS_IMPL_ISUPPORTS_INHERITED(RootAccessible, DocAccessible, nsIDOMEventListener)
 
 
 

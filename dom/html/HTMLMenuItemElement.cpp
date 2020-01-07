@@ -173,8 +173,6 @@ HTMLMenuItemElement::~HTMLMenuItemElement()
 }
 
 
-NS_IMPL_ISUPPORTS_INHERITED0(HTMLMenuItemElement, nsGenericHTMLElement)
-
 
 
 nsresult

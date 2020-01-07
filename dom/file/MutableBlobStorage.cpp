@@ -213,6 +213,8 @@ class CreateBlobRunnable final : public Runnable
                                , public TemporaryIPCBlobChildCallback
 {
 public:
+  
+  
   NS_DECL_ISUPPORTS_INHERITED
 
   CreateBlobRunnable(MutableBlobStorage* aBlobStorage,

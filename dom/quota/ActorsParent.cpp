@@ -970,6 +970,8 @@ protected:
   { }
 
 private:
+  
+  
   NS_DECL_ISUPPORTS_INHERITED
 
   virtual void

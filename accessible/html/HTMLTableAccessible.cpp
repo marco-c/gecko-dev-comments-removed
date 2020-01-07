@@ -52,8 +52,6 @@ HTMLTableCellAccessible::
   mGenericTypes |= eTableCell;
 }
 
-NS_IMPL_ISUPPORTS_INHERITED0(HTMLTableCellAccessible, HyperTextAccessible)
-
 
 
 
@@ -357,8 +355,6 @@ HTMLTableHeaderCellAccessible::NativeRole()
 
 
 
-NS_IMPL_ISUPPORTS_INHERITED0(HTMLTableRowAccessible, Accessible)
-
 role
 HTMLTableRowAccessible::NativeRole()
 {
@@ -387,8 +383,6 @@ HTMLTableRowAccessible::GroupPosition()
 
 
 
-
-NS_IMPL_ISUPPORTS_INHERITED0(HTMLTableAccessible, Accessible)
 
 
 

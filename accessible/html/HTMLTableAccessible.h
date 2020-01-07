@@ -26,7 +26,8 @@ public:
   HTMLTableCellAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
   
-  NS_DECL_ISUPPORTS_INHERITED
+  NS_INLINE_DECL_REFCOUNTING_INHERITED(HTMLTableCellAccessible,
+                                       HyperTextAccessibleWrap)
 
   
   virtual TableCellAccessible* AsTableCell() override { return this; }
@@ -92,7 +93,7 @@ public:
     mGenericTypes |= eTableRow;
   }
 
-  NS_DECL_ISUPPORTS_INHERITED
+  NS_INLINE_DECL_REFCOUNTING_INHERITED(HTMLTableRowAccessible, AccessibleWrap)
 
   
   virtual a11y::role NativeRole() override;
@@ -123,7 +124,7 @@ public:
     mGenericTypes |= eTable;
   }
 
-  NS_DECL_ISUPPORTS_INHERITED
+  NS_INLINE_DECL_REFCOUNTING_INHERITED(HTMLTableAccessible, AccessibleWrap)
 
   
   virtual Accessible* Caption() const override;
