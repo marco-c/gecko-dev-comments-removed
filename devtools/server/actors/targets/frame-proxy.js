@@ -4,6 +4,14 @@
 
 "use strict";
 
+
+
+
+
+
+
+
+
 const { DebuggerServer } = require("devtools/server/main");
 loader.lazyImporter(this, "PlacesUtils", "resource://gre/modules/PlacesUtils.jsm");
 
@@ -18,7 +26,7 @@ loader.lazyImporter(this, "PlacesUtils", "resource://gre/modules/PlacesUtils.jsm
 
 
 
-function BrowserTabActor(connection, browser, options = {}) {
+function FrameTargetActorProxy(connection, browser, options = {}) {
   this._conn = connection;
   this._browser = browser;
   this._form = null;
@@ -26,14 +34,14 @@ function BrowserTabActor(connection, browser, options = {}) {
   this.options = options;
 }
 
-BrowserTabActor.prototype = {
+FrameTargetActorProxy.prototype = {
   async connect() {
     const onDestroy = () => {
       if (this._deferredUpdate) {
         
         this._deferredUpdate.reject({
           error: "tabDestroyed",
-          message: "Tab destroyed while performing a BrowserTabActor update"
+          message: "Tab destroyed while performing a FrameTargetActorProxy update"
         });
       }
       this.exit();
@@ -172,4 +180,4 @@ BrowserTabActor.prototype = {
   },
 };
 
-exports.BrowserTabActor = BrowserTabActor;
+exports.FrameTargetActorProxy = FrameTargetActorProxy;

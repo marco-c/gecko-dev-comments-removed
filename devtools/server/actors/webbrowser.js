@@ -12,7 +12,7 @@ var { DebuggerServer } = require("devtools/server/main");
 var DevToolsUtils = require("devtools/shared/DevToolsUtils");
 
 loader.lazyRequireGetter(this, "RootActor", "devtools/server/actors/root", true);
-loader.lazyRequireGetter(this, "BrowserTabActor", "devtools/server/actors/browser-tab", true);
+loader.lazyRequireGetter(this, "FrameTargetActorProxy", "devtools/server/actors/targets/frame-proxy", true);
 loader.lazyRequireGetter(this, "BrowserAddonActor", "devtools/server/actors/addon", true);
 loader.lazyRequireGetter(this, "WebExtensionParentActor", "devtools/server/actors/webextension-parent", true);
 loader.lazyRequireGetter(this, "WorkerActorList", "devtools/server/actors/worker-list", true);
@@ -231,8 +231,6 @@ BrowserTabList.prototype._getBrowsers = function* () {
   for (const win of allAppShellDOMWindows(DebuggerServer.chromeWindowType)) {
     
     
-    
-    
     for (const browser of this._getChildren(win)) {
       yield browser;
     }
@@ -319,7 +317,7 @@ BrowserTabList.prototype._getActorForBrowser = function(browser, browserActorOpt
     return actor.update(browserActorOptions);
   }
 
-  actor = new BrowserTabActor(this._connection, browser, browserActorOptions);
+  actor = new FrameTargetActorProxy(this._connection, browser, browserActorOptions);
   this._actorByBrowser.set(browser, actor);
   this._checkListening();
   return actor.connect();
@@ -419,7 +417,7 @@ BrowserTabList.prototype._notifyListChanged = function() {
 BrowserTabList.prototype._handleActorClose = function(actor, browser) {
   if (this._testing) {
     if (this._actorByBrowser.get(browser) !== actor) {
-      throw new Error("BrowserTabActor not stored in map under given browser");
+      throw new Error("FrameTargetActorProxy not stored in map under given browser");
     }
     if (actor.browser !== browser) {
       throw new Error("actor's browser and map key don't match");
