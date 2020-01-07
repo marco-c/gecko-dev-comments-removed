@@ -2,27 +2,15 @@
 
 use self::IResult::*;
 use self::Needed::*;
-use util::ErrorKind;
 
-#[cfg(feature = "core")]
+#[cfg(not(feature = "std"))]
 use std::prelude::v1::*;
-use std::boxed::Box;
 
+#[cfg(feature = "verbose-errors")]
+use verbose_errors::Err;
 
-
-
-
-#[derive(Debug,PartialEq,Eq,Clone)]
-pub enum Err<P,E=u32>{
-  
-  Code(ErrorKind<E>),
-  
-  Node(ErrorKind<E>, Box<Err<P,E>>),
-  
-  Position(ErrorKind<E>, P),
-  
-  NodePosition(ErrorKind<E>, P, Box<Err<P,E>>)
-}
+#[cfg(not(feature = "verbose-errors"))]
+use simple_errors::Err;
 
 
 #[derive(Debug,PartialEq,Eq,Clone,Copy)]
@@ -48,6 +36,19 @@ impl Needed {
   }
 }
 
+#[cfg(feature = "verbose-errors")]
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -59,6 +60,41 @@ pub enum IResult<I,O,E=u32> {
   
   Error(Err<I,E>),
   
+  Incomplete(Needed)
+}
+
+#[cfg(not(feature = "verbose-errors"))]
+
+
+
+
+#[derive(Debug,PartialEq,Eq,Clone)]
+pub enum IResult<I,O,E=u32> {
+   
+  Done(I,O),
+  
+  Error(Err<E>),
+  
+  Incomplete(Needed)
+}
+
+#[cfg(feature = "verbose-errors")]
+
+
+
+#[derive(Debug,PartialEq,Eq,Clone)]
+pub enum IError<I,E=u32> {
+  Error(Err<I,E>),
+  Incomplete(Needed)
+}
+
+#[cfg(not(feature = "verbose-errors"))]
+
+
+
+#[derive(Debug,PartialEq,Eq,Clone)]
+pub enum IError<E=u32> {
+  Error(Err<E>),
   Incomplete(Needed)
 }
 
@@ -81,6 +117,14 @@ impl<I,O,E> IResult<I,O,E> {
     match *self {
       Incomplete(_) => true,
       _             => false
+    }
+  }
+
+  pub fn or(self, other: IResult<I, O, E>) -> IResult<I, O, E> {
+    if self.is_done() {
+      self
+    } else {
+      other
     }
   }
 
@@ -111,19 +155,6 @@ impl<I,O,E> IResult<I,O,E> {
 
   
   
-  
-  #[inline]
-  pub fn map_err<N, F>(self, f: F) -> IResult<I, O, N>
-   where F: FnOnce(Err<I, E>) -> Err<I, N> {
-    match self {
-      Error(e)      => Error(f(e)),
-      Incomplete(n) => Incomplete(n),
-      Done(i, o)    => Done(i, o),
-    }
-  }
-
-  
-  
   pub fn unwrap(self) -> (I, O) {
     match self {
       Done(i, o)    => (i, o),
@@ -134,21 +165,21 @@ impl<I,O,E> IResult<I,O,E> {
 
   
   
-  pub fn unwrap_inc(self) -> Needed {
+  pub fn unwrap_or(self, default: (I, O)) -> (I, O) {
     match self {
-      Incomplete(n) => n,
-      Done(_, _)    => panic!("unwrap_inc() called on an IResult that is Done"),
-      Error(_)      => panic!("unwrap_inc() called on an IResult that is Error")
+      Done(i, o)    => (i, o),
+      Incomplete(_) => default,
+      Error(_)      => default
     }
   }
 
   
   
-  pub fn unwrap_err(self) -> Err<I, E> {
+  pub fn unwrap_inc(self) -> Needed {
     match self {
-      Error(e)      => e,
-      Done(_, _)    => panic!("unwrap_err() called on an IResult that is Done"),
-      Incomplete(_) => panic!("unwrap_err() called on an IResult that is Incomplete"),
+      Incomplete(n) => n,
+      Done(_, _)    => panic!("unwrap_inc() called on an IResult that is Done"),
+      Error(_)      => panic!("unwrap_inc() called on an IResult that is Error")
     }
   }
 }
@@ -215,35 +246,130 @@ impl<'a,I,E> GetOutput<&'a str> for IResult<I,&'a str,E> {
   }
 }
 
-#[cfg(not(feature = "core"))]
-use std::any::Any;
-#[cfg(not(feature = "core"))]
-use std::{error,fmt};
-#[cfg(not(feature = "core"))]
-use std::fmt::Debug;
-#[cfg(not(feature = "core"))]
-impl<P:Debug+Any,E:Debug+Any> error::Error for Err<P,E> {
-  fn description(&self) -> &str {
-    let kind = match *self {
-      Err::Code(ref e) | Err::Node(ref e, _) | Err::Position(ref e, _) | Err::NodePosition(ref e, _, _) => e
-    };
-    kind.description()
-  }
-}
+#[cfg(feature = "verbose-errors")]
 
-#[cfg(not(feature = "core"))]
-impl<P:fmt::Debug,E:fmt::Debug> fmt::Display for Err<P,E> {
-  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    match *self {
-      Err::Code(ref e) | Err::Node(ref e, _) => {
-        write!(f, "{:?}", e)
+#[macro_export]
+macro_rules! error_code(
+  ($code:expr) => ($crate::Err::Code($code));
+);
+
+#[cfg(not(feature = "verbose-errors"))]
+
+#[macro_export]
+macro_rules! error_code(
+  ($code:expr) => ($code);
+);
+
+#[cfg(feature = "verbose-errors")]
+
+
+
+
+#[macro_export]
+macro_rules! error_node(
+  ($code:expr, $next:expr) => {
+    let next_errors = match $next {
+      $crate::Err::Code(e) => {
+        let mut v = ::std::vec::Vec::new();
+        v.push($crate::Err::Code(e));
+        v
       },
-      Err::Position(ref e, ref p) | Err::NodePosition(ref e, ref p, _) => {
-        write!(f, "{:?}:{:?}", p, e)
+      $crate::Err::Position(e, p) => {
+        let mut v = ::std::vec::Vec::new();
+        v.push($crate::Err::Position(e,p));
+        v
+      },
+      $crate::Err::Node(e, mut next) => {
+        next.push($crate::Err::Code(e));
+        next
+      },
+      $crate::Err::NodePosition(e, p, mut next) => {
+        next.push($crate::Err::Position(e,p));
+        next
+      },
+    };
+    $crate::Err::Node($code, next_errors)
+  };
+);
+
+#[cfg(not(feature = "verbose-errors"))]
+
+
+
+
+#[allow(unused_variables)]
+#[macro_export]
+macro_rules! error_node(
+  ($code:expr, $next:expr) => ($code);
+);
+
+#[cfg(feature = "verbose-errors")]
+
+
+
+
+#[macro_export]
+macro_rules! error_position(
+  ($code:expr, $input:expr) => ($crate::Err::Position($code, $input));
+);
+
+#[cfg(not(feature = "verbose-errors"))]
+
+
+
+
+#[allow(unused_variables)]
+#[macro_export]
+macro_rules! error_position(
+  ($code:expr, $input:expr) => ($code);
+);
+
+#[cfg(feature = "verbose-errors")]
+
+
+
+
+
+#[macro_export]
+macro_rules! error_node_position(
+  ($code:expr, $input:expr, $next:expr) => {
+    {
+    let next_errors = match $next {
+      $crate::Err::Code(e) => {
+        let mut v = ::std::vec::Vec::new();
+        v.push($crate::Err::Code(e));
+        v
+      },
+      $crate::Err::Position(e, p) => {
+        let mut v = ::std::vec::Vec::new();
+        v.push($crate::Err::Position(e,p));
+        v
+      },
+      $crate::Err::Node(e, mut next) => {
+        next.push($crate::Err::Code(e));
+        next
+      },
+      $crate::Err::NodePosition(e, p, mut next) => {
+        next.push($crate::Err::Position(e,p));
+        next
       }
+    };
+    $crate::Err::NodePosition($code, $input, next_errors)
     }
   }
-}
+);
+
+#[cfg(not(feature = "verbose-errors"))]
+
+
+
+
+
+#[allow(unused_variables)]
+#[macro_export]
+macro_rules! error_node_position(
+  ($code:expr, $input: expr, $next:expr) => ($code);
+);
 
 #[cfg(test)]
 mod tests {
@@ -252,8 +378,15 @@ mod tests {
 
   const REST: [u8; 0] = [];
   const DONE: IResult<&'static [u8], u32> = IResult::Done(&REST, 5);
-  const ERROR: IResult<&'static [u8], u32> = IResult::Error(Err::Code(ErrorKind::Tag));
+  const ERROR: IResult<&'static [u8], u32> = IResult::Error(error_code!(ErrorKind::Tag));
   const INCOMPLETE: IResult<&'static [u8], u32> = IResult::Incomplete(Needed::Unknown);
+
+  #[test]
+  fn iresult_or() {
+    assert_eq!(DONE.or(ERROR), DONE);
+    assert_eq!(ERROR.or(DONE), DONE);
+    assert_eq!(INCOMPLETE.or(ERROR), ERROR);
+  }
 
   #[test]
   fn needed_map() {
@@ -267,7 +400,7 @@ mod tests {
   #[test]
   fn iresult_map() {
     assert_eq!(DONE.map(|x| x * 2), IResult::Done(&b""[..], 10));
-    assert_eq!(ERROR.map(|x| x * 2), IResult::Error(Err::Code(ErrorKind::Tag)));
+    assert_eq!(ERROR.map(|x| x * 2), IResult::Error(error_code!(ErrorKind::Tag)));
     assert_eq!(INCOMPLETE.map(|x| x * 2), IResult::Incomplete(Needed::Unknown));
   }
 
@@ -277,17 +410,18 @@ mod tests {
     let inc_size: IResult<&[u8], u32> = IResult::Incomplete(Needed::Size(5));
 
     assert_eq!(DONE.map_inc(|n| if let Needed::Size(i) = n {Needed::Size(i+1)} else {n}), IResult::Done(&b""[..], 5));
-    assert_eq!(ERROR.map_inc(|n| if let Needed::Size(i) = n {Needed::Size(i+1)} else {n}), IResult::Error(Err::Code(ErrorKind::Tag)));
+    assert_eq!(ERROR.map_inc(|n| if let Needed::Size(i) = n {Needed::Size(i+1)} else {n}), IResult::Error(error_code!(ErrorKind::Tag)));
     assert_eq!(inc_unknown.map_inc(|n| if let Needed::Size(i) = n {Needed::Size(i+1)} else {n}), IResult::Incomplete(Needed::Unknown));
     assert_eq!(inc_size.map_inc(|n| if let Needed::Size(i) = n {Needed::Size(i+1)} else {n}), IResult::Incomplete(Needed::Size(6)));
   }
 
   #[test]
+  #[cfg(feature = "std")]
   fn iresult_map_err() {
     #[derive(Clone, Copy, Debug, PartialEq, Eq)]
     struct Error(u32);
 
-    let error_kind = Err::Code(ErrorKind::Custom(Error(5)));
+    let error_kind = error_code!(ErrorKind::Custom(Error(5)));
 
     assert_eq!(DONE.map_err(|_| error_kind.clone()), IResult::Done(&b""[..], 5));
     assert_eq!(ERROR.map_err(|x| {println!("err: {:?}", x); error_kind.clone()}), IResult::Error(error_kind.clone()));
@@ -312,6 +446,21 @@ mod tests {
   }
 
   #[test]
+  fn iresult_unwrap_or_on_done() {
+    assert_eq!(DONE.unwrap_or((&b""[..], 2)), (&b""[..], 5));
+  }
+
+  #[test]
+  fn iresult_unwrap_or_on_err() {
+    assert_eq!(ERROR.unwrap_or((&b""[..], 2)), (&b""[..], 2));
+  }
+
+  #[test]
+  fn iresult_unwrap_or_on_inc() {
+    assert_eq!(INCOMPLETE.unwrap_or((&b""[..], 2)), (&b""[..], 2));
+  }
+
+  #[test]
   #[should_panic]
   fn iresult_unwrap_err_on_done() {
     DONE.unwrap_err();
@@ -319,7 +468,7 @@ mod tests {
 
   #[test]
   fn iresult_unwrap_err_on_err() {
-    assert_eq!(ERROR.unwrap_err(), Err::Code(ErrorKind::Tag));
+    assert_eq!(ERROR.unwrap_err(), error_code!(ErrorKind::Tag));
   }
 
   #[test]
@@ -343,5 +492,24 @@ mod tests {
   #[test]
   fn iresult_unwrap_inc_on_inc() {
     assert_eq!(INCOMPLETE.unwrap_inc(), Needed::Unknown);
+  }
+
+  #[test]
+  fn iresult_to_result() {
+    assert_eq!(DONE.to_result(), Ok(5));
+    assert_eq!(ERROR.to_result(), Err(error_code!(ErrorKind::Tag)));
+  }
+
+  #[test]
+  #[should_panic]
+  fn iresult_to_result_on_incomplete() {
+    INCOMPLETE.to_result().unwrap();
+  }
+
+  #[test]
+  fn iresult_to_full_result() {
+    assert_eq!(DONE.to_full_result(), Ok(5));
+    assert_eq!(INCOMPLETE.to_full_result(), Err(IError::Incomplete(Needed::Unknown)));
+    assert_eq!(ERROR.to_full_result(), Err(IError::Error(error_code!(ErrorKind::Tag))));
   }
 }
