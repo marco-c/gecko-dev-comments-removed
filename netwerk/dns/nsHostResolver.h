@@ -23,6 +23,7 @@
 #include "mozilla/LinkedList.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
+#include "nsRefPtrHashtable.h"
 
 class nsHostResolver;
 class nsHostRecord;
@@ -55,6 +56,7 @@ struct nsHostKey
 
     bool operator==(const nsHostKey& other) const;
     size_t SizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
+    PLDHashNumber Hash() const;
 };
 
 
@@ -66,9 +68,6 @@ class nsHostRecord : public PRCList, public nsHostKey
 
 public:
     NS_INLINE_DECL_THREADSAFE_REFCOUNTING(nsHostRecord)
-
-    
-    static nsresult Create(const nsHostKey *key, nsHostRecord **record);
 
     
 
@@ -172,7 +171,6 @@ private:
     
     nsTArray<nsCString> mBlacklistedItems;
 
-    explicit nsHostRecord(const nsHostKey *key);           
    ~nsHostRecord();
 };
 
@@ -367,7 +365,7 @@ private:
     uint32_t      mDefaultGracePeriod; 
     mutable Mutex mLock;    
     CondVar       mIdleThreadCV;
-    PLDHashTable  mDB;
+    nsRefPtrHashtable<nsGenericHashKey<nsHostKey>, nsHostRecord> mRecordDB;
     PRCList       mHighQ;
     PRCList       mMediumQ;
     PRCList       mLowQ;
