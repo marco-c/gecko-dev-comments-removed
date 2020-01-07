@@ -920,12 +920,18 @@ CompositorBridgeParent::SetShadowProperties(Layer* aLayer)
         
         HostLayer* layerCompositor = layer->AsHostLayer();
         
-        layerCompositor->SetShadowBaseTransform(layer->GetBaseTransform());
-        layerCompositor->SetShadowTransformSetByAnimation(false);
+        AnimationArray& animations = layer->GetAnimations();
+        
+        
+        
+        if (animations.IsEmpty()) {
+          layerCompositor->SetShadowBaseTransform(layer->GetBaseTransform());
+          layerCompositor->SetShadowTransformSetByAnimation(false);
+          layerCompositor->SetShadowOpacity(layer->GetOpacity());
+          layerCompositor->SetShadowOpacitySetByAnimation(false);
+        }
         layerCompositor->SetShadowVisibleRegion(layer->GetVisibleRegion());
         layerCompositor->SetShadowClipRect(layer->GetClipRect());
-        layerCompositor->SetShadowOpacity(layer->GetOpacity());
-        layerCompositor->SetShadowOpacitySetByAnimation(false);
       }
     );
 }
