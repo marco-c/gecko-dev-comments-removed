@@ -8290,7 +8290,7 @@ nsLayoutUtils::Shutdown()
 #ifdef MOZ_STYLO
 
 bool
-nsLayoutUtils::ShouldUseStylo(nsIURI* aDocumentURI, nsIPrincipal* aPrincipal)
+nsLayoutUtils::ShouldUseStylo(nsIPrincipal* aPrincipal)
 {
   
   
@@ -8299,20 +8299,6 @@ nsLayoutUtils::ShouldUseStylo(nsIURI* aDocumentURI, nsIPrincipal* aPrincipal)
   if (!StyloChromeEnabled() &&
       nsContentUtils::IsSystemPrincipal(aPrincipal)) {
     return false;
-  }
-  
-  if (aDocumentURI) {
-    bool isAbout = false;
-    if (NS_SUCCEEDED(aDocumentURI->SchemeIs("about", &isAbout)) && isAbout) {
-      nsAutoCString path;
-      aDocumentURI->GetFilePath(path);
-      
-      
-      
-      if (path.EqualsLiteral("reader")) {
-        return false;
-      }
-    }
   }
   
   if (IsInStyloBlocklist(aPrincipal)) {

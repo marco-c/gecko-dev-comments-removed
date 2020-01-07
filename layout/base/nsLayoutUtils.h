@@ -2584,8 +2584,7 @@ public:
   
 
 
-
-  static bool ShouldUseStylo(nsIURI* aDocumentURI, nsIPrincipal* aPrincipal);
+  static bool ShouldUseStylo(nsIPrincipal* aPrincipal);
 
   
 
@@ -2610,7 +2609,7 @@ public:
 
   static void RemoveFromStyloBlocklist(const nsACString& aBlockedDomain);
 #else
-  static bool ShouldUseStylo(nsIURI* aDocumentURI, nsIPrincipal* aPrincipal) {
+  static bool ShouldUseStylo(nsIPrincipal* aPrincipal) {
     return false;
   }
 #endif

@@ -13238,7 +13238,7 @@ nsIDocument::UpdateStyleBackendType()
 
 #ifdef MOZ_STYLO
   if (nsLayoutUtils::StyloEnabled() &&
-      nsLayoutUtils::ShouldUseStylo(mDocumentURI, NodePrincipal())) {
+      nsLayoutUtils::ShouldUseStylo(NodePrincipal())) {
     mStyleBackendType = StyleBackendType::Servo;
   }
 #endif
@@ -13902,30 +13902,11 @@ nsDocument::IsThirdParty()
   return mIsThirdParty.value();
 }
 
-static bool
-IsAboutReader(nsIURI* aURI)
-{
-  if (!aURI) {
-    return false;
-  }
-
-  nsCString spec;
-  aURI->GetSpec(spec);
-
-  
-  return StringBeginsWith(spec, NS_LITERAL_CSTRING("about:reader"));
-}
-
 bool
 nsIDocument::IsScopedStyleEnabled()
 {
   if (mIsScopedStyleEnabled == eScopedStyle_Unknown) {
-    
-    
-    
-    
     mIsScopedStyleEnabled = nsContentUtils::IsChromeDoc(this) ||
-                            IsAboutReader(mDocumentURI) ||
                             nsContentUtils::IsScopedStylePrefEnabled()
                               ? eScopedStyle_Enabled
                               : eScopedStyle_Disabled;
