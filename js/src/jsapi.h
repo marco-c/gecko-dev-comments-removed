@@ -1915,13 +1915,7 @@ enum ZoneSpecifier {
     ExistingZone,
 
     
-    NewZoneInNewZoneGroup,
-
-    
-    NewZoneInSystemZoneGroup,
-
-    
-    NewZoneInExistingZoneGroup
+    NewZone
 };
 
 
@@ -1937,8 +1931,8 @@ class JS_PUBLIC_API(CompartmentCreationOptions)
   public:
     CompartmentCreationOptions()
       : traceGlobal_(nullptr),
-        zoneSpec_(NewZoneInSystemZoneGroup),
-        zonePointer_(nullptr),
+        zoneSpec_(NewZone),
+        zone_(nullptr),
         invisibleToDebugger_(false),
         mergeable_(false),
         preserveJitCode_(false),
@@ -1956,15 +1950,13 @@ class JS_PUBLIC_API(CompartmentCreationOptions)
         return *this;
     }
 
-    void* zonePointer() const { return zonePointer_; }
+    JS::Zone* zone() const { return zone_; }
     ZoneSpecifier zoneSpecifier() const { return zoneSpec_; }
 
     
     CompartmentCreationOptions& setSystemZone();
     CompartmentCreationOptions& setExistingZone(JSObject* obj);
-    CompartmentCreationOptions& setNewZoneInNewZoneGroup();
-    CompartmentCreationOptions& setNewZoneInSystemZoneGroup();
-    CompartmentCreationOptions& setNewZoneInExistingZoneGroup(JSObject* obj);
+    CompartmentCreationOptions& setNewZone();
 
     
     
@@ -2022,7 +2014,7 @@ class JS_PUBLIC_API(CompartmentCreationOptions)
   private:
     JSTraceOp traceGlobal_;
     ZoneSpecifier zoneSpec_;
-    void* zonePointer_; 
+    JS::Zone* zone_;
     bool invisibleToDebugger_;
     bool mergeable_;
     bool preserveJitCode_;

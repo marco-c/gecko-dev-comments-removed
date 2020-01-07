@@ -19,41 +19,6 @@ namespace js {
 
 
 
-class ZoneGroupsIter
-{
-    gc::AutoEnterIteration iterMarker;
-    ZoneGroup** it;
-    ZoneGroup** end;
-
-  public:
-    explicit ZoneGroupsIter(JSRuntime* rt) : iterMarker(&rt->gc) {
-        it = rt->gc.groups().begin();
-        end = rt->gc.groups().end();
-
-        if (!done() && (*it)->usedByHelperThread())
-            next();
-    }
-
-    bool done() const { return it == end; }
-
-    void next() {
-        MOZ_ASSERT(!done());
-        do {
-            it++;
-        } while (!done() && (*it)->usedByHelperThread());
-    }
-
-    ZoneGroup* get() const {
-        MOZ_ASSERT(!done());
-        return *it;
-    }
-
-    operator ZoneGroup*() const { return get(); }
-    ZoneGroup* operator->() const { return get(); }
-};
-
-
-
 
 
 enum ZoneSelector {
@@ -62,73 +27,44 @@ enum ZoneSelector {
 };
 
 
-class ZonesInGroupIter
+
+class ZonesIter
 {
     gc::AutoEnterIteration iterMarker;
+    JS::Zone* atomsZone;
     JS::Zone** it;
     JS::Zone** end;
 
   public:
-    explicit ZonesInGroupIter(ZoneGroup* group) : iterMarker(&group->runtime->gc) {
-        it = group->zones().begin();
-        end = group->zones().end();
-    }
-
-    bool done() const { return it == end; }
-
-    void next() {
-        MOZ_ASSERT(!done());
-        it++;
-    }
-
-    JS::Zone* get() const {
-        MOZ_ASSERT(!done());
-        return *it;
-    }
-
-    operator JS::Zone*() const { return get(); }
-    JS::Zone* operator->() const { return get(); }
-};
-
-
-
-class ZonesIter
-{
-    ZoneGroupsIter group;
-    mozilla::Maybe<ZonesInGroupIter> zone;
-    JS::Zone* atomsZone;
-
-  public:
     ZonesIter(JSRuntime* rt, ZoneSelector selector)
-      : group(rt), atomsZone(selector == WithAtoms ? rt->gc.atomsZone.ref() : nullptr)
+      : iterMarker(&rt->gc),
+        atomsZone(selector == WithAtoms ? rt->gc.atomsZone.ref() : nullptr),
+        it(rt->gc.zones().begin()),
+        end(rt->gc.zones().end())
     {
-        if (!atomsZone && !done())
-            next();
+        if (!atomsZone)
+            skipHelperThreadZones();
     }
 
-    bool done() const { return !atomsZone && group.done(); }
+    bool done() const { return !atomsZone && it == end; }
 
     void next() {
         MOZ_ASSERT(!done());
         if (atomsZone)
             atomsZone = nullptr;
-        while (!group.done()) {
-            if (zone.isSome())
-                zone.ref().next();
-            else
-                zone.emplace(group);
-            if (zone.ref().done()) {
-                zone.reset();
-                group.next();
-            } else {
-                break;
-            }
-        }
+        else
+            it++;
+        skipHelperThreadZones();
+    }
+
+    void skipHelperThreadZones() {
+        while (!done() && get()->usedByHelperThread())
+            it++;
     }
 
     JS::Zone* get() const {
         MOZ_ASSERT(!done());
-        return atomsZone ? atomsZone : zone.ref().get();
+        return atomsZone ? atomsZone : *it;
     }
 
     operator JS::Zone*() const { return get(); }

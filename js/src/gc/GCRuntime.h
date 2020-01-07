@@ -33,8 +33,8 @@ class VerifyPreTracer;
 
 namespace gc {
 
-typedef Vector<ZoneGroup*, 4, SystemAllocPolicy> ZoneGroupVector;
 using BlackGrayEdgeVector = Vector<TenuredCell*, 0, SystemAllocPolicy>;
+using ZoneVector = Vector<JS::Zone*, 4, SystemAllocPolicy>;
 
 class AutoCallGCCallbacks;
 class AutoRunParallelTask;
@@ -493,7 +493,7 @@ class GCRuntime
     };
 
     
-    void deleteEmptyZoneGroup(ZoneGroup* group);
+    void deleteEmptyZone(Zone* zone);
 
     
     friend class ArenaLists;
@@ -598,8 +598,7 @@ class GCRuntime
     IncrementalProgress sweepShapeTree(FreeOp* fop, SliceBudget& budget, Zone* zone);
     void endSweepPhase(bool lastGC);
     bool allCCVisibleZonesWereCollected() const;
-    void sweepZones(FreeOp* fop, ZoneGroup* group, bool lastGC);
-    void sweepZoneGroups(FreeOp* fop, bool destroyingRuntime);
+    void sweepZones(FreeOp* fop, bool destroyingRuntime);
     void decommitAllWithoutUnlocking(const AutoLockGC& lock);
     void startDecommit();
     void queueZonesForBackgroundSweep(ZoneList& zones);
@@ -642,13 +641,12 @@ class GCRuntime
 
     
     UnprotectedData<JS::Zone*> systemZone;
-    UnprotectedData<ZoneGroup*> systemZoneGroup;
 
     
   private:
-    ActiveThreadOrGCTaskData<ZoneGroupVector> groups_;
+    ActiveThreadOrGCTaskData<ZoneVector> zones_;
   public:
-    ZoneGroupVector& groups() { return groups_.ref(); }
+    ZoneVector& zones() { return zones_.ref(); }
 
     
     WriteOnceData<Zone*> atomsZone;

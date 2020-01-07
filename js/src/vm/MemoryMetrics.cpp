@@ -754,9 +754,7 @@ CollectRuntimeStatsHelper(JSContext* cx, RuntimeStats* rtStats, ObjectPrivateVis
     if (!rtStats->compartmentStatsVector.reserve(rt->numCompartments))
         return false;
 
-    size_t totalZones = 1; 
-    for (ZoneGroupsIter group(rt); !group.done(); group.next())
-        totalZones += group->zones().length();
+    size_t totalZones = rt->gc.zones().length() + 1; 
     if (!rtStats->zoneStatsVector.reserve(totalZones))
         return false;
 

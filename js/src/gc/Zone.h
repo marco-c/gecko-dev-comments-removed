@@ -146,22 +146,10 @@ struct Zone : public JS::shadow::Zone,
               public js::gc::GraphNodeBase<JS::Zone>,
               public js::MallocProvider<JS::Zone>
 {
-    explicit Zone(JSRuntime* rt, js::ZoneGroup* group);
+    explicit Zone(JSRuntime* rt);
     ~Zone();
     MOZ_MUST_USE bool init(bool isSystem);
     void destroy(js::FreeOp *fop);
-
-  private:
-    js::ZoneGroup* const group_;
-  public:
-    js::ZoneGroup* group() const {
-        return group_;
-    }
-
-    
-    static size_t offsetOfGroup() {
-        return offsetof(Zone, group_);
-    }
 
     void findOutgoingEdges(js::gc::ZoneComponentFinder& finder);
 
@@ -525,8 +513,46 @@ struct Zone : public JS::shadow::Zone,
 
     js::ZoneGroupData<bool> isSystem;
 
+  private:
+    
+    
+    js::UnprotectedData<JSContext*> helperThreadOwnerContext_;
+
+  public:
+    bool ownedByCurrentHelperThread();
+    void setHelperThreadOwnerContext(JSContext* cx);
+
+  private:
+    enum class HelperThreadUse : uint32_t
+    {
+        None,
+        Pending,
+        Active
+    };
+
+    mozilla::Atomic<HelperThreadUse> helperThreadUse;
+
+  public:
+    
+    bool createdForHelperThread() const {
+        return helperThreadUse != HelperThreadUse::None;
+    }
+    
     bool usedByHelperThread() {
-        return !isAtomsZone() && group()->usedByHelperThread();
+        MOZ_ASSERT_IF(isAtomsZone(), helperThreadUse == HelperThreadUse::None);
+        return helperThreadUse == HelperThreadUse::Active;
+    }
+    void setCreatedForHelperThread() {
+        MOZ_ASSERT(helperThreadUse == HelperThreadUse::None);
+        helperThreadUse = HelperThreadUse::Pending;
+    }
+    void setUsedByHelperThread() {
+        MOZ_ASSERT(helperThreadUse == HelperThreadUse::Pending);
+        helperThreadUse = HelperThreadUse::Active;
+    }
+    void clearUsedByHelperThread() {
+        MOZ_ASSERT(helperThreadUse != HelperThreadUse::None);
+        helperThreadUse = HelperThreadUse::None;
     }
 
 #ifdef DEBUG

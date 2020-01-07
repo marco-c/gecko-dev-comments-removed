@@ -71,25 +71,16 @@ CheckZoneGroup<Helper>::check() const
         return;
 
     JSContext* cx = TlsContext.get();
-    if (group) {
-        if (group->usedByHelperThread()) {
-            MOZ_ASSERT(group->ownedByCurrentHelperThread());
-        } else {
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            MOZ_ASSERT(CurrentThreadCanAccessRuntime(cx->runtime()));
-        }
+    if (zone->isAtomsZone()) {
+        
+        MOZ_ASSERT(cx->runtime()->currentThreadHasExclusiveAccess());
+    } else if (zone->usedByHelperThread()) {
+        
+        MOZ_ASSERT(zone->ownedByCurrentHelperThread());
     } else {
         
         
-        MOZ_ASSERT(cx->runtime()->currentThreadHasExclusiveAccess());
+        MOZ_ASSERT(CurrentThreadCanAccessRuntime(cx->runtime()));
     }
 }
 

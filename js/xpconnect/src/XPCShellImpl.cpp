@@ -1283,7 +1283,7 @@ XRE_XPCShellMain(int argc, char** argv, char** envp,
         
         
         JS::CompartmentOptions options;
-        options.creationOptions().setNewZoneInSystemZoneGroup();
+        options.creationOptions().setNewZone();
         if (xpc::SharedMemoryEnabled())
             options.creationOptions().setSharedMemoryAndAtomicsEnabled(true);
         JS::Rooted<JSObject*> glob(cx);

@@ -349,7 +349,7 @@ IndirectBindingMap::put(JSContext* cx, HandleId name,
     
     
     if (!map_) {
-        MOZ_ASSERT(!cx->zone()->group()->createdForHelperThread());
+        MOZ_ASSERT(!cx->zone()->createdForHelperThread());
         map_.emplace(cx->zone());
         if (!map_->init()) {
             map_.reset();
