@@ -137,6 +137,11 @@ public:
   void SetShippingType(const Nullable<PaymentShippingType>& aShippingType);
   Nullable<PaymentShippingType> GetShippingType() const;
 
+  inline void ShippingWasRequested()
+  {
+    mRequestShipping = true;
+  }
+
   IMPL_EVENT_HANDLER(shippingaddresschange);
   IMPL_EVENT_HANDLER(shippingoptionchange);
 
@@ -173,6 +178,10 @@ protected:
   
   
   bool mUpdating;
+
+  
+  
+  bool mRequestShipping;
   
   nsresult mUpdateError;
 
