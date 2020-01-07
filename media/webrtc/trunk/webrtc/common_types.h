@@ -14,6 +14,7 @@
 #include <stddef.h>
 #include <string.h>
 
+#include <atomic>
 #include <ostream>
 #include <string>
 #include <vector>
@@ -408,14 +409,37 @@ struct AudioDecodingCallStats {
         decoded_plc_cng(0),
         decoded_muted_output(0) {}
 
-  int calls_to_silence_generator;  
+  AudioDecodingCallStats(const AudioDecodingCallStats& other)
+  {
+    calls_to_silence_generator = other.calls_to_silence_generator.load();
+    calls_to_neteq = other.calls_to_neteq.load();
+    decoded_normal = other.decoded_normal.load();
+    decoded_plc = other.decoded_plc.load();
+    decoded_cng = other.decoded_cng.load();
+    decoded_plc_cng = other.decoded_plc_cng.load();
+    decoded_muted_output = other.decoded_muted_output.load();
+  }
+
+  AudioDecodingCallStats& operator=(const AudioDecodingCallStats& other)
+  {
+    calls_to_silence_generator = other.calls_to_silence_generator.load();
+    calls_to_neteq = other.calls_to_neteq.load();
+    decoded_normal = other.decoded_normal.load();
+    decoded_plc = other.decoded_plc.load();
+    decoded_cng = other.decoded_cng.load();
+    decoded_plc_cng = other.decoded_plc_cng.load();
+    decoded_muted_output = other.decoded_muted_output.load();
+    return *this;
+  }
+
+  std::atomic<int> calls_to_silence_generator;  
                                    
-  int calls_to_neteq;              
-  int decoded_normal;  
-  int decoded_plc;     
-  int decoded_cng;  
-  int decoded_plc_cng;  
-  int decoded_muted_output;  
+  std::atomic<int> calls_to_neteq;              
+  std::atomic<int> decoded_normal;  
+  std::atomic<int> decoded_plc;     
+  std::atomic<int> decoded_cng;  
+  std::atomic<int> decoded_plc_cng;  
+  std::atomic<int> decoded_muted_output;  
 };
 
 
