@@ -16,7 +16,10 @@ var tooltip = document.getElementById("UITourTooltip");
 function test() {
   registerCleanupFunction(() => {
     
-    gBrowser.getFindBar(gBrowser.selectedTab).close();
+    let findBar = gBrowser.getCachedFindBar(gBrowser.selectedTab);
+    if (findBar) {
+      findBar.close();
+    }
   });
   UITourTest();
 }

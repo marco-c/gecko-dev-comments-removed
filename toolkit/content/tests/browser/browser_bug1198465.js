@@ -26,6 +26,11 @@ add_task(async function() {
   
   
 
+  
+  
+  
+  await gFindBarPromise;
+
   let findBar = gFindBar;
   is(findBar._findField.value, "", "findbar is empty");
 

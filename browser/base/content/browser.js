@@ -266,7 +266,7 @@ Object.defineProperty(this, "gFindBar", {
   configurable: true,
   enumerable: true,
   get() {
-    return window.gBrowser.getFindBar();
+    return gBrowser.getCachedFindBar();
   },
 });
 
@@ -274,9 +274,25 @@ Object.defineProperty(this, "gFindBarInitialized", {
   configurable: true,
   enumerable: true,
   get() {
-    return window.gBrowser.isFindBarInitialized();
+    return gBrowser.isFindBarInitialized();
   },
 });
+
+Object.defineProperty(this, "gFindBarPromise", {
+  configurable: true,
+  enumerable: true,
+  get() {
+    return gBrowser.getFindBar();
+  },
+});
+
+async function gLazyFindCommand(cmd, ...args) {
+  let fb = await gFindBarPromise;
+  
+  if (fb && fb[cmd]) {
+    fb[cmd].apply(fb, args);
+  }
+}
 
 Object.defineProperty(this, "AddonManager", {
   configurable: true,
@@ -1174,7 +1190,14 @@ function RedirectLoad({ target: browser, data }) {
 }
 
 if (document.documentElement.getAttribute("windowtype") == "navigator:browser") {
-  addEventListener("DOMContentLoaded", function() {
+  window.addEventListener("MozBeforeInitialXULLayout", () => {
+    gBrowserInit.onBeforeInitialXULLayout();
+  }, { once: true });
+  
+  
+  
+  
+  window.addEventListener("DOMContentLoaded", () => {
     gBrowserInit.onDOMContentLoaded();
   }, { once: true });
 }
@@ -1186,6 +1209,27 @@ var delayedStartupPromise = new Promise(resolve => {
 
 var gBrowserInit = {
   delayedStartupFinished: false,
+
+  onBeforeInitialXULLayout() {
+    
+    if (Services.prefs.getBoolPref("privacy.resistFingerprinting")) {
+      
+      
+      document.documentElement.setAttribute("sizemode", "normal");
+    } else if (!document.documentElement.hasAttribute("width")) {
+      const TARGET_WIDTH = 1280;
+      const TARGET_HEIGHT = 1040;
+      let width = Math.min(screen.availWidth * .9, TARGET_WIDTH);
+      let height = Math.min(screen.availHeight * .9, TARGET_HEIGHT);
+
+      document.documentElement.setAttribute("width", width);
+      document.documentElement.setAttribute("height", height);
+
+      if (width < TARGET_WIDTH && height < TARGET_HEIGHT) {
+        document.documentElement.setAttribute("sizemode", "maximized");
+      }
+    }
+  },
 
   onDOMContentLoaded() {
     gBrowser = window._gBrowser;
@@ -1230,25 +1274,6 @@ var gBrowserInit = {
       initBrowser.removeAttribute("blank");
     }
 
-    
-    if (Services.prefs.getBoolPref("privacy.resistFingerprinting")) {
-      
-      
-      document.documentElement.setAttribute("sizemode", "normal");
-    } else if (!document.documentElement.hasAttribute("width")) {
-      const TARGET_WIDTH = 1280;
-      const TARGET_HEIGHT = 1040;
-      let width = Math.min(screen.availWidth * .9, TARGET_WIDTH);
-      let height = Math.min(screen.availHeight * .9, TARGET_HEIGHT);
-
-      document.documentElement.setAttribute("width", width);
-      document.documentElement.setAttribute("height", height);
-
-      if (width < TARGET_WIDTH && height < TARGET_HEIGHT) {
-        document.documentElement.setAttribute("sizemode", "maximized");
-      }
-    }
-
     gBrowser.updateBrowserRemoteness(initBrowser, isRemote, {
       remoteType, sameProcessAsFrameLoader
     });
@@ -1273,7 +1298,7 @@ var gBrowserInit = {
   },
 
   onLoad() {
-    gBrowser.addEventListener("DOMUpdateBlockedPopups", gPopupBlockerObserver);
+    gBrowser.addEventListener("DOMUpdatePageReport", gPopupBlockerObserver);
 
     Services.obs.addObserver(gPluginHandler.NPAPIPluginCrashed, "plugin-crashed");
 
@@ -2060,7 +2085,7 @@ function HandleAppCommandEvent(evt) {
     BrowserCloseTabOrWindow();
     break;
   case "Find":
-    gFindBar.onFindCommand();
+    gLazyFindCommand("onFindCommand");
     break;
   case "Help":
     openHelpLink("firefox-help");
@@ -3508,7 +3533,7 @@ var PrintPreviewListener = {
       gBrowser.getNotificationBox().notificationsHidden = false;
 
     if (this._chromeState.findOpen)
-      gFindBar.open();
+      gLazyFindCommand("open");
 
     if (this._chromeState.globalNotificationsOpen)
       document.getElementById("global-notificationbox").notificationsHidden = false;

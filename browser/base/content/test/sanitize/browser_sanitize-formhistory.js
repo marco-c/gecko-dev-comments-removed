@@ -22,6 +22,7 @@ add_task(async function test() {
 
   
   await Sanitizer.sanitize(["formdata"]);
+  await gFindBarPromise;
   ok(!gFindBar.hasTransactions, "pre-test baseline for sanitizer");
 
   gFindBar.getElement("findbar-textbox").value = "m";

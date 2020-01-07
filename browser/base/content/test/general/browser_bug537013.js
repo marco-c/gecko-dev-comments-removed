@@ -42,19 +42,21 @@ function test() {
   
   gBrowser.selectedTab = tabs[0];
 
+  gBrowser.getFindBar().then(initialTest);
+}
+
+function initialTest() {
   setFindString(texts[0]);
   
   gFindBar.getElement("highlight").checked = true;
 
   
   gBrowser.selectedTab = tabs[1];
-  gBrowser.selectedTab.addEventListener("TabFindInitialized", continueTests1);
+  gBrowser.selectedTab.addEventListener("TabFindInitialized", continueTests1, {once: true});
   
-  gFindBar;
+  gBrowser.getFindBar();
 }
 function continueTests1() {
-  gBrowser.selectedTab.removeEventListener("TabFindInitialized",
-                                           continueTests1);
   ok(true, "'TabFindInitialized' event properly dispatched!");
   ok(gFindBar.hidden, "Second tab doesn't show find bar!");
   gFindBar.open();
@@ -97,6 +99,11 @@ function continueTests3() {
 
   
   gBrowser.selectedTab = tabs[2];
+  gBrowser.selectedTab.addEventListener("TabFindInitialized", continueTests4, {once: true});
+  gBrowser.getFindBar();
+}
+
+function continueTests4() {
   setFindString(texts[2]);
 
   

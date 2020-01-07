@@ -188,7 +188,7 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
       
       
       if (gBrowser.isFindBarInitialized(tab)) {
-        let findBar = gBrowser.getFindBar(tab);
+        let findBar = gBrowser.getCachedFindBar(tab);
         findBar.browser = tab.linkedBrowser;
         if (!findBar.hidden) {
           
@@ -253,7 +253,7 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
       
       
       if (gBrowser.isFindBarInitialized(tab)) {
-        let findBar = gBrowser.getFindBar(tab);
+        let findBar = gBrowser.getCachedFindBar(tab);
         findBar.browser = tab.linkedBrowser;
         if (!findBar.hidden) {
           
