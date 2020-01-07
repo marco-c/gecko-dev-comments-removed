@@ -22,7 +22,11 @@
 
 
 
+
+
+
 #define NS_OS_HOME_DIR                          "Home"
+
 #define NS_OS_TEMP_DIR                          "TmpD"
 #define NS_OS_CURRENT_WORKING_DIR               "CurWorkD"
 
