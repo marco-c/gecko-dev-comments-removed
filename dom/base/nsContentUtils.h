@@ -1138,6 +1138,14 @@ public:
 
   static void
   ExtractErrorValues(JSContext* aCx, JS::Handle<JS::Value> aValue,
+                     nsAString& aSourceSpecOut, uint32_t *aLineOut,
+                     uint32_t *aColumnOut, nsString& aMessageOut);
+
+  
+  
+  
+  static void
+  ExtractErrorValues(JSContext* aCx, JS::Handle<JS::Value> aValue,
                      nsACString& aSourceSpecOut, uint32_t *aLineOut,
                      uint32_t *aColumnOut, nsString& aMessageOut);
 
