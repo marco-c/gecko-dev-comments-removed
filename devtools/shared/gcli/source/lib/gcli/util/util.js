@@ -498,10 +498,7 @@ exports.setContents = function(elem, contents) {
     return;
   }
 
-  if ("unsafeSetInnerHTML" in elem) {
-    
-    elem.unsafeSetInnerHTML(contents);
-  } else if ("innerHTML" in elem) {
+  if ("innerHTML" in elem) {
     elem.innerHTML = contents;
   } else {
     try {
