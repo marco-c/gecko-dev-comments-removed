@@ -34,6 +34,11 @@ var WindowsGPOParser = {
     } finally {
       childWrk.close();
     }
+    
+    
+    if (log._maxLogLevel == "debug") {
+      log.debug(JSON.stringify(policies, null, 2));
+    }
     return policies;
   }
 };
