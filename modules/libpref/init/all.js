@@ -4859,10 +4859,6 @@ pref("gfx.direct2d.disabled", false);
 
 pref("gfx.direct2d.force-enabled", false);
 
-
-
-pref("gfx.direct2d.destroy-dt-on-paintthread", true);
-
 pref("gfx.direct3d11.enable-debug-layer", false);
 pref("gfx.direct3d11.break-on-error", false);
 
@@ -4975,6 +4971,8 @@ pref("full-screen-api.unprefix.enabled", false);
 pref("full-screen-api.unprefix.enabled", true);
 #endif
 pref("full-screen-api.allow-trusted-requests-only", true);
+
+pref("full-screen-api.ignore-widgets", false);
 pref("full-screen-api.pointer-lock.enabled", true);
 
 #ifndef MOZ_WIDGET_GTK
