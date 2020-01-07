@@ -13,12 +13,14 @@ const L10N = new LocalizationHelper("devtools/client/locales/toolbox.properties"
 function handleThreadState(toolbox, event, packet) {
   
   
-  if (event !== "paused" || packet.why.type !== "interrupted") {
-    
-    
-    
-    toolbox.target.emit("thread-" + event);
+  if (event === "paused" && packet.why.type === "interrupted") {
+    return;
   }
+
+  
+  
+  
+  toolbox.target.emit("thread-" + event);
 
   if (event === "paused") {
     toolbox.highlightTool("jsdebugger");
