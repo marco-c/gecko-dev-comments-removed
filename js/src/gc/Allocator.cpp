@@ -244,15 +244,17 @@ GCRuntime::tryNewTenuredThing(JSContext* cx, AllocKind kind, size_t thingSize)
         
         t = reinterpret_cast<T*>(refillFreeListFromAnyThread(cx, kind));
 
-        if (MOZ_UNLIKELY(!t && allowGC && !cx->helperThread())) {
-            
-            
-            
-            JS::PrepareForFullGC(cx);
-            cx->runtime()->gc.gc(GC_SHRINK, JS::gcreason::LAST_DITCH);
-            cx->runtime()->gc.waitBackgroundSweepOrAllocEnd();
+        if (MOZ_UNLIKELY(!t && allowGC)) {
+            if (!cx->helperThread()) {
+                
+                
+                
+                JS::PrepareForFullGC(cx);
+                cx->runtime()->gc.gc(GC_SHRINK, JS::gcreason::LAST_DITCH);
+                cx->runtime()->gc.waitBackgroundSweepOrAllocEnd();
 
-            t = tryNewTenuredThing<T, NoGC>(cx, kind, thingSize);
+                t = tryNewTenuredThing<T, NoGC>(cx, kind, thingSize);
+            }
             if (!t)
                 ReportOutOfMemory(cx);
         }
