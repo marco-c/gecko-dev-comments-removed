@@ -283,6 +283,19 @@ public class GlobalSession implements HttpResponseObserver {
       return;
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    if (this.stages == null) {
+      Logger.info("Not advancing: stages cleaned up.");
+      return;
+    }
+
     this.callback.handleStageCompleted(this.currentState, this);
     Stage next = nextStage(this.currentState);
     GlobalSyncStage nextStage;
