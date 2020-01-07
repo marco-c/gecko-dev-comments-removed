@@ -514,7 +514,7 @@ protected:
 
   
   
-  virtual void NotifyPrincipalChanged();
+  void NotifyPrincipalChanged();
 
   MozPromiseRequestHolder<SeekPromise> mSeekRequest;
 
