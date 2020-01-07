@@ -715,29 +715,6 @@ IsInVideoControls(nsXULElement* aElement)
   }
   return false;
 }
-
-
-
-
-
-
-
-
-bool
-IsInFeedSubscribeLine(nsXULElement* aElement)
-{
-  nsIContent* bindingParent = aElement->GetBindingParent();
-  if (bindingParent) {
-    while (bindingParent->GetBindingParent()) {
-      bindingParent = bindingParent->GetBindingParent();
-    }
-    nsAtom* idAtom = bindingParent->GetID();
-    if (idAtom && idAtom->Equals(NS_LITERAL_STRING("feedSubscribeLine"))) {
-      return true;
-    }
-  }
-  return false;
-}
 #endif
 
 class XULInContentErrorReporter : public Runnable
@@ -806,7 +783,7 @@ nsXULElement::BindToTree(nsIDocument* aDocument,
       
       
       
-      NS_ASSERTION(IsInVideoControls(this) || IsInFeedSubscribeLine(this),
+      NS_ASSERTION(IsInVideoControls(this),
                    "Unexpected XUL element in non-XUL doc");
     }
   }

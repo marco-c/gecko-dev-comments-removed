@@ -3235,12 +3235,10 @@ function standardTreeWalkerFilter(node) {
   }
 
   
+  
+  
   if (!isInXULDocument(node) && (isXBLAnonymous(node) ||
                                   isNativeAnonymous(node))) {
-    
-    
-    
-    
     return nodeFilterConstants.FILTER_SKIP;
   }
 
