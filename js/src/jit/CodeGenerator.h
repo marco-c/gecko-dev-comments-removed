@@ -331,7 +331,7 @@ class CodeGenerator final : public CodeGeneratorSpecific
     uint32_t simdTemplatesToReadBarrier_;
 
     
-    uint32_t compartmentStubsToReadBarrier_;
+    uint32_t realmStubsToReadBarrier_;
 
     void addSimdTemplateToReadBarrier(SimdType simdType);
 

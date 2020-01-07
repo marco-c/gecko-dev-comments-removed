@@ -4,8 +4,8 @@
 
 
 
-#ifndef jit_JitCompartment_h
-#define jit_JitCompartment_h
+#ifndef jit_JitRealm_h
+#define jit_JitRealm_h
 
 #include "mozilla/Array.h"
 #include "mozilla/DebugOnly.h"
@@ -59,7 +59,7 @@ class JitcodeGlobalTable;
 class JitRuntime
 {
   private:
-    friend class JitCompartment;
+    friend class JitRealm;
 
     
     MainThreadData<ExecutableAllocator> execAlloc_;
@@ -449,7 +449,7 @@ enum class BailoutReturnStub {
     Count
 };
 
-class JitCompartment
+class JitRealm
 {
     friend class JitActivation;
 
@@ -551,8 +551,8 @@ class JitCompartment
         return bailoutReturnStubInfo_[kind].addr;
     }
 
-    JitCompartment();
-    ~JitCompartment();
+    JitRealm();
+    ~JitRealm();
 
     MOZ_MUST_USE bool initialize(JSContext* cx);
 
@@ -564,7 +564,7 @@ class JitCompartment
         return stubs_[StringConcat];
     }
 
-    void sweep(JSCompartment* compartment);
+    void sweep(JS::Realm* realm);
 
     void discardStubs() {
         for (ReadBarrieredJitCode& stubRef : stubs_)

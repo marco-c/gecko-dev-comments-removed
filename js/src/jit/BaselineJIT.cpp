@@ -287,7 +287,7 @@ CanEnterBaselineJIT(JSContext* cx, HandleScript script, InterpreterFrame* osrFra
     if (!CanLikelyAllocateMoreExecutableMemory())
         return Method_Skipped;
 
-    if (!cx->compartment()->ensureJitCompartmentExists(cx))
+    if (!cx->realm()->ensureJitRealmExists(cx))
         return Method_Error;
 
     
