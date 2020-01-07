@@ -8,6 +8,7 @@
 #define mozilla_dom_MutableBlobStorage_h
 
 #include "mozilla/RefPtr.h"
+#include "mozilla/Mutex.h"
 #include "prio.h"
 
 class nsIEventTarget;
@@ -34,6 +35,7 @@ public:
                                   Blob* aBlob,
                                   nsresult aRv) = 0;
 };
+
 
 
 class MutableBlobStorage final
@@ -74,24 +76,30 @@ public:
 
   
   
-  size_t SizeOfCurrentMemoryBuffer() const;
+  size_t SizeOfCurrentMemoryBuffer();
 
-  PRFileDesc* GetFD() const;
+  PRFileDesc* GetFD();
 
   void CloseFD();
 
 private:
   ~MutableBlobStorage();
 
-  bool ExpandBufferSize(uint64_t aSize);
+  bool ExpandBufferSize(const MutexAutoLock& aProofOfLock,
+                        uint64_t aSize);
 
-  bool ShouldBeTemporaryStorage(uint64_t aSize) const;
+  bool ShouldBeTemporaryStorage(const MutexAutoLock& aProofOfLock,
+                                uint64_t aSize) const;
 
-  bool MaybeCreateTemporaryFile();
+  bool MaybeCreateTemporaryFile(const MutexAutoLock& aProofOfLock);
+  void MaybeCreateTemporaryFileOnMainThread();
 
   MOZ_MUST_USE nsresult
   DispatchToIOThread(already_AddRefed<nsIRunnable> aRunnable);
 
+  Mutex mMutex;
+
+  
   
 
   void* mData;
