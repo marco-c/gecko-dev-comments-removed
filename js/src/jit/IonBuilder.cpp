@@ -8285,10 +8285,15 @@ IonBuilder::getElemTryCallSiteObject(bool* emitted, MDefinition* obj, MDefinitio
         return Ok();
     }
 
+    const Value& v = array->getDenseElement(uint32_t(idx));
+    
+    if (!v.isString() || !v.toString()->isAtom())
+        return Ok();
+
     obj->setImplicitlyUsedUnchecked();
     index->setImplicitlyUsedUnchecked();
 
-    pushConstant(array->getDenseElement(uint32_t(idx)));
+    pushConstant(v);
 
     trackOptimizationSuccess();
     *emitted = true;
