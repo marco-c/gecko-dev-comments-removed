@@ -39,7 +39,7 @@ public:
   explicit SchedulerEventQueue(UniquePtr<AbstractEventQueue> aQueue)
     : mLock("Scheduler")
     , mNonCooperativeCondVar(mLock, "SchedulerNonCoop")
-    , mQueue(std::move(aQueue))
+    , mQueue(Move(aQueue))
     , mScheduler(nullptr)
   {}
 
@@ -231,7 +231,7 @@ SchedulerEventQueue::PutEvent(already_AddRefed<nsIRunnable>&& aEvent,
 {
   
   
-  LeakRefPtr<nsIRunnable> event(std::move(aEvent));
+  LeakRefPtr<nsIRunnable> event(Move(aEvent));
   nsCOMPtr<nsIThreadObserver> obs;
 
   {
@@ -286,6 +286,7 @@ SchedulerEventQueue::GetEvent(bool aMayWait,
     if (mScheduler) {
       CooperativeThreadPool::Yield(mScheduler->GetQueueResource(), lock);
     } else {
+      AUTO_PROFILER_LABEL("SchedulerEventQueue::GetEvent::Wait", IDLE);
       mNonCooperativeCondVar.Wait();
     }
   }
@@ -506,7 +507,7 @@ SchedulerImpl::Start()
     sNumThreadsRunning = 1;
 
     mShuttingDown = false;
-    nsTArray<nsCOMPtr<nsIRunnable>> callbacks = std::move(mShutdownCallbacks);
+    nsTArray<nsCOMPtr<nsIRunnable>> callbacks = Move(mShutdownCallbacks);
     for (nsIRunnable* runnable : callbacks) {
       runnable->Run();
     }

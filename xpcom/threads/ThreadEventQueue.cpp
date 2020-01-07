@@ -30,7 +30,7 @@ public:
   bool PutEvent(already_AddRefed<nsIRunnable>&& aEvent,
                 EventPriority aPriority) final
   {
-    return mOwner->PutEventInternal(std::move(aEvent), aPriority, this);
+    return mOwner->PutEventInternal(Move(aEvent), aPriority, this);
   }
 
   void Disconnect(const MutexAutoLock& aProofOfLock) final
@@ -49,7 +49,7 @@ private:
 
 template<class InnerQueueT>
 ThreadEventQueue<InnerQueueT>::ThreadEventQueue(UniquePtr<InnerQueueT> aQueue)
-  : mBaseQueue(std::move(aQueue))
+  : mBaseQueue(Move(aQueue))
   , mLock("ThreadEventQueue")
   , mEventsAvailable(mLock, "EventsAvail")
 {
@@ -68,7 +68,7 @@ bool
 ThreadEventQueue<InnerQueueT>::PutEvent(already_AddRefed<nsIRunnable>&& aEvent,
                                         EventPriority aPriority)
 {
-  return PutEventInternal(std::move(aEvent), aPriority, nullptr);
+  return PutEventInternal(Move(aEvent), aPriority, nullptr);
 }
 
 template<class InnerQueueT>
@@ -79,7 +79,7 @@ ThreadEventQueue<InnerQueueT>::PutEventInternal(already_AddRefed<nsIRunnable>&& 
 {
   
   
-  LeakRefPtr<nsIRunnable> event(std::move(aEvent));
+  LeakRefPtr<nsIRunnable> event(Move(aEvent));
   nsCOMPtr<nsIThreadObserver> obs;
 
   {
@@ -152,6 +152,7 @@ ThreadEventQueue<InnerQueueT>::GetEvent(bool aMayWait,
       break;
     }
 
+    AUTO_PROFILER_LABEL("ThreadEventQueue::GetEvent::Wait", IDLE);
     mEventsAvailable.Wait();
   }
 
@@ -226,7 +227,7 @@ ThreadEventQueue<InnerQueueT>::PushEventQueue()
 
   MutexAutoLock lock(mLock);
 
-  mNestedQueues.AppendElement(NestedQueueItem(std::move(queue), eventTarget));
+  mNestedQueues.AppendElement(NestedQueueItem(Move(queue), eventTarget));
   return eventTarget.forget();
 }
 
