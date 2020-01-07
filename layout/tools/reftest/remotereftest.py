@@ -143,12 +143,12 @@ class ReftestServer:
 
 class RemoteReftest(RefTest):
     use_marionette = False
-    parse_manifest = False
     remoteApp = ''
     resolver_cls = RemoteReftestResolver
 
     def __init__(self, automation, devicemanager, options, scriptDir):
-        RefTest.__init__(self)
+        RefTest.__init__(self, options.suite)
+        self.run_by_manifest = False
         self.automation = automation
         self._devicemanager = devicemanager
         self.scriptDir = scriptDir
@@ -279,11 +279,6 @@ class RemoteReftest(RefTest):
         
         prefs["apz.allow_zooming"] = False
 
-        if options.totalChunks:
-            prefs['reftest.totalChunks'] = options.totalChunks
-        if options.thisChunk:
-            prefs['reftest.thisChunk'] = options.thisChunk
-
         
         profile.set_preferences(prefs)
 
@@ -360,7 +355,7 @@ class RemoteReftest(RefTest):
                                                            timeout=timeout)
 
         self.cleanup(profile.profile)
-        return status, self.outputHandler.results
+        return status
 
     def cleanup(self, profileDir):
         
