@@ -1134,7 +1134,7 @@ function ArrayFlatMap(mapperFunction) {
 
 
 
-function ArrayFlatten() {
+function ArrayFlat() {
      
     var O = ToObject(this);
 
