@@ -59,45 +59,47 @@ public:
 
   
   
-  virtual nsresult PressCaret(const nsPoint& aPoint, EventClassID aEventClass);
+  MOZ_CAN_RUN_SCRIPT virtual nsresult PressCaret(const nsPoint& aPoint,
+                                                 EventClassID aEventClass);
 
   
   
-  virtual nsresult DragCaret(const nsPoint& aPoint);
+  MOZ_CAN_RUN_SCRIPT virtual nsresult DragCaret(const nsPoint& aPoint);
 
   
   
-  virtual nsresult ReleaseCaret();
+  MOZ_CAN_RUN_SCRIPT virtual nsresult ReleaseCaret();
 
   
-  virtual nsresult TapCaret(const nsPoint& aPoint);
-
-  
-  
-  virtual nsresult SelectWordOrShortcut(const nsPoint& aPoint);
-
-  
-  virtual void OnScrollStart();
-
-  
-  virtual void OnScrollEnd();
+  MOZ_CAN_RUN_SCRIPT virtual nsresult TapCaret(const nsPoint& aPoint);
 
   
   
-  virtual void OnScrollPositionChanged();
+  MOZ_CAN_RUN_SCRIPT virtual nsresult SelectWordOrShortcut(
+    const nsPoint& aPoint);
 
   
-  virtual void OnReflow();
+  MOZ_CAN_RUN_SCRIPT virtual void OnScrollStart();
 
   
-  virtual void OnBlur();
+  MOZ_CAN_RUN_SCRIPT virtual void OnScrollEnd();
 
   
-  virtual nsresult OnSelectionChanged(nsIDOMDocument* aDoc,
-                                      nsISelection* aSel,
-                                      int16_t aReason);
   
-  virtual void OnKeyboardEvent();
+  MOZ_CAN_RUN_SCRIPT virtual void OnScrollPositionChanged();
+
+  
+  MOZ_CAN_RUN_SCRIPT virtual void OnReflow();
+
+  
+  MOZ_CAN_RUN_SCRIPT virtual void OnBlur();
+
+  
+  MOZ_CAN_RUN_SCRIPT virtual nsresult OnSelectionChanged(nsIDOMDocument* aDoc,
+                                                         nsISelection* aSel,
+                                                         int16_t aReason);
+  
+  MOZ_CAN_RUN_SCRIPT virtual void OnKeyboardEvent();
 
   
   
@@ -145,13 +147,16 @@ protected:
   
   
   
-  void UpdateCarets(const UpdateCaretsHintSet& aHints = UpdateCaretsHint::Default);
+  MOZ_CAN_RUN_SCRIPT void UpdateCarets(
+    const UpdateCaretsHintSet& aHints = UpdateCaretsHint::Default);
 
   
-  void HideCarets();
+  MOZ_CAN_RUN_SCRIPT void HideCarets();
 
-  void UpdateCaretsForCursorMode(const UpdateCaretsHintSet& aHints);
-  void UpdateCaretsForSelectionMode(const UpdateCaretsHintSet& aHints);
+  MOZ_CAN_RUN_SCRIPT void UpdateCaretsForCursorMode(
+    const UpdateCaretsHintSet& aHints);
+  MOZ_CAN_RUN_SCRIPT void UpdateCaretsForSelectionMode(
+    const UpdateCaretsHintSet& aHints);
 
   
   void ProvideHapticFeedback();
@@ -205,7 +210,7 @@ protected:
   
   
   
-  MOZ_MUST_USE bool FlushLayout();
+  MOZ_MUST_USE MOZ_CAN_RUN_SCRIPT bool FlushLayout();
 
   dom::Element* GetEditingHostForFrame(nsIFrame* aFrame) const;
   dom::Selection* GetSelection() const;
@@ -261,7 +266,8 @@ protected:
 
   
   
-  virtual void DispatchCaretStateChangedEvent(dom::CaretChangedReason aReason);
+  MOZ_CAN_RUN_SCRIPT virtual void DispatchCaretStateChangedEvent(
+    dom::CaretChangedReason aReason);
 
   
   
