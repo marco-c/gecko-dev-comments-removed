@@ -5871,10 +5871,10 @@ nsContentUtils::RunInStableState(already_AddRefed<nsIRunnable> aRunnable)
 
 
 void
-nsContentUtils::AddPendingIDBTransaction(already_AddRefed<nsIRunnable> aTransaction)
+nsContentUtils::RunInMetastableState(already_AddRefed<nsIRunnable> aRunnable)
 {
   MOZ_ASSERT(CycleCollectedJSContext::Get(), "Must be on a script thread!");
-  CycleCollectedJSContext::Get()->AddPendingIDBTransaction(Move(aTransaction));
+  CycleCollectedJSContext::Get()->RunInMetastableState(Move(aRunnable));
 }
 
 
@@ -6935,14 +6935,7 @@ nsContentUtils::IsSubDocumentTabbable(nsIContent* aContent)
   
   
   
-  
-  if (zombieViewer) {
-    bool inOnLoad = false;
-    docShell->GetIsExecutingOnLoadHandler(&inOnLoad);
-    return inOnLoad;
-  }
-
-  return true;
+  return !zombieViewer;
 }
 
 bool

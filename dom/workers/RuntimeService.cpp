@@ -1052,10 +1052,6 @@ public:
   {
     MOZ_COUNT_CTOR_INHERITED(WorkerJSContext, CycleCollectedJSContext);
     MOZ_ASSERT(aWorkerPrivate);
-    
-    
-    
-    SetTargetedMicroTaskRecursionDepth(2);
   }
 
   ~WorkerJSContext()
@@ -1109,14 +1105,26 @@ public:
     return NS_OK;
   }
 
-  virtual void DispatchToMicroTask(already_AddRefed<MicroTaskRunnable> aRunnable) override
+  virtual void AfterProcessTask(uint32_t aRecursionDepth) override
   {
-    RefPtr<MicroTaskRunnable> runnable(aRunnable);
+    
+    
+    if (aRecursionDepth == 2) {
+      CycleCollectedJSContext::AfterProcessTask(aRecursionDepth);
+    } else if (aRecursionDepth > 2) {
+      AutoDisableMicroTaskCheckpoint disableMicroTaskCheckpoint;
+      CycleCollectedJSContext::AfterProcessTask(aRecursionDepth);
+    }
+  }
+
+  virtual void DispatchToMicroTask(already_AddRefed<nsIRunnable> aRunnable) override
+  {
+    RefPtr<nsIRunnable> runnable(aRunnable);
 
     MOZ_ASSERT(!NS_IsMainThread());
     MOZ_ASSERT(runnable);
 
-    std::queue<RefPtr<MicroTaskRunnable>>* microTaskQueue = nullptr;
+    std::queue<nsCOMPtr<nsIRunnable>>* microTaskQueue = nullptr;
 
     JSContext* cx = GetCurrentWorkerThreadJSContext();
     NS_ASSERTION(cx, "This should never be null!");
@@ -1129,12 +1137,12 @@ public:
     
     
     if (IsWorkerGlobal(global)) {
-      microTaskQueue = &GetMicroTaskQueue();
+      microTaskQueue = &mPromiseMicroTaskQueue;
     } else {
       MOZ_ASSERT(IsWorkerDebuggerGlobal(global) ||
                  IsWorkerDebuggerSandbox(global));
 
-      microTaskQueue = &GetDebuggerMicroTaskQueue();
+      microTaskQueue = &mDebuggerPromiseMicroTaskQueue;
     }
 
     microTaskQueue->push(runnable.forget());

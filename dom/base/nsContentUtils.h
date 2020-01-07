@@ -2036,7 +2036,12 @@ public:
 
 
 
-  static void AddPendingIDBTransaction(already_AddRefed<nsIRunnable> aTransaction);
+
+
+
+
+
+  static void RunInMetastableState(already_AddRefed<nsIRunnable> aRunnable);
 
   
 

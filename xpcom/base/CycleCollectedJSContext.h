@@ -103,6 +103,9 @@ protected:
 
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
+  std::queue<nsCOMPtr<nsIRunnable>> mPromiseMicroTaskQueue;
+  std::queue<nsCOMPtr<nsIRunnable>> mDebuggerPromiseMicroTaskQueue;
+
 private:
   MOZ_IS_CLASS_INIT
   void InitializeCommon();
@@ -118,11 +121,11 @@ private:
                                               JS::PromiseRejectionHandlingState state,
                                               void* aData);
 
-  void AfterProcessMicrotasks();
+  void AfterProcessMicrotask(uint32_t aRecursionDepth);
 public:
   void ProcessStableStateQueue();
 private:
-  void CleanupIDBTransactions(uint32_t aRecursionDepth);
+  void ProcessMetastableStateQueue(uint32_t aRecursionDepth);
 
 public:
   enum DeferredFinalizeType {
@@ -139,8 +142,8 @@ public:
   already_AddRefed<dom::Exception> GetPendingException() const;
   void SetPendingException(dom::Exception* aException);
 
-  std::queue<RefPtr<MicroTaskRunnable>>& GetMicroTaskQueue();
-  std::queue<RefPtr<MicroTaskRunnable>>& GetDebuggerMicroTaskQueue();
+  std::queue<nsCOMPtr<nsIRunnable>>& GetPromiseMicroTaskQueue();
+  std::queue<nsCOMPtr<nsIRunnable>>& GetDebuggerPromiseMicroTaskQueue();
 
   JSContext* Context() const
   {
@@ -154,18 +157,45 @@ public:
     return JS::RootingContext::get(mJSContext);
   }
 
-  void SetTargetedMicroTaskRecursionDepth(uint32_t aDepth)
+  bool MicroTaskCheckpointDisabled() const
   {
-    mTargetedMicroTaskRecursionDepth = aDepth;
+    return mDisableMicroTaskCheckpoint;
   }
+
+  void DisableMicroTaskCheckpoint(bool aDisable)
+  {
+    mDisableMicroTaskCheckpoint = aDisable;
+  }
+
+  class MOZ_RAII AutoDisableMicroTaskCheckpoint
+  {
+    public:
+    AutoDisableMicroTaskCheckpoint()
+    : mCCJSCX(CycleCollectedJSContext::Get())
+    {
+      mOldValue = mCCJSCX->MicroTaskCheckpointDisabled();
+      mCCJSCX->DisableMicroTaskCheckpoint(true);
+    }
+
+    ~AutoDisableMicroTaskCheckpoint()
+    {
+      mCCJSCX->DisableMicroTaskCheckpoint(mOldValue);
+    }
+
+    CycleCollectedJSContext* mCCJSCX;
+    bool mOldValue;
+  };
 
 protected:
   JSContext* MaybeContext() const { return mJSContext; }
 
 public:
   
-  virtual void BeforeProcessTask(bool aMightBlock);
+  virtual void BeforeProcessTask(bool aMightBlock) { };
   virtual void AfterProcessTask(uint32_t aRecursionDepth);
+
+  
+  void AfterProcessMicrotask();
 
   
   void IsIdleGCTaskNeeded();
@@ -174,15 +204,16 @@ public:
 
   
   void RunInStableState(already_AddRefed<nsIRunnable>&& aRunnable);
-
-  void AddPendingIDBTransaction(already_AddRefed<nsIRunnable>&& aTransaction);
+  
+  
+  void RunInMetastableState(already_AddRefed<nsIRunnable>&& aRunnable);
 
   
   
   static CycleCollectedJSContext* Get();
 
   
-  virtual void DispatchToMicroTask(already_AddRefed<MicroTaskRunnable> aRunnable);
+  virtual void DispatchToMicroTask(already_AddRefed<nsIRunnable> aRunnable);
 
   
   
@@ -213,9 +244,9 @@ public:
     mMicroTaskLevel = aLevel;
   }
 
-  bool PerformMicroTaskCheckPoint();
+  void PerformMicroTaskCheckPoint();
 
-  void PerformDebuggerMicroTaskCheckpoint();
+  void DispatchMicroTaskRunnable(already_AddRefed<MicroTaskRunnable> aRunnable);
 
   bool IsInStableOrMetaStableState()
   {
@@ -250,25 +281,21 @@ private:
   nsCOMPtr<dom::Exception> mPendingException;
   nsThread* mOwningThread; 
 
-  struct PendingIDBTransactionData
+  struct RunInMetastableStateData
   {
-    nsCOMPtr<nsIRunnable> mTransaction;
+    nsCOMPtr<nsIRunnable> mRunnable;
     uint32_t mRecursionDepth;
   };
 
   nsTArray<nsCOMPtr<nsIRunnable>> mStableStateEvents;
-  nsTArray<PendingIDBTransactionData> mPendingIDBTransactions;
+  nsTArray<RunInMetastableStateData> mMetastableStateEvents;
   uint32_t mBaseRecursionDepth;
   bool mDoingStableStates;
 
-  
-  
-  uint32_t mTargetedMicroTaskRecursionDepth;
+  bool mDisableMicroTaskCheckpoint;
 
   uint32_t mMicroTaskLevel;
-
   std::queue<RefPtr<MicroTaskRunnable>> mPendingMicroTaskRunnables;
-  std::queue<RefPtr<MicroTaskRunnable>> mDebuggerMicroTaskQueue;
 
   uint32_t mMicroTaskRecursionDepth;
 };
