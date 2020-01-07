@@ -18,8 +18,11 @@ struct StylesheetSetEntry<S>
 where
     S: StylesheetInDocument + PartialEq + 'static,
 {
+    
     sheet: S,
-    dirty: bool,
+
+    
+    committed: bool,
 }
 
 impl<S> StylesheetSetEntry<S>
@@ -27,7 +30,7 @@ where
     S: StylesheetInDocument + PartialEq + 'static,
 {
     fn new(sheet: S) -> Self {
-        Self { sheet, dirty: true }
+        Self { sheet, committed: false }
     }
 }
 
@@ -239,8 +242,8 @@ where
         loop {
             let potential_sheet = self.iter.next()?;
 
-            let dirty = mem::replace(&mut potential_sheet.dirty, false);
-            if dirty {
+            let committed = mem::replace(&mut potential_sheet.committed, true);
+            if !committed {
                 
                 return Some((&potential_sheet.sheet, SheetRebuildKind::Full))
             }
@@ -303,18 +306,22 @@ where
     }
 
     fn remove(&mut self, sheet: &S) {
-        let old_len = self.entries.len();
-        self.entries.retain(|entry| entry.sheet != *sheet);
-        if cfg!(feature = "servo") {
+        let index = self.entries.iter().position(|entry| {
+            entry.sheet == *sheet
+        });
+        if cfg!(feature = "gecko") && index.is_none() {
             
-            
-            
-            
-            debug_assert!(self.entries.len() != old_len, "Sheet not found?");
+            return;
         }
+        let sheet = self.entries.remove(index.unwrap());
         
         
-        self.set_data_validity_at_least(OriginValidity::FullyInvalid);
+        
+        
+        
+        if sheet.committed {
+            self.set_data_validity_at_least(OriginValidity::FullyInvalid);
+        }
     }
 
     fn contains(&self, sheet: &S) -> bool {
