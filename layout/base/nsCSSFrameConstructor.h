@@ -2119,17 +2119,6 @@ private:
   void CountersDirty();
 
   
-
-
-
-
-
-  void SetAsUndisplayedContent(nsFrameConstructorState& aState,
-                               FrameConstructionItemList& aList,
-                               nsIContent* aContent,
-                               ComputedStyle* aComputedStyle,
-                               bool aIsGeneratedContent);
-  
   void ConstructAnonymousContentForCanvas(nsFrameConstructorState& aState,
                                           nsIFrame* aFrame,
                                           nsIContent* aDocElement);
