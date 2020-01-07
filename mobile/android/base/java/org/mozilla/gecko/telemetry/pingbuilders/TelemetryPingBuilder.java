@@ -31,6 +31,9 @@ abstract class TelemetryPingBuilder {
     
     public static final int UNIFIED_TELEMETRY_VERSION = 4;
 
+    
+    public static final String OS_NAME = "Android";
+
     private final String serverPath;
     protected final ExtendedJSONObject payload;
     protected final String docID;
