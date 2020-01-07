@@ -31,30 +31,6 @@ var ForgetAboutSite = {
       throw new Error("Exception thrown while clearing Encrypted Media Extensions: " + ex);
     }));
 
-    
-    promises.push((async function() {
-      let sss = Cc["@mozilla.org/ssservice;1"].
-                getService(Ci.nsISiteSecurityService);
-      for (let type of [Ci.nsISiteSecurityService.HEADER_HSTS,
-                        Ci.nsISiteSecurityService.HEADER_HPKP]) {
-        
-        
-        let enumerator = sss.enumerate(type);
-        while (enumerator.hasMoreElements()) {
-          let entry = enumerator.getNext();
-          let hostname = entry.QueryInterface(Ci.nsISiteSecurityState).hostname;
-          
-          if (hostname == aDomain || hostname.endsWith("." + aDomain)) {
-            
-            let uri = NetUtil.newURI("https://" + hostname);
-            sss.removeState(type, uri, 0, entry.originAttributes);
-          }
-        }
-      }
-    })().catch(ex => {
-      throw new Error("Exception thrown while clearing HSTS/HPKP: " + ex);
-    }));
-
     let ErrorCount = 0;
     for (let promise of promises) {
       try {
