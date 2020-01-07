@@ -179,6 +179,12 @@ add_task(async function testSidebarDOMNodeHighlighting() {
 
   
   
+  await ContentTaskUtils.waitForCondition(
+    () => sidebarPanelContent.querySelectorAll(".object-inspector .tree-node").length > 1
+  );
+
+  
+  
   assertObjectInspector(sidebarPanelContent, {
     expectedDOMNodes: 1,
     expectedOpenInspectors: 1,
