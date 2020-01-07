@@ -34,6 +34,7 @@ class EventMessageAutoOverride;
 
 
 class ExtendableEvent;
+class TimeEvent;
 class WantsPopupControlCheck;
 #define GENERATED_EVENT(EventClass_) class EventClass_;
 #include "mozilla/dom/GeneratedEventList.h"
@@ -108,6 +109,8 @@ public:
   {
     return nullptr;
   }
+
+  virtual TimeEvent* AsTimeEvent() { return nullptr; }
 
   
   NS_DECL_NSIDOMEVENT
