@@ -8,7 +8,7 @@ use script_traits::UntrustedNodeAddress;
 use servo_arc::Arc;
 use style::properties::ComputedValues;
 use style::properties::longhands::overflow_x;
-use webrender_api::ClipId;
+use webrender_api::ExternalScrollId;
 
 
 
@@ -28,7 +28,7 @@ pub trait LayoutRPC {
     
     fn node_scroll_area(&self) -> NodeGeometryResponse;
     
-    fn node_scroll_root_id(&self) -> NodeScrollRootIdResponse;
+    fn node_scroll_id(&self) -> NodeScrollIdResponse;
     
     fn resolved_style(&self) -> ResolvedStyleResponse;
     fn offset_parent(&self) -> OffsetParentResponse;
@@ -51,7 +51,7 @@ pub struct NodeGeometryResponse {
 
 pub struct NodeOverflowResponse(pub Option<Point2D<overflow_x::computed_value::T>>);
 
-pub struct NodeScrollRootIdResponse(pub ClipId);
+pub struct NodeScrollIdResponse(pub ExternalScrollId);
 
 pub struct ResolvedStyleResponse(pub String);
 

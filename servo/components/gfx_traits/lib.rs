@@ -74,20 +74,17 @@ pub enum FragmentType {
 
 
 
-
-static NEXT_SPECIAL_STACKING_CONTEXT_ID: AtomicUsize = ATOMIC_USIZE_INIT;
-
+static NEXT_SPECIAL_SCROLL_ROOT_ID: AtomicUsize = ATOMIC_USIZE_INIT;
 
 
 
-
-const SPECIAL_STACKING_CONTEXT_ID_MASK: usize = 0xffff;
+const SPECIAL_SCROLL_ROOT_ID_MASK: usize = 0xffff;
 
 
 fn next_special_id() -> usize {
     
-    ((NEXT_SPECIAL_STACKING_CONTEXT_ID.fetch_add(1, Ordering::SeqCst) + 1) << 2) &
-        SPECIAL_STACKING_CONTEXT_ID_MASK
+    ((NEXT_SPECIAL_SCROLL_ROOT_ID.fetch_add(1, Ordering::SeqCst) + 1) << 2) &
+        SPECIAL_SCROLL_ROOT_ID_MASK
 }
 
 pub fn combine_id_with_fragment_type(id: usize, fragment_type: FragmentType) ->  usize {
@@ -99,8 +96,8 @@ pub fn combine_id_with_fragment_type(id: usize, fragment_type: FragmentType) -> 
     }
 }
 
-pub fn node_id_from_clip_id(id: usize) -> Option<usize> {
-    if (id & !SPECIAL_STACKING_CONTEXT_ID_MASK) != 0 {
+pub fn node_id_from_scroll_id(id: usize) -> Option<usize> {
+    if (id & !SPECIAL_SCROLL_ROOT_ID_MASK) != 0 {
         return Some((id & !3) as usize);
     }
     None
