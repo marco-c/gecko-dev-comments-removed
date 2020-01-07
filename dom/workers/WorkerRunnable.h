@@ -414,7 +414,7 @@ public:
   
   
   
-  void Dispatch(workers::Status aFailStatus, ErrorResult& aRv);
+  void Dispatch(WorkerStatus aFailStatus, ErrorResult& aRv);
 
 private:
   NS_IMETHOD Run() override;
@@ -455,7 +455,7 @@ private:
 
 protected:
   workers::WorkerPrivate* mWorkerPrivate;
-  UniquePtr<workers::WorkerHolder> mWorkerHolder;
+  UniquePtr<WorkerHolder> mWorkerHolder;
 };
 
 

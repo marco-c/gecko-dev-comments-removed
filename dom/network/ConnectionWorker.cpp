@@ -36,7 +36,7 @@ public:
   void Notify(const hal::NetworkInformation& aNetworkInfo) override;
 
   
-  virtual bool Notify(Status aStatus) override
+  virtual bool Notify(WorkerStatus aStatus) override
   {
     Shutdown();
     return true;

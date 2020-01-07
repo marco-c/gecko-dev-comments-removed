@@ -315,7 +315,7 @@ public:
   }
 
   bool
-  Notify(Status aStatus) override
+  Notify(WorkerStatus aStatus) override
   {
     MOZ_ASSERT(mWorkerPrivate);
     mWorkerPrivate->AssertIsOnWorkerThread();
@@ -732,7 +732,7 @@ public:
   }
 
   bool
-  Notify(Status aStatus) override
+  Notify(WorkerStatus aStatus) override
   {
     if (aStatus < Terminating) {
       return true;
@@ -1152,7 +1152,7 @@ class AllowWindowInteractionHandler final : public ExtendableEventCallback
 
   
   bool
-  Notify(Status aStatus) override
+  Notify(WorkerStatus aStatus) override
   {
     
     

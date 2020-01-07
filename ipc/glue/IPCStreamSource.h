@@ -8,8 +8,8 @@
 #define mozilla_ipc_IPCStreamSource_h
 
 #include "mozilla/AlreadyAddRefed.h"
+#include "mozilla/dom/WorkerHolder.h"
 #include "mozilla/dom/WorkerPrivate.h"
-#include "mozilla/dom/workers/bindings/WorkerHolder.h"
 
 class nsIAsyncInputStream;
 
@@ -54,7 +54,7 @@ class PBackgroundParent;
 
 
 
-class IPCStreamSource : public dom::workers::WorkerHolder
+class IPCStreamSource : public dom::WorkerHolder
 {
 public:
   
@@ -123,7 +123,7 @@ private:
 
   
   virtual bool
-  Notify(dom::workers::Status aStatus) override;
+  Notify(dom::WorkerStatus aStatus) override;
 
   void DoRead();
 

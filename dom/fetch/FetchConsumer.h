@@ -19,10 +19,10 @@ namespace mozilla {
 namespace dom {
 
 class Promise;
+class WorkerHolder;
 
 namespace workers {
 class WorkerPrivate;
-class WorkerHolder;
 }
 
 template <class Derived> class FetchBody;
@@ -112,7 +112,7 @@ private:
   
   
   
-  UniquePtr<workers::WorkerHolder> mWorkerHolder;
+  UniquePtr<WorkerHolder> mWorkerHolder;
 
   nsCOMPtr<nsIGlobalObject> mGlobal;
 
