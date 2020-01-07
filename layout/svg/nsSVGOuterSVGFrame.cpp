@@ -783,11 +783,10 @@ nsSVGOuterSVGFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
        NS_SVGDisplayListHitTestingEnabled()) ||
       (!aBuilder->IsForEventDelivery() &&
        NS_SVGDisplayListPaintingEnabled())) {
-    nsDisplayList newList;
-    nsDisplayListSet set(&newList, &newList, &newList,
-                         &newList, &newList, &newList);
+    nsDisplayList* contentList = aLists.Content();
+    nsDisplayListSet set(contentList, contentList, contentList,
+                         contentList, contentList, contentList);
     BuildDisplayListForNonBlockChildren(aBuilder, set);
-    aLists.Content()->AppendToTop(MakeDisplayItem<nsDisplaySVGWrapper>(aBuilder, this, &newList));
   } else if (IsVisibleForPainting(aBuilder) || !aBuilder->IsForPainting()) {
     aLists.Content()->AppendToTop(
       MakeDisplayItem<nsDisplayOuterSVG>(aBuilder, this));
@@ -1001,6 +1000,24 @@ nsSVGOuterSVGAnonChildFrame::Init(nsIContent*       aContent,
   nsSVGDisplayContainerFrame::Init(aContent, aParent, aPrevInFlow);
 }
 #endif
+
+void
+nsSVGOuterSVGAnonChildFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
+                                              const nsDisplayListSet& aLists)
+{
+  
+  
+  
+  
+  
+  
+  
+  nsDisplayList newList;
+  nsDisplayListSet set(&newList, &newList, &newList,
+                       &newList, &newList, &newList);
+  BuildDisplayListForNonBlockChildren(aBuilder, set);
+  aLists.Content()->AppendToTop(MakeDisplayItem<nsDisplaySVGWrapper>(aBuilder, this, &newList));
+}
 
 static Matrix
 ComputeOuterSVGAnonChildFrameTransform(const nsSVGOuterSVGAnonChildFrame* aFrame)
