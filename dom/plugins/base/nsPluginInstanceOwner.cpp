@@ -892,11 +892,37 @@ nsPluginInstanceOwner::RequestCommitOrCancel(bool aCommitted)
     }
   }
 
-  if (aCommitted) {
-    widget->NotifyIME(widget::REQUEST_TO_COMMIT_COMPOSITION);
-  } else {
-    widget->NotifyIME(widget::REQUEST_TO_CANCEL_COMPOSITION);
+  
+  
+  
+  RefPtr<TextComposition> composition =
+    IMEStateManager::GetTextCompositionFor(widget);
+  if (!composition) {
+    
+    
+    
+    return true;
   }
+
+  nsCOMPtr<nsIContent> content = do_QueryReferent(mContent);
+  if (content != composition->GetEventTargetNode()) {
+    
+    
+    
+    
+    return true;
+  }
+
+  
+  
+  
+  
+  IMEStateManager::NotifyIME(aCommitted ?
+                                widget::REQUEST_TO_COMMIT_COMPOSITION :
+                                widget::REQUEST_TO_CANCEL_COMPOSITION,
+                             widget, composition->GetTabParent());
+  
+  
   return true;
 }
 
