@@ -326,13 +326,7 @@ pref("devtools.webconsole.autoMultiline", true);
 
 
 pref("devtools.webconsole.new-frontend-enabled", true);
-
-
-#if defined(NIGHTLY_BUILD)
 pref("devtools.browserconsole.new-frontend-enabled", true);
-#else
-pref("devtools.browserconsole.new-frontend-enabled", false);
-#endif
 
 
 pref("devtools.webconsole.sidebarToggle", false);
