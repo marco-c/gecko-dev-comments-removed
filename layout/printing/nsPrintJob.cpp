@@ -211,23 +211,6 @@ NS_IMPL_ISUPPORTS(nsPrintJob, nsIWebProgressListener,
                   nsISupportsWeakReference, nsIObserver)
 
 
-
-
-nsPrintJob::nsPrintJob()
-  : mIsCreatingPrintPreview(false)
-  , mIsDoingPrinting(false)
-  , mIsDoingPrintPreview(false)
-  , mProgressDialogIsShown(false)
-  , mScreenDPI(115.0f)
-  , mPagePrintTimer(nullptr)
-  , mLoadCounter(0)
-  , mDidLoadDataForPrinting(false)
-  , mIsDestroying(false)
-  , mDisallowSelectionPrint(false)
-{
-}
-
-
 nsPrintJob::~nsPrintJob()
 {
   Destroy(); 
@@ -406,7 +389,7 @@ nsPrintJob::CommonPrint(bool                    aIsPrintPreview,
                               aWebProgressListener, aDoc);
   if (NS_FAILED(rv)) {
     if (aIsPrintPreview) {
-      SetIsCreatingPrintPreview(false);
+      mIsCreatingPrintPreview = false;
       SetIsPrintPreview(false);
     } else {
       SetIsPrinting(false);
@@ -463,7 +446,7 @@ nsPrintJob::DoCommonPrint(bool                    aIsPrintPreview,
   printData->mPrintSettings->GetShrinkToFit(&printData->mShrinkToFit);
 
   if (aIsPrintPreview) {
-    SetIsCreatingPrintPreview(true);
+    mIsCreatingPrintPreview = true;
     SetIsPrintPreview(true);
     nsCOMPtr<nsIContentViewer> viewer =
       do_QueryInterface(mDocViewerPrint);
@@ -548,7 +531,7 @@ nsPrintJob::DoCommonPrint(bool                    aIsPrintPreview,
   
   
   
-  if (mIsDestroying || (aIsPrintPreview && !GetIsCreatingPrintPreview())) {
+  if (mIsDestroying || (aIsPrintPreview && !mIsCreatingPrintPreview)) {
     return NS_ERROR_FAILURE;
   }
 
@@ -1544,7 +1527,7 @@ nsPrintJob::CleanupOnFailure(nsresult aResult, bool aIsPrinting)
     SetIsPrinting(false);
   } else {
     SetIsPrintPreview(false);
-    SetIsCreatingPrintPreview(false);
+    mIsCreatingPrintPreview = false;
   }
 
   
@@ -3454,7 +3437,7 @@ nsPrintJob::FinishPrintPreview()
   
   
   
-  SetIsCreatingPrintPreview(false);
+  mIsCreatingPrintPreview = false;
 
   
   
