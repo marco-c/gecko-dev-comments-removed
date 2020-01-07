@@ -555,8 +555,6 @@ public:
 
   typedef void (*DisplayItemDataCallback)(nsIFrame *aFrame, DisplayItemData* aItem);
 
-  static void IterateRetainedDataFor(nsIFrame* aFrame, DisplayItemDataCallback aCallback);
-
   
 
 

@@ -531,7 +531,7 @@ WebRenderCommandBuilder::GenerateFallbackData(nsDisplayItem* aItem,
   LayoutDeviceIntPoint offset = RoundedToInt(bounds.TopLeft());
   aImageRect = LayoutDeviceRect(offset, LayoutDeviceSize(RoundedToInt(bounds.Size())));
   LayerRect paintRect = LayerRect(LayerPoint(0, 0), LayerSize(paintSize));
-  nsAutoPtr<nsDisplayItemGeometry> geometry = fallbackData->GetGeometry();
+  nsDisplayItemGeometry* geometry = fallbackData->GetGeometry();
 
   
   
@@ -561,6 +561,10 @@ WebRenderCommandBuilder::GenerateFallbackData(nsDisplayItem* aItem,
   }
 
   if (needPaint || !fallbackData->GetKey()) {
+    nsAutoPtr<nsDisplayItemGeometry> newGeometry;
+    newGeometry = aItem->AllocateGeometry(aDisplayListBuilder);
+    fallbackData->SetGeometry(Move(newGeometry));
+
     gfx::SurfaceFormat format = aItem->GetType() == DisplayItemType::TYPE_MASK ?
                                                       gfx::SurfaceFormat::A8 : gfx::SurfaceFormat::B8G8R8A8;
     if (useBlobImage) {
@@ -645,13 +649,11 @@ WebRenderCommandBuilder::GenerateFallbackData(nsDisplayItem* aItem,
       }
     }
 
-    geometry = aItem->AllocateGeometry(aDisplayListBuilder);
     fallbackData->SetScale(scale);
     fallbackData->SetInvalid(false);
   }
 
   
-  fallbackData->SetGeometry(Move(geometry));
   fallbackData->SetBounds(paintBounds);
 
   MOZ_ASSERT(fallbackData->GetKey());
