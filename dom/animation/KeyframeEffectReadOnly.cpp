@@ -1023,7 +1023,7 @@ KeyframeEffectReadOnly::GetKeyframes(JSContext*& aCx,
   
   
   
-  RefPtr<ComputedStyle> computedStyle;
+  RefPtr<ComputedStyle> styleContext;
   if (isServo && isCSSAnimation) {
     
     
@@ -1033,7 +1033,7 @@ KeyframeEffectReadOnly::GetKeyframes(JSContext*& aCx,
     
     
     
-    computedStyle = GetTargetComputedStyle();
+    styleContext = GetTargetComputedStyle();
   }
 
   for (const Keyframe& keyframe : mKeyframes) {
@@ -1086,7 +1086,7 @@ KeyframeEffectReadOnly::GetKeyframes(JSContext*& aCx,
         }
         if (propertyValue.mServoDeclarationBlock) {
           const ComputedStyle* servoComputedStyle =
-            computedStyle ? computedStyle->AsServo() : nullptr;
+            styleContext ? styleContext->AsServo() : nullptr;
           Servo_DeclarationBlock_SerializeOneValue(
             propertyValue.mServoDeclarationBlock,
             propertyValue.mProperty,

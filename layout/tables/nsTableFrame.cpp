@@ -734,16 +734,19 @@ nsTableFrame::AppendAnonymousColFrames(nsTableColGroupFrame* aColGroupFrame,
   int32_t lastIndex  = startIndex + aNumColsToAdd - 1;
 
   for (int32_t childX = startIndex; childX <= lastIndex; childX++) {
+    nsIContent* iContent;
+    RefPtr<ComputedStyle> styleContext;
+
     
     
-    nsIContent* iContent = aColGroupFrame->GetContent();
-    RefPtr<ComputedStyle> computedStyle = shell->StyleSet()->
+    iContent = aColGroupFrame->GetContent();
+    styleContext = shell->StyleSet()->
       ResolveNonInheritingAnonymousBoxStyle(nsCSSAnonBoxes::tableCol);
     
     NS_ASSERTION(iContent, "null content in CreateAnonymousColFrames");
 
     
-    nsIFrame* colFrame = NS_NewTableColFrame(shell, computedStyle);
+    nsIFrame* colFrame = NS_NewTableColFrame(shell, styleContext);
     ((nsTableColFrame *) colFrame)->SetColType(aColType);
     colFrame->Init(iContent, aColGroupFrame, nullptr);
 

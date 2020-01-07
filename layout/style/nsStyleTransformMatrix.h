@@ -23,6 +23,9 @@ class nsIFrame;
 class nsPresContext;
 struct gfxQuaternion;
 struct nsRect;
+namespace mozilla {
+class RuleNodeCacheConditions;
+} 
 
 
 

@@ -1945,7 +1945,7 @@ void nsDisplayMathMLCharDebug::Paint(nsDisplayListBuilder* aBuilder,
   
   Sides skipSides;
   nsPresContext* presContext = mFrame->PresContext();
-  ComputedStyle* computedStyle = mFrame->Style();
+  ComputedStyle* styleContext = mFrame->Style();
   nsRect rect = mRect + ToReferenceFrame();
 
   PaintBorderFlags flags = aBuilder->ShouldSyncDecodeImages()
@@ -1956,10 +1956,10 @@ void nsDisplayMathMLCharDebug::Paint(nsDisplayListBuilder* aBuilder,
   
   Unused <<
     nsCSSRendering::PaintBorder(presContext, *aCtx, mFrame, mVisibleRect,
-                                rect, computedStyle, flags, skipSides);
+                                rect, styleContext, flags, skipSides);
 
   nsCSSRendering::PaintOutline(presContext, *aCtx, mFrame,
-                               mVisibleRect, rect, computedStyle);
+                               mVisibleRect, rect, styleContext);
 }
 #endif
 
@@ -1971,16 +1971,16 @@ nsMathMLChar::Display(nsDisplayListBuilder*   aBuilder,
                       uint32_t                aIndex,
                       const nsRect*           aSelectedRect)
 {
-  bool usingParentStyle = false;
-  ComputedStyle* computedStyle = mComputedStyle;
+  ComputedStyle* parentContext = aForFrame->Style();
+  ComputedStyle* styleContext = mComputedStyle;
 
   if (mDraw == DRAW_NORMAL) {
     
     
-    computedStyle = aForFrame->Style();
+    styleContext = parentContext;
   }
 
-  if (!computedStyle->StyleVisibility()->IsVisible())
+  if (!styleContext->StyleVisibility()->IsVisible())
     return;
 
   
@@ -1992,12 +1992,12 @@ nsMathMLChar::Display(nsDisplayListBuilder*   aBuilder,
       MakeDisplayItem<nsDisplayMathMLSelectionRect>(aBuilder, aForFrame, *aSelectedRect));
   }
   else if (mRect.width && mRect.height) {
-    if (!usingParentStyle &&
-        NS_GET_A(computedStyle->StyleBackground()->
-                 BackgroundColor(computedStyle)) > 0) {
+    if (styleContext != parentContext &&
+        NS_GET_A(styleContext->StyleBackground()->
+                 BackgroundColor(styleContext)) > 0) {
       nsDisplayBackgroundImage::AppendBackgroundItemsToTop(
         aBuilder, aForFrame, mRect, aLists.BorderBackground(),
-         true, computedStyle);
+         true, styleContext);
     }
     
     
@@ -2049,17 +2049,18 @@ nsMathMLChar::PaintForeground(nsIFrame* aForFrame,
                               nsPoint aPt,
                               bool aIsSelected)
 {
-  ComputedStyle* computedStyle = mComputedStyle;
+  ComputedStyle* parentContext = aForFrame->Style();
+  ComputedStyle* styleContext = mComputedStyle;
   nsPresContext* presContext = aForFrame->PresContext();
 
   if (mDraw == DRAW_NORMAL) {
     
     
-    computedStyle = aForFrame->Style();
+    styleContext = parentContext;
   }
 
   
-  nscolor fgColor = computedStyle->
+  nscolor fgColor = styleContext->
     GetVisitedDependentColor(&nsStyleText::mWebkitTextFillColor);
   if (aIsSelected) {
     
