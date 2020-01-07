@@ -113,14 +113,6 @@ PlaceholderTransaction::Merge(nsITransaction* aTransaction,
   }
 
   
-  
-  
-  
-
-  nsCOMPtr<nsPIEditorTransaction> pTxn = do_QueryInterface(aTransaction);
-  NS_ENSURE_TRUE(pTxn, NS_OK); 
-
-  
   EditTransactionBase* editTransactionBase = (EditTransactionBase*)aTransaction;
   
   nsCOMPtr<nsIAbsorbingTransaction> absorbingTransaction =
@@ -186,20 +178,6 @@ PlaceholderTransaction::Merge(nsITransaction* aTransaction,
       }
     }
   }
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-PlaceholderTransaction::GetTxnDescription(nsAString& aString)
-{
-  aString.AssignLiteral("PlaceholderTransaction: ");
-
-  if (mName) {
-    nsAutoString name;
-    mName->ToString(name);
-    aString += name;
-  }
-
   return NS_OK;
 }
 
