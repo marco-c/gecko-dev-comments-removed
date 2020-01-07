@@ -4112,6 +4112,10 @@ Preferences::InitInitialObjects(bool aIsStartup)
 {
   
   
+  StaticPrefs::InitAll(aIsStartup);
+
+  
+  
   
   
   
@@ -4271,11 +4275,6 @@ Preferences::InitInitialObjects(bool aIsStartup)
       pref_LoadPrefsInDir(path, nullptr, 0);
     }
   }
-
-  
-  
-  
-  StaticPrefs::InitAll(aIsStartup);
 
   if (XRE_IsParentProcess()) {
     SetupTelemetryPref();
@@ -5003,25 +5002,12 @@ Preferences::AddFloatVarCache(float* aCache,
 #undef PREF
 #undef VARCACHE_PREF
 
-static void
-CheckForDoubleDefinition(const char* aName, bool aIsStartup)
-{
-#ifdef DEBUG
-  
-  
-  if (aIsStartup && Preferences::GetType(aName) != Preferences::PREF_INVALID) {
-    NS_ERROR(nsPrintfCString("'%s' already registered\n", aName).get());
-  }
-#endif
-}
-
 
 
 
 static void
-SetPref_bool(const char* aName, bool aDefaultValue, bool aIsStartup)
+SetPref_bool(const char* aName, bool aDefaultValue)
 {
-  CheckForDoubleDefinition(aName, aIsStartup);
   PrefValue value;
   value.mBoolVal = aDefaultValue;
   pref_SetPref(aName,
@@ -5034,9 +5020,8 @@ SetPref_bool(const char* aName, bool aDefaultValue, bool aIsStartup)
 }
 
 static void
-SetPref_int32_t(const char* aName, int32_t aDefaultValue, bool aIsStartup)
+SetPref_int32_t(const char* aName, int32_t aDefaultValue)
 {
-  CheckForDoubleDefinition(aName, aIsStartup);
   PrefValue value;
   value.mIntVal = aDefaultValue;
   pref_SetPref(aName,
@@ -5049,9 +5034,8 @@ SetPref_int32_t(const char* aName, int32_t aDefaultValue, bool aIsStartup)
 }
 
 static void
-SetPref_float(const char* aName, float aDefaultValue, bool aIsStartup)
+SetPref_float(const char* aName, float aDefaultValue)
 {
-  CheckForDoubleDefinition(aName, aIsStartup);
   PrefValue value;
   nsPrintfCString defaultValue("%f", aDefaultValue);
   value.mStringVal = defaultValue.get();
@@ -5066,9 +5050,8 @@ SetPref_float(const char* aName, float aDefaultValue, bool aIsStartup)
 
 
 MOZ_MAYBE_UNUSED static void
-SetPref_String(const char* aName, const char* aDefaultValue, bool aIsStartup)
+SetPref_String(const char* aName, const char* aDefaultValue)
 {
-  CheckForDoubleDefinition(aName, aIsStartup);
   PrefValue value;
   value.mStringVal = aDefaultValue;
   pref_SetPref(aName,
@@ -5086,7 +5069,7 @@ InitVarCachePref(const char* aName,
                  bool aDefaultValue,
                  bool aIsStartup)
 {
-  SetPref_bool(aName, aDefaultValue, aIsStartup);
+  SetPref_bool(aName, aDefaultValue);
   *aCache = aDefaultValue;
   if (aIsStartup) {
     Preferences::AddBoolVarCache(aCache, aName, aDefaultValue, true);
@@ -5100,7 +5083,7 @@ InitVarCachePref(const char* aName,
                  bool aDefaultValue,
                  bool aIsStartup)
 {
-  SetPref_bool(aName, aDefaultValue, aIsStartup);
+  SetPref_bool(aName, aDefaultValue);
   *aCache = aDefaultValue;
   if (aIsStartup) {
     Preferences::AddAtomicBoolVarCache(aCache, aName, aDefaultValue, true);
@@ -5114,7 +5097,7 @@ InitVarCachePref(const char* aName,
                  int32_t aDefaultValue,
                  bool aIsStartup)
 {
-  SetPref_int32_t(aName, aDefaultValue, aIsStartup);
+  SetPref_int32_t(aName, aDefaultValue);
   *aCache = aDefaultValue;
   if (aIsStartup) {
     Preferences::AddIntVarCache(aCache, aName, aDefaultValue, true);
@@ -5128,7 +5111,7 @@ InitVarCachePref(const char* aName,
                  int32_t aDefaultValue,
                  bool aIsStartup)
 {
-  SetPref_int32_t(aName, aDefaultValue, aIsStartup);
+  SetPref_int32_t(aName, aDefaultValue);
   *aCache = aDefaultValue;
   if (aIsStartup) {
     Preferences::AddAtomicIntVarCache(aCache, aName, aDefaultValue, true);
@@ -5141,7 +5124,7 @@ InitVarCachePref(const char* aName,
                  uint32_t aDefaultValue,
                  bool aIsStartup)
 {
-  SetPref_int32_t(aName, static_cast<int32_t>(aDefaultValue), aIsStartup);
+  SetPref_int32_t(aName, static_cast<int32_t>(aDefaultValue));
   *aCache = aDefaultValue;
   if (aIsStartup) {
     Preferences::AddUintVarCache(aCache, aName, aDefaultValue, true);
@@ -5155,7 +5138,7 @@ InitVarCachePref(const char* aName,
                  uint32_t aDefaultValue,
                  bool aIsStartup)
 {
-  SetPref_int32_t(aName, static_cast<int32_t>(aDefaultValue), aIsStartup);
+  SetPref_int32_t(aName, static_cast<int32_t>(aDefaultValue));
   *aCache = aDefaultValue;
   if (aIsStartup) {
     Preferences::AddAtomicUintVarCache(aCache, aName, aDefaultValue, true);
@@ -5169,7 +5152,7 @@ InitVarCachePref(const char* aName,
                  float aDefaultValue,
                  bool aIsStartup)
 {
-  SetPref_float(aName, aDefaultValue, aIsStartup);
+  SetPref_float(aName, aDefaultValue);
   *aCache = aDefaultValue;
   if (aIsStartup) {
     Preferences::AddFloatVarCache(aCache, aName, aDefaultValue, true);
@@ -5194,7 +5177,7 @@ StaticPrefs::InitAll(bool aIsStartup)
 
 
 
-#define PREF(name, cpp_type, value) SetPref_##cpp_type(name, value, aIsStartup);
+#define PREF(name, cpp_type, value) SetPref_##cpp_type(name, value);
 #define VARCACHE_PREF(name, id, cpp_type, value)                               \
   InitVarCachePref(name, &StaticPrefs::sVarCache_##id, value, aIsStartup);
 #include "mozilla/StaticPrefList.h"
