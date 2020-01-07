@@ -1288,12 +1288,6 @@ protected:
                                          const char* aName,
                                          uint32_t aDelay);
 
-  struct TransactionInvalidations {
-    uint64_t mTransactionId;
-    nsTArray<nsRect> mInvalidations;
-  };
-  TransactionInvalidations* GetInvalidations(uint64_t aTransactionId);
-
   
   
   
@@ -1362,6 +1356,10 @@ protected:
 
   mozilla::UniquePtr<nsBidi> mBidiEngine;
 
+  struct TransactionInvalidations {
+    uint64_t mTransactionId;
+    nsTArray<nsRect> mInvalidations;
+  };
   AutoTArray<TransactionInvalidations, 4> mTransactions;
 
   
@@ -1487,6 +1485,8 @@ protected:
   unsigned              mSuppressResizeReflow : 1;
 
   unsigned              mIsVisual : 1;
+
+  unsigned              mFireAfterPaintEvents : 1;
 
   unsigned              mIsChrome : 1;
   unsigned              mIsChromeOriginImage : 1;
