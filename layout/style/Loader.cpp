@@ -1337,8 +1337,7 @@ Loader::LoadSheet(SheetLoadData* aLoadData,
                                                 aLoadData->mLoaderPrincipal,
                                                 securityFlags,
                                                 contentPolicyType);
-    }
-    else {
+    } else {
       
       
       
@@ -1400,8 +1399,7 @@ Loader::LoadSheet(SheetLoadData* aLoadData,
   if (aSheetState == eSheetLoading) {
     mSheets->mLoadingDatas.Get(&key, &existingData);
     NS_ASSERTION(existingData, "CreateSheet lied about the state");
-  }
-  else if (aSheetState == eSheetPending){
+  } else if (aSheetState == eSheetPending) {
     mSheets->mPendingDatas.Get(&key, &existingData);
     NS_ASSERTION(existingData, "CreateSheet lied about the state");
   }
