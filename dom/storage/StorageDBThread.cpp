@@ -333,7 +333,7 @@ StorageDBThread::Shutdown()
 void
 StorageDBThread::SyncPreload(LocalStorageCacheBridge* aCache, bool aForceSync)
 {
-  AUTO_PROFILER_LABEL("StorageDBThread::SyncPreload", OTHER);
+  AUTO_PROFILER_LABEL("StorageDBThread::SyncPreload", STORAGE);
   if (!aForceSync && aCache->LoadedCount()) {
     
     
