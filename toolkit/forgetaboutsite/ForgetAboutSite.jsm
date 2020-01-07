@@ -45,35 +45,14 @@ var ForgetAboutSite = {
     await PlacesUtils.history.removeByFilter({ host: "." + aDomain });
 
     let promises = [];
-    
-    promises.push((async function() {
-      
-      
-      Services.cache2.clear();
-    })().catch(ex => {
-      throw new Error("Exception thrown while clearing the cache: " + ex);
-    }));
 
-    
-    promises.push((async function() {
-      let imageCache = Cc["@mozilla.org/image/tools;1"].
-                       getService(Ci.imgITools).getImgCacheForDocument(null);
-      imageCache.clearCache(false); 
-    })().catch(ex => {
-      throw new Error("Exception thrown while clearing the image cache: " + ex);
-    }));
-
-    
-    
-    promises.push((async function() {
-      let enumerator = Services.cookies.getCookiesWithOriginAttributes(JSON.stringify({}), aDomain);
-      while (enumerator.hasMoreElements()) {
-        let cookie = enumerator.getNext().QueryInterface(Ci.nsICookie);
-        Services.cookies.remove(cookie.host, cookie.name, cookie.path, false, cookie.originAttributes);
-      }
-    })().catch(ex => {
-      throw new Error("Exception thrown while clearning cookies: " + ex);
-    }));
+    ["http://", "https://"].forEach(scheme => {
+      promises.push(new Promise(resolve => {
+        Services.clearData.deleteDataFromHost(aDomain, true ,
+                                              Ci.nsIClearDataService.CLEAR_ALL,
+                                              resolve);
+      }));
+    });
 
     
     promises.push((async function() {
