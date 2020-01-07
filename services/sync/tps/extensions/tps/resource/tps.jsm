@@ -1179,7 +1179,7 @@ var TPS = {
 
 
   async Login(force) {
-    if ((await Authentication.isLoggedIn()) && !force) {
+    if ((await Authentication.isReady()) && !force) {
       return;
     }
 
@@ -1217,8 +1217,10 @@ var TPS = {
     } else {
       Weave.Svc.Prefs.reset("firstSync");
     }
-
-    this.Login(false);
+    if (!await Weave.Service.login()) {
+      
+      await this.Login(false);
+    }
     ++this._syncCount;
 
     this._triggeredSync = true;
