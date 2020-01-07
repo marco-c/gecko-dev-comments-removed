@@ -127,8 +127,8 @@ private:
   MapEntry* Lookup(REFIID aIid);
   HRESULT QueryInterfaceTarget(REFIID aIid, void** aOutput,
                                TimeDuration* aOutDuration = nullptr);
-  HRESULT ThreadSafeQueryInterface(REFIID aIid,
-                                   IUnknown** aOutInterface) override;
+  HRESULT WeakRefQueryInterface(REFIID aIid,
+                                IUnknown** aOutInterface) override;
   HRESULT CreateInterceptor(REFIID aIid, IUnknown* aOuter, IUnknown** aOutput);
   REFIID MarshalAs(REFIID aIid) const;
   HRESULT PublishTarget(detail::LiveSetAutoLock& aLiveSetLock,
@@ -139,9 +139,10 @@ private:
 private:
   InterceptorTargetPtr<IUnknown>  mTarget;
   RefPtr<IInterceptorSink>  mEventSink;
-  mozilla::Mutex            mMutex; 
+  mozilla::Mutex            mInterceptorMapMutex; 
   
   nsTArray<MapEntry>        mInterceptorMap;
+  mozilla::Mutex            mStdMarshalMutex; 
   RefPtr<IUnknown>          mStdMarshalUnk;
   IMarshal*                 mStdMarshal; 
 };
