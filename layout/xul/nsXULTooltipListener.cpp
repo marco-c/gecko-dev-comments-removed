@@ -7,7 +7,6 @@
 #include "nsXULTooltipListener.h"
 
 #include "nsIDOMMouseEvent.h"
-#include "nsIDOMXULDocument.h"
 #include "nsXULElement.h"
 #include "nsIDocument.h"
 #include "nsGkAtoms.h"
@@ -404,9 +403,8 @@ nsXULTooltipListener::ShowTooltip()
     return NS_ERROR_FAILURE; 
 
   
-  nsCOMPtr<nsIDOMXULDocument> xulDoc =
-    do_QueryInterface(tooltipNode->GetComposedDoc());
-  if (xulDoc) {
+  if (tooltipNode->GetComposedDoc() &&
+      tooltipNode->GetComposedDoc()->IsXULDocument()) {
     
     
     if (sourceNode->IsInComposedDoc()) {
