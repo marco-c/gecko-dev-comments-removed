@@ -111,10 +111,9 @@
 #endif
 
 
-#if defined(GP_PLAT_amd64_linux) || \
-    defined(GP_PLAT_x86_linux) || defined(GP_PLAT_x86_android) || \
-    defined(GP_PLAT_mips64_linux) || \
-    defined(GP_PLAT_arm64_linux) || defined(GP_PLAT_arm64_android)
+#if defined(GP_PLAT_amd64_linux) || defined(GP_PLAT_x86_linux) || \
+    defined(GP_PLAT_mips64_linux) || defined(GP_PLAT_arm64_linux) || \
+    defined(GP_PLAT_arm64_android)
 # define HAVE_NATIVE_UNWIND
 # define USE_LUL_STACKWALK
 # include "lul/LulMain.h"
@@ -1560,12 +1559,52 @@ StreamTaskTracer(PSLockRef aLock, SpliceableJSONWriter& aWriter)
 }
 
 static void
+StreamCategories(SpliceableJSONWriter& aWriter)
+{
+  
+  
+  
+  aWriter.Start();
+  aWriter.StringProperty("name", "Idle");
+  aWriter.StringProperty("color", "transparent");
+  aWriter.EndObject();
+  aWriter.Start();
+  aWriter.StringProperty("name", "Other");
+  aWriter.StringProperty("color", "grey");
+  aWriter.EndObject();
+  aWriter.Start();
+  aWriter.StringProperty("name", "Layout");
+  aWriter.StringProperty("color", "purple");
+  aWriter.EndObject();
+  aWriter.Start();
+  aWriter.StringProperty("name", "JavaScript");
+  aWriter.StringProperty("color", "yellow");
+  aWriter.EndObject();
+  aWriter.Start();
+  aWriter.StringProperty("name", "GC / CC");
+  aWriter.StringProperty("color", "orange");
+  aWriter.EndObject();
+  aWriter.Start();
+  aWriter.StringProperty("name", "Network");
+  aWriter.StringProperty("color", "lightblue");
+  aWriter.EndObject();
+  aWriter.Start();
+  aWriter.StringProperty("name", "Graphics");
+  aWriter.StringProperty("color", "green");
+  aWriter.EndObject();
+  aWriter.Start();
+  aWriter.StringProperty("name", "DOM");
+  aWriter.StringProperty("color", "blue");
+  aWriter.EndObject();
+}
+
+static void
 StreamMetaJSCustomObject(PSLockRef aLock, SpliceableJSONWriter& aWriter,
                          bool aIsShuttingDown)
 {
   MOZ_RELEASE_ASSERT(CorePS::Exists() && ActivePS::Exists(aLock));
 
-  aWriter.IntProperty("version", 10);
+  aWriter.IntProperty("version", 11);
 
   
   
@@ -1582,6 +1621,10 @@ StreamMetaJSCustomObject(PSLockRef aLock, SpliceableJSONWriter& aWriter,
   } else {
     aWriter.NullProperty("shutdownTime");
   }
+
+  aWriter.StartArrayProperty("categories");
+  StreamCategories(aWriter);
+  aWriter.EndArray();
 
   if (!NS_IsMainThread()) {
     
