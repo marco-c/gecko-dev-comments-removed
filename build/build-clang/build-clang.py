@@ -517,6 +517,18 @@ if __name__ == "__main__":
         extra_asmflags = []
         extra_ldflags = []
 
+        
+        
+        
+        
+        binutils_flags = ['-B', os.path.dirname(cc)]
+        if cc.endswith('gcc'):
+            extra_cflags += binutils_flags
+        if cxx.endswith('g++'):
+            extra_cxxflags += binutils_flags
+        if asm.endswith('gcc'):
+            extra_asmflags += binutils_flags
+
         if 'LD_LIBRARY_PATH' in os.environ:
             os.environ['LD_LIBRARY_PATH'] = ('%s/lib64/:%s' %
                                              (gcc_dir, os.environ['LD_LIBRARY_PATH']))
