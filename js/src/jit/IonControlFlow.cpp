@@ -1789,9 +1789,9 @@ ControlFlowGenerator::processIfStart(JSOp op)
       {
         
         
-        jsbytecode* trueEnd = pc + GetSrcNoteOffset(sn, 0);
+        MOZ_ASSERT(JSOp(*falseStart) == JSOP_JUMPTARGET);
+        jsbytecode* trueEnd = falseStart - JSOP_GOTO_LENGTH;
         MOZ_ASSERT(trueEnd > pc);
-        MOZ_ASSERT(trueEnd < falseStart);
         MOZ_ASSERT(JSOp(*trueEnd) == JSOP_GOTO);
         MOZ_ASSERT(!GetSrcNote(gsn, script, trueEnd));
 

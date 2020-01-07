@@ -1963,9 +1963,6 @@ class MOZ_STACK_CLASS IfThenElseEmitter
     JumpList jumpsAroundElse_;
 
     
-    unsigned noteIndex_;
-
-    
     
     
     
@@ -2014,7 +2011,6 @@ class MOZ_STACK_CLASS IfThenElseEmitter
   public:
     explicit IfThenElseEmitter(BytecodeEmitter* bce)
       : bce_(bce),
-        noteIndex_(-1),
         thenDepth_(0),
 #ifdef DEBUG
         pushed_(0),
@@ -2037,7 +2033,7 @@ class MOZ_STACK_CLASS IfThenElseEmitter
 
         
         SrcNoteType type = nextState == If ? SRC_IF : nextState == IfElse ? SRC_IF_ELSE : SRC_COND;
-        if (!bce_->newSrcNote(type, &noteIndex_))
+        if (!bce_->newSrcNote(type))
             return false;
         if (!bce_->emitJump(JSOP_IFEQ, &jumpAroundThen_))
             return false;
@@ -2092,17 +2088,6 @@ class MOZ_STACK_CLASS IfThenElseEmitter
         
         if (!bce_->emitJumpTargetAndPatch(jumpAroundThen_))
             return false;
-
-        
-        
-        
-        
-        
-        if (!bce_->setSrcNoteOffset(noteIndex_, 0,
-                                    jumpsAroundElse_.offset - jumpAroundThen_.offset))
-        {
-            return false;
-        }
 
         
         bce_->stackDepth = thenDepth_;
