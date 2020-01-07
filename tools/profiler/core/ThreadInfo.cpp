@@ -68,9 +68,7 @@ void
 ThreadInfo::StopProfiling()
 {
   mResponsiveness.reset();
-  mUniqueStacks.reset();
-  mSavedStreamedSamples = nullptr;
-  mSavedStreamedMarkers = nullptr;
+  mPartialProfile = nullptr;
   mIsBeingProfiled = false;
 }
 
@@ -79,9 +77,17 @@ ThreadInfo::StreamJSON(const ProfileBuffer& aBuffer,
                        SpliceableJSONWriter& aWriter,
                        const TimeStamp& aProcessStartTime, double aSinceTime)
 {
-  
-  if (!mUniqueStacks.isSome()) {
-    mUniqueStacks.emplace(mContext);
+  UniquePtr<PartialThreadProfile> partialProfile = Move(mPartialProfile);
+
+  UniquePtr<UniqueStacks> uniqueStacks = partialProfile
+    ? Move(partialProfile->mUniqueStacks)
+    : MakeUnique<UniqueStacks>(mContext);
+
+  UniquePtr<char[]> partialSamplesJSON;
+  UniquePtr<char[]> partialMarkersJSON;
+  if (partialProfile) {
+    partialSamplesJSON = Move(partialProfile->mSamplesJSON);
+    partialMarkersJSON = Move(partialProfile->mMarkersJSON);
   }
 
   aWriter.Start();
@@ -90,11 +96,9 @@ ThreadInfo::StreamJSON(const ProfileBuffer& aBuffer,
                             aProcessStartTime,
                             mRegisterTime, mUnregisterTime,
                             aSinceTime, mContext,
-                            mSavedStreamedSamples.get(),
-                            mSavedStreamedMarkers.get(),
-                            *mUniqueStacks);
-    mSavedStreamedSamples = nullptr;
-    mSavedStreamedMarkers = nullptr;
+                            Move(partialSamplesJSON),
+                            Move(partialMarkersJSON),
+                            *uniqueStacks);
 
     aWriter.StartObjectProperty("stackTable");
     {
@@ -106,7 +110,7 @@ ThreadInfo::StreamJSON(const ProfileBuffer& aBuffer,
 
       aWriter.StartArrayProperty("data");
       {
-        mUniqueStacks->SpliceStackTableElements(aWriter);
+        uniqueStacks->SpliceStackTableElements(aWriter);
       }
       aWriter.EndArray();
     }
@@ -125,7 +129,7 @@ ThreadInfo::StreamJSON(const ProfileBuffer& aBuffer,
 
       aWriter.StartArrayProperty("data");
       {
-        mUniqueStacks->SpliceFrameTableElements(aWriter);
+        uniqueStacks->SpliceFrameTableElements(aWriter);
       }
       aWriter.EndArray();
     }
@@ -133,13 +137,12 @@ ThreadInfo::StreamJSON(const ProfileBuffer& aBuffer,
 
     aWriter.StartArrayProperty("stringTable");
     {
-      mUniqueStacks->mUniqueStrings.SpliceStringTableElements(aWriter);
+      uniqueStacks->mUniqueStrings.SpliceStringTableElements(aWriter);
     }
     aWriter.EndArray();
   }
-  aWriter.End();
 
-  mUniqueStacks.reset();
+  aWriter.End();
 }
 
 void
@@ -152,8 +155,8 @@ StreamSamplesAndMarkers(const char* aName,
                         const TimeStamp& aUnregisterTime,
                         double aSinceTime,
                         JSContext* aContext,
-                        char* aSavedStreamedSamples,
-                        char* aSavedStreamedMarkers,
+                        UniquePtr<char[]>&& aPartialSamplesJSON,
+                        UniquePtr<char[]>&& aPartialMarkersJSON,
                         UniqueStacks& aUniqueStacks)
 {
   aWriter.StringProperty("processType",
@@ -190,12 +193,12 @@ StreamSamplesAndMarkers(const char* aName,
 
     aWriter.StartArrayProperty("data");
     {
-      if (aSavedStreamedSamples) {
+      if (aPartialSamplesJSON) {
         
         
         
         MOZ_ASSERT(aSinceTime == 0);
-        aWriter.Splice(aSavedStreamedSamples);
+        aWriter.Splice(aPartialSamplesJSON.get());
       }
       aBuffer.StreamSamplesToJSON(aWriter, aThreadId, aSinceTime,
                                   aContext, aUniqueStacks);
@@ -215,9 +218,9 @@ StreamSamplesAndMarkers(const char* aName,
 
     aWriter.StartArrayProperty("data");
     {
-      if (aSavedStreamedMarkers) {
+      if (aPartialMarkersJSON) {
         MOZ_ASSERT(aSinceTime == 0);
-        aWriter.Splice(aSavedStreamedMarkers);
+        aWriter.Splice(aPartialMarkersJSON.get());
       }
       aBuffer.StreamMarkersToJSON(aWriter, aThreadId, aProcessStartTime,
                                   aSinceTime, aUniqueStacks);
@@ -242,15 +245,20 @@ ThreadInfo::FlushSamplesAndMarkers(const TimeStamp& aProcessStartTime,
   
   
   
-  mUniqueStacks.emplace(mContext);
+  UniquePtr<UniqueStacks> uniqueStacks = mPartialProfile
+    ? Move(mPartialProfile->mUniqueStacks)
+    : MakeUnique<UniqueStacks>(mContext);
+
+  UniquePtr<char[]> samplesJSON;
+  UniquePtr<char[]> markersJSON;
 
   {
     SpliceableChunkedJSONWriter b;
     b.StartBareList();
     bool haveSamples = false;
     {
-      if (mSavedStreamedSamples) {
-        b.Splice(mSavedStreamedSamples.get());
+      if (mPartialProfile && mPartialProfile->mSamplesJSON) {
+        b.Splice(mPartialProfile->mSamplesJSON.get());
         haveSamples = true;
       }
 
@@ -259,7 +267,7 @@ ThreadInfo::FlushSamplesAndMarkers(const TimeStamp& aProcessStartTime,
       
       bool streamedNewSamples =
         aBuffer.StreamSamplesToJSON(b, ThreadId(),  0,
-                                    mContext, *mUniqueStacks);
+                                    mContext, *uniqueStacks);
       haveSamples = haveSamples || streamedNewSamples;
     }
     b.EndBareList();
@@ -269,9 +277,7 @@ ThreadInfo::FlushSamplesAndMarkers(const TimeStamp& aProcessStartTime,
     
     
     if (haveSamples) {
-      mSavedStreamedSamples = b.WriteFunc()->CopyData();
-    } else {
-      mSavedStreamedSamples = nullptr;
+      samplesJSON = b.WriteFunc()->CopyData();
     }
   }
 
@@ -280,8 +286,8 @@ ThreadInfo::FlushSamplesAndMarkers(const TimeStamp& aProcessStartTime,
     b.StartBareList();
     bool haveMarkers = false;
     {
-      if (mSavedStreamedMarkers) {
-        b.Splice(mSavedStreamedMarkers.get());
+      if (mPartialProfile && mPartialProfile->mMarkersJSON) {
+        b.Splice(mPartialProfile->mMarkersJSON.get());
         haveMarkers = true;
       }
 
@@ -290,7 +296,7 @@ ThreadInfo::FlushSamplesAndMarkers(const TimeStamp& aProcessStartTime,
       
       bool streamedNewMarkers =
         aBuffer.StreamMarkersToJSON(b, ThreadId(), aProcessStartTime,
-                                     0, *mUniqueStacks);
+                                     0, *uniqueStacks);
       haveMarkers = haveMarkers || streamedNewMarkers;
     }
     b.EndBareList();
@@ -300,11 +306,12 @@ ThreadInfo::FlushSamplesAndMarkers(const TimeStamp& aProcessStartTime,
     
     
     if (haveMarkers) {
-      mSavedStreamedMarkers = b.WriteFunc()->CopyData();
-    } else {
-      mSavedStreamedMarkers = nullptr;
+      markersJSON = b.WriteFunc()->CopyData();
     }
   }
+
+  mPartialProfile = MakeUnique<PartialThreadProfile>(
+    Move(samplesJSON), Move(markersJSON), Move(uniqueStacks));
 
   
   
@@ -318,8 +325,6 @@ ThreadInfo::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
   n += aMallocSizeOf(mName.get());
   n += mRacyInfo->SizeOfIncludingThis(aMallocSizeOf);
 
-  
-  
   
   
   

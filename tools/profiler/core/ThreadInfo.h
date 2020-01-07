@@ -165,6 +165,23 @@ private:
 
 
 
+struct PartialThreadProfile final
+{
+  PartialThreadProfile(mozilla::UniquePtr<char[]>&& aSamplesJSON,
+                       mozilla::UniquePtr<char[]>&& aMarkersJSON,
+                       mozilla::UniquePtr<UniqueStacks>&& aUniqueStacks)
+    : mSamplesJSON(mozilla::Move(aSamplesJSON))
+    , mMarkersJSON(mozilla::Move(aMarkersJSON))
+    , mUniqueStacks(mozilla::Move(aUniqueStacks))
+  {}
+
+  mozilla::UniquePtr<char[]> mSamplesJSON;
+  mozilla::UniquePtr<char[]> mMarkersJSON;
+  mozilla::UniquePtr<UniqueStacks> mUniqueStacks;
+};
+
+
+
 
 
 
@@ -324,9 +341,7 @@ private:
   
   
   
-  mozilla::UniquePtr<char[]> mSavedStreamedSamples;
-  mozilla::UniquePtr<char[]> mSavedStreamedMarkers;
-  mozilla::Maybe<UniqueStacks> mUniqueStacks;
+  UniquePtr<PartialThreadProfile> mPartialProfile;
 
   
   mozilla::Maybe<ThreadResponsiveness> mResponsiveness;
@@ -399,8 +414,8 @@ StreamSamplesAndMarkers(const char* aName, int aThreadId,
                         const TimeStamp& aUnregisterTime,
                         double aSinceTime,
                         JSContext* aContext,
-                        char* aSavedStreamedSamples,
-                        char* aSavedStreamedMarkers,
+                        UniquePtr<char[]>&& aPartialSamplesJSON,
+                        UniquePtr<char[]>&& aPartialMarkersJSON,
                         UniqueStacks& aUniqueStacks);
 
 #endif  
