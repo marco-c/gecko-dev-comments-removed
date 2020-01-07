@@ -2784,11 +2784,12 @@ EditorBase::InsertTextIntoTextNodeImpl(const nsAString& aStringToInsert,
   
   
   if (ShouldHandleIMEComposition() && !aSuppressIME) {
-    
-    mComposition->WillCreateCompositionTransaction(&aTextNode, aOffset);
-    transaction = CreateTxnForComposition(aStringToInsert);
-    mComposition->DidCreateCompositionTransaction(aStringToInsert);
+    transaction =
+      CompositionTransaction::Create(*this, aStringToInsert,
+                                     aTextNode, aOffset);
     isIMETransaction = true;
+    
+    
     
     
     
@@ -4647,20 +4648,6 @@ EditorBase::CreateTxnForDeleteNode(nsINode* aNode)
     return nullptr;
   }
   return deleteNodeTransaction.forget();
-}
-
-already_AddRefed<CompositionTransaction>
-EditorBase::CreateTxnForComposition(const nsAString& aStringToInsert)
-{
-  MOZ_ASSERT(mComposition);
-  MOZ_ASSERT(mComposition->GetContainerTextNode());
-  
-  
-  
-  RefPtr<CompositionTransaction> transaction =
-    new CompositionTransaction(*this, aStringToInsert, *mComposition,
-                               &mRangeUpdater);
-  return transaction.forget();
 }
 
 already_AddRefed<AddStyleSheetTransaction>

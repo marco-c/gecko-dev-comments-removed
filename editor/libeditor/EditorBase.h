@@ -584,12 +584,6 @@ protected:
   
 
 
-  already_AddRefed<mozilla::CompositionTransaction>
-    CreateTxnForComposition(const nsAString& aStringToInsert);
-
-  
-
-
   already_AddRefed<mozilla::AddStyleSheetTransaction>
     CreateTxnForAddStyleSheet(StyleSheet* aSheet);
 

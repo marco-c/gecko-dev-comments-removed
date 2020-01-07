@@ -150,7 +150,8 @@ public:
 
   uint32_t XPLengthInTextNode() const
   {
-    return mCompositionLengthInTextNode;
+    return mCompositionLengthInTextNode == UINT32_MAX ?
+             0 : mCompositionLengthInTextNode;
   }
 
   
@@ -242,8 +243,15 @@ public:
 
 
 
-  void WillCreateCompositionTransaction(Text* aTextNode,
-                                        uint32_t aOffset)
+
+
+
+
+
+
+  void OnCreateCompositionTransaction(const nsAString& aStringToInsert,
+                                      Text* aTextNode,
+                                      uint32_t aOffset)
   {
     if (!mContainerTextNode) {
       mContainerTextNode = aTextNode;
@@ -253,30 +261,10 @@ public:
     }
 #ifdef DEBUG
     else {
-      NS_WARNING_ASSERTION(aTextNode == mContainerTextNode,
-        "The editor tries to insert composition string into different node");
-      NS_WARNING_ASSERTION(aOffset == mCompositionStartOffsetInTextNode,
-        "The editor tries to insert composition string into different offset");
+      MOZ_ASSERT(aTextNode == mContainerTextNode);
+      MOZ_ASSERT(aOffset == mCompositionStartOffsetInTextNode);
     }
 #endif 
-    if (mCompositionLengthInTextNode == UINT32_MAX) {
-      mCompositionLengthInTextNode = 0;
-    }
-  }
-
-  
-
-
-
-
-
-
-
-
-
-  void DidCreateCompositionTransaction(const nsAString& aStringToInsert)
-  {
-    MOZ_ASSERT(mCompositionStartOffsetInTextNode != UINT32_MAX);
     mCompositionLengthInTextNode = aStringToInsert.Length();
     NS_WARNING_ASSERTION(mCompositionLengthInTextNode != UINT32_MAX,
       "The string to insert is really too long.");

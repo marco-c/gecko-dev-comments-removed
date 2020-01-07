@@ -17,7 +17,6 @@
 namespace mozilla {
 
 class EditorBase;
-class RangeUpdater;
 class TextComposition;
 class TextRangeArray;
 
@@ -33,6 +32,12 @@ class Text;
 
 class CompositionTransaction final : public EditTransactionBase
 {
+protected:
+  CompositionTransaction(EditorBase& aEditorBase,
+                         const nsAString& aStringToInsert,
+                         dom::Text& aTextNode,
+                         uint32_t aOffset);
+
 public:
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_IMETEXTTXN_IID)
 
@@ -45,10 +50,16 @@ public:
 
 
 
-  CompositionTransaction(EditorBase& aEditorBase,
-                         const nsAString& aStringToInsert,
-                         const TextComposition& aTextComposition,
-                         RangeUpdater* aRangeUpdater);
+
+
+
+
+
+  static already_AddRefed<CompositionTransaction>
+  Create(EditorBase& aEditorBase,
+         const nsAString& aStringToInsert,
+         dom::Text& aTextNode,
+         uint32_t aOffset);
 
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(CompositionTransaction,
                                            EditTransactionBase)
@@ -88,8 +99,6 @@ private:
 
   
   RefPtr<EditorBase> mEditorBase;
-
-  RangeUpdater* mRangeUpdater;
 
   bool mFixed;
 };
