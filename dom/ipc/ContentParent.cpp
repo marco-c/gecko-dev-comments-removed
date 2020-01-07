@@ -184,9 +184,7 @@
 #include "private/pprio.h"
 #include "ContentProcessManager.h"
 #include "mozilla/dom/ipc/StructuredCloneData.h"
-#ifndef RELEASE_OR_BETA
 #include "mozilla/PerformanceUtils.h"
-#endif
 #include "mozilla/psm/PSMContentListener.h"
 #include "nsPluginHost.h"
 #include "nsPluginTags.h"
@@ -3278,9 +3276,12 @@ ContentParent::RecvFinishMemoryReport(const uint32_t& aGeneration)
 mozilla::ipc::IPCResult
 ContentParent::RecvAddPerformanceMetrics(nsTArray<PerformanceInfo>&& aMetrics)
 {
-#ifndef RELEASE_OR_BETA
+  if (!mozilla::dom::DOMPrefs::SchedulerLoggingEnabled()) {
+    
+    
+    return IPC_OK();
+  }
   Unused << NS_WARN_IF(NS_FAILED(mozilla::NotifyPerformanceInfo(aMetrics)));
-#endif
   return IPC_OK();
 }
 

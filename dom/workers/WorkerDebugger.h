@@ -44,14 +44,12 @@ public:
   ReportErrorToDebugger(const nsAString& aFilename, uint32_t aLineno,
                         const nsAString& aMessage);
 
-#ifndef RELEASE_OR_BETA
   
 
 
 
   PerformanceInfo
   ReportPerformanceInfo();
-#endif
 
 private:
   virtual

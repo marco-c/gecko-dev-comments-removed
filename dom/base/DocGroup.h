@@ -58,7 +58,7 @@ public:
   {
     return aKey == mKey;
   }
-#ifndef RELEASE_OR_BETA
+
   PerformanceCounter* GetPerformanceCounter()
   {
     return mPerformanceCounter;
@@ -66,7 +66,7 @@ public:
 
   PerformanceInfo
   ReportPerformanceInfo();
-#endif
+
   TabGroup* GetTabGroup()
   {
     return mTabGroup;
@@ -139,9 +139,9 @@ private:
   nsTArray<nsIDocument*> mDocuments;
   RefPtr<mozilla::dom::CustomElementReactionsStack> mReactionsStack;
   nsTArray<RefPtr<HTMLSlotElement>> mSignalSlotList;
-#ifndef RELEASE_OR_BETA
+  
+  
   RefPtr<mozilla::PerformanceCounter> mPerformanceCounter;
-#endif
 };
 
 } 
