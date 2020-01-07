@@ -100,8 +100,16 @@ js::ToClampedIndex(JSContext* cx, HandleValue v, uint32_t length, uint32_t* out)
 
 
 
+
+
+
+#if defined(MOZ_TSAN) || defined(MOZ_ASAN)
+static const int32_t MaximumLiveMappedBuffers = 500;
+#else
 static const int32_t MaximumLiveMappedBuffers = 1000;
-static const int32_t StartTriggeringAtLiveBufferCount = 200;
+#endif
+static const int32_t StartTriggeringAtLiveBufferCount = 100;
+static const int32_t StartSyncFullGCAtLiveBufferCount = MaximumLiveMappedBuffers - 100;
 static const int32_t AllocatedBuffersPerTrigger = 100;
 
 static Atomic<int32_t, mozilla::ReleaseAcquire> liveBufferCount(0);
@@ -839,7 +847,11 @@ CreateBuffer(JSContext* cx, uint32_t initialSize, const Maybe<uint32_t>& maxSize
     maybeSharedObject.set(object);
 
     
-    if (liveBufferCount > StartTriggeringAtLiveBufferCount) {
+    if (liveBufferCount > StartSyncFullGCAtLiveBufferCount) {
+        JS::PrepareForFullGC(cx);
+        JS::GCForReason(cx, GC_NORMAL, JS::gcreason::TOO_MUCH_WASM_MEMORY);
+        allocatedSinceLastTrigger = 0;
+    } else if (liveBufferCount > StartTriggeringAtLiveBufferCount) {
         allocatedSinceLastTrigger++;
         if (allocatedSinceLastTrigger > AllocatedBuffersPerTrigger) {
             Unused << cx->runtime()->gc.triggerGC(JS::gcreason::TOO_MUCH_WASM_MEMORY);
