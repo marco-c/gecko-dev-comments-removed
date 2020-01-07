@@ -33,6 +33,7 @@ XPCOMUtils.defineLazyServiceGetter(Svc, "mime",
                                    "@mozilla.org/mime;1",
                                    "nsIMIMEService");
 
+
 var DEFAULT_PREFERENCES =
 {
   "showPreviousViewOnLoad": true,
@@ -55,7 +56,8 @@ var DEFAULT_PREFERENCES =
   "enablePrintAutoRotate": false,
   "disablePageMode": false,
   "disablePageLabels": false
-};
+}
+
 
 
 var PdfjsChromeUtils = {

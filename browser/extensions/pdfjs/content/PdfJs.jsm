@@ -79,6 +79,7 @@ function isDefaultHandler() {
 }
 
 function initializeDefaultPreferences() {
+  
   var DEFAULT_PREFERENCES =
 {
   "showPreviousViewOnLoad": true,
@@ -101,8 +102,9 @@ function initializeDefaultPreferences() {
   "enablePrintAutoRotate": false,
   "disablePageMode": false,
   "disablePageLabels": false
-};
+}
 
+  
 
   var defaultBranch = Services.prefs.getDefaultBranch(PREF_PREFIX + ".");
   var defaultValue;
