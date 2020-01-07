@@ -528,33 +528,39 @@ public:
 
 
 
-class MOZ_RAII AutoRules final
+
+class MOZ_RAII AutoTopLevelEditSubActionNotifier final
 {
 public:
-  AutoRules(EditorBase* aEditorBase, EditAction aAction,
-            nsIEditor::EDirection aDirection
-            MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
+  AutoTopLevelEditSubActionNotifier(EditorBase& aEditorBase,
+                                    EditSubAction aEditSubAction,
+                                    nsIEditor::EDirection aDirection
+                                    MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
     : mEditorBase(aEditorBase)
     , mDoNothing(false)
   {
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
     
-    if (mEditorBase && !mEditorBase->mAction) {
-      mEditorBase->StartOperation(aAction, aDirection);
+    
+    
+    
+    if (!mEditorBase.mTopLevelEditSubAction) {
+      mEditorBase.OnStartToHandleTopLevelEditSubAction(aEditSubAction,
+                                                       aDirection);
     } else {
       mDoNothing = true; 
     }
   }
 
-  ~AutoRules()
+  ~AutoTopLevelEditSubActionNotifier()
   {
-    if (mEditorBase && !mDoNothing) {
-      mEditorBase->EndOperation();
+    if (!mDoNothing) {
+      mEditorBase.OnEndHandlingTopLevelEditSubAction();
     }
   }
 
 protected:
-  EditorBase* mEditorBase;
+  EditorBase& mEditorBase;
   bool mDoNothing;
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 };

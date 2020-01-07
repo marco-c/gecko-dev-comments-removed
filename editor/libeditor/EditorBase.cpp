@@ -160,7 +160,7 @@ EditorBase::EditorBase()
   , mFlags(0)
   , mUpdateCount(0)
   , mPlaceholderBatch(0)
-  , mAction(EditAction::none)
+  , mTopLevelEditSubAction(EditSubAction::eNone)
   , mDirection(eNone)
   , mDocDirtyState(-1)
   , mSpellcheckCheckboxState(eTriUnset)
@@ -168,7 +168,7 @@ EditorBase::EditorBase()
   , mDidPreDestroy(false)
   , mDidPostCreate(false)
   , mDispatchInputEvent(true)
-  , mIsInEditAction(false)
+  , mIsInEditSubAction(false)
   , mHidingCaret(false)
   , mSpellCheckerDictionaryUpdated(true)
   , mIsHTMLEditorClass(false)
@@ -258,7 +258,7 @@ EditorBase::Init(nsIDocument& aDocument,
                  uint32_t aFlags,
                  const nsAString& aValue)
 {
-  MOZ_ASSERT(mAction == EditAction::none,
+  MOZ_ASSERT(mTopLevelEditSubAction == EditSubAction::eNone,
              "Initializing during an edit action is an error");
 
   
@@ -1355,7 +1355,9 @@ EditorBase::CreateNodeWithTransaction(
   
   Unused << aPointToInsert.Offset();
 
-  AutoRules beginRulesSniffing(this, EditAction::createNode, nsIEditor::eNext);
+  AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
+                                      *this, EditSubAction::eCreateNode,
+                                      nsIEditor::eNext);
 
   RefPtr<Element> newElement;
 
@@ -1431,7 +1433,9 @@ EditorBase::InsertNodeWithTransaction(
   }
   MOZ_ASSERT(aPointToInsert.IsSetAndValid());
 
-  AutoRules beginRulesSniffing(this, EditAction::insertNode, nsIEditor::eNext);
+  AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
+                                      *this, EditSubAction::eInsertNode,
+                                      nsIEditor::eNext);
 
   RefPtr<InsertNodeTransaction> transaction =
     InsertNodeTransaction::Create(*this, aContentToInsert, aPointToInsert);
@@ -1493,7 +1497,9 @@ EditorBase::SplitNodeWithTransaction(
   }
   MOZ_ASSERT(aStartOfRightNode.IsSetAndValid());
 
-  AutoRules beginRulesSniffing(this, EditAction::splitNode, nsIEditor::eNext);
+  AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
+                                      *this, EditSubAction::eSplitNode,
+                                      nsIEditor::eNext);
 
   
   
@@ -1558,8 +1564,9 @@ EditorBase::JoinNodesWithTransaction(nsINode& aLeftNode,
   nsCOMPtr<nsINode> parent = aLeftNode.GetParentNode();
   MOZ_ASSERT(parent);
 
-  AutoRules beginRulesSniffing(this, EditAction::joinNode,
-                               nsIEditor::ePrevious);
+  AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
+                                      *this, EditSubAction::eJoinNodes,
+                                      nsIEditor::ePrevious);
 
   
   
@@ -1626,8 +1633,9 @@ EditorBase::DeleteNode(nsINode* aNode)
 nsresult
 EditorBase::DeleteNodeWithTransaction(nsINode& aNode)
 {
-  AutoRules beginRulesSniffing(this, EditAction::createNode,
-                               nsIEditor::ePrevious);
+  AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
+                                      *this, EditSubAction::eCreateNode,
+                                      nsIEditor::ePrevious);
 
   if (mRules && mRules->AsHTMLEditRules()) {
     Selection* selection = GetSelection();
@@ -2114,7 +2122,7 @@ EditorBase::NotifyEditorObservers(NotificationForEditorObservers aNotification)
 {
   switch (aNotification) {
     case eNotifyEditorObserversOfEnd:
-      mIsInEditAction = false;
+      mIsInEditSubAction = false;
 
       if (mTextInputListener) {
         RefPtr<TextInputListener> listener = mTextInputListener;
@@ -2141,11 +2149,11 @@ EditorBase::NotifyEditorObservers(NotificationForEditorObservers aNotification)
       FireInputEvent();
       break;
     case eNotifyEditorObserversOfBefore:
-      if (NS_WARN_IF(mIsInEditAction)) {
+      if (NS_WARN_IF(mIsInEditSubAction)) {
         break;
       }
 
-      mIsInEditAction = true;
+      mIsInEditSubAction = true;
 
       if (mIMEContentObserver) {
         RefPtr<IMEContentObserver> observer = mIMEContentObserver;
@@ -2153,7 +2161,7 @@ EditorBase::NotifyEditorObservers(NotificationForEditorObservers aNotification)
       }
       break;
     case eNotifyEditorObserversOfCancel:
-      mIsInEditAction = false;
+      mIsInEditSubAction = false;
 
       if (mIMEContentObserver) {
         RefPtr<IMEContentObserver> observer = mIMEContentObserver;
@@ -2409,29 +2417,20 @@ EditorBase::GetRootElement(Element** aRootElement)
   return NS_OK;
 }
 
-
-
-
-
-nsresult
-EditorBase::StartOperation(EditAction opID,
-                           nsIEditor::EDirection aDirection)
+void
+EditorBase::OnStartToHandleTopLevelEditSubAction(
+              EditSubAction aEditSubAction,
+              nsIEditor::EDirection aDirection)
 {
-  mAction = opID;
+  mTopLevelEditSubAction = aEditSubAction;
   mDirection = aDirection;
-  return NS_OK;
 }
 
-
-
-
-
-nsresult
-EditorBase::EndOperation()
+void
+EditorBase::OnEndHandlingTopLevelEditSubAction()
 {
-  mAction = EditAction::none;
+  mTopLevelEditSubAction = EditSubAction::eNone;
   mDirection = eNone;
-  return NS_OK;
 }
 
 NS_IMETHODIMP
@@ -2913,8 +2912,9 @@ EditorBase::SetTextImpl(Selection& aSelection, const nsAString& aString,
 {
   const uint32_t length = aCharData.Length();
 
-  AutoRules beginRulesSniffing(this, EditAction::setText,
-                               nsIEditor::eNext);
+  AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
+                                      *this, EditSubAction::eSetText,
+                                      nsIEditor::eNext);
 
   
   if (!mActionListeners.IsEmpty() && length) {
@@ -2986,8 +2986,9 @@ EditorBase::DeleteTextWithTransaction(CharacterData& aCharData,
     return NS_ERROR_FAILURE;
   }
 
-  AutoRules beginRulesSniffing(this, EditAction::deleteText,
-                               nsIEditor::ePrevious);
+  AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
+                                      *this, EditSubAction::eDeleteText,
+                                      nsIEditor::ePrevious);
 
   
   if (!mActionListeners.IsEmpty()) {
@@ -4577,7 +4578,7 @@ EditorBase::HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent)
 }
 
 nsresult
-EditorBase::HandleInlineSpellCheck(EditAction action,
+EditorBase::HandleInlineSpellCheck(EditSubAction aEditSubAction,
                                    Selection& aSelection,
                                    nsINode* previousSelectedNode,
                                    uint32_t previousSelectedOffset,
@@ -4590,7 +4591,7 @@ EditorBase::HandleInlineSpellCheck(EditAction action,
     return NS_OK;
   }
   return mInlineSpellChecker->SpellCheckAfterEditorChange(
-                                action, aSelection,
+                                aEditSubAction, aSelection,
                                 previousSelectedNode, previousSelectedOffset,
                                 aStartContainer, aStartOffset, aEndContainer,
                                 aEndOffset);
