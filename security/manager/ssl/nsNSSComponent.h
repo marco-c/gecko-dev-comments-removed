@@ -79,6 +79,10 @@ public:
 
   NS_IMETHOD BlockUntilLoadableRootsLoaded() = 0;
   NS_IMETHOD CheckForSmartCardChanges() = 0;
+  
+  
+  
+  NS_IMETHOD IssuerMatchesMitmCanary(const char* aCertIssuer) = 0;
 
   
   NS_IMETHOD HasActiveSmartCards(bool& result) = 0;
@@ -131,6 +135,7 @@ public:
 
   NS_IMETHOD BlockUntilLoadableRootsLoaded() override;
   NS_IMETHOD CheckForSmartCardChanges() override;
+  NS_IMETHOD IssuerMatchesMitmCanary(const char* aCertIssuer) override;
 
   
   NS_IMETHOD HasActiveSmartCards(bool& result) override;
@@ -192,6 +197,8 @@ private:
 #endif
   nsString mContentSigningRootHash;
   RefPtr<mozilla::psm::SharedCertVerifier> mDefaultCertVerifier;
+  nsString mMitmCanaryIssuer;
+  bool mMitmDetecionEnabled;
 #ifdef XP_WIN
   mozilla::UniqueCERTCertificate mFamilySafetyRoot;
   mozilla::UniqueCERTCertList mEnterpriseRoots;
