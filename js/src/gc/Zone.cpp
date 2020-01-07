@@ -431,8 +431,8 @@ void Zone::releaseAtoms()
     keepAtomsCount--;
 
     if (!hasKeptAtoms() && purgeAtomsDeferred) {
-        atomCache().clearAndShrink();
         purgeAtomsDeferred = false;
+        purgeAtomCache();
     }
 }
 
@@ -444,7 +444,21 @@ Zone::purgeAtomCacheOrDefer()
         return;
     }
 
+    purgeAtomCache();
+}
+
+void
+Zone::purgeAtomCache()
+{
+    MOZ_ASSERT(!hasKeptAtoms());
+    MOZ_ASSERT(!purgeAtomsDeferred);
+
     atomCache().clearAndShrink();
+
+    
+    
+    for (RealmsInZoneIter r(this); !r.done(); r.next())
+        r->dtoaCache.purge();
 }
 
 void
