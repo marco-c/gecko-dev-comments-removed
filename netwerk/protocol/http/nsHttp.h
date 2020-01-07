@@ -266,42 +266,50 @@ class ParsedHeaderPair
 {
 public:
     ParsedHeaderPair(const char *name, int32_t nameLen,
-                     const char *val, int32_t valLen)
-    {
-        if (nameLen > 0) {
-            mName.Rebind(name, name + nameLen);
-        }
-        if (valLen > 0) {
-            mValue.Rebind(val, val + valLen);
-        }
-    }
+                     const char *val, int32_t valLen, bool isQuotedValue);
 
     ParsedHeaderPair(ParsedHeaderPair const &copy)
         : mName(copy.mName)
         , mValue(copy.mValue)
+        , mUnquotedValue(copy.mUnquotedValue)
+        , mIsQuotedValue(copy.mIsQuotedValue)
     {
+        if (mIsQuotedValue) {
+            mValue.Rebind(mUnquotedValue.BeginReading(), mUnquotedValue.Length());
+        }
     }
 
     nsDependentCSubstring mName;
     nsDependentCSubstring mValue;
+
+private:
+    nsCString mUnquotedValue;
+    bool mIsQuotedValue;
+
+    void RemoveQuotedStringEscapes(const char *val, int32_t valLen);
 };
 
 class ParsedHeaderValueList
 {
 public:
-    ParsedHeaderValueList(char *t, uint32_t len);
+    ParsedHeaderValueList(const char *t, uint32_t len, bool allowInvalidValue);
     nsTArray<ParsedHeaderPair> mValues;
 
 private:
-    void ParsePair(char *t, uint32_t len);
-    void Tokenize(char *input, uint32_t inputLen, char **token,
-                  uint32_t *tokenLen, bool *foundEquals, char **next);
+    void ParseNameAndValue(const char *input, bool allowInvalidValue);
 };
 
 class ParsedHeaderValueListList
 {
 public:
-    explicit ParsedHeaderValueListList(const nsCString &txt);
+    
+    
+    
+    
+    
+    
+    explicit ParsedHeaderValueListList(const nsCString &txt,
+                                       bool allowInvalidValue = true);
     nsTArray<ParsedHeaderValueList> mValues;
 
 private:
