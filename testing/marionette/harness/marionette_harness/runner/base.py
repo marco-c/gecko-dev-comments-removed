@@ -912,7 +912,7 @@ class BaseMarionetteTestRunner(object):
             
             
             interrupted = sys.exc_info()
-        except:
+        except Exception:
             
             
             self.cleanup()
@@ -929,7 +929,7 @@ class BaseMarionetteTestRunner(object):
                 self.logger.info("Using shuffle seed: %d" % self.shuffle_seed)
 
             self.logger.suite_end()
-        except:
+        except Exception:
             
             if not interrupted:
                 raise

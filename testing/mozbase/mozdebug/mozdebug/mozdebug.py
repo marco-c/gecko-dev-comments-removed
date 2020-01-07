@@ -103,7 +103,7 @@ def get_debugger_path(debugger):
             path = check_output(['xcrun', '--find', 'lldb']).strip()
             if path:
                 return path
-        except:
+        except Exception:
             
             pass
 

@@ -371,7 +371,7 @@ class XPCShellTestThread(Thread):
             try:
                 
                 self.removeDir(profileDir)
-            except:
+            except Exception:
                 pass
             os.makedirs(profileDir)
         else:
@@ -1555,7 +1555,7 @@ class XPCShellTests(object):
         for directory in self.cleanup_dir_list:
             try:
                 shutil.rmtree(directory)
-            except:
+            except Exception:
                 self.log.info("%s could not be cleaned up." % directory)
 
         if exceptions:

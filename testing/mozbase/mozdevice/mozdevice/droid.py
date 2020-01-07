@@ -163,7 +163,7 @@ class DroidADB(DeviceManagerADB, DroidMixin):
             
             data = self.shellCheckOutput(
                 ["dumpsys", "window", "windows"], timeout=60)
-        except:
+        except Exception:
             
             
             return ""
