@@ -96,21 +96,24 @@ class RequestListContent extends Component {
       interactive: true
     });
     
+    
+    
+    this.scrolledManually = false;
+    
     this.refs.contentEl.addEventListener("scroll", this.onScroll, true);
     this.onResize();
   }
 
-  componentWillUpdate(nextProps) {
-    
-    
-    const delta = nextProps.displayedRequests.size - this.props.displayedRequests.size;
-    this.shouldScrollBottom = delta > 0 && this.isScrolledToBottom();
-  }
-
   componentDidUpdate(prevProps) {
+    
+    
+    const hasNewRequests = this.props.displayedRequests.size -
+      prevProps.displayedRequests.size > 0;
+    this.shouldScrollBottom = hasNewRequests && !this.scrolledManually;
+    this.ignoreNextScroll = hasNewRequests;
     let node = this.refs.contentEl;
     
-    if (this.shouldScrollBottom && node.scrollTop !== MAX_SCROLL_HEIGHT) {
+    if (this.shouldScrollBottom) {
       
       node.scrollTop = MAX_SCROLL_HEIGHT;
     }
@@ -193,6 +196,14 @@ class RequestListContent extends Component {
 
   onScroll() {
     this.tooltip.hide();
+
+    
+    
+    if (this.ignoreNextScroll) {
+      this.ignoreNextScroll = false;
+      return;
+    }
+    this.scrolledManually = !this.isScrolledToBottom();
   }
 
   
