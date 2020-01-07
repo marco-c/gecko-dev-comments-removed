@@ -191,6 +191,14 @@ nsContentSecurityManager::CheckFTPSubresourceLoad(nsIChannel* aChannel)
     return NS_OK;
   }
 
+  
+  nsIPrincipal* triggeringPrincipal = loadInfo->TriggeringPrincipal();
+  nsCOMPtr<nsIURI> triggeringURI;
+  triggeringPrincipal->GetURI(getter_AddRefs(triggeringURI));
+  if (triggeringURI && nsContentUtils::SchemeIs(triggeringURI, "ftp")) {
+    return NS_OK;
+  }
+
   nsCOMPtr<nsIDocument> doc;
   if (nsINode* node = loadInfo->LoadingNode()) {
     doc = node->OwnerDoc();
