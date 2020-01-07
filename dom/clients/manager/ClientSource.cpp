@@ -611,21 +611,29 @@ ClientSource::PostMessage(const ClientPostMessageArgs& aArgs)
     CopyUTF8toUTF16(origin, init.mOrigin);
   }
 
-  RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
-  if (!swm) {
+  RefPtr<ServiceWorker> instance;
+
+  if (ServiceWorkerParentInterceptEnabled()) {
+    instance = globalObject->GetOrCreateServiceWorker(source);
+  } else {
     
-    ref = ClientOpPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
-    return ref.forget();
+    
+    RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
+    if (!swm) {
+      
+      ref = ClientOpPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
+      return ref.forget();
+    }
+
+    RefPtr<ServiceWorkerRegistrationInfo> reg =
+      swm->GetRegistration(principal, source.Scope());
+    if (reg) {
+      instance = globalObject->GetOrCreateServiceWorker(source);
+    }
   }
 
-  RefPtr<ServiceWorkerRegistrationInfo> reg =
-    swm->GetRegistration(principal, source.Scope());
-  if (reg) {
-    RefPtr<ServiceWorker> instance =
-      globalObject->GetOrCreateServiceWorker(source);
-    if (instance) {
-      init.mSource.SetValue().SetAsServiceWorker() = instance;
-    }
+  if (instance) {
+    init.mSource.SetValue().SetAsServiceWorker() = instance;
   }
 
   RefPtr<MessageEvent> event =
