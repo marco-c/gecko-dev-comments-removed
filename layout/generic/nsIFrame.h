@@ -888,13 +888,11 @@ public:
 
 
 
+
+
+
+
   inline nsContainerFrame* GetInFlowParent() const;
-
-  
-
-
-
-  nsIFrame* GetFlattenedTreeParentPrimaryFrame() const;
 
   
 
