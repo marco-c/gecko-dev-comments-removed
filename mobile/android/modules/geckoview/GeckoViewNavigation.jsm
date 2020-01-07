@@ -249,6 +249,11 @@ class GeckoViewNavigation extends GeckoViewModule {
   onLocationChange(aWebProgress, aRequest, aLocationURI, aFlags) {
     debug("onLocationChange");
 
+    
+    if (!aWebProgress.isTopLevel) {
+      return;
+    }
+
     let fixedURI = aLocationURI;
 
     try {
