@@ -39,36 +39,12 @@ struct unused_t;
 template<class T>
 struct MOZ_TEMPORARY_CLASS MOZ_MUST_USE_TYPE MOZ_NON_AUTOABLE already_AddRefed
 {
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   already_AddRefed() : mRawPtr(nullptr) {}
 
+  
+  
+  
   MOZ_IMPLICIT already_AddRefed(decltype(nullptr)) : mRawPtr(nullptr) {}
-
   explicit already_AddRefed(T* aRawPtr) : mRawPtr(aRawPtr) {}
 
   
