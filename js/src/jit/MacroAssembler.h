@@ -31,6 +31,7 @@
 #endif
 #include "jit/AtomicOp.h"
 #include "jit/IonInstrumentation.h"
+#include "jit/IonTypes.h"
 #include "jit/JitCompartment.h"
 #include "jit/VMFunctions.h"
 #include "vm/ProxyObject.h"
@@ -2346,23 +2347,6 @@ class MacroAssembler : public MacroAssemblerSpecific
     void convertTypedOrValueToFloat(TypedOrValueRegister src, FloatRegister output, Label* fail) {
         convertTypedOrValueToFloatingPoint(src, output, fail, MIRType::Float32);
     }
-
-    enum IntConversionBehavior {
-        
-        
-        IntConversion_Normal,
-        IntConversion_NegativeZeroCheck,
-        
-        IntConversion_Truncate,
-        IntConversion_ClampToUint8,
-    };
-
-    enum IntConversionInputKind {
-        IntConversion_NumbersOnly,
-        IntConversion_NumbersOrBoolsOnly,
-        IntConversion_Any
-    };
-
     
     
     

@@ -391,6 +391,22 @@ class SimdConstant {
     }
 };
 
+enum IntConversionBehavior {
+    
+    
+    IntConversion_Normal,
+    IntConversion_NegativeZeroCheck,
+    
+    IntConversion_Truncate,
+    IntConversion_ClampToUint8,
+};
+
+enum IntConversionInputKind {
+    IntConversion_NumbersOnly,
+    IntConversion_NumbersOrBoolsOnly,
+    IntConversion_Any
+};
+
 
 
 
