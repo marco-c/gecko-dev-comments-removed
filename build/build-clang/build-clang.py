@@ -511,9 +511,15 @@ if __name__ == "__main__":
     elif is_linux():
         extra_cflags = ["-static-libgcc"]
         extra_cxxflags = ["-static-libgcc", "-static-libstdc++"]
-        extra_cflags2 = ["-fPIC"]
         
-        extra_cxxflags2 = ["-fPIC", '-Qunused-arguments', "-static-libstdc++"]
+        
+        
+        
+        extra_cflags2 = ["-fPIC",
+                         '-gcc-toolchain', stage1_inst_dir]
+        
+        extra_cxxflags2 = ["-fPIC", '-Qunused-arguments', "-static-libstdc++",
+                           '-gcc-toolchain', stage1_inst_dir]
         extra_asmflags = []
         extra_ldflags = []
 
