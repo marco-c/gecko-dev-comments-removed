@@ -323,8 +323,7 @@ public:
   
 
 
-
-  bool AudioTrackPresent(bool& aNeedsAEC);
+  bool AudioTrackPresent();
 
   
 
