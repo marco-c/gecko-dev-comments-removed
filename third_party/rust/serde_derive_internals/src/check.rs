@@ -6,33 +6,68 @@
 
 
 
-use ast::{Body, Container, Style};
-use attr::Identifier;
+use ast::{Data, Container, Style};
+use attr::{Identifier, EnumTag};
 use Ctxt;
 
 
 
 pub fn check(cx: &Ctxt, cont: &Container) {
     check_getter(cx, cont);
+    check_flatten(cx, cont);
     check_identifier(cx, cont);
     check_variant_skip_attrs(cx, cont);
+    check_internal_tag_field_name_conflict(cx, cont);
+    check_adjacent_tag_conflict(cx, cont);
 }
 
 
 
 fn check_getter(cx: &Ctxt, cont: &Container) {
-    match cont.body {
-        Body::Enum(_, _) => {
-            if cont.body.has_getter() {
+    match cont.data {
+        Data::Enum(_, _) => {
+            if cont.data.has_getter() {
                 cx.error("#[serde(getter = \"...\")] is not allowed in an enum");
             }
         }
-        Body::Struct(_, _) => {
-            if cont.body.has_getter() && cont.attrs.remote().is_none() {
+        Data::Struct(_, _) => {
+            if cont.data.has_getter() && cont.attrs.remote().is_none() {
                 cx.error(
                     "#[serde(getter = \"...\")] can only be used in structs \
                      that have #[serde(remote = \"...\")]",
                 );
+            }
+        }
+    }
+}
+
+
+fn check_flatten(cx: &Ctxt, cont: &Container) {
+    match cont.data {
+        Data::Enum(_, _) => {
+            assert!(!cont.attrs.has_flatten());
+        }
+        Data::Struct(_, _) => {
+            for field in cont.data.all_fields() {
+                if !field.attrs.flatten() {
+                    continue;
+                }
+                if field.attrs.skip_serializing() {
+                    cx.error(
+                        "#[serde(flatten] can not be combined with \
+                         #[serde(skip_serializing)]"
+                    );
+                } else if field.attrs.skip_serializing_if().is_some() {
+                    cx.error(
+                        "#[serde(flatten] can not be combined with \
+                         #[serde(skip_serializing_if = \"...\")]"
+                    );
+                } else if field.attrs.skip_deserializing() {
+                    cx.error(
+                        "#[serde(flatten] can not be combined with \
+                         #[serde(skip_deserializing)]"
+                    );
+                }
             }
         }
     }
@@ -45,9 +80,9 @@ fn check_getter(cx: &Ctxt, cont: &Container) {
 
 
 fn check_identifier(cx: &Ctxt, cont: &Container) {
-    let variants = match cont.body {
-        Body::Enum(_, ref variants) => variants,
-        Body::Struct(_, _) => {
+    let variants = match cont.data {
+        Data::Enum(_, ref variants) => variants,
+        Data::Struct(_, _) => {
             return;
         }
     };
@@ -102,9 +137,9 @@ fn check_identifier(cx: &Ctxt, cont: &Container) {
 
 
 fn check_variant_skip_attrs(cx: &Ctxt, cont: &Container) {
-    let variants = match cont.body {
-        Body::Enum(_, ref variants) => variants,
-        Body::Struct(_, _) => {
+    let variants = match cont.data {
+        Data::Enum(_, ref variants) => variants,
+        Data::Struct(_, _) => {
             return;
         }
     };
@@ -167,5 +202,69 @@ fn check_variant_skip_attrs(cx: &Ctxt, cont: &Container) {
                 }
             }
         }
+    }
+}
+
+
+
+
+
+fn check_internal_tag_field_name_conflict(
+    cx: &Ctxt,
+    cont: &Container,
+) {
+    let variants = match cont.data {
+        Data::Enum(_, ref variants) => variants,
+        Data::Struct(_, _) => return,
+    };
+
+    let tag = match *cont.attrs.tag() {
+        EnumTag::Internal { ref tag } => tag.as_str(),
+        EnumTag::External | EnumTag::Adjacent { .. } | EnumTag::None => return,
+    };
+
+    let diagnose_conflict = || {
+        let message = format!(
+            "variant field name `{}` conflicts with internal tag",
+            tag
+        );
+        cx.error(message);
+    };
+
+    for variant in variants {
+        match variant.style {
+            Style::Struct => {
+                for field in &variant.fields {
+                    let check_ser = !field.attrs.skip_serializing();
+                    let check_de = !field.attrs.skip_deserializing();
+                    let name = field.attrs.name();
+                    let ser_name = name.serialize_name();
+                    let de_name = name.deserialize_name();
+
+                    if check_ser && ser_name == tag || check_de && de_name == tag {
+                        diagnose_conflict();
+                        return;
+                    }
+                }
+            },
+            Style::Unit | Style::Newtype | Style::Tuple => {},
+        }
+    }
+}
+
+
+
+fn check_adjacent_tag_conflict(cx: &Ctxt, cont: &Container) {
+    let (type_tag, content_tag) = match *cont.attrs.tag() {
+        EnumTag::Adjacent { ref tag, ref content } => (tag, content),
+        EnumTag::Internal { .. } | EnumTag::External | EnumTag::None => return,
+    };
+
+    if type_tag == content_tag {
+        let message = format!(
+            "enum tags `{}` for type and content conflict with each other",
+            type_tag
+        );
+        cx.error(message);
     }
 }

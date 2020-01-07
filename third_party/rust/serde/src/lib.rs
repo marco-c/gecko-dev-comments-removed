@@ -79,7 +79,7 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/serde/1.0.27")]
+#![doc(html_root_url = "https://docs.rs/serde/1.0.35")]
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -92,8 +92,8 @@
 
 #![cfg_attr(feature = "cargo-clippy",
             allow(cast_lossless, const_static_lifetime, doc_markdown, linkedlist,
-                  needless_pass_by_value, type_complexity, unreadable_literal,
-                  zero_prefixed_literal))]
+                  needless_pass_by_value, redundant_field_names, type_complexity,
+                  unreadable_literal, zero_prefixed_literal))]
 
 #![cfg_attr(feature = "cargo-clippy", allow(
 
@@ -104,6 +104,7 @@
 
     invalid_upcast_comparisons,
 
+    decimal_literal_representation,
     option_unwrap_used,
     result_unwrap_used,
     shadow_reuse,
@@ -111,7 +112,9 @@
     stutter,
     use_self,
 
+    many_single_char_names,
     missing_docs_in_private_items,
+    similar_names,
 
     empty_enum,
     use_debug,
@@ -208,7 +211,11 @@ mod lib {
     pub use std::sync::{Mutex, RwLock};
 
     #[cfg(feature = "unstable")]
+    #[allow(deprecated)]
     pub use core::nonzero::{NonZero, Zeroable};
+
+    #[cfg(feature = "unstable")]
+    pub use core::num::{NonZeroU8, NonZeroU16, NonZeroU32, NonZeroU64, NonZeroUsize};
 }
 
 
