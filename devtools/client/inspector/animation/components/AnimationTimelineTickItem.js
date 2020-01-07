@@ -8,33 +8,25 @@ const { PureComponent } = require("devtools/client/shared/vendor/react");
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 const dom = require("devtools/client/shared/vendor/react-dom-factories");
 
-
-
-
-class TickLines extends PureComponent {
+class AnimationTimeTickItem extends PureComponent {
   static get propTypes() {
     return {
-      ticks: PropTypes.array.isRequired,
+      position: PropTypes.number.isRequired,
+      timeTickLabel: PropTypes.string.isRequired,
     };
   }
 
   render() {
-    const { ticks } = this.props;
+    const { position, timeTickLabel } = this.props;
 
     return dom.div(
       {
-        className: "tick-lines"
+        className: "animation-timeline-tick-item",
+        style: { left: `${ position }%` }
       },
-      ticks.map(tick =>
-        dom.div(
-          {
-            className: "tick-line",
-            style: { left: `${ tick.position }%` }
-          }
-        )
-      )
+      timeTickLabel
     );
   }
 }
 
-module.exports = TickLines;
+module.exports = AnimationTimeTickItem;
