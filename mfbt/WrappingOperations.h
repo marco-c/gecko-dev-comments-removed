@@ -8,6 +8,8 @@
 
 
 
+
+
 #ifndef mozilla_WrappingOperations_h
 #define mozilla_WrappingOperations_h
 
@@ -85,6 +87,100 @@ inline constexpr typename detail::WrapToSignedHelper<UnsignedType>::SignedType
 WrapToSigned(UnsignedType aValue)
 {
   return detail::WrapToSignedHelper<UnsignedType>::compute(aValue);
+}
+
+namespace detail {
+
+template<typename T>
+struct WrappingMultiplyHelper
+{
+private:
+  using UnsignedT = typename MakeUnsigned<T>::Type;
+
+  MOZ_NO_SANITIZE_UNSIGNED_OVERFLOW
+  static UnsignedT
+  multiply(UnsignedT aX, UnsignedT aY)
+  {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+    
+    
+    return static_cast<UnsignedT>(1U * aX * aY);
+  }
+
+  static T
+  toResult(UnsignedT aX, UnsignedT aY)
+  {
+    
+    
+    return IsSigned<T>::value
+           ? WrapToSigned(multiply(aX, aY))
+           : multiply(aX, aY);
+  }
+
+public:
+  MOZ_NO_SANITIZE_UNSIGNED_OVERFLOW
+  static T compute(T aX, T aY)
+  {
+    return toResult(static_cast<UnsignedT>(aX), static_cast<UnsignedT>(aY));
+  }
+};
+
+} 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template<typename T>
+inline T
+WrappingMultiply(T aX, T aY)
+{
+  return detail::WrappingMultiplyHelper<T>::compute(aX, aY);
 }
 
 } 

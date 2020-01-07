@@ -52,6 +52,7 @@
 #include "mozilla/Char16.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/Types.h"
+#include "mozilla/WrappingOperations.h"
 
 #include <stdint.h>
 
@@ -114,7 +115,10 @@ AddU32ToHash(uint32_t aHash, uint32_t aValue)
 
 
 
-  return kGoldenRatioU32 * (RotateBitsLeft32(aHash, 5) ^ aValue);
+
+
+  return mozilla::WrappingMultiply(kGoldenRatioU32,
+                                   (RotateBitsLeft32(aHash, 5) ^ aValue));
 }
 
 
