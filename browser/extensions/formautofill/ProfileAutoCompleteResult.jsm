@@ -54,6 +54,11 @@ class ProfileAutoCompleteResult {
     }, new Set())].filter(field => allFieldNames.includes(field));
 
     
+    
+    if (isInputAutofilled) {
+      resultCode = Ci.nsIAutoCompleteResult.RESULT_SUCCESS;
+    }
+    
     if (resultCode) {
       this.searchResult = resultCode;
     } else if (matchingProfiles.length > 0) {
