@@ -139,7 +139,7 @@ public:
                     bool filterNameCollision, const char *cname);
 
   
-  explicit AddrInfo(const char *host, const char *cname);
+  explicit AddrInfo(const char *host, const char *cname, unsigned int TRRType);
 
   
   explicit AddrInfo(const char *host, unsigned int TRRType);
