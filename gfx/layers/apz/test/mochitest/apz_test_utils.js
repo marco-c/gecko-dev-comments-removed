@@ -523,6 +523,12 @@ function getHitTestConfig() {
 }
 
 
+function centerOf(element) {
+  var bounds = element.getBoundingClientRect();
+  return { x: bounds.x + (bounds.width / 2), y: bounds.y + (bounds.height / 2) };
+}
+
+
 
 
 
