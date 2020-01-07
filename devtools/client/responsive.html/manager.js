@@ -373,7 +373,7 @@ ResponsiveUI.prototype = {
 
 
 
-  destroy: Task.async(function* (options) {
+  async destroy(options) {
     if (this.destroying) {
       return false;
     }
@@ -389,7 +389,7 @@ ResponsiveUI.prototype = {
 
     
     if (!isTabContentDestroying) {
-      yield this.inited;
+      await this.inited;
     }
 
     this.tab.removeEventListener("TabClose", this);
@@ -399,7 +399,20 @@ ResponsiveUI.prototype = {
 
     if (!isTabContentDestroying) {
       
-      yield message.request(this.toolWindow, "stop-frame-script");
+      await message.request(this.toolWindow, "stop-frame-script");
+    }
+
+    
+    
+    if (!isTabContentDestroying) {
+      let reloadNeeded = false;
+      reloadNeeded |= await this.updateDPPX();
+      reloadNeeded |= await this.updateNetworkThrottling();
+      reloadNeeded |= await this.updateUserAgent();
+      reloadNeeded |= await this.updateTouchSimulation();
+      if (reloadNeeded) {
+        this.getViewportBrowser().reload();
+      }
     }
 
     
@@ -415,7 +428,7 @@ ResponsiveUI.prototype = {
     
     let clientClosed = this.client.close();
     if (!isTabContentDestroying) {
-      yield clientClosed;
+      await clientClosed;
     }
     this.client = this.emulationFront = null;
 
@@ -427,7 +440,7 @@ ResponsiveUI.prototype = {
     this.destroyed = true;
 
     return true;
-  }),
+  },
 
   connectToServer: Task.async(function* () {
     DebuggerServer.init();
@@ -487,9 +500,13 @@ ResponsiveUI.prototype = {
 
   onChangeDevice: Task.async(function* (event) {
     let { userAgent, pixelRatio, touch } = event.data.device;
+    
     yield this.updateUserAgent(userAgent);
     yield this.updateDPPX(pixelRatio);
-    yield this.updateTouchSimulation(touch);
+    let reloadNeeded = yield this.updateTouchSimulation(touch);
+    if (reloadNeeded) {
+      this.getViewportBrowser().reload();
+    }
     
     this.emit("device-changed");
   }),
@@ -506,9 +523,12 @@ ResponsiveUI.prototype = {
     this.updateDPPX(pixelRatio);
   },
 
-  onChangeTouchSimulation(event) {
+  async onChangeTouchSimulation(event) {
     let { enabled } = event.data;
-    this.updateTouchSimulation(enabled);
+    let reloadNeeded = await this.updateTouchSimulation(enabled);
+    if (reloadNeeded) {
+      this.getViewportBrowser().reload();
+    }
     
     this.emit("touch-simulation-changed");
   },
@@ -527,25 +547,44 @@ ResponsiveUI.prototype = {
   },
 
   onRemoveDeviceAssociation: Task.async(function* (event) {
+    
     yield this.updateUserAgent();
     yield this.updateDPPX();
-    yield this.updateTouchSimulation();
+    let reloadNeeded = yield this.updateTouchSimulation();
+    if (reloadNeeded) {
+      this.getViewportBrowser().reload();
+    }
     
     this.emit("device-association-removed");
   }),
 
+  
+
+
+
+
+
+
   updateDPPX: Task.async(function* (dppx) {
     if (!dppx) {
       yield this.emulationFront.clearDPPXOverride();
-      return;
+      return false;
     }
     yield this.emulationFront.setDPPXOverride(dppx);
+    return false;
   }),
+
+  
+
+
+
+
+
 
   updateNetworkThrottling: Task.async(function* (enabled, profile) {
     if (!enabled) {
       yield this.emulationFront.clearNetworkThrottling();
-      return;
+      return false;
     }
     let data = throttlingProfiles.find(({ id }) => id == profile);
     let { download, upload, latency } = data;
@@ -554,29 +593,36 @@ ResponsiveUI.prototype = {
       uploadThroughput: upload,
       latency,
     });
+    return false;
   }),
 
-  updateUserAgent: Task.async(function* (userAgent) {
+  
+
+
+
+
+
+  updateUserAgent(userAgent) {
     if (!userAgent) {
-      yield this.emulationFront.clearUserAgentOverride();
-      return;
+      return this.emulationFront.clearUserAgentOverride();
     }
-    yield this.emulationFront.setUserAgentOverride(userAgent);
-  }),
+    return this.emulationFront.setUserAgentOverride(userAgent);
+  },
 
-  updateTouchSimulation: Task.async(function* (enabled) {
-    let reloadNeeded;
-    if (enabled) {
-      reloadNeeded = yield this.emulationFront.setTouchEventsOverride(
-        Ci.nsIDocShell.TOUCHEVENTS_OVERRIDE_ENABLED
-      );
-    } else {
-      reloadNeeded = yield this.emulationFront.clearTouchEventsOverride();
+  
+
+
+
+
+
+  updateTouchSimulation(enabled) {
+    if (!enabled) {
+      return this.emulationFront.clearTouchEventsOverride();
     }
-    if (reloadNeeded) {
-      this.getViewportBrowser().reload();
-    }
-  }),
+    return this.emulationFront.setTouchEventsOverride(
+      Ci.nsIDocShell.TOUCHEVENTS_OVERRIDE_ENABLED
+    );
+  },
 
   
 

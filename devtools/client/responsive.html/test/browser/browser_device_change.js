@@ -4,7 +4,7 @@
 "use strict";
 
 
-const TEST_URL = "data:text/html;charset=utf-8,Device list test";
+const TEST_URL = `${URL_ROOT}doc_page_state.html`;
 
 const DEFAULT_DPPX = window.devicePixelRatio;
 const DEFAULT_UA = Cc["@mozilla.org/network/protocol;1?name=http"]
@@ -28,7 +28,7 @@ const testDevice = {
 
 addDeviceForTest(testDevice);
 
-addRDMTask(TEST_URL, function* ({ ui, manager }) {
+addRDMTask(TEST_URL, function* ({ ui }) {
   let { store } = ui.toolWindow;
 
   
@@ -37,23 +37,29 @@ addRDMTask(TEST_URL, function* ({ ui, manager }) {
 
   
   testViewportDimensions(ui, 320, 480);
+  info("Should have default UA at the start of the test");
   yield testUserAgent(ui, DEFAULT_UA);
   yield testDevicePixelRatio(ui, DEFAULT_DPPX);
   yield testTouchEventsOverride(ui, false);
   testViewportDeviceSelectLabel(ui, "no device selected");
 
   
+  let reloaded = waitForViewportLoad(ui);
   yield selectDevice(ui, "Fake Phone RDM Test");
+  yield reloaded;
   yield waitForViewportResizeTo(ui, testDevice.width, testDevice.height);
+  info("Should have device UA now that device is applied");
   yield testUserAgent(ui, testDevice.userAgent);
   yield testDevicePixelRatio(ui, testDevice.pixelRatio);
   yield testTouchEventsOverride(ui, true);
 
   
   let deviceRemoved = once(ui, "device-association-removed");
+  reloaded = waitForViewportLoad(ui);
   yield testViewportResize(ui, ".viewport-vertical-resize-handle",
     [-10, -10], [testDevice.width, testDevice.height - 10], [0, -10], ui);
-  yield deviceRemoved;
+  yield Promise.all([ deviceRemoved, reloaded ]);
+  info("Should have default UA after resizing viewport");
   yield testUserAgent(ui, DEFAULT_UA);
   yield testDevicePixelRatio(ui, DEFAULT_DPPX);
   yield testTouchEventsOverride(ui, false);
@@ -62,9 +68,40 @@ addRDMTask(TEST_URL, function* ({ ui, manager }) {
   
   yield selectDevice(ui, "Laptop (1366 x 768)");
   yield waitForViewportResizeTo(ui, 1366, 768);
+  info("Should have default UA when using device without specific UA");
   yield testUserAgent(ui, DEFAULT_UA);
   yield testDevicePixelRatio(ui, 1);
   yield testTouchEventsOverride(ui, false);
+});
+
+add_task(async function () {
+  const tab = await addTab(TEST_URL);
+  const { ui } = await openRDM(tab);
+
+  let { store } = ui.toolWindow;
+
+  
+  await waitUntilState(store, state => state.viewports.length == 1
+    && state.devices.listState == Types.deviceListState.LOADED);
+
+  
+  let reloaded = waitForViewportLoad(ui);
+  await selectDevice(ui, "Fake Phone RDM Test");
+  await reloaded;
+  await waitForViewportResizeTo(ui, testDevice.width, testDevice.height);
+  info("Should have device UA now that device is applied");
+  await testUserAgent(ui, testDevice.userAgent);
+
+  
+  reloaded = waitForViewportLoad(ui);
+  await closeRDM(tab);
+  await reloaded;
+
+  
+  info("Should have default UA after closing RDM");
+  await testUserAgentFromBrowser(tab.linkedBrowser, DEFAULT_UA);
+
+  await removeTab(tab);
 });
 
 function testViewportDimensions(ui, w, h) {
