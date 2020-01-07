@@ -83,6 +83,9 @@ job_description_schema = Schema({
         'using': basestring,
 
         
+        Optional('workdir'): basestring,
+
+        
         
         Extra: object,
     },
@@ -148,6 +151,8 @@ def make_task_description(config, jobs):
         worker['implementation'] = impl
         if os:
             worker['os'] = os
+
+        job['run'].setdefault('workdir', '/builds/worker')
 
         taskdesc = copy.deepcopy(job)
 

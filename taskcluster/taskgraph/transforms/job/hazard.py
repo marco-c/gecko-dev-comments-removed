@@ -34,6 +34,9 @@ haz_run_schema = Schema({
     
     
     Required('secrets', default=False): Any(bool, [basestring]),
+
+    
+    Required('workdir'): basestring,
 })
 
 
@@ -62,11 +65,11 @@ def docker_worker_hazard(config, job, taskdesc):
 
     
     
-    env['GECKO_DIR'] = '/builds/worker/checkouts/gecko'
+    env['GECKO_DIR'] = '{workdir}/checkouts/gecko'.format(**run)
 
     worker['command'] = [
-        '/builds/worker/bin/run-task',
-        '--vcs-checkout', '/builds/worker/checkouts/gecko',
+        '{workdir}/bin/run-task'.format(**run),
+        '--vcs-checkout', '{workdir}/checkouts/gecko'.format(**run),
         '--',
         '/bin/bash', '-c', run['command']
     ]

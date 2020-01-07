@@ -56,6 +56,9 @@ run_schema = Schema({
     
     
     Optional('resolver'): Any('apt-get', 'aptitude'),
+
+    
+    Required('workdir'): basestring,
 })
 
 

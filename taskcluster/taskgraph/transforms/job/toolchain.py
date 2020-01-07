@@ -63,6 +63,9 @@ toolchain_run_schema = Schema({
     
     
     Optional('toolchain-alias'): basestring,
+
+    
+    Required('workdir'): basestring,
 })
 
 
@@ -156,15 +159,15 @@ def docker_worker_toolchain(config, job, taskdesc):
                           'build/sparse-profiles/{}'.format(run['sparse-profile'])]
 
     worker['command'] = [
-        '/builds/worker/bin/run-task',
-        '--vcs-checkout=/builds/worker/workspace/build/src',
+        '{workdir}/bin/run-task'.format(**run),
+        '--vcs-checkout={workdir}/workspace/build/src'.format(**run),
     ] + sparse_profile + [
         '--',
         'bash',
         '-c',
-        'cd /builds/worker && '
+        'cd {} && '
         '{}workspace/build/src/taskcluster/scripts/misc/{}{}'.format(
-            wrapper, run['script'], args)
+            run['workdir'], wrapper, run['script'], args)
     ]
 
     attributes = taskdesc.setdefault('attributes', {})

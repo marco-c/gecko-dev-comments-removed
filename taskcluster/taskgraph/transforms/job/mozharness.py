@@ -101,6 +101,9 @@ mozharness_run_schema = Schema({
     
     
     Required('comm-checkout'): bool,
+
+    
+    Required('workdir'): basestring,
 })
 
 
@@ -199,17 +202,18 @@ def mozharness_on_docker_worker_setup(config, job, taskdesc):
     docker_worker_setup_secrets(config, job, taskdesc)
 
     command = [
-        '/builds/worker/bin/run-task',
-        '--vcs-checkout', '/builds/worker/workspace/build/src',
-        '--tools-checkout', '/builds/worker/workspace/build/tools',
+        '{workdir}/bin/run-task'.format(**run),
+        '--vcs-checkout', '{workdir}/workspace/build/src'.format(**run),
+        '--tools-checkout', '{workdir}/workspace/build/tools'.format(**run),
     ]
     if run['comm-checkout']:
-        command.append('--comm-checkout=/builds/worker/workspace/build/src/comm')
+        command.append('--comm-checkout={workdir}/workspace/build/src/comm'.format(**run))
 
     command += [
         '--',
-        '/builds/worker/workspace/build/src/{}'.format(
-            run.get('job-script', 'taskcluster/scripts/builder/build-linux.sh')
+        '{workdir}/workspace/build/src/{script}'.format(
+            workdir=run['workdir'],
+            script=run.get('job-script', 'taskcluster/scripts/builder/build-linux.sh'),
         ),
     ]
 

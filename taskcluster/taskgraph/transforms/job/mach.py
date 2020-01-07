@@ -20,6 +20,9 @@ mach_schema = Schema({
     
     
     Required('comm-checkout'): bool,
+
+    
+    Required('workdir'): basestring,
 })
 
 
@@ -29,7 +32,7 @@ def docker_worker_mach(config, job, taskdesc):
     run = job['run']
 
     
-    run['command'] = 'cd /builds/worker/checkouts/gecko && ./mach ' + run['mach']
+    run['command'] = 'cd {workdir}/checkouts/gecko && ./mach {mach}'.format(**run)
     run['using'] = 'run-task'
     del run['mach']
     configure_taskdesc_for_run(config, job, taskdesc, job['worker']['implementation'])
