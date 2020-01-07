@@ -539,6 +539,13 @@ WebAuthnManager::GetAssertion(const PublicKeyCredentialRequestOptions& aOptions,
     return promise.forget();
   }
 
+  
+  
+  if (aOptions.mAllowCredentials.Length() < 1) {
+    promise->MaybeReject(NS_ERROR_DOM_NOT_ALLOWED_ERR);
+    return promise.forget();
+  }
+
   nsTArray<WebAuthnScopedCredential> allowList;
   for (const auto& s: aOptions.mAllowCredentials) {
     if (s.mType == PublicKeyCredentialType::Public_key) {
