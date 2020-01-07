@@ -155,40 +155,42 @@ JS_GetIsSecureContext(JSCompartment* compartment)
 JS_FRIEND_API(JSPrincipals*)
 JS_GetCompartmentPrincipals(JSCompartment* compartment)
 {
-    return compartment->principals();
+    Realm* realm = JS::GetRealmForCompartment(compartment);
+    return realm->principals();
 }
 
 JS_FRIEND_API(void)
 JS_SetCompartmentPrincipals(JSCompartment* compartment, JSPrincipals* principals)
 {
     
-    if (principals == compartment->principals())
+    Realm* realm = JS::GetRealmForCompartment(compartment);
+    if (principals == realm->principals())
         return;
 
     
     
-    const JSPrincipals* trusted = compartment->runtimeFromMainThread()->trustedPrincipals();
+    const JSPrincipals* trusted = realm->runtimeFromMainThread()->trustedPrincipals();
     bool isSystem = principals && principals == trusted;
 
     
-    if (compartment->principals()) {
-        JS_DropPrincipals(TlsContext.get(), compartment->principals());
-        compartment->setPrincipals(nullptr);
+    if (realm->principals()) {
+        JS_DropPrincipals(TlsContext.get(), realm->principals());
+        realm->setPrincipals(nullptr);
         
         
         
         
-        MOZ_ASSERT(compartment->isSystem() == isSystem);
+        MOZ_ASSERT(realm->isSystem() == isSystem);
     }
 
     
     if (principals) {
         JS_HoldPrincipals(principals);
-        compartment->setPrincipals(principals);
+        realm->setPrincipals(principals);
     }
 
     
-    compartment->setIsSystem(isSystem);
+    realm->setIsSystem(isSystem);
 }
 
 JS_FRIEND_API(JSPrincipals*)
@@ -333,7 +335,7 @@ js::GetCompartmentZone(JSCompartment* comp)
 JS_FRIEND_API(bool)
 js::IsSystemCompartment(JSCompartment* comp)
 {
-    return comp->isSystem();
+    return JS::GetRealmForCompartment(comp)->isSystem();
 }
 
 JS_FRIEND_API(bool)

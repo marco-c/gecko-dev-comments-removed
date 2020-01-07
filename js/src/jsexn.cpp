@@ -446,7 +446,7 @@ Error(JSContext* cx, unsigned argc, Value* vp)
     }
 
     
-    NonBuiltinFrameIter iter(cx, cx->compartment()->principals());
+    NonBuiltinFrameIter iter(cx, cx->realm()->principals());
 
     
     RootedString fileName(cx);
@@ -967,7 +967,7 @@ ErrorReport::populateUncaughtExceptionReportUTF8VA(JSContext* cx, va_list ap)
     
     
     
-    NonBuiltinFrameIter iter(cx, cx->compartment()->principals());
+    NonBuiltinFrameIter iter(cx, cx->realm()->principals());
     if (!iter.done()) {
         ownedReport.filename = iter.filename();
         uint32_t column;

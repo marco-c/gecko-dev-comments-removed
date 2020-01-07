@@ -556,56 +556,6 @@ struct JSCompartment
     JSRuntime*                   runtime_;
 
   public:
-    
-
-
-
-
-
-    inline JSPrincipals* principals() {
-        return principals_;
-    }
-    inline void setPrincipals(JSPrincipals* principals) {
-        if (principals_ == principals)
-            return;
-
-        
-        
-        
-        
-        
-        
-        
-        performanceMonitoring.unlink();
-        principals_ = principals;
-    }
-    inline bool isSystem() const {
-        return isSystem_;
-    }
-    inline void setIsSystem(bool isSystem) {
-        if (isSystem_ == isSystem)
-            return;
-
-        
-        
-        
-        
-        
-        
-        
-        performanceMonitoring.unlink();
-        isSystem_ = isSystem;
-    }
-
-    
-    inline bool isProbablySystemCode() const {
-        return isSystem_;
-    }
-  private:
-    JSPrincipals*                principals_;
-    bool                         isSystem_;
-
-  public:
     bool                         isSelfHosting;
 
   private:
@@ -1027,6 +977,8 @@ class JS::Realm : public JSCompartment
     friend class js::AutoSetNewObjectMetadata;
     js::NewObjectMetadataState objectMetadataState_ { js::ImmediateMetadata() };
 
+    JSPrincipals* principals_ = nullptr;
+
     
     JS::RealmStats* realmStats_ = nullptr;
 
@@ -1037,6 +989,7 @@ class JS::Realm : public JSCompartment
 
     bool isAtomsRealm_ = false;
     bool marked_ = true;
+    bool isSystem_ = false;
 
   public:
     
@@ -1227,6 +1180,51 @@ class JS::Realm : public JSCompartment
     }
     void unmark() {
         marked_ = false;
+    }
+
+    
+
+
+
+
+    JSPrincipals* principals() {
+        return principals_;
+    }
+    void setPrincipals(JSPrincipals* principals) {
+        if (principals_ == principals)
+            return;
+
+        
+        
+        
+        
+        
+        
+        
+        performanceMonitoring.unlink();
+        principals_ = principals;
+    }
+
+    bool isSystem() const {
+        return isSystem_;
+    }
+    void setIsSystem(bool isSystem) {
+        if (isSystem_ == isSystem)
+            return;
+
+        
+        
+        
+        
+        
+        
+        performanceMonitoring.unlink();
+        isSystem_ = isSystem;
+    }
+
+    
+    bool isProbablySystemCode() const {
+        return isSystem_;
     }
 };
 

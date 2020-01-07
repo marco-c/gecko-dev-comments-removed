@@ -614,8 +614,8 @@ SavedFrameSubsumedByCaller(JSContext* cx, HandleSavedFrame frame)
     if (!subsumes)
         return true;
 
-    auto currentCompartmentPrincipals = cx->compartment()->principals();
-    MOZ_ASSERT(!ReconstructedSavedFramePrincipals::is(currentCompartmentPrincipals));
+    auto currentRealmPrincipals = cx->realm()->principals();
+    MOZ_ASSERT(!ReconstructedSavedFramePrincipals::is(currentRealmPrincipals));
 
     auto framePrincipals = frame->getPrincipals();
 
@@ -626,7 +626,7 @@ SavedFrameSubsumedByCaller(JSContext* cx, HandleSavedFrame frame)
     if (framePrincipals == &ReconstructedSavedFramePrincipals::IsNotSystem)
         return true;
 
-    return subsumes(currentCompartmentPrincipals, framePrincipals);
+    return subsumes(currentRealmPrincipals, framePrincipals);
 }
 
 
@@ -774,26 +774,26 @@ namespace {
 
 
 
-class MOZ_STACK_CLASS AutoMaybeEnterFrameCompartment
+class MOZ_STACK_CLASS AutoMaybeEnterFrameRealm
 {
 public:
-    AutoMaybeEnterFrameCompartment(JSContext* cx,
-                                   HandleObject obj
-                                   MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
+    AutoMaybeEnterFrameRealm(JSContext* cx,
+                             HandleObject obj
+                             MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
     {
         MOZ_GUARD_OBJECT_NOTIFIER_INIT;
 
-        MOZ_RELEASE_ASSERT(cx->compartment());
+        MOZ_RELEASE_ASSERT(cx->realm());
         if (obj)
-            MOZ_RELEASE_ASSERT(obj->compartment());
+            MOZ_RELEASE_ASSERT(obj->realm());
 
         
         
-        if (obj && cx->compartment() != obj->compartment())
+        if (obj && cx->realm() != obj->realm())
         {
             JSSubsumesOp subsumes = cx->runtime()->securityCallbacks->subsumes;
-            if (subsumes && subsumes(cx->compartment()->principals(),
-                                     obj->compartment()->principals()))
+            if (subsumes && subsumes(cx->realm()->principals(),
+                                     obj->realm()->principals()))
             {
                 ar_.emplace(cx, obj);
             }
@@ -832,7 +832,7 @@ GetSavedFrameSource(JSContext* cx, HandleObject savedFrame, MutableHandleString 
     MOZ_RELEASE_ASSERT(cx->compartment());
 
     {
-        AutoMaybeEnterFrameCompartment ac(cx, savedFrame);
+        AutoMaybeEnterFrameRealm ar(cx, savedFrame);
         bool skippedAsync;
         js::RootedSavedFrame frame(cx, UnwrapSavedFrame(cx, savedFrame, selfHosted, skippedAsync));
         if (!frame) {
@@ -855,7 +855,7 @@ GetSavedFrameLine(JSContext* cx, HandleObject savedFrame, uint32_t* linep,
     MOZ_RELEASE_ASSERT(cx->compartment());
     MOZ_ASSERT(linep);
 
-    AutoMaybeEnterFrameCompartment ac(cx, savedFrame);
+    AutoMaybeEnterFrameRealm ar(cx, savedFrame);
     bool skippedAsync;
     js::RootedSavedFrame frame(cx, UnwrapSavedFrame(cx, savedFrame, selfHosted, skippedAsync));
     if (!frame) {
@@ -875,7 +875,7 @@ GetSavedFrameColumn(JSContext* cx, HandleObject savedFrame, uint32_t* columnp,
     MOZ_RELEASE_ASSERT(cx->compartment());
     MOZ_ASSERT(columnp);
 
-    AutoMaybeEnterFrameCompartment ac(cx, savedFrame);
+    AutoMaybeEnterFrameRealm ar(cx, savedFrame);
     bool skippedAsync;
     js::RootedSavedFrame frame(cx, UnwrapSavedFrame(cx, savedFrame, selfHosted, skippedAsync));
     if (!frame) {
@@ -895,7 +895,7 @@ GetSavedFrameFunctionDisplayName(JSContext* cx, HandleObject savedFrame, Mutable
     MOZ_RELEASE_ASSERT(cx->compartment());
 
     {
-        AutoMaybeEnterFrameCompartment ac(cx, savedFrame);
+        AutoMaybeEnterFrameRealm ar(cx, savedFrame);
         bool skippedAsync;
         js::RootedSavedFrame frame(cx, UnwrapSavedFrame(cx, savedFrame, selfHosted, skippedAsync));
         if (!frame) {
@@ -918,7 +918,7 @@ GetSavedFrameAsyncCause(JSContext* cx, HandleObject savedFrame, MutableHandleStr
     MOZ_RELEASE_ASSERT(cx->compartment());
 
     {
-        AutoMaybeEnterFrameCompartment ac(cx, savedFrame);
+        AutoMaybeEnterFrameRealm ar(cx, savedFrame);
         bool skippedAsync;
         
         
@@ -948,7 +948,7 @@ GetSavedFrameAsyncParent(JSContext* cx, HandleObject savedFrame, MutableHandleOb
     CHECK_REQUEST(cx);
     MOZ_RELEASE_ASSERT(cx->compartment());
 
-    AutoMaybeEnterFrameCompartment ac(cx, savedFrame);
+    AutoMaybeEnterFrameRealm ar(cx, savedFrame);
     bool skippedAsync;
     js::RootedSavedFrame frame(cx, UnwrapSavedFrame(cx, savedFrame, selfHosted, skippedAsync));
     if (!frame) {
@@ -981,7 +981,7 @@ GetSavedFrameParent(JSContext* cx, HandleObject savedFrame, MutableHandleObject 
     CHECK_REQUEST(cx);
     MOZ_RELEASE_ASSERT(cx->compartment());
 
-    AutoMaybeEnterFrameCompartment ac(cx, savedFrame);
+    AutoMaybeEnterFrameRealm ar(cx, savedFrame);
     bool skippedAsync;
     js::RootedSavedFrame frame(cx, UnwrapSavedFrame(cx, savedFrame, selfHosted, skippedAsync));
     if (!frame) {
@@ -1098,7 +1098,7 @@ BuildStackString(JSContext* cx, HandleObject stack, MutableHandleString stringp,
     
     
     {
-        AutoMaybeEnterFrameCompartment ac(cx, stack);
+        AutoMaybeEnterFrameRealm ar(cx, stack);
         bool skippedAsync;
         js::RootedSavedFrame frame(cx, UnwrapSavedFrame(cx, stack, SavedFrameSelfHosted::Exclude,
                                                         skippedAsync));
@@ -1481,7 +1481,7 @@ SavedStacks::insertFrames(JSContext* cx, MutableHandleSavedFrame frame,
 
         RootedAtom displayAtom(cx, iter.maybeFunctionDisplayAtom());
 
-        auto principals = iter.compartment()->principals();
+        auto principals = JS::GetRealmForCompartment(iter.compartment())->principals();
         MOZ_ASSERT_IF(framePtr && !iter.isWasm(), iter.pc());
 
         if (!stackChain->emplaceBack(location.source(),
