@@ -113,11 +113,6 @@ OSFileConstantsService::Paths
 
 
 
-  nsString desktopDir;
-  
-
-
-
 
 
 
@@ -130,31 +125,11 @@ OSFileConstantsService::Paths
 
   nsString userApplicationDataDir;
 
-#if defined(XP_WIN)
-  
-
-
-  nsString winAppDataDir;
-  
-
-
-  nsString winStartMenuProgsDir;
-#endif 
-
 #if defined(XP_MACOSX)
   
 
 
   nsString macUserLibDir;
-  
-
-
-
-  nsString macLocalApplicationsDir;
-  
-
-
-  nsString macTrashDir;
 #endif 
 
   Paths()
@@ -164,18 +139,10 @@ OSFileConstantsService::Paths
     profileDir.SetIsVoid(true);
     localProfileDir.SetIsVoid(true);
     homeDir.SetIsVoid(true);
-    desktopDir.SetIsVoid(true);
     userApplicationDataDir.SetIsVoid(true);
-
-#if defined(XP_WIN)
-    winAppDataDir.SetIsVoid(true);
-    winStartMenuProgsDir.SetIsVoid(true);
-#endif 
 
 #if defined(XP_MACOSX)
     macUserLibDir.SetIsVoid(true);
-    macLocalApplicationsDir.SetIsVoid(true);
-    macTrashDir.SetIsVoid(true);
 #endif 
   }
 };
@@ -289,18 +256,10 @@ OSFileConstantsService::InitOSFileConstants()
 
   GetPathToSpecialDir(NS_OS_TEMP_DIR, paths->tmpDir);
   GetPathToSpecialDir(NS_OS_HOME_DIR, paths->homeDir);
-  GetPathToSpecialDir(NS_OS_DESKTOP_DIR, paths->desktopDir);
   GetPathToSpecialDir(XRE_USER_APP_DATA_DIR, paths->userApplicationDataDir);
-
-#if defined(XP_WIN)
-  GetPathToSpecialDir(NS_WIN_APPDATA_DIR, paths->winAppDataDir);
-  GetPathToSpecialDir(NS_WIN_PROGRAMS_DIR, paths->winStartMenuProgsDir);
-#endif 
 
 #if defined(XP_MACOSX)
   GetPathToSpecialDir(NS_MAC_USER_LIB_DIR, paths->macUserLibDir);
-  GetPathToSpecialDir(NS_OSX_LOCAL_APPLICATIONS_DIR, paths->macLocalApplicationsDir);
-  GetPathToSpecialDir(NS_MAC_TRASH_DIR, paths->macTrashDir);
 #endif 
 
   mPaths = Move(paths);
@@ -980,34 +939,12 @@ OSFileConstantsService::DefineOSFileConstants(JSContext* aCx,
     return false;
   }
 
-  if (!SetStringProperty(aCx, objPath, "desktopDir", mPaths->desktopDir)) {
-    return false;
-  }
-
   if (!SetStringProperty(aCx, objPath, "userApplicationDataDir", mPaths->userApplicationDataDir)) {
     return false;
   }
 
-#if defined(XP_WIN)
-  if (!SetStringProperty(aCx, objPath, "winAppDataDir", mPaths->winAppDataDir)) {
-    return false;
-  }
-
-  if (!SetStringProperty(aCx, objPath, "winStartMenuProgsDir", mPaths->winStartMenuProgsDir)) {
-    return false;
-  }
-#endif 
-
 #if defined(XP_MACOSX)
   if (!SetStringProperty(aCx, objPath, "macUserLibDir", mPaths->macUserLibDir)) {
-    return false;
-  }
-
-  if (!SetStringProperty(aCx, objPath, "macLocalApplicationsDir", mPaths->macLocalApplicationsDir)) {
-    return false;
-  }
-
-  if (!SetStringProperty(aCx, objPath, "macTrashDir", mPaths->macTrashDir)) {
     return false;
   }
 #endif 
