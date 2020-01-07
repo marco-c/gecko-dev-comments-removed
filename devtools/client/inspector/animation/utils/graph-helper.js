@@ -11,6 +11,8 @@ const BOUND_EXCLUDING_TIME = 0.001;
 
 const DEFAULT_GRAPH_HEIGHT = 100;
 
+const DEFAULT_KEYFRAMES_GRAPH_DURATION = 1000;
+
 const DEFAULT_MIN_PROGRESS_THRESHOLD = 0.1;
 
 
@@ -20,7 +22,7 @@ const DEFAULT_MIN_PROGRESS_THRESHOLD = 0.1;
 
 
 
-const DURATION_RESOLUTION = 4;
+const DEFAULT_DURATION_RESOLUTION = 4;
 
 
 
@@ -139,7 +141,7 @@ function createPathSegments(startTime, endTime, minSegmentDuration,
       const nextEndTime = currentSegment.x - BOUND_EXCLUDING_TIME;
       const segments =
         createPathSegments(nextStartTime, nextEndTime, minSegmentDuration,
-                           minProgressThreshold, DURATION_RESOLUTION, getSegment);
+                           minProgressThreshold, DEFAULT_DURATION_RESOLUTION, getSegment);
       pathSegments = pathSegments.concat(segments);
     }
 
@@ -161,10 +163,10 @@ function createPathSegments(startTime, endTime, minSegmentDuration,
 
 function getPreferredDurationResolution(keyframes) {
   if (!keyframes) {
-    return DURATION_RESOLUTION;
+    return DEFAULT_DURATION_RESOLUTION;
   }
 
-  let durationResolution = DURATION_RESOLUTION;
+  let durationResolution = DEFAULT_DURATION_RESOLUTION;
   let previousOffset = 0;
   for (let keyframe of keyframes) {
     if (previousOffset && previousOffset != keyframe.offset) {
@@ -198,6 +200,23 @@ function getPreferredProgressThreshold(state, keyframes) {
   if (!keyframes) {
     return threshold;
   }
+
+  threshold = Math.min(threshold, getPreferredProgressThresholdByKeyframes(keyframes));
+
+  return threshold;
+}
+
+
+
+
+
+
+
+
+
+function getPreferredProgressThresholdByKeyframes(keyframes) {
+  let threshold = DEFAULT_MIN_PROGRESS_THRESHOLD;
+  let stepsOrFrames;
 
   for (let i = 0; i < keyframes.length - 1; i++) {
     const keyframe = keyframes[i];
@@ -239,6 +258,11 @@ function toPathString(segments) {
   return pathString;
 }
 
-module.exports.DEFAULT_GRAPH_HEIGHT = DEFAULT_GRAPH_HEIGHT;
+exports.createPathSegments = createPathSegments;
+exports.DEFAULT_DURATION_RESOLUTION = DEFAULT_DURATION_RESOLUTION;
+exports.DEFAULT_GRAPH_HEIGHT = DEFAULT_GRAPH_HEIGHT;
+exports.DEFAULT_KEYFRAMES_GRAPH_DURATION = DEFAULT_KEYFRAMES_GRAPH_DURATION;
+exports.getPreferredProgressThresholdByKeyframes =
+  getPreferredProgressThresholdByKeyframes;
 exports.SummaryGraphHelper = SummaryGraphHelper;
 exports.toPathString = toPathString;
