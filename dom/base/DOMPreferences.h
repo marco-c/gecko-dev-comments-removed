@@ -1,0 +1,23 @@
+
+
+
+
+
+
+#ifndef mozilla_dom_DOMPreferences_h
+#define mozilla_dom_DOMPreferences_h
+
+namespace mozilla {
+namespace dom {
+
+class DOMPreferences final
+{
+public:
+  
+  static bool DumpEnabled();
+};
+
+} 
+} 
+
+#endif 

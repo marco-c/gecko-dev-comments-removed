@@ -2693,11 +2693,6 @@ public:
   
 
 
-  static bool DOMWindowDumpEnabled();
-
-  
-
-
   static bool DoNotTrackEnabled();
 
   
@@ -3474,9 +3469,6 @@ private:
   
   static nsCString* sJSBytecodeMimeType;
 
-#if !(defined(DEBUG) || defined(MOZ_ENABLE_JS_DUMP))
-  static bool sDOMWindowDumpEnabled;
-#endif
   static bool sDoNotTrackEnabled;
   static mozilla::LazyLogModule sDOMDumpLog;
 
