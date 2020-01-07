@@ -72,10 +72,6 @@ using namespace mozilla::ipc;
 namespace mozilla {
 namespace net {
 
-#if defined(NIGHTLY_BUILD) || defined(MOZ_DEV_EDITION) || defined(DEBUG)
-static bool gIPCSecurityDisabled = false;
-#endif
-
 NS_IMPL_ISUPPORTS(InterceptStreamListener,
                   nsIStreamListener,
                   nsIRequestObserver,
@@ -198,15 +194,6 @@ HttpChannelChild::HttpChannelChild()
   mAsyncOpenTime = TimeStamp::Now();
   mEventQ = new ChannelEventQueue(static_cast<nsIHttpChannel*>(this));
 
-#if defined(NIGHTLY_BUILD) || defined(MOZ_DEV_EDITION) || defined(DEBUG)
-  static bool sSecurityPrefChecked = false;
-  if (!sSecurityPrefChecked) {
-    Preferences::AddBoolVarCache(&gIPCSecurityDisabled,
-                                 "network.disable.ipc.security");
-    sSecurityPrefChecked = true;
-  }
-#endif
-
   
   
   
@@ -240,7 +227,7 @@ HttpChannelChild::ReleaseMainThreadOnlyReferences()
   arrayToRelease.AppendElement(mInterceptedRedirectListener.forget());
   arrayToRelease.AppendElement(mInterceptedRedirectContext.forget());
 
-  NS_DispatchToMainThread(new ProxyReleaseRunnable(std::move(arrayToRelease)));
+  NS_DispatchToMainThread(new ProxyReleaseRunnable(Move(arrayToRelease)));
 }
 
 
@@ -461,7 +448,7 @@ class StartRequestEvent : public NeckoTargetChannelEvent<HttpChannelChild>
   , mCacheKey(aCacheKey)
   , mAltDataType(altDataType)
   , mAltDataLen(altDataLen)
-  , mController(std::move(aController))
+  , mController(Move(aController))
   , mLoadInfoForwarder(loadInfoForwarder)
   {}
 
@@ -547,7 +534,7 @@ HttpChannelChild::RecvOnStartRequest(const nsresult& channelStatus,
                                               securityInfoSerialization,
                                               selfAddr, peerAddr, cacheKey,
                                               altDataType, altDataLen,
-                                              std::move(controller),
+                                              Move(controller),
                                               aApplyConversion));
 
   {
@@ -2124,12 +2111,9 @@ HttpChannelChild::ConnectParent(uint32_t registrarId)
   HttpChannelConnectArgs connectArgs(registrarId, mShouldParentIntercept);
   PBrowserOrId browser = static_cast<ContentChild*>(gNeckoChild->Manager())
                          ->GetBrowserOrId(tabChild);
-  IPC::SerializedLoadContext slc(this);
-  MOZ_DIAGNOSTIC_ASSERT(gIPCSecurityDisabled || slc.IsNotNull(),
-                        "SerializedLoadContext should not be null");
   if (!gNeckoChild->
         SendPHttpChannelConstructor(this, browser,
-                                    slc,
+                                    IPC::SerializedLoadContext(this),
                                     connectArgs)) {
     return NS_ERROR_FAILURE;
   }
@@ -2155,7 +2139,7 @@ HttpChannelChild::ConnectParent(uint32_t registrarId)
       gSocketTransportService->Dispatch(
         NewRunnableMethod<RefPtr<HttpChannelChild>>(
           "HttpBackgroundChannelChild::Init",
-          bgChild, &HttpBackgroundChannelChild::Init, std::move(self)),
+          bgChild, &HttpBackgroundChannelChild::Init, Move(self)),
         NS_DISPATCH_NORMAL);
 
     if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -2813,11 +2797,8 @@ HttpChannelChild::ContinueAsyncOpen()
   AddIPDLReference();
 
   PBrowserOrId browser = cc->GetBrowserOrId(tabChild);
-  IPC::SerializedLoadContext slc(this);
-  MOZ_DIAGNOSTIC_ASSERT(gIPCSecurityDisabled || slc.IsNotNull(),
-                        "SerializedLoadContext should not be null");
   if (!gNeckoChild->SendPHttpChannelConstructor(this, browser,
-                                                slc,
+                                                IPC::SerializedLoadContext(this),
                                                 openArgs)) {
     return NS_ERROR_FAILURE;
   }
@@ -3948,7 +3929,7 @@ HttpChannelChild::RecvSetPriority(const int16_t& aPriority)
 mozilla::ipc::IPCResult
 HttpChannelChild::RecvAttachStreamFilter(Endpoint<extensions::PStreamFilterParent>&& aEndpoint)
 {
-  extensions::StreamFilterParent::Attach(this, std::move(aEndpoint));
+  extensions::StreamFilterParent::Attach(this, Move(aEndpoint));
   return IPC_OK();
 }
 
