@@ -476,11 +476,6 @@ protected:
 
 
 
-  bool mKeepRequestAlive;
-
-  
-
-
 
 
   nsCOMPtr<nsIRequest> mRequest;
