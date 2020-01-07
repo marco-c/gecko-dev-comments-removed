@@ -36,10 +36,6 @@ WebSocketChannelParent::WebSocketChannelParent(nsIAuthPromptProvider* aAuthProvi
   MOZ_ASSERT_IF(!aLoadContext, aOverrideStatus == kPBOverride_Unset);
 }
 
-WebSocketChannelParent::~WebSocketChannelParent()
-{
-}
-
 
 
 

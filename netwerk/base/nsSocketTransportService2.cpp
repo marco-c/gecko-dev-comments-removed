@@ -515,7 +515,7 @@ nsSocketTransportService::Poll(TimeDuration *pollDuration,
     PRPollDesc *pollList;
     uint32_t pollCount;
     PRIntervalTime pollTimeout;
-    *pollDuration = 0;
+    *pollDuration = nullptr;
 
     
     
@@ -957,7 +957,7 @@ nsSocketTransportService::Run()
             startOfCycleForLastCycleCalc = TimeStamp::NowLoRes();
             startOfNextIteration = TimeStamp::NowLoRes();
         }
-        pollDuration = 0;
+        pollDuration = nullptr;
 
         do {
             if (mTelemetryEnabledPref) {
@@ -1026,7 +1026,7 @@ nsSocketTransportService::Run()
 
                     numberOfPendingEventsLastCycle += numberOfPendingEvents;
                     numberOfPendingEvents = 0;
-                    pollDuration = 0;
+                    pollDuration = nullptr;
                 }
             }
         } while (pendingEvents);
@@ -1166,7 +1166,7 @@ nsSocketTransportService::DoPollIteration(TimeDuration *pollDuration)
 
     
     int32_t n = 0;
-    *pollDuration = 0;
+    *pollDuration = nullptr;
 
     if (!gIOService->IsNetTearingDown()) {
         

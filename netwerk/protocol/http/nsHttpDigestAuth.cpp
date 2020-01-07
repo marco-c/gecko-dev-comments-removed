@@ -29,16 +29,6 @@ namespace net {
 
 
 
-nsHttpDigestAuth::nsHttpDigestAuth()
-{}
-
-nsHttpDigestAuth::~nsHttpDigestAuth()
-{}
-
-
-
-
-
 NS_IMPL_ISUPPORTS(nsHttpDigestAuth, nsIHttpAuthenticator)
 
 

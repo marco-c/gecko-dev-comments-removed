@@ -18,18 +18,6 @@ namespace net {
 
 
 
-nsHttpBasicAuth::nsHttpBasicAuth()
-{
-}
-
-nsHttpBasicAuth::~nsHttpBasicAuth()
-{
-}
-
-
-
-
-
 NS_IMPL_ISUPPORTS(nsHttpBasicAuth, nsIHttpAuthenticator)
 
 

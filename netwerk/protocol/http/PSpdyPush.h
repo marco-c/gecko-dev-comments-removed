@@ -40,7 +40,7 @@ class SpdyPushCache
 {
 public:
   
-  SpdyPushCache();
+  SpdyPushCache() = default;
   virtual ~SpdyPushCache();
   MOZ_MUST_USE bool  RegisterPushedStreamHttp2(const nsCString& key,
                                                Http2PushedStream *stream);

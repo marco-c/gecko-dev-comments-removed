@@ -28,10 +28,10 @@ public:
 
     
     
-    nsStreamConverterService();
+    nsStreamConverterService() = default;
 
 private:
-    virtual ~nsStreamConverterService();
+    virtual ~nsStreamConverterService() = default;
 
     
     nsresult FindConverter(const char *aContractID, nsTArray<nsCString> **aEdgeList);

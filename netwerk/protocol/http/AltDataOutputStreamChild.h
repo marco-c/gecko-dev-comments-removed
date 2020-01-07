@@ -30,7 +30,7 @@ public:
   virtual mozilla::ipc::IPCResult RecvDeleteSelf() override;
 
 private:
-  virtual ~AltDataOutputStreamChild();
+  virtual ~AltDataOutputStreamChild() = default;
   
   bool WriteDataInChunks(const nsCString& data);
 

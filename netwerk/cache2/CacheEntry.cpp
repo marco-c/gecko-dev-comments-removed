@@ -1925,10 +1925,6 @@ CacheOutputCloseListener::CacheOutputCloseListener(CacheEntry* aEntry)
 {
 }
 
-CacheOutputCloseListener::~CacheOutputCloseListener()
-{
-}
-
 void CacheOutputCloseListener::OnOutputClosed()
 {
   

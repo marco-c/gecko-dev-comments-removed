@@ -383,10 +383,9 @@ ValidationRequired(bool isForcedValid, nsHttpResponseHead *cachedResponseHead,
         if (cachedResponseHead->NoStore()) {
             LOG(("Validating based on no-store logic\n"));
             return true;
-        } else {
-            LOG(("NOT validating based on VALIDATE_NEVER load flag\n"));
-            return false;
         }
+        LOG(("NOT validating based on VALIDATE_NEVER load flag\n"));
+        return false;
     }
 
     
@@ -493,7 +492,7 @@ GetHttpResponseHeadFromCacheEntry(nsICacheEntry *entry, nsHttpResponseHead *cach
         }
     }
 
-    buf.Adopt(0);
+    buf.Adopt(nullptr);
     
     
     
@@ -505,7 +504,7 @@ GetHttpResponseHeadFromCacheEntry(nsICacheEntry *entry, nsHttpResponseHead *cach
     
     rv = cachedResponseHead->ParseCachedHead(buf.get());
     NS_ENSURE_SUCCESS(rv, rv);
-    buf.Adopt(0);
+    buf.Adopt(nullptr);
 
     return NS_OK;
 }

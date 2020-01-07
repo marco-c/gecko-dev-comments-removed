@@ -65,7 +65,7 @@ public:
   void DispatchCallbackSync() { DispatchCallback(false); }
 
 protected:
-  virtual ~nsBaseContentStream() {}
+  virtual ~nsBaseContentStream() = default;
 
 private:
   

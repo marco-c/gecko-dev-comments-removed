@@ -246,7 +246,7 @@ nsDiskCacheBindery::AddBinding(nsDiskCacheBinding * binding)
     nsDiskCacheBinding * p  = hashEntry->mBinding;
     bool     calcGeneration = (binding->mGeneration == 0);  
     if (calcGeneration)  binding->mGeneration = 1;          
-    while (1) {
+    while (true) {
 
         if (binding->mGeneration < p->mGeneration) {
             
@@ -303,10 +303,9 @@ nsDiskCacheBindery::RemoveBinding(nsDiskCacheBinding * binding)
             table.Remove((void*)(uintptr_t) binding->mRecord.HashNumber());
             return;
 
-        } else {
-            
-            hashEntry->mBinding = (nsDiskCacheBinding *)PR_NEXT_LINK(binding);
         }
+        
+        hashEntry->mBinding = (nsDiskCacheBinding *)PR_NEXT_LINK(binding);
     }
     PR_REMOVE_AND_INIT_LINK(binding);
 }

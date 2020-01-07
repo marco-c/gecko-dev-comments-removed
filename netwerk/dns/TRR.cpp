@@ -107,7 +107,7 @@ TRR::DohEncode(nsCString &aBody)
       break;
     }
     offset += labelLength + 1; 
-  } while(1);
+  } while(true);
 
   aBody += '\0'; 
   aBody += static_cast<uint8_t>(mType);

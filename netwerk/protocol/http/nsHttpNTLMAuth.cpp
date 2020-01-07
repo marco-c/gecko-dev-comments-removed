@@ -137,7 +137,7 @@ CanUseDefaultCredentials(nsIHttpAuthenticableChannel *channel,
 
 class nsNTLMSessionState final : public nsISupports
 {
-    ~nsNTLMSessionState() {}
+    ~nsNTLMSessionState() = default;
 public:
     NS_DECL_ISUPPORTS
 };

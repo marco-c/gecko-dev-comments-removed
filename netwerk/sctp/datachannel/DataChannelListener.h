@@ -17,7 +17,7 @@ namespace mozilla {
 
 class DataChannelListener {
 public:
-  virtual ~DataChannelListener() {}
+  virtual ~DataChannelListener() = default;
 
   
   virtual nsresult OnMessageAvailable(nsISupports *aContext,

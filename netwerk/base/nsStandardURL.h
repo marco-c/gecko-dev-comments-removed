@@ -87,7 +87,7 @@ public:
 
         URLSegment() : mPos(0), mLen(-1) {}
         URLSegment(uint32_t pos, int32_t len) : mPos(pos), mLen(len) {}
-        URLSegment(const URLSegment& aCopy) : mPos(aCopy.mPos), mLen(aCopy.mLen) {}
+        URLSegment(const URLSegment& aCopy) = default;
         void Reset() { mPos = 0; mLen = -1; }
         
         
@@ -476,9 +476,9 @@ public:
             return NS_OK;
         }
 
-        explicit TemplatedMutator() { }
+        explicit TemplatedMutator() = default;
     private:
-        virtual ~TemplatedMutator() { }
+        virtual ~TemplatedMutator() = default;
 
         bool mMarkedFileURL = false;
 

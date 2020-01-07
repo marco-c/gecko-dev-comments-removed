@@ -312,7 +312,7 @@ protected:
   virtual nsAsyncCopyProgressFun GetProgressCallback() override;
 
 private:
-  ~BackgroundFileSaverOutputStream();
+  ~BackgroundFileSaverOutputStream() = default;
 
   
 
@@ -339,7 +339,7 @@ protected:
   virtual nsAsyncCopyProgressFun GetProgressCallback() override;
 
 private:
-  ~BackgroundFileSaverStreamListener();
+  ~BackgroundFileSaverStreamListener() = default;
 
   
 
@@ -385,7 +385,7 @@ public:
   DigestOutputStream(nsIOutputStream* outputStream, PK11Context* aContext);
 
 private:
-  virtual ~DigestOutputStream() {}
+  virtual ~DigestOutputStream() = default;
 
   
   nsCOMPtr<nsIOutputStream> mOutputStream;
@@ -393,7 +393,7 @@ private:
   PK11Context* mDigestContext;
 
   
-  DigestOutputStream(const DigestOutputStream& d);
+  DigestOutputStream(const DigestOutputStream& d) = delete;
 };
 
 } 

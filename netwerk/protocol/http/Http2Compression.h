@@ -104,7 +104,7 @@ public:
     mPeakSizeID = Telemetry::HPACK_PEAK_SIZE_DECOMPRESSOR;
     mPeakCountID = Telemetry::HPACK_PEAK_COUNT_DECOMPRESSOR;
   };
-  virtual ~Http2Decompressor() { } ;
+  virtual ~Http2Decompressor() = default;
 
   
   MOZ_MUST_USE nsresult DecodeHeaderBlock(const uint8_t *data,
@@ -165,7 +165,7 @@ public:
     mPeakSizeID = Telemetry::HPACK_PEAK_SIZE_COMPRESSOR;
     mPeakCountID = Telemetry::HPACK_PEAK_COUNT_COMPRESSOR;
   };
-  virtual ~Http2Compressor() { }
+  virtual ~Http2Compressor() = default;
 
   
   

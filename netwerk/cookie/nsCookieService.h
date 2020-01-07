@@ -81,8 +81,7 @@ class nsCookieEntry : public nsCookieKey
       NS_NOTREACHED("nsCookieEntry copy constructor is forbidden!");
     }
 
-    ~nsCookieEntry()
-    {}
+    ~nsCookieEntry() = default;
 
     inline ArrayType& GetCookies() { return mCookies; }
 
@@ -150,9 +149,7 @@ struct DBState final
 
 private:
   
-  ~DBState()
-  {
-  }
+  ~DBState() = default;
 
 public:
   NS_INLINE_DECL_REFCOUNTING(DBState)

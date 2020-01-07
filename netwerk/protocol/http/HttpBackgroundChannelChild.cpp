@@ -24,13 +24,9 @@ namespace mozilla {
 namespace net {
 
 
-HttpBackgroundChannelChild::HttpBackgroundChannelChild()
-{
-}
+HttpBackgroundChannelChild::HttpBackgroundChannelChild() = default;
 
-HttpBackgroundChannelChild::~HttpBackgroundChannelChild()
-{
-}
+HttpBackgroundChannelChild::~HttpBackgroundChannelChild() = default;
 
 nsresult
 HttpBackgroundChannelChild::Init(HttpChannelChild* aChannelChild)
@@ -76,7 +72,7 @@ HttpBackgroundChannelChild::OnStartRequestReceived()
   nsTArray<nsCOMPtr<nsIRunnable>> runnables;
   runnables.SwapElements(mQueuedRunnables);
 
-  for (auto event : runnables) {
+  for (const auto& event : runnables) {
     
     
     event->Run();

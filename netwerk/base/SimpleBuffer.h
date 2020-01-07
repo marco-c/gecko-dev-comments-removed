@@ -37,7 +37,7 @@ class SimpleBuffer
 {
 public:
   SimpleBuffer();
-  ~SimpleBuffer() {}
+  ~SimpleBuffer() = default;
 
   nsresult Write(char *stc, size_t len); 
   size_t Read(char *dest, size_t maxLen); 

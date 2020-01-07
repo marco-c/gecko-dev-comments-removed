@@ -25,7 +25,7 @@ public:
   nsresult Init();
 
 protected:
-  ~nsFileChannel();
+  ~nsFileChannel() = default;
 
   
   

@@ -1333,7 +1333,7 @@ nsHttpTransaction::LocateHttpStart(char *buf, uint32_t len,
                 return (buf + checkChars);
             }
             
-            return 0;
+            return nullptr;
         }
         
         
@@ -1347,7 +1347,7 @@ nsHttpTransaction::LocateHttpStart(char *buf, uint32_t len,
                 
                 
                 mLineBuf.Assign(buf, len);
-                return 0;
+                return nullptr;
             }
 
             
@@ -1380,7 +1380,7 @@ nsHttpTransaction::LocateHttpStart(char *buf, uint32_t len,
         buf++;
         len--;
     }
-    return 0;
+    return nullptr;
 }
 
 nsresult

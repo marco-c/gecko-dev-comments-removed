@@ -49,11 +49,6 @@ NS_IMPL_ISUPPORTS(nsStreamConverterService, nsIStreamConverterService)
 
 
 
-nsStreamConverterService::nsStreamConverterService()
-{
-}
-
-nsStreamConverterService::~nsStreamConverterService() = default;
 
 
 

@@ -55,10 +55,6 @@ nsSimpleURI::nsSimpleURI()
 {
 }
 
-nsSimpleURI::~nsSimpleURI()
-{
-}
-
 NS_IMPL_ADDREF(nsSimpleURI)
 NS_IMPL_RELEASE(nsSimpleURI)
 NS_INTERFACE_TABLE_HEAD(nsSimpleURI)
