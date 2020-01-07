@@ -467,15 +467,18 @@ public abstract class BrowserToolbar extends ThemedRelativeLayout
                     flags.add(UpdateFlags.PROGRESS);
                     updateProgressBarState(tab, Tab.LOAD_PROGRESS_INIT);
                     break;
-                case ADDED:
-                case LOCATION_CHANGE:
+
                 case LOAD_ERROR:
-                case LOADED:
                 case STOP:
-                    flags.add(UpdateFlags.PROGRESS);
                     if (progressBar.getVisibility() == View.VISIBLE) {
+                        
                         progressBar.setProgress(tab.getLoadProgress());
                     }
+                    
+                case ADDED:
+                case LOCATION_CHANGE:
+                case LOADED:
+                    flags.add(UpdateFlags.PROGRESS);
                     updateProgressBarState();
                     break;
 
