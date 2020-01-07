@@ -678,6 +678,11 @@ FontFace::SetUserFontEntry(gfxUserFontEntry* aEntry)
   if (mUserFontEntry) {
     mUserFontEntry->mFontFaces.AppendElement(this);
 
+    MOZ_ASSERT(mUserFontEntry->GetUserFontSet() ==
+                 mFontFaceSet->GetUserFontSet(),
+               "user font entry must be associated with the same user font set "
+               "as the FontFace");
+
     
     
     

@@ -135,7 +135,7 @@ public:
 
 
 
-  already_AddRefed<gfxUserFontEntry>
+  static already_AddRefed<gfxUserFontEntry>
     FindOrCreateUserFontEntryFromFontFace(FontFace* aFontFace);
 
   
@@ -267,7 +267,7 @@ private:
     bool mLoadEventShouldFire;
   };
 
-  already_AddRefed<gfxUserFontEntry> FindOrCreateUserFontEntryFromFontFace(
+  static already_AddRefed<gfxUserFontEntry> FindOrCreateUserFontEntryFromFontFace(
                                                    const nsAString& aFamilyName,
                                                    FontFace* aFontFace,
                                                    SheetType aSheetType);

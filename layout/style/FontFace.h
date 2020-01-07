@@ -95,6 +95,8 @@ public:
   void AddFontFaceSet(FontFaceSet* aFontFaceSet);
   void RemoveFontFaceSet(FontFaceSet* aFontFaceSet);
 
+  FontFaceSet* GetPrimaryFontFaceSet() const { return mFontFaceSet; }
+
   
 
 
