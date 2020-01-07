@@ -59,6 +59,73 @@ GetEventType(GdkEventKey* aKeyEvent)
     }
 }
 
+class GetEventStateName : public nsAutoCString
+{
+public:
+    explicit GetEventStateName(guint aState,
+                               IMContextWrapper::IMContextID aIMContextID =
+                                   IMContextWrapper::IMContextID::eUnknown)
+    {
+        if (aState & GDK_SHIFT_MASK) {
+            AppendModifier("shift");
+        }
+        if (aState & GDK_CONTROL_MASK) {
+            AppendModifier("control");
+        }
+        if (aState & GDK_MOD1_MASK) {
+            AppendModifier("mod1");
+        }
+        if (aState & GDK_MOD2_MASK) {
+            AppendModifier("mod2");
+        }
+        if (aState & GDK_MOD3_MASK) {
+            AppendModifier("mod3");
+        }
+        if (aState & GDK_MOD4_MASK) {
+            AppendModifier("mod4");
+        }
+        if (aState & GDK_MOD4_MASK) {
+            AppendModifier("mod5");
+        }
+        if (aState & GDK_MOD4_MASK) {
+            AppendModifier("mod5");
+        }
+        switch (aIMContextID) {
+            case IMContextWrapper::IMContextID::eIBus:
+                static const guint IBUS_HANDLED_MASK = 1 << 24;
+                static const guint IBUS_IGNORED_MASK = 1 << 25;
+                if (aState & IBUS_HANDLED_MASK) {
+                    AppendModifier("IBUS_HANDLED_MASK");
+                }
+                if (aState & IBUS_IGNORED_MASK) {
+                    AppendModifier("IBUS_IGNORED_MASK");
+                }
+                break;
+            case IMContextWrapper::IMContextID::eFcitx:
+                static const guint FcitxKeyState_HandledMask = 1 << 24;
+                static const guint FcitxKeyState_IgnoredMask = 1 << 25;
+                if (aState & FcitxKeyState_HandledMask) {
+                    AppendModifier("FcitxKeyState_HandledMask");
+                }
+                if (aState & FcitxKeyState_IgnoredMask) {
+                    AppendModifier("FcitxKeyState_IgnoredMask");
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
+private:
+    void AppendModifier(const char* aModifierName)
+    {
+        if (!IsEmpty()) {
+            AppendLiteral(" + ");
+        }
+        Append(aModifierName);
+    }
+};
+
 class GetWritingModeName : public nsAutoCString
 {
 public:
@@ -174,6 +241,7 @@ IMContextWrapper::IMContextWrapper(nsWindow* aOwnerWindow)
     , mCompositionStart(UINT32_MAX)
     , mProcessingKeyEvent(nullptr)
     , mCompositionState(eCompositionState_NotComposing)
+    , mIMContextID(IMContextID::eUnknown)
     , mIsIMFocused(false)
     , mFallbackToKeyEvent(false)
     , mKeyboardEventWasDispatched(false)
@@ -183,6 +251,7 @@ IMContextWrapper::IMContextWrapper(nsWindow* aOwnerWindow)
     , mPendingResettingIMContext(false)
     , mRetrieveSurroundingSignalReceived(false)
     , mMaybeInDeadKeySequence(false)
+    , mIsIMInAsyncKeyHandlingMode(false)
 {
     static bool sFirstInstance = true;
     if (sFirstInstance) {
@@ -195,13 +264,59 @@ IMContextWrapper::IMContextWrapper(nsWindow* aOwnerWindow)
     Init();
 }
 
+static bool
+IsIBusInSyncMode()
+{
+    
+    
+    const char* env = PR_GetEnv("IBUS_ENABLE_SYNC_MODE");
+
+    
+    
+    if (!env) {
+        return false;
+    }
+    nsDependentCString envStr(env);
+    if (envStr.IsEmpty() ||
+        envStr.EqualsLiteral("0") ||
+        envStr.EqualsLiteral("false") ||
+        envStr.EqualsLiteral("False") ||
+        envStr.EqualsLiteral("FALSE")) {
+        return false;
+    }
+    return true;
+}
+
+static bool
+GetFcitxBoolEnv(const char* aEnv)
+{
+    
+    
+    const char* env = PR_GetEnv(aEnv);
+    if (!env) {
+        return false;
+    }
+    nsDependentCString envStr(env);
+    if (envStr.IsEmpty() ||
+        envStr.EqualsLiteral("0") ||
+        envStr.EqualsLiteral("false")) {
+        return false;
+    }
+    return true;
+}
+
+static bool
+IsFcitxInSyncMode()
+{
+    
+    
+    return GetFcitxBoolEnv("IBUS_ENABLE_SYNC_MODE") ||
+           GetFcitxBoolEnv("FCITX_ENABLE_SYNC_MODE");
+}
+
 void
 IMContextWrapper::Init()
 {
-    MOZ_LOG(gGtkIMLog, LogLevel::Info,
-        ("0x%p Init(), mOwnerWindow=0x%p",
-         this, mOwnerWindow));
-
     MozContainer* container = mOwnerWindow->GetMozContainer();
     NS_PRECONDITION(container, "container is null");
     GdkWindow* gdkWindow = gtk_widget_get_window(GTK_WIDGET(container));
@@ -224,6 +339,31 @@ IMContextWrapper::Init()
         G_CALLBACK(IMContextWrapper::OnStartCompositionCallback), this);
     g_signal_connect(mContext, "preedit_end",
         G_CALLBACK(IMContextWrapper::OnEndCompositionCallback), this);
+    nsDependentCString contextID;
+    const char* contextIDChar =
+        gtk_im_multicontext_get_context_id(GTK_IM_MULTICONTEXT(mContext));
+    if (contextIDChar) {
+        contextID.Rebind(contextIDChar);
+    }
+    if (contextID.EqualsLiteral("ibus")) {
+        mIMContextID = IMContextID::eIBus;
+        mIsIMInAsyncKeyHandlingMode = !IsIBusInSyncMode();
+    } else if (contextID.EqualsLiteral("fcitx")) {
+        mIMContextID = IMContextID::eFcitx;
+        mIsIMInAsyncKeyHandlingMode = !IsFcitxInSyncMode();
+    } else if (contextID.EqualsLiteral("uim")) {
+        mIMContextID = IMContextID::eUim;
+        mIsIMInAsyncKeyHandlingMode = false;
+    } else if (contextID.EqualsLiteral("scim")) {
+        mIMContextID = IMContextID::eScim;
+        mIsIMInAsyncKeyHandlingMode = false;
+    } else if (contextID.EqualsLiteral("iiim")) {
+        mIMContextID = IMContextID::eIIIMF;
+        mIsIMInAsyncKeyHandlingMode = false;
+    } else {
+        mIMContextID = IMContextID::eUnknown;
+        mIsIMInAsyncKeyHandlingMode = false;
+    }
 
     
     if (sUseSimpleContext) {
@@ -252,6 +392,13 @@ IMContextWrapper::Init()
     
     mDummyContext = gtk_im_multicontext_new();
     gtk_im_context_set_client_window(mDummyContext, gdkWindow);
+
+    MOZ_LOG(gGtkIMLog, LogLevel::Info,
+        ("0x%p Init(), mOwnerWindow=%p, mContext=%p (%s), "
+         "mIsIMInAsyncKeyHandlingMode=%s, mSimpleContext=%p, "
+         "mDummyContext=%p",
+         this, mOwnerWindow, mContext, contextID.get(),
+         ToChar(mIsIMInAsyncKeyHandlingMode), mSimpleContext, mDummyContext));
 }
 
 IMContextWrapper::~IMContextWrapper()
@@ -498,16 +645,23 @@ IMContextWrapper::OnKeyEvent(nsWindow* aCaller,
 
     MOZ_LOG(gGtkIMLog, LogLevel::Info,
         ("0x%p OnKeyEvent(aCaller=0x%p, "
-         "aEvent(0x%p): { type=%s, keyval=%s, unicode=0x%X }, "
-         "aKeyboardEventWasDispatched=%s), "
-         "mMaybeInDeadKeySequence=%s, "
-         "mCompositionState=%s, current context=0x%p, active context=0x%p, ",
+         "aEvent(0x%p): { type=%s, keyval=%s, unicode=0x%X, state=%s, "
+         "time=%u, hardware_keycode=%u, group=%u }, "
+         "aKeyboardEventWasDispatched=%s)",
          this, aCaller, aEvent, GetEventType(aEvent),
          gdk_keyval_name(aEvent->keyval),
          gdk_keyval_to_unicode(aEvent->keyval),
-         ToChar(aKeyboardEventWasDispatched),
-         ToChar(mMaybeInDeadKeySequence),
-         GetCompositionStateName(), GetCurrentContext(), GetActiveContext()));
+         GetEventStateName(aEvent->state, mIMContextID).get(),
+         aEvent->time, aEvent->hardware_keycode, aEvent->group,
+         ToChar(aKeyboardEventWasDispatched)));
+    MOZ_LOG(gGtkIMLog, LogLevel::Info,
+        ("0x%p   OnKeyEvent(), mMaybeInDeadKeySequence=%s, "
+         "mCompositionState=%s, current context=%p, active context=%p, "
+         "mIMContextID=%s, mIsIMInAsyncKeyHandlingMode=%s",
+         this, ToChar(mMaybeInDeadKeySequence),
+         GetCompositionStateName(), GetCurrentContext(), GetActiveContext(),
+         GetIMContextIDName(mIMContextID),
+         ToChar(mIsIMInAsyncKeyHandlingMode)));
 
     if (aCaller != mLastFocusedWindow) {
         MOZ_LOG(gGtkIMLog, LogLevel::Error,
@@ -537,6 +691,78 @@ IMContextWrapper::OnKeyEvent(nsWindow* aCaller,
     bool isDeadKey =
         KeymapWrapper::ComputeDOMKeyNameIndex(aEvent) == KEY_NAME_INDEX_Dead;
     mMaybeInDeadKeySequence |= isDeadKey;
+
+    
+    
+    
+    bool maybeHandledAsynchronously =
+        mIsIMInAsyncKeyHandlingMode && currentContext == mContext;
+
+    
+    
+    
+    
+    
+    if (maybeHandledAsynchronously) {
+        switch (mIMContextID) {
+            case IMContextID::eIBus:
+                
+                if (mMaybeInDeadKeySequence && aEvent->type == GDK_KEY_PRESS) {
+                    maybeHandledAsynchronously = false;
+                    break;
+                }
+                
+                
+                if (mInputContext.mIMEState.mEnabled == IMEState::PASSWORD) {
+                    maybeHandledAsynchronously = false;
+                    break;
+                }
+                
+                static const guint IBUS_IGNORED_MASK = 1 << 25;
+                
+                
+                
+                if (aEvent->state & IBUS_IGNORED_MASK) {
+                    MOZ_LOG(gGtkIMLog, LogLevel::Info,
+                        ("0x%p   OnKeyEvent(), aEvent->state has "
+                         "IBUS_IGNORED_MASK, so, it won't be handled "
+                         "asynchronously anymore",
+                         this));
+                    maybeHandledAsynchronously = false;
+                    break;
+                }
+                break;
+            case IMContextID::eFcitx:
+                
+                if (mMaybeInDeadKeySequence && aEvent->type == GDK_KEY_PRESS) {
+                    maybeHandledAsynchronously = false;
+                    break;
+                }
+
+                
+                
+
+                
+                static const guint FcitxKeyState_IgnoredMask = 1 << 25;
+                
+                
+                
+                if (aEvent->state & FcitxKeyState_IgnoredMask) {
+                    MOZ_LOG(gGtkIMLog, LogLevel::Info,
+                        ("0x%p   OnKeyEvent(), aEvent->state has "
+                         "FcitxKeyState_IgnoredMask, so, it won't be handled "
+                         "asynchronously anymore",
+                         this));
+                    maybeHandledAsynchronously = false;
+                    break;
+                }
+                break;
+            default:
+                MOZ_ASSERT_UNREACHABLE("IME may handle key event "
+                    "asyncrhonously, but not yet confirmed if it comes agian "
+                    "actually");
+        }
+    }
 
     mKeyboardEventWasDispatched = aKeyboardEventWasDispatched;
     mFallbackToKeyEvent = false;
@@ -571,7 +797,7 @@ IMContextWrapper::OnKeyEvent(nsWindow* aCaller,
     
     
     
-    if (filterThisEvent) {
+    if (filterThisEvent && !maybeHandledAsynchronously) {
         MaybeDispatchKeyEventAsProcessedByIME();
         
     }
@@ -589,11 +815,12 @@ IMContextWrapper::OnKeyEvent(nsWindow* aCaller,
 
     MOZ_LOG(gGtkIMLog, LogLevel::Debug,
         ("0x%p   OnKeyEvent(), succeeded, filterThisEvent=%s "
-         "(isFiltered=%s, mFallbackToKeyEvent=%s), mCompositionState=%s, "
+         "(isFiltered=%s, mFallbackToKeyEvent=%s, "
+         "maybeHandledAsynchronously=%s), mCompositionState=%s, "
          "mMaybeInDeadKeySequence=%s",
          this, ToChar(filterThisEvent), ToChar(isFiltered),
-         ToChar(mFallbackToKeyEvent), GetCompositionStateName(),
-         ToChar(mMaybeInDeadKeySequence)));
+         ToChar(mFallbackToKeyEvent), ToChar(maybeHandledAsynchronously),
+         GetCompositionStateName(), ToChar(mMaybeInDeadKeySequence)));
 
     return filterThisEvent;
 }

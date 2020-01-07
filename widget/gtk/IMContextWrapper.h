@@ -97,6 +97,37 @@ public:
 
     TextEventDispatcher* GetTextEventDispatcher();
 
+    
+    
+    
+    enum class IMContextID : uint8_t
+    {
+        eFcitx,
+        eIBus,
+        eIIIMF,
+        eScim,
+        eUim,
+        eUnknown,
+    };
+
+    static const char* GetIMContextIDName(IMContextID aIMContextID)
+    {
+        switch (aIMContextID) {
+            case IMContextID::eFcitx:
+                return "eFcitx";
+            case IMContextID::eIBus:
+                return "eIBus";
+            case IMContextID::eIIIMF:
+                return "eIIIMF";
+            case IMContextID::eScim:
+                return "eScim";
+            case IMContextID::eUim:
+                return "eUim";
+            default:
+                return "eUnknown";
+        }
+    }
+
 protected:
     ~IMContextWrapper();
 
@@ -175,7 +206,8 @@ protected:
     Range mCompositionTargetRange;
 
     
-    enum eCompositionState {
+    enum eCompositionState : uint8_t
+    {
         eCompositionState_NotComposing,
         eCompositionState_CompositionStartDispatched,
         eCompositionState_CompositionChangeEventDispatched
@@ -226,6 +258,10 @@ protected:
                 return "InvaildState";
         }
     }
+
+    
+    
+    IMContextID mIMContextID;
 
     struct Selection final
     {
@@ -321,6 +357,10 @@ protected:
     
     
     bool mMaybeInDeadKeySequence;
+    
+    
+    
+    bool mIsIMInAsyncKeyHandlingMode;
 
     
     
