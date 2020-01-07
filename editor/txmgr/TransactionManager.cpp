@@ -15,8 +15,8 @@
 #include "nsITransaction.h"
 #include "nsITransactionListener.h"
 #include "nsIWeakReference.h"
-#include "nsTransactionItem.h"
 #include "nsTransactionStack.h"
+#include "TransactionItem.h"
 
 namespace mozilla {
 
@@ -98,13 +98,13 @@ TransactionManager::UndoTransaction()
 
   
   
-  RefPtr<nsTransactionItem> tx = mUndoStack.Peek();
-  if (!tx) {
+  RefPtr<TransactionItem> transactionItem = mUndoStack.Peek();
+  if (!transactionItem) {
     
     return NS_OK;
   }
 
-  nsCOMPtr<nsITransaction> t = tx->GetTransaction();
+  nsCOMPtr<nsITransaction> t = transactionItem->GetTransaction();
   bool doInterrupt = false;
   nsresult rv = WillUndoNotify(t, &doInterrupt);
   if (NS_FAILED(rv)) {
@@ -114,10 +114,10 @@ TransactionManager::UndoTransaction()
     return NS_OK;
   }
 
-  rv = tx->UndoTransaction(this);
+  rv = transactionItem->UndoTransaction(this);
   if (NS_SUCCEEDED(rv)) {
-    tx = mUndoStack.Pop();
-    mRedoStack.Push(tx.forget());
+    transactionItem = mUndoStack.Pop();
+    mRedoStack.Push(transactionItem.forget());
   }
 
   nsresult rv2 = DidUndoNotify(t, rv);
@@ -142,15 +142,15 @@ TransactionManager::RedoTransaction()
 
   
   
-  RefPtr<nsTransactionItem> tx = mRedoStack.Peek();
-  if (!tx) {
+  RefPtr<TransactionItem> transactionItem = mRedoStack.Peek();
+  if (!transactionItem) {
     
     return NS_OK;
   }
 
-  nsCOMPtr<nsITransaction> t = tx->GetTransaction();
+  nsCOMPtr<nsITransaction> transaction = transactionItem->GetTransaction();
   bool doInterrupt = false;
-  nsresult rv = WillRedoNotify(t, &doInterrupt);
+  nsresult rv = WillRedoNotify(transaction, &doInterrupt);
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -158,13 +158,13 @@ TransactionManager::RedoTransaction()
     return NS_OK;
   }
 
-  rv = tx->RedoTransaction(this);
+  rv = transactionItem->RedoTransaction(this);
   if (NS_SUCCEEDED(rv)) {
-    tx = mRedoStack.Pop();
-    mUndoStack.Push(tx.forget());
+    transactionItem = mRedoStack.Pop();
+    mUndoStack.Push(transactionItem.forget());
   }
 
-  nsresult rv2 = DidRedoNotify(t, rv);
+  nsresult rv2 = DidRedoNotify(transaction, rv);
   if (NS_SUCCEEDED(rv)) {
     rv = rv2;
   }
@@ -225,12 +225,12 @@ TransactionManager::EndBatch(bool aAllowEmpty)
   
   
   
-  RefPtr<nsTransactionItem> tx = mDoStack.Peek();
-  nsCOMPtr<nsITransaction> ti;
-  if (tx) {
-    ti = tx->GetTransaction();
+  RefPtr<TransactionItem> transactionItem = mDoStack.Peek();
+  if (!transactionItem) {
+    return NS_ERROR_FAILURE;
   }
-  if (!tx || ti) {
+  nsCOMPtr<nsITransaction> transaction = transactionItem->GetTransaction();
+  if (transaction) {
     return NS_ERROR_FAILURE;
   }
 
@@ -309,8 +309,8 @@ TransactionManager::SetMaxTransactionCount(int32_t aMaxCount)
   
   
   while (numUndoItems > 0 && (numRedoItems + numUndoItems) > aMaxCount) {
-    RefPtr<nsTransactionItem> tx = mUndoStack.PopBottom();
-    if (!tx) {
+    RefPtr<TransactionItem> transactionItem = mUndoStack.PopBottom();
+    if (!transactionItem) {
       return NS_ERROR_FAILURE;
     }
     --numUndoItems;
@@ -319,8 +319,8 @@ TransactionManager::SetMaxTransactionCount(int32_t aMaxCount)
   
   
   while (numRedoItems > 0 && (numRedoItems + numUndoItems) > aMaxCount) {
-    RefPtr<nsTransactionItem> tx = mRedoStack.PopBottom();
-    if (!tx) {
+    RefPtr<TransactionItem> transactionItem = mRedoStack.PopBottom();
+    if (!transactionItem) {
       return NS_ERROR_FAILURE;
     }
     --numRedoItems;
@@ -341,11 +341,11 @@ TransactionManager::PeekUndoStack(nsITransaction** aTransaction)
 already_AddRefed<nsITransaction>
 TransactionManager::PeekUndoStack()
 {
-  RefPtr<nsTransactionItem> tx = mUndoStack.Peek();
-  if (!tx) {
+  RefPtr<TransactionItem> transactionItem = mUndoStack.Peek();
+  if (!transactionItem) {
     return nullptr;
   }
-  return tx->GetTransaction();
+  return transactionItem->GetTransaction();
 }
 
 NS_IMETHODIMP
@@ -359,11 +359,11 @@ TransactionManager::PeekRedoStack(nsITransaction** aTransaction)
 already_AddRefed<nsITransaction>
 TransactionManager::PeekRedoStack()
 {
-  RefPtr<nsTransactionItem> tx = mRedoStack.Peek();
-  if (!tx) {
+  RefPtr<TransactionItem> transactionItem = mRedoStack.Peek();
+  if (!transactionItem) {
     return nullptr;
   }
-  return tx->GetTransaction();
+  return transactionItem->GetTransaction();
 }
 
 nsresult
@@ -374,13 +374,10 @@ TransactionManager::BatchTopUndo()
     return NS_OK;
   }
 
-  RefPtr<nsTransactionItem> lastUndo;
-  RefPtr<nsTransactionItem> previousUndo;
-
-  lastUndo = mUndoStack.Pop();
+  RefPtr<TransactionItem> lastUndo = mUndoStack.Pop();
   MOZ_ASSERT(lastUndo, "There should be at least two transactions.");
 
-  previousUndo = mUndoStack.Peek();
+  RefPtr<TransactionItem> previousUndo = mUndoStack.Peek();
   MOZ_ASSERT(previousUndo, "There should be at least two transactions.");
 
   nsresult rv = previousUndo->AddChild(lastUndo);
@@ -401,7 +398,7 @@ TransactionManager::RemoveTopUndo()
     return NS_OK;
   }
 
-  RefPtr<nsTransactionItem> lastUndo = mUndoStack.Pop();
+  RefPtr<TransactionItem> lastUndo = mUndoStack.Pop();
   return NS_OK;
 }
 
@@ -631,21 +628,18 @@ TransactionManager::BeginTransaction(nsITransaction* aTransaction,
 {
   
   
-  RefPtr<nsTransactionItem> tx = new nsTransactionItem(aTransaction);
-  if (!tx) {
-    return NS_ERROR_OUT_OF_MEMORY;
-  }
+  RefPtr<TransactionItem> transactionItem = new TransactionItem(aTransaction);
 
   if (aData) {
-    nsCOMArray<nsISupports>& data = tx->GetData();
+    nsCOMArray<nsISupports>& data = transactionItem->GetData();
     data.AppendObject(aData);
   }
 
-  mDoStack.Push(tx);
+  mDoStack.Push(transactionItem);
 
-  nsresult rv = tx->DoTransaction();
+  nsresult rv = transactionItem->DoTransaction();
   if (NS_FAILED(rv)) {
-    tx = mDoStack.Pop();
+    transactionItem = mDoStack.Pop();
     return rv;
   }
   return NS_OK;
@@ -654,17 +648,17 @@ TransactionManager::BeginTransaction(nsITransaction* aTransaction,
 nsresult
 TransactionManager::EndTransaction(bool aAllowEmpty)
 {
-  RefPtr<nsTransactionItem> tx = mDoStack.Pop();
-  if (!tx) {
+  RefPtr<TransactionItem> transactionItem = mDoStack.Pop();
+  if (!transactionItem) {
     return NS_ERROR_FAILURE;
   }
 
-  nsCOMPtr<nsITransaction> tint = tx->GetTransaction();
-  if (!tint && !aAllowEmpty) {
+  nsCOMPtr<nsITransaction> transaction = transactionItem->GetTransaction();
+  if (!transaction && !aAllowEmpty) {
     
     
     int32_t nc = 0;
-    tx->GetNumberOfChildren(&nc);
+    transactionItem->GetNumberOfChildren(&nc);
     if (!nc) {
       return NS_OK;
     }
@@ -673,10 +667,7 @@ TransactionManager::EndTransaction(bool aAllowEmpty)
   
   
   bool isTransient = false;
-  nsresult rv = NS_OK;
-  if (tint) {
-    rv = tint->GetIsTransient(&isTransient);
-  }
+  nsresult rv = transaction ? transaction->GetIsTransient(&isTransient) : NS_OK;
   if (NS_FAILED(rv) || isTransient || !mMaxTransactionCount) {
     
     
@@ -686,9 +677,10 @@ TransactionManager::EndTransaction(bool aAllowEmpty)
   
   
   
-  RefPtr<nsTransactionItem> top = mDoStack.Peek();
-  if (top) {
-    return top->AddChild(tx); 
+  RefPtr<TransactionItem> topTransactionItem = mDoStack.Peek();
+  if (topTransactionItem) {
+    
+    return topTransactionItem->AddChild(transactionItem);
   }
 
   
@@ -699,18 +691,20 @@ TransactionManager::EndTransaction(bool aAllowEmpty)
 
   
   
-  top = mUndoStack.Peek();
-  if (tint && top) {
+  topTransactionItem = mUndoStack.Peek();
+  if (transaction && topTransactionItem) {
     bool didMerge = false;
-    nsCOMPtr<nsITransaction> topTransaction = top->GetTransaction();
+    nsCOMPtr<nsITransaction> topTransaction =
+      topTransactionItem->GetTransaction();
     if (topTransaction) {
       bool doInterrupt = false;
-      rv = WillMergeNotify(topTransaction, tint, &doInterrupt);
+      rv = WillMergeNotify(topTransaction, transaction, &doInterrupt);
       NS_ENSURE_SUCCESS(rv, rv);
 
       if (!doInterrupt) {
-        rv = topTransaction->Merge(tint, &didMerge);
-        nsresult rv2 = DidMergeNotify(topTransaction, tint, didMerge, rv);
+        rv = topTransaction->Merge(transaction, &didMerge);
+        nsresult rv2 =
+          DidMergeNotify(topTransaction, transaction, didMerge, rv);
         if (NS_SUCCEEDED(rv)) {
           rv = rv2;
         }
@@ -728,11 +722,11 @@ TransactionManager::EndTransaction(bool aAllowEmpty)
   
   int32_t sz = mUndoStack.GetSize();
   if (mMaxTransactionCount > 0 && sz >= mMaxTransactionCount) {
-    RefPtr<nsTransactionItem> overflow = mUndoStack.PopBottom();
+    RefPtr<TransactionItem> overflow = mUndoStack.PopBottom();
   }
 
   
-  mUndoStack.Push(tx.forget());
+  mUndoStack.Push(transactionItem.forget());
   return NS_OK;
 }
 

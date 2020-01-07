@@ -1,0 +1,71 @@
+
+
+
+
+
+#ifndef TransactionItem_h
+#define TransactionItem_h
+
+#include "nsCOMPtr.h"
+#include "nsCOMArray.h"
+#include "nsCycleCollectionParticipant.h"
+#include "nsISupportsImpl.h"
+#include "nscore.h"
+
+class nsITransaction;
+class nsTransactionStack;
+
+namespace mozilla {
+
+class TransactionManager;
+
+class TransactionItem final
+{
+public:
+  explicit TransactionItem(nsITransaction* aTransaction);
+  NS_METHOD_(MozExternalRefCountType) AddRef();
+  NS_METHOD_(MozExternalRefCountType) Release();
+
+  NS_DECL_CYCLE_COLLECTION_NATIVE_CLASS(TransactionItem)
+
+  nsresult AddChild(TransactionItem* aTransactionItem);
+  already_AddRefed<nsITransaction> GetTransaction();
+  nsresult GetIsBatch(bool *aIsBatch);
+  nsresult GetNumberOfChildren(int32_t *aNumChildren);
+  nsresult GetChild(int32_t aIndex, TransactionItem** aChild);
+
+  nsresult DoTransaction();
+  nsresult UndoTransaction(TransactionManager* aTransactionManager);
+  nsresult RedoTransaction(TransactionManager* aTransactionManager);
+
+  nsCOMArray<nsISupports>& GetData()
+  {
+    return mData;
+  }
+
+private:
+  nsresult UndoChildren(TransactionManager* aTransactionManager);
+  nsresult RedoChildren(TransactionManager* aTransactionManager);
+
+  nsresult RecoverFromUndoError(TransactionManager* aTransactionManager);
+  nsresult RecoverFromRedoError(TransactionManager* aTransactionManager);
+
+  nsresult GetNumberOfUndoItems(int32_t* aNumItems);
+  nsresult GetNumberOfRedoItems(int32_t* aNumItems);
+
+  void CleanUp();
+
+  ~TransactionItem();
+
+  nsCycleCollectingAutoRefCnt mRefCnt;
+  NS_DECL_OWNINGTHREAD
+
+  nsCOMArray<nsISupports> mData;
+  nsCOMPtr<nsITransaction> mTransaction;
+  nsTransactionStack* mUndoStack;
+  nsTransactionStack* mRedoStack;
+};
+
+} 
+
+#endif 
