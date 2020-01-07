@@ -57,6 +57,16 @@ ChromeUtils.defineModuleGetter(this, "PlacesUtils",
 ChromeUtils.defineModuleGetter(this, "PrivateBrowsingUtils",
   "resource://gre/modules/PrivateBrowsingUtils.jsm");
 
+XPCOMUtils.defineLazyGetter(this, "gHistoryObserver", function() {
+  return Object.freeze({
+    onClearHistory() {
+      WinTaskbarJumpList.update();
+    },
+    QueryInterface: XPCOMUtils.generateQI(Ci.nsINavHistoryObserver),
+    __noSuchMethod__: () => {}, 
+  });
+});
+
 
 
 
@@ -159,14 +169,6 @@ var WinTaskbarJumpList =
 
   _shutdown: function WTBJL__shutdown() {
     this._shuttingDown = true;
-
-    
-    
-    
-    if (!PlacesUtils.history.hasHistoryEntries) {
-      this.update();
-    }
-
     this._free();
   },
 
@@ -270,11 +272,6 @@ var WinTaskbarJumpList =
 
   _buildFrequent: function WTBJL__buildFrequent() {
     
-    if (!PlacesUtils.history.hasHistoryEntries) {
-      return;
-    }
-
-    
     
     
     
@@ -309,11 +306,6 @@ var WinTaskbarJumpList =
   },
 
   _buildRecent: function WTBJL__buildRecent() {
-    
-    if (!PlacesUtils.history.hasHistoryEntries) {
-      return;
-    }
-
     var items = Cc["@mozilla.org/array;1"].
                 createInstance(Ci.nsIMutableArray);
     
@@ -473,12 +465,14 @@ var WinTaskbarJumpList =
     Services.obs.addObserver(this, "profile-before-change");
     Services.obs.addObserver(this, "browser:purge-session-history");
     _prefs.addObserver("", this);
+    PlacesUtils.history.addObserver(gHistoryObserver, false);
   },
 
   _freeObs: function WTBJL__freeObs() {
     Services.obs.removeObserver(this, "profile-before-change");
     Services.obs.removeObserver(this, "browser:purge-session-history");
     _prefs.removeObserver("", this);
+    PlacesUtils.history.removeObserver(gHistoryObserver);
   },
 
   _updateTimer: function WTBJL__updateTimer() {
