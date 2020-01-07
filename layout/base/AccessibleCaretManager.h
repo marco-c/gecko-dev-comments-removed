@@ -349,10 +349,19 @@ protected:
   
   static bool sCaretsAlwaysTilt;
 
+  enum ScriptUpdateMode : int32_t {
+    
+    kScriptAlwaysHide,
+    
+    
+    kScriptUpdateVisible,
+    
+    kScriptAlwaysShow
+  };
+
   
   
-  
-  static bool sCaretsScriptUpdates;
+  static int32_t sCaretsScriptUpdates;
 
   
   

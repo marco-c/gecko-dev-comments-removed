@@ -78,8 +78,9 @@ AccessibleCaretManager::sSelectionBarEnabled = false;
 AccessibleCaretManager::sCaretShownWhenLongTappingOnEmptyContent = false;
  bool
 AccessibleCaretManager::sCaretsAlwaysTilt = false;
- bool
-AccessibleCaretManager::sCaretsScriptUpdates = false;
+ int32_t
+AccessibleCaretManager::sCaretsScriptUpdates =
+    AccessibleCaretManager::kScriptAlwaysHide;
  bool
 AccessibleCaretManager::sCaretsAllowDraggingAcrossOtherCaret = true;
  bool
@@ -107,8 +108,8 @@ AccessibleCaretManager::AccessibleCaretManager(nsIPresShell* aPresShell)
       "layout.accessiblecaret.caret_shown_when_long_tapping_on_empty_content");
     Preferences::AddBoolVarCache(&sCaretsAlwaysTilt,
                                  "layout.accessiblecaret.always_tilt");
-    Preferences::AddBoolVarCache(&sCaretsScriptUpdates,
-      "layout.accessiblecaret.allow_script_change_updates");
+    Preferences::AddIntVarCache(&sCaretsScriptUpdates,
+      "layout.accessiblecaret.script_change_update_mode");
     Preferences::AddBoolVarCache(&sCaretsAllowDraggingAcrossOtherCaret,
       "layout.accessiblecaret.allow_dragging_across_other_caret", true);
     Preferences::AddBoolVarCache(&sHapticFeedback,
@@ -156,9 +157,10 @@ AccessibleCaretManager::OnSelectionChanged(nsIDocument* aDoc,
 
   
   if (aReason == nsISelectionListener::NO_REASON) {
-    
-    if (sCaretsScriptUpdates &&
-        (mFirstCaret->IsLogicallyVisible() || mSecondCaret->IsLogicallyVisible())) {
+    if (sCaretsScriptUpdates == kScriptAlwaysShow ||
+        (sCaretsScriptUpdates == kScriptUpdateVisible &&
+         (mFirstCaret->IsLogicallyVisible() ||
+          mSecondCaret->IsLogicallyVisible()))) {
         UpdateCarets();
         return NS_OK;
     }

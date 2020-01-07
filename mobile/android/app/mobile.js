@@ -568,9 +568,6 @@ pref("media.mediasource.enabled", true);
 pref("media.mediadrm-widevinecdm.visible", true);
 
 
-pref("media.webspeech.synth.enabled", true);
-
-
 pref("image.downscale-during-decode.enabled", true);
 
 
@@ -786,7 +783,7 @@ pref("layout.accessiblecaret.always_tilt", true);
 
 
 
-pref("layout.accessiblecaret.allow_script_change_updates", true);
+pref("layout.accessiblecaret.script_change_update_mode", 1);
 
 
 pref("layout.accessiblecaret.hapticfeedback", true);
