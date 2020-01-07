@@ -230,6 +230,29 @@ public:
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  static void
+  UpdateCascadeResults(StyleBackendType aBackendType,
+                       EffectSet& aEffectSet,
+                       dom::Element* aElement,
+                       CSSPseudoElementType aPseudoType,
+                       nsStyleContext* aStyleContext);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
   static Maybe<NonOwningAnimationTarget>
   GetAnimationElementAndPseudoForFrame(const nsIFrame* aFrame);
 
@@ -292,24 +315,6 @@ private:
                           dom::Element* aElement,
                           CSSPseudoElementType aPseudoType,
                           nsStyleContext* aStyleContext);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  static void
-  UpdateCascadeResults(StyleBackendType aBackendType,
-                       EffectSet& aEffectSet,
-                       dom::Element* aElement,
-                       CSSPseudoElementType aPseudoType,
-                       nsStyleContext* aStyleContext);
 
   static nsPresContext* GetPresContext(dom::Element* aElement);
 
