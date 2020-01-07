@@ -140,7 +140,7 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
   
   
   
-  void UpdateSinkIdentity_m(dom::MediaStreamTrack* aTrack,
+  void UpdateSinkIdentity_m(const dom::MediaStreamTrack* aTrack,
                             nsIPrincipal* aPrincipal,
                             const PeerIdentity* aSinkIdentity);
   
