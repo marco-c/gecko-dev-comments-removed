@@ -9658,18 +9658,33 @@ nsDisplayMask::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuilder
                                                                             aSc, aDisplayListBuilder,
                                                                             bounds);
   if (mask) {
+    auto layoutBounds = wr::ToRoundedLayoutRect(bounds);
     wr::WrClipId clipId = aBuilder.DefineClip(Nothing(), Nothing(),
-        wr::ToRoundedLayoutRect(bounds), nullptr, mask.ptr());
+        layoutBounds, nullptr, mask.ptr());
+
     
     
+
     
-    aBuilder.PushClip(clipId, GetClipChain());
+    layoutBounds.origin.x = 0;
+    layoutBounds.origin.y = 0;
+
+    aBuilder.PushStackingContext( layoutBounds,
+                                  &clipId,
+                                  nullptr,
+                                  nullptr,
+                                  nullptr,
+                                  wr::TransformStyle::Flat,
+                                  nullptr,
+                                  wr::MixBlendMode::Normal,
+                                  nsTArray<wr::WrFilterOp>(),
+                                  true);
   }
 
   nsDisplaySVGEffects::CreateWebRenderCommands(aBuilder, aResources, aSc, aManager, aDisplayListBuilder);
 
   if (mask) {
-    aBuilder.PopClip(GetClipChain());
+    aBuilder.PopStackingContext();
   }
 
   return true;

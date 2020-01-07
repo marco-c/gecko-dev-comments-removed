@@ -247,6 +247,7 @@ public:
                 wr::BuiltDisplayList& aOutDisplayList);
 
   void PushStackingContext(const wr::LayoutRect& aBounds, 
+                           const wr::WrClipId* aClipNodeId,
                            const wr::WrAnimationProperty* aAnimation,
                            const float* aOpacity,
                            const gfx::Matrix4x4* aTransform,
