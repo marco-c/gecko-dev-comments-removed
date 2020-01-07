@@ -873,6 +873,11 @@ protected:
     bool mCapturingMediaStream;
 
     
+    
+    
+    nsTArray<RefPtr<MediaStreamTrack>> mPreCreatedTracks;
+
+    
     TrackID mNextAvailableTrackID;
     nsTArray<Pair<nsString, RefPtr<MediaInputPort>>> mTrackPorts;
   };
