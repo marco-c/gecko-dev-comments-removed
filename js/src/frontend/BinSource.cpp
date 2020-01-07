@@ -189,7 +189,7 @@ BinASTParser::buildFunctionBox(GeneratorKind generatorKind, FunctionAsyncKind fu
         functionAsyncKind));
 
     traceListHead_ = funbox;
-    FunctionSyntaxKind syntax = Expression; 
+    FunctionSyntaxKind syntax = FunctionSyntaxKind::Expression; 
     
     
     funbox->initWithEnclosingParseContext(parseContext_, syntax);
