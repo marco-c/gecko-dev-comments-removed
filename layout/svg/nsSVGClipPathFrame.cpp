@@ -9,7 +9,7 @@
 
 
 #include "AutoReferenceChainGuard.h"
-#include "DrawResult.h"
+#include "ImgDrawResult.h"
 #include "gfxContext.h"
 #include "mozilla/dom/SVGClipPathElement.h"
 #include "nsGkAtoms.h"

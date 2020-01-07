@@ -53,7 +53,7 @@ class nsTreeBodyFrame final
   , public nsIReflowCallback
 {
   typedef mozilla::layout::ScrollbarActivity ScrollbarActivity;
-  typedef mozilla::image::DrawResult DrawResult;
+  typedef mozilla::image::ImgDrawResult ImgDrawResult;
 
 public:
   explicit nsTreeBodyFrame(nsStyleContext* aContext);
@@ -190,7 +190,7 @@ public:
     nsIScrollableFrame*  mColumnsScrollFrame;
   };
 
-  DrawResult PaintTreeBody(gfxContext& aRenderingContext,
+  ImgDrawResult PaintTreeBody(gfxContext& aRenderingContext,
                            const nsRect& aDirtyRect, nsPoint aPt,
                            nsDisplayListBuilder* aBuilder);
 
@@ -206,14 +206,14 @@ protected:
   friend class nsOverflowChecker;
 
   
-  DrawResult PaintColumn(nsTreeColumn*        aColumn,
+  ImgDrawResult PaintColumn(nsTreeColumn*        aColumn,
                          const nsRect&        aColumnRect,
                          nsPresContext*       aPresContext,
                          gfxContext&          aRenderingContext,
                          const nsRect&        aDirtyRect);
 
   
-  DrawResult PaintRow(int32_t               aRowIndex,
+  ImgDrawResult PaintRow(int32_t               aRowIndex,
                       const nsRect&         aRowRect,
                       nsPresContext*        aPresContext,
                       gfxContext&           aRenderingContext,
@@ -222,14 +222,14 @@ protected:
                       nsDisplayListBuilder* aBuilder);
 
   
-  DrawResult PaintSeparator(int32_t              aRowIndex,
+  ImgDrawResult PaintSeparator(int32_t              aRowIndex,
                             const nsRect&        aSeparatorRect,
                             nsPresContext*       aPresContext,
                             gfxContext&          aRenderingContext,
                             const nsRect&        aDirtyRect);
 
   
-  DrawResult PaintCell(int32_t               aRowIndex,
+  ImgDrawResult PaintCell(int32_t               aRowIndex,
                        nsTreeColumn*         aColumn,
                        const nsRect&         aCellRect,
                        nsPresContext*        aPresContext,
@@ -240,7 +240,7 @@ protected:
                        nsDisplayListBuilder* aBuilder);
 
   
-  DrawResult PaintTwisty(int32_t              aRowIndex,
+  ImgDrawResult PaintTwisty(int32_t              aRowIndex,
                          nsTreeColumn*        aColumn,
                          const nsRect&        aTwistyRect,
                          nsPresContext*       aPresContext,
@@ -250,7 +250,7 @@ protected:
                          nscoord&             aCurrX);
 
   
-  DrawResult PaintImage(int32_t               aRowIndex,
+  ImgDrawResult PaintImage(int32_t               aRowIndex,
                         nsTreeColumn*         aColumn,
                         const nsRect&         aImageRect,
                         nsPresContext*        aPresContext,
@@ -261,7 +261,7 @@ protected:
                         nsDisplayListBuilder* aBuilder);
 
   
-  DrawResult PaintText(int32_t             aRowIndex,
+  ImgDrawResult PaintText(int32_t             aRowIndex,
                        nsTreeColumn*       aColumn,
                        const nsRect&       aTextRect,
                        nsPresContext*      aPresContext,
@@ -270,7 +270,7 @@ protected:
                        nscoord&            aCurrX);
 
   
-  DrawResult PaintCheckbox(int32_t              aRowIndex,
+  ImgDrawResult PaintCheckbox(int32_t              aRowIndex,
                            nsTreeColumn*        aColumn,
                            const nsRect&        aCheckboxRect,
                            nsPresContext*       aPresContext,
@@ -278,7 +278,7 @@ protected:
                            const nsRect&        aDirtyRect);
 
   
-  DrawResult PaintProgressMeter(int32_t               aRowIndex,
+  ImgDrawResult PaintProgressMeter(int32_t               aRowIndex,
                                 nsTreeColumn*         aColumn,
                                 const nsRect&         aProgressMeterRect,
                                 nsPresContext*        aPresContext,
@@ -287,7 +287,7 @@ protected:
                                 nsDisplayListBuilder* aBuilder);
 
   
-  DrawResult PaintDropFeedback(const nsRect&        aDropFeedbackRect,
+  ImgDrawResult PaintDropFeedback(const nsRect&        aDropFeedbackRect,
                                nsPresContext*       aPresContext,
                                gfxContext&          aRenderingContext,
                                const nsRect&        aDirtyRect,
@@ -295,7 +295,7 @@ protected:
 
   
   
-  DrawResult PaintBackgroundLayer(nsStyleContext*      aStyleContext,
+  ImgDrawResult PaintBackgroundLayer(nsStyleContext*      aStyleContext,
                                   nsPresContext*       aPresContext,
                                   gfxContext&          aRenderingContext,
                                   const nsRect&        aRect,
