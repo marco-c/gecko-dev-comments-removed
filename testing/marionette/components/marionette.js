@@ -28,27 +28,6 @@ const PREF_LOG_LEVEL = "marionette.log.level";
 const PREF_LOG_LEVEL_FALLBACK = "marionette.logging";
 
 const DEFAULT_LOG_LEVEL = "info";
-const LOG_LEVELS = new class extends Map {
-  constructor() {
-    super([
-      ["fatal", Log.Level.Fatal],
-      ["error", Log.Level.Error],
-      ["warn", Log.Level.Warn],
-      ["info", Log.Level.Info],
-      ["config", Log.Level.Config],
-      ["debug", Log.Level.Debug],
-      ["trace", Log.Level.Trace],
-    ]);
-  }
-
-  get(level) {
-    let s = String(level).toLowerCase();
-    if (!this.has(s)) {
-      return DEFAULT_LOG_LEVEL;
-    }
-    return super.get(s);
-  }
-};
 
 
 
@@ -68,6 +47,25 @@ const ENV_ENABLED = "MOZ_MARIONETTE";
 
 const ENV_PRESERVE_PREFS = "MOZ_MARIONETTE_PREF_STATE_ACROSS_RESTARTS";
 
+const LogLevel = {
+  get(level) {
+    let levels = new Map([
+      ["fatal", Log.Level.Fatal],
+      ["error", Log.Level.Error],
+      ["warn", Log.Level.Warn],
+      ["info", Log.Level.Info],
+      ["config", Log.Level.Config],
+      ["debug", Log.Level.Debug],
+      ["trace", Log.Level.Trace],
+    ]);
+
+    let s = String(level).toLowerCase();
+    if (!levels.has(s)) {
+      return DEFAULT_LOG_LEVEL;
+    }
+    return levels.get(s);
+  },
+};
 
 function getPrefVal(pref) {
   const {PREF_STRING, PREF_BOOL, PREF_INT, PREF_INVALID} = Ci.nsIPrefBranch;
@@ -113,7 +111,7 @@ const prefs = {
 
   get logLevel() {
     let s = getPref(PREF_LOG_LEVEL, PREF_LOG_LEVEL_FALLBACK);
-    return LOG_LEVELS.get(s);
+    return LogLevel.get(s);
   },
 
   readFromEnvironment(key) {
