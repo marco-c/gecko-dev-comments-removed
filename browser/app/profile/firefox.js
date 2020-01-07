@@ -1693,7 +1693,7 @@ pref("browser.crashReports.unsubmittedCheck.enabled", false);
 
 
 pref("browser.crashReports.unsubmittedCheck.chancesUntilSuppress", 4);
-pref("browser.crashReports.unsubmittedCheck.autoSubmit", false);
+pref("browser.crashReports.unsubmittedCheck.autoSubmit2", false);
 
 
 
