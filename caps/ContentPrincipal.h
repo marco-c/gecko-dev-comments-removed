@@ -47,9 +47,6 @@ public:
 
   nsCOMPtr<nsIURI> mDomain;
   nsCOMPtr<nsIURI> mCodebase;
-  
-  bool mCodebaseImmutable;
-  bool mDomainImmutable;
 
 protected:
   virtual ~ContentPrincipal();

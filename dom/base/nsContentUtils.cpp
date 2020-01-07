@@ -3696,9 +3696,6 @@ nsContentUtils::LoadImage(nsIURI* aURI, nsINode* aContext,
                "Could not get loadgroup; onload may fire too early");
 
   
-  NS_TryToSetImmutable(aURI);
-
-  
   
   return imgLoader->LoadImage(aURI,                 
                               documentURI,          

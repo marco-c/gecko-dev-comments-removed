@@ -65,7 +65,6 @@ public:
     NS_DECL_NSISTANDARDURL
     NS_DECL_NSISERIALIZABLE
     NS_DECL_NSICLASSINFO
-    NS_DECL_NSIMUTABLE
     NS_DECL_NSIIPCSERIALIZABLEURI
     NS_DECL_NSISENSITIVEINFOHIDDENURI
 
@@ -300,7 +299,6 @@ private:
     };
 
     uint32_t mURLType         : 2; 
-    uint32_t mMutable         : 1; 
     uint32_t mSupportsFileURL : 1; 
     uint32_t mCheckedIfHostA  : 1; 
                                    

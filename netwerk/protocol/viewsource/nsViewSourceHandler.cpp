@@ -105,10 +105,6 @@ nsViewSourceHandler::NewURI(const nsACString &aSpec,
         return rv;
     }
 
-    
-    
-    NS_TryToSetImmutable(uri);
-
     uri.swap(*aResult);
     return rv;
 }

@@ -797,26 +797,6 @@ nsresult NS_ImplGetInnermostURI(nsINestedURI *nestedURI, nsIURI **result);
 
 
 
-
-nsresult NS_EnsureSafeToReturn(nsIURI *uri, nsIURI **result);
-
-
-
-
-void NS_TryToSetImmutable(nsIURI *uri);
-
-
-
-
-
-
-already_AddRefed<nsIURI> NS_TryToMakeImmutable(nsIURI *uri,
-                                               nsresult *outRv = nullptr);
-
-
-
-
-
 nsresult NS_URIChainHasFlags(nsIURI   *uri,
                              uint32_t  flags,
                              bool     *result);

@@ -9,10 +9,6 @@
 
 
 
-
-
-
-
 #ifndef nsSimpleNestedURI_h__
 #define nsSimpleNestedURI_h__
 
@@ -100,7 +96,6 @@ public:
         MOZ_MUST_USE NS_IMETHOD
         Finalize(nsIURI** aURI) override
         {
-            mURI->mMutable = false;
             mURI.forget(aURI);
             return NS_OK;
         }
@@ -119,13 +114,6 @@ public:
         {
             mURI = new nsSimpleNestedURI(innerURI);
             return NS_OK;
-        }
-
-        void ResetMutable()
-        {
-            if (mURI) {
-                mURI->mMutable = true;
-            }
         }
 
         friend class nsSimpleNestedURI;
