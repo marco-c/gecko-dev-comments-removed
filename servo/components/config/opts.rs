@@ -911,6 +911,9 @@ lazy_static! {
 }
 
 pub fn set_defaults(opts: Opts) {
+    
+    MULTIPROCESS.store(opts.multiprocess, Ordering::SeqCst);
+
     unsafe {
         assert!(DEFAULT_OPTIONS.is_null());
         assert_ne!(DEFAULT_OPTIONS, INVALID_OPTIONS);
