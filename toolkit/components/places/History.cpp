@@ -623,14 +623,59 @@ NS_IMPL_ISUPPORTS_INHERITED(
 
 
 
-class NotifyVisitObservers : public Runnable
+class NotifyManyVisitsObservers : public Runnable
 {
 public:
-  explicit NotifyVisitObservers(VisitData& aPlace)
-    : Runnable("places::NotifyVisitObservers")
+  explicit NotifyManyVisitsObservers(VisitData aPlace)
+    : Runnable("places::NotifyManyVisitsObservers")
     , mPlace(aPlace)
     , mHistory(History::GetService())
   {
+  }
+
+  explicit NotifyManyVisitsObservers(nsTArray<VisitData>& aPlaces)
+    : Runnable("places::NotifyManyVisitsObservers")
+    , mHistory(History::GetService())
+  {
+    aPlaces.SwapElements(mPlaces);
+  }
+
+  nsresult NotifyVisit(nsNavHistory* aNavHistory,
+                       nsCOMPtr<nsIObserverService>& aObsService,
+                       PRTime aNow,
+                       VisitData aPlace) {
+    nsCOMPtr<nsIURI> uri;
+    MOZ_ALWAYS_SUCCEEDS(NS_NewURI(getter_AddRefs(uri), aPlace.spec));
+    if (!uri) {
+      return NS_ERROR_UNEXPECTED;
+    }
+    
+    
+    if (aPlace.transitionType != nsINavHistoryService::TRANSITION_EMBED) {
+      aNavHistory->NotifyOnVisit(uri, aPlace.visitId, aPlace.visitTime,
+                                 aPlace.referrerVisitId, aPlace.transitionType,
+                                 aPlace.guid, aPlace.hidden,
+                                 aPlace.visitCount + 1, 
+                                 static_cast<uint32_t>(aPlace.typed),
+                                 aPlace.title);
+    }
+
+    if (aObsService) {
+      DebugOnly<nsresult> rv =
+        aObsService->NotifyObservers(uri, URI_VISIT_SAVED, nullptr);
+      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Could not notify observers");
+    }
+
+    if (aNow - aPlace.visitTime < RECENTLY_VISITED_URIS_MAX_AGE) {
+      mHistory->AppendToRecentlyVisitedURIs(uri);
+    }
+    mHistory->NotifyVisited(uri);
+
+    if (aPlace.titleChanged) {
+      aNavHistory->NotifyTitleChange(uri, aPlace.title, aPlace.guid);
+    }
+
+    return NS_OK;
   }
 
   NS_IMETHOD Run() override
@@ -645,45 +690,28 @@ public:
 
     nsNavHistory* navHistory = nsNavHistory::GetHistoryService();
     if (!navHistory) {
-      NS_WARNING("Trying to notify about a visit but cannot get the history service!");
+      NS_WARNING("Trying to notify visits observers but cannot get the history service!");
       return NS_OK;
-    }
-
-    nsCOMPtr<nsIURI> uri;
-    MOZ_ALWAYS_SUCCEEDS(NS_NewURI(getter_AddRefs(uri), mPlace.spec));
-    if (!uri) {
-      return NS_ERROR_UNEXPECTED;
-    }
-
-    
-    
-    if (mPlace.transitionType != nsINavHistoryService::TRANSITION_EMBED) {
-      navHistory->NotifyOnVisit(uri, mPlace.visitId, mPlace.visitTime,
-                                mPlace.referrerVisitId, mPlace.transitionType,
-                                mPlace.guid, mPlace.hidden,
-                                mPlace.visitCount + 1, 
-                                static_cast<uint32_t>(mPlace.typed),
-                                mPlace.title);
     }
 
     nsCOMPtr<nsIObserverService> obsService =
       mozilla::services::GetObserverService();
-    if (obsService) {
-      DebugOnly<nsresult> rv =
-        obsService->NotifyObservers(uri, URI_VISIT_SAVED, nullptr);
-      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Could not notify observers");
-    }
 
-    History* history = History::GetService();
-    NS_ENSURE_STATE(history);
-    if (PR_Now() - mPlace.visitTime < RECENTLY_VISITED_URIS_MAX_AGE) {
-      mHistory->AppendToRecentlyVisitedURIs(uri);
+    PRTime now = PR_Now();
+    if (mPlaces.Length() > 0) {
+      for (uint32_t i = 0; i < mPlaces.Length(); ++i) {
+        nsresult rv = NotifyVisit(navHistory, obsService, now, mPlaces[i]);
+        NS_ENSURE_SUCCESS(rv, rv);
+      }
+    } else {
+      nsresult rv = NotifyVisit(navHistory, obsService, now, mPlace);
+      NS_ENSURE_SUCCESS(rv, rv);
     }
-    history->NotifyVisited(uri);
 
     return NS_OK;
   }
 private:
+  nsTArray<VisitData> mPlaces;
   VisitData mPlace;
   RefPtr<History> mHistory;
 };
@@ -987,7 +1015,8 @@ public:
     mozStorageTransaction transaction(mDBConn, false,
                                       mozIStorageConnection::TRANSACTION_IMMEDIATE);
 
-    VisitData* lastFetchedPlace = nullptr;
+    const VisitData* lastFetchedPlace = nullptr;
+    uint32_t lastFetchedVisitCount = 0;
     for (nsTArray<VisitData>::size_type i = 0; i < mPlaces.Length(); i++) {
       VisitData& place = mPlaces.ElementAt(i);
 
@@ -1010,6 +1039,7 @@ public:
           return NS_OK;
         }
         lastFetchedPlace = &mPlaces.ElementAt(i);
+        lastFetchedVisitCount = lastFetchedPlace->visitCount;
       } else {
         
         place.placeId = lastFetchedPlace->placeId;
@@ -1019,7 +1049,7 @@ public:
         place.titleChanged = !lastFetchedPlace->title.Equals(place.title);
         place.frecency = lastFetchedPlace->frecency;
         
-        place.visitCount = ++(*lastFetchedPlace).visitCount;
+        place.visitCount = ++lastFetchedVisitCount;
       }
 
       
@@ -1057,17 +1087,6 @@ public:
       
       
       mSuccessfulUpdatedCount++;
-
-      nsCOMPtr<nsIRunnable> event = new NotifyVisitObservers(place);
-      rv = NS_DispatchToMainThread(event);
-      NS_ENSURE_SUCCESS(rv, rv);
-
-      
-      if (place.titleChanged) {
-        event = new NotifyTitleObservers(place.spec, place.title, place.guid);
-        rv = NS_DispatchToMainThread(event);
-        NS_ENSURE_SUCCESS(rv, rv);
-      }
     }
 
     {
@@ -1081,6 +1100,10 @@ public:
     }
 
     nsresult rv = transaction.Commit();
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    nsCOMPtr<nsIRunnable> event = new NotifyManyVisitsObservers(mPlaces);
+    rv = NS_DispatchToMainThread(event);
     NS_ENSURE_SUCCESS(rv, rv);
 
     return NS_OK;
@@ -1920,7 +1943,7 @@ StoreAndNotifyEmbedVisit(VisitData& aPlace,
     }
   }
 
-  nsCOMPtr<nsIRunnable> event = new NotifyVisitObservers(aPlace);
+  nsCOMPtr<nsIRunnable> event = new NotifyManyVisitsObservers(aPlace);
   (void)NS_DispatchToMainThread(event);
 }
 
