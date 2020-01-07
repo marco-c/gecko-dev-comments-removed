@@ -1146,10 +1146,10 @@ WebGLTexture::TexStorage(const char* funcName, TexTarget target, GLsizei levels,
         const auto lastLevelHeight = uint32_t(height) >> lastLevel;
 
         
-        bool ok = lastLevelWidth && lastLevelHeight;
+        bool ok = lastLevelWidth || lastLevelHeight;
         if (target == LOCAL_GL_TEXTURE_3D) {
             const auto lastLevelDepth = uint32_t(depth) >> lastLevel;
-            ok &= bool(lastLevelDepth);
+            ok |= bool(lastLevelDepth);
         }
         return ok;
     }();
