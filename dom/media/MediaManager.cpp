@@ -11,6 +11,7 @@
 #include "MediaStreamListener.h"
 #include "nsArray.h"
 #include "nsContentUtils.h"
+#include "nsGlobalWindow.h"
 #include "nsHashPropertyBag.h"
 #include "nsIEventTarget.h"
 #include "nsIUUIDGenerator.h"
@@ -30,6 +31,7 @@
 #include "nsAppDirectoryServiceDefs.h"
 #include "nsIInputStream.h"
 #include "nsILineInputStream.h"
+#include "nsPIDOMWindow.h"
 #include "mozilla/EventStateManager.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/Types.h"
@@ -530,12 +532,13 @@ public:
 
 
 
-  void NotifySourceTrackStopped();
+
+  void ChromeAffectingStateChanged();
 
   
 
 
-  void NotifyChromeOfTrackStops();
+  void NotifyChrome();
 
   bool CapturingVideo() const
   {
@@ -1227,7 +1230,6 @@ public:
     
     
     
-    
     RefPtr<GetUserMediaStreamRunnable> self = this;
     MediaManager::PostTask(NewTaskFrom([self, domStream, callback]() mutable {
       MOZ_ASSERT(MediaManager::IsInMediaThread());
@@ -1286,23 +1288,29 @@ public:
       LOG(("started all sources"));
 
       
-      
-      
-      
-      
-      NS_DispatchToMainThread(do_AddRef(
-        new GetUserMediaNotificationEvent(
-          GetUserMediaNotificationEvent::STARTING,
-          domStream.forget(),
-          callback.forget(),
-          self->mWindowID,
-          self->mOnFailure.forget())));
-      NS_DispatchToMainThread(NS_NewRunnableFunction("MediaManager::SendPendingGUMRequest",
-                                                     []() -> void {
+      uint64_t windowID = self->mWindowID;
+      NS_DispatchToMainThread(NS_NewRunnableFunction("MediaManager::NotifyChromeOfStart",
+                                                     [domStream, callback, windowID]() mutable {
         MediaManager* manager = MediaManager::GetIfExists();
         if (!manager) {
           return;
         }
+
+        nsGlobalWindowInner* window =
+          nsGlobalWindowInner::GetInnerWindowWithId(windowID);
+        if (!window) {
+          MOZ_ASSERT_UNREACHABLE("Should have window");
+          return;
+        }
+
+        domStream->OnTracksAvailable(callback->release());
+
+        nsresult rv = MediaManager::NotifyRecordingStatusChange(window->AsInner());
+        if (NS_FAILED(rv)) {
+          MOZ_ASSERT_UNREACHABLE("Should be able to notify chrome");
+          return;
+        }
+
         manager->SendPendingGUMRequest();
       }));
       return NS_OK;
@@ -2014,8 +2022,7 @@ MediaManager::PostTask(already_AddRefed<Runnable> task)
 }
 
  nsresult
-MediaManager::NotifyRecordingStatusChange(nsPIDOMWindowInner* aWindow,
-                                          const nsString& aMsg)
+MediaManager::NotifyRecordingStatusChange(nsPIDOMWindowInner* aWindow)
 {
   NS_ENSURE_ARG(aWindow);
 
@@ -2040,7 +2047,7 @@ MediaManager::NotifyRecordingStatusChange(nsPIDOMWindowInner* aWindow,
 
   obs->NotifyObservers(static_cast<nsIPropertyBag2*>(props),
                        "recording-device-events",
-                       aMsg.get());
+                       nullptr);
 
   return NS_OK;
 }
@@ -3834,7 +3841,7 @@ SourceListener::StopTrack(TrackID aTrackID)
     MOZ_ASSERT(false, "Should still have window listener");
     return;
   }
-  mWindowListener->NotifySourceTrackStopped();
+  mWindowListener->ChromeAffectingStateChanged();
 }
 
 void
@@ -4288,7 +4295,7 @@ GetUserMediaWindowListener::StopRawID(const nsString& removedDeviceID)
 }
 
 void
-GetUserMediaWindowListener::NotifySourceTrackStopped()
+GetUserMediaWindowListener::ChromeAffectingStateChanged()
 {
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -4300,76 +4307,31 @@ GetUserMediaWindowListener::NotifySourceTrackStopped()
   }
 
   nsCOMPtr<nsIRunnable> runnable =
-    NewRunnableMethod("GetUserMediaWindowListener::NotifyChromeOfTrackStops",
+    NewRunnableMethod("GetUserMediaWindowListener::NotifyChrome",
                       this,
-                      &GetUserMediaWindowListener::NotifyChromeOfTrackStops);
+                      &GetUserMediaWindowListener::NotifyChrome);
   nsContentUtils::RunInStableState(runnable.forget());
   mChromeNotificationTaskPosted = true;
 }
 
 void
-GetUserMediaWindowListener::NotifyChromeOfTrackStops()
+GetUserMediaWindowListener::NotifyChrome()
 {
   MOZ_ASSERT(mChromeNotificationTaskPosted);
   mChromeNotificationTaskPosted = false;
 
-  NS_DispatchToMainThread(do_AddRef(new GetUserMediaNotificationEvent(
-    GetUserMediaNotificationEvent::STOPPING, mWindowID)));
-}
+  NS_DispatchToMainThread(NS_NewRunnableFunction("MediaManager::NotifyChrome",
+                                                 [windowID = mWindowID]() {
+    nsGlobalWindowInner* window =
+      nsGlobalWindowInner::GetInnerWindowWithId(windowID);
+    if (!window) {
+      MOZ_ASSERT_UNREACHABLE("Should have window");
+      return;
+    }
 
-GetUserMediaNotificationEvent::GetUserMediaNotificationEvent(
-  GetUserMediaStatus aStatus,
-  uint64_t aWindowID)
-  : Runnable("GetUserMediaNotificationEvent")
-  , mStatus(aStatus)
-  , mWindowID(aWindowID)
-{
-}
-
-GetUserMediaNotificationEvent::GetUserMediaNotificationEvent(
-  GetUserMediaStatus aStatus,
-  already_AddRefed<DOMMediaStream> aStream,
-  already_AddRefed<Refcountable<UniquePtr<OnTracksAvailableCallback>>>
-    aOnTracksAvailableCallback,
-  uint64_t aWindowID,
-  already_AddRefed<nsIDOMGetUserMediaErrorCallback> aError)
-  : Runnable("GetUserMediaNotificationEvent")
-  , mStream(aStream)
-  , mOnTracksAvailableCallback(aOnTracksAvailableCallback)
-  , mStatus(aStatus)
-  , mWindowID(aWindowID)
-  , mOnFailure(aError)
-{
-}
-GetUserMediaNotificationEvent::~GetUserMediaNotificationEvent()
-{
-}
-
-NS_IMETHODIMP
-GetUserMediaNotificationEvent::Run()
-{
-  MOZ_ASSERT(NS_IsMainThread());
-  
-  
-  
-  
-  RefPtr<DOMMediaStream> stream = mStream.forget();
-
-  nsString msg;
-  switch (mStatus) {
-  case STARTING:
-    msg = NS_LITERAL_STRING("starting");
-    stream->OnTracksAvailable(mOnTracksAvailableCallback->release());
-    break;
-  case STOPPING:
-    msg = NS_LITERAL_STRING("shutdown");
-    break;
-  }
-
-  RefPtr<nsGlobalWindowInner> window = nsGlobalWindowInner::GetInnerWindowWithId(mWindowID);
-  NS_ENSURE_TRUE(window, NS_ERROR_FAILURE);
-
-  return MediaManager::NotifyRecordingStatusChange(window->AsInner(), msg);
+    DebugOnly<nsresult> rv = MediaManager::NotifyRecordingStatusChange(window->AsInner());
+    MOZ_ASSERT(NS_SUCCEEDED(rv), "Should be able to notify chrome");
+  }));
 }
 
 } 
