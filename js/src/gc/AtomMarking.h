@@ -22,7 +22,7 @@ class Arena;
 class AtomMarkingRuntime
 {
     
-    js::ExclusiveAccessLockOrGCTaskData<Vector<size_t, 0, SystemAllocPolicy>> freeArenaIndexes;
+    js::GCLockData<Vector<size_t, 0, SystemAllocPolicy>> freeArenaIndexes;
 
     void markChildren(JSContext* cx, JSAtom*) {}
 
@@ -41,10 +41,10 @@ class AtomMarkingRuntime
     {}
 
     
-    void registerArena(Arena* arena);
+    void registerArena(Arena* arena, const AutoLockGC& lock);
 
     
-    void unregisterArena(Arena* arena);
+    void unregisterArena(Arena* arena, const AutoLockGC& lock);
 
     
     

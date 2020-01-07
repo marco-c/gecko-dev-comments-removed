@@ -283,7 +283,7 @@ class Arena
 
     uint8_t data[ArenaSize - ArenaHeaderSize];
 
-    void init(JS::Zone* zoneArg, AllocKind kind);
+    void init(JS::Zone* zoneArg, AllocKind kind, const AutoLockGC& lock);
 
     
     
@@ -308,7 +308,7 @@ class Arena
     }
 
     
-    inline void release();
+    inline void release(const AutoLockGC& lock);
 
     uintptr_t address() const {
         checkAddress();
