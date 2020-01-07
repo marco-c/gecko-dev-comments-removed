@@ -609,25 +609,6 @@ var Utils = {
 
 
   getSyncCredentialsHosts() {
-    let result = new Set(this.getSyncCredentialsHostsLegacy());
-    for (let host of this.getSyncCredentialsHostsFxA()) {
-      result.add(host);
-    }
-    return result;
-  },
-
-  
-
-
-  getSyncCredentialsHostsLegacy() {
-    
-    return new Set([PWDMGR_HOST]);
-  },
-
-  
-
-
-  getSyncCredentialsHostsFxA() {
     let result = new Set();
     
     result.add(FxAccountsCommon.FXA_PWDMGR_HOST);

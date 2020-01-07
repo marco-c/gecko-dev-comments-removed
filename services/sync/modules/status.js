@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+* License, v. 2.0. If a copy of the MPL was not distributed with this
+* file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 var EXPORTED_SYMBOLS = ["Status"];
 
@@ -19,7 +19,6 @@ var Status = {
       return this.__authManager;
     }
     this.__authManager = new BrowserIDManager();
-    this.__authManager.initialize();
     return this.__authManager;
   },
 
@@ -82,8 +81,8 @@ var Status = {
     }
   },
 
-  
-  
+  // Implement toString because adding a logger introduces a cyclic object
+  // value, so we can't trivially debug-print Status as JSON.
   toString: function toString() {
     return "<Status" +
            ": login: " + Status.login +
@@ -92,13 +91,12 @@ var Status = {
   },
 
   checkSetup: function checkSetup() {
-    let result = this._authManager.currentAuthState;
-    if (result == STATUS_OK) {
-      Status.service = result;
-      return result;
+    if (!this._authManager.username) {
+      Status.login = LOGIN_FAILED_NO_USERNAME;
+      Status.service = CLIENT_NOT_CONFIGURED;
+    } else if (Status.login == STATUS_OK) {
+      Status.service = STATUS_OK;
     }
-
-    Status.login = result;
     return Status.service;
   },
 
@@ -109,7 +107,7 @@ var Status = {
   },
 
   resetSync: function resetSync() {
-    
+    // Logger setup.
     this._log.manageLevelFromPref("services.sync.log.logger.status");
 
     this._log.info("Resetting Status.");
@@ -121,6 +119,6 @@ var Status = {
   }
 };
 
-
+// Initialize various status values.
 Status.resetBackoff();
 Status.resetSync();
