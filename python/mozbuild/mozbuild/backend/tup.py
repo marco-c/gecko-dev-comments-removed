@@ -99,6 +99,7 @@ class BackendTupfile(object):
         
         
         self._skip_files = [
+            'built_in_addons.json',
             'signmar',
         ]
 
