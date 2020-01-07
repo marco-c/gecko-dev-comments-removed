@@ -86,7 +86,7 @@ class RuntimeParser {
     
     
     if (this._index !== 0 &&
-        this._source[this._index - 1] !== '\n') {
+        this._source[this._index - 1] !== "\n") {
       throw this.error(`Expected an entry to start
         at the beginning of the file or on a new line.`);
     }
@@ -94,14 +94,14 @@ class RuntimeParser {
     const ch = this._source[this._index];
 
     
-    if (ch === '/' ||
-      (ch === '#' &&
-        [' ', '#', '\n'].includes(this._source[this._index + 1]))) {
+    if (ch === "/" ||
+      (ch === "#" &&
+        [" ", "#", "\n"].includes(this._source[this._index + 1]))) {
       this.skipComment();
       return;
     }
 
-    if (ch === '[') {
+    if (ch === "[") {
       this.skipSection();
       return;
     }
@@ -116,7 +116,7 @@ class RuntimeParser {
 
   skipSection() {
     this._index += 1;
-    if (this._source[this._index] !== '[') {
+    if (this._source[this._index] !== "[") {
       throw this.error('Expected "[[" to open a section');
     }
 
@@ -126,8 +126,8 @@ class RuntimeParser {
     this.getVariantName();
     this.skipInlineWS();
 
-    if (this._source[this._index] !== ']' ||
-        this._source[this._index + 1] !== ']') {
+    if (this._source[this._index] !== "]" ||
+        this._source[this._index + 1] !== "]") {
       throw this.error('Expected "]]" to close a section');
     }
 
@@ -145,7 +145,7 @@ class RuntimeParser {
 
     this.skipInlineWS();
 
-    if (this._source[this._index] === '=') {
+    if (this._source[this._index] === "=") {
       this._index++;
     }
 
@@ -153,27 +153,27 @@ class RuntimeParser {
 
     const val = this.getPattern();
 
-    if (id.startsWith('-') && val === null) {
-      throw this.error('Expected term to have a value');
+    if (id.startsWith("-") && val === null) {
+      throw this.error("Expected term to have a value");
     }
 
     let attrs = null;
 
-    if (this._source[this._index] === ' ') {
+    if (this._source[this._index] === " ") {
       const lineStart = this._index;
       this.skipInlineWS();
 
-      if (this._source[this._index] === '.') {
+      if (this._source[this._index] === ".") {
         this._index = lineStart;
         attrs = this.getAttributes();
       }
     }
 
-    if (attrs === null && typeof val === 'string') {
+    if (attrs === null && typeof val === "string") {
       this.entries[id] = val;
     } else {
       if (val === null && attrs === null) {
-        throw this.error('Expected message to have a value or attributes');
+        throw this.error("Expected message to have a value or attributes");
       }
 
       this.entries[id] = {};
@@ -195,7 +195,7 @@ class RuntimeParser {
 
   skipWS() {
     let ch = this._source[this._index];
-    while (ch === ' ' || ch === '\n' || ch === '\t' || ch === '\r') {
+    while (ch === " " || ch === "\n" || ch === "\t" || ch === "\r") {
       ch = this._source[++this._index];
     }
   }
@@ -207,7 +207,7 @@ class RuntimeParser {
 
   skipInlineWS() {
     let ch = this._source[this._index];
-    while (ch === ' ' || ch === '\t') {
+    while (ch === " " || ch === "\t") {
       ch = this._source[++this._index];
     }
   }
@@ -223,7 +223,7 @@ class RuntimeParser {
 
       this.skipInlineWS();
 
-      if (this._source[this._index] === '\n') {
+      if (this._source[this._index] === "\n") {
         this._index += 1;
       } else {
         this._index = ptr;
@@ -271,7 +271,7 @@ class RuntimeParser {
 
 
   getVariantName() {
-    let name = '';
+    let name = "";
 
     const start = this._index;
     let cc = this._source.charCodeAt(this._index);
@@ -281,7 +281,7 @@ class RuntimeParser {
         cc === 95 || cc === 32) { 
       cc = this._source.charCodeAt(++this._index);
     } else {
-      throw this.error('Expected a keyword (starting with [a-zA-Z_])');
+      throw this.error("Expected a keyword (starting with [a-zA-Z_])");
     }
 
     while ((cc >= 97 && cc <= 122) || 
@@ -301,7 +301,7 @@ class RuntimeParser {
 
     name += this._source.slice(start, this._index);
 
-    return { type: 'varname', name };
+    return { type: "varname", name };
   }
 
   
@@ -320,8 +320,8 @@ class RuntimeParser {
         break;
       }
 
-      if (ch === '\n') {
-        throw this.error('Unterminated string expression');
+      if (ch === "\n") {
+        throw this.error("Unterminated string expression");
       }
     }
 
@@ -343,7 +343,7 @@ class RuntimeParser {
     
     
     const start = this._index;
-    let eol = this._source.indexOf('\n', this._index);
+    let eol = this._source.indexOf("\n", this._index);
 
     if (eol === -1) {
       eol = this._length;
@@ -352,7 +352,7 @@ class RuntimeParser {
     const firstLineContent = start !== eol ?
       this._source.slice(start, eol) : null;
 
-    if (firstLineContent && firstLineContent.includes('{')) {
+    if (firstLineContent && firstLineContent.includes("{")) {
       return this.getComplexPattern();
     }
 
@@ -360,7 +360,7 @@ class RuntimeParser {
 
     this.skipBlankLines();
 
-    if (this._source[this._index] !== ' ') {
+    if (this._source[this._index] !== " ") {
       
       
       
@@ -371,7 +371,7 @@ class RuntimeParser {
 
     this.skipInlineWS();
 
-    if (this._source[this._index] === '.') {
+    if (this._source[this._index] === ".") {
       
       
       this._index = lineStart;
@@ -398,7 +398,7 @@ class RuntimeParser {
 
   
   getComplexPattern() {
-    let buffer = '';
+    let buffer = "";
     const content = [];
     let placeables = 0;
 
@@ -407,7 +407,7 @@ class RuntimeParser {
     while (this._index < this._length) {
       
       
-      if (ch === '\n') {
+      if (ch === "\n") {
         this._index++;
 
         
@@ -419,15 +419,15 @@ class RuntimeParser {
         const blankLinesEnd = this._index;
 
 
-        if (this._source[this._index] !== ' ') {
+        if (this._source[this._index] !== " ") {
           break;
         }
         this.skipInlineWS();
 
-        if (this._source[this._index] === '}' ||
-            this._source[this._index] === '[' ||
-            this._source[this._index] === '*' ||
-            this._source[this._index] === '.') {
+        if (this._source[this._index] === "}" ||
+            this._source[this._index] === "[" ||
+            this._source[this._index] === "*" ||
+            this._source[this._index] === ".") {
           this._index = blankLinesEnd;
           break;
         }
@@ -435,17 +435,17 @@ class RuntimeParser {
         buffer += this._source.substring(blankLinesStart, blankLinesEnd);
 
         if (buffer.length || content.length) {
-          buffer += '\n';
+          buffer += "\n";
         }
         ch = this._source[this._index];
         continue;
-      } else if (ch === '\\') {
+      } else if (ch === "\\") {
         const ch2 = this._source[this._index + 1];
-        if (ch2 === '"' || ch2 === '{' || ch2 === '\\') {
+        if (ch2 === '"' || ch2 === "{" || ch2 === "\\") {
           ch = ch2;
           this._index++;
         }
-      } else if (ch === '{') {
+      } else if (ch === "{") {
         
         if (buffer.length) {
           content.push(buffer);
@@ -454,7 +454,7 @@ class RuntimeParser {
           throw this.error(
             `Too many placeables, maximum allowed is ${MAX_PLACEABLES}`);
         }
-        buffer = '';
+        buffer = "";
         content.push(this.getPlaceable());
 
         this._index++;
@@ -495,13 +495,13 @@ class RuntimeParser {
 
     this.skipWS();
 
-    if (this._source[this._index] === '*' ||
-       (this._source[this._index] === '[' &&
-        this._source[this._index + 1] !== ']')) {
+    if (this._source[this._index] === "*" ||
+       (this._source[this._index] === "[" &&
+        this._source[this._index + 1] !== "]")) {
       const variants = this.getVariants();
 
       return {
-        type: 'sel',
+        type: "sel",
         exp: null,
         vars: variants[0],
         def: variants[1]
@@ -518,31 +518,31 @@ class RuntimeParser {
 
     const ch = this._source[this._index];
 
-    if (ch === '}') {
-      if (selector.type === 'attr' && selector.id.name.startsWith('-')) {
+    if (ch === "}") {
+      if (selector.type === "attr" && selector.id.name.startsWith("-")) {
         throw this.error(
-          'Attributes of private messages cannot be interpolated.'
+          "Attributes of private messages cannot be interpolated."
         );
       }
 
       return selector;
     }
 
-    if (ch !== '-' || this._source[this._index + 1] !== '>') {
+    if (ch !== "-" || this._source[this._index + 1] !== ">") {
       throw this.error('Expected "}" or "->"');
     }
 
-    if (selector.type === 'ref') {
-      throw this.error('Message references cannot be used as selectors.');
+    if (selector.type === "ref") {
+      throw this.error("Message references cannot be used as selectors.");
     }
 
-    if (selector.type === 'var') {
-      throw this.error('Variants cannot be used as selectors.');
+    if (selector.type === "var") {
+      throw this.error("Variants cannot be used as selectors.");
     }
 
-    if (selector.type === 'attr' && !selector.id.name.startsWith('-')) {
+    if (selector.type === "attr" && !selector.id.name.startsWith("-")) {
       throw this.error(
-        'Attributes of public messages cannot be used as selectors.'
+        "Attributes of public messages cannot be used as selectors."
       );
     }
 
@@ -551,8 +551,8 @@ class RuntimeParser {
 
     this.skipInlineWS();
 
-    if (this._source[this._index] !== '\n') {
-      throw this.error('Variants should be listed in a new line');
+    if (this._source[this._index] !== "\n") {
+      throw this.error("Variants should be listed in a new line");
     }
 
     this.skipWS();
@@ -560,11 +560,11 @@ class RuntimeParser {
     const variants = this.getVariants();
 
     if (variants[0].length === 0) {
-      throw this.error('Expected members for the select expression');
+      throw this.error("Expected members for the select expression");
     }
 
     return {
-      type: 'sel',
+      type: "sel",
       exp: selector,
       vars: variants[0],
       def: variants[1]
@@ -580,48 +580,48 @@ class RuntimeParser {
   getSelectorExpression() {
     const literal = this.getLiteral();
 
-    if (literal.type !== 'ref') {
+    if (literal.type !== "ref") {
       return literal;
     }
 
-    if (this._source[this._index] === '.') {
+    if (this._source[this._index] === ".") {
       this._index++;
 
       const name = this.getIdentifier();
       this._index++;
       return {
-        type: 'attr',
+        type: "attr",
         id: literal,
         name
       };
     }
 
-    if (this._source[this._index] === '[') {
+    if (this._source[this._index] === "[") {
       this._index++;
 
       const key = this.getVariantKey();
       this._index++;
       return {
-        type: 'var',
+        type: "var",
         id: literal,
         key
       };
     }
 
-    if (this._source[this._index] === '(') {
+    if (this._source[this._index] === "(") {
       this._index++;
       const args = this.getCallArgs();
 
       if (!functionIdentifierRe.test(literal.name)) {
-        throw this.error('Function names must be all upper-case');
+        throw this.error("Function names must be all upper-case");
       }
 
       this._index++;
 
-      literal.type = 'fun';
+      literal.type = "fun";
 
       return {
-        type: 'call',
+        type: "call",
         fun: literal,
         args
       };
@@ -642,7 +642,7 @@ class RuntimeParser {
     while (this._index < this._length) {
       this.skipInlineWS();
 
-      if (this._source[this._index] === ')') {
+      if (this._source[this._index] === ")") {
         return args;
       }
 
@@ -650,12 +650,12 @@ class RuntimeParser {
 
       
       
-      if (exp.type !== 'ref') {
+      if (exp.type !== "ref") {
         args.push(exp);
       } else {
         this.skipInlineWS();
 
-        if (this._source[this._index] === ':') {
+        if (this._source[this._index] === ":") {
           this._index++;
           this.skipInlineWS();
 
@@ -666,18 +666,18 @@ class RuntimeParser {
           
           
           
-          if (typeof val === 'string' ||
+          if (typeof val === "string" ||
               Array.isArray(val) ||
-              val.type === 'num') {
+              val.type === "num") {
             args.push({
-              type: 'narg',
+              type: "narg",
               name: exp.name,
               val
             });
           } else {
-            this._index = this._source.lastIndexOf(':', this._index) + 1;
+            this._index = this._source.lastIndexOf(":", this._index) + 1;
             throw this.error(
-              'Expected string in quotes, number.');
+              "Expected string in quotes, number.");
           }
 
         } else {
@@ -687,9 +687,9 @@ class RuntimeParser {
 
       this.skipInlineWS();
 
-      if (this._source[this._index] === ')') {
+      if (this._source[this._index] === ")") {
         break;
-      } else if (this._source[this._index] === ',') {
+      } else if (this._source[this._index] === ",") {
         this._index++;
       } else {
         throw this.error('Expected "," or ")"');
@@ -706,12 +706,12 @@ class RuntimeParser {
 
 
   getNumber() {
-    let num = '';
+    let num = "";
     let cc = this._source.charCodeAt(this._index);
 
     
     if (cc === 45) {
-      num += '-';
+      num += "-";
       cc = this._source.charCodeAt(++this._index);
     }
 
@@ -744,7 +744,7 @@ class RuntimeParser {
     }
 
     return {
-      type: 'num',
+      type: "num",
       val: num
     };
   }
@@ -759,12 +759,12 @@ class RuntimeParser {
     const attrs = {};
 
     while (this._index < this._length) {
-      if (this._source[this._index] !== ' ') {
+      if (this._source[this._index] !== " ") {
         break;
       }
       this.skipInlineWS();
 
-      if (this._source[this._index] !== '.') {
+      if (this._source[this._index] !== ".") {
         break;
       }
       this._index++;
@@ -773,7 +773,7 @@ class RuntimeParser {
 
       this.skipInlineWS();
 
-      if (this._source[this._index] !== '=') {
+      if (this._source[this._index] !== "=") {
         throw this.error('Expected "="');
       }
       this._index++;
@@ -783,10 +783,10 @@ class RuntimeParser {
       const val = this.getPattern();
 
       if (val === null) {
-        throw this.error('Expected attribute to have a value');
+        throw this.error("Expected attribute to have a value");
       }
 
-      if (typeof val === 'string') {
+      if (typeof val === "string") {
         attrs[key] = val;
       } else {
         attrs[key] = {
@@ -814,16 +814,16 @@ class RuntimeParser {
     while (this._index < this._length) {
       const ch = this._source[this._index];
 
-      if ((ch !== '[' || this._source[this._index + 1] === '[') &&
-          ch !== '*') {
+      if ((ch !== "[" || this._source[this._index + 1] === "[") &&
+          ch !== "*") {
         break;
       }
-      if (ch === '*') {
+      if (ch === "*") {
         this._index++;
         defaultIndex = index;
       }
 
-      if (this._source[this._index] !== '[') {
+      if (this._source[this._index] !== "[") {
         throw this.error('Expected "["');
       }
 
@@ -836,7 +836,7 @@ class RuntimeParser {
       const val = this.getPattern();
 
       if (val === null) {
-        throw this.error('Expected variant to have a value');
+        throw this.error("Expected variant to have a value");
       }
 
       variants[index++] = {key, val};
@@ -865,7 +865,7 @@ class RuntimeParser {
       literal = this.getVariantName();
     }
 
-    if (this._source[this._index] !== ']') {
+    if (this._source[this._index] !== "]") {
       throw this.error('Expected "]"');
     }
 
@@ -885,7 +885,7 @@ class RuntimeParser {
     if (cc0 === 36) { 
       this._index++;
       return {
-        type: 'ext',
+        type: "ext",
         name: this.getIdentifier()
       };
     }
@@ -899,7 +899,7 @@ class RuntimeParser {
     if ((cc1 >= 97 && cc1 <= 122) || 
         (cc1 >= 65 && cc1 <= 90)) { 
       return {
-        type: 'ref',
+        type: "ref",
         name: this.getEntryIdentifier()
       };
     }
@@ -912,7 +912,7 @@ class RuntimeParser {
       return this.getString();
     }
 
-    throw this.error('Expected literal');
+    throw this.error("Expected literal");
   }
 
   
@@ -923,15 +923,15 @@ class RuntimeParser {
   skipComment() {
     
     
-    let eol = this._source.indexOf('\n', this._index);
+    let eol = this._source.indexOf("\n", this._index);
 
     while (eol !== -1 &&
-      ((this._source[eol + 1] === '/' && this._source[eol + 2] === '/') ||
-       (this._source[eol + 1] === '#' &&
-         [' ', '#'].includes(this._source[eol + 2])))) {
+      ((this._source[eol + 1] === "/" && this._source[eol + 2] === "/") ||
+       (this._source[eol + 1] === "#" &&
+         [" ", "#"].includes(this._source[eol + 2])))) {
       this._index = eol + 3;
 
-      eol = this._source.indexOf('\n', this._index);
+      eol = this._source.indexOf("\n", this._index);
 
       if (eol === -1) {
         break;
@@ -967,7 +967,7 @@ class RuntimeParser {
     let start = this._index;
 
     while (true) {
-      if (start === 0 || this._source[start - 1] === '\n') {
+      if (start === 0 || this._source[start - 1] === "\n") {
         const cc = this._source.charCodeAt(start);
 
         if ((cc >= 97 && cc <= 122) || 
@@ -978,7 +978,7 @@ class RuntimeParser {
         }
       }
 
-      start = this._source.indexOf('\n', start);
+      start = this._source.indexOf("\n", start);
 
       if (start === -1) {
         this._index = this._length;
@@ -1044,13 +1044,13 @@ class FluentType {
 
 
   toString() {
-    throw new Error('Subclasses of FluentType must implement toString.');
+    throw new Error("Subclasses of FluentType must implement toString.");
   }
 }
 
 class FluentNone extends FluentType {
   toString() {
-    return this.value || '???';
+    return this.value || "???";
   }
 }
 
@@ -1119,7 +1119,7 @@ class FluentSymbol extends FluentType {
   match(ctx, other) {
     if (other instanceof FluentSymbol) {
       return this.value === other.value;
-    } else if (typeof other === 'string') {
+    } else if (typeof other === "string") {
       return this.value === other;
     } else if (other instanceof FluentNumber) {
       const pr = ctx._memoizeIntlObject(
@@ -1145,9 +1145,9 @@ class FluentSymbol extends FluentType {
 
 
 const builtins = {
-  'NUMBER': ([arg], opts) =>
+  "NUMBER": ([arg], opts) =>
     new FluentNumber(arg.valueOf(), merge(arg.opts, opts)),
-  'DATETIME': ([arg], opts) =>
+  "DATETIME": ([arg], opts) =>
     new FluentDateTime(arg.valueOf(), merge(arg.opts, opts)),
 };
 
@@ -1212,12 +1212,11 @@ function values(opts) {
 
 
 
-
 const MAX_PLACEABLE_LENGTH = 2500;
 
 
-const FSI = '\u2068';
-const PDI = '\u2069';
+const FSI = "\u2068";
+const PDI = "\u2069";
 
 
 
@@ -1240,7 +1239,7 @@ function DefaultMember(env, members, def) {
   }
 
   const { errors } = env;
-  errors.push(new RangeError('No default'));
+  errors.push(new RangeError("No default"));
   return new FluentNone();
 }
 
@@ -1259,12 +1258,12 @@ function DefaultMember(env, members, def) {
 
 function MessageReference(env, {name}) {
   const { ctx, errors } = env;
-  const message = name.startsWith('-')
+  const message = name.startsWith("-")
     ? ctx._terms.get(name)
     : ctx._messages.get(name);
 
   if (!message) {
-    const err = name.startsWith('-')
+    const err = name.startsWith("-")
       ? new ReferenceError(`Unknown term: ${name}`)
       : new ReferenceError(`Unknown message: ${name}`);
     errors.push(err);
@@ -1301,7 +1300,7 @@ function VariantExpression(env, {id, key}) {
 
   function isVariantList(node) {
     return Array.isArray(node) &&
-      node[0].type === 'sel' &&
+      node[0].type === "sel" &&
       node[0].exp === null;
   }
 
@@ -1418,7 +1417,7 @@ function SelectExpression(env, {exp, vars, def}) {
 function Type(env, expr) {
   
   
-  if (typeof expr === 'string' || expr instanceof FluentNone) {
+  if (typeof expr === "string" || expr instanceof FluentNone) {
     return expr;
   }
 
@@ -1430,29 +1429,29 @@ function Type(env, expr) {
 
 
   switch (expr.type) {
-    case 'varname':
+    case "varname":
       return new FluentSymbol(expr.name);
-    case 'num':
+    case "num":
       return new FluentNumber(expr.val);
-    case 'ext':
+    case "ext":
       return ExternalArgument(env, expr);
-    case 'fun':
+    case "fun":
       return FunctionReference(env, expr);
-    case 'call':
+    case "call":
       return CallExpression(env, expr);
-    case 'ref': {
+    case "ref": {
       const message = MessageReference(env, expr);
       return Type(env, message);
     }
-    case 'attr': {
+    case "attr": {
       const attr = AttributeExpression(env, expr);
       return Type(env, attr);
     }
-    case 'var': {
+    case "var": {
       const variant = VariantExpression(env, expr);
       return Type(env, variant);
     }
-    case 'sel': {
+    case "sel": {
       const member = SelectExpression(env, expr);
       return Type(env, member);
     }
@@ -1463,7 +1462,7 @@ function Type(env, expr) {
       }
 
       const { errors } = env;
-      errors.push(new RangeError('No value'));
+      errors.push(new RangeError("No value"));
       return new FluentNone();
     }
     default:
@@ -1500,11 +1499,11 @@ function ExternalArgument(env, {name}) {
 
   
   switch (typeof arg) {
-    case 'string':
+    case "string":
       return arg;
-    case 'number':
+    case "number":
       return new FluentNumber(arg);
-    case 'object':
+    case "object":
       if (arg instanceof Date) {
         return new FluentDateTime(arg);
       }
@@ -1539,7 +1538,7 @@ function FunctionReference(env, {name}) {
     return new FluentNone(`${name}()`);
   }
 
-  if (typeof func !== 'function') {
+  if (typeof func !== "function") {
     errors.push(new TypeError(`Function ${name}() is not callable`));
     return new FluentNone(`${name}()`);
   }
@@ -1572,7 +1571,7 @@ function CallExpression(env, {fun, args}) {
   const keyargs = {};
 
   for (const arg of args) {
-    if (arg.type === 'narg') {
+    if (arg.type === "narg") {
       keyargs[arg.name] = Type(env, arg.val);
     } else {
       posargs.push(Type(env, arg));
@@ -1601,7 +1600,7 @@ function Pattern(env, ptn) {
   const { ctx, dirty, errors } = env;
 
   if (dirty.has(ptn)) {
-    errors.push(new RangeError('Cyclic reference'));
+    errors.push(new RangeError("Cyclic reference"));
     return new FluentNone();
   }
 
@@ -1610,7 +1609,7 @@ function Pattern(env, ptn) {
   const result = [];
 
   for (const elem of ptn) {
-    if (typeof elem === 'string') {
+    if (typeof elem === "string") {
       result.push(elem);
       continue;
     }
@@ -1624,7 +1623,7 @@ function Pattern(env, ptn) {
     if (part.length > MAX_PLACEABLE_LENGTH) {
       errors.push(
         new RangeError(
-          'Too many characters in placeable ' +
+          "Too many characters in placeable " +
           `(${part.length}, max allowed is ${MAX_PLACEABLE_LENGTH})`
         )
       );
@@ -1639,7 +1638,7 @@ function Pattern(env, ptn) {
   }
 
   dirty.delete(ptn);
-  return result.join('');
+  return result.join("");
 }
 
 
@@ -1773,7 +1772,7 @@ class MessageContext {
   addMessages(source) {
     const [entries, errors] = parse(source);
     for (const id in entries) {
-      if (id.startsWith('-')) {
+      if (id.startsWith("-")) {
         
         
         this._terms.set(id, entries[id]);
@@ -1817,12 +1816,12 @@ class MessageContext {
 
   format(message, args, errors) {
     
-    if (typeof message === 'string') {
+    if (typeof message === "string") {
       return message;
     }
 
     
-    if (typeof message.val === 'string') {
+    if (typeof message.val === "string") {
       return message.val;
     }
 
@@ -1848,4 +1847,4 @@ class MessageContext {
 }
 
 this.MessageContext = MessageContext;
-this.EXPORTED_SYMBOLS = ['MessageContext'];
+this.EXPORTED_SYMBOLS = ["MessageContext"];

@@ -23,8 +23,7 @@
 
 const { XPCOMUtils } = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm", {});
 const { L10nRegistry } = ChromeUtils.import("resource://gre/modules/L10nRegistry.jsm", {});
-const LocaleService = Cc["@mozilla.org/intl/localeservice;1"].getService(Ci.mozILocaleService);
-const ObserverService = Cc["@mozilla.org/observer-service;1"].getService(Ci.nsIObserverService);
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm", {});
 
 
 
@@ -45,7 +44,7 @@ class CachedIterable {
     } else if (Symbol.iterator in Object(iterable)) {
       this.iterator = iterable[Symbol.iterator]();
     } else {
-      throw new TypeError('Argument must implement the iteration protocol.');
+      throw new TypeError("Argument must implement the iteration protocol.");
     }
 
     this.seen = [];
@@ -104,7 +103,7 @@ class CachedIterable {
 class L10nError extends Error {
   constructor(message) {
     super();
-    this.name = 'L10nError';
+    this.name = "L10nError";
     this.message = message;
   }
 }
@@ -121,7 +120,7 @@ class L10nError extends Error {
 function defaultGenerateMessages(resourceIds) {
   const availableLocales = L10nRegistry.getAvailableLocales();
 
-  const appLocales = LocaleService.getAppLocalesAsLangTags();
+  const appLocales = Services.locale.getAppLocalesAsLangTags();
   return L10nRegistry.generateContexts(appLocales, resourceIds);
 }
 
@@ -162,7 +161,7 @@ class Localization {
     for await (let ctx of this.ctxs) {
       
       
-      if (typeof ctx.then === 'function') {
+      if (typeof ctx.then === "function") {
         ctx = await ctx;
       }
       const errors = keysFromContext(method, ctx, keys, translations);
@@ -254,14 +253,14 @@ class Localization {
 
 
   registerObservers() {
-    ObserverService.addObserver(this, 'intl:app-locales-changed', true);
+    Services.obs.addObserver(this, 'intl:app-locales-changed', true);
   }
 
   
 
 
   unregisterObservers() {
-    ObserverService.removeObserver(this, 'intl:app-locales-changed');
+    Services.obs.removeObserver(this, 'intl:app-locales-changed');
   }
 
   
@@ -273,7 +272,7 @@ class Localization {
 
   observe(subject, topic, data) {
     switch (topic) {
-      case 'intl:app-locales-changed':
+      case "intl:app-locales-changed":
         this.onLanguageChange();
         break;
       default:
@@ -435,4 +434,4 @@ function keysFromContext(method, ctx, keys, translations) {
 }
 
 this.Localization = Localization;
-this.EXPORTED_SYMBOLS = ['Localization'];
+this.EXPORTED_SYMBOLS = ["Localization"];
