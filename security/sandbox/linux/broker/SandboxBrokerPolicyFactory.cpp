@@ -189,25 +189,6 @@ SandboxBrokerPolicyFactory::SandboxBrokerPolicyFactory()
   
   
   
-  
-  
-  nsCOMPtr<nsIFile> tmpDir;
-  nsresult rv = GetSpecialSystemDirectory(OS_TemporaryDirectory,
-                                          getter_AddRefs(tmpDir));
-
-  if (NS_SUCCEEDED(rv)) {
-    nsAutoCString tmpPath;
-    rv = tmpDir->GetNativePath(tmpPath);
-    if (NS_SUCCEEDED(rv)) {
-      policy->AddDir(rdwrcr, tmpPath.get());
-    }
-  }
-  
-  if (NS_FAILED(rv)) {
-    policy->AddDir(rdwrcr, "/tmp");
-  }
-
-  
   policy->AddFilePrefix(rdwr, "/dev", "nvidia");
 
   
@@ -276,7 +257,8 @@ SandboxBrokerPolicyFactory::SandboxBrokerPolicyFactory()
   };
 
   nsCOMPtr<nsIFile> homeDir;
-  rv = GetSpecialSystemDirectory(Unix_HomeDirectory, getter_AddRefs(homeDir));
+  nsresult rv = GetSpecialSystemDirectory(Unix_HomeDirectory,
+                                          getter_AddRefs(homeDir));
   if (NS_SUCCEEDED(rv)) {
     nsCOMPtr<nsIFile> confDir;
 
@@ -434,11 +416,23 @@ SandboxBrokerPolicyFactory::GetContentPolicy(int aPid, bool aFileProcess)
   policy->AddPath(rdonly, nsPrintfCString("/proc/%d/status", aPid).get());
 
   
+  nsCOMPtr<nsIFile> tmpDir;
+  nsresult rv = NS_GetSpecialDirectory(NS_APP_CONTENT_PROCESS_TEMP_DIR,
+                                       getter_AddRefs(tmpDir));
+  if (NS_SUCCEEDED(rv)) {
+    nsAutoCString tmpPath;
+    rv = tmpDir->GetNativePath(tmpPath);
+    if (NS_SUCCEEDED(rv)) {
+      policy->AddDir(rdwrcr, tmpPath.get());
+    }
+  }
+
+  
   
   
   nsCOMPtr<nsIFile> profileDir;
-  nsresult rv = NS_GetSpecialDirectory(NS_APP_USER_PROFILE_50_DIR,
-                                       getter_AddRefs(profileDir));
+  rv = NS_GetSpecialDirectory(NS_APP_USER_PROFILE_50_DIR,
+                              getter_AddRefs(profileDir));
   if (NS_SUCCEEDED(rv)) {
       nsCOMPtr<nsIFile> workDir;
       rv = profileDir->Clone(getter_AddRefs(workDir));
