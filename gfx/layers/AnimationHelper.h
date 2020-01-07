@@ -256,7 +256,12 @@ public:
 
 
 
-  static void
+
+
+
+
+
+  static bool
   SampleAnimations(CompositorAnimationStorage* aStorage,
                    TimeStamp aPreviousFrameTime,
                    TimeStamp aCurrentFrameTime);
