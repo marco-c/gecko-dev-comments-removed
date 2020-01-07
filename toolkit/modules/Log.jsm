@@ -14,12 +14,12 @@ const STREAM_SEGMENT_SIZE = 4096;
 const PR_UINT32_MAX = 0xffffffff;
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-XPCOMUtils.defineLazyModuleGetters(this, {
-  AndroidLog: "resource://gre/modules/AndroidLog.jsm", 
-  OS: "resource://gre/modules/osfile.jsm",
-  Services: "resource://gre/modules/Services.jsm",
-  Task: "resource://gre/modules/Task.jsm",
-});
+ChromeUtils.defineModuleGetter(this, "OS",
+                               "resource://gre/modules/osfile.jsm");
+ChromeUtils.defineModuleGetter(this, "Task",
+                               "resource://gre/modules/Task.jsm");
+ChromeUtils.defineModuleGetter(this, "Services",
+                               "resource://gre/modules/Services.jsm");
 const INTERNAL_FIELDS = new Set(["_level", "_message", "_time", "_namespace"]);
 
 
@@ -86,7 +86,6 @@ var Log = {
   DumpAppender,
   ConsoleAppender,
   StorageStreamAppender,
-  AndroidAppender,
 
   FileAppender,
   BoundedFileAppender,
@@ -418,36 +417,6 @@ Logger.prototype = {
     this.log(level, params._message, params);
   },
 
-  _unpackTemplateLiteral(string, params) {
-    if (!Array.isArray(params)) {
-      
-      return [string, params];
-    }
-
-    if (!Array.isArray(string)) {
-      
-      
-      return [string, params[0]];
-    }
-
-    
-    
-    
-    
-
-    if (!params.length) {
-      
-      
-      return [string[0], undefined];
-    }
-
-    let concat = string[0];
-    for (let i = 0; i < params.length; i++) {
-      concat += `\${${i}}${string[i + 1]}`;
-    }
-    return [concat, params];
-  },
-
   log(level, string, params) {
     if (this.level > level)
       return;
@@ -461,32 +430,31 @@ Logger.prototype = {
         continue;
       }
       if (!message) {
-        [string, params] = this._unpackTemplateLiteral(string, params);
         message = new LogMessage(this._name, level, string, params);
       }
       appender.append(message);
     }
   },
 
-  fatal(string, ...params) {
+  fatal(string, params) {
     this.log(Log.Level.Fatal, string, params);
   },
-  error(string, ...params) {
+  error(string, params) {
     this.log(Log.Level.Error, string, params);
   },
-  warn(string, ...params) {
+  warn(string, params) {
     this.log(Log.Level.Warn, string, params);
   },
-  info(string, ...params) {
+  info(string, params) {
     this.log(Log.Level.Info, string, params);
   },
-  config(string, ...params) {
+  config(string, params) {
     this.log(Log.Level.Config, string, params);
   },
-  debug(string, ...params) {
+  debug(string, params) {
     this.log(Log.Level.Debug, string, params);
   },
-  trace(string, ...params) {
+  trace(string, params) {
     this.log(Log.Level.Trace, string, params);
   }
 };
@@ -579,16 +547,7 @@ LoggerRepository.prototype = {
     let log = this.getLogger(name);
 
     let proxy = Object.create(log);
-    proxy.log = (level, string, params) => {
-      if (Array.isArray(string) && Array.isArray(params)) {
-        
-        
-        string = [prefix + string[0]].concat(string.slice(1));
-      } else {
-        string = prefix + string; 
-      }
-      return log.log(level, string, params);
-    };
+    proxy.log = (level, string, params) => log.log(level, prefix + string, params);
     return proxy;
   },
 };
@@ -637,7 +596,7 @@ BasicFormatter.prototype = {
       
       
       let subDone = false;
-      let regex = /\$\{(\S*?)\}/g;
+      let regex = /\$\{(\S*)\}/g;
       let textParts = [];
       if (message.message) {
         textParts.push(message.message.replace(regex, (_, sub) => {
@@ -716,21 +675,6 @@ StructuredFormatter.prototype = {
     return JSON.stringify(output);
   }
 };
-
-
-
-
-
-function AndroidFormatter() {
-  BasicFormatter.call(this);
-}
-AndroidFormatter.prototype = Object.freeze({
-  __proto__: BasicFormatter.prototype,
-
-  format(message) {
-    return this.formatText(message);
-  },
-});
 
 
 
@@ -1062,39 +1006,4 @@ BoundedFileAppender.prototype = {
       return OS.File.remove(this._path);
     });
   }
-};
-
-
-
-
-
-function AndroidAppender(aFormatter) {
-  Appender.call(this, aFormatter || new AndroidFormatter());
-  this._name = "AndroidAppender";
-}
-AndroidAppender.prototype = {
-  __proto__: Appender.prototype,
-
-  
-  _mapping: {
-    [Log.Level.Fatal]:  "e",
-    [Log.Level.Error]:  "e",
-    [Log.Level.Warn]:   "w",
-    [Log.Level.Info]:   "i",
-    [Log.Level.Config]: "d",
-    [Log.Level.Debug]:  "d",
-    [Log.Level.Trace]:  "v",
-  },
-
-  append(aMessage) {
-    if (!aMessage) {
-      return;
-    }
-
-    
-    
-    const tag = aMessage.loggerName.replace(/^Gecko|\./g, "");
-    const msg = this._formatter.format(aMessage);
-    AndroidLog[this._mapping[aMessage.level]](tag, msg);
-  },
 };

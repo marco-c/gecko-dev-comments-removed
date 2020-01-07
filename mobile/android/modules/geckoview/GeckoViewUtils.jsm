@@ -6,9 +6,8 @@
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
-  EventDispatcher: "resource://gre/modules/Messaging.jsm",
-  Log: "resource://gre/modules/Log.jsm",
   Services: "resource://gre/modules/Services.jsm",
+  EventDispatcher: "resource://gre/modules/Messaging.jsm",
 });
 
 var EXPORTED_SYMBOLS = ["GeckoViewUtils"];
@@ -252,90 +251,6 @@ var GeckoViewUtils = {
       }
     }
     return null;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  initLogging: function(tag, scope) {
-    
-    
-    
-    for (const level of ["debug", "warn"]) {
-      const log = (strings, ...exprs) =>
-          this._log(log.logger, level, strings, exprs);
-
-      XPCOMUtils.defineLazyGetter(log, "logger", _ => {
-        const logger = Log.repository.getLogger(tag);
-        logger.parent = this.rootLogger;
-        return logger;
-      });
-
-      scope[level] = new Proxy(log, {
-        set: (obj, prop, value) => obj([prop + " = ", ""], value) || true,
-      });
-    }
-    return scope;
-  },
-
-  get rootLogger() {
-    if (!this._rootLogger) {
-      this._rootLogger = Log.repository.getLogger("GeckoView");
-      this._rootLogger.addAppender(new Log.AndroidAppender());
-    }
-    return this._rootLogger;
-  },
-
-  _log: function(logger, level, strings, exprs) {
-    if (!Array.isArray(strings)) {
-      const [, file, line] =
-          (new Error()).stack.match(/.*\n.*\n.*@(.*):(\d+):/);
-      throw Error(`Expecting template literal: ${level} \`foo \${bar}\``,
-                  file, +line);
-    }
-
-    
-    
-    
-    for (let i = 0; i < exprs.length; i++) {
-      const expr = exprs[i];
-      switch (typeof expr) {
-        case "number":
-          if (expr > 0 && /\ba?[fF]lags?[\s=:]+$/.test(strings[i])) {
-            
-            exprs[i] = `0x${expr.toString(0x10)}`;
-          } else if (expr >= 0 && /\b(a?[sS]tatus|rv)[\s=:]+$/.test(strings[i])) {
-            
-            exprs[i] = `0x${expr.toString(0x10)}`;
-            for (const name in Cr) {
-              if (expr === Cr[name]) {
-                exprs[i] = name;
-                break;
-              }
-            }
-          }
-          break;
-      }
-    }
-
-    return logger[level](strings, ...exprs);
   },
 };
 

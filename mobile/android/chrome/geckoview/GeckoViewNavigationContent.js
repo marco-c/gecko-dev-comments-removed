@@ -11,25 +11,31 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   LoadURIDelegate: "resource://gre/modules/LoadURIDelegate.jsm",
 });
 
+XPCOMUtils.defineLazyGetter(this, "dump", () =>
+  ChromeUtils.import("resource://gre/modules/AndroidLog.jsm",
+                     {}).AndroidLog.d.bind(null, "ViewNavigation[C]"));
+
+function debug(aMsg) {
+  
+}
+
 
 class GeckoViewNavigationContent extends GeckoViewContentModule {
   onEnable() {
-    debug `onEnable`;
+    debug("onEnable");
 
     docShell.loadURIDelegate = this;
   }
 
   onDisable() {
-    debug `onDisable`;
+    debug("onDisable");
 
     docShell.loadURIDelegate = null;
   }
 
   
   loadURI(aUri, aWhere, aFlags, aTriggeringPrincipal) {
-    debug `loadURI: uri=${ aUri && aUri.spec
-                  } where=${ aWhere
-                  } flags=${ aFlags }`;
+    debug("loadURI " + (aUri && aUri.spec) + " " + aWhere + " " + aFlags);
 
     
     if (aUri && aUri.displaySpec.startsWith("about:certerror")) {
@@ -41,5 +47,4 @@ class GeckoViewNavigationContent extends GeckoViewContentModule {
   }
 }
 
-let {debug, warn} = GeckoViewNavigationContent.initLogging("GeckoViewNavigation");
-let module = GeckoViewNavigationContent.create(this);
+var navigationListener = new GeckoViewNavigationContent("GeckoViewNavigation", this);
