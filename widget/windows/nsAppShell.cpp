@@ -120,6 +120,47 @@ RemoveScreenWakeLockListener()
   }
 }
 
+class SingleNativeEventPump final : public nsIThreadObserver
+{
+public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSITHREADOBSERVER
+
+  SingleNativeEventPump()
+  {
+    MOZ_ASSERT(!XRE_UseNativeEventProcessing(),
+               "Should only be used when not properly processing events.");
+  }
+
+private:
+  ~SingleNativeEventPump() {}
+};
+
+NS_IMPL_ISUPPORTS(SingleNativeEventPump, nsIThreadObserver)
+
+NS_IMETHODIMP
+SingleNativeEventPump::OnDispatchedEvent() { return NS_OK; }
+
+NS_IMETHODIMP
+SingleNativeEventPump::OnProcessNextEvent(nsIThreadInternal* aThread,
+                                          bool aMayWait)
+{
+  MSG msg;
+  bool gotMessage = WinUtils::PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE);
+  if (gotMessage) {
+    ::TranslateMessage(&msg);
+    ::DispatchMessageW(&msg);
+  }
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+SingleNativeEventPump::AfterProcessNextEvent(nsIThreadInternal* aThread,
+                                             bool aMayWait)
+{
+  return NS_OK;
+}
+
 namespace mozilla {
 namespace widget {
 
@@ -305,6 +346,18 @@ nsAppShell::Init()
                               0, 0, 0, 10, 10, HWND_MESSAGE, nullptr, module,
                               nullptr);
     NS_ENSURE_STATE(mEventWnd);
+  } else {
+    
+    
+    
+    
+    
+    
+    nsCOMPtr<nsIThreadInternal> threadInt =
+      do_QueryInterface(NS_GetCurrentThread());
+    if (threadInt) {
+      threadInt->SetObserver(new SingleNativeEventPump());
+    }
   }
 
   if (XRE_IsParentProcess()) {
