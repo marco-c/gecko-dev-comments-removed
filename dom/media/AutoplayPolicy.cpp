@@ -10,12 +10,17 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/dom/HTMLMediaElement.h"
 #include "mozilla/dom/HTMLMediaElementBinding.h"
-#include "nsContentUtils.h"
 #include "nsIDocument.h"
 #include "MediaManager.h"
 
 namespace mozilla {
 namespace dom {
+
+ bool
+AutoplayPolicy::IsDocumentAllowedToPlay(nsIDocument* aDoc)
+{
+  return aDoc ? aDoc->HasBeenUserActivated() : false;
+}
 
  bool
 AutoplayPolicy::IsMediaElementAllowedToPlay(NotNull<HTMLMediaElement*> aElement)
@@ -40,7 +45,7 @@ AutoplayPolicy::IsMediaElementAllowedToPlay(NotNull<HTMLMediaElement*> aElement)
     
     return aElement->IsBlessed() ||
            EventStateManager::IsHandlingUserInput();
-  }
+   }
 
   
   if (aElement->Volume() == 0.0 || aElement->Muted()) {
@@ -54,18 +59,7 @@ AutoplayPolicy::IsMediaElementAllowedToPlay(NotNull<HTMLMediaElement*> aElement)
     return true;
   }
 
-  
-  if (nsContentUtils::IsExactSitePermAllow(
-        aElement->NodePrincipal(), "autoplay-media")) {
-    return true;
-  }
-
-  
-  if (aElement->OwnerDoc()->HasBeenUserActivated()) {
-    return true;
-  }
-
-  return false;
+  return AutoplayPolicy::IsDocumentAllowedToPlay(aElement->OwnerDoc());
 }
 
 } 

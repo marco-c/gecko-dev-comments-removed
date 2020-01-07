@@ -27,11 +27,12 @@ class HTMLMediaElement;
 
 
 
-
 class AutoplayPolicy
 {
 public:
   static bool IsMediaElementAllowedToPlay(NotNull<HTMLMediaElement*> aElement);
+private:
+  static bool IsDocumentAllowedToPlay(nsIDocument* aDoc);
 };
 
 } 

@@ -600,16 +600,6 @@ var gPermissionObject = {
 
 
 
-  "autoplay-media": {
-    exactHostMatch: true,
-    getDefault() {
-      if (Services.prefs.getBoolPref("media.autoplay.enabled")) {
-        return SitePermissions.ALLOW;
-      }
-      return SitePermissions.BLOCK;
-    }
-  },
-
   "image": {
     states: [ SitePermissions.ALLOW, SitePermissions.BLOCK ],
   },
