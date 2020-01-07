@@ -363,7 +363,10 @@ nsComponentManagerImpl::Init()
   RegisterModule(&kXPCOMModule, nullptr);
 
   for (auto module : AllStaticModules()) {
-    RegisterModule(module, nullptr);
+    if (module) { 
+                  
+      RegisterModule(module, nullptr);
+    }
   }
 
   for (uint32_t i = 0; i < sExtraStaticModules->Length(); ++i) {
