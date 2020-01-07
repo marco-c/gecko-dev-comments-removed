@@ -309,7 +309,7 @@ function main() {
   
   const localizedLocales = [];
   const skippedLocales = [];
-  for (const locale of [DEFAULT_LOCALE, ...CENTRAL_LOCALES, ...extraLocales]) {
+  for (const locale of [DEFAULT_LOCALE, ...CENTRAL_LOCALES]) {
     
     const strings = getStrings(locale, allStrings);
     if (isSubset(strings, defaultStrings) || isSubset(strings, langStrings)) {
@@ -352,7 +352,7 @@ function main() {
     console.log("\x1b[33m", `Skipped the following locales because they use the same strings as ${DEFAULT_LOCALE} or its language locale: ${skippedLocales.join(", ")}`, "\x1b[0m");
   }
   if (extraLocales.length) {
-    console.log("\x1b[31m", `✗ These locales were not in CENTRAL_LOCALES, but probably should be: ${extraLocales.join(", ")}`, "\x1b[0m");
+    console.log("\x1b[33m", `Skipped the following locales because they are not in CENTRAL_LOCALES: ${extraLocales.join(", ")}`, "\x1b[0m");
   }
 
   
