@@ -425,7 +425,7 @@ public:
 
   
   virtual void SetInputListener(AudioDataListener *aListener) {
-    MOZ_ASSERT(OnThread());
+    MOZ_ASSERT(!IsStarted());
     mAudioInput = aListener;
   }
   
@@ -529,7 +529,7 @@ private:
 
 
 
-  bool mStarted;
+  Atomic<bool> mStarted;
   
   RefPtr<AudioDataListener> mAudioInput;
 
