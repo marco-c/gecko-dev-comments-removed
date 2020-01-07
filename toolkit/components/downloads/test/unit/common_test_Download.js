@@ -2400,7 +2400,7 @@ add_task(async function test_history() {
 
   
   let [time, transitionType] = await promiseVisit;
-  Assert.equal(time, download.startTime.getTime());
+  Assert.equal(time, download.startTime.getTime() * 1000);
   Assert.equal(transitionType, Ci.nsINavHistoryService.TRANSITION_DOWNLOAD);
 
   
@@ -2434,7 +2434,7 @@ add_task(async function test_history_tryToKeepPartialData() {
   
   
   
-  Assert.ok(time >= beforeStartTimeMs - 1000);
+  Assert.ok(time >= beforeStartTimeMs * 1000 - 1000000);
 
   
   continueResponses();

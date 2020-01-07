@@ -816,6 +816,7 @@ var AeroPeek = {
   
   onBeginUpdateBatch() {},
   onEndUpdateBatch() {},
+  onVisits() {},
   onTitleChanged() {},
   onFrecencyChanged() {},
   onManyFrecenciesChanged() {},
