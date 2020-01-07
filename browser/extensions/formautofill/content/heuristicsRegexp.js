@@ -66,6 +66,7 @@ var HeuristicsRegExp = {
     ),
     "address-line1": new RegExp(
       "^address$|address[_-]?line(one)?|address1|addr1|street" +
+      "|addrline1|address_1" + 
       "|(?:shipping|billing)address$" +
       "|strasse|straße|hausnummer|housenumber" + 
       "|house.?name" + 
@@ -81,6 +82,7 @@ var HeuristicsRegExp = {
     ),
     "address-line2": new RegExp(
       "address[_-]?line(2|two)|address2|addr2|street|suite|unit" +
+      "|addrline2|address_2" + 
       "|adresszusatz|ergänzende.?angaben" + 
       "|direccion2|colonia|adicional" + 
       "|addresssuppl|complementnom|appartement" + 
@@ -94,6 +96,7 @@ var HeuristicsRegExp = {
     ),
     "address-line3": new RegExp(
       "address[_-]?line(3|three)|address3|addr3|street|suite|unit" +
+      "|addrline3|address_3" + 
       "|adresszusatz|ergänzende.?angaben" + 
       "|direccion3|colonia|adicional" + 
       "|addresssuppl|complementnom|appartement" + 

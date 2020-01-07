@@ -534,17 +534,56 @@ this.FormAutofillHeuristics = {
 
   _parseAddressFields(fieldScanner) {
     let parsedFields = false;
-    let addressLines = ["address-line1", "address-line2", "address-line3"];
-    for (let i = 0; !fieldScanner.parsingFinished && i < addressLines.length; i++) {
+    const addressLines = ["address-line1", "address-line2", "address-line3"];
+
+    
+    
+    
+    const addressLineRegexps = {
+      "address-line1": new RegExp(
+        "address[_-]?line(1|one)|address1|addr1" +
+        "|addrline1|address_1" + 
+        "|indirizzo1" + 
+        "|住所1" + 
+        "|地址1" + 
+        "|주소.?1", 
+        "iu"
+      ),
+      "address-line2": new RegExp(
+        "address[_-]?line(2|two)|address2|addr2" +
+        "|addrline2|address_2" + 
+        "|indirizzo2" + 
+        "|住所2" + 
+        "|地址2" + 
+        "|주소.?2", 
+        "iu"
+      ),
+      "address-line3": new RegExp(
+        "address[_-]?line(3|three)|address3|addr3" +
+        "|addrline3|address_3" + 
+        "|indirizzo3" + 
+        "|住所3" + 
+        "|地址3" + 
+        "|주소.?3", 
+        "iu"
+      ),
+    };
+    while (!fieldScanner.parsingFinished) {
       let detail = fieldScanner.getFieldDetailByIndex(fieldScanner.parsingIndex);
-      if (!detail || !addressLines.includes(detail.fieldName)) {
+      if (!detail || !addressLines.includes(detail.fieldName) || detail._reason == "autocomplete") {
+        
         
         
         break;
       }
-      fieldScanner.updateFieldName(fieldScanner.parsingIndex, addressLines[i]);
+      const elem = detail.elementWeakRef.get();
+      for (let regexp of Object.keys(addressLineRegexps)) {
+        if (this._matchRegexp(elem, addressLineRegexps[regexp])) {
+          fieldScanner.updateFieldName(fieldScanner.parsingIndex, regexp);
+          parsedFields = true;
+        }
+      }
       fieldScanner.parsingIndex++;
-      parsedFields = true;
     }
 
     return parsedFields;
