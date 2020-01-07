@@ -35,6 +35,7 @@ class DebianBootstrapper(StyloInstall, BaseBootstrapper):
         'autoconf2.13',
         'build-essential',
         'ccache',
+        'nodejs',
         'python-dev',
         'python-pip',
         'python-setuptools',
@@ -45,6 +46,11 @@ class DebianBootstrapper(StyloInstall, BaseBootstrapper):
 
     
     DISTRO_PACKAGES = []
+
+    
+    DEBIAN_PACKAGES = [
+        'npm'
+    ]
 
     
     
@@ -79,13 +85,16 @@ class DebianBootstrapper(StyloInstall, BaseBootstrapper):
     
     MOBILE_ANDROID_DISTRO_PACKAGES = []
 
-    def __init__(self, version, dist_id, **kwargs):
+    def __init__(self, distro, version, dist_id, **kwargs):
         BaseBootstrapper.__init__(self, **kwargs)
 
+        self.distro = distro
         self.version = version
         self.dist_id = dist_id
 
         self.packages = self.COMMON_PACKAGES + self.DISTRO_PACKAGES
+        if self.distro == 'Debian' or self.distro == 'debian':
+            self.packages += self.DEBIAN_PACKAGES
         self.browser_packages = self.BROWSER_COMMON_PACKAGES + self.BROWSER_DISTRO_PACKAGES
         self.mobile_android_packages = self.MOBILE_ANDROID_COMMON_PACKAGES + \
             self.MOBILE_ANDROID_DISTRO_PACKAGES
