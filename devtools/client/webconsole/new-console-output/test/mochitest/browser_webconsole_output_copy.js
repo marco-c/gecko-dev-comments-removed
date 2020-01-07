@@ -3,6 +3,8 @@
 
 
 
+
+
 "use strict";
 
 
@@ -19,11 +21,7 @@ add_task(async function () {
   const {node} = await onMessage;
   ok(true, "Message was logged");
 
-  const selection = node.ownerDocument.getSelection();
-  const range = document.createRange();
-  range.selectNodeContents(node);
-  selection.removeAllRanges();
-  selection.addRange(range);
+  let selection = selectNode(hud, node);
 
   const selectionString = selection.toString().trim();
   is(selectionString, smokeMessage, `selection has expected "${smokeMessage}" value`);

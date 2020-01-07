@@ -3,6 +3,8 @@
 
 
 
+
+
 "use strict";
 
 
@@ -24,11 +26,7 @@ add_task(async function () {
 
   
   const output = node.closest(".webconsole-output");
-  const selection = node.ownerDocument.getSelection();
-  const range = document.createRange();
-  range.selectNodeContents(output);
-  selection.removeAllRanges();
-  selection.addRange(range);
+  selectNode(hud, output);
 
   info("Wait for the clipboard to contain the text corresponding to all the messages");
   await waitForClipboardPromise(
