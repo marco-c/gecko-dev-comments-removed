@@ -105,3 +105,5 @@ bool OpenTypeMVAR::Serialize(OTSStream* out) {
 }
 
 }  
+
+#undef TABLE_NAME

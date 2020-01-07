@@ -85,3 +85,5 @@ bool OpenTypeHVAR::Serialize(OTSStream* out) {
 }
 
 }  
+
+#undef TABLE_NAME

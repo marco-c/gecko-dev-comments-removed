@@ -154,3 +154,5 @@ bool OpenTypeGVAR::Serialize(OTSStream* out) {
 }
 
 }  
+
+#undef TABLE_NAME
