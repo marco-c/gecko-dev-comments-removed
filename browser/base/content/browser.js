@@ -140,12 +140,23 @@ if (AppConstants.MOZ_CRASHREPORTER) {
                                      "nsICrashReporter");
 }
 
-XPCOMUtils.defineLazyGetter(this, "gBrowser", function() {
-  
-  
-  
-  
-  return (typeof TabBrowser == "function") ? new TabBrowser() : null;
+Object.defineProperty(this, "gBrowser", {
+  configurable: true,
+  enumerable: true,
+  get() {
+    delete window.gBrowser;
+
+    
+    
+    if (!window._gBrowser) {
+      return window.gBrowser = null;
+    }
+
+    window.gBrowser = window._gBrowser;
+    delete window._gBrowser;
+    gBrowser.init();
+    return gBrowser;
+  },
 });
 
 XPCOMUtils.defineLazyGetter(this, "gBrowserBundle", function() {
