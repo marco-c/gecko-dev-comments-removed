@@ -335,6 +335,12 @@ public:
 
 
 
+  bool hasHistoryEntries();
+
+  
+
+
+
 
 
 
