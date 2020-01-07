@@ -560,7 +560,12 @@ sandbox.compareRetainedDisplayLists = g.compareRetainedDisplayLists;
     sandbox.styloVsGecko = false;
 #endif
 
+
+#ifdef XP_MACOSX && MOZ_ENABLE_SKIA_PDF
+    sandbox.skiaPdf = true;
+#else
     sandbox.skiaPdf = false;
+#endif
 
 #ifdef RELEASE_OR_BETA
     sandbox.release_or_beta = true;
