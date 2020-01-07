@@ -244,5 +244,25 @@ ContainerLayerMLGPU::IsContentOpaque()
   return LayerMLGPU::IsContentOpaque();
 }
 
+const LayerIntRegion&
+ContainerLayerMLGPU::GetShadowVisibleRegion()
+{
+  if (!UseIntermediateSurface()) {
+    RecomputeShadowVisibleRegionFromChildren();
+  }
+
+  return mShadowVisibleRegion;
+}
+
+const LayerIntRegion&
+RefLayerMLGPU::GetShadowVisibleRegion()
+{
+  if (!UseIntermediateSurface()) {
+    RecomputeShadowVisibleRegionFromChildren();
+  }
+
+  return mShadowVisibleRegion;
+}
+
 } 
 } 
