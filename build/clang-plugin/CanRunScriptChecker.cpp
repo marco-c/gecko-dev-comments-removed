@@ -93,8 +93,14 @@ private:
 };
 
 void FuncSetCallback::run(const MatchFinder::MatchResult &Result) {
-  const FunctionDecl *Func =
-      Result.Nodes.getNodeAs<FunctionDecl>("canRunScriptFunction");
+  const FunctionDecl *Func;
+  if (auto *Lambda = Result.Nodes.getNodeAs<LambdaExpr>("lambda")) {
+    Func = Lambda->getCallOperator();
+    if (!Func || !hasCustomAnnotation(Func, "moz_can_run_script"))
+      return;
+  } else {
+    Func = Result.Nodes.getNodeAs<FunctionDecl>("canRunScriptFunction");
+  }
 
   CanRunScriptFuncs.insert(Func);
 
@@ -132,7 +138,9 @@ void CanRunScriptChecker::buildFuncSet(ASTContext *Context) {
   Finder.addMatcher(
       functionDecl(hasCanRunScriptAnnotation()).bind("canRunScriptFunction"),
       &Callback);
-
+  Finder.addMatcher(
+      lambdaExpr().bind("lambda"),
+      &Callback);
   
   Finder.matchAST(*Context);
 }
@@ -214,6 +222,9 @@ void CanRunScriptChecker::check(const MatchFinder::MatchResult &Result) {
   
   
   if (ParentFunction) {
+    assert(!hasCustomAnnotation(ParentFunction, "moz_can_run_script") &&
+           "Matcher missed something");
+
     diag(CallRange.getBegin(), ErrorNonCanRunScriptParent, DiagnosticIDs::Error)
         << CallRange;
 

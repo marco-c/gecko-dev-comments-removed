@@ -37,6 +37,19 @@ struct RefCountedBase {
   }
 };
 
+MOZ_CAN_RUN_SCRIPT void testLambda() {
+  auto doIt = []() MOZ_CAN_RUN_SCRIPT {
+    test();
+  };
+
+  auto doItWrong = []() { 
+    test(); 
+  };
+
+  doIt();
+  doItWrong();
+}
+
 void test2_parent() { 
   test2(new RefCountedBase); 
 
