@@ -741,11 +741,9 @@ public:
 
   void NotifyCueDisplayStatesChanged();
 
-  bool GetAndClearHasUserInteractedLoadOrSeek()
+  bool IsBlessed() const
   {
-    bool result = mHasUserInteractedLoadOrSeek;
-    mHasUserInteractedLoadOrSeek = false;
-    return result;
+    return mIsBlessed;
   }
 
   
@@ -1787,7 +1785,7 @@ private:
 
   
   
-  bool mHasUserInteractedLoadOrSeek;
+  bool mIsBlessed = false;
 
   
   bool mFirstFrameLoaded;

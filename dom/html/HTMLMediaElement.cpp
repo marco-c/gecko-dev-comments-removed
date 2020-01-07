@@ -1979,12 +1979,12 @@ void HTMLMediaElement::DoLoad()
     return;
   }
 
-  
-  
-  
-  
   if (EventStateManager::IsHandlingUserInput()) {
-    mHasUserInteractedLoadOrSeek = true;
+    
+    
+    
+    
+    mIsBlessed = true;
     
     
     if (HasAttr(kNameSpaceID_None, nsGkAtoms::autoplay)) {
@@ -2757,7 +2757,7 @@ HTMLMediaElement::Seek(double aTime,
   
   
   if (EventStateManager::IsHandlingUserInput()) {
-    mHasUserInteractedLoadOrSeek = true;
+    mIsBlessed = true;
   }
 
   StopSuspendingAfterFirstFrame();
@@ -4043,7 +4043,6 @@ HTMLMediaElement::HTMLMediaElement(already_AddRefed<mozilla::dom::NodeInfo>& aNo
     mIsEncrypted(false),
     mWaitingForKey(NOT_WAITING_FOR_KEY),
     mDisableVideo(false),
-    mHasUserInteractedLoadOrSeek(false),
     mFirstFrameLoaded(false),
     mDefaultPlaybackStartPosition(0.0),
     mHasSuspendTaint(false),
@@ -4285,6 +4284,9 @@ HTMLMediaElement::PlayInternal(ErrorResult& aRv)
   AddRemoveSelfReference();
   UpdatePreloadAction();
   UpdateSrcMediaStreamPlaying();
+
+  
+  mIsBlessed = true;
 
   
   
