@@ -1680,47 +1680,47 @@ public class GeckoSession extends LayerSession
 
 
 
-            public boolean disabled;
+            public final boolean disabled;
 
             
 
 
 
-            public String icon;
+            public final String icon;
 
             
 
 
-            public String id;
+            public final String id;
 
             
 
 
-            public Choice[] items;
+            public final Choice[] items;
 
             
 
 
-            public String label;
-
-            
-
-
-
-            public boolean selected;
+            public final String label;
 
             
 
 
 
-            public boolean separator;
+            public final boolean selected;
+
+            
+
+
+
+            public final boolean separator;
 
              Choice(GeckoBundle choice) {
                 disabled = choice.getBoolean("disabled");
                 icon = choice.getString("icon");
                 id = choice.getString("id");
                 label = choice.getString("label");
-                selected = choice.getBoolean("label");
+                selected = choice.getBoolean("selected");
                 separator = choice.getBoolean("separator");
 
                 GeckoBundle[] choices = choice.getBundleArray("items");
@@ -2058,33 +2058,33 @@ public class GeckoSession extends LayerSession
             
 
 
-            public String id;
+            public final String id;
 
             
 
 
-            public String rawId;
-
-            
-
-
-
-
-            public String name;
+            public final String rawId;
 
             
 
 
 
 
-
-
-            public int source;
+            public final String name;
 
             
 
 
-            public int type;
+
+
+
+
+            public final int source;
+
+            
+
+
+            public final int type;
 
             private static int getSourceFromString(String src) {
                 
@@ -2120,9 +2120,9 @@ public class GeckoSession extends LayerSession
                 }
             }
 
-            public MediaSource(GeckoBundle media) {
+             MediaSource(GeckoBundle media) {
                 id = media.getString("id");
-                rawId = media.getString("id");
+                rawId = media.getString("rawId");
                 name = media.getString("name");
                 source = getSourceFromString(media.getString("source"));
                 type = getTypeFromString(media.getString("type"));
