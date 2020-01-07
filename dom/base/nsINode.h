@@ -736,8 +736,8 @@ public:
 
 
 
-  virtual nsresult InsertChildAt(nsIContent* aKid, uint32_t aIndex,
-                                 bool aNotify) = 0;
+  virtual nsresult InsertChildAt_Deprecated(nsIContent* aKid, uint32_t aIndex,
+                                            bool aNotify) = 0;
 
   
 
@@ -759,7 +759,7 @@ public:
 
   nsresult AppendChildTo(nsIContent* aKid, bool aNotify)
   {
-    return InsertChildAt(aKid, GetChildCount(), aNotify);
+    return InsertChildAt_Deprecated(aKid, GetChildCount(), aNotify);
   }
 
   

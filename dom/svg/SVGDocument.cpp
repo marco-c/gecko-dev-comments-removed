@@ -35,7 +35,8 @@ namespace dom {
 
 
 nsresult
-SVGDocument::InsertChildAt(nsIContent* aKid, uint32_t aIndex, bool aNotify)
+SVGDocument::InsertChildAt_Deprecated(nsIContent* aKid, uint32_t aIndex,
+                                      bool aNotify)
 {
   if (aKid->IsElement() && !aKid->IsSVGElement()) {
     
@@ -47,7 +48,7 @@ SVGDocument::InsertChildAt(nsIContent* aKid, uint32_t aIndex, bool aNotify)
     EnsureNonSVGUserAgentStyleSheetsLoaded();
   }
 
-  return XMLDocument::InsertChildAt(aKid, aIndex, aNotify);
+  return XMLDocument::InsertChildAt_Deprecated(aKid, aIndex, aNotify);
 }
 
 nsresult
