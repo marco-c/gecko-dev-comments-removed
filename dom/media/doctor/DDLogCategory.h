@@ -23,7 +23,12 @@ MOZ_DEFINE_ENUM_CLASS(DDLogCategory,
                        Property,
                        Event,
                        API,
-                       Log));
+                       Log,
+                       MozLogError,
+                       MozLogWarning,
+                       MozLogInfo,
+                       MozLogDebug,
+                       MozLogVerbose));
 
 
 
