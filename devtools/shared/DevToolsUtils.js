@@ -589,7 +589,18 @@ function mainThreadFetch(urlIn, aOptions = { loadFromCache: true,
       
       
       
-      let charset = bomCharset || channel.contentCharset || aOptions.charset || "UTF-8";
+      let charset = bomCharset;
+      if (!charset) {
+        try {
+          charset = channel.contentCharset;
+        } catch (e) {
+          
+          
+        }
+      }
+      if (!charset) {
+        charset = aOptions.charset || "UTF-8";
+      }
       let unicodeSource = NetworkHelper.convertToUnicode(source, charset);
 
       deferred.resolve({
