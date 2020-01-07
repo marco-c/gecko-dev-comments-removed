@@ -2474,6 +2474,35 @@ nsGlobalWindowInner::NoteCalledRegisterForServiceWorkerScope(const nsACString& a
 }
 
 void
+nsGlobalWindowInner::MigrateStateForDocumentOpen(nsGlobalWindowInner* aOldInner)
+{
+  MOZ_DIAGNOSTIC_ASSERT(aOldInner);
+  MOZ_DIAGNOSTIC_ASSERT(aOldInner != this);
+  MOZ_DIAGNOSTIC_ASSERT(mDoc);
+
+  
+  
+  
+  aOldInner->CreatePerformanceObjectIfNeeded();
+  if (aOldInner->mPerformance) {
+    mPerformance =
+      Performance::CreateForMainThread(this,
+                                       mDoc->NodePrincipal(),
+                                       aOldInner->mPerformance->GetDOMTiming(),
+                                       aOldInner->mPerformance->GetChannel());
+  }
+
+  
+  
+  
+  
+  aOldInner->ForEachEventTargetObject(
+    [&] (DOMEventTargetHelper* aDETH, bool* aDoneOut) {
+      aDETH->BindToOwner(this->AsInner());
+    });
+}
+
+void
 nsGlobalWindowInner::UpdateTopInnerWindow()
 {
   if (IsTopInnerWindow() || !mTopInnerWindow) {

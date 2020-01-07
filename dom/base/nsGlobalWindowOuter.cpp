@@ -1725,7 +1725,7 @@ nsGlobalWindowOuter::SetNewDocument(nsIDocument* aDocument,
 
   mContext->WillInitializeContext();
 
-  nsGlobalWindowInner *currentInner = GetCurrentInnerWindowInternal();
+  RefPtr<nsGlobalWindowInner> currentInner = GetCurrentInnerWindowInternal();
 
   if (currentInner && currentInner->mNavigator) {
     currentInner->mNavigator->OnNavigation();
@@ -1738,6 +1738,9 @@ nsGlobalWindowOuter::SetNewDocument(nsIDocument* aDocument,
 
   nsCOMPtr<WindowStateHolder> wsh = do_QueryInterface(aState);
   NS_ASSERTION(!aState || wsh, "What kind of weird state are you giving me here?");
+
+  bool handleDocumentOpen = false;
+  bool doomCurrentInner = false;
 
   JS::Rooted<JSObject*> newInnerGlobal(cx);
   if (reUseInnerWindow) {
@@ -1822,32 +1825,13 @@ nsGlobalWindowOuter::SetNewDocument(nsIDocument* aDocument,
 
     if (currentInner && currentInner->GetWrapperPreserveColor()) {
       if (oldDoc == aDocument) {
-        
-        
-        
-        currentInner->AsInner()->CreatePerformanceObjectIfNeeded();
-        if (currentInner->mPerformance) {
-          newInnerWindow->mPerformance =
-            Performance::CreateForMainThread(newInnerWindow->AsInner(),
-                                             aDocument->NodePrincipal(),
-                                             currentInner->mPerformance->GetDOMTiming(),
-                                             currentInner->mPerformance->GetChannel());
-        }
-
-        
-        
-        
-        
-        currentInner->ForEachEventTargetObject(
-          [&] (DOMEventTargetHelper* aDETH, bool* aDoneOut) {
-            aDETH->BindToOwner(newInnerWindow->AsGlobal());
-          });
+        handleDocumentOpen = true;
       }
 
       
       
       if (!currentInner->IsFrozen()) {
-        currentInner->FreeInnerObjects();
+        doomCurrentInner = true;
       }
     }
 
@@ -1997,6 +1981,19 @@ nsGlobalWindowOuter::SetNewDocument(nsIDocument* aDocument,
     
     newInnerWindow->mChromeEventHandler = mChromeEventHandler;
   }
+
+  
+  
+  if (handleDocumentOpen) {
+    newInnerWindow->MigrateStateForDocumentOpen(currentInner);
+  }
+
+  
+  
+  if (doomCurrentInner) {
+    currentInner->FreeInnerObjects();
+  }
+  currentInner = nullptr;
 
   
   
