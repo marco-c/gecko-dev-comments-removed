@@ -241,12 +241,16 @@ public:
 
 
 
+
+
+
     static nsresult
     EncodeSourceSurface(SourceSurface* aSurface,
                         const nsACString& aMimeType,
                         const nsAString& aOutputOptions,
                         BinaryOrData aBinaryOrData,
-                        FILE* aFile);
+                        FILE* aFile,
+                        nsACString* aString = nullptr);
 
     
 
