@@ -907,25 +907,48 @@ let SourceActor = ActorClassWithSpec(sourceSpec, {
           entryPoints.push({ script, offsets });
         }
       }
-    } else {
-      
-      
+
+      if (entryPoints.length > 0) {
+        setBreakpointAtEntryPoints(actor, entryPoints);
+        return true;
+      }
+
+      return false;
+    }
+
+    
+    
+    for (let script of scripts) {
+      let columnToOffsetMap = script.getAllColumnOffsets()
+                                    .filter(({ lineNumber }) => {
+                                      return lineNumber === generatedLine;
+                                    });
+      for (let { columnNumber: column, offset } of columnToOffsetMap) {
+        if (column >= generatedColumn && column <= generatedLastColumn) {
+          entryPoints.push({ script, offsets: [offset] });
+        }
+      }
+    }
+
+    
+    
+    if (entryPoints.length === 0) {
       for (let script of scripts) {
-        let columnToOffsetMap = script.getAllColumnOffsets()
-                                      .filter(({ lineNumber }) => {
-                                        return lineNumber === generatedLine;
-                                      });
-        for (let { columnNumber: column, offset } of columnToOffsetMap) {
-          if (column >= generatedColumn && column <= generatedLastColumn) {
+        let columnToOffsetMap = script
+          .getAllColumnOffsets()
+          .filter(({ lineNumber }) => {
+            return lineNumber === generatedLine;
+          });
+
+        if (columnToOffsetMap.length > 0) {
+          let { columnNumber: column, offset } = columnToOffsetMap[0];
+          if (generatedColumn < column) {
             entryPoints.push({ script, offsets: [offset] });
           }
         }
       }
     }
 
-    if (entryPoints.length === 0) {
-      return false;
-    }
     setBreakpointAtEntryPoints(actor, entryPoints);
     return true;
   }
