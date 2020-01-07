@@ -1989,6 +1989,11 @@ ContentParent::LaunchSubprocess(ProcessPriority aInitialPriority )
 {
   AUTO_PROFILER_LABEL("ContentParent::LaunchSubprocess", OTHER);
 
+  if (!ContentProcessManager::GetSingleton()) {
+    
+    return false;
+  }
+
   std::vector<std::string> extraArgs;
   extraArgs.push_back("-childID");
   char idStr[21];
