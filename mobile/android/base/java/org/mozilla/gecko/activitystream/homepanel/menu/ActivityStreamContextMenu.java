@@ -345,8 +345,10 @@ public abstract class ActivityStreamContextMenu
 
 
 
+
     @RobocopTarget
-    public static ActivityStreamContextMenu show(View anchor, ActivityStreamTelemetry.Extras.Builder telemetryExtraBuilder,
+    public static ActivityStreamContextMenu show(final View tabletContextMenuAnchor, final View snackbarAnchor,
+                                                      ActivityStreamTelemetry.Extras.Builder telemetryExtraBuilder,
                                                       final MenuMode menuMode, final WebpageModel item,
                                                       final boolean shouldOverrideIconWithImageProvider,
                                                       HomePager.OnUrlOpenListener onUrlOpenListener,
@@ -355,12 +357,12 @@ public abstract class ActivityStreamContextMenu
         final ActivityStreamContextMenu menu;
 
         if (!HardwareUtils.isTablet()) {
-            menu = new BottomSheetContextMenu(anchor,
+            menu = new BottomSheetContextMenu(snackbarAnchor,
                     telemetryExtraBuilder, menuMode,
                     item, shouldOverrideIconWithImageProvider, onUrlOpenListener, onUrlOpenInBackgroundListener,
                     tilesWidth, tilesHeight);
         } else {
-            menu = new PopupContextMenu(anchor,
+            menu = new PopupContextMenu(tabletContextMenuAnchor, snackbarAnchor,
                     telemetryExtraBuilder, menuMode,
                     item, onUrlOpenListener, onUrlOpenInBackgroundListener);
         }

@@ -138,8 +138,9 @@ public class StreamRecyclerAdapter extends RecyclerView.Adapter<StreamViewHolder
         if (type == RowItemType.TOP_PANEL.getViewType()) {
             return new TopPanelRow(inflater.inflate(TopPanelRow.LAYOUT_ID, parent, false), onUrlOpenListener, new TopPanelRow.OnCardLongClickListener() {
                 @Override
-                public boolean onClick(final TopSite topSite, final int absolutePosition, final int faviconWidth, final int faviconHeight) {
-                    openContextMenuForTopSite(topSite, absolutePosition, parent, faviconWidth, faviconHeight);
+                public boolean onClick(final TopSite topSite, final int absolutePosition,
+                        final View tabletContextMenuAnchor, final int faviconWidth, final int faviconHeight) {
+                    openContextMenuForTopSite(topSite, absolutePosition, tabletContextMenuAnchor, parent, faviconWidth, faviconHeight);
                     return true;
                 }
             });
@@ -352,18 +353,18 @@ public class StreamRecyclerAdapter extends RecyclerView.Adapter<StreamViewHolder
               .set(ActivityStreamTelemetry.Contract.ACTION_POSITION, actionPosition)
               .set(ActivityStreamTelemetry.Contract.INTERACTION, interactionExtra);
 
-        openContextMenuInner(snackbarAnchor, extras, menuMode, model,
+        openContextMenuInner(webpageItemRow.getTabletContextMenuAnchor(), snackbarAnchor, extras, menuMode, model,
                  true, 
                 webpageItemRow.getTileWidth(), webpageItemRow.getTileHeight());
     }
 
-    private void openContextMenuForTopSite(final TopSite topSite, final int absolutePosition, final View snackbarAnchor,
-            final int faviconWidth, final int faviconHeight) {
+    private void openContextMenuForTopSite(final TopSite topSite, final int absolutePosition, final View tabletContextMenuAnchor,
+            final View snackbarAnchor, final int faviconWidth, final int faviconHeight) {
         ActivityStreamTelemetry.Extras.Builder extras = ActivityStreamTelemetry.Extras.builder()
                 .forTopSite(topSite)
                 .set(ActivityStreamTelemetry.Contract.ACTION_POSITION, absolutePosition);
 
-        openContextMenuInner(snackbarAnchor, extras, ActivityStreamContextMenu.MenuMode.TOPSITE, topSite,
+        openContextMenuInner(tabletContextMenuAnchor, snackbarAnchor, extras, ActivityStreamContextMenu.MenuMode.TOPSITE, topSite,
                  false, 
                 faviconWidth, faviconHeight);
     }
@@ -372,11 +373,12 @@ public class StreamRecyclerAdapter extends RecyclerView.Adapter<StreamViewHolder
 
 
 
-    private void openContextMenuInner(final View snackbarAnchor, final ActivityStreamTelemetry.Extras.Builder extras,
+    private void openContextMenuInner(final View tabletContextMenuAnchor, final View snackbarAnchor,
+            final ActivityStreamTelemetry.Extras.Builder extras,
             final ActivityStreamContextMenu.MenuMode menuMode, final WebpageModel webpageModel,
             final boolean shouldOverrideWithImageProvider,
             final int faviconWidth, final int faviconHeight) {
-        ActivityStreamContextMenu.show(snackbarAnchor,
+        ActivityStreamContextMenu.show(tabletContextMenuAnchor, snackbarAnchor,
                 extras,
                 menuMode,
                 webpageModel,
