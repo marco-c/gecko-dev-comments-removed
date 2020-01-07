@@ -250,7 +250,6 @@ nsXPCWrappedJSClass::CallQueryInterfaceOnJSObject(JSContext* cx,
             RootedValue jsexception(cx, NullValue());
 
             if (JS_GetPendingException(cx, &jsexception)) {
-                nsresult rv;
                 if (jsexception.isObject()) {
                     
                     
@@ -258,12 +257,11 @@ nsXPCWrappedJSClass::CallQueryInterfaceOnJSObject(JSContext* cx,
                     Exception* e = nullptr;
                     UNWRAP_OBJECT(Exception, &exceptionObj, e);
 
-                    if (e &&
-                        NS_SUCCEEDED(e->GetResult(&rv)) &&
-                        rv == NS_NOINTERFACE) {
+                    if (e && e->GetResult() == NS_NOINTERFACE) {
                         JS_ClearPendingException(cx);
                     }
                 } else if (jsexception.isNumber()) {
+                    nsresult rv;
                     
                     if (jsexception.isDouble())
                         
@@ -913,118 +911,116 @@ nsXPCWrappedJSClass::CheckForException(XPCCallContext & ccx,
     aes.ClearException();
 
     if (xpc_exception) {
-        nsresult e_result;
-        if (NS_SUCCEEDED(xpc_exception->GetResult(&e_result))) {
-            
-            bool reportable = xpc_IsReportableErrorCode(e_result);
-            if (reportable) {
-                
-                
-                
-                
-                
-                if (e_result == NS_ERROR_NO_INTERFACE &&
-                    !strcmp(anInterfaceName, "nsIInterfaceRequestor") &&
-                    !strcmp(aPropertyName, "getInterface")) {
-                    reportable = false;
-                }
-
-                
-                if (e_result == NS_ERROR_XPC_JSOBJECT_HAS_NO_FUNCTION_NAMED) {
-                    reportable = false;
-                }
-            }
-
+        nsresult e_result = xpc_exception->GetResult();
+        
+        bool reportable = xpc_IsReportableErrorCode(e_result);
+        if (reportable) {
             
             
-            if (reportable && is_js_exception)
-            {
-                
-                
-                
-                JS_SetPendingException(cx, js_exception);
-                aes.ReportException();
+            
+            
+            
+            if (e_result == NS_ERROR_NO_INTERFACE &&
+                !strcmp(anInterfaceName, "nsIInterfaceRequestor") &&
+                !strcmp(aPropertyName, "getInterface")) {
                 reportable = false;
             }
 
-            if (reportable) {
-                if (DOMPrefs::DumpEnabled()) {
-                    static const char line[] =
-                        "************************************************************\n";
-                    static const char preamble[] =
-                        "* Call to xpconnect wrapped JSObject produced this error:  *\n";
-                    static const char cant_get_text[] =
-                        "FAILED TO GET TEXT FROM EXCEPTION\n";
+            
+            if (e_result == NS_ERROR_XPC_JSOBJECT_HAS_NO_FUNCTION_NAMED) {
+                reportable = false;
+            }
+        }
 
-                    fputs(line, stdout);
-                    fputs(preamble, stdout);
-                    nsCString text;
-                    if (NS_SUCCEEDED(xpc_exception->ToString(cx, text)) &&
-                        !text.IsEmpty()) {
-                        fputs(text.get(), stdout);
-                        fputs("\n", stdout);
-                    } else
-                        fputs(cant_get_text, stdout);
-                    fputs(line, stdout);
-                }
+        
+        
+        if (reportable && is_js_exception)
+        {
+            
+            
+            
+            JS_SetPendingException(cx, js_exception);
+            aes.ReportException();
+            reportable = false;
+        }
 
-                
-                
-                nsCOMPtr<nsIConsoleService> consoleService
-                    (do_GetService(XPC_CONSOLE_CONTRACTID));
-                if (nullptr != consoleService) {
-                    nsresult rv;
-                    nsCOMPtr<nsIScriptError> scriptError;
-                    nsCOMPtr<nsISupports> errorData;
-                    rv = xpc_exception->GetData(getter_AddRefs(errorData));
-                    if (NS_SUCCEEDED(rv))
-                        scriptError = do_QueryInterface(errorData);
+        if (reportable) {
+            if (DOMPrefs::DumpEnabled()) {
+                static const char line[] =
+                    "************************************************************\n";
+                static const char preamble[] =
+                    "* Call to xpconnect wrapped JSObject produced this error:  *\n";
+                static const char cant_get_text[] =
+                    "FAILED TO GET TEXT FROM EXCEPTION\n";
 
-                    if (nullptr == scriptError) {
-                        
-                        
-                        scriptError = do_CreateInstance(XPC_SCRIPT_ERROR_CONTRACTID);
-                        if (nullptr != scriptError) {
-                            nsCString newMessage;
-                            rv = xpc_exception->ToString(cx, newMessage);
-                            if (NS_SUCCEEDED(rv)) {
+                fputs(line, stdout);
+                fputs(preamble, stdout);
+                nsCString text;
+                if (NS_SUCCEEDED(xpc_exception->ToString(cx, text)) &&
+                    !text.IsEmpty()) {
+                    fputs(text.get(), stdout);
+                    fputs("\n", stdout);
+                } else
+                    fputs(cant_get_text, stdout);
+                fputs(line, stdout);
+            }
+
+            
+            
+            nsCOMPtr<nsIConsoleService> consoleService
+                (do_GetService(XPC_CONSOLE_CONTRACTID));
+            if (nullptr != consoleService) {
+                nsresult rv;
+                nsCOMPtr<nsIScriptError> scriptError;
+                nsCOMPtr<nsISupports> errorData;
+                rv = xpc_exception->GetData(getter_AddRefs(errorData));
+                if (NS_SUCCEEDED(rv))
+                    scriptError = do_QueryInterface(errorData);
+
+                if (nullptr == scriptError) {
+                    
+                    
+                    scriptError = do_CreateInstance(XPC_SCRIPT_ERROR_CONTRACTID);
+                    if (nullptr != scriptError) {
+                        nsCString newMessage;
+                        rv = xpc_exception->ToString(cx, newMessage);
+                        if (NS_SUCCEEDED(rv)) {
+                            
+                            
+                            int32_t lineNumber = 0;
+                            nsString sourceName;
+
+                            nsCOMPtr<nsIStackFrame> location;
+                            xpc_exception->
+                                GetLocation(getter_AddRefs(location));
+                            if (location) {
                                 
+                                lineNumber = location->GetLineNumber(cx);
+
                                 
-                                int32_t lineNumber = 0;
-                                nsString sourceName;
-
-                                nsCOMPtr<nsIStackFrame> location;
-                                xpc_exception->
-                                    GetLocation(getter_AddRefs(location));
-                                if (location) {
-                                    
-                                    lineNumber = location->GetLineNumber(cx);
-
-                                    
-                                    location->GetFilename(cx, sourceName);
-                                }
-
-                                rv = scriptError->InitWithWindowID(NS_ConvertUTF8toUTF16(newMessage),
-                                                                   sourceName,
-                                                                   EmptyString(),
-                                                                   lineNumber, 0, 0,
-                                                                   "XPConnect JavaScript",
-                                                                   nsJSUtils::GetCurrentlyRunningCodeInnerWindowID(cx));
-                                if (NS_FAILED(rv))
-                                    scriptError = nullptr;
+                                location->GetFilename(cx, sourceName);
                             }
+
+                            rv = scriptError->InitWithWindowID(NS_ConvertUTF8toUTF16(newMessage),
+                                                               sourceName,
+                                                               EmptyString(),
+                                                               lineNumber, 0, 0,
+                                                               "XPConnect JavaScript",
+                                                               nsJSUtils::GetCurrentlyRunningCodeInnerWindowID(cx));
+                            if (NS_FAILED(rv))
+                                scriptError = nullptr;
                         }
                     }
-                    if (nullptr != scriptError)
-                        consoleService->LogMessage(scriptError);
                 }
+                if (nullptr != scriptError)
+                    consoleService->LogMessage(scriptError);
             }
-            
-            
-            if (NS_FAILED(e_result)) {
-                xpccx->SetPendingException(xpc_exception);
-                return e_result;
-            }
+        }
+        
+        
+        if (NS_FAILED(e_result)) {
+            xpccx->SetPendingException(xpc_exception);
+            return e_result;
         }
     } else {
         
