@@ -957,6 +957,8 @@ var WasmDisassembler =  (function () {
                     var operator = reader.result;
                     if (operator.code == 11  && this._indentLevel == 0) {
                         
+                        this.appendBuffer("  )");
+                        this.newLine();
                         break;
                     }
                     switch (operator.code) {
@@ -980,8 +982,7 @@ var WasmDisassembler =  (function () {
                 case 31 :
                     this._funcIndex++;
                     this._backrefLabels = null;
-                    this.appendBuffer("  )");
-                    this.newLine();
+                    
                     break;
                 default:
                     throw new Error("Expectected state: " + reader.state);

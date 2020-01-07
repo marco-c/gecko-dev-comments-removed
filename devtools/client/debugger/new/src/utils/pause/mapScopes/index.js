@@ -9,6 +9,8 @@ var _parser = require("../../../workers/parser/index");
 
 var _locColumn = require("./locColumn");
 
+var _rangeMetadata = require("./rangeMetadata");
+
 var _findGeneratedBindingFromPosition = require("./findGeneratedBindingFromPosition");
 
 var _buildGeneratedBindingList = require("./buildGeneratedBindingList");
@@ -30,10 +32,11 @@ async function buildMappedScopes(source, frame, scopes, sourceMaps, client) {
   }
 
   const generatedAstBindings = (0, _buildGeneratedBindingList.buildGeneratedBindingList)(scopes, generatedAstScopes, frame.this);
+  const originalRanges = await (0, _rangeMetadata.loadRangeMetadata)(source, frame, originalAstScopes, sourceMaps);
   const {
     mappedOriginalScopes,
     expressionLookup
-  } = await mapOriginalBindingsToGenerated(source, originalAstScopes, generatedAstBindings, client, sourceMaps);
+  } = await mapOriginalBindingsToGenerated(source, originalRanges, originalAstScopes, generatedAstBindings, client, sourceMaps);
   const mappedGeneratedScopes = generateClientScope(scopes, mappedOriginalScopes);
   return isReliableScope(mappedGeneratedScopes) ? {
     mappings: expressionLookup,
@@ -41,7 +44,7 @@ async function buildMappedScopes(source, frame, scopes, sourceMaps, client) {
   } : null;
 }
 
-async function mapOriginalBindingsToGenerated(source, originalAstScopes, generatedAstBindings, client, sourceMaps) {
+async function mapOriginalBindingsToGenerated(source, originalRanges, originalAstScopes, generatedAstBindings, client, sourceMaps) {
   const expressionLookup = {};
   const mappedOriginalScopes = [];
   const cachedSourceMaps = batchScopeMappings(originalAstScopes, source, sourceMaps);
@@ -51,7 +54,7 @@ async function mapOriginalBindingsToGenerated(source, originalAstScopes, generat
 
     for (const name of Object.keys(item.bindings)) {
       const binding = item.bindings[name];
-      const result = await findGeneratedBinding(cachedSourceMaps, client, source, name, binding, generatedAstBindings);
+      const result = await findGeneratedBinding(cachedSourceMaps, client, source, name, binding, originalRanges, generatedAstBindings);
 
       if (result) {
         generatedBindings[name] = result.grip;
@@ -213,7 +216,14 @@ function generateClientScope(scopes, originalScopes) {
   return result;
 }
 
-async function findGeneratedBinding(sourceMaps, client, source, name, originalBinding, generatedAstBindings) {
+function hasValidIdent(range, pos) {
+  return range.type === "match" || 
+  
+  pos.type !== "ref" && range.type === "contains";
+} 
+
+
+async function findGeneratedBinding(sourceMaps, client, source, name, originalBinding, originalRanges, generatedAstBindings) {
   
   
   
@@ -227,27 +237,43 @@ async function findGeneratedBinding(sourceMaps, client, source, name, originalBi
   let genContent = null;
 
   for (const pos of refs) {
-    if (originalBinding.type === "import") {
-      genContent = await (0, _findGeneratedBindingFromPosition.findGeneratedBindingForImportBinding)(sourceMaps, client, source, pos, name, originalBinding.type, generatedAstBindings);
-    } else {
-      genContent = await (0, _findGeneratedBindingFromPosition.findGeneratedBindingForStandardBinding)(sourceMaps, client, source, pos, name, originalBinding.type, generatedAstBindings);
+    const range = (0, _rangeMetadata.findMatchingRange)(originalRanges, pos);
+
+    if (range && hasValidIdent(range, pos)) {
+      if (originalBinding.type === "import") {
+        genContent = await (0, _findGeneratedBindingFromPosition.findGeneratedBindingForImportBinding)(sourceMaps, client, source, pos, name, originalBinding.type, generatedAstBindings);
+      } else {
+        genContent = await (0, _findGeneratedBindingFromPosition.findGeneratedBindingForStandardBinding)(sourceMaps, client, source, pos, name, originalBinding.type, generatedAstBindings);
+      }
     }
 
     if ((pos.type === "class-decl" || pos.type === "class-inner") && source.contentType && source.contentType.match(/\/typescript/)) {
-      
-      const declContent = await (0, _findGeneratedBindingFromPosition.findGeneratedBindingForNormalDeclaration)(sourceMaps, client, source, pos, name, originalBinding.type, generatedAstBindings);
+      const declRange = (0, _rangeMetadata.findMatchingRange)(originalRanges, pos.declaration);
 
-      if (declContent) {
+      if (declRange && declRange.type !== "multiple") {
         
-        
-        
-        genContent = declContent;
+        const declContent = await (0, _findGeneratedBindingFromPosition.findGeneratedBindingForNormalDeclaration)(sourceMaps, client, source, pos, name, originalBinding.type, generatedAstBindings);
+
+        if (declContent) {
+          
+          
+          
+          genContent = declContent;
+        }
       }
     }
 
     if (!genContent && (pos.type === "import-decl" || pos.type === "import-ns-decl")) {
+      const declRange = (0, _rangeMetadata.findMatchingRange)(originalRanges, pos.declaration); 
       
-      genContent = await (0, _findGeneratedBindingFromPosition.findGeneratedBindingForImportDeclaration)(sourceMaps, client, source, pos, name, originalBinding.type, generatedAstBindings);
+      
+      
+      
+
+      if (declRange && declRange.singleDeclaration) {
+        
+        genContent = await (0, _findGeneratedBindingFromPosition.findGeneratedBindingForImportDeclaration)(sourceMaps, client, source, pos, name, originalBinding.type, generatedAstBindings);
+      }
     }
 
     if (genContent) {
