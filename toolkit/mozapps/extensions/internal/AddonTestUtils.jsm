@@ -1263,10 +1263,20 @@ var AddonTestUtils = {
 
 
 
+  updateReason: AddonManager.UPDATE_WHEN_PERIODIC_UPDATE,
+
+  
 
 
 
-  promiseFindAddonUpdates(addon, reason = AddonManager.UPDATE_WHEN_PERIODIC_UPDATE) {
+
+
+
+
+
+
+
+  promiseFindAddonUpdates(addon, reason = AddonTestUtils.updateReason, ...args) {
     let equal = this.testScope.equal;
     return new Promise((resolve, reject) => {
       let result = {};
@@ -1312,7 +1322,7 @@ var AddonTestUtils = {
             reject(result);
           }
         }
-      }, reason);
+      }, reason, ...args);
     });
   },
 
