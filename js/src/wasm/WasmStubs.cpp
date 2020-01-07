@@ -377,20 +377,6 @@ static const ValueOperand ScratchValIonEntry = ValueOperand(ABINonArgReg0, ABINo
 #endif
 static const Register ScratchIonEntry = ABINonArgReg2;
 
-bool
-wasm::CanBeJitOptimized(const Sig& sig)
-{
-    
-    
-    if (IsSimdType(sig.ret()))
-        return false;
-    for (ValType t : sig.args()) {
-        if (IsSimdType(t))
-            return false;
-    }
-    return true;
-}
-
 
 static void
 GenerateJitEntryLoadTls(MacroAssembler& masm, unsigned frameSize)
@@ -434,8 +420,6 @@ static bool
 GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex, const FuncExport& fe,
                  Offsets* offsets)
 {
-    MOZ_ASSERT(CanBeJitOptimized(fe.sig()));
-
     RegisterOrSP sp = masm.getStackPointer();
 
     GenerateJitEntryPrologue(masm, offsets);
@@ -1729,7 +1713,7 @@ wasm::GenerateStubs(const ModuleEnvironment& env, const FuncImportVector& import
         if (!code->codeRanges.emplaceBack(CodeRange::InterpEntry, fe.funcIndex(), offsets))
             return false;
 
-        if (!CanBeJitOptimized(fe.sig()))
+        if (env.isAsmJS())
             continue;
         if (!GenerateJitEntry(masm, i, fe, &offsets))
             return false;
