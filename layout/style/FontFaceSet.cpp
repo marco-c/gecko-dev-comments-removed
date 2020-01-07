@@ -155,6 +155,12 @@ FontFaceSet::FontFaceSet(nsPIDOMWindowInner* aWindow, nsIDocument* aDocument)
   if (!mDocument->DidFireDOMContentLoaded()) {
     mDocument->AddSystemEventListener(NS_LITERAL_STRING("DOMContentLoaded"),
                                       this, false, false);
+  } else {
+    
+    
+    
+    
+    CheckLoadingFinished();
   }
 
   mDocument->CSSLoader()->AddObserver(this);
