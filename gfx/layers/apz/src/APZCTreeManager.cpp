@@ -93,11 +93,6 @@ struct APZCTreeManager::TreeBuildingState {
   
   
   nsTArray<RefPtr<HitTestingTreeNode>> mNodesToDestroy;
-  
-  
-  
-  
-  std::unordered_set<uint64_t> mLayersIdsToDestroy;
 
   
   
@@ -269,12 +264,20 @@ APZCTreeManager::NotifyLayerTreeAdopted(uint64_t aLayersId,
                                         const RefPtr<APZCTreeManager>& aOldApzcTreeManager)
 {
   APZThreadUtils::AssertOnCompositorThread();
+
+  MOZ_ASSERT(aOldApzcTreeManager);
+  aOldApzcTreeManager->mFocusState.RemoveFocusTarget(aLayersId);
+  
+  
+  
 }
 
 void
 APZCTreeManager::NotifyLayerTreeRemoved(uint64_t aLayersId)
 {
   APZThreadUtils::AssertOnCompositorThread();
+
+  mFocusState.RemoveFocusTarget(aLayersId);
 }
 
 AsyncPanZoomController*
@@ -342,7 +345,6 @@ APZCTreeManager::UpdateHitTestingTreeImpl(uint64_t aRootLayerTreeId,
       {
         state.mNodesToDestroy.AppendElement(aNode);
       });
-  state.mLayersIdsToDestroy = mFocusState.GetFocusTargetLayerIds();
   mRootNode = nullptr;
 
   if (aRoot) {
@@ -353,8 +355,6 @@ APZCTreeManager::UpdateHitTestingTreeImpl(uint64_t aRootLayerTreeId,
     uint64_t layersId = aRootLayerTreeId;
     ancestorTransforms.push(AncestorTransform());
     state.mParentHasPerspective.push(false);
-
-    state.mLayersIdsToDestroy.erase(aRootLayerTreeId);
 
     mApzcTreeLog << "[start]\n";
     mTreeLock.AssertCurrentThreadIn();
@@ -396,9 +396,6 @@ APZCTreeManager::UpdateHitTestingTreeImpl(uint64_t aRootLayerTreeId,
           
           if (Maybe<uint64_t> newLayersId = aLayerMetrics.GetReferentId()) {
             layersId = *newLayersId;
-
-            
-            state.mLayersIdsToDestroy.erase(layersId);
           }
 
           indents.push(gfx::TreeAutoIndent(mApzcTreeLog));
@@ -456,11 +453,6 @@ APZCTreeManager::UpdateHitTestingTreeImpl(uint64_t aRootLayerTreeId,
         state.mNodesToDestroy[i].get(),
         state.mNodesToDestroy[i]->GetApzc());
     state.mNodesToDestroy[i]->Destroy();
-  }
-
-  
-  for (auto layersId : state.mLayersIdsToDestroy) {
-    mFocusState.RemoveFocusTarget(layersId);
   }
 
 #if ENABLE_APZCTM_LOGGING

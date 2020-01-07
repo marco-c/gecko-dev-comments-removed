@@ -109,11 +109,6 @@ public:
   
 
 
-  std::unordered_set<uint64_t> GetFocusTargetLayerIds() const;
-
-  
-
-
   void RemoveFocusTarget(uint64_t aLayersId);
 
   
