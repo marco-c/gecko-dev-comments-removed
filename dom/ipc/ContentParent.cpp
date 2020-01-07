@@ -2297,8 +2297,6 @@ ContentParent::InitInternal(ProcessPriority aInitialPriority)
 
   
   
-  StyleBackendType backendType =
-    StyleBackendType::Servo;
   StyleSheet* ucs = nsLayoutStylesheetCache::Singleton()->UserContentSheet();
   if (ucs) {
     SerializeURI(ucs->GetSheetURI(), xpcomInit.userContentSheetURL());

@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsCSSFrameConstructor.h"
 #include "nsTArray.h"
@@ -90,15 +90,12 @@ nsXBLResourceLoader::LoadResources(nsIContent* aBoundElement)
 
   mLoadingResources = true;
 
-  
+  // Declare our loaders.
   nsCOMPtr<nsIDocument> doc = mBinding->XBLDocumentInfo()->GetDocument();
   mBoundDocument = aBoundElement->OwnerDoc();
 
   mozilla::css::Loader* cssLoader = doc->CSSLoader();
-  MOZ_ASSERT(cssLoader->GetDocument() &&
-             cssLoader->GetDocument()->GetStyleBackendType()
-               == mBoundDocument->GetStyleBackendType(),
-             "The style backends of the loader and bound document are mismatched!");
+  MOZ_ASSERT(cssLoader->GetDocument(), "Loader must have document");
 
   nsIURI *docURL = doc->GetDocumentURI();
   nsIPrincipal* docPrincipal = doc->NodePrincipal();
@@ -114,9 +111,9 @@ nsXBLResourceLoader::LoadResources(nsIContent* aBoundElement)
       continue;
 
     if (curr->mType == nsGkAtoms::image) {
-      
-      
-      
+      // Now kick off the image load...
+      // Passing nullptr for pretty much everything -- cause we don't care!
+      // XXX: initialDocumentURI is nullptr!
       RefPtr<imgRequestProxy> req;
       nsContentUtils::LoadImage(url, doc, doc, docPrincipal, 0, docURL,
                                 doc->GetReferrerPolicy(), nullptr,
@@ -124,10 +121,10 @@ nsXBLResourceLoader::LoadResources(nsIContent* aBoundElement)
                                 getter_AddRefs(req));
     }
     else if (curr->mType == nsGkAtoms::stylesheet) {
-      
+      // Kick off the load of the stylesheet.
 
-      
-      
+      // Always load chrome synchronously
+      // XXXbz should that still do a content policy check?
       bool chrome;
       nsresult rv;
       if (NS_SUCCEEDED(url->SchemeIs("chrome", &chrome)) && chrome)
@@ -157,21 +154,21 @@ nsXBLResourceLoader::LoadResources(nsIContent* aBoundElement)
 
   mInLoadResourcesFunc = false;
 
-  
+  // Destroy our resource list.
   delete mResourceList;
   mResourceList = nullptr;
 
   return mPendingSheets == 0;
 }
 
-
+// nsICSSLoaderObserver
 NS_IMETHODIMP
 nsXBLResourceLoader::StyleSheetLoaded(StyleSheet* aSheet,
                                       bool aWasAlternate,
                                       nsresult aStatus)
 {
   if (!mResources) {
-    
+    // Our resources got destroyed -- just bail out
     return NS_OK;
   }
 
@@ -181,11 +178,11 @@ nsXBLResourceLoader::StyleSheetLoaded(StyleSheet* aSheet,
     mPendingSheets--;
 
   if (mPendingSheets == 0) {
-    
+    // All stylesheets are loaded.
     mResources->ComputeServoStyles(
       *mBoundDocument->GetShell()->StyleSet()->AsServo());
 
-    
+    // XXX Check for mPendingScripts when scripts also come online.
     if (!mInLoadResourcesFunc)
       NotifyBoundElements();
   }
@@ -226,34 +223,34 @@ nsXBLResourceLoader::NotifyBoundElements()
   for (uint32_t j = 0; j < eltCount; j++) {
     nsCOMPtr<nsIContent> content = mBoundElements.ObjectAt(j);
     MOZ_ASSERT(content->IsElement());
-    content->OwnerDoc()->UnblockOnload( false);
+    content->OwnerDoc()->UnblockOnload(/* aFireSync = */ false);
 
     bool ready = false;
     xblService->BindingReady(content, bindingURI, &ready);
 
     if (ready) {
-      
-      
+      // We need the document to flush out frame construction and
+      // such, so we want to use the current document.
       nsIDocument* doc = content->GetUncomposedDoc();
 
       if (doc) {
-        
+        // Flush first to make sure we can get the frame for content
         doc->FlushPendingNotifications(FlushType::Frames);
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
+        // If |content| is (in addition to having binding |mBinding|)
+        // also a descendant of another element with binding |mBinding|,
+        // then we might have just constructed it due to the
+        // notification of its parent.  (We can know about both if the
+        // binding loads were triggered from the DOM rather than frame
+        // construction.)  So we have to check both whether the element
+        // has a primary frame and whether it's in the undisplayed map
+        // before sending a ContentInserted notification, or bad things
+        // will happen.
         nsIPresShell *shell = doc->GetShell();
         if (shell) {
           nsIFrame* childFrame = content->GetPrimaryFrame();
           if (!childFrame) {
-            
+            // Check if it's in the display:none or display:contents maps.
             ComputedStyle* sc =
               shell->FrameConstructor()->GetDisplayNoneStyleFor(content);
 
@@ -267,17 +264,17 @@ nsXBLResourceLoader::NotifyBoundElements()
           }
         }
 
-        
-        
+        // Flush again
+        // XXXbz why is this needed?
         doc->FlushPendingNotifications(FlushType::ContentAndNotify);
       }
     }
   }
 
-  
+  // Clear out the whole array.
   mBoundElements.Clear();
 
-  
+  // Delete ourselves.
   mResources->ClearLoader();
 }
 

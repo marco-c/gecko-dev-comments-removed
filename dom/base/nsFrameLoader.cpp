@@ -906,13 +906,9 @@ nsFrameLoader::MarginsChanged(uint32_t aMarginWidth,
   
   
   if (nsIDocument* doc = mDocShell->GetDocument()) {
-    
-    
-    if (doc->GetStyleBackendType() == StyleBackendType::Servo) {
-      for (nsINode* cur = doc; cur; cur = cur->GetNextNode()) {
-        if (cur->IsHTMLElement(nsGkAtoms::body)) {
-          static_cast<HTMLBodyElement*>(cur)->ClearMappedServoStyle();
-        }
+    for (nsINode* cur = doc; cur; cur = cur->GetNextNode()) {
+      if (cur->IsHTMLElement(nsGkAtoms::body)) {
+        static_cast<HTMLBodyElement*>(cur)->ClearMappedServoStyle();
       }
     }
   }

@@ -971,16 +971,12 @@ nsPresContext::Init(nsDeviceContext* aDeviceContext)
 
 
 void
-nsPresContext::AttachShell(nsIPresShell* aShell, StyleBackendType aBackendType)
+nsPresContext::AttachShell(nsIPresShell* aShell)
 {
   MOZ_ASSERT(!mShell);
   mShell = aShell;
 
-  if (aBackendType == StyleBackendType::Servo) {
-    mRestyleManager = new ServoRestyleManager(this);
-  } else {
-    MOZ_CRASH("old style system disabled");
-  }
+  mRestyleManager = new ServoRestyleManager(this);
 
   
   

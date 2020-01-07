@@ -27,7 +27,6 @@
 #include "mozilla/TouchEvents.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
-#include "mozilla/StyleBackendType.h"
 #include <algorithm>
 
 #ifdef XP_WIN
@@ -953,7 +952,7 @@ PresShell::Init(nsIDocument* aDocument,
 
   
   mPresContext = aPresContext;
-  mPresContext->AttachShell(this, aStyleSet->BackendType());
+  mPresContext->AttachShell(this);
 
   
   

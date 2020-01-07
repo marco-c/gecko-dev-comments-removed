@@ -1,19 +1,19 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "AnimationHelper.h"
-#include "mozilla/ComputedTimingFunction.h" 
-#include "mozilla/dom/AnimationEffectReadOnlyBinding.h" 
-#include "mozilla/dom/KeyframeEffectBinding.h" 
-#include "mozilla/dom/KeyframeEffectReadOnly.h" 
-#include "mozilla/layers/CompositorThread.h" 
-#include "mozilla/layers/LayerAnimationUtils.h" 
-#include "mozilla/StyleAnimationValue.h" 
-#include "nsDeviceContext.h"            
-#include "nsDisplayList.h"              
+#include "mozilla/ComputedTimingFunction.h" // for ComputedTimingFunction
+#include "mozilla/dom/AnimationEffectReadOnlyBinding.h" // for dom::FillMode
+#include "mozilla/dom/KeyframeEffectBinding.h" // for dom::IterationComposite
+#include "mozilla/dom/KeyframeEffectReadOnly.h" // for dom::KeyFrameEffectReadOnly
+#include "mozilla/layers/CompositorThread.h" // for CompositorThreadHolder
+#include "mozilla/layers/LayerAnimationUtils.h" // for TimingFunctionToComputedTimingFunction
+#include "mozilla/StyleAnimationValue.h" // for StyleAnimationValue, etc
+#include "nsDeviceContext.h"            // for AppUnitsPerCSSPixel
+#include "nsDisplayList.h"              // for nsDisplayTransform, etc
 
 namespace mozilla {
 namespace layers {
@@ -67,13 +67,13 @@ CompositorAnimationStorage::GetAnimationTransform(const uint64_t& aId) const
   float scale = data.appUnitsPerDevPixel();
   gfx::Point3D transformOrigin = data.transformOrigin();
 
-  
-  
+  // Undo the rebasing applied by
+  // nsDisplayTransform::GetResultingTransformMatrixInternal
   transform.ChangeBasis(-transformOrigin);
 
-  
-  
-  
+  // Convert to CSS pixels (this undoes the operations performed by
+  // nsStyleTransformMatrix::ProcessTranslatePart which is called from
+  // nsDisplayTransform::GetResultingTransformMatrix)
   double devPerCss =
     double(scale) / double(nsDeviceContext::AppUnitsPerCSSPixel());
   transform._41 *= devPerCss;
@@ -147,7 +147,7 @@ AnimationHelper::SampleAnimationForEachNode(
     return activeAnimations;
   }
 
-  
+  // Process in order, since later aAnimations override earlier ones.
   for (size_t i = 0, iEnd = aAnimations.Length(); i < iEnd; ++i) {
     Animation& animation = aAnimations[i];
     AnimData& animData = aAnimationData[i];
@@ -160,8 +160,8 @@ AnimationHelper::SampleAnimationForEachNode(
                animation.isNotPlaying(),
                "If we are playing, we should have an origin time and a start"
                " time");
-    
-    
+    // If the animation is not currently playing, e.g. paused or
+    // finished, then use the hold time to stay at the same position.
     TimeDuration elapsedDuration =
       animation.isNotPlaying() ||
       animation.startTime().type() != MaybeTimeDuration::TTimeDuration
@@ -218,7 +218,7 @@ AnimationHelper::SampleAnimationForEachNode(
     animSegment.mToComposite =
       static_cast<dom::CompositeOperation>(segment->endComposite());
 
-    
+    // interpolate the property
     dom::IterationCompositeOperation iterCompositeOperation =
         static_cast<dom::IterationCompositeOperation>(
           animation.iterationComposite());
@@ -235,7 +235,7 @@ AnimationHelper::SampleAnimationForEachNode(
   }
 
 #ifdef DEBUG
-  
+  // Sanity check that all of animation data are the same.
   const AnimationData& lastData = aAnimations.LastElement().data();
   for (const Animation& animation : aAnimations) {
     const AnimationData& data = animation.data();
@@ -416,7 +416,6 @@ CreateCSSValueList(const InfallibleTArray<TransformFunction>& aFunctions)
 static AnimationValue
 ToAnimationValue(const Animatable& aAnimatable)
 {
-  StyleBackendType backend = StyleBackendType::Servo;
   AnimationValue result;
 
   switch (aAnimatable.type()) {
@@ -429,12 +428,12 @@ ToAnimationValue(const Animatable& aAnimatable)
       if (listOrError.isOk()) {
         RefPtr<nsCSSValueSharedList> list = listOrError.unwrap();
         MOZ_ASSERT(list, "Transform list should be non null");
-        result = AnimationValue::Transform(backend, *list);
+        result = AnimationValue::Transform(*list);
       }
       break;
     }
     case Animatable::Tfloat:
-      result = AnimationValue::Opacity(backend, aAnimatable.get_float());
+      result = AnimationValue::Opacity(aAnimatable.get_float());
       break;
     default:
       MOZ_ASSERT_UNREACHABLE("Unsupported type");
@@ -449,9 +448,9 @@ AnimationHelper::SetAnimations(AnimationArray& aAnimations,
 {
   for (uint32_t i = 0; i < aAnimations.Length(); i++) {
     Animation& animation = aAnimations[i];
-    
-    
-    
+    // Adjust fill mode to fill forwards so that if the main thread is delayed
+    // in clearing this animation we don't introduce flicker by jumping back to
+    // the old underlying value
     switch (static_cast<dom::FillMode>(animation.fillMode())) {
       case dom::FillMode::None:
         animation.fillMode() = static_cast<uint8_t>(dom::FillMode::Forwards);
@@ -504,12 +503,12 @@ AnimationHelper::SampleAnimations(CompositorAnimationStorage* aStorage,
 {
   MOZ_ASSERT(aStorage);
 
-  
+  // Do nothing if there are no compositor animations
   if (!aStorage->AnimationsCount()) {
     return;
   }
 
-  
+  //Sample the animations in CompositorAnimationStorage
   for (auto iter = aStorage->ConstAnimationsTableIter();
        !iter.Done(); iter.Next()) {
     bool hasInEffectAnimations = false;
@@ -529,7 +528,7 @@ AnimationHelper::SampleAnimations(CompositorAnimationStorage* aStorage,
       continue;
     }
 
-    
+    // Store the AnimatedValue
     Animation& animation = animations->LastElement();
     switch (animation.property()) {
       case eCSSProperty_opacity: {
@@ -541,7 +540,7 @@ AnimationHelper::SampleAnimations(CompositorAnimationStorage* aStorage,
           animationValue.GetTransformList();
         const TransformData& transformData = animation.data().get_TransformData();
         nsPoint origin = transformData.origin();
-        
+        // we expect all our transform data to arrive in device pixels
         gfx::Point3D transformOrigin = transformData.transformOrigin();
         nsDisplayTransform::FrameTransformProperties props(Move(list),
                                                            transformOrigin);
@@ -551,9 +550,9 @@ AnimationHelper::SampleAnimations(CompositorAnimationStorage* aStorage,
                                                           transformData.appUnitsPerDevPixel(),
                                                           0, &transformData.bounds());
         gfx::Matrix4x4 frameTransform = transform;
-        
-        
-        
+        // If the parent has perspective transform, then the offset into reference
+        // frame coordinates is already on this transform. If not, then we need to ask
+        // for it to be added here.
         if (!transformData.hasPerspectiveParent()) {
            nsLayoutUtils::PostTranslate(transform, origin,
                                         transformData.appUnitsPerDevPixel(),
@@ -575,5 +574,5 @@ AnimationHelper::SampleAnimations(CompositorAnimationStorage* aStorage,
   }
 }
 
-} 
-} 
+} // namespace layers
+} // namespace mozilla
