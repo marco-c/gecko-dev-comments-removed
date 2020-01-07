@@ -540,8 +540,8 @@ HTMLEditRules::AfterEditInner(EditSubAction aEditSubAction,
         aEditSubAction == EditSubAction::eInsertTextComingFromIME ||
         aEditSubAction == EditSubAction::eDeleteSelectedContent ||
         aEditSubAction == EditSubAction::eInsertParagraphSeparator ||
-        aEditSubAction == EditSubAction::htmlPaste ||
-        aEditSubAction == EditSubAction::loadHTML) {
+        aEditSubAction == EditSubAction::ePasteHTMLContent ||
+        aEditSubAction == EditSubAction::eInsertHTMLSource) {
       rv = AdjustWhitespace();
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
@@ -576,8 +576,8 @@ HTMLEditRules::AfterEditInner(EditSubAction aEditSubAction,
         aEditSubAction == EditSubAction::eInsertTextComingFromIME ||
         aEditSubAction == EditSubAction::eDeleteSelectedContent ||
         aEditSubAction == EditSubAction::eInsertParagraphSeparator ||
-        aEditSubAction == EditSubAction::htmlPaste ||
-        aEditSubAction == EditSubAction::loadHTML) {
+        aEditSubAction == EditSubAction::ePasteHTMLContent ||
+        aEditSubAction == EditSubAction::eInsertHTMLSource) {
       rv = AdjustSelection(aDirection);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
@@ -687,7 +687,7 @@ HTMLEditRules::WillDoAction(Selection* aSelection,
       return WillInsertText(aInfo.mEditSubAction, aCancel, aHandled,
                             aInfo.inString, aInfo.outString,
                             aInfo.maxLength);
-    case EditSubAction::loadHTML:
+    case EditSubAction::eInsertHTMLSource:
       return WillLoadHTML();
     case EditSubAction::eInsertParagraphSeparator:
       UndefineCaretBidiLevel();
