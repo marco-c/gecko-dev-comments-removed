@@ -176,6 +176,10 @@ function sendMouseEvent(aEvent, aTarget, aWindow) {
                        ctrlKeyArg, altKeyArg, shiftKeyArg, metaKeyArg,
                        buttonArg, relatedTargetArg);
 
+  
+  
+  if (!window.document || window.document.documentURIObject)
+    return aTarget.dispatchEvent(event);
   return SpecialPowers.dispatchEvent(aWindow, aTarget, event);
 }
 
@@ -1238,6 +1242,14 @@ function _getDOMWindowUtils(aWindow = window)
   
   if (!aWindow) {
     aWindow = window;
+  }
+
+  
+  
+  if (!window.document || window.document.documentURIObject) {
+    return aWindow
+        .QueryInterface(_EU_Ci.nsIInterfaceRequestor)
+        .getInterface(_EU_Ci.nsIDOMWindowUtils);
   }
 
   

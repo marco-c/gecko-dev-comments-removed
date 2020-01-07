@@ -379,6 +379,16 @@ function Tester(aTests, structuredLogger, aCallback) {
   this._scriptLoader = Services.scriptloader;
   this.EventUtils = {};
   this._scriptLoader.loadSubScript("chrome://mochikit/content/tests/SimpleTest/EventUtils.js", this.EventUtils);
+
+  
+  
+  
+  this.cpowSandbox = Cu.Sandbox(window, {sandboxPrototype: window});
+  Cu.permitCPOWsInScope(this.cpowSandbox);
+
+  this.cpowEventUtils = new this.cpowSandbox.Object();
+  this._scriptLoader.loadSubScript("chrome://mochikit/content/tests/SimpleTest/EventUtils.js", this.cpowEventUtils);
+
   var simpleTestScope = {};
   this._scriptLoader.loadSubScript("chrome://mochikit/content/tests/SimpleTest/specialpowersAPI.js", simpleTestScope);
   this._scriptLoader.loadSubScript("chrome://mochikit/content/tests/SimpleTest/SpecialPowersObserverAPI.js", simpleTestScope);
@@ -970,16 +980,17 @@ Tester.prototype = {
     let currentTest = this.currentTest;
 
     
-    this.currentTest.scope.EventUtils = this.EventUtils;
-    this.currentTest.scope.SimpleTest = this.SimpleTest;
-    this.currentTest.scope.gTestPath = this.currentTest.path;
-    this.currentTest.scope.Task = this.Task;
-    this.currentTest.scope.ContentTask = this.ContentTask;
-    this.currentTest.scope.BrowserTestUtils = this.BrowserTestUtils;
-    this.currentTest.scope.TestUtils = this.TestUtils;
-    this.currentTest.scope.ExtensionTestUtils = this.ExtensionTestUtils;
+    let {scope} = this.currentTest;
+    scope.EventUtils = this.currentTest.usesUnsafeCPOWs ? this.cpowEventUtils : this.EventUtils;
+    scope.SimpleTest = this.SimpleTest;
+    scope.gTestPath = this.currentTest.path;
+    scope.Task = this.Task;
+    scope.ContentTask = this.ContentTask;
+    scope.BrowserTestUtils = this.BrowserTestUtils;
+    scope.TestUtils = this.TestUtils;
+    scope.ExtensionTestUtils = this.ExtensionTestUtils;
     
-    this.currentTest.scope.Assert = new this.Assert(function(err, message, stack) {
+    scope.Assert = new this.Assert(function(err, message, stack) {
       currentTest.addResult(new testResult(err ? {
         name: err.message,
         ex: err.stack,
@@ -996,7 +1007,7 @@ Tester.prototype = {
     this.ContentTask.setTestScope(currentScope);
 
     
-    this.currentTest.scope.export_assertions = function() {
+    scope.export_assertions = function() {
       for (let func in this.Assert) {
         this[func] = this.Assert[func].bind(this.Assert);
       }
@@ -1005,11 +1016,11 @@ Tester.prototype = {
     
     SIMPLETEST_OVERRIDES.forEach(function(m) {
       this.SimpleTest[m] = this[m];
-    }, this.currentTest.scope);
+    }, scope);
 
     
     try {
-      this._scriptLoader.loadSubScript("chrome://mochikit/content/chrome-harness.js", this.currentTest.scope);
+      this._scriptLoader.loadSubScript("chrome://mochikit/content/chrome-harness.js", scope);
     } catch (ex) {  }
 
     
@@ -1017,7 +1028,7 @@ Tester.prototype = {
       this.currentTest.path.substr(0, this.currentTest.path.lastIndexOf("/"));
     var headPath = currentTestDirPath + "/head.js";
     try {
-      this._scriptLoader.loadSubScript(headPath, this.currentTest.scope);
+      this._scriptLoader.loadSubScript(headPath, scope);
     } catch (ex) {
       
       
@@ -1032,8 +1043,7 @@ Tester.prototype = {
 
     
     try {
-      this._scriptLoader.loadSubScript(this.currentTest.path,
-                                       this.currentTest.scope);
+      this._scriptLoader.loadSubScript(this.currentTest.path, scope);
       
       this.lastStartTime = Date.now();
       if (this.currentTest.scope.__tasks) {
@@ -1091,8 +1101,8 @@ Tester.prototype = {
           }
           this.finish();
         }.bind(currentScope));
-      } else if (typeof this.currentTest.scope.test == "function") {
-        this.currentTest.scope.test();
+      } else if (typeof scope.test == "function") {
+        scope.test();
       } else {
         throw "This test didn't call add_task, nor did it define a generatorTest() function, nor did it define a test() function, so we don't know how to run it.";
       }
@@ -1372,6 +1382,18 @@ function testScope(aTester, aTest, expected) {
       self.__tester.structuredLogger.activateBuffering();
     })
   };
+
+  
+  
+  
+  
+  
+  
+  if (aTest.usesUnsafeCPOWs) {
+    let sandbox = this._createSandbox();
+    Cu.permitCPOWsInScope(sandbox);
+    return sandbox;
+  }
 }
 
 function decorateTaskFn(fn) {
@@ -1399,6 +1421,29 @@ testScope.prototype = {
   TestUtils: null,
   ExtensionTestUtils: null,
   Assert: null,
+
+  _createSandbox() {
+    let sandbox = Cu.Sandbox(window, {sandboxPrototype: window});
+
+    for (let prop in this) {
+      if (typeof this[prop] == "function") {
+        sandbox[prop] = this[prop].bind(this);
+      } else {
+        Object.defineProperty(sandbox, prop, {
+          configurable: true,
+          enumerable: true,
+          get: () => {
+            return this[prop];
+          },
+          set: (value) => {
+            this[prop] = value;
+          }
+        });
+      }
+    }
+
+    return sandbox;
+  },
 
   
 
