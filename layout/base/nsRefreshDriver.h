@@ -398,6 +398,8 @@ public:
     return mSkippedPaints;
   }
 
+  void NotifyDOMContentLoaded();
+
 private:
   typedef nsTObserverArray<nsARefreshObserver*> ObserverArray;
   typedef nsTArray<RefPtr<mozilla::Runnable>> ScrollEventArray;
@@ -494,6 +496,9 @@ private:
   
   
   bool mResizeSuppressed;
+
+  
+  bool mNotifyDOMContentFlushed;
 
   int64_t mMostRecentRefreshEpochTime;
   
