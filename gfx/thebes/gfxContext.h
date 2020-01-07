@@ -262,6 +262,15 @@ public:
 
 
 
+    bool HasNonOpaqueNonTransparentColor(mozilla::gfx::Color& aColorOut) {
+        return GetDeviceColor(aColorOut) &&
+               0.f < aColorOut.a && aColorOut.a < 1.f;
+    }
+
+    
+
+
+
 
     void SetColor(const mozilla::gfx::Color& aColor);
 

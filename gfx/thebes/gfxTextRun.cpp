@@ -548,19 +548,6 @@ HasSyntheticBoldOrColor(const gfxTextRun *aRun, gfxTextRun::Range aRange)
 }
 
 
-
-static bool
-HasNonOpaqueNonTransparentColor(gfxContext *aContext, Color& aCurrentColorOut)
-{
-    if (aContext->GetDeviceColor(aCurrentColorOut)) {
-        if (0.f < aCurrentColorOut.a && aCurrentColorOut.a < 1.f) {
-            return true;
-        }
-    }
-    return false;
-}
-
-
 struct MOZ_STACK_CLASS BufferAlphaColor {
     explicit BufferAlphaColor(gfxContext *aContext)
         : mContext(aContext)
@@ -635,7 +622,7 @@ gfxTextRun::Draw(Range aRange, gfx::Point aPt, const DrawParams& aParams) const
     bool needToRestore = false;
 
     if (aParams.drawMode & DrawMode::GLYPH_FILL &&
-        HasNonOpaqueNonTransparentColor(aParams.context, currentColor) &&
+        aParams.context->HasNonOpaqueNonTransparentColor(currentColor) &&
         HasSyntheticBoldOrColor(this, aRange) &&
         !aParams.context->GetTextDrawer()) {
 
