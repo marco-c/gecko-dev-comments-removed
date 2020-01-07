@@ -567,6 +567,15 @@ public:
   
   bool IsStrut() const             { return mIsStrut; }
 
+  
+  
+  
+  bool IsInlineAxisMainAxis() const { return mIsInlineAxisMainAxis; }
+
+  
+  
+  bool IsInlineAxisCrossAxis() const { return !mIsInlineAxisMainAxis; }
+
   WritingMode GetWritingMode() const { return mWM; }
   uint8_t GetAlignSelf() const     { return mAlignSelf; }
 
@@ -849,6 +858,7 @@ protected:
   bool mIsStretched; 
   bool mIsStrut;     
                      
+  const bool mIsInlineAxisMainAxis; 
 
   
   bool mNeedsMinSizeAutoResolution;
@@ -1801,7 +1811,9 @@ FlexItem::FlexItem(ReflowInput& aFlexItemReflowInput,
     mHadMaxViolation(false),
     mHadMeasuringReflow(false),
     mIsStretched(false),
-    mIsStrut(false)
+    mIsStrut(false),
+    mIsInlineAxisMainAxis(aAxisTracker.IsRowOriented() !=
+                          aAxisTracker.GetWritingMode().IsOrthogonalTo(mWM))
     
     
 {
@@ -1899,6 +1911,7 @@ FlexItem::FlexItem(nsIFrame* aChildFrame, nscoord aCrossSize,
     mHadMeasuringReflow(false),
     mIsStretched(false),
     mIsStrut(true), 
+    mIsInlineAxisMainAxis(true), 
     mNeedsMinSizeAutoResolution(false),
     mAlignSelf(NS_STYLE_ALIGN_FLEX_START)
 {
