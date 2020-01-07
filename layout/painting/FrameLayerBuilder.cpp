@@ -490,8 +490,15 @@ public:
   
 
 
+  void AccumulateEventRegions(ContainerState* aState,
+                              nsDisplayLayerEventRegions* aEventRegions);
 
-  void AccumulateEventRegions(ContainerState* aState, nsDisplayLayerEventRegions* aEventRegions);
+  
+
+
+
+  void AccumulateHitTestInfo(ContainerState* aState,
+                             nsDisplayCompositorHitTestInfo* aItem);
 
   
 
@@ -3145,6 +3152,7 @@ void ContainerState::FinishPaintedLayerData(PaintedLayerData& aData, FindOpaqueB
 
   for (auto& item : data->mAssignedDisplayItems) {
     MOZ_ASSERT(item.mItem->GetType() != DisplayItemType::TYPE_LAYER_EVENT_REGIONS);
+    MOZ_ASSERT(item.mItem->GetType() != DisplayItemType::TYPE_COMPOSITOR_HITTEST_INFO);
 
     DisplayItemData* oldData =
       mLayerBuilder->GetOldLayerForFrame(item.mItem->Frame(), item.mItem->GetPerFrameKey());
@@ -3602,6 +3610,108 @@ PaintedLayerData::AccumulateEventRegions(ContainerState* aState, nsDisplayLayerE
 }
 
 void
+PaintedLayerData::AccumulateHitTestInfo(ContainerState* aState,
+                                        nsDisplayCompositorHitTestInfo* aItem)
+{
+  FLB_LOG_PAINTED_LAYER_DECISION(this,
+    "Accumulating hit test info %p against pld=%p\n", aItem, this);
+
+  const mozilla::DisplayItemClip& clip = aItem->GetClip();
+  const nsRect area = clip.ApplyNonRoundedIntersection(aItem->Area());
+  const mozilla::gfx::CompositorHitTestInfo hitTestInfo = aItem->HitTestInfo();
+
+  bool hasRoundedCorners = clip.GetRoundedRectCount() > 0;
+
+  
+  
+  
+  nsIFrame* frame = aItem->Frame();
+
+  bool simpleRegions = frame->HasAnyStateBits(NS_FRAME_SIMPLE_EVENT_REGIONS);
+  if (!simpleRegions) {
+    if (nsLayoutUtils::HasNonZeroCorner(frame->StyleBorder()->mBorderRadius)) {
+      hasRoundedCorners = true;
+    } else {
+      frame->AddStateBits(NS_FRAME_SIMPLE_EVENT_REGIONS);
+    }
+  }
+
+  if (hasRoundedCorners || (frame->GetStateBits() & NS_FRAME_SVG_LAYOUT)) {
+    mMaybeHitRegion.OrWith(area);
+  } else {
+    mHitRegion.OrWith(area);
+  }
+
+  if (aItem->HitTestInfo() & CompositorHitTestInfo::eDispatchToContent) {
+    mDispatchToContentHitRegion.OrWith(area);
+  }
+
+  auto touchFlags = hitTestInfo & CompositorHitTestInfo::eTouchActionMask;
+  if (touchFlags) {
+    
+    if (touchFlags == CompositorHitTestInfo::eTouchActionMask) {
+      
+      mNoActionRegion.OrWith(area);
+    } else {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (touchFlags != CompositorHitTestInfo::eTouchActionDoubleTapZoomDisabled) {
+        if (!(hitTestInfo & CompositorHitTestInfo::eTouchActionPanXDisabled)) {
+          
+          mHorizontalPanRegion.OrWith(area);
+        }
+        if (!(hitTestInfo & CompositorHitTestInfo::eTouchActionPanYDisabled)) {
+          
+          mVerticalPanRegion.OrWith(area);
+        }
+      } else {
+        
+        
+        
+      }
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  const int alreadyHadRegions = mNoActionRegion.GetNumRects() +
+    mHorizontalPanRegion.GetNumRects() +
+    mVerticalPanRegion.GetNumRects();
+
+  if (alreadyHadRegions > 1) {
+    mDispatchToContentHitRegion.OrWith(CombinedTouchActionRegion());
+  }
+
+  
+  
+  mMaybeHitRegion.SimplifyOutward(8);
+
+  
+  
+  mScaledHitRegionBounds =
+    aState->ScaleToOutsidePixels(mHitRegion.GetBounds());
+  mScaledMaybeHitRegionBounds =
+    aState->ScaleToOutsidePixels(mMaybeHitRegion.GetBounds());
+}
+
+void
 ContainerState::NewPaintedLayerData(PaintedLayerData* aData,
                                     AnimatedGeometryRoot* aAnimatedGeometryRoot,
                                     const ActiveScrolledRoot* aASR,
@@ -3975,6 +4085,11 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
   int32_t maxLayers = gfxPrefs::MaxActiveLayers();
   int layerCount = 0;
 
+#ifdef DEBUG
+  bool hadLayerEventRegions = false;
+  bool hadCompositorHitTestInfo = false;
+#endif
+
   FlattenedDisplayItemIterator iter(mBuilder, aList);
   while (nsDisplayItem* i = iter.GetNext()) {
     nsDisplayItem* item = i;
@@ -3985,6 +4100,9 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
     
     
     if (itemType == DisplayItemType::TYPE_LAYER_EVENT_REGIONS) {
+#ifdef DEBUG
+      hadLayerEventRegions = true;
+#endif
       nsDisplayLayerEventRegions* eventRegions =
         static_cast<nsDisplayLayerEventRegions*>(item);
 
@@ -3992,6 +4110,22 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
         continue;
       }
     }
+
+    if (itemType == DisplayItemType::TYPE_COMPOSITOR_HITTEST_INFO) {
+#ifdef DEBUG
+      hadCompositorHitTestInfo = true;
+#endif
+      nsDisplayCompositorHitTestInfo* hitTestInfo =
+        static_cast<nsDisplayCompositorHitTestInfo*>(item);
+
+      if (hitTestInfo->Area().IsEmpty()) {
+        continue;
+      }
+    }
+
+    
+    MOZ_ASSERT(!(hadLayerEventRegions && hadCompositorHitTestInfo));
+
 
     
     
@@ -4026,6 +4160,7 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
 
     if (mParameters.mForEventsAndPluginsOnly && !item->GetChildren() &&
         (itemType != DisplayItemType::TYPE_LAYER_EVENT_REGIONS &&
+         itemType != DisplayItemType::TYPE_COMPOSITOR_HITTEST_INFO &&
          itemType != DisplayItemType::TYPE_PLUGIN)) {
       continue;
     }
@@ -4461,8 +4596,12 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
 
       if (itemType == DisplayItemType::TYPE_LAYER_EVENT_REGIONS) {
         nsDisplayLayerEventRegions* eventRegions =
-            static_cast<nsDisplayLayerEventRegions*>(item);
+          static_cast<nsDisplayLayerEventRegions*>(item);
         paintedLayerData->AccumulateEventRegions(this, eventRegions);
+      } else if (itemType == DisplayItemType::TYPE_COMPOSITOR_HITTEST_INFO) {
+        nsDisplayCompositorHitTestInfo* hitTestInfo =
+          static_cast<nsDisplayCompositorHitTestInfo*>(item);
+        paintedLayerData->AccumulateHitTestInfo(this, hitTestInfo);
       } else {
         
         

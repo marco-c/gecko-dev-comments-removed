@@ -1028,10 +1028,11 @@ nsDisplayListBuilder::nsDisplayListBuilder(nsIFrame* aReferenceFrame,
 {
   MOZ_COUNT_CTOR(nsDisplayListBuilder);
 
-  mBuildCompositorHitTestInfo = gfxVars::UseWebRender()
-      && gfxPrefs::WebRenderHitTest()
-      && mAsyncPanZoomEnabled
-      && mMode == nsDisplayListBuilderMode::PAINTING;
+  const bool useWRHitTest =
+    gfxPrefs::WebRenderHitTest() && gfxVars::UseWebRender();
+
+  mBuildCompositorHitTestInfo = mAsyncPanZoomEnabled && IsForPainting() &&
+    (useWRHitTest || gfxPrefs::SimpleEventRegionItems());
 
   nsPresContext* pc = aReferenceFrame->PresContext();
   nsIPresShell *shell = pc->PresShell();
@@ -1358,6 +1359,7 @@ DisplayListIsNonBlank(nsDisplayList* aList)
   for (nsDisplayItem* i = aList->GetBottom(); i != nullptr; i = i->GetAbove()) {
     switch (i->GetType()) {
       case DisplayItemType::TYPE_LAYER_EVENT_REGIONS:
+      case DisplayItemType::TYPE_COMPOSITOR_HITTEST_INFO:
       case DisplayItemType::TYPE_CANVAS_BACKGROUND_COLOR:
       case DisplayItemType::TYPE_CANVAS_BACKGROUND_IMAGE:
         continue;
@@ -2303,7 +2305,8 @@ TreatAsOpaque(nsDisplayItem* aItem, nsDisplayListBuilder* aBuilder)
   bool snap;
   nsRegion opaque = aItem->GetOpaqueRegion(aBuilder, &snap);
   if (aBuilder->IsForPluginGeometry() &&
-      aItem->GetType() != DisplayItemType::TYPE_LAYER_EVENT_REGIONS)
+      aItem->GetType() != DisplayItemType::TYPE_LAYER_EVENT_REGIONS &&
+      aItem->GetType() != DisplayItemType::TYPE_COMPOSITOR_HITTEST_INFO)
   {
     
     
@@ -5003,6 +5006,7 @@ nsDisplayCompositorHitTestInfo::nsDisplayCompositorHitTestInfo(nsDisplayListBuil
   : nsDisplayEventReceiver(aBuilder, aFrame)
   , mHitTestInfo(aHitTestInfo)
   , mIndex(aIndex)
+  , mAppUnitsPerDevPixel(mFrame->PresContext()->AppUnitsPerDevPixel())
 {
   MOZ_COUNT_CTOR(nsDisplayCompositorHitTestInfo);
   
@@ -5018,9 +5022,8 @@ nsDisplayCompositorHitTestInfo::nsDisplayCompositorHitTestInfo(nsDisplayListBuil
     mScrollTarget = Some(aBuilder->GetCurrentScrollbarTarget());
   }
 
-  nsRect area;
   if (aArea.isSome()) {
-    area = *aArea;
+    mArea = *aArea;
   } else {
     nsIScrollableFrame* scrollFrame = nsLayoutUtils::GetScrollableFrameFor(mFrame);
     if (scrollFrame) {
@@ -5029,9 +5032,9 @@ nsDisplayCompositorHitTestInfo::nsDisplayCompositorHitTestInfo(nsDisplayListBuil
       
       
       
-      area = mFrame->GetScrollableOverflowRect();
+      mArea = mFrame->GetScrollableOverflowRect();
     } else {
-      area = nsRect(nsPoint(0, 0), mFrame->GetSize());
+      mArea = nsRect(nsPoint(0, 0), mFrame->GetSize());
     }
 
     
@@ -5039,11 +5042,7 @@ nsDisplayCompositorHitTestInfo::nsDisplayCompositorHitTestInfo(nsDisplayListBuil
     
     
     
-    area += aBuilder->ToReferenceFrame(mFrame);
-  }
-
-  if (!area.IsEmpty()) {
-    mArea = LayoutDeviceRect::FromAppUnits(area, mFrame->PresContext()->AppUnitsPerDevPixel());
+    mArea += aBuilder->ToReferenceFrame(mFrame);
   }
 }
 
@@ -5073,7 +5072,12 @@ nsDisplayCompositorHitTestInfo::CreateWebRenderCommands(mozilla::wr::DisplayList
 
   
   aBuilder.SetHitTestInfo(scrollId, mHitTestInfo);
-  wr::LayoutRect rect = aSc.ToRelativeLayoutRect(mArea);
+
+  const LayoutDeviceRect devRect =
+    LayoutDeviceRect::FromAppUnits(mArea, mAppUnitsPerDevPixel);
+
+  const wr::LayoutRect rect = aSc.ToRelativeLayoutRect(devRect);
+
   aBuilder.PushRect(rect, rect, true, wr::ToColorF(gfx::Color()));
   aBuilder.ClearHitTestInfo();
 
@@ -6589,6 +6593,7 @@ CollectItemsWithOpacity(nsDisplayList* aList,
     }
 
     if (type == DisplayItemType::TYPE_LAYER_EVENT_REGIONS ||
+        type == DisplayItemType::TYPE_COMPOSITOR_HITTEST_INFO ||
         type == DisplayItemType::TYPE_WRAP_LIST) {
       continue;
     }
