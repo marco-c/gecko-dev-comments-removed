@@ -6550,19 +6550,6 @@ nsFrame::Reflow(nsPresContext*          aPresContext,
   NS_FRAME_SET_TRUNCATION(aStatus, aReflowInput, aDesiredSize);
 }
 
-bool
-nsIFrame::IsContentDisabled() const
-{
-  
-  
-  if (StyleUserInterface()->mUserInput == StyleUserInput::None) {
-    return true;
-  }
-
-  auto* element = nsGenericHTMLElement::FromContentOrNull(GetContent());
-  return element && element->IsDisabled();
-}
-
 nsresult
 nsFrame::CharacterDataChanged(CharacterDataChangeInfo* aInfo)
 {
@@ -9715,6 +9702,16 @@ nsFrame::ConsiderChildOverflow(nsOverflowAreas& aOverflowAreas,
 {
   aOverflowAreas.UnionWith(aChildFrame->GetOverflowAreas() +
                            aChildFrame->GetPosition());
+}
+
+bool
+nsFrame::ShouldAvoidBreakInside(const ReflowInput& aReflowInput) const
+{
+  const auto* disp = StyleDisplay();
+  return !aReflowInput.mFlags.mIsTopOfPage &&
+    NS_STYLE_PAGE_BREAK_AVOID == disp->mBreakInside &&
+    !(HasAnyStateBits(NS_FRAME_OUT_OF_FLOW) && IsAbsolutelyPositioned(disp)) &&
+    !GetPrevInFlow();
 }
 
 

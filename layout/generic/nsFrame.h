@@ -473,11 +473,7 @@ public:
   
 
 
-  bool ShouldAvoidBreakInside(const ReflowInput& aReflowInput) const {
-    return !aReflowInput.mFlags.mIsTopOfPage &&
-           NS_STYLE_PAGE_BREAK_AVOID == StyleDisplay()->mBreakInside &&
-           !GetPrevInFlow();
-  }
+  bool ShouldAvoidBreakInside(const ReflowInput& aReflowInput) const;
 
 #ifdef DEBUG
   
