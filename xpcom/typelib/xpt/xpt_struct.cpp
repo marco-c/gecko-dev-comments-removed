@@ -316,7 +316,12 @@ DoMethodDescriptor(XPTArena *arena, NotNull<XPTCursor*> cursor,
             return false;
     }
 
-    if (!DoParamDescriptor(arena, cursor, &md->result, id))
+    
+    
+    
+    
+    XPTParamDescriptor result;
+    if (!DoParamDescriptor(arena, cursor, &result, id))
         return false;
 
     return true;
