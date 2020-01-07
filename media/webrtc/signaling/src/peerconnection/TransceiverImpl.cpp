@@ -363,6 +363,12 @@ TransceiverImpl::SyncWithJS(dom::RTCRtpTransceiver& aJsTransceiver,
   MOZ_MTLOG(ML_DEBUG, mPCHandle << "[" << mMid << "]: " << __FUNCTION__
                       << " Syncing with JS transceiver");
 
+  if (!mTransmitPipeline) {
+    
+    
+    return;
+  }
+
   
   if (mJsepTransceiver->IsStopped()) {
     
