@@ -135,7 +135,8 @@ class ComputedStylePath extends PureComponent {
 
 
 
-  renderPathSegments(segments) {
+
+  renderPathSegments(segments, style) {
     const { graphHeight } = this.props;
 
     for (const segment of segments) {
@@ -146,7 +147,7 @@ class ComputedStylePath extends PureComponent {
     d += toPathString(segments);
     d += `L${ segments[segments.length - 1].x },0 Z`;
 
-    return dom.path({ d });
+    return dom.path({ d, style });
   }
 }
 
