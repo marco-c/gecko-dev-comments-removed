@@ -726,7 +726,7 @@ RespondWithHandler::ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValu
     
     
     
-    if (!mRequestFragment.IsEmpty()) {
+    if (!mRequestFragment.IsEmpty() && !responseURL.IsEmpty()) {
       MOZ_ASSERT(!responseURL.Contains('#'));
       responseURL.Append(NS_LITERAL_CSTRING("#"));
       responseURL.Append(mRequestFragment);
