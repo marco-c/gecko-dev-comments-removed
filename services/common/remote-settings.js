@@ -15,8 +15,6 @@ ChromeUtils.defineModuleGetter(this, "Kinto",
                                "resource://services-common/kinto-offline-client.js");
 ChromeUtils.defineModuleGetter(this, "KintoHttpClient",
                                "resource://services-common/kinto-http-client.js");
-ChromeUtils.defineModuleGetter(this, "FirefoxAdapter",
-                               "resource://services-common/kinto-storage-adapter.js");
 ChromeUtils.defineModuleGetter(this, "CanonicalJSON",
                                "resource://gre/modules/CanonicalJSON.jsm");
 ChromeUtils.defineModuleGetter(this, "UptakeTelemetry",
@@ -37,11 +35,6 @@ const PREF_SETTINGS_LOAD_DUMP          = "services.settings.load_dump";
 const TELEMETRY_HISTOGRAM_KEY = "settings-changes-monitoring";
 
 const INVALID_SIGNATURE = "Invalid content/signature";
-
-
-
-
-const KINTO_STORAGE_PATH = "kinto.sqlite";
 
 
 function mergeChanges(collection, localRecords, changes) {
@@ -169,26 +162,11 @@ class RemoteSettingsClient {
 
 
 
-
-
-
-  async openCollection(callback, options = {}) {
-    const { bucket = this.bucketName, path = KINTO_STORAGE_PATH } = options;
+  async openCollection(options = {}) {
     if (!this._kinto) {
-      this._kinto = new Kinto({bucket, adapter: FirefoxAdapter});
+      this._kinto = new Kinto({ bucket: this.bucketName, adapter: Kinto.adapters.IDB });
     }
-    let sqliteHandle;
-    try {
-      sqliteHandle = await FirefoxAdapter.openConnection({path});
-      const colOptions = Object.assign({adapterOptions: {sqliteHandle}}, options);
-      const {collection: collectionName = this.collectionName} = options;
-      const collection = this._kinto.collection(collectionName, colOptions);
-      return await callback(collection);
-    } finally {
-      if (sqliteHandle) {
-        await sqliteHandle.close();
-      }
-    }
+    return this._kinto.collection(this.collectionName, options);
   }
 
   
@@ -202,11 +180,10 @@ class RemoteSettingsClient {
   async get(options = {}) {
     
     
-    const { filters, order } = options;
-    return this.openCollection(async c => {
-      const { data } = await c.list({ filters, order });
-      return data;
-    });
+    const { filters = {}, order } = options;
+    const c = await this.openCollection();
+    const { data } = await c.list({ filters, order });
+    return data;
   }
 
   
@@ -219,7 +196,7 @@ class RemoteSettingsClient {
 
 
 
-  async maybeSync(lastModified, serverTime, options = {loadDump: true}) {
+  async maybeSync(lastModified, serverTime, options = { loadDump: true }) {
     const {loadDump} = options;
     const remote = Services.prefs.getCharPref(PREF_SETTINGS_SERVER);
     const verifySignature = Services.prefs.getBoolPref(PREF_SETTINGS_VERIFY_SIGNATURE, true);
@@ -237,98 +214,97 @@ class RemoteSettingsClient {
 
     let reportStatus = null;
     try {
-      return await this.openCollection(async (collection) => {
-        
-        let collectionLastModified = await collection.db.getLastModified();
+      const collection = await this.openCollection(colOptions);
+      
+      let collectionLastModified = await collection.db.getLastModified();
 
-        
-        
-        
-        
-        if (!collectionLastModified && loadDump) {
-          try {
-            const initialData = await this._loadDumpFile();
-            await collection.loadDump(initialData.data);
-            collectionLastModified = await collection.db.getLastModified();
-          } catch (e) {
-            
-            Cu.reportError(e);
-          }
-        }
-
-        
-        
-        if (lastModified <= collectionLastModified) {
-          this._updateLastCheck(serverTime);
-          reportStatus = UptakeTelemetry.STATUS.UP_TO_DATE;
-          return;
-        }
-
-        
+      
+      
+      
+      
+      if (!collectionLastModified && loadDump) {
         try {
-          
-          const strategy = Kinto.syncStrategy.SERVER_WINS;
-          const { ok } = await collection.sync({remote, strategy});
-          if (!ok) {
-            
-            reportStatus = UptakeTelemetry.STATUS.CONFLICT_ERROR;
-            throw new Error("Sync failed");
-          }
+          const initialData = await this._loadDumpFile();
+          await collection.loadDump(initialData.data);
+          collectionLastModified = await collection.db.getLastModified();
         } catch (e) {
-          if (e.message == INVALID_SIGNATURE) {
-            
-            reportStatus = UptakeTelemetry.STATUS.SIGNATURE_ERROR;
-            
-            
-            
-            
-            const payload = await fetchRemoteCollection(remote, collection);
-            try {
-              await this._validateCollectionSignature(remote, payload, collection, {ignoreLocal: true});
-            } catch (e) {
-              reportStatus = UptakeTelemetry.STATUS.SIGNATURE_RETRY_ERROR;
-              throw e;
-            }
-            
-            
-            
-            const localLastModified = await collection.db.getLastModified();
-            if (payload.last_modified >= localLastModified) {
-              await collection.clear();
-              await collection.loadDump(payload.data);
-            }
-          } else {
-            
-            if (/NetworkError/.test(e.message)) {
-              reportStatus = UptakeTelemetry.STATUS.NETWORK_ERROR;
-            } else if (/Backoff/.test(e.message)) {
-              reportStatus = UptakeTelemetry.STATUS.BACKOFF;
-            } else {
-              reportStatus = UptakeTelemetry.STATUS.SYNC_ERROR;
-            }
+          
+          Cu.reportError(e);
+        }
+      }
+
+      
+      
+      if (lastModified <= collectionLastModified) {
+        this._updateLastCheck(serverTime);
+        reportStatus = UptakeTelemetry.STATUS.UP_TO_DATE;
+        return;
+      }
+
+      
+      try {
+        
+        const strategy = Kinto.syncStrategy.SERVER_WINS;
+        const { ok } = await collection.sync({remote, strategy});
+        if (!ok) {
+          
+          reportStatus = UptakeTelemetry.STATUS.CONFLICT_ERROR;
+          throw new Error("Sync failed");
+        }
+      } catch (e) {
+        if (e.message == INVALID_SIGNATURE) {
+          
+          reportStatus = UptakeTelemetry.STATUS.SIGNATURE_ERROR;
+          
+          
+          
+          
+          const payload = await fetchRemoteCollection(remote, collection);
+          try {
+            await this._validateCollectionSignature(remote, payload, collection, {ignoreLocal: true});
+          } catch (e) {
+            reportStatus = UptakeTelemetry.STATUS.SIGNATURE_RETRY_ERROR;
             throw e;
           }
-        }
-        
-        const { data } = await collection.list();
-
-        
-        try {
           
           
-          const callbacks = this._callbacks.get("change");
-          for (const cb of callbacks) {
-            await cb({ data });
+          
+          const localLastModified = await collection.db.getLastModified();
+          if (payload.last_modified >= localLastModified) {
+            await collection.clear();
+            await collection.loadDump(payload.data);
           }
-        } catch (e) {
-          reportStatus = UptakeTelemetry.STATUS.APPLY_ERROR;
+        } else {
+          
+          if (/NetworkError/.test(e.message)) {
+            reportStatus = UptakeTelemetry.STATUS.NETWORK_ERROR;
+          } else if (/Backoff/.test(e.message)) {
+            reportStatus = UptakeTelemetry.STATUS.BACKOFF;
+          } else {
+            reportStatus = UptakeTelemetry.STATUS.SYNC_ERROR;
+          }
           throw e;
         }
+      }
+      
+      const { data } = await collection.list();
 
+      
+      try {
         
-        this._updateLastCheck(serverTime);
+        
+        const callbacks = this._callbacks.get("change");
+        for (const cb of callbacks) {
+          await cb({ data });
+        }
+      } catch (e) {
+        reportStatus = UptakeTelemetry.STATUS.APPLY_ERROR;
+        throw e;
+      }
 
-      }, colOptions);
+      
+      this._updateLastCheck(serverTime);
+
     } catch (e) {
       
       if (reportStatus === null) {

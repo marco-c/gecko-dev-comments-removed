@@ -1842,7 +1842,9 @@ BrowserGlue.prototype = {
 
   
   _migrateUI: function BG__migrateUI() {
-    const UI_VERSION = 67;
+    
+    
+    const UI_VERSION = 68;
     const BROWSER_DOCURL = "chrome://browser/content/browser.xul";
 
     let currentUIVersion;
@@ -2196,6 +2198,12 @@ BrowserGlue.prototype = {
       if (Services.prefs.getCharPref("devtools.theme") == "firebug") {
         Services.prefs.setCharPref("devtools.theme", "light");
       }
+    }
+
+    if (currentUIVersion < 68) {
+      
+      OS.File.remove(OS.Path.join(OS.Constants.Path.profileDir,
+                                  "kinto.sqlite"), {ignoreAbsent: true});
     }
 
     
