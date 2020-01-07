@@ -1004,8 +1004,11 @@ Loader::CreateSheet(nsIURI* aURI,
                    "Sheet thinks it's not complete while we think it is");
 
       
-      if (sheet->IsModified()) {
-        LOG(("  Not cloning completed sheet %p because it's been modified",
+      
+      
+      if (sheet->HasForcedUniqueInner()) {
+        LOG(("  Not cloning completed sheet %p because it has a "
+             "forced unique inner",
              sheet.get()));
         sheet = nullptr;
         fromCompleteSheets = false;
@@ -1057,9 +1060,10 @@ Loader::CreateSheet(nsIURI* aURI,
 
     if (sheet) {
       
-      NS_ASSERTION(!sheet->IsModified() ||
+      
+      NS_ASSERTION(!sheet->HasForcedUniqueInner() ||
                    !sheet->IsComplete(),
-                   "Unexpected modified complete sheet");
+                   "Unexpected complete sheet with forced unique inner");
       NS_ASSERTION(sheet->IsComplete() ||
                    aSheetState != eSheetComplete,
                    "Sheet thinks it's not complete while we think it is");
@@ -1812,8 +1816,8 @@ Loader::DoSheetComplete(SheetLoadData* aLoadData, nsresult aStatus,
       
       
       
-      MOZ_ASSERT(!data->mSheet->IsModified(),
-                 "should not get marked modified during parsing");
+      MOZ_ASSERT(!data->mSheet->HasForcedUniqueInner(),
+                 "should not get a forced unique inner during parsing");
       data->mSheet->SetComplete();
       data->ScheduleLoadEventIfNeeded(aStatus);
     }

@@ -149,7 +149,7 @@ ServoStyleSheet::ServoStyleSheet(const ServoStyleSheet& aCopy,
                aDocumentToUse,
                aOwningNodeToUse)
 {
-  if (mDirty) { 
+  if (HasForcedUniqueInner()) { 
     NS_ASSERTION(mInner->mComplete,
                  "Why have rules been accessed on an incomplete sheet?");
     

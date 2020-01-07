@@ -353,7 +353,7 @@ CSSStyleSheet::CSSStyleSheet(const CSSStyleSheet& aCopy,
   , mScopeElement(nullptr)
   , mRuleProcessors(nullptr)
 {
-  if (mDirty) { 
+  if (HasForcedUniqueInner()) { 
     NS_ASSERTION(mInner->mComplete,
                  "Why have rules been accessed on an incomplete sheet?");
     
@@ -610,7 +610,7 @@ CSSStyleSheet::ClearRuleCascades()
 void
 CSSStyleSheet::DidDirty()
 {
-  MOZ_ASSERT(!mInner->mComplete || mDirty,
+  MOZ_ASSERT(!mInner->mComplete || HasForcedUniqueInner(),
              "caller must have called WillDirty()");
   ClearRuleCascades();
 }
