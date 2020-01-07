@@ -73,7 +73,6 @@ ViewSourceBrowser.prototype = {
       this.mm.addMessageListener(msgName, this);
     });
 
-    
     this.loadFrameScript();
   },
 
@@ -91,6 +90,12 @@ ViewSourceBrowser.prototype = {
 
 
   loadFrameScript() {
+    
+    
+    
+    if (!this.browser) {
+      return;
+    }
     if (!gKnownBrowsers.has(this.browser)) {
       gKnownBrowsers.add(this.browser);
       this.mm.loadFrameScript(FRAME_SCRIPT, false);
