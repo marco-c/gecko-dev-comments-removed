@@ -9,7 +9,7 @@
 
 
 
-var MemoryCallTreeView = Heritage.extend(DetailsSubview, {
+var MemoryCallTreeView = extend(DetailsSubview, {
 
   rerenderPrefs: [
     "invert-call-tree"

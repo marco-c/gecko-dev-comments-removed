@@ -10,7 +10,7 @@
 
 
 
-var JsFlameGraphView = Heritage.extend(DetailsSubview, {
+var JsFlameGraphView = extend(DetailsSubview, {
 
   shouldUpdateWhileMouseIsActive: true,
 

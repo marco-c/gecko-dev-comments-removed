@@ -8,7 +8,7 @@
 
 
 
-var SnapshotsListView = Heritage.extend(WidgetMethods, {
+var SnapshotsListView = extend(WidgetMethods, {
   
 
 

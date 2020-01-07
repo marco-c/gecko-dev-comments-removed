@@ -846,7 +846,7 @@ var DebuggerView = {
 function ResultsPanelContainer() {
 }
 
-ResultsPanelContainer.prototype = Heritage.extend(WidgetMethods, {
+ResultsPanelContainer.prototype = extend(WidgetMethods, {
   
 
 

@@ -15,7 +15,7 @@ const { TickUtils } = require("devtools/client/performance/modules/waterfall-tic
 
 
 
-var WaterfallView = Heritage.extend(DetailsSubview, {
+var WaterfallView = extend(DetailsSubview, {
 
   
   MARKER_EPSILON: 0.000000000001,

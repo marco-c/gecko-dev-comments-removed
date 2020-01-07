@@ -15,9 +15,10 @@ var { loader, require } = BrowserLoaderModule.BrowserLoader({
 });
 var { Task } = require("devtools/shared/task");
 
-var { Heritage, ViewHelpers, WidgetMethods, setNamedTimeout, clearNamedTimeout } = require("devtools/client/shared/widgets/view-helpers");
+var { ViewHelpers, WidgetMethods, setNamedTimeout, clearNamedTimeout } = require("devtools/client/shared/widgets/view-helpers");
 var { PrefObserver } = require("devtools/client/shared/prefs");
 
+const { extend } = require("devtools/shared/extend");
 
 
 var Promise = require("Promise");
