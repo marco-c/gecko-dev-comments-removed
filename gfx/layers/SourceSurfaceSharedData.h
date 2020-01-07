@@ -136,9 +136,16 @@ public:
   {
   }
 
+  
+
+
+
+
+
   bool Init(const IntSize& aSize,
             int32_t aStride,
-            SurfaceFormat aFormat);
+            SurfaceFormat aFormat,
+            bool aShare = true);
 
   uint8_t* GetData() override
   {

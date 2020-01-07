@@ -577,12 +577,7 @@ RasterImage::GetFrameAtSize(const IntSize& aSize,
 #endif
 
   auto result = GetFrameInternal(aSize, Nothing(), aWhichFrame, aFlags);
-  RefPtr<SourceSurface> surf = mozilla::Get<2>(result).forget();
-
-  
-  
-  MarkSurfaceShared(surf);
-  return surf.forget();
+  return mozilla::Get<2>(result).forget();
 }
 
 Tuple<ImgDrawResult, IntSize, RefPtr<SourceSurface>>

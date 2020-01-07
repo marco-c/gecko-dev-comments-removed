@@ -138,19 +138,6 @@ ClearSurface(DataSourceSurface* aSurface, const IntSize& aSize, SurfaceFormat aF
   return true;
 }
 
-void
-MarkSurfaceShared(SourceSurface* aSurface)
-{
-  
-  
-  
-  
-  if (aSurface && aSurface->GetType() == SurfaceType::DATA_SHARED) {
-    auto sharedSurface = static_cast<SourceSurfaceSharedData*>(aSurface);
-    sharedSurface->FinishedSharing();
-  }
-}
-
 
 static bool
 AllowedImageSize(int32_t aWidth, int32_t aHeight)
@@ -586,9 +573,6 @@ bool imgFrame::Draw(gfxContext* aContext, const ImageRegion& aRegion,
                                aSamplingFilter, aImageFlags, aOpacity);
   }
 
-  
-  
-  MarkSurfaceShared(surf);
   return true;
 }
 
