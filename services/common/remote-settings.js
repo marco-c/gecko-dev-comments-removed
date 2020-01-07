@@ -125,11 +125,11 @@ async function fetchLatestChanges(url, lastEtag) {
 
 class RemoteSettingsClient {
 
-  constructor(collectionName, { lastCheckTimePref, bucketName, signerName }) {
+  constructor(collectionName, { bucketName, signerName, lastCheckTimePref }) {
     this.collectionName = collectionName;
-    this.lastCheckTimePref = lastCheckTimePref;
     this.bucketName = bucketName;
     this.signerName = signerName;
+    this._lastCheckTimePref = lastCheckTimePref;
 
     this._callbacks = new Map();
     this._callbacks.set("sync", []);
@@ -145,6 +145,10 @@ class RemoteSettingsClient {
     
     const identifier = OS.Path.join(...this.identifier.split("/"));
     return `${identifier}.json`;
+  }
+
+  get lastCheckTimePref() {
+    return this._lastCheckTimePref || `services.settings.${this.bucketName}.${this.collectionName}.last_check`;
   }
 
   on(event, callback) {
@@ -415,12 +419,6 @@ class RemoteSettingsClient {
 
 
   _updateLastCheck(serverTime) {
-    if (!this.lastCheckTimePref) {
-      
-      return;
-    }
-    
-    
     const checkedServerTimeInSeconds = Math.round(serverTime / 1000);
     Services.prefs.setIntPref(this.lastCheckTimePref, checkedServerTimeInSeconds);
   }
