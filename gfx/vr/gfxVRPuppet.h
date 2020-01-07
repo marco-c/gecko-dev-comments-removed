@@ -9,6 +9,7 @@
 
 #include "nsTArray.h"
 #include "mozilla/RefPtr.h"
+#include "nsRefPtrHashtable.h"
 
 #include "gfxVR.h"
 #include "VRDisplayHost.h"
@@ -107,11 +108,16 @@ class VRSystemManagerPuppet : public VRSystemManager
 {
 public:
   static already_AddRefed<VRSystemManagerPuppet> Create();
+  uint32_t CreateTestDisplay();
+  void ClearTestDisplays();
+  void SetPuppetDisplayInfo(const uint32_t& aDeviceID,
+                            const VRDisplayInfo& aDisplayInfo);
+  void SetPuppetDisplaySensorState(const uint32_t& aDeviceID,
+                                   const VRHMDSensorState& aSensorState);
 
   virtual void Destroy() override;
   virtual void Shutdown() override;
   virtual void Enumerate() override;
-  virtual bool ShouldInhibitEnumeration() override;
   virtual void GetHMDs(nsTArray<RefPtr<VRDisplayHost>>& aHMDResult) override;
   virtual bool GetIsPresenting() override;
   virtual void HandleInput() override;
@@ -143,8 +149,14 @@ private:
                           VRControllerHost* aController);
 
   
-  RefPtr<impl::VRDisplayPuppet> mPuppetHMD;
+  nsTArray<RefPtr<impl::VRDisplayPuppet>> mPuppetHMDs;
   nsTArray<RefPtr<impl::VRControllerPuppet>> mPuppetController;
+
+  
+  static const uint32_t kMaxPuppetDisplays = 5;
+  uint32_t mPuppetDisplayCount;
+  VRDisplayInfo mPuppetDisplayInfo[kMaxPuppetDisplays];
+  VRHMDSensorState mPuppetDisplaySensorState[kMaxPuppetDisplays];
 };
 
 } 

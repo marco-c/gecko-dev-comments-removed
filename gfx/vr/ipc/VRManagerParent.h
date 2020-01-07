@@ -83,6 +83,7 @@ private:
   static void RegisterVRManagerInVRListenerThread(VRManagerParent* aVRManager);
 
   void DeferredDestroy();
+  already_AddRefed<impl::VRControllerPuppet> GetControllerPuppet(uint32_t aDeviceID);
 
   
   
@@ -91,9 +92,7 @@ private:
 
   
   RefPtr<VRManager> mVRManagerHolder;
-  nsRefPtrHashtable<nsUint32HashKey, impl::VRDisplayPuppet> mVRDisplayTests;
   nsRefPtrHashtable<nsUint32HashKey, impl::VRControllerPuppet> mVRControllerTests;
-  uint32_t mDisplayTestID;
   uint32_t mControllerTestID;
   bool mHaveEventListener;
   bool mHaveControllerListener;
