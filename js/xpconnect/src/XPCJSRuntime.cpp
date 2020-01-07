@@ -2043,8 +2043,9 @@ class JSMainRuntimeRealmsReporter final : public nsIMemoryReporter
         js::Vector<nsCString, 0, js::SystemAllocPolicy> paths;
     };
 
-    static void CompartmentCallback(JSContext* cx, void* vdata, JSCompartment* c) {
+    static void RealmCallback(JSContext* cx, void* vdata, Handle<Realm*> realm) {
         
+        JSCompartment* c = JS::GetCompartmentForRealm(realm);
         Data* data = static_cast<Data*>(vdata);
         nsCString path;
         GetCompartmentName(c, path, &data->anonymizeID,  true);
@@ -2065,12 +2066,11 @@ class JSMainRuntimeRealmsReporter final : public nsIMemoryReporter
 
         Data d;
         d.anonymizeID = anonymize ? 1 : 0;
-        JS_IterateCompartments(XPCJSContext::Get()->Context(),
-                               &d, CompartmentCallback);
+        JS::IterateRealms(XPCJSContext::Get()->Context(), &d, RealmCallback);
 
         for (size_t i = 0; i < d.paths.length(); i++)
             REPORT(nsCString(d.paths[i]), KIND_OTHER, UNITS_COUNT, 1,
-                "A live compartment in the main JSRuntime.");
+                "A live realm in the main JSRuntime.");
 
         return NS_OK;
     }
@@ -2187,9 +2187,10 @@ class XPCJSRuntimeStats : public JS::RuntimeStats
         zStats->extra = extras;
     }
 
-    virtual void initExtraRealmStats(JSCompartment* c,
+    virtual void initExtraRealmStats(Handle<Realm*> realm,
                                      JS::RealmStats* realmStats) override
     {
+        JSCompartment* c = JS::GetCompartmentForRealm(realm);
         xpc::RealmStatsExtras* extras = new xpc::RealmStatsExtras;
         nsCString cName;
         GetCompartmentName(c, cName, &mAnonymizeID,  true);
@@ -2197,7 +2198,6 @@ class XPCJSRuntimeStats : public JS::RuntimeStats
         
         AutoSafeJSContext cx;
         bool needZone = true;
-        Rooted<Realm*> realm(cx, JS::GetRealmForCompartment(c));
         RootedObject global(cx, JS::GetRealmGlobalOrNull(realm));
         if (global) {
             RefPtr<nsGlobalWindowInner> window;

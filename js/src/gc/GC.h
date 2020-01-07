@@ -90,10 +90,9 @@ typedef void (*IterateCellCallback)(JSRuntime* rt, void* data, void* thing,
 extern void
 IterateHeapUnbarriered(JSContext* cx, void* data,
                        IterateZoneCallback zoneCallback,
-                       JSIterateCompartmentCallback compartmentCallback,
+                       JS::IterateRealmCallback realmCallback,
                        IterateArenaCallback arenaCallback,
                        IterateCellCallback cellCallback);
-
 
 
 
@@ -101,7 +100,7 @@ IterateHeapUnbarriered(JSContext* cx, void* data,
 extern void
 IterateHeapUnbarrieredForZone(JSContext* cx, JS::Zone* zone, void* data,
                               IterateZoneCallback zoneCallback,
-                              JSIterateCompartmentCallback compartmentCallback,
+                              JS::IterateRealmCallback realmCallback,
                               IterateArenaCallback arenaCallback,
                               IterateCellCallback cellCallback);
 
