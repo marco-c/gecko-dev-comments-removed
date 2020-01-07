@@ -11,6 +11,7 @@
 
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Logging.h"
+#include "mozilla/Mutex.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPtr.h"
@@ -146,34 +147,58 @@ nsRFPService::IsTimerPrecisionReductionEnabled(TimerPrecisionType aType)
 #define HASH_DIGEST_SIZE_BITS  (256)
 #define HASH_DIGEST_SIZE_BYTES (HASH_DIGEST_SIZE_BITS / 8)
 
-
 class LRUCache
 {
 public:
-  LRUCache() {
+  LRUCache()
+    : mLock("mozilla.resistFingerprinting.LRUCache") {
     this->cache.SetLength(LRU_CACHE_SIZE);
   }
 
   nsCString Get(long long aKey) {
     for (auto & cacheEntry : this->cache) {
+      
       if (cacheEntry.key == aKey) {
+        MutexAutoLock lock(mLock);
+
+        
+        if (MOZ_UNLIKELY(cacheEntry.key != aKey)) {
+          
+#if defined(DEBUG)
+          long long tmp_key = cacheEntry.key;
+          MOZ_LOG(gResistFingerprintingLog, LogLevel::Verbose,
+            ("LRU Cache HIT-MISS with %lli != %lli", aKey, tmp_key));
+#endif
+          return EmptyCString();
+        }
+
         cacheEntry.accessTime = PR_Now();
 
 #if defined(DEBUG)
         MOZ_LOG(gResistFingerprintingLog, LogLevel::Verbose,
-          ("LRU Cache HIT with %lli == %lli", aKey, cacheEntry.key));
+          ("LRU Cache HIT with %lli", aKey));
 #endif
         return cacheEntry.data;
       }
     }
+
     return EmptyCString();
   }
 
   void Store(long long aKey, const nsCString& aValue) {
     MOZ_DIAGNOSTIC_ASSERT(aValue.Length() == HASH_DIGEST_SIZE_BYTES);
+    MutexAutoLock lock(mLock);
 
     CacheEntry* lowestKey = &this->cache[0];
     for (auto & cacheEntry : this->cache) {
+      if (MOZ_UNLIKELY(cacheEntry.key == aKey)) {
+        
+#if defined(DEBUG)
+        MOZ_LOG(gResistFingerprintingLog, LogLevel::Verbose,
+          ("LRU Cache DOUBLE STORE with %lli", aKey));
+#endif
+        return;
+      }
       if (cacheEntry.accessTime < lowestKey->accessTime) {
         lowestKey = &cacheEntry;
       }
@@ -190,7 +215,7 @@ public:
 
 private:
   struct CacheEntry {
-    long long key;
+    Atomic<long long, Relaxed> key;
     PRTime accessTime = 0;
     nsCString data;
 
@@ -199,9 +224,15 @@ private:
       this->accessTime = 0;
       this->data = nullptr;
     }
+    CacheEntry(const CacheEntry &obj) {
+      this->key.exchange(obj.key);
+      this->accessTime = obj.accessTime;
+      this->data = obj.data;
+    }
   };
 
   AutoTArray<CacheEntry, LRU_CACHE_SIZE> cache;
+  mozilla::Mutex mLock;
 };
 
 
