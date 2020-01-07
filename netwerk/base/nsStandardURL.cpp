@@ -1799,6 +1799,14 @@ nsStandardURL::SetPassword(const nsACString &input)
 
     const nsPromiseFlatCString &password = PromiseFlatCString(input);
 
+    auto clearedPassword = MakeScopeExit([&password, this]() {
+        
+        
+        if (password.IsEmpty()) {
+            MOZ_DIAGNOSTIC_ASSERT(this->Password().IsEmpty());
+        }
+    });
+
     LOG(("nsStandardURL::SetPassword [password=%s]\n", password.get()));
 
     if (mURLType == URLTYPE_NO_AUTHORITY) {
