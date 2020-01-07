@@ -517,15 +517,15 @@ impl PropertyDeclarationBlock {
                     continue;
                 }
 
-                let important = self.declarations_importance[i];
-                
-                
-                if important && !importance.important() &&
-                    matches!(source, DeclarationSource::Parsing) {
-                    return false;
-                }
-
                 if matches!(source, DeclarationSource::Parsing) {
+                    let important = self.declarations_importance[i];
+
+                    
+                    
+                    if important && !importance.important() {
+                        return false;
+                    }
+
                     
                     
                     
