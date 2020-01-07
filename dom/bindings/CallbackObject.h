@@ -149,7 +149,6 @@ public:
     
     
     
-    
     eRethrowExceptions
   };
 
@@ -305,7 +304,7 @@ protected:
     CallSetup(CallbackObject* aCallback, ErrorResult& aRv,
               const char* aExecutionReason,
               ExceptionHandling aExceptionHandling,
-              JSCompartment* aCompartment = nullptr,
+              JS::Realm* aRealm = nullptr,
               bool aIsJSImplementedWebIDL = false);
     ~CallSetup();
 
@@ -325,7 +324,7 @@ protected:
 
     
     
-    JSCompartment* mCompartment;
+    JS::Realm* mRealm;
 
     
     Maybe<AutoEntryScript> mAutoEntryScript;

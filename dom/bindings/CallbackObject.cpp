@@ -133,10 +133,10 @@ CallbackObject::CallSetup::CallSetup(CallbackObject* aCallback,
                                      ErrorResult& aRv,
                                      const char* aExecutionReason,
                                      ExceptionHandling aExceptionHandling,
-                                     JSCompartment* aCompartment,
+                                     JS::Realm* aRealm,
                                      bool aIsJSImplementedWebIDL)
   : mCx(nullptr)
-  , mCompartment(aCompartment)
+  , mRealm(aRealm)
   , mErrorResult(aRv)
   , mExceptionHandling(aExceptionHandling)
   , mIsMainThread(NS_IsMainThread())
@@ -261,7 +261,7 @@ bool
 CallbackObject::CallSetup::ShouldRethrowException(JS::Handle<JS::Value> aException)
 {
   if (mExceptionHandling == eRethrowExceptions) {
-    if (!mCompartment) {
+    if (!mRealm) {
       
       return true;
     }
@@ -269,7 +269,7 @@ CallbackObject::CallSetup::ShouldRethrowException(JS::Handle<JS::Value> aExcepti
     
     
     
-    if (mCompartment == js::GetContextCompartment(mCx)) {
+    if (mRealm == js::GetContextRealm(mCx)) {
       return true;
     }
 
@@ -279,14 +279,14 @@ CallbackObject::CallSetup::ShouldRethrowException(JS::Handle<JS::Value> aExcepti
     
     
     nsIPrincipal* callerPrincipal =
-      nsJSPrincipals::get(JS_GetCompartmentPrincipals(mCompartment));
+      nsJSPrincipals::get(JS::GetRealmPrincipals(mRealm));
     nsIPrincipal* calleePrincipal = nsContentUtils::SubjectPrincipal();
     if (callerPrincipal->SubsumesConsideringDomain(calleePrincipal)) {
       return true;
     }
   }
 
-  MOZ_ASSERT(mCompartment);
+  MOZ_ASSERT(mRealm);
 
   
   
@@ -297,7 +297,7 @@ CallbackObject::CallSetup::ShouldRethrowException(JS::Handle<JS::Value> aExcepti
 
   JS::Rooted<JSObject*> obj(mCx, &aException.toObject());
   obj = js::UncheckedUnwrap(obj,  false);
-  return js::GetObjectCompartment(obj) == mCompartment;
+  return js::GetNonCCWObjectRealm(obj) == mRealm;
 }
 
 CallbackObject::CallSetup::~CallSetup()
@@ -313,7 +313,7 @@ CallbackObject::CallSetup::~CallSetup()
   
   if (mCx) {
     bool needToDealWithException = mAutoEntryScript->HasException();
-    if ((mCompartment && mExceptionHandling == eRethrowContentExceptions) ||
+    if ((mRealm && mExceptionHandling == eRethrowContentExceptions) ||
         mExceptionHandling == eRethrowExceptions) {
       mErrorResult.MightThrowJSException();
       if (needToDealWithException) {
