@@ -638,6 +638,12 @@ inline void EndpointHandler<SERVER>::Copy(uint64_t& aDest, const PSecHandle& aSr
 template<>
 inline void EndpointHandler<SERVER>::Copy(uint64_t& aDest, void* const & aSrc)
 {
+  
+  if (!aSrc) {
+    aDest = 0;
+    return;
+  }
+
   static uint64_t sNextVal = 1;
   
   uint64_t& val = sPtrToIdMap[aSrc];
