@@ -342,7 +342,8 @@ var FullScreen = {
       
       
       
-      TabsInTitlebar.update();
+      
+      TabsInTitlebar.updateAppearance(true);
     }
 
     if (enterFS && !document.fullscreenElement) {
