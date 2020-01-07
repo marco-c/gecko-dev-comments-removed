@@ -303,10 +303,11 @@ impl WebGLProgram {
 
         
         if name.starts_with("gl_") {
-            return Err(WebGLError::InvalidOperation);
+            return Ok(None);
         }
 
-        if name.starts_with("webgl") || name.starts_with("_webgl_") {
+        
+        if name.starts_with("webgl_") || name.starts_with("_webgl_") {
             return Ok(None);
         }
 

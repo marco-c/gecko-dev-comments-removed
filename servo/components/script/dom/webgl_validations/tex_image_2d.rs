@@ -152,6 +152,13 @@ impl<'a> WebGLValidator for CommonTexImage2DValidator<'a> {
         };
 
         
+        
+        if target.is_cubic() && self.width != self.height {
+            self.context.webgl_error(InvalidValue);
+            return Err(TexImageValidationError::InvalidCubicTextureDimensions);
+        }
+
+        
         if self.level < 0 {
             self.context.webgl_error(InvalidValue);
             return Err(TexImageValidationError::NegativeLevel);
@@ -286,13 +293,6 @@ impl<'a> WebGLValidator for TexImage2DValidator<'a> {
             height,
             border,
         } = self.common_validator.validate()?;
-
-        
-        
-        if target.is_cubic() && width != height {
-            context.webgl_error(InvalidValue);
-            return Err(TexImageValidationError::InvalidCubicTextureDimensions);
-        }
 
         
         
