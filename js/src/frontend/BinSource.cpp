@@ -198,8 +198,19 @@ BinASTParser<Tok>::buildFunction(const size_t start, const BinKind kind, ParseNo
     return result;
 }
 
+
+
+static bool TryMarkCaptureInScope(ParseContext::Scope& scope, HandleAtom atom)
+{
+    auto name = scope.lookupDeclaredName(atom);
+    if (!name)
+        return false;
+    name->value()->setClosedOver();
+    return true;
+}
+
 template<typename Tok> JS::Result<Ok>
-BinASTParser<Tok>::parseAndUpdateCapturedNames()
+BinASTParser<Tok>::parseAndUpdateCapturedNames(const BinKind kind)
 {
     
     AutoList guard(*tokenizer_);
@@ -211,6 +222,26 @@ BinASTParser<Tok>::parseAndUpdateCapturedNames()
         name = nullptr;
 
         MOZ_TRY_VAR(name, tokenizer_->readAtom());
+        if (kind == BinKind::AssertedParameterScope) {
+            MOZ_ASSERT(parseContext_->isFunctionBox());
+
+            if (parseContext_->functionBox()->function()->isNamedLambda()) {
+                if (TryMarkCaptureInScope(parseContext_->namedLambdaScope(), name))
+                    continue;
+            }
+
+            if (!TryMarkCaptureInScope(parseContext_->functionScope(), name))
+                return raiseUndeclaredCapture(name);
+            continue;
+        }
+
+        if (kind == BinKind::AssertedVarScope) {
+            if (TryMarkCaptureInScope(parseContext_->varScope(), name))
+                continue;
+        }
+
+        if (!TryMarkCaptureInScope(*parseContext_->innermostScope(), name))
+            return raiseUndeclaredCapture(name);
     }
     MOZ_TRY(guard.done());
     return Ok();
@@ -284,6 +315,13 @@ BinASTParser<Tok>::appendDirectivesToBody(ParseNode* body, ParseNode* directives
     }
 
     return result;
+}
+
+template<typename Tok> mozilla::GenericErrorResult<JS::Error&>
+BinASTParser<Tok>::raiseUndeclaredCapture(JSAtom* name)
+{
+    
+    return raiseError("Captured variable undeclared in scope");
 }
 
 template<typename Tok> mozilla::GenericErrorResult<JS::Error&>
