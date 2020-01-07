@@ -75,6 +75,7 @@ async function _eventListenerLeakStep(target, name, extra) {
   
   await new Promise(resolve => SpecialPowers.exactGC(resolve));
   await new Promise(resolve => SpecialPowers.exactGC(resolve));
+  await new Promise(resolve => SpecialPowers.exactGC(resolve));
 
   ok(!weakRef.get(), `iframe content window should be garbage collected - ${name}`);
 }
