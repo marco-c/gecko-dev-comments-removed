@@ -15,9 +15,15 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   FormHistory: "resource://gre/modules/FormHistory.jsm",
   OfflineAppCacheHelper: "resource://gre/modules/offlineAppCache.jsm",
   OS: "resource://gre/modules/osfile.jsm",
+  ServiceWorkerCleanUp: "resource://gre/modules/ServiceWorkerCleanUp.jsm",
   Task: "resource://gre/modules/Task.jsm",
   TelemetryStopwatch: "resource://gre/modules/TelemetryStopwatch.jsm",
 });
+
+XPCOMUtils.defineLazyServiceGetters(this, {
+  quotaManagerService: ["@mozilla.org/dom/quota-manager-service;1", "nsIQuotaManagerService"],
+});
+
 
 var EXPORTED_SYMBOLS = ["Sanitizer"];
 
@@ -146,14 +152,43 @@ Sanitizer.prototype = {
     },
 
     offlineApps: {
-      clear: function() {
-        return new Promise(function(resolve, reject) {
-          
-          
-          OfflineAppCacheHelper.clear();
+      async clear() {
+        
+        
+        OfflineAppCacheHelper.clear();
 
-          resolve();
+        
+        Services.obs.notifyObservers(null, "extension:purge-localStorage");
+
+        
+        await ServiceWorkerCleanUp.removeAll();
+
+        
+        let promises = [];
+        await new Promise(resolve => {
+          quotaManagerService.getUsage(request => {
+            if (request.resultCode != Cr.NS_OK) {
+              
+              
+              resolve();
+              return;
+            }
+
+            for (let item of request.result) {
+              let principal = Services.scriptSecurityManager.createCodebasePrincipalFromOrigin(item.origin);
+              let uri = principal.URI;
+              if (uri.scheme == "http" || uri.scheme == "https" || uri.scheme == "file") {
+                promises.push(new Promise(r => {
+                  let req = quotaManagerService.clearStoragesForPrincipal(principal, null, false);
+                  req.callback = () => { r(); };
+                }));
+              }
+            }
+            resolve();
+          });
         });
+
+        return Promise.all(promises);
       },
 
       get canClear() {
