@@ -569,20 +569,6 @@ this.UITour = {
         break;
       }
 
-      case "showConnectAnotherDevice": {
-        const url = new URL(Services.prefs.getCharPref("identity.fxaccounts.remote.connectdevice.uri"));
-        url.searchParams.append("entrypoint", "uitour");
-        
-        if (!this._populateCampaignParams(url, data.extraURLCampaignParams)) {
-          log.warn("showConnectAnotherDevice: invalid campaign args specified");
-          return false;
-        }
-
-        
-        browser.loadURI(url.href);
-        break;
-      }
-
       case "resetFirefox": {
         
         if (ResetProfile.resetSupported()) {

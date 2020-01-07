@@ -602,33 +602,6 @@ if (typeof Mozilla == "undefined") {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-  Mozilla.UITour.showConnectAnotherDevice = function(extraURLCampaignParams) {
-    _sendEvent("showConnectAnotherDevice", {
-      extraURLCampaignParams: JSON.stringify(extraURLCampaignParams)
-    });
-  };
-
-  
-
-
-
-
-
-
-
   Mozilla.UITour.resetFirefox = function() {
     _sendEvent("resetFirefox");
   };

@@ -47,6 +47,7 @@ const ICON_STATE_DEFAULT = "default";
 
 
 
+
 var onboardingTourset = {
   "private": {
     id: "onboarding-tour-private-browsing",
@@ -183,6 +184,7 @@ var onboardingTourset = {
       const STATE_LOGOUT = "logged-out";
       const STATE_LOGIN = "logged-in";
       let div = win.document.createElement("div");
+      div.classList.add("onboarding-no-button");
       div.dataset.loginState = STATE_LOGOUT;
       
       
@@ -205,9 +207,6 @@ var onboardingTourset = {
           </form>
           <img src="resource://onboarding/img/figure_sync.svg" role="presentation"/>
         </section>
-        <aside class="onboarding-tour-button-container show-on-logged-in">
-          <button id="onboarding-tour-sync-connect-device-button" class="onboarding-tour-action-button" data-l10n-id="onboarding.tour-sync.connect-device.button"></button>
-        </aside>
       `;
       let emailInput = div.querySelector("#onboarding-tour-sync-email-input");
       emailInput.placeholder =
