@@ -357,7 +357,9 @@ function getTestTab(client, title, callback) {
 
 function attachTestTab(client, title, callback) {
   getTestTab(client, title, function(tab) {
-    client.attachTab(tab.actor, callback);
+    client.attachTab(tab.actor).then(([response, tabClient]) => {
+      callback(response, tabClient);
+    });
   });
 }
 
@@ -367,13 +369,13 @@ function attachTestTab(client, title, callback) {
 
 function attachTestThread(client, title, callback) {
   attachTestTab(client, title, function(tabResponse, tabClient) {
-    function onAttach(response, threadClient) {
+    function onAttach([response, threadClient]) {
       callback(response, tabClient, threadClient, tabResponse);
     }
     tabClient.attachThread({
       useSourceMaps: true,
       autoBlackBox: true
-    }, onAttach);
+    }).then(onAttach);
   });
 }
 

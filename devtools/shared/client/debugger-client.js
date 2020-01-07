@@ -29,8 +29,6 @@ loader.lazyRequireGetter(this, "ThreadClient", "devtools/shared/client/thread-cl
 loader.lazyRequireGetter(this, "WorkerClient", "devtools/shared/client/worker-client");
 loader.lazyRequireGetter(this, "ObjectClient", "devtools/shared/client/object-client");
 
-const noop = () => {};
-
 
 
 
@@ -331,10 +329,7 @@ DebuggerClient.prototype = {
 
 
 
-
-
-
-  attachTab: function(targetActor, onResponse = noop) {
+  attachTab: function(targetActor) {
     if (this._clients.has(targetActor)) {
       const cachedTab = this._clients.get(targetActor);
       const cachedResponse = {
@@ -342,7 +337,6 @@ DebuggerClient.prototype = {
         javascriptEnabled: cachedTab.javascriptEnabled,
         traits: cachedTab.traits,
       };
-      DevToolsUtils.executeSoon(() => onResponse(cachedResponse, cachedTab));
       return promise.resolve([cachedResponse, cachedTab]);
     }
 
@@ -351,17 +345,13 @@ DebuggerClient.prototype = {
       type: "attach"
     };
     return this.request(packet).then(response => {
-      let tabClient;
-      if (!response.error) {
-        tabClient = new TabClient(this, response);
-        this.registerClient(tabClient);
-      }
-      onResponse(response, tabClient);
+      const tabClient = new TabClient(this, response);
+      this.registerClient(tabClient);
       return [response, tabClient];
     });
   },
 
-  attachWorker: function(workerTargetActor, onResponse = noop) {
+  attachWorker: function(workerTargetActor) {
     let workerClient = this._clients.get(workerTargetActor);
     if (workerClient !== undefined) {
       const response = {
@@ -369,19 +359,12 @@ DebuggerClient.prototype = {
         type: "attached",
         url: workerClient.url
       };
-      DevToolsUtils.executeSoon(() => onResponse(response, workerClient));
       return promise.resolve([response, workerClient]);
     }
 
     return this.request({ to: workerTargetActor, type: "attach" }).then(response => {
-      if (response.error) {
-        onResponse(response, null);
-        return [response, null];
-      }
-
       workerClient = new WorkerClient(this, response);
       this.registerClient(workerClient);
-      onResponse(response, workerClient);
       return [response, workerClient];
     });
   },
@@ -392,22 +375,15 @@ DebuggerClient.prototype = {
 
 
 
-
-
-
-  attachAddon: function(addonTargetActor, onResponse = noop) {
+  attachAddon: function(addonTargetActor) {
     const packet = {
       to: addonTargetActor,
       type: "attach"
     };
     return this.request(packet).then(response => {
-      let addonClient;
-      if (!response.error) {
-        addonClient = new AddonClient(this, addonTargetActor);
-        this.registerClient(addonClient);
-        this.activeAddon = addonClient;
-      }
-      onResponse(response, addonClient);
+      const addonClient = new AddonClient(this, addonTargetActor);
+      this.registerClient(addonClient);
+      this.activeAddon = addonClient;
       return [response, addonClient];
     });
   },
@@ -420,11 +396,7 @@ DebuggerClient.prototype = {
 
 
 
-
-
-
-  attachConsole:
-  function(consoleActor, listeners, onResponse = noop) {
+  attachConsole: function(consoleActor, listeners) {
     const packet = {
       to: consoleActor,
       type: "startListeners",
@@ -433,15 +405,12 @@ DebuggerClient.prototype = {
 
     return this.request(packet).then(response => {
       let consoleClient;
-      if (!response.error) {
-        if (this._clients.has(consoleActor)) {
-          consoleClient = this._clients.get(consoleActor);
-        } else {
-          consoleClient = new WebConsoleClient(this, response);
-          this.registerClient(consoleClient);
-        }
+      if (this._clients.has(consoleActor)) {
+        consoleClient = this._clients.get(consoleActor);
+      } else {
+        consoleClient = new WebConsoleClient(this, response);
+        this.registerClient(consoleClient);
       }
-      onResponse(response, consoleClient);
       return [response, consoleClient];
     });
   },
@@ -455,13 +424,9 @@ DebuggerClient.prototype = {
 
 
 
-
-
-
-  attachThread: function(threadActor, onResponse = noop, options = {}) {
+  attachThread: function(threadActor, options = {}) {
     if (this._clients.has(threadActor)) {
       const client = this._clients.get(threadActor);
-      DevToolsUtils.executeSoon(() => onResponse({}, client));
       return promise.resolve([{}, client]);
     }
 
@@ -471,12 +436,8 @@ DebuggerClient.prototype = {
       options,
     };
     return this.request(packet).then(response => {
-      let threadClient;
-      if (!response.error) {
-        threadClient = new ThreadClient(this, threadActor);
-        this.registerClient(threadClient);
-      }
-      onResponse(response, threadClient);
+      const threadClient = new ThreadClient(this, threadActor);
+      this.registerClient(threadClient);
       return [response, threadClient];
     });
   },
@@ -501,9 +462,6 @@ DebuggerClient.prototype = {
   },
 
   
-
-
-
 
 
 

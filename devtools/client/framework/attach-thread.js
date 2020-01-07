@@ -58,7 +58,7 @@ function attachThread(toolbox) {
 
   const threadOptions = { useSourceMaps, autoBlackBox, ignoreFrameEnvironment };
 
-  const handleResponse = (res, threadClient) => {
+  const handleResponse = ([res, threadClient]) => {
     if (res.error) {
       deferred.reject(new Error("Couldn't attach to thread: " + res.error));
       return;
@@ -98,15 +98,15 @@ function attachThread(toolbox) {
 
   if (target.isBrowsingContext) {
     
-    target.activeTab.attachThread(threadOptions, handleResponse);
+    target.activeTab.attachThread(threadOptions).then(handleResponse);
   } else if (target.isAddon) {
     
-    target.client.attachAddon(actor, res => {
-      target.client.attachThread(res.threadActor, handleResponse);
+    target.client.attachAddon(actor).then(([res]) => {
+      target.client.attachThread(res.threadActor).then(handleResponse);
     });
   } else {
     
-    target.client.attachThread(chromeDebugger, handleResponse);
+    target.client.attachThread(chromeDebugger).then(handleResponse);
   }
 
   return deferred.promise;

@@ -6,12 +6,9 @@
 
 const promise = require("devtools/shared/deprecated-sync-thenables");
 
-const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 const eventSource = require("devtools/shared/client/event-source");
 const {arg, DebuggerClient} = require("devtools/shared/client/debugger-client");
 loader.lazyRequireGetter(this, "ThreadClient", "devtools/shared/client/thread-client");
-
-const noop = () => {};
 
 
 
@@ -50,12 +47,8 @@ TabClient.prototype = {
 
 
 
-
-
-
-  attachThread: function(options = {}, onResponse = noop) {
+  attachThread: function(options = {}) {
     if (this.thread) {
-      DevToolsUtils.executeSoon(() => onResponse({}, this.thread));
       return promise.resolve([{}, this.thread]);
     }
 
@@ -65,19 +58,13 @@ TabClient.prototype = {
       options,
     };
     return this.request(packet).then(response => {
-      if (!response.error) {
-        this.thread = new ThreadClient(this, this._threadActor);
-        this.client.registerClient(this.thread);
-      }
-      onResponse(response, this.thread);
+      this.thread = new ThreadClient(this, this._threadActor);
+      this.client.registerClient(this.thread);
       return [response, this.thread];
     });
   },
 
   
-
-
-
 
 
   detach: DebuggerClient.requester({
@@ -141,8 +128,6 @@ TabClient.prototype = {
 
 
 
-
-
   reconfigure: DebuggerClient.requester({
     type: "reconfigure",
     options: arg(0)
@@ -152,8 +137,8 @@ TabClient.prototype = {
     type: "listWorkers"
   }),
 
-  attachWorker: function(workerTargetActor, onResponse) {
-    return this.client.attachWorker(workerTargetActor, onResponse);
+  attachWorker: function(workerTargetActor) {
+    return this.client.attachWorker(workerTargetActor);
   },
 };
 

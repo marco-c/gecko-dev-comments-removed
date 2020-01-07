@@ -22,8 +22,8 @@ function run_test() {
     
     client.getProcess().then(response => {
       const actor = response.form.actor;
-      client.attachTab(actor, (response, tabClient) => {
-        tabClient.attachThread(null, (response, threadClient) => {
+      client.attachTab(actor).then(([response, tabClient]) => {
+        tabClient.attachThread(null).then(([response, threadClient]) => {
           threadClient.addOneTimeListener("paused", (event, packet) => {
             equal(packet.why.type, "breakpoint",
                 "yay - hit the breakpoint at the first line in our script");
