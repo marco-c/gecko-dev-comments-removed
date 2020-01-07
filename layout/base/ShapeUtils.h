@@ -60,6 +60,15 @@ struct ShapeUtils final
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
   static nsRect ComputeInsetRect(
     const UniquePtr<StyleBasicShape>& aBasicShape,
     const nsRect& aRefBox);
