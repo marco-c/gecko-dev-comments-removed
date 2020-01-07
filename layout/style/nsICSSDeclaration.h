@@ -18,10 +18,7 @@
 
 
 
-
-
 #include "mozilla/Attributes.h"
-#include "nsIDOMCSSStyleDeclaration.h"
 #include "nsCSSPropertyID.h"
 #include "mozilla/dom/CSSValue.h"
 #include "nsWrapperCache.h"
@@ -45,8 +42,8 @@ class DocGroup;
 { 0xdbeabbfa, 0x6cb3, 0x4f5c, \
  { 0xae, 0xc2, 0xdd, 0x55, 0x8d, 0x9d, 0x68, 0x1f } }
 
-class nsICSSDeclaration : public nsIDOMCSSStyleDeclaration,
-                          public nsWrapperCache
+class nsICSSDeclaration : public nsISupports
+                        , public nsWrapperCache
 {
 public:
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_ICSSDECLARATION_IID)
@@ -70,33 +67,30 @@ public:
   virtual nsINode *GetParentObject() = 0;
   virtual mozilla::dom::DocGroup* GetDocGroup() const = 0;
 
-  
-  
-  NS_IMETHOD GetCssText(nsAString& aCssText) override = 0;
+  NS_IMETHOD GetCssText(nsAString& aCssText) = 0;
   NS_IMETHOD SetCssText(const nsAString& aCssText,
-                        nsIPrincipal* aSubjectPrincipal = nullptr) override = 0;
+                        nsIPrincipal* aSubjectPrincipal = nullptr) = 0;
   NS_IMETHOD GetPropertyValue(const nsAString& aPropName,
-                              nsAString& aValue) override = 0;
+                              nsAString& aValue) = 0;
   virtual already_AddRefed<mozilla::dom::CSSValue>
     GetPropertyCSSValue(const nsAString& aPropertyName,
                         mozilla::ErrorResult& aRv) = 0;
   NS_IMETHOD RemoveProperty(const nsAString& aPropertyName,
-                            nsAString& aReturn) override = 0;
+                            nsAString& aReturn) = 0;
   NS_IMETHOD GetPropertyPriority(const nsAString& aPropertyName,
-                                 nsAString& aReturn) override = 0;
+                                 nsAString& aReturn) = 0;
   NS_IMETHOD SetProperty(const nsAString& aPropertyName,
                          const nsAString& aValue,
                          const nsAString& aPriority,
-                         nsIPrincipal* aSubjectPrincipal = nullptr) override = 0;
-  NS_IMETHOD GetLength(uint32_t* aLength) override = 0;
-  NS_IMETHOD Item(uint32_t aIndex, nsAString& aReturn) override
+                         nsIPrincipal* aSubjectPrincipal = nullptr) = 0;
+  NS_IMETHOD GetLength(uint32_t* aLength) = 0;
+  void Item(uint32_t aIndex, nsAString& aReturn)
   {
     bool found;
     IndexedGetter(aIndex, found, aReturn);
     if (!found) {
       aReturn.Truncate();
     }
-    return NS_OK;
   }
 
   
@@ -161,7 +155,6 @@ NS_DEFINE_STATIC_IID_ACCESSOR(nsICSSDeclaration, NS_ICSSDECLARATION_IID)
                          const nsAString& priority,                           \
                          nsIPrincipal* aSubjectPrincipal = nullptr) override; \
   NS_IMETHOD GetLength(uint32_t *aLength) override; \
-  NS_IMETHOD Item(uint32_t index, nsAString & _retval) override; \
   mozilla::css::Rule* GetParentRule() override;
 
 #endif 
