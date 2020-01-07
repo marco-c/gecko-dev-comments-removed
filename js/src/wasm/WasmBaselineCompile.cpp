@@ -139,6 +139,7 @@
 #endif
 
 #include "wasm/WasmGenerator.h"
+#include "wasm/WasmInstance.h"
 #include "wasm/WasmOpIter.h"
 #include "wasm/WasmSignalHandlers.h"
 #include "wasm/WasmValidate.h"
@@ -4395,7 +4396,6 @@ class BaseCompiler final : public BaseCompilerInterface
     Address addressOfGlobalVar(const GlobalDesc& global, RegI32 tmp)
     {
         uint32_t globalToTlsOffset = offsetof(TlsData, globalArea) + global.offset();
-
         masm.loadWasmTlsRegFromFrame(tmp);
         if (global.isIndirect()) {
             masm.loadPtr(Address(tmp, globalToTlsOffset), tmp);
@@ -5720,6 +5720,81 @@ class BaseCompiler final : public BaseCompilerInterface
     void branchTo(Assembler::Condition c, RegI64 lhs, Imm64 rhs, Label* l) {
         masm.branch64(c, lhs, rhs, l);
     }
+
+#ifdef ENABLE_WASM_GC
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    void testNeedPreBarrier(Label* skipBarrier) {
+        MOZ_ASSERT(!skipBarrier->used());
+        MOZ_ASSERT(!skipBarrier->bound());
+
+        
+        ScratchPtr scratch(*this);
+        masm.loadWasmTlsRegFromFrame(scratch);
+        masm.loadPtr(Address(scratch, offsetof(TlsData, addressOfNeedsIncrementalBarrier)), scratch);
+        masm.branchTest32(Assembler::Zero, Address(scratch, 0), Imm32(0x1), skipBarrier);
+    }
+
+    void emitPreBarrier(RegPtr valueAddr, Label* skipBarrier) {
+        MOZ_ASSERT(valueAddr == PreBarrierReg);
+
+        
+        ScratchPtr scratch(*this);
+        masm.loadPtr(Address(valueAddr, 0), scratch);
+        masm.branchTestPtr(Assembler::Zero, scratch, scratch, skipBarrier);
+
+        
+        
+        masm.loadWasmTlsRegFromFrame(scratch);
+        masm.loadPtr(Address(scratch, offsetof(TlsData, instance)), scratch);
+        masm.loadPtr(Address(scratch, Instance::offsetOfPreBarrierCode()), scratch);
+        masm.call(scratch);
+
+        masm.bind(skipBarrier);
+    }
+
+    
+    
+    
+    
+
+    void emitPostBarrier(const Maybe<RegPtr>& object, RegPtr setValue, PostBarrierArg arg) {
+        Label skipBarrier;
+
+        
+        masm.branchTestPtr(Assembler::Zero, setValue, setValue, &skipBarrier);
+
+        RegPtr scratch = needRef();
+        if (object) {
+            
+            masm.branchPtrInNurseryChunk(Assembler::Equal, *object, scratch, &skipBarrier);
+        }
+
+        
+        masm.branchPtrInNurseryChunk(Assembler::NotEqual, setValue, scratch, &skipBarrier);
+
+        freeRef(scratch);
+
+        
+        uint32_t bytecodeOffset = iter_.lastOpcodeOffset();
+        pushI32(arg.rawPayload());
+        emitInstanceCall(bytecodeOffset, SigPI_, ExprType::Void, SymbolicAddress::PostBarrier);
+
+        masm.bind(&skipBarrier);
+    }
+#endif
 
     
     
@@ -8267,6 +8342,9 @@ BaseCompiler::emitGetGlobal()
           case ValType::F64:
             pushF64(value.f64());
             break;
+          case ValType::AnyRef:
+            pushRef(value.ptr());
+            break;
           default:
             MOZ_CRASH("Global constant type");
         }
@@ -8300,6 +8378,13 @@ BaseCompiler::emitGetGlobal()
         ScratchI32 tmp(*this);
         masm.loadDouble(addressOfGlobalVar(global, tmp), rv);
         pushF64(rv);
+        break;
+      }
+      case ValType::AnyRef: {
+        RegPtr rv = needRef();
+        ScratchI32 tmp(*this);
+        masm.loadPtr(addressOfGlobalVar(global, tmp), rv);
+        pushRef(rv);
         break;
       }
       default:
@@ -8351,6 +8436,33 @@ BaseCompiler::emitSetGlobal()
         freeF64(rv);
         break;
       }
+#ifdef ENABLE_WASM_GC
+      case ValType::AnyRef: {
+        Label skipBarrier;
+        testNeedPreBarrier(&skipBarrier);
+
+        RegPtr valueAddr(PreBarrierReg);
+        needRef(valueAddr);
+        {
+            ScratchI32 tmp(*this);
+            masm.computeEffectiveAddress(addressOfGlobalVar(global, tmp), valueAddr);
+        }
+        emitPreBarrier(valueAddr, &skipBarrier);
+        freeRef(valueAddr);
+
+        RegPtr rv = popRef();
+        {
+            
+            ScratchI32 tmp(*this);
+            masm.storePtr(rv, addressOfGlobalVar(global, tmp));
+        }
+
+        emitPostBarrier(Nothing(), rv, PostBarrierArg::Global(id));
+
+        freeRef(rv);
+        break;
+      }
+#endif
       default:
         MOZ_CRASH("Global variable type");
         break;
