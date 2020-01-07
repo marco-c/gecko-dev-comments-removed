@@ -81,7 +81,7 @@ GetMonitorScaleFactor(nsIFrame* aFrame)
     }
   }
   
-  return (scale < 1) ? 1 : int(round(scale));
+  return ScreenHelperGTK::GetGTKMonitorScaleFactor();
 }
 
 nsNativeThemeGTK::nsNativeThemeGTK()
