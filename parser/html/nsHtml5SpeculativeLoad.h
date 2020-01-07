@@ -1,12 +1,14 @@
 
 
 
- 
+
 #ifndef nsHtml5SpeculativeLoad_h
 #define nsHtml5SpeculativeLoad_h
 
 #include "nsString.h"
 #include "nsContentUtils.h"
+#include "nsHtml5DocumentMode.h"
+#include "nsHtml5String.h"
 
 class nsHtml5TreeOpExecutor;
 

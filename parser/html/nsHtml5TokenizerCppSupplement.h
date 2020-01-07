@@ -2,6 +2,7 @@
 
 
 
+#include "mozilla/CheckedInt.h"
 #include "mozilla/Likely.h"
 
 
@@ -19,7 +20,7 @@ nsHtml5Tokenizer::EnsureBufferSpace(int32_t aLength)
     
     return false;
   }
-  CheckedInt<int32_t> worstCase(strBufLen);
+  mozilla::CheckedInt<int32_t> worstCase(strBufLen);
   worstCase += aLength;
   worstCase += charRefBufLen;
   

@@ -2,8 +2,11 @@
 
 
 
+
 #ifndef nsHtml5StreamParserPtr_h
 #define nsHtml5StreamParserPtr_h
+
+#include "nsHtml5StreamParser.h"
 #include "nsThreadUtils.h"
 #include "mozilla/dom/DocGroup.h"
 
@@ -24,6 +27,7 @@ public:
     return NS_OK;
   }
 };
+
 
 
 
@@ -265,4 +269,5 @@ operator!=(decltype(nullptr), const nsHtml5StreamParserPtr& rhs)
 {
   return nullptr != rhs.get();
 }
+
 #endif 

@@ -1,12 +1,12 @@
 
 
 
- 
+
 #include "nsISupportsImpl.h"
 
 #include "mozilla/Encoding.h"
 
-const Encoding*
+const mozilla::Encoding*
 nsHtml5MetaScanner::sniff(nsHtml5ByteReadable* bytes)
 {
   readable = bytes;
@@ -25,7 +25,7 @@ nsHtml5MetaScanner::tryCharset(nsHtml5String charset)
   nsString charset16; 
   charset.ToString(charset16);
   CopyUTF16toUTF8(charset16, label);
-  const Encoding* encoding = Encoding::ForLabel(label);
+  const mozilla::Encoding* encoding = Encoding::ForLabel(label);
   if (!encoding) {
     return false;
   }
