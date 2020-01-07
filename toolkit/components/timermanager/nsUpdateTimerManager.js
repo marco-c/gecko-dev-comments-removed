@@ -15,28 +15,8 @@ const PREF_APP_UPDATE_LOG                 = "app.update.log";
 const CATEGORY_UPDATE_TIMER               = "update-timer";
 
 XPCOMUtils.defineLazyGetter(this, "gLogEnabled", function tm_gLogEnabled() {
-  return getPref("getBoolPref", PREF_APP_UPDATE_LOG, false);
+  return Services.prefs.getBoolPref(PREF_APP_UPDATE_LOG, false);
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-function getPref(func, preference, defaultValue) {
-  try {
-    return Services.prefs[func](preference);
-  } catch (e) {
-  }
-  return defaultValue;
-}
 
 
 
@@ -92,13 +72,15 @@ TimerManager.prototype = {
         minInterval = 500;
         minFirstInterval = 500;
       case "profile-after-change":
-        this._timerMinimumDelay = Math.max(1000 * getPref("getIntPref", PREF_APP_UPDATE_TIMERMINIMUMDELAY, 120),
-                                           minInterval);
+        this._timerMinimumDelay =
+          Math.max(1000 * Services.prefs.getIntPref(PREF_APP_UPDATE_TIMERMINIMUMDELAY, 120),
+                   minInterval);
         
         
         this._timerMinimumDelay = Math.min(this._timerMinimumDelay, 300000);
         
-        let firstInterval = Math.max(getPref("getIntPref", PREF_APP_UPDATE_TIMERFIRSTINTERVAL,
+        let firstInterval =
+          Math.max(Services.prefs.getIntPref(PREF_APP_UPDATE_TIMERFIRSTINTERVAL,
                                              30000), minFirstInterval);
         
         
@@ -188,7 +170,7 @@ TimerManager.prototype = {
         continue;
       }
 
-      let interval = getPref("getIntPref", prefInterval, defaultInterval);
+      let interval = Services.prefs.getIntPref(prefInterval, defaultInterval);
       
       
       maxInterval = parseInt(maxInterval);
@@ -199,7 +181,7 @@ TimerManager.prototype = {
                                                                       timerID);
       
       
-      lastUpdateTime = getPref("getIntPref", prefLastUpdate, 0);
+      lastUpdateTime = Services.prefs.getIntPref(prefLastUpdate, 0);
 
       
       
@@ -322,7 +304,7 @@ TimerManager.prototype = {
     let prefLastUpdate = PREF_APP_UPDATE_LASTUPDATETIME_FMT.replace(/%ID%/, id);
     
     
-    let lastUpdateTime = getPref("getIntPref", prefLastUpdate, 0);
+    let lastUpdateTime = Services.prefs.getIntPref(prefLastUpdate, 0);
     let now = Math.round(Date.now() / 1000);
     if (lastUpdateTime > now) {
       lastUpdateTime = 0;

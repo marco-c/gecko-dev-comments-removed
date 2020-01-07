@@ -85,27 +85,6 @@ function openUpdateURL(event) {
 
 
 
-
-
-
-
-
-
-
-
-
-function getPref(func, preference, defaultValue) {
-  try {
-    return Services.prefs[func](preference);
-  } catch (e) {
-    LOG("General", "getPref - failed to get preference: " + preference);
-  }
-  return defaultValue;
-}
-
-
-
-
 var gUpdates = {
   
 
@@ -311,7 +290,7 @@ var gUpdates = {
   onLoad() {
     this.wiz = document.documentElement;
 
-    gLogEnabled = getPref("getBoolPref", PREF_APP_UPDATE_LOG, false);
+    gLogEnabled = Services.prefs.getBoolPref(PREF_APP_UPDATE_LOG, false);
 
     this.strings = document.getElementById("updateStrings");
     var brandStrings = document.getElementById("brandStrings");
@@ -595,7 +574,7 @@ var gNoUpdatesPage = {
     LOG("gNoUpdatesPage", "onPageShow - could not select an appropriate " +
         "update. Either there were no updates or |selectUpdate| failed");
 
-    if (getPref("getBoolPref", PREF_APP_UPDATE_ENABLED, true))
+    if (Services.prefs.getBoolPref(PREF_APP_UPDATE_ENABLED, true))
       document.getElementById("noUpdatesAutoEnabled").hidden = false;
     else
       document.getElementById("noUpdatesAutoDisabled").hidden = false;
@@ -1295,7 +1274,7 @@ var gFinishedPage = {
       moreElevatedLinkLabel.setAttribute("hidden", "false");
     }
 
-    if (getPref("getBoolPref", PREF_APP_UPDATE_TEST_LOOP, false)) {
+    if (Services.prefs.getBoolPref(PREF_APP_UPDATE_TEST_LOOP, false)) {
       setTimeout(function() { gUpdates.wiz.getButton("finish").click(); },
                  UPDATE_TEST_LOOP_INTERVAL);
     }
