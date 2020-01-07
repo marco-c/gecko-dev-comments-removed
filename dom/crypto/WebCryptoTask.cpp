@@ -19,7 +19,7 @@
 #include "mozilla/dom/WebCryptoCommon.h"
 #include "mozilla/dom/WebCryptoTask.h"
 #include "mozilla/dom/WebCryptoThreadPool.h"
-#include "mozilla/dom/WorkerHolder.h"
+#include "mozilla/dom/WorkerRef.h"
 #include "mozilla/dom/WorkerPrivate.h"
 
 
@@ -133,47 +133,6 @@ public:
 
 private:
   JSContext* mCx;
-};
-
-class WebCryptoTask::InternalWorkerHolder final : public WorkerHolder
-{
-  InternalWorkerHolder()
-    : WorkerHolder("WebCryptoTask::InternalWorkerHolder")
-  { }
-
-  ~InternalWorkerHolder()
-  {
-    NS_ASSERT_OWNINGTHREAD(InternalWorkerHolder);
-    
-    
-  }
-
-public:
-  static already_AddRefed<InternalWorkerHolder>
-  Create()
-  {
-    MOZ_ASSERT(!NS_IsMainThread());
-    WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
-    MOZ_ASSERT(workerPrivate);
-    RefPtr<InternalWorkerHolder> ref = new InternalWorkerHolder();
-    if (NS_WARN_IF(!ref->HoldWorker(workerPrivate, Canceling))) {
-      return nullptr;
-    }
-    return ref.forget();
-  }
-
-  virtual bool
-  Notify(WorkerStatus aStatus) override
-  {
-    NS_ASSERT_OWNINGTHREAD(InternalWorkerHolder);
-    
-    
-    
-    
-    return true;
-  }
-
-  NS_INLINE_DECL_REFCOUNTING(WebCryptoTask::InternalWorkerHolder)
 };
 
 template<class OOS>
@@ -385,11 +344,15 @@ WebCryptoTask::DispatchWithPromise(Promise* aResultPromise)
   
   
   if (!NS_IsMainThread()) {
-    mWorkerHolder = InternalWorkerHolder::Create();
-    
-    
-    if (!mWorkerHolder) {
+    WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
+    MOZ_ASSERT(workerPrivate);
+
+    RefPtr<StrongWorkerRef> workerRef =
+      StrongWorkerRef::Create(workerPrivate, "WebCryptoTask");
+    if (NS_WARN_IF(!workerRef)) {
       mEarlyRv = NS_BINDING_ABORTED;
+    } else {
+      mWorkerRef = new ThreadSafeWorkerRef(workerRef);
     }
   }
   MAYBE_EARLY_FAIL(mEarlyRv);
@@ -416,7 +379,7 @@ WebCryptoTask::Run()
 
   
   
-  mWorkerHolder = nullptr;
+  mWorkerRef = nullptr;
 
   return NS_OK;
 }
@@ -440,7 +403,7 @@ WebCryptoTask::FailWithError(nsresult aRv)
   mResultPromise->MaybeReject(aRv);
   
   mResultPromise = nullptr;
-  mWorkerHolder = nullptr;
+  mWorkerRef = nullptr;
   Cleanup();
 }
 
@@ -3675,14 +3638,7 @@ WebCryptoTask::WebCryptoTask()
 {
 }
 
-WebCryptoTask::~WebCryptoTask()
-{
-  if (mWorkerHolder) {
-    NS_ProxyRelease(
-      "WebCryptoTask::mWorkerHolder",
-      mOriginalEventTarget, mWorkerHolder.forget());
-  }
-}
+WebCryptoTask::~WebCryptoTask() = default;
 
 } 
 } 
