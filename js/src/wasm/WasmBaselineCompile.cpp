@@ -3762,7 +3762,7 @@ class BaseCompiler final : public BaseCompilerInterface
 
     void callIndirect(uint32_t sigIndex, const Stk& indexVal, const FunctionCall& call)
     {
-        const SigWithId& sig = env_.types[sigIndex].funcType();
+        const SigWithId& sig = env_.sigs[sigIndex];
         MOZ_ASSERT(sig.id.kind() != SigIdDesc::Kind::None);
 
         MOZ_ASSERT(env_.tables.length() == 1);
@@ -7861,7 +7861,7 @@ BaseCompiler::emitCallIndirect()
 
     sync();
 
-    const SigWithId& sig = env_.types[sigIndex].funcType();
+    const SigWithId& sig = env_.sigs[sigIndex];
 
     
 
@@ -8829,9 +8829,6 @@ BaseCompiler::emitInstanceCall(uint32_t lineOrBytecode, const MIRTypeVector& sig
     endCall(baselineCall, stackSpace);
 
     popValueStackBy(numArgs);
-
-    
-    
 
     pushReturnedIfNonVoid(baselineCall, retType);
 }
