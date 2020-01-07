@@ -92,15 +92,12 @@ add_task(async function() {
         info("Test emphasis path");
         
         hintEl.scrollIntoView(false);
+        const win = hintEl.ownerGlobal;
 
-        const win = hintEl.ownerDocument.defaultView;
         
-        EventUtils.synthesizeMouse(hintEl, -1, -1, {type: "mouseout"}, win);
-        is(win.getComputedStyle(hintEl).strokeOpacity, 0,
-           `stroke-opacity of hintEl for ${ testIdentity } should be 0 ` +
-           `while mouse is out from the element`);
         
-        EventUtils.synthesizeMouseAtCenter(hintEl, {type: "mouseover"}, win);
+        
+        hintEl.classList.add("hover");
         if (testdata.noEmphasisPath) {
           is(win.getComputedStyle(hintEl).strokeOpacity, 0,
              `stroke-opacity of hintEl for ${ testIdentity } should be 0 ` +
@@ -110,6 +107,11 @@ add_task(async function() {
              `stroke-opacity of hintEl for ${ testIdentity } should be 1 ` +
              `while mouse is over the element`);
         }
+        
+        hintEl.classList.remove("hover");
+        is(win.getComputedStyle(hintEl).strokeOpacity, 0,
+           `stroke-opacity of hintEl for ${ testIdentity } should be 0 ` +
+           `while mouse is out from the element`);
       }
     }
   }

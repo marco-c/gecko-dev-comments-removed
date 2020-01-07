@@ -702,7 +702,10 @@ body {
   fill: none;
 }
 
-.keyframes svg path.hint:hover {
+
+
+.keyframes svg path.hint:hover,
+.keyframes svg path.hint.hover {
   stroke-opacity: 1;
 }
 
