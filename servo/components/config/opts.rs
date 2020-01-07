@@ -191,9 +191,6 @@ pub struct Opts {
     pub webrender_stats: bool,
 
     
-    pub webrender_debug: bool,
-
-    
     pub webrender_record: bool,
 
     
@@ -313,9 +310,6 @@ pub struct DebugOptions {
     pub webrender_stats: bool,
 
     
-    pub webrender_debug: bool,
-
-    
     pub webrender_record: bool,
 
     
@@ -366,7 +360,6 @@ impl DebugOptions {
                 "load-webfonts-synchronously" => self.load_webfonts_synchronously = true,
                 "disable-vsync" => self.disable_vsync = true,
                 "wr-stats" => self.webrender_stats = true,
-                "wr-debug" => self.webrender_debug = true,
                 "wr-record" => self.webrender_record = true,
                 "wr-no-batch" => self.webrender_disable_batch = true,
                 "msaa" => self.use_msaa = true,
@@ -549,7 +542,6 @@ pub fn default_opts() -> Opts {
         config_dir: None,
         full_backtraces: false,
         is_printing_version: false,
-        webrender_debug: false,
         webrender_record: false,
         webrender_batch: true,
         precache_shaders: false,
@@ -850,7 +842,6 @@ pub fn from_cmdline_args(args: &[String]) -> ArgumentParsingResult {
         config_dir: opt_match.opt_str("config-dir").map(Into::into),
         full_backtraces: debug_options.full_backtraces,
         is_printing_version: is_printing_version,
-        webrender_debug: debug_options.webrender_debug,
         webrender_record: debug_options.webrender_record,
         webrender_batch: !debug_options.webrender_disable_batch,
         precache_shaders: debug_options.precache_shaders,
