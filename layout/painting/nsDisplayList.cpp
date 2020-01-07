@@ -3774,18 +3774,31 @@ nsDisplayBackgroundImage::AppendBackgroundItemsToTop(nsDisplayListBuilder* aBuil
       
       
       
-      thisItemList.AppendNewToTop(
-        new (aBuilder) nsDisplayBlendMode(aBuilder, aFrame, &thisItemList,
-                                          bg->mImage.mLayers[i].mBlendMode,
-                                          asr, i + 1));
+      if (aSecondaryReferenceFrame) {
+        thisItemList.AppendNewToTop(
+          new (aBuilder) nsDisplayTableBlendMode(aBuilder, aSecondaryReferenceFrame, &thisItemList,
+                                                 bg->mImage.mLayers[i].mBlendMode,
+                                                 asr, i + 1, aFrame));
+      } else {
+        thisItemList.AppendNewToTop(
+          new (aBuilder) nsDisplayBlendMode(aBuilder, aFrame, &thisItemList,
+                                            bg->mImage.mLayers[i].mBlendMode,
+                                            asr, i + 1));
+      }
     }
     bgItemList.AppendToTop(&thisItemList);
   }
 
   if (needBlendContainer) {
     DisplayListClipState::AutoSaveRestore blendContainerClip(aBuilder);
-    bgItemList.AppendNewToTop(
-      nsDisplayBlendContainer::CreateForBackgroundBlendMode(aBuilder, aFrame, &bgItemList, asr));
+    if (aSecondaryReferenceFrame) {
+      bgItemList.AppendNewToTop(
+        nsDisplayTableBlendContainer::CreateForBackgroundBlendMode(aBuilder, aSecondaryReferenceFrame,
+                                                                   &bgItemList, asr, aFrame));
+    } else {
+      bgItemList.AppendNewToTop(
+        nsDisplayBlendContainer::CreateForBackgroundBlendMode(aBuilder, aFrame, &bgItemList, asr));
+    }
   }
 
   aList->AppendToTop(&bgItemList);
@@ -4944,8 +4957,7 @@ nsDisplayEventReceiver::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder&
 nsDisplayCompositorHitTestInfo::nsDisplayCompositorHitTestInfo(nsDisplayListBuilder* aBuilder,
                                                                nsIFrame* aFrame,
                                                                mozilla::gfx::CompositorHitTestInfo aHitTestInfo,
-                                                               uint32_t aIndex,
-                                                               const mozilla::Maybe<nsRect>& aArea)
+                                                               uint32_t aIndex)
   : nsDisplayEventReceiver(aBuilder, aFrame)
   , mHitTestInfo(aHitTestInfo)
   , mIndex(aIndex)
@@ -4963,29 +4975,12 @@ nsDisplayCompositorHitTestInfo::nsDisplayCompositorHitTestInfo(nsDisplayListBuil
     MOZ_ASSERT(mHitTestInfo & CompositorHitTestInfo::eScrollbar);
     mScrollTarget = Some(aBuilder->GetCurrentScrollbarTarget());
   }
+}
 
-  if (aArea.isSome()) {
-    mArea = *aArea;
-  } else {
-    nsIScrollableFrame* scrollFrame = nsLayoutUtils::GetScrollableFrameFor(mFrame);
-    if (scrollFrame) {
-      
-      
-      
-      
-      
-      mArea = mFrame->GetScrollableOverflowRect();
-    } else {
-      mArea = nsRect(nsPoint(0, 0), mFrame->GetSize());
-    }
-
-    
-    
-    
-    
-    
-    mArea += aBuilder->ToReferenceFrame(mFrame);
-  }
+void
+nsDisplayCompositorHitTestInfo::SetArea(const nsRect& aArea)
+{
+  mArea = Some(aArea);
 }
 
 bool
@@ -4995,13 +4990,31 @@ nsDisplayCompositorHitTestInfo::CreateWebRenderCommands(mozilla::wr::DisplayList
                                                         mozilla::layers::WebRenderLayerManager* aManager,
                                                         nsDisplayListBuilder* aDisplayListBuilder)
 {
-  if (mArea.IsEmpty()) {
-    return true;
+  if (mArea.isNothing()) {
+    nsRect borderBox;
+    nsIScrollableFrame* scrollFrame = nsLayoutUtils::GetScrollableFrameFor(mFrame);
+    if (scrollFrame) {
+      
+      
+      
+      
+      
+      borderBox = mFrame->GetScrollableOverflowRect();
+    } else {
+      borderBox = nsRect(nsPoint(0, 0), mFrame->GetSize());
+    }
+
+    if (borderBox.IsEmpty()) {
+      return true;
+    }
+
+    mArea = Some(borderBox + aDisplayListBuilder->ToReferenceFrame(mFrame));
   }
 
+  MOZ_ASSERT(mArea.isSome());
   wr::LayoutRect rect = aSc.ToRelativeLayoutRect(
       LayoutDeviceRect::FromAppUnits(
-          mArea,
+          *mArea,
           mFrame->PresContext()->AppUnitsPerDevPixel()));
 
   
@@ -6939,6 +6952,15 @@ nsDisplayBlendContainer::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder
 
   return nsDisplayWrapList::CreateWebRenderCommands(aBuilder, aResources, sc,
                                                     aManager, aDisplayListBuilder);
+}
+
+ nsDisplayTableBlendContainer*
+nsDisplayTableBlendContainer::CreateForBackgroundBlendMode(nsDisplayListBuilder* aBuilder,
+                                                           nsIFrame* aFrame, nsDisplayList* aList,
+                                                           const ActiveScrolledRoot* aActiveScrolledRoot,
+                                                           nsIFrame* aAncestorFrame)
+{
+  return new (aBuilder) nsDisplayTableBlendContainer(aBuilder, aFrame, aList, aActiveScrolledRoot, true, aAncestorFrame);
 }
 
 nsDisplayOwnLayer::nsDisplayOwnLayer(nsDisplayListBuilder* aBuilder,
