@@ -67,8 +67,8 @@ public class StoreBatchTracker {
         currentStoreBatchFailed.incrementAndGet();
     }
 
-     void onRecordStoreSucceeded() {
-        currentStoreBatchAccepted.incrementAndGet();
+     void onRecordStoreSucceeded(int count) {
+        currentStoreBatchAccepted.addAndGet(count);
     }
 
      void onRecordStoreAttempted() {

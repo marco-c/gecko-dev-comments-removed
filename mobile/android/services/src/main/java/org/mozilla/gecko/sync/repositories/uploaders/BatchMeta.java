@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 
 
@@ -28,34 +29,23 @@ public class BatchMeta {
     @Nullable private volatile Long lastModified;
     private volatile String token;
 
-    
-    
-    
-    private final ConcurrentLinkedQueue<String> successRecordGuids = new ConcurrentLinkedQueue<>();
+    private final AtomicInteger recordSuccessCounter = new AtomicInteger(0);
 
     BatchMeta(@Nullable Long initialLastModified, Boolean initialInBatchingMode) {
         lastModified = initialLastModified;
         inBatchingMode = initialInBatchingMode;
     }
 
-    String[] getSuccessRecordGuids() {
-        
-        final String[] guids = new String[this.successRecordGuids.size()];
-        this.successRecordGuids.toArray(guids);
-        return guids;
+    int getSuccessRecordCount() {
+        return recordSuccessCounter.get();
     }
 
-    void recordSucceeded(final String recordGuid) {
-        
-        if (recordGuid == null) {
-            throw new IllegalStateException("Record guid is unexpectedly null");
-        }
-
-        successRecordGuids.add(recordGuid);
+    void recordsSucceeded(int count) {
+        recordSuccessCounter.addAndGet(count);
     }
 
-    void clearSuccessRecordGuids() {
-        successRecordGuids.clear();
+    void clearSuccessRecordCounter() {
+        recordSuccessCounter.set(0);
     }
 
      void setInBatchingMode(boolean inBatchingMode) {

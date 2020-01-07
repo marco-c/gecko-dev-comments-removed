@@ -80,20 +80,18 @@ class PayloadDispatcher {
             throw new IllegalStateException("Can't process payload success until we know if we're in a batching mode");
         }
 
-        final String[] guids = batchWhiteboard.getSuccessRecordGuids();
+        final int recordsSucceeded = batchWhiteboard.getSuccessRecordCount();
         
         
         if (!batchWhiteboard.getInBatchingMode() || isCommit) {
-            for (String guid : guids) {
-                uploader.sessionStoreDelegate.onRecordStoreSucceeded(guid);
-            }
+            uploader.sessionStoreDelegate.onRecordStoreSucceeded(recordsSucceeded);
 
             
             
             
             bumpTimestampTo(uploadTimestamp, response.normalizedTimestampForHeader(SyncResponse.X_LAST_MODIFIED));
             uploader.setLastStoreTimestamp(uploadTimestamp);
-            batchWhiteboard.clearSuccessRecordGuids();
+            batchWhiteboard.clearSuccessRecordCounter();
         }
 
         if (isCommit || !batchWhiteboard.getInBatchingMode()) {

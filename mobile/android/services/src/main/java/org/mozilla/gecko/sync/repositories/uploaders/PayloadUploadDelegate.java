@@ -141,14 +141,7 @@ class PayloadUploadDelegate implements SyncStorageRequestDelegate {
 
         if (success != null && !success.isEmpty()) {
             Logger.trace(LOG_TAG, "Successful records: " + success.toString());
-            for (Object o : success) {
-                try {
-                    dispatcher.batchWhiteboard.recordSucceeded((String) o);
-                } catch (ClassCastException e) {
-                    Logger.error(LOG_TAG, "Got exception parsing POST success guid.", e);
-                    
-                }
-            }
+            dispatcher.batchWhiteboard.recordsSucceeded(success.size());
         }
         
         success = null;
