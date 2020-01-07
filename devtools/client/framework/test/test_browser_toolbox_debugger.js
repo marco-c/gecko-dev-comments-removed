@@ -41,6 +41,11 @@ Task.spawn(function* () {
 
   assertPausedLocation(dbg, "browser-toolbox-test.js", 3);
 
+  
+  
+  let source = findSource(dbg, "browser-toolbox-test.js");
+  yield removeBreakpoint(dbg, source.id, 2);
+
   yield resume(dbg);
 
   info("Close the browser toolbox");
