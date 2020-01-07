@@ -684,11 +684,15 @@ SampleAnimations(Layer* aLayer,
             
             switch (animations[0].property()) {
               case eCSSProperty_opacity:
+                MOZ_ASSERT(
+                  layer->AsHostLayer()->GetShadowOpacitySetByAnimation());
                 MOZ_ASSERT(FuzzyEqualsMultiplicative(
                   layer->AsHostLayer()->GetShadowOpacity(),
                   *(aStorage->GetAnimationOpacity(layer->GetCompositorAnimationsId()))));
                 break;
               case eCSSProperty_transform: {
+                MOZ_ASSERT(
+                  layer->AsHostLayer()->GetShadowTransformSetByAnimation());
                 AnimatedValue* transform =
                   aStorage->GetAnimatedValue(layer->GetCompositorAnimationsId());
                 MOZ_ASSERT(
