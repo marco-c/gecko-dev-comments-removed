@@ -51,7 +51,6 @@ class nsISupports;
 class nsITransaction;
 class nsIWidget;
 class nsRange;
-class nsTransactionManager;
 
 namespace mozilla {
 class AddStyleSheetTransaction;
@@ -80,6 +79,7 @@ class TextComposition;
 class TextEditor;
 class TextInputListener;
 class TextServicesDocument;
+class TransactionManager;
 enum class EditAction : int32_t;
 
 namespace dom {
@@ -1513,7 +1513,7 @@ protected:
   
   RefPtr<TextServicesDocument> mTextServicesDocument;
 
-  RefPtr<nsTransactionManager> mTxnMgr;
+  RefPtr<TransactionManager> mTransactionManager;
   
   nsCOMPtr<Element> mRootElement;
   
