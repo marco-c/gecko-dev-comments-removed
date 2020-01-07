@@ -294,7 +294,10 @@ AnimationSurfaceProvider::CheckForNewFrameAtYield()
     AnnounceSurfaceAvailable();
   }
 
-  return continueDecoding;
+  
+  
+  
+  return continueDecoding && !DecodePool::Singleton()->IsShuttingDown();
 }
 
 bool
@@ -344,7 +347,10 @@ AnimationSurfaceProvider::CheckForNewFrameAtTerminalState()
     AnnounceSurfaceAvailable();
   }
 
-  return continueDecoding;
+  
+  
+  
+  return continueDecoding && !DecodePool::Singleton()->IsShuttingDown();
 }
 
 void

@@ -56,6 +56,10 @@ public:
   static uint32_t NumberOfCores();
 
   
+  
+  bool IsShuttingDown() const;
+
+  
   void AsyncRun(IDecodingTask* aTask);
 
   
