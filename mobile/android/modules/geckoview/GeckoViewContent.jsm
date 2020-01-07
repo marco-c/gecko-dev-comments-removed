@@ -23,9 +23,9 @@ class GeckoViewContent extends GeckoViewModule {
   }
 
   onEnable() {
-    this.window.addEventListener("MozDOMFullScreen:Entered", this,
+    this.window.addEventListener("MozDOMFullscreen:Entered", this,
                                   true,  false);
-    this.window.addEventListener("MozDOMFullScreen:Exited", this,
+    this.window.addEventListener("MozDOMFullscreen:Exited", this,
                                   true,  false);
 
     this.messageManager.addMessageListener("GeckoView:DOMFullscreenExit", this);
@@ -33,9 +33,9 @@ class GeckoViewContent extends GeckoViewModule {
   }
 
   onDisable() {
-    this.window.removeEventListener("MozDOMFullScreen:Entered", this,
+    this.window.removeEventListener("MozDOMFullscreen:Entered", this,
                                      true);
-    this.window.removeEventListener("MozDOMFullScreen:Exited", this,
+    this.window.removeEventListener("MozDOMFullscreen:Exited", this,
                                      true);
 
     this.messageManager.removeMessageListener("GeckoView:DOMFullscreenExit", this);
