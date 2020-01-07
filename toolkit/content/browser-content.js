@@ -306,9 +306,6 @@ var ClickEventHandler = {
       this._scrollErrorX = (desiredScrollX - actualScrollX);
     }
 
-    const kAutoscroll = 15; 
-    Services.telemetry.getHistogramById("SCROLL_INPUT_METHODS").add(kAutoscroll);
-
     this._scrollable.scrollBy({
       left: actualScrollX,
       top: actualScrollY,
