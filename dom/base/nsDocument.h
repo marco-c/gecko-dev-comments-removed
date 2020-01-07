@@ -376,17 +376,7 @@ public:
   
   already_AddRefed<nsSimpleContentList> BlockedTrackingNodes() const;
 
-  void RequestPointerLock(Element* aElement,
-                          mozilla::dom::CallerType aCallerType) override;
-  bool SetPointerLock(Element* aElement, int aCursorStyle);
   static void UnlockPointer(nsIDocument* aDoc = nullptr);
-
-  void SetCurrentOrientation(mozilla::dom::OrientationType aType,
-                             uint16_t aAngle) override;
-  uint16_t CurrentOrientationAngle() const override;
-  mozilla::dom::OrientationType CurrentOrientationType() const override;
-  void SetOrientationPendingPromise(mozilla::dom::Promise* aPromise) override;
-  mozilla::dom::Promise* GetOrientationPendingPromise() const override;
 
   virtual void DocAddSizeOfExcludingThis(nsWindowSizes& aWindowSizes) const override;
   
@@ -457,13 +447,6 @@ public:
   bool mParserAborted:1;
 
   friend class nsCallRequestFullScreen;
-
-  
-  
-  RefPtr<mozilla::dom::Promise> mOrientationPendingPromise;
-
-  uint16_t mCurrentOrientationAngle;
-  mozilla::dom::OrientationType mCurrentOrientationType;
 
   
   
