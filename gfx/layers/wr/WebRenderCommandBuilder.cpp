@@ -1371,11 +1371,52 @@ WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(nsDisplayList* a
 
         int32_t descendants = mLayerScrollData.size() - layerCountBeforeRecursing;
 
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         Maybe<nsDisplayTransform*> deferred = aSc.GetDeferredTransformItem();
-        mLayerScrollData.emplace_back();
-        mLayerScrollData.back().Initialize(mManager->GetScrollData(), item,
-            descendants, stopAtAsr,
-            deferred ? Some((*deferred)->GetTransform().GetMatrix()) : Nothing());
+        if (deferred && (*deferred)->GetActiveScrolledRoot() != item->GetActiveScrolledRoot()) {
+          
+          
+          
+          
+          
+          mLayerScrollData.emplace_back();
+          mLayerScrollData.back().Initialize(mManager->GetScrollData(), item,
+              descendants, (*deferred)->GetActiveScrolledRoot(), Nothing());
+
+          
+          
+          descendants++;
+
+          
+          
+          
+          
+          
+          mLayerScrollData.emplace_back();
+          mLayerScrollData.back().Initialize(mManager->GetScrollData(), *deferred,
+              descendants, stopAtAsr, Some((*deferred)->GetTransform().GetMatrix()));
+        } else {
+          
+          
+          
+          mLayerScrollData.emplace_back();
+          mLayerScrollData.back().Initialize(mManager->GetScrollData(), item,
+              descendants, stopAtAsr, deferred ? Some((*deferred)->GetTransform().GetMatrix()) : Nothing());
+        }
       } else if (mLayerScrollData.size() != layerCountBeforeRecursing &&
                  !eventRegions.IsEmpty()) {
         
