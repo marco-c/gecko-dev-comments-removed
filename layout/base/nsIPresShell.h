@@ -620,12 +620,6 @@ public:
   }
 
   bool NeedStyleFlush() const { return mNeedStyleFlush; }
-  
-
-
-
-
-  bool NeedLayoutFlush() const { return mNeedLayoutFlush; }
 
   
 
@@ -1643,10 +1637,6 @@ public:
   void SetNeverPainting(bool aNeverPainting) {
     mIsNeverPainting = aNeverPainting;
   }
-
-  
-
-
 
   bool HasPendingReflow() const
     { return mObservingLayoutFlushes || mReflowContinueTimer; }
