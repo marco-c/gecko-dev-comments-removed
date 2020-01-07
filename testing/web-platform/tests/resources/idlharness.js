@@ -1522,8 +1522,6 @@ IdlInterface.prototype.test_self = function()
         
         
         
-        
-        
         if (this.name === "Window") {
             assert_class_string(Object.getPrototypeOf(self[this.name].prototype),
                                 'WindowProperties',
@@ -1537,9 +1535,6 @@ IdlInterface.prototype.test_self = function()
                     !this.array
                          .members[inherit_interface]
                          .has_extended_attribute("NoInterfaceObject");
-            } else if (this.has_extended_attribute('LegacyArrayClass')) {
-                inherit_interface = 'Array';
-                inherit_interface_has_interface_object = true;
             } else if (this.name === "DOMException") {
                 inherit_interface = 'Error';
                 inherit_interface_has_interface_object = true;
