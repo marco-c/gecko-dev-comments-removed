@@ -910,7 +910,7 @@ nsHttpChannelAuthProvider::GetCredentialsForChallenge(const char *challenge,
             
             
             
-            if (BlockPrompt()) {
+            if (BlockPrompt(proxyAuth)) {
                 LOG(("nsHttpChannelAuthProvider::GetCredentialsForChallenge: "
                      "Prompt is blocked [this=%p pref=%d img-pref=%d]\n",
                       this, sAuthAllowPref, sImgCrossOriginAuthAllowPref));
@@ -962,7 +962,7 @@ nsHttpChannelAuthProvider::GetCredentialsForChallenge(const char *challenge,
 }
 
 bool
-nsHttpChannelAuthProvider::BlockPrompt()
+nsHttpChannelAuthProvider::BlockPrompt(bool proxyAuth)
 {
     
     
@@ -974,6 +974,11 @@ nsHttpChannelAuthProvider::BlockPrompt()
         LOG(("nsHttpChannelAuthProvider::BlockPrompt: Prompt is blocked "
              "[this=%p channel=%p]\n", this, mAuthChannel));
         return true;
+    }
+
+    if (proxyAuth) {
+      
+      return false;
     }
 
     nsCOMPtr<nsIChannel> chan = do_QueryInterface(mAuthChannel);

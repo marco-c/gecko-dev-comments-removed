@@ -122,7 +122,7 @@ private:
     
     
     
-    bool BlockPrompt();
+    bool BlockPrompt(bool proxyAuth);
 
     
     MOZ_MUST_USE nsresult UpdateCache(nsIHttpAuthenticator *aAuth,
