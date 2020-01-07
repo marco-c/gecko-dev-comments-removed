@@ -591,9 +591,6 @@ this.AddonRepository = {
     let allAddons = await AddonManager.getAllAddons();
 
     
-    allAddons = allAddons.filter(a => a.id != AddonManager.hotfixID);
-
-    
     if (!this.cacheEnabled) {
       logger.debug("Clearing cache because it is disabled");
       await this._clearCache();

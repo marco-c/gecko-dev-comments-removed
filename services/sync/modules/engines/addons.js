@@ -585,16 +585,6 @@ AddonsStore.prototype = {
     
     
     
-    
-    if (this._extensionsPrefs.get("hotfix.id", null) == addon.id) {
-      this._log.debug(addon.id + " not syncable: is a hotfix.");
-      return false;
-    }
-
-    
-    
-    
-    
     if (ignoreRepoCheck || !AddonRepository.cacheEnabled) {
       return true;
     }

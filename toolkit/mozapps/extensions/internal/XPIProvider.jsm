@@ -98,7 +98,6 @@ const PREF_ALLOW_NON_MPC              = "extensions.allow-non-mpc-extensions";
 const PREF_EM_MIN_COMPAT_APP_VERSION      = "extensions.minCompatibleAppVersion";
 const PREF_EM_MIN_COMPAT_PLATFORM_VERSION = "extensions.minCompatiblePlatformVersion";
 
-const PREF_EM_HOTFIX_ID               = "extensions.hotfix.id";
 const PREF_EM_LAST_APP_BUILD_ID       = "extensions.lastAppBuildId";
 
 
@@ -5600,10 +5599,6 @@ AddonWrapper.prototype = {
   
   get isSyncable() {
     let addon = addonFor(this);
-    let hotfixID = Services.prefs.getStringPref(PREF_EM_HOTFIX_ID, undefined);
-    if (hotfixID && hotfixID == addon.id) {
-      return false;
-    }
     return (addon._installLocation.name == KEY_APP_PROFILE);
   },
 
