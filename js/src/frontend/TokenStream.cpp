@@ -601,6 +601,22 @@ TokenStreamCharsBase<CharT>::ungetCharIgnoreEOL(int32_t c)
     userbuf.ungetRawChar();
 }
 
+template<class AnyCharsAccess>
+void
+TokenStreamChars<char16_t, AnyCharsAccess>::ungetCodePointIgnoreEOL(uint32_t codePoint)
+{
+    MOZ_ASSERT(!userbuf.atStart());
+
+    unsigned numUnits = 0;
+    char16_t units[2];
+    unicode::UTF16Encode(codePoint, units, &numUnits);
+
+    MOZ_ASSERT(numUnits == 1 || numUnits == 2);
+
+    while (numUnits-- > 0)
+        ungetCharIgnoreEOL(units[numUnits]);
+}
+
 
 
 
@@ -1499,13 +1515,15 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getTokenInternal(TokenKind* ttp, Mod
             goto identifier;
         }
 
-        uint32_t codePoint;
+        uint32_t codePoint = c;
         if (isMultiUnitCodepoint(c, &codePoint) && unicode::IsUnicodeIDStart(codePoint)) {
             hadUnicodeEscape = false;
             goto identifier;
         }
 
-        goto badchar;
+        ungetCodePointIgnoreEOL(codePoint);
+        error(JSMSG_ILLEGAL_CHARACTER);
+        goto error;
     }
 
     
@@ -1838,7 +1856,14 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getTokenInternal(TokenKind* ttp, Mod
             hadUnicodeEscape = true;
             goto identifier;
         }
-        goto badchar;
+
+        
+        
+        
+        
+        ungetCharIgnoreEOL('\\');
+        error(JSMSG_BAD_ESCAPE);
+        goto error;
       }
 
       case '|':
@@ -2055,9 +2080,11 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getTokenInternal(TokenKind* ttp, Mod
         }
         goto out;
 
-      badchar:
       default:
-        reportError(JSMSG_ILLEGAL_CHARACTER);
+        
+        
+        ungetCodePointIgnoreEOL(c);
+        error(JSMSG_ILLEGAL_CHARACTER);
         goto error;
     }
 
