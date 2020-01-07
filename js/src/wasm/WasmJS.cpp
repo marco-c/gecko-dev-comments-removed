@@ -87,15 +87,25 @@ wasm::HasCompilerSupport(JSContext* cx)
 #if defined(JS_CODEGEN_NONE) || defined(JS_CODEGEN_ARM64)
     return false;
 #else
+    return BaselineCanCompile() || IonCanCompile();
+#endif
+}
+
+
+
+static bool
+HasAvailableCompilerTier(JSContext* cx)
+{
     return (cx->options().wasmBaseline() && BaselineCanCompile()) ||
            (cx->options().wasmIon() && IonCanCompile());
-#endif
 }
 
 bool
 wasm::HasSupport(JSContext* cx)
 {
-    return cx->options().wasm() && HasCompilerSupport(cx);
+    return cx->options().wasm() &&
+           HasCompilerSupport(cx) &&
+           HasAvailableCompilerTier(cx);
 }
 
 bool

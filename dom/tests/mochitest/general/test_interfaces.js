@@ -29,8 +29,8 @@ var ecmaGlobals =
     {name: "ArrayBuffer", insecureContext: true},
     {name: "Atomics", insecureContext: true, disabled: true},
     {name: "Boolean", insecureContext: true},
-    {name: "ByteLengthQueuingStrategy", insecureContext: true, disabled: !SpecialPowers.Cu.getJSTestingFunctions().streamsAreEnabled()},
-    {name: "CountQueuingStrategy", insecureContext: true, disabled: !SpecialPowers.Cu.getJSTestingFunctions().streamsAreEnabled()},
+    {name: "ByteLengthQueuingStrategy", insecureContext: true, disabled: true},
+    {name: "CountQueuingStrategy", insecureContext: true, disabled: true},
     {name: "DataView", insecureContext: true},
     {name: "Date", insecureContext: true},
     {name: "Error", insecureContext: true},
@@ -56,7 +56,7 @@ var ecmaGlobals =
     {name: "Promise", insecureContext: true},
     {name: "Proxy", insecureContext: true},
     {name: "RangeError", insecureContext: true},
-    {name: "ReadableStream", insecureContext: true, disabled: !SpecialPowers.Cu.getJSTestingFunctions().streamsAreEnabled()},
+    {name: "ReadableStream", insecureContext: true, disabled: true},
     {name: "ReferenceError", insecureContext: true},
     {name: "Reflect", insecureContext: true},
     {name: "RegExp", insecureContext: true},
@@ -75,7 +75,7 @@ var ecmaGlobals =
     {name: "URIError", insecureContext: true},
     {name: "WeakMap", insecureContext: true},
     {name: "WeakSet", insecureContext: true},
-    {name: "WebAssembly", insecureContext: true, disabled: !SpecialPowers.Cu.getJSTestingFunctions().wasmIsSupported()}
+    {name: "WebAssembly", insecureContext: true, disabled: !SpecialPowers.Cu.getJSTestingFunctions().wasmIsSupportedByHardware()},
   ];
 
 
@@ -279,13 +279,13 @@ var interfaceNamesInGlobalScope =
 
     {name: "DelayNode", insecureContext: true},
 
-    {name: "DeviceLightEvent", insecureContext: true, release: true},
+    {name: "DeviceLightEvent", insecureContext: true},
 
     {name: "DeviceMotionEvent", insecureContext: true},
 
     {name: "DeviceOrientationEvent", insecureContext: true},
 
-    {name: "DeviceProximityEvent", insecureContext: true, release: true},
+    {name: "DeviceProximityEvent", insecureContext: true},
 
     {name: "Directory", insecureContext: true},
 
@@ -1149,7 +1149,7 @@ var interfaceNamesInGlobalScope =
 
     {name: "URLSearchParams", insecureContext: true},
 
-    {name: "UserProximityEvent", insecureContext: true, release: true},
+    {name: "UserProximityEvent", insecureContext: true},
 
     {name: "ValidityState", insecureContext: true},
 

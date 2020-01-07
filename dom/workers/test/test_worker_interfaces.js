@@ -27,8 +27,8 @@ var ecmaGlobals =
     {name: "ArrayBuffer", insecureContext: true},
     {name: "Atomics", insecureContext: true, disabled: true},
     {name: "Boolean", insecureContext: true},
-    {name: "ByteLengthQueuingStrategy", insecureContext: true, optional: true},
-    {name: "CountQueuingStrategy", insecureContext: true, optional: true},
+    {name: "ByteLengthQueuingStrategy", insecureContext: true, disabled: true},
+    {name: "CountQueuingStrategy", insecureContext: true, disabled: true},
     {name: "DataView", insecureContext: true},
     {name: "Date", insecureContext: true},
     {name: "Error", insecureContext: true},
@@ -51,7 +51,7 @@ var ecmaGlobals =
     {name: "Promise", insecureContext: true},
     {name: "Proxy", insecureContext: true},
     {name: "RangeError", insecureContext: true},
-    {name: "ReadableStream", insecureContext: true, optional: true},
+    {name: "ReadableStream", insecureContext: true, disabled: true},
     {name: "ReferenceError", insecureContext: true},
     {name: "Reflect", insecureContext: true},
     {name: "RegExp", insecureContext: true},
@@ -70,7 +70,11 @@ var ecmaGlobals =
     {name: "URIError", insecureContext: true},
     {name: "WeakMap", insecureContext: true},
     {name: "WeakSet", insecureContext: true},
-    {name: "WebAssembly", insecureContext: true, optional: true}
+    
+    
+    
+    
+    {name: "WebAssembly", insecureContext: true, optional: true},
   ];
 
 
