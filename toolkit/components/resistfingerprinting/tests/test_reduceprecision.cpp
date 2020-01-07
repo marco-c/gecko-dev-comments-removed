@@ -42,9 +42,9 @@ using namespace mozilla;
 
 
 
-void process(double clock, double precision, double precisionUnits) {
-    double reduced1 = nsRFPService::ReduceTimePrecisionImpl(clock, precision, precisionUnits);
-	double reduced2 = nsRFPService::ReduceTimePrecisionImpl(reduced1, precision, precisionUnits);
+void process(double clock, nsRFPService::TimeScale clockUnits, double precision) {
+    double reduced1 = nsRFPService::ReduceTimePrecisionImpl(clock, clockUnits, precision);
+	double reduced2 = nsRFPService::ReduceTimePrecisionImpl(reduced1, clockUnits, precision);
 	ASSERT_EQ(reduced1, reduced2);
 }
 
@@ -55,47 +55,64 @@ TEST(ResistFingerprinting, ReducePrecision_Assumptions) {
 
 TEST(ResistFingerprinting, ReducePrecision_Reciprocal) {
 	
-	process(2064.8338460, 20, 1000000);
+	process(2064.8338460, nsRFPService::TimeScale::MicroSeconds, 20);
 	
-	process(1516305819, 20, 1000000);
-	process(69053.12, 20, 1000000);
+	process(1516305819, nsRFPService::TimeScale::MicroSeconds, 20);
+	process(69053.12, nsRFPService::TimeScale::MicroSeconds, 20);
 }
 
 TEST(ResistFingerprinting, ReducePrecision_KnownGood) {
-	process(2064.8338460, 20, 1000);
-	process(69027.62, 20, 1000);
-	process(69053.12, 20, 1000);
+	process(2064.8338460, nsRFPService::TimeScale::MilliSeconds, 20);
+	process(69027.62, nsRFPService::TimeScale::MilliSeconds, 20);
+	process(69053.12, nsRFPService::TimeScale::MilliSeconds, 20);
 }
 
 TEST(ResistFingerprinting, ReducePrecision_KnownBad) {
-	process(1054.842405, 20, 1000);
-	process(273.53038600000002, 20, 1000);
-	process(628.66686500000003, 20, 1000);
-	process(521.28919100000007, 20, 1000);
+	process(1054.842405, nsRFPService::TimeScale::MilliSeconds, 20);
+	process(273.53038600000002, nsRFPService::TimeScale::MilliSeconds, 20);
+	process(628.66686500000003, nsRFPService::TimeScale::MilliSeconds, 20);
+	process(521.28919100000007, nsRFPService::TimeScale::MilliSeconds, 20);
 }
 
 TEST(ResistFingerprinting, ReducePrecision_Edge) {
-	process(2611.14, 20, 1000);
-	process(2611.16, 20, 1000);
-	process(2612.16, 20, 1000);
-	process(2601.64, 20, 1000);
-	process(2595.16, 20, 1000);
-	process(2578.66, 20, 1000);
+	process(2611.14, nsRFPService::TimeScale::MilliSeconds, 20);
+	process(2611.16, nsRFPService::TimeScale::MilliSeconds, 20);
+	process(2612.16, nsRFPService::TimeScale::MilliSeconds, 20);
+	process(2601.64, nsRFPService::TimeScale::MilliSeconds, 20);
+	process(2595.16, nsRFPService::TimeScale::MilliSeconds, 20);
+	process(2578.66, nsRFPService::TimeScale::MilliSeconds, 20);
 }
+
+TEST(ResistFingerprinting, ReducePrecision_ExpectedLossOfPrecision) {
+	double result;
+	
+	result = nsRFPService::ReduceTimePrecisionImpl(9007199254740992, nsRFPService::TimeScale::MicroSeconds, 5);
+	ASSERT_EQ(result, 9007199254740990);
+	
+	result = nsRFPService::ReduceTimePrecisionImpl(9007199254740995, nsRFPService::TimeScale::MicroSeconds, 5);
+	ASSERT_EQ(result, 9007199254740996);
+	
+	result = nsRFPService::ReduceTimePrecisionImpl(9007199254740999, nsRFPService::TimeScale::MicroSeconds, 5);
+	ASSERT_EQ(result, 9007199254741000);
+	
+	result = nsRFPService::ReduceTimePrecisionImpl(9007199254743568, nsRFPService::TimeScale::MicroSeconds, 5);
+	ASSERT_EQ(result, 9007199254743564);
+}
+
 
 TEST(ResistFingerprinting, ReducePrecision_Expectations) {
 	double result;
-	result = nsRFPService::ReduceTimePrecisionImpl(2611.14, 20, 1000);
+	result = nsRFPService::ReduceTimePrecisionImpl(2611.14, nsRFPService::TimeScale::MilliSeconds, 20);
 	ASSERT_EQ(result, 2611.14);
-	result = nsRFPService::ReduceTimePrecisionImpl(2611.145, 20, 1000);
+	result = nsRFPService::ReduceTimePrecisionImpl(2611.145, nsRFPService::TimeScale::MilliSeconds, 20);
 	ASSERT_EQ(result, 2611.14);
-	result = nsRFPService::ReduceTimePrecisionImpl(2611.141, 20, 1000);
+	result = nsRFPService::ReduceTimePrecisionImpl(2611.141, nsRFPService::TimeScale::MilliSeconds, 20);
 	ASSERT_EQ(result, 2611.14);
-	result = nsRFPService::ReduceTimePrecisionImpl(2611.15999, 20, 1000);
+	result = nsRFPService::ReduceTimePrecisionImpl(2611.159, nsRFPService::TimeScale::MilliSeconds, 20);
 	ASSERT_EQ(result, 2611.14);
-	result = nsRFPService::ReduceTimePrecisionImpl(2611.15, 20, 1000);
+	result = nsRFPService::ReduceTimePrecisionImpl(2611.15, nsRFPService::TimeScale::MilliSeconds, 20);
 	ASSERT_EQ(result, 2611.14);
-	result = nsRFPService::ReduceTimePrecisionImpl(2611.13, 20, 1000);
+	result = nsRFPService::ReduceTimePrecisionImpl(2611.13, nsRFPService::TimeScale::MilliSeconds, 20);
 	ASSERT_EQ(result, 2611.12);
 }
 
@@ -103,7 +120,14 @@ TEST(ResistFingerprinting, ReducePrecision_Expectations) {
 
 #define RAND_DOUBLE (rand() * (rand() / (double)rand()))
 
+
+#define RUN_AGGRESSIVE true
+
 TEST(ResistFingerprinting, ReducePrecision_Aggressive) {
+	if(!RUN_AGGRESSIVE) {
+		return;
+	}
+
 	for (int i=0; i<10000; i++) {
 		
 		
@@ -127,26 +151,25 @@ TEST(ResistFingerprinting, ReducePrecision_Aggressive) {
 		
 		double precision2 = rand() % 200;
 
-		
-		process(time1_s, precision1, 1000000);
-		process(time1_s, precision2, 1000000);
-		process(time2_s, precision1, 1000000);
-		process(time2_s, precision2, 1000000);
-		process(time3_s, precision1, 1000000);
-		process(time3_s, precision2, 1000000);
+		process(time1_s, nsRFPService::TimeScale::Seconds, precision1);
+		process(time1_s, nsRFPService::TimeScale::Seconds, precision2);
+		process(time2_s, nsRFPService::TimeScale::Seconds, precision1);
+		process(time2_s, nsRFPService::TimeScale::Seconds, precision2);
+		process(time3_s, nsRFPService::TimeScale::Seconds, precision1);
+		process(time3_s, nsRFPService::TimeScale::Seconds, precision2);
 
-		process(time1_ms, precision1, 1000);
-		process(time1_ms, precision2, 1000);
-		process(time2_ms, precision1, 1000);
-		process(time2_ms, precision2, 1000);
-		process(time3_ms, precision1, 1000);
-		process(time3_ms, precision2, 1000);
+		process(time1_ms, nsRFPService::TimeScale::MilliSeconds, precision1);
+		process(time1_ms, nsRFPService::TimeScale::MilliSeconds, precision2);
+		process(time2_ms, nsRFPService::TimeScale::MilliSeconds, precision1);
+		process(time2_ms, nsRFPService::TimeScale::MilliSeconds, precision2);
+		process(time3_ms, nsRFPService::TimeScale::MilliSeconds, precision1);
+		process(time3_ms, nsRFPService::TimeScale::MilliSeconds, precision2);
 
-		process(time1_us, precision1, 1);
-		process(time1_us, precision2, 1);
-		process(time2_us, precision1, 1);
-		process(time2_us, precision2, 1);
-		process(time3_us, precision1, 1);
-		process(time3_us, precision2, 1);
+		process(time1_us, nsRFPService::TimeScale::MicroSeconds, precision1);
+		process(time1_us, nsRFPService::TimeScale::MicroSeconds, precision2);
+		process(time2_us, nsRFPService::TimeScale::MicroSeconds, precision1);
+		process(time2_us, nsRFPService::TimeScale::MicroSeconds, precision2);
+		process(time3_us, nsRFPService::TimeScale::MicroSeconds, precision1);
+		process(time3_us, nsRFPService::TimeScale::MicroSeconds, precision2);
 	}
 }
