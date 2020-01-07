@@ -73,8 +73,8 @@ function populateReportList() {
   var dateFormatter;
   var timeFormatter;
   try {
-    dateFormatter = Services.intl.createDateTimeFormat(undefined, { dateStyle: "short" });
-    timeFormatter = Services.intl.createDateTimeFormat(undefined, { timeStyle: "short" });
+    dateFormatter = new Services.intl.DateTimeFormat(undefined, { dateStyle: "short" });
+    timeFormatter = new Services.intl.DateTimeFormat(undefined, { timeStyle: "short" });
   } catch (e) {
     
     

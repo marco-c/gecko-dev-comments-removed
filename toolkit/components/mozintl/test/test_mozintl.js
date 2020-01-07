@@ -6,6 +6,7 @@ Components.utils.import("resource://gre/modules/Services.jsm");
 function run_test() {
   test_methods_presence();
   test_methods_calling();
+  test_constructors();
 
   ok(true);
 }
@@ -14,13 +15,34 @@ function test_methods_presence() {
   equal(Services.intl.getCalendarInfo instanceof Function, true);
   equal(Services.intl.getDisplayNames instanceof Function, true);
   equal(Services.intl.getLocaleInfo instanceof Function, true);
-  equal(Services.intl.createDateTimeFormat instanceof Function, true);
+  equal(Services.intl.getLocaleInfo instanceof Object, true);
 }
 
 function test_methods_calling() {
   Services.intl.getCalendarInfo("pl");
   Services.intl.getDisplayNames("ar");
   Services.intl.getLocaleInfo("de");
-  Services.intl.createDateTimeFormat("fr");
+  new Services.intl.DateTimeFormat("fr");
   ok(true);
+}
+
+function test_constructors() {
+  let dtf = new Intl.DateTimeFormat();
+  let dtf2 = new Services.intl.DateTimeFormat();
+
+  equal(typeof dtf, typeof dtf2);
+
+  Assert.throws(() => {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    Services.intl.DateTimeFormat();
+  }, /class constructors must be invoked with |new|/);
 }
