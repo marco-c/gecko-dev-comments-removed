@@ -162,8 +162,6 @@ public:
   Tile& GetTile(size_t i) { return mRetainedTiles[i]; }
 
   const nsIntRegion& GetValidRegion() const { return mValidRegion; }
-  const nsIntRegion& GetPaintedRegion() const { return mPaintedRegion; }
-  void ClearPaintedRegion() { mPaintedRegion.SetEmpty(); }
 
   
   
@@ -179,7 +177,6 @@ public:
 protected:
 
   nsIntRegion     mValidRegion;
-  nsIntRegion     mPaintedRegion;
 
   
 
