@@ -17,8 +17,8 @@ namespace jit {
 
 
 
-static const uint32_t MAX_ACTIVE_THREAD_SCRIPT_SIZE = 2 * 1000;
-static const uint32_t MAX_ACTIVE_THREAD_LOCALS_AND_ARGS = 256;
+static const uint32_t MAX_MAIN_THREAD_SCRIPT_SIZE = 2 * 1000;
+static const uint32_t MAX_MAIN_THREAD_LOCALS_AND_ARGS = 256;
 
 
 enum IonRegisterAllocator {

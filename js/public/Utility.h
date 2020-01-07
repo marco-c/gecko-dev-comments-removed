@@ -63,7 +63,7 @@ namespace js {
 
 enum ThreadType {
     THREAD_TYPE_NONE = 0,       
-    THREAD_TYPE_COOPERATING,    
+    THREAD_TYPE_MAIN,           
     THREAD_TYPE_WASM,           
     THREAD_TYPE_ION,            
     THREAD_TYPE_PARSE,          
@@ -92,7 +92,7 @@ namespace oom {
 
 
 
-const ThreadType FirstThreadTypeToTest = THREAD_TYPE_COOPERATING;
+const ThreadType FirstThreadTypeToTest = THREAD_TYPE_MAIN;
 const ThreadType LastThreadTypeToTest = THREAD_TYPE_WASM_TIER2;
 
 extern bool InitThreadType(void);
