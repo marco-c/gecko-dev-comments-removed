@@ -76,7 +76,7 @@ pref("extensions.geckoProfiler.getSymbolRules", "localBreakpad,remoteBreakpad");
 pref("extensions.webextensions.base-content-security-policy", "script-src 'self' https://* moz-extension: blob: filesystem: 'unsafe-eval' 'unsafe-inline'; object-src 'self' https://* moz-extension: blob: filesystem:;");
 pref("extensions.webextensions.default-content-security-policy", "script-src 'self'; object-src 'self';");
 
-#ifdef XP_WIN
+#if defined(XP_WIN) || (defined(XP_MACOSX) && !defined(RELEASE_OR_BETA))
 pref("extensions.webextensions.remote", true);
 #endif
 
@@ -1166,6 +1166,7 @@ pref("services.sync.prefs.sync.browser.download.useDownloadDir", true);
 pref("services.sync.prefs.sync.browser.formfill.enable", true);
 pref("services.sync.prefs.sync.browser.link.open_newwindow", true);
 pref("services.sync.prefs.sync.browser.newtabpage.enabled", true);
+pref("services.sync.prefs.sync.browser.newtabpage.enhanced", true);
 pref("services.sync.prefs.sync.browser.newtabpage.pinned", true);
 pref("services.sync.prefs.sync.browser.offline-apps.notify", true);
 pref("services.sync.prefs.sync.browser.safebrowsing.phishing.enabled", true);
@@ -1257,7 +1258,27 @@ pref("prompts.tab_modal.enabled", true);
 pref("browser.newtab.preload", true);
 
 
+
+
+pref("browser.newtabpage.introShown", false);
+
+
 pref("browser.newtabpage.enabled", true);
+
+
+pref("browser.newtabpage.enhanced", true, sticky);
+
+
+pref("browser.newtabpage.compact", false);
+
+
+pref("browser.newtabpage.thumbnailPlaceholder", false);
+
+
+pref("browser.newtabpage.rows", 3);
+
+
+pref("browser.newtabpage.columns", 5);
 
 
 pref("browser.newtabpage.activity-stream.prerender", true);
