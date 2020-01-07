@@ -82,6 +82,8 @@ public:
   nsresult GetBoundsForAreaContent(nsIContent *aContent,
                                    nsRect& aBounds);
 
+  using AreaList = AutoTArray<mozilla::UniquePtr<Area>, 8>;
+
 protected:
   virtual ~nsImageMap();
 
@@ -92,12 +94,15 @@ protected:
   void SearchForAreas(nsIContent* aParent);
 
   void AddArea(mozilla::dom::HTMLAreaElement* aArea);
+  void AreaRemoved(mozilla::dom::HTMLAreaElement* aArea);
 
   void MaybeUpdateAreas(nsIContent *aContent);
 
   nsImageFrame* mImageFrame;  
   nsCOMPtr<nsIContent> mMap;
-  AutoTArray<Area*, 8> mAreas; 
+
+  
+  AreaList mAreas;
 
   
   
