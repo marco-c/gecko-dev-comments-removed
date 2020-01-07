@@ -6155,7 +6155,7 @@ public:
 
 
   const Matrix4x4& GetTransform() const;
-  Matrix4x4 GetTransformForRendering(mozilla::LayoutDevicePoint* aOutOrigin = nullptr);
+  Matrix4x4 GetTransformForRendering();
 
   
 
