@@ -165,6 +165,7 @@ enum nsTransparencyMode {
   eTransparencyTransparent, 
   eTransparencyGlass,       
   eTransparencyBorderlessGlass 
+  
 };
 
 
