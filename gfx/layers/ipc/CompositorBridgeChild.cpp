@@ -495,7 +495,8 @@ CompositorBridgeChild::RecvCaptureAllPlugins(const uintptr_t& aParentWidget)
   
   
   ImageBridgeChild::GetSingleton()->GetMessageLoop()->PostTask(
-    NewRunnableFunction(&ScheduleSendAllPluginsCaptured, this,
+    NewRunnableFunction("ScheduleSendAllPluginsCapturedRunnable",
+                        &ScheduleSendAllPluginsCaptured, this,
                         MessageLoop::current()));
   return IPC_OK();
 #else

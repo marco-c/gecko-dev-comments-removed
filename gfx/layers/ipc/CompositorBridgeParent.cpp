@@ -382,10 +382,12 @@ CompositorBridgeParent::Initialize()
   
   
   MOZ_ASSERT(CompositorLoop());
-  CompositorLoop()->PostTask(NewRunnableFunction(&AddCompositor,
+  CompositorLoop()->PostTask(NewRunnableFunction("AddCompositorRunnable",
+                                                 &AddCompositor,
                                                  this, &mCompositorBridgeID));
 
-  CompositorLoop()->PostTask(NewRunnableFunction(SetThreadPriority));
+  CompositorLoop()->PostTask(NewRunnableFunction("SetThreadPriorityRunnable",
+                                                 SetThreadPriority));
 
 
   { 
@@ -1788,7 +1790,8 @@ CompositorBridgeParent::DeallocateLayerTreeId(uint64_t aId)
     gfxCriticalError() << "Attempting to post to a invalid Compositor Loop";
     return;
   }
-  CompositorLoop()->PostTask(NewRunnableFunction(&EraseLayerState, aId));
+  CompositorLoop()->PostTask(NewRunnableFunction("EraseLayerStateRunnable",
+                                                 &EraseLayerState, aId));
 }
 
 static void
@@ -1825,7 +1828,8 @@ CompositorBridgeParent::SetControllerForLayerTree(uint64_t aLayersId,
 {
   
   aController->AddRef();
-  CompositorLoop()->PostTask(NewRunnableFunction(&UpdateControllerForLayersId,
+  CompositorLoop()->PostTask(NewRunnableFunction("UpdateControllerForLayersIdRunnable",
+                                                 &UpdateControllerForLayersId,
                                                  aLayersId,
                                                  aController));
 }
@@ -1865,7 +1869,8 @@ CompositorBridgeParent::PostInsertVsyncProfilerMarker(TimeStamp aVsyncTimestamp)
   
   if (profiler_is_active() && CompositorThreadHolder::IsActive()) {
     CompositorLoop()->PostTask(
-      NewRunnableFunction(InsertVsyncProfilerMarker, aVsyncTimestamp));
+      NewRunnableFunction("InsertVsyncProfilerMarkerRunnable", InsertVsyncProfilerMarker,
+                          aVsyncTimestamp));
   }
 #endif
 }

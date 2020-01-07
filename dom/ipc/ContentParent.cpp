@@ -1763,7 +1763,8 @@ ContentParent::ActorDestroy(ActorDestroyReason why)
   mIdleListeners.Clear();
 
   MessageLoop::current()->
-    PostTask(NewRunnableFunction(DelayedDeleteSubprocess, mSubprocess));
+    PostTask(NewRunnableFunction("DelayedDeleteSubprocessRunnable",
+                                 DelayedDeleteSubprocess, mSubprocess));
   mSubprocess = nullptr;
 
   
@@ -3120,7 +3121,8 @@ ContentParent::OnGenerateMinidumpComplete(bool aDumpResult)
 
   
   XRE_GetIOMessageLoop()->PostTask(
-    NewRunnableFunction(&ProcessWatcher::EnsureProcessTerminated,
+    NewRunnableFunction("EnsureProcessTerminatedRunnable",
+                        &ProcessWatcher::EnsureProcessTerminated,
                         otherProcessHandle, true));
 }
 

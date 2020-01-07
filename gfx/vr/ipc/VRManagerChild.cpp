@@ -156,7 +156,8 @@ VRManagerChild::Destroy()
   
   
   MessageLoop::current()->PostTask(
-             NewRunnableFunction(DeferredDestroy, selfRef));
+             NewRunnableFunction("VRManagerChildDestroyRunnable",
+                                 DeferredDestroy, selfRef));
 }
 
 PVRLayerChild*
