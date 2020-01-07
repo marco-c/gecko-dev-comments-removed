@@ -395,6 +395,7 @@ TCPFastOpenFinish(PRFileDesc *fd, PRErrorCode &err,
         
         SOCKET_LOG(("TCPFastOpenFinish - sendto not implemented.\n"));
         fastOpenNotSupported = true;
+        tfoStatus = TFO_DISABLED;
     }
   } else {
     
@@ -432,6 +433,7 @@ TCPFastOpenFinish(PRFileDesc *fd, PRErrorCode &err,
         } else {
           result = PR_GetError();
         }
+        tfoStatus = TFO_DISABLED;
       } else {
         tfoStatus = TFO_TRIED;
       }

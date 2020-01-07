@@ -3875,7 +3875,7 @@ nsHalfOpenSocket::nsHalfOpenSocket(nsConnectionEntry *ent,
     }
 
     if (mEnt->mConnInfo->FirstHopSSL()) {
-      mFastOpenStatus = TFO_NOT_TRIED;
+      mFastOpenStatus = TFO_UNKNOWN;
     } else {
       mFastOpenStatus = TFO_HTTP;
     }
@@ -3985,8 +3985,12 @@ nsHalfOpenSocket::SetupStreams(nsISocketTransport **transport,
         tmpFlags |= nsISocketTransport::DISABLE_RFC1918;
     }
 
-    if (!isBackup && mEnt->mUseFastOpen) {
-        socketTransport->SetFastOpenCallback(this);
+    if (!isBackup) {
+        if (mEnt->mUseFastOpen) {
+            socketTransport->SetFastOpenCallback(this);
+        } else {
+            mFastOpenStatus = TFO_DISABLED;
+        }
     }
 
     socketTransport->SetConnectionFlags(tmpFlags);
@@ -4310,7 +4314,18 @@ nsHalfOpenSocket::OnOutputStreamReady(nsIAsyncOutputStream *out)
 
         mFastOpenInProgress = false;
         mConnectionNegotiatingFastOpen = nullptr;
-        mFastOpenStatus = TFO_FAILED_BACKUP_CONNECTION;
+        if (mFastOpenStatus == TFO_NOT_TRIED) {
+            mFastOpenStatus = TFO_FAILED_BACKUP_CONNECTION_TFO_NOT_TRIED;
+        } else if (mFastOpenStatus == TFO_TRIED) {
+            mFastOpenStatus = TFO_FAILED_BACKUP_CONNECTION_TFO_TRIED;
+        } else if (mFastOpenStatus == TFO_DATA_SENT) {
+            mFastOpenStatus = TFO_FAILED_BACKUP_CONNECTION_TFO_DATA_SENT;
+        } else {
+            
+            
+            
+            mFastOpenStatus = TFO_FAILED_BACKUP_CONNECTION_TFO_DATA_COOKIE_NOT_ACCEPTED;
+        }
     }
 
     nsresult rv =  SetupConn(out, false);
@@ -4332,6 +4347,8 @@ nsHalfOpenSocket::FastOpenEnabled()
         return false;
     }
 
+    MOZ_ASSERT(mEnt->mConnInfo->FirstHopSSL());
+
     
     
     if (!mEnt->mHalfOpens.Contains(this)) {
@@ -4342,6 +4359,7 @@ nsHalfOpenSocket::FastOpenEnabled()
         
         LOG(("nsHalfOpenSocket::FastEnabled - fast open was turned off.\n"));
         mEnt->mUseFastOpen = false;
+        mFastOpenStatus = TFO_DISABLED;
         return false;
     }
     
@@ -4350,25 +4368,11 @@ nsHalfOpenSocket::FastOpenEnabled()
     
     
     
-    RefPtr<PendingTransactionInfo> info = FindTransactionHelper(false);
-
-    if ((!info) &&
-        (!mEnt->mConnInfo->FirstHopSSL() || mEnt->mConnInfo->UsingConnect())) {
-        LOG(("nsHalfOpenSocket::FastOpenEnabled - It is a connection without "
-             "transaction and first hop is not ssl.\n"));
+    if (mEnt->mConnInfo->UsingConnect()) {
+        LOG(("nsHalfOpenSocket::FastOpenEnabled - It is using Connect."));
+        mFastOpenStatus = TFO_DISABLED_CONNECT;
         return false;
     }
-
-    if ((info) && !mEnt->mConnInfo->FirstHopSSL()) {
-        
-        
-        if (!info->mTransaction->CanDo0RTT()) {
-            LOG(("nsHalfOpenSocket::FastOpenEnabled - it is not safe to restart "
-                 "transaction.\n"));
-            return false;
-        }
-    }
-
     return true;
 }
 
@@ -4556,7 +4560,13 @@ nsHalfOpenSocket::SetFastOpenConnected(nsresult aError, bool aWillRetry)
         mStreamOut = nullptr;
         mStreamIn = nullptr;
 
-        Abandon();
+        
+        
+        if (mBackupTransport) {
+            mFastOpenStatus = TFO_BACKUP_CONN;
+            mEnt->mHalfOpens.AppendElement(this);
+            gHttpHandler->ConnMgr()->mNumHalfOpenConns++;
+        }
     }
 
     mFastOpenInProgress = false;
@@ -4576,6 +4586,7 @@ nsHttpConnectionMgr::
 nsHalfOpenSocket::SetFastOpenStatus(uint8_t tfoStatus)
 {
     MOZ_ASSERT(mFastOpenInProgress);
+    mFastOpenStatus = tfoStatus;
     mConnectionNegotiatingFastOpen->SetFastOpenStatus(tfoStatus);
     mConnectionNegotiatingFastOpen->Transaction()->SetFastOpenStatus(tfoStatus);
 }
@@ -4804,6 +4815,10 @@ nsHalfOpenSocket::SetupConn(nsIAsyncOutputStream *out,
         }
     } else {
         conn->SetFastOpenStatus(mFastOpenStatus);
+        mFastOpenStatus = TFO_BACKUP_CONN; 
+                                           
+                                           
+                                           
     }
 
     
