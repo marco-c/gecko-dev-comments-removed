@@ -9,6 +9,11 @@
 #  pragma section(".kPStaticModules$Z", read)
 #  undef NSMODULE_SECTION
 #  define NSMODULE_SECTION __declspec(allocate(".kPStaticModules$Z"), dllexport)
+#elif MOZ_LTO
+
+
+#  undef NSMODULE_SECTION
+#  define NSMODULE_SECTION __attribute__((section(".kPStaticModules$Z"), visibility("default")))
 #endif
 
 
