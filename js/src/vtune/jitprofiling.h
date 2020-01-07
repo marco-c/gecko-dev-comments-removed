@@ -669,7 +669,7 @@ unsigned int JITAPI iJIT_GetNewMethodID(void);
 
 iJIT_IsProfilingActiveFlags JITAPI iJIT_IsProfilingActive(void);
 
-int loadiJIT_Funcs();
+int loadiJIT_Funcs(void);
 
 
 

@@ -77,7 +77,7 @@
 
 #include "vtune/disable_warnings.h"
 
-static const char api_version[] = API_VERSION "\0\n@(#) $Revision: 523557 $\n";
+static const char api_version[] = API_VERSION "\0\n@(#) $Revision: 481659 $\n";
 
 #define _N_(n) ITT_JOIN(INTEL_ITTNOTIFY_PREFIX,n)
 
