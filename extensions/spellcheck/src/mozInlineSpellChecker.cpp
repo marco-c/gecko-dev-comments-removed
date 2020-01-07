@@ -861,15 +861,14 @@ mozInlineSpellChecker::NotifyObservers(const char* aTopic,
 
 
 
-NS_IMETHODIMP
+nsresult
 mozInlineSpellChecker::SpellCheckAfterEditorChange(
-    int32_t aAction, nsISelection *aSelection,
+    EditAction aAction, Selection& aSelection,
     nsINode *aPreviousSelectedNode, uint32_t aPreviousSelectedOffset,
     nsINode *aStartNode, uint32_t aStartOffset,
     nsINode *aEndNode, uint32_t aEndOffset)
 {
   nsresult rv;
-  NS_ENSURE_ARG_POINTER(aSelection);
   if (!mSpellCheck)
     return NS_OK; 
 
@@ -877,13 +876,11 @@ mozInlineSpellChecker::SpellCheckAfterEditorChange(
   
   mNeedsCheckAfterNavigation = true;
 
-  RefPtr<Selection> selection = aSelection->AsSelection();
-
   
   auto status = MakeUnique<mozInlineSpellStatus>(this);
-  rv = status->InitForEditorChange((EditAction)aAction,
-                                   selection->GetAnchorNode(),
-                                   selection->AnchorOffset(),
+  rv = status->InitForEditorChange(aAction,
+                                   aSelection.GetAnchorNode(),
+                                   aSelection.AnchorOffset(),
                                    aPreviousSelectedNode,
                                    aPreviousSelectedOffset,
                                    aStartNode, aStartOffset,
