@@ -1,15 +1,15 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/* Generated with cbindgen:0.3.3 */
 
-
-
-
-
-
-
-
-
-
-
+/* DO NOT MODIFY THIS MANUALLY! This file was generated using cbindgen.
+ * To generate this file:
+ *   1. Get the latest cbindgen using `cargo install --force cbindgen`
+ *      a. Alternatively, you can clone `https://github.com/rlhunt/cbindgen` and use a tagged release
+ *   2. Run `rustup run nightly cbindgen toolkit/library/rust/ --crate webrender_bindings -o gfx/webrender_bindings/webrender_ffi_generated.h`
+ */
 
 #include <cstdint>
 #include <cstdlib>
@@ -29,28 +29,28 @@ enum class BorderStyle : uint32_t {
   Inset = 8,
   Outset = 9,
 
-  Sentinel 
+  Sentinel /* this must be last for serialization purposes. */
 };
 
 enum class BoxShadowClipMode : uint32_t {
   Outset = 0,
   Inset = 1,
 
-  Sentinel 
+  Sentinel /* this must be last for serialization purposes. */
 };
 
 enum class ClipMode {
   Clip = 0,
   ClipOut = 1,
 
-  Sentinel 
+  Sentinel /* this must be last for serialization purposes. */
 };
 
 enum class ExtendMode : uint32_t {
   Clamp = 0,
   Repeat = 1,
 
-  Sentinel 
+  Sentinel /* this must be last for serialization purposes. */
 };
 
 enum class ExternalImageType : uint32_t {
@@ -60,7 +60,7 @@ enum class ExternalImageType : uint32_t {
   TextureExternalHandle = 3,
   ExternalBuffer = 4,
 
-  Sentinel 
+  Sentinel /* this must be last for serialization purposes. */
 };
 
 #if !(defined(XP_MACOSX) || defined(XP_WIN))
@@ -71,7 +71,7 @@ enum class FontHinting : uint8_t {
   Normal = 3,
   LCD = 4,
 
-  Sentinel 
+  Sentinel /* this must be last for serialization purposes. */
 };
 #endif
 
@@ -82,7 +82,7 @@ enum class FontLCDFilter : uint8_t {
   Light = 2,
   Legacy = 3,
 
-  Sentinel 
+  Sentinel /* this must be last for serialization purposes. */
 };
 #endif
 
@@ -91,7 +91,7 @@ enum class FontRenderMode : uint32_t {
   Alpha = 1,
   Subpixel = 2,
 
-  Sentinel 
+  Sentinel /* this must be last for serialization purposes. */
 };
 
 enum class ImageFormat : uint32_t {
@@ -101,7 +101,7 @@ enum class ImageFormat : uint32_t {
   RGBAF32 = 4,
   RG8 = 5,
 
-  Sentinel 
+  Sentinel /* this must be last for serialization purposes. */
 };
 
 enum class ImageRendering : uint32_t {
@@ -109,14 +109,14 @@ enum class ImageRendering : uint32_t {
   CrispEdges = 1,
   Pixelated = 2,
 
-  Sentinel 
+  Sentinel /* this must be last for serialization purposes. */
 };
 
 enum class LineOrientation : uint8_t {
   Vertical = 0,
   Horizontal = 1,
 
-  Sentinel 
+  Sentinel /* this must be last for serialization purposes. */
 };
 
 enum class LineStyle : uint8_t {
@@ -125,32 +125,32 @@ enum class LineStyle : uint8_t {
   Dashed = 2,
   Wavy = 3,
 
-  Sentinel 
+  Sentinel /* this must be last for serialization purposes. */
 };
 
-
-
-
-
-
-
-
-
+// An enum representing the available verbosity level filters of the logging
+// framework.
+//
+// A `LogLevelFilter` may be compared directly to a [`LogLevel`](enum.LogLevel.html).
+// Use this type to [`get()`](struct.MaxLogLevelFilter.html#method.get) and
+// [`set()`](struct.MaxLogLevelFilter.html#method.set) the
+// [`MaxLogLevelFilter`](struct.MaxLogLevelFilter.html), or to match with the getter
+// [`max_log_level()`](fn.max_log_level.html).
 enum class LogLevelFilter : uintptr_t {
-  
+  // A level lower than all log levels.
   Off = 0,
-  
+  // Corresponds to the `Error` log level.
   Error = 1,
-  
+  // Corresponds to the `Warn` log level.
   Warn = 2,
-  
+  // Corresponds to the `Info` log level.
   Info = 3,
-  
+  // Corresponds to the `Debug` log level.
   Debug = 4,
-  
+  // Corresponds to the `Trace` log level.
   Trace = 5,
 
-  Sentinel 
+  Sentinel /* this must be last for serialization purposes. */
 };
 
 enum class MixBlendMode : uint32_t {
@@ -171,7 +171,7 @@ enum class MixBlendMode : uint32_t {
   Color = 14,
   Luminosity = 15,
 
-  Sentinel 
+  Sentinel /* this must be last for serialization purposes. */
 };
 
 enum class RepeatMode : uint32_t {
@@ -180,7 +180,7 @@ enum class RepeatMode : uint32_t {
   Round = 2,
   Space = 3,
 
-  Sentinel 
+  Sentinel /* this must be last for serialization purposes. */
 };
 
 enum class SubpixelDirection : uint32_t {
@@ -188,21 +188,21 @@ enum class SubpixelDirection : uint32_t {
   Horizontal = 1,
   Vertical = 2,
 
-  Sentinel 
+  Sentinel /* this must be last for serialization purposes. */
 };
 
 enum class TransformStyle : uint32_t {
   Flat = 0,
   Preserve3D = 1,
 
-  Sentinel 
+  Sentinel /* this must be last for serialization purposes. */
 };
 
 enum class WrAnimationType : uint32_t {
   Transform = 0,
   Opacity = 1,
 
-  Sentinel 
+  Sentinel /* this must be last for serialization purposes. */
 };
 
 enum class WrExternalImageType : uint32_t {
@@ -210,7 +210,7 @@ enum class WrExternalImageType : uint32_t {
   NativeTexture = 1,
   Invalid = 2,
 
-  Sentinel 
+  Sentinel /* this must be last for serialization purposes. */
 };
 
 enum class WrFilterOpType : uint32_t {
@@ -225,53 +225,53 @@ enum class WrFilterOpType : uint32_t {
   Sepia = 8,
   DropShadow = 9,
 
-  Sentinel 
+  Sentinel /* this must be last for serialization purposes. */
 };
 
 enum class YuvColorSpace : uint32_t {
   Rec601 = 0,
   Rec709 = 1,
 
-  Sentinel 
+  Sentinel /* this must be last for serialization purposes. */
 };
 
 template<typename T>
 struct Arc;
 
-
-
+// Geometry in the coordinate system of the render target (screen or intermediate
+// surface) in physical pixels.
 struct DevicePixel;
 
 struct DocumentHandle;
 
-
+// Geometry in a layer's local coordinate space (logical pixels).
 struct LayerPixel;
 
-
-
+// The renderer is responsible for submitting to the GPU the work prepared by the
+// RenderBackend.
 struct Renderer;
 
-
+// The resource updates for a given transaction (they must be applied in the same frame).
 struct ResourceUpdates;
 
-
+// Offset in number of tiles.
 struct Tiles;
 
-
-
-
-
-
-
+// A Transaction is a group of commands to apply atomically to a document.
+//
+// This mechanism ensures that:
+//  - no other message can be interleaved between two commands that need to be applied together.
+//  - no redundant work is performed if two commands in the same transaction cause the scene or
+//    the frame to be rebuilt.
 struct Transaction;
 
-
+// The default unit.
 struct UnknownUnit;
 
 template<typename T>
 struct Vec;
 
-
+// Geometry in the document's coordinate space (logical pixels).
 struct WorldPixel;
 
 struct WrProgramCache;
@@ -315,42 +315,6 @@ using VecU8 = Vec<uint8_t>;
 
 using ArcVecU8 = Arc<VecU8>;
 
-struct Epoch {
-  uint32_t mHandle;
-
-  bool operator==(const Epoch& aOther) const {
-    return mHandle == aOther.mHandle;
-  }
-  bool operator<(const Epoch& aOther) const {
-    return mHandle < aOther.mHandle;
-  }
-  bool operator<=(const Epoch& aOther) const {
-    return mHandle <= aOther.mHandle;
-  }
-};
-
-using WrEpoch = Epoch;
-
-
-
-
-
-using PipelineSourceId = uint32_t;
-
-
-
-struct PipelineId {
-  PipelineSourceId mNamespace;
-  uint32_t mHandle;
-
-  bool operator==(const PipelineId& aOther) const {
-    return mNamespace == aOther.mNamespace &&
-           mHandle == aOther.mHandle;
-  }
-};
-
-using WrPipelineId = PipelineId;
-
 template<typename T, typename U>
 struct TypedSize2D {
   T width;
@@ -366,16 +330,16 @@ using LayerSize = TypedSize2D<float, LayerPixel>;
 
 using LayoutSize = LayerSize;
 
-
-
-
-
+// Describes the memory layout of a display list.
+//
+// A display list consists of some number of display list items, followed by a number of display
+// items.
 struct BuiltDisplayListDescriptor {
-  
+  // The first IPC time stamp: before any work has been done
   uint64_t builder_start_time;
-  
+  // The second IPC time stamp: after serialization
   uint64_t builder_finish_time;
-  
+  // The third IPC time stamp: just before sending
   uint64_t send_start_time;
 
   bool operator==(const BuiltDisplayListDescriptor& aOther) const {
@@ -397,81 +361,9 @@ struct WrVecU8 {
   }
 };
 
-struct WrOpacityProperty {
-  uint64_t id;
-  float opacity;
-
-  bool operator==(const WrOpacityProperty& aOther) const {
-    return id == aOther.id &&
-           opacity == aOther.opacity;
-  }
-};
-
-
-
-
-using LayoutPixel = LayerPixel;
-
-
-
-
-
-
-
-
-
-
-
-
-template<typename T, typename Src, typename Dst>
-struct TypedTransform3D {
-  T m11;
-  T m12;
-  T m13;
-  T m14;
-  T m21;
-  T m22;
-  T m23;
-  T m24;
-  T m31;
-  T m32;
-  T m33;
-  T m34;
-  T m41;
-  T m42;
-  T m43;
-  T m44;
-
-  bool operator==(const TypedTransform3D& aOther) const {
-    return m11 == aOther.m11 &&
-           m12 == aOther.m12 &&
-           m13 == aOther.m13 &&
-           m14 == aOther.m14 &&
-           m21 == aOther.m21 &&
-           m22 == aOther.m22 &&
-           m23 == aOther.m23 &&
-           m24 == aOther.m24 &&
-           m31 == aOther.m31 &&
-           m32 == aOther.m32 &&
-           m33 == aOther.m33 &&
-           m34 == aOther.m34 &&
-           m41 == aOther.m41 &&
-           m42 == aOther.m42 &&
-           m43 == aOther.m43 &&
-           m44 == aOther.m44;
-  }
-};
-
-using LayoutTransform = TypedTransform3D<float, LayoutPixel, LayoutPixel>;
-
-struct WrTransformProperty {
-  uint64_t id;
-  LayoutTransform transform;
-};
-
 using WrIdNamespace = IdNamespace;
 
-
+// A 2d Point tagged with a unit.
 template<typename T, typename U>
 struct TypedPoint2D {
   T x;
@@ -485,25 +377,27 @@ struct TypedPoint2D {
 
 using WorldPoint = TypedPoint2D<float, WorldPixel>;
 
+// This type carries no valuable semantics for WR. However, it reflects the fact that
+// clients (Servo) may generate pipelines by different semi-independent sources.
+// These pipelines still belong to the same `IdNamespace` and the same `DocumentId`.
+// Having this extra Id field enables them to generate `PipelineId` without collision.
+using PipelineSourceId = uint32_t;
 
+// From the point of view of WR, `PipelineId` is completely opaque and generic as long as
+// it's clonable, serializable, comparable, and hashable.
+struct PipelineId {
+  PipelineSourceId mNamespace;
+  uint32_t mHandle;
 
-
-
-struct ColorF {
-  float r;
-  float g;
-  float b;
-  float a;
-
-  bool operator==(const ColorF& aOther) const {
-    return r == aOther.r &&
-           g == aOther.g &&
-           b == aOther.b &&
-           a == aOther.a;
+  bool operator==(const PipelineId& aOther) const {
+    return mNamespace == aOther.mNamespace &&
+           mHandle == aOther.mHandle;
   }
 };
 
+using WrPipelineId = PipelineId;
 
+// A 2d Rectangle optionally tagged with a unit.
 template<typename T, typename U>
 struct TypedRect {
   TypedPoint2D<T, U> origin;
@@ -534,12 +428,12 @@ struct BorderRadius {
 };
 
 struct ComplexClipRegion {
-  
+  // The boundaries of the rectangle.
   LayoutRect rect;
-  
+  // Border radii of this rectangle.
   BorderRadius radii;
-  
-  
+  // Whether we are clipping inside or outside
+  // the region.
   ClipMode mode;
 
   bool operator==(const ComplexClipRegion& aOther) const {
@@ -577,15 +471,15 @@ struct WrImageMask {
   }
 };
 
-
+// The minimum and maximum allowable offset for a sticky frame in a single dimension.
 struct StickyOffsetBounds {
-  
-  
-  
+  // The minimum offset for this frame, typically a negative value, which specifies how
+  // far in the negative direction the sticky frame can offset its contents in this
+  // dimension.
   float min;
-  
-  
-  
+  // The maximum offset for this frame, typically a positive value, which specifies how
+  // far in the positive direction the sticky frame can offset its contents in this
+  // dimension.
   float max;
 
   bool operator==(const StickyOffsetBounds& aOther) const {
@@ -594,7 +488,7 @@ struct StickyOffsetBounds {
   }
 };
 
-
+// A 2d Vector tagged with a unit.
 template<typename T, typename U>
 struct TypedVector2D {
   T x;
@@ -621,6 +515,24 @@ struct BorderWidths {
            top == aOther.top &&
            right == aOther.right &&
            bottom == aOther.bottom;
+  }
+};
+
+// Represents RGBA screen colors with floating point numbers.
+//
+// All components must be between 0.0 and 1.0.
+// An alpha value of 1.0 is opaque while 0.0 is fully transparent.
+struct ColorF {
+  float r;
+  float g;
+  float b;
+  float a;
+
+  bool operator==(const ColorF& aOther) const {
+    return r == aOther.r &&
+           g == aOther.g &&
+           b == aOther.b &&
+           a == aOther.a;
   }
 };
 
@@ -663,7 +575,7 @@ struct TypedSideOffsets2D {
   }
 };
 
-
+// The default side offset type with no unit.
 template<typename T>
 using SideOffsets2D = TypedSideOffsets2D<T, UnknownUnit>;
 
@@ -700,6 +612,63 @@ struct WrAnimationProperty {
            id == aOther.id;
   }
 };
+
+// Geometry in a stacking context's local coordinate space (logical pixels).
+//
+// For now layout pixels are equivalent to layer pixels, but it may change.
+using LayoutPixel = LayerPixel;
+
+// A 3d transform stored as a 4 by 4 matrix in row-major order in memory.
+//
+// Transforms can be parametrized over the source and destination units, to describe a
+// transformation from a space to another.
+// For example, `TypedTransform3D<f32, WordSpace, ScreenSpace>::transform_point3d`
+// takes a `TypedPoint3D<f32, WordSpace>` and returns a `TypedPoint3D<f32, ScreenSpace>`.
+//
+// Transforms expose a set of convenience methods for pre- and post-transformations.
+// A pre-transformation corresponds to adding an operation that is applied before
+// the rest of the transformation, while a post-transformation adds an operation
+// that is applied after.
+template<typename T, typename Src, typename Dst>
+struct TypedTransform3D {
+  T m11;
+  T m12;
+  T m13;
+  T m14;
+  T m21;
+  T m22;
+  T m23;
+  T m24;
+  T m31;
+  T m32;
+  T m33;
+  T m34;
+  T m41;
+  T m42;
+  T m43;
+  T m44;
+
+  bool operator==(const TypedTransform3D& aOther) const {
+    return m11 == aOther.m11 &&
+           m12 == aOther.m12 &&
+           m13 == aOther.m13 &&
+           m14 == aOther.m14 &&
+           m21 == aOther.m21 &&
+           m22 == aOther.m22 &&
+           m23 == aOther.m23 &&
+           m24 == aOther.m24 &&
+           m31 == aOther.m31 &&
+           m32 == aOther.m32 &&
+           m33 == aOther.m33 &&
+           m34 == aOther.m34 &&
+           m41 == aOther.m41 &&
+           m42 == aOther.m42 &&
+           m43 == aOther.m43 &&
+           m44 == aOther.m44;
+  }
+};
+
+using LayoutTransform = TypedTransform3D<float, LayoutPixel, LayoutPixel>;
 
 struct WrFilterOp {
   WrFilterOpType filter_type;
@@ -787,6 +756,22 @@ struct WrWindowId {
   }
 };
 
+struct Epoch {
+  uint32_t mHandle;
+
+  bool operator==(const Epoch& aOther) const {
+    return mHandle == aOther.mHandle;
+  }
+  bool operator<(const Epoch& aOther) const {
+    return mHandle < aOther.mHandle;
+  }
+  bool operator<=(const Epoch& aOther) const {
+    return mHandle <= aOther.mHandle;
+  }
+};
+
+using WrEpoch = Epoch;
+
 struct WrDebugFlags {
   uint32_t mBits;
 
@@ -859,9 +844,9 @@ struct WrImageDescriptor {
 
 using WrExternalImageBufferType = ExternalImageType;
 
-
-
-
+// Represents RGBA screen colors with one byte per channel.
+//
+// If the alpha value `a` is 255 the color is opaque.
 struct ColorU {
   uint8_t r;
   uint8_t g;
@@ -880,9 +865,9 @@ struct FontInstanceOptions {
   FontRenderMode render_mode;
   SubpixelDirection subpx_dir;
   FontInstanceFlags flags;
-  
-  
-  
+  // When bg_color.a is != 0 and render_mode is FontRenderMode::Subpixel,
+  // the text will be rendered with bg_color.r/g/b as an opaque estimated
+  // background color.
   ColorU bg_color;
 
   bool operator==(const FontInstanceOptions& aOther) const {
@@ -927,14 +912,29 @@ struct FontInstancePlatformOptions {
 
 using DeviceUintRect = TypedRect<uint32_t, DevicePixel>;
 
+struct WrOpacityProperty {
+  uint64_t id;
+  float opacity;
+
+  bool operator==(const WrOpacityProperty& aOther) const {
+    return id == aOther.id &&
+           opacity == aOther.opacity;
+  }
+};
+
+struct WrTransformProperty {
+  uint64_t id;
+  LayoutTransform transform;
+};
+
 extern "C" {
 
-
-
-
-
-
-
+/* DO NOT MODIFY THIS MANUALLY! This file was generated using cbindgen.
+ * To generate this file:
+ *   1. Get the latest cbindgen using `cargo install --force cbindgen`
+ *      a. Alternatively, you can clone `https://github.com/rlhunt/cbindgen` and use a tagged release
+ *   2. Run `rustup run nightly cbindgen toolkit/library/rust/ --crate webrender_bindings -o gfx/webrender_bindings/webrender_ffi_generated.h`
+ */
 
 extern void AddFontData(WrFontKey aKey,
                         const uint8_t *aData,
@@ -977,12 +977,6 @@ const VecU8 *wr_add_ref_arc(const ArcVecU8 *aArc)
 WR_FUNC;
 
 WR_INLINE
-void wr_api_clear_display_list(DocumentHandle *aDh,
-                               WrEpoch aEpoch,
-                               WrPipelineId aPipelineId)
-WR_FUNC;
-
-WR_INLINE
 void wr_api_clone(DocumentHandle *aDh,
                   DocumentHandle **aOutHandle)
 WR_FUNC;
@@ -999,18 +993,6 @@ void wr_api_finalize_builder(WrState *aState,
 WR_FUNC;
 
 WR_INLINE
-void wr_api_generate_frame(DocumentHandle *aDh)
-WR_FUNC;
-
-WR_INLINE
-void wr_api_generate_frame_with_properties(DocumentHandle *aDh,
-                                           const WrOpacityProperty *aOpacityArray,
-                                           size_t aOpacityCount,
-                                           const WrTransformProperty *aTransformArray,
-                                           size_t aTransformCount)
-WR_FUNC;
-
-WR_INLINE
 WrIdNamespace wr_api_get_namespace(DocumentHandle *aDh)
 WR_FUNC;
 
@@ -1023,11 +1005,6 @@ bool wr_api_hit_test(DocumentHandle *aDh,
 WR_FUNC;
 
 WR_INLINE
-void wr_api_remove_pipeline(DocumentHandle *aDh,
-                            WrPipelineId aPipelineId)
-WR_FUNC;
-
-WR_INLINE
 void wr_api_send_external_event(DocumentHandle *aDh,
                                 size_t aEvt)
 WR_DESTRUCTOR_SAFE_FUNC;
@@ -1035,42 +1012,6 @@ WR_DESTRUCTOR_SAFE_FUNC;
 WR_INLINE
 void wr_api_send_transaction(DocumentHandle *aDh,
                              Transaction *aTransaction)
-WR_FUNC;
-
-WR_INLINE
-void wr_api_set_display_list(DocumentHandle *aDh,
-                             ColorF aColor,
-                             WrEpoch aEpoch,
-                             float aViewportWidth,
-                             float aViewportHeight,
-                             WrPipelineId aPipelineId,
-                             LayoutSize aContentSize,
-                             BuiltDisplayListDescriptor aDlDescriptor,
-                             WrVecU8 *aDlData,
-                             ResourceUpdates *aResources)
-WR_FUNC;
-
-WR_INLINE
-void wr_api_set_root_pipeline(DocumentHandle *aDh,
-                              WrPipelineId aPipelineId)
-WR_FUNC;
-
-WR_INLINE
-void wr_api_set_window_parameters(DocumentHandle *aDh,
-                                  int32_t aWidth,
-                                  int32_t aHeight)
-WR_FUNC;
-
-WR_INLINE
-void wr_api_update_pipeline_resources(DocumentHandle *aDh,
-                                      WrPipelineId aPipelineId,
-                                      WrEpoch aEpoch,
-                                      ResourceUpdates *aResources)
-WR_FUNC;
-
-WR_INLINE
-void wr_api_update_resources(DocumentHandle *aDh,
-                             ResourceUpdates *aResources)
 WR_FUNC;
 
 WR_INLINE
@@ -1324,7 +1265,7 @@ void wr_dp_push_text(WrState *aState,
                      const GlyphOptions *aGlyphOptions)
 WR_FUNC;
 
-
+// Push a 2 planar NV12 image.
 WR_INLINE
 void wr_dp_push_yuv_NV12_image(WrState *aState,
                                LayoutRect aBounds,
@@ -1336,7 +1277,7 @@ void wr_dp_push_yuv_NV12_image(WrState *aState,
                                ImageRendering aImageRendering)
 WR_FUNC;
 
-
+// Push a yuv interleaved image.
 WR_INLINE
 void wr_dp_push_yuv_interleaved_image(WrState *aState,
                                       LayoutRect aBounds,
@@ -1347,7 +1288,7 @@ void wr_dp_push_yuv_interleaved_image(WrState *aState,
                                       ImageRendering aImageRendering)
 WR_FUNC;
 
-
+// Push a 3 planar yuv image.
 WR_INLINE
 void wr_dp_push_yuv_planar_image(WrState *aState,
                                  LayoutRect aBounds,
@@ -1595,6 +1536,12 @@ WrThreadPool *wr_thread_pool_new()
 WR_FUNC;
 
 WR_INLINE
+void wr_transaction_clear_display_list(Transaction *aTxn,
+                                       WrEpoch aEpoch,
+                                       WrPipelineId aPipelineId)
+WR_FUNC;
+
+WR_INLINE
 void wr_transaction_delete(Transaction *aTxn)
 WR_DESTRUCTOR_SAFE_FUNC;
 
@@ -1677,14 +1624,14 @@ bool wr_window_new(WrWindowId aWindowId,
                    uint32_t *aOutMaxTextureSize)
 WR_FUNC;
 
-} 
+} // extern "C"
 
-} 
-} 
+} // namespace wr
+} // namespace mozilla
 
-
-
-
-
-
-
+/* DO NOT MODIFY THIS MANUALLY! This file was generated using cbindgen.
+ * To generate this file:
+ *   1. Get the latest cbindgen using `cargo install --force cbindgen`
+ *      a. Alternatively, you can clone `https://github.com/rlhunt/cbindgen` and use a tagged release
+ *   2. Run `rustup run nightly cbindgen toolkit/library/rust/ --crate webrender_bindings -o gfx/webrender_bindings/webrender_ffi_generated.h`
+ */
