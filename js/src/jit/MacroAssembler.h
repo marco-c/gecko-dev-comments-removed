@@ -1369,7 +1369,7 @@ class MacroAssembler : public MacroAssemblerSpecific
 
     
     inline void spectreMovePtr(Condition cond, Register src, Register dest)
-        DEFINED_ON(arm, arm64, x86, x64);
+        DEFINED_ON(arm, arm64, mips_shared, x86, x64);
 
     
     
