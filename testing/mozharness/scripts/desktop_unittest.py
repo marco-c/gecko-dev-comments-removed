@@ -6,7 +6,6 @@
 
 
 """desktop_unittest.py
-The goal of this is to extract desktop unittesting from buildbot's factory.py
 
 author: Jordan Lund
 """
@@ -28,7 +27,7 @@ from mozharness.base.errors import BaseErrorList
 from mozharness.base.log import INFO
 from mozharness.base.script import PreScriptAction
 from mozharness.base.vcs.vcsbase import MercurialScript
-from mozharness.mozilla.buildbot import TBPL_EXCEPTION
+from mozharness.mozilla.automation import TBPL_EXCEPTION
 from mozharness.mozilla.mozbase import MozbaseMixin
 from mozharness.mozilla.structuredlog import StructuredOutputParser
 from mozharness.mozilla.testing.errors import HarnessErrorList
@@ -546,7 +545,7 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin,
                     rejected.append(suite)
                     break
         if rejected:
-            self.buildbot_status(TBPL_EXCEPTION)
+            self.record_status(TBPL_EXCEPTION)
             self.fatal("There are specified suites that are incompatible with "
                        "--artifact try syntax flag: {}".format(', '.join(rejected)),
                        exit_code=self.return_code)
@@ -850,36 +849,25 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin,
                 cmd_timeout = self.get_timeout_for_category(suite_category)
 
                 summary = None
-                executed_too_many_tests = False
                 for per_test_args in self.query_args(suite):
-                    
-                    
-                    
-                    is_baseline_test = 'baselinecoverage' in per_test_args[-1] \
-                                       if self.per_test_coverage else False
-                    if executed_too_many_tests and not is_baseline_test:
-                        continue
-
-                    if not is_baseline_test:
-                        if (datetime.now() - self.start_time) > max_per_test_time:
-                            
-                            
-                            
-                            self.info("TinderboxPrint: Running tests took too long: Not all tests "
-                                      "were executed.<br/>")
-                            
-                            
-                            return False
-                        if executed_tests >= max_per_test_tests:
-                            
-                            
-                            
-                            
-                            self.info("TinderboxPrint: Too many modified tests: Not all tests "
-                                      "were executed.<br/>")
-                            executed_too_many_tests = True
-
-                        executed_tests = executed_tests + 1
+                    if (datetime.now() - self.start_time) > max_per_test_time:
+                        
+                        
+                        
+                        self.info("TinderboxPrint: Running tests took too long: Not all tests "
+                                  "were executed.<br/>")
+                        
+                        
+                        return False
+                    if executed_tests >= max_per_test_tests:
+                        
+                        
+                        
+                        
+                        self.info("TinderboxPrint: Too many modified tests: Not all tests "
+                                  "were executed.<br/>")
+                        return False
+                    executed_tests = executed_tests + 1
 
                     final_cmd = copy.copy(cmd)
                     final_cmd.extend(per_test_args)
@@ -917,15 +905,12 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin,
                                                                              summary)
                     parser.append_tinderboxprint_line(suite_name)
 
-                    self.buildbot_status(tbpl_status, level=log_level)
+                    self.record_status(tbpl_status, level=log_level)
                     if len(per_test_args) > 0:
                         self.log_per_test_status(per_test_args[-1], tbpl_status, log_level)
                     else:
                         self.log("The %s suite: %s ran with return status: %s" %
                                  (suite_category, suite, tbpl_status), level=log_level)
-
-                if executed_too_many_tests:
-                    return False
         else:
             self.debug('There were no suites to run for %s' % suite_category)
         return True

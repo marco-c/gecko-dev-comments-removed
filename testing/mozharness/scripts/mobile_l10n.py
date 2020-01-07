@@ -27,7 +27,7 @@ sys.path.insert(1, os.path.dirname(sys.path[0]))
 from mozharness.base.errors import MakefileErrorList
 from mozharness.base.log import OutputParser
 from mozharness.base.transfer import TransferMixin
-from mozharness.mozilla.buildbot import BuildbotMixin
+from mozharness.mozilla.automation import AutomationMixin
 from mozharness.mozilla.release import ReleaseMixin
 from mozharness.mozilla.tooltool import TooltoolMixin
 from mozharness.base.vcs.vcsbase import MercurialScript
@@ -39,7 +39,7 @@ from mozharness.base.python import VirtualenvMixin
 
 
 class MobileSingleLocale(LocalesMixin, ReleaseMixin,
-                         TransferMixin, TooltoolMixin, BuildbotMixin,
+                         TransferMixin, TooltoolMixin, AutomationMixin,
                          MercurialScript, BalrogMixin,
                          VirtualenvMixin, SecretsMixin):
     config_options = [[
@@ -105,7 +105,7 @@ class MobileSingleLocale(LocalesMixin, ReleaseMixin,
         {"action": "store",
          "dest": "revision",
          "type": "string",
-         "help": "Override the gecko revision to use (otherwise use buildbot supplied"
+         "help": "Override the gecko revision to use (otherwise use automation supplied"
                  " value, or en-US revision) "}
     ], [
         ['--scm-level'],
@@ -256,8 +256,6 @@ class MobileSingleLocale(LocalesMixin, ReleaseMixin,
         """ Get the gecko revision in this order of precedence
               * cached value
               * command line arg --revision   (development, taskcluster)
-              * buildbot properties           (try with buildbot forced build)
-              * buildbot change               (try with buildbot scheduler)
               * from the en-US build          (m-c & m-a)
 
         This will fail the last case if the build hasn't been pulled yet.
@@ -269,14 +267,6 @@ class MobileSingleLocale(LocalesMixin, ReleaseMixin,
         revision = None
         if config.get("revision"):
             revision = config["revision"]
-        elif 'revision' in self.buildbot_properties:
-            revision = self.buildbot_properties['revision']
-        elif (self.buildbot_config and
-                self.buildbot_config.get('sourcestamp', {}).get('revision')):
-            revision = self.buildbot_config['sourcestamp']['revision']
-        elif self.buildbot_config and self.buildbot_config.get('revision'):
-            revision = self.buildbot_config['revision']
-
         if not revision:
             self.fatal("Can't determine revision!")
         self.revision = str(revision)
@@ -348,12 +338,12 @@ class MobileSingleLocale(LocalesMixin, ReleaseMixin,
     def add_failure(self, locale, message, **kwargs):
         self.locales_property[locale] = "Failed"
         prop_key = "%s_failure" % locale
-        prop_value = self.query_buildbot_property(prop_key)
+        prop_value = self.query_property(prop_key)
         if prop_value:
             prop_value = "%s  %s" % (prop_value, message)
         else:
             prop_value = message
-        self.set_buildbot_property(prop_key, prop_value, write_to_file=True)
+        self.set_property(prop_key, prop_value, write_to_file=True)
         MercurialScript.add_failure(self, locale, message=message, **kwargs)
 
     def summary(self):
@@ -362,8 +352,8 @@ class MobileSingleLocale(LocalesMixin, ReleaseMixin,
         locales = self.query_locales()
         for locale in locales:
             self.locales_property.setdefault(locale, "Success")
-        self.set_buildbot_property("locales", json.dumps(self.locales_property),
-                                   write_to_file=True)
+        self.set_property("locales", json.dumps(self.locales_property),
+                          write_to_file=True)
 
     
     def pull(self):
@@ -567,7 +557,7 @@ class MobileSingleLocale(LocalesMixin, ReleaseMixin,
             'dest': dirs['abs_tools_dir'],
         }]
         rev = self.vcs_checkout(**repos[0])
-        self.set_buildbot_property("tools_revision", rev, write_to_file=True)
+        self.set_property("tools_revision", rev, write_to_file=True)
 
     def query_apkfile_path(self, locale):
 
@@ -615,32 +605,31 @@ class MobileSingleLocale(LocalesMixin, ReleaseMixin,
             apkfile = self.query_apkfile_path(locale)
             if self.config.get('taskcluster_nightly'):
                 
-                self.set_buildbot_property("stage_platform",
-                                           self.config.get("stage_platform"))
-                self.set_buildbot_property("branch", self.config.get("branch"))
+                self.set_property("stage_platform", self.config.get("stage_platform"))
+                self.set_property("branch", self.config.get("branch"))
             else:
                 apk_url = self.query_upload_url(locale)
-                self.set_buildbot_property("completeMarUrl", apk_url)
+                self.set_property("completeMarUrl", apk_url)
 
                 
                 
-                self.set_buildbot_property(
+                self.set_property(
                     "platform",
-                    self.buildbot_config["properties"]["platform"])
+                    self.config["properties"]["platform"])
                 
 
             
             
             
-            self.set_buildbot_property("locale", locale)
+            self.set_property("locale", locale)
 
-            self.set_buildbot_property("appVersion", self.query_version())
+            self.set_property("appVersion", self.query_version())
 
-            self.set_buildbot_property("appName", "Fennec")
-            self.set_buildbot_property("completeMarSize", self.query_filesize(apkfile))
-            self.set_buildbot_property("completeMarHash", self.query_sha512sum(apkfile))
-            self.set_buildbot_property("isOSUpdate", False)
-            self.set_buildbot_property("buildid", self.query_buildid())
+            self.set_property("appName", "Fennec")
+            self.set_property("completeMarSize", self.query_filesize(apkfile))
+            self.set_property("completeMarHash", self.query_sha512sum(apkfile))
+            self.set_property("isOSUpdate", False)
+            self.set_property("buildid", self.query_buildid())
 
             props_path = os.path.join(env["UPLOAD_PATH"], locale,
                                       'balrog_props.json')

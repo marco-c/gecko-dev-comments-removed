@@ -27,8 +27,8 @@ from mozharness.base.config import BaseConfig, parse_config_file, DEFAULT_CONFIG
 from mozharness.base.log import ERROR, OutputParser, FATAL
 from mozharness.base.script import PostScriptRun
 from mozharness.base.vcs.vcsbase import MercurialScript
-from mozharness.mozilla.buildbot import (
-    BuildbotMixin,
+from mozharness.mozilla.automation import (
+    AutomationMixin,
     EXIT_STATUS_DICT,
     TBPL_STATUS_DICT,
     TBPL_EXCEPTION,
@@ -655,7 +655,7 @@ BUILD_BASE_CONFIG_OPTIONS = [
     [['--who'], {
         "dest": "who",
         "default": '',
-        "help": "stores who made the created the buildbot change."}],
+        "help": "stores who made the created the change."}],
 ]
 
 
@@ -667,7 +667,7 @@ def generate_build_UID():
     return uuid.uuid4().hex
 
 
-class BuildScript(BuildbotMixin, BalrogMixin,
+class BuildScript(AutomationMixin, BalrogMixin,
                   VirtualenvMixin, MercurialScript,
                   SecretsMixin, PerfherderResourceOptionsMixin):
     def __init__(self, **kwargs):
@@ -841,9 +841,7 @@ or run without that action (ie: --no-{action})"
             buildid = generate_build_ID()
 
         if c.get('is_automation') or os.environ.get("TASK_ID"):
-            self.set_buildbot_property('buildid',
-                                       buildid,
-                                       write_to_file=True)
+            self.set_property('buildid', buildid, write_to_file=True)
 
         self.buildid = buildid
         return self.buildid
@@ -1125,7 +1123,7 @@ or run without that action (ie: --no-{action})"
                     self.info(pprint.pformat(build_props))
             for key, prop in build_props.iteritems():
                 if prop != 'UNKNOWN':
-                    self.set_buildbot_property(key, prop, write_to_file=True)
+                    self.set_property(key, prop, write_to_file=True)
         else:
             self.info("No mach_build_properties.json found - not importing properties.")
 
@@ -1176,22 +1174,22 @@ or run without that action (ie: --no-{action})"
                 base_cmd + [prop['ini_name']], cwd=dirs['abs_obj_dir'],
                 halt_on_failure=halt_on_failure, env=env
             )
-            self.set_buildbot_property(prop['prop_name'],
+            self.set_property(prop['prop_name'],
                                        prop_val,
                                        write_to_file=True)
 
         if self.config.get('is_automation'):
             self.info("Verifying buildid from application.ini matches buildid "
-                      "from buildbot")
+                      "from automation")
             app_ini_buildid = self._query_build_prop_from_app_ini('BuildID')
             
             
-            buildbot_buildid = self.query_buildid() or None
+            automation_buildid = self.query_buildid() or None
             self.info(
-                'buildid from application.ini: "%s". buildid from buildbot '
-                'properties: "%s"' % (app_ini_buildid, buildbot_buildid)
+                'buildid from application.ini: "%s". buildid from automation '
+                'properties: "%s"' % (app_ini_buildid, automation_buildid)
             )
-            if app_ini_buildid == buildbot_buildid != None:
+            if app_ini_buildid == automation_buildid is not None:
                 self.info('buildids match.')
             else:
                 self.error(
@@ -1251,17 +1249,7 @@ or run without that action (ie: --no-{action})"
         env = self.query_build_env()
         env.update(self.query_mach_build_env())
 
-        
-        
-        
-        
         dirs = self.query_abs_dirs()
-        buildprops = os.path.join(dirs['base_work_dir'], 'buildprops.json')
-        
-        if os.path.exists(buildprops):
-            self.copyfile(
-                buildprops,
-                os.path.join(dirs['abs_work_dir'], 'buildprops.json'))
 
         if 'MOZILLABUILD' in os.environ:
             
@@ -1307,13 +1295,8 @@ or run without that action (ie: --no-{action})"
         multi_config_pf = self.config.get('multi_locale_config_platform',
                                           'android')
 
-        
-        if self.config.get('taskcluster_nightly'):
-            multil10n_path = \
-                'build/src/testing/mozharness/scripts/multil10n.py'
-            base_work_dir = os.path.join(base_work_dir, 'workspace')
-        else:
-            multil10n_path = '%s/scripts/scripts/multil10n.py' % base_work_dir,
+        multil10n_path = 'build/src/testing/mozharness/scripts/multil10n.py'
+        base_work_dir = os.path.join(base_work_dir, 'workspace')
 
         cmd = [
             sys.executable,
@@ -1357,9 +1340,7 @@ or run without that action (ie: --no-{action})"
                          cwd=objdir, halt_on_failure=True,
                          output_parser=parser)
         for prop in parser.matches:
-            self.set_buildbot_property(prop,
-                                       parser.matches[prop],
-                                       write_to_file=True)
+            self.set_property(prop, parser.matches[prop], write_to_file=True)
         upload_files_cmd = [
             'make',
             'echo-variable-UPLOAD_FILES',
@@ -1783,5 +1764,5 @@ or run without that action (ie: --no-{action})"
                 self.return_code = 2
             for status, return_code in EXIT_STATUS_DICT.iteritems():
                 if return_code == self.return_code:
-                    self.buildbot_status(status, TBPL_STATUS_DICT[status])
+                    self.record_status(status, TBPL_STATUS_DICT[status])
         self.summary()
