@@ -7012,6 +7012,7 @@ nsLayoutUtils::DrawSingleUnscaledImage(gfxContext&          aContext,
                                        const SamplingFilter aSamplingFilter,
                                        const nsPoint&       aDest,
                                        const nsRect*        aDirty,
+                                       const Maybe<SVGImageContext>& aSVGContext,
                                        uint32_t             aImageFlags,
                                        const nsRect*        aSourceArea)
 {
@@ -7040,7 +7041,7 @@ nsLayoutUtils::DrawSingleUnscaledImage(gfxContext&          aContext,
   return DrawImageInternal(aContext, aPresContext,
                            aImage, aSamplingFilter,
                            dest, fill, aDest, aDirty ? *aDirty : dest,
-                            Nothing(), aImageFlags);
+                           aSVGContext, aImageFlags);
 }
 
  ImgDrawResult

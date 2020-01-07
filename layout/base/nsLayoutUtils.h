@@ -1875,12 +1875,21 @@ public:
 
 
 
+
+
+
+
+
+
+
+
   static ImgDrawResult DrawSingleUnscaledImage(gfxContext&          aContext,
                                             nsPresContext*       aPresContext,
                                             imgIContainer*       aImage,
                                             const SamplingFilter aSamplingFilter,
                                             const nsPoint&       aDest,
                                             const nsRect*        aDirty,
+                                            const mozilla::Maybe<SVGImageContext>& aSVGContext,
                                             uint32_t             aImageFlags,
                                             const nsRect*        aSourceArea = nullptr);
 

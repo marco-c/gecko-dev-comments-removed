@@ -34,6 +34,7 @@
 #include "nsIContent.h"
 #include "mozilla/ComputedStyle.h"
 #include "nsIBoxObject.h"
+#include "nsIDOMCustomEvent.h"
 #include "nsIDOMElement.h"
 #include "nsIDOMNodeList.h"
 #include "nsIDOMXULElement.h"
@@ -60,10 +61,7 @@
 #include "nsLayoutUtils.h"
 #include "nsIScrollableFrame.h"
 #include "nsDisplayList.h"
-#include "mozilla/dom/CustomEvent.h"
 #include "mozilla/dom/Event.h"
-#include "mozilla/dom/ScriptSettings.h"
-#include "mozilla/dom/ToJSValue.h"
 #include "mozilla/dom/TreeBoxObject.h"
 #include "nsIScriptableRegion.h"
 #include <algorithm>
@@ -3494,19 +3492,24 @@ nsTreeBodyFrame::PaintTwisty(int32_t              aRowIndex,
       bool useImageRegion = true;
       GetImage(aRowIndex, aColumn, true, twistyContext, useImageRegion, getter_AddRefs(image));
       if (image) {
-        nsPoint pt = twistyRect.TopLeft();
+        nsPoint anchorPoint = twistyRect.TopLeft();
 
         
         if (imageSize.height < twistyRect.height) {
-          pt.y += (twistyRect.height - imageSize.height)/2;
+          anchorPoint.y += (twistyRect.height - imageSize.height)/2;
         }
+
+        
+        Maybe<SVGImageContext> svgContext;
+        SVGImageContext::MaybeStoreContextPaint(svgContext, twistyContext,
+                                                image);
 
         
         result &=
           nsLayoutUtils::DrawSingleUnscaledImage(
               aRenderingContext, aPresContext, image,
-              SamplingFilter::POINT, pt, &aDirtyRect,
-              imgIContainer::FLAG_NONE, &imageSize);
+              SamplingFilter::POINT, anchorPoint, &aDirtyRect,
+              svgContext, imgIContainer::FLAG_NONE, &imageSize);
       }
     }
   }
@@ -3882,11 +3885,15 @@ nsTreeBodyFrame::PaintCheckbox(int32_t              aRowIndex,
     }
 
     
+    Maybe<SVGImageContext> svgContext;
+    SVGImageContext::MaybeStoreContextPaint(svgContext, checkboxContext,
+                                            image);
+    
     result &=
       nsLayoutUtils::DrawSingleUnscaledImage(aRenderingContext,
         aPresContext,
         image, SamplingFilter::POINT, pt, &aDirtyRect,
-        imgIContainer::FLAG_NONE, &imageSize);
+        svgContext, imgIContainer::FLAG_NONE, &imageSize);
   }
 
   return result;
@@ -4646,26 +4653,6 @@ nsTreeBodyFrame::RemoveTreeImageListener(nsTreeImageListener* aListener)
 }
 
 #ifdef ACCESSIBILITY
-static void
-InitCustomEvent(CustomEvent* aEvent, const nsAString& aType,
-                nsIWritablePropertyBag2* aDetail)
-{
-  AutoJSAPI jsapi;
-  if (!jsapi.Init(aEvent->GetParentObject())) {
-    return;
-  }
-
-  JSContext* cx = jsapi.cx();
-  JS::Rooted<JS::Value> detail(cx);
-  if (!ToJSValue(cx, aDetail, &detail)) {
-    jsapi.ClearException();
-    return;
-  }
-
-  aEvent->InitCustomEvent(cx, aType,  true,
-                           false, detail);
-}
-
 void
 nsTreeBodyFrame::FireRowCountChangedEvent(int32_t aIndex, int32_t aCount)
 {
@@ -4676,19 +4663,18 @@ nsTreeBodyFrame::FireRowCountChangedEvent(int32_t aIndex, int32_t aCount)
   nsCOMPtr<nsIDocument> doc = content->OwnerDoc();
   MOZ_ASSERT(doc);
 
+  IgnoredErrorResult ignored;
   RefPtr<Event> event = doc->CreateEvent(NS_LITERAL_STRING("customevent"),
-                                         CallerType::System, IgnoreErrors());
+                                         CallerType::System, ignored);
 
-  CustomEvent* treeEvent = event->AsCustomEvent();
-  if (!treeEvent) {
+  nsCOMPtr<nsIDOMCustomEvent> treeEvent(do_QueryInterface(event));
+  if (!treeEvent)
     return;
-  }
 
   nsCOMPtr<nsIWritablePropertyBag2> propBag(
     do_CreateInstance("@mozilla.org/hash-property-bag;1"));
-  if (!propBag) {
+  if (!propBag)
     return;
-  }
 
   
   propBag->SetPropertyAsInt32(NS_LITERAL_STRING("index"), aIndex);
@@ -4696,8 +4682,11 @@ nsTreeBodyFrame::FireRowCountChangedEvent(int32_t aIndex, int32_t aCount)
   
   propBag->SetPropertyAsInt32(NS_LITERAL_STRING("count"), aCount);
 
-  InitCustomEvent(treeEvent, NS_LITERAL_STRING("TreeRowCountChanged"),
-                  propBag);
+  RefPtr<nsVariant> detailVariant(new nsVariant());
+
+  detailVariant->SetAsISupports(propBag);
+  treeEvent->InitCustomEvent(NS_LITERAL_STRING("TreeRowCountChanged"),
+                             true, false, detailVariant);
 
   event->SetTrusted(true);
 
@@ -4717,19 +4706,18 @@ nsTreeBodyFrame::FireInvalidateEvent(int32_t aStartRowIdx, int32_t aEndRowIdx,
 
   nsCOMPtr<nsIDocument> doc = content->OwnerDoc();
 
+  IgnoredErrorResult ignored;
   RefPtr<Event> event = doc->CreateEvent(NS_LITERAL_STRING("customevent"),
-                                         CallerType::System, IgnoreErrors());
+                                         CallerType::System, ignored);
 
-  CustomEvent* treeEvent = event->AsCustomEvent();
-  if (!treeEvent) {
+  nsCOMPtr<nsIDOMCustomEvent> treeEvent(do_QueryInterface(event));
+  if (!treeEvent)
     return;
-  }
 
   nsCOMPtr<nsIWritablePropertyBag2> propBag(
     do_CreateInstance("@mozilla.org/hash-property-bag;1"));
-  if (!propBag){
+  if (!propBag)
     return;
-  }
 
   if (aStartRowIdx != -1 && aEndRowIdx != -1) {
     
@@ -4761,8 +4749,11 @@ nsTreeBodyFrame::FireInvalidateEvent(int32_t aStartRowIdx, int32_t aEndRowIdx,
                                 endColIdx);
   }
 
-  InitCustomEvent(treeEvent, NS_LITERAL_STRING("TreeInvalidated"),
-                  propBag);
+  RefPtr<nsVariant> detailVariant(new nsVariant());
+
+  detailVariant->SetAsISupports(propBag);
+  treeEvent->InitCustomEvent(NS_LITERAL_STRING("TreeInvalidated"),
+                             true, false, detailVariant);
 
   event->SetTrusted(true);
 
