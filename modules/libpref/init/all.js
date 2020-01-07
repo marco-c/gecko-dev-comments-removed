@@ -960,6 +960,8 @@ pref("accessibility.mouse_focuses_formcontrol", false);
 
 
 pref("accessibility.typeaheadfind", true);
+
+pref("accessibility.typeaheadfind.manual", true);
 pref("accessibility.typeaheadfind.autostart", true);
 
 
