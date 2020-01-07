@@ -370,6 +370,7 @@ pub enum WrFilterOpType {
   Saturate = 7,
   Sepia = 8,
   DropShadow = 9,
+  ColorMatrix = 10,
 }
 
 #[repr(C)]
@@ -379,6 +380,7 @@ pub struct WrFilterOp {
     argument: c_float, 
     offset: LayoutVector2D, 
     color: ColorF, 
+    matrix: [f32;20], 
 }
 
 /// cbindgen:derive-eq=false
@@ -1424,6 +1426,7 @@ pub extern "C" fn wr_dp_push_stacking_context(state: &mut WrState,
             WrFilterOpType::DropShadow => FilterOp::DropShadow(c_filter.offset,
                                                                c_filter.argument,
                                                                c_filter.color),
+            WrFilterOpType::ColorMatrix => FilterOp::ColorMatrix(c_filter.matrix),
         }
     }).collect();
 

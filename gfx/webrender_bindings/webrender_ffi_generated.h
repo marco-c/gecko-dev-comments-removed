@@ -223,6 +223,7 @@ enum class WrFilterOpType : uint32_t {
   Saturate = 7,
   Sepia = 8,
   DropShadow = 9,
+  ColorMatrix = 10,
 
   Sentinel 
 };
@@ -676,13 +677,7 @@ struct WrFilterOp {
   float argument;
   LayoutVector2D offset;
   ColorF color;
-
-  bool operator==(const WrFilterOp& aOther) const {
-    return filter_type == aOther.filter_type &&
-           argument == aOther.argument &&
-           offset == aOther.offset &&
-           color == aOther.color;
-  }
+  float matrix[20];
 };
 
 struct FontInstanceKey {
