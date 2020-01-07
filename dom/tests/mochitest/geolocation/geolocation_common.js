@@ -3,6 +3,16 @@
 var harness = SimpleTest.harnessParameters.testRoot == "chrome" ? "chrome" : "tests";
 var BASE_URL = "http://mochi.test:8888/" + harness + "/dom/tests/mochitest/geolocation/network_geolocation.sjs";
 
+function set_geo_wifi_uri(uri, callback)
+{
+  
+  
+  
+  set_network_request_cache_enabled(false, () => {
+    SpecialPowers.pushPrefEnv({"set": [["geo.wifi.uri", uri]]}, callback);
+  });
+}
+
 function sleep(delay)
 {
     var start = Date.now();
@@ -15,7 +25,7 @@ function force_prompt(allow, callback) {
 
 function start_sending_garbage(callback)
 {
-  SpecialPowers.pushPrefEnv({"set": [["geo.wifi.uri", BASE_URL + "?action=respond-garbage"]]}, function() {
+  set_geo_wifi_uri(BASE_URL + "?action=respond-garbage", () => {
     
     sleep(1000);
     callback.call();
@@ -24,7 +34,7 @@ function start_sending_garbage(callback)
 
 function stop_sending_garbage(callback)
 {
-  SpecialPowers.pushPrefEnv({"set": [["geo.wifi.uri", BASE_URL + ""]]}, function() {
+  set_geo_wifi_uri(BASE_URL + "", () => {
     
     sleep(1000);
     callback.call();
@@ -33,7 +43,7 @@ function stop_sending_garbage(callback)
 
 function stop_geolocationProvider(callback)
 {
-  SpecialPowers.pushPrefEnv({"set": [["geo.wifi.uri", BASE_URL + "?action=stop-responding"]]}, function() {
+  set_geo_wifi_uri(BASE_URL + "?action=stop-responding", () => {
     
     sleep(1000);
     callback.call();
@@ -47,23 +57,22 @@ function set_network_request_cache_enabled(enabled, callback)
 
 function worse_geolocationProvider(callback)
 {
-  SpecialPowers.pushPrefEnv({"set": [["geo.wifi.uri", BASE_URL + "?action=worse-accuracy"]]}, callback);
+  set_geo_wifi_uri(BASE_URL + "?action=worse-accuracy", callback);
 }
 
 function resume_geolocationProvider(callback)
 {
-  SpecialPowers.pushPrefEnv({"set": [["geo.wifi.uri", BASE_URL + ""]]}, callback);
+  set_geo_wifi_uri(BASE_URL + "", callback);
 }
 
 function delay_geolocationProvider(delay, callback)
 {
-  SpecialPowers.pushPrefEnv({"set": [["geo.wifi.uri", BASE_URL + "?delay=" + delay]]}, callback);
+  set_geo_wifi_uri(BASE_URL + "?delay=" + delay, callback);
 }
 
 function send404_geolocationProvider(callback)
 {
-  set_network_request_cache_enabled(false, function() {
-    SpecialPowers.pushPrefEnv({"set": [["geo.wifi.uri", BASE_URL + "?action=send404"]]}, callback);});
+  set_geo_wifi_uri(BASE_URL + "?action=send404", callback);
 }
 
 function check_geolocation(location)
