@@ -3,10 +3,6 @@
 
 
 
-async function foo() {
-  return new Promise(r => setTimeout(r, 3000000));
-}
-
 function getScopeNodeLabel(dbg, index) {
   return findElement(dbg, "scopeNode", index).innerText;
 }

@@ -31,10 +31,6 @@ function assertEmptyValue(dbg, index) {
   is(value, null);
 }
 
-function toggleExpression(dbg, index) {
-  findElement(dbg, "expressionNode", index).click();
-}
-
 async function addExpression(dbg, input) {
   info("Adding an expression");
   findElementWithSelector(dbg, expressionSelectors.input).focus();
@@ -75,8 +71,7 @@ add_task(async function() {
   ok(getValue(dbg, 2).includes("Location"), "has a value");
 
   
-  toggleExpression(dbg, 2);
-  await waitForDispatch(dbg, "LOAD_OBJECT_PROPERTIES");
+  await toggleExpressionNode(dbg, 2);
 
   await deleteExpression(dbg, "foo");
   await deleteExpression(dbg, "location");
@@ -85,8 +80,7 @@ add_task(async function() {
   
   await resume(dbg);
   await addExpression(dbg, "location");
-  toggleExpression(dbg, 1);
-  await waitForDispatch(dbg, "LOAD_OBJECT_PROPERTIES");
+  await toggleExpressionNode(dbg, 1);
 
   is(findAllElements(dbg, "expressionNodes").length, 17);
 
