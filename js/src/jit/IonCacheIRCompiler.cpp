@@ -5,6 +5,7 @@
 
 
 #include "mozilla/DebugOnly.h"
+#include "mozilla/Maybe.h"
 
 #include "jit/BaselineIC.h"
 #include "jit/CacheIRCompiler.h"
@@ -23,6 +24,7 @@ using namespace js;
 using namespace js::jit;
 
 using mozilla::DebugOnly;
+using mozilla::Maybe;
 
 namespace js {
 namespace jit {
