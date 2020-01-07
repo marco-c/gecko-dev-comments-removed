@@ -157,6 +157,12 @@ class MachCommands(MachCommandBase):
                 kwargs['pref'] = 'security.sandbox.content.level:0'
                 self.log(logging.WARNING, 'awsy', {},
                     'Forcing \'security.sandbox.content.level\' = 0 because DMD is enabled.')
+            elif mozinfo.os == 'mac':
+                
+                
+                
+                bin_dir = os.path.join(bin_dir, "../Resources/")
+
 
             
             if bin_dir not in sys.path:
