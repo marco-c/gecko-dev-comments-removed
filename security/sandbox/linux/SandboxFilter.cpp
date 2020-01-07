@@ -814,11 +814,20 @@ public:
       return Allow();
 
       
-    case __NR_mknod: {
-      Arg<mode_t> mode(1);
+#ifdef __NR_mknod
+    case __NR_mknod:
+#endif
+    case __NR_mknodat: {
+      Arg<mode_t> mode(sysno == __NR_mknodat ? 2 : 1);
       return If((mode & S_IFMT) == S_IFCHR, Error(EPERM))
         .Else(InvalidSyscall());
     }
+      
+#ifdef __NR_chown
+    case __NR_chown:
+#endif
+    case __NR_fchownat:
+      return Error(EPERM);
 
       
       
