@@ -336,12 +336,20 @@ PerformanceMainThread::CreateNavigationTimingEntry()
 void
 PerformanceMainThread::QueueNavigationTimingEntry()
 {
-  if (mDocEntry) {
-    QueueEntry(mDocEntry);
+  if (!mDocEntry) {
+    return;
   }
+
+  
+  nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(mChannel);
+  if (httpChannel) {
+    mDocEntry->UpdatePropertiesFromHttpChannel(httpChannel);
+  }
+
+  QueueEntry(mDocEntry);
 }
 
-+void
+void
 PerformanceMainThread::GetEntries(nsTArray<RefPtr<PerformanceEntry>>& aRetval)
 {
   
