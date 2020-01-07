@@ -196,11 +196,14 @@ AnimationHelper::SampleAnimationForEachNode(
       
       
       
+      
+      
       const TimeStamp readyTime =
         animation.originTime() +
-        animation.startTime().get_TimeDuration() +
-        animation.holdTime().MultDouble(1.0 / animation.playbackRate());
-      hasFutureReadyTime = readyTime > aPreviousFrameTime;
+        (animation.startTime().get_TimeDuration() +
+         animation.holdTime().MultDouble(1.0 / animation.playbackRate()));
+      hasFutureReadyTime =
+        !readyTime.IsNull() && readyTime > aPreviousFrameTime;
     }
     
     
