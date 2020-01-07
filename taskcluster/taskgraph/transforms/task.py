@@ -93,6 +93,8 @@ task_description_schema = Schema({
     
     Optional('dependencies'): {basestring: object},
 
+    Optional('requires'): Any('all-completed', 'all-resolved'),
+
     
     
     Optional('expires-after'): basestring,
@@ -567,6 +569,9 @@ task_description_schema = Schema({
 
             
             Required('paths'): [basestring],
+
+            
+            Optional('optional', default=False): bool,
         }],
 
         
@@ -1421,6 +1426,9 @@ def build_task(config, tasks):
             'tags': tags,
             'priority': task['priority'],
         }
+
+        if task.get('requires', None):
+            task_def['requires'] = task['requires']
 
         if task_th:
             
