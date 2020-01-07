@@ -403,9 +403,9 @@ AudioSink::NotifyAudioNeeded()
         mOutputChannels == data->mChannels
           ? inputLayout
           : AudioConfig::ChannelLayout(mOutputChannels);
-      mConverter =
-        MakeUnique<AudioConverter>(AudioConfig(inputLayout, data->mRate),
-                                   AudioConfig(outputLayout, mOutputRate));
+      mConverter = MakeUnique<AudioConverter>(
+        AudioConfig(inputLayout, data->mChannels, data->mRate),
+        AudioConfig(outputLayout, mOutputChannels, mOutputRate));
     }
 
     
