@@ -952,6 +952,9 @@ nsTextControlFrame::SelectAllOrCollapseToEndOfText(bool aSelect)
       if (child->IsHTMLElement(nsGkAtoms::br)) {
         child = child->GetPreviousSibling();
         --numChildren;
+      } else if (child->IsNodeOfType(nsINode::eTEXT) && !child->Length()) {
+        
+        --numChildren;
       }
     }
     if (!aSelect && numChildren) {
