@@ -576,6 +576,18 @@ class Tab extends TabBase {
   get isInReaderMode() {
     return false;
   }
+
+  get hidden() {
+    return false;
+  }
+
+  get sharingState() {
+    return {
+      screen: undefined,
+      microphone: false,
+      camera: false,
+    };
+  }
 }
 
 

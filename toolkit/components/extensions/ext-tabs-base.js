@@ -323,7 +323,27 @@ class TabBase {
 
 
 
+  get discarded() {
+    throw new Error("Not implemented");
+  }
+
+  
+
+
+
+
+
   get height() {
+    throw new Error("Not implemented");
+  }
+
+  
+
+
+
+
+
+  get hidden() {
     throw new Error("Not implemented");
   }
 
@@ -344,6 +364,16 @@ class TabBase {
 
 
   get mutedInfo() {
+    throw new Error("Not implemented");
+  }
+
+  
+
+
+
+
+
+  get sharingState() {
     throw new Error("Not implemented");
   }
 
@@ -474,15 +504,42 @@ class TabBase {
 
 
 
-  matches(queryInfo) {
-    const PROPS = ["active", "audible", "cookieStoreId", "highlighted", "index", "openerTabId", "pinned", "status"];
 
-    if (PROPS.some(prop => queryInfo[prop] != null && queryInfo[prop] !== this[prop])) {
+
+
+
+
+
+
+
+
+
+  matches(queryInfo) {
+    const PROPS = ["active", "audible", "cookieStoreId", "discarded", "hidden",
+                   "highlighted", "index", "openerTabId", "pinned", "status"];
+
+    function checkProperty(prop, obj) {
+      return queryInfo[prop] != null && queryInfo[prop] !== obj[prop];
+    }
+
+    if (PROPS.some(prop => checkProperty(prop, this))) {
       return false;
     }
 
-    if (queryInfo.muted !== null) {
-      if (queryInfo.muted !== this.mutedInfo.muted) {
+    if (checkProperty("muted", this.mutedInfo)) {
+      return false;
+    }
+
+    let state = this.sharingState;
+    if (["camera", "microphone"].some(prop => checkProperty(prop, state))) {
+      return false;
+    }
+    
+    if (queryInfo.screen !== null) {
+      let match = typeof queryInfo.screen == "boolean" ?
+                         queryInfo.screen === !!state.screen :
+                         queryInfo.screen === state.screen;
+      if (!match) {
         return false;
       }
     }
@@ -516,6 +573,7 @@ class TabBase {
       active: this.selected,
       pinned: this.pinned,
       status: this.status,
+      hidden: this.hidden,
       discarded: this.discarded,
       incognito: this.incognito,
       width: this.width,
@@ -525,6 +583,7 @@ class TabBase {
       mutedInfo: this.mutedInfo,
       isArticle: this.isArticle,
       isInReaderMode: this.isInReaderMode,
+      sharingState: this.sharingState,
     };
 
     
