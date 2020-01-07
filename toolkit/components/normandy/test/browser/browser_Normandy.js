@@ -152,6 +152,11 @@ decorate_task(
       [[{"test.rollout-pref": 1}]],
       "finishInit should record original values of the study prefs",
     );
+
+    
+    defaultBranch.deleteBranch(experimentPref1);
+    defaultBranch.deleteBranch(experimentPref2);
+    defaultBranch.deleteBranch(experimentPref3);
   },
 );
 
