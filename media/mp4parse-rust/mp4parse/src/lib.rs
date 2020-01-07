@@ -1377,6 +1377,12 @@ fn find_descriptor(data: &[u8], esds: &mut ES_Descriptor) -> Result<()> {
         let mut end: u32 = 0;   
         
         for _ in 0..4 {
+            if (des.position() as usize) == remains.len() {
+                
+                
+                end = des.position() as u32;
+                break;
+            }
             let extend_or_len = des.read_u8()?;
             end = (end << 7) + (extend_or_len & 0x7F) as u32;
             if (extend_or_len & 0x80) == 0 {
