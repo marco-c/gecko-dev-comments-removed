@@ -169,6 +169,14 @@ bool OpenTypeNAME::Parse(const uint8_t* data, size_t length) {
       if (tag_end > length) {
         return Error("bad end of tag %d > %ld for langTagRecord %d", tag_end, length, i);
       }
+      
+      
+      
+      
+      
+      if (tag_length > 100 * 2) {
+        return Error("Too long language tag for LangTagRecord %d: %d", i, tag_length);
+      }
       std::string tag(string_base + tag_offset, tag_length);
       this->lang_tags.push_back(tag);
     }
