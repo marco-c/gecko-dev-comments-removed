@@ -7,6 +7,7 @@
 #ifndef mozilla_layers_APZInputBridge_h
 #define mozilla_layers_APZInputBridge_h
 
+#include "APZUtils.h"                   
 #include "mozilla/EventForwards.h"      
 #include "Units.h"                      
 
@@ -96,7 +97,7 @@ public:
   
   
   
-  static bool WillHandleWheelEvent(WidgetWheelEvent* aEvent);
+  static Maybe<APZWheelAction> ActionForWheelEvent(WidgetWheelEvent* aEvent);
 
 protected:
   friend class APZInputBridgeParent;

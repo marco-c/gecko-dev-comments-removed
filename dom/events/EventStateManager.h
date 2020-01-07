@@ -15,6 +15,7 @@
 #include "nsCOMArray.h"
 #include "nsCycleCollectionParticipant.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/layers/APZUtils.h"
 #include "nsIFrame.h"
 #include "Units.h"
 #include "WheelHandlingHelper.h"          
@@ -307,7 +308,7 @@ public:
   static bool IsRemoteTarget(nsIContent* aTarget);
 
   
-  static bool WheelEventIsScrollAction(const WidgetWheelEvent* aEvent);
+  static Maybe<layers::APZWheelAction> APZWheelActionFor(const WidgetWheelEvent* aEvent);
 
   
   
