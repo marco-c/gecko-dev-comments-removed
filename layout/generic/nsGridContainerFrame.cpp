@@ -606,8 +606,6 @@ struct nsGridContainerFrame::GridItemInfo
 
   
   
-  
-  
   bool ShouldApplyAutoMinSize(WritingMode aContainerWM,
                               LogicalAxis aContainerAxis,
                               nscoord aPercentageBasis) const
@@ -1096,7 +1094,13 @@ struct nsGridContainerFrame::Tracks
   
 
 
-   TrackSize::StateBits StateBitsForRange(const LineRange& aRange) const;
+
+
+
+
+
+  bool HasIntrinsicButNoFlexSizingInRange(const LineRange&      aRange,
+                                          TrackSize::StateBits* aState) const;
 
   
   struct ItemBaselineData
@@ -3751,17 +3755,28 @@ nsGridContainerFrame::Tracks::CalculateSizes(
   }
 }
 
-TrackSize::StateBits
-nsGridContainerFrame::Tracks::StateBitsForRange(const LineRange& aRange) const
+bool
+nsGridContainerFrame::Tracks::HasIntrinsicButNoFlexSizingInRange(
+  const LineRange&      aRange,
+  TrackSize::StateBits* aState) const
 {
   MOZ_ASSERT(!aRange.IsAuto(), "must have a definite range");
-  TrackSize::StateBits state = TrackSize::StateBits(0);
   const uint32_t start = aRange.mStart;
   const uint32_t end = aRange.mEnd;
+  const TrackSize::StateBits selector =
+    TrackSize::eIntrinsicMinSizing | TrackSize::eIntrinsicMaxSizing;
+  bool foundIntrinsic = false;
   for (uint32_t i = start; i < end; ++i) {
-    state |= mSizes[i].mState;
+    TrackSize::StateBits state = mSizes[i].mState;
+    *aState |= state;
+    if (state & TrackSize::eFlexMaxSizing) {
+      return false;
+    }
+    if (state & selector) {
+      foundIntrinsic = true;
+    }
   }
-  return state;
+  return foundIntrinsic;
 }
 
 bool
@@ -3776,13 +3791,6 @@ nsGridContainerFrame::Tracks::ResolveIntrinsicSizeStep1(
   CachedIntrinsicSizes cache;
   TrackSize& sz = mSizes[aRange.mStart];
   WritingMode wm = aState.mWM;
-
-  
-  if ((sz.mState & TrackSize::eAutoMinSizing) &&
-      aGridItem.ShouldApplyAutoMinSize(wm, mAxis, aPercentageBasis)) {
-    aGridItem.mState[mAxis] |= ItemState::eApplyAutoMinSize;
-  }
-
   
   bool needed = ((sz.mState & TrackSize::eIntrinsicMinSizing) ||
                  aConstraint == SizingConstraint::eNoConstraint) &&
@@ -4189,8 +4197,14 @@ nsGridContainerFrame::Tracks::ResolveIntrinsicSize(
   iter.Reset();
   for (; !iter.AtEnd(); iter.Next()) {
     auto& gridItem = aGridItems[iter.ItemIndex()];
+
+    
     MOZ_ASSERT(!(gridItem.mState[mAxis] & ItemState::eApplyAutoMinSize),
                "Why is eApplyAutoMinSize set already?");
+    if (gridItem.ShouldApplyAutoMinSize(wm, mAxis, aPercentageBasis)) {
+      gridItem.mState[mAxis] |= ItemState::eApplyAutoMinSize;
+    }
+
     const GridArea& area = gridItem.mArea;
     const LineRange& lineRange = area.*aRange;
     uint32_t span = lineRange.Extent();
@@ -4201,17 +4215,8 @@ nsGridContainerFrame::Tracks::ResolveIntrinsicSize(
         gridItem.mState[mAxis] |= ItemState::eIsFlexing;
       }
     } else {
-      TrackSize::StateBits state = StateBitsForRange(lineRange);
-
-      
-      if ((state & TrackSize::eAutoMinSizing) &&
-          gridItem.ShouldApplyAutoMinSize(wm, mAxis, aPercentageBasis)) {
-        gridItem.mState[mAxis] |= ItemState::eApplyAutoMinSize;
-      }
-
-      if ((state & (TrackSize::eIntrinsicMinSizing |
-                    TrackSize::eIntrinsicMaxSizing)) &&
-          !(state & TrackSize::eFlexMaxSizing)) {
+      TrackSize::StateBits state = TrackSize::StateBits(0);
+      if (HasIntrinsicButNoFlexSizingInRange(lineRange, &state)) {
         
         maxSpan = std::max(maxSpan, span);
         if (span >= stateBitsPerSpan.Length()) {
