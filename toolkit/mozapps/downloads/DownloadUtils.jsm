@@ -251,7 +251,6 @@ var DownloadUtils = {
 
 
   getTimeLeft: function DU_getTimeLeft(aSeconds, aLastSec) {
-    let nf = new Services.intl.NumberFormat();
     if (aLastSec == null)
       aLastSec = Infinity;
 
@@ -294,9 +293,9 @@ var DownloadUtils = {
         DownloadUtils.convertTimeUnits(aSeconds);
 
       let pair1 =
-        gBundle.formatStringFromName(gStr.timePair, [nf.format(time1), unit1], 2);
+        gBundle.formatStringFromName(gStr.timePair, [time1, unit1], 2);
       let pair2 =
-        gBundle.formatStringFromName(gStr.timePair, [nf.format(time2), unit2], 2);
+        gBundle.formatStringFromName(gStr.timePair, [time2, unit2], 2);
 
       
       
