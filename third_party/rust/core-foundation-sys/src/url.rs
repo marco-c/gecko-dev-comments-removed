@@ -6,7 +6,8 @@
 
 
 
-use libc::c_void;
+
+use std::os::raw::c_void;
 
 use base::{CFOptionFlags, CFIndex, CFAllocatorRef, Boolean, CFTypeID, CFTypeRef, SInt32};
 use string::{CFStringRef, CFStringEncoding};

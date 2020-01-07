@@ -7,7 +7,7 @@
 
 
 
-use libc::c_void;
+use std::os::raw::c_void;
 
 use base::{CFTypeID, CFAllocatorRef};
 use url::CFURLRef;

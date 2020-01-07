@@ -7,7 +7,7 @@
 
 
 
-use libc::{c_char, c_ushort, c_void};
+use std::os::raw::{c_char, c_ushort, c_void};
 
 use base::{Boolean, CFOptionFlags, CFIndex, CFAllocatorRef, CFRange, CFTypeID};
 

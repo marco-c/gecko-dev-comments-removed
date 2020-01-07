@@ -7,7 +7,7 @@
 
 
 
-use libc::{c_void};
+use std::os::raw::c_void;
 
 use base::{CFAllocatorRef, CFHashCode, CFIndex, CFTypeID, Boolean};
 use string::CFStringRef;
