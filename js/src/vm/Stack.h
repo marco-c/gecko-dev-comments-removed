@@ -777,9 +777,6 @@ class InterpreterFrame
     void setHasCachedSavedFrame() {
         flags_ |= HAS_CACHED_SAVED_FRAME;
     }
-    void clearHasCachedSavedFrame() {
-        flags_ &= ~HAS_CACHED_SAVED_FRAME;
-    }
 
   public:
     void trace(JSTracer* trc, Value* sp, jsbytecode* pc);
@@ -1251,7 +1248,6 @@ class LiveSavedFrameCache
 
         struct HasCachedMatcher;
         struct SetHasCachedMatcher;
-        struct ClearHasCachedMatcher;
 
       public:
         
@@ -1263,7 +1259,6 @@ class LiveSavedFrameCache
 
         inline bool hasCachedSavedFrame() const;
         inline void setHasCachedSavedFrame();
-        inline void clearHasCachedSavedFrame();
 
         
         inline bool isInterpreterFrame() const { return ptr.is<InterpreterFrame*>(); }
