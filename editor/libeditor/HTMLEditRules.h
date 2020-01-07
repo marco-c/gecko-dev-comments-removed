@@ -780,8 +780,9 @@ protected:
 
 
 
-  nsresult GetInlineStyles(nsINode* aNode,
-                           StyleCache aStyleCache[SIZE_STYLE_TABLE]);
+
+  MOZ_MUST_USE nsresult
+  GetInlineStyles(nsINode* aNode, StyleCache aStyleCache[SIZE_STYLE_TABLE]);
 
 protected:
   HTMLEditor* mHTMLEditor;
