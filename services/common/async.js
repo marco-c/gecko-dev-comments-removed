@@ -204,6 +204,28 @@ var Async = {
     };
   },
 
+  
+
+
+
+
+
+
+
+
+
+
+
+  async* yieldingIterator(iterable, maybeYield = 50) {
+    if (typeof maybeYield == "number") {
+      maybeYield = Async.jankYielder(maybeYield);
+    }
+    for (let item of iterable) {
+      await maybeYield();
+      yield item;
+    }
+  },
+
   asyncQueueCaller(log) {
     return new AsyncQueueCaller(log);
   },
