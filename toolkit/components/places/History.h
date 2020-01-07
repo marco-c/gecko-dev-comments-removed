@@ -43,6 +43,10 @@ class ConcurrentStatementsHolder;
 
 #define RECENTLY_VISITED_URIS_MAX_AGE 6 * 60 * PR_USEC_PER_SEC
 
+
+
+#define NOTIFY_VISITS_CHUNK_SIZE 100
+
 class History final : public IHistory
                     , public nsIDownloadHistory
                     , public mozIAsyncHistory
