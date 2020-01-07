@@ -347,7 +347,7 @@ nsHttpHandler::SetFastOpenOSSupport()
     if (NS_SUCCEEDED(rv)) {
         
 #if XP_MACOSX
-        int min_version[] = {17, 4}; 
+        int min_version[] = {17, 5}; 
 #elif ANDROID
         int min_version[] = {4, 4};
 #elif XP_LINUX
