@@ -69,7 +69,10 @@ enum class EditSubAction : int32_t
   
   eInsertParagraphSeparator,
 
-  makeList,
+  
+  
+  eCreateOrChangeList,
+
   indent,
   outdent,
   align,

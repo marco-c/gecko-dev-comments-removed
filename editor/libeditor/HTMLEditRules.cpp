@@ -86,7 +86,7 @@ IsStyleCachePreservingSubAction(EditSubAction aEditSubAction)
 {
   return aEditSubAction == EditSubAction::eDeleteSelectedContent ||
          aEditSubAction == EditSubAction::eInsertParagraphSeparator ||
-         aEditSubAction == EditSubAction::makeList ||
+         aEditSubAction == EditSubAction::eCreateOrChangeList ||
          aEditSubAction == EditSubAction::indent ||
          aEditSubAction == EditSubAction::outdent ||
          aEditSubAction == EditSubAction::align ||
@@ -695,7 +695,7 @@ HTMLEditRules::WillDoAction(Selection* aSelection,
     case EditSubAction::eDeleteSelectedContent:
       return WillDeleteSelection(aInfo.collapsedAction, aInfo.stripWrappers,
                                  aCancel, aHandled);
-    case EditSubAction::makeList:
+    case EditSubAction::eCreateOrChangeList:
       return WillMakeList(aInfo.blockType, aInfo.entireList,
                           aInfo.bulletType, aCancel, aHandled);
     case EditSubAction::indent:
@@ -3802,8 +3802,8 @@ HTMLEditRules::MoveBlock(Element& aLeftBlock,
   nsTArray<OwningNonNull<nsINode>> arrayOfNodes;
   
   nsresult rv = GetNodesFromPoint(EditorDOMPoint(&aRightBlock, aRightOffset),
-                                  EditSubAction::makeList, arrayOfNodes,
-                                  TouchContent::yes);
+                                  EditSubAction::eCreateOrChangeList,
+                                  arrayOfNodes, TouchContent::yes);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return EditActionIgnored(rv);
   }
@@ -4506,7 +4506,7 @@ HTMLEditRules::WillRemoveList(bool* aCancel,
   AutoSelectionRestorer selectionRestorer(&SelectionRef(), &HTMLEditorRef());
 
   nsTArray<RefPtr<nsRange>> arrayOfRanges;
-  GetPromotedRanges(arrayOfRanges, EditSubAction::makeList);
+  GetPromotedRanges(arrayOfRanges, EditSubAction::eCreateOrChangeList);
 
   
   nsTArray<OwningNonNull<nsINode>> arrayOfNodes;
@@ -7582,7 +7582,7 @@ HTMLEditRules::GetNodesForOperation(
   
   
   if (aEditSubAction == EditSubAction::makeBasicBlock ||
-      aEditSubAction == EditSubAction::makeList ||
+      aEditSubAction == EditSubAction::eCreateOrChangeList ||
       aEditSubAction == EditSubAction::align ||
       aEditSubAction == EditSubAction::setAbsolutePosition ||
       aEditSubAction == EditSubAction::indent ||
@@ -7652,7 +7652,7 @@ HTMLEditRules::GetListActionNodes(
     AutoTransactionsConserveSelection dontChangeMySelection(&HTMLEditorRef());
 
     
-    nsresult rv = GetNodesFromSelection(EditSubAction::makeList,
+    nsresult rv = GetNodesFromSelection(EditSubAction::eCreateOrChangeList,
                                         aOutArrayOfNodes, aTouchContent);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
