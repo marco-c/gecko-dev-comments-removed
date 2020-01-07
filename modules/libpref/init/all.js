@@ -2473,7 +2473,7 @@ pref("security.csp.enableStrictDynamic", true);
 
 #if defined(DEBUG) && !defined(ANDROID)
 
-pref("csp.content_privileged_about_uris_without_csp", "blank,home,newtab,printpreview,srcdoc,studies,welcome");
+pref("csp.content_privileged_about_uris_without_csp", "blank,home,newtab,printpreview,srcdoc,welcome");
 #endif
 
 #ifdef NIGHTLY_BUILD
