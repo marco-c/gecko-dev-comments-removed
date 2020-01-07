@@ -95,10 +95,6 @@ public:
     return mSupportedCodecs.values;
   }
 
-  virtual std::vector<JsepTrack> GetRemoteTracksAdded() const override;
-
-  virtual std::vector<JsepTrack> GetRemoteTracksRemoved() const override;
-
   virtual nsresult CreateOffer(const JsepOfferOptions& options,
                                std::string* offer) override;
 
@@ -253,9 +249,6 @@ private:
                                            const;
   const Sdp* GetAnswer() const;
 
-  
-  std::vector<JsepTrack> mRemoteTracksAdded;
-  std::vector<JsepTrack> mRemoteTracksRemoved;
   
   
   std::vector<RefPtr<JsepTransceiver>> mTransceivers;

@@ -522,19 +522,33 @@ TransceiverImpl::SyncWithJS(dom::RTCRtpTransceiver& aJsTransceiver,
         aJsTransceiver.SetCurrentDirection(
             dom::RTCRtpTransceiverDirection::Inactive, aRv);
       }
-
-      
-      
-      
-      
-      if (!mReceiveTrack->Muted()) {
-        mReceiveTrack->MutedChanged(true);
-      }
     }
 
     if (aRv.Failed()) {
       return;
     }
+  }
+
+  RefPtr<dom::RTCRtpReceiver> receiver = aJsTransceiver.GetReceiver(aRv);
+  if (aRv.Failed()) {
+    return;
+  }
+
+  
+  dom::Sequence<nsString> receiveStreamIds;
+  for (const auto& id : mJsepTransceiver->mRecvTrack.GetStreamIds()) {
+    receiveStreamIds.AppendElement(NS_ConvertUTF8toUTF16(id.c_str()),
+                                   fallible);
+  }
+  receiver->SetStreamIds(receiveStreamIds, aRv);
+  if (aRv.Failed()) {
+    return;
+  }
+
+  receiver->SetRemoteSendBit(mJsepTransceiver->mRecvTrack.GetRemoteSetSendBit(),
+                             aRv);
+  if (aRv.Failed()) {
+    return;
   }
 
   

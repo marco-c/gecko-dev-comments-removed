@@ -132,10 +132,6 @@ public:
     }
   }
 
-  
-  virtual std::vector<JsepTrack> GetRemoteTracksAdded() const = 0;
-  virtual std::vector<JsepTrack> GetRemoteTracksRemoved() const = 0;
-
   virtual const std::vector<RefPtr<JsepTransceiver>>&
     GetTransceivers() const = 0;
   virtual std::vector<RefPtr<JsepTransceiver>>& GetTransceivers() = 0;
