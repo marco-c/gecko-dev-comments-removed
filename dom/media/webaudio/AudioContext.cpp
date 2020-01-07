@@ -650,11 +650,15 @@ AudioContext::DestinationStream() const
 }
 
 double
-AudioContext::CurrentTime() const
+AudioContext::CurrentTime()
 {
   MediaStream* stream = Destination()->Stream();
+  
+  
+  
   return nsRFPService::ReduceTimePrecisionAsSecs(
-    stream->StreamTimeToSeconds(stream->GetCurrentTime()));
+    stream->StreamTimeToSeconds(stream->GetCurrentTime()),
+    GetRandomTimelineSeed());
 }
 
 void AudioContext::DisconnectFromOwner()

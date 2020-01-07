@@ -572,8 +572,12 @@ DOMMediaStream::CurrentTime()
   if (!mPlaybackStream) {
     return 0.0;
   }
+  
+  
+  
   return nsRFPService::ReduceTimePrecisionAsSecs(mPlaybackStream->
-    StreamTimeToSeconds(mPlaybackStream->GetCurrentTime() - mLogicalStreamStartTime));
+    StreamTimeToSeconds(mPlaybackStream->GetCurrentTime() - mLogicalStreamStartTime),
+    GetRandomTimelineSeed());
 }
 
 already_AddRefed<Promise>
