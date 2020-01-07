@@ -14,7 +14,7 @@ add_task(async function() {
   scope.OS.File.read = () => triedToRead = true;
   blocklist._loadBlocklist();
   Assert.ok(blocklist.isLoaded);
-  await blocklist._preloadBlocklist();
+  await blocklist.loadBlocklistAsync();
   Assert.ok(!triedToRead);
   scope.OS.File.read = read;
   blocklist._clear();
@@ -22,7 +22,7 @@ add_task(async function() {
   info("sync -> async complete");
 
   
-  await blocklist._preloadBlocklist();
+  await blocklist.loadBlocklistAsync();
   Assert.ok(blocklist.isLoaded);
   
 
@@ -40,7 +40,7 @@ add_task(async function() {
     });
   };
 
-  await blocklist._preloadBlocklist();
+  await blocklist.loadBlocklistAsync();
   
   Assert.ok(blocklist.isLoaded);
   info("mixed async/sync test complete");
