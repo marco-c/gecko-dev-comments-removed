@@ -290,6 +290,9 @@ public:
   void NotifyClientSuspended(bool aSuspended);
 
   
+  void NotifyResume();
+
+  
   
   
   void Pin();

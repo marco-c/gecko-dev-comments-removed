@@ -690,24 +690,7 @@ ChannelMediaResource::Resume()
       
       element->DownloadResumed();
     } else {
-      int64_t totalLength = GetLength();
-      
-      
-      
-      
-      
-      if (totalLength < 0 || GetOffset() < totalLength) {
-        
-        
-        int64_t offset =
-          mPendingSeekOffset != -1 ? mPendingSeekOffset : GetOffset();
-        mPendingSeekOffset = -1;
-        Seek(offset, false);
-        element->DownloadResumed();
-      } else {
-        
-        
-      }
+      mCacheStream.NotifyResume();
     }
   }
 }

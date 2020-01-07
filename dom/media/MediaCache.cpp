@@ -2300,6 +2300,31 @@ MediaCacheStream::NotifyClientSuspended(bool aSuspended)
   OwnerThread()->Dispatch(r.forget());
 }
 
+void
+MediaCacheStream::NotifyResume()
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
+    "MediaCacheStream::NotifyResume",
+    [ this, client = RefPtr<ChannelMediaResource>(mClient) ]() {
+      AutoLock lock(mMediaCache->Monitor());
+      if (mClosed) {
+        return;
+      }
+      
+      
+      if (mStreamLength < 0 || mChannelOffset < mStreamLength) {
+        int64_t offset = mSeekTarget != -1 ? mSeekTarget : mChannelOffset;
+        mClient->CacheClientSeek(offset, false);
+        
+      }
+      
+      
+    });
+  OwnerThread()->Dispatch(r.forget());
+}
+
 MediaCacheStream::~MediaCacheStream()
 {
   NS_ASSERTION(NS_IsMainThread(), "Only call on main thread");
