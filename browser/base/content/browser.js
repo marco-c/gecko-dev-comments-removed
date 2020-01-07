@@ -1233,6 +1233,7 @@ var gBrowserInit = {
           .XULBrowserWindow = window.XULBrowserWindow;
     window.QueryInterface(Ci.nsIDOMChromeWindow).browserDOMWindow =
       new nsBrowserAccess();
+    BrowserWindowTracker.track(window);
 
     let initBrowser = gBrowser.initialBrowser;
 
@@ -1488,8 +1489,6 @@ var gBrowserInit = {
     
     if (!getBoolPref("ui.click_hold_context_menus", false))
       SetClickAndHoldHandlers();
-
-    BrowserWindowTracker.track(window);
 
     PlacesToolbarHelper.init();
 

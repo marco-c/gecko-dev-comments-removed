@@ -13,9 +13,6 @@ ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
-XPCOMUtils.defineLazyServiceGetter(this, "_focusManager",
-                                   "@mozilla.org/focus-manager;1",
-                                   "nsIFocusManager");
 XPCOMUtils.defineLazyModuleGetters(this, {
   AppConstants: "resource://gre/modules/AppConstants.jsm",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm"
@@ -23,12 +20,12 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
 
 const TAB_EVENTS = ["TabBrowserInserted", "TabSelect"];
-const WINDOW_EVENTS = ["activate", "unload"];
+const WINDOW_EVENTS = ["activate", "sizemodechange", "unload"];
 const DEBUG = false;
 
 
-var _lastFocusedWindow = null;
 var _lastTopLevelWindowID = 0;
+var _trackedWindows = [];
 
 
 function debug(s) {
@@ -54,21 +51,24 @@ function _updateCurrentContentOuterWindowID(browser) {
                                "net:current-toplevel-outer-content-windowid");
 }
 
-function _handleEvent(aEvent) {
-  switch (aEvent.type) {
+function _handleEvent(event) {
+  switch (event.type) {
     case "TabBrowserInserted":
-      if (aEvent.target.ownerGlobal.gBrowser.selectedBrowser === aEvent.target.linkedBrowser) {
-        _updateCurrentContentOuterWindowID(aEvent.target.linkedBrowser);
+      if (event.target.ownerGlobal.gBrowser.selectedBrowser === event.target.linkedBrowser) {
+        _updateCurrentContentOuterWindowID(event.target.linkedBrowser);
       }
       break;
     case "TabSelect":
-      _updateCurrentContentOuterWindowID(aEvent.target.linkedBrowser);
+      _updateCurrentContentOuterWindowID(event.target.linkedBrowser);
       break;
     case "activate":
-      WindowHelper.onActivate(aEvent.target);
+      WindowHelper.onActivate(event.target);
+      break;
+    case "sizemodechange":
+      WindowHelper.onSizemodeChange(event.target);
       break;
     case "unload":
-      WindowHelper.removeWindow(aEvent.currentTarget);
+      WindowHelper.removeWindow(event.currentTarget);
       break;
   }
 }
@@ -79,6 +79,17 @@ function _handleMessage(message) {
       browser === browser.ownerGlobal.gBrowser.selectedBrowser) {
     _updateCurrentContentOuterWindowID(browser);
   }
+}
+
+function _trackWindowOrder(window) {
+  _trackedWindows.splice(window.windowState == window.STATE_MINIMIZED ?
+    _trackedWindows.length - 1 : 0, 0, window);
+}
+
+function _untrackWindowOrder(window) {
+  let idx = _trackedWindows.indexOf(window);
+  if (idx >= 0)
+    _trackedWindows.splice(idx, 1);
 }
 
 
@@ -95,18 +106,14 @@ var WindowHelper = {
     let messageManager = window.getGroupMessageManager("browsers");
     messageManager.addMessageListener("Browser:Init", _handleMessage);
 
-    
-    
-    if (window == _focusManager.activeWindow)
-      this.handleFocusedWindow(window);
+    _trackWindowOrder(window);
 
     
     _updateCurrentContentOuterWindowID(window.gBrowser.selectedBrowser);
   },
 
   removeWindow(window) {
-    if (window == _lastFocusedWindow)
-      _lastFocusedWindow = null;
+    _untrackWindowOrder(window);
 
     
     TAB_EVENTS.forEach(function(event) {
@@ -122,17 +129,21 @@ var WindowHelper = {
 
   onActivate(window, hasFocus) {
     
-    if (window == _lastFocusedWindow)
+    if (window == _trackedWindows[0])
       return;
 
-    this.handleFocusedWindow(window);
+    _untrackWindowOrder(window);
+    _trackWindowOrder(window);
 
     _updateCurrentContentOuterWindowID(window.gBrowser.selectedBrowser);
   },
 
-  handleFocusedWindow(window) {
-    
-    _lastFocusedWindow = window;
+  onSizemodeChange(window) {
+    if (window.windowState == window.STATE_MINIMIZED) {
+      
+      _untrackWindowOrder(window);
+      _trackedWindows.push(window);
+    }
   },
 
   getTopWindow(options) {
@@ -190,6 +201,19 @@ this.BrowserWindowTracker = {
 
   getTopWindow(options) {
     return WindowHelper.getTopWindow(options);
+  },
+
+  
+
+
+
+
+
+  orderedWindows: {
+    * [Symbol.iterator]() {
+      for (let window of _trackedWindows)
+        yield window;
+    }
   },
 
   track(window) {
