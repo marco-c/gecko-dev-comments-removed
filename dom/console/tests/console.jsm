@@ -1,0 +1,11 @@
+
+
+
+
+this.EXPORTED_SYMBOLS = [ "ConsoleTest" ];
+
+this.ConsoleTest = {
+  go: function() {
+    console.log("Hello world!");
+  }
+};
