@@ -715,19 +715,3 @@ function waitForNMutations(inspector, type, count) {
   });
 }
 
-
-
-
-
-async function clickOnRevealLink(inspector, container) {
-  const onSelection = inspector.selection.once("new-node-front");
-  const revealLink = container.elt.querySelector(".reveal-link");
-  const tagline = revealLink.closest(".tag-line");
-  const win = inspector.markup.doc.defaultView;
-
-  
-  EventUtils.synthesizeMouseAtCenter(tagline, {type: "mouseover"}, win);
-  EventUtils.synthesizeMouseAtCenter(revealLink, {}, win);
-
-  await onSelection;
-}
