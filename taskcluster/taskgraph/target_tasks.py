@@ -70,7 +70,8 @@ def filter_beta_release_tasks(task, parameters, ignore_kinds=None, allow_l10n=Fa
             'win32', 'win64',
             ):
         if task.attributes['build_type'] == 'opt' and \
-           task.attributes.get('unittest_suite') != 'talos':
+           task.attributes.get('unittest_suite') != 'talos' and \
+           task.attributes.get('unittest_suite') != 'raptor':
             return False
 
     
@@ -127,6 +128,11 @@ def _try_option_syntax(full_task_graph, parameters, graph_config):
         
         if options.talos_trigger_tests > 1 and task.attributes.get('unittest_suite') == 'talos':
             task.attributes['task_duplicates'] = options.talos_trigger_tests
+            task.attributes['profile'] = options.profile
+
+        
+        if options.raptor_trigger_tests > 1 and task.attributes.get('unittest_suite') == 'raptor':
+            task.attributes['task_duplicates'] = options.raptor_trigger_tests
             task.attributes['profile'] = options.profile
 
         task.attributes.update(attributes)
@@ -194,6 +200,9 @@ def target_tasks_ash(full_task_graph, parameters, graph_config):
                 return False
             
             if task.attributes.get('unittest_suite') == 'talos':
+                return False
+            
+            if task.attributes.get('unittest_suite') == 'raptor':
                 return False
         
         if task.attributes['kind'] == 'upload-symbols':
