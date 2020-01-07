@@ -13,7 +13,6 @@ config = {
     ],
     'stage_platform': 'linux-rusttests',
     'enable_signing': False,
-    'enable_talos_sendchange': False,
     
     'env': {
         'MOZBUILD_STATE_PATH': os.path.join(os.getcwd(), '.mozbuild'),

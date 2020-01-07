@@ -5,6 +5,5 @@ config = {
     'stage_product': 'devedition',
 
     
-    'enable_talos_sendchange': False,
     'enable_unittest_sendchange': False,
 }

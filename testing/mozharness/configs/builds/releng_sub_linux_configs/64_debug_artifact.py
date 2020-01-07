@@ -20,7 +20,6 @@ config = {
     'debug_build': True,
     
     'enable_signing': False,
-    'enable_talos_sendchange': False,
     
     'enable_unittest_sendchange': True,
     'perfherder_extra_options': ['artifact'],

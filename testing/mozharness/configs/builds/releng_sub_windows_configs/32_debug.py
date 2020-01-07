@@ -14,7 +14,6 @@ config = {
     ],
     'stage_platform': 'win32-debug',
     'debug_build': True,
-    'enable_talos_sendchange': False,
     
     'env': {
         'BINSCOPE': 'C:/Program Files (x86)/Microsoft/SDL BinScope/BinScope.exe',

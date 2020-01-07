@@ -27,7 +27,6 @@ config = {
     'enable_count_ctors': True,
     
     'debug_build': True,
-    'enable_talos_sendchange': False,
     
     'enable_unittest_sendchange': True,
     'perfherder_extra_options': ['artifact'],

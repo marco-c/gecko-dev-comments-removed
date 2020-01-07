@@ -20,7 +20,6 @@ config = {
     'vcs_share_base': '/builds/hg-shared',
     
     'debug_build': True,
-    'enable_talos_sendchange': False,
     
     'enable_unittest_sendchange': True,
     'perfherder_extra_options': ['artifact'],
