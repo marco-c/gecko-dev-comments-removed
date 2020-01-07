@@ -8,8 +8,8 @@
 
 
 
-#ifndef gc_Iteration_h
-#define gc_Iteration_h
+#ifndef gc_PublicIterators_h
+#define gc_PublicIterators_h
 
 #include "gc/Zone.h"
 

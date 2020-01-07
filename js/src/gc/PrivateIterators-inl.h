@@ -8,10 +8,10 @@
 
 
 
-#ifndef gc_GCIteration_h
-#define gc_GCIteration_h
+#ifndef gc_PrivateIterators_inl_h
+#define gc_PrivateIterators_inl_h
 
-#include "gc/Iteration.h"
+#include "gc/PublicIterators.h"
 
 #include "jsgcinlines.h"
 
