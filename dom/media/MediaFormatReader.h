@@ -577,6 +577,18 @@ private:
     }
 
     
+    
+    
+    
+    const TrackInfo* GetCurrentInfo() const
+    {
+      if (mInfo) {
+        return *mInfo;
+      }
+      return mOriginalInfo.get();
+    }
+
+    
     Atomic<size_t> mSizeOfQueue;
     
     
