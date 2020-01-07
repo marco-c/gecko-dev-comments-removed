@@ -48,7 +48,7 @@ public:
 
   void Shutdown();
 
-  void DataSaved();
+  void DataSaved(uint32_t aFileGeneration);
 
   static already_AddRefed<ServiceWorkerRegistrar> Get();
 
@@ -63,10 +63,10 @@ protected:
   
   
   void LoadData();
-  nsresult SaveData();
+  nsresult SaveData(const nsTArray<ServiceWorkerRegistrationData>& aData);
 
   nsresult ReadData();
-  nsresult WriteData();
+  nsresult WriteData(const nsTArray<ServiceWorkerRegistrationData>& aData);
   void DeleteData();
 
   void RegisterServiceWorkerInternal(const ServiceWorkerRegistrationData& aData);
@@ -78,9 +78,12 @@ private:
   void ProfileStarted();
   void ProfileStopped();
 
-  void ScheduleSaveData();
+  void MaybeScheduleSaveData();
   void ShutdownCompleted();
   void MaybeScheduleShutdownCompleted();
+
+  uint32_t GetNextGeneration();
+  void MaybeResetGeneration();
 
   nsCOMPtr<nsIAsyncShutdownClient> GetShutdownPhase() const;
 
@@ -95,8 +98,11 @@ protected:
   bool mDataLoaded;
 
   
+  uint32_t mDataGeneration;
+  uint32_t mFileGeneration;
+  uint32_t mRetryCount;
   bool mShuttingDown;
-  uint32_t mRunnableCounter;
+  bool mRunnableDispatched;
 };
 
 } 
