@@ -3032,7 +3032,8 @@ nsNavHistoryQueryResultNode::OnItemMoved(int64_t aFolder,
                                          const nsACString& aGUID,
                                          const nsACString& aOldParentGUID,
                                          const nsACString& aNewParentGUID,
-                                         uint16_t aSource)
+                                         uint16_t aSource,
+                                         const nsACString& aURI)
 {
   
   
@@ -3991,12 +3992,23 @@ nsNavHistoryFolderResultNode::OnItemMoved(int64_t aItemId,
                                           const nsACString& aGUID,
                                           const nsACString& aOldParentGUID,
                                           const nsACString& aNewParentGUID,
-                                          uint16_t aSource)
+                                          uint16_t aSource,
+                                          const nsACString& aURI)
 {
   NS_ASSERTION(aOldParent == mTargetFolderItemId || aNewParent == mTargetFolderItemId,
                "Got a bookmark message that doesn't belong to us");
 
   RESTART_AND_RETURN_IF_ASYNC_PENDING();
+
+  bool excludeItems = mOptions->ExcludeItems();
+  if (excludeItems &&
+      (aItemType == nsINavBookmarksService::TYPE_SEPARATOR ||
+       (aItemType == nsINavBookmarksService::TYPE_BOOKMARK &&
+        !StringBeginsWith(aURI, NS_LITERAL_CSTRING("place:"))))) {
+    
+    
+    return NS_OK;
+  }
 
   uint32_t index;
   nsNavHistoryResultNode* node = FindChildById(aItemId, &index);
@@ -4009,12 +4021,6 @@ nsNavHistoryFolderResultNode::OnItemMoved(int64_t aItemId,
     return NS_OK;
   if (!node && aOldParent == mTargetFolderItemId)
     return NS_OK;
-
-  bool excludeItems = mOptions->ExcludeItems();
-  if (node && excludeItems && (node->IsURI() || node->IsSeparator())) {
-    
-    return NS_OK;
-  }
 
   if (!StartIncrementalUpdate())
     return NS_OK; 
@@ -4670,25 +4676,26 @@ nsNavHistoryResult::OnItemMoved(int64_t aItemId,
                                 const nsACString& aGUID,
                                 const nsACString& aOldParentGUID,
                                 const nsACString& aNewParentGUID,
-                                uint16_t aSource)
+                                uint16_t aSource,
+                                const nsACString& aURI)
 {
   ENUMERATE_BOOKMARK_FOLDER_OBSERVERS(aOldParent,
       OnItemMoved(aItemId, aOldParent, aOldIndex, aNewParent, aNewIndex,
-                  aItemType, aGUID, aOldParentGUID, aNewParentGUID, aSource));
+                  aItemType, aGUID, aOldParentGUID, aNewParentGUID, aSource, aURI));
   if (aNewParent != aOldParent) {
     ENUMERATE_BOOKMARK_FOLDER_OBSERVERS(aNewParent,
         OnItemMoved(aItemId, aOldParent, aOldIndex, aNewParent, aNewIndex,
-                    aItemType, aGUID, aOldParentGUID, aNewParentGUID, aSource));
+                    aItemType, aGUID, aOldParentGUID, aNewParentGUID, aSource, aURI));
   }
   ENUMERATE_ALL_BOOKMARKS_OBSERVERS(OnItemMoved(aItemId, aOldParent, aOldIndex,
                                                 aNewParent, aNewIndex,
                                                 aItemType, aGUID,
                                                 aOldParentGUID,
-                                                aNewParentGUID, aSource));
+                                                aNewParentGUID, aSource, aURI));
   ENUMERATE_HISTORY_OBSERVERS(OnItemMoved(aItemId, aOldParent, aOldIndex,
                                           aNewParent, aNewIndex, aItemType,
                                           aGUID, aOldParentGUID,
-                                          aNewParentGUID, aSource));
+                                          aNewParentGUID, aSource, aURI));
   return NS_OK;
 }
 
