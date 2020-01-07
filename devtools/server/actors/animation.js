@@ -391,7 +391,6 @@ var AnimationPlayerActor = protocol.ActorClassWithSpec(animationPlayerSpec, {
       if (hasCurrentAnimation(changedAnimations)) {
         
         
-        
         const newState = this.getState();
         const oldState = this.currentState;
         hasChanged = newState.delay !== oldState.delay ||
@@ -400,6 +399,10 @@ var AnimationPlayerActor = protocol.ActorClassWithSpec(animationPlayerSpec, {
                      newState.duration !== oldState.duration ||
                      newState.endDelay !== oldState.endDelay ||
                      newState.direction !== oldState.direction ||
+                     newState.easing !== oldState.easing ||
+                     newState.fill !== oldState.fill ||
+                     newState.animationTimingFunction !==
+                       oldState.animationTimingFunction ||
                      newState.playbackRate !== oldState.playbackRate;
         break;
       }
