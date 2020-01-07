@@ -73,6 +73,12 @@
 #include "prdtoa.h"
 #include "prtime.h"
 
+#if defined(XP_WIN)
+#include <processthreadsapi.h>  
+#else
+#include <unistd.h> 
+#endif 
+
 #ifdef MOZ_TASK_TRACER
 #include "GeckoTaskTracer.h"
 #endif
@@ -427,6 +433,20 @@ private:
       
       if (name.find(filter) != std::string::npos) {
         return true;
+      }
+
+      
+      if (filter.find("pid:") == 0) {
+        std::string mypid = std::to_string(
+#ifdef XP_WIN
+          GetCurrentProcessId()
+#else
+          getpid()
+#endif
+        );
+        if (filter.compare(4, std::string::npos, mypid) == 0) {
+          return true;
+        }
       }
     }
 

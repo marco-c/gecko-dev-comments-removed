@@ -247,6 +247,12 @@ void profiler_shutdown();
 
 
 
+
+
+
+
+
+
 void profiler_start(uint32_t aEntries, double aInterval, uint32_t aFeatures,
                     const char** aFilters, uint32_t aFilterCount);
 
