@@ -2,6 +2,8 @@
 
 
 
+from __future__ import absolute_import
+
 from datetime import datetime
 
 from marionette_driver.by import By

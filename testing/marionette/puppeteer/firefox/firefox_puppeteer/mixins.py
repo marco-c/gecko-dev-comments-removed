@@ -2,6 +2,8 @@
 
 
 
+from __future__ import absolute_import
+
 from firefox_puppeteer.puppeteer import Puppeteer
 from firefox_puppeteer.ui.browser.window import BrowserWindow
 

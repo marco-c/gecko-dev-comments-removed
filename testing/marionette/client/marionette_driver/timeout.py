@@ -2,8 +2,9 @@
 
 
 
+from __future__ import absolute_import
 
-import errors
+from . import errors
 
 
 DEFAULT_SCRIPT_TIMEOUT = 30

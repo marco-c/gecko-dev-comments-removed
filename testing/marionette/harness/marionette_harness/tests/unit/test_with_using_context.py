@@ -2,6 +2,8 @@
 
 
 
+from __future__ import absolute_import
+
 from marionette_driver.decorators import using_context
 from marionette_driver.errors import MarionetteException
 

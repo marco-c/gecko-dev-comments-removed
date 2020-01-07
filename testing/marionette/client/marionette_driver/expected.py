@@ -2,10 +2,12 @@
 
 
 
-import errors
+from __future__ import absolute_import
+
 import types
 
-from marionette import HTMLElement
+from . import errors
+from .marionette import HTMLElement
 
 """This file provides a set of expected conditions for common use
 cases when writing Marionette tests.

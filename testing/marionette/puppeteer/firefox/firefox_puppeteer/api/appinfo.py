@@ -2,6 +2,8 @@
 
 
 
+from __future__ import absolute_import
+
 from firefox_puppeteer.base import BaseLib
 
 

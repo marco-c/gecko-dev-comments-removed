@@ -2,7 +2,9 @@
 
 
 
-from marionette import MultiActions, Actions
+from __future__ import absolute_import
+
+from .marionette import MultiActions, Actions
 
 
 def smooth_scroll(marionette_session, start_element, axis, direction,

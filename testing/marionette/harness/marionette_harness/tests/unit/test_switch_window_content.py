@@ -2,6 +2,8 @@
 
 
 
+from __future__ import absolute_import
+
 from marionette_driver import Actions, By, Wait
 from marionette_driver.keys import Keys
 

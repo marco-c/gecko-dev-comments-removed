@@ -2,6 +2,8 @@
 
 
 
+from __future__ import absolute_import
+
 from marionette_driver.marionette import HTMLElement
 
 from firefox_puppeteer.base import BaseLib

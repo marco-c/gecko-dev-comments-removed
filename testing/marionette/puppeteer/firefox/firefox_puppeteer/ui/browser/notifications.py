@@ -2,6 +2,8 @@
 
 
 
+from __future__ import absolute_import
+
 from abc import ABCMeta
 
 from marionette_driver import By

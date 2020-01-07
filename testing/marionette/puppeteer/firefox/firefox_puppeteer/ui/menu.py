@@ -2,6 +2,8 @@
 
 
 
+from __future__ import absolute_import
+
 from marionette_driver import By
 from marionette_driver.errors import NoSuchElementException
 

@@ -2,6 +2,8 @@
 
 
 
+from __future__ import absolute_import
+
 import re
 
 from firefox_puppeteer.base import BaseLib

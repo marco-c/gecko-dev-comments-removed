@@ -2,10 +2,14 @@
 
 
 
+from __future__ import absolute_import
+
 import collections
-import errors
 import sys
 import time
+
+from . import errors
+
 
 DEFAULT_TIMEOUT = 5
 DEFAULT_INTERVAL = 0.1

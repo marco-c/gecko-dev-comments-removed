@@ -2,6 +2,8 @@
 
 
 
+from __future__ import absolute_import
+
 from marionette_driver import By, keys, Wait
 
 from firefox_puppeteer.ui.base import UIBaseLib

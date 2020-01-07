@@ -2,6 +2,8 @@
 
 
 
+from __future__ import absolute_import
+
 
 class L10n(object):
     """An API which allows Marionette to handle localized content.

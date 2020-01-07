@@ -2,10 +2,9 @@
 
 
 
-import unittest
+from __future__ import absolute_import, print_function
 
 from marionette_driver import errors
-
 from marionette_harness import MarionetteTestCase, skip
 
 

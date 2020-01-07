@@ -2,8 +2,11 @@
 
 
 
-from functools import wraps
+from __future__ import absolute_import, print_function
+
 import socket
+
+from functools import wraps
 
 
 def _find_marionette_in_args(*args, **kwargs):

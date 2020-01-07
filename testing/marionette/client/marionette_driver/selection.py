@@ -3,6 +3,8 @@
 
 
 
+from __future__ import absolute_import
+
 
 class SelectionManager(object):
     '''Interface for manipulating the selection and carets of the element.

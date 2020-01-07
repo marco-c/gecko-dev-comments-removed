@@ -2,9 +2,12 @@
 
 
 
+from __future__ import absolute_import
+
 import argparse
 import os
 import sys
+
 from functools import partial
 
 from mach.decorators import (
@@ -21,7 +24,6 @@ def run_marionette(context, **kwargs):
         MarionetteHarness
     )
     from mozlog.structured import commandline
-
 
     args = argparse.Namespace(**kwargs)
     args.binary = args.binary or context.firefox_bin

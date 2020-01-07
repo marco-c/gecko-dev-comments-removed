@@ -2,6 +2,8 @@
 
 
 
+from __future__ import absolute_import
+
 from marionette_driver.by import By
 
 from marionette_harness import MarionetteTestCase, skip, WindowManagerMixin

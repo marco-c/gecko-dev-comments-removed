@@ -2,6 +2,8 @@
 
 
 
+from __future__ import absolute_import
+
 __version__ = '2.5.0'
 
 from marionette_driver import (

@@ -2,6 +2,8 @@
 
 
 
+from __future__ import absolute_import
+
 import types
 
 from marionette_driver import By, errors, Wait

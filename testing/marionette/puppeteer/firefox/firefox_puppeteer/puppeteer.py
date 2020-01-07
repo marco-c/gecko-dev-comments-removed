@@ -2,7 +2,9 @@
 
 
 
-from decorators import use_class_as_property
+from __future__ import absolute_import
+
+from .decorators import use_class_as_property
 
 
 class Puppeteer(object):

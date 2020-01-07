@@ -13,6 +13,8 @@
 
 
 
+from __future__ import absolute_import
+
 
 class By(object):
     ID = "id"
