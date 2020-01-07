@@ -36,16 +36,25 @@ class SummaryGraphPath extends PureComponent {
       
       durationPerPixel: 0,
       
+      
+      isStateUpdating: false,
+      
       keyframesList: [],
     };
   }
 
   componentDidMount() {
+    
     this.updateState(this.props.animation);
   }
 
   componentWillReceiveProps(nextProps) {
+    this.setState({ isStateUpdating: true });
     this.updateState(nextProps.animation);
+  }
+
+  shouldComponentUpdate(nextProps, nextState) {
+    return !nextState.isStateUpdating;
   }
 
   
@@ -165,7 +174,13 @@ class SummaryGraphPath extends PureComponent {
     const totalDuration = this.getTotalDuration(animation, timeScale);
     const durationPerPixel = totalDuration / thisEl.parentNode.clientWidth;
 
-    this.setState({ durationPerPixel, keyframesList });
+    this.setState(
+      {
+        durationPerPixel,
+        isStateUpdating: false,
+        keyframesList
+      }
+    );
 
     emitEventForTest("animation-summary-graph-rendered");
   }
