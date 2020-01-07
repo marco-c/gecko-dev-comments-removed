@@ -2,7 +2,6 @@
 
 
 
-@import "chrome://devtools/skin/widgets.css";
 @import "resource://devtools/client/themes/light-theme.css";
 @import "resource://devtools/client/shared/components/splitter/SplitBox.css";
 @import "resource://devtools/client/shared/components/tree/TreeView.css";
