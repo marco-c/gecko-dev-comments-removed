@@ -431,7 +431,7 @@ JSRuntime::addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf, JS::Runtim
 }
 
 static bool
-InvokeInterruptCallback(JSContext* cx)
+HandleInterrupt(JSContext* cx, bool invokeCallback)
 {
     MOZ_ASSERT(cx->requestDepth >= 1);
     MOZ_ASSERT(!cx->compartment()->isAtomsCompartment());
@@ -441,6 +441,10 @@ InvokeInterruptCallback(JSContext* cx)
     
     
     jit::AttachFinishedCompilations(cx);
+
+    
+    if (!invokeCallback)
+        return true;
 
     
     
@@ -502,16 +506,15 @@ InvokeInterruptCallback(JSContext* cx)
 }
 
 void
-JSContext::requestInterrupt(InterruptMode mode)
+JSContext::requestInterrupt(InterruptReason reason)
 {
-    interrupt_ = true;
+    interruptBits_ |= uint32_t(reason);
     jitStackLimit = UINTPTR_MAX;
 
-    if (mode == JSContext::RequestInterruptUrgent) {
+    if (reason == InterruptReason::CallbackUrgent) {
         
         
         
-        interruptRegExpJit_ = true;
         FutexThread::lock();
         if (fx.isWaiting())
             fx.wake(FutexThread::WakeForJSInterrupt);
@@ -524,11 +527,13 @@ bool
 JSContext::handleInterrupt()
 {
     MOZ_ASSERT(CurrentThreadCanAccessRuntime(runtime()));
-    if (interrupt_ || jitStackLimit == UINTPTR_MAX) {
-        interrupt_ = false;
-        interruptRegExpJit_ = false;
+    if (hasAnyPendingInterrupt() || jitStackLimit == UINTPTR_MAX) {
+        bool invokeCallback =
+            hasPendingInterrupt(InterruptReason::CallbackUrgent) ||
+            hasPendingInterrupt(InterruptReason::CallbackCanWait);
+        interruptBits_ = 0;
         resetJitStackLimit();
-        return InvokeInterruptCallback(this);
+        return HandleInterrupt(this, invokeCallback);
     }
     return true;
 }

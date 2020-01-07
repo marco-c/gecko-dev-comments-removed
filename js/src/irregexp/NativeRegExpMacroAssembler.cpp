@@ -567,11 +567,13 @@ NativeRegExpMacroAssembler::Backtrack()
     JitSpew(SPEW_PREFIX "Backtrack");
 
     
+    
+    
     Label noInterrupt;
-    masm.branch32(Assembler::Equal,
-                  AbsoluteAddress(cx->addressOfInterruptRegExpJit()),
-                  Imm32(0),
-                  &noInterrupt);
+    masm.branchTest32(Assembler::Zero,
+                      AbsoluteAddress(cx->addressOfInterruptBits()),
+                      Imm32(uint32_t(InterruptReason::CallbackUrgent)),
+                      &noInterrupt);
     masm.movePtr(ImmWord(RegExpRunStatus_Error), temp0);
     masm.jump(&exit_label_);
     masm.bind(&noInterrupt);

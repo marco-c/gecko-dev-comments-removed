@@ -314,7 +314,7 @@ GCRuntime::gcIfNeededAtAllocation(JSContext* cx)
 
     
     
-    if (cx->hasPendingInterrupt())
+    if (cx->hasAnyPendingInterrupt())
         gcIfRequested();
 
     

@@ -92,6 +92,14 @@ bool
 CurrentThreadIsParseThread();
 #endif
 
+enum class InterruptReason : uint32_t
+{
+    GC = 1 << 0,
+    AttachIonCompilations = 1 << 1,
+    CallbackUrgent = 1 << 2,
+    CallbackCanWait = 1 << 3,
+};
+
 } 
 
 
@@ -787,13 +795,8 @@ struct JSContext : public JS::RootingContext,
 
     js::ThreadData<bool> interruptCallbackDisabled;
 
-    mozilla::Atomic<uint32_t, mozilla::Relaxed> interrupt_;
-    mozilla::Atomic<uint32_t, mozilla::Relaxed> interruptRegExpJit_;
-
-    enum InterruptMode {
-        RequestInterruptUrgent,
-        RequestInterruptCanWait
-    };
+    
+    mozilla::Atomic<uint32_t, mozilla::Relaxed> interruptBits_;
 
     
     
@@ -814,20 +817,20 @@ struct JSContext : public JS::RootingContext,
     
     
     
-    void requestInterrupt(InterruptMode mode);
+    void requestInterrupt(js::InterruptReason reason);
     bool handleInterrupt();
 
-    MOZ_ALWAYS_INLINE bool hasPendingInterrupt() const {
-        static_assert(sizeof(interrupt_) == sizeof(uint32_t), "Assumed by JIT callers");
-        return interrupt_;
+    MOZ_ALWAYS_INLINE bool hasAnyPendingInterrupt() const {
+        static_assert(sizeof(interruptBits_) == sizeof(uint32_t), "Assumed by JIT callers");
+        return interruptBits_ != 0;
+    }
+    bool hasPendingInterrupt(js::InterruptReason reason) const {
+        return interruptBits_ & uint32_t(reason);
     }
 
   public:
-    void* addressOfInterrupt() {
-        return &interrupt_;
-    }
-    void* addressOfInterruptRegExpJit() {
-        return &interruptRegExpJit_;
+    void* addressOfInterruptBits() {
+        return &interruptBits_;
     }
     void* addressOfJitStackLimit() {
         return &jitStackLimit;

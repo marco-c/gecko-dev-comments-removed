@@ -1922,9 +1922,7 @@ HelperThread::handleIonWorkload(AutoLockHelperThreadState& locked)
     
     
     
-    
-    
-    rt->mainContextFromAnyThread()->requestInterrupt(JSContext::RequestInterruptCanWait);
+    rt->mainContextFromAnyThread()->requestInterrupt(InterruptReason::AttachIonCompilations);
 
     currentTask.reset();
 

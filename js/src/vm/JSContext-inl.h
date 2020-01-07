@@ -392,7 +392,7 @@ CheckForInterrupt(JSContext* cx)
     MOZ_ASSERT(!cx->isExceptionPending());
     
     
-    if (MOZ_UNLIKELY(cx->hasPendingInterrupt()))
+    if (MOZ_UNLIKELY(cx->hasAnyPendingInterrupt()))
         return cx->handleInterrupt();
 
     JS_INTERRUPT_POSSIBLY_FAIL();
