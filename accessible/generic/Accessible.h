@@ -861,7 +861,7 @@ public:
   
 
 
-  bool IsDefunct() const { return mStateFlags & eIsDefunct; }
+  bool IsDefunct() const;
 
   
 
