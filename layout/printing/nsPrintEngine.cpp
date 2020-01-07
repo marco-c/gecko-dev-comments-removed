@@ -680,6 +680,11 @@ nsPrintEngine::DoCommonPrint(bool                    aIsPrintPreview,
   rv = printData->mPrintDC->InitForPrinting(devspec);
   NS_ENSURE_SUCCESS(rv, rv);
 
+  if (XRE_IsParentProcess() && !printData->mPrintDC->IsSyncPagePrinting()) {
+    RefPtr<nsPrintEngine> self(this);
+    printData->mPrintDC->RegisterPageDoneCallback([self](nsresult aResult) { self->PageDone(aResult); });
+  }
+
   if (aIsPrintPreview) {
     printData->mPrintSettings->SetPrintFrameType(nsIPrintSettings::kFramesAsIs);
 
@@ -2839,6 +2844,10 @@ nsPrintEngine::PrintPage(nsPrintObject*    aPO,
     return true;
   }
 
+  if (XRE_IsParentProcess() && !printData->mPrintDC->IsSyncPagePrinting()) {
+    mPagePrintTimer->WaitForRemotePrint();
+  }
+
   
   
   
@@ -2859,7 +2868,6 @@ nsPrintEngine::PrintPage(nsPrintObject*    aPO,
 
   return donePrinting;
 }
-
 
 
 
@@ -3016,6 +3024,8 @@ nsPrintEngine::DonePrintingPages(nsPrintObject* aPO, nsresult aResult)
       return false;
     }
   }
+
+  printData->mPrintDC->UnregisterPageDoneCallback();
 
   if (NS_SUCCEEDED(aResult)) {
     FirePrintCompletionEvent();
