@@ -380,7 +380,7 @@ public:
 
 
 
-  nsresult Stop(void);
+  void Stop();
 
   
 
@@ -438,7 +438,7 @@ public:
   
   IsAlternate IsAlternateSheet(const nsAString& aTitle, bool aHasAlternateRel);
 
-  typedef nsTArray<RefPtr<SheetLoadData> > LoadDataArray;
+  typedef nsTArray<RefPtr<SheetLoadData>> LoadDataArray;
 
   
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
@@ -595,7 +595,7 @@ private:
 
   
   
-  LoadDataArray     mPostedEvents;
+  LoadDataArray mPostedEvents;
 
   
   nsTObserverArray<nsCOMPtr<nsICSSLoaderObserver> > mObservers;
