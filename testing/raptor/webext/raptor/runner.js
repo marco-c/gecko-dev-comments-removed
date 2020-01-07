@@ -14,6 +14,13 @@
 
 
 
+
+
+var postStartupDelay = 30000;
+
+
+var pageloadDelay = 1000;
+
 var browserName;
 var ext;
 var testName = null;
@@ -136,7 +143,7 @@ function getBrowserInfo() {
 function testTabCreated(tab) {
   testTabID = tab.id;
   console.log("opened new empty tab " + testTabID);
-  nextCycle();
+  setTimeout(nextCycle, pageloadDelay);
 }
 
 async function testTabUpdated(tab) {
@@ -144,7 +151,7 @@ async function testTabUpdated(tab) {
   
   await waitForResult();
   
-  nextCycle();
+  setTimeout(nextCycle, pageloadDelay);
 }
 
 function waitForResult() {
@@ -366,8 +373,12 @@ function runner() {
       ext.tabs.onCreated.addListener(testTabCreated);
       
       ext.alarms.onAlarm.addListener(timeoutAlarmListener);
+
       
-      ext.tabs.create({url: "about:blank"});
+      
+      var text = "* pausing " + postStartupDelay / 1000 + " seconds to let browser settle... *";
+      postToControlServer("status", text);
+      setTimeout(function() { ext.tabs.create({url: "about:blank"}); }, postStartupDelay);
     });
   });
 }
