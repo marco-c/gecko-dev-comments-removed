@@ -1731,19 +1731,21 @@ this.DownloadSaver.prototype = {
     
     let startPRTime = this.download.startTime.getTime() * 1000;
 
-    try {
-      gDownloadHistory.addDownload(sourceUri, referrerUri, startPRTime,
-                                   targetUri);
-    } catch (ex) {
-      if (!(ex instanceof Components.Exception) ||
-          ex.result != Cr.NS_ERROR_NOT_AVAILABLE) {
-        throw ex;
+    if ("@mozilla.org/browser/download-history;1" in Cc) {
+      try {
+        gDownloadHistory.addDownload(sourceUri, referrerUri, startPRTime,
+                                     targetUri);
+      } catch (ex) {
+        if (!(ex instanceof Components.Exception) ||
+            ex.result != Cr.NS_ERROR_NOT_AVAILABLE) {
+          throw ex;
+        }
+        
+        
+        
+        
+        
       }
-      
-      
-      
-      
-      
     }
   },
 

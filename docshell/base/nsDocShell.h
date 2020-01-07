@@ -80,7 +80,6 @@ class nsIContentViewer;
 class nsIController;
 class nsIDocShellTreeOwner;
 class nsIDocument;
-class nsIGlobalHistory2;
 class nsIHttpChannel;
 class nsIMutableArray;
 class nsIPrompt;
@@ -684,7 +683,6 @@ private:
 
 
 
-
   void AddURIVisit(nsIURI* aURI,
                    nsIURI* aReferrerURI,
                    nsIURI* aPreviousURI,
@@ -928,7 +926,6 @@ private:
   nsCOMPtr<nsIContentViewer> mContentViewer;
   nsCOMPtr<nsIWidget> mParentWidget;
   RefPtr<mozilla::dom::ChildSHistory> mSessionHistory;
-  nsCOMPtr<nsIGlobalHistory2> mGlobalHistory;
   nsCOMPtr<nsIWebBrowserFind> mFind;
   nsCOMPtr<nsICommandManager> mCommandManager;
 
