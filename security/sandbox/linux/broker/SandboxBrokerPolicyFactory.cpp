@@ -213,11 +213,6 @@ SandboxBrokerPolicyFactory::SandboxBrokerPolicyFactory()
   
   policy->AddDir(rdwr, "/dev/dri");
 
-#ifdef MOZ_ALSA
-  
-  policy->AddDir(rdwr, "/dev/snd");
-#endif
-
   
   policy->AddPath(rdonly, "/dev/urandom");
   policy->AddPath(rdonly, "/proc/cpuinfo");
@@ -474,10 +469,19 @@ SandboxBrokerPolicyFactory::GetContentPolicy(int aPid, bool aFileProcess)
   }
 
   bool allowPulse = false;
+  bool allowAlsa = false;
   if (level < 4) {
 #ifdef MOZ_PULSEAUDIO
     allowPulse = true;
 #endif
+#ifdef MOZ_ALSA
+    allowAlsa = true;
+#endif
+  }
+
+  if (allowAlsa) {
+    
+    policy->AddDir(rdwr, "/dev/snd");
   }
 
 #ifdef MOZ_WIDGET_GTK
