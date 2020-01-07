@@ -424,7 +424,9 @@ ResolvePremultipliedAlpha(nsTArray<ColorStop>& aStops)
 
     
     
-    if (leftStop.mColor.a == rightStop.mColor.a) {
+    
+    if (leftStop.mColor.a == rightStop.mColor.a ||
+        leftStop.mPosition == rightStop.mPosition) {
       continue;
     }
 
