@@ -4,6 +4,7 @@
 
 #include <stdint.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <sys/mman.h>
 #include <elf.h>
 
@@ -25,6 +26,7 @@ extern __attribute__((visibility("hidden"))) Elf32_Rel relhack[];
 extern __attribute__((visibility("hidden"))) Elf_Ehdr elf_header;
 
 extern __attribute__((visibility("hidden"))) int (*mprotect_cb)(void *addr, size_t len, int prot);
+extern __attribute__((visibility("hidden"))) long (*sysconf_cb)(int name);
 extern __attribute__((visibility("hidden"))) char relro_start[];
 extern __attribute__((visibility("hidden"))) char relro_end[];
 
@@ -58,38 +60,43 @@ int init(int argc, char **argv, char **env)
 }
 
 static inline __attribute__((always_inline))
-void relro_pre()
+void do_relocations_with_relro(void)
 {
+    long page_size = sysconf_cb(_SC_PAGESIZE);
+    uintptr_t aligned_relro_start = ((uintptr_t) relro_start) & ~(page_size - 1);
     
     
     
-    mprotect_cb(relro_start, relro_end - relro_start, PROT_READ | PROT_WRITE);
-}
+    uintptr_t aligned_relro_end = ((uintptr_t) relro_end) & ~(page_size - 1);
+    
+    
+    
+    mprotect_cb((void *)aligned_relro_start,
+                aligned_relro_end - aligned_relro_start,
+                PROT_READ | PROT_WRITE);
 
-static inline __attribute__((always_inline))
-void relro_post()
-{
-    mprotect_cb(relro_start, relro_end - relro_start, PROT_READ);
+    do_relocations();
+
+    mprotect_cb((void *)aligned_relro_start,
+                aligned_relro_end - aligned_relro_start,
+                PROT_READ);
     
     
     mprotect_cb = NULL;
+    sysconf_cb = NULL;
 }
 
 __attribute__((section(".text._init_noinit_relro")))
 int init_noinit_relro(int argc, char **argv, char **env)
 {
-    relro_pre();
-    do_relocations();
-    relro_post();
+    do_relocations_with_relro();
     return 0;
 }
 
 __attribute__((section(".text._init_relro")))
 int init_relro(int argc, char **argv, char **env)
 {
-    relro_pre();
-    do_relocations();
-    relro_post();
+    do_relocations_with_relro();
     original_init(argc, argv, env);
     return 0;
 }

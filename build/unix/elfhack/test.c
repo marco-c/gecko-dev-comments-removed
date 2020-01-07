@@ -129,6 +129,10 @@ int print_status() {
 __thread int foo;
 __thread long long int bar[512];
 
+
+
+size_t dummy;
+
 void end_test() {
     static size_t count = 0;
     

@@ -90,9 +90,10 @@ private:
 class ElfRelHackCode_Section: public ElfSection {
 public:
     ElfRelHackCode_Section(Elf_Shdr &s, Elf &e, ElfRelHack_Section &relhack_section,
-                           unsigned int init, unsigned int mprotect_cb)
+                           unsigned int init, unsigned int mprotect_cb,
+                           unsigned int sysconf_cb)
     : ElfSection(s, nullptr, nullptr), parent(e), relhack_section(relhack_section),
-      init(init), mprotect_cb(mprotect_cb) {
+      init(init), mprotect_cb(mprotect_cb), sysconf_cb(sysconf_cb) {
         std::string file(rundir);
         file += "/inject/";
         switch (parent.getMachine()) {
@@ -128,7 +129,6 @@ public:
             throw std::runtime_error("Couldn't find a symbol table for the injected code");
 
         relro = parent.getSegmentByType(PT_GNU_RELRO);
-        align = parent.getSegmentByType(PT_LOAD)->getAlign();
 
         
         entry_point = -1;
@@ -365,12 +365,12 @@ private:
                     addr = init;
                 } else if (relro && strcmp(name, "mprotect_cb") == 0) {
                     addr = mprotect_cb;
+                } else if (relro && strcmp(name, "sysconf_cb") == 0) {
+                    addr = sysconf_cb;
                 } else if (relro && strcmp(name, "relro_start") == 0) {
-                    
-                    addr = relro->getAddr() & ~(align - 1);
-                    
+                    addr = relro->getAddr();
                 } else if (relro && strcmp(name, "relro_end") == 0) {
-                    addr = (relro->getAddr() + relro->getMemSize()) & ~(align - 1);
+                    addr = (relro->getAddr() + relro->getMemSize());
                 } else if (strcmp(name, "_GLOBAL_OFFSET_TABLE_") == 0) {
                     
                     
@@ -424,9 +424,9 @@ private:
     std::vector<ElfSection *> code;
     unsigned int init;
     unsigned int mprotect_cb;
+    unsigned int sysconf_cb;
     int entry_point;
     ElfSegment *relro;
-    unsigned int align;
 };
 
 unsigned int get_addend(Elf_Rel *rel, Elf *elf) {
@@ -702,6 +702,7 @@ int do_relocation_section(Elf *elf, unsigned int rel_type, unsigned int rel_type
     }
 
     unsigned int mprotect_cb = 0;
+    unsigned int sysconf_cb = 0;
     
     
     
@@ -714,33 +715,47 @@ int do_relocation_section(Elf *elf, unsigned int rel_type, unsigned int rel_type
     
     
     if (elf->getSegmentByType(PT_GNU_RELRO)) {
-        Elf_SymValue *mprotect = symtab->lookup("mprotect", STT(FUNC));
-        if (!mprotect) {
-            symtab->syms.emplace_back();
-            mprotect = &symtab->syms.back();
-            symtab->grow(symtab->syms.size() * symtab->getEntSize());
-            mprotect->name = ((ElfStrtab_Section *)symtab->getLink())->getStr("mprotect");
-            mprotect->info = ELF32_ST_INFO(STB_GLOBAL, STT_FUNC);
-            mprotect->other = STV_DEFAULT;
-            new (&mprotect->value) ElfLocation(nullptr, 0, ElfLocation::ABSOLUTE);
-            mprotect->size = 0;
-            mprotect->defined = false;
+        ElfSection *gnu_versym = dyn->getSectionForType(DT_VERSYM);
+        auto lookup = [&symtab, &gnu_versym](const char* symbol) {
+            Elf_SymValue *sym_value = symtab->lookup(symbol, STT(FUNC));
+            if (!sym_value) {
+                symtab->syms.emplace_back();
+                sym_value = &symtab->syms.back();
+                symtab->grow(symtab->syms.size() * symtab->getEntSize());
+                sym_value->name = ((ElfStrtab_Section *)symtab->getLink())->getStr(symbol);
+                sym_value->info = ELF32_ST_INFO(STB_GLOBAL, STT_FUNC);
+                sym_value->other = STV_DEFAULT;
+                new (&sym_value->value) ElfLocation(nullptr, 0, ElfLocation::ABSOLUTE);
+                sym_value->size = 0;
+                sym_value->defined = false;
 
-            
-            
-            
-            
-            ElfSection *gnu_versym = dyn->getSectionForType(DT_VERSYM);
-            if (gnu_versym) {
-               gnu_versym->grow(gnu_versym->getSize() + gnu_versym->getEntSize());
+                
+                
+                
+                
+                if (gnu_versym) {
+                   gnu_versym->grow(gnu_versym->getSize() + gnu_versym->getEntSize());
+                }
             }
-        }
+            return sym_value;
+        };
+
+        Elf_SymValue *mprotect = lookup("mprotect");
+        Elf_SymValue *sysconf = lookup("sysconf");
 
         
-        new_rels.emplace_back();
-        Rel_Type &rel = new_rels.back();
-        memset(&rel, 0, sizeof(rel));
-        rel.r_info = ELF32_R_INFO(std::distance(symtab->syms.begin(), std::vector<Elf_SymValue>::iterator(mprotect)), rel_type2);
+        auto add_relocation_to = [&new_rels, &symtab, rel_type2](Elf_SymValue *symbol, unsigned int location) {
+            new_rels.emplace_back();
+            Rel_Type &rel = new_rels.back();
+            memset(&rel, 0, sizeof(rel));
+            rel.r_info = ELF32_R_INFO(
+                std::distance(symtab->syms.begin(),
+                              std::vector<Elf_SymValue>::iterator(symbol)),
+                rel_type2);
+            rel.r_offset = location;
+            return location;
+        };
+
 
         
         
@@ -751,13 +766,14 @@ int do_relocation_section(Elf *elf, unsigned int rel_type, unsigned int rel_type
             size_t ptr_size = Elf_Addr::size(elf->getClass());
             size_t usable_start = (s->getAddr() + ptr_size - 1) & ~(ptr_size - 1);
             size_t usable_end = (s->getAddr() + s->getSize()) & ~(ptr_size - 1);
-            if (usable_end - usable_start >= ptr_size) {
-                mprotect_cb = rel.r_offset = usable_start;
+            if (usable_end - usable_start >= 2 * ptr_size) {
+                mprotect_cb = add_relocation_to(mprotect, usable_start);
+                sysconf_cb = add_relocation_to(sysconf, usable_start + ptr_size);
                 break;
             }
         }
 
-        if (mprotect_cb == 0) {
+        if (mprotect_cb == 0 || sysconf_cb == 0) {
             fprintf(stderr, "Couldn't find .bss. Skipping\n");
             return -1;
         }
@@ -766,7 +782,8 @@ int do_relocation_section(Elf *elf, unsigned int rel_type, unsigned int rel_type
     section->rels.assign(new_rels.begin(), new_rels.end());
     section->shrink(new_rels.size() * section->getEntSize());
 
-    ElfRelHackCode_Section *relhackcode = new ElfRelHackCode_Section(relhackcode_section, *elf, *relhack, original_init, mprotect_cb);
+    ElfRelHackCode_Section *relhackcode = new ElfRelHackCode_Section(
+        relhackcode_section, *elf, *relhack, original_init, mprotect_cb, sysconf_cb);
     
     
     ElfSection *first_executable = nullptr;
