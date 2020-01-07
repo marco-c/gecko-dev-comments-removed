@@ -110,6 +110,8 @@ window.Netmonitor = {
     let options = {
       connector,
       items: getSortedRequests(state),
+      
+      forceExport: true,
     };
 
     return HarExporter.getHar(options);

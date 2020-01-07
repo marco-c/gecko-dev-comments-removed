@@ -3050,18 +3050,23 @@ Toolbox.prototype = {
   
 
 
-  getHARFromNetMonitor: function() {
+  getHARFromNetMonitor: async function() {
     let netPanel = this.getPanel("netmonitor");
 
     
     
     
     if (!netPanel) {
-      return Promise.resolve(buildHarLog(Services.appinfo));
+      let har = await buildHarLog(Services.appinfo);
+      return har.log;
     }
 
     
-    return netPanel.panelWin.Netmonitor.getHar();
+    let har = await netPanel.panelWin.Netmonitor.getHar();
+
+    
+    
+    return har.log;
   },
 
   
