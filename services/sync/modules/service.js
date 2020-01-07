@@ -451,6 +451,11 @@ Sync11Service.prototype = {
           return;
         }
         const engine = data.slice((PREFS_BRANCH + "engine.").length);
+        if (engine.includes(".")) {
+          
+          
+          return;
+        }
         this._handleEngineStatusChanged(engine);
         break;
     }

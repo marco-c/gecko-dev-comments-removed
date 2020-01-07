@@ -78,6 +78,7 @@ pref("services.sync.telemetry.maxPayloadCount", 500);
 
 
 pref("services.sync.engine.bookmarks.validation.enabled", true);
+pref("services.sync.engine.passwords.validation.enabled", true);
 #endif
 
 #if defined(NIGHTLY_BUILD)
@@ -89,14 +90,17 @@ pref("services.sync.engine.bookmarks.repair.enabled", true);
 
 
 pref("services.sync.engine.bookmarks.validation.interval", 86400); 
+pref("services.sync.engine.passwords.validation.interval", 86400); 
 
 
 
 
 pref("services.sync.engine.bookmarks.validation.percentageChance", 10);
+pref("services.sync.engine.passwords.validation.percentageChance", 10);
 
 
 pref("services.sync.engine.bookmarks.validation.maxRecords", 1000);
+pref("services.sync.engine.passwords.validation.maxRecords", 1000);
 
 
 
