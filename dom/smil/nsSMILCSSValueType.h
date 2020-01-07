@@ -108,18 +108,6 @@ public:
 
 
 
-
-
-
-
-
-  static void ValueToString(const nsSMILValue& aValue, nsAString& aString);
-
-  
-
-
-
-
   static bool SetPropertyValues(const nsSMILValue&, mozilla::DeclarationBlock&);
 
   
