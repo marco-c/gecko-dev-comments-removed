@@ -1051,6 +1051,9 @@ IonCacheIRCompiler::emitCallNativeGetterResult()
         return false;
     masm.enterFakeExitFrame(argJSContext, scratch, ExitFrameType::IonOOLNative);
 
+    if (target->realm() != cx_->realm())
+        masm.switchToRealm(target->realm(), scratch);
+
     
     masm.setupUnalignedABICall(scratch);
     masm.passABIArg(argJSContext);
@@ -1061,6 +1064,9 @@ IonCacheIRCompiler::emitCallNativeGetterResult()
 
     
     masm.branchIfFalseBool(ReturnReg, masm.exceptionLabel());
+
+    if (target->realm() != cx_->realm())
+        masm.switchToRealm(cx_->realm(), ReturnReg);
 
     
     Address outparam(masm.getStackPointer(), IonOOLNativeExitFrameLayout::offsetOfResult());
@@ -2066,6 +2072,9 @@ IonCacheIRCompiler::emitCallNativeSetter()
         return false;
     masm.enterFakeExitFrame(argJSContext, scratch, ExitFrameType::IonOOLNative);
 
+    if (target->realm() != cx_->realm())
+        masm.switchToRealm(target->realm(), scratch);
+
     
     masm.setupUnalignedABICall(scratch);
     masm.passABIArg(argJSContext);
@@ -2076,6 +2085,9 @@ IonCacheIRCompiler::emitCallNativeSetter()
 
     
     masm.branchIfFalseBool(ReturnReg, masm.exceptionLabel());
+
+    if (target->realm() != cx_->realm())
+        masm.switchToRealm(cx_->realm(), ReturnReg);
 
     masm.adjustStack(IonOOLNativeExitFrameLayout::Size(1));
     return true;

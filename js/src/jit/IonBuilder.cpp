@@ -3993,6 +3993,11 @@ IonBuilder::makeInliningDecision(JSObject* targetArg, CallInfo& callInfo)
     }
 
     
+    Realm* targetRealm = JS::GetObjectRealmOrNull(targetArg);
+    if (!targetRealm || targetRealm != script()->realm())
+        return InliningDecision_DontInline;
+
+    
     if (!targetArg->is<JSFunction>())
         return InliningDecision_Inline;
 
@@ -5611,14 +5616,19 @@ IonBuilder::makeCallHelper(const Maybe<CallTargets>& targets, CallInfo& callInfo
 
         
         bool needArgCheck = false;
+        bool maybeCrossRealm = false;
         for (JSFunction* target : targets.ref()) {
             if (testNeedsArgumentCheck(target, callInfo)) {
                 needArgCheck = true;
                 break;
             }
+            if (target->realm() != script()->realm())
+                maybeCrossRealm = true;
         }
         if (!needArgCheck)
             call->disableArgCheck();
+        if (!maybeCrossRealm)
+            call->setNotCrossRealm();
     }
 
     call->initFunction(callInfo.fun());
