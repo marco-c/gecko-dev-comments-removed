@@ -1207,12 +1207,6 @@ TypedArrayObjectTemplate<T>::fromTypedArray(JSContext* cx, HandleObject other, b
     Rooted<ArrayBufferObject*> buffer(cx);
     if (ArrayTypeID() == srcType) {
         
-        if (srcArray->hasDetachedBuffer()) {
-            JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_TYPED_ARRAY_DETACHED);
-            return nullptr;
-        }
-
-        
         uint32_t byteLength = srcArray->byteLength();
 
         
