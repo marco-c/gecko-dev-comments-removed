@@ -225,7 +225,7 @@ public:
 
   
   virtual mozilla::a11y::role NativeRole() const override;
-  virtual Relation RelationByType(RelationType aType) override;
+  virtual Relation RelationByType(RelationType aType) const override;
 
 protected:
   
@@ -245,7 +245,7 @@ public:
   HTMLLegendAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
   
-  virtual Relation RelationByType(RelationType aType) override;
+  virtual Relation RelationByType(RelationType aType) const override;
 };
 
 
@@ -257,7 +257,7 @@ public:
   HTMLFigureAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
   
-  virtual Relation RelationByType(RelationType aType) override;
+  virtual Relation RelationByType(RelationType aType) const override;
 
 protected:
   
@@ -277,7 +277,7 @@ public:
   HTMLFigcaptionAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
   
-  virtual Relation RelationByType(RelationType aType) override;
+  virtual Relation RelationByType(RelationType aType) const override;
 };
 
 } 
