@@ -927,6 +927,11 @@ enum class RoundingMode {
 
 static const uint32_t MAX_UNCHECKED_LEAF_FRAME_SIZE = 64;
 
+
+typedef uint32_t TruncFlags;
+static const TruncFlags TRUNC_UNSIGNED   = TruncFlags(1) << 0;
+static const TruncFlags TRUNC_SATURATING = TruncFlags(1) << 1;
+
 } 
 } 
 

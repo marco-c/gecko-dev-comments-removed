@@ -702,7 +702,8 @@ struct MOZ_RAII AutoHandleWasmTruncateToIntErrors
 };
 
 void
-MacroAssembler::wasmTruncateDoubleToInt32(FloatRegister input, Register output, Label* oolEntry)
+MacroAssembler::wasmTruncateDoubleToInt32(FloatRegister input, Register output,
+                                          bool isSaturating, Label* oolEntry)
 {
     vcvttsd2si(input, output);
     cmp32(output, Imm32(1));
@@ -710,7 +711,8 @@ MacroAssembler::wasmTruncateDoubleToInt32(FloatRegister input, Register output, 
 }
 
 void
-MacroAssembler::wasmTruncateFloat32ToInt32(FloatRegister input, Register output, Label* oolEntry)
+MacroAssembler::wasmTruncateFloat32ToInt32(FloatRegister input, Register output,
+                                           bool isSaturating, Label* oolEntry)
 {
     vcvttss2si(input, output);
     cmp32(output, Imm32(1));
@@ -718,10 +720,43 @@ MacroAssembler::wasmTruncateFloat32ToInt32(FloatRegister input, Register output,
 }
 
 void
-MacroAssembler::oolWasmTruncateCheckF64ToI32(FloatRegister input, bool isUnsigned,
-                                             wasm::BytecodeOffset off, Label* rejoin)
+MacroAssembler::oolWasmTruncateCheckF64ToI32(FloatRegister input, Register output,
+                                             TruncFlags flags, wasm::BytecodeOffset off,
+                                             Label* rejoin)
 {
+    bool isUnsigned = flags & TRUNC_UNSIGNED;
+    bool isSaturating = flags & TRUNC_SATURATING;
+
     AutoHandleWasmTruncateToIntErrors traps(*this, off);
+
+    if (isSaturating) {
+        if (isUnsigned) {
+            
+            
+            Label nonNegative;
+            loadConstantDouble(0.0, ScratchDoubleReg);
+            branchDouble(Assembler::DoubleGreaterThanOrEqual, input, ScratchDoubleReg, &nonNegative);
+            move32(Imm32(0), output);
+            jump(rejoin);
+            bind(&nonNegative);
+
+            move32(Imm32(UINT32_MAX), output);
+        } else {
+            
+            
+            Label notNaN;
+            branchDouble(Assembler::DoubleOrdered, input, input, &notNaN);
+            move32(Imm32(0), output);
+            jump(rejoin);
+            bind(&notNaN);
+
+            loadConstantDouble(0.0, ScratchDoubleReg);
+            branchDouble(Assembler::DoubleLessThan, input, ScratchDoubleReg, rejoin);
+            sub32(Imm32(1), output);
+        }
+        jump(rejoin);
+        return;
+    }
 
     
     branchDouble(Assembler::DoubleUnordered, input, input, &traps.inputIsNaN);
@@ -737,16 +772,49 @@ MacroAssembler::oolWasmTruncateCheckF64ToI32(FloatRegister input, bool isUnsigne
     loadConstantDouble(double(INT32_MIN) - 1.0, ScratchDoubleReg);
     branchDouble(Assembler::DoubleLessThanOrEqual, input, ScratchDoubleReg, &traps.intOverflow);
 
-    loadConstantDouble(double(INT32_MIN), ScratchDoubleReg);
+    loadConstantDouble(0.0, ScratchDoubleReg);
     branchDouble(Assembler::DoubleGreaterThan, input, ScratchDoubleReg, &traps.intOverflow);
     jump(rejoin);
 }
 
 void
-MacroAssembler::oolWasmTruncateCheckF32ToI32(FloatRegister input, bool isUnsigned,
-                                             wasm::BytecodeOffset off, Label* rejoin)
+MacroAssembler::oolWasmTruncateCheckF32ToI32(FloatRegister input, Register output,
+                                             TruncFlags flags, wasm::BytecodeOffset off,
+                                             Label* rejoin)
 {
+    bool isUnsigned = flags & TRUNC_UNSIGNED;
+    bool isSaturating = flags & TRUNC_SATURATING;
+
     AutoHandleWasmTruncateToIntErrors traps(*this, off);
+
+    if (isSaturating) {
+        if (isUnsigned) {
+            
+            
+            Label nonNegative;
+            loadConstantFloat32(0.0f, ScratchDoubleReg);
+            branchFloat(Assembler::DoubleGreaterThanOrEqual, input, ScratchDoubleReg, &nonNegative);
+            move32(Imm32(0), output);
+            jump(rejoin);
+            bind(&nonNegative);
+
+            move32(Imm32(UINT32_MAX), output);
+        } else {
+            
+            
+            Label notNaN;
+            branchFloat(Assembler::DoubleOrdered, input, input, &notNaN);
+            move32(Imm32(0), output);
+            jump(rejoin);
+            bind(&notNaN);
+
+            loadConstantFloat32(0.0f, ScratchFloat32Reg);
+            branchFloat(Assembler::DoubleLessThan, input, ScratchFloat32Reg, rejoin);
+            sub32(Imm32(1), output);
+        }
+        jump(rejoin);
+        return;
+    }
 
     
     branchFloat(Assembler::DoubleUnordered, input, input, &traps.inputIsNaN);
@@ -766,17 +834,50 @@ MacroAssembler::oolWasmTruncateCheckF32ToI32(FloatRegister input, bool isUnsigne
 }
 
 void
-MacroAssembler::oolWasmTruncateCheckF64ToI64(FloatRegister input, bool isUnsigned,
-                                             wasm::BytecodeOffset off, Label* rejoin)
+MacroAssembler::oolWasmTruncateCheckF64ToI64(FloatRegister input, Register64 output,
+                                             TruncFlags flags, wasm::BytecodeOffset off,
+                                             Label* rejoin)
 {
+    bool isUnsigned = flags & TRUNC_UNSIGNED;
+    bool isSaturating = flags & TRUNC_SATURATING;
+
     AutoHandleWasmTruncateToIntErrors traps(*this, off);
+
+    if (isSaturating) {
+        if (isUnsigned) {
+            
+            
+            Label nonNegative;
+            loadConstantDouble(0.0, ScratchDoubleReg);
+            branchDouble(Assembler::DoubleGreaterThanOrEqual, input, ScratchDoubleReg, &nonNegative);
+            move64(Imm64(0), output);
+            jump(rejoin);
+            bind(&nonNegative);
+
+            move64(Imm64(UINT64_MAX), output);
+        } else {
+            
+            
+            Label notNaN;
+            branchDouble(Assembler::DoubleOrdered, input, input, &notNaN);
+            move64(Imm64(0), output);
+            jump(rejoin);
+            bind(&notNaN);
+
+            loadConstantDouble(0.0, ScratchDoubleReg);
+            branchDouble(Assembler::DoubleLessThan, input, ScratchDoubleReg, rejoin);
+            sub64(Imm64(1), output);
+        }
+        jump(rejoin);
+        return;
+    }
 
     
     branchDouble(Assembler::DoubleUnordered, input, input, &traps.inputIsNaN);
 
     
     if (isUnsigned) {
-        loadConstantDouble(-0.0, ScratchDoubleReg);
+        loadConstantDouble(0.0, ScratchDoubleReg);
         branchDouble(Assembler::DoubleGreaterThan, input, ScratchDoubleReg, &traps.intOverflow);
         loadConstantDouble(-1.0, ScratchDoubleReg);
         branchDouble(Assembler::DoubleLessThanOrEqual, input, ScratchDoubleReg, &traps.intOverflow);
@@ -793,17 +894,50 @@ MacroAssembler::oolWasmTruncateCheckF64ToI64(FloatRegister input, bool isUnsigne
 }
 
 void
-MacroAssembler::oolWasmTruncateCheckF32ToI64(FloatRegister input, bool isUnsigned,
-                                             wasm::BytecodeOffset off, Label* rejoin)
+MacroAssembler::oolWasmTruncateCheckF32ToI64(FloatRegister input, Register64 output,
+                                             TruncFlags flags, wasm::BytecodeOffset off,
+                                             Label* rejoin)
 {
+    bool isUnsigned = flags & TRUNC_UNSIGNED;
+    bool isSaturating = flags & TRUNC_SATURATING;
+
     AutoHandleWasmTruncateToIntErrors traps(*this, off);
+
+    if (isSaturating) {
+        if (isUnsigned) {
+            
+            
+            Label nonNegative;
+            loadConstantFloat32(0.0f, ScratchDoubleReg);
+            branchFloat(Assembler::DoubleGreaterThanOrEqual, input, ScratchDoubleReg, &nonNegative);
+            move64(Imm64(0), output);
+            jump(rejoin);
+            bind(&nonNegative);
+
+            move64(Imm64(UINT64_MAX), output);
+        } else {
+            
+            
+            Label notNaN;
+            branchFloat(Assembler::DoubleOrdered, input, input, &notNaN);
+            move64(Imm64(0), output);
+            jump(rejoin);
+            bind(&notNaN);
+
+            loadConstantFloat32(0.0f, ScratchFloat32Reg);
+            branchFloat(Assembler::DoubleLessThan, input, ScratchFloat32Reg, rejoin);
+            sub64(Imm64(1), output);
+        }
+        jump(rejoin);
+        return;
+    }
 
     
     branchFloat(Assembler::DoubleUnordered, input, input, &traps.inputIsNaN);
 
     
     if (isUnsigned) {
-        loadConstantFloat32(-0.0f, ScratchFloat32Reg);
+        loadConstantFloat32(0.0f, ScratchFloat32Reg);
         branchFloat(Assembler::DoubleGreaterThan, input, ScratchFloat32Reg, &traps.intOverflow);
         loadConstantFloat32(-1.0f, ScratchFloat32Reg);
         branchFloat(Assembler::DoubleLessThanOrEqual, input, ScratchFloat32Reg, &traps.intOverflow);
