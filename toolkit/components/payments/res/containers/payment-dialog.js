@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 import "../vendor/custom-elements.min.js";
 
@@ -9,17 +9,16 @@ import paymentRequest from "../paymentRequest.js";
 
 import "../components/currency-amount.js";
 import "./address-picker.js";
-import "./address-form.js";
 import "./basic-card-form.js";
 import "./order-details.js";
 import "./payment-method-picker.js";
 import "./shipping-option-picker.js";
 
-/* import-globals-from ../unprivileged-fallbacks.js */
 
-/**
- * <payment-dialog></payment-dialog>
- */
+
+
+
+
 
 export default class PaymentDialog extends PaymentStateSubscriberMixin(HTMLElement) {
   constructor() {
@@ -109,18 +108,18 @@ export default class PaymentDialog extends PaymentStateSubscriberMixin(HTMLEleme
     });
   }
 
-  /**
-   * Set some state from the privileged parent process.
-   * Other elements that need to set state should use their own `this.requestStore.setState`
-   * method provided by the `PaymentStateSubscriberMixin`.
-   *
-   * @param {object} state - See `PaymentsStore.setState`
-   */
+  
+
+
+
+
+
+
   setStateFromParent(state) {
     let oldSavedAddresses = this.requestStore.getState().savedAddresses;
     this.requestStore.setState(state);
 
-    // Check if any foreign-key constraints were invalidated.
+    
     state = this.requestStore.getState();
     let {
       request: {paymentOptions: {requestShipping: requestShipping}},
@@ -135,19 +134,19 @@ export default class PaymentDialog extends PaymentStateSubscriberMixin(HTMLEleme
     let oldShippingAddress = selectedShippingAddress &&
                              oldSavedAddresses[selectedShippingAddress];
 
-    // Ensure `selectedShippingAddress` never refers to a deleted address and refers
-    // to an address if one exists. We also compare address timestamps to handle changes
-    // made outside the payments UI.
+    
+    
+    
     if (shippingAddress) {
-      // invalidate the cached value if the address was modified
+      
       if (oldShippingAddress &&
           shippingAddress.guid == oldShippingAddress.guid &&
           shippingAddress.timeLastModified != oldShippingAddress.timeLastModified) {
         delete this._cachedState.selectedShippingAddress;
       }
     } else {
-      // assign selectedShippingAddress as value if it is undefined,
-      // or if the address it pointed to was removed from storage
+      
+      
       let defaultShippingAddress = null;
       if (requestShipping) {
         defaultShippingAddress = Object.keys(savedAddresses)[0];
@@ -158,25 +157,25 @@ export default class PaymentDialog extends PaymentStateSubscriberMixin(HTMLEleme
       });
     }
 
-    // Ensure `selectedPaymentCard` never refers to a deleted payment card and refers
-    // to a payment card if one exists.
+    
+    
     let basicCards = paymentRequest.getBasicCards(state);
     if (!basicCards[selectedPaymentCard]) {
-      // Determining the initial selection is tracked in bug 1455789
+      
       this.requestStore.setState({
         selectedPaymentCard: Object.keys(basicCards)[0] || null,
         selectedPaymentCardSecurityCode: null,
       });
     }
 
-    // Ensure `selectedShippingOption` never refers to a deleted shipping option and
-    // refers to a shipping option if one exists.
+    
+    
     if (shippingOptions && (!selectedShippingOption ||
                             !shippingOptions.find(option => option.id == selectedShippingOption))) {
-      // Use the DOM's computed selected shipping option:
+      
       selectedShippingOption = state.request.shippingOption;
 
-      // Otherwise, default to selecting the first option:
+      
       if (!selectedShippingOption && shippingOptions.length) {
         selectedShippingOption = shippingOptions[0].id;
       }
@@ -186,8 +185,8 @@ export default class PaymentDialog extends PaymentStateSubscriberMixin(HTMLEleme
       });
     }
 
-    // Ensure `selectedPayerAddress` never refers to a deleted address and refers
-    // to an address if one exists.
+    
+    
     if (!savedAddresses[selectedPayerAddress]) {
       this.requestStore.setState({
         selectedPayerAddress: Object.keys(savedAddresses)[0] || null,
@@ -214,8 +213,8 @@ export default class PaymentDialog extends PaymentStateSubscriberMixin(HTMLEleme
   stateChangeCallback(state) {
     super.stateChangeCallback(state);
 
-    // Don't dispatch change events for initial selectedShipping* changes at initialization
-    // if requestShipping is false.
+    
+    
     if (state.request.paymentOptions.requestShipping) {
       if (state.selectedShippingAddress != this._cachedState.selectedShippingAddress) {
         this.changeShippingAddress(state.selectedShippingAddress);
@@ -255,7 +254,7 @@ export default class PaymentDialog extends PaymentStateSubscriberMixin(HTMLEleme
     }
 
     if (payerRequested) {
-      let fieldNames = new Set(); // default: ["name", "tel", "email"]
+      let fieldNames = new Set(); 
       if (paymentOptions.requestPayerName) {
         fieldNames.add("name");
       }
