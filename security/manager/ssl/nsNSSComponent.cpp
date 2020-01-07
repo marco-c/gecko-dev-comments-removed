@@ -225,19 +225,6 @@ nsNSSComponent::~nsNSSComponent()
   MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("nsNSSComponent::dtor finished\n"));
 }
 
-NS_IMETHODIMP
-nsNSSComponent::GetPIPNSSBundleString(const char* name, nsAString& outString)
-{
-  MutexAutoLock lock(mMutex);
-
-  outString.Truncate();
-  if (mPIPNSSBundle && name) {
-    return mPIPNSSBundle->GetStringFromName(name, outString);
-  }
-
-  return NS_ERROR_FAILURE;
-}
-
 #ifdef XP_WIN
 static bool
 GetUserSid(nsAString& sidString)
@@ -520,7 +507,7 @@ nsNSSComponent::MaybeImportFamilySafetyRoot(PCCERT_CONTEXT certificate,
   if (kMicrosoftFamilySafetyCN.Equals(subjectName.get())) {
     wasFamilySafetyRoot = true;
     MOZ_ASSERT(!mFamilySafetyRoot);
-    mFamilySafetyRoot = std::move(nssCertificate);
+    mFamilySafetyRoot = Move(nssCertificate);
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("added Family Safety root"));
   }
   return NS_OK;
@@ -763,7 +750,7 @@ nsNSSComponent::GetEnterpriseRoots(nsIX509CertList** enterpriseRoots)
     return NS_ERROR_FAILURE;
   }
   nsCOMPtr<nsIX509CertList> enterpriseRootsCertList(
-    new nsNSSCertList(std::move(enterpriseRootsCopy)));
+    new nsNSSCertList(Move(enterpriseRootsCopy)));
   if (!enterpriseRootsCertList) {
     return NS_ERROR_FAILURE;
   }
@@ -1085,7 +1072,7 @@ nsNSSComponent::CheckForSmartCardChanges()
     while (list) {
       if (SECMOD_HasRemovableSlots(list->module)) {
         UniqueSECMODModule module(SECMOD_ReferenceModule(list->module));
-        if (!modulesWithRemovableSlots.append(std::move(module))) {
+        if (!modulesWithRemovableSlots.append(Move(module))) {
           return NS_ERROR_OUT_OF_MEMORY;
         }
       }
@@ -1196,7 +1183,7 @@ LoadLoadableRootsTask::LoadLoadableRoots()
   nsAutoCString nss3Dir;
   nsresult rv = GetNSS3Directory(nss3Dir);
   if (NS_SUCCEEDED(rv)) {
-    if (!possibleCKBILocations.append(std::move(nss3Dir))) {
+    if (!possibleCKBILocations.append(Move(nss3Dir))) {
       return NS_ERROR_OUT_OF_MEMORY;
     }
   } else {
@@ -1208,7 +1195,7 @@ LoadLoadableRootsTask::LoadLoadableRoots()
   nsAutoCString currentProcessDir;
   rv = GetDirectoryPath(NS_XPCOM_CURRENT_PROCESS_DIR, currentProcessDir);
   if (NS_SUCCEEDED(rv)) {
-    if (!possibleCKBILocations.append(std::move(currentProcessDir))) {
+    if (!possibleCKBILocations.append(Move(currentProcessDir))) {
       return NS_ERROR_OUT_OF_MEMORY;
     }
   } else {
@@ -1218,7 +1205,7 @@ LoadLoadableRootsTask::LoadLoadableRoots()
   nsAutoCString greDir;
   rv = GetDirectoryPath(NS_GRE_DIR, greDir);
   if (NS_SUCCEEDED(rv)) {
-    if (!possibleCKBILocations.append(std::move(greDir))) {
+    if (!possibleCKBILocations.append(Move(greDir))) {
       return NS_ERROR_OUT_OF_MEMORY;
     }
   } else {
@@ -1227,7 +1214,7 @@ LoadLoadableRootsTask::LoadLoadableRoots()
   
   
   nsAutoCString emptyString;
-  if (!possibleCKBILocations.append(std::move(emptyString))) {
+  if (!possibleCKBILocations.append(Move(emptyString))) {
     return NS_ERROR_OUT_OF_MEMORY;
   }
 
@@ -1289,20 +1276,6 @@ nsNSSComponent::ConfigureInternalPKCS11Token()
                        NS_ConvertUTF16toUTF8(fips140TokenDescription).get(),
                        0, 0);
   return NS_OK;
-}
-
-nsresult
-nsNSSComponent::InitializePIPNSSBundle()
-{
-  MutexAutoLock lock(mMutex);
-  nsCOMPtr<nsIStringBundleService> bundleService(
-    do_GetService(NS_STRINGBUNDLE_CONTRACTID));
-  if (!bundleService) {
-    return NS_ERROR_FAILURE;
-  }
-
-  return bundleService->CreateBundle("chrome://pipnss/locale/pipnss.properties",
-                                     getter_AddRefs(mPIPNSSBundle));
 }
 
 
@@ -2203,13 +2176,7 @@ nsNSSComponent::Init()
 
   MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("Beginning NSS initialization\n"));
 
-  nsresult rv = InitializePIPNSSBundle();
-  if (NS_FAILED(rv)) {
-    MOZ_LOG(gPIPNSSLog, LogLevel::Error, ("Unable to create pipnss bundle.\n"));
-    return rv;
-  }
-
-  rv = InitializeNSS();
+  nsresult rv = InitializeNSS();
   if (NS_FAILED(rv)) {
     MOZ_LOG(gPIPNSSLog, LogLevel::Error,
             ("nsNSSComponent::InitializeNSS() failed\n"));
