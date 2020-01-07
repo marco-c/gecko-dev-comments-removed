@@ -99,13 +99,15 @@ this.LoginManagerStorage_json.prototype = {
     return this._store._save();
   },
 
-  addLogin(login) {
+  addLogin(login, preEncrypted = false) {
     this._store.ensureDataReady();
 
     
     LoginHelper.checkLoginValues(login);
 
-    let [encUsername, encPassword, encType] = this._encryptLogin(login);
+    let [encUsername, encPassword, encType] = preEncrypted ?
+      [login.username, login.password, this._crypto.defaultEncType] :
+      this._encryptLogin(login);
 
     
     let loginClone = login.clone();

@@ -210,6 +210,51 @@ this.LoginHelper = {
     return false;
   },
 
+  
+
+
+
+
+
+
+  checkForDuplicatesAndMaybeUpdate(aLogin) {
+    
+    
+    let existingLogins = Services.logins.findLogins({}, aLogin.hostname,
+                                                    aLogin.formSubmitURL,
+                                                    aLogin.httpRealm);
+    
+    
+    if (existingLogins.some(l => aLogin.matches(l, false ))) {
+      return true;
+    }
+    
+    
+    let foundMatchingLogin = false;
+    for (let existingLogin of existingLogins) {
+      if (aLogin.username == existingLogin.username) {
+        foundMatchingLogin = true;
+        existingLogin.QueryInterface(Ci.nsILoginMetaInfo);
+        if (aLogin.password != existingLogin.password &
+           aLogin.timePasswordChanged > existingLogin.timePasswordChanged) {
+          
+          
+          let propBag = Cc["@mozilla.org/hash-property-bag;1"].
+                        createInstance(Ci.nsIWritablePropertyBag);
+          propBag.setProperty("password", aLogin.password);
+          propBag.setProperty("timePasswordChanged", aLogin.timePasswordChanged);
+          Services.logins.modifyLogin(existingLogin, propBag);
+        }
+      }
+    }
+    
+    if (foundMatchingLogin) {
+      return true;
+    }
+
+    return false;
+  },
+
   doLoginsMatch(aLogin1, aLogin2, {
     ignorePassword = false,
     ignoreSchemes = false,
@@ -571,40 +616,85 @@ this.LoginHelper = {
     login.timeLastUsed = loginData.timeLastUsed || loginData.timeCreated;
     login.timePasswordChanged = loginData.timePasswordChanged || loginData.timeCreated;
     login.timesUsed = loginData.timesUsed || 1;
-    
-    
-    let existingLogins = Services.logins.findLogins({}, login.hostname,
-                                                    login.formSubmitURL,
-                                                    login.httpRealm);
-    
-    
-    if (existingLogins.some(l => login.matches(l, false ))) {
-      return null;
-    }
-    
-    
-    let foundMatchingLogin = false;
-    for (let existingLogin of existingLogins) {
-      if (login.username == existingLogin.username) {
-        foundMatchingLogin = true;
-        existingLogin.QueryInterface(Ci.nsILoginMetaInfo);
-        if (login.password != existingLogin.password &
-           login.timePasswordChanged > existingLogin.timePasswordChanged) {
-          
-          
-          let propBag = Cc["@mozilla.org/hash-property-bag;1"].
-                        createInstance(Ci.nsIWritablePropertyBag);
-          propBag.setProperty("password", login.password);
-          propBag.setProperty("timePasswordChanged", login.timePasswordChanged);
-          Services.logins.modifyLogin(existingLogin, propBag);
-        }
-      }
-    }
-    
-    if (foundMatchingLogin) {
+    if (this.checkForDuplicatesAndMaybeUpdate(login)) {
       return null;
     }
     return Services.logins.addLogin(login);
+  },
+
+  
+
+
+
+
+  async maybeImportLogins(loginDatas) {
+    let loginsToAdd = [];
+    let loginMap = new Map();
+    for (let loginData of loginDatas) {
+      
+      let login = Cc["@mozilla.org/login-manager/loginInfo;1"].createInstance(Ci.nsILoginInfo);
+      login.init(loginData.hostname,
+                 loginData.formSubmitURL || (typeof(loginData.httpRealm) == "string" ? null : ""),
+                 typeof(loginData.httpRealm) == "string" ? loginData.httpRealm : null,
+                 loginData.username,
+                 loginData.password,
+                 loginData.usernameElement || "",
+                 loginData.passwordElement || "");
+
+      login.QueryInterface(Ci.nsILoginMetaInfo);
+      login.timeCreated = loginData.timeCreated;
+      login.timeLastUsed = loginData.timeLastUsed || loginData.timeCreated;
+      login.timePasswordChanged = loginData.timePasswordChanged || loginData.timeCreated;
+      login.timesUsed = loginData.timesUsed || 1;
+
+      try {
+        
+        
+        this.checkLoginValues(login);
+      } catch (e) {
+        Cu.reportError(e);
+        continue;
+      }
+
+      
+      
+      
+      
+      let newLogins = loginMap.get(login.hostname) || [];
+      if (!newLogins) {
+        loginMap.set(login.hostname, newLogins);
+      } else {
+        if (newLogins.some(l => login.matches(l, false ))) {
+          continue;
+        }
+        let foundMatchingNewLogin = false;
+        for (let newLogin of newLogins) {
+          if (login.username == newLogin.username) {
+            foundMatchingNewLogin = true;
+            newLogin.QueryInterface(Ci.nsILoginMetaInfo);
+            if (login.password != newLogin.password &
+                login.timePasswordChanged > newLogin.timePasswordChanged) {
+              
+              
+              newLogin.password = login.password;
+              newLogin.timePasswordChanged = login.timePasswordChanged;
+            }
+          }
+        }
+
+        if (foundMatchingNewLogin) {
+          continue;
+        }
+      }
+
+      if (this.checkForDuplicatesAndMaybeUpdate(login)) {
+        continue;
+      }
+
+      newLogins.push(login);
+      loginsToAdd.push(login);
+    }
+    return Services.logins.addLogins(loginsToAdd);
   },
 
   

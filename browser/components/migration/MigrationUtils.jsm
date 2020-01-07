@@ -1058,6 +1058,20 @@ this.MigrationUtils = Object.freeze({
     }
   },
 
+  async insertLoginsWrapper(logins) {
+    this._importQuantities.logins += logins.length;
+    let inserted = await LoginHelper.maybeImportLogins(logins);
+    
+    
+    
+    
+    if (gKeepUndoData) {
+      for (let {guid, timePasswordChanged} of inserted) {
+        gUndoData.get("logins").push({guid, timePasswordChanged});
+      }
+    }
+  },
+
   initializeUndoData() {
     gKeepUndoData = true;
     gUndoData = new Map([["bookmarks", []], ["visits", []], ["logins", []]]);

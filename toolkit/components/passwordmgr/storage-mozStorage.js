@@ -196,11 +196,13 @@ LoginManagerStorage_mozStorage.prototype = {
   },
 
 
-  addLogin(login) {
+  addLogin(login, preEncrypted = false) {
     
     LoginHelper.checkLoginValues(login);
 
-    let [encUsername, encPassword, encType] = this._encryptLogin(login);
+    let [encUsername, encPassword, encType] = preEncrypted ?
+      [login.username, login.password, this._crypto.defaultEncType] :
+      this._encryptLogin(login);
 
     
     let loginClone = login.clone();
