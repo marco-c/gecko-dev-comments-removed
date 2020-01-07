@@ -135,13 +135,9 @@ PerformanceMonitoring::start()
 bool
 PerformanceMonitoring::commit()
 {
+#if defined(MOZ_HAVE_RDTSC)
     
     static const size_t MAX_GROUPS_INIT_CAPACITY = 1024;
-
-#if !defined(MOZ_HAVE_RDTSC)
-    
-    return false;
-#endif 
 
     if (!isMonitoringJank_) {
         
@@ -175,6 +171,10 @@ PerformanceMonitoring::commit()
     
     reset();
     return success;
+#else
+    
+    return false;
+#endif 
 }
 
 uint64_t
