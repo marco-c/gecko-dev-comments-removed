@@ -2778,17 +2778,12 @@ var gDetailView = {
     desc.textContent = aAddon.description;
 
     var fullDesc = document.getElementById("detail-fulldesc");
-    if (aAddon.fullDescription) {
-      
-      
-      
-      if (aAddon.isGMPlugin) {
-        
-        fullDesc.unsafeSetInnerHTML(aAddon.fullDescription);
-      } else {
-        fullDesc.textContent = aAddon.fullDescription;
-      }
-
+    if (aAddon.getFullDescription) {
+      fullDesc.textContent = "";
+      fullDesc.append(aAddon.getFullDescription(document));
+      fullDesc.hidden = false;
+    } else if (aAddon.fullDescription) {
+      fullDesc.textContent = aAddon.fullDescription;
       fullDesc.hidden = false;
     } else {
       fullDesc.hidden = true;
