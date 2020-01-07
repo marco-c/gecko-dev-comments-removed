@@ -127,12 +127,7 @@ def taskgraph_cron(options):
         'job_name': '..',
 
         
-        'base_repository': options['base_repository'],
         'head_repository': options['head_repository'],
-
-        
-        
-        'head_ref': options['head_ref'],
 
         
         
