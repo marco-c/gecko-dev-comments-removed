@@ -156,6 +156,22 @@ public:
   
 
 
+  void AddResizeEventFlushObserver(nsIPresShell* aShell)
+  {
+    NS_ASSERTION(!mResizeEventFlushObservers.Contains(aShell),
+                 "Double-adding resize event flush observer");
+    mResizeEventFlushObservers.AppendElement(aShell);
+    EnsureTimerStarted();
+  }
+
+  void RemoveResizeEventFlushObserver(nsIPresShell* aShell)
+  {
+    mResizeEventFlushObservers.RemoveElement(aShell);
+  }
+
+  
+
+
   bool AddStyleFlushObserver(nsIPresShell* aShell) {
     NS_ASSERTION(!mStyleFlushObservers.Contains(aShell),
                  "Double-adding style flush observer");
@@ -470,6 +486,7 @@ private:
     nsCOMPtr<nsIDOMEvent> mEvent;
   };
 
+  AutoTArray<nsIPresShell*, 16> mResizeEventFlushObservers;
   AutoTArray<nsIPresShell*, 16> mStyleFlushObservers;
   AutoTArray<nsIPresShell*, 16> mLayoutFlushObservers;
   

@@ -1428,6 +1428,7 @@ nsRefreshDriver::ObserverCount() const
   
   
   
+  sum += mResizeEventFlushObservers.Length();
   sum += mStyleFlushObservers.Length();
   sum += mLayoutFlushObservers.Length();
   sum += mPendingEvents.Length();
@@ -1828,6 +1829,24 @@ nsRefreshDriver::Tick(int64_t aNowEpoch, TimeStamp aNowTime)
   earlyRunners.SwapElements(mEarlyRunners);
   for (uint32_t i = 0; i < earlyRunners.Length(); ++i) {
     earlyRunners[i]->Run();
+  }
+
+  
+  
+  AutoTArray<nsIPresShell*, 16> observers;
+  observers.AppendElements(mResizeEventFlushObservers);
+  for (uint32_t i = observers.Length(); i; --i) {
+    if (!mPresContext || !mPresContext->GetPresShell()) {
+      break;
+    }
+    
+    
+    nsIPresShell* shell = observers[i - 1];
+    if (!mResizeEventFlushObservers.Contains(shell)) {
+      continue;
+    }
+    mResizeEventFlushObservers.RemoveElement(shell);
+    shell->FireResizeEvent();
   }
 
   
