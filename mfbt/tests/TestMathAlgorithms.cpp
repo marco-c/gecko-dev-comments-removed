@@ -80,6 +80,16 @@ TestIsPowerOfTwo()
   static_assert(!IsPowerOfTwo(uint64_t(UINT64_MAX)), "0xffffffffffffffff isn't a power of two");
 }
 
+
+
+
+
+
+
+
+
+
+
 static_assert(WrapToSigned(uint8_t(17)) == 17,
               "no wraparound should work, 8-bit");
 static_assert(WrapToSigned(uint8_t(128)) == -128,
@@ -100,12 +110,12 @@ static_assert(WrapToSigned(uint16_t(32768 + 32767)) == -32768 + 32767,
 
 static_assert(WrapToSigned(uint32_t(8675309)) == 8675309,
               "no wraparound should work, 32-bit");
-static_assert(WrapToSigned(uint32_t(2147483648)) == -2147483648,
+static_assert(WrapToSigned(uint32_t(2147483648)) == -2147483647 - 1,
               "works for 32-bit numbers, wraparound low end");
-static_assert(WrapToSigned(uint32_t(2147483648 + 42)) == -2147483648 + 42,
+static_assert(WrapToSigned(uint32_t(2147483648 + 42)) == -2147483647 - 1 + 42,
               "works for 32-bit numbers, wraparound mid");
 static_assert(WrapToSigned(uint32_t(2147483648 + 2147483647)) ==
-                -2147483648 + 2147483647,
+                -2147483647 - 1 + 2147483647,
               "works for 32-bit numbers, wraparound high end");
 
 static_assert(WrapToSigned(uint64_t(4152739164)) == 4152739164,
