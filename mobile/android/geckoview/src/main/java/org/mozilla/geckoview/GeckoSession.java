@@ -171,7 +171,7 @@ public class GeckoSession extends LayerSession
                                     throw new IllegalArgumentException("Must use an unopened GeckoSession instance");
                                 }
 
-                                session.openWindow(null);
+                                session.open(null);
                                 callback.sendSuccess(session.getId());
                             }
                         });
@@ -601,8 +601,21 @@ public class GeckoSession extends LayerSession
      boolean isReady() {
         return mNativeQueue.isReady();
     }
+    
+    
 
-    public void openWindow(final @Nullable Context appContext) {
+
+
+
+
+
+
+
+
+
+
+
+    public void open(final @Nullable Context appContext) {
         ThreadUtils.assertOnUiThread();
 
         if (isOpen()) {
@@ -643,7 +656,14 @@ public class GeckoSession extends LayerSession
         onWindowChanged();
     }
 
-    public void closeWindow() {
+    
+
+
+
+
+
+
+    public void close() {
         ThreadUtils.assertOnUiThread();
 
         if (!isOpen()) {
