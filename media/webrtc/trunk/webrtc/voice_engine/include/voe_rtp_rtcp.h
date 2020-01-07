@@ -134,7 +134,8 @@ class WEBRTC_DLLEXPORT VoERTP_RTCP {
   
   virtual int SetReceiveAudioLevelIndicationStatus(int channel,
                                                    bool enable,
-                                                   unsigned char id = 1) {
+                                                   unsigned char id = 1,
+                                                   bool isLevelSsrc = true) {
     
     return 0;
   }
