@@ -169,48 +169,48 @@ public:
   
   virtual void MetadataLoaded(
     const MediaInfo* aInfo,
-    UniquePtr<const MetadataTags> aTags) final override;
+    UniquePtr<const MetadataTags> aTags) final;
 
   
   
-  virtual void FirstFrameLoaded() final override;
+  virtual void FirstFrameLoaded() final;
 
   
   
-  virtual void NetworkError(const MediaResult& aError) final override;
+  virtual void NetworkError(const MediaResult& aError) final;
 
   
   
-  virtual void DecodeError(const MediaResult& aError) final override;
-
-  
-  
-  
-  virtual void DecodeWarning(const MediaResult& aError) final override;
-
-  
-  virtual bool HasError() const final override;
-
-  
-  
-  virtual void LoadAborted() final override;
-
-  
-  
-  virtual void PlaybackEnded() final override;
-
-  
-  
-  virtual void SeekStarted() final override;
-
-  
-  
-  virtual void SeekCompleted() final override;
+  virtual void DecodeError(const MediaResult& aError) final;
 
   
   
   
-  virtual void DownloadSuspended() final override;
+  virtual void DecodeWarning(const MediaResult& aError) final;
+
+  
+  virtual bool HasError() const final;
+
+  
+  
+  virtual void LoadAborted() final;
+
+  
+  
+  virtual void PlaybackEnded() final;
+
+  
+  
+  virtual void SeekStarted() final;
+
+  
+  
+  virtual void SeekCompleted() final;
+
+  
+  
+  
+  virtual void DownloadSuspended() final;
 
   
   
@@ -218,11 +218,11 @@ public:
   void DownloadResumed();
 
   
-  virtual void DownloadProgressed() final override;
+  virtual void DownloadProgressed() final;
 
   
   
-  virtual void NotifySuspendedByCache(bool aSuspendedByCache) final override;
+  virtual void NotifySuspendedByCache(bool aSuspendedByCache) final;
 
   bool IsActive() const;
 
@@ -230,7 +230,7 @@ public:
 
   
   
-  virtual VideoFrameContainer* GetVideoFrameContainer() final override;
+  virtual VideoFrameContainer* GetVideoFrameContainer() final;
   layers::ImageContainer* GetImageContainer();
 
   
@@ -251,7 +251,7 @@ public:
     const PrincipalHandle& aNewPrincipalHandle) override;
 
   
-  virtual void DispatchAsyncEvent(const nsAString& aName) final override;
+  virtual void DispatchAsyncEvent(const nsAString& aName) final;
 
   
   void UpdateReadyState() override { UpdateReadyStateInternal(); }
@@ -296,7 +296,7 @@ public:
   already_AddRefed<nsIPrincipal> GetCurrentVideoPrincipal();
 
   
-  void NotifyDecoderPrincipalChanged() final override;
+  void NotifyDecoderPrincipalChanged() final;
 
   void GetEMEInfo(nsString& aEMEInfo);
 
@@ -427,7 +427,7 @@ public:
 
 
 
-  virtual void FireTimeUpdate(bool aPeriodic) final override;
+  virtual void FireTimeUpdate(bool aPeriodic) final;
 
   
 
@@ -472,11 +472,11 @@ public:
     return mNetworkState;
   }
 
-  void NotifyXPCOMShutdown() final override;
+  void NotifyXPCOMShutdown() final;
 
   
   
-  virtual void SetAudibleState(bool aAudible) final override;
+  virtual void SetAudibleState(bool aAudible) final;
 
   
   void NotifyAudioPlaybackChanged(AudibleChangedReasons aReason);
@@ -787,7 +787,7 @@ public:
 
   void SetMediaInfo(const MediaInfo& aInfo);
 
-  virtual AbstractThread* AbstractMainThread() const final override;
+  virtual AbstractThread* AbstractMainThread() const final;
 
   
   
@@ -1241,13 +1241,13 @@ protected:
 
   
   
-  virtual HTMLMediaElement* GetMediaElement() final override
+  virtual HTMLMediaElement* GetMediaElement() final
   {
     return this;
   }
 
   
-  virtual bool GetPaused() final override
+  virtual bool GetPaused() final
   {
     return Paused();
   }

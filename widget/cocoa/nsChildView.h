@@ -343,7 +343,7 @@ public:
   
   CGFloat                 BackingScaleFactor() const;
 
-  mozilla::DesktopToLayoutDeviceScale GetDesktopToDeviceScale() final override {
+  mozilla::DesktopToLayoutDeviceScale GetDesktopToDeviceScale() final {
     return mozilla::DesktopToLayoutDeviceScale(BackingScaleFactor());
   }
 

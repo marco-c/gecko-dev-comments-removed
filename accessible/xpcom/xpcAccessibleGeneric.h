@@ -44,7 +44,7 @@ public:
   NS_DECL_ISUPPORTS
 
   
-  virtual Accessible* ToInternalAccessible() const final override;
+  virtual Accessible* ToInternalAccessible() const final;
 
   
   virtual void Shutdown();

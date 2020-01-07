@@ -514,8 +514,8 @@ class nsExpirationTracker : protected ::detail::SingleThreadedExpirationTracker<
 
 
 
-  void NotifyHandlerEndLocked(const AutoLock&) final override { }
-  void NotifyHandlerEnd() final override { }
+  void NotifyHandlerEndLocked(const AutoLock&) final { }
+  void NotifyHandlerEnd() final { }
 
 protected:
   virtual void NotifyExpired(T* aObj) = 0;

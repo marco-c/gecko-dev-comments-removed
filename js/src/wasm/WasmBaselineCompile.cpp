@@ -2175,7 +2175,7 @@ class BaseCompiler final : public BaseCompilerInterface
     
     
 
-    void sync() final override {
+    void sync() final {
         size_t start = 0;
         size_t lim = stk_.length();
 

@@ -247,8 +247,8 @@ public:
     nsExtendedDOMSlots();
     ~nsExtendedDOMSlots() final;
 
-    void Traverse(nsCycleCollectionTraversalCallback&) final override;
-    void Unlink() final override;
+    void Traverse(nsCycleCollectionTraversalCallback&) final;
+    void Unlink() final;
 
     
 
@@ -299,8 +299,8 @@ public:
     nsDOMSlots();
     ~nsDOMSlots() final;
 
-    void Traverse(nsCycleCollectionTraversalCallback&) final override;
-    void Unlink() final override;
+    void Traverse(nsCycleCollectionTraversalCallback&) final;
+    void Unlink() final;
 
     size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
@@ -344,7 +344,7 @@ protected:
     return new nsDOMSlots();
   }
 
-  nsIContent::nsExtendedContentSlots* CreateExtendedSlots() final override
+  nsIContent::nsExtendedContentSlots* CreateExtendedSlots() final
   {
     return new nsExtendedDOMSlots();
   }

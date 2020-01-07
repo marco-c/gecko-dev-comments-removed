@@ -7554,7 +7554,7 @@ protected:
 
   
   NS_IMETHOD
-  Run() final override;
+  Run() final;
 
   
   void
@@ -7897,7 +7897,7 @@ protected:
 
   
   NS_IMETHOD
-  Run() final override;
+  Run() final;
 
   
   void

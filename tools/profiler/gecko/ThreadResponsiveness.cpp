@@ -106,7 +106,7 @@ public:
   }
 
   
-  NS_IMETHOD Notify(nsITimer* aTimer) final override
+  NS_IMETHOD Notify(nsITimer* aTimer) final
   {
     Run();
     return NS_OK;
