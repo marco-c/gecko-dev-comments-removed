@@ -50,8 +50,6 @@ public class GeckoDisplay {
 
 
 
-
-
     public void screenOriginChanged(final int left, final int top) {
         mSession.onScreenOriginChanged(left, top);
     }
