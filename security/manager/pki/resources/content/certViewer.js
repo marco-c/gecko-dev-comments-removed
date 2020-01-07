@@ -1,6 +1,8 @@
 
 
 
+
+
 "use strict";
 
 
@@ -10,9 +12,6 @@
 
 
 
-
-const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
-const { Services } = Cu.import("resource://gre/modules/Services.jsm", {});
 
 const nsIX509Cert = Ci.nsIX509Cert;
 const nsX509CertDB = "@mozilla.org/security/x509certdb;1";
