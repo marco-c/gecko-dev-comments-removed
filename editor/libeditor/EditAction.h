@@ -82,7 +82,10 @@ enum class EditSubAction : int32_t
   
   eSetOrClearAlignment,
 
-  makeBasicBlock,
+  
+  
+  eCreateOrRemoveBlock,
+
   removeList,
   makeDefListItem,
   insertElement,
