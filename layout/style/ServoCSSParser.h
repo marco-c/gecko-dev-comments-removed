@@ -49,6 +49,15 @@ public:
 
   static bool ParseIntersectionObserverRootMargin(const nsAString& aValue,
                                                   nsCSSRect* aResult);
+
+  
+
+
+
+
+
+
+  static already_AddRefed<nsAtom> ParseCounterStyleName(const nsAString& aValue);
 };
 
 } 
