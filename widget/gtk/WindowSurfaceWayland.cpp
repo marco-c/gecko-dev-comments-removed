@@ -556,6 +556,7 @@ WindowSurfaceWayland::WindowSurfaceWayland(nsWindow *aWindow)
   , mBackBuffer(nullptr)
   , mFrameCallback(nullptr)
   , mFrameCallbackSurface(nullptr)
+  , mDisplayThreadMessageLoop(MessageLoop::current())
   , mDelayedCommit(false)
   , mFullScreenDamage(false)
   , mIsMainThread(NS_IsMainThread())
@@ -575,7 +576,7 @@ WindowSurfaceWayland::~WindowSurfaceWayland()
     
     
     
-    MessageLoop::current()->PostTask(
+    mDisplayThreadMessageLoop->PostTask(
       NewRunnableFunction(&WaylandDisplayRelease, mWaylandDisplay->GetDisplay()));
   } else {
     WaylandDisplayRelease(mWaylandDisplay->GetDisplay());
