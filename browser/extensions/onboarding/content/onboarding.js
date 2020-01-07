@@ -19,6 +19,7 @@ const BRAND_SHORT_NAME = Services.strings
                      .createBundle("chrome://branding/locale/brand.properties")
                      .GetStringFromName("brandShortName");
 const PROMPT_COUNT_PREF = "browser.onboarding.notification.prompt-count";
+const NOTIFICATION_FINISHED_PREF = "browser.onboarding.notification.finished";
 const ONBOARDING_DIALOG_ID = "onboarding-overlay-dialog";
 const ONBOARDING_MIN_WIDTH_PX = 960;
 const SPEECH_BUBBLE_MIN_WIDTH_PX = 1130;
@@ -357,7 +358,7 @@ function telemetry(data) {
 
 function registerNewTelemetrySession(data) {
   telemetry(Object.assign(data, {
-    event: "onboarding-register-session",
+    type: "onboarding-register-session",
   }));
 }
 
@@ -396,36 +397,55 @@ class Onboarding {
 
     this._loadJS(UITOUR_JS_URI);
 
-    this._window.addEventListener("resize", this);
-
-    
-    
-    this._window.addEventListener("unload", () => this.destroy());
-
-    this.uiInitialized = false;
-    this._resizeTimerId =
-      this._window.requestIdleCallback(() => this._resizeUI());
     registerNewTelemetrySession({
       page: this._window.location.href,
       session_key: this._session_key,
       tour_type: this._tourType,
     });
+
+    
+    
+    this._window.addEventListener("beforeunload", this);
+
+    this.uiInitialized = false;
+    let doc = this._window.document;
+    if (doc.hidden) {
+      
+      
+      
+      let onVisible = () => {
+        if (!doc.hidden) {
+          doc.removeEventListener("visibilitychange", onVisible);
+          this._startUI();
+        }
+      };
+      doc.addEventListener("visibilitychange", onVisible);
+    } else {
+      this._startUI();
+    }
+  }
+
+  _startUI() {
+    this._window.addEventListener("resize", this);
+    this._resizeTimerId =
+      this._window.requestIdleCallback(() => this._resizeUI());
+    
     telemetry({
-      event: "onboarding-session-begin",
+      type: "onboarding-session-begin",
       session_key: this._session_key,
     });
   }
 
   _resizeUI() {
-    let width = this._window.document.body.getBoundingClientRect().width;
-    if (width < ONBOARDING_MIN_WIDTH_PX) {
+    this._windowWidth = this._window.document.body.getBoundingClientRect().width;
+    if (this._windowWidth < ONBOARDING_MIN_WIDTH_PX) {
       
       this.destroy();
       return;
     }
 
     this._initUI();
-    if (this._isFirstSession && width >= SPEECH_BUBBLE_MIN_WIDTH_PX) {
+    if (this._isFirstSession && this._windowWidth >= SPEECH_BUBBLE_MIN_WIDTH_PX) {
       this._overlayIcon.classList.add("onboarding-speech-bubble");
     } else {
       this._overlayIcon.classList.remove("onboarding-speech-bubble");
@@ -457,30 +477,12 @@ class Onboarding {
     this._onIconStateChange(Services.prefs.getStringPref("browser.onboarding.state", ICON_STATE_DEFAULT));
 
     
-    this._window.requestIdleCallback(() => this._initNotification());
+    this._window.requestIdleCallback(() => this.showNotification());
   }
 
   _getTourIDList() {
     let tours = Services.prefs.getStringPref(`browser.onboarding.${this._tourType}tour`, "");
     return tours.split(",").filter(tourId => tourId !== "").map(tourId => tourId.trim());
-  }
-
-  _initNotification() {
-    let doc = this._window.document;
-    if (doc.hidden) {
-      
-      
-      
-      let onVisible = () => {
-        if (!doc.hidden) {
-          doc.removeEventListener("visibilitychange", onVisible);
-          this.showNotification();
-        }
-      };
-      doc.addEventListener("visibilitychange", onVisible);
-    } else {
-      this.showNotification();
-    }
   }
 
   _initPrefObserver() {
@@ -532,6 +534,78 @@ class Onboarding {
            this._tours[0];
   }
 
+  
+
+
+  get _activeTourId() {
+    
+    if (!this._tourItems) {
+      return "";
+    }
+
+    let tourItem = this._tourItems.find(item => item.classList.contains("onboarding-active"));
+    return tourItem ? tourItem.id : "";
+  }
+
+  
+
+
+  get _logoState() {
+    return this._overlayIcon.classList.contains("onboarding-watermark") ?
+      "watermark" : "logo";
+  }
+
+  
+
+
+  get _bubbleState() {
+    let state;
+    if (this._overlayIcon.classList.contains("onboarding-watermark")) {
+      state = "hide";
+    } else if (this._overlayIcon.classList.contains("onboarding-speech-bubble")) {
+      state = "bubble";
+    } else {
+      state = "dot";
+    }
+    return state;
+  }
+
+  
+
+
+  get _notificationState() {
+    if (this._notificationCachedState === "finished") {
+      return this._notificationCachedState;
+    }
+
+    if (Services.prefs.getBoolPref(NOTIFICATION_FINISHED_PREF, false)) {
+      this._notificationCachedState = "finished";
+    } else if (this._notification) {
+      this._notificationCachedState = "show";
+    } else {
+      
+      this._notificationCachedState = "hide";
+    }
+
+    return this._notificationCachedState;
+  }
+
+  
+
+
+  get _notificationPromptCount() {
+    return Services.prefs.getIntPref(PROMPT_COUNT_PREF, 0);
+  }
+
+  
+
+
+
+
+  get _windowWidthRounded() {
+    return Math.round(this._windowWidth / 50) * 50;
+  }
+
   handleClick(target) {
     let { id, classList } = target;
     
@@ -542,6 +616,14 @@ class Onboarding {
 
     switch (id) {
       case "onboarding-overlay-button":
+        telemetry({
+          type: "onboarding-logo-click",
+          bubble_state: this._bubbleState,
+          logo_state: this._logoState,
+          notification_state: this._notificationState,
+          session_key: this._session_key,
+          width: this._windowWidthRounded,
+        });
         this.showOverlay();
         this.gotoPage(this._firstUncompleteTour.id);
         break;
@@ -555,42 +637,73 @@ class Onboarding {
       
       
       case "onboarding-overlay":
+        let eventName = id === "onboarding-overlay-close-btn" ?
+          "overlay-close-button-click" : "overlay-close-outside-click";
+        telemetry({
+          type: eventName,
+          current_tour_id: this._activeTourId,
+          session_key: this._session_key,
+          target_tour_id: this._activeTourId,
+          width: this._windowWidthRounded,
+        });
         this.hideOverlay();
         break;
       case "onboarding-notification-close-btn":
-        let tour_id = this._notificationBar.dataset.targetTourId;
-        this.hideNotification();
-        this._removeTourFromNotificationQueue(tour_id);
+        let currentTourId = this._notificationBar.dataset.targetTourId;
+        
         telemetry({
-          event: "notification-close-button-click",
-          tour_id,
+          type: "notification-close-button-click",
+          bubble_state: this._bubbleState,
+          current_tour_id: currentTourId,
+          logo_state: this._logoState,
+          notification_impression: this._notificationPromptCount,
+          notification_state: this._notificationState,
           session_key: this._session_key,
+          target_tour_id: currentTourId,
+          width: this._windowWidthRounded,
         });
+        this.hideNotification();
+        this._removeTourFromNotificationQueue(currentTourId);
         break;
       case "onboarding-notification-action-btn":
         let tourId = this._notificationBar.dataset.targetTourId;
+        telemetry({
+          type: "notification-cta-click",
+          bubble_state: this._bubbleState,
+          current_tour_id: tourId,
+          logo_state: this._logoState,
+          notification_impression: this._notificationPromptCount,
+          notification_state: this._notificationState,
+          session_key: this._session_key,
+          target_tour_id: tourId,
+          width: this._windowWidthRounded,
+        });
         this.showOverlay();
         this.gotoPage(tourId);
-        telemetry({
-          event: "notification-cta-click",
-          tour_id: tourId,
-          session_key: this._session_key,
-        });
         this._removeTourFromNotificationQueue(tourId);
         break;
     }
     if (classList.contains("onboarding-tour-item")) {
+      telemetry({
+        type: "overlay-nav-click",
+        current_tour_id: this._activeTourId,
+        session_key: this._session_key,
+        target_tour_id: id,
+        width: this._windowWidthRounded,
+      });
       this.gotoPage(id);
       
       
       target.focus();
     } else if (classList.contains("onboarding-tour-action-button")) {
-      let activeItem = this._tourItems.find(item => item.classList.contains("onboarding-active"));
-      this.setToursCompleted([ activeItem.id ]);
+      let activeTourId = this._activeTourId;
+      this.setToursCompleted([ activeTourId ]);
       telemetry({
-        event: "overlay-cta-click",
-        tour_id: activeItem.id,
+        type: "overlay-cta-click",
+        current_tour_id: activeTourId,
         session_key: this._session_key,
+        target_tour_id: activeTourId,
+        width: this._windowWidthRounded,
       });
     }
   }
@@ -691,6 +804,13 @@ class Onboarding {
 
   handleEvent(evt) {
     switch (evt.type) {
+      case "beforeunload":
+        this.destroy();
+        telemetry({
+          type: "onboarding-session-end",
+          session_key: this._session_key,
+        });
+        break;
       case "resize":
         this._window.cancelIdleCallback(this._resizeTimerId);
         this._resizeTimerId =
@@ -717,16 +837,18 @@ class Onboarding {
 
     this._clearPrefObserver();
     this._overlayIcon.remove();
-    this._overlay.remove();
+    if (this._overlay) {
+      
+      this.hideOverlay();
+      this._overlay.remove();
+    }
     if (this._notificationBar) {
+      
+      this.hideNotification();
       this._notificationBar.remove();
     }
     this._tourItems = this._tourPages =
     this._overlayIcon = this._overlay = this._notificationBar = null;
-    telemetry({
-      event: "onboarding-session-end",
-      session_key: this._session_key,
-    });
   }
 
   _onIconStateChange(state) {
@@ -747,20 +869,26 @@ class Onboarding {
       this._loadTours(this._tours);
     }
 
-    this.hideNotification();
-    this.toggleModal(this._overlay.classList.toggle("onboarding-opened"));
-    telemetry({
-      event: "overlay-session-begin",
-      session_key: this._session_key
-    });
+    if (this._overlay && !this._overlay.classList.contains("onboarding-opened")) {
+      this.hideNotification();
+      this._overlay.classList.add("onboarding-opened");
+      this.toggleModal(true);
+      telemetry({
+        type: "overlay-session-begin",
+        session_key: this._session_key,
+      });
+    }
   }
 
   hideOverlay() {
-    this.toggleModal(this._overlay.classList.toggle("onboarding-opened"));
-    telemetry({
-      event: "overlay-session-end",
-      session_key: this._session_key,
-    });
+    if (this._overlay && this._overlay.classList.contains("onboarding-opened")) {
+      this._overlay.classList.remove("onboarding-opened");
+      this.toggleModal(false);
+      telemetry({
+        type: "overlay-session-end",
+        session_key: this._session_key,
+      });
+    }
   }
 
   
@@ -798,6 +926,10 @@ class Onboarding {
     }
   }
 
+  
+
+
+
   gotoPage(tourId) {
     let targetPageId = `${tourId}-page`;
     for (let page of this._tourPages) {
@@ -813,9 +945,10 @@ class Onboarding {
         tab.classList.add("onboarding-active");
         tab.setAttribute("aria-selected", true);
         telemetry({
-          event: "overlay-nav-click",
-          tour_id: tourId,
+          type: "overlay-current-tour",
+          current_tour_id: tourId,
           session_key: this._session_key,
+          width: this._windowWidthRounded,
         });
 
         
@@ -924,9 +1057,8 @@ class Onboarding {
   }
 
   _isTimeForNextTourNotification(lastTourChangeTime) {
-    let promptCount = Services.prefs.getIntPref("browser.onboarding.notification.prompt-count", 0);
     let maxCount = Services.prefs.getIntPref("browser.onboarding.notification.max-prompt-count-per-tour");
-    if (promptCount >= maxCount) {
+    if (this._notificationPromptCount >= maxCount) {
       return true;
     }
 
@@ -979,7 +1111,7 @@ class Onboarding {
   }
 
   showNotification() {
-    if (Services.prefs.getBoolPref("browser.onboarding.notification.finished", false)) {
+    if (this._notificationState === "finished") {
       return;
     }
 
@@ -987,6 +1119,7 @@ class Onboarding {
     if (this._muteNotificationOnFirstSession(lastTime)) {
       return;
     }
+
     
     
     this._overlayIcon.classList.remove("onboarding-speech-bubble");
@@ -1012,7 +1145,7 @@ class Onboarding {
     if (queue.length == 0) {
       sendMessageToChrome("set-prefs", [
         {
-          name: "browser.onboarding.notification.finished",
+          name: NOTIFICATION_FINISHED_PREF,
           value: true
         },
         {
@@ -1044,6 +1177,7 @@ class Onboarding {
     this._window.document.body.appendChild(this._notificationBar);
 
     let params = [];
+    let promptCount = 1;
     if (startQueueLength != queue.length) {
       
       params.push({
@@ -1052,23 +1186,35 @@ class Onboarding {
       });
       params.push({
         name: PROMPT_COUNT_PREF,
-        value: 1
+        value: promptCount
       });
       params.push({
         name: "browser.onboarding.notification.tour-ids-queue",
         value: queue.join(",")
       });
     } else {
-      let promptCount = Services.prefs.getIntPref(PROMPT_COUNT_PREF, 0);
+      promptCount = this._notificationPromptCount + 1;
       params.push({
         name: PROMPT_COUNT_PREF,
-        value: promptCount + 1
+        value: promptCount
       });
     }
     sendMessageToChrome("set-prefs", params);
     telemetry({
-      event: "notification-session-begin",
+      type: "notification-session-begin",
       session_key: this._session_key
+    });
+    
+    
+    telemetry({
+      type: "notification-appear",
+      bubble_state: this._bubbleState,
+      current_tour_id: targetTourId,
+      logo_state: this._logoState,
+      notification_impression: promptCount,
+      notification_state: this._notificationState,
+      session_key: this._session_key,
+      width: this._windowWidthRounded,
     });
   }
 
@@ -1077,8 +1223,7 @@ class Onboarding {
       if (this._notificationBar.classList.contains("onboarding-opened")) {
         this._notificationBar.classList.remove("onboarding-opened");
         telemetry({
-          event: "notification-session-end",
-          tour_id: this._notificationBar.dataset.targetTourId,
+          type: "notification-session-end",
           session_key: this._session_key,
         });
       }
@@ -1114,7 +1259,7 @@ class Onboarding {
     this.setToursCompleted(this._tours.map(tour => tour.id));
     sendMessageToChrome("set-prefs", [
       {
-        name: "browser.onboarding.notification.finished",
+        name: NOTIFICATION_FINISHED_PREF,
         value: true
       },
       {
@@ -1123,8 +1268,10 @@ class Onboarding {
       }
     ]);
     telemetry({
-      event: "overlay-skip-tour",
-      session_key: this._session_key
+      type: "overlay-skip-tour",
+      current_tour_id: this._activeTourId,
+      session_key: this._session_key,
+      width: this._windowWidthRounded,
     });
   }
 
