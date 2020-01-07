@@ -6,7 +6,6 @@
 
 "use strict";
 
-const {Task} = require("devtools/shared/task");
 const EventEmitter = require("devtools/shared/event-emitter");
 const {DomNodePreview} = require("devtools/client/inspector/shared/dom-node-preview");
 
@@ -40,7 +39,7 @@ AnimationTargetNode.prototype = {
     this.isDestroyed = true;
   },
 
-  render: Task.async(function* (playerFront) {
+  async render(playerFront) {
     
     let nodeFront = nodeFronts.get(playerFront);
 
@@ -52,7 +51,7 @@ AnimationTargetNode.prototype = {
     
     if (!nodeFront) {
       try {
-        nodeFront = yield this.inspector.walker.getNodeFromActor(
+        nodeFront = await this.inspector.walker.getNodeFromActor(
                                playerFront.actorID, ["node"]);
       } catch (e) {
         
@@ -76,5 +75,5 @@ AnimationTargetNode.prototype = {
 
     this.previewer.render(nodeFront);
     this.emit("target-retrieved");
-  })
+  }
 };

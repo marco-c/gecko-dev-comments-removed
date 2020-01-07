@@ -13,11 +13,11 @@
 
 requestLongerTimeout(2);
 
-add_task(function* () {
+add_task(async function() {
   requestLongerTimeout(2);
 
-  yield addTab(URL_ROOT + "doc_simple_animation.html");
-  let {panel, window} = yield openAnimationInspector();
+  await addTab(URL_ROOT + "doc_simple_animation.html");
+  let {panel, window} = await openAnimationInspector();
   let {playTimelineButtonEl} = panel;
 
   
@@ -28,7 +28,7 @@ add_task(function* () {
 
   
   EventUtils.sendKey("SPACE", window);
-  yield waitForAnimationTimelineRendering(panel);
+  await waitForAnimationTimelineRendering(panel);
   ok(playTimelineButtonEl.classList.contains("paused"),
     "The play/resume button is in its paused state");
 
@@ -37,7 +37,7 @@ add_task(function* () {
 
   
   EventUtils.sendKey("SPACE", window);
-  yield waitForAnimationTimelineRendering(panel);
+  await waitForAnimationTimelineRendering(panel);
   ok(!playTimelineButtonEl.classList.contains("paused"),
     "The play/resume button is in its play state again");
 });

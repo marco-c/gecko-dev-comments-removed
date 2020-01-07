@@ -12,7 +12,7 @@ ChromeUtils.defineModuleGetter(this, "Preferences",
 
 
 
-add_task(function* () {
+add_task(async function() {
   
   
   
@@ -21,26 +21,26 @@ add_task(function* () {
   
   
 
-  yield addTab(URL_ROOT + "doc_simple_animation.html");
+  await addTab(URL_ROOT + "doc_simple_animation.html");
 
-  let {panel, inspector} = yield openAnimationInspector();
+  let {panel, inspector} = await openAnimationInspector();
   let timeline = panel.animationsTimelineComponent;
   let btn = panel.playTimelineButtonEl;
 
   info("Select an infinite animation and wait for the scrubber to reach the end");
-  yield selectNodeAndWaitForAnimations(".multi", inspector);
-  yield waitForOutOfBoundScrubber(timeline);
+  await selectNodeAndWaitForAnimations(".multi", inspector);
+  await waitForOutOfBoundScrubber(timeline);
 
   ok(!btn.classList.contains("paused"),
      "The button is in its playing state still, animations are infinite.");
-  yield assertScrubberMoving(panel, true);
+  await assertScrubberMoving(panel, true);
 
   info("Click on the button after the scrubber has moved out of bounds");
-  yield clickTimelinePlayPauseButton(panel);
+  await clickTimelinePlayPauseButton(panel);
 
   ok(btn.classList.contains("paused"),
      "The button can be paused after the scrubber has moved out of bounds");
-  yield assertScrubberMoving(panel, false);
+  await assertScrubberMoving(panel, false);
 });
 
 function waitForOutOfBoundScrubber({win, scrubberEl}) {

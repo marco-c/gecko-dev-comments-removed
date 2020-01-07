@@ -9,9 +9,9 @@
 
 
 
-add_task(function* () {
-  yield addTab(URL_ROOT + "doc_negative_animation.html");
-  const {controller, panel} = yield openAnimationInspector();
+add_task(async function() {
+  await addTab(URL_ROOT + "doc_negative_animation.html");
+  const {controller, panel} = await openAnimationInspector();
   const timeline = panel.animationsTimelineComponent;
 
   const areTracksReady = () => timeline.animations.every(a => {
@@ -21,11 +21,11 @@ add_task(function* () {
   
   
   while (controller.animationPlayers.length < 3 || !areTracksReady()) {
-    yield waitForAnimationTimelineRendering(panel);
+    await waitForAnimationTimelineRendering(panel);
   }
 
   
-  yield waitForAllAnimationTargets(panel);
+  await waitForAllAnimationTargets(panel);
 
   is(panel.animationsTimelineComponent.animations.length, 3,
      "The timeline shows 3 animations too");

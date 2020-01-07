@@ -6,7 +6,6 @@
 
 "use strict";
 
-const {Task} = require("devtools/shared/task");
 const {createNode, getCssPropertyName} =
   require("devtools/client/animationinspector/utils");
 const {Keyframes} = require("devtools/client/animationinspector/components/keyframes");
@@ -89,9 +88,9 @@ AnimationDetails.prototype = {
 
 
 
-  getAnimationTypes: Task.async(function* (propertyNames) {
+  async getAnimationTypes(propertyNames) {
     if (this.serverTraits.hasGetAnimationTypes) {
-      return yield this.animation.getAnimationTypes(propertyNames);
+      return this.animation.getAnimationTypes(propertyNames);
     }
     
     const animationTypes = {};
@@ -99,9 +98,9 @@ AnimationDetails.prototype = {
       animationTypes[propertyName] = "none";
     });
     return Promise.resolve(animationTypes);
-  }),
+  },
 
-  render: Task.async(function* (animation, tracks) {
+  async render(animation, tracks) {
     this.unrender();
 
     if (!animation) {
@@ -117,7 +116,7 @@ AnimationDetails.prototype = {
     }
 
     
-    const animationTypes = yield this.getAnimationTypes(Object.keys(this.tracks));
+    const animationTypes = await this.getAnimationTypes(Object.keys(this.tracks));
 
     
     this.renderProgressIndicator();
@@ -133,7 +132,7 @@ AnimationDetails.prototype = {
     });
     this.dummyAnimation =
       new this.win.Animation(new this.win.KeyframeEffect(null, null, timing), null);
-  }),
+  },
 
   renderAnimatedPropertiesHeader: function() {
     

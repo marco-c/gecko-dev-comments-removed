@@ -6,7 +6,6 @@
 
 "use strict";
 
-const { Task } = require("devtools/shared/task");
 const EventEmitter = require("devtools/shared/event-emitter");
 const {
   createNode,
@@ -315,7 +314,7 @@ AnimationsTimeline.prototype = {
     }, TIMELINE_BACKGROUND_RESIZE_DEBOUNCE_TIMER);
   },
 
-  onAnimationSelected: Task.async(function* (animation) {
+  async onAnimationSelected(animation) {
     let index = this.animations.indexOf(animation);
     if (index === -1) {
       return;
@@ -354,12 +353,12 @@ AnimationsTimeline.prototype = {
     
     if (animation !== this.details.animation) {
       this.selectedAnimation = animation;
-      yield this.details.render(animation, this.componentsMap[animation.actorID].tracks);
+      await this.details.render(animation, this.componentsMap[animation.actorID].tracks);
       this.animationAnimationNameEl.textContent = getFormattedAnimationTitle(animation);
     }
     this.onTimelineDataChanged({ time: this.currentTime || 0 });
     this.emit("animation-selected", animation);
-  }),
+  },
 
   
 
@@ -438,7 +437,7 @@ AnimationsTimeline.prototype = {
     return className;
   },
 
-  render: Task.async(function* (animations, documentCurrentTime) {
+  async render(animations, documentCurrentTime) {
     this.animations = animations;
 
     
@@ -472,7 +471,7 @@ AnimationsTimeline.prototype = {
     for (let animation of this.animations) {
       animation.on("changed", this.onAnimationStateChanged);
 
-      const tracks = yield this.getTracks(animation);
+      const tracks = await this.getTracks(animation);
       
       if (this.isDestroyed) {
         return;
@@ -510,18 +509,18 @@ AnimationsTimeline.prototype = {
     if (this.animations.length === 1) {
       
       
-      yield this.onAnimationSelected(this.animations[0]);
+      await this.onAnimationSelected(this.animations[0]);
     } else if (this.animationRootEl.classList.contains("animation-detail-visible") &&
                this.animations.includes(this.selectedAnimation)) {
       
       
-      yield this.onAnimationSelected(this.selectedAnimation);
+      await this.onAnimationSelected(this.selectedAnimation);
     } else {
       
       this.onDetailCloseButtonClick();
     }
     this.emit("animation-timeline-rendering-completed");
-  }),
+  },
 
   updateAnimation: function(animation, tracks, existentComponents) {
     
@@ -713,7 +712,7 @@ AnimationsTimeline.prototype = {
 
 
 
-  getTracks: Task.async(function* (animation) {
+  async getTracks(animation) {
     let tracks = {};
 
     
@@ -732,7 +731,7 @@ AnimationsTimeline.prototype = {
     if (this.serverTraits.hasGetProperties) {
       let properties = [];
       try {
-        properties = yield animation.getProperties();
+        properties = await animation.getProperties();
       } catch (e) {
         
         if (!this.isDestroyed) {
@@ -754,7 +753,7 @@ AnimationsTimeline.prototype = {
     } else {
       let frames = [];
       try {
-        frames = yield animation.getFrames();
+        frames = await animation.getFrames();
       } catch (e) {
         
         if (!this.isDestroyed) {
@@ -786,7 +785,7 @@ AnimationsTimeline.prototype = {
     }
 
     return tracks;
-  })
+  }
 };
 
 

@@ -21,9 +21,9 @@ const EXPECTED_PROPERTIES = [
   "width"
 ];
 
-add_task(function* () {
-  yield addTab(URL_ROOT + "doc_keyframes.html");
-  let {panel} = yield openAnimationInspector();
+add_task(async function() {
+  await addTab(URL_ROOT + "doc_keyframes.html");
+  let {panel} = await openAnimationInspector();
   let timeline = panel.animationsTimelineComponent;
 
   
@@ -32,7 +32,7 @@ add_task(function* () {
   ok(timeline.rootWrapperEl.querySelectorAll(".frames .keyframes").length,
      "There are container elements for displaying keyframes");
 
-  let data = yield getExpectedKeyframesData(timeline.animations[0]);
+  let data = await getExpectedKeyframesData(timeline.animations[0]);
   for (let propertyName in data) {
     info("Check the keyframe markers for " + propertyName);
     let widthMarkerSelector = ".frame[data-property=" + propertyName + "]";
@@ -52,10 +52,10 @@ add_task(function* () {
   }
 });
 
-function* getExpectedKeyframesData(animation) {
+async function getExpectedKeyframesData(animation) {
   
   
-  let properties = yield animation.getProperties();
+  let properties = await animation.getProperties();
   let data = {};
 
   for (let expectedProperty of EXPECTED_PROPERTIES) {

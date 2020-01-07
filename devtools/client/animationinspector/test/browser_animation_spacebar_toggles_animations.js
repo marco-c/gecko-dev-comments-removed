@@ -10,13 +10,13 @@
 
 
 
-add_task(function* () {
-  yield addTab(URL_ROOT + "doc_simple_animation.html");
-  let {panel, inspector, window, controller} = yield openAnimationInspector();
+add_task(async function() {
+  await addTab(URL_ROOT + "doc_simple_animation.html");
+  let {panel, inspector, window, controller} = await openAnimationInspector();
   let {toggleAllButtonEl} = panel;
 
   
-  yield selectNodeAndWaitForAnimations(".still", inspector);
+  await selectNodeAndWaitForAnimations(".still", inspector);
 
   
   window.focus();
@@ -27,7 +27,7 @@ add_task(function* () {
   
   let onToggled = once(controller, controller.ALL_ANIMATIONS_TOGGLED_EVENT);
   EventUtils.sendKey("SPACE", window);
-  yield onToggled;
+  await onToggled;
   ok(toggleAllButtonEl.classList.contains("paused"),
    "The toggle all button is in its paused state");
 
@@ -37,7 +37,7 @@ add_task(function* () {
   
   onToggled = once(controller, controller.ALL_ANIMATIONS_TOGGLED_EVENT);
   EventUtils.sendKey("SPACE", window);
-  yield onToggled;
+  await onToggled;
   ok(!toggleAllButtonEl.classList.contains("paused"),
    "The toggle all button is in its playing state again");
 });
