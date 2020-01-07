@@ -18,19 +18,11 @@ const { fetchHeaders } = require("../utils/request-utils");
 
 
 class FirefoxDataProvider {
-  
-
-
-
-
-
-
-  constructor({webConsoleClient, actions, owner}) {
+  constructor({webConsoleClient, actions}) {
     
     this.webConsoleClient = webConsoleClient;
-    this.actions = actions || {};
+    this.actions = actions;
     this.actionsEnabled = true;
-    this.owner = owner;
 
     
     this.payloadQueue = new Map();
@@ -92,7 +84,7 @@ class FirefoxDataProvider {
       }, true);
     }
 
-    this.emit(EVENTS.REQUEST_ADDED, id);
+    emit(EVENTS.REQUEST_ADDED, id);
   }
 
   
@@ -322,7 +314,7 @@ class FirefoxDataProvider {
       url,
     });
 
-    this.emit(EVENTS.NETWORK_EVENT, actor);
+    emit(EVENTS.NETWORK_EVENT, actor);
   }
 
   
@@ -349,7 +341,7 @@ class FirefoxDataProvider {
           statusText: networkInfo.response.statusText,
           headersSize: networkInfo.response.headersSize
         });
-        this.emit(EVENTS.STARTED_RECEIVING_RESPONSE, actor);
+        emit(EVENTS.STARTED_RECEIVING_RESPONSE, actor);
         break;
       case "responseContent":
         this.pushRequestToQueue(actor, {
@@ -375,7 +367,7 @@ class FirefoxDataProvider {
 
     this.onPayloadDataReceived(actor);
 
-    this.emit(EVENTS.NETWORK_EVENT_UPDATED, actor);
+    emit(EVENTS.NETWORK_EVENT_UPDATED, actor);
   }
 
   
@@ -401,7 +393,7 @@ class FirefoxDataProvider {
 
     
     
-    this.emit(EVENTS.PAYLOAD_READY, actor);
+    emit(EVENTS.PAYLOAD_READY, actor);
   }
 
   
@@ -471,7 +463,7 @@ class FirefoxDataProvider {
     let updatingEventName = `UPDATING_${method.replace(/([A-Z])/g, "_$1").toUpperCase()}`;
 
     
-    this.emit(EVENTS[updatingEventName], actor);
+    emit(EVENTS[updatingEventName], actor);
 
     let response = await new Promise((resolve, reject) => {
       
@@ -508,7 +500,7 @@ class FirefoxDataProvider {
     let payload = await this.updateRequest(response.from, {
       requestHeaders: response
     });
-    this.emit(EVENTS.RECEIVED_REQUEST_HEADERS, response.from);
+    emit(EVENTS.RECEIVED_REQUEST_HEADERS, response.from);
     return payload.requestHeaders;
   }
 
@@ -521,7 +513,7 @@ class FirefoxDataProvider {
     let payload = await this.updateRequest(response.from, {
       responseHeaders: response
     });
-    this.emit(EVENTS.RECEIVED_RESPONSE_HEADERS, response.from);
+    emit(EVENTS.RECEIVED_RESPONSE_HEADERS, response.from);
     return payload.responseHeaders;
   }
 
@@ -534,7 +526,7 @@ class FirefoxDataProvider {
     let payload = await this.updateRequest(response.from, {
       requestCookies: response
     });
-    this.emit(EVENTS.RECEIVED_REQUEST_COOKIES, response.from);
+    emit(EVENTS.RECEIVED_REQUEST_COOKIES, response.from);
     return payload.requestCookies;
   }
 
@@ -547,7 +539,7 @@ class FirefoxDataProvider {
     let payload = await this.updateRequest(response.from, {
       requestPostData: response
     });
-    this.emit(EVENTS.RECEIVED_REQUEST_POST_DATA, response.from);
+    emit(EVENTS.RECEIVED_REQUEST_POST_DATA, response.from);
     return payload.requestPostData;
   }
 
@@ -560,7 +552,7 @@ class FirefoxDataProvider {
     let payload = await this.updateRequest(response.from, {
       securityInfo: response.securityInfo
     });
-    this.emit(EVENTS.RECEIVED_SECURITY_INFO, response.from);
+    emit(EVENTS.RECEIVED_SECURITY_INFO, response.from);
     return payload.securityInfo;
   }
 
@@ -573,7 +565,7 @@ class FirefoxDataProvider {
     let payload = await this.updateRequest(response.from, {
       responseCookies: response
     });
-    this.emit(EVENTS.RECEIVED_RESPONSE_COOKIES, response.from);
+    emit(EVENTS.RECEIVED_RESPONSE_COOKIES, response.from);
     return payload.responseCookies;
   }
 
@@ -590,7 +582,7 @@ class FirefoxDataProvider {
       mimeType: response.content.mimeType,
       responseContent: response,
     });
-    this.emit(EVENTS.RECEIVED_RESPONSE_CONTENT, response.from);
+    emit(EVENTS.RECEIVED_RESPONSE_CONTENT, response.from);
     return payload.responseContent;
   }
 
@@ -603,7 +595,7 @@ class FirefoxDataProvider {
     let payload = await this.updateRequest(response.from, {
       eventTimings: response
     });
-    this.emit(EVENTS.RECEIVED_EVENT_TIMINGS, response.from);
+    emit(EVENTS.RECEIVED_EVENT_TIMINGS, response.from);
     return payload.eventTimings;
   }
 
@@ -616,17 +608,17 @@ class FirefoxDataProvider {
     let payload = await this.updateRequest(response.from, {
       stacktrace: response.stacktrace
     });
-    this.emit(EVENTS.RECEIVED_EVENT_STACKTRACE, response.from);
+    emit(EVENTS.RECEIVED_EVENT_STACKTRACE, response.from);
     return payload.stacktrace;
   }
+}
 
-  
 
 
-  emit(type, data) {
-    if (this.owner) {
-      this.owner.emit(type, data);
-    }
+
+function emit(type, data) {
+  if (typeof window != "undefined") {
+    window.emit(type, data);
   }
 }
 
