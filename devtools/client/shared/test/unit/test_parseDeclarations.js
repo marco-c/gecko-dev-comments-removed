@@ -73,9 +73,56 @@ const TEST_DATA = [
   },
   
   {
+    input: "p1: v1 !/*comment*/important;",
+    expected: [
+      {name: "p1", value: "v1", priority: "important", offsets: [0, 29]},
+    ]
+  },
+  
+  {
+    input: "p1: v1 !important",
+    expected: [
+      {name: "p1", value: "v1", priority: "important", offsets: [0, 17]},
+    ]
+  },
+  
+  {
+    input: "p1: v1 !",
+    expected: [
+      {name: "p1", value: "v1 !", priority: "", offsets: [0, 8]},
+    ]
+  },
+  
+  {
     input: "p1: v1 important;",
     expected: [
       {name: "p1", value: "v1 important", priority: "", offsets: [0, 17]}
+    ]
+  },
+  
+  
+  {
+    input: "p1: v1 !important v2;",
+    expected: [
+      {name: "p1", value: "v1 !important v2", priority: "", offsets: [0, 21]}
+    ]
+  },
+  {
+    input: "p1: v1 !    important v2;",
+    expected: [
+      {name: "p1", value: "v1 ! important v2", priority: "", offsets: [0, 25]}
+    ]
+  },
+  {
+    input: "p1: v1 !  /*comment*/  important v2;",
+    expected: [
+      {name: "p1", value: "v1 ! important v2", priority: "", offsets: [0, 36]}
+    ]
+  },
+  {
+    input: "p1: v1 !/*hi*/important v2;",
+    expected: [
+      {name: "p1", value: "v1 ! important v2", priority: "", offsets: [0, 27]}
     ]
   },
   
