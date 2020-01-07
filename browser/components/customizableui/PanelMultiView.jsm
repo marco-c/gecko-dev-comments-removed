@@ -264,7 +264,7 @@ var AssociatedToNode = class {
 
 
 
-var PanelMultiView = class extends this.AssociatedToNode {
+var PanelMultiView = class extends AssociatedToNode {
   
 
 
@@ -1138,7 +1138,7 @@ var PanelMultiView = class extends this.AssociatedToNode {
 
 
 
-var PanelView = class extends this.AssociatedToNode {
+var PanelView = class extends AssociatedToNode {
   constructor(node) {
     super(node);
 

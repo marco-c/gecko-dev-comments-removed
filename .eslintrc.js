@@ -52,21 +52,6 @@ module.exports = {
     
     
     "files": [
-      "browser/components/**/*.jsm",
-      "browser/extensions/**/*.jsm",
-    ],
-    "rules": {
-      "mozilla/mark-exported-symbols-as-used": "error",
-      "no-unused-vars": ["error", {
-        "args": "none",
-        "vars": "local",
-        "varsIgnorePattern": "^EXPORTED_SYMBOLS$"
-      }]
-    }
-  }, {
-    
-    
-    "files": [
       "devtools/**"
     ],
     "rules": {
