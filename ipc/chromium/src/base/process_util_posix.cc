@@ -172,7 +172,7 @@ void CloseSuperfluousFds(const base::InjectiveMultimap& saved_mapping) {
 
       
       
-      HANDLE_EINTR(close(fd));
+      IGNORE_EINTR(close(fd));
     }
     return;
   }
@@ -206,7 +206,7 @@ void CloseSuperfluousFds(const base::InjectiveMultimap& saved_mapping) {
     
     
     if (fd < static_cast<int>(max_fds)) {
-      int ret = HANDLE_EINTR(close(fd));
+      int ret = IGNORE_EINTR(close(fd));
       if (ret != 0) {
         DLOG(ERROR) << "Problem closing fd";
       }
