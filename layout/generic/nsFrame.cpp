@@ -3769,12 +3769,6 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
 
     child->MarkAbsoluteFramesForDisplayList(aBuilder);
 
-    const bool differentAGR =
-      buildingForChild.IsAnimatedGeometryRoot() || isPositioned;
-    nsDisplayList* toList = isPositioned ? &list : aLists.BorderBackground();
-
-    aBuilder->BuildCompositorHitTestInfoIfNeeded(child, toList, differentAGR);
-
     if (aBuilder->IsBuildingLayerEventRegions()) {
       
       
@@ -3799,6 +3793,9 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
       }
     }
 
+    const bool differentAGR =
+      buildingForChild.IsAnimatedGeometryRoot() || isPositioned;
+
     if (!awayFromCommonPath && shortcutPossible &&
         !differentAGR && !buildingForChild.MaybeAnimatedGeometryRoot()) {
       
@@ -3809,6 +3806,10 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
       
       
       
+
+      aBuilder->BuildCompositorHitTestInfoIfNeeded(child,
+                                                   aLists.BorderBackground(),
+                                                   differentAGR);
 
       aBuilder->AdjustWindowDraggingRegion(child);
       child->BuildDisplayList(aBuilder, aLists);
@@ -3824,6 +3825,11 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
     
     
     nsDisplayListCollection pseudoStack(aBuilder);
+
+    aBuilder->BuildCompositorHitTestInfoIfNeeded(child,
+                                                 pseudoStack.BorderBackground(),
+                                                 differentAGR);
+
     aBuilder->AdjustWindowDraggingRegion(child);
     nsDisplayListBuilder::AutoContainerASRTracker contASRTracker(aBuilder);
     child->BuildDisplayList(aBuilder, pseudoStack);
