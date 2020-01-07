@@ -13,6 +13,22 @@ ChromeUtils.defineModuleGetter(this, "PlacesTestUtils",
 
 
 
+function dirtyFrame(win) {
+  let dwu = win.QueryInterface(Ci.nsIInterfaceRequestor)
+               .getInterface(Ci.nsIDOMWindowUtils);
+  try {
+    dwu.ensureDirtyRootFrame();
+  } catch (e) {
+    
+    info("Note: ensureDirtyRootFrame threw an exception:" + e);
+  }
+}
+
+
+
+
+
+
 
 
 
@@ -58,17 +74,6 @@ ChromeUtils.defineModuleGetter(this, "PlacesTestUtils",
 
 
 async function withReflowObserver(testFn, expectedReflows = [], win = window) {
-  let dwu = win.QueryInterface(Ci.nsIInterfaceRequestor)
-               .getInterface(Ci.nsIDOMWindowUtils);
-  let dirtyFrameFn = () => {
-    try {
-      dwu.ensureDirtyRootFrame();
-    } catch (e) {
-      
-      info("Note: ensureDirtyRootFrame threw an exception.");
-    }
-  };
-
   
   let reflows = [];
 
@@ -78,7 +83,7 @@ async function withReflowObserver(testFn, expectedReflows = [], win = window) {
       reflows.push(new Error().stack);
 
       
-      dirtyFrameFn();
+      dirtyFrame(win);
     },
 
     reflowInterruptible(start, end) {
@@ -95,11 +100,12 @@ async function withReflowObserver(testFn, expectedReflows = [], win = window) {
                     .QueryInterface(Ci.nsIDocShell);
   docShell.addWeakReflowObserver(observer);
 
+  let dirtyFrameFn = dirtyFrame.bind(null, win);
   Services.els.addListenerForAllEvents(win, dirtyFrameFn, true);
 
   try {
-    dirtyFrameFn();
-    await testFn(dirtyFrameFn);
+    dirtyFrame(win);
+    await testFn();
   } finally {
     let knownReflows = expectedReflows.map(r => {
       return {stack: r.stack, path: r.stack.join("|"),

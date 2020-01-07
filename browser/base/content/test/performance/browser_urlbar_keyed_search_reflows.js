@@ -127,7 +127,7 @@ add_task(async function() {
   URLBar.focus();
   URLBar.value = "";
 
-  await withReflowObserver(async function(dirtyFrameFn) {
+  await withReflowObserver(async function() {
     let oldInvalidate = popup.invalidate.bind(popup);
     let oldResultsAdded = popup.onResultsAdded.bind(popup);
 
@@ -136,12 +136,12 @@ add_task(async function() {
     
     
     popup.invalidate = (reason) => {
-      dirtyFrameFn();
+      dirtyFrame(win);
       oldInvalidate(reason);
     };
 
     popup.onResultsAdded = () => {
-      dirtyFrameFn();
+      dirtyFrame(win);
       oldResultsAdded();
     };
 
