@@ -43,7 +43,8 @@ SERVO_BINDING_FUNC(Servo_Element_IsPrimaryStyleReusedViaRuleNode,
 SERVO_BINDING_FUNC(Servo_InvalidateStyleForDocStateChanges,
                    void,
                    RawGeckoElementBorrowed root,
-                   const nsTArray<RawServoStyleSetBorrowed>* sets,
+                   RawServoStyleSetBorrowed doc_styles,
+                   const nsTArray<RawServoAuthorStylesBorrowed>* non_document_styles,
                    uint64_t aStatesChanged)
 
 
@@ -86,10 +87,11 @@ SERVO_BINDING_FUNC(Servo_StyleSet_RebuildCachedData, void,
 
 
 
+
 SERVO_BINDING_FUNC(Servo_StyleSet_MediumFeaturesChanged,
                    MediumFeaturesChangedResult,
                    RawServoStyleSetBorrowed document_set,
-                   const nsTArray<mozilla::ServoStyleSet*>* non_document_sets,
+                   nsTArray<RawServoAuthorStylesBorrowedMut>* non_document_sets,
                    bool may_affect_default_style)
 
 
@@ -173,6 +175,20 @@ SERVO_BINDING_FUNC(Servo_UACache_AddSizeOf, void,
                    mozilla::MallocSizeOf malloc_size_of,
                    mozilla::MallocSizeOf malloc_enclosing_size_of,
                    mozilla::ServoStyleSetSizes* sizes)
+
+
+SERVO_BINDING_FUNC(Servo_AuthorStyles_Create, RawServoAuthorStyles*)
+
+
+SERVO_BINDING_FUNC(Servo_AuthorStyles_AppendStyleSheet, void,
+                   RawServoAuthorStylesBorrowedMut self,
+                   const mozilla::ServoStyleSheet* gecko_sheet)
+
+
+SERVO_BINDING_FUNC(Servo_AuthorStyles_Flush, void,
+                   RawServoAuthorStylesBorrowedMut self,
+                   RawServoStyleSetBorrowed document_styles)
+
 SERVO_BINDING_FUNC(Servo_StyleContext_AddRef, void, ServoStyleContextBorrowed ctx);
 SERVO_BINDING_FUNC(Servo_StyleContext_Release, void, ServoStyleContextBorrowed ctx);
 

@@ -8,6 +8,7 @@
 #define nsXBLPrototypeResources_h__
 
 #include "mozilla/StyleSheet.h"
+#include "mozilla/ServoStyleRuleMap.h"
 #include "nsICSSLoaderObserver.h"
 
 class nsCSSRuleProcessor;
@@ -15,10 +16,12 @@ class nsAtom;
 class nsIContent;
 class nsXBLPrototypeBinding;
 class nsXBLResourceLoader;
+struct RawServoAuthorStyles;
 
 namespace mozilla {
 class CSSStyleSheet;
 class ServoStyleSet;
+class ServoStyleRuleMap;
 } 
 
 
@@ -45,9 +48,22 @@ public:
   void AppendStyleSheet(mozilla::StyleSheet* aSheet);
   void RemoveStyleSheet(mozilla::StyleSheet* aSheet);
   void InsertStyleSheetAt(size_t aIndex, mozilla::StyleSheet* aSheet);
-  mozilla::StyleSheet* StyleSheetAt(size_t aIndex) const;
-  size_t SheetCount() const;
-  bool HasStyleSheets() const;
+
+  mozilla::StyleSheet* StyleSheetAt(size_t aIndex) const
+  {
+    return mStyleSheetList[aIndex];
+  }
+
+  size_t SheetCount() const
+  {
+    return mStyleSheetList.Length();
+  }
+
+  bool HasStyleSheets() const
+  {
+    return !mStyleSheetList.IsEmpty();
+  }
+
   void AppendStyleSheetsTo(nsTArray<mozilla::StyleSheet*>& aResult) const;
 
 #ifdef MOZ_OLD_STYLE
@@ -61,17 +77,25 @@ public:
   nsCSSRuleProcessor* GetRuleProcessor() const { return mRuleProcessor; }
 #endif
 
-  
-  
-  
-  void ComputeServoStyleSet(nsPresContext* aPresContext);
+  const RawServoAuthorStyles* GetServoStyles() const
+  {
+    return mServoStyles.get();
+  }
 
-  mozilla::ServoStyleSet* GetServoStyleSet() const { return mServoStyleSet.get(); }
+  mozilla::ServoStyleRuleMap* GetServoStyleRuleMap();
+
+  
+  
+  
+  void ComputeServoStyles(const mozilla::ServoStyleSet& aMasterStyleSet);
 
 private:
   
   RefPtr<nsXBLResourceLoader> mLoader;
 
+  
+  
+  
   
   nsTArray<RefPtr<mozilla::StyleSheet>> mStyleSheetList;
 
@@ -82,9 +106,8 @@ private:
 
   
   
-  
-  
-  mozilla::UniquePtr<mozilla::ServoStyleSet> mServoStyleSet;
+  mozilla::UniquePtr<RawServoAuthorStyles> mServoStyles;
+  mozilla::UniquePtr<mozilla::ServoStyleRuleMap> mStyleRuleMap;
 };
 
 #endif

@@ -142,10 +142,6 @@ public:
   bool MediumFeaturesChanged(nsPresContext* aPresContext,
                              mozilla::MediaFeatureChangeReason);
 
-  
-  
-  void UpdateBoundContentBindingsForServo(nsPresContext* aPresContext);
-
   void AppendAllSheets(nsTArray<mozilla::StyleSheet*>& aArray);
 
   void Traverse(nsIContent *aContent,
