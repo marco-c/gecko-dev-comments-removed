@@ -24,6 +24,7 @@ using mozilla::ipc::PrincipalInfo;
 namespace {
 
 ClientManagerService* sClientManagerServiceInstance = nullptr;
+bool sClientManagerServiceShutdownRegistered = false;
 
 bool
 MatchPrincipalInfo(const PrincipalInfo& aLeft, const PrincipalInfo& aRight)
@@ -149,16 +150,26 @@ ClientManagerService::ClientManagerService()
   
   
   
-  
-  
-  
-  OnShutdown()->Then(GetCurrentThreadSerialEventTarget(), __func__,
-    [] () {
-      RefPtr<ClientManagerService> svc = ClientManagerService::GetInstance();
-      if (svc) {
-        svc->Shutdown();
-      }
-    });
+  if (!sClientManagerServiceShutdownRegistered) {
+    sClientManagerServiceShutdownRegistered = true;
+
+    
+    
+    
+    
+    
+    
+    OnShutdown()->Then(GetCurrentThreadSerialEventTarget(), __func__,
+      [] () {
+        
+        
+        
+        RefPtr<ClientManagerService> svc = ClientManagerService::GetInstance();
+        if (svc) {
+          svc->Shutdown();
+        }
+      });
+  }
 }
 
 ClientManagerService::~ClientManagerService()
@@ -175,6 +186,7 @@ void
 ClientManagerService::Shutdown()
 {
   AssertIsOnBackgroundThread();
+  MOZ_DIAGNOSTIC_ASSERT(sClientManagerServiceShutdownRegistered);
 
   
   
