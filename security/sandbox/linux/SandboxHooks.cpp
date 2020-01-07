@@ -14,6 +14,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/inotify.h>
+#ifdef MOZ_X11
+#include <X11/Xlib.h>
+#endif
 
 
 extern mozilla::Atomic<int> gSeccompTsyncBroadcastSignum;
@@ -121,3 +124,17 @@ inotify_init1(int flags)
   errno = ENOSYS;
   return -1;
 }
+
+#ifdef MOZ_X11
+
+
+
+
+
+
+extern "C" MOZ_EXPORT Bool
+XShmQueryExtension(Display* aDisplay)
+{
+  return False;
+}
+#endif
