@@ -204,7 +204,7 @@ ProxyObject::create(JSContext* cx, const Class* clasp, Handle<TaggedProto> proto
 }
 
 JS_FRIEND_API(void)
-js::SetValueInProxy(Value* slot, const Value& value)
+js::detail::SetValueInProxy(Value* slot, const Value& value)
 {
     
     
