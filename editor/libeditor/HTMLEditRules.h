@@ -168,7 +168,7 @@ protected:
 
 
 
-  nsresult InsertBRElement(const EditorDOMPoint& aInsertToBreak);
+  MOZ_MUST_USE nsresult InsertBRElement(const EditorDOMPoint& aInsertToBreak);
 
   
 
