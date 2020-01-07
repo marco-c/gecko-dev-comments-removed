@@ -808,6 +808,11 @@ WebrtcVideoConduit::ConfigureSendMediaCodec(const VideoCodecConfig* codecConfig)
   
   if (mSendStream) {
     if (!RequiresNewSendStream(*codecConfig)) {
+      {
+        MutexAutoLock lock(mCodecMutex);
+        mCurSendCodecConfig->mEncodingConstraints = codecConfig->mEncodingConstraints;
+        mCurSendCodecConfig->mSimulcastEncodings = codecConfig->mSimulcastEncodings;
+      }
       mSendStream->ReconfigureVideoEncoder(mEncoderConfig.CopyConfig());
       return kMediaConduitNoError;
     }
