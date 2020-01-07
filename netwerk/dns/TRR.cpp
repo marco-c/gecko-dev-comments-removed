@@ -65,7 +65,7 @@ TRR::DohEncode(nsCString &aBody)
   
   aBody += '\0';
   aBody += '\0'; 
-  aBody += '\0'; 
+  aBody += 0x01; 
   aBody += '\0'; 
   aBody += '\0';
   aBody += 1;    

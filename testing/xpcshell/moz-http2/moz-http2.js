@@ -565,7 +565,7 @@ function handleRequest(req, res) {
   }
 
   
-  else if (u.path === "/dns-get?ct&dns=AAAAAAABAAAAAAAAA2dldAdleGFtcGxlA2NvbQAAAQAB") {
+  else if (u.path === "/dns-get?ct&dns=AAABAAABAAAAAAAAA2dldAdleGFtcGxlA2NvbQAAAQAB") {
     
     
     var content= new Buffer("00000100000100010000000003676574076578616D706C6503636F6D0000010001C00C0001000100000037000401020304", "hex");
