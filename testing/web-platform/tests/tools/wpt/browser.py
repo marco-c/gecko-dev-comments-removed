@@ -112,7 +112,7 @@ class Firefox(Browser):
 
         try:
             mozinstall.install(filename, dest)
-        except mozinstall.mozinstall.InstallError as e:
+        except mozinstall.mozinstall.InstallError:
             if platform == "mac" and os.path.exists(os.path.join(dest, "Firefox Nightly.app")):
                 
                 
