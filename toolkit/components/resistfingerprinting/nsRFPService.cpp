@@ -10,6 +10,7 @@
 #include <time.h>
 
 #include "mozilla/ClearOnShutdown.h"
+#include "mozilla/dom/Element.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/Preferences.h"
@@ -982,7 +983,7 @@ nsRFPService::GetSpoofedKeyCodeInfo(const nsIDocument* aDoc,
     
     
     if (language.IsEmpty()) {
-      Element* elm = aDoc->GetHtmlElement();
+      dom::Element* elm = aDoc->GetHtmlElement();
 
       if (elm) {
         elm->GetLang(language);

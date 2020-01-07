@@ -9,10 +9,6 @@
 
 #include "mozilla/TypedEnumBits.h"
 
-#define STYLE_STRUCT(name_) struct nsStyle##name_;
-#include "nsStyleStructList.h"
-#undef STYLE_STRUCT
-
 
 
 
@@ -129,44 +125,6 @@ enum class InheritTarget {
   PlaceholderFrame,
 };
 
-struct ServoWritingMode {
-  uint8_t mBits;
-};
-
-struct ServoCustomPropertiesMap {
-  uintptr_t mPtr;
-};
-
-struct ServoRuleNode {
-  uintptr_t mPtr;
-};
-
-
-class ComputedStyle;
-
-struct ServoVisitedStyle {
-  
-  
-  
-  
-  ComputedStyle* mPtr;
-};
-
-template <typename T>
-struct ServoRawOffsetArc {
-  
-  
-  T* mPtr;
-};
-
-struct ServoComputedValueFlags {
-  uint16_t mFlags;
-};
-
-#define STYLE_STRUCT(name_) struct Gecko##name_;
-#include "nsStyleStructList.h"
-#undef STYLE_STRUCT
-
 
 
 class ServoStyleSetSizes
@@ -189,63 +147,13 @@ public:
   {}
 };
 
+template <typename T>
+struct ServoRawOffsetArc {
+  
+  
+  T* mPtr;
+};
+
 } 
-
-class ServoComputedData;
-
-struct ServoComputedDataForgotten
-{
-  
-  
-  explicit ServoComputedDataForgotten(const ServoComputedData* aValue) : mPtr(aValue) {}
-  const ServoComputedData* mPtr;
-};
-
-
-
-
-
-
-class ServoComputedData
-{
-  friend class mozilla::ComputedStyle;
-
-public:
-  
-  explicit ServoComputedData(const ServoComputedDataForgotten aValue);
-
-#define STYLE_STRUCT(name_)                                \
-  mozilla::ServoRawOffsetArc<mozilla::Gecko##name_> name_; \
-  inline const nsStyle##name_* GetStyle##name_() const;
-#include "nsStyleStructList.h"
-#undef STYLE_STRUCT
-
-  void AddSizeOfExcludingThis(nsWindowSizes& aSizes) const;
-
-private:
-  mozilla::ServoCustomPropertiesMap custom_properties;
-  mozilla::ServoWritingMode writing_mode;
-  mozilla::ServoComputedValueFlags flags;
-  
-  
-  
-  mozilla::ServoRuleNode rules;
-  
-  
-  
-  mozilla::ServoVisitedStyle visited_style;
-
-  
-  
-  
-  
-  
-  
-  
-  ServoComputedData& operator=(const ServoComputedData&) = delete;
-  ServoComputedData(const ServoComputedData&) = delete;
-  ServoComputedData&& operator=(const ServoComputedData&&) = delete;
-  ServoComputedData(const ServoComputedData&&) = delete;
-};
 
 #endif 
