@@ -256,6 +256,15 @@ public:
     mDropEffect = aDropEffectInt;
   }
 
+  
+
+
+
+  uint32_t EffectAllowedInt() const
+  {
+    return mEffectAllowed;
+  }
+
   void GetMozTriggeringPrincipalURISpec(nsAString& aPrincipalURISpec);
 
   mozilla::dom::Element* GetDragTarget() const

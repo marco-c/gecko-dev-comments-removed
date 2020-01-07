@@ -2078,8 +2078,7 @@ EventStateManager::DoDefaultDragStart(nsPresContext* aPresContext,
 
   
   
-  uint32_t action;
-  aDataTransfer->GetEffectAllowedInt(&action);
+  uint32_t action = aDataTransfer->EffectAllowedInt();
   if (action == nsIDragService::DRAGDROP_ACTION_UNINITIALIZED)
     action = nsIDragService::DRAGDROP_ACTION_COPY |
              nsIDragService::DRAGDROP_ACTION_MOVE |
@@ -3579,8 +3578,9 @@ EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
         
         
         uint32_t effectAllowed = nsIDragService::DRAGDROP_ACTION_UNINITIALIZED;
-        if (dataTransfer)
-          dataTransfer->GetEffectAllowedInt(&effectAllowed);
+        if (dataTransfer) {
+          effectAllowed = dataTransfer->EffectAllowedInt();
+        }
 
         
         
