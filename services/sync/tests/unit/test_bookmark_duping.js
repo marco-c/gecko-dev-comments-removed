@@ -552,6 +552,8 @@ add_task(async function test_dupe_reparented_to_future_arriving_parent_bookmark(
     let expected = [
       
       { name: "orphans", count: 1 },
+      
+      { name: "parentChildMismatches", count: 1 },
     ];
     await validate(collection, expected);
 
@@ -603,6 +605,7 @@ add_task(async function test_dupe_reparented_to_future_arriving_parent_bookmark(
       
       
       { name: "multipleParents", count: 1 },
+      { name: "parentChildMismatches", count: 1 },
     ];
     await validate(collection, expected);
 

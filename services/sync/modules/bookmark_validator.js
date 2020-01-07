@@ -7,6 +7,7 @@
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://services-common/utils.js");
+ChromeUtils.import("resource://services-sync/util.js");
 
 ChromeUtils.defineModuleGetter(this, "Async",
                                "resource://services-common/async.js");
@@ -240,14 +241,381 @@ XPCOMUtils.defineLazyGetter(this, "ROOT_GUID_TO_QUERY_FOLDER_NAME", () => ({
   [PlacesUtils.bookmarks.mobileGuid]: "MOBILE_BOOKMARKS",
 }));
 
+async function detectCycles(records) {
+  
+  
+  
+  let pathLookup = new Set();
+  let currentPath = [];
+  let cycles = [];
+  let seenEver = new Set();
+  const maybeYield = Async.jankYielder();
+  const traverse = async node => {
+    await maybeYield();
+    if (pathLookup.has(node)) {
+      let cycleStart = currentPath.lastIndexOf(node);
+      let cyclePath = currentPath.slice(cycleStart).map(n => n.id);
+      cycles.push(cyclePath);
+      return;
+    } else if (seenEver.has(node)) {
+      
+      
+      return;
+    }
+    seenEver.add(node);
+    let children = node.children || [];
+    if (node.concreteItems) {
+      children.push(...node.concreteItems);
+    }
+    if (children.length) {
+      pathLookup.add(node);
+      currentPath.push(node);
+      for (let child of children) {
+        await traverse(child);
+      }
+      currentPath.pop();
+      pathLookup.delete(node);
+    }
+  };
+  for (let record of records) {
+    if (!seenEver.has(record)) {
+      await traverse(record);
+    }
+  }
+
+  return cycles;
+}
+
+class ServerRecordInspection {
+  constructor() {
+    this.serverRecords = null;
+    this.liveRecords = [];
+
+    this.folders = [];
+
+    this.root = null;
+
+    this.idToRecord = new Map();
+
+    this.deletedIds = new Set();
+    this.deletedRecords = [];
+
+    this.problemData = new BookmarkProblemData();
+
+    
+    this._orphans = new Map();
+    this._multipleParents = new Map();
+
+    this.maybeYield = Async.jankYielder();
+  }
+
+  static async create(records) {
+    return new ServerRecordInspection().performInspection(records);
+  }
+
+  async performInspection(records) {
+    await this._setRecords(records);
+    await this._linkParentIDs();
+    await this._linkChildren();
+    await this._findOrphans();
+    await this._finish();
+    return this;
+  }
+
+  
+  
+  _noteOrphan(id, parentId = undefined) {
+    
+    
+    if (parentId || !this._orphans.has(id)) {
+      this._orphans.set(id, parentId);
+    }
+  }
+
+  noteParent(child, parent) {
+    let parents = this._multipleParents.get(child);
+    if (!parents) {
+      this._multipleParents.set(child, [parent]);
+    } else {
+      parents.push(parent);
+    }
+  }
+
+  noteMismatch(child, parent) {
+    let exists = this.problemData.parentChildMismatches.some(match =>
+      match.child == child && match.parent == parent);
+    if (!exists) {
+      this.problemData.parentChildMismatches.push({child, parent});
+    }
+  }
+
+  
+  
+  async _setRecords(records) {
+    if (this.serverRecords) {
+      
+      
+      throw new Error("Bug: ServerRecordInspection can't `setRecords` twice");
+    }
+    this.serverRecords = records;
+    let rootChildren = [];
+
+    for (let record of this.serverRecords) {
+      await this.maybeYield();
+      if (!record.id) {
+        ++this.problemData.missingIDs;
+        continue;
+      }
+
+      if (record.deleted) {
+        this.deletedIds.add(record.id);
+      }
+      if (this.idToRecord.has(record.id)) {
+        this.problemData.duplicates.push(record.id);
+        continue;
+      }
+
+      this.idToRecord.set(record.id, record);
+
+      if (!record.deleted) {
+        this.liveRecords.push(record);
+
+        if (record.parentid == "places") {
+          rootChildren.push(record);
+        }
+      }
+
+      if (!record.children) {
+        continue;
+      }
+
+      if (record.type != "folder") {
+        
+        
+        
+        if (!record.children.length) {
+          continue;
+        }
+        
+        this.problemData.childrenOnNonFolder.push(record.id);
+      }
+
+      this.folders.push(record);
+
+      if (new Set(record.children).size !== record.children.length) {
+        this.problemData.duplicateChildren.push(record.id);
+      }
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      record.childGUIDs = record.children;
+      for (let id of record.childGUIDs) {
+        await this.maybeYield();
+        this.noteParent(id, record.id);
+      }
+      record.children = [];
+    }
+
+    
+    this.deletedRecords = Array.from(this.deletedIds,
+      id => this.idToRecord.get(id));
+
+    this._initRoot(rootChildren);
+  }
+
+  _initRoot(rootChildren) {
+    let serverRoot = this.idToRecord.get("places");
+    if (serverRoot) {
+      this.root = serverRoot;
+      this.problemData.rootOnServer = true;
+      return;
+    }
+
+    
+    
+    
+    
+    
+
+    this.root = {
+      id: "places",
+      fake: true,
+      children: rootChildren,
+      childGUIDs: rootChildren.map(record => record.id),
+      type: "folder",
+      title: "",
+    };
+    this.liveRecords.push(this.root);
+    this.idToRecord.set("places", this.root);
+  }
+
+  
+  async _linkParentIDs() {
+    for (let [id, record] of this.idToRecord) {
+      await this.maybeYield();
+      if (record == this.root || record.deleted) {
+        continue;
+      }
+
+      
+      let parentID = record.parentid;
+      let parent = this.idToRecord.get(parentID);
+      if (!parentID || !parent) {
+        this._noteOrphan(id, parentID);
+        continue;
+      }
+
+      record.parent = parent;
+
+      if (parent.deleted) {
+        this.problemData.deletedParents.push(id);
+        return;
+      } else if (parent.type != "folder") {
+        this.problemData.parentNotFolder.push(record.id);
+        return;
+      }
+
+      if (parent.id !== "place" || this.problemData.rootOnServer) {
+        if (!parent.childGUIDs.includes(record.id)) {
+          this.noteMismatch(record.id, parent.id);
+        }
+      }
+
+      if (parent.deleted && !record.deleted) {
+        this.problemData.deletedParents.push(record.id);
+      }
+
+      
+      
+      
+      
+    }
+  }
+
+  
+  
+  async _linkChildren() {
+    
+    for (let folder of this.folders) {
+      await this.maybeYield();
+
+      folder.children = [];
+      folder.unfilteredChildren = [];
+
+      let idsThisFolder = new Set();
+
+      for (let i = 0; i < folder.childGUIDs.length; ++i) {
+        await this.maybeYield();
+        let childID = folder.childGUIDs[i];
+
+        let child = this.idToRecord.get(childID);
+
+        if (!child) {
+          this.problemData.missingChildren.push({ parent: folder.id, child: childID });
+          continue;
+        }
+
+        if (child.deleted) {
+          this.problemData.deletedChildren.push({ parent: folder.id, child: childID });
+          continue;
+        }
+
+        if (child.parentid != folder.id) {
+          this.noteMismatch(childID, folder.id);
+          continue;
+        }
+
+        if (idsThisFolder.has(childID)) {
+          
+          continue;
+        }
+        folder.children.push(child);
+      }
+    }
+  }
+
+  
+  
+  
+  
+  async _findOrphans() {
+    let seen = new Set([this.root.id]);
+    for (let [node] of Utils.walkTree(this.root)) {
+      await this.maybeYield();
+      if (seen.has(node.id)) {
+        
+        
+        return;
+      }
+      seen.add(node.id);
+    }
+
+    for (let i = 0; i < this.liveRecords.length; ++i) {
+      await this.maybeYield();
+      let record = this.liveRecords[i];
+      if (!seen.has(record.id)) {
+        
+        
+        
+        this._noteOrphan(record.id);
+      }
+    }
+
+    for (const [id, parent] of this._orphans) {
+      await this.maybeYield();
+      this.problemData.orphans.push({id, parent});
+    }
+  }
+
+  async _finish() {
+    this.problemData.cycles = await detectCycles(this.liveRecords);
+
+    for (const [child, recordedParents] of this._multipleParents) {
+      let parents = new Set(recordedParents);
+      if (parents.size > 1) {
+        this.problemData.multipleParents.push({ child, parents: [...parents] });
+      }
+    }
+    
+    
+    const idArrayProps = [
+      "duplicates",
+      "deletedParents",
+      "childrenOnNonFolder",
+      "duplicateChildren",
+      "parentNotFolder",
+    ];
+    for (let prop of idArrayProps) {
+      this.problemData[prop] = [...new Set(this.problemData[prop])];
+    }
+  }
+}
+
 class BookmarkValidator {
+  constructor() {
+    this.maybeYield = Async.jankYielder();
+  }
 
   async canValidate() {
     return !await PlacesSyncUtils.bookmarks.havePendingChanges();
   }
 
-  _followQueries(recordsByQueryId) {
+  async _followQueries(recordsByQueryId) {
     for (let entry of recordsByQueryId.values()) {
+      await this.maybeYield();
       if (entry.type !== "query" && (!entry.bmkUri || !entry.bmkUri.startsWith(QUERY_PROTOCOL))) {
         continue;
       }
@@ -281,9 +649,8 @@ class BookmarkValidator {
     
     let recordsByQueryId = new Map();
     let syncedRoots = SYNCED_ROOTS;
-    let maybeYield = Async.jankYielder();
-    async function traverse(treeNode, synced) {
-      await maybeYield();
+    const traverse = async (treeNode, synced) => {
+      await this.maybeYield();
       if (!synced) {
         synced = syncedRoots.includes(treeNode.guid);
       } else if (isNodeIgnored(treeNode)) {
@@ -359,10 +726,10 @@ class BookmarkValidator {
           treeNode.childGUIDs.push(child.guid);
         }
       }
-    }
+    };
     await traverse(clientTree, false);
     clientTree.id = "places";
-    this._followQueries(recordsByQueryId);
+    await this._followQueries(recordsByQueryId);
     return records;
   }
 
@@ -391,280 +758,19 @@ class BookmarkValidator {
 
 
 
-  
-  
   async inspectServerRecords(serverRecords) {
-    let deletedItemIds = new Set();
-    let idToRecord = new Map();
-    let deletedRecords = [];
-
-    let folders = [];
-
-    let problemData = new BookmarkProblemData();
-
-    let resultRecords = [];
-
-    let maybeYield = Async.jankYielder();
-    for (let record of serverRecords) {
-      await maybeYield();
-      if (!record.id) {
-        ++problemData.missingIDs;
-        continue;
-      }
-      if (record.deleted) {
-        deletedItemIds.add(record.id);
-      } else if (idToRecord.has(record.id)) {
-          problemData.duplicates.push(record.id);
-          continue;
-        }
-      idToRecord.set(record.id, record);
-
-      if (record.children) {
-        if (record.type !== "folder") {
-          
-          
-          
-          if (!record.children.length) {
-            continue;
-          }
-          
-          problemData.childrenOnNonFolder.push(record.id);
-        }
-        folders.push(record);
-
-        if (new Set(record.children).size !== record.children.length) {
-          problemData.duplicateChildren.push(record.id);
-        }
-
-        
-        
-        
-        record.childGUIDs = record.children;
-        record.children = record.children.map(childID => {
-          return PlacesSyncUtils.bookmarks.guidToRecordId(childID);
-        });
-      }
-    }
-
-    for (let deletedId of deletedItemIds) {
-      let record = idToRecord.get(deletedId);
-      if (record && !record.isDeleted) {
-        deletedRecords.push(record);
-        record.isDeleted = true;
-      }
-    }
-
-    let root = idToRecord.get("places");
-
-    if (!root) {
-      
-      
-      root = { id: "places", children: [], type: "folder", title: "", fake: true };
-      resultRecords.push(root);
-      idToRecord.set("places", root);
-    } else {
-      problemData.rootOnServer = true;
-    }
-
-    
-    
-    for (let [id, record] of idToRecord) {
-      if (record === root) {
-        continue;
-      }
-
-      if (record.isDeleted) {
-        continue;
-      }
-
-      let parentID = record.parentid;
-      if (!parentID) {
-        problemData.orphans.push({id: record.id, parent: parentID});
-        continue;
-      }
-
-      let parent = idToRecord.get(parentID);
-      if (!parent) {
-        problemData.orphans.push({id: record.id, parent: parentID});
-        continue;
-      }
-
-      if (parent.type !== "folder") {
-        problemData.parentNotFolder.push(record.id);
-        if (!parent.children) {
-          parent.children = [];
-        }
-        if (!parent.childGUIDs) {
-          parent.childGUIDs = [];
-        }
-      }
-
-      if (!record.isDeleted) {
-        resultRecords.push(record);
-      }
-
-      record.parent = parent;
-      if (parent !== root || problemData.rootOnServer) {
-        let childIndex = parent.children.indexOf(id);
-        if (childIndex < 0) {
-          problemData.parentChildMismatches.push({parent: parent.id, child: record.id});
-        } else {
-          parent.children[childIndex] = record;
-        }
-      } else {
-        parent.children.push(record);
-      }
-
-      if (parent.isDeleted && !record.isDeleted) {
-        problemData.deletedParents.push(record.id);
-      }
-
-      
-      
-      
-      
-    }
-
-    
-    for (let folder of folders) {
-      folder.unfilteredChildren = folder.children;
-      folder.children = [];
-      for (let ci = 0; ci < folder.unfilteredChildren.length; ++ci) {
-        let child = folder.unfilteredChildren[ci];
-        let childObject;
-        if (typeof child == "string") {
-          
-          
-          
-          childObject = idToRecord.get(child);
-          if (!childObject) {
-            problemData.missingChildren.push({parent: folder.id, child});
-          } else {
-            folder.unfilteredChildren[ci] = childObject;
-            if (childObject.isDeleted) {
-              problemData.deletedChildren.push({ parent: folder.id, child });
-            }
-          }
-        } else {
-          childObject = child;
-        }
-
-        if (!childObject) {
-          continue;
-        }
-
-        if (childObject.parentid === folder.id) {
-          folder.children.push(childObject);
-          continue;
-        }
-
-        
-        
-        let currentProblemRecord = problemData.multipleParents.find(pr =>
-          pr.child === child);
-
-        if (currentProblemRecord) {
-          currentProblemRecord.parents.push(folder.id);
-          continue;
-        }
-
-        let otherParent = idToRecord.get(childObject.parentid);
-        
-        if (!otherParent) {
-          
-          problemData.multipleParents.push({
-            child,
-            parents: [folder.id]
-          });
-          if (!problemData.orphans.some(r => r.id === child)) {
-            problemData.orphans.push({
-              id: child,
-              parent: childObject.parentid
-            });
-          }
-          continue;
-        }
-
-        if (otherParent.isDeleted) {
-          if (!problemData.deletedParents.includes(child)) {
-            problemData.deletedParents.push(child);
-          }
-          continue;
-        }
-
-        if (otherParent.childGUIDs && !otherParent.childGUIDs.includes(child)) {
-          if (!problemData.parentChildMismatches.some(r => r.child === child)) {
-            
-            problemData.parentChildMismatches.push({ child, parent: folder.id });
-          }
-        }
-
-        problemData.multipleParents.push({
-          child,
-          parents: [childObject.parentid, folder.id]
-        });
-      }
-    }
-    problemData.multipleParents = problemData.multipleParents.filter(record =>
-      record.parents.length >= 2);
-
-    problemData.cycles = this._detectCycles(resultRecords);
-
+    const data = await ServerRecordInspection.create(serverRecords);
     return {
-      deletedRecords,
-      records: resultRecords,
-      problemData,
-      root,
+      deletedRecords: data.deletedRecords,
+      records: data.liveRecords,
+      problemData: data.problemData,
+      root: data.root,
     };
   }
 
   
-  _detectCycles(records) {
-    
-    
-    
-    let pathLookup = new Set();
-    let currentPath = [];
-    let cycles = [];
-    let seenEver = new Set();
-    const traverse = node => {
-      if (pathLookup.has(node)) {
-        let cycleStart = currentPath.lastIndexOf(node);
-        let cyclePath = currentPath.slice(cycleStart).map(n => n.id);
-        cycles.push(cyclePath);
-        return;
-      } else if (seenEver.has(node)) {
-        
-        
-        return;
-      }
-      seenEver.add(node);
-      let children = node.children || [];
-      if (node.concreteItems) {
-        children.push(...node.concreteItems);
-      }
-      if (children.length) {
-        pathLookup.add(node);
-        currentPath.push(node);
-        for (let child of children) {
-          traverse(child);
-        }
-        currentPath.pop();
-        pathLookup.delete(node);
-      }
-    };
-    for (let record of records) {
-      if (!seenEver.has(record)) {
-        traverse(record);
-      }
-    }
-
-    return cycles;
-  }
-
-  
-  _validateClient(problemData, clientRecords) {
-    problemData.clientCycles = this._detectCycles(clientRecords);
+  async _validateClient(problemData, clientRecords) {
+    problemData.clientCycles = await detectCycles(clientRecords);
     for (let rootGUID of SYNCED_ROOTS) {
       let record = clientRecords.find(record =>
         record.guid === rootGUID);
@@ -674,6 +780,120 @@ class BookmarkValidator {
     }
   }
 
+  async _computeUnifiedRecordMap(serverRecords, clientRecords) {
+    let allRecords = new Map();
+    for (let sr of serverRecords) {
+      await this.maybeYield();
+      if (sr.fake) {
+        continue;
+      }
+      allRecords.set(sr.id, {client: null, server: sr});
+    }
+
+    for (let cr of clientRecords) {
+      await this.maybeYield();
+      let unified = allRecords.get(cr.id);
+      if (!unified) {
+        allRecords.set(cr.id, {client: cr, server: null});
+      } else {
+        unified.client = cr;
+      }
+    }
+    return allRecords;
+  }
+
+  _recordMissing(problems, id, clientRecord, serverRecord, serverTombstones) {
+    if (!clientRecord && serverRecord) {
+      problems.clientMissing.push(id);
+    }
+    if (!serverRecord && clientRecord) {
+      if (serverTombstones.has(id)) {
+        problems.serverDeleted.push(id);
+      } else if (!clientRecord.ignored && clientRecord.id != "places") {
+        problems.serverMissing.push(id);
+      }
+    }
+  }
+
+  _compareRecords(client, server) {
+    let structuralDifferences = [];
+    let differences = [];
+
+    
+    
+    
+    
+    if (!SYNCED_ROOTS.includes(client.guid)) {
+      
+      if ((client.title || "") !== (server.title || "")) {
+        differences.push("title");
+      }
+    }
+
+    if (client.parentid || server.parentid) {
+      if (client.parentid !== server.parentid) {
+        structuralDifferences.push("parentid");
+      }
+    }
+
+    if (client.tags || server.tags) {
+      let cl = client.tags ? [...client.tags].sort() : [];
+      let sl = server.tags ? [...server.tags].sort() : [];
+      if (!CommonUtils.arrayEqual(cl, sl)) {
+        differences.push("tags");
+      }
+    }
+
+    let sameType = client.type === server.type;
+    if (!sameType) {
+      if (server.type === "query" && client.type === "bookmark" &
+          client.bmkUri.startsWith(QUERY_PROTOCOL)) {
+        sameType = true;
+      }
+    }
+
+    if (!sameType) {
+      differences.push("type");
+    } else {
+      switch (server.type) {
+        case "bookmark":
+        case "query":
+          if (!areURLsEqual(server.bmkUri, client.bmkUri)) {
+            differences.push("bmkUri");
+          }
+          break;
+        case "separator":
+          if (server.pos != client.pos) {
+            differences.push("pos");
+          }
+          break;
+        case "livemark":
+          if (server.feedUri != client.feedUri) {
+            differences.push("feedUri");
+          }
+          if (server.siteUri != client.siteUri) {
+            differences.push("siteUri");
+          }
+          break;
+        case "folder":
+          if (server.id === "places" && server.fake) {
+            
+            
+            break;
+          }
+          if (client.childGUIDs || server.childGUIDs) {
+            let cl = client.childGUIDs || [];
+            let sl = server.childGUIDs || [];
+            if (!CommonUtils.arrayEqual(cl, sl)) {
+              structuralDifferences.push("childGUIDs");
+            }
+          }
+          break;
+      }
+    }
+    return { differences, structuralDifferences };
+  }
+
   
 
 
@@ -684,10 +904,7 @@ class BookmarkValidator {
 
 
 
-  
-  
   async compareServerWithClient(serverRecords, clientTree) {
-
     let clientRecords = await this.createClientRecordsFromTree(clientTree);
     let inspectionInfo = await this.inspectServerRecords(serverRecords);
     inspectionInfo.clientRecords = clientRecords;
@@ -696,122 +913,24 @@ class BookmarkValidator {
     serverRecords = inspectionInfo.records;
     let problemData = inspectionInfo.problemData;
 
-    this._validateClient(problemData, clientRecords);
+    await this._validateClient(problemData, clientRecords);
 
-    let allRecords = new Map();
-    let serverDeletedLookup = new Set(inspectionInfo.deletedRecords.map(r => r.id));
+    let allRecords = await this._computeUnifiedRecordMap(serverRecords, clientRecords);
 
-    for (let sr of serverRecords) {
-      if (sr.fake) {
-        continue;
-      }
-      allRecords.set(sr.id, {client: null, server: sr});
-    }
-
-    for (let cr of clientRecords) {
-      let unified = allRecords.get(cr.id);
-      if (!unified) {
-        allRecords.set(cr.id, {client: cr, server: null});
-      } else {
-        unified.client = cr;
-      }
-    }
-
-
+    let serverDeleted = new Set(inspectionInfo.deletedRecords.map(r => r.id));
     for (let [id, {client, server}] of allRecords) {
-      if (!client && server) {
-        problemData.clientMissing.push(id);
-        continue;
-      }
-      if (!server && client) {
-        if (serverDeletedLookup.has(id)) {
-          problemData.serverDeleted.push(id);
-        } else if (!client.ignored && client.id != "places") {
-          problemData.serverMissing.push(id);
-        }
+      await this.maybeYield();
+      if (!client || !server) {
+        this._recordMissing(problemData, id, client, server, serverDeleted);
         continue;
       }
       if (server && client && client.ignored) {
         problemData.serverUnexpected.push(id);
       }
-      let differences = [];
-      let structuralDifferences = [];
-
-      
-      
-      
-      
-      if (!SYNCED_ROOTS.includes(client.guid)) {
-        
-        if ((client.title || "") !== (server.title || "")) {
-          differences.push("title");
-        }
-      }
-
-      if (client.parentid || server.parentid) {
-        if (client.parentid !== server.parentid) {
-          structuralDifferences.push("parentid");
-        }
-      }
-
-      if (client.tags || server.tags) {
-        let cl = client.tags ? [...client.tags].sort() : [];
-        let sl = server.tags ? [...server.tags].sort() : [];
-        if (!CommonUtils.arrayEqual(cl, sl)) {
-          differences.push("tags");
-        }
-      }
-
-      let sameType = client.type === server.type;
-      if (!sameType) {
-        if (server.type === "query" && client.type === "bookmark" && client.bmkUri.startsWith(QUERY_PROTOCOL)) {
-          sameType = true;
-        }
-      }
-
-
-      if (!sameType) {
-        differences.push("type");
-      } else {
-        switch (server.type) {
-          case "bookmark":
-          case "query":
-            if (!areURLsEqual(server.bmkUri, client.bmkUri)) {
-              differences.push("bmkUri");
-            }
-            break;
-          case "separator":
-            if (server.pos != client.pos) {
-              differences.push("pos");
-            }
-            break;
-          case "livemark":
-            if (server.feedUri != client.feedUri) {
-              differences.push("feedUri");
-            }
-            if (server.siteUri != client.siteUri) {
-              differences.push("siteUri");
-            }
-            break;
-          case "folder":
-            if (server.id === "places" && !problemData.rootOnServer) {
-              
-              
-              break;
-            }
-            if (client.childGUIDs || server.childGUIDs) {
-              let cl = client.childGUIDs || [];
-              let sl = server.childGUIDs || [];
-              if (!CommonUtils.arrayEqual(cl, sl)) {
-                structuralDifferences.push("childGUIDs");
-              }
-            }
-            break;
-        }
-      }
+      let { differences, structuralDifferences } = this._compareRecords(client, server);
 
       if (differences.length) {
-        problemData.differences.push({id, differences});
+        problemData.differences.push({ id, differences });
       }
       if (structuralDifferences.length) {
         problemData.structuralDifferences.push({ id, differences: structuralDifferences });
@@ -830,10 +949,9 @@ class BookmarkValidator {
     if (!result.response.success) {
       throw result.response;
     }
-    let maybeYield = Async.jankYielder();
     let cleartexts = [];
     for (let record of result.records) {
-      await maybeYield();
+      await this.maybeYield();
       await record.decrypt(collectionKey);
       cleartexts.push(record.cleartext);
     }
