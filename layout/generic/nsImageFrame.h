@@ -75,7 +75,7 @@ public:
   NS_DECL_QUERYFRAME
 
   virtual void DestroyFrom(nsIFrame* aDestructRoot, PostDestroyData& aPostDestroyData) override;
-  virtual void DidSetComputedStyle(ComputedStyle* aOldComputedStyle) override;
+  virtual void DidSetStyleContext(nsStyleContext* aOldStyleContext) override;
 
   virtual void Init(nsIContent*       aContent,
                     nsContainerFrame* aParent,
@@ -146,7 +146,7 @@ public:
 
 
   static bool ShouldCreateImageFrameFor(mozilla::dom::Element* aElement,
-                                        ComputedStyle* aComputedStyle);
+                                          nsStyleContext* aStyleContext);
 
   ImgDrawResult DisplayAltFeedback(gfxContext& aRenderingContext,
                                 const nsRect& aDirtyRect,
@@ -178,12 +178,12 @@ public:
   virtual void ReflowCallbackCanceled() override;
 
 private:
-  friend nsIFrame* NS_NewImageFrame(nsIPresShell*, ComputedStyle*);
-  explicit nsImageFrame(ComputedStyle* aStyle)
-    : nsImageFrame(aStyle, kClassID) {}
+  friend nsIFrame* NS_NewImageFrame(nsIPresShell*, nsStyleContext*);
+  explicit nsImageFrame(nsStyleContext* aContext)
+    : nsImageFrame(aContext, kClassID) {}
 
 protected:
-  nsImageFrame(ComputedStyle* aStyle, ClassID aID);
+  nsImageFrame(nsStyleContext* aContext, ClassID aID);
   virtual ~nsImageFrame();
 
   void EnsureIntrinsicSizeAndRatio();

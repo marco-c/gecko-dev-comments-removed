@@ -78,7 +78,7 @@ public:
   
   
   mozilla::UniquePtr<nsISMILAttr>
-  CreateSMILAttr(mozilla::ComputedStyle* aBaseComputedStyle);
+  CreateSMILAttr(nsStyleContext* aBaseStyleContext);
 
   
   

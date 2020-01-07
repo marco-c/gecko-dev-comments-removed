@@ -25,6 +25,7 @@ class nsTableRowGroupFrame;
 class nsTableRowFrame;
 class nsTableColGroupFrame;
 class nsITableLayoutStrategy;
+class nsStyleContext;
 namespace mozilla {
 class WritingMode;
 class LogicalMargin;
@@ -33,8 +34,6 @@ namespace layers {
 class StackingContextHelper;
 }
 } 
-
-using namespace mozilla;
 
 struct BCPropertyData;
 
@@ -144,7 +143,7 @@ public:
 
 
   friend nsTableFrame* NS_NewTableFrame(nsIPresShell* aPresShell,
-                                        ComputedStyle* aStyle);
+                                        nsStyleContext* aContext);
 
   
 
@@ -193,7 +192,7 @@ public:
   virtual void DestroyFrom(nsIFrame* aDestructRoot, PostDestroyData& aPostDestroyData) override;
 
   
-  virtual void DidSetComputedStyle(ComputedStyle* aOldComputedStyle) override;
+  virtual void DidSetStyleContext(nsStyleContext* aOldStyleContext) override;
 
   virtual void SetInitialChildList(ChildListID     aListID,
                                    nsFrameList&    aChildList) override;
@@ -296,8 +295,8 @@ public:
   friend class nsDelayedCalcBCBorders;
 
   void AddBCDamageArea(const mozilla::TableArea& aValue);
-  bool BCRecalcNeeded(ComputedStyle* aOldComputedStyle,
-                        ComputedStyle* aNewComputedStyle);
+  bool BCRecalcNeeded(nsStyleContext* aOldStyleContext,
+                        nsStyleContext* aNewStyleContext);
   void PaintBCBorders(DrawTarget& aDrawTarget, const nsRect& aDirtyRect);
   void CreateWebRenderCommandsForBCBorders(mozilla::wr::DisplayListBuilder& aBuilder,
                                            const mozilla::layers::StackingContextHelper& aSc,
@@ -365,8 +364,8 @@ public:
 
   nsFrameList& GetColGroups();
 
-  virtual ComputedStyle*
-  GetParentComputedStyle(nsIFrame** aProviderFrame) const override;
+  virtual nsStyleContext*
+  GetParentStyleContext(nsIFrame** aProviderFrame) const override;
 
   virtual bool IsFrameOfType(uint32_t aFlags) const override
   {
@@ -596,7 +595,7 @@ protected:
   
 
 
-  explicit nsTableFrame(ComputedStyle* aStyle, ClassID aID = kClassID);
+  explicit nsTableFrame(nsStyleContext* aContext, ClassID aID = kClassID);
 
   
   virtual ~nsTableFrame();

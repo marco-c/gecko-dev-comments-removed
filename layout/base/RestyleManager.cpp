@@ -1146,7 +1146,7 @@ ApplyRenderingChangeToTree(nsIPresShell* aPresShell,
   if (aChange & nsChangeHint_RepaintFrame) {
     
     
-    ComputedStyle* bgSC;
+    nsStyleContext* bgSC;
     nsIFrame* propagatedFrame = aFrame;
     while (!nsCSSRendering::FindBackground(propagatedFrame, &bgSC)) {
       propagatedFrame = propagatedFrame->GetParent();

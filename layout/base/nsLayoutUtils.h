@@ -51,6 +51,7 @@ class nsDisplayItem;
 class nsFontMetrics;
 class nsFontFaceList;
 class nsIImageLoadingContent;
+class nsStyleContext;
 class nsBlockFrame;
 class nsContainerFrame;
 class nsView;
@@ -65,7 +66,6 @@ struct nsStyleImageOrientation;
 struct nsOverflowAreas;
 
 namespace mozilla {
-class ComputedStyle;
 enum class CSSPseudoElementType : uint8_t;
 class EventListenerManager;
 enum class LayoutFrameType : uint8_t;
@@ -140,7 +140,6 @@ MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(DrawStringFlags)
 
 class nsLayoutUtils
 {
-  typedef mozilla::ComputedStyle ComputedStyle;
   typedef mozilla::dom::DOMRectList DOMRectList;
   typedef mozilla::layers::Layer Layer;
   typedef mozilla::layers::StackingContextHelper StackingContextHelper;
@@ -683,9 +682,9 @@ public:
 
 
   static bool HasPseudoStyle(nsIContent* aContent,
-                             ComputedStyle* aComputedStyle,
-                             mozilla::CSSPseudoElementType aPseudoElement,
-                             nsPresContext* aPresContext);
+                               nsStyleContext* aStyleContext,
+                               mozilla::CSSPseudoElementType aPseudoElement,
+                               nsPresContext* aPresContext);
 
   
 
@@ -1301,9 +1300,8 @@ public:
 
 
 
-  static already_AddRefed<nsFontMetrics> GetFontMetricsForComputedStyle(
-      ComputedStyle* aComputedStyle,
-      float aSizeInflation = 1.0f,
+  static already_AddRefed<nsFontMetrics> GetFontMetricsForStyleContext(
+      nsStyleContext* aStyleContext, float aSizeInflation = 1.0f,
       uint8_t aVariantWidth = NS_FONT_VARIANT_WIDTH_NORMAL);
 
   
@@ -1314,10 +1312,9 @@ public:
 
 
   static already_AddRefed<nsFontMetrics> GetFontMetricsOfEmphasisMarks(
-      ComputedStyle* aComputedStyle,
-      float aInflation)
+      nsStyleContext* aStyleContext, float aInflation)
   {
-    return GetFontMetricsForComputedStyle(aComputedStyle, aInflation * 0.5f);
+    return GetFontMetricsForStyleContext(aStyleContext, aInflation * 0.5f);
   }
 
   
@@ -1632,14 +1629,14 @@ public:
                                                  nsFontMetrics& aFontMetrics,
                                                  DrawTarget* aDrawTarget);
 
-  static void DrawString(const nsIFrame*         aFrame,
-                         nsFontMetrics&          aFontMetrics,
-                         gfxContext*             aContext,
-                         const char16_t*         aString,
-                         int32_t                 aLength,
-                         nsPoint                 aPoint,
-                         ComputedStyle* aComputedStyle = nullptr,
-                         DrawStringFlags         aFlags = DrawStringFlags::eDefault);
+  static void DrawString(const nsIFrame*     aFrame,
+                         nsFontMetrics&      aFontMetrics,
+                         gfxContext*         aContext,
+                         const char16_t*     aString,
+                         int32_t             aLength,
+                         nsPoint             aPoint,
+                         nsStyleContext*     aStyleContext = nullptr,
+                         DrawStringFlags     aFlags = DrawStringFlags::eDefault);
 
   static nsPoint GetBackgroundFirstTilePos(const nsPoint& aDest,
                                            const nsPoint& aFill,
@@ -1848,16 +1845,16 @@ public:
 
 
   static ImgDrawResult DrawImage(gfxContext&         aContext,
-                                 ComputedStyle*      aComputedStyle,
-                                 nsPresContext*      aPresContext,
-                                 imgIContainer*      aImage,
-                                 const SamplingFilter aSamplingFilter,
-                                 const nsRect&       aDest,
-                                 const nsRect&       aFill,
-                                 const nsPoint&      aAnchor,
-                                 const nsRect&       aDirty,
-                                 uint32_t            aImageFlags,
-                                 float               aOpacity = 1.0);
+                              nsStyleContext*     aStyleContext,
+                              nsPresContext*      aPresContext,
+                              imgIContainer*      aImage,
+                              const SamplingFilter aSamplingFilter,
+                              const nsRect&       aDest,
+                              const nsRect&       aFill,
+                              const nsPoint&      aAnchor,
+                              const nsRect&       aDirty,
+                              uint32_t            aImageFlags,
+                              float               aOpacity = 1.0);
 
   
 
@@ -2056,7 +2053,7 @@ public:
 
 
   static mozilla::gfx::ShapedTextFlags
-  GetTextRunFlagsForStyle(ComputedStyle* aComputedStyle,
+  GetTextRunFlagsForStyle(nsStyleContext* aStyleContext,
                           const nsStyleFont* aStyleFont,
                           const nsStyleText* aStyleText,
                           nscoord aLetterSpacing);
@@ -2065,7 +2062,7 @@ public:
 
 
   static mozilla::gfx::ShapedTextFlags
-  GetTextRunOrientFlagsForStyle(ComputedStyle* aComputedStyle);
+  GetTextRunOrientFlagsForStyle(nsStyleContext* aStyleContext);
 
   
 

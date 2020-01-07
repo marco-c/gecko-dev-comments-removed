@@ -5363,7 +5363,7 @@ void PresShell::UpdateCanvasBackground()
   
   nsIFrame* rootStyleFrame = FrameConstructor()->GetRootElementStyleFrame();
   if (rootStyleFrame) {
-    ComputedStyle* bgStyle =
+    nsStyleContext* bgStyle =
       nsCSSRendering::FindRootFrameBackground(rootStyleFrame);
     
     
@@ -9717,11 +9717,11 @@ PresShell::VerifyIncrementalReflow()
 
 
 void
-PresShell::ListComputedStyles(FILE *out, int32_t aIndent)
+PresShell::ListStyleContexts(FILE *out, int32_t aIndent)
 {
   nsIFrame* rootFrame = GetRootFrame();
   if (rootFrame) {
-    rootFrame->Style()->List(out, aIndent);
+    rootFrame->StyleContext()->List(out, aIndent);
   }
 
   
@@ -9729,7 +9729,7 @@ PresShell::ListComputedStyles(FILE *out, int32_t aIndent)
   if (rootElement) {
     nsIFrame* rootElementFrame = rootElement->GetPrimaryFrame();
     if (rootElementFrame) {
-      rootElementFrame->Style()->List(out, aIndent);
+      rootElementFrame->StyleContext()->List(out, aIndent);
     }
   }
 }

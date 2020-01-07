@@ -28,7 +28,6 @@
 #include "StyleSheetTransactions.h"     
 #include "TextEditUtils.h"              
 #include "mozilla/CheckedInt.h"         
-#include "mozilla/ComputedStyle.h"      
 #include "mozilla/EditAction.h"         
 #include "mozilla/EditorDOMPoint.h"     
 #include "mozilla/EditorSpellCheck.h"   
@@ -104,6 +103,7 @@
 #include "nsString.h"                   
 #include "nsStringFwd.h"                
 #include "nsStyleConsts.h"              
+#include "nsStyleContext.h"             
 #include "nsStyleStruct.h"              
 #include "nsStyleStructFwd.h"           
 #include "nsTextNode.h"                 
@@ -4109,13 +4109,13 @@ EditorBase::IsPreformatted(nsIDOMNode* aNode,
   NS_ENSURE_TRUE(ps, NS_ERROR_NOT_INITIALIZED);
 
   
-  RefPtr<ComputedStyle> elementStyle;
+  RefPtr<nsStyleContext> elementStyle;
   if (!content->IsElement()) {
     content = content->GetParent();
   }
   if (content && content->IsElement()) {
     elementStyle =
-      nsComputedDOMStyle::GetComputedStyleNoFlush(content->AsElement(), nullptr);
+      nsComputedDOMStyle::GetStyleContextNoFlush(content->AsElement(), nullptr);
   }
 
   if (!elementStyle) {

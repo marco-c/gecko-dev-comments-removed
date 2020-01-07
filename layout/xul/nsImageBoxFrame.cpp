@@ -14,7 +14,7 @@
 #include "gfxContext.h"
 #include "nsImageBoxFrame.h"
 #include "nsGkAtoms.h"
-#include "mozilla/ComputedStyle.h"
+#include "nsStyleContext.h"
 #include "nsStyleConsts.h"
 #include "nsStyleUtil.h"
 #include "nsCOMPtr.h"
@@ -126,9 +126,9 @@ FireImageDOMEvent(nsIContent* aContent, EventMessage aMessage)
 
 
 nsIFrame*
-NS_NewImageBoxFrame (nsIPresShell* aPresShell, ComputedStyle* aStyle)
+NS_NewImageBoxFrame (nsIPresShell* aPresShell, nsStyleContext* aContext)
 {
-  return new (aPresShell) nsImageBoxFrame(aStyle);
+  return new (aPresShell) nsImageBoxFrame(aContext);
 }
 
 NS_IMPL_FRAMEARENA_HELPERS(nsImageBoxFrame)
@@ -152,8 +152,8 @@ nsImageBoxFrame::AttributeChanged(int32_t aNameSpaceID,
   return rv;
 }
 
-nsImageBoxFrame::nsImageBoxFrame(ComputedStyle* aStyle)
-  : nsLeafBoxFrame(aStyle, kClassID)
+nsImageBoxFrame::nsImageBoxFrame(nsStyleContext* aContext)
+  : nsLeafBoxFrame(aContext, kClassID)
   , mIntrinsicSize(0, 0)
   , mLoadFlags(nsIRequest::LOAD_NORMAL)
   , mRequestRegistered(false)
@@ -645,9 +645,9 @@ nsImageBoxFrame::CanOptimizeToImageLayer()
 
 
  void
-nsImageBoxFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle)
+nsImageBoxFrame::DidSetStyleContext(nsStyleContext* aOldStyleContext)
 {
-  nsLeafBoxFrame::DidSetComputedStyle(aOldComputedStyle);
+  nsLeafBoxFrame::DidSetStyleContext(aOldStyleContext);
 
   
   const nsStyleList* myList = StyleList();

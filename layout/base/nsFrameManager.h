@@ -18,9 +18,9 @@ class nsIFrame;
 class nsILayoutHistoryState;
 class nsIPresShell;
 class nsPlaceholderFrame;
+class nsStyleContext;
 class nsWindowSizes;
 namespace mozilla {
-class ComputedStyle;
 struct UndisplayedNode;
 }
 
@@ -35,7 +35,6 @@ struct UndisplayedNode;
 
 class nsFrameManager
 {
-  typedef mozilla::ComputedStyle ComputedStyle;
   typedef mozilla::layout::FrameChildListID ChildListID;
   typedef mozilla::UndisplayedNode UndisplayedNode;
 
@@ -77,62 +76,61 @@ public:
   
   
   
-  
-  
 
   
 
 
   void RegisterDisplayNoneStyleFor(nsIContent* aContent,
-                                   ComputedStyle* aComputedStyle);
+                                   nsStyleContext* aStyleContext);
 
   
 
 
   void RegisterDisplayContentsStyleFor(nsIContent* aContent,
-                                       ComputedStyle* aComputedStyle);
+                                       nsStyleContext* aStyleContext);
 
   
 
 
   void ChangeRegisteredDisplayNoneStyleFor(nsIContent* aContent,
-                                           ComputedStyle* aComputedStyle)
+                                           nsStyleContext* aStyleContext)
   {
-    ChangeComputedStyleInMap(mDisplayNoneMap, aContent, aComputedStyle);
+    ChangeStyleContextInMap(mDisplayNoneMap, aContent, aStyleContext);
   }
 
   
 
 
   void ChangeRegisteredDisplayContentsStyleFor(nsIContent* aContent,
-                                               ComputedStyle* aComputedStyle)
+                                               nsStyleContext* aStyleContext)
   {
-    ChangeComputedStyleInMap(mDisplayContentsMap, aContent, aComputedStyle);
+    ChangeStyleContextInMap(mDisplayContentsMap, aContent, aStyleContext);
   }
 
   
 
 
-  ComputedStyle* GetDisplayNoneStyleFor(const nsIContent* aContent)
+  nsStyleContext* GetDisplayNoneStyleFor(const nsIContent* aContent)
   {
     if (!mDisplayNoneMap) {
       return nullptr;
     }
-    return GetComputedStyleInMap(mDisplayNoneMap, aContent);
+    return GetStyleContextInMap(mDisplayNoneMap, aContent);
   }
 
   
 
 
-  ComputedStyle* GetDisplayContentsStyleFor(const nsIContent* aContent)
+  nsStyleContext* GetDisplayContentsStyleFor(const nsIContent* aContent)
   {
     if (!mDisplayContentsMap) {
       return nullptr;
     }
-    return GetComputedStyleInMap(mDisplayContentsMap, aContent);
+    return GetStyleContextInMap(mDisplayContentsMap, aContent);
   }
 
   
+
 
 
 
@@ -213,21 +211,18 @@ protected:
 
   void ClearAllMapsFor(nsIContent* aParentContent);
 
-  static ComputedStyle* GetComputedStyleInMap(UndisplayedMap* aMap,
+  static nsStyleContext* GetStyleContextInMap(UndisplayedMap* aMap,
                                               const nsIContent* aContent);
   static UndisplayedNode* GetUndisplayedNodeInMapFor(UndisplayedMap* aMap,
                                                      const nsIContent* aContent);
   static UndisplayedNode* GetAllUndisplayedNodesInMapFor(UndisplayedMap* aMap,
                                                          nsIContent* aParentContent);
-  static void SetComputedStyleInMap(
-      UndisplayedMap* aMap,
-      nsIContent* aContent,
-      ComputedStyle* aComputedStyle);
-
-  static void ChangeComputedStyleInMap(
-      UndisplayedMap* aMap,
-      nsIContent* aContent,
-      ComputedStyle* aComputedStyle);
+  static void SetStyleContextInMap(UndisplayedMap* aMap,
+                                   nsIContent* aContent,
+                                   nsStyleContext* aStyleContext);
+  static void ChangeStyleContextInMap(UndisplayedMap* aMap,
+                                      nsIContent* aContent,
+                                      nsStyleContext* aStyleContext);
 
   
   nsIPresShell* MOZ_NON_OWNING_REF mPresShell;

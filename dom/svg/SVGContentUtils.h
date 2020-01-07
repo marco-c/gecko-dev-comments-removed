@@ -20,11 +20,11 @@
 class nsIContent;
 class nsIDocument;
 class nsIFrame;
+class nsStyleContext;
 class nsStyleCoord;
 class nsSVGElement;
 
 namespace mozilla {
-class ComputedStyle;
 class nsSVGAnimatedTransformList;
 class SVGAnimatedPreserveAspectRatio;
 class SVGContextPaint;
@@ -75,7 +75,6 @@ enum SVGTransformTypes {
 class SVGContentUtils
 {
 public:
-  typedef mozilla::ComputedStyle ComputedStyle;
   typedef mozilla::gfx::Float Float;
   typedef mozilla::gfx::Matrix Matrix;
   typedef mozilla::gfx::Rect Rect;
@@ -156,7 +155,7 @@ public:
 
   static void GetStrokeOptions(AutoStrokeOptions* aStrokeOptions,
                                nsSVGElement* aElement,
-                               ComputedStyle* aComputedStyle,
+                               nsStyleContext* aStyleContext,
                                mozilla::SVGContextPaint* aContextPaint,
                                StrokeOptionFlags aFlags = eAllStrokeOptions);
 
@@ -170,7 +169,7 @@ public:
 
 
   static Float GetStrokeWidth(nsSVGElement* aElement,
-                              ComputedStyle* aComputedStyle,
+                              nsStyleContext* aStyleContext,
                               mozilla::SVGContextPaint* aContextPaint);
 
   
@@ -182,7 +181,7 @@ public:
 
   static float GetFontSize(mozilla::dom::Element *aElement);
   static float GetFontSize(nsIFrame *aFrame);
-  static float GetFontSize(ComputedStyle *aComputedStyle);
+  static float GetFontSize(nsStyleContext *aStyleContext);
   
 
 
@@ -192,7 +191,7 @@ public:
 
   static float GetFontXHeight(mozilla::dom::Element *aElement);
   static float GetFontXHeight(nsIFrame *aFrame);
-  static float GetFontXHeight(ComputedStyle *aComputedStyle);
+  static float GetFontXHeight(nsStyleContext *aStyleContext);
 
   
 

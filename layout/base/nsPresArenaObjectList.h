@@ -13,7 +13,7 @@
 
 
 
-PRES_ARENA_OBJECT(GeckoComputedStyle)
+PRES_ARENA_OBJECT(GeckoStyleContext)
 
 PRES_ARENA_OBJECT(nsLineBox)
 PRES_ARENA_OBJECT(nsRuleNode)

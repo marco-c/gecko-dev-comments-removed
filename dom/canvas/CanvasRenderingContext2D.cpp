@@ -1175,8 +1175,8 @@ CanvasRenderingContext2D::ParseColor(const nsAString& aString,
     if (wasCurrentColor && mCanvasElement) {
       
       
-      RefPtr<ComputedStyle> canvasStyle =
-        nsComputedDOMStyle::GetComputedStyle(mCanvasElement, nullptr);
+      RefPtr<nsStyleContext> canvasStyle =
+        nsComputedDOMStyle::GetStyleContext(mCanvasElement, nullptr);
       if (canvasStyle) {
         *aColor = canvasStyle->StyleColor()->mColor;
       }
@@ -1955,8 +1955,8 @@ CanvasRenderingContext2D::ClearTarget()
 
   
   
-  RefPtr<ComputedStyle> canvasStyle =
-    nsComputedDOMStyle::GetComputedStyle(mCanvasElement, nullptr);
+  RefPtr<nsStyleContext> canvasStyle =
+    nsComputedDOMStyle::GetStyleContext(mCanvasElement, nullptr);
   if (canvasStyle) {
     WritingMode wm(canvasStyle);
     if (wm.IsVertical() && !wm.IsSideways()) {
@@ -2683,7 +2683,7 @@ CreateFontDeclarationForServo(const nsAString& aFont,
   return CreateDeclarationForServo(eCSSProperty_font, aFont, aDocument);
 }
 
-static already_AddRefed<ComputedStyle>
+static already_AddRefed<ServoStyleContext>
 GetFontStyleForServo(Element* aElement, const nsAString& aFont,
                      nsIPresShell* aPresShell,
                      nsAString& aOutUsedFont,
@@ -2708,11 +2708,11 @@ GetFontStyleForServo(Element* aElement, const nsAString& aFont,
 
   ServoStyleSet* styleSet = aPresShell->StyleSet()->AsServo();
 
-  RefPtr<ComputedStyle> parentStyle;
+  RefPtr<nsStyleContext> parentStyle;
   
   
   if (aElement && aElement->IsInComposedDoc()) {
-    parentStyle = nsComputedDOMStyle::GetComputedStyle(aElement, nullptr);
+    parentStyle = nsComputedDOMStyle::GetStyleContext(aElement, nullptr);
     if (!parentStyle) {
       
       
@@ -2735,7 +2735,7 @@ GetFontStyleForServo(Element* aElement, const nsAString& aFont,
              "We should have returned an error above if the presshell is "
              "being destroyed.");
 
-  RefPtr<ComputedStyle> sc =
+  RefPtr<ServoStyleContext> sc =
     styleSet->ResolveForDeclarations(parentStyle->AsServo(), declarations);
 
   
@@ -2754,9 +2754,9 @@ CreateFilterDeclarationForServo(const nsAString& aFilter,
   return CreateDeclarationForServo(eCSSProperty_filter, aFilter, aDocument);
 }
 
-static already_AddRefed<ComputedStyle>
+static already_AddRefed<ServoStyleContext>
 ResolveFilterStyleForServo(const nsAString& aFilterString,
-                           const ComputedStyle* aParentStyle,
+                           const ServoStyleContext* aParentStyle,
                            nsIPresShell* aPresShell,
                            ErrorResult& aError)
 {
@@ -2777,7 +2777,7 @@ ResolveFilterStyleForServo(const nsAString& aFilterString,
   }
 
   ServoStyleSet* styleSet = aPresShell->StyleSet()->AsServo();
-  RefPtr<ComputedStyle> computedValues =
+  RefPtr<ServoStyleContext> computedValues =
     styleSet->ResolveForDeclarations(aParentStyle, declarations);
 
   return computedValues.forget();
@@ -2809,7 +2809,7 @@ CanvasRenderingContext2D::ParseFilter(const nsAString& aString,
   
   MOZ_ASSERT(presShell->StyleSet()->IsServo());
 
-  RefPtr<ComputedStyle> parentStyle =
+  RefPtr<ServoStyleContext> parentStyle =
     GetFontStyleForServo(mCanvasElement,
                          GetFont(),
                          presShell,
@@ -2819,7 +2819,7 @@ CanvasRenderingContext2D::ParseFilter(const nsAString& aString,
     return false;
   }
 
-  RefPtr<ComputedStyle> computedValues =
+  RefPtr<ServoStyleContext> computedValues =
     ResolveFilterStyleForServo(aString,
                                parentStyle,
                                presShell,
@@ -3735,7 +3735,7 @@ CanvasRenderingContext2D::SetFontInternal(const nsAString& aFont,
     return false;
   }
 
-  RefPtr<ComputedStyle> sc;
+  RefPtr<nsStyleContext> sc;
   nsString usedFont;
   if (presShell->StyleSet()->IsServo()) {
     sc =
@@ -4305,11 +4305,11 @@ CanvasRenderingContext2D::DrawOrMeasureText(const nsAString& aRawText,
   
   bool isRTL = false;
 
-  RefPtr<ComputedStyle> canvasStyle;
+  RefPtr<nsStyleContext> canvasStyle;
   if (mCanvasElement && mCanvasElement->IsInComposedDoc()) {
     
     canvasStyle =
-      nsComputedDOMStyle::GetComputedStyle(mCanvasElement, nullptr);
+      nsComputedDOMStyle::GetStyleContext(mCanvasElement, nullptr);
     if (!canvasStyle) {
       return NS_ERROR_FAILURE;
     }

@@ -22,8 +22,8 @@ nsBackdropFrame::GetFrameName(nsAString& aResult) const
 }
 #endif
 
- ComputedStyle*
-nsBackdropFrame::GetParentComputedStyle(nsIFrame** aProviderFrame) const
+ nsStyleContext*
+nsBackdropFrame::GetParentStyleContext(nsIFrame** aProviderFrame) const
 {
   
   

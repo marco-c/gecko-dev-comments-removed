@@ -16,9 +16,9 @@ using namespace mozilla;
 
 
 nsIFrame*
-NS_NewMathMLmfencedFrame(nsIPresShell* aPresShell, ComputedStyle* aStyle)
+NS_NewMathMLmfencedFrame(nsIPresShell* aPresShell, nsStyleContext* aContext)
 {
-  return new (aPresShell) nsMathMLmfencedFrame(aStyle);
+  return new (aPresShell) nsMathMLmfencedFrame(aContext);
 }
 
 NS_IMPL_FRAMEARENA_HELPERS(nsMathMLmfencedFrame)
@@ -113,7 +113,7 @@ nsMathMLmfencedFrame::CreateFencesAndSeparators(nsPresContext* aPresContext)
   if (!value.IsEmpty()) {
     mOpenChar = new nsMathMLChar;
     mOpenChar->SetData(value);
-    ResolveMathMLCharStyle(aPresContext, mContent, mComputedStyle, mOpenChar);
+    ResolveMathMLCharStyle(aPresContext, mContent, mStyleContext, mOpenChar);
   }
 
   
@@ -127,7 +127,7 @@ nsMathMLmfencedFrame::CreateFencesAndSeparators(nsPresContext* aPresContext)
   if (!value.IsEmpty()) {
     mCloseChar = new nsMathMLChar;
     mCloseChar->SetData(value);
-    ResolveMathMLCharStyle(aPresContext, mContent, mComputedStyle, mCloseChar);
+    ResolveMathMLCharStyle(aPresContext, mContent, mStyleContext, mCloseChar);
   }
 
   
@@ -152,7 +152,7 @@ nsMathMLmfencedFrame::CreateFencesAndSeparators(nsPresContext* aPresContext)
           sepChar = value[mSeparatorsCount-1];
         }
         mSeparatorsChar[i].SetData(sepChar);
-        ResolveMathMLCharStyle(aPresContext, mContent, mComputedStyle, &mSeparatorsChar[i]);
+        ResolveMathMLCharStyle(aPresContext, mContent, mStyleContext, &mSeparatorsChar[i]);
       }
       mSeparatorsCount = sepCount;
     } else {
@@ -683,8 +683,8 @@ nsMathMLmfencedFrame::FixInterFrameSpacing(ReflowOutput& aDesiredSize)
 
 
 
-ComputedStyle*
-nsMathMLmfencedFrame::GetAdditionalComputedStyle(int32_t aIndex) const
+nsStyleContext*
+nsMathMLmfencedFrame::GetAdditionalStyleContext(int32_t aIndex) const
 {
   int32_t openIndex = -1;
   int32_t closeIndex = -1;
@@ -703,20 +703,20 @@ nsMathMLmfencedFrame::GetAdditionalComputedStyle(int32_t aIndex) const
   }
 
   if (aIndex < mSeparatorsCount) {
-    return mSeparatorsChar[aIndex].GetComputedStyle();
+    return mSeparatorsChar[aIndex].GetStyleContext();
   }
   else if (aIndex == openIndex) {
-    return mOpenChar->GetComputedStyle();
+    return mOpenChar->GetStyleContext();
   }
   else if (aIndex == closeIndex) {
-    return mCloseChar->GetComputedStyle();
+    return mCloseChar->GetStyleContext();
   }
   return nullptr;
 }
 
 void
-nsMathMLmfencedFrame::SetAdditionalComputedStyle(int32_t          aIndex,
-                                                ComputedStyle*  aComputedStyle)
+nsMathMLmfencedFrame::SetAdditionalStyleContext(int32_t          aIndex,
+                                                nsStyleContext*  aStyleContext)
 {
   int32_t openIndex = -1;
   int32_t closeIndex = -1;
@@ -735,12 +735,12 @@ nsMathMLmfencedFrame::SetAdditionalComputedStyle(int32_t          aIndex,
   }
 
   if (aIndex < mSeparatorsCount) {
-    mSeparatorsChar[aIndex].SetComputedStyle(aComputedStyle);
+    mSeparatorsChar[aIndex].SetStyleContext(aStyleContext);
   }
   else if (aIndex == openIndex) {
-    mOpenChar->SetComputedStyle(aComputedStyle);
+    mOpenChar->SetStyleContext(aStyleContext);
   }
   else if (aIndex == closeIndex) {
-    mCloseChar->SetComputedStyle(aComputedStyle);
+    mCloseChar->SetStyleContext(aStyleContext);
   }
 }

@@ -101,7 +101,7 @@ public:
   ReverseLineIterator LinesRBeginFrom(nsLineBox* aList) { return mLines.rbegin(aList); }
 
   friend nsBlockFrame* NS_NewBlockFrame(nsIPresShell* aPresShell,
-                                        ComputedStyle* aStyle);
+                                        nsStyleContext* aContext);
 
   
   NS_DECL_QUERYFRAME
@@ -416,8 +416,8 @@ public:
   void UpdateFirstLetterStyle(mozilla::ServoRestyleState& aRestyleState);
 
 protected:
-  explicit nsBlockFrame(ComputedStyle* aStyle, ClassID aID = kClassID)
-    : nsContainerFrame(aStyle, aID)
+  explicit nsBlockFrame(nsStyleContext* aContext, ClassID aID = kClassID)
+    : nsContainerFrame(aContext, aID)
     , mMinWidth(NS_INTRINSIC_WIDTH_UNKNOWN)
     , mPrefWidth(NS_INTRINSIC_WIDTH_UNKNOWN)
   {
@@ -429,7 +429,7 @@ protected:
   virtual ~nsBlockFrame();
 
 #ifdef DEBUG
-  already_AddRefed<ComputedStyle> GetFirstLetterStyle(nsPresContext* aPresContext);
+  already_AddRefed<nsStyleContext> GetFirstLetterStyle(nsPresContext* aPresContext);
 #endif
 
   NS_DECLARE_FRAME_PROPERTY_WITHOUT_DTOR(LineCursorProperty, nsLineBox)
@@ -941,7 +941,7 @@ protected:
   
   
   
-  already_AddRefed<ComputedStyle> ResolveBulletStyle(
+  already_AddRefed<nsStyleContext> ResolveBulletStyle(
     mozilla::CSSPseudoElementType aType,
     mozilla::StyleSetHandle aStyleSet);
 

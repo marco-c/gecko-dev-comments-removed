@@ -15,7 +15,7 @@
 #include "mozilla/dom/CSSPrimitiveValueBinding.h"
 #include "nsIFrame.h"
 #include "nsIFrameInlines.h"
-#include "mozilla/ComputedStyle.h"
+#include "nsStyleContext.h"
 #include "nsIScrollableFrame.h"
 #include "nsContentUtils.h"
 #include "nsIContent.h"
@@ -54,7 +54,7 @@
 #include "nsWrapperCacheInlines.h"
 #include "mozilla/AppUnits.h"
 #include <algorithm>
-#include "mozilla/ComputedStyleInlines.h"
+#include "nsStyleContextInlines.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -179,7 +179,7 @@ DocumentNeedsRestyle(
 
 
 
-struct ComputedStyleMap
+struct nsComputedStyleMap
 {
   friend class nsComputedDOMStyle;
 
@@ -303,7 +303,7 @@ private:
 };
 
 void
-ComputedStyleMap::Update()
+nsComputedStyleMap::Update()
 {
   if (!IsDirty()) {
     return;
@@ -328,9 +328,9 @@ nsComputedDOMStyle::nsComputedDOMStyle(dom::Element* aElement,
   , mInnerFrame(nullptr)
   , mPresShell(nullptr)
   , mStyleType(aStyleType)
-  , mComputedStyleGeneration(0)
+  , mStyleContextGeneration(0)
   , mExposeVisitedStyle(false)
-  , mResolvedComputedStyle(false)
+  , mResolvedStyleContext(false)
   , mAnimationFlag(aFlag)
 {
   MOZ_ASSERT(aElement && aPresShell);
@@ -343,13 +343,13 @@ nsComputedDOMStyle::nsComputedDOMStyle(dom::Element* aElement,
 
 nsComputedDOMStyle::~nsComputedDOMStyle()
 {
-  ClearComputedStyle();
+  ClearStyleContext();
 }
 
 NS_IMPL_CYCLE_COLLECTION_CLASS(nsComputedDOMStyle)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(nsComputedDOMStyle)
-  tmp->ClearComputedStyle();  
+  tmp->ClearStyleContext();  
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mContent)
   NS_IMPL_CYCLE_COLLECTION_UNLINK_PRESERVED_WRAPPER
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
@@ -424,8 +424,12 @@ nsComputedDOMStyle::Length()
   
   
   UpdateCurrentStyleSources(false);
-  if (mComputedStyle) {
-    length += Servo_GetCustomPropertiesCount(mComputedStyle->AsServo());
+  if (mStyleContext) {
+    if (mStyleContext->IsServo()) {
+      length += Servo_GetCustomPropertiesCount(mStyleContext->AsServo());
+    } else {
+      MOZ_CRASH("old style system disabled");
+    }
   }
 
   ClearCurrentStyleSources();
@@ -463,15 +467,15 @@ nsComputedDOMStyle::GetPropertyValue(const nsAString& aPropertyName,
 }
 
 
-already_AddRefed<ComputedStyle>
-nsComputedDOMStyle::GetComputedStyle(Element* aElement,
-                                     nsAtom* aPseudo,
-                                     StyleType aStyleType)
+already_AddRefed<nsStyleContext>
+nsComputedDOMStyle::GetStyleContext(Element* aElement,
+                                    nsAtom* aPseudo,
+                                    StyleType aStyleType)
 {
   if (nsIDocument* doc = aElement->GetComposedDoc()) {
     doc->FlushPendingNotifications(FlushType::Style);
   }
-  return GetComputedStyleNoFlush(aElement, aPseudo, aStyleType);
+  return GetStyleContextNoFlush(aElement, aPseudo, aStyleType);
 }
 
 
@@ -484,21 +488,30 @@ nsComputedDOMStyle::GetComputedStyle(Element* aElement,
 
 
 static bool
-MustReresolveStyle(const mozilla::ComputedStyle* aStyle)
+MustReresolveStyle(const nsStyleContext* aContext)
 {
-  MOZ_ASSERT(aStyle);
+  MOZ_ASSERT(aContext);
 
-  
-  
-  return aStyle->HasPseudoElementData() && !aStyle->GetPseudo();
+  if (aContext->HasPseudoElementData()) {
+    if (!aContext->GetPseudo() ||
+        aContext->IsServo()) {
+      
+      
+      return true;
+    }
+
+    MOZ_CRASH("old style system disabled");
+  }
+
+  return false;
 }
 
-already_AddRefed<ComputedStyle>
-nsComputedDOMStyle::DoGetComputedStyleNoFlush(Element* aElement,
-                                              nsAtom* aPseudo,
-                                              nsIPresShell* aPresShell,
-                                              StyleType aStyleType,
-                                              AnimationFlag aAnimationFlag)
+already_AddRefed<nsStyleContext>
+nsComputedDOMStyle::DoGetStyleContextNoFlush(Element* aElement,
+                                             nsAtom* aPseudo,
+                                             nsIPresShell* aPresShell,
+                                             StyleType aStyleType,
+                                             AnimationFlag aAnimationFlag)
 {
   MOZ_ASSERT(aElement, "NULL element");
   
@@ -558,7 +571,8 @@ nsComputedDOMStyle::DoGetComputedStyleNoFlush(Element* aElement,
       frame = nsLayoutUtils::GetStyleFrame(aElement);
     }
     if (frame) {
-      ComputedStyle* result = frame->Style();
+      nsStyleContext* result = frame->StyleContext();
+      
       
       
       if (!MustReresolveStyle(result)) {
@@ -582,7 +596,8 @@ nsComputedDOMStyle::DoGetComputedStyleNoFlush(Element* aElement,
           }
         }
 
-        RefPtr<ComputedStyle> ret = result;
+        
+        RefPtr<nsStyleContext> ret = result;
         return ret.forget();
       }
     }
@@ -595,25 +610,31 @@ nsComputedDOMStyle::DoGetComputedStyleNoFlush(Element* aElement,
   if (!presContext)
     return nullptr;
 
-  ServoStyleSet* styleSet = presShell->StyleSet()->AsServo();
+  StyleSetHandle styleSet = presShell->StyleSet();
 
-  StyleRuleInclusion rules = aStyleType == eDefaultOnly
-                             ? StyleRuleInclusion::DefaultOnly
-                             : StyleRuleInclusion::All;
-  RefPtr<ComputedStyle> result =
-     styleSet->ResolveStyleLazily(aElement, pseudoType, rules);
-  if (aAnimationFlag == eWithAnimation) {
-    return result.forget();
+  
+  
+  if (ServoStyleSet* servoSet = styleSet->GetAsServo()) {
+    StyleRuleInclusion rules = aStyleType == eDefaultOnly
+                               ? StyleRuleInclusion::DefaultOnly
+                               : StyleRuleInclusion::All;
+    RefPtr<ServoStyleContext> result =
+       servoSet->ResolveStyleLazily(aElement, pseudoType, rules);
+    if (aAnimationFlag == eWithAnimation) {
+      return result.forget();
+    }
+
+    Element* elementOrPseudoElement =
+      EffectCompositor::GetElementToRestyle(aElement, pseudoType);
+    if (!elementOrPseudoElement) {
+      return nullptr;
+    }
+    return servoSet->GetBaseContextForElement(elementOrPseudoElement,
+                                              presContext,
+                                              result);
   }
 
-  Element* elementOrPseudoElement =
-    EffectCompositor::GetElementToRestyle(aElement, pseudoType);
-  if (!elementOrPseudoElement) {
-    return nullptr;
-  }
-  return styleSet->GetBaseContextForElement(elementOrPseudoElement,
-                                            presContext,
-                                            result);
+  MOZ_CRASH("old style system disabled");
 }
 
 nsMargin
@@ -699,7 +720,7 @@ AddImageURLs(const nsStyleImageLayers& aLayers, nsTArray<nsString>& aURLs)
 
 static void
 CollectImageURLsForProperty(nsCSSPropertyID aProp,
-                            ComputedStyle& aStyle,
+                            nsStyleContext& aStyle,
                             nsTArray<nsString>& aURLs)
 {
   if (nsCSSProps::IsShorthand(aProp)) {
@@ -754,12 +775,12 @@ nsComputedDOMStyle::GetCSSImageURLs(const nsAString& aPropertyName,
 
   UpdateCurrentStyleSources(false);
 
-  if (!mComputedStyle) {
+  if (!mStyleContext) {
     aRv.Throw(NS_ERROR_NOT_AVAILABLE);
     return;
   }
 
-  CollectImageURLsForProperty(prop, *mComputedStyle, aImageURLs);
+  CollectImageURLsForProperty(prop, *mStyleContext, aImageURLs);
 }
 
 
@@ -798,34 +819,34 @@ nsComputedDOMStyle::GetServoCSSParsingEnvironment(
 }
 
 void
-nsComputedDOMStyle::ClearComputedStyle()
+nsComputedDOMStyle::ClearStyleContext()
 {
-  if (mResolvedComputedStyle) {
-    mResolvedComputedStyle = false;
+  if (mResolvedStyleContext) {
+    mResolvedStyleContext = false;
     mContent->RemoveMutationObserver(this);
   }
-  mComputedStyle = nullptr;
+  mStyleContext = nullptr;
 }
 
 void
-nsComputedDOMStyle::SetResolvedComputedStyle(RefPtr<ComputedStyle>&& aContext,
+nsComputedDOMStyle::SetResolvedStyleContext(RefPtr<nsStyleContext>&& aContext,
                                             uint64_t aGeneration)
 {
-  if (!mResolvedComputedStyle) {
-    mResolvedComputedStyle = true;
+  if (!mResolvedStyleContext) {
+    mResolvedStyleContext = true;
     mContent->AddMutationObserver(this);
   }
-  mComputedStyle = aContext;
-  mComputedStyleGeneration = aGeneration;
+  mStyleContext = aContext;
+  mStyleContextGeneration = aGeneration;
 }
 
 void
-nsComputedDOMStyle::SetFrameComputedStyle(mozilla::ComputedStyle* aStyle,
+nsComputedDOMStyle::SetFrameStyleContext(nsStyleContext* aContext,
                                          uint64_t aGeneration)
 {
-  ClearComputedStyle();
-  mComputedStyle = aStyle;
-  mComputedStyleGeneration = aGeneration;
+  ClearStyleContext();
+  mStyleContext = aContext;
+  mStyleContextGeneration = aGeneration;
 }
 
 bool
@@ -863,7 +884,7 @@ nsComputedDOMStyle::UpdateCurrentStyleSources(bool aNeedsLayoutFlush)
 {
   nsCOMPtr<nsIDocument> document = do_QueryReferent(mDocumentWeak);
   if (!document) {
-    ClearComputedStyle();
+    ClearStyleContext();
     return;
   }
 
@@ -895,7 +916,7 @@ nsComputedDOMStyle::UpdateCurrentStyleSources(bool aNeedsLayoutFlush)
 
   mPresShell = document->GetShell();
   if (!mPresShell || !mPresShell->GetPresContext()) {
-    ClearComputedStyle();
+    ClearStyleContext();
     return;
   }
 
@@ -911,19 +932,20 @@ nsComputedDOMStyle::UpdateCurrentStyleSources(bool aNeedsLayoutFlush)
   uint64_t currentGeneration =
     mPresShell->GetPresContext()->GetUndisplayedRestyleGeneration();
 
-  if (mComputedStyle) {
+  if (mStyleContext) {
     
     
     
     
     
-    if (mComputedStyleGeneration == currentGeneration
+    if (mStyleContextGeneration == currentGeneration
         && mContent->IsInComposedDoc()) {
       
       return;
     }
     
-    mComputedStyle = nullptr;
+    
+    mStyleContext = nullptr;
   }
 
   
@@ -957,22 +979,27 @@ nsComputedDOMStyle::UpdateCurrentStyleSources(bool aNeedsLayoutFlush)
                      "the inner table");
       }
 
-      SetFrameComputedStyle(mInnerFrame->Style(), currentGeneration);
-      NS_ASSERTION(mComputedStyle, "Frame without style?");
+      SetFrameStyleContext(mInnerFrame->StyleContext(), currentGeneration);
+      NS_ASSERTION(mStyleContext, "Frame without style context?");
     }
   }
 
-  if (!mComputedStyle || MustReresolveStyle(mComputedStyle)) {
+  if (!mStyleContext || MustReresolveStyle(mStyleContext)) {
+#ifdef DEBUG
+    if (mStyleContext && mStyleContext->IsGecko()) {
+      MOZ_CRASH("old style system disabled");
+    }
+#endif
     
-    RefPtr<ComputedStyle> resolvedComputedStyle =
-      DoGetComputedStyleNoFlush(
+    RefPtr<nsStyleContext> resolvedStyleContext =
+      DoGetStyleContextNoFlush(
           mContent->AsElement(),
           mPseudo,
           presShellForContent ? presShellForContent.get() : mPresShell,
           mStyleType,
           eWithAnimation);
-    if (!resolvedComputedStyle) {
-      ClearComputedStyle();
+    if (!resolvedStyleContext) {
+      ClearStyleContext();
       return;
     }
 
@@ -984,8 +1011,8 @@ nsComputedDOMStyle::UpdateCurrentStyleSources(bool aNeedsLayoutFlush)
                      mPresShell->GetPresContext()->GetUndisplayedRestyleGeneration(),
                    "why should we have flushed style again?");
 
-    SetResolvedComputedStyle(Move(resolvedComputedStyle), currentGeneration);
-    NS_ASSERTION(mPseudo || !mComputedStyle->HasPseudoElementData(),
+    SetResolvedStyleContext(Move(resolvedStyleContext), currentGeneration);
+    NS_ASSERTION(mPseudo || !mStyleContext->HasPseudoElementData(),
                  "should not have pseudo-element data");
   }
 
@@ -997,10 +1024,10 @@ nsComputedDOMStyle::UpdateCurrentStyleSources(bool aNeedsLayoutFlush)
   
   MOZ_ASSERT(!mExposeVisitedStyle || nsContentUtils::IsCallerChrome(),
              "mExposeVisitedStyle set incorrectly");
-  if (mExposeVisitedStyle && mComputedStyle->RelevantLinkVisited()) {
-    ComputedStyle *styleIfVisited = mComputedStyle->GetStyleIfVisited();
+  if (mExposeVisitedStyle && mStyleContext->RelevantLinkVisited()) {
+    nsStyleContext *styleIfVisited = mStyleContext->GetStyleIfVisited();
     if (styleIfVisited) {
-      mComputedStyle = styleIfVisited;
+      mStyleContext = styleIfVisited;
     }
   }
 }
@@ -1012,9 +1039,8 @@ nsComputedDOMStyle::ClearCurrentStyleSources()
   
   
   
-  
-  if (!mResolvedComputedStyle || mOuterFrame) {
-    ClearComputedStyle();
+  if (!mResolvedStyleContext || mOuterFrame) {
+    ClearStyleContext();
   }
 
   mOuterFrame = nullptr;
@@ -1041,7 +1067,7 @@ nsComputedDOMStyle::GetPropertyCSSValueWithoutWarning(
     nsCSSProps::LookupProperty(aPropertyName, CSSEnabledState::eForAllContent);
 
   bool needsLayoutFlush;
-  ComputedStyleMap::Entry::ComputeMethod getter;
+  nsComputedStyleMap::Entry::ComputeMethod getter;
 
   if (prop == eCSSPropertyExtra_variable) {
     needsLayoutFlush = false;
@@ -1060,7 +1086,7 @@ nsComputedDOMStyle::GetPropertyCSSValueWithoutWarning(
       prop = subprops[0];
     }
 
-    const ComputedStyleMap::Entry* propEntry =
+    const nsComputedStyleMap::Entry* propEntry =
       GetComputedStyleMap()->FindEntryForProperty(prop);
 
     if (!propEntry) {
@@ -1078,7 +1104,7 @@ nsComputedDOMStyle::GetPropertyCSSValueWithoutWarning(
   }
 
   UpdateCurrentStyleSources(needsLayoutFlush);
-  if (!mComputedStyle) {
+  if (!mStyleContext) {
     aRv.Throw(NS_ERROR_NOT_AVAILABLE);
     return nullptr;
   }
@@ -1125,7 +1151,7 @@ nsComputedDOMStyle::IndexedGetter(uint32_t   aIndex,
                                   bool&      aFound,
                                   nsAString& aPropName)
 {
-  ComputedStyleMap* map = GetComputedStyleMap();
+  nsComputedStyleMap* map = GetComputedStyleMap();
   uint32_t length = map->Length();
 
   if (aIndex < length) {
@@ -1138,19 +1164,30 @@ nsComputedDOMStyle::IndexedGetter(uint32_t   aIndex,
   
   
   UpdateCurrentStyleSources(false);
-  if (!mComputedStyle) {
+  if (!mStyleContext) {
     aFound = false;
     return;
   }
 
-  uint32_t count =
-    Servo_GetCustomPropertiesCount(mComputedStyle);
+  bool isServo = mStyleContext->IsServo();
+
+
+  uint32_t count;
+  if (isServo) {
+    count = Servo_GetCustomPropertiesCount(mStyleContext->AsServo());
+  } else {
+    MOZ_CRASH("old style system disabled");
+  }
 
   const uint32_t index = aIndex - length;
   if (index < count) {
     aFound = true;
     nsString varName;
-    Servo_GetCustomPropertyNameAt(mComputedStyle->AsServo(), index, &varName);
+    if (isServo) {
+      Servo_GetCustomPropertyNameAt(mStyleContext->AsServo(), index, &varName);
+    } else {
+      MOZ_CRASH("old style system disabled");
+    }
     aPropName.AssignLiteral("--");
     aPropName.Append(varName);
   } else {
@@ -1656,7 +1693,10 @@ nsComputedDOMStyle::DoGetTranslate()
   RefPtr<nsComputedDOMStyle> self(this);
   return ReadIndividualTransformValue(StyleDisplay()->mSpecifiedTranslate,
     [self](const nsCSSValue::Array* aData, nsString& aResult) {
+      GeckoStyleContext* contextIfGecko =
+        nullptr;
       TransformReferenceBox refBox(self->mInnerFrame, nsSize(0, 0));
+      RuleNodeCacheConditions dummy;
 
       
       
@@ -1667,6 +1707,9 @@ nsComputedDOMStyle::DoGetTranslate()
         case eCSSKeyword_translatex: {
           NS_PRECONDITION(aData->Count() == 2, "Invalid array!");
           float tx = ProcessTranslatePart(aData->Item(1),
+                                          contextIfGecko,
+                                          self->mStyleContext->PresContext(),
+                                          dummy,
                                           &refBox,
                                           &TransformReferenceBox::Width);
           aResult.AppendFloat(tx);
@@ -1677,12 +1720,18 @@ nsComputedDOMStyle::DoGetTranslate()
         case eCSSKeyword_translate: {
           NS_PRECONDITION(aData->Count() == 3, "Invalid array!");
           float tx = ProcessTranslatePart(aData->Item(1),
+                                          contextIfGecko,
+                                          self->mStyleContext->PresContext(),
+                                          dummy,
                                           &refBox,
                                           &TransformReferenceBox::Width);
           aResult.AppendFloat(tx);
           aResult.AppendLiteral("px");
 
           float ty = ProcessTranslatePart(aData->Item(2),
+                                          contextIfGecko,
+                                          self->mStyleContext->PresContext(),
+                                          dummy,
                                           &refBox,
                                           &TransformReferenceBox::Height);
           if (ty != 0) {
@@ -1696,16 +1745,25 @@ nsComputedDOMStyle::DoGetTranslate()
         case eCSSKeyword_translate3d: {
           NS_PRECONDITION(aData->Count() == 4, "Invalid array!");
           float tx = ProcessTranslatePart(aData->Item(1),
+                                          contextIfGecko,
+                                          self->mStyleContext->PresContext(),
+                                          dummy,
                                           &refBox,
                                           &TransformReferenceBox::Width);
           aResult.AppendFloat(tx);
           aResult.AppendLiteral("px");
 
           float ty = ProcessTranslatePart(aData->Item(2),
+                                          contextIfGecko,
+                                          self->mStyleContext->PresContext(),
+                                          dummy,
                                           &refBox,
                                           &TransformReferenceBox::Height);
 
           float tz = ProcessTranslatePart(aData->Item(3),
+                                          contextIfGecko,
+                                          self->mStyleContext->PresContext(),
+                                          dummy,
                                           &refBox,
                                           nullptr);
           if (ty != 0. || tz != 0.) {
@@ -5685,7 +5743,7 @@ nsComputedDOMStyle::GetLineHeightCoord(nscoord& aCoord)
 
   
   
-  aCoord = ReflowInput::CalcLineHeight(mContent, mComputedStyle,
+  aCoord = ReflowInput::CalcLineHeight(mContent, mStyleContext,
                                        blockHeight, 1.0f);
 
   
@@ -6130,9 +6188,13 @@ nsComputedDOMStyle::GetTransformValue(nsCSSValueSharedList* aSpecifiedTransform)
   nsStyleTransformMatrix::TransformReferenceBox refBox(mInnerFrame,
                                                        nsSize(0, 0));
 
+   RuleNodeCacheConditions dummy;
    bool dummyBool;
    gfx::Matrix4x4 matrix =
      nsStyleTransformMatrix::ReadTransforms(aSpecifiedTransform->mHead,
+                                            mStyleContext,
+                                            mStyleContext->PresContext(),
+                                            dummy,
                                             refBox,
                                             float(mozilla::AppUnitsPerCSSPixel()),
                                             &dummyBool);
@@ -7156,7 +7218,7 @@ nsComputedDOMStyle::DoGetAnimationPlayState()
 static void
 MarkComputedStyleMapDirty(const char* aPref, void* aData)
 {
-  static_cast<ComputedStyleMap*>(aData)->MarkDirty();
+  static_cast<nsComputedStyleMap*>(aData)->MarkDirty();
 }
 
 already_AddRefed<CSSValue>
@@ -7167,9 +7229,13 @@ nsComputedDOMStyle::DoGetCustomProperty(const nsAString& aPropertyName)
   nsString variableValue;
   const nsAString& name = Substring(aPropertyName,
                                     CSS_CUSTOM_NAME_PREFIX_LENGTH);
-  bool present =
-    Servo_GetCustomPropertyValue(mComputedStyle->AsServo(), &name,
-                                 &variableValue);
+  bool present;
+  if (mStyleContext->IsServo()) {
+    present = Servo_GetCustomPropertyValue(mStyleContext->AsServo(), &name,
+                                           &variableValue);
+  } else {
+    MOZ_CRASH("old style system disabled");
+  }
   if (!present) {
     return nullptr;
   }
@@ -7184,17 +7250,17 @@ void
 nsComputedDOMStyle::ParentChainChanged(nsIContent* aContent)
 {
   NS_ASSERTION(mContent == aContent, "didn't we register mContent?");
-  NS_ASSERTION(mResolvedComputedStyle,
+  NS_ASSERTION(mResolvedStyleContext,
                "should have only registered an observer when "
-               "mResolvedComputedStyle is true");
+               "mResolvedStyleContext is true");
 
-  ClearComputedStyle();
+  ClearStyleContext();
 }
 
- ComputedStyleMap*
+ nsComputedStyleMap*
 nsComputedDOMStyle::GetComputedStyleMap()
 {
-  static ComputedStyleMap map = {
+  static nsComputedStyleMap map = {
     {
 #define COMPUTED_STYLE_PROP(prop_, method_) \
   { eCSSProperty_##prop_, &nsComputedDOMStyle::DoGet##method_ },
@@ -7212,7 +7278,7 @@ nsComputedDOMStyle::RegisterPrefChangeCallbacks()
   
   
   
-  ComputedStyleMap* data = GetComputedStyleMap();
+  nsComputedStyleMap* data = GetComputedStyleMap();
 #define REGISTER_CALLBACK(pref_)                                             \
   if (pref_[0]) {                                                            \
     Preferences::RegisterCallback(MarkComputedStyleMapDirty, pref_, data);   \
@@ -7230,7 +7296,7 @@ nsComputedDOMStyle::RegisterPrefChangeCallbacks()
  void
 nsComputedDOMStyle::UnregisterPrefChangeCallbacks()
 {
-  ComputedStyleMap* data = GetComputedStyleMap();
+  nsComputedStyleMap* data = GetComputedStyleMap();
 #define UNREGISTER_CALLBACK(pref_)                                             \
   if (pref_[0]) {                                                              \
     Preferences::UnregisterCallback(MarkComputedStyleMapDirty, pref_, data);   \

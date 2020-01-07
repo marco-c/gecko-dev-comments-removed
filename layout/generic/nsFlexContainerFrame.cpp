@@ -14,7 +14,7 @@
 #include "nsLayoutUtils.h"
 #include "nsPlaceholderFrame.h"
 #include "nsPresContext.h"
-#include "mozilla/ComputedStyle.h"
+#include "nsStyleContext.h"
 #include "mozilla/CSSOrderAwareFrameIterator.h"
 #include "mozilla/Logging.h"
 #include <algorithm>
@@ -165,7 +165,7 @@ static nsIFrame*
 GetFirstNonAnonBoxDescendant(nsIFrame* aFrame)
 {
   while (aFrame) {
-    nsAtom* pseudoTag = aFrame->Style()->GetPseudo();
+    nsAtom* pseudoTag = aFrame->StyleContext()->GetPseudo();
 
     
     if (!pseudoTag ||                                 
@@ -1158,7 +1158,7 @@ nsFlexContainerFrame::CSSAlignmentForAbsPosChild(
     } else {
       
       
-      alignment = aChildRI.mStylePosition->UsedAlignSelf(Style());
+      alignment = aChildRI.mStylePosition->UsedAlignSelf(StyleContext());
       
       
       alignment &= ~NS_STYLE_ALIGN_FLAG_BITS;
@@ -1837,7 +1837,7 @@ FlexItem::FlexItem(ReflowInput& aFlexItemReflowInput,
     mAlignSelf = ConvertLegacyStyleToAlignItems(containerStyleXUL);
   } else {
     mAlignSelf = aFlexItemReflowInput.mStylePosition->UsedAlignSelf(
-                   containerRS->mFrame->Style());
+                   containerRS->mFrame->StyleContext());
     if (MOZ_LIKELY(mAlignSelf == NS_STYLE_ALIGN_NORMAL)) {
       mAlignSelf = NS_STYLE_ALIGN_STRETCH;
     }
@@ -2243,9 +2243,9 @@ NS_IMPL_FRAMEARENA_HELPERS(nsFlexContainerFrame)
 
 nsContainerFrame*
 NS_NewFlexContainerFrame(nsIPresShell* aPresShell,
-                         ComputedStyle* aStyle)
+                         nsStyleContext* aContext)
 {
-  return new (aPresShell) nsFlexContainerFrame(aStyle);
+  return new (aPresShell) nsFlexContainerFrame(aContext);
 }
 
 
@@ -2266,7 +2266,7 @@ nsFlexContainerFrame::Init(nsIContent*       aContent,
 {
   nsContainerFrame::Init(aContent, aParent, aPrevInFlow);
 
-  const nsStyleDisplay* styleDisp = Style()->StyleDisplay();
+  const nsStyleDisplay* styleDisp = StyleContext()->StyleDisplay();
 
   
   
@@ -2278,14 +2278,14 @@ nsFlexContainerFrame::Init(nsIContent*       aContent,
   
   
   if (!isLegacyBox && styleDisp->mDisplay == mozilla::StyleDisplay::Block) {
-    ComputedStyle* parentComputedStyle = GetParent()->Style();
-    NS_ASSERTION(parentComputedStyle &&
-                 (mComputedStyle->GetPseudo() == nsCSSAnonBoxes::buttonContent ||
-                  mComputedStyle->GetPseudo() == nsCSSAnonBoxes::scrolledContent),
+    nsStyleContext* parentStyleContext = GetParent()->StyleContext();
+    NS_ASSERTION(parentStyleContext &&
+                 (mStyleContext->GetPseudo() == nsCSSAnonBoxes::buttonContent ||
+                  mStyleContext->GetPseudo() == nsCSSAnonBoxes::scrolledContent),
                  "The only way a nsFlexContainerFrame can have 'display:block' "
                  "should be if it's the inner part of a scrollable or button "
                  "element");
-    isLegacyBox = IsDisplayValueLegacyBox(parentComputedStyle->StyleDisplay());
+    isLegacyBox = IsDisplayValueLegacyBox(parentStyleContext->StyleDisplay());
   }
 
   if (isLegacyBox) {
@@ -3675,7 +3675,7 @@ nsFlexContainerFrame::ShouldUseMozBoxCollapseBehavior(
 
   
   
-  auto pseudoType = Style()->GetPseudo();
+  auto pseudoType = StyleContext()->GetPseudo();
   if (pseudoType == nsCSSAnonBoxes::scrolledContent ||
       pseudoType == nsCSSAnonBoxes::buttonContent) {
     const nsStyleDisplay* disp = GetParent()->StyleDisplay();

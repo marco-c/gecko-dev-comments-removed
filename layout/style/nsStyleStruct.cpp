@@ -1837,7 +1837,7 @@ nsStylePosition::WidthCoordDependsOnContainer(const nsStyleCoord &aCoord)
 }
 
 uint8_t
-nsStylePosition::UsedAlignSelf(ComputedStyle* aParent) const
+nsStylePosition::UsedAlignSelf(nsStyleContext* aParent) const
 {
   if (mAlignSelf != NS_STYLE_ALIGN_AUTO) {
     return mAlignSelf;
@@ -1852,7 +1852,7 @@ nsStylePosition::UsedAlignSelf(ComputedStyle* aParent) const
 }
 
 uint8_t
-nsStylePosition::UsedJustifySelf(ComputedStyle* aParent) const
+nsStylePosition::UsedJustifySelf(nsStyleContext* aParent) const
 {
   if (mJustifySelf != NS_STYLE_JUSTIFY_AUTO) {
     return mJustifySelf;
@@ -3409,31 +3409,31 @@ nsStyleBackground::HasFixedBackground(nsIFrame* aFrame) const
 nscolor
 nsStyleBackground::BackgroundColor(const nsIFrame* aFrame) const
 {
-  return BackgroundColor(aFrame->Style());
+  return BackgroundColor(aFrame->StyleContext());
 }
 
 nscolor
-nsStyleBackground::BackgroundColor(mozilla::ComputedStyle* aStyle) const
+nsStyleBackground::BackgroundColor(nsStyleContext* aContext) const
 {
   
   
   return mBackgroundColor.IsNumericColor()
     ? mBackgroundColor.mColor
-    : aStyle->StyleColor()->CalcComplexColor(mBackgroundColor);
+    : aContext->StyleColor()->CalcComplexColor(mBackgroundColor);
 }
 
 bool
 nsStyleBackground::IsTransparent(const nsIFrame* aFrame) const
 {
-  return IsTransparent(aFrame->Style());
+  return IsTransparent(aFrame->StyleContext());
 }
 
 bool
-nsStyleBackground::IsTransparent(mozilla::ComputedStyle* aStyle) const
+nsStyleBackground::IsTransparent(nsStyleContext* aContext) const
 {
   return BottomLayer().mImage.IsEmpty() &&
          mImage.mImageCount == 1 &&
-         NS_GET_A(BackgroundColor(aStyle)) == 0;
+         NS_GET_A(BackgroundColor(aContext)) == 0;
 }
 
 void

@@ -43,7 +43,7 @@ public:
   virtual void DestroyFrom(nsIFrame* aDestructRoot, PostDestroyData& aPostDestroyData) override;
 
   
-  virtual void DidSetComputedStyle(ComputedStyle* aOldComputedStyle) override;
+  virtual void DidSetStyleContext(nsStyleContext* aOldStyleContext) override;
 
   virtual void AppendFrames(ChildListID     aListID,
                             nsFrameList&    aFrameList) override;
@@ -59,7 +59,7 @@ public:
 
 
   friend nsTableRowFrame* NS_NewTableRowFrame(nsIPresShell* aPresShell,
-                                              ComputedStyle* aStyle);
+                                              nsStyleContext* aContext);
 
   nsTableRowGroupFrame* GetTableRowGroupFrame() const
   {
@@ -255,7 +255,7 @@ protected:
   
 
 
-  explicit nsTableRowFrame(ComputedStyle* aStyle, ClassID aID = kClassID);
+  explicit nsTableRowFrame(nsStyleContext* aContext, ClassID aID = kClassID);
 
   void InitChildReflowInput(nsPresContext&              aPresContext,
                             const mozilla::LogicalSize& aAvailSize,

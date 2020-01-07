@@ -1478,7 +1478,7 @@ GetPropagatedScrollbarStylesForViewport(nsPresContext* aPresContext,
 
   
   StyleSetHandle styleSet = aPresContext->StyleSet();
-  RefPtr<ComputedStyle> rootStyle =
+  RefPtr<nsStyleContext> rootStyle =
     styleSet->ResolveStyleFor(docElement, nullptr, LazyComputeBehavior::Allow);
   if (CheckOverflow(rootStyle->StyleDisplay(), aStyles)) {
     
@@ -1505,7 +1505,7 @@ GetPropagatedScrollbarStylesForViewport(nsPresContext* aPresContext,
   MOZ_ASSERT(bodyElement->IsHTMLElement(nsGkAtoms::body),
              "GetBodyElement returned something bogus");
 
-  RefPtr<ComputedStyle> bodyStyle =
+  RefPtr<nsStyleContext> bodyStyle =
     styleSet->ResolveStyleFor(bodyElement, rootStyle,
                               LazyComputeBehavior::Allow);
 
@@ -2014,6 +2014,9 @@ nsPresContext::RebuildAllStyleData(nsChangeHint aExtraHint,
   
   mUsesRootEMUnits = false;
   mUsesExChUnits = false;
+  if (mShell->StyleSet()->IsGecko()) {
+    MOZ_CRASH("old style system disabled");
+  }
 
   
   
@@ -2207,6 +2210,9 @@ bool
 nsPresContext::HasAuthorSpecifiedRules(const nsIFrame* aFrame,
                                        uint32_t aRuleTypeMask) const
 {
+  if (aFrame->StyleContext()->IsGecko()) {
+    MOZ_CRASH("old style system disabled");
+  }
   Element* elem = aFrame->GetContent()->AsElement();
 
   
@@ -2220,7 +2226,7 @@ nsPresContext::HasAuthorSpecifiedRules(const nsIFrame* aFrame,
     return false;
   }
 
-  ComputedStyle* styleContext = aFrame->Style();
+  nsStyleContext* styleContext = aFrame->StyleContext();
   CSSPseudoElementType pseudoType = styleContext->GetPseudoType();
   
   

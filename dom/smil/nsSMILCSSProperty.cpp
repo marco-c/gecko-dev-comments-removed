@@ -23,10 +23,10 @@ using namespace mozilla::dom;
 
 nsSMILCSSProperty::nsSMILCSSProperty(nsCSSPropertyID aPropID,
                                      Element* aElement,
-                                     ComputedStyle* aBaseComputedStyle)
+                                     nsStyleContext* aBaseStyleContext)
   : mPropID(aPropID)
   , mElement(aElement)
-  , mBaseComputedStyle(aBaseComputedStyle)
+  , mBaseStyleContext(aBaseStyleContext)
 {
   MOZ_ASSERT(IsPropertyAnimatable(mPropID,
                aElement->OwnerDoc()->GetStyleBackendType()),
@@ -47,7 +47,7 @@ nsSMILCSSProperty::GetBaseValue() const
   
   if (nsCSSProps::IsShorthand(mPropID) ||
       mPropID == eCSSProperty_display ||
-      !mBaseComputedStyle) {
+      !mBaseStyleContext) {
     
     
     
@@ -69,7 +69,7 @@ nsSMILCSSProperty::GetBaseValue() const
   AnimationValue computedValue;
   if (mElement->IsStyledByServo()) {
     computedValue.mServo =
-      Servo_ComputedValues_ExtractAnimationValue(mBaseComputedStyle->AsServo(), mPropID)
+      Servo_ComputedValues_ExtractAnimationValue(mBaseStyleContext->AsServo(), mPropID)
       .Consume();
     if (!computedValue.mServo) {
       return baseValue;

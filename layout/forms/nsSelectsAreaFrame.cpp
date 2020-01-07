@@ -12,9 +12,9 @@
 using namespace mozilla;
 
 nsContainerFrame*
-NS_NewSelectsAreaFrame(nsIPresShell* aShell, ComputedStyle* aStyle, nsFrameState aFlags)
+NS_NewSelectsAreaFrame(nsIPresShell* aShell, nsStyleContext* aContext, nsFrameState aFlags)
 {
-  nsSelectsAreaFrame* it = new (aShell) nsSelectsAreaFrame(aStyle);
+  nsSelectsAreaFrame* it = new (aShell) nsSelectsAreaFrame(aContext);
 
   
   

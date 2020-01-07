@@ -37,7 +37,7 @@ class ServoRestyleManager;
 class ServoStyleSheet;
 struct Keyframe;
 class ServoElementSnapshotTable;
-class ComputedStyle;
+class ServoStyleContext;
 class ServoStyleRuleMap;
 } 
 class nsCSSCounterStyleRule;
@@ -155,9 +155,9 @@ public:
   void BeginUpdate();
   nsresult EndUpdate();
 
-  already_AddRefed<ComputedStyle>
+  already_AddRefed<ServoStyleContext>
   ResolveStyleFor(dom::Element* aElement,
-                  ComputedStyle* aParentContext,
+                  ServoStyleContext* aParentContext,
                   LazyComputeBehavior aMayCompute);
 
   
@@ -167,8 +167,8 @@ public:
   
   
   
-  already_AddRefed<ComputedStyle>
-  ResolveStyleForText(nsIContent* aTextNode, ComputedStyle* aParentContext);
+  already_AddRefed<ServoStyleContext>
+  ResolveStyleForText(nsIContent* aTextNode, ServoStyleContext* aParentContext);
 
   
   
@@ -180,8 +180,8 @@ public:
   
   
   
-  already_AddRefed<ComputedStyle>
-  ResolveStyleForFirstLetterContinuation(ComputedStyle* aParentContext);
+  already_AddRefed<ServoStyleContext>
+  ResolveStyleForFirstLetterContinuation(ServoStyleContext* aParentContext);
 
   
   
@@ -191,7 +191,7 @@ public:
   
   
   
-  already_AddRefed<ComputedStyle>
+  already_AddRefed<ServoStyleContext>
   ResolveStyleForPlaceholder();
 
   
@@ -199,17 +199,17 @@ public:
   
   
   
-  already_AddRefed<ComputedStyle>
+  already_AddRefed<ServoStyleContext>
   ResolvePseudoElementStyle(dom::Element* aOriginatingElement,
                             CSSPseudoElementType aType,
-                            ComputedStyle* aParentContext,
+                            ServoStyleContext* aParentContext,
                             dom::Element* aPseudoElement);
 
   
   
   
   
-  already_AddRefed<ComputedStyle>
+  already_AddRefed<ServoStyleContext>
   ResolveStyleLazily(dom::Element* aElement,
                      CSSPseudoElementType aPseudoType,
                      StyleRuleInclusion aRules =
@@ -218,21 +218,21 @@ public:
   
   
   
-  already_AddRefed<ComputedStyle>
+  already_AddRefed<ServoStyleContext>
   ResolveInheritingAnonymousBoxStyle(nsAtom* aPseudoTag,
-                                     ComputedStyle* aParentContext);
+                                     ServoStyleContext* aParentContext);
 
   
   
   
-  already_AddRefed<ComputedStyle>
+  already_AddRefed<ServoStyleContext>
   ResolveNonInheritingAnonymousBoxStyle(nsAtom* aPseudoTag);
 
 #ifdef MOZ_XUL
-  already_AddRefed<ComputedStyle>
+  already_AddRefed<ServoStyleContext>
   ResolveXULTreePseudoStyle(dom::Element* aParentElement,
                             nsICSSAnonBoxPseudo* aPseudoTag,
-                            ComputedStyle* aParentContext,
+                            ServoStyleContext* aParentContext,
                             const AtomArray& aInputWord);
 #endif
 
@@ -262,10 +262,10 @@ public:
   nsresult AddDocStyleSheet(ServoStyleSheet* aSheet, nsIDocument* aDocument);
 
   
-  already_AddRefed<ComputedStyle>
+  already_AddRefed<ServoStyleContext>
   ProbePseudoElementStyle(dom::Element* aOriginatingElement,
                           CSSPseudoElementType aType,
-                          ComputedStyle* aParentContext);
+                          ServoStyleContext* aParentContext);
 
   
 
@@ -343,7 +343,7 @@ public:
 
 
 
-  already_AddRefed<ComputedStyle> ResolveServoStyle(dom::Element* aElement)
+  already_AddRefed<ServoStyleContext> ResolveServoStyle(dom::Element* aElement)
   {
     return Servo_ResolveStyle(aElement, mRawSet.get()).Consume();
   }
@@ -355,12 +355,12 @@ public:
   nsTArray<ComputedKeyframeValues>
   GetComputedKeyframeValuesFor(const nsTArray<Keyframe>& aKeyframes,
                                dom::Element* aElement,
-                               const mozilla::ComputedStyle* aStyle);
+                               const ServoStyleContext* aContext);
 
   void
   GetAnimationValues(RawServoDeclarationBlock* aDeclarations,
                      dom::Element* aElement,
-                     const mozilla::ComputedStyle* aStyle,
+                     const ServoStyleContext* aContext,
                      nsTArray<RefPtr<RawServoAnimationValue>>& aAnimationValues);
 
   bool AppendFontFaceRules(nsTArray<nsFontFaceRuleContainer>& aArray);
@@ -370,10 +370,10 @@ public:
   
   already_AddRefed<gfxFontFeatureValueSet> BuildFontFeatureValueSet();
 
-  already_AddRefed<ComputedStyle>
+  already_AddRefed<ServoStyleContext>
   GetBaseContextForElement(dom::Element* aElement,
                            nsPresContext* aPresContext,
-                           const ComputedStyle* aStyle);
+                           const ServoStyleContext* aStyle);
 
   
   
@@ -385,25 +385,23 @@ public:
   
   
   
-  
-  
-  already_AddRefed<ComputedStyle>
+  already_AddRefed<ServoStyleContext>
   ResolveServoStyleByAddingAnimation(dom::Element* aElement,
-                                     const ComputedStyle* aStyle,
+                                     const ServoStyleContext* aStyle,
                                      RawServoAnimationValue* aAnimationValue);
   
 
 
 
 
-  already_AddRefed<ComputedStyle>
-  ResolveForDeclarations(const ComputedStyle* aParentOrNull,
+  already_AddRefed<ServoStyleContext>
+  ResolveForDeclarations(const ServoStyleContext* aParentOrNull,
                          RawServoDeclarationBlockBorrowed aDeclarations);
 
   already_AddRefed<RawServoAnimationValue>
   ComputeAnimationValue(dom::Element* aElement,
                         RawServoDeclarationBlock* aDeclaration,
-                        const mozilla::ComputedStyle* aStyle);
+                        const ServoStyleContext* aContext);
 
   void AppendTask(PostTraversalTask aTask)
   {
@@ -467,12 +465,12 @@ public:
 
 
 
-  already_AddRefed<ComputedStyle>
-  ReparentComputedStyle(ComputedStyle* aComputedStyle,
-                        ComputedStyle* aNewParent,
-                        ComputedStyle* aNewParentIgnoringFirstLine,
-                        ComputedStyle* aNewLayoutParent,
-                        Element* aElement);
+  already_AddRefed<ServoStyleContext>
+  ReparentStyleContext(ServoStyleContext* aStyleContext,
+                       ServoStyleContext* aNewParent,
+                       ServoStyleContext* aNewParentIgnoringFirstLine,
+                       ServoStyleContext* aNewLayoutParent,
+                       Element* aElement);
 
 private:
   friend class AutoSetInServoTraversal;
@@ -500,7 +498,7 @@ private:
 
 
 
-  void ClearNonInheritingComputedStyles();
+  void ClearNonInheritingStyleContexts();
 
   
 
@@ -540,7 +538,7 @@ private:
 
   void UpdateStylist();
 
-  already_AddRefed<ComputedStyle>
+  already_AddRefed<ServoStyleContext>
     ResolveStyleLazilyInternal(dom::Element* aElement,
                                CSSPseudoElementType aPseudoType,
                                StyleRuleInclusion aRules =
@@ -591,7 +589,7 @@ private:
   
   EnumeratedArray<nsCSSAnonBoxes::NonInheriting,
                   nsCSSAnonBoxes::NonInheriting::_Count,
-                  RefPtr<ComputedStyle>> mNonInheritingComputedStyles;
+                  RefPtr<ServoStyleContext>> mNonInheritingStyleContexts;
 
   
   

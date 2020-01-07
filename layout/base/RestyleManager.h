@@ -102,9 +102,9 @@ public:
     
     
     
-    void Put(nsIContent* aContent, ComputedStyle* aComputedStyle) {
+    void Put(nsIContent* aContent, nsStyleContext* aStyleContext) {
       MOZ_ASSERT(aContent);
-      CSSPseudoElementType pseudoType = aComputedStyle->GetPseudoType();
+      CSSPseudoElementType pseudoType = aStyleContext->GetPseudoType();
       if (pseudoType == CSSPseudoElementType::NotPseudo) {
         mContents.AppendElement(aContent);
       } else if (pseudoType == CSSPseudoElementType::before) {
@@ -189,7 +189,7 @@ public:
                                nsAtom* aAttribute,
                                int32_t aModType,
                                const nsAttrValue* aOldValue);
-  inline nsresult ReparentComputedStyle(nsIFrame* aFrame);
+  inline nsresult ReparentStyleContext(nsIFrame* aFrame);
 
   inline void UpdateOnlyAnimationStyles();
 

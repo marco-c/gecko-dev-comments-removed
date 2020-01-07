@@ -39,9 +39,9 @@ using namespace mozilla::image;
 
 nsIFrame*
 NS_NewSVGGeometryFrame(nsIPresShell* aPresShell,
-                       ComputedStyle* aStyle)
+                       nsStyleContext* aContext)
 {
-  return new (aPresShell) SVGGeometryFrame(aStyle);
+  return new (aPresShell) SVGGeometryFrame(aContext);
 }
 
 NS_IMPL_FRAMEARENA_HELPERS(SVGGeometryFrame)
@@ -187,15 +187,15 @@ SVGGeometryFrame::AttributeChanged(int32_t         aNameSpaceID,
 }
 
  void
-SVGGeometryFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle)
+SVGGeometryFrame::DidSetStyleContext(nsStyleContext* aOldStyleContext)
 {
-  nsFrame::DidSetComputedStyle(aOldComputedStyle);
+  nsFrame::DidSetStyleContext(aOldStyleContext);
 
-  if (aOldComputedStyle) {
+  if (aOldStyleContext) {
     SVGGeometryElement* element =
       static_cast<SVGGeometryElement*>(GetContent());
 
-    auto oldStyleSVG = aOldComputedStyle->PeekStyleSVG();
+    auto oldStyleSVG = aOldStyleContext->PeekStyleSVG();
     if (oldStyleSVG && !SVGContentUtils::ShapeTypeHasNoCorners(GetContent())) {
       if (StyleSVG()->mStrokeLinecap != oldStyleSVG->mStrokeLinecap &&
           element->IsSVGElement(nsGkAtoms::path)) {
@@ -351,7 +351,7 @@ SVGGeometryFrame::GetFrameForPoint(const gfxPoint& aPoint)
   if (!isHit && (hitTestFlags & SVG_HIT_TEST_STROKE)) {
     Point point = ToPoint(aPoint);
     SVGContentUtils::AutoStrokeOptions stroke;
-    SVGContentUtils::GetStrokeOptions(&stroke, content, Style(), nullptr);
+    SVGContentUtils::GetStrokeOptions(&stroke, content, StyleContext(), nullptr);
     gfxMatrix userToOuterSVG;
     if (nsSVGUtils::GetNonScalingStrokeTransform(this, &userToOuterSVG)) {
       
@@ -497,7 +497,7 @@ SVGGeometryFrame::GetBBoxContribution(const Matrix &aToBBoxUserspace,
   SVGContentUtils::AutoStrokeOptions strokeOptions;
   if (getStroke) {
     SVGContentUtils::GetStrokeOptions(&strokeOptions, element,
-                                      Style(), nullptr,
+                                      StyleContext(), nullptr,
                                       SVGContentUtils::eIgnoreStrokeDashing);
   } else {
     
@@ -607,7 +607,7 @@ SVGGeometryFrame::GetBBoxContribution(const Matrix &aToBBoxUserspace,
       
       SVGContentUtils::AutoStrokeOptions strokeOptions;
       SVGContentUtils::GetStrokeOptions(&strokeOptions, element,
-                                        Style(), nullptr,
+                                        StyleContext(), nullptr,
                                         SVGContentUtils::eIgnoreStrokeDashing);
       Rect strokeBBoxExtents;
       gfxMatrix userToOuterSVG;
@@ -841,7 +841,7 @@ SVGGeometryFrame::Render(gfxContext* aContext,
       SVGContentUtils::AutoStrokeOptions strokeOptions;
       SVGContentUtils::GetStrokeOptions(&strokeOptions,
                                         static_cast<nsSVGElement*>(GetContent()),
-                                        Style(), contextPaint);
+                                        StyleContext(), contextPaint);
       
       if (strokeOptions.mLineWidth <= 0) {
         return;

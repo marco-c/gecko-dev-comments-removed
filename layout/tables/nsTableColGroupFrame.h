@@ -28,7 +28,7 @@ public:
 
 
   friend nsTableColGroupFrame* NS_NewTableColGroupFrame(nsIPresShell* aPresShell,
-                                                        ComputedStyle* aStyle);
+                                                        nsStyleContext* aContext);
 
   
   virtual void Init(nsIContent*       aContent,
@@ -80,7 +80,7 @@ public:
   static nsTableColGroupFrame* GetLastRealColGroup(nsTableFrame* aTableFrame);
 
   
-  virtual void DidSetComputedStyle(ComputedStyle* aOldComputedStyle) override;
+  virtual void DidSetStyleContext(nsStyleContext* aOldStyleContext) override;
 
   virtual void SetInitialChildList(ChildListID     aListID,
                                    nsFrameList&    aChildList) override;
@@ -203,7 +203,7 @@ public:
   virtual void InvalidateFrameForRemoval() override { InvalidateFrameSubtree(); }
 
 protected:
-  explicit nsTableColGroupFrame(ComputedStyle* aStyle);
+  explicit nsTableColGroupFrame(nsStyleContext* aContext);
 
   void InsertColsReflow(int32_t                   aColIndex,
                         const nsFrameList::Slice& aCols);
@@ -220,8 +220,8 @@ protected:
   BCPixelSize mBEndContBorderWidth;
 };
 
-inline nsTableColGroupFrame::nsTableColGroupFrame(ComputedStyle* aStyle)
-  : nsContainerFrame(aStyle, kClassID)
+inline nsTableColGroupFrame::nsTableColGroupFrame(nsStyleContext* aContext)
+  : nsContainerFrame(aContext, kClassID)
   , mColCount(0)
   , mStartColIndex(0)
 {

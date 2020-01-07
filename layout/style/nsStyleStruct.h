@@ -42,11 +42,11 @@
 
 class nsIFrame;
 class nsIURI;
+class nsStyleContext;
 class nsTextFrame;
 class imgIContainer;
 struct nsStyleVisibility;
 namespace mozilla {
-class ComputedStyle;
 namespace dom {
 class ImageTracker;
 } 
@@ -890,11 +890,11 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleBackground {
 
   
   nscolor BackgroundColor(const nsIFrame* aFrame) const;
-  nscolor BackgroundColor(mozilla::ComputedStyle* aStyle) const;
+  nscolor BackgroundColor(nsStyleContext* aContext) const;
 
   
   bool IsTransparent(const nsIFrame* aFrame) const;
-  bool IsTransparent(mozilla::ComputedStyle* aStyle) const;
+  bool IsTransparent(nsStyleContext* aContext) const;
 
   
   
@@ -1598,13 +1598,13 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePosition
 
 
 
-  uint8_t UsedAlignSelf(mozilla::ComputedStyle* aParent) const;
+  uint8_t UsedAlignSelf(nsStyleContext* aParent) const;
 
   
 
 
 
-  uint8_t UsedJustifySelf(mozilla::ComputedStyle* aParent) const;
+  uint8_t UsedJustifySelf(nsStyleContext* aParent) const;
 
   mozilla::Position mObjectPosition;    
   nsStyleSides  mOffset;                
@@ -2695,11 +2695,9 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
 
 
 
-
-
-  template<class ComputedStyleLike>
+  template<class StyleContextLike>
   inline bool IsAbsPosContainingBlockForAppropriateFrame(
-                ComputedStyleLike* aComputedStyle) const;
+                StyleContextLike* aStyleContext) const;
 
   
 
@@ -2720,11 +2718,9 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
 
 
 
-
-
-  template<class ComputedStyleLike>
+  template<class StyleContextLike>
   inline bool IsFixedPosContainingBlockForAppropriateFrame(
-                ComputedStyleLike* aComputedStyle) const;
+                StyleContextLike* aStyleContext) const;
 
   
 
@@ -2741,14 +2737,12 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
 private:
   
   
-  
-  
-  template<class ComputedStyleLike>
+  template<class StyleContextLike>
   inline bool HasAbsPosContainingBlockStyleInternal(
-                ComputedStyleLike* aComputedStyle) const;
-  template<class ComputedStyleLike>
+                StyleContextLike* aStyleContext) const;
+  template<class StyleContextLike>
   inline bool HasFixedPosContainingBlockStyleInternal(
-                ComputedStyleLike* aComputedStyle) const;
+                StyleContextLike* aStyleContext) const;
   void GenerateCombinedTransform();
 public:
   

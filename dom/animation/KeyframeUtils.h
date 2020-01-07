@@ -15,7 +15,7 @@
 struct JSContext;
 class JSObject;
 class nsIDocument;
-class ComputedStyle;
+class nsStyleContext;
 struct RawServoDeclarationBlock;
 
 namespace mozilla {

@@ -14,8 +14,8 @@
 #include "nsPrintfCString.h"
 #include "FrameLayerBuilder.h"
 #include "mozilla/ArrayUtils.h"
-#include "mozilla/ComputedStyle.h"
-#include "mozilla/ComputedStyleInlines.h"
+#include "nsStyleContext.h"
+#include "nsStyleContextInlines.h"
 #include "nsWindowSizes.h"
 
 #include <inttypes.h>
@@ -50,8 +50,8 @@ nsPresArena::ClearArenaRefPtrWithoutDeregistering(void* aPtr,
     
     
     
-    case eArenaObjectID_GeckoComputedStyle:
-      static_cast<ArenaRefPtr<ComputedStyle>*>(aPtr)->ClearWithoutDeregistering();
+    case eArenaObjectID_GeckoStyleContext:
+      static_cast<ArenaRefPtr<nsStyleContext>*>(aPtr)->ClearWithoutDeregistering();
       return;
     default:
       MOZ_ASSERT(false, "unexpected ArenaObjectID value");
@@ -206,8 +206,8 @@ nsPresArena::AddSizeOfExcludingThis(nsWindowSizes& aSizes) const
       case eArenaObjectID_nsRuleNode:
         aSizes.mArenaSizes.mRuleNodes += totalSize;
         break;
-      case eArenaObjectID_GeckoComputedStyle:
-        aSizes.mArenaSizes.mComputedStyles += totalSize;
+      case eArenaObjectID_GeckoStyleContext:
+        aSizes.mArenaSizes.mStyleContexts += totalSize;
         break;
 #define STYLE_STRUCT(name_, cb_) \
       case eArenaObjectID_nsStyle##name_: \

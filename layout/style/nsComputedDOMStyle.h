@@ -18,7 +18,7 @@
 #include "nscore.h"
 #include "nsCSSProps.h"
 #include "nsDOMCSSDeclaration.h"
-#include "mozilla/ComputedStyle.h"
+#include "nsStyleContext.h"
 #include "nsIWeakReferenceUtils.h"
 #include "mozilla/gfx/Types.h"
 #include "nsCoord.h"
@@ -35,7 +35,7 @@ class Element;
 struct ComputedGridTrackInfo;
 } 
 
-struct ComputedStyleMap;
+struct nsComputedStyleMap;
 class nsIFrame;
 class nsIPresShell;
 class nsDOMCSSValueList;
@@ -102,32 +102,32 @@ public:
     return mContent;
   }
 
-  static already_AddRefed<mozilla::ComputedStyle>
-  GetComputedStyle(mozilla::dom::Element* aElement, nsAtom* aPseudo,
-                   StyleType aStyleType = eAll);
+  static already_AddRefed<nsStyleContext>
+  GetStyleContext(mozilla::dom::Element* aElement, nsAtom* aPseudo,
+                  StyleType aStyleType = eAll);
 
-  static already_AddRefed<mozilla::ComputedStyle>
-  GetComputedStyleNoFlush(mozilla::dom::Element* aElement,
-                          nsAtom* aPseudo,
-                          StyleType aStyleType = eAll)
+  static already_AddRefed<nsStyleContext>
+  GetStyleContextNoFlush(mozilla::dom::Element* aElement,
+                         nsAtom* aPseudo,
+                         StyleType aStyleType = eAll)
   {
-    return DoGetComputedStyleNoFlush(aElement,
+    return DoGetStyleContextNoFlush(aElement,
                                     aPseudo,
                                     aElement->OwnerDoc()->GetShell(),
                                     aStyleType,
                                     eWithAnimation);
   }
 
-  static already_AddRefed<mozilla::ComputedStyle>
-  GetUnanimatedComputedStyleNoFlush(mozilla::dom::Element* aElement,
-                                    nsAtom* aPseudo,
-                                    StyleType aStyleType = eAll)
+  static already_AddRefed<nsStyleContext>
+  GetUnanimatedStyleContextNoFlush(mozilla::dom::Element* aElement,
+                                   nsAtom* aPseudo,
+                                   StyleType aStyleType = eAll)
   {
-    return DoGetComputedStyleNoFlush(aElement,
-                                     aPseudo,
-                                     aElement->OwnerDoc()->GetShell(),
-                                     aStyleType,
-                                     eWithoutAnimation);
+    return DoGetStyleContextNoFlush(aElement,
+                                    aPseudo,
+                                    aElement->OwnerDoc()->GetShell(),
+                                    aStyleType,
+                                    eWithoutAnimation);
   }
 
   
@@ -180,13 +180,13 @@ private:
   void ClearCurrentStyleSources();
 
   
-  void ClearComputedStyle();
-  void SetResolvedComputedStyle(RefPtr<mozilla::ComputedStyle>&& aContext,
-                                uint64_t aGeneration);
-  void SetFrameComputedStyle(mozilla::ComputedStyle* aStyle, uint64_t aGeneration);
+  void ClearStyleContext();
+  void SetResolvedStyleContext(RefPtr<nsStyleContext>&& aContext,
+                               uint64_t aGeneration);
+  void SetFrameStyleContext(nsStyleContext* aContext, uint64_t aGeneration);
 
-  static already_AddRefed<mozilla::ComputedStyle>
-  DoGetComputedStyleNoFlush(mozilla::dom::Element* aElement,
+  static already_AddRefed<nsStyleContext>
+  DoGetStyleContextNoFlush(mozilla::dom::Element* aElement,
                            nsAtom* aPseudo,
                            nsIPresShell* aPresShell,
                            StyleType aStyleType,
@@ -194,7 +194,7 @@ private:
 
 #define STYLE_STRUCT(name_, checkdata_cb_)                              \
   const nsStyle##name_ * Style##name_() {                               \
-    return mComputedStyle->Style##name_();                               \
+    return mStyleContext->Style##name_();                               \
   }
 #include "nsStyleStructList.h"
 #undef STYLE_STRUCT
@@ -737,7 +737,7 @@ private:
   bool NeedsToFlush(nsIDocument* aDocument) const;
 
 
-  static ComputedStyleMap* GetComputedStyleMap();
+  static nsComputedStyleMap* GetComputedStyleMap();
 
   
   
@@ -761,7 +761,7 @@ private:
 
 
 
-  mozilla::ArenaRefPtr<mozilla::ComputedStyle> mComputedStyle;
+  mozilla::ArenaRefPtr<nsStyleContext> mStyleContext;
   RefPtr<nsAtom> mPseudo;
 
   
@@ -791,7 +791,7 @@ private:
 
 
 
-  uint64_t mComputedStyleGeneration;
+  uint64_t mStyleContextGeneration;
 
   bool mExposeVisitedStyle;
 
@@ -799,7 +799,7 @@ private:
 
 
 
-  bool mResolvedComputedStyle;
+  bool mResolvedStyleContext;
 
   
 

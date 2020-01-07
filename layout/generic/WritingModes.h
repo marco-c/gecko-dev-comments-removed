@@ -7,10 +7,9 @@
 #ifndef WritingModes_h_
 #define WritingModes_h_
 
-#include "mozilla/ComputedStyle.h"
-#include "mozilla/ComputedStyleInlines.h"
-
 #include "nsRect.h"
+#include "nsStyleContext.h"
+#include "nsStyleContextInlines.h"
 #include "nsBidiUtils.h"
 
 
@@ -483,10 +482,10 @@ public:
   
 
 
-  explicit WritingMode(ComputedStyle* aComputedStyle)
+  explicit WritingMode(nsStyleContext* aStyleContext)
   {
-    NS_ASSERTION(aComputedStyle, "we need an ComputedStyle here");
-    InitFromStyleVisibility(aComputedStyle->StyleVisibility());
+    NS_ASSERTION(aStyleContext, "we need an nsStyleContext here");
+    InitFromStyleVisibility(aStyleContext->StyleVisibility());
   }
 
   explicit WritingMode(const nsStyleVisibility* aStyleVisibility)
