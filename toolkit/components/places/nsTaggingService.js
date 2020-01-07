@@ -541,13 +541,7 @@ TagAutoCompleteResult.prototype = {
 
 
   getStyleAt: function PTACR_getStyleAt(index) {
-    if (!this._comments[index])
-      return null; 
-
-    if (index == 0)
-      return "suggestfirst"; 
-
-    return "suggesthint"; 
+    return null;
   },
 
   

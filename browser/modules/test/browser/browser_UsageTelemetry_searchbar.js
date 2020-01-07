@@ -40,27 +40,13 @@ let searchInSearchbar = async function(inputText) {
 
 
 function clickSearchbarSuggestion(entryName) {
-  let popup = BrowserSearch.searchBar.textbox.popup;
-  let column = popup.tree.columns[0];
+  let richlistbox = BrowserSearch.searchBar.textbox.popup.richlistbox;
+  let richlistitem = Array.prototype.find.call(richlistbox.children,
+                     item => item.getAttribute("ac-value") == entryName);
 
-  for (let rowID = 0; rowID < popup.tree.view.rowCount; rowID++) {
-    const suggestion = popup.tree.view.getValueAt(rowID, column);
-    if (suggestion !== entryName) {
-      continue;
-    }
-
-    
-    let tbo = popup.tree.treeBoxObject;
-    tbo.ensureRowIsVisible(rowID);
-    
-    let rect = tbo.getCoordsForCellItem(rowID, column, "text");
-    let x = rect.x + rect.width / 2;
-    let y = rect.y + rect.height / 2;
-    
-    EventUtils.synthesizeMouse(popup.tree.body, x, y, {},
-                               popup.tree.ownerGlobal);
-    break;
-  }
+  
+  richlistbox.ensureElementIsVisible(richlistitem);
+  EventUtils.synthesizeMouseAtCenter(richlistitem, {});
 }
 
 add_task(async function setup() {

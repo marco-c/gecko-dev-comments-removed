@@ -33,16 +33,10 @@ function checkMenuEntries(expectedValues) {
 }
 
 function getMenuEntries() {
-  var entries = [];
-  var autocompleteMenu = searchBar.textbox.popup;
   
   
-  var column = autocompleteMenu.tree.columns[0];
-  var numRows = autocompleteMenu.tree.view.rowCount;
-  for (var i = 0; i < numRows; i++) {
-    entries.push(autocompleteMenu.tree.view.getValueAt(i, column));
-  }
-  return entries;
+  return Array.map(searchBar.textbox.popup.richlistbox.children,
+                   item => item.getAttribute("ac-value"));
 }
 
 function countEntries(name, value) {

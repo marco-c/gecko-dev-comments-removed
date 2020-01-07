@@ -63,14 +63,8 @@ add_task(async function() {
 });
 
 function getMenuEntries(searchBar) {
-  let entries = [];
-  let autocompleteMenu = searchBar.textbox.popup;
   
   
-  let column = autocompleteMenu.tree.columns[0];
-  let numRows = autocompleteMenu.tree.view.rowCount;
-  for (let i = 0; i < numRows; i++) {
-    entries.push(autocompleteMenu.tree.view.getValueAt(i, column));
-  }
-  return entries;
+  return Array.map(searchBar.textbox.popup.richlistbox.children,
+                   item => item.getAttribute("ac-value"));
 }
