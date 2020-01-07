@@ -67,8 +67,13 @@ def process(input_dir, inc_paths, bindings_conf, cache_dir, header_dir,
         with FileAvoidWrite(rs_bt_path) as fh:
             print_rust_macros_bindings(idl, fh, path)
 
+    
+    
+    
+    
+    
     xpt_path = os.path.join(xpt_dir, '%s.xpt' % module)
-    with FileAvoidWrite(xpt_path) as fh:
+    with open(xpt_path, 'w') as fh:
         jsonxpt.write(jsonxpt.link(xpts), fh)
 
     rule.add_targets([xpt_path])
