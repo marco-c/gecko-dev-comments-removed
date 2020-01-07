@@ -165,6 +165,7 @@ public:
   }
 
   operator ErrorResult&();
+  operator const ErrorResult&() const;
   operator OOMReporter&();
 
   void MOZ_MUST_RETURN_FROM_CALLER Throw(nsresult rv) {
@@ -391,6 +392,8 @@ public:
     return static_cast<uint32_t>(ErrorCode());
   }
 
+  bool operator==(const ErrorResult& aRight) const;
+
 protected:
   nsresult ErrorCode() const {
     return mResult;
@@ -439,7 +442,9 @@ private:
 
   MOZ_ALWAYS_INLINE void AssertInOwningThread() const {
 #ifdef DEBUG
-    NS_ASSERT_OWNINGTHREAD(TErrorResult);
+    if (CleanupPolicy::assertSameThread) {
+      NS_ASSERT_OWNINGTHREAD(TErrorResult);
+    }
 #endif
   }
 
@@ -566,16 +571,25 @@ private:
 struct JustAssertCleanupPolicy {
   static const bool assertHandled = true;
   static const bool suppress = false;
+  static const bool assertSameThread = true;
 };
 
 struct AssertAndSuppressCleanupPolicy {
   static const bool assertHandled = true;
   static const bool suppress = true;
+  static const bool assertSameThread = true;
 };
 
 struct JustSuppressCleanupPolicy {
   static const bool assertHandled = false;
   static const bool suppress = true;
+  static const bool assertSameThread = true;
+};
+
+struct ThreadSafeJustSuppressCleanupPolicy {
+  static const bool assertHandled = false;
+  static const bool suppress = true;
+  static const bool assertSameThread = false;
 };
 
 } 
@@ -625,12 +639,113 @@ binding_danger::TErrorResult<CleanupPolicy>::operator ErrorResult&()
      reinterpret_cast<TErrorResult<AssertAndSuppressCleanupPolicy>*>(this));
 }
 
+template<typename CleanupPolicy>
+binding_danger::TErrorResult<CleanupPolicy>::operator const ErrorResult&() const
+{
+  return *static_cast<const ErrorResult*>(
+     reinterpret_cast<const TErrorResult<AssertAndSuppressCleanupPolicy>*>(this));
+}
+
+template<typename CleanupPolicy>
+bool
+binding_danger::TErrorResult<CleanupPolicy>::operator==(const ErrorResult& aRight) const
+{
+  auto right = reinterpret_cast<const TErrorResult<CleanupPolicy>*>(&aRight);
+
+  if (mResult != right->mResult) {
+    return false;
+  }
+
+  if (IsJSException()) {
+    
+    return false;
+  }
+
+  if (IsErrorWithMessage()) {
+    return *mExtra.mMessage == *right->mExtra.mMessage;
+  }
+
+  if (IsDOMException()) {
+    return *mExtra.mDOMExceptionInfo == *right->mExtra.mDOMExceptionInfo;
+  }
+
+  return true;
+}
+
 
 
 
 class IgnoredErrorResult :
     public binding_danger::TErrorResult<binding_danger::JustSuppressCleanupPolicy>
 {
+};
+
+
+
+
+
+
+
+class CopyableErrorResult :
+    public binding_danger::TErrorResult<binding_danger::ThreadSafeJustSuppressCleanupPolicy>
+{
+  typedef binding_danger::TErrorResult<binding_danger::ThreadSafeJustSuppressCleanupPolicy> BaseErrorResult;
+
+public:
+  CopyableErrorResult()
+    : BaseErrorResult()
+  {}
+
+  explicit CopyableErrorResult(const ErrorResult& aRight)
+    : BaseErrorResult()
+  {
+    auto val = reinterpret_cast<const CopyableErrorResult&>(aRight);
+    operator=(val);
+  }
+
+  CopyableErrorResult(CopyableErrorResult&& aRHS)
+    : BaseErrorResult(Move(aRHS))
+  {}
+
+  explicit CopyableErrorResult(nsresult aRv)
+    : BaseErrorResult(aRv)
+  {}
+
+  void operator=(nsresult rv)
+  {
+    BaseErrorResult::operator=(rv);
+  }
+
+  CopyableErrorResult& operator=(CopyableErrorResult&& aRHS)
+  {
+    BaseErrorResult::operator=(Move(aRHS));
+    return *this;
+  }
+
+  CopyableErrorResult(const CopyableErrorResult& aRight)
+    : BaseErrorResult()
+  {
+    operator=(aRight);
+  }
+
+  CopyableErrorResult&
+  operator=(const CopyableErrorResult& aRight)
+  {
+    
+    
+    
+    MOZ_DIAGNOSTIC_ASSERT(!IsJSException(),
+                          "Attempt to copy to ErrorResult with a JS exception value.");
+    MOZ_DIAGNOSTIC_ASSERT(!aRight.IsJSException(),
+                          "Attempt to copy from ErrorResult with a JS exception value.");
+    if (aRight.IsJSException()) {
+      SuppressException();
+      Throw(NS_ERROR_FAILURE);
+    } else {
+      aRight.CloneTo(*this);
+    }
+    return *this;
+  }
 };
 
 namespace dom {
