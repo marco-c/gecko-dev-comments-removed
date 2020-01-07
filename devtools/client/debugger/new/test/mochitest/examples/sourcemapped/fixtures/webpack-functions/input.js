@@ -1,0 +1,12 @@
+var module = {};
+
+module.exports = function(x) {
+  return x * 2;
+};
+
+
+export default function root() {
+  
+  
+  module.exports(4);
+}
