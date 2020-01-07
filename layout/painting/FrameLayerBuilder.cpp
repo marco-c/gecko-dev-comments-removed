@@ -962,7 +962,7 @@ public:
                                         const ActiveScrolledRoot* aASR,
                                         const DisplayItemClipChain* aClipChain,
                                         const nsIntRect& aVisibleRect,
-                                        bool aBackfaceidden,
+                                        const bool aBackfaceHidden,
                                         NewPaintedLayerCallbackType aNewPaintedLayerCallback);
 
   
@@ -1229,7 +1229,8 @@ protected:
 
   already_AddRefed<PaintedLayer> AttemptToRecyclePaintedLayer(AnimatedGeometryRoot* aAnimatedGeometryRoot,
                                                               nsDisplayItem* aItem,
-                                                              const nsPoint& aTopLeft);
+                                                              const nsPoint& aTopLeft,
+                                                              const nsIFrame* aReferenceFrame);
   
 
 
@@ -1353,12 +1354,16 @@ protected:
 
 
 
-  PaintedLayerData NewPaintedLayerData(nsDisplayItem* aItem,
-                                       AnimatedGeometryRoot* aAnimatedGeometryRoot,
-                                       const ActiveScrolledRoot* aASR,
-                                       const DisplayItemClipChain* aClipChain,
-                                       const ActiveScrolledRoot* aScrollMetadataASR,
-                                       const nsPoint& aTopLeft);
+
+
+  void NewPaintedLayerData(PaintedLayerData* aData,
+                           AnimatedGeometryRoot* aAnimatedGeometryRoot,
+                           const ActiveScrolledRoot* aASR,
+                           const DisplayItemClipChain* aClipChain,
+                           const ActiveScrolledRoot* aScrollMetadataASR,
+                           const nsPoint& aTopLeft,
+                           const nsIFrame* aReferenceFrame,
+                           const bool aBackfaceHidden);
 
   
 
@@ -2283,7 +2288,8 @@ ContainerState::GetLayerCreationHint(AnimatedGeometryRoot* aAnimatedGeometryRoot
 already_AddRefed<PaintedLayer>
 ContainerState::AttemptToRecyclePaintedLayer(AnimatedGeometryRoot* aAnimatedGeometryRoot,
                                              nsDisplayItem* aItem,
-                                             const nsPoint& aTopLeft)
+                                             const nsPoint& aTopLeft,
+                                             const nsIFrame* aReferenceFrame)
 {
   Layer* oldLayer = mLayerBuilder->GetOldLayerFor(aItem);
   if (!oldLayer || !oldLayer->AsPaintedLayer()) {
@@ -2308,8 +2314,8 @@ ContainerState::AttemptToRecyclePaintedLayer(AnimatedGeometryRoot* aAnimatedGeom
   PaintedDisplayItemLayerUserData* data =
     RecyclePaintedLayer(layer, aAnimatedGeometryRoot,
                         didResetScrollPositionForLayerPixelAlignment);
-  PreparePaintedLayerForUse(layer, data, aAnimatedGeometryRoot, aItem->ReferenceFrame(),
-                            aTopLeft,
+  PreparePaintedLayerForUse(layer, data, aAnimatedGeometryRoot,
+                            aReferenceFrame, aTopLeft,
                             didResetScrollPositionForLayerPixelAlignment);
 
   return layer.forget();
@@ -2735,7 +2741,7 @@ PaintedLayerDataNode::AddChildNodeFor(AnimatedGeometryRoot* aAnimatedGeometryRoo
 template<typename NewPaintedLayerCallbackType>
 PaintedLayerData*
 PaintedLayerDataNode::FindPaintedLayerFor(const nsIntRect& aVisibleRect,
-                                          bool aBackfaceHidden,
+                                          const bool aBackfaceHidden,
                                           const ActiveScrolledRoot* aASR,
                                           const DisplayItemClipChain* aClipChain,
                                           NewPaintedLayerCallbackType aNewPaintedLayerCallback)
@@ -2778,7 +2784,10 @@ PaintedLayerDataNode::FindPaintedLayerFor(const nsIntRect& aVisibleRect,
       return lowestUsableLayer;
     }
   }
-  return mPaintedLayerDataStack.AppendElement(aNewPaintedLayerCallback());
+  PaintedLayerData* data = mPaintedLayerDataStack.AppendElement();
+  aNewPaintedLayerCallback(data);
+
+  return data;
 }
 
 void
@@ -2905,7 +2914,7 @@ PaintedLayerDataTree::FindPaintedLayerFor(AnimatedGeometryRoot* aAnimatedGeometr
                                           const ActiveScrolledRoot* aASR,
                                           const DisplayItemClipChain* aClipChain,
                                           const nsIntRect& aVisibleRect,
-                                          bool aBackfaceHidden,
+                                          const bool aBackfaceHidden,
                                           NewPaintedLayerCallbackType aNewPaintedLayerCallback)
 {
   const nsIntRect* bounds = &aVisibleRect;
@@ -3592,23 +3601,24 @@ PaintedLayerData::AccumulateEventRegions(ContainerState* aState, nsDisplayLayerE
   mScaledMaybeHitRegionBounds = aState->ScaleToOutsidePixels(mMaybeHitRegion.GetBounds());
 }
 
-PaintedLayerData
-ContainerState::NewPaintedLayerData(nsDisplayItem* aItem,
+void
+ContainerState::NewPaintedLayerData(PaintedLayerData* aData,
                                     AnimatedGeometryRoot* aAnimatedGeometryRoot,
                                     const ActiveScrolledRoot* aASR,
                                     const DisplayItemClipChain* aClipChain,
                                     const ActiveScrolledRoot* aScrollMetadataASR,
-                                    const nsPoint& aTopLeft)
+                                    const nsPoint& aTopLeft,
+                                    const nsIFrame* aReferenceFrame,
+                                    const bool aBackfaceHidden)
 {
-  PaintedLayerData data;
-  data.mAnimatedGeometryRoot = aAnimatedGeometryRoot;
-  data.mASR = aASR;
-  data.mClipChain = aClipChain;
-  data.mAnimatedGeometryRootOffset = aTopLeft;
-  data.mReferenceFrame = aItem->ReferenceFrame();
-  data.mBackfaceHidden = aItem->In3DContextAndBackfaceIsHidden();
+  aData->mAnimatedGeometryRoot = aAnimatedGeometryRoot;
+  aData->mASR = aASR;
+  aData->mClipChain = aClipChain;
+  aData->mAnimatedGeometryRootOffset = aTopLeft;
+  aData->mReferenceFrame = aReferenceFrame;
+  aData->mBackfaceHidden = aBackfaceHidden;
 
-  data.mNewChildLayersIndex = mNewChildLayers.Length();
+  aData->mNewChildLayersIndex = mNewChildLayers.Length();
   NewLayerEntry* newLayerEntry = mNewChildLayers.AppendElement();
   newLayerEntry->mAnimatedGeometryRoot = aAnimatedGeometryRoot;
   newLayerEntry->mASR = aASR;
@@ -3619,8 +3629,6 @@ ContainerState::NewPaintedLayerData(nsDisplayItem* aItem,
 
   
   mNewChildLayers.AppendElement();
-
-  return data;
 }
 
 #ifdef MOZ_DUMP_PAINTING
@@ -4439,13 +4447,16 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
         mLayerBuilder->GetOldLayerForFrame(item->Frame(), item->GetPerFrameKey());
       mLayerBuilder->AddLayerDisplayItem(ownLayer, item, layerState, nullptr, oldData);
     } else {
+      const bool backfaceHidden = item->In3DContextAndBackfaceIsHidden();
+      const nsIFrame* referenceFrame = item->ReferenceFrame();
+
       PaintedLayerData* paintedLayerData =
         mPaintedLayerDataTree.FindPaintedLayerFor(animatedGeometryRoot, itemASR, layerClipChain,
-                                                  itemVisibleRect,
-                                                  item->In3DContextAndBackfaceIsHidden(),
-                                                  [&]() {
-          return NewPaintedLayerData(item, animatedGeometryRoot, itemASR, layerClipChain, scrollMetadataASR,
-                                     topLeft);
+                                                  itemVisibleRect, backfaceHidden,
+                                                  [&](PaintedLayerData* aData) {
+          NewPaintedLayerData(aData, animatedGeometryRoot, itemASR,
+                              layerClipChain, scrollMetadataASR, topLeft,
+                              referenceFrame, backfaceHidden);
         });
 
       if (itemType == DisplayItemType::TYPE_LAYER_EVENT_REGIONS) {
@@ -4463,7 +4474,8 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
         if (!paintedLayerData->mLayer) {
           
           RefPtr<PaintedLayer> layer =
-            AttemptToRecyclePaintedLayer(animatedGeometryRoot, item, topLeft);
+            AttemptToRecyclePaintedLayer(animatedGeometryRoot, item,
+                                         topLeft, referenceFrame);
           if (layer) {
             paintedLayerData->mLayer = layer;
 
