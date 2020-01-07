@@ -1,0 +1,21 @@
+
+
+
+
+"use strict";
+
+const {
+  UPDATE_EDITOR_VISIBILITY,
+} = require("./index");
+
+module.exports = {
+
+  toggleFontEditor(isVisible, selector = "") {
+    return {
+      type: UPDATE_EDITOR_VISIBILITY,
+      isVisible,
+      selector,
+    };
+  },
+
+};

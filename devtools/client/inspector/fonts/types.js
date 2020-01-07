@@ -79,6 +79,17 @@ exports.fontOptions = {
   previewText: PropTypes.string,
 };
 
+exports.fontEditor = {
+  
+  font: PropTypes.shape(font),
+
+  
+  isVisible: PropTypes.bool,
+
+  
+  selector: PropTypes.string,
+};
+
 
 
 
