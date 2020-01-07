@@ -390,7 +390,7 @@ class ScriptSource
     };
 
   private:
-    uint32_t refs;
+    mozilla::Atomic<uint32_t, mozilla::ReleaseAcquire> refs;
 
     
     
