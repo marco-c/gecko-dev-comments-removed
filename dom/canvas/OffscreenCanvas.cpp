@@ -226,13 +226,6 @@ OffscreenCanvas::TransferToImageBitmap(ErrorResult& aRv)
   }
 
   
-  if ((mCurrentContextType == CanvasContextType::WebGL1 ||
-       mCurrentContextType == CanvasContextType::WebGL2))
-  {
-    WebGLContext* webGL = static_cast<WebGLContext*>(mCurrentContext.get());
-    webGL->ClearScreen();
-  }
-
   return result.forget();
 }
 
