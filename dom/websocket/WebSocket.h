@@ -65,6 +65,9 @@ public:
 
   virtual JSObject* WrapObject(JSContext* cx, JS::Handle<JSObject*> aGivenProto) override;
 
+  
+  void BindToOwner(nsIGlobalObject* aNew) override;
+
 public: 
 
   
