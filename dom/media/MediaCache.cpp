@@ -263,6 +263,7 @@ public:
       , mResourceID(aResourceID)
       , mNext(0)
     {
+      aMediaCache->mMonitor.AssertCurrentThreadIn();
     }
     MediaCacheStream* Next(AutoLock& aLock)
     {
@@ -443,7 +444,6 @@ protected:
   
   
   ReentrantMonitor mMonitor;
-  
   
   nsTArray<MediaCacheStream*> mStreams;
   
@@ -724,11 +724,16 @@ void
 MediaCache::CloseStreamsForPrivateBrowsing()
 {
   MOZ_ASSERT(NS_IsMainThread());
-  for (MediaCacheStream* s : mStreams) {
-    if (s->mIsPrivateBrowsing) {
-      s->mClient->Close();
-    }
-  }
+  sThread->Dispatch(
+    NS_NewRunnableFunction("MediaCache::CloseStreamsForPrivateBrowsing",
+                           [self = RefPtr<MediaCache>(this)]() {
+                             AutoLock lock(self->mMonitor);
+                             for (MediaCacheStream* s : self->mStreams) {
+                               if (s->mIsPrivateBrowsing) {
+                                 s->CloseInternal(lock);
+                               }
+                             }
+                           }));
 }
 
  RefPtr<MediaCache>
