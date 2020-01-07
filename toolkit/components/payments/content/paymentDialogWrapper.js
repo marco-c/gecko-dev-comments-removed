@@ -271,6 +271,11 @@ var paymentDialogWrapper = {
       
       
       delete card["cc-number-encrypted"];
+
+      
+      if (!card.methodName) {
+        card.methodName = "basic-card";
+      }
     }
     return savedBasicCards;
   },
