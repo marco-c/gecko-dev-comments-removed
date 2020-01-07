@@ -1247,8 +1247,10 @@ nsTreeSanitizer::SanitizeAttributes(mozilla::dom::Element* aElement,
       uint32_t localLen = attrLocal->GetLength();
       
       
+      
       if (UTF16StringStartsWith(localStr, localLen, u"_") ||
-          UTF16StringStartsWith(localStr, localLen, u"data-")) {
+          UTF16StringStartsWith(localStr, localLen, u"data-") ||
+          UTF16StringStartsWith(localStr, localLen, u"aria-")) {
         continue;
       }
       
