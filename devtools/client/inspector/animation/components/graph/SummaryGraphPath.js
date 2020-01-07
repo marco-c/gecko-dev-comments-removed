@@ -184,16 +184,14 @@ class SummaryGraphPath extends Component {
 
   render() {
     const { durationPerPixel, keyframesList } = this.state;
+    const { animation, simulateAnimation, timeScale } = this.props;
 
-    if (!durationPerPixel) {
+    if (!durationPerPixel || !animation.state.type) {
+      
+      
+      
       return dom.svg();
     }
-
-    const {
-      animation,
-      simulateAnimation,
-      timeScale,
-    } = this.props;
 
     const { createdTime, playbackRate } = animation.state;
 
