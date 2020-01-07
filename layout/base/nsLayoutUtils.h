@@ -3054,10 +3054,58 @@ public:
   
 
 
+  template<bool clampNegativeResultToZero>
+  static nscoord ResolveToLength(const nsStyleCoord& aCoord,
+                                 nscoord aPercentageBasis)
+  {
+    NS_WARNING_ASSERTION(aPercentageBasis >= nscoord(0), "nscoord overflow?");
+
+    switch (aCoord.GetUnit()) {
+      case eStyleUnit_Coord:
+        MOZ_ASSERT(!clampNegativeResultToZero || aCoord.GetCoordValue() >= 0,
+                   "This value should have been rejected by the style system");
+        return aCoord.GetCoordValue();
+      case eStyleUnit_Percent:
+        if (aPercentageBasis == NS_UNCONSTRAINEDSIZE) {
+          return nscoord(0);
+        }
+        MOZ_ASSERT(!clampNegativeResultToZero || aCoord.GetPercentValue() >= 0,
+                   "This value should have been rejected by the style system");
+        return NSToCoordFloorClamped(aPercentageBasis *
+                                     aCoord.GetPercentValue());
+      case eStyleUnit_Calc: {
+        nsStyleCoord::Calc* calc = aCoord.GetCalcValue();
+        nscoord result;
+        if (aPercentageBasis == NS_UNCONSTRAINEDSIZE) {
+          result = calc->mLength;
+        } else {
+          result = calc->mLength +
+            NSToCoordFloorClamped(aPercentageBasis * calc->mPercent);
+        }
+        if (clampNegativeResultToZero && result < 0) {
+          return nscoord(0);
+        }
+        return result;
+      }
+      default:
+        MOZ_ASSERT_UNREACHABLE("Unexpected unit!");
+        return nscoord(0);
+    }
+  }
+
+  
+
+
 
 
   static nscoord ResolveGapToLength(const nsStyleCoord& aGap,
-                                    nscoord aPercentageBasis);
+                                    nscoord aPercentageBasis)
+  {
+    if (aGap.GetUnit() == eStyleUnit_Normal) {
+      return nscoord(0);
+    }
+    return ResolveToLength<true>(aGap, aPercentageBasis);
+  }
 
 private:
   static uint32_t sFontSizeInflationEmPerLine;
