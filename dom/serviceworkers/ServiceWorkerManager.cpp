@@ -317,20 +317,6 @@ ServiceWorkerManager::StartControllingClient(const ClientInfo& aClientInfo,
   MOZ_DIAGNOSTIC_ASSERT(aRegistrationInfo->GetActive());
 
   RefPtr<GenericPromise> ref;
-  RefPtr<ServiceWorkerManager> self(this);
-
-  
-  
-  auto scopeExit = MakeScopeExit([&] () {
-    ref->Then(
-      SystemGroup::EventTargetFor(TaskCategory::Other), __func__,
-      [] (bool) {
-        
-      }, [self, aClientInfo] (nsresult aRv) {
-        
-        self->StopControllingClient(aClientInfo);
-      });
-  });
 
   const ServiceWorkerDescriptor& active =
     aRegistrationInfo->GetActive()->Descriptor();
@@ -340,12 +326,7 @@ ServiceWorkerManager::StartControllingClient(const ClientInfo& aClientInfo,
     RefPtr<ServiceWorkerRegistrationInfo> old =
       entry.Data()->mRegistrationInfo.forget();
 
-    if (aControlClientHandle) {
-      ref = entry.Data()->mClientHandle->Control(active);
-    } else {
-      ref = GenericPromise::CreateAndResolve(false, __func__);
-    }
-
+    ref = entry.Data()->mClientHandle->Control(active);
     entry.Data()->mRegistrationInfo = aRegistrationInfo;
 
     if (old != aRegistrationInfo) {
@@ -374,9 +355,10 @@ ServiceWorkerManager::StartControllingClient(const ClientInfo& aClientInfo,
     return new ControlledClientData(clientHandle, aRegistrationInfo);
   });
 
+  RefPtr<ServiceWorkerManager> self(this);
   clientHandle->OnDetach()->Then(
     SystemGroup::EventTargetFor(TaskCategory::Other), __func__,
-    [self, aClientInfo] {
+    [self = std::move(self), aClientInfo] {
       self->StopControllingClient(aClientInfo);
     });
 
@@ -2713,20 +2695,7 @@ ServiceWorkerManager::UpdateClientControllers(ServiceWorkerRegistrationInfo* aRe
   
   
   for (auto& handle : handleList) {
-    RefPtr<GenericPromise> p = handle->Control(activeWorker->Descriptor());
-
-    RefPtr<ServiceWorkerManager> self = this;
-
-    
-    
-    p->Then(
-      SystemGroup::EventTargetFor(TaskCategory::Other), __func__,
-      [] (bool) {
-        
-      }, [self, clientInfo = handle->Info()] (nsresult aRv) {
-        
-        self->StopControllingClient(clientInfo);
-      });
+    handle->Control(activeWorker->Descriptor());
   }
 }
 

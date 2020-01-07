@@ -275,12 +275,6 @@ ClientSourceParent::GetController() const
 }
 
 void
-ClientSourceParent::ClearController()
-{
-  mController.reset();
-}
-
-void
 ClientSourceParent::AttachHandle(ClientHandleParent* aClientHandle)
 {
   MOZ_DIAGNOSTIC_ASSERT(aClientHandle);
@@ -303,10 +297,6 @@ ClientSourceParent::StartOp(const ClientOpConstructorArgs& aArgs)
   RefPtr<ClientOpPromise::Private> promise =
     new ClientOpPromise::Private(__func__);
 
-  
-  
-  
-  
   
   
   if (aArgs.type() == ClientOpConstructorArgs::TClientControlledArgs) {
