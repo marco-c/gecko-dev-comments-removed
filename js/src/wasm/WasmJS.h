@@ -47,15 +47,6 @@ HasSupport(JSContext* cx);
 
 
 
-bool
-ToWebAssemblyValue(JSContext* cx, ValType targetType, HandleValue v, Val* val);
-
-Value
-ToJSValue(const Val& val);
-
-
-
-
 MOZ_MUST_USE bool
 Eval(JSContext* cx, Handle<TypedArrayObject*> code, HandleObject importObj,
      MutableHandleWasmInstanceObject instanceObj);
