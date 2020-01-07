@@ -1103,20 +1103,6 @@ GeneralTokenStreamChars<CharT, AnyCharsAccess>::matchUnicodeEscapeIdent(uint32_t
     return false;
 }
 
-
-
-template<typename CharT>
-static bool
-CharsMatch(const CharT* p, const char* q)
-{
-    while (*q) {
-        if (*p++ != *q++)
-            return false;
-    }
-
-    return true;
-}
-
 template<typename CharT, class AnyCharsAccess>
 bool
 TokenStreamSpecific<CharT, AnyCharsAccess>::getDirectives(bool isMultiline,
@@ -1162,17 +1148,10 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getDirective(bool isMultiline,
                                                          const char* errorMsgPragma,
                                                          UniquePtr<char16_t[], JS::FreePolicy>* destination)
 {
-    MOZ_ASSERT(directiveLength <= 18);
-    char16_t peeked[18];
-
     
     
     
-    if (!sourceUnits.peekCodeUnits(directiveLength, peeked))
-        return true;
-
-    
-    if (!CharsMatch(peeked, directive))
+    if (!sourceUnits.matchCodeUnits(directive, directiveLength))
         return true;
 
     if (shouldWarnDeprecated) {
@@ -1180,7 +1159,6 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getDirective(bool isMultiline,
             return false;
     }
 
-    sourceUnits.skipCodeUnits(directiveLength);
     charBuffer.clear();
 
     do {
