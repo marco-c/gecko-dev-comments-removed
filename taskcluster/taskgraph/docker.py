@@ -93,29 +93,6 @@ def build_image(name, tag, args=None):
         print('*' * 50)
 
 
-
-
-
-
-class IteratorReader(object):
-    def __init__(self, iterator):
-        self._iterator = iterator
-        self._buf = b''
-
-    def read(self, size):
-        result = b''
-        while len(result) < size:
-            wanted = min(size - len(result), len(self._buf))
-            if not self._buf:
-                try:
-                    self._buf = memoryview(next(self._iterator))
-                except StopIteration:
-                    break
-            result += self._buf[:wanted].tobytes()
-            self._buf = self._buf[wanted:]
-        return result
-
-
 def load_image(url, imageName=None, imageTag=None):
     """
     Load docker image from URL as imageName:tag, if no imageName or tag is given
@@ -143,57 +120,62 @@ def load_image(url, imageName=None, imageTag=None):
         
         req = get_session().get(url, stream=True)
         req.raise_for_status()
-        decompressed_reader = IteratorReader(zstd.ZstdDecompressor().read_from(req.raw))
-        tarin = tarfile.open(
-            mode='r|',
-            fileobj=decompressed_reader,
-            bufsize=zstd.DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE)
 
-        
-        for member in tarin:
+        with zstd.ZstdDecompressor().stream_reader(req.raw) as ifh:
+
+            tarin = tarfile.open(
+                mode='r|',
+                fileobj=ifh,
+                bufsize=zstd.DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE)
+
             
-            if not member.isfile():
+            for member in tarin:
+                
+                if not member.isfile():
+                    yield member.tobuf(tarfile.GNU_FORMAT)
+                    continue
+
+                
+                reader = tarin.extractfile(member)
+
+                
+                
+                if member.name == 'repositories':
+                    
+                    repos = json.loads(reader.read())
+                    reader.close()
+
+                    
+                    
+                    if len(repos.keys()) > 1:
+                        raise Exception('file contains more than one image')
+                    info['image'] = image = repos.keys()[0]
+                    if len(repos[image].keys()) > 1:
+                        raise Exception('file contains more than one tag')
+                    info['tag'] = tag = repos[image].keys()[0]
+                    info['layer'] = layer = repos[image][tag]
+
+                    
+                    data = json.dumps({imageName or image: {imageTag or tag: layer}})
+                    reader = BytesIO(data)
+                    member.size = len(data)
+
+                
                 yield member.tobuf(tarfile.GNU_FORMAT)
-                continue
-
-            
-            reader = tarin.extractfile(member)
-
-            
-            if member.name == 'repositories':
                 
-                repos = json.loads(reader.read())
+                remaining = member.size
+                while remaining:
+                    length = min(remaining,
+                                 zstd.DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE)
+                    buf = reader.read(length)
+                    remaining -= len(buf)
+                    yield buf
+                
+                remainder = member.size % 512
+                if remainder:
+                    yield '\0' * (512 - remainder)
+
                 reader.close()
-
-                
-                if len(repos.keys()) > 1:
-                    raise Exception('file contains more than one image')
-                info['image'] = image = repos.keys()[0]
-                if len(repos[image].keys()) > 1:
-                    raise Exception('file contains more than one tag')
-                info['tag'] = tag = repos[image].keys()[0]
-                info['layer'] = layer = repos[image][tag]
-
-                
-                data = json.dumps({imageName or image: {imageTag or tag: layer}})
-                reader = BytesIO(data)
-                member.size = len(data)
-
-            
-            yield member.tobuf(tarfile.GNU_FORMAT)
-            
-            remaining = member.size
-            while remaining:
-                length = min(remaining, zstd.DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE)
-                buf = reader.read(length)
-                remaining -= len(buf)
-                yield buf
-            
-            remainder = member.size % 512
-            if remainder:
-                yield '\0' * (512 - remainder)
-
-            reader.close()
 
     docker.post_to_docker(download_and_modify_image(), '/images/load', quiet=0)
 
