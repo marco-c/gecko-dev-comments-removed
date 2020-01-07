@@ -385,7 +385,6 @@ InlineSpellChecker.prototype = {
 
 var SpellCheckHelper = {
   
-  
   EDITABLE: 0x1,
 
   
@@ -409,10 +408,6 @@ var SpellCheckHelper = {
 
   
   PASSWORD: 0x80,
-
-  
-  
-  SPELLCHECKABLE: 0x100,
 
   isTargetAKeywordField(aNode, window) {
     if (!(aNode instanceof window.HTMLInputElement))
@@ -448,11 +443,9 @@ var SpellCheckHelper = {
     var flags = 0;
     if (element instanceof window.HTMLInputElement) {
       flags |= this.INPUT;
+
       if (element.mozIsTextField(false) || element.type == "number") {
         flags |= this.TEXTINPUT;
-        if (!element.readOnly) {
-          flags |= this.EDITABLE;
-        }
 
         if (element.type == "number") {
           flags |= this.NUMERIC;
@@ -461,7 +454,7 @@ var SpellCheckHelper = {
         
         if (!element.readOnly &&
             (element.type == "text" || element.type == "search")) {
-          flags |= this.SPELLCHECKABLE;
+          flags |= this.EDITABLE;
         }
         if (this.isTargetAKeywordField(element, window))
           flags |= this.KEYWORD;
@@ -472,14 +465,14 @@ var SpellCheckHelper = {
     } else if (element instanceof window.HTMLTextAreaElement) {
       flags |= this.TEXTINPUT | this.TEXTAREA;
       if (!element.readOnly) {
-        flags |= this.SPELLCHECKABLE | this.EDITABLE;
+        flags |= this.EDITABLE;
       }
     }
 
-    if (!(flags & this.SPELLCHECKABLE)) {
+    if (!(flags & this.EDITABLE)) {
       var win = element.ownerGlobal;
       if (win) {
-        var isSpellcheckable = false;
+        var isEditable = false;
         try {
           var editingSession = win.QueryInterface(Ci.nsIInterfaceRequestor)
                                   .getInterface(Ci.nsIWebNavigation)
@@ -487,14 +480,14 @@ var SpellCheckHelper = {
                                   .getInterface(Ci.nsIEditingSession);
           if (editingSession.windowIsEditable(win) &&
               this.getComputedStyle(element, "-moz-user-modify") == "read-write") {
-            isSpellcheckable = true;
+            isEditable = true;
           }
         } catch (ex) {
           
         }
 
-        if (isSpellcheckable)
-          flags |= this.CONTENTEDITABLE | this.SPELLCHECKABLE;
+        if (isEditable)
+          flags |= this.CONTENTEDITABLE;
       }
     }
 
