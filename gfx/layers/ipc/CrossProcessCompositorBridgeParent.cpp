@@ -206,7 +206,7 @@ CrossProcessCompositorBridgeParent::AllocPWebRenderBridgeParent(const wr::Pipeli
   LayersId layersId = wr::AsLayersId(aPipelineId);
   
   if (!LayerTreeOwnerTracker::Get()->IsMapped(layersId, OtherPid())) {
-    NS_ERROR("Unexpected layers id in AllocPAPZCTreeManagerParent; dropping message...");
+    NS_ERROR("Unexpected layers id in AllocPWebRenderBridgeParent; dropping message...");
     return nullptr;
   }
 
