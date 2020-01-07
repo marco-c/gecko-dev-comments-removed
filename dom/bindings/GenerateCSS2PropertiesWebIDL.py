@@ -36,13 +36,12 @@ def generate(output, idlFilename, preprocessorHeader):
         
         
         if (prop.startswith("Webkit")):
-            props += generateLine(prop, extendedAttrs)
+            extendedAttrs.append('BindingAlias="%s"' % prop)
 
         
         
         if not prop.startswith("Moz"):
             prop = prop[0].lower() + prop[1:]
-        props += generateLine(prop, extendedAttrs)
 
         
         
@@ -61,10 +60,9 @@ def generate(output, idlFilename, preprocessorHeader):
         
         
         if prop != name:
-            extendedAttrs.append('BinaryName="%s"' % prop)
-            
-            
-            props += generateLine("_" + name, extendedAttrs)
+            extendedAttrs.append('BindingAlias="%s"' % name)
+
+        props += generateLine(prop, extendedAttrs)
 
 
     idlFile = open(idlFilename, "r")
