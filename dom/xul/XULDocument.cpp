@@ -40,6 +40,7 @@
 #include "nsXULContentUtils.h"
 #include "nsIXULOverlayProvider.h"
 #include "nsIStringEnumerator.h"
+#include "nsDocElementCreatedNotificationRunner.h"
 #include "nsNetUtil.h"
 #include "nsParserCIID.h"
 #include "nsPIBoxObject.h"
@@ -2026,6 +2027,9 @@ XULDocument::PrepareToWalk()
         
         
         BlockOnload();
+
+        nsContentUtils::AddScriptRunner(
+            new nsDocElementCreatedNotificationRunner(this));
     }
 
     
