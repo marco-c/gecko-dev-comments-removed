@@ -207,6 +207,13 @@ int32_t VideoCaptureImpl::IncomingFrame(
             !apply_rotation ? _rotateFrame : kVideoRotation_0);
         captureFrame.set_ntp_time_ms(captureTime);
 
+        
+        
+        
+        
+        
+        captureFrame.set_rotation(_rotateFrame);
+
         DeliverCapturedFrame(captureFrame);
     }
     else 
