@@ -1,27 +1,27 @@
-
-
-
-
-
-
-
+// Copyright 2017 Serde Developers
+//
+// Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
+// http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
+// <LICENSE-MIT or http://opensource.org/licenses/MIT>, at your
+// option. This file may not be copied, modified, or distributed
+// except according to those terms.
 
 use std::collections::HashSet;
 
 use syn::{self, visit};
 
-use internals::ast::Container;
+use internals::ast::{Body, Container};
 use internals::attr;
 
 macro_rules! path {
     ($($path:tt)+) => {
-        syn::parse_path(stringify!($($path)+)).unwrap()
+        syn::parse_path(quote!($($path)+).as_str()).unwrap()
     };
 }
 
-
-
-
+// Remove the default from every type parameter because in the generated impls
+// they look like associated types: "error: associated type bindings are not
+// allowed here".
 pub fn without_defaults(generics: &syn::Generics) -> syn::Generics {
     syn::Generics {
         ty_params: generics
@@ -70,17 +70,17 @@ where
     generics
 }
 
-
-
-
-
-
-
-
-
-
-
-
+// Puts the given bound on any generic type parameters that are used in fields
+// for which filter returns true.
+//
+// For example, the following struct needs the bound `A: Serialize, B: Serialize`.
+//
+//     struct S<'b, A, B: 'b, C> {
+//         a: A,
+//         b: Option<&'b B>
+//         #[serde(skip_serializing)]
+//         c: C,
+//     }
 pub fn with_bound<F>(
     cont: &Container,
     generics: &syn::Generics,
@@ -88,23 +88,23 @@ pub fn with_bound<F>(
     bound: &syn::Path,
 ) -> syn::Generics
 where
-    F: Fn(&attr::Field) -> bool,
+    F: Fn(&attr::Field, Option<&attr::Variant>) -> bool,
 {
     struct FindTyParams {
-        
-        
+        // Set of all generic type parameters on the current struct (A, B, C in
+        // the example). Initialized up front.
         all_ty_params: HashSet<syn::Ident>,
-        
-        
-        
+        // Set of generic type parameters used in fields for which filter
+        // returns true (A and B in the example). Filled in as the visitor sees
+        // them.
         relevant_ty_params: HashSet<syn::Ident>,
     }
     impl visit::Visitor for FindTyParams {
         fn visit_path(&mut self, path: &syn::Path) {
             if let Some(seg) = path.segments.last() {
                 if seg.ident == "PhantomData" {
-                    
-                    
+                    // Hardcoded exception, because PhantomData<T> implements
+                    // Serialize and Deserialize whether or not T implements it.
                     return;
                 }
             }
@@ -116,6 +116,14 @@ where
             }
             visit::walk_path(self, path);
         }
+
+        // Type parameter should not be considered used by a macro path.
+        //
+        //     struct TypeMacro<T> {
+        //         mac: T!(),
+        //         marker: PhantomData<T>,
+        //     }
+        fn visit_mac(&mut self, _mac: &syn::Mac) {}
     }
 
     let all_ty_params: HashSet<_> = generics
@@ -124,17 +132,27 @@ where
         .map(|ty_param| ty_param.ident.clone())
         .collect();
 
-    let relevant_tys = cont.body
-        .all_fields()
-        .filter(|&field| filter(&field.attrs))
-        .map(|field| &field.ty);
-
     let mut visitor = FindTyParams {
         all_ty_params: all_ty_params,
         relevant_ty_params: HashSet::new(),
     };
-    for ty in relevant_tys {
-        visit::walk_ty(&mut visitor, ty);
+    match cont.body {
+        Body::Enum(_, ref variants) => {
+            for variant in variants.iter() {
+                let relevant_fields = variant
+                    .fields
+                    .iter()
+                    .filter(|field| filter(&field.attrs, Some(&variant.attrs)));
+                for field in relevant_fields {
+                    visit::walk_ty(&mut visitor, field.ty);
+                }
+            }
+        }
+        Body::Struct(_, ref fields) => {
+            for field in fields.iter().filter(|field| filter(&field.attrs, None)) {
+                visit::walk_ty(&mut visitor, field.ty);
+            }
+        }
     }
 
     let new_predicates = generics
@@ -147,9 +165,9 @@ where
                 syn::WherePredicate::BoundPredicate(
                     syn::WhereBoundPredicate {
                         bound_lifetimes: Vec::new(),
-                        
+                        // the type parameter that is being bounded e.g. T
                         bounded_ty: syn::Ty::Path(None, id.into()),
-                        
+                        // the bound e.g. Serialize
                         bounds: vec![
                             syn::TyParamBound::Trait(
                                 syn::PolyTraitRef {
@@ -182,9 +200,9 @@ pub fn with_self_bound(
             syn::WherePredicate::BoundPredicate(
                 syn::WhereBoundPredicate {
                     bound_lifetimes: Vec::new(),
-                    
+                    // the type that is being bounded e.g. MyStruct<'a, T>
                     bounded_ty: type_of_item(cont),
-                    
+                    // the bound e.g. Default
                     bounds: vec![
                         syn::TyParamBound::Trait(
                             syn::PolyTraitRef {

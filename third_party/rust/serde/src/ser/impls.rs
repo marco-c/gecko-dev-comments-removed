@@ -1,10 +1,10 @@
-
-
-
-
-
-
-
+// Copyright 2017 Serde Developers
+//
+// Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
+// http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
+// <LICENSE-MIT or http://opensource.org/licenses/MIT>, at your
+// option. This file may not be copied, modified, or distributed
+// except according to those terms.
 
 use lib::*;
 
@@ -13,7 +13,7 @@ use ser::{Serialize, SerializeTuple, Serializer};
 #[cfg(feature = "std")]
 use ser::Error;
 
-
+////////////////////////////////////////////////////////////////////////////////
 
 macro_rules! primitive_impl {
     ($ty:ident, $method:ident $($cast:tt)*) => {
@@ -44,7 +44,7 @@ primitive_impl!(f32, serialize_f32);
 primitive_impl!(f64, serialize_f64);
 primitive_impl!(char, serialize_char);
 
-
+////////////////////////////////////////////////////////////////////////////////
 
 impl Serialize for str {
     #[inline]
@@ -56,7 +56,7 @@ impl Serialize for str {
     }
 }
 
-#[cfg(any(feature = "std", feature = "collections"))]
+#[cfg(any(feature = "std", feature = "alloc"))]
 impl Serialize for String {
     #[inline]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -67,7 +67,7 @@ impl Serialize for String {
     }
 }
 
-
+////////////////////////////////////////////////////////////////////////////////
 
 #[cfg(feature = "std")]
 impl Serialize for CStr {
@@ -91,7 +91,7 @@ impl Serialize for CString {
     }
 }
 
-
+////////////////////////////////////////////////////////////////////////////////
 
 impl<T> Serialize for Option<T>
 where
@@ -109,7 +109,7 @@ where
     }
 }
 
-
+////////////////////////////////////////////////////////////////////////////////
 
 impl<T> Serialize for PhantomData<T> {
     #[inline]
@@ -121,9 +121,9 @@ impl<T> Serialize for PhantomData<T> {
     }
 }
 
+////////////////////////////////////////////////////////////////////////////////
 
-
-
+// Does not require T: Serialize.
 impl<T> Serialize for [T; 0] {
     #[inline]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -162,7 +162,7 @@ array_impls!(01 02 03 04 05 06 07 08 09 10
              21 22 23 24 25 26 27 28 29 30
              31 32);
 
-
+////////////////////////////////////////////////////////////////////////////////
 
 impl<T> Serialize for [T]
 where
@@ -177,6 +177,7 @@ where
     }
 }
 
+#[cfg(any(feature = "std", feature = "alloc"))]
 macro_rules! seq_impl {
     ($ty:ident < T $(: $tbound1:ident $(+ $tbound2:ident)*)* $(, $typaram:ident : $bound:ident)* >) => {
         impl<T $(, $typaram)*> Serialize for $ty<T $(, $typaram)*>
@@ -195,25 +196,25 @@ macro_rules! seq_impl {
     }
 }
 
-#[cfg(any(feature = "std", feature = "collections"))]
+#[cfg(any(feature = "std", feature = "alloc"))]
 seq_impl!(BinaryHeap<T: Ord>);
 
-#[cfg(any(feature = "std", feature = "collections"))]
+#[cfg(any(feature = "std", feature = "alloc"))]
 seq_impl!(BTreeSet<T: Ord>);
 
 #[cfg(feature = "std")]
 seq_impl!(HashSet<T: Eq + Hash, H: BuildHasher>);
 
-#[cfg(any(feature = "std", feature = "collections"))]
+#[cfg(any(feature = "std", feature = "alloc"))]
 seq_impl!(LinkedList<T>);
 
-#[cfg(any(feature = "std", feature = "collections"))]
+#[cfg(any(feature = "std", feature = "alloc"))]
 seq_impl!(Vec<T>);
 
-#[cfg(any(feature = "std", feature = "collections"))]
+#[cfg(any(feature = "std", feature = "alloc"))]
 seq_impl!(VecDeque<T>);
 
-
+////////////////////////////////////////////////////////////////////////////////
 
 #[cfg(feature = "std")]
 impl<Idx> Serialize for ops::Range<Idx>
@@ -232,7 +233,7 @@ where
     }
 }
 
-
+////////////////////////////////////////////////////////////////////////////////
 
 impl Serialize for () {
     #[inline]
@@ -244,7 +245,7 @@ impl Serialize for () {
     }
 }
 
-
+////////////////////////////////////////////////////////////////////////////////
 
 macro_rules! tuple_impls {
     ($($len:expr => ($($n:tt $name:ident)+))+) => {
@@ -288,8 +289,9 @@ tuple_impls! {
     16 => (0 T0 1 T1 2 T2 3 T3 4 T4 5 T5 6 T6 7 T7 8 T8 9 T9 10 T10 11 T11 12 T12 13 T13 14 T14 15 T15)
 }
 
+////////////////////////////////////////////////////////////////////////////////
 
-
+#[cfg(any(feature = "std", feature = "alloc"))]
 macro_rules! map_impl {
     ($ty:ident < K $(: $kbound1:ident $(+ $kbound2:ident)*)*, V $(, $typaram:ident : $bound:ident)* >) => {
         impl<K, V $(, $typaram)*> Serialize for $ty<K, V $(, $typaram)*>
@@ -309,13 +311,13 @@ macro_rules! map_impl {
     }
 }
 
-#[cfg(any(feature = "std", feature = "collections"))]
+#[cfg(any(feature = "std", feature = "alloc"))]
 map_impl!(BTreeMap<K: Ord, V>);
 
 #[cfg(feature = "std")]
 map_impl!(HashMap<K: Eq + Hash, V, H: BuildHasher>);
 
-
+////////////////////////////////////////////////////////////////////////////////
 
 macro_rules! deref_impl {
     ($($desc:tt)+) => {
@@ -338,15 +340,15 @@ deref_impl!(<'a, T: ?Sized> Serialize for &'a mut T where T: Serialize);
 deref_impl!(<T: ?Sized> Serialize for Box<T> where T: Serialize);
 
 #[cfg(all(feature = "rc", any(feature = "std", feature = "alloc")))]
-deref_impl!(<T> Serialize for Rc<T> where T: Serialize);
+deref_impl!(<T: ?Sized> Serialize for Rc<T> where T: Serialize);
 
 #[cfg(all(feature = "rc", any(feature = "std", feature = "alloc")))]
-deref_impl!(<T> Serialize for Arc<T> where T: Serialize);
+deref_impl!(<T: ?Sized> Serialize for Arc<T> where T: Serialize);
 
-#[cfg(any(feature = "std", feature = "collections"))]
+#[cfg(any(feature = "std", feature = "alloc"))]
 deref_impl!(<'a, T: ?Sized> Serialize for Cow<'a, T> where T: Serialize + ToOwned);
 
-
+////////////////////////////////////////////////////////////////////////////////
 
 #[cfg(feature = "unstable")]
 impl<T> Serialize for NonZero<T>
@@ -417,7 +419,7 @@ where
     }
 }
 
-
+////////////////////////////////////////////////////////////////////////////////
 
 impl<T, E> Serialize for Result<T, E>
 where
@@ -437,7 +439,7 @@ where
     }
 }
 
-
+////////////////////////////////////////////////////////////////////////////////
 
 #[cfg(feature = "std")]
 impl Serialize for Duration {
@@ -453,12 +455,29 @@ impl Serialize for Duration {
     }
 }
 
+////////////////////////////////////////////////////////////////////////////////
 
+#[cfg(feature = "std")]
+impl Serialize for SystemTime {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        use super::SerializeStruct;
+        let duration_since_epoch = self.duration_since(UNIX_EPOCH).expect("SystemTime must be later than UNIX_EPOCH");
+        let mut state = try!(serializer.serialize_struct("SystemTime", 2));
+        try!(state.serialize_field("secs_since_epoch", &duration_since_epoch.as_secs()));
+        try!(state.serialize_field("nanos_since_epoch", &duration_since_epoch.subsec_nanos()));
+        state.end()
+    }
+}
 
+////////////////////////////////////////////////////////////////////////////////
 
-
-
-
+/// Serialize a value that implements `Display` as a string, when that string is
+/// statically known to never have more than a constant `MAX_LEN` bytes.
+///
+/// Panics if the `Display` impl tries to write more than `MAX_LEN` bytes.
 #[cfg(feature = "std")]
 macro_rules! serialize_display_bounded_length {
     ($value:expr, $max:expr, $serializer:expr) => {{
@@ -487,9 +506,18 @@ impl Serialize for net::IpAddr {
     where
         S: Serializer,
     {
-        match *self {
-            net::IpAddr::V4(ref a) => a.serialize(serializer),
-            net::IpAddr::V6(ref a) => a.serialize(serializer),
+        if serializer.is_human_readable() {
+            match *self {
+                net::IpAddr::V4(ref a) => a.serialize(serializer),
+                net::IpAddr::V6(ref a) => a.serialize(serializer),
+            }
+        } else {
+            match *self {
+                net::IpAddr::V4(ref a) =>
+                    serializer.serialize_newtype_variant("IpAddr", 0, "V4", a),
+                net::IpAddr::V6(ref a) =>
+                    serializer.serialize_newtype_variant("IpAddr", 1, "V6", a),
+            }
         }
     }
 }
@@ -500,9 +528,13 @@ impl Serialize for net::Ipv4Addr {
     where
         S: Serializer,
     {
-        
-        const MAX_LEN: usize = 15;
-        serialize_display_bounded_length!(self, MAX_LEN, serializer)
+        if serializer.is_human_readable() {
+            const MAX_LEN: usize = 15;
+            debug_assert_eq!(MAX_LEN, "101.102.103.104".len());
+            serialize_display_bounded_length!(self, MAX_LEN, serializer)
+        } else {
+            self.octets().serialize(serializer)
+        }
     }
 }
 
@@ -512,9 +544,13 @@ impl Serialize for net::Ipv6Addr {
     where
         S: Serializer,
     {
-        
-        const MAX_LEN: usize = 39;
-        serialize_display_bounded_length!(self, MAX_LEN, serializer)
+        if serializer.is_human_readable() {
+            const MAX_LEN: usize = 39;
+            debug_assert_eq!(MAX_LEN, "1001:1002:1003:1004:1005:1006:1007:1008".len());
+            serialize_display_bounded_length!(self, MAX_LEN, serializer)
+        } else {
+            self.octets().serialize(serializer)
+        }
     }
 }
 
@@ -524,9 +560,18 @@ impl Serialize for net::SocketAddr {
     where
         S: Serializer,
     {
-        match *self {
-            net::SocketAddr::V4(ref addr) => addr.serialize(serializer),
-            net::SocketAddr::V6(ref addr) => addr.serialize(serializer),
+        if serializer.is_human_readable() {
+            match *self {
+                net::SocketAddr::V4(ref addr) => addr.serialize(serializer),
+                net::SocketAddr::V6(ref addr) => addr.serialize(serializer),
+            }
+        } else {
+            match *self {
+                net::SocketAddr::V4(ref addr) =>
+                    serializer.serialize_newtype_variant("SocketAddr", 0, "V4", addr),
+                net::SocketAddr::V6(ref addr) =>
+                    serializer.serialize_newtype_variant("SocketAddr", 1, "V6", addr),
+            }
         }
     }
 }
@@ -537,9 +582,13 @@ impl Serialize for net::SocketAddrV4 {
     where
         S: Serializer,
     {
-        
-        const MAX_LEN: usize = 21;
-        serialize_display_bounded_length!(self, MAX_LEN, serializer)
+        if serializer.is_human_readable() {
+            const MAX_LEN: usize = 21;
+            debug_assert_eq!(MAX_LEN, "101.102.103.104:65000".len());
+            serialize_display_bounded_length!(self, MAX_LEN, serializer)
+        } else {
+            (self.ip(), self.port()).serialize(serializer)
+        }
     }
 }
 
@@ -549,13 +598,17 @@ impl Serialize for net::SocketAddrV6 {
     where
         S: Serializer,
     {
-        
-        const MAX_LEN: usize = 47;
-        serialize_display_bounded_length!(self, MAX_LEN, serializer)
+        if serializer.is_human_readable() {
+            const MAX_LEN: usize = 47;
+            debug_assert_eq!(MAX_LEN, "[1001:1002:1003:1004:1005:1006:1007:1008]:65000".len());
+            serialize_display_bounded_length!(self, MAX_LEN, serializer)
+        } else {
+            (self.ip(), self.port()).serialize(serializer)
+        }
     }
 }
 
-
+////////////////////////////////////////////////////////////////////////////////
 
 #[cfg(feature = "std")]
 impl Serialize for Path {
@@ -609,5 +662,21 @@ impl Serialize for OsString {
         S: Serializer,
     {
         self.as_os_str().serialize(serializer)
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+#[cfg(feature = "std")]
+impl<T> Serialize for Wrapping<T>
+where
+    T: Serialize,
+{
+    #[inline]
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        self.0.serialize(serializer)
     }
 }

@@ -1,25 +1,25 @@
-
-
-
-
-
-
-
+// Copyright 2017 Serde Developers
+//
+// Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
+// http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
+// <LICENSE-MIT or http://opensource.org/licenses/MIT>, at your
+// option. This file may not be copied, modified, or distributed
+// except according to those terms.
 
 use lib::*;
 
 use ser::{self, Serialize, Serializer, SerializeMap, SerializeStruct, Impossible};
 
-#[cfg(any(feature = "std", feature = "collections"))]
+#[cfg(any(feature = "std", feature = "alloc"))]
 use self::content::{SerializeTupleVariantAsMapValue, SerializeStructVariantAsMapValue};
 
-
-
+/// Used to check that serde(getter) attributes return the expected type.
+/// Not public API.
 pub fn constrain<T: ?Sized>(t: &T) -> &T {
     t
 }
 
-
+/// Not public API.
 pub fn serialize_tagged_newtype<S, T>(
     serializer: S,
     type_ident: &'static str,
@@ -60,11 +60,10 @@ enum Unsupported {
     ByteArray,
     Optional,
     Unit,
-    UnitStruct,
     Sequence,
     Tuple,
     TupleStruct,
-    #[cfg(not(any(feature = "std", feature = "collections")))]
+    #[cfg(not(any(feature = "std", feature = "alloc")))]
     Enum,
 }
 
@@ -79,11 +78,10 @@ impl Display for Unsupported {
             Unsupported::ByteArray => formatter.write_str("a byte array"),
             Unsupported::Optional => formatter.write_str("an optional"),
             Unsupported::Unit => formatter.write_str("unit"),
-            Unsupported::UnitStruct => formatter.write_str("a unit struct"),
             Unsupported::Sequence => formatter.write_str("a sequence"),
             Unsupported::Tuple => formatter.write_str("a tuple"),
             Unsupported::TupleStruct => formatter.write_str("a tuple struct"),
-            #[cfg(not(any(feature = "std", feature = "collections")))]
+            #[cfg(not(any(feature = "std", feature = "alloc")))]
             Unsupported::Enum => formatter.write_str("an enum"),
         }
     }
@@ -117,14 +115,14 @@ where
     type SerializeMap = S::SerializeMap;
     type SerializeStruct = S::SerializeStruct;
 
-    #[cfg(not(any(feature = "std", feature = "collections")))]
+    #[cfg(not(any(feature = "std", feature = "alloc")))]
     type SerializeTupleVariant = Impossible<S::Ok, S::Error>;
-    #[cfg(any(feature = "std", feature = "collections"))]
+    #[cfg(any(feature = "std", feature = "alloc"))]
     type SerializeTupleVariant = SerializeTupleVariantAsMapValue<S::SerializeMap>;
 
-    #[cfg(not(any(feature = "std", feature = "collections")))]
+    #[cfg(not(any(feature = "std", feature = "alloc")))]
     type SerializeStructVariant = Impossible<S::Ok, S::Error>;
-    #[cfg(any(feature = "std", feature = "collections"))]
+    #[cfg(any(feature = "std", feature = "alloc"))]
     type SerializeStructVariant = SerializeStructVariantAsMapValue<S::SerializeMap>;
 
     fn serialize_bool(self, _: bool) -> Result<Self::Ok, Self::Error> {
@@ -199,7 +197,9 @@ where
     }
 
     fn serialize_unit_struct(self, _: &'static str) -> Result<Self::Ok, Self::Error> {
-        Err(self.bad_type(Unsupported::UnitStruct))
+        let mut map = try!(self.delegate.serialize_map(Some(1)));
+        try!(map.serialize_entry(self.tag, self.variant_name));
+        map.end()
     }
 
     fn serialize_unit_variant(
@@ -257,7 +257,7 @@ where
         Err(self.bad_type(Unsupported::TupleStruct))
     }
 
-    #[cfg(not(any(feature = "std", feature = "collections")))]
+    #[cfg(not(any(feature = "std", feature = "alloc")))]
     fn serialize_tuple_variant(
         self,
         _: &'static str,
@@ -265,12 +265,12 @@ where
         _: &'static str,
         _: usize,
     ) -> Result<Self::SerializeTupleVariant, Self::Error> {
-        
-        
+        // Lack of push-based serialization means we need to buffer the content
+        // of the tuple variant, so it requires std.
         Err(self.bad_type(Unsupported::Enum))
     }
 
-    #[cfg(any(feature = "std", feature = "collections"))]
+    #[cfg(any(feature = "std", feature = "alloc"))]
     fn serialize_tuple_variant(
         self,
         _: &'static str,
@@ -300,7 +300,7 @@ where
         Ok(state)
     }
 
-    #[cfg(not(any(feature = "std", feature = "collections")))]
+    #[cfg(not(any(feature = "std", feature = "alloc")))]
     fn serialize_struct_variant(
         self,
         _: &'static str,
@@ -308,12 +308,12 @@ where
         _: &'static str,
         _: usize,
     ) -> Result<Self::SerializeStructVariant, Self::Error> {
-        
-        
+        // Lack of push-based serialization means we need to buffer the content
+        // of the struct variant, so it requires std.
         Err(self.bad_type(Unsupported::Enum))
     }
 
-    #[cfg(any(feature = "std", feature = "collections"))]
+    #[cfg(any(feature = "std", feature = "alloc"))]
     fn serialize_struct_variant(
         self,
         _: &'static str,
@@ -327,7 +327,7 @@ where
         Ok(SerializeStructVariantAsMapValue::new(map, inner_variant, len),)
     }
 
-    #[cfg(not(any(feature = "std", feature = "collections")))]
+    #[cfg(not(any(feature = "std", feature = "alloc")))]
     fn collect_str<T: ?Sized>(self, _: &T) -> Result<Self::Ok, Self::Error>
     where
         T: Display,
@@ -336,7 +336,7 @@ where
     }
 }
 
-
+/// Used only by Serde doc tests. Not public API.
 #[doc(hidden)]
 #[derive(Debug)]
 pub struct Error;
@@ -363,7 +363,7 @@ impl Display for Error {
     }
 }
 
-#[cfg(any(feature = "std", feature = "collections"))]
+#[cfg(any(feature = "std", feature = "alloc"))]
 mod content {
     use lib::*;
 

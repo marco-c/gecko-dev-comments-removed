@@ -118,6 +118,7 @@
 
 
 
+
 use lib::*;
 
 
@@ -503,6 +504,35 @@ pub trait Deserialize<'de>: Sized {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn deserialize_from<D>(&mut self, deserializer: D) -> Result<(), D::Error>
+        where D: Deserializer<'de>
+    {
+        
+        *self = Deserialize::deserialize(deserializer)?;
+        Ok(())
+    }
 }
 
 
@@ -1010,6 +1040,74 @@ pub trait Deserializer<'de>: Sized {
     fn deserialize_ignored_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
     where
         V: Visitor<'de>;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    fn is_human_readable(&self) -> bool { true }
 }
 
 
@@ -1262,7 +1360,7 @@ pub trait Visitor<'de>: Sized {
     
     
     #[inline]
-    #[cfg(any(feature = "std", feature = "collections"))]
+    #[cfg(any(feature = "std", feature = "alloc"))]
     fn visit_string<E>(self, v: String) -> Result<Self::Value, E>
     where
         E: Error,
@@ -1321,7 +1419,7 @@ pub trait Visitor<'de>: Sized {
     
     
     
-    #[cfg(any(feature = "std", feature = "collections"))]
+    #[cfg(any(feature = "std", feature = "alloc"))]
     fn visit_byte_buf<E>(self, v: Vec<u8>) -> Result<Self::Value, E>
     where
         E: Error,

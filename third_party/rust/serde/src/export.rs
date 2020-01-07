@@ -19,7 +19,7 @@ pub use self::string::from_utf8_lossy;
 mod string {
     use lib::*;
 
-    #[cfg(any(feature = "std", feature = "collections"))]
+    #[cfg(any(feature = "std", feature = "alloc"))]
     pub fn from_utf8_lossy(bytes: &[u8]) -> Cow<str> {
         String::from_utf8_lossy(bytes)
     }
@@ -31,7 +31,7 @@ mod string {
     
     
     
-    #[cfg(not(any(feature = "std", feature = "collections")))]
+    #[cfg(not(any(feature = "std", feature = "alloc")))]
     pub fn from_utf8_lossy(bytes: &[u8]) -> &str {
         
         
