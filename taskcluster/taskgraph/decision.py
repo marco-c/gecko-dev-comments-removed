@@ -194,6 +194,7 @@ def get_decision_parameters(options):
     parameters['do_not_optimize'] = []
     parameters['build_number'] = 1
     parameters['next_version'] = None
+    parameters['desktop_release_type'] = ''
 
     
     
