@@ -6,8 +6,6 @@
 #ifndef MOZILLA_GFX_PRINTTARGET_H
 #define MOZILLA_GFX_PRINTTARGET_H
 
-#include <functional>
-
 #include "mozilla/RefPtr.h"
 #include "mozilla/gfx/2D.h"
 #include "nsISupportsImpl.h"
@@ -28,7 +26,6 @@ class DrawEventRecorder;
 
 class PrintTarget {
 public:
-  typedef std::function<void(nsresult)> PageDoneCallback;
 
   NS_INLINE_DECL_REFCOUNTING(PrintTarget);
 
@@ -139,17 +136,6 @@ public:
 
   virtual already_AddRefed<DrawTarget> GetReferenceDrawTarget(DrawEventRecorder* aRecorder);
 
-  
-
-
-
-
-
-
-  virtual bool IsSyncPagePrinting() const { return true; }
-  void RegisterPageDoneCallback(PageDoneCallback&& aCallback);
-  void UnregisterPageDoneCallback();
-
   static void AdjustPrintJobNameForIPP(const nsAString& aJobName,
                                        nsCString& aAdjustedJobName);
   static void AdjustPrintJobNameForIPP(const nsAString& aJobName,
@@ -183,8 +169,6 @@ protected:
   
   DrawEventRecorder* mRecorder;
 #endif
-
-  PageDoneCallback mPageDoneCallback;
 };
 
 } 

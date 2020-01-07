@@ -20,7 +20,6 @@
 #include "nscore.h"                     
 #include "mozilla/AppUnits.h"           
 #include "nsFontMetrics.h"              
-#include "mozilla/gfx/PrintTarget.h"    
 
 class gfxContext;
 class gfxTextPerfMetrics;
@@ -33,6 +32,12 @@ class nsIScreen;
 class nsIScreenManager;
 class nsIWidget;
 struct nsRect;
+
+namespace mozilla {
+namespace gfx {
+class PrintTarget;
+}
+}
 
 class nsDeviceContext final
 {
@@ -275,9 +280,6 @@ public:
 
     mozilla::DesktopToLayoutDeviceScale GetDesktopToDeviceScale();
 
-    bool IsSyncPagePrinting() const;
-    void RegisterPageDoneCallback(PrintTarget::PageDoneCallback&& aCallback);
-    void UnregisterPageDoneCallback();
 private:
     
     ~nsDeviceContext();

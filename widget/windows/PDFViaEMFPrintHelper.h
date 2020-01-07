@@ -9,8 +9,6 @@
 #include "nsCOMPtr.h"
 #include "PDFiumEngineShim.h"
 #include "mozilla/Vector.h"
-#include "mozilla/ipc/FileDescriptor.h"
-#include "mozilla/ipc/Shmem.h"
 
 
 #include <windows.h>
@@ -19,11 +17,6 @@ class nsIFile;
 class nsFileInputStream;
 
 namespace mozilla {
-
-namespace ipc {
-  class IShmemAllocator;
-}
-
 namespace widget {
 
 
@@ -35,15 +28,12 @@ namespace widget {
 class PDFViaEMFPrintHelper
 {
 public:
-  typedef mozilla::ipc::FileDescriptor FileDescriptor;
-
   PDFViaEMFPrintHelper();
   virtual ~PDFViaEMFPrintHelper();
 
   
-  NS_IMETHOD OpenDocument(nsIFile* aFile);
+  NS_IMETHOD OpenDocument(nsIFile *aFile);
   NS_IMETHOD OpenDocument(const char* aFileName);
-  NS_IMETHOD OpenDocument(const FileDescriptor& aFD);
 
   
   void CloseDocument();
@@ -51,20 +41,12 @@ public:
   int GetPageCount() const { return mPDFiumEngine->GetPageCount(mPDFDoc); }
 
   
-
-
-
   bool DrawPage(HDC aPrinterDC, unsigned int aPageIndex,
                 int aPageWidth, int aPageHeight);
 
   
-  bool SavePageToFile(const wchar_t* aFilePath, unsigned int aPageIndex,
+  bool DrawPageToFile(const wchar_t* aFilePath, unsigned int aPageIndex,
                       int aPageWidth, int aPageHeight);
-
-  
-  bool SavePageToBuffer(unsigned int aPageIndex, int aPageWidth,
-                        int aPageHeight, ipc::Shmem& aMem,
-                        mozilla::ipc::IShmemAllocator* aAllocator);
 
 protected:
   virtual bool CreatePDFiumEngineIfNeed();
@@ -73,7 +55,6 @@ protected:
 
   RefPtr<PDFiumEngineShim>    mPDFiumEngine;
   FPDF_DOCUMENT               mPDFDoc;
-  PRFileDesc*                 mPrfile;
 };
 
 } 
