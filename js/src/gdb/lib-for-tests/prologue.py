@@ -7,11 +7,13 @@ import traceback
 
 sys.path[0:0] = [testlibdir]
 
+active_fragment = None
+
 
 
 def run_fragment(fragment, function='breakpoint'):
     
-    bp = gdb.Breakpoint(function);
+    bp = gdb.Breakpoint(function)
     try:
         gdb.execute("run %s" % (fragment,))
         
@@ -19,6 +21,9 @@ def run_fragment(fragment, function='breakpoint'):
     finally:
         bp.delete()
     gdb.execute('frame 1')
+
+    global active_fragment
+    active_fragment = fragment
 
 
 def assert_eq(actual, expected):
@@ -79,12 +84,14 @@ gdb.execute('set width 0')
 try:
     
     
-    exec(open(testscript).read())
+    execfile(testscript, globals(), locals())
 except AssertionError as err:
-    sys.stderr.write('\nAssertion traceback:\n')
+    header = '\nAssertion traceback'
+    if active_fragment:
+        header += ' for ' + active_fragment
+    sys.stderr.write(header + ':\n')
     (t, v, tb) = sys.exc_info()
     traceback.print_tb(tb)
     sys.stderr.write('\nTest assertion failed:\n')
     sys.stderr.write(str(err))
     sys.exit(1)
-
