@@ -990,6 +990,10 @@ ServiceWorkerRegistrationWorkerThread::ShowNotification(JSContext* aCx,
                                                         const NotificationOptions& aOptions,
                                                         ErrorResult& aRv)
 {
+  if (!mWorkerPrivate) {
+    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
+    return nullptr;
+  }
 
   
   
