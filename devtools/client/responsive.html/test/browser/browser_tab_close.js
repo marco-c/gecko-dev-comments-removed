@@ -7,10 +7,10 @@
 
 const TEST_URL = "http://example.com/";
 
-add_task(function* () {
-  let tab = yield addTab(TEST_URL);
+add_task(async function () {
+  let tab = await addTab(TEST_URL);
 
-  let { ui } = yield openRDM(tab);
+  let { ui } = await openRDM(tab);
   let clientClosed = waitForClientClose(ui);
 
   closeRDM(tab, {
@@ -22,22 +22,22 @@ add_task(function* () {
   
   is(ui.destroyed, true, "RDM closed synchronously");
 
-  yield clientClosed;
-  yield removeTab(tab);
+  await clientClosed;
+  await removeTab(tab);
 });
 
-add_task(function* () {
-  let tab = yield addTab(TEST_URL);
+add_task(async function () {
+  let tab = await addTab(TEST_URL);
 
-  let { ui } = yield openRDM(tab);
+  let { ui } = await openRDM(tab);
   let clientClosed = waitForClientClose(ui);
 
-  yield removeTab(tab);
+  await removeTab(tab);
 
   
   
   
   is(ui.destroyed, true, "RDM closed synchronously");
 
-  yield clientClosed;
+  await clientClosed;
 });

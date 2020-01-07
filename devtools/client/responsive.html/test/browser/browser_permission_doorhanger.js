@@ -20,8 +20,8 @@ function waitForGeolocationPrompt(win, browser) {
   });
 }
 
-add_task(function* () {
-  let tab = yield addTab(DUMMY_URL);
+add_task(async function () {
+  let tab = await addTab(DUMMY_URL);
   let browser = tab.linkedBrowser;
   let win = browser.ownerGlobal;
 
@@ -29,25 +29,25 @@ add_task(function* () {
 
   
   
-  yield load(browser, TEST_SURL);
-  yield waitPromptPromise;
+  await load(browser, TEST_SURL);
+  await waitPromptPromise;
 
   ok(true, "Permission doorhanger appeared without RDM enabled");
 
   
-  yield load(browser, DUMMY_URL);
-  let { ui } = yield openRDM(tab);
+  await load(browser, DUMMY_URL);
+  let { ui } = await openRDM(tab);
   let newBrowser = ui.getViewportBrowser();
 
   waitPromptPromise = waitForGeolocationPrompt(win, newBrowser);
 
   
   
-  yield load(browser, TEST_SURL);
-  yield waitPromptPromise;
+  await load(browser, TEST_SURL);
+  await waitPromptPromise;
 
   ok(true, "Permission doorhanger appeared inside RDM");
 
-  yield closeRDM(tab);
-  yield removeTab(tab);
+  await closeRDM(tab);
+  await removeTab(tab);
 });

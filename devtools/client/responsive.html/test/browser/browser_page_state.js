@@ -10,18 +10,18 @@ const DUMMY_1_URL = "http://example.com/";
 const TEST_URL = `${URL_ROOT}doc_page_state.html`;
 const DUMMY_2_URL = "http://example.com/browser/";
 
-add_task(function* () {
+add_task(async function () {
   
   
   
   
-  let tab = yield addTab(DUMMY_1_URL);
+  let tab = await addTab(DUMMY_1_URL);
   let browser = tab.linkedBrowser;
-  yield load(browser, TEST_URL);
-  yield load(browser, DUMMY_2_URL);
+  await load(browser, TEST_URL);
+  await load(browser, DUMMY_2_URL);
 
   
-  let history = yield getSessionHistory(browser);
+  let history = await getSessionHistory(browser);
   is(history.index - 1, 2, "At page 2 in history");
   is(history.entries.length, 3, "3 pages in history");
   is(history.entries[0].url, DUMMY_1_URL, "Page 0 URL matches");
@@ -29,10 +29,10 @@ add_task(function* () {
   is(history.entries[2].url, DUMMY_2_URL, "Page 2 URL matches");
 
   
-  yield back(browser);
+  await back(browser);
 
   
-  history = yield getSessionHistory(browser);
+  history = await getSessionHistory(browser);
   is(history.index - 1, 1, "At page 1 in history");
   is(history.entries.length, 3, "3 pages in history");
   is(history.entries[0].url, DUMMY_1_URL, "Page 0 URL matches");
@@ -40,12 +40,12 @@ add_task(function* () {
   is(history.entries[2].url, DUMMY_2_URL, "Page 2 URL matches");
 
   
-  yield BrowserTestUtils.synthesizeMouseAtCenter("body", {}, browser);
+  await BrowserTestUtils.synthesizeMouseAtCenter("body", {}, browser);
 
-  let { ui } = yield openRDM(tab);
+  let { ui } = await openRDM(tab);
 
   
-  let color = yield spawnViewportTask(ui, {}, function* () {
+  let color = await spawnViewportTask(ui, {}, function () {
     
     return content.getComputedStyle(content.document.body)
                   .getPropertyValue("background-color");
@@ -53,10 +53,10 @@ add_task(function* () {
   is(color, "rgb(0, 128, 0)",
      "Content is still modified from click in viewport");
 
-  yield closeRDM(tab);
+  await closeRDM(tab);
 
   
-  color = yield ContentTask.spawn(browser, {}, function* () {
+  color = await ContentTask.spawn(browser, {}, async function () {
     
     return content.getComputedStyle(content.document.body)
                   .getPropertyValue("background-color");
@@ -65,12 +65,12 @@ add_task(function* () {
      "Content is still modified from click in browser tab");
 
   
-  history = yield getSessionHistory(browser);
+  history = await getSessionHistory(browser);
   is(history.index - 1, 1, "At page 1 in history");
   is(history.entries.length, 3, "3 pages in history");
   is(history.entries[0].url, DUMMY_1_URL, "Page 0 URL matches");
   is(history.entries[1].url, TEST_URL, "Page 1 URL matches");
   is(history.entries[2].url, DUMMY_2_URL, "Page 2 URL matches");
 
-  yield removeTab(tab);
+  await removeTab(tab);
 });

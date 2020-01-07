@@ -92,7 +92,7 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
 
   return {
 
-    start: Task.async(function* () {
+    async start() {
       tab.isResponsiveDesignMode = true;
 
       
@@ -151,9 +151,9 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
       
       
       debug("Yield to container tab loaded");
-      yield tabLoaded(containerTab);
+      await tabLoaded(containerTab);
       debug("Yield to get inner browser");
-      innerBrowser = yield getInnerBrowser(containerBrowser);
+      innerBrowser = await getInnerBrowser(containerBrowser);
       addXULBrowserDecorations(innerBrowser);
       if (innerBrowser.isRemoteBrowser != tab.linkedBrowser.isRemoteBrowser) {
         throw new Error("The inner browser's remoteness must match the " +
@@ -184,7 +184,7 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
       
       tunnel = tunnelToInnerBrowser(tab.linkedBrowser, innerBrowser);
       debug("Yield to tunnel start");
-      yield tunnel.start();
+      await tunnel.start();
 
       
       
@@ -204,7 +204,7 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
 
       
       tab.linkedBrowser.style.visibility = "";
-    }),
+    },
 
     stop() {
       

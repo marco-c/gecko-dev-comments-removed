@@ -8,39 +8,39 @@
 const e10s = require("devtools/client/responsive.html/utils/e10s");
 
 const TEST_URL = "http://example.com/";
-add_task(function* () {
-  let tab = yield addTab(TEST_URL);
+add_task(async function () {
+  let tab = await addTab(TEST_URL);
 
-  let { ui } = yield openRDM(tab);
+  let { ui } = await openRDM(tab);
 
   let mm = ui.getViewportBrowser().messageManager;
-  let { active } = yield e10s.request(mm, "IsActive");
+  let { active } = await e10s.request(mm, "IsActive");
   is(active, true, "Frame script is active");
 
-  yield closeRDM(tab);
+  await closeRDM(tab);
 
   
   
   
   mm = tab.linkedBrowser.messageManager;
-  ({ active } = yield e10s.request(mm, "IsActive"));
+  ({ active } = await e10s.request(mm, "IsActive"));
   is(active, false, "Frame script is active");
 
   
-  ({ ui } = yield openRDM(tab));
+  ({ ui } = await openRDM(tab));
 
   mm = ui.getViewportBrowser().messageManager;
-  ({ active } = yield e10s.request(mm, "IsActive"));
+  ({ active } = await e10s.request(mm, "IsActive"));
   is(active, true, "Frame script is active");
 
-  yield closeRDM(tab);
+  await closeRDM(tab);
 
   
   
   
   mm = tab.linkedBrowser.messageManager;
-  ({ active } = yield e10s.request(mm, "IsActive"));
+  ({ active } = await e10s.request(mm, "IsActive"));
   is(active, false, "Frame script is active");
 
-  yield removeTab(tab);
+  await removeTab(tab);
 });

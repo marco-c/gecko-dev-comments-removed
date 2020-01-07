@@ -8,13 +8,13 @@
 const TEST_URL = "data:text/html;charset=utf-8,";
 const Types = require("devtools/client/responsive.html/types");
 
-addRDMTask(TEST_URL, function* ({ ui }) {
+addRDMTask(TEST_URL, async function ({ ui }) {
   let { store, document } = ui.toolWindow;
   let modal = document.querySelector("#device-modal-wrapper");
   let closeButton = document.querySelector("#device-close-button");
 
   
-  yield waitUntilState(store, state => state.viewports.length == 1
+  await waitUntilState(store, state => state.viewports.length == 1
     && state.devices.listState == Types.deviceListState.LOADED);
 
   openDeviceModal(ui);

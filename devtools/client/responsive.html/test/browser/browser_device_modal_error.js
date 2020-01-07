@@ -10,19 +10,19 @@ const Types = require("devtools/client/responsive.html/types");
 const { getStr } = require("devtools/client/responsive.html/utils/l10n");
 
 
-add_task(function* () {
-  yield SpecialPowers.pushPrefEnv({
+add_task(async function () {
+  await SpecialPowers.pushPrefEnv({
     set: [["devtools.devices.url", TEST_URI_ROOT + "wrong_devices_file.json"]],
   });
 });
 
-addRDMTask(TEST_URL, function* ({ ui }) {
+addRDMTask(TEST_URL, async function ({ ui }) {
   let { store, document } = ui.toolWindow;
   let select = document.querySelector(".viewport-device-selector");
 
   
   
-  yield waitUntilState(store, state => state.viewports.length == 1
+  await waitUntilState(store, state => state.viewports.length == 1
     && state.devices.listState == Types.deviceListState.ERROR);
 
   

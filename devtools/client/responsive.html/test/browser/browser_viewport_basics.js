@@ -7,11 +7,11 @@
 
 const TEST_URL = "http://example.org/";
 
-addRDMTask(TEST_URL, function* ({ ui }) {
+addRDMTask(TEST_URL, async function ({ ui }) {
   let store = ui.toolWindow.store;
 
   
-  yield waitUntilState(store, state => state.viewports.length == 1);
+  await waitUntilState(store, state => state.viewports.length == 1);
 
   
   let viewport = ui.toolWindow.document.querySelector(".viewport-content");
@@ -22,8 +22,8 @@ addRDMTask(TEST_URL, function* ({ ui }) {
      "480px", "Viewport has default height");
 
   
-  yield waitForFrameLoad(ui, TEST_URL);
-  let location = yield spawnViewportTask(ui, {}, function* () {
+  await waitForFrameLoad(ui, TEST_URL);
+  let location = await spawnViewportTask(ui, {}, function () {
     return content.location.href; 
   });
   is(location, TEST_URL, "Viewport location matches");
