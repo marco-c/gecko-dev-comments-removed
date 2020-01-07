@@ -13,7 +13,7 @@ use std::ops::{Add, Neg};
 use style_traits::{CssWriter, ToCss};
 use style_traits::values::specified::AllowedNumericType;
 use super::{Number, ToComputedValue, Context, Percentage};
-use values::{Auto, CSSFloat, Either, None_, Normal, specified};
+use values::{Auto, CSSFloat, Either, Normal, specified};
 use values::animated::{Animate, Procedure, ToAnimatedValue, ToAnimatedZero};
 use values::computed::NonNegativeNumber;
 use values::distance::{ComputeSquaredDistance, SquaredDistance};
@@ -793,9 +793,6 @@ impl From<Au> for CSSPixelLength {
 pub type Length = CSSPixelLength;
 
 
-pub type LengthOrNone = Either<Length, None_>;
-
-
 pub type LengthOrAuto = Either<Length, Auto>;
 
 
@@ -902,7 +899,7 @@ pub type NonNegativeLengthOrAuto = Either<NonNegativeLength, Auto>;
 pub type NonNegativeLengthOrNormal = Either<NonNegativeLength, Normal>;
 
 
-pub type NonNegativeLengthOrNumber = Either<NonNegativeLength, NonNegativeNumber>;
+pub type NonNegativeLengthOrNumber = Either<NonNegativeNumber, NonNegativeLength>;
 
 
 
