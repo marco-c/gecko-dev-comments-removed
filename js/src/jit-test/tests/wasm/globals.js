@@ -361,12 +361,17 @@ if (typeof WebAssembly.Global === "function") {
     assertErrorMessage(() => new Global(),                TypeError, /Global requires more than 0 arguments/);
 
     
-    assertEq((new Global({type: "i32", value: 3.14})).value, 3);
-    assertEq((new Global({type: "f32", value: { valueOf: () => 33.5 }})).value, 33.5);
-    assertEq((new Global({type: "f64", value: "3.25"})).value, 3.25);
+    assertEq((new Global({type: "i32"}, 3.14)).value, 3);
+    assertEq((new Global({type: "f32"}, { valueOf: () => 33.5 })).value, 33.5);
+    assertEq((new Global({type: "f64"}, "3.25")).value, 3.25);
 
     
-    assertEq((new Global({type: "i32", value: NaN})).value, 0);
+    assertEq((new Global({type: "i32"}, NaN)).value, 0);
+
+    
+    assertEq((new Global({type: "i32"})).value, 0);
+    assertEq((new Global({type: "f32"})).value, 0);
+    assertEq((new Global({type: "f64"})).value, 0);
 
     {
         
@@ -387,14 +392,14 @@ if (typeof WebAssembly.Global === "function") {
 
     {
         
-        let g = new Global({type: "i32", mutable: true, value: 37});
+        let g = new Global({type: "i32", mutable: true}, 37);
         g.value = 10;
         assertEq(g.value, 10);
     }
 
     {
         
-        let g = new Global({type: "i32", value: 42});
+        let g = new Global({type: "i32"}, 42);
 
         
         assertEq(g - 5, 37);
@@ -508,7 +513,7 @@ if (typeof WebAssembly.Global === "function") {
                                                (import "m" "g" (global i32)))`));
 
         
-        let gm = new Global({type: "i32", value: 42, mutable: true});
+        let gm = new Global({type: "i32", mutable: true}, 42);
         assertErrorMessage(() => new Instance(m1, {m: {g: gm}}),
                            LinkError,
                            mutErr);
@@ -517,7 +522,7 @@ if (typeof WebAssembly.Global === "function") {
                                                (import "m" "g" (global (mut i32))))`));
 
         
-        let gi = new Global({type: "i32", value: 42, mutable: false});
+        let gi = new Global({type: "i32", mutable: false}, 42);
         assertErrorMessage(() => new Instance(m2, {m: {g: gi}}),
                            LinkError,
                            mutErr);
