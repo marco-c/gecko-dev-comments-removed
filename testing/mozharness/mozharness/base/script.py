@@ -1573,7 +1573,7 @@ class ScriptMixin(PlatformMixin):
             shell = False
 
         p = subprocess.Popen(command, shell=shell, stdout=tmp_stdout,
-                             cwd=cwd, stderr=tmp_stderr, env=env)
+                             cwd=cwd, stderr=tmp_stderr, env=env, bufsize=0)
         
         
         self.log("Temporary files: %s and %s" % (tmp_stdout_filename, tmp_stderr_filename), level=DEBUG)
