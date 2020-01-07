@@ -1291,11 +1291,23 @@ WasmInstanceObject::getExportedFunction(JSContext* cx, HandleWasmInstanceObject 
         RootedAtom name(cx, NumberToAtom(cx, funcIndex));
         if (!name)
             return false;
+
+        
+        
+        
+        JSFunction::Flags flags = sig.temporarilyUnsupportedAnyRef()
+                                ? JSFunction::ASMJS_NATIVE
+                                : JSFunction::WASM_FUN;
+
         fun.set(NewNativeFunction(cx, WasmCall, numArgs, name, gc::AllocKind::FUNCTION_EXTENDED,
-                                  SingletonObject, JSFunction::WASM_FUN));
+                                  SingletonObject, flags));
         if (!fun)
             return false;
-        fun->setWasmJitEntry(instance.code().getAddressOfJitEntry(funcIndex));
+
+        if (sig.temporarilyUnsupportedAnyRef())
+            fun->setAsmJSIndex(funcIndex);
+        else
+            fun->setWasmJitEntry(instance.code().getAddressOfJitEntry(funcIndex));
     }
 
     fun->setExtendedSlot(FunctionExtended::WASM_INSTANCE_SLOT, ObjectValue(*instanceObj));
