@@ -36,7 +36,9 @@ impl<F> fmt::Debug for RepeatCall<F>
 
 
 
-pub fn repeat_call<F>(function: F) -> RepeatCall<F> {
+pub fn repeat_call<F, A>(function: F) -> RepeatCall<F>
+    where F: FnMut() -> A
+{
     RepeatCall { f: function }
 }
 
@@ -92,7 +94,6 @@ impl<A, F> Iterator for RepeatCall<F>
 
 
 
-
 pub fn unfold<A, St, F>(initial_state: St, f: F) -> Unfold<St, F>
     where F: FnMut(&mut St) -> Option<A>
 {
@@ -110,6 +111,7 @@ impl<St, F> fmt::Debug for Unfold<St, F>
 
 
 #[derive(Clone)]
+#[must_use = "iterators are lazy and do nothing unless consumed"]
 pub struct Unfold<St, F> {
     f: F,
     
@@ -139,6 +141,7 @@ impl<A, St, F> Iterator for Unfold<St, F>
 
 
 #[derive(Clone)]
+#[must_use = "iterators are lazy and do nothing unless consumed"]
 pub struct Iterate<St, F> {
     state: St,
     f: F,

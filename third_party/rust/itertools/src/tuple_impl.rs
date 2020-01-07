@@ -60,6 +60,7 @@ impl<T> ExactSizeIterator for TupleBuffer<T>
 
 
 
+#[must_use = "iterator adaptors are lazy and do nothing unless consumed"]
 pub struct Tuples<I, T>
     where I: Iterator<Item = T::Item>,
           T: TupleCollect
@@ -114,6 +115,7 @@ impl<I, T> Tuples<I, T>
 
 
 
+#[must_use = "iterator adaptors are lazy and do nothing unless consumed"]
 pub struct TupleWindows<I, T>
     where I: Iterator<Item = T::Item>,
           T: TupleCollect
@@ -189,7 +191,7 @@ macro_rules! impl_tuple_collect {
             type Item = $A;
             type Buffer = [Option<$A>; $N - 1];
 
-            #[allow(unused_assignments)]
+            #[allow(unused_assignments, unused_mut)]
             fn collect_from_iter<I>(iter: I, buf: &mut Self::Buffer) -> Option<Self>
                 where I: IntoIterator<Item = $A>
             {

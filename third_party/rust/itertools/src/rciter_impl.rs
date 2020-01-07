@@ -36,6 +36,13 @@ pub struct RcIter<I> {
 
 
 
+
+
+
+
+
+
+
 pub fn rciter<I>(iterable: I) -> RcIter<I::IntoIter>
     where I: IntoIterator
 {
@@ -76,6 +83,7 @@ impl<I> DoubleEndedIterator for RcIter<I>
         self.rciter.borrow_mut().next_back()
     }
 }
+
 
 impl<'a, I> IntoIterator for &'a RcIter<I>
     where I: Iterator

@@ -1,7 +1,8 @@
 use std::cmp::Ordering::{Equal, Greater, Less};
 use super::size_hint;
 use std::iter::Fuse;
-use self::EitherOrBoth::{Right, Left, Both};
+
+use either_or_both::EitherOrBoth;
 
 
 
@@ -39,9 +40,9 @@ impl<T, U> Iterator for ZipLongest<T, U>
     fn next(&mut self) -> Option<Self::Item> {
         match (self.a.next(), self.b.next()) {
             (None, None) => None,
-            (Some(a), None) => Some(Left(a)),
-            (None, Some(b)) => Some(Right(b)),
-            (Some(a), Some(b)) => Some(Both(a, b)),
+            (Some(a), None) => Some(EitherOrBoth::Left(a)),
+            (None, Some(b)) => Some(EitherOrBoth::Right(b)),
+            (Some(a), Some(b)) => Some(EitherOrBoth::Both(a, b)),
         }
     }
 
@@ -60,13 +61,13 @@ impl<T, U> DoubleEndedIterator for ZipLongest<T, U>
         match self.a.len().cmp(&self.b.len()) {
             Equal => match (self.a.next_back(), self.b.next_back()) {
                 (None, None) => None,
-                (Some(a), Some(b)) => Some(Both(a, b)),
+                (Some(a), Some(b)) => Some(EitherOrBoth::Both(a, b)),
                 
-                (Some(a), None) => Some(Left(a)),
-                (None, Some(b)) => Some(Right(b)),
+                (Some(a), None) => Some(EitherOrBoth::Left(a)),
+                (None, Some(b)) => Some(EitherOrBoth::Right(b)),
             },
-            Greater => self.a.next_back().map(Left),
-            Less => self.b.next_back().map(Right),
+            Greater => self.a.next_back().map(EitherOrBoth::Left),
+            Less => self.b.next_back().map(EitherOrBoth::Right),
         }
     }
 }
@@ -75,20 +76,3 @@ impl<T, U> ExactSizeIterator for ZipLongest<T, U>
     where T: ExactSizeIterator,
           U: ExactSizeIterator
 {}
-
-
-
-
-
-
-#[derive(Clone, PartialEq, Eq, Debug)]
-pub enum EitherOrBoth<A, B> {
-    
-    Both(A, B),
-    
-    
-    Left(A),
-    
-    
-    Right(B),
-}

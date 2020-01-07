@@ -109,6 +109,7 @@ fn sift_down<T, S>(heap: &mut [T], index: usize, mut less_than: S)
 
 
 
+#[must_use = "iterator adaptors are lazy and do nothing unless consumed"]
 pub struct KMerge<I>
     where I: Iterator
 {
@@ -183,6 +184,7 @@ impl<I> Iterator for KMerge<I>
 
 
 
+#[must_use = "iterator adaptors are lazy and do nothing unless consumed"]
 pub struct KMergeBy<I, F>
     where I: Iterator,
 {

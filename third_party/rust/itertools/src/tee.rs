@@ -15,6 +15,7 @@ struct TeeBuffer<A, I> {
 
 
 
+#[must_use = "iterator adaptors are lazy and do nothing unless consumed"]
 pub struct Tee<I>
     where I: Iterator
 {

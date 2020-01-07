@@ -2,6 +2,7 @@
 
 
 
+#[must_use = "iterators are lazy and do nothing unless consumed"]
 pub struct RepeatN<A> {
     elt: Option<A>,
     n: usize,
@@ -15,23 +16,6 @@ pub fn repeat_n<A>(element: A, n: usize) -> RepeatN<A>
         RepeatN { elt: None, n: n, }
     } else {
         RepeatN { elt: Some(element), n: n, }
-    }
-}
-
-impl<A> RepeatN<A> {
-    #[deprecated(note = "The ::new constructor is deprecated. Use `repeat_n`")]
-    
-    pub fn new(elt: A, n: usize) -> Self {
-        
-        
-        if n == 0 {
-            RepeatN { elt: None, n: n }
-        } else {
-            RepeatN {
-                elt: Some(elt),
-                n: n,
-            }
-        }
     }
 }
 

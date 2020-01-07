@@ -67,6 +67,15 @@ pub fn mul(a: SizeHint, b: SizeHint) -> SizeHint {
 
 
 #[inline]
+pub fn mul_scalar(sh: SizeHint, x: usize) -> SizeHint {
+    let (mut low, mut hi) = sh;
+    low = low.saturating_mul(x);
+    hi = hi.and_then(|elt| elt.checked_mul(x));
+    (low, hi)
+}
+
+
+#[inline]
 pub fn max(a: SizeHint, b: SizeHint) -> SizeHint {
     let (a_lower, a_upper) = a;
     let (b_lower, b_upper) = b;

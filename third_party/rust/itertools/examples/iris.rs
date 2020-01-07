@@ -114,7 +114,7 @@ fn main() {
         let min_max = |data: &[Iris], col| {
             data.iter()
                 .map(|iris| iris.data[col])
-                .minmax_by(|a, b| f32::partial_cmp(a, b).unwrap())
+                .minmax()
                 .into_option()
                 .expect("Can't find min/max of empty iterator")
         };

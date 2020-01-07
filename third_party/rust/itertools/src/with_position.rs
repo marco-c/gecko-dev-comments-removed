@@ -5,6 +5,7 @@ use std::iter::{Fuse,Peekable};
 
 
 
+#[must_use = "iterator adaptors are lazy and do nothing unless consumed"]
 pub struct WithPosition<I>
     where I: Iterator,
 {

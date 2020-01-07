@@ -2,20 +2,19 @@ use super::size_hint;
 
 
 #[derive(Clone)]
+#[must_use = "iterator adaptors are lazy and do nothing unless consumed"]
 pub struct Zip<T> {
     t: T,
 }
 
-impl<T> Zip<T> {
-    
-    #[deprecated(note = "Renamed to multizip")]
-    pub fn new<U>(t: U) -> Zip<T>
-        where Zip<T>: From<U>,
-              Zip<T>: Iterator,
-    {
-        multizip(t)
-    }
-}
+
+
+
+
+
+
+
+
 
 
 
