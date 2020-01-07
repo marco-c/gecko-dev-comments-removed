@@ -19,6 +19,7 @@ namespace dom {
 class Promise;
 class PushManager;
 class ServiceWorker;
+class WeakWorkerRef;
 
 
 
@@ -99,13 +100,11 @@ private:
 class WorkerListener;
 
 class ServiceWorkerRegistrationWorkerThread final : public ServiceWorkerRegistration::Inner
-                                                  , public WorkerHolder
 {
 public:
   NS_INLINE_DECL_REFCOUNTING(ServiceWorkerRegistrationWorkerThread, override)
 
-  ServiceWorkerRegistrationWorkerThread(WorkerPrivate* aWorkerPrivate,
-                                        const ServiceWorkerRegistrationDescriptor& aDescriptor);
+  explicit ServiceWorkerRegistrationWorkerThread(const ServiceWorkerRegistrationDescriptor& aDescriptor);
 
   void
   RegistrationRemoved();
@@ -136,10 +135,6 @@ public:
   already_AddRefed<PushManager>
   GetPushManager(JSContext* aCx, ErrorResult& aRv) override;
 
-  
-  bool
-  Notify(WorkerStatus aStatus) override;
-
   void
   UpdateFound();
 
@@ -158,9 +153,9 @@ private:
   
   RefPtr<ServiceWorkerRegistration> mOuter;
 
-  WorkerPrivate* mWorkerPrivate;
   const nsString mScope;
   RefPtr<WorkerListener> mListener;
+  RefPtr<WeakWorkerRef> mWorkerRef;
 };
 
 } 

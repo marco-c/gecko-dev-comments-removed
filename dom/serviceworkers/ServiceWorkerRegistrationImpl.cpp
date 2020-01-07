@@ -15,8 +15,9 @@
 #include "mozilla/dom/PushManagerBinding.h"
 #include "mozilla/dom/PushManager.h"
 #include "mozilla/dom/ServiceWorkerRegistrationBinding.h"
-#include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/dom/WorkerCommon.h"
+#include "mozilla/dom/WorkerPrivate.h"
+#include "mozilla/dom/WorkerRef.h"
 #include "mozilla/dom/WorkerScope.h"
 #include "mozilla/Services.h"
 #include "mozilla/Unused.h"
@@ -890,18 +891,14 @@ public:
   ServiceWorkerRegistrationWorkerThread*
   GetRegistration() const
   {
-    if (mWorkerPrivate) {
-      mWorkerPrivate->AssertIsOnWorkerThread();
-    }
+    MOZ_ASSERT(IsCurrentThreadRunningWorker());
     return mRegistration;
   }
 
   void
   ClearRegistration()
   {
-    if (mWorkerPrivate) {
-      mWorkerPrivate->AssertIsOnWorkerThread();
-    }
+    MOZ_ASSERT(IsCurrentThreadRunningWorker());
     mRegistration = nullptr;
   }
 
@@ -912,11 +909,8 @@ private:
   }
 };
 
-ServiceWorkerRegistrationWorkerThread::ServiceWorkerRegistrationWorkerThread(WorkerPrivate* aWorkerPrivate,
-                                                                             const ServiceWorkerRegistrationDescriptor& aDescriptor)
-  : WorkerHolder("ServiceWorkerRegistrationWorkerThread")
-  , mOuter(nullptr)
-  , mWorkerPrivate(aWorkerPrivate)
+ServiceWorkerRegistrationWorkerThread::ServiceWorkerRegistrationWorkerThread(const ServiceWorkerRegistrationDescriptor& aDescriptor)
+  : mOuter(nullptr)
   , mScope(NS_ConvertUTF8toUTF16(aDescriptor.Scope()))
 {
 }
@@ -1023,7 +1017,20 @@ ServiceWorkerRegistrationWorkerThread::InitListener()
   worker->AssertIsOnWorkerThread();
 
   mListener = new WorkerListener(worker, this, mScope);
-  if (!HoldWorker(worker, Closing)) {
+
+  RefPtr<ServiceWorkerRegistrationWorkerThread> self = this;
+  mWorkerRef = WeakWorkerRef::Create(worker, [self]() {
+    self->ReleaseListener();
+
+    
+    
+    
+    
+    
+    self->mOuter = nullptr;
+  });
+
+  if (!mWorkerRef) {
     mListener = nullptr;
     NS_WARNING("Could not add feature");
     return;
@@ -1043,13 +1050,7 @@ ServiceWorkerRegistrationWorkerThread::ReleaseListener()
     return;
   }
 
-  
-  
-  
-  
-  
-  mWorkerPrivate->AssertIsOnWorkerThread();
-  ReleaseWorker();
+  MOZ_ASSERT(IsCurrentThreadRunningWorker());
 
   mListener->ClearRegistration();
 
@@ -1057,25 +1058,12 @@ ServiceWorkerRegistrationWorkerThread::ReleaseListener()
     NewRunnableMethod("dom::WorkerListener::StopListeningForEvents",
                       mListener,
                       &WorkerListener::StopListeningForEvents);
-  MOZ_ALWAYS_SUCCEEDS(mWorkerPrivate->DispatchToMainThread(r.forget()));
+  
+  
+  MOZ_ALWAYS_SUCCEEDS(mWorkerRef->GetPrivate()->DispatchToMainThread(r.forget()));
 
   mListener = nullptr;
-  mWorkerPrivate = nullptr;
-}
-
-bool
-ServiceWorkerRegistrationWorkerThread::Notify(WorkerStatus aStatus)
-{
-  ReleaseListener();
-
-  
-  
-  
-  
-  
-  mOuter = nullptr;
-
-  return true;
+  mWorkerRef = nullptr;
 }
 
 class FireUpdateFoundRunnable final : public WorkerRunnable
@@ -1169,7 +1157,7 @@ ServiceWorkerRegistrationWorkerThread::ShowNotification(JSContext* aCx,
                                                         const NotificationOptions& aOptions,
                                                         ErrorResult& aRv)
 {
-  if (!mWorkerPrivate) {
+  if (!mWorkerRef || !mWorkerRef->GetPrivate()) {
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return nullptr;
   }
@@ -1179,7 +1167,8 @@ ServiceWorkerRegistrationWorkerThread::ShowNotification(JSContext* aCx,
   
   
   RefPtr<Promise> p =
-    Notification::ShowPersistentNotification(aCx, mWorkerPrivate->GlobalScope(),
+    Notification::ShowPersistentNotification(aCx,
+                                             mWorkerRef->GetPrivate()->GlobalScope(),
                                              mScope, aTitle, aOptions, aRv);
   if (NS_WARN_IF(aRv.Failed())) {
     return nullptr;
@@ -1192,7 +1181,8 @@ already_AddRefed<Promise>
 ServiceWorkerRegistrationWorkerThread::GetNotifications(const GetNotificationOptions& aOptions,
                                                         ErrorResult& aRv)
 {
-  return Notification::WorkerGet(mWorkerPrivate, aOptions, mScope, aRv);
+  MOZ_ASSERT(mWorkerRef && mWorkerRef->GetPrivate());
+  return Notification::WorkerGet(mWorkerRef->GetPrivate(), aOptions, mScope, aRv);
 }
 
 already_AddRefed<PushManager>
