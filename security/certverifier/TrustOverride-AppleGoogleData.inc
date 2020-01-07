@@ -127,20 +127,12 @@ static const uint8_t CAAppleISTCA6G1DN[100] = {
 };
 
 static const DataAndLength RootAppleAndGoogleDNs[]= {
-  { CAGoogleInternetAuthorityG2DN,
-    sizeof(CAGoogleInternetAuthorityG2DN) },
-  { CAAppleISTCA2G1DN,
-    sizeof(CAAppleISTCA2G1DN) },
-  { CAAppleISTCA5G1DN,
-    sizeof(CAAppleISTCA5G1DN) },
-  { CAAppleISTCA4G1DN,
-    sizeof(CAAppleISTCA4G1DN) },
-  { CAAppleISTCA7G1DN,
-    sizeof(CAAppleISTCA7G1DN) },
-  { CAAppleISTCA8G1DN,
-    sizeof(CAAppleISTCA8G1DN) },
-  { CAAppleISTCA3G1DN,
-    sizeof(CAAppleISTCA3G1DN) },
-  { CAAppleISTCA6G1DN,
-    sizeof(CAAppleISTCA6G1DN) },
+  { CAGoogleInternetAuthorityG2DN, sizeof(CAGoogleInternetAuthorityG2DN) },
+  { CAAppleISTCA2G1DN, sizeof(CAAppleISTCA2G1DN) },
+  { CAAppleISTCA5G1DN, sizeof(CAAppleISTCA5G1DN) },
+  { CAAppleISTCA4G1DN, sizeof(CAAppleISTCA4G1DN) },
+  { CAAppleISTCA7G1DN, sizeof(CAAppleISTCA7G1DN) },
+  { CAAppleISTCA8G1DN, sizeof(CAAppleISTCA8G1DN) },
+  { CAAppleISTCA3G1DN, sizeof(CAAppleISTCA3G1DN) },
+  { CAAppleISTCA6G1DN, sizeof(CAAppleISTCA6G1DN) },
 };
