@@ -4527,78 +4527,109 @@ HTMLEditor::AreNodesSameType(nsIContent* aNode1,
 }
 
 nsresult
-HTMLEditor::CopyLastEditableChildStyles(nsINode* aPreviousBlock,
-                                        nsINode* aNewBlock,
-                                        Element** aOutBrNode)
+HTMLEditor::CopyLastEditableChildStylesWithTransaction(
+              Element& aPreviousBlock,
+              Element& aNewBlock,
+              RefPtr<Element>* aNewBrElement)
 {
-  if (NS_WARN_IF(!aNewBlock)) {
+  if (NS_WARN_IF(!aNewBrElement)) {
     return NS_ERROR_INVALID_ARG;
   }
-  nsCOMPtr<nsINode> newBlock(aNewBlock);
-  *aOutBrNode = nullptr;
+  *aNewBrElement = nullptr;
+
+  RefPtr<Element> previousBlock(&aPreviousBlock);
+  RefPtr<Element> newBlock(&aNewBlock);
+
   
   
-  for (nsCOMPtr<nsINode> child = aNewBlock->GetFirstChild();
+  for (nsCOMPtr<nsINode> child = newBlock->GetFirstChild();
        child;
-       child = aNewBlock->GetFirstChild()) {
+       child = newBlock->GetFirstChild()) {
     nsresult rv = DeleteNodeWithTransaction(*child);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
   }
+
   
-  nsCOMPtr<nsINode> child = aPreviousBlock;
-  nsCOMPtr<nsINode> tmp = aPreviousBlock;
-  while (tmp) {
-    child = tmp;
-    tmp = GetLastEditableChild(*child);
+  
+
+  
+  
+  nsIContent* deepestEditableContent = nullptr;
+  for (nsCOMPtr<nsIContent> child = previousBlock.get();
+       child;
+       child = GetLastEditableChild(*child)) {
+    deepestEditableContent = child;
   }
-  while (child && TextEditUtils::IsBreak(child)) {
-    child = GetPreviousEditableHTMLNode(*child);
+  while (deepestEditableContent &&
+         TextEditUtils::IsBreak(deepestEditableContent)) {
+    deepestEditableContent =
+      GetPreviousEditableHTMLNode(*deepestEditableContent);
   }
-  nsCOMPtr<Element> newStyles, deepestStyle;
-  nsCOMPtr<nsINode> childNode = child;
-  nsCOMPtr<Element> childElement;
-  if (childNode) {
-    childElement = childNode->IsElement() ? childNode->AsElement()
-                                          : childNode->GetParentElement();
+  Element* deepestVisibleEditableElement = nullptr;
+  if (deepestEditableContent) {
+    deepestVisibleEditableElement =
+      deepestEditableContent->IsElement() ?
+        deepestEditableContent->AsElement() :
+        deepestEditableContent->GetParentElement();
   }
-  while (childElement && (childElement != aPreviousBlock)) {
-    if (HTMLEditUtils::IsInlineStyle(childElement) ||
-        childElement->IsHTMLElement(nsGkAtoms::span)) {
-      if (newStyles) {
-        newStyles =
-          InsertContainerWithTransaction(*newStyles,
-                                         *childElement->NodeInfo()->NameAtom());
-        if (NS_WARN_IF(!newStyles)) {
-          return NS_ERROR_FAILURE;
-        }
-      } else {
-        EditorRawDOMPoint atStartOfNewBlock(newBlock, 0);
-        deepestStyle = newStyles =
-          CreateNodeWithTransaction(*childElement->NodeInfo()->NameAtom(),
-                                    atStartOfNewBlock);
-        if (NS_WARN_IF(!newStyles)) {
-          return NS_ERROR_FAILURE;
-        }
+
+  
+  
+  
+  
+  
+  RefPtr<Element> lastClonedElement, firstClonsedElement;
+  for (RefPtr<Element> elementInPreviousBlock = deepestVisibleEditableElement;
+       elementInPreviousBlock && elementInPreviousBlock != previousBlock;
+       elementInPreviousBlock = elementInPreviousBlock->GetParentElement()) {
+    if (!HTMLEditUtils::IsInlineStyle(elementInPreviousBlock) &&
+        !elementInPreviousBlock->IsHTMLElement(nsGkAtoms::span)) {
+      continue;
+    }
+    nsAtom* tagName = elementInPreviousBlock->NodeInfo()->NameAtom();
+    
+    if (!firstClonsedElement) {
+      EditorRawDOMPoint atStartOfNewBlock(newBlock, 0);
+      firstClonsedElement = lastClonedElement =
+        CreateNodeWithTransaction(*tagName, atStartOfNewBlock);
+      if (NS_WARN_IF(!firstClonsedElement)) {
+        return NS_ERROR_FAILURE;
       }
-      CloneAttributesWithTransaction(*newStyles, *childElement);
+      
+      
+      CloneAttributesWithTransaction(*lastClonedElement,
+                                     *elementInPreviousBlock);
+      continue;
     }
-    childElement = childElement->GetParentElement();
-  }
-  if (deepestStyle) {
-    RefPtr<Selection> selection = GetSelection();
-    if (NS_WARN_IF(!selection)) {
+    
+    
+    lastClonedElement =
+      InsertContainerWithTransaction(*lastClonedElement, *tagName);
+    if (NS_WARN_IF(!lastClonedElement)) {
       return NS_ERROR_FAILURE;
     }
-    RefPtr<Element> brElement =
-      InsertBrElementWithTransaction(*selection,
-                                     EditorRawDOMPoint(deepestStyle, 0));
-    if (NS_WARN_IF(!brElement)) {
-      return NS_ERROR_FAILURE;
-    }
-    brElement.forget(aOutBrNode);
+    CloneAttributesWithTransaction(*lastClonedElement, *elementInPreviousBlock);
   }
+
+  if (!firstClonsedElement) {
+    
+    
+    return NS_OK;
+  }
+
+  RefPtr<Selection> selection = GetSelection();
+  if (NS_WARN_IF(!selection)) {
+    return NS_ERROR_FAILURE;
+  }
+  RefPtr<Element> brElement =
+    InsertBrElementWithTransaction(*selection,
+                                   EditorRawDOMPoint(firstClonsedElement, 0));
+  if (NS_WARN_IF(!brElement)) {
+    return NS_ERROR_FAILURE;
+  }
+  *aNewBrElement = brElement.forget();
   return NS_OK;
 }
 

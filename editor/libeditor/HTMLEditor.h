@@ -159,10 +159,6 @@ public:
   NS_DECL_NSIHTMLINLINETABLEEDITOR
 
   
-  nsresult CopyLastEditableChildStyles(nsINode* aPreviousBlock,
-                                       nsINode* aNewBlock,
-                                       Element** aOutBrNode);
-
   nsresult LoadHTML(const nsAString& aInputString);
 
   nsresult GetCSSBackgroundColorState(bool* aMixed, nsAString& aOutColor,
@@ -465,6 +461,23 @@ public:
     nsIContent& aNode,
     const EditorDOMPointBase<PT, CT>& aPointToInsert,
     SplitAtEdges aSplitAtEdges);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  nsresult
+  CopyLastEditableChildStylesWithTransaction(Element& aPreviousBlock,
+                                             Element& aNewBlock,
+                                             RefPtr<Element>* aNewBrElement);
 
   
 
