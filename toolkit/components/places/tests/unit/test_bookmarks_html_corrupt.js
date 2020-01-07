@@ -8,9 +8,6 @@ const TEST_FAVICON_DATA_SIZE = 580;
 
 add_task(async function test_corrupt_file() {
   
-  Services.prefs.setIntPref("browser.places.smartBookmarksVersion", -1);
-
-  
   let corruptHtml = OS.Path.join(do_get_cwd().path, "bookmarks.corrupt.html");
   await BookmarkHTMLUtils.importFromFile(corruptHtml, { replace: true });
 

@@ -72,9 +72,6 @@ var gBookmarksFileNew;
 
 add_task(async function setup() {
   
-  Services.prefs.setIntPref("browser.places.smartBookmarksVersion", -1);
-
-  
   gBookmarksFileOld = OS.Path.join(do_get_cwd().path, "bookmarks.preplaces.html");
 
   

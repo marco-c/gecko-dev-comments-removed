@@ -40,20 +40,12 @@ add_task(async function test_main() {
                PlacesUtils.history.DATABASE_STATUS_CORRUPT);
 
   
-  
   await promiseTopicObserved("places-browser-init-complete");
 
+  
   let bm = await PlacesUtils.bookmarks.fetch({
     parentGuid: PlacesUtils.bookmarks.toolbarGuid,
     index: 0
-  });
-  await checkItemHasAnnotation(bm.guid, SMART_BOOKMARKS_ANNO);
-
-  
-  
-  bm = await PlacesUtils.bookmarks.fetch({
-    parentGuid: PlacesUtils.bookmarks.toolbarGuid,
-    index: SMART_BOOKMARKS_ON_TOOLBAR
   });
   Assert.equal(bm.title, "examplejson");
 });

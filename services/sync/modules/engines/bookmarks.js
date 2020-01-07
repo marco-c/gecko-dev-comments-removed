@@ -533,16 +533,7 @@ BookmarksEngine.prototype = {
       switch (placeType) {
         case PlacesUtils.TYPE_X_MOZ_PLACE:
           
-          let query = null;
-          if (node.annos && node.uri.startsWith("place:")) {
-            query = node.annos.find(({name}) =>
-              name === PlacesSyncUtils.bookmarks.SMART_BOOKMARKS_ANNO);
-          }
-          if (query && query.value) {
-            key = "q" + query.value;
-          } else {
-            key = "b" + node.uri + ":" + (node.title || "");
-          }
+          key = "b" + node.uri + ":" + (node.title || "");
           break;
         case PlacesUtils.TYPE_X_MOZ_PLACE_CONTAINER:
           
@@ -579,17 +570,8 @@ BookmarksEngine.prototype = {
   async _mapDupe(item) {
     
     let key;
-    let altKey;
     switch (item.type) {
       case "query":
-        
-        
-        
-        if (item.queryId) {
-          key = "q" + item.queryId;
-          altKey = "b" + item.bmkUri + ":" + (item.title || "");
-          break;
-        }
         
       case "bookmark":
         key = "b" + item.bmkUri + ":" + (item.title || "");
@@ -626,15 +608,7 @@ BookmarksEngine.prototype = {
       return dupe;
     }
 
-    if (altKey) {
-      dupe = parent[altKey];
-      if (dupe) {
-        this._log.trace("Mapped dupe using altKey " + altKey, dupe);
-        return dupe;
-      }
-    }
-
-    this._log.trace("No dupe found for key " + key + "/" + altKey + ".");
+    this._log.trace("No dupe found for key " + key + ".");
     return undefined;
   },
 

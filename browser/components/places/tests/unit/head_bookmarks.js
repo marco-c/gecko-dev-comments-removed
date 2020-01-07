@@ -28,15 +28,8 @@ updateAppInfo({
 });
 
 
-const SMART_BOOKMARKS_VERSION = 8;
-const SMART_BOOKMARKS_ON_TOOLBAR = 1;
-const SMART_BOOKMARKS_ON_MENU =  2; 
-
-
 const DEFAULT_BOOKMARKS_ON_TOOLBAR = 1;
 const DEFAULT_BOOKMARKS_ON_MENU = 1;
-
-const SMART_BOOKMARKS_ANNO = "Places/SmartBookmark";
 
 function checkItemHasAnnotation(guid, name) {
   return PlacesUtils.promiseItemId(guid).then(id => {
@@ -57,39 +50,6 @@ var createCorruptDB = async function() {
   
   Assert.ok((await OS.File.exists(dbPath)), "should have a DB now");
 };
-
-
-
-
-
-
-
-
-function rebuildSmartBookmarks() {
-  let consoleListener = {
-    observe(aMsg) {
-      if (aMsg.message.startsWith("[JavaScript Warning:")) {
-        
-        return;
-      }
-      do_throw("Got console message: " + aMsg.message);
-    },
-    QueryInterface: ChromeUtils.generateQI([ Ci.nsIConsoleListener ]),
-  };
-  Services.console.reset();
-  Services.console.registerListener(consoleListener);
-  registerCleanupFunction(() => {
-    try {
-      Services.console.unregisterListener(consoleListener);
-    } catch (ex) {  }
-  });
-  Cc["@mozilla.org/browser/browserglue;1"]
-    .getService(Ci.nsIObserver)
-    .observe(null, "browser-glue-test", "smart-bookmarks-init");
-  return promiseTopicObserved("test-smart-bookmarks-done").then(() => {
-    Services.console.unregisterListener(consoleListener);
-  });
-}
 
 const SINGLE_TRY_TIMEOUT = 100;
 const NUMBER_OF_TRIES = 30;

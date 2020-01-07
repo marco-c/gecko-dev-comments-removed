@@ -377,7 +377,6 @@ const HistorySyncUtils = PlacesSyncUtils.history = Object.freeze({
 });
 
 const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
-  SMART_BOOKMARKS_ANNO: "Places/SmartBookmark",
   SYNC_PARENT_ANNO: "sync/parent",
 
   SYNC_ID_META_KEY: "sync/bookmarks/syncId",
@@ -1154,7 +1153,6 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
 
 
 
-
   insert(info) {
     let insertInfo = validateNewBookmark("BookmarkSyncUtils: insert", info);
 
@@ -1163,8 +1161,6 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
   },
 
   
-
-
 
 
 
@@ -1569,16 +1565,7 @@ function removeConflictingKeywords(bookmarkURL, newKeyword) {
 
 
 async function insertBookmarkMetadata(db, bookmarkItem, insertInfo) {
-  let itemId = await PlacesUtils.promiseItemId(bookmarkItem.guid);
   let newItem = await placesBookmarkToSyncBookmark(db, bookmarkItem);
-
-  if (insertInfo.query) {
-    PlacesUtils.annotations.setItemAnnotation(itemId,
-      BookmarkSyncUtils.SMART_BOOKMARKS_ANNO, insertInfo.query, 0,
-      PlacesUtils.annotations.EXPIRE_NEVER,
-      SOURCE_SYNC);
-    newItem.query = insertInfo.query;
-  }
 
   try {
     newItem.tags = tagItem(bookmarkItem, insertInfo.tags);
@@ -1787,7 +1774,6 @@ async function updateSyncBookmark(db, updateInfo) {
 async function updateBookmarkMetadata(db, oldBookmarkItem,
                                       newBookmarkItem,
                                       updateInfo) {
-  let itemId = await PlacesUtils.promiseItemId(newBookmarkItem.guid);
   let newItem = await placesBookmarkToSyncBookmark(db, newBookmarkItem);
 
   try {
@@ -1808,14 +1794,6 @@ async function updateBookmarkMetadata(db, oldBookmarkItem,
       });
     }
     newItem.keyword = updateInfo.keyword;
-  }
-
-  if (updateInfo.hasOwnProperty("query")) {
-    PlacesUtils.annotations.setItemAnnotation(itemId,
-      BookmarkSyncUtils.SMART_BOOKMARKS_ANNO, updateInfo.query, 0,
-      PlacesUtils.annotations.EXPIRE_NEVER,
-      SOURCE_SYNC);
-    newItem.query = updateInfo.query;
   }
 
   return newItem;
@@ -2077,12 +2055,6 @@ async function fetchQueryItem(db, bookmarkItem) {
   let tags = params.getAll("tag");
   if (tags.length == 1) {
     item.folder = tags[0];
-  }
-
-  let query = await getAnno(db, bookmarkItem.guid,
-                            BookmarkSyncUtils.SMART_BOOKMARKS_ANNO);
-  if (query) {
-    item.query = query;
   }
 
   return item;

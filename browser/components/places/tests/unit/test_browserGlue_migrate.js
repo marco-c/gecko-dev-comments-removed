@@ -7,8 +7,6 @@
 
 
 
-const PREF_SMART_BOOKMARKS_VERSION = "browser.places.smartBookmarksVersion";
-
 function run_test() {
   
   create_bookmarks_html("bookmarks.glue.html");
@@ -44,27 +42,21 @@ add_task(async function test_migrate_bookmarks() {
   bg.observe(null, "initial-migration-did-import-default-bookmarks", null);
   await promise;
 
-  let bm = await PlacesUtils.bookmarks.fetch({
-    parentGuid: PlacesUtils.bookmarks.toolbarGuid,
-    index: 0
-  });
-  await checkItemHasAnnotation(bm.guid, SMART_BOOKMARKS_ANNO);
-
   
-  bm = await PlacesUtils.bookmarks.fetch({
+  let bm = await PlacesUtils.bookmarks.fetch({
     parentGuid: PlacesUtils.bookmarks.menuGuid,
-    index: SMART_BOOKMARKS_ON_MENU
+    index: 0
   });
   Assert.equal(bm.title, "migrated");
 
   
   Assert.ok(!(await PlacesUtils.bookmarks.fetch({
     parentGuid: PlacesUtils.bookmarks.menuGuid,
-    index: SMART_BOOKMARKS_ON_MENU + 1
+    index: 1
   })));
 
   Assert.ok(!(await PlacesUtils.bookmarks.fetch({
     parentGuid: PlacesUtils.bookmarks.toolbarGuid,
-    index: SMART_BOOKMARKS_ON_MENU
+    index: 0
   })));
 });
