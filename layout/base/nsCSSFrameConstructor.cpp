@@ -4275,19 +4275,6 @@ nsCSSFrameConstructor::ConstructFrameFromItemInternal(FrameConstructionItem& aIt
     }
   }
 
-#ifdef MOZ_XUL
-  
-  if (aItem.mNameSpaceID == kNameSpaceID_XUL &&
-      (aItem.mTag == nsGkAtoms::treechildren || 
-       content->AsElement()->HasAttr(kNameSpaceID_None, nsGkAtoms::tooltiptext) ||
-       content->AsElement()->HasAttr(kNameSpaceID_None, nsGkAtoms::tooltip))) {
-    nsIRootBox* rootBox = nsIRootBox::GetRootBox(mPresShell);
-    if (rootBox) {
-      rootBox->AddTooltipSupport(content);
-    }
-  }
-#endif
-
   NS_ASSERTION(newFrame->IsFrameOfType(nsIFrame::eLineParticipant) ==
                ((bits & FCDATA_IS_LINE_PARTICIPANT) != 0),
                "Incorrectly set FCDATA_IS_LINE_PARTICIPANT bits");

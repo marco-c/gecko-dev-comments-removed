@@ -31,14 +31,13 @@ public:
   void MouseOut(nsIDOMEvent* aEvent);
   void MouseMove(nsIDOMEvent* aEvent);
 
-  nsresult AddTooltipSupport(nsIContent* aNode);
-  nsresult RemoveTooltipSupport(nsIContent* aNode);
+  void AddTooltipSupport(nsIContent* aNode);
+  void RemoveTooltipSupport(nsIContent* aNode);
   static nsXULTooltipListener* GetInstance() {
-    if (!mInstance)
-      mInstance = new nsXULTooltipListener();
-    return mInstance;
+    if (!sInstance)
+      sInstance = new nsXULTooltipListener();
+    return sInstance;
   }
-  static void ClearTooltipCache() { mInstance = nullptr; }
 
 protected:
 
@@ -47,7 +46,6 @@ protected:
 
   
   static bool sShowTooltips;
-  static uint32_t sTooltipListenerCount;
 
   void KillTooltipTimer();
 
@@ -66,7 +64,7 @@ protected:
   
   nsresult GetTooltipFor(nsIContent* aTarget, nsIContent** aTooltip);
 
-  static nsXULTooltipListener* mInstance;
+  static nsXULTooltipListener* sInstance;
   static void ToolbarTipsPrefChanged(const char *aPref, void *aClosure);
 
   nsWeakPtr mSourceNode;

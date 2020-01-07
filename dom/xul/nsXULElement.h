@@ -754,6 +754,9 @@ protected:
     void RemoveBroadcaster(const nsAString & broadcasterId);
 
 protected:
+    void AddTooltipSupport();
+    void RemoveTooltipSupport();
+
     
     
     nsIControllers *Controllers() {
