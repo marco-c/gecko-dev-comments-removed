@@ -33,7 +33,7 @@ struct RetainedDisplayListBuilder {
 
 
 
-  void ClearModifiedFrameProps();
+  void ClearFramesWithProps();
 
   NS_DECLARE_FRAME_PROPERTY_DELETABLE(Cached, RetainedDisplayListBuilder)
 

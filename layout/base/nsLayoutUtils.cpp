@@ -1390,7 +1390,7 @@ nsLayoutUtils::InvalidateForDisplayPortChange(nsIContent* aContent,
     
     frame->SchedulePaint();
 
-    if (!gfxPrefs::LayoutRetainDisplayList()) {
+    if (!nsLayoutUtils::AreRetainedDisplayListsEnabled()) {
       return;
     }
 
@@ -1409,6 +1409,19 @@ nsLayoutUtils::InvalidateForDisplayPortChange(nsIContent* aContent,
       rect = new nsRect();
       frame->SetProperty(nsDisplayListBuilder::DisplayListBuildingDisplayPortRect(), rect);
       frame->SetHasOverrideDirtyRegion(true);
+
+      nsIFrame* rootFrame = frame->PresContext()->PresShell()->GetRootFrame();
+      MOZ_ASSERT(rootFrame);
+
+      nsTArray<nsIFrame*>* frames =
+        rootFrame->GetProperty(nsIFrame::OverriddenDirtyRectFrameList());
+
+      if (!frames) {
+        frames = new nsTArray<nsIFrame*>();
+        rootFrame->SetProperty(nsIFrame::OverriddenDirtyRectFrameList(), frames);
+      }
+
+      frames->AppendElement(frame);
     }
 
     if (aHadDisplayPort) {
@@ -3686,7 +3699,7 @@ nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext, nsIFrame* aFrame,
   
   if (!useRetainedBuilder && retainedBuilder) {
     
-    retainedBuilder->ClearModifiedFrameProps();
+    retainedBuilder->ClearFramesWithProps();
 
     
     retainedBuilder->List()->DeleteAll(retainedBuilder->Builder());
