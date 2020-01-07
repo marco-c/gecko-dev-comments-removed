@@ -1,115 +1,168 @@
-const gTestSyntax = {
-  '0': {
-    description: 'unitless zero',
-    set: true,
-    examples: [
-      new CSSUnitValue(0, 'number'),
-    ],
-  },
+const gTestSyntaxExamples = {
   '<length>': {
     description: 'a length',
-    get: true,
-    set: true,
     examples: [
-      new CSSUnitValue(0, 'px'),
-      new CSSUnitValue(-3.14, 'em'),
-      new CSSUnitValue(3.14, 'cm'),
+      {
+        description: "zero px",
+        input: new CSSUnitValue(0, 'px')
+      },
+      {
+        description: "a negative em",
+        input: new CSSUnitValue(-3.14, 'em'),
+        defaultComputed: value => {
+          
+          assert_class_string(value, 'CSSUnitValue',
+            '"em" lengths must compute to a CSSUnitValue');
+          assert_equals(value.unit, 'px', 'unit');
+        }
+      },
+      {
+        description: "a positive cm",
+        input: new CSSUnitValue(3.14, 'cm'),
+        defaultComputed: value => {
+          
+          assert_class_string(value, 'CSSUnitValue',
+            '"cm" lengths must compute to a CSSUnitValue');
+          assert_equals(value.unit, 'px', 'unit');
+        }
+      },
     ],
   },
   '<percentage>': {
     description: 'a percent',
-    get: true,
-    set: true,
     examples: [
-      new CSSUnitValue(0, 'percent'),
-      new CSSUnitValue(-3.14, 'percent'),
-      new CSSUnitValue(3.14, 'percent'),
+      {
+        description: "zero percent",
+        input: new CSSUnitValue(0, 'percent')
+      },
+      {
+        description: "a negative percent",
+        input: new CSSUnitValue(-3.14, 'percent')
+      },
+      {
+        description: "a positive percent",
+        input: new CSSUnitValue(3.14, 'percent')
+      },
     ],
   },
   '<time>': {
     description: 'a time',
-    get: true,
-    set: true,
     examples: [
-      new CSSUnitValue(0, 's'),
-      new CSSUnitValue(-3.14, 'ms'),
-      new CSSUnitValue(3.14, 's'),
+      {
+        description: "zero seconds",
+        input: new CSSUnitValue(0, 's')
+      },
+      {
+        description: "negative milliseconds",
+        input: new CSSUnitValue(-3.14, 'ms')
+      },
+      {
+        description: "positive seconds",
+        input: new CSSUnitValue(3.14, 's')
+      },
     ],
-  },
-  '<ident>': {
-    description: 'a CSSKeywordValue',
-    set: true,
-    get: true,
-    
-    examples: null,
   },
 };
 
-function testGet(propertyName, values, description) {
+
+
+function testPropertyValid(propertyName, examples, specified, computed, description) {
   test(t => {
     let element = createDivWithStyle(t);
-    let styleMap = element.attributeStyleMap;
 
-    for (const styleValue of values) {
-      element.style[propertyName] = styleValue.toString();
+    for (const example of examples) {
+      element.attributeStyleMap.set(propertyName, example.input);
 
-      getComputedStyle(element); 
-      const result = styleMap.get(propertyName);
-      assert_style_value_equals(result, styleValue);
-    }
-  }, `Can get ${description} from '${propertyName}'`);
-}
+      
+      const specifiedResult = element.attributeStyleMap.get(propertyName);
+      if (specified || example.defaultSpecified) {
+        (specified || example.defaultSpecified)(specifiedResult);
+      } else {
+        assert_not_equals(specifiedResult, null,
+          'Specified value must not be null');
+        assert_true(specifiedResult instanceof CSSStyleValue,
+          'Specified value must be a CSSStyleValue');
+        assert_style_value_equals(specifiedResult, example.input,
+          `Setting ${example.description} and getting its specified value`);
+      }
 
-function testSet(propertyName, values, description) {
-  test(t => {
-    let element = createDivWithStyle(t);
-    let styleMap = element.attributeStyleMap;
-
-    for (const styleValue of values) {
-      styleMap.set(propertyName, styleValue);
-
-      getComputedStyle(element); 
-      assert_equals(element.style[propertyName], styleValue.toString());
+      
+      const computedResult = element.computedStyleMap().get(propertyName);
+      if (computed || example.defaultComputed) {
+        (computed || example.defaultComputed)(computedResult);
+      } else {
+        assert_not_equals(computedResult, null,
+          'Computed value must not be null');
+        assert_true(computedResult instanceof CSSStyleValue,
+          'Computed value must be a CSSStyleValue');
+        assert_style_value_equals(computedResult, example.input,
+          `Setting ${example.description} and getting its computed value`);
+      }
     }
   }, `Can set '${propertyName}' to ${description}`);
 }
 
-function testSetInvalid(propertyName, values, description) {
-  test(t => {
-    let element = createDivWithStyle(t);
-    let styleMap = element.attributeStyleMap;
 
-    for (const styleValue of values) {
-      assert_throws(new TypeError(), () => styleMap.set(propertyName, styleValue));
+function testPropertyInvalid(propertyName, examples, description) {
+  test(t => {
+    let styleMap = createInlineStyleMap(t);
+    for (const example of examples) {
+      assert_throws(new TypeError(), () => styleMap.set(propertyName, example.input));
     }
   }, `Setting '${propertyName}' to ${description} throws TypeError`);
 }
 
+function createKeywordExample(keyword) {
+  return {
+    description: `the '${keyword}' keyword`,
+    examples: [ { input: new CSSKeywordValue(keyword) } ]
+  };
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function runPropertyTests(propertyName, testCases) {
-  let productionsTested = new Set();
+  let syntaxTested = new Set();
 
   for (const testCase of testCases) {
-    const syntax = gTestSyntax[testCase.specified];
-    if (!syntax)
-      throw new Error(`'${testCase.specified}' is not a valid production`);
+    
+    
+    const syntaxExamples = testCase.syntax.match(/^[a-z\-]+$/) ?
+      createKeywordExample(testCase.syntax) :
+      gTestSyntaxExamples[testCase.syntax];
 
-    const examples = testCase.examples || syntax.examples;
-    if (!examples)
-      throw new Error(`'${testCase.specified}' tests require explicit examples`);
+    if (!syntaxExamples)
+      throw new Error(`'${testCase.syntax}' is not a valid CSS component`);
 
-    if (syntax.get)
-      testGet(propertyName, examples, syntax.description);
-    if (syntax.set)
-      testSet(propertyName, examples, syntax.description);
+    testPropertyValid(propertyName,
+      syntaxExamples.examples,
+      testCase.specified,
+      testCase.computed,
+      syntaxExamples.description);
 
-    productionsTested.add(testCase.specified);
+    syntaxTested.add(testCase.syntax);
   }
 
   
-  for (const [production, syntax] of Object.entries(gTestSyntax)) {
-    if (!productionsTested.has(production)) {
-      if (syntax.set && syntax.examples)
-        testSetInvalid(propertyName, syntax.examples, syntax.description);
+  for (const [syntax, syntaxExamples] of Object.entries(gTestSyntaxExamples)) {
+    if (!syntaxTested.has(syntax)) {
+      testPropertyInvalid(propertyName,
+        syntaxExamples.examples,
+        syntaxExamples.description);
     }
   }
 }
