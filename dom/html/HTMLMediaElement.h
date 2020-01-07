@@ -82,6 +82,7 @@ namespace dom {
 
 class MediaError;
 class MediaSource;
+class PlayPromise;
 class Promise;
 class TextTrackList;
 class AudioTrackList;
@@ -1326,7 +1327,7 @@ protected:
 
   
   
-  nsTArray<RefPtr<Promise>> TakePendingPlayPromises();
+  nsTArray<RefPtr<PlayPromise>> TakePendingPlayPromises();
 
   
   
@@ -1780,6 +1781,9 @@ public:
     uint32_t mCount;
   };
 private:
+
+  already_AddRefed<PlayPromise> CreatePlayPromise(ErrorResult& aRv) const;
+
   
 
 
@@ -1841,7 +1845,7 @@ private:
 
   
   
-  nsTArray<RefPtr<Promise>> mPendingPlayPromises;
+  nsTArray<RefPtr<PlayPromise>> mPendingPlayPromises;
 
   
   
