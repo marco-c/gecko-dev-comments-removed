@@ -250,8 +250,6 @@ RuleEditor.prototype = {
         class: "ruleview-fontswatch"
       });
 
-      
-      this.fontSwatch.textContent = "Aa";
       this.fontSwatch.addEventListener("click", this._onFontSwatchClick);
     }
   },
