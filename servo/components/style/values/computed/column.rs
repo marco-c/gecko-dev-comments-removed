@@ -1,0 +1,11 @@
+
+
+
+
+
+
+use values::computed::PositiveInteger;
+use values::generics::column::ColumnCount as GenericColumnCount;
+
+
+pub type ColumnCount = GenericColumnCount<PositiveInteger>;
