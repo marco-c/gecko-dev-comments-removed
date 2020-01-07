@@ -1190,18 +1190,18 @@ StyleDistance(uint32_t aFontStyle, uint32_t aTargetStyle)
     return 1; 
 }
 
-#define REVERSE_STRETCH_DISTANCE 5
+#define REVERSE_STRETCH_DISTANCE 200
 
 
 static inline uint32_t
-StretchDistance(int16_t aFontStretch, int16_t aTargetStretch)
+StretchDistance(int32_t aFontStretch, int32_t aTargetStretch)
 {
     int32_t distance = 0;
     if (aTargetStretch != aFontStretch) {
         
         
         
-        if (aTargetStretch > 0) {
+        if (aTargetStretch > 100) {
             distance = (aFontStretch - aTargetStretch);
         } else {
             distance = (aTargetStretch - aFontStretch);
@@ -1435,7 +1435,7 @@ gfxFontFamily::CheckForSimpleFamily()
         return;
     }
 
-    int16_t firstStretch = mAvailableFonts[0]->Stretch();
+    uint16_t firstStretch = mAvailableFonts[0]->Stretch();
 
     gfxFontEntry *faces[4] = { 0 };
     for (uint8_t i = 0; i < count; ++i) {

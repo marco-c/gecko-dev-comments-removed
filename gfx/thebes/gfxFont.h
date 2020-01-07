@@ -79,7 +79,7 @@ struct gfxFontStyle {
     typedef mozilla::FontWeight FontWeight;
 
     gfxFontStyle();
-    gfxFontStyle(uint8_t aStyle, FontWeight aWeight, int16_t aStretch,
+    gfxFontStyle(uint8_t aStyle, FontWeight aWeight, uint16_t aStretch,
                  gfxFloat aSize, nsAtom *aLanguage, bool aExplicitLanguage,
                  float aSizeAdjust, bool aSystemFont,
                  bool aPrinterFont,
@@ -143,8 +143,7 @@ struct gfxFontStyle {
     FontWeight weight;
 
     
-    
-    int8_t stretch;
+    uint8_t stretch;
 
     
     uint8_t style;
