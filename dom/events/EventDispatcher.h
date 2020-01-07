@@ -125,6 +125,9 @@ public:
     , mWantsWillHandleEvent(false)
     , mMayHaveListenerManager(true)
     , mWantsPreHandleEvent(false)
+    , mRootOfClosedTree(false)
+    , mParentIsSlotInClosedTree(false)
+    , mParentIsChromeHandler(false)
     , mParentTarget(nullptr)
     , mEventTargetAtParent(nullptr)
   {
@@ -140,8 +143,24 @@ public:
     mWantsWillHandleEvent = false;
     mMayHaveListenerManager = true;
     mWantsPreHandleEvent = false;
+    mRootOfClosedTree = false;
+    mParentIsSlotInClosedTree = false;
+    mParentIsChromeHandler = false;
     mParentTarget = nullptr;
     mEventTargetAtParent = nullptr;
+  }
+
+  dom::EventTarget* GetParentTarget()
+  {
+    return mParentTarget;
+  }
+
+  void SetParentTarget(dom::EventTarget* aParentTarget, bool aIsChromeHandler)
+  {
+    mParentTarget = aParentTarget;
+    if (mParentTarget) {
+      mParentIsChromeHandler = aIsChromeHandler;
+    }
   }
 
   
@@ -198,8 +217,27 @@ public:
   
 
 
+
+  bool mRootOfClosedTree;
+
+  
+
+
+
+  bool mParentIsSlotInClosedTree;
+
+  
+
+
+  bool mParentIsChromeHandler;
+
+private:
+  
+
+
   dom::EventTarget* mParentTarget;
 
+public:
   
 
 
@@ -283,6 +321,9 @@ public:
                                                   const nsAString& aEventType,
                                                   dom::CallerType aCallerType =
                                                     dom::CallerType::System);
+
+  static void GetComposedPathFor(WidgetEvent* aEvent,
+                                 nsTArray<RefPtr<dom::EventTarget>>& aPath);
 
   
 

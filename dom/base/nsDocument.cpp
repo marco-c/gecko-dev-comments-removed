@@ -8209,8 +8209,8 @@ nsDocument::GetEventTargetParent(EventChainPreVisitor& aVisitor)
   
   if (aVisitor.mEvent->mMessage != eLoad) {
     nsGlobalWindowOuter* window = nsGlobalWindowOuter::Cast(GetWindow());
-    aVisitor.mParentTarget =
-      window ? window->GetTargetForEventTargetChain() : nullptr;
+    aVisitor.SetParentTarget(
+      window ? window->GetTargetForEventTargetChain() : nullptr, false);
   }
   return NS_OK;
 }

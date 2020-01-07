@@ -307,6 +307,7 @@ nsresult
 ShadowRoot::GetEventTargetParent(EventChainPreVisitor& aVisitor)
 {
   aVisitor.mCanHandle = true;
+  aVisitor.mRootOfClosedTree = IsClosed();
 
   
   if (!aVisitor.mEvent->mFlags.mComposed) {
@@ -321,13 +322,13 @@ ShadowRoot::GetEventTargetParent(EventChainPreVisitor& aVisitor)
       EventTarget* parentTarget = win && aVisitor.mEvent->mMessage != eLoad
         ? win->GetParentTarget() : nullptr;
 
-      aVisitor.mParentTarget = parentTarget;
+      aVisitor.SetParentTarget(parentTarget, true);
       return NS_OK;
     }
   }
 
   nsIContent* shadowHost = GetHost();
-  aVisitor.mParentTarget = shadowHost;
+  aVisitor.SetParentTarget(shadowHost, false);
 
   if (aVisitor.mOriginalTargetIsInAnon) {
     nsCOMPtr<nsIContent> content(do_QueryInterface(aVisitor.mEvent->mTarget));

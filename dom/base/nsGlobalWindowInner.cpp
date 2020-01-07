@@ -1949,7 +1949,7 @@ nsGlobalWindowInner::GetEventTargetParent(EventChainPreVisitor& aVisitor)
     }
   }
 
-  aVisitor.mParentTarget = GetParentTarget();
+  aVisitor.SetParentTarget(GetParentTarget(), true);
 
   
   if (!mIdleObservers.IsEmpty() &&

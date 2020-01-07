@@ -174,7 +174,7 @@ nsWindowRoot::GetEventTargetParent(EventChainPreVisitor& aVisitor)
   aVisitor.mForceContentDispatch = true; 
   
   aVisitor.mItemData = static_cast<nsISupports *>(mWindow);
-  aVisitor.mParentTarget = mParent;
+  aVisitor.SetParentTarget(mParent, false);
   return NS_OK;
 }
 
