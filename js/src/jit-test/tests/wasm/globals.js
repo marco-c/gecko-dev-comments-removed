@@ -107,14 +107,6 @@ module = wasmEvalText(`(module
 assertEq(module.f, module.tbl.get(1));
 
 
-if (typeof WebAssembly.Global === "undefined") {
-    wasmFailValidateText(`(module (import "globals" "x" (global (mut i32))))`,
-             /can't import.* mutable globals in the MVP/);
-    wasmFailValidateText(`(module (global (mut i32) (i32.const 42)) (export "" global 0))`,
-             /can't .*export mutable globals in the MVP/);
-}
-
-
 module = wasmEvalText(`(module
  (import $g "globals" "x" (global i32))
  (func $get (result i32) (get_global $g))
@@ -125,10 +117,7 @@ module = wasmEvalText(`(module
 assertEq(module.getter(), 42);
 
 
-if (typeof WebAssembly.Global === "function")
-    assertEq(Number(module.value), 42);
-else
-    assertEq(module.value, 42);
+assertEq(Number(module.value), 42);
 
 
 module = new Module(wasmTextToBinary(`(module
@@ -183,14 +172,8 @@ module = wasmEvalText(`(module
  (export "defined" global 1)
 )`, { globals: {x: 42} }).exports;
 
-
-if (typeof WebAssembly.Global === "function") {
-    assertEq(Number(module.imported), 42);
-    assertEq(Number(module.defined), 1337);
-} else {
-    assertEq(module.imported, 42);
-    assertEq(module.defined, 1337);
-}
+assertEq(Number(module.imported), 42);
+assertEq(Number(module.defined), 1337);
 
 
 wasmFailValidateText(`(module (global f32 (f32.const 13.37)) (global i32 (get_global 0)))`, /must reference a global immutable import/);
@@ -227,20 +210,12 @@ function testInitExpr(type, initialValue, nextValue, coercion, assertFunc = asse
 
     assertFunc(module.get0(), coercion(initialValue));
     assertFunc(module.get1(), coercion(initialValue));
-    
-    if (typeof WebAssembly.Global === "function")
-        assertFunc(Number(module.global_imm), coercion(initialValue));
-    else
-        assertFunc(module.global_imm, coercion(initialValue));
+    assertFunc(Number(module.global_imm), coercion(initialValue));
 
     assertEq(module.set1(coercion(nextValue)), undefined);
     assertFunc(module.get1(), coercion(nextValue));
     assertFunc(module.get0(), coercion(initialValue));
-    
-    if (typeof WebAssembly.Global === "function")
-        assertFunc(Number(module.global_imm), coercion(initialValue));
-    else
-        assertFunc(module.global_imm, coercion(initialValue));
+    assertFunc(Number(module.global_imm), coercion(initialValue));
 
     assertFunc(module.get_cst(), coercion(initialValue));
 }
@@ -267,18 +242,7 @@ assertErrorMessage(() => wasmEvalText(`(module
                    LinkError,
                    /cannot pass i64 to or from JS/);
 
-if (typeof WebAssembly.Global === "undefined") {
-
-    
-
-    assertErrorMessage(() => wasmEvalText(`(module
-                                            (global i64 (i64.const 42))
-                                            (export "" global 0))`),
-                       LinkError,
-                       /cannot pass i64 to or from JS/);
-
-} else {
-
+{
     
     
     
@@ -344,9 +308,7 @@ wasmAssert(`(module
 }
 
 
-
-if (typeof WebAssembly.Global === "function") {
-
+{
     const Global = WebAssembly.Global;
 
     

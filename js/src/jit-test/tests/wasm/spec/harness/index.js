@@ -228,12 +228,7 @@ function get(instance, name) {
     
     
     
-    
-
-    if (typeof WebAssembly.Global === "function")
-        return ValueResult(Number(instance.value.exports[name]));
-
-    return ValueResult(instance.value.exports[name]);
+    return ValueResult(Number(instance.value.exports[name]));
 }
 
 function exports(name, instance) {
