@@ -124,13 +124,14 @@ ScrollingLayersHelper::BeginItem(nsDisplayItem* aItem,
   
   
 
-  Maybe<wr::WrScrollId> leafmostId = ids.first;
+  wr::WrScrollId rootId = wr::WrScrollId { 0 };
+  wr::WrScrollId leafmostId = ids.first.valueOr(rootId);
+
   FrameMetrics::ViewID viewId = aItem->GetActiveScrolledRoot()
       ? aItem->GetActiveScrolledRoot()->GetViewId()
       : FrameMetrics::NULL_SCROLL_ID;
-  Maybe<wr::WrScrollId> scrollId =
-      mBuilder->GetScrollIdForDefinedScrollLayer(viewId);
-  MOZ_ASSERT(scrollId.isSome());
+  wr::WrScrollId scrollId =
+      mBuilder->GetScrollIdForDefinedScrollLayer(viewId).valueOr(rootId);
 
   
   
@@ -146,7 +147,7 @@ ScrollingLayersHelper::BeginItem(nsDisplayItem* aItem,
       mBuilder->TopmostScrollId() == scrollId &&
       !mBuilder->TopmostIsClip()) {
     if (auto cs = EnclosingClipAndScroll()) {
-      MOZ_ASSERT(cs->first == *scrollId);
+      MOZ_ASSERT(cs->first == scrollId);
       needClipAndScroll = true;
     }
   }
@@ -155,7 +156,7 @@ ScrollingLayersHelper::BeginItem(nsDisplayItem* aItem,
   
   if (!needClipAndScroll && mBuilder->TopmostScrollId() != scrollId) {
     MOZ_ASSERT(leafmostId == scrollId); 
-    clips.mScrollId = scrollId;
+    clips.mScrollId = Some(scrollId);
   }
   
   
@@ -174,7 +175,7 @@ ScrollingLayersHelper::BeginItem(nsDisplayItem* aItem,
       clipId = mBuilder->TopmostClipId();
     }
 
-    clips.mClipAndScroll = Some(std::make_pair(*scrollId, clipId));
+    clips.mClipAndScroll = Some(std::make_pair(scrollId, clipId));
   }
 
   clips.Apply(mBuilder);
@@ -299,7 +300,9 @@ ScrollingLayersHelper::RecurseAndDefineClip(nsDisplayItem* aItem,
   } else {
     MOZ_ASSERT(!ancestorIds.second);
     FrameMetrics::ViewID viewId = aChain->mASR ? aChain->mASR->GetViewId() : FrameMetrics::NULL_SCROLL_ID;
-    auto scrollId = mBuilder->GetScrollIdForDefinedScrollLayer(viewId);
+
+    wr::WrScrollId rootId = wr::WrScrollId { 0 };
+    auto scrollId = mBuilder->GetScrollIdForDefinedScrollLayer(viewId).valueOr(rootId);
     if (mBuilder->TopmostScrollId() == scrollId) {
       if (mBuilder->TopmostIsClip()) {
         
@@ -328,7 +331,7 @@ ScrollingLayersHelper::RecurseAndDefineClip(nsDisplayItem* aItem,
         
         
         
-        MOZ_ASSERT(Some(cs->first) == scrollId);
+        MOZ_ASSERT(cs->first == scrollId);
         ancestorIds.first = Nothing();
         ancestorIds.second = cs->second;
       }

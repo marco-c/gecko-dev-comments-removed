@@ -435,7 +435,7 @@ public:
   
   Maybe<wr::WrClipId> TopmostClipId();
   
-  Maybe<wr::WrScrollId> TopmostScrollId();
+  wr::WrScrollId TopmostScrollId();
   
   bool TopmostIsClip();
 
