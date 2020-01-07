@@ -30,7 +30,9 @@ class GenericPrinter
   protected:
     bool                  hadOOM_;     
 
-    GenericPrinter();
+    constexpr GenericPrinter()
+      : hadOOM_(false)
+    {}
 
   public:
     
@@ -139,8 +141,15 @@ class Fprinter final : public GenericPrinter
 
   public:
     explicit Fprinter(FILE* fp);
-    Fprinter();
+
+    constexpr Fprinter()
+      : file_(nullptr),
+        init_(false)
+    {}
+
+#ifdef DEBUG
     ~Fprinter();
+#endif
 
     
     MOZ_MUST_USE bool init(const char* path);
