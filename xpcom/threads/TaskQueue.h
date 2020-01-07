@@ -45,6 +45,10 @@ typedef MozPromise<bool, bool, false> ShutdownPromise;
 
 
 
+
+
+
+
 class TaskQueue : public AbstractThread
 {
   class EventTargetWrapper;

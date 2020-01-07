@@ -89,8 +89,8 @@ TaskQueue::TaskQueue(already_AddRefed<nsIEventTarget> aTarget,
 
 TaskQueue::~TaskQueue()
 {
-  MonitorAutoLock mon(mQueueMonitor);
-  MOZ_ASSERT(mIsShutdown);
+  
+  
 }
 
 TaskDispatcher&
@@ -178,7 +178,6 @@ TaskQueue::BeginShutdown()
   if (AbstractThread* currentThread = AbstractThread::GetCurrent()) {
     currentThread->TailDispatchTasksFor(this);
   }
-
   MonitorAutoLock mon(mQueueMonitor);
   mIsShutdown = true;
   RefPtr<ShutdownPromise> p = mShutdownPromise.Ensure(__func__);
