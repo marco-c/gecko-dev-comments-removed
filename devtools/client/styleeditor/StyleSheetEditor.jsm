@@ -469,6 +469,9 @@ StyleSheetEditor.prototype = {
         sourceEditor.container.addEventListener("mousemove", this._onMouseMove);
       }
 
+      
+      sourceEditor.insertCommandsController();
+
       this.emit("source-editor-load");
     });
   },

@@ -487,6 +487,16 @@ Editor.prototype = {
 
 
 
+  insertCommandsController: function () {
+    const { insertCommandsController } =
+      require("devtools/client/sourceeditor/editor-commands-controller");
+    insertCommandsController(this);
+  },
+
+  
+
+
+
   getText: function (line) {
     let cm = editors.get(this);
 
