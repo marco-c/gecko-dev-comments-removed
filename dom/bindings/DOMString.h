@@ -47,6 +47,8 @@ namespace dom {
 
 
 
+
+
 class MOZ_STACK_CLASS DOMString {
 public:
   DOMString()
@@ -130,6 +132,33 @@ public:
     }
   }
 
+  bool HasLiteral() const
+  {
+    MOZ_ASSERT(!mString || !mStringBuffer,
+               "Shouldn't have both present!");
+    MOZ_ASSERT(mState > State::Null,
+               "Caller should have checked IsNull() and IsEmpty() first");
+    return mState == State::Literal;
+  }
+
+  
+  
+  const char16_t* Literal() const
+  {
+    MOZ_ASSERT(HasLiteral(),
+               "Don't ask for the literal if we don't have it");
+    MOZ_ASSERT(mLiteral,
+               "We better have a literal if we claim to");
+    return mLiteral;
+  }
+
+  
+  uint32_t LiteralLength() const
+  {
+    MOZ_ASSERT(HasLiteral(), "Don't call this if there is no literal");
+    return mLength;
+  }
+
   
   
   
@@ -166,6 +195,8 @@ public:
       nsStringBuffer* buf = nsStringBuffer::FromString(aString);
       if (buf) {
         SetKnownLiveStringBuffer(buf, aString.Length());
+      } else if (aString.IsLiteral()) {
+        SetLiteralInternal(aString.BeginReading(), aString.Length());
       } else {
         AsAString() = aString;
       }
@@ -188,8 +219,7 @@ public:
     if (aNullHandling == eNullNotExpected || aAtom) {
       if (aAtom->IsStaticAtom()) {
         
-        
-        AsAString().AssignLiteral(aAtom->GetUTF16String(), aAtom->GetLength());
+        SetLiteralInternal(aAtom->GetUTF16String(), aAtom->GetLength());
       } else {
         
         
@@ -244,6 +274,8 @@ public:
         
         aString.Assign(chars, len);
       }
+    } else if (HasLiteral()) {
+      aString.AssignLiteral(Literal(), LiteralLength());
     } else {
       aString = AsAString();
     }
@@ -261,6 +293,14 @@ private:
     mLength = aLength;
   }
 
+  void SetLiteralInternal(const char16_t* aLiteral, uint32_t aLength)
+  {
+    MOZ_ASSERT(!mLiteral, "What's going on here?");
+    mLiteral = aLiteral;
+    mLength = aLength;
+    mState = State::Literal;
+  }
+
   enum class State : uint8_t
   {
     Empty, 
@@ -270,6 +310,7 @@ private:
     
 
     String, 
+    Literal, 
     OwnedStringBuffer, 
     UnownedStringBuffer, 
     
@@ -279,10 +320,16 @@ private:
   
   Maybe<nsAutoString> mString;
 
-  
-  nsStringBuffer* MOZ_UNSAFE_REF("The ways in which this can be safe are "
+  union
+  {
+    
+    nsStringBuffer* MOZ_UNSAFE_REF("The ways in which this can be safe are "
                                  "documented above and enforced through "
                                  "assertions") mStringBuffer;
+    
+    const char16_t* mLiteral;
+  };
+
   
   uint32_t mLength;
 

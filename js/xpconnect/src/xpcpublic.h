@@ -281,6 +281,19 @@ public:
         return true;
     }
 
+    static inline bool
+    StringLiteralToJSVal(JSContext* cx, const char16_t* literal, uint32_t length,
+                         JS::MutableHandleValue rval)
+    {
+        bool ignored;
+        JSString* str = JS_NewMaybeExternalString(cx, literal, length,
+                                                  &sLiteralFinalizer, &ignored);
+        if (!str)
+            return false;
+        rval.setString(str);
+        return true;
+    }
+
     static MOZ_ALWAYS_INLINE bool IsLiteral(JSString* str)
     {
         return JS_IsExternalString(str) &&
@@ -361,23 +374,28 @@ bool NonVoidStringToJsval(JSContext* cx, mozilla::dom::DOMString& str,
         return true;
     }
 
-    if (!str.HasStringBuffer()) {
-        
-        return NonVoidStringToJsval(cx, str.AsAString(), rval);
+    if (str.HasStringBuffer()) {
+        uint32_t length = str.StringBufferLength();
+        nsStringBuffer* buf = str.StringBuffer();
+        bool shared;
+        if (!XPCStringConvert::StringBufferToJSVal(cx, buf, length, rval,
+                                                   &shared)) {
+            return false;
+        }
+        if (shared) {
+            
+            str.RelinquishBufferOwnership();
+        }
+        return true;
     }
 
-    uint32_t length = str.StringBufferLength();
-    nsStringBuffer* buf = str.StringBuffer();
-    bool shared;
-    if (!XPCStringConvert::StringBufferToJSVal(cx, buf, length, rval,
-                                               &shared)) {
-        return false;
+    if (str.HasLiteral()) {
+        return XPCStringConvert::StringLiteralToJSVal(cx, str.Literal(),
+                                                      str.LiteralLength(), rval);
     }
-    if (shared) {
-        
-        str.RelinquishBufferOwnership();
-    }
-    return true;
+
+    
+    return NonVoidStringToJsval(cx, str.AsAString(), rval);
 }
 
 MOZ_ALWAYS_INLINE
