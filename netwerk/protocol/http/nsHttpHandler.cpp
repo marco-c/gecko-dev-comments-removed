@@ -2474,7 +2474,7 @@ CanEnableSpeculativeConnect()
   
   
   bool activeSmartCards = false;
-  nsresult rv = component->HasActiveSmartCards(activeSmartCards);
+  nsresult rv = component->HasActiveSmartCards(&activeSmartCards);
   if (NS_FAILED(rv) || activeSmartCards) {
     return false;
   }
@@ -2482,7 +2482,7 @@ CanEnableSpeculativeConnect()
   
   
   bool hasUserCerts = false;
-  rv = component->HasUserCertsInstalled(hasUserCerts);
+  rv = component->HasUserCertsInstalled(&hasUserCerts);
   if (NS_FAILED(rv) || hasUserCerts) {
     return false;
   }
