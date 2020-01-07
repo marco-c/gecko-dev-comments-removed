@@ -4152,7 +4152,7 @@ CodeOffsetJump
 MacroAssemblerARMCompat::jumpWithPatch(RepatchLabel* label, Condition cond, Label* documentation)
 {
     ARMBuffer::PoolEntry pe;
-    BufferOffset bo = as_BranchPool(0xdeadbeef, label, &pe, cond, documentation);
+    BufferOffset bo = as_BranchPool(0xdeadbeef, label, refLabel(documentation), &pe, cond);
     
     
     CodeOffsetJump ret(bo.getOffset(), pe.index());

@@ -35,6 +35,7 @@
 #include "jit/JitSpewer.h"
 
 #include "jit/shared/Assembler-shared.h"
+#include "jit/shared/Disassembler-shared.h"
 #include "jit/shared/IonAssemblerBufferWithConstantPools.h"
 
 namespace vixl {
@@ -43,6 +44,9 @@ using js::jit::BufferOffset;
 using js::jit::Label;
 using js::jit::Address;
 using js::jit::BaseIndex;
+using js::jit::DisassemblerSpew;
+
+using LabelDoc = DisassemblerSpew::LabelDoc;
 
 typedef uint64_t RegList;
 static const int kRegListSizeInBits = sizeof(RegList) * 8;
@@ -971,32 +975,32 @@ class Assembler : public MozBaseAssembler {
   BufferOffset b(Label* label, Condition cond);
 
   
-  BufferOffset b(int imm26);
+  BufferOffset b(int imm26, const LabelDoc& doc);
   static void b(Instruction* at, int imm26);
 
   
-  BufferOffset b(int imm19, Condition cond);
+  BufferOffset b(int imm19, Condition cond, const LabelDoc& doc);
   static void b(Instruction*at, int imm19, Condition cond);
 
   
   void bl(Label* label);
 
   
-  void bl(int imm26);
+  void bl(int imm26, const LabelDoc& doc);
   static void bl(Instruction* at, int imm26);
 
   
   void cbz(const Register& rt, Label* label);
 
   
-  void cbz(const Register& rt, int imm19);
+  void cbz(const Register& rt, int imm19, const LabelDoc& doc);
   static void cbz(Instruction* at, const Register& rt, int imm19);
 
   
   void cbnz(const Register& rt, Label* label);
 
   
-  void cbnz(const Register& rt, int imm19);
+  void cbnz(const Register& rt, int imm19, const LabelDoc& doc);
   static void cbnz(Instruction* at, const Register& rt, int imm19);
 
   
@@ -1055,14 +1059,14 @@ class Assembler : public MozBaseAssembler {
   void tbz(const Register& rt, unsigned bit_pos, Label* label);
 
   
-  void tbz(const Register& rt, unsigned bit_pos, int imm14);
+  void tbz(const Register& rt, unsigned bit_pos, int imm14, const LabelDoc& doc);
   static void tbz(Instruction* at, const Register& rt, unsigned bit_pos, int imm14);
 
   
   void tbnz(const Register& rt, unsigned bit_pos, Label* label);
 
   
-  void tbnz(const Register& rt, unsigned bit_pos, int imm14);
+  void tbnz(const Register& rt, unsigned bit_pos, int imm14, const LabelDoc& doc);
   static void tbnz(Instruction* at, const Register& rt, unsigned bit_pos, int imm14);
 
   
@@ -1073,14 +1077,14 @@ class Assembler : public MozBaseAssembler {
   void adr(const Register& rd, Label* label);
 
   
-  void adr(const Register& rd, int imm21);
+  void adr(const Register& rd, int imm21, const LabelDoc& doc);
   static void adr(Instruction* at, const Register& rd, int imm21);
 
   
   void adrp(const Register& rd, Label* label);
 
   
-  void adrp(const Register& rd, int imm21);
+  void adrp(const Register& rd, int imm21, const LabelDoc& doc);
   static void adrp(Instruction* at, const Register& rd, int imm21);
 
   
