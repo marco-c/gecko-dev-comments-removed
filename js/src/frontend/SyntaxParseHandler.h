@@ -15,6 +15,7 @@
 #include "jscntxt.h"
 
 #include "frontend/ParseNode.h"
+#include "js/GCAnnotations.h"
 
 namespace js {
 
@@ -35,6 +36,18 @@ class SyntaxParseHandler
     
     JSAtom* lastAtom;
     TokenPos lastStringPos;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
   public:
     enum Node {
@@ -536,7 +549,7 @@ class SyntaxParseHandler
     }
 
     void adjustGetToSet(Node node) {}
-};
+} JS_HAZ_ROOTED; 
 
 } 
 } 
