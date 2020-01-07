@@ -224,11 +224,6 @@ this.BrowserIDManager.prototype = {
     switch (topic) {
     case fxAccountsCommon.ONLOGIN_NOTIFICATION: {
       this._log.info("A user has logged in");
-      
-      
-      if (Weave.Status.login == LOGIN_FAILED_LOGIN_REJECTED) {
-        Weave.Status.login = LOGIN_SUCCEEDED;
-      }
       this.resetCredentials();
       let accountData = await this._fxaService.getSignedInUser();
       this._updateSignedInUser(accountData);
@@ -238,6 +233,7 @@ this.BrowserIDManager.prototype = {
         this._log.info("The user is not verified");
         break;
       }
+      
     }
     
     case fxAccountsCommon.ONVERIFIED_NOTIFICATION: {
@@ -246,16 +242,18 @@ this.BrowserIDManager.prototype = {
       
       let accountData = await this._fxaService.getSignedInUser();
       this.username = accountData.email;
+      Weave.Status.login = LOGIN_SUCCEEDED;
 
       
       
       
-      let isFirstSync = !Svc.Prefs.get("client.syncID", null);
+      
+      let isFirstSync = !Weave.Service.locked && !Svc.Prefs.get("client.syncID", null);
       if (isFirstSync) {
         this._log.info("Doing initial sync actions");
         Svc.Prefs.set("firstSync", "resetClient");
+        Services.obs.notifyObservers(null, "weave:service:setup-complete");
       }
-      Services.obs.notifyObservers(null, "weave:service:setup-complete");
       
       
       Weave.Service.sync({why: "login"});
