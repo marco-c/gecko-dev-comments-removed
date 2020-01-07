@@ -234,25 +234,27 @@ var Policies = {
 
   "DisplayBookmarksToolbar": {
     onBeforeUIStartup(manager, param) {
-      let value = param.toString();
-      
-      
-      
-      runOncePerModification("displayBookmarksToolbar", value, () => {
-        gXulStore.setValue(BROWSER_DOCUMENT_URL, "PersonalToolbar", "collapsed", value);
-      });
+      if (param) {
+        
+        
+        
+        runOnce("displayBookmarksToolbar", () => {
+          gXulStore.setValue(BROWSER_DOCUMENT_URL, "PersonalToolbar", "collapsed", "false");
+        });
+      }
     }
   },
 
   "DisplayMenuBar": {
     onBeforeUIStartup(manager, param) {
-      let value = param.toString();
+      if (param) {
         
         
         
-      runOncePerModification("displayMenuBar", value, () => {
-        gXulStore.setValue(BROWSER_DOCUMENT_URL, "toolbar-menubar", "autohide", value);
-      });
+        runOnce("displayMenuBar", () => {
+          gXulStore.setValue(BROWSER_DOCUMENT_URL, "toolbar-menubar", "autohide", "false");
+        });
+      }
     }
   },
 
@@ -512,7 +514,6 @@ function addAllowDenyPermissions(permissionName, allowList, blockList) {
 
 
 
- 
 function runOnce(actionName, callback) {
   let prefName = `browser.policies.runonce.${actionName}`;
   if (Services.prefs.getBoolPref(prefName, false)) {
