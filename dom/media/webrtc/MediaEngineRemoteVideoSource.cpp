@@ -374,21 +374,24 @@ MediaEngineRemoteVideoSource::Reconfigure(const RefPtr<AllocationHandle>& aHandl
     return NS_OK;
   }
 
-  {
-    MutexAutoLock lock(mMutex);
-    
-    mCapability = newCapability;
-  }
-
-  if (mState == kStarted) {
+  bool started = mState == kStarted;
+  if (started) {
     
     
     nsresult rv = Stop(nullptr);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
+  }
 
-    rv = Start(nullptr);
+  {
+    MutexAutoLock lock(mMutex);
+    
+    mCapability = newCapability;
+  }
+
+  if (started) {
+    nsresult rv = Start(nullptr);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
