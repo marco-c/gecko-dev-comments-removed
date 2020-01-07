@@ -1289,14 +1289,10 @@ pref("dom.min_timeout_value", 4);
 pref("dom.min_background_timeout_value", 1000);
 
 
-#ifdef NIGHTLY_BUILD
-pref("dom.min_tracking_timeout_value", 10000);
-#else
 pref("dom.min_tracking_timeout_value", 4);
-#endif
 
 
-pref("dom.min_tracking_background_timeout_value", 10000);
+pref("dom.min_tracking_background_timeout_value", 4);
 
 pref("dom.timeout.throttling_delay", 30000);
 
@@ -5025,9 +5021,6 @@ pref("extensions.webextensions.remote", false);
 
 
 pref("extensions.webextensions.protocol.remote", true);
-
-
-pref("extensions.webextensions.tabhide.enabled", false);
 
 
 pref("extensions.webcompat-reporter.newIssueEndpoint", "https://webcompat.com/issues/new");
