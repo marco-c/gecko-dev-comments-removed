@@ -26,6 +26,7 @@ Atomic<size_t, ReleaseAcquire> gPageSize;
 
 #if defined(ANDROID)
 #include <sys/syscall.h>
+#include <sys/system_properties.h>
 #include <math.h>
 
 #include <android/api-level.h>
@@ -311,6 +312,56 @@ LeafName(const char *path)
   return path;
 }
 
+#if defined(ANDROID)
+
+
+
+int
+GetAndroidSDKVersion() {
+  static int version = 0;
+  if (version) {
+    return version;
+  }
+
+  char version_string[PROP_VALUE_MAX] = {'\0'};
+  int len = __system_property_get("ro.build.version.sdk", version_string);
+  if (len) {
+    version = static_cast<int>(strtol(version_string, nullptr, 10));
+  }
+  return version;
+}
+#endif
+
+
+
+
+
+
+
+template<class Lambda>
+static bool
+RunWithSystemLinkerLock(Lambda&& aLambda) {
+  if (!dl_iterate_phdr) {
+    
+    return false;
+  }
+
+#if defined(ANDROID)
+  if (GetAndroidSDKVersion() < 23) {
+    
+    
+    return false;
+  }
+#endif
+
+  dl_iterate_phdr([] (dl_phdr_info*, size_t, void* lambda) -> int {
+    (*static_cast<Lambda*>(lambda))();
+    
+    return 1;
+  }, &aLambda);
+  return true;
+}
+
 } 
 
 
@@ -576,7 +627,9 @@ ElfLoader::Register(CustomElf *handle)
 {
   Register(static_cast<LibHandle *>(handle));
   if (dbg) {
-    dbg.Add(handle);
+    
+    
+    RunWithSystemLinkerLock([this, handle] { dbg.Add(handle); });
   }
 }
 
@@ -603,7 +656,9 @@ ElfLoader::Forget(CustomElf *handle)
 {
   Forget(static_cast<LibHandle *>(handle));
   if (dbg) {
-    dbg.Remove(handle);
+    
+    
+    RunWithSystemLinkerLock([this, handle] { dbg.Remove(handle); });
   }
 }
 
