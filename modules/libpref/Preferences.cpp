@@ -2829,7 +2829,6 @@ static nsresult
 pref_LoadPrefsInDirList(const char* aListId);
 
 static const char kTelemetryPref[] = "toolkit.telemetry.enabled";
-static const char kOldTelemetryPref[] = "toolkit.telemetry.enabledPreRelease";
 static const char kChannelPref[] = "app.update.channel";
 
 
@@ -3484,12 +3483,6 @@ Preferences::InitializeUserPrefs()
 
   
   sPreferences->mCurrentFile = prefsFile.forget();
-
-  
-  if (!Preferences::GetBool(kOldTelemetryPref, true)) {
-    Preferences::SetBoolInAnyProcess(kTelemetryPref, false);
-    Preferences::ClearUser(kOldTelemetryPref);
-  }
 
   sPreferences->NotifyServiceObservers(NS_PREFSERVICE_READ_TOPIC_ID);
 }
