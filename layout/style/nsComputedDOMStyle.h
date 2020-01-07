@@ -74,11 +74,6 @@ public:
                             const nsAString& aValue,
                             nsIPrincipal* aSubjectPrincipal) override;
 
-  
-  already_AddRefed<CSSValue>
-  GetPropertyCSSValue(const nsAString& aProp, mozilla::ErrorResult& aRv) final;
-  using nsICSSDeclaration::GetPropertyCSSValue;
-
   void IndexedGetter(uint32_t aIndex, bool& aFound, nsAString& aPropName) final;
 
   enum StyleType {

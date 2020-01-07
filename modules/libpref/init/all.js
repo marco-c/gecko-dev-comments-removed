@@ -2481,8 +2481,7 @@ pref("security.csp.experimentalEnabled", false);
 pref("security.csp.enableStrictDynamic", true);
 
 #if defined(DEBUG) && !defined(ANDROID)
-
-pref("csp.content_privileged_about_uris_without_csp", "blank,home,newtab,printpreview,srcdoc,studies,welcome");
+pref("csp.content_privileged_about_uris_without_csp", "blank,home,newtab,printpreview,srcdoc,studies");
 #endif
 
 #ifdef NIGHTLY_BUILD
@@ -2827,12 +2826,6 @@ pref("layout.selection.caret_style", 0);
 
 
 pref("layout.css.report_errors", true);
-
-#ifdef NIGHTLY_BUILD
-pref("layout.css.getPropertyCSSValue.enabled", false);
-#else
-pref("layout.css.getPropertyCSSValue.enabled", true);
-#endif
 
 
 

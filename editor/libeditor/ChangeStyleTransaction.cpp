@@ -183,10 +183,6 @@ ChangeStyleTransaction::DoTransaction()
     nsAutoString returnString;
     if (multiple) {
       
-
-      
-      
-      
       RemoveValueFromListOfValues(values, NS_LITERAL_STRING("none"));
       RemoveValueFromListOfValues(values, mValue);
       if (values.IsEmpty()) {
@@ -206,10 +202,6 @@ ChangeStyleTransaction::DoTransaction()
     nsAutoString priority;
     cssDecl->GetPropertyPriority(propertyNameString, priority);
     if (multiple) {
-      
-
-      
-      
       
       AddValueToMultivalueProperty(values, mValue);
     } else {

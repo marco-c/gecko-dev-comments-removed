@@ -279,8 +279,6 @@ public:
 
 
 
-
-
   static void ParseLength(const nsAString& aString, float* aValue,
                           nsAtom** aUnit);
 

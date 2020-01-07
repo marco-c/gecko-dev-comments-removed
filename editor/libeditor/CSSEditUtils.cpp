@@ -642,10 +642,6 @@ CSSEditUtils::GetDefaultLengthUnit(nsAString& aLengthUnit)
 }
 
 
-
-
-
-
 void
 CSSEditUtils::ParseLength(const nsAString& aString,
                           float* aValue,
