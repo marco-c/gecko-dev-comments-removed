@@ -3752,6 +3752,14 @@ nsRuleNode::SetFont(nsPresContext* aPresContext, GeckoStyleContext* aContext,
            Unused,  0, Unused, Unused);
 
   
+  SetValue(*aRuleData->ValueForFontOpticalSizing(),
+           aFont->mFont.opticalSizing, aConditions,
+           SETVAL_ENUMERATED | SETVAL_UNSET_INHERIT,
+           aParentFont->mFont.opticalSizing,
+           defaultVariableFont->opticalSizing,
+           Unused, Unused, Unused, systemFont.opticalSizing);
+
+  
   
   const nsCSSValue* variantAlternatesValue =
     aRuleData->ValueForFontVariantAlternates();
