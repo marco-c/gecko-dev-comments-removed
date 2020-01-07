@@ -100,7 +100,7 @@ public:
   BasicFunctionHook(const char* aModuleName,
                     const char* aFunctionName, FunctionType* aOldFunction,
                     FunctionType* aNewFunction) :
-    mOldFunction(aOldFunction), mIsHooked(false), mModuleName(aModuleName),
+    mOldFunction(aOldFunction), mRegistration(UNREGISTERED), mModuleName(aModuleName),
     mFunctionName(aFunctionName), mNewFunction(aNewFunction)
   {
     MOZ_ASSERT(mOldFunction);
@@ -129,8 +129,9 @@ protected:
   
   
   FunctionType* mOldFunction;
-  
-  bool mIsHooked;
+
+  enum RegistrationStatus { UNREGISTERED, FAILED, SUCCEEDED };
+  RegistrationStatus mRegistration;
 
   
   const nsCString mModuleName;
@@ -154,9 +155,13 @@ BasicFunctionHook<functionId, FunctionType>::Register(int aQuirks)
   MOZ_RELEASE_ASSERT(XRE_IsPluginProcess());
 
   
-  if (mIsHooked || !mShouldHook(aQuirks)) {
+  
+  if (mRegistration != UNREGISTERED || !mShouldHook(aQuirks)) {
     return true;
   }
+
+  bool isHooked = false;
+  mRegistration = FAILED;
 
 #if defined(XP_WIN)
   WindowsDllInterceptor* dllInterceptor =
@@ -165,16 +170,19 @@ BasicFunctionHook<functionId, FunctionType>::Register(int aQuirks)
     return false;
   }
 
-  mIsHooked =
+  isHooked =
     dllInterceptor->AddHook(mFunctionName.Data(), reinterpret_cast<intptr_t>(mNewFunction),
                             reinterpret_cast<void**>(&mOldFunction));
 #endif
 
+  if (isHooked) {
+    mRegistration = SUCCEEDED;
+  }
   HOOK_LOG(LogLevel::Debug,
            ("Registering to intercept function '%s' : '%s'", mFunctionName.Data(),
-            SuccessMsg(mIsHooked)));
+            SuccessMsg(isHooked)));
 
-  return mIsHooked;
+  return isHooked;
 }
 
 }
