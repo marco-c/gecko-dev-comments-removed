@@ -202,12 +202,6 @@ if opt is not None:
     CONFIGURE_ARGS += (" --enable-jemalloc" if opt else " --disable-jemalloc")
 
 
-
-env.setdefault('MOZ_UPLOAD_DIR', OBJDIR)
-ensure_dir_exists(env['MOZ_UPLOAD_DIR'], clobber=False, creation_marker_filename=None)
-info("MOZ_UPLOAD_DIR = {}".format(env['MOZ_UPLOAD_DIR']))
-
-
 word_bits = variant.get('bits')
 
 
@@ -313,6 +307,12 @@ timer.start()
 
 ensure_dir_exists(OBJDIR, clobber=not args.dep and not args.nobuild)
 ensure_dir_exists(OUTDIR, clobber=not args.keep)
+
+
+
+env.setdefault('MOZ_UPLOAD_DIR', OBJDIR)
+ensure_dir_exists(env['MOZ_UPLOAD_DIR'], clobber=False, creation_marker_filename=None)
+info("MOZ_UPLOAD_DIR = {}".format(env['MOZ_UPLOAD_DIR']))
 
 
 def run_command(command, check=False, **kwargs):
