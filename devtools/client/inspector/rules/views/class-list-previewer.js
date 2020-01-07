@@ -169,7 +169,7 @@ ClassListPreviewerModel.prototype = {
     return mod.apply();
   },
 
-  onMutations(e, mutations) {
+  onMutations(mutations) {
     for (let {type, target, attributeName} of mutations) {
       
       if (type !== "attributes" || attributeName !== "class") {
