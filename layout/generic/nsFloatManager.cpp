@@ -553,31 +553,24 @@ public:
 
   static UniquePtr<ShapeInfo> CreateShapeBox(
     nsIFrame* const aFrame,
-    nscoord aShapeMargin,
     const LogicalRect& aShapeBoxRect,
     WritingMode aWM,
     const nsSize& aContainerSize);
 
   static UniquePtr<ShapeInfo> CreateBasicShape(
     const UniquePtr<StyleBasicShape>& aBasicShape,
-    nscoord aShapeMargin,
-    nsIFrame* const aFrame,
     const LogicalRect& aShapeBoxRect,
     WritingMode aWM,
     const nsSize& aContainerSize);
 
   static UniquePtr<ShapeInfo> CreateInset(
     const UniquePtr<StyleBasicShape>& aBasicShape,
-    nscoord aShapeMargin,
-    nsIFrame* aFrame,
     const LogicalRect& aShapeBoxRect,
     WritingMode aWM,
     const nsSize& aContainerSize);
 
   static UniquePtr<ShapeInfo> CreateCircleOrEllipse(
     const UniquePtr<StyleBasicShape>& aBasicShape,
-    nscoord aShapeMargin,
-    nsIFrame* const aFrame,
     const LogicalRect& aShapeBoxRect,
     WritingMode aWM,
     const nsSize& aContainerSize);
@@ -591,9 +584,7 @@ public:
   static UniquePtr<ShapeInfo> CreateImageShape(
     const UniquePtr<nsStyleImage>& aShapeImage,
     float aShapeImageThreshold,
-    nscoord aShapeMargin,
     nsIFrame* const aFrame,
-    const LogicalRect& aMarginRect,
     WritingMode aWM,
     const nsSize& aContainerSize);
 
@@ -626,384 +617,7 @@ protected:
   static UniquePtr<nscoord[]> ConvertToFloatLogical(
     const nscoord aRadii[8],
     WritingMode aWM);
-
-  
-  
-  
-  
-  
-  
-  
-  static size_t MinIntervalIndexContainingY(const nsTArray<nsRect>& aIntervals,
-                                            const nscoord aTargetY);
 };
-
-
-
-
-
-
-class nsFloatManager::EllipseShapeInfo final : public nsFloatManager::ShapeInfo
-{
-public:
-  
-  
-  
-  
-  
-  
-  EllipseShapeInfo(const nsPoint& aCenter,
-                   const nsSize& aRadii,
-                   nscoord aShapeMargin);
-
-  
-  
-  
-  
-  EllipseShapeInfo(const nsPoint& aCenter,
-                   const nsSize& aRadii,
-                   nscoord aShapeMargin,
-                   int32_t aAppUnitsPerDevPixel);
-
-  static bool ShapeMarginIsNegligible(nscoord aShapeMargin) {
-    
-    
-    
-    static const nscoord SHAPE_MARGIN_NEGLIGIBLE_MAX(0);
-    return aShapeMargin <= SHAPE_MARGIN_NEGLIGIBLE_MAX;
-  }
-
-  static bool RadiiAreRoughlyEqual(const nsSize& aRadii) {
-    
-    
-    
-    
-    return aRadii.width == aRadii.height;
-  }
-  nscoord LineEdge(const nscoord aBStart,
-                   const nscoord aBEnd,
-                   bool aLeft) const;
-  nscoord LineLeft(const nscoord aBStart,
-                   const nscoord aBEnd) const override;
-  nscoord LineRight(const nscoord aBStart,
-                    const nscoord aBEnd) const override;
-  nscoord BStart() const override {
-    return mCenter.y - mRadii.height - mShapeMargin;
-  }
-  nscoord BEnd() const override {
-    return mCenter.y + mRadii.height + mShapeMargin;
-  }
-  bool IsEmpty() const override {
-    return mRadii.IsEmpty();
-  }
-
-  void Translate(nscoord aLineLeft, nscoord aBlockStart) override
-  {
-    mCenter.MoveBy(aLineLeft, aBlockStart);
-
-    for (nsRect& interval : mIntervals) {
-      interval.MoveBy(aLineLeft, aBlockStart);
-    }
-  }
-
-private:
-  
-  
-  nsPoint mCenter;
-  
-  
-  nsSize mRadii;
-  
-  
-  
-  nscoord mShapeMargin;
-
-  
-  
-  
-  
-
-  
-  nsTArray<nsRect> mIntervals;
-};
-
-nsFloatManager::EllipseShapeInfo::EllipseShapeInfo(const nsPoint& aCenter,
-                                                   const nsSize& aRadii,
-                                                   nscoord aShapeMargin)
-  : mCenter(aCenter)
-  , mRadii(aRadii)
-  , mShapeMargin(0) 
-{
-  MOZ_ASSERT(RadiiAreRoughlyEqual(aRadii) ||
-             ShapeMarginIsNegligible(aShapeMargin),
-             "This constructor should only be called when margin is "
-             "negligible or radii are roughly equal.");
-
-  
-  
-  mRadii.width += aShapeMargin;
-  mRadii.height += aShapeMargin;
-}
-
-nsFloatManager::EllipseShapeInfo::EllipseShapeInfo(const nsPoint& aCenter,
-                                                   const nsSize& aRadii,
-                                                   nscoord aShapeMargin,
-                                                   int32_t aAppUnitsPerDevPixel)
-  : mCenter(aCenter)
-  , mRadii(aRadii)
-  , mShapeMargin(aShapeMargin)
-{
-  if (RadiiAreRoughlyEqual(aRadii) || ShapeMarginIsNegligible(aShapeMargin)) {
-    
-    
-    mRadii.width += mShapeMargin;
-    mRadii.height += mShapeMargin;
-    mShapeMargin = 0;
-    return;
-  }
-
-  
-  
-  
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  
-  
-  
-  
-  
-  
-  
-
-  
-  
-  
-  
-  
-  
-  typedef uint16_t dfType;
-  const dfType MAX_CHAMFER_VALUE = 11;
-  const dfType MAX_MARGIN = (std::numeric_limits<dfType>::max() -
-                             MAX_CHAMFER_VALUE) / 5;
-  const dfType MAX_MARGIN_5X = MAX_MARGIN * 5;
-
-  
-  
-  float shapeMarginDevPixels =
-    NSAppUnitsToFloatPixels(aShapeMargin, aAppUnitsPerDevPixel);
-  int32_t shapeMarginDevPixelsInt5X =
-    NSToIntRound(5.0f * shapeMarginDevPixels);
-  NS_WARNING_ASSERTION(shapeMarginDevPixelsInt5X <= MAX_MARGIN_5X,
-                       "shape-margin is too large and is being clamped.");
-  dfType usedMargin5X = (dfType)std::min((int32_t)MAX_MARGIN_5X,
-                                         shapeMarginDevPixelsInt5X);
-
-  nsSize radiiPlusShapeMargin(mRadii.width + aShapeMargin,
-                              mRadii.height + aShapeMargin);
-  const LayoutDeviceIntSize bounds =
-    LayoutDevicePixel::FromAppUnitsRounded(radiiPlusShapeMargin,
-                                           aAppUnitsPerDevPixel);
-  
-  
-  
-  
-  
-
-  
-  
-  static const int32_t iExpand = 2;
-  static const int32_t bExpand = 2;
-  const int32_t iSize = bounds.width + iExpand;
-  const int32_t bSize = bounds.height + bExpand;
-  auto df = MakeUniqueFallible<dfType[]>(iSize * bSize);
-  if (!df) {
-    
-    return;
-  }
-
-  
-  
-  
-  
-  
-  
-
-  for (int32_t b = 0; b < bSize; ++b) {
-    bool bIsInExpandedRegion(b < bExpand);
-    nscoord bInAppUnits = (b - bExpand) * aAppUnitsPerDevPixel;
-    bool bIsMoreThanEllipseBEnd(bInAppUnits > mRadii.height);
-
-    
-    
-    
-    
-    const int32_t iIntercept = (bIsInExpandedRegion ||
-                                bIsMoreThanEllipseBEnd) ? nscoord_MIN :
-      iExpand + NSAppUnitsToIntPixels(
-        XInterceptAtY(bInAppUnits, mRadii.width, mRadii.height),
-        aAppUnitsPerDevPixel);
-
-    
-    int32_t iMax = iIntercept;
-
-    for (int32_t i = 0; i < iSize; ++i) {
-      const int32_t index = i + b * iSize;
-      MOZ_ASSERT(index >= 0 && index < (iSize * bSize),
-                 "Our distance field index should be in-bounds.");
-
-      
-      if (i < iExpand ||
-          bIsInExpandedRegion) {
-        
-        df[index] = MAX_MARGIN_5X;
-      } else if (i <= iIntercept) {
-        
-        df[index] = 0;
-      } else {
-        
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        MOZ_ASSERT(index - iSize - 2 >= 0 &&
-                   index - (iSize * 2) - 1 >= 0,
-                   "Our distance field most extreme indices should be "
-                   "in-bounds.");
-
-        df[index] = std::min<dfType>(df[index - 1] + 5,
-                    std::min<dfType>(df[index - iSize] + 5,
-                    std::min<dfType>(df[index - iSize - 1] + 7,
-                    std::min<dfType>(df[index - iSize - 2] + 11,
-                                     df[index - (iSize * 2) - 1] + 11))));
-
-        
-        
-        if (df[index] <= usedMargin5X) {
-          MOZ_ASSERT(iMax < i);
-          iMax = i;
-        }
-      }
-    }
-
-    NS_WARNING_ASSERTION(bIsInExpandedRegion || iMax > nscoord_MIN,
-                         "Once past the expanded region, we should always "
-                         "find a pixel within the shape-margin distance for "
-                         "each block row.");
-
-    if (iMax > nscoord_MIN) {
-      
-      
-      nsPoint origin(aCenter.x, aCenter.y + bInAppUnits);
-      
-      
-      nsSize size((iMax - iExpand + 1) * aAppUnitsPerDevPixel,
-                  aAppUnitsPerDevPixel);
-      mIntervals.AppendElement(nsRect(origin, size));
-    }
-  }
-}
-
-nscoord
-nsFloatManager::EllipseShapeInfo::LineEdge(const nscoord aBStart,
-                                           const nscoord aBEnd,
-                                           bool aIsLineLeft) const
-{
-  
-  if (mShapeMargin == 0) {
-    nscoord lineDiff =
-      ComputeEllipseLineInterceptDiff(BStart(), BEnd(),
-                                      mRadii.width, mRadii.height,
-                                      mRadii.width, mRadii.height,
-                                      aBStart, aBEnd);
-    return mCenter.x + (aIsLineLeft ? (-mRadii.width + lineDiff) :
-                                      (mRadii.width - lineDiff));
-  }
-
-  
-  if (mIntervals.IsEmpty()) {
-    NS_WARNING("With mShapeMargin > 0, we can't proceed without intervals.");
-    return 0;
-  }
-
-  
-  
-  
-  
-  bool bStartIsAboveCenter = (aBStart < mCenter.y);
-  bool bEndIsBelowOrAtCenter = (aBEnd >= mCenter.y);
-  if (bStartIsAboveCenter && bEndIsBelowOrAtCenter) {
-    return mCenter.x + (aIsLineLeft ? (-mRadii.width - mShapeMargin) :
-                                      (mRadii.width + mShapeMargin));
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-
-  
-  
-  
-  
-  nscoord bSmallestWithinIntervals = std::min(
-    bStartIsAboveCenter ? aBStart + (mCenter.y - aBStart) * 2 - 1 : aBStart,
-    bEndIsBelowOrAtCenter ? aBEnd : aBEnd + (mCenter.y - aBEnd) * 2 - 1);
-
-  MOZ_ASSERT(bSmallestWithinIntervals >= mCenter.y &&
-             bSmallestWithinIntervals < BEnd(),
-             "We should have a block value within the intervals.");
-
-  size_t index = MinIntervalIndexContainingY(mIntervals,
-                                             bSmallestWithinIntervals);
-  MOZ_ASSERT(index < mIntervals.Length(),
-             "We should have found a matching interval for this block value.");
-
-  
-  
-  
-  
-  
-  nscoord iLineRight = mIntervals[index].XMost();
-  return aIsLineLeft ? iLineRight - (iLineRight - mCenter.x) * 2
-                     : iLineRight;
-}
-
-nscoord
-nsFloatManager::EllipseShapeInfo::LineLeft(const nscoord aBStart,
-                                           const nscoord aBEnd) const
-{
-  return LineEdge(aBStart, aBEnd, true);
-}
-
-nscoord
-nsFloatManager::EllipseShapeInfo::LineRight(const nscoord aBStart,
-                                            const nscoord aBEnd) const
-{
-  return LineEdge(aBStart, aBEnd, false);
-}
 
 
 
@@ -1017,13 +631,7 @@ public:
                       UniquePtr<nscoord[]> aRadii)
     : mRect(aRect)
     , mRadii(Move(aRadii))
-    , mShapeMargin(0)
   {}
-
-  RoundedBoxShapeInfo(const nsRect& aRect,
-                      UniquePtr<nscoord[]> aRadii,
-                      nscoord aShapeMargin,
-                      int32_t aAppUnitsPerDevPixel);
 
   nscoord LineLeft(const nscoord aBStart,
                    const nscoord aBEnd) const override;
@@ -1031,28 +639,11 @@ public:
                     const nscoord aBEnd) const override;
   nscoord BStart() const override { return mRect.y; }
   nscoord BEnd() const override { return mRect.YMost(); }
-  bool IsEmpty() const override { return mRect.IsEmpty(); }
+  bool IsEmpty() const override { return mRect.IsEmpty(); };
 
   void Translate(nscoord aLineLeft, nscoord aBlockStart) override
   {
     mRect.MoveBy(aLineLeft, aBlockStart);
-
-    if (mShapeMargin > 0) {
-      MOZ_ASSERT(mLogicalTopLeftCorner && mLogicalTopRightCorner &&
-                 mLogicalBottomLeftCorner && mLogicalBottomRightCorner,
-                 "If we have positive shape-margin, we should have corners.");
-      mLogicalTopLeftCorner->Translate(aLineLeft, aBlockStart);
-      mLogicalTopRightCorner->Translate(aLineLeft, aBlockStart);
-      mLogicalBottomLeftCorner->Translate(aLineLeft, aBlockStart);
-      mLogicalBottomRightCorner->Translate(aLineLeft, aBlockStart);
-    }
-  }
-
-  static bool EachCornerHasBalancedRadii(const nscoord* aRadii) {
-    return (aRadii[eCornerTopLeftX] == aRadii[eCornerTopLeftY] &&
-            aRadii[eCornerTopRightX] == aRadii[eCornerTopRightY] &&
-            aRadii[eCornerBottomLeftX] == aRadii[eCornerBottomLeftY] &&
-            aRadii[eCornerBottomRightX] == aRadii[eCornerBottomRightY]);
   }
 
 private:
@@ -1062,140 +653,101 @@ private:
   
   
   
-  const UniquePtr<nscoord[]> mRadii;
-
-  
-  
-  
-  
-  
-  const nscoord mShapeMargin;
-
-  
-  
-  
-  
-  UniquePtr<EllipseShapeInfo> mLogicalTopLeftCorner;
-  UniquePtr<EllipseShapeInfo> mLogicalTopRightCorner;
-  UniquePtr<EllipseShapeInfo> mLogicalBottomLeftCorner;
-  UniquePtr<EllipseShapeInfo> mLogicalBottomRightCorner;
+  UniquePtr<nscoord[]> mRadii;
 };
-
-nsFloatManager::RoundedBoxShapeInfo::RoundedBoxShapeInfo(const nsRect& aRect,
-  UniquePtr<nscoord[]> aRadii,
-  nscoord aShapeMargin,
-  int32_t aAppUnitsPerDevPixel)
-  : mRect(aRect)
-  , mRadii(Move(aRadii))
-  , mShapeMargin(aShapeMargin)
-{
-  MOZ_ASSERT(mShapeMargin > 0 && !EachCornerHasBalancedRadii(mRadii.get()),
-             "Slow constructor should only be used for for shape-margin > 0 "
-             "and radii with elliptical corners.");
-
-  
-  
-  
-  mLogicalTopLeftCorner = MakeUnique<EllipseShapeInfo>(
-    nsPoint(mRect.X() + mRadii[eCornerTopLeftX],
-            mRect.Y() + mRadii[eCornerTopLeftY]),
-    nsSize(mRadii[eCornerTopLeftX], mRadii[eCornerTopLeftY]),
-    mShapeMargin, aAppUnitsPerDevPixel);
-
-  mLogicalTopRightCorner = MakeUnique<EllipseShapeInfo>(
-    nsPoint(mRect.XMost() - mRadii[eCornerTopRightX],
-            mRect.Y() + mRadii[eCornerTopRightY]),
-    nsSize(mRadii[eCornerTopRightX], mRadii[eCornerTopRightY]),
-    mShapeMargin, aAppUnitsPerDevPixel);
-
-  mLogicalBottomLeftCorner = MakeUnique<EllipseShapeInfo>(
-    nsPoint(mRect.X() + mRadii[eCornerBottomLeftX],
-            mRect.YMost() - mRadii[eCornerBottomLeftY]),
-    nsSize(mRadii[eCornerBottomLeftX], mRadii[eCornerBottomLeftY]),
-    mShapeMargin, aAppUnitsPerDevPixel);
-
-  mLogicalBottomRightCorner = MakeUnique<EllipseShapeInfo>(
-    nsPoint(mRect.XMost() - mRadii[eCornerBottomRightX],
-            mRect.YMost() - mRadii[eCornerBottomRightY]),
-    nsSize(mRadii[eCornerBottomRightX], mRadii[eCornerBottomRightY]),
-    mShapeMargin, aAppUnitsPerDevPixel);
-
-  
-  mRect.Inflate(mShapeMargin);
-}
 
 nscoord
 nsFloatManager::RoundedBoxShapeInfo::LineLeft(const nscoord aBStart,
                                               const nscoord aBEnd) const
 {
-  if (mShapeMargin == 0) {
-    if (!mRadii) {
-      return mRect.x;
-    }
-
-    nscoord lineLeftDiff =
-      ComputeEllipseLineInterceptDiff(
-        mRect.y, mRect.YMost(),
-        mRadii[eCornerTopLeftX], mRadii[eCornerTopLeftY],
-        mRadii[eCornerBottomLeftX], mRadii[eCornerBottomLeftY],
-        aBStart, aBEnd);
-    return mRect.x + lineLeftDiff;
+  if (!mRadii) {
+    return mRect.x;
   }
 
-  MOZ_ASSERT(mLogicalTopLeftCorner && mLogicalBottomLeftCorner,
-             "If we have positive shape-margin, we should have corners.");
-
-  
-  if (aBEnd < mLogicalTopLeftCorner->BEnd()) {
-    return mLogicalTopLeftCorner->LineLeft(aBStart, aBEnd);
-  }
-
-  
-  if (aBStart >= mLogicalBottomLeftCorner->BStart()) {
-    return mLogicalBottomLeftCorner->LineLeft(aBStart, aBEnd);
-  }
-
-  
-  
-  
-  return mRect.X();
+  nscoord lineLeftDiff =
+    ComputeEllipseLineInterceptDiff(
+      mRect.y, mRect.YMost(),
+      mRadii[eCornerTopLeftX], mRadii[eCornerTopLeftY],
+      mRadii[eCornerBottomLeftX], mRadii[eCornerBottomLeftY],
+      aBStart, aBEnd);
+  return mRect.x + lineLeftDiff;
 }
 
 nscoord
 nsFloatManager::RoundedBoxShapeInfo::LineRight(const nscoord aBStart,
                                                const nscoord aBEnd) const
 {
-  if (mShapeMargin == 0) {
-    if (!mRadii) {
-      return mRect.XMost();
-    }
-
-    nscoord lineRightDiff =
-      ComputeEllipseLineInterceptDiff(
-        mRect.y, mRect.YMost(),
-        mRadii[eCornerTopRightX], mRadii[eCornerTopRightY],
-        mRadii[eCornerBottomRightX], mRadii[eCornerBottomRightY],
-        aBStart, aBEnd);
-    return mRect.XMost() - lineRightDiff;
+  if (!mRadii) {
+    return mRect.XMost();
   }
 
-  MOZ_ASSERT(mLogicalTopRightCorner && mLogicalBottomRightCorner,
-             "If we have positive shape-margin, we should have corners.");
+  nscoord lineRightDiff =
+    ComputeEllipseLineInterceptDiff(
+      mRect.y, mRect.YMost(),
+      mRadii[eCornerTopRightX], mRadii[eCornerTopRightY],
+      mRadii[eCornerBottomRightX], mRadii[eCornerBottomRightY],
+      aBStart, aBEnd);
+  return mRect.XMost() - lineRightDiff;
+}
 
-  
-  if (aBEnd < mLogicalTopRightCorner->BEnd()) {
-    return mLogicalTopRightCorner->LineRight(aBStart, aBEnd);
+
+
+
+
+
+class nsFloatManager::EllipseShapeInfo final : public nsFloatManager::ShapeInfo
+{
+public:
+  EllipseShapeInfo(const nsPoint& aCenter,
+                   const nsSize& aRadii)
+    : mCenter(aCenter)
+    , mRadii(aRadii)
+  {}
+
+  nscoord LineLeft(const nscoord aBStart,
+                   const nscoord aBEnd) const override;
+  nscoord LineRight(const nscoord aBStart,
+                    const nscoord aBEnd) const override;
+  nscoord BStart() const override { return mCenter.y - mRadii.height; }
+  nscoord BEnd() const override { return mCenter.y + mRadii.height; }
+  bool IsEmpty() const override { return mRadii.IsEmpty(); };
+
+  void Translate(nscoord aLineLeft, nscoord aBlockStart) override
+  {
+    mCenter.MoveBy(aLineLeft, aBlockStart);
   }
 
+private:
   
-  if (aBStart >= mLogicalBottomRightCorner->BStart()) {
-    return mLogicalBottomRightCorner->LineRight(aBStart, aBEnd);
-  }
+  
+  nsPoint mCenter;
+  
+  
+  nsSize mRadii;
+};
 
-  
-  
-  
-  return mRect.XMost();
+nscoord
+nsFloatManager::EllipseShapeInfo::LineLeft(const nscoord aBStart,
+                                           const nscoord aBEnd) const
+{
+  nscoord lineLeftDiff =
+    ComputeEllipseLineInterceptDiff(BStart(), BEnd(),
+                                    mRadii.width, mRadii.height,
+                                    mRadii.width, mRadii.height,
+                                    aBStart, aBEnd);
+  return mCenter.x - mRadii.width + lineLeftDiff;
+}
+
+nscoord
+nsFloatManager::EllipseShapeInfo::LineRight(const nscoord aBStart,
+                                            const nscoord aBEnd) const
+{
+  nscoord lineRightDiff =
+    ComputeEllipseLineInterceptDiff(BStart(), BEnd(),
+                                    mRadii.width, mRadii.height,
+                                    mRadii.width, mRadii.height,
+                                    aBStart, aBEnd);
+  return mCenter.x + mRadii.width - lineRightDiff;
 }
 
 
@@ -1422,9 +974,7 @@ public:
                  const LayoutDeviceIntSize& aImageSize,
                  int32_t aAppUnitsPerDevPixel,
                  float aShapeImageThreshold,
-                 nscoord aShapeMargin,
                  const nsRect& aContentRect,
-                 const nsRect& aMarginRect,
                  WritingMode aWM,
                  const nsSize& aContainerSize);
 
@@ -1439,6 +989,7 @@ public:
   void Translate(nscoord aLineLeft, nscoord aBlockStart) override;
 
 private:
+  size_t MinIntervalIndexContainingY(const nscoord aTargetY) const;
   nscoord LineEdge(const nscoord aBStart,
                    const nscoord aBEnd,
                    bool aLeft) const;
@@ -1453,19 +1004,6 @@ private:
 
   nscoord mBStart = nscoord_MAX;
   nscoord mBEnd = nscoord_MIN;
-
-  
-  
-  
-  
-  
-  void CreateInterval(int32_t aIMin,
-                      int32_t aIMax,
-                      int32_t aB,
-                      int32_t aAppUnitsPerDevPixel,
-                      const nsPoint& aOffsetFromContainer,
-                      WritingMode aWM,
-                      const nsSize& aContainerSize);
 };
 
 nsFloatManager::ImageShapeInfo::ImageShapeInfo(
@@ -1474,9 +1012,7 @@ nsFloatManager::ImageShapeInfo::ImageShapeInfo(
   const LayoutDeviceIntSize& aImageSize,
   int32_t aAppUnitsPerDevPixel,
   float aShapeImageThreshold,
-  nscoord aShapeMargin,
   const nsRect& aContentRect,
-  const nsRect& aMarginRect,
   WritingMode aWM,
   const nsSize& aContainerSize)
 {
@@ -1487,324 +1023,85 @@ nsFloatManager::ImageShapeInfo::ImageShapeInfo(
   const int32_t w = aImageSize.width;
   const int32_t h = aImageSize.height;
 
-  if (aShapeMargin <= 0) {
+  
+  
+  
+  
+  const int32_t bSize = aWM.IsVertical() ? w : h;
+  const int32_t iSize = aWM.IsVertical() ? h : w;
+  for (int32_t b = 0; b < bSize; ++b) {
     
     
-    
+    int32_t iMin = -1;
+    int32_t iMax = -1;
 
-    
-    
-    
-    
-    const int32_t bSize = aWM.IsVertical() ? w : h;
-    const int32_t iSize = aWM.IsVertical() ? h : w;
-    for (int32_t b = 0; b < bSize; ++b) {
-      
-      
-      int32_t iMin = -1;
-      int32_t iMax = -1;
+    for (int32_t i = 0; i < iSize; ++i) {
+      const int32_t col = aWM.IsVertical() ? b : i;
+      const int32_t row = aWM.IsVertical() ? i : b;
 
-      for (int32_t i = 0; i < iSize; ++i) {
-        const int32_t col = aWM.IsVertical() ? b : i;
-        const int32_t row = aWM.IsVertical() ? i : b;
-        const int32_t index = col + row * aStride;
-
-        
-        
-        
-        
-        const uint8_t alpha = aAlphaPixels[index];
-        if (alpha > threshold) {
-          if (iMin == -1) {
-            iMin = i;
-          }
-          MOZ_ASSERT(iMax < i);
-          iMax = i;
-        }
-      }
-
-      
-      if (iMin != -1) {
-        
-        
-        
-        CreateInterval(iMin, iMax, b, aAppUnitsPerDevPixel,
-                       aContentRect.TopLeft(), aWM, aContainerSize);
-      }
-    }
-
-    if (aWM.IsVerticalRL()) {
       
       
       
       
-      mIntervals.Reverse();
-    }
-  } else {
-    
-    
-    
-
-    
-    
-    
-    
-
-    
-    
-    
-    
-    
-    
-    
-
-    
-    
-    
-    
-    
-    
-    typedef uint16_t dfType;
-    const dfType MAX_CHAMFER_VALUE = 11;
-    const dfType MAX_MARGIN = (std::numeric_limits<dfType>::max() -
-                               MAX_CHAMFER_VALUE) / 5;
-    const dfType MAX_MARGIN_5X = MAX_MARGIN * 5;
-
-    
-    
-    float shapeMarginDevPixels =
-      NSAppUnitsToFloatPixels(aShapeMargin, aAppUnitsPerDevPixel);
-    int32_t shapeMarginDevPixelsInt5X =
-      NSToIntRound(5.0f * shapeMarginDevPixels);
-    NS_WARNING_ASSERTION(shapeMarginDevPixelsInt5X <= MAX_MARGIN_5X,
-                         "shape-margin is too large and is being clamped.");
-    dfType usedMargin5X = (dfType)std::min((int32_t)MAX_MARGIN_5X,
-                                           shapeMarginDevPixelsInt5X);
-
-    
-    
-    
-    
-    
-    nsPoint offsetPoint = aContentRect.TopLeft() - aMarginRect.TopLeft();
-    LayoutDeviceIntPoint dfOffset =
-      LayoutDevicePixel::FromAppUnitsRounded(offsetPoint,
-                                             aAppUnitsPerDevPixel);
-
-    
-    
-    
-    
-
-    
-    
-    
-    static int32_t kExpansionPerSide = 2;
-
-    
-    
-    
-    dfOffset.x += kExpansionPerSide;
-    dfOffset.y += kExpansionPerSide;
-
-    
-    
-    
-    
-    const LayoutDeviceIntSize marginRectDevPixels =
-      LayoutDevicePixel::FromAppUnitsRounded(aMarginRect.Size(),
-                                             aAppUnitsPerDevPixel);
-    const int32_t wEx = marginRectDevPixels.width + (kExpansionPerSide * 2);
-    const int32_t hEx = marginRectDevPixels.height + (kExpansionPerSide * 2);
-
-    
-    
-    
-    
-    auto df = MakeUniqueFallible<dfType[]>(wEx * hEx);
-    if (!df) {
-      
-      return;
-    }
-
-    const int32_t bSize = aWM.IsVertical() ? wEx : hEx;
-    const int32_t iSize = aWM.IsVertical() ? hEx : wEx;
-
-    
-    
-    
-    
-    
-
-    
-    
-    
-    
-    for (int32_t b = 0; b < bSize; ++b) {
-      for (int32_t i = 0; i < iSize; ++i) {
-        const int32_t col = aWM.IsVertical() ? b : i;
-        const int32_t row = aWM.IsVertical() ? i : b;
-        const int32_t index = col + row * wEx;
-        MOZ_ASSERT(index >= 0 && index < (wEx * hEx),
-                   "Our distance field index should be in-bounds.");
-
-        
-        if (col < kExpansionPerSide ||
-            col >= wEx - kExpansionPerSide ||
-            row < kExpansionPerSide ||
-            row >= hEx - kExpansionPerSide) {
-          
-          df[index] = MAX_MARGIN_5X;
-        } else if (col >= dfOffset.x &&
-                   col < (dfOffset.x + w) &&
-                   row >= dfOffset.y &&
-                   row < (dfOffset.y + h) &&
-                   aAlphaPixels[col - dfOffset.x +
-                                (row - dfOffset.y) * aStride] > threshold) {
-          
-          DebugOnly<int32_t> alphaIndex = col - dfOffset.x +
-                                          (row - dfOffset.y) * aStride;
-          MOZ_ASSERT(alphaIndex >= 0 && alphaIndex < (aStride * h),
-            "Our aAlphaPixels index should be in-bounds.");
-
-          df[index] = 0;
-        } else {
-          
-
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          MOZ_ASSERT(index - (wEx * 2) - 1 >= 0 &&
-                     index - wEx - 2 >= 0,
-                     "Our distance field most extreme indices should be "
-                     "in-bounds.");
-
-          df[index] = std::min<dfType>(MAX_MARGIN_5X,
-                      std::min<dfType>(df[index - (wEx * 2) - 1] + 11,
-                      std::min<dfType>(df[index - (wEx * 2) + 1] + 11,
-                      std::min<dfType>(df[index - wEx - 2] + 11,
-                      std::min<dfType>(df[index - wEx - 1] + 7,
-                      std::min<dfType>(df[index - wEx] + 5,
-                      std::min<dfType>(df[index - wEx + 1] + 7,
-                      std::min<dfType>(df[index - wEx + 2] + 11,
-                                       df[index - 1] + 5))))))));
-        }
-      }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-
-    
-    
-    
-    
-    
-    
-
-    
-    
-    
-    
-    for (int32_t b = bSize - kExpansionPerSide - 1;
-         b >= kExpansionPerSide; --b) {
-      
-      
-      
-      int32_t iMin = iSize;
-      int32_t iMax = -1;
-
-      
-      
-      for (int32_t i = iSize - kExpansionPerSide - 1;
-           i >= kExpansionPerSide; --i) {
-        const int32_t col = aWM.IsVertical() ? b : i;
-        const int32_t row = aWM.IsVertical() ? i : b;
-        const int32_t index = col + row * wEx;
-        MOZ_ASSERT(index >= 0 && index < (wEx * hEx),
-                   "Our distance field index should be in-bounds.");
-
-        
-        
-        if (df[index]) {
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          MOZ_ASSERT(index + (wEx * 2) + 1 < (wEx * hEx) &&
-                     index + wEx + 2 < (wEx * hEx),
-                     "Our distance field most extreme indices should be "
-                     "in-bounds.");
-
-          df[index] = std::min<dfType>(df[index],
-                      std::min<dfType>(df[index + (wEx * 2) + 1] + 11,
-                      std::min<dfType>(df[index + (wEx * 2) - 1] + 11,
-                      std::min<dfType>(df[index + wEx + 2] + 11,
-                      std::min<dfType>(df[index + wEx + 1] + 7,
-                      std::min<dfType>(df[index + wEx] + 5,
-                      std::min<dfType>(df[index + wEx - 1] + 7,
-                      std::min<dfType>(df[index + wEx - 2] + 11,
-                                       df[index + 1] + 5))))))));
-        }
-
-        
-        
-        if (df[index] <= usedMargin5X) {
-          if (iMax == -1) {
-            iMax = i;
-          }
-          MOZ_ASSERT(iMin > i);
+      const uint8_t alpha = aAlphaPixels[col + row * aStride];
+      if (alpha > threshold) {
+        if (iMin == -1) {
           iMin = i;
         }
-      }
-
-      if (iMax != -1) {
-        
-        
-        
-        
-        
-        
-        
-        CreateInterval(iMin - kExpansionPerSide, iMax - kExpansionPerSide,
-                       b - kExpansionPerSide, aAppUnitsPerDevPixel,
-                       aMarginRect.TopLeft(), aWM, aContainerSize);
+        MOZ_ASSERT(iMax < i);
+        iMax = i;
       }
     }
 
-    if (!aWM.IsVerticalRL()) {
+    
+    if (iMin != -1) {
       
       
       
+
       
-      mIntervals.Reverse();
+      
+      
+      nsSize size(((iMax + 1) - iMin) * aAppUnitsPerDevPixel,
+                  aAppUnitsPerDevPixel);
+
+      
+      
+      
+      nsPoint origin = ConvertToFloatLogical(aContentRect.TopLeft(), aWM,
+                                             aContainerSize);
+
+      
+      if (aWM.IsVerticalRL()) {
+        
+        
+        
+        
+        
+        origin.MoveBy(iMin * aAppUnitsPerDevPixel, (b + 1) * -aAppUnitsPerDevPixel);
+      } else if (aWM.IsVerticalLR() && aWM.IsSideways()) {
+        
+        
+        
+        
+        origin.MoveBy((iMax + 1) * -aAppUnitsPerDevPixel, b * aAppUnitsPerDevPixel);
+      } else {
+        
+        
+        
+        origin.MoveBy(iMin * aAppUnitsPerDevPixel, b * aAppUnitsPerDevPixel);
+      }
+
+      mIntervals.AppendElement(nsRect(origin, size));
     }
+  }
+
+  if (aWM.IsVerticalRL()) {
+    
+    
+    
+    
+    mIntervals.Reverse();
   }
 
   if (!mIntervals.IsEmpty()) {
@@ -1813,54 +1110,29 @@ nsFloatManager::ImageShapeInfo::ImageShapeInfo(
   }
 }
 
-void
-nsFloatManager::ImageShapeInfo::CreateInterval(
-  int32_t aIMin,
-  int32_t aIMax,
-  int32_t aB,
-  int32_t aAppUnitsPerDevPixel,
-  const nsPoint& aOffsetFromContainer,
-  WritingMode aWM,
-  const nsSize& aContainerSize)
+size_t
+nsFloatManager::ImageShapeInfo::MinIntervalIndexContainingY(
+  const nscoord aTargetY) const
 {
   
   
   
-
-  
-  
-  
-  nsSize size(((aIMax + 1) - aIMin) * aAppUnitsPerDevPixel,
-  aAppUnitsPerDevPixel);
-
-  
-  
-  
-  nsPoint origin = ConvertToFloatLogical(aOffsetFromContainer, aWM,
-                                         aContainerSize);
-
-  
-  if (aWM.IsVerticalRL()) {
-    
-    
-    
-    
-    
-    origin.MoveBy(aIMin * aAppUnitsPerDevPixel, (aB + 1) * -aAppUnitsPerDevPixel);
-  } else if (aWM.IsVerticalLR() && aWM.IsSideways()) {
-    
-    
-    
-    
-    origin.MoveBy((aIMax + 1) * -aAppUnitsPerDevPixel, aB * aAppUnitsPerDevPixel);
-  } else {
-    
-    
-    
-    origin.MoveBy(aIMin * aAppUnitsPerDevPixel, aB * aAppUnitsPerDevPixel);
+  size_t startIdx = 0;
+  size_t endIdx = mIntervals.Length();
+  while (startIdx < endIdx) {
+    size_t midIdx = startIdx + (endIdx - startIdx) / 2;
+    if (mIntervals[midIdx].ContainsY(aTargetY)) {
+      return midIdx;
+    }
+    nscoord midY = mIntervals[midIdx].Y();
+    if (midY < aTargetY) {
+      startIdx = midIdx + 1;
+    } else {
+      endIdx = midIdx;
+    }
   }
 
-  mIntervals.AppendElement(nsRect(origin, size));
+  return endIdx;
 }
 
 nscoord
@@ -1882,7 +1154,7 @@ nsFloatManager::ImageShapeInfo::LineEdge(const nscoord aBStart,
   nscoord lineEdge = aLeft ? nscoord_MAX : nscoord_MIN;
 
   size_t intervalCount = mIntervals.Length();
-  for (size_t i = MinIntervalIndexContainingY(mIntervals, aBStart);
+  for (size_t i = MinIntervalIndexContainingY(aBStart);
 	   i < intervalCount; ++i) {
     
     
@@ -1955,12 +1227,6 @@ nsFloatManager::FloatInfo::FloatInfo(nsIFrame* aFrame,
 
   const StyleShapeSource& shapeOutside = mFrame->StyleDisplay()->mShapeOutside;
 
-  nscoord shapeMargin = (shapeOutside.GetType() == StyleShapeSourceType::None)
-   ? 0
-   : nsLayoutUtils::ResolveToLength<true>(
-       mFrame->StyleDisplay()->mShapeMargin,
-       LogicalSize(aWM, aContainerSize).ISize(aWM));
-
   switch (shapeOutside.GetType()) {
     case StyleShapeSourceType::None:
       
@@ -1974,9 +1240,7 @@ nsFloatManager::FloatInfo::FloatInfo(nsIFrame* aFrame,
       float shapeImageThreshold = mFrame->StyleDisplay()->mShapeImageThreshold;
       mShapeInfo = ShapeInfo::CreateImageShape(shapeOutside.GetShapeImage(),
                                                shapeImageThreshold,
-                                               shapeMargin,
                                                mFrame,
-                                               aMarginRect,
                                                aWM,
                                                aContainerSize);
       if (!mShapeInfo) {
@@ -1991,8 +1255,7 @@ nsFloatManager::FloatInfo::FloatInfo(nsIFrame* aFrame,
       
       LogicalRect shapeBoxRect =
         ShapeInfo::ComputeShapeBoxRect(shapeOutside, mFrame, aMarginRect, aWM);
-      mShapeInfo = ShapeInfo::CreateShapeBox(mFrame, shapeMargin,
-                                             shapeBoxRect, aWM,
+      mShapeInfo = ShapeInfo::CreateShapeBox(mFrame, shapeBoxRect, aWM,
                                              aContainerSize);
       break;
     }
@@ -2002,8 +1265,7 @@ nsFloatManager::FloatInfo::FloatInfo(nsIFrame* aFrame,
       
       LogicalRect shapeBoxRect =
         ShapeInfo::ComputeShapeBoxRect(shapeOutside, mFrame, aMarginRect, aWM);
-      mShapeInfo = ShapeInfo::CreateBasicShape(basicShape, shapeMargin, mFrame,
-                                               shapeBoxRect, aWM,
+      mShapeInfo = ShapeInfo::CreateBasicShape(basicShape, shapeBoxRect, aWM,
                                                aContainerSize);
       break;
     }
@@ -2152,7 +1414,6 @@ nsFloatManager::ShapeInfo::ComputeShapeBoxRect(
  UniquePtr<nsFloatManager::ShapeInfo>
 nsFloatManager::ShapeInfo::CreateShapeBox(
   nsIFrame* const aFrame,
-  nscoord aShapeMargin,
   const LogicalRect& aShapeBoxRect,
   WritingMode aWM,
   const nsSize& aContainerSize)
@@ -2160,19 +1421,11 @@ nsFloatManager::ShapeInfo::CreateShapeBox(
   nsRect logicalShapeBoxRect
     = ConvertToFloatLogical(aShapeBoxRect, aWM, aContainerSize);
 
-  
-  logicalShapeBoxRect.Inflate(aShapeMargin);
-
   nscoord physicalRadii[8];
   bool hasRadii = aFrame->GetShapeBoxBorderRadii(physicalRadii);
   if (!hasRadii) {
     return MakeUnique<RoundedBoxShapeInfo>(logicalShapeBoxRect,
                                            UniquePtr<nscoord[]>());
-  }
-
-  
-  for (nscoord& r : physicalRadii) {
-    r += aShapeMargin;
   }
 
   return MakeUnique<RoundedBoxShapeInfo>(logicalShapeBoxRect,
@@ -2183,8 +1436,6 @@ nsFloatManager::ShapeInfo::CreateShapeBox(
  UniquePtr<nsFloatManager::ShapeInfo>
 nsFloatManager::ShapeInfo::CreateBasicShape(
   const UniquePtr<StyleBasicShape>& aBasicShape,
-  nscoord aShapeMargin,
-  nsIFrame* const aFrame,
   const LogicalRect& aShapeBoxRect,
   WritingMode aWM,
   const nsSize& aContainerSize)
@@ -2194,12 +1445,10 @@ nsFloatManager::ShapeInfo::CreateBasicShape(
       return CreatePolygon(aBasicShape, aShapeBoxRect, aWM, aContainerSize);
     case StyleBasicShapeType::Circle:
     case StyleBasicShapeType::Ellipse:
-      return CreateCircleOrEllipse(aBasicShape, aShapeMargin, aFrame,
-                                   aShapeBoxRect, aWM,
+      return CreateCircleOrEllipse(aBasicShape, aShapeBoxRect, aWM,
                                    aContainerSize);
     case StyleBasicShapeType::Inset:
-      return CreateInset(aBasicShape, aShapeMargin, aFrame, aShapeBoxRect,
-                         aWM, aContainerSize);
+      return CreateInset(aBasicShape, aShapeBoxRect, aWM, aContainerSize);
   }
   return nullptr;
 }
@@ -2207,8 +1456,6 @@ nsFloatManager::ShapeInfo::CreateBasicShape(
  UniquePtr<nsFloatManager::ShapeInfo>
 nsFloatManager::ShapeInfo::CreateInset(
   const UniquePtr<StyleBasicShape>& aBasicShape,
-  nscoord aShapeMargin,
-  nsIFrame* aFrame,
   const LogicalRect& aShapeBoxRect,
   WritingMode aWM,
   const nsSize& aContainerSize)
@@ -2228,59 +1475,19 @@ nsFloatManager::ShapeInfo::CreateInset(
   bool hasRadii =
     ShapeUtils::ComputeInsetRadii(aBasicShape, insetRect, physicalShapeBoxRect,
                                   physicalRadii);
-
-  
-  if (aShapeMargin == 0) {
-    if (!hasRadii) {
-      return MakeUnique<RoundedBoxShapeInfo>(logicalInsetRect,
-                                             UniquePtr<nscoord[]>());
-    }
-    return MakeUnique<RoundedBoxShapeInfo>(logicalInsetRect,
-                                           ConvertToFloatLogical(physicalRadii,
-                                                                 aWM));
-  }
-
-  
-  
-  
-  
   if (!hasRadii) {
-    logicalInsetRect.Inflate(aShapeMargin);
-    auto logicalRadii = MakeUnique<nscoord[]>(8);
-    for (int32_t i = 0; i < 8; ++i) {
-      logicalRadii[i] = aShapeMargin;
-    }
     return MakeUnique<RoundedBoxShapeInfo>(logicalInsetRect,
-                                           Move(logicalRadii));
+                                           UniquePtr<nscoord[]>());
   }
 
-  
-  
-  if (RoundedBoxShapeInfo::EachCornerHasBalancedRadii(physicalRadii)) {
-    logicalInsetRect.Inflate(aShapeMargin);
-    for (nscoord& r : physicalRadii) {
-      r += aShapeMargin;
-    }
-    return MakeUnique<RoundedBoxShapeInfo>(logicalInsetRect,
-                                           ConvertToFloatLogical(physicalRadii,
-                                                                 aWM));
-  }
-
-  
-  
-  nsDeviceContext* dc = aFrame->PresContext()->DeviceContext();
-  int32_t appUnitsPerDevPixel = dc->AppUnitsPerDevPixel();
   return MakeUnique<RoundedBoxShapeInfo>(logicalInsetRect,
                                          ConvertToFloatLogical(physicalRadii,
-                                                               aWM),
-                                         aShapeMargin, appUnitsPerDevPixel);
+                                                               aWM));
 }
 
  UniquePtr<nsFloatManager::ShapeInfo>
 nsFloatManager::ShapeInfo::CreateCircleOrEllipse(
   const UniquePtr<StyleBasicShape>& aBasicShape,
-  nscoord aShapeMargin,
-  nsIFrame* const aFrame,
   const LogicalRect& aShapeBoxRect,
   WritingMode aWM,
   const nsSize& aContainerSize)
@@ -2301,34 +1508,17 @@ nsFloatManager::ShapeInfo::CreateCircleOrEllipse(
   if (type == StyleBasicShapeType::Circle) {
     nscoord radius = ShapeUtils::ComputeCircleRadius(aBasicShape, physicalCenter,
                                                      physicalShapeBoxRect);
-    
-    
     radii = nsSize(radius, radius);
-    return MakeUnique<EllipseShapeInfo>(logicalCenter, radii, aShapeMargin);
+  } else {
+    MOZ_ASSERT(type == StyleBasicShapeType::Ellipse);
+    nsSize physicalRadii =
+      ShapeUtils::ComputeEllipseRadii(aBasicShape, physicalCenter,
+                                      physicalShapeBoxRect);
+    LogicalSize logicalRadii(aWM, physicalRadii);
+    radii = nsSize(logicalRadii.ISize(aWM), logicalRadii.BSize(aWM));
   }
 
-  MOZ_ASSERT(type == StyleBasicShapeType::Ellipse);
-  nsSize physicalRadii =
-    ShapeUtils::ComputeEllipseRadii(aBasicShape, physicalCenter,
-                                    physicalShapeBoxRect);
-  LogicalSize logicalRadii(aWM, physicalRadii);
-  radii = nsSize(logicalRadii.ISize(aWM), logicalRadii.BSize(aWM));
-
-  
-  
-  
-  
-  if (EllipseShapeInfo::ShapeMarginIsNegligible(aShapeMargin) ||
-      EllipseShapeInfo::RadiiAreRoughlyEqual(radii)) {
-    return MakeUnique<EllipseShapeInfo>(logicalCenter, radii, aShapeMargin);
-  }
-
-  
-  
-  nsDeviceContext* dc = aFrame->PresContext()->DeviceContext();
-  int32_t appUnitsPerDevPixel = dc->AppUnitsPerDevPixel();
-  return MakeUnique<EllipseShapeInfo>(logicalCenter, radii, aShapeMargin,
-                                      appUnitsPerDevPixel);
+  return MakeUnique<EllipseShapeInfo>(logicalCenter, radii);
 }
 
  UniquePtr<nsFloatManager::ShapeInfo>
@@ -2360,9 +1550,7 @@ nsFloatManager::ShapeInfo::CreatePolygon(
 nsFloatManager::ShapeInfo::CreateImageShape(
   const UniquePtr<nsStyleImage>& aShapeImage,
   float aShapeImageThreshold,
-  nscoord aShapeMargin,
   nsIFrame* const aFrame,
-  const LogicalRect& aMarginRect,
   WritingMode aWM,
   const nsSize& aContainerSize)
 {
@@ -2421,8 +1609,6 @@ nsFloatManager::ShapeInfo::CreateImageShape(
   MOZ_ASSERT(sourceSurface->GetSize() == contentSizeInDevPixels.ToUnknownSize(),
              "Who changes the size?");
 
-  nsRect marginRect = aMarginRect.GetPhysicalRect(aWM, aContainerSize);
-
   uint8_t* alphaPixels = map.GetData();
   int32_t stride = map.GetStride();
 
@@ -2433,9 +1619,7 @@ nsFloatManager::ShapeInfo::CreateImageShape(
                                     contentSizeInDevPixels,
                                     appUnitsPerDevPixel,
                                     aShapeImageThreshold,
-                                    aShapeMargin,
                                     contentRect,
-                                    marginRect,
                                     aWM,
                                     aContainerSize);
 }
@@ -2529,32 +1713,6 @@ nsFloatManager::ShapeInfo::ConvertToFloatLogical(
   LogicalPoint logicalPoint(aWM, aPoint, aContainerSize);
   return nsPoint(logicalPoint.LineRelative(aWM, aContainerSize),
                  logicalPoint.B(aWM));
-}
-
- size_t
-nsFloatManager::ShapeInfo::MinIntervalIndexContainingY(
-  const nsTArray<nsRect>& aIntervals,
-  const nscoord aTargetY)
-{
-  
-  
-  
-  size_t startIdx = 0;
-  size_t endIdx = aIntervals.Length();
-  while (startIdx < endIdx) {
-    size_t midIdx = startIdx + (endIdx - startIdx) / 2;
-    if (aIntervals[midIdx].ContainsY(aTargetY)) {
-      return midIdx;
-    }
-    nscoord midY = aIntervals[midIdx].Y();
-    if (midY < aTargetY) {
-      startIdx = midIdx + 1;
-    } else {
-      endIdx = midIdx;
-    }
-  }
-
-  return endIdx;
 }
 
  UniquePtr<nscoord[]>
