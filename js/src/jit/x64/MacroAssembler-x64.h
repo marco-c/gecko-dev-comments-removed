@@ -32,6 +32,44 @@ struct ImmTag : public Imm32
     { }
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class ScratchTagScope : public ScratchRegisterScope
+{
+  public:
+    ScratchTagScope(MacroAssembler& masm, const ValueOperand&)
+      : ScratchRegisterScope(masm)
+    {}
+};
+
+class ScratchTagScopeRelease
+{
+    ScratchTagScope* ts_;
+  public:
+    explicit ScratchTagScopeRelease(ScratchTagScope* ts) : ts_(ts) {
+        ts_->release();
+    }
+    ~ScratchTagScopeRelease() {
+        ts_->reacquire();
+    }
+};
+
 class MacroAssemblerX64 : public MacroAssemblerX86Shared
 {
   private:
@@ -663,18 +701,18 @@ class MacroAssemblerX64 : public MacroAssemblerX86Shared
     }
 
     
-    Register splitTagForTest(const ValueOperand& value) {
-        splitTag(value, ScratchReg);
-        return ScratchReg;
+    void splitTagForTest(const ValueOperand& value, ScratchTagScope& tag) {
+        splitTag(value, tag);
     }
     void cmpTag(const ValueOperand& operand, ImmTag tag) {
-        Register reg = splitTagForTest(operand);
+        ScratchTagScope reg(asMasm(), operand);
+        splitTagForTest(operand, reg);
         cmp32(reg, tag);
     }
 
     Condition testMagic(Condition cond, const ValueOperand& src) {
-        ScratchRegisterScope scratch(asMasm());
-        splitTag(src, scratch);
+        ScratchTagScope scratch(asMasm(), src);
+        splitTagForTest(src, scratch);
         return testMagic(cond, scratch);
     }
     Condition testError(Condition cond, const ValueOperand& src) {

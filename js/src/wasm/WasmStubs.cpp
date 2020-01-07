@@ -473,7 +473,8 @@ GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex, const FuncExport&
         Label next;
         switch (fe.sig().args()[i]) {
           case ValType::I32: {
-            Register tag = masm.splitTagForTest(scratchV);
+            ScratchTagScope tag(masm, scratchV);
+            masm.splitTagForTest(scratchV, tag);
 
             
             masm.branchTestInt32(Assembler::Equal, tag, &next);
@@ -481,9 +482,12 @@ GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex, const FuncExport&
             
             Label storeBack, notDouble;
             masm.branchTestDouble(Assembler::NotEqual, tag, &notDouble);
-            masm.unboxDouble(scratchV, scratchF);
-            masm.branchTruncateDoubleMaybeModUint32(scratchF, scratchG, &oolCall);
-            masm.jump(&storeBack);
+            {
+                ScratchTagScopeRelease _(&tag);
+                masm.unboxDouble(scratchV, scratchF);
+                masm.branchTruncateDoubleMaybeModUint32(scratchF, scratchG, &oolCall);
+                masm.jump(&storeBack);
+            }
             masm.bind(&notDouble);
 
             
@@ -491,7 +495,10 @@ GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex, const FuncExport&
             masm.branchTestUndefined(Assembler::Equal, tag, &nullOrUndefined);
             masm.branchTestNull(Assembler::NotEqual, tag, &notNullOrUndefined);
             masm.bind(&nullOrUndefined);
-            masm.storeValue(Int32Value(0), jitArgAddr);
+            {
+                ScratchTagScopeRelease _(&tag);
+                masm.storeValue(Int32Value(0), jitArgAddr);
+            }
             masm.jump(&next);
             masm.bind(&notNullOrUndefined);
 
@@ -502,7 +509,10 @@ GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex, const FuncExport&
             
 
             masm.bind(&storeBack);
-            masm.storeValue(JSVAL_TYPE_INT32, scratchG, jitArgAddr);
+            {
+                ScratchTagScopeRelease _(&tag);
+                masm.storeValue(JSVAL_TYPE_INT32, scratchG, jitArgAddr);
+            }
             break;
           }
           case ValType::F32:
@@ -510,29 +520,39 @@ GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex, const FuncExport&
             
             
             
-            Register tag = masm.splitTagForTest(scratchV);
+            ScratchTagScope tag(masm, scratchV);
+            masm.splitTagForTest(scratchV, tag);
 
             
             masm.branchTestDouble(Assembler::Equal, tag, &next);
 
             
             Label storeBack, notInt32;
-            masm.branchTestInt32(Assembler::NotEqual, scratchV, &notInt32);
-            masm.int32ValueToDouble(scratchV, scratchF);
-            masm.jump(&storeBack);
+            {
+                ScratchTagScopeRelease _(&tag);
+                masm.branchTestInt32(Assembler::NotEqual, scratchV, &notInt32);
+                masm.int32ValueToDouble(scratchV, scratchF);
+                masm.jump(&storeBack);
+            }
             masm.bind(&notInt32);
 
             
             Label notUndefined;
             masm.branchTestUndefined(Assembler::NotEqual, tag, &notUndefined);
-            masm.storeValue(DoubleValue(JS::GenericNaN()), jitArgAddr);
-            masm.jump(&next);
+            {
+                ScratchTagScopeRelease _(&tag);
+                masm.storeValue(DoubleValue(JS::GenericNaN()), jitArgAddr);
+                masm.jump(&next);
+            }
             masm.bind(&notUndefined);
 
             
             Label notNull;
             masm.branchTestNull(Assembler::NotEqual, tag, &notNull);
-            masm.storeValue(DoubleValue(0.), jitArgAddr);
+            {
+                ScratchTagScopeRelease _(&tag);
+                masm.storeValue(DoubleValue(0.), jitArgAddr);
+            }
             masm.jump(&next);
             masm.bind(&notNull);
 

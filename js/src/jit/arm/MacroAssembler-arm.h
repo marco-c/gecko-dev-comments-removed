@@ -25,6 +25,25 @@ JS_STATIC_ASSERT(1 << defaultShift == sizeof(JS::Value));
 
 
 
+
+class ScratchTagScope
+{
+    const ValueOperand& v_;
+  public:
+    ScratchTagScope(MacroAssembler&, const ValueOperand& v) : v_(v) {}
+    operator Register() { return v_.typeReg(); }
+    void release() {}
+    void reacquire() {}
+};
+
+class ScratchTagScopeRelease
+{
+  public:
+    explicit ScratchTagScopeRelease(ScratchTagScope*) {}
+};
+
+
+
 class MacroAssemblerARM : public Assembler
 {
   private:
@@ -700,9 +719,8 @@ class MacroAssemblerARMCompat : public MacroAssemblerARM
         test32(lhs, rhs);
     }
 
-    
-    Register splitTagForTest(const ValueOperand& value) {
-        return value.typeReg();
+    void splitTagForTest(const ValueOperand& value, ScratchTagScope& tag) {
+        MOZ_ASSERT(value.typeReg() == tag);
     }
 
     
