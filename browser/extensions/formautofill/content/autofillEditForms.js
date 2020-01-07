@@ -8,21 +8,18 @@
 "use strict";
 
 class EditAutofillForm {
-  constructor(elements, record) {
+  constructor(elements) {
     this._elements = elements;
-    this._record = record;
   }
 
   
 
 
 
-  loadInitialValues(record) {
-    for (let field in record) {
-      let input = document.getElementById(field);
-      if (input) {
-        input.value = record[field];
-      }
+  loadRecord(record = {}) {
+    for (let field of this._elements.form.elements) {
+      let value = record[field.id];
+      field.value = typeof(value) == "undefined" ? "" : value;
     }
   }
 
@@ -85,9 +82,7 @@ class EditAddress extends EditAutofillForm {
 
 
   constructor(elements, record, config) {
-    let country = record ? record.country :
-                    config.supportedCountries.find(supported => supported == config.DEFAULT_REGION);
-    super(elements, record || {country});
+    super(elements);
 
     Object.assign(this, config);
     Object.assign(this._elements, {
@@ -99,9 +94,19 @@ class EditAddress extends EditAutofillForm {
     this.populateCountries();
     
     
-    this.loadInitialValues(this._record);
-    this.formatForm(country);
+    this.loadRecord(record);
     this.attachEventListeners();
+  }
+
+  loadRecord(record) {
+    this._record = record;
+    if (!record) {
+      record = {
+        country: this.supportedCountries.find(supported => supported == this.DEFAULT_REGION),
+      };
+    }
+    super.loadRecord(record);
+    this.formatForm(record.country);
   }
 
   
@@ -176,22 +181,32 @@ class EditCreditCard extends EditAutofillForm {
 
 
   constructor(elements, record, config) {
-    super(elements, record);
+    super(elements);
 
     Object.assign(this, config);
     Object.assign(this._elements, {
       ccNumber: this._elements.form.querySelector("#cc-number"),
       year: this._elements.form.querySelector("#cc-exp-year"),
     });
-    this.generateYears();
-    this.loadInitialValues(this._record);
+
+    this.loadRecord(record);
     this.attachEventListeners();
+  }
+
+  loadRecord(record) {
+    
+    this._record = record;
+    this.generateYears();
+    super.loadRecord(record);
   }
 
   generateYears() {
     const count = 11;
     const currentYear = new Date().getFullYear();
     const ccExpYear = this._record && this._record["cc-exp-year"];
+
+    
+    this._elements.year.textContent = "";
 
     if (ccExpYear && ccExpYear < currentYear) {
       this._elements.year.appendChild(new Option(ccExpYear));
