@@ -150,7 +150,15 @@ protected:
 
   void InitFields();
 
-  void WillInsert(bool* aCancel);
+  
+
+
+
+
+
+
+
+  MOZ_MUST_USE nsresult WillInsert(bool* aCancel = nullptr);
 
   
 
