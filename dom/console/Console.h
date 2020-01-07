@@ -120,6 +120,9 @@ public:
   Count(const GlobalObject& aGlobal, const nsAString& aLabel);
 
   static void
+  CountReset(const GlobalObject& aGlobal, const nsAString& aLabel);
+
+  static void
   Clear(const GlobalObject& aGlobal);
 
   static already_AddRefed<ConsoleInstance>
@@ -168,6 +171,7 @@ private:
     MethodTimeStamp,
     MethodAssert,
     MethodCount,
+    MethodCountReset,
     MethodClear,
     MethodProfile,
     MethodProfileEnd,
@@ -380,9 +384,23 @@ private:
   
   
   
+  
+  
+  
+  uint32_t
+  ResetCounter(JSContext* aCx, const Sequence<JS::Value>& aData,
+               nsAString& aCountLabel);
+
+  
+  
+  
+  
+  
+  
+  
   JS::Value
-  CreateCounterValue(JSContext* aCx, const nsAString& aCountLabel,
-                     uint32_t aCountValue) const;
+  CreateCounterOrResetCounterValue(JSContext* aCx, const nsAString& aCountLabel,
+                                   uint32_t aCountValue) const;
 
   bool
   ShouldIncludeStackTrace(MethodName aMethodName) const;
