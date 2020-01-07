@@ -48,19 +48,41 @@ ResolutionFeasibilityDistance(int32_t candidate, int32_t requested)
   
   
   
-  uint32_t distance;
-  if (candidate >= requested) {
-    distance = (candidate - requested) * 1000 / std::max(candidate, requested);
-  } else {
-    distance = 10000 + (requested - candidate) *
-      1000 / std::max(candidate, requested);
+
+  MOZ_DIAGNOSTIC_ASSERT(candidate >= 0, "Candidate unexpectedly negative");
+  MOZ_DIAGNOSTIC_ASSERT(requested >= 0, "Requested unexpectedly negative");
+
+  if (candidate == 0) {
+    
+    
+    return 0;
   }
-  return distance;
+
+  uint32_t distance =
+    std::abs(candidate - requested) * 1000 / std::max(candidate, requested);
+  if (candidate > requested) {
+    
+    
+    return distance;
+  }
+
+  
+  
+  return 10000 + distance;
 }
 
 uint32_t
 FeasibilityDistance(int32_t candidate, int32_t requested)
 {
+  MOZ_DIAGNOSTIC_ASSERT(candidate >= 0, "Candidate unexpectedly negative");
+  MOZ_DIAGNOSTIC_ASSERT(requested >= 0, "Requested unexpectedly negative");
+
+  if (candidate == 0) {
+    
+    
+    return 0;
+  }
+
   return std::abs(candidate - requested) * 1000 / std::max(candidate, requested);
 }
 
