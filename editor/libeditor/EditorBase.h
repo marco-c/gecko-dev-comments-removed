@@ -382,6 +382,62 @@ public:
   nsresult JoinNodes(nsINode& aLeftNode, nsINode& aRightNode);
   nsresult MoveNode(nsIContent* aNode, nsINode* aParent, int32_t aOffset);
 
+  
+
+
+
+
+
+
+
+
+
+
+
+  void MoveAllChildren(nsINode& aContainer,
+                       const EditorRawDOMPoint& aPointToInsert,
+                       ErrorResult& aError);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  void MovePreviousSiblings(nsIContent& aChild,
+                            const EditorRawDOMPoint& aPointToInsert,
+                            ErrorResult& aError);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  void MoveChildren(nsIContent& aFirstChild,
+                    nsIContent& aLastChild,
+                    const EditorRawDOMPoint& aPointToInsert,
+                    ErrorResult& aError);
+
   nsresult CloneAttribute(nsAtom* aAttribute, Element* aDestElement,
                           Element* aSourceElement);
   nsresult RemoveAttribute(Element* aElement, nsAtom* aAttribute);

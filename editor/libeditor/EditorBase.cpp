@@ -1869,6 +1869,119 @@ EditorBase::MoveNode(nsIContent* aNode,
   return InsertNode(*aNode, *aParent, aOffset);
 }
 
+void
+EditorBase::MoveAllChildren(nsINode& aContainer,
+                            const EditorRawDOMPoint& aPointToInsert,
+                            ErrorResult& aError)
+{
+  if (!aContainer.HasChildren()) {
+    return;
+  }
+  nsIContent* firstChild = aContainer.GetFirstChild();
+  if (NS_WARN_IF(!firstChild)) {
+    aError.Throw(NS_ERROR_FAILURE);
+    return;
+  }
+  nsIContent* lastChild = aContainer.GetLastChild();
+  if (NS_WARN_IF(!lastChild)) {
+    aError.Throw(NS_ERROR_FAILURE);
+    return;
+  }
+  return MoveChildren(*firstChild, *lastChild, aPointToInsert, aError);
+}
+
+void
+EditorBase::MovePreviousSiblings(nsIContent& aChild,
+                                 const EditorRawDOMPoint& aPointToInsert,
+                                 ErrorResult& aError)
+{
+  if (NS_WARN_IF(!aChild.GetParentNode())) {
+    aError.Throw(NS_ERROR_INVALID_ARG);
+    return;
+  }
+  nsIContent* firstChild = aChild.GetParentNode()->GetFirstChild();
+  if (NS_WARN_IF(!firstChild)) {
+    aError.Throw(NS_ERROR_FAILURE);
+    return;
+  }
+  nsIContent* lastChild =
+    &aChild == firstChild ? firstChild : aChild.GetPreviousSibling();
+  if (NS_WARN_IF(!lastChild)) {
+    aError.Throw(NS_ERROR_FAILURE);
+    return;
+  }
+  return MoveChildren(*firstChild, *lastChild, aPointToInsert, aError);
+}
+
+void
+EditorBase::MoveChildren(nsIContent& aFirstChild,
+                         nsIContent& aLastChild,
+                         const EditorRawDOMPoint& aPointToInsert,
+                         ErrorResult& aError)
+{
+  nsCOMPtr<nsINode> oldContainer = aFirstChild.GetParentNode();
+  if (NS_WARN_IF(oldContainer != aLastChild.GetParentNode()) ||
+      NS_WARN_IF(!aPointToInsert.IsSet()) ||
+      NS_WARN_IF(!aPointToInsert.Container()->IsContainerNode())) {
+    aError.Throw(NS_ERROR_INVALID_ARG);
+    return;
+  }
+
+  
+  AutoTArray<nsCOMPtr<nsIContent>, 10> children;
+  for (nsIContent* child = &aFirstChild;
+       child;
+       child = child->GetNextSibling()) {
+    children.AppendElement(child);
+    if (child == &aLastChild) {
+      break;
+    }
+  }
+
+  if (NS_WARN_IF(children.LastElement() != &aLastChild)) {
+    aError.Throw(NS_ERROR_INVALID_ARG);
+    return;
+  }
+
+  nsCOMPtr<nsINode> newContainer = aPointToInsert.Container();
+  nsCOMPtr<nsIContent> nextNode = aPointToInsert.GetChildAtOffset();
+  for (size_t i = children.Length(); i > 0; --i) {
+    nsCOMPtr<nsIContent>& child = children[i - 1];
+    if (child->GetParentNode() != oldContainer) {
+      
+      
+      continue;
+    }
+    oldContainer->RemoveChild(*child, aError);
+    if (NS_WARN_IF(aError.Failed())) {
+      return;
+    }
+    if (nextNode) {
+      
+      
+      
+      EditorRawDOMPoint pointToInsert(nextNode);
+      if (NS_WARN_IF(!pointToInsert.IsSet()) ||
+          NS_WARN_IF(pointToInsert.Container() != newContainer)) {
+        
+        
+        
+        aError.Throw(NS_ERROR_FAILURE);
+        return;
+      }
+    }
+    newContainer->InsertBefore(*child, nextNode, aError);
+    if (NS_WARN_IF(aError.Failed())) {
+      return;
+    }
+    
+    
+    if (child->GetParentNode() == newContainer) {
+      nextNode = child;
+    }
+  }
+}
+
 NS_IMETHODIMP
 EditorBase::AddEditorObserver(nsIEditorObserver* aObserver)
 {
@@ -2980,6 +3093,8 @@ EditorBase::SplitNodeImpl(const EditorDOMPoint& aStartOfRightNode,
     return;
   }
 
+  
+  nsIContent* firstChildOfRightNode = aStartOfRightNode.GetChildAtOffset();
   parent->InsertBefore(aNewLeftNode, aStartOfRightNode.Container(),
                        aError);
   if (NS_WARN_IF(aError.Failed())) {
@@ -3004,24 +3119,21 @@ EditorBase::SplitNodeImpl(const EditorDOMPoint& aStartOfRightNode,
       MOZ_DIAGNOSTIC_ASSERT(!rightAsText && !leftAsText);
       
       
-      
-      
-      nsINode* existingRightNode = aStartOfRightNode.Container();
-      nsCOMPtr<nsINodeList> childNodes = existingRightNode->ChildNodes();
-      
-      
-      for (int32_t i = aStartOfRightNode.Offset() - 1; i >= 0; i--) {
-        nsCOMPtr<nsIContent> childNode = childNodes->Item(i);
-        MOZ_RELEASE_ASSERT(childNode);
-        existingRightNode->RemoveChild(*childNode, aError);
-        if (NS_WARN_IF(aError.Failed())) {
-          break;
-        }
-        nsCOMPtr<nsIContent> firstChild = aNewLeftNode.GetFirstChild();
-        aNewLeftNode.InsertBefore(*childNode, firstChild, aError);
+      if (!firstChildOfRightNode) {
+        MoveAllChildren(*aStartOfRightNode.Container(),
+                        EditorRawDOMPoint(&aNewLeftNode, 0), aError);
         NS_WARNING_ASSERTION(!aError.Failed(),
-          "Failed to insert a child which is removed from the right node into "
-          "the left node");
+          "Failed to move all children from the right node to the left node");
+      } else if (NS_WARN_IF(aStartOfRightNode.Container() !=
+                              firstChildOfRightNode->GetParentNode())) {
+          
+          
+          
+      } else {
+        MovePreviousSiblings(*firstChildOfRightNode,
+                             EditorRawDOMPoint(&aNewLeftNode, 0), aError);
+        NS_WARNING_ASSERTION(!aError.Failed(),
+          "Failed to move some children from the right node to the left node");
       }
     }
   }
@@ -4084,7 +4196,7 @@ EditorBase::SplitNodeDeep(nsIContent& aMostAncestorToSplit,
          !atStartOfRightNode.Container()->GetAsText()) ||
         (!atStartOfRightNode.IsStartOfContainer() &&
          !atStartOfRightNode.IsEndOfContainer())) {
-      ErrorResult error;
+      IgnoredErrorResult error;
       nsCOMPtr<nsIContent> newLeftNode =
         SplitNode(atStartOfRightNode.AsRaw(), error);
       if (NS_WARN_IF(error.Failed())) {
