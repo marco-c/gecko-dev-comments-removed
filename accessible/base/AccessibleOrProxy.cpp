@@ -6,6 +6,9 @@
 
 #include "AccessibleOrProxy.h"
 
+namespace mozilla {
+namespace a11y {
+
 AccessibleOrProxy
 AccessibleOrProxy::Parent() const
 {
@@ -24,4 +27,7 @@ AccessibleOrProxy::Parent() const
 
   
   return proxy->OuterDocOfRemoteBrowser();
+}
+
+}
 }
