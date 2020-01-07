@@ -2916,6 +2916,10 @@ MediaCacheStream::InitAsCloneInternal(MediaCacheStream* aOriginal)
   mDownloadStatistics = aOriginal->mDownloadStatistics;
   mDownloadStatistics.Stop();
 
+  
+  
+  mClient->CacheClientNotifyDataReceived();
+
   if (aOriginal->mDidNotifyDataEnded &&
       NS_SUCCEEDED(aOriginal->mNotifyDataEndedStatus)) {
     mNotifyDataEndedStatus = aOriginal->mNotifyDataEndedStatus;
