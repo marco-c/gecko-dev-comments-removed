@@ -460,17 +460,25 @@ wasm::GenerateFunctionPrologue(MacroAssembler& masm, uint32_t framePushed, IsLea
     masm.haltingAlign(CodeAlignment);
 
     
+    
+    Label normalEntry;
+
+    
+    
     offsets->begin = masm.currentOffset();
-    OldTrapDesc trap(trapOffset, Trap::IndirectCallBadSig, 0);
     switch (sigId.kind()) {
       case SigIdDesc::Kind::Global: {
         Register scratch = WasmTableCallScratchReg;
         masm.loadWasmGlobalPtr(sigId.globalDataOffset(), scratch);
-        masm.branchPtr(Assembler::Condition::NotEqual, WasmTableCallSigReg, scratch, trap);
+        masm.branchPtr(Assembler::Condition::Equal, WasmTableCallSigReg, scratch,
+                       &normalEntry);
+        masm.wasmTrap(Trap::IndirectCallBadSig, BytecodeOffset(0));
         break;
       }
       case SigIdDesc::Kind::Immediate: {
-        masm.branch32(Assembler::Condition::NotEqual, WasmTableCallSigReg, Imm32(sigId.immediate()), trap);
+        masm.branch32(Assembler::Condition::Equal, WasmTableCallSigReg, Imm32(sigId.immediate()),
+                      &normalEntry);
+        masm.wasmTrap(Trap::IndirectCallBadSig, BytecodeOffset(0));
         break;
       }
       case SigIdDesc::Kind::None:
@@ -483,6 +491,7 @@ wasm::GenerateFunctionPrologue(MacroAssembler& masm, uint32_t framePushed, IsLea
 
     
     masm.nopAlign(CodeAlignment);
+    masm.bind(&normalEntry);
     GenerateCallablePrologue(masm, &offsets->normalEntry);
 
     
@@ -1272,10 +1281,13 @@ wasm::LookupFaultingInstance(const ModuleSegment& codeSegment, void* pc, void* f
         return nullptr;
 
     size_t offsetInModule = ((uint8_t*)pc) - codeSegment.base();
-    if (offsetInModule < codeRange->funcNormalEntry() + SetFP)
+    if ((offsetInModule >= codeRange->funcNormalEntry() &&
+         offsetInModule < codeRange->funcNormalEntry() + SetFP) ||
+        (offsetInModule >= codeRange->ret() - PoppedFP &&
+         offsetInModule <= codeRange->ret()))
+    {
         return nullptr;
-    if (offsetInModule >= codeRange->ret() - PoppedFP && offsetInModule <= codeRange->ret())
-        return nullptr;
+    }
 
     Instance* instance = reinterpret_cast<Frame*>(fp)->tls->instance;
 
@@ -1284,8 +1296,6 @@ wasm::LookupFaultingInstance(const ModuleSegment& codeSegment, void* pc, void* f
     
     
     
-    if (&instance->code() != &codeSegment.code())
-        return nullptr;
 
     return instance;
 }

@@ -36,6 +36,7 @@
 #include "jit/arm/Architecture-arm.h"
 #include "jit/arm/disasm/Disasm-arm.h"
 #include "jit/IonTypes.h"
+#include "js/ProfilingFrameIterator.h"
 #include "threading/Thread.h"
 #include "vm/MutexIDs.h"
 #include "wasm/WasmCode.h"
@@ -293,7 +294,7 @@ class Simulator
 
     
     void handleWasmInterrupt();
-    bool startWasmInterrupt(JitActivation* act);
+    JS::ProfilingFrameIterator::RegisterState registerState();
 
     
     bool handleWasmSegFault(int32_t addr, unsigned numBytes);
