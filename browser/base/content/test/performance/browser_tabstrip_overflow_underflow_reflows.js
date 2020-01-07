@@ -39,7 +39,7 @@ add_task(async function() {
 
   await createTabs(TAB_COUNT_FOR_OVERFLOW);
 
-  await withReflowObserver(async function() {
+  await withPerfObserver(async function() {
     let switchDone = BrowserTestUtils.waitForEvent(window, "TabSwitchDone");
     BrowserOpenTab();
     await BrowserTestUtils.waitForEvent(gBrowser.selectedTab, "transitionend",
@@ -48,27 +48,27 @@ add_task(async function() {
     await BrowserTestUtils.waitForCondition(() => {
       return gBrowser.tabContainer.arrowScrollbox.hasAttribute("scrolledtoend");
     });
-  }, EXPECTED_OVERFLOW_REFLOWS, window);
+  }, {expectedReflows: EXPECTED_OVERFLOW_REFLOWS});
 
   Assert.ok(gBrowser.tabContainer.hasAttribute("overflow"),
             "Tabs should now be overflowed.");
 
   
   
-  await withReflowObserver(async function() {
+  await withPerfObserver(async function() {
     let switchDone = BrowserTestUtils.waitForEvent(window, "TabSwitchDone");
     BrowserOpenTab();
     await switchDone;
     await BrowserTestUtils.waitForCondition(() => {
       return gBrowser.tabContainer.arrowScrollbox.hasAttribute("scrolledtoend");
     });
-  }, [], window);
+  }, {expectedReflows: []});
 
-  await withReflowObserver(async function() {
+  await withPerfObserver(async function() {
     let switchDone = BrowserTestUtils.waitForEvent(window, "TabSwitchDone");
     BrowserTestUtils.removeTab(gBrowser.selectedTab, { animate: true });
     await switchDone;
-  }, [], window);
+  }, {expectedReflows: []});
 
   
   
@@ -82,13 +82,13 @@ add_task(async function() {
             "First tab should be partially scrolled out of view.");
 
   
-  await withReflowObserver(async function() {
+  await withPerfObserver(async function() {
     let firstTab = gBrowser.tabContainer.firstChild;
     await BrowserTestUtils.switchTab(gBrowser, firstTab);
     await BrowserTestUtils.waitForCondition(() => {
       return gBrowser.tabContainer.arrowScrollbox.hasAttribute("scrolledtostart");
     });
-  }, [], window);
+  }, {expectedReflows: []});
 
   
   
@@ -108,12 +108,12 @@ add_task(async function() {
 
     
     
-    await withReflowObserver(async function() {
+    await withPerfObserver(async function() {
       let switchDone = BrowserTestUtils.waitForEvent(window, "TabSwitchDone");
       BrowserTestUtils.removeTab(lastTab, { animate: true });
       await switchDone;
       await BrowserTestUtils.waitForCondition(() => !lastTab.isConnected);
-    }, EXPECTED_UNDERFLOW_REFLOWS, window);
+    }, {expectedReflows: EXPECTED_UNDERFLOW_REFLOWS});
   }
 
   await removeAllButFirstTab();
