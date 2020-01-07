@@ -138,6 +138,20 @@ bool NS_UnescapeURL(const char* aStr,
                     nsACString& aResult);
 
 
+
+
+
+
+
+
+nsresult NS_UnescapeURL(const char* aStr,
+                        int32_t aLen,
+                        uint32_t aFlags,
+                        nsACString& aResult,
+                        bool& aAppended,
+                        const mozilla::fallible_t&);
+
+
 inline int32_t
 NS_UnescapeURL(char* aStr)
 {
@@ -185,6 +199,7 @@ NS_UnescapeURL(const nsACString& aStr, uint32_t aFlags, nsACString& aResult)
   }
   return aStr;
 }
+
 const nsAString&
 NS_EscapeURL(const nsAString& aStr, uint32_t aFlags, nsAString& aResult);
 
