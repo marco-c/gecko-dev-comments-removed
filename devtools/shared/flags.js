@@ -7,7 +7,18 @@ const Services = require("Services");
 
 
 
-function makeWritableFlag(exports, name, pref) {
+
+
+
+
+
+
+
+
+
+
+
+function makePrefTrackedFlag(exports, name, pref) {
   let flag;
   
   if (isWorker) {
@@ -33,10 +44,22 @@ function makeWritableFlag(exports, name, pref) {
   });
 }
 
-makeWritableFlag(exports, "wantLogging", "devtools.debugger.log");
-makeWritableFlag(exports, "wantVerbose", "devtools.debugger.log.verbose");
 
 
 
 
-makeWritableFlag(exports, "testing", "devtools.testing");
+makePrefTrackedFlag(exports, "wantLogging", "devtools.debugger.log");
+
+
+
+
+
+
+makePrefTrackedFlag(exports, "wantVerbose", "devtools.debugger.log.verbose");
+
+
+
+
+
+
+makePrefTrackedFlag(exports, "testing", "devtools.testing");
