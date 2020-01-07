@@ -1057,7 +1057,9 @@ PaymentRequest::RejectedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue)
 PaymentRequest::~PaymentRequest()
 {
   if (mIPC) {
-    mIPC->MaybeDelete();
+    
+    
+    mIPC->MaybeDelete(false);
   }
 }
 

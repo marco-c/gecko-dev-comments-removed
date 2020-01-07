@@ -64,6 +64,10 @@ public:
   nsresult ChangeShippingOption(PaymentRequest* aRequest,
                                 const nsAString& aOption);
 
+  
+  
+  void RequestIPCOver(PaymentRequest* aRequest);
+
 private:
   PaymentRequestManager() = default;
   ~PaymentRequestManager()

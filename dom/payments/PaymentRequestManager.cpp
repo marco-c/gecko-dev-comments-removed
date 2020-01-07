@@ -309,6 +309,17 @@ PaymentRequestManager::NotifyRequestDone(PaymentRequest* aRequest)
   }
 }
 
+void
+PaymentRequestManager::RequestIPCOver(PaymentRequest* aRequest)
+{
+  
+  
+  mActivePayments.Remove(aRequest);
+  if (aRequest == mShowingRequest) {
+    mShowingRequest = nullptr;
+  }
+}
+
 already_AddRefed<PaymentRequestManager>
 PaymentRequestManager::GetSingleton()
 {
