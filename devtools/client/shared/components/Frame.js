@@ -123,7 +123,12 @@ class Frame extends Component {
       frame = this.props.frame;
     }
 
-    let source = frame.source ? String(frame.source) : "";
+    
+    
+    
+    let source = frame.source
+      ? String(frame.source).split(" -> ").pop()
+      : "";
     let line = frame.line != void 0 ? Number(frame.line) : null;
     let column = frame.column != void 0 ? Number(frame.column) : null;
 
@@ -139,7 +144,6 @@ class Frame extends Component {
     const elements = [];
     const sourceElements = [];
     let sourceEl;
-
     let tooltip = long;
 
     
@@ -220,7 +224,7 @@ class Frame extends Component {
         onClick: e => {
           e.preventDefault();
           e.stopPropagation();
-          onClick(this.getSourceForClick(frame));
+          onClick(this.getSourceForClick({...frame, source}));
         },
         href: source,
         className: "frame-link-source",
