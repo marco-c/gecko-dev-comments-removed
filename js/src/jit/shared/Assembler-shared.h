@@ -158,7 +158,7 @@ static inline bool
 IsCompilingWasm()
 {
     
-    return GetJitContext()->compartment == nullptr;
+    return GetJitContext()->realm == nullptr;
 }
 #endif
 

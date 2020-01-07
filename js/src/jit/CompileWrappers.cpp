@@ -230,61 +230,61 @@ CompileZone::setMinorGCShouldCancelIonCompilations()
     rt->gc.storeBuffer().setShouldCancelIonCompilations();
 }
 
-JSCompartment*
-CompileCompartment::compartment()
+JS::Realm*
+CompileRealm::realm()
 {
-    return reinterpret_cast<JSCompartment*>(this);
+    return reinterpret_cast<JS::Realm*>(this);
 }
 
- CompileCompartment*
-CompileCompartment::get(JSCompartment* comp)
+ CompileRealm*
+CompileRealm::get(JS::Realm* realm)
 {
-    return reinterpret_cast<CompileCompartment*>(comp);
+    return reinterpret_cast<CompileRealm*>(realm);
 }
 
 CompileZone*
-CompileCompartment::zone()
+CompileRealm::zone()
 {
-    return CompileZone::get(compartment()->zone());
+    return CompileZone::get(realm()->zone());
 }
 
 CompileRuntime*
-CompileCompartment::runtime()
+CompileRealm::runtime()
 {
-    return CompileRuntime::get(compartment()->runtimeFromAnyThread());
+    return CompileRuntime::get(realm()->runtimeFromAnyThread());
 }
 
 const void*
-CompileCompartment::addressOfRandomNumberGenerator()
+CompileRealm::addressOfRandomNumberGenerator()
 {
-    return JS::GetRealmForCompartment(compartment())->addressOfRandomNumberGenerator();
+    return realm()->addressOfRandomNumberGenerator();
 }
 
 const JitRealm*
-CompileCompartment::jitRealm()
+CompileRealm::jitRealm()
 {
-    return JS::GetRealmForCompartment(compartment())->jitRealm();
+    return realm()->jitRealm();
 }
 
 const GlobalObject*
-CompileCompartment::maybeGlobal()
+CompileRealm::maybeGlobal()
 {
     
     
     
-    return JS::GetRealmForCompartment(compartment())->unsafeUnbarrieredMaybeGlobal();
+    return realm()->unsafeUnbarrieredMaybeGlobal();
 }
 
 const uint32_t*
-CompileCompartment::addressOfGlobalWriteBarriered()
+CompileRealm::addressOfGlobalWriteBarriered()
 {
-    return &JS::GetRealmForCompartment(compartment())->globalWriteBarriered;
+    return &realm()->globalWriteBarriered;
 }
 
 bool
-CompileCompartment::hasAllocationMetadataBuilder()
+CompileRealm::hasAllocationMetadataBuilder()
 {
-    return JS::GetRealmForCompartment(compartment())->hasAllocationMetadataBuilder();
+    return realm()->hasAllocationMetadataBuilder();
 }
 
 
@@ -295,9 +295,9 @@ CompileCompartment::hasAllocationMetadataBuilder()
 
 
 void
-CompileCompartment::setSingletonsAsValues()
+CompileRealm::setSingletonsAsValues()
 {
-    JS::GetRealmForCompartment(compartment())->behaviors().setSingletonsAsValues();
+    realm()->behaviors().setSingletonsAsValues();
 }
 
 JitCompileOptions::JitCompileOptions()

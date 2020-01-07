@@ -56,7 +56,7 @@ class JitContext
 {
   public:
     JitContext(JSContext* cx, TempAllocator* temp);
-    JitContext(CompileRuntime* rt, CompileCompartment* comp, TempAllocator* temp);
+    JitContext(CompileRuntime* rt, CompileRealm* realm, TempAllocator* temp);
     explicit JitContext(TempAllocator* temp);
     JitContext();
     ~JitContext();
@@ -71,7 +71,7 @@ class JitContext
     
     
     CompileRuntime* runtime;
-    CompileCompartment* compartment;
+    CompileRealm* realm;
 
     int getNextAssemblerId() {
         return assemblerCount_++;

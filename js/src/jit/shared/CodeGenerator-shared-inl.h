@@ -414,7 +414,7 @@ CodeGeneratorShared::isGlobalObject(JSObject* object)
     
     
     
-    return object == gen->compartment->maybeGlobal();
+    return object == gen->realm->maybeGlobal();
 }
 
 } 
