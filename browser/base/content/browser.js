@@ -1021,7 +1021,7 @@ function handleUriInChrome(aBrowser, aUri) {
 
 
 
-function _loadURI(browser, uri, params = {}) {
+function _loadURI(browser, uri, params) {
   let tab = gBrowser.getTabForBrowser(browser);
   
   if (tab) {
@@ -1038,7 +1038,7 @@ function _loadURI(browser, uri, params = {}) {
     referrerPolicy = Ci.nsIHttpChannel.REFERRER_POLICY_UNSET,
     triggeringPrincipal,
     postData,
-  } = params;
+  } = params || {};
 
   let currentRemoteType = browser.remoteType;
   let requiredRemoteType;
