@@ -397,12 +397,6 @@ SetNewObjectMetadata(JSContext* cx, T* obj)
 
 } 
 
-inline void
-JSObject::setInitialSlotsMaybeNonNative(js::HeapSlot* slots)
-{
-    static_cast<js::NativeObject*>(this)->slots_ = slots;
-}
-
 inline js::GlobalObject&
 JSObject::global() const
 {

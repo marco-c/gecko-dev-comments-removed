@@ -154,12 +154,6 @@ class JSObject : public js::gc::Cell
     inline js::Shape* maybeShape() const;
     inline js::Shape* ensureShape(JSContext* cx);
 
-    
-    
-    
-    
-    inline void setInitialSlotsMaybeNonNative(js::HeapSlot* slots);
-
     enum GenerateShape {
         GENERATE_NONE,
         GENERATE_SHAPE

@@ -58,6 +58,8 @@ ArrayObject::createArrayInternal(JSContext* cx, gc::AllocKind kind, gc::InitialH
     aobj->initGroup(group);
     aobj->initShape(shape);
     
+    if (!nDynamicSlots)
+        aobj->initSlots(nullptr);
 
     MOZ_ASSERT(clasp->shouldDelayMetadataBuilder());
     cx->compartment()->setObjectPendingMetadata(cx, aobj);

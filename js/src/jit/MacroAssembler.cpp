@@ -875,6 +875,8 @@ MacroAssembler::allocateObject(Register result, Register temp, gc::AllocKind all
     if (!nDynamicSlots)
         return freeListAllocate(result, temp, allocKind, fail);
 
+    
+
     callMallocStub(nDynamicSlots * sizeof(GCPtrValue), temp, fail);
 
     Label failAlloc;

@@ -545,6 +545,8 @@ NativeObject::create(JSContext* cx, js::gc::AllocKind kind, js::gc::InitialHeap 
     nobj->initGroup(group);
     nobj->initShape(shape);
     
+    if (!nDynamicSlots)
+        nobj->initSlots(nullptr);
     nobj->setEmptyElements();
 
     if (clasp->hasPrivate())

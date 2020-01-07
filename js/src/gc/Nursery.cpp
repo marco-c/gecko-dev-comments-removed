@@ -294,7 +294,10 @@ js::Nursery::allocateObject(JSContext* cx, size_t size, size_t nDynamicSlots, co
     }
 
     
-    obj->setInitialSlotsMaybeNonNative(slots);
+
+
+    if (nDynamicSlots)
+        static_cast<NativeObject*>(obj)->initSlots(slots);
 
     TraceNurseryAlloc(obj, size);
     return obj;

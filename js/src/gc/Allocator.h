@@ -22,6 +22,7 @@ struct Class;
 
 
 
+
 template <typename T, AllowGC allowGC = CanGC>
 T*
 Allocate(JSContext* cx);
