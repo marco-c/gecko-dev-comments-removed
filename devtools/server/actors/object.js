@@ -2341,6 +2341,69 @@ LongStringActor.prototype.requestTypes = {
 
 
 
+function SymbolActor(symbol) {
+  this.symbol = symbol;
+}
+
+SymbolActor.prototype = {
+  actorPrefix: "symbol",
+
+  rawValue: function () {
+    return this.symbol;
+  },
+
+  destroy: function () {
+    
+    
+    
+    this._releaseActor();
+  },
+
+  
+
+
+  grip: function () {
+    let form = {
+      type: "symbol",
+      actor: this.actorID,
+    };
+    let name = getSymbolName(this.symbol);
+    if (name !== undefined) {
+      
+      form.name = createValueGrip(name, this.registeredPool);
+    }
+    return form;
+  },
+
+  
+
+
+  onRelease: function () {
+    
+    
+    
+    this._releaseActor();
+    this.registeredPool.removeActor(this);
+    return {};
+  },
+
+  _releaseActor: function () {
+    if (this.registeredPool && this.registeredPool.symbolActors) {
+      delete this.registeredPool.symbolActors[this.symbol];
+    }
+  }
+};
+
+SymbolActor.prototype.requestTypes = {
+  "release": SymbolActor.prototype.onRelease
+};
+
+
+
+
+
+
+
 function ArrayBufferActor(buffer) {
   this.buffer = buffer;
   this.bufferLength = buffer.byteLength;
@@ -2433,14 +2496,7 @@ function createValueGrip(value, pool, makeObjectGrip) {
       return makeObjectGrip(value, pool);
 
     case "symbol":
-      let form = {
-        type: "symbol"
-      };
-      let name = getSymbolName(value);
-      if (name !== undefined) {
-        form.name = createValueGrip(name, pool, makeObjectGrip);
-      }
-      return form;
+      return symbolGrip(value, pool);
 
     default:
       assert(false, "Failed to provide a grip for: " + value);
@@ -2486,6 +2542,29 @@ function longStringGrip(str, pool) {
   let actor = new LongStringActor(str);
   pool.addActor(actor);
   pool.longStringActors[str] = actor;
+  return actor.grip();
+}
+
+
+
+
+
+
+
+
+
+function symbolGrip(sym, pool) {
+  if (!pool.symbolActors) {
+    pool.symbolActors = Object.create(null);
+  }
+
+  if (sym in pool.symbolActors) {
+    return pool.symbolActors[sym].grip();
+  }
+
+  let actor = new SymbolActor(sym);
+  pool.addActor(actor);
+  pool.symbolActors[sym] = actor;
   return actor.grip();
 }
 
@@ -2594,6 +2673,7 @@ function isArrayIndex(str) {
 exports.ObjectActor = ObjectActor;
 exports.PropertyIteratorActor = PropertyIteratorActor;
 exports.LongStringActor = LongStringActor;
+exports.SymbolActor = SymbolActor;
 exports.createValueGrip = createValueGrip;
 exports.stringIsLong = stringIsLong;
 exports.longStringGrip = longStringGrip;
