@@ -104,15 +104,23 @@ IsDisplayLocal()
 
 
 
-
 static bool
 ContentNeedsSysVIPC()
 {
+  
+  
 #ifdef MOZ_ALSA
   if (!Preferences::GetBool("media.cubeb.sandbox")) {
     return true;
   }
 #endif
+
+  
+  if (PR_GetEnv("VGL_ISACTIVE") != nullptr) {
+    return true;
+  }
+
+  
   nsCOMPtr<nsIGfxInfo> gfxInfo = services::GetGfxInfo();
   nsAutoString vendorID;
   static const Array<nsresult (nsIGfxInfo::*)(nsAString&), 2> kMethods = {

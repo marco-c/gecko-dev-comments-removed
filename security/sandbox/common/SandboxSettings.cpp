@@ -27,7 +27,10 @@ int GetEffectiveContentSandboxLevel() {
 #endif
 #ifdef XP_LINUX
   
-  if (level > 3 && !Preferences::GetBool("media.cubeb.sandbox")) {
+  
+  if (level > 3 &&
+      (!Preferences::GetBool("media.cubeb.sandbox") ||
+       PR_GetEnv("VGL_ISACTIVE") != nullptr)) {
     level = 3;
   }
 #endif
