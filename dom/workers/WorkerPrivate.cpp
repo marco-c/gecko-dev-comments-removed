@@ -4058,11 +4058,7 @@ WorkerPrivate::NotifyHolders(WorkerStatus aStatus)
 {
   AssertIsOnWorkerThread();
 
-  NS_ASSERTION(aStatus > Running, "Bad status!");
-
-  if (aStatus >= Closing) {
-    CancelAllTimeouts();
-  }
+  NS_ASSERTION(aStatus > Closing, "Bad status!");
 
   nsTObserverArray<WorkerHolder*>::ForwardIterator iter(mHolders);
   while (iter.HasMore()) {
@@ -4566,8 +4562,14 @@ WorkerPrivate::NotifyInternal(WorkerStatus aStatus)
 
   MOZ_ASSERT(previousStatus != Pending);
 
+  if (aStatus >= Closing) {
+    CancelAllTimeouts();
+  }
+
   
-  NotifyHolders(aStatus);
+  if (aStatus > Closing) {
+    NotifyHolders(aStatus);
+  }
 
   
   
