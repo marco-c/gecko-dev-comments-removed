@@ -113,11 +113,11 @@ MacroAssemblerMIPS64Compat::convertDoubleToInt32(FloatRegister src, Register des
     }
 
     
-    
-    as_cvtwd(ScratchDoubleReg, src);
-    as_mfc1(dest, ScratchDoubleReg);
-    as_cvtdw(ScratchDoubleReg, ScratchDoubleReg);
-    ma_bc1d(src, ScratchDoubleReg, fail, Assembler::DoubleNotEqualOrUnordered);
+    as_truncwd(ScratchFloat32Reg, src);
+    as_cfc1(ScratchRegister, Assembler::FCSR);
+    moveFromFloat32(ScratchFloat32Reg, dest);
+    ma_ext(ScratchRegister, ScratchRegister, Assembler::CauseI, 1);
+    ma_b(ScratchRegister, Imm32(0), fail, Assembler::NotEqual);
 }
 
 
@@ -132,18 +132,11 @@ MacroAssemblerMIPS64Compat::convertFloat32ToInt32(FloatRegister src, Register de
         ma_b(dest, Imm32(INT32_MIN), fail, Assembler::Equal);
     }
 
-    
-    
-    
-    
-    
-    as_cvtws(ScratchFloat32Reg, src);
-    as_mfc1(dest, ScratchFloat32Reg);
-    as_cvtsw(ScratchFloat32Reg, ScratchFloat32Reg);
-    ma_bc1s(src, ScratchFloat32Reg, fail, Assembler::DoubleNotEqualOrUnordered);
-
-    
-    ma_b(dest, Imm32(INT32_MAX), fail, Assembler::Equal);
+    as_truncws(ScratchFloat32Reg, src);
+    as_cfc1(ScratchRegister, Assembler::FCSR);
+    moveFromFloat32(ScratchFloat32Reg, dest);
+    ma_ext(ScratchRegister, ScratchRegister, Assembler::CauseI, 1);
+    ma_b(ScratchRegister, Imm32(0), fail, Assembler::NotEqual);
 }
 
 void
