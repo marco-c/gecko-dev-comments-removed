@@ -525,7 +525,7 @@ private:
   const RefPtr<AudioOutputObserver> mAudioOutputObserver;
 
   
-  nsAutoPtr<AudioPacketizer<AudioDataValue, float>> mPacketizer;
+  nsAutoPtr<AudioPacketizer<AudioDataValue, float>> mPacketizerInput;
   ScopedCustomReleasePtr<webrtc::VoEExternalMedia> mVoERenderListener;
 
   
