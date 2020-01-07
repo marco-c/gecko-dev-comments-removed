@@ -19,7 +19,6 @@ class LIRGeneratorMIPS : public LIRGeneratorMIPSShared
       : LIRGeneratorMIPSShared(gen, graph, lirGraph)
     { }
 
-  protected:
     
     LBoxAllocation useBoxFixed(MDefinition* mir, Register reg1, Register reg2,
                                bool useAtStart = false);
@@ -41,14 +40,6 @@ class LIRGeneratorMIPS : public LIRGeneratorMIPSShared
     void lowerModI64(MMod* mod);
     void lowerUDivI64(MDiv* div);
     void lowerUModI64(MMod* mod);
-
-  public:
-    void visitBox(MBox* box);
-    void visitUnbox(MUnbox* unbox);
-    void visitReturn(MReturn* ret);
-    void visitRandom(MRandom* ins);
-    void visitWasmTruncateToInt64(MWasmTruncateToInt64* ins);
-    void visitInt64ToFloatingPoint(MInt64ToFloatingPoint* ins);
 };
 
 typedef LIRGeneratorMIPS LIRGeneratorSpecific;
