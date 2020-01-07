@@ -3392,8 +3392,6 @@ nsCSSFrameConstructor::ConstructFieldSetFrame(nsFrameConstructorState& aState,
   
   fieldsetFrame->SetInitialChildList(kPrincipalList, fieldsetKids);
 
-  fieldsetFrame->AddStateBits(NS_FRAME_MAY_HAVE_GENERATED_CONTENT);
-
   
   return fieldsetFrame;
 }
@@ -5733,10 +5731,6 @@ nsCSSFrameConstructor::AddFrameConstructionItemsInternal(nsFrameConstructorState
   }
 
   if (display->mDisplay == StyleDisplay::Contents) {
-    if (aParentFrame) {
-      
-      aParentFrame->AddStateBits(NS_FRAME_MAY_HAVE_GENERATED_CONTENT);
-    }
     CreateGeneratedContentItem(aState, aParentFrame, aContent->AsElement(),
                                computedStyle, CSSPseudoElementType::before,
                                aItems);
@@ -10290,7 +10284,6 @@ nsCSSFrameConstructor::ProcessChildren(nsFrameConstructorState& aState,
     ComputedStyle* computedStyle;
 
     if (aCanHaveGeneratedContent) {
-      aFrame->AddStateBits(NS_FRAME_MAY_HAVE_GENERATED_CONTENT);
       computedStyle =
         nsFrame::CorrectStyleParentFrame(aFrame, nullptr)->Style();
       
@@ -11356,9 +11349,6 @@ nsCSSFrameConstructor::ConstructInline(nsFrameConstructorState& aState,
   
   InitAndRestoreFrame(aState, content, aParentFrame, newFrame);
 
-  
-  newFrame->AddStateBits(NS_FRAME_MAY_HAVE_GENERATED_CONTENT);
-
   nsFrameConstructorSaveState absoluteSaveState;  
                                                   
                                                   
@@ -11461,8 +11451,7 @@ nsCSSFrameConstructor::CreateIBSiblings(nsFrameConstructorState& aState,
     
     nsInlineFrame* inlineFrame = NS_NewInlineFrame(mPresShell, computedStyle);
     InitAndRestoreFrame(aState, content, parentFrame, inlineFrame, false);
-    inlineFrame->AddStateBits(NS_FRAME_MAY_HAVE_GENERATED_CONTENT |
-                              NS_FRAME_CAN_HAVE_ABSPOS_CHILDREN);
+    inlineFrame->AddStateBits(NS_FRAME_CAN_HAVE_ABSPOS_CHILDREN);
     if (aIsPositioned) {
       inlineFrame->MarkAsAbsoluteContainingBlock();
     }
