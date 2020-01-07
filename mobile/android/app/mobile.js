@@ -568,6 +568,9 @@ pref("media.mediasource.enabled", true);
 pref("media.mediadrm-widevinecdm.visible", true);
 
 
+pref("media.webspeech.synth.enabled", true);
+
+
 pref("image.downscale-during-decode.enabled", true);
 
 

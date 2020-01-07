@@ -3837,17 +3837,16 @@ Zone::destroy(FreeOp* fop)
 
 
 
+
 void
 Zone::sweepCompartments(FreeOp* fop, bool keepAtleastOne, bool destroyingRuntime)
 {
     MOZ_ASSERT(!compartments().empty());
-
-    mozilla::DebugOnly<JSRuntime*> rt = runtimeFromMainThread();
+    MOZ_ASSERT_IF(destroyingRuntime, !keepAtleastOne);
 
     JSCompartment** read = compartments().begin();
     JSCompartment** end = compartments().end();
     JSCompartment** write = read;
-    bool foundOne = false;
     while (read < end) {
         JSCompartment* comp = *read++;
         Realm* realm = JS::GetRealmForCompartment(comp);
@@ -3856,12 +3855,12 @@ Zone::sweepCompartments(FreeOp* fop, bool keepAtleastOne, bool destroyingRuntime
 
 
 
-        bool dontDelete = read == end && !foundOne && keepAtleastOne;
-        if ((!realm->marked() && !dontDelete) || destroyingRuntime) {
-            realm->destroy(fop);
-        } else {
+        bool dontDelete = read == end && keepAtleastOne;
+        if ((realm->marked() || dontDelete) && !destroyingRuntime) {
             *write++ = comp;
-            foundOne = true;
+            keepAtleastOne = false;
+        } else {
+            realm->destroy(fop);
         }
     }
     compartments().shrinkTo(write - compartments().begin());
@@ -6252,7 +6251,7 @@ struct IncrementalIter
       : maybeIter(maybeIter)
     {
         if (maybeIter.isNothing())
-            maybeIter.emplace(mozilla::Forward<Args>(args)...);
+            maybeIter.emplace(std::forward<Args>(args)...);
     }
 
     ~IncrementalIter() {
@@ -7940,7 +7939,7 @@ js::NewRealm(JSContext* cx, JSPrincipals* principals, const JS::RealmOptions& op
     JSRuntime* rt = cx->runtime();
     JS_AbortIfWrongThread(cx);
 
-    ScopedJSDeletePtr<Zone> zoneHolder;
+    UniquePtr<Zone> zoneHolder;
 
     Zone* zone = nullptr;
     JS::ZoneSpecifier zoneSpec = options.creationOptions().zoneSpecifier();
@@ -7959,29 +7958,29 @@ js::NewRealm(JSContext* cx, JSPrincipals* principals, const JS::RealmOptions& op
     }
 
     if (!zone) {
-        zone = cx->new_<Zone>(cx->runtime());
-        if (!zone)
+        zoneHolder = cx->make_unique<Zone>(cx->runtime());
+        if (!zoneHolder)
             return nullptr;
-
-        zoneHolder.reset(zone);
 
         const JSPrincipals* trusted = rt->trustedPrincipals();
         bool isSystem = principals && principals == trusted;
-        if (!zone->init(isSystem)) {
+        if (!zoneHolder->init(isSystem)) {
             ReportOutOfMemory(cx);
             return nullptr;
         }
+
+        zone = zoneHolder.get();
     }
 
-    ScopedJSDeletePtr<Realm> realm(cx->new_<Realm>(zone, options));
+    UniquePtr<Realm> realm = cx->make_unique<Realm>(zone, options);
     if (!realm || !realm->init(cx))
         return nullptr;
 
     
-    JS::SetRealmPrincipals(realm, principals);
+    JS::SetRealmPrincipals(realm.get(), principals);
 
     JSCompartment* comp = realm->compartment();
-    if (!comp->realms().append(realm)) {
+    if (!comp->realms().append(realm.get())) {
         ReportOutOfMemory(cx);
         return nullptr;
     }
@@ -8007,8 +8006,8 @@ js::NewRealm(JSContext* cx, JSPrincipals* principals, const JS::RealmOptions& op
         }
     }
 
-    zoneHolder.forget();
-    return realm.forget();
+    mozilla::Unused << zoneHolder.release();
+    return realm.release();
 }
 
 void

@@ -31,7 +31,7 @@
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/IntegerRange.h"
-#include "nsHostObjectProtocolHandler.h"
+#include "mozilla/dom/FontTableURIProtocolHandler.h"
 #include "nsITimer.h"
 #include "nsLayoutUtils.h"
 #include "nsPresContext.h"
@@ -1347,7 +1347,7 @@ nsRefreshDriver::EnsureTimerStarted(EnsureTimerStartedFlags aFlags)
     
     
     nsIURI* uri = mPresContext->Document()->GetDocumentURI();
-    if (!uri || !IsFontTableURI(uri)) {
+    if (!uri || !mozilla::dom::IsFontTableURI(uri)) {
       MOZ_ASSERT(!mActiveTimer,
                  "image doc refresh driver should never have its own timer");
       return;

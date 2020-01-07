@@ -5091,6 +5091,21 @@ FormControlShrinksForPercentISize(nsIFrame* aFrame)
 
 
 
+static bool
+IsReplacedBoxResolvedAgainstZero(nsIFrame* aFrame,
+                                 const nsStyleCoord& aStyleSize,
+                                 const nsStyleCoord& aStyleMaxSize)
+{
+  const bool sizeHasPercent = aStyleSize.HasPercent();
+  return ((sizeHasPercent || aStyleMaxSize.HasPercent()) &&
+          aFrame->IsFrameOfType(nsIFrame::eReplacedSizing)) ||
+         (sizeHasPercent &&
+          FormControlShrinksForPercentISize(aFrame));
+}
+
+
+
+
 
 
 
@@ -5149,15 +5164,7 @@ AddIntrinsicSizeOffset(gfxContext* aRenderingContext,
 
   nscoord size;
   if (aType == nsLayoutUtils::MIN_ISIZE &&
-      (((aStyleSize.HasPercent() || aStyleMaxSize.HasPercent()) &&
-        aFrame->IsFrameOfType(nsIFrame::eReplacedSizing)) ||
-       (aStyleSize.HasPercent() &&
-        FormControlShrinksForPercentISize(aFrame)))) {
-    
-    
-    
-    
-    
+      ::IsReplacedBoxResolvedAgainstZero(aFrame, aStyleSize, aStyleMaxSize)) {
     
     result = 0; 
   } else if (GetAbsoluteCoord(aStyleSize, size) ||
@@ -5521,6 +5528,12 @@ nsLayoutUtils::MinSizeContributionForAxis(PhysicalAxis       aAxis,
       if (GetAbsoluteCoord(*style, minSize)) {
         
         
+        fixedMinSize = &minSize;
+      } else if (::IsReplacedBoxResolvedAgainstZero(aFrame, *style,
+                     eAxisHorizontal ? stylePos->mMaxWidth
+                                     : stylePos->mMaxHeight)) {
+        
+        minSize = 0;
         fixedMinSize = &minSize;
       }
       
@@ -7851,14 +7864,16 @@ nsLayoutUtils::AssertTreeOnlyEmptyNextInFlows(nsIFrame *aSubtreeRoot)
 static void
 GetFontFacesForFramesInner(nsIFrame* aFrame,
                            nsLayoutUtils::UsedFontFaceTable& aFontFaces,
-                           uint32_t aMaxRanges)
+                           uint32_t aMaxRanges,
+                           bool aSkipCollapsedWhitespace)
 {
   MOZ_ASSERT(aFrame, "NULL frame pointer");
 
   if (aFrame->IsTextFrame()) {
     if (!aFrame->GetPrevContinuation()) {
       nsLayoutUtils::GetFontFacesForText(aFrame, 0, INT32_MAX, true,
-                                         aFontFaces, aMaxRanges);
+                                         aFontFaces, aMaxRanges,
+                                         aSkipCollapsedWhitespace);
     }
     return;
   }
@@ -7870,7 +7885,8 @@ GetFontFacesForFramesInner(nsIFrame* aFrame,
     for (nsFrameList::Enumerator e(children); !e.AtEnd(); e.Next()) {
       nsIFrame* child = e.get();
       child = nsPlaceholderFrame::GetRealFrameFor(child);
-      GetFontFacesForFramesInner(child, aFontFaces, aMaxRanges);
+      GetFontFacesForFramesInner(child, aFontFaces, aMaxRanges,
+                                 aSkipCollapsedWhitespace);
     }
   }
 }
@@ -7878,12 +7894,14 @@ GetFontFacesForFramesInner(nsIFrame* aFrame,
  nsresult
 nsLayoutUtils::GetFontFacesForFrames(nsIFrame* aFrame,
                                      UsedFontFaceTable& aFontFaces,
-                                     uint32_t aMaxRanges)
+                                     uint32_t aMaxRanges,
+                                     bool aSkipCollapsedWhitespace)
 {
   MOZ_ASSERT(aFrame, "NULL frame pointer");
 
   while (aFrame) {
-    GetFontFacesForFramesInner(aFrame, aFontFaces, aMaxRanges);
+    GetFontFacesForFramesInner(aFrame, aFontFaces, aMaxRanges,
+                               aSkipCollapsedWhitespace);
     aFrame = GetNextContinuationOrIBSplitSibling(aFrame);
   }
 
@@ -7954,7 +7972,8 @@ nsLayoutUtils::GetFontFacesForText(nsIFrame* aFrame,
                                    int32_t aEndOffset,
                                    bool aFollowContinuations,
                                    UsedFontFaceTable& aFontFaces,
-                                   uint32_t aMaxRanges)
+                                   uint32_t aMaxRanges,
+                                   bool aSkipCollapsedWhitespace)
 {
   MOZ_ASSERT(aFrame, "NULL frame pointer");
 
@@ -7994,9 +8013,13 @@ nsLayoutUtils::GetFontFacesForText(nsIFrame* aFrame,
       }
     }
 
-    gfxTextRun::Range range(iter.ConvertOriginalToSkipped(fstart),
-                            iter.ConvertOriginalToSkipped(fend));
-    AddFontsFromTextRun(textRun, curr, iter, range, aFontFaces, aMaxRanges);
+    if (!aSkipCollapsedWhitespace ||
+        (curr->HasAnyNoncollapsedCharacters() &&
+         curr->HasNonSuppressedText())) {
+      gfxTextRun::Range range(iter.ConvertOriginalToSkipped(fstart),
+                              iter.ConvertOriginalToSkipped(fend));
+      AddFontsFromTextRun(textRun, curr, iter, range, aFontFaces, aMaxRanges);
+    }
 
     curr = next;
   } while (aFollowContinuations && curr);
