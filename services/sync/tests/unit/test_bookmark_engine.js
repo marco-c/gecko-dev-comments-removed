@@ -220,12 +220,12 @@ add_bookmark_test(async function test_processIncoming_error_orderChildren(engine
     
     folder1_record = await store.createRecord(folder1.guid);
     let new_children = folder1_record.children;
-    Assert.deepEqual(new_children,
-      [folder1_payload.children[0], folder1_payload.children[1]]);
+    Assert.deepEqual(new_children.sort(),
+      [folder1_payload.children[0], folder1_payload.children[1]].sort());
 
     let localChildIds = await PlacesSyncUtils.bookmarks.fetchChildRecordIds(
       folder1.guid);
-    Assert.deepEqual(localChildIds, [bmk2.guid, bmk1.guid]);
+    Assert.deepEqual(localChildIds.sort(), [bmk2.guid, bmk1.guid].sort());
 
   } finally {
     await cleanup(engine, server);
@@ -873,6 +873,100 @@ add_task(async function test_sync_imap_URLs() {
       "fetch%3EUID%3E/CURRENT%3E2433?part=1.2&type=text/html&filename=" +
       "TomEdwards.html",
       "Local bookmark B with IMAP URL should exist remotely");
+  } finally {
+    await cleanup(engine, server);
+  }
+});
+
+add_task(async function test_resume_buffer() {
+  await Service.recordManager.clearCache();
+  let engine = new BufferedBookmarksEngine(Service);
+  await engine.initialize();
+  await engine._store.wipe();
+  await engine.resetClient();
+
+  let server = await serverForFoo(engine);
+  await SyncTestingInfrastructure(server);
+
+  let collection = server.user("foo").collection("bookmarks");
+
+  engine._tracker.start(); 
+
+  const batchChunkSize = 50;
+
+  engine._store._batchChunkSize = batchChunkSize;
+  try {
+    let children = [];
+
+    let timestamp = Math.floor(Date.now() / 1000);
+    
+    for (let i = 0; i < batchChunkSize * 2; ++i) {
+      let cleartext = {
+        id: Utils.makeGUID(),
+        type: "bookmark",
+        parentid: "toolbar",
+        title: `Bookmark ${i}`,
+        parentName: "Bookmarks Toolbar",
+        bmkUri: `https://example.com/${i}`,
+      };
+      let wbo = collection.insert(cleartext.id,
+                                  encryptPayload(cleartext),
+                                  timestamp + 10 * i);
+      
+      
+      
+      wbo.sortindex = 1000 + Math.round(Math.sin(i / 5) * 100);
+      children.push(cleartext.id);
+    }
+
+    
+    collection.insert("toolbar", encryptPayload({
+      id: "toolbar",
+      type: "folder",
+      parentid: "places",
+      title: "Bookmarks Toolbar",
+      children
+    }), timestamp + 10 * children.length);
+
+    
+    
+    let origApplyIncomingBatch = engine._store.applyIncomingBatch;
+    engine._store.applyIncomingBatch = function(records) {
+      if (records.length > batchChunkSize) {
+        
+        delete records[batchChunkSize];
+        Object.defineProperty(records, batchChunkSize, {
+          get() { throw new Error("D:"); }
+        });
+      }
+      return origApplyIncomingBatch.call(this, records);
+    };
+
+    let caughtError;
+    _("We expect this to fail");
+    try {
+      await sync_engine_and_validate_telem(engine, true);
+    } catch (e) {
+      caughtError = e;
+    }
+    Assert.ok(caughtError, "Expected engine.sync to throw");
+    Assert.equal(caughtError.message, "D:");
+
+    
+    let lastSync = await engine.getLastSync() + 1;
+    
+    
+    let expectedLastSync = timestamp + 10 * (batchChunkSize - 1);
+    Assert.equal(expectedLastSync, lastSync);
+
+    engine._store.applyIncomingBatch = origApplyIncomingBatch;
+
+    await sync_engine_and_validate_telem(engine, false);
+
+    
+    let toolbarRecord = await engine._store.createRecord("toolbar");
+    Assert.deepEqual(toolbarRecord.children.sort(), children.sort());
+
   } finally {
     await cleanup(engine, server);
   }
