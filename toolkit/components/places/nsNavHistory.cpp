@@ -767,145 +767,6 @@ nsNavHistory::NormalizeTime(uint32_t aRelative, PRTime aOffset)
 
 
 
-
-
-
-
-
-
-
-
-
-
-bool
-nsNavHistory::EvaluateQueryForNode(const RefPtr<nsNavHistoryQuery>& aQuery,
-                                   nsNavHistoryQueryOptions* aOptions,
-                                   nsNavHistoryResultNode* aNode)
-{
-  
-  nsCOMPtr<nsIURI> nodeUri;
-
-  
-  if (aNode->mHidden && !aOptions->IncludeHidden())
-    return false;
-
-  bool hasIt;
-  
-  aQuery->GetHasBeginTime(&hasIt);
-  if (hasIt) {
-    PRTime beginTime = NormalizeTime(aQuery->BeginTimeReference(),
-                                     aQuery->BeginTime());
-    if (aNode->mTime < beginTime)
-      return false;
-  }
-
-  
-  aQuery->GetHasEndTime(&hasIt);
-  if (hasIt) {
-    PRTime endTime = NormalizeTime(aQuery->EndTimeReference(),
-                                   aQuery->EndTime());
-    if (aNode->mTime > endTime)
-      return false;
-  }
-
-  
-  if (!aQuery->SearchTerms().IsEmpty()) {
-    
-    
-    nsCOMArray<nsNavHistoryResultNode> inputSet;
-    inputSet.AppendObject(aNode);
-    nsCOMArray<nsNavHistoryResultNode> filteredSet;
-    nsresult rv = FilterResultSet(nullptr, inputSet, &filteredSet, aQuery, aOptions);
-    if (NS_FAILED(rv))
-      return false;
-    if (!filteredSet.Count())
-      return false;
-  }
-
-  
-  if (!aQuery->Domain().IsVoid()) {
-    if (!nodeUri) {
-      
-      if (NS_FAILED(NS_NewURI(getter_AddRefs(nodeUri), aNode->mURI)))
-        return false;
-    }
-    nsAutoCString asciiRequest;
-    if (NS_FAILED(AsciiHostNameFromHostString(aQuery->Domain(), asciiRequest)))
-      return false;
-
-    if (aQuery->DomainIsHost()) {
-      nsAutoCString host;
-      if (NS_FAILED(nodeUri->GetAsciiHost(host)))
-        return false;
-
-      if (!asciiRequest.Equals(host))
-        return false;
-    }
-    
-    nsAutoCString domain;
-    DomainNameFromURI(nodeUri, domain);
-    if (!asciiRequest.Equals(domain))
-      return false;
-  }
-
-  
-  if (aQuery->Uri()) {
-    if (!nodeUri) { 
-      if (NS_FAILED(NS_NewURI(getter_AddRefs(nodeUri), aNode->mURI)))
-        return false;
-    }
-
-    bool equals;
-    nsresult rv = aQuery->Uri()->Equals(nodeUri, &equals);
-    NS_ENSURE_SUCCESS(rv, false);
-    if (!equals)
-      return false;
-  }
-
-  
-  const nsTArray<uint32_t>& transitions = aQuery->Transitions();
-  if (aNode->mTransitionType > 0 &&
-      transitions.Length() &&
-      !transitions.Contains(aNode->mTransitionType)) {
-    return false;
-  }
-
-  
-  
-  return true;
-}
-
-
-
-
-
-
-
-
-nsresult 
-nsNavHistory::AsciiHostNameFromHostString(const nsACString& aHostName,
-                                          nsACString& aAscii)
-{
-  aAscii.Truncate();
-  if (aHostName.IsEmpty()) {
-    return NS_OK;
-  }
-  
-  nsAutoCString fakeURL("http://");
-  fakeURL.Append(aHostName);
-  nsCOMPtr<nsIURI> uri;
-  nsresult rv = NS_NewURI(getter_AddRefs(uri), fakeURL);
-  NS_ENSURE_SUCCESS(rv, rv);
-  rv = uri->GetAsciiHost(aAscii);
-  NS_ENSURE_SUCCESS(rv, rv);
-  return NS_OK;
-}
-
-
-
-
-
-
 void
 nsNavHistory::DomainNameFromURI(nsIURI *aURI,
                                 nsACString& aDomainName)
@@ -3427,6 +3288,7 @@ nsNavHistory::GetTagsFolder()
 
 
 
+
 nsresult
 nsNavHistory::FilterResultSet(nsNavHistoryQueryResultNode* aQueryNode,
                               const nsCOMArray<nsNavHistoryResultNode>& aSet,
@@ -3434,10 +3296,6 @@ nsNavHistory::FilterResultSet(nsNavHistoryQueryResultNode* aQueryNode,
                               const RefPtr<nsNavHistoryQuery>& aQuery,
                               nsNavHistoryQueryOptions *aOptions)
 {
-  
-  nsNavBookmarks *bookmarks = nsNavBookmarks::GetBookmarksService();
-  NS_ENSURE_TRUE(bookmarks, NS_ERROR_OUT_OF_MEMORY);
-
   
   nsTArray<nsString> terms;
   ParseSearchTermsFromQuery(aQuery, &terms);
