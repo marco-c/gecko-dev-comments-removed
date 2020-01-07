@@ -11,6 +11,7 @@
 #include "AccessibleCaretLogger.h"
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/MouseEventBinding.h"
 #include "mozilla/dom/NodeFilterBinding.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/dom/TreeWalker.h"
@@ -191,7 +192,7 @@ AccessibleCaretManager::OnSelectionChanged(nsIDOMDocument* aDoc,
 
   
   if (sHideCaretsForMouseInput &&
-      mLastInputSource == nsIDOMMouseEvent::MOZ_SOURCE_MOUSE) {
+      mLastInputSource == MouseEventBinding::MOZ_SOURCE_MOUSE) {
     HideCarets();
     return NS_OK;
   }
@@ -199,7 +200,7 @@ AccessibleCaretManager::OnSelectionChanged(nsIDOMDocument* aDoc,
   
   
   if (sHideCaretsForMouseInput &&
-      mLastInputSource == nsIDOMMouseEvent::MOZ_SOURCE_KEYBOARD &&
+      mLastInputSource == MouseEventBinding::MOZ_SOURCE_KEYBOARD &&
       (aReason & nsISelectionListener::SELECTALL_REASON)) {
     HideCarets();
     return NS_OK;
@@ -692,7 +693,7 @@ AccessibleCaretManager::OnScrollEnd()
 
   
   if (sHideCaretsForMouseInput &&
-      mLastInputSource == nsIDOMMouseEvent::MOZ_SOURCE_MOUSE) {
+      mLastInputSource == MouseEventBinding::MOZ_SOURCE_MOUSE) {
     AC_LOG("%s: HideCarets()", __FUNCTION__);
     HideCarets();
     return;

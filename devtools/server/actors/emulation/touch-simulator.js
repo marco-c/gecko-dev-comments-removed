@@ -116,7 +116,7 @@ TouchSimulator.prototype = {
     
     
     if (evt.button ||
-        evt.mozInputSource != Ci.nsIDOMMouseEvent.MOZ_SOURCE_MOUSE ||
+        evt.mozInputSource != evt.MOZ_SOURCE_MOUSE ||
         evt.isSynthesized) {
       return;
     }
@@ -223,7 +223,7 @@ TouchSimulator.prototype = {
     let utils = content.QueryInterface(Ci.nsIInterfaceRequestor)
                        .getInterface(Ci.nsIDOMWindowUtils);
     utils.sendMouseEvent(type, evt.clientX, evt.clientY, 0, 1, 0, true, 0,
-                         Ci.nsIDOMMouseEvent.MOZ_SOURCE_TOUCH);
+                         evt.MOZ_SOURCE_TOUCH);
   },
 
   sendContextMenu({ target, clientX, clientY, screenX, screenY }) {

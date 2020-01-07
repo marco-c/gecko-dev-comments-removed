@@ -25,7 +25,7 @@ add_task(async function test() {
 
     
     
-    EventUtils.synthesizeMouse(tab.linkedBrowser, 20, 20, { "button": button }, null);
+    EventUtils.synthesizeMouse(tab.linkedBrowser, 20, 20, { "button": button });
 
     isnot(fm.focusedElement, document.getElementById("urlbar").inputField,
        "Failed to move focus away from search bar: button=" + button);

@@ -10,13 +10,13 @@
 #include "AccessibleCaret.h"
 
 #include "mozilla/dom/CaretStateChangedEvent.h"
+#include "mozilla/dom/MouseEventBinding.h"
 #include "mozilla/EnumSet.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
 #include "nsCOMPtr.h"
 #include "nsCoord.h"
-#include "nsIDOMMouseEvent.h"
 #include "nsIFrame.h"
 #include "nsISelectionListener.h"
 
@@ -321,7 +321,7 @@ protected:
   
   
   
-  uint16_t mLastInputSource = nsIDOMMouseEvent::MOZ_SOURCE_UNKNOWN;
+  uint16_t mLastInputSource = dom::MouseEventBinding::MOZ_SOURCE_UNKNOWN;
 
   
   bool mIsScrollStarted = false;

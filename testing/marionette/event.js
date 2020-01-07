@@ -269,16 +269,16 @@ event.synthesizeMouse = function(
 
 
 event.synthesizeMouseAtPoint = function(
-    left, top, opts, window = undefined) {
+    left, top, opts, win = window) {
 
-  let domutils = getDOMWindowUtils(window);
+  let domutils = getDOMWindowUtils(win);
 
   let button = opts.button || 0;
   let clickCount = opts.clickCount || 1;
   let modifiers = event.parseModifiers_(opts);
   let pressure = ("pressure" in opts) ? opts.pressure : 0;
   let inputSource = ("inputSource" in opts) ? opts.inputSource :
-      Ci.nsIDOMMouseEvent.MOZ_SOURCE_MOUSE;
+      win.MouseEvent.MOZ_SOURCE_MOUSE;
   let isDOMEventSynthesized =
       ("isSynthesized" in opts) ? opts.isSynthesized : true;
   let isWidgetEventSynthesized;

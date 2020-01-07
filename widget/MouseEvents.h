@@ -12,7 +12,6 @@
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/dom/DataTransfer.h"
 #include "nsCOMPtr.h"
-#include "nsIDOMMouseEvent.h"
 
 
 
@@ -124,7 +123,9 @@ protected:
     , buttons(0)
     , pressure(0)
     , hitCluster(false)
-    , inputSource(nsIDOMMouseEvent::MOZ_SOURCE_MOUSE)
+    
+    
+    , inputSource( 1)
   {
   }
 
@@ -135,7 +136,9 @@ protected:
     , buttons(0)
     , pressure(0)
     , hitCluster(false)
-    , inputSource(nsIDOMMouseEvent::MOZ_SOURCE_MOUSE)
+    
+    
+    , inputSource( 1)
  {
  }
 

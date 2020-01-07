@@ -105,6 +105,19 @@ function _EU_isAndroid(aWindow = window) {
 }
 
 function _EU_maybeWrap(o) {
+  
+  
+  
+  var haveWrap = false;
+  try {
+    haveWrap = SpecialPowers.wrap != undefined;
+  } catch (e) {
+    
+  }
+  if (!haveWrap) {
+    
+    return o;
+  }
   var c = Object.getOwnPropertyDescriptor(window, 'Components');
   return c.value && !c.writable ? o : SpecialPowers.wrap(o);
 }
@@ -419,14 +432,17 @@ function synthesizeMouseAtPoint(left, top, aEvent, aWindow = window)
     var pressure = ("pressure" in aEvent) ? aEvent.pressure : 0;
 
     
+    var MouseEvent = _EU_maybeWrap(aWindow).MouseEvent;
+
+    
     var inputSource = ("inputSource" in aEvent) ? aEvent.inputSource :
-                                                  _EU_Ci.nsIDOMMouseEvent.MOZ_SOURCE_MOUSE;
+                                                  MouseEvent.MOZ_SOURCE_MOUSE;
     
     var id;
     if ("id" in aEvent) {
       id = aEvent.id;
     } else {
-      var isFromPen = inputSource === _EU_Ci.nsIDOMMouseEvent.MOZ_SOURCE_PEN;
+      var isFromPen = inputSource === MouseEvent.MOZ_SOURCE_PEN;
       id = isFromPen ? utils.DEFAULT_PEN_POINTER_ID :
                        utils.DEFAULT_MOUSE_POINTER_ID;
     }

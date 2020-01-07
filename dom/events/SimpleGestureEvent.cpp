@@ -4,6 +4,7 @@
 
 
 
+#include "mozilla/dom/MouseEventBinding.h"
 #include "mozilla/dom/SimpleGestureEvent.h"
 #include "mozilla/TouchEvents.h"
 #include "prtime.h"
@@ -29,7 +30,7 @@ SimpleGestureEvent::SimpleGestureEvent(EventTarget* aOwner,
     mEvent->mTime = PR_Now();
     mEvent->mRefPoint = LayoutDeviceIntPoint(0, 0);
     static_cast<WidgetMouseEventBase*>(mEvent)->inputSource =
-      nsIDOMMouseEvent::MOZ_SOURCE_UNKNOWN;
+      MouseEventBinding::MOZ_SOURCE_UNKNOWN;
   }
 }
 

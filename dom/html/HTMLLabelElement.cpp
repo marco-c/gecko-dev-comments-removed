@@ -11,9 +11,9 @@
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/dom/HTMLLabelElementBinding.h"
+#include "mozilla/dom/MouseEventBinding.h"
 #include "nsFocusManager.h"
 #include "nsContentUtils.h"
-#include "nsIDOMMouseEvent.h"
 #include "nsQueryObject.h"
 #include "mozilla/dom/ShadowRoot.h"
 
@@ -157,8 +157,8 @@ HTMLLabelElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
               
               
               nsCOMPtr<nsIDOMElement> elem = do_QueryInterface(content);
-              bool byMouse = (mouseEvent->inputSource != nsIDOMMouseEvent::MOZ_SOURCE_KEYBOARD);
-              bool byTouch = (mouseEvent->inputSource == nsIDOMMouseEvent::MOZ_SOURCE_TOUCH);
+              bool byMouse = (mouseEvent->inputSource != MouseEventBinding::MOZ_SOURCE_KEYBOARD);
+              bool byTouch = (mouseEvent->inputSource == MouseEventBinding::MOZ_SOURCE_TOUCH);
               fm->SetFocus(elem, nsIFocusManager::FLAG_BYMOVEFOCUS |
                                  (byMouse ? nsIFocusManager::FLAG_BYMOUSE : 0) |
                                  (byTouch ? nsIFocusManager::FLAG_BYTOUCH : 0));
@@ -209,7 +209,7 @@ HTMLLabelElement::PerformAccesskey(bool aKeyCausesActivation,
     
     WidgetMouseEvent event(aIsTrustedEvent, eMouseClick,
                            nullptr, WidgetMouseEvent::eReal);
-    event.inputSource = nsIDOMMouseEvent::MOZ_SOURCE_KEYBOARD;
+    event.inputSource = MouseEventBinding::MOZ_SOURCE_KEYBOARD;
 
     nsAutoPopupStatePusher popupStatePusher(aIsTrustedEvent ?
                                             openAllowed : openAbused);

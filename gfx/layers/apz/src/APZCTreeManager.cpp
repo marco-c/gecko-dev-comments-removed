@@ -15,6 +15,7 @@
 #include "InputBlockState.h"            
 #include "InputData.h"                  
 #include "Layers.h"                     
+#include "mozilla/dom/MouseEventBinding.h" 
 #include "mozilla/dom/Touch.h"          
 #include "mozilla/gfx/gfxVars.h"        
 #include "mozilla/gfx/GPUParent.h"      
@@ -1696,7 +1697,7 @@ APZCTreeManager::ProcessTouchInputForScrollbarDrag(MultiTouchInput& aTouchInput,
   
   MouseInput mouseInput{MultiTouchTypeToMouseType(aTouchInput.mType),
                         MouseInput::LEFT_BUTTON,
-                        nsIDOMMouseEvent::MOZ_SOURCE_TOUCH,
+                        dom::MouseEventBinding::MOZ_SOURCE_TOUCH,
                         WidgetMouseEvent::eLeftButtonFlag,
                         aTouchInput.mTouches[0].mScreenPoint,
                         aTouchInput.mTime,

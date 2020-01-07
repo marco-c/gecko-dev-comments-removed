@@ -21,6 +21,7 @@
 #include "mozilla/EventListenerManager.h"
 #include "mozilla/dom/DataTransfer.h"
 #include "mozilla/dom/indexedDB/PIndexedDBPermissionRequestChild.h"
+#include "mozilla/dom/MouseEventBinding.h"
 #include "mozilla/dom/PaymentRequestChild.h"
 #include "mozilla/dom/TelemetryScrollProbe.h"
 #include "mozilla/IMEStateManager.h"
@@ -1541,7 +1542,7 @@ TabChild::RecvMouseEvent(const nsString& aType,
   APZCCallbackHelper::DispatchMouseEvent(GetPresShell(), aType,
                                          CSSPoint(aX, aY), aButton, aClickCount,
                                          aModifiers, aIgnoreRootScrollFrame,
-                                         nsIDOMMouseEvent::MOZ_SOURCE_UNKNOWN,
+                                         MouseEventBinding::MOZ_SOURCE_UNKNOWN,
                                          0 );
   return IPC_OK();
 }
@@ -2580,13 +2581,9 @@ TabChild::RecvRenderLayers(const bool& aEnabled, const uint64_t& aLayerObserverE
     
     
     if (aEnabled) {
-      ProcessHangMonitor::ClearForcePaint(mLayerObserverEpoch);
+      ProcessHangMonitor::ClearForcePaint();
     }
   });
-
-  if (aEnabled) {
-    ProcessHangMonitor::MaybeStartForcePaint();
-  }
 
   if (mCompositorOptions) {
     MOZ_ASSERT(mPuppetWidget);

@@ -4,6 +4,7 @@
 
 
 
+#include "mozilla/dom/MouseEventBinding.h"
 #include "mozilla/dom/WheelEvent.h"
 #include "mozilla/MouseEvents.h"
 #include "prtime.h"
@@ -32,7 +33,7 @@ WheelEvent::WheelEvent(EventTarget* aOwner,
     mEventIsInternal = true;
     mEvent->mTime = PR_Now();
     mEvent->mRefPoint = LayoutDeviceIntPoint(0, 0);
-    mEvent->AsWheelEvent()->inputSource = nsIDOMMouseEvent::MOZ_SOURCE_UNKNOWN;
+    mEvent->AsWheelEvent()->inputSource = MouseEventBinding::MOZ_SOURCE_UNKNOWN;
   }
 }
 
