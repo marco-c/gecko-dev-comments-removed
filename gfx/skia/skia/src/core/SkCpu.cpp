@@ -85,7 +85,9 @@
         return features;
     }
 
-#elif defined(SK_CPU_ARM32) && __has_include(<asm/hwcap.h>) && __has_include(<sys/auxv.h>)
+#elif defined(SK_CPU_ARM32) && __has_include(<sys/auxv.h>) && \
+    (!defined(__ANDROID_API__) || __ANDROID_API__ >= 18)
+    
     
     #include <asm/hwcap.h>
     #include <sys/auxv.h>
