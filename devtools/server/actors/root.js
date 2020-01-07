@@ -512,6 +512,11 @@ RootActor.prototype = {
     
     
     if ((!("id" in request)) || request.id === 0) {
+      if (this._chromeActor && (!this._chromeActor.docShell ||
+          this._chromeActor.docShell.isBeingDestroyed)) {
+        this._globalActorPool.removeActor(this._chromeActor);
+        this._chromeActor = null;
+      }
       if (!this._chromeActor) {
         
         let { ChromeActor } = require("devtools/server/actors/chrome");
