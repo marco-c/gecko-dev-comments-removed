@@ -6,7 +6,8 @@
 
 use cssparser::Parser;
 use parser::{Parse, ParserContext};
-use style_traits::{CommaWithSpace, ParseError, Separator, StyleParseErrorKind};
+use std::fmt;
+use style_traits::{CommaWithSpace, ParseError, Separator, StyleParseErrorKind, ToCss};
 use values::generics::svg as generic;
 use values::specified::{LengthOrPercentage, NonNegativeLengthOrPercentage, NonNegativeNumber};
 use values::specified::{Number, Opacity, SpecifiedUrl};
@@ -122,5 +123,140 @@ impl Parse for SVGOpacity {
         } else {
             Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError))
         }
+    }
+}
+
+
+#[repr(u8)]
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, ToCss)]
+pub enum PaintOrder {
+    
+    Normal = 0,
+    
+    Fill = 1,
+    
+    Stroke = 2,
+    
+    Markers = 3,
+}
+
+
+const PAINT_ORDER_COUNT: u8 = 3;
+
+
+const PAINT_ORDER_SHIFT: u8 = 2;
+
+
+const PAINT_ORDER_MASK: u8 = 0b11;
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToComputedValue)]
+pub struct SVGPaintOrder(pub u8);
+
+impl SVGPaintOrder {
+    
+    pub fn normal() -> Self {
+        SVGPaintOrder(0)
+    }
+
+    
+    pub fn order_at(&self, pos: u8) -> PaintOrder {
+        
+        unsafe { ::std::mem::transmute((self.0 >> pos * PAINT_ORDER_SHIFT) & PAINT_ORDER_MASK) }
+    }
+}
+
+impl Parse for SVGPaintOrder {
+    fn parse<'i, 't>(
+        _context: &ParserContext,
+        input: &mut Parser<'i, 't>
+    ) -> Result<SVGPaintOrder, ParseError<'i>> {
+        if let Ok(()) = input.try(|i| i.expect_ident_matching("normal")) {
+            return Ok(SVGPaintOrder::normal())
+        }
+
+        let mut value = 0;
+        
+        
+        let mut seen = 0;
+        let mut pos = 0;
+
+        loop {
+            let result: Result<_, ParseError> = input.try(|input| {
+                try_match_ident_ignore_ascii_case! { input,
+                    "fill" => Ok(PaintOrder::Fill),
+                    "stroke" => Ok(PaintOrder::Stroke),
+                    "markers" => Ok(PaintOrder::Markers),
+                }
+            });
+
+            match result {
+                Ok(val) => {
+                    if (seen & (1 << val as u8)) != 0 {
+                        
+                        return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError))
+                    }
+
+                    value |= (val as u8) << (pos * PAINT_ORDER_SHIFT);
+                    seen |= 1 << (val as u8);
+                    pos += 1;
+                }
+                Err(_) => break,
+            }
+        }
+
+        if value == 0 {
+            
+            return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError))
+        }
+
+        
+        for i in pos..PAINT_ORDER_COUNT {
+            for paint in 0..PAINT_ORDER_COUNT {
+                
+                if (seen & (1 << paint)) == 0 {
+                    seen |= 1 << paint;
+                    value |= paint << (i * PAINT_ORDER_SHIFT);
+                    break;
+                }
+            }
+        }
+
+        Ok(SVGPaintOrder(value))
+    }
+}
+
+impl ToCss for SVGPaintOrder {
+    fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
+        if self.0 == 0 {
+            return dest.write_str("normal")
+        }
+
+        let mut last_pos_to_serialize = 0;
+        for i in (1..PAINT_ORDER_COUNT).rev() {
+            let component = self.order_at(i);
+            let earlier_component = self.order_at(i - 1);
+            if component < earlier_component {
+                last_pos_to_serialize = i - 1;
+                break;
+            }
+        }
+
+        for pos in 0..last_pos_to_serialize + 1 {
+            if pos != 0 {
+                dest.write_str(" ")?
+            }
+            self.order_at(pos).to_css(dest)?;
+        }
+        Ok(())
     }
 }
