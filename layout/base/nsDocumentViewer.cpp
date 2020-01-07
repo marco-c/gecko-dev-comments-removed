@@ -2798,15 +2798,14 @@ NS_IMETHODIMP nsDocumentViewer::GetContents(const char *mimeType, bool selection
   NS_ENSURE_TRUE(mDocument, NS_ERROR_NOT_INITIALIZED);
 
   
-  nsCOMPtr<nsISelection> sel;
+  RefPtr<Selection> sel;
   if (selectionOnly) {
     nsCopySupport::GetSelectionForCopy(mDocument, getter_AddRefs(sel));
     NS_ENSURE_TRUE(sel, NS_ERROR_FAILURE);
 
-    bool isCollapsed;
-    sel->GetIsCollapsed(&isCollapsed);
-    if (isCollapsed)
+    if (sel->IsCollapsed()) {
       return NS_OK;
+    }
   }
 
   
