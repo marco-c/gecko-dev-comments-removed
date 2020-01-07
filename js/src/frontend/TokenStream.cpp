@@ -1565,400 +1565,126 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getTokenInternal(TokenKind* const tt
         return true;
     }
 
-  retry:
-    if (MOZ_UNLIKELY(!sourceUnits.hasRawChars())) {
-        tp = newToken(0);
-        tp->type = TokenKind::Eof;
-        anyCharsAccess().flags.isEOF = true;
-        FinishToken();
-        return true;
-    }
-
-    c = sourceUnits.getCodeUnit();
-    MOZ_ASSERT(c != EOF);
-
     
     
-    if (MOZ_UNLIKELY(c >= 128)) {
-        if (unicode::IsSpaceOrBOM2(c)) {
-            if (c == unicode::LINE_SEPARATOR || c == unicode::PARA_SEPARATOR) {
-                if (!updateLineInfoForEOL()) {
-                    BadToken();
-                    return false;
-                }
-
-                anyCharsAccess().updateFlagsForEOL();
-            }
-
-            goto retry;
-        }
-
-        tp = newToken(-1);
-
-        
-        
-        
-        const CharT* identStart = sourceUnits.addressOfNextCodeUnit() - 1;
-
-        static_assert('$' < 128,
-                      "IdentifierStart contains '$', but as !IsUnicodeIDStart('$'), "
-                      "ensure that '$' is never handled here");
-        static_assert('_' < 128,
-                      "IdentifierStart contains '_', but as !IsUnicodeIDStart('_'), "
-                      "ensure that '_' is never handled here");
-        if (unicode::IsUnicodeIDStart(char16_t(c))) {
-            if (!identifierName(tp, identStart, IdentifierEscapes::None)) {
-                BadToken();
-                return false;
-            }
-
+    do {
+        if (MOZ_UNLIKELY(!sourceUnits.hasRawChars())) {
+            tp = newToken(0);
+            tp->type = TokenKind::Eof;
+            anyCharsAccess().flags.isEOF = true;
             FinishToken();
             return true;
         }
 
-        uint32_t codePoint = c;
-        if (!matchMultiUnitCodePoint(c, &codePoint)) {
-            BadToken();
-            return false;
-        }
-        if (codePoint && unicode::IsUnicodeIDStart(codePoint)) {
-            if (!identifierName(tp, identStart, IdentifierEscapes::None)) {
-                BadToken();
-                return false;
-            }
-
-            FinishToken();
-            return true;
-        }
-
-        ungetCodePointIgnoreEOL(codePoint);
-        error(JSMSG_ILLEGAL_CHARACTER);
-        BadToken();
-        return false;
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    c1kind = FirstCharKind(firstCharKinds[c]);
-
-    
-    
-    if (c1kind <= OneChar_Max) {
-        tp = newToken(-1);
-        tp->type = TokenKind(c1kind);
-        FinishToken();
-        return true;
-    }
-
-    
-    
-    if (c1kind == Space)
-        goto retry;
-
-    
-    
-    if (c1kind == Ident) {
-        tp = newToken(-1);
-
-        if (!identifierName(tp, sourceUnits.addressOfNextCodeUnit() - 1,
-                            IdentifierEscapes::None))
-        {
-            BadToken();
-            return false;
-        }
-
-        FinishToken();
-        return true;
-    }
-
-    
-    
-    if (c1kind == Dec) {
-        tp = newToken(-1);
-        numStart = sourceUnits.addressOfNextCodeUnit() - 1;
-
-      decimal:
-        decimalPoint = NoDecimal;
-        hasExp = false;
-        while (IsAsciiDigit(c))
-            c = getCharIgnoreEOL();
-
-        if (c == '.') {
-            decimalPoint = HasDecimal;
-          decimal_dot:
-            do {
-                c = getCharIgnoreEOL();
-            } while (IsAsciiDigit(c));
-        }
-        if (c == 'e' || c == 'E') {
-            hasExp = true;
-            c = getCharIgnoreEOL();
-            if (c == '+' || c == '-')
-                c = getCharIgnoreEOL();
-
-            if (!IsAsciiDigit(c)) {
-                ungetCharIgnoreEOL(c);
-                reportError(JSMSG_MISSING_EXPONENT);
-                BadToken();
-                return false;
-            }
-
-            do {
-                c = getCharIgnoreEOL();
-            } while (IsAsciiDigit(c));
-        }
-        ungetCharIgnoreEOL(c);
-
-        if (c != EOF) {
-            if (unicode::IsIdentifierStart(char16_t(c))) {
-                reportError(JSMSG_IDSTART_AFTER_NUMBER);
-                BadToken();
-                return false;
-            }
-
-            uint32_t codePoint;
-            if (!matchMultiUnitCodePoint(c, &codePoint)) {
-                BadToken();
-                return false;
-            }
-            if (codePoint && unicode::IsIdentifierStart(codePoint)) {
-                reportError(JSMSG_IDSTART_AFTER_NUMBER);
-                BadToken();
-                return false;
-            }
-        }
+        c = sourceUnits.getCodeUnit();
+        MOZ_ASSERT(c != EOF);
 
         
         
-        
-        double dval;
-        if (!((decimalPoint == HasDecimal) || hasExp)) {
-            if (!GetDecimalInteger(anyCharsAccess().cx, numStart,
-                                   sourceUnits.addressOfNextCodeUnit(), &dval))
-            {
-                BadToken();
-                return false;
-            }
-        } else {
-            const CharT* dummy;
-            if (!js_strtod(anyCharsAccess().cx, numStart, sourceUnits.addressOfNextCodeUnit(),
-                           &dummy, &dval))
-            {
-                BadToken();
-                return false;
-            }
-        }
-        tp->type = TokenKind::Number;
-        tp->setNumber(dval, decimalPoint);
-        FinishToken();
-        return true;
-    }
-
-    
-    
-    if (c1kind == String) {
-        if (!getStringOrTemplateToken(static_cast<char>(c), &tp)) {
-            BadToken();
-            return false;
-        }
-
-        FinishToken();
-        return true;
-    }
-
-    
-    
-    if (c1kind == EOL) {
-        
-        if (c == '\r' && sourceUnits.hasRawChars())
-            sourceUnits.matchCodeUnit('\n');
-
-        if (!updateLineInfoForEOL()) {
-            BadToken();
-            return false;
-        }
-
-        anyCharsAccess().updateFlagsForEOL();
-        goto retry;
-    }
-
-    
-    
-    if (c1kind == BasePrefix) {
-        tp = newToken(-1);
-        int radix;
-        c = getCharIgnoreEOL();
-        if (c == 'x' || c == 'X') {
-            radix = 16;
-            c = getCharIgnoreEOL();
-            if (!JS7_ISHEX(c)) {
-                ungetCharIgnoreEOL(c);
-                reportError(JSMSG_MISSING_HEXDIGITS);
-                BadToken();
-                return false;
-            }
-
-            numStart = sourceUnits.addressOfNextCodeUnit() - 1;  
-            while (JS7_ISHEX(c))
-                c = getCharIgnoreEOL();
-        } else if (c == 'b' || c == 'B') {
-            radix = 2;
-            c = getCharIgnoreEOL();
-            if (c != '0' && c != '1') {
-                ungetCharIgnoreEOL(c);
-                reportError(JSMSG_MISSING_BINARY_DIGITS);
-                BadToken();
-                return false;
-            }
-
-            numStart = sourceUnits.addressOfNextCodeUnit() - 1;  
-            while (c == '0' || c == '1')
-                c = getCharIgnoreEOL();
-        } else if (c == 'o' || c == 'O') {
-            radix = 8;
-            c = getCharIgnoreEOL();
-            if (c < '0' || c > '7') {
-                ungetCharIgnoreEOL(c);
-                reportError(JSMSG_MISSING_OCTAL_DIGITS);
-                BadToken();
-                return false;
-            }
-
-            numStart = sourceUnits.addressOfNextCodeUnit() - 1;  
-            while ('0' <= c && c <= '7')
-                c = getCharIgnoreEOL();
-        } else if (IsAsciiDigit(c)) {
-            radix = 8;
-            numStart = sourceUnits.addressOfNextCodeUnit() - 1;  
-            while (IsAsciiDigit(c)) {
-                
-                if (!reportStrictModeError(JSMSG_DEPRECATED_OCTAL)) {
-                    BadToken();
-                    return false;
-                }
-
-                
-                
-                
-                
-                if (c >= '8') {
-                    if (!warning(JSMSG_BAD_OCTAL, c == '8' ? "08" : "09")) {
+        if (MOZ_UNLIKELY(c >= 128)) {
+            if (unicode::IsSpaceOrBOM2(c)) {
+                if (c == unicode::LINE_SEPARATOR ||
+                    c == unicode::PARA_SEPARATOR)
+                {
+                    if (!updateLineInfoForEOL()) {
                         BadToken();
                         return false;
                     }
 
-                    
-                    goto decimal;
+                    anyCharsAccess().updateFlagsForEOL();
                 }
-                c = getCharIgnoreEOL();
+
+                continue;
             }
-        } else {
+
+            tp = newToken(-1);
+
             
-            numStart = sourceUnits.addressOfNextCodeUnit() - 1;
-            goto decimal;
-        }
-        ungetCharIgnoreEOL(c);
+            
+            
+            const CharT* identStart = sourceUnits.addressOfNextCodeUnit() - 1;
 
-        if (c != EOF) {
-            if (unicode::IsIdentifierStart(char16_t(c))) {
-                reportError(JSMSG_IDSTART_AFTER_NUMBER);
-                BadToken();
-                return false;
+            static_assert('$' < 128,
+                          "IdentifierStart contains '$', but as "
+                          "!IsUnicodeIDStart('$'), ensure that '$' is never "
+                          "handled here");
+            static_assert('_' < 128,
+                          "IdentifierStart contains '_', but as "
+                          "!IsUnicodeIDStart('_'), ensure that '_' is never "
+                          "handled here");
+            if (unicode::IsUnicodeIDStart(char16_t(c))) {
+                if (!identifierName(tp, identStart, IdentifierEscapes::None)) {
+                    BadToken();
+                    return false;
+                }
+
+                FinishToken();
+                return true;
             }
 
-            uint32_t codePoint;
+            uint32_t codePoint = c;
             if (!matchMultiUnitCodePoint(c, &codePoint)) {
                 BadToken();
                 return false;
             }
-            if (codePoint && unicode::IsIdentifierStart(codePoint)) {
-                reportError(JSMSG_IDSTART_AFTER_NUMBER);
-                BadToken();
-                return false;
-            }
-        }
+            if (codePoint && unicode::IsUnicodeIDStart(codePoint)) {
+                if (!identifierName(tp, identStart, IdentifierEscapes::None)) {
+                    BadToken();
+                    return false;
+                }
 
-        double dval;
-        const char16_t* dummy;
-        if (!GetPrefixInteger(anyCharsAccess().cx, numStart, sourceUnits.addressOfNextCodeUnit(),
-                              radix, &dummy, &dval))
-        {
+                FinishToken();
+                return true;
+            }
+
+            ungetCodePointIgnoreEOL(codePoint);
+            error(JSMSG_ILLEGAL_CHARACTER);
             BadToken();
             return false;
         }
 
-        tp->type = TokenKind::Number;
-        tp->setNumber(dval, NoDecimal);
-        FinishToken();
-        return true;
-    }
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        c1kind = FirstCharKind(firstCharKinds[c]);
 
-    
-    
-    MOZ_ASSERT(c1kind == Other);
-    tp = newToken(-1);
-    switch (c) {
-      case '.':
-        c = getCharIgnoreEOL();
-        if (IsAsciiDigit(c)) {
-            numStart = sourceUnits.addressOfNextCodeUnit() - 2;
-            decimalPoint = HasDecimal;
-            hasExp = false;
-            goto decimal_dot;
+        
+        
+        if (c1kind <= OneChar_Max) {
+            tp = newToken(-1);
+            tp->type = TokenKind(c1kind);
+            FinishToken();
+            return true;
         }
-        if (c == '.') {
-            if (matchChar('.')) {
-                tp->type = TokenKind::TripleDot;
-                FinishToken();
-                return true;
-            }
-        }
-        ungetCharIgnoreEOL(c);
-        tp->type = TokenKind::Dot;
-        FinishToken();
-        return true;
 
-      case '=':
-        if (matchChar('='))
-            tp->type = matchChar('=') ? TokenKind::StrictEq : TokenKind::Eq;
-        else if (matchChar('>'))
-            tp->type = TokenKind::Arrow;
-        else
-            tp->type = TokenKind::Assign;
-        FinishToken();
-        return true;
+        
+        
+        if (c1kind == Space)
+            continue;
 
-      case '+':
-        if (matchChar('+'))
-            tp->type = TokenKind::Inc;
-        else
-            tp->type = matchChar('=') ? TokenKind::AddAssign : TokenKind::Add;
-        FinishToken();
-        return true;
+        
+        
+        if (c1kind == Ident) {
+            tp = newToken(-1);
 
-      case '\\': {
-        uint32_t qc;
-        if (uint32_t escapeLength = matchUnicodeEscapeIdStart(&qc)) {
-            if (!identifierName(tp, sourceUnits.addressOfNextCodeUnit() - escapeLength - 1,
-                                IdentifierEscapes::SawUnicodeEscape))
+            if (!identifierName(tp, sourceUnits.addressOfNextCodeUnit() - 1,
+                                IdentifierEscapes::None))
             {
                 BadToken();
                 return false;
@@ -1970,259 +1696,549 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getTokenInternal(TokenKind* const tt
 
         
         
-        
-        
-        ungetCharIgnoreEOL('\\');
-        error(JSMSG_BAD_ESCAPE);
-        BadToken();
-        return false;
-      }
+        if (c1kind == Dec) {
+            tp = newToken(-1);
+            numStart = sourceUnits.addressOfNextCodeUnit() - 1;
 
-      case '|':
-        if (matchChar('|'))
-            tp->type = TokenKind::Or;
-#ifdef ENABLE_PIPELINE_OPERATOR
-        else if (matchChar('>'))
-            tp->type = TokenKind::Pipeline;
-#endif
-        else
-            tp->type = matchChar('=') ? TokenKind::BitOrAssign : TokenKind::BitOr;
-        FinishToken();
-        return true;
+          decimal:
+            decimalPoint = NoDecimal;
+            hasExp = false;
+            while (IsAsciiDigit(c))
+                c = getCharIgnoreEOL();
 
-      case '^':
-        tp->type = matchChar('=') ? TokenKind::BitXorAssign : TokenKind::BitXor;
-        FinishToken();
-        return true;
-
-      case '&':
-        if (matchChar('&'))
-            tp->type = TokenKind::And;
-        else
-            tp->type = matchChar('=') ? TokenKind::BitAndAssign : TokenKind::BitAnd;
-        FinishToken();
-        return true;
-
-      case '!':
-        if (matchChar('='))
-            tp->type = matchChar('=') ? TokenKind::StrictNe : TokenKind::Ne;
-        else
-            tp->type = TokenKind::Not;
-        FinishToken();
-        return true;
-
-      case '<':
-        if (anyCharsAccess().options().allowHTMLComments) {
-            
-            if (matchChar('!')) {
-                if (matchChar('-')) {
-                    if (matchChar('-')) {
-                        consumeRestOfSingleLineComment();
-                        goto retry;
-                    }
-                    ungetCharIgnoreEOL('-');
-                }
-                ungetCharIgnoreEOL('!');
+            if (c == '.') {
+                decimalPoint = HasDecimal;
+              decimal_dot:
+                do {
+                    c = getCharIgnoreEOL();
+                } while (IsAsciiDigit(c));
             }
-        }
-        if (matchChar('<')) {
-            tp->type = matchChar('=') ? TokenKind::LshAssign : TokenKind::Lsh;
-        } else {
-            tp->type = matchChar('=') ? TokenKind::Le : TokenKind::Lt;
-        }
-        FinishToken();
-        return true;
+            if (c == 'e' || c == 'E') {
+                hasExp = true;
+                c = getCharIgnoreEOL();
+                if (c == '+' || c == '-')
+                    c = getCharIgnoreEOL();
 
-      case '>':
-        if (matchChar('>')) {
-            if (matchChar('>'))
-                tp->type = matchChar('=') ? TokenKind::UrshAssign : TokenKind::Ursh;
-            else
-                tp->type = matchChar('=') ? TokenKind::RshAssign : TokenKind::Rsh;
-        } else {
-            tp->type = matchChar('=') ? TokenKind::Ge : TokenKind::Gt;
-        }
-        FinishToken();
-        return true;
+                if (!IsAsciiDigit(c)) {
+                    ungetCharIgnoreEOL(c);
+                    reportError(JSMSG_MISSING_EXPONENT);
+                    BadToken();
+                    return false;
+                }
 
-      case '*':
-        if (matchChar('*'))
-            tp->type = matchChar('=') ? TokenKind::PowAssign : TokenKind::Pow;
-        else
-            tp->type = matchChar('=') ? TokenKind::MulAssign : TokenKind::Mul;
-        FinishToken();
-        return true;
+                do {
+                    c = getCharIgnoreEOL();
+                } while (IsAsciiDigit(c));
+            }
+            ungetCharIgnoreEOL(c);
 
-      case '/':
-        
-        if (matchChar('/')) {
-            c = getCharIgnoreEOL();
-            if (c == '@' || c == '#') {
-                bool shouldWarn = c == '@';
-                if (!getDirectives(false, shouldWarn)) {
+            if (c != EOF) {
+                if (unicode::IsIdentifierStart(char16_t(c))) {
+                    reportError(JSMSG_IDSTART_AFTER_NUMBER);
+                    BadToken();
+                    return false;
+                }
+
+                uint32_t codePoint;
+                if (!matchMultiUnitCodePoint(c, &codePoint)) {
+                    BadToken();
+                    return false;
+                }
+                if (codePoint && unicode::IsIdentifierStart(codePoint)) {
+                    reportError(JSMSG_IDSTART_AFTER_NUMBER);
+                    BadToken();
+                    return false;
+                }
+            }
+
+            
+            
+            
+            
+            double dval;
+            if (!((decimalPoint == HasDecimal) || hasExp)) {
+                if (!GetDecimalInteger(anyCharsAccess().cx, numStart,
+                                       sourceUnits.addressOfNextCodeUnit(), &dval))
+                {
                     BadToken();
                     return false;
                 }
             } else {
-                ungetCharIgnoreEOL(c);
+                const CharT* dummy;
+                if (!js_strtod(anyCharsAccess().cx, numStart, sourceUnits.addressOfNextCodeUnit(),
+                               &dummy, &dval))
+                {
+                    BadToken();
+                    return false;
+                }
             }
-
-            consumeRestOfSingleLineComment();
-            goto retry;
-        }
-
-        
-        if (matchChar('*')) {
-            TokenStreamAnyChars& anyChars = anyCharsAccess();
-            unsigned linenoBefore = anyChars.lineno;
-
-            do {
-                if (!getChar(&c))
-                    return false;
-
-                if (c == EOF) {
-                    reportError(JSMSG_UNTERMINATED_COMMENT);
-                    BadToken();
-                    return false;
-                }
-
-                if (c == '*' && matchChar('/'))
-                    break;
-
-                if (c == '@' || c == '#') {
-                    bool shouldWarn = c == '@';
-                    if (!getDirectives(true, shouldWarn)) {
-                        BadToken();
-                        return false;
-                    }
-                }
-            } while (true);
-
-            if (linenoBefore != anyChars.lineno)
-                anyChars.updateFlagsForEOL();
-            anyChars.cursor = (anyChars.cursor - 1) & ntokensMask;
-            goto retry;
-        }
-
-        
-        if (modifier == Operand) {
-            tokenbuf.clear();
-
-            bool inCharClass = false;
-            do {
-                if (!getChar(&c)) {
-                    BadToken();
-                    return false;
-                }
-
-                if (c == '\\') {
-                    if (!tokenbuf.append(c)) {
-                        BadToken();
-                        return false;
-                    }
-
-                    if (!getChar(&c)) {
-                        BadToken();
-                        return false;
-                    }
-                } else if (c == '[') {
-                    inCharClass = true;
-                } else if (c == ']') {
-                    inCharClass = false;
-                } else if (c == '/' && !inCharClass) {
-                    
-                    break;
-                }
-
-                if (c == '\n' || c == EOF) {
-                    ungetChar(c);
-                    reportError(JSMSG_UNTERMINATED_REGEXP);
-                    BadToken();
-                    return false;
-                }
-
-                if (!tokenbuf.append(c)) {
-                    BadToken();
-                    return false;
-                }
-            } while (true);
-
-            RegExpFlag reflags = NoFlags;
-            while (true) {
-                RegExpFlag flag;
-                c = getCharIgnoreEOL();
-                if (c == 'g')
-                    flag = GlobalFlag;
-                else if (c == 'i')
-                    flag = IgnoreCaseFlag;
-                else if (c == 'm')
-                    flag = MultilineFlag;
-                else if (c == 'y')
-                    flag = StickyFlag;
-                else if (c == 'u')
-                    flag = UnicodeFlag;
-                else if (IsAsciiAlpha(c))
-                    flag = NoFlags;
-                else
-                    break;
-
-                if ((reflags & flag) || flag == NoFlags) {
-                    MOZ_ASSERT(sourceUnits.offset() > 0);
-                    char buf[2] = { char(c), '\0' };
-                    errorAt(sourceUnits.offset() - 1, JSMSG_BAD_REGEXP_FLAG, buf);
-                    BadToken();
-                    return false;
-                }
-
-                reflags = RegExpFlag(reflags | flag);
-            }
-            ungetCharIgnoreEOL(c);
-
-            tp->type = TokenKind::RegExp;
-            tp->setRegExpFlags(reflags);
+            tp->type = TokenKind::Number;
+            tp->setNumber(dval, decimalPoint);
             FinishToken();
             return true;
         }
 
-        tp->type = matchChar('=') ? TokenKind::DivAssign : TokenKind::Div;
-        FinishToken();
-        return true;
+        
+        
+        if (c1kind == String) {
+            if (!getStringOrTemplateToken(static_cast<char>(c), &tp)) {
+                BadToken();
+                return false;
+            }
 
-      case '%':
-        tp->type = matchChar('=') ? TokenKind::ModAssign : TokenKind::Mod;
-        FinishToken();
-        return true;
+            FinishToken();
+            return true;
+        }
 
-      case '-':
-        if (matchChar('-')) {
-            if (anyCharsAccess().options().allowHTMLComments &&
-                !anyCharsAccess().flags.isDirtyLine)
-            {
-                if (matchChar('>')) {
-                    consumeRestOfSingleLineComment();
-                    goto retry;
+        
+        
+        if (c1kind == EOL) {
+            
+            if (c == '\r' && sourceUnits.hasRawChars())
+                sourceUnits.matchCodeUnit('\n');
+
+            if (!updateLineInfoForEOL()) {
+                BadToken();
+                return false;
+            }
+
+            anyCharsAccess().updateFlagsForEOL();
+            continue;
+        }
+
+        
+        
+        if (c1kind == BasePrefix) {
+            tp = newToken(-1);
+            int radix;
+            c = getCharIgnoreEOL();
+            if (c == 'x' || c == 'X') {
+                radix = 16;
+                c = getCharIgnoreEOL();
+                if (!JS7_ISHEX(c)) {
+                    ungetCharIgnoreEOL(c);
+                    reportError(JSMSG_MISSING_HEXDIGITS);
+                    BadToken();
+                    return false;
+                }
+
+                
+                numStart = sourceUnits.addressOfNextCodeUnit() - 1;
+
+                while (JS7_ISHEX(c))
+                    c = getCharIgnoreEOL();
+            } else if (c == 'b' || c == 'B') {
+                radix = 2;
+                c = getCharIgnoreEOL();
+                if (c != '0' && c != '1') {
+                    ungetCharIgnoreEOL(c);
+                    reportError(JSMSG_MISSING_BINARY_DIGITS);
+                    BadToken();
+                    return false;
+                }
+
+                
+                numStart = sourceUnits.addressOfNextCodeUnit() - 1;
+
+                while (c == '0' || c == '1')
+                    c = getCharIgnoreEOL();
+            } else if (c == 'o' || c == 'O') {
+                radix = 8;
+                c = getCharIgnoreEOL();
+                if (c < '0' || c > '7') {
+                    ungetCharIgnoreEOL(c);
+                    reportError(JSMSG_MISSING_OCTAL_DIGITS);
+                    BadToken();
+                    return false;
+                }
+
+                
+                numStart = sourceUnits.addressOfNextCodeUnit() - 1;
+
+                while ('0' <= c && c <= '7')
+                    c = getCharIgnoreEOL();
+            } else if (IsAsciiDigit(c)) {
+                radix = 8;
+                
+                numStart = sourceUnits.addressOfNextCodeUnit() - 1;
+
+                while (IsAsciiDigit(c)) {
+                    
+                    
+                    if (!reportStrictModeError(JSMSG_DEPRECATED_OCTAL)) {
+                        BadToken();
+                        return false;
+                    }
+
+                    
+                    
+                    
+                    
+                    if (c >= '8') {
+                        if (!warning(JSMSG_BAD_OCTAL, c == '8' ? "08" : "09")) {
+                            BadToken();
+                            return false;
+                        }
+
+                        
+                        goto decimal;
+                    }
+                    c = getCharIgnoreEOL();
+                }
+            } else {
+                
+                numStart = sourceUnits.addressOfNextCodeUnit() - 1;
+                goto decimal;
+            }
+            ungetCharIgnoreEOL(c);
+
+            if (c != EOF) {
+                if (unicode::IsIdentifierStart(char16_t(c))) {
+                    reportError(JSMSG_IDSTART_AFTER_NUMBER);
+                    BadToken();
+                    return false;
+                }
+
+                uint32_t codePoint;
+                if (!matchMultiUnitCodePoint(c, &codePoint)) {
+                    BadToken();
+                    return false;
+                }
+                if (codePoint && unicode::IsIdentifierStart(codePoint)) {
+                    reportError(JSMSG_IDSTART_AFTER_NUMBER);
+                    BadToken();
+                    return false;
                 }
             }
 
-            tp->type = TokenKind::Dec;
-        } else {
-            tp->type = matchChar('=') ? TokenKind::SubAssign : TokenKind::Sub;
+            double dval;
+            const char16_t* dummy;
+            if (!GetPrefixInteger(anyCharsAccess().cx, numStart,
+                                  sourceUnits.addressOfNextCodeUnit(), radix, &dummy, &dval))
+            {
+                BadToken();
+                return false;
+            }
+
+            tp->type = TokenKind::Number;
+            tp->setNumber(dval, NoDecimal);
+            FinishToken();
+            return true;
         }
-        FinishToken();
-        return true;
 
-      default:
         
         
-        ungetCodePointIgnoreEOL(c);
-        error(JSMSG_ILLEGAL_CHARACTER);
-        BadToken();
-        return false;
-    }
+        MOZ_ASSERT(c1kind == Other);
+        tp = newToken(-1);
+        switch (c) {
+          case '.':
+            c = getCharIgnoreEOL();
+            if (IsAsciiDigit(c)) {
+                numStart = sourceUnits.addressOfNextCodeUnit() - 2;
+                decimalPoint = HasDecimal;
+                hasExp = false;
+                goto decimal_dot;
+            }
+            if (c == '.') {
+                if (matchChar('.')) {
+                    tp->type = TokenKind::TripleDot;
+                    FinishToken();
+                    return true;
+                }
+            }
+            ungetCharIgnoreEOL(c);
+            tp->type = TokenKind::Dot;
+            FinishToken();
+            return true;
 
-    MOZ_CRASH("should either have called |FinishToken()| and returned true or "
-              "called |BadToken()| and returned false by here");
-    return false;
+          case '=':
+            if (matchChar('='))
+                tp->type = matchChar('=') ? TokenKind::StrictEq : TokenKind::Eq;
+            else if (matchChar('>'))
+                tp->type = TokenKind::Arrow;
+            else
+                tp->type = TokenKind::Assign;
+            FinishToken();
+            return true;
+
+          case '+':
+            if (matchChar('+'))
+                tp->type = TokenKind::Inc;
+            else
+                tp->type = matchChar('=') ? TokenKind::AddAssign : TokenKind::Add;
+            FinishToken();
+            return true;
+
+          case '\\': {
+            uint32_t qc;
+            if (uint32_t escapeLength = matchUnicodeEscapeIdStart(&qc)) {
+                if (!identifierName(tp, sourceUnits.addressOfNextCodeUnit() - escapeLength - 1,
+                                    IdentifierEscapes::SawUnicodeEscape))
+                {
+                    BadToken();
+                    return false;
+                }
+
+                FinishToken();
+                return true;
+            }
+
+            
+            
+            
+            
+            ungetCharIgnoreEOL('\\');
+            error(JSMSG_BAD_ESCAPE);
+            BadToken();
+            return false;
+          }
+
+          case '|':
+            if (matchChar('|'))
+                tp->type = TokenKind::Or;
+#ifdef ENABLE_PIPELINE_OPERATOR
+            else if (matchChar('>'))
+                tp->type = TokenKind::Pipeline;
+#endif
+            else
+                tp->type = matchChar('=') ? TokenKind::BitOrAssign : TokenKind::BitOr;
+            FinishToken();
+            return true;
+
+          case '^':
+            tp->type = matchChar('=') ? TokenKind::BitXorAssign : TokenKind::BitXor;
+            FinishToken();
+            return true;
+
+          case '&':
+            if (matchChar('&'))
+                tp->type = TokenKind::And;
+            else
+                tp->type = matchChar('=') ? TokenKind::BitAndAssign : TokenKind::BitAnd;
+            FinishToken();
+            return true;
+
+          case '!':
+            if (matchChar('='))
+                tp->type = matchChar('=') ? TokenKind::StrictNe : TokenKind::Ne;
+            else
+                tp->type = TokenKind::Not;
+            FinishToken();
+            return true;
+
+          case '<':
+            if (anyCharsAccess().options().allowHTMLComments) {
+                
+                if (matchChar('!')) {
+                    if (matchChar('-')) {
+                        if (matchChar('-')) {
+                            consumeRestOfSingleLineComment();
+                            continue;
+                        }
+                        ungetCharIgnoreEOL('-');
+                    }
+                    ungetCharIgnoreEOL('!');
+                }
+            }
+            if (matchChar('<')) {
+                tp->type = matchChar('=') ? TokenKind::LshAssign : TokenKind::Lsh;
+            } else {
+                tp->type = matchChar('=') ? TokenKind::Le : TokenKind::Lt;
+            }
+            FinishToken();
+            return true;
+
+          case '>':
+            if (matchChar('>')) {
+                if (matchChar('>'))
+                    tp->type = matchChar('=') ? TokenKind::UrshAssign : TokenKind::Ursh;
+                else
+                    tp->type = matchChar('=') ? TokenKind::RshAssign : TokenKind::Rsh;
+            } else {
+                tp->type = matchChar('=') ? TokenKind::Ge : TokenKind::Gt;
+            }
+            FinishToken();
+            return true;
+
+          case '*':
+            if (matchChar('*'))
+                tp->type = matchChar('=') ? TokenKind::PowAssign : TokenKind::Pow;
+            else
+                tp->type = matchChar('=') ? TokenKind::MulAssign : TokenKind::Mul;
+            FinishToken();
+            return true;
+
+          case '/':
+            
+            if (matchChar('/')) {
+                c = getCharIgnoreEOL();
+                if (c == '@' || c == '#') {
+                    bool shouldWarn = c == '@';
+                    if (!getDirectives(false, shouldWarn)) {
+                        BadToken();
+                        return false;
+                    }
+                } else {
+                    ungetCharIgnoreEOL(c);
+                }
+
+                consumeRestOfSingleLineComment();
+                continue;
+            }
+
+            
+            if (matchChar('*')) {
+                TokenStreamAnyChars& anyChars = anyCharsAccess();
+                unsigned linenoBefore = anyChars.lineno;
+
+                do {
+                    if (!getChar(&c))
+                        return false;
+
+                    if (c == EOF) {
+                        reportError(JSMSG_UNTERMINATED_COMMENT);
+                        BadToken();
+                        return false;
+                    }
+
+                    if (c == '*' && matchChar('/'))
+                        break;
+
+                    if (c == '@' || c == '#') {
+                        bool shouldWarn = c == '@';
+                        if (!getDirectives(true, shouldWarn)) {
+                            BadToken();
+                            return false;
+                        }
+                    }
+                } while (true);
+
+                if (linenoBefore != anyChars.lineno)
+                    anyChars.updateFlagsForEOL();
+                anyChars.cursor = (anyChars.cursor - 1) & ntokensMask;
+                continue;
+            }
+
+            
+            if (modifier == Operand) {
+                tokenbuf.clear();
+
+                bool inCharClass = false;
+                do {
+                    if (!getChar(&c)) {
+                        BadToken();
+                        return false;
+                    }
+
+                    if (c == '\\') {
+                        if (!tokenbuf.append(c)) {
+                            BadToken();
+                            return false;
+                        }
+
+                        if (!getChar(&c)) {
+                            BadToken();
+                            return false;
+                        }
+                    } else if (c == '[') {
+                        inCharClass = true;
+                    } else if (c == ']') {
+                        inCharClass = false;
+                    } else if (c == '/' && !inCharClass) {
+                        
+                        break;
+                    }
+
+                    if (c == '\n' || c == EOF) {
+                        ungetChar(c);
+                        reportError(JSMSG_UNTERMINATED_REGEXP);
+                        BadToken();
+                        return false;
+                    }
+
+                    if (!tokenbuf.append(c)) {
+                        BadToken();
+                        return false;
+                    }
+                } while (true);
+
+                RegExpFlag reflags = NoFlags;
+                while (true) {
+                    RegExpFlag flag;
+                    c = getCharIgnoreEOL();
+                    if (c == 'g')
+                        flag = GlobalFlag;
+                    else if (c == 'i')
+                        flag = IgnoreCaseFlag;
+                    else if (c == 'm')
+                        flag = MultilineFlag;
+                    else if (c == 'y')
+                        flag = StickyFlag;
+                    else if (c == 'u')
+                        flag = UnicodeFlag;
+                    else if (IsAsciiAlpha(c))
+                        flag = NoFlags;
+                    else
+                        break;
+
+                    if ((reflags & flag) || flag == NoFlags) {
+                        MOZ_ASSERT(sourceUnits.offset() > 0);
+                        char buf[2] = { char(c), '\0' };
+                        errorAt(sourceUnits.offset() - 1, JSMSG_BAD_REGEXP_FLAG, buf);
+                        BadToken();
+                        return false;
+                    }
+
+                    reflags = RegExpFlag(reflags | flag);
+                }
+                ungetCharIgnoreEOL(c);
+
+                tp->type = TokenKind::RegExp;
+                tp->setRegExpFlags(reflags);
+                FinishToken();
+                return true;
+            }
+
+            tp->type = matchChar('=') ? TokenKind::DivAssign : TokenKind::Div;
+            FinishToken();
+            return true;
+
+          case '%':
+            tp->type = matchChar('=') ? TokenKind::ModAssign : TokenKind::Mod;
+            FinishToken();
+            return true;
+
+          case '-':
+            if (matchChar('-')) {
+                if (anyCharsAccess().options().allowHTMLComments &&
+                    !anyCharsAccess().flags.isDirtyLine)
+                {
+                    if (matchChar('>')) {
+                        consumeRestOfSingleLineComment();
+                        continue;
+                    }
+                }
+
+                tp->type = TokenKind::Dec;
+            } else {
+                tp->type = matchChar('=') ? TokenKind::SubAssign : TokenKind::Sub;
+            }
+            FinishToken();
+            return true;
+
+          default:
+            
+            
+            ungetCodePointIgnoreEOL(c);
+            error(JSMSG_ILLEGAL_CHARACTER);
+            BadToken();
+            return false;
+        }
+
+        MOZ_CRASH("should either have called |FinishToken()| and returned "
+                  "true, called |BadToken()| and returned false, or continued "
+                  "following whitespace or a comment");
+    } while (true);
 }
 
 template<typename CharT, class AnyCharsAccess>
