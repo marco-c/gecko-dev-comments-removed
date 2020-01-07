@@ -53,14 +53,8 @@ public:
   NS_DECL_NSIOBSERVER
 
   static nsRFPService* GetOrCreate();
-  static bool IsResistFingerprintingEnabled()
-  {
-    return sPrivacyResistFingerprinting;
-  }
-  static bool IsTimerPrecisionReductionEnabled()
-  {
-    return sPrivacyTimerPrecisionReduction || IsResistFingerprintingEnabled();
-  }
+  static bool IsResistFingerprintingEnabled();
+  static bool IsTimerPrecisionReductionEnabled();
 
   
   static double ReduceTimePrecisionAsMSecs(double aTime);

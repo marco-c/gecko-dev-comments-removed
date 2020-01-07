@@ -78,6 +78,21 @@ nsRFPService::GetOrCreate()
 }
 
 
+bool
+nsRFPService::IsResistFingerprintingEnabled()
+{
+  return sPrivacyResistFingerprinting;
+}
+
+
+bool
+nsRFPService::IsTimerPrecisionReductionEnabled()
+{
+  return (sPrivacyTimerPrecisionReduction || IsResistFingerprintingEnabled()) &&
+         sResolutionUSec != 0;
+}
+
+
 double
 nsRFPService::ReduceTimePrecisionAsMSecs(double aTime)
 {
