@@ -1637,6 +1637,7 @@ nsEventStatus AsyncPanZoomController::OnScaleEnd(const PinchGestureInput& aEvent
     
     
     
+    bool stateWasPinching = (mState == PINCHING);
     StateChangeNotificationBlocker blocker(this);
     SetState(NOTHING);
 
@@ -1663,7 +1664,7 @@ nsEventStatus AsyncPanZoomController::OnScaleEnd(const PinchGestureInput& aEvent
       
       mX.EndTouch(aEvent.mTime);
       mY.EndTouch(aEvent.mTime);
-      if (mState == PINCHING) {
+      if (stateWasPinching) {
         
         if (HasReadyTouchBlock()) {
           return HandleEndOfPan();
