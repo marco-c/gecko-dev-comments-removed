@@ -11,7 +11,7 @@
 #include "mozilla/UniquePtr.h"
 
 
-#include "DrawResult.h"
+#include "ImgDrawResult.h"
 #include "gfx2DGlue.h"
 #include "gfxContext.h"
 #include "gfxPlatform.h"
