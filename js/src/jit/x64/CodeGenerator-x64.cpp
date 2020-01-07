@@ -285,7 +285,10 @@ CodeGeneratorX64::visitDivOrModI64(LDivOrModI64* lir)
 
     
     if (lir->canBeDivideByZero()) {
-        masm.branchTestPtr(Assembler::Zero, rhs, rhs, oldTrap(lir, wasm::Trap::IntegerDivideByZero));
+        Label nonZero;
+        masm.branchTestPtr(Assembler::NonZero, rhs, rhs, &nonZero);
+        masm.wasmTrap(wasm::Trap::IntegerDivideByZero, lir->bytecodeOffset());
+        masm.bind(&nonZero);
     }
 
     
@@ -327,8 +330,12 @@ CodeGeneratorX64::visitUDivOrModI64(LUDivOrModI64* lir)
     Label done;
 
     
-    if (lir->canBeDivideByZero())
-        masm.branchTestPtr(Assembler::Zero, rhs, rhs, oldTrap(lir, wasm::Trap::IntegerDivideByZero));
+    if (lir->canBeDivideByZero()) {
+        Label nonZero;
+        masm.branchTestPtr(Assembler::NonZero, rhs, rhs, &nonZero);
+        masm.wasmTrap(wasm::Trap::IntegerDivideByZero, lir->bytecodeOffset());
+        masm.bind(&nonZero);
+    }
 
     
     masm.xorl(rdx, rdx);

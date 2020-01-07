@@ -379,8 +379,12 @@ CodeGeneratorMIPS::visitDivOrModI64(LDivOrModI64* lir)
     Label done;
 
     
-    if (lir->canBeDivideByZero())
-        masm.branchTest64(Assembler::Zero, rhs, rhs, temp, oldTrap(lir, wasm::Trap::IntegerDivideByZero));
+    if (lir->canBeDivideByZero()) {
+        Label nonZero;
+        masm.branchTest64(Assembler::NonZero, rhs, rhs, temp, &nonZero);
+        masm.wasmTrap(wasm::Trap::IntegerDivideByZero, lir->bytecodeOffset());
+        masm.bind(&nonZero);
+    }
 
     
     if (lir->canBeNegativeOverflow()) {
@@ -431,8 +435,12 @@ CodeGeneratorMIPS::visitUDivOrModI64(LUDivOrModI64* lir)
     Register temp = regs.takeAny();
 
     
-    if (lir->canBeDivideByZero())
-        masm.branchTest64(Assembler::Zero, rhs, rhs, temp, oldTrap(lir, wasm::Trap::IntegerDivideByZero));
+    if (lir->canBeDivideByZero()) {
+        Label nonZero;
+        masm.branchTest64(Assembler::NonZero, rhs, rhs, temp, &nonZero);
+        masm.wasmTrap(wasm::Trap::IntegerDivideByZero, lir->bytecodeOffset());
+        masm.bind(&nonZero);
+    }
 
     masm.setupWasmABICall();
     masm.passABIArg(lhs.high);
