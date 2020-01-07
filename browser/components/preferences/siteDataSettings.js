@@ -218,70 +218,23 @@ let gSiteDataSettings = {
     this._updateButtonsState();
   },
 
-  _getBaseDomainFromHost(host) {
-    let result = host;
-    try {
-      result = Services.eTLD.getBaseDomainFromHost(host);
-    } catch (e) {
-      if (e.result == Cr.NS_ERROR_HOST_IS_IP_ADDRESS ||
-          e.result == Cr.NS_ERROR_INSUFFICIENT_DOMAIN_LEVELS) {
-        
-        
-        
-        result = host;
-      } else {
-        throw e;
-      }
-    }
-    return result;
-  },
-
   saveChanges() {
-    let allowed = true;
-
     
-    let removals = new Set();
-    this._sites = this._sites.filter(site => {
-      if (site.userAction === "remove") {
-        removals.add(site.host);
-        return false;
-      }
-      return true;
-    });
+    let allowed = false;
 
-    if (removals.size > 0) {
-      if (this._sites.length == 0) {
-        if (SiteDataManager.promptSiteDataRemoval(window)) {
+    let removals = this._sites
+      .filter(site => site.userAction == "remove")
+      .map(site => site.host);
+
+    if (removals.length > 0) {
+      if (this._sites.length == removals.length) {
+        allowed = SiteDataManager.promptSiteDataRemoval(window);
+        if (allowed) {
           SiteDataManager.removeAll();
         }
       } else {
-        
-        
-        
-        
-        let hostsTable = new Map();
-        
-        for (let host of removals) {
-          let baseDomain = this._getBaseDomainFromHost(host);
-          let hosts = hostsTable.get(baseDomain);
-          if (!hosts) {
-            hosts = [];
-            hostsTable.set(baseDomain, hosts);
-          }
-          hosts.push(host);
-        }
-
-        
-        for (let site of this._sites) {
-          let baseDomain = this._getBaseDomainFromHost(site.host);
-          let hosts = hostsTable.get(baseDomain);
-          if (hosts) {
-            hosts.push(site.host);
-          }
-        }
-
         let args = {
-          hostsTable,
+          hosts: removals,
           allowed: false
         };
         let features = "centerscreen,chrome,modal,resizable=no";
@@ -299,9 +252,12 @@ let gSiteDataSettings = {
         }
       }
     }
-    
 
-    this.close();
+    
+    
+    if (allowed) {
+      this.close();
+    }
   },
 
   close() {
