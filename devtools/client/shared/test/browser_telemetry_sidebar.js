@@ -12,16 +12,15 @@ const TOOL_DELAY = 200;
 
 add_task(async function() {
   await addTab(TEST_URI);
-  let Telemetry = loadTelemetryAndRecordLogs();
+  startTelemetry();
 
   let target = TargetFactory.forTab(gBrowser.selectedTab);
   let toolbox = await gDevTools.showToolbox(target, "inspector");
   info("inspector opened");
 
   await testSidebar(toolbox);
-  checkResults(Telemetry);
+  checkResults();
 
-  stopRecordingTelemetryLogs(Telemetry);
   await gDevTools.closeToolbox(target);
   gBrowser.removeCurrentTab();
 });
@@ -34,7 +33,7 @@ function testSidebar(toolbox) {
                       "animationinspector"];
 
   
-  sidebarTools.push.apply(sidebarTools, sidebarTools);
+  sidebarTools = [...sidebarTools, ...sidebarTools];
 
   return new Promise(resolve => {
     
@@ -52,34 +51,16 @@ function testSidebar(toolbox) {
   });
 }
 
-function checkResults(Telemetry) {
-  let result = Telemetry.prototype.telemetryInfo;
-
-  for (let [histId, value] of Object.entries(result)) {
-    if (histId.startsWith("DEVTOOLS_INSPECTOR_")) {
-      
-      
-      continue;
-    }
-
-    if (histId === "DEVTOOLS_TOOLBOX_OPENED_COUNT") {
-      is(value.length, 1, histId + " has only one entry");
-    } else if (histId.endsWith("OPENED_COUNT")) {
-      ok(value.length > 1, histId + " has more than one entry");
-
-      let okay = value.every(function(element) {
-        return element === true;
-      });
-
-      ok(okay, "All " + histId + " entries are === true");
-    } else if (histId.endsWith("TIME_ACTIVE_SECONDS")) {
-      ok(value.length > 1, histId + " has more than one entry");
-
-      let okay = value.every(function(element) {
-        return element > 0;
-      });
-
-      ok(okay, "All " + histId + " entries have time > 0");
-    }
-  }
+function checkResults() {
+  
+  
+  checkTelemetry("DEVTOOLS_INSPECTOR_OPENED_COUNT", "", [1, 0, 0], "array");
+  checkTelemetry("DEVTOOLS_RULEVIEW_OPENED_COUNT", "", [3, 0, 0], "array");
+  checkTelemetry("DEVTOOLS_COMPUTEDVIEW_OPENED_COUNT", "", [2, 0, 0], "array");
+  checkTelemetry("DEVTOOLS_LAYOUTVIEW_OPENED_COUNT", "", [2, 0, 0], "array");
+  checkTelemetry("DEVTOOLS_FONTINSPECTOR_OPENED_COUNT", "", [2, 0, 0], "array");
+  checkTelemetry("DEVTOOLS_RULEVIEW_TIME_ACTIVE_SECONDS", "", null, "hasentries");
+  checkTelemetry("DEVTOOLS_COMPUTEDVIEW_TIME_ACTIVE_SECONDS", "", null, "hasentries");
+  checkTelemetry("DEVTOOLS_LAYOUTVIEW_TIME_ACTIVE_SECONDS", "", null, "hasentries");
+  checkTelemetry("DEVTOOLS_FONTINSPECTOR_TIME_ACTIVE_SECONDS", "", null, "hasentries");
 }
