@@ -46,8 +46,7 @@ class TabChild;
 class DocGroup;
 class TabChild;
 
-class TabGroup final : public SchedulerGroup,
-                       public LinkedListElement<TabGroup>
+class TabGroup final : public SchedulerGroup
 {
 private:
   class HashEntry : public nsCStringHashKey
@@ -147,16 +146,6 @@ public:
     return mNumOfIndexedDBDatabases;
   }
 
-  static LinkedList<TabGroup>& TabGroupList()
-  {
-    return sTabGroups;
-  }
-
-  
-  
-  
-  static bool HasOnlyThrottableTabs();
-
 private:
   virtual AbstractThread*
   AbstractMainThreadForImpl(TaskCategory aCategory) override;
@@ -178,8 +167,6 @@ private:
   DocGroupMap mDocGroups;
   nsTArray<nsPIDOMWindowOuter*> mWindows;
   uint32_t mForegroundCount;
-
-  static LinkedList<TabGroup> sTabGroups;
 };
 
 } 
