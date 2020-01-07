@@ -737,7 +737,7 @@ var MessageQueue = {
 
 
 
-  _idleCallbackID: null,
+  _idleScheduled: false,
 
   
 
@@ -782,10 +782,7 @@ var MessageQueue = {
 
 
   cleanupTimers() {
-    if (this._idleCallbackID) {
-      content.cancelIdleCallback(this._idleCallbackID);
-      this._idleCallbackID = null;
-    }
+    this._idleScheduled = false;
     if (this._timeout) {
       clearTimeout(this._timeout);
       this._timeout = null;
@@ -850,13 +847,13 @@ var MessageQueue = {
         MessageQueue.send();
         return;
       }
-    } else if (MessageQueue._idleCallbackID) {
+    } else if (MessageQueue._idleScheduled) {
       
       return;
     }
-    MessageQueue._idleCallbackID =
-      content.requestIdleCallback(MessageQueue.sendWhenIdle, {timeout: MessageQueue._timeoutWaitIdlePeriodMs});
-   },
+    ChromeUtils.idleDispatch(MessageQueue.sendWhenIdle, {timeout: MessageQueue._timeoutWaitIdlePeriodMs});
+    MessageQueue._idleScheduled = true;
+  },
 
   
 
