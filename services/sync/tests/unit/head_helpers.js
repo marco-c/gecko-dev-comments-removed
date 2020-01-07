@@ -10,6 +10,7 @@
 
 
 
+ChromeUtils.import("resource://testing-common/AddonTestUtils.jsm");
 ChromeUtils.import("resource://services-common/async.js");
 ChromeUtils.import("resource://services-common/utils.js");
 ChromeUtils.import("resource://testing-common/PlacesTestUtils.jsm");
@@ -19,6 +20,8 @@ ChromeUtils.import("resource://gre/modules/PlacesUtils.jsm");
 ChromeUtils.import("resource://gre/modules/PlacesSyncUtils.jsm");
 ChromeUtils.import("resource://gre/modules/ObjectUtils.jsm");
 ChromeUtils.import("resource://testing-common/services/sync/utils.js");
+ChromeUtils.defineModuleGetter(this, "AddonManager",
+                               "resource://gre/modules/AddonManager.jsm");
 
 add_task(async function head_setup() {
   
@@ -79,22 +82,6 @@ function ExtensionsTestPath(path) {
   return "../../../../toolkit/mozapps/extensions/test/xpcshell" + path;
 }
 
-
-
-
-
-
-
-
-function loadAddonTestFunctions() {
-  const path = ExtensionsTestPath("/head_addons.js");
-  let file = do_get_file(path);
-  let uri = Services.io.newFileURI(file);
-  
-  Services.scriptloader.loadSubScript(uri.spec, gGlobalScope);
-  createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "1.9.2");
-}
-
 function webExtensionsTestPath(path) {
   if (path[0] != "/") {
     throw Error("Path must begin with '/': " + path);
@@ -112,12 +99,6 @@ function loadWebExtensionTestFunctions() {
   let file = do_get_file(path);
   let uri = Services.io.newFileURI(file);
   Services.scriptloader.loadSubScript(uri.spec, gGlobalScope);
-}
-
-
-function getAddonInstall(name) {
-  let f = do_get_file(ExtensionsTestPath("/addons/" + name + ".xpi"));
-  return AddonManager.getInstallForFile(f);
 }
 
 
@@ -153,8 +134,8 @@ async function installAddonFromInstall(install) {
 
 
 
-async function installAddon(name, reconciler = null) {
-  let install = await getAddonInstall(name);
+async function installAddon(file, reconciler = null) {
+  let install = await AddonManager.getInstallForFile(file);
   Assert.notEqual(null, install);
   const addon = await installAddonFromInstall(install);
   if (reconciler) {
