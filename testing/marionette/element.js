@@ -664,6 +664,30 @@ function findElements(strategy, selector, document, startNode = undefined) {
 
 
 
+
+
+
+
+element.findClosest = function(startNode, selector) {
+  let node = startNode;
+  while (node.parentNode && node.parentNode.nodeType == ELEMENT_NODE) {
+    node = node.parentNode;
+    if (node.matches(selector)) {
+      return node;
+    }
+  }
+  return null;
+};
+
+
+
+
+
+
+
+
+
+
 element.isCollection = function(seq) {
   switch (Object.prototype.toString.call(seq)) {
     case "[object Arguments]":
