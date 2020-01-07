@@ -1067,6 +1067,7 @@ Module::instantiateGlobals(JSContext* cx, const ValVector& globalImportValues,
     
     
 
+# ifdef DEBUG
     size_t numGlobalImports = 0;
     for (const Import& import : imports_) {
         if (import.kind != DefinitionKind::Global)
@@ -1074,13 +1075,12 @@ Module::instantiateGlobals(JSContext* cx, const ValVector& globalImportValues,
         size_t globalIndex = numGlobalImports++;
         const GlobalDesc& global = globals[globalIndex];
         MOZ_ASSERT(global.importIndex() == globalIndex);
-        if (!global.isIndirect())
-            continue;
-        if (!EnsureGlobalObject(cx, globalImportValues, globalIndex, global, globalObjs))
-            return false;
+        MOZ_ASSERT_IF(global.isIndirect(),
+                      globalIndex < globalObjs.length() || globalObjs[globalIndex]);
     }
     MOZ_ASSERT_IF(!metadata().isAsmJS(),
                   numGlobalImports == globals.length() || !globals[numGlobalImports].isImport());
+# endif
 #endif
     return true;
 }
