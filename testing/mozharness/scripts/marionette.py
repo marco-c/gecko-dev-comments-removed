@@ -29,9 +29,6 @@ from mozharness.mozilla.testing.errors import HarnessErrorList
 from mozharness.mozilla.structuredlog import StructuredOutputParser
 
 
-
-
-
 class MarionetteTest(TestingMixin, MercurialScript, TransferMixin,
                      CodeCoverageMixin):
     config_options = [[

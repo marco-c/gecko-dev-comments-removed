@@ -483,8 +483,6 @@ def fetch_file(base_urls, file_record, grabchunk=1024 * 4, auth_file=None, regio
                 k = True
                 size = 0
                 while k:
-                    
-                    
                     indata = f.read(grabchunk)
                     out.write(indata)
                     size += len(indata)

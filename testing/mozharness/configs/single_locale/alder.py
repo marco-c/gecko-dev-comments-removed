@@ -31,7 +31,7 @@ config = {
     "mar_tools_url": os.environ.get(
         "MAR_TOOLS_URL",
         
-        "http://ftp.mozilla.org/pub/mozilla.org/firefox/nightly/latest-mozilla-central/mar-tools/%(platform)s"
+        "https://ftp.mozilla.org/pub/mozilla.org/firefox/nightly/latest-mozilla-central/mar-tools/%(platform)s"
     ),
 
     

@@ -96,8 +96,7 @@ class TalosOutputParser(OutputParser):
 class Talos(TestingMixin, MercurialScript, TooltoolMixin,
             Python3Virtualenv, CodeCoverageMixin):
     """
-    install and run Talos tests:
-    https://wiki.mozilla.org/Buildbot/Talos
+    install and run Talos tests
     """
     config_options = [
         [["--use-talos-json"],

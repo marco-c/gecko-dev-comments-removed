@@ -722,12 +722,6 @@ Did you run with --create-virtualenv? Is mozinstall in virtualenv_modules?""")
             name = suite['name']
             self.info("Running pre test command %(name)s with '%(cmd)s'"
                       % {'name': name, 'cmd': ' '.join(cmd)})
-            if self.buildbot_config:  
-                
-                
-                
-                cmd = [x % (self.buildbot_config.get('properties'))
-                       for x in cmd]
             self.run_command(cmd,
                              cwd=dirs['abs_work_dir'],
                              error_list=BaseErrorList,

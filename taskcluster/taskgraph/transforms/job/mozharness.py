@@ -278,7 +278,6 @@ def mozharness_on_generic_worker(config, job, taskdesc):
         mh_command.append('--config ' + cfg.replace('/', '\\'))
     if run['use-magic-mh-args']:
         mh_command.append('--branch ' + config.params['project'])
-        mh_command.append(r'--skip-buildbot-actions')
     mh_command.append(r'--work-dir %cd:Z:=z:%\build')
     for action in run.get('actions', []):
         assert ' ' not in action
