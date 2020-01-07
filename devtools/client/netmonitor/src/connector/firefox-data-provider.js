@@ -180,6 +180,10 @@ class FirefoxDataProvider {
       requestPostData.postData.text = postData;
       payload.requestPostData = Object.assign({}, requestPostData);
       payload.requestHeadersFromUploadStream = { headers, headersSize };
+
+      
+      
+      payload.requestPostDataAvailable = false;
     }
     return payload;
   }
@@ -202,6 +206,10 @@ class FirefoxDataProvider {
           payload.responseCookies = resCookies;
         }
       }
+
+      
+      
+      payload.responseCookiesAvailable = false;
     }
     return payload;
   }
@@ -224,6 +232,10 @@ class FirefoxDataProvider {
           payload.requestCookies = reqCookies;
         }
       }
+
+      
+      
+      payload.requestCookiesAvailable = false;
     }
     return payload;
   }
@@ -265,12 +277,9 @@ class FirefoxDataProvider {
     
     
     
-    return record.requestHeaders && record.requestCookies && record.eventTimings &&
-      (
-        (record.responseHeaders && record.responseCookies) ||
-        payload.securityState === "broken" ||
-        (!payload.status && payload.responseContentAvailable)
-      );
+    return record.requestHeaders && record.eventTimings &&
+      (record.responseHeaders || payload.securityState === "broken" ||
+        (!payload.status && payload.responseContentAvailable));
   }
 
   
@@ -342,9 +351,7 @@ class FirefoxDataProvider {
     
     this.rdpRequestMap.set(actor, {
       requestHeaders: false,
-      requestCookies: false,
       responseHeaders: false,
-      responseCookies: false,
       eventTimings: false,
     });
 
@@ -381,17 +388,15 @@ class FirefoxDataProvider {
 
     switch (updateType) {
       case "requestHeaders":
-      case "requestCookies":
       case "responseHeaders":
-      case "responseCookies":
         this.requestPayloadData(actor, updateType);
         break;
+      case "requestCookies":
+      case "responseCookies":
       case "requestPostData":
-        this.updateRequest(actor, {
-          
-          
-          requestPostDataAvailable: true
-        });
+        
+        
+        this.updateRequest(actor, { [`${updateType}Available`]: true });
         break;
       case "securityInfo":
         this.updateRequest(actor, { securityState: networkInfo.securityInfo });
@@ -591,12 +596,12 @@ class FirefoxDataProvider {
 
 
 
-  onRequestCookies(response) {
-    return this.updateRequest(response.from, {
+  async onRequestCookies(response) {
+    let payload = await this.updateRequest(response.from, {
       requestCookies: response
-    }).then(() => {
-      emit(EVENTS.RECEIVED_REQUEST_COOKIES, response.from);
     });
+    emit(EVENTS.RECEIVED_REQUEST_COOKIES, response.from);
+    return payload.requestCookies;
   }
 
   
@@ -643,12 +648,12 @@ class FirefoxDataProvider {
 
 
 
-  onResponseCookies(response) {
-    return this.updateRequest(response.from, {
+  async onResponseCookies(response) {
+    let payload = await this.updateRequest(response.from, {
       responseCookies: response
-    }).then(() => {
-      emit(EVENTS.RECEIVED_RESPONSE_COOKIES, response.from);
     });
+    emit(EVENTS.RECEIVED_RESPONSE_COOKIES, response.from);
+    return payload.responseCookies;
   }
 
   

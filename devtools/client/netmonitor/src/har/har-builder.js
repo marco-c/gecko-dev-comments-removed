@@ -268,7 +268,6 @@ HarBuilder.prototype = {
       postDataText: postData.text,
     })) {
       postData.mimeType = "application/x-www-form-urlencoded";
-
       
       let formDataSections = await getFormDataSections(
         requestHeaders,
