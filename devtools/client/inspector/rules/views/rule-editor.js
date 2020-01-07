@@ -604,7 +604,9 @@ RuleEditor.prototype = {
     
     this.editor.input.blur();
 
-    this.telemetry.recordEvent("devtools.main", "edit_rule", "ruleview");
+    this.telemetry.recordEvent("devtools.main", "edit_rule", "ruleview", null, {
+      "session_id": this.toolbox.sessionId
+    });
   },
 
   
