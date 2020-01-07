@@ -43,6 +43,7 @@ public:
   nsresult Rv() const { return mRv; }
   bool Canceled() const { return mCanceled; }
   bool Handled() const { return mHandled; }
+  bool EditorDestroyed() const { return mRv == NS_ERROR_EDITOR_DESTROYED; }
 
   EditActionResult SetResult(nsresult aRv)
   {
@@ -76,7 +77,12 @@ public:
       return *this;
     }
     
-    if (Failed() || aOther.Failed()) {
+    
+    if (EditorDestroyed() || aOther.EditorDestroyed()) {
+      mRv = NS_ERROR_EDITOR_DESTROYED;
+    }
+    
+    else if (Failed() || aOther.Failed()) {
       mRv = NS_ERROR_FAILURE;
     } else {
       
