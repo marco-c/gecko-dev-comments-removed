@@ -47,6 +47,7 @@
 #include "nsFrameLoader.h"
 #include "nsNumberControlFrame.h"
 #include "nsNetUtil.h"
+#include "nsRange.h"
 
 #include "mozilla/ContentEvents.h"
 #include "mozilla/dom/Element.h"
@@ -2430,37 +2431,41 @@ nsFocusManager::UpdateCaret(bool aMoveCaretToFocus,
 void
 nsFocusManager::MoveCaretToFocus(nsIPresShell* aPresShell, nsIContent* aContent)
 {
-  
-  nsCOMPtr<nsIDOMDocument> domDoc = do_QueryInterface(aPresShell->GetDocument());
-  if (domDoc) {
+  nsCOMPtr<nsIDocument> doc = aPresShell->GetDocument();
+  if (doc) {
     RefPtr<nsFrameSelection> frameSelection = aPresShell->FrameSelection();
     nsCOMPtr<nsISelection> domSelection =
       frameSelection->GetSelection(SelectionType::eNormal);
     if (domSelection) {
-      nsCOMPtr<nsIDOMNode> currentFocusNode(do_QueryInterface(aContent));
       
       
       domSelection->RemoveAllRanges();
-      if (currentFocusNode) {
-        nsCOMPtr<nsIDOMRange> newRange;
-        nsresult rv = domDoc->CreateRange(getter_AddRefs(newRange));
-        if (NS_SUCCEEDED(rv)) {
-          
-          
-          newRange->SelectNodeContents(currentFocusNode);
-          nsCOMPtr<nsIDOMNode> firstChild;
-          currentFocusNode->GetFirstChild(getter_AddRefs(firstChild));
-          if (!firstChild ||
-              aContent->IsNodeOfType(nsINode::eHTML_FORM_CONTROL)) {
-            
-            
-            
-            newRange->SetStartBefore(currentFocusNode);
-            newRange->SetEndBefore(currentFocusNode);
-          }
-          domSelection->AddRange(newRange);
-          domSelection->CollapseToStart();
+      if (aContent) {
+        ErrorResult rv;
+        RefPtr<nsRange> newRange = doc->CreateRange(rv);
+        if (NS_WARN_IF(rv.Failed())) {
+          rv.SuppressException();
+          return;
         }
+
+        
+        
+        {
+          IgnoredErrorResult ignored;
+          newRange->SelectNodeContents(*aContent, ignored);
+        }
+
+        if (!aContent->GetFirstChild() ||
+            aContent->IsNodeOfType(nsINode::eHTML_FORM_CONTROL)) {
+          
+          
+          
+          IgnoredErrorResult err1, err2;
+          newRange->SetStartBefore(*aContent, err1);
+          newRange->SetEndBefore(*aContent, err2);
+        }
+        domSelection->AddRange(newRange);
+        domSelection->CollapseToStart();
       }
     }
   }
@@ -3956,13 +3961,12 @@ nsFocusManager::GetFocusInSelection(nsPIDOMWindowOuter* aWindow,
   
   
 
-  
-  nsCOMPtr<nsIDOMNode> selectionNode(do_QueryInterface(aStartSelection));
-  nsCOMPtr<nsIDOMNode> endSelectionNode(do_QueryInterface(aEndSelection));
-  nsCOMPtr<nsIDOMNode> testNode;
+  nsCOMPtr<nsIContent> selectionNode = aStartSelection;
+  nsCOMPtr<nsIContent> endSelectionNode = aEndSelection;
+  nsCOMPtr<nsIContent> testNode;
 
   do {
-    testContent = do_QueryInterface(selectionNode);
+    testContent = selectionNode;
 
     
     
@@ -3973,7 +3977,7 @@ nsFocusManager::GetFocusInSelection(nsPIDOMWindowOuter* aWindow,
       return;
     }
 
-    selectionNode->GetFirstChild(getter_AddRefs(testNode));
+    nsIContent* testNode = selectionNode->GetFirstChild();
     if (testNode) {
       selectionNode = testNode;
       continue;
@@ -3981,19 +3985,26 @@ nsFocusManager::GetFocusInSelection(nsPIDOMWindowOuter* aWindow,
 
     if (selectionNode == endSelectionNode)
       break;
-    selectionNode->GetNextSibling(getter_AddRefs(testNode));
+    testNode = selectionNode->GetNextSibling();
     if (testNode) {
       selectionNode = testNode;
       continue;
     }
 
     do {
-      selectionNode->GetParentNode(getter_AddRefs(testNode));
+      
+      
+      
+      
+      
+      
+      
+      testNode = selectionNode->GetParent();
       if (!testNode || testNode == endSelectionNode) {
         selectionNode = nullptr;
         break;
       }
-      testNode->GetNextSibling(getter_AddRefs(selectionNode));
+      selectionNode = testNode->GetNextSibling();
       if (selectionNode)
         break;
       selectionNode = testNode;
