@@ -6,5 +6,11 @@
 
 
 import os
+import sys
+
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
+from shellutil import quote
+
 for key, value in os.environ.items():
-    print('%s=%s' % (key, value))
+    print('%s=%s' % (key, quote(value)))
