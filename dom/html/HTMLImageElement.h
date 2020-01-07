@@ -331,7 +331,7 @@ protected:
   bool InResponsiveMode();
 
   
-  bool SelectedSourceMatchesLast(nsIURI* aSelectedSource, double aSelectedDensity);
+  bool SelectedSourceMatchesLast(nsIURI* aSelectedSource);
 
   
   

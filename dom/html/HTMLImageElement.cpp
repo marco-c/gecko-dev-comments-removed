@@ -13,6 +13,7 @@
 #include "nsSize.h"
 #include "nsDocument.h"
 #include "nsIDocument.h"
+#include "nsImageFrame.h"
 #include "nsIScriptContext.h"
 #include "nsIURL.h"
 #include "nsIIOService.h"
@@ -949,7 +950,7 @@ HTMLImageElement::InResponsiveMode()
 }
 
 bool
-HTMLImageElement::SelectedSourceMatchesLast(nsIURI* aSelectedSource, double aSelectedDensity)
+HTMLImageElement::SelectedSourceMatchesLast(nsIURI* aSelectedSource)
 {
   
   
@@ -957,32 +958,58 @@ HTMLImageElement::SelectedSourceMatchesLast(nsIURI* aSelectedSource, double aSel
     return false;
   }
   bool equal = false;
-  return NS_SUCCEEDED(mLastSelectedSource->Equals(aSelectedSource, &equal)) && equal &&
-      aSelectedDensity == mCurrentDensity;
+  return NS_SUCCEEDED(mLastSelectedSource->Equals(aSelectedSource, &equal)) && equal;
 }
 
 nsresult
 HTMLImageElement::LoadSelectedImage(bool aForce, bool aNotify, bool aAlwaysLoad)
 {
-  nsresult rv = NS_ERROR_FAILURE;
+  double currentDensity = 1.0; 
+
+  
+  
+  
+  
+  
+  
+  
+  auto UpdateDensityOnly = [&]() -> void {
+    if (mCurrentDensity == currentDensity) {
+      return;
+    }
+    mCurrentDensity = currentDensity;
+    if (nsImageFrame* f = do_QueryFrame(GetPrimaryFrame())) {
+      f->ResponsiveContentDensityChanged();
+    }
+  };
 
   if (aForce) {
     
     
     
-    if (!UpdateResponsiveSource() && !aAlwaysLoad) {
+    
+    const bool sourceChanged = UpdateResponsiveSource();
+
+    if (mResponsiveSelector) {
+      currentDensity = mResponsiveSelector->GetSelectedImageDensity();
+    }
+
+    if (!sourceChanged && !aAlwaysLoad) {
+      UpdateDensityOnly();
       return NS_OK;
     }
+  } else if (mResponsiveSelector) {
+    currentDensity = mResponsiveSelector->GetSelectedImageDensity();
   }
 
+  nsresult rv = NS_ERROR_FAILURE;
   nsCOMPtr<nsIURI> selectedSource;
-  double currentDensity = 1.0; 
   if (mResponsiveSelector) {
     nsCOMPtr<nsIURI> url = mResponsiveSelector->GetSelectedImageURL();
     nsCOMPtr<nsIPrincipal> triggeringPrincipal = mResponsiveSelector->GetSelectedImageTriggeringPrincipal();
     selectedSource = url;
-    currentDensity = mResponsiveSelector->GetSelectedImageDensity();
-    if (!aAlwaysLoad && SelectedSourceMatchesLast(selectedSource, currentDensity)) {
+    if (!aAlwaysLoad && SelectedSourceMatchesLast(selectedSource)) {
+      UpdateDensityOnly();
       return NS_OK;
     }
     if (url) {
@@ -995,12 +1022,11 @@ HTMLImageElement::LoadSelectedImage(bool aForce, bool aNotify, bool aAlwaysLoad)
       CancelImageRequests(aNotify);
       rv = NS_OK;
     } else {
-      nsIDocument* doc = GetOurOwnerDoc();
-      if (doc) {
-        StringToURI(src, doc, getter_AddRefs(selectedSource));
-        if (!aAlwaysLoad && SelectedSourceMatchesLast(selectedSource, currentDensity)) {
-          return NS_OK;
-        }
+      nsIDocument* doc = OwnerDoc();
+      StringToURI(src, doc, getter_AddRefs(selectedSource));
+      if (!aAlwaysLoad && SelectedSourceMatchesLast(selectedSource)) {
+        UpdateDensityOnly();
+        return NS_OK;
       }
 
       
