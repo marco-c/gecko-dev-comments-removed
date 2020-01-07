@@ -1031,11 +1031,19 @@ var ActivityStreamProvider = {
                   .filter(item => item.status === "0")
                   .map(item => ({
                     description: item.excerpt,
-                    preview_image_url: item.has_image === "1" && item.image.src,
+                    preview_image_url: item.image && item.image.src,
                     title: item.resolved_title,
                     url: item.resolved_url,
-                    item_id: item.item_id
+                    pocket_id: item.item_id
                   }));
+
+    
+    for (let item of items) {
+      const bookmarkData = await this.getBookmark({url: item.url});
+      if (bookmarkData) {
+        item.bookmarkGuid = bookmarkData.bookmarkGuid;
+      }
+    }
     return this._processHighlights(items, aOptions, "pocket");
   },
 
@@ -1230,8 +1238,11 @@ var ActivityStreamProvider = {
 
 
 
-  async getBookmark(aGuid) {
-    let bookmark = await PlacesUtils.bookmarks.fetch(aGuid);
+
+
+
+  async getBookmark(aInfo) {
+    let bookmark = await PlacesUtils.bookmarks.fetch(aInfo);
     if (!bookmark) {
       return null;
     }
@@ -1353,6 +1364,19 @@ var ActivityStreamLinks = {
     const url = aUrl;
     PinnedLinks.unpin({url});
     return PlacesUtils.history.remove(url);
+  },
+
+  
+
+
+
+
+
+
+
+
+  deletePocketEntry(aItemID) {
+    return new Promise((success, error) => pktApi.deleteItem(aItemID, {success, error}));
   },
 
   
