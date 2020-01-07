@@ -411,117 +411,115 @@ RetainedDisplayListBuilder::MergeDisplayLists(nsDisplayList* aNewList,
     }
   };
 
-  if (!aNewList->IsEmpty()) {
-    
-    
-    
-    
-    nsDataHashtable<DisplayItemHashEntry, nsDisplayItem*> oldListLookup(aOldList->Count());
+  
+  
+  
+  
+  nsDataHashtable<DisplayItemHashEntry, nsDisplayItem*> oldListLookup(aOldList->Count());
 
-    for (nsDisplayItem* i = aOldList->GetBottom(); i != nullptr; i = i->GetAbove()) {
-      i->SetReused(false);
+  for (nsDisplayItem* i = aOldList->GetBottom(); i != nullptr; i = i->GetAbove()) {
+    i->SetReused(false);
 
-      if (!aNewList->IsEmpty()) {
-        oldListLookup.Put({ i->Frame(), i->GetPerFrameKey() }, i);
-      }
+    if (!aNewList->IsEmpty()) {
+      oldListLookup.Put({ i->Frame(), i->GetPerFrameKey() }, i);
     }
+  }
 
-    nsDataHashtable<DisplayItemHashEntry, nsDisplayItem*> newListLookup(aNewList->Count());
-    for (nsDisplayItem* i = aNewList->GetBottom(); i != nullptr; i = i->GetAbove()) {
+  nsDataHashtable<DisplayItemHashEntry, nsDisplayItem*> newListLookup(aNewList->Count());
+  for (nsDisplayItem* i = aNewList->GetBottom(); i != nullptr; i = i->GetAbove()) {
 #ifdef DEBUG
-      if (newListLookup.Get({ i->Frame(), i->GetPerFrameKey() }, nullptr)) {
-        MOZ_CRASH_UNSAFE_PRINTF("Duplicate display items detected!: %s(0x%p) type=%d key=%d",
-                                  i->Name(), i->Frame(),
-                                  static_cast<int>(i->GetType()), i->GetPerFrameKey());
-      }
-#endif
-      newListLookup.Put({ i->Frame(), i->GetPerFrameKey() }, i);
+    if (newListLookup.Get({ i->Frame(), i->GetPerFrameKey() }, nullptr)) {
+       MOZ_CRASH_UNSAFE_PRINTF("Duplicate display items detected!: %s(0x%p) type=%d key=%d",
+                                i->Name(), i->Frame(),
+                                static_cast<int>(i->GetType()), i->GetPerFrameKey());
     }
+#endif
+    newListLookup.Put({ i->Frame(), i->GetPerFrameKey() }, i);
+  }
 
-    while (nsDisplayItem* newItem = aNewList->RemoveBottom()) {
-      if (nsDisplayItem* oldItem = oldListLookup.Get({ newItem->Frame(), newItem->GetPerFrameKey() })) {
-        
-        
-        
-        nsDisplayItem* old = nullptr;
-        while ((old = aOldList->GetBottom()) && old != oldItem) {
-          if (IsAnyAncestorModified(old->FrameForInvalidation())) {
-            
-            oldListLookup.Remove({ old->Frame(), old->GetPerFrameKey() });
-            aOldList->RemoveBottom();
-            old->Destroy(&mBuilder);
-          } else if (newListLookup.Get({ old->Frame(), old->GetPerFrameKey() })) {
-            
-            
-            break;
-          } else {
-            
-            
-            if (old->GetChildren()) {
-              nsDisplayList empty;
-              Maybe<const ActiveScrolledRoot*> containerASRForChildren;
-              MergeDisplayLists(&empty, old->GetChildren(),
-                                old->GetChildren(), containerASRForChildren);
-              UpdateASR(old, containerASRForChildren);
-              old->UpdateBounds(&mBuilder);
-            }
-            aOldList->RemoveBottom();
-            ReuseItem(old);
-          }
-        }
-        bool destroy = false;
-        if (old == oldItem) {
+  while (nsDisplayItem* newItem = aNewList->RemoveBottom()) {
+    if (nsDisplayItem* oldItem = oldListLookup.Get({ newItem->Frame(), newItem->GetPerFrameKey() })) {
+      
+      
+      
+      nsDisplayItem* old = nullptr;
+      while ((old = aOldList->GetBottom()) && old != oldItem) {
+        if (IsAnyAncestorModified(old->FrameForInvalidation())) {
           
-          
+          oldListLookup.Remove({ old->Frame(), old->GetPerFrameKey() });
           aOldList->RemoveBottom();
-          destroy = true;
+          old->Destroy(&mBuilder);
+        } else if (newListLookup.Get({ old->Frame(), old->GetPerFrameKey() })) {
+          
+          
+          break;
         } else {
           
           
-          
-          oldItem->SetReused(true);
-        }
-
-        
-        
-        if (!destroy &&
-            oldItem->GetType() == DisplayItemType::TYPE_LAYER_EVENT_REGIONS &&
-            !IsAnyAncestorModified(oldItem->FrameForInvalidation())) {
-          
-          
-          
-          
-          MergeLayerEventRegions(oldItem, newItem);
-          ReuseItem(oldItem);
-          newItem->Destroy(&mBuilder);
-        } else {
-          if (!IsAnyAncestorModified(oldItem->FrameForInvalidation()) &&
-              oldItem->GetChildren()) {
-            MOZ_ASSERT(newItem->GetChildren());
+          if (old->GetChildren()) {
+            nsDisplayList empty;
             Maybe<const ActiveScrolledRoot*> containerASRForChildren;
-            MergeDisplayLists(newItem->GetChildren(), oldItem->GetChildren(),
-                              newItem->GetChildren(), containerASRForChildren);
-            UpdateASR(newItem, containerASRForChildren);
-            newItem->UpdateBounds(&mBuilder);
+            MergeDisplayLists(&empty, old->GetChildren(),
+                              old->GetChildren(), containerASRForChildren);
+            UpdateASR(old, containerASRForChildren);
+            old->UpdateBounds(&mBuilder);
           }
-
-          if (destroy) {
-            oldItem->Destroy(&mBuilder);
-          }
-          UseItem(newItem);
+          aOldList->RemoveBottom();
+          ReuseItem(old);
         }
+      }
+      bool destroy = false;
+      if (old == oldItem) {
+        
+        
+        aOldList->RemoveBottom();
+        destroy = true;
       } else {
         
         
+        
+        oldItem->SetReused(true);
+      }
+
+      
+      
+      if (!destroy &&
+          oldItem->GetType() == DisplayItemType::TYPE_LAYER_EVENT_REGIONS &&
+          !IsAnyAncestorModified(oldItem->FrameForInvalidation())) {
+        
+        
+        
+        
+        MergeLayerEventRegions(oldItem, newItem);
+        ReuseItem(oldItem);
+        newItem->Destroy(&mBuilder);
+      } else {
+        if (!IsAnyAncestorModified(oldItem->FrameForInvalidation()) &&
+            oldItem->GetChildren()) {
+          MOZ_ASSERT(newItem->GetChildren());
+          Maybe<const ActiveScrolledRoot*> containerASRForChildren;
+          MergeDisplayLists(newItem->GetChildren(), oldItem->GetChildren(),
+                            newItem->GetChildren(), containerASRForChildren);
+          UpdateASR(newItem, containerASRForChildren);
+          newItem->UpdateBounds(&mBuilder);
+        }
+
+        if (destroy) {
+          oldItem->Destroy(&mBuilder);
+        }
         UseItem(newItem);
       }
+    } else {
+      
+      
+      UseItem(newItem);
     }
   }
 
   
   while (nsDisplayItem* old = aOldList->RemoveBottom()) {
     if (!IsAnyAncestorModified(old->FrameForInvalidation()) &&
-        (!old->IsReused() || aNewList->IsEmpty())) {
+        !old->IsReused()) {
       if (old->GetChildren()) {
         
         
