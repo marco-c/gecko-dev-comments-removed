@@ -211,6 +211,7 @@ let InternalFaviconLoader = {
 var PlacesUIUtils = {
   LOAD_IN_SIDEBAR_ANNO: "bookmarkProperties/loadInSidebar",
   DESCRIPTION_ANNO: "bookmarkProperties/description",
+  LAST_USED_FOLDERS_META_KEY: "bookmarks/lastusedfolders",
 
   
 
@@ -1032,7 +1033,7 @@ var PlacesUIUtils = {
     if (win.top.XULBrowserWindow) {
       win.top.XULBrowserWindow.setOverLink(url, null);
     }
-  }
+  },
 };
 
 

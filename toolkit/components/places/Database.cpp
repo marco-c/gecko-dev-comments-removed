@@ -6,6 +6,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/ScopeExit.h"
+#include "mozilla/JSONWriter.h"
 
 #include "Database.h"
 
@@ -110,6 +111,11 @@
 
 
 #define MOBILE_ROOT_ANNO "mobile/bookmarksRoot"
+
+
+#define LAST_USED_ANNO NS_LITERAL_CSTRING("bookmarkPropertiesDialog/folderLastUsed")
+
+#define LAST_USED_FOLDERS_META_KEY NS_LITERAL_CSTRING("places/bookmarks/edit/lastusedfolder")
 
 
 
@@ -1297,6 +1303,11 @@ Database::InitSchema(bool* aDatabaseMigrated)
 
       if (currentSchemaVersion < 50) {
         rv = MigrateV50Up();
+        NS_ENSURE_SUCCESS(rv, rv);
+      }
+
+      if (currentSchemaVersion < 51) {
+        rv = MigrateV51Up();
         NS_ENSURE_SUCCESS(rv, rv);
       }
 
@@ -2554,6 +2565,90 @@ Database::MigrateV50Up() {
     rv = syncStmt->Execute();
     if (NS_FAILED(rv)) return rv;
   }
+
+  return NS_OK;
+}
+
+
+struct StringWriteFunc : public JSONWriteFunc
+{
+  nsCString& mCString;
+  explicit StringWriteFunc(nsCString& aCString) : mCString(aCString)
+  {
+  }
+  void Write(const char* aStr) override { mCString.Append(aStr); }
+};
+
+nsresult
+Database::MigrateV51Up()
+{
+  nsCOMPtr<mozIStorageStatement> stmt;
+  nsresult rv = mMainConn->CreateStatement(NS_LITERAL_CSTRING(
+    "SELECT b.guid FROM moz_anno_attributes n "
+    "JOIN moz_items_annos a ON n.id = a.anno_attribute_id "
+    "JOIN moz_bookmarks b ON a.item_id = b.id "
+    "WHERE n.name = :anno_name ORDER BY a.content DESC"
+  ), getter_AddRefs(stmt));
+  if (NS_FAILED(rv)) {
+    MOZ_ASSERT(false, "Should succeed unless item annotations table has been removed");
+    return NS_OK;
+  };
+
+  rv = stmt->BindUTF8StringByName(NS_LITERAL_CSTRING("anno_name"),
+                                  LAST_USED_ANNO);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  nsAutoCString json;
+  JSONWriter jw{ MakeUnique<StringWriteFunc>(json) };
+  jw.StartArrayProperty(nullptr, JSONWriter::SingleLineStyle);
+
+  bool hasAtLeastOne = false;
+  bool hasMore = false;
+  uint32_t length;
+  while (NS_SUCCEEDED(stmt->ExecuteStep(&hasMore)) && hasMore) {
+    hasAtLeastOne = true;
+    jw.StringElement(stmt->AsSharedUTF8String(0, &length));
+  }
+  jw.EndArray();
+
+  
+  if (!hasAtLeastOne) {
+    return NS_OK;
+  }
+
+  rv = mMainConn->CreateStatement(NS_LITERAL_CSTRING(
+    "INSERT OR REPLACE INTO moz_meta "
+    "VALUES (:key, :value) "
+  ), getter_AddRefs(stmt));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  rv = stmt->BindUTF8StringByName(NS_LITERAL_CSTRING("key"),
+                                  LAST_USED_FOLDERS_META_KEY);
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = stmt->BindUTF8StringByName(NS_LITERAL_CSTRING("value"), json);
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = stmt->Execute();
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  rv = mMainConn->CreateStatement(NS_LITERAL_CSTRING(
+    "DELETE FROM moz_items_annos WHERE anno_attribute_id = "
+      "(SELECT id FROM moz_anno_attributes WHERE name = :anno_name) "
+  ), getter_AddRefs(stmt));
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = stmt->BindUTF8StringByName(NS_LITERAL_CSTRING("anno_name"), LAST_USED_ANNO);
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = stmt->Execute();
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  rv = mMainConn->CreateStatement(NS_LITERAL_CSTRING(
+    "DELETE FROM moz_anno_attributes WHERE name = :anno_name "
+  ), getter_AddRefs(stmt));
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = stmt->BindUTF8StringByName(NS_LITERAL_CSTRING("anno_name"),  LAST_USED_ANNO);
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = stmt->Execute();
+  NS_ENSURE_SUCCESS(rv, rv);
 
   return NS_OK;
 }

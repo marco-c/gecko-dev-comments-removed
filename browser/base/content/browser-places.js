@@ -19,6 +19,9 @@ var StarUI = {
   
   
   _autoCloseTimerEnabled: true,
+  
+  
+  _autoCloseTimeout: 3500,
   _removeBookmarksOnPopupHidden: false,
 
   _element(aID) {
@@ -84,8 +87,13 @@ var StarUI = {
       case "popuphidden": {
         clearTimeout(this._autoCloseTimer);
         if (aEvent.originalTarget == this.panel) {
-          if (!this._element("editBookmarkPanelContent").hidden)
+          let selectedFolderGuid;
+
+          if (!this._element("editBookmarkPanelContent").hidden) {
+            
+            selectedFolderGuid = gEditItemOverlay.selectedFolderGuid;
             this.quitEditMode();
+          }
 
           if (this._anchorToolbarButton) {
             this._anchorToolbarButton.removeAttribute("open");
@@ -112,6 +120,10 @@ var StarUI = {
                               .transact().catch(Cu.reportError);
           } else if (this._isNewBookmark) {
             LibraryUI.triggerLibraryAnimation("bookmark");
+          }
+
+          if (!removeBookmarksOnPopupHidden) {
+            this._storeRecentlyUsedFolder(selectedFolderGuid).catch(console.error);
           }
         }
         break;
@@ -186,9 +198,7 @@ var StarUI = {
         }
         
         if (this._isNewBookmark && !this._isComposing) {
-          
-          
-          let delay = 3500;
+          let delay = this._autoCloseTimeout;
           if (this._closePanelQuickForTesting) {
             delay /= 10;
           }
@@ -340,6 +350,33 @@ var StarUI = {
     this._batchBlockingDeferred.resolve();
     this._batchBlockingDeferred = null;
     this._batching = false;
+  },
+
+  async _storeRecentlyUsedFolder(selectedFolderGuid) {
+    
+    if (!selectedFolderGuid ||
+        PlacesUtils.bookmarks.userContentRoots.includes(selectedFolderGuid)) {
+      return;
+    }
+
+    
+    let lastUsedFolderGuids =
+      await PlacesUtils.metadata.get(PlacesUIUtils.LAST_USED_FOLDERS_META_KEY, []);
+
+    let index = lastUsedFolderGuids.indexOf(selectedFolderGuid);
+    if (index > 1) {
+      
+      lastUsedFolderGuids.splice(index, 1);
+      lastUsedFolderGuids.unshift(selectedFolderGuid);
+    } else if (index == -1) {
+      lastUsedFolderGuids.unshift(selectedFolderGuid);
+    }
+    if (lastUsedFolderGuids.length > 5) {
+      lastUsedFolderGuids.pop();
+    }
+
+    await PlacesUtils.metadata.set(PlacesUIUtils.LAST_USED_FOLDERS_META_KEY,
+                                   lastUsedFolderGuids);
   }
 };
 
