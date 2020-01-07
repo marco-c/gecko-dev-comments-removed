@@ -12,6 +12,22 @@ module.exports = {
     "reportError": true,
     "require": true,
   },
+  "overrides": [{
+    
+    
+    "files": [
+      "client/memory/test/**",
+      "server/tests/browser/**",
+      "server/tests/mochitest/**",
+      "server/tests/unit/**",
+      "shared/heapsnapshot/tests/unit/**",
+      "shared/tests/unit/**",
+      "shared/webconsole/test/**",
+    ],
+    "rules": {
+      "no-undef": "off",
+    }
+  }],
   "rules": {
     
     

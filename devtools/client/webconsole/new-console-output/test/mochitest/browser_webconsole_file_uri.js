@@ -7,12 +7,15 @@
 
 
 
+
+
+
 const PREF = "devtools.webconsole.persistlog";
 const TEST_FILE = "test-network.html";
 
 var hud;
 
-add_task(function* () {
+add_task(async function() {
   Services.prefs.setBoolPref(PREF, true);
 
   let jar = getJar(getRootDirectory(gTestPath));
@@ -27,16 +30,16 @@ add_task(function* () {
   
   let remoteType = E10SUtils.getRemoteTypeForURI(uri.spec,
                                                  gMultiProcessBrowser);
-  let { browser } = yield loadTab("about:blank", remoteType);
+  let { browser } = await loadTab("about:blank", remoteType);
 
-  hud = yield openConsole();
+  hud = await openConsole();
   hud.jsterm.clearOutput();
 
   let loaded = loadBrowser(browser);
   BrowserTestUtils.loadURI(gBrowser.selectedBrowser, uri.spec);
-  yield loaded;
+  await loaded;
 
-  yield testMessages();
+  await testMessages();
 
   Services.prefs.clearUserPref(PREF);
   hud = null;

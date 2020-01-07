@@ -1,0 +1,14 @@
+"use strict";
+
+module.exports = {
+  "env": {
+    "browser": false,
+    "mocha": true,
+  },
+
+  "globals": {
+    
+    "document": false,
+    "window": false,
+  }
+}

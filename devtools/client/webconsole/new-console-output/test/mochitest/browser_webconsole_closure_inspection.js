@@ -8,6 +8,9 @@
 
 
 
+
+
+
 "use strict";
 
 const TEST_URI = "http://example.com/browser/devtools/client/webconsole/" +
@@ -17,7 +20,7 @@ var gWebConsole, gJSTerm, gVariablesView;
 
 
 Services.prefs.setBoolPref("devtools.debugger.new-debugger-frontend", false);
-registerCleanupFunction(function* () {
+registerCleanupFunction(function() {
   Services.prefs.clearUserPref("devtools.debugger.new-debugger-frontend");
 });
 
