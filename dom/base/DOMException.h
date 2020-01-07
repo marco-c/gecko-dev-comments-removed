@@ -82,8 +82,7 @@ public:
     CreateErrorMessage(name, message, aRetVal);
   }
 
-  
-  
+  void GetFilename(JSContext* aCx, nsAString& aFilename);
 
   uint32_t LineNumber(JSContext* aCx) const;
 
