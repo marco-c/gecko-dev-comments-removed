@@ -56,6 +56,9 @@ class GeckoViewModule {
   onInit() {}
 
   
+  onDestroy() {}
+
+  
   onSettingsUpdate() {}
 
   
