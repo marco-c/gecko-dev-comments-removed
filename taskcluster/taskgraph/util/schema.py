@@ -11,6 +11,7 @@ import voluptuous
 
 import taskgraph
 
+from mozbuild import schedules
 from .attributes import keymatch
 
 
@@ -202,3 +203,23 @@ def Schema(*args, **kwargs):
     schema = voluptuous.Schema(*args, **kwargs)
     check_schema(schema)
     return schema
+
+
+OptimizationSchema = voluptuous.Any(
+    
+    None,
+    
+    
+    {'index-search': [basestring]},
+    
+    {'seta': None},
+    
+    {'skip-unless-changed': [basestring]},
+    
+    {'skip-unless-schedules': list(schedules.ALL_COMPONENTS)},
+    
+    {'skip-unless-schedules-or-seta': list(schedules.ALL_COMPONENTS)},
+    
+    
+    {'only-if-dependencies-run': None}
+)

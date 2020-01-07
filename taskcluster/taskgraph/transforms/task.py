@@ -17,12 +17,17 @@ import time
 from copy import deepcopy
 
 from mozbuild.util import memoize
-from mozbuild import schedules
 from taskgraph.util.attributes import TRUNK_PROJECTS
 from taskgraph.util.hash import hash_path
 from taskgraph.util.treeherder import split_symbol
 from taskgraph.transforms.base import TransformSequence
-from taskgraph.util.schema import validate_schema, Schema, optionally_keyed_by, resolve_keyed_by
+from taskgraph.util.schema import (
+    validate_schema,
+    Schema,
+    optionally_keyed_by,
+    resolve_keyed_by,
+    OptimizationSchema,
+)
 from taskgraph.util.scriptworker import (
     BALROG_ACTIONS,
     get_balrog_action_scope,
@@ -231,24 +236,7 @@ task_description_schema = Schema({
 
     
     
-    Required('optimization'): Any(
-        
-        None,
-        
-        
-        {'index-search': [basestring]},
-        
-        {'seta': None},
-        
-        {'skip-unless-changed': [basestring]},
-        
-        {'skip-unless-schedules': list(schedules.ALL_COMPONENTS)},
-        
-        {'skip-unless-schedules-or-seta': list(schedules.ALL_COMPONENTS)},
-        
-        
-        {'only-if-dependencies-run': None}
-    ),
+    Required('optimization'): OptimizationSchema,
 
     
     
