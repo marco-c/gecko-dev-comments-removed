@@ -146,6 +146,14 @@ ClipManager::BeginItem(nsDisplayItem* aItem,
 
   const DisplayItemClipChain* clip = aItem->GetClipChain();
   const ActiveScrolledRoot* asr = aItem->GetActiveScrolledRoot();
+  if (aItem->GetType() == DisplayItemType::TYPE_STICKY_POSITION) {
+    
+    
+    
+    
+    
+    asr = static_cast<nsDisplayStickyPosition*>(aItem)->GetContainerASR();
+  }
 
   ItemClips clips(asr, clip);
   MOZ_ASSERT(!mItemClipStack.empty());
