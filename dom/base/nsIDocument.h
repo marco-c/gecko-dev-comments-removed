@@ -4167,9 +4167,33 @@ protected:
   bool mScaleStrEmpty: 1;
   bool mWidthStrEmpty: 1;
 
+  
+  
+  bool mParserAborted: 1;
+
+  
+  
+  
+  
+  
+  
+  bool mReportedUseCounters: 1;
+
+#ifdef DEBUG
+public:
+  bool mWillReparent: 1;
+protected:
+#endif
+
   uint8_t mPendingFullscreenRequests;
 
   uint8_t mXMLDeclarationBits;
+
+  
+  uint32_t mOnloadBlockCount;
+
+  
+  uint32_t mAsyncOnloadBlockCount;
 
   
   nsCompatibility mCompatMode;
@@ -4491,6 +4515,9 @@ protected:
   mozilla::CSSSize mViewportSize;
 
   RefPtr<mozilla::EventListenerManager> mListenerManager;
+
+  nsCOMPtr<nsIRunnable> mMaybeEndOutermostXBLUpdateRunner;
+  nsCOMPtr<nsIRequest> mOnloadBlocker;
 
   nsTArray<RefPtr<mozilla::StyleSheet>> mOnDemandBuiltInUASheets;
   nsTArray<RefPtr<mozilla::StyleSheet>> mAdditionalSheets[AdditionalSheetTypeCount];

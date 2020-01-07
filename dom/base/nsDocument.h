@@ -340,19 +340,7 @@ public:
 
   nsClassHashtable<nsStringHashKey, nsRadioGroupStruct> mRadioGroups;
 
-  
-  
-  bool mParserAborted:1;
-
   friend class nsCallRequestFullScreen;
-
-  
-  
-  
-  
-  
-  
-  bool mReportedUseCounters:1;
 
   
   
@@ -372,19 +360,6 @@ private:
   
   nsDocument(const nsDocument& aOther);
   nsDocument& operator=(const nsDocument& aOther);
-
-  
-  uint32_t mOnloadBlockCount;
-  
-  uint32_t mAsyncOnloadBlockCount;
-  nsCOMPtr<nsIRequest> mOnloadBlocker;
-
-  nsCOMPtr<nsIRunnable> mMaybeEndOutermostXBLUpdateRunner;
-
-#ifdef DEBUG
-public:
-  bool mWillReparent;
-#endif
 };
 
 class nsDocumentOnStack
