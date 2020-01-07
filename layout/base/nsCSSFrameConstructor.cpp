@@ -6873,8 +6873,7 @@ nsCSSFrameConstructor::CheckBitsForLazyFrameConstruction(nsIContent* aParent)
   bool noPrimaryFrame = false;
   bool needsFrameBitSet = false;
   nsIContent* content = aParent;
-  while (content &&
-         !content->HasFlag(NODE_DESCENDANTS_NEED_FRAMES)) {
+  while (content && !content->HasFlag(NODE_DESCENDANTS_NEED_FRAMES)) {
     if (content->GetPrimaryFrame() && content->GetPrimaryFrame()->IsLeaf()) {
       noPrimaryFrame = needsFrameBitSet = false;
     }
@@ -6909,30 +6908,21 @@ nsCSSFrameConstructor::CheckBitsForLazyFrameConstruction(nsIContent* aParent)
 
 
 
-
-
-
-
 bool
 nsCSSFrameConstructor::MaybeConstructLazily(Operation aOperation,
-                                            nsIContent* aContainer,
                                             nsIContent* aChild)
 {
-  if (!aContainer || aContainer->IsInNativeAnonymousSubtree() ||
-      aContainer->IsXULElement()) {
-    return false;
-  }
-
+  MOZ_ASSERT(aChild->GetParent());
   if (aOperation == CONTENTINSERT) {
-    if (aChild->IsRootOfAnonymousSubtree() || aChild->IsXULElement()) {
+    MOZ_ASSERT(!aChild->IsRootOfAnonymousSubtree());
+    if (aChild->IsXULElement()) {
       return false;
     }
   } else { 
-    NS_ASSERTION(aOperation == CONTENTAPPEND,
-                 "operation should be either insert or append");
+    MOZ_ASSERT(aOperation == CONTENTAPPEND,
+               "operation should be either insert or append");
     for (nsIContent* child = aChild; child; child = child->GetNextSibling()) {
-      NS_ASSERTION(!child->IsRootOfAnonymousSubtree(),
-                   "Should be coming through the CONTENTINSERT case");
+      MOZ_ASSERT(!child->IsRootOfAnonymousSubtree());
       if (child->IsXULElement()) {
         return false;
       }
@@ -6969,15 +6959,8 @@ nsCSSFrameConstructor::MaybeConstructLazily(Operation aOperation,
     }
   }
 
-  
-  
   CheckBitsForLazyFrameConstruction(parent);
-
-  if (RestyleManager()->IsGecko()) {
-    MOZ_CRASH("old style system disabled");
-  } else {
-    parent->AsElement()->NoteDescendantsNeedFramesForServo();
-  }
+  parent->AsElement()->NoteDescendantsNeedFramesForServo();
 
   return true;
 }
@@ -7195,7 +7178,7 @@ nsCSSFrameConstructor::ContentAppended(nsIContent* aContainer,
   }
 
   if (aInsertionKind == InsertionKind::Async &&
-      MaybeConstructLazily(CONTENTAPPEND, aContainer, aFirstNewContent)) {
+      MaybeConstructLazily(CONTENTAPPEND, aFirstNewContent)) {
     if (aContainer->IsStyledByServo()) {
       LazilyStyleNewChildRange(aFirstNewContent, nullptr);
     }
@@ -7665,7 +7648,7 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
                GetDisplayContentsStyleFor(aContainer), "New XBL code is possibly wrong!");
 
   if (aInsertionKind == InsertionKind::Async &&
-      MaybeConstructLazily(CONTENTINSERT, aContainer, aStartChild)) {
+      MaybeConstructLazily(CONTENTINSERT, aStartChild)) {
     if (aContainer->IsStyledByServo()) {
       LazilyStyleNewChildRange(aStartChild, aEndChild);
     }

@@ -113,9 +113,7 @@ private:
 
   
   
-  bool MaybeConstructLazily(Operation aOperation,
-                            nsIContent* aContainer,
-                            nsIContent* aChild);
+  bool MaybeConstructLazily(Operation aOperation, nsIContent* aChild);
 
 #ifdef DEBUG
   void CheckBitsForLazyFrameConstruction(nsIContent* aParent);
