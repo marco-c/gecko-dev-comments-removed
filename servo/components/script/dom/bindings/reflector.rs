@@ -46,7 +46,8 @@ impl Reflector {
     
     #[inline]
     pub fn get_jsobject(&self) -> HandleObject {
-        self.object.handle()
+        
+        unsafe { self.object.handle() }
     }
 
     
