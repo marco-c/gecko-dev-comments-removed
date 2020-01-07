@@ -23,7 +23,7 @@ const { editableField } = require("devtools/client/shared/inplace-editor");
 
 
 
-const createInplaceEditorAndClick = Task.async(function* (options, doc, textContent) {
+const createInplaceEditorAndClick = async function(options, doc, textContent) {
   let span = options.element = createSpan(doc);
   if (textContent) {
     span.textContent = textContent;
@@ -34,7 +34,7 @@ const createInplaceEditorAndClick = Task.async(function* (options, doc, textCont
 
   info("Clicking on the inplace-editor field to turn to edit mode");
   span.click();
-});
+};
 
 
 
@@ -75,7 +75,8 @@ function createSpan(doc) {
 
 
 
-function* testCompletion([key, completion, index, total], editor) {
+
+async function testCompletion([key, completion, index, total, postLabel], editor) {
   info("Pressing key " + key);
   info("Expecting " + completion);
 
@@ -97,14 +98,22 @@ function* testCompletion([key, completion, index, total], editor) {
   info("Synthesizing key " + key);
   EventUtils.synthesizeKey(key, {}, editor.input.defaultView);
 
-  yield onSuggest;
-  yield onVisibilityChange;
-  yield waitForTime(5);
+  await onSuggest;
+  await onVisibilityChange;
+  await waitForTime(5);
 
   info("Checking the state");
   if (completion !== null) {
     is(editor.input.value, completion, "Correct value is autocompleted");
   }
+
+  if (postLabel) {
+    let selectedItem = editor.popup.getItems()[index];
+    let selectedElement = editor.popup.elements.get(selectedItem);
+    ok(selectedElement.textContent.includes(postLabel),
+      "Selected popup element contains the expected post-label");
+  }
+
   if (total === 0) {
     ok(!(editor.popup && editor.popup.isOpen), "Popup is closed");
   } else {
