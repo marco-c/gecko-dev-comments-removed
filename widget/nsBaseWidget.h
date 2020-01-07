@@ -602,6 +602,8 @@ protected:
 
   bool UseAPZ();
 
+  bool AllowWebRenderForThisWindow();
+
   
 
 
