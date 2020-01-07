@@ -471,9 +471,12 @@ DocAccessible*
 DocManager::CreateDocOrRootAccessible(nsIDocument* aDocument)
 {
   
+  
   if (!aDocument->IsVisibleConsideringAncestors() ||
-      aDocument->IsResourceDoc() || !aDocument->IsActive())
+      aDocument->IsResourceDoc() || aDocument->IsStaticDocument() ||
+      !aDocument->IsActive()) {
     return nullptr;
+  }
 
   
   nsIPresShell* presShell = aDocument->GetShell();
