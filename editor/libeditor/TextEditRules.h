@@ -23,9 +23,9 @@
 namespace mozilla {
 
 class AutoLockRulesSniffing;
+class EditSubActionInfo;
 class HTMLEditor;
 class HTMLEditRules;
-class RulesInfo;
 namespace dom {
 class Selection;
 } 
@@ -76,16 +76,16 @@ public:
   virtual nsresult Init(TextEditor* aTextEditor);
   virtual nsresult SetInitialValue(const nsAString& aValue);
   virtual nsresult DetachEditor();
-  virtual nsresult BeforeEdit(EditAction aAction,
+  virtual nsresult BeforeEdit(EditSubAction aEditSubAction,
                               nsIEditor::EDirection aDirection);
-  virtual nsresult AfterEdit(EditAction aAction,
+  virtual nsresult AfterEdit(EditSubAction aEditSubAction,
                              nsIEditor::EDirection aDirection);
   virtual nsresult WillDoAction(Selection* aSelection,
-                                RulesInfo* aInfo,
+                                EditSubActionInfo& aInfo,
                                 bool* aCancel,
                                 bool* aHandled);
   virtual nsresult DidDoAction(Selection* aSelection,
-                               RulesInfo* aInfo,
+                               EditSubActionInfo& aInfo,
                                nsresult aResult);
 
   
@@ -165,7 +165,7 @@ protected:
 
 
   MOZ_MUST_USE nsresult
-  WillInsertText(EditAction aAction, bool* aCancel, bool* aHandled,
+  WillInsertText(EditSubAction aEditSubAction, bool* aCancel, bool* aHandled,
                  const nsAString* inString, nsAString* outString,
                  int32_t aMaxLength);
 
@@ -499,7 +499,7 @@ protected:
   bool mDeleteBidiImmediately;
   bool mIsHTMLEditRules;
   
-  EditAction mTheAction;
+  EditSubAction mTopLevelEditSubAction;
   nsCOMPtr<nsITimer> mTimer;
   uint32_t mLastStart;
   uint32_t mLastLength;
@@ -514,11 +514,11 @@ protected:
 
 
 
-class RulesInfo final
+class MOZ_STACK_CLASS EditSubActionInfo final
 {
 public:
-  explicit RulesInfo(EditAction aAction)
-    : action(aAction)
+  explicit EditSubActionInfo(EditSubAction aEditSubAction)
+    : mEditSubAction(aEditSubAction)
     , inString(nullptr)
     , outString(nullptr)
     , outputFormat(nullptr)
@@ -533,7 +533,7 @@ public:
     , blockType(nullptr)
   {}
 
-  EditAction action;
+  EditSubAction mEditSubAction;
 
   
   const nsAString* inString;

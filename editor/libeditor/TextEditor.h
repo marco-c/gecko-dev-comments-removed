@@ -23,7 +23,7 @@ class nsITransferable;
 
 namespace mozilla {
 class AutoEditInitRulesTrigger;
-enum class EditAction : int32_t;
+enum class EditSubAction : int32_t;
 
 namespace dom {
 class DragEvent;
@@ -243,18 +243,11 @@ protected:
                                     int32_t& aCaretStyle);
 
 protected: 
-  
 
-
-
-  virtual nsresult StartOperation(EditAction opID,
-                                  nsIEditor::EDirection aDirection) override;
-
-  
-
-
-
-  virtual nsresult EndOperation() override;
+  virtual void
+  OnStartToHandleTopLevelEditSubAction(
+    EditSubAction aEditSubAction, nsIEditor::EDirection aDirection) override;
+  virtual void OnEndHandlingTopLevelEditSubAction() override;
 
   void BeginEditorInit();
   nsresult EndEditorInit();

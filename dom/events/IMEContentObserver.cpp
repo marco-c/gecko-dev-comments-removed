@@ -1643,7 +1643,7 @@ IMEContentObserver::IsSafeToNotifyIME() const
   }
 
   
-  if (mEditorBase && mEditorBase->IsInEditAction()) {
+  if (mEditorBase && mEditorBase->IsInEditSubAction()) {
     return false;
   }
 

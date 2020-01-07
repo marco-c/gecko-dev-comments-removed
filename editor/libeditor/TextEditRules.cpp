@@ -72,7 +72,7 @@ TextEditRules::TextEditRules()
   , mDidExplicitlySetInterline(false)
   , mDeleteBidiImmediately(false)
   , mIsHTMLEditRules(false)
-  , mTheAction(EditAction::none)
+  , mTopLevelEditSubAction(EditSubAction::none)
   , mLastStart(0)
   , mLastLength(0)
 {
@@ -93,7 +93,7 @@ TextEditRules::InitFields()
   mLockRulesSniffing = false;
   mDidExplicitlySetInterline = false;
   mDeleteBidiImmediately = false;
-  mTheAction = EditAction::none;
+  mTopLevelEditSubAction = EditSubAction::none;
   mTimer = nullptr;
   mLastStart = 0;
   mLastLength = 0;
@@ -201,7 +201,7 @@ TextEditRules::DetachEditor()
 }
 
 nsresult
-TextEditRules::BeforeEdit(EditAction aAction,
+TextEditRules::BeforeEdit(EditSubAction aEditSubAction,
                           nsIEditor::EDirection aDirection)
 {
   if (NS_WARN_IF(!CanHandleEditAction())) {
@@ -216,11 +216,11 @@ TextEditRules::BeforeEdit(EditAction aAction,
   mDidExplicitlySetInterline = false;
   if (!mActionNesting) {
     
-    mTheAction = aAction;
+    mTopLevelEditSubAction = aEditSubAction;
   }
   mActionNesting++;
 
-  if (aAction == EditAction::setText) {
+  if (aEditSubAction == EditSubAction::setText) {
     
     
     
@@ -240,7 +240,7 @@ TextEditRules::BeforeEdit(EditAction aAction,
 }
 
 nsresult
-TextEditRules::AfterEdit(EditAction aAction,
+TextEditRules::AfterEdit(EditSubAction aEditSubAction,
                          nsIEditor::EDirection aDirection)
 {
   if (NS_WARN_IF(!CanHandleEditAction())) {
@@ -263,7 +263,7 @@ TextEditRules::AfterEdit(EditAction aAction,
     AutoSafeEditorData setData(*this, *mTextEditor, *selection);
 
     nsresult rv =
-      TextEditorRef().HandleInlineSpellCheck(aAction, *selection,
+      TextEditorRef().HandleInlineSpellCheck(aEditSubAction, *selection,
                                              mCachedSelectionNode,
                                              mCachedSelectionOffset,
                                              nullptr, 0, nullptr, 0);
@@ -306,11 +306,11 @@ TextEditRules::AfterEdit(EditAction aAction,
 
 nsresult
 TextEditRules::WillDoAction(Selection* aSelection,
-                            RulesInfo* aInfo,
+                            EditSubActionInfo& aInfo,
                             bool* aCancel,
                             bool* aHandled)
 {
-  if (NS_WARN_IF(!aSelection) || NS_WARN_IF(!aInfo)) {
+  if (NS_WARN_IF(!aSelection)) {
     return NS_ERROR_INVALID_ARG;
   }
   if (NS_WARN_IF(!CanHandleEditAction())) {
@@ -326,34 +326,34 @@ TextEditRules::WillDoAction(Selection* aSelection,
   AutoSafeEditorData setData(*this, *mTextEditor, *aSelection);
 
   
-  switch (aInfo->action) {
-    case EditAction::insertBreak:
+  switch (aInfo.mEditSubAction) {
+    case EditSubAction::insertBreak:
       UndefineCaretBidiLevel();
-      return WillInsertBreak(aCancel, aHandled, aInfo->maxLength);
-    case EditAction::insertText:
-    case EditAction::insertIMEText:
+      return WillInsertBreak(aCancel, aHandled, aInfo.maxLength);
+    case EditSubAction::insertText:
+    case EditSubAction::insertIMEText:
       UndefineCaretBidiLevel();
-      return WillInsertText(aInfo->action, aCancel, aHandled,
-                            aInfo->inString, aInfo->outString,
-                            aInfo->maxLength);
-    case EditAction::setText:
+      return WillInsertText(aInfo.mEditSubAction, aCancel, aHandled,
+                            aInfo.inString, aInfo.outString,
+                            aInfo.maxLength);
+    case EditSubAction::setText:
       UndefineCaretBidiLevel();
-      return WillSetText(aCancel, aHandled, aInfo->inString,
-                         aInfo->maxLength);
-    case EditAction::deleteSelection:
-      return WillDeleteSelection(aInfo->collapsedAction, aCancel, aHandled);
-    case EditAction::undo:
+      return WillSetText(aCancel, aHandled, aInfo.inString,
+                         aInfo.maxLength);
+    case EditSubAction::deleteSelection:
+      return WillDeleteSelection(aInfo.collapsedAction, aCancel, aHandled);
+    case EditSubAction::undo:
       return WillUndo(aCancel, aHandled);
-    case EditAction::redo:
+    case EditSubAction::redo:
       return WillRedo(aCancel, aHandled);
-    case EditAction::setTextProperty:
+    case EditSubAction::setTextProperty:
       return WillSetTextProperty(aCancel, aHandled);
-    case EditAction::removeTextProperty:
+    case EditSubAction::removeTextProperty:
       return WillRemoveTextProperty(aCancel, aHandled);
-    case EditAction::outputText:
-      return WillOutputText(aInfo->outputFormat, aInfo->outString, aInfo->flags,
+    case EditSubAction::outputText:
+      return WillOutputText(aInfo.outputFormat, aInfo.outString, aInfo.flags,
                             aCancel, aHandled);
-    case EditAction::insertElement:
+    case EditSubAction::insertElement:
       
       
       return WillInsert(aCancel);
@@ -364,10 +364,10 @@ TextEditRules::WillDoAction(Selection* aSelection,
 
 nsresult
 TextEditRules::DidDoAction(Selection* aSelection,
-                           RulesInfo* aInfo,
+                           EditSubActionInfo& aInfo,
                            nsresult aResult)
 {
-  if (NS_WARN_IF(!aSelection) || NS_WARN_IF(!aInfo)) {
+  if (NS_WARN_IF(!aSelection)) {
     return NS_ERROR_INVALID_ARG;
   }
   if (NS_WARN_IF(!CanHandleEditAction())) {
@@ -380,12 +380,12 @@ TextEditRules::DidDoAction(Selection* aSelection,
   
   AutoTransactionsConserveSelection dontChangeMySelection(&TextEditorRef());
 
-  switch (aInfo->action) {
-    case EditAction::deleteSelection:
+  switch (aInfo.mEditSubAction) {
+    case EditSubAction::deleteSelection:
       return DidDeleteSelection();
-    case EditAction::undo:
+    case EditSubAction::undo:
       return DidUndo(aResult);
-    case EditAction::redo:
+    case EditSubAction::redo:
       return DidRedo(aResult);
     default:
       
@@ -668,7 +668,7 @@ TextEditRules::HandleNewLines(nsString& aString,
 }
 
 nsresult
-TextEditRules::WillInsertText(EditAction aAction,
+TextEditRules::WillInsertText(EditSubAction aEditSubAction,
                               bool* aCancel,
                               bool* aHandled,
                               const nsAString* inString,
@@ -681,7 +681,7 @@ TextEditRules::WillInsertText(EditAction aAction,
     return NS_ERROR_INVALID_ARG;
   }
 
-  if (inString->IsEmpty() && aAction != EditAction::insertIMEText) {
+  if (inString->IsEmpty() && aEditSubAction != EditSubAction::insertIMEText) {
     
     
     
@@ -707,7 +707,7 @@ TextEditRules::WillInsertText(EditAction aAction,
   
   
   if (truncated && outString->IsEmpty() &&
-      aAction != EditAction::insertIMEText) {
+      aEditSubAction != EditSubAction::insertIMEText) {
     *aCancel = true;
     return NS_OK;
   }
@@ -743,7 +743,7 @@ TextEditRules::WillInsertText(EditAction aAction,
   
   
   if (IsPasswordEditor() &&
-      aAction == EditAction::insertIMEText) {
+      aEditSubAction == EditSubAction::insertIMEText) {
     RemoveIMETextFromPWBuf(start, outString);
   }
 
@@ -810,7 +810,7 @@ TextEditRules::WillInsertText(EditAction aAction,
     return NS_ERROR_NOT_INITIALIZED;
   }
 
-  if (aAction == EditAction::insertIMEText) {
+  if (aEditSubAction == EditSubAction::insertIMEText) {
     
     EditorRawDOMPoint betterInsertionPoint =
       TextEditorRef().FindBetterInsertionPoint(atStartOfSelection);
@@ -1499,8 +1499,9 @@ TextEditRules::CreateBogusNodeIfNeeded()
   }
 
   
-  AutoRules beginRulesSniffing(&TextEditorRef(), EditAction::ignore,
-                               nsIEditor::eNone);
+  AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
+                                      TextEditorRef(), EditSubAction::ignore,
+                                      nsIEditor::eNone);
 
   RefPtr<Element> rootElement = TextEditorRef().GetRoot();
   if (!rootElement) {

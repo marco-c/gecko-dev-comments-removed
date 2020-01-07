@@ -12,7 +12,7 @@ namespace mozilla {
 
 
 
-enum class EditAction : int32_t
+enum class EditSubAction : int32_t
 {
   ignore = -1,
 
@@ -59,9 +59,9 @@ enum class EditAction : int32_t
 
 } 
 
-inline bool operator!(const mozilla::EditAction& aOp)
+inline bool operator!(const mozilla::EditSubAction& aEditSubAction)
 {
-  return aOp == mozilla::EditAction::none;
+  return aEditSubAction == mozilla::EditSubAction::none;
 }
 
 #endif 

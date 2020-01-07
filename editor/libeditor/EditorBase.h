@@ -51,8 +51,8 @@ class nsRange;
 
 namespace mozilla {
 class AddStyleSheetTransaction;
-class AutoRules;
 class AutoSelectionRestorer;
+class AutoTopLevelEditSubActionNotifier;
 class AutoTransactionsConserveSelection;
 class AutoUpdateViewBatch;
 class ChangeAttributeTransaction;
@@ -82,7 +82,7 @@ class TextInputListener;
 class TextServicesDocument;
 class TypeInState;
 class WSRunObject;
-enum class EditAction : int32_t;
+enum class EditSubAction : int32_t;
 
 namespace dom {
 class DataTransfer;
@@ -589,7 +589,7 @@ public:
 
 
 
-  bool IsInEditAction() const { return mIsInEditAction; }
+  bool IsInEditSubAction() const { return mIsInEditSubAction; }
 
   
 
@@ -1533,7 +1533,7 @@ protected:
 
   bool GetShouldTxnSetSelection();
 
-  nsresult HandleInlineSpellCheck(EditAction action,
+  nsresult HandleInlineSpellCheck(EditSubAction aEditSubAction,
                                   Selection& aSelection,
                                   nsINode* previousSelectedNode,
                                   uint32_t previousSelectedOffset,
@@ -1585,18 +1585,25 @@ protected:
   void HideCaret(bool aHide);
 
 protected: 
-  
-
-
-
-  virtual nsresult StartOperation(EditAction opID,
-                                  nsIEditor::EDirection aDirection);
 
   
 
 
 
-  virtual nsresult EndOperation();
+
+
+
+
+
+  virtual void
+  OnStartToHandleTopLevelEditSubAction(EditSubAction aEditSubAction,
+                                       nsIEditor::EDirection aDirection);
+
+  
+
+
+
+  virtual void OnEndHandlingTopLevelEditSubAction();
 
   
 
@@ -1884,7 +1891,7 @@ protected:
   
   int32_t mPlaceholderBatch;
   
-  EditAction mAction;
+  EditSubAction mTopLevelEditSubAction;
 
   
   EDirection mDirection;
@@ -1901,7 +1908,7 @@ protected:
   bool mDidPostCreate;
   bool mDispatchInputEvent;
   
-  bool mIsInEditAction;
+  bool mIsInEditSubAction;
   
   bool mHidingCaret;
   
@@ -1910,8 +1917,8 @@ protected:
   bool mIsHTMLEditorClass;
 
   friend class AutoPlaceholderBatch;
-  friend class AutoRules;
   friend class AutoSelectionRestorer;
+  friend class AutoTopLevelEditSubActionNotifier;
   friend class AutoTransactionsConserveSelection;
   friend class AutoUpdateViewBatch;
   friend class CompositionTransaction;

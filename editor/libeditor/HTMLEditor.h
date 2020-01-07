@@ -45,7 +45,7 @@ namespace mozilla {
 class AutoSelectionSetterAfterTableEdit;
 class EmptyEditableFunctor;
 class ResizerSelectionListener;
-enum class EditAction : int32_t;
+enum class EditSubAction : int32_t;
 struct PropItem;
 template<class T> class OwningNonNull;
 namespace dom {
@@ -736,18 +736,10 @@ protected:
   nsresult SetPositionToStatic(Element& aElement);
 
 protected: 
-  
-
-
-
-  virtual nsresult StartOperation(EditAction opID,
-                                  nsIEditor::EDirection aDirection) override;
-
-  
-
-
-
-  virtual nsresult EndOperation() override;
+  virtual void
+  OnStartToHandleTopLevelEditSubAction(
+    EditSubAction aEditSubAction, nsIEditor::EDirection aDirection) override;
+  virtual void OnEndHandlingTopLevelEditSubAction() override;
 
   virtual nsresult EndUpdateViewBatch() override;
 

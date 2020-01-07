@@ -2015,7 +2015,7 @@ nsTextEditorState::UnbindFromFrame(nsTextControlFrame* aFrame)
   
   
   if (mTextListener && mTextEditor && mEditorInitialized &&
-      mTextEditor->IsInEditAction()) {
+      mTextEditor->IsInEditSubAction()) {
     mTextListener->OnEditActionHandled();
   }
 
