@@ -1339,6 +1339,10 @@ pref("security.insecure_connection_icon.enabled", false);
 pref("security.insecure_connection_icon.pbmode.enabled", false);
 
 
+pref("security.insecure_connection_text.enabled", false);
+pref("security.insecure_connection_text.pbmode.enabled", false);
+
+
 pref("security.cert_pinning.enforcement_level", 1);
 
 
