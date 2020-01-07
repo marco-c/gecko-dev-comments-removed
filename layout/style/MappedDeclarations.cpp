@@ -4,7 +4,7 @@
 
 
 
-#include "mozillla/MappedDeclarations.h"
+#include "mozilla/MappedDeclarations.h"
 
 namespace mozilla {
 
