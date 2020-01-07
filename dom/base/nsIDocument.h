@@ -166,6 +166,7 @@ class FrameRequestCallback;
 struct FullscreenRequest;
 class ImageTracker;
 class HTMLBodyElement;
+class HTMLSharedElement;
 class HTMLImageElement;
 struct LifecycleCallbackArgs;
 class Link;
@@ -1598,6 +1599,8 @@ public:
   nsGenericHTMLElement* GetBody();
   
   void SetBody(nsGenericHTMLElement* aBody, mozilla::ErrorResult& rv);
+  
+  mozilla::dom::HTMLSharedElement* GetHead();
 
   
 
