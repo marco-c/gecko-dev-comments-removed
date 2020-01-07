@@ -382,9 +382,6 @@ JS_DefineFunctionsWithHelp(JSContext* cx, JS::HandleObject obj, const JSFunction
 
 namespace js {
 
-extern JS_FRIEND_API(JSObject*)
-proxy_WeakmapKeyDelegate(JSObject* obj);
-
 
 
 
