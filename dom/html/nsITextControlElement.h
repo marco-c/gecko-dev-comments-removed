@@ -136,11 +136,6 @@ public:
   
 
 
-  NS_IMETHOD_(mozilla::dom::Element*) GetPreviewNode() = 0;
-
-  
-
-
   NS_IMETHOD_(void) SetPreviewValue(const nsAString& aValue) = 0;
 
   
