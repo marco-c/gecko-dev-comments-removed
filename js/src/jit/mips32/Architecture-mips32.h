@@ -19,6 +19,7 @@
 namespace js {
 namespace jit {
 
+
 static const uint32_t ShadowStackSpace = 4 * sizeof(uintptr_t);
 
 
@@ -41,56 +42,78 @@ static const uint32_t BAILOUT_TABLE_ENTRY_SIZE = 2 * sizeof(void*);
 
 
 
-
-
-
-
-#ifdef __mips_fpr
-static_assert(__mips_fpr == 32, "MIPS32 jit only supports FR=0 fpu mode.");
-#endif
-
 class FloatRegisters : public FloatRegistersMIPSShared
 {
   public:
     static const char* GetName(uint32_t i) {
-        MOZ_ASSERT(i < RegisterIdLimit);
-        return FloatRegistersMIPSShared::GetName(Encoding(i % 32));
+        MOZ_ASSERT(i < Total);
+        return FloatRegistersMIPSShared::GetName(Code(i % 32));
     }
 
-    static Encoding FromName(const char* name);
+    static Code FromName(const char* name);
 
-    static const uint32_t Total = 32;
+    static const uint32_t Total = 64;
     static const uint32_t TotalDouble = 16;
+    static const uint32_t RegisterIdLimit = 32;
+    
+    
+#if defined(_MIPS_ARCH_LOONGSON3A)
     static const uint32_t TotalSingle = 16;
-
     static const uint32_t Allocatable = 28;
-    static const SetType AllSingleMask = (1ULL << TotalSingle) - 1;
-
-    static const SetType AllDoubleMask = ((1ULL << TotalDouble) - 1) << TotalSingle;
-    static const SetType AllMask = AllDoubleMask | AllSingleMask;
-
+    static const SetType AllSingleMask = 0x55555555ULL;
+#else
+    static const uint32_t TotalSingle = 32;
+    static const uint32_t Allocatable = 42;
+    static const SetType AllSingleMask = (1ULL << 32) - 1;
+#endif
     
     static const uint32_t TotalPhys = 16;
-    static const uint32_t RegisterIdLimit = 32;
 
     static_assert(sizeof(SetType) * 8 >= Total,
                   "SetType should be large enough to enumerate all registers.");
 
+    static const SetType AllDoubleMask = 0x55555555ULL << 32;
+    static const SetType AllMask = AllDoubleMask | AllSingleMask;
+
+    static const SetType NonVolatileDoubleMask =
+        ((1ULL << FloatRegisters::f20) |
+         (1ULL << FloatRegisters::f22) |
+         (1ULL << FloatRegisters::f24) |
+         (1ULL << FloatRegisters::f26) |
+         (1ULL << FloatRegisters::f28) |
+         (1ULL << FloatRegisters::f30)) << 32;
+
+    
     static const SetType NonVolatileMask =
-        ((SetType(1) << (FloatRegisters::f20 >> 1)) |
-         (SetType(1) << (FloatRegisters::f22 >> 1)) |
-         (SetType(1) << (FloatRegisters::f24 >> 1)) |
-         (SetType(1) << (FloatRegisters::f26 >> 1)) |
-         (SetType(1) << (FloatRegisters::f28 >> 1)) |
-         (SetType(1) << (FloatRegisters::f30 >> 1))) * ((1 << TotalSingle) + 1);
+        NonVolatileDoubleMask |
+        (1ULL << FloatRegisters::f20) |
+        (1ULL << FloatRegisters::f21) |
+        (1ULL << FloatRegisters::f22) |
+        (1ULL << FloatRegisters::f23) |
+        (1ULL << FloatRegisters::f24) |
+        (1ULL << FloatRegisters::f25) |
+        (1ULL << FloatRegisters::f26) |
+        (1ULL << FloatRegisters::f27) |
+        (1ULL << FloatRegisters::f28) |
+        (1ULL << FloatRegisters::f29) |
+        (1ULL << FloatRegisters::f30) |
+        (1ULL << FloatRegisters::f31);
 
     static const SetType VolatileMask = AllMask & ~NonVolatileMask;
+    static const SetType VolatileDoubleMask = AllDoubleMask & ~NonVolatileDoubleMask;
 
     static const SetType WrapperMask = VolatileMask;
 
+    static const SetType NonAllocatableDoubleMask =
+        ((1ULL << FloatRegisters::f16) |
+         (1ULL << FloatRegisters::f18)) << 32;
+    
     static const SetType NonAllocatableMask =
-        ((SetType(1) << (FloatRegisters::f16 >> 1)) |
-         (SetType(1) << (FloatRegisters::f18 >> 1))) * ((1 << TotalSingle) + 1);
+        NonAllocatableDoubleMask |
+        (1ULL << FloatRegisters::f16) |
+        (1ULL << FloatRegisters::f17) |
+        (1ULL << FloatRegisters::f18) |
+        (1ULL << FloatRegisters::f19);
 
     
     static const SetType TempMask = VolatileMask & ~NonAllocatableMask;
@@ -110,16 +133,16 @@ class FloatRegister : public FloatRegisterMIPSShared
     typedef Codes::Code Code;
     typedef Codes::Encoding Encoding;
 
-    Encoding code_ : 6;
+    uint32_t code_ : 6;
   protected:
     RegType kind_ : 1;
 
   public:
     constexpr FloatRegister(uint32_t code, RegType kind = Double)
-      : code_ (Encoding(code)), kind_(kind)
+      : code_ (Code(code)), kind_(kind)
     { }
     constexpr FloatRegister()
-      : code_(FloatRegisters::invalid_freg), kind_(Double)
+      : code_(Code(FloatRegisters::invalid_freg)), kind_(Double)
     { }
 
     bool operator==(const FloatRegister& other) const {
@@ -133,43 +156,52 @@ class FloatRegister : public FloatRegisterMIPSShared
         return code_ == FloatRegisters::invalid_freg;
     }
 
-    bool isNotOdd() const { return !isInvalid() && ((code_ & 1) == 0); }
-
     bool isSingle() const { return kind_ == Single; }
     bool isDouble() const { return kind_ == Double; }
 
-    FloatRegister doubleOverlay() const;
-    FloatRegister singleOverlay() const;
+    FloatRegister doubleOverlay(unsigned int which = 0) const;
+    FloatRegister singleOverlay(unsigned int which = 0) const;
+    FloatRegister sintOverlay(unsigned int which = 0) const;
+    FloatRegister uintOverlay(unsigned int which = 0) const;
 
     FloatRegister asSingle() const { return singleOverlay(); }
     FloatRegister asDouble() const { return doubleOverlay(); }
     FloatRegister asSimd128() const { MOZ_CRASH("NYI"); }
 
     Code code() const {
-        MOZ_ASSERT(isNotOdd());
-        return Code((code_ >> 1)  | (kind_ << 4));
+        MOZ_ASSERT(!isInvalid());
+        return Code(code_  | (kind_ << 5));
     }
     Encoding encoding() const {
         MOZ_ASSERT(!isInvalid());
-        return code_;
+        return Encoding(code_);
     }
     uint32_t id() const {
-        MOZ_ASSERT(!isInvalid());
         return code_;
     }
     static FloatRegister FromCode(uint32_t i) {
-        uint32_t code = i & 15;
-        uint32_t kind = i >> 4;
-        return FloatRegister(Encoding(code << 1), RegType(kind));
+        uint32_t code = i & 31;
+        uint32_t kind = i >> 5;
+        return FloatRegister(code, RegType(kind));
     }
-
+    
     static FloatRegister FromIndex(uint32_t index, RegType kind) {
-        MOZ_ASSERT(index < 16);
-        return FloatRegister(Encoding(index << 1), kind);
+#if defined(USES_O32_ABI)
+        
+# if defined(_MIPS_ARCH_LOONGSON3A)
+        return FloatRegister(index * 2, kind);
+# else
+        if (kind == Double)
+            return FloatRegister(index * 2, kind);
+# endif
+#endif
+        return FloatRegister(index, kind);
     }
 
     bool volatile_() const {
-        return !!((SetType(1) << code()) & FloatRegisters::VolatileMask);
+        if (isDouble())
+            return !!((1ULL << code_) & FloatRegisters::VolatileMask);
+        return !!((1ULL << (code_ & ~1)) & FloatRegisters::VolatileMask);
     }
     const char* name() const {
         return FloatRegisters::GetName(code_);
@@ -178,49 +210,61 @@ class FloatRegister : public FloatRegisterMIPSShared
         return other.kind_ != kind_ || code_ != other.code_;
     }
     bool aliases(const FloatRegister& other) {
-        MOZ_ASSERT(isNotOdd());
-        return code_ == other.code_;
+        if (kind_ == other.kind_)
+            return code_ == other.code_;
+        return doubleOverlay() == other.doubleOverlay();
     }
     uint32_t numAliased() const {
-        MOZ_ASSERT(isNotOdd());
+        if (isDouble()) {
+            MOZ_ASSERT((code_ & 1) == 0);
+            return 3;
+        }
         return 2;
     }
     void aliased(uint32_t aliasIdx, FloatRegister* ret) {
-        MOZ_ASSERT(isNotOdd());
-
         if (aliasIdx == 0) {
             *ret = *this;
             return;
         }
-        MOZ_ASSERT(aliasIdx == 1);
         if (isDouble()) {
-            *ret = singleOverlay();
-        } else {
-            *ret = doubleOverlay();
+            MOZ_ASSERT((code_ & 1) == 0);
+            MOZ_ASSERT(aliasIdx <= 2);
+            *ret = singleOverlay(aliasIdx - 1);
+            return;
         }
+        MOZ_ASSERT(aliasIdx == 1);
+        *ret = doubleOverlay(aliasIdx - 1);
     }
     uint32_t numAlignedAliased() const {
-        MOZ_ASSERT(isNotOdd());
-        return 2;
+        if (isDouble()) {
+            MOZ_ASSERT((code_ & 1) == 0);
+            return 2;
+        }
+        
+        
+        return 2 - (code_ & 1);
     }
+    
+    
+    
+    
     void alignedAliased(uint32_t aliasIdx, FloatRegister* ret) {
-        MOZ_ASSERT(isNotOdd());
-
+        MOZ_ASSERT(isDouble());
+        MOZ_ASSERT((code_ & 1) == 0);
         if (aliasIdx == 0) {
             *ret = *this;
             return;
         }
         MOZ_ASSERT(aliasIdx == 1);
-        if (isDouble()) {
-            *ret = singleOverlay();
-        } else {
-            *ret = doubleOverlay();
-        }
+        *ret = singleOverlay(aliasIdx - 1);
     }
 
     SetType alignedOrDominatedAliasedSet() const {
-        MOZ_ASSERT(isNotOdd());
-        return (SetType(1) << (code_ >> 1)) * ((1 << FloatRegisters::TotalSingle) + 1);
+        if (isSingle())
+            return SetType(1) << code_;
+
+        MOZ_ASSERT(isDouble());
+        return SetType(0b11) << code_;
     }
 
     static constexpr RegTypeName DefaultType = RegTypeName::Float64;
@@ -260,21 +304,6 @@ template <> inline FloatRegister::SetType
 FloatRegister::LiveAsIndexableSet<RegTypeName::Any>(SetType set)
 {
     return set;
-}
-
-template <> inline FloatRegister::SetType
-FloatRegister::AllocatableAsIndexableSet<RegTypeName::Float32>(SetType set)
-{
-    
-    
-    
-    return set & FloatRegisters::AllSingleMask;
-}
-
-template <> inline FloatRegister::SetType
-FloatRegister::AllocatableAsIndexableSet<RegTypeName::Float64>(SetType set)
-{
-    return set & FloatRegisters::AllDoubleMask;
 }
 
 
