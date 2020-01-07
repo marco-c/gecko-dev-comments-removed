@@ -160,6 +160,7 @@ function faviconTimeoutCallback(aFaviconLoads, aPageUrl, aChromeGlobal) {
 
   let preferredIcon;
   let preferredWidth = 16 * Math.ceil(aChromeGlobal.content.devicePixelRatio);
+  let bestSizedIcon;
   
   let defaultIcon;
   
@@ -177,6 +178,13 @@ function faviconTimeoutCallback(aFaviconLoads, aPageUrl, aChromeGlobal) {
         preferredIcon = icon;
       } else if (guessType(icon) == TYPE_ICO && (!preferredIcon || guessType(preferredIcon) == TYPE_ICO)) {
         preferredIcon = icon;
+      }
+
+      
+      
+      if (icon.width >= preferredWidth &&
+          (!bestSizedIcon || bestSizedIcon.width >= icon.width)) {
+        bestSizedIcon = icon;
       }
     }
 
@@ -196,11 +204,14 @@ function faviconTimeoutCallback(aFaviconLoads, aPageUrl, aChromeGlobal) {
   
   
   
+  
   if (largestRichIcon) {
     setIconForLink(largestRichIcon, aChromeGlobal);
   }
   if (preferredIcon) {
     setIconForLink(preferredIcon, aChromeGlobal);
+  } else if (bestSizedIcon) {
+    setIconForLink(bestSizedIcon, aChromeGlobal);
   } else if (defaultIcon) {
     setIconForLink(defaultIcon, aChromeGlobal);
   }
