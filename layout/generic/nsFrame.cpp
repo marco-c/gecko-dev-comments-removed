@@ -4748,37 +4748,40 @@ struct MOZ_STACK_CLASS FrameContentRange {
 
 
 static FrameContentRange GetRangeForFrame(nsIFrame* aFrame) {
-  nsCOMPtr<nsIContent> content, parent;
-  content = aFrame->GetContent();
+  nsIContent* content = aFrame->GetContent();
   if (!content) {
     NS_WARNING("Frame has no content");
     return FrameContentRange(nullptr, -1, -1);
   }
+
   LayoutFrameType type = aFrame->Type();
   if (type == LayoutFrameType::Text) {
     int32_t offset, offsetEnd;
     aFrame->GetOffsets(offset, offsetEnd);
     return FrameContentRange(content, offset, offsetEnd);
   }
+
   if (type == LayoutFrameType::Br) {
-    parent = content->GetParent();
+    nsIContent* parent = content->GetParent();
     int32_t beginOffset = parent->ComputeIndexOf(content);
     return FrameContentRange(parent, beginOffset, beginOffset);
   }
-  
-  
-  do {
-    parent  = content->GetParent();
-    if (parent) {
-      int32_t beginOffset = parent->ComputeIndexOf(content);
-      if (beginOffset >= 0)
-        return FrameContentRange(parent, beginOffset, beginOffset + 1);
-      content = parent;
-    }
-  } while (parent);
+
+  while (content->IsRootOfAnonymousSubtree()) {
+    content = content->GetParent();
+  }
+
+  nsIContent* parent = content->GetParent();
+  if (nsLayoutUtils::GetAsBlock(aFrame) || !parent) {
+    return FrameContentRange(content, 0, content->GetChildCount());
+  }
 
   
-  return FrameContentRange(content, 0, content->GetChildCount());
+  
+  
+  int32_t index = parent->ComputeIndexOf(content);
+  MOZ_ASSERT(index >= 0);
+  return FrameContentRange(parent, index, index + 1);
 }
 
 
@@ -4786,20 +4789,22 @@ static FrameContentRange GetRangeForFrame(nsIFrame* aFrame) {
 
 
 struct FrameTarget {
-  FrameTarget(nsIFrame* aFrame, bool aFrameEdge, bool aAfterFrame,
-              bool aEmptyBlock = false) :
-    frame(aFrame), frameEdge(aFrameEdge), afterFrame(aAfterFrame),
-    emptyBlock(aEmptyBlock) { }
+  FrameTarget(nsIFrame* aFrame, bool aFrameEdge, bool aAfterFrame)
+    : frame(aFrame)
+    , frameEdge(aFrameEdge)
+    , afterFrame(aAfterFrame)
+  {}
+
   static FrameTarget Null() {
     return FrameTarget(nullptr, false, false);
   }
+
   bool IsNull() {
     return !frame;
   }
   nsIFrame* frame;
   bool frameEdge;
   bool afterFrame;
-  bool emptyBlock;
 };
 
 
@@ -4889,11 +4894,12 @@ static FrameTarget GetSelectionClosestFrameForLine(
                       const nsPoint& aPoint,
                       uint32_t aFlags)
 {
-  nsIFrame *frame = aLine->mFirstChild;
   
   if (aLine == aParent->LinesEnd())
     return DrillDownToSelectionFrame(aParent, true, aFlags);
-  nsIFrame *closestFromIStart = nullptr, *closestFromIEnd = nullptr;
+  nsIFrame* frame = aLine->mFirstChild;
+  nsIFrame* closestFromIStart = nullptr;
+  nsIFrame* closestFromIEnd = nullptr;
   nscoord closestIStart = aLine->IStart(), closestIEnd = aLine->IEnd();
   WritingMode wm = aLine->mWritingMode;
   LogicalPoint pt(wm, aPoint, aLine->mContainerSize);
@@ -4952,62 +4958,56 @@ static FrameTarget GetSelectionClosestFrameForBlock(nsIFrame* aFrame,
     return FrameTarget::Null();
 
   
-  nsBlockFrame::LineIterator firstLine = bf->LinesBegin();
   nsBlockFrame::LineIterator end = bf->LinesEnd();
-  if (firstLine == end) {
-    nsIContent *blockContent = aFrame->GetContent();
-    if (blockContent) {
-      
-      return FrameTarget(aFrame, false, false, true);
-    }
-    return FrameTarget::Null();
-  }
-  nsBlockFrame::LineIterator curLine = firstLine;
+  nsBlockFrame::LineIterator curLine = bf->LinesBegin();
   nsBlockFrame::LineIterator closestLine = end;
-  
-  WritingMode wm = curLine->mWritingMode;
-  LogicalPoint pt(wm, aPoint, curLine->mContainerSize);
-  while (curLine != end) {
-    
-    nscoord BCoord = pt.B(wm) - curLine->BStart();
-    nscoord BSize = curLine->BSize();
-    if (BCoord >= 0 && BCoord < BSize) {
-      closestLine = curLine;
-      break; 
-    }
-    if (BCoord < 0)
-      break;
-    ++curLine;
-  }
 
-  if (closestLine == end) {
-    nsBlockFrame::LineIterator prevLine = curLine.prev();
-    nsBlockFrame::LineIterator nextLine = curLine;
+  if (curLine != end) {
     
-    while (nextLine != end && nextLine->IsEmpty())
-      ++nextLine;
-    while (prevLine != end && prevLine->IsEmpty())
-      --prevLine;
+    WritingMode wm = curLine->mWritingMode;
+    LogicalPoint pt(wm, aPoint, curLine->mContainerSize);
+    do {
+      
+      nscoord BCoord = pt.B(wm) - curLine->BStart();
+      nscoord BSize = curLine->BSize();
+      if (BCoord >= 0 && BCoord < BSize) {
+        closestLine = curLine;
+        break; 
+      }
+      if (BCoord < 0)
+        break;
+      ++curLine;
+    } while (curLine != end);
 
-    
-    
-    
-    int32_t dragOutOfFrame =
-      Preferences::GetInt("browser.drag_out_of_frame_style");
+    if (closestLine == end) {
+      nsBlockFrame::LineIterator prevLine = curLine.prev();
+      nsBlockFrame::LineIterator nextLine = curLine;
+      
+      while (nextLine != end && nextLine->IsEmpty())
+        ++nextLine;
+      while (prevLine != end && prevLine->IsEmpty())
+        --prevLine;
 
-    if (prevLine == end) {
-      if (dragOutOfFrame == 1 || nextLine == end)
-        return DrillDownToSelectionFrame(aFrame, false, aFlags);
-      closestLine = nextLine;
-    } else if (nextLine == end) {
-      if (dragOutOfFrame == 1)
-        return DrillDownToSelectionFrame(aFrame, true, aFlags);
-      closestLine = prevLine;
-    } else { 
-      if (pt.B(wm) - prevLine->BEnd() < nextLine->BStart() - pt.B(wm))
-        closestLine = prevLine;
-      else
+      
+      
+      
+      int32_t dragOutOfFrame =
+        Preferences::GetInt("browser.drag_out_of_frame_style");
+
+      if (prevLine == end) {
+        if (dragOutOfFrame == 1 || nextLine == end)
+          return DrillDownToSelectionFrame(aFrame, false, aFlags);
         closestLine = nextLine;
+      } else if (nextLine == end) {
+        if (dragOutOfFrame == 1)
+          return DrillDownToSelectionFrame(aFrame, true, aFlags);
+        closestLine = prevLine;
+      } else { 
+        if (pt.B(wm) - prevLine->BEnd() < nextLine->BStart() - pt.B(wm))
+          closestLine = prevLine;
+        else
+          closestLine = nextLine;
+      }
     }
   }
 
@@ -5018,6 +5018,7 @@ static FrameTarget GetSelectionClosestFrameForBlock(nsIFrame* aFrame,
       return target;
     ++closestLine;
   } while (closestLine != end);
+
   
   return DrillDownToSelectionFrame(aFrame, true, aFlags);
 }
@@ -5154,17 +5155,6 @@ nsIFrame::ContentOffsets nsIFrame::GetContentOffsetsFromPoint(const nsPoint& aPo
 
   FrameTarget closest =
     GetSelectionClosestFrame(adjustedFrame, adjustedPoint, aFlags);
-
-  if (closest.emptyBlock) {
-    ContentOffsets offsets;
-    NS_ASSERTION(closest.frame,
-                 "closest.frame must not be null when it's empty");
-    offsets.content = closest.frame->GetContent();
-    offsets.offset = 0;
-    offsets.secondaryOffset = 0;
-    offsets.associate = CARET_ASSOCIATE_AFTER;
-    return offsets;
-  }
 
   
   
@@ -8389,7 +8379,7 @@ nsIFrame::PeekOffsetParagraph(nsPeekOffsetStruct *aPos)
   nsIFrame* frame = this;
   nsContentAndOffset blockFrameOrBR;
   blockFrameOrBR.mContent = nullptr;
-  bool reachedBlockAncestor = false;
+  bool reachedBlockAncestor = !!nsLayoutUtils::GetAsBlock(frame);
 
   
   
@@ -8440,7 +8430,7 @@ nsIFrame::PeekOffsetParagraph(nsPeekOffsetStruct *aPos)
         break;
       }
       frame = parent;
-      reachedBlockAncestor = (nsLayoutUtils::GetAsBlock(frame) != nullptr);
+      reachedBlockAncestor = !!nsLayoutUtils::GetAsBlock(frame);
     }
     if (reachedBlockAncestor) { 
       aPos->mResultContent = frame->GetContent();
