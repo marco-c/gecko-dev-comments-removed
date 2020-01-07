@@ -294,16 +294,6 @@ public:
   
   AxisOrientationType GetMainAxis() const  { return mMainAxis;  }
   AxisOrientationType GetCrossAxis() const { return mCrossAxis; }
-
-  bool IsMainAxisHorizontal() const {
-    
-    
-    
-    return mIsRowOriented != mWM.IsVertical();
-  }
-  bool IsCrossAxisHorizontal() const {
-    return !IsMainAxisHorizontal();
-  }
   
 
   
@@ -411,6 +401,15 @@ private:
   
   FlexboxAxisTracker(const FlexboxAxisTracker&) = delete;
   FlexboxAxisTracker& operator=(const FlexboxAxisTracker&) = delete;
+
+  
+  
+  bool IsMainAxisHorizontal() const {
+    
+    
+    
+    return mIsRowOriented != mWM.IsVertical();
+  }
 
   
   
