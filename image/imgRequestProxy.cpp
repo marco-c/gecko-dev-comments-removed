@@ -561,7 +561,10 @@ NS_IMETHODIMP
 imgRequestProxy::StartDecoding(uint32_t aFlags)
 {
   
-  mDecodeRequested = true;
+  if (IsValidating()) {
+    mDecodeRequested = true;
+    return NS_OK;
+  }
 
   RefPtr<Image> image = GetImage();
   if (image) {
@@ -579,7 +582,10 @@ bool
 imgRequestProxy::StartDecodingWithResult(uint32_t aFlags)
 {
   
-  mDecodeRequested = true;
+  if (IsValidating()) {
+    mDecodeRequested = true;
+    return false;
+  }
 
   RefPtr<Image> image = GetImage();
   if (image) {
@@ -736,8 +742,16 @@ imgRequestProxy::GetImage(imgIContainer** aImage)
 NS_IMETHODIMP
 imgRequestProxy::GetImageStatus(uint32_t* aStatus)
 {
-  RefPtr<ProgressTracker> progressTracker = GetProgressTracker();
-  *aStatus = progressTracker->GetImageStatus();
+  if (IsValidating()) {
+    
+    
+    
+    
+    *aStatus = imgIRequest::STATUS_NONE;
+  } else {
+    RefPtr<ProgressTracker> progressTracker = GetProgressTracker();
+    *aStatus = progressTracker->GetImageStatus();
+  }
 
   return NS_OK;
 }
