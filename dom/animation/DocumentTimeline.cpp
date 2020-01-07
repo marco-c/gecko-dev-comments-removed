@@ -141,14 +141,14 @@ DocumentTimeline::NotifyAnimationUpdated(Animation& aAnimation)
       MOZ_ASSERT(isInList(),
                 "We should not register with the refresh driver if we are not"
                 " in the document's list of timelines");
-      refreshDriver->AddRefreshObserver(this, FlushType::Style);
-      mIsObservingRefreshDriver = true;
+
+      ObserveRefreshDriver(refreshDriver);
     }
   }
 }
 
 void
-DocumentTimeline::WillRefresh(mozilla::TimeStamp aTime)
+DocumentTimeline::MostRecentRefreshTimeUpdated()
 {
   MOZ_ASSERT(mIsObservingRefreshDriver);
   MOZ_ASSERT(GetRefreshDriver(),
@@ -157,13 +157,6 @@ DocumentTimeline::WillRefresh(mozilla::TimeStamp aTime)
   bool needsTicks = false;
   nsTArray<Animation*> animationsToRemove(mAnimations.Count());
 
-  
-  
-  
-  
-  
-  
-  nsAutoMicroTask mt;
   nsAutoAnimationMutationBatch mb(mDocument);
 
   for (Animation* animation = mAnimationOrder.getFirst(); animation;
@@ -206,6 +199,38 @@ DocumentTimeline::WillRefresh(mozilla::TimeStamp aTime)
 }
 
 void
+DocumentTimeline::WillRefresh(mozilla::TimeStamp aTime)
+{
+  
+  
+  
+  
+  
+  
+  nsAutoMicroTask mt;
+  MostRecentRefreshTimeUpdated();
+}
+
+void
+DocumentTimeline::NotifyTimerAdjusted(TimeStamp aTime)
+{
+  MostRecentRefreshTimeUpdated();
+}
+
+void
+DocumentTimeline::ObserveRefreshDriver(nsRefreshDriver* aDriver)
+{
+  MOZ_ASSERT(!mIsObservingRefreshDriver);
+  
+  
+  
+  
+  mIsObservingRefreshDriver = true;
+  aDriver->AddRefreshObserver(this, FlushType::Style);
+  aDriver->AddTimerAdjustmentObserver(this);
+}
+
+void
 DocumentTimeline::NotifyRefreshDriverCreated(nsRefreshDriver* aDriver)
 {
   MOZ_ASSERT(!mIsObservingRefreshDriver,
@@ -216,9 +241,18 @@ DocumentTimeline::NotifyRefreshDriverCreated(nsRefreshDriver* aDriver)
     MOZ_ASSERT(isInList(),
                "We should not register with the refresh driver if we are not"
                " in the document's list of timelines");
-    aDriver->AddRefreshObserver(this, FlushType::Style);
-    mIsObservingRefreshDriver = true;
+    ObserveRefreshDriver(aDriver);
   }
+}
+
+void
+DocumentTimeline::DisconnectRefreshDriver(nsRefreshDriver* aDriver)
+{
+  MOZ_ASSERT(mIsObservingRefreshDriver);
+
+  aDriver->RemoveRefreshObserver(this, FlushType::Style);
+  aDriver->RemoveTimerAdjustmentObserver(this);
+  mIsObservingRefreshDriver = false;
 }
 
 void
@@ -228,8 +262,7 @@ DocumentTimeline::NotifyRefreshDriverDestroying(nsRefreshDriver* aDriver)
     return;
   }
 
-  aDriver->RemoveRefreshObserver(this, FlushType::Style);
-  mIsObservingRefreshDriver = false;
+  DisconnectRefreshDriver(aDriver);
 }
 
 void
@@ -278,9 +311,7 @@ DocumentTimeline::UnregisterFromRefreshDriver()
   if (!refreshDriver) {
     return;
   }
-
-  refreshDriver->RemoveRefreshObserver(this, FlushType::Style);
-  mIsObservingRefreshDriver = false;
+  DisconnectRefreshDriver(refreshDriver);
 }
 
 } 
