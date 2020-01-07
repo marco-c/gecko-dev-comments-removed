@@ -79,6 +79,8 @@ Converter.prototype = {
     request.QueryInterface(Ci.nsIChannel);
     request.contentType = "text/html";
 
+    let headers = getHttpHeaders(request);
+
     
     try {
       request.QueryInterface(Ci.nsIHttpChannel);
@@ -105,7 +107,7 @@ Converter.prototype = {
 
     
     let win = NetworkHelper.getWindowForRequest(request);
-    this.data = exportData(win, request);
+    this.data = exportData(win, headers);
     insertJsonData(win, this.data.json);
     win.addEventListener("contentMessage", onContentMessage, false, true);
     keepThemeUpdated(win);
@@ -164,8 +166,30 @@ function fixSave(request) {
   request.setProperty("contentType", originalType);
 }
 
+function getHttpHeaders(request) {
+  let headers = {
+    response: [],
+    request: []
+  };
+  
+  
+  if (request instanceof Ci.nsIHttpChannel) {
+    request.visitResponseHeaders({
+      visitHeader: function(name, value) {
+        headers.response.push({name: name, value: value});
+      }
+    });
+    request.visitRequestHeaders({
+      visitHeader: function(name, value) {
+        headers.request.push({name: name, value: value});
+      }
+    });
+  }
+  return headers;
+}
 
-function exportData(win, request) {
+
+function exportData(win, headers) {
   let data = Cu.createObjectIn(win, {
     defineAs: "JSONView"
   });
@@ -188,24 +212,6 @@ function exportData(win, request) {
   };
   data.Locale = Cu.cloneInto(Locale, win, {cloneFunctions: true});
 
-  let headers = {
-    response: [],
-    request: []
-  };
-  
-  
-  if (request instanceof Ci.nsIHttpChannel) {
-    request.visitResponseHeaders({
-      visitHeader: function(name, value) {
-        headers.response.push({name: name, value: value});
-      }
-    });
-    request.visitRequestHeaders({
-      visitHeader: function(name, value) {
-        headers.request.push({name: name, value: value});
-      }
-    });
-  }
   data.headers = Cu.cloneInto(headers, win);
 
   return data;
