@@ -820,6 +820,14 @@ BaselineCompiler::emitDebugTrap()
 
     bool enabled = script->stepModeEnabled() || script->hasBreakpointsAt(pc);
 
+#if defined(JS_CODEGEN_ARM64)
+    
+    
+    masm.flush();
+    
+    pcMappingEntries_.back().nativeOffset = masm.currentOffset();
+#endif
+
     
     JitCode* handler = cx->runtime()->jitRuntime()->debugTrapHandler(cx);
     if (!handler)
