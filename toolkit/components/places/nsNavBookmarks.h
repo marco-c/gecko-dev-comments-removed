@@ -196,17 +196,6 @@ public:
 
   void NotifyItemChanged(const ItemChangeData& aData);
 
-  
-
-
-
-
-
-
-
-  nsresult GetDescendantFolders(int64_t aFolderId,
-                                nsTArray<int64_t>& aDescendantFoldersArray);
-
   static const int32_t kGetChildrenIndex_Guid;
   static const int32_t kGetChildrenIndex_Position;
   static const int32_t kGetChildrenIndex_Type;
