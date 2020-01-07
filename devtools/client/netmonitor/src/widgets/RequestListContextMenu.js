@@ -84,11 +84,9 @@ class RequestListContextMenu {
       accesskey: L10N.getStr("netmonitor.context.copyAsCurl.accesskey"),
       
       
-      visible: !!(selectedRequest &&
-        (requestHeadersAvailable || requestHeaders) &&
-        (responseContentAvailable || responseContent)),
+      visible: !!selectedRequest,
       click: () =>
-        this.copyAsCurl(id, url, method, httpVersion, requestHeaders, responseContent),
+        this.copyAsCurl(id, url, method, httpVersion, requestHeaders, requestPostData),
     });
 
     copySubmenu.push({
