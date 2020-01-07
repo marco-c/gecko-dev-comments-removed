@@ -21,15 +21,10 @@ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIDATASIGNATUREVERIFIER
 
-  nsDataSignatureVerifier()
-  {
-  }
+  nsDataSignatureVerifier() {}
 
 private:
-  ~nsDataSignatureVerifier();
-
-  
-  virtual void virtualDestroyNSSReference() override {}
+  ~nsDataSignatureVerifier() {}
 };
 
 #endif 

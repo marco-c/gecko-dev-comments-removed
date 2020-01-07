@@ -54,11 +54,6 @@ public:
   
 
 
-  void virtualDestroyNSSReference() override;
-
-  
-
-
   static uint32_t sThreadCount;
 
   
@@ -73,11 +68,6 @@ public:
 
 protected:
   virtual ~BackgroundFileSaver();
-
-  
-
-
-  void destructorSafeDestroyNSSReference();
 
   
 
@@ -397,11 +387,8 @@ public:
   
   DigestOutputStream(nsIOutputStream* outputStream, PK11Context* aContext);
 
-  
-  void virtualDestroyNSSReference() override { }
-
 private:
-  ~DigestOutputStream();
+  ~DigestOutputStream() {}
 
   
   nsCOMPtr<nsIOutputStream> mOutputStream;

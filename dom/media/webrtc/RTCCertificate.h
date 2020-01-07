@@ -64,15 +64,11 @@ public:
   const UniqueCERTCertificate& Certificate() const { return mCertificate; }
 
   
-  virtual void virtualDestroyNSSReference() override;
-  void destructorSafeDestroyNSSReference();
-
-  
   bool WriteStructuredClone(JSStructuredCloneWriter* aWriter) const;
   bool ReadStructuredClone(JSStructuredCloneReader* aReader);
 
 private:
-  ~RTCCertificate();
+  ~RTCCertificate() {}
   void operator=(const RTCCertificate&) = delete;
   RTCCertificate(const RTCCertificate&) = delete;
 

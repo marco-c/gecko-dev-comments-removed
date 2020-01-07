@@ -68,24 +68,6 @@ U2FSoftTokenManager::U2FSoftTokenManager(uint32_t aCounter)
     mCounter(aCounter)
 {}
 
-U2FSoftTokenManager::~U2FSoftTokenManager()
-{
-  destructorSafeDestroyNSSReference();
-  shutdown(ShutdownCalledFrom::Object);
-}
-
-void
-U2FSoftTokenManager::virtualDestroyNSSReference()
-{
-  destructorSafeDestroyNSSReference();
-}
-
-void
-U2FSoftTokenManager::destructorSafeDestroyNSSReference()
-{
-  mWrappingKey = nullptr;
-}
-
 
 
 

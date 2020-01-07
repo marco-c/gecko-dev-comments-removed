@@ -23,13 +23,10 @@ public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSISECRETDECODERRING
 
-  SecretDecoderRing();
-
-  
-  virtual void virtualDestroyNSSReference() override {}
+  SecretDecoderRing() {}
 
 protected:
-  virtual ~SecretDecoderRing();
+  virtual ~SecretDecoderRing() {}
 
 private:
   nsresult Encrypt(const nsACString& data,  nsACString& result);

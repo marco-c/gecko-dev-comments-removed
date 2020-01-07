@@ -9,13 +9,6 @@
 
 namespace mozilla {
 
-CryptoTask::~CryptoTask()
-{
-  MOZ_ASSERT(mReleasedNSSResources);
-
-  shutdown(ShutdownCalledFrom::Object);
-}
-
 nsresult
 CryptoTask::Dispatch(const nsACString& taskThreadName)
 {
@@ -48,14 +41,6 @@ CryptoTask::Run()
   } else {
     
 
-    
-    
-    
-    if (!mReleasedNSSResources) {
-      mReleasedNSSResources = true;
-      ReleaseNSSResources();
-    }
-
     CallCallback(mRv);
 
     
@@ -71,17 +56,6 @@ CryptoTask::Run()
   }
 
   return NS_OK;
-}
-
-void
-CryptoTask::virtualDestroyNSSReference()
-{
-  MOZ_ASSERT(NS_IsMainThread(),
-             "virtualDestroyNSSReference called off the main thread");
-  if (!mReleasedNSSResources) {
-    mReleasedNSSResources = true;
-    ReleaseNSSResources();
-  }
 }
 
 } 

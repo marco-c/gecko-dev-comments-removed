@@ -40,12 +40,6 @@ nsPKCS12Blob::nsPKCS12Blob()
 }
 
 
-nsPKCS12Blob::~nsPKCS12Blob()
-{
-  shutdown(ShutdownCalledFrom::Object);
-}
-
-
 
 
 

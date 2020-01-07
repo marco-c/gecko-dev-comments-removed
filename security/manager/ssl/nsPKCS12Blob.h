@@ -24,10 +24,7 @@ class nsPKCS12Blob : public nsNSSShutDownObject
 {
 public:
   nsPKCS12Blob();
-  virtual ~nsPKCS12Blob();
-
-  
-  virtual void virtualDestroyNSSReference() override {}
+  virtual ~nsPKCS12Blob() {}
 
   
   nsresult ImportFromFile(nsIFile *file);

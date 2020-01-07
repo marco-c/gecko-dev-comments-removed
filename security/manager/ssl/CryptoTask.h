@@ -22,25 +22,6 @@ namespace mozilla {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class CryptoTask : public Runnable,
                    public nsNSSShutDownObject
 {
@@ -55,23 +36,16 @@ public:
 
   nsresult Dispatch(const nsACString& taskThreadName);
 
-  void Skip()
-  {
-    virtualDestroyNSSReference();
-  }
-
 protected:
   CryptoTask()
     : Runnable("CryptoTask")
     , mRv(NS_ERROR_NOT_INITIALIZED)
-    , mReleasedNSSResources(false)
   {
   }
 
-  virtual ~CryptoTask();
+  virtual ~CryptoTask() {}
 
   
-
 
 
 
@@ -80,24 +54,12 @@ protected:
   
 
 
-
-
-  virtual void ReleaseNSSResources() = 0;
-
-  
-
-
-
-
   virtual void CallCallback(nsresult rv) = 0;
 
 private:
   NS_IMETHOD Run() override final;
-  virtual void virtualDestroyNSSReference() override final;
 
   nsresult mRv;
-  bool mReleasedNSSResources;
-
   nsCOMPtr<nsIThread> mThread;
 };
 

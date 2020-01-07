@@ -19,15 +19,6 @@ namespace mozilla { namespace psm {
 
 NS_IMPL_ISUPPORTS(PKCS11ModuleDB, nsIPKCS11ModuleDB)
 
-PKCS11ModuleDB::PKCS11ModuleDB()
-{
-}
-
-PKCS11ModuleDB::~PKCS11ModuleDB()
-{
-  shutdown(ShutdownCalledFrom::Object);
-}
-
 
 NS_IMETHODIMP
 PKCS11ModuleDB::DeleteModule(const nsAString& aModuleName)

@@ -739,22 +739,14 @@ public:
       mIR(ir)
   {
   }
-  virtual ~PK11PasswordPromptRunnable();
+  virtual ~PK11PasswordPromptRunnable() = default;
 
-  
-  
-  virtual void virtualDestroyNSSReference() override {}
   char * mResult; 
   virtual void RunOnTargetThread() override;
 private:
   PK11SlotInfo* const mSlot; 
   nsIInterfaceRequestor* const mIR; 
 };
-
-PK11PasswordPromptRunnable::~PK11PasswordPromptRunnable()
-{
-  shutdown(ShutdownCalledFrom::Object);
-}
 
 void
 PK11PasswordPromptRunnable::RunOnTargetThread()

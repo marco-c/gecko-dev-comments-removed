@@ -31,7 +31,7 @@ public:
   FindCertByDBKey(const nsACString& aDBKey, mozilla::UniqueCERTCertificate& cert);
 
 protected:
-  virtual ~nsNSSCertificateDB();
+  virtual ~nsNSSCertificateDB() {}
 
 private:
   
@@ -51,9 +51,6 @@ private:
                                     uint8_t* data, uint32_t length);
   nsresult handleCACertDownload(mozilla::NotNull<nsIArray*> x509Certs,
                                 nsIInterfaceRequestor* ctx);
-
-  
-  virtual void virtualDestroyNSSReference() override { };
 };
 
 #define NS_X509CERTDB_CID { /* fb0bbc5c-452e-4783-b32c-80124693d871 */ \

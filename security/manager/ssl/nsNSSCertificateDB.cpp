@@ -57,11 +57,6 @@ extern LazyLogModule gPIPNSSLog;
 
 NS_IMPL_ISUPPORTS(nsNSSCertificateDB, nsIX509CertDB)
 
-nsNSSCertificateDB::~nsNSSCertificateDB()
-{
-  shutdown(ShutdownCalledFrom::Object);
-}
-
 NS_IMETHODIMP
 nsNSSCertificateDB::FindCertByDBKey(const nsACString& aDBKey,
                              nsIX509Cert** _cert)
@@ -1371,9 +1366,6 @@ private:
                                     getter_AddRefs(mVerifiedCertList),
                                     &mHasEVPolicy, &mPRErrorCode);
   }
-
-  
-  virtual void ReleaseNSSResources() override { }
 
   virtual void CallCallback(nsresult rv) override
   {

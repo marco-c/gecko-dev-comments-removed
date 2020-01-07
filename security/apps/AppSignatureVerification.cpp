@@ -1416,10 +1416,6 @@ private:
                              getter_AddRefs(mSignerCert));
   }
 
-  
-  
-  virtual void ReleaseNSSResources() override { }
-
   virtual void CallCallback(nsresult rv) override
   {
     (void) mCallback->OpenSignedAppFileFinished(rv, mZipReader, mSignerCert);

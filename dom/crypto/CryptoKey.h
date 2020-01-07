@@ -137,10 +137,6 @@ public:
   UniqueSECKEYPublicKey GetPublicKey() const;
 
   
-  virtual void virtualDestroyNSSReference() override;
-  void destructorSafeDestroyNSSReference();
-
-  
   
   
   
@@ -181,7 +177,7 @@ public:
   bool ReadStructuredClone(JSStructuredCloneReader* aReader);
 
 private:
-  ~CryptoKey();
+  ~CryptoKey() {}
 
   RefPtr<nsIGlobalObject> mGlobal;
   uint32_t mAttributes; 
