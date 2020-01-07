@@ -325,6 +325,11 @@ class FileSource {
   }
 
   getPath(locale, path) {
+    
+    
+    if (locale === "ja-JP-macos") {
+      locale = "ja-JP-mac";
+    }
     return (this.prePath + path).replace(/\{locale\}/g, locale);
   }
 

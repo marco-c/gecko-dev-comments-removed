@@ -101,7 +101,7 @@ class CachedIterable {
 
 
 function defaultGenerateMessages(resourceIds) {
-  const appLocales = Services.locale.getAppLocalesAsLangTags();
+  const appLocales = Services.locale.getAppLocalesAsBCP47();
   return L10nRegistry.generateContexts(appLocales, resourceIds);
 }
 

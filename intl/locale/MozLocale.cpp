@@ -83,11 +83,7 @@ Locale::Locale(const nsACString& aLocale)
       mRegion = subTag;
       ToUpperCase(mRegion);
       position = 4;
-    } else if (position <= 4 && slen >= 3 && slen <= 8) {
-      
-      
-      
-      
+    } else if (position <= 4 && slen >= 5 && slen <= 8) {
       nsAutoCString lcSubTag(subTag);
       ToLowerCase(lcSubTag);
       mVariants.InsertElementSorted(lcSubTag);

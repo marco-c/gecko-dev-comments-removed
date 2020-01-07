@@ -55,6 +55,14 @@ SanitizeForBCP47(nsACString& aLocale, bool strict)
   
   
   
+  
+  if (aLocale.LowerCaseEqualsASCII("ja-jp-mac")) {
+    aLocale.AssignLiteral("ja-JP-macos");
+    return true;
+  }
+
+  
+  
   const int32_t LANG_TAG_CAPACITY = 128;
   char langTag[LANG_TAG_CAPACITY];
   nsAutoCString locale(aLocale);
@@ -80,12 +88,7 @@ SplitLocaleListStringIntoArray(nsACString& str, nsTArray<nsCString>& aRetVal)
   if (str.Length() > 0) {
     for (const nsACString& part : str.Split(',')) {
       nsAutoCString locale(part);
-      if (locale.EqualsLiteral("ja-JP-mac")) {
-        
-        if (!aRetVal.Contains(locale)) {
-          aRetVal.AppendElement(locale);
-        }
-      } else if (SanitizeForBCP47(locale, true)) {
+      if (SanitizeForBCP47(locale, true)) {
         if (!aRetVal.Contains(locale)) {
           aRetVal.AppendElement(locale);
         }
@@ -214,7 +217,14 @@ LocaleService::GetAppLocalesAsLangTags(nsTArray<nsCString>& aRetVal)
   if (mAppLocales.IsEmpty()) {
     NegotiateAppLocales(mAppLocales);
   }
-  aRetVal = mAppLocales;
+  for (uint32_t i = 0; i < mAppLocales.Length(); i++) {
+    nsAutoCString locale(mAppLocales[i]);
+    if (locale.LowerCaseEqualsASCII("ja-jp-macos")) {
+      aRetVal.AppendElement("ja-JP-mac");
+    } else {
+      aRetVal.AppendElement(locale);
+    }
+  }
 }
 
 void
@@ -223,11 +233,7 @@ LocaleService::GetAppLocalesAsBCP47(nsTArray<nsCString>& aRetVal)
   if (mAppLocales.IsEmpty()) {
     NegotiateAppLocales(mAppLocales);
   }
-  for (uint32_t i = 0; i < mAppLocales.Length(); i++) {
-    nsAutoCString locale(mAppLocales[i]);
-    SanitizeForBCP47(locale, false);
-    aRetVal.AppendElement(locale);
-  }
+  aRetVal = mAppLocales;
 }
 
 void
@@ -690,15 +696,17 @@ LocaleService::GetDefaultLocale(nsACString& aRetVal)
   
   
   if (mDefaultLocale.IsEmpty()) {
+    nsAutoCString locale;
     
     
     
-    GetGREFileContents("update.locale", &mDefaultLocale);
-    mDefaultLocale.Trim(" \t\n\r");
+    GetGREFileContents("update.locale", &locale);
+    locale.Trim(" \t\n\r");
     
-    MOZ_ASSERT(!mDefaultLocale.IsEmpty());
-    MOZ_ASSERT(mDefaultLocale.EqualsLiteral("ja-JP-mac")
-        || SanitizeForBCP47(mDefaultLocale, true));
+    MOZ_ASSERT(!locale.IsEmpty());
+    if (SanitizeForBCP47(locale, true)) {
+      mDefaultLocale.Assign(locale);
+    }
 
     
     
@@ -721,21 +729,8 @@ LocaleService::GetLastFallbackLocale(nsACString& aRetVal)
 NS_IMETHODIMP
 LocaleService::GetAppLocalesAsLangTags(uint32_t* aCount, char*** aOutArray)
 {
-  if (mAppLocales.IsEmpty()) {
-    NegotiateAppLocales(mAppLocales);
-  }
-
-  *aCount = mAppLocales.Length();
-  *aOutArray = CreateOutArray(mAppLocales);
-
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-LocaleService::GetAppLocalesAsBCP47(uint32_t* aCount, char*** aOutArray)
-{
   AutoTArray<nsCString, 32> locales;
-  GetAppLocalesAsBCP47(locales);
+  GetAppLocalesAsLangTags(locales);
 
   *aCount = locales.Length();
   *aOutArray = CreateOutArray(locales);
@@ -744,12 +739,24 @@ LocaleService::GetAppLocalesAsBCP47(uint32_t* aCount, char*** aOutArray)
 }
 
 NS_IMETHODIMP
-LocaleService::GetAppLocaleAsLangTag(nsACString& aRetVal)
+LocaleService::GetAppLocalesAsBCP47(uint32_t* aCount, char*** aOutArray)
 {
   if (mAppLocales.IsEmpty()) {
     NegotiateAppLocales(mAppLocales);
   }
-  aRetVal = mAppLocales[0];
+  *aCount = mAppLocales.Length();
+  *aOutArray = CreateOutArray(mAppLocales);
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+LocaleService::GetAppLocaleAsLangTag(nsACString& aRetVal)
+{
+  AutoTArray<nsCString, 32> locales;
+  GetAppLocalesAsLangTags(locales);
+
+  aRetVal = locales[0];
   return NS_OK;
 }
 
@@ -760,8 +767,6 @@ LocaleService::GetAppLocaleAsBCP47(nsACString& aRetVal)
     NegotiateAppLocales(mAppLocales);
   }
   aRetVal = mAppLocales[0];
-
-  SanitizeForBCP47(aRetVal, false);
   return NS_OK;
 }
 
@@ -902,8 +907,7 @@ LocaleService::SetRequestedLocales(const char** aRequested,
 
   for (uint32_t i = 0; i < aRequestedCount; i++) {
     nsAutoCString locale(aRequested[i]);
-    if (!locale.EqualsLiteral("ja-JP-mac") &&
-        !SanitizeForBCP47(locale, true)) {
+    if (!SanitizeForBCP47(locale, true)) {
       NS_ERROR("Invalid language tag provided to SetRequestedLocales!");
       return NS_ERROR_INVALID_ARG;
     }
@@ -949,8 +953,7 @@ LocaleService::SetAvailableLocales(const char** aAvailable,
 
   for (uint32_t i = 0; i < aAvailableCount; i++) {
     nsAutoCString locale(aAvailable[i]);
-    if (!locale.EqualsLiteral("ja-JP-mac") &&
-        !SanitizeForBCP47(locale, true)) {
+    if (!SanitizeForBCP47(locale, true)) {
       NS_ERROR("Invalid language tag provided to SetAvailableLocales!");
       return NS_ERROR_INVALID_ARG;
     }
