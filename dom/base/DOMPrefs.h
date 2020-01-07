@@ -1,0 +1,23 @@
+
+
+
+
+
+
+#ifndef mozilla_dom_DOMPrefs_h
+#define mozilla_dom_DOMPrefs_h
+
+namespace mozilla {
+namespace dom {
+
+class DOMPrefs final
+{
+public:
+  
+  static bool DumpEnabled();
+};
+
+} 
+} 
+
+#endif 
