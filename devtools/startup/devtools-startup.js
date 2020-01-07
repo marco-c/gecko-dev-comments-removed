@@ -595,7 +595,7 @@ DevToolsStartup.prototype = {
       
       
       
-      let startTime = window.performance.now();
+      let startTime = Cu.now();
       let require = this.initDevTools("KeyShortcut");
       let { gDevToolsBrowser } = require("devtools/client/framework/devtools-browser");
       gDevToolsBrowser.onKeyShortcut(window, key, startTime);

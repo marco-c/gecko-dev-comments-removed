@@ -200,8 +200,7 @@ this.DevToolsShim = {
     
     
     
-    let { performance } = Services.appShell.hiddenDOMWindow;
-    let startTime = performance.now();
+    let startTime = Cu.now();
 
     this.initDevTools("ContextMenu");
 
@@ -233,8 +232,7 @@ this.DevToolsShim = {
     
     
     
-    let { performance } = Services.appShell.hiddenDOMWindow;
-    let startTime = performance.now();
+    let startTime = Cu.now();
 
     this.initDevTools("ContextMenu");
 

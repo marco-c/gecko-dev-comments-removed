@@ -503,8 +503,7 @@ DevTools.prototype = {
 
 
   logToolboxOpenTime(toolId, startTime) {
-    let { performance } = Services.appShell.hiddenDOMWindow;
-    let delay = performance.now() - startTime;
+    let delay = Cu.now() - startTime;
 
     let telemetryKey = this._firstShowToolbox ?
       "DEVTOOLS_COLD_TOOLBOX_OPEN_DELAY_MS" : "DEVTOOLS_WARM_TOOLBOX_OPEN_DELAY_MS";
