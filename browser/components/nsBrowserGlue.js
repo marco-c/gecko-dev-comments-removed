@@ -1838,7 +1838,7 @@ BrowserGlue.prototype = {
 
   
   _migrateUI: function BG__migrateUI() {
-    const UI_VERSION = 66;
+    const UI_VERSION = 67;
     const BROWSER_DOCURL = "chrome://browser/content/browser.xul";
 
     let currentUIVersion;
@@ -2185,6 +2185,13 @@ BrowserGlue.prototype = {
       
       
       this._migrateMatchBucketsPrefForUI66();
+    }
+
+    if (currentUIVersion < 67) {
+      
+      if (Services.prefs.getCharPref("devtools.theme") == "firebug") {
+        Services.prefs.setCharPref("devtools.theme", "light");
+      }
     }
 
     
