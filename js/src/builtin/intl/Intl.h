@@ -4,8 +4,8 @@
 
 
 
-#ifndef builtin_intl_IntlObject_h
-#define builtin_intl_IntlObject_h
+#ifndef builtin_intl_Intl_h
+#define builtin_intl_Intl_h
 
 #include "mozilla/Attributes.h"
 

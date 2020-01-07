@@ -4,7 +4,7 @@
 
 
 
-#include "builtin/DataViewObject.h"
+#include "builtin/DataView.h"
 
 #include "mozilla/Alignment.h"
 #include "mozilla/Casting.h"

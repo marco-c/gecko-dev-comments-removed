@@ -4,8 +4,8 @@
 
 
 
-#ifndef builtin_WeakMapObject_h
-#define builtin_WeakMapObject_h
+#ifndef builtin_WeakMap_h
+#define builtin_WeakMap_h
 
 #include "gc/WeakMap.h"
 #include "vm/JSObject.h"

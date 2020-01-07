@@ -4,8 +4,8 @@
 
 
 
-#ifndef builtin_AtomicsObject_h
-#define builtin_AtomicsObject_h
+#ifndef builtin_Atomics_h
+#define builtin_Atomics_h
 
 #include "mozilla/Maybe.h"
 #include "mozilla/TimeStamp.h"

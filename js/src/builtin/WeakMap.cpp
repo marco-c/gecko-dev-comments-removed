@@ -4,11 +4,11 @@
 
 
 
-#include "builtin/WeakMapObject-inl.h"
+#include "builtin/WeakMap-inl.h"
 
 #include "jsapi.h"
 
-#include "builtin/WeakSetObject.h"
+#include "builtin/WeakSet.h"
 #include "gc/FreeOp.h"
 #include "vm/JSContext.h"
 #include "vm/SelfHosting.h"

@@ -4,8 +4,8 @@
 
 
 
-#ifndef builtin_MapObject_h
-#define builtin_MapObject_h
+#ifndef builtin_Map_h
+#define builtin_Map_h
 
 #include "builtin/SelfHostingDefines.h"
 #include "vm/GlobalObject.h"

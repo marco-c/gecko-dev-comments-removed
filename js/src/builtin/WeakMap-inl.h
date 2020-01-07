@@ -4,10 +4,10 @@
 
 
 
-#ifndef builtin_WeakMapObject_inl_h
-#define builtin_WeakMapObject_inl_h
+#ifndef builtin_WeakMap_inl_h
+#define builtin_WeakMap_inl_h
 
-#include "builtin/WeakMapObject.h"
+#include "builtin/WeakMap.h"
 
 #include "vm/ProxyObject.h"
 

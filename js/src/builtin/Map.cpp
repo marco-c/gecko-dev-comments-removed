@@ -4,7 +4,7 @@
 
 
 
-#include "builtin/MapObject.h"
+#include "builtin/Map.h"
 
 #include "ds/OrderedHashTable.h"
 #include "gc/FreeOp.h"

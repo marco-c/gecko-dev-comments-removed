@@ -4,10 +4,10 @@
 
 
 
-#ifndef builtin_WeakSetObject_h
-#define builtin_WeakSetObject_h
+#ifndef builtin_WeakSet_h
+#define builtin_WeakSet_h
 
-#include "builtin/WeakMapObject.h"
+#include "builtin/WeakMap.h"
 
 namespace js {
 
