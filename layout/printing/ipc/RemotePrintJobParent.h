@@ -76,6 +76,12 @@ private:
 
   nsresult PrintPage(PRFileDescStream& aRecording);
 
+  
+
+
+
+  void PageDone(nsresult aResult);
+
   nsCOMPtr<nsIPrintSettings> mPrintSettings;
   RefPtr<nsDeviceContext> mPrintDeviceContext;
   UniquePtr<PrintTranslator> mPrintTranslator;
