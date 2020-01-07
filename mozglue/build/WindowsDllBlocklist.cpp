@@ -264,6 +264,9 @@ static const DllBlockInfo sWindowsDllBlocklist[] = {
   
   { "banksafe64.dll", MAKE_VERSION(1, 2, 15299, 65535) },
 
+  
+  { "gdkbfltdll64.dll", MAKE_VERSION(1, 0, 14141, 240) },
+
   { nullptr, 0 }
 };
 
