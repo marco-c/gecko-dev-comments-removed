@@ -19,7 +19,6 @@ import "./shipping-option-picker.js";
 
 
 
-
 export default class PaymentDialog extends PaymentStateSubscriberMixin(HTMLElement) {
   constructor() {
     super();
@@ -122,7 +121,6 @@ export default class PaymentDialog extends PaymentStateSubscriberMixin(HTMLEleme
     
     state = this.requestStore.getState();
     let {
-      request: {paymentOptions: {requestShipping: requestShipping}},
       savedAddresses,
       savedBasicCards,
       selectedPayerAddress,
@@ -148,13 +146,8 @@ export default class PaymentDialog extends PaymentStateSubscriberMixin(HTMLEleme
     } else {
       
       
-      let defaultShippingAddress = null;
-      if (requestShipping) {
-        defaultShippingAddress = Object.keys(savedAddresses)[0];
-        log.debug("selecting the default shipping address");
-      }
       this.requestStore.setState({
-        selectedShippingAddress: defaultShippingAddress || null,
+        selectedShippingAddress: Object.keys(savedAddresses)[0] || null,
       });
     }
 
