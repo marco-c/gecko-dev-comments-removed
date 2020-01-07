@@ -2945,7 +2945,11 @@ public:
 
 
 
-  virtual void InvalidateFrame(uint32_t aDisplayItemKey = 0);
+
+
+
+
+  virtual void InvalidateFrame(uint32_t aDisplayItemKey = 0, bool aRebuildDisplayItems = true);
 
   
 
@@ -2957,7 +2961,11 @@ public:
 
 
 
-  virtual void InvalidateFrameWithRect(const nsRect& aRect, uint32_t aDisplayItemKey = 0);
+
+
+
+
+  virtual void InvalidateFrameWithRect(const nsRect& aRect, uint32_t aDisplayItemKey = 0, bool aRebuildDisplayItems = true);
 
   
 
@@ -2970,7 +2978,8 @@ public:
 
 
 
-  void InvalidateFrameSubtree(uint32_t aDisplayItemKey = 0);
+
+  void InvalidateFrameSubtree(bool aRebuildDisplayItems = true);
 
   
 
