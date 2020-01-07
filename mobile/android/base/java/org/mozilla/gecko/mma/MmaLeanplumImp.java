@@ -20,6 +20,8 @@ import com.leanplum.LeanplumActivityHelper;
 import com.leanplum.LeanplumPushNotificationCustomizer;
 import com.leanplum.LeanplumPushService;
 import com.leanplum.internal.Constants;
+import com.leanplum.internal.LeanplumInternal;
+import com.leanplum.internal.VarCache;
 
 import org.mozilla.gecko.AppConstants;
 import org.mozilla.gecko.MmaConstants;
@@ -36,6 +38,11 @@ public class MmaLeanplumImp implements MmaInterface {
         if (activity == null) {
             return;
         }
+
+        
+        
+        Leanplum.setIsTestModeEnabled(false);
+
         Leanplum.setApplicationContext(activity.getApplicationContext());
 
         LeanplumActivityHelper.enableLifecycleCallbacks(activity.getApplication());
@@ -100,9 +107,28 @@ public class MmaLeanplumImp implements MmaInterface {
 
     }
 
+    
+    
+    
+    
+    
+    
     @Override
     public void stop() {
+        
         Leanplum.stop();
+
+        
+        
+        
+        
+        
+        Leanplum.setIsTestModeEnabled(true);
+
+        
+        
+        LeanplumInternal.setCalledStart(false);
+        LeanplumInternal.setHasStarted(false);
     }
 
     @Override
