@@ -379,14 +379,6 @@ public:
 
 
 
-
-  virtual nsresult AppendText(const char16_t* aBuffer, uint32_t aLength,
-                              bool aNotify) = 0;
-
-  
-
-
-
   virtual bool TextIsOnlyWhitespace() = 0;
 
   

@@ -146,8 +146,13 @@ public:
     return SetText(aStr.BeginReading(), aStr.Length(), aNotify);
   }
 
-  virtual nsresult AppendText(const char16_t* aBuffer, uint32_t aLength,
-                              bool aNotify) override;
+  
+
+
+
+  nsresult AppendText(const char16_t* aBuffer, uint32_t aLength,
+                      bool aNotify);
+
   virtual bool TextIsOnlyWhitespace() override;
   bool ThreadSafeTextIsOnlyWhitespace() const final;
   virtual bool HasTextForTranslation() override;
