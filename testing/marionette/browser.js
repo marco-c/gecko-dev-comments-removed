@@ -179,6 +179,20 @@ browser.Context = class {
 
 
 
+
+
+
+
+
+  get closed() {
+    return this.contentBrowser === null;
+  }
+
+  
+
+
+
+
   get curFrameId() {
     let rv = null;
     if (this.tab || this.driver.isReftestBrowser(this.contentBrowser)) {
