@@ -9,8 +9,8 @@ use api::{LayerRect, MixBlendMode, PipelineId};
 use batch::{AlphaBatcher, ClipBatcher, resolve_image};
 use clip::{ClipStore};
 use clip_scroll_tree::{ClipScrollTree};
-use device::Texture;
-use gpu_cache::{GpuCache, GpuCacheUpdateList};
+use device::{FrameId, Texture};
+use gpu_cache::{GpuCache};
 use gpu_types::{BlurDirection, BlurInstance, BrushInstance, ClipChainRectIndex};
 use gpu_types::{ClipScrollNodeData, ClipScrollNodeIndex};
 use gpu_types::{PrimitiveInstance};
@@ -861,6 +861,7 @@ impl CompositeOps {
 
 #[cfg_attr(feature = "capture", derive(Deserialize, Serialize))]
 pub struct Frame {
+    
     pub window_size: DeviceUintSize,
     pub inner_rect: DeviceUintRect,
     pub background_color: Option<ColorF>,
@@ -875,8 +876,7 @@ pub struct Frame {
     pub render_tasks: RenderTaskTree,
 
     
-    
-    pub gpu_cache_updates: Option<GpuCacheUpdateList>,
+    pub gpu_cache_frame_id: FrameId,
 
     
     

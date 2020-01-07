@@ -221,8 +221,11 @@ pub enum GpuCacheUpdate {
     },
 }
 
+#[must_use]
 #[cfg_attr(feature = "capture", derive(Deserialize, Serialize))]
 pub struct GpuCacheUpdateList {
+    
+    pub frame_id: FrameId,
     
     
     pub height: u32,
@@ -595,9 +598,9 @@ impl GpuCache {
     
     
     pub fn end_frame(
-        &mut self,
+        &self,
         profile_counters: &mut GpuCacheProfileCounters,
-    ) -> GpuCacheUpdateList {
+    ) -> FrameId {
         profile_counters
             .allocated_rows
             .set(self.texture.rows.len());
@@ -607,8 +610,13 @@ impl GpuCache {
         profile_counters
             .saved_blocks
             .set(self.saved_block_count);
+        self.frame_id
+    }
 
+    
+    pub fn extract_updates(&mut self) -> GpuCacheUpdateList {
         GpuCacheUpdateList {
+            frame_id: self.frame_id,
             height: self.texture.height,
             updates: mem::replace(&mut self.texture.updates, Vec::new()),
             blocks: mem::replace(&mut self.texture.pending_blocks, Vec::new()),
