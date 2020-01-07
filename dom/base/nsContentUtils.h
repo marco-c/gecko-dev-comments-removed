@@ -3124,12 +3124,6 @@ public:
 
 
 
-  static Element* GetClosestNonNativeAnonymousAncestor(Element* aElement);
-
-  
-
-
-
 
 
 
