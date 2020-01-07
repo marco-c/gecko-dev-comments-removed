@@ -54,8 +54,6 @@ class ParentLoadInfoForwarderArgs;
 class RedirectHistoryEntryInfo;
 } 
 
-using namespace mozilla::net;
-
 namespace ipc {
 
 class PrincipalInfo;
@@ -90,7 +88,7 @@ IsPincipalInfoPrivate(const PrincipalInfo& aPrincipalInfo);
 
 
 already_AddRefed<nsIRedirectHistoryEntry>
-RHEntryInfoToRHEntry(const RedirectHistoryEntryInfo& aRHEntryInfo);
+RHEntryInfoToRHEntry(const mozilla::net::RedirectHistoryEntryInfo& aRHEntryInfo);
 
 
 
@@ -98,20 +96,20 @@ RHEntryInfoToRHEntry(const RedirectHistoryEntryInfo& aRHEntryInfo);
 
 nsresult
 RHEntryToRHEntryInfo(nsIRedirectHistoryEntry* aRHEntry,
-                     RedirectHistoryEntryInfo* aRHEntryInfo);
+                     mozilla::net::RedirectHistoryEntryInfo* aRHEntryInfo);
 
 
 
 
 nsresult
 LoadInfoToLoadInfoArgs(nsILoadInfo *aLoadInfo,
-                       OptionalLoadInfoArgs* outOptionalLoadInfoArgs);
+                       mozilla::net::OptionalLoadInfoArgs* outOptionalLoadInfoArgs);
 
 
 
 
 nsresult
-LoadInfoArgsToLoadInfo(const OptionalLoadInfoArgs& aOptionalLoadInfoArgs,
+LoadInfoArgsToLoadInfo(const mozilla::net::OptionalLoadInfoArgs& aOptionalLoadInfoArgs,
                        nsILoadInfo** outLoadInfo);
 
 
@@ -119,14 +117,14 @@ LoadInfoArgsToLoadInfo(const OptionalLoadInfoArgs& aOptionalLoadInfoArgs,
 
 void
 LoadInfoToParentLoadInfoForwarder(nsILoadInfo *aLoadInfo,
-                                  ParentLoadInfoForwarderArgs* outLoadInfoChildForwardArgs);
+                                  mozilla::net::ParentLoadInfoForwarderArgs* outLoadInfoChildForwardArgs);
 
 
 
 
 
 nsresult
-MergeParentLoadInfoForwarder(ParentLoadInfoForwarderArgs const& outLoadInfoChildForwardArgs,
+MergeParentLoadInfoForwarder(mozilla::net::ParentLoadInfoForwarderArgs const& outLoadInfoChildForwardArgs,
                              nsILoadInfo *aLoadInfo);
 
 } 

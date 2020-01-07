@@ -301,11 +301,11 @@ ServiceWorkerContainer::Register(const nsAString& aScriptURL,
   
   
   nsCOMPtr<nsILoadInfo> secCheckLoadInfo =
-    new LoadInfo(doc->NodePrincipal(), 
-                 doc->NodePrincipal(), 
-                 doc,                  
-                 nsILoadInfo::SEC_ONLY_FOR_EXPLICIT_CONTENTSEC_CHECK,
-                 nsIContentPolicy::TYPE_INTERNAL_SERVICE_WORKER);
+    new mozilla::net::LoadInfo(doc->NodePrincipal(), 
+                               doc->NodePrincipal(), 
+                               doc,                  
+                               nsILoadInfo::SEC_ONLY_FOR_EXPLICIT_CONTENTSEC_CHECK,
+                               nsIContentPolicy::TYPE_INTERNAL_SERVICE_WORKER);
 
   
   int16_t decision = nsIContentPolicy::ACCEPT;

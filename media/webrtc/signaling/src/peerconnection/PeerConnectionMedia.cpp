@@ -169,7 +169,7 @@ PeerConnectionMedia::InitLocalAddrs()
     
     
     mStunAddrsRequest =
-      new StunAddrsRequestChild(new StunAddrsHandler(this), target);
+      new net::StunAddrsRequestChild(new StunAddrsHandler(this), target);
     mStunAddrsRequest->SendGetStunAddrs();
   } else {
     
