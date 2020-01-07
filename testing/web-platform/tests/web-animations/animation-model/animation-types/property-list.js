@@ -530,7 +530,7 @@ const gCSSProperties = {
   },
   'font-stretch': {
     
-    types: [ 'fontStretch' ]
+    types: [ 'percentage' ]
   },
   'font-style': {
     
