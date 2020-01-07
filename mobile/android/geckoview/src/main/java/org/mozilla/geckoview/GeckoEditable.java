@@ -1209,22 +1209,37 @@ import android.view.inputmethod.EditorInfo;
 
         switch (type) {
             case SessionTextInput.EditableListener.NOTIFY_IME_OF_FOCUS:
+                if (mFocusedChild != null) {
+                    
+                    icRestartInput(GeckoSession.TextInputDelegate.RESTART_REASON_BLUR,
+                                    false);
+                }
+
                 mFocusedChild = child;
                 mNeedSync = false;
                 mText.syncShadowText( null);
 
                 
-                if (mIMEState != SessionTextInput.EditableListener.IME_STATE_DISABLED) {
-                    icRestartInput(GeckoSession.TextInputDelegate.RESTART_REASON_FOCUS);
+                
+                
+                if (mIMEState == SessionTextInput.EditableListener.IME_STATE_DISABLED) {
+                    mIMEState = SessionTextInput.EditableListener.IME_STATE_UNKNOWN;
+                } else {
+                    icRestartInput(GeckoSession.TextInputDelegate.RESTART_REASON_FOCUS,
+                                    true);
                 }
                 break;
 
             case SessionTextInput.EditableListener.NOTIFY_IME_OF_BLUR:
-                mFocusedChild = null;
+                if (mFocusedChild != null) {
+                    mFocusedChild = null;
+                    icRestartInput(GeckoSession.TextInputDelegate.RESTART_REASON_BLUR,
+                                    true);
+                }
                 break;
 
             case SessionTextInput.EditableListener.NOTIFY_IME_OPEN_VKB:
-                toggleSoftInput( true);
+                toggleSoftInput( true, mIMEState);
                 return; 
 
             case SessionTextInput.EditableListener.NOTIFY_IME_TO_COMMIT_COMPOSITION: {
@@ -1244,7 +1259,8 @@ import android.view.inputmethod.EditorInfo;
                     }
                 }
                 
-                icRestartInput(GeckoSession.TextInputDelegate.RESTART_REASON_CONTENT_CHANGE);
+                icRestartInput(GeckoSession.TextInputDelegate.RESTART_REASON_CONTENT_CHANGE,
+                                false);
                 return; 
             }
 
@@ -1311,24 +1327,26 @@ import android.view.inputmethod.EditorInfo;
             mListener.notifyIMEContext(state, typeHint, modeHint, actionHint, flags);
         }
 
-        
-        
-        
-        
-        
-
-        
-        if (oldState == SessionTextInput.EditableListener.IME_STATE_DISABLED) {
+        if (state == SessionTextInput.EditableListener.IME_STATE_DISABLED ||
+                mFocusedChild == null) {
             return;
         }
-        if (state == SessionTextInput.EditableListener.IME_STATE_DISABLED) {
-            icRestartInput(GeckoSession.TextInputDelegate.RESTART_REASON_BLUR);
-        } else if (mFocusedChild != null) {
-            icRestartInput(GeckoSession.TextInputDelegate.RESTART_REASON_CONTENT_CHANGE);
+
+        
+        
+        
+        
+        if (oldState == SessionTextInput.EditableListener.IME_STATE_UNKNOWN) {
+            icRestartInput(GeckoSession.TextInputDelegate.RESTART_REASON_FOCUS,
+                            true);
+        } else if (oldState != SessionTextInput.EditableListener.IME_STATE_DISABLED) {
+            icRestartInput(GeckoSession.TextInputDelegate.RESTART_REASON_CONTENT_CHANGE,
+                            false);
         }
     }
 
-    private void icRestartInput(@GeckoSession.TextInputDelegate.RestartReason final int reason) {
+    private void icRestartInput(@GeckoSession.TextInputDelegate.RestartReason final int reason,
+                                final boolean toggleSoftInput) {
         if (DEBUG) {
             assertOnIcThread();
         }
@@ -1336,13 +1354,28 @@ import android.view.inputmethod.EditorInfo;
         ThreadUtils.postToUiThread(new Runnable() {
             @Override
             public void run() {
-                mSoftInputReentrancyGuard.incrementAndGet();
+                if (DEBUG) {
+                    Log.d(LOGTAG, "restartInput(" + reason + ", " + toggleSoftInput + ')');
+                }
+                if (toggleSoftInput) {
+                    mSoftInputReentrancyGuard.incrementAndGet();
+                }
                 mSession.getTextInput().getDelegate().restartInput(mSession, reason);
 
+                if (!toggleSoftInput) {
+                    return;
+                }
                 postToInputConnection(new Runnable() {
                     @Override
                     public void run() {
-                        toggleSoftInput( false);
+                        int state = mIMEState;
+                        if (reason == GeckoSession.TextInputDelegate.RESTART_REASON_BLUR &&
+                                    mFocusedChild == null) {
+                            
+                            
+                            state = SessionTextInput.EditableListener.IME_STATE_DISABLED;
+                        }
+                        toggleSoftInput( false, state);
                     }
                 });
             }
@@ -1362,7 +1395,7 @@ import android.view.inputmethod.EditorInfo;
 
         if (state == SessionTextInput.EditableListener.IME_STATE_DISABLED) {
             outAttrs.inputType = InputType.TYPE_NULL;
-            toggleSoftInput( false);
+            toggleSoftInput( false, state);
             return;
         }
 
@@ -1431,12 +1464,14 @@ import android.view.inputmethod.EditorInfo;
             outAttrs.imeOptions |= InputMethods.IME_FLAG_NO_PERSONALIZED_LEARNING;
         }
 
-        toggleSoftInput( false);
+        toggleSoftInput( false, state);
     }
 
-     void toggleSoftInput(final boolean force) {
+     void toggleSoftInput(final boolean force, final int state) {
+        if (DEBUG) {
+            Log.d(LOGTAG, "toggleSoftInput");
+        }
         
-        final int state = mIMEState;
         final int flags = mIMEFlags;
 
         
@@ -1472,11 +1507,21 @@ import android.view.inputmethod.EditorInfo;
                         SessionTextInput.EditableListener.IME_FLAG_USER_ACTION) != 0);
 
                 if (!force && (isReentrant || !isFocused || !isUserAction)) {
+                    if (DEBUG) {
+                        Log.d(LOGTAG, "toggleSoftInput: no-op, reentrant=" + isReentrant +
+                                ", focused=" + isFocused + ", user=" + isUserAction);
+                    }
                     return;
                 }
                 if (state == SessionTextInput.EditableListener.IME_STATE_DISABLED) {
+                    if (DEBUG) {
+                        Log.d(LOGTAG, "hideSoftInput");
+                    }
                     mSession.getTextInput().getDelegate().hideSoftInput(mSession);
                     return;
+                }
+                if (DEBUG) {
+                    Log.d(LOGTAG, "showSoftInput");
                 }
                 mSession.getEventDispatcher().dispatch("GeckoView:ZoomToInput", null);
                 mSession.getTextInput().getDelegate().showSoftInput(mSession);
