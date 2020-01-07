@@ -146,6 +146,10 @@ private:
   uint32_t mSuspendCount;
   bool mIsPending;
 
+  
+  
+  bool mDuringOnStart = false;
+
   PRTime mLastModifiedTime;
   uint64_t mStartPos;
   nsCString mEntityID;

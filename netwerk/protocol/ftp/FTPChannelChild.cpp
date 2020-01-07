@@ -312,6 +312,12 @@ FTPChannelChild::DoOnStartRequest(const nsresult& aChannelStatus,
                                   const nsCString& aEntityID,
                                   const URIParams& aURI)
 {
+  mDuringOnStart = true;
+  RefPtr<FTPChannelChild> self = this;
+  auto clearDuringFlag = mozilla::MakeScopeExit([self] {
+    self->mDuringOnStart = false;
+  });
+
   LOG(("FTPChannelChild::DoOnStartRequest [this=%p]\n", this));
 
   
@@ -891,6 +897,11 @@ FTPChannelChild::DivertToParent(ChannelDiverterChild **aChild)
                    IsShuttingDown(), NS_ERROR_FAILURE);
 
   LOG(("FTPChannelChild::DivertToParent [this=%p]\n", this));
+
+  
+  if (!mDuringOnStart) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
 
   
   
