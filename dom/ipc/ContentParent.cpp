@@ -4591,11 +4591,18 @@ ContentParent::CommonCreateWindow(PBrowserParent* aThisTab,
       if (frameLoader) {
         frameLoader->GetTabParent(getter_AddRefs(aNewTabParent));
       }
+    } else if (NS_SUCCEEDED(aResult) && !frameLoaderOwner) {
+      
+      
+      openLocation = nsIBrowserDOMWindow::OPEN_NEWWINDOW;
     } else {
       *aWindowIsNew = false;
     }
 
-    return IPC_OK();
+    
+    if (openLocation != nsIBrowserDOMWindow::OPEN_NEWWINDOW) {
+      return IPC_OK();
+    }
   }
 
   nsCOMPtr<nsPIWindowWatcher> pwwatch =
