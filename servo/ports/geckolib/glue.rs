@@ -709,6 +709,31 @@ pub extern "C" fn Servo_AnimationValue_Serialize(
 }
 
 #[no_mangle]
+pub unsafe extern "C" fn Servo_Shorthand_AnimationValues_Serialize(
+    shorthand_property: nsCSSPropertyID,
+    values: RawGeckoServoAnimationValueListBorrowed,
+    buffer: *mut nsAString,
+) {
+    let property_id = get_property_id_from_nscsspropertyid!(shorthand_property, ());
+    let shorthand = match property_id.as_shorthand() {
+        Ok(shorthand) => shorthand,
+        _ => return,
+    };
+
+    
+    
+    
+    
+    let declarations: Vec<PropertyDeclaration> =
+        values.iter().map(|v| AnimationValue::as_arc(&&*v.mRawPtr).uncompute()).collect();
+
+    let _ = shorthand.longhands_to_css(
+        declarations.iter(),
+        &mut CssWriter::new(&mut *buffer),
+    );
+}
+
+#[no_mangle]
 pub extern "C" fn Servo_AnimationValue_GetOpacity(
     value: RawServoAnimationValueBorrowed,
 ) -> f32 {
@@ -3585,20 +3610,6 @@ pub unsafe extern "C" fn Servo_DeclarationBlock_SetProperty(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Servo_DeclarationBlock_SetPropertyToAnimationValue(
-    declarations: RawServoDeclarationBlockBorrowed,
-    animation_value: RawServoAnimationValueBorrowed,
-) -> bool {
-    write_locked_arc(declarations, |decls: &mut PropertyDeclarationBlock| {
-        decls.push(
-            AnimationValue::as_arc(&animation_value).uncompute(),
-            Importance::Normal,
-            DeclarationSource::CssOm,
-        )
-    })
-}
-
-#[no_mangle]
 pub unsafe extern "C" fn Servo_DeclarationBlock_SetPropertyById(
     declarations: RawServoDeclarationBlockBorrowed,
     property: nsCSSPropertyID,
@@ -4495,6 +4506,7 @@ pub extern "C" fn Servo_GetComputedKeyframeValues(
     raw_data: RawServoStyleSetBorrowed,
     computed_keyframes: RawGeckoComputedKeyframeValuesListBorrowedMut
 ) {
+    use std::mem;
     use style::properties::LonghandIdSet;
 
     let data = PerDocumentStyleData::from_ffi(raw_data).borrow();
@@ -4555,6 +4567,10 @@ pub extern "C" fn Servo_GetComputedKeyframeValues(
                 
                 unsafe { animation_values.set_len((property_index + 1) as u32) };
                 animation_values[property_index].mProperty = property.to_nscsspropertyid();
+                
+                
+                
+                animation_values[property_index].mValue.mGecko = unsafe { mem::zeroed() };
                 match value {
                     Some(v) => {
                         animation_values[property_index].mValue.mServo.set_arc_leaky(Arc::new(v));

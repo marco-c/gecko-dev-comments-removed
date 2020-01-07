@@ -16,7 +16,6 @@
 
 namespace mozilla {
 struct AnimationValue;
-class DeclarationBlock;
 namespace dom {
 class Element;
 } 
@@ -108,7 +107,12 @@ public:
 
 
 
-  static bool SetPropertyValues(const nsSMILValue&, mozilla::DeclarationBlock&);
+
+
+
+
+
+  static void ValueToString(const nsSMILValue& aValue, nsAString& aString);
 
   
 

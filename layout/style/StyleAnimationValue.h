@@ -82,6 +82,7 @@ struct AnimationValue
   already_AddRefed<const nsCSSValueSharedList> GetTransformList() const;
 
   
+  
   mozilla::gfx::Size GetScaleValue(const nsIFrame* aFrame) const;
 
   
@@ -115,6 +116,16 @@ struct AnimationValue
   AppendTransformFunction(nsCSSKeyword aTransformFunction,
                           nsCSSValueList**& aListTail);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  uintptr_t mGecko;
   RefPtr<RawServoAnimationValue> mServo;
 };
 
