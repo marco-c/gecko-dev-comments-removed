@@ -81,7 +81,7 @@ function test() {
   waitForExplicitFinish();
   addTab(TEST_URI).then(function () {
     
-    doc = content.document;
+    doc = gBrowser.contentDocumentAsCPOW;
     
     runTests();
   });
