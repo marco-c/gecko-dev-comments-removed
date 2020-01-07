@@ -338,11 +338,27 @@ public:
   
   NS_IMETHOD TypedText(const nsAString& aString,
                        ETypingAction aAction) override;
-  nsresult InsertNodeAtPoint(nsIDOMNode* aNode,
-                             nsCOMPtr<nsIDOMNode>* ioParent,
-                             int32_t* ioOffset,
-                             SplitAtEdges aSplitAtEdges,
-                             nsCOMPtr<nsIDOMNode>* ioChildAtOffset = nullptr);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  EditorDOMPoint
+  InsertNodeIntoProperAncestor(nsIContent& aNode,
+                               const EditorRawDOMPoint& aPointToInsert,
+                               SplitAtEdges aSplitAtEdges);
 
   
 

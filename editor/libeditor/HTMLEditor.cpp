@@ -1499,10 +1499,13 @@ HTMLEditor::InsertElementAtSelection(nsIDOMElement* aElement,
       NormalizeEOLInsertPosition(element, address_of(parentSelectedDOMNode),
                                  &offsetForInsert);
 
-      rv = InsertNodeAtPoint(node, address_of(parentSelectedDOMNode),
-                             &offsetForInsert,
-                             SplitAtEdges::eAllowToCreateEmptyContainer);
-      NS_ENSURE_SUCCESS(rv, rv);
+      EditorDOMPoint insertedPoint =
+        InsertNodeIntoProperAncestor(
+          *element, EditorRawDOMPoint(parentSelectedDOMNode, offsetForInsert),
+          SplitAtEdges::eAllowToCreateEmptyContainer);
+      if (NS_WARN_IF(!insertedPoint.IsSet())) {
+        return NS_ERROR_FAILURE;
+      }
       
       
       if (!SetCaretInTableCell(aElement)) {
@@ -1513,12 +1516,12 @@ HTMLEditor::InsertElementAtSelection(nsIDOMElement* aElement,
       
       if (HTMLEditUtils::IsTable(node) &&
           IsLastEditableChild(element)) {
+        DebugOnly<bool> advanced = insertedPoint.AdvanceOffset();
+        NS_WARNING_ASSERTION(advanced,
+          "Failed to advance offset from inserted point");
         
         RefPtr<Element> newBRElement =
-          CreateBRImpl(*selection,
-                       EditorRawDOMPoint(parentSelectedDOMNode,
-                                         offsetForInsert + 1),
-                       ePrevious);
+          CreateBRImpl(*selection, insertedPoint.AsRaw(), ePrevious);
         if (NS_WARN_IF(!newBRElement)) {
           return NS_ERROR_FAILURE;
         }
@@ -1529,97 +1532,71 @@ HTMLEditor::InsertElementAtSelection(nsIDOMElement* aElement,
   return rv;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-nsresult
-HTMLEditor::InsertNodeAtPoint(nsIDOMNode* aNode,
-                              nsCOMPtr<nsIDOMNode>* ioParent,
-                              int32_t* ioOffset,
-                              SplitAtEdges aSplitAtEdges,
-                              nsCOMPtr<nsIDOMNode>* ioChildAtOffset)
+EditorDOMPoint
+HTMLEditor::InsertNodeIntoProperAncestor(
+              nsIContent& aNode,
+              const EditorRawDOMPoint& aPointToInsert,
+              SplitAtEdges aSplitAtEdges)
 {
-  nsCOMPtr<nsIContent> node = do_QueryInterface(aNode);
-  NS_ENSURE_TRUE(node, NS_ERROR_NULL_POINTER);
-  NS_ENSURE_TRUE(ioParent, NS_ERROR_NULL_POINTER);
-  NS_ENSURE_TRUE(*ioParent, NS_ERROR_NULL_POINTER);
-  NS_ENSURE_TRUE(ioOffset, NS_ERROR_NULL_POINTER);
-  bool isDocumentFragment = false;
-  if (ioChildAtOffset) {
-    *ioChildAtOffset = aNode;
-    uint16_t nodeType = 0;
-    if (NS_SUCCEEDED(aNode->GetNodeType(&nodeType)) &&
-        nodeType == nsIDOMNode::DOCUMENT_FRAGMENT_NODE) {
-      
-      
-      
-      isDocumentFragment = true;
-    }
+  if (NS_WARN_IF(!aPointToInsert.IsSet())) {
+    return EditorDOMPoint();
   }
-
-  nsCOMPtr<nsIContent> parent = do_QueryInterface(*ioParent);
-  NS_ENSURE_TRUE(parent, NS_ERROR_NULL_POINTER);
-  nsCOMPtr<nsIContent> topChild = parent;
-  nsCOMPtr<nsIContent> origParent = parent;
+  MOZ_ASSERT(aPointToInsert.IsSetAndValid());
 
   
-  while (!CanContain(*parent, *node)) {
+  EditorDOMPoint pointToInsert(aPointToInsert);
+  MOZ_ASSERT(pointToInsert.IsSet());
+  while (!CanContain(*pointToInsert.Container(), aNode)) {
     
     
-    if (parent->IsHTMLElement(nsGkAtoms::body) ||
-        HTMLEditUtils::IsTableElement(parent)) {
-      return NS_ERROR_FAILURE;
+    if (pointToInsert.Container()->IsHTMLElement(nsGkAtoms::body) ||
+        HTMLEditUtils::IsTableElement(pointToInsert.Container())) {
+      return EditorDOMPoint();
     }
+
     
-    NS_ENSURE_TRUE(parent->GetParentNode(), NS_ERROR_FAILURE);
-    if (!IsEditable(parent->GetParentNode())) {
+    pointToInsert.Set(pointToInsert.Container());
+    if (NS_WARN_IF(!pointToInsert.IsSet())) {
+      return EditorDOMPoint();
+    }
+
+    if (!IsEditable(pointToInsert.Container())) {
       
       
       
-      parent = topChild = origParent;
+      pointToInsert = aPointToInsert;
       break;
     }
-    topChild = parent;
-    parent = parent->GetParent();
   }
-  if (parent != topChild) {
+
+  if (pointToInsert != aPointToInsert) {
     
+    MOZ_ASSERT(pointToInsert.GetChildAtOffset());
     SplitNodeResult splitNodeResult =
-      SplitNodeDeep(*topChild, EditorRawDOMPoint(origParent, *ioOffset),
-                    aSplitAtEdges);
+      SplitNodeDeep(*pointToInsert.GetChildAtOffset(),
+                    aPointToInsert, aSplitAtEdges);
     if (NS_WARN_IF(splitNodeResult.Failed())) {
-      return splitNodeResult.Rv();
+      return EditorDOMPoint();
     }
-    EditorRawDOMPoint splitPoint(splitNodeResult.SplitPoint());
-    *ioParent = GetAsDOMNode(splitPoint.Container());
-    *ioOffset = splitPoint.Offset();
-    if (ioChildAtOffset) {
-      *ioChildAtOffset = GetAsDOMNode(splitPoint.GetChildAtOffset());
+    pointToInsert = splitNodeResult.SplitPoint();
+    MOZ_ASSERT(pointToInsert.IsSet());
+  }
+
+  {
+    
+    
+    
+    
+    
+    
+    AutoEditorDOMPointChildInvalidator lockOffset(pointToInsert);
+    
+    nsresult rv = InsertNode(aNode, pointToInsert.AsRaw());
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return EditorDOMPoint();
     }
   }
-  
-  nsresult rv = InsertNode(*node, EditorRawDOMPoint(parent, *ioOffset));
-  if (isDocumentFragment) {
-    *ioChildAtOffset = do_QueryInterface(parent->GetChildAt(*ioOffset));
-  }
-  return rv;
+  return pointToInsert;
 }
 
 NS_IMETHODIMP
