@@ -482,7 +482,7 @@ class BeforeFinished : public TlsRecordFilter {
     switch (state_) {
       case BEFORE_CCS:
         
-        if (header.content_type() == kTlsChangeCipherSpecType) {
+        if (header.content_type() == ssl_ct_change_cipher_spec) {
           before_ccs_();
 
           
@@ -499,7 +499,7 @@ class BeforeFinished : public TlsRecordFilter {
         break;
 
       case AFTER_CCS:
-        EXPECT_EQ(kTlsHandshakeType, header.content_type());
+        EXPECT_EQ(ssl_ct_handshake, header.content_type());
         
         
 
