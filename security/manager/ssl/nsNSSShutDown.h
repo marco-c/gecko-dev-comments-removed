@@ -5,186 +5,30 @@
 #ifndef nsNSSShutDown_h
 #define nsNSSShutDown_h
 
-#include "PLDHashTable.h"
-#include "mozilla/Assertions.h"
-#include "mozilla/CondVar.h"
-#include "mozilla/Mutex.h"
-#include "mozilla/StaticMutex.h"
-#include "nscore.h"
-#include "nspr.h"
-
-class nsNSSShutDownObject;
 
 
-class nsNSSActivityState
-{
-public:
-  nsNSSActivityState();
-  ~nsNSSActivityState();
 
-  
-  
-  void enter();
-  void leave();
-  
-  
-  PRStatus restrictActivityToCurrentThread();
 
-  
-  void releaseCurrentThreadActivityRestriction();
 
-private:
-  
-  mozilla::Mutex mNSSActivityStateLock;
 
-  
-  
-  
-  mozilla::CondVar mNSSActivityChanged;
 
-  
-  int mNSSActivityCounter;
 
-  
-  
-  PRThread* mNSSRestrictedThread;
-};
 
+static int sSilenceCompilerWarnings;
 
 class nsNSSShutDownPreventionLock
 {
 public:
-  nsNSSShutDownPreventionLock();
-  ~nsNSSShutDownPreventionLock();
-private:
-  
-  
-  
-  
-  bool mEnteredActivityState;
+  nsNSSShutDownPreventionLock()
+  {
+    sSilenceCompilerWarnings++;
+  }
+
+  ~nsNSSShutDownPreventionLock()
+  {
+    sSilenceCompilerWarnings--;
+  }
 };
-
-
-
-class nsNSSShutDownList
-{
-public:
-  
-  static void remember(nsNSSShutDownObject *o);
-  static void forget(nsNSSShutDownObject *o);
-
-  
-  
-  static nsresult evaporateAllNSSResourcesAndShutDown();
-
-  
-  
-  
-  static void enterActivityState( bool& enteredActivityState);
-  static void leaveActivityState();
-
-private:
-  static bool construct(const mozilla::StaticMutexAutoLock& );
-
-  nsNSSShutDownList();
-  ~nsNSSShutDownList();
-
-protected:
-  PLDHashTable mObjects;
-  nsNSSActivityState mActivityState;
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 class nsNSSShutDownObject
 {
@@ -194,42 +38,16 @@ public:
     Object,
   };
 
-  nsNSSShutDownObject()
-  {
-    mAlreadyShutDown = false;
-    nsNSSShutDownList::remember(this);
-  }
+  nsNSSShutDownObject() {}
 
-  virtual ~nsNSSShutDownObject()
-  {
-    
-    
-    
-  }
+  virtual ~nsNSSShutDownObject() {}
 
-  void shutdown(ShutdownCalledFrom calledFrom)
-  {
-    if (!mAlreadyShutDown) {
-      switch (calledFrom) {
-        case ShutdownCalledFrom::Object:
-          nsNSSShutDownList::forget(this);
-          break;
-        case ShutdownCalledFrom::List:
-          virtualDestroyNSSReference();
-          break;
-        default:
-          MOZ_CRASH("shutdown() called from an unknown source");
-      }
-      mAlreadyShutDown = true;
-    }
-  }
+  void shutdown(ShutdownCalledFrom) {}
 
-  bool isAlreadyShutDown() const;
+  bool isAlreadyShutDown() const { return false; }
 
 protected:
   virtual void virtualDestroyNSSReference() = 0;
-private:
-  volatile bool mAlreadyShutDown;
 };
 
 #endif 
