@@ -10,6 +10,18 @@
 #include "gfxDWriteCommon.h"
 #include "dwrite_3.h"
 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+#if WINVER < 0x0A00
+#include "dw-extra.h"
+#endif
+
 #include "gfxFont.h"
 #include "gfxUserFontSet.h"
 #include "cairo-win32.h"
