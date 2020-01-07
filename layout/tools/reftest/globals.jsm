@@ -71,9 +71,6 @@ for (let [key, val] of Object.entries({
     focusFilterMode: "all",
     compareRetainedDisplayLists: false,
 
-    
-    runSlower: false,
-
     browser: undefined,
     
     browserIsRemote: undefined,        
