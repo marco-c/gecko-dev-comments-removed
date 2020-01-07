@@ -17,9 +17,27 @@ add_task(async function() {
   gURLBar.focus();
 
   let browser = gBrowser.selectedBrowser;
-  await SimpleTest.promiseFocus(browser.contentWindowAsCPOW, true);
+  await SimpleTest.promiseFocus(browser, true);
 
   is(document.activeElement, browser, "Browser is focused when about:blank is loaded");
+
+  gBrowser.removeCurrentTab();
+  gURLBar.focus();
+});
+
+add_task(async function() {
+  await BrowserTestUtils.openNewForegroundTab(gBrowser);
+
+  gURLBar.focus();
+
+  let browser = gBrowser.selectedBrowser;
+  
+  
+  if (browser.contentWindow) {
+    await SimpleTest.promiseFocus(browser.contentWindow, true);
+
+    is(document.activeElement, browser, "Browser is focused when about:blank is loaded");
+  }
 
   gBrowser.removeCurrentTab();
   gURLBar.focus();
@@ -31,15 +49,19 @@ add_task(async function() {
   gBrowser.selectedTab = tab;
 
   let browser = gBrowser.getBrowserForTab(tab);
-  await promiseTabLoadEvent(tab, gBaseURL + "waitForFocusPage.html");
+  
+  
+  if (browser.contentWindow) {
+    await promiseTabLoadEvent(tab, gBaseURL + "waitForFocusPage.html");
 
-  await SimpleTest.promiseFocus(browser.contentWindowAsCPOW);
+    await SimpleTest.promiseFocus(browser.contentWindow);
 
-  is(document.activeElement, browser, "Browser is focused when page is loaded");
+    is(document.activeElement, browser, "Browser is focused when page is loaded");
 
-  await SimpleTest.promiseFocus(browser.contentWindowAsCPOW.frames[0]);
+    await SimpleTest.promiseFocus(browser.contentWindow.frames[0]);
 
-  is(browser.contentWindowAsCPOW.document.activeElement.localName, "iframe", "Child iframe is focused");
+    is(browser.contentWindow.document.activeElement.localName, "iframe", "Child iframe is focused");
+  }
 
   gBrowser.removeCurrentTab();
 });
