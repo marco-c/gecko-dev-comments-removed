@@ -155,7 +155,9 @@ HTMLOutputElement::SetDefaultValue(const nsAString& aDefaultValue, ErrorResult& 
 {
   mDefaultValue = aDefaultValue;
   if (mValueModeFlag == eModeDefault) {
-    aRv = nsContentUtils::SetNodeTextContent(this, mDefaultValue, true);
+    
+    
+    aRv = nsContentUtils::SetNodeTextContent(this, aDefaultValue, true);
   }
 }
 
