@@ -218,7 +218,7 @@ public:
     uint32_t mHash;
   };
 
-  explicit UniqueStacks(JSContext* aContext);
+  explicit UniqueStacks();
 
   
   MOZ_MUST_USE StackKey BeginStack(const FrameKey& aFrame);
@@ -228,7 +228,7 @@ public:
                                     const FrameKey& aFrame);
 
   MOZ_MUST_USE nsTArray<FrameKey>
-  GetOrAddJITFrameKeysForAddress(void* aJITAddress);
+  GetOrAddJITFrameKeysForAddress(JSContext* aContext, void* aJITAddress);
 
   MOZ_MUST_USE uint32_t GetOrAddFrameIndex(const FrameKey& aFrame);
   MOZ_MUST_USE uint32_t GetOrAddStackIndex(const StackKey& aStack);
@@ -239,19 +239,19 @@ public:
 private:
   
   
-  void MaybeAddJITFrameIndex(const FrameKey& aFrame,
+  void MaybeAddJITFrameIndex(JSContext* aContext,
+                             const FrameKey& aFrame,
                              const JS::ProfiledFrameHandle& aJITFrame);
 
   void StreamNonJITFrame(const FrameKey& aFrame);
-  void StreamJITFrame(const JS::ProfiledFrameHandle& aJITFrame);
+  void StreamJITFrame(JSContext* aContext,
+                      const JS::ProfiledFrameHandle& aJITFrame);
   void StreamStack(const StackKey& aStack);
 
 public:
   UniqueJSONStrings mUniqueStrings;
 
 private:
-  JSContext* mContext;
-
   
   
   
