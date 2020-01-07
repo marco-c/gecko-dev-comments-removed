@@ -80,11 +80,12 @@ function setWindowName() {
 
   
   
+  
   AddCertChain("treesetDump", [cert]);
   DisplayGeneralDataFromCert(cert);
   BuildPrettyPrint(cert);
 
-  asyncDetermineUsages(cert);
+  asyncDetermineUsages(cert).then(displayUsages);
 }
 
 
@@ -133,6 +134,8 @@ const SEC_ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED       = SEC_ERROR_BASE + 176;
 
 
 
+
+
 function asyncDetermineUsages(cert) {
   let promises = [];
   let now = Date.now() / 1000;
@@ -149,7 +152,7 @@ function asyncDetermineUsages(cert) {
         });
     }));
   });
-  Promise.all(promises).then(displayUsages);
+  return Promise.all(promises);
 }
 
 
