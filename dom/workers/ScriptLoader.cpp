@@ -29,6 +29,7 @@
 #include "nsContentPolicyUtils.h"
 #include "nsContentUtils.h"
 #include "nsDocShellCID.h"
+#include "nsHostObjectProtocolHandler.h"
 #include "nsISupportsPrimitives.h"
 #include "nsNetUtil.h"
 #include "nsIPipe.h"
@@ -1259,6 +1260,18 @@ private:
 
       if (chanLoadInfo) {
         mController = chanLoadInfo->GetController();
+      }
+
+      
+      
+      
+      
+      
+      
+      
+      if (IsBlobURI(mWorkerPrivate->GetBaseURI())) {
+        MOZ_DIAGNOSTIC_ASSERT(mController.isNothing());
+        mController = mWorkerPrivate->GetParentController();
       }
     }
 
