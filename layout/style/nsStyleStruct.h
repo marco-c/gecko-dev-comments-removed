@@ -232,15 +232,6 @@ private:
 
 
 
-
-
-
-
-
-
-
-
-
 class nsStyleImageRequest
 {
 public:
@@ -269,17 +260,7 @@ public:
 
   
   
-  
-  nsStyleImageRequest(Mode aModeFlags,
-                      imgRequestProxy* aRequestProxy,
-                      mozilla::css::ImageValue* aImageValue,
-                      mozilla::dom::ImageTracker* aImageTracker);
-
-  
-  
-  nsStyleImageRequest(
-      Mode aModeFlags,
-      mozilla::css::ImageValue* aImageValue);
+  nsStyleImageRequest(Mode aModeFlags, mozilla::css::ImageValue* aImageValue);
 
   bool Resolve(nsPresContext*, const nsStyleImageRequest* aOldImageRequest);
   bool IsResolved() const { return mResolved; }
