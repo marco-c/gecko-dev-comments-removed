@@ -2810,13 +2810,17 @@ nsWindow::OnButtonReleaseEvent(GdkEventButton *aEvent)
     gdk_event_get_axis ((GdkEvent*)aEvent, GDK_AXIS_PRESSURE, &pressure);
     event.pressure = pressure ? pressure : mLastMotionPressure;
 
+    
+    
+    LayoutDeviceIntPoint pos = event.mRefPoint;
+
     nsEventStatus eventStatus = DispatchInputEvent(&event);
 
     bool defaultPrevented = (eventStatus == nsEventStatus_eConsumeNoDefault);
     
     
-    LayoutDeviceIntPoint pos = event.mRefPoint;
     if (!defaultPrevented
+             && mIsCSDEnabled
              && event.button == WidgetMouseEvent::eLeftButton
              && event.mClickCount == 2
              && mDraggableRegion.Contains(pos.x, pos.y)) {
