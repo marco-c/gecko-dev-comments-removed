@@ -47,6 +47,24 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(Directory)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 
+ bool
+Directory::WebkitBlinkDirectoryPickerEnabled(JSContext* aCx, JSObject* aObj)
+{
+  if (NS_IsMainThread()) {
+    return Preferences::GetBool("dom.webkitBlink.dirPicker.enabled", false);
+  }
+
+  
+  
+  workers::WorkerPrivate* workerPrivate =
+    workers::GetCurrentThreadWorkerPrivate();
+  if (!workerPrivate) {
+    return false;
+  }
+
+  return workerPrivate->WebkitBlinkDirectoryPickerEnabled();
+}
+
  already_AddRefed<Directory>
 Directory::Constructor(const GlobalObject& aGlobal,
                        const nsAString& aRealPath,

@@ -26,6 +26,24 @@ NS_INTERFACE_MAP_END_INHERITING(DOMEventTargetHelper)
 NS_IMPL_ADDREF_INHERITED(FetchObserver, DOMEventTargetHelper)
 NS_IMPL_RELEASE_INHERITED(FetchObserver, DOMEventTargetHelper)
 
+ bool
+FetchObserver::IsEnabled(JSContext* aCx, JSObject* aGlobal)
+{
+  if (NS_IsMainThread()) {
+    return Preferences::GetBool("dom.fetchObserver.enabled", false);
+  }
+
+  using namespace workers;
+
+  
+  WorkerPrivate* workerPrivate = GetWorkerPrivateFromContext(aCx);
+  if (!workerPrivate) {
+    return false;
+  }
+
+  return workerPrivate->FetchObserverEnabled();
+}
+
 FetchObserver::FetchObserver(nsIGlobalObject* aGlobal,
                              AbortSignal* aSignal)
   : DOMEventTargetHelper(aGlobal)

@@ -8,9 +8,9 @@
 #define mozilla_dom_PushSubscriptionOptions_h
 
 #include "nsCycleCollectionParticipant.h"
+#include "nsContentUtils.h" 
 #include "nsTArray.h"
 #include "nsWrapperCache.h"
-#include "mozilla/dom/DOMPreferences.h"
 
 class nsIGlobalObject;
 
