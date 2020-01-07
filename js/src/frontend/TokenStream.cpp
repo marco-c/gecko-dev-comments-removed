@@ -550,6 +550,11 @@ TokenStreamChars<char16_t, AnyCharsAccess>::getNonAsciiCodePoint(char16_t lead, 
 
     
     
+    
+    
+    
+
+    
     if (MOZ_LIKELY(!unicode::IsLeadSurrogate(lead))) {
         if (MOZ_UNLIKELY(lead == unicode::LINE_SEPARATOR ||
                          lead == unicode::PARA_SEPARATOR))
@@ -570,7 +575,6 @@ TokenStreamChars<char16_t, AnyCharsAccess>::getNonAsciiCodePoint(char16_t lead, 
         return true;
     }
 
-    
     
     if (MOZ_UNLIKELY(sourceUnits.atEnd() ||
                      !unicode::IsTrailSurrogate(sourceUnits.peekCodeUnit())))
@@ -1381,24 +1385,6 @@ TokenStreamCharsBase<char16_t>::appendCodePointToTokenbuf(uint32_t codePoint)
     return tokenbuf.append(units[1]);
 }
 
-template<class AnyCharsAccess>
-void
-TokenStreamChars<char16_t, AnyCharsAccess>::matchMultiUnitCodePointSlow(char16_t lead,
-                                                                        uint32_t* codePoint)
-{
-    MOZ_ASSERT(unicode::IsLeadSurrogate(lead),
-               "matchMultiUnitCodepoint should have ensured |lead| is a lead "
-               "surrogate");
-
-    int32_t maybeTrail = getCodeUnit();
-    if (MOZ_LIKELY(unicode::IsTrailSurrogate(maybeTrail))) {
-        *codePoint = unicode::UTF16Decode(lead, maybeTrail);
-    } else {
-        ungetCodeUnit(maybeTrail);
-        *codePoint = 0;
-    }
-}
-
 template<typename CharT, class AnyCharsAccess>
 bool
 TokenStreamSpecific<CharT, AnyCharsAccess>::putIdentInTokenbuf(const CharT* identStart)
@@ -1854,23 +1840,31 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getTokenInternal(TokenKind* const tt
     
     
     do {
-        if (MOZ_UNLIKELY(sourceUnits.atEnd())) {
+        int32_t unit = getCodeUnit();
+        if (MOZ_UNLIKELY(unit == EOF)) {
+            MOZ_ASSERT(sourceUnits.atEnd());
             anyCharsAccess().flags.isEOF = true;
             TokenStart start(sourceUnits, 0);
             newSimpleToken(TokenKind::Eof, start, modifier, ttp);
             return true;
         }
 
-        int c = sourceUnits.getCodeUnit();
-        MOZ_ASSERT(c != EOF);
+        if (MOZ_UNLIKELY(!isAsciiCodePoint(unit))) {
+            
+            
+            
+            
+            
+            
+            TokenStart start(sourceUnits, -1);
+            const CharT* identStart = sourceUnits.addressOfNextCodeUnit() - 1;
 
-        
-        
-        if (MOZ_UNLIKELY(c >= 128)) {
-            if (unicode::IsSpaceOrBOM2(c)) {
-                if (c == unicode::LINE_SEPARATOR ||
-                    c == unicode::PARA_SEPARATOR)
-                {
+            int32_t codePoint;
+            if (!getNonAsciiCodePoint(unit, &codePoint))
+                return badToken();
+
+            if (unicode::IsSpaceOrBOM2(codePoint)) {
+                if (codePoint == unicode::LINE_SEPARATOR || codePoint == unicode::PARA_SEPARATOR) {
                     if (!updateLineInfoForEOL())
                         return badToken();
 
@@ -1880,33 +1874,22 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getTokenInternal(TokenKind* const tt
                 continue;
             }
 
-            
-            
-            TokenStart start(sourceUnits, -1);
-            const CharT* identStart = sourceUnits.addressOfNextCodeUnit() - 1;
-
-            static_assert('$' < 128,
+            static_assert(isAsciiCodePoint('$'),
                           "IdentifierStart contains '$', but as "
                           "!IsUnicodeIDStart('$'), ensure that '$' is never "
                           "handled here");
-            static_assert('_' < 128,
+            static_assert(isAsciiCodePoint('_'),
                           "IdentifierStart contains '_', but as "
                           "!IsUnicodeIDStart('_'), ensure that '_' is never "
                           "handled here");
-            if (unicode::IsUnicodeIDStart(char16_t(c)))
-                return identifierName(start, identStart, IdentifierEscapes::None, modifier, ttp);
 
-            uint32_t codePoint = c;
-            if (!matchMultiUnitCodePoint(c, &codePoint))
-                return badToken();
-
-            if (codePoint && unicode::IsUnicodeIDStart(codePoint))
+            if (unicode::IsUnicodeIDStart(uint32_t(codePoint)))
                 return identifierName(start, identStart, IdentifierEscapes::None, modifier, ttp);
 
             ungetCodePointIgnoreEOL(codePoint);
             error(JSMSG_ILLEGAL_CHARACTER);
             return badToken();
-        }
+        } 
 
         
         
@@ -1927,7 +1910,7 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getTokenInternal(TokenKind* const tt
         
         
         
-        FirstCharKind c1kind = FirstCharKind(firstCharKinds[c]);
+        FirstCharKind c1kind = FirstCharKind(firstCharKinds[unit]);
 
         
         
@@ -1955,19 +1938,19 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getTokenInternal(TokenKind* const tt
         if (c1kind == Dec) {
             TokenStart start(sourceUnits, -1);
             const CharT* numStart = sourceUnits.addressOfNextCodeUnit() - 1;
-            return decimalNumber(c, start, numStart, modifier, ttp);
+            return decimalNumber(unit, start, numStart, modifier, ttp);
         }
 
         
         
         if (c1kind == String)
-            return getStringOrTemplateToken(static_cast<char>(c), modifier, ttp);
+            return getStringOrTemplateToken(static_cast<char>(unit), modifier, ttp);
 
         
         
         if (c1kind == EOL) {
             
-            if (c == '\r' && !sourceUnits.atEnd())
+            if (unit == '\r' && !sourceUnits.atEnd())
                 sourceUnits.matchCodeUnit('\n');
 
             if (!updateLineInfoForEOL())
@@ -1986,50 +1969,53 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getTokenInternal(TokenKind* const tt
 
             int radix;
             const CharT* numStart;
-            c = getCodeUnit();
-            if (c == 'x' || c == 'X') {
+            unit = getCodeUnit();
+            if (unit == 'x' || unit == 'X') {
                 radix = 16;
-                c = getCodeUnit();
-                if (!JS7_ISHEX(c)) {
-                    ungetCodeUnit(c);
-                    reportError(JSMSG_MISSING_HEXDIGITS);
+                unit = getCodeUnit();
+                if (!JS7_ISHEX(unit)) {
+                    
+                    ungetCodeUnit(unit);
+                    error(JSMSG_MISSING_HEXDIGITS);
                     return badToken();
                 }
 
                 
                 numStart = sourceUnits.addressOfNextCodeUnit() - 1;
 
-                while (JS7_ISHEX(c))
-                    c = getCodeUnit();
-            } else if (c == 'b' || c == 'B') {
+                while (JS7_ISHEX(unit))
+                    unit = getCodeUnit();
+            } else if (unit == 'b' || unit == 'B') {
                 radix = 2;
-                c = getCodeUnit();
-                if (c != '0' && c != '1') {
-                    ungetCodeUnit(c);
-                    reportError(JSMSG_MISSING_BINARY_DIGITS);
+                unit = getCodeUnit();
+                if (unit != '0' && unit != '1') {
+                    
+                    ungetCodeUnit(unit);
+                    error(JSMSG_MISSING_BINARY_DIGITS);
                     return badToken();
                 }
 
                 
                 numStart = sourceUnits.addressOfNextCodeUnit() - 1;
 
-                while (c == '0' || c == '1')
-                    c = getCodeUnit();
-            } else if (c == 'o' || c == 'O') {
+                while (unit == '0' || unit == '1')
+                    unit = getCodeUnit();
+            } else if (unit == 'o' || unit == 'O') {
                 radix = 8;
-                c = getCodeUnit();
-                if (c < '0' || c > '7') {
-                    ungetCodeUnit(c);
-                    reportError(JSMSG_MISSING_OCTAL_DIGITS);
+                unit = getCodeUnit();
+                if (!JS7_ISOCT(unit)) {
+                    
+                    ungetCodeUnit(unit);
+                    error(JSMSG_MISSING_OCTAL_DIGITS);
                     return badToken();
                 }
 
                 
                 numStart = sourceUnits.addressOfNextCodeUnit() - 1;
 
-                while ('0' <= c && c <= '7')
-                    c = getCodeUnit();
-            } else if (IsAsciiDigit(c)) {
+                while (JS7_ISOCT(unit))
+                    unit = getCodeUnit();
+            } else if (IsAsciiDigit(unit)) {
                 radix = 8;
                 
                 numStart = sourceUnits.addressOfNextCodeUnit() - 1;
@@ -2044,50 +2030,52 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getTokenInternal(TokenKind* const tt
                     
                     
                     
-                    if (c >= '8') {
-                        if (!warning(JSMSG_BAD_OCTAL, c == '8' ? "08" : "09"))
+                    if (unit >= '8') {
+                        if (!warning(JSMSG_BAD_OCTAL, unit == '8' ? "08" : "09"))
                             return badToken();
 
                         
-                        return decimalNumber(c, start, numStart, modifier, ttp);
+                        return decimalNumber(unit, start, numStart, modifier, ttp);
                     }
 
-                    c = getCodeUnit();
-                } while (IsAsciiDigit(c));
+                    unit = getCodeUnit();
+                } while (IsAsciiDigit(unit));
             } else {
                 
                 numStart = sourceUnits.addressOfNextCodeUnit() - 1;
 
-                return decimalNumber(c, start, numStart, modifier, ttp);
+                
+                
+                return decimalNumber(unit, start, numStart, modifier, ttp);
             }
-            ungetCodeUnit(c);
 
-            if (c != EOF) {
-                if (unicode::IsIdentifierStart(char16_t(c))) {
+            
+            
+            
+            if (MOZ_UNLIKELY(unit == EOF)) {
+                
+                
+                
+                ungetCodeUnit(unit);
+            } else if (MOZ_LIKELY(isAsciiCodePoint(unit))) {
+                ungetCodeUnit(unit);
+
+                if (unicode::IsIdentifierStart(char16_t(unit))) {
                     error(JSMSG_IDSTART_AFTER_NUMBER);
                     return badToken();
                 }
-
-                consumeKnownCharIgnoreEOL(c);
-
-                uint32_t codePoint;
-                if (!matchMultiUnitCodePoint(c, &codePoint))
+            } else {
+                int32_t codePoint;
+                if (!getNonAsciiCodePoint(unit, &codePoint))
                     return badToken();
 
-                if (codePoint) {
-                    
-                    ungetCodePointIgnoreEOL(codePoint);
+                ungetCodePointIgnoreEOL(codePoint);
+                if (codePoint == unicode::LINE_SEPARATOR || codePoint == unicode::PARA_SEPARATOR)
+                    anyCharsAccess().undoInternalUpdateLineInfoForEOL();
 
-                    if (unicode::IsIdentifierStart(codePoint)) {
-                        
-                        
-                        error(JSMSG_IDSTART_AFTER_NUMBER);
-                        return badToken();
-                    }
-                } else {
-                    
-                    
-                    ungetCodeUnit(c);
+                if (unicode::IsIdentifierStart(uint32_t(codePoint))) {
+                    error(JSMSG_IDSTART_AFTER_NUMBER);
+                    return badToken();
                 }
             }
 
@@ -2115,21 +2103,24 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getTokenInternal(TokenKind* const tt
 #ifdef DEBUG
         simpleKind = TokenKind::Limit; 
 #endif
-        switch (c) {
+        switch (static_cast<CharT>(unit)) {
           case '.':
-            c = getCodeUnit();
-            if (IsAsciiDigit(c)) {
+            unit = getCodeUnit();
+            if (IsAsciiDigit(unit)) {
                 return decimalNumber('.', start, sourceUnits.addressOfNextCodeUnit() - 2, modifier,
                                      ttp);
             }
 
-            if (c == '.') {
+            if (unit == '.') {
                 if (matchCodeUnit('.')) {
                     simpleKind = TokenKind::TripleDot;
                     break;
                 }
             }
-            ungetCodeUnit(c);
+
+            
+            
+            ungetCodeUnit(unit);
 
             simpleKind = TokenKind::Dot;
             break;
@@ -2151,8 +2142,8 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getTokenInternal(TokenKind* const tt
             break;
 
           case '\\': {
-            uint32_t qc;
-            if (uint32_t escapeLength = matchUnicodeEscapeIdStart(&qc)) {
+            uint32_t codePoint;
+            if (uint32_t escapeLength = matchUnicodeEscapeIdStart(&codePoint)) {
                 return identifierName(start,
                                       sourceUnits.addressOfNextCodeUnit() - escapeLength - 1,
                                       IdentifierEscapes::SawUnicodeEscape, modifier, ttp);
@@ -2237,13 +2228,14 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getTokenInternal(TokenKind* const tt
           case '/':
             
             if (matchCodeUnit('/')) {
-                c = getCodeUnit();
-                if (c == '@' || c == '#') {
-                    bool shouldWarn = c == '@';
+                unit = getCodeUnit();
+                if (unit == '@' || unit == '#') {
+                    bool shouldWarn = unit == '@';
                     if (!getDirectives(false, shouldWarn))
                         return false;
                 } else {
-                    ungetCodeUnit(c);
+                    
+                    ungetCodeUnit(unit);
                 }
 
                 consumeRestOfSingleLineComment();
@@ -2317,10 +2309,10 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getTokenInternal(TokenKind* const tt
           default:
             
             
-            ungetCodePointIgnoreEOL(c);
+            ungetCodeUnit(unit);
             error(JSMSG_ILLEGAL_CHARACTER);
             return badToken();
-        }
+        } 
 
         MOZ_ASSERT(simpleKind != TokenKind::Limit,
                    "switch-statement should have set |simpleKind| before "

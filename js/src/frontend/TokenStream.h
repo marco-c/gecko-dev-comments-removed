@@ -1119,7 +1119,7 @@ class TokenStreamCharsBase
 
 
 
-    static MOZ_MUST_USE MOZ_ALWAYS_INLINE bool isAsciiCodePoint(CharT unit) {
+    static constexpr MOZ_ALWAYS_INLINE MOZ_MUST_USE bool isAsciiCodePoint(CharT unit) {
         return mozilla::IsAscii(unit);
     }
 
@@ -1294,8 +1294,6 @@ class TokenStreamChars<char16_t, AnyCharsAccess>
 
     using typename GeneralCharsBase::TokenStreamSpecific;
 
-    void matchMultiUnitCodePointSlow(char16_t lead, uint32_t* codePoint);
-
   protected:
     using GeneralCharsBase::anyCharsAccess;
     using GeneralCharsBase::getCodeUnit;
@@ -1307,31 +1305,6 @@ class TokenStreamChars<char16_t, AnyCharsAccess>
     using typename GeneralCharsBase::SourceUnits;
 
     using GeneralCharsBase::GeneralCharsBase;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    MOZ_ALWAYS_INLINE bool matchMultiUnitCodePoint(char16_t c, uint32_t* codePoint) {
-        if (MOZ_LIKELY(!unicode::IsLeadSurrogate(c)))
-            *codePoint = 0;
-        else
-            matchMultiUnitCodePointSlow(c, codePoint);
-        return true;
-    }
 
     
     
@@ -1518,7 +1491,6 @@ class MOZ_STACK_CLASS TokenStreamSpecific
     using CharsBase::getNonAsciiCodePoint;
     using CharsSharedBase::isAsciiCodePoint;
     using CharsSharedBase::matchCodeUnit;
-    using CharsBase::matchMultiUnitCodePoint;
     using GeneralCharsBase::matchUnicodeEscapeIdent;
     using GeneralCharsBase::matchUnicodeEscapeIdStart;
     using GeneralCharsBase::newAtomToken;
@@ -1887,14 +1859,6 @@ class MOZ_STACK_CLASS TokenStreamSpecific
                                    UniquePtr<char16_t[], JS::FreePolicy>* destination);
     MOZ_MUST_USE bool getDisplayURL(bool isMultiline, bool shouldWarnDeprecated);
     MOZ_MUST_USE bool getSourceMappingURL(bool isMultiline, bool shouldWarnDeprecated);
-
-    void consumeKnownCharIgnoreEOL(int32_t expect) {
-#ifdef DEBUG
-        auto c =
-#endif
-            getCodeUnit();
-        MOZ_ASSERT(c == expect);
-    }
 };
 
 
