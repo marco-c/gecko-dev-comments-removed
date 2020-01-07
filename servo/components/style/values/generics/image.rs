@@ -26,6 +26,7 @@ pub enum Image<Gradient, MozImageRect, ImageUrl> {
     
     Rect(Box<MozImageRect>),
     
+    #[css(function = "-moz-element")]
     Element(Atom),
     
     

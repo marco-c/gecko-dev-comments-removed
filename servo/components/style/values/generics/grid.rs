@@ -198,10 +198,12 @@ pub enum TrackSize<L> {
     
     
     
+    #[css(function)]
     Minmax(TrackBreadth<L>, TrackBreadth<L>),
     
     
     
+    #[css(function)]
     FitContent(L),
 }
 
@@ -346,8 +348,7 @@ where
 
 
 
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo,
-         ToComputedValue, ToCss)]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToCss)]
 pub enum RepeatCount<Integer> {
     
     Number(Integer),
@@ -384,6 +385,7 @@ impl Parse for RepeatCount<specified::Integer> {
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo,
          ToComputedValue)]
+#[css(function = "repeat")]
 pub struct TrackRepeat<L, I> {
     
     pub count: RepeatCount<I>,
@@ -481,8 +483,7 @@ pub enum TrackListValue<LengthOrPercentage, Integer> {
 
 
 
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo,
-         ToComputedValue)]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToComputedValue)]
 pub enum TrackListType {
     
     
@@ -510,6 +511,7 @@ pub struct TrackList<LengthOrPercentage, Integer> {
     
     
     
+    #[css(skip)]
     pub list_type: TrackListType,
     
     pub values: Vec<TrackListValue<LengthOrPercentage, Integer>>,

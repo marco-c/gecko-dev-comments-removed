@@ -28,6 +28,7 @@ pub struct BorderImageSlice<NumberOrPercentage> {
     
     pub offsets: Rect<NumberOrPercentage>,
     
+    #[value_info(represents_keyword)]
     pub fill: bool,
 }
 

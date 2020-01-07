@@ -78,9 +78,10 @@ impl Parse for ListStyleType {
 
 
 
+
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo,
          ToComputedValue)]
-pub struct Quotes(pub Box<[(Box<str>, Box<str>)]>);
+pub struct Quotes(#[css(if_empty = "none")] pub Box<[(Box<str>, Box<str>)]>);
 
 impl ToCss for Quotes {
     fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result

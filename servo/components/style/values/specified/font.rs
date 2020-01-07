@@ -1947,9 +1947,11 @@ pub struct FontSynthesis {
     
     
     
+    #[value_info(represents_keyword)]
     pub weight: bool,
     
     
+    #[value_info(represents_keyword)]
     pub style: bool,
 }
 

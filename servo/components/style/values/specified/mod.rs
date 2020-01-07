@@ -570,6 +570,7 @@ pub type GridTemplateComponent = GenericGridTemplateComponent<LengthOrPercentage
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo)]
 
+#[css(function = "rect")]
 pub struct ClipRect {
     
     pub top: Option<Length>,
@@ -757,7 +758,9 @@ impl AllowQuirks {
 
 
 
-#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, ToComputedValue)]
+#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo,
+         ToComputedValue)]
+#[css(function)]
 pub struct Attr {
     
     pub namespace: Option<(Prefix, Namespace)>,
@@ -852,5 +855,3 @@ impl ToCss for Attr {
         dest.write_str(")")
     }
 }
-
-impl SpecifiedValueInfo for Attr {}

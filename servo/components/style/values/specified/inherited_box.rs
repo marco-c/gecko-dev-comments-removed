@@ -21,6 +21,7 @@ pub struct ImageOrientation {
     pub angle: Option<Angle>,
 
     
+    #[value_info(other_values = "flip,from-image")]
     pub flipped: bool,
 }
 
