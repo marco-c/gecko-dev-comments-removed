@@ -2556,6 +2556,9 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
   uint8_t mTransformStyle;
   StyleGeometryBox mTransformBox; 
   RefPtr<nsCSSValueSharedList> mSpecifiedTransform; 
+  RefPtr<nsCSSValueSharedList> mSpecifiedRotate; 
+  RefPtr<nsCSSValueSharedList> mSpecifiedTranslate; 
+  RefPtr<nsCSSValueSharedList> mSpecifiedScale; 
   nsStyleCoord mTransformOrigin[3]; 
   nsStyleCoord mChildPerspective; 
   nsStyleCoord mPerspectiveOrigin[2]; 
@@ -2753,7 +2756,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
   
 
   bool HasTransformStyle() const {
-    return mSpecifiedTransform ||
+    return mSpecifiedTransform || mSpecifiedRotate || mSpecifiedTranslate ||
+           mSpecifiedScale ||
            mTransformStyle == NS_STYLE_TRANSFORM_STYLE_PRESERVE_3D ||
            (mWillChangeBitField & NS_STYLE_WILL_CHANGE_TRANSFORM);
   }
