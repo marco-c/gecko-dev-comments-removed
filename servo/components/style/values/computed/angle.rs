@@ -65,6 +65,12 @@ impl Angle {
     }
 
     
+    pub fn degrees(&self) -> f32 {
+        use std::f32::consts::PI;
+        self.radians() * 360. / (2. * PI)
+    }
+
+    
     #[inline]
     fn animate_fallback(&self, other: &Self, procedure: Procedure) -> Result<Self, ()> {
         Ok(Angle::from_radians(self.radians().animate(&other.radians(), procedure)?))

@@ -110,8 +110,7 @@ impl Angle {
     
     #[inline]
     pub fn degrees(self) -> f32 {
-        use std::f32::consts::PI;
-        self.radians() * 360. / (2. * PI)
+        self.value.degrees()
     }
 
     
