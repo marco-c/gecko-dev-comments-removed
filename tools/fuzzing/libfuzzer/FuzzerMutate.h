@@ -53,10 +53,6 @@ public:
                                             size_t MaxSize);
 
   
-  size_t Mutate_AddWordFromTemporaryAutoDictionary(uint8_t *Data, size_t Size,
-                                                   size_t MaxSize);
-
-  
   size_t Mutate_AddWordFromTORC(uint8_t *Data, size_t Size, size_t MaxSize);
 
   
@@ -84,8 +80,6 @@ public:
 
   void AddWordToManualDictionary(const Word &W);
 
-  void AddWordToAutoDictionary(DictionaryEntry DE);
-  void ClearAutoDictionary();
   void PrintRecommendedDictionary();
 
   void SetCorpus(const InputCorpus *Corpus) { this->Corpus = Corpus; }
@@ -102,7 +96,7 @@ private:
   size_t AddWordFromDictionary(Dictionary &D, uint8_t *Data, size_t Size,
                                size_t MaxSize);
   size_t MutateImpl(uint8_t *Data, size_t Size, size_t MaxSize,
-                    const std::vector<Mutator> &Mutators);
+                    Vector<Mutator> &Mutators);
 
   size_t InsertPartOf(const uint8_t *From, size_t FromSize, uint8_t *To,
                       size_t ToSize, size_t MaxToSize);
@@ -134,21 +128,21 @@ private:
   
   Dictionary PersistentAutoDictionary;
 
-  std::vector<Mutator> CurrentMutatorSequence;
-  std::vector<DictionaryEntry *> CurrentDictionaryEntrySequence;
+  Vector<Mutator> CurrentMutatorSequence;
+  Vector<DictionaryEntry *> CurrentDictionaryEntrySequence;
 
   static const size_t kCmpDictionaryEntriesDequeSize = 16;
   DictionaryEntry CmpDictionaryEntriesDeque[kCmpDictionaryEntriesDequeSize];
   size_t CmpDictionaryEntriesDequeIdx = 0;
 
   const InputCorpus *Corpus = nullptr;
-  std::vector<uint8_t> MutateInPlaceHere;
+  Vector<uint8_t> MutateInPlaceHere;
   
   
-  std::vector<uint8_t> CustomCrossOverInPlaceHere;
+  Vector<uint8_t> CustomCrossOverInPlaceHere;
 
-  std::vector<Mutator> Mutators;
-  std::vector<Mutator> DefaultMutators;
+  Vector<Mutator> Mutators;
+  Vector<Mutator> DefaultMutators;
 };
 
 }  

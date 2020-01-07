@@ -10,11 +10,13 @@
 
 #include "FuzzerDefs.h"
 #if LIBFUZZER_APPLE
-
+#include "FuzzerCommand.h"
 #include "FuzzerIO.h"
 #include <mutex>
 #include <signal.h>
 #include <spawn.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/wait.h>
 
 
@@ -36,7 +38,8 @@ static sigset_t OldBlockedSignalsSet;
 
 
 
-int ExecuteCommand(const std::string &Command) {
+int ExecuteCommand(const Command &Cmd) {
+  std::string CmdLine = Cmd.toString();
   posix_spawnattr_t SpawnAttributes;
   if (posix_spawnattr_init(&SpawnAttributes))
     return -1;
@@ -96,12 +99,17 @@ int ExecuteCommand(const std::string &Command) {
 
   pid_t Pid;
   char **Environ = environ; 
-  const char *CommandCStr = Command.c_str();
-  const char *Argv[] = {"sh", "-c", CommandCStr, NULL};
+  const char *CommandCStr = CmdLine.c_str();
+  char *const Argv[] = {
+    strdup("sh"),
+    strdup("-c"),
+    strdup(CommandCStr),
+    NULL
+  };
   int ErrorCode = 0, ProcessStatus = 0;
   
   ErrorCode = posix_spawn(&Pid, "/bin/sh", NULL, &SpawnAttributes,
-                          (char *const *)Argv, Environ);
+                          Argv, Environ);
   (void)posix_spawnattr_destroy(&SpawnAttributes);
   if (!ErrorCode) {
     pid_t SavedPid = Pid;
@@ -120,6 +128,8 @@ int ExecuteCommand(const std::string &Command) {
     
     ProcessStatus = W_EXITCODE(127, 0);
   }
+  for (unsigned i = 0, n = sizeof(Argv) / sizeof(Argv[0]); i < n; ++i)
+    free(Argv[i]);
 
   
   

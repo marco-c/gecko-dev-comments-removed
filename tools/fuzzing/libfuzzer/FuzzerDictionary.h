@@ -120,7 +120,7 @@ private:
 bool ParseOneDictionaryEntry(const std::string &Str, Unit *U);
 
 
-bool ParseDictionaryFile(const std::string &Text, std::vector<Unit> *Units);
+bool ParseDictionaryFile(const std::string &Text, Vector<Unit> *Units);
 
 }  
 

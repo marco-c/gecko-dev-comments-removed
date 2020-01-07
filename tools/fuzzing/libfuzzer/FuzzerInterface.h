@@ -30,35 +30,39 @@ extern "C" {
 
 
 
-int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size);
+__attribute__((visibility("default"))) int
+LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size);
 
 
 
 
 
-int LLVMFuzzerInitialize(int *argc, char ***argv);
+__attribute__((visibility("default"))) int LLVMFuzzerInitialize(int *argc,
+                                                                char ***argv);
 
 
 
 
 
-size_t LLVMFuzzerCustomMutator(uint8_t *Data, size_t Size, size_t MaxSize,
-                               unsigned int Seed);
+__attribute__((visibility("default"))) size_t
+LLVMFuzzerCustomMutator(uint8_t *Data, size_t Size, size_t MaxSize,
+                        unsigned int Seed);
 
 
 
 
 
-size_t LLVMFuzzerCustomCrossOver(const uint8_t *Data1, size_t Size1,
-                                 const uint8_t *Data2, size_t Size2,
-                                 uint8_t *Out, size_t MaxOutSize,
-                                 unsigned int Seed);
+__attribute__((visibility("default"))) size_t
+LLVMFuzzerCustomCrossOver(const uint8_t *Data1, size_t Size1,
+                          const uint8_t *Data2, size_t Size2, uint8_t *Out,
+                          size_t MaxOutSize, unsigned int Seed);
 
 
 
 
 
-size_t LLVMFuzzerMutate(uint8_t *Data, size_t Size, size_t MaxSize);
+__attribute__((visibility("default"))) size_t
+LLVMFuzzerMutate(uint8_t *Data, size_t Size, size_t MaxSize);
 
 #ifdef __cplusplus
 }  
