@@ -311,8 +311,9 @@ protected:
 
 
 
-  EditActionResult MoveNodeSmart(nsIContent& aNode, Element& aDestElement,
-                                 int32_t* aInOutDestOffset);
+  MOZ_MUST_USE EditActionResult
+  MoveNodeSmart(nsIContent& aNode, Element& aDestElement,
+                int32_t* aInOutDestOffset);
 
   
 
