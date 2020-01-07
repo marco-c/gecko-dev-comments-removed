@@ -13,49 +13,32 @@
 
 using namespace mozilla;
 
-static uint32_t
-BlendColorComponent(uint32_t aBg, uint32_t aFg, uint32_t aFgAlpha)
-{
-  return RoundingDivideBy255(aBg * (255 - aFgAlpha) + aFg * aFgAlpha);
-}
-
 
 
 static nscolor
-LinearBlendColors(nscolor aBg, nscolor aFg, uint_fast8_t aFgRatio)
+LinearBlendColors(nscolor aBg, float aBgRatio, nscolor aFg, float aFgRatio)
 {
-  
-  if (aFgRatio == 0) {
-    return aBg;
-  }
-  if (aFgRatio == 255) {
-    return aFg;
-  }
-  
-  if (NS_GET_A(aBg) == NS_GET_A(aFg)) {
-    auto r = BlendColorComponent(NS_GET_R(aBg), NS_GET_R(aFg), aFgRatio);
-    auto g = BlendColorComponent(NS_GET_G(aBg), NS_GET_G(aFg), aFgRatio);
-    auto b = BlendColorComponent(NS_GET_B(aBg), NS_GET_B(aFg), aFgRatio);
-    return NS_RGBA(r, g, b, NS_GET_A(aFg));
-  }
-
   constexpr float kFactor = 1.0f / 255.0f;
 
-  float p1 = kFactor * (255 - aFgRatio);
+  float p1 = aBgRatio;
   float a1 = kFactor * NS_GET_A(aBg);
   float r1 = a1 * NS_GET_R(aBg);
   float g1 = a1 * NS_GET_G(aBg);
   float b1 = a1 * NS_GET_B(aBg);
 
-  float p2 = 1.0f - p1;
+  float p2 = aFgRatio;
   float a2 = kFactor * NS_GET_A(aFg);
   float r2 = a2 * NS_GET_R(aFg);
   float g2 = a2 * NS_GET_G(aFg);
   float b2 = a2 * NS_GET_B(aFg);
 
   float a = p1 * a1 + p2 * a2;
-  if (a == 0.0) {
+  if (a <= 0.f) {
     return NS_RGBA(0, 0, 0, 0);
+  }
+
+  if (a > 1.f) {
+    a = 1.f;
   }
 
   auto r = ClampColor((p1 * r1 + p2 * r2) / a);
@@ -64,11 +47,32 @@ LinearBlendColors(nscolor aBg, nscolor aFg, uint_fast8_t aFgRatio)
   return NS_RGBA(r, g, b, NSToIntRound(a * 255));
 }
 
+bool
+StyleComplexColor::MaybeTransparent() const {
+  
+  
+  
+  
+  return mTag != eNumeric || NS_GET_A(mColor) != 255;
+}
+
 nscolor
 StyleComplexColor::CalcColor(mozilla::ComputedStyle* aStyle) const {
+  
+  
+  if (mTag == eNumeric) {
+    return mColor;
+  }
+
   MOZ_ASSERT(aStyle);
-  auto foregroundColor = aStyle->StyleColor()->mColor;
-  return LinearBlendColors(mColor, foregroundColor, mForegroundRatio);
+  auto fgColor = aStyle->StyleColor()->mColor;
+
+  if (mTag == eComplex) {
+    return LinearBlendColors(mColor, mBgRatio, fgColor, mFgRatio);
+  }
+
+  
+  return fgColor;
 }
 
 nscolor

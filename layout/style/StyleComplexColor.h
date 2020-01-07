@@ -26,39 +26,51 @@ class ComputedStyle;
 
 
 
-
-struct StyleComplexColor
+class StyleComplexColor final
 {
-  nscolor mColor;
-  uint8_t mForegroundRatio;
-  
-  
-  
-  
-  
-  bool mIsAuto;
-
+public:
   static StyleComplexColor FromColor(nscolor aColor) {
-    return {aColor, 0, false};
+    return {aColor, 0, eNumeric};
   }
   static StyleComplexColor CurrentColor() {
-    return {NS_RGBA(0, 0, 0, 0), 255, false};
+    return {NS_RGBA(0, 0, 0, 0), 1, eForeground};
   }
   static StyleComplexColor Auto() {
-    return {NS_RGBA(0, 0, 0, 0), 255, true};
+    return {NS_RGBA(0, 0, 0, 0), 1, eAuto};
   }
 
-  bool IsNumericColor() const { return mForegroundRatio == 0; }
-  bool IsCurrentColor() const { return mForegroundRatio == 255; }
+  bool IsAuto() const { return mTag == eAuto; }
+  bool IsCurrentColor() const { return mTag == eForeground; }
 
   bool operator==(const StyleComplexColor& aOther) const {
-    return mForegroundRatio == aOther.mForegroundRatio &&
-           (IsCurrentColor() || mColor == aOther.mColor) &&
-           mIsAuto == aOther.mIsAuto;
+    if (mTag != aOther.mTag) {
+      return false;
+    }
+
+    switch (mTag) {
+    case eAuto:
+    case eForeground:
+      return true;
+    case eNumeric:
+      return mColor == aOther.mColor;
+    case eComplex:
+      return (mBgRatio == aOther.mBgRatio &&
+              mFgRatio == aOther.mFgRatio &&
+              mColor == aOther.mColor);
+    default:
+      MOZ_ASSERT_UNREACHABLE("Unexpected StyleComplexColor type.");
+      return false;
+    }
   }
+
   bool operator!=(const StyleComplexColor& aOther) const {
     return !(*this == aOther);
   }
+
+  
+
+
+  bool MaybeTransparent() const;
 
   
 
@@ -71,8 +83,43 @@ struct StyleComplexColor
 
 
   nscolor CalcColor(const nsIFrame* aFrame) const;
+
+private:
+  enum Tag : uint8_t {
+    
+    
+    
+    
+    eAuto,
+    
+    eNumeric,
+    
+    
+    eForeground,
+    
+    
+    
+    eComplex,
+  };
+
+  StyleComplexColor(nscolor aColor,
+                    float aFgRatio,
+                    Tag aTag)
+    : mColor(aColor)
+    , mBgRatio(1.f - aFgRatio)
+    , mFgRatio(aFgRatio)
+    , mTag(aTag)
+  {
+    MOZ_ASSERT(mTag != eNumeric || aFgRatio == 0.);
+    MOZ_ASSERT(!(mTag == eAuto || mTag == eForeground) || aFgRatio == 1.);
+  }
+
+  nscolor mColor;
+  float mBgRatio;
+  float mFgRatio;
+  Tag mTag;
 };
 
-}
+} 
 
 #endif 

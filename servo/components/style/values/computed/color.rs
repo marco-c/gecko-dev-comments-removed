@@ -12,15 +12,34 @@ use values::animated::color::{Color as AnimatedColor, RGBA as AnimatedRGBA};
 
 
 
-
-
-#[derive(Clone, Copy, Debug, MallocSizeOf)]
-pub struct Color {
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq)]
+pub struct ComplexColorRatios {
     
-    pub color: RGBA,
+    pub bg: f32,
+    
+    pub fg: f32,
+}
+
+impl ComplexColorRatios {
+    
+    pub const NUMERIC: ComplexColorRatios = ComplexColorRatios { bg: 1., fg: 0. };
+    
+    pub const FOREGROUND: ComplexColorRatios = ComplexColorRatios { bg: 0., fg: 1. };
+}
+
+
+
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq)]
+pub enum Color {
+    
+    Numeric(RGBA),
 
     
-    pub foreground_ratio: u8,
+    Foreground,
+
+    
+    
+    Complex(RGBA, ComplexColorRatios),
 }
 
 
@@ -31,11 +50,8 @@ pub type ColorPropertyValue = RGBA;
 
 impl Color {
     
-    pub fn rgba(rgba: RGBA) -> Color {
-        Color {
-            color: rgba,
-            foreground_ratio: 0,
-        }
+    pub fn rgba(color: RGBA) -> Color {
+        Color::Numeric(color)
     }
 
     
@@ -45,50 +61,29 @@ impl Color {
 
     
     pub fn currentcolor() -> Color {
-        Color {
-            color: RGBA::transparent(),
-            foreground_ratio: u8::max_value(),
-        }
+        Color::Foreground
     }
 
     
     pub fn is_numeric(&self) -> bool {
-        self.foreground_ratio == 0
+        matches!(*self, Color::Numeric { .. })
     }
 
     
     pub fn is_currentcolor(&self) -> bool {
-        self.foreground_ratio == u8::max_value()
+        matches!(*self, Color::Foreground)
     }
 
     
     
     pub fn to_rgba(&self, fg_color: RGBA) -> RGBA {
-        
-        
-        if self.is_numeric() {
-            return self.color;
-        }
-        if self.is_currentcolor() {
-            return fg_color.clone();
-        }
-
-        fn blend_color_component(bg: u8, fg: u8, fg_alpha: u8) -> u8 {
-            let bg_ratio = (u8::max_value() - fg_alpha) as u32;
-            let fg_ratio = fg_alpha as u32;
-            let color = bg as u32 * bg_ratio + fg as u32 * fg_ratio;
+        let (color, ratios) = match *self {
             
-            ((color + 127) / 255) as u8
-        }
-
-        
-        let fg_ratio = self.foreground_ratio;
-        if self.color.alpha == fg_color.alpha {
-            let r = blend_color_component(self.color.red, fg_color.red, fg_ratio);
-            let g = blend_color_component(self.color.green, fg_color.green, fg_ratio);
-            let b = blend_color_component(self.color.blue, fg_color.blue, fg_ratio);
-            return RGBA::new(r, g, b, fg_color.alpha);
-        }
+            
+            Color::Numeric(color) => return color,
+            Color::Foreground => return fg_color,
+            Color::Complex(color, ratios) => (color, ratios),
+        };
 
         
         
@@ -96,22 +91,23 @@ impl Color {
         
         
 
-        let p1 = (1. / 255.) * (255 - fg_ratio) as f32;
-        let a1 = self.color.alpha_f32();
-        let r1 = a1 * self.color.red_f32();
-        let g1 = a1 * self.color.green_f32();
-        let b1 = a1 * self.color.blue_f32();
+        let p1 = ratios.bg;
+        let a1 = color.alpha_f32();
+        let r1 = a1 * color.red_f32();
+        let g1 = a1 * color.green_f32();
+        let b1 = a1 * color.blue_f32();
 
-        let p2 = 1. - p1;
+        let p2 = ratios.fg;
         let a2 = fg_color.alpha_f32();
         let r2 = a2 * fg_color.red_f32();
         let g2 = a2 * fg_color.green_f32();
         let b2 = a2 * fg_color.blue_f32();
 
         let a = p1 * a1 + p2 * a2;
-        if a == 0.0 {
+        if a <= 0. {
             return RGBA::transparent();
         }
+        let a = f32::min(a, 1.);
 
         let inverse_a = 1. / a;
         let r = (p1 * r1 + p2 * r2) * inverse_a;
@@ -121,19 +117,9 @@ impl Color {
     }
 }
 
-impl PartialEq for Color {
-    fn eq(&self, other: &Color) -> bool {
-        self.foreground_ratio == other.foreground_ratio &&
-            (self.is_currentcolor() || self.color == other.color)
-    }
-}
-
 impl From<RGBA> for Color {
     fn from(color: RGBA) -> Color {
-        Color {
-            color: color,
-            foreground_ratio: 0,
-        }
+        Color::Numeric(color)
     }
 }
 
@@ -142,12 +128,10 @@ impl ToCss for Color {
     where
         W: fmt::Write,
     {
-        if self.is_numeric() {
-            self.color.to_css(dest)
-        } else if self.is_currentcolor() {
-            CSSParserColor::CurrentColor.to_css(dest)
-        } else {
-            Ok(())
+        match *self {
+            Color::Numeric(color) => color.to_css(dest),
+            Color::Foreground => CSSParserColor::CurrentColor.to_css(dest),
+            _ => Ok(()),
         }
     }
 }
@@ -157,17 +141,23 @@ impl ToAnimatedValue for Color {
 
     #[inline]
     fn to_animated_value(self) -> Self::AnimatedValue {
-        AnimatedColor {
-            color: self.color.to_animated_value(),
-            foreground_ratio: self.foreground_ratio as f32 * (1. / 255.),
+        match self {
+            Color::Numeric(color) => AnimatedColor::Numeric(color.to_animated_value()),
+            Color::Foreground => AnimatedColor::Foreground,
+            Color::Complex(color, ratios) => {
+                AnimatedColor::Complex(color.to_animated_value(), ratios)
+            }
         }
     }
 
     #[inline]
     fn from_animated_value(animated: Self::AnimatedValue) -> Self {
-        Color {
-            color: RGBA::from_animated_value(animated.color),
-            foreground_ratio: (animated.foreground_ratio * 255.).round() as u8,
+        match animated {
+            AnimatedColor::Numeric(color) => Color::Numeric(RGBA::from_animated_value(color)),
+            AnimatedColor::Foreground => Color::Foreground,
+            AnimatedColor::Complex(color, ratios) => {
+                Color::Complex(RGBA::from_animated_value(color), ratios)
+            }
         }
     }
 }
