@@ -16,6 +16,11 @@ var _ast2 = require("../reducers/ast");
 
 function inComponent(state) {
   const selectedFrame = (0, _.getSelectedFrame)(state);
+
+  if (!selectedFrame) {
+    return;
+  }
+
   const source = (0, _.getSource)(state, selectedFrame.location.sourceId);
   const symbols = (0, _.getSymbols)(state, source);
 

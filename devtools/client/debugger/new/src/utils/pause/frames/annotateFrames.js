@@ -69,6 +69,7 @@ function getBabelFrameIndexes(frames) {
   } 
   
   
+  
 
 
   return (0, _lodash.flatMap)((0, _lodash.zip)(startIndexes, endIndexes), ([startIndex, endIndex]) => (0, _lodash.range)(startIndex, endIndex + 1));

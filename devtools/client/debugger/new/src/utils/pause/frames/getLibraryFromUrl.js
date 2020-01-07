@@ -5,8 +5,6 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.getLibraryFromUrl = getLibraryFromUrl;
 
-var _lodash = require("devtools/client/shared/vendor/lodash");
-
 var _getFrameUrl = require("./getFrameUrl");
 
 
@@ -90,6 +88,11 @@ function getLibraryFromUrl(frame) {
   
   
   const frameUrl = (0, _getFrameUrl.getFrameUrl)(frame);
-  const match = (0, _lodash.find)(libraryMap, o => frameUrl.match(o.pattern));
-  return match && match.label;
+  const matches = libraryMap.filter(o => frameUrl.match(o.pattern));
+
+  if (matches.length == 0) {
+    return null;
+  }
+
+  return matches[0].label;
 }
