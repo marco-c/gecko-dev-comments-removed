@@ -96,6 +96,11 @@ nsresult SerializeScalars(mozilla::JSONWriter &aWriter);
 nsresult SerializeKeyedScalars(mozilla::JSONWriter &aWriter);
 nsresult DeserializePersistedScalars(JSContext* aCx, JS::HandleValue aData);
 nsresult DeserializePersistedKeyedScalars(JSContext* aCx, JS::HandleValue aData);
+
+
+void DeserializationStarted();
+
+void ApplyPendingOperations();
 } 
 
 #endif 
