@@ -1172,12 +1172,7 @@ var BrowserApp = {
     }
 
     try {
-      aBrowser.loadURI(aURI, {
-        flags,
-        referrerURI,
-        charset,
-        postData,
-      });
+      aBrowser.loadURIWithFlags(aURI, flags, referrerURI, charset, postData);
     } catch(e) {
       if (tab) {
         let message = {
@@ -3514,7 +3509,7 @@ nsBrowserAccess.prototype = {
     
     let browser = BrowserApp.selectedBrowser;
     if (aURI && browser) {
-      browser.loadURI(aURI.spec, {
+      browser.loadURIWithFlags(aURI.spec, {
         flags: loadflags,
         referrerURI: referrer,
         triggeringPrincipal: aTriggeringPrincipal,
@@ -3780,12 +3775,7 @@ Tab.prototype = {
       this.isSearch = "isSearch" in aParams ? aParams.isSearch : false;
 
       try {
-        this.browser.loadURI(aURL, {
-          flags,
-          referrerURI,
-          charset,
-          postData,
-        });
+        this.browser.loadURIWithFlags(aURL, flags, referrerURI, charset, postData);
       } catch(e) {
         let message = {
           type: "Content:LoadError",
