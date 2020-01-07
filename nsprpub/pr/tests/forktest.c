@@ -196,51 +196,6 @@ finish:
     return;
 }
 
-#ifdef _PR_DCETHREADS
-
-#include <syscall.h>
-
-pid_t PR_UnixFork1(void)
-{
-    pid_t parent = getpid();
-    int rv = syscall(SYS_fork);
-
-    if (rv == -1) {
-        return (pid_t) -1;
-    } else {
-        
-        if (rv == parent) {
-            
-            return 0;
-        } else {
-            
-            return rv;
-        }
-    }
-}
-
-#elif defined(SOLARIS)
-
-
-
-
-
-
-
-pid_t PR_UnixFork1(void)
-{
-    return fork1();
-}
-
-#else
-
-pid_t PR_UnixFork1(void)
-{
-    return fork();
-}
-
-#endif  
-
 int main(int argc, char **argv)
 {
     pid_t pid;
@@ -250,7 +205,7 @@ int main(int argc, char **argv)
 
     DoIO();
 
-    pid = PR_UnixFork1();
+    pid = fork();
 
     if (pid  == (pid_t) -1) {
         fprintf(stderr, "Fork failed: errno %d\n", errno);

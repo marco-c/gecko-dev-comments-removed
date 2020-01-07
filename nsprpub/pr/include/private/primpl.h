@@ -6,14 +6,6 @@
 #ifndef primpl_h___
 #define primpl_h___
 
-
-
-
-
-
-
-
-
 #if defined(_PR_PTHREADS)
 #include <pthread.h>
 #endif
@@ -1877,7 +1869,7 @@ extern PRFileDesc *_pr_stderr;
 
 
 
-#if defined(_PR_PTHREADS) && !defined(_PR_DCETHREADS)
+#if defined(_PR_PTHREADS)
 #define _PR_ZONE_ALLOCATOR
 #endif
 

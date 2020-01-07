@@ -23,7 +23,7 @@
 
 #if !defined(_PR_HAVE_ATOMIC_OPS)
 
-#if defined(_PR_PTHREADS) && !defined(_PR_DCETHREADS)
+#if defined(_PR_PTHREADS)
 
 
 

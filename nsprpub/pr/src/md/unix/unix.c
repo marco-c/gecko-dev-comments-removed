@@ -2854,28 +2854,11 @@ void _PR_UnixInit(void)
 #endif
 #endif  
 
-    
-
-
-
-
-#if defined(HPUX) && defined(_PR_DCETHREADS)
-    {
-        struct sigvec vec;
-
-        vec.sv_handler = SIG_IGN;
-        vec.sv_mask = 0;
-        vec.sv_flags = 0;
-        rv = sigvector(SIGPIPE, &vec, NULL);
-        PR_ASSERT(0 == rv);
-    }
-#else
     sigact.sa_handler = SIG_IGN;
     sigemptyset(&sigact.sa_mask);
     sigact.sa_flags = 0;
     rv = sigaction(SIGPIPE, &sigact, 0);
     PR_ASSERT(0 == rv);
-#endif 
 
     _pr_rename_lock = PR_NewLock();
     PR_ASSERT(NULL != _pr_rename_lock);

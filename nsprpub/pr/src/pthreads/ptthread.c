@@ -9,7 +9,7 @@
 
 
 
-#if defined(_PR_PTHREADS) || defined(_PR_DCETHREADS)
+#if defined(_PR_PTHREADS)
 
 #include "prlog.h"
 #include "primpl.h"
@@ -58,7 +58,7 @@ static struct _PT_Bookeeping
     pthread_key_t key;          
     PRBool keyCreated;          
     PRThread *first, *last;     
-#if defined(_PR_DCETHREADS) || _POSIX_THREAD_PRIORITY_SCHEDULING > 0
+#if _POSIX_THREAD_PRIORITY_SCHEDULING > 0
     PRInt32 minPrio, maxPrio;   
 #endif
 } pt_book = {0};
@@ -67,7 +67,7 @@ static void _pt_thread_death(void *arg);
 static void _pt_thread_death_internal(void *arg, PRBool callDestructors);
 static void init_pthread_gc_support(void);
 
-#if defined(_PR_DCETHREADS) || _POSIX_THREAD_PRIORITY_SCHEDULING > 0
+#if _POSIX_THREAD_PRIORITY_SCHEDULING > 0
 static PRIntn pt_PriorityMap(PRThreadPriority pri)
 {
 #ifdef NTO
@@ -147,21 +147,6 @@ static void *_pt_root(void *arg)
                     pt_RelativePriority(rv, thred->priority));
     }
 #endif
-
-    
-
-
-
-
-#if defined(_PR_DCETHREADS)
-    if (detached)
-    {
-        
-        pthread_t self = id;
-        rv = pthread_detach(&self);
-        PR_ASSERT(0 == rv);
-    }
-#endif 
 
     
     _PR_InitializeStack(thred->stack);
@@ -329,7 +314,7 @@ static PRThread* _PR_CreateThread(
 
     if (EPERM != pt_schedpriv)
     {
-#if !defined(_PR_DCETHREADS) && _POSIX_THREAD_PRIORITY_SCHEDULING > 0
+#if _POSIX_THREAD_PRIORITY_SCHEDULING > 0
         struct sched_param schedule;
 #endif
 
@@ -340,10 +325,7 @@ static PRThread* _PR_CreateThread(
 
         
 
-#if defined(_PR_DCETHREADS)
-        rv = pthread_attr_setprio(&tattr, pt_PriorityMap(priority));
-        PR_ASSERT(0 == rv);
-#elif _POSIX_THREAD_PRIORITY_SCHEDULING > 0
+#if _POSIX_THREAD_PRIORITY_SCHEDULING > 0
         rv = pthread_attr_getschedparam(&tattr, &schedule);
         PR_ASSERT(0 == rv);
         schedule.sched_priority = pt_PriorityMap(priority);
@@ -356,16 +338,10 @@ static PRThread* _PR_CreateThread(
 #endif 
     }
 
-    
-
-
-
-#if !defined(_PR_DCETHREADS)
     rv = pthread_attr_setdetachstate(&tattr,
         ((PR_JOINABLE_THREAD == state) ?
             PTHREAD_CREATE_JOINABLE : PTHREAD_CREATE_DETACHED));
     PR_ASSERT(0 == rv);
-#endif 
 
     
 
@@ -456,7 +432,6 @@ static PRThread* _PR_CreateThread(
 
         rv = _PT_PTHREAD_CREATE(&id, tattr, _pt_root, thred);
 
-#if !defined(_PR_DCETHREADS)
         if (EPERM == rv)
         {
 #if defined(IRIX)
@@ -482,15 +457,10 @@ static PRThread* _PR_CreateThread(
 #endif	
             rv = _PT_PTHREAD_CREATE(&id, tattr, _pt_root, thred);
         }
-#endif
 
         if (0 != rv)
         {
-#if defined(_PR_DCETHREADS)
-            PRIntn oserr = errno;
-#else
             PRIntn oserr = rv;
-#endif
             PR_Lock(pt_book.ml);
             if (thred->state & PT_THREAD_SYSTEM)
                 pt_book.system -= 1;
@@ -602,10 +572,6 @@ PR_IMPLEMENT(PRStatus) PR_JoinThread(PRThread *thred)
         PR_ASSERT(rv == 0 && result == NULL);
         if (0 == rv)
         {
-#ifdef _PR_DCETHREADS
-            rv = pthread_detach(&id);
-            PR_ASSERT(0 == rv);
-#endif
             
 
 
@@ -693,10 +659,7 @@ PR_IMPLEMENT(void) PR_SetThreadPriority(PRThread *thred, PRThreadPriority newPri
     else if ((PRIntn)PR_PRIORITY_LAST < (PRIntn)newPri)
         newPri = PR_PRIORITY_LAST;
 
-#if defined(_PR_DCETHREADS)
-    rv = pthread_setprio(thred->id, pt_PriorityMap(newPri));
-    
-#elif _POSIX_THREAD_PRIORITY_SCHEDULING > 0
+#if _POSIX_THREAD_PRIORITY_SCHEDULING > 0
     if (EPERM != pt_schedpriv)
     {
         int policy;
@@ -927,7 +890,7 @@ void _PR_InitThreads(
     pthread_init();
 #endif
 
-#if defined(_PR_DCETHREADS) || _POSIX_THREAD_PRIORITY_SCHEDULING > 0
+#if _POSIX_THREAD_PRIORITY_SCHEDULING > 0
 #if defined(FREEBSD)
     {
     pthread_attr_t attr;
@@ -1161,11 +1124,7 @@ PR_IMPLEMENT(void) PR_ProcessExit(PRIntn status)
 
 PR_IMPLEMENT(PRUint32) PR_GetThreadID(PRThread *thred)
 {
-#if defined(_PR_DCETHREADS)
-    return (PRUint32)&thred->id;  
-#else
     return (PRUint32)thred->id;  
-#endif
 }
 
 
@@ -1197,18 +1156,6 @@ PR_SetThreadDumpProc(PRThread* thread, PRThreadDumpProc dump, void *arg)
 
 
 
-#if defined(_PR_DCETHREADS)
-
-
-
-
-
-
-static sigset_t javagc_vtalarm_sigmask;
-static sigset_t javagc_intsoff_sigmask;
-
-#else 
-
 
 
 static sigset_t sigwait_set;
@@ -1224,8 +1171,6 @@ static void suspend_signal_handler(PRIntn sig);
 static void null_signal_handler(PRIntn sig);
 #endif
 
-#endif 
-
 
 
 
@@ -1236,12 +1181,6 @@ static void init_pthread_gc_support(void)
 #ifndef SYMBIAN
     PRIntn rv;
 
-#if defined(_PR_DCETHREADS)
-	rv = sigemptyset(&javagc_vtalarm_sigmask);
-    PR_ASSERT(0 == rv);
-	rv = sigaddset(&javagc_vtalarm_sigmask, SIGVTALRM);
-    PR_ASSERT(0 == rv);
-#else  
 	{
 	    struct sigaction sigact_usr2;
 
@@ -1269,7 +1208,6 @@ static void init_pthread_gc_support(void)
 	    PR_ASSERT(0 ==rv); 
     }
 #endif  
-#endif 
 #endif 
 }
 
@@ -1300,9 +1238,7 @@ PR_IMPLEMENT(PRStatus) PR_EnumerateThreads(PREnumerator func, void *arg)
     PRThread* thred = pt_book.first;
 
 #if defined(DEBUG) || defined(FORCE_PR_ASSERT)
-#if !defined(_PR_DCETHREADS)
     PRThread *me = PR_GetCurrentThread();
-#endif
 #endif
 
     PR_LOG(_pr_gc_lm, PR_LOG_ALWAYS, ("Begin PR_EnumerateThreads\n"));
@@ -1331,9 +1267,7 @@ PR_IMPLEMENT(PRStatus) PR_EnumerateThreads(PREnumerator func, void *arg)
 
         if (_PT_IS_GCABLE_THREAD(thred))
         {
-#if !defined(_PR_DCETHREADS)
             PR_ASSERT((thred == me) || (thred->suspend & PT_THREAD_SUSPENDED));
-#endif
             PR_LOG(_pr_gc_lm, PR_LOG_ALWAYS, 
                    ("In PR_EnumerateThreads callback thread %p thid = %X\n", 
                     thred, thred->id));
@@ -1360,8 +1294,6 @@ PR_IMPLEMENT(PRStatus) PR_EnumerateThreads(PREnumerator func, void *arg)
 
 
 
-
-#if !defined(_PR_DCETHREADS)
 
 
 
@@ -1660,78 +1592,6 @@ PR_IMPLEMENT(void *)PR_GetSP(PRThread *thred)
 	    thred, thred->id, thred->sp));
     return thred->sp;
 }  
-
-#else 
-
-static pthread_once_t pt_gc_support_control = pthread_once_init;
-
-
-
-
-
-
-
-PR_IMPLEMENT(void) PR_SuspendAll()
-{
-    PRIntn rv;
-
-    rv = pthread_once(&pt_gc_support_control, init_pthread_gc_support);
-    PR_ASSERT(0 == rv);  
-#ifdef DEBUG
-    suspendAllOn = PR_TRUE;
-#endif
-    PR_LOG(_pr_gc_lm, PR_LOG_ALWAYS, ("Begin PR_SuspendAll\n"));
-    
-
-
-
-    rv = sigprocmask(
-        SIG_BLOCK, &javagc_vtalarm_sigmask, &javagc_intsoff_sigmask);
-    PR_ASSERT(0 == rv);
-    suspendAllSuspended = PR_TRUE;
-    PR_LOG(_pr_gc_lm, PR_LOG_ALWAYS, ("End PR_SuspendAll\n"));
-}  
-
-PR_IMPLEMENT(void) PR_ResumeAll()
-{
-    PRIntn rv;
-    
-    suspendAllSuspended = PR_FALSE;
-    PR_LOG(_pr_gc_lm, PR_LOG_ALWAYS, ("Begin PR_ResumeAll\n"));
-    
-
-    rv = sigprocmask(SIG_SETMASK, &javagc_intsoff_sigmask, (sigset_t *)NULL);
-    PR_ASSERT(0 == rv);
-#ifdef DEBUG
-    suspendAllOn = PR_FALSE;
-#endif
-
-    PR_LOG(_pr_gc_lm, PR_LOG_ALWAYS, ("End PR_ResumeAll\n"));
-}  
-
-
-PR_IMPLEMENT(void*)PR_GetSP(PRThread *thred)
-{
-	pthread_t tid = thred->id;
-	char *thread_tcb, *top_sp;
-
-	
-
-
-
-
-
-
-
-
-	PR_LOG(_pr_gc_lm, PR_LOG_ALWAYS, ("Begin PR_GetSP\n"));
-	thread_tcb = (char*)tid.field1;
-	top_sp = *(char**)(thread_tcb + 128);
-	PR_LOG(_pr_gc_lm, PR_LOG_ALWAYS, ("End PR_GetSP %p \n", top_sp));
-	return top_sp;
-}  
-
-#endif 
 
 PR_IMPLEMENT(PRStatus) PR_SetCurrentThreadName(const char *name)
 {

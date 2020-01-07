@@ -606,7 +606,7 @@ typedef struct StartObject
     void *arg;
 } StartObject;
 
-#if defined(_PR_PTHREADS) && !defined(_PR_DCETHREADS)
+#if defined(_PR_PTHREADS)
 #include "md/_pth.h"
 #include <pthread.h>
 
@@ -657,7 +657,7 @@ static PRStatus JoinThread(PRThread *thread)
         rv = PR_JoinThread(thread);
         break;
     case thread_pthread:
-#if defined(_PR_PTHREADS) && !defined(_PR_DCETHREADS)
+#if defined(_PR_PTHREADS)
         rv = PR_SUCCESS;
         break;
 #endif 
@@ -690,7 +690,7 @@ static PRStatus NewThread(
         }
         break;
     case thread_pthread:
-#if defined(_PR_PTHREADS) && !defined(_PR_DCETHREADS)
+#if defined(_PR_PTHREADS)
         {
             int rv;
             pthread_t id;
