@@ -13,6 +13,8 @@ var EXPORTED_SYMBOLS = ["PlacesRemoteTabsAutocompleteProvider"];
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
+ChromeUtils.defineModuleGetter(this, "SyncedTabs",
+  "resource://services-sync/SyncedTabs.jsm");
 
 XPCOMUtils.defineLazyGetter(this, "weaveXPCService", function() {
   try {
@@ -25,42 +27,29 @@ XPCOMUtils.defineLazyGetter(this, "weaveXPCService", function() {
   return null;
 });
 
-XPCOMUtils.defineLazyGetter(this, "Weave", () => {
-  try {
-    let {Weave} = ChromeUtils.import("resource://services-sync/main.js", {});
-    return Weave;
-  } catch (ex) {
-    
-  }
-  return null;
-});
-
 
 function escapeRegExp(string) {
   return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 
-function buildItems() {
-  let clients = new Map(); 
-  let tabs = new Map(); 
-
+async function buildItems() {
+  
+  let tabsData = [];
   
   
   
   
   if (weaveXPCService.ready) {
-    let engine = Weave.Service.engineManager.get("tabs");
-
-    for (let [guid, client] of Object.entries(engine.getAllClients())) {
-      clients.set(guid, client);
+    let clients = await SyncedTabs.getTabClients();
+    SyncedTabs.sortTabClientsByLastUsed(clients);
+    for (let client of clients) {
       for (let tab of client.tabs) {
-        let url = tab.urlHistory[0];
-        tabs.set(url, { clientId: guid, tab });
+        tabsData.push({tab, client});
       }
     }
   }
-  return { clients, tabs };
+  return tabsData;
 }
 
 
@@ -68,9 +57,9 @@ function buildItems() {
 let _items = null;
 
 
-function ensureItems() {
+async function ensureItems() {
   if (!_items) {
-    _items = buildItems();
+    _items = await buildItems();
   }
   return _items;
 }
@@ -117,30 +106,30 @@ observe(null, "nsPref:changed", PREF_SHOW_REMOTE_ICONS);
 
 var PlacesRemoteTabsAutocompleteProvider = {
   
-  getMatches(searchString) {
+  async getMatches(searchString) {
     
     if (!weaveXPCService || !weaveXPCService.ready || !weaveXPCService.enabled) {
-      return Promise.resolve([]);
+      return [];
     }
 
     let re = new RegExp(escapeRegExp(searchString), "i");
     let matches = [];
-    let { tabs, clients } = ensureItems();
-    for (let [url, { clientId, tab }] of tabs) {
+    let tabsData = await ensureItems();
+    for (let {tab, client} of tabsData) {
+      let url = tab.url;
       let title = tab.title;
       if (url.match(re) || (title && title.match(re))) {
-        
-        let client = clients.get(clientId);
         let icon = showRemoteIcons ? tab.icon : null;
         
         let record = {
           url, title, icon,
-          deviceClass: Weave.Service.clientsEngine.getClientType(clientId),
-          deviceName: client.clientName,
+          deviceName: client.name,
+          lastUsed: tab.lastUsed * 1000
         };
         matches.push(record);
       }
     }
-    return Promise.resolve(matches);
+
+    return matches;
   },
 };
