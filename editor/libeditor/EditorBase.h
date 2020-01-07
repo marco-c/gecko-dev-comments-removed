@@ -1164,7 +1164,7 @@ public:
                                   nsINode* aEndContainer,
                                   uint32_t aEndOffset);
 
-  virtual already_AddRefed<dom::EventTarget> GetDOMEventTarget() = 0;
+  virtual dom::EventTarget* GetDOMEventTarget() = 0;
 
   
 
@@ -1344,7 +1344,7 @@ public:
   
 
 
-  virtual already_AddRefed<nsIContent> GetFocusedContent();
+  virtual nsIContent* GetFocusedContent();
 
   
 

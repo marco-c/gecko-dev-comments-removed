@@ -4533,7 +4533,7 @@ HTMLEditor::GetReturnInParagraphCreatesNewParagraph(bool* aCreatesNewParagraph)
   return NS_OK;
 }
 
-already_AddRefed<nsIContent>
+nsIContent*
 HTMLEditor::GetFocusedContent()
 {
   nsFocusManager* fm = nsFocusManager::GetFocusManager();
@@ -4549,8 +4549,7 @@ HTMLEditor::GetFocusedContent()
   if (!focusedContent) {
     
     if (inDesignMode && OurWindowHasFocus()) {
-      nsCOMPtr<nsIContent> rootContent = document->GetRootElement();
-      return rootContent.forget();
+      return document->GetRootElement();
     }
     return nullptr;
   }
@@ -4558,7 +4557,7 @@ HTMLEditor::GetFocusedContent()
   if (inDesignMode) {
     return OurWindowHasFocus() &&
       nsContentUtils::ContentIsDescendantOf(focusedContent, document) ?
-        focusedContent.forget() : nullptr;
+        focusedContent.get() : nullptr;
   }
 
   
@@ -4570,7 +4569,7 @@ HTMLEditor::GetFocusedContent()
     return nullptr;
   }
   
-  return OurWindowHasFocus() ? focusedContent.forget() : nullptr;
+  return OurWindowHasFocus() ? focusedContent.get() : nullptr;
 }
 
 already_AddRefed<nsIContent>
@@ -4656,7 +4655,7 @@ HTMLEditor::GetActiveEditingHost()
   return content->GetEditingHost();
 }
 
-already_AddRefed<EventTarget>
+EventTarget*
 HTMLEditor::GetDOMEventTarget()
 {
   
@@ -4664,7 +4663,7 @@ HTMLEditor::GetDOMEventTarget()
   
   MOZ_ASSERT(IsInitialized(), "The HTMLEditor has not been initialized yet");
   nsCOMPtr<mozilla::dom::EventTarget> target = GetDocument();
-  return target.forget();
+  return target;
 }
 
 bool
