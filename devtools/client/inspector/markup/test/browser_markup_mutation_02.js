@@ -8,7 +8,7 @@
 
 
 
-const {clearTimeout} = Cu.import("resource://gre/modules/Timer.jsm", {});
+const {clearTimeout} = ChromeUtils.import("resource://gre/modules/Timer.jsm", {});
 
 const TEST_URL = URL_ROOT + "doc_markup_flashing.html";
 

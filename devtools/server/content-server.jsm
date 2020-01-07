@@ -18,7 +18,7 @@ function setupServer(mm) {
 
   
   let { DevToolsLoader } =
-    Cu.import("resource://devtools/shared/Loader.jsm", {});
+    ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
 
   
   

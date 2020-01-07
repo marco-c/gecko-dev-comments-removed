@@ -5,7 +5,7 @@
 
 
 
-Cu.import("resource://testing-common/PromiseTestUtils.jsm", this);
+ChromeUtils.import("resource://testing-common/PromiseTestUtils.jsm", this);
 PromiseTestUtils.expectUncaughtRejection(/[object Object]/);
 
 var TAB_URL = EXAMPLE_URL + "doc_WorkerActor.attachThread-tab.html";

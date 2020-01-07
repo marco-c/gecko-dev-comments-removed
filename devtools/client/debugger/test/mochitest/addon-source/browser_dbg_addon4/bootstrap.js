@@ -9,13 +9,13 @@ function notify() {
 }
 
 function startup(aParams, aReason) {
-  const { Services } = Cu.import("resource://gre/modules/Services.jsm", {});
+  const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm", {});
   let res = Services.io.getProtocolHandler("resource")
                        .QueryInterface(Ci.nsIResProtocolHandler);
   res.setSubstitution("browser_dbg_addon4", aParams.resourceURI);
 
   
-  Cu.import("resource://browser_dbg_addon4/test.jsm"); 
+  ChromeUtils.import("resource://browser_dbg_addon4/test.jsm"); 
   
   console.log({ msg: "Hello from the test add-on" });
 

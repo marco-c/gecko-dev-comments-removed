@@ -6,9 +6,9 @@
 
 
 
-let { require } = Cu.import("resource://devtools/shared/Loader.jsm", {});
+let { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
 let { Assert } = require("resource://testing-common/Assert.jsm");
-let { BrowserLoader } = Cu.import("resource://devtools/client/shared/browser-loader.js", {});
+let { BrowserLoader } = ChromeUtils.import("resource://devtools/client/shared/browser-loader.js", {});
 let defer = require("devtools/shared/defer");
 let flags = require("devtools/shared/flags");
 let { Task } = require("devtools/shared/task");

@@ -11,8 +11,8 @@
 
 
 
-const {console} = Cu.import("resource://gre/modules/Console.jsm", {});
-const {require} = Cu.import("resource://devtools/shared/Loader.jsm", {});
+const {console} = ChromeUtils.import("resource://gre/modules/Console.jsm", {});
+const {require} = ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
 const {Task} = require("devtools/shared/task");
 const {DebuggerServer} = require("devtools/server/main");
 const {DebuggerClient} = require("devtools/shared/client/debugger-client");

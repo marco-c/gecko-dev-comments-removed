@@ -10,7 +10,7 @@
 const TEST_URI = "http://example.com/browser/devtools/client/commandline/" +
                  "test/browser_cmd_screenshot.html";
 
-var FileUtils = (Cu.import("resource://gre/modules/FileUtils.jsm", {})).FileUtils;
+var FileUtils = (ChromeUtils.import("resource://gre/modules/FileUtils.jsm", {})).FileUtils;
 
 function test() {
   

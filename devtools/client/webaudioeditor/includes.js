@@ -3,7 +3,7 @@
 
 "use strict";
 
-const { loader, require } = Cu.import("resource://devtools/shared/Loader.jsm", {});
+const { loader, require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
 const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
 const { Task } = require("devtools/shared/task");
 const OldEventEmitter = require("devtools/shared/old-event-emitter");

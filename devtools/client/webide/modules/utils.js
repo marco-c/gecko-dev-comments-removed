@@ -3,7 +3,7 @@
 
 
 const { Cc, Cu, Ci } = require("chrome");
-const { FileUtils } = Cu.import("resource://gre/modules/FileUtils.jsm", {});
+const { FileUtils } = require("resource://gre/modules/FileUtils.jsm");
 const Services = require("Services");
 const Strings = Services.strings.createBundle("chrome://devtools/locale/webide.properties");
 

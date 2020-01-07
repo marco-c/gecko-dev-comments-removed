@@ -7,7 +7,7 @@
 
 
 
-const { BrowserToolboxProcess } = Cu.import(
+const { BrowserToolboxProcess } = ChromeUtils.import(
   "resource://devtools/client/framework/ToolboxProcess.jsm",
   {}
 );

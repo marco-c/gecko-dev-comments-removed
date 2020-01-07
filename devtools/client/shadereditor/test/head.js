@@ -2,7 +2,7 @@
 
 "use strict";
 
-var { require } = Cu.import("resource://devtools/shared/Loader.jsm", {});
+var { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
 var { Task } = require("devtools/shared/task");
 
 var Services = require("Services");

@@ -7,7 +7,7 @@
 
 
 
-const { PromiseTestUtils } = Cu.import("resource://testing-common/PromiseTestUtils.jsm", {});
+const { PromiseTestUtils } = ChromeUtils.import("resource://testing-common/PromiseTestUtils.jsm", {});
 PromiseTestUtils.whitelistRejectionsGlobally(/Component not initialized/);
 PromiseTestUtils.whitelistRejectionsGlobally(/Connection closed/);
 PromiseTestUtils.whitelistRejectionsGlobally(/destroy/);
@@ -20,7 +20,7 @@ PromiseTestUtils.whitelistRejectionsGlobally(/this\.toolbox is null/);
 PromiseTestUtils.whitelistRejectionsGlobally(/this\.webConsoleClient is null/);
 PromiseTestUtils.whitelistRejectionsGlobally(/this\.worker is null/);
 
-var { require } = Cu.import("resource://devtools/shared/Loader.jsm", {});
+var { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
 var { Task } = require("devtools/shared/task");
 var Services = require("Services");
 var { gDevTools } = require("devtools/client/framework/devtools");

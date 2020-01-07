@@ -2,7 +2,7 @@
 
 
 
-const {require} = Cu.import("resource://devtools/shared/Loader.jsm", {});
+const {require} = ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
 const Services = require("Services");
 const {gDevTools} = require("devtools/client/framework/devtools");
 const {GetAvailableAddons, ForgetAddonsList} = require("devtools/client/webide/modules/addons");

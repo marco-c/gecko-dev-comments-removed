@@ -15,7 +15,7 @@
 
 this.EXPORTED_SYMBOLS = [ "gDevTools", "gDevToolsBrowser" ];
 
-const { loader } = Cu.import("resource://devtools/shared/Loader.jsm", {});
+const { loader } = ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
 
 
 
@@ -25,7 +25,7 @@ const { loader } = Cu.import("resource://devtools/shared/Loader.jsm", {});
 
 Object.defineProperty(this, "require", {
   get() {
-    let { require } = Cu.import("resource://devtools/shared/Loader.jsm", {});
+    let { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
     return require;
   }
 });

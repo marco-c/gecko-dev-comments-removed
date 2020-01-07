@@ -16,7 +16,7 @@ var EventEmitter = require("devtools/shared/event-emitter");
 
 
 if (!gMultiProcessBrowser) {
-  Cu.import("resource://testing-common/PromiseTestUtils.jsm", this);
+  ChromeUtils.import("resource://testing-common/PromiseTestUtils.jsm", this);
   PromiseTestUtils.expectUncaughtRejection(/hello/);
 }
 
