@@ -1085,16 +1085,20 @@ class MOZ_RAII JS_PUBLIC_API(JSAutoNullableRealm)
     MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 };
 
+namespace JS {
+
 
 
 
 
 
 extern JS_PUBLIC_API(JSCompartment*)
-JS_EnterCompartment(JSContext* cx, JSObject* target);
+EnterRealm(JSContext* cx, JSObject* target);
 
 extern JS_PUBLIC_API(void)
-JS_LeaveCompartment(JSContext* cx, JSCompartment* oldCompartment);
+LeaveRealm(JSContext* cx, JSCompartment* oldRealm);
+
+} 
 
 typedef void (*JSIterateCompartmentCallback)(JSContext* cx, void* data, JSCompartment* compartment);
 
