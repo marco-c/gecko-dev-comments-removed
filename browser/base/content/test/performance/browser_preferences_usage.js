@@ -97,10 +97,6 @@ add_task(async function startup() {
       min: 20,
       max: 55,
     },
-    
-    "network.jar.block-remote-files": {
-      max: 500,
-    },
   };
 
   let startupRecorder = Cc["@mozilla.org/test/startuprecorder;1"].getService().wrappedJSObject;
@@ -161,8 +157,6 @@ add_task(async function open_10_tabs() {
       min: 5,
       max: 20,
     },
-    
-    "network.jar.block-remote-files": { },
   };
 
   Services.prefs.resetStats();
