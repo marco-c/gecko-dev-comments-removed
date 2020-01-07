@@ -227,8 +227,6 @@ public:
   nsRadioGroupStruct* GetRadioGroup(const nsAString& aName) const;
   nsRadioGroupStruct* GetOrCreateRadioGroup(const nsAString& aName);
 
-  virtual nsViewportInfo GetViewportInfo(const mozilla::ScreenIntSize& aDisplaySize) override;
-
   enum class UseCounterReportKind {
     
     
@@ -413,9 +411,6 @@ private:
   void ClearAllBoxObjects();
 
   
-  bool IsAboutPage() const;
-
-  
   nsDocument(const nsDocument& aOther);
   nsDocument& operator=(const nsDocument& aOther);
 
@@ -426,16 +421,6 @@ private:
   nsCOMPtr<nsIRequest> mOnloadBlocker;
 
   nsCOMPtr<nsIRunnable> mMaybeEndOutermostXBLUpdateRunner;
-
-  
-  
-  bool mValidWidth, mValidHeight;
-  mozilla::LayoutDeviceToScreenScale mScaleMinFloat;
-  mozilla::LayoutDeviceToScreenScale mScaleMaxFloat;
-  mozilla::LayoutDeviceToScreenScale mScaleFloat;
-  mozilla::CSSToLayoutDeviceScale mPixelRatio;
-  bool mAutoSize, mAllowZoom, mAllowDoubleTapZoom, mValidScaleFloat, mValidMaxScale, mScaleStrEmpty, mWidthStrEmpty;
-  mozilla::CSSSize mViewportSize;
 
 #ifdef DEBUG
 public:

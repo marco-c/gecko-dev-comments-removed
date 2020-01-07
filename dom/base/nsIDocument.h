@@ -1307,7 +1307,7 @@ public:
 
 
 
-  virtual nsViewportInfo GetViewportInfo(const mozilla::ScreenIntSize& aDisplaySize) = 0;
+  nsViewportInfo GetViewportInfo(const mozilla::ScreenIntSize& aDisplaySize);
 
   
 
@@ -3631,6 +3631,8 @@ public:
   nsIContent* GetContentInThisDocument(nsIFrame* aFrame) const;
 
 protected:
+  
+  bool IsAboutPage() const;
 
   bool ContainsEMEContent();
   bool ContainsMSEContent();
@@ -4127,6 +4129,18 @@ protected:
   
   bool mMaybeServiceWorkerControlled: 1;
 
+  
+  
+  bool mValidWidth: 1;
+  bool mValidHeight: 1;
+  bool mAutoSize: 1;
+  bool mAllowZoom: 1;
+  bool mAllowDoubleTapZoom: 1;
+  bool mValidScaleFloat: 1;
+  bool mValidMaxScale: 1;
+  bool mScaleStrEmpty: 1;
+  bool mWidthStrEmpty: 1;
+
   uint8_t mPendingFullscreenRequests;
 
   uint8_t mXMLDeclarationBits;
@@ -4441,6 +4455,14 @@ protected:
   
   
   nsCOMPtr<nsILayoutHistoryState> mLayoutHistoryState;
+
+  
+  
+  mozilla::LayoutDeviceToScreenScale mScaleMinFloat;
+  mozilla::LayoutDeviceToScreenScale mScaleMaxFloat;
+  mozilla::LayoutDeviceToScreenScale mScaleFloat;
+  mozilla::CSSToLayoutDeviceScale mPixelRatio;
+  mozilla::CSSSize mViewportSize;
 
   nsTArray<RefPtr<mozilla::StyleSheet>> mOnDemandBuiltInUASheets;
   nsTArray<RefPtr<mozilla::StyleSheet>> mAdditionalSheets[AdditionalSheetTypeCount];
