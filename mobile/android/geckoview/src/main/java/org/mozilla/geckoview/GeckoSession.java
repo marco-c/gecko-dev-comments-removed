@@ -654,6 +654,7 @@ public class GeckoSession extends LayerSession
                               final GeckoSessionSettings settings,
                               final String id) {
         if (isOpen()) {
+            
             throw new IllegalStateException("Session is open");
         }
 
@@ -725,6 +726,13 @@ public class GeckoSession extends LayerSession
         }
     };
 
+    
+
+
+
+
+
+
     public boolean isOpen() {
         return mWindow != null;
     }
@@ -752,17 +760,15 @@ public class GeckoSession extends LayerSession
 
 
 
+
     public void open(final @NonNull GeckoRuntime runtime) {
         ThreadUtils.assertOnUiThread();
 
         if (isOpen()) {
+            
             throw new IllegalStateException("Session is open");
         }
 
-        openWindow(runtime);
-    }
-
-    private void openWindow(final @NonNull GeckoRuntime runtime) {
         final String chromeUri = mSettings.getString(GeckoSessionSettings.CHROME_URI);
         final int screenId = mSettings.getInt(GeckoSessionSettings.SCREEN_ID);
         final boolean isPrivate = mSettings.getBoolean(GeckoSessionSettings.USE_PRIVATE_MODE);
@@ -792,6 +798,9 @@ public class GeckoSession extends LayerSession
     }
 
     
+
+
+
 
 
 
