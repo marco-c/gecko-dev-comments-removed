@@ -132,8 +132,9 @@ nsHttpConnection::~nsHttpConnection()
 
     if ((mFastOpenStatus != TFO_FAILED) &&
         (mFastOpenStatus != TFO_HTTP) &&
-        ((mFastOpenStatus != TFO_DISABLED) ||
+        (((mFastOpenStatus > TFO_DISABLED_CONNECT) && (mFastOpenStatus < TFO_BACKUP_CONN)) ||
          gHttpHandler->UseFastOpen())) {
+        
         
         
         
