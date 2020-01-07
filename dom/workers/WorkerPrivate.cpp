@@ -1884,8 +1884,6 @@ WorkerPrivate::Thaw(nsPIDOMWindowInner* aWindow)
 {
   AssertIsOnParentThread();
 
-  MOZ_ASSERT(mParentFrozen);
-
   
   
   
