@@ -85,7 +85,10 @@ private:
   void
   StopListeningForEvents();
 
-  ServiceWorkerRegistration* mOuter;
+  void
+  RegistrationRemovedInternal();
+
+  RefPtr<ServiceWorkerRegistration> mOuter;
   const nsString mScope;
   bool mListeningForEvents;
 };
@@ -103,6 +106,9 @@ public:
 
   ServiceWorkerRegistrationWorkerThread(WorkerPrivate* aWorkerPrivate,
                                         const ServiceWorkerRegistrationDescriptor& aDescriptor);
+
+  void
+  RegistrationRemoved();
 
   
   void
@@ -146,7 +152,12 @@ private:
   void
   ReleaseListener();
 
-  ServiceWorkerRegistration* mOuter;
+  
+  
+  
+  
+  RefPtr<ServiceWorkerRegistration> mOuter;
+
   WorkerPrivate* mWorkerPrivate;
   const nsString mScope;
   RefPtr<WorkerListener> mListener;

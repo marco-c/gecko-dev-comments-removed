@@ -131,7 +131,12 @@ private:
   ~ServiceWorkerRegistration();
 
   ServiceWorkerRegistrationDescriptor mDescriptor;
+
+  
+  
+  
   RefPtr<Inner> mInner;
+
   RefPtr<ServiceWorker> mInstallingWorker;
   RefPtr<ServiceWorker> mWaitingWorker;
   RefPtr<ServiceWorker> mActiveWorker;
