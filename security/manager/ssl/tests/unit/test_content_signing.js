@@ -13,6 +13,8 @@ const TEST_DATA_DIR = "test_content_signing/";
 
 const ONECRL_NAME = "oneCRL-signer.mozilla.org";
 const ABOUT_NEWTAB_NAME = "remotenewtab.content-signature.mozilla.org";
+var VERIFICATION_HISTOGRAM = Services.telemetry
+                                     .getHistogramById("CONTENT_SIGNATURE_VERIFICATION_STATUS");
 
 function getSignatureVerifier() {
   return Cc["@mozilla.org/security/contentsignatureverifier;1"]
@@ -31,6 +33,19 @@ function loadChain(prefix, names) {
     chain.push(readFile(do_get_file(filename)));
   }
   return chain;
+}
+
+function check_telemetry(expected_index, expected) {
+  for (let i = 0; i < 10; i++) {
+    let expected_value = 0;
+    if (i == expected_index) {
+      expected_value = expected;
+    }
+    equal(VERIFICATION_HISTOGRAM.snapshot().counts[i], expected_value,
+      "count " + i + ": " + VERIFICATION_HISTOGRAM.snapshot().counts[i] +
+      " expected " + expected_value);
+  }
+  VERIFICATION_HISTOGRAM.clear();
 }
 
 function run_test() {
@@ -56,11 +71,21 @@ function run_test() {
   let noSANChain = loadChain(TEST_DATA_DIR + "content_signing",
                              ["onecrl_no_SAN_ee", "int", "root"]);
 
+  let expiredOneCRLChain = loadChain(TEST_DATA_DIR + "content_signing",
+                                     ["onecrl_ee_expired", "int", "root"]);
+
+  let notValidYetOneCRLChain = loadChain(TEST_DATA_DIR + "content_signing",
+                                         ["onecrl_ee_not_valid_yet", "int",
+                                          "root"]);
+
   
+  VERIFICATION_HISTOGRAM.clear();
   let chain1 = oneCRLChain.join("\n");
   let verifier = getSignatureVerifier();
   ok(!verifier.verifyContentSignature(DATA, GOOD_SIGNATURE, chain1, ONECRL_NAME),
      "Before the root is set, signatures should fail to verify but not throw.");
+  
+  check_telemetry(6, 1);
 
   setRoot(TEST_DATA_DIR + "content_signing_root.pem");
 
@@ -73,12 +98,16 @@ function run_test() {
   ok(verifier.verifyContentSignature(DATA, GOOD_SIGNATURE, chain2,
                                      ABOUT_NEWTAB_NAME),
      "A newtab signature should verify with the newtab chain");
+  
+  check_telemetry(0, 2);
 
   
   chain1 = oneCRLChain.join("\n");
   verifier = getSignatureVerifier();
   ok(!verifier.verifyContentSignature(DATA, BAD_SIGNATURE, chain1, ONECRL_NAME),
      "A bad signature should not verify");
+  
+  check_telemetry(1, 1);
 
   
   
@@ -87,6 +116,8 @@ function run_test() {
   ok(!verifier.verifyContentSignature(DATA, GOOD_SIGNATURE, badKeyChain,
                                       ONECRL_NAME),
      "A signature should not verify if the signing key is wrong");
+  
+  check_telemetry(9, 1);
 
   
   
@@ -95,6 +126,8 @@ function run_test() {
   ok(!verifier.verifyContentSignature(DATA, GOOD_SIGNATURE, rsaKeyChain,
                                       ONECRL_NAME),
      "A signature should not verify if the signing key is wrong (RSA)");
+  
+  check_telemetry(9, 1);
 
   
   let missingRoot = [oneCRLChain[0], oneCRLChain[1]].join("\n");
@@ -102,6 +135,8 @@ function run_test() {
   ok(!verifier.verifyContentSignature(DATA, GOOD_SIGNATURE, missingRoot,
                                       ONECRL_NAME),
      "A signature should not verify if the chain is incomplete (missing root)");
+  
+  check_telemetry(6, 1);
 
   
   let missingInt = [oneCRLChain[0], oneCRLChain[2]].join("\n");
@@ -109,6 +144,8 @@ function run_test() {
   ok(!verifier.verifyContentSignature(DATA, GOOD_SIGNATURE, missingInt,
                                       ONECRL_NAME),
      "A signature should not verify if the chain is incomplete (missing int)");
+  
+  check_telemetry(6, 1);
 
   
   chain1 = oneCRLChain.join("\n");
@@ -116,17 +153,39 @@ function run_test() {
   ok(!verifier.verifyContentSignature(DATA, GOOD_SIGNATURE, chain1,
                                       ABOUT_NEWTAB_NAME),
      "A OneCRL signature should not verify if we require the newtab SAN");
+  
+  check_telemetry(7, 1);
 
   chain2 = remoteNewTabChain.join("\n");
   verifier = getSignatureVerifier();
   ok(!verifier.verifyContentSignature(DATA, GOOD_SIGNATURE, chain2,
                                       ONECRL_NAME),
      "A newtab signature should not verify if we require the OneCRL SAN");
+  
+  check_telemetry(7, 1);
 
   
   verifier = getSignatureVerifier();
   ok(!verifier.verifyContentSignature(DATA, GOOD_SIGNATURE, chain1, ""),
      "A signature should not verify if the SANs do not match an empty name");
+  
+  check_telemetry(7, 1);
+
+  
+  let chainExpired = expiredOneCRLChain.join("\n");
+  verifier = getSignatureVerifier();
+  ok(!verifier.verifyContentSignature(DATA, GOOD_SIGNATURE, chainExpired, ""),
+     "A signature should not verify if the signing certificate is expired");
+  
+  check_telemetry(4, 1);
+
+  
+  let chainNotValidYet = notValidYetOneCRLChain.join("\n");
+  verifier = getSignatureVerifier();
+  ok(!verifier.verifyContentSignature(DATA, GOOD_SIGNATURE, chainNotValidYet, ""),
+     "A signature should not verify if the signing certificate is not valid yet");
+  
+  check_telemetry(5, 1);
 
   let relatedName = "subdomain." + ONECRL_NAME;
   verifier = getSignatureVerifier();
