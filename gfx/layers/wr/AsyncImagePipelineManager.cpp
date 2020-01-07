@@ -407,8 +407,12 @@ AsyncImagePipelineManager::PipelineRemoved(const wr::PipelineId& aPipelineId)
     return;
   }
   if (auto entry = mPipelineTexturesHolders.Lookup(wr::AsUint64(aPipelineId))) {
+    if (entry.Data()->mDestroyedEpoch.isSome()) {
+      
+      entry.Remove();
+    }
     
-    entry.Remove();
+    
   }
 }
 
