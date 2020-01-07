@@ -85,12 +85,7 @@ TestInterfaceJS.prototype = {
   testThrowNsresultFromNative: function(x) {
     
     
-    
-    var url = Components.classes["@mozilla.org/network/standard-url;1"]
-                        .createInstance(Ci.nsIURI);
-    url.QueryInterface(Ci.nsIMutable);
-    url.mutable = false;
-    url.spec = "http://example.com";
+    Services.netUtils.notImplemented();
   },
 
   testThrowCallbackError: function(callback) {
