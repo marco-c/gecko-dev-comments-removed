@@ -44,6 +44,12 @@ private:
   explicit NonBlockingAsyncInputStream(already_AddRefed<nsIInputStream> aInputStream);
   ~NonBlockingAsyncInputStream();
 
+  class AsyncWaitRunnable;
+
+  void
+  RunAsyncWaitCallback(AsyncWaitRunnable* aRunnable,
+                       already_AddRefed<nsIInputStreamCallback> aCallback);
+
   nsCOMPtr<nsIInputStream> mInputStream;
 
   
@@ -51,21 +57,25 @@ private:
   nsIIPCSerializableInputStream* MOZ_NON_OWNING_REF mWeakIPCSerializableInputStream;
   nsISeekableStream* MOZ_NON_OWNING_REF mWeakSeekableInputStream;
 
+  Mutex mLock;
+
   struct WaitClosureOnly
   {
-    WaitClosureOnly(nsIRunnable* aRunnable, nsIEventTarget* aEventTarget)
-      : mRunnable(aRunnable)
-      , mEventTarget(aEventTarget)
-    {}
+    WaitClosureOnly(AsyncWaitRunnable* aRunnable, nsIEventTarget* aEventTarget);
 
-    nsCOMPtr<nsIRunnable> mRunnable;
+    RefPtr<AsyncWaitRunnable> mRunnable;
     nsCOMPtr<nsIEventTarget> mEventTarget;
   };
 
   
   
+  
   Maybe<WaitClosureOnly> mWaitClosureOnly;
 
+  
+  RefPtr<AsyncWaitRunnable> mAsyncWaitCallback;
+
+  
   bool mClosed;
 };
 
