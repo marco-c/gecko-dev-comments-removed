@@ -2319,10 +2319,9 @@ ContentParent::InitInternal(ProcessPriority aInitialPriority)
     nsCString UAName(gAppData->UAName);
     nsCString ID(gAppData->ID);
     nsCString vendor(gAppData->vendor);
-    nsCString sourceURL(gAppData->sourceURL);
 
     
-    Unused << SendAppInfo(version, buildID, name, UAName, ID, vendor, sourceURL);
+    Unused << SendAppInfo(version, buildID, name, UAName, ID, vendor);
   }
 
   
