@@ -2709,8 +2709,7 @@ InterfaceHasInstance(JSContext* cx, int prototypeID, int depth,
 
 
 bool
-InterfaceIsInstance(JSContext* cx, unsigned argc, JS::Value* vp,
-                    prototypes::ID prototypeID, int depth);
+InterfaceIsInstance(JSContext* cx, unsigned argc, JS::Value* vp);
 
 
 

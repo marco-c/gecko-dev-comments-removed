@@ -106,7 +106,8 @@ const char* const XPCJSRuntime::mStrings[] = {
     "stack",                
     "message",              
     "lastIndex",            
-    "then"                  
+    "then",                 
+    "isInstance",           
 };
 
 

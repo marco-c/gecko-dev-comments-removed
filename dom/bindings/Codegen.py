@@ -1772,23 +1772,6 @@ def JSNativeArguments():
             Argument('JS::Value*', 'vp')]
 
 
-class CGIsInstanceMethod(CGAbstractStaticMethod):
-    """
-    A class for generating the static isInstance method.
-    """
-    def __init__(self, descriptor):
-        assert descriptor.interface.hasInterfacePrototypeObject()
-        CGAbstractStaticMethod.__init__(self, descriptor, "isInstance", "bool",
-                                        JSNativeArguments())
-
-    def definition_body(self):
-        return fill(
-            """
-            return InterfaceIsInstance(cx, argc, vp, prototypes::id::${name},
-                                       PrototypeTraits<prototypes::id::${name}>::Depth);
-            """,
-            name=self.descriptor.name)
-
 class CGClassConstructor(CGAbstractStaticMethod):
     """
     JS-visible constructor for our objects
@@ -2337,18 +2320,6 @@ class MethodDefiner(PropertyDefiner):
                 self.regular.append(method)
 
         
-        if (static and
-            (self.descriptor.interface.hasInterfaceObject() and
-             self.descriptor.interface.hasInterfacePrototypeObject())):
-            self.chrome.append({
-                "name": "isInstance",
-                "methodInfo": False,
-                "length": 1,
-                "flags": "JSPROP_ENUMERATE",
-                "condition": MemberCondition(),
-            })
-
-        
         
         
         
@@ -2732,7 +2703,6 @@ class ConstDefiner(PropertyDefiner):
 
 class PropertyArrays():
     def __init__(self, descriptor):
-        self.descriptor = descriptor
         self.staticMethods = MethodDefiner(descriptor, "StaticMethods",
                                            static=True)
         self.staticAttrs = AttrDefiner(descriptor, "StaticAttributes",
@@ -2751,11 +2721,7 @@ class PropertyArrays():
                 "unforgeableMethods", "unforgeableAttrs", "consts"]
 
     def hasChromeOnly(self):
-        
-        
-        return ((self.staticMethods.descriptor.interface.hasInterfaceObject() and
-                 self.staticMethods.descriptor.interface.hasInterfacePrototypeObject()) or
-                any(getattr(self, a).hasChromeOnly() for a in self.arrayNames()))
+        return any(getattr(self, a).hasChromeOnly() for a in self.arrayNames())
 
     def hasNonChromeOnly(self):
         return any(getattr(self, a).hasNonChromeOnly() for a in self.arrayNames())
@@ -12321,9 +12287,6 @@ class CGDescriptor(CGThing):
         for n in descriptor.interface.namedConstructors:
             cgThings.append(CGClassConstructor(descriptor, n,
                                                NamedConstructorName(n)))
-        if (descriptor.interface.hasInterfaceObject() and
-            descriptor.interface.hasInterfacePrototypeObject()):
-            cgThings.append(CGIsInstanceMethod(descriptor))
         for m in descriptor.interface.members:
             if m.isMethod() and m.identifier.name == 'QueryInterface':
                 continue
@@ -13869,13 +13832,9 @@ class CGBindingRoot(CGThing):
                     
                     
                     
-                    
-                    
-                    
                     (desc.interface.hasInterfaceObject() and
                      (desc.interface.isJSImplemented() or
-                      (ctor and isChromeOnly(ctor)) or
-                      desc.interface.hasInterfacePrototypeObject())) or
+                      (ctor and isChromeOnly(ctor)))) or
                     
                     
                     (desc.interface.isJSImplemented() and
