@@ -90,7 +90,16 @@ AutoplayPolicy::IsAudioContextAllowedToPlay(NotNull<AudioContext*> aContext)
     return false;
   }
 
-   nsCOMPtr<nsIPrincipal> principal = aContext->GetParentObject()->AsGlobal()->PrincipalOrNull();
+  
+  
+  MediaManager* manager = MediaManager::GetIfExists();
+  if (manager) {
+    if (manager->IsActivelyCapturingOrHasAPermission(window->WindowID())) {
+      return true;
+    }
+  }
+
+  nsCOMPtr<nsIPrincipal> principal = aContext->GetParentObject()->AsGlobal()->PrincipalOrNull();
 
   
   if (principal &&
