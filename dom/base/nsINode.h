@@ -787,6 +787,17 @@ public:
 
 
 
+  virtual void RemoveChildNode(nsIContent* aKid, bool aNotify) = 0;
+
+  
+
+
+
+
+
+
+
+
 
 
   void* GetProperty(nsAtom *aPropertyName,

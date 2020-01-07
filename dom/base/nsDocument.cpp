@@ -4402,6 +4402,28 @@ nsDocument::RemoveChildAt_Deprecated(uint32_t aIndex, bool aNotify)
 }
 
 void
+nsDocument::RemoveChildNode(nsIContent* aKid, bool aNotify)
+{
+  if (aKid->IsElement()) {
+    
+    DestroyElementMaps();
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  mCachedRootElement = nullptr;
+  doRemoveChildAt(IndexOf(aKid), aNotify, aKid, mChildren);
+  MOZ_ASSERT(mCachedRootElement != aKid,
+             "Stale pointer in mCachedRootElement, after we tried to clear it "
+             "(maybe somebody called GetRootElement() too early?)");
+}
+
+void
 nsDocument::EnsureOnDemandBuiltInUASheet(StyleSheet* aSheet)
 {
   if (mOnDemandBuiltInUASheets.Contains(aSheet)) {
