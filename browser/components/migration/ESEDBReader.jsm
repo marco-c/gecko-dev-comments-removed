@@ -118,6 +118,8 @@ function convertESEError(errorCode) {
     case -1207 :
     case -1302 :
       return "The database or table is locked, error code: " + errorCode;
+    case -1305 :
+      return "The table/object was not found.";
     case -1809 :
     case -1907 :
       return "Access or permission denied, error code: " + errorCode;

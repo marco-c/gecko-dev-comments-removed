@@ -59,7 +59,7 @@ XPCOMUtils.defineLazyGetter(this, "gEdgeDatabase", function() {
 
 
 
-function readTableFromEdgeDB(tableName, columns, filterFn, dbFile = gEdgeDatabase) {
+function readTableFromEdgeDB(tableName, columns, dbFile = gEdgeDatabase, filterFn = null) {
   let database;
   let rows = [];
   try {
@@ -73,7 +73,7 @@ function readTableFromEdgeDB(tableName, columns, filterFn, dbFile = gEdgeDatabas
 
     let tableReader = database.tableItems(tableName, columns);
     for (let row of tableReader) {
-      if (filterFn(row)) {
+      if (!filterFn || filterFn(row)) {
         rows.push(row);
       }
     }
@@ -114,7 +114,7 @@ EdgeTypedURLMigrator.prototype = {
       let url;
       try {
         url = new URL(urlString);
-        if (!["http", "https", "ftp"].includes(url.scheme)) {
+        if (!["http:", "https:", "ftp:"].includes(url.protocol)) {
           continue;
         }
       } catch (ex) {
@@ -139,6 +139,86 @@ EdgeTypedURLMigrator.prototype = {
     MigrationUtils.insertVisitsWrapper(pageInfos).then(
       () => aCallback(true),
       () => aCallback(false));
+  },
+};
+
+function EdgeTypedURLDBMigrator() {
+}
+
+EdgeTypedURLDBMigrator.prototype = {
+  type: MigrationUtils.resourceTypes.HISTORY,
+
+  get db() { return gEdgeDatabase; },
+
+  get exists() {
+    return !!this.db;
+  },
+
+  migrate(callback) {
+    this._migrateTypedURLsFromDB().then(
+      () => callback(true),
+      ex => {
+        Cu.reportError(ex);
+        callback(false);
+      }
+    );
+  },
+
+  async _migrateTypedURLsFromDB() {
+    if (await ESEDBReader.dbLocked(this.db)) {
+      throw new Error("Edge seems to be running - its database is locked.");
+    }
+    let columns = [
+      {name: "URL", type: "string"},
+      {name: "AccessDateTimeUTC", type: "date"},
+    ];
+
+    let typedUrls = [];
+    try {
+      typedUrls = readTableFromEdgeDB("TypedUrls", columns, this.db);
+    } catch (ex) {
+      
+      
+      
+      
+    }
+    if (!typedUrls.length) {
+      return;
+    }
+
+    let pageInfos = [];
+    
+    
+    
+    
+    
+    const kDateCutOff = new Date("2016", 0, 1);
+    for (let typedUrlInfo of typedUrls) {
+      try {
+        let url = new URL(typedUrlInfo.URL);
+        if (!["http:", "https:", "ftp:"].includes(url.protocol)) {
+          continue;
+        }
+
+        let date = typedUrlInfo.AccessDateTimeUTC;
+        if (!date) {
+          date = kDateCutOff;
+        } else if (date < kDateCutOff) {
+          continue;
+        }
+
+        pageInfos.push({
+          url,
+          visits: [{
+            transition: PlacesUtils.history.TRANSITIONS.TYPED,
+            date,
+          }],
+        });
+      } catch (ex) {
+        Cu.reportError(ex);
+      }
+    }
+    await MigrationUtils.insertVisitsWrapper(pageInfos);
   },
 };
 
@@ -188,7 +268,7 @@ EdgeReadingListMigrator.prototype = {
       return !row.IsDeleted;
     };
 
-    let readingListItems = readTableFromEdgeDB("ReadingList", columnFn, filterFn, this.db);
+    let readingListItems = readTableFromEdgeDB("ReadingList", columnFn, this.db, filterFn);
     if (!readingListItems.length) {
       return;
     }
@@ -287,7 +367,7 @@ EdgeBookmarksMigrator.prototype = {
       }
       return true;
     };
-    let bookmarks = readTableFromEdgeDB(this.TABLE_NAME, columns, filterFn, this.db);
+    let bookmarks = readTableFromEdgeDB(this.TABLE_NAME, columns, this.db, filterFn);
     let toplevelBMs = [], toolbarBMs = [];
     for (let bookmark of bookmarks) {
       let bmToInsert;
@@ -357,6 +437,7 @@ EdgeProfileMigrator.prototype.getResources = function() {
     new EdgeBookmarksMigrator(),
     MSMigrationUtils.getCookiesMigrator(MSMigrationUtils.MIGRATION_TYPE_EDGE),
     new EdgeTypedURLMigrator(),
+    new EdgeTypedURLDBMigrator(),
     new EdgeReadingListMigrator(),
   ];
   let windowsVaultFormPasswordsMigrator =
