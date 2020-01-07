@@ -4,8 +4,6 @@
 
 
 
-const CC = Components.Constructor;
-
 const TEST_SITE = "http://mochi.test:8888";
 const TEST_CACHE_SITE = "http://www.example.com";
 const TEST_DIRECTORY = "/browser/browser/components/privatebrowsing/test/browser/";
@@ -184,21 +182,17 @@ async function openTab(aBrowser, aURL) {
   return {tab, browser};
 }
 
-
-registerCleanupFunction(() => {
-  
+registerCleanupFunction(async () => {
   Services.cookies.removeAll();
-
-  
   clearAllImageCaches();
-
   Services.cache2.clear();
+  await PlacesUtils.history.clear();
+  await PlacesUtils.bookmarks.eraseEverything();
 });
 
 add_task(async function test_favicon_privateBrowsing() {
   
   clearAllImageCaches();
-
   
   await clearAllPlacesFavicons();
 
@@ -222,9 +216,15 @@ add_task(async function test_favicon_privateBrowsing() {
   let promiseObserveFavicon = observeFavicon(true, cookies[0], pageURI);
 
   
-  let tabInfo = await openTab(privateWindow.gBrowser, TEST_PAGE);
+  await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.unfiledGuid,
+    url: TEST_PAGE
+  });
 
   
+  let tabInfo = await openTab(privateWindow.gBrowser, TEST_PAGE);
+
+  info("Waiting until favicon requests are all made in private window.");
   await promiseObserveFavicon;
 
   
@@ -239,7 +239,7 @@ add_task(async function test_favicon_privateBrowsing() {
   
   tabInfo = await openTab(gBrowser, TEST_PAGE);
 
-  
+  info("Waiting until favicon requests are all made in non-private window.");
   await promiseObserveFavicon;
 
   
@@ -273,6 +273,12 @@ add_task(async function test_favicon_cache_privateBrowsing() {
 
   
   let privateWindow = await BrowserTestUtils.openNewBrowserWindow({ private: true });
+
+  
+  await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.unfiledGuid,
+    url: TEST_CACHE_PAGE
+  });
 
   
   let tabInfoPrivate = await openTab(privateWindow.gBrowser, TEST_CACHE_PAGE);
