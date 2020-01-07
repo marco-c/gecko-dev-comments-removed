@@ -2,29 +2,25 @@
 
 
 
-use api::{DevicePoint, DeviceSize, DeviceRect, LayoutToWorldTransform};
+use api::{DevicePoint, DeviceSize, DeviceRect, LayoutRect, LayoutToWorldTransform};
 use api::{PremultipliedColorF, WorldToLayoutTransform};
+use clip_scroll_tree::TransformIndex;
 use gpu_cache::{GpuCacheAddress, GpuDataRequest};
-use prim_store::{VECS_PER_SEGMENT, EdgeAaSegmentMask};
+use prim_store::{EdgeAaSegmentMask};
 use render_task::RenderTaskAddress;
-use renderer::MAX_VERTEX_TEXTURE_WIDTH;
+use util::{MatrixHelpers, TransformedRectKind};
 
 
-
-const INT_BITS: usize = 31; 
-const CLIP_CHAIN_RECT_BITS: usize = 22;
-const SEGMENT_BITS: usize = INT_BITS - CLIP_CHAIN_RECT_BITS;
-
-
-const _SEGMENT_GUARD: usize = (1 << SEGMENT_BITS) * VECS_PER_SEGMENT - MAX_VERTEX_TEXTURE_WIDTH;
-const EDGE_FLAG_BITS: usize = 4;
-const BRUSH_FLAG_BITS: usize = 4;
-const CLIP_SCROLL_INDEX_BITS: usize = INT_BITS - EDGE_FLAG_BITS - BRUSH_FLAG_BITS;
 
 #[derive(Copy, Clone, Debug)]
 #[repr(C)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct ZBufferId(i32);
 
+#[derive(Debug)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct ZBufferIdGenerator {
     next: i32,
 }
@@ -119,7 +115,7 @@ pub struct BorderInstance {
 #[repr(C)]
 pub struct ClipMaskInstance {
     pub render_task_address: RenderTaskAddress,
-    pub scroll_node_data_index: ClipScrollNodeIndex,
+    pub transform_id: TransformPaletteId,
     pub segment: i32,
     pub clip_data_address: GpuCacheAddress,
     pub resource_address: GpuCacheAddress,
@@ -140,45 +136,119 @@ pub struct ClipMaskBorderCornerDotDash {
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct PrimitiveInstance {
-    data: [i32; 8],
+    data: [i32; 4],
+}
+
+#[derive(Debug, Copy, Clone)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub struct PrimitiveHeaderIndex(pub i32);
+
+#[derive(Debug)]
+#[repr(C)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub struct PrimitiveHeaders {
+    
+    pub headers_int: Vec<PrimitiveHeaderI>,
+    
+    pub headers_float: Vec<PrimitiveHeaderF>,
+    
+    pub z_generator: ZBufferIdGenerator,
+}
+
+impl PrimitiveHeaders {
+    pub fn new() -> PrimitiveHeaders {
+        PrimitiveHeaders {
+            headers_int: Vec::new(),
+            headers_float: Vec::new(),
+            z_generator: ZBufferIdGenerator::new(),
+        }
+    }
+
+    
+    pub fn push(
+        &mut self,
+        prim_header: &PrimitiveHeader,
+        user_data: [i32; 3],
+    ) -> PrimitiveHeaderIndex {
+        debug_assert_eq!(self.headers_int.len(), self.headers_float.len());
+        let id = self.headers_float.len();
+
+        self.headers_float.push(PrimitiveHeaderF {
+            local_rect: prim_header.local_rect,
+            local_clip_rect: prim_header.local_clip_rect,
+        });
+
+        self.headers_int.push(PrimitiveHeaderI {
+            z: self.z_generator.next(),
+            task_address: prim_header.task_address,
+            specific_prim_address: prim_header.specific_prim_address.as_int(),
+            clip_task_address: prim_header.clip_task_address,
+            transform_id: prim_header.transform_id,
+            user_data,
+        });
+
+        PrimitiveHeaderIndex(id as i32)
+    }
+}
+
+
+
+pub struct PrimitiveHeader {
+    pub local_rect: LayoutRect,
+    pub local_clip_rect: LayoutRect,
+    pub task_address: RenderTaskAddress,
+    pub specific_prim_address: GpuCacheAddress,
+    pub clip_task_address: RenderTaskAddress,
+    pub transform_id: TransformPaletteId,
+}
+
+
+#[derive(Debug)]
+#[repr(C)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub struct PrimitiveHeaderF {
+    pub local_rect: LayoutRect,
+    pub local_clip_rect: LayoutRect,
+}
+
+
+
+#[derive(Debug)]
+#[repr(C)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub struct PrimitiveHeaderI {
+    pub z: ZBufferId,
+    pub task_address: RenderTaskAddress,
+    pub specific_prim_address: i32,
+    pub clip_task_address: RenderTaskAddress,
+    pub transform_id: TransformPaletteId,
+    pub user_data: [i32; 3],
 }
 
 pub struct GlyphInstance {
-    pub specific_prim_address: GpuCacheAddress,
-    pub task_address: RenderTaskAddress,
-    pub clip_task_address: RenderTaskAddress,
-    pub clip_chain_rect_index: ClipChainRectIndex,
-    pub scroll_id: ClipScrollNodeIndex,
-    pub z: ZBufferId,
+    pub prim_header_index: PrimitiveHeaderIndex,
 }
 
 impl GlyphInstance {
     pub fn new(
-        specific_prim_address: GpuCacheAddress,
-        task_address: RenderTaskAddress,
-        clip_task_address: RenderTaskAddress,
-        clip_chain_rect_index: ClipChainRectIndex,
-        scroll_id: ClipScrollNodeIndex,
-        z: ZBufferId,
+        prim_header_index: PrimitiveHeaderIndex,
     ) -> Self {
         GlyphInstance {
-            specific_prim_address,
-            task_address,
-            clip_task_address,
-            clip_chain_rect_index,
-            scroll_id,
-            z,
+            prim_header_index,
         }
     }
 
+    
+    
+    
     pub fn build(&self, data0: i32, data1: i32, data2: i32) -> PrimitiveInstance {
         PrimitiveInstance {
             data: [
-                self.specific_prim_address.as_int(),
-                self.task_address.0 as i32 | (self.clip_task_address.0 as i32) << 16,
-                self.clip_chain_rect_index.0 as i32,
-                self.scroll_id.0 as i32,
-                self.z.0,
+                self.prim_header_index.0 as i32,
                 data0,
                 data1,
                 data2,
@@ -218,10 +288,6 @@ impl From<SplitCompositeInstance> for PrimitiveInstance {
                 instance.src_task_address.0 as i32,
                 instance.polygons_address.as_int(),
                 instance.z.0,
-                0,
-                0,
-                0,
-                0,
             ],
         }
     }
@@ -246,77 +312,138 @@ bitflags! {
 
 
 
-
-
-
-
 #[repr(C)]
 pub struct BrushInstance {
-    pub picture_address: RenderTaskAddress,
-    pub prim_address: GpuCacheAddress,
-    pub clip_chain_rect_index: ClipChainRectIndex,
-    pub scroll_id: ClipScrollNodeIndex,
+    pub prim_header_index: PrimitiveHeaderIndex,
     pub clip_task_address: RenderTaskAddress,
-    pub z: ZBufferId,
     pub segment_index: i32,
     pub edge_flags: EdgeAaSegmentMask,
     pub brush_flags: BrushFlags,
-    pub user_data: [i32; 3],
 }
 
 impl From<BrushInstance> for PrimitiveInstance {
     fn from(instance: BrushInstance) -> Self {
-        debug_assert_eq!(0, instance.clip_chain_rect_index.0 >> CLIP_CHAIN_RECT_BITS);
-        debug_assert_eq!(0, instance.scroll_id.0 >> CLIP_SCROLL_INDEX_BITS);
-        debug_assert_eq!(0, instance.segment_index >> SEGMENT_BITS);
         PrimitiveInstance {
             data: [
-                instance.picture_address.0 as i32 | (instance.clip_task_address.0 as i32) << 16,
-                instance.prim_address.as_int(),
-                instance.clip_chain_rect_index.0 as i32 | (instance.segment_index << CLIP_CHAIN_RECT_BITS),
-                instance.z.0,
-                instance.scroll_id.0 as i32 |
-                    ((instance.edge_flags.bits() as i32) << CLIP_SCROLL_INDEX_BITS) |
-                    ((instance.brush_flags.bits() as i32) << (CLIP_SCROLL_INDEX_BITS + EDGE_FLAG_BITS)),
-                instance.user_data[0],
-                instance.user_data[1],
-                instance.user_data[2],
+                instance.prim_header_index.0,
+                instance.clip_task_address.0 as i32,
+                instance.segment_index |
+                ((instance.edge_flags.bits() as i32) << 16) |
+                ((instance.brush_flags.bits() as i32) << 24),
+                0,
             ]
         }
     }
 }
 
+
+
+
+
+
+
 #[derive(Copy, Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 #[repr(C)]
-pub struct ClipScrollNodeIndex(pub u32);
+pub struct TransformPaletteId(pub u32);
+
+impl TransformPaletteId {
+    
+    pub fn identity() -> TransformPaletteId {
+        TransformPaletteId(0)
+    }
+
+    
+    pub fn transform_kind(&self) -> TransformedRectKind {
+        if (self.0 >> 24) == 0 {
+            TransformedRectKind::AxisAligned
+        } else {
+            TransformedRectKind::Complex
+        }
+    }
+}
+
 
 #[derive(Debug)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 #[repr(C)]
-pub struct ClipScrollNodeData {
+pub struct TransformData {
     pub transform: LayoutToWorldTransform,
     pub inv_transform: WorldToLayoutTransform,
-    pub transform_kind: f32,
-    pub padding: [f32; 3],
 }
 
-impl ClipScrollNodeData {
+impl TransformData {
     pub fn invalid() -> Self {
-        ClipScrollNodeData {
+        TransformData {
             transform: LayoutToWorldTransform::identity(),
             inv_transform: WorldToLayoutTransform::identity(),
-            transform_kind: 0.0,
-            padding: [0.0; 3],
         }
     }
 }
 
-#[derive(Copy, Debug, Clone, PartialEq)]
-#[repr(C)]
-pub struct ClipChainRectIndex(pub usize);
+
+pub struct TransformMetadata {
+    pub transform_kind: TransformedRectKind,
+}
+
+
+
+
+
+
+
+
+pub struct TransformPalette {
+    pub transforms: Vec<TransformData>,
+    metadata: Vec<TransformMetadata>,
+}
+
+impl TransformPalette {
+    pub fn new(spatial_node_count: usize) -> TransformPalette {
+        TransformPalette {
+            transforms: Vec::with_capacity(spatial_node_count),
+            metadata: Vec::with_capacity(spatial_node_count),
+        }
+    }
+
+    
+    
+    pub fn set(
+        &mut self,
+        index: TransformIndex,
+        data: TransformData,
+    ) {
+        let index = index.0 as usize;
+
+        
+        
+        
+        
+        while index >= self.transforms.len() {
+            self.transforms.push(TransformData::invalid());
+            self.metadata.push(TransformMetadata {
+                transform_kind: TransformedRectKind::AxisAligned,
+            });
+        }
+
+        
+        self.metadata[index] = TransformMetadata {
+            transform_kind: data.transform.transform_kind(),
+        };
+        self.transforms[index] = data;
+    }
+
+    
+    
+    
+    
+    pub fn get_id(&self, index: TransformIndex) -> TransformPaletteId {
+        let transform_kind = self.metadata[index.0 as usize].transform_kind as u32;
+        TransformPaletteId(index.0 | (transform_kind << 24))
+    }
+}
 
 
 
