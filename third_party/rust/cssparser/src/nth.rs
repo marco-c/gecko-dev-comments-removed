@@ -2,7 +2,7 @@
 
 
 
-use std::ascii::AsciiExt;
+#[allow(unused_imports)] use std::ascii::AsciiExt;
 
 use super::{Token, Parser, ParserInput, BasicParseError};
 
