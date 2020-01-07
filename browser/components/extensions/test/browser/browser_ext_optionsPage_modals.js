@@ -55,7 +55,9 @@ add_task(async function test_tab_options_modals() {
       }
 
       aboutAddonsBrowser.removeEventListener("DOMWillOpenModalDialog", onModalDialog, true);
-      resolve();
+      
+      
+      SimpleTest.executeSoon(resolve);
     }, true);
   });
 
