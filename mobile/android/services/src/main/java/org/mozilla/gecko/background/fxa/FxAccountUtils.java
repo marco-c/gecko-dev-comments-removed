@@ -99,18 +99,11 @@ public class FxAccountUtils {
     return Utils.byte2Hex(Utils.hex2Byte((x.mod(N)).toString(16), byteLength), hexLength);
   }
 
-  
-
-
-
-
-
-  public static KeyBundle generateSyncKeyBundle(final byte[] kB) throws InvalidKeyException, NoSuchAlgorithmException, UnsupportedEncodingException {
+  public static KeyBundle generateSyncKeyBundle(final byte[] kSync) throws InvalidKeyException, NoSuchAlgorithmException, UnsupportedEncodingException {
     byte[] encryptionKey = new byte[32];
     byte[] hmacKey = new byte[32];
-    byte[] derived = HKDF.derive(kB, new byte[0], FxAccountUtils.KW("oldsync"), 2*32);
-    System.arraycopy(derived, 0*32, encryptionKey, 0, 1*32);
-    System.arraycopy(derived, 1*32, hmacKey, 0, 1*32);
+    System.arraycopy(kSync, 0*32, encryptionKey, 0, 1*32);
+    System.arraycopy(kSync, 1*32, hmacKey, 0, 1*32);
     return new KeyBundle(encryptionKey, hmacKey);
   }
 
@@ -167,6 +160,16 @@ public class FxAccountUtils {
       kB[i] = (byte) (wrapkB[i] ^ unwrapkB[i]);
     }
     return kB;
+  }
+
+  
+
+
+
+
+
+  public static byte[] deriveSyncKey(byte[] kB) throws UnsupportedEncodingException, InvalidKeyException, NoSuchAlgorithmException {
+    return HKDF.derive(kB, new byte[0], FxAccountUtils.KW("oldsync"), 2*32);
   }
 
   
