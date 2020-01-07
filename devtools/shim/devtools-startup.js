@@ -32,6 +32,8 @@ const TOOLBAR_VISIBLE_PREF = "devtools.toolbar.visible";
 
 const DEVTOOLS_ENABLED_PREF = "devtools.enabled";
 
+const DEVTOOLS_POLICY_DISABLED_PREF = "devtools.policy.disabled";
+
 const { XPCOMUtils } = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm", {});
 ChromeUtils.defineModuleGetter(this, "Services",
                                "resource://gre/modules/Services.jsm");
@@ -192,24 +194,26 @@ DevToolsStartup.prototype = {
 
   developerToggleCreated: false,
 
+  isDisabledByPolicy: function () {
+    return Services.prefs.getBoolPref(DEVTOOLS_POLICY_DISABLED_PREF, false);
+  },
+
   handle: function (cmdLine) {
-    let consoleFlag = cmdLine.handleFlag("jsconsole", false);
-    let debuggerFlag = cmdLine.handleFlag("jsdebugger", false);
-    let devtoolsFlag = cmdLine.handleFlag("devtools", false);
+    let flags = this.readCommandLineFlags(cmdLine);
 
     
     let isInitialLaunch = cmdLine.state == Ci.nsICommandLine.STATE_INITIAL_LAUNCH;
     if (isInitialLaunch) {
       
-      let hasDevToolsFlag = consoleFlag || devtoolsFlag || debuggerFlag;
+      let hasDevToolsFlag = flags.console || flags.devtools || flags.debugger;
       this.setupEnabledPref(hasDevToolsFlag);
 
       
-      this.devtoolsFlag = devtoolsFlag;
+      this.devtoolsFlag = flags.devtools;
       
       Services.obs.addObserver(this.onWindowReady, "browser-delayed-startup-finished");
 
-      if (AppConstants.MOZ_DEV_EDITION) {
+      if (AppConstants.MOZ_DEV_EDITION && !this.isDisabledByPolicy()) {
         
         
         this.hookDeveloperToggle();
@@ -219,25 +223,39 @@ DevToolsStartup.prototype = {
       Services.prefs.addObserver(DEVTOOLS_ENABLED_PREF, this.onEnabledPrefChanged);
     }
 
-    if (consoleFlag) {
+    if (flags.console) {
       this.handleConsoleFlag(cmdLine);
     }
-    if (debuggerFlag) {
+    if (flags.debugger) {
       this.handleDebuggerFlag(cmdLine);
     }
 
-    let debuggerServerFlag;
+    if (flags.debuggerServer) {
+      this.handleDebuggerServerFlag(cmdLine, flags.debuggerServer);
+    }
+  },
+
+  readCommandLineFlags(cmdLine) {
+    
+    if (this.isDisabledByPolicy()) {
+      return { console: false, debugger: false, devtools: false, debuggerServer: false };
+    }
+
+    let console = cmdLine.handleFlag("jsconsole", false);
+    let debuggerFlag = cmdLine.handleFlag("jsdebugger", false);
+    let devtools = cmdLine.handleFlag("devtools", false);
+
+    let debuggerServer;
     try {
-      debuggerServerFlag =
+      debuggerServer =
         cmdLine.handleFlagWithParam("start-debugger-server", false);
     } catch (e) {
       
       
-      debuggerServerFlag = cmdLine.handleFlag("start-debugger-server", false);
+      debuggerServer = cmdLine.handleFlag("start-debugger-server", false);
     }
-    if (debuggerServerFlag) {
-      this.handleDebuggerServerFlag(cmdLine, debuggerServerFlag);
-    }
+
+    return { console, debugger: debuggerFlag, devtools, debuggerServer };
   },
 
   
@@ -245,6 +263,11 @@ DevToolsStartup.prototype = {
 
 
   onWindowReady(window) {
+    if (this.isDisabledByPolicy()) {
+      this.removeDevToolsMenus(window);
+      return;
+    }
+
     this.hookWindow(window);
 
     if (Services.prefs.getBoolPref(TOOLBAR_VISIBLE_PREF, false)) {
@@ -261,6 +284,14 @@ DevToolsStartup.prototype = {
     }
 
     JsonView.initialize();
+  },
+
+  removeDevToolsMenus(window) {
+    
+    window.document.getElementById("webDeveloperMenu").setAttribute("hidden", "true");
+    
+    window.document.getElementById("appMenu-developer-button").setAttribute("hidden",
+      "true");
   },
 
   onFirstWindowReady(window) {
@@ -616,6 +647,12 @@ DevToolsStartup.prototype = {
 
 
   openInstallPage: function (reason, keyId) {
+    
+    
+    if (this.isDisabledByPolicy()) {
+      return;
+    }
+
     let { gBrowser } = Services.wm.getMostRecentWindow("navigator:browser");
 
     

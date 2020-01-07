@@ -35,3 +35,7 @@ pref("devtools.onboarding.experiment.flipped", false);
 
 
 pref("devtools.onboarding.telemetry.logged", false);
+
+
+
+pref("devtools.policy.disabled", false);
