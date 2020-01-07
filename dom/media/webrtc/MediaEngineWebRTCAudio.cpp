@@ -553,8 +553,19 @@ MediaEngineWebRTCMicrophoneSource::NotifyPull(MediaStreamGraph *aGraph,
                                               StreamTime aDesiredTime,
                                               const PrincipalHandle& aPrincipalHandle)
 {
-  
   LOG_FRAMES(("NotifyPull, desired = %" PRId64, (int64_t) aDesiredTime));
+
+  StreamTime delta = aDesiredTime - aSource->GetEndOfAppendedData(aID);
+  if (delta <= 0) {
+    return;
+  }
+
+  
+  
+
+  AudioSegment audio;
+  audio.AppendNullData(delta);
+  aSource->AppendToTrack(aID, &audio);
 }
 
 void
