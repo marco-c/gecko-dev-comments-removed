@@ -1,7 +1,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/Promise.jsm");
+ChromeUtils.import("resource://gre/modules/Promise.jsm", this);
 
 const kDefaultWait = 2000;
 

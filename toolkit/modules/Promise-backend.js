@@ -54,8 +54,10 @@ var Components_ = this.require ? require("chrome").components : Components;
 
 
 if (Cu) {
-  ChromeUtils.import("resource://gre/modules/Services.jsm");
-  ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+  
+  
+  Cu.import("resource://gre/modules/Services.jsm");
+  Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
   XPCOMUtils.defineLazyServiceGetter(this, "FinalizationWitnessService",
                                      "@mozilla.org/toolkit/finalizationwitness;1",
