@@ -40,6 +40,13 @@ function setupActions() {
 
 
 function setupStore(input = [], hud, options, wrappedActions) {
+  if (!hud) {
+    hud = {
+      proxy: {
+        releaseActor: () => {}
+      }
+    };
+  }
   const store = configureStore(hud, options);
 
   
