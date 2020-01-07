@@ -32,7 +32,7 @@ var PLUGINS = [{
 }];
 
 
-function run_test() {
+add_task(async function checkBlocklistForRegexes() {
   createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "1.9");
 
   
@@ -41,15 +41,14 @@ function run_test() {
   var {blocklist} = Services;
 
   
-  Assert.ok(blocklist.getPluginBlocklistState(PLUGINS[0], "1", "1.9") == blocklist.STATE_BLOCKED);
+  Assert.equal(await blocklist.getPluginBlocklistState(PLUGINS[0], "1", "1.9"), blocklist.STATE_BLOCKED);
 
   
-  Assert.ok(blocklist.getPluginBlocklistState(PLUGINS[1], "1", "1.9") == blocklist.STATE_NOT_BLOCKED);
+  Assert.equal(await blocklist.getPluginBlocklistState(PLUGINS[1], "1", "1.9"), blocklist.STATE_NOT_BLOCKED);
 
   
-  Assert.ok(blocklist.getPluginBlocklistState(PLUGINS[2], "1", "1.9") == blocklist.STATE_BLOCKED);
+  Assert.equal(await blocklist.getPluginBlocklistState(PLUGINS[2], "1", "1.9"), blocklist.STATE_BLOCKED);
 
   
-  Assert.ok(blocklist.getPluginBlocklistState(PLUGINS[3], "1", "1.9") == blocklist.STATE_NOT_BLOCKED);
-
-}
+  Assert.equal(await blocklist.getPluginBlocklistState(PLUGINS[3], "1", "1.9"), blocklist.STATE_NOT_BLOCKED);
+});

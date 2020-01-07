@@ -98,6 +98,8 @@
 #include "nsVersionComparator.h"
 #include "NullPrincipal.h"
 
+#include "mozilla/dom/Promise.h"
+
 #if defined(XP_WIN)
 #include "nsIWindowMediator.h"
 #include "nsIBaseWindow.h"
@@ -113,6 +115,7 @@ using mozilla::plugins::FakePluginTag;
 using mozilla::plugins::PluginTag;
 using mozilla::dom::FakePluginTagInit;
 using mozilla::dom::FakePluginMimeEntry;
+using mozilla::dom::Promise;
 
 
 
@@ -247,6 +250,110 @@ static bool UnloadPluginsASAP()
   return (Preferences::GetUint(kPrefUnloadPluginTimeoutSecs, kDefaultPluginUnloadingTimeout) == 0);
 }
 
+namespace mozilla {
+namespace plugins {
+class BlocklistPromiseHandler final : public mozilla::dom::PromiseNativeHandler
+{
+  public:
+    NS_DECL_ISUPPORTS
+
+    BlocklistPromiseHandler(nsPluginTag *aTag, const bool aShouldSoftblock)
+      : mTag(aTag)
+      , mShouldDisableWhenSoftblocked(aShouldSoftblock)
+    {
+      MOZ_ASSERT(mTag, "Should always be passed a plugin tag");
+      sPendingBlocklistStateRequests++;
+    }
+
+    void
+    MaybeWriteBlocklistChanges()
+    {
+      
+      
+      
+      if (!mTag) {
+        return;
+      }
+      mTag = nullptr;
+      sPendingBlocklistStateRequests--;
+      
+      
+      if (!sPendingBlocklistStateRequests &&
+          sPluginBlocklistStatesChangedSinceLastWrite) {
+        sPluginBlocklistStatesChangedSinceLastWrite = false;
+
+        RefPtr<nsPluginHost> host = nsPluginHost::GetInst();
+        
+        host->WritePluginInfo();
+
+        
+        
+        host->IncrementChromeEpoch();
+        host->SendPluginsToContent();
+      }
+    }
+
+    void
+    ResolvedCallback(JSContext *aCx, JS::Handle<JS::Value> aValue) override
+    {
+      if (!aValue.isInt32()) {
+        MOZ_ASSERT(false, "Blocklist should always return int32");
+        return;
+      }
+      int32_t newState = aValue.toInt32();
+      MOZ_ASSERT(newState >= 0 && newState < nsIBlocklistService::STATE_MAX,
+        "Shouldn't get an out of bounds blocklist state");
+
+      
+      uint32_t oldState = nsIBlocklistService::STATE_NOT_BLOCKED;
+      MOZ_ALWAYS_SUCCEEDS(mTag->GetBlocklistState(&oldState));
+      bool changed = oldState != (uint32_t)newState;
+      mTag->SetBlocklistState(newState);
+
+      if (newState == nsIBlocklistService::STATE_SOFTBLOCKED && mShouldDisableWhenSoftblocked) {
+        mTag->SetEnabledState(nsIPluginTag::STATE_DISABLED);
+        changed = true;
+      }
+      sPluginBlocklistStatesChangedSinceLastWrite |= changed;
+
+      MaybeWriteBlocklistChanges();
+    }
+    void
+    RejectedCallback(JSContext *aCx, JS::Handle<JS::Value> aValue) override
+    {
+      MOZ_ASSERT(false, "Shouldn't reject plugin blocklist state request");
+      MaybeWriteBlocklistChanges();
+    }
+
+  private:
+    ~BlocklistPromiseHandler() {
+      
+      
+      MaybeWriteBlocklistChanges();
+    }
+
+    RefPtr<nsPluginTag> mTag;
+    bool mShouldDisableWhenSoftblocked;
+
+    
+    
+    
+    
+    
+    static bool sPluginBlocklistStatesChangedSinceLastWrite;
+    
+    static uint32_t sPendingBlocklistStateRequests;
+};
+
+NS_IMPL_ISUPPORTS0(BlocklistPromiseHandler)
+
+
+bool BlocklistPromiseHandler::sPluginBlocklistStatesChangedSinceLastWrite = false;
+uint32_t BlocklistPromiseHandler::sPendingBlocklistStateRequests = 0;
+} 
+} 
+
+
 nsPluginHost::nsPluginHost()
   : mPluginsLoaded(false)
   , mOverrideInternalTypes(false)
@@ -268,7 +375,6 @@ nsPluginHost::nsPluginHost()
     obsService->AddObserver(this, NS_XPCOM_SHUTDOWN_OBSERVER_ID, false);
     if (XRE_IsParentProcess()) {
       obsService->AddObserver(this, "blocklist-updated", false);
-      obsService->AddObserver(this, "blocklist-loaded", false);
     }
   }
 
@@ -2002,13 +2108,6 @@ nsresult nsPluginHost::ScanPluginsDirectory(nsIFile *pluginsDir,
   nsCOMArray<nsIFile> extensionDirs;
   GetExtensionDirectories(extensionDirs);
 
-  nsCOMPtr<nsIBlocklistService> blocklist =
-    do_GetService("@mozilla.org/extensions/blocklist;1");
-
-  bool isBlocklistLoaded = false;
-  if (blocklist && NS_FAILED(blocklist->GetIsLoaded(&isBlocklistLoaded))) {
-    isBlocklistLoaded = false;
-  }
   for (int32_t i = (pluginFiles.Length() - 1); i >= 0; i--) {
     nsCOMPtr<nsIFile>& localfile = pluginFiles[i];
 
@@ -2103,20 +2202,10 @@ nsresult nsPluginHost::ScanPluginsDirectory(nsIFile *pluginsDir,
       uint32_t state = nsIBlocklistService::STATE_NOT_BLOCKED;
       pluginTag = new nsPluginTag(&info, fileModTime, fromExtension, state);
       pluginTag->mLibrary = library;
-      
-      
-      if (isBlocklistLoaded &&
-          NS_SUCCEEDED(blocklist->GetPluginBlocklistState(pluginTag, EmptyString(),
-                                                          EmptyString(), &state))) {
-        pluginTag->SetBlocklistState(state);
-      }
       pluginFile.FreePluginInfo(info);
-
       
       
-      if (state == nsIBlocklistService::STATE_SOFTBLOCKED && !seenBefore) {
-        pluginTag->SetEnabledState(nsIPluginTag::STATE_DISABLED);
-      }
+      UpdatePluginBlocklistState(pluginTag, !seenBefore);
 
       
       
@@ -2149,6 +2238,26 @@ nsresult nsPluginHost::ScanPluginsDirectory(nsIFile *pluginsDir,
   }
 
   return NS_OK;
+}
+
+void
+nsPluginHost::UpdatePluginBlocklistState(nsPluginTag* aPluginTag, bool aShouldSoftblock)
+{
+  nsCOMPtr<nsIBlocklistService> blocklist =
+    do_GetService("@mozilla.org/extensions/blocklist;1");
+  MOZ_ASSERT(blocklist, "Should be able to access the blocklist");
+  if (!blocklist) {
+    return;
+  }
+  
+  nsCOMPtr<nsISupports> result;
+  blocklist->GetPluginBlocklistState(aPluginTag, EmptyString(),
+                                     EmptyString(), getter_AddRefs(result));
+  RefPtr<Promise> promise = do_QueryObject(result);
+  MOZ_ASSERT(promise, "Should always get a promise for plugin blocklist state.");
+  if (promise) {
+    promise->AppendNativeHandler(new mozilla::plugins::BlocklistPromiseHandler(aPluginTag, aShouldSoftblock));
+  }
 }
 
 nsresult nsPluginHost::ScanPluginsDirectoryList(nsISimpleEnumerator *dirEnum,
@@ -3407,35 +3516,14 @@ NS_IMETHODIMP nsPluginHost::Observe(nsISupports *aSubject,
       LoadPlugins();
     }
   }
-  if (XRE_IsParentProcess() &&
-      (!strcmp("blocklist-updated", aTopic) || !strcmp("blocklist-loaded", aTopic))) {
-    nsCOMPtr<nsIBlocklistService> blocklist =
-      do_GetService("@mozilla.org/extensions/blocklist;1");
-    if (!blocklist) {
-      return NS_OK;
-    }
+  if (XRE_IsParentProcess() && !strcmp("blocklist-updated", aTopic)) {
+    
+    
+    
     nsPluginTag* plugin = mPlugins;
-    bool blocklistAlteredPlugins = false;
     while (plugin) {
-      uint32_t blocklistState = nsIBlocklistService::STATE_NOT_BLOCKED;
-      nsresult rv = blocklist->GetPluginBlocklistState(plugin, EmptyString(),
-                                                       EmptyString(), &blocklistState);
-      NS_ENSURE_SUCCESS(rv, rv);
-      uint32_t oldBlocklistState;
-      plugin->GetBlocklistState(&oldBlocklistState);
-      plugin->SetBlocklistState(blocklistState);
-      blocklistAlteredPlugins |= (oldBlocklistState != blocklistState);
+      UpdatePluginBlocklistState(plugin);
       plugin = plugin->mNext;
-    }
-    if (blocklistAlteredPlugins) {
-      
-      WritePluginInfo();
-
-      
-      
-      
-      IncrementChromeEpoch();
-      SendPluginsToContent();
     }
   }
   return NS_OK;
