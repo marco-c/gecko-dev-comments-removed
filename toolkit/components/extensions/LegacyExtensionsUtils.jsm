@@ -131,7 +131,9 @@ class EmbeddedExtension {
 
 
 
-  startup(reason) {
+
+
+  startup(reason, addonData = {}) {
     if (this.started) {
       return Promise.reject(new Error("This embedded extension has already been started"));
     }
@@ -140,8 +142,13 @@ class EmbeddedExtension {
     this.startupPromise = new Promise((resolve, reject) => {
       let embeddedExtensionURI = Services.io.newURI("webextension/", null, this.resourceURI);
 
+      let {builtIn, signedState, temporarilyInstalled} = addonData;
+
       
       this.extension = new Extension({
+        builtIn,
+        signedState,
+        temporarilyInstalled,
         id: this.addonId,
         resourceURI: embeddedExtensionURI,
         version: this.version,
