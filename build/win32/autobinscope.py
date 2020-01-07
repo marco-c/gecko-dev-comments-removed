@@ -19,8 +19,8 @@ BINSCOPE_OUTPUT_LOGFILE = r".\binscope_xml_output.log"
 
 
 if len(sys.argv) < 3:
-    print """usage : autobinscope.by path_to_binary path_to_symbols [log_file_path]"
-		log_file_path is optional, log will be written to .\binscope_xml_output.log by default"""
+    print("""usage : autobinscope.by path_to_binary path_to_symbols [log_file_path]"
+    log_file_path is optional, log will be written to .\binscope_xml_output.log by default""")
     sys.exit(0)
 
 binary_path = sys.argv[1]
@@ -36,7 +36,8 @@ else:
 try:
     binscope_path = os.environ['BINSCOPE']
 except KeyError:
-    print "TEST-UNEXPECTED-FAIL | autobinscope.py | BINSCOPE environment variable is not set, can't check DEP/ASLR etc. status."
+    print("TEST-UNEXPECTED-FAIL | autobinscope.py | BINSCOPE environment variable is not set, "
+          "can't check DEP/ASLR etc. status.")
     sys.exit(0)
 
 try:
@@ -73,11 +74,12 @@ try:
 
 except WindowsError, (errno, strerror):
     if errno != 2 and errno != 3:
-        print "TEST-UNEXPECTED-FAIL | autobinscope.py | Unexpected error %d : %s" (
-            errno, strerror)
+        print("TEST-UNEXPECTED-FAIL | autobinscope.py | Unexpected error %d : %s" (
+            errno, strerror))
         sys.exit(0)
     else:
-        print "TEST-UNEXPECTED-FAIL | autobinscope.py | Could not locate binscope at location : %s\n" % binscope_path
+        print("TEST-UNEXPECTED-FAIL | autobinscope.py | Could not locate binscope at location : "
+              "%s\n" % binscope_path)
         sys.exit(0)
 
 proc.wait()
@@ -91,10 +93,10 @@ for line in output:
         errors += 1
 
 if proc.returncode != 0:
-    print "TEST-UNEXPECTED-FAIL | autobinscope.py | Binscope returned error code %d for file %s" % (
-        proc.returncode, binary_path)
+    print("TEST-UNEXPECTED-FAIL | autobinscope.py | Binscope returned error code %d for file %s" %
+          (proc.returncode, binary_path))
 elif errors != 0:
-    print "TEST-UNEXPECTED-FAIL | autobinscope.py | Binscope reported %d error(s) for file %s" % (
-        errors, binary_path)
+    print("TEST-UNEXPECTED-FAIL | autobinscope.py | Binscope reported %d error(s) for file %s" % (
+        errors, binary_path))
 else:
-    print "TEST-PASS | autobinscope.py | %s succeeded" % binary_path
+    print("TEST-PASS | autobinscope.py | %s succeeded" % binary_path)

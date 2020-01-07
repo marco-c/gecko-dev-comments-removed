@@ -1,5 +1,4 @@
 
-
 import json
 
 import re
@@ -64,4 +63,4 @@ if __name__ == '__main__':
                 }]}
             ]
         }
-        print "PERFHERDER_DATA: %s" % json.dumps(perfherder_data)
+        print("PERFHERDER_DATA: %s" % json.dumps(perfherder_data))

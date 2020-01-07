@@ -38,7 +38,7 @@ class OutputHandler(object):
     the count of these lines doesn't match the error count found during
     parsing, then the parsing has missed one or more errors and we can fail
     appropriately.
-    '''
+    '''  
 
     def __init__(self, logger):
         
