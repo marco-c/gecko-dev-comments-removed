@@ -252,11 +252,19 @@ public class GeckoSession extends LayerSession
                             GeckoSession.this, message.getStringArray("perms"),
                             new PermissionCallback("android", callback));
                 } else if ("GeckoView:ContentPermission".equals(event)) {
-                    final String type = message.getString("perm");
+                    final String typeString = message.getString("perm");
+                    final int type;
+                    if ("geolocation".equals(typeString)) {
+                        type = PermissionDelegate.PERMISSION_GEOLOCATION;
+                    } else if ("desktop_notification".equals(typeString)) {
+                        type = PermissionDelegate.PERMISSION_DESKTOP_NOTIFICATION;
+                    } else {
+                        throw new IllegalArgumentException("Unknown permission request: " + typeString);
+                    }
                     listener.requestContentPermission(
                             GeckoSession.this, message.getString("uri"),
                             type, message.getString("access"),
-                            new PermissionCallback(type, callback));
+                            new PermissionCallback(typeString, callback));
                 } else if ("GeckoView:MediaPermission".equals(event)) {
                     GeckoBundle[] videoBundles = message.getBundleArray("video");
                     GeckoBundle[] audioBundles = message.getBundleArray("audio");
@@ -1649,11 +1657,6 @@ public class GeckoSession extends LayerSession
 
 
 
-
-
-
-
-
         void promptForAuth(GeckoSession session, String title, String msg,
                            AuthenticationOptions options, AuthCallback callback);
 
@@ -1773,17 +1776,6 @@ public class GeckoSession extends LayerSession
 
 
         
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1958,6 +1950,18 @@ public class GeckoSession extends LayerSession
         
 
 
+
+        public static final int PERMISSION_GEOLOCATION = 0;
+
+        
+
+
+
+        public static final int PERMISSION_DESKTOP_NOTIFICATION = 1;
+
+        
+
+
         interface Callback {
             
 
@@ -1997,7 +2001,7 @@ public class GeckoSession extends LayerSession
 
 
 
-        void requestContentPermission(GeckoSession session, String uri, String type,
+        void requestContentPermission(GeckoSession session, String uri, int type,
                                       String access, Callback callback);
 
         class MediaSource {
