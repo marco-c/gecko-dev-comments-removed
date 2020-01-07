@@ -40,26 +40,26 @@ enum class BoxShadowClipMode : uint32_t {
 };
 
 enum class ClipMode {
-  Clip = 0,
-  ClipOut = 1,
+  Clip,
+  ClipOut,
 
   Sentinel 
 };
 
 enum class ExtendMode : uint32_t {
-  Clamp = 0,
-  Repeat = 1,
+  Clamp,
+  Repeat,
 
   Sentinel 
 };
 
 #if !(defined(XP_MACOSX) || defined(XP_WIN))
 enum class FontHinting : uint8_t {
-  None = 0,
-  Mono = 1,
-  Light = 2,
-  Normal = 3,
-  LCD = 4,
+  None,
+  Mono,
+  Light,
+  Normal,
+  LCD,
 
   Sentinel 
 };
@@ -67,10 +67,10 @@ enum class FontHinting : uint8_t {
 
 #if !(defined(XP_MACOSX) || defined(XP_WIN))
 enum class FontLCDFilter : uint8_t {
-  None = 0,
-  Default = 1,
-  Light = 2,
-  Legacy = 3,
+  None,
+  Default,
+  Light,
+  Legacy,
 
   Sentinel 
 };
@@ -78,8 +78,8 @@ enum class FontLCDFilter : uint8_t {
 
 enum class FontRenderMode : uint32_t {
   Mono = 0,
-  Alpha = 1,
-  Subpixel = 2,
+  Alpha,
+  Subpixel,
 
   Sentinel 
 };
@@ -111,33 +111,33 @@ enum class ImageRendering : uint32_t {
 
 enum class LevelFilter : uintptr_t {
   
-  Off = 0,
+  Off,
   
-  Error = 1,
+  Error,
   
-  Warn = 2,
+  Warn,
   
-  Info = 3,
+  Info,
   
-  Debug = 4,
+  Debug,
   
-  Trace = 5,
+  Trace,
 
   Sentinel 
 };
 
 enum class LineOrientation : uint8_t {
-  Vertical = 0,
-  Horizontal = 1,
+  Vertical,
+  Horizontal,
 
   Sentinel 
 };
 
 enum class LineStyle : uint8_t {
-  Solid = 0,
-  Dotted = 1,
-  Dashed = 2,
-  Wavy = 3,
+  Solid,
+  Dotted,
+  Dashed,
+  Wavy,
 
   Sentinel 
 };
@@ -164,18 +164,18 @@ enum class MixBlendMode : uint32_t {
 };
 
 enum class RepeatMode : uint32_t {
-  Stretch = 0,
-  Repeat = 1,
-  Round = 2,
-  Space = 3,
+  Stretch,
+  Repeat,
+  Round,
+  Space,
 
   Sentinel 
 };
 
 enum class SubpixelDirection : uint32_t {
   None = 0,
-  Horizontal = 1,
-  Vertical = 2,
+  Horizontal,
+  Vertical,
 
   Sentinel 
 };
@@ -205,9 +205,9 @@ enum class WrExternalImageBufferType {
 };
 
 enum class WrExternalImageType : uint32_t {
-  RawData = 0,
-  NativeTexture = 1,
-  Invalid = 2,
+  RawData,
+  NativeTexture,
+  Invalid,
 
   Sentinel 
 };
