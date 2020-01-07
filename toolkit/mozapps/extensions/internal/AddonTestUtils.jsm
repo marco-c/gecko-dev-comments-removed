@@ -336,6 +336,9 @@ var AddonTestUtils = {
     Services.prefs.setBoolPref("extensions.getAddons.cache.enabled", false);
 
     
+    Services.prefs.setBoolPref("extensions.showMismatchUI", false);
+
+    
     Services.prefs.setCharPref("extensions.update.url", "http://127.0.0.1/updateURL");
     Services.prefs.setCharPref("extensions.update.background.url", "http://127.0.0.1/updateBackgroundURL");
     Services.prefs.setCharPref("extensions.blocklist.url", "http://127.0.0.1/blocklistURL");

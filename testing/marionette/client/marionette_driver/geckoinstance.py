@@ -68,6 +68,7 @@ class GeckoInstance(object):
         
         
         "extensions.shield-recipe-client.api_url": "",
+        "extensions.showMismatchUI": False,
         
         "extensions.update.enabled": False,
         "extensions.update.notifyUser": False,
