@@ -314,8 +314,7 @@ HTMLEditor::DeleteRefToAnonymousNode(ManualNACPtr aContent,
 
     
     
-    aShell->ContentRemoved(
-      aContent->GetComposedDoc(), parentContent, aContent, nullptr);
+    aShell->ContentRemoved(aContent, nullptr);
 
     if (document) {
       aShell->EndUpdate(document, UPDATE_CONTENT_MODEL);

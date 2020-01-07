@@ -681,8 +681,7 @@ nsContentList::Item(uint32_t aIndex)
 }
 
 void
-nsContentList::AttributeChanged(nsIDocument* aDocument,
-                                Element* aElement,
+nsContentList::AttributeChanged(Element* aElement,
                                 int32_t aNameSpaceID,
                                 nsAtom* aAttribute,
                                 int32_t aModType,
@@ -715,11 +714,10 @@ nsContentList::AttributeChanged(nsIDocument* aDocument,
 }
 
 void
-nsContentList::ContentAppended(nsIDocument* aDocument,
-                               nsIContent* aContainer,
-                               nsIContent* aFirstNewContent)
+nsContentList::ContentAppended(nsIContent* aFirstNewContent)
 {
-  NS_PRECONDITION(aContainer, "Can't get at the new content if no container!");
+  nsIContent* container = aFirstNewContent->GetParent();
+  NS_PRECONDITION(container, "Can't get at the new content if no container!");
 
   
 
@@ -732,8 +730,8 @@ nsContentList::ContentAppended(nsIDocument* aDocument,
 
 
   if (mState == LIST_DIRTY ||
-      !nsContentUtils::IsInSameAnonymousTree(mRootNode, aContainer) ||
-      !MayContainRelevantNodes(aContainer) ||
+      !nsContentUtils::IsInSameAnonymousTree(mRootNode, container) ||
+      !MayContainRelevantNodes(container) ||
       (!aFirstNewContent->HasChildren() &&
        !aFirstNewContent->GetNextSibling() &&
        !MatchSelf(aFirstNewContent))) {
@@ -749,7 +747,7 @@ nsContentList::ContentAppended(nsIDocument* aDocument,
 
 
 
-  int32_t count = aContainer->GetChildCount();
+  int32_t count = container->GetChildCount();
 
   if (count > 0) {
     uint32_t ourCount = mElements.Length();
@@ -800,7 +798,7 @@ nsContentList::ContentAppended(nsIDocument* aDocument,
     if (mDeep) {
       for (nsIContent* cur = aFirstNewContent;
            cur;
-           cur = cur->GetNextNode(aContainer)) {
+           cur = cur->GetNextNode(container)) {
         if (cur->IsElement() && Match(cur->AsElement())) {
           mElements.AppendElement(cur);
         }
@@ -818,15 +816,13 @@ nsContentList::ContentAppended(nsIDocument* aDocument,
 }
 
 void
-nsContentList::ContentInserted(nsIDocument *aDocument,
-                               nsIContent* aContainer,
-                               nsIContent* aChild)
+nsContentList::ContentInserted(nsIContent* aChild)
 {
   
   
   
   if (mState != LIST_DIRTY &&
-      MayContainRelevantNodes(NODE_FROM(aContainer, aDocument)) &&
+      MayContainRelevantNodes(aChild->GetParentNode()) &&
       nsContentUtils::IsInSameAnonymousTree(mRootNode, aChild) &&
       MatchSelf(aChild)) {
     SetDirty();
@@ -836,16 +832,11 @@ nsContentList::ContentInserted(nsIDocument *aDocument,
 }
 
 void
-nsContentList::ContentRemoved(nsIDocument *aDocument,
-                              nsIContent* aContainer,
-                              nsIContent* aChild,
+nsContentList::ContentRemoved(nsIContent* aChild,
                               nsIContent* aPreviousSibling)
 {
-  
-  
-  
   if (mState != LIST_DIRTY &&
-      MayContainRelevantNodes(NODE_FROM(aContainer, aDocument)) &&
+      MayContainRelevantNodes(aChild->GetParentNode()) &&
       nsContentUtils::IsInSameAnonymousTree(mRootNode, aChild) &&
       MatchSelf(aChild)) {
     SetDirty();
@@ -1113,8 +1104,7 @@ nsCachableElementsByNameNodeList::WrapObject(JSContext *cx, JS::Handle<JSObject*
 }
 
 void
-nsCachableElementsByNameNodeList::AttributeChanged(nsIDocument* aDocument,
-                                                   Element* aElement,
+nsCachableElementsByNameNodeList::AttributeChanged(Element* aElement,
                                                    int32_t aNameSpaceID,
                                                    nsAtom* aAttribute,
                                                    int32_t aModType,
@@ -1126,7 +1116,7 @@ nsCachableElementsByNameNodeList::AttributeChanged(nsIDocument* aDocument,
     return;
   }
 
-  nsCacheableFuncStringContentList::AttributeChanged(aDocument, aElement,
+  nsCacheableFuncStringContentList::AttributeChanged(aElement,
                                                      aNameSpaceID, aAttribute,
                                                      aModType, aOldValue);
 }
@@ -1150,7 +1140,7 @@ nsLabelsNodeList::WrapObject(JSContext *cx, JS::Handle<JSObject*> aGivenProto)
 }
 
 void
-nsLabelsNodeList::AttributeChanged(nsIDocument* aDocument, Element* aElement,
+nsLabelsNodeList::AttributeChanged(Element* aElement,
                                    int32_t aNameSpaceID, nsAtom* aAttribute,
                                    int32_t aModType,
                                    const nsAttrValue* aOldValue)
@@ -1170,24 +1160,21 @@ nsLabelsNodeList::AttributeChanged(nsIDocument* aDocument, Element* aElement,
 }
 
 void
-nsLabelsNodeList::ContentAppended(nsIDocument* aDocument,
-                                  nsIContent* aContainer,
-                                  nsIContent* aFirstNewContent)
+nsLabelsNodeList::ContentAppended(nsIContent* aFirstNewContent)
 {
+  nsIContent* container = aFirstNewContent->GetParent();
   
   
   
   if (mState != LIST_DIRTY ||
-      nsContentUtils::IsInSameAnonymousTree(mRootNode, aContainer)) {
+      nsContentUtils::IsInSameAnonymousTree(mRootNode, container)) {
     SetDirty();
     return;
   }
 }
 
 void
-nsLabelsNodeList::ContentInserted(nsIDocument* aDocument,
-                                  nsIContent* aContainer,
-                                  nsIContent* aChild)
+nsLabelsNodeList::ContentInserted(nsIContent* aChild)
 {
   
   
@@ -1200,9 +1187,7 @@ nsLabelsNodeList::ContentInserted(nsIDocument* aDocument,
 }
 
 void
-nsLabelsNodeList::ContentRemoved(nsIDocument* aDocument,
-                                 nsIContent* aContainer,
-                                 nsIContent* aChild,
+nsLabelsNodeList::ContentRemoved(nsIContent* aChild,
                                  nsIContent* aPreviousSibling)
 {
   

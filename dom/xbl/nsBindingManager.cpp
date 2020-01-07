@@ -828,13 +828,12 @@ InsertAppendedContent(XBLChildrenElement* aPoint,
 }
 
 void
-nsBindingManager::ContentAppended(nsIDocument* aDocument,
-                                  nsIContent* aContainer,
-                                  nsIContent* aFirstNewContent)
+nsBindingManager::ContentAppended(nsIContent* aFirstNewContent)
 {
   
   XBLChildrenElement* point = nullptr;
-  nsIContent* parent = aContainer;
+  nsIContent* container = aFirstNewContent->GetParent();
+  nsIContent* parent = container;
 
   
   if (parent && parent->IsActiveChildrenElement()) {
@@ -863,7 +862,7 @@ nsBindingManager::ContentAppended(nsIDocument* aDocument,
       
       for (nsIContent* currentChild = aFirstNewContent; currentChild;
            currentChild = currentChild->GetNextSibling()) {
-        HandleChildInsertion(aContainer, currentChild, true);
+        HandleChildInsertion(container, currentChild, true);
       }
 
       return;
@@ -896,23 +895,19 @@ nsBindingManager::ContentAppended(nsIDocument* aDocument,
 }
 
 void
-nsBindingManager::ContentInserted(nsIDocument* aDocument,
-                                  nsIContent* aContainer,
-                                  nsIContent* aChild)
+nsBindingManager::ContentInserted(nsIContent* aChild)
 {
-  HandleChildInsertion(aContainer, aChild, false);
+  HandleChildInsertion(aChild->GetParent(), aChild, false);
 }
 
 void
-nsBindingManager::ContentRemoved(nsIDocument* aDocument,
-                                 nsIContent* aContainer,
-                                 nsIContent* aChild,
+nsBindingManager::ContentRemoved(nsIContent* aChild,
                                  nsIContent* aPreviousSibling)
 {
   aChild->SetXBLInsertionPoint(nullptr);
 
   XBLChildrenElement* point = nullptr;
-  nsIContent* parent = aContainer;
+  nsIContent* parent = aChild->GetParent();
 
   
   if (parent && parent->IsActiveChildrenElement()) {

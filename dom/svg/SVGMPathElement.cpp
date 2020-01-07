@@ -188,8 +188,7 @@ SVGMPathElement::GetStringInfo()
 
 
 void
-SVGMPathElement::AttributeChanged(nsIDocument* aDocument,
-                                  Element* aElement,
+SVGMPathElement::AttributeChanged(Element* aElement,
                                   int32_t aNameSpaceID,
                                   nsAtom* aAttribute,
                                   int32_t aModType,

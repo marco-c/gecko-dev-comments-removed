@@ -438,8 +438,7 @@ ShadowRoot::SetInnerHTML(const nsAString& aInnerHTML, ErrorResult& aError)
 }
 
 void
-ShadowRoot::AttributeChanged(nsIDocument* aDocument,
-                             Element* aElement,
+ShadowRoot::AttributeChanged(Element* aElement,
                              int32_t aNameSpaceID,
                              nsAtom* aAttribute,
                              int32_t aModType,
@@ -468,26 +467,22 @@ ShadowRoot::AttributeChanged(nsIDocument* aDocument,
 }
 
 void
-ShadowRoot::ContentAppended(nsIDocument* aDocument,
-                            nsIContent* aContainer,
-                            nsIContent* aFirstNewContent)
+ShadowRoot::ContentAppended(nsIContent* aFirstNewContent)
 {
   for (nsIContent* content = aFirstNewContent;
        content;
        content = content->GetNextSibling()) {
-    ContentInserted(aDocument, aContainer, content);
+    ContentInserted(content);
   }
 }
 
 void
-ShadowRoot::ContentInserted(nsIDocument* aDocument,
-                            nsIContent* aContainer,
-                            nsIContent* aChild)
+ShadowRoot::ContentInserted(nsIContent* aChild)
 {
   
   
   
-  if (!nsContentUtils::IsInSameAnonymousTree(aContainer, aChild)) {
+  if (aChild->IsRootOfAnonymousSubtree()) {
     return;
   }
 
@@ -495,7 +490,7 @@ ShadowRoot::ContentInserted(nsIDocument* aDocument,
     return;
   }
 
-  if (aContainer && aContainer == GetHost()) {
+  if (aChild->GetParent() == GetHost()) {
     if (const HTMLSlotElement* slot = AssignSlotFor(aChild)) {
       slot->EnqueueSlotChangeEvent();
     }
@@ -504,7 +499,7 @@ ShadowRoot::ContentInserted(nsIDocument* aDocument,
 
   
   
-  HTMLSlotElement* slot = HTMLSlotElement::FromContentOrNull(aContainer);
+  HTMLSlotElement* slot = HTMLSlotElement::FromContentOrNull(aChild->GetParent());
   if (slot && slot->GetContainingShadow() == this &&
       slot->AssignedNodes().IsEmpty()) {
     slot->EnqueueSlotChangeEvent();
@@ -512,15 +507,12 @@ ShadowRoot::ContentInserted(nsIDocument* aDocument,
 }
 
 void
-ShadowRoot::ContentRemoved(nsIDocument* aDocument,
-                           nsIContent* aContainer,
-                           nsIContent* aChild,
-                           nsIContent* aPreviousSibling)
+ShadowRoot::ContentRemoved(nsIContent* aChild, nsIContent* aPreviousSibling)
 {
   
   
   
- if (!nsContentUtils::IsInSameAnonymousTree(aContainer, aChild)) {
+ if (aChild->IsRootOfAnonymousSubtree()) {
     return;
   }
 
@@ -528,7 +520,7 @@ ShadowRoot::ContentRemoved(nsIDocument* aDocument,
     return;
   }
 
-  if (aContainer && aContainer == GetHost()) {
+  if (aChild->GetParent() == GetHost()) {
     nsAutoString slotName;
     if (aChild->IsElement()) {
       aChild->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::slot, slotName);
@@ -541,7 +533,7 @@ ShadowRoot::ContentRemoved(nsIDocument* aDocument,
 
   
   
-  HTMLSlotElement* slot = HTMLSlotElement::FromContentOrNull(aContainer);
+  HTMLSlotElement* slot = HTMLSlotElement::FromContentOrNull(aChild->GetParent());
   if (slot && slot->GetContainingShadow() == this &&
       slot->AssignedNodes().IsEmpty()) {
     slot->EnqueueSlotChangeEvent();

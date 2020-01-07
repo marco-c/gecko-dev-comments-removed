@@ -117,9 +117,7 @@ public:
 
 
 
-
-  virtual void CharacterDataWillChange(nsIDocument* aDocument,
-                                       nsIContent* aContent,
+  virtual void CharacterDataWillChange(nsIContent* aContent,
                                        const CharacterDataChangeInfo&) = 0;
 
   
@@ -139,9 +137,7 @@ public:
 
 
 
-
-  virtual void CharacterDataChanged(nsIDocument* aDocument,
-                                    nsIContent* aContent,
+  virtual void CharacterDataChanged(nsIContent* aContent,
                                     const CharacterDataChangeInfo&) = 0;
 
   
@@ -166,12 +162,10 @@ public:
 
 
 
-
-  virtual void AttributeWillChange(nsIDocument* aDocument,
-                                   mozilla::dom::Element* aElement,
-                                   int32_t      aNameSpaceID,
-                                   nsAtom*     aAttribute,
-                                   int32_t      aModType,
+  virtual void AttributeWillChange(mozilla::dom::Element* aElement,
+                                   int32_t aNameSpaceID,
+                                   nsAtom* aAttribute,
+                                   int32_t aModType,
                                    const nsAttrValue* aNewValue) = 0;
 
   
@@ -192,12 +186,10 @@ public:
 
 
 
-
-  virtual void AttributeChanged(nsIDocument* aDocument,
-                                mozilla::dom::Element* aElement,
-                                int32_t      aNameSpaceID,
-                                nsAtom*     aAttribute,
-                                int32_t      aModType,
+  virtual void AttributeChanged(mozilla::dom::Element* aElement,
+                                int32_t aNameSpaceID,
+                                nsAtom* aAttribute,
+                                int32_t aModType,
                                 const nsAttrValue* aOldValue) = 0;
 
   
@@ -207,9 +199,7 @@ public:
 
 
 
-
-  virtual void NativeAnonymousChildListChange(nsIDocument* aDocument,
-                                              nsIContent* aContent,
+  virtual void NativeAnonymousChildListChange(nsIContent* aContent,
                                               bool aIsRemove) {}
 
   
@@ -220,9 +210,7 @@ public:
 
 
 
-
-  virtual void AttributeSetToCurrentValue(nsIDocument* aDocument,
-                                          mozilla::dom::Element* aElement,
+  virtual void AttributeSetToCurrentValue(mozilla::dom::Element* aElement,
                                           int32_t aNameSpaceID,
                                           nsAtom* aAttribute) {}
 
@@ -238,12 +226,21 @@ public:
 
 
 
+  virtual void ContentAppended(nsIContent* aFirstNewContent) = 0;
+
+  
 
 
 
-  virtual void ContentAppended(nsIDocument* aDocument,
-                               nsIContent* aContainer,
-                               nsIContent* aFirstNewContent) = 0;
+
+
+
+
+
+
+
+
+  virtual void ContentInserted(nsIContent* aChild) = 0;
 
   
 
@@ -259,40 +256,7 @@ public:
 
 
 
-
-
-
-
-
-  virtual void ContentInserted(nsIDocument* aDocument,
-                               nsIContent* aContainer,
-                               nsIContent* aChild) = 0;
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  virtual void ContentRemoved(nsIDocument* aDocument,
-                              nsIContent* aContainer,
-                              nsIContent* aChild,
+  virtual void ContentRemoved(nsIContent* aChild,
                               nsIContent* aPreviousSibling) = 0;
 
  
@@ -336,50 +300,39 @@ public:
 NS_DEFINE_STATIC_IID_ACCESSOR(nsIMutationObserver, NS_IMUTATION_OBSERVER_IID)
 
 #define NS_DECL_NSIMUTATIONOBSERVER_CHARACTERDATAWILLCHANGE                  \
-    virtual void CharacterDataWillChange(nsIDocument* aDocument,             \
-                                         nsIContent* aContent,               \
+    virtual void CharacterDataWillChange(nsIContent* aContent,               \
                                          const CharacterDataChangeInfo& aInfo) override;
 
 #define NS_DECL_NSIMUTATIONOBSERVER_CHARACTERDATACHANGED                     \
-    virtual void CharacterDataChanged(nsIDocument* aDocument,                \
-                                      nsIContent* aContent,                  \
+    virtual void CharacterDataChanged(nsIContent* aContent,                  \
                                       const CharacterDataChangeInfo& aInfo) override;
 
 #define NS_DECL_NSIMUTATIONOBSERVER_ATTRIBUTEWILLCHANGE                      \
-    virtual void AttributeWillChange(nsIDocument* aDocument,                 \
-                                     mozilla::dom::Element* aElement,        \
+    virtual void AttributeWillChange(mozilla::dom::Element* aElement,        \
                                      int32_t aNameSpaceID,                   \
                                      nsAtom* aAttribute,                    \
                                      int32_t aModType,                       \
                                      const nsAttrValue* aNewValue) override;
 
 #define NS_DECL_NSIMUTATIONOBSERVER_NATIVEANONYMOUSCHILDLISTCHANGE           \
-    virtual void NativeAnonymousChildListChange(nsIDocument* aDocument,      \
-                                                nsIContent* aContent,        \
+    virtual void NativeAnonymousChildListChange(nsIContent* aContent,        \
                                                 bool aIsRemove) override;
 
 #define NS_DECL_NSIMUTATIONOBSERVER_ATTRIBUTECHANGED                         \
-    virtual void AttributeChanged(nsIDocument* aDocument,                    \
-                                  mozilla::dom::Element* aElement,           \
+    virtual void AttributeChanged(mozilla::dom::Element* aElement,           \
                                   int32_t aNameSpaceID,                      \
-                                  nsAtom* aAttribute,                       \
+                                  nsAtom* aAttribute,                        \
                                   int32_t aModType,                          \
                                   const nsAttrValue* aOldValue) override;
 
 #define NS_DECL_NSIMUTATIONOBSERVER_CONTENTAPPENDED                          \
-    virtual void ContentAppended(nsIDocument* aDocument,                     \
-                                 nsIContent* aContainer,                     \
-                                 nsIContent* aFirstNewContent) override;
+    virtual void ContentAppended(nsIContent* aFirstNewContent) override;
 
 #define NS_DECL_NSIMUTATIONOBSERVER_CONTENTINSERTED                          \
-    virtual void ContentInserted(nsIDocument* aDocument,                     \
-                                 nsIContent* aContainer,                     \
-                                 nsIContent* aChild) override;
+    virtual void ContentInserted(nsIContent* aChild) override;
 
 #define NS_DECL_NSIMUTATIONOBSERVER_CONTENTREMOVED                           \
-    virtual void ContentRemoved(nsIDocument* aDocument,                      \
-                                nsIContent* aContainer,                      \
-                                nsIContent* aChild,                          \
+    virtual void ContentRemoved(nsIContent* aChild,                          \
                                 nsIContent* aPreviousSibling) override;
 
 #define NS_DECL_NSIMUTATIONOBSERVER_NODEWILLBEDESTROYED                      \
@@ -402,26 +355,23 @@ NS_DEFINE_STATIC_IID_ACCESSOR(nsIMutationObserver, NS_IMUTATION_OBSERVER_IID)
 
 #define NS_IMPL_NSIMUTATIONOBSERVER_CORE_STUB(_class)                     \
 void                                                                      \
-_class::NodeWillBeDestroyed(const nsINode* aNode)                               \
+_class::NodeWillBeDestroyed(const nsINode* aNode)                         \
 {                                                                         \
 }
 
 #define NS_IMPL_NSIMUTATIONOBSERVER_CONTENT(_class)                       \
 void                                                                      \
-_class::CharacterDataWillChange(nsIDocument* aDocument,                   \
-                                nsIContent* aContent,                     \
+_class::CharacterDataWillChange(nsIContent* aContent,                     \
                                 const CharacterDataChangeInfo& aInfo)     \
 {                                                                         \
 }                                                                         \
 void                                                                      \
-_class::CharacterDataChanged(nsIDocument* aDocument,                      \
-                             nsIContent* aContent,                        \
+_class::CharacterDataChanged(nsIContent* aContent,                        \
                              const CharacterDataChangeInfo& aInfo)        \
 {                                                                         \
 }                                                                         \
 void                                                                      \
-_class::AttributeWillChange(nsIDocument* aDocument,                       \
-                            mozilla::dom::Element* aElement,              \
+_class::AttributeWillChange(mozilla::dom::Element* aElement,              \
                             int32_t aNameSpaceID,                         \
                             nsAtom* aAttribute,                          \
                             int32_t aModType,                             \
@@ -429,14 +379,12 @@ _class::AttributeWillChange(nsIDocument* aDocument,                       \
 {                                                                         \
 }                                                                         \
 void                                                                      \
-_class::NativeAnonymousChildListChange(nsIDocument* aDocument,            \
-                                       nsIContent* aContent,              \
+_class::NativeAnonymousChildListChange(nsIContent* aContent,              \
                                        bool aIsRemove)                    \
 {                                                                         \
 }                                                                         \
 void                                                                      \
-_class::AttributeChanged(nsIDocument* aDocument,                          \
-                         mozilla::dom::Element* aElement,                 \
+_class::AttributeChanged(mozilla::dom::Element* aElement,                 \
                          int32_t aNameSpaceID,                            \
                          nsAtom* aAttribute,                             \
                          int32_t aModType,                                \
@@ -444,22 +392,15 @@ _class::AttributeChanged(nsIDocument* aDocument,                          \
 {                                                                         \
 }                                                                         \
 void                                                                      \
-_class::ContentAppended(nsIDocument* aDocument,                           \
-                        nsIContent* aContainer,                           \
-                        nsIContent* aFirstNewContent)                     \
+_class::ContentAppended(nsIContent* aFirstNewContent)                     \
 {                                                                         \
 }                                                                         \
 void                                                                      \
-_class::ContentInserted(nsIDocument* aDocument,                           \
-                        nsIContent* aContainer,                           \
-                        nsIContent* aChild)                               \
+_class::ContentInserted(nsIContent* aChild)                               \
 {                                                                         \
 }                                                                         \
 void                                                                      \
-_class::ContentRemoved(nsIDocument* aDocument,                            \
-                       nsIContent* aContainer,                            \
-                       nsIContent* aChild,                                \
-                       nsIContent* aPreviousSibling)                      \
+_class::ContentRemoved(nsIContent* aChild, nsIContent* aPreviousSibling)  \
 {                                                                         \
 }                                                                         \
 void                                                                      \
