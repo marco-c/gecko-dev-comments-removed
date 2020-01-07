@@ -34,6 +34,36 @@ extern "C" {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef enum {
+  ATK_SCROLL_TOP_LEFT,
+  ATK_SCROLL_BOTTOM_RIGHT,
+  ATK_SCROLL_TOP_EDGE,
+  ATK_SCROLL_BOTTOM_EDGE,
+  ATK_SCROLL_LEFT_EDGE,
+  ATK_SCROLL_RIGHT_EDGE,
+  ATK_SCROLL_ANYWHERE
+} AtkScrollType;
+
+
+
+
+
+
+
+
 #define ATK_TYPE_COMPONENT                    (atk_component_get_type ())
 #define ATK_IS_COMPONENT(obj)                 G_TYPE_CHECK_INSTANCE_TYPE ((obj), ATK_TYPE_COMPONENT)
 #define ATK_COMPONENT(obj)                    G_TYPE_CHECK_INSTANCE_CAST ((obj), ATK_TYPE_COMPONENT, AtkComponent)
@@ -115,6 +145,18 @@ struct _AtkComponentIface
   void                     (* bounds_changed)   (AtkComponent   *component,
                                                  AtkRectangle   *bounds);
   gdouble                  (* get_alpha)        (AtkComponent   *component);
+
+  
+
+
+
+  gboolean                (*scroll_to)          (AtkComponent   *component,
+                                                 AtkScrollType   type);
+
+  gboolean                (*scroll_to_point)    (AtkComponent   *component,
+                                                 AtkCoordType    coords,
+                                                 gint            x,
+                                                 gint            y);
 };
 
 GType atk_component_get_type (void);
@@ -163,6 +205,14 @@ gboolean              atk_component_set_size               (AtkComponent    *com
                                                             gint            width,
                                                             gint            height);
 gdouble               atk_component_get_alpha              (AtkComponent    *component);
+gboolean              atk_component_scroll_to              (AtkComponent    *component,
+                                                            AtkScrollType   type);
+
+gboolean              atk_component_scroll_to_point        (AtkComponent    *component,
+                                                            AtkCoordType    coords,
+                                                            gint            x,
+                                                            gint            y);
+
 #ifdef __cplusplus
 }
 #endif 
