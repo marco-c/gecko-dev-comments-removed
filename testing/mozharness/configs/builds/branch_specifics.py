@@ -217,9 +217,6 @@ config = {
         'repo_path': 'integration/autoland',
     },
     'ux': {},
-    'date': {
-        'update_channel': 'nightly-date',
-    },
     'cypress': {
         
         'branch_uses_per_checkin_strategy': True,
