@@ -119,7 +119,7 @@ var PropertiesView = {
   
 
 
-  _onNodeSet: function (_, id) {
+  _onNodeSet: function (id) {
     this._setAudioNode(gAudioNodes.get(id));
   },
 

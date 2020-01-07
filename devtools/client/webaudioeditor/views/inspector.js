@@ -141,7 +141,7 @@ var InspectorView = {
 
 
 
-  _onNodeSelect: function (_, id) {
+  _onNodeSelect: function (id) {
     this.setCurrentAudioNode(gAudioNodes.get(id));
 
     

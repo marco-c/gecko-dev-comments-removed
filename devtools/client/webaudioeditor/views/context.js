@@ -285,7 +285,7 @@ var ContextView = {
   
 
 
-  _onThemeChange: function (eventName, theme) {
+  _onThemeChange: function (theme) {
     let markerColor = MARKER_STYLING[theme];
     let marker = $("#arrowhead");
     if (marker) {
