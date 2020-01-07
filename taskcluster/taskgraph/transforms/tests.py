@@ -706,6 +706,10 @@ def enable_code_coverage(config, tests):
     """Enable code coverage for the ccov and jsdcov build-platforms"""
     for test in tests:
         if 'ccov' in test['build-platform']:
+            
+            if 'opt' in test['build-platform'] or 'fuzzing' in test['build-platform']:
+                test['run-on-projects'] = []
+                continue
             test['mozharness'].setdefault('extra-options', []).append('--code-coverage')
             test['instance-size'] = 'xlarge'
             
