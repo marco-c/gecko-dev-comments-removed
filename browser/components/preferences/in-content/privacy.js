@@ -274,12 +274,6 @@ var gPrivacyPane = {
       }
       return false;
     });
-    setEventListener("historyRememberCookies", "click", function(event) {
-      if (event.button == 0) {
-        gPrivacyPane.showCookies();
-      }
-      return false;
-    });
     setEventListener("historyDontRememberClear", "click", function(event) {
       if (event.button == 0) {
         gPrivacyPane.clearPrivateDataNow(true);
@@ -296,8 +290,6 @@ var gPrivacyPane = {
       gPrivacyPane.updateAutostart);
     setEventListener("cookieExceptions", "command",
       gPrivacyPane.showCookieExceptions);
-    setEventListener("showCookiesButton", "command",
-      gPrivacyPane.showCookies);
     setEventListener("clearDataSettings", "command",
       gPrivacyPane.showClearPrivateDataSettings);
     setEventListener("disableTrackingProtectionExtension", "command",
@@ -423,12 +415,6 @@ var gPrivacyPane = {
     ]);
     appendSearchKeywords("cookieExceptions", [
       bundlePrefs.getString("cookiepermissionstext"),
-    ]);
-    appendSearchKeywords("showCookiesButton", [
-      bundlePrefs.getString("cookiesAll"),
-      bundlePrefs.getString("removeAllCookies.label"),
-      bundlePrefs.getString("removeAllShownCookies.label"),
-      bundlePrefs.getString("removeSelectedCookies.label"),
     ]);
     appendSearchKeywords("trackingProtectionExceptions", [
       bundlePrefs.getString("trackingprotectionpermissionstitle"),
@@ -837,7 +823,9 @@ var gPrivacyPane = {
     acceptThirdPartyLabel.disabled = acceptThirdPartyMenu.disabled = !acceptCookies;
     keepUntil.disabled = menu.disabled = this._autoStartPrivateBrowsing || !acceptCookies;
 
-    return acceptCookies;
+    
+    
+    return acceptCookies ? "0" : "2";
   },
 
   
@@ -849,10 +837,10 @@ var gPrivacyPane = {
     var acceptThirdPartyMenu = document.getElementById("acceptThirdPartyMenu");
 
     
-    if (accept.checked)
+    if (accept.value == "0")
       acceptThirdPartyMenu.selectedIndex = 0;
 
-    return accept.checked ? 0 : 2;
+    return parseInt(accept.value, 10);
   },
 
   
@@ -904,13 +892,6 @@ var gPrivacyPane = {
     };
     gSubDialog.open("chrome://browser/content/preferences/permissions.xul",
       null, params);
-  },
-
-  
-
-
-  showCookies(aCategory) {
-    gSubDialog.open("chrome://browser/content/preferences/cookies.xul");
   },
 
   
