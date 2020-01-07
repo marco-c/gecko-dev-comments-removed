@@ -84,7 +84,7 @@ function writeRelativePointer(aId, aName) {
 
 function run_test() {
   
-  if (!Services.prefs.getBoolPref("extensions.alwaysUnpack"))
+  if (!TEST_UNPACKED)
     return;
 
   do_test_pending();
