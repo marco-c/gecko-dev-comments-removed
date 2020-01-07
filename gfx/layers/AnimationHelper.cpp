@@ -6,7 +6,7 @@
 
 #include "AnimationHelper.h"
 #include "mozilla/ComputedTimingFunction.h" 
-#include "mozilla/dom/AnimationEffectReadOnlyBinding.h" 
+#include "mozilla/dom/AnimationEffectBinding.h" 
 #include "mozilla/dom/KeyframeEffectBinding.h" 
 #include "mozilla/dom/KeyframeEffect.h" 
 #include "mozilla/dom/Nullable.h" 
@@ -233,7 +233,7 @@ AnimationHelper::SampleAnimationForEachNode(
         .MultDouble(animation.playbackRate());
 
     ComputedTiming computedTiming =
-      dom::AnimationEffectReadOnly::GetComputedTimingAt(
+      dom::AnimationEffect::GetComputedTimingAt(
         dom::Nullable<TimeDuration>(elapsedDuration), animData.mTiming,
         animation.playbackRate());
 

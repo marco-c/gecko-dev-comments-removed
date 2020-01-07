@@ -125,7 +125,7 @@ var interfaceNamesInGlobalScope =
 
     {name: "Animation", insecureContext: true},
 
-    {name: "AnimationEffectReadOnly", insecureContext: true, release: false},
+    {name: "AnimationEffect", insecureContext: true, release: false},
 
     {name: "AnimationEffectTiming", insecureContext: true, release: false},
 

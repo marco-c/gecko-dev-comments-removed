@@ -15,8 +15,8 @@
 #include "mozilla/StickyTimeDuration.h"
 #include "mozilla/TimeStamp.h" 
 
-#include "mozilla/dom/AnimationEffectReadOnlyBinding.h" 
-                                                        
+#include "mozilla/dom/AnimationEffectBinding.h" 
+                                                
 
 class nsIDocument;
 

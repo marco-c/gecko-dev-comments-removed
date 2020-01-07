@@ -88,7 +88,7 @@ namespace {
 
  already_AddRefed<Animation>
 Animation::Constructor(const GlobalObject& aGlobal,
-                       AnimationEffectReadOnly* aEffect,
+                       AnimationEffect* aEffect,
                        const Optional<AnimationTimeline*>& aTimeline,
                        ErrorResult& aRv)
 {
@@ -125,7 +125,7 @@ Animation::SetId(const nsAString& aId)
 }
 
 void
-Animation::SetEffect(AnimationEffectReadOnly* aEffect)
+Animation::SetEffect(AnimationEffect* aEffect)
 {
   SetEffectNoUpdate(aEffect);
   PostUpdate();
@@ -133,7 +133,7 @@ Animation::SetEffect(AnimationEffectReadOnly* aEffect)
 
 
 void
-Animation::SetEffectNoUpdate(AnimationEffectReadOnly* aEffect)
+Animation::SetEffectNoUpdate(AnimationEffect* aEffect)
 {
   RefPtr<Animation> kungFuDeathGrip(this);
 
@@ -159,7 +159,7 @@ Animation::SetEffectNoUpdate(AnimationEffectReadOnly* aEffect)
     }
 
     
-    RefPtr<AnimationEffectReadOnly> oldEffect = mEffect;
+    RefPtr<AnimationEffect> oldEffect = mEffect;
     mEffect = nullptr;
     oldEffect->SetAnimation(nullptr);
 
@@ -169,7 +169,7 @@ Animation::SetEffectNoUpdate(AnimationEffectReadOnly* aEffect)
 
   if (aEffect) {
     
-    RefPtr<AnimationEffectReadOnly> newEffect = aEffect;
+    RefPtr<AnimationEffect> newEffect = aEffect;
     Animation* prevAnim = aEffect->GetAnimation();
     if (prevAnim) {
       prevAnim->SetEffect(nullptr);
