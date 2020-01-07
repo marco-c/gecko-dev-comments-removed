@@ -6,16 +6,30 @@
 #include "CustomMatchers.h"
 
 void CanRunScriptChecker::registerMatchers(MatchFinder *AstMatcher) {
+  auto Refcounted = qualType(hasDeclaration(cxxRecordDecl(isRefCounted())));
   auto InvalidArg =
       
       ignoreTrivials(expr(
           
-          hasType(pointerType(
-              pointee(hasDeclaration(cxxRecordDecl(isRefCounted()))))),
+          anyOf(
+            hasType(Refcounted),
+            hasType(pointsTo(Refcounted)),
+            hasType(references(Refcounted))
+          ),
           
           unless(cxxThisExpr()),
           
           unless(cxxMemberCallExpr(on(hasType(isSmartPtrToRefCounted())))),
+          
+          unless(
+            allOf(
+              cxxOperatorCallExpr(hasOverloadedOperatorName("*")),
+              callExpr(allOf(
+                hasAnyArgument(hasType(isSmartPtrToRefCounted())),
+                argumentCountIs(1)
+              ))
+            )
+          ),
           
           unless(declRefExpr(to(parmVarDecl()))),
           
