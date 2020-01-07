@@ -106,25 +106,9 @@ nsMathMLElement::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
     aDocument->RegisterPendingLinkUpdate(this);
   }
 
-  nsIDocument* doc = GetComposedDoc();
-  if (doc) {
-    if (!doc->GetMathMLEnabled()) {
-      
-      
-      
-      auto cache = nsLayoutStylesheetCache::Singleton();
-      doc->SetMathMLEnabled();
-      doc->EnsureOnDemandBuiltInUASheet(cache->MathMLSheet());
-
-      
-      
-      
-      RefPtr<nsPresContext> presContext = doc->GetPresContext();
-      if (presContext) {
-        presContext->
-          PostRebuildAllStyleDataEvent(nsChangeHint(0), eRestyle_Subtree);
-      }
-    }
+  
+  if (nsIDocument* doc = GetComposedDoc()) {
+    doc->SetMathMLEnabled();
   }
 
   return rv;
