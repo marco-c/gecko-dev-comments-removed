@@ -28,7 +28,6 @@ const {
   ElementNotInteractableError,
   InsecureCertificateError,
   InvalidArgumentError,
-  InvalidElementStateError,
   InvalidSelectorError,
   NoSuchElementError,
   NoSuchFrameError,
@@ -1324,21 +1323,7 @@ async function sendKeysToElement(el, val) {
 
 
 function clearElement(el) {
-  try {
-    if (el.type == "file") {
-      el.value = null;
-    } else {
-      atom.clearElement(el, curContainer.frame);
-    }
-  } catch (e) {
-    
-    
-    if (e.name == "InvalidElementStateError") {
-      throw new InvalidElementStateError(e.message);
-    } else {
-      throw e;
-    }
-  }
+  interaction.clearElement(el);
 }
 
 
