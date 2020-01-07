@@ -12,37 +12,19 @@ transforms = TransformSequence()
 
 
 @transforms.add
-def tweak_beetmover_source_dependencies_and_upstream_artifacts(config, jobs):
+def remove_build_dependency_in_beetmover_source(config, jobs):
     for job in jobs:
         
         
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
+        del job['dependencies']['build']
 
-        if job['attributes']['shipping_product'] == 'firefox':
-            job['dependencies']['build'] = u'build-linux64-nightly/opt'
-        elif job['attributes']['shipping_product'] == 'fennec':
-            job['dependencies']['build'] = u'build-android-api-16-nightly/opt'
-        elif job['attributes']['shipping_product'] == 'devedition':
-            job['dependencies']['build'] = u'build-linux64-devedition-nightly/opt'
-        else:
-            raise NotImplemented(
-                "Unknown shipping_product {} for beetmover_source!".format(
-                    job['attributes']['shipping_product']
-                )
-            )
-        upstream_artifacts = job['worker']['upstream-artifacts']
-        for artifact in upstream_artifacts:
-            if artifact['taskType'] == 'build':
-                artifact['paths'].append(u'public/build/balrog_props.json')
-                break
+        all_upstream_artifacts = job['worker']['upstream-artifacts']
+        upstream_artifacts_without_build = [
+            upstream_artifact
+            for upstream_artifact in all_upstream_artifacts
+            if upstream_artifact['taskId']['task-reference'] != '<build>'
+        ]
+        job['worker']['upstream-artifacts'] = upstream_artifacts_without_build
 
         yield job
