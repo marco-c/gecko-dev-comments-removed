@@ -1143,6 +1143,9 @@ class JSScript : public js::gc::TenuredCell
     bool isExprBody_:1;
 
     
+    bool hideScriptFromDebugger_:1;
+
+    
     
   protected:
 #if JS_BITS_PER_WORD == 32
@@ -1461,6 +1464,13 @@ class JSScript : public js::gc::TenuredCell
     }
     void setIsExprBody() {
         isExprBody_ = true;
+    }
+
+    bool hideScriptFromDebugger() const {
+        return hideScriptFromDebugger_;
+    }
+    void clearHideScriptFromDebugger() {
+        hideScriptFromDebugger_ = false;
     }
 
     void setNeedsHomeObject() {

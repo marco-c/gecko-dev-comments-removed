@@ -1800,6 +1800,11 @@ Debugger::onNewScript(JSContext* cx, HandleScript script)
     MOZ_ASSERT_IF(!script->compartment()->creationOptions().invisibleToDebugger() &&
                   !script->selfHosted(),
                   script->compartment()->firedOnNewGlobalObject);
+
+    
+    if (script->hideScriptFromDebugger())
+        return;
+
     if (script->compartment()->isDebuggee())
         slowPathOnNewScript(cx, script);
 }
