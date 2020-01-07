@@ -38,11 +38,6 @@ public:
   
 
 
-  virtual bool OnDocumentParserError() = 0;
-
-  
-
-
   virtual void ResetDocumentDirection() = 0;
 
   virtual void ResetDocumentLWTheme() = 0;

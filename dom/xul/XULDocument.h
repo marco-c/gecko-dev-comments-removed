@@ -111,7 +111,10 @@ public:
 
 
     nsresult OnPrototypeLoadDone(bool aResumeWalk);
-    bool OnDocumentParserError() override;
+    
+
+
+    bool OnDocumentParserError();
 
     
     virtual nsresult Clone(mozilla::dom::NodeInfo *aNodeInfo, nsINode **aResult,
