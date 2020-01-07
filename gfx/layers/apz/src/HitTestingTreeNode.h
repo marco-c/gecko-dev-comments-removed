@@ -95,8 +95,7 @@ public:
 
   
 
-  void SetScrollbarData(FrameMetrics::ViewID aScrollViewId,
-                        const uint64_t& aScrollbarAnimationId,
+  void SetScrollbarData(const uint64_t& aScrollbarAnimationId,
                         const ScrollbarData& aScrollbarData);
   bool MatchesScrollDragMetrics(const AsyncDragMetrics& aDragMetrics) const;
   bool IsScrollbarNode() const;  
@@ -139,10 +138,6 @@ private:
   bool mIsPrimaryApzcHolder;
 
   LayersId mLayersId;
-
-  
-  
-  FrameMetrics::ViewID mScrollViewId;
 
   
   

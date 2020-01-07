@@ -878,8 +878,7 @@ APZCTreeManager::PrepareNodeForLayer(const ScrollNode& aLayer,
           : Nothing(),
         GetEventRegionsOverride(aParent, aLayer),
         aLayer.IsBackfaceHidden());
-    node->SetScrollbarData(aLayer.GetScrollbarTargetContainerId(),
-                           aLayer.GetScrollbarAnimationId(),
+    node->SetScrollbarData(aLayer.GetScrollbarAnimationId(),
                            aLayer.GetScrollbarData());
     node->SetFixedPosData(aLayer.GetFixedPositionScrollContainerId());
     return node;
@@ -1098,8 +1097,7 @@ APZCTreeManager::PrepareNodeForLayer(const ScrollNode& aLayer,
   
   
   
-  node->SetScrollbarData(aLayer.GetScrollbarTargetContainerId(),
-                         aLayer.GetScrollbarAnimationId(),
+  node->SetScrollbarData(aLayer.GetScrollbarAnimationId(),
                          aLayer.GetScrollbarData());
   node->SetFixedPosData(aLayer.GetFixedPositionScrollContainerId());
   return node;

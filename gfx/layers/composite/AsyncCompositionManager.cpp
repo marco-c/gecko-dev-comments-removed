@@ -649,20 +649,17 @@ SampleAnimations(Layer* aLayer,
       aLayer,
       [&] (Layer* layer)
       {
-        AnimationArray& animations = layer->GetAnimations();
-        if (animations.IsEmpty()) {
-          return;
-        }
-        isAnimating = true;
         bool hasInEffectAnimations = false;
         AnimationValue animationValue = layer->GetBaseAnimationStyle();
-        AnimationHelper::SampleAnimationForEachNode(aTime,
-                                                    animations,
-                                                    layer->GetAnimationData(),
-                                                    animationValue,
-                                                    hasInEffectAnimations);
+        if (AnimationHelper::SampleAnimationForEachNode(aTime,
+                                                        layer->GetAnimations(),
+                                                        layer->GetAnimationData(),
+                                                        animationValue,
+                                                        hasInEffectAnimations)) {
+          isAnimating = true;
+        }
         if (hasInEffectAnimations) {
-          Animation& animation = animations.LastElement();
+          Animation& animation = layer->GetAnimations().LastElement();
           ApplyAnimatedValue(layer,
                              aStorage,
                              animation.property(),
@@ -758,7 +755,7 @@ MoveScrollbarForLayerMargin(Layer* aRoot, FrameMetrics::ViewID aRootScrollId,
     [aRootScrollId](Layer* aNode) {
       return (aNode->GetScrollbarData().mDirection.isSome() &&
               *aNode->GetScrollbarData().mDirection == ScrollDirection::eHorizontal &&
-              aNode->GetScrollbarTargetViewId() == aRootScrollId);
+              aNode->GetScrollbarData().mTargetViewId == aRootScrollId);
     });
   if (scrollbar) {
     
@@ -1053,7 +1050,7 @@ LayerIsScrollbarTarget(const LayerMetricsWrapper& aTarget, Layer* aScrollbar)
   }
   const FrameMetrics& metrics = aTarget.Metrics();
   MOZ_ASSERT(metrics.IsScrollable());
-  if (metrics.GetScrollId() != aScrollbar->GetScrollbarTargetViewId()) {
+  if (metrics.GetScrollId() != aScrollbar->GetScrollbarData().mTargetViewId) {
     return false;
   }
   return !metrics.IsScrollInfoLayer();
