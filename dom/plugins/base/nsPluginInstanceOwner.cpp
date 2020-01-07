@@ -497,7 +497,7 @@ NS_IMETHODIMP nsPluginInstanceOwner::GetDocument(nsIDocument* *aDocument)
 
   
   
-  NS_IF_ADDREF(*aDocument = content->OwnerDoc());
+  NS_ADDREF(*aDocument = content->OwnerDoc());
   return NS_OK;
 }
 
@@ -3292,7 +3292,7 @@ void nsPluginInstanceOwner::SetFrame(nsPluginFrame *aFrame)
     }
 
     
-    if (content && content->OwnerDoc() && content->OwnerDoc()->GetWindow()) {
+    if (content && content->OwnerDoc()->GetWindow()) {
       nsCOMPtr<EventTarget> windowRoot = content->OwnerDoc()->GetWindow()->GetTopWindowRoot();
       if (windowRoot) {
         windowRoot->AddEventListener(NS_LITERAL_STRING("activate"),
