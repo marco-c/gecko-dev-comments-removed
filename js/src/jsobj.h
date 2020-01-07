@@ -1031,10 +1031,6 @@ GetThisValueOfWith(JSObject* env);
 
 typedef JSObject* (*ClassInitializerOp)(JSContext* cx, JS::HandleObject obj);
 
-
-extern bool
-IsStandardPrototype(JSObject* obj, JSProtoKey key);
-
 } 
 
 namespace js {
