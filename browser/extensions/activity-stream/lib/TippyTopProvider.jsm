@@ -26,6 +26,7 @@ this.TippyTopProvider = class TippyTopProvider {
     this._sitesByDomain = new Map();
     this.initialized = false;
   }
+
   async init() {
     
     try {
@@ -41,6 +42,7 @@ this.TippyTopProvider = class TippyTopProvider {
       Cu.reportError("Failed to load tippy top manifest.");
     }
   }
+
   processSite(site) {
     const tippyTop = this._sitesByDomain.get(getDomain(site.url));
     if (tippyTop) {

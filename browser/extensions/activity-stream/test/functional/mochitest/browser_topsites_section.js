@@ -4,11 +4,11 @@
 test_newtab(
   
   function topsites_edit() {
-    const topsitesEditBtn = content.document.querySelector(".edit-topsites-button button");
-    topsitesEditBtn.click();
+    const topsitesAddBtn = content.document.querySelector(".add-topsites-button button");
+    topsitesAddBtn.click();
 
-    let found = content.document.querySelector(".edit-topsites");
-    ok(found && !found.hidden, "Should find a visible topsites edit menu");
+    let found = content.document.querySelector(".topsite-form");
+    ok(found && !found.hidden, "Should find a visible topsite form");
 
     found = content.document.querySelector(".modal-overlay");
     ok(found && !found.hidden, "Should find a visible overlay");

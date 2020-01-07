@@ -4,23 +4,23 @@
 "use strict";
 
 const {utils: Cu} = Components;
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
-const {actionCreators: ac, actionTypes: at} = ChromeUtils.import("resource://activity-stream/common/Actions.jsm", {});
-const {TippyTopProvider} = ChromeUtils.import("resource://activity-stream/lib/TippyTopProvider.jsm", {});
-const {insertPinned, TOP_SITES_SHOWMORE_LENGTH} = ChromeUtils.import("resource://activity-stream/common/Reducers.jsm", {});
-const {Dedupe} = ChromeUtils.import("resource://activity-stream/common/Dedupe.jsm", {});
-const {shortURL} = ChromeUtils.import("resource://activity-stream/lib/ShortURL.jsm", {});
+const {actionCreators: ac, actionTypes: at} = Cu.import("resource://activity-stream/common/Actions.jsm", {});
+const {TippyTopProvider} = Cu.import("resource://activity-stream/lib/TippyTopProvider.jsm", {});
+const {insertPinned, TOP_SITES_SHOWMORE_LENGTH} = Cu.import("resource://activity-stream/common/Reducers.jsm", {});
+const {Dedupe} = Cu.import("resource://activity-stream/common/Dedupe.jsm", {});
+const {shortURL} = Cu.import("resource://activity-stream/lib/ShortURL.jsm", {});
 
-ChromeUtils.defineModuleGetter(this, "filterAdult",
+XPCOMUtils.defineLazyModuleGetter(this, "filterAdult",
   "resource://activity-stream/lib/FilterAdult.jsm");
-ChromeUtils.defineModuleGetter(this, "LinksCache",
+XPCOMUtils.defineLazyModuleGetter(this, "LinksCache",
   "resource://activity-stream/lib/LinksCache.jsm");
-ChromeUtils.defineModuleGetter(this, "NewTabUtils",
+XPCOMUtils.defineLazyModuleGetter(this, "NewTabUtils",
   "resource://gre/modules/NewTabUtils.jsm");
-ChromeUtils.defineModuleGetter(this, "Screenshots",
+XPCOMUtils.defineLazyModuleGetter(this, "Screenshots",
   "resource://activity-stream/lib/Screenshots.jsm");
-ChromeUtils.defineModuleGetter(this, "PageThumbs",
+XPCOMUtils.defineLazyModuleGetter(this, "PageThumbs",
   "resource://gre/modules/PageThumbs.jsm");
 
 const DEFAULT_SITES_PREF = "default.sites";
@@ -50,6 +50,7 @@ this.TopSitesFeed = class TopSitesFeed {
   _dedupeKey(site) {
     return site && site.hostname;
   }
+
   refreshDefaults(sites) {
     
     DEFAULT_TOP_SITES.length = 0;
@@ -292,7 +293,7 @@ this.TopSitesFeed = class TopSitesFeed {
     this._broadcastPinnedSitesUpdated();
   }
 
-  async onAction(action) {
+  onAction(action) {
     switch (action.type) {
       case at.INIT:
         this.refresh({broadcast: true});

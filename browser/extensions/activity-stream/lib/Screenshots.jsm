@@ -6,18 +6,22 @@
 this.EXPORTED_SYMBOLS = ["Screenshots"];
 
 const {utils: Cu} = Components;
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
-ChromeUtils.defineModuleGetter(this, "BackgroundPageThumbs",
+XPCOMUtils.defineLazyModuleGetter(this, "BackgroundPageThumbs",
   "resource://gre/modules/BackgroundPageThumbs.jsm");
-ChromeUtils.defineModuleGetter(this, "PageThumbs",
+XPCOMUtils.defineLazyModuleGetter(this, "PageThumbs",
   "resource://gre/modules/PageThumbs.jsm");
-ChromeUtils.defineModuleGetter(this, "FileUtils",
+XPCOMUtils.defineLazyModuleGetter(this, "FileUtils",
     "resource://gre/modules/FileUtils.jsm");
 XPCOMUtils.defineLazyServiceGetter(this, "MIMEService",
   "@mozilla.org/mime;1", "nsIMIMEService");
-ChromeUtils.defineModuleGetter(this, "OS",
+XPCOMUtils.defineLazyModuleGetter(this, "OS",
   "resource://gre/modules/osfile.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "PrivateBrowsingUtils",
+  "resource://gre/modules/PrivateBrowsingUtils.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "Services",
+  "resource://gre/modules/Services.jsm");
 
 const GREY_10 = "#F9F9FA";
 
@@ -68,11 +72,31 @@ this.Screenshots = {
 
 
 
+  _shouldGetScreenshots() {
+    const windows = Services.wm.getEnumerator("navigator:browser");
+    while (windows.hasMoreElements()) {
+      if (!PrivateBrowsingUtils.isWindowPrivate(windows.getNext())) {
+        
+        return true;
+      }
+    }
+    return false;
+  },
+
+  
+
+
+
+
 
 
 
 
   async maybeCacheScreenshot(link, url, property, onScreenshot) {
+    
+    if (!this._shouldGetScreenshots()) {
+      return;
+    }
     
     
     const cache = link.__sharedCache;

@@ -72,7 +72,7 @@ describe("Reducers", () => {
         }
       };
       const nextState = TopSites(oldState, action);
-      const newRow = nextState.rows[1];
+      const [, newRow] = nextState.rows;
       
       assert.equal(newRow.url, action.data.url);
       assert.equal(newRow.bookmarkGuid, action.data.bookmarkGuid);
@@ -97,7 +97,7 @@ describe("Reducers", () => {
       };
       const action = {type: at.PLACES_BOOKMARK_REMOVED, data: {url: "bar.com"}};
       const nextState = TopSites(oldState, action);
-      const newRow = nextState.rows[1];
+      const [, newRow] = nextState.rows;
       
       assert.equal(newRow.url, oldState.rows[1].url);
       assert.isUndefined(newRow.bookmarkGuid);
@@ -373,8 +373,7 @@ describe("Reducers", () => {
       };
       const nextState = Sections(oldState, action);
       
-      const newRow = nextState[0].rows[0];
-      const oldRow = nextState[0].rows[1];
+      const [newRow, oldRow] = nextState[0].rows;
 
       
       assert.equal(newRow.url, action.data.url);
@@ -407,8 +406,7 @@ describe("Reducers", () => {
       });
       const nextState = Sections(oldState, action);
       
-      const newRow = nextState[0].rows[0];
-      const oldRow = nextState[0].rows[1];
+      const [newRow, oldRow] = nextState[0].rows;
 
       
       assert.equal(newRow.url, action.data.url);
