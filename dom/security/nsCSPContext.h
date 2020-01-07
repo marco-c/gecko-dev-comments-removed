@@ -79,8 +79,9 @@ class nsCSPContext : public nsIContentSecurityPolicy
 
 
 
+
     nsresult GatherSecurityPolicyViolationEventData(
-      nsIURI* aBlockedURI,
+      nsISupports* aBlockedContentSource,
       nsIURI* aOriginalURI,
       nsAString& aViolatedDirective,
       uint32_t aViolatedPolicyIndex,
