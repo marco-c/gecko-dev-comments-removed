@@ -1766,17 +1766,15 @@ HttpChannelParent::StartRedirect(uint32_t registrarId,
   
   
   if (redirectFlags & nsIChannelEventSink::REDIRECT_INTERNAL) {
-    nsCOMPtr<nsIInterceptedChannel> newIntercepted = do_QueryInterface(newChannel);
-    if (newIntercepted) {
-#ifdef DEBUG
-      
-      
-      
-      nsCOMPtr<nsIInterceptedChannel> oldIntercepted =
+    nsCOMPtr<nsIInterceptedChannel> oldIntercepted =
         do_QueryInterface(static_cast<nsIChannel*>(mChannel.get()));
-      MOZ_ASSERT(!oldIntercepted);
-#endif
+    nsCOMPtr<nsIInterceptedChannel> newIntercepted = do_QueryInterface(newChannel);
 
+    
+    
+    
+    
+    if (!oldIntercepted && newIntercepted) {
       
       
       
