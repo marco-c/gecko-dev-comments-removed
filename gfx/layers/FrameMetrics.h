@@ -833,6 +833,7 @@ public:
     , mScrollClip()
     , mHasScrollgrab(false)
     , mIsLayersIdRoot(false)
+    , mIsAutoDirRootContentRTL(false)
     , mUsesContainerScrolling(false)
     , mForceDisableApz(false)
     , mOverscrollBehavior()
@@ -850,6 +851,7 @@ public:
            mScrollClip == aOther.mScrollClip &&
            mHasScrollgrab == aOther.mHasScrollgrab &&
            mIsLayersIdRoot == aOther.mIsLayersIdRoot &&
+           mIsAutoDirRootContentRTL == aOther.mIsAutoDirRootContentRTL &&
            mUsesContainerScrolling == aOther.mUsesContainerScrolling &&
            mForceDisableApz == aOther.mForceDisableApz &&
            mDisregardedDirection == aOther.mDisregardedDirection &&
@@ -944,6 +946,12 @@ public:
   bool IsLayersIdRoot() const {
     return mIsLayersIdRoot;
   }
+  void SetIsAutoDirRootContentRTL(bool aValue) {
+    mIsAutoDirRootContentRTL = aValue;
+  }
+  bool IsAutoDirRootContentRTL() const {
+    return mIsAutoDirRootContentRTL;
+  }
   
   
   void SetUsesContainerScrolling(bool aValue);
@@ -1011,6 +1019,17 @@ private:
   
   
   bool mIsLayersIdRoot:1;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool mIsAutoDirRootContentRTL:1;
 
   
   

@@ -2084,8 +2084,9 @@ bool
 AsyncPanZoomController::IsContentOfHonouredTargetRightToLeft(
                           bool aHonoursRoot) const
 {
-  
-  
+  if (aHonoursRoot) {
+    return mScrollMetadata.IsAutoDirRootContentRTL();
+  }
   RecursiveMutexAutoLock lock(mRecursiveMutex);
   return mFrameMetrics.IsHorizontalContentRightToLeft();
 }
@@ -4093,6 +4094,8 @@ void AsyncPanZoomController::NotifyLayersUpdated(const ScrollMetadata& aScrollMe
     
     mScrollMetadata.SetScrollClip(Nothing());
     mScrollMetadata.SetIsLayersIdRoot(aScrollMetadata.IsLayersIdRoot());
+    mScrollMetadata.SetIsAutoDirRootContentRTL(
+                      aScrollMetadata.IsAutoDirRootContentRTL());
     mScrollMetadata.SetUsesContainerScrolling(aScrollMetadata.UsesContainerScrolling());
     mFrameMetrics.SetIsScrollInfoLayer(aLayerMetrics.IsScrollInfoLayer());
     mScrollMetadata.SetForceDisableApz(aScrollMetadata.IsApzForceDisabled());
