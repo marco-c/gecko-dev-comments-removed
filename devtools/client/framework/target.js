@@ -5,7 +5,6 @@
 "use strict";
 
 const { Ci } = require("chrome");
-const defer = require("devtools/shared/defer");
 const EventEmitter = require("devtools/shared/event-emitter");
 const Services = require("Services");
 
@@ -188,19 +187,17 @@ TabTarget.prototype = {
                       "remote tabs.");
     }
 
-    const deferred = defer();
-
-    if (this._protocolDescription &&
-        this._protocolDescription.types[actorName]) {
-      deferred.resolve(this._protocolDescription.types[actorName]);
-    } else {
-      this.client.mainRoot.protocolDescription(description => {
-        this._protocolDescription = description;
-        deferred.resolve(description.types[actorName]);
-      });
-    }
-
-    return deferred.promise;
+    return new Promise(resolve => {
+      if (this._protocolDescription &&
+          this._protocolDescription.types[actorName]) {
+        resolve(this._protocolDescription.types[actorName]);
+      } else {
+        this.client.mainRoot.protocolDescription(description => {
+          this._protocolDescription = description;
+          resolve(description.types[actorName]);
+        });
+      }
+    });
   },
 
   
@@ -409,10 +406,8 @@ TabTarget.prototype = {
 
   makeRemote: async function() {
     if (this._remote) {
-      return this._remote.promise;
+      return this._remote;
     }
-
-    this._remote = defer();
 
     if (this.isLocalTab) {
       
@@ -452,56 +447,58 @@ TabTarget.prototype = {
 
     this._setupRemoteListeners();
 
-    const attachTab = async () => {
-      try {
-        const [ response, tabClient ] = await this._client.attachTab(this._form.actor);
-        this.activeTab = tabClient;
-        this.threadActor = response.threadActor;
-      } catch (e) {
-        this._remote.reject("Unable to attach to the tab: " + e);
-        return;
+    this._remote = new Promise((resolve, reject) => {
+      const attachTab = async () => {
+        try {
+          const [response, tabClient] = await this._client.attachTab(this._form.actor);
+          this.activeTab = tabClient;
+          this.threadActor = response.threadActor;
+        } catch (e) {
+          reject("Unable to attach to the tab: " + e);
+          return;
+        }
+        attachConsole();
+      };
+
+      const onConsoleAttached = ([response, consoleClient]) => {
+        this.activeConsole = consoleClient;
+
+        this._onInspectObject = packet => this.emit("inspect-object", packet);
+        this.activeConsole.on("inspectObject", this._onInspectObject);
+
+        resolve(null);
+      };
+
+      const attachConsole = () => {
+        this._client.attachConsole(this._form.consoleActor, [])
+          .then(onConsoleAttached, response => {
+            reject(
+              `Unable to attach to the console [${response.error}]: ${response.message}`);
+          });
+      };
+
+      if (this.isLocalTab) {
+        this._client.connect()
+          .then(() => this._client.getTab({tab: this.tab}))
+          .then(response => {
+            this._form = response.tab;
+            this._url = this._form.url;
+            this._title = this._form.title;
+
+            attachTab();
+          }, e => reject(e));
+      } else if (this.isBrowsingContext) {
+        
+        
+        attachTab();
+      } else {
+        
+        
+        attachConsole();
       }
-      attachConsole();
-    };
+    });
 
-    const onConsoleAttached = ([response, consoleClient]) => {
-      this.activeConsole = consoleClient;
-
-      this._onInspectObject = packet => this.emit("inspect-object", packet);
-      this.activeConsole.on("inspectObject", this._onInspectObject);
-
-      this._remote.resolve(null);
-    };
-
-    const attachConsole = () => {
-      this._client.attachConsole(this._form.consoleActor, [])
-        .then(onConsoleAttached, response => {
-          this._remote.reject(
-            `Unable to attach to the console [${response.error}]: ${response.message}`);
-        });
-    };
-
-    if (this.isLocalTab) {
-      this._client.connect()
-        .then(() => this._client.getTab({ tab: this.tab }))
-        .then(response => {
-          this._form = response.tab;
-          this._url = this._form.url;
-          this._title = this._form.title;
-
-          attachTab();
-        }, e => this._remote.reject(e));
-    } else if (this.isBrowsingContext) {
-      
-      
-      attachTab();
-    } else {
-      
-      
-      attachConsole();
-    }
-
-    return this._remote.promise;
+    return this._remote;
   },
 
   
@@ -650,48 +647,48 @@ TabTarget.prototype = {
     
     
     if (this._destroyer) {
-      return this._destroyer.promise;
+      return this._destroyer;
     }
 
-    this._destroyer = defer();
-
-    
-    this.emit("close");
-
-    if (this._tab) {
-      this._teardownListeners();
-    }
-
-    const cleanupAndResolve = () => {
-      this._cleanup();
-      this._destroyer.resolve(null);
-    };
-    
-    
-    if (this._tab && !this._client) {
-      cleanupAndResolve();
-    } else if (this._client) {
+    this._destroyer = new Promise(resolve => {
       
-      
-      this._teardownRemoteListeners();
+      this.emit("close");
 
-      if (this.isLocalTab) {
-        
-        
-        this._client.close().then(cleanupAndResolve);
-      } else if (this.activeTab) {
-        
-        
-        
-        
-        this.activeTab.detach();
-        cleanupAndResolve();
-      } else {
-        cleanupAndResolve();
+      if (this._tab) {
+        this._teardownListeners();
       }
-    }
 
-    return this._destroyer.promise;
+      const cleanupAndResolve = () => {
+        this._cleanup();
+        resolve(null);
+      };
+      
+      
+      if (this._tab && !this._client) {
+        cleanupAndResolve();
+      } else if (this._client) {
+        
+        
+        this._teardownRemoteListeners();
+
+        if (this.isLocalTab) {
+          
+          
+          this._client.close().then(cleanupAndResolve);
+        } else if (this.activeTab) {
+          
+          
+          
+          
+          this.activeTab.detach();
+          cleanupAndResolve();
+        } else {
+          cleanupAndResolve();
+        }
+      }
+    });
+
+    return this._destroyer;
   },
 
   
