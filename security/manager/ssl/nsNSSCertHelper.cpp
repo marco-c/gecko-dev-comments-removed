@@ -1675,7 +1675,13 @@ ProcessTime(PRTime dispTime,
     kDateFormatLong, kTimeFormatSeconds, &explodedTimeGMT, tempString);
 
   text.Append(tempString);
-  text.AppendLiteral(" GMT)");
+  
+  
+  if (tempString.Find(" GMT") == kNotFound) {
+    text.AppendLiteral(" GMT)");
+  } else {
+    text.Append(')');
+  }
 
   nsCOMPtr<nsIASN1PrintableItem> printableItem = new nsNSSASN1PrintableItem();
 
