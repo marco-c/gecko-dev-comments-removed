@@ -653,6 +653,8 @@ public:
   
   void DropPaintThreadRef();
 
+  wr::MaybeExternalImageId GetExternalImageKey() { return mExternalImageId; }
+
 private:
   static void TextureClientRecycleCallback(TextureClient* aClient, void* aClosure);
 
