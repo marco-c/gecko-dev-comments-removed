@@ -941,7 +941,11 @@ public:
   void ListAttributes(FILE* out) const;
 #endif
 
-  void Describe(nsAString& aOutDescription) const override;
+  
+
+
+
+  void Describe(nsAString& aOutDescription) const;
 
   
 

@@ -31,6 +31,13 @@ public:
   static already_AddRefed<Text>
   Constructor(const GlobalObject& aGlobal,
               const nsAString& aData, ErrorResult& aRv);
+
+  
+
+
+
+
+  bool HasTextForTranslation();
 };
 
 } 

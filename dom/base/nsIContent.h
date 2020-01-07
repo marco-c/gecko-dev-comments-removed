@@ -392,14 +392,6 @@ public:
 
 
 
-  virtual bool HasTextForTranslation() = 0;
-
-  
-
-
-
-
-
 
 
 
@@ -633,16 +625,6 @@ public:
 
 
 
-  virtual void BeginAddingChildren()
-  {
-  }
-
-  
-
-
-
-
-
 
 
 
@@ -793,11 +775,6 @@ public:
 
   virtual bool OwnedOnlyByTheDOMTree() { return false; }
 
-  virtual already_AddRefed<nsITextControlElement> GetAsTextControlElement()
-  {
-    return nullptr;
-  }
-
 protected:
   
 
@@ -928,15 +905,6 @@ public:
   virtual void DumpContent(FILE* out = stdout, int32_t aIndent = 0,
                            bool aDumpAll = true) const = 0;
 #endif
-
-  
-
-
-
-
-  virtual void Describe(nsAString& aOutDescription) const {
-    aOutDescription = NS_LITERAL_STRING("(not an element)");
-  }
 
   enum ETabFocusType {
     eTabFocus_textControlsMask = (1<<0),  
