@@ -36,7 +36,7 @@ const { l10n } = require("devtools/client/webconsole/utils/messages");
 
 
 
-function createContextMenu(jsterm, parentNode, {
+function createContextMenu(hud, parentNode, {
   actor,
   clipboardText,
   variableText,
@@ -114,9 +114,9 @@ function createContextMenu(jsterm, parentNode, {
         selectedObjectActor: actor,
       };
 
-      jsterm.requestEvaluation(evalString, options).then((res) => {
-        jsterm.focus();
-        jsterm.setInputValue(res.result);
+      hud.jsterm.requestEvaluation(evalString, options).then((res) => {
+        hud.jsterm.focus();
+        hud.jsterm.setInputValue(res.result);
       });
     },
   }));
@@ -149,7 +149,7 @@ function createContextMenu(jsterm, parentNode, {
     click: () => {
       if (actor) {
         
-        jsterm.copyObject(`_self`, { selectedObjectActor: actor }).then((res) => {
+        hud.jsterm.copyObject(`_self`, { selectedObjectActor: actor }).then((res) => {
           clipboardHelper.copyString(res.helperResult.value);
         });
       } else {
