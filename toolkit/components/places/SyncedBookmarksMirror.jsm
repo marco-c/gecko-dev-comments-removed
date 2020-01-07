@@ -648,28 +648,43 @@ class SyncedBookmarksMirror {
       return;
     }
 
+    
+    
+    
+    let params = new URLSearchParams(url.pathname);
+    let type = +params.get("type");
+    if (type == Ci.nsINavHistoryQueryOptions.RESULTS_AS_TAG_CONTENTS) {
+      let tagFolderName = validateTag(record.folderName);
+      if (!tagFolderName) {
+        MirrorLog.warn("Ignoring tag query ${guid} with invalid tag name " +
+                       "${tagFolderName}", { guid, tagFolderName });
+        ignoreCounts.query.url++;
+        return;
+      }
+      url = new URL(`place:tag=${tagFolderName}`);
+    }
+
     await this.maybeStoreRemoteURL(url);
 
     let serverModified = determineServerModified(record);
     let dateAdded = determineDateAdded(record);
     let title = validateTitle(record.title);
-    let tagFolderName = validateTag(record.folderName);
     let description = validateDescription(record.description);
     let smartBookmarkName = typeof record.queryId == "string" ?
                             record.queryId : null;
 
     await this.db.executeCached(`
       REPLACE INTO items(guid, serverModified, needsMerge, kind,
-                         dateAdded, title, tagFolderName,
-                         urlId, description, smartBookmarkName)
+                         dateAdded, title, urlId, description,
+                         smartBookmarkName)
       VALUES(:guid, :serverModified, :needsMerge, :kind,
-             :dateAdded, NULLIF(:title, ""), :tagFolderName,
+             :dateAdded, NULLIF(:title, ""),
              (SELECT id FROM urls
               WHERE hash = hash(:url) AND
                     url = :url),
              :description, :smartBookmarkName)`,
       { guid, serverModified, needsMerge,
-        kind: SyncedBookmarksMirror.KIND.QUERY, dateAdded, title, tagFolderName,
+        kind: SyncedBookmarksMirror.KIND.QUERY, dateAdded, title,
         url: url.href, description, smartBookmarkName });
   }
 
@@ -1247,9 +1262,6 @@ class SyncedBookmarksMirror {
         mergeStatesParams);
     }
 
-    MirrorLog.debug("Rewriting tag queries in mirror");
-    await this.rewriteRemoteTagQueries();
-
     MirrorLog.debug("Inserting new URLs into Places");
     await this.db.execute(`
       INSERT OR IGNORE INTO moz_places(url, url_hash, rev_host, hidden,
@@ -1347,55 +1359,6 @@ class SyncedBookmarksMirror {
         WHERE needsMerge AND
               guid IN (${new Array(chunk.length).fill("?").join(",")})`,
         chunk);
-    }
-  }
-
-  
-
-
-
-
-
-
-  async rewriteRemoteTagQueries() {
-    let queryRows = await this.db.execute(`
-      SELECT u.id AS urlId, u.url, v.tagFolderName
-      FROM urls u
-      JOIN items v ON v.urlId = u.id
-      JOIN mergeStates r ON r.mergedGuid = v.guid
-      WHERE r.valueState = :valueState AND
-            v.kind = :queryKind AND
-            v.tagFolderName NOT NULL AND
-            CAST(get_query_param(substr(u.url, 7), "type") AS INT) = :tagContentsType
-      `, { valueState: BookmarkMergeState.TYPE.REMOTE,
-           queryKind: SyncedBookmarksMirror.KIND.QUERY,
-           tagContentsType: Ci.nsINavHistoryQueryOptions.RESULTS_AS_TAG_CONTENTS });
-
-    let urlsParams = [];
-    for (let row of queryRows) {
-      let url = new URL(row.getResultByName("url"));
-      let tagQueryParams = new URLSearchParams(url.pathname);
-
-      
-      tagQueryParams.delete("queryType");
-      tagQueryParams.delete("type");
-      tagQueryParams.delete("folder");
-      tagQueryParams.set("tag", row.getResultByName("tagFolderName"));
-
-      let newURLHref = url.protocol + tagQueryParams;
-      urlsParams.push({
-        urlId: row.getResultByName("urlId"),
-        url: newURLHref,
-      });
-    }
-
-    if (urlsParams.length) {
-      await this.db.execute(`
-        UPDATE urls SET
-          url = :url,
-          hash = hash(:url)
-        WHERE id = :urlId`,
-        urlsParams);
     }
   }
 
@@ -1975,7 +1938,6 @@ async function initializeMirrorDatabase(db) {
     urlId INTEGER REFERENCES urls(id)
                   ON DELETE SET NULL,
     keyword TEXT,
-    tagFolderName TEXT,
     description TEXT,
     loadInSidebar BOOLEAN,
     smartBookmarkName TEXT,

@@ -258,64 +258,117 @@ add_task(async function test_livemarks() {
 });
 
 add_task(async function test_queries() {
-  try {
-    let buf = await openMirror("queries");
+  let buf = await openMirror("queries");
 
-    info("Set up places");
+  info("Set up places");
 
+  
+  let tag = await PlacesUtils.bookmarks.insert({
+    type: PlacesUtils.bookmarks.TYPE_FOLDER,
+    parentGuid: PlacesUtils.bookmarks.tagsGuid,
+    title: "a-tag",
+  });
+
+  await PlacesTestUtils.markBookmarksAsSynced();
+
+  await PlacesUtils.bookmarks.insertTree({
+    guid: PlacesUtils.bookmarks.menuGuid,
+    children: [
+      {
+        
+        guid: "queryAAAAAAA",
+        type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
+        title: "TAG_QUERY query",
+        url: `place:tag=a-tag&&sort=14&maxResults=10`,
+      },
+      {
+        
+        guid: "queryBBBBBBB",
+        type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
+        title: "TAG_QUERY query but invalid folder id",
+        url: `place:tag=b-tag&sort=14&maxResults=10`,
+      },
+      {
+        
+        guid: "queryCCCCCCC",
+        type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
+        title: "TAG_QUERY without a folder at all",
+        url: "place:sort=14&maxResults=10",
+      },
+      {
+        
+        guid: "queryDDDDDDD",
+        type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
+        title: "TAG_QUERY without a folder at all",
+        url: "place:tag=a-tag",
+      },
+    ],
+  });
+
+  info("Make remote changes");
+  await storeRecords(buf, shuffle([{
+    id: "toolbar",
+    type: "folder",
+    children: ["queryEEEEEEE", "queryFFFFFFF", "queryGGGGGGG"],
+  }, {
     
-    let tag = await PlacesUtils.bookmarks.insert({
-      type: PlacesUtils.bookmarks.TYPE_FOLDER,
-      parentGuid: PlacesUtils.bookmarks.tagsGuid,
-      title: "a-tag",
-    });
+    id: "queryEEEEEEE",
+    type: "query",
+    title: "E",
+    bmkUri: "place:type=7&folder=999",
+    folderName: "taggy",
+  }, {
+    
+    id: "queryFFFFFFF",
+    type: "query",
+    title: "F",
+    bmkUri: "place:tag=a-tag",
+    folderName: "a-tag",
+  }, {
+    
+    id: "queryGGGGGGG",
+    type: "query",
+    title: "G",
+    bmkUri: "place:type=7&folder=111&something=else",
+    folderName: "a-tag",
+  }]));
 
-    await PlacesTestUtils.markBookmarksAsSynced();
+  info("Create records to upload");
+  let changes = await buf.apply();
+  Assert.strictEqual(changes.queryAAAAAAA.cleartext.folderName, tag.title);
+  Assert.strictEqual(changes.queryBBBBBBB.cleartext.folderName, "b-tag");
+  Assert.strictEqual(changes.queryCCCCCCC.cleartext.folderName, undefined);
+  Assert.strictEqual(changes.queryDDDDDDD.cleartext.folderName, tag.title);
 
-    await PlacesUtils.bookmarks.insertTree({
-      guid: PlacesUtils.bookmarks.menuGuid,
-      children: [
-        {
-          
-          guid: "queryAAAAAAA",
-          type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
-          title: "TAG_QUERY query",
-          url: `place:tag=a-tag&&sort=14&maxResults=10`,
-        },
-        {
-          
-          guid: "queryBBBBBBB",
-          type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
-          title: "TAG_QUERY query but invalid folder id",
-          url: `place:tag=b-tag&sort=14&maxResults=10`,
-        },
-        {
-          
-          guid: "queryCCCCCCC",
-          type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
-          title: "TAG_QUERY without a folder at all",
-          url: "place:sort=14&maxResults=10",
-        },
-        {
-          
-          guid: "queryDDDDDDD",
-          type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
-          title: "TAG_QUERY without a folder at all",
-          url: "place:tag=a-tag",
-        },
-      ],
-    });
+  await assertLocalTree(PlacesUtils.bookmarks.toolbarGuid, {
+    guid: PlacesUtils.bookmarks.toolbarGuid,
+    type: PlacesUtils.bookmarks.TYPE_FOLDER,
+    index: 1,
+    title: BookmarksToolbarTitle,
+    children: [{
+      guid: "queryEEEEEEE",
+      type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
+      index: 0,
+      title: "E",
+      url: "place:tag=taggy",
+    }, {
+      guid: "queryFFFFFFF",
+      type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
+      index: 1,
+      title: "F",
+      url: "place:tag=a-tag",
+    }, {
+      guid: "queryGGGGGGG",
+      type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
+      index: 2,
+      title: "G",
+      url: "place:tag=a-tag",
+    }],
+  }, "Should rewrite legacy remote tag queries");
 
-    info("Create records to upload");
-    let changes = await buf.apply();
-    Assert.strictEqual(changes.queryAAAAAAA.cleartext.folderName, tag.title);
-    Assert.strictEqual(changes.queryBBBBBBB.cleartext.folderName, "b-tag");
-    Assert.strictEqual(changes.queryCCCCCCC.cleartext.folderName, undefined);
-    Assert.strictEqual(changes.queryDDDDDDD.cleartext.folderName, tag.title);
-  } finally {
-    await PlacesUtils.bookmarks.eraseEverything();
-    await PlacesSyncUtils.bookmarks.reset();
-  }
+  await buf.finalize();
+  await PlacesUtils.bookmarks.eraseEverything();
+  await PlacesSyncUtils.bookmarks.reset();
 });
 
 
