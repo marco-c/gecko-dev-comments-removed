@@ -194,7 +194,7 @@ HTMLEditor::DoInsertHTMLWithContext(const nsAString& aInputString,
                                     const nsAString& aInfoStr,
                                     const nsAString& aFlavor,
                                     nsIDOMDocument* aSourceDoc,
-                                    nsIDOMNode* aDestNode,
+                                    nsIDOMNode* aDestDOMNode,
                                     int32_t aDestOffset,
                                     bool aDeleteSelection,
                                     bool aTrustedInput,
@@ -227,20 +227,18 @@ HTMLEditor::DoInsertHTMLWithContext(const nsAString& aInputString,
                                            aTrustedInput);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  nsCOMPtr<nsINode> targetNode;
-  int32_t targetOffset=0;
-
-  if (!aDestNode) {
+  EditorDOMPoint targetPoint;
+  if (!aDestDOMNode) {
     
     
-    rv = GetStartNodeAndOffset(selection, getter_AddRefs(targetNode), &targetOffset);
-    NS_ENSURE_SUCCESS(rv, rv);
-    if (!targetNode || !IsEditable(targetNode)) {
+    targetPoint = EditorBase::GetStartPoint(selection);
+    if (NS_WARN_IF(!targetPoint.IsSet()) ||
+        !IsEditable(targetPoint.GetContainer())) {
       return NS_ERROR_FAILURE;
     }
   } else {
-    targetNode = do_QueryInterface(aDestNode);
-    targetOffset = aDestOffset;
+    nsCOMPtr<nsINode> destNode = do_QueryInterface(aDestDOMNode);
+    targetPoint.Set(destNode, aDestOffset);
   }
 
   
@@ -249,17 +247,20 @@ HTMLEditor::DoInsertHTMLWithContext(const nsAString& aInputString,
   
   
   
-  if (aDestNode) {
+  if (aDestDOMNode) {
     if (aDeleteSelection) {
       
       
-      AutoTrackDOMPoint tracker(mRangeUpdater, &targetNode, &targetOffset);
+      AutoTrackDOMPoint tracker(mRangeUpdater, &targetPoint);
       rv = DeleteSelection(eNone, eStrip);
       NS_ENSURE_SUCCESS(rv, rv);
     }
 
-    rv = selection->Collapse(targetNode, targetOffset);
-    NS_ENSURE_SUCCESS(rv, rv);
+    ErrorResult error;
+    selection->Collapse(targetPoint, error);
+    if (NS_WARN_IF(error.Failed())) {
+      return error.StealNSResult();
+    }
   }
 
   

@@ -463,81 +463,85 @@ TextEditRules::CollapseSelectionToTrailingBRIfNeeded(Selection* aSelection)
     return NS_OK;
   }
 
-  NS_ENSURE_STATE(mTextEditor);
+  if (NS_WARN_IF(!mTextEditor)) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+  RefPtr<TextEditor> textEditor(mTextEditor);
 
   
   
   
   if (!aSelection->RangeCount()) {
-    mTextEditor->CollapseSelectionToEnd(aSelection);
-  }
-
-  
-  
-  int32_t selOffset;
-  nsCOMPtr<nsINode> selNode;
-  nsresult rv =
-    EditorBase::GetStartNodeAndOffset(aSelection,
-                                      getter_AddRefs(selNode), &selOffset);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
-  if (!EditorBase::IsTextNode(selNode)) {
-    return NS_OK; 
-  }
-
-  
-  if (selOffset != static_cast<int32_t>(selNode->Length())) {
-    return NS_OK;
-  }
-
-  NS_ENSURE_STATE(mTextEditor);
-  nsINode* root = mTextEditor->GetRoot();
-  if (NS_WARN_IF(!root)) {
-    return NS_ERROR_NULL_POINTER;
-  }
-  nsINode* parentNode = selNode->GetParentNode();
-  if (parentNode != root) {
-    return NS_OK;
-  }
-
-  nsINode* nextNode = selNode->GetNextSibling();
-  if (nextNode && TextEditUtils::IsMozBR(nextNode)) {
-    EditorRawDOMPoint afterSelNode(selNode);
-    if (NS_WARN_IF(!afterSelNode.AdvanceOffset())) {
+    textEditor->CollapseSelectionToEnd(aSelection);
+    if (!mTextEditor) {
+      
       return NS_ERROR_FAILURE;
     }
-    rv = aSelection->Collapse(afterSelNode);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
+  }
+
+  
+  
+  EditorRawDOMPoint selectionStartPoint(EditorBase::GetStartPoint(aSelection));
+  if (NS_WARN_IF(!selectionStartPoint.IsSet())) {
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  if (!selectionStartPoint.IsInTextNode() ||
+      !selectionStartPoint.IsEndOfContainer()) {
+    return NS_OK;
+  }
+
+  Element* rootElement = textEditor->GetRoot();
+  if (NS_WARN_IF(!rootElement)) {
+    return NS_ERROR_NULL_POINTER;
+  }
+  nsINode* parentNode = selectionStartPoint.GetContainer()->GetParentNode();
+  if (parentNode != rootElement) {
+    return NS_OK;
+  }
+
+  nsINode* nextNode = selectionStartPoint.GetContainer()->GetNextSibling();
+  if (!nextNode || !TextEditUtils::IsMozBR(nextNode)) {
+    return NS_OK;
+  }
+
+  EditorRawDOMPoint afterStartContainer(selectionStartPoint.GetContainer());
+  if (NS_WARN_IF(!afterStartContainer.AdvanceOffset())) {
+    return NS_ERROR_FAILURE;
+  }
+  ErrorResult error;
+  aSelection->Collapse(afterStartContainer, error);
+  if (NS_WARN_IF(error.Failed())) {
+    return error.StealNSResult();
   }
   return NS_OK;
 }
 
 static inline already_AddRefed<nsINode>
-GetTextNode(Selection* selection)
+GetTextNode(Selection* aSelection)
 {
-  int32_t selOffset;
-  nsCOMPtr<nsINode> selNode;
-  nsresult rv =
-    EditorBase::GetStartNodeAndOffset(selection,
-                                      getter_AddRefs(selNode), &selOffset);
-  NS_ENSURE_SUCCESS(rv, nullptr);
-  if (!EditorBase::IsTextNode(selNode)) {
-    
-    RefPtr<NodeIterator> iter =
-      new NodeIterator(selNode, NodeFilterBinding::SHOW_TEXT, nullptr);
-    while (!EditorBase::IsTextNode(selNode)) {
-      selNode = iter->NextNode(IgnoreErrors());
-      if (!selNode) {
-        return nullptr;
-      }
+  EditorRawDOMPoint selectionStartPoint(EditorBase::GetStartPoint(aSelection));
+  if (NS_WARN_IF(!selectionStartPoint.IsSet())) {
+    return nullptr;
+  }
+  if (selectionStartPoint.IsInTextNode()) {
+    nsCOMPtr<nsINode> node = selectionStartPoint.GetContainer();
+    return node.forget();
+  }
+  
+  nsCOMPtr<nsINode> node = selectionStartPoint.GetContainer();
+  RefPtr<NodeIterator> iter =
+    new NodeIterator(node, NodeFilterBinding::SHOW_TEXT, nullptr);
+  while (!EditorBase::IsTextNode(node)) {
+    node = iter->NextNode(IgnoreErrors());
+    if (!node) {
+      return nullptr;
     }
   }
-  return selNode.forget();
+  return node.forget();
 }
+
 #ifdef DEBUG
 #define ASSERT_PASSWORD_LENGTHS_EQUAL()                                \
   if (IsPasswordEditor() && mTextEditor->GetRoot()) {                  \
@@ -1032,22 +1036,19 @@ TextEditRules::WillDeleteSelection(Selection* aSelection,
       mPasswordText.Cut(start, end-start);
     }
   } else {
-    nsCOMPtr<nsINode> startNode;
-    int32_t startOffset;
-    nsresult rv =
-      EditorBase::GetStartNodeAndOffset(aSelection, getter_AddRefs(startNode),
-                                        &startOffset);
-    NS_ENSURE_SUCCESS(rv, rv);
-    NS_ENSURE_TRUE(startNode, NS_ERROR_FAILURE);
+    EditorRawDOMPoint selectionStartPoint(
+                        EditorBase::GetStartPoint(aSelection));
+    if (NS_WARN_IF(!selectionStartPoint.IsSet())) {
+      return NS_ERROR_FAILURE;
+    }
 
     if (!aSelection->IsCollapsed()) {
       return NS_OK;
     }
 
     
-    rv = CheckBidiLevelForDeletion(aSelection,
-                                   EditorRawDOMPoint(startNode, startOffset),
-                                   aCollapsedAction, aCancel);
+    nsresult rv = CheckBidiLevelForDeletion(aSelection, selectionStartPoint,
+                                            aCollapsedAction, aCancel);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -1075,29 +1076,25 @@ TextEditRules::DidDeleteSelection(Selection* aSelection,
                                   nsIEditor::EDirection aCollapsedAction,
                                   nsresult aResult)
 {
-  nsCOMPtr<nsINode> startNode;
-  int32_t startOffset;
-  nsresult rv =
-    EditorBase::GetStartNodeAndOffset(aSelection,
-                                      getter_AddRefs(startNode), &startOffset);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-  if (NS_WARN_IF(!startNode)) {
+  EditorRawDOMPoint selectionStartPoint(EditorBase::GetStartPoint(aSelection));
+  if (NS_WARN_IF(!selectionStartPoint.IsSet())) {
     return NS_ERROR_FAILURE;
   }
 
   
-  if (EditorBase::IsTextNode(startNode)) {
-    
-    if (!startNode->Length()) {
-      NS_ENSURE_STATE(mTextEditor);
-      rv = mTextEditor->DeleteNode(startNode);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-      }
+  if (selectionStartPoint.IsInTextNode() &&
+      !selectionStartPoint.GetContainer()->Length()) {
+    if (NS_WARN_IF(!mTextEditor)) {
+      return NS_ERROR_NOT_AVAILABLE;
     }
+    RefPtr<TextEditor> textEditor(mTextEditor);
+    nsresult rv = textEditor->DeleteNode(selectionStartPoint.GetContainer());
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+    
   }
+
   if (mDidExplicitlySetInterline) {
     return NS_OK;
   }
