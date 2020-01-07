@@ -635,13 +635,11 @@ pref("media.decoder.skip-to-next-key-frame.enabled", true);
 
 pref("media.cubeb.logging_level", "");
 
-#ifdef NIGHTLY_BUILD
 
-#ifdef XP_MACOSX
-pref("media.cubeb.sandbox", false);
-#else
+#ifdef XP_LINUX
 pref("media.cubeb.sandbox", true);
-#endif
+#else
+pref("media.cubeb.sandbox", false);
 #endif
 
 
