@@ -8049,9 +8049,6 @@ HTMLEditRules::MakeBlockquote(nsTArray<OwningNonNull<nsINode>>& aNodeArray)
   return NS_OK;
 }
 
-
-
-
 nsresult
 HTMLEditRules::RemoveBlockStyle(nsTArray<OwningNonNull<nsINode>>& aNodeArray)
 {
@@ -8080,17 +8077,24 @@ HTMLEditRules::RemoveBlockStyle(nsTArray<OwningNonNull<nsINode>>& aNodeArray)
       nsresult rv =
         HTMLEditorRef().RemoveBlockContainerWithTransaction(
                           *curNode->AsElement());
+      if (NS_WARN_IF(!CanHandleEditAction())) {
+        return NS_ERROR_EDITOR_DESTROYED;
+      }
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
-    } else if (curNode->IsAnyOfHTMLElements(nsGkAtoms::table,
-                                            nsGkAtoms::tr,
-                                            nsGkAtoms::tbody,
-                                            nsGkAtoms::td,
-                                            nsGkAtoms::li,
-                                            nsGkAtoms::blockquote,
-                                            nsGkAtoms::div) ||
-                HTMLEditUtils::IsList(curNode)) {
+      continue;
+    }
+
+    
+    if (curNode->IsAnyOfHTMLElements(nsGkAtoms::table,
+                                     nsGkAtoms::tr,
+                                     nsGkAtoms::tbody,
+                                     nsGkAtoms::td,
+                                     nsGkAtoms::li,
+                                     nsGkAtoms::blockquote,
+                                     nsGkAtoms::div) ||
+        HTMLEditUtils::IsList(curNode)) {
       
       if (curBlock) {
         nsresult rv = RemovePartOfBlock(*curBlock, *firstNode, *lastNode);
@@ -8109,7 +8113,10 @@ HTMLEditRules::RemoveBlockStyle(nsTArray<OwningNonNull<nsINode>>& aNodeArray)
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
-    } else if (IsInlineNode(curNode)) {
+      continue;
+    }
+
+    if (IsInlineNode(curNode)) {
       if (curBlock) {
         
         if (EditorUtils::IsDescendantOf(*curNode, *curBlock)) {
@@ -8135,7 +8142,10 @@ HTMLEditRules::RemoveBlockStyle(nsTArray<OwningNonNull<nsINode>>& aNodeArray)
       } else {
         firstNode = lastNode = curNode->AsContent();
       }
-    } else if (curBlock) {
+      continue;
+    }
+
+    if (curBlock) {
       
       
       nsresult rv = RemovePartOfBlock(*curBlock, *firstNode, *lastNode);
@@ -8143,6 +8153,7 @@ HTMLEditRules::RemoveBlockStyle(nsTArray<OwningNonNull<nsINode>>& aNodeArray)
         return rv;
       }
       firstNode = lastNode = curBlock = nullptr;
+      continue;
     }
   }
   

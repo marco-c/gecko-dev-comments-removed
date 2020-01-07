@@ -487,6 +487,15 @@ protected:
   nsIContent* GetHighestInlineParent(nsINode& aNode);
   void MakeTransitionList(nsTArray<OwningNonNull<nsINode>>& aNodeArray,
                           nsTArray<bool>& aTransitionArray);
+
+  
+
+
+
+
+
+
+
   nsresult RemoveBlockStyle(nsTArray<OwningNonNull<nsINode>>& aNodeArray);
 
   
