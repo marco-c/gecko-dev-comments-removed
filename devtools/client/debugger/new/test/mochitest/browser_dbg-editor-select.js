@@ -26,6 +26,7 @@ add_task(async function() {
 
   
   
+  await stepOver(dbg);
   await stepIn(dbg);
   await waitForSelectedSource(dbg, "simple2");
   assertPausedLocation(dbg);
