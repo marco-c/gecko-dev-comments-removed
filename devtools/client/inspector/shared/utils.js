@@ -145,6 +145,8 @@ function translateNodeFrontToGrip(nodeFront) {
     preview: {
       attributes: attributesMap,
       attributesLength: attributes.length,
+      isAfterPseudoElement: nodeFront.isAfterPseudoElement,
+      isBeforePseudoElement: nodeFront.isBeforePseudoElement,
       
       isConnected: true,
       
