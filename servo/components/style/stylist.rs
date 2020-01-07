@@ -1555,27 +1555,25 @@ impl Stylist {
         E: TElement,
     {
         use font_metrics::get_metrics_provider_for_product;
-        use std::iter;
 
-        
-        
-        
-        let rule_node = self.rule_tree.insert_ordered_rules(iter::once((
-            StyleSource::from_declarations(declarations),
-            CascadeLevel::StyleAttributeNormal,
-        )));
+        let block = declarations.read_with(guards.author);
+        let iter_declarations = || {
+            block.declaration_importance_iter().map(|(declaration, importance)| {
+                debug_assert!(!importance.important());
+                (declaration, CascadeLevel::StyleAttributeNormal)
+            })
+        };
 
-        
-        
-        
         let metrics = get_metrics_provider_for_product();
 
         
-        properties::cascade::<E>(
+        
+        properties::apply_declarations::<E, _, _>(
             &self.device,
              None,
-            &rule_node,
+            self.rule_tree.root(),
             guards,
+            iter_declarations,
             Some(parent_style),
             Some(parent_style),
             Some(parent_style),
