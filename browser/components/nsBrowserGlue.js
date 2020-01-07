@@ -1843,7 +1843,7 @@ BrowserGlue.prototype = {
   _migrateUI: function BG__migrateUI() {
     
     
-    const UI_VERSION = 68;
+    const UI_VERSION = 69;
     const BROWSER_DOCURL = "chrome://browser/content/browser.xul";
 
     let currentUIVersion;
@@ -2203,6 +2203,17 @@ BrowserGlue.prototype = {
       
       OS.File.remove(OS.Path.join(OS.Constants.Path.profileDir,
                                   "kinto.sqlite"), {ignoreAbsent: true});
+    }
+
+    if (currentUIVersion < 69) {
+      
+      let socialPrefs = Services.prefs.getBranch("social.");
+      if (socialPrefs) {
+        let socialPrefsArray = socialPrefs.getChildList("");
+        for (let item of socialPrefsArray) {
+          Services.prefs.clearUserPref("social." + item);
+        }
+      }
     }
 
     
