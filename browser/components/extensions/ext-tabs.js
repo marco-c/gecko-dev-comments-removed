@@ -617,6 +617,12 @@ this.tabs = class extends ExtensionAPI {
             let window = destinationWindow || nativeTab.ownerGlobal;
             let gBrowser = window.gBrowser;
 
+            
+            
+            if (nativeTab.ownerGlobal == window && gBrowser.tabs.length === 1) {
+              continue;
+            }
+
             let insertionPoint = indexMap.get(window) || moveProperties.index;
             
             if (insertionPoint == -1) {
