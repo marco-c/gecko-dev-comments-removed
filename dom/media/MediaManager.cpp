@@ -3736,6 +3736,10 @@ SourceListener::Remove()
 
   
   if (!mStream->IsDestroyed()) {
+    
+    
+    
+    mStream->SetPullEnabled(false);
     mStream->RemoveListener(this);
   }
 }
