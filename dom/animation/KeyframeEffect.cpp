@@ -515,7 +515,7 @@ KeyframeEffect::ComposeStyle(
   
   
   
-  if (HasTransformThatMightAffectOverflow()) {
+  if (HasPropertiesThatMightAffectOverflow()) {
     nsPresContext* presContext =
       nsContentUtils::GetContextForContent(mTarget->mElement);
     if (presContext) {
@@ -524,7 +524,7 @@ KeyframeEffect::ComposeStyle(
         EffectSet::GetEffectSet(mTarget->mElement, mTarget->mPseudoType);
       MOZ_ASSERT(effectSet, "ComposeStyle should only be called on an effect "
                             "that is part of an effect set");
-      effectSet->UpdateLastTransformSyncTime(now);
+      effectSet->UpdateLastOverflowAnimationSyncTime(now);
     }
   }
 }
@@ -1233,8 +1233,7 @@ KeyframeEffect::CanThrottle() const
         frame->IsScrolledOutOfView()) {
       
       
-      if (HasTransformThatMightAffectOverflow()) {
-        
+      if (HasPropertiesThatMightAffectOverflow()) {
         
         
         if (HasFiniteActiveDuration()) {
@@ -1242,8 +1241,8 @@ KeyframeEffect::CanThrottle() const
         }
 
         return isVisibilityHidden
-          ? CanThrottleTransformChangesInScrollable(*frame)
-          : CanThrottleTransformChanges(*frame);
+          ? CanThrottleOverflowChangesInScrollable(*frame)
+          : CanThrottleOverflowChanges(*frame);
       }
       return true;
     }
@@ -1279,8 +1278,8 @@ KeyframeEffect::CanThrottle() const
 
     
     
-    if (HasTransformThatMightAffectOverflow() &&
-        !CanThrottleTransformChangesInScrollable(*frame)) {
+    if (HasPropertiesThatMightAffectOverflow() &&
+        !CanThrottleOverflowChangesInScrollable(*frame)) {
       return false;
     }
   }
@@ -1295,24 +1294,24 @@ KeyframeEffect::CanThrottle() const
 }
 
 bool
-KeyframeEffect::CanThrottleTransformChanges(const nsIFrame& aFrame) const
+KeyframeEffect::CanThrottleOverflowChanges(const nsIFrame& aFrame) const
 {
   TimeStamp now = aFrame.PresContext()->RefreshDriver()->MostRecentRefresh();
 
   EffectSet* effectSet = EffectSet::GetEffectSet(mTarget->mElement,
                                                  mTarget->mPseudoType);
-  MOZ_ASSERT(effectSet, "CanThrottleTransformChanges is expected to be called"
+  MOZ_ASSERT(effectSet, "CanOverflowTransformChanges is expected to be called"
                         " on an effect in an effect set");
-  MOZ_ASSERT(mAnimation, "CanThrottleTransformChanges is expected to be called"
+  MOZ_ASSERT(mAnimation, "CanOverflowTransformChanges is expected to be called"
                          " on an effect with a parent animation");
-  TimeStamp lastSyncTime = effectSet->LastTransformSyncTime();
+  TimeStamp lastSyncTime = effectSet->LastOverflowAnimationSyncTime();
   
   return (!lastSyncTime.IsNull() &&
     (now - lastSyncTime) < OverflowRegionRefreshInterval());
 }
 
 bool
-KeyframeEffect::CanThrottleTransformChangesInScrollable(nsIFrame& aFrame) const
+KeyframeEffect::CanThrottleOverflowChangesInScrollable(nsIFrame& aFrame) const
 {
   
   
@@ -1333,7 +1332,7 @@ KeyframeEffect::CanThrottleTransformChangesInScrollable(nsIFrame& aFrame) const
     return true;
   }
 
-  if (CanThrottleTransformChanges(aFrame)) {
+  if (CanThrottleOverflowChanges(aFrame)) {
     return true;
   }
 
