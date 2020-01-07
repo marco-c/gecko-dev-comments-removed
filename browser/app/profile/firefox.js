@@ -32,9 +32,6 @@ pref("extensions.strictCompatibility", false);
 
 
 
-pref("extensions.minCompatibleAppVersion", "4.0");
-
-
 pref("extensions.checkCompatibility.temporaryThemeOverride_minAppVersion", "29.0a1");
 
 pref("xpinstall.customConfirmationUI", true);

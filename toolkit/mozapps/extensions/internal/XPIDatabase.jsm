@@ -467,17 +467,6 @@ class AddonInternal {
         }
       }
 
-      
-      let minCompatVersion;
-      if (app.id == Services.appinfo.ID)
-        minCompatVersion = XPIProvider.minCompatibleAppVersion;
-      else if (app.id == TOOLKIT_ID)
-        minCompatVersion = XPIProvider.minCompatiblePlatformVersion;
-
-      if (minCompatVersion &&
-          Services.vc.compare(minCompatVersion, maxVersion) > 0)
-        return false;
-
       return Services.vc.compare(version, minVersion) >= 0;
     }
 

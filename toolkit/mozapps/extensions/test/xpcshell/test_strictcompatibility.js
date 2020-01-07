@@ -25,7 +25,10 @@ const ADDONS = {
     expected: {
       strictCompatibility: false,
     },
-    compatible: [true,  true,  true,  true],
+    compatible: {
+      nonStrict: true,
+      strict: true,
+    },
   },
 
   
@@ -44,7 +47,10 @@ const ADDONS = {
     expected: {
       strictCompatibility: false,
     },
-    compatible: [false, true,  false, true],
+    compatible: {
+      nonStrict: true,
+      strict: false,
+    },
   },
 
   
@@ -64,7 +70,10 @@ const ADDONS = {
     expected: {
       strictCompatibility: true,
     },
-    compatible: [false, false, false, false],
+    compatible: {
+      nonStrict: false,
+      strict: false,
+    },
   },
 
   
@@ -84,7 +93,10 @@ const ADDONS = {
     expected: {
       strictCompatibility: false,
     },
-    compatible: [false, false, false, false],
+    compatible: {
+      nonStrict: false,
+      strict: false,
+    },
   },
 
   
@@ -104,7 +116,10 @@ const ADDONS = {
     expected: {
       strictCompatibility: false,
     },
-    compatible: [false, true,  false, false],
+    compatible: {
+      nonStrict: true,
+      strict: false,
+    },
   },
 
   
@@ -123,7 +138,10 @@ const ADDONS = {
     expected: {
       strictCompatibility: false,
     },
-    compatible: [false, true,  false, true],
+    compatible: {
+      nonStrict: true,
+      strict: false,
+    },
   },
 };
 
@@ -154,37 +172,23 @@ add_task(async function setup() {
     await promiseWriteInstallRDFForExtension(addon["install.rdf"], profileDir);
   }
 
-  Services.prefs.setCharPref(PREF_EM_MIN_COMPAT_APP_VERSION, "0.1");
-
   await promiseStartupManager();
-});
-
-add_task(async function test_0() {
-  
-  await checkCompatStatus(true, 0);
 });
 
 add_task(async function test_1() {
   info("Test 1");
   Services.prefs.setBoolPref(PREF_EM_STRICT_COMPATIBILITY, false);
-  await checkCompatStatus(false, 1);
+  await checkCompatStatus(false, "nonStrict");
   await promiseRestartManager();
-  await checkCompatStatus(false, 1);
+  await checkCompatStatus(false, "nonStrict");
 });
 
 add_task(async function test_2() {
   info("Test 2");
   Services.prefs.setBoolPref(PREF_EM_STRICT_COMPATIBILITY, true);
-  await checkCompatStatus(true, 2);
+  await checkCompatStatus(true, "strict");
   await promiseRestartManager();
-  await checkCompatStatus(true, 2);
-});
-
-add_task(async function test_3() {
-  info("Test 3");
-  Services.prefs.setBoolPref(PREF_EM_STRICT_COMPATIBILITY, false);
-  Services.prefs.setCharPref(PREF_EM_MIN_COMPAT_APP_VERSION, "0.4");
-  await checkCompatStatus(false, 3);
+  await checkCompatStatus(true, "strict");
 });
 
 const CHECK_COMPAT_ADDONS = {
