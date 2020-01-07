@@ -268,26 +268,6 @@ pub enum RepeatMode {
     Space,
 }
 
-#[repr(C)]
-#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
-pub struct NinePatchDescriptor {
-    pub width: u32,
-    pub height: u32,
-    pub slice: SideOffsets2D<u32>,
-}
-
-#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
-pub struct ImageBorder {
-    pub image_key: ImageKey,
-    pub patch: NinePatchDescriptor,
-    
-    
-    pub fill: bool,
-    pub outset: SideOffsets2D<f32>,
-    pub repeat_horizontal: RepeatMode,
-    pub repeat_vertical: RepeatMode,
-}
-
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
 pub struct GradientBorder {
     pub gradient: Gradient,
@@ -301,9 +281,54 @@ pub struct RadialGradientBorder {
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
+
+
+pub enum NinePatchBorderSource {
+    Image(ImageKey),
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
+pub struct NinePatchBorder {
+    
+    
+    pub source: NinePatchBorderSource,
+
+    
+    pub width: u32,
+
+    
+    pub height: u32,
+
+    
+    
+    
+    
+    
+    
+    
+    pub slice: SideOffsets2D<u32>,
+
+    
+    
+    pub fill: bool,
+
+    
+    
+    pub repeat_horizontal: RepeatMode,
+
+    
+    
+    pub repeat_vertical: RepeatMode,
+
+    
+    
+    pub outset: SideOffsets2D<f32>,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
 pub enum BorderDetails {
     Normal(NormalBorder),
-    Image(ImageBorder),
+    NinePatch(NinePatchBorder),
     Gradient(GradientBorder),
     RadialGradient(RadialGradientBorder),
 }

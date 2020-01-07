@@ -14,7 +14,7 @@
 
 use app_units::Au;
 use euclid::{Length, TypedRect, TypedScale, TypedSize2D, TypedTransform3D};
-use euclid::{TypedPoint2D, TypedPoint3D, TypedVector2D, TypedVector3D};
+use euclid::{TypedPoint2D, TypedPoint3D, TypedVector2D, TypedVector3D, TypedSideOffsets2D};
 
 
 
@@ -25,6 +25,7 @@ pub type DeviceIntRect = TypedRect<i32, DevicePixel>;
 pub type DeviceIntPoint = TypedPoint2D<i32, DevicePixel>;
 pub type DeviceIntSize = TypedSize2D<i32, DevicePixel>;
 pub type DeviceIntLength = Length<i32, DevicePixel>;
+pub type DeviceIntSideOffsets = TypedSideOffsets2D<i32, DevicePixel>;
 
 pub type DeviceUintRect = TypedRect<u32, DevicePixel>;
 pub type DeviceUintPoint = TypedPoint2D<u32, DevicePixel>;

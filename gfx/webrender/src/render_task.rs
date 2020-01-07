@@ -2,7 +2,7 @@
 
 
 
-use api::{DeviceIntPoint, DeviceIntRect, DeviceIntSize, DeviceSize, ImageDescriptor, ImageFormat};
+use api::{DeviceIntPoint, DeviceIntRect, DeviceIntSize, DeviceSize, DeviceIntSideOffsets, ImageDescriptor, ImageFormat};
 #[cfg(feature = "pathfinder")]
 use api::FontRenderMode;
 use box_shadow::{BoxShadowCacheKey};
@@ -254,6 +254,7 @@ pub enum BlitSource {
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct BlitTask {
     pub source: BlitSource,
+    pub padding: DeviceIntSideOffsets,
 }
 
 #[derive(Debug)]
@@ -338,6 +339,14 @@ impl RenderTask {
         size: DeviceIntSize,
         source: BlitSource,
     ) -> Self {
+        RenderTask::new_blit_with_padding(size, &DeviceIntSideOffsets::zero(), source)
+    }
+
+    pub fn new_blit_with_padding(
+        mut size: DeviceIntSize,
+        padding: &DeviceIntSideOffsets,
+        source: BlitSource,
+    ) -> Self {
         let mut children = Vec::new();
 
         
@@ -349,11 +358,15 @@ impl RenderTask {
             children.push(task_id);
         }
 
+        size.width += padding.horizontal();
+        size.height += padding.vertical();
+
         RenderTask {
             children,
             location: RenderTaskLocation::Dynamic(None, Some(size)),
             kind: RenderTaskKind::Blit(BlitTask {
                 source,
+                padding: *padding,
             }),
             clear_mode: ClearMode::Transparent,
             saved_index: None,
