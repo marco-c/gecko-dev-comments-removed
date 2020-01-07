@@ -122,6 +122,10 @@ public:
   virtual void PreDestroy(bool aDestroyingFrames) override;
 
   bool GetReturnInParagraphCreatesNewParagraph();
+
+  
+
+
   Element* GetSelectionContainer();
 
   
