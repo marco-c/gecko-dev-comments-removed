@@ -11,7 +11,6 @@ module.exports = {
     
     
     
-    "comma-spacing": "off",
     "no-cond-assign": "off",
     "no-lonely-if": "off",
     "no-nested-ternary": "off",
