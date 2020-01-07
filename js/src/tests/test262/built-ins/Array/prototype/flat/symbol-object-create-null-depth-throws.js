@@ -8,11 +8,11 @@
 
 
 assert.throws(TypeError, function() {
-  [].flatten(Symbol());
+  [].flat(Symbol());
 }, 'symbol value');
 
 assert.throws(TypeError, function() {
-  [].flatten(Object.create(null));
+  [].flat(Object.create(null));
 }, 'object create null');
 
 reportCompare(0, 0);

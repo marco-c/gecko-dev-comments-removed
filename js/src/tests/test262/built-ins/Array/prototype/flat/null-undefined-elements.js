@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+var a = [void 0];
+
+assert(compareArray([1, null, void 0].flat(), [1, null, undefined]));
+assert(compareArray([1, [null, void 0]].flat(), [1, null, undefined]));
+assert(compareArray([
+  [null, void 0],
+  [null, void 0]
+].flat(), [null, undefined, null, undefined]));
+assert(compareArray([1, [null, a]].flat(1), [1, null, a]));
+assert(compareArray([1, [null, a]].flat(2), [1, null, undefined]));
+
+reportCompare(0, 0);

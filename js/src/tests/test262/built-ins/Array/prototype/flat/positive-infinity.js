@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+var a = [1, [2, [3, [4]]]]
+assert(compareArray(a.flat(Number.POSITIVE_INFINITY), [1, 2, 3, 4]), 'positive infinity depthNum');
+
+reportCompare(0, 0);

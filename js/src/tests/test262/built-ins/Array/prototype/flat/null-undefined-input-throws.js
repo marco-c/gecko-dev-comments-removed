@@ -8,15 +8,15 @@
 
 
 assert.throws(TypeError, function() {
-  [].flatten.call(null);
+  [].flat.call(null);
 }, 'null value');
 
 assert.throws(TypeError, function() {
-  [].flatten.call();
+  [].flat.call();
 }, 'missing');
 
 assert.throws(TypeError, function() {
-  [].flatten.call(void 0);
+  [].flat.call(void 0);
 }, 'undefined');
 
 reportCompare(0, 0);

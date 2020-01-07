@@ -13,32 +13,32 @@ var expected = a;
 
 
 var depthNum = 'TestString';
-var actual = a.flatten(depthNum);
+var actual = a.flat(depthNum);
 assert(compareArray(actual, expected), 'non integral string depthNum');
 
 
 var depthNum = {};
-var actual = a.flatten(depthNum);
+var actual = a.flat(depthNum);
 assert(compareArray(actual, expected), 'object type depthNum');
 
 
 var depthNum = Number.NEGATIVE_INFINITY;
-var actual = a.flatten(depthNum);
+var actual = a.flat(depthNum);
 assert(compareArray(actual, expected), 'negative infinity depthNum');
 
 
 var depthNum = +0;
-var actual = a.flatten(depthNum);
+var actual = a.flat(depthNum);
 assert(compareArray(actual, expected), 'positive zero depthNum');
 
 
 var depthNum = -0;
-var actual = a.flatten(depthNum);
+var actual = a.flat(depthNum);
 assert(compareArray(actual, expected), 'negative zero depthNum');
 
 
 var depthNum = '1';
-var actual = a.flatten(depthNum);
+var actual = a.flat(depthNum);
 var expected = [1, 2]
 assert(compareArray(actual, expected), 'integral string depthNum');
 

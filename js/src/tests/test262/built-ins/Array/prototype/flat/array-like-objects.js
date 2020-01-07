@@ -13,21 +13,21 @@ function getArgumentsObject() {
 }
 
 var a = getArgumentsObject([1], [2]);
-var actual = [].flatten.call(a);
+var actual = [].flat.call(a);
 assert.compareArray(actual, [1, 2], 'arguments objects');
 
 var a = {
   length: 1,
   0: [1],
 };
-var actual = [].flatten.call(a);
+var actual = [].flat.call(a);
 assert.compareArray(actual, [1], 'array-like objects');
 
 var a = {
   length: undefined,
   0: [1],
 };
-var actual = [].flatten.call(a);
+var actual = [].flat.call(a);
 assert.compareArray(actual, [], 'array-like objects; undefined length');
 
 reportCompare(0, 0);

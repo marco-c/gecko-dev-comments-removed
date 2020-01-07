@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  Array.prototype.flat.name, 'flat',
+  'The value of `Array.prototype.flat.name` is `"flat"`'
+);
+
+verifyNotEnumerable(Array.prototype.flat, 'name');
+verifyNotWritable(Array.prototype.flat, 'name');
+verifyConfigurable(Array.prototype.flat, 'name');
+
+reportCompare(0, 0);

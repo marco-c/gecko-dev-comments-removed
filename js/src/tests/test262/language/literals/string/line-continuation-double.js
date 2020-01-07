@@ -1,0 +1,62 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue("\
+", "");
+
+
+assert.sameValue("\", "");
+
+
+
+assert.sameValue("\ ", "");
+
+
+
+assert.sameValue("\ ", "");
+
+
+assert.sameValue("\
+", "");
+
+reportCompare(0, 0);

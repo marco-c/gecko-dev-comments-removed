@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+var a = {},
+  b = {};
+
+assert.compareArray([a].flat(), [a]);
+assert.compareArray([a, [b]].flat(), [a, b]);
+assert.compareArray([
+  [a], b
+].flat(), [a, b]);
+assert.compareArray([
+  [a],
+  [b]
+].flat(), [a, b]);
+
+reportCompare(0, 0);

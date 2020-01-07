@@ -11,25 +11,25 @@
 var a = [];
 a.constructor = null;
 assert.throws(TypeError, function() {
-  a.flatten();
+  a.flat();
 }, 'null value');
 
 var a = [];
 a.constructor = 1;
 assert.throws(TypeError, function() {
-  a.flatten();
+  a.flat();
 }, 'number value');
 
 var a = [];
 a.constructor = 'string';
 assert.throws(TypeError, function() {
-  a.flatten();
+  a.flat();
 }, 'string value');
 
 var a = [];
 a.constructor = true;
 assert.throws(TypeError, function() {
-  a.flatten();
+  a.flat();
 }, 'boolean value');
 
 reportCompare(0, 0);

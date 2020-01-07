@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+var a = [
+  [0],
+  [1]
+];
+var actual = [].flat.bind(a)();
+
+assert.compareArray(actual, [0, 1], 'bound flat');
+
+reportCompare(0, 0);

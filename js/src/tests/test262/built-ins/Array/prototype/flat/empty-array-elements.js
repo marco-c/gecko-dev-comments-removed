@@ -9,18 +9,18 @@
 
 
 var a = {};
-assert.compareArray([].flatten(), []);
+assert.compareArray([].flat(), []);
 assert.compareArray([
   [],
   []
-].flatten(), []);
+].flat(), []);
 assert.compareArray([
   [],
   [1]
-].flatten(), [1]);
+].flat(), [1]);
 assert.compareArray([
   [],
   [1, a]
-].flatten(), [1, a]);
+].flat(), [1, a]);
 
 reportCompare(0, 0);
