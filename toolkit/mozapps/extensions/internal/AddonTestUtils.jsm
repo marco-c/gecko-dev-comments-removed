@@ -138,7 +138,7 @@ class MockBlocklist {
   }
 
   async getAddonBlocklistState(addon, appVersion, toolkitVersion) {
-    await new Promise(r => setTimeout(r, 150));
+    await new Promise(r => setTimeout(r, 0));
     return this.addons.get(addon.id) || Ci.nsIBlocklistService.STATE_NOT_BLOCKED;
   }
 
@@ -153,8 +153,7 @@ class MockBlocklist {
     return null;
   }
 
-  async getPluginBlocklistState(plugin, version, appVersion, toolkitVersion) {
-    await new Promise(r => setTimeout(r, 150));
+  getPluginBlocklistState(plugin, version, appVersion, toolkitVersion) {
     return Ci.nsIBlocklistService.STATE_NOT_BLOCKED;
   }
 }
@@ -335,9 +334,6 @@ var AddonTestUtils = {
 
     
     Services.prefs.setBoolPref("extensions.getAddons.cache.enabled", false);
-
-    
-    Services.prefs.setBoolPref("extensions.showMismatchUI", false);
 
     
     Services.prefs.setCharPref("extensions.update.url", "http://127.0.0.1/updateURL");

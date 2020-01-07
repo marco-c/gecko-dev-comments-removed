@@ -413,8 +413,6 @@ class FirefoxProfile(Profile):
         
         'extensions.installDistroAddons': False,
         
-        'extensions.showMismatchUI': False,
-        
         'extensions.update.enabled': False,
         
         'extensions.update.notifyUser': False,
