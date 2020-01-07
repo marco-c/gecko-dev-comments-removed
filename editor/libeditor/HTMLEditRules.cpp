@@ -486,8 +486,8 @@ HTMLEditRules::AfterEditInner(EditSubAction aEditSubAction,
     }
   }
 
-  if (bDamagedRange && !((aEditSubAction == EditSubAction::undo) ||
-                         (aEditSubAction == EditSubAction::redo))) {
+  if (bDamagedRange && !((aEditSubAction == EditSubAction::eUndo) ||
+                         (aEditSubAction == EditSubAction::eRedo))) {
     
     
     AutoTransactionsConserveSelection dontChangeMySelection(&HTMLEditorRef());
@@ -644,8 +644,8 @@ HTMLEditRules::WillDoAction(Selection* aSelection,
   
   
   if (aInfo.mEditSubAction == EditSubAction::outputText ||
-      aInfo.mEditSubAction == EditSubAction::undo ||
-      aInfo.mEditSubAction == EditSubAction::redo) {
+      aInfo.mEditSubAction == EditSubAction::eUndo ||
+      aInfo.mEditSubAction == EditSubAction::eRedo) {
     return TextEditRules::WillDoAction(aSelection, aInfo, aCancel, aHandled);
   }
 

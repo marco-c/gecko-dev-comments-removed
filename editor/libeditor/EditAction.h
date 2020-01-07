@@ -19,8 +19,11 @@ enum class EditSubAction : int32_t
   
   
   eNone = 0,
-  undo,
-  redo,
+
+  
+  eUndo,
+  eRedo,
+
   insertNode,
   createNode,
   deleteNode,
