@@ -78,6 +78,8 @@ class JSFunction : public js::NativeObject
         INTERPRETED_LAZY = 0x0200,  
         RESOLVED_LENGTH  = 0x0400,  
         RESOLVED_NAME    = 0x0800,  
+        NEW_SCRIPT_CLEARED  = 0x1000, 
+
 
         FUNCTION_KIND_SHIFT = 13,
         FUNCTION_KIND_MASK  = 0x7 << FUNCTION_KIND_SHIFT,
@@ -367,6 +369,14 @@ class JSFunction : public js::NativeObject
 
     void setResolvedName() {
         flags_ |= RESOLVED_NAME;
+    }
+
+    
+    bool wasNewScriptCleared() const {
+        return flags_ & NEW_SCRIPT_CLEARED;
+    }
+    void setNewScriptCleared() {
+        flags_ |= NEW_SCRIPT_CLEARED;
     }
 
     void setAsyncKind(js::FunctionAsyncKind asyncKind) {
