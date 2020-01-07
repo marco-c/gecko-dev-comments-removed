@@ -68,13 +68,14 @@ def main():
     parser = argparse.ArgumentParser(
         description='Upload symbols in ZIP using token from Taskcluster secrets service.')
     parser.add_argument('zip',
-                        help='Symbols zip file')
+                        help='Symbols zip file - URL or path to local file')
     args = parser.parse_args()
 
-    if not os.path.isfile(args.zip):
+    if not args.zip.startswith('http') and not os.path.isfile(args.zip):
         log.error('Error: zip file "{0}" does not exist!'.format(args.zip),
                   file=sys.stderr)
         return 1
+
 
     secret_name = os.environ.get('SYMBOL_SECRET')
     if secret_name is not None:
@@ -105,12 +106,19 @@ def main():
     for i, _ in enumerate(redo.retrier(attempts=MAX_RETRIES), start=1):
         log.info('Attempt %d of %d...' % (i, MAX_RETRIES))
         try:
+            if args.zip.startswith('http'):
+                zip_arg = {'data': {'url': args.zip}}
+            else:
+                zip_arg = {'files': {'symbols.zip': open(args.zip, 'rb')}}
             r = requests.post(
                 url,
-                files={'symbols.zip': open(args.zip, 'rb')},
                 headers={'Auth-Token': auth_token},
                 allow_redirects=False,
-                timeout=120)
+                
+                
+                
+                timeout=(10, 300),
+                **zip_arg)
             
             
             if r.status_code < 500:
