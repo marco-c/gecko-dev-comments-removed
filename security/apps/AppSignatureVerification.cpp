@@ -739,10 +739,6 @@ VerifySignature(AppTrustedRoot trustedRoot, const SECItem& buffer,
                  SECOidTag& digestAlgorithm,
                  UniqueCERTCertList& builtChain)
 {
-  
-  
-  
-
   if (NS_WARN_IF(!buffer.data || buffer.len == 0 || !detachedSHA1Digest.data ||
                  detachedSHA1Digest.len == 0 || !detachedSHA256Digest.data ||
                  detachedSHA256Digest.len == 0)) {

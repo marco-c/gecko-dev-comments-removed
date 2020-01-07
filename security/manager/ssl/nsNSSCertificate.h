@@ -84,14 +84,12 @@ public:
   NS_DECL_NSISERIALIZABLE
 
   
-  nsNSSCertList(mozilla::UniqueCERTCertList certList,
-                const nsNSSShutDownPreventionLock& proofOfLock);
+  explicit nsNSSCertList(mozilla::UniqueCERTCertList certList);
 
   nsNSSCertList();
 
   static mozilla::UniqueCERTCertList DupCertList(
-    const mozilla::UniqueCERTCertList& certList,
-    const nsNSSShutDownPreventionLock& proofOfLock);
+    const mozilla::UniqueCERTCertList& certList);
 
   
   
@@ -131,8 +129,7 @@ public:
    NS_DECL_THREADSAFE_ISUPPORTS
    NS_DECL_NSISIMPLEENUMERATOR
 
-   nsNSSCertListEnumerator(const mozilla::UniqueCERTCertList& certList,
-                           const nsNSSShutDownPreventionLock& proofOfLock);
+   explicit nsNSSCertListEnumerator(const mozilla::UniqueCERTCertList& certList);
 private:
    virtual ~nsNSSCertListEnumerator();
    virtual void virtualDestroyNSSReference() override;

@@ -52,7 +52,6 @@ pip_ucs2_ascii_conversion_fn(PRBool toUnicode,
 
 
 nsresult
-setPassword(PK11SlotInfo* slot, nsIInterfaceRequestor* ctx,
-            nsNSSShutDownPreventionLock& );
+setPassword(PK11SlotInfo* slot, nsIInterfaceRequestor* ctx);
 
 #endif

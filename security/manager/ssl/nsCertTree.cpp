@@ -608,7 +608,6 @@ nsCertTree::GetCertsByType(uint32_t           aType,
                            nsCertCompareFunc  aCertCmpFn,
                            void              *aCertCmpFnArg)
 {
-  nsNSSShutDownPreventionLock locker;
   nsCOMPtr<nsIInterfaceRequestor> cxt = new PipUIContext();
   UniqueCERTCertList certList(PK11_ListCerts(PK11CertListUnique, cxt));
   return GetCertsByTypeFromCertList(certList.get(), aType, aCertCmpFn,
@@ -622,18 +621,10 @@ nsCertTree::GetCertsByTypeFromCache(nsIX509CertList   *aCache,
                                     void              *aCertCmpFnArg)
 {
   NS_ENSURE_ARG_POINTER(aCache);
-  
-  
-  
-  
-  
-  
-  
-  
-  nsNSSShutDownPreventionLock locker;
   CERTCertList* certList = aCache->GetRawCertList();
-  if (!certList)
+  if (!certList) {
     return NS_ERROR_FAILURE;
+  }
   return GetCertsByTypeFromCertList(certList, aType, aCertCmpFn, aCertCmpFnArg);
 }
 

@@ -118,7 +118,6 @@ BackgroundFileSaver::BackgroundFileSaver()
 BackgroundFileSaver::~BackgroundFileSaver()
 {
   LOG(("Destroying BackgroundFileSaver [this = %p]", this));
-  nsNSSShutDownPreventionLock lock;
   if (isAlreadyShutDown()) {
     return;
   }
@@ -553,7 +552,6 @@ BackgroundFileSaver::ProcessStateChange()
 
   
   if (sha256Enabled && !mDigestContext) {
-    nsNSSShutDownPreventionLock lock;
     if (!isAlreadyShutDown()) {
       mDigestContext = UniquePK11Context(
         PK11_CreateDigestContext(SEC_OID_SHA256));
@@ -582,7 +580,6 @@ BackgroundFileSaver::ProcessStateChange()
           break;
         }
 
-        nsNSSShutDownPreventionLock lock;
         if (isAlreadyShutDown()) {
           return NS_ERROR_NOT_AVAILABLE;
         }
@@ -628,8 +625,6 @@ BackgroundFileSaver::ProcessStateChange()
 
   
   if (mDigestContext) {
-    
-    
     
     
     
@@ -724,7 +719,6 @@ BackgroundFileSaver::CheckCompletion()
 
   
   if (!failed && mDigestContext) {
-    nsNSSShutDownPreventionLock lock;
     if (!isAlreadyShutDown()) {
       Digest d;
       rv = d.End(SEC_OID_SHA256, mDigestContext);
@@ -817,7 +811,6 @@ BackgroundFileSaver::ExtractSignatureInfo(const nsAString& filePath)
 {
   MOZ_ASSERT(!NS_IsMainThread(), "Cannot extract signature on main thread");
 
-  nsNSSShutDownPreventionLock nssLock;
   if (isAlreadyShutDown()) {
     return NS_ERROR_NOT_AVAILABLE;
   }
@@ -1219,7 +1212,6 @@ DigestOutputStream::DigestOutputStream(nsIOutputStream* aStream,
 
 DigestOutputStream::~DigestOutputStream()
 {
-  nsNSSShutDownPreventionLock locker;
   if (isAlreadyShutDown()) {
     return;
   }
@@ -1241,7 +1233,6 @@ DigestOutputStream::Flush()
 NS_IMETHODIMP
 DigestOutputStream::Write(const char* aBuf, uint32_t aCount, uint32_t* retval)
 {
-  nsNSSShutDownPreventionLock lock;
   if (isAlreadyShutDown()) {
     return NS_ERROR_NOT_AVAILABLE;
   }

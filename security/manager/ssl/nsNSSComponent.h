@@ -183,9 +183,6 @@ private:
   nsresult mLoadableRootsLoadedResult;
 
   
-  
-  
-  
   mozilla::Mutex mMutex;
 
   

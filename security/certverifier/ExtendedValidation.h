@@ -14,8 +14,7 @@ namespace mozilla { namespace pkix { struct CertPolicyId; } }
 
 namespace mozilla { namespace psm {
 
-nsresult LoadExtendedValidationInfo(
-  const nsNSSShutDownPreventionLock& proofOfLock);
+nsresult LoadExtendedValidationInfo();
 
 
 

@@ -986,9 +986,6 @@ nsNTLMAuthModule::InitTest()
     prefObserved = true;
   }
 
-  nsNSSShutDownPreventionLock locker;
-  
-  
   
   return PK11_IsFIPS() ? NS_ERROR_NOT_AVAILABLE : NS_OK;
 }
@@ -1027,12 +1024,11 @@ nsNTLMAuthModule::GetNextToken(const void *inToken,
                                uint32_t   *outTokenLen)
 {
   nsresult rv;
-  nsNSSShutDownPreventionLock locker;
+
   
-  
-  
-  if (PK11_IsFIPS())
+  if (PK11_IsFIPS()) {
     return NS_ERROR_NOT_AVAILABLE;
+  }
 
   if (mNTLMNegotiateSent) {
     

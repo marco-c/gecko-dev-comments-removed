@@ -10,26 +10,6 @@
 
 
 
-
-
-
-
-static int sSilenceCompilerWarnings;
-
-class nsNSSShutDownPreventionLock
-{
-public:
-  nsNSSShutDownPreventionLock()
-  {
-    sSilenceCompilerWarnings++;
-  }
-
-  ~nsNSSShutDownPreventionLock()
-  {
-    sSilenceCompilerWarnings--;
-  }
-};
-
 class nsNSSShutDownObject
 {
 public:
