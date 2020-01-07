@@ -572,7 +572,7 @@ class DisconnectInternalRunnable final : public WorkerMainThreadRunnable
 {
 public:
   explicit DisconnectInternalRunnable(WebSocketImpl* aImpl)
-    : WorkerMainThreadRunnable(aImpl->mWorkerRef->Private(),
+    : WorkerMainThreadRunnable(GetCurrentThreadWorkerPrivate(),
                                NS_LITERAL_CSTRING("WebSocket :: disconnect"))
     , mImpl(aImpl)
   { }
@@ -620,7 +620,7 @@ WebSocketImpl::Disconnect()
     if (mWebSocket->GetOwner()) {
       mWebSocket->GetOwner()->UpdateWebSocketCount(-1);
     }
-  } else if (mWorkerRef) {
+  } else {
     RefPtr<DisconnectInternalRunnable> runnable =
       new DisconnectInternalRunnable(this);
     ErrorResult rv;
@@ -1404,17 +1404,13 @@ WebSocket::ConstructorCommon(const GlobalObject& aGlobal,
 
     if (NS_WARN_IF(!webSocketImpl->RegisterWorkerRef(workerPrivate))) {
       
-      
-      webSocketImpl->mWorkerShuttingDown = true;
-      webSocketImpl->Disconnect();
-      return webSocket.forget();
+      aRv.Throw(NS_ERROR_FAILURE);
+      return nullptr;
     }
 
     RefPtr<ConnectRunnable> connectRunnable =
       new ConnectRunnable(workerPrivate, webSocketImpl);
-    
-    
-    connectRunnable->Dispatch(Closing, aRv);
+    connectRunnable->Dispatch(Canceling, aRv);
     if (NS_WARN_IF(aRv.Failed())) {
       return nullptr;
     }
