@@ -340,6 +340,29 @@ async function waitUntilApzStable() {
   await promiseApzRepaintsFlushed();
 }
 
+
+
+
+
+
+
+
+
+
+async function forceLayerTreeToCompositor() {
+  var utils = SpecialPowers.getDOMWindowUtils(window);
+  if (!utils.isMozAfterPaintPending) {
+    dump("Forcing a paint since none was pending already...\n");
+    var testMode = utils.isTestControllingRefreshes;
+    utils.advanceTimeAndRefresh(0);
+    if (!testMode) {
+      utils.restoreNormalRefresh();
+    }
+  }
+  await promiseAllPaintsDone();
+  await promiseApzRepaintsFlushed();
+}
+
 function isApzEnabled() {
   var enabled = SpecialPowers.getDOMWindowUtils(window).asyncPanZoomEnabled;
   if (!enabled) {
