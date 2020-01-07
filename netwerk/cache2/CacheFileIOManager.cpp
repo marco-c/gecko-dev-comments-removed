@@ -52,10 +52,11 @@ namespace net {
 #define kSmartSizeUpdateInterval 60000 // in milliseconds
 
 #ifdef ANDROID
-const uint32_t kMaxCacheSizeKB = 200*1024; 
+const uint32_t kMaxCacheSizeKB = 512*1024; 
 #else
-const uint32_t kMaxCacheSizeKB = 350*1024; 
+const uint32_t kMaxCacheSizeKB = 1024*1024; 
 #endif
+const uint32_t kMaxClearOnShutdownCacheSizeKB = 150*1024; 
 
 bool
 CacheFileHandle::DispatchRelease()
@@ -4168,9 +4169,15 @@ CacheFileIOManager::SyncRemoveAllCacheFiles()
 static uint32_t
 SmartCacheSize(const uint32_t availKB)
 {
-  uint32_t maxSize = kMaxCacheSizeKB;
+  uint32_t maxSize;
 
-  if (availKB > 100 * 1024 * 1024) {
+  if (CacheObserver::ClearCacheOnShutdown()) {
+    maxSize = kMaxClearOnShutdownCacheSizeKB;
+  } else {
+    maxSize = kMaxCacheSizeKB;
+  }
+
+  if (availKB > 25 * 1024 * 1024) {
     return maxSize;  
   }
 
@@ -4181,18 +4188,13 @@ SmartCacheSize(const uint32_t availKB)
   uint32_t avail10MBs = availKB / (1024*10);
 
   
-  if (avail10MBs > 2500) {
-    sz10MBs += static_cast<uint32_t>((avail10MBs - 2500)*.005);
-    avail10MBs = 2500;
-  }
-  
   if (avail10MBs > 700) {
-    sz10MBs += static_cast<uint32_t>((avail10MBs - 700)*.01);
+    sz10MBs += static_cast<uint32_t>((avail10MBs - 700)*.025);
     avail10MBs = 700;
   }
   
   if (avail10MBs > 50) {
-    sz10MBs += static_cast<uint32_t>((avail10MBs - 50)*.05);
+    sz10MBs += static_cast<uint32_t>((avail10MBs - 50)*.075);
     avail10MBs = 50;
   }
 
@@ -4202,10 +4204,10 @@ SmartCacheSize(const uint32_t availKB)
   
 
   
-  sz10MBs += std::max<uint32_t>(1, static_cast<uint32_t>(avail10MBs * .2));
+  sz10MBs += std::max<uint32_t>(1, static_cast<uint32_t>(avail10MBs * .16));
 #else
   
-  sz10MBs += std::max<uint32_t>(5, static_cast<uint32_t>(avail10MBs * .4));
+  sz10MBs += std::max<uint32_t>(5, static_cast<uint32_t>(avail10MBs * .3));
 #endif
 
   return std::min<uint32_t>(maxSize, sz10MBs * 10 * 1024);
