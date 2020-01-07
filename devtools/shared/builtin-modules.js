@@ -18,17 +18,36 @@ const promise = require("resource://gre/modules/Promise.jsm").Promise;
 const jsmScope = require("resource://gre/modules/Services.jsm");
 const { Services } = jsmScope;
 
-const { ChromeUtils, HeapSnapshot, XMLHttpRequest, console,
-        atob, btoa, TextEncoder, TextDecoder } = Cu.getGlobalForObject(jsmScope);
+const {
+  atob,
+  btoa,
+  ChromeUtils,
+  console,
+  HeapSnapshot,
+  TextDecoder,
+  TextEncoder,
+  XMLHttpRequest,
+} = Cu.getGlobalForObject(jsmScope);
 
 
 
-const { CSS, CSSRule, FileReader, indexedDB, InspectorUtils, URL } =
-    Cu.Sandbox(CC("@mozilla.org/systemprincipal;1", "nsIPrincipal")(), {
-      wantGlobalProperties: [
-        "CSS", "CSSRule", "FileReader", "indexedDB", "InspectorUtils", "URL",
-      ]
-    });
+const {
+  CSS,
+  CSSRule,
+  FileReader,
+  indexedDB,
+  InspectorUtils,
+  URL,
+} = Cu.Sandbox(CC("@mozilla.org/systemprincipal;1", "nsIPrincipal")(), {
+  wantGlobalProperties: [
+    "CSS",
+    "CSSRule",
+    "FileReader",
+    "indexedDB",
+    "InspectorUtils",
+    "URL",
+  ]
+});
 
 
 
@@ -172,16 +191,16 @@ function lazyRequireGetter(obj, property, module, destructure) {
 
 
 exports.modules = {
-  "Services": Object.create(Services),
+  ChromeUtils,
+  FileReader,
+  HeapSnapshot,
+  InspectorUtils,
   promise,
   
   
   
   Promise,
-  ChromeUtils,
-  HeapSnapshot,
-  InspectorUtils,
-  FileReader,
+  Services: Object.create(Services),
 };
 
 defineLazyGetter(exports.modules, "Debugger", () => {
@@ -213,31 +232,11 @@ defineLazyGetter(exports.modules, "xpcInspector", () => {
 
 
 exports.globals = {
-  isWorker: false,
-  reportError: Cu.reportError,
-  atob: atob,
-  btoa: btoa,
-  console: console,
-  TextEncoder: TextEncoder,
-  TextDecoder: TextDecoder,
-  URL,
+  atob,
+  btoa,
+  console,
   CSS,
   CSSRule,
-  loader: {
-    lazyGetter: defineLazyGetter,
-    lazyImporter: defineLazyModuleGetter,
-    lazyServiceGetter: defineLazyServiceGetter,
-    lazyRequireGetter: lazyRequireGetter,
-    
-    id: null
-  },
-
-  XMLHttpRequest: XMLHttpRequest,
-
-  Node: Ci.nsIDOMNode,
-  Element: Ci.nsIDOMElement,
-  DocumentFragment: Ci.nsIDOMDocumentFragment,
-
   
   
   
@@ -254,6 +253,23 @@ exports.globals = {
   define(factory) {
     factory(this.require, this.exports, this.module);
   },
+  DocumentFragment: Ci.nsIDOMDocumentFragment,
+  Element: Ci.nsIDOMElement,
+  isWorker: false,
+  loader: {
+    lazyGetter: defineLazyGetter,
+    lazyImporter: defineLazyModuleGetter,
+    lazyServiceGetter: defineLazyServiceGetter,
+    lazyRequireGetter: lazyRequireGetter,
+    
+    id: null
+  },
+  Node: Ci.nsIDOMNode,
+  reportError: Cu.reportError,
+  TextDecoder,
+  TextEncoder,
+  URL,
+  XMLHttpRequest,
 };
 
 
