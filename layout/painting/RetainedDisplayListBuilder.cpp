@@ -108,183 +108,75 @@ SelectAGRForFrame(nsIFrame* aFrame, AnimatedGeometryRoot* aParentAGR)
 
 
 bool
-RetainedDisplayListBuilder::PreProcessDisplayList(nsDisplayList* aList,
+RetainedDisplayListBuilder::PreProcessDisplayList(RetainedDisplayList* aList,
                                                   AnimatedGeometryRoot* aAGR)
 {
-  bool modified = false;
+  
+  
+  
+  
+  static const uint32_t kMaxEdgeRatio = 5;
+  bool initializeDAG = !aList->mDAG.Length();
+  if (!initializeDAG &&
+      aList->mDAG.mDirectPredecessorList.Length() >
+      (aList->mDAG.mNodesInfo.Length() * kMaxEdgeRatio)) {
+    return false;
+
+  }
+
   nsDisplayList saved;
-  while (nsDisplayItem* i = aList->RemoveBottom()) {
-    if (i->HasDeletedFrame() || !i->CanBeReused()) {
-      i->Destroy(&mBuilder);
-      modified = true;
+  aList->mOldItems.SetCapacity(aList->Count());
+  size_t i = 0;
+  while (nsDisplayItem* item = aList->RemoveBottom()) {
+    if (item->HasDeletedFrame() || !item->CanBeReused()) {
+      
+      
+      
+      
+      if (initializeDAG) {
+        item->Destroy(&mBuilder);
+      } else {
+        aList->mOldItems.AppendElement(OldItemInfo(item));
+      }
       continue;
     }
 
-    nsIFrame* f = i->Frame();
+    aList->mOldItems.AppendElement(OldItemInfo(item));
+    if (initializeDAG) {
+      if (i == 0) {
+        aList->mDAG.AddNode(Span<const MergedListIndex>());
+      } else {
+        MergedListIndex previous(i - 1);
+        aList->mDAG.AddNode(Span<const MergedListIndex>(&previous, 1));
+      }
 
-    if (i->GetChildren()) {
-      if (PreProcessDisplayList(i->GetChildren(), SelectAGRForFrame(f, aAGR))) {
-        modified = true;
+      aList->mKeyLookup.Put({ item->Frame(), item->GetPerFrameKey() }, i);
+      i++;
+    }
+
+    nsIFrame* f = item->Frame();
+
+    if (item->GetChildren()) {
+      if (!PreProcessDisplayList(item->GetChildren(), SelectAGRForFrame(f, aAGR))) {
+        mBuilder.MarkFrameForDisplayIfVisible(f, mBuilder.RootReferenceFrame());
+        mBuilder.MarkFrameModifiedDuringBuilding(f);
       }
     }
 
     
     
     
-    if (aAGR && i->GetAnimatedGeometryRoot()->GetAsyncAGR() != aAGR) {
+    if (aAGR && item->GetAnimatedGeometryRoot()->GetAsyncAGR() != aAGR) {
       mBuilder.MarkFrameForDisplayIfVisible(f, mBuilder.RootReferenceFrame());
-      modified = true;
     }
 
     
     
     
-    i->RestoreState();
-
-    saved.AppendToTop(i);
+    item->RestoreState();
   }
-  aList->AppendToTop(&saved);
   aList->RestoreState();
-  return modified;
-}
-
-struct DisplayItemKey
-{
-  bool operator ==(const DisplayItemKey& aOther) const {
-    return mFrame == aOther.mFrame &&
-           mPerFrameKey == aOther.mPerFrameKey;
-  }
-
-  nsIFrame* mFrame;
-  uint32_t mPerFrameKey;
-};
-
-class DisplayItemHashEntry : public PLDHashEntryHdr
-{
-public:
-  typedef DisplayItemKey KeyType;
-  typedef const DisplayItemKey* KeyTypePointer;
-
-  explicit DisplayItemHashEntry(KeyTypePointer aKey)
-    : mKey(*aKey) {}
-  explicit DisplayItemHashEntry(const DisplayItemHashEntry& aCopy)=default;
-
-  ~DisplayItemHashEntry() = default;
-
-  KeyType GetKey() const { return mKey; }
-  bool KeyEquals(KeyTypePointer aKey) const
-  {
-    return mKey == *aKey;
-  }
-
-  static KeyTypePointer KeyToPointer(KeyType& aKey) { return &aKey; }
-  static PLDHashNumber HashKey(KeyTypePointer aKey)
-  {
-    if (!aKey)
-      return 0;
-
-    return mozilla::HashGeneric(aKey->mFrame, aKey->mPerFrameKey);
-  }
-  enum { ALLOW_MEMMOVE = true };
-
-  DisplayItemKey mKey;
-};
-
-template<typename T>
-void SwapAndRemove(nsTArray<T>& aArray, uint32_t aIndex)
-{
-  if (aIndex != (aArray.Length() - 1)) {
-    T last = aArray.LastElement();
-    aArray.LastElement() = aArray[aIndex];
-    aArray[aIndex] = last;
-  }
-
-  aArray.RemoveLastElement();
-}
-
-static bool
-MergeFrameRects(nsDisplayLayerEventRegions* aOldItem,
-                nsDisplayLayerEventRegions* aNewItem,
-                nsDisplayLayerEventRegions::FrameRects nsDisplayLayerEventRegions::*aRectList,
-                nsTArray<nsIFrame*>& aAddedFrames)
-{
-  bool modified = false;
-  
-  
-  
-  nsDisplayLayerEventRegions::FrameRects& oldRects = aOldItem->*aRectList;
-  uint32_t i = 0;
-  while (i < oldRects.mFrames.Length()) {
-    
-    
-    nsIFrame* f = oldRects.mFrames[i];
-    if (IsAnyAncestorModified(f)) {
-      MOZ_ASSERT(f != aOldItem->Frame());
-      f->RemoveDisplayItem(aOldItem);
-      SwapAndRemove(oldRects.mFrames, i);
-      SwapAndRemove(oldRects.mBoxes, i);
-      modified = true;
-    } else {
-      i++;
-    }
-  }
-  if (!aNewItem) {
-    return modified;
-  }
-
-  
-  
-  nsDisplayItem* destItem = aOldItem;
-  nsDisplayLayerEventRegions::FrameRects* destRects = &(aOldItem->*aRectList);
-  nsDisplayLayerEventRegions::FrameRects* srcRects = &(aNewItem->*aRectList);
-
-  for (uint32_t i = 0; i < srcRects->mFrames.Length(); i++) {
-    nsIFrame* f = srcRects->mFrames[i];
-    if (!f->HasDisplayItem(destItem)) {
-      
-      
-      destRects->Add(f, srcRects->mBoxes[i]);
-
-      
-      
-      
-      aAddedFrames.AppendElement(f);
-      MOZ_ASSERT(f != aOldItem->Frame());
-
-      modified = true;
-    }
-
-  }
-  return modified;
-}
-
-bool MergeLayerEventRegions(nsDisplayItem* aOldItem,
-                            nsDisplayItem* aNewItem)
-{
-  nsDisplayLayerEventRegions* oldItem =
-    static_cast<nsDisplayLayerEventRegions*>(aOldItem);
-  nsDisplayLayerEventRegions* newItem =
-    static_cast<nsDisplayLayerEventRegions*>(aNewItem);
-
-  nsTArray<nsIFrame*> addedFrames;
-
-  bool modified = false;
-  modified |= MergeFrameRects(oldItem, newItem, &nsDisplayLayerEventRegions::mHitRegion, addedFrames);
-  modified |= MergeFrameRects(oldItem, newItem, &nsDisplayLayerEventRegions::mMaybeHitRegion, addedFrames);
-  modified |= MergeFrameRects(oldItem, newItem, &nsDisplayLayerEventRegions::mDispatchToContentHitRegion, addedFrames);
-  modified |= MergeFrameRects(oldItem, newItem, &nsDisplayLayerEventRegions::mNoActionRegion, addedFrames);
-  modified |= MergeFrameRects(oldItem, newItem, &nsDisplayLayerEventRegions::mHorizontalPanRegion, addedFrames);
-  modified |= MergeFrameRects(oldItem, newItem, &nsDisplayLayerEventRegions::mVerticalPanRegion, addedFrames);
-
-  
-  
-  
-  for (nsIFrame* f : addedFrames) {
-    if (!f->HasDisplayItem(aOldItem)) {
-      f->AddDisplayItem(aOldItem);
-    }
-  }
-  return modified;
+  return true;
 }
 
 void
@@ -321,73 +213,253 @@ UpdateASR(nsDisplayItem* aItem,
                                      aContainerASR.value()));
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+void
+OldItemInfo::AddedMatchToMergedList(RetainedDisplayListBuilder* aBuilder,
+                                    MergedListIndex aIndex)
+{
+  mItem->Destroy(aBuilder->Builder());
+  AddedToMergedList(aIndex);
+}
+
+void
+OldItemInfo::Discard(RetainedDisplayListBuilder* aBuilder,
+                     nsTArray<MergedListIndex>&& aDirectPredecessors)
+{
+  MOZ_ASSERT(!IsUsed());
+  mUsed = mDiscarded = true;
+  mDirectPredecessors = Move(aDirectPredecessors);
+  mItem->Destroy(aBuilder->Builder());
+  mItem = nullptr;
+}
+
+
+
+
+
+
+
+
+
+
+class MergeState {
+public:
+  MergeState(RetainedDisplayListBuilder* aBuilder, RetainedDisplayList&& aOldList)
+    : mBuilder(aBuilder)
+    , mOldItems(Move(aOldList.mOldItems))
+    , mOldDAG(Move(*reinterpret_cast<DirectedAcyclicGraph<OldListUnits>*>(&aOldList.mDAG)))
+    , mResultIsModified(false)
+  {
+    mOldKeyLookup.SwapElements(aOldList.mKeyLookup);
+    mMergedDAG.EnsureCapacityFor(mOldDAG);
+  }
+
+  MergedListIndex ProcessItemFromNewList(nsDisplayItem* aNewItem, const Maybe<MergedListIndex>& aPreviousItem) {
+    OldListIndex oldIndex;
+    if (mOldKeyLookup.Get({ aNewItem->Frame(), aNewItem->GetPerFrameKey() }, &oldIndex.val)) {
+      bool changed = IsChanged(aNewItem);
+      if (!changed || HasSameSinglePredecessor(oldIndex, aPreviousItem)) {
+        MOZ_ASSERT(!mOldItems[oldIndex.val].IsUsed());
+        if (changed) {
+          mResultIsModified = true;
+        } else if (aNewItem->GetChildren()) {
+          Maybe<const ActiveScrolledRoot*> containerASRForChildren;
+          if (mBuilder->MergeDisplayLists(aNewItem->GetChildren(),
+                                          mOldItems[oldIndex.val].mItem->GetChildren(),
+                                          aNewItem->GetChildren(),
+                                          containerASRForChildren)) {
+            mResultIsModified = true;
+
+          }
+          UpdateASR(aNewItem, containerASRForChildren);
+          aNewItem->UpdateBounds(mBuilder->Builder());
+        }
+
+        AutoTArray<MergedListIndex, 2> directPredecessors = ProcessPredecessorsOfOldNode(oldIndex);
+        MergedListIndex newIndex = AddNewNode(aNewItem, Some(oldIndex), directPredecessors, aPreviousItem);
+        mOldItems[oldIndex.val].AddedMatchToMergedList(mBuilder, newIndex);
+        return newIndex;
+      }
+    }
+    mResultIsModified = true;
+    return AddNewNode(aNewItem, Nothing(), Span<MergedListIndex>(), aPreviousItem);
+  }
+
+  bool HasSameSinglePredecessor(OldListIndex aNode,
+                                const Maybe<MergedListIndex>& aNewItemPredecessor)
+  {
+    if (!aNewItemPredecessor) {
+      return false;
+    }
+
+    Span<OldListIndex> directPredecessors = mOldDAG.GetDirectPredecessors(aNode);
+    if (directPredecessors.Length() != 1) {
+      return false;
+    }
+
+    OldItemInfo& oldItem = mOldItems[directPredecessors[0].val];
+    if (oldItem.IsUsed() && !oldItem.IsDiscarded()) {
+      return oldItem.mIndex == aNewItemPredecessor.value();
+    }
+    return false;
+  }
+
+  RetainedDisplayList Finalize() {
+    for (size_t i = 0; i < mOldDAG.Length(); i++) {
+      if (mOldItems[i].IsUsed()) {
+        continue;
+      }
+
+      AutoTArray<MergedListIndex, 2> directPredecessors =
+        ResolveNodeIndexesOldToMerged(mOldDAG.GetDirectPredecessors(OldListIndex(i)));
+      ProcessOldNode(OldListIndex(i), Move(directPredecessors));
+    }
+
+    RetainedDisplayList result;
+    result.AppendToTop(&mMergedItems);
+    result.mDAG = Move(mMergedDAG);
+    result.mKeyLookup.SwapElements(mMergedKeyLookup);
+    return result;
+  }
+
+  bool IsChanged(nsDisplayItem* aItem) {
+    return aItem->HasDeletedFrame() || !aItem->CanBeReused() ||
+           IsAnyAncestorModified(aItem->FrameForInvalidation());
+  }
+
+  void UpdateContainerASR(nsDisplayItem* aItem)
+  {
+    const ActiveScrolledRoot* itemClipASR =
+      aItem->GetClipChain() ? aItem->GetClipChain()->mASR : nullptr;
+
+    const ActiveScrolledRoot* finiteBoundsASR = ActiveScrolledRoot::PickDescendant(
+      itemClipASR, aItem->GetActiveScrolledRoot());
+    if (!mContainerASR) {
+      mContainerASR = Some(finiteBoundsASR);
+    } else {
+      mContainerASR = Some(ActiveScrolledRoot::PickAncestor(mContainerASR.value(), finiteBoundsASR));
+    }
+
+  }
+
+  MergedListIndex AddNewNode(nsDisplayItem* aItem,
+                             const Maybe<OldListIndex>& aOldIndex,
+                             Span<const MergedListIndex> aDirectPredecessors,
+                             const Maybe<MergedListIndex>& aExtraDirectPredecessor) {
+    UpdateContainerASR(aItem);
+    mMergedItems.AppendToTop(aItem);
+    MergedListIndex newIndex = mMergedDAG.AddNode(aDirectPredecessors, aExtraDirectPredecessor);
+    mMergedKeyLookup.Put({ aItem->Frame(), aItem->GetPerFrameKey() }, newIndex.val);
+    return newIndex;
+  }
+
+  void ProcessOldNode(OldListIndex aNode, nsTArray<MergedListIndex>&& aDirectPredecessors) {
+    nsDisplayItem* item = mOldItems[aNode.val].mItem;
+    if (IsChanged(item)) {
+      mOldItems[aNode.val].Discard(mBuilder, Move(aDirectPredecessors));
+      mResultIsModified = true;
+    } else {
+      if (item->GetChildren()) {
+        Maybe<const ActiveScrolledRoot*> containerASRForChildren;
+        nsDisplayList empty;
+        if (mBuilder->MergeDisplayLists(&empty, item->GetChildren(), item->GetChildren(),
+                                        containerASRForChildren)) {
+          mResultIsModified = true;
+        }
+        UpdateASR(item, containerASRForChildren);
+        item->UpdateBounds(mBuilder->Builder());
+      }
+      if (item->GetType() == DisplayItemType::TYPE_SUBDOCUMENT) {
+        mBuilder->IncrementSubDocPresShellPaintCount(item);
+      }
+      item->SetReused(true);
+      mOldItems[aNode.val].AddedToMergedList(
+        AddNewNode(item, Some(aNode), aDirectPredecessors, Nothing()));
+    }
+  }
+
+  struct PredecessorStackItem {
+    PredecessorStackItem(OldListIndex aNode, Span<OldListIndex> aPredecessors)
+     : mNode(aNode)
+     , mDirectPredecessors(aPredecessors)
+     , mCurrentPredecessorIndex(0)
+    {}
+
+    bool IsFinished() {
+      return mCurrentPredecessorIndex == mDirectPredecessors.Length();
+    }
+
+    OldListIndex GetAndIncrementCurrentPredecessor() { return mDirectPredecessors[mCurrentPredecessorIndex++]; }
+
+    OldListIndex mNode;
+    Span<OldListIndex> mDirectPredecessors;
+    size_t mCurrentPredecessorIndex;
+  };
+
+  AutoTArray<MergedListIndex, 2> ProcessPredecessorsOfOldNode(OldListIndex aNode) {
+    AutoTArray<PredecessorStackItem,256> mStack;
+    mStack.AppendElement(PredecessorStackItem(aNode, mOldDAG.GetDirectPredecessors(aNode)));
+
+    while (true) {
+      if (mStack.LastElement().IsFinished()) {
+        
+        
+        PredecessorStackItem item = mStack.PopLastElement();
+        AutoTArray<MergedListIndex,2> result =
+          ResolveNodeIndexesOldToMerged(item.mDirectPredecessors);
+        if (mStack.IsEmpty()) {
+          return result;
+        } else {
+          ProcessOldNode(item.mNode, Move(result));
+        }
+      } else {
+        
+        
+        OldListIndex currentIndex = mStack.LastElement().GetAndIncrementCurrentPredecessor();
+        if (!mOldItems[currentIndex.val].IsUsed()) {
+          mStack.AppendElement(
+            PredecessorStackItem(currentIndex, mOldDAG.GetDirectPredecessors(currentIndex)));
+        }
+      }
+    }
+  }
+
+  AutoTArray<MergedListIndex, 2> ResolveNodeIndexesOldToMerged(Span<OldListIndex> aDirectPredecessors) {
+    AutoTArray<MergedListIndex, 2> result;
+    result.SetCapacity(aDirectPredecessors.Length());
+    for (OldListIndex index : aDirectPredecessors) {
+      OldItemInfo& oldItem = mOldItems[index.val];
+      if (oldItem.IsDiscarded()) {
+        for (MergedListIndex inner : oldItem.mDirectPredecessors) {
+          if (!result.Contains(inner)) {
+            result.AppendElement(inner);
+          }
+        }
+      } else {
+        result.AppendElement(oldItem.mIndex);
+      }
+    }
+    return result;
+  }
+
+  RetainedDisplayListBuilder* mBuilder;
+  Maybe<const ActiveScrolledRoot*> mContainerASR;
+  nsTArray<OldItemInfo> mOldItems;
+  DirectedAcyclicGraph<OldListUnits> mOldDAG;
+  
+  
+  
+  nsDataHashtable<DisplayItemHashEntry, size_t> mOldKeyLookup;
+  nsDisplayList mMergedItems;
+  DirectedAcyclicGraph<MergedListUnits> mMergedDAG;
+  nsDataHashtable<DisplayItemHashEntry, size_t> mMergedKeyLookup;
+  bool mResultIsModified;
+};
+
+void RetainedDisplayList::ClearDAG()
+{
+  mDAG.Clear();
+  mKeyLookup.Clear();
+}
 
 
 
@@ -401,186 +473,20 @@ UpdateASR(nsDisplayItem* aItem,
 
 bool
 RetainedDisplayListBuilder::MergeDisplayLists(nsDisplayList* aNewList,
-                                              nsDisplayList* aOldList,
-                                              nsDisplayList* aOutList,
-                                              Maybe<const ActiveScrolledRoot*>& aOutContainerASR)
+                                              RetainedDisplayList* aOldList,
+                                              RetainedDisplayList* aOutList,
+                                              mozilla::Maybe<const mozilla::ActiveScrolledRoot*>& aOutContainerASR)
 {
-  bool modified = false;
+  MergeState merge(this, Move(*aOldList));
 
-  nsDisplayList merged;
-  const auto UseItem = [&](nsDisplayItem* aItem) {
-    const ActiveScrolledRoot* itemClipASR =
-      aItem->GetClipChain() ? aItem->GetClipChain()->mASR : nullptr;
-
-    const ActiveScrolledRoot* finiteBoundsASR = ActiveScrolledRoot::PickDescendant(
-      itemClipASR, aItem->GetActiveScrolledRoot());
-    if (!aOutContainerASR) {
-      aOutContainerASR = Some(finiteBoundsASR);
-    } else {
-      aOutContainerASR =
-        Some(ActiveScrolledRoot::PickAncestor(aOutContainerASR.value(), finiteBoundsASR));
-    }
-
-    merged.AppendToTop(aItem);
-  };
-
-  const auto ReuseItem = [&](nsDisplayItem* aItem) {
-    UseItem(aItem);
-    aItem->SetReused(true);
-
-    if (aItem->GetType() == DisplayItemType::TYPE_SUBDOCUMENT) {
-      IncrementSubDocPresShellPaintCount(aItem);
-    }
-  };
-
-  const bool newListIsEmpty = aNewList->IsEmpty();
-  if (!newListIsEmpty) {
-    
-    
-    
-    
-    nsDataHashtable<DisplayItemHashEntry, nsDisplayItem*> oldListLookup(aOldList->Count());
-
-    for (nsDisplayItem* i = aOldList->GetBottom(); i != nullptr; i = i->GetAbove()) {
-      i->SetReused(false);
-      oldListLookup.Put({ i->Frame(), i->GetPerFrameKey() }, i);
-    }
-
-    nsDataHashtable<DisplayItemHashEntry, nsDisplayItem*> newListLookup(aNewList->Count());
-    for (nsDisplayItem* i = aNewList->GetBottom(); i != nullptr; i = i->GetAbove()) {
-#ifdef DEBUG
-      if (newListLookup.Get({ i->Frame(), i->GetPerFrameKey() }, nullptr)) {
-        MOZ_CRASH_UNSAFE_PRINTF("Duplicate display items detected!: %s(0x%p) type=%d key=%d",
-                                  i->Name(), i->Frame(),
-                                  static_cast<int>(i->GetType()), i->GetPerFrameKey());
-      }
-#endif
-      newListLookup.Put({ i->Frame(), i->GetPerFrameKey() }, i);
-    }
-
-    while (nsDisplayItem* newItem = aNewList->RemoveBottom()) {
-      if (nsDisplayItem* oldItem = oldListLookup.Get({ newItem->Frame(), newItem->GetPerFrameKey() })) {
-        
-        
-        
-        nsDisplayItem* old = nullptr;
-        while ((old = aOldList->GetBottom()) && old != oldItem) {
-          if (IsAnyAncestorModified(old->FrameForInvalidation())) {
-            
-            oldListLookup.Remove({ old->Frame(), old->GetPerFrameKey() });
-            aOldList->RemoveBottom();
-            old->Destroy(&mBuilder);
-            modified = true;
-          } else if (newListLookup.Get({ old->Frame(), old->GetPerFrameKey() })) {
-            
-            
-            modified = true;
-            break;
-          } else {
-            
-            
-            if (old->GetChildren()) {
-              nsDisplayList empty;
-              Maybe<const ActiveScrolledRoot*> containerASRForChildren;
-              if (MergeDisplayLists(&empty, old->GetChildren(),
-                                    old->GetChildren(), containerASRForChildren)) {
-                modified = true;
-              }
-              UpdateASR(old, containerASRForChildren);
-              old->UpdateBounds(&mBuilder);
-            }
-            aOldList->RemoveBottom();
-            ReuseItem(old);
-          }
-        }
-        bool destroy = false;
-        if (old == oldItem) {
-          
-          
-          aOldList->RemoveBottom();
-          destroy = true;
-        } else {
-          
-          
-          
-          oldItem->SetReused(true);
-        }
-
-        
-        
-        if (destroy &&
-            oldItem->GetType() == DisplayItemType::TYPE_LAYER_EVENT_REGIONS &&
-            !IsAnyAncestorModified(oldItem->FrameForInvalidation())) {
-          
-          
-          
-          
-          if (MergeLayerEventRegions(oldItem, newItem)) {
-            modified = true;
-          }
-          ReuseItem(oldItem);
-          newItem->Destroy(&mBuilder);
-        } else {
-          if (IsAnyAncestorModified(oldItem->FrameForInvalidation())) {
-            modified = true;
-          } else if (oldItem->GetChildren()) {
-            MOZ_ASSERT(newItem->GetChildren());
-            Maybe<const ActiveScrolledRoot*> containerASRForChildren;
-            if (MergeDisplayLists(newItem->GetChildren(), oldItem->GetChildren(),
-                                  newItem->GetChildren(), containerASRForChildren)) {
-              modified = true;
-            }
-            UpdateASR(newItem, containerASRForChildren);
-            newItem->UpdateBounds(&mBuilder);
-          }
-
-          if (destroy) {
-            oldItem->Destroy(&mBuilder);
-          }
-          UseItem(newItem);
-        }
-      } else {
-        
-        
-        modified = true;
-        UseItem(newItem);
-      }
-    }
+  Maybe<MergedListIndex> previousItemIndex;
+  while (nsDisplayItem* item = aNewList->RemoveBottom()) {
+    previousItemIndex = Some(merge.ProcessItemFromNewList(item, previousItemIndex));
   }
 
-  
-  while (nsDisplayItem* old = aOldList->RemoveBottom()) {
-    if (!IsAnyAncestorModified(old->FrameForInvalidation()) &&
-        (!old->IsReused() || newListIsEmpty)) {
-      if (old->GetChildren()) {
-        
-        
-        
-        
-        nsDisplayList empty;
-        Maybe<const ActiveScrolledRoot*> containerASRForChildren;
-
-        if (MergeDisplayLists(&empty, old->GetChildren(),
-                              old->GetChildren(), containerASRForChildren)) {
-          modified = true;
-        }
-        UpdateASR(old, containerASRForChildren);
-        old->UpdateBounds(&mBuilder);
-      }
-      if (old->GetType() == DisplayItemType::TYPE_LAYER_EVENT_REGIONS) {
-        if (MergeLayerEventRegions(old, nullptr)) {
-          modified = true;
-        }
-      }
-      ReuseItem(old);
-    } else {
-      old->Destroy(&mBuilder);
-      modified = true;
-    }
-  }
-
-  aOutList->AppendToTop(&merged);
-  return modified;
+  *aOutList = Move(merge.Finalize());
+  aOutContainerASR = merge.mContainerASR;
+  return merge.mResultIsModified;
 }
 
 static void
@@ -1094,7 +1000,7 @@ RetainedDisplayListBuilder::AttemptPartialUpdate(
   mBuilder.ClearWindowOpaqueRegion();
 
   if (mBuilder.ShouldSyncDecodeImages()) {
-    MarkFramesWithItemsAndImagesModified(&mList);
+    MarkFramesWithItemsAndImagesModified(List());
   }
 
   mBuilder.EnterPresShell(mBuilder.RootReferenceFrame());
@@ -1108,7 +1014,7 @@ RetainedDisplayListBuilder::AttemptPartialUpdate(
 
   
   
-  const bool shouldBuildPartial = !mList.IsEmpty() && ShouldBuildPartial(modifiedFrames.Frames());
+  const bool shouldBuildPartial = !List()->IsEmpty() && ShouldBuildPartial(modifiedFrames.Frames());
 
   if (mPreviousCaret != mBuilder.GetCaretFrame()) {
     if (mPreviousCaret) {
@@ -1130,16 +1036,17 @@ RetainedDisplayListBuilder::AttemptPartialUpdate(
   AnimatedGeometryRoot* modifiedAGR = nullptr;
   if (!shouldBuildPartial ||
       !ComputeRebuildRegion(modifiedFrames.Frames(), &modifiedDirty,
-                           &modifiedAGR, framesWithProps.Frames())) {
-    mBuilder.LeavePresShell(mBuilder.RootReferenceFrame(), &mList);
+                           &modifiedAGR, framesWithProps.Frames()) ||
+      !PreProcessDisplayList(&mList, modifiedAGR)) {
+    mBuilder.LeavePresShell(mBuilder.RootReferenceFrame(), List());
+    mList.ClearDAG();
     return PartialUpdateResult::Failed;
   }
 
   modifiedDirty.IntersectRect(modifiedDirty, mBuilder.RootReferenceFrame()->GetVisualOverflowRectRelativeToSelf());
 
   PartialUpdateResult result = PartialUpdateResult::NoChange;
-  if (PreProcessDisplayList(&mList, modifiedAGR) ||
-      !modifiedDirty.IsEmpty() ||
+  if (!modifiedDirty.IsEmpty() ||
       !framesWithProps.IsEmpty()) {
     result = PartialUpdateResult::Updated;
   }
@@ -1182,6 +1089,6 @@ RetainedDisplayListBuilder::AttemptPartialUpdate(
   
   
 
-  mBuilder.LeavePresShell(mBuilder.RootReferenceFrame(), &mList);
+  mBuilder.LeavePresShell(mBuilder.RootReferenceFrame(), List());
   return result;
 }
