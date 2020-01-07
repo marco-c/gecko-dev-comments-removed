@@ -84,9 +84,7 @@ bool MenuBoxObject::HandleKeyPress(KeyboardEvent& keyEvent)
   }
 
   
-  bool eventHandled = false;
-  keyEvent.GetDefaultPrevented(&eventHandled);
-  if (eventHandled) {
+  if (keyEvent.DefaultPrevented()) {
     return false;
   }
 

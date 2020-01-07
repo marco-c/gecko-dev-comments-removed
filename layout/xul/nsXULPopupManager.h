@@ -58,6 +58,7 @@ class nsRefreshDriver;
 
 namespace mozilla {
 namespace dom {
+class Event;
 class KeyboardEvent;
 } 
 } 
@@ -458,7 +459,7 @@ public:
                  bool aIsContextMenu,
                  bool aAttributesOverride,
                  bool aSelectFirstItem,
-                 nsIDOMEvent* aTriggerEvent);
+                 mozilla::dom::Event* aTriggerEvent);
 
   
 
@@ -473,7 +474,7 @@ public:
   void ShowPopupAtScreen(nsIContent* aPopup,
                          int32_t aXPos, int32_t aYPos,
                          bool aIsContextMenu,
-                         nsIDOMEvent* aTriggerEvent);
+                         mozilla::dom::Event* aTriggerEvent);
 
   
 
@@ -483,7 +484,7 @@ public:
                              const nsIntRect& aRect,
                              bool aIsContextMenu,
                              bool aAttributesOverride,
-                             nsIDOMEvent* aTriggerEvent);
+                             mozilla::dom::Event* aTriggerEvent);
 
   
 
@@ -725,7 +726,7 @@ protected:
 
   
   
-  void InitTriggerEvent(nsIDOMEvent* aEvent, nsIContent* aPopup, nsIContent** aTriggerContent);
+  void InitTriggerEvent(mozilla::dom::Event* aEvent, nsIContent* aPopup, nsIContent** aTriggerContent);
 
   
   void ShowPopupCallback(nsIContent* aPopup,
@@ -752,7 +753,7 @@ protected:
   void FirePopupShowingEvent(nsIContent* aPopup,
                              bool aIsContextMenu,
                              bool aSelectFirstItem,
-                             nsIDOMEvent* aTriggerEvent);
+                             mozilla::dom::Event* aTriggerEvent);
 
   
 
