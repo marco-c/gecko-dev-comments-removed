@@ -7,7 +7,7 @@
 use app_units::AU_PER_PX;
 use app_units::Au;
 use context::QuirksMode;
-use cssparser::{BasicParseErrorKind, Parser, RGBA, Token};
+use cssparser::{Parser, RGBA, Token};
 use euclid::Size2D;
 use euclid::TypedScale;
 use gecko::values::{convert_nscolor_to_rgba, convert_rgba_to_nscolor};
@@ -641,15 +641,7 @@ impl MediaFeatureExpression {
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
-        input.expect_parenthesis_block().map_err(|err| {
-            err.location.new_custom_error(match err.kind {
-                BasicParseErrorKind::UnexpectedToken(t) => {
-                    StyleParseErrorKind::ExpectedIdentifier(t)
-                },
-                _ => StyleParseErrorKind::UnspecifiedError,
-            })
-        })?;
-
+        input.expect_parenthesis_block()?;
         input.parse_nested_block(|input| {
             Self::parse_in_parenthesis_block(context, input)
         })
@@ -666,14 +658,7 @@ impl MediaFeatureExpression {
         let range;
         {
             let location = input.current_source_location();
-            let ident = input.expect_ident().map_err(|err| {
-                err.location.new_custom_error(match err.kind {
-                    BasicParseErrorKind::UnexpectedToken(t) => {
-                        StyleParseErrorKind::ExpectedIdentifier(t)
-                    },
-                    _ => StyleParseErrorKind::UnspecifiedError,
-                })
-            })?;
+            let ident = input.expect_ident()?;
 
             let mut flags = 0;
 
@@ -768,7 +753,7 @@ impl MediaFeatureExpression {
             Some(range) => {
                 if operator.is_some() {
                     return Err(input.new_custom_error(
-                        StyleParseErrorKind::MediaQueryExpectedFeatureValue
+                        StyleParseErrorKind::MediaQueryUnexpectedOperator
                     ));
                 }
                 Some(RangeOrOperator::Range(range))
@@ -778,7 +763,7 @@ impl MediaFeatureExpression {
                     Some(operator) => {
                         if !feature_allows_ranges {
                             return Err(input.new_custom_error(
-                                StyleParseErrorKind::MediaQueryExpectedFeatureValue
+                                StyleParseErrorKind::MediaQueryUnexpectedOperator
                             ));
                         }
                         Some(RangeOrOperator::Operator(operator))
