@@ -13,6 +13,7 @@
 
 
 
+
 add_task(async function() {
   await addTab(URL_ROOT + "doc_simple_animation.html");
   await removeAnimatedElementsExcept([".animated", ".multi"]);
@@ -48,6 +49,17 @@ add_task(async function() {
   await wait(500);
   ok(panel.querySelectorAll(".animation-target")[0].classList.contains("highlighting"),
     "The highlighted element still should have 'highlighting' class");
+
+  info("Check no highlight event occur by mouse over locked target");
+  let highlightEventCount = 0;
+  const highlightEventCounter = () => {
+    highlightEventCount += 1;
+  };
+  toolbox.on("node-highlight", highlightEventCounter);
+  mouseOverOnTargetNode(animationInspector, panel, 0);
+  await wait(500);
+  is(highlightEventCount, 0, "Highlight event should not occur");
+  toolbox.off("node-highlight", highlightEventCounter);
 
   info("Highlighting another animation target");
   onHighlighterShown = inspector.highlighters.once("box-model-highlighter-shown");
