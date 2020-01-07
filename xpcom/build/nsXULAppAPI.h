@@ -398,7 +398,7 @@ XRE_API(const char*,
 
 #if defined(MOZ_WIDGET_ANDROID)
 XRE_API(void,
-        XRE_SetAndroidChildFds, (JNIEnv* env, int crashFd, int ipcFd))
+        XRE_SetAndroidChildFds, (JNIEnv* env, int crashFd, int ipcFd, int crashAnnotationFd))
 #endif 
 
 XRE_API(void,
@@ -410,8 +410,16 @@ XRE_API(bool,
                                    uint32_t* aSequence))
 
 
+#if defined(XP_WIN)
+
+
+XRE_API(bool,
+        XRE_SetRemoteExceptionHandler,
+        (const char* aPipe, uintptr_t aCrashTimeAnnotationFile))
+#else
 XRE_API(bool,
         XRE_SetRemoteExceptionHandler, (const char* aPipe))
+#endif
 
 namespace mozilla {
 namespace gmp {
