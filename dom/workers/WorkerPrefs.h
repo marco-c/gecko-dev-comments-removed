@@ -21,7 +21,6 @@
 
 
 
-WORKER_SIMPLE_PREF("dom.webkitBlink.dirPicker.enabled", WebkitBlinkDirectoryPickerEnabled, DOM_WEBKITBLINK_DIRPICKER_WEBKITBLINK)
 WORKER_SIMPLE_PREF("dom.netinfo.enabled", NetworkInformationEnabled, NETWORKINFORMATION_ENABLED)
 WORKER_SIMPLE_PREF("dom.fetchObserver.enabled", FetchObserverEnabled, FETCHOBSERVER_ENABLED)
 WORKER_SIMPLE_PREF("privacy.resistFingerprinting", ResistFingerprintingEnabled, RESISTFINGERPRINTING_ENABLED)
