@@ -107,10 +107,6 @@ pref("network.http.spdy.push-allowance", 32768);
 pref("network.http.spdy.default-hpack-buffer", 4096); 
 
 
-
-pref("network.http.rcwn.enabled", false);
-
-
 pref("network.buffer.cache.count", 24);
 pref("network.buffer.cache.size",  16384);
 
