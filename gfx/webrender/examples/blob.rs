@@ -51,7 +51,7 @@ fn render_blob(
 
     
     
-    let mut texels = Vec::with_capacity((descriptor.width * descriptor.height * 4) as usize);
+    let mut texels = Vec::with_capacity((descriptor.size.width * descriptor.size.height * 4) as usize);
 
     
     
@@ -60,8 +60,8 @@ fn render_blob(
         None => true,
     };
 
-    for y in 0 .. descriptor.height {
-        for x in 0 .. descriptor.width {
+    for y in 0 .. descriptor.size.height {
+        for x in 0 .. descriptor.size.width {
             
             
             let x2 = x + descriptor.offset.x as u32;
@@ -97,8 +97,7 @@ fn render_blob(
 
     Ok(api::RasterizedBlobImage {
         data: texels,
-        width: descriptor.width,
-        height: descriptor.height,
+        size: descriptor.size,
     })
 }
 
@@ -138,12 +137,12 @@ impl CheckerboardRenderer {
 }
 
 impl api::BlobImageRenderer for CheckerboardRenderer {
-    fn add(&mut self, key: api::ImageKey, cmds: api::BlobImageData, _: Option<api::TileSize>) {
+    fn add(&mut self, key: api::ImageKey, cmds: Arc<api::BlobImageData>, _: Option<api::TileSize>) {
         self.image_cmds
             .insert(key, Arc::new(deserialize_blob(&cmds[..]).unwrap()));
     }
 
-    fn update(&mut self, key: api::ImageKey, cmds: api::BlobImageData, _dirty_rect: Option<api::DeviceUintRect>) {
+    fn update(&mut self, key: api::ImageKey, cmds: Arc<api::BlobImageData>, _dirty_rect: Option<api::DeviceUintRect>) {
         
         
         self.image_cmds
