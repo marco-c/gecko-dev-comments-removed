@@ -44,3 +44,31 @@ pub trait SelectorVisitor {
         true
     }
 }
+
+
+pub trait Visit {
+    
+    type Impl: SelectorImpl;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn visit<V>(&self, visitor: &mut V) -> bool
+    where
+        V: SelectorVisitor<Impl = Self::Impl>;
+}

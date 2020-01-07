@@ -15,7 +15,7 @@ use std::fmt::Debug;
 
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct OpaqueElement(pub NonZeroPtrMut<()>);
+pub struct OpaqueElement(NonZeroPtrMut<()>);
 
 impl OpaqueElement {
     
