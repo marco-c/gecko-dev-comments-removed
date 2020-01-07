@@ -513,6 +513,23 @@ class DOMLocalization extends Localization {
 
 
 
+  translateFragment(frag) {
+    return this.translateElements(this.getTranslatables(frag));
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
   async translateElements(elements) {
     if (!elements.length) {
       return undefined;
