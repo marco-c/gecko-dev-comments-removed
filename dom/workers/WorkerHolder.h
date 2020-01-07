@@ -33,11 +33,6 @@ class WorkerPrivate;
 
 
 
-#ifdef Status
-
-
-#undef Status
-#endif
 enum WorkerStatus
 {
   
