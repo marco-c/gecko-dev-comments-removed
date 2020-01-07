@@ -94,31 +94,82 @@ SyntaxError, /Type label.*not found/);
 
 
 
-assertErrorMessage(() => wasmEvalText(`
+
+wasmEvalText(`
 (module
  (type $s (struct (field i32)))
  (type $t (struct (field i32)))
  (func $f (param (ref $s)) (unreachable))
- (func $g (param (ref $t)) (call $f (get_local 0)) drop))
-`),
+ (func $g (param (ref $t)) (call $f (get_local 0)))
+)`);
+
+assertErrorMessage(() => wasmEvalText(`
+(module
+ (type $s (struct (field i32)))
+ (type $t (struct (field f32))) ;; Incompatible type
+ (func $f (param (ref $s)) (unreachable))
+ (func $g (param (ref $t)) (call $f (get_local 0)))
+)`),
+WebAssembly.CompileError, /expression has type ref.*but expected ref/);
+
+assertErrorMessage(() => wasmEvalText(`
+(module
+ (type $s (struct (field i32)))
+ (type $t (struct (field (mut i32)))) ;; Incompatible mutability
+ (func $f (param (ref $s)) (unreachable))
+ (func $g (param (ref $t)) (call $f (get_local 0)))
+)`),
 WebAssembly.CompileError, /expression has type ref.*but expected ref/);
 
 
 
-assertErrorMessage(() => wasmEvalText(`
+
+wasmEvalText(`
 (module
  (type $s (struct (field i32)))
  (type $t (struct (field i32)))
  (func $f (param (ref $s)) (local (ref $t)) (set_local 1 (get_local 0))))
-`),
-WebAssembly.CompileError, /expression has type ref.*but expected ref/);
-
-
+`)
 
 assertErrorMessage(() => wasmEvalText(`
 (module
  (type $s (struct (field i32)))
+ (type $t (struct (field f32)))
+ (func $f (param (ref $s)) (local (ref $t)) (set_local 1 (get_local 0))))
+`),
+WebAssembly.CompileError, /expression has type ref.*but expected ref/);
+
+assertErrorMessage(() => wasmEvalText(`
+(module
+ (type $s (struct (field i32)))
+ (type $t (struct (field (mut i32))))
+ (func $f (param (ref $s)) (unreachable))
+ (func $g (param (ref $t)) (call $f (get_local 0)))
+)`),
+WebAssembly.CompileError, /expression has type ref.*but expected ref/);
+
+
+
+
+wasmEvalText(`
+(module
+ (type $s (struct (field i32)))
  (type $t (struct (field i32)))
+ (func $f (param (ref $s)) (result (ref $t)) (get_local 0)))
+`);
+
+assertErrorMessage(() => wasmEvalText(`
+(module
+ (type $s (struct (field i32)))
+ (type $t (struct (field f32)))
+ (func $f (param (ref $s)) (result (ref $t)) (get_local 0)))
+`),
+WebAssembly.CompileError, /expression has type ref.*but expected ref/);
+
+assertErrorMessage(() => wasmEvalText(`
+(module
+ (type $s (struct (field i32)))
+ (type $t (struct (field (mut i32))))
  (func $f (param (ref $s)) (result (ref $t)) (get_local 0)))
 `),
 WebAssembly.CompileError, /expression has type ref.*but expected ref/);
