@@ -12,6 +12,7 @@ var isDevtools = SimpleTest.harnessParameters.subsuite == "devtools";
 
 var gExceptionPaths = [
   "chrome://browser/content/defaultthemes/",
+  "chrome://browser/locale/searchplugins/",
   "resource://app/defaults/settings/blocklists/",
   "resource://app/defaults/settings/main/",
   "resource://app/defaults/settings/pinning/",
@@ -35,9 +36,6 @@ var gExceptionPaths = [
   
   
   "resource://formautofill/addressmetadata/",
-
-  
-  "resource://search-plugins/",
 ];
 
 
