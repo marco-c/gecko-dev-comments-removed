@@ -956,7 +956,7 @@ nsPresContext::AttachShell(nsIPresShell* aShell)
   MOZ_ASSERT(!mShell);
   mShell = aShell;
 
-  mRestyleManager = new mozilla::RestyleManager(this);
+  mRestyleManager = MakeUnique<mozilla::RestyleManager>(this);
 
   
   
