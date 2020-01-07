@@ -199,7 +199,12 @@ public:
     return mGraphImpl;
   }
 
+  
+  
   virtual bool OnThread() = 0;
+  
+  
+  virtual bool ThreadRunning() = 0;
 
 protected:
   GraphTime StateComputedTime() const;
@@ -258,11 +263,20 @@ public:
 
   void RunThread();
   friend class MediaStreamGraphInitThreadRunnable;
-  uint32_t IterationDuration() override {
+  uint32_t IterationDuration() override
+  {
     return MEDIA_GRAPH_TARGET_PERIOD_MS;
   }
 
-  bool OnThread() override { return !mThread || mThread->EventTarget()->IsOnCurrentThread(); }
+  bool OnThread() override
+  {
+    return mThread && mThread->EventTarget()->IsOnCurrentThread();
+  }
+
+  bool ThreadRunning() override
+  {
+    return mThreadRunning;
+  }
 
   
 
@@ -271,6 +285,10 @@ public:
   virtual MediaTime GetIntervalForIteration() = 0;
 protected:
   nsCOMPtr<nsIThread> mThread;
+private:
+  
+  
+  Atomic<bool> mThreadRunning;
 };
 
 
@@ -456,6 +474,11 @@ public:
     return mAudioThreadId.load() == std::this_thread::get_id();
   }
 
+  bool ThreadRunning() override
+  {
+    return mAudioThreadRunning;
+  }
+
   
 
   bool IsStarted();
@@ -552,6 +575,9 @@ private:
   
 
   std::atomic<std::thread::id> mAudioThreadId;
+  
+
+  Atomic<bool> mAudioThreadRunning;
   
 
 
