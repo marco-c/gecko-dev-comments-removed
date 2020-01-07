@@ -11,35 +11,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 function toASCIIUpperCase(s) {
     assert(typeof s === "string", "toASCIIUpperCase");
 
@@ -91,7 +62,6 @@ function getUnicodeLocaleExtensionSequenceRE() {
 
 
 
-
 function removeUnicodeExtensions(locale) {
     
     if (callFunction(std_String_startsWith, locale, "x-"))
@@ -126,7 +96,6 @@ function removeUnicodeExtensions(locale) {
 
     return combined;
 }
-
 
 
 
@@ -222,7 +191,6 @@ function getLanguageTagRE() {
     return (internalIntlRegExps.languageTagRE = RegExpCreate(languageTag, "i"));
 }
 
-
 function getDuplicateVariantRE() {
     if (internalIntlRegExps.duplicateVariantRE)
         return internalIntlRegExps.duplicateVariantRE;
@@ -267,7 +235,6 @@ function getDuplicateVariantRE() {
     
     return (internalIntlRegExps.duplicateVariantRE = RegExpCreate(duplicateVariant, "i"));
 }
-
 
 function getDuplicateSingletonRE() {
     if (internalIntlRegExps.duplicateSingletonRE)
@@ -319,7 +286,6 @@ function getDuplicateSingletonRE() {
 
 
 
-
 function IsStructurallyValidLanguageTag(locale) {
     assert(typeof locale === "string", "IsStructurallyValidLanguageTag");
     var languageTagRE = getLanguageTagRE();
@@ -341,7 +307,6 @@ function IsStructurallyValidLanguageTag(locale) {
     return !regexp_test_no_statics(duplicateVariantRE, locale) &&
            !regexp_test_no_statics(duplicateSingletonRE, locale);
 }
-
 
 
 
@@ -482,7 +447,6 @@ function CanonicalizeLanguageTag(locale) {
 
 
 
-
 function ArrayJoinRange(array, separator, from, to = array.length) {
     assert(typeof separator === "string", "|separator| is a string value");
     assert(typeof from === "number", "|from| is a number value");
@@ -502,7 +466,6 @@ function ArrayJoinRange(array, separator, from, to = array.length) {
 
 
 
-
 function IsASCIIAlphaString(s) {
     assert(typeof s === "string", "IsASCIIAlphaString");
 
@@ -513,7 +476,6 @@ function IsASCIIAlphaString(s) {
     }
     return true;
 }
-
 
 
 
@@ -555,7 +517,6 @@ function ValidateAndCanonicalizeLanguageTag(locale) {
     return CanonicalizeLanguageTag(locale);
 }
 
-
 function localeContainsNoUnicodeExtensions(locale) {
     
     if (callFunction(std_String_indexOf, locale, "-u-") === -1)
@@ -578,13 +539,11 @@ function localeContainsNoUnicodeExtensions(locale) {
 
 
 
-
 function lastDitchLocale() {
     
     
     return "en-GB";
 }
-
 
 
 
@@ -597,18 +556,15 @@ var oldStyleLanguageTagMappings = {
     "zh-TW": "zh-Hant-TW",
 };
 
-
 var localeCandidateCache = {
     runtimeDefaultLocale: undefined,
     candidateDefaultLocale: undefined,
 };
 
-
 var localeCache = {
     runtimeDefaultLocale: undefined,
     defaultLocale: undefined,
 };
-
 
 
 
@@ -649,7 +605,6 @@ function DefaultLocaleIgnoringAvailableLocales() {
 
     return candidate;
 }
-
 
 
 
@@ -699,7 +654,6 @@ function DefaultLocale() {
 
 
 
-
 function getIsWellFormedCurrencyCodeRE() {
     return internalIntlRegExps.isWellFormedCurrencyCodeRE ||
            (internalIntlRegExps.isWellFormedCurrencyCodeRE = RegExpCreate("[^A-Z]"));
@@ -712,12 +666,10 @@ function IsWellFormedCurrencyCode(currency) {
     return !regexp_test_no_statics(getIsWellFormedCurrencyCodeRE(), normalized);
 }
 
-
 var timeZoneCache = {
     icuDefaultTimeZone: undefined,
     defaultTimeZone: undefined,
 };
-
 
 
 
@@ -751,7 +703,6 @@ function CanonicalizeTimeZoneName(timeZone) {
     
     return ianaTimeZone;
 }
-
 
 
 
@@ -807,7 +758,6 @@ function DefaultTimeZone() {
 
 
 
-
 function addSpecialMissingLanguageTags(availableLocales) {
     
     
@@ -825,7 +775,6 @@ function addSpecialMissingLanguageTags(availableLocales) {
            "ditch locale, merely just the last-ditch locale");
     availableLocales[lastDitch] = true;
 }
-
 
 
 
@@ -862,7 +811,6 @@ function CanonicalizeLocaleList(locales) {
     }
     return seen;
 }
-
 
 function BestAvailableLocaleHelper(availableLocales, locale, considerDefaultLocale) {
     assert(IsStructurallyValidLanguageTag(locale), "invalid BestAvailableLocale locale structure");
@@ -915,7 +863,6 @@ function BestAvailableLocaleHelper(availableLocales, locale, considerDefaultLoca
 
 
 
-
 function BestAvailableLocale(availableLocales, locale) {
     return BestAvailableLocaleHelper(availableLocales, locale, true);
 }
@@ -924,11 +871,9 @@ function BestAvailableLocale(availableLocales, locale) {
 
 
 
-
 function BestAvailableLocaleIgnoringDefault(availableLocales, locale) {
     return BestAvailableLocaleHelper(availableLocales, locale, false);
 }
-
 
 
 
@@ -977,12 +922,10 @@ function LookupMatcher(availableLocales, requestedLocales) {
 
 
 
-
 function BestFitMatcher(availableLocales, requestedLocales) {
     
     return LookupMatcher(availableLocales, requestedLocales);
 }
-
 
 
 
@@ -1055,7 +998,6 @@ function UnicodeExtensionValue(extension, key) {
 
     
 }
-
 
 
 
@@ -1208,7 +1150,6 @@ function ResolveLocale(availableLocales, requestedLocales, options, relevantExte
 
 
 
-
 function LookupSupportedLocales(availableLocales, requestedLocales) {
     
     var len = requestedLocales.length;
@@ -1241,12 +1182,10 @@ function LookupSupportedLocales(availableLocales, requestedLocales) {
 
 
 
-
 function BestFitSupportedLocales(availableLocales, requestedLocales) {
     
     return LookupSupportedLocales(availableLocales, requestedLocales);
 }
-
 
 
 
@@ -1289,7 +1228,6 @@ function SupportedLocales(availableLocales, requestedLocales, options) {
     
     return subset;
 }
-
 
 
 
@@ -1369,8 +1307,6 @@ function GetNumberOption(options, property, minimum, maximum, fallback) {
 
 
 
-
-
 var intlFallbackSymbolHolder = { value: undefined };
 
 
@@ -1387,7 +1323,6 @@ function intlFallbackSymbol() {
     }
     return fallbackSymbol;
 }
-
 
 
 
@@ -1430,7 +1365,6 @@ function initializeIntlObject(obj, type, lazyData) {
 
 
 
-
 function setInternalProperties(internals, internalProps) {
     assert(IsObject(internals.lazyData), "lazy data must exist already");
     assert(IsObject(internalProps), "internalProps argument should be an object");
@@ -1444,7 +1378,6 @@ function setInternalProperties(internals, internalProps) {
 
 
 
-
 function maybeInternalProperties(internals) {
     assert(IsObject(internals), "non-object passed to maybeInternalProperties");
     var lazyData = internals.lazyData;
@@ -1453,7 +1386,6 @@ function maybeInternalProperties(internals) {
     assert(IsObject(internals.internalProps), "missing lazy data and computed internals");
     return internals.internalProps;
 }
-
 
 
 
@@ -1485,7 +1417,6 @@ function getIntlObjectInternals(obj) {
 
     return internals;
 }
-
 
 
 
