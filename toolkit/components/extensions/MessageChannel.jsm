@@ -948,6 +948,11 @@ this.MessageChannel = {
           value,
         };
 
+        if (target.isDisconnected) {
+          
+          
+          return;
+        }
         target.sendAsyncMessage(MESSAGE_RESPONSE, response);
       },
       error => {

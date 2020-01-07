@@ -384,7 +384,7 @@ var LoginManagerContent = {
       return;
     }
 
-    let pwField = event.target;
+    let pwField = event.originalTarget;
     if (pwField.form) {
       
       return;

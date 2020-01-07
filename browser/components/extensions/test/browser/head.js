@@ -58,6 +58,17 @@ if (remote) {
 }
 
 
+Services.prefs.getDefaultBranch("browser.newtabpage.activity-stream.")
+        .setBoolPref("feeds.topsites", false);
+
+{
+  
+  
+  const {LoginManagerParent} = ChromeUtils.import("resource://gre/modules/LoginManagerParent.jsm", null);
+  void LoginManagerParent.recipeParentPromise;
+}
+
+
 
 
 
