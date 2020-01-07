@@ -2592,6 +2592,8 @@ RestyleManager::ProcessPostTraversal(
   nsIFrame* styleFrame = nsLayoutUtils::GetStyleFrame(aElement);
   nsIFrame* primaryFrame = aElement->GetPrimaryFrame();
 
+  MOZ_ASSERT(aElement->HasServoData(), "How in the world?");
+
   
   
   const bool isOutOfFlow =
