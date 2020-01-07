@@ -213,21 +213,17 @@ OptionsPanel.prototype = {
       "tools-not-supported-label");
     let atleastOneToolNotSupported = false;
 
-    const toolbox = this.toolbox;
-
     
     
     
-    let onCheckboxClick = function(tool) {
+    let onCheckboxClick = function(telemetry, tool) {
       
       Services.prefs.setBoolPref(tool.visibilityswitch, this.checked);
 
       if (!tool.isWebExtension) {
         gDevTools.emit(this.checked ? "tool-registered" : "tool-unregistered", tool.id);
         
-        this.telemetry.keyedScalarSet("devtools.tool.registered",
-                                      tool.id,
-                                      this.checked);
+        telemetry.keyedScalarSet("devtools.tool.registered", tool.id, this.checked);
       }
     };
 
@@ -253,7 +249,8 @@ OptionsPanel.prototype = {
         checkboxInput.setAttribute("checked", "true");
       }
 
-      checkboxInput.addEventListener("change", onCheckboxClick.bind(checkboxInput, tool));
+      checkboxInput.addEventListener("change",
+        onCheckboxClick.bind(checkboxInput, this.telemetry, tool));
 
       checkboxLabel.appendChild(checkboxInput);
       checkboxLabel.appendChild(checkboxSpanLabel);
@@ -287,7 +284,7 @@ OptionsPanel.prototype = {
     }
 
     
-    for (let {uuid, name, pref} of toolbox.listWebExtensions()) {
+    for (let {uuid, name, pref} of this.toolbox.listWebExtensions()) {
       atleastOneAddon = true;
 
       additionalToolsBox.appendChild(createToolCheckbox({
