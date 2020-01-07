@@ -22,6 +22,10 @@
 #include "nsDisplayList.h"
 #include "WebRenderCanvasRenderer.h"
 
+#ifdef XP_WIN
+#include "gfxDWriteFonts.h"
+#endif
+
 
 
 #define DUMP_LISTS 0
@@ -256,6 +260,10 @@ WebRenderLayerManager::EndTransactionWithoutLayer(nsDisplayList* aDisplayList,
   
   
   if (XRE_IsContentProcess()) nsFrame::PrintDisplayList(aDisplayListBuilder, *aDisplayList);
+#endif
+
+#ifdef XP_WIN
+  gfxDWriteFont::UpdateClearTypeUsage();
 #endif
 
   
@@ -602,7 +610,7 @@ WebRenderLayerManager::SendInvalidRegion(const nsIntRegion& aRegion)
 void
 WebRenderLayerManager::ScheduleComposite()
 {
-  WrBridge()->SendScheduleComposite();
+  WrBridge()->SendForceComposite();
 }
 
 void
