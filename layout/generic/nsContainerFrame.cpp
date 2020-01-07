@@ -161,6 +161,7 @@ nsContainerFrame::RemoveFrame(ChildListID aListID,
   }
   nsIPresShell* shell = PresShell();
   nsContainerFrame* lastParent = nullptr;
+  AutoPostDestroyData data(PresContext());
   while (aOldFrame) {
     nsIFrame* oldFrameNextContinuation = aOldFrame->GetNextContinuation();
     nsContainerFrame* parent = aOldFrame->GetParent();
@@ -168,7 +169,7 @@ nsContainerFrame::RemoveFrame(ChildListID aListID,
     
     
     parent->StealFrame(aOldFrame);
-    aOldFrame->Destroy();
+    aOldFrame->Destroy(data.mData);
     aOldFrame = oldFrameNextContinuation;
     if (parent != lastParent && generateReflowCommand) {
       shell->FrameNeedsReflow(parent, nsIPresShell::eTreeChange,
