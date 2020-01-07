@@ -435,9 +435,6 @@ struct ProfilerBufferInfo
 mozilla::Maybe<ProfilerBufferInfo> profiler_get_buffer_info();
 
 
-PseudoStack* profiler_get_pseudo_stack();
-
-
 
 
 
