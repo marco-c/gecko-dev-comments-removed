@@ -137,10 +137,14 @@ const SecurityInfo = {
     info.cipherSuite = SSLStatus.cipherName;
 
     
-    info.keaGroupName = SSLStatus.keaGroupName;
+    if (SSLStatus.keaGroupName !== "none") {
+      info.keaGroupName = SSLStatus.keaGroupName;
+    }
 
     
-    info.signatureSchemeName = SSLStatus.signatureSchemeName;
+    if (SSLStatus.signatureSchemeName !== "none") {
+      info.signatureSchemeName = SSLStatus.signatureSchemeName;
+    }
 
     info.isDomainMismatch = SSLStatus.isDomainMismatch;
     info.isExtendedValidation = SSLStatus.isExtendedValidation;
