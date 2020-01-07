@@ -204,8 +204,7 @@ public:
   
   
   
-  template<typename ComposeAnimationResult>
-  void ComposeStyle(ComposeAnimationResult&& aRestultContainer,
+  void ComposeStyle(RawServoAnimationValueMap& aComposeResult,
                     const nsCSSPropertyIDSet& aPropertiesToSkip);
 
 

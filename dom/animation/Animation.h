@@ -373,8 +373,7 @@ public:
 
 
 
-  template<typename ComposeAnimationResult>
-  void ComposeStyle(ComposeAnimationResult&& aComposeResult,
+  void ComposeStyle(RawServoAnimationValueMap& aComposeResult,
                     const nsCSSPropertyIDSet& aPropertiesToSkip);
 
   void NotifyEffectTimingUpdated();
