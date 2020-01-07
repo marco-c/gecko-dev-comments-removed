@@ -299,7 +299,6 @@ class CommandBase(object):
         if use_geckolib_toolchain:
             
             
-            
             self.config["build"]["incremental"] = False
 
     def toolchain(self):
