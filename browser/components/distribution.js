@@ -227,11 +227,9 @@ DistributionCustomizer.prototype = {
     if (!this._ini)
       return this._checkCustomizationComplete();
 
-    
-    
-    
-    Services.prefs.QueryInterface(Ci.nsIObserver)
-      .observe(null, "reload-default-prefs", null);
+    if (!this._prefDefaultsApplied) {
+      this.applyPrefDefaults();
+    }
   },
 
   _bookmarksApplied: false,
