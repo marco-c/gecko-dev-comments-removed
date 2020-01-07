@@ -1,0 +1,364 @@
+
+
+"use strict";
+
+
+
+
+
+
+ChromeUtils.defineModuleGetter(this, "DevToolsShim",
+                               "chrome://devtools-startup/content/DevToolsShim.jsm");
+
+ChromeUtils.import("resource://gre/modules/ExtensionParent.jsm");
+
+var {
+  HiddenExtensionPage,
+  watchExtensionProxyContextLoad,
+} = ExtensionParent;
+
+
+let devtoolsPageDefinitionMap = new Map();
+
+let initDevTools;
+
+
+
+
+
+
+
+
+
+
+
+
+global.getDevToolsTargetForContext = async (context) => {
+  if (context.devToolsTarget) {
+    await context.devToolsTarget.makeRemote();
+    return context.devToolsTarget;
+  }
+
+  if (!context.devToolsToolbox || !context.devToolsToolbox.target) {
+    throw new Error("Unable to get a TabTarget for a context not associated to any toolbox");
+  }
+
+  if (!context.devToolsToolbox.target.isLocalTab) {
+    throw new Error("Unexpected target type: only local tabs are currently supported.");
+  }
+
+  const tab = context.devToolsToolbox.target.tab;
+  context.devToolsTarget = DevToolsShim.createTargetForTab(tab);
+
+  await context.devToolsTarget.makeRemote();
+
+  return context.devToolsTarget;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+global.getTargetTabIdForToolbox = (toolbox) => {
+  let {target} = toolbox;
+
+  if (!target.isLocalTab) {
+    throw new Error("Unexpected target type: only local tabs are currently supported.");
+  }
+
+  let parentWindow = target.tab.linkedBrowser.ownerGlobal;
+  let tab = parentWindow.gBrowser.getTabForBrowser(target.tab.linkedBrowser);
+
+  return tabTracker.getId(tab);
+};
+
+
+
+global.getInspectedWindowFront = async function(context) {
+  
+  
+  
+  
+  const clonedTarget = await getDevToolsTargetForContext(context);
+  return DevToolsShim.createWebExtensionInspectedWindowFront(clonedTarget);
+};
+
+
+
+global.getToolboxEvalOptions = function(context) {
+  const options = {};
+  const toolbox = context.devToolsToolbox;
+  const selectedNode = toolbox.selection;
+
+  if (selectedNode && selectedNode.nodeFront) {
+    
+    
+    options.toolboxSelectedNodeActorID = selectedNode.nodeFront.actorID;
+  }
+
+  
+  options.toolboxConsoleActorID = toolbox.target.form.consoleActor;
+
+  return options;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class DevToolsPage extends HiddenExtensionPage {
+  constructor(extension, options) {
+    super(extension, "devtools_page");
+
+    this.url = extension.baseURI.resolve(options.url);
+    this.toolbox = options.toolbox;
+    this.devToolsPageDefinition = options.devToolsPageDefinition;
+
+    this.unwatchExtensionProxyContextLoad = null;
+
+    this.waitForTopLevelContext = new Promise(resolve => {
+      this.resolveTopLevelContext = resolve;
+    });
+  }
+
+  async build() {
+    await this.createBrowserElement();
+
+    
+    this.unwatchExtensionProxyContextLoad = watchExtensionProxyContextLoad(this, context => {
+      
+      
+      context.devToolsToolbox = this.toolbox;
+
+      if (!this.topLevelContext) {
+        this.topLevelContext = context;
+
+        
+        
+        this.topLevelContext.callOnClose(this);
+
+        this.resolveTopLevelContext(context);
+      }
+    });
+
+    extensions.emit("extension-browser-inserted", this.browser, {
+      devtoolsToolboxInfo: {
+        inspectedWindowTabId: getTargetTabIdForToolbox(this.toolbox),
+        themeName: DevToolsShim.getTheme(),
+      },
+    });
+
+    this.browser.loadURI(this.url, {
+      triggeringPrincipal: this.extension.principal,
+    });
+
+    await this.waitForTopLevelContext;
+  }
+
+  close() {
+    if (this.closed) {
+      throw new Error("Unable to shutdown a closed DevToolsPage instance");
+    }
+
+    this.closed = true;
+
+    
+    this.devToolsPageDefinition.forgetForTarget(this.toolbox.target);
+
+    
+    if (this.topLevelContext) {
+      this.topLevelContext.forgetOnClose(this);
+    }
+
+    
+    if (this.unwatchExtensionProxyContextLoad) {
+      this.unwatchExtensionProxyContextLoad();
+      this.unwatchExtensionProxyContextLoad = null;
+    }
+
+    super.shutdown();
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class DevToolsPageDefinition {
+  constructor(extension, url) {
+    initDevTools();
+
+    this.url = url;
+    this.extension = extension;
+
+    
+    this.devtoolsPageForTarget = new Map();
+  }
+
+  onThemeChanged(themeName) {
+    Services.ppmm.broadcastAsyncMessage("Extension:DevToolsThemeChanged", {themeName});
+  }
+
+  buildForToolbox(toolbox) {
+    if (this.devtoolsPageForTarget.has(toolbox.target)) {
+      return Promise.reject(new Error("DevtoolsPage has been already created for this toolbox"));
+    }
+
+    const devtoolsPage = new DevToolsPage(this.extension, {
+      toolbox, url: this.url, devToolsPageDefinition: this,
+    });
+
+    
+    if (this.devtoolsPageForTarget.size === 0) {
+      DevToolsShim.on("theme-changed", this.onThemeChanged);
+    }
+    this.devtoolsPageForTarget.set(toolbox.target, devtoolsPage);
+
+    return devtoolsPage.build();
+  }
+
+  shutdownForTarget(target) {
+    if (this.devtoolsPageForTarget.has(target)) {
+      const devtoolsPage = this.devtoolsPageForTarget.get(target);
+      devtoolsPage.close();
+
+      
+      
+      if (this.devtoolsPageForTarget.has(target)) {
+        throw new Error(`Leaked DevToolsPage instance for target "${target.toString()}"`);
+      }
+
+      
+      if (this.devtoolsPageForTarget.size === 0) {
+        DevToolsShim.off("theme-changed", this.onThemeChanged);
+      }
+    }
+  }
+
+  forgetForTarget(target) {
+    this.devtoolsPageForTarget.delete(target);
+  }
+
+  shutdown() {
+    for (let target of this.devtoolsPageForTarget.keys()) {
+      this.shutdownForTarget(target);
+    }
+
+    if (this.devtoolsPageForTarget.size > 0) {
+      throw new Error(
+        `Leaked ${this.devtoolsPageForTarget.size} DevToolsPage instances in devtoolsPageForTarget Map`
+      );
+    }
+  }
+}
+
+
+let devToolsInitialized = false;
+initDevTools = function() {
+  if (devToolsInitialized) {
+    return;
+  }
+
+  
+  
+  
+  DevToolsShim.on("toolbox-created", toolbox => {
+    if (!toolbox.target.isLocalTab) {
+      
+      
+      let msg = `Ignoring DevTools Toolbox for target "${toolbox.target.toString()}": ` +
+                `"${toolbox.target.name}" ("${toolbox.target.url}"). ` +
+                "Only local tab are currently supported by the WebExtensions DevTools API.";
+      let scriptError = Cc["@mozilla.org/scripterror;1"].createInstance(Ci.nsIScriptError);
+      scriptError.init(msg, null, null, null, null, Ci.nsIScriptError.warningFlag, "content javascript");
+      Services.console.logMessage(scriptError);
+
+      return;
+    }
+
+    for (let devtoolsPage of devtoolsPageDefinitionMap.values()) {
+      devtoolsPage.buildForToolbox(toolbox);
+    }
+  });
+
+  
+  
+  DevToolsShim.on("toolbox-destroy", target => {
+    if (!target.isLocalTab) {
+      
+      
+      return;
+    }
+
+    for (let devtoolsPageDefinition of devtoolsPageDefinitionMap.values()) {
+      devtoolsPageDefinition.shutdownForTarget(target);
+    }
+  });
+  
+
+  devToolsInitialized = true;
+};
+
+this.devtools = class extends ExtensionAPI {
+  onManifestEntry(entryName) {
+    let {extension} = this;
+    let {manifest} = extension;
+
+    
+    
+    let devtoolsPageDefinition = new DevToolsPageDefinition(extension, manifest.devtools_page);
+    devtoolsPageDefinitionMap.set(extension, devtoolsPageDefinition);
+  }
+
+  onShutdown(reason) {
+    let {extension} = this;
+
+    
+    if (devtoolsPageDefinitionMap.has(extension)) {
+      devtoolsPageDefinitionMap.get(extension).shutdown();
+      devtoolsPageDefinitionMap.delete(extension);
+    }
+  }
+
+  getAPI(context) {
+    return {
+      devtools: {},
+    };
+  }
+};
