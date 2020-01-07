@@ -9,6 +9,8 @@
 #define GFX_FONT_PROPERTY_TYPES_H
 
 #include <cstdint>
+#include <cmath>
+#include "mozilla/Assertions.h"
 
 
 
@@ -20,7 +22,25 @@ namespace mozilla {
 
 
 
-class FontFixedPointValue
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template<class T,unsigned FractionBits,int Min,int Max>
+class FontPropertyValue
 {
 public:
   
@@ -30,101 +50,284 @@ public:
   
   
   
-  FontFixedPointValue() = default;
-  FontFixedPointValue(const FontFixedPointValue& aOther) = default;
+  
+  FontPropertyValue() = default;
+  explicit FontPropertyValue(const FontPropertyValue& aOther) = default;
+  FontPropertyValue& operator= (const FontPropertyValue& aOther) = default;
+
+  bool operator==(const FontPropertyValue& aOther) const
+  {
+    return mValue == aOther.mValue;
+  }
+  bool operator!=(const FontPropertyValue& aOther) const
+  {
+    return mValue != aOther.mValue;
+  }
+  bool operator<(const FontPropertyValue& aOther) const
+  {
+    return mValue < aOther.mValue;
+  }
+  bool operator>(const FontPropertyValue& aOther) const
+  {
+    return mValue > aOther.mValue;
+  }
+  bool operator<=(const FontPropertyValue& aOther) const
+  {
+    return mValue <= aOther.mValue;
+  }
+  bool operator>=(const FontPropertyValue& aOther) const
+  {
+    return mValue >= aOther.mValue;
+  }
 
   
-  explicit FontFixedPointValue(int16_t aValue)
-    : mEncoded(aValue)
-  {}
-
-  explicit FontFixedPointValue(int32_t aValue)
-    : mEncoded(aValue)
-  {}
-
-  explicit FontFixedPointValue(float aValue)
-    : mEncoded(int16_t(aValue))
-  {}
-
-  float ToFloat() const {
-    return float(mEncoded);
+  
+  float operator-(const FontPropertyValue& aOther) const
+  {
+    return (mValue - aOther.mValue) * kInverseScale;
   }
 
-  int16_t ToIntRounded() const {
-    return mEncoded;
-  }
-
-  bool operator==(const FontFixedPointValue& aOther) const {
-    return mEncoded == aOther.mEncoded;
-  }
-
-  bool operator!=(const FontFixedPointValue& aOther) const {
-    return mEncoded != aOther.mEncoded;
-  }
-
-  bool operator<(const FontFixedPointValue& aOther) const {
-    return mEncoded < aOther.mEncoded;
-  }
-
-  bool operator<=(const FontFixedPointValue& aOther) const {
-    return mEncoded <= aOther.mEncoded;
-  }
-
-  bool operator>=(const FontFixedPointValue& aOther) const {
-    return mEncoded >= aOther.mEncoded;
-  }
-
-  bool operator>(const FontFixedPointValue& aOther) const {
-    return mEncoded > aOther.mEncoded;
-  }
-
-  int16_t ForHash() const {
-    return mEncoded;
+  
+  T ForHash() const
+  {
+    return mValue;
   }
 
 protected:
-  int16_t mEncoded;
+  typedef T internal_type;
+
+  
+  
+  explicit FontPropertyValue(float aValue)
+    : mValue(std::round(aValue * kScale))
+  {
+    MOZ_ASSERT(aValue >= kMin && aValue <= kMax);
+  }
+  explicit FontPropertyValue(int aValue)
+    : mValue(aValue << kFractionBits)
+  {
+    MOZ_ASSERT(aValue >= Min && aValue <= Max);
+  }
+
+  
+  
+  
+  explicit FontPropertyValue(T aValue)
+    : mValue(aValue)
+  {
+  }
+
+  
+  
+  
+  float ToFloat() const { return mValue * kInverseScale; }
+  int ToIntRounded() const { return (mValue + kPointFive) >> FractionBits; }
+
+  static constexpr float kScale = float(1u << FractionBits);
+  static constexpr float kInverseScale = 1.0f / kScale;
+  static constexpr float kMin = float(Min);
+  static constexpr float kMax = float(Max);
+  static const unsigned kFractionBits = FractionBits;
+
+  
+  
+  static const T kPointFive = 1u << (kFractionBits - 1);
+
+  T mValue;
 };
 
-class FontWeight : public FontFixedPointValue
+
+
+
+
+
+
+
+class FontWeight final : public FontPropertyValue<uint16_t,6,1,1000>
 {
 public:
   
+  
   FontWeight() = default;
-  FontWeight(const FontWeight& aOther) = default;
-
-    
-  explicit FontWeight(int16_t aValue)
-    : FontFixedPointValue(aValue)
-  {}
-
-  explicit FontWeight(int32_t aValue)
-    : FontFixedPointValue(aValue)
-  {}
 
   explicit FontWeight(float aValue)
-    : FontFixedPointValue(int16_t(aValue))
-  {}
-
-  bool operator==(const FontWeight& aOther) const
+    : FontPropertyValue(aValue)
   {
-    return mEncoded == aOther.mEncoded;
   }
 
   
-  float operator-(const FontWeight& aOther) const {
-    return this->ToFloat() - aOther.ToFloat();
+
+
+
+  explicit FontWeight(int aValue)
+    : FontPropertyValue(aValue)
+  {
   }
 
-  static FontWeight Thin() {
-    return FontWeight{100};
+  static FontWeight Normal()
+  {
+    return FontWeight(kNormal);
   }
-  static FontWeight Normal() {
-    return FontWeight{400};
+
+  static FontWeight Thin()
+  {
+    return FontWeight(kThin);
   }
-  static FontWeight Bold() {
-    return FontWeight{700};
+
+  static FontWeight Bold()
+  {
+    return FontWeight(kBold);
   }
+
+  bool IsNormal() const { return mValue == kNormal; }
+  bool IsBold() const { return mValue >= kBoldThreshold; }
+
+  float ToFloat() const { return FontPropertyValue::ToFloat(); }
+  int ToIntRounded() const { return FontPropertyValue::ToIntRounded(); }
+
+private:
+  explicit FontWeight(internal_type aValue)
+    : FontPropertyValue(aValue)
+  {
+  }
+
+  static const internal_type kNormal        = 400u << kFractionBits;
+  static const internal_type kBold          = 700u << kFractionBits;
+  static const internal_type kBoldThreshold = 600u << kFractionBits;
+  static const internal_type kThin          = 100u << kFractionBits;
+  static const internal_type kExtraBold     = 900u << kFractionBits;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class FontStretch final : public FontPropertyValue<uint16_t,6,0,1000>
+{
+public:
+  
+  
+  FontStretch() = default;
+
+  explicit FontStretch(float aPercent)
+    : FontPropertyValue(aPercent)
+  {
+  }
+
+  static FontStretch Normal()
+  {
+    return FontStretch(kNormal);
+  }
+  static FontStretch UltraCondensed()
+  {
+    return FontStretch(kUltraCondensed);
+  }
+  static FontStretch ExtraCondensed()
+  {
+    return FontStretch(kExtraCondensed);
+  }
+  static FontStretch Condensed()
+  {
+    return FontStretch(kCondensed);
+  }
+  static FontStretch SemiCondensed()
+  {
+    return FontStretch(kSemiCondensed);
+  }
+  static FontStretch SemiExpanded()
+  {
+    return FontStretch(kSemiExpanded);
+  }
+  static FontStretch Expanded()
+  {
+    return FontStretch(kExpanded);
+  }
+  static FontStretch ExtraExpanded()
+  {
+    return FontStretch(kExtraExpanded);
+  }
+  static FontStretch UltraExpanded()
+  {
+    return FontStretch(kUltraExpanded);
+  }
+
+  bool IsNormal() const { return mValue == kNormal; }
+  float Percentage() const { return ToFloat(); }
+
+private:
+  static const internal_type kUltraCondensed =  50u << kFractionBits;
+  static const internal_type kExtraCondensed = (62u << kFractionBits) + kPointFive;
+  static const internal_type kCondensed      =  75u << kFractionBits;
+  static const internal_type kSemiCondensed  = (87u << kFractionBits) + kPointFive;
+  static const internal_type kNormal         = 100u << kFractionBits;
+  static const internal_type kSemiExpanded  = (112u << kFractionBits) + kPointFive;
+  static const internal_type kExpanded       = 125u << kFractionBits;
+  static const internal_type kExtraExpanded  = 150u << kFractionBits;
+  static const internal_type kUltraExpanded  = 200u << kFractionBits;
+};
+
+
+
+
+
+
+
+
+
+
+
+class FontStyle final : public FontPropertyValue<int16_t,8,-90,90>
+{
+public:
+  
+  
+  FontStyle() = default;
+
+  static FontStyle Normal()
+  {
+    return FontStyle(kNormal);
+  }
+
+  static FontStyle Italic()
+  {
+    return FontStyle(kItalic);
+  }
+
+  static FontStyle Oblique(float aAngle = 14.0f)
+  {
+    return FontStyle(aAngle);
+  }
+
+  bool IsNormal() const { return mValue == kNormal; }
+  bool IsItalic() const { return mValue == kItalic; }
+  bool IsOblique() const { return mValue != kItalic && mValue != kNormal; }
+
+  float ObliqueAngle() const
+  {
+    
+    
+    MOZ_ASSERT(!IsItalic() && !IsNormal());
+    return ToFloat();
+  }
+
+private:
+  explicit FontStyle(float aAngle)
+    : FontPropertyValue(aAngle)
+  {
+  }
+
+  static const int16_t kNormal = INT16_MIN;
+  static const int16_t kItalic = INT16_MAX;
 };
 
 } 
