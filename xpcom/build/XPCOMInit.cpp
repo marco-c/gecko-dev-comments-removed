@@ -156,6 +156,10 @@ using namespace mozilla;
 using base::AtExitManager;
 using mozilla::ipc::BrowserProcessSubThread;
 
+
+extern "C" void GkRust_Init();
+extern "C" void GkRust_Shutdown();
+
 namespace {
 
 static AtExitManager* sExitManager;
@@ -451,6 +455,8 @@ NS_InitXPCOM2(nsIServiceManager** aResult,
   
   
   mozilla::LogModule::Init(0, nullptr);
+
+  GkRust_Init();
 
   nsresult rv = NS_OK;
 
@@ -998,6 +1004,8 @@ ShutdownXPCOM(nsIServiceManager* aServMgr)
 
   
   SystemGroup::Shutdown();
+
+  GkRust_Shutdown();
 
   NS_ShutdownAtomTable();
 
