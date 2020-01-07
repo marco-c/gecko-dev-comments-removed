@@ -843,13 +843,6 @@ public:
 
   virtual nsISupports* GetCurrentContentSink() override;
 
-  virtual mozilla::EventStates GetDocumentState() final;
-  
-  
-  
-  
-  virtual mozilla::EventStates ThreadSafeGetDocumentState() const final;
-
   
   void AsyncBlockOnload();
 
@@ -1182,8 +1175,6 @@ protected:
   
   
   mozilla::Maybe<bool> mIsThirdParty;
-private:
-  void UpdatePossiblyStaleDocumentState();
 
 public:
   RefPtr<mozilla::EventListenerManager> mListenerManager;
@@ -1269,9 +1260,6 @@ public:
   nsCOMPtr<nsIApplicationCache> mApplicationCache;
 
   nsCOMPtr<nsIContent> mFirstBaseNodeWithHref;
-
-  mozilla::EventStates mDocumentState;
-  mozilla::EventStates mGotDocumentState;
 
   RefPtr<nsDOMNavigationTiming> mTiming;
 private:

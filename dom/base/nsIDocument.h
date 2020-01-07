@@ -2641,8 +2641,20 @@ public:
 
 
 
-  virtual mozilla::EventStates GetDocumentState() = 0;
-  virtual mozilla::EventStates ThreadSafeGetDocumentState() const = 0;
+  mozilla::EventStates GetDocumentState()
+  {
+    UpdatePossiblyStaleDocumentState();
+    return ThreadSafeGetDocumentState();
+  }
+
+  
+  
+  
+  
+  mozilla::EventStates ThreadSafeGetDocumentState() const
+  {
+    return mDocumentState;
+  }
 
   virtual nsISupports* GetCurrentContentSink() = 0;
 
@@ -3263,6 +3275,8 @@ protected:
   }
 
 private:
+  void UpdatePossiblyStaleDocumentState();
+
   mutable std::bitset<eDeprecatedOperationCount> mDeprecationWarnedAbout;
   mutable std::bitset<eDocumentWarningCount> mDocWarningWarnedAbout;
 
@@ -3421,6 +3435,9 @@ protected:
   
   
   mozilla::TimeStamp mLastFocusTime;
+
+  mozilla::EventStates mDocumentState;
+  mozilla::EventStates mGotDocumentState;
 
   
   bool mBidiEnabled : 1;
