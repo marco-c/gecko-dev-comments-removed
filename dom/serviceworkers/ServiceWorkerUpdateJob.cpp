@@ -540,11 +540,8 @@ ServiceWorkerUpdateJob::Install()
   
 
   
-  nsCOMPtr<nsIRunnable> upr = NewRunnableMethod(
-      "ServiceWorkerRegistrationInfo::FireUpdateFound",
-      mRegistration,
-      &ServiceWorkerRegistrationInfo::FireUpdateFound);
-  NS_DispatchToMainThread(upr);
+  
+  
 
   nsMainThreadPtrHandle<ServiceWorkerUpdateJob> handle(
     new nsMainThreadPtrHolder<ServiceWorkerUpdateJob>(

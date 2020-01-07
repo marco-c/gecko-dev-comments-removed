@@ -52,9 +52,6 @@ public:
 
   
   void
-  UpdateFound() override;
-
-  void
   UpdateState(const ServiceWorkerRegistrationDescriptor& aDescriptor) override;
 
   void
@@ -120,9 +117,6 @@ public:
   Unregister(ServiceWorkerBoolCallback&& aSuccessCB,
              ServiceWorkerFailureCallback&& aFailureCB) override;
 
-  void
-  UpdateFound();
-
 private:
   ~ServiceWorkerRegistrationWorkerThread();
 
@@ -131,6 +125,9 @@ private:
 
   void
   ReleaseListener();
+
+  void
+  UpdateState(const ServiceWorkerRegistrationDescriptor& aDescriptor);
 
   
   WorkerPrivate*
