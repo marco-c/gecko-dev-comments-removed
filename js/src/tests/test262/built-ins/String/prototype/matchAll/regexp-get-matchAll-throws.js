@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var regexp = /./;
+Object.defineProperty(regexp, Symbol.matchAll, {
+  get() {
+    throw new Test262Error();
+  }
+});
+
+assert.throws(Test262Error, function() {
+  ''.matchAll(regexp);
+});
+
+reportCompare(0, 0);

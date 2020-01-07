@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var str = 'a';
+
+assert.compareIterator(str.matchAll(undefined), [
+  matchValidator([''], 0, str),
+  matchValidator([''], 1, str)
+]);
+
+reportCompare(0, 0);

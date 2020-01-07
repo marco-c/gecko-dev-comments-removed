@@ -26,6 +26,8 @@ var poisoned = {
 
 $DETACHBUFFER(int32Array.buffer); 
 
-assert.throws(TypeError, () => Atomics.wait(int32Array, poisoned, poisoned, poisoned));
+assert.throws(TypeError, function() {
+  Atomics.wait(int32Array, poisoned, poisoned, poisoned);
+});
 
 reportCompare(0, 0);

@@ -16,16 +16,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 Object.defineProperty(fnGlobalObject(), 'f', {
   value: 'x',
   enumerable: true,
@@ -35,13 +25,20 @@ Object.defineProperty(fnGlobalObject(), 'f', {
 
 eval(
   'var global = fnGlobalObject();\
-  assert.sameValue(f, undefined, "binding is initialized to `undefined`");\
+  assert.sameValue(f, "x", "binding is not reinitialized");\
   \
   verifyProperty(global, "f", {\
     enumerable: true,\
     writable: true,\
     configurable: false\
-  });{ function f() {  } }'
+  }, { restore: true });{ function f() {  } }'
 );
+
+assert.sameValue(typeof f, "function");
+verifyProperty(global, "f", {
+  enumerable: true,
+  writable: true,
+  configurable: false
+});
 
 reportCompare(0, 0);

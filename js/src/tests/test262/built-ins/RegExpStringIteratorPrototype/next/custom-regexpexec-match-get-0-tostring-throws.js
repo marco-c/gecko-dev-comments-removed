@@ -1,0 +1,34 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var iter = /./g[Symbol.matchAll]('');
+
+RegExp.prototype.exec = function() {
+  return [{
+    toString: function() {
+      throw new Test262Error();
+    }
+  }];
+};
+
+assert.throws(Test262Error, function() {
+  iter.next();
+});
+
+
+reportCompare(0, 0);

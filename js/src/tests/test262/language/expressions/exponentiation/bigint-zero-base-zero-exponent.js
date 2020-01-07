@@ -18,8 +18,5 @@
 
 
 
-
-
-assert.sameValue(0n ** 0n, 1n);
-
+assert.sameValue(0n ** 0n, 1n, 'The result of (0n ** 0n) is 1n');
 reportCompare(0, 0);

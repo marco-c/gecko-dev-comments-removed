@@ -48,19 +48,23 @@ assert.sameValue(Atomics.wake(ia, 0, WAKECOUNT), WAKECOUNT);
 
 
 var rs = [];
-for (var i = 0; i < NUMAGENT; i++)
+for (var i = 0; i < NUMAGENT; i++) {
   rs.push(getReport());
+}
 rs.sort();
 
-for (var i = 0; i < WAKECOUNT; i++)
+for (var i = 0; i < WAKECOUNT; i++) {
   assert.sameValue(rs[i], "ok");
-for (var i = WAKECOUNT; i < NUMAGENT; i++)
+}
+for (var i = WAKECOUNT; i < NUMAGENT; i++) {
   assert.sameValue(rs[i], "timed-out");
+}
 
 function getReport() {
   var r;
-  while ((r = $262.agent.getReport()) == null)
+  while ((r = $262.agent.getReport()) == null) {
     $262.agent.sleep(100);
+  }
   return r;
 }
 

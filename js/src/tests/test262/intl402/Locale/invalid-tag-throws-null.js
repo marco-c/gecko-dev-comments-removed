@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  new Intl.Locale(null);
+}, "null is an invalid tag value");
+
+reportCompare(0, 0);

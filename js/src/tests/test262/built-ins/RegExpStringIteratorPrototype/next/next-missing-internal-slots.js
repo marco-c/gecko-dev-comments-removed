@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var iterator = /./[Symbol.matchAll]('');
+var object = Object.create(iterator);
+
+assert.throws(TypeError, function() {
+  object.next();
+});
+
+reportCompare(0, 0);

@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assertNativeFunction(new Proxy(class {}, {}));
+assertNativeFunction(new Proxy(class {}, { apply() {} }).apply);
+
+reportCompare(0, 0);

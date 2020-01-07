@@ -42,12 +42,12 @@ waitUntil(ia, RUNNING, NUMAGENT);
 
 
 
-$262.agent.sleep(500);
+$262.agent.sleep(50);
 
 
 for (var i = 0; i < NUMAGENT; i++) {
   Atomics.store(ia, SPIN + i, 1);
-  $262.agent.sleep(500);
+  $262.agent.sleep(50);
 }
 
 
@@ -58,15 +58,16 @@ for (var i = 0; i < NUMAGENT; i++) {
 
 function getReport() {
   var r;
-  while ((r = $262.agent.getReport()) == null)
-    $262.agent.sleep(100);
+  while ((r = $262.agent.getReport()) == null) {
+    $262.agent.sleep(10);
+  }
   return r;
 }
 
 function waitUntil(ia, k, value) {
   var i = 0;
   while (Atomics.load(ia, k) !== value && i < 15) {
-    $262.agent.sleep(100);
+    $262.agent.sleep(10);
     i++;
   }
   assert.sameValue(Atomics.load(ia, k), value, "All agents are running");

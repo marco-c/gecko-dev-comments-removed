@@ -15,22 +15,32 @@
 
 
 
-
-
-assert.sameValue(~Object(1n), -2n, "~Object(1n) === -2n");
+assert.sameValue(~Object(1n), -2n, 'The value of ~Object(1n) is -2n');
 
 function err() {
   throw new Test262Error();
 }
 
-assert.sameValue(
-  ~{[Symbol.toPrimitive]: function() { return 1n; }, valueOf: err, toString: err}, -2n,
-  "primitive from @@toPrimitive");
-assert.sameValue(
-  ~{valueOf: function() { return 1n; }, toString: err}, -2n,
-  "primitive from {}.valueOf");
-assert.sameValue(
-  ~{toString: function() { return 1n; }}, -2n,
-  "primitive from {}.toString");
+assert.sameValue(~{
+  [Symbol.toPrimitive]: function() {
+    return 1n;
+  },
 
+  valueOf: err,
+  toString: err
+}, -2n, 'The value of ~{[Symbol.toPrimitive]: function() {return 1n;}, valueOf: err, toString: err} is -2n');
+
+assert.sameValue(~{
+  valueOf: function() {
+    return 1n;
+  },
+
+  toString: err
+}, -2n, 'The value of ~{valueOf: function() {return 1n;}, toString: err} is -2n');
+
+assert.sameValue(~{
+  toString: function() {
+    return 1n;
+  }
+}, -2n, 'The value of ~{toString: function() {return 1n;}} is -2n');
 reportCompare(0, 0);

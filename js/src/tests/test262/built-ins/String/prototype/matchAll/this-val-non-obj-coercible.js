@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+var matchAll = String.prototype.matchAll;
+
+assert.sameValue(typeof matchAll, 'function');
+
+assert.throws(TypeError, function() {
+  matchAll.call(undefined);
+}, 'undefined');
+
+assert.throws(TypeError, function() {
+  matchAll.call(null);
+}, 'null');
+
+reportCompare(0, 0);

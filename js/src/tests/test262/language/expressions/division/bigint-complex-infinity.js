@@ -19,22 +19,19 @@
 
 
 
-
+assert.throws(RangeError, function() {
+  1n / 0n;
+}, '1n / 0n throws RangeError');
 
 assert.throws(RangeError, function() {
-  1n / 0n
-});
+  10n / 0n;
+}, '10n / 0n throws RangeError');
 
 assert.throws(RangeError, function() {
-  10n / 0n
-});
+  0n / 0n;
+}, '0n / 0n throws RangeError');
 
 assert.throws(RangeError, function() {
-  0n / 0n
-});
-
-assert.throws(RangeError, function() {
-  1000000000000000000n / 0n
-});
-
+  1000000000000000000n / 0n;
+}, '1000000000000000000n / 0n throws RangeError');
 reportCompare(0, 0);

@@ -21,7 +21,7 @@ values.forEach(function(value, i) {
       () => sample.setBigInt64(0, BigInt(value), false),
       "value: " + value);
     return;
-  } else if (!Number.isInteger(value) || value > 9007199254740991) {
+  } else if (!Number.isInteger(value)) {
     assert.throws(RangeError,
       () => sample.setBigInt64(0, BigInt(value), false),
       "value " + value);

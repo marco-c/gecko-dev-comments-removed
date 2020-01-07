@@ -11,14 +11,13 @@
 
 var sab = new SharedArrayBuffer(1024);
 var ab = new ArrayBuffer(16);
+var views = intArrayConstructors.slice();
 
-var int_views = [Int8Array, Uint8Array, Int16Array, Uint16Array, Int32Array, Uint32Array];
-
-testWithTypedArrayConstructors(function(View) {
+testWithTypedArrayConstructors(function(TA) {
   
 
-  var view = new View(sab, 32, 20);
-  var control = new View(ab, 0, 2);
+  var view = new TA(sab, 32, 20);
+  var control = new TA(ab, 0, 2);
 
   
   view[8] = 0;
@@ -53,6 +52,6 @@ testWithTypedArrayConstructors(function(View) {
     Atomics.store(view, Idx, 37);
     assert.sameValue(Atomics.add(view, Idx, 0), 37);
   });
-}, int_views);
+}, views);
 
 reportCompare(0, 0);

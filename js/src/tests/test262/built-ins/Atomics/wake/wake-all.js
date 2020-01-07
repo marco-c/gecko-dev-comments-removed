@@ -34,7 +34,7 @@ $262.agent.receiveBroadcast(function (sab) {
   var ia = new Int32Array(sab);
   Atomics.add(ia, ${RUNNING}, 1);
   // This will always time out.
-  $262.agent.report("B " + Atomics.wait(ia, ${DUMMY}, 0, 1000));
+  $262.agent.report("B " + Atomics.wait(ia, ${DUMMY}, 0, 10));
   $262.agent.leaving();
 })
 `);
@@ -47,31 +47,34 @@ waitUntil(ia, RUNNING, NUMAGENT + 1);
 
 
 
-$262.agent.sleep(500);
+$262.agent.sleep(50);
 
 
 assert.sameValue(Atomics.wake(ia, WAKEUP), NUMAGENT);
 
 var rs = [];
-for (var i = 0; i < NUMAGENT + 1; i++)
+for (var i = 0; i < NUMAGENT + 1; i++) {
   rs.push(getReport());
+}
 rs.sort();
 
-for (var i = 0; i < NUMAGENT; i++)
+for (var i = 0; i < NUMAGENT; i++) {
   assert.sameValue(rs[i], "A ok");
+}
 assert.sameValue(rs[NUMAGENT], "B timed-out");
 
 function getReport() {
   var r;
-  while ((r = $262.agent.getReport()) == null)
-    $262.agent.sleep(100);
+  while ((r = $262.agent.getReport()) == null) {
+    $262.agent.sleep(10);
+  }
   return r;
 }
 
 function waitUntil(ia, k, value) {
   var i = 0;
   while (Atomics.load(ia, k) !== value && i < 15) {
-    $262.agent.sleep(100);
+    $262.agent.sleep(10);
     i++;
   }
   assert.sameValue(Atomics.load(ia, k), value, "All agents are running");

@@ -38,7 +38,7 @@ waitUntil(ia, RUNNING, NUMAGENT);
 
 
 
-$262.agent.sleep(500);
+$262.agent.sleep(50);
 
 
 
@@ -47,26 +47,30 @@ assert.sameValue(Atomics.wake(ia, 0, WAKECOUNT), WAKECOUNT);
 
 
 var rs = [];
-for (var i = 0; i < NUMAGENT; i++)
+for (var i = 0; i < NUMAGENT; i++) {
   rs.push(getReport());
+}
 rs.sort();
 
-for (var i = 0; i < WAKECOUNT; i++)
+for (var i = 0; i < WAKECOUNT; i++) {
   assert.sameValue(rs[i], "ok");
-for (var i = WAKECOUNT; i < NUMAGENT; i++)
+}
+for (var i = WAKECOUNT; i < NUMAGENT; i++) {
   assert.sameValue(rs[i], "timed-out");
+}
 
 function getReport() {
   var r;
-  while ((r = $262.agent.getReport()) == null)
-    $262.agent.sleep(100);
+  while ((r = $262.agent.getReport()) == null) {
+    $262.agent.sleep(10);
+  }
   return r;
 }
 
 function waitUntil(ia, k, value) {
   var i = 0;
   while (Atomics.load(ia, k) !== value && i < 15) {
-    $262.agent.sleep(100);
+    $262.agent.sleep(10);
     i++;
   }
   assert.sameValue(Atomics.load(ia, k), value, "All agents are running");

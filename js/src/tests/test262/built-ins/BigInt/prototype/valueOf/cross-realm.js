@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+var other = $262.createRealm().global;
+var wrapped = other.Object(other.BigInt(0));
+
+assert.sameValue(BigInt.prototype.valueOf.call(wrapped), 0n,
+                 "cross-realm valueOf");
+
+reportCompare(0, 0);

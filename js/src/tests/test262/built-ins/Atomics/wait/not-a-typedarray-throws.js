@@ -21,7 +21,12 @@ var poisoned = {
   }
 };
 
-assert.throws(TypeError, () => Atomics.wait({}, 0, 0, 0));
-assert.throws(TypeError, () => Atomics.wait({}, poisoned, poisoned, poisoned));
+assert.throws(TypeError, function() {
+  Atomics.wait({}, 0, 0, 0);
+});
+
+assert.throws(TypeError, function() {
+  Atomics.wait({}, poisoned, poisoned, poisoned);
+});
 
 reportCompare(0, 0);

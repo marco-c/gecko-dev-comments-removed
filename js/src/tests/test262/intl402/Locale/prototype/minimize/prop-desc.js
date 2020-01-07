@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  typeof Intl.Locale.prototype.minimize,
+  'function',
+  'typeof Intl.Locale.prototype.minimize is function'
+);
+
+verifyProperty(Intl.Locale.prototype, 'minimize', {
+  writable: true,
+  enumerable: false,
+  configurable: true,
+});
+
+reportCompare(0, 0);

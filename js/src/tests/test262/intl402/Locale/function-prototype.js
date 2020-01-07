@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  Object.getPrototypeOf(Intl.Locale),
+  Function.prototype,
+  "Object.getPrototypeOf(Intl.Locale) equals the value of Function.prototype"
+);
+
+reportCompare(0, 0);

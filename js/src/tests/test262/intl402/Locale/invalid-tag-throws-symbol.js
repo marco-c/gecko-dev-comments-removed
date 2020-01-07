@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  new Intl.Locale(Symbol());
+}, "Symbol() is an invalid tag value");
+
+reportCompare(0, 0);

@@ -25,9 +25,17 @@ var poisoned = {
   }
 };
 
-assert.throws(RangeError, () => Atomics.wait(int32Array, -Infinity, poisoned, poisoned));
-assert.throws(RangeError, () => Atomics.wait(int32Array, -7.999, poisoned, poisoned));
-assert.throws(RangeError, () => Atomics.wait(int32Array, -1, poisoned, poisoned));
-assert.throws(RangeError, () => Atomics.wait(int32Array, -300, poisoned, poisoned));
+assert.throws(RangeError, function() {
+  Atomics.wait(int32Array, -Infinity, poisoned, poisoned);
+});
+assert.throws(RangeError, function() {
+  Atomics.wait(int32Array, -7.999, poisoned, poisoned);
+});
+assert.throws(RangeError, function() {
+  Atomics.wait(int32Array, -1, poisoned, poisoned);
+});
+assert.throws(RangeError, function() {
+  Atomics.wait(int32Array, -300, poisoned, poisoned);
+});
 
 reportCompare(0, 0);

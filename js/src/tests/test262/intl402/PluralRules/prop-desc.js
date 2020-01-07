@@ -1,0 +1,33 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(Intl, 'PluralRules', {
+  writable: true,
+  enumerable: false,
+  configurable: true
+});
+
+reportCompare(0, 0);

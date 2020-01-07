@@ -21,39 +21,85 @@
 
 
 
+assert.throws(TypeError, function() {
+  Object(0b101n) >>> 1n;
+}, 'Object(0b101n) >>> 1n throws TypeError');
 
-
-assert.throws(TypeError,
-  function() { Object(0b101n) >>> 1n; },
-  "bigint >>> bigint throws a TypeError for Object(0b101n) >>> 1n");
-assert.throws(TypeError,
-  function() { Object(0b101n) >>> Object(1n); },
-  "bigint >>> bigint throws a TypeError for Object(0b101n) >>> Object(1n)");
+assert.throws(TypeError, function() {
+  Object(0b101n) >>> Object(1n);
+}, 'Object(0b101n) >>> Object(1n) throws TypeError');
 
 function err() {
   throw new Test262Error();
 }
 
-assert.throws(TypeError,
-  function() { ({[Symbol.toPrimitive]: function() { return 0b101n; }, valueOf: err, toString: err} >>> 1n); },
-  "bigint >>> bigint throws a TypeError for primitive from @@toPrimitive");
-assert.throws(TypeError,
-  function() { ({valueOf: function() { return 0b101n; }, toString: err} >>> 1n); },
-  "bigint >>> bigint throws a TypeError for primitive from {}.valueOf");
-assert.throws(TypeError,
-  function() { ({toString: function() { return 0b101n; }} >>> 1n); },
-  "bigint >>> bigint throws a TypeError for primitive from {}.toString");
-assert.throws(TypeError,
-  function() { 0b101n >>> {[Symbol.toPrimitive]: function() { return 1n; }, valueOf: err, toString: err}; },
-  "bigint >>> bigint throws a TypeError for primitive from @@toPrimitive");
-assert.throws(TypeError,
-  function() { 0b101n >>> {valueOf: function() { return 1n; }, toString: err}; },
-  "bigint >>> bigint throws a TypeError for primitive from {}.valueOf");
-assert.throws(TypeError,
-  function() { 0b101n >>> {toString: function() { return 1n; }}; },
-  "bigint >>> bigint throws a TypeError for primitive from {}.toString");
-assert.throws(TypeError,
-  function() { ({valueOf: function() { return 0b101n; }} >>> {valueOf: function() { return 1n; }}); },
-  "bigint >>> bigint throws a TypeError for primitive from {}.valueOf");
+assert.throws(TypeError, function() {
+  ({
+    [Symbol.toPrimitive]: function() {
+      return 0b101n;
+    },
 
+    valueOf: err,
+    toString: err
+  }) >>> 1n;
+}, '({[Symbol.toPrimitive]: function() {return 0b101n;}, valueOf: err, toString: err}) >>> 1n throws TypeError');
+
+assert.throws(TypeError, function() {
+  ({
+    valueOf: function() {
+      return 0b101n;
+    },
+
+    toString: err
+  }) >>> 1n;
+}, '({valueOf: function() {return 0b101n;}, toString: err}) >>> 1n throws TypeError');
+
+assert.throws(TypeError, function() {
+  ({
+    toString: function() {
+      return 0b101n;
+    }
+  }) >>> 1n;
+}, '({toString: function() {return 0b101n;}}) >>> 1n throws TypeError');
+
+assert.throws(TypeError, function() {
+  0b101n >>> {
+    [Symbol.toPrimitive]: function() {
+      return 1n;
+    },
+
+    valueOf: err,
+    toString: err
+  };
+}, '0b101n >>> {[Symbol.toPrimitive]: function() {return 1n;}, valueOf: err, toString: err} throws TypeError');
+
+assert.throws(TypeError, function() {
+  0b101n >>> {
+    valueOf: function() {
+      return 1n;
+    },
+
+    toString: err
+  };
+}, '0b101n >>> {valueOf: function() {return 1n;}, toString: err} throws TypeError');
+
+assert.throws(TypeError, function() {
+  0b101n >>> {
+    toString: function() {
+      return 1n;
+    }
+  };
+}, '0b101n >>> {toString: function() {return 1n;}} throws TypeError');
+
+assert.throws(TypeError, function() {
+  ({
+    valueOf: function() {
+      return 0b101n;
+    }
+  }) >>> {
+    valueOf: function() {
+      return 1n;
+    }
+  };
+}, '({valueOf: function() {return 0b101n;}}) >>> {valueOf: function() {return 1n;}} throws TypeError');
 reportCompare(0, 0);

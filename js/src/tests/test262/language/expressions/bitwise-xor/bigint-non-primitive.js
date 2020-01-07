@@ -14,33 +14,71 @@
 
 
 
+assert.sameValue(
+  Object(0b101n) ^ 0b011n,
+  0b110n,
+  'The result of (Object(0b101n) ^ 0b011n) is 0b110n'
+);
 
+assert.sameValue(
+  0b011n ^ Object(0b101n),
+  0b110n,
+  'The result of (0b011n ^ Object(0b101n)) is 0b110n'
+);
 
-assert.sameValue(Object(0b101n) ^ 0b011n, 0b110n, "Object(0b101n) ^ 0b011n === 0b110n");
-assert.sameValue(0b011n ^ Object(0b101n), 0b110n, "0b011n ^ Object(0b101n) === 0b110n");
-assert.sameValue(Object(0b101n) ^ Object(0b011n), 0b110n, "Object(0b101n) ^ Object(0b011n) === 0b110n");
+assert.sameValue(
+  Object(0b101n) ^ Object(0b011n),
+  0b110n,
+  'The result of (Object(0b101n) ^ Object(0b011n)) is 0b110n'
+);
 
 function err() {
   throw new Test262Error();
 }
 
-assert.sameValue(
-  {[Symbol.toPrimitive]: function() { return 0b101n; }, valueOf: err, toString: err} ^ 0b011n, 0b110n,
-  "primitive from @@toPrimitive");
-assert.sameValue(
-  0b011n ^ {[Symbol.toPrimitive]: function() { return 0b101n; }, valueOf: err, toString: err}, 0b110n,
-  "primitive from @@toPrimitive");
-assert.sameValue(
-  {valueOf: function() { return 0b101n; }, toString: err} ^ 0b011n, 0b110n,
-  "primitive from {}.valueOf");
-assert.sameValue(
-  0b011n ^ {valueOf: function() { return 0b101n; }, toString: err}, 0b110n,
-  "primitive from {}.valueOf");
-assert.sameValue(
-  {toString: function() { return 0b101n; }} ^ 0b011n, 0b110n,
-  "primitive from {}.toString");
-assert.sameValue(
-  0b011n ^ {toString: function() { return 0b101n; }}, 0b110n,
-  "primitive from {}.toString");
+assert.sameValue({
+  [Symbol.toPrimitive]: function() {
+    return 0b101n;
+  },
 
+  valueOf: err,
+  toString: err
+} ^ 0b011n, 0b110n, 'The result of (({[Symbol.toPrimitive]: function() {return 0b101n;}, valueOf: err, toString: err}) ^ 0b011n) is 0b110n');
+
+assert.sameValue(0b011n ^ {
+  [Symbol.toPrimitive]: function() {
+    return 0b101n;
+  },
+
+  valueOf: err,
+  toString: err
+}, 0b110n, 'The result of (0b011n ^ {[Symbol.toPrimitive]: function() {return 0b101n;}, valueOf: err, toString: err}) is 0b110n');
+
+assert.sameValue({
+  valueOf: function() {
+    return 0b101n;
+  },
+
+  toString: err
+} ^ 0b011n, 0b110n, 'The result of (({valueOf: function() {return 0b101n;}, toString: err}) ^ 0b011n) is 0b110n');
+
+assert.sameValue(0b011n ^ {
+  valueOf: function() {
+    return 0b101n;
+  },
+
+  toString: err
+}, 0b110n, 'The result of (0b011n ^ {valueOf: function() {return 0b101n;}, toString: err}) is 0b110n');
+
+assert.sameValue({
+  toString: function() {
+    return 0b101n;
+  }
+} ^ 0b011n, 0b110n, 'The result of (({toString: function() {return 0b101n;}}) ^ 0b011n) is 0b110n');
+
+assert.sameValue(0b011n ^ {
+  toString: function() {
+    return 0b101n;
+  }
+}, 0b110n, 'The result of (0b011n ^ {toString: function() {return 0b101n;}}) is 0b110n');
 reportCompare(0, 0);

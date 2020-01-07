@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  new Intl.Locale();
+}, "(empty) is an invalid tag value");
+
+assert.throws(TypeError, function() {
+  new Intl.Locale(undefined)
+}, "undefined is an invalid tag value");
+
+reportCompare(0, 0);

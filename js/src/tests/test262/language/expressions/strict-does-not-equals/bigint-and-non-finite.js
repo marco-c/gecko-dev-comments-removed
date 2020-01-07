@@ -9,25 +9,22 @@
 
 
 
-
-
-assert.sameValue(0n !== Infinity, true, "0n !== Infinity");
-assert.sameValue(Infinity !== 0n, true, "Infinity !== 0n");
-assert.sameValue(1n !== Infinity, true, "1n !== Infinity");
-assert.sameValue(Infinity !== 1n, true, "Infinity !== 1n");
-assert.sameValue(-1n !== Infinity, true, "-1n !== Infinity");
-assert.sameValue(Infinity !== -1n, true, "Infinity !== -1n");
-assert.sameValue(0n !== -Infinity, true, "0n !== -Infinity");
-assert.sameValue(-Infinity !== 0n, true, "-Infinity !== 0n");
-assert.sameValue(1n !== -Infinity, true, "1n !== -Infinity");
-assert.sameValue(-Infinity !== 1n, true, "-Infinity !== 1n");
-assert.sameValue(-1n !== -Infinity, true, "-1n !== -Infinity");
-assert.sameValue(-Infinity !== -1n, true, "-Infinity !== -1n");
-assert.sameValue(0n !== NaN, true, "0n !== NaN");
-assert.sameValue(NaN !== 0n, true, "NaN !== 0n");
-assert.sameValue(1n !== NaN, true, "1n !== NaN");
-assert.sameValue(NaN !== 1n, true, "NaN !== 1n");
-assert.sameValue(-1n !== NaN, true, "-1n !== NaN");
-assert.sameValue(NaN !== -1n, true, "NaN !== -1n");
-
+assert.sameValue(0n !== Infinity, true, 'The result of (0n !== Infinity) is true');
+assert.sameValue(Infinity !== 0n, true, 'The result of (Infinity !== 0n) is true');
+assert.sameValue(1n !== Infinity, true, 'The result of (1n !== Infinity) is true');
+assert.sameValue(Infinity !== 1n, true, 'The result of (Infinity !== 1n) is true');
+assert.sameValue(-1n !== Infinity, true, 'The result of (-1n !== Infinity) is true');
+assert.sameValue(Infinity !== -1n, true, 'The result of (Infinity !== -1n) is true');
+assert.sameValue(0n !== -Infinity, true, 'The result of (0n !== -Infinity) is true');
+assert.sameValue(-Infinity !== 0n, true, 'The result of (-Infinity !== 0n) is true');
+assert.sameValue(1n !== -Infinity, true, 'The result of (1n !== -Infinity) is true');
+assert.sameValue(-Infinity !== 1n, true, 'The result of (-Infinity !== 1n) is true');
+assert.sameValue(-1n !== -Infinity, true, 'The result of (-1n !== -Infinity) is true');
+assert.sameValue(-Infinity !== -1n, true, 'The result of (-Infinity !== -1n) is true');
+assert.sameValue(0n !== NaN, true, 'The result of (0n !== NaN) is true');
+assert.sameValue(NaN !== 0n, true, 'The result of (NaN !== 0n) is true');
+assert.sameValue(1n !== NaN, true, 'The result of (1n !== NaN) is true');
+assert.sameValue(NaN !== 1n, true, 'The result of (NaN !== 1n) is true');
+assert.sameValue(-1n !== NaN, true, 'The result of (-1n !== NaN) is true');
+assert.sameValue(NaN !== -1n, true, 'The result of (NaN !== -1n) is true');
 reportCompare(0, 0);

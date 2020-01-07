@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  Function.prototype.toString.call(new Proxy({}, {}));
+});
+
+reportCompare(0, 0);

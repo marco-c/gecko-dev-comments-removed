@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+RegExp.prototype[Symbol.matchAll] = function() {
+  throw new Test262Error();
+};
+
+assert.throws(Test262Error, function() {
+  ''.matchAll(/./);
+});
+
+reportCompare(0, 0);

@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  Object.isExtensible(new Intl.Locale('en')),
+  true,
+  "Object.isExtensible(new Intl.Locale('en')) returns true"
+);
+
+reportCompare(0, 0);

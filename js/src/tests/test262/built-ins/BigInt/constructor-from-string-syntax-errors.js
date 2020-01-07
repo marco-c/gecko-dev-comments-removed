@@ -14,6 +14,13 @@
 
 
 
+
+
+
+
+
+
+
 assert.throws(SyntaxError, function() {
   BigInt("10n");
 });

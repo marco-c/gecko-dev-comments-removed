@@ -11,18 +11,17 @@
 
 
 var sab = new SharedArrayBuffer(8);
-var views = [Int8Array, Uint8Array, Int16Array, Uint16Array, Int32Array, Uint32Array];
+var views = intArrayConstructors.slice();
 
 if (typeof BigInt !== "undefined") {
   views.push(BigInt64Array);
   views.push(BigUint64Array);
 }
 
-testWithTypedArrayConstructors(function(View) {
-  let view = new View(sab);
+testWithTypedArrayConstructors(function(TA) {
+  let view = new TA(sab);
   testWithAtomicsOutOfBoundsIndices(function(IdxGen) {
-    let Idx = IdxGen(view);
-    assert.throws(RangeError, () => Atomics.xor(view, Idx, 0));
+    assert.throws(RangeError, () => Atomics.xor(view, IdxGen(view), 0));
   });
 }, views);
 

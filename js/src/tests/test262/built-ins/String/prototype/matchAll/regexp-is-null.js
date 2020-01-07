@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var str = '-null-';
+
+assert.compareIterator(str.matchAll(null), [
+  matchValidator(['null'], 1, str)
+]);
+
+reportCompare(0, 0);

@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var poisoned = {
+  valueOf: function() {
+    throw new Test262Error("should not evaluate this code");
+  }
+};
+
+assert.throws(TypeError, function() {
+  Atomics.wait({}, 0, 0, 0);
+});
+
+assert.throws(TypeError, function () {
+  Atomics.wait({}, poisoned, poisoned, poisoned);
+});
+
+reportCompare(0, 0);

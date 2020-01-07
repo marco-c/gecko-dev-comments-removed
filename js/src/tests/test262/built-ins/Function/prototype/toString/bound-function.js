@@ -7,8 +7,13 @@
 
 
 
-let f = function(){}.bind(null);
 
-assertNativeFunction(f);
+
+
+
+
+
+
+assertNativeFunction(function() {}.bind({}));
 
 reportCompare(0, 0);

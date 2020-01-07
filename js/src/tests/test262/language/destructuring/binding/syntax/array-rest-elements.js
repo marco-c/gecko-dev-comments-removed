@@ -17,6 +17,7 @@
 
 
 
+
 function fn1([...args]) {}
 
 function fn2([,,,,,,,...args]) {}

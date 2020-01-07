@@ -20,6 +20,7 @@
 
 
 
+
 function fn({}) { return true; }
 
 assert(fn(0));

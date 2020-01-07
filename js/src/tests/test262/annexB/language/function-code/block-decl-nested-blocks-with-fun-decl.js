@@ -1,0 +1,42 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function g() {
+    
+    {
+        
+        
+        function f() { return 1; }
+
+        
+        
+        
+        {
+            function f() { return 2; }
+        }
+    }
+
+    assert.sameValue(f(), 1);
+}
+
+g();
+
+reportCompare(0, 0);

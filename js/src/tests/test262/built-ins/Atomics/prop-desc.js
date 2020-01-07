@@ -24,13 +24,21 @@
 
 
 
-assert.sameValue(typeof Atomics, "object", "no [[Call]]");
+
+assert.sameValue(typeof Atomics, "object");
+
+assert.throws(TypeError, function() {
+  Atomics();
+}, "no [[Call]]");
+
 assert.throws(TypeError, function() {
   new Atomics();
 }, "no [[Construct]]");
 
-verifyNotEnumerable(this, "Atomics");
-verifyWritable(this, "Atomics");
-verifyConfigurable(this, "Atomics");
+verifyProperty(this, "Atomics", {
+  enumerable: false,
+  writable: true,
+  configurable: true
+});
 
 reportCompare(0, 0);

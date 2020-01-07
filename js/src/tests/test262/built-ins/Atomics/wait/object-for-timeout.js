@@ -20,31 +20,29 @@
 
 
 
-function getReport() {
-  var r;
-  while ((r = $262.agent.getReport()) == null)
-    $262.agent.sleep(100);
-  return r;
-}
+var buffer = new SharedArrayBuffer(1024);
+var int32Array = new Int32Array(buffer);
 
+var valueOf = {
+  valueOf: function() {
+    return 0;
+  }
+};
 
-$262.agent.start(
-  `
-$262.agent.receiveBroadcast(function (sab) {
-  var int32Array = new Int32Array(sab);
-  $262.agent.report("A " + Atomics.wait(int32Array, 0, 0, {})); // {} => NaN => Infinity
-  $262.agent.leaving();
-})
-`);
+var toString = {
+  toString: function() {
+    return "0";
+  }
+};
 
-var int32Array = new Int32Array(new SharedArrayBuffer(Int32Array.BYTES_PER_ELEMENT));
+var toPrimitive = {
+  [Symbol.toPrimitive]: function() {
+    return 0;
+  }
+};
 
-$262.agent.broadcast(int32Array.buffer);
-
-$262.agent.sleep(500); 
-
-assert.sameValue(Atomics.wake(int32Array, 0), 1);
-
-assert.sameValue(getReport(), "A ok");
+assert.sameValue(Atomics.wait(int32Array, 0, 0, valueOf), "timed-out");
+assert.sameValue(Atomics.wait(int32Array, 0, 0, toString), "timed-out");
+assert.sameValue(Atomics.wait(int32Array, 0, 0, toPrimitive), "timed-out");
 
 reportCompare(0, 0);

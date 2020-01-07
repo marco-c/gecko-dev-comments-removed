@@ -1,0 +1,39 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var log = [];
+
+Object.keys(new Proxy([], new Proxy({},{
+    get(t, pk, r) {
+        log.push(pk);
+    }
+})));
+
+assert.compareArray([
+    "ownKeys",
+    "getOwnPropertyDescriptor",
+], log);
+
+reportCompare(0, 0);

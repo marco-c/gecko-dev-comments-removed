@@ -18,9 +18,10 @@
 
 
 
-var sab = new SharedArrayBuffer(4);
-var int32Array = new Int32Array(sab);
-  
+
+var buffer = new SharedArrayBuffer(4);
+var int32Array = new Int32Array(buffer);
+
 assert.throws(TypeError, function() {
   Atomics.wait(int32Array, 0, 0, 0);
 });

@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const propdesc = Object.getOwnPropertyDescriptor(Intl.Locale.prototype, "language");
+assert.sameValue(propdesc.set, undefined);
+assert.sameValue(typeof propdesc.get, "function");
+assert.sameValue(propdesc.get.name, "get language");
+
+verifyProperty(Intl.Locale.prototype, "language", {
+  enumerable: false,
+  configurable: true,
+});
+
+reportCompare(0, 0);

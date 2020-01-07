@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Object.defineProperty(RegExp.prototype, Symbol.match, {
+  get() {
+    throw new Test262Error();
+  }
+});
+
+assert.throws(Test262Error, function() {
+  RegExp.prototype[Symbol.matchAll].call({}, '');
+});
+
+reportCompare(0, 0);
