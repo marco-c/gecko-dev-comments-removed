@@ -254,6 +254,12 @@ VARCACHE_PREF(
 )
 #undef PREF_VALUE
 
+VARCACHE_PREF(
+  "layout.css.xul-display-values.content.enabled",
+   layout_css_xul_display_values_content_enabled,
+  bool, false
+)
+
 
 VARCACHE_PREF(
   "layout.css.grid-template-subgrid-value.enabled",
