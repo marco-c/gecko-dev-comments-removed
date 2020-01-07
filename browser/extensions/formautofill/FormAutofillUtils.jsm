@@ -659,11 +659,13 @@ this.FormAutofillUtils = {
 
 
 
+
   getFormFormat(country) {
     const dataset = this.getCountryAddressData(country);
     return {
       "addressLevel1Label": dataset.state_name_type || "province",
       "postalCodeLabel": dataset.zip_name_type || "postalCode",
+      "fieldsOrder": this.parseAddressFormat(dataset.fmt || "%N%n%O%n%A%n%C, %S %Z"),
     };
   },
 

@@ -67,6 +67,33 @@ const TEST_ADDRESS_5 = {
   tel: "+16172535702",
 };
 
+const TEST_ADDRESS_CA_1 = {
+  "given-name": "John",
+  "additional-name": "R.",
+  "family-name": "Smith",
+  organization: "Mozilla",
+  "street-address": "163 W Hastings\nSuite 209",
+  "address-level2": "Vancouver",
+  "address-level1": "BC",
+  "postal-code": "V6B 1H5",
+  country: "CA",
+  tel: "+17787851540",
+  email: "timbl@w3.org",
+};
+
+const TEST_ADDRESS_DE_1 = {
+  "given-name": "John",
+  "additional-name": "R.",
+  "family-name": "Smith",
+  organization: "Mozilla",
+  "street-address": "Geb\u00E4ude 3, 4. Obergeschoss\nSchlesische Stra\u00DFe 27",
+  "address-level2": "Berlin",
+  "postal-code": "10997",
+  country: "DE",
+  tel: "+4930983333000",
+  email: "timbl@w3.org",
+};
+
 const TEST_CREDIT_CARD_1 = {
   "cc-name": "John Doe",
   "cc-number": "1234567812345678",
