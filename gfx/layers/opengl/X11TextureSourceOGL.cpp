@@ -4,8 +4,6 @@
 
 
 
-#ifdef GL_PROVIDER_GLX
-
 #include "X11TextureSourceOGL.h"
 #include "gfxXlibSurface.h"
 #include "gfx2DGlue.h"
@@ -103,4 +101,3 @@ X11TextureSourceOGL::ContentTypeToSurfaceFormat(gfxContentType aType)
 }
 }
 
-#endif

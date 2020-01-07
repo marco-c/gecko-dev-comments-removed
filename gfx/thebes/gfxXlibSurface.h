@@ -12,9 +12,7 @@
 #include <X11/Xlib.h>
 #include "X11UndefineNone.h"
 
-#if defined(GL_PROVIDER_GLX)
 #include "GLXLibrary.h"
-#endif
 
 #include "nsSize.h"
 
@@ -86,12 +84,10 @@ public:
     
     bool GetColormapAndVisual(Colormap* colormap, Visual **visual);
 
-#if defined(GL_PROVIDER_GLX)
     GLXPixmap GetGLXPixmap();
     
     
     void BindGLXPixmap(GLXPixmap aPixmap);
-#endif
 
     
     
@@ -114,9 +110,7 @@ protected:
 
     const mozilla::gfx::IntSize DoSizeQuery();
 
-#if defined(GL_PROVIDER_GLX)
     GLXPixmap mGLXPixmap;
-#endif
 };
 
 #endif 
