@@ -2113,10 +2113,10 @@ nsWebBrowserPersist::CalculateUniqueFilename(nsIURI *aURI, nsCOMPtr<nsIURI>& aOu
             localFile->SetLeafName(filenameAsUnichar);
 
             
-            nsresult rv;
-            nsCOMPtr<nsIFileURL> fileURL = do_QueryInterface(aURI, &rv);
-            NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
-            fileURL->SetFile(localFile);  
+            return NS_MutateURI(aURI)
+                     .Apply<nsIFileURLMutator>(&nsIFileURLMutator::SetFile,
+                                               localFile)
+                     .Finalize(aOutURI);
         }
         else
         {
@@ -2292,9 +2292,10 @@ nsWebBrowserPersist::CalculateAndAppendFileExt(nsIURI *aURI,
                     localFile->SetLeafName(NS_ConvertUTF8toUTF16(newFileName));
 
                     
-                    nsCOMPtr<nsIFileURL> fileURL = do_QueryInterface(aURI, &rv);
-                    NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
-                    fileURL->SetFile(localFile);  
+                    return NS_MutateURI(aURI)
+                             .Apply<nsIFileURLMutator>(&nsIFileURLMutator::SetFile,
+                                                   localFile)
+                             .Finalize(aOutURI);
                 }
                 else
                 {
