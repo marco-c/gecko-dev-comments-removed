@@ -603,6 +603,10 @@ RetainedDisplayListBuilder::ComputeRebuildRegion(nsTArray<nsIFrame*>& aModifiedF
       aOutFramesWithProps->AppendElement(f);
     }
 
+    if (f->HasAnyStateBits(NS_FRAME_IN_POPUP)) {
+      continue;
+    }
+
     
     
     AnimatedGeometryRoot* agr = mBuilder.FindAnimatedGeometryRootFor(f)->GetAsyncAGR();
