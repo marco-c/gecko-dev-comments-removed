@@ -1305,17 +1305,11 @@ public:
   
 
 
-  void SetTestAsyncScrollOffset(const CSSPoint& aPoint)
-  {
-    mTestAsyncScrollOffset = aPoint;
-  }
+  void SetTestAsyncScrollOffset(const CSSPoint& aPoint);
   
 
 
-  void SetTestAsyncZoom(const LayerToParentLayerScale& aZoom)
-  {
-    mTestAsyncZoom = aZoom;
-  }
+  void SetTestAsyncZoom(const LayerToParentLayerScale& aZoom);
 
   void MarkAsyncTransformAppliedToContent()
   {
