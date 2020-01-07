@@ -2957,6 +2957,8 @@ public:
     eSessionScoped = 2,
     
     eAllow = 3,
+    
+    eNumValues = 4,
   };
 
   
