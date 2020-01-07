@@ -435,7 +435,7 @@ public:
   
 
 
-  bool HasChildren() { return !!GetChildAt(0); }
+  bool HasChildren() const { return !!GetChildAt(0); }
 
   
 
@@ -855,7 +855,7 @@ public:
   
 
 
-  virtual void SetCurrentItem(Accessible* aItem);
+  virtual void SetCurrentItem(const Accessible* aItem);
 
   
 

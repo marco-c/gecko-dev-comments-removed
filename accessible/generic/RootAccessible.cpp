@@ -102,7 +102,7 @@ RootAccessible::NativeRole() const
 
 #ifdef MOZ_XUL
 uint32_t
-RootAccessible::GetChromeFlags()
+RootAccessible::GetChromeFlags() const
 {
   
   
