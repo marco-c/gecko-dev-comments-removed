@@ -23,6 +23,7 @@
 #include "mozilla/mozalloc.h"           
 #include "nsISupportsImpl.h"            
 #include "LayersLogging.h"
+#include "mozilla/layers/MultiTiledContentClient.h"
 #include "mozilla/layers/SingleTiledContentClient.h"
 
 namespace mozilla {
