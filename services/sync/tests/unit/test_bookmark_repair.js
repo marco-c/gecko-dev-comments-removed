@@ -359,7 +359,7 @@ add_task(async function test_repair_client_missing() {
     
     do_check_empty((await bookmarksEngine.pullNewChanges()));
     
-    Assert.equal(false, await PlacesUtils.bookmarks.fetch(bookmarkInfo.guid));
+    Assert.equal(null, await PlacesUtils.bookmarks.fetch(bookmarkInfo.guid));
 
     
     _("Syncing again.");

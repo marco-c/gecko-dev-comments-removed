@@ -9,13 +9,15 @@ const Cc = Components.classes;
 const Ci = Components.interfaces;
 const Cu = Components.utils;
 
-function do_check_true(cond, text) {
-  
-  
-  
-  if (!cond)
-    throw "Failed check: " + text;
-}
+const Assert = {
+  ok(cond, text) {
+    
+    
+    
+    if (!cond)
+      throw "Failed check: " + text;
+  }
+};
 
 function BlobComponent() {
   this.wrappedJSObject = this;

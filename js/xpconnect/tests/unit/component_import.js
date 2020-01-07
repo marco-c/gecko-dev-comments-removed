@@ -74,13 +74,15 @@ BarComponent.prototype =
   QueryInterface: XPCOMUtils.generateQI([Components.interfaces.nsIClassInfo])
 };
 
-function do_check_true(cond, text) {
-  
-  
-  
-  if (!cond)
-    throw "Failed check: " + text;
-}
+const Assert = {
+  ok(cond, text) {
+    
+    
+    
+    if (!cond)
+      throw "Failed check: " + text;
+  }
+};
 
 var gComponentsArray = [FooComponent, BarComponent];
 this.NSGetFactory = XPCOMUtils.generateNSGetFactory(gComponentsArray);

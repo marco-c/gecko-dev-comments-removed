@@ -8,13 +8,15 @@ Components.utils.importGlobalProperties(['File']);
 
 const Ci = Components.interfaces;
 
-function do_check_true(cond, text) {
-  
-  
-  
-  if (!cond)
-    throw "Failed check: " + text;
-}
+const Assert = {
+  ok(cond, text) {
+    
+    
+    
+    if (!cond)
+      throw "Failed check: " + text;
+  }
+};
 
 function FileComponent() {
   this.wrappedJSObject = this;
