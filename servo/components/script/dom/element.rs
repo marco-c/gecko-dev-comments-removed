@@ -379,28 +379,28 @@ impl Element {
     fn overflow_x_is_visible(&self) -> bool {
         let window = window_from_node(self);
         let overflow_pair = window.overflow_query(self.upcast::<Node>().to_trusted_node_address());
-        overflow_pair.x == overflow_x::computed_value::T::visible
+        overflow_pair.x == overflow_x::computed_value::T::Visible
     }
 
     
     fn overflow_y_is_visible(&self) -> bool {
         let window = window_from_node(self);
         let overflow_pair = window.overflow_query(self.upcast::<Node>().to_trusted_node_address());
-        overflow_pair.y == overflow_y::computed_value::T::visible
+        overflow_pair.y == overflow_y::computed_value::T::Visible
     }
 
     
     fn overflow_x_is_hidden(&self) -> bool {
         let window = window_from_node(self);
         let overflow_pair = window.overflow_query(self.upcast::<Node>().to_trusted_node_address());
-        overflow_pair.x == overflow_x::computed_value::T::hidden
+        overflow_pair.x == overflow_x::computed_value::T::Hidden
     }
 
     
     fn overflow_y_is_hidden(&self) -> bool {
         let window = window_from_node(self);
         let overflow_pair = window.overflow_query(self.upcast::<Node>().to_trusted_node_address());
-        overflow_pair.y == overflow_y::computed_value::T::hidden
+        overflow_pair.y == overflow_y::computed_value::T::Hidden
     }
 }
 
