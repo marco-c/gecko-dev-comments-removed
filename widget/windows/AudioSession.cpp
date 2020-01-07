@@ -448,6 +448,11 @@ AudioSession::OnSessionDisconnected(AudioSessionDisconnectReason aReason)
 nsresult
 AudioSession::OnSessionDisconnectedInternal()
 {
+  
+  
+  
+  RefPtr<AudioSession> kungFuDeathGrip(this);
+
   {
     
     MutexAutoLock lock(mMutex);
@@ -455,10 +460,6 @@ AudioSession::OnSessionDisconnectedInternal()
     if (!mAudioSessionControl)
       return NS_OK;
 
-    
-    
-    
-    RefPtr<AudioSession> kungFuDeathGrip(this);
     mAudioSessionControl->UnregisterAudioSessionNotification(this);
     mAudioSessionControl = nullptr;
   }
