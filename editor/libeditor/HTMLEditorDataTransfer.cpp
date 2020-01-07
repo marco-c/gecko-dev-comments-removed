@@ -347,8 +347,7 @@ HTMLEditor::DoInsertHTMLWithContext(const nsAString& aInputString,
     
     
     
-    WSRunObject wsObj(this, pointToInsert.GetContainer(),
-                      pointToInsert.Offset());
+    WSRunObject wsObj(this, pointToInsert);
     if (wsObj.mEndReasonNode &&
         TextEditUtils::IsBreak(wsObj.mEndReasonNode) &&
         !IsVisibleBRElement(wsObj.mEndReasonNode)) {
