@@ -248,6 +248,11 @@ this.SyncedTabs = {
   },
 
   
+  get loginFailed() {
+    return this._internal.loginFailed;
+  },
+
+  
   
   
   
