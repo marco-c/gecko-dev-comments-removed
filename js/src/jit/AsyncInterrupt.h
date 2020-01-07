@@ -15,7 +15,7 @@ namespace jit {
 
 
 
-MOZ_MUST_USE bool
+void
 EnsureAsyncInterrupt(JSContext* cx);
 
 
