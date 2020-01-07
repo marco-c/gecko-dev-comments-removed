@@ -639,13 +639,10 @@ this.DB = {
       try {
         this._instance = await this._establishConn();
       } catch (e) {
-        log("Failed to establish database connection.");
+        log("Failed to establish database connection: " + e);
         reject(e);
         return;
       }
-
-      AsyncShutdown.profileBeforeChange.addBlocker(
-        "Closing FormHistory database.", () => this._instance.close());
 
       resolve(this._instance);
     });
@@ -676,6 +673,8 @@ this.DB = {
     let conn;
     try {
       conn = await Sqlite.openConnection({ path: this.path });
+      Sqlite.shutdown.addBlocker(
+        "Closing FormHistory database.", () => conn.close());
     } catch (e) {
       
       
