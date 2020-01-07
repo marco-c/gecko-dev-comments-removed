@@ -1175,11 +1175,6 @@ protected:
   
 
 
-  bool DoesReadOnlyApply() const;
-
-  
-
-
   bool DoesMinMaxApply() const;
 
   
