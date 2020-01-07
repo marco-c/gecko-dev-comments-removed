@@ -50,14 +50,15 @@ public:
   
 
   
-  using nsFrameMessageManager::LoadProcessScript;
   void LoadProcessScript(const nsAString& aUrl, bool aAllowDelayedLoad,
                          mozilla::ErrorResult& aError)
   {
     LoadScript(aUrl, aAllowDelayedLoad, false, aError);
   }
-  
-  using nsFrameMessageManager::GetDelayedProcessScripts;
+  void RemoveDelayedProcessScript(const nsAString& aURL)
+  {
+    RemoveDelayedScript(aURL);
+  }
   void GetDelayedProcessScripts(JSContext* aCx,
                                 nsTArray<nsTArray<JS::Value>>& aScripts,
                                 mozilla::ErrorResult& aError)
