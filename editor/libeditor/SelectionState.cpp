@@ -7,6 +7,7 @@
 
 #include "mozilla/Assertions.h"         
 #include "mozilla/EditorUtils.h"        
+#include "mozilla/dom/RangeBinding.h"
 #include "mozilla/dom/Selection.h"      
 #include "nsAString.h"                  
 #include "nsCycleCollectionParticipant.h"
@@ -123,14 +124,15 @@ SelectionState::IsEqual(SelectionState* aSelState)
     RefPtr<nsRange> itsRange = aSelState->mArray[i]->GetRange();
     NS_ENSURE_TRUE(myRange && itsRange, false);
 
-    int16_t compResult;
-    nsresult rv;
-    rv = myRange->CompareBoundaryPoints(nsIDOMRange::START_TO_START, itsRange, &compResult);
-    if (NS_FAILED(rv) || compResult) {
+    IgnoredErrorResult rv;
+    int16_t compResult =
+      myRange->CompareBoundaryPoints(RangeBinding::START_TO_START, *itsRange, rv);
+    if (rv.Failed() || compResult) {
       return false;
     }
-    rv = myRange->CompareBoundaryPoints(nsIDOMRange::END_TO_END, itsRange, &compResult);
-    if (NS_FAILED(rv) || compResult) {
+    compResult =
+      myRange->CompareBoundaryPoints(RangeBinding::END_TO_END, *itsRange, rv);
+    if (rv.Failed() || compResult) {
       return false;
     }
   }

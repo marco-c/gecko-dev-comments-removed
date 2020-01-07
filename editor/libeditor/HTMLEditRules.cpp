@@ -24,6 +24,7 @@
 #include "mozilla/Unused.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/RangeBinding.h"
 #include "mozilla/OwningNonNull.h"
 #include "mozilla/mozalloc.h"
 #include "nsAString.h"
@@ -8835,24 +8836,25 @@ HTMLEditRules::UpdateDocChangeRange(nsRange* aRange)
     
     mDocChangeRange = aRange->CloneRange();
   } else {
-    int16_t result;
-
     
-    nsresult rv =
-      mDocChangeRange->CompareBoundaryPoints(nsIDOMRange::START_TO_START,
-                                             aRange, &result);
-    if (rv == NS_ERROR_NOT_INITIALIZED) {
+    ErrorResult error;
+    int16_t result =
+      mDocChangeRange->CompareBoundaryPoints(RangeBinding::START_TO_START,
+                                             *aRange, error);
+    if (error.ErrorCodeIs(NS_ERROR_NOT_INITIALIZED)) {
       
       
       
       
       result = 1;
-      rv = NS_OK;
+      error.SuppressException();
     }
-    NS_ENSURE_SUCCESS(rv, rv);
+    if (NS_WARN_IF(error.Failed())) {
+      return error.StealNSResult();
+    }
+
     
     if (result > 0) {
-      ErrorResult error;
       mDocChangeRange->SetStart(atStart.AsRaw(), error);
       if (NS_WARN_IF(error.Failed())) {
         return error.StealNSResult();
@@ -8860,16 +8862,19 @@ HTMLEditRules::UpdateDocChangeRange(nsRange* aRange)
     }
 
     
-    rv = mDocChangeRange->CompareBoundaryPoints(nsIDOMRange::END_TO_END,
-                                                aRange, &result);
-    NS_ENSURE_SUCCESS(rv, rv);
+    result =
+      mDocChangeRange->CompareBoundaryPoints(RangeBinding::END_TO_END,
+                                             *aRange, error);
+    if (NS_WARN_IF(error.Failed())) {
+      return error.StealNSResult();
+    }
+
     
     if (result < 0) {
       const RangeBoundary& atEnd = aRange->EndRef();
       if (NS_WARN_IF(!atEnd.IsSet())) {
         return NS_ERROR_FAILURE;
       }
-      ErrorResult error;
       mDocChangeRange->SetEnd(atEnd.AsRaw(), error);
       if (NS_WARN_IF(error.Failed())) {
         return error.StealNSResult();
