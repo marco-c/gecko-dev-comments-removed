@@ -904,7 +904,11 @@ CompositorBridgeParent::ScheduleComposition()
     return;
   }
 
-  mCompositorScheduler->ScheduleComposition();
+  if (mWrBridge) {
+    mWrBridge->ScheduleGenerateFrame();
+  } else {
+    mCompositorScheduler->ScheduleComposition();
+  }
 }
 
 

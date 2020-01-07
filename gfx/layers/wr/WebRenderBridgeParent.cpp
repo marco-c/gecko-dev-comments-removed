@@ -612,7 +612,7 @@ WebRenderBridgeParent::RecvSetDisplayList(const gfx::IntSize& aSize,
                         dlDesc, dl.mData, dl.mLen,
                         resources);
 
-    ScheduleComposition();
+    ScheduleGenerateFrame();
 
     if (ShouldParentObserveEpoch()) {
       mCompositorBridge->ObserveLayerUpdate(GetLayersId(), GetChildLayerObserverEpoch(), true);
@@ -664,7 +664,7 @@ WebRenderBridgeParent::RecvEmptyTransaction(const FocusTarget& aFocusTarget,
   if (!aCommands.IsEmpty()) {
     mAsyncImageManager->SetCompositionTime(TimeStamp::Now());
     ProcessWebRenderParentCommands(aCommands);
-    mCompositorScheduler->ScheduleComposition();
+    ScheduleGenerateFrame();
   }
 
   mScrollData.SetFocusTarget(aFocusTarget);
@@ -941,7 +941,7 @@ WebRenderBridgeParent::RecvClearCachedResources()
   
   mApi->ClearDisplayList(wr::NewEpoch(GetNextWrEpoch()), mPipelineId);
   
-  mCompositorScheduler->ScheduleComposition();
+  ScheduleGenerateFrame();
   
   for (std::unordered_set<uint64_t>::iterator iter = mActiveAnimations.begin(); iter != mActiveAnimations.end(); iter++) {
     mAnimStorage->ClearById(*iter);
@@ -998,7 +998,7 @@ WebRenderBridgeParent::RecvForceComposite()
   if (mDestroyed) {
     return IPC_OK();
   }
-  ScheduleComposition();
+  ScheduleGenerateFrame();
   return IPC_OK();
 }
 
@@ -1189,24 +1189,36 @@ WebRenderBridgeParent::CompositeToTarget(gfx::DrawTarget* aTarget, const gfx::In
   if (!mForceRendering &&
       wr::RenderThread::Get()->TooManyPendingFrames(mApi->GetId())) {
     
-    ScheduleComposition();
+    mCompositorScheduler->ScheduleComposition();
     return;
   }
-
-  bool scheduleComposite = false;
-  nsTArray<wr::WrOpacityProperty> opacityArray;
-  nsTArray<wr::WrTransformProperty> transformArray;
 
   mAsyncImageManager->SetCompositionTime(TimeStamp::Now());
   mAsyncImageManager->ApplyAsyncImages();
 
+  if (!mAsyncImageManager->GetCompositeUntilTime().IsNull()) {
+    
+    
+    
+    mCompositorScheduler->ScheduleComposition();
+  }
+
+  if (!mAsyncImageManager->GetAndResetWillGenerateFrame() &&
+      !mForceRendering) {
+    
+    return;
+  }
+
+  nsTArray<wr::WrOpacityProperty> opacityArray;
+  nsTArray<wr::WrTransformProperty> transformArray;
+
   SampleAnimations(opacityArray, transformArray);
   if (!transformArray.IsEmpty() || !opacityArray.IsEmpty()) {
-    scheduleComposite = true;
+    ScheduleGenerateFrame();
   }
 
   if (PushAPZStateToWR(transformArray)) {
-    scheduleComposite = true;
+    ScheduleGenerateFrame();
   }
 
   wr::RenderThread::Get()->IncPendingFrameCount(mApi->GetId());
@@ -1220,14 +1232,6 @@ WebRenderBridgeParent::CompositeToTarget(gfx::DrawTarget* aTarget, const gfx::In
     mApi->GenerateFrame(opacityArray, transformArray);
   } else {
     mApi->GenerateFrame();
-  }
-
-  if (!mAsyncImageManager->GetCompositeUntilTime().IsNull()) {
-    scheduleComposite = true;
-  }
-
-  if (scheduleComposite) {
-    ScheduleComposition();
   }
 }
 
@@ -1302,9 +1306,10 @@ WebRenderBridgeParent::GetLayersId() const
 }
 
 void
-WebRenderBridgeParent::ScheduleComposition()
+WebRenderBridgeParent::ScheduleGenerateFrame()
 {
   if (mCompositorScheduler) {
+    mAsyncImageManager->SetWillGenerateFrame();
     mCompositorScheduler->ScheduleComposition();
   }
 }
@@ -1369,7 +1374,7 @@ WebRenderBridgeParent::ClearResources()
   uint32_t wrEpoch = GetNextWrEpoch();
   mApi->ClearDisplayList(wr::NewEpoch(wrEpoch), mPipelineId);
   
-  mCompositorScheduler->ScheduleComposition();
+  ScheduleGenerateFrame();
   
   for (auto iter = mExternalImageIds.Iter(); !iter.Done(); iter.Next()) {
     iter.Data()->ClearWrBridge();

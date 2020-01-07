@@ -173,7 +173,18 @@ public:
 
   void FlushRendering(bool aIsSync);
 
-  void ScheduleComposition();
+  
+
+
+
+
+
+
+
+
+
+
+  void ScheduleGenerateFrame();
 
   void UpdateWebRender(CompositorVsyncScheduler* aScheduler,
                        wr::WebRenderAPI* aApi,

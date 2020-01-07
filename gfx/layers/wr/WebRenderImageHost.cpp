@@ -70,8 +70,9 @@ WebRenderImageHost::UseTextureHost(const nsTArray<TimedTexture>& aTextures)
   mImages.SwapElements(newImages);
   newImages.Clear();
 
-  if (mWrBridge && GetAsyncRef()) {
-    mWrBridge->ScheduleComposition();
+  if (mWrBridge && mWrBridge->CompositorScheduler() && GetAsyncRef()) {
+    
+    mWrBridge->CompositorScheduler()->ScheduleComposition();
   }
 
   
