@@ -368,7 +368,7 @@ private:
 
 
 
-  bool PermissionAvaliable(nsIPrincipal* aPrincipal, const char* aType);
+  bool PermissionAvailable(nsIPrincipal* aPrincipal, const char* aType);
 
   nsRefPtrHashtable<nsCStringHashKey, mozilla::GenericPromise::Private> mPermissionKeyPromiseMap;
 
