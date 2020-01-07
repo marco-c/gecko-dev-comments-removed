@@ -101,21 +101,6 @@ enum class ImageRendering : uint32_t {
   Sentinel 
 };
 
-enum class LineOrientation : uint8_t {
-  Vertical = 0,
-  Horizontal = 1,
-
-  Sentinel 
-};
-
-enum class LineStyle : uint8_t {
-  Solid = 0,
-  Dotted = 1,
-  Dashed = 2,
-  Wavy = 3,
-
-  Sentinel 
-};
 
 
 
@@ -124,8 +109,7 @@ enum class LineStyle : uint8_t {
 
 
 
-
-enum class LogLevelFilter : uintptr_t {
+enum class LevelFilter : uintptr_t {
   
   Off = 0,
   
@@ -138,6 +122,22 @@ enum class LogLevelFilter : uintptr_t {
   Debug = 4,
   
   Trace = 5,
+
+  Sentinel 
+};
+
+enum class LineOrientation : uint8_t {
+  Vertical = 0,
+  Horizontal = 1,
+
+  Sentinel 
+};
+
+enum class LineStyle : uint8_t {
+  Solid = 0,
+  Dotted = 1,
+  Dashed = 2,
+  Wavy = 3,
 
   Sentinel 
 };
@@ -721,7 +721,7 @@ struct GlyphOptions {
 
 using WrYuvColorSpace = YuvColorSpace;
 
-using WrLogLevelFilter = LogLevelFilter;
+using WrLogLevelFilter = LevelFilter;
 
 struct ByteSlice {
   const uint8_t *buffer;

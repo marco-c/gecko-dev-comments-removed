@@ -241,7 +241,7 @@ WebRenderAPI::InitExternalLogHandler()
 {
   
   
-  mozilla::wr::wr_init_external_log_handler(wr::LogLevelFilter::Error);
+  mozilla::wr::wr_init_external_log_handler(wr::WrLogLevelFilter::Error);
 }
 
  void
