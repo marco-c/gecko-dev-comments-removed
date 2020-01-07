@@ -284,6 +284,16 @@ public:
 
 
 
+
+  virtual bool
+  BlitRenderTarget(CompositingRenderTarget* aSource,
+                   const gfx::IntSize& aSourceSize,
+                   const gfx::IntSize& aDestSize) { return false; }
+
+  
+
+
+
   virtual void SetRenderTarget(CompositingRenderTarget* aSurface) = 0;
 
   
