@@ -467,12 +467,6 @@ pub trait TElement:
     }
 
     
-    
-    fn closest_non_native_anonymous_ancestor(&self) -> Option<Self> {
-        unreachable!("Servo doesn't know about NAC");
-    }
-
-    
     fn style_attribute(&self) -> Option<ArcBorrow<Locked<PropertyDeclarationBlock>>>;
 
     
@@ -658,8 +652,7 @@ pub trait TElement:
     }
 
     
-    
-    fn is_native_anonymous(&self) -> bool {
+    fn is_in_native_anonymous_subtree(&self) -> bool {
         false
     }
 
@@ -794,7 +787,7 @@ pub trait TElement:
     
     fn rule_hash_target(&self) -> Self {
         if self.implemented_pseudo_element().is_some() {
-            self.closest_non_native_anonymous_ancestor()
+            self.pseudo_element_originating_element()
                 .expect("Trying to collect rules for a detached pseudo-element")
         } else {
             *self

@@ -131,27 +131,6 @@ enum {
   NODE_IS_EDITABLE =                      NODE_FLAG_BIT(6),
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  NODE_IS_NATIVE_ANONYMOUS =              NODE_FLAG_BIT(7),
 
   
   NODE_IS_IN_SHADOW_TREE =                NODE_FLAG_BIT(8),
@@ -1271,15 +1250,6 @@ public:
   }
 
   bool IsEditable() const;
-
-  
-
-
-
-  bool IsNativeAnonymous() const
-  {
-    return HasFlag(NODE_IS_NATIVE_ANONYMOUS);
-  }
 
   
 

@@ -1762,24 +1762,9 @@ Element::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
   
   
   
-  
-  
-  if (aDocument) {
+  if (aDocument && MayHaveAnimations()) {
     CSSPseudoElementType pseudoType = GetPseudoElementType();
-    if (pseudoType != CSSPseudoElementType::NotPseudo &&
-        nsCSSPseudoElements::PseudoElementIsJSCreatedNAC(pseudoType)) {
-      SetFlags(NODE_IS_NATIVE_ANONYMOUS);
-      nsIContent* parent = aParent;
-      while (parent && !parent->IsRootOfNativeAnonymousSubtree()) {
-        MOZ_ASSERT(parent->IsInNativeAnonymousSubtree());
-        parent->SetFlags(NODE_IS_NATIVE_ANONYMOUS);
-        parent = parent->GetParent();
-      }
-      MOZ_ASSERT(parent);
-    }
-
-    if (MayHaveAnimations() &&
-        (pseudoType == CSSPseudoElementType::NotPseudo ||
+    if ((pseudoType == CSSPseudoElementType::NotPseudo ||
          pseudoType == CSSPseudoElementType::before ||
          pseudoType == CSSPseudoElementType::after) &&
         EffectSet::GetEffectSet(this, pseudoType)) {

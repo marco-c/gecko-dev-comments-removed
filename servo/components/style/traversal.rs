@@ -433,7 +433,8 @@ pub fn recalc_style_at<E, D, F>(
     if compute_self {
         child_cascade_requirement = compute_style(traversal_data, context, element, data);
 
-        if element.is_native_anonymous() {
+        if element.is_in_native_anonymous_subtree() {
+            
             
             
             child_cascade_requirement = cmp::max(

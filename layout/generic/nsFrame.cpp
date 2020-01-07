@@ -634,6 +634,7 @@ nsFrame::Init(nsIContent*       aContent,
     AddStateBits(state & (NS_FRAME_INDEPENDENT_SELECTION |
                           NS_FRAME_PART_OF_IBSPLIT |
                           NS_FRAME_MAY_BE_TRANSFORMED |
+                          NS_FRAME_MAY_HAVE_GENERATED_CONTENT |
                           NS_FRAME_CAN_HAVE_ABSPOS_CHILDREN));
   } else {
     PresContext()->ConstructedFrame();
@@ -9829,25 +9830,20 @@ GetCorrectedParent(const nsIFrame* aFrame)
 
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  nsIContent* content = aFrame->GetContent();
-  Element* element =
-    content && content->IsElement() ? content->AsElement() : nullptr;
-  if (element && element->IsNativeAnonymous() && !element->IsNativeScrollbarContent() &&
-      element->GetPseudoElementType() == aFrame->Style()->GetPseudoType()) {
-    while (parent->GetContent() && parent->GetContent()->IsNativeAnonymous()) {
+  if (pseudo) {
+    MOZ_ASSERT(aFrame->GetContent());
+    Element* element =
+      aFrame->GetContent()->IsElement()
+        ? aFrame->GetContent()->AsElement() : nullptr;
+    
+    
+    if (element &&
+        !element->IsRootOfNativeAnonymousSubtree() &&
+        element->GetPseudoElementType() == aFrame->Style()->GetPseudoType()) {
+      while (parent->GetContent() &&
+             !parent->GetContent()->IsRootOfAnonymousSubtree()) {
+        parent = parent->GetInFlowParent();
+      }
       parent = parent->GetInFlowParent();
     }
   }
@@ -11017,7 +11013,6 @@ nsIFrame::IsVisuallyAtomic(EffectSet* aEffectSet,
                            const nsStyleEffects* aStyleEffects) {
   return HasOpacity(aEffectSet) ||
          IsTransformed(aStyleDisplay) ||
-         aStyleDisplay->IsContainPaint() ||
          
          
          ChildrenHavePerspective(aStyleDisplay) ||

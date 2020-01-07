@@ -3392,6 +3392,8 @@ nsCSSFrameConstructor::ConstructFieldSetFrame(nsFrameConstructorState& aState,
   
   fieldsetFrame->SetInitialChildList(kPrincipalList, fieldsetKids);
 
+  fieldsetFrame->AddStateBits(NS_FRAME_MAY_HAVE_GENERATED_CONTENT);
+
   
   return fieldsetFrame;
 }
@@ -4151,14 +4153,6 @@ ConnectAnonymousTreeDescendants(nsIContent* aParent,
   }
 }
 
-static void
-SetNativeAnonymousBitOnDescendants(nsIContent* aRoot)
-{
-  for (nsIContent* curr = aRoot; curr; curr = curr->GetNextNode(aRoot)) {
-    curr->SetFlags(NODE_IS_NATIVE_ANONYMOUS);
-  }
-}
-
 nsresult
 nsCSSFrameConstructor::GetAnonymousContent(nsIContent* aParent,
                                            nsIFrame* aParentFrame,
@@ -4182,28 +4176,12 @@ nsCSSFrameConstructor::GetAnonymousContent(nsIContent* aParent,
 
     ConnectAnonymousTreeDescendants(content, aContent[i].mChildren);
 
-    LayoutFrameType parentFrameType = aParentFrame->Type();
-    if (parentFrameType == LayoutFrameType::SVGUse) {
+    if (aParentFrame->IsSVGUseFrame()) {
       
       
       content->SetFlags(NODE_IS_ANONYMOUS_ROOT);
     } else {
       content->SetIsNativeAnonymousRoot();
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if (!(parentFrameType == LayoutFrameType::Canvas &&
-            content == static_cast<nsCanvasFrame*>(aParentFrame)
-                         ->GetCustomContentContainer())) {
-        SetNativeAnonymousBitOnDescendants(content);
-      }
     }
 
     bool anonContentIsEditable = content->HasFlag(NODE_IS_EDITABLE);
@@ -5731,6 +5709,10 @@ nsCSSFrameConstructor::AddFrameConstructionItemsInternal(nsFrameConstructorState
   }
 
   if (display->mDisplay == StyleDisplay::Contents) {
+    if (aParentFrame) {
+      
+      aParentFrame->AddStateBits(NS_FRAME_MAY_HAVE_GENERATED_CONTENT);
+    }
     CreateGeneratedContentItem(aState, aParentFrame, aContent->AsElement(),
                                computedStyle, CSSPseudoElementType::before,
                                aItems);
@@ -10284,6 +10266,7 @@ nsCSSFrameConstructor::ProcessChildren(nsFrameConstructorState& aState,
     ComputedStyle* computedStyle;
 
     if (aCanHaveGeneratedContent) {
+      aFrame->AddStateBits(NS_FRAME_MAY_HAVE_GENERATED_CONTENT);
       computedStyle =
         nsFrame::CorrectStyleParentFrame(aFrame, nullptr)->Style();
       
@@ -11349,6 +11332,9 @@ nsCSSFrameConstructor::ConstructInline(nsFrameConstructorState& aState,
   
   InitAndRestoreFrame(aState, content, aParentFrame, newFrame);
 
+  
+  newFrame->AddStateBits(NS_FRAME_MAY_HAVE_GENERATED_CONTENT);
+
   nsFrameConstructorSaveState absoluteSaveState;  
                                                   
                                                   
@@ -11451,7 +11437,8 @@ nsCSSFrameConstructor::CreateIBSiblings(nsFrameConstructorState& aState,
     
     nsInlineFrame* inlineFrame = NS_NewInlineFrame(mPresShell, computedStyle);
     InitAndRestoreFrame(aState, content, parentFrame, inlineFrame, false);
-    inlineFrame->AddStateBits(NS_FRAME_CAN_HAVE_ABSPOS_CHILDREN);
+    inlineFrame->AddStateBits(NS_FRAME_MAY_HAVE_GENERATED_CONTENT |
+                              NS_FRAME_CAN_HAVE_ABSPOS_CHILDREN);
     if (aIsPositioned) {
       inlineFrame->MarkAsAbsoluteContainingBlock();
     }
