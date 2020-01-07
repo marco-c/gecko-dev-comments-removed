@@ -623,12 +623,12 @@ impl<'a, 'b, 'i> DeclarationParser<'i> for KeyframeDeclarationParser<'a, 'b> {
         let id = match PropertyId::parse(&name, self.context) {
             Ok(id) => id,
             Err(()) => return Err(input.new_custom_error(
-                StyleParseErrorKind::UnknownProperty(name.clone())
+                StyleParseErrorKind::UnknownProperty(name)
             )),
         };
 
         
-        PropertyDeclaration::parse_into(self.declarations, id, name, self.context, input)?;
+        PropertyDeclaration::parse_into(self.declarations, id, self.context, input)?;
 
         
         
