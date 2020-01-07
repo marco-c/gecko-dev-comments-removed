@@ -35,12 +35,6 @@ class FontOverview extends PureComponent {
   }
 
   renderElementFonts() {
-    
-    
-    if (Services.prefs.getBoolPref(PREF_FONT_EDITOR)) {
-      return null;
-    }
-
     const {
       fontData,
       fontOptions,
@@ -48,6 +42,26 @@ class FontOverview extends PureComponent {
       onToggleFontHighlight,
     } = this.props;
     const { fonts } = fontData;
+
+    
+    
+    if (Services.prefs.getBoolPref(PREF_FONT_EDITOR)) {
+      return Accordion({
+        items: [
+          {
+            header: getStr("fontinspector.renderedFontsInPageHeader"),
+            component: FontList,
+            componentProps: {
+              fonts,
+              fontOptions,
+              onPreviewFonts,
+              onToggleFontHighlight,
+            },
+            opened: false
+          }
+        ]
+      });
+    }
 
     return fonts.length ?
       FontList({

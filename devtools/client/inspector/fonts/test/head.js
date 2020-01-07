@@ -103,18 +103,38 @@ function getUsedFontsEls(viewDoc) {
 
 
 
-async function expandOtherFontsAccordion(viewDoc) {
-  info("Expanding the other fonts section");
 
-  const accordion = viewDoc.querySelector("#font-container .accordion");
+
+
+
+function getRenderedFontsAccordion(viewDoc) {
+  return viewDoc.querySelectorAll("#font-container .accordion")[0];
+}
+
+
+
+
+
+
+
+
+function getOtherFontsAccordion(viewDoc) {
+  return viewDoc.querySelectorAll("#font-container .accordion")[1];
+}
+
+
+
+
+
+
+async function expandAccordion(accordion) {
   const isExpanded = () => accordion.querySelector(".fonts-list");
-
   if (isExpanded()) {
     return;
   }
 
-  const onExpanded = BrowserTestUtils.waitForCondition(isExpanded,
-                                                     "Waiting for other fonts section");
+  const onExpanded = BrowserTestUtils.waitForCondition(
+    isExpanded, "Waiting for other fonts section");
   accordion.querySelector(".theme-twisty").click();
   await onExpanded;
 }
@@ -124,9 +144,29 @@ async function expandOtherFontsAccordion(viewDoc) {
 
 
 
+async function expandOtherFontsAccordion(viewDoc) {
+  info("Expanding the other fonts section");
+  await expandAccordion(getOtherFontsAccordion(viewDoc));
+}
+
+
+
+
+
+
+
+function getRenderedFontsEls(viewDoc) {
+  return getRenderedFontsAccordion(viewDoc).querySelectorAll(".fonts-list > li");
+}
+
+
+
+
+
+
 
 function getOtherFontsEls(viewDoc) {
-  return viewDoc.querySelectorAll("#font-container .accordion .fonts-list > li");
+  return getOtherFontsAccordion(viewDoc).querySelectorAll(".fonts-list > li");
 }
 
 
