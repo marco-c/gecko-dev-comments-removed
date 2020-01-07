@@ -418,6 +418,7 @@ static const char* const kBinaryFileExtensions[] = {
     ".adp", 
     ".apk", 
     ".app", 
+    ".applescript",
     ".application", 
     ".appref-ms", 
     
@@ -552,6 +553,8 @@ static const char* const kBinaryFileExtensions[] = {
     
     ".ocx", 
     ".ops", 
+    ".osas", 
+    ".osax", 
     
     
     
@@ -626,9 +629,12 @@ static const char* const kBinaryFileExtensions[] = {
     
     
     ".scf", 
+    ".scpt", 
+    ".scptd", 
     ".scr", 
     ".sct", 
     ".search-ms", 
+    ".seplugin", 
     ".sh", 
     ".shar", 
     ".shb", 
@@ -750,6 +756,7 @@ PendingLookup::GetDownloadType(const nsACString& aFilename) {
   } else if (StringEndsWith(aFilename, NS_LITERAL_CSTRING(".apk"))) {
     return ClientDownloadRequest::ANDROID_APK;
   } else if (StringEndsWith(aFilename, NS_LITERAL_CSTRING(".app")) ||
+             StringEndsWith(aFilename, NS_LITERAL_CSTRING(".applescript")) ||
              StringEndsWith(aFilename, NS_LITERAL_CSTRING(".cdr")) ||
              StringEndsWith(aFilename, NS_LITERAL_CSTRING(".dart")) ||
              StringEndsWith(aFilename, NS_LITERAL_CSTRING(".dc42")) ||
@@ -762,7 +769,12 @@ PendingLookup::GetDownloadType(const nsACString& aFilename) {
              StringEndsWith(aFilename, NS_LITERAL_CSTRING(".iso")) ||
              StringEndsWith(aFilename, NS_LITERAL_CSTRING(".mpkg")) ||
              StringEndsWith(aFilename, NS_LITERAL_CSTRING(".ndif")) ||
+             StringEndsWith(aFilename, NS_LITERAL_CSTRING(".osas")) ||
+             StringEndsWith(aFilename, NS_LITERAL_CSTRING(".osax")) ||
              StringEndsWith(aFilename, NS_LITERAL_CSTRING(".pkg")) ||
+             StringEndsWith(aFilename, NS_LITERAL_CSTRING(".scpt")) ||
+             StringEndsWith(aFilename, NS_LITERAL_CSTRING(".scptd")) ||
+             StringEndsWith(aFilename, NS_LITERAL_CSTRING(".seplugin")) ||
              StringEndsWith(aFilename, NS_LITERAL_CSTRING(".smi")) ||
              StringEndsWith(aFilename, NS_LITERAL_CSTRING(".sparsebundle")) ||
              StringEndsWith(aFilename, NS_LITERAL_CSTRING(".sparseimage")) ||
