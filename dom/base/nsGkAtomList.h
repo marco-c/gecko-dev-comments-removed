@@ -2509,6 +2509,21 @@ GK_ATOM(onaddsourcebuffer, "onaddsourcebuffer")
 GK_ATOM(onremovesourcebuffer, "onremovesourcebuffer")
 
 
+GK_ATOM(about, "about")
+GK_ATOM(ID, "ID")
+GK_ATOM(nodeID, "nodeID")
+GK_ATOM(aboutEach, "aboutEach")
+GK_ATOM(resource, "resource")
+GK_ATOM(RDF, "RDF")
+GK_ATOM(Description, "Description")
+GK_ATOM(Bag, "Bag")
+GK_ATOM(Seq, "Seq")
+GK_ATOM(Alt, "Alt")
+
+
+GK_ATOM(parseType, "parseType")
+
+
 
 
 
