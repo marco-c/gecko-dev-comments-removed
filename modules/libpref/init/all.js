@@ -2972,6 +2972,13 @@ pref("layout.css.frames-timing.enabled", true);
 #endif
 
 
+
+
+#ifndef RELEASE_OR_BETA
+pref("layout.css.emulate-moz-box-with-flex", false);
+#endif
+
+
 pref("layout.css.prefixes.border-image", true);
 pref("layout.css.prefixes.transforms", true);
 pref("layout.css.prefixes.transitions", true);
