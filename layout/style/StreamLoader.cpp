@@ -114,13 +114,10 @@ StreamLoader::OnStopRequest(nsIRequest* aRequest,
   
   
   
-  bool dummy;
   mSheetLoadData->mLoader->ParseSheet(
-    EmptyString(),
     utf8String,
     mSheetLoadData,
-     true,
-    dummy);
+    Loader::AllowAsyncParse::Yes);
   return NS_OK;
 }
 

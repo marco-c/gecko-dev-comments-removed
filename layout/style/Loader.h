@@ -552,21 +552,20 @@ private:
                      StyleSheetState aSheetState,
                      bool aIsPreLoad);
 
-  
-  
-  
-  
-  
-  void ParseSheet(const nsAString& aUTF16,
-                  const nsACString& aUTF8,
-                  SheetLoadData* aLoadData,
-                  bool aAllowAsync,
-                  bool& aCompleted);
+  enum class AllowAsyncParse
+  {
+    Yes,
+    No,
+  };
 
-  void DoParseSheetServo(const nsACString& aBytes,
-                         SheetLoadData* aLoadData,
-                         bool aAllowAsync,
-                         bool& aCompleted);
+  
+  
+  
+  
+  
+  
+  
+  Completed ParseSheet(const nsACString& aBytes, SheetLoadData*, AllowAsyncParse);
 
   
   
