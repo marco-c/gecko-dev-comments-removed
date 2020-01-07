@@ -25,7 +25,7 @@
   ((cursor)->state->pool_data[CURS_POOL_OFFSET(cursor)])
 
 static bool
-CHECK_COUNT(NotNull<XPTCursor*> cursor, uint32_t space)
+CheckCount(NotNull<XPTCursor*> cursor, uint32_t space)
 {
     
     
@@ -63,7 +63,7 @@ XPT_MakeCursor(XPTState *state, XPTPool pool, uint32_t len,
     cursor->bits = 0;
     cursor->offset = state->next_cursor[pool];
 
-    if (!(CHECK_COUNT(cursor, len)))
+    if (!(CheckCount(cursor, len)))
         return false;
 
     
@@ -177,7 +177,7 @@ XPT_DoIID(NotNull<XPTCursor*> cursor, nsID *iidp)
     do {                                          \
         const size_t sz = sizeof(T);              \
                                                   \
-        if (!CHECK_COUNT(cursor, sz)) {           \
+        if (!CheckCount(cursor, sz)) {            \
             return false;                         \
         }                                         \
                                                   \
@@ -215,7 +215,7 @@ XPT_Do16(NotNull<XPTCursor*> cursor, uint16_t *u16p)
 bool
 XPT_Do8(NotNull<XPTCursor*> cursor, uint8_t *u8p)
 {
-    if (!CHECK_COUNT(cursor, 1))
+    if (!CheckCount(cursor, 1))
         return false;
 
     *u8p = CURS_POINT(cursor);
