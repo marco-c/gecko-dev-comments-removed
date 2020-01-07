@@ -26,6 +26,7 @@
 #include "ScreenHelperWin.h"
 #include "HeadlessScreenHelper.h"
 #include "mozilla/widget/ScreenManager.h"
+#include "mozilla/Atomics.h"
 
 #if defined(ACCESSIBILITY)
 #include "mozilla/a11y/Compatibility.h"
@@ -185,13 +186,23 @@ using mozilla::crashreporter::LSPAnnotate;
 
 
 
+
+
+static Atomic<size_t, ReleaseAcquire> sOutstandingNativeEventCallbacks;
+
  LRESULT CALLBACK
 nsAppShell::EventWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
   if (uMsg == sAppShellGeckoMsgId) {
+    
+    
+    if (!sOutstandingNativeEventCallbacks) {
+      return TRUE;
+    }
+
     nsAppShell *as = reinterpret_cast<nsAppShell *>(lParam);
     as->NativeEventCallback();
-    NS_RELEASE(as);
+    --sOutstandingNativeEventCallbacks;
     return TRUE;
   }
   return DefWindowProc(hwnd, uMsg, wParam, lParam);
@@ -205,6 +216,9 @@ nsAppShell::~nsAppShell()
     
     SendMessage(mEventWnd, WM_CLOSE, 0, 0);
   }
+
+  
+  sOutstandingNativeEventCallbacks = 0;
 }
 
 #if defined(ACCESSIBILITY)
@@ -463,7 +477,7 @@ nsAppShell::ScheduleNativeEventCallback()
              "We should have created mEventWnd in Init, if this is called.");
 
   
-  NS_ADDREF_THIS(); 
+  ++sOutstandingNativeEventCallbacks;
   {
     MutexAutoLock lock(mLastNativeEventScheduledMutex);
     
