@@ -4429,6 +4429,22 @@ nsFlexContainerFrame::IsItemInlineAxisMainAxis(nsIFrame* aFrame)
   return flexContainerIsRowOriented == itemInlineAxisIsParallelToParent;
 }
 
+
+bool
+nsFlexContainerFrame::IsUsedFlexBasisContent(const nsStyleCoord* aFlexBasis,
+                                             const nsStyleCoord* aMainSize)
+{
+  
+  
+  
+  
+  return
+    (aFlexBasis->GetUnit() == eStyleUnit_Enumerated &&
+     aFlexBasis->GetIntValue() == NS_STYLE_FLEX_BASIS_CONTENT) ||
+    (aFlexBasis->GetUnit() == eStyleUnit_Auto &&
+     aMainSize->GetUnit() == eStyleUnit_Auto);
+}
+
 void
 nsFlexContainerFrame::DoFlexLayout(nsPresContext*           aPresContext,
                                    ReflowOutput&     aDesiredSize,

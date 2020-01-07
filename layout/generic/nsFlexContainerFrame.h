@@ -12,6 +12,8 @@
 #include "nsContainerFrame.h"
 #include "mozilla/UniquePtr.h"
 
+class nsStyleCoord;
+
 namespace mozilla {
 template <class T> class LinkedList;
 class LogicalPoint;
@@ -211,6 +213,17 @@ public:
 
 
   static bool IsItemInlineAxisMainAxis(nsIFrame* aFrame);
+
+  
+
+
+
+
+
+
+
+  static bool IsUsedFlexBasisContent(const nsStyleCoord* aFlexBasis,
+                                     const nsStyleCoord* aMainSize);
 
 protected:
   
