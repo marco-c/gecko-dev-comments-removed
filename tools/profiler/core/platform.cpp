@@ -925,7 +925,7 @@ MergeStacks(uint32_t aFeatures, bool aIsSynchronous,
     if (pseudoIndex != pseudoCount) {
       const js::ProfileEntry& pseudoEntry = pseudoEntries[pseudoIndex];
 
-      if (pseudoEntry.isLabelFrame()) {
+      if (pseudoEntry.isLabelFrame() || pseudoEntry.isSpMarkerFrame()) {
         lastLabelFrameStackAddr = (uint8_t*) pseudoEntry.stackAddress();
       }
 
@@ -978,7 +978,7 @@ MergeStacks(uint32_t aFeatures, bool aIsSynchronous,
 
       
       
-      if (pseudoEntry.kind() != js::ProfileEntry::Kind::LABEL_MARKER_FOR_JS) {
+      if (!pseudoEntry.isSpMarkerFrame()) {
         
         MOZ_ASSERT_IF(pseudoEntry.isJsFrame() && pseudoEntry.script() && !pseudoEntry.pc(),
                       &pseudoEntry == &pseudoStack.entries[pseudoStack.stackSize() - 1]);
@@ -2329,7 +2329,6 @@ MozGlueLabelEnter(const char* aLabel, const char* aDynamicString, void* aSp,
   PseudoStack* pseudoStack = AutoProfilerLabel::sPseudoStack.get();
   if (pseudoStack) {
     pseudoStack->pushLabelFrame(aLabel, aDynamicString, aSp, aLine,
-                                js::ProfileEntry::Kind::LABEL,
                                 js::ProfileEntry::Category::OTHER);
   }
   return pseudoStack;

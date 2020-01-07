@@ -62,9 +62,7 @@ GeckoProfilerEntryMarker::GeckoProfilerEntryMarker(JSContext* cx,
 
     
     
-    profiler_->pseudoStack_->pushLabelFrame(
-         "",  nullptr,  this,  0,
-        ProfileEntry::Kind::LABEL_MARKER_FOR_JS, ProfileEntry::Category::OTHER);
+    profiler_->pseudoStack_->pushSpMarkerFrame(this);
 
     profiler_->pseudoStack_->pushJsFrame(
         "js::RunScript",  nullptr, script, script->code());
@@ -99,7 +97,6 @@ AutoGeckoProfilerEntry::AutoGeckoProfilerEntry(JSContext* cx, const char* label,
                                              nullptr,
                                              this,
                                              0,
-                                            ProfileEntry::Kind::LABEL,
                                             category);
 }
 

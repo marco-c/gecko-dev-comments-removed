@@ -25,7 +25,6 @@
 
 
 
-
 class PseudoStack;
 
 namespace mozilla {
