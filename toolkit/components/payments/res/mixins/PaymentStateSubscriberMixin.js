@@ -14,8 +14,6 @@
 
 
 let requestStore = new PaymentsStore({
-  changesPrevented: false,
-  completionState: "initial",
   orderDetailsShowing: false,
   request: {
     tabId: null,
