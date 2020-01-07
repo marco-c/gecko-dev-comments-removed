@@ -867,8 +867,18 @@ SimpleTest.waitForFocus = function (callback, targetWindow, expectBlankPage) {
     
     
     
-    var Cu = Components.utils || SpecialPowers.Cu;
-    var Ci = Components.interfaces || SpecialPowers.Ci;
+    
+    
+    
+    var c = Object.getOwnPropertyDescriptor(window, 'Components');
+    var Cu, Ci;
+    if (c && c.value && !c.writable) {
+        Cu = Components.utils;
+        Ci = Components.interfaces;
+    } else {
+        Cu = SpecialPowers.Cu;
+        Ci = SpecialPowers.Ci;
+    }
 
     var browser = null;
     if (typeof(XULElement) != "undefined" &&
