@@ -80,17 +80,6 @@ public:
 
 
 
-  static bool ParseIntersectionObserverRootMargin(const nsAString& aValue,
-                                                  nsCSSRect* aResult);
-
-  
-
-
-
-
-
-
-
 
 
 
