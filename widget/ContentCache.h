@@ -480,12 +480,15 @@ private:
   uint8_t mPendingCompositionCount;
   
   
+  uint8_t mPendingCommitCount;
+  
+  
   
   bool mWidgetHasComposition;
   
   
   
-  bool mIsPendingLastCommitEvent;
+  bool mIsChildIgnoringCompositionEvents;
 
   ContentCacheInParent() = delete;
 
