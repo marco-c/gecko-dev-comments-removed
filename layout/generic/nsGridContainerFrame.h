@@ -234,6 +234,18 @@ public:
   }
 
   
+  bool HasSubgridItems(mozilla::LogicalAxis aAxis) const {
+    return HasAnyStateBits(
+      aAxis == mozilla::eLogicalAxisBlock ? NS_STATE_GRID_HAS_ROW_SUBGRID_ITEM
+                                          : NS_STATE_GRID_HAS_COL_SUBGRID_ITEM);
+  }
+  
+  bool HasSubgridItems() const {
+    return HasAnyStateBits(NS_STATE_GRID_HAS_ROW_SUBGRID_ITEM |
+                           NS_STATE_GRID_HAS_COL_SUBGRID_ITEM);
+  }
+
+  
 
 
 

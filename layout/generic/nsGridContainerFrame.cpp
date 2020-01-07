@@ -3172,6 +3172,10 @@ nsGridContainerFrame::Grid::PlaceGridItems(GridReflowInput& aState,
   MOZ_ASSERT(mCellMap.mCells.IsEmpty(), "unexpected entries in cell map");
 
   
+  aState.mFrame->RemoveStateBits(NS_STATE_GRID_HAS_COL_SUBGRID_ITEM |
+                                 NS_STATE_GRID_HAS_ROW_SUBGRID_ITEM);
+
+  
   
   
   
@@ -6395,7 +6399,9 @@ nsGridContainerFrame::Init(nsIContent*       aContent,
     }
   } else {
     bits = aPrevInFlow->GetStateBits() & (NS_STATE_GRID_IS_COL_SUBGRID |
-                                          NS_STATE_GRID_IS_ROW_SUBGRID);
+                                          NS_STATE_GRID_IS_ROW_SUBGRID |
+                                          NS_STATE_GRID_HAS_COL_SUBGRID_ITEM |
+                                          NS_STATE_GRID_HAS_ROW_SUBGRID_ITEM);
   }
   AddStateBits(bits);
 }
