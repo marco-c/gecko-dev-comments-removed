@@ -10,9 +10,11 @@ import org.mozilla.gecko.annotation.WrapForJNI;
 import org.mozilla.gecko.GeckoEditableChild;
 import org.mozilla.gecko.IGeckoEditableParent;
 import org.mozilla.gecko.NativeQueue;
+import org.mozilla.gecko.util.ActivityUtils;
 import org.mozilla.gecko.util.ThreadUtils;
 
 import android.annotation.TargetApi;
+import android.app.Activity;
 import android.content.Context;
 import android.graphics.RectF;
 import android.os.Handler;
@@ -32,6 +34,12 @@ import android.view.inputmethod.InputMethodManager;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+
+
+
+
+
+
 
 
 
@@ -74,9 +82,11 @@ public final class SessionTextInput {
 
 
 
+
         void restartInput(@NonNull GeckoSession session, @RestartReason int reason);
 
         
+
 
 
 
@@ -90,9 +100,11 @@ public final class SessionTextInput {
 
 
 
+
         void hideSoftInput(@NonNull GeckoSession session);
 
         
+
 
 
 
@@ -112,11 +124,13 @@ public final class SessionTextInput {
 
 
 
+
         void updateExtractedText(@NonNull GeckoSession session,
                                  @NonNull ExtractedTextRequest request,
                                  @NonNull ExtractedText text);
 
         
+
 
 
 
@@ -199,6 +213,17 @@ public final class SessionTextInput {
         public void restartInput(@NonNull final GeckoSession session, final int reason) {
             ThreadUtils.assertOnUiThread();
             final View view = session.getTextInput().getView();
+
+            if (reason == RESTART_REASON_FOCUS) {
+                final Context context = (view != null) ? view.getContext() : null;
+                if ((context instanceof Activity) &&
+                        !ActivityUtils.isFullScreen((Activity) context)) {
+                    
+                    session.getDynamicToolbarAnimator()
+                           .showToolbar( true);
+                }
+            }
+
             final InputMethodManager imm = getInputMethodManager(view);
             if (imm == null) {
                 return;
@@ -292,8 +317,8 @@ public final class SessionTextInput {
 
     private final GeckoSession mSession;
     private final NativeQueue mQueue;
-    private final GeckoEditable mEditable = new GeckoEditable();
-    private final GeckoEditableChild mEditableChild = new GeckoEditableChild(mEditable);
+    private final GeckoEditable mEditable;
+    private final GeckoEditableChild mEditableChild;
     private InputConnectionClient mInputConnection;
     private Delegate mDelegate;
 
@@ -301,6 +326,8 @@ public final class SessionTextInput {
                                    final @NonNull NativeQueue queue) {
         mSession = session;
         mQueue = queue;
+        mEditable = new GeckoEditable(session);
+        mEditableChild = new GeckoEditableChild(mEditable);
         mEditable.setDefaultEditableChild(mEditableChild);
     }
 
@@ -357,6 +384,9 @@ public final class SessionTextInput {
 
 
 
+
+
+
     public synchronized void setView(final @Nullable View view) {
         ThreadUtils.assertOnUiThread();
 
@@ -375,9 +405,13 @@ public final class SessionTextInput {
 
 
 
+
+
     public synchronized @Nullable InputConnection onCreateInputConnection(
             final @NonNull EditorInfo attrs) {
         
+        mEditable.onCreateInputConnection(attrs);
+
         if (!mQueue.isReady() || mInputConnection == null) {
             return null;
         }

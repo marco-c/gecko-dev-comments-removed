@@ -11,10 +11,12 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.mozilla.gecko.GeckoEditableChild;
 import org.mozilla.gecko.IGeckoEditableChild;
 import org.mozilla.gecko.IGeckoEditableParent;
+import org.mozilla.gecko.InputMethods;
 import org.mozilla.gecko.util.GamepadUtils;
 import org.mozilla.gecko.util.ThreadUtils;
 import org.mozilla.gecko.util.ThreadUtils.AssertBehavior;
@@ -29,6 +31,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.text.Editable;
 import android.text.InputFilter;
+import android.text.InputType;
 import android.text.Selection;
 import android.text.Spannable;
 import android.text.SpannableString;
@@ -43,6 +46,7 @@ import android.util.Log;
 import android.view.KeyCharacterMap;
 import android.view.KeyEvent;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
 
 
 
@@ -61,6 +65,7 @@ import android.view.View;
     
     private InputFilter[] mFilters;
 
+     final GeckoSession mSession;
     private final AsyncText mText;
     private final Editable mProxy;
     private final ConcurrentLinkedQueue<Action> mActions;
@@ -85,7 +90,18 @@ import android.view.View;
     private boolean mNeedUpdateComposition; 
     private boolean mSuppressKeyUp; 
 
+    private int mIMEState = 
+            SessionTextInput.EditableListener.IME_STATE_DISABLED;
+    private String mIMETypeHint = ""; 
+    private String mIMEModeHint = ""; 
+    private String mIMEActionHint = ""; 
+    private int mIMEFlags; 
+
     private boolean mIgnoreSelectionChange; 
+
+    
+    
+     final AtomicInteger mSoftInputReentrancyGuard = new AtomicInteger();
 
     private static final int IME_RANGE_CARETPOSITION = 1;
     private static final int IME_RANGE_RAWINPUT = 2;
@@ -607,12 +623,13 @@ import android.view.View;
         }
     }
 
-    public GeckoEditable() {
+    public GeckoEditable(@NonNull final GeckoSession session) {
         if (DEBUG) {
             
             ThreadUtils.assertOnUiThread();
         }
 
+        mSession = session;
         mText = new AsyncText();
         mActions = new ConcurrentLinkedQueue<Action>();
 
@@ -1174,27 +1191,71 @@ import android.view.View;
         mIcPostHandler.post(new Runnable() {
             @Override
             public void run() {
-                if (type == SessionTextInput.EditableListener.NOTIFY_IME_REPLY_EVENT) {
-                    if (mNeedSync) {
-                        icSyncShadowText();
-                    }
-                    return;
-                }
-
-                if (type == SessionTextInput.EditableListener.NOTIFY_IME_OF_FOCUS &&
-                        mListener != null) {
-                    mFocusedChild = child;
-                    mNeedSync = false;
-                    mText.syncShadowText( null);
-                } else if (type == SessionTextInput.EditableListener.NOTIFY_IME_OF_BLUR) {
-                    mFocusedChild = null;
-                }
-
-                if (mListener != null) {
-                    mListener.notifyIME(type);
-                }
+                icNotifyIME(child, type);
             }
         });
+    }
+
+     void icNotifyIME(final IGeckoEditableChild child, final int type) {
+        if (DEBUG) {
+            assertOnIcThread();
+        }
+
+        if (type == SessionTextInput.EditableListener.NOTIFY_IME_REPLY_EVENT) {
+            if (mNeedSync) {
+                icSyncShadowText();
+            }
+            return;
+        }
+
+        switch (type) {
+            case SessionTextInput.EditableListener.NOTIFY_IME_OF_FOCUS:
+                mFocusedChild = child;
+                mNeedSync = false;
+                mText.syncShadowText( null);
+
+                
+                if (mIMEState != SessionTextInput.EditableListener.IME_STATE_DISABLED) {
+                    icRestartInput(SessionTextInput.Delegate.RESTART_REASON_FOCUS);
+                }
+                break;
+
+            case SessionTextInput.EditableListener.NOTIFY_IME_OF_BLUR:
+                mFocusedChild = null;
+                break;
+
+            case SessionTextInput.EditableListener.NOTIFY_IME_OPEN_VKB:
+                toggleSoftInput( true);
+                return; 
+
+            case SessionTextInput.EditableListener.NOTIFY_IME_TO_COMMIT_COMPOSITION: {
+                
+                
+                
+                
+                
+                
+                
+                final Spanned text = mText.getShadowText();
+                final Object[] spans = text.getSpans(0, text.length(), Object.class);
+                for (final Object span : spans) {
+                    if ((text.getSpanFlags(span) & Spanned.SPAN_COMPOSING) != 0) {
+                        
+                        return; 
+                    }
+                }
+                
+                icRestartInput(SessionTextInput.Delegate.RESTART_REASON_CONTENT_CHANGE);
+                return; 
+            }
+
+            default:
+                throw new IllegalArgumentException("Invalid notifyIME type: " + type);
+        }
+
+        if (mListener != null) {
+            mListener.notifyIME(type);
+        }
     }
 
     @Override 
@@ -1217,10 +1278,206 @@ import android.view.View;
         mIcPostHandler.post(new Runnable() {
             @Override
             public void run() {
-                if (mListener == null) {
+                icNotifyIMEContext(state, typeHint, modeHint, actionHint, flags);
+            }
+        });
+    }
+
+     void icNotifyIMEContext(int state, final String typeHint,
+                                          final String modeHint, final String actionHint,
+                                          final int flags) {
+        if (DEBUG) {
+            assertOnIcThread();
+        }
+
+        
+        
+        
+        if (typeHint != null && (typeHint.equalsIgnoreCase("date") ||
+                                 typeHint.equalsIgnoreCase("time") ||
+                                 typeHint.equalsIgnoreCase("month") ||
+                                 typeHint.equalsIgnoreCase("week") ||
+                                 typeHint.equalsIgnoreCase("datetime-local"))) {
+            state = SessionTextInput.EditableListener.IME_STATE_DISABLED;
+        }
+
+        final int oldState = mIMEState;
+        mIMEState = state;
+        mIMETypeHint = (typeHint == null) ? "" : typeHint;
+        mIMEModeHint = (modeHint == null) ? "" : modeHint;
+        mIMEActionHint = (actionHint == null) ? "" : actionHint;
+        mIMEFlags = flags;
+
+        if (mListener != null) {
+            mListener.notifyIMEContext(state, typeHint, modeHint, actionHint, flags);
+        }
+
+        
+        
+        
+        
+        
+        if (oldState != SessionTextInput.EditableListener.IME_STATE_DISABLED) {
+            if (state == SessionTextInput.EditableListener.IME_STATE_DISABLED) {
+                icRestartInput(SessionTextInput.Delegate.RESTART_REASON_BLUR);
+            } else if (mFocusedChild != null) {
+                icRestartInput(SessionTextInput.Delegate.RESTART_REASON_CONTENT_CHANGE);
+            }
+        }
+    }
+
+    private void icRestartInput(@SessionTextInput.Delegate.RestartReason final int reason) {
+        if (DEBUG) {
+            assertOnIcThread();
+        }
+
+        ThreadUtils.postToUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mSoftInputReentrancyGuard.incrementAndGet();
+                mSession.getTextInput().getDelegate().restartInput(mSession, reason);
+
+                postToInputConnection(new Runnable() {
+                    @Override
+                    public void run() {
+                        toggleSoftInput( false);
+                    }
+                });
+            }
+        });
+    }
+
+    public void onCreateInputConnection(final EditorInfo outAttrs) {
+        final int state = mIMEState;
+        final String typeHint = mIMETypeHint;
+        final String modeHint = mIMEModeHint;
+        final String actionHint = mIMEActionHint;
+        final int flags = mIMEFlags;
+
+        
+        outAttrs.imeOptions = EditorInfo.IME_ACTION_NONE;
+        outAttrs.actionLabel = null;
+
+        if (state == SessionTextInput.EditableListener.IME_STATE_DISABLED) {
+            outAttrs.inputType = InputType.TYPE_NULL;
+            toggleSoftInput( false);
+            return;
+        }
+
+        outAttrs.inputType = InputType.TYPE_CLASS_TEXT;
+        if (state == SessionTextInput.EditableListener.IME_STATE_PASSWORD ||
+                "password".equalsIgnoreCase(typeHint)) {
+            outAttrs.inputType |= InputType.TYPE_TEXT_VARIATION_PASSWORD;
+        } else if (typeHint.equalsIgnoreCase("url") ||
+                typeHint.equalsIgnoreCase("mozAwesomebar")) {
+            outAttrs.inputType |= InputType.TYPE_TEXT_VARIATION_URI;
+        } else if (typeHint.equalsIgnoreCase("email")) {
+            outAttrs.inputType |= InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS;
+        } else if (typeHint.equalsIgnoreCase("tel")) {
+            outAttrs.inputType = InputType.TYPE_CLASS_PHONE;
+        } else if (typeHint.equalsIgnoreCase("number") ||
+                typeHint.equalsIgnoreCase("range")) {
+            outAttrs.inputType = InputType.TYPE_CLASS_NUMBER
+                    | InputType.TYPE_NUMBER_FLAG_SIGNED
+                    | InputType.TYPE_NUMBER_FLAG_DECIMAL;
+        } else if (modeHint.equalsIgnoreCase("numeric")) {
+            outAttrs.inputType = InputType.TYPE_CLASS_NUMBER |
+                    InputType.TYPE_NUMBER_FLAG_SIGNED |
+                    InputType.TYPE_NUMBER_FLAG_DECIMAL;
+        } else if (modeHint.equalsIgnoreCase("digit")) {
+            outAttrs.inputType = InputType.TYPE_CLASS_NUMBER;
+        } else {
+            
+            outAttrs.inputType |= InputType.TYPE_TEXT_FLAG_AUTO_CORRECT |
+                    InputType.TYPE_TEXT_FLAG_IME_MULTI_LINE;
+            if (typeHint.equalsIgnoreCase("textarea") ||
+                    typeHint.length() == 0) {
+                
+                outAttrs.inputType |= InputType.TYPE_TEXT_FLAG_MULTI_LINE;
+            }
+            if (modeHint.equalsIgnoreCase("uppercase")) {
+                outAttrs.inputType |= InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS;
+            } else if (modeHint.equalsIgnoreCase("titlecase")) {
+                outAttrs.inputType |= InputType.TYPE_TEXT_FLAG_CAP_WORDS;
+            } else if (typeHint.equalsIgnoreCase("text") &&
+                    !modeHint.equalsIgnoreCase("autocapitalized")) {
+                outAttrs.inputType |= InputType.TYPE_TEXT_VARIATION_NORMAL;
+            } else if (!modeHint.equalsIgnoreCase("lowercase")) {
+                outAttrs.inputType |= InputType.TYPE_TEXT_FLAG_CAP_SENTENCES;
+            }
+            
+        }
+
+        if (actionHint.equalsIgnoreCase("go")) {
+            outAttrs.imeOptions = EditorInfo.IME_ACTION_GO;
+        } else if (actionHint.equalsIgnoreCase("done")) {
+            outAttrs.imeOptions = EditorInfo.IME_ACTION_DONE;
+        } else if (actionHint.equalsIgnoreCase("next")) {
+            outAttrs.imeOptions = EditorInfo.IME_ACTION_NEXT;
+        } else if (actionHint.equalsIgnoreCase("search") ||
+                typeHint.equalsIgnoreCase("search")) {
+            outAttrs.imeOptions = EditorInfo.IME_ACTION_SEARCH;
+        } else if (actionHint.equalsIgnoreCase("send")) {
+            outAttrs.imeOptions = EditorInfo.IME_ACTION_SEND;
+        } else if (actionHint.length() > 0) {
+            if (DEBUG)
+                Log.w(LOGTAG, "Unexpected actionHint=\"" + actionHint + "\"");
+            outAttrs.actionLabel = actionHint;
+        }
+
+        if ((flags & SessionTextInput.EditableListener.IME_FLAG_PRIVATE_BROWSING) != 0) {
+            outAttrs.imeOptions |= InputMethods.IME_FLAG_NO_PERSONALIZED_LEARNING;
+        }
+
+        toggleSoftInput( false);
+    }
+
+     void toggleSoftInput(final boolean force) {
+        
+        final int state = mIMEState;
+        final int flags = mIMEFlags;
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+        ThreadUtils.postToUiThread(new Runnable() {
+            @Override
+            public void run() {
+                final int reentrancyGuard = mSoftInputReentrancyGuard.decrementAndGet();
+                final boolean isReentrant;
+                if (reentrancyGuard < 0) {
+                    mSoftInputReentrancyGuard.incrementAndGet();
+                    isReentrant = false;
+                } else {
+                    isReentrant = reentrancyGuard > 0;
+                }
+
+                
+                
+                
+                
+                final View view = mSession.getTextInput().getView();
+                final boolean isFocused = (view == null) || view.hasFocus();
+
+                final boolean isUserAction = ((flags &
+                        SessionTextInput.EditableListener.IME_FLAG_USER_ACTION) != 0);
+
+                if (!force && (isReentrant || !isFocused || !isUserAction)) {
                     return;
                 }
-                mListener.notifyIMEContext(state, typeHint, modeHint, actionHint, flags);
+                if (state == SessionTextInput.EditableListener.IME_STATE_DISABLED) {
+                    mSession.getTextInput().getDelegate().hideSoftInput(mSession);
+                    return;
+                }
+                mSession.getEventDispatcher().dispatch("GeckoView:ZoomToInput", null);
+                mSession.getTextInput().getDelegate().showSoftInput(mSession);
             }
         });
     }
