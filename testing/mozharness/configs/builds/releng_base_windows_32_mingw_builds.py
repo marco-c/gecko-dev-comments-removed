@@ -59,10 +59,7 @@ config = {
         'MOZ_CRASHREPORTER_NO_REPORT': '1',
         'LC_ALL': 'C',
         
-        'PATH': '/tools/buildbot/bin:/bin:/usr/bin:/usr/local/sbin:\
-/usr/sbin:/sbin:/tools/git/bin:/tools/python27/bin:\
-/tools/python27-mercurial/bin:/home/cltbld/bin',
-        'LD_LIBRARY_PATH': "/tools/gcc-4.3.3/installed/lib",
+        'PATH': '/usr/local/bin:/bin:/usr/bin',
     },
     'upload_env': {
         
