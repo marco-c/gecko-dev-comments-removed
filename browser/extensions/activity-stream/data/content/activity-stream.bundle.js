@@ -885,8 +885,7 @@ var reducers = { TopSites, App, Snippets, Prefs, Dialog, Sections, Theme };
  (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-(function(global) { __webpack_exports__["b"] = initASRouter;
- var __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__ = __webpack_require__(1);
+(function(global) { var __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__ = __webpack_require__(1);
  var __WEBPACK_IMPORTED_MODULE_1_content_src_lib_init_store__ = __webpack_require__(8);
  var __WEBPACK_IMPORTED_MODULE_2__components_ImpressionsWrapper_ImpressionsWrapper__ = __webpack_require__(22);
  var __WEBPACK_IMPORTED_MODULE_3__templates_OnboardingMessage_OnboardingMessage__ = __webpack_require__(23);
@@ -946,7 +945,7 @@ const ASRouterUtils = {
     global.sendAsyncMessage(__WEBPACK_IMPORTED_MODULE_1_content_src_lib_init_store__["a" ], payload);
   }
 };
- __webpack_exports__["a"] = ASRouterUtils;
+ __webpack_exports__["b"] = ASRouterUtils;
 
 
 
@@ -1063,9 +1062,35 @@ class ASRouterUISurface extends __WEBPACK_IMPORTED_MODULE_4_react___default.a.Pu
 
 ASRouterUISurface.defaultProps = { document: global.document };
 
-function initASRouter() {
-  __WEBPACK_IMPORTED_MODULE_5_react_dom___default.a.render(__WEBPACK_IMPORTED_MODULE_4_react___default.a.createElement(ASRouterUISurface, null), document.getElementById("snippets-container"));
+class ASRouterContent {
+  constructor() {
+    this.initialized = false;
+    this.containerElement = null;
+  }
+
+  _mount() {
+    this.containerElement = global.document.getElementById("snippets-container");
+    __WEBPACK_IMPORTED_MODULE_5_react_dom___default.a.render(__WEBPACK_IMPORTED_MODULE_4_react___default.a.createElement(ASRouterUISurface, null), this.containerElement);
+  }
+
+  _unmount() {
+    __WEBPACK_IMPORTED_MODULE_5_react_dom___default.a.unmountComponentAtNode(this.containerElement);
+  }
+
+  init() {
+    this._mount();
+    this.initialized = true;
+  }
+
+  uninit() {
+    if (this.initialized) {
+      this._unmount();
+      this.initialized = false;
+    }
+  }
 }
+ __webpack_exports__["a"] = ASRouterContent;
+
 }.call(__webpack_exports__, __webpack_require__(3)))
 
  }),
@@ -3272,6 +3297,7 @@ class SnippetsProvider {
 
 function addSnippetsSubscriber(store) {
   const snippets = new SnippetsProvider(store.dispatch);
+  const asrouterContent = new __WEBPACK_IMPORTED_MODULE_1_content_src_asrouter_asrouter_content__["a" ]();
 
   let initializing = false;
 
@@ -3292,13 +3318,17 @@ function addSnippetsSubscriber(store) {
       snippets.uninit();
     }
 
-    if (state.Prefs.values.asrouterExperimentEnabled) {
-      Object(__WEBPACK_IMPORTED_MODULE_1_content_src_asrouter_asrouter_content__["b" ])();
+    
+    
+    if (state.Prefs.values.asrouterExperimentEnabled && state.Prefs.values["feeds.snippets"] && !asrouterContent.initialized) {
+      asrouterContent.init();
+    } else if ((!state.Prefs.values.asrouterExperimentEnabled || !state.Prefs.values["feeds.snippets"]) && asrouterContent.initialized) {
+      asrouterContent.uninit();
     }
   });
 
   
-  return snippets;
+  return { snippets, asrouterContent };
 }
 }.call(__webpack_exports__, __webpack_require__(3)))
 
@@ -3454,7 +3484,7 @@ class OnboardingMessage_OnboardingCard extends external__React__default.a.PureCo
 
   onClick() {
     const { props } = this;
-    props.sendUserActionTelemetry({ event: "TRY_NOW", message_id: props.id });
+    props.sendUserActionTelemetry({ event: "CLICK_BUTTON", message_id: props.id });
     props.onAction(props.content);
   }
 
@@ -3863,12 +3893,12 @@ class ASRouterAdmin extends __WEBPACK_IMPORTED_MODULE_1_react___default.a.PureCo
   }
 
   componentWillMount() {
-    __WEBPACK_IMPORTED_MODULE_0__asrouter_asrouter_content__["a" ].sendMessage({ type: "ADMIN_CONNECT_STATE" });
-    __WEBPACK_IMPORTED_MODULE_0__asrouter_asrouter_content__["a" ].addListener(this.onMessage);
+    __WEBPACK_IMPORTED_MODULE_0__asrouter_asrouter_content__["b" ].sendMessage({ type: "ADMIN_CONNECT_STATE" });
+    __WEBPACK_IMPORTED_MODULE_0__asrouter_asrouter_content__["b" ].addListener(this.onMessage);
   }
 
   componentWillUnmount() {
-    __WEBPACK_IMPORTED_MODULE_0__asrouter_asrouter_content__["a" ].removeListener(this.onMessage);
+    __WEBPACK_IMPORTED_MODULE_0__asrouter_asrouter_content__["b" ].removeListener(this.onMessage);
   }
 
   findOtherBundledMessagesOfSameTemplate(template) {
@@ -3879,22 +3909,22 @@ class ASRouterAdmin extends __WEBPACK_IMPORTED_MODULE_1_react___default.a.PureCo
     if (msg.bundled) {
       
       let bundle = this.findOtherBundledMessagesOfSameTemplate(msg.template);
-      return () => __WEBPACK_IMPORTED_MODULE_0__asrouter_asrouter_content__["a" ].blockBundle(bundle);
+      return () => __WEBPACK_IMPORTED_MODULE_0__asrouter_asrouter_content__["b" ].blockBundle(bundle);
     }
-    return () => __WEBPACK_IMPORTED_MODULE_0__asrouter_asrouter_content__["a" ].blockById(msg.id);
+    return () => __WEBPACK_IMPORTED_MODULE_0__asrouter_asrouter_content__["b" ].blockById(msg.id);
   }
 
   handleUnblock(msg) {
     if (msg.bundled) {
       
       let bundle = this.findOtherBundledMessagesOfSameTemplate(msg.template);
-      return () => __WEBPACK_IMPORTED_MODULE_0__asrouter_asrouter_content__["a" ].unblockBundle(bundle);
+      return () => __WEBPACK_IMPORTED_MODULE_0__asrouter_asrouter_content__["b" ].unblockBundle(bundle);
     }
-    return () => __WEBPACK_IMPORTED_MODULE_0__asrouter_asrouter_content__["a" ].unblockById(msg.id);
+    return () => __WEBPACK_IMPORTED_MODULE_0__asrouter_asrouter_content__["b" ].unblockById(msg.id);
   }
 
   handleOverride(id) {
-    return () => __WEBPACK_IMPORTED_MODULE_0__asrouter_asrouter_content__["a" ].overrideMessage(id);
+    return () => __WEBPACK_IMPORTED_MODULE_0__asrouter_asrouter_content__["b" ].overrideMessage(id);
   }
 
   renderMessageItem(msg) {
@@ -4002,7 +4032,7 @@ class ASRouterAdmin extends __WEBPACK_IMPORTED_MODULE_1_react___default.a.PureCo
       ),
       __WEBPACK_IMPORTED_MODULE_1_react___default.a.createElement(
         "button",
-        { className: "button primary", onClick: __WEBPACK_IMPORTED_MODULE_0__asrouter_asrouter_content__["a" ].getNextMessage },
+        { className: "button primary", onClick: __WEBPACK_IMPORTED_MODULE_0__asrouter_asrouter_content__["b" ].getNextMessage },
         "Refresh Current Message"
       ),
       __WEBPACK_IMPORTED_MODULE_1_react___default.a.createElement(
@@ -4486,6 +4516,11 @@ function getFormattedMessage(message) {
 }
 
 class Section extends __WEBPACK_IMPORTED_MODULE_6_react___default.a.PureComponent {
+  get numRows() {
+    const { rowsPref, maxRows, Prefs } = this.props;
+    return rowsPref ? Prefs.values[rowsPref] : maxRows;
+  }
+
   _dispatchImpressionStats() {
     const { props } = this;
     let cardsPerRow = CARDS_PER_ROW_DEFAULT;
@@ -4495,7 +4530,7 @@ class Section extends __WEBPACK_IMPORTED_MODULE_6_react___default.a.PureComponen
       
       cardsPerRow = CARDS_PER_ROW_COMPACT_WIDE;
     }
-    const maxCards = cardsPerRow * props.maxRows;
+    const maxCards = cardsPerRow * this.numRows;
     const cards = props.rows.slice(0, maxCards);
 
     if (this.needsImpressionStats(cards)) {
@@ -4584,14 +4619,15 @@ class Section extends __WEBPACK_IMPORTED_MODULE_6_react___default.a.PureComponen
   render() {
     const {
       id, eventSource, title, icon, rows,
-      emptyState, dispatch, compactCards, maxRows,
+      emptyState, dispatch, compactCards,
       contextMenuOptions, initialized, disclaimer,
       pref, privacyNoticeURL, isFirst, isLast
     } = this.props;
 
     const maxCardsPerRow = compactCards ? CARDS_PER_ROW_COMPACT_WIDE : CARDS_PER_ROW_DEFAULT;
-    const maxCards = maxCardsPerRow * maxRows;
-    const maxCardsOnNarrow = CARDS_PER_ROW_DEFAULT * maxRows;
+    const { numRows } = this;
+    const maxCards = maxCardsPerRow * numRows;
+    const maxCardsOnNarrow = CARDS_PER_ROW_DEFAULT * numRows;
 
     
     
@@ -4955,7 +4991,7 @@ class Card__Card extends external__React__default.a.PureComponent {
             link.hostname && external__React__default.a.createElement(
               "div",
               { className: "card-host-name" },
-              link.hostname,
+              link.hostname.slice(0, 100),
               link.type === "download" && `  \u2014 ${link.description}`
             ),
             external__React__default.a.createElement(
