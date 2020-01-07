@@ -1279,6 +1279,8 @@ public:
   
   
   nsGenericHTMLElement* GetBody();
+  
+  void SetBody(nsGenericHTMLElement* aBody, mozilla::ErrorResult& rv);
 
   
 

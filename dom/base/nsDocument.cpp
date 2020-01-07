@@ -6820,6 +6820,31 @@ nsIDocument::GetBody()
   return nullptr;
 }
 
+void
+nsIDocument::SetBody(nsGenericHTMLElement* newBody, ErrorResult& rv)
+{
+  nsCOMPtr<Element> root = GetRootElement();
+
+  
+  
+  
+  if (!newBody ||
+      !newBody->IsAnyOfHTMLElements(nsGkAtoms::body, nsGkAtoms::frameset) ||
+      !root || !root->IsHTMLElement() ||
+      !root->IsHTMLElement(nsGkAtoms::html)) {
+    rv.Throw(NS_ERROR_DOM_HIERARCHY_REQUEST_ERR);
+    return;
+  }
+
+  
+  nsCOMPtr<Element> currentBody = GetBodyElement();
+  if (currentBody) {
+    root->ReplaceChild(*newBody, *currentBody, rv);
+  } else {
+    root->AppendChild(*newBody, rv);
+  }
+}
+
 Element*
 nsDocument::GetTitleElement()
 {
