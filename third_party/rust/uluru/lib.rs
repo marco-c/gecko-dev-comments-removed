@@ -2,18 +2,28 @@
 
 
 
+#![no_std]
+
 
 
 extern crate arrayvec;
 
 use arrayvec::{Array, ArrayVec};
 
+#[cfg(test)] mod tests;
 
 
 
 
 
-pub struct LRUCache<T, A: Array<Item=Entry<T>>> {
+
+
+
+
+pub struct LRUCache<A: Array> {
+    
+    
+    
     entries: ArrayVec<A>,
     
     head: u16,
@@ -33,7 +43,7 @@ pub struct Entry<T> {
     next: u16,
 }
 
-impl<T, A: Array<Item=Entry<T>>> Default for LRUCache<T, A> {
+impl<A: Array> Default for LRUCache<A> {
     fn default() -> Self {
         let cache = LRUCache {
             entries: ArrayVec::new(),
@@ -45,7 +55,7 @@ impl<T, A: Array<Item=Entry<T>>> Default for LRUCache<T, A> {
     }
 }
 
-impl<T, A: Array<Item=Entry<T>>> LRUCache<T, A> {
+impl<T, A: Array<Item=Entry<T>>> LRUCache<A> {
     
     pub fn num_entries(&self) -> usize {
         self.entries.len()
@@ -72,7 +82,7 @@ impl<T, A: Array<Item=Entry<T>>> LRUCache<T, A> {
 
     
     
-    pub fn iter(&self) -> LRUCacheIterator<T, A> {
+    pub fn iter(&self) -> LRUCacheIterator<A> {
         LRUCacheIterator {
             pos: self.head,
             done: self.entries.len() == 0,
@@ -81,7 +91,7 @@ impl<T, A: Array<Item=Entry<T>>> LRUCache<T, A> {
     }
 
     
-    pub fn iter_mut(&mut self) -> LRUCacheMutIterator<T, A> {
+    pub fn iter_mut(&mut self) -> LRUCacheMutIterator<A> {
         LRUCacheMutIterator {
             pos: self.head,
             done: self.entries.len() == 0,
@@ -107,13 +117,29 @@ impl<T, A: Array<Item=Entry<T>>> LRUCache<T, A> {
             None => None,
             Some((i, r)) => {
                 self.touch(i);
-                let front = self.front_mut().unwrap();
-                debug_assert!(test_one(front).is_some());
                 Some(r)
             }
         }
     }
 
+    
+    
+    pub fn find<F>(&mut self, mut pred: F) -> Option<&mut T>
+    where
+        F: FnMut(&T) -> bool
+    {
+        match self.iter_mut().find(|&(_, ref x)| pred(x)) {
+            Some((i, _)) => {
+                self.touch(i);
+                self.front_mut()
+            }
+            None => None
+        }
+    }
+
+    
+    
+    
     
     pub fn insert(&mut self, val: T) {
         let entry = Entry { val, prev: 0, next: 0 };
@@ -179,13 +205,13 @@ impl<T, A: Array<Item=Entry<T>>> LRUCache<T, A> {
 }
 
 
-pub struct LRUCacheIterator<'a, T: 'a, A: 'a + Array<Item=Entry<T>>> {
-    cache: &'a LRUCache<T, A>,
+pub struct LRUCacheIterator<'a, A: 'a + Array> {
+    cache: &'a LRUCache<A>,
     pos: u16,
     done: bool,
 }
 
-impl<'a, T, A> Iterator for LRUCacheIterator<'a, T, A>
+impl<'a, T, A> Iterator for LRUCacheIterator<'a, A>
 where T: 'a,
       A: 'a + Array<Item=Entry<T>>
 {
@@ -207,13 +233,13 @@ where T: 'a,
 }
 
 
-pub struct LRUCacheMutIterator<'a, T: 'a, A: 'a + Array<Item=Entry<T>>> {
-    cache: &'a mut LRUCache<T, A>,
+pub struct LRUCacheMutIterator<'a, A: 'a + Array> {
+    cache: &'a mut LRUCache<A>,
     pos: u16,
     done: bool,
 }
 
-impl<'a, T, A> Iterator for LRUCacheMutIterator<'a, T, A>
+impl<'a, T, A> Iterator for LRUCacheMutIterator<'a, A>
 where T: 'a,
       A: 'a + Array<Item=Entry<T>>
 {

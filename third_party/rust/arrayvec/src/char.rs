@@ -11,8 +11,6 @@
 
 
 
-
-
 const TAG_CONT: u8    = 0b1000_0000;
 const TAG_TWO_B: u8   = 0b1100_0000;
 const TAG_THREE_B: u8 = 0b1110_0000;
@@ -22,8 +20,7 @@ const MAX_TWO_B: u32   =    0x800;
 const MAX_THREE_B: u32 =  0x10000;
 
 
-#[derive(Debug, Copy, Clone)]
-pub struct EncodeUtf8Error(());
+pub struct EncodeUtf8Error;
 
 
 
@@ -52,6 +49,6 @@ pub fn encode_utf8(ch: char, buf: &mut [u8]) -> Result<usize, EncodeUtf8Error>
         buf[3] = (code & 0x3F) as u8 | TAG_CONT;
         return Ok(4);
     };
-    Err(EncodeUtf8Error(()))
+    Err(EncodeUtf8Error)
 }
 

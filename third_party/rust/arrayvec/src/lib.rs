@@ -19,13 +19,15 @@
 
 
 
-#![doc(html_root_url="https://docs.rs/arrayvec/0.3/")]
-#![cfg_attr(not(feature="std"), no_std)]
-extern crate odds;
-extern crate nodrop;
 
-#[cfg(feature = "use_generic_array")]
-extern crate generic_array;
+
+
+
+#![doc(html_root_url="https://docs.rs/arrayvec/0.4/")]
+#![cfg_attr(not(feature="std"), no_std)]
+extern crate nodrop;
+#[cfg(feature="serde-1")]
+extern crate serde;
 
 #[cfg(not(feature="std"))]
 extern crate core as std;
@@ -47,20 +49,27 @@ use std::fmt;
 
 #[cfg(feature="std")]
 use std::io;
-#[cfg(feature="std")]
-use std::error::Error;
-#[cfg(feature="std")]
-use std::any::Any; 
 
+#[cfg(not(feature="use_union"))]
 use nodrop::NoDrop;
+
+#[cfg(feature="use_union")]
+use std::mem::ManuallyDrop as NoDrop;
+
+#[cfg(feature="serde-1")]
+use serde::{Serialize, Deserialize, Serializer, Deserializer};
 
 mod array;
 mod array_string;
+mod char;
+mod range;
+mod errors;
 
 pub use array::Array;
-pub use odds::IndexRange as RangeArgument;
+pub use range::RangeArgument;
 use array::Index;
 pub use array_string::ArrayString;
+pub use errors::CapacityError;
 
 
 unsafe fn new_array<A: Array>() -> A {
@@ -95,6 +104,13 @@ impl<A: Array> Drop for ArrayVec<A> {
         
         
         
+    }
+}
+
+macro_rules! panic_oob {
+    ($method_name:expr, $index:expr, $len:expr) => {
+        panic!(concat!("ArrayVec::", $method_name, ": index {} is out of bounds in vector of length {}"),
+               $index, $len)
     }
 }
 
@@ -167,20 +183,8 @@ impl<A: Array> ArrayVec<A> {
     
     
     
-    
-    
-    
-    pub fn push(&mut self, element: A::Item) -> Option<A::Item> {
-        if self.len() < A::capacity() {
-            let len = self.len();
-            unsafe {
-                ptr::write(self.get_unchecked_mut(len), element);
-                self.set_len(len + 1);
-            }
-            None
-        } else {
-            Some(element)
-        }
+    pub fn push(&mut self, element: A::Item) {
+        self.try_push(element).unwrap()
     }
 
     
@@ -205,13 +209,96 @@ impl<A: Array> ArrayVec<A> {
     
     
     
-    pub fn insert(&mut self, index: usize, element: A::Item) -> Option<A::Item> {
-        if index > self.len() || index == self.capacity() {
-            return Some(element);
+    pub fn try_push(&mut self, element: A::Item) -> Result<(), CapacityError<A::Item>> {
+        if self.len() < A::capacity() {
+            unsafe {
+                self.push_unchecked(element);
+            }
+            Ok(())
+        } else {
+            Err(CapacityError::new(element))
         }
-        let mut ret = None;
+    }
+
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub unsafe fn push_unchecked(&mut self, element: A::Item) {
+        let len = self.len();
+        debug_assert!(len < A::capacity());
+        ptr::write(self.get_unchecked_mut(len), element);
+        self.set_len(len + 1);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn insert(&mut self, index: usize, element: A::Item) {
+        self.try_insert(index, element).unwrap()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn try_insert(&mut self, index: usize, element: A::Item) -> Result<(), CapacityError<A::Item>> {
+        if index > self.len() {
+            panic_oob!("try_insert", index, self.len())
+        }
         if self.len() == self.capacity() {
-            ret = self.pop();
+            return Err(CapacityError::new(element));
         }
         let len = self.len();
 
@@ -229,7 +316,7 @@ impl<A: Array> ArrayVec<A> {
             }
             self.set_len(len + 1);
         }
-        ret
+        Ok(())
     }
 
     
@@ -273,10 +360,37 @@ impl<A: Array> ArrayVec<A> {
     
     
     
-    pub fn swap_remove(&mut self, index: usize) -> Option<A::Item> {
+    
+    
+    
+    pub fn swap_remove(&mut self, index: usize) -> A::Item {
+        self.swap_pop(index)
+            .unwrap_or_else(|| {
+                panic_oob!("swap_remove", index, self.len())
+            })
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn swap_pop(&mut self, index: usize) -> Option<A::Item> {
         let len = self.len();
         if index >= len {
-            return None
+            return None;
         }
         self.swap(index, len - 1);
         self.pop()
@@ -296,12 +410,55 @@ impl<A: Array> ArrayVec<A> {
     
     
     
-    pub fn remove(&mut self, index: usize) -> Option<A::Item> {
+    
+    pub fn remove(&mut self, index: usize) -> A::Item {
+        self.pop_at(index)
+            .unwrap_or_else(|| {
+                panic_oob!("remove", index, self.len())
+            })
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn pop_at(&mut self, index: usize) -> Option<A::Item> {
         if index >= self.len() {
             None
         } else {
             self.drain(index..index + 1).next()
         }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn truncate(&mut self, len: usize) {
+        while self.len() > len { self.pop(); }
     }
 
     
@@ -343,6 +500,7 @@ impl<A: Array> ArrayVec<A> {
         }
     }
 
+    
     
     
     
@@ -666,6 +824,21 @@ impl<'a, A: Array> Drop for Drain<'a, A>
     }
 }
 
+struct ScopeExitGuard<T, Data, F>
+    where F: FnMut(&Data, &mut T)
+{
+    value: T,
+    data: Data,
+    f: F,
+}
+
+impl<T, Data, F> Drop for ScopeExitGuard<T, Data, F>
+    where F: FnMut(&Data, &mut T)
+{
+    fn drop(&mut self) {
+        (self.f)(&self.data, &mut self.value)
+    }
+}
 
 
 
@@ -676,8 +849,25 @@ impl<'a, A: Array> Drop for Drain<'a, A>
 impl<A: Array> Extend<A::Item> for ArrayVec<A> {
     fn extend<T: IntoIterator<Item=A::Item>>(&mut self, iter: T) {
         let take = self.capacity() - self.len();
-        for elt in iter.into_iter().take(take) {
-            self.push(elt);
+        unsafe {
+            let len = self.len();
+            let mut ptr = self.as_mut_ptr().offset(len as isize);
+            
+            
+            
+            
+            let mut guard = ScopeExitGuard {
+                value: self,
+                data: len,
+                f: |&len, self_| {
+                    self_.set_len(len)
+                }
+            };
+            for elt in iter.into_iter().take(take) {
+                ptr::write(ptr, elt);
+                ptr = ptr.offset(1);
+                guard.data += 1;
+            }
         }
     }
 }
@@ -771,6 +961,7 @@ impl<A: Array> fmt::Debug for ArrayVec<A> where A::Item: fmt::Debug {
 }
 
 impl<A: Array> Default for ArrayVec<A> {
+    
     fn default() -> ArrayVec<A> {
         ArrayVec::new()
     }
@@ -829,48 +1020,49 @@ impl<A: Array<Item=u8>> io::Write for ArrayVec<A> {
     fn flush(&mut self) -> io::Result<()> { Ok(()) }
 }
 
+#[cfg(feature="serde-1")]
 
-#[derive(Clone, Copy, Eq, Ord, PartialEq, PartialOrd)]
-pub struct CapacityError<T = ()> {
-    element: T,
+impl<T: Serialize, A: Array<Item=T>> Serialize for ArrayVec<A> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where S: Serializer
+    {
+        serializer.collect_seq(self)
+    }
 }
 
-impl<T> CapacityError<T> {
-    fn new(element: T) -> CapacityError<T> {
-        CapacityError {
-            element: element,
+#[cfg(feature="serde-1")]
+
+impl<'de, T: Deserialize<'de>, A: Array<Item=T>> Deserialize<'de> for ArrayVec<A> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where D: Deserializer<'de>
+    {
+        use serde::de::{Visitor, SeqAccess, Error};
+        use std::marker::PhantomData;
+
+        struct ArrayVecVisitor<'de, T: Deserialize<'de>, A: Array<Item=T>>(PhantomData<(&'de (), T, A)>);
+
+        impl<'de, T: Deserialize<'de>, A: Array<Item=T>> Visitor<'de> for ArrayVecVisitor<'de, T, A> {
+            type Value = ArrayVec<A>;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                write!(formatter, "an array with no more than {} items", A::capacity())
+            }
+
+            fn visit_seq<SA>(self, mut seq: SA) -> Result<Self::Value, SA::Error>
+                where SA: SeqAccess<'de>,
+            {
+                let mut values = ArrayVec::<A>::new();
+
+                while let Some(value) = try!(seq.next_element()) {
+                    if let Err(_) = values.try_push(value) {
+                        return Err(SA::Error::invalid_length(A::capacity() + 1, &self));
+                    }
+                }
+
+                Ok(values)
+            }
         }
-    }
 
-    
-    pub fn element(self) -> T {
-        self.element
-    }
-
-    
-    pub fn simplify(self) -> CapacityError {
-        CapacityError { element: () }
-    }
-}
-
-const CAPERROR: &'static str = "insufficient capacity";
-
-#[cfg(feature="std")]
-
-impl<T: Any> Error for CapacityError<T> {
-    fn description(&self) -> &str {
-        CAPERROR
-    }
-}
-
-impl<T> fmt::Display for CapacityError<T> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", CAPERROR)
-    }
-}
-
-impl<T> fmt::Debug for CapacityError<T> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}: {}", "CapacityError", CAPERROR)
+        deserializer.deserialize_seq(ArrayVecVisitor::<T, A>(PhantomData))
     }
 }
