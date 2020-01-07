@@ -145,23 +145,9 @@ impl KeyframePercentage {
 
 
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[css(comma, iterable)]
+#[derive(Clone, Debug, Eq, PartialEq, ToCss)]
 pub struct KeyframeSelector(Vec<KeyframePercentage>);
-
-impl ToCss for KeyframeSelector {
-    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
-    where
-        W: Write,
-    {
-        let mut iter = self.0.iter();
-        iter.next().unwrap().to_css(dest)?;
-        for percentage in iter {
-            dest.write_str(", ")?;
-            percentage.to_css(dest)?;
-        }
-        Ok(())
-    }
-}
 
 impl KeyframeSelector {
     
