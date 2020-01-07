@@ -517,7 +517,7 @@ public:
   
 
 
-  nsIntRect Bounds() const;
+  virtual nsIntRect Bounds() const;
 
   
 
