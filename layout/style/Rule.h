@@ -58,30 +58,6 @@ public:
   virtual void List(FILE* out = stdout, int32_t aIndent = 0) const = 0;
 #endif
 
-  
-  
-  
-  
-  
-  enum {
-    UNKNOWN_RULE = 0,
-    CHARSET_RULE,
-    IMPORT_RULE,
-    NAMESPACE_RULE,
-    STYLE_RULE,
-    MEDIA_RULE,
-    FONT_FACE_RULE,
-    PAGE_RULE,
-    KEYFRAME_RULE,
-    KEYFRAMES_RULE,
-    DOCUMENT_RULE,
-    SUPPORTS_RULE,
-    FONT_FEATURE_VALUES_RULE,
-    COUNTER_STYLE_RULE
-  };
-
-  virtual int32_t GetType() const = 0;
-
   StyleSheet* GetStyleSheet() const { return mSheet; }
 
   

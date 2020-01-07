@@ -323,7 +323,7 @@ ServoStyleSheet::ReparseSheet(const nsAString& aInput)
     for (uint32_t i = 0; i < ruleCount; ++i) {
       css::Rule* rule = ruleList->GetRule(i);
       MOZ_ASSERT(rule);
-      if (rule->GetType() == css::Rule::IMPORT_RULE &&
+      if (rule->Type() == CSSRuleBinding::IMPORT_RULE &&
           RuleHasPendingChildSheet(rule)) {
         continue; 
       }
@@ -354,7 +354,7 @@ ServoStyleSheet::ReparseSheet(const nsAString& aInput)
     for (uint32_t i = 0; i < ruleCount; ++i) {
       css::Rule* rule = ruleList->GetRule(i);
       MOZ_ASSERT(rule);
-      if (rule->GetType() == css::Rule::IMPORT_RULE &&
+      if (rule->Type() == CSSRuleBinding::IMPORT_RULE &&
           RuleHasPendingChildSheet(rule)) {
         continue; 
       }
@@ -446,7 +446,7 @@ ServoStyleSheet::InsertRuleInternal(const nsAString& aRule,
   
   
   css::Rule* rule = mRuleList->GetRule(aIndex);
-  if (rule->GetType() != css::Rule::IMPORT_RULE ||
+  if (rule->Type() != CSSRuleBinding::IMPORT_RULE ||
       !RuleHasPendingChildSheet(rule)) {
     RuleAdded(*rule);
   }
