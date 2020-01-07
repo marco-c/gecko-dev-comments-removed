@@ -4,44 +4,24 @@
 module.exports = {
   "env": {
     "browser": true,
-    "mozilla/browser-window": true,
-    "mozilla/simpletest": true
+    "mozilla/browser-window": true
   },
 
   
   "globals": {
     
-    "$": false,
-    "Assert": false,
-    "BrowserTestUtils": false,
-    "ContentTask": false,
-    "EventUtils": false,
-    "SpecialPowers": false,
-    "addLoadEvent": false,
-    "add_task": false,
-    "executeSoon": false,
-    "export_assertions": false,
-    "extractJarToTmp": false,
-    "finish": false,
-    "gTestPath": false,
-    "getJar": false,
-    "getRootDirectory": false,
-    "getTestFilePath": false,
-    "info": false,
-    "is": false,
-    "isnot": false,
-    "ok": false,
-    "privateNoteIntentionalCrash": false,
-    "promise": false,
-    "registerCleanupFunction": false,
-    "requestLongerTimeout": false,
-    "todo": false,
-    "todo_is": false,
-    "todo_isnot": false,
-    "waitForClipboard": false,
-    "waitForExplicitFinish": false,
-    "waitForFocus": false
+    "SpecialPowers": false
   },
+
+  "overrides": [{
+    "env": {
+      
+      
+      
+      "mozilla/simpletest": true
+    },
+    "files": ["*.js"]
+  }],
 
   "plugins": [
     "mozilla"

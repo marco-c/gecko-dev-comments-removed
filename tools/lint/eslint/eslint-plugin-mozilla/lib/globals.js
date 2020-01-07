@@ -12,6 +12,7 @@ const path = require("path");
 const fs = require("fs");
 const helpers = require("./helpers");
 const eslintScope = require("eslint-scope");
+const htmlparser = require("htmlparser2");
 
 
 
@@ -64,6 +65,13 @@ const globalCache = new Map();
 
 
 var globalDiscoveryInProgressForFiles = new Set();
+
+
+
+
+
+
+var lastHTMLGlobals = {};
 
 
 
@@ -210,6 +218,73 @@ module.exports = {
 
 
 
+
+
+
+
+
+
+
+
+
+
+  getImportedGlobalsForHTMLFile(filePath) {
+    if (lastHTMLGlobals.filename === filePath) {
+      return lastHTMLGlobals.globals;
+    }
+
+    let dir = path.dirname(filePath);
+    let globals = [];
+
+    let content = fs.readFileSync(filePath, "utf8");
+    let scriptSrcs = [];
+
+    
+    let parser = new htmlparser.Parser({
+      onopentag(name, attribs) {
+        if (name === "script" && "src" in attribs) {
+          scriptSrcs.push(attribs.src);
+        }
+      }
+    });
+
+    parser.parseComplete(content);
+
+    for (let scriptSrc of scriptSrcs) {
+      
+      if (!scriptSrc) {
+        continue;
+      }
+      let scriptName;
+      if (scriptSrc.includes("http:")) {
+        
+      } else if (scriptSrc.includes("chrome")) {
+        
+        scriptSrc = scriptSrc.replace("chrome://mochikit/content/", "/");
+        scriptName = path.join(helpers.rootDir, "testing", "mochitest", scriptSrc);
+      } else if (scriptSrc.includes("SimpleTest")) {
+        
+        scriptName = path.join(helpers.rootDir, "testing", "mochitest", scriptSrc);
+      } else {
+        
+        scriptName = path.join(dir, scriptSrc);
+      }
+      if (scriptName && fs.existsSync(scriptName)) {
+        globals.push(...module.exports.getGlobalsForFile(scriptName));
+      }
+    }
+
+    lastHTMLGlobals.filePath = filePath;
+    return (lastHTMLGlobals.globals = globals);
+  },
+
+  
+
+
+
+
+
+
   getESLintGlobalParser(context) {
     let globalScope;
 
@@ -218,6 +293,12 @@ module.exports = {
         globalScope = context.getScope();
       }
     };
+    let filename = context.getFilename();
+
+    let extraHTMLGlobals = [];
+    if (filename.endsWith(".html") || filename.endsWith(".xhtml")) {
+      extraHTMLGlobals = module.exports.getImportedGlobalsForHTMLFile(filename);
+    }
 
     
     let handler = new GlobalsForNode(helpers.getAbsoluteFilePath(context));
@@ -226,6 +307,7 @@ module.exports = {
       parser[type] = function(node) {
         if (type === "Program") {
           globalScope = context.getScope();
+          helpers.addGlobals(extraHTMLGlobals, globalScope);
         }
         let globals = handler[type](node, context.getAncestors(), globalScope);
         helpers.addGlobals(globals, globalScope, node.type !== "Program" && node);
