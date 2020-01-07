@@ -8,243 +8,6 @@
 
 #include <algorithm>
 
-#include "mozilla/ArrayUtils.h"
-#include "mozilla/Attributes.h"
-#include "mozilla/AutoRestore.h"
-#include "mozilla/BasePrincipal.h"
-#include "mozilla/Casting.h"
-#include "mozilla/dom/ClientChannelHelper.h"
-#include "mozilla/dom/ClientHandle.h"
-#include "mozilla/dom/ClientInfo.h"
-#include "mozilla/dom/ClientManager.h"
-#include "mozilla/dom/ClientSource.h"
-#include "mozilla/dom/ContentChild.h"
-#include "mozilla/dom/Element.h"
-#include "mozilla/dom/HTMLAnchorElement.h"
-#include "mozilla/dom/PendingGlobalHistoryEntry.h"
-#include "mozilla/dom/TabChild.h"
-#include "mozilla/dom/ProfileTimelineMarkerBinding.h"
-#include "mozilla/dom/ScreenOrientation.h"
-#include "mozilla/dom/ToJSValue.h"
-#include "mozilla/dom/PermissionMessageUtils.h"
-#include "mozilla/dom/workers/ServiceWorkerManager.h"
-#include "mozilla/EventStateManager.h"
-#include "mozilla/LoadInfo.h"
-#include "mozilla/HTMLEditor.h"
-#include "mozilla/Preferences.h"
-#include "mozilla/ResultExtensions.h"
-#include "mozilla/Services.h"
-#include "mozilla/StartupTimeline.h"
-#include "mozilla/Telemetry.h"
-#include "mozilla/Unused.h"
-#include "Navigator.h"
-#include "URIUtils.h"
-#include "mozilla/dom/DocGroup.h"
-#include "mozilla/dom/TabGroup.h"
-
-#include "nsIContent.h"
-#include "nsIContentInlines.h"
-#include "nsIDocument.h"
-#include "nsIDOMDocument.h"
-#include "nsIDOMElement.h"
-
-#include "nsArray.h"
-#include "nsArrayUtils.h"
-#include "nsContentSecurityManager.h"
-#include "nsICaptivePortalService.h"
-#include "nsIDOMStorage.h"
-#include "nsIContentViewer.h"
-#include "nsIDocumentLoaderFactory.h"
-#include "nsCURILoader.h"
-#include "nsContentDLF.h"
-#include "nsDocShellCID.h"
-#include "nsDOMCID.h"
-#include "nsNetCID.h"
-#include "nsNetUtil.h"
-#include "mozilla/net/ReferrerPolicy.h"
-#include "nsRect.h"
-#include "prenv.h"
-#include "nsIDOMWindow.h"
-#include "nsIGlobalObject.h"
-#include "nsIViewSourceChannel.h"
-#include "nsIWebBrowserChrome.h"
-#include "nsPoint.h"
-#include "nsIObserverService.h"
-#include "nsIPrompt.h"
-#include "nsIAuthPrompt.h"
-#include "nsIAuthPrompt2.h"
-#include "nsIChannelEventSink.h"
-#include "nsIAsyncVerifyRedirectCallback.h"
-#include "nsIScriptSecurityManager.h"
-#include "nsIScriptObjectPrincipal.h"
-#include "nsIScrollableFrame.h"
-#include "nsContentPolicyUtils.h" 
-#include "nsISeekableStream.h"
-#include "nsAutoPtr.h"
-#include "nsQueryObject.h"
-#include "nsIWritablePropertyBag2.h"
-#include "nsIAppShell.h"
-#include "nsWidgetsCID.h"
-#include "nsIInterfaceRequestorUtils.h"
-#include "nsView.h"
-#include "nsViewManager.h"
-#include "nsIScriptChannel.h"
-#include "nsITimedChannel.h"
-#include "nsIPrivacyTransitionObserver.h"
-#include "nsIReflowObserver.h"
-#include "nsIScrollObserver.h"
-#include "nsIDocShellTreeItem.h"
-#include "nsIChannel.h"
-#include "IHistory.h"
-#include "nsViewSourceHandler.h"
-#include "nsWhitespaceTokenizer.h"
-#include "nsICookieService.h"
-#include "nsIConsoleReportCollector.h"
-#include "nsObjectLoadingContent.h"
-#include "nsStringStream.h"
-
-
-
-
-#include "nsIHttpChannelInternal.h"
-#include "nsPILoadGroupInternal.h"
-
-
-#include "nsDocShellLoadInfo.h"
-#include "nsCDefaultURIFixup.h"
-#include "nsDocShellEnumerator.h"
-#include "nsSHistory.h"
-#include "nsDocShellEditorData.h"
-#include "GeckoProfiler.h"
-#include "timeline/JavascriptTimelineMarker.h"
-
-
-#include "nsError.h"
-#include "nsEscape.h"
-
-
-#include "nsIFormPOSTActionChannel.h"
-#include "nsIUploadChannel.h"
-#include "nsIUploadChannel2.h"
-#include "nsIWebProgress.h"
-#include "nsILayoutHistoryState.h"
-#include "nsITimer.h"
-#include "nsISHistoryInternal.h"
-#include "nsIPrincipal.h"
-#include "NullPrincipal.h"
-#include "nsISHEntry.h"
-#include "nsIWindowWatcher.h"
-#include "nsIPromptFactory.h"
-#include "nsITransportSecurityInfo.h"
-#include "nsINode.h"
-#include "nsINSSErrorsService.h"
-#include "nsIApplicationCacheChannel.h"
-#include "nsIApplicationCacheContainer.h"
-#include "nsStreamUtils.h"
-#include "nsIController.h"
-#include "nsPICommandUpdater.h"
-#include "nsIWebBrowserChrome3.h"
-#include "nsITabChild.h"
-#include "nsISiteSecurityService.h"
-#include "nsStructuredCloneContainer.h"
-#include "nsIStructuredCloneContainer.h"
-#include "nsISupportsPrimitives.h"
-#ifdef MOZ_PLACES
-#include "nsIFaviconService.h"
-#include "mozIPlacesPendingOperation.h"
-#include "mozIAsyncFavicons.h"
-#endif
-#include "nsINetworkPredictor.h"
-
-
-#include "nsIEditingSession.h"
-
-#include "nsPIDOMWindow.h"
-#include "nsGlobalWindow.h"
-#include "nsPIWindowRoot.h"
-#include "nsICachingChannel.h"
-#include "nsIMultiPartChannel.h"
-#include "nsIWyciwygChannel.h"
-
-
-
-#include "nsIScriptError.h"
-
-
-#include "nsCExternalHandlerService.h"
-#include "nsIExternalProtocolService.h"
-
-#include "nsFocusManager.h"
-
-#include "nsITextToSubURI.h"
-
-#include "nsIJARChannel.h"
-
-#include "mozilla/Logging.h"
-
-#include "nsISelectionDisplay.h"
-
-#include "nsIGlobalHistory2.h"
-
-#include "nsIFrame.h"
-#include "nsSubDocumentFrame.h"
-
-
-#include "nsIWebBrowserChromeFocus.h"
-
-#if NS_PRINT_PREVIEW
-#include "nsIDocumentViewerPrint.h"
-#include "nsIWebBrowserPrint.h"
-#endif
-
-#include "nsContentUtils.h"
-#include "nsIContentSecurityPolicy.h"
-#include "nsILoadInfo.h"
-#include "nsSandboxFlags.h"
-#include "nsXULAppAPI.h"
-#include "nsDOMNavigationTiming.h"
-#include "nsISecurityUITelemetry.h"
-#include "nsDSURIContentListener.h"
-#include "nsDocShellLoadTypes.h"
-#include "nsDocShellTransferableHooks.h"
-#include "nsICommandManager.h"
-#include "nsIDOMNode.h"
-#include "nsIClassOfService.h"
-#include "nsIDocShellTreeOwner.h"
-#include "nsIHttpChannel.h"
-#include "nsIIDNService.h"
-#include "nsIInputStreamChannel.h"
-#include "nsINestedURI.h"
-#include "nsIOService.h"
-#include "nsISHContainer.h"
-#include "nsISHistory.h"
-#include "nsISecureBrowserUI.h"
-#include "nsISocketProvider.h"
-#include "nsIStringBundle.h"
-#include "nsIURIFixup.h"
-#include "nsIURILoader.h"
-#include "nsIURL.h"
-#include "nsIWebBrowserFind.h"
-#include "nsIWidget.h"
-#include "mozilla/dom/PerformanceNavigation.h"
-#include "mozilla/dom/ScriptSettings.h"
-#include "mozilla/Encoding.h"
-#include "nsJSEnvironment.h"
-#include "IUrlClassifierUITelemetry.h"
-
-#ifdef MOZ_TOOLKIT_SEARCH
-#include "nsIBrowserSearchService.h"
-#endif
-
-#include "mozIThirdPartyUtil.h"
-
-static NS_DEFINE_CID(kAppShellCID, NS_APPSHELL_CID);
-
-#if defined(DEBUG_bryner) || defined(DEBUG_chb)
-
-#define DEBUG_PAGE_CACHE
-#endif
-
 #ifdef XP_WIN
 #include <process.h>
 #define getpid _getpid
@@ -252,15 +15,234 @@ static NS_DEFINE_CID(kAppShellCID, NS_APPSHELL_CID);
 #include <unistd.h> 
 #endif
 
+#include "mozilla/ArrayUtils.h"
+#include "mozilla/Attributes.h"
+#include "mozilla/AutoRestore.h"
+#include "mozilla/BasePrincipal.h"
+#include "mozilla/Casting.h"
+#include "mozilla/Encoding.h"
+#include "mozilla/EventStateManager.h"
+#include "mozilla/HTMLEditor.h"
+#include "mozilla/LoadInfo.h"
+#include "mozilla/Logging.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/ResultExtensions.h"
+#include "mozilla/Services.h"
+#include "mozilla/StartupTimeline.h"
+#include "mozilla/Telemetry.h"
+#include "mozilla/Unused.h"
+
+#include "mozilla/dom/ClientChannelHelper.h"
+#include "mozilla/dom/ClientHandle.h"
+#include "mozilla/dom/ClientInfo.h"
+#include "mozilla/dom/ClientManager.h"
+#include "mozilla/dom/ClientSource.h"
+#include "mozilla/dom/ContentChild.h"
+#include "mozilla/dom/DocGroup.h"
+#include "mozilla/dom/Element.h"
+#include "mozilla/dom/HTMLAnchorElement.h"
+#include "mozilla/dom/PendingGlobalHistoryEntry.h"
+#include "mozilla/dom/PerformanceNavigation.h"
+#include "mozilla/dom/PermissionMessageUtils.h"
+#include "mozilla/dom/ProfileTimelineMarkerBinding.h"
+#include "mozilla/dom/ScreenOrientation.h"
+#include "mozilla/dom/ScriptSettings.h"
+#include "mozilla/dom/TabChild.h"
+#include "mozilla/dom/TabGroup.h"
+#include "mozilla/dom/ToJSValue.h"
+
+#include "mozilla/dom/workers/ServiceWorkerManager.h"
+
+#include "mozilla/net/ReferrerPolicy.h"
+
+#include "nsIApplicationCacheChannel.h"
+#include "nsIApplicationCacheContainer.h"
+#include "nsIAppShell.h"
+#include "nsIAsyncVerifyRedirectCallback.h"
+#include "nsIAuthPrompt.h"
+#include "nsIAuthPrompt2.h"
+#include "nsICachingChannel.h"
+#include "nsICaptivePortalService.h"
+#include "nsIChannel.h"
+#include "nsIChannelEventSink.h"
+#include "nsIClassOfService.h"
+#include "nsICommandManager.h"
+#include "nsIConsoleReportCollector.h"
+#include "nsIContent.h"
+#include "nsIContentInlines.h"
+#include "nsIContentSecurityPolicy.h"
+#include "nsIContentViewer.h"
+#include "nsIController.h"
+#include "nsICookieService.h"
+#include "nsIDocShellTreeItem.h"
+#include "nsIDocShellTreeOwner.h"
+#include "nsIDocument.h"
+#include "nsIDocumentLoaderFactory.h"
+#include "nsIDOMDocument.h"
+#include "nsIDOMElement.h"
+#include "nsIDOMNode.h"
+#include "nsIDOMStorage.h"
+#include "nsIDOMWindow.h"
+#include "nsIEditingSession.h"
+#include "nsIExternalProtocolService.h"
+#include "nsIFormPOSTActionChannel.h"
+#include "nsIFrame.h"
+#include "nsIGlobalHistory2.h"
+#include "nsIGlobalObject.h"
+#include "nsIHttpChannel.h"
+#include "nsIHttpChannelInternal.h"
+#include "nsIIDNService.h"
+#include "nsIInputStreamChannel.h"
+#include "nsIInterfaceRequestorUtils.h"
+#include "nsIJARChannel.h"
+#include "nsILayoutHistoryState.h"
+#include "nsILoadInfo.h"
+#include "nsIMultiPartChannel.h"
+#include "nsINestedURI.h"
+#include "nsINetworkPredictor.h"
+#include "nsINode.h"
+#include "nsINSSErrorsService.h"
+#include "nsIObserverService.h"
+#include "nsIOService.h"
+#include "nsIPrincipal.h"
+#include "nsIPrivacyTransitionObserver.h"
+#include "nsIPrompt.h"
+#include "nsIPromptFactory.h"
+#include "nsIReflowObserver.h"
+#include "nsIScriptChannel.h"
+#include "nsIScriptError.h"
+#include "nsIScriptObjectPrincipal.h"
+#include "nsIScriptSecurityManager.h"
+#include "nsIScrollableFrame.h"
+#include "nsIScrollObserver.h"
+#include "nsISecureBrowserUI.h"
+#include "nsISecurityUITelemetry.h"
+#include "nsISeekableStream.h"
+#include "nsISelectionDisplay.h"
+#include "nsISHContainer.h"
+#include "nsISHEntry.h"
+#include "nsISHistory.h"
+#include "nsISHistoryInternal.h"
+#include "nsISiteSecurityService.h"
+#include "nsISocketProvider.h"
+#include "nsIStringBundle.h"
+#include "nsIStructuredCloneContainer.h"
+#include "nsISupportsPrimitives.h"
+#include "nsITabChild.h"
+#include "nsITextToSubURI.h"
+#include "nsITimedChannel.h"
+#include "nsITimer.h"
+#include "nsITransportSecurityInfo.h"
+#include "nsIUploadChannel.h"
+#include "nsIUploadChannel2.h"
+#include "nsIURIFixup.h"
+#include "nsIURILoader.h"
+#include "nsIURL.h"
+#include "nsIViewSourceChannel.h"
+#include "nsIWebBrowserChrome.h"
+#include "nsIWebBrowserChrome3.h"
+#include "nsIWebBrowserChromeFocus.h"
+#include "nsIWebBrowserFind.h"
+#include "nsIWebProgress.h"
+#include "nsIWidget.h"
+#include "nsIWindowWatcher.h"
+#include "nsIWritablePropertyBag2.h"
+#include "nsIWyciwygChannel.h"
+
+#include "nsPICommandUpdater.h"
+#include "nsPIDOMWindow.h"
+#include "nsPILoadGroupInternal.h"
+#include "nsPIWindowRoot.h"
+
+#include "IHistory.h"
+#include "IUrlClassifierUITelemetry.h"
+
+#include "mozIThirdPartyUtil.h"
+
+#include "nsArray.h"
+#include "nsArrayUtils.h"
+#include "nsAutoPtr.h"
+#include "nsCDefaultURIFixup.h"
+#include "nsCExternalHandlerService.h"
+#include "nsContentDLF.h"
+#include "nsContentPolicyUtils.h" 
+#include "nsContentSecurityManager.h"
+#include "nsContentUtils.h"
+#include "nsCURILoader.h"
+#include "nsDocShellCID.h"
+#include "nsDocShellEditorData.h"
+#include "nsDocShellEnumerator.h"
+#include "nsDocShellLoadInfo.h"
+#include "nsDocShellLoadTypes.h"
+#include "nsDocShellTransferableHooks.h"
+#include "nsDOMCID.h"
+#include "nsDOMNavigationTiming.h"
+#include "nsDSURIContentListener.h"
+#include "nsError.h"
+#include "nsEscape.h"
+#include "nsFocusManager.h"
+#include "nsGlobalWindow.h"
+#include "nsJSEnvironment.h"
+#include "nsNetCID.h"
+#include "nsNetUtil.h"
+#include "nsObjectLoadingContent.h"
+#include "nsPoint.h"
+#include "nsQueryObject.h"
+#include "nsRect.h"
+#include "nsSandboxFlags.h"
+#include "nsSHistory.h"
+#include "nsStreamUtils.h"
+#include "nsStringStream.h"
+#include "nsStructuredCloneContainer.h"
+#include "nsSubDocumentFrame.h"
+#include "nsView.h"
+#include "nsViewManager.h"
+#include "nsViewSourceHandler.h"
+#include "nsWhitespaceTokenizer.h"
+#include "nsWidgetsCID.h"
+#include "nsXULAppAPI.h"
+
+#include "GeckoProfiler.h"
+#include "Navigator.h"
+#include "NullPrincipal.h"
+#include "prenv.h"
+#include "URIUtils.h"
+
+#include "timeline/JavascriptTimelineMarker.h"
+
+#ifdef MOZ_PLACES
+#include "nsIFaviconService.h"
+#include "mozIPlacesPendingOperation.h"
+#include "mozIAsyncFavicons.h"
+#endif
+
+#if NS_PRINT_PREVIEW
+#include "nsIDocumentViewerPrint.h"
+#include "nsIWebBrowserPrint.h"
+#endif
+
+#ifdef MOZ_TOOLKIT_SEARCH
+#include "nsIBrowserSearchService.h"
+#endif
+
 using namespace mozilla;
 using namespace mozilla::dom;
 using mozilla::dom::workers::ServiceWorkerManager;
 
 
+#define REFRESH_REDIRECT_TIMER 15000
+
+
+
+
+
+#define NS_EVENT_STARVATION_DELAY_HINT 2000
+
+static NS_DEFINE_CID(kAppShellCID, NS_APPSHELL_CID);
+
+
 
 static bool gAddedPreferencesVarCache = false;
-
-bool nsDocShell::sUseErrorPages = false;
 
 
 static int32_t gNumberOfDocumentsLoading = 0;
@@ -272,18 +254,9 @@ static int32_t gDocShellCount = 0;
 static uint32_t gNumberOfPrivateDocShells = 0;
 
 
-nsIURIFixup* nsDocShell::sURIFixup = 0;
-
-
 
 
 static uint32_t gValidateOrigin = 0xffffffff;
-
-
-
-
-
-#define NS_EVENT_STARVATION_DELAY_HINT 2000
 
 #ifdef DEBUG
 static mozilla::LazyLogModule gDocShellLog("nsDocShell");
@@ -292,6 +265,11 @@ static mozilla::LazyLogModule gDocShellLeakLog("nsDocShellLeak");;
 
 const char kBrandBundleURL[]      = "chrome://branding/locale/brand.properties";
 const char kAppstringsBundleURL[] = "chrome://global/locale/appstrings.properties";
+
+bool nsDocShell::sUseErrorPages = false;
+
+
+nsIURIFixup* nsDocShell::sURIFixup = nullptr;
 
 static void
 FavorPerformanceHint(bool aPerfOverStarvation)
