@@ -3,11 +3,10 @@
 
 
 
+
 "use strict";
 
 const {Ci, Cu} = require("chrome");
-
-loader.lazyRequireGetter(this, "screenshot", "devtools/server/actors/webconsole/screenshot", true);
 
 
 if (!isWorker) {
@@ -591,28 +590,6 @@ WebConsoleCommands._registerOriginal("copy", function(owner, value) {
     type: "copyValueToClipboard",
     value: payload,
   };
-});
-
-
-
-
-
-
-
-
-WebConsoleCommands._registerOriginal("screenshot", function(owner, args) {
-  owner.helperResult = (async () => {
-    
-    const value = await screenshot(owner, args);
-    return {
-      type: "screenshotOutput",
-      value,
-      
-      
-      
-      args
-    };
-  })();
 });
 
 

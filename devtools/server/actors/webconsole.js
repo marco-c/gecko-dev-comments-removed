@@ -27,8 +27,6 @@ loader.lazyRequireGetter(this, "JSPropertyProvider", "devtools/shared/webconsole
 loader.lazyRequireGetter(this, "Parser", "resource://devtools/shared/Parser.jsm", true);
 loader.lazyRequireGetter(this, "NetUtil", "resource://gre/modules/NetUtil.jsm", true);
 loader.lazyRequireGetter(this, "addWebConsoleCommands", "devtools/server/actors/webconsole/utils", true);
-loader.lazyRequireGetter(this, "formatCommand", "devtools/server/actors/webconsole/commands", true);
-loader.lazyRequireGetter(this, "isCommand", "devtools/server/actors/webconsole/commands", true);
 loader.lazyRequireGetter(this, "CONSOLE_WORKER_IDS", "devtools/server/actors/webconsole/utils", true);
 loader.lazyRequireGetter(this, "WebConsoleUtils", "devtools/server/actors/webconsole/utils", true);
 loader.lazyRequireGetter(this, "EnvironmentActor", "devtools/server/actors/environment", true);
@@ -884,7 +882,6 @@ WebConsoleActor.prototype =
 
 
 
-
   evaluateJSAsync: function(request) {
     
     
@@ -899,39 +896,6 @@ WebConsoleActor.prototype =
     
     const response = this.evaluateJS(request);
     response.resultID = resultID;
-
-    this._waitForHelperResultAndSend(response).catch(e =>
-      DevToolsUtils.reportException(
-        "evaluateJSAsync",
-        Error(`Encountered error while waiting for Helper Result: ${e}`)
-      )
-    );
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  _waitForHelperResultAndSend: async function(response) {
-    
-    if (
-      response.helperResult &&
-      typeof response.helperResult.then == "function"
-    ) {
-      response.helperResult = await response.helperResult;
-    }
 
     
     
@@ -1124,13 +1088,8 @@ WebConsoleActor.prototype =
         this._webConsoleCommandsCache =
           Object.getOwnPropertyNames(helpers.sandbox);
       }
-
       matches = matches.concat(this._webConsoleCommandsCache
-          .filter(n =>
-            
-            
-            n !== "screenshot" && n.startsWith(result.matchProp)
-          ));
+          .filter(n => n.startsWith(result.matchProp)));
     }
 
     return {
@@ -1337,16 +1296,6 @@ WebConsoleActor.prototype =
       string = "help()";
     }
 
-    const isCmd = isCommand(string);
-    
-    if (isCmd) {
-      try {
-        string = formatCommand(string);
-      } catch (e) {
-        string = `throw "${e}"`;
-      }
-    }
-
     
     if (trimmedString == "console.mihai()" || trimmedString == "console.mihai();") {
       string = "\"http://incompleteness.me/blog/2015/02/09/console-dot-mihai/\"";
@@ -1420,25 +1369,19 @@ WebConsoleActor.prototype =
     
     
     
-    let found$ = false, found$$ = false, disableScreenshot = false;
-    
-    
-    if (!isCmd) {
-      
-      disableScreenshot = true;
-      if (frame) {
-        const env = frame.environment;
-        if (env) {
-          found$ = !!env.find("$");
-          found$$ = !!env.find("$$");
-        }
-      } else {
-        found$ = !!dbgWindow.getOwnPropertyDescriptor("$");
-        found$$ = !!dbgWindow.getOwnPropertyDescriptor("$$");
+    let found$ = false, found$$ = false;
+    if (frame) {
+      const env = frame.environment;
+      if (env) {
+        found$ = !!env.find("$");
+        found$$ = !!env.find("$$");
       }
+    } else {
+      found$ = !!dbgWindow.getOwnPropertyDescriptor("$");
+      found$$ = !!dbgWindow.getOwnPropertyDescriptor("$$");
     }
 
-    let $ = null, $$ = null, screenshot = null;
+    let $ = null, $$ = null;
     if (found$) {
       $ = bindings.$;
       delete bindings.$;
@@ -1446,10 +1389,6 @@ WebConsoleActor.prototype =
     if (found$$) {
       $$ = bindings.$$;
       delete bindings.$$;
-    }
-    if (disableScreenshot) {
-      screenshot = bindings.screenshot;
-      delete bindings.screenshot;
     }
 
     
@@ -1552,9 +1491,6 @@ WebConsoleActor.prototype =
     }
     if ($$) {
       bindings.$$ = $$;
-    }
-    if (screenshot) {
-      bindings.screenshot = screenshot;
     }
 
     if (bindings._self) {
