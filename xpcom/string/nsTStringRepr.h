@@ -10,6 +10,7 @@
 #include <type_traits> 
 
 #include "mozilla/Char16.h"
+#include "mozilla/fallible.h"
 #include "nsStringFlags.h"
 #include "nsCharTraits.h"
 
