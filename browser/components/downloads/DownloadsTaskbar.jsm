@@ -40,6 +40,12 @@ XPCOMUtils.defineLazyGetter(this, "gMacTaskbarProgress", function() {
            .getService(Ci.nsITaskbarProgress);
 });
 
+XPCOMUtils.defineLazyGetter(this, "gGtkTaskbarProgress", function() {
+  return ("@mozilla.org/widget/taskbarprogress/gtk;1" in Cc) &&
+         Cc["@mozilla.org/widget/taskbarprogress/gtk;1"]
+           .getService(Ci.nsIGtkTaskbarProgress);
+});
+
 
 
 
@@ -89,6 +95,10 @@ var DownloadsTaskbar = {
         
         
         this._attachIndicator(aBrowserWindow);
+      } else if (gGtkTaskbarProgress) {
+        this._taskbarProgress = gGtkTaskbarProgress;
+
+        this._attachGtkTaskbarProgress(aBrowserWindow);
       } else {
         
         return;
@@ -134,6 +144,35 @@ var DownloadsTaskbar = {
       if (browserWindow) {
         
         this._attachIndicator(browserWindow);
+      } else {
+        
+        
+        
+        this._taskbarProgress = null;
+      }
+    });
+  },
+
+  
+
+
+  _attachGtkTaskbarProgress(aWindow) {
+    
+    this._taskbarProgress.setPrimaryWindow(aWindow);
+
+    
+    
+    
+    if (this._summary) {
+      this.onSummaryChanged();
+    }
+
+    aWindow.addEventListener("unload", () => {
+      
+      let browserWindow = RecentWindow.getMostRecentBrowserWindow();
+      if (browserWindow) {
+        
+        this._attachGtkTaskbarProgress(browserWindow);
       } else {
         
         
