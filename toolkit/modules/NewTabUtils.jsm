@@ -23,6 +23,9 @@ ChromeUtils.defineModuleGetter(this, "PageThumbs",
 ChromeUtils.defineModuleGetter(this, "BinarySearch",
   "resource://gre/modules/BinarySearch.jsm");
 
+ChromeUtils.defineModuleGetter(this, "pktApi",
+  "chrome://pocket/content/pktApi.jsm");
+
 XPCOMUtils.defineLazyGetter(this, "gCryptoHash", function() {
   return Cc["@mozilla.org/security/hash;1"].createInstance(Ci.nsICryptoHash);
 });
@@ -955,6 +958,11 @@ var ActivityStreamProvider = {
     
     
     return Promise.all(aLinks.map(link => new Promise(async resolve => {
+      
+      if (link.type === "pocket") {
+        resolve(link);
+        return;
+      }
       let iconData;
       try {
         const linkUri = Services.io.newURI(link.url);
@@ -972,6 +980,67 @@ var ActivityStreamProvider = {
       
       resolve(Object.assign(link, iconData || {}));
     })));
+  },
+
+  
+
+
+
+  fetchSavedPocketItems(requestData) {
+    if (!pktApi.isUserLoggedIn()) {
+      return Promise.resolve(null);
+    }
+    return new Promise((resolve, reject) => {
+      pktApi.retrieve(requestData, {
+        success(data) {
+          resolve(data);
+        },
+        error(error) {
+          reject(error);
+        }
+      });
+    });
+  },
+
+  
+
+
+
+
+
+
+  async getRecentlyPocketed(aOptions) {
+    const pocketSecondsAgo = Math.floor(Date.now() / 1000) - ACTIVITY_STREAM_DEFAULT_RECENT;
+    const requestData = {
+      detailType: "complete",
+      count: aOptions.numItems,
+      since: pocketSecondsAgo
+    };
+    let data;
+    try {
+      data = await this.fetchSavedPocketItems(requestData);
+      if (!data) {
+        return [];
+      }
+    } catch (e) {
+      Cu.reportError(e);
+      return [];
+    }
+    
+
+
+
+    let items = Object.values(data.list)
+                  
+                  .filter(item => item.status === "0")
+                  .map(item => ({
+                    description: item.excerpt,
+                    preview_image_url: item.has_image === "1" && item.image.src,
+                    title: item.resolved_title,
+                    url: item.resolved_url,
+                    item_id: item.item_id
+                  }));
+    return this._processHighlights(items, aOptions, "pocket");
   },
 
   
@@ -1301,6 +1370,7 @@ var ActivityStreamLinks = {
 
 
 
+
   async getHighlights(aOptions = {}) {
     aOptions.numItems = aOptions.numItems || ACTIVITY_STREAM_DEFAULT_LIMIT;
     const results = [];
@@ -1308,6 +1378,11 @@ var ActivityStreamLinks = {
     
     if (!aOptions.excludeBookmarks) {
       results.push(...await ActivityStreamProvider.getRecentBookmarks(aOptions));
+    }
+
+    
+    if (aOptions.numItems - results.length > 0 && !aOptions.excludePocket) {
+      results.push(...await ActivityStreamProvider.getRecentlyPocketed(aOptions));
     }
 
     

@@ -87,7 +87,8 @@ this.HighlightsFeed = class HighlightsFeed {
 
     
     
-    const manyPages = await this.linksCache.request({numItems: MANY_EXTRA_LENGTH});
+    
+    const manyPages = await this.linksCache.request({numItems: MANY_EXTRA_LENGTH, excludePocket: true});
 
     
     const checkedAdult = this.store.getState().Prefs.values.filterAdult ?

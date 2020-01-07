@@ -523,7 +523,8 @@ const PanelUI = {
       
       
       numItems: 6,
-      withFavicons: true
+      withFavicons: true,
+      excludePocket: true
     }).catch(ex => {
       
       Cu.reportError(ex);
