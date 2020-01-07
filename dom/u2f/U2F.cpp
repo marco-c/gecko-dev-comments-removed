@@ -35,12 +35,6 @@ static mozilla::LazyLogModule gU2FLog("u2fmanager");
 NS_NAMED_LITERAL_STRING(kFinishEnrollment, "navigator.id.finishEnrollment");
 NS_NAMED_LITERAL_STRING(kGetAssertion, "navigator.id.getAssertion");
 
-
-NS_NAMED_LITERAL_STRING(kGoogleAccountsAppId1,
-  "https://www.gstatic.com/securitykey/origins.json");
-NS_NAMED_LITERAL_STRING(kGoogleAccountsAppId2,
-  "https://www.gstatic.com/securitykey/a/google.com/origins.json");
-
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(U2F)
   NS_WRAPPERCACHE_INTERFACE_MAP_ENTRY
   NS_INTERFACE_MAP_ENTRY(nsISupports)
@@ -128,15 +122,9 @@ RegisteredKeysToScopedCredentialList(const nsAString& aAppId,
   }
 }
 
-static enum U2FOperation
-{
-  Register,
-  Sign
-};
-
 static ErrorCode
 EvaluateAppID(nsPIDOMWindowInner* aParent, const nsString& aOrigin,
-              const U2FOperation& aOp,  nsString& aAppId)
+               nsString& aAppId)
 {
   
   nsAutoCString facetString = NS_ConvertUTF16toUTF8(aOrigin);
@@ -217,15 +205,6 @@ EvaluateAppID(nsPIDOMWindowInner* aParent, const nsString& aOrigin,
 
   if (html->IsRegistrableDomainSuffixOfOrEqualTo(NS_ConvertUTF8toUTF16(lowestFacetHost),
                                                  appIdHost)) {
-    return ErrorCode::OK;
-  }
-
-  
-  if (aOp == U2FOperation::Sign && lowestFacetHost.EqualsLiteral("google.com") &&
-      (aAppId.Equals(kGoogleAccountsAppId1) ||
-       aAppId.Equals(kGoogleAccountsAppId2))) {
-    MOZ_LOG(gU2FLog, LogLevel::Debug,
-            ("U2F permitted for Google Accounts via Bug #1436085"));
     return ErrorCode::OK;
   }
 
@@ -377,8 +356,7 @@ U2F::Register(const nsAString& aAppId,
   
   nsString adjustedAppId;
   adjustedAppId.Assign(aAppId);
-  ErrorCode appIdResult = EvaluateAppID(mParent, mOrigin, U2FOperation::Register,
-                                        adjustedAppId);
+  ErrorCode appIdResult = EvaluateAppID(mParent, mOrigin, adjustedAppId);
   if (appIdResult != ErrorCode::OK) {
     RegisterResponse response;
     response.mErrorCode.Construct(static_cast<uint32_t>(appIdResult));
@@ -540,8 +518,7 @@ U2F::Sign(const nsAString& aAppId,
   
   nsString adjustedAppId;
   adjustedAppId.Assign(aAppId);
-  ErrorCode appIdResult = EvaluateAppID(mParent, mOrigin, U2FOperation::Sign,
-                                        adjustedAppId);
+  ErrorCode appIdResult = EvaluateAppID(mParent, mOrigin, adjustedAppId);
   if (appIdResult != ErrorCode::OK) {
     SignResponse response;
     response.mErrorCode.Construct(static_cast<uint32_t>(appIdResult));
