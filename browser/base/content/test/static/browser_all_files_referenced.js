@@ -85,9 +85,6 @@ var whitelist = [
   {file: "resource://pdf.js/build/pdf.worker.js"},
 
   
-  {file: "resource://app/modules/NewTabURL.jsm"},
-
-  
   {file: "resource://app/modules/NewTabSearchProvider.jsm"},
   {file: "resource://app/modules/NewTabWebChannel.jsm"},
 
