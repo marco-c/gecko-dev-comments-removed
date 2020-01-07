@@ -1346,6 +1346,7 @@ var gBrowserInit = {
     TabletModeUpdater.init();
     CombinedStopReload.ensureInitialized();
     gPrivateBrowsingUI.init();
+    BrowserSearch.init();
     BrowserPageActions.init();
     gAccessibilityServiceIndicator.init();
 
@@ -1875,6 +1876,8 @@ var gBrowserInit = {
     gAccessibilityServiceIndicator.uninit();
 
     LanguagePrompt.uninit();
+
+    BrowserSearch.uninit();
 
     
     
@@ -3747,6 +3750,83 @@ const DOMEventHandler = {
 };
 
 const BrowserSearch = {
+  init() {
+    Services.obs.addObserver(this, "browser-search-engine-modified");
+  },
+
+  uninit() {
+    Services.obs.removeObserver(this, "browser-search-engine-modified");
+  },
+
+  observe(engine, topic, data) {
+    
+    
+    
+    
+    
+    
+    
+    let engineName = engine.wrappedJSObject.name;
+    switch (data) {
+    case "engine-removed":
+      
+      
+      
+      this._addMaybeOfferedEngine(engineName);
+      break;
+    case "engine-added":
+      
+      
+      
+      this._removeMaybeOfferedEngine(engineName);
+      break;
+    }
+  },
+
+  _addMaybeOfferedEngine(engineName) {
+    let selectedBrowserOffersEngine = false;
+    for (let browser of gBrowser.browsers) {
+      for (let i = 0; i < (browser.hiddenEngines || []).length; i++) {
+        if (browser.hiddenEngines[i].title == engineName) {
+          if (!browser.engines) {
+            browser.engines = [];
+          }
+          browser.engines.push(browser.hiddenEngines[i]);
+          browser.hiddenEngines.splice(i, 1);
+          if (browser == gBrowser.selectedBrowser) {
+            selectedBrowserOffersEngine = true;
+          }
+          break;
+        }
+      }
+    }
+    if (selectedBrowserOffersEngine) {
+      this.updateOpenSearchBadge();
+    }
+  },
+
+  _removeMaybeOfferedEngine(engineName) {
+    let selectedBrowserOffersEngine = false;
+    for (let browser of gBrowser.browsers) {
+      for (let i = 0; i < (browser.engines || []).length; i++) {
+        if (browser.engines[i].title == engineName) {
+          if (!browser.hiddenEngines) {
+            browser.hiddenEngines = [];
+          }
+          browser.hiddenEngines.push(browser.engines[i]);
+          browser.engines.splice(i, 1);
+          if (browser == gBrowser.selectedBrowser) {
+            selectedBrowserOffersEngine = true;
+          }
+          break;
+        }
+      }
+    }
+    if (selectedBrowserOffersEngine) {
+      this.updateOpenSearchBadge();
+    }
+  },
+
   addEngine(browser, engine, uri) {
     
     if (browser.engines) {
@@ -3784,6 +3864,8 @@ const BrowserSearch = {
 
 
   updateOpenSearchBadge() {
+    BrowserPageActions.addSearchEngine.updateEngines();
+
     var searchBar = this.searchBar;
     if (!searchBar)
       return;

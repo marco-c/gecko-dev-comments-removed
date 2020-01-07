@@ -1132,6 +1132,25 @@ var gBuiltInActions = [
       browserPageActions(buttonNode).emailLink.onCommand(event, buttonNode);
     },
   },
+
+  
+  {
+    id: "addSearchEngine",
+    
+    title: "",
+    _transient: true,
+    onShowingInPanel(buttonNode) {
+      browserPageActions(buttonNode).addSearchEngine.onShowingInPanel();
+    },
+    onCommand(event, buttonNode) {
+      browserPageActions(buttonNode).addSearchEngine
+        .onCommand(event, buttonNode);
+    },
+    onSubviewShowing(panelViewNode) {
+      browserPageActions(panelViewNode).addSearchEngine
+        .onSubviewShowing(panelViewNode);
+    },
+  },
 ];
 
 if (Services.prefs.getBoolPref("identity.fxaccounts.enabled")) {
