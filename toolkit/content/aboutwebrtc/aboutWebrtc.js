@@ -440,7 +440,11 @@ PeerConnection.prototype = {
 
 function renderElement(elemName, elemText, options = {}) {
   let elem = document.createElement(elemName);
-  elem.textContent = elemText || "";
+  
+  
+  if (elemText != null) {
+    elem.textContent = elemText;
+  }
   Object.assign(elem, options);
   return elem;
 }
@@ -631,12 +635,29 @@ ICEStats.prototype = {
 
   renderICECandidateTable() {
     let caption = renderElement("caption", null, {className: "no-print"});
+
+    
+    
+    
+    
+    
+    let captionTemplate = getString("trickle_caption_msg2");
+    let [start, end] = captionTemplate.split(/%(?:1\$)?S/);
+
+    
+    if (/\S/.test(start)) {
+      caption.appendChild(
+          renderElement("span", `${start}`));
+    }
     caption.appendChild(
-        renderElement("span", `${getString("trickle_caption_msg")} `));
-    caption.appendChild(
-        renderElement("span", getString("trickle_highlight_color_name"), {
+        renderElement("span", getString("trickle_highlight_color_name2"), {
           className: "trickled"
         }));
+    
+    if (/\S/.test(end)) {
+      caption.appendChild(
+          renderElement("span", `${end}`));
+    }
 
     let stats = this.generateICEStats();
     
