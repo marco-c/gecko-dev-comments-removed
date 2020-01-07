@@ -63,7 +63,7 @@
 
 
 #define AUDIO_SAMPLE_BUFFER_MAX_BYTES 480*2*2
-static_assert((WEBRTC_DEFAULT_SAMPLE_RATE/100)*sizeof(uint16_t) * 2
+static_assert((WEBRTC_MAX_SAMPLE_RATE/100)*sizeof(uint16_t) * 2
                <= AUDIO_SAMPLE_BUFFER_MAX_BYTES,
                "AUDIO_SAMPLE_BUFFER_MAX_BYTES is not large enough");
 
@@ -2038,8 +2038,11 @@ public:
       return;
     }
 
+    TrackRate rate = graph->GraphRate();
+    uint32_t samples_per_10ms = rate/100;
+
     
-    while (source_->TicksToTimeRoundDown(WEBRTC_DEFAULT_SAMPLE_RATE,
+    while (source_->TicksToTimeRoundDown(rate,
                                          played_ticks_) < desired_time) {
       int16_t scratch_buffer[AUDIO_SAMPLE_BUFFER_MAX_BYTES / sizeof(int16_t)];
 
@@ -2049,7 +2052,7 @@ public:
       MediaConduitErrorCode err =
           static_cast<AudioSessionConduit*>(conduit_.get())->GetAudioFrame(
               scratch_buffer,
-              WEBRTC_DEFAULT_SAMPLE_RATE,
+              rate,
               0,  
               samples_length);
 
@@ -2059,11 +2062,11 @@ public:
                     err, played_ticks_, desired_time,
                     source_->StreamTimeToSeconds(desired_time));
         
-        samples_length = WEBRTC_DEFAULT_SAMPLE_RATE/100;
+        samples_length = samples_per_10ms;
         PodArrayZero(scratch_buffer);
       }
 
-      MOZ_ASSERT(samples_length * sizeof(uint16_t) < AUDIO_SAMPLE_BUFFER_MAX_BYTES);
+      MOZ_ASSERT(samples_length * sizeof(uint16_t) <= AUDIO_SAMPLE_BUFFER_MAX_BYTES);
 
       CSFLogDebug(LOGTAG, "Audio conduit returned buffer of length %u",
                   samples_length);
@@ -2074,7 +2077,7 @@ public:
       
       
       
-      uint32_t channelCount = samples_length / (WEBRTC_DEFAULT_SAMPLE_RATE / 100);
+      uint32_t channelCount = samples_length / samples_per_10ms;
       AutoTArray<int16_t*,2> channels;
       AutoTArray<const int16_t*,2> outputChannels;
       size_t frames = samples_length / channelCount;
@@ -2101,7 +2104,7 @@ public:
       if (source_->AppendToTrack(track_id_, &segment)) {
         played_ticks_ += frames;
         if (MOZ_LOG_TEST(AudioLogModule(), LogLevel::Debug)) {
-          if (played_ticks_ > last_log_ + WEBRTC_DEFAULT_SAMPLE_RATE) { 
+          if (played_ticks_ > last_log_ + graph->GraphRate()) { 
             MOZ_LOG(AudioLogModule(), LogLevel::Debug,
                     ("%p: Inserting %zu samples into track %d, total = %" PRIu64,
                      (void*) this, frames, track_id_, played_ticks_));
