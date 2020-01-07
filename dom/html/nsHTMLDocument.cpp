@@ -890,7 +890,7 @@ nsHTMLDocument::GetDomain(nsAString& aDomain)
   nsCOMPtr<nsIURI> uri = GetDomainURI();
 
   if (!uri) {
-    SetDOMStringToNull(aDomain);
+    aDomain.Truncate();
     return;
   }
 
@@ -901,7 +901,7 @@ nsHTMLDocument::GetDomain(nsAString& aDomain)
   } else {
     
     
-    SetDOMStringToNull(aDomain);
+    aDomain.Truncate();
   }
 }
 
