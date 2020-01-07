@@ -931,6 +931,13 @@ exports.Pool = Pool;
 
 
 
+var actorSpecs = new WeakMap();
+
+
+
+
+
+
 
 
 
@@ -938,6 +945,7 @@ exports.Pool = Pool;
 var Actor = function(conn) {
   Pool.call(this, conn);
 
+  this._actorSpec = actorSpecs.get(Object.getPrototypeOf(this));
   
   if (this._actorSpec && this._actorSpec.events) {
     for (let [name, request] of this._actorSpec.events.entries()) {
@@ -1170,8 +1178,6 @@ var generateRequestHandlers = function(actorSpec, actorProto) {
     actorProto.requestTypes[spec.request.type] = handler;
   });
 
-  actorProto._actorSpec = actorSpec;
-
   return actorProto;
 };
 
@@ -1196,6 +1202,8 @@ var ActorClassWithSpec = function(actorSpec, actorProto) {
     return instance;
   };
   cls.prototype = extend(Actor.prototype, generateRequestHandlers(actorSpec, actorProto));
+
+  actorSpecs.set(cls.prototype, actorSpec);
 
   return cls;
 };
