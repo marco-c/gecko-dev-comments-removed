@@ -33,6 +33,11 @@
 
 class nsINode;
 class nsIPrincipal;
+namespace mozilla {
+namespace dom {
+class DocGroup;
+} 
+} 
 
 
 #define NS_ICSSDECLARATION_IID \
@@ -62,6 +67,7 @@ public:
                               nsIPrincipal* aSubjectPrincipal = nullptr) = 0;
 
   virtual nsINode *GetParentObject() = 0;
+  virtual mozilla::dom::DocGroup* GetDocGroup() const = 0;
 
   
   

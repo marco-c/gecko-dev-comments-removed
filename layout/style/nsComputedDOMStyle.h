@@ -29,6 +29,7 @@
 
 namespace mozilla {
 namespace dom {
+class DocGroup;
 class Element;
 } 
 struct ComputedGridTrackInfo;
@@ -90,6 +91,11 @@ public:
   virtual nsINode *GetParentObject() override
   {
     return mContent;
+  }
+
+  virtual mozilla::dom::DocGroup* GetDocGroup() const override
+  {
+    return mContent ? mContent->GetDocGroup() : nullptr;
   }
 
   static already_AddRefed<nsStyleContext>
@@ -501,7 +507,8 @@ private:
   already_AddRefed<CSSValue> DoGetOverflow();
   already_AddRefed<CSSValue> DoGetOverflowX();
   already_AddRefed<CSSValue> DoGetOverflowY();
-  already_AddRefed<CSSValue> DoGetOverflowClipBox();
+  already_AddRefed<CSSValue> DoGetOverflowClipBoxBlock();
+  already_AddRefed<CSSValue> DoGetOverflowClipBoxInline();
   already_AddRefed<CSSValue> DoGetResize();
   already_AddRefed<CSSValue> DoGetPageBreakAfter();
   already_AddRefed<CSSValue> DoGetPageBreakBefore();

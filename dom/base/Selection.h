@@ -37,6 +37,9 @@ namespace mozilla {
 class ErrorResult;
 class HTMLEditor;
 struct AutoPrepareFocusRange;
+namespace dom {
+class DocGroup;
+} 
 } 
 
 struct RangeData
@@ -82,6 +85,7 @@ public:
   void EndBatchChanges(int16_t aReason = nsISelectionListener::NO_REASON);
 
   nsIDocument* GetParentObject() const;
+  DocGroup* GetDocGroup() const;
 
   
   nsPresContext* GetPresContext() const;

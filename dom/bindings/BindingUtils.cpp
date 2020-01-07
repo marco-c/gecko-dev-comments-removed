@@ -3527,28 +3527,6 @@ GetDesiredProto(JSContext* aCx, const JS::CallArgs& aCallArgs,
   return true;
 }
 
-CustomElementReactionsStack*
-GetCustomElementReactionsStack(JS::Handle<JSObject*> aObj)
-{
-  
-  JSObject* obj = js::CheckedUnwrap(aObj);
-  if (!obj) {
-    return nullptr;
-  }
-
-  nsGlobalWindowInner* window = xpc::WindowGlobalOrNull(obj);
-  if (!window) {
-    return nullptr;
-  }
-
-  DocGroup* docGroup = window->AsInner()->GetDocGroup();
-  if (!docGroup) {
-    return nullptr;
-  }
-
-  return docGroup->CustomElementReactionsStack();
-}
-
 
 already_AddRefed<Element>
 CreateXULOrHTMLElement(const GlobalObject& aGlobal, const JS::CallArgs& aCallArgs,

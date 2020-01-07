@@ -3387,12 +3387,6 @@ GetDesiredProto(JSContext* aCx, const JS::CallArgs& aCallArgs,
 
 
 
-
-CustomElementReactionsStack*
-GetCustomElementReactionsStack(JS::Handle<JSObject*> aObj);
-
-
-
 already_AddRefed<Element>
 CreateXULOrHTMLElement(const GlobalObject& aGlobal, const JS::CallArgs& aCallArgs,
                        JS::Handle<JSObject*> aGivenProto, ErrorResult& aRv);

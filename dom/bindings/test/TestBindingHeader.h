@@ -21,6 +21,7 @@
 
 namespace mozilla {
 namespace dom {
+class DocGroup;
 class TestExternalInterface;
 class Promise;
 } 
@@ -117,6 +118,7 @@ public:
 
   
   virtual nsISupports* GetParentObject();
+  DocGroup* GetDocGroup() const;
 
   
   
@@ -1480,6 +1482,7 @@ public:
 
   
   virtual nsISupports* GetParentObject();
+  DocGroup* GetDocGroup() const;
 
   int32_t Item(uint32_t);
   uint32_t Length() const;
