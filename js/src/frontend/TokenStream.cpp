@@ -637,6 +637,10 @@ SourceUnits<CharT>::findEOLMax(size_t start, size_t max)
         if (n >= max)
             break;
         n++;
+
+        
+        
+        
         if (isRawEOLChar(*p++))
             break;
     }
@@ -2409,13 +2413,15 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getStringOrTemplateToken(char untilC
                 }
                 break;
             }
-        } else if (SourceUnits::isRawEOLChar(c)) {
+        } else if (c == '\r' || c == '\n') {
             if (!parsingTemplate) {
+                
                 ungetCharIgnoreEOL(c);
                 const char delimiters[] = { untilChar, untilChar, '\0' };
                 error(JSMSG_EOL_BEFORE_END_OF_STRING, delimiters);
                 return false;
             }
+
             if (c == '\r') {
                 c = '\n';
 
@@ -2424,6 +2430,15 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getStringOrTemplateToken(char untilC
                     sourceUnits.matchCodeUnit('\n');
             }
 
+            if (!updateLineInfoForEOL())
+                return false;
+
+            anyCharsAccess().updateFlagsForEOL();
+        } else if (c == unicode::LINE_SEPARATOR || c == unicode::PARA_SEPARATOR) {
+            
+            
+            
+            
             if (!updateLineInfoForEOL())
                 return false;
 
