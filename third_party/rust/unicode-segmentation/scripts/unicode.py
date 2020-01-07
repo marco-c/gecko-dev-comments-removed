@@ -334,17 +334,9 @@ pub const UNICODE_VERSION: (u64, u64, u64) = (%s, %s, %s);
         
         
         
-        
-        
-        
-        
         grapheme_cats["Control"] = group_cat(list(
-            (set(ungroup_cat(grapheme_cats["Control"]))
-             | set(ungroup_cat(grapheme_cats["CR"]))
-             | set(ungroup_cat(grapheme_cats["LF"])))
+            set(ungroup_cat(grapheme_cats["Control"]))
             - set(ungroup_cat([surrogate_codepoints]))))
-        del(grapheme_cats["CR"])
-        del(grapheme_cats["LF"])
 
         grapheme_table = []
         for cat in grapheme_cats:

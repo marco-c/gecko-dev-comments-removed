@@ -34,6 +34,10 @@ fn test_graphemes() {
         
         ("\u{1f468}\u{200d}\u{1f467}\u{200d}\u{1f466}",
          &["\u{1f468}\u{200d}\u{1f467}\u{200d}\u{1f466}"]),
+        
+        
+        ("\u{1F938}\u{1F3FE}\u{1F3FE}",
+         &["\u{1F938}\u{1F3FE}", "\u{1F3FE}"]),
     ];
 
     for &(s, g) in TEST_SAME.iter().chain(EXTRA_SAME) {
