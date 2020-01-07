@@ -1260,7 +1260,7 @@ IMContextWrapper::OnDeleteSurroundingNative(GtkIMContext* aContext,
          this));
     return FALSE;
 }
-                         
+
 
 void
 IMContextWrapper::OnCommitCompositionCallback(GtkIMContext* aContext,

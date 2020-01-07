@@ -5,7 +5,7 @@
 
 
 
-#ifndef GTKTOOLKIT_H      
+#ifndef GTKTOOLKIT_H
 #define GTKTOOLKIT_H
 
 #include "nsString.h"
@@ -15,7 +15,7 @@
 
 
 
- 
+
 
 class nsGTKToolkit
 {
@@ -33,7 +33,7 @@ public:
 
 
 
- 
+
     void SetDesktopStartupID(const nsACString& aID) { mDesktopStartupID = aID; }
     void GetDesktopStartupID(nsACString* aID) { *aID = mDesktopStartupID; }
 

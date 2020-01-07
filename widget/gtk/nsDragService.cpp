@@ -267,7 +267,7 @@ OnSourceGrabEventAfter(GtkWidget *widget, GdkEvent *event, gpointer user_data)
     
     
     
-    sMotionEventTimerID = 
+    sMotionEventTimerID =
         g_timeout_add_full(G_PRIORITY_DEFAULT_IDLE, 350,
                            DispatchMotionEventCopy, nullptr, nullptr);
 }
@@ -303,7 +303,7 @@ GetGtkWindow(nsIDOMDocument *aDocument)
         return nullptr;
 
     return GTK_WINDOW(toplevel);
-}   
+}
 
 
 
@@ -527,7 +527,7 @@ nsDragService::StartDragSession()
     MOZ_LOG(sDragLm, LogLevel::Debug, ("nsDragService::StartDragSession"));
     return nsBaseDragService::StartDragSession();
 }
- 
+
 NS_IMETHODIMP
 nsDragService::EndDragSession(bool aDoneDrag, uint32_t aKeyModifiers)
 {
@@ -552,7 +552,7 @@ nsDragService::EndDragSession(bool aDoneDrag, uint32_t aKeyModifiers)
 
     
     SetDragAction(DRAGDROP_ACTION_NONE);
-    
+
     
     mTargetDragContextForRemote = nullptr;
 
@@ -979,7 +979,7 @@ nsDragService::GetData(nsITransferable * aTransferable,
                                &mTargetDragData,
                                reinterpret_cast<int*>(&mTargetDragDataLen));
                 }
-        
+
                 
                 nsCOMPtr<nsISupports> genericDataWrapper;
                 nsPrimitiveHelpers::CreatePrimitiveForData(flavorStr,
@@ -996,7 +996,7 @@ nsDragService::GetData(nsITransferable * aTransferable,
     } 
 
     return NS_OK;
-  
+
 }
 
 NS_IMETHODIMP
@@ -1067,7 +1067,7 @@ nsDragService::IsDataFlavorSupported(const char *aDataFlavor,
 
     
     GList *tmp;
-    for (tmp = gdk_drag_context_list_targets(mTargetDragContext); 
+    for (tmp = gdk_drag_context_list_targets(mTargetDragContext);
          tmp; tmp = tmp->next) {
         
         GdkAtom atom = GDK_POINTER_TO_ATOM(tmp->data);
@@ -1080,7 +1080,7 @@ nsDragService::IsDataFlavorSupported(const char *aDataFlavor,
             *_retval = true;
         }
         
-        if (!*_retval && 
+        if (!*_retval &&
             name &&
             (strcmp(name, gTextUriListType) == 0) &&
             (strcmp(aDataFlavor, kURLMime) == 0 ||
@@ -1091,7 +1091,7 @@ nsDragService::IsDataFlavorSupported(const char *aDataFlavor,
             *_retval = true;
         }
         
-        if (!*_retval && 
+        if (!*_retval &&
             name &&
             (strcmp(name, gMozUrlType) == 0) &&
             (strcmp(aDataFlavor, kURLMime) == 0)) {
@@ -1101,7 +1101,7 @@ nsDragService::IsDataFlavorSupported(const char *aDataFlavor,
             *_retval = true;
         }
         
-        if (!*_retval && 
+        if (!*_retval &&
             name &&
             (strcmp(name, kTextMime) == 0) &&
             ((strcmp(aDataFlavor, kUnicodeMime) == 0) ||
@@ -1186,7 +1186,7 @@ nsDragService::IsTargetContextList(void)
 
     
     
-    for (tmp = gdk_drag_context_list_targets(mTargetDragContext); 
+    for (tmp = gdk_drag_context_list_targets(mTargetDragContext);
          tmp; tmp = tmp->next) {
         
         GdkAtom atom = GDK_POINTER_TO_ATOM(tmp->data);
@@ -1214,7 +1214,7 @@ nsDragService::GetTargetDragData(GdkAtom aFlavor)
     
     TargetResetData();
     gtk_drag_get_data(mTargetWidget, mTargetDragContext, aFlavor, mTargetTime);
-    
+
     MOZ_LOG(sDragLm, LogLevel::Debug, ("about to start inner iteration."));
     PRTime entryTime = PR_Now();
     while (!mTargetDragDataReceived && mDoingDrag) {
@@ -1443,7 +1443,7 @@ nsDragService::SourceEndDragSession(GdkDragContext *aContext,
         
         
         GdkDragAction action =
-            gdk_drag_context_get_dest_window(aContext) ? 
+            gdk_drag_context_get_dest_window(aContext) ?
                 gdk_drag_context_get_actions(aContext) : (GdkDragAction)0;
 
         
@@ -1849,7 +1849,7 @@ nsDragService::ScheduleLeaveEvent()
     
     if (!Schedule(eDragTaskLeave, nullptr, nullptr, LayoutDeviceIntPoint(), 0)) {
         NS_WARNING("Drag leave after drop");
-    }        
+    }
 }
 
 gboolean
@@ -1860,7 +1860,7 @@ nsDragService::ScheduleDropEvent(nsWindow *aWindow,
     if (!Schedule(eDragTaskDrop, aWindow,
                   aDragContext, aWindowPoint, aTime)) {
         NS_WARNING("Additional drag drop ignored");
-        return FALSE;        
+        return FALSE;
     }
 
     SetDragEndPoint(aWindowPoint + aWindow->WidgetToScreenOffset());

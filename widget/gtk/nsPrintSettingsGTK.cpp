@@ -36,8 +36,8 @@ GtkPaperSize* moz_gtk_paper_size_copy_to_new_custom(GtkPaperSize* oldPaperSize)
                                    GTK_UNIT_INCH);
 }
 
-NS_IMPL_ISUPPORTS_INHERITED(nsPrintSettingsGTK, 
-                            nsPrintSettings, 
+NS_IMPL_ISUPPORTS_INHERITED(nsPrintSettingsGTK,
+                            nsPrintSettings,
                             nsPrintSettingsGTK)
 
 
@@ -94,7 +94,7 @@ nsPrintSettingsGTK& nsPrintSettingsGTK::operator=(const nsPrintSettingsGTK& rhs)
   if (this == &rhs) {
     return *this;
   }
-  
+
   nsPrintSettings::operator=(rhs);
 
   if (mPageSetup)
@@ -123,7 +123,7 @@ nsresult nsPrintSettingsGTK::_Clone(nsIPrintSettings **_retval)
 {
   NS_ENSURE_ARG_POINTER(_retval);
   *_retval = nullptr;
-  
+
   nsPrintSettingsGTK *newSettings = new nsPrintSettingsGTK(*this);
   if (!newSettings)
     return NS_ERROR_FAILURE;
@@ -152,7 +152,7 @@ nsPrintSettingsGTK::SetGtkPageSetup(GtkPageSetup *aPageSetup)
 {
   if (mPageSetup)
     g_object_unref(mPageSetup);
-  
+
   mPageSetup = (GtkPageSetup*) g_object_ref(aPageSetup);
   InitUnwriteableMargin();
 
@@ -176,7 +176,7 @@ nsPrintSettingsGTK::SetGtkPrintSettings(GtkPrintSettings *aPrintSettings)
 {
   if (mPrintSettings)
     g_object_unref(mPrintSettings);
-  
+
   mPrintSettings = (GtkPrintSettings*) g_object_ref(aPrintSettings);
 
   GtkPaperSize* paperSize = gtk_print_settings_get_paper_size(aPrintSettings);
@@ -586,7 +586,7 @@ nsPrintSettingsGTK::InitUnwriteableMargin()
 
 
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 nsPrintSettingsGTK::SetUnwriteableMarginInTwips(nsIntMargin& aUnwriteableMargin)
 {
   nsPrintSettings::SetUnwriteableMarginInTwips(aUnwriteableMargin);

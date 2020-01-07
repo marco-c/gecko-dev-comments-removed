@@ -394,7 +394,7 @@ gint moz_gtk_get_widget_border(WidgetNodeType widget, gint* left, gint* top,
 
 
 gint
-moz_gtk_get_tab_border(gint* left, gint* top, gint* right, gint* bottom, 
+moz_gtk_get_tab_border(gint* left, gint* top, gint* right, gint* bottom,
                        GtkTextDirection direction, GtkTabFlags flags,
                        WidgetNodeType widget);
 

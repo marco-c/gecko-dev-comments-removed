@@ -47,7 +47,7 @@ clipboard_get_cb(GtkClipboard *aGtkClipboard,
 void
 clipboard_clear_cb(GtkClipboard *aGtkClipboard,
                    gpointer user_data);
-                   
+
 static void
 ConvertHTMLtoUCS2          (const char*         data,
                             int32_t             dataLength,
@@ -193,13 +193,13 @@ nsClipboard::SetData(nsITransferable *aTransferable,
             gtk_target_list_add(list, atom, 0, 0);
         }
     }
-    
+
     
     GtkClipboard *gtkClipboard = gtk_clipboard_get(GetSelectionAtom(aWhichClipboard));
-  
+
     gint numTargets;
     GtkTargetEntry *gtkTargets = gtk_target_table_new_from_list(list, &numTargets);
-          
+
     
     if (gtkTargets &&
         gtk_clipboard_set_with_data(gtkClipboard, gtkTargets, numTargets,
@@ -220,13 +220,13 @@ nsClipboard::SetData(nsITransferable *aTransferable,
 
         rv = NS_OK;
     }
-    else {  
+    else {
         rv = NS_ERROR_FAILURE;
     }
 
     gtk_target_table_free(gtkTargets, numTargets);
     gtk_target_list_unref(list);
-  
+
     return rv;
 }
 
@@ -455,7 +455,7 @@ nsClipboard::GetTransferable(int32_t aWhichClipboard)
         retval = mSelectionTransferable.get();
     else
         retval = mGlobalTransferable.get();
-        
+
     return retval;
 }
 
@@ -508,7 +508,7 @@ nsClipboard::SelectionGetEvent(GtkClipboard     *aClipboard,
                                     &len);
         if (!item || NS_FAILED(rv))
             return;
-        
+
         nsCOMPtr<nsISupportsString> wideString;
         wideString = do_QueryInterface(item);
         if (!wideString)
@@ -519,7 +519,7 @@ nsClipboard::SelectionGetEvent(GtkClipboard     *aClipboard,
         char *utf8string = ToNewUTF8String(ucs2string);
         if (!utf8string)
             return;
-        
+
         gtk_selection_data_set_text (aSelectionData, utf8string,
                                      strlen(utf8string));
 
@@ -594,7 +594,7 @@ nsClipboard::SelectionGetEvent(GtkClipboard     *aClipboard,
             primitive_data = (guchar *)buffer;
             len += sizeof(prefix);
         }
-  
+
         gtk_selection_data_set(aSelectionData, selectionTarget,
                                8, 
                                (const guchar *)primitive_data, len);
@@ -602,7 +602,7 @@ nsClipboard::SelectionGetEvent(GtkClipboard     *aClipboard,
     }
 
     g_free(target_name);
-                           
+
 }
 
 void
@@ -757,7 +757,7 @@ void GetHTMLCharset(const char* data, int32_t dataLength, nsCString& str)
             valueStart = end;
             start = end;
             htmlStr.EndReading(end);
-          
+
             if (FindCharInReadable('"', start, end))
                 valueEnd = start;
         }
