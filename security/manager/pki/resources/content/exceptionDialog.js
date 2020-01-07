@@ -17,33 +17,6 @@ var gNsISecTel;
 
 Components.utils.import("resource://gre/modules/PrivateBrowsingUtils.jsm");
 
-function badCertListener() {}
-badCertListener.prototype = {
-  getInterface(aIID) {
-    return this.QueryInterface(aIID);
-  },
-  QueryInterface(aIID) {
-    if (aIID.equals(Components.interfaces.nsIBadCertListener2) ||
-        aIID.equals(Components.interfaces.nsIInterfaceRequestor) ||
-        aIID.equals(Components.interfaces.nsISupports)) {
-      return this;
-    }
-
-    throw new Error(Components.results.NS_ERROR_NO_INTERFACE);
-  },
-  handle_test_result() {
-    if (gSSLStatus) {
-      gCert = gSSLStatus.QueryInterface(Components.interfaces.nsISSLStatus).serverCert;
-    }
-  },
-  notifyCertProblem: function MSR_notifyCertProblem(socketInfo, sslStatus, targetHost) {
-    gBroken = true;
-    gSSLStatus = sslStatus;
-    this.handle_test_result();
-    return true; 
-  }
-};
-
 function initExceptionDialog() {
   gNeedReset = false;
   gDialog = document.documentElement;
@@ -92,6 +65,28 @@ function initExceptionDialog() {
 
 
 
+
+
+
+
+
+
+function grabCert(req, evt) {
+  if (req.channel && req.channel.securityInfo) {
+    gSSLStatus = req.channel.securityInfo
+                    .QueryInterface(Ci.nsISSLStatusProvider).SSLStatus;
+    gCert = gSSLStatus ? gSSLStatus.QueryInterface(Ci.nsISSLStatus).serverCert
+                       : null;
+  }
+  gBroken = evt.type == "error";
+  gChecking = false;
+  updateCertStatus();
+}
+
+
+
+
+
 function checkCert() {
   gCert = null;
   gSSLStatus = null;
@@ -99,34 +94,18 @@ function checkCert() {
   gBroken = false;
   updateCertStatus();
 
-  var uri = getURI();
+  let uri = getURI();
 
-  var req = new XMLHttpRequest();
-  try {
-    if (uri) {
-      req.open("GET", uri.prePath, false);
-      req.channel.notificationCallbacks = new badCertListener();
-      req.send(null);
-    }
-  } catch (e) {
-    
-    
-    
-    Components.utils.reportError("Attempted to connect to a site with a bad certificate in the add exception dialog. " +
-                                 "This results in a (mostly harmless) exception being thrown. " +
-                                 "Logged for information purposes only: " + e);
-  } finally {
+  if (uri) {
+    let req = new XMLHttpRequest();
+    req.open("GET", uri.prePath);
+    req.onerror = grabCert.bind(this, req);
+    req.onload = grabCert.bind(this, req);
+    req.send(null);
+  } else {
     gChecking = false;
+    updateCertStatus();
   }
-
-  if (req.channel && req.channel.securityInfo) {
-    const Ci = Components.interfaces;
-    gSSLStatus = req.channel.securityInfo
-                    .QueryInterface(Ci.nsISSLStatusProvider).SSLStatus;
-    gCert = gSSLStatus.QueryInterface(Ci.nsISSLStatus).serverCert;
-  }
-
-  updateCertStatus();
 }
 
 
