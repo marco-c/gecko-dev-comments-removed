@@ -121,7 +121,7 @@ public:
 
 
 
-  bool ComputeRegionInClips(DisplayItemClip* aOldClip,
+  bool ComputeRegionInClips(const DisplayItemClip* aOldClip,
                             const nsPoint& aShift,
                             nsRegion* aCombined) const;
 
