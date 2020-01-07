@@ -1871,10 +1871,9 @@ nsRefreshDriver::Tick(int64_t aNowEpoch, TimeStamp aNowTime)
     
     
     nsIPresShell* shell = observers[i - 1];
-    if (!mResizeEventFlushObservers.Contains(shell)) {
+    if (!mResizeEventFlushObservers.RemoveElement(shell)) {
       continue;
     }
-    mResizeEventFlushObservers.RemoveElement(shell);
     shell->FireResizeEvent();
   }
 
