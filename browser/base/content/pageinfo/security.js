@@ -52,8 +52,7 @@ var security = {
     if (!isInsecure && status) {
       status.QueryInterface(nsISSLStatus);
       var cert = status.serverCert;
-      var issuerName =
-        this.mapIssuerOrganization(cert.issuerOrganization) || cert.issuerName;
+      var issuerName = cert.issuerOrganization || cert.issuerName;
 
       var retval = {
         hostName,
@@ -133,18 +132,6 @@ var security = {
   },
 
   
-  
-  
-  mapIssuerOrganization(name) {
-    if (!name) return null;
-
-    if (name == "RSA Data Security, Inc.") return "Verisign, Inc.";
-
-    
-    return name;
-  },
-
-  
 
 
   viewCookies() {
@@ -200,7 +187,7 @@ function securityOnLoad(uri, windowInfo) {
     
     if (info.isEV) {
       owner = info.cert.organization;
-      verifier = security.mapIssuerOrganization(info.cAName);
+      verifier = info.cAName;
     } else {
       
       
@@ -208,9 +195,7 @@ function securityOnLoad(uri, windowInfo) {
       
       
       owner = pageInfoBundle.getString("securityNoOwner");
-      verifier = security.mapIssuerOrganization(info.cAName ||
-                                                info.cert.issuerCommonName ||
-                                                info.cert.issuerName);
+      verifier = info.cAName || info.cert.issuerCommonName || info.cert.issuerName;
     }
   } else {
     
