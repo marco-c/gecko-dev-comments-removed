@@ -10,7 +10,6 @@
 
 import json
 from perfecthash import PerfectHash
-import time
 from collections import OrderedDict
 
 
@@ -222,7 +221,8 @@ def link_to_cpp(interfaces, fd):
     strings = OrderedDict()
 
     def lower_uuid(uuid):
-        return "{0x%s, 0x%s, 0x%s, {0x%s, 0x%s, 0x%s, 0x%s, 0x%s, 0x%s, 0x%s, 0x%s}}" % split_iid(uuid)
+        return ("{0x%s, 0x%s, 0x%s, {0x%s, 0x%s, 0x%s, 0x%s, 0x%s, 0x%s, 0x%s, 0x%s}}" %
+                split_iid(uuid))
 
     def lower_domobject(do):
         assert do['tag'] == 'TD_DOMOBJECT'

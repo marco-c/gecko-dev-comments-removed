@@ -34,7 +34,6 @@
 
 
 
-import sys
 import os.path
 import re
 import xpidl
