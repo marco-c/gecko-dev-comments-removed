@@ -131,12 +131,6 @@ struct CustomElementData
   void Traverse(nsCycleCollectionTraversalCallback& aCb) const;
   void Unlink();
 
-  nsAtom* GetIs(Element* aElement)
-  {
-    
-    
-    return aElement->NodeInfo()->NameAtom() == mType ? nullptr : mType.get();
-  }
 private:
   virtual ~CustomElementData() {}
 

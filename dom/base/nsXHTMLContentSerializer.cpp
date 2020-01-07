@@ -173,8 +173,6 @@ nsXHTMLContentSerializer::SerializeAttributes(Element* aElement,
 
   int32_t contentNamespaceID = aElement->GetNameSpaceID();
 
-  MaybeSerializeIsValue(aElement, aStr);
-
   
   
 
