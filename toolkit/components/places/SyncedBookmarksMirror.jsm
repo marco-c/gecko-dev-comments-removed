@@ -731,6 +731,14 @@ class SyncedBookmarksMirror {
         return;
       }
       url = new URL(`place:tag=${tagFolderName}`);
+    } else {
+      
+      
+      
+      let folder = params.get("folder");
+      if (folder) {
+        url.href = `${url.href}&excludeItems=1`;
+      }
     }
 
     await this.maybeStoreRemoteURL(url);
