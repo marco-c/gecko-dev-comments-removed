@@ -27,6 +27,7 @@ struct NativeIterator
 {
   private:
     
+    
     GCPtrObject objectBeingIterated_ = {};
 
     
@@ -92,8 +93,8 @@ struct NativeIterator
     
     NativeIterator();
 
-    JSObject& objectBeingIterated() const {
-        return *objectBeingIterated_;
+    JSObject* objectBeingIterated() const {
+        return objectBeingIterated_;
     }
 
     void changeObjectBeingIterated(JSObject& obj) {

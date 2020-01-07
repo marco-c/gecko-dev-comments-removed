@@ -187,7 +187,7 @@ js::ObjectRealm::objectMaybeInIteration(JSObject* obj)
 
     
     if (next->next() == enumerators)
-        return &next->objectBeingIterated() == obj;
+        return next->objectBeingIterated() == obj;
 
     return true;
 }
