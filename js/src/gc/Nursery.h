@@ -433,16 +433,12 @@ class Nursery
     ProfileDurations profileDurations_;
     ProfileDurations totalDurations_;
 
-    
-
-
-
     struct {
-        JS::gcreason::Reason reason;
-        size_t nurseryCapacity;
-        size_t nurseryLazyCapacity;
-        size_t nurseryUsedBytes;
-        size_t tenuredBytes;
+        JS::gcreason::Reason reason = JS::gcreason::NO_REASON;
+        size_t nurseryCapacity = 0;
+        size_t nurseryLazyCapacity = 0;
+        size_t nurseryUsedBytes = 0;
+        size_t tenuredBytes = 0;
     } previousGC;
 
     

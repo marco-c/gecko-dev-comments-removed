@@ -1671,7 +1671,7 @@ class JitActivation : public Activation
   protected:
     
     
-    uint32_t checkRegs_;
+    uint32_t checkRegs_ = 0;
     RegisterDump regs_;
 #endif
 
