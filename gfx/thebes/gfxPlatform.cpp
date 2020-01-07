@@ -2506,8 +2506,16 @@ void
 gfxPlatform::InitWebRenderConfig()
 {
   bool prefEnabled = WebRenderPrefEnabled();
+  bool envvarEnabled = WebRenderEnvvarEnabled();
 
-  ScopedGfxFeatureReporter reporter("WR", prefEnabled);
+  
+  
+  
+  
+  
+  
+  
+  ScopedGfxFeatureReporter reporter("WR", prefEnabled || envvarEnabled);
   if (!XRE_IsParentProcess()) {
     
     
@@ -2525,10 +2533,19 @@ gfxPlatform::InitWebRenderConfig()
       "WebRender is an opt-in feature",
       NS_LITERAL_CSTRING("FEATURE_FAILURE_DEFAULT_OFF"));
 
-  if (prefEnabled) {
-    featureWebRender.UserEnable("Force enabled by pref");
-  } else if (WebRenderEnvvarEnabled()) {
+  
+  
+  
+  if (envvarEnabled) {
     featureWebRender.UserEnable("Force enabled by envvar");
+
+  
+#ifdef NIGHTLY_BUILD
+  } else if (prefEnabled) {
+    featureWebRender.UserEnable("Force enabled by pref");
+#endif
+
+
   } else if (gfxPrefs::WebRenderAllQualified()) {
     nsCOMPtr<nsIGfxInfo> gfxInfo = services::GetGfxInfo();
     nsCString discardFailureId;
