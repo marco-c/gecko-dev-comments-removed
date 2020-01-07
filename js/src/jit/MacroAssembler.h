@@ -841,9 +841,8 @@ class MacroAssembler : public MacroAssemblerSpecific
     
     
     
-    
-    inline CodeOffset add32ToPtrWithPatch(Register src, Register dest) PER_ARCH;
-    inline void patchAdd32ToPtr(CodeOffset offset, Imm32 imm) PER_ARCH;
+    inline CodeOffset sub32FromStackPtrWithPatch(Register dest) PER_ARCH;
+    inline void patchSub32FromStackPtr(CodeOffset offset, Imm32 imm) PER_ARCH;
 
     inline void addDouble(FloatRegister src, FloatRegister dest) PER_SHARED_ARCH;
     inline void addConstantDouble(double d, FloatRegister dest) DEFINED_ON(x86);
