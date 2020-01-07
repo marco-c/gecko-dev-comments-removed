@@ -582,6 +582,12 @@ pref("privacy.panicButton.enabled",         true);
 
 pref("privacy.temporary_permission_expire_time_ms",  3600000);
 
+
+
+
+
+pref("privacy.spoof_english", 0);
+
 pref("network.proxy.share_proxy_settings",  false); 
 
 
