@@ -14,7 +14,7 @@
 
 using namespace js;
 
-PseudoStack::~PseudoStack()
+ProfilingStack::~ProfilingStack()
 {
     
     
@@ -25,7 +25,7 @@ PseudoStack::~PseudoStack()
 }
 
 bool
-PseudoStack::ensureCapacitySlow()
+ProfilingStack::ensureCapacitySlow()
 {
     MOZ_ASSERT(stackPointer >= capacity);
     const uint32_t kInitialCapacity = 128;

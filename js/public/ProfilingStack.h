@@ -26,7 +26,10 @@ class JS_PUBLIC_API(JSTracer);
 #pragma GCC diagnostic pop
 #endif 
 
-class PseudoStack;
+class ProfilingStack;
+
+
+
 
 
 
@@ -303,7 +306,7 @@ class ProfilingStackFrame
 };
 
 JS_FRIEND_API(void)
-SetContextProfilingStack(JSContext* cx, PseudoStack* pseudoStack);
+SetContextProfilingStack(JSContext* cx, ProfilingStack* profilingStack);
 
 
 
@@ -334,14 +337,14 @@ RegisterContextProfilingEventMarker(JSContext* cx, void (*fn)(const char*));
 
 
 
-class PseudoStack final
+class ProfilingStack final
 {
   public:
-    PseudoStack()
+    ProfilingStack()
       : stackPointer(0)
     {}
 
-    ~PseudoStack();
+    ~ProfilingStack();
 
     void pushLabelFrame(const char* label, const char* dynamicString, void* sp,
                         uint32_t line, js::ProfilingStackFrame::Category category) {
@@ -402,12 +405,12 @@ class PseudoStack final
     MOZ_COLD MOZ_MUST_USE bool ensureCapacitySlow();
 
     
-    PseudoStack(const PseudoStack&) = delete;
-    void operator=(const PseudoStack&) = delete;
+    ProfilingStack(const ProfilingStack&) = delete;
+    void operator=(const ProfilingStack&) = delete;
 
     
-    PseudoStack(PseudoStack&&) = delete;
-    void operator=(PseudoStack&&) = delete;
+    ProfilingStack(ProfilingStack&&) = delete;
+    void operator=(ProfilingStack&&) = delete;
 
     uint32_t capacity = 0;
 
@@ -445,19 +448,19 @@ class GeckoProfilerThread
     friend class GeckoProfilerEntryMarker;
     friend class GeckoProfilerBaselineOSRMarker;
 
-    PseudoStack*         pseudoStack_;
+    ProfilingStack*         profilingStack_;
 
   public:
     GeckoProfilerThread();
 
-    uint32_t stackPointer() { MOZ_ASSERT(installed()); return pseudoStack_->stackPointer; }
-    ProfilingStackFrame* stack() { return pseudoStack_->frames; }
-    PseudoStack* getPseudoStack() { return pseudoStack_; }
+    uint32_t stackPointer() { MOZ_ASSERT(installed()); return profilingStack_->stackPointer; }
+    ProfilingStackFrame* stack() { return profilingStack_->frames; }
+    ProfilingStack* getProfilingStack() { return profilingStack_; }
 
     
-    bool installed() { return pseudoStack_ != nullptr; }
+    bool installed() { return profilingStack_ != nullptr; }
 
-    void setProfilingStack(PseudoStack* pseudoStack);
+    void setProfilingStack(ProfilingStack* profilingStack);
     void trace(JSTracer* trc);
 
     

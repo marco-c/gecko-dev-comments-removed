@@ -706,7 +706,7 @@ public:
   static bool Init(PSLockRef)
   {
     bool ok1 = sRegisteredThread.init();
-    bool ok2 = AutoProfilerLabel::sPseudoStack.init();
+    bool ok2 = AutoProfilerLabel::sProfilingStack.init();
     return ok1 && ok2;
   }
 
@@ -727,15 +727,15 @@ public:
   
   
   
-  static PseudoStack* Stack() { return AutoProfilerLabel::sPseudoStack.get(); }
+  static ProfilingStack* Stack() { return AutoProfilerLabel::sProfilingStack.get(); }
 
   static void SetRegisteredThread(PSLockRef,
                                   class RegisteredThread* aRegisteredThread)
   {
     sRegisteredThread.set(aRegisteredThread);
-    AutoProfilerLabel::sPseudoStack.set(
+    AutoProfilerLabel::sProfilingStack.set(
       aRegisteredThread
-        ? &aRegisteredThread->RacyRegisteredThread().PseudoStack()
+        ? &aRegisteredThread->RacyRegisteredThread().ProfilingStack()
         : nullptr);
   }
 
@@ -764,7 +764,7 @@ MOZ_THREAD_LOCAL(RegisteredThread*) TLSRegisteredThread::sRegisteredThread;
 
 
 
-MOZ_THREAD_LOCAL(PseudoStack*) AutoProfilerLabel::sPseudoStack;
+MOZ_THREAD_LOCAL(ProfilingStack*) AutoProfilerLabel::sProfilingStack;
 
 
 static const char* const kMainThreadName = "GeckoMain";
@@ -845,10 +845,10 @@ MergeStacks(uint32_t aFeatures, bool aIsSynchronous,
   
   
 
-  const PseudoStack& pseudoStack =
-    aRegisteredThread.RacyRegisteredThread().PseudoStack();
-  const js::ProfilingStackFrame* pseudoEntries = pseudoStack.frames;
-  uint32_t pseudoCount = pseudoStack.stackSize();
+  const ProfilingStack& profilingStack =
+    aRegisteredThread.RacyRegisteredThread().ProfilingStack();
+  const js::ProfilingStackFrame* profilingStackFrames = profilingStack.frames;
+  uint32_t profilingStackFrameCount = profilingStack.stackSize();
   JSContext* context = aRegisteredThread.GetJSContext();
 
   
@@ -905,7 +905,7 @@ MergeStacks(uint32_t aFeatures, bool aIsSynchronous,
   
   
   
-  uint32_t pseudoIndex = 0;
+  uint32_t profilingStackIndex = 0;
   int32_t jsIndex = jsCount - 1;
   int32_t nativeIndex = aNativeStack.mCount - 1;
 
@@ -913,17 +913,20 @@ MergeStacks(uint32_t aFeatures, bool aIsSynchronous,
   uint8_t* jitEndStackAddr = nullptr;
 
   
-  while (pseudoIndex != pseudoCount || jsIndex >= 0 || nativeIndex >= 0) {
+  while (profilingStackIndex != profilingStackFrameCount || jsIndex >= 0 ||
+         nativeIndex >= 0) {
     
-    uint8_t* pseudoStackAddr = nullptr;
+    uint8_t* profilingStackAddr = nullptr;
     uint8_t* jsStackAddr = nullptr;
     uint8_t* nativeStackAddr = nullptr;
     uint8_t* jsActivationAddr = nullptr;
 
-    if (pseudoIndex != pseudoCount) {
-      const js::ProfilingStackFrame& profilingStackFrame = pseudoEntries[pseudoIndex];
+    if (profilingStackIndex != profilingStackFrameCount) {
+      const js::ProfilingStackFrame& profilingStackFrame =
+        profilingStackFrames[profilingStackIndex];
 
-      if (profilingStackFrame.isLabelFrame() || profilingStackFrame.isSpMarkerFrame()) {
+      if (profilingStackFrame.isLabelFrame() ||
+          profilingStackFrame.isSpMarkerFrame()) {
         lastLabelFrameStackAddr = (uint8_t*) profilingStackFrame.stackAddress();
       }
 
@@ -933,12 +936,12 @@ MergeStacks(uint32_t aFeatures, bool aIsSynchronous,
       
       
       if (profilingStackFrame.kind() == js::ProfilingStackFrame::Kind::JS_OSR) {
-          pseudoIndex++;
+          profilingStackIndex++;
           continue;
       }
 
       MOZ_ASSERT(lastLabelFrameStackAddr);
-      pseudoStackAddr = lastLabelFrameStackAddr;
+      profilingStackAddr = lastLabelFrameStackAddr;
     }
 
     if (jsIndex >= 0) {
@@ -955,25 +958,26 @@ MergeStacks(uint32_t aFeatures, bool aIsSynchronous,
     
     
     
-    if (nativeStackAddr && (pseudoStackAddr == nativeStackAddr ||
+    if (nativeStackAddr && (profilingStackAddr == nativeStackAddr ||
                             jsStackAddr == nativeStackAddr)) {
       nativeStackAddr = nullptr;
       nativeIndex--;
-      MOZ_ASSERT(pseudoStackAddr || jsStackAddr);
+      MOZ_ASSERT(profilingStackAddr || jsStackAddr);
     }
 
     
-    MOZ_ASSERT_IF(pseudoStackAddr, pseudoStackAddr != jsStackAddr &&
-                                   pseudoStackAddr != nativeStackAddr);
-    MOZ_ASSERT_IF(jsStackAddr, jsStackAddr != pseudoStackAddr &&
+    MOZ_ASSERT_IF(profilingStackAddr, profilingStackAddr != jsStackAddr &&
+                                      profilingStackAddr != nativeStackAddr);
+    MOZ_ASSERT_IF(jsStackAddr, jsStackAddr != profilingStackAddr &&
                                jsStackAddr != nativeStackAddr);
-    MOZ_ASSERT_IF(nativeStackAddr, nativeStackAddr != pseudoStackAddr &&
+    MOZ_ASSERT_IF(nativeStackAddr, nativeStackAddr != profilingStackAddr &&
                                    nativeStackAddr != jsStackAddr);
 
     
-    if (pseudoStackAddr > jsStackAddr && pseudoStackAddr > nativeStackAddr) {
-      MOZ_ASSERT(pseudoIndex < pseudoCount);
-      const js::ProfilingStackFrame& profilingStackFrame = pseudoEntries[pseudoIndex];
+    if (profilingStackAddr > jsStackAddr && profilingStackAddr > nativeStackAddr) {
+      MOZ_ASSERT(profilingStackIndex < profilingStackFrameCount);
+      const js::ProfilingStackFrame& profilingStackFrame =
+        profilingStackFrames[profilingStackIndex];
 
       
       
@@ -981,10 +985,10 @@ MergeStacks(uint32_t aFeatures, bool aIsSynchronous,
         
         MOZ_ASSERT_IF(profilingStackFrame.isJsFrame() &&
                       profilingStackFrame.script() && !profilingStackFrame.pc(),
-                      &profilingStackFrame == &pseudoStack.frames[pseudoStack.stackSize() - 1]);
+                      &profilingStackFrame == &profilingStack.frames[profilingStack.stackSize() - 1]);
         aCollector.CollectProfilingStackFrame(profilingStackFrame);
       }
-      pseudoIndex++;
+      profilingStackIndex++;
       continue;
     }
 
@@ -1129,17 +1133,17 @@ DoEHABIBacktrace(PSLockRef aLock, const RegisteredThread& aRegisteredThread,
 
   const mcontext_t* mcontext = &aRegs.mContext->uc_mcontext;
   mcontext_t savedContext;
-  const PseudoStack& pseudoStack =
-    aRegisteredThread.RacyRegisteredThread().PseudoStack();
+  const ProfilingStack& profilingStack =
+    aRegisteredThread.RacyRegisteredThread().ProfilingStack();
 
   
   
   
   
-  for (uint32_t i = pseudoStack.stackSize(); i > 0; --i) {
+  for (uint32_t i = profilingStack.stackSize(); i > 0; --i) {
     
     
-    const js::ProfilingStackFrame& frame = pseudoStack.frames[i - 1];
+    const js::ProfilingStackFrame& frame = profilingStack.frames[i - 1];
     if (!frame.isJsFrame() && strcmp(frame.label(), "EnterJIT") == 0) {
       
       
@@ -2322,24 +2326,24 @@ locked_profiler_start(PSLockRef aLock, uint32_t aEntries, double aInterval,
                       const char** aFilters, uint32_t aFilterCount);
 
 
-PseudoStack*
+ProfilingStack*
 MozGlueLabelEnter(const char* aLabel, const char* aDynamicString, void* aSp,
                   uint32_t aLine)
 {
-  PseudoStack* pseudoStack = AutoProfilerLabel::sPseudoStack.get();
-  if (pseudoStack) {
-    pseudoStack->pushLabelFrame(aLabel, aDynamicString, aSp, aLine,
+  ProfilingStack* profilingStack = AutoProfilerLabel::sProfilingStack.get();
+  if (profilingStack) {
+    profilingStack->pushLabelFrame(aLabel, aDynamicString, aSp, aLine,
                                 js::ProfilingStackFrame::Category::OTHER);
   }
-  return pseudoStack;
+  return profilingStack;
 }
 
 
 void
-MozGlueLabelExit(PseudoStack* aPseudoStack)
+MozGlueLabelExit(ProfilingStack* sProfilingStack)
 {
-  if (aPseudoStack) {
-    aPseudoStack->pop();
+  if (sProfilingStack) {
+    sProfilingStack->pop();
   }
 }
 

@@ -27,16 +27,16 @@
 
 
 #if defined(XP_LINUX) || defined(XP_WIN) || defined(XP_MACOSX)
-#  define MOZ_THREADSTACKHELPER_PSEUDO
-#  define MOZ_THREADSTACKHELPER_NATIVE
+#  define MOZ_THREADSTACKHELPER_PROFILING_STACK
+#  define MOZ_THREADSTACKHELPER_NATIVE_STACK
 #endif
 
 
 
 
 #if defined(__ANDROID__)
-#  undef MOZ_THREADSTACKHELPER_PSEUDO
-#  undef MOZ_THREADSTACKHELPER_NATIVE
+#  undef MOZ_THREADSTACKHELPER_PROFILING_STACK
+#  undef MOZ_THREADSTACKHELPER_NATIVE_STACK
 #endif
 
 namespace mozilla {
@@ -56,7 +56,6 @@ class ThreadStackHelper : public ProfilerStackCollector
 private:
   HangStack* mStackToFill;
   Array<char, nsThread::kRunnableNameBufSize>* mRunnableNameBuffer;
-  
   size_t mMaxStackSize;
   size_t mMaxBufferSize;
   size_t mDesiredStackSize;

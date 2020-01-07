@@ -95,11 +95,11 @@ public:
 
   int ThreadId() const { return mThreadId; }
 
-  class PseudoStack& PseudoStack() { return mPseudoStack; }
-  const class PseudoStack& PseudoStack() const { return mPseudoStack; }
+  class ProfilingStack& ProfilingStack() { return mProfilingStack; }
+  const class ProfilingStack& ProfilingStack() const { return mProfilingStack; }
 
 private:
-  class PseudoStack mPseudoStack;
+  class ProfilingStack mProfilingStack;
 
   
   ProfilerSignalSafeLinkedList<ProfilerMarker> mPendingMarkers;
@@ -178,7 +178,7 @@ public:
 
     
     
-    js::SetContextProfilingStack(aContext, &RacyRegisteredThread().PseudoStack());
+    js::SetContextProfilingStack(aContext, &RacyRegisteredThread().ProfilingStack());
 
     PollJSSampling();
   }

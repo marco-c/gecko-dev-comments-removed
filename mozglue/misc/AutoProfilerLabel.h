@@ -25,13 +25,13 @@
 
 
 
-class PseudoStack;
+class ProfilingStack;
 
 namespace mozilla {
 
-typedef PseudoStack* (*ProfilerLabelEnter)(const char*, const char*, void*,
+typedef ProfilingStack* (*ProfilerLabelEnter)(const char*, const char*, void*,
                                            uint32_t);
-typedef void (*ProfilerLabelExit)(PseudoStack*);
+typedef void (*ProfilerLabelExit)(ProfilingStack*);
 
 
 MFBT_API void RegisterProfilerLabelEnterExit(ProfilerLabelEnter aEnter,
@@ -51,7 +51,7 @@ public:
 
 private:
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
-  PseudoStack* mPseudoStack;
+  ProfilingStack* mProfilingStack;
 };
 
 #endif

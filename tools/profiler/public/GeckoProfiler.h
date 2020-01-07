@@ -106,7 +106,7 @@ class TimeStamp;
  \
   macro(0, "java", Java) \
   \
-  /* Get the JS engine to emit pseudostack entries in prologues/epilogues */ \
+  /* Get the JS engine to expose the JS stack to the profiler */ \
   macro(1, "js", JS) \
   \
   /* Include the C++ leaf node if not stackwalking. */ \
@@ -701,7 +701,7 @@ public:
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
 
     
-    Push(sPseudoStack.get(), aLabel, aDynamicString, aLine, aCategory);
+    Push(sProfilingStack.get(), aLabel, aDynamicString, aLine, aCategory);
   }
 
   
@@ -716,19 +716,19 @@ public:
       Push(js::GetContextProfilingStack(aJSContext),
            aLabel, aDynamicString, aLine, aCategory);
     } else {
-      mPseudoStack = nullptr;
+      mProfilingStack = nullptr;
     }
   }
 
-  void Push(PseudoStack* aPseudoStack,
+  void Push(ProfilingStack* aProfilingStack,
             const char* aLabel, const char* aDynamicString,
             uint32_t aLine, js::ProfilingStackFrame::Category aCategory)
   {
     
 
-    mPseudoStack = aPseudoStack;
-    if (mPseudoStack) {
-      mPseudoStack->pushLabelFrame(aLabel, aDynamicString, this, aLine,
+    mProfilingStack = aProfilingStack;
+    if (mProfilingStack) {
+      mProfilingStack->pushLabelFrame(aLabel, aDynamicString, this, aLine,
                                    aCategory);
     }
   }
@@ -737,8 +737,8 @@ public:
   {
     
 
-    if (mPseudoStack) {
-      mPseudoStack->pop();
+    if (mProfilingStack) {
+      mProfilingStack->pop();
     }
   }
 
@@ -747,11 +747,11 @@ private:
 
   
   
-  PseudoStack* mPseudoStack;
+  ProfilingStack* mProfilingStack;
 
 public:
   
-  static MOZ_THREAD_LOCAL(PseudoStack*) sPseudoStack;
+  static MOZ_THREAD_LOCAL(ProfilingStack*) sProfilingStack;
 };
 
 class MOZ_RAII AutoProfilerTracing
