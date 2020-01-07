@@ -138,16 +138,12 @@ public:
   size_t AddMetadata(const ScrollMetadata& aMetadata);
   
   
-  size_t AddNewLayerData();
-  
-  
   size_t AddLayerData(const WebRenderLayerScrollData& aData);
 
   size_t GetLayerCount() const;
 
   
   
-  WebRenderLayerScrollData* GetLayerDataMutable(size_t aIndex);
   const WebRenderLayerScrollData* GetLayerData(size_t aIndex) const;
 
   const ScrollMetadata& GetScrollMetadata(size_t aIndex) const;
