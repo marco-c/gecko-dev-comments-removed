@@ -647,6 +647,7 @@ PluginModuleChromeParent::PluginModuleChromeParent(const char* aFilePath,
     , mFlashProcess2(0)
     , mFinishInitTask(nullptr)
 #endif
+    , mIsCleaningFromTimeout(false)
 {
     NS_ASSERTION(mSubprocess, "Out of memory!");
     mSandboxLevel = aSandboxLevel;
@@ -803,6 +804,15 @@ PluginModuleChromeParent::CleanupFromTimeout(const bool aFromHangUI)
                 &PluginModuleChromeParent::CleanupFromTimeout, aFromHangUI), 10);
         return;
     }
+
+    
+    
+    if (mIsCleaningFromTimeout) {
+      return;
+    }
+
+    AutoRestore<bool> resetCleaningFlag(mIsCleaningFromTimeout);
+    mIsCleaningFromTimeout = true;
 
     
 
