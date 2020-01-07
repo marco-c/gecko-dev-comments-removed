@@ -822,6 +822,8 @@ if (!this.isWorker) {
 
 
 
+
+
     function WorkerDebuggerTransport(dbg, id) {
       this._dbg = dbg;
       this._id = id;
@@ -871,6 +873,8 @@ if (!this.isWorker) {
   
   (function() {
     
+
+
 
 
 
