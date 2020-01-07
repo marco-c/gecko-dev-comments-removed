@@ -61,6 +61,8 @@
 
 
 
+
+
 #ifndef mozilla_EndianUtils_h
 #define mozilla_EndianUtils_h
 
@@ -362,6 +364,12 @@ protected:
   }
 
   
+  static MOZ_MUST_USE uintptr_t readUintptr(const void* aPtr)
+  {
+    return read<uintptr_t>(aPtr);
+  }
+
+  
   static MOZ_MUST_USE int16_t readInt16(const void* aPtr)
   {
     return read<int16_t>(aPtr);
@@ -377,6 +385,12 @@ protected:
   static MOZ_MUST_USE int64_t readInt64(const void* aPtr)
   {
     return read<int64_t>(aPtr);
+  }
+
+  
+  static MOZ_MUST_USE intptr_t readIntptr(const void* aPtr)
+  {
+    return read<intptr_t>(aPtr);
   }
 
   
@@ -398,6 +412,12 @@ protected:
   }
 
   
+  static void writeUintptr(void* aPtr, uintptr_t aValue)
+  {
+    write(aPtr, aValue);
+  }
+
+  
   static void writeInt16(void* aPtr, int16_t aValue)
   {
     write(aPtr, aValue);
@@ -411,6 +431,12 @@ protected:
 
   
   static void writeInt64(void* aPtr, int64_t aValue)
+  {
+    write(aPtr, aValue);
+  }
+
+  
+  static void writeIntptr(void* aPtr, intptr_t aValue)
   {
     write(aPtr, aValue);
   }
@@ -630,15 +656,19 @@ public:
   using super::readUint16;
   using super::readUint32;
   using super::readUint64;
+  using super::readUintptr;
   using super::readInt16;
   using super::readInt32;
   using super::readInt64;
+  using super::readIntptr;
   using super::writeUint16;
   using super::writeUint32;
   using super::writeUint64;
+  using super::writeUintptr;
   using super::writeInt16;
   using super::writeInt32;
   using super::writeInt64;
+  using super::writeIntptr;
 };
 
 } 
