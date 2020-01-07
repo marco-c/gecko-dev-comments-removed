@@ -189,7 +189,7 @@ protected:
   
 
 
-  nsresult CreateBogusNodeIfNeeded();
+  MOZ_MUST_USE nsresult CreateBogusNodeIfNeeded();
 
   
 
