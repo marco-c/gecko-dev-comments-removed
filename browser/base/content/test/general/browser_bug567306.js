@@ -2,8 +2,6 @@
 
 
 
-var {Ci: interfaces, Cc: classes} = Components;
-
 var HasFindClipboard = Services.clipboard.supportsFindClipboard();
 
 add_task(async function() {

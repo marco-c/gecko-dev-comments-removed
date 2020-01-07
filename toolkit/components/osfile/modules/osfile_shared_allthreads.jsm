@@ -24,12 +24,6 @@
 
 
 
-const Cu = typeof Components != "undefined" ? Components.utils : undefined;
-const Ci = typeof Components != "undefined" ? Components.interfaces : undefined;
-const Cc = typeof Components != "undefined" ? Components.classes : undefined;
-
-
-
 
 
 
