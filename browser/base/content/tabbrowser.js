@@ -2890,6 +2890,10 @@ window._gBrowser = {
     this.tabContainer.removeChild(aTab);
 
     
+    if (aTab.hidden)
+      this.tabContainer._updateHiddenTabsStatus();
+
+    
     for (let i = aTab._tPos; i < this.tabs.length; i++)
       this.tabs[i]._tPos = i;
 
