@@ -1364,6 +1364,7 @@ OggTrackDemuxer::NextSample()
     
     mParent->ReadOggChain(data->GetEndTime());
   }
+  data->mOffset = mParent->Resource(mType)->Tell();
   
   data->mTime += totalDuration;
   return data;
