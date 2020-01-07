@@ -311,6 +311,7 @@ add_task(async function onPermissionDisable() {
 
   
   doc.getElementById("cancel").click();
+  Services.prefs.setIntPref("permissions.default.desktop-notification", SitePermissions.UNKNOWN);
 });
 
 add_task(async function checkDefaultPermissionState() {
@@ -334,6 +335,9 @@ add_task(async function checkDefaultPermissionState() {
   
   let state = Services.prefs.getIntPref("permissions.default.desktop-notification");
   Assert.equal(state, SitePermissions.ALLOW);
+
+  
+  Services.prefs.setIntPref("permissions.default.desktop-notification", SitePermissions.UNKNOWN);
 });
 
 add_task(async function removeTab() {
