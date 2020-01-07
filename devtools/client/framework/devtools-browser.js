@@ -377,8 +377,7 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
       return this._getContentProcessTarget(processId)
           .then(target => {
             
-            return gDevTools.showToolbox(target, "jsdebugger",
-                                         Toolbox.HostType.WINDOW);
+            return gDevTools.showToolbox(target, null, Toolbox.HostType.WINDOW);
           });
     }
 
