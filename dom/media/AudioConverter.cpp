@@ -429,15 +429,13 @@ size_t
 AudioConverter::ResampleRecipientFrames(size_t aFrames) const
 {
   if (!aFrames && mIn.Rate() != mOut.Rate()) {
-    
-    
     if (!mResampler) {
       return 0;
     }
-    return speex_resampler_get_output_latency(mResampler);
-  } else {
-    return (uint64_t)aFrames * mOut.Rate() / mIn.Rate() + 1;
+    
+    aFrames = speex_resampler_get_input_latency(mResampler);
   }
+  return (uint64_t)aFrames * mOut.Rate() / mIn.Rate() + 1;
 }
 
 size_t
