@@ -6654,7 +6654,7 @@ nsDisplayBlendMode::CanMerge(const nsDisplayItem* aItem) const
 {
   
   
-  if (!HasSameTypeAndClip(aItem) || !HasSameContent(aItem)) {
+  if (!HasDifferentFrame(aItem) || !HasSameTypeAndClip(aItem) || !HasSameContent(aItem)) {
     return false;
   }
 
@@ -9370,7 +9370,7 @@ nsDisplayMask::CanMerge(const nsDisplayItem* aItem) const
 {
   
   
-  if (!HasSameTypeAndClip(aItem) || !HasSameContent(aItem)) {
+  if (!HasDifferentFrame(aItem) || !HasSameTypeAndClip(aItem) || !HasSameContent(aItem)) {
     return false;
   }
 
