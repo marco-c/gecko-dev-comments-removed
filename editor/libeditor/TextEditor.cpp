@@ -1737,13 +1737,10 @@ TextEditor::OutputToString(const nsAString& aFormatType,
   
   RefPtr<TextEditRules> rules(mRules);
 
-  nsString resultString;
   RulesInfo ruleInfo(EditAction::outputText);
-  ruleInfo.outString = &resultString;
+  ruleInfo.outString = &aOutputString;
   ruleInfo.flags = aFlags;
-  
-  nsAutoString str(aFormatType);
-  ruleInfo.outputFormat = &str;
+  ruleInfo.outputFormat = &aFormatType;
   Selection* selection = GetSelection();
   if (NS_WARN_IF(!selection)) {
     return NS_ERROR_FAILURE;
@@ -1755,7 +1752,6 @@ TextEditor::OutputToString(const nsAString& aFormatType,
   }
   if (handled) {
     
-    aOutputString.Assign(*(ruleInfo.outString));
     return rv;
   }
 
