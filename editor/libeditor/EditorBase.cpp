@@ -4490,11 +4490,13 @@ EditorBase::DeleteSelectionAndCreateElement(nsAtom& aTag)
   RefPtr<Element> newElement = CreateNode(&aTag, pointToInsert);
 
   
-  DebugOnly<bool> advanced = pointToInsert.AdvanceOffset();
+  EditorRawDOMPoint afterNewElement(newElement);
+  MOZ_ASSERT(afterNewElement.IsSetAndValid());
+  DebugOnly<bool> advanced = afterNewElement.AdvanceOffset();
   NS_WARNING_ASSERTION(advanced,
                        "Failed to move offset next to the new element");
   ErrorResult error;
-  selection->Collapse(pointToInsert, error);
+  selection->Collapse(afterNewElement, error);
   if (NS_WARN_IF(error.Failed())) {
     
     
