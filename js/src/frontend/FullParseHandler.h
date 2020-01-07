@@ -689,6 +689,12 @@ class FullParseHandler
                !node->pn_funbox->isArrow();
     }
 
+    void noteExpressionClosure(Node* funcNode) const {
+        
+        
+        
+    }
+
     ParseNode* newObjectMethodOrPropertyDefinition(ParseNode* key, ParseNode* fn, AccessorType atype) {
         MOZ_ASSERT(isUsableAsObjectPropertyName(key));
 
