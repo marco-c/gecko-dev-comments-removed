@@ -229,10 +229,16 @@ DecoderFactory::CreateAnimationDecoder(DecoderType aType,
 DecoderFactory::CloneAnimationDecoder(Decoder* aDecoder)
 {
   MOZ_ASSERT(aDecoder);
-  MOZ_ASSERT(aDecoder->HasAnimation());
 
-  RefPtr<Decoder> decoder = GetDecoder(aDecoder->GetType(), nullptr,
-                                        true);
+  
+  
+  
+  
+  DecoderType type = aDecoder->GetType();
+  MOZ_ASSERT(type == DecoderType::GIF || type == DecoderType::PNG,
+             "Calling CloneAnimationDecoder for non-animating DecoderType");
+
+  RefPtr<Decoder> decoder = GetDecoder(type, nullptr,  true);
   MOZ_ASSERT(decoder, "Should have a decoder now");
 
   
