@@ -5043,6 +5043,7 @@ enum class SymbolCode : uint32_t {
     JS_FOR_EACH_WELL_KNOWN_SYMBOL(JS_DEFINE_SYMBOL_ENUM)  
 #undef JS_DEFINE_SYMBOL_ENUM
     Limit,
+    WellKnownAPILimit = 0x80000000, 
     InSymbolRegistry = 0xfffffffe,  
     UniqueSymbol = 0xffffffff       
 };
