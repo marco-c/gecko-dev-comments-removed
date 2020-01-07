@@ -25,7 +25,7 @@ add_task(async function() {
   }
 
   
-  const BASE_RESULT = [
+  const EXPECTED_RESULT = [
     "curl " + quote(SIMPLE_SJS),
     "--compressed",
     header("Host: example.com"),
@@ -41,83 +41,49 @@ add_task(async function() {
     header("Cache-Control: no-cache")
   ];
 
-  const COOKIE_PARTIAL_RESULT = [
-    header("Cookie: bob=true; tom=cool")
-  ];
+  let { document } = monitor.panelWin;
 
-  const POST_PAYLOAD = "Plaintext value as a payload";
-  const POST_PARTIAL_RESULT = [
-    "--data '" + POST_PAYLOAD + "'",
-    header("Content-Type: text/plain;charset=UTF-8")
-  ];
+  let wait = waitForNetworkEvents(monitor, 1);
+  await ContentTask.spawn(tab.linkedBrowser, SIMPLE_SJS, async function(url) {
+    content.wrappedJSObject.performRequest(url);
+  });
+  await wait;
 
-  
-  await performRequest(null);
-  await testClipboardContent(BASE_RESULT);
+  EventUtils.sendMouseEvent({ type: "mousedown" },
+    document.querySelectorAll(".request-list-item")[0]);
+  EventUtils.sendMouseEvent({ type: "contextmenu" },
+    document.querySelectorAll(".request-list-item")[0]);
 
-  
-  await performRequest(null);
-  await testClipboardContent([
-    ...BASE_RESULT,
-    ...COOKIE_PARTIAL_RESULT
-  ]);
+  await waitForClipboardPromise(function setup() {
+    monitor.panelWin.parent.document
+      .querySelector("#request-list-context-copy-as-curl").click();
+  }, function validate(result) {
+    if (typeof result !== "string") {
+      return false;
+    }
 
-  
-  await performRequest(POST_PAYLOAD);
-  await testClipboardContent([
-    ...BASE_RESULT,
-    ...COOKIE_PARTIAL_RESULT,
-    ...POST_PARTIAL_RESULT
-  ]);
+    
+    
+    
+
+    
+    
+    
+    let matchRe = /[-A-Za-z1-9]+(?: ([\"'])(?:\\\1|.)*?\1)?/g;
+
+    let actual = result.match(matchRe);
+
+    
+    if (!actual || EXPECTED_RESULT[0] != actual[0]) {
+      return false;
+    }
+
+    
+    return EXPECTED_RESULT.length === actual.length &&
+      EXPECTED_RESULT.every(param => actual.includes(param));
+  });
+
+  info("Clipboard contains a cURL command for the currently selected item's url.");
 
   await teardown(monitor);
-
-  async function performRequest(payload) {
-    let wait = waitForNetworkEvents(monitor, 1);
-    await ContentTask.spawn(tab.linkedBrowser, {
-      url: SIMPLE_SJS, payload_: payload
-    }, async function({url, payload_}) {
-      content.wrappedJSObject.performRequest(url, payload_);
-    });
-    await wait;
-  }
-
-  async function testClipboardContent(expectedResult) {
-    let { document } = monitor.panelWin;
-
-    const items = document.querySelectorAll(".request-list-item");
-    EventUtils.sendMouseEvent({ type: "mousedown" }, items[items.length - 1]);
-    EventUtils.sendMouseEvent({ type: "contextmenu" },
-      document.querySelectorAll(".request-list-item")[0]);
-
-    await waitForClipboardPromise(function setup() {
-      monitor.panelWin.parent.document
-        .querySelector("#request-list-context-copy-as-curl").click();
-    }, function validate(result) {
-      if (typeof result !== "string") {
-        return false;
-      }
-
-      
-      
-      
-
-      
-      
-      
-      let matchRe = /[-A-Za-z1-9]+(?: ([\"'])(?:\\\1|.)*?\1)?/g;
-
-      let actual = result.match(matchRe);
-      
-      if (!actual || expectedResult[0] != actual[0]) {
-        return false;
-      }
-
-      
-      return expectedResult.length === actual.length &&
-        expectedResult.every(param => actual.includes(param));
-    });
-
-    info("Clipboard contains a cURL command for the currently selected item's url.");
-  }
 });

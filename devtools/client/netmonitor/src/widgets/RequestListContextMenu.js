@@ -272,15 +272,12 @@ class RequestListContextMenu {
   async copyPostData(id, formDataSections, requestPostData) {
     let params = [];
     
-    
-    if (formDataSections) {
-      formDataSections.forEach(section => {
-        let paramsArray = parseQueryString(section);
-        if (paramsArray) {
-          params = [...params, ...paramsArray];
-        }
-      });
-    }
+    formDataSections.forEach(section => {
+      let paramsArray = parseQueryString(section);
+      if (paramsArray) {
+        params = [...params, ...paramsArray];
+      }
+    });
 
     let string = params
       .map(param => param.name + (param.value ? "=" + param.value : ""))
@@ -289,7 +286,7 @@ class RequestListContextMenu {
     
     if (!string) {
       requestPostData = requestPostData ||
-        await this.props.connector.requestData(id, "requestPostData");
+        await this.props.connector.requestData(id, "requestPostData").requestPostData;
 
       string = requestPostData.postData.text;
       if (Services.appinfo.OS !== "WINNT") {
@@ -307,7 +304,7 @@ class RequestListContextMenu {
       await this.props.connector.requestData(id, "requestHeaders");
 
     requestPostData = requestPostData ||
-      await this.props.connector.requestData(id, "requestPostData");
+      await this.props.connector.requestData(id, "requestPostData").requestPostData;
 
     
     let data = {
