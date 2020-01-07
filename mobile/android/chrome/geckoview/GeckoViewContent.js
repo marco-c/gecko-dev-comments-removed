@@ -12,12 +12,17 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   FormData: "resource://gre/modules/FormData.jsm",
   PrivacyFilter: "resource://gre/modules/sessionstore/PrivacyFilter.jsm",
   ScrollPosition: "resource://gre/modules/ScrollPosition.jsm",
-  Utils: "resource://gre/modules/sessionstore/Utils.jsm",
 });
 
 class GeckoViewContent extends GeckoViewContentModule {
   onInit() {
     debug `onInit`;
+
+    
+    
+    XPCOMUtils.defineLazyModuleGetters(this, {
+      Utils: "resource://gre/modules/sessionstore/Utils.jsm",
+    });
 
     this.messageManager.addMessageListener("GeckoView:SaveState",
                                            this);
@@ -59,7 +64,7 @@ class GeckoViewContent extends GeckoViewContentModule {
 
   collectSessionState() {
     let history = SessionHistory.collect(docShell);
-    let [formdata, scrolldata] = Utils.mapFrameTree(content, FormData.collect, ScrollPosition.collect);
+    let [formdata, scrolldata] = this.Utils.mapFrameTree(content, FormData.collect, ScrollPosition.collect);
 
     
     let zoom = { value: 1 };
