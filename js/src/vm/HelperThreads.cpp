@@ -297,6 +297,11 @@ CancelOffThreadIonCompileLocked(const CompilationSelector& selector, bool discar
     for (size_t i = 0; i < worklist.length(); i++) {
         jit::IonBuilder* builder = worklist[i];
         if (IonBuilderMatches(selector, builder)) {
+            
+            
+            
+            worklist[i]->alloc().lifoAlloc()->setReadWrite();
+
             FinishOffThreadIonCompile(builder, lock);
             HelperThreadState().remove(worklist, &i);
         }
