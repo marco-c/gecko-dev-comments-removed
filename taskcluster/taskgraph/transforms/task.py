@@ -47,21 +47,35 @@ taskref_or_string = Any(
     {Required('task-reference'): basestring},
 )
 
-notification_ids = optionally_keyed_by('project', Any(None, [basestring]))
+
+
+
+
+
 notification_schema = Schema({
-    Required("subject"): basestring,
-    Required("message"): basestring,
-    Required("ids"): notification_ids,
+    
+    
+    Optional('plugins'): optionally_keyed_by('project', [basestring]),
 
+    
+    Optional('subject'): optionally_keyed_by('project', basestring),
+
+    
+    Optional('message'): optionally_keyed_by('project', basestring),
+
+    
+    Optional('emails'): optionally_keyed_by('project', [basestring]),
+
+    
+    Optional('nicks'): optionally_keyed_by('project', [basestring]),
+
+    
+    Optional('channels'): optionally_keyed_by('project', [basestring]),
+
+    
+    
+    Optional('ids'): optionally_keyed_by('project', [basestring]),
 })
-
-FULL_TASK_NAME = (
-    "[{task[payload][properties][product]} "
-    "{task[payload][properties][version]} "
-    "build{task[payload][properties][build_number]}/"
-    "{task[payload][sourcestamp][branch]}] "
-    "{task[metadata][name]} task"
-)
 
 
 task_description_schema = Schema({
@@ -91,6 +105,7 @@ task_description_schema = Schema({
     
     Optional('routes'): [basestring],
 
+    
     
     
     
@@ -178,8 +193,9 @@ task_description_schema = Schema({
     
     Required('shipping-phase', default=None): Any(
         None,
+        'build',
         'promote',
-        'publish',
+        'push',
         'ship',
     ),
 
@@ -250,10 +266,19 @@ task_description_schema = Schema({
     Required('needs-sccache', default=False): bool,
 
     
+    
+    
+    
+    
+    
     Optional('notifications'): {
-        Optional('completed'): Any(notification_schema, notification_ids),
-        Optional('failed'): Any(notification_schema, notification_ids),
-        Optional('exception'): Any(notification_schema, notification_ids),
+        Optional('defined'): notification_schema,
+        Optional('pending'): notification_schema,
+        Optional('running'): notification_schema,
+        Optional('artifact-created'): notification_schema,
+        Optional('completed'): notification_schema,
+        Optional('failed'): notification_schema,
+        Optional('exception'): notification_schema,
     },
 
     
@@ -336,7 +361,10 @@ task_description_schema = Schema({
         Required('max-run-time'): int,
 
         
-        Optional('retry-exit-status'): int,
+        Optional('retry-exit-status'): Any(
+            int,
+            [int],
+        ),
     }, {
         Required('implementation'): 'generic-worker',
         Required('os'): Any('windows', 'macosx'),
@@ -430,6 +458,7 @@ task_description_schema = Schema({
             'product': basestring,
             Optional('build_number'): int,
             Optional('release_promotion'): bool,
+            Optional('generate_bz2_blob'): bool,
             Optional('tuxedo_server_url'): optionally_keyed_by('project', basestring),
             Extra: taskref_or_string,  
         },
@@ -483,6 +512,8 @@ task_description_schema = Schema({
             
             Required('formats'): [basestring],
         }],
+    }, {
+        Required('implementation'): 'binary-transparency',
     }, {
         Required('implementation'): 'beetmover',
 
@@ -784,7 +815,10 @@ def build_docker_worker_payload(config, task, task_def):
         payload['maxRunTime'] = worker['max-run-time']
 
     if 'retry-exit-status' in worker:
-        payload['onExitStatus'] = {'retry': [worker['retry-exit-status']]}
+        if isinstance(worker['retry-exit-status'], int):
+            payload['onExitStatus'] = {'retry': [worker['retry-exit-status']]}
+        elif isinstance(worker['retry-exit-status'], list):
+            payload['onExitStatus'] = {'retry': worker['retry-exit-status']}
 
     if 'artifacts' in worker:
         artifacts = {}
@@ -946,6 +980,27 @@ def build_scriptworker_signing_payload(config, task, task_def):
     }
 
 
+@payload_builder('binary-transparency')
+def build_binary_transparency_payload(config, task, task_def):
+    release_config = get_release_config(config)
+
+    task_def['payload'] = {
+        'version': release_config['version'],
+        'chain': 'TRANSPARENCY.pem',
+        'contact': task_def['metadata']['owner'],
+        'maxRunTime': 600,
+        'stage-product': task['shipping-product'],
+        'summary': (
+            'https://archive.mozilla.org/pub/{}/candidates/'
+            '{}-candidates/build{}/SHA256SUMMARY'
+        ).format(
+            task['shipping-product'],
+            release_config['version'],
+            release_config['build_number'],
+        ),
+    }
+
+
 @payload_builder('beetmover')
 def build_beetmover_payload(config, task, task_def):
     worker = task['worker']
@@ -965,7 +1020,7 @@ def build_beetmover_payload(config, task, task_def):
 @payload_builder('beetmover-cdns')
 def build_beetmover_cdns_payload(config, task, task_def):
     worker = task['worker']
-    release_config = get_release_config(config, force=True)
+    release_config = get_release_config(config)
 
     task_def['payload'] = {
         'maxRunTime': worker['max-run-time'],
@@ -1135,9 +1190,7 @@ def add_nightly_index_routes(config, task):
 def add_release_index_routes(config, task):
     index = task.get('index')
     routes = []
-    release_config = get_release_config(config, force=True)
-
-    verify_index_job_name(index)
+    release_config = get_release_config(config)
 
     subs = config.params.copy()
     subs['build_number'] = str(release_config['build_number'])
@@ -1278,9 +1331,10 @@ def build_task(config, tasks):
         level = str(config.params['level'])
         worker_type = task['worker-type'].format(level=level)
         provisioner_id, worker_type = worker_type.split('/', 1)
+        project = config.params['project']
 
         routes = task.get('routes', [])
-        scopes = [s.format(level=level) for s in task.get('scopes', [])]
+        scopes = [s.format(level=level, project=project) for s in task.get('scopes', [])]
 
         
         extra = task.get('extra', {})
@@ -1382,8 +1436,26 @@ def build_task(config, tasks):
         attributes = task.get('attributes', {})
         attributes['run_on_projects'] = task.get('run-on-projects', ['all'])
         attributes['always_target'] = task['always-target']
-        attributes['shipping_phase'] = task['shipping-phase']
-        attributes['shipping_product'] = task['shipping-product']
+        
+        
+        
+        
+        if task.get('shipping-phase') is not None:
+            attributes['shipping_phase'] = task['shipping-phase']
+        else:
+            attributes.setdefault('shipping_phase', None)
+        
+        
+        
+        
+        if task.get('shipping-product') and \
+                attributes.get('shipping_product') not in (None, task['shipping-product']):
+            raise Exception(
+                "{} shipping_product {} doesn't match task shipping-product {}!".format(
+                    task['label'], attributes['shipping_product'], task['shipping-product']
+                )
+            )
+        attributes.setdefault('shipping_product', task['shipping-product'])
 
         
         if task['worker']['implementation'] in (
@@ -1399,47 +1471,42 @@ def build_task(config, tasks):
 
         notifications = task.get('notifications')
         if notifications:
+            release_config = get_release_config(config)
             task_def['extra'].setdefault('notifications', {})
-            for k, v in notifications.items():
-                if isinstance(v, dict) and len(v) == 1 and v.keys()[0].startswith('by-'):
-                    v = {'tmp': v}
-                    resolve_keyed_by(v, 'tmp', 'notifications', **config.params)
-                    v = v['tmp']
-                if v is None:
-                    continue
-                elif isinstance(v, list):
-                    v = {'ids': v}
-                    if 'completed' == k:
-                        v.update({
-                            "subject": "Completed: {}".format(FULL_TASK_NAME),
-                            "message": "{} has completed successfully! Yay!".format(
-                                FULL_TASK_NAME),
-                        })
-                    elif k == 'failed':
-                        v.update({
-                            "subject": "Failed: {}".format(FULL_TASK_NAME),
-                            "message": "Uh-oh! {} failed.".format(FULL_TASK_NAME),
-                        })
-                    elif k == 'exception':
-                        v.update({
-                            "subject": "Exception: {}".format(FULL_TASK_NAME),
-                            "message": "Uh-oh! {} resulted in an exception.".format(
-                                FULL_TASK_NAME),
-                        })
-                else:
-                    resolve_keyed_by(v, 'ids', 'notifications', **config.params)
-                if v['ids'] is None:
-                    continue
-                notifications_kwargs = dict(
-                    task=task_def,
-                    config=config.__dict__,
-                    release_config=get_release_config(config, force=True),
-                )
-                task_def['extra']['notifications']['task-' + k] = {
-                    'subject': v['subject'].format(**notifications_kwargs),
-                    'message': v['message'].format(**notifications_kwargs),
-                    'ids': v['ids'],
-                }
+            for notification_event, notification in notifications.items():
+
+                for notification_option, notification_option_value in notification.items():
+
+                    
+                    resolve_keyed_by(
+                        notification,
+                        notification_option,
+                        'notifications',
+                        project=config.params['project'],
+                    )
+
+                    
+                    format_kwargs = dict(
+                            task=task,
+                            task_def=task_def,
+                            config=config.__dict__,
+                            release_config=release_config,
+                    )
+                    if isinstance(notification_option_value, basestring):
+                        notification[notification_option] = notification_option_value.format(
+                            **format_kwargs
+                        )
+                    elif isinstance(notification_option_value, list):
+                        notification[notification_option] = [
+                            i.format(**format_kwargs) for i in notification_option_value
+                        ]
+
+                
+                if notification_event != 'artifact-created':
+                    notification_event = 'task-' + notification_event
+
+                
+                task_def['extra']['notifications'][notification_event] = notification
 
         yield {
             'label': task['label'],
