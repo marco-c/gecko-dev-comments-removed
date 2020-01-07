@@ -562,120 +562,6 @@ module.exports = toKey;
 
  }),
 
- 1129:
- (function(module, exports, __webpack_require__) {
-
-var baseDifference = __webpack_require__(1131),
-    baseFlatten = __webpack_require__(707),
-    baseRest = __webpack_require__(411),
-    isArrayLikeObject = __webpack_require__(1155);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-var difference = baseRest(function(array, values) {
-  return isArrayLikeObject(array)
-    ? baseDifference(array, baseFlatten(values, 1, isArrayLikeObject, true))
-    : [];
-});
-
-module.exports = difference;
-
-
- }),
-
- 1131:
- (function(module, exports, __webpack_require__) {
-
-var SetCache = __webpack_require__(276),
-    arrayIncludes = __webpack_require__(563),
-    arrayIncludesWith = __webpack_require__(567),
-    arrayMap = __webpack_require__(110),
-    baseUnary = __webpack_require__(215),
-    cacheHas = __webpack_require__(280);
-
-
-var LARGE_ARRAY_SIZE = 200;
-
-
-
-
-
-
-
-
-
-
-
-
-function baseDifference(array, values, iteratee, comparator) {
-  var index = -1,
-      includes = arrayIncludes,
-      isCommon = true,
-      length = array.length,
-      result = [],
-      valuesLength = values.length;
-
-  if (!length) {
-    return result;
-  }
-  if (iteratee) {
-    values = arrayMap(values, baseUnary(iteratee));
-  }
-  if (comparator) {
-    includes = arrayIncludesWith;
-    isCommon = false;
-  }
-  else if (values.length >= LARGE_ARRAY_SIZE) {
-    includes = cacheHas;
-    isCommon = false;
-    values = new SetCache(values);
-  }
-  outer:
-  while (++index < length) {
-    var value = array[index],
-        computed = iteratee == null ? value : iteratee(value);
-
-    value = (comparator || value !== 0) ? value : 0;
-    if (isCommon && computed === computed) {
-      var valuesIndex = valuesLength;
-      while (valuesIndex--) {
-        if (values[valuesIndex] === computed) {
-          continue outer;
-        }
-      }
-      result.push(value);
-    }
-    else if (!includes(values, computed, comparator)) {
-      result.push(value);
-    }
-  }
-  return result;
-}
-
-module.exports = baseDifference;
-
-
- }),
-
  114:
  (function(module, exports, __webpack_require__) {
 
@@ -739,46 +625,6 @@ function baseAssignValue(object, key, value) {
 }
 
 module.exports = baseAssignValue;
-
-
- }),
-
- 1155:
- (function(module, exports, __webpack_require__) {
-
-var isArrayLike = __webpack_require__(220),
-    isObjectLike = __webpack_require__(14);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function isArrayLikeObject(value) {
-  return isObjectLike(value) && isArrayLike(value);
-}
-
-module.exports = isArrayLikeObject;
 
 
  }),
@@ -1217,7 +1063,6 @@ function traverseAst(sourceId, visitor, state) {
   }
 
   t.traverse(ast, visitor, state);
-  
   return ast;
 }
 
@@ -2081,15 +1926,13 @@ var _findOutOfScopeLocations2 = _interopRequireDefault(_findOutOfScopeLocations)
 
 var _steps = __webpack_require__(1625);
 
-var _getEmptyLines = __webpack_require__(1628);
-
-var _getEmptyLines2 = _interopRequireDefault(_getEmptyLines);
-
 var _validate = __webpack_require__(1629);
 
 var _frameworks = __webpack_require__(1703);
 
 var _pauseLocation = __webpack_require__(2422);
+
+var _pausePoints = __webpack_require__(3612);
 
 var _devtoolsUtils = __webpack_require__(1363);
 
@@ -2114,9 +1957,9 @@ self.onmessage = workerHandler({
   clearSources: _sources.clearSources,
   isInvalidPauseLocation: _pauseLocation.isInvalidPauseLocation,
   getNextStep: _steps.getNextStep,
-  getEmptyLines: _getEmptyLines2.default,
   hasSyntaxError: _validate.hasSyntaxError,
-  getFramework: _frameworks.getFramework
+  getFramework: _frameworks.getFramework,
+  getPausePoints: _pausePoints.getPausePoints
 });
 
  }),
@@ -2525,68 +2368,6 @@ function _getNextStep(statement, position) {
 
 "use strict";
 
-
- }),
-
- 1628:
- (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = getEmptyLines;
-
-var _uniq = __webpack_require__(561);
-
-var _uniq2 = _interopRequireDefault(_uniq);
-
-var _difference = __webpack_require__(1129);
-
-var _difference2 = _interopRequireDefault(_difference);
-
-var _ast = __webpack_require__(1375);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-const commentTokens = ["CommentBlock", "CommentLine"]; 
-
-
-
-function fillRange(start, end) {
-  return Array(end - start + 1).fill().map((item, index) => start + index);
-}
-
-
-
-function getLines(ast) {
-  return fillRange(1, ast.tokens[ast.tokens.length - 1].loc.end.line);
-}
-
-
-
-function getExecutableLines(ast) {
-  const lines = ast.tokens.filter(token => !commentTokens.includes(token.type) && (!token.type || token.type.label && token.type.label != "eof")).map(token => token.loc.start.line);
-
-  return (0, _uniq2.default)(lines);
-}
-
-function getEmptyLines(sourceId) {
-  if (!sourceId) {
-    return null;
-  }
-
-  const ast = (0, _ast.getAst)(sourceId);
-  if (!ast || !ast.comments) {
-    return [];
-  }
-
-  const executableLines = getExecutableLines(ast);
-  const lines = getLines(ast);
-  return (0, _difference2.default)(lines, executableLines);
-}
 
  }),
 
@@ -14552,10 +14333,19 @@ function parseSourceScopes(sourceId) {
 
   const state = {
     sourceId,
+    freeVariables: new Map(),
+    freeVariableStack: [],
     scope: lexical,
     scopeStack: []
   };
   t.traverse(ast, scopeCollectionVisitor, state);
+
+  for (const [key, freeVariables] of state.freeVariables) {
+    const binding = global.bindings[key];
+    if (binding) {
+      binding.refs = freeVariables.concat(binding.refs);
+    }
+  }
 
   
   
@@ -14605,6 +14395,9 @@ function pushTempScope(state, type, displayName, loc) {
   const scope = createTempScope(type, displayName, state.scope, loc);
 
   state.scope = scope;
+
+  state.freeVariableStack.push(state.freeVariables);
+  state.freeVariables = new Map();
   return scope;
 }
 
@@ -14676,16 +14469,6 @@ function hasLexicalDeclaration(node, parent) {
 }
 function isLexicalVariable(node) {
   return isNode(node, "VariableDeclaration") && isLetOrConst(node);
-}
-
-function findIdentifierInScopes(scope, name) {
-  
-  for (let s = scope; s; s = s.parent) {
-    if (name in s.bindings) {
-      return s;
-    }
-  }
-  return null;
 }
 
 function createGlobalScope(ast, sourceId) {
@@ -14869,7 +14652,7 @@ const scopeCollectionVisitor = {
       node.declarations.forEach(declarator => {
         parseDeclarator(declarator.id, hoistAt, node.kind, node, state.sourceId);
       });
-    } else if (t.isImportDeclaration(node)) {
+    } else if (t.isImportDeclaration(node) && (!node.importKind || node.importKind === "value")) {
       node.specifiers.forEach(spec => {
         if (t.isImportNamespaceSpecifier(spec)) {
           state.scope.bindings[spec.local.name] = {
@@ -14899,25 +14682,31 @@ const scopeCollectionVisitor = {
         }
       });
     } else if (t.isIdentifier(node) && t.isReferenced(node, parentNode)) {
-      const identScope = findIdentifierInScopes(state.scope, node.name);
-      if (identScope) {
-        identScope.bindings[node.name].refs.push({
-          type: "ref",
-          start: fromBabelLocation(node.loc.start, state.sourceId),
-          end: fromBabelLocation(node.loc.end, state.sourceId),
-          meta: buildMetaBindings(state.sourceId, node, ancestors)
-        });
+      let freeVariables = state.freeVariables.get(node.name);
+      if (!freeVariables) {
+        freeVariables = [];
+        state.freeVariables.set(node.name, freeVariables);
       }
+
+      freeVariables.push({
+        type: "ref",
+        start: fromBabelLocation(node.loc.start, state.sourceId),
+        end: fromBabelLocation(node.loc.end, state.sourceId),
+        meta: buildMetaBindings(state.sourceId, node, ancestors)
+      });
     } else if (t.isThisExpression(node)) {
-      const identScope = findIdentifierInScopes(state.scope, "this");
-      if (identScope) {
-        identScope.bindings.this.refs.push({
-          type: "ref",
-          start: fromBabelLocation(node.loc.start, state.sourceId),
-          end: fromBabelLocation(node.loc.end, state.sourceId),
-          meta: buildMetaBindings(state.sourceId, node, ancestors)
-        });
+      let freeVariables = state.freeVariables.get("this");
+      if (!freeVariables) {
+        freeVariables = [];
+        state.freeVariables.set("this", freeVariables);
       }
+
+      freeVariables.push({
+        type: "ref",
+        start: fromBabelLocation(node.loc.start, state.sourceId),
+        end: fromBabelLocation(node.loc.end, state.sourceId),
+        meta: buildMetaBindings(state.sourceId, node, ancestors)
+      });
     } else if (t.isClassProperty(parentNode, { value: node })) {
       const scope = pushTempScope(state, "function", "Class Field", {
         start: fromBabelLocation(node.loc.start, state.sourceId),
@@ -14939,12 +14728,45 @@ const scopeCollectionVisitor = {
     }
   },
   exit(node, ancestors, state) {
-    const scope = state.scopeStack.pop();
-    if (!scope) {
+    const currentScope = state.scope;
+    const parentScope = state.scopeStack.pop();
+    if (!parentScope) {
       throw new Error("Assertion failure - unsynchronized pop");
     }
+    state.scope = parentScope;
 
-    state.scope = scope;
+    
+    
+    
+    for (let scope = currentScope; scope && scope !== parentScope; scope = scope.parent) {
+      const freeVariables = state.freeVariables;
+      state.freeVariables = state.freeVariableStack.pop();
+      const parentFreeVariables = state.freeVariables;
+
+      
+      
+      for (const key of Object.keys(scope.bindings)) {
+        const binding = scope.bindings[key];
+
+        const freeVars = freeVariables.get(key);
+        if (freeVars) {
+          binding.refs.push(...freeVars);
+          freeVariables.delete(key);
+        }
+      }
+
+      
+      
+      for (const [key, value] of freeVariables) {
+        let refs = parentFreeVariables.get(key);
+        if (!refs) {
+          refs = [];
+          parentFreeVariables.set(key, refs);
+        }
+
+        refs.push(...value);
+      }
+    }
   }
 };
 
@@ -16448,6 +16270,72 @@ class SimplePath {
 
  }),
 
+ 3612:
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.getPausePoints = getPausePoints;
+
+var _ast = __webpack_require__(1375);
+
+var _types = __webpack_require__(2268);
+
+var t = _interopRequireWildcard(_types);
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+const isControlFlow = node => t.isForStatement(node) || t.isWhileStatement(node) || t.isIfStatement(node);
+
+const isAssignment = node => t.isVariableDeclaration(node) || t.isAssignmentExpression(node);
+
+const isImport = node => t.isImport(node) || t.isImportDeclaration(node);
+const isReturn = node => t.isReturnStatement(node);
+const inExpression = parent => t.isArrayExpression(parent.node) || t.isObjectProperty(parent.node) || t.isCallExpression(parent.node);
+
+function getPausePoints(sourceId) {
+  const state = [];
+  (0, _ast.traverseAst)(sourceId, { enter: onEnter }, state);
+  return state;
+}
+
+function formatNode(location, types) {
+  return { location, types };
+}
+
+function onEnter(node, ancestors, state) {
+  const parent = ancestors[ancestors.length - 1];
+
+  if (isAssignment(node) || isImport(node) || isControlFlow(node) || isReturn(node)) {
+    state.push(formatNode(node.loc.start, { breakpoint: true, stepOver: true }));
+  }
+
+  if (t.isCallExpression(node)) {
+    state.push(formatNode(node.loc.start, {
+      breakpoint: true,
+
+      
+      stepOver: !inExpression(parent)
+    }));
+  }
+
+  if (t.isDebuggerStatement(node)) {
+    state.push(formatNode(node.loc.start, { breakpoint: true, stepOver: true }));
+  }
+
+  if (t.isFunction(node)) {
+    const { line, column } = node.loc.end;
+    state.push(formatNode(node.loc.start, { breakpoint: true }));
+    state.push(formatNode({ line, column: column - 1 }, { breakpoint: true, stepOver: true }));
+  }
+}
+
+ }),
+
  398:
  (function(module, exports, __webpack_require__) {
 
@@ -16775,228 +16663,6 @@ function nativeKeysIn(object) {
 }
 
 module.exports = nativeKeysIn;
-
-
- }),
-
- 411:
- (function(module, exports, __webpack_require__) {
-
-var identity = __webpack_require__(298),
-    overRest = __webpack_require__(412),
-    setToString = __webpack_require__(414);
-
-
-
-
-
-
-
-
-
-function baseRest(func, start) {
-  return setToString(overRest(func, start, identity), func + '');
-}
-
-module.exports = baseRest;
-
-
- }),
-
- 412:
- (function(module, exports, __webpack_require__) {
-
-var apply = __webpack_require__(413);
-
-
-var nativeMax = Math.max;
-
-
-
-
-
-
-
-
-
-
-function overRest(func, start, transform) {
-  start = nativeMax(start === undefined ? (func.length - 1) : start, 0);
-  return function() {
-    var args = arguments,
-        index = -1,
-        length = nativeMax(args.length - start, 0),
-        array = Array(length);
-
-    while (++index < length) {
-      array[index] = args[start + index];
-    }
-    index = -1;
-    var otherArgs = Array(start + 1);
-    while (++index < start) {
-      otherArgs[index] = args[index];
-    }
-    otherArgs[start] = transform(array);
-    return apply(func, this, otherArgs);
-  };
-}
-
-module.exports = overRest;
-
-
- }),
-
- 413:
- (function(module, exports) {
-
-
-
-
-
-
-
-
-
-
-
-function apply(func, thisArg, args) {
-  switch (args.length) {
-    case 0: return func.call(thisArg);
-    case 1: return func.call(thisArg, args[0]);
-    case 2: return func.call(thisArg, args[0], args[1]);
-    case 3: return func.call(thisArg, args[0], args[1], args[2]);
-  }
-  return func.apply(thisArg, args);
-}
-
-module.exports = apply;
-
-
- }),
-
- 414:
- (function(module, exports, __webpack_require__) {
-
-var baseSetToString = __webpack_require__(415),
-    shortOut = __webpack_require__(417);
-
-
-
-
-
-
-
-
-
-var setToString = shortOut(baseSetToString);
-
-module.exports = setToString;
-
-
- }),
-
- 415:
- (function(module, exports, __webpack_require__) {
-
-var constant = __webpack_require__(416),
-    defineProperty = __webpack_require__(116),
-    identity = __webpack_require__(298);
-
-
-
-
-
-
-
-
-
-var baseSetToString = !defineProperty ? identity : function(func, string) {
-  return defineProperty(func, 'toString', {
-    'configurable': true,
-    'enumerable': false,
-    'value': constant(string),
-    'writable': true
-  });
-};
-
-module.exports = baseSetToString;
-
-
- }),
-
- 416:
- (function(module, exports) {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function constant(value) {
-  return function() {
-    return value;
-  };
-}
-
-module.exports = constant;
-
-
- }),
-
- 417:
- (function(module, exports) {
-
-
-var HOT_COUNT = 800,
-    HOT_SPAN = 16;
-
-
-var nativeNow = Date.now;
-
-
-
-
-
-
-
-
-
-
-function shortOut(func) {
-  var count = 0,
-      lastCalled = 0;
-
-  return function() {
-    var stamp = nativeNow(),
-        remaining = HOT_SPAN - (stamp - lastCalled);
-
-    lastCalled = stamp;
-    if (remaining > 0) {
-      if (++count >= HOT_COUNT) {
-        return arguments[0];
-      }
-    } else {
-      count = 0;
-    }
-    return func.apply(undefined, arguments);
-  };
-}
-
-module.exports = shortOut;
 
 
  }),
