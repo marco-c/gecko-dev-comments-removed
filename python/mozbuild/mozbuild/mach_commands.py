@@ -1289,19 +1289,19 @@ class PackageFrontend(MachCommandBase):
             def __init__(self, task_id, artifact_name):
                 cot = cache._download_manager.session.get(
                     get_artifact_url(task_id, 'public/chainOfTrust.json.asc'))
+                cot.raise_for_status()
                 digest = algorithm = None
-                if cot.status_code == 200:
-                    
-                    
-                    
-                    data = {}
-                    for l in cot.content.splitlines():
-                        if l.startswith('{'):
-                            try:
-                                data = json.loads(l)
-                                break
-                            except Exception:
-                                pass
+                data = {}
+                
+                
+                
+                for l in cot.content.splitlines():
+                    if l.startswith('{'):
+                        try:
+                            data = json.loads(l)
+                            break
+                        except Exception:
+                            pass
                 for algorithm, digest in (data.get('artifacts', {})
                                               .get(artifact_name, {}).items()):
                     pass
