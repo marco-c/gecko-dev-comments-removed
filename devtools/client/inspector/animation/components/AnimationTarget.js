@@ -134,10 +134,24 @@ class AnimationTarget extends Component {
           inspectIconTitle: getInspectorStr("inspector.nodePreview.highlightNodeLabel"),
           object: translateNodeFrontToGrip(nodeFront),
           onDOMNodeClick: () => this.select(),
-          onDOMNodeMouseOut: () => onHideBoxModelHighlighter(),
-          onDOMNodeMouseOver: () => this.highlight(),
+          onDOMNodeMouseOut: () => {
+            if (!isHighlighted) {
+              onHideBoxModelHighlighter();
+            }
+          },
+          onDOMNodeMouseOver: () => {
+            if (!isHighlighted) {
+              this.highlight();
+            }
+          },
           onInspectIconClick: (_, e) => {
             e.stopPropagation();
+
+            if (!isHighlighted) {
+              
+              onHideBoxModelHighlighter();
+            }
+
             setHighlightedNode(isHighlighted ? null : nodeFront);
           }
         }
