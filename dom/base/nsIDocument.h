@@ -1151,7 +1151,7 @@ public:
     return mPageUnloadingEventTimeStamp;
   }
 
-  virtual void NotifyLayerManagerRecreated() = 0;
+  void NotifyLayerManagerRecreated();
 
   
 
