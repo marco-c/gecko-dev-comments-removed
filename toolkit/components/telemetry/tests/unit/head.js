@@ -276,17 +276,6 @@ function fakeCachedClientId(uuid) {
 }
 
 
-
-function fakeGzipCompressStringForNextPing(length) {
-  let send = ChromeUtils.import("resource://gre/modules/TelemetrySend.jsm", {});
-  let largePayload = generateString(length);
-  send.Policy.gzipCompressString = (data) => {
-    send.Policy.gzipCompressString = send.gzipCompressString;
-    return largePayload;
-  };
-}
-
-
 function futureDate(date, offset) {
   return new Date(date.getTime() + offset);
 }
@@ -310,10 +299,6 @@ function generateRandomString(length) {
   }
 
   return string.substring(0, length);
-}
-
-function generateString(length) {
-  return new Array(length + 1).join("a");
 }
 
 
