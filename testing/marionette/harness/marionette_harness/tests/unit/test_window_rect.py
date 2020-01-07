@@ -186,13 +186,13 @@ class TestWindowRect(MarionetteTestCase):
         
         
         
-        elif os == "darwin":
+        elif os == "mac":
             self.assertEqual(-8, new_position["x"])
             self.assertEqual(23, new_position["y"])
 
         
         
-        elif os == "windows_nt":
+        elif os == "windows":
             self.assertEqual(-8, new_position["x"])
             self.assertEqual(-8, new_position["y"])
 
