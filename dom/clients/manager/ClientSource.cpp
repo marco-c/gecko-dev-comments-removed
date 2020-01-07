@@ -208,7 +208,9 @@ ClientSource::WorkerExecutionReady(WorkerPrivate* aWorkerPrivate)
   
   
   if (mController.isSome()) {
-    MOZ_DIAGNOSTIC_ASSERT(aWorkerPrivate->IsStorageAllowed());
+    MOZ_DIAGNOSTIC_ASSERT(aWorkerPrivate->IsStorageAllowed() ||
+                          StringBeginsWith(aWorkerPrivate->ScriptURL(),
+                                           NS_LITERAL_STRING("blob:")));
   }
 
   
@@ -236,34 +238,36 @@ ClientSource::WindowExecutionReady(nsPIDOMWindowInner* aInnerWindow)
   }
 
   nsIDocument* doc = aInnerWindow->GetExtantDoc();
-  if (NS_WARN_IF(!doc)) {
-    return NS_ERROR_UNEXPECTED;
-  }
+  NS_ENSURE_TRUE(doc, NS_ERROR_UNEXPECTED);
 
+  nsIURI* uri = doc->GetOriginalURI();
+  NS_ENSURE_TRUE(uri, NS_ERROR_UNEXPECTED);
+
+  
+  nsCString spec;
+  nsresult rv = uri->GetSpec(spec);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  
+  
+  
+  
+  
+  
   
   
   
   
   if (mController.isSome()) {
-    MOZ_DIAGNOSTIC_ASSERT(nsContentUtils::StorageAllowedForWindow(aInnerWindow) ==
+    MOZ_DIAGNOSTIC_ASSERT(spec.LowerCaseEqualsLiteral("about:blank") ||
+                          StringBeginsWith(spec, NS_LITERAL_CSTRING("blob:")) ||
+                          nsContentUtils::StorageAllowedForWindow(aInnerWindow) ==
                           nsContentUtils::StorageAccess::eAllow);
   }
 
-  
-  nsCString spec;
-
-  nsIURI* uri = doc->GetOriginalURI();
-  if (uri) {
-    nsresult rv = uri->GetSpec(spec);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
-  }
-
   nsPIDOMWindowOuter* outer = aInnerWindow->GetOuterWindow();
-  if (NS_WARN_IF(!outer)) {
-    return NS_ERROR_UNEXPECTED;
-  }
+  NS_ENSURE_TRUE(outer, NS_ERROR_UNEXPECTED);
 
   FrameType frameType = FrameType::Top_level;
   if (!outer->IsTopLevelWindow()) {
@@ -386,11 +390,19 @@ ClientSource::SetController(const ServiceWorkerDescriptor& aServiceWorker)
   
   
   
+  
+  
+  
+  
   if (GetInnerWindow()) {
-    MOZ_DIAGNOSTIC_ASSERT(nsContentUtils::StorageAllowedForWindow(GetInnerWindow()) ==
+    MOZ_DIAGNOSTIC_ASSERT(Info().URL().LowerCaseEqualsLiteral("about:blank") ||
+                          StringBeginsWith(Info().URL(), NS_LITERAL_CSTRING("blob:")) ||
+                          nsContentUtils::StorageAllowedForWindow(GetInnerWindow()) ==
                           nsContentUtils::StorageAccess::eAllow);
   } else if (GetWorkerPrivate()) {
-    MOZ_DIAGNOSTIC_ASSERT(GetWorkerPrivate()->IsStorageAllowed());
+    MOZ_DIAGNOSTIC_ASSERT(GetWorkerPrivate()->IsStorageAllowed() ||
+                          StringBeginsWith(GetWorkerPrivate()->ScriptURL(),
+                                           NS_LITERAL_STRING("blob:")));
   }
 
   if (mController.isSome() && mController.ref() == aServiceWorker) {
