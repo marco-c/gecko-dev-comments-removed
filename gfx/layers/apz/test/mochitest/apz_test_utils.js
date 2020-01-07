@@ -679,6 +679,36 @@ function hitTestScrollbar(params) {
   }
 }
 
+
+function getPrefs(ident) {
+  switch (ident) {
+    case "TOUCH_EVENTS:PAN":
+      return [
+        
+        
+        
+        ["apz.touch_start_tolerance", "0.0"],
+        
+        
+        
+        
+        
+        ["ui.click_hold_context_menus.delay", 10000],
+        
+        
+        
+        ["apz.fling_min_velocity_threshold", "10000"],
+        
+        
+        
+        
+        ["apz.displayport_expiry_ms", 0],
+      ];
+    default:
+      return [];
+  }
+}
+
 var ApzCleanup = {
   _cleanups: [],
 
