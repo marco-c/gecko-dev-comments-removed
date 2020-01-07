@@ -3,12 +3,8 @@
 
 
 
-#ifndef __mozinlinespellchecker_h__
-#define __mozinlinespellchecker_h__
-
-#include "mozilla/TextEditor.h"
-
-#include "mozISpellI18NUtil.h"
+#ifndef mozilla_mozInlineSpellChecker_h
+#define mozilla_mozInlineSpellChecker_h
 
 #include "nsCycleCollectionParticipant.h"
 #include "nsIDOMEventListener.h"
@@ -19,20 +15,16 @@
 #include "nsRange.h"
 #include "nsWeakReference.h"
 
-
-#ifdef KeyPress
-#undef KeyPress
-#endif
-
+class InitEditorSpellCheckCallback;
 class mozInlineSpellWordUtil;
 class mozInlineSpellChecker;
+class mozISpellI18NUtil;
 class mozInlineSpellResume;
-class InitEditorSpellCheckCallback;
 class UpdateCurrentDictionaryCallback;
-class mozInlineSpellResume;
 
 namespace mozilla {
 class EditorSpellCheck;
+class TextEditor;
 enum class EditAction : int32_t;
 } 
 
@@ -197,9 +189,9 @@ public:
   
   static void UpdateCanEnableInlineSpellChecking();
 
-  nsresult Blur(nsIDOMEvent* aEvent);
-  nsresult MouseClick(nsIDOMEvent* aMouseEvent);
-  nsresult KeyPress(nsIDOMEvent* aKeyEvent);
+  nsresult OnBlur(nsIDOMEvent* aEvent);
+  nsresult OnMouseClick(nsIDOMEvent* aMouseEvent);
+  nsresult OnKeyPress(nsIDOMEvent* aKeyEvent);
 
   mozInlineSpellChecker();
 

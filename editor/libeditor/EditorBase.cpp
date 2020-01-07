@@ -35,6 +35,7 @@
 #include "mozilla/EditTransactionBase.h" 
 #include "mozilla/FlushType.h"          
 #include "mozilla/IMEStateManager.h"    
+#include "mozilla/mozInlineSpellChecker.h" 
 #include "mozilla/Preferences.h"        
 #include "mozilla/RangeBoundary.h"      
 #include "mozilla/dom/Selection.h"      
@@ -1365,8 +1366,7 @@ EditorBase::GetInlineSpellChecker(bool autoCreate,
 
   nsresult rv;
   if (!mInlineSpellChecker && autoCreate) {
-    mInlineSpellChecker = do_CreateInstance(MOZ_INLINESPELLCHECKER_CONTRACTID, &rv);
-    NS_ENSURE_SUCCESS(rv, rv);
+    mInlineSpellChecker = new mozInlineSpellChecker();
   }
 
   if (mInlineSpellChecker) {

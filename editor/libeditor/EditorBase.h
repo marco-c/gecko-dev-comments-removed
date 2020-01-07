@@ -34,6 +34,7 @@
 #include "nsWeakReference.h"            
 #include "nscore.h"                     
 
+class mozInlineSpellChecker;
 class nsAtom;
 class nsIContent;
 class nsIDOMDocument;
@@ -44,7 +45,6 @@ class nsIDOMNode;
 class nsIDocumentStateListener;
 class nsIEditActionListener;
 class nsIEditorObserver;
-class nsIInlineSpellChecker;
 class nsINode;
 class nsIPresShell;
 class nsISupports;
@@ -1384,7 +1384,7 @@ protected:
   
   nsCString mContentMIMEType;
 
-  nsCOMPtr<nsIInlineSpellChecker> mInlineSpellChecker;
+  RefPtr<mozInlineSpellChecker> mInlineSpellChecker;
 
   RefPtr<nsTransactionManager> mTxnMgr;
   
