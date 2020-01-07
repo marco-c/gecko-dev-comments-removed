@@ -1847,7 +1847,7 @@ CodeGeneratorX86Shared::visitOutOfLineTableSwitch(OutOfLineTableSwitch* ool)
     MTableSwitch* mir = ool->mir();
 
     masm.haltingAlign(sizeof(void*));
-    masm.bind(ool->jumpLabel());
+    masm.use(ool->jumpLabel()->target());
     masm.addCodeLabel(*ool->jumpLabel());
 
     for (size_t i = 0; i < mir->numCases(); i++) {
@@ -1858,7 +1858,7 @@ CodeGeneratorX86Shared::visitOutOfLineTableSwitch(OutOfLineTableSwitch* ool)
         
         
         CodeLabel cl;
-        masm.writeCodePointer(&cl);
+        masm.writeCodePointer(cl.patchAt());
         cl.target()->bind(caseoffset);
         masm.addCodeLabel(cl);
     }
@@ -1885,7 +1885,7 @@ CodeGeneratorX86Shared::emitTableSwitchDispatch(MTableSwitch* mir, Register inde
     addOutOfLineCode(ool, mir);
 
     
-    masm.mov(ool->jumpLabel(), base);
+    masm.mov(ool->jumpLabel()->patchAt(), base);
     BaseIndex pointer(base, index, ScalePointer);
 
     

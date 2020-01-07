@@ -32,10 +32,6 @@
 # define JS_SMALL_BRANCH
 #endif
 
-#if defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
-# define JS_CODELABEL_LINKMODE
-#endif
-
 using mozilla::CheckedInt;
 
 namespace js {
@@ -533,8 +529,6 @@ class CodeOffset
 
 
 
-
-
 class CodeLabel
 {
     
@@ -544,19 +538,6 @@ class CodeLabel
     
     
     CodeOffset target_;
-
-#ifdef JS_CODELABEL_LINKMODE
-public:
-    enum LinkMode
-    {
-        Uninitialized = 0,
-        RawPointer,
-        MoveImmediate,
-        JumpImmediate
-    };
-private:
-    LinkMode linkMode_ = Uninitialized;
-#endif
 
   public:
     CodeLabel()
@@ -580,14 +561,6 @@ private:
     CodeOffset target() const {
         return target_;
     }
-#ifdef JS_CODELABEL_LINKMODE
-    LinkMode linkMode() const {
-        return linkMode_;
-    }
-    void setLinkMode(LinkMode value) {
-        linkMode_ = value;
-    }
-#endif
 };
 
 typedef Vector<CodeLabel, 0, SystemAllocPolicy> CodeLabelVector;
