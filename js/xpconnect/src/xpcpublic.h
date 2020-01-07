@@ -453,12 +453,9 @@ UnwrapReflectorToISupports(JSObject* reflector);
 JSObject*
 UnprivilegedJunkScope();
 
-
-
-
-
 JSObject*
 PrivilegedJunkScope();
+
 
 
 

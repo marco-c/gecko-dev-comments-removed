@@ -6,6 +6,7 @@
 
 #include "ScriptPreloader-inl.h"
 #include "mozilla/ScriptPreloader.h"
+#include "mozJSComponentLoader.h"
 #include "mozilla/loader/ScriptCacheActors.h"
 
 #include "mozilla/URLPreloader.h"
@@ -436,7 +437,7 @@ ScriptPreloader::InitCache(const nsAString& basePath)
     
     
     AutoSafeJSAPI jsapi;
-    JS::RootedObject scope(jsapi.cx(), xpc::CompilationScope());
+    JS::RootedObject scope(jsapi.cx(), CompilationScope(jsapi.cx()));
 
     
     
@@ -950,6 +951,12 @@ ScriptPreloader::DoFinishOffThreadDecode()
     MaybeFinishOffThreadDecode();
 }
 
+JSObject*
+ScriptPreloader::CompilationScope(JSContext* cx)
+{
+    return mozJSComponentLoader::Get()->CompilationScope(cx);
+}
+
 void
 ScriptPreloader::MaybeFinishOffThreadDecode()
 {
@@ -968,7 +975,7 @@ ScriptPreloader::MaybeFinishOffThreadDecode()
     AutoSafeJSAPI jsapi;
     JSContext* cx = jsapi.cx();
 
-    JSAutoRealm ar(cx, xpc::CompilationScope());
+    JSAutoRealm ar(cx, CompilationScope(cx));
     JS::Rooted<JS::ScriptVector> jsScripts(cx, JS::ScriptVector(cx));
 
     
@@ -1038,7 +1045,7 @@ ScriptPreloader::DecodeNextBatch(size_t chunkSize, JS::HandleObject scope)
 
     AutoSafeJSAPI jsapi;
     JSContext* cx = jsapi.cx();
-    JSAutoRealm ar(cx, scope ? scope : xpc::CompilationScope());
+    JSAutoRealm ar(cx, scope ? scope : CompilationScope(cx));
 
     JS::CompileOptions options(cx);
     options.setNoScriptRval(true)
