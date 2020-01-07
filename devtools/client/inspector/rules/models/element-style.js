@@ -30,8 +30,7 @@ const { ELEMENT_STYLE } = require("devtools/shared/specs/styles");
 
 
 
-function ElementStyle(element, ruleView, store, pageStyle,
-    showUserAgentStyles) {
+function ElementStyle(element, ruleView, store, pageStyle, showUserAgentStyles) {
   this.element = element;
   this.ruleView = ruleView;
   this.store = store || {};
@@ -53,13 +52,11 @@ function ElementStyle(element, ruleView, store, pageStyle,
 }
 
 ElementStyle.prototype = {
-  
-  element: null,
-
   destroy: function() {
     if (this.destroyed) {
       return;
     }
+
     this.destroyed = true;
 
     for (const rule of this.rules) {
@@ -92,12 +89,7 @@ ElementStyle.prototype = {
       matchedSelectors: true,
       filter: this.showUserAgentStyles ? "ua" : undefined,
     }).then(entries => {
-      if (this.destroyed) {
-        return promise.resolve(undefined);
-      }
-
-      if (this.populated !== populated) {
-        
+      if (this.destroyed || this.populated !== populated) {
         return promise.resolve(undefined);
       }
 
@@ -179,12 +171,8 @@ ElementStyle.prototype = {
   _maybeAddRule: function(options, existingRules) {
     
     
-    if (options.rule &&
-        this.rules.some(rule => rule.domRule === options.rule)) {
-      return false;
-    }
-
-    if (options.system) {
+    if (options.system ||
+        (options.rule && this.rules.some(rule => rule.domRule === options.rule))) {
       return false;
     }
 
