@@ -27,14 +27,14 @@ namespace Helpers
 
 
 
-static constexpr size_t kStaticMangledNameLength = 2;
+static constexpr size_t kStaticMangledNameMaxLength = 10;
 
 
 
 struct StaticMangledName
 {
     
-    char name[kStaticMangledNameLength + 1] = {};
+    char name[kStaticMangledNameMaxLength + 1] = {};
 };
 
 
@@ -45,9 +45,40 @@ constexpr StaticMangledName BuildStaticMangledName(TBasicType basicType,
                                                    unsigned char secondarySize)
 {
     StaticMangledName name = {};
-    name.name[0]           = TType::GetSizeMangledName(primarySize, secondarySize);
-    name.name[1]           = GetBasicMangledName(basicType);
-    name.name[2]           = '\0';
+    
+    
+    size_t at = 0;
+
+    bool isMatrix = primarySize > 1 && secondarySize > 1;
+    bool isVector = primarySize > 1 && secondarySize == 1;
+
+    if (isMatrix)
+    {
+        name.name[at++] = 'm';
+    }
+    else if (isVector)
+    {
+        name.name[at++] = 'v';
+    }
+
+    {
+        const char *basicMangledName = GetBasicMangledName(basicType);
+        for (size_t i = 0; basicMangledName[i] != '\0'; ++i)
+        {
+            name.name[at++] = basicMangledName[i];
+        }
+    }
+
+    name.name[at++] = '0' + primarySize;
+    if (isMatrix)
+    {
+        name.name[at++] = 'x';
+        name.name[at++] = '0' + secondarySize;
+    }
+
+    name.name[at++] = ';';
+
+    name.name[at] = '\0';
     return name;
 }
 
@@ -190,6 +221,12 @@ constexpr const TType *GetForVec(TQualifier qualifier, unsigned char size)
             return GetBasic<EbtVoid>();
     }
 }
+
+const TType *GetForFloatImage(TBasicType basicType);
+
+const TType *GetForIntImage(TBasicType basicType);
+
+const TType *GetForUintImage(TBasicType basicType);
 
 }  
 

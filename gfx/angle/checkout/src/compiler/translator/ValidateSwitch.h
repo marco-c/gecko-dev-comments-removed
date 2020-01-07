@@ -18,6 +18,7 @@ class TIntermBlock;
 
 
 bool ValidateSwitchStatementList(TBasicType switchType,
+                                 int shaderVersion,
                                  TDiagnostics *diagnostics,
                                  TIntermBlock *statementList,
                                  const TSourceLoc &loc);

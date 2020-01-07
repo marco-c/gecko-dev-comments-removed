@@ -25,7 +25,7 @@
 
 
 
-#define ANGLE_SH_VERSION 197
+#define ANGLE_SH_VERSION 196
 
 enum ShShaderSpec
 {

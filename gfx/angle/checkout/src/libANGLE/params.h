@@ -14,7 +14,6 @@
 #include "common/Optional.h"
 #include "common/angleutils.h"
 #include "common/mathutil.h"
-#include "libANGLE/Error.h"
 #include "libANGLE/entry_points_enum_autogen.h"
 
 namespace gl
@@ -69,77 +68,27 @@ ANGLE_INLINE void ParamsBase::Factory(EntryPointParamType<EP> *objBuffer, ArgsT.
     new (objBuffer) EntryPointParamType<EP>(args...);
 }
 
-
-
-
-
-class DrawCallParams final : angle::NonCopyable
+class HasIndexRange : public ParamsBase
 {
   public:
     
-    DrawCallParams(GLenum mode, GLint firstVertex, GLsizei vertexCount, GLsizei instances);
-
-    
-    DrawCallParams(GLenum mode,
-                   GLint indexCount,
-                   GLenum type,
-                   const void *indices,
-                   GLint baseVertex,
-                   GLsizei instances);
-
-    
-    DrawCallParams(GLenum mode, const void *indirect);
-
-    
-    DrawCallParams(GLenum mode, GLenum type, const void *indirect);
-
-    GLenum mode() const;
-
-    
-    GLint firstVertex() const;
-
-    size_t vertexCount() const;
-    GLsizei indexCount() const;
-    GLint baseVertex() const;
-    GLenum type() const;
-    const void *indices() const;
-    GLsizei instances() const;
-    const void *indirect() const;
-
-    Error ensureIndexRangeResolved(const Context *context) const;
-    bool isDrawElements() const;
-    bool isDrawIndirect() const;
-
-    
-    const IndexRange &getIndexRange() const;
-
-    template <typename T>
-    T getClampedVertexCount() const;
+    HasIndexRange();
+    HasIndexRange(Context *context, GLsizei count, GLenum type, const void *indices);
 
     template <EntryPoint EP, typename... ArgsT>
-    static void Factory(DrawCallParams *objBuffer, ArgsT... args);
+    static void Factory(HasIndexRange *objBuffer, ArgsT... args);
 
-    ANGLE_PARAM_TYPE_INFO(DrawCallParams, ParamsBase);
+    const Optional<IndexRange> &getIndexRange() const;
+
+    ANGLE_PARAM_TYPE_INFO(HasIndexRange, ParamsBase);
 
   private:
-    GLenum mMode;
-    mutable Optional<IndexRange> mIndexRange;
-    mutable GLint mFirstVertex;
-    mutable size_t mVertexCount;
-    GLint mIndexCount;
-    GLint mBaseVertex;
+    Context *mContext;
+    GLsizei mCount;
     GLenum mType;
-    const void *mIndices;
-    GLsizei mInstances;
-    const void *mIndirect;
+    const GLvoid *mIndices;
+    mutable Optional<IndexRange> mIndexRange;
 };
-
-template <typename T>
-T DrawCallParams::getClampedVertexCount() const
-{
-    constexpr size_t kMax = static_cast<size_t>(std::numeric_limits<T>::max());
-    return static_cast<T>(mVertexCount > kMax ? kMax : mVertexCount);
-}
 
 
 
@@ -154,118 +103,59 @@ template<> struct EntryPointParam<EntryPoint::NAME> \
     \
 template<> inline void CLASS::Factory<EntryPoint::NAME>(__VA_ARGS__)
 
-ANGLE_ENTRY_POINT_FUNC(DrawArrays,
-                       DrawCallParams,
-                       DrawCallParams *objBuffer,
-                       Context *context,
-                       GLenum mode,
-                       GLint first,
-                       GLsizei count)
-{
-    return ParamsBase::Factory<EntryPoint::DrawArrays>(objBuffer, mode, first, count, 0);
-}
-
-ANGLE_ENTRY_POINT_FUNC(DrawArraysInstanced,
-                       DrawCallParams,
-                       DrawCallParams *objBuffer,
-                       Context *context,
-                       GLenum mode,
-                       GLint first,
-                       GLsizei count,
-                       GLsizei instanceCount)
-{
-    return ParamsBase::Factory<EntryPoint::DrawArraysInstanced>(objBuffer, mode, first, count,
-                                                                instanceCount);
-}
-
-ANGLE_ENTRY_POINT_FUNC(DrawArraysInstancedANGLE,
-                       DrawCallParams,
-                       DrawCallParams *objBuffer,
-                       Context *context,
-                       GLenum mode,
-                       GLint first,
-                       GLsizei count,
-                       GLsizei instanceCount)
-{
-    return ParamsBase::Factory<EntryPoint::DrawArraysInstancedANGLE>(objBuffer, mode, first, count,
-                                                                     instanceCount);
-}
-
-ANGLE_ENTRY_POINT_FUNC(DrawArraysIndirect,
-                       DrawCallParams,
-                       DrawCallParams *objBuffer,
-                       Context *context,
-                       GLenum mode,
-                       const void *indirect)
-{
-    return ParamsBase::Factory<EntryPoint::DrawArraysIndirect>(objBuffer, mode, indirect);
-}
-
-ANGLE_ENTRY_POINT_FUNC(DrawElementsIndirect,
-                       DrawCallParams,
-                       DrawCallParams *objBuffer,
-                       Context *context,
-                       GLenum mode,
-                       GLenum type,
-                       const void *indirect)
-{
-    return ParamsBase::Factory<EntryPoint::DrawElementsIndirect>(objBuffer, mode, type, indirect);
-}
-
 ANGLE_ENTRY_POINT_FUNC(DrawElements,
-                       DrawCallParams,
-                       DrawCallParams *objBuffer,
+                       HasIndexRange,
+                       HasIndexRange *objBuffer,
                        Context *context,
-                       GLenum mode,
+                       GLenum ,
                        GLsizei count,
                        GLenum type,
                        const void *indices)
 {
-    return ParamsBase::Factory<EntryPoint::DrawElements>(objBuffer, mode, count, type, indices, 0,
-                                                         0);
+    return ParamsBase::Factory<EntryPoint::DrawElements>(objBuffer, context, count, type, indices);
 }
 
 ANGLE_ENTRY_POINT_FUNC(DrawElementsInstanced,
-                       DrawCallParams,
-                       DrawCallParams *objBuffer,
+                       HasIndexRange,
+                       HasIndexRange *objBuffer,
                        Context *context,
-                       GLenum mode,
+                       GLenum ,
                        GLsizei count,
                        GLenum type,
                        const void *indices,
-                       GLsizei instanceCount)
+                       GLsizei )
 {
-    return ParamsBase::Factory<EntryPoint::DrawElementsInstanced>(objBuffer, mode, count, type,
-                                                                  indices, 0, instanceCount);
+    return ParamsBase::Factory<EntryPoint::DrawElementsInstanced>(objBuffer, context, count, type,
+                                                                  indices);
 }
 
 ANGLE_ENTRY_POINT_FUNC(DrawElementsInstancedANGLE,
-                       DrawCallParams,
-                       DrawCallParams *objBuffer,
+                       HasIndexRange,
+                       HasIndexRange *objBuffer,
                        Context *context,
-                       GLenum mode,
+                       GLenum ,
                        GLsizei count,
                        GLenum type,
                        const void *indices,
-                       GLsizei instanceCount)
+                       GLsizei )
 {
-    return ParamsBase::Factory<EntryPoint::DrawElementsInstancedANGLE>(objBuffer, mode, count, type,
-                                                                       indices, 0, instanceCount);
+    return ParamsBase::Factory<EntryPoint::DrawElementsInstancedANGLE>(objBuffer, context, count,
+                                                                       type, indices);
 }
 
 ANGLE_ENTRY_POINT_FUNC(DrawRangeElements,
-                       DrawCallParams,
-                       DrawCallParams *objBuffer,
+                       HasIndexRange,
+                       HasIndexRange *objBuffer,
                        Context *context,
-                       GLenum mode,
+                       GLenum ,
                        GLuint ,
                        GLuint ,
                        GLsizei count,
                        GLenum type,
                        const void *indices)
 {
-    return ParamsBase::Factory<EntryPoint::DrawRangeElements>(objBuffer, mode, count, type, indices,
-                                                              0, 0);
+    return ParamsBase::Factory<EntryPoint::DrawRangeElements>(objBuffer, context, count, type,
+                                                              indices);
 }
 
 #undef ANGLE_ENTRY_POINT_FUNC

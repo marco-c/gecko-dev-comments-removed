@@ -12,7 +12,6 @@
 #include "common/angleutils.h"
 #include "common/mathutil.h"
 #include "libANGLE/Error.h"
-#include "libANGLE/Observer.h"
 #include "libANGLE/PackedGLEnums.h"
 
 #include <stdint.h>
@@ -25,10 +24,7 @@ class Context;
 
 namespace rx
 {
-
-
-
-class BufferImpl : public angle::Subject
+class BufferImpl : angle::NonCopyable
 {
   public:
     BufferImpl(const gl::BufferState &state) : mState(state) {}

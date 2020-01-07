@@ -419,8 +419,6 @@ class TParseContext : angle::NonCopyable
     TIntermBranch *addBranch(TOperator op, const TSourceLoc &loc);
     TIntermBranch *addBranch(TOperator op, TIntermTyped *expression, const TSourceLoc &loc);
 
-    void appendStatement(TIntermBlock *block, TIntermNode *statement);
-
     void checkTextureGather(TIntermAggregate *functionCall);
     void checkTextureOffsetConst(TIntermAggregate *functionCall);
     void checkImageMemoryAccessForBuiltinFunctions(TIntermAggregate *functionCall);
@@ -465,8 +463,6 @@ class TParseContext : angle::NonCopyable
     
     
     constexpr static size_t kAtomicCounterArrayStride = 4;
-
-    void markStaticReadIfSymbol(TIntermNode *node);
 
     
     int checkIndexLessThan(bool outOfRangeIndexIsError,
@@ -549,10 +545,11 @@ class TParseContext : angle::NonCopyable
                                         TIntermTyped *left,
                                         TIntermTyped *right,
                                         const TSourceLoc &loc);
-    TIntermTyped *createUnaryMath(TOperator op,
-                                  TIntermTyped *child,
-                                  const TSourceLoc &loc,
-                                  const TFunction *func);
+    TIntermBinary *createAssign(TOperator op,
+                                TIntermTyped *left,
+                                TIntermTyped *right,
+                                const TSourceLoc &loc);
+    TIntermTyped *createUnaryMath(TOperator op, TIntermTyped *child, const TSourceLoc &loc);
 
     TIntermTyped *addMethod(TFunctionLookup *fnCall, const TSourceLoc &loc);
     TIntermTyped *addConstructor(TFunctionLookup *fnCall, const TSourceLoc &line);
@@ -609,6 +606,10 @@ class TParseContext : angle::NonCopyable
     TDirectiveHandler mDirectiveHandler;
     pp::Preprocessor mPreprocessor;
     void *mScanner;
+    bool mUsesFragData;  
+    bool mUsesFragColor;
+    bool mUsesSecondaryOutputs;  
+                                 
     int mMinProgramTexelOffset;
     int mMaxProgramTexelOffset;
 
@@ -641,6 +642,10 @@ class TParseContext : angle::NonCopyable
     int mGeometryShaderMaxVertices;
     int mMaxGeometryShaderInvocations;
     int mMaxGeometryShaderMaxVertices;
+
+    
+    
+    const TVariable *mGlInVariableWithArraySize;
 };
 
 int PaParseStrings(size_t count,

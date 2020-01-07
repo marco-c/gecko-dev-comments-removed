@@ -299,33 +299,22 @@ gl::Error IndexDataManager::getStreamingIndexBuffer(GLenum destinationIndexType,
     return gl::NoError();
 }
 
-gl::Error GetIndexTranslationDestType(const gl::Context *context,
-                                      const gl::DrawCallParams &drawCallParams,
-                                      bool usePrimitiveRestartWorkaround,
-                                      GLenum *destTypeOut)
+GLenum GetIndexTranslationDestType(GLenum srcType,
+                                   const gl::HasIndexRange &lazyIndexRange,
+                                   bool usePrimitiveRestartWorkaround)
 {
     
     
     if (usePrimitiveRestartWorkaround)
     {
-        
-        if (drawCallParams.isDrawIndirect())
+        const gl::IndexRange &indexRange = lazyIndexRange.getIndexRange().value();
+        if (indexRange.end == gl::GetPrimitiveRestartIndex(srcType))
         {
-            *destTypeOut = GL_UNSIGNED_INT;
-            return gl::NoError();
-        }
-
-        ANGLE_TRY(drawCallParams.ensureIndexRangeResolved(context));
-        const gl::IndexRange &indexRange = drawCallParams.getIndexRange();
-        if (indexRange.end == gl::GetPrimitiveRestartIndex(drawCallParams.type()))
-        {
-            *destTypeOut = GL_UNSIGNED_INT;
-            return gl::NoError();
+            return GL_UNSIGNED_INT;
         }
     }
 
-    *destTypeOut = (drawCallParams.type() == GL_UNSIGNED_INT) ? GL_UNSIGNED_INT : GL_UNSIGNED_SHORT;
-    return gl::NoError();
+    return (srcType == GL_UNSIGNED_INT) ? GL_UNSIGNED_INT : GL_UNSIGNED_SHORT;
 }
 
 }  

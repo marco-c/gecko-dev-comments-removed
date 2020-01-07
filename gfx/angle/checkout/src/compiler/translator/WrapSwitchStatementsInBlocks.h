@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+#ifndef COMPILER_TRANSLATOR_WRAPSWITCHSTATEMENTSINBLOCKS_H_
+#define COMPILER_TRANSLATOR_WRAPSWITCHSTATEMENTSINBLOCKS_H_
+
+namespace sh
+{
+
+class TIntermBlock;
+
+
+bool WrapSwitchStatementsInBlocks(TIntermBlock *root);
+
+}  
+
+#endif  

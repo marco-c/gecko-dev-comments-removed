@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+#ifndef COMPILER_TRANSLATOR_REMOVEUNREFERENCEDVARIABLES_H_
+#define COMPILER_TRANSLATOR_REMOVEUNREFERENCEDVARIABLES_H_
+
+namespace sh
+{
+
+class TIntermBlock;
+class TSymbolTable;
+
+void RemoveUnreferencedVariables(TIntermBlock *root, TSymbolTable *symbolTable);
+
+}  
+
+#endif  

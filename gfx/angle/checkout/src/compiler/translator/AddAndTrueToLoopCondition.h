@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+#ifndef COMPILER_TRANSLATOR_ADDANDTRUETOLOOPCONDITION_H_
+#define COMPILER_TRANSLATOR_ADDANDTRUETOLOOPCONDITION_H_
+
+class TIntermNode;
+namespace sh
+{
+
+void AddAndTrueToLoopCondition(TIntermNode *root);
+
+}  
+
+#endif  

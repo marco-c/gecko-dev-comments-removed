@@ -15,33 +15,6 @@
 namespace sh
 {
 
-namespace
-{
-
-void DisambiguateFunctionNameForParameterType(const TType &paramType,
-                                              TString *disambiguatingStringOut)
-{
-    
-    
-    
-    if (paramType.getObjectSize() == 4 && paramType.getBasicType() == EbtFloat)
-    {
-        
-        
-        
-        *disambiguatingStringOut += "_" + TypeString(paramType);
-    }
-    else if (paramType.getBasicType() == EbtStruct)
-    {
-        
-        
-        ASSERT(paramType.getStruct()->symbolType() != SymbolType::Empty);
-        *disambiguatingStringOut += "_" + TypeString(paramType);
-    }
-}
-
-}  
-
 const char *SamplerString(const TBasicType type)
 {
     if (IsShadowSampler(type))
@@ -829,10 +802,8 @@ TString Decorate(const ImmutableString &string)
 
 TString DecorateVariableIfNeeded(const TVariable &variable)
 {
-    if (variable.symbolType() == SymbolType::AngleInternal ||
-        variable.symbolType() == SymbolType::Empty)
+    if (variable.symbolType() == SymbolType::AngleInternal)
     {
-        
         const ImmutableString &name = variable.name();
         
         ASSERT(!name.beginsWith("f_"));
@@ -1054,26 +1025,29 @@ const char *QualifierString(TQualifier qualifier)
     return "";
 }
 
-TString DisambiguateFunctionName(const TFunction *func)
+TString DisambiguateFunctionName(const TIntermSequence *parameters)
 {
     TString disambiguatingString;
-    size_t paramCount = func->getParamCount();
-    for (size_t i = 0; i < paramCount; ++i)
+    for (auto parameter : *parameters)
     {
-        DisambiguateFunctionNameForParameterType(func->getParam(i)->getType(),
-                                                 &disambiguatingString);
-    }
-    return disambiguatingString;
-}
-
-TString DisambiguateFunctionName(const TIntermSequence *args)
-{
-    TString disambiguatingString;
-    for (TIntermNode *arg : *args)
-    {
-        ASSERT(arg->getAsTyped());
-        DisambiguateFunctionNameForParameterType(arg->getAsTyped()->getType(),
-                                                 &disambiguatingString);
+        const TType &paramType = parameter->getAsTyped()->getType();
+        
+        
+        
+        if (paramType.getObjectSize() == 4 && paramType.getBasicType() == EbtFloat)
+        {
+            
+            
+            
+            disambiguatingString += "_" + TypeString(paramType);
+        }
+        else if (paramType.getBasicType() == EbtStruct)
+        {
+            
+            
+            ASSERT(paramType.getStruct()->symbolType() != SymbolType::Empty);
+            disambiguatingString += "_" + TypeString(paramType);
+        }
     }
     return disambiguatingString;
 }

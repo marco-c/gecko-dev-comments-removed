@@ -95,12 +95,15 @@
 
 
 
+
+
 #if defined(_WIN32) && !defined(__SCITECH_SNAP__)
 #   define KHRONOS_APICALL __declspec(dllimport)
 #elif defined (__SYMBIAN32__)
 #   define KHRONOS_APICALL IMPORT_C
 #elif defined(__ANDROID__)
-#   define KHRONOS_APICALL __attribute__((visibility("default")))
+#   include <sys/cdefs.h>
+#   define KHRONOS_APICALL __attribute__((visibility("default"))) __NDK_FPABI__
 #else
 #   define KHRONOS_APICALL
 #endif

@@ -48,10 +48,23 @@ bool numeric_lex_int(const std::string &str, IntType *value)
 template <typename FloatType>
 bool numeric_lex_float(const std::string &str, FloatType *value)
 {
+
+
+
+
+
+#if defined(ANGLE_PLATFORM_ANDROID) && __x86_64__
+    *value = strtod(str.c_str(), nullptr);
+    return errno != ERANGE;
+#else
+    std::istringstream stream(str);
     
     
-    *value = static_cast<FloatType>(strtod(str.c_str(), nullptr));
-    return errno != ERANGE && std::isfinite(*value);
+    stream.imbue(std::locale::classic());
+
+    stream >> (*value);
+    return !stream.fail() && std::isfinite(*value);
+#endif
 }
 
 }  

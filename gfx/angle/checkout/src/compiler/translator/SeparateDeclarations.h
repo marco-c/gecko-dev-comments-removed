@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef COMPILER_TRANSLATOR_SEPARATEDECLARATIONS_H_
+#define COMPILER_TRANSLATOR_SEPARATEDECLARATIONS_H_
+
+namespace sh
+{
+class TIntermNode;
+
+void SeparateDeclarations(TIntermNode *root);
+}  
+
+#endif  

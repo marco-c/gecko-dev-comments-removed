@@ -124,12 +124,9 @@ class BindingPointer
     {
         
         if (newObject != nullptr) reinterpret_cast<const RefCountObjectNoID*>(newObject)->addRef();
-        
-        
-        ObjectType *oldObject = mObject;
+        if (mObject != nullptr)
+            reinterpret_cast<RefCountObjectNoID *>(mObject)->release(context);
         mObject = newObject;
-        if (oldObject != nullptr)
-            reinterpret_cast<RefCountObjectNoID *>(oldObject)->release(context);
     }
 
     ObjectType *get() const { return mObject; }

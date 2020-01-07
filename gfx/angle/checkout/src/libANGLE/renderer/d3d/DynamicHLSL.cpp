@@ -460,8 +460,8 @@ void DynamicHLSL::generateShaderLinkHLSL(const gl::Context *context,
     ASSERT(pixelHLSL->empty() && vertexHLSL->empty());
 
     const auto &data                   = context->getContextState();
-    gl::Shader *vertexShaderGL         = programData.getAttachedShader(ShaderType::Vertex);
-    gl::Shader *fragmentShaderGL       = programData.getAttachedShader(ShaderType::Fragment);
+    gl::Shader *vertexShaderGL         = programData.getAttachedVertexShader();
+    gl::Shader *fragmentShaderGL       = programData.getAttachedFragmentShader();
     const ShaderD3D *fragmentShader    = GetImplAs<ShaderD3D>(fragmentShaderGL);
     const int shaderModel              = mRenderer->getMajorShaderModel();
 
@@ -491,7 +491,7 @@ void DynamicHLSL::generateShaderLinkHLSL(const gl::Context *context,
     
     vertexStream << "\n" << std::string(VERTEX_ATTRIBUTE_STUB_STRING) << "\n";
 
-    const auto &vertexBuiltins = builtinsD3D[gl::ShaderType::Vertex];
+    const auto &vertexBuiltins = builtinsD3D[gl::SHADER_VERTEX];
 
     
     vertexStream << "struct VS_OUTPUT\n";
@@ -657,7 +657,7 @@ void DynamicHLSL::generateShaderLinkHLSL(const gl::Context *context,
                  << "    return output;\n"
                  << "}\n";
 
-    const auto &pixelBuiltins = builtinsD3D[gl::ShaderType::Fragment];
+    const auto &pixelBuiltins = builtinsD3D[gl::SHADER_FRAGMENT];
 
     std::ostringstream pixelStream;
     pixelStream << fragmentShaderGL->getTranslatedSource(context);
@@ -794,7 +794,7 @@ void DynamicHLSL::generateShaderLinkHLSL(const gl::Context *context,
 
         
         
-        if (packedVarying.vertexOnly || !varying.active)
+        if (packedVarying.vertexOnly || !varying.staticUse)
             continue;
 
         pixelStream << "    ";
@@ -851,7 +851,7 @@ void DynamicHLSL::generateShaderLinkHLSL(const gl::Context *context,
 std::string DynamicHLSL::generateComputeShaderLinkHLSL(const gl::Context *context,
                                                        const gl::ProgramState &programData) const
 {
-    gl::Shader *computeShaderGL = programData.getAttachedShader(ShaderType::Compute);
+    gl::Shader *computeShaderGL = programData.getAttachedComputeShader();
     std::stringstream computeStream;
     std::string translatedSource = computeShaderGL->getTranslatedSource(context);
     computeStream << translatedSource;
@@ -931,14 +931,14 @@ std::string DynamicHLSL::generateGeometryShaderPreamble(const VaryingPacking &va
 
     std::ostringstream preambleStream;
 
-    const auto &vertexBuiltins = builtinsD3D[gl::ShaderType::Vertex];
+    const auto &vertexBuiltins = builtinsD3D[gl::SHADER_VERTEX];
 
     preambleStream << "struct GS_INPUT\n";
     generateVaryingLinkHLSL(varyingPacking, vertexBuiltins, builtinsD3D.usesPointSize(),
                             preambleStream);
     preambleStream << "\n"
                    << "struct GS_OUTPUT\n";
-    generateVaryingLinkHLSL(varyingPacking, builtinsD3D[gl::ShaderType::Geometry],
+    generateVaryingLinkHLSL(varyingPacking, builtinsD3D[gl::SHADER_GEOMETRY],
                             builtinsD3D.usesPointSize(), preambleStream);
     preambleStream
         << "\n"
@@ -956,8 +956,8 @@ std::string DynamicHLSL::generateGeometryShaderPreamble(const VaryingPacking &va
         preambleStream << "    output.gl_ViewID_OVR = input.gl_ViewID_OVR;\n";
         if (selectViewInVS)
         {
-            ASSERT(builtinsD3D[gl::ShaderType::Geometry].glViewportIndex.enabled &&
-                   builtinsD3D[gl::ShaderType::Geometry].glLayer.enabled);
+            ASSERT(builtinsD3D[gl::SHADER_GEOMETRY].glViewportIndex.enabled &&
+                   builtinsD3D[gl::SHADER_GEOMETRY].glLayer.enabled);
 
             
             
@@ -989,8 +989,8 @@ std::string DynamicHLSL::generateGeometryShaderPreamble(const VaryingPacking &va
 
     if (hasANGLEMultiviewEnabled && !selectViewInVS)
     {
-        ASSERT(builtinsD3D[gl::ShaderType::Geometry].glViewportIndex.enabled &&
-               builtinsD3D[gl::ShaderType::Geometry].glLayer.enabled);
+        ASSERT(builtinsD3D[gl::SHADER_GEOMETRY].glViewportIndex.enabled &&
+               builtinsD3D[gl::SHADER_GEOMETRY].glLayer.enabled);
 
         
         
@@ -1286,7 +1286,7 @@ void DynamicHLSL::getPixelShaderOutputKey(const gl::ContextState &data,
             const std::string &elementString =
                 (outputVariable.isArray() ? Str(outputLocation.arrayIndex) : "");
 
-            ASSERT(outputVariable.active);
+            ASSERT(outputVariable.staticUse);
 
             PixelShaderOutputVariable outputKeyVariable;
             outputKeyVariable.type        = outputVariable.type;
@@ -1329,11 +1329,11 @@ void BuiltinVarying::enable(const std::string &semanticVal, unsigned int indexVa
 BuiltinVaryingsD3D::BuiltinVaryingsD3D(const ProgramD3DMetadata &metadata,
                                        const VaryingPacking &packing)
 {
-    updateBuiltins(gl::ShaderType::Vertex, metadata, packing);
-    updateBuiltins(gl::ShaderType::Fragment, metadata, packing);
+    updateBuiltins(gl::SHADER_VERTEX, metadata, packing);
+    updateBuiltins(gl::SHADER_FRAGMENT, metadata, packing);
     if (metadata.getRendererMajorShaderModel() >= 4)
     {
-        updateBuiltins(gl::ShaderType::Geometry, metadata, packing);
+        updateBuiltins(gl::SHADER_GEOMETRY, metadata, packing);
     }
 }
 
@@ -1348,13 +1348,13 @@ void BuiltinVaryingsD3D::updateBuiltins(gl::ShaderType shaderType,
 
     unsigned int reservedSemanticIndex = packing.getMaxSemanticIndex();
 
-    BuiltinInfo *builtins = &mBuiltinInfo[static_cast<size_t>(shaderType)];
+    BuiltinInfo *builtins = &mBuiltinInfo[shaderType];
 
     if (metadata.getRendererMajorShaderModel() >= 4)
     {
         builtins->dxPosition.enableSystem("SV_Position");
     }
-    else if (shaderType == gl::ShaderType::Fragment)
+    else if (shaderType == gl::SHADER_FRAGMENT)
     {
         builtins->dxPosition.enableSystem("VPOS");
     }
@@ -1373,8 +1373,8 @@ void BuiltinVaryingsD3D::updateBuiltins(gl::ShaderType shaderType,
         builtins->glFragCoord.enable(userSemantic, reservedSemanticIndex++);
     }
 
-    if (shaderType == gl::ShaderType::Vertex ? metadata.addsPointCoordToVertexShader()
-                                             : metadata.usesPointCoord())
+    if (shaderType == gl::SHADER_VERTEX ? metadata.addsPointCoordToVertexShader()
+                                        : metadata.usesPointCoord())
     {
         
         
@@ -1388,7 +1388,7 @@ void BuiltinVaryingsD3D::updateBuiltins(gl::ShaderType shaderType,
         }
     }
 
-    if (shaderType == gl::ShaderType::Vertex && metadata.hasANGLEMultiviewEnabled())
+    if (shaderType == gl::SHADER_VERTEX && metadata.hasANGLEMultiviewEnabled())
     {
         builtins->glViewIDOVR.enable(userSemantic, reservedSemanticIndex++);
         if (metadata.canSelectViewInVertexShader())
@@ -1398,12 +1398,12 @@ void BuiltinVaryingsD3D::updateBuiltins(gl::ShaderType shaderType,
         }
     }
 
-    if (shaderType == gl::ShaderType::Fragment && metadata.hasANGLEMultiviewEnabled())
+    if (shaderType == gl::SHADER_FRAGMENT && metadata.hasANGLEMultiviewEnabled())
     {
         builtins->glViewIDOVR.enable(userSemantic, reservedSemanticIndex++);
     }
 
-    if (shaderType == gl::ShaderType::Geometry && metadata.hasANGLEMultiviewEnabled())
+    if (shaderType == gl::SHADER_GEOMETRY && metadata.hasANGLEMultiviewEnabled())
     {
         
         
@@ -1418,7 +1418,7 @@ void BuiltinVaryingsD3D::updateBuiltins(gl::ShaderType shaderType,
 
     
     if (metadata.usesSystemValuePointSize() &&
-        (shaderType != gl::ShaderType::Fragment || metadata.getRendererMajorShaderModel() >= 4))
+        (shaderType != gl::SHADER_FRAGMENT || metadata.getRendererMajorShaderModel() >= 4))
     {
         builtins->glPointSize.enableSystem("PSIZE");
     }

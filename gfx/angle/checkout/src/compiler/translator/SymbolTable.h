@@ -30,6 +30,7 @@
 
 
 
+#include <array>
 #include <memory>
 
 #include "common/angleutils.h"
@@ -38,10 +39,11 @@
 #include "compiler/translator/InfoSink.h"
 #include "compiler/translator/IntermNode.h"
 #include "compiler/translator/Symbol.h"
-#include "compiler/translator/SymbolTable_autogen.h"
 
 namespace sh
 {
+
+
 
 
 typedef int ESymbolLevel;
@@ -53,15 +55,18 @@ const int ESSL3_1_BUILTINS   = 3;
 
 const int GLSL_BUILTINS      = 4;
 const int LAST_BUILTIN_LEVEL = GLSL_BUILTINS;
+const int GLOBAL_LEVEL       = 5;
 
 struct UnmangledBuiltIn
 {
+    constexpr UnmangledBuiltIn() : extension(TExtension::UNDEFINED) {}
+
     constexpr UnmangledBuiltIn(TExtension extension) : extension(extension) {}
 
     TExtension extension;
 };
 
-class TSymbolTable : angle::NonCopyable, TSymbolTableBase
+class TSymbolTable : angle::NonCopyable
 {
   public:
     TSymbolTable();
@@ -71,16 +76,22 @@ class TSymbolTable : angle::NonCopyable, TSymbolTableBase
 
     ~TSymbolTable();
 
-    bool isEmpty() const;
-    bool atGlobalLevel() const;
+    
+    
+    
+    bool isEmpty() const { return mTable.empty(); }
+    bool atBuiltInLevel() const { return currentLevel() <= LAST_BUILTIN_LEVEL; }
+    bool atGlobalLevel() const { return currentLevel() == GLOBAL_LEVEL; }
 
     void push();
     void pop();
 
     
     
-    bool declare(TSymbol *symbol);
-
+    
+    bool declareVariable(TVariable *variable);
+    bool declareStructType(TStructure *str);
+    bool declareInterfaceBlock(TInterfaceBlock *interfaceBlock);
     
     void declareUserDefinedFunction(TFunction *function, bool insertUnmangledName);
 
@@ -91,25 +102,16 @@ class TSymbolTable : angle::NonCopyable, TSymbolTableBase
                                                              bool *wasDefinedOut);
 
     
-    bool setGlInArraySize(unsigned int inputArraySize);
-    TVariable *getGlInVariableWithArraySize() const;
-
-    const TVariable *gl_FragData() const;
-    const TVariable *gl_SecondaryFragDataEXT() const;
-
-    void markStaticRead(const TVariable &variable);
-    void markStaticWrite(const TVariable &variable);
-
-    
-    bool isStaticallyUsed(const TVariable &variable) const;
-
-    
     
     const TSymbol *find(const ImmutableString &name, int shaderVersion) const;
 
     const TSymbol *findGlobal(const ImmutableString &name) const;
 
     const TSymbol *findBuiltIn(const ImmutableString &name, int shaderVersion) const;
+
+    const TSymbol *findBuiltIn(const ImmutableString &name,
+                               int shaderVersion,
+                               bool includeGLSLBuiltins) const;
 
     void setDefaultPrecision(TBasicType type, TPrecision prec);
 
@@ -144,16 +146,138 @@ class TSymbolTable : angle::NonCopyable, TSymbolTableBase
     friend class TSymbolUniqueId;
     int nextUniqueIdValue();
 
+    class TSymbolTableBuiltInLevel;
     class TSymbolTableLevel;
+
+    void pushBuiltInLevel();
+
+    ESymbolLevel currentLevel() const
+    {
+        return static_cast<ESymbolLevel>(mTable.size() + LAST_BUILTIN_LEVEL);
+    }
+
+    
+    
+    
+    TVariable *insertVariable(ESymbolLevel level, const ImmutableString &name, const TType *type);
+    void insertVariableExt(ESymbolLevel level,
+                           TExtension ext,
+                           const ImmutableString &name,
+                           const TType *type);
+    bool insertVariable(ESymbolLevel level, TVariable *variable);
+    bool insertStructType(ESymbolLevel level, TStructure *str);
+    bool insertInterfaceBlock(ESymbolLevel level, TInterfaceBlock *interfaceBlock);
+
+    template <TPrecision precision>
+    bool insertConstInt(ESymbolLevel level, const ImmutableString &name, int value);
+
+    template <TPrecision precision>
+    bool insertConstIntExt(ESymbolLevel level,
+                           TExtension ext,
+                           const ImmutableString &name,
+                           int value);
+
+    template <TPrecision precision>
+    bool insertConstIvec3(ESymbolLevel level,
+                          const ImmutableString &name,
+                          const std::array<int, 3> &values);
+
+    
+    
+    void insertBuiltIn(ESymbolLevel level,
+                       TOperator op,
+                       TExtension ext,
+                       const TType *rvalue,
+                       const char *name,
+                       const TType *ptype1,
+                       const TType *ptype2 = 0,
+                       const TType *ptype3 = 0,
+                       const TType *ptype4 = 0,
+                       const TType *ptype5 = 0);
+
+    void insertBuiltIn(ESymbolLevel level,
+                       const TType *rvalue,
+                       const char *name,
+                       const TType *ptype1,
+                       const TType *ptype2 = 0,
+                       const TType *ptype3 = 0,
+                       const TType *ptype4 = 0,
+                       const TType *ptype5 = 0)
+    {
+        insertUnmangledBuiltIn(name, TExtension::UNDEFINED, level);
+        insertBuiltIn(level, EOpCallBuiltInFunction, TExtension::UNDEFINED, rvalue, name, ptype1,
+                      ptype2, ptype3, ptype4, ptype5);
+    }
+
+    void insertBuiltIn(ESymbolLevel level,
+                       TExtension ext,
+                       const TType *rvalue,
+                       const char *name,
+                       const TType *ptype1,
+                       const TType *ptype2 = 0,
+                       const TType *ptype3 = 0,
+                       const TType *ptype4 = 0,
+                       const TType *ptype5 = 0)
+    {
+        insertUnmangledBuiltIn(name, ext, level);
+        insertBuiltIn(level, EOpCallBuiltInFunction, ext, rvalue, name, ptype1, ptype2, ptype3,
+                      ptype4, ptype5);
+    }
+
+    void insertBuiltInOp(ESymbolLevel level,
+                         TOperator op,
+                         const TType *rvalue,
+                         const TType *ptype1,
+                         const TType *ptype2 = 0,
+                         const TType *ptype3 = 0,
+                         const TType *ptype4 = 0,
+                         const TType *ptype5 = 0);
+
+    void insertBuiltInOp(ESymbolLevel level,
+                         TOperator op,
+                         TExtension ext,
+                         const TType *rvalue,
+                         const TType *ptype1,
+                         const TType *ptype2 = 0,
+                         const TType *ptype3 = 0,
+                         const TType *ptype4 = 0,
+                         const TType *ptype5 = 0);
+
+    void insertBuiltInFunctionNoParameters(ESymbolLevel level,
+                                           TOperator op,
+                                           const TType *rvalue,
+                                           const char *name);
+
+    void insertBuiltInFunctionNoParametersExt(ESymbolLevel level,
+                                              TExtension ext,
+                                              TOperator op,
+                                              const TType *rvalue,
+                                              const char *name);
+
+    TVariable *insertVariable(ESymbolLevel level,
+                              const ImmutableString &name,
+                              const TType *type,
+                              SymbolType symbolType);
+
+    bool insert(ESymbolLevel level, TSymbol *symbol);
 
     TFunction *findUserDefinedFunction(const ImmutableString &name) const;
 
+    
+    
+    void insertUnmangledBuiltIn(const char *name, TExtension ext, ESymbolLevel level);
+
+    bool hasUnmangledBuiltInAtLevel(const char *name, ESymbolLevel level);
+
     void initSamplerDefaultPrecision(TBasicType samplerType);
 
-    void initializeBuiltInVariables(sh::GLenum shaderType,
+    void initializeBuiltInFunctions(sh::GLenum type);
+    void initializeBuiltInVariables(sh::GLenum type,
                                     ShShaderSpec spec,
                                     const ShBuiltInResources &resources);
+    void markBuiltInInitializationFinished();
 
+    std::vector<std::unique_ptr<TSymbolTableBuiltInLevel>> mBuiltInTable;
     std::vector<std::unique_ptr<TSymbolTableLevel>> mTable;
 
     
@@ -163,24 +287,10 @@ class TSymbolTable : angle::NonCopyable, TSymbolTableBase
 
     int mUniqueIdCounter;
 
-    static const int kLastBuiltInId;
-
-    sh::GLenum mShaderType;
-    ShBuiltInResources mResources;
-
-    struct VariableMetadata
-    {
-        VariableMetadata();
-        bool staticRead;
-        bool staticWrite;
-    };
-
-    
-    std::map<int, VariableMetadata> mVariableMetadata;
-
     
     
-    TVariable *mGlInVariableWithArraySize;
+    
+    int mUserDefinedUniqueIdsStart;
 };
 
 }  

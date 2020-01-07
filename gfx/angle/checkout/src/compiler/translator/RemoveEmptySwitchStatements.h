@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+#ifndef COMPILER_TRANSLATOR_REMOVEEMPTYSWITCHSTATEMENTS_H_
+#define COMPILER_TRANSLATOR_REMOVEEMPTYSWITCHSTATEMENTS_H_
+
+namespace sh
+{
+class TIntermBlock;
+
+void RemoveEmptySwitchStatements(TIntermBlock *root);
+}
+
+#endif  

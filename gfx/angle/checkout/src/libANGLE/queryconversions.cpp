@@ -10,8 +10,8 @@
 
 #include <vector>
 
-#include "common/utilities.h"
 #include "libANGLE/Context.h"
+#include "common/utilities.h"
 
 namespace gl
 {
@@ -32,21 +32,13 @@ QueryT CastFromStateValueToInt(GLenum pname, NativeT value)
     if (nativeType == GL_FLOAT)
     {
         
-        
-        switch (pname)
+        if (pname == GL_DEPTH_RANGE || pname == GL_COLOR_CLEAR_VALUE || pname == GL_DEPTH_CLEAR_VALUE || pname == GL_BLEND_COLOR)
         {
-            case GL_DEPTH_RANGE:
-            case GL_COLOR_CLEAR_VALUE:
-            case GL_DEPTH_CLEAR_VALUE:
-            case GL_BLEND_COLOR:
-            
-            
-            
-            
-            case GL_ALPHA_TEST_REF:
-                return clampCast<QueryT>(ExpandFloatToInteger(static_cast<GLfloat>(value)));
-            default:
-                return clampCast<QueryT>(std::round(value));
+            return clampCast<QueryT>(ExpandFloatToInteger(static_cast<GLfloat>(value)));
+        }
+        else
+        {
+            return clampCast<QueryT>(std::round(value));
         }
     }
 
@@ -159,11 +151,8 @@ template GLuint CastQueryValueTo<GLuint, GLint>(GLenum pname, GLint value);
 template GLuint CastQueryValueTo<GLuint, GLfloat>(GLenum pname, GLfloat value);
 
 template <typename QueryT>
-void CastStateValues(Context *context,
-                     GLenum nativeType,
-                     GLenum pname,
-                     unsigned int numParams,
-                     QueryT *outParams)
+void CastStateValues(Context *context, GLenum nativeType, GLenum pname,
+                     unsigned int numParams, QueryT *outParams)
 {
     if (nativeType == GL_INT)
     {
@@ -182,8 +171,7 @@ void CastStateValues(Context *context,
 
         for (unsigned int i = 0; i < numParams; ++i)
         {
-            outParams[i] =
-                (boolParams[i] == GL_FALSE ? static_cast<QueryT>(0) : static_cast<QueryT>(1));
+            outParams[i] = (boolParams[i] == GL_FALSE ? static_cast<QueryT>(0) : static_cast<QueryT>(1));
         }
     }
     else if (nativeType == GL_FLOAT)
@@ -206,8 +194,7 @@ void CastStateValues(Context *context,
             outParams[i] = CastFromStateValue<QueryT>(pname, int64Params[i]);
         }
     }
-    else
-        UNREACHABLE();
+    else UNREACHABLE();
 }
 
 
