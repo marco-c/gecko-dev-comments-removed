@@ -470,8 +470,6 @@ CacheRegisterAllocator::fixupAliasedInputs(MacroAssembler& masm)
             
             
             if (loc1.kind() == OperandLocation::ValueReg) {
-                MOZ_ASSERT_IF(loc2.kind() == OperandLocation::ValueReg,
-                              loc1 == loc2);
                 spillOperandToStack(masm, &loc2);
             } else {
                 MOZ_ASSERT(loc1.kind() == OperandLocation::PayloadReg);
