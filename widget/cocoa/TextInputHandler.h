@@ -1162,11 +1162,7 @@ public:
   
 
 
-
-
-
-
-  void InsertNewline();
+  void HandleCommand(Command aCommand);
 
   
 
