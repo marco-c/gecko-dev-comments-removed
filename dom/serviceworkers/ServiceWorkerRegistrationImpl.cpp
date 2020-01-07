@@ -87,12 +87,7 @@ void
 ServiceWorkerRegistrationMainThread::RegistrationRemovedInternal()
 {
   MOZ_ASSERT(NS_IsMainThread());
-  
-  
-  
-  if (mOuter && mOuter->GetOwner()) {
-    mOuter->GetOwner()->InvalidateServiceWorkerRegistration(mScope);
-  }
+
   StopListeningForEvents();
 
   
