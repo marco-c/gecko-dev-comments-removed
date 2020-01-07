@@ -25,14 +25,6 @@ class StyleSheet;
 
 namespace dom {
 
-
-
-
-
-
-
-
-
 class MediaList final : public nsISupports
                       , public nsWrapperCache
 {
