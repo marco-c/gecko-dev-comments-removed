@@ -95,7 +95,7 @@ typedef struct {
   bool lastButton;
 } ToolbarButtonGTKMetrics;
 
-#define TOOLBAR_BUTTONS 4
+#define TOOLBAR_BUTTONS 3
 typedef struct {
   bool initialized;
   ToolbarButtonGTKMetrics button[TOOLBAR_BUTTONS];
@@ -322,7 +322,12 @@ typedef enum {
   MOZ_GTK_HEADER_BAR_BUTTON_CLOSE,
   MOZ_GTK_HEADER_BAR_BUTTON_MINIMIZE,
   MOZ_GTK_HEADER_BAR_BUTTON_MAXIMIZE,
-  MOZ_GTK_HEADER_BAR_BUTTON_RESTORE,
+
+  
+
+
+
+  MOZ_GTK_HEADER_BAR_BUTTON_MAXIMIZE_RESTORE,
 
   MOZ_GTK_WIDGET_NODE_COUNT
 } WidgetNodeType;
@@ -582,7 +587,15 @@ GetToolbarButtonMetrics(WidgetNodeType aWidgetType);
 
 
 
-bool
-IsToolbarButtonEnabled(WidgetNodeType aWidgetType);
+
+
+
+
+
+
+
+
+int
+GetGtkHeaderBarButtonLayout(WidgetNodeType* aButtonLayout, int aMaxButtonNums);
 
 #endif

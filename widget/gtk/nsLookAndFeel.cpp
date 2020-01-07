@@ -1085,14 +1085,31 @@ nsLookAndFeel::EnsureInit()
     mCSDAvailable = (gtk_check_version(3, 10, 0) == nullptr &&
         nsWindow::GetCSDSupportLevel() != nsWindow::CSD_SUPPORT_NONE);
 
+    mCSDCloseButton = false;
+    mCSDMinimizeButton = false;
+    mCSDMaximizeButton = false;
+
     
     
-    mCSDCloseButton =
-        IsToolbarButtonEnabled(MOZ_GTK_HEADER_BAR_BUTTON_CLOSE);
-    mCSDMinimizeButton =
-        IsToolbarButtonEnabled(MOZ_GTK_HEADER_BAR_BUTTON_MINIMIZE);
-    mCSDMaximizeButton =
-        IsToolbarButtonEnabled(MOZ_GTK_HEADER_BAR_BUTTON_MAXIMIZE);
+    WidgetNodeType buttonLayout[TOOLBAR_BUTTONS];
+
+    int activeButtons =
+        GetGtkHeaderBarButtonLayout(buttonLayout, TOOLBAR_BUTTONS);
+    for (int i = 0; i < activeButtons; i++) {
+        switch(buttonLayout[i]) {
+        case MOZ_GTK_HEADER_BAR_BUTTON_MINIMIZE:
+            mCSDMinimizeButton = true;
+            break;
+        case MOZ_GTK_HEADER_BAR_BUTTON_MAXIMIZE:
+            mCSDMaximizeButton = true;
+            break;
+        case MOZ_GTK_HEADER_BAR_BUTTON_CLOSE:
+            mCSDCloseButton = true;
+            break;
+        default:
+            break;
+        }
+    }
 }
 
 

@@ -633,57 +633,115 @@ GetWidgetIconSurface(GtkWidget* aWidgetIcon, int aScale)
     g_object_get_data(G_OBJECT(aWidgetIcon), surfaceName.get());
 }
 
-
 static GtkWidget*
 CreateHeaderBarButton(WidgetNodeType aWidgetType)
 {
-  MOZ_ASSERT(gtk_check_version(3, 10, 0) == nullptr,
-             "GtkHeaderBar is only available on GTK 3.10+.");
-
   GtkWidget* widget = gtk_button_new();
-  gtk_container_add(GTK_CONTAINER(GetWidget(MOZ_GTK_HEADER_BAR)), widget);
+
+  
+  
+  NS_ASSERTION(sWidgetStorage[aWidgetType] == nullptr,
+               "Titlebar button is already created!");
+  sWidgetStorage[aWidgetType] = widget;
+
+  
+  
+  
+  gtk_widget_show(widget);
 
   GtkStyleContext* style = gtk_widget_get_style_context(widget);
   gtk_style_context_add_class(style, "titlebutton");
 
   GtkWidget *image = nullptr;
   switch (aWidgetType) {
-    case MOZ_GTK_HEADER_BAR_BUTTON_CLOSE:
-      gtk_style_context_add_class(style, "close");
-      image = gtk_image_new_from_icon_name("window-close-symbolic",
-                                          GTK_ICON_SIZE_MENU);
-      break;
-    case MOZ_GTK_HEADER_BAR_BUTTON_MINIMIZE:
-      gtk_style_context_add_class(style, "minimize");
-      image = gtk_image_new_from_icon_name("window-minimize-symbolic",
+     case MOZ_GTK_HEADER_BAR_BUTTON_CLOSE:
+       gtk_style_context_add_class(style, "close");
+       image = gtk_image_new_from_icon_name("window-close-symbolic",
                                            GTK_ICON_SIZE_MENU);
-      break;
-    case MOZ_GTK_HEADER_BAR_BUTTON_MAXIMIZE:
-      gtk_style_context_add_class(style, "maximize");
-      image = gtk_image_new_from_icon_name("window-maximize-symbolic",
-                                           GTK_ICON_SIZE_MENU);
-      break;
-    case MOZ_GTK_HEADER_BAR_BUTTON_RESTORE:
-      gtk_style_context_add_class(style, "maximize");
-      image = gtk_image_new_from_icon_name("window-restore-symbolic",
-                                           GTK_ICON_SIZE_MENU);
-      break;
-    default:
-      break;
+       break;
+     case MOZ_GTK_HEADER_BAR_BUTTON_MINIMIZE:
+       gtk_style_context_add_class(style, "minimize");
+       image = gtk_image_new_from_icon_name("window-minimize-symbolic",
+                                            GTK_ICON_SIZE_MENU);
+       break;
+
+     case MOZ_GTK_HEADER_BAR_BUTTON_MAXIMIZE:
+       gtk_style_context_add_class(style, "maximize");
+       image = gtk_image_new_from_icon_name("window-maximize-symbolic",
+                                            GTK_ICON_SIZE_MENU);
+       break;
+
+     case MOZ_GTK_HEADER_BAR_BUTTON_MAXIMIZE_RESTORE:
+       gtk_style_context_add_class(style, "maximize");
+       image = gtk_image_new_from_icon_name("window-restore-symbolic",
+                                            GTK_ICON_SIZE_MENU);
+       break;
+     default:
+       break;
+   }
+
+   gtk_widget_set_valign(widget, GTK_ALIGN_CENTER);
+   g_object_set(image, "use-fallback", TRUE, NULL);
+   gtk_container_add(GTK_CONTAINER (widget), image);
+
+   
+   
+   style = gtk_widget_get_style_context(image);
+   gtk_style_context_invalidate(style);
+
+   LoadWidgetIconPixbuf(image);
+
+   return widget;
+}
+
+static bool
+IsToolbarButtonEnabled(WidgetNodeType* aButtonLayout, int aButtonNums,
+                       WidgetNodeType aWidgetType)
+{
+    for (int i = 0; i < aButtonNums; i++) {
+      if (aButtonLayout[i] == aWidgetType) {
+        return true;
+      }
+    }
+    return false;
+}
+
+static void
+CreateHeaderBarButtons()
+{
+  MOZ_ASSERT(gtk_check_version(3, 10, 0) == nullptr,
+             "GtkHeaderBar is only available on GTK 3.10+.");
+
+  GtkWidget* headerBar = GetWidget(MOZ_GTK_HEADER_BAR);
+
+  gint buttonSpacing = 6;
+  g_object_get(headerBar, "spacing", &buttonSpacing, nullptr);
+
+  GtkWidget *buttonBox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, buttonSpacing);
+  gtk_container_add(GTK_CONTAINER(GetWidget(MOZ_GTK_HEADER_BAR)), buttonBox);
+
+  WidgetNodeType buttonLayout[TOOLBAR_BUTTONS];
+  int activeButtons =
+      GetGtkHeaderBarButtonLayout(buttonLayout, TOOLBAR_BUTTONS);
+
+  if (IsToolbarButtonEnabled(buttonLayout, activeButtons,
+                             MOZ_GTK_HEADER_BAR_BUTTON_MINIMIZE)) {
+    GtkWidget* button = CreateHeaderBarButton(MOZ_GTK_HEADER_BAR_BUTTON_MINIMIZE);
+    gtk_box_pack_start(GTK_BOX(buttonBox), button, FALSE, FALSE, 0);
   }
-
-  gtk_widget_set_valign(widget, GTK_ALIGN_CENTER);
-  g_object_set(image, "use-fallback", TRUE, NULL);
-  gtk_container_add(GTK_CONTAINER (widget), image);
-
-  
-  
-  style = gtk_widget_get_style_context(image);
-  gtk_style_context_invalidate(style);
-
-  LoadWidgetIconPixbuf(image);
-
-  return widget;
+  if (IsToolbarButtonEnabled(buttonLayout, activeButtons,
+                             MOZ_GTK_HEADER_BAR_BUTTON_MAXIMIZE)) {
+    GtkWidget* button = CreateHeaderBarButton(MOZ_GTK_HEADER_BAR_BUTTON_MAXIMIZE);
+    gtk_box_pack_start(GTK_BOX(buttonBox), button, FALSE, FALSE, 0);
+    
+    
+    CreateHeaderBarButton(MOZ_GTK_HEADER_BAR_BUTTON_MAXIMIZE_RESTORE);
+  }
+  if (IsToolbarButtonEnabled(buttonLayout, activeButtons,
+                             MOZ_GTK_HEADER_BAR_BUTTON_CLOSE)) {
+    GtkWidget* button = CreateHeaderBarButton(MOZ_GTK_HEADER_BAR_BUTTON_CLOSE);
+    gtk_box_pack_start(GTK_BOX(buttonBox), button, FALSE, FALSE, 0);
+  }
 }
 
 static GtkWidget*
@@ -774,8 +832,9 @@ CreateWidget(WidgetNodeType aWidgetType)
     case MOZ_GTK_HEADER_BAR_BUTTON_CLOSE:
     case MOZ_GTK_HEADER_BAR_BUTTON_MINIMIZE:
     case MOZ_GTK_HEADER_BAR_BUTTON_MAXIMIZE:
-    case MOZ_GTK_HEADER_BAR_BUTTON_RESTORE:
-      return CreateHeaderBarButton(aWidgetType);
+    case MOZ_GTK_HEADER_BAR_BUTTON_MAXIMIZE_RESTORE:
+      CreateHeaderBarButtons();
+      return sWidgetStorage[aWidgetType];
     default:
       
       return nullptr;
@@ -1214,6 +1273,12 @@ GetCssNodeStyleInternal(WidgetNodeType aNodeType)
       
       GtkWidget* widget = GetWidget(MOZ_GTK_NOTEBOOK);
       return gtk_widget_get_style_context(widget);
+    }
+    case MOZ_GTK_HEADER_BAR_BUTTON_MAXIMIZE_RESTORE:
+    {
+      NS_ASSERTION(false,
+          "MOZ_GTK_HEADER_BAR_BUTTON_RESTORE is used as an icon only!");
+      return nullptr;
     }
     default:
       return GetWidgetRootStyle(aNodeType);
