@@ -461,27 +461,6 @@ protected:
 
 
 
-
-
-
-class WorkerCheckAPIExposureOnMainThreadRunnable
-  : public WorkerMainThreadRunnable
-{
-public:
-  explicit
-  WorkerCheckAPIExposureOnMainThreadRunnable(WorkerPrivate* aWorkerPrivate);
-  virtual
-  ~WorkerCheckAPIExposureOnMainThreadRunnable();
-
-  
-  
-  bool Dispatch();
-};
-
-
-
-
-
 class MainThreadStopSyncLoopRunnable : public WorkerSyncRunnable
 {
   bool mResult;
