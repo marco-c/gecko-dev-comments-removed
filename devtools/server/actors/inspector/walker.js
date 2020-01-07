@@ -13,8 +13,15 @@ const {LongStringActor} = require("devtools/server/actors/string");
 const InspectorUtils = require("InspectorUtils");
 
 loader.lazyRequireGetter(this, "getFrameElement", "devtools/shared/layout/utils", true);
+loader.lazyRequireGetter(this, "isAfterPseudoElement", "devtools/shared/layout/utils", true);
 loader.lazyRequireGetter(this, "isAnonymous", "devtools/shared/layout/utils", true);
+loader.lazyRequireGetter(this, "isBeforePseudoElement", "devtools/shared/layout/utils", true);
+loader.lazyRequireGetter(this, "isDirectShadowHostChild", "devtools/shared/layout/utils", true);
+loader.lazyRequireGetter(this, "isShadowHost", "devtools/shared/layout/utils", true);
+loader.lazyRequireGetter(this, "isShadowRoot", "devtools/shared/layout/utils", true);
+loader.lazyRequireGetter(this, "isTemplateElement", "devtools/shared/layout/utils", true);
 loader.lazyRequireGetter(this, "loadSheet", "devtools/shared/layout/utils", true);
+
 loader.lazyRequireGetter(this, "throttle", "devtools/shared/throttle", true);
 
 loader.lazyRequireGetter(this, "allAnonymousContentTreeWalkerFilter", "devtools/server/actors/inspector/utils", true);
@@ -318,7 +325,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       actor.watchDocument(node, this.onMutations);
     }
 
-    if (actor.isShadowRoot) {
+    if (isShadowRoot(actor.rawNode)) {
       actor.watchDocument(node.ownerDocument, this.onMutations);
       actor.watchSlotchange(this.onSlotchange);
     }
@@ -438,7 +445,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     try {
       
       
-      const walker = node.isDirectShadowHostChild
+      const walker = isDirectShadowHostChild(node.rawNode)
         ? this.getNonAnonymousWalker(node.rawNode)
         : this.getDocumentWalker(node.rawNode);
       parent = walker.parentNode();
@@ -465,15 +472,16 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
   inlineTextChild: function(node) {
     
-    if (node.isBeforePseudoElement ||
-        node.isAfterPseudoElement ||
+    if (isBeforePseudoElement(node.rawNode) ||
+        isAfterPseudoElement(node.rawNode) ||
         node.rawNode.nodeType != Node.ELEMENT_NODE ||
         node.rawNode.children.length > 0) {
       return undefined;
     }
 
-    const walker = node.isDirectShadowHostChild ? this.getNonAnonymousWalker(node.rawNode)
-                                              : this.getDocumentWalker(node.rawNode);
+    const walker = isDirectShadowHostChild(node.rawNode)
+      ? this.getNonAnonymousWalker(node.rawNode)
+      : this.getDocumentWalker(node.rawNode);
     const firstChild = walker.firstChild();
 
     
@@ -654,14 +662,12 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       maxNodes = Number.MAX_VALUE;
     }
 
-    const {
-      isDirectShadowHostChild,
-      isShadowHost,
-      isShadowRoot,
-      isTemplateElement,
-    } = node;
+    const directShadowHostChild = isDirectShadowHostChild(node.rawNode);
+    const shadowHost = isShadowHost(node.rawNode);
+    const shadowRoot = isShadowRoot(node.rawNode);
+    const templateElement = isTemplateElement(node.rawNode);
 
-    if (isTemplateElement) {
+    if (templateElement) {
       
       
       const documentFragment = node.rawNode.content;
@@ -672,7 +678,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     
     
     let isUnslottedHostChild = false;
-    if (isDirectShadowHostChild) {
+    if (directShadowHostChild) {
       try {
         this.getDocumentWalker(node.rawNode, options.whatToShow, SKIP_TO_SIBLING);
       } catch (e) {
@@ -689,7 +695,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       
       const skipTo = SKIP_TO_SIBLING;
 
-      const useNonAnonymousWalker = isShadowRoot || isShadowHost || isUnslottedHostChild;
+      const useNonAnonymousWalker = shadowRoot || shadowHost || isUnslottedHostChild;
       if (useNonAnonymousWalker) {
         
         
@@ -711,7 +717,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     const firstChild = getFilteredWalker(rawNode).firstChild();
     const lastChild = getFilteredWalker(rawNode).lastChild();
 
-    if (!firstChild && !isShadowHost) {
+    if (!firstChild && !shadowHost) {
       
       return { hasFirst: true, hasLast: true, nodes: [] };
     }
@@ -765,7 +771,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       hasFirst = hasLast = true;
     }
 
-    if (isShadowHost) {
+    if (shadowHost) {
       
       const firstChildWalker = this.getDocumentWalker(node.rawNode);
       const first = firstChildWalker.firstChild();
