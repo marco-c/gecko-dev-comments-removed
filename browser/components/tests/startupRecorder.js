@@ -95,6 +95,21 @@ startupRecorder.prototype = {
       return;
     }
 
+    
+    
+    if (topic == firstPaintNotification) {
+      
+      
+      if (subject instanceof Ci.nsIXULWindow) {
+        subject = subject.QueryInterface(Ci.nsIInterfaceRequestor)
+                         .getInterface(Ci.nsIDOMWindow);
+      }
+
+      if (subject.document.documentElement.getAttribute("windowtype") != "navigator:browser") {
+        return;
+      }
+    }
+
     if (topic == "image-drawing" || topic == "image-loading") {
       this.data.images[topic].add(data);
       return;
@@ -104,7 +119,9 @@ startupRecorder.prototype = {
 
     if (topic == firstPaintNotification &&
         Services.prefs.getBoolPref("browser.startup.record", false)) {
-      win = Services.wm.getMostRecentWindow("navigator:browser");
+      
+      
+      win = subject;
       canvas = win.document.createElementNS("http://www.w3.org/1999/xhtml",
                                             "canvas");
       canvas.mozOpaque = true;
