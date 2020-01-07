@@ -347,7 +347,7 @@ IsCacheableGetPropCallNative(JSObject* obj, JSObject* holder, Shape* shape)
 
     
     
-    if (getter.jitInfo() && !getter.jitInfo()->needsOuterizedThisObject())
+    if (getter.hasJitInfo() && !getter.jitInfo()->needsOuterizedThisObject())
         return true;
 
     
@@ -849,7 +849,7 @@ GetPropIRGenerator::tryAttachWindowProxy(HandleObject obj, ObjOperandId objId, H
         
         JSFunction* callee = &shape->getterObject()->as<JSFunction>();
         MOZ_ASSERT(callee->isNative());
-        if (!callee->jitInfo() || callee->jitInfo()->needsOuterizedThisObject())
+        if (!callee->hasJitInfo() || callee->jitInfo()->needsOuterizedThisObject())
             return false;
 
         
@@ -3165,7 +3165,7 @@ IsCacheableSetPropCallNative(JSObject* obj, JSObject* holder, Shape* shape)
     if (setter.isClassConstructor())
         return false;
 
-    if (setter.jitInfo() && !setter.jitInfo()->needsOuterizedThisObject())
+    if (setter.hasJitInfo() && !setter.jitInfo()->needsOuterizedThisObject())
         return true;
 
     return !IsWindow(obj);
