@@ -864,6 +864,10 @@ public:
   
 
 
+  bool IsBlockedForFingerprintingResistance() const;
+  
+
+
   void SetDefaultComposed()
   {
     switch (mClass) {
