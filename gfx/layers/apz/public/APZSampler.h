@@ -75,12 +75,12 @@ public:
 
 
 
-  void AssertOnSamplerThread();
+  void AssertOnSamplerThread() const;
 
   
 
 
-  bool IsSamplerThread();
+  bool IsSamplerThread() const;
 
 protected:
   virtual ~APZSampler();

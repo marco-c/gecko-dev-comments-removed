@@ -13,6 +13,7 @@
 #include "base/platform_thread.h"   
 #include "LayersTypes.h"
 #include "mozilla/layers/APZTestData.h"
+#include "mozilla/layers/WebRenderScrollData.h"
 #include "mozilla/StaticMutex.h"
 #include "nsThreadUtils.h"
 #include "Units.h"
@@ -64,11 +65,15 @@ public:
                             bool aIsFirstPaint,
                             LayersId aOriginatingLayersId,
                             uint32_t aPaintSequenceNumber);
-  void UpdateHitTestingTree(LayersId aRootLayerTreeId,
-                            const WebRenderScrollData& aScrollData,
-                            bool aIsFirstPaint,
-                            LayersId aOriginatingLayersId,
-                            uint32_t aPaintSequenceNumber);
+  
+
+
+
+
+
+  void UpdateScrollDataAndTreeState(LayersId aRootLayerTreeId,
+                                    LayersId aOriginatingLayersId,
+                                    WebRenderScrollData&& aScrollData);
 
   void NotifyLayerTreeAdopted(LayersId aLayersId,
                               const RefPtr<APZUpdater>& aOldUpdater);
@@ -84,11 +89,14 @@ public:
                         const LayerToParentLayerScale& aZoom);
 
   
+  const WebRenderScrollData* GetScrollData(LayersId aLayersId) const;
+
+  
 
 
 
 
-  void AssertOnUpdaterThread();
+  void AssertOnUpdaterThread() const;
 
   
 
@@ -100,7 +108,7 @@ public:
   
 
 
-  bool IsUpdaterThread();
+  bool IsUpdaterThread() const;
 
   
 
@@ -120,6 +128,12 @@ protected:
 
 private:
   RefPtr<APZCTreeManager> mApz;
+
+  
+  
+  std::unordered_map<LayersId,
+                     WebRenderScrollData,
+                     LayersId::HashFn> mScrollData;
 
   
   
