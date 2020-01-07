@@ -485,9 +485,15 @@ class Telemetry {
     
     
     if (!PENDING_EVENTS.has(sig)) {
-      PENDING_EVENT_PROPERTIES.set(sig, {
-        [pendingPropName]: pendingPropValue
-      });
+      let props = PENDING_EVENT_PROPERTIES.get(sig);
+
+      if (props) {
+        props[pendingPropName] = pendingPropValue;
+      } else {
+        PENDING_EVENT_PROPERTIES.set(sig, {
+          [pendingPropName]: pendingPropValue
+        });
+      }
       return;
     }
 
