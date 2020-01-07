@@ -3356,10 +3356,7 @@ EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
           
           
           
-          
-          
-          nsCOMPtr<nsIDOMElement> elt(do_QueryInterface(activeContent));
-          if (!elt) {
+          if (!activeContent->IsElement()) {
             nsIContent* par = activeContent->GetParent();
             if (par)
               activeContent = par;

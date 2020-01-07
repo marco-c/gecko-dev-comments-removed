@@ -222,7 +222,6 @@ nsXULPopupListener::FireFocusOnTargetContent(nsIDOMNode* aTargetNode, bool aIsTo
 
   
   
-  
   RefPtr<nsPresContext> context = doc->GetPresContext();
   if (!context) {
     return NS_ERROR_FAILURE;

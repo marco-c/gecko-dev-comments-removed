@@ -650,11 +650,6 @@ protected:
     
     nsresult EnsureContentsGenerated(void) const;
 
-    nsresult ExecuteOnBroadcastHandler(nsIDOMElement* anElement, const nsAString& attrName);
-
-    static nsresult
-    ExecuteJSCode(nsIDOMElement* anElement, mozilla::WidgetEvent* aEvent);
-
     
     NS_IMETHOD GetParentTree(nsIDOMXULMultiSelectControlElement** aTreeElement);
 

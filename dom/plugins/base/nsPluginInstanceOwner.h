@@ -37,6 +37,7 @@ class gfxContext;
 namespace mozilla {
 class TextComposition;
 namespace dom {
+class Element;
 class Event;
 struct MozPluginParameter;
 } 
@@ -95,7 +96,7 @@ public:
 
 
 
-  NS_IMETHOD GetDOMElement(nsIDOMElement* * aResult);
+  NS_IMETHOD GetDOMElement(mozilla::dom::Element** aResult);
 
   
   NS_DECL_NSIDOMEVENTLISTENER
