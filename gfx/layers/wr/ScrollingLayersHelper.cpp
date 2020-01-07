@@ -78,7 +78,8 @@ ScrollingLayersHelper::BeginItem(nsDisplayItem* aItem,
 {
   SLH_LOG("processing item %p\n", aItem);
 
-  ItemClips clips(aItem->GetActiveScrolledRoot(), aItem->GetClipChain());
+  const DisplayItemClipChain* clip = aItem->GetClipChain();
+  ItemClips clips(aItem->GetActiveScrolledRoot(), clip);
   MOZ_ASSERT(!mItemClipStack.empty());
   if (clips.HasSameInputs(mItemClipStack.back())) {
     
@@ -101,11 +102,10 @@ ScrollingLayersHelper::BeginItem(nsDisplayItem* aItem,
   
   
   const ActiveScrolledRoot* leafmostASR = aItem->GetActiveScrolledRoot();
-  if (aItem->GetClipChain()) {
-    leafmostASR = ActiveScrolledRoot::PickDescendant(leafmostASR,
-        aItem->GetClipChain()->mASR);
+  if (clip) {
+    leafmostASR = ActiveScrolledRoot::PickDescendant(leafmostASR, clip->mASR);
   }
-  auto ids = DefineClipChain(aItem, leafmostASR, aItem->GetClipChain(),
+  auto ids = DefineClipChain(aItem, leafmostASR, clip,
       auPerDevPixel, aStackingContext);
 
   
@@ -149,7 +149,7 @@ ScrollingLayersHelper::BeginItem(nsDisplayItem* aItem,
   }
   
   
-  if (ids.second && aItem->GetClipChain()->mASR == leafmostASR) {
+  if (ids.second && clip->mASR == leafmostASR) {
     clips.mClipId = ids.second;
   }
   
