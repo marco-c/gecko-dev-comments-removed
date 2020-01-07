@@ -66,6 +66,9 @@ class Toolbar extends Component {
       browserCacheDisabled: PropTypes.bool.isRequired,
       toggleRequestFilterType: PropTypes.func.isRequired,
       filteredRequests: PropTypes.array.isRequired,
+      
+      
+      singleRow: PropTypes.bool.isRequired,
     };
   }
 
@@ -89,6 +92,7 @@ class Toolbar extends Component {
     return this.props.persistentLogsEnabled !== nextProps.persistentLogsEnabled
     || this.props.browserCacheDisabled !== nextProps.browserCacheDisabled
     || this.props.recording !== nextProps.recording
+    || this.props.singleRow !== nextProps.singleRow
     || !Object.is(this.props.requestFilterTypes, nextProps.requestFilterTypes)
 
     
@@ -135,19 +139,51 @@ class Toolbar extends Component {
     });
   }
 
-  render() {
-    let {
-      toggleRecording,
-      clearRequests,
-      requestFilterTypes,
-      setRequestFilterText,
-      togglePersistentLogs,
-      persistentLogsEnabled,
-      toggleBrowserCache,
-      browserCacheDisabled,
-      recording,
-    } = this.props;
+  
 
+
+  renderSeparator() {
+    return span({ className: "devtools-separator" });
+  }
+
+  
+
+
+  renderClearButton(clearRequests) {
+    return (
+      button({
+        className: "devtools-button devtools-clear-icon requests-list-clear-button",
+        title: TOOLBAR_CLEAR,
+        onClick: clearRequests,
+      })
+    );
+  }
+
+  
+
+
+  renderToggleRecordingButton(recording, toggleRecording) {
+    
+    
+    let toggleRecordingButtonClass = [
+      "devtools-button",
+      "requests-list-pause-button",
+      recording ? "devtools-pause-icon" : "devtools-play-icon",
+    ].join(" ");
+
+    return (
+      button({
+        className: toggleRecordingButtonClass,
+        title: TOOLBAR_TOGGLE_RECORDING,
+        onClick: toggleRecording,
+      })
+    );
+  }
+
+  
+
+
+  renderFilterButtons(requestFilterTypes) {
     
     let buttons = Object.entries(requestFilterTypes).map(([type, checked]) => {
       let classList = ["devtools-button", `requests-list-filter-${type}-button`];
@@ -167,69 +203,117 @@ class Toolbar extends Component {
       );
     });
 
-    
-    
-    let toggleRecordingButtonClass = [
-      "devtools-button",
-      "requests-list-pause-button",
-      recording ? "devtools-pause-icon" : "devtools-play-icon",
-    ].join(" ");
+    return div({ className: "requests-list-filter-buttons" }, buttons);
+  }
+
+  
+
+
+  renderPersistlogCheckbox(persistentLogsEnabled, togglePersistentLogs) {
+    return (
+      label(
+        {
+          className: "devtools-checkbox-label",
+          title: ENABLE_PERSISTENT_LOGS_TOOLTIP,
+        },
+        input({
+          id: "devtools-persistlog-checkbox",
+          className: "devtools-checkbox",
+          type: "checkbox",
+          checked: persistentLogsEnabled,
+          onChange: togglePersistentLogs,
+        }),
+        ENABLE_PERSISTENT_LOGS_LABEL,
+      )
+    );
+  }
+
+  
+
+
+  renderCacheCheckbox(browserCacheDisabled, toggleBrowserCache) {
+    return (
+      label(
+        {
+          className: "devtools-checkbox-label",
+          title: DISABLE_CACHE_TOOLTIP,
+        },
+        input({
+          id: "devtools-cache-checkbox",
+          className: "devtools-checkbox",
+          type: "checkbox",
+          checked: browserCacheDisabled,
+          onChange: toggleBrowserCache,
+        }),
+        DISABLE_CACHE_LABEL,
+      )
+    );
+  }
+
+  
+
+
+  renderFilterBox(setRequestFilterText) {
+    return (
+      SearchBox({
+        delay: FILTER_SEARCH_DELAY,
+        keyShortcut: SEARCH_KEY_SHORTCUT,
+        placeholder: SEARCH_PLACE_HOLDER,
+        plainStyle: true,
+        type: "filter",
+        ref: "searchbox",
+        onChange: setRequestFilterText,
+        onFocus: this.onSearchBoxFocus,
+        autocompleteProvider: this.autocompleteProvider,
+      })
+    );
+  }
+
+  render() {
+    let {
+      toggleRecording,
+      clearRequests,
+      requestFilterTypes,
+      setRequestFilterText,
+      togglePersistentLogs,
+      persistentLogsEnabled,
+      toggleBrowserCache,
+      browserCacheDisabled,
+      recording,
+      singleRow,
+    } = this.props;
 
     
-    return (
+    
+    return singleRow ? (
       span({ className: "devtools-toolbar devtools-toolbar-container" },
-        span({ className: "devtools-toolbar-group" },
-          button({
-            className: toggleRecordingButtonClass,
-            title: TOOLBAR_TOGGLE_RECORDING,
-            onClick: toggleRecording,
-          }),
-          button({
-            className: "devtools-button devtools-clear-icon requests-list-clear-button",
-            title: TOOLBAR_CLEAR,
-            onClick: clearRequests,
-          }),
-          div({ className: "requests-list-filter-buttons" }, buttons),
-          label(
-            {
-              className: "devtools-checkbox-label",
-              title: ENABLE_PERSISTENT_LOGS_TOOLTIP,
-            },
-            input({
-              id: "devtools-persistlog-checkbox",
-              className: "devtools-checkbox",
-              type: "checkbox",
-              checked: persistentLogsEnabled,
-              onChange: togglePersistentLogs,
-            }),
-            ENABLE_PERSISTENT_LOGS_LABEL
-          ),
-          label(
-            {
-              className: "devtools-checkbox-label",
-              title: DISABLE_CACHE_TOOLTIP,
-            },
-            input({
-              id: "devtools-cache-checkbox",
-              className: "devtools-checkbox",
-              type: "checkbox",
-              checked: browserCacheDisabled,
-              onChange: toggleBrowserCache,
-            }),
-            DISABLE_CACHE_LABEL,
-          ),
+        span({ className: "devtools-toolbar-group devtools-toolbar-single-row" },
+          this.renderClearButton(clearRequests),
+          this.renderSeparator(),
+          this.renderFilterBox(setRequestFilterText),
+          this.renderSeparator(),
+          this.renderToggleRecordingButton(recording, toggleRecording),
+          this.renderSeparator(),
+          this.renderFilterButtons(requestFilterTypes),
+          this.renderSeparator(),
+          this.renderPersistlogCheckbox(persistentLogsEnabled, togglePersistentLogs),
+          this.renderCacheCheckbox(browserCacheDisabled, toggleBrowserCache),
+        )
+      )
+    ) : (
+      span({ className: "devtools-toolbar devtools-toolbar-container" },
+        span({ className: "devtools-toolbar-group devtools-toolbar-two-rows-1" },
+          this.renderClearButton(clearRequests),
+          this.renderSeparator(),
+          this.renderFilterBox(setRequestFilterText),
+          this.renderSeparator(),
+          this.renderToggleRecordingButton(recording, toggleRecording),
+          this.renderSeparator(),
+          this.renderPersistlogCheckbox(persistentLogsEnabled, togglePersistentLogs),
+          this.renderCacheCheckbox(browserCacheDisabled, toggleBrowserCache),
         ),
-        span({ className: "devtools-toolbar-group" },
-          SearchBox({
-            delay: FILTER_SEARCH_DELAY,
-            keyShortcut: SEARCH_KEY_SHORTCUT,
-            placeholder: SEARCH_PLACE_HOLDER,
-            type: "filter",
-            ref: "searchbox",
-            onChange: setRequestFilterText,
-            onFocus: this.onSearchBoxFocus,
-            autocompleteProvider: this.autocompleteProvider,
-          })
+        span({ className: "devtools-toolbar-group devtools-toolbar-two-rows-2" },
+          this.renderFilterButtons(requestFilterTypes)
         )
       )
     );

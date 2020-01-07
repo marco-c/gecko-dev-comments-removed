@@ -27,7 +27,13 @@ loader.lazyGetter(this, "NetworkDetailsPanel", function() {
   return createFactory(require("./NetworkDetailsPanel"));
 });
 
-const MediaQueryList = window.matchMedia("(min-width: 700px)");
+
+
+const MediaQueryVert = window.matchMedia("(min-width: 700px)");
+
+
+
+const MediaQuerySingleRow = window.matchMedia("(min-width: 920px)");
 
 
 
@@ -53,7 +59,8 @@ class MonitorPanel extends Component {
     super(props);
 
     this.state = {
-      isVerticalSpliter: MediaQueryList.matches,
+      isSingleRow: MediaQuerySingleRow.matches,
+      isVerticalSpliter: MediaQueryVert.matches,
     };
 
     this.onLayoutChange = this.onLayoutChange.bind(this);
@@ -61,7 +68,8 @@ class MonitorPanel extends Component {
   }
 
   componentDidMount() {
-    MediaQueryList.addListener(this.onLayoutChange);
+    MediaQuerySingleRow.addListener(this.onLayoutChange);
+    MediaQueryVert.addListener(this.onLayoutChange);
   }
 
   componentWillReceiveProps(nextProps) {
@@ -76,7 +84,8 @@ class MonitorPanel extends Component {
   }
 
   componentWillUnmount() {
-    MediaQueryList.removeListener(this.onLayoutChange);
+    MediaQuerySingleRow.removeListener(this.onLayoutChange);
+    MediaQueryVert.removeListener(this.onLayoutChange);
 
     let { clientWidth, clientHeight } = findDOMNode(this.refs.endPanel) || {};
 
@@ -92,13 +101,14 @@ class MonitorPanel extends Component {
 
   onLayoutChange() {
     this.setState({
-      isVerticalSpliter: MediaQueryList.matches,
+      isSingleRow: MediaQuerySingleRow.matches,
+      isVerticalSpliter: MediaQueryVert.matches,
     });
   }
 
   onNetworkDetailsResized(width, height) {
-   
-   
+    
+    
     let { isVerticalSpliter }  = this.state;
     return this.props.onNetworkDetailsResized(
       isVerticalSpliter ? width : null,
@@ -116,13 +126,16 @@ class MonitorPanel extends Component {
     } = this.props;
 
     let initialWidth = Services.prefs.getIntPref(
-        "devtools.netmonitor.panes-network-details-width");
+      "devtools.netmonitor.panes-network-details-width");
     let initialHeight = Services.prefs.getIntPref(
-        "devtools.netmonitor.panes-network-details-height");
+      "devtools.netmonitor.panes-network-details-height");
 
     return (
       div({ className: "monitor-panel" },
-        Toolbar({ connector }),
+        Toolbar({
+          connector,
+          singleRow: this.state.isSingleRow,
+        }),
         SplitBox({
           className: "devtools-responsive-container",
           initialWidth: initialWidth,
