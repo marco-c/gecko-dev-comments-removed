@@ -99,23 +99,20 @@ nsRFPService::GetOrCreate()
       sRFPService = nullptr;
       return nullptr;
     }
-
     ClearOnShutdown(&sRFPService);
     sInitialized = true;
   }
-
   return sRFPService;
 }
 
-inline double
-TimerResolution()
+double
+nsRFPService::TimerResolution()
 {
   if(nsRFPService::IsResistFingerprintingEnabled()) {
     return max(100000.0, (double)sResolutionUSec);
   }
   return sResolutionUSec;
 }
-
 
 bool
 nsRFPService::IsResistFingerprintingEnabled()
