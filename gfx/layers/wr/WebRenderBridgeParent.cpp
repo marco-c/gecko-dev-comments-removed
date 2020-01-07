@@ -677,7 +677,11 @@ WebRenderBridgeParent::RecvSetDisplayList(const gfx::IntSize& aSize,
 
     mApi->SendTransaction(txn);
 
-    ScheduleGenerateFrame();
+    if (!gfxPrefs::WebRenderAsyncSceneBuild()) {
+      
+      
+      ScheduleGenerateFrame();
+    }
 
     if (ShouldParentObserveEpoch()) {
       mCompositorBridge->ObserveLayerUpdate(GetLayersId(), GetChildLayerObserverEpoch(), true);
