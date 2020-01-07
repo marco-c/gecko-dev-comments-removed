@@ -511,6 +511,12 @@ SERVO_BINDING_FUNC(Servo_AnimationValue_Compute,
                    RawServoStyleSetBorrowed raw_data)
 
 
+
+SERVO_BINDING_FUNC(Servo_UnlockedDeclarationBlock_GetCssText, void,
+                   const RawServoUnlockedDeclarationBlock* declarations,
+                   nsAString* result)
+
+
 SERVO_BINDING_FUNC(Servo_ParseStyleAttribute, RawServoDeclarationBlockStrong,
                    const nsACString* data,
                    RawGeckoURLExtraData* extra_data,
@@ -552,7 +558,8 @@ SERVO_BINDING_FUNC(Servo_DeclarationBlock_SetProperty, bool,
                    RawGeckoURLExtraData* data,
                    mozilla::ParsingMode parsing_mode,
                    nsCompatibility quirks_mode,
-                   mozilla::css::Loader* loader)
+                   mozilla::css::Loader* loader,
+                   DeclarationBlockMutationClosure)
 SERVO_BINDING_FUNC(Servo_DeclarationBlock_SetPropertyToAnimationValue, bool,
                    RawServoDeclarationBlockBorrowed declarations,
                    RawServoAnimationValueBorrowed animation_value)
@@ -563,13 +570,16 @@ SERVO_BINDING_FUNC(Servo_DeclarationBlock_SetPropertyById, bool,
                    RawGeckoURLExtraData* data,
                    mozilla::ParsingMode parsing_mode,
                    nsCompatibility quirks_mode,
-                   mozilla::css::Loader* loader)
+                   mozilla::css::Loader* loader,
+                   DeclarationBlockMutationClosure)
 SERVO_BINDING_FUNC(Servo_DeclarationBlock_RemoveProperty, bool,
                    RawServoDeclarationBlockBorrowed declarations,
-                   const nsACString* property)
+                   const nsACString* property,
+                   DeclarationBlockMutationClosure)
 SERVO_BINDING_FUNC(Servo_DeclarationBlock_RemovePropertyById, bool,
                    RawServoDeclarationBlockBorrowed declarations,
-                   nsCSSPropertyID property)
+                   nsCSSPropertyID property,
+                   DeclarationBlockMutationClosure)
 SERVO_BINDING_FUNC(Servo_DeclarationBlock_HasCSSWideKeyword, bool,
                    RawServoDeclarationBlockBorrowed declarations,
                    nsCSSPropertyID property)

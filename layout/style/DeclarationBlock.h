@@ -207,18 +207,20 @@ public:
   }
 
   
-  bool RemoveProperty(const nsAString& aProperty)
+  bool RemoveProperty(const nsAString& aProperty,
+                      DeclarationBlockMutationClosure aClosure = { })
   {
     AssertMutable();
     NS_ConvertUTF16toUTF8 property(aProperty);
-    return Servo_DeclarationBlock_RemoveProperty(mRaw, &property);
+    return Servo_DeclarationBlock_RemoveProperty(mRaw, &property, aClosure);
   }
 
   
-  bool RemovePropertyByID(nsCSSPropertyID aProperty)
+  bool RemovePropertyByID(nsCSSPropertyID aProperty,
+                          DeclarationBlockMutationClosure aClosure = { })
   {
     AssertMutable();
-    return Servo_DeclarationBlock_RemovePropertyById(mRaw, aProperty);
+    return Servo_DeclarationBlock_RemovePropertyById(mRaw, aProperty, aClosure);
   }
 
 private:

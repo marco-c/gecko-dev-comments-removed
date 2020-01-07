@@ -1202,7 +1202,8 @@ MappedAttrParser::ParseMappedAttrValue(nsAtom* aMappedAttrName,
                                                  mElement->NodePrincipal());
     changed = Servo_DeclarationBlock_SetPropertyById(
       mDecl->Raw(), propertyID, &value, false, data,
-      ParsingMode::AllowUnitlessLength, mElement->OwnerDoc()->GetCompatibilityMode(), mLoader);
+      ParsingMode::AllowUnitlessLength,
+      mElement->OwnerDoc()->GetCompatibilityMode(), mLoader, { });
 
     if (changed) {
       
