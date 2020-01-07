@@ -45,6 +45,7 @@ export default class BasicCardForm extends PaymentStateSubscriberMixin(HTMLEleme
     this.saveButton.addEventListener("click", this);
 
     this.persistCheckbox = new LabelledCheckbox();
+    this.persistCheckbox.className = "persist-checkbox";
 
     
     let url = "formautofill/editCreditCard.xhtml";
