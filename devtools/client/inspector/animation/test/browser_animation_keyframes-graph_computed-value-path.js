@@ -9,6 +9,8 @@
 
 
 
+requestLongerTimeout(2);
+
 const TEST_DATA = [
   {
     targetClass: "multi-types",
