@@ -63,6 +63,9 @@ private:
       audioLevel = aAudioLevel;
     }
     
+    
+    double ToLinearAudioLevel() const;
+    
     int64_t jitterAdjustedTimestamp = 0;
     bool hasAudioLevel = false;
     uint8_t audioLevel = 0;
