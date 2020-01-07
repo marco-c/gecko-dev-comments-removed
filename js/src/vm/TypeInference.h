@@ -957,12 +957,10 @@ class PreliminaryObjectArray
   private:
     
     
-    JSObject* objects[COUNT];
+    JSObject* objects[COUNT] = {}; 
 
   public:
-    PreliminaryObjectArray() {
-        mozilla::PodZero(this);
-    }
+    PreliminaryObjectArray() = default;
 
     void registerNewObject(PlainObject* res);
     void unregisterObject(PlainObject* obj);
@@ -1056,19 +1054,11 @@ class TypeNewScript
 
   private:
     
-    HeapPtr<JSFunction*> function_;
+    HeapPtr<JSFunction*> function_ = {};
 
     
     
-    PreliminaryObjectArray* preliminaryObjects;
-
-    
-    
-    
-    
-    
-    
-    HeapPtr<PlainObject*> templateObject_;
+    PreliminaryObjectArray* preliminaryObjects = nullptr;
 
     
     
@@ -1076,23 +1066,31 @@ class TypeNewScript
     
     
     
-    
-    
-    Initializer* initializerList;
+    HeapPtr<PlainObject*> templateObject_ = {};
 
     
     
     
     
     
-    HeapPtr<Shape*> initializedShape_;
+    
+    
+    
+    Initializer* initializerList = nullptr;
 
     
     
-    HeapPtr<ObjectGroup*> initializedGroup_;
+    
+    
+    
+    HeapPtr<Shape*> initializedShape_ = {};
+
+    
+    
+    HeapPtr<ObjectGroup*> initializedGroup_ = {};
 
   public:
-    TypeNewScript() { mozilla::PodZero(this); }
+    TypeNewScript() = default;
     ~TypeNewScript() {
         js_delete(preliminaryObjects);
         js_free(initializerList);

@@ -11,7 +11,6 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/EnumeratedArray.h"
 #include "mozilla/IntegerRange.h"
-#include "mozilla/PodOperations.h"
 #include "mozilla/TimeStamp.h"
 
 #include "jspubtd.h"
@@ -50,33 +49,31 @@ enum Stat {
 struct ZoneGCStats
 {
     
-    int collectedZoneCount;
+    int collectedZoneCount = 0;
 
     
-    int collectableZoneCount;
+    int collectableZoneCount = 0;
 
     
-    int zoneCount;
+    int zoneCount = 0;
 
     
-    int sweptZoneCount;
+    int sweptZoneCount = 0;
 
     
-    int collectedCompartmentCount;
+    int collectedCompartmentCount = 0;
 
     
-    int compartmentCount;
+    int compartmentCount = 0;
 
     
-    int sweptCompartmentCount;
+    int sweptCompartmentCount = 0;
 
     bool isFullCollection() const {
         return collectedZoneCount == collectableZoneCount;
     }
 
-    ZoneGCStats() {
-        mozilla::PodZero(this);
-    }
+    ZoneGCStats() = default;
 };
 
 #define FOR_EACH_GC_PROFILE_TIME(_)                                           \

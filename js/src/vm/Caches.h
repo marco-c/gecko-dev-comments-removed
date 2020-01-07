@@ -7,6 +7,8 @@
 #ifndef vm_Caches_h
 #define vm_Caches_h
 
+#include <new>
+
 #include "jsmath.h"
 
 #include "frontend/SourceNotes.h"
@@ -142,14 +144,20 @@ class NewObjectCache
         char templateObject[MAX_OBJ_SIZE];
     };
 
-    Entry entries[41];  
+    using EntryArray = Entry[41]; 
+    EntryArray entries;
 
   public:
 
-    typedef int EntryIndex;
+    using EntryIndex = int;
 
-    NewObjectCache() { mozilla::PodZero(this); }
-    void purge() { mozilla::PodZero(this); }
+    NewObjectCache()
+      : entries{} 
+    {}
+
+    void purge() {
+        new (&entries) EntryArray{}; 
+    }
 
     
     void clearNurseryObjects(JSRuntime* rt);

@@ -9,7 +9,6 @@
 
 #include "mozilla/Atomics.h"
 #include "mozilla/MemoryReporting.h"
-#include "mozilla/PodOperations.h"
 
 #include "jstypes.h"
 
@@ -677,17 +676,14 @@ struct IonScriptCounts
 {
   private:
     
-    IonScriptCounts* previous_;
+    IonScriptCounts* previous_ = nullptr;
 
     
-    size_t numBlocks_;
-    IonBlockCounts* blocks_;
+    size_t numBlocks_ = 0;
+    IonBlockCounts* blocks_ = nullptr;
 
   public:
-
-    IonScriptCounts() {
-        mozilla::PodZero(this);
-    }
+    IonScriptCounts() = default;
 
     ~IonScriptCounts() {
         for (size_t i = 0; i < numBlocks_; i++)
