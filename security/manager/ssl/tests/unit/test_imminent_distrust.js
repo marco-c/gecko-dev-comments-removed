@@ -6,8 +6,6 @@
 
 
 
-
-
 function shouldBeImminentlyDistrusted(aTransportSecurityInfo) {
   let isDistrust = aTransportSecurityInfo.securityState &
                      Ci.nsIWebProgressListener.STATE_CERT_DISTRUST_IMMINENT;
@@ -22,19 +20,10 @@ function shouldNotBeImminentlyDistrusted(aTransportSecurityInfo) {
 
 do_get_profile();
 
-add_tls_server_setup("SymantecSanctionsServer", "test_symantec_apple_google");
+add_tls_server_setup("BadCertServer", "bad_certs");
 
-
-add_connection_test("symantec-whitelist-after-cutoff.example.com",
-                    PRErrorCodeSuccess, null, shouldNotBeImminentlyDistrusted);
-
-add_connection_test("symantec-whitelist-before-cutoff.example.com",
-                    PRErrorCodeSuccess, null, shouldNotBeImminentlyDistrusted);
-
-
-add_connection_test("symantec-not-whitelisted-after-cutoff.example.com",
+add_connection_test("imminently-distrusted.example.com",
                     PRErrorCodeSuccess, null, shouldBeImminentlyDistrusted);
 
-
-add_connection_test("symantec-not-whitelisted-before-cutoff.example.com",
-                    PRErrorCodeSuccess, null, shouldBeImminentlyDistrusted);
+add_connection_test("include-subdomains.pinning.example.com",
+                    PRErrorCodeSuccess, null, shouldNotBeImminentlyDistrusted);

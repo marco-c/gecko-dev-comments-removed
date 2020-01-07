@@ -39,7 +39,7 @@
 #include "TrustOverrideUtils.h"
 #include "TrustOverride-SymantecData.inc"
 #include "TrustOverride-AppleGoogleData.inc"
-
+#include "TrustOverride-TestImminentDistrustData.inc"
 
 using namespace mozilla;
 using namespace mozilla::pkix;
@@ -1256,28 +1256,23 @@ IsCertificateDistrustImminent(nsIX509CertList* aCertList,
   }
 
   
-  nsCOMPtr<nsIX509CertValidity> validity;
-  rv = eeCert->GetValidity(getter_AddRefs(validity));
-  if (NS_FAILED(rv)) {
-    return rv;
+  
+  
+  
+  
+  UniqueCERTCertificate nssEECert(eeCert->GetCert());
+  if (!nssEECert) {
+    return NS_ERROR_FAILURE;
   }
-
-  PRTime notBefore;
-  rv = validity->GetNotBefore(&notBefore);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  
-  
-  static const PRTime JUNE_1_2016 = 1464739200000000;
-
-  
-  
-  if (notBefore >= JUNE_1_2016) {
-    aResult = false;
+  aResult = CertDNIsInList(nssEECert.get(), TestImminentDistrustEndEntityDNs);
+  if (aResult) {
+    
     return NS_OK;
   }
+
+  
+  
+  
 
   
   UniqueCERTCertificate nssRootCert(rootCert->GetCert());
