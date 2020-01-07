@@ -112,15 +112,6 @@ nsSVGElement::WrapNode(JSContext *aCx, JS::Handle<JSObject*> aGivenProto)
 
 
 
-NS_IMETHODIMP
-nsSVGElement::GetSVGClassName(nsISupports** aClassName)
-{
-  *aClassName = ClassName().take();
-  return NS_OK;
-}
-
-
-
 
 void
 nsSVGElement::DidAnimateClass()
@@ -247,8 +238,7 @@ nsSVGElement::Init()
 
 
 NS_IMPL_ISUPPORTS_INHERITED(nsSVGElement, nsSVGElementBase,
-                            nsIDOMNode, nsIDOMElement,
-                            nsIDOMSVGElement)
+                            nsIDOMNode, nsIDOMElement)
 
 
 
@@ -1100,14 +1090,6 @@ nsSVGElement::sMaskMap[] = {
 
 
 
-
-NS_IMETHODIMP
-nsSVGElement::GetOwnerSVGElement(nsIDOMSVGElement * *aOwnerSVGElement)
-{
-  NS_IF_ADDREF(*aOwnerSVGElement = GetOwnerSVGElement());
-  return NS_OK;
-}
-
 SVGSVGElement*
 nsSVGElement::GetOwnerSVGElement()
 {
@@ -1125,14 +1107,6 @@ nsSVGElement::GetOwnerSVGElement()
 
   
   return nullptr;
-}
-
-NS_IMETHODIMP
-nsSVGElement::GetViewportElement(nsIDOMSVGElement * *aViewportElement)
-{
-  nsSVGElement* elem = GetViewportElement();
-  NS_ADDREF(*aViewportElement = elem);
-  return NS_OK;
 }
 
 nsSVGElement*
@@ -2479,7 +2453,7 @@ nsSVGElement::WillChangeStringList(bool aIsConditionalProcessingAttribute,
 {
   nsAtom* name;
   if (aIsConditionalProcessingAttribute) {
-    nsCOMPtr<SVGTests> tests(do_QueryInterface(static_cast<nsIDOMSVGElement*>(this)));
+    nsCOMPtr<SVGTests> tests(do_QueryInterface(static_cast<nsIDOMElement*>(this)));
     name = tests->GetAttrName(aAttrEnum);
   } else {
     name = *GetStringListInfo().mStringListInfo[aAttrEnum].mName;
