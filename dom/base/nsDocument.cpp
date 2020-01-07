@@ -3776,7 +3776,11 @@ nsDocument::ElementsFromPointHelper(float aX, float aY,
       
       
       
-      if (!(aFlags & nsIDocument::IS_ELEMENT_FROM_POINT)) {
+      
+      
+      
+      if (!(aFlags & nsIDocument::IS_ELEMENT_FROM_POINT) &&
+          !nsSVGUtils::IsInSVGTextSubtree(outFrames[i])) {
         continue;
       }
       node = node->GetParent();
