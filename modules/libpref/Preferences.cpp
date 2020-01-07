@@ -5040,6 +5040,11 @@ Preferences::AddAtomicUintVarCache(Atomic<uint32_t, Relaxed>*,
                                    const char*,
                                    uint32_t);
 
+template nsresult
+Preferences::AddAtomicUintVarCache(Atomic<uint32_t, ReleaseAcquire>*,
+                                   const char*,
+                                   uint32_t);
+
 static void
 FloatVarChanged(const char* aPref, void* aClosure)
 {

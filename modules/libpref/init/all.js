@@ -1383,6 +1383,12 @@ pref("privacy.firstparty.isolate.restrict_opener_access", true);
 pref("privacy.resistFingerprinting", false);
 
 
+
+pref("privacy.reduceTimerPrecision", true);
+
+pref("privacy.resistFingerprinting.reduceTimerPrecision.microseconds", 20);
+
+
 #ifdef NIGHTLY_BUILD
 pref("privacy.trackingprotection.lower_network_priority", true);
 #else
