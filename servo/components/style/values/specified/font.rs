@@ -86,6 +86,7 @@ pub enum FontWeight {
     
     Lighter,
     
+    #[css(skip)]
     System(SystemFont),
 }
 
@@ -338,6 +339,7 @@ impl SpecifiedFontStyle {
 #[allow(missing_docs)]
 pub enum FontStyle {
     Specified(SpecifiedFontStyle),
+    #[css(skip)]
     System(SystemFont),
 }
 
@@ -384,6 +386,7 @@ impl Parse for FontStyle {
 pub enum FontStretch {
     Stretch(Percentage),
     Keyword(FontStretchKeyword),
+    #[css(skip)]
     System(SystemFont),
 }
 
@@ -525,6 +528,7 @@ pub enum FontSize {
     
     Larger,
     
+    #[css(skip)]
     System(SystemFont),
 }
 
@@ -541,6 +545,7 @@ pub enum FontFamily {
     #[css(comma)]
     Values(#[css(iterable)] FontFamilyList),
     
+    #[css(skip)]
     System(SystemFont),
 }
 
@@ -632,6 +637,7 @@ pub enum FontSizeAdjust {
     
     Number(Number),
     
+    #[css(skip)]
     System(SystemFont),
 }
 
@@ -1136,6 +1142,7 @@ pub enum FontVariantAlternates {
     
     Value(VariantAlternatesList),
     
+    #[css(skip)]
     System(SystemFont),
 }
 
@@ -1389,6 +1396,7 @@ pub enum FontVariantEastAsian {
     
     Value(VariantEastAsian),
     
+    #[css(skip)]
     System(SystemFont),
 }
 
@@ -1617,6 +1625,7 @@ pub enum FontVariantLigatures {
     
     Value(VariantLigatures),
     
+    #[css(skip)]
     System(SystemFont),
 }
 
@@ -1847,6 +1856,7 @@ pub enum FontVariantNumeric {
     
     Value(VariantNumeric),
     
+    #[css(skip)]
     System(SystemFont),
 }
 
@@ -1954,6 +1964,7 @@ pub enum FontFeatureSettings {
     
     Value(SpecifiedFontFeatureSettings),
     
+    #[css(skip)]
     System(SystemFont),
 }
 
@@ -2104,6 +2115,7 @@ pub enum FontLanguageOverride {
     
     Override(Box<str>),
     
+    #[css(skip)]
     System(SystemFont),
 }
 
@@ -2186,6 +2198,7 @@ pub enum FontVariationSettings {
     
     Value(SpecifiedFontVariationSettings),
     
+    #[css(skip)]
     System(SystemFont),
 }
 
