@@ -226,7 +226,7 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
     
     
     if (numChildren === 0 || hasAnonChildren || this.isShadowHost) {
-      numChildren = this.walker.children(this).nodes.length;
+      numChildren = this.walker.countChildren(this);
     }
 
     return numChildren;

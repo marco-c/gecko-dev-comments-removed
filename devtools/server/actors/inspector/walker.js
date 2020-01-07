@@ -588,6 +588,19 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
 
 
+  countChildren: function(node, options = {}) {
+    return this._getChildren(node, options).nodes.length;
+  },
+
+  
+
+
+
+
+
+
+
+
 
 
 
@@ -604,6 +617,31 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
 
   children: function(node, options = {}) {
+    const { hasFirst, hasLast, nodes } = this._getChildren(node, options);
+    return {
+      hasFirst,
+      hasLast,
+      nodes: nodes.map(n => this._ref(n))
+    };
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  _getChildren: function(node, options = {}) {
     if (isNodeDead(node)) {
       return { hasFirst: true, hasLast: true, nodes: [] };
     }
@@ -627,7 +665,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       
       
       const documentFragment = node.rawNode.content;
-      const nodes = [this._ref(documentFragment)];
+      const nodes = [documentFragment];
       return { hasFirst: true, hasLast: true, nodes };
     }
 
@@ -719,8 +757,8 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     if (nodes.length > 0) {
       
       
-      hasFirst = nodes[0].rawNode == firstChild;
-      hasLast = nodes[nodes.length - 1].rawNode == lastChild;
+      hasFirst = nodes[0] == firstChild;
+      hasLast = nodes[nodes.length - 1] == lastChild;
     } else {
       
       
@@ -739,13 +777,13 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
       nodes = [
         
-        this._ref(node.rawNode.openOrClosedShadowRoot),
+        node.rawNode.openOrClosedShadowRoot,
         
-        ...(hasBefore ? [this._ref(first)] : []),
+        ...(hasBefore ? [first] : []),
         
         ...nodes,
         
-        ...(hasAfter ? [this._ref(last)] : []),
+        ...(hasAfter ? [last] : []),
       ];
     }
 
@@ -802,7 +840,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       if (!walker.isSkippedNode(node)) {
         
         
-        ret.push(this._ref(node));
+        ret.push(node);
       }
       node = walker.nextSibling();
     } while (node && --count);
@@ -821,7 +859,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       if (!walker.isSkippedNode(node)) {
         
         
-        ret.push(this._ref(node));
+        ret.push(node);
       }
       node = walker.previousSibling();
     } while (node && --count);
