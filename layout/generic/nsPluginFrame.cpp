@@ -833,24 +833,18 @@ nsPluginFrame::GetWindowOriginInPixels(bool aWindowless)
 }
 
 void
-nsPluginFrame::DidReflow(nsPresContext*            aPresContext,
-                         const ReflowInput*  aReflowInput)
+nsPluginFrame::DidReflow(nsPresContext*     aPresContext,
+                         const ReflowInput* aReflowInput)
 {
   
   
-  if (aStatus == nsDidReflowStatus::FINISHED &&
-      (GetStateBits() & NS_FRAME_FIRST_REFLOW)) {
+  if (GetStateBits() & NS_FRAME_FIRST_REFLOW) {
     nsCOMPtr<nsIObjectLoadingContent> objContent(do_QueryInterface(mContent));
     NS_ASSERTION(objContent, "Why not an object loading content?");
     objContent->HasNewFrame(this);
   }
 
-  nsFrame::DidReflow(aPresContext, aReflowInput, aStatus);
-
-  
-  
-  if (aStatus != nsDidReflowStatus::FINISHED)
-    return;
+  nsFrame::DidReflow(aPresContext, aReflowInput);
 
   if (HasView()) {
     nsView* view = GetView();
@@ -1313,9 +1307,7 @@ nsPluginFrame::PrintPlugin(gfxContext& aRenderingContext,
 
   
   
-  nsDidReflowStatus status = nsDidReflowStatus::FINISHED; 
-  frame->DidReflow(presContext,
-                   nullptr, status);  
+  frame->DidReflow(presContext, nullptr);  
 }
 
 nsRect
