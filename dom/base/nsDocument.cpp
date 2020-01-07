@@ -59,7 +59,6 @@
 
 #include "mozilla/dom/Attr.h"
 #include "mozilla/dom/BindingDeclarations.h"
-#include "nsIDOMDocumentXBL.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/FramingChecker.h"
 #include "nsGenericHTMLElement.h"
@@ -1802,7 +1801,6 @@ NS_INTERFACE_TABLE_HEAD(nsDocument)
     NS_INTERFACE_TABLE_ENTRY(nsDocument, nsIDocument)
     NS_INTERFACE_TABLE_ENTRY(nsDocument, nsIDOMDocument)
     NS_INTERFACE_TABLE_ENTRY(nsDocument, nsIDOMNode)
-    NS_INTERFACE_TABLE_ENTRY(nsDocument, nsIDOMDocumentXBL)
     NS_INTERFACE_TABLE_ENTRY(nsDocument, nsIScriptObjectPrincipal)
     NS_INTERFACE_TABLE_ENTRY(nsDocument, nsIDOMEventTarget)
     NS_INTERFACE_TABLE_ENTRY(nsDocument, mozilla::dom::EventTarget)
@@ -6214,29 +6212,9 @@ nsIDocument::ImportNode(nsINode& aNode, bool aDeep, ErrorResult& rv) const
   return nullptr;
 }
 
-NS_IMETHODIMP
-nsDocument::LoadBindingDocument(const nsAString& aURI)
-{
-  ErrorResult rv;
-  nsIDocument::LoadBindingDocument(aURI,
-                                   nsContentUtils::GetCurrentJSContext()
-                                     ? Some(nsContentUtils::SubjectPrincipal())
-                                     : Nothing(),
-                                   rv);
-  return rv.StealNSResult();
-}
-
 void
 nsIDocument::LoadBindingDocument(const nsAString& aURI,
                                  nsIPrincipal& aSubjectPrincipal,
-                                 ErrorResult& rv)
-{
-  LoadBindingDocument(aURI, Some(&aSubjectPrincipal), rv);
-}
-
-void
-nsIDocument::LoadBindingDocument(const nsAString& aURI,
-                                 const Maybe<nsIPrincipal*>& aSubjectPrincipal,
                                  ErrorResult& rv)
 {
   nsCOMPtr<nsIURI> uri;
@@ -6245,24 +6223,7 @@ nsIDocument::LoadBindingDocument(const nsAString& aURI,
     return;
   }
 
-  
-  
-  
-  nsCOMPtr<nsIPrincipal> subjectPrincipal =
-    aSubjectPrincipal.isSome() ? aSubjectPrincipal.value() : NodePrincipal();
-  BindingManager()->LoadBindingDocument(this, uri, subjectPrincipal);
-}
-
-NS_IMETHODIMP
-nsDocument::GetBindingParent(nsIDOMNode* aNode, nsIDOMElement** aResult)
-{
-  nsCOMPtr<nsINode> node = do_QueryInterface(aNode);
-  NS_ENSURE_ARG_POINTER(node);
-
-  Element* bindingParent = nsIDocument::GetBindingParent(*node);
-  nsCOMPtr<nsIDOMElement> retval = do_QueryInterface(bindingParent);
-  retval.forget(aResult);
-  return NS_OK;
+  BindingManager()->LoadBindingDocument(this, uri, &aSubjectPrincipal);
 }
 
 Element*
@@ -6333,23 +6294,6 @@ nsDocument::GetAnonymousElementByAttribute(nsIContent* aElement,
   return nullptr;
 }
 
-NS_IMETHODIMP
-nsDocument::GetAnonymousElementByAttribute(nsIDOMElement* aElement,
-                                           const nsAString& aAttrName,
-                                           const nsAString& aAttrValue,
-                                           nsIDOMElement** aResult)
-{
-  nsCOMPtr<Element> element = do_QueryInterface(aElement);
-  NS_ENSURE_ARG_POINTER(element);
-
-  Element* anonEl =
-    nsIDocument::GetAnonymousElementByAttribute(*element, aAttrName,
-                                                aAttrValue);
-  nsCOMPtr<nsIDOMElement> retval = do_QueryInterface(anonEl);
-  retval.forget(aResult);
-  return NS_OK;
-}
-
 Element*
 nsIDocument::GetAnonymousElementByAttribute(Element& aElement,
                                             const nsAString& aAttrName,
@@ -6358,17 +6302,6 @@ nsIDocument::GetAnonymousElementByAttribute(Element& aElement,
   RefPtr<nsAtom> attribute = NS_Atomize(aAttrName);
 
   return GetAnonymousElementByAttribute(&aElement, attribute, aAttrValue);
-}
-
-
-NS_IMETHODIMP
-nsDocument::GetAnonymousNodes(nsIDOMElement* aElement,
-                              nsIDOMNodeList** aResult)
-{
-  *aResult = nullptr;
-
-  nsCOMPtr<nsIContent> content(do_QueryInterface(aElement));
-  return BindingManager()->GetAnonymousNodesFor(content, aResult);
 }
 
 nsINodeList*
@@ -8817,7 +8750,7 @@ nsDocument::OnPageHide(bool aPersisted,
   EnumerateActivityObservers(NotifyActivityChanged, nullptr);
 
   ClearPendingFullscreenRequests(this);
-  if (FullScreenStackTop()) {
+  if (GetFullscreenElement()) {
     
     
     
@@ -10619,7 +10552,7 @@ nsIDocument::AsyncExitFullscreen(nsIDocument* aDoc)
 static bool
 CountFullscreenSubDocuments(nsIDocument* aDoc, void* aData)
 {
-  if (aDoc->FullScreenStackTop()) {
+  if (aDoc->GetFullscreenElement()) {
     uint32_t* count = static_cast<uint32_t*>(aData);
     (*count)++;
   }
@@ -10639,7 +10572,7 @@ nsDocument::IsFullscreenLeaf()
 {
   
   
-  if (!FullScreenStackTop()) {
+  if (!GetFullscreenElement()) {
     return false;
   }
   return CountFullscreenSubDocuments(this) == 0;
@@ -10648,11 +10581,11 @@ nsDocument::IsFullscreenLeaf()
 static bool
 ResetFullScreen(nsIDocument* aDocument, void* aData)
 {
-  if (aDocument->FullScreenStackTop()) {
+  if (aDocument->GetFullscreenElement()) {
     NS_ASSERTION(CountFullscreenSubDocuments(aDocument) <= 1,
         "Should have at most 1 fullscreen subdocument.");
     static_cast<nsDocument*>(aDocument)->CleanupFullscreenState();
-    NS_ASSERTION(!aDocument->FullScreenStackTop(),
+    NS_ASSERTION(!aDocument->GetFullscreenElement(),
                  "Should reset full-screen");
     auto changed = reinterpret_cast<nsCOMArray<nsIDocument>*>(aData);
     changed->AppendElement(aDocument);
@@ -10703,7 +10636,7 @@ nsIDocument::ExitFullscreenInDocTree(nsIDocument* aMaybeNotARootDoc)
   UnlockPointer();
 
   nsCOMPtr<nsIDocument> root = aMaybeNotARootDoc->GetFullscreenRoot();
-  if (!root || !root->FullScreenStackTop()) {
+  if (!root || !root->GetFullscreenElement()) {
     
     
     
@@ -10732,7 +10665,7 @@ nsIDocument::ExitFullscreenInDocTree(nsIDocument* aMaybeNotARootDoc)
     DispatchFullScreenChange(changed[changed.Length() - i - 1]);
   }
 
-  NS_ASSERTION(!root->FullScreenStackTop(),
+  NS_ASSERTION(!root->GetFullscreenElement(),
     "Fullscreen root should no longer be a fullscreen doc...");
 
   
@@ -10749,7 +10682,7 @@ GetFullscreenLeaf(nsIDocument* aDoc, void* aData)
     nsIDocument** result = static_cast<nsIDocument**>(aData);
     *result = aDoc;
     return false;
-  } else if (aDoc->FullScreenStackTop()) {
+  } else if (aDoc->GetFullscreenElement()) {
     aDoc->EnumerateSubDocuments(GetFullscreenLeaf, aData);
   }
   return true;
@@ -10768,7 +10701,7 @@ GetFullscreenLeaf(nsIDocument* aDoc)
   nsIDocument* root = nsContentUtils::GetRootDocument(aDoc);
   
   
-  if (!root->FullScreenStackTop()) {
+  if (!root->GetFullscreenElement()) {
     return nullptr;
   }
   GetFullscreenLeaf(root, &leaf);
@@ -10778,10 +10711,10 @@ GetFullscreenLeaf(nsIDocument* aDoc)
 void
 nsDocument::RestorePreviousFullScreenState()
 {
-  NS_ASSERTION(!FullScreenStackTop() || !FullscreenRoots::IsEmpty(),
+  NS_ASSERTION(!GetFullscreenElement() || !FullscreenRoots::IsEmpty(),
     "Should have at least 1 fullscreen root when fullscreen!");
 
-  if (!FullScreenStackTop() || !GetWindow() || FullscreenRoots::IsEmpty()) {
+  if (!GetFullscreenElement() || !GetWindow() || FullscreenRoots::IsEmpty()) {
     return;
   }
 
@@ -10960,7 +10893,7 @@ nsDocument::FullScreenStackPush(Element* aElement)
   }
   EventStateManager::SetFullScreenState(aElement, true);
   mFullScreenStack.AppendElement(do_GetWeakReference(aElement));
-  NS_ASSERTION(FullScreenStackTop() == aElement, "Should match");
+  NS_ASSERTION(GetFullscreenElement() == aElement, "Should match");
   UpdateViewportScrollbarOverrideForFullscreen(this);
   return true;
 }
@@ -11008,7 +10941,7 @@ nsDocument::FullScreenStackTop()
   uint32_t last = mFullScreenStack.Length() - 1;
   nsCOMPtr<Element> element(do_QueryReferent(mFullScreenStack[last]));
   NS_ASSERTION(element, "Should have full-screen element!");
-  NS_ASSERTION(element->IsInComposedDoc(), "Full-screen element should be in doc");
+  NS_ASSERTION(element->IsInUncomposedDoc(), "Full-screen element should be in doc");
   NS_ASSERTION(element->OwnerDoc() == this, "Full-screen element should be in this doc");
   return element;
 }
@@ -11086,7 +11019,7 @@ nsresult nsDocument::RemoteFrameFullscreenReverted()
 }
 
  bool
-nsIDocument::IsUnprefixedFullscreenEnabled(JSContext* aCx, JSObject* aObject)
+nsDocument::IsUnprefixedFullscreenEnabled(JSContext* aCx, JSObject* aObject)
 {
   MOZ_ASSERT(NS_IsMainThread());
   return nsContentUtils::IsSystemCaller(aCx) ||
@@ -11133,10 +11066,10 @@ nsDocument::FullscreenElementReadyCheck(Element* aElement,
 {
   NS_ASSERTION(aElement,
     "Must pass non-null element to nsDocument::RequestFullScreen");
-  if (!aElement || aElement == FullScreenStackTop()) {
+  if (!aElement || aElement == GetFullscreenElement()) {
     return false;
   }
-  if (!aElement->IsInComposedDoc()) {
+  if (!aElement->IsInUncomposedDoc()) {
     DispatchFullscreenError("FullscreenDeniedNotInDocument");
     return false;
   }
@@ -11160,11 +11093,8 @@ nsDocument::FullscreenElementReadyCheck(Element* aElement,
     DispatchFullscreenError("FullscreenDeniedSubDocFullScreen");
     return false;
   }
-  
-  
-  if (FullScreenStackTop() &&
-      !nsContentUtils::ContentIsHostIncludingDescendantOf(aElement,
-                                                          FullScreenStackTop())) {
+  if (GetFullscreenElement() &&
+      !nsContentUtils::ContentIsDescendantOf(aElement, GetFullscreenElement())) {
     
     
     DispatchFullscreenError("FullscreenDeniedNotDescendant");
@@ -11513,6 +11443,16 @@ nsDocument::ApplyFullscreen(const FullscreenRequest& aRequest)
     DispatchFullScreenChange(changed[changed.Length() - i - 1]);
   }
   return true;
+}
+
+Element*
+nsDocument::GetFullscreenElement()
+{
+  Element* element = FullScreenStackTop();
+  NS_ASSERTION(!element ||
+               element->State().HasState(NS_EVENT_STATE_FULL_SCREEN),
+    "Fullscreen element should have fullscreen styles applied");
+  return element;
 }
 
 bool

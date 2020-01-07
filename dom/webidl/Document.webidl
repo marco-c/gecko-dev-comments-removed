@@ -242,6 +242,10 @@ partial interface Document {
   readonly attribute boolean fullscreenEnabled;
   [BinaryName="fullscreenEnabled", NeedsCallerType]
   readonly attribute boolean mozFullScreenEnabled;
+  [LenientSetter, Func="nsDocument::IsUnprefixedFullscreenEnabled"]
+  readonly attribute Element? fullscreenElement;
+  [BinaryName="fullscreenElement"]
+  readonly attribute Element? mozFullScreenElement;
 
   [Func="nsDocument::IsUnprefixedFullscreenEnabled"]
   void exitFullscreen();
@@ -319,7 +323,7 @@ partial interface Document {
 
 //  Mozilla extensions of various sorts
 partial interface Document {
-  // nsIDOMDocumentXBL.  Wish we could make these [ChromeOnly], but
+  // XBL support.  Wish we could make these [ChromeOnly], but
   // that would likely break bindings running with the page principal.
   [Func="IsChromeOrXBL"]
   NodeList? getAnonymousNodes(Element elt);

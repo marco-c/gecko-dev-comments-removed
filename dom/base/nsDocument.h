@@ -21,7 +21,6 @@
 #include "nsTArray.h"
 #include "nsIdentifierMapEntry.h"
 #include "nsIDOMDocument.h"
-#include "nsIDOMDocumentXBL.h"
 #include "nsStubDocumentObserver.h"
 #include "nsIScriptGlobalObject.h"
 #include "nsIContent.h"
@@ -322,7 +321,6 @@ class PrincipalFlashClassifier;
 
 class nsDocument : public nsIDocument,
                    public nsIDOMDocument,
-                   public nsIDOMDocumentXBL,
                    public nsSupportsWeakReference,
                    public nsIScriptObjectPrincipal,
                    public nsIRadioGroupContainer,
@@ -636,9 +634,6 @@ public:
   
   NS_DECL_NSIDOMDOCUMENT
 
-  
-  NS_DECL_NSIDOMDOCUMENTXBL
-
   using mozilla::dom::DocumentOrShadowRoot::GetElementById;
   using mozilla::dom::DocumentOrShadowRoot::GetElementsByTagName;
   using mozilla::dom::DocumentOrShadowRoot::GetElementsByTagNameNS;
@@ -883,6 +878,8 @@ public:
   
   already_AddRefed<nsSimpleContentList> BlockedTrackingNodes() const;
 
+  static bool IsUnprefixedFullscreenEnabled(JSContext* aCx, JSObject* aObject);
+
   
   
   bool FullscreenElementReadyCheck(Element* aElement, bool aWasCallerChrome);
@@ -906,10 +903,11 @@ public:
   void FullScreenStackPop();
 
   
-  Element* FullScreenStackTop() override;
+  Element* FullScreenStackTop();
 
   
   bool FullscreenEnabled(mozilla::dom::CallerType aCallerType) override;
+  Element* GetFullscreenElement() override;
 
   virtual bool AllowPaymentRequest() const override;
   virtual void SetAllowPaymentRequest(bool aIsAllowPaymentRequest) override;
