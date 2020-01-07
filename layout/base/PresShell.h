@@ -872,6 +872,14 @@ private:
   
   bool mHasHandledUserInput : 1;
 
+#ifdef NIGHTLY_BUILD
+  
+  
+  bool mForceDispatchKeyPressEventsForNonPrintableKeys : 1;
+  
+  bool mInitializedForceDispatchKeyPressEventsForNonPrintableKeys : 1;
+#endif 
+
   static bool sDisableNonTestMouseEvents;
 
   TimeStamp mLastOSWake;

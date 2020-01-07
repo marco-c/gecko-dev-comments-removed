@@ -227,7 +227,19 @@ pref("dom.keyboardevent.dispatch_during_composition", false);
 
 
 
+#ifdef NIGHTLY_BUILD
+pref("dom.keyboardevent.keypress.dispatch_non_printable_keys_only_system_group_in_content", true);
+
+
+
+
+
+
+pref("dom.keyboardevent.keypress.hack.dispatch_non_printable_keys",
+     "docs.google.com,mail.google.com");
+#else
 pref("dom.keyboardevent.keypress.dispatch_non_printable_keys_only_system_group_in_content", false);
+#endif
 
 
 pref("dom.webmidi.enabled", false);

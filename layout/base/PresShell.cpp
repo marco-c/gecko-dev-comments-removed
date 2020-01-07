@@ -829,6 +829,10 @@ PresShell::PresShell()
   , mIsLastChromeOnlyEscapeKeyConsumed(false)
   , mHasReceivedPaintMessage(false)
   , mHasHandledUserInput(false)
+#ifdef NIGHTLY_BUILD
+  , mForceDispatchKeyPressEventsForNonPrintableKeys(false)
+  , mInitializedForceDispatchKeyPressEventsForNonPrintableKeys(false)
+#endif 
 {
   MOZ_LOG(gLog, LogLevel::Debug, ("PresShell::PresShell this=%p", this));
 
@@ -7812,7 +7816,103 @@ PresShell::HandleEventInternal(WidgetEvent* aEvent,
   return rv;
 }
 
+#ifdef NIGHTLY_BUILD
+static already_AddRefed<nsIURI>
+GetDocumentURIToCompareWithBlacklist(PresShell& aPresShell)
+{
+  nsPresContext* presContext = aPresShell.GetPresContext();
+  if (NS_WARN_IF(!presContext)) {
+    return nullptr;
+  }
+  
+  
+  for (nsIDocument* document = presContext->Document();
+       document && document->IsContentDocument();
+       document = document->GetParentDocument()) {
+    
+    
+    nsIPrincipal* principal = document->NodePrincipal();
+    if (principal->GetIsNullPrincipal()) {
+      continue;
+    }
+    nsCOMPtr<nsIURI> uri;
+    principal->GetURI(getter_AddRefs(uri));
+    return uri.forget();
+  }
+  return nullptr;
+}
 
+static bool
+DispatchKeyPressEventsEvenForNonPrintableKeys(nsIURI* aURI)
+{
+  if (!aURI) {
+    return false;
+  }
+
+  nsAutoCString scheme;
+  aURI->GetScheme(scheme);
+  if (!scheme.EqualsLiteral("http") &&
+      !scheme.EqualsLiteral("https")) {
+    return false;
+  }
+
+  nsAutoCString host;
+  aURI->GetHost(host);
+  if (host.IsEmpty()) {
+    return false;
+  }
+
+  
+  
+  static const char* kPrefNameOfBlackList =
+    "dom.keyboardevent.keypress.hack.dispatch_non_printable_keys";
+
+  nsAutoCString blackList;
+  Preferences::GetCString(kPrefNameOfBlackList, blackList);
+  if (blackList.IsEmpty()) {
+    return false;
+  }
+
+  for (;;) {
+    int32_t index = blackList.Find(host, false);
+    if (index >= 0 &&
+        static_cast<uint32_t>(index) + host.Length() <= blackList.Length() &&
+        
+        (!index || blackList[index - 1] == ',')) {
+      
+      size_t indexAfterHost = index + host.Length();
+      if (indexAfterHost == blackList.Length() ||
+          blackList[indexAfterHost] == ',') {
+        return true;
+      }
+      
+      
+      if (blackList[indexAfterHost] == '/') {
+        int32_t endOfPath = blackList.Find(",", false, indexAfterHost);
+        nsDependentCSubstring::size_type length =
+          endOfPath < 0 ? static_cast<nsDependentCSubstring::size_type>(-1) :
+                          endOfPath - indexAfterHost;
+        nsDependentCSubstring pathInBlackList(blackList,
+                                              indexAfterHost, length);
+        nsAutoCString filePath;
+        aURI->GetFilePath(filePath);
+        if (StringBeginsWith(filePath, pathInBlackList)) {
+          return true;
+        }
+      }
+    }
+    int32_t startIndexOfCurrentLevel = host[0] == '*' ? 1 : 0;
+    int32_t startIndexOfNextLevel =
+      host.Find(".", false, startIndexOfCurrentLevel + 1);
+    if (startIndexOfNextLevel <= 0) {
+      return false;
+    }
+    host = NS_LITERAL_CSTRING("*") +
+             nsDependentCSubstring(host, startIndexOfNextLevel);
+  }
+  return false;
+}
+#endif 
 
 nsresult
 PresShell::DispatchEventToDOM(WidgetEvent* aEvent,
@@ -7840,6 +7940,26 @@ PresShell::DispatchEventToDOM(WidgetEvent* aEvent,
   if (eventTarget) {
     if (aEvent->IsBlockedForFingerprintingResistance()) {
       aEvent->mFlags.mOnlySystemGroupDispatchInContent = true;
+#ifdef NIGHTLY_BUILD
+    } else if (aEvent->mMessage == eKeyPress &&
+               aEvent->mFlags.mOnlySystemGroupDispatchInContent) {
+      
+      
+      
+      
+      
+      
+      
+      if (!mInitializedForceDispatchKeyPressEventsForNonPrintableKeys) {
+        mInitializedForceDispatchKeyPressEventsForNonPrintableKeys = true;
+        nsCOMPtr<nsIURI> uri = GetDocumentURIToCompareWithBlacklist(*this);
+        mForceDispatchKeyPressEventsForNonPrintableKeys =
+          DispatchKeyPressEventsEvenForNonPrintableKeys(uri);
+      }
+      if (mForceDispatchKeyPressEventsForNonPrintableKeys) {
+        aEvent->mFlags.mOnlySystemGroupDispatchInContent = false;
+      }
+#endif
     }
 
     if (aEvent->mClass == eCompositionEventClass) {
