@@ -3,7 +3,6 @@
 
 
 use servo_rand;
-use servo_rand::Rng;
 use std::cell::RefCell;
 use std::rc::Rc;
 use url::{Host, Origin};
@@ -43,7 +42,7 @@ impl ImmutableOrigin {
 
     
     pub fn new_opaque() -> ImmutableOrigin {
-        ImmutableOrigin::Opaque(OpaqueOrigin(servo_rand::thread_rng().gen()))
+        ImmutableOrigin::Opaque(OpaqueOrigin(servo_rand::random_uuid()))
     }
 
     pub fn scheme(&self) -> Option<&str> {
