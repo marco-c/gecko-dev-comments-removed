@@ -186,18 +186,11 @@ private:
   const T mValue;
 };
 
-
-
-
-
-
-
-
-
-
 enum class MediaThreadType {
   PLAYBACK, 
-  PLATFORM_DECODER
+  PLATFORM_DECODER, 
+  MSG_CONTROL,
+  WEBRTC_DECODER
 };
 
 
