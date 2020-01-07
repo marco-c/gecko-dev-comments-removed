@@ -350,10 +350,11 @@ task_description_schema = Schema({
         Required('max-run-time'): int,
 
         
-        Optional('retry-exit-status'): Any(
-            int,
-            [int],
-        ),
+        Optional('retry-exit-status'): [int],
+
+        
+        
+        Optional('purge-caches-exit-status'): [int],
     }, {
         Required('implementation'): 'generic-worker',
         Required('os'): Any('windows', 'macosx'),
@@ -819,11 +820,11 @@ def build_docker_worker_payload(config, task, task_def):
     if 'max-run-time' in worker:
         payload['maxRunTime'] = worker['max-run-time']
 
+    payload['onExitStatus'] = {}
     if 'retry-exit-status' in worker:
-        if isinstance(worker['retry-exit-status'], int):
-            payload['onExitStatus'] = {'retry': [worker['retry-exit-status']]}
-        elif isinstance(worker['retry-exit-status'], list):
-            payload['onExitStatus'] = {'retry': worker['retry-exit-status']}
+        payload['onExitStatus']['retry'] = worker['retry-exit-status']
+    if 'purge-caches-exit-status' in worker:
+        payload['onExitStatus']['purgeCaches'] = worker['purge-caches-exit-status']
 
     if 'artifacts' in worker:
         artifacts = {}
@@ -963,9 +964,6 @@ def build_generic_worker_payload(config, task, task_def):
     }
 
     
-
-    if 'retry-exit-status' in worker:
-        raise Exception("retry-exit-status not supported in generic-worker")
 
     
     features = {}

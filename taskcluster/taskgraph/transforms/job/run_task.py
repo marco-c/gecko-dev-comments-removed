@@ -79,6 +79,10 @@ def docker_worker_run_task(config, job, taskdesc):
             'skip-untrusted': True,
         })
 
+    
+    worker.setdefault('retry-exit-status', []).append(72)
+    worker.setdefault('purge-caches-exit-status', []).append(72)
+
     run_command = run['command']
     if isinstance(run_command, basestring):
         run_command = ['bash', '-cx', run_command]
