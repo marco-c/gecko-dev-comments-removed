@@ -5874,8 +5874,13 @@ HTMLEditRules::WillAlign(const nsAString& aAlignType,
       if (HTMLEditUtils::IsList(atCurNode.GetContainer())) {
         
         
+        
+        
+        
         rv = AlignInnerBlocks(*curNode, aAlignType);
-        NS_ENSURE_SUCCESS(rv, rv);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
+        }
         curDiv = nullptr;
         continue;
       }
@@ -5923,10 +5928,6 @@ HTMLEditRules::WillAlign(const nsAString& aAlignType,
 
   return NS_OK;
 }
-
-
-
-
 
 nsresult
 HTMLEditRules::AlignInnerBlocks(nsINode& aNode,

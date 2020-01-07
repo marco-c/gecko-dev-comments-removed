@@ -401,7 +401,16 @@ protected:
 
   MOZ_MUST_USE nsresult DidAbsolutePosition();
 
-  nsresult AlignInnerBlocks(nsINode& aNode, const nsAString& aAlignType);
+  
+
+
+
+
+
+
+
+  MOZ_MUST_USE nsresult
+  AlignInnerBlocks(nsINode& aNode, const nsAString& aAlignType);
 
   
 
