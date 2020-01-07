@@ -78,7 +78,7 @@ var openInspectorSidebarTab = async function(id) {
 
 
 function openRuleView() {
-  return openInspectorSidebarTab("ruleview").then(data => {
+  return openInspector().then(data => {
     
     
     data.inspector.getPanel("ruleview").view.debounce = manualDebounce();
@@ -149,7 +149,6 @@ function openLayoutView() {
 
 
 function selectRuleView(inspector) {
-  inspector.sidebar.select("ruleview");
   return inspector.getPanel("ruleview").view;
 }
 
