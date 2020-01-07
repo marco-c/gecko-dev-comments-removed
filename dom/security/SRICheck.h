@@ -32,20 +32,6 @@ public:
                                     const nsACString& aSourceFileURI,
                                     nsIConsoleReportCollector* aReporter,
                                     SRIMetadata* outMetadata);
-
-  
-
-
-
-
-
-
-  static nsresult VerifyIntegrity(const SRIMetadata& aMetadata,
-                                  nsIChannel* aChannel,
-                                  const nsACString& aFirst,
-                                  const nsACString& aSecond,
-                                  const nsACString& aSourceFileURI,
-                                  nsIConsoleReportCollector* aReporter);
 };
 
 
