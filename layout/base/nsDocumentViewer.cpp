@@ -3668,27 +3668,26 @@ nsDocumentViewer::GetPopupLinkNode(nsIDOMNode** aNode)
   *aNode = nullptr;
 
   
-  nsCOMPtr<nsIDOMNode> node;
-  nsresult rv = GetPopupNode(getter_AddRefs(node));
+  nsCOMPtr<nsIDOMNode> domNode;
+  nsresult rv = GetPopupNode(getter_AddRefs(domNode));
   NS_ENSURE_SUCCESS(rv, rv);
+
+  nsCOMPtr<nsINode> node = do_QueryInterface(domNode);
 
   
   while (node) {
-
     nsCOMPtr<nsIContent> content(do_QueryInterface(node));
     if (content) {
       nsCOMPtr<nsIURI> hrefURI = content->GetHrefURI();
       if (hrefURI) {
-        *aNode = node;
+        *aNode = node->AsDOMNode();
         NS_IF_ADDREF(*aNode); 
         return NS_OK;
       }
     }
 
     
-    nsCOMPtr<nsIDOMNode> parentNode;
-    node->GetParentNode(getter_AddRefs(parentNode));
-    node = parentNode;
+    node = node->GetParentNode();
   }
 
   

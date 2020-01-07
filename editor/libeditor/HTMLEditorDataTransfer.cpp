@@ -360,7 +360,7 @@ HTMLEditor::DoInsertHTMLWithContext(const nsAString& aInputString,
     }
 
     
-    bool bStartedInLink = IsInLink(pointToInsert.GetContainerAsDOMNode());
+    bool bStartedInLink = IsInLink(pointToInsert.GetContainer());
 
     
     if (pointToInsert.IsInTextNode()) {
@@ -658,9 +658,9 @@ HTMLEditor::DoInsertHTMLWithContext(const nsAString& aInputString,
       selection->Collapse(selNode, selOffset);
 
       
-      nsCOMPtr<nsIDOMNode> link;
+      nsCOMPtr<nsINode> link;
       if (!bStartedInLink &&
-          IsInLink(GetAsDOMNode(selNode), address_of(link))) {
+          IsInLink(selNode, address_of(link))) {
         
         
         
@@ -686,14 +686,14 @@ HTMLEditor::DoInsertHTMLWithContext(const nsAString& aInputString,
 }
 
 bool
-HTMLEditor::IsInLink(nsIDOMNode* aNode,
-                     nsCOMPtr<nsIDOMNode>* outLink)
+HTMLEditor::IsInLink(nsINode* aNode,
+                     nsCOMPtr<nsINode>* outLink)
 {
   NS_ENSURE_TRUE(aNode, false);
   if (outLink) {
     *outLink = nullptr;
   }
-  nsCOMPtr<nsIDOMNode> tmp, node = aNode;
+  nsINode* node = aNode;
   while (node) {
     if (HTMLEditUtils::IsLink(node)) {
       if (outLink) {
@@ -701,8 +701,7 @@ HTMLEditor::IsInLink(nsIDOMNode* aNode,
       }
       return true;
     }
-    tmp = node;
-    tmp->GetParentNode(getter_AddRefs(node));
+    node = node->GetParentNode();
   }
   return false;
 }

@@ -1004,7 +1004,7 @@ HTMLEditRules::GetIndentState(bool* aCanIndent,
   NS_ENSURE_STATE(mHTMLEditor);
   bool useCSS = mHTMLEditor->IsCSSEnabled();
   for (auto& curNode : Reversed(arrayOfNodes)) {
-    if (HTMLEditUtils::IsNodeThatCanOutdent(GetAsDOMNode(curNode))) {
+    if (HTMLEditUtils::IsNodeThatCanOutdent(curNode)) {
       *aCanOutdent = true;
       break;
     } else if (useCSS) {
@@ -1037,7 +1037,7 @@ HTMLEditRules::GetIndentState(bool* aCanIndent,
 
     
     NS_ENSURE_STATE(mHTMLEditor);
-    nsCOMPtr<nsIDOMNode> parent, tmp, root = do_QueryInterface(mHTMLEditor->GetRoot());
+    nsCOMPtr<nsINode> parent, root = mHTMLEditor->GetRoot();
     NS_ENSURE_TRUE(root, NS_ERROR_NULL_POINTER);
     int32_t selOffset;
     NS_ENSURE_STATE(mHTMLEditor);
@@ -1053,8 +1053,7 @@ HTMLEditRules::GetIndentState(bool* aCanIndent,
         *aCanOutdent = true;
         break;
       }
-      tmp = parent;
-      tmp->GetParentNode(getter_AddRefs(parent));
+      parent = parent->GetParentNode();
     }
 
     
@@ -1066,8 +1065,7 @@ HTMLEditRules::GetIndentState(bool* aCanIndent,
         *aCanOutdent = true;
         break;
       }
-      tmp = parent;
-      tmp->GetParentNode(getter_AddRefs(parent));
+      parent = parent->GetParentNode();
     }
   }
   return NS_OK;
@@ -1123,7 +1121,7 @@ HTMLEditRules::GetParagraphState(bool* aMixed,
 
   
   NS_ENSURE_STATE(mHTMLEditor);
-  nsCOMPtr<nsIDOMElement> rootElem = do_QueryInterface(mHTMLEditor->GetRoot());
+  nsCOMPtr<Element> rootElem = mHTMLEditor->GetRoot();
   NS_ENSURE_TRUE(rootElem, NS_ERROR_NULL_POINTER);
 
   
@@ -1131,7 +1129,7 @@ HTMLEditRules::GetParagraphState(bool* aMixed,
     nsAutoString format;
     
     if (HTMLEditUtils::IsFormatNode(curNode)) {
-      GetFormatString(GetAsDOMNode(curNode), format);
+      GetFormatString(curNode, format);
     } else if (IsBlockNode(curNode)) {
       
       
@@ -1139,8 +1137,7 @@ HTMLEditRules::GetParagraphState(bool* aMixed,
       
       continue;
     } else {
-      nsCOMPtr<nsIDOMNode> node, tmp = GetAsDOMNode(curNode);
-      tmp->GetParentNode(getter_AddRefs(node));
+      nsINode* node = curNode->GetParentNode();
       while (node) {
         if (node == rootElem) {
           format.Truncate(0);
@@ -1150,8 +1147,7 @@ HTMLEditRules::GetParagraphState(bool* aMixed,
           break;
         }
         
-        tmp = node;
-        tmp->GetParentNode(getter_AddRefs(node));
+        node = node->GetParentNode();
       }
     }
 
@@ -1202,14 +1198,13 @@ HTMLEditRules::AppendInnerFormatNodes(nsTArray<OwningNonNull<nsINode>>& aArray,
 }
 
 nsresult
-HTMLEditRules::GetFormatString(nsIDOMNode* aNode,
+HTMLEditRules::GetFormatString(nsINode* aNode,
                                nsAString& outFormat)
 {
   NS_ENSURE_TRUE(aNode, NS_ERROR_NULL_POINTER);
 
   if (HTMLEditUtils::IsFormatNode(aNode)) {
-    RefPtr<nsAtom> atom = EditorBase::GetTag(aNode);
-    atom->ToString(outFormat);
+    aNode->NodeInfo()->NameAtom()->ToString(outFormat);
   } else {
     outFormat.Truncate();
   }
@@ -1864,8 +1859,8 @@ HTMLEditRules::InsertBRElement(Selection& aSelection,
     }
     
     
-    nsCOMPtr<nsIDOMNode> linkDOMNode;
-    if (htmlEditor->IsInLink(pointToBreak.GetContainerAsDOMNode(),
+    nsCOMPtr<nsINode> linkDOMNode;
+    if (htmlEditor->IsInLink(pointToBreak.GetContainer(),
                              address_of(linkDOMNode))) {
       nsCOMPtr<Element> linkNode = do_QueryInterface(linkDOMNode);
       if (NS_WARN_IF(!linkNode)) {
