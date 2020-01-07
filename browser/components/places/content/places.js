@@ -532,7 +532,8 @@ var PlacesOrganizer = {
     let fpCallback = function fpCallback_done(aResult) {
       if (aResult != Ci.nsIFilePicker.returnCancel) {
         
-        PlacesBackups.saveBookmarksToJSONFile(fp.file.path);
+        PlacesBackups.saveBookmarksToJSONFile(fp.file.path)
+                     .catch(Cu.reportError);
       }
     };
 
