@@ -406,22 +406,23 @@ var TPS = {
   async HandleHistory(entries, action) {
     try {
       for (let entry of entries) {
+        const entryString = JSON.stringify(entry);
         Logger.logInfo("executing action " + action.toUpperCase() +
-                       " on history entry " + JSON.stringify(entry));
+                       " on history entry " + entryString);
         switch (action) {
           case ACTION_ADD:
-            HistoryEntry.Add(entry, this._usSinceEpoch);
+            await HistoryEntry.Add(entry, this._usSinceEpoch);
             break;
           case ACTION_DELETE:
-            HistoryEntry.Delete(entry, this._usSinceEpoch);
+            await HistoryEntry.Delete(entry, this._usSinceEpoch);
             break;
           case ACTION_VERIFY:
             Logger.AssertTrue((await HistoryEntry.Find(entry, this._usSinceEpoch)),
-              "Uri visits not found in history database");
+              "Uri visits not found in history database: " + entryString);
             break;
           case ACTION_VERIFY_NOT:
             Logger.AssertTrue(!(await HistoryEntry.Find(entry, this._usSinceEpoch)),
-              "Uri visits found in history database, but they shouldn't be");
+              "Uri visits found in history database, but they shouldn't be: " + entryString);
             break;
           default:
             Logger.AssertTrue(false, "invalid action: " + action);
@@ -743,9 +744,12 @@ var TPS = {
         return;
       }
       this.seconds_since_epoch = Services.prefs.getIntPref("tps.seconds_since_epoch");
-      if (this.seconds_since_epoch)
-        this._usSinceEpoch = this.seconds_since_epoch * 1000 * 1000;
-      else {
+      if (this.seconds_since_epoch) {
+        
+        
+        
+        this._usSinceEpoch = (this.seconds_since_epoch - 60) * 1000 * 1000;
+      } else {
         this.DumpError("seconds-since-epoch not set");
         return;
       }
