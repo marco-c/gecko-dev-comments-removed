@@ -303,42 +303,72 @@ VorbisDataDecoder::VorbisLayout(uint32_t aChannels)
   switch (aChannels) {
     case 1: 
     {
-      static const Channel config[] = { AudioConfig::CHANNEL_MONO };
+      static const Channel config[] = { AudioConfig::CHANNEL_FRONT_CENTER };
       return config;
     }
     case 2: 
     {
-      static const Channel config[] = { AudioConfig::CHANNEL_LEFT, AudioConfig::CHANNEL_RIGHT };
+      static const Channel config[] = { AudioConfig::CHANNEL_FRONT_LEFT,
+                                        AudioConfig::CHANNEL_FRONT_RIGHT };
       return config;
     }
     case 3: 
+            
     {
-      static const Channel config[] = { AudioConfig::CHANNEL_LEFT, AudioConfig::CHANNEL_CENTER, AudioConfig::CHANNEL_RIGHT };
+      static const Channel config[] = { AudioConfig::CHANNEL_FRONT_LEFT,
+                                        AudioConfig::CHANNEL_FRONT_CENTER,
+                                        AudioConfig::CHANNEL_FRONT_RIGHT };
       return config;
     }
     case 4: 
+            
     {
-      static const Channel config[] = { AudioConfig::CHANNEL_LEFT, AudioConfig::CHANNEL_RIGHT, AudioConfig::CHANNEL_LS, AudioConfig::CHANNEL_RS };
+      static const Channel config[] = { AudioConfig::CHANNEL_FRONT_LEFT,
+                                        AudioConfig::CHANNEL_FRONT_RIGHT,
+                                        AudioConfig::CHANNEL_BACK_LEFT,
+                                        AudioConfig::CHANNEL_BACK_RIGHT };
       return config;
     }
     case 5: 
+            
     {
-      static const Channel config[] = { AudioConfig::CHANNEL_LEFT, AudioConfig::CHANNEL_CENTER, AudioConfig::CHANNEL_RIGHT, AudioConfig::CHANNEL_LS, AudioConfig::CHANNEL_RS };
+      static const Channel config[] = { AudioConfig::CHANNEL_FRONT_LEFT,
+                                        AudioConfig::CHANNEL_FRONT_CENTER,
+                                        AudioConfig::CHANNEL_FRONT_RIGHT,
+                                        AudioConfig::CHANNEL_BACK_LEFT,
+                                        AudioConfig::CHANNEL_BACK_RIGHT };
       return config;
     }
     case 6: 
+            
     {
-      static const Channel config[] = { AudioConfig::CHANNEL_LEFT, AudioConfig::CHANNEL_CENTER, AudioConfig::CHANNEL_RIGHT, AudioConfig::CHANNEL_LS, AudioConfig::CHANNEL_RS, AudioConfig::CHANNEL_LFE };
+      static const Channel config[] = {
+        AudioConfig::CHANNEL_FRONT_LEFT,  AudioConfig::CHANNEL_FRONT_CENTER,
+        AudioConfig::CHANNEL_FRONT_RIGHT, AudioConfig::CHANNEL_BACK_LEFT,
+        AudioConfig::CHANNEL_BACK_RIGHT,  AudioConfig::CHANNEL_LFE
+      };
       return config;
     }
     case 7: 
+            
     {
-      static const Channel config[] = { AudioConfig::CHANNEL_LEFT, AudioConfig::CHANNEL_CENTER, AudioConfig::CHANNEL_RIGHT, AudioConfig::CHANNEL_LS, AudioConfig::CHANNEL_RS, AudioConfig::CHANNEL_RCENTER, AudioConfig::CHANNEL_LFE };
+      static const Channel config[] = {
+        AudioConfig::CHANNEL_FRONT_LEFT,  AudioConfig::CHANNEL_FRONT_CENTER,
+        AudioConfig::CHANNEL_FRONT_RIGHT, AudioConfig::CHANNEL_SIDE_LEFT,
+        AudioConfig::CHANNEL_SIDE_RIGHT,  AudioConfig::CHANNEL_BACK_CENTER,
+        AudioConfig::CHANNEL_LFE
+      };
       return config;
     }
     case 8: 
+            
     {
-      static const Channel config[] = { AudioConfig::CHANNEL_LEFT, AudioConfig::CHANNEL_CENTER, AudioConfig::CHANNEL_RIGHT, AudioConfig::CHANNEL_LS, AudioConfig::CHANNEL_RS, AudioConfig::CHANNEL_RLS, AudioConfig::CHANNEL_RRS, AudioConfig::CHANNEL_LFE };
+      static const Channel config[] = {
+        AudioConfig::CHANNEL_FRONT_LEFT,  AudioConfig::CHANNEL_FRONT_CENTER,
+        AudioConfig::CHANNEL_FRONT_RIGHT, AudioConfig::CHANNEL_SIDE_LEFT,
+        AudioConfig::CHANNEL_SIDE_RIGHT,  AudioConfig::CHANNEL_BACK_LEFT,
+        AudioConfig::CHANNEL_BACK_RIGHT,  AudioConfig::CHANNEL_LFE
+      };
       return config;
     }
     default:
