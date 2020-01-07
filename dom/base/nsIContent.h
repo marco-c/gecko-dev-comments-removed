@@ -203,7 +203,7 @@ public:
 
 
 
-  virtual nsIContent* FindFirstNonChromeOnlyAccessContent() const;
+  nsIContent* FindFirstNonChromeOnlyAccessContent() const;
 
   
 
@@ -264,7 +264,7 @@ public:
   
 
 
-  virtual bool IsInChromeDocument() const;
+  bool IsInChromeDocument() const;
 
   
 
