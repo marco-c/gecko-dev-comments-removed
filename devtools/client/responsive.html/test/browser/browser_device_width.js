@@ -18,6 +18,9 @@ addRDMTask(TEST_URL, function* ({ ui, manager }) {
   info("Checking for screen props");
   yield checkScreenProps(ui);
 
+  info("Changing the RDM size using input keys");
+  yield setViewportSizeWithInputKeys(ui);
+
   info("Setting docShell.deviceSizeIsPageSize to false");
   yield ContentTask.spawn(ui.getViewportBrowser(), {}, function* () {
     let docShell = content.QueryInterface(Ci.nsIInterfaceRequestor)
@@ -29,6 +32,43 @@ addRDMTask(TEST_URL, function* ({ ui, manager }) {
   info("Checking for screen props once again.");
   yield checkScreenProps2(ui);
 });
+
+function* setViewportSizeWithInputKeys(ui) {
+  let width = 320, height = 500;
+  let resized = waitForViewportResizeTo(ui, width, height);
+  ui.setViewportSize({ width, height });
+  yield resized;
+
+  let dimensions = ui.toolWindow.document.querySelectorAll(".viewport-dimension-input");
+
+  
+  resized = waitForViewportResizeTo(ui, 420, height);
+  dimensions[0].focus();
+  for (let i = 1; i <= 100; i++) {
+    EventUtils.synthesizeKey("KEY_ArrowUp", { code: "ArrowUp" });
+  }
+  yield resized;
+
+  
+  resized = waitForViewportResizeTo(ui, width, height);
+  dimensions[0].focus();
+  for (let i = 1; i <= 10; i++) {
+    EventUtils.synthesizeKey("KEY_ArrowDown", { shiftKey: true, code: "ArrowDown" });
+  }
+  yield resized;
+
+  
+  resized = waitForViewportResizeTo(ui, width, 600);
+  dimensions[1].focus();
+  EventUtils.synthesizeKey("VK_PAGE_UP", { shiftKey: true });
+  yield resized;
+
+  
+  resized = waitForViewportResizeTo(ui, width, height);
+  dimensions[1].focus();
+  EventUtils.synthesizeKey("VK_PAGE_DOWN", { shiftKey: true });
+  yield resized;
+}
 
 function* doInitialChecks(ui) {
   let { innerWidth, matchesMedia } = yield grabContentInfo(ui);

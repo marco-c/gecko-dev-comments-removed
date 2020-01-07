@@ -1,0 +1,25 @@
+
+
+
+
+"use strict";
+
+const { KeyCodes } = require("devtools/client/shared/keycodes");
+
+
+
+
+
+
+
+
+
+
+
+function isKeyIn(key, ...keys) {
+  return keys.some(expectedKey => {
+    return key === KeyCodes["DOM_VK_" + expectedKey];
+  });
+}
+
+exports.isKeyIn = isKeyIn;
