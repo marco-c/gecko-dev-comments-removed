@@ -1505,6 +1505,22 @@ public:
   virtual bool IsVisible() = 0;
   void DispatchSynthMouseMove(mozilla::WidgetGUIEvent* aEvent);
 
+  
+
+
+
+
+  virtual void SuppressDisplayport(bool aEnabled) = 0;
+
+  
+
+
+
+  virtual void RespectDisplayportSuppression(bool aEnabled) = 0;
+
+  
+  virtual bool IsDisplayportSuppressed() = 0;
+
   virtual void AddSizeOfIncludingThis(nsWindowSizes& aWindowSizes) const = 0;
 
   
