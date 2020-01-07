@@ -71,6 +71,10 @@ const GRID_GAP_ALPHA = 0.5;
 
 
 
+const OFFSET_FROM_EDGE = 25;
+
+
+
 
 const gCachedGridPattern = new Map();
 
@@ -1168,11 +1172,6 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
       }
     }
 
-    if (!this.hasNodeTransformations) {
-      x = Math.max(x, padding);
-      y = Math.max(y, padding);
-    }
-
     
     
     
@@ -1185,31 +1184,108 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
     let margin = 2 * displayPixelRatio;
     let arrowSize = 8 * displayPixelRatio;
 
+    let minOffsetFromEdge = OFFSET_FROM_EDGE * displayPixelRatio;
+
     let minBoxSize = arrowSize * 2 + padding;
     boxWidth = Math.max(boxWidth, minBoxSize);
     boxHeight = Math.max(boxHeight, minBoxSize);
 
+    let { width, height } = this._winDimensions;
+
+    let boxAlignment;
+    let textCenterPos;
+
     if (dimensionType === COLUMNS) {
       if (lineNumber > 0) {
+        boxAlignment = "top";
+        textCenterPos = (boxHeight + arrowSize + radius) - boxHeight / 2;
+
+        
+        
+        if (y <= minOffsetFromEdge) {
+          boxAlignment = "bottom";
+          textCenterPos = -((boxHeight + arrowSize + radius) - boxHeight / 2);
+
+          
+          
+          
+          if (y + padding < 0 || y === padding) {
+            y = padding;
+          } else {
+            
+            
+            y += arrowSize;
+          }
+        }
+
         drawBubbleRect(this.ctx, x, y, boxWidth, boxHeight, radius, margin, arrowSize,
-          "top");
+          boxAlignment);
+
         
         
-        y -= (boxHeight + arrowSize + radius) - boxHeight / 2;
+        y -= textCenterPos;
       } else {
+        boxAlignment = "bottom";
+        textCenterPos = (boxHeight + arrowSize + radius) - boxHeight / 2;
+
+        
+        
+        if (y / displayPixelRatio >= height * .95) {
+          boxAlignment = "top";
+          textCenterPos = -((boxHeight + arrowSize + radius) - boxHeight / 2);
+
+          if (y + padding > height) {
+            y -= arrowSize;
+          }
+        }
+
         drawBubbleRect(this.ctx, x, y, boxWidth, boxHeight, radius, margin, arrowSize,
-          "bottom");
-        y += (boxHeight + arrowSize + radius) - boxHeight / 2;
+                       boxAlignment);
+
+        y += textCenterPos;
       }
-    } else if (dimensionType === ROWS) {
+    }
+
+    if (dimensionType === ROWS) {
       if (lineNumber > 0) {
+        boxAlignment = "left";
+        textCenterPos = (boxWidth + arrowSize + radius) - boxWidth / 2;
+
+        if (x <= minOffsetFromEdge) {
+          boxAlignment = "right";
+          textCenterPos = -((boxWidth + arrowSize + radius) - boxWidth / 2);
+
+          
+          
+          if (x + padding < 0 || x === padding) {
+            x = padding;
+          } else {
+            x += arrowSize;
+          }
+        }
+
         drawBubbleRect(this.ctx, x, y, boxWidth, boxHeight, radius, margin, arrowSize,
-          "left");
-        x -= (boxWidth + arrowSize + radius) - boxWidth / 2;
+                       boxAlignment);
+
+        x -= textCenterPos;
       } else {
+        boxAlignment = "right";
+        textCenterPos = (boxWidth + arrowSize + radius) - boxWidth / 2;
+
+        
+        if (x / displayPixelRatio >= width * .95) {
+          boxAlignment = "left";
+          textCenterPos = -((boxWidth + arrowSize + radius) - boxWidth / 2);
+
+          if (x + padding > width) {
+            x -= arrowSize;
+          }
+        }
+
         drawBubbleRect(this.ctx, x, y, boxWidth, boxHeight, radius, margin, arrowSize,
-          "right");
-        x += (boxWidth + arrowSize + radius) - boxWidth / 2;
+                       boxAlignment);
+
+        x += textCenterPos;
       }
     }
 
