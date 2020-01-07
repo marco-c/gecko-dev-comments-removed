@@ -14,7 +14,6 @@ import hashlib
 from xml.dom import minidom
 
 from six import reraise, string_types
-from six.moves.urllib import request
 
 import mozfile
 from mozlog.unstructured import getLogger
@@ -57,9 +56,6 @@ class AddonManager(object):
         self.backup_dir = None
 
         
-        self.downloaded_addons = []
-
-        
         self.installed_addons = []
 
     def __del__(self):
@@ -82,10 +78,6 @@ class AddonManager(object):
                 pass
 
         
-        for addon in self.downloaded_addons:
-            mozfile.remove(addon)
-
-        
         if self.backup_dir and os.path.isdir(self.backup_dir):
             extensions_path = os.path.join(self.profile, 'extensions')
 
@@ -98,36 +90,6 @@ class AddonManager(object):
 
         
         self._internal_init()
-
-    @classmethod
-    def download(self, url, target_folder=None):
-        """
-        Downloads an add-on from the specified URL to the target folder
-
-        :param url: URL of the add-on (XPI file)
-        :param target_folder: Folder to store the XPI file in
-
-        """
-        response = request.urlopen(url)
-        fd, path = tempfile.mkstemp(suffix='.xpi')
-        os.write(fd, response.read())
-        os.close(fd)
-
-        if not self.is_addon(path):
-            mozfile.remove(path)
-            raise AddonFormatError('Not a valid add-on: %s' % url)
-
-        
-        details = self.addon_details(path)
-        new_path = path.replace('.xpi', '_%s.xpi' % details.get('id'))
-
-        
-        if target_folder:
-            new_path = os.path.join(target_folder, os.path.basename(new_path))
-
-        os.rename(path, new_path)
-
-        return new_path
 
     def get_addon_path(self, addon_id):
         """Returns the path to the installed add-on
@@ -296,17 +258,11 @@ class AddonManager(object):
 
     def install_from_path(self, path, unpack=False):
         """
-        Installs addon from a filepath, url or directory of addons in the profile.
+        Installs addon from a filepath or directory of addons in the profile.
 
-        :param path: url, path to .xpi, or directory of addons
+        :param path: path to .xpi or directory of addons
         :param unpack: whether to unpack unless specified otherwise in the install.rdf
         """
-        
-        
-        if mozfile.is_url(path):
-            path = self.download(path)
-            self.downloaded_addons.append(path)
-
         addons = [path]
 
         
