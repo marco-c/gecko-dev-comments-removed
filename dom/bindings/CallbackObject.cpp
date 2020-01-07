@@ -196,7 +196,7 @@ CallbackObject::CallSetup::CallSetup(CallbackObject* aCallback,
       globalObject = win;
     } else {
       
-      JSObject* global = js::GetGlobalForObjectCrossCompartment(realCallback);
+      JSObject* global = JS::GetNonCCWObjectGlobal(realCallback);
       globalObject = xpc::NativeGlobal(global);
       MOZ_ASSERT(globalObject);
     }
