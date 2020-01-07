@@ -127,7 +127,7 @@ public:
   void RunEvent(wr::WindowId aWindowId, UniquePtr<RendererEvent> aCallBack);
 
   
-  void UpdateAndRender(wr::WindowId aWindowId);
+  void UpdateAndRender(wr::WindowId aWindowId, bool aReadback = false);
 
   void Pause(wr::WindowId aWindowId);
   bool Resume(wr::WindowId aWindowId);

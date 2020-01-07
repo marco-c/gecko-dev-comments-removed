@@ -53,7 +53,7 @@ public:
   void Update();
 
   
-  bool UpdateAndRender();
+  bool UpdateAndRender(bool aReadback);
 
   
   bool RenderToTarget(gfx::DrawTarget& aTarget);
