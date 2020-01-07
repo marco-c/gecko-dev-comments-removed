@@ -150,12 +150,7 @@ add_task(async function test_execute() {
   Assert.equal(storageType.value, Ci.nsIAnnotationService.TYPE_STRING);
 
   
-  var annoNames = annosvc.getPageAnnotationNames(testURI);
-  Assert.equal(annoNames.length, 1);
-  Assert.equal(annoNames[0], "moz-test-places/annotations");
-
-  
-  annoNames = annosvc.getItemAnnotationNames(testItemId);
+  let annoNames = annosvc.getItemAnnotationNames(testItemId);
   Assert.equal(annoNames.length, 1);
   Assert.equal(annoNames[0], "moz-test-places/annotations");
 
