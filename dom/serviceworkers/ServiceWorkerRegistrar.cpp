@@ -689,6 +689,12 @@ ServiceWorkerRegistrar::ReadData()
 
   
   for (uint32_t i = 0; i < tmpData.Length(); ++i) {
+    
+    
+    if (!ServiceWorkerRegistrationDataIsValid(tmpData[i])) {
+      continue;
+    }
+
     bool match = false;
     if (dedupe) {
       MOZ_ASSERT(overwrite);
@@ -779,6 +785,7 @@ ServiceWorkerRegistrar::RegisterServiceWorkerInternal(const ServiceWorkerRegistr
   }
 
   if (!found) {
+    MOZ_ASSERT(ServiceWorkerRegistrationDataIsValid(aData));
     mData.AppendElement(aData);
   }
 }
@@ -956,6 +963,12 @@ ServiceWorkerRegistrar::WriteData()
   }
 
   for (uint32_t i = 0, len = data.Length(); i < len; ++i) {
+    
+    
+    if (!ServiceWorkerRegistrationDataIsValid(data[i])) {
+      continue;
+    }
+
     const mozilla::ipc::PrincipalInfo& info = data[i].principal();
 
     MOZ_ASSERT(info.type() == mozilla::ipc::PrincipalInfo::TContentPrincipalInfo);

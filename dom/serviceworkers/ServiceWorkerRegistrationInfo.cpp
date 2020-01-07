@@ -141,6 +141,16 @@ ServiceWorkerRegistrationInfo::SetPendingUninstall()
 void
 ServiceWorkerRegistrationInfo::ClearPendingUninstall()
 {
+  
+  
+  
+  
+  if (mPendingUninstall && mActiveWorker) {
+    RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
+    if (swm) {
+      swm->StoreRegistration(mPrincipal, this);
+    }
+  }
   mPendingUninstall = false;
 }
 
@@ -607,12 +617,8 @@ ServiceWorkerRegistrationInfo::TransitionInstallingToWaiting()
 
   NotifyChromeRegistrationListeners();
 
-  RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
-  if (!swm) {
-    
-    return;
-  }
-  swm->StoreRegistration(mPrincipal, this);
+  
+  
 }
 
 void

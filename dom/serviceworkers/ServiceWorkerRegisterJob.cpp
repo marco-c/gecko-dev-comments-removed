@@ -40,13 +40,8 @@ ServiceWorkerRegisterJob::AsyncExecute()
     bool sameUVC = GetUpdateViaCache() == registration->GetUpdateViaCache();
     registration->SetUpdateViaCache(GetUpdateViaCache());
 
-    
-    
-    
-    
     if (registration->IsPendingUninstall()) {
       registration->ClearPendingUninstall();
-      swm->StoreRegistration(mPrincipal, registration);
       
       
       
