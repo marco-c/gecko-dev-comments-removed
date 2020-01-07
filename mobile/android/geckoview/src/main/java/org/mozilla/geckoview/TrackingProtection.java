@@ -4,12 +4,12 @@
 
 
 
-package org.mozilla.gecko;
-
+package org.mozilla.geckoview;
 
 import android.util.Log;
 
-import org.mozilla.gecko.GeckoSession.TrackingProtectionDelegate;
+import org.mozilla.gecko.PrefsHelper;
+import org.mozilla.geckoview.GeckoSession.TrackingProtectionDelegate;
 
  class TrackingProtection {
     private static final boolean DEBUG = false;

@@ -4,7 +4,7 @@
 
 
 
-package org.mozilla.gecko;
+package org.mozilla.geckoview;
 
 import org.mozilla.gecko.util.GeckoBundle;
 

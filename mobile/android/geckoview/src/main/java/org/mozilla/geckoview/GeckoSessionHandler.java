@@ -4,11 +4,13 @@
 
 
 
-package org.mozilla.gecko;
+package org.mozilla.geckoview;
 
+import org.mozilla.gecko.EventDispatcher;
 import org.mozilla.gecko.util.BundleEventListener;
 import org.mozilla.gecko.util.EventCallback;
 import org.mozilla.gecko.util.GeckoBundle;
+import org.mozilla.geckoview.GeckoSession;
 
 import android.util.Log;
 
@@ -24,13 +26,16 @@ import android.util.Log;
     private final String[] mEvents;
 
 
-    GeckoSessionHandler(final String module, final GeckoSession session,
-                        final String[] events) {
+     GeckoSessionHandler(final String module,
+                                      final GeckoSession session,
+                                      final String[] events) {
         this(module, session, events,  false);
     }
 
-    GeckoSessionHandler(final String module, final GeckoSession session,
-                        final String[] events, final boolean alwaysListen) {
+     GeckoSessionHandler(final String module,
+                                      final GeckoSession session,
+                                      final String[] events,
+                                      final boolean alwaysListen) {
         mAlwaysListen = alwaysListen;
         mModuleName = module;
         mEvents = events;

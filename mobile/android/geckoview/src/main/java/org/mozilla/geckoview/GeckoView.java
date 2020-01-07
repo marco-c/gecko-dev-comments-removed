@@ -4,11 +4,14 @@
 
 
 
-package org.mozilla.gecko;
+package org.mozilla.geckoview;
 
+import org.mozilla.gecko.AndroidGamepadManager;
+import org.mozilla.gecko.EventDispatcher;
 import org.mozilla.gecko.gfx.DynamicToolbarAnimator;
 import org.mozilla.gecko.gfx.NativePanZoomController;
 import org.mozilla.gecko.gfx.GeckoDisplay;
+import org.mozilla.gecko.InputMethods;
 
 import android.content.Context;
 import android.graphics.Canvas;

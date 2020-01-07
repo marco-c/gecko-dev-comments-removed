@@ -68,7 +68,7 @@ public final class EventDispatcher extends JNIObject {
         mNativeQueue = GeckoThread.getNativeQueue();
     }
 
-     EventDispatcher(final NativeQueue queue) {
+    public EventDispatcher(final NativeQueue queue) {
         mNativeQueue = queue;
     }
 

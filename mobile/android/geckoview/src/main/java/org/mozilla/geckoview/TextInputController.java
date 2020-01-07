@@ -3,9 +3,14 @@
 
 
 
-package org.mozilla.gecko;
+package org.mozilla.geckoview;
 
 import org.mozilla.gecko.annotation.WrapForJNI;
+import org.mozilla.gecko.GeckoEditable;
+import org.mozilla.gecko.GeckoEditableChild;
+import org.mozilla.gecko.GeckoInputConnection;
+import org.mozilla.gecko.IGeckoEditableParent;
+import org.mozilla.gecko.NativeQueue;
 import org.mozilla.gecko.util.ThreadUtils;
 
 import android.graphics.RectF;
@@ -27,7 +32,7 @@ import android.view.inputmethod.InputConnection;
 public final class TextInputController {
 
     
-     interface Delegate {
+    public interface Delegate {
         View getView();
         Handler getHandler(Handler defHandler);
         InputConnection onCreateInputConnection(EditorInfo attrs);
@@ -40,7 +45,7 @@ public final class TextInputController {
     }
 
     
-     interface EditableClient {
+    public interface EditableClient {
         
         
         
@@ -61,7 +66,7 @@ public final class TextInputController {
     }
 
     
-     interface EditableListener {
+    public interface EditableListener {
         
         @WrapForJNI final int NOTIFY_IME_OF_TOKEN = -3;
         @WrapForJNI final int NOTIFY_IME_OPEN_VKB = -2;
@@ -95,14 +100,14 @@ public final class TextInputController {
     private final GeckoEditableChild mEditableChild = new GeckoEditableChild(mEditable);
     private Delegate mInputConnection;
 
-     TextInputController(final @NonNull GeckoSession session,
-                                      final @NonNull NativeQueue queue) {
+    public TextInputController(final @NonNull GeckoSession session,
+                               final @NonNull NativeQueue queue) {
         mSession = session;
         mQueue = queue;
         mEditable.setDefaultEditableChild(mEditableChild);
     }
 
-     void onWindowChanged(final GeckoSession.Window window) {
+    public void onWindowChanged(final GeckoSession.Window window) {
         if (mQueue.isReady()) {
             window.attachEditable(mEditable, mEditableChild);
         } else {
