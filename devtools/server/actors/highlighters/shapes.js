@@ -834,7 +834,12 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
       let { unitX, unitY, valueX, valueY, ratioX, ratioY } = point;
       let vector = [valueX / ratioX, valueY / ratioY];
       let [newX, newY] = apply(this.transformMatrix, vector);
-      return `${newX * ratioX}${unitX} ${newY * ratioY}${unitY}`;
+      let precisionX = getDecimalPrecision(unitX);
+      let precisionY = getDecimalPrecision(unitY);
+      newX = (newX * ratioX).toFixed(precisionX);
+      newY = (newY * ratioY).toFixed(precisionY);
+
+      return `${newX}${unitX} ${newY}${unitY}`;
     }).join(", ");
     polygonDef = (this.geometryBox) ? `polygon(${polygonDef}) ${this.geometryBox}` :
                                       `polygon(${polygonDef})`;
@@ -965,12 +970,15 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
     let { point, unitX, unitY, valueX, valueY, ratioX, ratioY, x, y } = this[_dragging];
     let deltaX = (pageX - x) * ratioX;
     let deltaY = (pageY - y) * ratioY;
-    let newX = `${valueX + deltaX}${unitX}`;
-    let newY = `${valueY + deltaY}${unitY}`;
+    let precisionX = getDecimalPrecision(unitX);
+    let precisionY = getDecimalPrecision(unitY);
+    let newX = (valueX + deltaX).toFixed(precisionX);
+    let newY = (valueY + deltaY).toFixed(precisionY);
 
     let polygonDef = (this.fillRule) ? `${this.fillRule}, ` : "";
     polygonDef += this.coordUnits.map((coords, i) => {
-      return (i === point) ? `${newX} ${newY}` : `${coords[0]} ${coords[1]}`;
+      return (i === point) ?
+        `${newX}${unitX} ${newY}${unitY}` : `${coords[0]} ${coords[1]}`;
     }).join(", ");
     polygonDef = (this.geometryBox) ? `polygon(${polygonDef}) ${this.geometryBox}` :
                                       `polygon(${polygonDef})`;
@@ -979,6 +987,9 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
   }
 
   
+
+
+
 
 
 
@@ -1567,7 +1578,9 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
           pageY <= Math.max(y1, y2) + clickWidth) {
         
         let [newX, newY] = projection(x1, y1, x2, y2, pageX, pageY);
-        this._addPolygonPoint(i, newX, newY);
+        
+        let precision = getDecimalPrecision("%");
+        this._addPolygonPoint(i, newX.toFixed(precision), newY.toFixed(precision));
         return;
       }
     }
@@ -2727,5 +2740,28 @@ const getAnchorPoint = (type) => {
 
   return anchor;
 };
+
+
+
+
+
+
+
+
+
+
+
+
+function getDecimalPrecision(unitType) {
+  switch (unitType) {
+    case "px":
+    case "":
+    case undefined:
+      return 0;
+    default:
+      return 2;
+  }
+}
+exports.getDecimalPrecision = getDecimalPrecision;
 
 exports.ShapesHighlighter = ShapesHighlighter;

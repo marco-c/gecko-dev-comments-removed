@@ -87,7 +87,12 @@ function* testPolygonAddPoint(testActor, helper) {
 
   let computedStyle = yield highlightedNode.getComputedStyle();
   let definition = computedStyle["clip-path"].value;
-  ok(definition.includes(`${newPointX * 100 / width}% ${newPointY * 100 / height}%`),
+  
+  let precision = 2;
+  
+  newPointX = Number((newPointX * 100 / width).toFixed(precision));
+  newPointY = Number((newPointY * 100 / height).toFixed(precision));
+  ok(definition.includes(`${newPointX}% ${newPointY}%`),
      "Point successfuly added");
 }
 
