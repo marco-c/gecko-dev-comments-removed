@@ -148,7 +148,8 @@ var istream = getFileInputStream(imgFile);
 do_check_eq(istream.available(), 8415);
 
 var buffer = NetUtil.readInputStreamToString(istream, istream.available());
-var container = imgTools.decodeImageBuffer(buffer, buffer.length, inMimeType);
+var container = imgTools.decodeImageFromBuffer(buffer, buffer.length,
+                                               inMimeType);
 
 
 
@@ -207,7 +208,7 @@ istream = getFileInputStream(imgFile);
 do_check_eq(istream.available(), 3494);
 
 buffer = NetUtil.readInputStreamToString(istream, istream.available());
-container = imgTools.decodeImageBuffer(buffer, buffer.length, inMimeType);
+container = imgTools.decodeImageFromBuffer(buffer, buffer.length, inMimeType);
 
 
 
@@ -270,7 +271,7 @@ istream = getFileInputStream(imgFile);
 do_check_eq(istream.available(), 1406);
 
 buffer = NetUtil.readInputStreamToString(istream, istream.available());
-container = imgTools.decodeImageBuffer(buffer, buffer.length, inMimeType);
+container = imgTools.decodeImageFromBuffer(buffer, buffer.length, inMimeType);
 
 
 
@@ -329,7 +330,7 @@ istream = getFileInputStream(imgFile);
 do_check_eq(istream.available(), 1809);
 
 buffer = NetUtil.readInputStreamToString(istream, istream.available());
-container = imgTools.decodeImageBuffer(buffer, buffer.length, inMimeType);
+container = imgTools.decodeImageFromBuffer(buffer, buffer.length, inMimeType);
 
 
 
@@ -438,7 +439,7 @@ istream = getFileInputStream(imgFile);
 do_check_eq(istream.available(), 3494);
 
 buffer = NetUtil.readInputStreamToString(istream, istream.available());
-container = imgTools.decodeImageBuffer(buffer, buffer.length, inMimeType);
+container = imgTools.decodeImageFromBuffer(buffer, buffer.length, inMimeType);
 
 
 
@@ -657,8 +658,8 @@ for(var i=0; i<testData.length; ++i) {
     istream = getFileInputStream(imgFile);
 
     var buffer = NetUtil.readInputStreamToString(istream, istream.available());
-    var container = imgTools.decodeImageBuffer(buffer, buffer.length,
-                                               dict["preImageMimeType"]);
+    var container = imgTools.decodeImageFromBuffer(buffer, buffer.length,
+                                                   dict["preImageMimeType"]);
 
     istream = imgTools.encodeImage(container, dict["refImageMimeType"]);
 
@@ -695,7 +696,7 @@ var errsrc = "none";
 
 try {
   buffer = NetUtil.readInputStreamToString(istream, istream.available());
-  container = imgTools.decodeImageBuffer(buffer, buffer.length, inMimeType);
+  container = imgTools.decodeImageFromBuffer(buffer, buffer.length, inMimeType);
 
   
   
@@ -729,7 +730,7 @@ istream = getFileInputStream(imgFile);
 do_check_eq(istream.available(), 4286);
 
 buffer = NetUtil.readInputStreamToString(istream, istream.available());
-container = imgTools.decodeImageBuffer(buffer, buffer.length, inMimeType);
+container = imgTools.decodeImageFromBuffer(buffer, buffer.length, inMimeType);
 
 var props = container.QueryInterface(Ci.nsIProperties);
 
