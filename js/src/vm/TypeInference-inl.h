@@ -35,59 +35,25 @@ namespace js {
 
 
 
-inline jit::IonScript*
-CompilerOutput::ion() const
+jit::IonScript*
+RecompileInfo::maybeIonScriptToInvalidate() const
 {
     
     
-    
-    MOZ_ASSERT(isValid());
-    jit::IonScript* ion = script()->maybeIonScript();
-    MOZ_ASSERT(ion != ION_COMPILING_SCRIPT);
-    return ion;
-}
+    MOZ_ASSERT(!TlsContext.get()->runtime()->jitRuntime()->currentCompilationId().isSome());
 
-inline CompilerOutput*
-RecompileInfo::compilerOutput(TypeZone& types) const
-{
-    if (generation != types.generation) {
-        if (!types.sweepCompilerOutputs || outputIndex >= types.sweepCompilerOutputs->length())
-            return nullptr;
-        CompilerOutput* output = &(*types.sweepCompilerOutputs)[outputIndex];
-        if (!output->isValid())
-            return nullptr;
-        output = &(*types.compilerOutputs)[output->sweepIndex()];
-        return output->isValid() ? output : nullptr;
-    }
-
-    if (!types.compilerOutputs || outputIndex >= types.compilerOutputs->length())
+    if (!script_->hasIonScript() || script_->ionScript()->compilationId() != id_)
         return nullptr;
-    CompilerOutput* output = &(*types.compilerOutputs)[outputIndex];
-    return output->isValid() ? output : nullptr;
-}
 
-inline CompilerOutput*
-RecompileInfo::compilerOutput(JSContext* cx) const
-{
-    return compilerOutput(cx->zone()->types);
+    return script_->ionScript();
 }
 
 inline bool
-RecompileInfo::shouldSweep(TypeZone& types)
+RecompileInfo::shouldSweep()
 {
-    CompilerOutput* output = compilerOutput(types);
-    if (!output || !output->isValid())
+    if (IsAboutToBeFinalizedUnbarriered(&script_))
         return true;
-
-    
-    
-    MOZ_ASSERT_IF(generation == types.generation,
-                  outputIndex == output - types.compilerOutputs->begin());
-
-    
-    outputIndex = output - types.compilerOutputs->begin();
-    generation = types.generation;
-    return false;
+    return maybeIonScriptToInvalidate() == nullptr;
 }
 
 

@@ -10284,19 +10284,23 @@ CodeGenerator::link(JSContext* cx, CompilerConstraintList* constraints)
     
     uint32_t warmUpCount = script->getWarmUpCount();
 
-    
-    
-    
-    RecompileInfo recompileInfo;
-    bool validRecompiledInfo = false;
-    if (!FinishCompilation(cx, script, constraints, &recompileInfo, &validRecompiledInfo))
-        return false;
-    if (!validRecompiledInfo)
-        return true;
-    auto guardRecordedConstraints = mozilla::MakeScopeExit([&] {
-        
-        recompileInfo.compilerOutput(cx->zone()->types)->invalidate();
+    JitRuntime* jrt = cx->runtime()->jitRuntime();
+    IonCompilationId compilationId = jrt->nextCompilationId();
+#ifdef DEBUG
+    jrt->currentCompilationId().emplace(compilationId);
+    auto resetCurrentId = mozilla::MakeScopeExit([jrt] {
+        jrt->currentCompilationId().reset();
     });
+#endif
+
+    
+    
+    
+    bool isValid = false;
+    if (!FinishCompilation(cx, script, constraints, compilationId, &isValid))
+        return false;
+    if (!isValid)
+        return true;
 
     
     
@@ -10315,7 +10319,7 @@ CodeGenerator::link(JSContext* cx, CompilerConstraintList* constraints)
         return false;
 
     IonScript* ionScript =
-        IonScript::New(cx, recompileInfo,
+        IonScript::New(cx, compilationId,
                        graph.totalSlotCount(), argumentSlots, scriptFrameSize,
                        snapshots_.listSize(), snapshots_.RVATableSize(),
                        recovers_.size(), bailouts_.length(), graph.numConstants(),
@@ -10547,7 +10551,6 @@ CodeGenerator::link(JSContext* cx, CompilerConstraintList* constraints)
         script->addIonCounts(counts);
 
     guardIonScript.release();
-    guardRecordedConstraints.release();
     return true;
 }
 

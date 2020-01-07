@@ -199,6 +199,7 @@ jit::InitializeIon()
 JitRuntime::JitRuntime(JSRuntime* rt)
   : execAlloc_(rt),
     backedgeExecAlloc_(rt),
+    nextCompilationId_(0),
     exceptionTailOffset_(0),
     bailoutTailOffset_(0),
     profilerExitFrameTailOffset_(0),
@@ -868,7 +869,7 @@ JitCode::finalize(FreeOp* fop)
     pool_ = nullptr;
 }
 
-IonScript::IonScript()
+IonScript::IonScript(IonCompilationId compilationId)
   : method_(nullptr),
     osrPc_(nullptr),
     osrEntryOffset_(0),
@@ -900,14 +901,14 @@ IonScript::IonScript()
     backedgeList_(0),
     backedgeEntries_(0),
     invalidationCount_(0),
-    recompileInfo_(),
+    compilationId_(compilationId),
     osrPcMismatchCounter_(0),
     fallbackStubSpace_()
 {
 }
 
 IonScript*
-IonScript::New(JSContext* cx, RecompileInfo recompileInfo,
+IonScript::New(JSContext* cx, IonCompilationId compilationId,
                uint32_t frameSlots, uint32_t argumentSlots, uint32_t frameSize,
                size_t snapshotsListSize, size_t snapshotsRVATableSize,
                size_t recoversSize, size_t bailoutEntries,
@@ -955,7 +956,7 @@ IonScript::New(JSContext* cx, RecompileInfo recompileInfo,
     IonScript* script = cx->zone()->pod_malloc_with_extra<IonScript, uint8_t>(bytes);
     if (!script)
         return nullptr;
-    new (script) IonScript();
+    new (script) IonScript(compilationId);
 
     uint32_t offsetCursor = sizeof(IonScript);
 
@@ -1009,7 +1010,6 @@ IonScript::New(JSContext* cx, RecompileInfo recompileInfo,
 
     script->frameSize_ = frameSize;
 
-    script->recompileInfo_ = recompileInfo;
     script->optimizationLevel_ = optimizationLevel;
 
     return script;
@@ -2952,6 +2952,17 @@ jit::InvalidateAll(FreeOp* fop, Zone* zone)
     }
 }
 
+static void
+ClearIonScriptAfterInvalidation(JSContext* cx, JSScript* script, bool resetUses)
+{
+    script->setIonScript(cx->runtime(), nullptr);
+
+    
+    
+    
+    if (resetUses)
+        script->resetWarmUpCounter();
+}
 
 void
 jit::Invalidate(TypeZone& types, FreeOp* fop,
@@ -2963,25 +2974,21 @@ jit::Invalidate(TypeZone& types, FreeOp* fop,
     
     
     size_t numInvalidations = 0;
-    for (size_t i = 0; i < invalid.length(); i++) {
-        const CompilerOutput* co = invalid[i].compilerOutput(types);
-        if (!co)
-            continue;
-        MOZ_ASSERT(co->isValid());
-
+    for (const RecompileInfo& info : invalid) {
         if (cancelOffThread)
-            CancelOffThreadIonCompile(co->script());
+            CancelOffThreadIonCompile(info.script());
 
-        if (!co->ion())
+        IonScript* ionScript = info.maybeIonScriptToInvalidate();
+        if (!ionScript)
             continue;
 
         JitSpew(JitSpew_IonInvalidate, " Invalidate %s:%zu, IonScript %p",
-                co->script()->filename(), co->script()->lineno(), co->ion());
+                info.script()->filename(), info.script()->lineno(), ionScript);
 
         
         
         
-        co->ion()->incrementInvalidationCount();
+        ionScript->incrementInvalidationCount();
         numInvalidations++;
     }
 
@@ -2997,32 +3004,32 @@ jit::Invalidate(TypeZone& types, FreeOp* fop,
     
     
     
-    for (size_t i = 0; i < invalid.length(); i++) {
-        CompilerOutput* co = invalid[i].compilerOutput(types);
-        if (!co)
-            continue;
-        MOZ_ASSERT(co->isValid());
-
-        JSScript* script = co->script();
-        IonScript* ionScript = co->ion();
+    for (const RecompileInfo& info : invalid) {
+        IonScript* ionScript = info.maybeIonScriptToInvalidate();
         if (!ionScript)
             continue;
 
-        script->setIonScript(cx->runtime(), nullptr);
-        ionScript->decrementInvalidationCount(fop);
-        co->invalidate();
-        numInvalidations--;
+        if (ionScript->invalidationCount() == 1) {
+            
+            
+            
+            
+            ClearIonScriptAfterInvalidation(cx, info.script(), resetUses);
+        }
 
-        
-        
-        
-        if (resetUses)
-            script->resetWarmUpCounter();
+        ionScript->decrementInvalidationCount(fop);
+        numInvalidations--;
     }
 
     
     
     MOZ_ASSERT(!numInvalidations);
+
+    
+    for (const RecompileInfo& info : invalid) {
+        if (info.maybeIonScriptToInvalidate())
+            ClearIonScriptAfterInvalidation(cx, info.script(), resetUses);
+    }
 }
 
 void
@@ -3034,14 +3041,16 @@ jit::Invalidate(JSContext* cx, const RecompileInfoVector& invalid, bool resetUse
 }
 
 void
-jit::IonScript::invalidate(JSContext* cx, bool resetUses, const char* reason)
+jit::IonScript::invalidate(JSContext* cx, JSScript* script, bool resetUses, const char* reason)
 {
+    MOZ_RELEASE_ASSERT(script->ionScript() == this);
+
     JitSpew(JitSpew_IonInvalidate, " Invalidate IonScript %p: %s", this, reason);
 
     
     RecompileInfoVector list;
     MOZ_RELEASE_ASSERT(list.reserve(1));
-    list.infallibleAppend(recompileInfo());
+    list.infallibleEmplaceBack(script, compilationId());
 
     Invalidate(cx, list, resetUses, true);
 }
@@ -3074,36 +3083,25 @@ jit::Invalidate(JSContext* cx, JSScript* script, bool resetUses, bool cancelOffT
     RecompileInfoVector scripts;
     MOZ_ASSERT(script->hasIonScript());
     MOZ_RELEASE_ASSERT(scripts.reserve(1));
-    scripts.infallibleAppend(script->ionScript()->recompileInfo());
+    scripts.infallibleEmplaceBack(script, script->ionScript()->compilationId());
 
     Invalidate(cx, scripts, resetUses, cancelOffThread);
-}
-
-static void
-FinishInvalidationOf(FreeOp* fop, JSScript* script, IonScript* ionScript)
-{
-    TypeZone& types = script->zone()->types;
-
-    
-    
-    if (CompilerOutput* output = ionScript->recompileInfo().compilerOutput(types))
-        output->invalidate();
-
-    
-    
-    if (!ionScript->invalidated())
-        jit::IonScript::Destroy(fop, ionScript);
 }
 
 void
 jit::FinishInvalidation(FreeOp* fop, JSScript* script)
 {
+    if (!script->hasIonScript())
+        return;
+
     
-    if (script->hasIonScript()) {
-        IonScript* ion = script->ionScript();
-        script->setIonScript(fop->runtime(), nullptr);
-        FinishInvalidationOf(fop, script, ion);
-    }
+    IonScript* ion = script->ionScript();
+    script->setIonScript(fop->runtime(), nullptr);
+
+    
+    
+    if (!ion->invalidated())
+        jit::IonScript::Destroy(fop, ion);
 }
 
 void
