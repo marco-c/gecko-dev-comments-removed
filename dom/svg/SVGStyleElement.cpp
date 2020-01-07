@@ -219,29 +219,24 @@ SVGStyleElement::SetTitle(const nsAString& aTitle, ErrorResult& rv)
 Maybe<nsStyleLinkElement::SheetInfo>
 SVGStyleElement::GetStyleSheetInfo()
 {
-  nsAutoString title;
-  GetAttr(kNameSpaceID_None, nsGkAtoms::title, title);
-  title.CompressWhitespace();
-
-  nsAutoString media;
-  GetAttr(kNameSpaceID_None, nsGkAtoms::media, media);
-  
-  
-  nsContentUtils::ASCIIToLower(media);
-
-  
-  nsAutoString type;
-  GetAttr(kNameSpaceID_None, nsGkAtoms::type, type);
-  if (!type.IsEmpty() && !type.LowerCaseEqualsLiteral("text/css")) {
+  if (!IsCSSMimeTypeAttribute(*this)) {
     return Nothing();
   }
+
+  nsAutoString title;
+  nsAutoString media;
+  GetTitleAndMediaForElement(*this, title, media);
 
   return Some(SheetInfo {
     *OwnerDoc(),
     this,
     nullptr,
+    
+    
     nullptr,
     net::ReferrerPolicy::RP_Unset,
+    
+    
     AttrValueToCORSMode(GetParsedAttr(nsGkAtoms::crossorigin)),
     title,
     media,

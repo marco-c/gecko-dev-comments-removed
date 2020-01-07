@@ -93,6 +93,18 @@ protected:
       mozilla::dom::ShadowRoot* aOldShadowRoot,
       ForceUpdate = ForceUpdate::No);
 
+  
+  
+  
+  
+  
+  static void GetTitleAndMediaForElement(const mozilla::dom::Element&,
+                                         nsString& aTitle,
+                                         nsString& aMedia);
+
+  
+  static bool IsCSSMimeTypeAttribute(const mozilla::dom::Element&);
+
   virtual mozilla::Maybe<SheetInfo> GetStyleSheetInfo() = 0;
 
   
