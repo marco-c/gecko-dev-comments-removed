@@ -229,6 +229,17 @@ where
             collector.invalidates_self
         };
 
+        
+        
+        
+        
+        
+        
+        
+        if descendant_invalidations.len() > 150 {
+            self.data.hint.insert(RestyleHint::RESTYLE_DESCENDANTS);
+        }
+
         if invalidated_self {
             self.data.hint.insert(RestyleHint::RESTYLE_SELF);
         }
