@@ -8,38 +8,38 @@
 
 const TEST_URI = URL_ROOT + "doc_inspector_infobar_textnode.html";
 
-add_task(async function() {
-  let { inspector, testActor } = await openInspectorForURL(TEST_URI);
+add_task(function* () {
+  let { inspector, testActor } = yield openInspectorForURL(TEST_URI);
   let { walker } = inspector;
 
   info("Retrieve the children of #textnode-container");
-  let div = await walker.querySelector(walker.rootNode, "#textnode-container");
-  let { nodes } = await inspector.walker.children(div);
+  let div = yield walker.querySelector(walker.rootNode, "#textnode-container");
+  let { nodes } = yield inspector.walker.children(div);
 
   
   
 
   
   info("Select the first text node");
-  await selectNode(nodes[0], inspector, "test-highlight");
-  await checkTextNodeInfoBar(testActor);
+  yield selectNode(nodes[0], inspector, "test-highlight");
+  yield checkTextNodeInfoBar(testActor);
 
   
   info("Select the second text node");
-  await selectNode(nodes[2], inspector, "test-highlight");
-  await checkTextNodeInfoBar(testActor);
+  yield selectNode(nodes[2], inspector, "test-highlight");
+  yield checkTextNodeInfoBar(testActor);
 
   
   info("Select the third text node");
-  await selectNode(nodes[4], inspector, "test-highlight");
-  await checkTextNodeInfoBar(testActor);
+  yield selectNode(nodes[4], inspector, "test-highlight");
+  yield checkTextNodeInfoBar(testActor);
 });
 
-async function checkTextNodeInfoBar(testActor) {
-  let tag = await testActor.getHighlighterNodeTextContent(
+function* checkTextNodeInfoBar(testActor) {
+  let tag = yield testActor.getHighlighterNodeTextContent(
     "box-model-infobar-tagname");
   is(tag, "#text", "node display name is #text");
-  let dims = await testActor.getHighlighterNodeTextContent(
+  let dims = yield testActor.getHighlighterNodeTextContent(
       "box-model-infobar-dimensions");
   
   ok(!!dims, "node has dims");

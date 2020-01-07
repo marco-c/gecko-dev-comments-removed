@@ -8,6 +8,7 @@ const PREVIEW_MAX_DIM_PREF = "devtools.inspector.imagePreviewTooltipSize";
 
 const promise = require("promise");
 const Services = require("Services");
+const {Task} = require("devtools/shared/task");
 const nodeConstants = require("devtools/shared/dom-node-constants");
 const clipboardHelper = require("devtools/shared/platform/clipboard");
 const {setImageTooltip, setBrokenImageTooltip} =
@@ -44,11 +45,11 @@ function MarkupElementContainer(markupView, node) {
 }
 
 MarkupElementContainer.prototype = extend(MarkupContainer.prototype, {
-  async _buildEventTooltipContent(target, tooltip) {
+  _buildEventTooltipContent: Task.async(function* (target, tooltip) {
     if (target.hasAttribute("data-event")) {
-      await tooltip.hide();
+      yield tooltip.hide();
 
-      let listenerInfo = await this.node.getEventListenerInfo();
+      let listenerInfo = yield this.node.getEventListenerInfo();
 
       let toolbox = this.markup.toolbox;
 
@@ -61,7 +62,7 @@ MarkupElementContainer.prototype = extend(MarkupContainer.prototype, {
       });
       tooltip.show(target);
     }
-  },
+  }),
 
   
 
@@ -87,16 +88,16 @@ MarkupElementContainer.prototype = extend(MarkupContainer.prototype, {
     }
 
     
-    this.tooltipDataPromise = (async function() {
+    this.tooltipDataPromise = Task.spawn(function* () {
       let maxDim = Services.prefs.getIntPref(PREVIEW_MAX_DIM_PREF);
-      let preview = await this.node.getImageData(maxDim);
-      let data = await preview.data.string();
+      let preview = yield this.node.getImageData(maxDim);
+      let data = yield preview.data.string();
 
       
       
       this.tooltipDataPromise = null;
       return { data, size: preview.size };
-    }.bind(this))();
+    }.bind(this));
 
     return this.tooltipDataPromise;
   },
@@ -110,7 +111,7 @@ MarkupElementContainer.prototype = extend(MarkupContainer.prototype, {
 
 
 
-  async isImagePreviewTarget(target, tooltip) {
+  isImagePreviewTarget: Task.async(function* (target, tooltip) {
     
     if (!this.isPreviewable()) {
       return false;
@@ -126,7 +127,7 @@ MarkupElementContainer.prototype = extend(MarkupContainer.prototype, {
     }
 
     try {
-      let { data, size } = await this._getPreview();
+      let { data, size } = yield this._getPreview();
       
       let options = {
         naturalWidth: size.naturalWidth,
@@ -140,7 +141,7 @@ MarkupElementContainer.prototype = extend(MarkupContainer.prototype, {
       setBrokenImageTooltip(tooltip, this.markup.doc);
     }
     return true;
-  },
+  }),
 
   copyImageDataUri: function() {
     

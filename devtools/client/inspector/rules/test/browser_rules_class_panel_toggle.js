@@ -6,9 +6,9 @@
 
 
 
-add_task(async function() {
-  await addTab("data:text/html;charset=utf-8,<body class='class1 class2'>");
-  let {inspector, view} = await openRuleView();
+add_task(function* () {
+  yield addTab("data:text/html;charset=utf-8,<body class='class1 class2'>");
+  let {inspector, view} = yield openRuleView();
 
   info("Check that the toggle button exists");
   const button = inspector.panelDoc.querySelector("#class-panel-toggle");

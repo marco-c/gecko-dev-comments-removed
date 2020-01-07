@@ -8,17 +8,17 @@
 
 const TEST_URL = URL_ROOT + "doc_markup_whitespace.html";
 
-add_task(async function() {
-  let {inspector, testActor} = await openInspectorForURL(TEST_URL);
+add_task(function* () {
+  let {inspector, testActor} = yield openInspectorForURL(TEST_URL);
   let {markup} = inspector;
 
-  await markup.expandAll();
+  yield markup.expandAll();
 
   info("Verify the number of child nodes and child elements in body");
 
   
   
-  let {numNodes, numChildren} = await testActor.getNodeInfo("body");
+  let {numNodes, numChildren} = yield testActor.getNodeInfo("body");
   is(numNodes, 11, "The body node has 11 child nodes (includes text nodes)");
   is(numChildren, 5, "The body node has 5 child elements (only element nodes)");
 
@@ -33,14 +33,14 @@ add_task(async function() {
   
   
   info("Verify the number of child nodes and child elements in div#inline");
-  ({numNodes, numChildren} = await testActor.getNodeInfo("#inline"));
+  ({numNodes, numChildren} = yield testActor.getNodeInfo("#inline"));
   is(numNodes, 7, "The div#inline node has 7 child nodes (includes text nodes)");
   is(numChildren, 3, "The div#inline node has 3 child elements (only element nodes)");
 
   
   
   info("Check that the div#inline's whitespace text node children are shown");
-  await selectNode("#inline", inspector);
+  yield selectNode("#inline", inspector);
   let divContainer = markup.getContainer(inspector.selection.nodeFront);
   childContainers = divContainer.getChildContainers();
   is(childContainers.length, 5,
@@ -49,7 +49,7 @@ add_task(async function() {
   
   
   info("Verify the number of child nodes and child elements in div#pre");
-  ({numNodes, numChildren} = await testActor.getNodeInfo("#pre"));
+  ({numNodes, numChildren} = yield testActor.getNodeInfo("#pre"));
   is(numNodes, 5, "The div#pre node has 5 child nodes (includes text nodes)");
   is(numChildren, 2, "The div#pre node has 2 child elements (only element nodes)");
 
@@ -58,7 +58,7 @@ add_task(async function() {
   
   
   info("Check that the div#pre's whitespace text node children are shown");
-  await selectNode("#pre", inspector);
+  yield selectNode("#pre", inspector);
   divContainer = markup.getContainer(inspector.selection.nodeFront);
   childContainers = divContainer.getChildContainers();
   is(childContainers.length, 5,

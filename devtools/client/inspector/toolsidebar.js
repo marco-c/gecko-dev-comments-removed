@@ -8,6 +8,7 @@
 
 var EventEmitter = require("devtools/shared/event-emitter");
 var Telemetry = require("devtools/client/shared/telemetry");
+var { Task } = require("devtools/shared/task");
 
 
 
@@ -185,16 +186,16 @@ ToolSidebar.prototype = {
 
 
 
-  async removeTab(tabId, tabPanelId) {
+  removeTab: Task.async(function* (tabId, tabPanelId) {
     this._tabbar.removeTab(tabId);
 
     let win = this.getWindowForTab(tabId);
     if (win && ("destroy" in win)) {
-      await win.destroy();
+      yield win.destroy();
     }
 
     this.emit("tab-unregistered", tabId);
-  },
+  }),
 
   
 
@@ -313,7 +314,7 @@ ToolSidebar.prototype = {
   
 
 
-  async destroy() {
+  destroy: Task.async(function* () {
     if (this._destroyed) {
       return;
     }
@@ -332,7 +333,7 @@ ToolSidebar.prototype = {
       }
       let win = iframe.contentWindow;
       if (win && ("destroy" in win)) {
-        await win.destroy();
+        yield win.destroy();
       }
       panel.remove();
     }
@@ -347,5 +348,5 @@ ToolSidebar.prototype = {
     this._tabbox = null;
     this._panelDoc = null;
     this._toolPanel = null;
-  }
+  })
 };

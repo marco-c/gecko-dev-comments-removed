@@ -11,6 +11,7 @@
 
 
 
+const { Task } = require("devtools/shared/task");
 const Services = require("Services");
 const {
   VIEW_NODE_VALUE_TYPE,
@@ -196,7 +197,7 @@ TooltipsOverlay.prototype = {
 
 
 
-  async _onPreviewTooltipTargetHover(target) {
+  _onPreviewTooltipTargetHover: Task.async(function* (target) {
     let nodeInfo = this.view.getNodeInfo(target);
     if (!nodeInfo) {
       
@@ -220,9 +221,9 @@ TooltipsOverlay.prototype = {
 
     if (type === TOOLTIP_IMAGE_TYPE) {
       try {
-        await this._setImagePreviewTooltip(nodeInfo.value.url);
+        yield this._setImagePreviewTooltip(nodeInfo.value.url);
       } catch (e) {
-        await setBrokenImageTooltip(this.getTooltip("previewTooltip"),
+        yield setBrokenImageTooltip(this.getTooltip("previewTooltip"),
           this.view.inspector.panelDoc);
       }
       return true;
@@ -231,7 +232,7 @@ TooltipsOverlay.prototype = {
     if (type === TOOLTIP_FONTFAMILY_TYPE) {
       let font = nodeInfo.value.value;
       let nodeFront = inspector.selection.nodeFront;
-      await this._setFontPreviewTooltip(font, nodeFront);
+      yield this._setFontPreviewTooltip(font, nodeFront);
 
       if (nodeInfo.type === VIEW_NODE_FONT_TYPE) {
         
@@ -243,12 +244,12 @@ TooltipsOverlay.prototype = {
 
     if (type === TOOLTIP_VARIABLE_TYPE && nodeInfo.value.value.startsWith("--")) {
       let variable = nodeInfo.value.variable;
-      await this._setVariablePreviewTooltip(variable);
+      yield this._setVariablePreviewTooltip(variable);
       return true;
     }
 
     return false;
-  },
+  }),
 
   
 
@@ -259,27 +260,27 @@ TooltipsOverlay.prototype = {
 
 
 
-  async _setImagePreviewTooltip(imageUrl) {
+  _setImagePreviewTooltip: Task.async(function* (imageUrl) {
     let doc = this.view.inspector.panelDoc;
     let maxDim = Services.prefs.getIntPref(PREF_IMAGE_TOOLTIP_SIZE);
 
     let naturalWidth, naturalHeight;
     if (imageUrl.startsWith("data:")) {
       
-      let size = await getImageDimensions(doc, imageUrl);
+      let size = yield getImageDimensions(doc, imageUrl);
       naturalWidth = size.naturalWidth;
       naturalHeight = size.naturalHeight;
     } else {
       let inspectorFront = this.view.inspector.inspector;
-      let {data, size} = await inspectorFront.getImageDataFromURL(imageUrl, maxDim);
-      imageUrl = await data.string();
+      let {data, size} = yield inspectorFront.getImageDataFromURL(imageUrl, maxDim);
+      imageUrl = yield data.string();
       naturalWidth = size.naturalWidth;
       naturalHeight = size.naturalHeight;
     }
 
-    await setImageTooltip(this.getTooltip("previewTooltip"), doc, imageUrl,
+    yield setImageTooltip(this.getTooltip("previewTooltip"), doc, imageUrl,
       {maxDim, naturalWidth, naturalHeight});
-  },
+  }),
 
   
 
@@ -291,7 +292,7 @@ TooltipsOverlay.prototype = {
 
 
 
-  async _setFontPreviewTooltip(font, nodeFront) {
+  _setFontPreviewTooltip: Task.async(function* (font, nodeFront) {
     if (!font || !nodeFront || typeof nodeFront.getFontFamilyDataURL !== "function") {
       throw new Error("Unable to create font preview tooltip content.");
     }
@@ -301,16 +302,16 @@ TooltipsOverlay.prototype = {
     font = font.trim();
 
     let fillStyle = getColor("body-color");
-    let {data, size: maxDim} = await nodeFront.getFontFamilyDataURL(font, fillStyle);
+    let {data, size: maxDim} = yield nodeFront.getFontFamilyDataURL(font, fillStyle);
 
-    let imageUrl = await data.string();
+    let imageUrl = yield data.string();
     let doc = this.view.inspector.panelDoc;
-    let {naturalWidth, naturalHeight} = await getImageDimensions(doc, imageUrl);
+    let {naturalWidth, naturalHeight} = yield getImageDimensions(doc, imageUrl);
 
-    await setImageTooltip(this.getTooltip("previewTooltip"), doc, imageUrl,
+    yield setImageTooltip(this.getTooltip("previewTooltip"), doc, imageUrl,
       {hideDimensionLabel: true, hideCheckeredBackground: true,
        maxDim, naturalWidth, naturalHeight});
-  },
+  }),
 
   
 
@@ -319,10 +320,10 @@ TooltipsOverlay.prototype = {
 
 
 
-  async _setVariablePreviewTooltip(text) {
+  _setVariablePreviewTooltip: Task.async(function* (text) {
     let doc = this.view.inspector.panelDoc;
-    await setVariableTooltip(this.getTooltip("previewTooltip"), doc, text);
-  },
+    yield setVariableTooltip(this.getTooltip("previewTooltip"), doc, text);
+  }),
 
   _onNewSelection: function() {
     for (let [, tooltip] of this._instances) {

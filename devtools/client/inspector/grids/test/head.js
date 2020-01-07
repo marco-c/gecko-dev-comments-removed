@@ -32,15 +32,15 @@ const HIGHLIGHTER_TYPE = "CssGridHighlighter";
 
 
 
-var simulateColorPickerChange = async function(colorPicker, newRgba) {
+var simulateColorPickerChange = Task.async(function* (colorPicker, newRgba) {
   info("Getting the spectrum colorpicker object");
-  let spectrum = await colorPicker.spectrum;
+  let spectrum = yield colorPicker.spectrum;
   info("Setting the new color");
   spectrum.rgb = newRgba;
   info("Applying the change");
   spectrum.updateUI();
   spectrum.onChange();
-};
+});
 
 registerCleanupFunction(async function() {
   await asyncStorage.removeItem("gridInspectorHostColors");

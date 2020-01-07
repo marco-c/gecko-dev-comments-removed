@@ -6,6 +6,7 @@
 
 const promise = require("promise");
 const Services = require("Services");
+const {Task} = require("devtools/shared/task");
 const nodeConstants = require("devtools/shared/dom-node-constants");
 const nodeFilterConstants = require("devtools/shared/dom-node-filter-constants");
 const EventEmitter = require("devtools/shared/event-emitter");
@@ -511,7 +512,7 @@ MarkupView.prototype = {
 
 
 
-  async _isImagePreviewTarget(target) {
+  _isImagePreviewTarget: Task.async(function* (target) {
     
     
     if (this.isDragging) {
@@ -534,7 +535,7 @@ MarkupView.prototype = {
     }
 
     return false;
-  },
+  }),
 
   
 

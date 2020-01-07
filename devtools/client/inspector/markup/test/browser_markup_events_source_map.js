@@ -32,27 +32,27 @@ const TEST_DATA = [
   },
 ];
 
-add_task(async function() {
+add_task(function* () {
   
   
   
-  let {toolbox, inspector, testActor} = await openInspectorForURL(INITIAL_URL);
+  let {toolbox, inspector, testActor} = yield openInspectorForURL(INITIAL_URL);
 
   
   
   
   toolbox.sourceMapURLService;
 
-  await navigateTo(inspector, TEST_URL);
+  yield navigateTo(inspector, TEST_URL);
 
-  await inspector.markup.expandAll();
+  yield inspector.markup.expandAll();
 
   for (let test of TEST_DATA) {
-    await checkEventsForNode(test, inspector, testActor);
+    yield checkEventsForNode(test, inspector, testActor);
   }
 
   
   
   
-  await promiseNextTick();
+  yield promiseNextTick();
 });

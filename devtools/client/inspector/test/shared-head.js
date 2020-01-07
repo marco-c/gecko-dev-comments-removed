@@ -8,6 +8,8 @@
 
 
 
+const { Task } = require("devtools/shared/task");
+
 var {getInplaceEditorForSpan: inplaceEditor} = require("devtools/client/shared/inplace-editor");
 
 
@@ -18,23 +20,23 @@ var {getInplaceEditorForSpan: inplaceEditor} = require("devtools/client/shared/i
 
 
 
-var openInspector = async function(hostType) {
+var openInspector = Task.async(function* (hostType) {
   info("Opening the inspector");
 
-  let toolbox = await openToolboxForTab(gBrowser.selectedTab, "inspector",
+  let toolbox = yield openToolboxForTab(gBrowser.selectedTab, "inspector",
                                         hostType);
   let inspector = toolbox.getPanel("inspector");
 
   if (inspector._updateProgress) {
     info("Need to wait for the inspector to update");
-    await inspector.once("inspector-updated");
+    yield inspector.once("inspector-updated");
   }
 
-  await registerTestActor(toolbox.target.client);
-  let testActor = await getTestActor(toolbox);
+  yield registerTestActor(toolbox.target.client);
+  let testActor = yield getTestActor(toolbox);
 
   return {toolbox, inspector, testActor};
-};
+});
 
 
 
@@ -45,8 +47,8 @@ var openInspector = async function(hostType) {
 
 
 
-var openInspectorSidebarTab = async function(id) {
-  let {toolbox, inspector, testActor} = await openInspector();
+var openInspectorSidebarTab = Task.async(function* (id) {
+  let {toolbox, inspector, testActor} = yield openInspector();
 
   info("Selecting the " + id + " sidebar");
 
@@ -56,19 +58,19 @@ var openInspectorSidebarTab = async function(id) {
     let onBoxModelViewReady = inspector.once("boxmodel-view-updated");
     let onGridPanelReady = inspector.once("grid-panel-updated");
     inspector.sidebar.select(id);
-    await onBoxModelViewReady;
-    await onGridPanelReady;
+    yield onBoxModelViewReady;
+    yield onGridPanelReady;
   } else {
     inspector.sidebar.select(id);
   }
-  await onSidebarSelect;
+  yield onSidebarSelect;
 
   return {
     toolbox,
     inspector,
     testActor
   };
-};
+});
 
 
 
@@ -201,13 +203,13 @@ function getNodeFront(selector, {walker}) {
 
 
 
-var selectNode = async function(selector, inspector, reason = "test") {
+var selectNode = Task.async(function* (selector, inspector, reason = "test") {
   info("Selecting the node for '" + selector + "'");
-  let nodeFront = await getNodeFront(selector, inspector);
+  let nodeFront = yield getNodeFront(selector, inspector);
   let updated = inspector.once("inspector-updated");
   inspector.selection.setNodeFront(nodeFront, reason);
-  await updated;
-};
+  yield updated;
+});
 
 
 
@@ -302,8 +304,8 @@ function executeInContent(name, data = {}, objects = {},
 
 
 
-async function getComputedStyleProperty(selector, pseudo, propName) {
-  return executeInContent("Test:GetComputedStylePropertyValue",
+function* getComputedStyleProperty(selector, pseudo, propName) {
+  return yield executeInContent("Test:GetComputedStylePropertyValue",
     {selector,
      pseudo,
      name: propName});
@@ -324,8 +326,8 @@ async function getComputedStyleProperty(selector, pseudo, propName) {
 
 
 
-async function waitForComputedStyleProperty(selector, pseudo, name, expected) {
-  return executeInContent("Test:WaitForComputedStylePropertyValue",
+function* waitForComputedStyleProperty(selector, pseudo, name, expected) {
+  return yield executeInContent("Test:WaitForComputedStylePropertyValue",
     {selector,
      pseudo,
      expected,
@@ -338,19 +340,19 @@ async function waitForComputedStyleProperty(selector, pseudo, name, expected) {
 
 
 
-var focusEditableField = async function(ruleView, editable, xOffset = 1,
+var focusEditableField = Task.async(function* (ruleView, editable, xOffset = 1,
     yOffset = 1, options = {}) {
   let onFocus = once(editable.parentNode, "focus", true);
   info("Clicking on editable field to turn to edit mode");
   EventUtils.synthesizeMouse(editable, xOffset, yOffset, options,
     editable.ownerDocument.defaultView);
-  await onFocus;
+  yield onFocus;
 
   info("Editable field gained focus, returning the input field now");
   let onEdit = inplaceEditor(editable.ownerDocument.activeElement);
 
   return onEdit;
-};
+});
 
 
 
@@ -460,17 +462,17 @@ function getRuleViewSelector(view, selectorText) {
 
 
 
-var getRuleViewSelectorHighlighterIcon = async function(view,
+var getRuleViewSelectorHighlighterIcon = Task.async(function* (view,
     selectorText, index = 0) {
   let rule = getRuleViewRule(view, selectorText, index);
 
   let editor = rule._ruleEditor;
   if (!editor.uniqueSelector) {
-    await once(editor, "selector-icon-created");
+    yield once(editor, "selector-icon-created");
   }
 
   return rule.querySelector(".ruleview-selectorhighlighter");
-};
+});
 
 
 
@@ -508,19 +510,19 @@ function getRuleViewLinkTextByIndex(view, index) {
 
 
 
-var focusNewRuleViewProperty = async function(ruleEditor) {
+var focusNewRuleViewProperty = Task.async(function* (ruleEditor) {
   info("Clicking on a close ruleEditor brace to start editing a new property");
 
   
   ruleEditor.closeBrace.scrollIntoView(false);
-  let editor = await focusEditableField(ruleEditor.ruleView,
+  let editor = yield focusEditableField(ruleEditor.ruleView,
     ruleEditor.closeBrace);
 
   is(inplaceEditor(ruleEditor.newPropSpan), editor,
     "Focused editor is the new property editor.");
 
   return editor;
-};
+});
 
 
 
@@ -535,9 +537,9 @@ var focusNewRuleViewProperty = async function(ruleEditor) {
 
 
 
-var createNewRuleViewProperty = async function(ruleEditor, inputValue) {
+var createNewRuleViewProperty = Task.async(function* (ruleEditor, inputValue) {
   info("Creating a new property editor");
-  let editor = await focusNewRuleViewProperty(ruleEditor);
+  let editor = yield focusNewRuleViewProperty(ruleEditor);
 
   info("Entering the value " + inputValue);
   editor.input.value = inputValue;
@@ -546,8 +548,8 @@ var createNewRuleViewProperty = async function(ruleEditor, inputValue) {
   let onFocus = once(ruleEditor.element, "focus", true);
   EventUtils.synthesizeKey("VK_RETURN", {},
     ruleEditor.element.ownerDocument.defaultView);
-  await onFocus;
-};
+  yield onFocus;
+});
 
 
 
@@ -559,7 +561,7 @@ var createNewRuleViewProperty = async function(ruleEditor, inputValue) {
 
 
 
-var setSearchFilter = async function(view, searchValue) {
+var setSearchFilter = Task.async(function* (view, searchValue) {
   info("Setting filter text to \"" + searchValue + "\"");
 
   let searchField = view.searchField;
@@ -569,8 +571,8 @@ var setSearchFilter = async function(view, searchValue) {
     EventUtils.synthesizeKey(key, {}, view.styleWindow);
   }
 
-  await view.inspector.once("ruleview-filtered");
-};
+  yield view.inspector.once("ruleview-filtered");
+});
 
 
 

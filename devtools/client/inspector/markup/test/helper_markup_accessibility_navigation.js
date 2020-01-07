@@ -46,7 +46,7 @@ function testNavigationState(inspector, elms, focused, activedescendant) {
 
 
 
-async function runAccessibilityNavigationTest(inspector, elms,
+function* runAccessibilityNavigationTest(inspector, elms,
   {desc, key, options, focused, activedescendant, waitFor}) {
   info(desc);
 
@@ -62,7 +62,7 @@ async function runAccessibilityNavigationTest(inspector, elms,
     updated = Promise.resolve();
   }
   EventUtils.synthesizeKey(key, options, win);
-  await updated;
+  yield updated;
 
   let focusedElement = lookupPath(elms, focused);
   let activeDescendantElement = lookupPath(elms, activedescendant);

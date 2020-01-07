@@ -7,20 +7,20 @@
 
 
 
-add_task(async function() {
+add_task(function* () {
   
   
   
   ok(true);
 
-  await addTab("data:text/html;charset=utf-8,test inspector destroy");
+  yield addTab("data:text/html;charset=utf-8,test inspector destroy");
 
   info("Open the toolbox on the debugger panel");
   let target = TargetFactory.forTab(gBrowser.selectedTab);
-  let toolbox = await gDevTools.showToolbox(target, "jsdebugger");
+  let toolbox = yield gDevTools.showToolbox(target, "jsdebugger");
 
   info("Switch to the inspector panel and immediately end the test");
   let onInspectorSelected = toolbox.once("inspector-selected");
   toolbox.selectTool("inspector");
-  await onInspectorSelected;
+  yield onInspectorSelected;
 });
