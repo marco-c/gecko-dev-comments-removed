@@ -238,14 +238,12 @@ TokenServerClient.prototype = {
     for (let header in addHeaders) {
       req.setHeader(header, addHeaders[header]);
     }
-
-    let response = await new Promise((resolve, reject) => {
-      req.get(function(err) {
-        
-        err ? reject(new TokenServerClientNetworkError(err)) :
-              resolve(this.response);
-      });
-    });
+    let response;
+    try {
+      response = await req.get();
+    } catch (err) {
+      throw new TokenServerClientNetworkError(err);
+    }
 
     try {
       return this._processTokenResponse(response);

@@ -50,7 +50,7 @@ add_test(function test_attributes() {
 
 
 
-add_test(function test_proxy_auth_redirect() {
+add_task(async function test_proxy_auth_redirect() {
   let pacFetched = false;
   function pacHandler(metadata, response) {
     pacFetched = true;
@@ -75,16 +75,16 @@ add_test(function test_proxy_auth_redirect() {
   PACSystemSettings.PACURI = server.baseURI + "/pac3";
   installFakePAC();
 
-  let res = new RESTRequest(server.baseURI + "/original");
-  res.get(function(error) {
-    Assert.ok(pacFetched);
-    Assert.ok(fetched);
-    Assert.ok(!error);
-    Assert.ok(this.response.success);
-    Assert.equal("TADA!", this.response.body);
-    uninstallFakePAC();
-    server.stop(run_next_test);
-  });
+  let req = new RESTRequest(server.baseURI + "/original");
+  await req.get();
+
+  Assert.ok(pacFetched);
+  Assert.ok(fetched);
+
+  Assert.ok(req.response.success);
+  Assert.equal("TADA!", req.response.body);
+  uninstallFakePAC();
+  await promiseStopServer(server);
 });
 
 
@@ -92,91 +92,72 @@ add_test(function test_proxy_auth_redirect() {
 
 
 
-add_test(function test_forbidden_port() {
+add_task(async function test_forbidden_port() {
   let request = new RESTRequest("http://localhost:6000/");
-  request.get(function(error) {
-    if (!error) {
-      do_throw("Should have got an error.");
-    }
-    Assert.equal(error.result, Cr.NS_ERROR_PORT_ACCESS_NOT_ALLOWED);
-    run_next_test();
-  });
+
+  await Assert.rejects(request.get(), error =>
+    error.result == Cr.NS_ERROR_PORT_ACCESS_NOT_ALLOWED);
 });
 
 
 
 
-add_test(function test_simple_get() {
+add_task(async function test_simple_get() {
   let handler = httpd_handler(200, "OK", "Huzzah!");
   let server = httpd_setup({"/resource": handler});
+  let request = new RESTRequest(server.baseURI + "/resource");
+  let promiseResponse = request.get();
 
-  let request = new RESTRequest(server.baseURI + "/resource").get(function(error) {
-    Assert.equal(error, null);
-
-    Assert.equal(this.status, this.COMPLETED);
-    Assert.ok(this.response.success);
-    Assert.equal(this.response.status, 200);
-    Assert.equal(this.response.body, "Huzzah!");
-
-    server.stop(run_next_test);
-  });
   Assert.equal(request.status, request.SENT);
   Assert.equal(request.method, "GET");
+
+  let response = await promiseResponse;
+  Assert.equal(response, request.response);
+
+  Assert.equal(request.status, request.COMPLETED);
+  Assert.ok(response.success);
+  Assert.equal(response.status, 200);
+  Assert.equal(response.body, "Huzzah!");
+  await promiseStopServer(server);
 });
 
 
 
 
-add_test(function test_get() {
+add_task(async function test_get() {
   let handler = httpd_handler(200, "OK", "Huzzah!");
   let server = httpd_setup({"/resource": handler});
 
   let request = new RESTRequest(server.baseURI + "/resource");
   Assert.equal(request.status, request.NOT_SENT);
 
-  request.onProgress = request.onComplete = function() {
-    do_throw("This function should have been overwritten!");
-  };
+  let promiseResponse = request.get();
 
-  let onProgress_called = false;
-  function onProgress() {
-    onProgress_called = true;
-    Assert.ok(this.response.body.length > 0);
-
-    Assert.ok(!!(this.channel.loadFlags & Ci.nsIRequest.LOAD_BYPASS_CACHE));
-    Assert.ok(!!(this.channel.loadFlags & Ci.nsIRequest.INHIBIT_CACHING));
-  }
-
-  function onComplete(error) {
-    Assert.equal(error, null);
-
-    Assert.equal(this.status, this.COMPLETED);
-    Assert.ok(this.response.success);
-    Assert.equal(this.response.status, 200);
-    Assert.equal(this.response.body, "Huzzah!");
-    Assert.equal(handler.request.method, "GET");
-
-    Assert.ok(onProgress_called);
-    CommonUtils.nextTick(function() {
-      Assert.equal(request.onComplete, null);
-      Assert.equal(request.onProgress, null);
-      server.stop(run_next_test);
-    });
-  }
-
-  Assert.equal(request.get(onComplete, onProgress), request);
   Assert.equal(request.status, request.SENT);
   Assert.equal(request.method, "GET");
-  do_check_throws(function() {
-    request.get();
-  });
+
+  Assert.ok(!!(request.channel.loadFlags & Ci.nsIRequest.LOAD_BYPASS_CACHE));
+  Assert.ok(!!(request.channel.loadFlags & Ci.nsIRequest.INHIBIT_CACHING));
+
+  let response = await promiseResponse;
+
+  Assert.equal(response, request.response);
+  Assert.equal(request.status, request.COMPLETED);
+  Assert.ok(request.response.success);
+  Assert.equal(request.response.status, 200);
+  Assert.equal(request.response.body, "Huzzah!");
+  Assert.equal(handler.request.method, "GET");
+
+  await Assert.rejects(request.get(), /Request has already been sent/);
+
+  await promiseStopServer(server);
 });
 
 
 
 
-add_test(function test_get_utf8() {
-  let response = "Hello World or Καλημέρα κόσμε or こんにちは 世界";
+add_task(async function test_get_utf8() {
+  let response = "Hello World or Καλημέρα κόσμε or こんにちは 世界 😺";
 
   let contentType = "text/plain";
   let charset = true;
@@ -195,34 +176,49 @@ add_test(function test_get_utf8() {
 
   
   let request1 = new RESTRequest(server.baseURI + "/resource");
-  request1.get(function(error) {
-    Assert.equal(null, error);
+  await request1.get();
 
-    Assert.equal(request1.response.status, 200);
-    Assert.equal(request1.response.body, response);
-    Assert.equal(request1.response.headers["content-type"],
-                 contentType + charsetSuffix);
+  Assert.equal(request1.response.status, 200);
+  Assert.equal(request1.response.body, response);
+  Assert.equal(request1.response.headers["content-type"],
+               contentType + charsetSuffix);
 
-    
-    charset = false;
-    let request2 = new RESTRequest(server.baseURI + "/resource");
-    request2.get(function(error2) {
-      Assert.equal(null, error2);
+  
+  charset = false;
+  let request2 = new RESTRequest(server.baseURI + "/resource");
+  await request2.get();
+  Assert.equal(request2.response.status, 200);
+  Assert.equal(request2.response.body, response);
+  Assert.equal(request2.response.headers["content-type"], contentType);
+  Assert.equal(request2.response.charset, "utf-8");
 
-      Assert.equal(request2.response.status, 200);
-      Assert.equal(request2.response.body, response);
-      Assert.equal(request2.response.headers["content-type"], contentType);
-      Assert.equal(request2.response.charset, "utf-8");
+  let request3 = new RESTRequest(server.baseURI + "/resource");
 
-      server.stop(run_next_test);
-    });
-  });
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  response = ("a" + "😺".repeat(2048)).repeat(10);
+
+  await request3.get();
+
+  Assert.equal(request3.response.status, 200);
+
+  
+  Assert.equal(request3.response.body, response);
+
+  await promiseStopServer(server);
 });
 
 
 
 
-add_test(function test_post_utf8() {
+add_task(async function test_post_utf8() {
   
   
   
@@ -239,24 +235,26 @@ add_test(function test_post_utf8() {
     res.write(body);
   }});
 
-  let data = {copyright: "\xa9"}; 
+  let data = {
+    copyright: "©",
+    
+    long: ("a" + "😺".repeat(2048)).repeat(10)
+  };
   let request1 = new RESTRequest(server.baseURI + "/echo");
-  request1.post(data, function(error) {
-    Assert.equal(null, error);
+  await request1.post(data);
 
-    Assert.equal(request1.response.status, 200);
-    deepEqual(JSON.parse(request1.response.body), data);
-    Assert.equal(request1.response.headers["content-type"],
-                 "application/json; charset=utf-8");
+  Assert.equal(request1.response.status, 200);
+  deepEqual(JSON.parse(request1.response.body), data);
+  Assert.equal(request1.response.headers["content-type"],
+               "application/json; charset=utf-8");
 
-    server.stop(run_next_test);
-  });
+  await promiseStopServer(server);
 });
 
 
 
 
-add_test(function test_charsets() {
+add_task(async function test_charsets() {
   let response = "Hello World, I can't speak Russian";
 
   let contentType = "text/plain";
@@ -277,172 +275,131 @@ add_test(function test_charsets() {
   
   let request1 = new RESTRequest(server.baseURI + "/resource");
   request1.charset = "not-a-charset";
-  request1.get(function(error) {
-    Assert.equal(null, error);
+  await request1.get();
+  Assert.equal(request1.response.status, 200);
+  Assert.equal(request1.response.body, response);
+  Assert.equal(request1.response.headers["content-type"],
+               contentType + charsetSuffix);
+  Assert.equal(request1.response.charset, "us-ascii");
 
-    Assert.equal(request1.response.status, 200);
-    Assert.equal(request1.response.body, response);
-    Assert.equal(request1.response.headers["content-type"],
-                 contentType + charsetSuffix);
-    Assert.equal(request1.response.charset, "us-ascii");
+  
+  charset = false;
+  let request2 = new RESTRequest(server.baseURI + "/resource");
+  request2.charset = "us-ascii";
+  await request2.get();
 
-    
-    charset = false;
-    let request2 = new RESTRequest(server.baseURI + "/resource");
-    request2.charset = "us-ascii";
-    request2.get(function(error2) {
-      Assert.equal(null, error2);
+  Assert.equal(request2.response.status, 200);
+  Assert.equal(request2.response.body, response);
+  Assert.equal(request2.response.headers["content-type"], contentType);
+  Assert.equal(request2.response.charset, "us-ascii");
 
-      Assert.equal(request2.response.status, 200);
-      Assert.equal(request2.response.body, response);
-      Assert.equal(request2.response.headers["content-type"], contentType);
-      Assert.equal(request2.response.charset, "us-ascii");
-
-      server.stop(run_next_test);
-    });
-  });
+  await promiseStopServer(server);
 });
 
 
 
 
-function check_posting_data(method) {
+async function check_posting_data(method) {
   let funcName = method.toLowerCase();
   let handler = httpd_handler(200, "OK", "Got it!");
   let server = httpd_setup({"/resource": handler});
 
   let request = new RESTRequest(server.baseURI + "/resource");
   Assert.equal(request.status, request.NOT_SENT);
-
-  request.onProgress = request.onComplete = function() {
-    do_throw("This function should have been overwritten!");
-  };
-
-  let onProgress_called = false;
-  function onProgress() {
-    onProgress_called = true;
-    Assert.ok(this.response.body.length > 0);
-  }
-
-  function onComplete(error) {
-    Assert.equal(error, null);
-
-    Assert.equal(this.status, this.COMPLETED);
-    Assert.ok(this.response.success);
-    Assert.equal(this.response.status, 200);
-    Assert.equal(this.response.body, "Got it!");
-
-    Assert.equal(handler.request.method, method);
-    Assert.equal(handler.request.body, "Hullo?");
-    Assert.equal(handler.request.getHeader("Content-Type"), "text/plain");
-
-    Assert.ok(onProgress_called);
-    CommonUtils.nextTick(function() {
-      Assert.equal(request.onComplete, null);
-      Assert.equal(request.onProgress, null);
-      server.stop(run_next_test);
-    });
-  }
-
-  Assert.equal(request[funcName]("Hullo?", onComplete, onProgress), request);
+  let responsePromise = request[funcName]("Hullo?");
   Assert.equal(request.status, request.SENT);
   Assert.equal(request.method, method);
-  do_check_throws(function() {
-    request[funcName]("Hai!");
-  });
+
+  let response = await responsePromise;
+
+  Assert.equal(response, request.response);
+
+  Assert.equal(request.status, request.COMPLETED);
+  Assert.ok(request.response.success);
+  Assert.equal(request.response.status, 200);
+  Assert.equal(request.response.body, "Got it!");
+
+  Assert.equal(handler.request.method, method);
+  Assert.equal(handler.request.body, "Hullo?");
+  Assert.equal(handler.request.getHeader("Content-Type"), "text/plain");
+
+  await Assert.rejects(request[funcName]("Hai!"),
+                       /Request has already been sent/);
+
+  await promiseStopServer(server);
 }
 
 
 
 
-add_test(function test_patch() {
-  check_posting_data("PATCH");
+add_task(async function test_patch() {
+  await check_posting_data("PATCH");
 });
 
 
 
 
-add_test(function test_put() {
-  check_posting_data("PUT");
+add_task(async function test_put() {
+  await check_posting_data("PUT");
 });
 
 
 
 
-add_test(function test_post() {
-  check_posting_data("POST");
+add_task(async function test_post() {
+  await check_posting_data("POST");
 });
 
 
 
 
-add_test(function test_delete() {
+add_task(async function test_delete() {
   let handler = httpd_handler(200, "OK", "Got it!");
   let server = httpd_setup({"/resource": handler});
 
   let request = new RESTRequest(server.baseURI + "/resource");
   Assert.equal(request.status, request.NOT_SENT);
-
-  request.onProgress = request.onComplete = function() {
-    do_throw("This function should have been overwritten!");
-  };
-
-  let onProgress_called = false;
-  function onProgress() {
-    onProgress_called = true;
-    Assert.ok(this.response.body.length > 0);
-  }
-
-  function onComplete(error) {
-    Assert.equal(error, null);
-
-    Assert.equal(this.status, this.COMPLETED);
-    Assert.ok(this.response.success);
-    Assert.equal(this.response.status, 200);
-    Assert.equal(this.response.body, "Got it!");
-    Assert.equal(handler.request.method, "DELETE");
-
-    Assert.ok(onProgress_called);
-    CommonUtils.nextTick(function() {
-      Assert.equal(request.onComplete, null);
-      Assert.equal(request.onProgress, null);
-      server.stop(run_next_test);
-    });
-  }
-
-  Assert.equal(request.delete(onComplete, onProgress), request);
+  let responsePromise = request.delete();
   Assert.equal(request.status, request.SENT);
   Assert.equal(request.method, "DELETE");
-  do_check_throws(function() {
-    request.delete();
-  });
+
+  let response = await responsePromise;
+  Assert.equal(response, request.response);
+
+  Assert.equal(request.status, request.COMPLETED);
+  Assert.ok(request.response.success);
+  Assert.equal(request.response.status, 200);
+  Assert.equal(request.response.body, "Got it!");
+  Assert.equal(handler.request.method, "DELETE");
+
+  await Assert.rejects(request.delete(), /Request has already been sent/);
+
+  await promiseStopServer(server);
 });
 
 
 
 
-add_test(function test_get_404() {
+add_task(async function test_get_404() {
   let handler = httpd_handler(404, "Not Found", "Cannae find it!");
   let server = httpd_setup({"/resource": handler});
 
   let request = new RESTRequest(server.baseURI + "/resource");
-  request.get(function(error) {
-    Assert.equal(error, null);
+  await request.get();
 
-    Assert.equal(this.status, this.COMPLETED);
-    Assert.ok(!this.response.success);
-    Assert.equal(this.response.status, 404);
-    Assert.equal(this.response.body, "Cannae find it!");
+  Assert.equal(request.status, request.COMPLETED);
+  Assert.ok(!request.response.success);
+  Assert.equal(request.response.status, 404);
+  Assert.equal(request.response.body, "Cannae find it!");
 
-    server.stop(run_next_test);
-  });
+  await promiseStopServer(server);
 });
 
 
 
 
 
-add_test(function test_put_json() {
+add_task(async function test_put_json() {
   let handler = httpd_handler(200, "OK");
   let server = httpd_setup({"/resource": handler});
 
@@ -452,27 +409,25 @@ add_test(function test_put_json() {
     number: 42
   };
   let request = new RESTRequest(server.baseURI + "/resource");
-  request.put(sample_data, function(error) {
-    Assert.equal(error, null);
+  await request.put(sample_data);
 
-    Assert.equal(this.status, this.COMPLETED);
-    Assert.ok(this.response.success);
-    Assert.equal(this.response.status, 200);
-    Assert.equal(this.response.body, "");
+  Assert.equal(request.status, request.COMPLETED);
+  Assert.ok(request.response.success);
+  Assert.equal(request.response.status, 200);
+  Assert.equal(request.response.body, "");
 
-    Assert.equal(handler.request.method, "PUT");
-    Assert.equal(handler.request.body, JSON.stringify(sample_data));
-    Assert.equal(handler.request.getHeader("Content-Type"), "application/json; charset=utf-8");
+  Assert.equal(handler.request.method, "PUT");
+  Assert.equal(handler.request.body, JSON.stringify(sample_data));
+  Assert.equal(handler.request.getHeader("Content-Type"), "application/json; charset=utf-8");
 
-    server.stop(run_next_test);
-  });
+  await promiseStopServer(server);
 });
 
 
 
 
 
-add_test(function test_post_json() {
+add_task(async function test_post_json() {
   let handler = httpd_handler(200, "OK");
   let server = httpd_setup({"/resource": handler});
 
@@ -482,102 +437,93 @@ add_test(function test_post_json() {
     number: 42
   };
   let request = new RESTRequest(server.baseURI + "/resource");
-  request.post(sample_data, function(error) {
-    Assert.equal(error, null);
+  await request.post(sample_data);
 
-    Assert.equal(this.status, this.COMPLETED);
-    Assert.ok(this.response.success);
-    Assert.equal(this.response.status, 200);
-    Assert.equal(this.response.body, "");
+  Assert.equal(request.status, request.COMPLETED);
+  Assert.ok(request.response.success);
+  Assert.equal(request.response.status, 200);
+  Assert.equal(request.response.body, "");
 
-    Assert.equal(handler.request.method, "POST");
-    Assert.equal(handler.request.body, JSON.stringify(sample_data));
-    Assert.equal(handler.request.getHeader("Content-Type"), "application/json; charset=utf-8");
+  Assert.equal(handler.request.method, "POST");
+  Assert.equal(handler.request.body, JSON.stringify(sample_data));
+  Assert.equal(handler.request.getHeader("Content-Type"), "application/json; charset=utf-8");
 
-    server.stop(run_next_test);
-  });
+  await promiseStopServer(server);
 });
 
 
 
 
 
-add_test(function test_post_json() {
+add_task(async function test_post_json() {
   let handler = httpd_handler(200, "OK");
   let server = httpd_setup({"/resource": handler});
 
   let sample_data = "hello";
   let request = new RESTRequest(server.baseURI + "/resource");
-  request.post(sample_data, function(error) {
-    Assert.equal(error, null);
+  await request.post(sample_data);
+  Assert.equal(request.status, request.COMPLETED);
+  Assert.ok(request.response.success);
+  Assert.equal(request.response.status, 200);
+  Assert.equal(request.response.body, "");
 
-    Assert.equal(this.status, this.COMPLETED);
-    Assert.ok(this.response.success);
-    Assert.equal(this.response.status, 200);
-    Assert.equal(this.response.body, "");
+  Assert.equal(handler.request.method, "POST");
+  Assert.equal(handler.request.body, sample_data);
+  Assert.equal(handler.request.getHeader("Content-Type"), "text/plain");
 
-    Assert.equal(handler.request.method, "POST");
-    Assert.equal(handler.request.body, sample_data);
-    Assert.equal(handler.request.getHeader("Content-Type"), "text/plain");
-
-    server.stop(run_next_test);
-  });
+  await promiseStopServer(server);
 });
 
 
 
 
-add_test(function test_put_override_content_type() {
+add_task(async function test_put_override_content_type() {
   let handler = httpd_handler(200, "OK");
   let server = httpd_setup({"/resource": handler});
 
   let request = new RESTRequest(server.baseURI + "/resource");
   request.setHeader("Content-Type", "application/lolcat");
-  request.put("O HAI!!1!", function(error) {
-    Assert.equal(error, null);
+  await request.put("O HAI!!1!");
 
-    Assert.equal(this.status, this.COMPLETED);
-    Assert.ok(this.response.success);
-    Assert.equal(this.response.status, 200);
-    Assert.equal(this.response.body, "");
+  Assert.equal(request.status, request.COMPLETED);
+  Assert.ok(request.response.success);
+  Assert.equal(request.response.status, 200);
+  Assert.equal(request.response.body, "");
 
-    Assert.equal(handler.request.method, "PUT");
-    Assert.equal(handler.request.body, "O HAI!!1!");
-    Assert.equal(handler.request.getHeader("Content-Type"), "application/lolcat");
+  Assert.equal(handler.request.method, "PUT");
+  Assert.equal(handler.request.body, "O HAI!!1!");
+  Assert.equal(handler.request.getHeader("Content-Type"), "application/lolcat");
 
-    server.stop(run_next_test);
-  });
+  await promiseStopServer(server);
 });
 
 
 
 
-add_test(function test_post_override_content_type() {
+add_task(async function test_post_override_content_type() {
   let handler = httpd_handler(200, "OK");
   let server = httpd_setup({"/resource": handler});
 
   let request = new RESTRequest(server.baseURI + "/resource");
   request.setHeader("Content-Type", "application/lolcat");
-  request.post("O HAI!!1!", function(error) {
-    Assert.equal(error, null);
+  await request.post("O HAI!!1!");
 
-    Assert.equal(this.status, this.COMPLETED);
-    Assert.ok(this.response.success);
-    Assert.equal(this.response.status, 200);
-    Assert.equal(this.response.body, "");
+  Assert.equal(request.status, request.COMPLETED);
+  Assert.ok(request.response.success);
+  Assert.equal(request.response.status, 200);
+  Assert.equal(request.response.body, "");
 
-    Assert.equal(handler.request.method, "POST");
-    Assert.equal(handler.request.body, "O HAI!!1!");
-    Assert.equal(handler.request.getHeader("Content-Type"), "application/lolcat");
+  Assert.equal(handler.request.method, "POST");
+  Assert.equal(handler.request.body, "O HAI!!1!");
+  Assert.equal(handler.request.getHeader("Content-Type"), "application/lolcat");
 
-    server.stop(run_next_test);
-  });
+  await promiseStopServer(server);
 });
 
 
 
 
-add_test(function test_get_no_headers() {
+add_task(async function test_get_no_headers() {
   let handler = httpd_handler(200, "OK");
   let server = httpd_setup({"/resource": handler});
 
@@ -585,45 +531,41 @@ add_test(function test_get_no_headers() {
                         "accept-encoding", "accept-charset", "keep-alive",
                         "connection", "pragma", "cache-control",
                         "content-length"];
+  let request = new RESTRequest(server.baseURI + "/resource");
+  await request.get();
 
-  new RESTRequest(server.baseURI + "/resource").get(function(error) {
-    Assert.equal(error, null);
+  Assert.equal(request.response.status, 200);
+  Assert.equal(request.response.body, "");
 
-    Assert.equal(this.response.status, 200);
-    Assert.equal(this.response.body, "");
-
-    let server_headers = handler.request.headers;
-    while (server_headers.hasMoreElements()) {
-      let header = server_headers.getNext().toString();
-      if (!ignore_headers.includes(header)) {
-        do_throw("Got unexpected header!");
-      }
+  let server_headers = handler.request.headers;
+  while (server_headers.hasMoreElements()) {
+    let header = server_headers.getNext().toString();
+    if (!ignore_headers.includes(header)) {
+      do_throw("Got unexpected header!");
     }
+  }
 
-    server.stop(run_next_test);
-  });
+  await promiseStopServer(server);
 });
 
 
 
 
-add_test(function test_changing_uri() {
+add_task(async function test_changing_uri() {
   let handler = httpd_handler(200, "OK");
   let server = httpd_setup({"/resource": handler});
 
   let request = new RESTRequest("http://localhost:1234/the-wrong-resource");
   request.uri = CommonUtils.makeURI(server.baseURI + "/resource");
-  request.get(function(error) {
-    Assert.equal(error, null);
-    Assert.equal(this.response.status, 200);
-    server.stop(run_next_test);
-  });
+  let response = await request.get();
+  Assert.equal(response.status, 200);
+  await promiseStopServer(server);
 });
 
 
 
 
-add_test(function test_request_setHeader() {
+add_task(async function test_request_setHeader() {
   let handler = httpd_handler(200, "OK");
   let server = httpd_setup({"/resource": handler});
 
@@ -632,24 +574,21 @@ add_test(function test_request_setHeader() {
   request.setHeader("X-What-Is-Weave", "awesome");
   request.setHeader("X-WHAT-is-Weave", "more awesomer");
   request.setHeader("Another-Header", "Hello World");
+  await request.get();
 
-  request.get(function(error) {
-    Assert.equal(error, null);
+  Assert.equal(request.response.status, 200);
+  Assert.equal(request.response.body, "");
 
-    Assert.equal(this.response.status, 200);
-    Assert.equal(this.response.body, "");
+  Assert.equal(handler.request.getHeader("X-What-Is-Weave"), "more awesomer");
+  Assert.equal(handler.request.getHeader("another-header"), "Hello World");
 
-    Assert.equal(handler.request.getHeader("X-What-Is-Weave"), "more awesomer");
-    Assert.equal(handler.request.getHeader("another-header"), "Hello World");
-
-    server.stop(run_next_test);
-  });
+  await promiseStopServer(server);
 });
 
 
 
 
-add_test(function test_response_headers() {
+add_task(async function test_response_headers() {
   function handler(request, response) {
     response.setHeader("X-What-Is-Weave", "awesome");
     response.setHeader("Another-Header", "Hello World");
@@ -657,42 +596,36 @@ add_test(function test_response_headers() {
   }
   let server = httpd_setup({"/resource": handler});
   let request = new RESTRequest(server.baseURI + "/resource");
+  await request.get();
 
-  request.get(function(error) {
-    Assert.equal(error, null);
+  Assert.equal(request.response.status, 200);
+  Assert.equal(request.response.body, "");
 
-    Assert.equal(this.response.status, 200);
-    Assert.equal(this.response.body, "");
+  Assert.equal(request.response.headers["x-what-is-weave"], "awesome");
+  Assert.equal(request.response.headers["another-header"], "Hello World");
 
-    Assert.equal(this.response.headers["x-what-is-weave"], "awesome");
-    Assert.equal(this.response.headers["another-header"], "Hello World");
-
-    server.stop(run_next_test);
-  });
+  await promiseStopServer(server);
 });
 
 
 
 
 
-add_test(function test_connection_refused() {
+add_task(async function test_connection_refused() {
   let request = new RESTRequest("http://localhost:1234/resource");
-  request.onProgress = function onProgress() {
-    do_throw("Shouldn't have called request.onProgress()!");
-  };
-  request.get(function(error) {
-    Assert.equal(error.result, Cr.NS_ERROR_CONNECTION_REFUSED);
-    Assert.equal(error.message, "NS_ERROR_CONNECTION_REFUSED");
-    Assert.equal(this.status, this.COMPLETED);
-    run_next_test();
-  });
-  Assert.equal(request.status, request.SENT);
+
+  
+  await Assert.rejects(request.get(), error =>
+    error.result == Cr.NS_ERROR_CONNECTION_REFUSED &&
+    error.message == "NS_ERROR_CONNECTION_REFUSED");
+
+  Assert.equal(request.status, request.COMPLETED);
 });
 
 
 
 
-add_test(function test_abort() {
+add_task(async function test_abort() {
   function handler() {
     do_throw("Shouldn't have gotten here!");
   }
@@ -705,10 +638,7 @@ add_test(function test_abort() {
     request.abort();
   });
 
-  request.onProgress = request.onComplete = function() {
-    do_throw("Shouldn't have gotten here!");
-  };
-  request.get();
+  let responsePromise = request.get();
   request.abort();
 
   
@@ -717,16 +647,17 @@ add_test(function test_abort() {
   });
 
   Assert.equal(request.status, request.ABORTED);
-  CommonUtils.nextTick(function() {
-    server.stop(run_next_test);
-  });
+
+  await Assert.rejects(responsePromise);
+
+  await promiseStopServer(server);
 });
 
 
 
 
 
-add_test(function test_timeout() {
+add_task(async function test_timeout() {
   let server = new HttpServer();
   let server_connection;
   server._handler.handleResponse = function(connection) {
@@ -743,43 +674,23 @@ add_test(function test_timeout() {
 
   let request = new RESTRequest(uri + "/resource");
   request.timeout = 0.1; 
-  request.get(function(error) {
-    Assert.equal(error.result, Cr.NS_ERROR_NET_TIMEOUT);
-    Assert.equal(this.status, this.ABORTED);
 
-    
-    
-    
-    if (server_connection) {
-      _("Closing connection.");
-      server_connection.close();
-    }
+  await Assert.rejects(request.get(), error =>
+    error.result == Cr.NS_ERROR_NET_TIMEOUT);
 
-    _("Shutting down server.");
-    server.stop(run_next_test);
-  });
+  Assert.equal(request.status, request.ABORTED);
+
+  
+  
+  
+  if (server_connection) {
+    _("Closing connection.");
+    server_connection.close();
+  }
+  await promiseStopServer(server);
 });
 
-
-
-
-add_test(function test_exception_in_onProgress() {
-  let handler = httpd_handler(200, "OK", "Foobar");
-  let server = httpd_setup({"/resource": handler});
-
-  let request = new RESTRequest(server.baseURI + "/resource");
-  request.onProgress = function onProgress() {
-    it.does.not.exist(); 
-  };
-  request.get(function onComplete(error) {
-    Assert.equal(error, "ReferenceError: it is not defined");
-    Assert.equal(this.status, this.ABORTED);
-
-    server.stop(run_next_test);
-  });
-});
-
-add_test(function test_new_channel() {
+add_task(async function test_new_channel() {
   _("Ensure a redirect to a new channel is handled properly.");
 
   function checkUA(metadata) {
@@ -814,12 +725,6 @@ add_test(function test_new_channel() {
   let server2 = httpd_setup({"/resource": resourceHandler});
   redirectURL = server2.baseURI + "/resource";
 
-  function advance() {
-    server1.stop(function() {
-      server2.stop(run_next_test);
-    });
-  }
-
   let request = new RESTRequest(server1.baseURI + "/redirect");
   request.setHeader("User-Agent", "foo bar");
 
@@ -833,19 +738,18 @@ add_test(function test_new_channel() {
     return true;
   };
 
-  request.get(function onComplete(error) {
-    let response = this.response;
+  let response = await request.get();
 
-    Assert.equal(200, response.status);
-    Assert.equal("Test", response.body);
-    Assert.ok(redirectRequested);
-    Assert.ok(resourceRequested);
+  Assert.equal(200, response.status);
+  Assert.equal("Test", response.body);
+  Assert.ok(redirectRequested);
+  Assert.ok(resourceRequested);
 
-    advance();
-  });
+  await promiseStopServer(server1);
+  await promiseStopServer(server2);
 });
 
-add_test(function test_not_sending_cookie() {
+add_task(async function test_not_sending_cookie() {
   function handler(metadata, response) {
     let body = "COOKIE!";
     response.setStatusLine(metadata.httpVersion, 200, "OK");
@@ -860,10 +764,10 @@ add_test(function test_not_sending_cookie() {
   cookieSer.setCookieString(uri, null, "test=test; path=/;", null);
 
   let res = new RESTRequest(server.baseURI + "/test");
-  res.get(function(error) {
-    Assert.equal(null, error);
-    Assert.ok(this.response.success);
-    Assert.equal("COOKIE!", this.response.body);
-    server.stop(run_next_test);
-  });
+  let response = await res.get();
+
+  Assert.ok(response.success);
+  Assert.equal("COOKIE!", response.body);
+
+  await promiseStopServer(server);
 });

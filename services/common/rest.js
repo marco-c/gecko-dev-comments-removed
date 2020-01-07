@@ -13,6 +13,7 @@ ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Log.jsm");
+ChromeUtils.import("resource://gre/modules/PromiseUtils.jsm");
 ChromeUtils.import("resource://services-common/utils.js");
 
 ChromeUtils.defineModuleGetter(this, "CryptoUtils",
@@ -73,38 +74,6 @@ function decodeString(data, charset) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 function RESTRequest(uri) {
   this.status = this.NOT_SENT;
 
@@ -116,9 +85,11 @@ function RESTRequest(uri) {
   this.uri = uri;
 
   this._headers = {};
+  this._deferred = PromiseUtils.defer();
   this._log = Log.repository.getLogger(this._logName);
   this._log.manageLevelFromPref("services.common.log.logger.rest.request");
 }
+
 RESTRequest.prototype = {
 
   _logName: "Services.Common.RESTRequest",
@@ -130,13 +101,6 @@ RESTRequest.prototype = {
   ]),
 
   
-
-  
-
-
-
-
-  willUTF8EncodeObjectRequests: true,
 
   
 
@@ -201,26 +165,7 @@ RESTRequest.prototype = {
   
 
 
-
-
-
-
-
-  onComplete: function onComplete(error) {
-  },
-
-  
-
-
-
-
-  onProgress: function onProgress() {
-  },
-
-  
-
-
-  setHeader: function setHeader(name, value) {
+  setHeader(name, value) {
     this._headers[name.toLowerCase()] = value;
   },
 
@@ -229,13 +174,8 @@ RESTRequest.prototype = {
 
 
 
-
-
-
-
-
-  get: function get(onComplete, onProgress) {
-    return this.dispatch("GET", null, onComplete, onProgress);
+  async get() {
+    return this.dispatch("GET", null);
   },
 
   
@@ -247,12 +187,8 @@ RESTRequest.prototype = {
 
 
 
-
-
-
-
-  patch: function patch(data, onComplete, onProgress) {
-    return this.dispatch("PATCH", data, onComplete, onProgress);
+  async patch(data) {
+    return this.dispatch("PATCH", data);
   },
 
   
@@ -264,12 +200,8 @@ RESTRequest.prototype = {
 
 
 
-
-
-
-
-  put: function put(data, onComplete, onProgress) {
-    return this.dispatch("PUT", data, onComplete, onProgress);
+  async put(data) {
+    return this.dispatch("PUT", data);
   },
 
   
@@ -281,12 +213,8 @@ RESTRequest.prototype = {
 
 
 
-
-
-
-
-  post: function post(data, onComplete, onProgress) {
-    return this.dispatch("POST", data, onComplete, onProgress);
+  async post(data) {
+    return this.dispatch("POST", data);
   },
 
   
@@ -294,19 +222,14 @@ RESTRequest.prototype = {
 
 
 
-
-
-
-
-
-  delete: function delete_(onComplete, onProgress) {
-    return this.dispatch("DELETE", null, onComplete, onProgress);
+  async delete() {
+    return this.dispatch("DELETE", null);
   },
 
   
 
 
-  abort: function abort() {
+  abort(rejectWithError = null) {
     if (this.status != this.SENT && this.status != this.IN_PROGRESS) {
       throw new Error("Can only abort a request that has been sent.");
     }
@@ -318,22 +241,19 @@ RESTRequest.prototype = {
       
       this.timeoutTimer.clear();
     }
+    if (rejectWithError) {
+      this._deferred.reject(rejectWithError);
+    }
   },
 
   
 
-  dispatch: function dispatch(method, data, onComplete, onProgress) {
+  async dispatch(method, data) {
     if (this.status != this.NOT_SENT) {
       throw new Error("Request has already been sent!");
     }
 
     this.method = method;
-    if (onComplete) {
-      this.onComplete = onComplete;
-    }
-    if (onProgress) {
-      this.onProgress = onProgress;
-    }
 
     
     let channel = NetUtil.newChannel({uri: this.uri, loadUsingSystemPrincipal: true})
@@ -407,17 +327,17 @@ RESTRequest.prototype = {
     } catch (ex) {
       
       this._log.warn("Caught an error in asyncOpen", ex);
-      CommonUtils.nextTick(onComplete.bind(this, ex));
+      this._deferred.reject(ex);
     }
     this.status = this.SENT;
     this.delayTimeout();
-    return this;
+    return this._deferred.promise;
   },
 
   
 
 
-  delayTimeout: function delayTimeout() {
+  delayTimeout() {
     if (this.timeout) {
       CommonUtils.namedTimer(this.abortTimeout, this.timeout * 1000, this,
                              "timeoutTimer");
@@ -427,23 +347,18 @@ RESTRequest.prototype = {
   
 
 
-  abortTimeout: function abortTimeout() {
-    this.abort();
-    let error = Components.Exception("Aborting due to channel inactivity.",
-                                     Cr.NS_ERROR_NET_TIMEOUT);
-    if (!this.onComplete) {
-      this._log.error("Unexpected error: onComplete not defined in " +
-                      "abortTimeout.");
-      return;
-    }
-    this.onComplete(error);
+  abortTimeout() {
+    this.abort(Components.Exception("Aborting due to channel inactivity.",
+                                    Cr.NS_ERROR_NET_TIMEOUT));
   },
 
   
 
-  onStartRequest: function onStartRequest(channel) {
+  onStartRequest(channel) {
     if (this.status == this.ABORTED) {
       this._log.trace("Not proceeding with onStartRequest, request was aborted.");
+      
+      this._deferred.reject(Components.Exception("Request aborted", Cr.NS_BINDING_ABORTED));
       return;
     }
 
@@ -453,6 +368,7 @@ RESTRequest.prototype = {
       this._log.error("Unexpected error: channel is not a nsIHttpChannel!");
       this.status = this.ABORTED;
       channel.cancel(Cr.NS_BINDING_ABORTED);
+      this._deferred.reject(ex);
       return;
     }
 
@@ -467,7 +383,7 @@ RESTRequest.prototype = {
     this.delayTimeout();
   },
 
-  onStopRequest: function onStopRequest(channel, context, statusCode) {
+  onStopRequest(channel, context, statusCode) {
     if (this.timeoutTimer) {
       
       this.timeoutTimer.clear();
@@ -476,6 +392,10 @@ RESTRequest.prototype = {
     
     if (this.status == this.ABORTED) {
       this._log.trace("Not proceeding with onStopRequest, request was aborted.");
+      
+      
+      this._deferred.reject(Components.Exception("Request aborted",
+                                                 Cr.NS_BINDING_ABORTED));
       return;
     }
 
@@ -484,35 +404,25 @@ RESTRequest.prototype = {
     } catch (ex) {
       this._log.error("Unexpected error: channel not nsIHttpChannel!");
       this.status = this.ABORTED;
+      this._deferred.reject(ex);
       return;
     }
+
     this.status = this.COMPLETED;
+
+    try {
+      this.response.body = decodeString(this.response._rawBody, this.response.charset);
+      this.response._rawBody = null;
+    } catch (ex) {
+      this._log.warn(`Exception decoding response - ${this.method} ${channel.URI.spec}`, ex);
+      this._deferred.reject(ex);
+      return;
+    }
 
     let statusSuccess = Components.isSuccessCode(statusCode);
     let uri = channel && channel.URI && channel.URI.spec || "<unknown>";
     this._log.trace("Channel for " + channel.requestMethod + " " + uri +
                     " returned status code " + statusCode);
-
-    if (!this.onComplete) {
-      this._log.error("Unexpected error: onComplete not defined in " +
-                      "abortRequest.");
-      this.onProgress = null;
-      return;
-    }
-
-    try {
-      
-      this.response.body = decodeString(this.response._rawBody, this.response.charset);
-      this.response._rawBody = null;
-      
-      this.onProgress();
-    } catch (ex) {
-      this._log.warn(`Exception handling response - ${this.method} ${channel.URI.spec}`, ex);
-      this.status = this.ABORTED;
-      this.onComplete(ex);
-      this.onComplete = this.onProgress = null;
-      return;
-    }
 
     
     
@@ -521,8 +431,7 @@ RESTRequest.prototype = {
       let message = Components.Exception("", statusCode).name;
       let error = Components.Exception(message, statusCode);
       this._log.debug(this.method + " " + uri + " failed: " + statusCode + " - " + message);
-      this.onComplete(error);
-      this.onComplete = this.onProgress = null;
+      this._deferred.reject(error);
       return;
     }
 
@@ -530,28 +439,21 @@ RESTRequest.prototype = {
 
     
     if (this._log.level <= Log.Level.Trace) {
-      this._log.trace(this.method + " body: " + this.response.body);
+      this._log.trace(this.method + " body", this.response.body);
     }
 
     delete this._inputStream;
 
-    this.onComplete(null);
-    this.onComplete = this.onProgress = null;
+    this._deferred.resolve(this.response);
   },
 
-  onDataAvailable: function onDataAvailable(channel, cb, stream, off, count) {
+  onDataAvailable(channel, cb, stream, off, count) {
     
     try {
       channel.QueryInterface(Ci.nsIHttpChannel);
     } catch (ex) {
       this._log.error("Unexpected error: channel not nsIHttpChannel!");
-      this.abort();
-
-      if (this.onComplete) {
-        this.onComplete(ex);
-      }
-
-      this.onComplete = this.onProgress = null;
+      this.abort(ex);
       return;
     }
 
@@ -580,7 +482,7 @@ RESTRequest.prototype = {
 
   
 
-  notifyCertProblem: function notifyCertProblem(socketInfo, sslStatus, targetHost) {
+  notifyCertProblem(socketInfo, sslStatus, targetHost) {
     this._log.warn("Invalid HTTPS certificate encountered!");
     
     
@@ -592,7 +494,7 @@ RESTRequest.prototype = {
 
 
 
-  shouldCopyOnRedirect: function shouldCopyOnRedirect(oldChannel, newChannel, flags) {
+  shouldCopyOnRedirect(oldChannel, newChannel, flags) {
     let isInternal = !!(flags & Ci.nsIChannelEventSink.REDIRECT_INTERNAL);
     let isSameURI  = newChannel.URI.equals(oldChannel.URI);
     this._log.debug("Channel redirect: " + oldChannel.URI.spec + ", " +
@@ -601,8 +503,7 @@ RESTRequest.prototype = {
   },
 
   
-  asyncOnChannelRedirect:
-    function asyncOnChannelRedirect(oldChannel, newChannel, flags, callback) {
+  asyncOnChannelRedirect(oldChannel, newChannel, flags, callback) {
 
     let oldSpec = (oldChannel && oldChannel.URI) ? oldChannel.URI.spec : "<undefined>";
     let newSpec = (newChannel && newChannel.URI) ? newChannel.URI.spec : "<undefined>";
@@ -750,15 +651,13 @@ function TokenAuthenticatedRESTRequest(uri, authToken, extra) {
 TokenAuthenticatedRESTRequest.prototype = {
   __proto__: RESTRequest.prototype,
 
-  dispatch: function dispatch(method, data, onComplete, onProgress) {
+  async dispatch(method, data) {
     let sig = CryptoUtils.computeHTTPMACSHA1(
       this.authToken.id, this.authToken.key, method, this.uri, this.extra
     );
 
     this.setHeader("Authorization", sig.getHeader());
 
-    return RESTRequest.prototype.dispatch.call(
-      this, method, data, onComplete, onProgress
-    );
+    return super.dispatch(method, data);
   },
 };

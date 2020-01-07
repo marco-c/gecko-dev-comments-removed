@@ -101,11 +101,6 @@ this.HawkClient.prototype = {
   
 
 
-  willUTF8EncodeRequests: HAWKAuthenticatedRESTRequest.prototype.willUTF8EncodeObjectRequests,
-
-  
-
-
 
 
 
@@ -201,93 +196,11 @@ this.HawkClient.prototype = {
 
 
 
-  request(path, method, credentials = null, payloadObj = {}, extraHeaders = {},
-                    retryOK = true) {
+  async request(path, method, credentials = null, payloadObj = {}, extraHeaders = {},
+                retryOK = true) {
     method = method.toLowerCase();
 
-    let deferred = PromiseUtils.defer();
     let uri = this.host + path;
-    let self = this;
-
-    function _onComplete(error) {
-      
-      
-      
-      if (error) {
-        log.warn("hawk request error", error);
-      }
-      
-      if (!this.response) {
-        deferred.reject(error);
-        return;
-      }
-      let restResponse = this.response;
-      let status = restResponse.status;
-
-      log.debug("(Response) " + path + ": code: " + status +
-                " - Status text: " + restResponse.statusText);
-      if (logPII) {
-        log.debug("Response text: " + restResponse.body);
-      }
-
-      
-      
-      self._maybeNotifyBackoff(restResponse, "x-weave-backoff");
-      self._maybeNotifyBackoff(restResponse, "x-backoff");
-
-      if (error) {
-        
-        
-        deferred.reject(self._constructError(restResponse, error));
-        return;
-      }
-
-      self._updateClockOffset(restResponse.headers.date);
-
-      if (status === 401 && retryOK && !("retry-after" in restResponse.headers)) {
-        
-        
-        log.debug("Received 401 for " + path + ": retrying");
-        deferred.resolve(self.request(path, method, credentials, payloadObj, extraHeaders, false));
-        return;
-      }
-
-      
-      
-      
-      
-      
-      
-
-      let jsonResponse = {};
-      try {
-        jsonResponse = JSON.parse(restResponse.body);
-      } catch (notJSON) {}
-
-      let okResponse = (200 <= status && status < 300);
-      if (!okResponse || jsonResponse.error) {
-        if (jsonResponse.error) {
-          deferred.reject(jsonResponse);
-        } else {
-          deferred.reject(self._constructError(restResponse, "Request failed"));
-        }
-        return;
-      }
-      
-      
-      deferred.resolve(this.response);
-    }
-
-    function onComplete(error) {
-      try {
-        
-        
-        _onComplete.call(this, error);
-      } catch (ex) {
-        log.error("Unhandled exception processing response", ex);
-        deferred.reject(ex);
-      }
-    }
 
     let extra = {
       now: this.now(),
@@ -296,18 +209,71 @@ this.HawkClient.prototype = {
     };
 
     let request = this.newHAWKAuthenticatedRESTRequest(uri, credentials, extra);
-    try {
-      if (method == "post" || method == "put" || method == "patch") {
-        request[method](payloadObj, onComplete);
-      } else {
-        request[method](onComplete);
-      }
-    } catch (ex) {
-      log.error("Failed to make hawk request", ex);
-      deferred.reject(ex);
+    let error;
+    let restResponse = await request[method](payloadObj).catch(e => {
+      
+      
+      error = e;
+      log.warn("hawk request error", error);
+      return request.response;
+    });
+
+    
+    if (!restResponse) {
+      throw error;
     }
 
-    return deferred.promise;
+    let status = restResponse.status;
+
+    log.debug("(Response) " + path + ": code: " + status +
+              " - Status text: " + restResponse.statusText);
+    if (logPII) {
+      log.debug("Response text", restResponse.body);
+    }
+
+    
+    
+    this._maybeNotifyBackoff(restResponse, "x-weave-backoff");
+    this._maybeNotifyBackoff(restResponse, "x-backoff");
+
+    if (error) {
+      
+      
+      throw this._constructError(restResponse, error);
+    }
+
+    this._updateClockOffset(restResponse.headers.date);
+
+    if (status === 401 && retryOK && !("retry-after" in restResponse.headers)) {
+      
+      
+      log.debug("Received 401 for " + path + ": retrying");
+      return this.request(path, method, credentials, payloadObj, extraHeaders, false);
+    }
+
+    
+    
+    
+    
+    
+    
+
+    let jsonResponse = {};
+    try {
+      jsonResponse = JSON.parse(restResponse.body);
+    } catch (notJSON) {}
+
+    let okResponse = (200 <= status && status < 300);
+    if (!okResponse || jsonResponse.error) {
+      if (jsonResponse.error) {
+        throw jsonResponse;
+      }
+      throw this._constructError(restResponse, "Request failed");
+    }
+
+    
+    
+    return restResponse;
   },
 
   
