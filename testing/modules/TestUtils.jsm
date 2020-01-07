@@ -136,7 +136,7 @@ this.TestUtils = {
 
         if (conditionPassed) {
           clearInterval(intervalID);
-          resolve();
+          resolve(conditionPassed);
         }
         tries++;
       }, interval);
