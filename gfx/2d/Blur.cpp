@@ -232,8 +232,7 @@ BoxBlur(uint8_t* aData,
 {
   if (aTranspose) {
     swap(aWidth, aRows);
-    swap(aSkipRect.x, aSkipRect.y);
-    swap(aSkipRect.width, aSkipRect.height);
+    aSkipRect.Swap();
   }
 
   MOZ_ASSERT(aWidth > 0);
@@ -251,15 +250,14 @@ BoxBlur(uint8_t* aData,
   uint8_t* tmpRow2 = tmpRow + aWidth;
 
   const int32_t stride = aTranspose ? 1 : aStride;
-  bool skipRectCoversWholeRow = 0 >= aSkipRect.x &&
+  bool skipRectCoversWholeRow = 0 >= aSkipRect.X() &&
                                 aWidth <= aSkipRect.XMost();
 
   for (int32_t y = 0; y < aRows; y++) {
     
     
     
-    bool inSkipRectY = y >= aSkipRect.y &&
-                       y < aSkipRect.YMost();
+    bool inSkipRectY = aSkipRect.ContainsY(y);
     if (inSkipRectY && skipRectCoversWholeRow) {
       aData += stride * (aSkipRect.YMost() - y);
       y = aSkipRect.YMost() - 1;
@@ -275,7 +273,7 @@ BoxBlur(uint8_t* aData,
     
     
     
-    int32_t skipStart = inSkipRectY ? min(max(aSkipRect.x, 0), aWidth) : aWidth;
+    int32_t skipStart = inSkipRectY ? min(max(aSkipRect.X(), 0), aWidth) : aWidth;
     int32_t skipEnd = max(skipStart, aSkipRect.XMost());
     if (skipStart > 0) {
       BoxBlurRow<false, aTranspose>(tmpRow2, aData, aLobes[2][0], aLobes[2][1], aWidth, aStride, 0, skipStart);
@@ -349,14 +347,13 @@ SpreadHorizontal(uint8_t* aInput,
         return;
     }
 
-    bool skipRectCoversWholeRow = 0 >= aSkipRect.x &&
+    bool skipRectCoversWholeRow = 0 >= aSkipRect.X() &&
                                     aWidth <= aSkipRect.XMost();
     for (int32_t y = 0; y < aRows; y++) {
         
         
         
-        bool inSkipRectY = y >= aSkipRect.y &&
-                             y < aSkipRect.YMost();
+        bool inSkipRectY = aSkipRect.ContainsY(y);
         if (inSkipRectY && skipRectCoversWholeRow) {
             y = aSkipRect.YMost() - 1;
             continue;
@@ -365,8 +362,7 @@ SpreadHorizontal(uint8_t* aInput,
         for (int32_t x = 0; x < aWidth; x++) {
             
             
-            if (inSkipRectY && x >= aSkipRect.x &&
-                x < aSkipRect.XMost()) {
+            if (inSkipRectY && aSkipRect.ContainsX(x)) {
                 x = aSkipRect.XMost();
                 if (x >= aWidth)
                     break;
@@ -397,11 +393,10 @@ SpreadVertical(uint8_t* aInput,
         return;
     }
 
-    bool skipRectCoversWholeColumn = 0 >= aSkipRect.y &&
+    bool skipRectCoversWholeColumn = 0 >= aSkipRect.Y() &&
                                      aRows <= aSkipRect.YMost();
     for (int32_t x = 0; x < aWidth; x++) {
-        bool inSkipRectX = x >= aSkipRect.x &&
-                           x < aSkipRect.XMost();
+        bool inSkipRectX = aSkipRect.ContainsX(x);
         if (inSkipRectX && skipRectCoversWholeColumn) {
             x = aSkipRect.XMost() - 1;
             continue;
@@ -410,8 +405,7 @@ SpreadVertical(uint8_t* aInput,
         for (int32_t y = 0; y < aRows; y++) {
             
             
-            if (inSkipRectX && y >= aSkipRect.y &&
-                y < aSkipRect.YMost()) {
+            if (inSkipRectX && aSkipRect.ContainsY(y)) {
                 y = aSkipRect.YMost();
                 if (y >= aRows)
                     break;
@@ -808,7 +802,9 @@ AlphaBoxBlur::BoxBlur_C(uint8_t* aData,
   uint8_t *data = aData;
   int32_t stride = mStride;
   for (int32_t y = 0; y < size.height; y++) {
-    bool inSkipRectY = y > skipRect.y && y < skipRect.YMost();
+    
+    
+    bool inSkipRectY = y > skipRect.Y() && y < skipRect.YMost();
 
     uint32_t *topLeftBase = innerIntegral + ((y - aTopLobe) * stride32bit - aLeftLobe);
     uint32_t *topRightBase = innerIntegral + ((y - aTopLobe) * stride32bit + aRightLobe);
@@ -816,7 +812,9 @@ AlphaBoxBlur::BoxBlur_C(uint8_t* aData,
     uint32_t *bottomLeftBase = innerIntegral + ((y + aBottomLobe) * stride32bit - aLeftLobe);
 
     for (int32_t x = 0; x < size.width; x++) {
-      if (inSkipRectY && x > skipRect.x && x < skipRect.XMost()) {
+      
+      
+      if (inSkipRectY && x > skipRect.X() && x < skipRect.XMost()) {
         x = skipRect.XMost() - 1;
         
         

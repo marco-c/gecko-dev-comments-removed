@@ -390,7 +390,7 @@ WebRenderLayerManager::MakeSnapshotIfRequired(LayoutDeviceIntSize aSize)
 
 
 
-  Rect dst(bounds.x, bounds.y, bounds.Width(), bounds.Height());
+  Rect dst(bounds.X(), bounds.Y(), bounds.Width(), bounds.Height());
   Rect src(0, 0, bounds.Width(), bounds.Height());
 
   

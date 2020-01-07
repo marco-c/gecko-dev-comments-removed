@@ -176,9 +176,9 @@ gfxGDIFont::Measure(const gfxTextRun *aTextRun,
     
     if (aBoundingBoxType == LOOSE_INK_EXTENTS &&
         mAntialiasOption != kAntialiasNone &&
-        metrics.mBoundingBox.width > 0) {
-        metrics.mBoundingBox.x -= aTextRun->GetAppUnitsPerDevUnit();
-        metrics.mBoundingBox.width += aTextRun->GetAppUnitsPerDevUnit() * 3;
+        metrics.mBoundingBox.Width() > 0) {
+        metrics.mBoundingBox.MoveByX(-aTextRun->GetAppUnitsPerDevUnit());
+        metrics.mBoundingBox.SetWidth(metrics.mBoundingBox.Width() + aTextRun->GetAppUnitsPerDevUnit() * 3);
     }
 
     return metrics;

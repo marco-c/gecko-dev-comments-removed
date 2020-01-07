@@ -812,14 +812,11 @@ gfxTextRun::AccumulatePartialLigatureMetrics(gfxFont *aFont, Range aRange,
     
     gfxFloat origin = IsRightToLeft() ? metrics.mAdvanceWidth - data.mPartAdvance : 0;
     ClipPartialLigature(this, &bboxLeft, &bboxRight, origin, &data);
-    metrics.mBoundingBox.x = bboxLeft;
-    metrics.mBoundingBox.width = bboxRight - bboxLeft;
+    metrics.mBoundingBox.SetBoxX(bboxLeft, bboxRight);
 
     
     
-    metrics.mBoundingBox.x -=
-        IsRightToLeft() ? metrics.mAdvanceWidth - (data.mPartAdvance + data.mPartWidth)
-            : data.mPartAdvance;
+    metrics.mBoundingBox.MoveByX(-(IsRightToLeft() ? metrics.mAdvanceWidth - (data.mPartAdvance + data.mPartWidth) : data.mPartAdvance));
     metrics.mAdvanceWidth = data.mPartWidth;
 
     aMetrics->CombineWith(metrics, IsRightToLeft());

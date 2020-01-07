@@ -366,7 +366,7 @@ static void CalculatePluginClip(const LayoutDeviceIntRect& aBounds,
   for (uint32_t idx = 0; idx < aPluginClipRects.Length(); idx++) {
     LayoutDeviceIntRect rect = aPluginClipRects[idx];
     
-    rect.MoveBy(aBounds.x, aBounds.y);
+    rect.MoveBy(aBounds.X(), aBounds.Y());
     
     contentVisibleRegion.OrWith(rect);
   }
@@ -379,7 +379,7 @@ static void CalculatePluginClip(const LayoutDeviceIntRect& aBounds,
     return;
   }
   
-  contentVisibleRegion.MoveBy(-aBounds.x, -aBounds.y);
+  contentVisibleRegion.MoveBy(-aBounds.X(), -aBounds.Y());
   for (auto iter = contentVisibleRegion.RectIter(); !iter.Done(); iter.Next()) {
     const LayoutDeviceIntRect& rect = iter.Get();
     aResult.AppendElement(rect);
@@ -438,8 +438,8 @@ CompositorBridgeChild::RecvUpdatePluginConfigurations(const LayoutDeviceIntPoint
         
         
         
-        widget->Resize(aContentOffset.x + bounds.x,
-                       aContentOffset.y + bounds.y,
+        widget->Resize(aContentOffset.x + bounds.X(),
+                       aContentOffset.y + bounds.Y(),
                        bounds.Width(), bounds.Height(), true);
       }
 

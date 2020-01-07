@@ -238,7 +238,9 @@ AlphaBoxBlur::BoxBlur_SSE2(uint8_t* aData,
   int32_t stride = mStride;
   uint8_t *data = aData;
   for (int32_t y = 0; y < size.height; y++) {
-    bool inSkipRectY = y > skipRect.y && y < skipRect.YMost();
+    
+    
+    bool inSkipRectY = y > skipRect.Y() && y < skipRect.YMost();
 
     uint32_t *topLeftBase = innerIntegral + ((y - aTopLobe) * ptrdiff_t(stride32bit) - aLeftLobe);
     uint32_t *topRightBase = innerIntegral + ((y - aTopLobe) * ptrdiff_t(stride32bit) + aRightLobe);
@@ -248,7 +250,9 @@ AlphaBoxBlur::BoxBlur_SSE2(uint8_t* aData,
     int32_t x = 0;
     
     for (; x <= size.width - 16; x += 16) {
-      if (inSkipRectY && x > skipRect.x && x < skipRect.XMost()) {
+      
+      
+      if (inSkipRectY && x > skipRect.X() && x < skipRect.XMost()) {
         x = skipRect.XMost() - 16;
         
         
@@ -292,7 +296,9 @@ AlphaBoxBlur::BoxBlur_SSE2(uint8_t* aData,
 
     
     for (; x < size.width; x += 4) {
-      if (inSkipRectY && x > skipRect.x && x < skipRect.XMost()) {
+      
+      
+      if (inSkipRectY && x > skipRect.X() && x < skipRect.XMost()) {
         x = skipRect.XMost() - 4;
         
         
