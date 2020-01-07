@@ -137,7 +137,12 @@ function decodeRequestPayload(request) {
     let observer = {
       buffer: "",
       onStreamComplete(loader, context, status, length, result) {
-        this.buffer = String.fromCharCode.apply(this, result);
+        
+        
+        const chunkSize = 500000;
+        for (let offset = 0; offset < result.length; offset += chunkSize) {
+          this.buffer += String.fromCharCode.apply(String, result.slice(offset, offset + chunkSize));
+        }
       }
     };
 
