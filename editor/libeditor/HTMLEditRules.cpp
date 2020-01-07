@@ -3732,6 +3732,9 @@ HTMLEditRules::WillMakeList(Selection* aSelection,
       }
       curList =
         htmlEditor->CreateNode(listType, splitCurNodeResult.SplitPoint());
+      if (NS_WARN_IF(!curList)) {
+        return NS_ERROR_FAILURE;
+      }
       
       mNewBlock = curList;
       
