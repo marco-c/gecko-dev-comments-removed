@@ -9,7 +9,6 @@
 #include "nsIDOMEvent.h"
 #include "nsIDOMEventListener.h"
 #include "nsIRunnable.h"
-#include "nsIXMLHttpRequest.h"
 #include "nsIXPConnect.h"
 
 #include "jsfriendapi.h"
@@ -1009,9 +1008,7 @@ Proxy::HandleEvent(nsIDOMEvent* aEvent)
   ProgressEvent* progressEvent = aEvent->InternalDOMEvent()->AsProgressEvent();
 
   if (mInOpen && type.EqualsASCII(sEventStrings[STRING_readystatechange])) {
-    uint16_t readyState = 0;
-    if (NS_SUCCEEDED(mXHR->GetReadyState(&readyState)) &&
-        readyState == nsIXMLHttpRequest::OPENED) {
+    if (mXHR->ReadyState() == 1) {
       mInnerEventStreamId++;
     }
   }
@@ -1135,9 +1132,9 @@ EventRunnable::PreDispatch(WorkerPrivate* )
   RefPtr<XMLHttpRequestMainThread>& xhr = mProxy->mXHR;
   MOZ_ASSERT(xhr);
 
-  if (NS_FAILED(xhr->GetResponseType(mResponseType))) {
-    MOZ_ASSERT(false, "This should never fail!");
-  }
+  const EnumEntry& entry =
+    XMLHttpRequestResponseTypeValues::strings[static_cast<uint32_t>(xhr->ResponseType())];
+  mResponseType.AssignASCII(entry.value, entry.length);
 
   ErrorResult rv;
   xhr->GetResponseText(mResponseText, rv);
@@ -1151,7 +1148,8 @@ EventRunnable::PreDispatch(WorkerPrivate* )
   }
   else {
     JS::Rooted<JS::Value> response(cx);
-    mResponseResult = xhr->GetResponse(cx, &response);
+    xhr->GetResponse(cx, &response, rv);
+    mResponseResult = rv.StealNSResult();
     if (NS_SUCCEEDED(mResponseResult)) {
       if (!response.isGCThing()) {
         mResponse = response;
@@ -1174,7 +1172,7 @@ EventRunnable::PreDispatch(WorkerPrivate* )
             if (obj) {
               transferable.setObject(*obj);
               
-              if (xhr->ReadyState() == nsIXMLHttpRequest::DONE) {
+              if (xhr->ReadyState() == 4) {
                 mProxy->mArrayBufferResponseWasTransferred = true;
               }
             } else {
@@ -1196,7 +1194,8 @@ EventRunnable::PreDispatch(WorkerPrivate* )
     }
   }
 
-  mStatusResult = xhr->GetStatus(&mStatus);
+  mStatus = xhr->GetStatus(rv);
+  mStatusResult = rv.StealNSResult();
 
   xhr->GetStatusText(mStatusText, rv);
   MOZ_ASSERT(!rv.Failed());
@@ -1412,42 +1411,45 @@ OpenRunnable::MainThreadRunInternal()
     return NS_ERROR_DOM_INVALID_STATE_ERR;
   }
 
-  nsresult rv;
-
   if (mBackgroundRequest) {
-    rv = mProxy->mXHR->SetMozBackgroundRequest(mBackgroundRequest);
+    nsresult rv = mProxy->mXHR->SetMozBackgroundRequest(mBackgroundRequest);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
+  ErrorResult rv;
+
   if (mWithCredentials) {
-    rv = mProxy->mXHR->SetWithCredentials(mWithCredentials);
-    NS_ENSURE_SUCCESS(rv, rv);
+    mProxy->mXHR->SetWithCredentials(mWithCredentials, rv);
+    if (NS_WARN_IF(rv.Failed())) {
+      return rv.StealNSResult();
+    }
   }
 
   if (mTimeout) {
-    rv = mProxy->mXHR->SetTimeout(mTimeout);
-    NS_ENSURE_SUCCESS(rv, rv);
+    mProxy->mXHR->SetTimeout(mTimeout, rv);
+    if (NS_WARN_IF(rv.Failed())) {
+      return rv.StealNSResult();
+    }
   }
 
   MOZ_ASSERT(!mProxy->mInOpen);
   mProxy->mInOpen = true;
 
-  ErrorResult rv2;
   mProxy->mXHR->Open(mMethod, mURL, true,
                      mUser.WasPassed() ? mUser.Value() : VoidString(),
                      mPassword.WasPassed() ? mPassword.Value() : VoidString(),
-                     rv2);
+                     rv);
 
   MOZ_ASSERT(mProxy->mInOpen);
   mProxy->mInOpen = false;
 
-  if (rv2.Failed()) {
-    return rv2.StealNSResult();
+  if (NS_WARN_IF(rv.Failed())) {
+    return rv.StealNSResult();
   }
 
-  mProxy->mXHR->SetResponseType(mResponseType, rv2);
-  if (rv2.Failed()) {
-    return rv2.StealNSResult();
+  mProxy->mXHR->SetResponseType(mResponseType, rv);
+  if (NS_WARN_IF(rv.Failed())) {
+    return rv.StealNSResult();
   }
 
   return NS_OK;
@@ -2186,10 +2188,10 @@ XMLHttpRequestWorker::Abort(ErrorResult& aRv)
   
   
   
-  if ((mStateData.mReadyState == nsIXMLHttpRequest::OPENED && mStateData.mFlagSend) ||
-      mStateData.mReadyState == nsIXMLHttpRequest::HEADERS_RECEIVED ||
-      mStateData.mReadyState == nsIXMLHttpRequest::LOADING ||
-      mStateData.mReadyState == nsIXMLHttpRequest::DONE) {
+  if ((mStateData.mReadyState == State::opened && mStateData.mFlagSend) ||
+      mStateData.mReadyState == State::headers_received ||
+      mStateData.mReadyState == State::loading ||
+      mStateData.mReadyState == State::done) {
     mStateData.mStatus = 0;
     mStateData.mStatusText.Truncate();
   }
@@ -2282,7 +2284,7 @@ XMLHttpRequestWorker::OverrideMimeType(const nsAString& aMimeType, ErrorResult& 
   
   if (!mProxy || (SendInProgress() &&
                   (mProxy->mSeenLoadStart ||
-                   mStateData.mReadyState > nsIXMLHttpRequest::OPENED))) {
+                   mStateData.mReadyState > 1))) {
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return;
   }
@@ -2318,7 +2320,7 @@ XMLHttpRequestWorker::SetResponseType(XMLHttpRequestResponseType aResponseType,
 
   if (SendInProgress() &&
       (mProxy->mSeenLoadStart ||
-       mStateData.mReadyState > nsIXMLHttpRequest::OPENED)) {
+       mStateData.mReadyState > 1)) {
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return;
   }
