@@ -39,6 +39,10 @@ var emptyFormDataTest = { id: "EmptyFormData", data: CreateEmptyFormDataPayload(
 var smallFormDataTest = { id: "SmallFormData", data: CreateFormDataFromPayload(smallPayload) };
 var mediumFormDataTest = { id: "MediumFormData", data: CreateFormDataFromPayload(mediumPayload) };
 var largeFormDataTest = { id: "LargeFormData", data: CreateFormDataFromPayload(largePayload) };
+var smallSafeContentTypeEncodedTest = { id: "SmallSafeContentTypeEncoded", data: new Blob([smallPayload], { type: 'application/x-www-form-urlencoded' }) };
+var smallSafeContentTypeFormTest = { id: "SmallSafeContentTypeForm", data: new FormData() };
+var smallSafeContentTypeTextTest = { id: "SmallSafeContentTypeText", data: new Blob([smallPayload], { type: 'text/plain' }) };
+var smallCORSContentTypeTextTest = { id: "SmallCORSContentTypeText", data: new Blob([smallPayload], { type: 'text/html' }) };
 
 
 
@@ -57,7 +61,9 @@ var allTests = [].concat(stringTests, stringMaxTest, blobTests, blobMaxTest, buf
 
 
 
-var sampleTests = [noDataTest, nullDataTest, undefinedDataTest, smallStringTest, smallBlobTest, smallBufferSourceTest, smallFormDataTest];
+var sampleTests = [noDataTest, nullDataTest, undefinedDataTest, smallStringTest, smallBlobTest, smallBufferSourceTest, smallFormDataTest, smallSafeContentTypeEncodedTest, smallSafeContentTypeFormTest, smallSafeContentTypeTextTest];
+
+var preflightTests = [smallCORSContentTypeTextTest];
 
 
 

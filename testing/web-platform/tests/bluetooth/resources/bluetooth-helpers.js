@@ -52,8 +52,8 @@ function performChromiumSetup() {
       
       
       
-      .then(() => setBluetoothFakeAdapter ? setBluetoothFakeAdapter('')
-                                          : undefined);
+      .then(() => typeof setBluetoothFakeAdapter === 'undefined' ?
+          undefined : setBluetoothFakeAdapter(''));
 }
 
 
@@ -218,20 +218,34 @@ var gatt_errors_tests = [{
       'NotSupportedError')
 }];
 
-function callWithTrustedClick(callback) {
+
+function waitForDocumentReady() {
   return new Promise(resolve => {
-    let button = document.createElement('button');
-    button.textContent = 'click to continue test';
-    button.style.display = 'block';
-    button.style.fontSize = '20px';
-    button.style.padding = '10px';
-    button.onclick = () => {
-      document.body.removeChild(button);
-      resolve(callback());
-    };
-    document.body.appendChild(button);
-    test_driver.click(button);
+    if (document.readyState === 'complete') {
+      resolve();
+    }
+
+    window.addEventListener('load', () => {
+      resolve();
+    }, {once: true});
   });
+}
+
+function callWithTrustedClick(callback) {
+  return waitForDocumentReady()
+    .then(() => new Promise(resolve => {
+      let button = document.createElement('button');
+      button.textContent = 'click to continue test';
+      button.style.display = 'block';
+      button.style.fontSize = '20px';
+      button.style.padding = '10px';
+      button.onclick = () => {
+        document.body.removeChild(button);
+        resolve(callback());
+      };
+      document.body.appendChild(button);
+      test_driver.click(button);
+    }));
 }
 
 
@@ -673,7 +687,14 @@ function getHealthThermometerDeviceWithServicesDiscovered(options) {
       code: HCI_SUCCESS,
     }))
     .then(() => new Promise(resolve => {
-      iframe.src = '../../../resources/bluetooth/health-thermometer-iframe.html';
+      let src = '/bluetooth/resources/health-thermometer-iframe.html';
+      
+      
+      
+      if (window.location.pathname.includes('/LayoutTests/')) {
+        src = '../../../external/wpt/bluetooth/resources/health-thermometer-iframe.html';
+      }
+      iframe.src = src;
       document.body.appendChild(iframe);
       iframe.addEventListener('load', resolve);
     }))

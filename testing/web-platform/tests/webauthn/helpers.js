@@ -1,5 +1,17 @@
 
 
+const cose_kty = 1;
+const cose_kty_ec2 = 2;
+const cose_alg = 3;
+const cose_alg_ECDSA_w_SHA256 = -7;
+const cose_alg_ECDSA_w_SHA512 = -36;
+const cose_crv = -1;
+const cose_crv_P256 = 1;
+const cose_crv_x = -2;
+const cose_crv_y = -3;
+
+
+
 
 
 
@@ -15,6 +27,7 @@ class TestCase {
         };
         this.testObject = {};
         this.argOrder = [];
+        this.ctx = null;
     }
 
     
@@ -70,7 +83,6 @@ class TestCase {
         }
 
         
-        var obj = this.testObject;
         for (let idx in mods) {
             var mod = mods[idx];
             let paths = mod.path.split(".");
@@ -96,21 +108,112 @@ class TestCase {
     
 
 
+    doIt() {
+        if (typeof this.testFunction !== "function") {
+            throw new Error("Test function not found");
+        }
 
-
-    test() {
-        return this.testFunction(...this.toArgs());
+        return this.testFunction.call(this.ctx, ...this.toArgs());
     }
 
     
 
 
+    test(desc) {
+        promise_test(() => {
+            return this.doIt()
+                .then((ret) => {
+                    
+                    this.validateRet(ret);
+                    return ret;
+                });
+        }, desc);
+    }
+
+    
+
+
+    validateRet() {
+        throw new Error("Not implemented");
+    }
+
+    
 
 
     testBadArgs(testDesc) {
         promise_test(function(t) {
-            return promise_rejects(t, new TypeError(), this.test());
+            return promise_rejects(t, new TypeError(), this.doIt(), "Expected bad parameters to fail");
         }.bind(this), testDesc);
+    }
+}
+
+var createCredentialDefaultArgs = {
+    options: {
+        publicKey: {
+            
+            rp: {
+                name: "Acme"
+            },
+
+            
+            user: {
+                id: new Uint8Array(), 
+                name: "john.p.smith@example.com",
+                displayName: "John P. Smith",
+                icon: "https://pics.acme.com/00/p/aBjjjpqPb.png"
+            },
+
+            pubKeyCredParams: [{
+                type: "public-key",
+                alg: cose_alg_ECDSA_w_SHA256,
+            }],
+
+            timeout: 60000, 
+            excludeCredentials: [] 
+        }
+    }
+};
+
+function cloneObject(o) {
+    return JSON.parse(JSON.stringify(o));
+}
+
+
+
+
+
+
+class CreateCredentialsTest extends TestCase {
+    constructor() {
+        
+        super();
+
+        
+        this.testFunction = navigator.credentials.create;
+        
+        this.ctx = navigator.credentials;
+
+        
+        let challengeBytes = new Uint8Array(16);
+        window.crypto.getRandomValues(challengeBytes);
+        this.testObject = cloneObject(createCredentialDefaultArgs);
+        
+        this.testObject.options.publicKey.user.id = new Uint8Array();
+        this.testObject.options.publicKey.challenge = challengeBytes;
+
+        
+        this.argOrder = [
+            "options"
+        ];
+
+        
+        
+        if (arguments.length) this.modify(...arguments);
+    }
+
+    validateRet(ret) {
+        validatePublicKeyCredential(ret);
+        validateAuthenticatorAttestationResponse(ret.response);
     }
 }
 
@@ -119,43 +222,142 @@ class TestCase {
 
 
 
-class MakeCredentialTest extends TestCase {
-    constructor() {
+class GetCredentialsTest extends TestCase {
+    constructor(...args) {
         
         super();
 
         
-        this.testFunction = navigator.authentication.makeCredential;
+        this.testFunction = navigator.credentials.get;
+        
+        this.ctx = navigator.credentials;
 
         
-        
+        let challengeBytes = new Uint8Array(16);
+        window.crypto.getRandomValues(challengeBytes);
         this.testObject = {
-            accountInformation: {
-                rpDisplayName: "ACME",
-                displayName: "John P. Smith",
-                name: "johnpsmith@example.com",
-                id: "1098237235409872",
-                imageUri: "https://pics.acme.com/00/p/aBjjjpqPb.png"
-            },
-            cryptoParameters: [{
-                type: "ScopedCred",
-                algorithm: "RSASSA-PKCS1-v1_5",
-            }],
-            attestationChallenge: Uint8Array.from([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]).buffer
+            options: {
+                publicKey: {
+                    challenge: challengeBytes,
+                    
+                    
+                }
+            }
         };
 
         
         this.argOrder = [
-            "accountInformation",
-            "cryptoParameters",
-            "attestationChallenge",
             "options"
         ];
 
+        this.credentialPromiseList = [];
+
         
         
-        if (arguments.length) this.modify(...arguments);
+        if (arguments.length) {
+            if (args.cred instanceof Promise) this.credPromise = args.cred;
+            else if (typeof args.cred === "object") this.credPromise = Promise.resolve(args.cred);
+            delete args.cred;
+            this.modify(...arguments);
+        }
     }
+
+    addCredential(arg) {
+        
+        if (arg instanceof Promise) {
+            this.credentialPromiseList.push(arg);
+            return;
+        }
+
+        
+        if (typeof arg === "object") {
+            this.credentialPromiseList.push(Promise.resolve(arg));
+            return;
+        }
+
+        
+        let challengeBytes = new Uint8Array(16);
+        window.crypto.getRandomValues(challengeBytes);
+        var createArgs = cloneObject(createCredentialDefaultArgs);
+        createArgs.options.publicKey.challenge = challengeBytes;
+        createArgs.options.publicKey.user.id = new Uint8Array();
+        var p = navigator.credentials.create(createArgs.options);
+        this.credentialPromiseList.push(p);
+
+        return this;
+    }
+
+    test() {
+        if (!this.credentialPromiseList.length) {
+            throw new Error("Attempting list without defining credential to test");
+        }
+
+        Promise.all(this.credentialPromiseList)
+            .then((credList) => {
+                var idList = credList.map((cred) => {
+                    return {
+                        id: cred.rawId,
+                        transports: ["usb", "nfc", "ble"],
+                        type: "public-key"
+                    };
+                });
+                this.testObject.options.publicKey.allowCredentials = idList;
+                return super.test();
+            });
+    }
+
+    validateRet(ret) {
+        validatePublicKeyCredential (ret);
+        validateAuthenticatorAssertionResponse(ret.response);
+    }
+}
+
+
+
+
+function validatePublicKeyCredential(cred) {
+    
+    assert_class_string(cred, "PublicKeyCredential", "Expected return to be instance of 'PublicKeyCredential' class");
+    
+    assert_idl_attribute(cred, "id", "should return PublicKeyCredential with id attribute");
+    assert_readonly(cred, "id", "should return PublicKeyCredential with readonly id attribute");
+    
+    assert_idl_attribute(cred, "rawId", "should return PublicKeyCredential with rawId attribute");
+    assert_readonly(cred, "rawId", "should return PublicKeyCredential with readonly rawId attribute");
+    
+    assert_idl_attribute(cred, "type", "should return PublicKeyCredential with type attribute");
+    assert_equals(cred.type, "public-key", "should return PublicKeyCredential with type 'public-key'");
+}
+
+
+
+
+function validateAuthenticatorAttestationResponse(attr) {
+    
+    assert_class_string(attr, "AuthenticatorAttestationResponse", "Expected credentials.create() to return instance of 'AuthenticatorAttestationResponse' class");
+    
+    assert_idl_attribute(attr, "clientDataJSON", "credentials.create() should return AuthenticatorAttestationResponse with clientDataJSON attribute");
+    assert_readonly(attr, "clientDataJSON", "credentials.create() should return AuthenticatorAttestationResponse with readonly clientDataJSON attribute");
+    
+    assert_idl_attribute(attr, "attestationObject", "credentials.create() should return AuthenticatorAttestationResponse with attestationObject attribute");
+    assert_readonly(attr, "attestationObject", "credentials.create() should return AuthenticatorAttestationResponse with readonly attestationObject attribute");
+}
+
+
+
+
+function validateAuthenticatorAssertionResponse(assert) {
+    
+    assert_class_string(assert, "AuthenticatorAssertionResponse", "Expected credentials.create() to return instance of 'AuthenticatorAssertionResponse' class");
+    
+    assert_idl_attribute(assert, "clientDataJSON", "credentials.get() should return AuthenticatorAssertionResponse with clientDataJSON attribute");
+    assert_readonly(assert, "clientDataJSON", "credentials.get() should return AuthenticatorAssertionResponse with readonly clientDataJSON attribute");
+    
+    assert_idl_attribute(assert, "signature", "credentials.get() should return AuthenticatorAssertionResponse with signature attribute");
+    assert_readonly(assert, "signature", "credentials.get() should return AuthenticatorAssertionResponse with readonly signature attribute");
+    
+    assert_idl_attribute(assert, "authenticatorData", "credentials.get() should return AuthenticatorAssertionResponse with authenticatorData attribute");
+    assert_readonly(assert, "authenticatorData", "credentials.get() should return AuthenticatorAssertionResponse with readonly authenticatorData attribute");
 }
 
 
@@ -168,31 +370,41 @@ var debug = function() {};
 
 
 function ensureInterface() {
-    return new Promise(function(resolve, reject) {
-        if (typeof navigator.authentication !== "object") {
-            debug = console.log;
+    if (typeof navigator.credentials.create !== "function") {
+        debug = console.log;
 
-            
-            var scriptElem = document.createElement("script");
-            if (typeof scriptElem !== "object") {
-                debug("ensureInterface: Error creating script element while attempting loading polyfill");
-                return reject(new Error("ensureInterface: Error creating script element while loading polyfill"));
-            }
-            scriptElem.type = "application/javascript";
-            scriptElem.onload = function() {
-                debug("!!! XXX - LOADING POLYFILL FOR WEBAUTHN TESTING - XXX !!!");
-                return resolve();
-            };
-            scriptElem.onerror = function() {
-                return reject(new Error("navigator.authentication does not exist"));
-            };
-            scriptElem.src = "/webauthn/webauthn-polyfill/webauthn-polyfill.js";
-            if (document.body) {
-                document.body.appendChild(scriptElem);
-            } else {
-                debug("ensureInterface: DOM has no body");
-                return reject(new Error("ensureInterface: DOM has no body"));
-            }
+        return loadJavaScript("/webauthn/webauthn-polyfill/webauthn-polyfill.js")
+            .then(() => {
+                return loadJavaScript("/webauthn/webauthn-soft-authn/soft-authn.js");
+            });
+    } else {
+        return Promise.resolve();
+    }
+}
+
+function loadJavaScript(path) {
+    return new Promise((resolve, reject) => {
+        
+        var scriptElem = document.createElement("script");
+        if (typeof scriptElem !== "object") {
+            debug("ensureInterface: Error creating script element while attempting loading polyfill");
+            return reject(new Error("ensureInterface: Error creating script element while loading polyfill"));
+        }
+        scriptElem.type = "application/javascript";
+        scriptElem.onload = function() {
+            debug("!!! Loaded " + path + " ...");
+            return resolve();
+        };
+        scriptElem.onerror = function() {
+            debug("navigator.credentials.create does not exist");
+            resolve();
+        };
+        scriptElem.src = path;
+        if (document.body) {
+            document.body.appendChild(scriptElem);
+        } else {
+            debug("ensureInterface: DOM has no body");
+            return reject(new Error("ensureInterface: DOM has no body"));
         }
     });
 }
@@ -201,8 +413,9 @@ function standardSetup(cb) {
     return ensureInterface()
         .then(() => {
             if (cb) return cb();
-        })
-        .catch((err) => {
-            return (err);
         });
 }
+
+
+
+
