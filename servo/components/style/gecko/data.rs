@@ -148,14 +148,6 @@ impl PerDocumentStyleData {
     }
 }
 
-impl Drop for PerDocumentStyleDataImpl {
-    fn drop(&mut self) {
-        if !structs::GECKO_IS_NIGHTLY {
-            return
-        }
-    }
-}
-
 impl PerDocumentStyleDataImpl {
     
     pub fn flush_stylesheets<E>(
