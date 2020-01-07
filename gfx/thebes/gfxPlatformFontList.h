@@ -87,6 +87,7 @@ struct FontListSizes {
                             
     uint32_t mFontTableCacheSize; 
     uint32_t mCharMapsSize; 
+    uint32_t mLoaderSize;   
 };
 
 class gfxUserFontSet;
