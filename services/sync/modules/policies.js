@@ -25,9 +25,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "AddonManager",
 XPCOMUtils.defineLazyServiceGetter(this, "IdleService",
                                    "@mozilla.org/widget/idleservice;1",
                                    "nsIIdleService");
-XPCOMUtils.defineLazyServiceGetter(this, "NetworkLinkService",
-                                   "@mozilla.org/network/network-link-service;1",
-                                   "nsINetworkLinkService");
 XPCOMUtils.defineLazyServiceGetter(this, "CaptivePortalService",
                                    "@mozilla.org/network/captive-portal-service;1",
                                    "nsICaptivePortalService");
@@ -66,10 +63,6 @@ SyncScheduler.prototype = {
 
     
     this.idle = false;
-
-    
-    
-    this.shouldSyncWhenLinkComesUp = false;
 
     this.hasIncomingItems = false;
     
@@ -133,17 +126,8 @@ SyncScheduler.prototype = {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
     try {
       if (Services.io.offline ||
-          !NetworkLinkService.isLinkUp ||
           CaptivePortalService.state == CaptivePortalService.LOCKED_PORTAL) {
         return true;
       }
@@ -193,11 +177,9 @@ SyncScheduler.prototype = {
         }
         break;
       case "network:link-status-changed":
-        if (this.shouldSyncWhenLinkComesUp && !this.offline) {
-          this._log.debug("Network link is up for the first time since we woke-up. Syncing.");
-          this.shouldSyncWhenLinkComesUp = false;
+        if (!this.offline) {
+          this._log.debug("Network link looks up. Syncing.");
           this.scheduleNextSync(0, {why: topic});
-          break;
         }
         
       case "network:offline-status-changed":
@@ -378,15 +360,11 @@ SyncScheduler.prototype = {
             if (!this.offline) {
               this._log.debug("Online, will sync in 2s.");
               this.scheduleNextSync(2000, {why: topic});
-            } else {
-              this._log.debug("Offline, will sync when link comes up.");
-              this.shouldSyncWhenLinkComesUp = true;
             }
           }
         });
         break;
       case "captive-portal-login-success":
-        this.shouldSyncWhenLinkComesUp = false;
         this._log.debug("Captive portal login success. Scheduling a sync.");
         CommonUtils.nextTick(() => {
           this.scheduleNextSync(3000, {why: topic});
