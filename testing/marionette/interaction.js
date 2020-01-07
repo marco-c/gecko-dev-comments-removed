@@ -477,31 +477,34 @@ interaction.isKeyboardInteractable = function(el) {
 
 
 
-interaction.uploadFile = async function(el, path) {
-  let file;
-  try {
-    file = await File.createFromFileName(path);
-  } catch (e) {
-    throw new InvalidArgumentError("File not found: " + path);
+
+
+
+interaction.uploadFiles = async function(el, paths) {
+  let files = [];
+
+  if (el.hasAttribute("multiple")) {
+    
+    files = Array.prototype.slice.call(el.files);
+
+  } else if (paths.length > 1) {
+    throw new InvalidArgumentError(
+        pprint`Element ${el} doesn't accept multiple files`);
   }
 
-  let fs = Array.prototype.slice.call(el.files);
-  fs.push(file);
+  for (let path of paths) {
+    let file;
 
-  
-  
-  
-  event.mouseover(el);
-  event.mousemove(el);
-  event.mousedown(el);
-  el.focus();
-  event.mouseup(el);
-  event.click(el);
+    try {
+      file = await File.createFromFileName(path);
+    } catch (e) {
+      throw new InvalidArgumentError("File not found: " + path);
+    }
 
-  el.mozSetFileArray(fs);
+    files.push(file);
+  }
 
-  event.change(el);
-  el.blur();
+  el.mozSetFileArray(files);
 };
 
 
@@ -571,7 +574,11 @@ async function webdriverSendKeysToElement(el, value, a11y) {
   interaction.moveCaretToEnd(el);
 
   if (el.type == "file") {
-    await interaction.uploadFile(el, value);
+    let paths = value.split("\n");
+    await interaction.uploadFiles(el, paths);
+
+    event.input(el);
+    event.change(el);
   } else if ((el.type == "date" || el.type == "time") &&
       Preferences.get("dom.forms.datetime")) {
     interaction.setFormControlValue(el, value);
@@ -584,7 +591,11 @@ async function legacySendKeysToElement(el, value, a11y) {
   const win = getWindow(el);
 
   if (el.type == "file") {
-    await interaction.uploadFile(el, value);
+    el.focus();
+    await interaction.uploadFiles(el, [value]);
+
+    event.input(el);
+    event.change(el);
   } else if ((el.type == "date" || el.type == "time") &&
       Preferences.get("dom.forms.datetime")) {
     interaction.setFormControlValue(el, value);
