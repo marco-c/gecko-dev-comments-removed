@@ -58,6 +58,7 @@ struct PropItem;
 template<class T> class OwningNonNull;
 namespace dom {
 class DocumentFragment;
+class Event;
 class MouseEvent;
 } 
 namespace widget {
@@ -518,7 +519,7 @@ public:
 
 
   nsresult OnMouseDown(int32_t aX, int32_t aY, nsIDOMElement* aTarget,
-                       nsIDOMEvent* aMouseEvent);
+                       dom::Event* aMouseEvent);
 
   
 
