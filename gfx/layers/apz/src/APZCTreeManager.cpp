@@ -1935,6 +1935,24 @@ void
 APZCTreeManager::UpdateZoomConstraints(const ScrollableLayerGuid& aGuid,
                                        const Maybe<ZoomConstraints>& aConstraints)
 {
+  if (!APZThreadUtils::IsSamplerThread()) {
+    
+    
+    
+    MOZ_ASSERT(XRE_IsParentProcess());
+
+    APZThreadUtils::RunOnSamplerThread(
+        NewRunnableMethod<ScrollableLayerGuid, Maybe<ZoomConstraints>>(
+            "APZCTreeManager::UpdateZoomConstraints",
+            this,
+            &APZCTreeManager::UpdateZoomConstraints,
+            aGuid,
+            aConstraints));
+    return;
+  }
+
+  APZThreadUtils::AssertOnSamplerThread();
+
   RecursiveMutexAutoLock lock(mTreeLock);
   RefPtr<HitTestingTreeNode> node = GetTargetNode(aGuid, nullptr);
   MOZ_ASSERT(!node || node->GetApzc()); 
