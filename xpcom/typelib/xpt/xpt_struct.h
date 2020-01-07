@@ -191,41 +191,41 @@ enum XPTTypeDescriptorTags {
 
 struct XPTTypeDescriptor {
   uint8_t Tag() const {
-    return prefix.TagPart();
+    return mPrefix.TagPart();
   }
 
-  XPTTypeDescriptorPrefix prefix;
+  XPTTypeDescriptorPrefix mPrefix;
 
   
   
   union {
     
     struct {
-      uint8_t argnum;
-    } interface_is;
+      uint8_t mArgNum;
+    } mInterfaceIs;
 
     
     struct {
-      uint8_t argnum;
+      uint8_t mArgNum;
       
-    } pstring_is;
+    } mPStringIs;
 
     
     struct {
-      uint8_t argnum;
+      uint8_t mArgNum;
       
-      uint8_t additional_type;    
+      uint8_t mAdditionalType;    
                                   
-    } array;
+    } mArray;
 
     
     struct {
       
       
       
-      uint8_t iface_hi8;
-      uint8_t iface_lo8;
-    } iface;
+      uint8_t mIfaceHi8;
+      uint8_t mIfaceLo8;
+    } mIface;
   } u;
 };
 
@@ -247,9 +247,9 @@ union XPTConstValue {
 }; 
 
 struct XPTConstDescriptor {
-  const char* name;
-  XPTTypeDescriptor type;
-  union XPTConstValue value;
+  const char* mName;
+  XPTTypeDescriptor mType;
+  union XPTConstValue mValue;
 };
 
 
