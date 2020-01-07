@@ -142,8 +142,8 @@ global.TabContext = class extends EventEmitter {
     windowTracker.addListener("progress", this);
     windowTracker.addListener("TabSelect", this);
 
-    this.tabDetached = this.tabDetached.bind(this);
-    tabTracker.on("tab-detached", this.tabDetached);
+    this.tabAdopted = this.tabAdopted.bind(this);
+    tabTracker.on("tab-adopted", this.tabAdopted);
   }
 
   
@@ -188,14 +188,25 @@ global.TabContext = class extends EventEmitter {
     this.emit("location-change", tab, fromBrowse);
   }
 
-  tabDetached(eventType, {nativeTab, adoptedBy}) {
-    if (!this.tabData.has(nativeTab)) {
+  
+
+
+
+
+
+
+
+
+
+  tabAdopted(eventType, adoptingTab, adoptedTab) {
+    if (!this.tabData.has(adoptedTab)) {
       return;
     }
     
     
-    let newData = this.get(adoptedBy);
-    let oldData = this.tabData.get(nativeTab);
+    let newData = this.get(adoptingTab);
+    let oldData = this.tabData.get(adoptedTab);
+    this.tabData.delete(adoptedTab);
     Object.assign(newData, oldData);
   }
 
@@ -205,7 +216,7 @@ global.TabContext = class extends EventEmitter {
   shutdown() {
     windowTracker.removeListener("progress", this);
     windowTracker.removeListener("TabSelect", this);
-    tabTracker.off("tab-detached", this.tabDetached);
+    tabTracker.off("tab-adopted", this.tabAdopted);
   }
 };
 
@@ -304,6 +315,24 @@ class TabTracker extends TabTrackerBase {
     this._tabIds.set(id, nativeTab);
   }
 
+  
+
+
+
+
+
+
+
+
+
+  adopt(adoptingTab, adoptedTab) {
+    if (!this.adoptedTabs.has(adoptedTab)) {
+      this.adoptedTabs.set(adoptedTab, adoptingTab);
+      this.setId(adoptingTab, this.getId(adoptedTab));
+      this.emit("tab-adopted", adoptingTab, adoptedTab);
+    }
+  }
+
   _handleTabDestroyed(event, {nativeTab}) {
     let id = this._tabs.get(nativeTab);
     if (id) {
@@ -363,11 +392,9 @@ class TabTracker extends TabTrackerBase {
       case "TabOpen":
         let {adoptedTab} = event.detail;
         if (adoptedTab) {
-          this.adoptedTabs.set(adoptedTab, event.target);
-
           
           
-          this.setId(nativeTab, this.getId(adoptedTab));
+          this.adopt(nativeTab, adoptedTab);
 
           adoptedTab.linkedBrowser.messageManager.sendAsyncMessage("Extension:SetFrameData", {
             windowId: windowTracker.getId(nativeTab.ownerGlobal),
@@ -397,7 +424,7 @@ class TabTracker extends TabTrackerBase {
           
           
           
-          this.setId(adoptedBy, this.getId(nativeTab));
+          this.adopt(adoptedBy, nativeTab);
 
           this.emitDetached(nativeTab, adoptedBy);
         } else {
@@ -448,9 +475,7 @@ class TabTracker extends TabTrackerBase {
       
       let nativeTab = tabToAdopt;
       let adoptedBy = window.gBrowser.tabs[0];
-
-      this.adoptedTabs.set(nativeTab, adoptedBy);
-      this.setId(adoptedBy, this.getId(nativeTab));
+      this.adopt(adoptedBy, nativeTab);
 
       
       
