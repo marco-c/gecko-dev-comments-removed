@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+"use strict";
+
+function getUnicodeHostname(hostname) {
+  return hostname;
+}
+
+function getUnicodeUrlPath(urlPath) {
+  return urlPath;
+}
+
+function getUnicodeUrl(url) {
+  return url;
+}
+
+module.exports = {
+  getUnicodeHostname,
+  getUnicodeUrlPath,
+  getUnicodeUrl,
+};
