@@ -1719,7 +1719,10 @@ var SessionStoreInternal = {
 
   onQuitApplication: function ssi_onQuitApplication(aData) {
     if (aData == "restart") {
-      this._prefBranch.setBoolPref("sessionstore.resume_session_once", true);
+      if (!PrivateBrowsingUtils.permanentPrivateBrowsing) {
+        this._prefBranch.setBoolPref("sessionstore.resume_session_once", true);
+      }
+
       
       
       

@@ -315,7 +315,9 @@ BrowserGlue.prototype = {
     if (!this._saveSession && !aForce)
       return;
 
-    Services.prefs.setBoolPref("browser.sessionstore.resume_session_once", true);
+    if (!PrivateBrowsingUtils.permanentPrivateBrowsing) {
+      Services.prefs.setBoolPref("browser.sessionstore.resume_session_once", true);
+    }
 
     
     
