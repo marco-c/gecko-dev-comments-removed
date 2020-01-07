@@ -3874,6 +3874,30 @@ pref("plugin.mousewheel.enabled", true);
 
 pref("intl.keyboard.per_window_layout", false);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pref("intl.ime.hack.set_input_scope_of_url_bar_to_default", true);
+
 #ifdef NS_ENABLE_TSF
 
 pref("intl.tsf.enable", true);
