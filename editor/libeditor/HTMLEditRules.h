@@ -544,8 +544,22 @@ protected:
                               nsIContent** aOutLeftNode,
                               nsIContent** aOutRightNode);
 
-  already_AddRefed<Element> ConvertListType(Element* aList, nsAtom* aListType,
-                                            nsAtom* aItemType);
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_MUST_USE CreateElementResult
+  ConvertListType(Element& aListElement, nsAtom& aListType, nsAtom& aItemType);
 
   
 
