@@ -867,6 +867,7 @@ protected:
     ~OutputMediaStream();
 
     RefPtr<DOMMediaStream> mStream;
+    TrackID mNextAvailableTrackID;
     bool mFinishWhenEnded;
     bool mCapturingAudioOnly;
     bool mCapturingDecoder;
@@ -878,7 +879,6 @@ protected:
     nsTArray<RefPtr<MediaStreamTrack>> mPreCreatedTracks;
 
     
-    TrackID mNextAvailableTrackID;
     nsTArray<Pair<nsString, RefPtr<MediaInputPort>>> mTrackPorts;
   };
 

@@ -201,9 +201,12 @@ public:
 
   RefPtr<MediaDecoder::DebugInfoPromise> RequestDebugInfo();
 
-  void AddOutputStream(ProcessedMediaStream* aStream, bool aFinishWhenEnded);
+  void AddOutputStream(ProcessedMediaStream* aStream,
+                       TrackID aNextAvailableTrackID,
+                       bool aFinishWhenEnded);
   
   void RemoveOutputStream(MediaStream* aStream);
+  TrackID NextAvailableTrackIDFor(MediaStream* aOutputStream) const;
 
   
   RefPtr<MediaDecoder::SeekPromise> InvokeSeek(const SeekTarget& aTarget);

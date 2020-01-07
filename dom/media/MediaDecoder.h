@@ -170,9 +170,12 @@ public:
   
   
   virtual void AddOutputStream(ProcessedMediaStream* aStream,
+                               TrackID aNextAvailableTrackID,
                                bool aFinishWhenEnded);
   
   virtual void RemoveOutputStream(MediaStream* aStream);
+  
+  virtual TrackID NextAvailableTrackIDFor(MediaStream* aOutputStream) const;
 
   
   virtual double GetDuration();

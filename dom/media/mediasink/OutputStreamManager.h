@@ -9,6 +9,7 @@
 
 #include "mozilla/RefPtr.h"
 #include "nsTArray.h"
+#include "TrackID.h"
 
 namespace mozilla {
 
@@ -21,11 +22,13 @@ class ProcessedMediaStream;
 class OutputStreamData {
 public:
   ~OutputStreamData();
-  void Init(OutputStreamManager* aOwner, ProcessedMediaStream* aStream);
+  void Init(OutputStreamManager* aOwner,
+            ProcessedMediaStream* aStream,
+            TrackID aNextAvailableTrackID);
 
   
   
-  bool Connect(MediaStream* aStream);
+  bool Connect(MediaStream* aStream, TrackID aAudioTrackID, TrackID aVideoTrackID);
   
   
   bool Disconnect();
@@ -34,12 +37,16 @@ public:
   bool Equals(MediaStream* aStream) const;
   
   MediaStreamGraph* Graph() const;
+  
+  TrackID NextAvailableTrackID() const;
 
 private:
   OutputStreamManager* mOwner;
   RefPtr<ProcessedMediaStream> mStream;
   
-  RefPtr<MediaInputPort> mPort;
+  nsTArray<RefPtr<MediaInputPort>> mPorts;
+  
+  TrackID mNextAvailableTrackID = TRACK_INVALID;
 };
 
 class OutputStreamManager {
@@ -47,9 +54,13 @@ class OutputStreamManager {
 
 public:
   
-  void Add(ProcessedMediaStream* aStream, bool aFinishWhenEnded);
+  void Add(ProcessedMediaStream* aStream,
+           TrackID aNextAvailableTrackID,
+           bool aFinishWhenEnded);
   
   void Remove(MediaStream* aStream);
+  
+  TrackID NextAvailableTrackIDFor(MediaStream* aOutputStream) const;
   
   bool IsEmpty() const
   {
@@ -57,7 +68,9 @@ public:
     return mStreams.IsEmpty();
   }
   
-  void Connect(MediaStream* aStream);
+  void Connect(MediaStream* aStream,
+               TrackID aAudioTrackID,
+               TrackID aVideoTrackID);
   
   void Disconnect();
   
@@ -72,6 +85,8 @@ private:
   
   
   RefPtr<MediaStream> mInputStream;
+  TrackID mInputAudioTrackID = TRACK_INVALID;
+  TrackID mInputVideoTrackID = TRACK_INVALID;
   nsTArray<OutputStreamData> mStreams;
 };
 
