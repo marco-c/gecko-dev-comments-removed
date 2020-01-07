@@ -24,7 +24,7 @@ add_task(async function() {
 
   
   
-  let promiseNewWindow = BrowserTestUtils.waitForNewWindow(TEST_HTTP);
+  let promiseNewWindow = BrowserTestUtils.waitForNewWindow({url: TEST_HTTP});
   await ContentTask.spawn(browser, TEST_HTTP, uri => {
     content.open(uri, "_blank");
   });
@@ -40,7 +40,7 @@ add_task(async function() {
 
   
   
-  promiseNewWindow = BrowserTestUtils.waitForNewWindow(TEST_HTTP);
+  promiseNewWindow = BrowserTestUtils.waitForNewWindow({url: TEST_HTTP});
   await BrowserTestUtils.synthesizeMouseAtCenter("#linkToExample", {}, browser);
   let win2 = await promiseNewWindow;
   registerCleanupFunction(async function() {

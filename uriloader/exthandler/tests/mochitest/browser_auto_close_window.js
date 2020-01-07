@@ -92,7 +92,7 @@ add_task(async function new_window() {
   
   await BrowserTestUtils.withNewTab({ gBrowser, url: URL }, async function(browser) {
     let dialogAppeared = promiseHelperAppDialog();
-    let windowOpened = BrowserTestUtils.waitForNewWindow(false);
+    let windowOpened = BrowserTestUtils.waitForNewWindow();
 
     await BrowserTestUtils.synthesizeMouseAtCenter("#new_window", {}, browser);
 

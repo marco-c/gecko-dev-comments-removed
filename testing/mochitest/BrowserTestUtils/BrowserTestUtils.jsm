@@ -489,7 +489,13 @@ var BrowserTestUtils = {
 
 
 
-  async waitForNewWindow(initialBrowserLoaded=null) {
+
+
+  async waitForNewWindow(aParams = {}) {
+    let {
+      url = null,
+    } = aParams;
+
     let win = await this.domWindowOpened();
 
     let promises = [
@@ -497,7 +503,7 @@ var BrowserTestUtils = {
                               subject => subject == win),
     ];
 
-    if (initialBrowserLoaded) {
+    if (url) {
       await this.waitForEvent(win, "DOMContentLoaded");
 
       let browser = win.gBrowser.selectedBrowser;
@@ -507,11 +513,11 @@ var BrowserTestUtils = {
         browser.isRemoteBrowser ? Ci.nsIXULRuntime.PROCESS_TYPE_CONTENT
                                 : Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT;
       if (win.gMultiProcessBrowser &&
-          !E10SUtils.canLoadURIInProcess(initialBrowserLoaded, process)) {
+          !E10SUtils.canLoadURIInProcess(url, process)) {
         await this.waitForEvent(browser, "XULFrameLoaderCreated");
       }
 
-      let loadPromise = this.browserLoaded(browser, false, initialBrowserLoaded);
+      let loadPromise = this.browserLoaded(browser, false, url);
       promises.push(loadPromise);
     }
 
