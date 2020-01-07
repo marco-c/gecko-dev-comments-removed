@@ -180,8 +180,6 @@ struct ShellContext
     
     js::Monitor offThreadMonitor;
     Vector<OffThreadJob*, 0, SystemAllocPolicy> offThreadJobs;
-
-    JS::PersistentRootedFunction moduleResolveHook;
 };
 
 extern ShellContext*
