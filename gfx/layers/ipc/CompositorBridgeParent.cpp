@@ -497,16 +497,22 @@ CompositorBridgeParent::StopAndClearResources()
   }
 
   if (mWrBridge) {
+    
+    
+    std::vector<RefPtr<WebRenderBridgeParent>> indirectBridgeParents;
     { 
       MonitorAutoLock lock(*sIndirectLayerTreesLock);
-      ForEachIndirectLayerTree([] (LayerTreeState* lts, LayersId) -> void {
+      ForEachIndirectLayerTree([&] (LayerTreeState* lts, LayersId) -> void {
         if (lts->mWrBridge) {
-          lts->mWrBridge->Destroy();
-          lts->mWrBridge = nullptr;
+          indirectBridgeParents.emplace_back(lts->mWrBridge.forget());
         }
         lts->mParent = nullptr;
       });
     }
+    for (const RefPtr<WebRenderBridgeParent>& bridge : indirectBridgeParents) {
+      bridge->Destroy();
+    }
+    indirectBridgeParents.clear();
 
     
     

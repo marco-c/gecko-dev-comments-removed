@@ -1615,6 +1615,14 @@ WebRenderBridgeParent::ClearResources()
   if (mWidget) {
     mCompositorScheduler->Destroy();
   }
+
+  
+  
+  
+  
+  
+  FlushSceneBuilds();
+
   mAnimStorage = nullptr;
   mCompositorScheduler = nullptr;
   mAsyncImageManager = nullptr;
