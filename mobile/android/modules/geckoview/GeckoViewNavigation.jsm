@@ -30,9 +30,16 @@ function debug(aMsg) {
 
 
 class GeckoViewNavigation extends GeckoViewModule {
-  onInit() {
+  onInitBrowser() {
     this.window.QueryInterface(Ci.nsIDOMChromeWindow).browserDOMWindow = this;
 
+    
+    
+    
+    Services.obs.notifyObservers(this.window, "geckoview-window-created");
+  }
+
+  onInit() {
     this.registerListener([
       "GeckoView:GoBack",
       "GeckoView:GoForward",

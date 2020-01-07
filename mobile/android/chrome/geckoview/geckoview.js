@@ -54,10 +54,6 @@ function createBrowser() {
   browser.setAttribute("type", "content");
   browser.setAttribute("primary", "true");
   browser.setAttribute("flex", "1");
-
-  
-  
-  Services.obs.notifyObservers(window, "geckoview-window-created");
   return browser;
 }
 
@@ -65,8 +61,6 @@ function startup() {
   const browser = createBrowser();
   ModuleManager.init(browser);
 
-  
-  
   ModuleManager.add("resource://gre/modules/GeckoViewNavigation.jsm",
                     "GeckoViewNavigation");
   ModuleManager.add("resource://gre/modules/GeckoViewSettings.jsm",
