@@ -8,6 +8,7 @@
 
 
 
+
 "use strict";
 
 Cu.import("resource://testing-common/LoginTestUtils.jsm", this);
@@ -29,6 +30,7 @@ const SYNC_USERNAME_PREF = "services.sync.username";
 const SYNC_ADDRESSES_PREF = "services.sync.engine.addresses";
 const SYNC_CREDITCARDS_PREF = "services.sync.engine.creditcards";
 const SYNC_CREDITCARDS_AVAILABLE_PREF = "services.sync.engine.creditcards.available";
+const DEFAULT_REGION_PREF = "browser.search.region";
 
 const TEST_ADDRESS_1 = {
   "given-name": "John",
@@ -325,6 +327,19 @@ async function removeAllRecords() {
   if (creditCards.length) {
     await removeCreditCards(creditCards.map(cc => cc.guid));
   }
+}
+
+function testDialog(url, testFn, arg) {
+  return new Promise(resolve => {
+    let win = window.openDialog(url, null, null, arg);
+    win.addEventListener("FormReady", () => {
+      win.addEventListener("unload", () => {
+        ok(true, "Dialog is closed");
+        resolve();
+      }, {once: true});
+      testFn(win);
+    }, {once: true});
+  });
 }
 
 registerCleanupFunction(removeAllRecords);
