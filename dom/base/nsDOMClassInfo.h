@@ -14,9 +14,6 @@
 #include "js/Id.h"
 #include "nsIXPConnect.h"
 
-class nsGlobalWindowInner;
-class nsGlobalWindowOuter;
-
 class nsDOMClassInfo
 {
 public:
@@ -26,20 +23,6 @@ public:
 protected:
   static bool sIsInitialized;
 };
-
-
-
-class nsWindowSH
-{
-protected:
-  static nsresult GlobalResolve(nsGlobalWindowInner *aWin, JSContext *cx,
-                                JS::Handle<JSObject*> obj, JS::Handle<jsid> id,
-                                JS::MutableHandle<JS::PropertyDescriptor> desc);
-
-  friend class nsGlobalWindowInner;
-  friend class nsGlobalWindowOuter;
-};
-
 
 
 
