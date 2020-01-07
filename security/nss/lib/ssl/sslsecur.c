@@ -762,6 +762,55 @@ ssl_SecureShutdown(sslSocket *ss, int nsprHow)
 
 
 
+static SECStatus
+tls13_CheckKeyUpdate(sslSocket *ss, CipherSpecDirection dir)
+{
+    PRBool keyUpdate;
+    ssl3CipherSpec *spec;
+    sslSequenceNumber seqNum;
+    sslSequenceNumber margin;
+    SECStatus rv;
+
+    
+    if (ss->version < SSL_LIBRARY_VERSION_TLS_1_3 || IS_DTLS(ss)) {
+        return SECSuccess;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+    ssl_GetSpecReadLock(ss);
+    if (dir == CipherSpecRead) {
+        spec = ss->ssl3.crSpec;
+        margin = spec->cipherDef->max_records / 8;
+    } else {
+        spec = ss->ssl3.cwSpec;
+        margin = spec->cipherDef->max_records / 4;
+    }
+    seqNum = spec->seqNum;
+    keyUpdate = seqNum > spec->cipherDef->max_records - margin;
+    ssl_ReleaseSpecReadLock(ss);
+    if (!keyUpdate) {
+        return SECSuccess;
+    }
+
+    SSL_TRC(5, ("%d: SSL[%d]: automatic key update at %llx for %s cipher spec",
+                SSL_GETPID(), ss->fd, seqNum,
+                (dir == CipherSpecRead) ? "read" : "write"));
+    ssl_GetSSL3HandshakeLock(ss);
+    rv = tls13_SendKeyUpdate(ss, (dir == CipherSpecRead) ? update_requested : update_not_requested,
+                             dir == CipherSpecWrite );
+    ssl_ReleaseSSL3HandshakeLock(ss);
+    return rv;
+}
+
 int
 ssl_SecureRecv(sslSocket *ss, unsigned char *buf, int len, int flags)
 {
@@ -801,8 +850,17 @@ ssl_SecureRecv(sslSocket *ss, unsigned char *buf, int len, int flags)
             rv = ssl_Do1stHandshake(ss);
         }
         ssl_Release1stHandshakeLock(ss);
+    } else {
+        if (tls13_CheckKeyUpdate(ss, CipherSpecRead) != SECSuccess) {
+            rv = PR_FAILURE;
+        }
     }
     if (rv < 0) {
+        if (PORT_GetError() == PR_WOULD_BLOCK_ERROR &&
+            !PR_CLIST_IS_EMPTY(&ss->ssl3.hs.bufferedEarlyData)) {
+            PORT_Assert(ss->version >= SSL_LIBRARY_VERSION_TLS_1_3);
+            return tls13_Read0RttData(ss, buf, len);
+        }
         return rv;
     }
 
@@ -884,9 +942,17 @@ ssl_SecureSend(sslSocket *ss, const unsigned char *buf, int len, int flags)
         }
         ssl_Release1stHandshakeLock(ss);
     }
+
     if (rv < 0) {
         ss->writerThread = NULL;
         goto done;
+    }
+
+    if (ss->firstHsDone) {
+        if (tls13_CheckKeyUpdate(ss, CipherSpecWrite) != SECSuccess) {
+            rv = PR_FAILURE;
+            goto done;
+        }
     }
 
     if (zeroRtt) {

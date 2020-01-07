@@ -235,27 +235,29 @@ TEST_P(TlsCipherSuiteTest, ResumeCipherSuite) {
   ConnectAndCheckCipherSuite();
 }
 
-
-
-
-
-
 TEST_P(TlsCipherSuiteTest, ReadLimit) {
   SetupCertificate();
   EnableSingleCipher();
   ConnectAndCheckCipherSuite();
-  EXPECT_EQ(SECSuccess,
-            SSLInt_AdvanceWriteSeqNum(client_->ssl_fd(), last_safe_write()));
-  EXPECT_EQ(SECSuccess,
-            SSLInt_AdvanceReadSeqNum(server_->ssl_fd(), last_safe_write()));
+  if (version_ < SSL_LIBRARY_VERSION_TLS_1_3) {
+    uint64_t last = last_safe_write();
+    EXPECT_EQ(SECSuccess, SSLInt_AdvanceWriteSeqNum(client_->ssl_fd(), last));
+    EXPECT_EQ(SECSuccess, SSLInt_AdvanceReadSeqNum(server_->ssl_fd(), last));
 
-  client_->SendData(10, 10);
-  server_->ReadBytes();  
+    client_->SendData(10, 10);
+    server_->ReadBytes();  
+  } else {
+    
+    
+    
+    
+    uint64_t last = record_limit() - 1;
+    EXPECT_EQ(SECSuccess, SSLInt_AdvanceReadSeqNum(server_->ssl_fd(), last));
+  }
 
   
   
-  
-  static const uint8_t payload[18] = {6};
+  static const uint8_t payload[32] = {6};
   DataBuffer record;
   uint64_t epoch;
   if (variant_ == ssl_variant_datagram) {
@@ -270,13 +272,17 @@ TEST_P(TlsCipherSuiteTest, ReadLimit) {
   TlsAgentTestBase::MakeRecord(variant_, kTlsApplicationDataType, version_,
                                payload, sizeof(payload), &record,
                                (epoch << 48) | record_limit());
-  server_->adapter()->PacketReceived(record);
+  client_->SendDirect(record);
   server_->ExpectReadWriteError();
   server_->ReadBytes();
   EXPECT_EQ(SSL_ERROR_TOO_MANY_RECORDS, server_->error_code());
 }
 
 TEST_P(TlsCipherSuiteTest, WriteLimit) {
+  
+  if (version_ >= SSL_LIBRARY_VERSION_TLS_1_3) {
+    return;
+  }
   SetupCertificate();
   EnableSingleCipher();
   ConnectAndCheckCipherSuite();

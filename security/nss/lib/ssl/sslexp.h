@@ -340,6 +340,16 @@ typedef SSLHelloRetryRequestAction(PR_CALLBACK *SSLHelloRetryRequestCallback)(
                           SSLHelloRetryRequestCallback _cb, void *_arg), \
                          (fd, cb, arg))
 
+
+
+
+
+
+#define SSL_KeyUpdate(fd, requestUpdate)                            \
+    SSL_EXPERIMENTAL_API("SSL_KeyUpdate",                           \
+                         (PRFileDesc * _fd, PRBool _requestUpdate), \
+                         (fd, requestUpdate))
+
 #define SSL_UseAltServerHelloType(fd, enable) \
     SSL_DEPRECATED_EXPERIMENTAL_API
 

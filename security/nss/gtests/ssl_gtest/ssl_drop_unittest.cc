@@ -352,6 +352,9 @@ TEST_F(TlsDropDatagram13, DropSecondHalfOfServerCertificate) {
 
 
 class TlsFragmentationAndRecoveryTest : public TlsDropDatagram13 {
+ public:
+  TlsFragmentationAndRecoveryTest() : cert_len_(0) {}
+
  protected:
   void RunTest(size_t dropped_half) {
     FirstFlightDropCertificate();
