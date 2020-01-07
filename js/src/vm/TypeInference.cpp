@@ -4420,7 +4420,7 @@ ObjectGroup::sweep(const AutoSweepObjectGroup& sweep, AutoClearTypeInferenceStat
         
         ObjectGroup* group = this;
         if (IsAboutToBeFinalizedUnbarriered(&group))
-            layout->detachFromCompartment();
+            layout->detachFromRealm();
 
         if (layout->newScript())
             layout->newScript()->sweep();

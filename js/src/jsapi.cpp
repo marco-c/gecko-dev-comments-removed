@@ -674,7 +674,7 @@ JS_SetExternalStringSizeofCallback(JSContext* cx, JSExternalStringSizeofCallback
     cx->runtime()->externalStringSizeofCallback = callback;
 }
 
-JS_PUBLIC_API(JSCompartment*)
+JS_PUBLIC_API(Realm*)
 JS::EnterRealm(JSContext* cx, JSObject* target)
 {
     AssertHeapIsIdle();
@@ -682,7 +682,7 @@ JS::EnterRealm(JSContext* cx, JSObject* target)
 
     Realm* oldRealm = cx->realm();
     cx->enterRealmOf(target);
-    return JS::GetCompartmentForRealm(oldRealm);
+    return oldRealm;
 }
 
 JS_PUBLIC_API(void)
@@ -890,7 +890,7 @@ JS_TransplantObject(JSContext* cx, HandleObject origobj, HandleObject target)
         
         
         
-        AutoRealmUnchecked ar(cx, origobj->compartment());
+        AutoRealmUnchecked ar(cx, origobj->realm());
         if (!JSObject::swap(cx, origobj, target))
             MOZ_CRASH();
         newIdentity = origobj;
@@ -924,7 +924,7 @@ JS_TransplantObject(JSContext* cx, HandleObject origobj, HandleObject target)
     
     if (origobj->compartment() != destination) {
         RootedObject newIdentityWrapper(cx, newIdentity);
-        AutoRealmUnchecked ar(cx, origobj->compartment());
+        AutoRealmUnchecked ar(cx, origobj->realm());
         if (!JS_WrapObject(cx, &newIdentityWrapper))
             MOZ_CRASH();
         MOZ_ASSERT(Wrapper::wrappedObject(newIdentityWrapper) == newIdentity);

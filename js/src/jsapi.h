@@ -1092,7 +1092,7 @@ namespace JS {
 
 
 
-extern JS_PUBLIC_API(JSCompartment*)
+extern JS_PUBLIC_API(JS::Realm*)
 EnterRealm(JSContext* cx, JSObject* target);
 
 extern JS_PUBLIC_API(void)

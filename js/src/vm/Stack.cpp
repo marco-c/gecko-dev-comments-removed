@@ -901,6 +901,17 @@ FrameIter::compartment() const
     MOZ_CRASH("Unexpected state");
 }
 
+Realm*
+FrameIter::realm() const
+{
+    MOZ_ASSERT(!done());
+
+    if (hasScript())
+        return script()->realm();
+
+    return wasmInstance()->realm();
+}
+
 bool
 FrameIter::isEvalFrame() const
 {
@@ -1624,7 +1635,7 @@ jit::JitActivation::getRematerializedFrame(JSContext* cx, const JSJitFrameIter& 
         
         
         
-        AutoRealmUnchecked ar(cx, compartment_);
+        AutoRealmUnchecked ar(cx, iter.script()->realm());
 
         if (!RematerializedFrame::RematerializeInlineFrames(cx, top, inlineIter, recover, frames))
             return nullptr;
