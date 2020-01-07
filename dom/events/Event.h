@@ -29,6 +29,7 @@ class nsPresContext;
 namespace mozilla {
 namespace dom {
 
+class BeforeUnloadEvent;
 class EventTarget;
 class EventMessageAutoOverride;
 
@@ -111,6 +112,12 @@ public:
   }
 
   virtual TimeEvent* AsTimeEvent() { return nullptr; }
+
+  
+  virtual BeforeUnloadEvent* AsBeforeUnloadEvent()
+  {
+    return nullptr;
+  }
 
   
   NS_DECL_NSIDOMEVENT
