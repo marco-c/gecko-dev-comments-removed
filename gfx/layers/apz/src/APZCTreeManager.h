@@ -343,12 +343,13 @@ public:
 
 
 
-  void SetDPI(float aDpiValue) override { sDPI = aDpiValue; }
+
+  void SetDPI(float aDpiValue) override;
 
   
 
 
-  static float GetDPI() { return sDPI; }
+  float GetDPI() const;
 
   
 
@@ -747,7 +748,8 @@ private:
   std::unordered_map<uint64_t, UniquePtr<APZTestData>> mTestData;
   mutable mozilla::Mutex mTestDataLock;
 
-  static float sDPI;
+  
+  float mDPI;
 
 #if defined(MOZ_WIDGET_ANDROID)
 public:

@@ -155,18 +155,29 @@ public:
   
 
 
+  float GetDPI() const;
 
-
-
-
-
-  static ScreenCoord GetTouchStartTolerance();
   
 
 
 
 
-  static ScreenCoord GetSecondTapTolerance();
+
+
+
+  ScreenCoord GetTouchStartTolerance() const;
+  
+
+
+
+
+  ScreenCoord GetTouchMoveTolerance() const;
+  
+
+
+
+
+  ScreenCoord GetSecondTapTolerance() const;
 
   AsyncPanZoomController(uint64_t aLayersId,
                          APZCTreeManager* aTreeManager,
