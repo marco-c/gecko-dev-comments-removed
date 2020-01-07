@@ -91,6 +91,9 @@ private:
 
   enum State {
     
+    eInitializing,
+
+    
     
     eWaiting,
 
