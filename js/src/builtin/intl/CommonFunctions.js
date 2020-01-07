@@ -10,29 +10,6 @@
 
 
 
-
-function toASCIIUpperCase(s) {
-    assert(typeof s === "string", "toASCIIUpperCase");
-
-    
-    
-    
-    var result = "";
-    for (var i = 0; i < s.length; i++) {
-        var c = callFunction(std_String_charCodeAt, s, i);
-        result += (0x61 <= c && c <= 0x7A)
-                  ? callFunction(std_String_fromCharCode, null, c & ~0x20)
-                  : s[i];
-    }
-    return result;
-}
-
-
-
-
-
-
-
 var internalIntlRegExps = std_Object_create(null);
 internalIntlRegExps.unicodeLocaleExtensionSequenceRE = null;
 internalIntlRegExps.languageTagRE = null;
@@ -311,6 +288,25 @@ function IsStructurallyValidLanguageTag(locale) {
 
 
 
+function ArrayJoinRange(array, separator, from, to = array.length) {
+    assert(typeof separator === "string", "|separator| is a string value");
+    assert(typeof from === "number", "|from| is a number value");
+    assert(typeof to === "number", "|to| is a number value");
+    assert(0 <= from && from <= to && to <= array.length, "|from| and |to| form a valid range");
+
+    if (from === to)
+        return "";
+
+    var result = array[from];
+    for (var i = from + 1; i < to; i++) {
+        result += separator + array[i];
+    }
+    return result;
+}
+
+
+
+
 
 
 
@@ -442,25 +438,6 @@ function CanonicalizeLanguageTag(locale) {
     }
 
     return canonical;
-}
-
-
-
-
-function ArrayJoinRange(array, separator, from, to = array.length) {
-    assert(typeof separator === "string", "|separator| is a string value");
-    assert(typeof from === "number", "|from| is a number value");
-    assert(typeof to === "number", "|to| is a number value");
-    assert(0 <= from && from <= to && to <= array.length, "|from| and |to| form a valid range");
-
-    if (from === to)
-        return "";
-
-    var result = array[from];
-    for (var i = from + 1; i < to; i++) {
-        result += separator + array[i];
-    }
-    return result;
 }
 
 
@@ -648,109 +625,6 @@ function DefaultLocale() {
 
     return locale;
 }
-
-
-
-
-
-
-function getIsWellFormedCurrencyCodeRE() {
-    return internalIntlRegExps.isWellFormedCurrencyCodeRE ||
-           (internalIntlRegExps.isWellFormedCurrencyCodeRE = RegExpCreate("[^A-Z]"));
-}
-function IsWellFormedCurrencyCode(currency) {
-    var c = ToString(currency);
-    var normalized = toASCIIUpperCase(c);
-    if (normalized.length !== 3)
-        return false;
-    return !regexp_test_no_statics(getIsWellFormedCurrencyCodeRE(), normalized);
-}
-
-var timeZoneCache = {
-    icuDefaultTimeZone: undefined,
-    defaultTimeZone: undefined,
-};
-
-
-
-
-
-
-
-
-function CanonicalizeTimeZoneName(timeZone) {
-    assert(typeof timeZone === "string", "CanonicalizeTimeZoneName");
-
-    
-    assert(timeZone !== "Etc/Unknown", "Invalid time zone");
-    assert(timeZone === intl_IsValidTimeZoneName(timeZone), "Time zone name not normalized");
-
-    
-    var ianaTimeZone = intl_canonicalizeTimeZone(timeZone);
-    assert(ianaTimeZone !== "Etc/Unknown", "Invalid canonical time zone");
-    assert(ianaTimeZone === intl_IsValidTimeZoneName(ianaTimeZone), "Unsupported canonical time zone");
-
-    
-    if (ianaTimeZone === "Etc/UTC" || ianaTimeZone === "Etc/GMT") {
-        
-        
-        if (timeZone === "Etc/UCT" || timeZone === "UCT")
-            ianaTimeZone = "Etc/UCT";
-        else
-            ianaTimeZone = "UTC";
-    }
-
-    
-    return ianaTimeZone;
-}
-
-
-
-
-
-
-
-
-function DefaultTimeZone() {
-    if (intl_isDefaultTimeZone(timeZoneCache.icuDefaultTimeZone))
-        return timeZoneCache.defaultTimeZone;
-
-    
-    var icuDefaultTimeZone = intl_defaultTimeZone();
-    var timeZone = intl_IsValidTimeZoneName(icuDefaultTimeZone);
-    if (timeZone === null) {
-        
-        
-        
-        const msPerHour = 60 * 60 * 1000;
-        var offset = intl_defaultTimeZoneOffset();
-        assert(offset === (offset | 0),
-               "milliseconds offset shouldn't be able to exceed int32_t range");
-        var offsetHours = offset / msPerHour, offsetHoursFraction = offset % msPerHour;
-        if (offsetHoursFraction === 0) {
-            
-            
-            timeZone = "Etc/GMT" + (offsetHours < 0 ? "+" : "-") + std_Math_abs(offsetHours);
-
-            
-            timeZone = intl_IsValidTimeZoneName(timeZone);
-        }
-
-        
-        if (timeZone === null)
-            timeZone = "UTC";
-    }
-
-    
-    var defaultTimeZone = CanonicalizeTimeZoneName(timeZone);
-
-    timeZoneCache.defaultTimeZone = defaultTimeZone;
-    timeZoneCache.icuDefaultTimeZone = icuDefaultTimeZone;
-
-    return defaultTimeZone;
-}
-
-
 
 
 
@@ -1301,8 +1175,6 @@ function GetNumberOption(options, property, minimum, maximum, fallback) {
     
     return DefaultNumberOption(options[property], minimum, maximum, fallback);
 }
-
-
 
 
 
