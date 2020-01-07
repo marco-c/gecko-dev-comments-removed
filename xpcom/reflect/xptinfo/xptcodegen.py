@@ -152,6 +152,33 @@ def splitint(i):
 
 
 
+
+
+
+
+utility_types = [
+    { 'tag': 'TD_INT8' },
+    { 'tag': 'TD_UINT8' },
+    { 'tag': 'TD_INT16' },
+    { 'tag': 'TD_UINT16' },
+    { 'tag': 'TD_INT32' },
+    { 'tag': 'TD_UINT32' },
+    { 'tag': 'TD_INT64' },
+    { 'tag': 'TD_UINT64' },
+    { 'tag': 'TD_FLOAT' },
+    { 'tag': 'TD_DOUBLE' },
+    { 'tag': 'TD_BOOL' },
+    { 'tag': 'TD_CHAR' },
+    { 'tag': 'TD_WCHAR' },
+    { 'tag': 'TD_PNSIID' },
+    { 'tag': 'TD_PSTRING' },
+    { 'tag': 'TD_PWSTRING' },
+    { 'tag': 'TD_INTERFACE_IS_TYPE', 'iid_is': 0 },
+]
+
+
+
+
 def link_to_cpp(interfaces, fd):
     
     iid_phf = PerfectHash(PHFSIZE, [
@@ -220,6 +247,14 @@ def link_to_cpp(interfaces, fd):
             strings[s] = 0
         return strings[s]
 
+    def lower_extra_type(type):
+        key = describe_type(type)
+        idx = type_cache.get(key)
+        if idx is None:
+            idx = type_cache[key] = len(types)
+            types.append(lower_type(type))
+        return idx
+
     def describe_type(type): 
         tag = type['tag'][3:].lower()
         if tag == 'array':
@@ -239,13 +274,7 @@ def link_to_cpp(interfaces, fd):
 
         if tag == 'TD_ARRAY':
             d1 = type['size_is']
-
-            
-            key = describe_type(type['element'])
-            d2 = type_cache.get(key)
-            if d2 is None:
-                d2 = type_cache[key] = len(types)
-                types.append(lower_type(type['element']))
+            d2 = lower_extra_type(type['element'])
 
         elif tag == 'TD_INTERFACE_TYPE':
             d1, d2 = splitint(interface_idx(type['name']))
@@ -412,6 +441,12 @@ def link_to_cpp(interfaces, fd):
             lower_const(const, iface['name'])
 
     
+    
+    for expected, ty in enumerate(utility_types):
+        got = lower_extra_type(ty)
+        assert got == expected, "Wrong index when lowering"
+
+    
     for iface in iid_phf.values:
         lower_iface(iface)
 
@@ -487,7 +522,13 @@ namespace detail {
     phfarr("sPHF_NamesIdxs", "uint16_t", name_phf.values)
 
     
-    fd.write("""\
+    
+    for idx, ty in enumerate(utility_types):
+        fd.write("static_assert(%d == (uint8_t)nsXPTType::Idx::%s, \"Bad idx\");\n" %
+                 (idx, ty['tag'][3:]))
+
+    
+    fd.write("""
 const uint16_t sInterfacesSize = mozilla::ArrayLength(sInterfaces);
 static_assert(sInterfacesSize == mozilla::ArrayLength(sPHF_NamesIdxs),
               "sPHF_NamesIdxs must have same size as sInterfaces");
