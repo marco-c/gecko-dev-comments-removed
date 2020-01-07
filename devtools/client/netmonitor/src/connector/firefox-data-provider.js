@@ -341,13 +341,7 @@ class FirefoxDataProvider {
         });
         break;
       case "eventTimings":
-        
-        
-        
-        
-        if (typeof networkInfo.totalTime != "undefined") {
-          this.pushRequestToQueue(actor, { totalTime: networkInfo.totalTime });
-        }
+        this.pushRequestToQueue(actor, { totalTime: networkInfo.totalTime });
         await this._requestData(actor, updateType);
         break;
     }
