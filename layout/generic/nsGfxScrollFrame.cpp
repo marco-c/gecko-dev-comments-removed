@@ -2293,6 +2293,11 @@ ScrollFrameHelper::ScrollToWithOrigin(nsPoint aScrollPosition,
                                           const nsRect* aRange,
                                           nsIScrollbarMediator::ScrollSnapMode aSnap)
 {
+  if (aOrigin != nsGkAtoms::restore) {
+    
+    
+    mRestorePos.x = mRestorePos.y = -1;
+  }
 
   if (aSnap == nsIScrollableFrame::ENABLE_SNAP) {
     GetSnapPointForDestination(nsIScrollableFrame::DEVICE_PIXELS,
@@ -4367,6 +4372,8 @@ ScrollFrameHelper::ScrollToRestoredPosition()
           (mScrollPort.XMost() - scrollToPos.x - mScrolledFrame->GetRect().width);
       }
       AutoWeakFrame weakFrame(mOuter);
+      
+      
       ScrollToWithOrigin(scrollToPos, nsIScrollableFrame::INSTANT,
                          nsGkAtoms::restore, nullptr);
       if (!weakFrame.IsAlive()) {
