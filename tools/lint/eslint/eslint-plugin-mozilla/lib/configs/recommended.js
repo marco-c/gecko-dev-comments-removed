@@ -68,7 +68,15 @@ module.exports = {
       "browser": false,
       "mozilla/jsm": true
     },
-    "files": "**/*.jsm"
+    "files": "**/*.jsm",
+    "rules": {
+      "mozilla/mark-exported-symbols-as-used": "error"
+      
+      
+      
+      
+      
+    }
   }],
 
   "parserOptions": {
