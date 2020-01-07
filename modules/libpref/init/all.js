@@ -1394,11 +1394,7 @@ pref("dom.event.highrestimestamp.enabled",  true);
 pref("dom.event.coalesce_mouse_move",       true);
 
 pref("dom.webcomponents.enabled",           false);
-#ifdef NIGHTLY_BUILD
-pref("dom.webcomponents.customelements.enabled", true);
-#else
 pref("dom.webcomponents.customelements.enabled", false);
-#endif
 
 pref("javascript.enabled",                  true);
 pref("javascript.options.strict",           false);
@@ -5853,7 +5849,11 @@ pref("prompts.authentication_dialog_abuse_limit", 3);
 pref("dom.IntersectionObserver.enabled", true);
 
 
+#ifdef NIGHTLY_BUILD
+pref("dom.moduleScripts.enabled", true);
+#else
 pref("dom.moduleScripts.enabled", false);
+#endif
 
 
 
