@@ -1405,6 +1405,25 @@ const gCSSProperties = {
       { type: 'discrete', options: [ [ 'flat', 'preserve-3d' ] ] }
     ]
   },
+  'rotate': {
+    
+    types: [ 'rotateList' ]
+  },
+  'translate': {
+    
+    types: [ 'translateList' ],
+    setup: t => {
+      
+      const element = createElement(t);
+      element.style.width = '100px';
+      element.style.height = '100px';
+      return element;
+    }
+  },
+  'scale': {
+    
+    types: [ 'scaleList' ]
+  },
   'unicode-bidi': {
     
     types: [
