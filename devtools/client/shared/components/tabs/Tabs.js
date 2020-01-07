@@ -53,6 +53,9 @@ define(function(require, exports, module) {
 
         
         
+        renderSidebarToggle: PropTypes.func,
+        
+        
         
         renderOnlySelected: PropTypes.bool,
       };
@@ -328,8 +331,13 @@ define(function(require, exports, module) {
         })
       ) : null;
 
+      
+      let sidebarToggle =  this.props.renderSidebarToggle ?
+        this.props.renderSidebarToggle() : null;
+
       return (
         dom.nav({className: "tabs-navigation"},
+          sidebarToggle,
           dom.ul({className: "tabs-menu", role: "tablist"},
             tabs
           ),
