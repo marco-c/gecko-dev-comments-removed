@@ -1651,6 +1651,13 @@ toolbar#nav-bar {
 
         
         
+        
+        if (options.flavor == 'browser' or not options.e10s) and \
+           'MOZ_CRASHREPORTER_SHUTDOWN' in browserEnv:
+            del browserEnv["MOZ_CRASHREPORTER_SHUTDOWN"]
+
+        
+        
         browserEnv["XPCOM_DEBUG_BREAK"] = "stack"
 
         
