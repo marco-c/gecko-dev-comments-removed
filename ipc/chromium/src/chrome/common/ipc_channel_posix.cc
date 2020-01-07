@@ -423,10 +423,27 @@ bool Channel::ChannelImpl::ProcessIncomingMessages() {
       fds = wire_fds;
       num_fds = num_wire_fds;
     } else {
-      const size_t prev_size = input_overflow_fds_.size();
-      input_overflow_fds_.resize(prev_size + num_wire_fds);
-      memcpy(&input_overflow_fds_[prev_size], wire_fds,
-             num_wire_fds * sizeof(int));
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (num_wire_fds > 0) {
+        const size_t prev_size = input_overflow_fds_.size();
+        input_overflow_fds_.resize(prev_size + num_wire_fds);
+        memcpy(&input_overflow_fds_[prev_size], wire_fds,
+               num_wire_fds * sizeof(int));
+      }
       fds = &input_overflow_fds_[0];
       num_fds = input_overflow_fds_.size();
     }
