@@ -695,6 +695,17 @@ public class BrowserApp extends GeckoApp
 
         showSplashScreen = true;
 
+        boolean supported = HardwareUtils.isSupportedSystem();
+        if (supported) {
+            GeckoLoader.loadMozGlue(appContext);
+            supported = GeckoLoader.neonCompatible();
+        }
+        if (!supported) {
+            
+            super.onCreate(savedInstanceState);
+            return;
+        }
+
         final SafeIntent intent = new SafeIntent(getIntent());
         final boolean isInAutomation = IntentUtils.getIsInAutomationFromEnvironment(intent);
 
@@ -713,10 +724,6 @@ public class BrowserApp extends GeckoApp
         app.prepareLightweightTheme();
 
         super.onCreate(savedInstanceState);
-
-        if (mIsAbortingAppLaunch) {
-          return;
-        }
 
         initSwitchboard(this, intent, isInAutomation);
         initTelemetryUploader(isInAutomation);
@@ -2737,7 +2744,9 @@ public class BrowserApp extends GeckoApp
 
                 
                 
-                if (TextUtils.isEmpty(keywordUrl)) {
+                
+                if (TextUtils.isEmpty(keywordUrl) ||
+                        (!TextUtils.isEmpty(keywordSearch) && !StringUtils.queryExists(keywordUrl))) {
                     Tabs.getInstance().loadUrl(url, Tabs.LOADURL_USER_ENTERED);
                     Telemetry.sendUIEvent(TelemetryContract.Event.LOAD_URL, TelemetryContract.Method.ACTIONBAR, "user");
                     return;

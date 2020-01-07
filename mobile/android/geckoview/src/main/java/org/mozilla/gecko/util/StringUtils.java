@@ -75,6 +75,18 @@ public class StringUtils {
 
 
 
+    public static boolean queryExists(final String inputURL) {
+        if (inputURL == null) {
+            return false;
+        }
+        return inputURL.contains("%s") || inputURL.contains("%S");
+    }
+
+    
+
+
+
+
 
     public static String stripRef(final String inputURL) {
         if (inputURL == null) {

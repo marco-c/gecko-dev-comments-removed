@@ -140,6 +140,25 @@ public class TestStringUtils {
 
 
     }
+
+    @Test
+    public void testQueryExists(){
+        
+        assertFalse(StringUtils.queryExists(""));
+
+        
+        assertFalse(StringUtils.queryExists("mozilla.org"));
+        assertFalse(StringUtils.queryExists("https://www.google.com/"));
+        assertTrue(StringUtils.queryExists("https://www.google.com/search?q=%s"));
+        assertTrue(StringUtils.queryExists("https://www.google.com/search?q=%S"));
+        assertTrue(StringUtils.queryExists("%s"));
+        assertTrue(StringUtils.queryExists("%S"));
+
+        
+        assertTrue(StringUtils.queryExists("%s%S"));
+        assertTrue(StringUtils.queryExists("https://www.google.com/search?q=%s%S"));
+    }
+
     @Test
     public void testPathStartIndex(){
         
