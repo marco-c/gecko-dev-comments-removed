@@ -1669,6 +1669,7 @@ GlobalHelperThreadState::finishParseTask(JSContext* cx, ParseTaskKind kind, void
     if (!script) {
         
         
+        MOZ_DIAGNOSTIC_ASSERT(false);
         ReportOutOfMemory(cx);
         return nullptr;
     }
@@ -1705,6 +1706,7 @@ GlobalHelperThreadState::finishParseTask(JSContext* cx, ParseTaskKind kind, void
     if (scripts.length() != expectedLength) {
         
         
+        MOZ_DIAGNOSTIC_ASSERT(false);
         ReportOutOfMemory(cx);
         return false;
     }
