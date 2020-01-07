@@ -119,6 +119,7 @@ MOZ_END_EXTERN_C
 
 
 
+
 #if defined(XP_MACOSX)
 #  define MOZALLOC_EXPORT_NEW MFBT_API
 #else
@@ -196,50 +197,6 @@ MOZALLOC_EXPORT_NEW MOZ_ALWAYS_INLINE_EVEN_DEBUG
 void operator delete[](void* ptr, const std::nothrow_t&) MOZALLOC_THROW_IF_HAS_EXCEPTIONS
 {
     return free_impl(ptr);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-MOZ_ALWAYS_INLINE_EVEN_DEBUG
-void* operator new(size_t size, const mozilla::fallible_t&) MOZALLOC_THROW_IF_HAS_EXCEPTIONS
-{
-    return malloc_impl(size);
-}
-
-MOZ_ALWAYS_INLINE_EVEN_DEBUG
-void* operator new[](size_t size, const mozilla::fallible_t&) MOZALLOC_THROW_IF_HAS_EXCEPTIONS
-{
-    return malloc_impl(size);
-}
-
-MOZ_ALWAYS_INLINE_EVEN_DEBUG
-void operator delete(void* ptr, const mozilla::fallible_t&) MOZALLOC_THROW_IF_HAS_EXCEPTIONS
-{
-    free_impl(ptr);
-}
-
-MOZ_ALWAYS_INLINE_EVEN_DEBUG
-void operator delete[](void* ptr, const mozilla::fallible_t&) MOZALLOC_THROW_IF_HAS_EXCEPTIONS
-{
-    free_impl(ptr);
 }
 
 

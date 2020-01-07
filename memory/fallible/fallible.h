@@ -48,18 +48,14 @@
 
 
 
+
+#include <new>
+
 namespace mozilla {
 
-struct fallible_t { };
+using fallible_t = std::nothrow_t;
 
-
-
-
-
-
-
-
-extern const fallible_t fallible;
+const fallible_t fallible = std::nothrow;
 
 } 
 
