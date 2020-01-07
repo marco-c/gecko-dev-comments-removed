@@ -20,20 +20,6 @@ types.addDictType("symboliterator.ownsymbols", {
   descriptor: "nullable:object.descriptor",
 });
 
-
-types.addDictType("object.descriptor", {
-  configurable: "boolean",
-  enumerable: "boolean",
-  
-  value: "nullable:json",
-  
-  writable: "nullable:boolean",
-  
-  get: "nullable:json",
-  
-  set: "nullable:json",
-});
-
 const symbolIteratorSpec = generateActorSpec({
   typeName: "symbolIterator",
 

@@ -6,92 +6,68 @@
 
 "use strict";
 
-const { ObjectActor } = require("devtools/server/actors/object");
+const { extend } = require("devtools/shared/extend");
+const { ObjectActorProto } = require("devtools/server/actors/object");
+const protocol = require("devtools/shared/protocol");
+const { ActorClassWithSpec } = protocol;
+const { objectSpec } = require("devtools/shared/specs/object");
 
 
 
 
 
 
+const proto = extend({}, ObjectActorProto);
 
-
-function PauseScopedActor() {
-}
-
-
-
-
-
-
-
-
-PauseScopedActor.withPaused = function(method) {
-  return function() {
-    if (this.isPaused()) {
-      return method.apply(this, arguments);
-    }
-    return this._wrongState();
-  };
-};
-
-PauseScopedActor.prototype = {
-
+Object.assign(proto, {
+  typeName: "pausedobj",
   
 
 
-  isPaused: function() {
-    
-    
-    
-    return this.threadActor ? this.threadActor.state === "paused" : true;
+
+  initialize: function(obj, hooks, conn) {
+    ObjectActorProto.initialize.call(this, obj, hooks, conn);
+    this.hooks.promote = hooks.promote;
+    this.hooks.isThreadLifetimePool = hooks.isThreadLifetimePool;
   },
 
-  
+  isPaused: function() {
+    return this.threadActor
+      ? this.threadActor.state === "paused"
+      : true;
+  },
 
+  withPaused: function(method) {
+    return function() {
+      if (this.isPaused()) {
+        return method.apply(this, arguments);
+      }
 
-  _wrongState: function() {
-    return {
-      error: "wrongState",
-      message: this.constructor.name +
-        " actors can only be accessed while the thread is paused."
+      return {
+        error: "wrongState",
+        message: this.constructor.name +
+          " actors can only be accessed while the thread is paused."
+      };
     };
   }
-};
+});
 
+const guardWithPaused = [
+  "decompile",
+  "displayString",
+  "ownPropertyNames",
+  "parameterNames",
+  "property",
+  "prototype",
+  "prototypeAndProperties",
+  "scope",
+];
 
+guardWithPaused.forEach(f => {
+  proto[f] = proto.withPaused(ObjectActorProto[f]);
+});
 
-
-
-function PauseScopedObjectActor(obj, hooks) {
-  ObjectActor.call(this, obj, hooks);
-  this.hooks.promote = hooks.promote;
-  this.hooks.isThreadLifetimePool = hooks.isThreadLifetimePool;
-}
-
-PauseScopedObjectActor.prototype = Object.create(PauseScopedActor.prototype);
-
-Object.assign(PauseScopedObjectActor.prototype, ObjectActor.prototype);
-
-Object.assign(PauseScopedObjectActor.prototype, {
-  constructor: PauseScopedObjectActor,
-  actorPrefix: "pausedobj",
-
-  onOwnPropertyNames:
-    PauseScopedActor.withPaused(ObjectActor.prototype.onOwnPropertyNames),
-
-  onPrototypeAndProperties:
-    PauseScopedActor.withPaused(ObjectActor.prototype.onPrototypeAndProperties),
-
-  onPrototype: PauseScopedActor.withPaused(ObjectActor.prototype.onPrototype),
-  onProperty: PauseScopedActor.withPaused(ObjectActor.prototype.onProperty),
-  onDecompile: PauseScopedActor.withPaused(ObjectActor.prototype.onDecompile),
-
-  onDisplayString:
-    PauseScopedActor.withPaused(ObjectActor.prototype.onDisplayString),
-
-  onParameterNames:
-    PauseScopedActor.withPaused(ObjectActor.prototype.onParameterNames),
-
+Object.assign(proto, {
   
 
 
@@ -99,7 +75,7 @@ Object.assign(PauseScopedObjectActor.prototype, {
 
 
 
-  onThreadGrip: PauseScopedActor.withPaused(function(request) {
+  threadGrip: proto.withPaused(function(request) {
     this.hooks.promote();
     return {};
   }),
@@ -110,19 +86,16 @@ Object.assign(PauseScopedObjectActor.prototype, {
 
 
 
-  onRelease: PauseScopedActor.withPaused(function(request) {
+  destroy: proto.withPaused(function(request) {
     if (this.hooks.isThreadLifetimePool()) {
       return { error: "notReleasable",
                message: "Only thread-lifetime actors can be released." };
     }
 
-    this.release();
-    return {};
+    return protocol.Actor.prototype.destroy.call(this);
   }),
 });
 
-Object.assign(PauseScopedObjectActor.prototype.requestTypes, {
-  "threadGrip": PauseScopedObjectActor.prototype.onThreadGrip,
-});
+exports.PauseScopedObjectActor = ActorClassWithSpec(objectSpec, proto);
+  
 
-exports.PauseScopedObjectActor = PauseScopedObjectActor;

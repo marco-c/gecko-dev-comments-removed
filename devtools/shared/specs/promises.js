@@ -12,7 +12,7 @@ const {
 
 
 types.addType("ObjectActor", {
-  write: actor => actor.grip(),
+  write: actor => actor.form(),
   read: grip => grip
 });
 
