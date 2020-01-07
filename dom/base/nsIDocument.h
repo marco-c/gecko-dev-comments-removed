@@ -1406,6 +1406,10 @@ public:
   mozilla::Maybe<mozilla::dom::ServiceWorkerDescriptor> GetController() const;
 
 protected:
+  void DispatchPageTransition(mozilla::dom::EventTarget* aDispatchTarget,
+                              const nsAString& aType,
+                              bool aPersisted);
+
   
   
   void DestroyElementMaps();
@@ -2358,7 +2362,7 @@ public:
 
 
   virtual void OnPageShow(bool aPersisted,
-                          mozilla::dom::EventTarget* aDispatchStartTarget) = 0;
+                          mozilla::dom::EventTarget* aDispatchStartTarget);
 
   
 
@@ -2372,8 +2376,8 @@ public:
 
 
 
-  virtual void OnPageHide(bool aPersisted,
-                          mozilla::dom::EventTarget* aDispatchStartTarget) = 0;
+  void OnPageHide(bool aPersisted,
+                  mozilla::dom::EventTarget* aDispatchStartTarget);
 
   
 
