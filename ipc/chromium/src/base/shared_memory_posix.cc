@@ -12,15 +12,11 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#ifdef ANDROID
-#include <linux/ashmem.h>
-#endif
-
-#include "base/eintr_wrapper.h"
+#include "base/file_util.h"
 #include "base/logging.h"
+#include "base/platform_thread.h"
 #include "base/string_util.h"
-#include "mozilla/Atomics.h"
-#include "prenv.h"
+#include "mozilla/UniquePtr.h"
 
 namespace base {
 
@@ -53,28 +49,20 @@ SharedMemoryHandle SharedMemory::NULLHandle() {
   return SharedMemoryHandle();
 }
 
+namespace {
 
-bool SharedMemory::AppendPosixShmPrefix(std::string* str, pid_t pid)
-{
-#if defined(ANDROID) || defined(SHM_ANON)
-  return false;
-#else
-  *str += '/';
-#ifdef OS_LINUX
-  
-  
-  
-  
-  static const char* const kSnap = PR_GetEnv("SNAP_NAME");
-  if (kSnap) {
-    StringAppendF(str, "snap.%s.", kSnap);
+
+class ScopedFILEClose {
+ public:
+  inline void operator()(FILE* x) const {
+    if (x) {
+      fclose(x);
+    }
   }
-#endif 
-  
-  
-  StringAppendF(str, "org.mozilla.ipc.%d.", static_cast<int>(pid));
-  return true;
-#endif 
+};
+
+typedef mozilla::UniquePtr<FILE, ScopedFILEClose> ScopedFILE;
+
 }
 
 bool SharedMemory::Create(size_t size) {
@@ -83,62 +71,37 @@ bool SharedMemory::Create(size_t size) {
   DCHECK(size > 0);
   DCHECK(mapped_file_ == -1);
 
-  int fd;
-  bool needs_truncate = true;
+  ScopedFILE file_closer;
+  FILE *fp;
 
-#ifdef ANDROID
+  FilePath path;
+  fp = file_util::CreateAndOpenTemporaryShmemFile(&path);
+
   
-  fd = open("/" ASHMEM_NAME_DEF, O_RDWR, 0600);
-  if (fd < 0) {
-    CHROMIUM_LOG(WARNING) << "failed to open shm: " << strerror(errno);
+  
+  
+  file_util::Delete(path);
+
+  if (fp == NULL)
     return false;
-  }
-  if (ioctl(fd, ASHMEM_SET_SIZE, size) != 0) {
-    CHROMIUM_LOG(WARNING) << "failed to set shm size: " << strerror(errno);
-    close(fd);
+  file_closer.reset(fp);  
+
+  
+  
+  
+  
+  
+  
+  
+  if (ftruncate(fileno(fp), size) != 0)
     return false;
-  }
-  needs_truncate = false;
-#elif defined(SHM_ANON)
   
-  
-  fd = shm_open(SHM_ANON, O_RDWR, 0600);
-#else
-  
-  do {
-    
-    
-    static mozilla::Atomic<size_t> sNameCounter;
-    std::string name;
-    CHECK(AppendPosixShmPrefix(&name, getpid()));
-    StringAppendF(&name, "%zu", sNameCounter++);
-    
-    fd = HANDLE_EINTR(shm_open(name.c_str(), O_RDWR | O_CREAT | O_EXCL, 0600));
-    if (fd >= 0) {
-      if (shm_unlink(name.c_str()) != 0) {
-        
-        
-        DLOG(FATAL) << "failed to unlink shm: " << strerror(errno);
-        return false;
-      }
-    }
-  } while (fd < 0 && errno == EEXIST);
-#endif
-
-  if (fd < 0) {
-    CHROMIUM_LOG(WARNING) << "failed to open shm: " << strerror(errno);
+  if (fseeko(fp, size, SEEK_SET) != 0)
     return false;
-  }
 
-  if (needs_truncate) {
-    if (HANDLE_EINTR(ftruncate(fd, static_cast<off_t>(size))) != 0) {
-      CHROMIUM_LOG(WARNING) << "failed to set shm size: " << strerror(errno);
-      close(fd);
-      return false;
-    }
-  }
+  mapped_file_ = dup(fileno(fp));
+  DCHECK(mapped_file_ >= 0);
 
-  mapped_file_ = fd;
   max_size_ = size;
   return true;
 }
