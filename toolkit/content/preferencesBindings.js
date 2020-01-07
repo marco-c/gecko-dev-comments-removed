@@ -360,10 +360,21 @@ const Preferences = window.Preferences = (function() {
 
 
       function setValue(element, attribute, value) {
-        if (attribute in element)
+        if (attribute in element) {
           element[attribute] = value;
-        else
+        } else if (attribute === "checked") {
+          
+          
+          
+          if (value) {
+            
+            element.setAttribute(attribute, attribute);
+          } else {
+            element.removeAttribute(attribute);
+          }
+        } else {
           element.setAttribute(attribute, value);
+        }
       }
       if (aElement.localName == "checkbox" ||
           aElement.localName == "listitem")
