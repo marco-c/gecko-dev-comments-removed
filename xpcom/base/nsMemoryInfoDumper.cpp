@@ -805,12 +805,8 @@ nsMemoryInfoDumper::OpenDMDFile(const nsAString& aIdentifier, int aPid,
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "OpenANSIFileDesc failed");
 
   
-  nsCString path;
-  rv = dmdFile->GetNativePath(path);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-  dmd::StatusMsg("opened %s for writing\n", path.get());
+  dmd::StatusMsg("opened %s for writing\n",
+                 dmdFile->HumanReadablePath().get());
 
   return rv;
 }
