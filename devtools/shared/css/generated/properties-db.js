@@ -5930,7 +5930,9 @@ exports.CSS_PROPERTIES = {
     "subproperties": [
       "font-stretch"
     ],
-    "supports": [],
+    "supports": [
+      8
+    ],
     "values": [
       "condensed",
       "expanded",
@@ -8503,36 +8505,6 @@ exports.CSS_PROPERTIES = {
       "mandatory",
       "none",
       "proximity",
-      "unset"
-    ]
-  },
-  "shape-image-threshold": {
-    "isInherited": false,
-    "subproperties": [
-      "shape-image-threshold"
-    ],
-    "supports": [
-      7
-    ],
-    "values": [
-      "inherit",
-      "initial",
-      "unset"
-    ]
-  },
-  "shape-outside": {
-    "isInherited": false,
-    "subproperties": [
-      "shape-outside"
-    ],
-    "supports": [
-      4,
-      5,
-      11
-    ],
-    "values": [
-      "inherit",
-      "initial",
       "unset"
     ]
   },
