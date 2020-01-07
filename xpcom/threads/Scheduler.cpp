@@ -127,7 +127,6 @@ public:
   bool UseCooperativeScheduling() const { return mQueue->UseCooperativeScheduling(); }
 
   
-  static bool sPrefScheduler;
   static bool sPrefChaoticScheduling;
   static bool sPrefPreemption;
   static size_t sPrefThreadCount;
@@ -218,7 +217,6 @@ private:
   JSContext* mContexts[CooperativeThreadPool::kMaxThreads];
 };
 
-bool SchedulerImpl::sPrefScheduler = false;
 bool SchedulerImpl::sPrefChaoticScheduling = false;
 bool SchedulerImpl::sPrefPreemption = false;
 bool SchedulerImpl::sPrefUseMultipleQueues = false;
@@ -778,8 +776,7 @@ Scheduler::GetPrefs()
 {
   MOZ_ASSERT(XRE_IsParentProcess());
   nsPrintfCString result("%d%d%d%d,%d",
-                         Preferences::GetBool("dom.ipc.scheduler",
-                                              SchedulerImpl::sPrefScheduler),
+                         false, 
                          Preferences::GetBool("dom.ipc.scheduler.chaoticScheduling",
                                               SchedulerImpl::sPrefChaoticScheduling),
                          Preferences::GetBool("dom.ipc.scheduler.preemption",
@@ -807,7 +804,6 @@ Scheduler::SetPrefs(const char* aPrefs)
     return;
   }
 
-  SchedulerImpl::sPrefScheduler = aPrefs[0] == '1';
   SchedulerImpl::sPrefChaoticScheduling = aPrefs[1] == '1';
   SchedulerImpl::sPrefPreemption = aPrefs[2] == '1';
   SchedulerImpl::sPrefUseMultipleQueues = aPrefs[3] == '1';
@@ -818,7 +814,8 @@ Scheduler::SetPrefs(const char* aPrefs)
  bool
 Scheduler::IsSchedulerEnabled()
 {
-  return SchedulerImpl::sPrefScheduler;
+  
+  return false;
 }
 
  bool
