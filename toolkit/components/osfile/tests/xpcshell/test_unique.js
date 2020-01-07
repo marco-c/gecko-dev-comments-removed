@@ -15,7 +15,7 @@ function testFiles(filename) {
 
     
     let openedFile = await OS.File.openUnique(path);
-    do_print("\nCreate new file: " + openedFile.path);
+    info("\nCreate new file: " + openedFile.path);
     await openedFile.file.close();
     let exists = await OS.File.exists(openedFile.path);
     Assert.ok(exists);
@@ -25,7 +25,7 @@ function testFiles(filename) {
 
     
     openedFile = await OS.File.openUnique(path);
-    do_print("\nCreate unique HEX file: " + openedFile.path);
+    info("\nCreate unique HEX file: " + openedFile.path);
     await openedFile.file.close();
     exists = await OS.File.exists(openedFile.path);
     Assert.ok(exists);
@@ -44,7 +44,7 @@ function testFiles(filename) {
 
     
     openedFile = await OS.File.openUnique(path, {humanReadable: true});
-    do_print("\nCreate unique Human Readable file: " + openedFile.path);
+    info("\nCreate unique Human Readable file: " + openedFile.path);
     await openedFile.file.close();
     exists = await OS.File.exists(openedFile.path);
     Assert.ok(exists);
@@ -71,7 +71,7 @@ function testFiles(filename) {
       exn = ex;
     }
 
-    do_print("Ensure that this raises the correct error");
+    info("Ensure that this raises the correct error");
     Assert.ok(!!exn);
     Assert.ok(exn instanceof OS.File.Error);
     Assert.ok(exn.becauseExists);

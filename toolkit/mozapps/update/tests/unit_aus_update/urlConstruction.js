@@ -17,7 +17,7 @@ function run_test() {
   setupTestCommon();
 
   standardInit();
-  do_execute_soon(run_test_pt1);
+  executeSoon(run_test_pt1);
 }
 
 

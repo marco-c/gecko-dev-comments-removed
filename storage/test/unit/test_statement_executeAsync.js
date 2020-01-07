@@ -940,7 +940,7 @@ function run_next_test() {
   
   if (!_quit) {
     
-    do_execute_soon(_run_next_test);
+    executeSoon(_run_next_test);
   }
 }
 

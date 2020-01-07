@@ -39,7 +39,7 @@ add_task(async function test_javascript_match() {
   
   await PlacesUtils.history.remove(uri6);
 
-  do_print("Match everything");
+  info("Match everything");
   await check_autocomplete({
     search: "foo",
     searchParam: "enable-actions",
@@ -56,21 +56,21 @@ add_task(async function test_javascript_match() {
 
   
   
-  do_print("Match only typed history");
+  info("Match only typed history");
   await check_autocomplete({
     search: "foo ^ ~",
     matches: [ { uri: uri3, title: "title" },
                { uri: uri4, title: "title" } ]
   });
 
-  do_print("Drop-down empty search matches only typed history");
+  info("Drop-down empty search matches only typed history");
   await check_autocomplete({
     search: "",
     matches: [ { uri: uri3, title: "title" },
                { uri: uri4, title: "title" } ]
   });
 
-  do_print("Drop-down empty search matches only bookmarks");
+  info("Drop-down empty search matches only bookmarks");
   Services.prefs.setBoolPref("browser.urlbar.suggest.history", false);
   Services.prefs.setBoolPref("browser.urlbar.suggest.bookmark", true);
   await check_autocomplete({
@@ -81,7 +81,7 @@ add_task(async function test_javascript_match() {
                { uri: uri6, title: "title", style: ["bookmark"] } ]
   });
 
-  do_print("Drop-down empty search matches only open tabs");
+  info("Drop-down empty search matches only open tabs");
   Services.prefs.setBoolPref("browser.urlbar.suggest.bookmark", false);
   await check_autocomplete({
     search: "",

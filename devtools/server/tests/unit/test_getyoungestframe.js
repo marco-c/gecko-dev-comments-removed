@@ -14,7 +14,7 @@ function run_test() {
     
     
 
-    do_execute_soon(function () {
+    executeSoon(function () {
       try {
         Assert.ok(frame === dbg.getNewestFrame());
       } finally {

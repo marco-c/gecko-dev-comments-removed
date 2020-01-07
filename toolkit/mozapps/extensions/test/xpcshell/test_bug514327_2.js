@@ -33,7 +33,7 @@ function run_test() {
 
   
   Services.obs.notifyObservers(null, "addon-blocklist-closed");
-  do_execute_soon(function() {
+  executeSoon(function() {
     
     Assert.ok(blocklist.getPluginBlocklistState(plugin, "1", "1.9") == nsIBLS.STATE_OUTDATED);
   });

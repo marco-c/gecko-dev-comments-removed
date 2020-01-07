@@ -10,7 +10,7 @@ function run_test()
     
     
     
-    do_execute_soon(function() {
+    executeSoon(function() {
       syncWithCacheIOThread(function() {
 
         var expectedConsumption = 4096;

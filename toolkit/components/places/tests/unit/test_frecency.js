@@ -266,7 +266,7 @@ async function() {
 add_task(async function test_frecency() {
   
   Services.prefs.setBoolPref("browser.urlbar.autoFill", false);
-  do_register_cleanup(() => Services.prefs.clearUserPref("browser.urlbar.autoFill"));
+  registerCleanupFunction(() => Services.prefs.clearUserPref("browser.urlbar.autoFill"));
   
   Services.prefs.setBoolPref("browser.urlbar.suggest.history", true);
   Services.prefs.setBoolPref("browser.urlbar.suggest.bookmark", true);

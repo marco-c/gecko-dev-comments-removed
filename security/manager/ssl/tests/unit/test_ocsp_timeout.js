@@ -63,10 +63,10 @@ function add_one_test(useHardFail, timeoutPrefName, timeoutMilliseconds) {
   add_test(function() {
     let endTime = new Date();
     let timeDifference = endTime - startTime;
-    do_print(`useHardFail = ${useHardFail}`);
-    do_print(`startTime = ${startTime.getTime()} (${startTime})`);
-    do_print(`endTime = ${endTime.getTime()} (${endTime})`);
-    do_print(`timeDifference = ${timeDifference}ms`);
+    info(`useHardFail = ${useHardFail}`);
+    info(`startTime = ${startTime.getTime()} (${startTime})`);
+    info(`endTime = ${endTime.getTime()} (${endTime})`);
+    info(`timeDifference = ${timeDifference}ms`);
     
     
     

@@ -17,7 +17,7 @@ function run_test() {
   start_httpserver();
   setUpdateURL(gURLData + gHTTPHandlerPath);
   standardInit();
-  do_execute_soon(run_test_pt1);
+  executeSoon(run_test_pt1);
 }
 
 
@@ -53,7 +53,7 @@ function downloadListenerStop() {
   
   
   gUpdateManager.cleanupActiveUpdate();
-  do_execute_soon(waitForUpdateXMLFiles);
+  executeSoon(waitForUpdateXMLFiles);
 }
 
 

@@ -46,7 +46,7 @@ add_task(async function test_watch_multi_paths() {
 
   
   let changeCallback = function(changed) {
-      do_print(changed + " has changed.");
+      info(changed + " has changed.");
 
       detectedChanges += 1;
 
@@ -58,7 +58,7 @@ add_task(async function test_watch_multi_paths() {
 
   
   let watchSuccessCallback = function(resourcePath) {
-      do_print(resourcePath + " is being watched.");
+      info(resourcePath + " is being watched.");
 
       watchedResources += 1;
 
@@ -71,7 +71,7 @@ add_task(async function test_watch_multi_paths() {
 
   
   let unwatchSuccessCallback = function(resourcePath) {
-      do_print(resourcePath + " is being un-watched.");
+      info(resourcePath + " is being un-watched.");
 
       unwatchedResources += 1;
 
@@ -85,7 +85,7 @@ add_task(async function test_watch_multi_paths() {
   
   for (let i = 0; i < resourcesToWatch; i++) {
     let tmpSubDirPath = OS.Path.join(watchedDir, tempDirNameBase + i);
-    do_print("Creating the " + tmpSubDirPath + " directory.");
+    info("Creating the " + tmpSubDirPath + " directory.");
     await OS.File.makeDir(tmpSubDirPath);
     watcher.addPath(tmpSubDirPath, changeCallback, deferredChanges.reject, watchSuccessCallback);
   }

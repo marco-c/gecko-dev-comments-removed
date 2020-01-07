@@ -62,9 +62,9 @@ add_task(async function test_onlyBookmarked() {
   
   
   
-  do_print("begin first test");
+  info("begin first test");
   compareArrayToResult(testData, root);
-  do_print("end first test");
+  info("end first test");
 
   
   var liveUpdateTestData = [
@@ -92,9 +92,9 @@ add_task(async function test_onlyBookmarked() {
   testData.push(liveUpdateTestData[1]);
 
   
-  do_print("begin live-update test");
+  info("begin live-update test");
   compareArrayToResult(testData, root);
-  do_print("end live-update test");
+  info("end live-update test");
 
 
 

@@ -61,7 +61,7 @@ add_task(async function test_kill_race() {
   
   await OS.File.exists("foo.foo");
 
-  do_print("issuing first request");
+  info("issuing first request");
   let firstRequest = OS.File.exists("foo.bar"); 
   let secondRequest;
   let secondResolved = false;
@@ -72,14 +72,14 @@ add_task(async function test_kill_race() {
   
   
   Scheduler.queue.then(function() {
-    do_print("issuing second request");
+    info("issuing second request");
     secondRequest = OS.File.exists("foo.baz");
     secondRequest.then(function() {
       secondResolved = true;
     });
   });
 
-  do_print("issuing kill request");
+  info("issuing kill request");
   let killRequest = Scheduler.kill({ reset: true, shutdown: false });
 
   

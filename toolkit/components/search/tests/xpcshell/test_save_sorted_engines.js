@@ -34,7 +34,7 @@ add_task(async function test_save_sorted_engines() {
 
   
   await promiseAfterCache();
-  do_print("Commit complete after moveEngine");
+  info("Commit complete after moveEngine");
 
   
   let metadata = await promiseEngineMetadata();
@@ -44,7 +44,7 @@ add_task(async function test_save_sorted_engines() {
   
   search.removeEngine(engine1);
   await promiseAfterCache();
-  do_print("Commit complete after removeEngine");
+  info("Commit complete after removeEngine");
 
   
   metadata = await promiseEngineMetadata();
@@ -54,7 +54,7 @@ add_task(async function test_save_sorted_engines() {
   search.addEngineWithDetails("foo", "", "foo", "", "GET",
                               "http://searchget/?search={searchTerms}");
   await promiseAfterCache();
-  do_print("Commit complete after addEngineWithDetails");
+  info("Commit complete after addEngineWithDetails");
 
   metadata = await promiseEngineMetadata();
   Assert.equal(metadata.foo.alias, "foo");

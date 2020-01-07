@@ -5,11 +5,11 @@
 
 
 function run_test() {
-  do_print("Setting up test");
+  info("Setting up test");
 
   useHttpServer();
 
-  do_print("Test starting");
+  info("Test starting");
   run_next_test();
 }
 
@@ -95,40 +95,40 @@ add_task(async function test_hasEngineWithURL() {
   
   
   checkEngineState(false, UNSORTED_ENGINE);
-  do_print("The unsorted version of the test engine does not exist.");
+  info("The unsorted version of the test engine does not exist.");
   checkEngineState(false, SORTED_ENGINE);
-  do_print("The sorted version of the test engine does not exist.");
+  info("The sorted version of the test engine does not exist.");
 
   
   checkEngineState(false, SORTED_ENGINE_METHOD_CHANGE);
   checkEngineState(false, SORTED_ENGINE_FORMURL_CHANGE);
   checkEngineState(false, SORTED_ENGINE_QUERYPARM_CHANGE);
-  do_print("There are no modified versions of the sorted test engine.");
+  info("There are no modified versions of the sorted test engine.");
 
   
   checkEngineState(false, SORTED_ENGINE_NAME_CHANGE);
-  do_print("There is no NAME modified version of the sorted test engine.");
+  info("There is no NAME modified version of the sorted test engine.");
 
 
   
   addEngineWithParams(UNSORTED_ENGINE);
-  do_print("The unsorted engine has been added.");
+  info("The unsorted engine has been added.");
 
 
   
   
   checkEngineState(true, UNSORTED_ENGINE);
-  do_print("The unsorted version of the test engine now exists.");
+  info("The unsorted version of the test engine now exists.");
   checkEngineState(true, SORTED_ENGINE);
-  do_print("The sorted version of the same test engine also now exists.");
+  info("The sorted version of the same test engine also now exists.");
 
   
   checkEngineState(false, SORTED_ENGINE_METHOD_CHANGE);
   checkEngineState(false, SORTED_ENGINE_FORMURL_CHANGE);
   checkEngineState(false, SORTED_ENGINE_QUERYPARM_CHANGE);
-  do_print("There are still no modified versions of the sorted test engine.");
+  info("There are still no modified versions of the sorted test engine.");
 
   
   checkEngineState(true, SORTED_ENGINE_NAME_CHANGE);
-  do_print("There IS now a NAME modified version of the sorted test engine.");
+  info("There IS now a NAME modified version of the sorted test engine.");
 });

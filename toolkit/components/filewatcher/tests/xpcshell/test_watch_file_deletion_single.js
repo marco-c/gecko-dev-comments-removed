@@ -38,7 +38,7 @@ add_task(async function test_watch_single_path_file_deletion() {
   await promiseAddPath(watcher, watchedDir, deferred.resolve, deferred.reject);
 
   
-  do_print("Removing " + tmpFilePath);
+  info("Removing " + tmpFilePath);
   await OS.File.remove(tmpFilePath);
 
   

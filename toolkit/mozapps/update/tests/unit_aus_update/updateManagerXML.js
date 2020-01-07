@@ -169,12 +169,12 @@ function run_test() {
   
   
   gUpdateManager.cleanupActiveUpdate();
-  do_execute_soon(waitForUpdateXMLFiles);
+  executeSoon(waitForUpdateXMLFiles);
 }
 
 
 
 
 function waitForUpdateXMLFilesFinished() {
-  do_execute_soon(doTestFinish);
+  executeSoon(doTestFinish);
 }

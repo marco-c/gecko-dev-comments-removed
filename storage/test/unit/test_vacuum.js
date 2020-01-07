@@ -315,6 +315,6 @@ function run_next_test() {
     
     Services.prefs.setIntPref("storage.vacuum.last.testVacuum.sqlite",
                               parseInt(Date.now() / 1000 - 31 * 86400));
-    do_execute_soon(TESTS.shift());
+    executeSoon(TESTS.shift());
   }
 }

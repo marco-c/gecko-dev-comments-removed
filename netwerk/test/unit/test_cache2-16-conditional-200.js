@@ -11,7 +11,7 @@ function run_test()
           asyncOpenCacheEntry("http://200/", "disk", Ci.nsICacheStorage.OPEN_NORMALLY, null,
             new OpenCallback(REVAL, "21m", "21d", function(entry) {
               
-              do_execute_soon(function() {
+              executeSoon(function() {
                 var entry2 = entry.recreate();
 
                 

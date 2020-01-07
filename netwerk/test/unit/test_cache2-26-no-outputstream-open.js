@@ -6,7 +6,7 @@ function run_test()
   asyncOpenCacheEntry("http://no-data/", "disk", Ci.nsICacheStorage.OPEN_NORMALLY, null,
     new OpenCallback(NEW|METAONLY|DONTSETVALID|WAITFORWRITE, "meta", "", function(entry) {
       
-      do_execute_soon(() => {
+      executeSoon(() => {
         Cu.forceGC(); 
 
         asyncOpenCacheEntry("http://no-data/", "disk", Ci.nsICacheStorage.OPEN_NORMALLY, null,

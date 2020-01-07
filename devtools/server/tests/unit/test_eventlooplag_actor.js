@@ -27,7 +27,7 @@ function run_test() {
       front.start().then(success => {
         Assert.ok(success);
         front.once("event-loop-lag", gotLagEvent);
-        do_execute_soon(lag);
+        executeSoon(lag);
       });
     });
   });
@@ -46,7 +46,7 @@ function run_test() {
   
   
   function gotLagEvent(time) {
-    do_print("lag: " + time);
+    info("lag: " + time);
     Assert.ok(time >= threshold);
     front.stop().then(() => {
       finishClient(client);

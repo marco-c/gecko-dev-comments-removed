@@ -34,25 +34,25 @@ function* do_run_test() {
   
   
   
-  do_execute_soon(function() {
+  executeSoon(function() {
     pm.addFromPrincipal(principal, permType, pm.ALLOW_ACTION, pm.EXPIRE_TIME, now + 100000);
   });
   yield;
 
   
-  do_execute_soon(function() {
+  executeSoon(function() {
     pm.addFromPrincipal(principal, permType, pm.ALLOW_ACTION, pm.EXPIRE_TIME, now + 200000);
   });
   yield;
 
   
-  do_execute_soon(function() {
+  executeSoon(function() {
     pm.removeFromPrincipal(principal, permType);
   });
   yield;
 
   
-  do_execute_soon(function() {
+  executeSoon(function() {
     pm.removeAll();
   });
   yield;

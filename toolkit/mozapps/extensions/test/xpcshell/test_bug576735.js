@@ -60,7 +60,7 @@ function run_test() {
       
       Assert.notEqual(a2_2, null);
 
-      do_execute_soon(do_test_finished);
+      executeSoon(do_test_finished);
     });
   }));
 }

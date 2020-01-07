@@ -36,7 +36,7 @@ function run_test()
     
     gc();
     gc();
-    do_execute_soon(() => {
+    executeSoon(() => {
       gc();
       gc();
       log_("purging");

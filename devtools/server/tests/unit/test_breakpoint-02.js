@@ -52,7 +52,7 @@ function test_breakpoint_running() {
       
       Assert.notEqual(response.error, "noScript");
 
-      do_execute_soon(function () {
+      executeSoon(function () {
         gClient.close().then(gCallback);
       });
     });

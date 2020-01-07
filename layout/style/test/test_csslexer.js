@@ -108,7 +108,7 @@ function test_lexer_eofchar(domutils, cssText, argText, expectedAppend,
     
   }
 
-  do_print("EOF char test, input = " + cssText);
+  info("EOF char test, input = " + cssText);
 
   let result = lexer.performEOFFixup(argText, true);
   equal(result, expectedAppend);

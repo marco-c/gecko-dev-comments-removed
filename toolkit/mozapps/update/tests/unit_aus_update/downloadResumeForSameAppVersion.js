@@ -29,7 +29,7 @@ function run_test() {
   
   gAUS.pauseDownload();
   gUpdateManager.cleanupActiveUpdate();
-  do_execute_soon(waitForUpdateXMLFiles);
+  executeSoon(waitForUpdateXMLFiles);
 }
 
 

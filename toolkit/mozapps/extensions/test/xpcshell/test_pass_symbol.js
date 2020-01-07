@@ -32,7 +32,7 @@ add_task(async function() {
   
   
   
-  do_execute_soon(function() {
+  executeSoon(function() {
     
     Assert.ok(Services.prefs.getBoolPref(PASS_PREF));
     Assert.ok(Services.prefs.getBoolPref(FAIL_BOGUS_PREF));

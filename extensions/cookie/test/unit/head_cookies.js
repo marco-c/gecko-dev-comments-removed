@@ -49,7 +49,7 @@ function do_run_generator(generator)
 
 function do_finish_generator_test(generator)
 {
-  do_execute_soon(function() {
+  executeSoon(function() {
     generator.return();
     do_test_finished();
   });

@@ -264,7 +264,7 @@ add_task(async function run_test_1() {
   
   
   shutdownManager();
-  do_print("Locking " + gExtensionsJSON.path);
+  info("Locking " + gExtensionsJSON.path);
   let options = {
     winShare: 0
   };
@@ -461,7 +461,7 @@ add_task(async function run_test_1() {
    } catch (e) {
      
    }
-   do_print("Unlocking " + gExtensionsJSON.path);
+   info("Unlocking " + gExtensionsJSON.path);
    await file.close();
    gExtensionsJSON.permissions = filePermissions;
    await promiseStartupManager();

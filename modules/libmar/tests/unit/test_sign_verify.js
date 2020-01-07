@@ -576,5 +576,5 @@ function run_test() {
   
   Assert.equal(run_tests(tests), Object.keys(tests).length - 1);
 
-  do_register_cleanup(cleanup);
+  registerCleanupFunction(cleanup);
 }

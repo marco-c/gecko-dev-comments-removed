@@ -13,7 +13,7 @@
 
 
 function check_invariants(aGuid) {
-  do_print("Checking guid '" + aGuid + "'");
+  info("Checking guid '" + aGuid + "'");
 
   do_check_valid_places_guid(aGuid);
 }

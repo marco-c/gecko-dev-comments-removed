@@ -64,12 +64,12 @@ var RootActor = protocol.ActorClassWithSpec(rootSpec, {
     
     let check = () => {
       if ((this.sequence - sequence) < toWait) {
-        do_execute_soon(check);
+        executeSoon(check);
         return;
       }
       deferred.resolve(sequence);
     };
-    do_execute_soon(check);
+    executeSoon(check);
 
     return deferred.promise;
   },

@@ -53,7 +53,7 @@ add_task(async function test_execute() {
       
       
       
-      do_print("Could not construct URI for '" + currentURL + "'; ignoring");
+      info("Could not construct URI for '" + currentURL + "'; ignoring");
     }
     if (cantAddUri) {
       PlacesTestUtils.addVisits({uri: cantAddUri, referrer}).then(() => {

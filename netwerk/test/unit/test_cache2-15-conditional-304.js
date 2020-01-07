@@ -9,7 +9,7 @@ function run_test()
       asyncOpenCacheEntry("http://304/", "disk", Ci.nsICacheStorage.OPEN_NORMALLY, null,
         new OpenCallback(REVAL, "31m", "31d", function(entry) {
           
-          do_execute_soon(function() {
+          executeSoon(function() {
             entry.setValid(); 
           });
         })

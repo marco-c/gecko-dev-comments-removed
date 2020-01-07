@@ -85,7 +85,7 @@ function end_test() {
 
 
 function run_test_1() {
-  do_print("Testing with strict compatibility checking disabled");
+  info("Testing with strict compatibility checking disabled");
   Services.prefs.setBoolPref(PREF_EM_STRICT_COMPATIBILITY, false);
   AddonManager.getAddonByID("compatmode-normal@tests.mozilla.org", function(addon) {
     Assert.notEqual(addon, null);
@@ -111,7 +111,7 @@ function run_test_1() {
 
 
 function run_test_2() {
-  do_print("Testing with strict compatibility checking enabled");
+  info("Testing with strict compatibility checking enabled");
   Services.prefs.setBoolPref(PREF_EM_STRICT_COMPATIBILITY, true);
   AddonManager.getAddonByID("compatmode-strict@tests.mozilla.org", function(addon) {
     Assert.notEqual(addon, null);
@@ -137,7 +137,7 @@ function run_test_2() {
 
 
 function run_test_3() {
-  do_print("Testing with strict compatibility disabled, but addon opt-in");
+  info("Testing with strict compatibility disabled, but addon opt-in");
   Services.prefs.setBoolPref(PREF_EM_STRICT_COMPATIBILITY, false);
   AddonManager.getAddonByID("compatmode-strict-optin@tests.mozilla.org", function(addon) {
     Assert.notEqual(addon, null);
@@ -159,7 +159,7 @@ function run_test_3() {
 
 
 function run_test_4() {
-  do_print("Testing with all compatibility checking disabled");
+  info("Testing with all compatibility checking disabled");
   AddonManager.checkCompatibility = false;
   AddonManager.getAddonByID("compatmode-ignore@tests.mozilla.org", function(addon) {
     Assert.notEqual(addon, null);

@@ -76,12 +76,12 @@ function readServerContent(request, buffer)
   Assert.equal(buffer, responseContent);
   Assert.equal(cc.alternativeDataType, "");
 
-  do_execute_soon(() => {
+  executeSoon(() => {
     os = cc.openAlternativeOutputStream(altContentType);
     
     os.write(altContent, firstChunkSize);
 
-    do_execute_soon(openAltChannel);
+    executeSoon(openAltChannel);
   });
 }
 

@@ -82,7 +82,7 @@ function run_test() {
   Services.obs.addObserver(function(aSubject, aTopic, aData) {
     
     
-    do_execute_soon(checkBlacklist);
+    executeSoon(checkBlacklist);
   }, "blocklist-data-gfxItems");
 
   load_blocklist("test_gfxBlacklist_OSVersion.xml");

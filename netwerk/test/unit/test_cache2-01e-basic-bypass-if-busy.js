@@ -19,7 +19,7 @@ function run_test()
       
       
       
-      do_execute_soon(function() {
+      executeSoon(function() {
         Assert.ok(bypassed);
         finish_cache2_test();
       });

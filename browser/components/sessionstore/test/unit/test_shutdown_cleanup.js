@@ -37,7 +37,7 @@ add_task(async function setup() {
   await SessionFile.read();
 
   
-  do_register_cleanup(() => {
+  registerCleanupFunction(() => {
     Services.prefs.clearUserPref("browser.sessionstore.max_serialize_back");
     Services.prefs.clearUserPref("browser.sessionstore.max_serialize_forward");
   });

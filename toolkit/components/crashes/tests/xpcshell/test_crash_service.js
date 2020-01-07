@@ -142,7 +142,7 @@ add_task(async function test_addCrash_quitting() {
                 Ci.nsICrashService.CRASH_TYPE_CRASH, firstCrashId);
 
   
-  await new Promise((resolve) => { do_execute_soon(resolve); });
+  await new Promise((resolve) => { executeSoon(resolve); });
 
   
   let obs = cs.QueryInterface(Ci.nsIObserver);

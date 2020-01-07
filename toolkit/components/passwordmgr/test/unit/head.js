@@ -72,7 +72,7 @@ add_task(async function test_common_initialize()
   LoginTestUtils.clearData();
 
   
-  do_register_cleanup(() => LoginTestUtils.clearData());
+  registerCleanupFunction(() => LoginTestUtils.clearData());
 });
 
 

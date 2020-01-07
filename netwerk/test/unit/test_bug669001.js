@@ -107,7 +107,7 @@ function nextTest()
 
   
   
-  do_execute_soon(function() {
+  executeSoon(function() {
     chan.asyncOpen2(new ChannelListener(checkAndShiftTest, null));
   });
 }

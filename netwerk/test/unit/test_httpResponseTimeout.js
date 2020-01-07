@@ -104,13 +104,13 @@ function setup_tests() {
   
   if (prefService.getBoolPref(kShortLivedKeepalivePref)) {
     prefService.setBoolPref(kShortLivedKeepalivePref, false);
-    do_register_cleanup(function() {
+    registerCleanupFunction(function() {
       prefService.setBoolPref(kShortLivedKeepalivePref, true);
     });
   }
   if (prefService.getBoolPref(kLongLivedKeepalivePref)) {
     prefService.setBoolPref(kLongLivedKeepalivePref, false);
-    do_register_cleanup(function() {
+    registerCleanupFunction(function() {
       prefService.setBoolPref(kLongLivedKeepalivePref, true);
     });
   }
@@ -137,7 +137,7 @@ function setup_http_server() {
   
   server.start(-1);
   baseURL = "http://localhost:" + server.identity.primaryPort + "/";
-  do_print("Using baseURL: " + baseURL);
+  info("Using baseURL: " + baseURL);
   server.registerPathHandler('/', function(metadata, response) {
     
     response.processAsync();
@@ -148,7 +148,7 @@ function setup_http_server() {
       response.finish();
     });
   });
-  do_register_cleanup(function() {
+  registerCleanupFunction(function() {
     server.stop(serverStopListener);
   });
 }

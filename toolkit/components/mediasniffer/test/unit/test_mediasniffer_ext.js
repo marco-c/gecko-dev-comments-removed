@@ -47,7 +47,7 @@ const tests = [
 
 var listener = {
   onStartRequest(request, context) {
-    do_print("Sniffing " + tests[testRan].path);
+    info("Sniffing " + tests[testRan].path);
     Assert.equal(request.QueryInterface(Ci.nsIChannel).contentType, tests[testRan].expected);
   },
 

@@ -53,7 +53,7 @@ function Call_PpbFunc(obj) {
 
 let instance = new PPAPIInstance(instanceId, rt, info, new Mock_Window(), null , null, new Mock_MessageManager());
 
-do_register_cleanup(function () {
+registerCleanupFunction(function () {
   resHandler.setSubstitution("ppapi.js", null);
 })
 

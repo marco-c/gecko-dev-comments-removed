@@ -84,7 +84,7 @@ add_task(async function reorder() {
   }
 
 
-  do_print("Test partial sorting");
+  info("Test partial sorting");
   {
     
     

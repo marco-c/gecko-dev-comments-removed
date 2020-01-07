@@ -52,7 +52,7 @@ function readTestData(testFile) {
 }
 
 function iterateDir(dir, recurse, callback) {
-  do_print("Iterate " + dir.leafName);
+  info("Iterate " + dir.leafName);
   let entries = dir.directoryEntries;
 
   

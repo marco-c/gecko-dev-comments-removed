@@ -117,12 +117,12 @@ add_task(async function test_export_import_excluded_file() {
   await BookmarkJSONUtils.exportToFile(jsonFile);
 
   
-  do_print("Restoring json file");
+  info("Restoring json file");
   await BookmarkJSONUtils.importFromFile(jsonFile, true);
 
   
   
-  do_print("Validating...");
+  info("Validating...");
   test.validate(false);
 });
 

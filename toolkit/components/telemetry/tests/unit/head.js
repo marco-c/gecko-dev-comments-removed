@@ -359,7 +359,7 @@ if (runningInParent) {
 
   
   
-  do_register_cleanup(() => TelemetrySend.shutdown());
+  registerCleanupFunction(() => TelemetrySend.shutdown());
 }
 
 TelemetryController.testInitLogging();
