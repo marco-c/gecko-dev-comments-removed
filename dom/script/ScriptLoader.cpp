@@ -3041,7 +3041,7 @@ ScriptLoader::PrepareLoadedRequest(ScriptLoadRequest* aRequest,
   
   
   
-  if (aRequest->mCORSMode == CORS_NONE) {
+  if (!aRequest->IsModuleRequest() && aRequest->mCORSMode == CORS_NONE) {
     rv = nsContentUtils::GetSecurityManager()->
       GetChannelResultPrincipal(channel, getter_AddRefs(aRequest->mOriginPrincipal));
     NS_ENSURE_SUCCESS(rv, rv);
