@@ -476,7 +476,7 @@ nsXULTemplateBuilder::Init()
 }
 
 NS_IMETHODIMP
-nsXULTemplateBuilder::CreateContents(Element* aElement, bool aForceCreation)
+nsXULTemplateBuilder::CreateContents(nsIContent* aElement, bool aForceCreation)
 {
     return NS_OK;
 }
@@ -575,7 +575,7 @@ nsXULTemplateBuilder::UpdateResult(nsIXULTemplateResult* aOldResult,
     
     
 
-    nsAutoPtr<nsCOMArray<Element> > insertionPoints;
+    nsAutoPtr<nsCOMArray<nsIContent> > insertionPoints;
     bool mayReplace = GetInsertionLocations(aOldResult ? aOldResult : aNewResult,
                                               getter_Transfers(insertionPoints));
     if (! mayReplace)
@@ -632,7 +632,7 @@ nsXULTemplateBuilder::UpdateResult(nsIXULTemplateResult* aOldResult,
         
         uint32_t count = insertionPoints->Count();
         for (uint32_t t = 0; t < count; t++) {
-            nsCOMPtr<Element> insertionPoint = insertionPoints->SafeObjectAt(t);
+            nsCOMPtr<nsIContent> insertionPoint = insertionPoints->SafeObjectAt(t);
             if (insertionPoint) {
                 rv = UpdateResultInContainer(aOldResult, aNewResult, queryset,
                                              oldId, newId, insertionPoint);
@@ -657,7 +657,7 @@ nsXULTemplateBuilder::UpdateResultInContainer(nsIXULTemplateResult* aOldResult,
                                               nsTemplateQuerySet* aQuerySet,
                                               nsIRDFResource* aOldId,
                                               nsIRDFResource* aNewId,
-                                              Element* aInsertionPoint)
+                                              nsIContent* aInsertionPoint)
 {
     
     
@@ -1704,11 +1704,12 @@ nsXULTemplateBuilder::SubstituteTextReplaceVariable(nsXULTemplateBuilder* aThis,
 bool
 nsXULTemplateBuilder::IsTemplateElement(nsIContent* aContent)
 {
-    return aContent->NodeInfo()->Equals(nsGkAtoms::_template, kNameSpaceID_XUL);
+    return aContent->NodeInfo()->Equals(nsGkAtoms::_template,
+                                        kNameSpaceID_XUL);
 }
 
 nsresult
-nsXULTemplateBuilder::GetTemplateRoot(Element** aResult)
+nsXULTemplateBuilder::GetTemplateRoot(nsIContent** aResult)
 {
     NS_PRECONDITION(mRoot != nullptr, "not initialized");
     if (! mRoot)
@@ -1734,7 +1735,7 @@ nsXULTemplateBuilder::GetTemplateRoot(Element** aResult)
         domDoc->GetElementById(templateID, getter_AddRefs(domElement));
 
         if (domElement) {
-            nsCOMPtr<Element> content = do_QueryInterface(domElement);
+            nsCOMPtr<nsIContent> content = do_QueryInterface(domElement);
             NS_ENSURE_STATE(content &&
                             !nsContentUtils::ContentIsDescendantOf(mRoot,
                                                                    content));
@@ -1750,7 +1751,7 @@ nsXULTemplateBuilder::GetTemplateRoot(Element** aResult)
          child = child->GetNextSibling()) {
 
         if (IsTemplateElement(child)) {
-            NS_ADDREF(*aResult = child->AsElement());
+            NS_ADDREF(*aResult = child);
             return NS_OK;
         }
     }
@@ -1763,7 +1764,7 @@ nsXULTemplateBuilder::GetTemplateRoot(Element** aResult)
     FlattenedChildIterator iter(mRoot);
     for (nsIContent* child = iter.GetNextChild(); child; child = iter.GetNextChild()) {
         if (IsTemplateElement(child)) {
-            NS_ADDREF(*aResult = child->AsElement());
+            NS_ADDREF(*aResult = child);
             return NS_OK;
         }
     }
@@ -1775,7 +1776,7 @@ nsXULTemplateBuilder::GetTemplateRoot(Element** aResult)
 nsresult
 nsXULTemplateBuilder::CompileQueries()
 {
-    nsCOMPtr<Element> tmpl;
+    nsCOMPtr<nsIContent> tmpl;
     GetTemplateRoot(getter_AddRefs(tmpl));
     if (! tmpl)
         return NS_OK;
@@ -1866,7 +1867,7 @@ nsXULTemplateBuilder::CompileQueries()
 }
 
 nsresult
-nsXULTemplateBuilder::CompileTemplate(Element* aTemplate,
+nsXULTemplateBuilder::CompileTemplate(nsIContent* aTemplate,
                                       nsTemplateQuerySet* aQuerySet,
                                       bool aIsQuerySet,
                                       int32_t* aPriority,
@@ -1914,9 +1915,7 @@ nsXULTemplateBuilder::CompileTemplate(Element* aTemplate,
 
             hasQuerySet = true;
 
-            
-            rv = CompileTemplate(rulenode->AsElement(), aQuerySet, true,
-                                 aPriority, aCanUseTemplate);
+            rv = CompileTemplate(rulenode, aQuerySet, true, aPriority, aCanUseTemplate);
             if (NS_FAILED(rv))
                 return rv;
         }
@@ -1926,7 +1925,7 @@ nsXULTemplateBuilder::CompileTemplate(Element* aTemplate,
             continue;
 
         if (ni->Equals(nsGkAtoms::rule, kNameSpaceID_XUL)) {
-            RefPtr<Element> action;
+            nsCOMPtr<nsIContent> action;
             nsXULContentUtils::FindChildByTag(rulenode,
                                               kNameSpaceID_XUL,
                                               nsGkAtoms::action,
@@ -1960,22 +1959,20 @@ nsXULTemplateBuilder::CompileTemplate(Element* aTemplate,
                     }
 
                     if (aQuerySet->mCompiledQuery) {
-                        
-                        
-                        rv = CompileExtendedQuery(rulenode->AsElement(),
-                                                  action, memberVariable,
+                        rv = CompileExtendedQuery(rulenode, action, memberVariable,
                                                   aQuerySet);
                         if (NS_FAILED(rv))
                             return rv;
 
                         *aCanUseTemplate = true;
                     }
-                } else {
+                }
+                else {
                     
                     
                     
 
-                    RefPtr<Element> conditions;
+                    nsCOMPtr<nsIContent> conditions;
                     nsXULContentUtils::FindChildByTag(rulenode,
                                                       kNameSpaceID_XUL,
                                                       nsGkAtoms::conditions,
@@ -2009,10 +2006,7 @@ nsXULTemplateBuilder::CompileTemplate(Element* aTemplate,
                             return rv;
 
                         if (aQuerySet->mCompiledQuery) {
-                            
-                            
-                            rv = CompileExtendedQuery(rulenode->AsElement(),
-                                                      action, memberVariable,
+                            rv = CompileExtendedQuery(rulenode, action, memberVariable,
                                                       aQuerySet);
                             if (NS_FAILED(rv))
                                 return rv;
@@ -2021,7 +2015,8 @@ nsXULTemplateBuilder::CompileTemplate(Element* aTemplate,
                         }
                     }
                 }
-            } else {
+            }
+            else {
                 if (hasQuery)
                     continue;
 
@@ -2036,21 +2031,21 @@ nsXULTemplateBuilder::CompileTemplate(Element* aTemplate,
 
                 hasQuerySet = true;
 
-                
-                rv = CompileSimpleQuery(rulenode->AsElement(), aQuerySet,
-                                        aCanUseTemplate);
+                rv = CompileSimpleQuery(rulenode, aQuerySet, aCanUseTemplate);
                 if (NS_FAILED(rv))
                     return rv;
             }
 
             hasRule = true;
-        } else if (ni->Equals(nsGkAtoms::query, kNameSpaceID_XUL)) {
+        }
+        else if (ni->Equals(nsGkAtoms::query, kNameSpaceID_XUL)) {
             if (hasQuery)
               continue;
 
             aQuerySet->mQueryNode = rulenode;
             hasQuery = true;
-        } else if (ni->Equals(nsGkAtoms::action, kNameSpaceID_XUL)) {
+        }
+        else if (ni->Equals(nsGkAtoms::action, kNameSpaceID_XUL)) {
             
             if (! hasQuery)
                 continue;
@@ -2099,7 +2094,7 @@ nsXULTemplateBuilder::CompileTemplate(Element* aTemplate,
 }
 
 nsresult
-nsXULTemplateBuilder::CompileExtendedQuery(Element* aRuleElement,
+nsXULTemplateBuilder::CompileExtendedQuery(nsIContent* aRuleElement,
                                            nsIContent* aActionElement,
                                            nsAtom* aMemberVariable,
                                            nsTemplateQuerySet* aQuerySet)
@@ -2112,7 +2107,7 @@ nsXULTemplateBuilder::CompileExtendedQuery(Element* aRuleElement,
     if (! rule)
          return NS_ERROR_OUT_OF_MEMORY;
 
-    RefPtr<Element> conditions;
+    nsCOMPtr<nsIContent> conditions;
     nsXULContentUtils::FindChildByTag(aRuleElement,
                                       kNameSpaceID_XUL,
                                       nsGkAtoms::conditions,
@@ -2132,7 +2127,7 @@ nsXULTemplateBuilder::CompileExtendedQuery(Element* aRuleElement,
     rule->SetVars(mRefVariable, aMemberVariable);
 
     
-    RefPtr<Element> bindings;
+    nsCOMPtr<nsIContent> bindings;
     nsXULContentUtils::FindChildByTag(aRuleElement,
                                       kNameSpaceID_XUL,
                                       nsGkAtoms::bindings,
@@ -2175,7 +2170,7 @@ void
 nsXULTemplateBuilder::DetermineRDFQueryRef(nsIContent* aQueryElement, nsAtom** aTag)
 {
     
-    RefPtr<Element> content;
+    nsCOMPtr<nsIContent> content;
     nsXULContentUtils::FindChildByTag(aQueryElement,
                                       kNameSpaceID_XUL,
                                       nsGkAtoms::content,
@@ -2205,7 +2200,7 @@ nsXULTemplateBuilder::DetermineRDFQueryRef(nsIContent* aQueryElement, nsAtom** a
 }
 
 nsresult
-nsXULTemplateBuilder::CompileSimpleQuery(Element* aRuleElement,
+nsXULTemplateBuilder::CompileSimpleQuery(nsIContent* aRuleElement,
                                          nsTemplateQuerySet* aQuerySet,
                                          bool* aCanUseTemplate)
 {
@@ -2462,12 +2457,12 @@ nsXULTemplateBuilder::CompileBinding(nsTemplateRule* aRule,
 
 nsresult
 nsXULTemplateBuilder::AddSimpleRuleBindings(nsTemplateRule* aRule,
-                                            Element* aElement)
+                                            nsIContent* aElement)
 {
     
     
 
-    AutoTArray<Element*, 8> elements;
+    AutoTArray<nsIContent*, 8> elements;
 
     if (elements.AppendElement(aElement) == nullptr)
         return NS_ERROR_OUT_OF_MEMORY;
@@ -2475,7 +2470,7 @@ nsXULTemplateBuilder::AddSimpleRuleBindings(nsTemplateRule* aRule,
     while (elements.Length()) {
         
         uint32_t i = elements.Length() - 1;
-        Element* element = elements[i];
+        nsIContent* element = elements[i];
         elements.RemoveElementAt(i);
 
         
@@ -2500,10 +2495,8 @@ nsXULTemplateBuilder::AddSimpleRuleBindings(nsTemplateRule* aRule,
         for (nsIContent* child = element->GetLastChild();
              child;
              child = child->GetPreviousSibling()) {
-            if (!child->IsElement())
-                continue;
 
-            if (!elements.AppendElement(child->AsElement()))
+            if (!elements.AppendElement(child))
                 return NS_ERROR_OUT_OF_MEMORY;
         }
     }

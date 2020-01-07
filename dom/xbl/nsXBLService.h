@@ -46,7 +46,7 @@ class nsXBLService final : public nsSupportsWeakReference
 
   
   
-  nsresult LoadBindings(mozilla::dom::Element* aElement, nsIURI* aURL,
+  nsresult LoadBindings(nsIContent* aContent, nsIURI* aURL,
                         nsIPrincipal* aOriginPrincipal,
                         nsXBLBinding** aBinding, bool* aResolveStyle);
 
@@ -73,7 +73,7 @@ private:
 
 protected:
   
-  void FlushStyleBindings(mozilla::dom::Element*);
+  nsresult FlushStyleBindings(nsIContent* aContent);
 
   
   nsresult FetchBindingDocument(nsIContent* aBoundElement, nsIDocument* aBoundDocument,

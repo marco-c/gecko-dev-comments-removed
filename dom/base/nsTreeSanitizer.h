@@ -146,8 +146,8 @@ class MOZ_STACK_CLASS nsTreeSanitizer {
 
 
     bool SanitizeURL(mozilla::dom::Element* aElement,
-                     int32_t aNamespace,
-                     nsAtom* aLocalName);
+                       int32_t aNamespace,
+                       nsAtom* aLocalName);
 
     
 
@@ -178,7 +178,7 @@ class MOZ_STACK_CLASS nsTreeSanitizer {
     
 
 
-    void RemoveAllAttributes(mozilla::dom::Element* aElement);
+    void RemoveAllAttributes(nsIContent* aElement);
 
     
 

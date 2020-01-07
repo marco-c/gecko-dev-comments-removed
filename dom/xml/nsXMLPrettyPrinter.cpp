@@ -144,8 +144,8 @@ nsXMLPrettyPrinter::PrettyPrint(nsIDocument* aDocument,
     NS_ENSURE_SUCCESS(rv, rv);
 
     
-    RefPtr<Element> rootElement = aDocument->GetRootElement();
-    NS_ENSURE_TRUE(rootElement, NS_ERROR_UNEXPECTED);
+    nsCOMPtr<nsIContent> rootCont = aDocument->GetRootElement();
+    NS_ENSURE_TRUE(rootCont, NS_ERROR_UNEXPECTED);
 
     
     nsCOMPtr<nsIPrincipal> sysPrincipal;
@@ -154,20 +154,20 @@ nsXMLPrettyPrinter::PrettyPrint(nsIDocument* aDocument,
 
     
     
-    if (!shell->IsDestroying()) {
-        shell->DestroyFramesForAndRestyle(rootElement);
+    if (!shell->IsDestroying() && rootCont->IsElement()) {
+        shell->DestroyFramesForAndRestyle(rootCont->AsElement());
     }
 
     
     RefPtr<nsXBLBinding> unused;
     bool ignored;
-    rv = xblService->LoadBindings(rootElement, bindingUri, sysPrincipal,
+    rv = xblService->LoadBindings(rootCont, bindingUri, sysPrincipal,
                                   getter_AddRefs(unused), &ignored);
     NS_ENSURE_SUCCESS(rv, rv);
 
     
     RefPtr<CustomEvent> event =
-      NS_NewDOMCustomEvent(rootElement, nullptr, nullptr);
+      NS_NewDOMCustomEvent(rootCont, nullptr, nullptr);
     MOZ_ASSERT(event);
     nsCOMPtr<nsIWritableVariant> resultFragmentVariant = new nsVariant();
     rv = resultFragmentVariant->SetAsISupports(resultFragment);
@@ -178,7 +178,7 @@ nsXMLPrettyPrinter::PrettyPrint(nsIDocument* aDocument,
     NS_ENSURE_SUCCESS(rv, rv);
     event->SetTrusted(true);
     bool dummy;
-    rv = rootElement->DispatchEvent(event, &dummy);
+    rv = rootCont->DispatchEvent(event, &dummy);
     NS_ENSURE_SUCCESS(rv, rv);
 
     

@@ -41,8 +41,8 @@ class nsXBLPrototypeBinding final :
 public:
   MOZ_DECLARE_WEAKREFERENCE_TYPENAME(nsXBLPrototypeBinding)
 
-  mozilla::dom::Element* GetBindingElement() const { return mBinding; }
-  void SetBindingElement(mozilla::dom::Element* aElement);
+  nsIContent* GetBindingElement() const { return mBinding; }
+  void SetBindingElement(nsIContent* aElement);
 
   nsIURI* BindingURI() const { return mBindingURI; }
   nsIURI* AlternateBindingURI() const { return mAlternateBindingURI; }
@@ -111,8 +111,7 @@ public:
   bool HasImplementation() const { return mImplementation != nullptr; }
 
   void AttributeChanged(nsAtom* aAttribute, int32_t aNameSpaceID,
-                        bool aRemoveFlag,
-                        mozilla::dom::Element* aChangedElement,
+                        bool aRemoveFlag, nsIContent* aChangedElement,
                         nsIContent* aAnonymousContent, bool aNotify);
 
   void SetBasePrototype(nsXBLPrototypeBinding* aBinding);
@@ -121,8 +120,7 @@ public:
   nsXBLDocumentInfo* XBLDocumentInfo() const { return mXBLDocInfoWeak; }
   bool IsChrome() { return mXBLDocInfoWeak->IsChrome(); }
 
-  void SetInitialAttributes(mozilla::dom::Element* aBoundElement,
-                            nsIContent* aAnonymousContent);
+  void SetInitialAttributes(nsIContent* aBoundElement, nsIContent* aAnonymousContent);
 
   void AppendStyleSheet(mozilla::StyleSheet* aSheet);
   void RemoveStyleSheet(mozilla::StyleSheet* aSheet);
@@ -248,7 +246,7 @@ public:
   
   nsresult Init(const nsACString& aRef,
                 nsXBLDocumentInfo* aInfo,
-                mozilla::dom::Element* aElement,
+                nsIContent* aElement,
                 bool aFirstBinding = false);
 
   void Traverse(nsCycleCollectionTraversalCallback &cb) const;
@@ -261,11 +259,11 @@ public:
 
 
 
-  mozilla::dom::Element* GetImmediateChild(nsAtom* aTag);
-  mozilla::dom::Element* LocateInstance(mozilla::dom::Element* aBoundElt,
-                                        nsIContent* aTemplRoot,
-                                        nsIContent* aCopyRoot,
-                                        mozilla::dom::Element* aTemplChild);
+  nsIContent* GetImmediateChild(nsAtom* aTag);
+  nsIContent* LocateInstance(nsIContent* aBoundElt,
+                             nsIContent* aTemplRoot,
+                             nsIContent* aCopyRoot,
+                             nsIContent* aTemplChild);
 
   bool ChromeOnlyContent() { return mChromeOnlyContent; }
   bool BindToUntrustedContent() { return mBindToUntrustedContent; }
@@ -278,8 +276,8 @@ protected:
   
   void AddToAttributeTable(int32_t aSourceNamespaceID, nsAtom* aSourceTag,
                            int32_t aDestNamespaceID, nsAtom* aDestTag,
-                           mozilla::dom::Element* aContent);
-  void ConstructAttributeTable(mozilla::dom::Element* aElement);
+                           nsIContent* aContent);
+  void ConstructAttributeTable(nsIContent* aElement);
   void CreateKeyHandlers();
 
 private:
@@ -289,7 +287,7 @@ private:
 protected:
   nsCOMPtr<nsIURI> mBindingURI;
   nsCOMPtr<nsIURI> mAlternateBindingURI; 
-  RefPtr<mozilla::dom::Element> mBinding; 
+  nsCOMPtr<nsIContent> mBinding; 
   nsAutoPtr<nsXBLPrototypeHandler> mPrototypeHandler; 
 
   

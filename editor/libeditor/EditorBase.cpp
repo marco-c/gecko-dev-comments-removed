@@ -5348,7 +5348,7 @@ NS_IMETHODIMP
 EditorBase::SwitchTextDirection()
 {
   
-  Element* rootElement = GetExposedRoot();
+  nsIContent* rootElement = GetExposedRoot();
 
   nsresult rv = DetermineCurrentDirection();
   NS_ENSURE_SUCCESS(rv, rv);
@@ -5379,7 +5379,7 @@ void
 EditorBase::SwitchTextDirectionTo(uint32_t aDirection)
 {
   
-  Element* rootElement = GetExposedRoot();
+  nsIContent* rootElement = GetExposedRoot();
 
   nsresult rv = DetermineCurrentDirection();
   NS_ENSURE_SUCCESS_VOID(rv);

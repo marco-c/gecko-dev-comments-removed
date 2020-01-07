@@ -178,7 +178,7 @@ nsDeckFrame::RemoveFrame(ChildListID aListID,
       
       
       nsContentUtils::AddScriptRunner(new nsSetAttrRunnable(
-        mContent->AsElement(), nsGkAtoms::selectedIndex, mIndex));
+        mContent, nsGkAtoms::selectedIndex, mIndex));
     }
   }
   nsBoxFrame::RemoveFrame(aListID, aOldFrame);

@@ -136,12 +136,12 @@ protected:
 
 
 
-  RefPtr<Element> mTextContent;
+  nsCOMPtr<nsIContent> mTextContent;
   
 
 
 
-  RefPtr<Element> mBrowseFilesOrDirs;
+  nsCOMPtr<nsIContent> mBrowseFilesOrDirs;
 
   
 

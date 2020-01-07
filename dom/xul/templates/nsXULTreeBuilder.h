@@ -161,7 +161,7 @@ protected:
 
 
     nsresult
-    GetTemplateActionRowFor(int32_t aRow, mozilla::dom::Element** aResult);
+    GetTemplateActionRowFor(int32_t aRow, nsIContent** aResult);
 
     
 
@@ -248,7 +248,7 @@ protected:
 
     bool
     GetInsertionLocations(nsIXULTemplateResult* aResult,
-                          nsCOMArray<Element>** aLocations) override;
+                          nsCOMArray<nsIContent>** aLocations) override;
 
     
 
@@ -257,7 +257,7 @@ protected:
     ReplaceMatch(nsIXULTemplateResult* aOldResult,
                  nsTemplateMatch* aNewMatch,
                  nsTemplateRule* aNewMatchRule,
-                 Element* aContext) override;
+                 void* aContext) override;
 
     
 

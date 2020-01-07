@@ -152,7 +152,7 @@ public:
   
 
 
-  void AppendAllIdContent(nsCOMArray<Element>* aElements);
+  void AppendAllIdContent(nsCOMArray<nsIContent>* aElements);
   
 
 

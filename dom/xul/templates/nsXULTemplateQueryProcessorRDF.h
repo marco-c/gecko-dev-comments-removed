@@ -34,12 +34,6 @@ extern mozilla::LazyLogModule gXULTemplateLog;
 class nsIContent;
 class nsXULTemplateResultRDF;
 
-namespace mozilla {
-namespace dom {
-class Element;
-}
-}
-
 
 
 
@@ -189,8 +183,8 @@ public:
 
     nsresult
     CompileSimpleQuery(nsRDFQuery* aQuery,
-                       mozilla::dom::Element* aQueryElement,
-                       TestNode** aLastNode);
+                      nsIContent* aQueryElement,
+                      TestNode** aLastNode);
 
     RDFBindingSet*
     GetBindingsForRule(nsIDOMNode* aRule);

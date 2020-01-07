@@ -479,7 +479,7 @@ private:
 
 
 nsresult
-nsXBLService::LoadBindings(Element* aElement, nsIURI* aURL,
+nsXBLService::LoadBindings(nsIContent* aContent, nsIURI* aURL,
                            nsIPrincipal* aOriginPrincipal,
                            nsXBLBinding** aBinding, bool* aResolveStyle)
 {
@@ -488,20 +488,20 @@ nsXBLService::LoadBindings(Element* aElement, nsIURI* aURL,
   *aBinding = nullptr;
   *aResolveStyle = false;
 
-  AutoEnsureSubtreeStyled subtreeStyled(aElement);
+  AutoEnsureSubtreeStyled subtreeStyled(aContent->AsElement());
 
   if (MOZ_UNLIKELY(!aURL)) {
     return NS_OK;
   }
 
   
-  nsXBLBinding* binding = aElement->GetXBLBinding();
+  nsXBLBinding* binding = aContent->GetXBLBinding();
   if (binding && !binding->MarkedForDeath() &&
       binding->PrototypeBinding()->CompareBindingURI(aURL)) {
     return NS_OK;
   }
 
-  nsCOMPtr<nsIDocument> document = aElement->OwnerDoc();
+  nsCOMPtr<nsIDocument> document = aContent->OwnerDoc();
 
   nsAutoCString urlspec;
   nsresult rv;
@@ -518,13 +518,13 @@ nsXBLService::LoadBindings(Element* aElement, nsIURI* aURL,
   }
 
   if (binding) {
-    FlushStyleBindings(aElement);
+    FlushStyleBindings(aContent);
     binding = nullptr;
   }
 
   bool ready;
   RefPtr<nsXBLBinding> newBinding;
-  if (NS_FAILED(rv = GetBinding(aElement, aURL, false, aOriginPrincipal,
+  if (NS_FAILED(rv = GetBinding(aContent, aURL, false, aOriginPrincipal,
                                 &ready, getter_AddRefs(newBinding)))) {
     return rv;
   }
@@ -537,21 +537,21 @@ nsXBLService::LoadBindings(Element* aElement, nsIURI* aURL,
     return NS_OK;
   }
 
-  if (::IsAncestorBinding(document, aURL, aElement)) {
+  if (::IsAncestorBinding(document, aURL, aContent)) {
     return NS_ERROR_ILLEGAL_VALUE;
   }
 
-  AutoStyleElement styleElement(aElement, aResolveStyle);
+  AutoStyleElement styleElement(aContent->AsElement(), aResolveStyle);
 
   
   
-  aElement->SetXBLBinding(newBinding);
+  aContent->SetXBLBinding(newBinding);
 
   {
     nsAutoScriptBlocker scriptBlocker;
 
     
-    newBinding->SetBoundElement(aElement);
+    newBinding->SetBoundElement(aContent);
 
     
     newBinding->GenerateAnonymousContent();
@@ -572,18 +572,20 @@ nsXBLService::LoadBindings(Element* aElement, nsIURI* aURL,
   return NS_OK;
 }
 
-void
-nsXBLService::FlushStyleBindings(Element* aElement)
+nsresult
+nsXBLService::FlushStyleBindings(nsIContent* aContent)
 {
-  nsCOMPtr<nsIDocument> document = aElement->OwnerDoc();
+  nsCOMPtr<nsIDocument> document = aContent->OwnerDoc();
 
-  nsXBLBinding* binding = aElement->GetXBLBinding();
+  nsXBLBinding *binding = aContent->GetXBLBinding();
   if (binding) {
     
     binding->ChangeDocument(document, nullptr);
 
-    aElement->SetXBLBinding(nullptr); 
+    aContent->SetXBLBinding(nullptr); 
   }
+
+  return NS_OK;
 }
 
 
