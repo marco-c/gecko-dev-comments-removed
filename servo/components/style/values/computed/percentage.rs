@@ -6,7 +6,9 @@
 
 use std::fmt;
 use style_traits::{CssWriter, ToCss};
+use values::animated::ToAnimatedValue;
 use values::{serialize_percentage, CSSFloat};
+use values::generics::NonNegative;
 
 
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
@@ -46,5 +48,36 @@ impl ToCss for Percentage {
         W: fmt::Write,
     {
         serialize_percentage(self.0, dest)
+    }
+}
+
+
+pub type NonNegativePercentage = NonNegative<Percentage>;
+
+impl NonNegativePercentage {
+    
+    #[inline]
+    pub fn zero() -> Self {
+        NonNegative(Percentage::zero())
+    }
+
+    
+    #[inline]
+    pub fn hundred() -> Self {
+        NonNegative(Percentage::hundred())
+    }
+}
+
+impl ToAnimatedValue for NonNegativePercentage {
+    type AnimatedValue = Percentage;
+
+    #[inline]
+    fn to_animated_value(self) -> Self::AnimatedValue {
+        self.0
+    }
+
+    #[inline]
+    fn from_animated_value(animated: Self::AnimatedValue) -> Self {
+        NonNegative(animated.clamp_to_non_negative())
     }
 }
