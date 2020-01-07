@@ -424,50 +424,11 @@ class ExtensionData {
   }
 
   
-
-
-
-
-
-
-  get manifestPermissions() {
-    if (this.type !== "extension") {
-      return null;
-    }
-
-    let permissions = new Set();
-    let origins = new Set();
-    for (let perm of this.manifest.permissions || []) {
-      let type = classifyPermission(perm);
-      if (type.origin) {
-        origins.add(perm);
-      } else if (!type.api) {
-        permissions.add(perm);
-      }
-    }
-
-    if (this.manifest.devtools_page) {
-      permissions.add("devtools");
-    }
-
-    for (let entry of this.manifest.content_scripts || []) {
-      for (let origin of entry.matches) {
-        origins.add(origin);
-      }
-    }
-
-    return {
-      permissions: Array.from(permissions),
-      origins: Array.from(origins),
-    };
-  }
-
   
-
-
-
-
-  get activePermissions() {
+  
+  
+  
+  get userPermissions() {
     if (this.type !== "extension") {
       return null;
     }
@@ -477,6 +438,11 @@ class ExtensionData {
       apis: [...this.apiNames],
     };
 
+    if (Array.isArray(this.manifest.content_scripts)) {
+      for (let entry of this.manifest.content_scripts) {
+        result.origins.push(...entry.matches);
+      }
+    }
     const EXP_PATTERN = /^experiments\.\w+/;
     result.permissions = [...this.permissions]
       .filter(p => !result.origins.includes(p) && !EXP_PATTERN.test(p));
@@ -576,6 +542,10 @@ class ExtensionData {
     };
 
     if (this.type === "extension") {
+      if (this.manifest.devtools_page) {
+        permissions.add("devtools");
+      }
+
       for (let perm of manifest.permissions) {
         if (perm === "geckoProfiler" && !this.isPrivileged) {
           const acceptedExtensions = Services.prefs.getStringPref("extensions.geckoProfiler.acceptedExtensionIds", "");
