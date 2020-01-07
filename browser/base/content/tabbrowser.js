@@ -2451,7 +2451,7 @@ window._gBrowser = {
 
     
     
-    if (aURI == "about:newtab") {
+    if (aURI == "about:newtab" || aURI == "about:home" || aURI == "about:welcome") {
       this.setIcon(t, "chrome://branding/content/icon32.png");
     } else if (aURI == "about:privatebrowsing") {
       this.setIcon(t, "chrome://browser/skin/privatebrowsing/favicon.svg");
@@ -4505,9 +4505,10 @@ class TabProgressListener {
           
           
           let isNewTab = originalLocation &&
-            (originalLocation.spec == "about:newtab" ||
+             (originalLocation.spec == "about:newtab" ||
               originalLocation.spec == "about:privatebrowsing" ||
-              originalLocation.spec == "about:home");
+              originalLocation.spec == "about:home" ||
+              originalLocation.spec == "about:welcome");
           if (!isNewTab) {
             gBrowser.useDefaultIcon(this.mTab);
           }

@@ -47,7 +47,7 @@ function isValidCategory(category) {
 
 
 function isValidPage(page) {
-  return ["about:newtab", "about:home"].includes(page);
+    return ["about:newtab", "about:home", "about:welcome"].includes(page);
 }
 
 
