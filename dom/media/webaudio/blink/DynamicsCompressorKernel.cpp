@@ -39,6 +39,7 @@ using namespace std;
 
 using namespace mozilla::dom; 
 using mozilla::IsInfinite;
+using mozilla::PositiveInfinity;
 using mozilla::IsNaN;
 using mozilla::MakeUnique;
 
@@ -321,7 +322,13 @@ void DynamicsCompressorKernel::process(float* sourceChannels[],
         bool isReleasing = scaledDesiredGain > m_compressorGain;
 
         
-        float compressionDiffDb = WebAudioUtils::ConvertLinearToDecibels(m_compressorGain / scaledDesiredGain, -1000.0f);
+        float compressionDiffDb;
+        if (scaledDesiredGain == 0.0) {
+          compressionDiffDb = PositiveInfinity<float>();
+        } else {
+          compressionDiffDb = WebAudioUtils::ConvertLinearToDecibels(m_compressorGain / scaledDesiredGain, -1000.0f);
+        }
+
 
         if (isReleasing) {
             
