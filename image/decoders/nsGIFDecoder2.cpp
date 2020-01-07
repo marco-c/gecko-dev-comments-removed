@@ -292,10 +292,12 @@ nsGIFDecoder2::ColormapIndexToPixel<uint8_t>(uint8_t aIndex)
 }
 
 template <typename PixelSize>
-NextPixel<PixelSize>
-nsGIFDecoder2::YieldPixel(const uint8_t* aData,
-                          size_t aLength,
-                          size_t* aBytesReadOut)
+Tuple<int32_t, Maybe<WriteState>>
+nsGIFDecoder2::YieldPixels(const uint8_t* aData,
+                           size_t aLength,
+                           size_t* aBytesReadOut,
+                           PixelSize* aPixelBlock,
+                           int32_t aBlockSize)
 {
   MOZ_ASSERT(aData);
   MOZ_ASSERT(aBytesReadOut);
@@ -304,108 +306,119 @@ nsGIFDecoder2::YieldPixel(const uint8_t* aData,
   
   const uint8_t* data = aData + *aBytesReadOut;
 
-  
-  
-  if (mGIFStruct.stackp == mGIFStruct.stack) {
-    while (mGIFStruct.bits < mGIFStruct.codesize && *aBytesReadOut < aLength) {
-      
-      mGIFStruct.datum += int32_t(*data) << mGIFStruct.bits;
-      mGIFStruct.bits += 8;
-      data += 1;
-      *aBytesReadOut += 1;
-    }
-
-    if (mGIFStruct.bits < mGIFStruct.codesize) {
-      return AsVariant(WriteState::NEED_MORE_DATA);
-    }
-
-    
-    int code = mGIFStruct.datum & mGIFStruct.codemask;
-    mGIFStruct.datum >>= mGIFStruct.codesize;
-    mGIFStruct.bits -= mGIFStruct.codesize;
-
-    const int clearCode = ClearCode();
-
-    
-    if (code == clearCode) {
-      mGIFStruct.codesize = mGIFStruct.datasize + 1;
-      mGIFStruct.codemask = (1 << mGIFStruct.codesize) - 1;
-      mGIFStruct.avail = clearCode + 2;
-      mGIFStruct.oldcode = -1;
-      return AsVariant(WriteState::NEED_MORE_DATA);
-    }
-
+  int32_t written = 0;
+  while (aBlockSize > written) {
     
     
-    
-    if (code == (clearCode + 1)) {
-      return AsVariant(WriteState::FAILURE);
-    }
-
-    if (mGIFStruct.oldcode == -1) {
-      if (code >= MAX_BITS) {
-        return AsVariant(WriteState::FAILURE);  
+    if (mGIFStruct.stackp == mGIFStruct.stack) {
+      while (mGIFStruct.bits < mGIFStruct.codesize && *aBytesReadOut < aLength) {
+        
+        mGIFStruct.datum += int32_t(*data) << mGIFStruct.bits;
+        mGIFStruct.bits += 8;
+        data += 1;
+        *aBytesReadOut += 1;
       }
 
-      mGIFStruct.firstchar = mGIFStruct.oldcode = code;
+      if (mGIFStruct.bits < mGIFStruct.codesize) {
+        return MakeTuple(written, Some(WriteState::NEED_MORE_DATA));
+      }
 
       
-      mGIFStruct.pixels_remaining--;
-      return AsVariant(ColormapIndexToPixel<PixelSize>(mGIFStruct.suffix[code]));
-    }
+      int code = mGIFStruct.datum & mGIFStruct.codemask;
+      mGIFStruct.datum >>= mGIFStruct.codesize;
+      mGIFStruct.bits -= mGIFStruct.codesize;
 
-    int incode = code;
-    if (code >= mGIFStruct.avail) {
-      *mGIFStruct.stackp++ = mGIFStruct.firstchar;
-      code = mGIFStruct.oldcode;
+      const int clearCode = ClearCode();
 
-      if (mGIFStruct.stackp >= mGIFStruct.stack + MAX_BITS) {
-        return AsVariant(WriteState::FAILURE);  
+      
+      if (code == clearCode) {
+        mGIFStruct.codesize = mGIFStruct.datasize + 1;
+        mGIFStruct.codemask = (1 << mGIFStruct.codesize) - 1;
+        mGIFStruct.avail = clearCode + 2;
+        mGIFStruct.oldcode = -1;
+        return MakeTuple(written, Some(WriteState::NEED_MORE_DATA));
       }
-    }
-
-    while (code >= clearCode) {
-      if ((code >= MAX_BITS) || (code == mGIFStruct.prefix[code])) {
-        return AsVariant(WriteState::FAILURE);
-      }
-
-      *mGIFStruct.stackp++ = mGIFStruct.suffix[code];
-      code = mGIFStruct.prefix[code];
-
-      if (mGIFStruct.stackp >= mGIFStruct.stack + MAX_BITS) {
-        return AsVariant(WriteState::FAILURE);  
-      }
-    }
-
-    *mGIFStruct.stackp++ = mGIFStruct.firstchar = mGIFStruct.suffix[code];
-
-    
-    if (mGIFStruct.avail < 4096) {
-      mGIFStruct.prefix[mGIFStruct.avail] = mGIFStruct.oldcode;
-      mGIFStruct.suffix[mGIFStruct.avail] = mGIFStruct.firstchar;
-      mGIFStruct.avail++;
 
       
       
       
-      if (((mGIFStruct.avail & mGIFStruct.codemask) == 0) &&
-          (mGIFStruct.avail < 4096)) {
-        mGIFStruct.codesize++;
-        mGIFStruct.codemask += mGIFStruct.avail;
+      if (code == (clearCode + 1)) {
+        return MakeTuple(written, Some(WriteState::FAILURE));
       }
+
+      if (mGIFStruct.oldcode == -1) {
+        if (code >= MAX_BITS) {
+          
+          return MakeTuple(written, Some(WriteState::FAILURE));
+        }
+
+        mGIFStruct.firstchar = mGIFStruct.oldcode = code;
+
+        
+        mGIFStruct.pixels_remaining--;
+        aPixelBlock[written++] =
+          ColormapIndexToPixel<PixelSize>(mGIFStruct.suffix[code]);
+        continue;
+      }
+
+      int incode = code;
+      if (code >= mGIFStruct.avail) {
+        *mGIFStruct.stackp++ = mGIFStruct.firstchar;
+        code = mGIFStruct.oldcode;
+
+        if (mGIFStruct.stackp >= mGIFStruct.stack + MAX_BITS) {
+          
+          return MakeTuple(written, Some(WriteState::FAILURE));
+        }
+      }
+
+      while (code >= clearCode) {
+        if ((code >= MAX_BITS) || (code == mGIFStruct.prefix[code])) {
+          return MakeTuple(written, Some(WriteState::FAILURE));
+        }
+
+        *mGIFStruct.stackp++ = mGIFStruct.suffix[code];
+        code = mGIFStruct.prefix[code];
+
+        if (mGIFStruct.stackp >= mGIFStruct.stack + MAX_BITS) {
+          
+          return MakeTuple(written, Some(WriteState::FAILURE));
+        }
+      }
+
+      *mGIFStruct.stackp++ = mGIFStruct.firstchar = mGIFStruct.suffix[code];
+
+      
+      if (mGIFStruct.avail < 4096) {
+        mGIFStruct.prefix[mGIFStruct.avail] = mGIFStruct.oldcode;
+        mGIFStruct.suffix[mGIFStruct.avail] = mGIFStruct.firstchar;
+        mGIFStruct.avail++;
+
+        
+        
+        
+        if (((mGIFStruct.avail & mGIFStruct.codemask) == 0) &&
+            (mGIFStruct.avail < 4096)) {
+          mGIFStruct.codesize++;
+          mGIFStruct.codemask += mGIFStruct.avail;
+        }
+      }
+
+      mGIFStruct.oldcode = incode;
     }
 
-    mGIFStruct.oldcode = incode;
+    if (MOZ_UNLIKELY(mGIFStruct.stackp <= mGIFStruct.stack)) {
+      MOZ_ASSERT_UNREACHABLE("No decoded data but we didn't return early?");
+      return MakeTuple(written, Some(WriteState::FAILURE));
+    }
+
+    
+    mGIFStruct.pixels_remaining--;
+    aPixelBlock[written++]
+      = ColormapIndexToPixel<PixelSize>(*--mGIFStruct.stackp);
   }
 
-  if (MOZ_UNLIKELY(mGIFStruct.stackp <= mGIFStruct.stack)) {
-    MOZ_ASSERT_UNREACHABLE("No decoded data but we didn't return early?");
-    return AsVariant(WriteState::FAILURE);
-  }
-
-  
-  mGIFStruct.pixels_remaining--;
-  return AsVariant(ColormapIndexToPixel<PixelSize>(*--mGIFStruct.stackp));
+  return MakeTuple(written, Maybe<WriteState>());
 }
 
 
@@ -1032,8 +1045,12 @@ nsGIFDecoder2::ReadLZWData(const char* aData, size_t aLength)
     size_t bytesRead = 0;
 
     auto result = mGIFStruct.images_decoded == 0
-      ? mPipe.WritePixels<uint32_t>([&]{ return YieldPixel<uint32_t>(data, length, &bytesRead); })
-      : mPipe.WritePixels<uint8_t>([&]{ return YieldPixel<uint8_t>(data, length, &bytesRead); });
+      ? mPipe.WritePixelBlocks<uint32_t>([&](uint32_t* aPixelBlock, int32_t aBlockSize) {
+          return YieldPixels<uint32_t>(data, length, &bytesRead, aPixelBlock, aBlockSize);
+        })
+      : mPipe.WritePixelBlocks<uint8_t>([&](uint8_t* aPixelBlock, int32_t aBlockSize) {
+          return YieldPixels<uint8_t>(data, length, &bytesRead, aPixelBlock, aBlockSize);
+        });
 
     if (MOZ_UNLIKELY(bytesRead > length)) {
       MOZ_ASSERT_UNREACHABLE("Overread?");
