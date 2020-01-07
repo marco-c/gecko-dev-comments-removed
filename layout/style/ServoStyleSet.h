@@ -100,26 +100,8 @@ public:
     return sInServoTraversal;
   }
 
-  
-  
-  
-  
-  enum class Kind : uint8_t {
-    
-    
-    
-    Master,
-
-    
-    ForXBL,
-  };
-
-  explicit ServoStyleSet(Kind aKind);
+  ServoStyleSet();
   ~ServoStyleSet();
-
-  static UniquePtr<ServoStyleSet>
-  CreateXBLServoStyleSet(nsPresContext* aPresContext,
-                         const nsTArray<RefPtr<ServoStyleSheet>>& aNewSheets);
 
   void Init(nsPresContext* aPresContext);
   void BeginShutdown() {}
@@ -492,9 +474,6 @@ public:
                        ServoStyleContext* aNewLayoutParent,
                        Element* aElement);
 
-  bool IsMaster() const { return mKind == Kind::Master; }
-  bool IsForXBL() const { return mKind == Kind::ForXBL; }
-
 private:
   friend class AutoSetInServoTraversal;
   friend class AutoPrepareTraversal;
@@ -581,8 +560,6 @@ private:
 
   void RemoveSheetOfType(SheetType aType,
                          ServoStyleSheet* aSheet);
-
-  const Kind mKind;
 
   
   

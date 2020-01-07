@@ -98,9 +98,8 @@ private:
 
 } 
 
-ServoStyleSet::ServoStyleSet(Kind aKind)
-  : mKind(aKind)
-  , mDocument(nullptr)
+ServoStyleSet::ServoStyleSet()
+  : mDocument(nullptr)
   , mAuthorStyleDisabled(false)
   , mStylistState(StylistState::NotDirty)
   , mUserFontSetUpdateGeneration(0)
@@ -116,34 +115,6 @@ ServoStyleSet::~ServoStyleSet()
       sheet->DropStyleSet(this);
     }
   }
-}
-
-UniquePtr<ServoStyleSet>
-ServoStyleSet::CreateXBLServoStyleSet(
-  nsPresContext* aPresContext,
-  const nsTArray<RefPtr<ServoStyleSheet>>& aNewSheets)
-{
-  auto set = MakeUnique<ServoStyleSet>(Kind::ForXBL);
-  set->Init(aPresContext);
-
-  
-  
-  
-  
-  set->ReplaceSheets(SheetType::Doc, aNewSheets);
-
-  
-  
-  
-  
-  
-  set->UpdateStylist();
-
-  
-  
-  set->mDocument = nullptr;
-
-  return set;
 }
 
 nsPresContext*
@@ -214,7 +185,6 @@ ServoStyleSet::InvalidateStyleForCSSRuleChanges()
 void
 ServoStyleSet::InvalidateStyleForDocumentStateChanges(EventStates aStatesChanged)
 {
-  MOZ_ASSERT(IsMaster());
   MOZ_ASSERT(mDocument);
   MOZ_ASSERT(!aStatesChanged.IsEmpty());
 
@@ -1475,7 +1445,7 @@ ServoStyleSet::UpdateStylist()
     
     
     
-    Element* root = IsMaster() ? mDocument->GetRootElement() : nullptr;
+    Element* root = mDocument->GetRootElement();
     const ServoElementSnapshotTable* snapshots = nullptr;
     if (nsPresContext* pc = GetPresContext()) {
       snapshots = &pc->RestyleManager()->AsServo()->Snapshots();
@@ -1484,7 +1454,6 @@ ServoStyleSet::UpdateStylist()
   }
 
   if (MOZ_UNLIKELY(mStylistState & StylistState::XBLStyleSheetsDirty)) {
-    MOZ_ASSERT(IsMaster(), "Only master styleset can mark XBL stylesets dirty!");
     MOZ_ASSERT(GetPresContext(), "How did they get dirty?");
     mDocument->BindingManager()->EnumerateBoundContentBindings(
       [&](nsXBLBinding* aBinding) {
