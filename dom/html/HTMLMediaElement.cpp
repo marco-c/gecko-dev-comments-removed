@@ -7692,7 +7692,7 @@ HTMLMediaElement::MarkAsContentSource(CallerAPI aAPI)
     
     Telemetry::Accumulate(Telemetry::VIDEO_AS_CONTENT_SOURCE, 1);
 
-    if (IsInUncomposedDoc()) {
+    if (IsInComposedDoc()) {
       
       Telemetry::Accumulate(Telemetry::VIDEO_AS_CONTENT_SOURCE_IN_TREE_OR_NOT,
                             0);
@@ -7712,7 +7712,7 @@ HTMLMediaElement::MarkAsContentSource(CallerAPI aAPI)
         
         Telemetry::Accumulate(Telemetry::VIDEO_AS_CONTENT_SOURCE, 3);
 
-        if (IsInUncomposedDoc()) {
+        if (IsInComposedDoc()) {
           
           Telemetry::Accumulate(
             Telemetry::VIDEO_AS_CONTENT_SOURCE_IN_TREE_OR_NOT, 2);
@@ -7732,7 +7732,7 @@ HTMLMediaElement::MarkAsContentSource(CallerAPI aAPI)
         
         Telemetry::Accumulate(Telemetry::VIDEO_AS_CONTENT_SOURCE, 5);
 
-        if (IsInUncomposedDoc()) {
+        if (IsInComposedDoc()) {
           
           Telemetry::Accumulate(
             Telemetry::VIDEO_AS_CONTENT_SOURCE_IN_TREE_OR_NOT, 4);
@@ -7752,7 +7752,7 @@ HTMLMediaElement::MarkAsContentSource(CallerAPI aAPI)
         
         Telemetry::Accumulate(Telemetry::VIDEO_AS_CONTENT_SOURCE, 7);
 
-        if (IsInUncomposedDoc()) {
+        if (IsInComposedDoc()) {
           
           Telemetry::Accumulate(
             Telemetry::VIDEO_AS_CONTENT_SOURCE_IN_TREE_OR_NOT, 6);
@@ -7772,7 +7772,7 @@ HTMLMediaElement::MarkAsContentSource(CallerAPI aAPI)
         
         Telemetry::Accumulate(Telemetry::VIDEO_AS_CONTENT_SOURCE, 9);
 
-        if (IsInUncomposedDoc()) {
+        if (IsInComposedDoc()) {
           
           Telemetry::Accumulate(
             Telemetry::VIDEO_AS_CONTENT_SOURCE_IN_TREE_OR_NOT, 8);
@@ -7797,7 +7797,7 @@ HTMLMediaElement::MarkAsContentSource(CallerAPI aAPI)
         ("%p Log VIDEO_AS_CONTENT_SOURCE_IN_TREE_OR_NOT: inTree = %u, API: "
          "'%d' and 'All'",
          this,
-         IsInUncomposedDoc(),
+         IsInComposedDoc(),
          static_cast<int>(aAPI)));
   }
 }
@@ -7924,7 +7924,7 @@ HTMLMediaElement::NotifyDecoderActivityChanges() const
 {
   if (mDecoder) {
     mDecoder->NotifyOwnerActivityChanged(
-      !IsHidden(), mVisibilityState, IsInUncomposedDoc());
+      !IsHidden(), mVisibilityState, IsInComposedDoc());
   }
 }
 
