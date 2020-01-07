@@ -2896,10 +2896,7 @@ public:
   void GetReferrer(nsAString& aReferrer) const;
   void GetLastModified(nsAString& aLastModified) const;
   void GetReadyState(nsAString& aReadyState) const;
-  
-  
-  
-  virtual void GetTitle(nsString& aTitle) = 0;
+  virtual void GetTitle(nsAString& aTitle) = 0;
   virtual void SetTitle(const nsAString& aTitle, mozilla::ErrorResult& rv) = 0;
   void GetDir(nsAString& aDirection) const;
   void SetDir(const nsAString& aDirection);

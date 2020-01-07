@@ -1035,7 +1035,7 @@ protected:
 
 public:
   
-  virtual void GetTitle(nsString& aTitle) override;
+  virtual void GetTitle(nsAString& aTitle) override;
   
   virtual void SetTitle(const nsAString& aTitle, mozilla::ErrorResult& rv) override;
 
