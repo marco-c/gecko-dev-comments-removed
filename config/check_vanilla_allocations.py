@@ -131,6 +131,11 @@ def main():
 
         
         
+        if 'stdc++compat' in filename:
+            continue
+
+        
+        
         if "_memory_" in filename:
             continue
 
