@@ -1,0 +1,50 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var SECTION = "lexical-020";
+var TITLE   = "Future Reserved Words";
+
+writeHeaderToLog( SECTION + " "+ TITLE);
+
+var result = "Failed";
+var exception = "No exception thrown";
+var expect = "Passed";
+
+try {
+  eval("const = true;");
+} catch ( e ) {
+  result = expect;
+  exception = e.toString();
+}
+
+new TestCase(
+  "const = true" +
+  " (threw " + exception +")",
+  expect,
+  result );
+
+test();
+
+

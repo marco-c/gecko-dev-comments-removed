@@ -1,0 +1,18 @@
+
+
+
+Object.defineProperty(this, "x", {
+  get: function () { return "get-x"; },
+  configurable: true
+});
+
+
+
+
+evaluate(`{
+  function x() { return "fun-x"; }
+}`);
+
+
+
+reportCompare(x, "get-x");

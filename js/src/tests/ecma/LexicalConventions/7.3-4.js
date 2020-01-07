@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var SECTION = "7.3-4";
+var TITLE   = "Comments";
+
+writeHeaderToLog( SECTION + " "+ TITLE);
+
+var actual = "pass";
+
+
+
+new TestCase( "multiline comment ",
+			     "pass",
+			     actual);
+
+test();

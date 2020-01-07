@@ -1,0 +1,34 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var SECTION = "7.4.3-6-n";
+var TITLE   = "Future Reserved Words";
+
+writeHeaderToLog( SECTION + " "+ TITLE);
+
+DESCRIPTION = "var default = true";
+
+new TestCase( "var default = true",     "error",    eval("var default = true") );
+
+test();

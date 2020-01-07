@@ -1,0 +1,56 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var SECTION = "lexical-025";
+var TITLE   = "Keywords";
+
+writeHeaderToLog( SECTION + " "+ TITLE);
+
+var result = "Failed";
+var exception = "No exception thrown";
+var expect = "Passed";
+
+try {
+  eval("var for;");
+} catch ( e ) {
+  result = expect;
+  exception = e.toString();
+}
+
+new TestCase(
+  "var for" +
+  " (threw " + exception +")",
+  expect,
+  result );
+
+test();
+
+

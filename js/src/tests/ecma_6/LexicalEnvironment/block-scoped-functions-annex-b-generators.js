@@ -1,0 +1,26 @@
+
+
+
+function f1() {
+    { function* g() {} }
+    assertEq(typeof g, "undefined");
+}
+f1();
+
+
+{ function* g() {} }
+assertEq(typeof g, "undefined");
+
+
+function f2() {
+    eval("{ function* g() {} }");
+    assertEq(typeof g, "undefined");
+}
+f2();
+
+
+eval("{ function* g() {} }");
+assertEq(typeof g, "undefined");
+
+if (typeof reportCompare === "function")
+    reportCompare(true, true);

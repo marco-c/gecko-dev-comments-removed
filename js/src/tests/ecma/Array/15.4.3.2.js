@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var SECTION = "15.4.3.2";
+var TITLE   = "Array.length";
+
+writeHeaderToLog( SECTION + " "+ TITLE);
+
+new TestCase( "Array.length",     
+	      1,       
+	      Array.length );
+
+test();

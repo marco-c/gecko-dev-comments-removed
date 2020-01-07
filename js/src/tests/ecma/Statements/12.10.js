@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var SECTION = "12.10-1";
+var TITLE   = "The with statement";
+
+writeHeaderToLog( SECTION +" "+ TITLE);
+
+new TestCase(   "var x; with (7) x = valueOf(); typeof x;",
+		"number",
+		eval("var x; with(7) x = valueOf(); typeof x;") );
+
+test();

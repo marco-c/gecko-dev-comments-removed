@@ -877,6 +877,7 @@ pref("gfx.webrender.program-binary", true);
 
 pref("gfx.webrender.highlight-painted-layers", false);
 pref("gfx.webrender.blob-images", false);
+pref("gfx.webrender.hit-test", false);
 
 
 pref("gfx.webrender.debug.texture-cache", false);
@@ -5217,14 +5218,21 @@ pref("dom.vr.oculus.enabled", false);
 
 
 
-pref("dom.vr.oculus.present.timeout", 10000);
+pref("dom.vr.oculus.present.timeout", 500);
 
 
 
 
 
 
-pref("dom.vr.oculus.quit.timeout", 30000);
+pref("dom.vr.oculus.quit.timeout", 10000);
+
+
+
+
+
+
+pref("dom.vr.oculus.invisible.enabled", true);
 
 pref("dom.vr.osvr.enabled", false);
 

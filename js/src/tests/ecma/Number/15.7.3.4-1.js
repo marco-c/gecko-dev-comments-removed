@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var SECTION = "15.7.3.4-1";
+var TITLE   = "Number.NaN";
+
+writeHeaderToLog( SECTION + " "+ TITLE );
+
+new TestCase("NaN",       
+	     NaN,       
+	     Number.NaN );
+
+test();

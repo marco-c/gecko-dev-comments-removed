@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var SECTION = "15.2.3";
+
+writeHeaderToLog( SECTION + " Properties of the Object Constructor");
+
+new TestCase( "Object.__proto__",     Function.prototype,     Object.__proto__ );
+
+test();

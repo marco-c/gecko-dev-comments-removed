@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var SECTION = "15.7.3";
+var TITLE   = "Properties of the Number Constructor";
+
+writeHeaderToLog( SECTION + " "+ TITLE);
+
+new TestCase("Number.length",     
+	     1,                 
+	     Number.length );
+
+test();

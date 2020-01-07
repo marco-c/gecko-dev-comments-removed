@@ -1,0 +1,38 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var SECTION = "";       
+var TITLE   = "";       
+var BUGNUMBER = "";     
+
+printBugNumber(BUGNUMBER);               
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+test();      

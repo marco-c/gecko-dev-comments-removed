@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var SECTION = "7.7.1";
+var TITLE   = "Null Literals";
+
+writeHeaderToLog( SECTION + " "+ TITLE);
+
+new TestCase( "null",     null,        null);
+
+test();

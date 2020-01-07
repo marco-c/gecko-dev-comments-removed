@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var SECTION = "12.7.1-n";
+var TITLE   = "The continue statement";
+
+writeHeaderToLog( SECTION + " "+ TITLE);
+
+DESCRIPTION = "continue";
+
+new TestCase(   "continue",
+		"error",
+		eval("continue") );
+
+test();

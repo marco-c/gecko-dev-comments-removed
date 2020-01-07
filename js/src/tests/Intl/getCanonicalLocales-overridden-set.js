@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+Object.defineProperty(Array.prototype, 0, { set() { throw 42; } });
+
+
+var arr = Intl.getCanonicalLocales(["en-US"]);
+
+assertEqArray(arr, ["en-US"]);
+
+if (typeof reportCompare === 'function')
+    reportCompare(0, 0);

@@ -1,0 +1,36 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var SECTION = "15.3.5.3";
+var TITLE   = "Function.arguments";
+
+writeHeaderToLog( SECTION + " "+ TITLE);
+
+var MYFUNCTION = new Function( "return this.arguments" );
+
+new TestCase( "var MYFUNCTION = new Function( 'return this.arguments' ); MYFUNCTION.arguments",   null,   MYFUNCTION.arguments );
+
+test();
