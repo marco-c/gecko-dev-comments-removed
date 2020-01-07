@@ -1,14 +1,14 @@
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
-
-
-
+/*
+ * A base class which implements nsIStyleSheetLinkingElement and can
+ * be subclassed by various content nodes that want to load
+ * stylesheets (<style>, <link>, processing instructions, etc).
+ */
 
 #include "nsStyleLinkElement.h"
 
@@ -23,7 +23,6 @@
 #include "mozilla/Preferences.h"
 #include "nsIContent.h"
 #include "nsIDocument.h"
-#include "nsIDOMComment.h"
 #include "nsIDOMNode.h"
 #include "nsUnicharUtils.h"
 #include "nsCRT.h"
@@ -109,20 +108,20 @@ nsStyleLinkElement::GetCharset(nsAString& aCharset)
   aCharset.Truncate();
 }
 
- void
+/* virtual */ void
 nsStyleLinkElement::OverrideBaseURI(nsIURI* aNewBaseURI)
 {
   NS_NOTREACHED("Base URI can't be overriden in this implementation "
                 "of nsIStyleSheetLinkingElement.");
 }
 
- void
+/* virtual */ void
 nsStyleLinkElement::SetLineNumber(uint32_t aLineNumber)
 {
   mLineNumber = aLineNumber;
 }
 
- uint32_t
+/* virtual */ uint32_t
 nsStyleLinkElement::GetLineNumber()
 {
   return mLineNumber;
@@ -130,7 +129,7 @@ nsStyleLinkElement::GetLineNumber()
 
 static uint32_t ToLinkMask(const nsAString& aLink)
 {
-  
+  // Keep this in sync with sRelValues in HTMLLinkElement.cpp
   if (aLink.EqualsLiteral("prefetch"))
     return nsStyleLinkElement::ePREFETCH;
   else if (aLink.EqualsLiteral("dns-prefetch"))
@@ -185,10 +184,10 @@ uint32_t nsStyleLinkElement::ParseLinkTypes(const nsAString& aTypes)
   return linkMask;
 }
 
-
-
-
-
+// We will use official mime-types from:
+// https://www.iana.org/assignments/media-types/media-types.xhtml#font
+// We do not support old deprecated mime-types for preload feature.
+// (We currectly do not support font/collection)
 static uint32_t StyleLinkElementFontMimeTypesNum = 5;
 static const char* StyleLinkElementFontMimeTypes[] = {
   "font/otf",
@@ -223,7 +222,7 @@ nsStyleLinkElement::CheckPreloadAttrs(const nsAttrValue& aAs,
     return false;
   }
 
-  
+  // Check if media attribute is valid.
   if (!aMedia.IsEmpty()) {
     RefPtr<MediaList> mediaList = MediaList::Create(aDocument->GetStyleBackendType(),
                                                     aMedia);
@@ -261,7 +260,7 @@ nsStyleLinkElement::CheckPreloadAttrs(const nsAttrValue& aAs,
     DecoderDoctorDiagnostics diagnostics;
     CanPlayStatus status = DecoderTraits::CanHandleContainerType(*mimeType,
                                                                  &diagnostics);
-    
+    // Preload if this return CANPLAY_YES and CANPLAY_MAYBE.
     if (status == CANPLAY_NO) {
       return false;
     } else {
@@ -307,7 +306,7 @@ nsStyleLinkElement::UpdateStyleSheet(nsICSSLoaderObserver* aObserver,
                                      bool aForceReload)
 {
   if (aForceReload) {
-    
+    // We remove this stylesheet from the cache to load a new version.
     nsCOMPtr<nsIContent> thisContent = do_QueryInterface(this);
     nsCOMPtr<nsIDocument> doc = thisContent->IsInShadowTree() ?
       thisContent->OwnerDoc() : thisContent->GetUncomposedDoc();
@@ -341,18 +340,18 @@ nsStyleLinkElement::DoUpdateStyleSheet(nsIDocument* aOldDocument,
   *aWillNotify = false;
 
   nsCOMPtr<nsIContent> thisContent = do_QueryInterface(this);
-  
+  // All instances of nsStyleLinkElement should implement nsIContent.
   MOZ_ASSERT(thisContent);
 
   if (thisContent->IsInAnonymousSubtree() &&
       thisContent->IsAnonymousContentInSVGUseSubtree()) {
-    
-    
+    // Stylesheets in <use>-cloned subtrees are disabled until we figure out
+    // how they should behave.
     return NS_OK;
   }
 
-  
-  
+  // Check for a ShadowRoot because link elements are inert in a
+  // ShadowRoot.
   ShadowRoot* containingShadow = thisContent->GetContainingShadow();
   if (thisContent->IsHTMLElement(nsGkAtoms::link) &&
       (aOldShadowRoot || containingShadow)) {
@@ -365,10 +364,10 @@ nsStyleLinkElement::DoUpdateStyleSheet(nsIDocument* aOldDocument,
                "there should not be a old document and old "
                "ShadowRoot simultaneously.");
 
-    
-    
-    
-    
+    // We're removing the link element from the document or shadow tree,
+    // unload the stylesheet.  We want to do this even if updates are
+    // disabled, since otherwise a sheet with a stale linking element pointer
+    // will be hanging around -- not good!
     if (aOldShadowRoot) {
       aOldShadowRoot->RemoveSheet(mStyleSheet);
     } else {
@@ -380,7 +379,7 @@ nsStyleLinkElement::DoUpdateStyleSheet(nsIDocument* aOldDocument,
     nsStyleLinkElement::SetStyleSheet(nullptr);
   }
 
-  
+  // When static documents are created, stylesheets are cloned manually.
   if (mDontLoadStyle || !mUpdatesEnabled ||
       thisContent->OwnerDoc()->IsStaticDocument()) {
     return NS_OK;
@@ -402,7 +401,7 @@ nsStyleLinkElement::DoUpdateStyleSheet(nsIDocument* aOldDocument,
       bool equal;
       nsresult rv = oldURI->Equals(uri, &equal);
       if (NS_SUCCEEDED(rv) && equal) {
-        return NS_OK; 
+        return NS_OK; // We already loaded this stylesheet
       }
     }
   }
@@ -421,7 +420,7 @@ nsStyleLinkElement::DoUpdateStyleSheet(nsIDocument* aOldDocument,
   }
 
   if (!uri && !isInline) {
-    return NS_OK; 
+    return NS_OK; // If href is empty and this is not inline style then just bail
   }
 
   nsAutoString title, type, media;
@@ -436,9 +435,9 @@ nsStyleLinkElement::DoUpdateStyleSheet(nsIDocument* aOldDocument,
   bool doneLoading = false;
   nsresult rv = NS_OK;
 
-  
-  
-  
+  // Load the link's referrerpolicy attribute. If the link does not provide a
+  // referrerpolicy attribute, ignore this and use the document's referrer
+  // policy
 
   net::ReferrerPolicy referrerPolicy = GetLinkReferrerPolicy();
   if (referrerPolicy == net::RP_Unset) {
@@ -461,7 +460,7 @@ nsStyleLinkElement::DoUpdateStyleSheet(nsIDocument* aOldDocument,
                                            mLineNumber, text, &rv))
       return rv;
 
-    
+    // Parse the style sheet.
     rv = doc->CSSLoader()->
       LoadInlineStyle(thisContent, text, triggeringPrincipal, mLineNumber,
                       title, media, referrerPolicy,
@@ -478,7 +477,7 @@ nsStyleLinkElement::DoUpdateStyleSheet(nsIDocument* aOldDocument,
                NS_ConvertUTF16toUTF8(integrity).get()));
     }
 
-    
+    // XXXbz clone the URI here to work around content policies modifying URIs.
     nsCOMPtr<nsIURI> clonedURI;
     uri->Clone(getter_AddRefs(clonedURI));
     NS_ENSURE_TRUE(clonedURI, NS_ERROR_OUT_OF_MEMORY);
@@ -487,9 +486,9 @@ nsStyleLinkElement::DoUpdateStyleSheet(nsIDocument* aOldDocument,
                     isAlternate, GetCORSMode(), referrerPolicy, integrity,
                     aObserver, &isAlternate);
     if (NS_FAILED(rv)) {
-      
-      
-      
+      // Don't propagate LoadStyleLink() errors further than this, since some
+      // consumers (e.g. nsXMLContentSink) will completely abort on innocuous
+      // things like a stylesheet load being blocked by the security system.
       doneLoading = true;
       isAlternate = false;
       rv = NS_OK;
