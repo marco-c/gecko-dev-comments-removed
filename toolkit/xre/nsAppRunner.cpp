@@ -10,7 +10,6 @@
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/ChaosMode.h"
-#include "mozilla/CmdLineAndEnvUtils.h"
 #include "mozilla/IOInterposer.h"
 #include "mozilla/Likely.h"
 #include "mozilla/MemoryChecking.h"
@@ -233,7 +232,6 @@
 #endif
 
 #include "mozilla/mozalloc_oom.h"
-#include "SafeMode.h"
 
 extern uint32_t gRestartMode;
 extern void InstallSignalHandlers(const char *ProgramName);
@@ -310,6 +308,25 @@ using mozilla::intl::LocaleService;
 
 
 static void
+SaveToEnv(const char *putenv)
+{
+  char *expr = strdup(putenv);
+  if (expr)
+    PR_SetEnv(expr);
+  
+  MOZ_LSAN_INTENTIONALLY_LEAK_OBJECT(expr);
+}
+
+
+static bool
+EnvHasValue(const char *name)
+{
+  const char *val = PR_GetEnv(name);
+  return (val && *val);
+}
+
+
+static void
 SaveWordToEnv(const char *name, const nsACString & word)
 {
   char *expr = Smprintf("%s=%s", name, PromiseFlatCString(word).get()).release();
@@ -383,6 +400,22 @@ SaveFileToEnvIfUnset(const char *name, nsIFile *file)
     SaveFileToEnv(name, file);
 }
 
+static bool
+strimatch(const char* lowerstr, const char* mixedstr)
+{
+  while(*lowerstr) {
+    if (!*mixedstr) return false; 
+    if (tolower(*mixedstr) != *lowerstr) return false; 
+
+    ++lowerstr;
+    ++mixedstr;
+  }
+
+  if (*mixedstr) return false; 
+
+  return true;
+}
+
 static bool gIsExpectedExit = false;
 
 void MozExpectedExit() {
@@ -449,6 +482,24 @@ enum RemoteResult {
   REMOTE_ARG_BAD    = 2
 };
 
+enum ArgResult {
+  ARG_NONE  = 0,
+  ARG_FOUND = 1,
+  ARG_BAD   = 2 
+};
+
+static void RemoveArg(char **argv)
+{
+  do {
+    *argv = *(argv + 1);
+    ++argv;
+  } while (*argv);
+
+  --gArgc;
+}
+
+
+
 
 
 
@@ -460,11 +511,65 @@ enum RemoteResult {
 
 
 static ArgResult
-CheckArg(const char* aArg, const char** aParam = nullptr,
-         CheckArgFlag aFlags = CheckArgFlag::RemoveArg)
+CheckArg(const char* aArg, bool aCheckOSInt = false, const char **aParam = nullptr, bool aRemArg = true)
 {
   MOZ_ASSERT(gArgv, "gArgv must be initialized before CheckArg()");
-  return CheckArg(gArgc, gArgv, aArg, aParam, aFlags);
+
+  char **curarg = gArgv + 1; 
+  ArgResult ar = ARG_NONE;
+
+  while (*curarg) {
+    char *arg = curarg[0];
+
+    if (arg[0] == '-'
+#if defined(XP_WIN)
+        || *arg == '/'
+#endif
+        ) {
+      ++arg;
+      if (*arg == '-')
+        ++arg;
+
+      if (strimatch(aArg, arg)) {
+        if (aRemArg)
+          RemoveArg(curarg);
+        else
+          ++curarg;
+        if (!aParam) {
+          ar = ARG_FOUND;
+          break;
+        }
+
+        if (*curarg) {
+          if (**curarg == '-'
+#if defined(XP_WIN)
+              || **curarg == '/'
+#endif
+              )
+            return ARG_BAD;
+
+          *aParam = *curarg;
+          if (aRemArg)
+            RemoveArg(curarg);
+          ar = ARG_FOUND;
+          break;
+        }
+        return ARG_BAD;
+      }
+    }
+
+    ++curarg;
+  }
+
+  if (aCheckOSInt && ar == ARG_FOUND) {
+    ArgResult arOSInt = CheckArg("osint");
+    if (arOSInt == ARG_FOUND) {
+      ar = ARG_BAD;
+      PR_fprintf(PR_STDERR, "Error: argument --osint is invalid\n");
+    }
+  }
+
+  return ar;
 }
 
 
@@ -477,7 +582,38 @@ CheckArg(const char* aArg, const char** aParam = nullptr,
 static ArgResult
 CheckArgExists(const char* aArg)
 {
-  return CheckArg(aArg, nullptr, CheckArgFlag::None);
+  char **curarg = gArgv + 1; 
+  while (*curarg) {
+    char *arg = curarg[0];
+
+    if (arg[0] == '-'
+#if defined(XP_WIN)
+        || *arg == '/'
+#endif
+        ) {
+      ++arg;
+      if (*arg == '-')
+        ++arg;
+
+      char delimiter = '=';
+#if defined(XP_WIN)
+      delimiter = ':';
+#endif
+      int i;
+      for (i = 0; arg[i] && arg[i] != delimiter; i++) {}
+      char tmp = arg[i];
+      arg[i] = '\0';
+      bool found = strimatch(aArg, arg);
+      arg[i] = tmp;
+      if (found) {
+        return ARG_FOUND;
+      }
+    }
+
+    ++curarg;
+  }
+
+  return ARG_NONE;
 }
 
 #if defined(XP_WIN)
@@ -1663,14 +1799,14 @@ ParseRemoteCommandLine(nsCString& program,
 {
   ArgResult ar;
 
-  ar = CheckArg("p", profile, CheckArgFlag::None);
+  ar = CheckArg("p", false, profile, false);
   if (ar == ARG_BAD) {
     
     return REMOTE_NOT_FOUND;
   }
 
   const char *temp = nullptr;
-  ar = CheckArg("a", &temp, CheckArgFlag::CheckOSInt | CheckArgFlag::RemoveArg);
+  ar = CheckArg("a", true, &temp);
   if (ar == ARG_BAD) {
     PR_fprintf(PR_STDERR, "Error: argument -a requires an application name\n");
     return REMOTE_ARG_BAD;
@@ -1679,7 +1815,7 @@ ParseRemoteCommandLine(nsCString& program,
     program.Assign(temp);
   }
 
-  ar = CheckArg("u", username, CheckArgFlag::CheckOSInt | CheckArgFlag::RemoveArg);
+  ar = CheckArg("u", true, username);
   if (ar == ARG_BAD) {
     PR_fprintf(PR_STDERR, "Error: argument -u requires a username\n");
     return REMOTE_ARG_BAD;
@@ -2186,7 +2322,7 @@ SelectProfile(nsIProfileLock* *aResult, nsIToolkitProfileService* aProfileSvc, n
   *aResult = nullptr;
   *aStartOffline = false;
 
-  ar = CheckArg("offline", nullptr, CheckArgFlag::CheckOSInt | CheckArgFlag::RemoveArg);
+  ar = CheckArg("offline", true);
   if (ar == ARG_BAD) {
     PR_fprintf(PR_STDERR, "Error: argument --offline is invalid when argument --osint is specified\n");
     return NS_ERROR_FAILURE;
@@ -2208,7 +2344,7 @@ SelectProfile(nsIProfileLock* *aResult, nsIToolkitProfileService* aProfileSvc, n
   }
 
   
-  ar = CheckArg("reset-profile", nullptr, CheckArgFlag::CheckOSInt | CheckArgFlag::RemoveArg);
+  ar = CheckArg("reset-profile", true);
   if (ar == ARG_BAD) {
     PR_fprintf(PR_STDERR, "Error: argument --reset-profile is invalid when argument --osint is specified\n");
     return NS_ERROR_FAILURE;
@@ -2217,7 +2353,7 @@ SelectProfile(nsIProfileLock* *aResult, nsIToolkitProfileService* aProfileSvc, n
     gDoProfileReset = true;
   }
 
-  ar = CheckArg("migration", nullptr, CheckArgFlag::CheckOSInt | CheckArgFlag::RemoveArg);
+  ar = CheckArg("migration", true);
   if (ar == ARG_BAD) {
     PR_fprintf(PR_STDERR, "Error: argument --migration is invalid when argument --osint is specified\n");
     return NS_ERROR_FAILURE;
@@ -2244,8 +2380,8 @@ SelectProfile(nsIProfileLock* *aResult, nsIToolkitProfileService* aProfileSvc, n
 
     
     const char *dummy;
-    CheckArg("p", &dummy);
-    CheckArg("profile", &dummy);
+    CheckArg("p", false, &dummy);
+    CheckArg("profile", false, &dummy);
     CheckArg("profilemanager");
 
     if (gDoProfileReset) {
@@ -2274,7 +2410,7 @@ SelectProfile(nsIProfileLock* *aResult, nsIToolkitProfileService* aProfileSvc, n
     return NS_LockProfilePath(lf, localDir, nullptr, aResult);
   }
 
-  ar = CheckArg("profile", &arg, CheckArgFlag::CheckOSInt | CheckArgFlag::RemoveArg);
+  ar = CheckArg("profile", true, &arg);
   if (ar == ARG_BAD) {
     PR_fprintf(PR_STDERR, "Error: argument --profile requires a path\n");
     return NS_ERROR_FAILURE;
@@ -2308,7 +2444,7 @@ SelectProfile(nsIProfileLock* *aResult, nsIToolkitProfileService* aProfileSvc, n
     return ProfileLockedDialog(lf, lf, unlocker, aNative, aResult);
   }
 
-  ar = CheckArg("createprofile", &arg, CheckArgFlag::CheckOSInt | CheckArgFlag::RemoveArg);
+  ar = CheckArg("createprofile", true, &arg);
   if (ar == ARG_BAD) {
     PR_fprintf(PR_STDERR, "Error: argument --createprofile requires a profile name\n");
     return NS_ERROR_FAILURE;
@@ -2364,7 +2500,7 @@ SelectProfile(nsIProfileLock* *aResult, nsIToolkitProfileService* aProfileSvc, n
   rv = aProfileSvc->GetProfileCount(&count);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  ar = CheckArg("p", &arg);
+  ar = CheckArg("p", false, &arg);
   if (ar == ARG_BAD) {
     ar = CheckArg("osint");
     if (ar == ARG_FOUND) {
@@ -2429,7 +2565,7 @@ SelectProfile(nsIProfileLock* *aResult, nsIToolkitProfileService* aProfileSvc, n
     }
   }
 
-  ar = CheckArg("profilemanager", nullptr, CheckArgFlag::CheckOSInt | CheckArgFlag::RemoveArg);
+  ar = CheckArg("profilemanager", true);
   if (ar == ARG_BAD) {
     PR_fprintf(PR_STDERR, "Error: argument --profilemanager is invalid when argument --osint is specified\n");
     return NS_ERROR_FAILURE;
@@ -3025,6 +3161,33 @@ public:
 #endif
 };
 
+#ifdef XP_WIN
+namespace {
+
+bool PolicyHasRegValue(HKEY aKey, LPCWSTR aName, DWORD* aValue)
+{
+  DWORD len = sizeof(DWORD);
+  LONG ret = ::RegGetValueW(aKey, L"SOFTWARE\\Policies\\Mozilla\\Firefox", aName,
+                            RRF_RT_DWORD, nullptr, aValue, &len);
+  return ret == ERROR_SUCCESS;
+}
+
+bool SafeModeBlockedByPolicy()
+{
+  LPCTSTR policyName = L"DisableSafeMode";
+  DWORD value;
+  if (PolicyHasRegValue(HKEY_LOCAL_MACHINE, policyName, &value)) {
+    return value == 1;
+  }
+  if (PolicyHasRegValue(HKEY_CURRENT_USER, policyName, &value)) {
+    return value == 1;
+  }
+  return false;
+}
+
+} 
+#endif 
+
 #if defined(XP_UNIX) && !defined(ANDROID)
 static SmprintfPointer
 FormatUid(uid_t aId)
@@ -3203,7 +3366,7 @@ XREMain::XRE_mainInit(bool* aExitFlag)
 
   
   const char* override = nullptr;
-  ar = CheckArg("override", &override, CheckArgFlag::CheckOSInt | CheckArgFlag::RemoveArg);
+  ar = CheckArg("override", true, &override);
   if (ar == ARG_BAD) {
     Output(true, "Incorrect number of arguments passed to --override");
     return 1;
@@ -3423,12 +3586,49 @@ XREMain::XRE_mainInit(bool* aExitFlag)
 
   gRestartArgv[gRestartArgc] = nullptr;
 
-  Maybe<bool> safeModeRequested = IsSafeModeRequested(gArgc, gArgv);
-  if (!safeModeRequested) {
+
+  ar = CheckArg("safe-mode", true);
+  if (ar == ARG_BAD) {
+    PR_fprintf(PR_STDERR, "Error: argument --safe-mode is invalid when argument --osint is specified\n");
     return 1;
   }
+  if (ar == ARG_FOUND) {
+    gSafeMode = true;
+  }
 
-  gSafeMode = safeModeRequested.value();
+#ifdef XP_WIN
+  
+  
+  
+  
+  
+  if ((GetKeyState(VK_SHIFT) & 0x8000) &&
+      !(GetKeyState(VK_CONTROL) & 0x8000) &&
+      !(GetKeyState(VK_MENU) & 0x8000) &&
+      !EnvHasValue("MOZ_DISABLE_SAFE_MODE_KEY")) {
+    gSafeMode = true;
+  }
+#endif
+
+#ifdef XP_MACOSX
+  if ((GetCurrentEventKeyModifiers() & optionKey) &&
+      !EnvHasValue("MOZ_DISABLE_SAFE_MODE_KEY"))
+    gSafeMode = true;
+#endif
+
+#ifdef XP_WIN
+if (gSafeMode && SafeModeBlockedByPolicy()) {
+    gSafeMode = false;
+  }
+#endif
+
+  
+  
+  if (EnvHasValue("MOZ_SAFE_MODE_RESTART")) {
+    gSafeMode = true;
+    
+    SaveToEnv("MOZ_SAFE_MODE_RESTART=");
+  }
 
 #ifdef XP_WIN
   {
@@ -3481,7 +3681,7 @@ XREMain::XRE_mainInit(bool* aExitFlag)
   
   
   
-  ar = CheckArg("no-remote", nullptr, CheckArgFlag::CheckOSInt | CheckArgFlag::RemoveArg);
+  ar = CheckArg("no-remote", true);
   if (ar == ARG_BAD) {
     PR_fprintf(PR_STDERR, "Error: argument --no-remote is invalid when argument --osint is specified\n");
     return 1;
@@ -3490,7 +3690,7 @@ XREMain::XRE_mainInit(bool* aExitFlag)
     SaveToEnv("MOZ_NO_REMOTE=1");
   }
 
-  ar = CheckArg("new-instance", nullptr, CheckArgFlag::CheckOSInt | CheckArgFlag::RemoveArg);
+  ar = CheckArg("new-instance", true);
   if (ar == ARG_BAD) {
     PR_fprintf(PR_STDERR, "Error: argument --new-instance is invalid when argument --osint is specified\n");
     return 1;
@@ -3517,7 +3717,7 @@ XREMain::XRE_mainInit(bool* aExitFlag)
   NS_ENSURE_SUCCESS(rv, 1);
 
   
-  ar = CheckArg("register", nullptr, CheckArgFlag::CheckOSInt | CheckArgFlag::RemoveArg);
+  ar = CheckArg("register", true);
   if (ar == ARG_BAD) {
     PR_fprintf(PR_STDERR, "Error: argument --register is invalid when argument --osint is specified\n");
     return 1;
@@ -4053,7 +4253,7 @@ XREMain::XRE_mainStartup(bool* aExitFlag)
     
     
     const char *logFile = nullptr;
-    if (ARG_FOUND == CheckArg("dump-args", &logFile)) {
+    if (ARG_FOUND == CheckArg("dump-args", false, &logFile)) {
       FILE* logFP = fopen(logFile, "wb");
       if (logFP) {
         for (int i = 1; i < gRestartArgc; ++i) {
@@ -4908,7 +5108,7 @@ XRE_InitCommandLine(int aArgc, char* aArgv[])
 #endif
 
   const char *path = nullptr;
-  ArgResult ar = CheckArg("greomni", &path);
+  ArgResult ar = CheckArg("greomni", false, &path);
   if (ar == ARG_BAD) {
     PR_fprintf(PR_STDERR, "Error: argument --greomni requires a path argument\n");
     return NS_ERROR_FAILURE;
@@ -4924,7 +5124,7 @@ XRE_InitCommandLine(int aArgc, char* aArgv[])
     return rv;
   }
 
-  ar = CheckArg("appomni", &path);
+  ar = CheckArg("appomni", false, &path);
   if (ar == ARG_BAD) {
     PR_fprintf(PR_STDERR, "Error: argument --appomni requires a path argument\n");
     return NS_ERROR_FAILURE;
