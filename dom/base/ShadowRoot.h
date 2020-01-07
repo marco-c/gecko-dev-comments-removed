@@ -89,6 +89,10 @@ public:
     return &DocumentOrShadowRoot::EnsureDOMStyleSheets();
   }
 
+  
+
+
+  void CloneInternalDataFrom(ShadowRoot* aOther);
 private:
 
   
