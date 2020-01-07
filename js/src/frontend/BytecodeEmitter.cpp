@@ -1533,6 +1533,9 @@ BytecodeEmitter::TDZCheckCache::noteTDZCheck(BytecodeEmitter* bce, JSAtom* name,
 
 
 
+
+
+
 class MOZ_STACK_CLASS TryEmitter
 {
   public:
@@ -1583,28 +1586,22 @@ class MOZ_STACK_CLASS TryEmitter
     
     
     
-    enum ShouldUseRetVal {
-        UseRetVal,
-        DontUseRetVal
-    };
-
     
     
     
     
     
-    enum ShouldUseControl {
-        UseControl,
-        DontUseControl,
+    
+    enum class ControlKind {
+        Syntactic,
+        NonSyntactic
     };
 
   private:
     BytecodeEmitter* bce_;
     Kind kind_;
-    ShouldUseRetVal retValKind_;
+    ControlKind controlKind_;
 
-    
-    
     
     
     
@@ -1679,17 +1676,16 @@ class MOZ_STACK_CLASS TryEmitter
     }
 
   public:
-    TryEmitter(BytecodeEmitter* bce, Kind kind, ShouldUseRetVal retValKind = UseRetVal,
-               ShouldUseControl controlKind = UseControl)
+    TryEmitter(BytecodeEmitter* bce, Kind kind, ControlKind controlKind)
       : bce_(bce),
         kind_(kind),
-        retValKind_(retValKind),
+        controlKind_(controlKind),
         depth_(0),
         noteIndex_(0),
         tryStart_(0),
         state_(State::Start)
     {
-        if (controlKind == UseControl)
+        if (controlKind_ == ControlKind::Syntactic)
             controlInfo_.emplace(bce_, hasFinally() ? StatementKind::Finally : StatementKind::Try);
         finallyStart_.offset = 0;
     }
@@ -1758,7 +1754,7 @@ class MOZ_STACK_CLASS TryEmitter
 
         MOZ_ASSERT(bce_->stackDepth == depth_);
 
-        if (retValKind_ == UseRetVal) {
+        if (controlKind_ == ControlKind::Syntactic) {
             
             
             
@@ -1805,6 +1801,7 @@ class MOZ_STACK_CLASS TryEmitter
         
         
         
+        
         if (!controlInfo_) {
             if (kind_ == Kind::TryCatch)
                 kind_ = Kind::TryCatchFinally;
@@ -1841,7 +1838,7 @@ class MOZ_STACK_CLASS TryEmitter
         if (!bce_->emit1(JSOP_FINALLY))
             return false;
 
-        if (retValKind_ == UseRetVal) {
+        if (controlKind_ == ControlKind::Syntactic) {
             if (!bce_->emit1(JSOP_GETRVAL))
                 return false;
 
@@ -1863,7 +1860,7 @@ class MOZ_STACK_CLASS TryEmitter
     bool emitFinallyEnd() {
         MOZ_ASSERT(state_ == State::Finally);
 
-        if (retValKind_ == UseRetVal) {
+        if (controlKind_ == ControlKind::Syntactic) {
             if (!bce_->emit1(JSOP_SETRVAL))
                 return false;
         }
@@ -2263,8 +2260,7 @@ class ForOfLoopControl : public LoopControl
     }
 
     bool emitBeginCodeNeedingIteratorClose(BytecodeEmitter* bce) {
-        tryCatch_.emplace(bce, TryEmitter::Kind::TryCatch, TryEmitter::DontUseRetVal,
-                          TryEmitter::DontUseControl);
+        tryCatch_.emplace(bce, TryEmitter::Kind::TryCatch, TryEmitter::ControlKind::NonSyntactic);
 
         if (!tryCatch_->emitTry())
             return false;
@@ -5536,8 +5532,7 @@ BytecodeEmitter::emitIteratorCloseInScope(EmitterScope& currentScope,
     Maybe<TryEmitter> tryCatch;
 
     if (completionKind == CompletionKind::Throw) {
-        tryCatch.emplace(this, TryEmitter::Kind::TryCatch, TryEmitter::DontUseRetVal,
-                         TryEmitter::DontUseControl);
+        tryCatch.emplace(this, TryEmitter::Kind::TryCatch, TryEmitter::ControlKind::NonSyntactic);
 
         
         if (!emit1(JSOP_UNDEFINED))                       
@@ -6872,7 +6867,7 @@ BytecodeEmitter::emitTry(ParseNode* pn)
         MOZ_ASSERT(finallyNode);
         kind = TryEmitter::Kind::TryFinally;
     }
-    TryEmitter tryCatch(this, kind);
+    TryEmitter tryCatch(this, kind, TryEmitter::ControlKind::Syntactic);
 
     if (!tryCatch.emitTry())
         return false;
@@ -8618,8 +8613,8 @@ BytecodeEmitter::emitYieldStar(ParseNode* iter)
     int32_t startDepth = stackDepth;
     MOZ_ASSERT(startDepth >= 3);
 
-    TryEmitter tryCatch(this, TryEmitter::Kind::TryCatchFinally, TryEmitter::DontUseRetVal,
-                        TryEmitter::DontUseControl);
+    TryEmitter tryCatch(this, TryEmitter::Kind::TryCatchFinally,
+                        TryEmitter::ControlKind::NonSyntactic);
     if (!tryCatch.emitJumpOverCatchAndFinally())          
         return false;
 
