@@ -477,16 +477,6 @@ class nsStyleSet final
 
   
   
-  
-  
-  
-  
-  bool HasCachedStyleData() const {
-    return (mRuleTree && mRuleTree->TreeHasCachedData()) || mRootStyleContextCount > 0;
-  }
-
-  
-  
   static const uint32_t kGCInterval = 300;
   void RuleNodeUnused(nsRuleNode* aNode, bool aMayGC) {
     ++mUnusedRuleNodeCount;
