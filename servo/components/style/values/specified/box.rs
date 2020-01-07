@@ -219,6 +219,16 @@ impl Display {
 
     
     #[inline]
+    pub fn is_contents(&self) -> bool {
+        match *self {
+            #[cfg(feature = "gecko")]
+            Display::Contents => true,
+            _ => false,
+        }
+    }
+
+    
+    #[inline]
     pub fn is_none(&self) -> bool {
         *self == Display::None
     }
