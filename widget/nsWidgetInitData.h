@@ -106,7 +106,8 @@ struct nsWidgetInitData {
       mIsAnimationSuppressed(false),
       mSupportTranslucency(false),
       mMouseTransparent(false),
-      mHasRemoteContent(false)
+      mHasRemoteContent(false),
+      mIsPrivateBrowsing(false)
   {
   }
 
@@ -133,6 +134,7 @@ struct nsWidgetInitData {
   
   bool          mMouseTransparent;
   bool          mHasRemoteContent;
+  bool          mIsPrivateBrowsing;
 };
 
 #endif 
