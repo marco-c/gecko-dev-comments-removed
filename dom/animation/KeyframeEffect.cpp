@@ -515,7 +515,7 @@ KeyframeEffect::ComposeStyle(
   
   
   
-  if (HasPropertiesThatMightAffectOverflow()) {
+  if (HasTransformThatMightAffectOverflow()) {
     nsPresContext* presContext =
       nsContentUtils::GetContextForContent(mTarget->mElement);
     if (presContext) {
@@ -524,7 +524,7 @@ KeyframeEffect::ComposeStyle(
         EffectSet::GetEffectSet(mTarget->mElement, mTarget->mPseudoType);
       MOZ_ASSERT(effectSet, "ComposeStyle should only be called on an effect "
                             "that is part of an effect set");
-      effectSet->UpdateLastOverflowAnimationSyncTime(now);
+      effectSet->UpdateLastTransformSyncTime(now);
     }
   }
 }
@@ -1194,46 +1194,6 @@ KeyframeEffect::OverflowRegionRefreshInterval()
 }
 
 bool
-KeyframeEffect::CanThrottleIfNotVisible(nsIFrame& aFrame) const
-{
-  
-  
-  
-  if (!mInEffectOnLastAnimationTimingUpdate || !CanIgnoreIfNotVisible()) {
-    return false;
-  }
-
-  nsIPresShell* presShell = GetPresShell();
-  if (presShell && !presShell->IsActive()) {
-    return true;
-  }
-
-  const bool isVisibilityHidden =
-    !aFrame.IsVisibleOrMayHaveVisibleDescendants();
-  if ((!isVisibilityHidden || HasVisibilityChange()) &&
-      !aFrame.IsScrolledOutOfView()) {
-    return false;
-  }
-
-  
-  
-  
-  if (!HasPropertiesThatMightAffectOverflow()) {
-    return true;
-  }
-
-  
-  
-  if (HasFiniteActiveDuration()) {
-    return false;
-  }
-
-  return isVisibilityHidden
-    ? CanThrottleOverflowChangesInScrollable(aFrame)
-    : CanThrottleOverflowChanges(aFrame);
-}
-
-bool
 KeyframeEffect::CanThrottle() const
 {
   
@@ -1258,8 +1218,35 @@ KeyframeEffect::CanThrottle() const
     return true;
   }
 
-  if (CanThrottleIfNotVisible(*frame)) {
-    return true;
+  
+  
+  
+  if (mInEffectOnLastAnimationTimingUpdate && CanIgnoreIfNotVisible()) {
+    nsIPresShell* presShell = GetPresShell();
+    if (presShell && !presShell->IsActive()) {
+      return true;
+    }
+
+    const bool isVisibilityHidden =
+      !frame->IsVisibleOrMayHaveVisibleDescendants();
+    if ((isVisibilityHidden && !HasVisibilityChange()) ||
+        frame->IsScrolledOutOfView()) {
+      
+      
+      if (HasTransformThatMightAffectOverflow()) {
+        
+        
+        
+        if (HasFiniteActiveDuration()) {
+          return false;
+        }
+
+        return isVisibilityHidden
+          ? CanThrottleTransformChangesInScrollable(*frame)
+          : CanThrottleTransformChanges(*frame);
+      }
+      return true;
+    }
   }
 
   
@@ -1292,8 +1279,8 @@ KeyframeEffect::CanThrottle() const
 
     
     
-    if (HasPropertiesThatMightAffectOverflow() &&
-        !CanThrottleOverflowChangesInScrollable(*frame)) {
+    if (HasTransformThatMightAffectOverflow() &&
+        !CanThrottleTransformChangesInScrollable(*frame)) {
       return false;
     }
   }
@@ -1308,24 +1295,24 @@ KeyframeEffect::CanThrottle() const
 }
 
 bool
-KeyframeEffect::CanThrottleOverflowChanges(const nsIFrame& aFrame) const
+KeyframeEffect::CanThrottleTransformChanges(const nsIFrame& aFrame) const
 {
   TimeStamp now = aFrame.PresContext()->RefreshDriver()->MostRecentRefresh();
 
   EffectSet* effectSet = EffectSet::GetEffectSet(mTarget->mElement,
                                                  mTarget->mPseudoType);
-  MOZ_ASSERT(effectSet, "CanOverflowTransformChanges is expected to be called"
+  MOZ_ASSERT(effectSet, "CanThrottleTransformChanges is expected to be called"
                         " on an effect in an effect set");
-  MOZ_ASSERT(mAnimation, "CanOverflowTransformChanges is expected to be called"
+  MOZ_ASSERT(mAnimation, "CanThrottleTransformChanges is expected to be called"
                          " on an effect with a parent animation");
-  TimeStamp lastSyncTime = effectSet->LastOverflowAnimationSyncTime();
+  TimeStamp lastSyncTime = effectSet->LastTransformSyncTime();
   
   return (!lastSyncTime.IsNull() &&
     (now - lastSyncTime) < OverflowRegionRefreshInterval());
 }
 
 bool
-KeyframeEffect::CanThrottleOverflowChangesInScrollable(nsIFrame& aFrame) const
+KeyframeEffect::CanThrottleTransformChangesInScrollable(nsIFrame& aFrame) const
 {
   
   
@@ -1346,7 +1333,7 @@ KeyframeEffect::CanThrottleOverflowChangesInScrollable(nsIFrame& aFrame) const
     return true;
   }
 
-  if (CanThrottleOverflowChanges(aFrame)) {
+  if (CanThrottleTransformChanges(aFrame)) {
     return true;
   }
 
@@ -1617,25 +1604,9 @@ KeyframeEffect::CalculateCumulativeChangeHint(const ComputedStyle* aComputedStyl
       
       
       if (!segment.HasReplaceableValues()) {
-        if (property.mProperty != eCSSProperty_transform) {
-          mCumulativeChangeHint = ~nsChangeHint_Hints_CanIgnoreIfNotVisible;
-          return;
-        }
-        
-        
-        
-        
-        
-        
-        mCumulativeChangeHint |= nsChangeHint_AddOrRemoveTransform |
-                                 nsChangeHint_RepaintFrame |
-                                 nsChangeHint_UpdateContainingBlock |
-                                 nsChangeHint_UpdateOverflow |
-                                 nsChangeHint_UpdatePostTransformOverflow |
-                                 nsChangeHint_UpdateTransformLayer;
-        continue;
+        mCumulativeChangeHint = ~nsChangeHint_Hints_CanIgnoreIfNotVisible;
+        return;
       }
-
       RefPtr<ComputedStyle> fromContext =
         CreateComputedStyleForAnimationValue(property.mProperty,
                                              segment.mFromValue,

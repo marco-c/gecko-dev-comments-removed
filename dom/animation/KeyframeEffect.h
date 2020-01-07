@@ -421,9 +421,8 @@ private:
   nsIFrame* GetStyleFrame() const;
 
   bool CanThrottle() const;
-  bool CanThrottleOverflowChanges(const nsIFrame& aFrame) const;
-  bool CanThrottleOverflowChangesInScrollable(nsIFrame& aFrame) const;
-  bool CanThrottleIfNotVisible(nsIFrame& aFrame) const;
+  bool CanThrottleTransformChanges(const nsIFrame& aFrame) const;
+  bool CanThrottleTransformChangesInScrollable(nsIFrame& aFrame) const;
 
   
   
@@ -445,11 +444,10 @@ private:
   
   
   
-  bool HasPropertiesThatMightAffectOverflow() const
+  bool HasTransformThatMightAffectOverflow() const
   {
-    return mCumulativeChangeHint & (nsChangeHint_AddOrRemoveTransform |
-                                    nsChangeHint_UpdateOverflow |
-                                    nsChangeHint_UpdatePostTransformOverflow |
+    return mCumulativeChangeHint & (nsChangeHint_UpdatePostTransformOverflow |
+                                    nsChangeHint_AddOrRemoveTransform |
                                     nsChangeHint_UpdateTransformLayer);
   }
 

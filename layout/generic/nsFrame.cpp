@@ -722,12 +722,7 @@ nsFrame::Init(nsIContent*       aContent,
   
   
   
-  
-  
-  
-  if (!IsPlaceholderFrame()) {
-    UpdateVisibleDescendantsState();
-  }
+  UpdateVisibleDescendantsState();
 }
 
 void
