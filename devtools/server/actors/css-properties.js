@@ -90,7 +90,7 @@ function isCssPropertyKnown(name) {
     
     
     
-    DOMUtils.cssPropertyIsShorthand(name);
+    InspectorUtils.cssPropertyIsShorthand(name);
     return true;
   } catch (e) {
     return false;
