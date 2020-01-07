@@ -51,25 +51,6 @@ public:
 
 
   static bool IsControllerThread();
-
-  
-
-
-
-
-  static void AssertOnSamplerThread();
-
-  
-
-
-
-
-  static void RunOnSamplerThread(already_AddRefed<Runnable> aTask);
-
-  
-
-
-  static bool IsSamplerThread();
 };
 
 

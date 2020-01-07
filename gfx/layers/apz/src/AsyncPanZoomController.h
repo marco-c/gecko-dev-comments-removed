@@ -753,6 +753,8 @@ protected:
 
   APZCTreeManager* GetApzcTreeManager() const;
 
+  void AssertOnSamplerThread() const;
+
   
 
 

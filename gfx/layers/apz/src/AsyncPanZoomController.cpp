@@ -848,7 +848,7 @@ AsyncPanZoomController::GetInputQueue() const {
 void
 AsyncPanZoomController::Destroy()
 {
-  APZThreadUtils::AssertOnSamplerThread();
+  AssertOnSamplerThread();
 
   CancelAnimation(CancelAnimationFlags::ScrollSnap);
 
@@ -3481,7 +3481,7 @@ AsyncPanZoomController::RequestContentRepaint(const FrameMetrics& aFrameMetrics,
 bool AsyncPanZoomController::UpdateAnimation(const TimeStamp& aSampleTime,
                                              nsTArray<RefPtr<Runnable>>* aOutDeferredTasks)
 {
-  APZThreadUtils::AssertOnSamplerThread();
+  AssertOnSamplerThread();
 
   
   
@@ -3540,7 +3540,7 @@ AsyncPanZoomController::GetOverscrollTransform(AsyncTransformConsumer aMode) con
 
 bool AsyncPanZoomController::AdvanceAnimations(const TimeStamp& aSampleTime)
 {
-  APZThreadUtils::AssertOnSamplerThread();
+  AssertOnSamplerThread();
 
   
   
@@ -3819,7 +3819,7 @@ void AsyncPanZoomController::NotifyLayersUpdated(const ScrollMetadata& aScrollMe
                                                  bool aIsFirstPaint,
                                                  bool aThisLayerTreeUpdated)
 {
-  APZThreadUtils::AssertOnSamplerThread();
+  AssertOnSamplerThread();
 
   RecursiveMutexAutoLock lock(mRecursiveMutex);
   bool isDefault = mScrollMetadata.IsDefault();
@@ -4081,6 +4081,14 @@ const FrameMetrics& AsyncPanZoomController::GetFrameMetrics() const {
 const ScrollMetadata& AsyncPanZoomController::GetScrollMetadata() const {
   mRecursiveMutex.AssertCurrentThreadIn();
   return mScrollMetadata;
+}
+
+void
+AsyncPanZoomController::AssertOnSamplerThread() const
+{
+  if (APZCTreeManager* treeManagerLocal = GetApzcTreeManager()) {
+    treeManagerLocal->AssertOnSamplerThread();
+  }
 }
 
 APZCTreeManager* AsyncPanZoomController::GetApzcTreeManager() const {
@@ -4437,7 +4445,7 @@ void AsyncPanZoomController::UpdateSharedCompositorFrameMetrics()
 
 void AsyncPanZoomController::ShareCompositorFrameMetrics()
 {
-  APZThreadUtils::AssertOnSamplerThread();
+  AssertOnSamplerThread();
 
   
   

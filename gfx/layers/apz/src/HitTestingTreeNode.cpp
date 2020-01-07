@@ -10,7 +10,6 @@
 #include "gfxPrefs.h"
 #include "LayersLogging.h"                              
 #include "mozilla/gfx/Point.h"                          
-#include "mozilla/layers/APZThreadUtils.h"              
 #include "mozilla/layers/APZUtils.h"                    
 #include "mozilla/layers/AsyncCompositionManager.h"     
 #include "mozilla/layers/AsyncDragMetrics.h"            
@@ -58,7 +57,8 @@ HitTestingTreeNode::~HitTestingTreeNode() = default;
 void
 HitTestingTreeNode::Destroy()
 {
-  APZThreadUtils::AssertOnSamplerThread();
+  
+  
 
   mPrevSibling = nullptr;
   mLastChild = nullptr;

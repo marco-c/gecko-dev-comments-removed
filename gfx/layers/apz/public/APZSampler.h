@@ -104,6 +104,25 @@ public:
   void MarkAsyncTransformAppliedToContent(const LayerMetricsWrapper& aLayer);
   bool HasUnusedAsyncTransform(const LayerMetricsWrapper& aLayer);
 
+  
+
+
+
+
+  void AssertOnSamplerThread();
+
+  
+
+
+
+
+  void RunOnSamplerThread(already_AddRefed<Runnable> aTask);
+
+  
+
+
+  bool IsSamplerThread();
+
 protected:
   virtual ~APZSampler();
 

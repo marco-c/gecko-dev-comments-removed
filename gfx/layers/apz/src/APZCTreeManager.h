@@ -526,9 +526,14 @@ public:
       bool aScrollbarIsDescendant,
       AsyncTransformComponentMatrix* aOutClipTransform);
 
+  
+  void AssertOnSamplerThread();
+
 protected:
   
   virtual ~APZCTreeManager();
+
+  APZSampler* GetSampler() const;
 
   
   virtual AsyncPanZoomController* NewAPZCInstance(LayersId aLayersId,
