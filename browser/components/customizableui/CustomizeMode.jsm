@@ -31,8 +31,6 @@ XPCOMUtils.defineLazyGlobalGetters(this, ["CSS"]);
 
 ChromeUtils.defineModuleGetter(this, "DragPositionManager",
                                "resource:///modules/DragPositionManager.jsm");
-ChromeUtils.defineModuleGetter(this, "BrowserUITelemetry",
-                               "resource:///modules/BrowserUITelemetry.jsm");
 ChromeUtils.defineModuleGetter(this, "BrowserUtils",
                                "resource://gre/modules/BrowserUtils.jsm");
 ChromeUtils.defineModuleGetter(this, "LightweightThemeManager",
@@ -1084,7 +1082,6 @@ CustomizeMode.prototype = {
     this.resetting = true;
     
     let btn = this.$("customization-reset-button");
-    BrowserUITelemetry.countCustomizationEvent("reset");
     btn.disabled = true;
     return (async () => {
       await this.depopulatePalette();
@@ -1892,7 +1889,6 @@ CustomizeMode.prototype = {
         }
 
         CustomizableUI.removeWidgetFromArea(aDraggedItemId);
-        BrowserUITelemetry.countCustomizationEvent("remove");
         
         if (CustomizableUI.isSpecialWidget(aDraggedItemId)) {
           return;
@@ -1934,7 +1930,6 @@ CustomizeMode.prototype = {
         this.wrapToolbarItem(aTargetNode, place);
       }
       this.wrapToolbarItem(draggedItem, place);
-      BrowserUITelemetry.countCustomizationEvent("move");
       return;
     }
 
@@ -1942,12 +1937,6 @@ CustomizeMode.prototype = {
     
     if (aTargetNode == aTargetArea.customizationTarget) {
       CustomizableUI.addWidgetToArea(aDraggedItemId, aTargetArea.id);
-      
-      
-      
-      
-      let custEventType = aOriginArea.id == kPaletteId ? "add" : "move";
-      BrowserUITelemetry.countCustomizationEvent(custEventType);
       this._onDragEnd(aEvent);
       return;
     }
@@ -1991,11 +1980,6 @@ CustomizeMode.prototype = {
     }
 
     this._onDragEnd(aEvent);
-
-    
-    
-    let custEventType = aOriginArea.id == kPaletteId ? "add" : "move";
-    BrowserUITelemetry.countCustomizationEvent(custEventType);
 
     
     if (aTargetNode != itemForPlacement) {
