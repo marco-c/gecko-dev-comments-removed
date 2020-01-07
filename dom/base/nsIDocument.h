@@ -213,7 +213,28 @@ enum DocumentFlavor {
 class nsContentList;
 class nsDocumentOnStack;
 
+class nsDocHeaderData
+{
+public:
+  nsDocHeaderData(nsAtom* aField, const nsAString& aData)
+    : mField(aField), mData(aData), mNext(nullptr)
+  {
+  }
 
+  ~nsDocHeaderData(void)
+  {
+    delete mNext;
+  }
+
+  RefPtr<nsAtom> mField;
+  nsString mData;
+  nsDocHeaderData* mNext;
+};
+
+
+
+
+class PrincipalFlashClassifier;
 
 
 
@@ -319,7 +340,7 @@ public:
 
 
 
-  virtual void NotifyPossibleTitleChange(bool aBoundTitleElement) = 0;
+  void NotifyPossibleTitleChange(bool aBoundTitleElement);
 
   
 
@@ -356,24 +377,30 @@ public:
 
 
 
-  virtual void SetDocumentURI(nsIURI* aURI) = 0;
+  void SetDocumentURI(nsIURI* aURI);
 
   
 
 
 
-  virtual void SetChromeXHRDocURI(nsIURI* aURI) = 0;
+  void SetChromeXHRDocURI(nsIURI* aURI)
+  {
+    mChromeXHRDocURI = aURI;
+  }
 
   
 
 
 
-  virtual void SetChromeXHRDocBaseURI(nsIURI* aURI) = 0;
+  void SetChromeXHRDocBaseURI(nsIURI* aURI)
+  {
+    mChromeXHRDocBaseURI = aURI;
+  }
 
   
 
 
-  virtual void ApplySettingsFromCSP(bool aSpeculative) = 0;
+  void ApplySettingsFromCSP(bool aSpeculative);
 
   already_AddRefed<nsIParser> CreatorParserOrNull()
   {
@@ -434,7 +461,7 @@ public:
 
 
 
-  virtual void SetPrincipal(nsIPrincipal *aPrincipal) = 0;
+  void SetPrincipal(nsIPrincipal* aPrincipal);
 
   
 
@@ -495,9 +522,10 @@ public:
     }
     return GetFallbackBaseURI();
   }
-  virtual already_AddRefed<nsIURI> GetBaseURI(bool aTryUseXHRDocBaseURI = false) const override;
 
-  virtual void SetBaseURI(nsIURI* aURI) = 0;
+  already_AddRefed<nsIURI> GetBaseURI(bool aTryUseXHRDocBaseURI = false) const final;
+
+  void SetBaseURI(nsIURI* aURI);
 
   
 
@@ -511,7 +539,11 @@ public:
   
 
 
-  virtual void GetBaseTarget(nsAString &aBaseTarget) = 0;
+  void GetBaseTarget(nsAString& aBaseTarget) const
+  {
+    aBaseTarget = mBaseTarget;
+  }
+
   void SetBaseTarget(const nsString& aBaseTarget) {
     mBaseTarget = aBaseTarget;
   }
@@ -563,14 +595,30 @@ public:
 
 
 
-  virtual Element* AddIDTargetObserver(nsAtom* aID, IDTargetObserver aObserver,
-                                       void* aData, bool aForImage) = 0;
+  Element* AddIDTargetObserver(nsAtom* aID, IDTargetObserver aObserver,
+                               void* aData, bool aForImage);
   
 
 
 
-  virtual void RemoveIDTargetObserver(nsAtom* aID, IDTargetObserver aObserver,
-                                      void* aData, bool aForImage) = 0;
+  void RemoveIDTargetObserver(nsAtom* aID, IDTargetObserver aObserver,
+                              void* aData, bool aForImage);
+
+  
+
+
+
+
+  inline bool CheckGetElementByIdArg(const nsAString& aId)
+  {
+    if (aId.IsEmpty()) {
+      ReportEmptyGetElementByIdArg();
+      return false;
+    }
+    return true;
+  }
+
+  void ReportEmptyGetElementByIdArg();
 
   
 
@@ -893,8 +941,8 @@ public:
 
 
 
-  virtual void GetHeaderData(nsAtom* aHeaderField, nsAString& aData) const = 0;
-  virtual void SetHeaderData(nsAtom* aheaderField, const nsAString& aData) = 0;
+  void GetHeaderData(nsAtom* aHeaderField, nsAString& aData) const;
+  void SetHeaderData(nsAtom* aheaderField, const nsAString& aData);
 
   
 
@@ -984,23 +1032,22 @@ public:
   
 
 
-  virtual bool GetAllowPlugins () = 0;
+  bool GetAllowPlugins ();
 
   
 
 
-  virtual nsresult SetSubDocumentFor(Element* aContent,
-                                     nsIDocument* aSubDoc) = 0;
+  nsresult SetSubDocumentFor(Element* aContent, nsIDocument* aSubDoc);
 
   
 
 
-  virtual nsIDocument *GetSubDocumentFor(nsIContent *aContent) const = 0;
+  nsIDocument* GetSubDocumentFor(nsIContent* aContent) const;
 
   
 
 
-  virtual Element* FindContentForSubDocument(nsIDocument* aDocument) const = 0;
+  Element* FindContentForSubDocument(nsIDocument* aDocument) const;
 
   
 
@@ -1131,7 +1178,8 @@ public:
   mozilla::Maybe<mozilla::dom::ServiceWorkerDescriptor> GetController() const;
 
 protected:
-  virtual Element *GetRootElementInternal() const = 0;
+  virtual Element* GetRootElementInternal() const = 0;
+  void DoNotifyPossibleTitleChange();
 
   void SetPageUnloadingEventTimeStamp()
   {
@@ -2063,14 +2111,36 @@ public:
   
 
 
-  virtual void AddStyleRelevantLink(mozilla::dom::Link* aLink) = 0;
+  void AddStyleRelevantLink(mozilla::dom::Link* aLink)
+  {
+    NS_ASSERTION(aLink, "Passing in a null link.  Expect crashes RSN!");
+#ifdef DEBUG
+    nsPtrHashKey<mozilla::dom::Link>* entry = mStyledLinks.GetEntry(aLink);
+    NS_ASSERTION(!entry, "Document already knows about this Link!");
+    mStyledLinksCleared = false;
+#endif
+    mStyledLinks.PutEntry(aLink);
+  }
+
   
 
 
 
 
 
-  virtual void ForgetLink(mozilla::dom::Link* aLink) = 0;
+  void ForgetLink(mozilla::dom::Link* aLink)
+  {
+    NS_ASSERTION(aLink, "Passing in a null link.  Expect crashes RSN!");
+#ifdef DEBUG
+    nsPtrHashKey<mozilla::dom::Link>* entry = mStyledLinks.GetEntry(aLink);
+    NS_ASSERTION(entry || mStyledLinksCleared,
+                 "Document knows nothing about this Link!");
+#endif
+    mStyledLinks.RemoveEntry(aLink);
+  }
+
+  
+  void RefreshLinkHrefs();
 
   
 
@@ -2110,7 +2180,8 @@ public:
 
 
 
-  bool HaveFiredDOMTitleChange() const {
+  bool HaveFiredDOMTitleChange() const
+  {
     return mHaveFiredTitleChange;
   }
 
@@ -2656,7 +2727,7 @@ public:
 
 
 
-  virtual Element* LookupImageElement(const nsAString& aElementId) = 0;
+  Element* LookupImageElement(const nsAString& aElementId);
 
   virtual mozilla::dom::DocumentTimeline* Timeline() = 0;
   virtual mozilla::LinkedList<mozilla::dom::DocumentTimeline>& Timelines() = 0;
@@ -2897,8 +2968,8 @@ public:
   already_AddRefed<mozilla::dom::AboutCapabilities> GetAboutCapabilities(
     ErrorResult& aRv);
 
-  virtual void GetTitle(nsAString& aTitle) = 0;
-  virtual void SetTitle(const nsAString& aTitle, mozilla::ErrorResult& rv) = 0;
+  void GetTitle(nsAString& aTitle);
+  void SetTitle(const nsAString& aTitle, mozilla::ErrorResult& rv);
   void GetDir(nsAString& aDirection) const;
   void SetDir(const nsAString& aDirection);
   already_AddRefed<nsContentList> GetElementsByName(const nsAString& aName)
@@ -2924,8 +2995,7 @@ public:
   }
   Element* GetCurrentScript();
   void ReleaseCapture() const;
-  virtual void MozSetImageElement(const nsAString& aImageElementId,
-                                  Element* aElement) = 0;
+  void MozSetImageElement(const nsAString& aImageElementId, Element* aElement);
   nsIURI* GetDocumentURIObject() const;
   
   virtual bool FullscreenEnabled(mozilla::dom::CallerType aCallerType) = 0;
@@ -3143,8 +3213,8 @@ public:
 
   
   
-  virtual mozilla::dom::FlashClassification DocumentFlashClassification() = 0;
-  virtual bool IsThirdParty() = 0;
+  mozilla::dom::FlashClassification DocumentFlashClassification();
+  bool IsThirdParty();
 
   bool IsScopedStyleEnabled();
 
@@ -3222,6 +3292,23 @@ public:
   nsIContent* GetContentInThisDocument(nsIFrame* aFrame) const;
 
 protected:
+  
+
+
+
+
+
+
+  Element* GetTitleElement();
+
+  
+  
+  mozilla::dom::FlashClassification PrincipalFlashClassification();
+
+  
+  
+  mozilla::dom::FlashClassification ComputeFlashClassification();
+
   bool GetUseCounter(mozilla::UseCounter aUseCounter)
   {
     return mUseCounters[aUseCounter];
@@ -3296,7 +3383,7 @@ protected:
   virtual nsIScriptGlobalObject* GetScriptHandlingObjectInternal() const = 0;
 
   
-  virtual bool InternalAllowXULXBL() = 0;
+  bool InternalAllowXULXBL();
 
   
 
@@ -3403,6 +3490,15 @@ protected:
   
   
   nsAutoPtr<nsTHashtable<nsPtrHashKey<nsISupports> > > mActivityObservers;
+
+  
+  nsTHashtable<nsPtrHashKey<mozilla::dom::Link>> mStyledLinks;
+#ifdef DEBUG
+  
+  
+  
+  bool mStyledLinksCleared;
+#endif
 
   
   
@@ -3638,6 +3734,10 @@ protected:
   bool mSSApplicableStateNotificationPending: 1;
 
   
+  
+  bool mMayHaveTitleElement: 1;
+
+  
   enum { eScopedStyle_Unknown, eScopedStyle_Disabled, eScopedStyle_Enabled };
   unsigned int mIsScopedStyleEnabled : 2;
 
@@ -3838,6 +3938,27 @@ protected:
 
   
   uint32_t mUpdateNestLevel;
+
+  enum ViewportType {
+    DisplayWidthHeight,
+    Specified,
+    Unknown
+  };
+
+  ViewportType mViewportType;
+
+  PLDHashTable* mSubDocuments;
+
+  nsDocHeaderData* mHeaderData;
+
+  RefPtr<PrincipalFlashClassifier> mPrincipalFlashClassifier;
+  mozilla::dom::FlashClassification mFlashClassification;
+  
+  
+  mozilla::Maybe<bool> mIsThirdParty;
+
+  nsRevocableEventPtr<nsRunnableMethod<nsIDocument, void, false>>
+    mPendingTitleChangeEvent;
 
   nsTArray<RefPtr<mozilla::StyleSheet>> mOnDemandBuiltInUASheets;
   nsTArray<RefPtr<mozilla::StyleSheet>> mAdditionalSheets[AdditionalSheetTypeCount];

@@ -129,24 +129,6 @@ public:
 } 
 } 
 
-class nsDocHeaderData
-{
-public:
-  nsDocHeaderData(nsAtom* aField, const nsAString& aData)
-    : mField(aField), mData(aData), mNext(nullptr)
-  {
-  }
-
-  ~nsDocHeaderData(void)
-  {
-    delete mNext;
-  }
-
-  RefPtr<nsAtom> mField;
-  nsString          mData;
-  nsDocHeaderData*  mNext;
-};
-
 class nsOnloadBlocker final : public nsIRequest
 {
 public:
@@ -316,9 +298,6 @@ protected:
 };
 
 
-class PrincipalFlashClassifier;
-
-
 class nsDocument : public nsIDocument,
                    public nsIDOMDocument,
                    public nsSupportsWeakReference,
@@ -356,32 +335,10 @@ public:
 
   virtual void StopDocumentLoad() override;
 
-  virtual void NotifyPossibleTitleChange(bool aBoundTitleElement) override;
-
-  virtual void SetDocumentURI(nsIURI* aURI) override;
-
-  virtual void SetChromeXHRDocURI(nsIURI* aURI) override;
-
-  virtual void SetChromeXHRDocBaseURI(nsIURI* aURI) override;
-
-  virtual void ApplySettingsFromCSP(bool aSpeculative) override;
-
-  
-
-
-  virtual void SetPrincipal(nsIPrincipal *aPrincipal) override;
-
   
 
 
   virtual void SetContentType(const nsAString& aContentType) override;
-
-  virtual void SetBaseURI(nsIURI* aURI) override;
-
-  
-
-
-  virtual void GetBaseTarget(nsAString &aBaseTarget) override;
 
   
 
@@ -389,19 +346,6 @@ public:
 
   virtual void
     SetDocumentCharacterSet(NotNull<const Encoding*> aEncoding) override;
-
-  virtual Element* AddIDTargetObserver(nsAtom* aID, IDTargetObserver aObserver,
-                                       void* aData, bool aForImage) override;
-  virtual void RemoveIDTargetObserver(nsAtom* aID, IDTargetObserver aObserver,
-                                      void* aData, bool aForImage) override;
-
-  
-
-
-
-  virtual void GetHeaderData(nsAtom* aHeaderField, nsAString& aData) const override;
-  virtual void SetHeaderData(nsAtom* aheaderField,
-                             const nsAString& aData) override;
 
   
 
@@ -413,8 +357,6 @@ public:
                                              mozilla::StyleSetHandle aStyleSet)
     final;
   virtual void DeleteShell() override;
-
-  virtual bool GetAllowPlugins() override;
 
   static bool CallerIsTrustedAboutPage(JSContext* aCx, JSObject* aObject);
   static bool IsElementAnimateEnabled(JSContext* aCx, JSObject* aObject);
@@ -428,10 +370,6 @@ public:
     return mTimelines;
   }
 
-  virtual nsresult SetSubDocumentFor(Element* aContent,
-                                     nsIDocument* aSubDoc) override;
-  virtual nsIDocument* GetSubDocumentFor(nsIContent* aContent) const override;
-  virtual Element* FindContentForSubDocument(nsIDocument *aDocument) const override;
   virtual Element* GetRootElementInternal() const override;
 
   virtual nsIChannel* GetChannel() const override {
@@ -615,9 +553,6 @@ public:
   virtual void BlockOnload() override;
   virtual void UnblockOnload(bool aFireSync) override;
 
-  virtual void AddStyleRelevantLink(mozilla::dom::Link* aLink) override;
-  virtual void ForgetLink(mozilla::dom::Link* aLink) override;
-
   virtual void ClearBoxObjectFor(nsIContent* aContent) override;
 
   virtual already_AddRefed<mozilla::dom::BoxObject>
@@ -676,8 +611,6 @@ public:
   NS_DECL_CYCLE_COLLECTION_SKIPPABLE_SCRIPT_HOLDER_CLASS_AMBIGUOUS(nsDocument,
                                                                    nsIDocument)
 
-  void DoNotifyPossibleTitleChange();
-
   nsExternalResourceMap& ExternalResourceMap()
   {
     return mExternalResourceMap;
@@ -733,10 +666,6 @@ public:
   virtual void ScrollToRef() override;
   virtual void ResetScrolledToRefAlready() override;
   virtual void SetChangeScrollPosWhenScrollingToRef(bool aValue) override;
-
-  virtual Element* LookupImageElement(const nsAString& aElementId) override;
-  virtual void MozSetImageElement(const nsAString& aImageElementId,
-                                  Element* aElement) override;
 
   
   
@@ -878,22 +807,6 @@ public:
 protected:
   friend class nsNodeUtils;
 
-  
-
-
-
-
-  inline bool CheckGetElementByIdArg(const nsAString& aId)
-  {
-    if (aId.IsEmpty()) {
-      ReportEmptyGetElementByIdArg();
-      return false;
-    }
-    return true;
-  }
-
-  void ReportEmptyGetElementByIdArg();
-
   void DispatchContentLoadedEvents();
 
   void RetrieveRelevantHeaders(nsIChannel *aChannel);
@@ -907,26 +820,10 @@ protected:
   
   void DestroyElementMaps();
 
-  
-  void RefreshLinkHrefs();
-
   nsIContent* GetFirstBaseNodeWithHref();
   nsresult SetFirstBaseNodeWithHref(nsIContent *node);
 
-  
-
-
-
-
-
-
-  Element* GetTitleElement();
-
 public:
-  
-  virtual void GetTitle(nsAString& aTitle) override;
-  
-  virtual void SetTitle(const nsAString& aTitle, mozilla::ErrorResult& rv) override;
 
   js::ExpandoAndGeneration mExpandoAndGeneration;
 
@@ -942,12 +839,8 @@ protected:
 
   virtual nsPIDOMWindowOuter* GetWindowInternal() const override;
   virtual nsIScriptGlobalObject* GetScriptHandlingObjectInternal() const override;
-  virtual bool InternalAllowXULXBL() override;
 
   void UpdateScreenOrientation();
-
-  virtual mozilla::dom::FlashClassification DocumentFlashClassification() override;
-  virtual bool IsThirdParty() override;
 
 #define NS_DOCUMENT_NOTIFY_OBSERVERS(func_, params_) do {                     \
     NS_OBSERVER_ARRAY_NOTIFY_XPCOM_OBSERVERS(mObservers, nsIDocumentObserver, \
@@ -974,16 +867,6 @@ protected:
   bool ApplyFullscreen(const FullscreenRequest& aRequest);
 
   
-  
-  mozilla::dom::FlashClassification PrincipalFlashClassification();
-
-  
-  
-  mozilla::dom::FlashClassification ComputeFlashClassification();
-
-  PLDHashTable *mSubDocuments;
-
-  
   nsAttrAndChildArray mChildren;
 
   
@@ -1008,25 +891,14 @@ protected:
   
   nsWeakPtr mFullscreenRoot;
 
-  RefPtr<PrincipalFlashClassifier> mPrincipalFlashClassifier;
-  mozilla::dom::FlashClassification mFlashClassification;
-  
-  
-  mozilla::Maybe<bool> mIsThirdParty;
-
 public:
   RefPtr<mozilla::EventListenerManager> mListenerManager;
   RefPtr<mozilla::dom::ScriptLoader> mScriptLoader;
-  nsDocHeaderData* mHeaderData;
 
   nsClassHashtable<nsStringHashKey, nsRadioGroupStruct> mRadioGroups;
 
   
   mozilla::TimeStamp mLoadingTimeStamp;
-
-  
-  
-  bool mMayHaveTitleElement:1;
 
   bool mHasWarnedAboutBoxObjects:1;
 
@@ -1104,15 +976,6 @@ private:
   nsCOMPtr<nsIRequest> mOnloadBlocker;
 
   
-  nsTHashtable<nsPtrHashKey<mozilla::dom::Link> > mStyledLinks;
-#ifdef DEBUG
-  
-  
-  
-  bool mStyledLinksCleared;
-#endif
-
-  
   nsTHashtable< nsPtrHashKey<nsIContent> > mResponsiveContent;
 
   nsTArray<RefPtr<nsFrameLoader> > mInitializableFrameLoaders;
@@ -1120,9 +983,6 @@ private:
   RefPtr<nsRunnableMethod<nsDocument> > mFrameLoaderRunner;
 
   nsCOMPtr<nsIRunnable> mMaybeEndOutermostXBLUpdateRunner;
-
-  nsRevocableEventPtr<nsRunnableMethod<nsDocument, void, false> >
-    mPendingTitleChangeEvent;
 
   nsExternalResourceMap mExternalResourceMap;
 
@@ -1135,7 +995,7 @@ private:
   
   
   
-  nsDataHashtable< nsURIHashKey, bool> mPreloadedPreconnects;
+  nsDataHashtable<nsURIHashKey, bool> mPreloadedPreconnects;
 
   
   int32_t mPreloadPictureDepth;
@@ -1158,14 +1018,6 @@ private:
 
   RefPtr<mozilla::dom::DocumentTimeline> mDocumentTimeline;
   mozilla::LinkedList<mozilla::dom::DocumentTimeline> mTimelines;
-
-  enum ViewportType {
-    DisplayWidthHeight,
-    Specified,
-    Unknown
-  };
-
-  ViewportType mViewportType;
 
   
   
