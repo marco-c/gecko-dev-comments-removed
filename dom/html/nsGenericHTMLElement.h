@@ -176,6 +176,7 @@ public:
                 aError);
   }
 
+  MOZ_CAN_RUN_SCRIPT
   void GetInnerText(mozilla::dom::DOMString& aValue, mozilla::ErrorResult& aError);
   void SetInnerText(const nsAString& aValue);
 
@@ -265,6 +266,7 @@ public:
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   nsSize GetWidthHeightForImage(RefPtr<imgRequestProxy>& aImageRequest);
 
   

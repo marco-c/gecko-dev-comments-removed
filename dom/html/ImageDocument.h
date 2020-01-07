@@ -65,7 +65,9 @@ public:
     return mImageIsResized;
   }
   already_AddRefed<imgIRequest> GetImageRequest(ErrorResult& aRv);
-  void ShrinkToFit();
+  
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void ShrinkToFit();
   void RestoreImage();
   void RestoreImageTo(int32_t aX, int32_t aY)
   {
