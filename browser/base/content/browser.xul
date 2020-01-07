@@ -683,11 +683,6 @@
             <menupopup id="alltabs_containersMenuTab" />
           </menu>
           <menuseparator id="alltabs-popup-separator-2"/>
-          <menu id="alltabs_hiddenTabs"
-                label="&hiddenTabs.label;">
-            <menupopup id="alltabs_hiddenTabsMenu"/>
-          </menu>
-          <menuseparator id="alltabs-popup-separator-3"/>
         </menupopup>
       </toolbarbutton>
 
@@ -867,7 +862,7 @@
                   <image id="midi-notification-icon" class="notification-anchor-icon midi-icon" role="button"
                          tooltiptext="&urlbar.midiNotificationAnchor.tooltip;"/>
                   <image id="webauthn-notification-icon" class="notification-anchor-icon" role="button"
-                         tooltiptext="&urlbar.defaultNotificationAnchor.tooltip;"/>
+                         tooltiptext="&urlbar.webAuthnAnchor.tooltip;"/>
                 </box>
                 <image id="connection-icon"/>
                 <image id="extension-icon"/>
