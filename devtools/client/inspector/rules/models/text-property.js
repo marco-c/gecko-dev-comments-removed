@@ -130,10 +130,7 @@ TextProperty.prototype = {
 
 
 
-
-
-
-  updateValue: function(value) {
+  noticeNewValue: function(value) {
     if (value !== this.value) {
       this.value = value;
       this.updateEditor();

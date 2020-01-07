@@ -5,57 +5,17 @@
 "use strict";
 
 const {
-  RESET_EDITOR,
-  UPDATE_AXIS_VALUE,
-  UPDATE_EDITOR_STATE,
   UPDATE_EDITOR_VISIBILITY,
 } = require("../actions/index");
 
 const INITIAL_STATE = {
   
-  axes: {},
-  
-  fonts: [],
-  
   isVisible: false,
-  
-  properties: {},
   
   selector: "",
 };
 
 let reducers = {
-
-  [RESET_EDITOR](state) {
-    return { ...INITIAL_STATE };
-  },
-
-  [UPDATE_AXIS_VALUE](state, { axis, value }) {
-    let newState = { ...state };
-    newState.axes[axis] = value;
-    return newState;
-  },
-
-  [UPDATE_EDITOR_STATE](state, { fonts, properties }) {
-    let axes = {};
-
-    if (properties["font-variation-settings"]) {
-      
-      
-      axes = properties["font-variation-settings"]
-        .split(",")
-        .reduce((acc, pair) => {
-          
-          pair = pair.split(/["']/).filter(part => part.trim() !== "");
-          const tag = pair[0].trim();
-          const value = pair[1].trim();
-          acc[tag] = value;
-          return acc;
-        }, {});
-    }
-
-    return { ...state, axes, fonts, properties };
-  },
 
   [UPDATE_EDITOR_VISIBILITY](state, { isVisible, selector }) {
     return { ...state, isVisible, selector };

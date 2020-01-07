@@ -81,16 +81,10 @@ exports.fontOptions = {
 
 exports.fontEditor = {
   
-  axes: PropTypes.object,
-
-  
-  fonts: PropTypes.arrayOf(PropTypes.shape(font)),
+  font: PropTypes.shape(font),
 
   
   isVisible: PropTypes.bool,
-
-  
-  properties: PropTypes.object,
 
   
   selector: PropTypes.string,

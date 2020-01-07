@@ -9,15 +9,6 @@ const { createEnum } = require("devtools/client/shared/enum");
 createEnum([
 
   
-  "RESET_EDITOR",
-
-  
-  "UPDATE_AXIS_VALUE",
-
-  
-  "UPDATE_EDITOR_STATE",
-
-  
   "UPDATE_EDITOR_VISIBILITY",
 
   

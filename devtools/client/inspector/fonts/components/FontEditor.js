@@ -4,11 +4,9 @@
 
 "use strict";
 
-const { createFactory, PureComponent } = require("devtools/client/shared/vendor/react");
+const { PureComponent } = require("devtools/client/shared/vendor/react");
 const dom = require("devtools/client/shared/vendor/react-dom-factories");
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
-
-const FontAxis = createFactory(require("./FontAxis"));
 
 const Types = require("../types");
 
@@ -16,84 +14,17 @@ class FontEditor extends PureComponent {
   static get propTypes() {
     return {
       fontEditor: PropTypes.shape(Types.fontEditor).isRequired,
-      onAxisUpdate: PropTypes.func.isRequired,
     };
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-  getAxisStep(min, max) {
-    let step = 1;
-    let delta = parseInt(max, 10) - parseInt(min, 10);
-
-    if (delta <= 1) {
-      step = 0.001;
-    } else if (delta <= 10) {
-      step = 0.01;
-    } else if (delta <= 100) {
-      step = 0.1;
-    }
-
-    return step.toString();
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  renderAxes(fontAxes = [], editedAxes) {
-    return fontAxes.map(axis => {
-      return FontAxis({
-        min: axis.minValue,
-        max: axis.maxValue,
-        value: editedAxes[axis.tag] || axis.defaultValue,
-        step: this.getAxisStep(axis.minValue, axis.maxValue),
-        label: axis.name,
-        name: axis.tag,
-        onChange: this.props.onAxisUpdate,
-        showInput: true
-      });
-    });
-  }
-
-  
-  
-  renderPlaceholder() {
-    return dom.div({}, "No fonts with variation axes apply to this element.");
-  }
-
   render() {
-    const { fonts, axes } = this.props.fontEditor;
-    
-    
-    const fontAxes = (fonts[0] && fonts[0].variationAxes) ? fonts[0].variationAxes : null;
+    const { selector } = this.props.fontEditor;
 
     return dom.div(
       {
         className: "theme-sidebar inspector-tabpanel",
-        id: "sidebar-panel-fontinspector"
-      },
-      fontAxes ?
-        this.renderAxes(fontAxes, axes)
-        :
-        this.renderPlaceholder()
+        id: "sidebar-panel-fonteditor"
+      }, `Placeholder for Font Editor panel for selector: ${selector}`
     );
   }
 }
