@@ -21,35 +21,7 @@
 #include "nsCSSAnonBoxes.h"
 #include "nsCSSPseudoElements.h"
 
-
 #include "nsStyleStructFwd.h"
-
-
-
-#define NS_STYLE_INHERIT_MASK              0x0007fffff
-
-
-#define NS_STYLE_INHERITED_STRUCT_MASK \
-  ((nsStyleStructID_size_t(1) << nsStyleStructID_Inherited_Count) - 1)
-
-#define NS_STYLE_RESET_STRUCT_MASK \
-  (((nsStyleStructID_size_t(1) << nsStyleStructID_Reset_Count) - 1) \
-   << nsStyleStructID_Inherited_Count)
-
-
-
-
-#define NS_STYLE_HAS_TEXT_DECORATION_LINES 0x001000000
-
-#define NS_STYLE_HAS_PSEUDO_ELEMENT_DATA   0x002000000
-
-#define NS_STYLE_RELEVANT_LINK_VISITED     0x004000000
-
-#define NS_STYLE_SUPPRESS_LINEBREAK        0x080000000
-
-#define NS_STYLE_IS_TEXT_COMBINED          0x800000000
-
-#define NS_STYLE_CONTEXT_TYPE_SHIFT        37
 
 class nsAtom;
 enum nsChangeHint : uint32_t;
@@ -91,8 +63,20 @@ class ComputedStyle;
 
 
 
+enum class ComputedStyleBit : uint8_t
+{
+  HasTextDecorationLines = 1 << 0,
+  HasPseudoElementData = 1 << 1,
+  SuppressLineBreak = 1 << 2,
+  IsTextCombined = 1 << 3,
+  RelevantLinkVisited = 1 << 4,
+};
+
+MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(ComputedStyleBit)
+
 class ComputedStyle
 {
+  using Bit = ComputedStyleBit;
 public:
   ComputedStyle(nsPresContext* aPresContext,
                 nsAtom* aPseudoTag,
@@ -142,9 +126,9 @@ public:
   }
 
   nsAtom* GetPseudo() const { return mPseudoTag; }
-  mozilla::CSSPseudoElementType GetPseudoType() const {
-    return static_cast<mozilla::CSSPseudoElementType>(
-             mBits >> NS_STYLE_CONTEXT_TYPE_SHIFT);
+  mozilla::CSSPseudoElementType GetPseudoType() const
+  {
+    return mPseudoType;
   }
 
   bool IsInheritingAnonBox() const {
@@ -174,7 +158,9 @@ public:
   
   
   bool HasTextDecorationLines() const
-    { return !!(mBits & NS_STYLE_HAS_TEXT_DECORATION_LINES); }
+  {
+    return bool(mBits & Bit::HasTextDecorationLines);
+  }
 
   
   
@@ -184,25 +170,33 @@ public:
   
   
   bool ShouldSuppressLineBreak() const
-    { return !!(mBits & NS_STYLE_SUPPRESS_LINEBREAK); }
+  {
+    return bool(mBits & Bit::SuppressLineBreak);
+  }
 
   
   
   bool IsTextCombined() const
-    { return !!(mBits & NS_STYLE_IS_TEXT_COMBINED); }
+  {
+    return bool(mBits & Bit::IsTextCombined);
+  }
 
   
   
   
   
   bool HasPseudoElementData() const
-    { return !!(mBits & NS_STYLE_HAS_PSEUDO_ELEMENT_DATA); }
+  {
+    return bool(mBits & Bit::HasPseudoElementData);
+  }
 
   
   
   
   bool RelevantLinkVisited() const
-    { return !!(mBits & NS_STYLE_RELEVANT_LINK_VISITED); }
+  {
+    return bool(mBits & Bit::RelevantLinkVisited);
+  }
 
   ComputedStyle* GetCachedInheritingAnonBoxStyle(nsAtom* aAnonBox) const
   {
@@ -240,8 +234,6 @@ public:
 
     mCachedInheritingStyles.Insert(aStyle);
   }
-
-  void AddStyleBit(const uint64_t& aBit) { mBits |= aBit; }
 
   
 
@@ -319,20 +311,17 @@ public:
 
 
 
-  static nscolor CombineVisitedColors(nscolor *aColors,
-                                      bool aLinkIsVisited);
+  static nscolor CombineVisitedColors(nscolor* aColors, bool aLinkIsVisited);
 
   
 
 
   inline void StartBackgroundImageLoads();
 
-  static uint32_t GetBitForSID(const nsStyleStructID aSID) { return 1 << aSID; }
-
 #ifdef DEBUG
   void List(FILE* out, int32_t aIndent);
-  static const char* StructName(nsStyleStructID aSID);
-  static bool LookupStruct(const nsACString& aName, nsStyleStructID& aResult);
+  static const char* StructName(StyleStructID aSID);
+  static Maybe<StyleStructID> LookupStruct(const nsACString& aName);
 #endif
 
   
@@ -347,13 +336,23 @@ public:
   void AddSizeOfIncludingThis(nsWindowSizes& aSizes, size_t* aCVsSize) const;
 
 protected:
+  bool HasRequestedStruct(StyleStructID aID) const
+  {
+    return mRequestedStructs & StyleStructConstants::BitFor(aID);
+  }
+
+  void SetRequestedStruct(StyleStructID aID)
+  {
+    mRequestedStructs |= StyleStructConstants::BitFor(aID);
+  }
+
   
   
   friend void ::Gecko_ComputedStyle_Destroy(ComputedStyle*);
 
   ~ComputedStyle() = default;
 
-  nsPresContext* mPresContext;
+  nsPresContext* const mPresContext;
 
   ServoComputedData mSource;
 
@@ -374,14 +373,12 @@ protected:
 
   
   
-  RefPtr<nsAtom> mPseudoTag;
+  const RefPtr<nsAtom> mPseudoTag;
 
   
-  
-  
-  
-  
-  uint64_t                mBits;
+  uint32_t mRequestedStructs = 0;
+  const Bit mBits;
+  const CSSPseudoElementType mPseudoType;
 };
 
 } 

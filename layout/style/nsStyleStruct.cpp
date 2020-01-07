@@ -45,10 +45,6 @@
 using namespace mozilla;
 using namespace mozilla::dom;
 
-static_assert((((1 << nsStyleStructID_Length) - 1) &
-               ~(NS_STYLE_INHERIT_MASK)) == 0,
-              "Not enough bits in NS_STYLE_INHERIT_MASK");
-
  const int32_t nsStyleGridLine::kMinLine;
  const int32_t nsStyleGridLine::kMaxLine;
 
@@ -2100,7 +2096,27 @@ private:
 };
 
 nsStyleImageRequest::nsStyleImageRequest(Mode aModeFlags,
-                                         css::ImageValue* aImageValue)
+                                         imgRequestProxy* aRequestProxy,
+                                         css::ImageValue* aImageValue,
+                                         ImageTracker* aImageTracker)
+  : mRequestProxy(aRequestProxy)
+  , mImageValue(aImageValue)
+  , mImageTracker(aImageTracker)
+  , mModeFlags(aModeFlags)
+  , mResolved(true)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(aImageValue);
+  MOZ_ASSERT(!!(aModeFlags & Mode::Track) == !!aImageTracker);
+
+  if (mRequestProxy) {
+    MaybeTrackAndLock();
+  }
+}
+
+nsStyleImageRequest::nsStyleImageRequest(
+    Mode aModeFlags,
+    mozilla::css::ImageValue* aImageValue)
   : mImageValue(aImageValue)
   , mModeFlags(aModeFlags)
   , mResolved(false)
@@ -2179,12 +2195,11 @@ nsStyleImageRequest::Resolve(
   } else {
     mDocGroup = doc->GetDocGroup();
     mImageValue->Initialize(doc);
-    imgRequestProxy* request = mImageValue->mRequests.GetWeak(doc);
-    if (aPresContext->IsDynamic()) {
-      mRequestProxy = request;
-    } else if (request) {
-      request->GetStaticRequest(doc, getter_AddRefs(mRequestProxy));
-    }
+
+    nsCSSValue value;
+    value.SetImageValue(mImageValue);
+    mRequestProxy = value.GetPossiblyStaticImageValue(aPresContext->Document(),
+                                                      aPresContext);
   }
 
   if (!mRequestProxy) {
