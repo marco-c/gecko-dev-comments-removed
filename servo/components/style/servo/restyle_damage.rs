@@ -191,7 +191,8 @@ fn compute_damage(old: &ComputedValues, new: &ComputedValues) -> ServoRestyleDam
     
     
 
-    restyle_damage_rebuild_and_reflow!(
+    
+    let _ = restyle_damage_rebuild_and_reflow!(
         old,
         new,
         damage,
