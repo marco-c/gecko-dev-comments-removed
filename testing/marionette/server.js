@@ -33,7 +33,10 @@ const logger = Log.repository.getLogger("Marionette");
 
 const {KeepWhenOffline, LoopbackOnly} = Ci.nsIServerSocket;
 
-this.EXPORTED_SYMBOLS = ["server"];
+this.EXPORTED_SYMBOLS = [
+  "TCPConnection",
+  "TCPListener",
+];
 
 
 this.server = {};
@@ -50,7 +53,7 @@ const PREF_PORT = "marionette.port";
 
 
 
-server.TCPListener = class {
+class TCPListener {
   
 
 
@@ -133,7 +136,7 @@ server.TCPListener = class {
     let output = clientSocket.openOutputStream(0, 0, 0);
     let transport = new DebuggerTransport(input, output);
 
-    let conn = new server.TCPConnection(
+    let conn = new TCPConnection(
         this.nextConnID++, transport, this.driverFactory.bind(this));
     conn.onclose = this.onConnectionClosed.bind(this);
     this.conns.add(conn);
@@ -148,7 +151,8 @@ server.TCPListener = class {
     logger.debug(`Closed connection ${conn.id}`);
     this.conns.delete(conn);
   }
-};
+}
+this.TCPListener = TCPListener;
 
 
 
@@ -163,7 +167,7 @@ server.TCPListener = class {
 
 
 
-server.TCPConnection = class {
+class TCPConnection {
   constructor(connID, transport, driverFactory) {
     this.id = connID;
     this.conn = transport;
@@ -402,6 +406,7 @@ server.TCPConnection = class {
   }
 
   toString() {
-    return `[object server.TCPConnection ${this.id}]`;
+    return `[object TCPConnection ${this.id}]`;
   }
-};
+}
+this.TCPConnection = TCPConnection;
