@@ -710,7 +710,7 @@ Inspector.prototype = {
 
     
     
-    if (!Services.prefs.getBoolPref("devtools.inspector.split-sidebar-toggle")) {
+    if (!this.showSplitSidebarToggle) {
       this.sidebar.addExistingTab(
         "computedview",
         INSPECTOR_L10N.getStr("inspector.sidebar.computedViewTitle"),
@@ -743,7 +743,7 @@ Inspector.prototype = {
 
     
     
-    if (Services.prefs.getBoolPref("devtools.inspector.split-sidebar-toggle")) {
+    if (this.showSplitSidebarToggle) {
       this.sidebar.addExistingTab(
         "computedview",
         INSPECTOR_L10N.getStr("inspector.sidebar.computedViewTitle"),
