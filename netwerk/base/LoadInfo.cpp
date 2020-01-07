@@ -46,12 +46,16 @@ LoadInfo::LoadInfo(nsIPrincipal* aLoadingPrincipal,
                    nsIPrincipal* aTriggeringPrincipal,
                    nsINode* aLoadingContext,
                    nsSecurityFlags aSecurityFlags,
-                   nsContentPolicyType aContentPolicyType)
+                   nsContentPolicyType aContentPolicyType,
+                   const Maybe<mozilla::dom::ClientInfo>& aLoadingClientInfo,
+                   const Maybe<mozilla::dom::ServiceWorkerDescriptor>& aController)
   : mLoadingPrincipal(aLoadingContext ?
                         aLoadingContext->NodePrincipal() : aLoadingPrincipal)
   , mTriggeringPrincipal(aTriggeringPrincipal ?
                            aTriggeringPrincipal : mLoadingPrincipal.get())
   , mPrincipalToInherit(nullptr)
+  , mClientInfo(aLoadingClientInfo)
+  , mController(aController)
   , mLoadingContext(do_GetWeakReference(aLoadingContext))
   , mContextForTopLevelLoad(nullptr)
   , mSecurityFlags(aSecurityFlags)
@@ -94,6 +98,11 @@ LoadInfo::LoadInfo(nsIPrincipal* aLoadingPrincipal,
              mInternalContentPolicyType != nsIContentPolicy::TYPE_DOCUMENT);
 
   
+  MOZ_DIAGNOSTIC_ASSERT(
+    aController.isNothing() ||
+    !nsContentUtils::IsNonSubresourceInternalPolicyType(mInternalContentPolicyType));
+
+  
   
   
   
@@ -115,14 +124,16 @@ LoadInfo::LoadInfo(nsIPrincipal* aLoadingPrincipal,
     
     
     
-    mClientInfo = aLoadingContext->OwnerDoc()->GetClientInfo();
+    if (mClientInfo.isNothing()) {
+      mClientInfo = aLoadingContext->OwnerDoc()->GetClientInfo();
+    }
 
     
     
     
     
-    
-    if (!nsContentUtils::IsNonSubresourceInternalPolicyType(mInternalContentPolicyType)) {
+    if (mController.isNothing() &&
+        !nsContentUtils::IsNonSubresourceInternalPolicyType(mInternalContentPolicyType)) {
       mController = aLoadingContext->OwnerDoc()->GetController();
     }
 

@@ -52,7 +52,9 @@
 #include "mozilla/net/DNS.h"
 #include "mozilla/ipc/URIUtils.h"
 #include "mozilla/net/NeckoChild.h"
+#include "mozilla/dom/ClientInfo.h"
 #include "mozilla/dom/ContentParent.h"
+#include "mozilla/dom/ServiceWorkerDescriptor.h"
 #include "mozilla/net/CaptivePortalService.h"
 #include "mozilla/Unused.h"
 #include "ReferrerPolicy.h"
@@ -62,6 +64,10 @@
 
 namespace mozilla {
 namespace net {
+
+using mozilla::Maybe;
+using mozilla::dom::ClientInfo;
+using mozilla::dom::ServiceWorkerDescriptor;
 
 #define PORT_PREF_PREFIX           "network.security.ports."
 #define PORT_PREF(x)               PORT_PREF_PREFIX x
@@ -734,6 +740,29 @@ nsIOService::NewChannelFromURI2(nsIURI* aURI,
                                             aContentPolicyType,
                                             result);
 }
+nsresult
+nsIOService::NewChannelFromURIWithClientAndController(nsIURI* aURI,
+                                                      nsIDOMNode* aLoadingNode,
+                                                      nsIPrincipal* aLoadingPrincipal,
+                                                      nsIPrincipal* aTriggeringPrincipal,
+                                                      const Maybe<ClientInfo>& aLoadingClientInfo,
+                                                      const Maybe<ServiceWorkerDescriptor>& aController,
+                                                      uint32_t aSecurityFlags,
+                                                      uint32_t aContentPolicyType,
+                                                      nsIChannel** aResult)
+{
+    return NewChannelFromURIWithProxyFlagsInternal(aURI,
+                                                   nullptr, 
+                                                   0,       
+                                                   aLoadingNode,
+                                                   aLoadingPrincipal,
+                                                   aTriggeringPrincipal,
+                                                   aLoadingClientInfo,
+                                                   aController,
+                                                   aSecurityFlags,
+                                                   aContentPolicyType,
+                                                   aResult);
+}
 
 
 
@@ -780,6 +809,52 @@ nsIOService::NewChannelFromURIWithLoadInfo(nsIURI* aURI,
                                                  0,       
                                                  aLoadInfo,
                                                  result);
+}
+
+
+nsresult
+nsIOService::NewChannelFromURIWithProxyFlagsInternal(nsIURI* aURI,
+                                                     nsIURI* aProxyURI,
+                                                     uint32_t aProxyFlags,
+                                                     nsIDOMNode* aLoadingNode,
+                                                     nsIPrincipal* aLoadingPrincipal,
+                                                     nsIPrincipal* aTriggeringPrincipal,
+                                                     const Maybe<ClientInfo>& aLoadingClientInfo,
+                                                     const Maybe<ServiceWorkerDescriptor>& aController,
+                                                     uint32_t aSecurityFlags,
+                                                     uint32_t aContentPolicyType,
+                                                     nsIChannel** result)
+{
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    nsCOMPtr<nsILoadInfo> loadInfo;
+
+    
+    
+    if (aLoadingNode || aLoadingPrincipal ||
+        aContentPolicyType == nsIContentPolicy::TYPE_DOCUMENT) {
+      nsCOMPtr<nsINode> loadingNode(do_QueryInterface(aLoadingNode));
+      loadInfo = new LoadInfo(aLoadingPrincipal,
+                              aTriggeringPrincipal,
+                              loadingNode,
+                              aSecurityFlags,
+                              aContentPolicyType,
+                              aLoadingClientInfo,
+                              aController);
+    }
+    NS_ASSERTION(loadInfo, "Please pass security info when creating a channel");
+    return NewChannelFromURIWithProxyFlagsInternal(aURI,
+                                                   aProxyURI,
+                                                   aProxyFlags,
+                                                   loadInfo,
+                                                   result);
 }
 
 nsresult
@@ -907,36 +982,16 @@ nsIOService::NewChannelFromURIWithProxyFlags2(nsIURI* aURI,
                                               uint32_t aContentPolicyType,
                                               nsIChannel** result)
 {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    nsCOMPtr<nsILoadInfo> loadInfo;
-
-    
-    
-    if (aLoadingNode || aLoadingPrincipal ||
-        aContentPolicyType == nsIContentPolicy::TYPE_DOCUMENT) {
-      nsCOMPtr<nsINode> loadingNode(do_QueryInterface(aLoadingNode));
-      loadInfo = new LoadInfo(aLoadingPrincipal,
-                              aTriggeringPrincipal,
-                              loadingNode,
-                              aSecurityFlags,
-                              aContentPolicyType);
-    }
-    NS_ASSERTION(loadInfo, "Please pass security info when creating a channel");
     return NewChannelFromURIWithProxyFlagsInternal(aURI,
                                                    aProxyURI,
                                                    aProxyFlags,
-                                                   loadInfo,
+                                                   aLoadingNode,
+                                                   aLoadingPrincipal,
+                                                   aTriggeringPrincipal,
+                                                   Maybe<ClientInfo>(),
+                                                   Maybe<ServiceWorkerDescriptor>(),
+                                                   aSecurityFlags,
+                                                   aContentPolicyType,
                                                    result);
 }
 

@@ -82,6 +82,8 @@
 
 using namespace mozilla;
 using namespace mozilla::net;
+using mozilla::dom::ClientInfo;
+using mozilla::dom::ServiceWorkerDescriptor;
 
 #define DEFAULT_RP 3
 #define DEFAULT_PRIVATE_RP 2
@@ -211,6 +213,56 @@ NS_NewChannelInternal(nsIChannel           **outChannel,
   return NS_OK;
 }
 
+namespace {
+
+void
+AssertLoadingPrincipalAndClientInfoMatch(nsIPrincipal* aLoadingPrincipal,
+                                         const ClientInfo& aLoadingClientInfo,
+                                         nsContentPolicyType aType)
+{
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  if (aLoadingPrincipal->GetIsSystemPrincipal() &&
+      (aType == nsIContentPolicy::TYPE_INTERNAL_WORKER ||
+       aType == nsIContentPolicy::TYPE_INTERNAL_SHARED_WORKER ||
+       aType == nsIContentPolicy::TYPE_INTERNAL_SERVICE_WORKER ||
+       aType == nsIContentPolicy::TYPE_INTERNAL_WORKER_IMPORT_SCRIPTS)) {
+    return;
+  }
+
+  
+  nsCOMPtr<nsIPrincipal> clientPrincipal(aLoadingClientInfo.GetPrincipal());
+  if (aLoadingPrincipal->Equals(clientPrincipal)) {
+    return;
+  }
+
+  
+  nsAutoCString loadingOrigin;
+  MOZ_ALWAYS_SUCCEEDS(aLoadingPrincipal->GetOrigin(loadingOrigin));
+
+  nsAutoCString clientOrigin;
+  MOZ_ALWAYS_SUCCEEDS(clientPrincipal->GetOrigin(clientOrigin));
+
+  MOZ_DIAGNOSTIC_ASSERT(loadingOrigin == clientOrigin);
+#endif
+}
+
+}
+
 nsresult
 NS_NewChannel(nsIChannel           **outChannel,
               nsIURI                *aUri,
@@ -227,6 +279,43 @@ NS_NewChannel(nsIChannel           **outChannel,
                                nullptr, 
                                aLoadingPrincipal,
                                nullptr, 
+                               Maybe<ClientInfo>(),
+                               Maybe<ServiceWorkerDescriptor>(),
+                               aSecurityFlags,
+                               aContentPolicyType,
+                               aLoadGroup,
+                               aCallbacks,
+                               aLoadFlags,
+                               aIoService);
+}
+
+nsresult
+NS_NewChannel(nsIChannel           **outChannel,
+              nsIURI                *aUri,
+              nsIPrincipal          *aLoadingPrincipal,
+              const ClientInfo      &aLoadingClientInfo,
+              const Maybe<ServiceWorkerDescriptor>& aController,
+              nsSecurityFlags        aSecurityFlags,
+              nsContentPolicyType    aContentPolicyType,
+              nsILoadGroup          *aLoadGroup ,
+              nsIInterfaceRequestor *aCallbacks ,
+              nsLoadFlags            aLoadFlags ,
+              nsIIOService          *aIoService )
+{
+  AssertLoadingPrincipalAndClientInfoMatch(aLoadingPrincipal,
+                                           aLoadingClientInfo,
+                                           aContentPolicyType);
+
+  Maybe<ClientInfo> loadingClientInfo;
+  loadingClientInfo.emplace(aLoadingClientInfo);
+
+  return NS_NewChannelInternal(outChannel,
+                               aUri,
+                               nullptr, 
+                               aLoadingPrincipal,
+                               nullptr, 
+                               loadingClientInfo,
+                               aController,
                                aSecurityFlags,
                                aContentPolicyType,
                                aLoadGroup,
@@ -241,6 +330,8 @@ NS_NewChannelInternal(nsIChannel           **outChannel,
                       nsINode               *aLoadingNode,
                       nsIPrincipal          *aLoadingPrincipal,
                       nsIPrincipal          *aTriggeringPrincipal,
+                      const Maybe<ClientInfo>& aLoadingClientInfo,
+                      const Maybe<ServiceWorkerDescriptor>& aController,
                       nsSecurityFlags        aSecurityFlags,
                       nsContentPolicyType    aContentPolicyType,
                       nsILoadGroup          *aLoadGroup ,
@@ -255,12 +346,14 @@ NS_NewChannelInternal(nsIChannel           **outChannel,
   NS_ENSURE_SUCCESS(rv, rv);
 
   nsCOMPtr<nsIChannel> channel;
-  rv = aIoService->NewChannelFromURI2(
+  rv = aIoService->NewChannelFromURIWithClientAndController(
          aUri,
          aLoadingNode ?
            aLoadingNode->AsDOMNode() : nullptr,
          aLoadingPrincipal,
          aTriggeringPrincipal,
+         aLoadingClientInfo,
+         aController,
          aSecurityFlags,
          aContentPolicyType,
          getter_AddRefs(channel));
@@ -315,6 +408,8 @@ NS_NewChannelWithTriggeringPrincipal(nsIChannel           **outChannel,
                                aLoadingNode,
                                aLoadingNode->NodePrincipal(),
                                aTriggeringPrincipal,
+                               Maybe<ClientInfo>(),
+                               Maybe<ServiceWorkerDescriptor>(),
                                aSecurityFlags,
                                aContentPolicyType,
                                aLoadGroup,
@@ -324,7 +419,7 @@ NS_NewChannelWithTriggeringPrincipal(nsIChannel           **outChannel,
 }
 
 
-nsresult 
+nsresult
 NS_NewChannelWithTriggeringPrincipal(nsIChannel           **outChannel,
                                      nsIURI                *aUri,
                                      nsIPrincipal          *aLoadingPrincipal,
@@ -342,6 +437,8 @@ NS_NewChannelWithTriggeringPrincipal(nsIChannel           **outChannel,
                                nullptr, 
                                aLoadingPrincipal,
                                aTriggeringPrincipal,
+                               Maybe<ClientInfo>(),
+                               Maybe<ServiceWorkerDescriptor>(),
                                aSecurityFlags,
                                aContentPolicyType,
                                aLoadGroup,
@@ -350,7 +447,44 @@ NS_NewChannelWithTriggeringPrincipal(nsIChannel           **outChannel,
                                aIoService);
 }
 
-nsresult 
+
+nsresult
+NS_NewChannelWithTriggeringPrincipal(nsIChannel           **outChannel,
+                                     nsIURI                *aUri,
+                                     nsIPrincipal          *aLoadingPrincipal,
+                                     nsIPrincipal          *aTriggeringPrincipal,
+                                     const ClientInfo      &aLoadingClientInfo,
+                                     const Maybe<ServiceWorkerDescriptor>& aController,
+                                     nsSecurityFlags        aSecurityFlags,
+                                     nsContentPolicyType    aContentPolicyType,
+                                     nsILoadGroup          *aLoadGroup ,
+                                     nsIInterfaceRequestor *aCallbacks ,
+                                     nsLoadFlags            aLoadFlags ,
+                                     nsIIOService          *aIoService )
+{
+  AssertLoadingPrincipalAndClientInfoMatch(aLoadingPrincipal,
+                                           aLoadingClientInfo,
+                                           aContentPolicyType);
+
+  Maybe<ClientInfo> loadingClientInfo;
+  loadingClientInfo.emplace(aLoadingClientInfo);
+
+  return NS_NewChannelInternal(outChannel,
+                               aUri,
+                               nullptr, 
+                               aLoadingPrincipal,
+                               aTriggeringPrincipal,
+                               loadingClientInfo,
+                               aController,
+                               aSecurityFlags,
+                               aContentPolicyType,
+                               aLoadGroup,
+                               aCallbacks,
+                               aLoadFlags,
+                               aIoService);
+}
+
+nsresult
 NS_NewChannel(nsIChannel           **outChannel,
               nsIURI                *aUri,
               nsINode               *aLoadingNode,
@@ -367,6 +501,8 @@ NS_NewChannel(nsIChannel           **outChannel,
                                aLoadingNode,
                                aLoadingNode->NodePrincipal(),
                                nullptr, 
+                               Maybe<ClientInfo>(),
+                               Maybe<ServiceWorkerDescriptor>(),
                                aSecurityFlags,
                                aContentPolicyType,
                                aLoadGroup,
@@ -896,6 +1032,8 @@ NS_NewStreamLoaderInternal(nsIStreamLoader        **outStream,
                                        aLoadingNode,
                                        aLoadingPrincipal,
                                        nullptr, 
+                                       Maybe<ClientInfo>(),
+                                       Maybe<ServiceWorkerDescriptor>(),
                                        aSecurityFlags,
                                        aContentPolicyType,
                                        aLoadGroup,
@@ -914,7 +1052,7 @@ NS_NewStreamLoaderInternal(nsIStreamLoader        **outStream,
 }
 
 
-nsresult 
+nsresult
 NS_NewStreamLoader(nsIStreamLoader        **outStream,
                    nsIURI                  *aUri,
                    nsIStreamLoaderObserver *aObserver,
@@ -940,7 +1078,7 @@ NS_NewStreamLoader(nsIStreamLoader        **outStream,
                                     aReferrer);
 }
 
-nsresult 
+nsresult
 NS_NewStreamLoader(nsIStreamLoader        **outStream,
                    nsIURI                  *aUri,
                    nsIStreamLoaderObserver *aObserver,
@@ -2861,20 +2999,24 @@ NS_ShouldSecureUpgrade(nsIURI* aURI,
 nsresult
 NS_GetSecureUpgradedURI(nsIURI* aURI, nsIURI** aUpgradedURI)
 {
-  NS_MutateURI mutator(aURI);
-  mutator.SetScheme(NS_LITERAL_CSTRING("https")); 
+  nsCOMPtr<nsIURI> upgradedURI;
+
+  nsresult rv = aURI->Clone(getter_AddRefs(upgradedURI));
+  NS_ENSURE_SUCCESS(rv,rv);
 
   
-  nsCOMPtr<nsIStandardURL> stdURL = do_QueryInterface(aURI);
-  if (stdURL) {
-    mutator.Apply<nsIStandardURLMutator>(&nsIStandardURLMutator::SetDefaultPort, 443, nullptr);
+  upgradedURI->SetScheme(NS_LITERAL_CSTRING("https"));
+
+  
+  nsCOMPtr<nsIStandardURL> upgradedStandardURL = do_QueryInterface(upgradedURI);
+  if (upgradedStandardURL) {
+    upgradedStandardURL->SetDefaultPort(443);
   } else {
     
     
     
-    NS_WARNING("Calling NS_GetSecureUpgradedURI for non nsStandardURL");
     int32_t oldPort = -1;
-    nsresult rv = aURI->GetPort(&oldPort);
+    rv = aURI->GetPort(&oldPort);
     if (NS_FAILED(rv)) return rv;
 
     
@@ -2883,13 +3025,14 @@ NS_GetSecureUpgradedURI(nsIURI* aURI, nsIURI** aUpgradedURI)
     
 
     if (oldPort == 80 || oldPort == -1) {
-        mutator.SetPort(-1);
+        upgradedURI->SetPort(-1);
     } else {
-        mutator.SetPort(oldPort);
+        upgradedURI->SetPort(oldPort);
     }
   }
 
-  return mutator.Finalize(aUpgradedURI);
+  upgradedURI.forget(aUpgradedURI);
+  return NS_OK;
 }
 
 nsresult
