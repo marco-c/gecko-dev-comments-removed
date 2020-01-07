@@ -1,9 +1,0 @@
-
-
-
-
-#include <vcclr.h>
-
-int main() {
-  return 0;
-}

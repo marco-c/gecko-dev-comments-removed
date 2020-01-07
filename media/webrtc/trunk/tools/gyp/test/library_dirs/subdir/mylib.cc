@@ -1,9 +1,0 @@
-
-
-
-
-#include "mylib.h"
-
-std::string my_foo(int x) {
-  return std::string("world");
-}
