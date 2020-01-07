@@ -29,6 +29,13 @@ add_task(async function test_update() {
 
   let sw = BASE_URI + "server_multie10s_update.sjs";
 
+  info("Let's make sure there are no existing registrations...");
+  let existingCount = await ContentTask.spawn(browser1, null, async function() {
+    const regs = await content.navigator.serviceWorker.getRegistrations();
+    return regs.length;
+  });
+  is(existingCount, 0, "Previous tests should have cleaned up!");
+
   info("Let's start the test...");
   let status = await ContentTask.spawn(browser1, sw, function(url) {
     
@@ -36,6 +43,7 @@ add_task(async function test_update() {
 
     
     .then(function(r) {
+      content.registration = r;
       return new content.window.Promise(resolve => {
         let worker = r.installing;
         worker.addEventListener('statechange', () => {
@@ -74,6 +82,13 @@ add_task(async function test_update() {
   } else {
     ok(false, "both failed. This is definitely wrong.");
   }
+
+  
+  await ContentTask.spawn(browser1, null, function() {
+    
+    
+    return content.registration.unregister();
+  });
 
   await BrowserTestUtils.removeTab(tab1);
   await BrowserTestUtils.removeTab(tab2);
