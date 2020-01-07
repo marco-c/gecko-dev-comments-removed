@@ -22,7 +22,7 @@ function run_test() {
 
   
   client.connect().then(function () {
-    client.listTabs(function (resp) {
+    client.listTabs().then(function (resp) {
       front = new EventLoopLagFront(client, resp);
       front.start().then(success => {
         Assert.ok(success);

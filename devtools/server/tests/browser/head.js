@@ -121,11 +121,7 @@ async function initPerfFront() {
 
 
 function getRootForm(client) {
-  return new Promise(resolve => {
-    client.listTabs(rootForm => {
-      resolve(rootForm);
-    });
-  });
+  return client.listTabs();
 }
 
 

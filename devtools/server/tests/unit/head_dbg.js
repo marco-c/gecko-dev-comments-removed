@@ -353,7 +353,7 @@ function addTestGlobal(name, server = DebuggerServer) {
 
 
 function getTestTab(client, title, callback) {
-  client.listTabs(function (response) {
+  client.listTabs().then(function (response) {
     for (let tab of response.tabs) {
       if (tab.title === title) {
         callback(tab, response);
