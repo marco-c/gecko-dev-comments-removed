@@ -1488,9 +1488,9 @@ public:
 
 
 
-  void SetUserData(void* aKey, LayerUserData* aData)
+  void SetUserData(void* aKey, LayerUserData* aData, void (*aDestroy)(void*) = LayerManager::LayerUserDataDestroy)
   {
-    mUserData.Add(static_cast<gfx::UserDataKey*>(aKey), aData, LayerManager::LayerUserDataDestroy);
+    mUserData.Add(static_cast<gfx::UserDataKey*>(aKey), aData, aDestroy);
   }
   
 
