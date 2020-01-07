@@ -5,6 +5,7 @@
 #ifndef RLZ_LIB_MACHINE_ID_H_
 #define RLZ_LIB_MACHINE_ID_H_
 
+#include <string>
 #include <vector>
 
 namespace rlz_lib {
@@ -12,7 +13,20 @@ namespace rlz_lib {
 
 
 
+
+
+bool GetMachineId(std::string* machine_id);
+
+
+
+
 bool GetRawMachineId(std::vector<uint8_t>* data, int* more_data);
+
+namespace testing {
+bool GetMachineIdImpl(const base::string16& sid_string,
+                      int volume_id,
+                      std::string* machine_id);
+}  
 
 }  
 
