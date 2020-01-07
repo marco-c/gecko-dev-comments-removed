@@ -125,6 +125,14 @@ pref("dom.registerContentHandler.enabled", true);
 #endif
 
 
+
+#ifdef NIGHTLY_BUILD
+pref("dom.registerProtocolHandler.insecure.enabled", false);
+#else
+pref("dom.registerProtocolHandler.insecure.enabled", true);
+#endif
+
+
 pref("dom.quotaManager.testing", false);
 
 

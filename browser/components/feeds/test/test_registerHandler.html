@@ -36,7 +36,10 @@
 
   async function tests() {
     await SpecialPowers.pushPrefEnv({
-      set: [["dom.registerContentHandler.enabled", true]]
+      set: [
+        ["dom.registerContentHandler.enabled", true],
+        ["dom.registerProtocolHandler.insecure.enabled", true],
+      ]
     });
     ok(navigator.registerContentHandler, "navigator.registerContentHandler should be defined");
 
