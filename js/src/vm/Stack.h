@@ -1950,8 +1950,14 @@ class JitFrameIter
     bool done() const;
     void operator++();
 
+    JS::Realm* realm() const;
+
     
     void skipNonScriptedJSFrames();
+
+    
+    
+    bool isSelfHostedIgnoringInlining() const;
 };
 
 
