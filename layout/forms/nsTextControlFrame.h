@@ -327,16 +327,6 @@ private:
   nsresult SetSelectionEndPoints(uint32_t aSelStart, uint32_t aSelEnd,
                                  SelectionDirection aDirection = eNone);
 
-  
-
-
-
-
-
-
-
-  nsresult GetRootNodeAndInitializeEditor(nsIDOMElement **aRootElement);
-
   void FinishedInitializer() {
     DeleteProperty(TextControlInitializer());
   }
