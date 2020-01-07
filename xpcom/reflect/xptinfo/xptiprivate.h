@@ -15,7 +15,6 @@
 
 
 #include "xpt_struct.h"
-#include "xpt_xdr.h"
 
 #include "nsIInterfaceInfo.h"
 #include "nsIInterfaceInfoManager.h"
@@ -62,6 +61,7 @@ class xptiInterfaceInfo;
 class xptiInterfaceEntry;
 class xptiTypelibGuts;
 
+struct XPTArena;
 extern XPTArena* gXPTIStructArena;
 
 
