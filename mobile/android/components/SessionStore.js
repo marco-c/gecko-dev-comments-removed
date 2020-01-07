@@ -50,10 +50,6 @@ const PREFS_MAX_TABS_UNDO = "browser.sessionstore.max_tabs_undo";
 
 const MINIMUM_SAVE_DELAY = 2000;
 
-
-
-const MINIMUM_SAVE_DELAY_BACKGROUND = 200;
-
 function SessionStore() { }
 
 SessionStore.prototype = {
@@ -69,7 +65,6 @@ SessionStore.prototype = {
   _lastBackupTime: 0,
   _interval: 10000,
   _backupInterval: 120000, 
-  _minSaveDelay: MINIMUM_SAVE_DELAY,
   _maxTabsUndo: 5,
   _pendingWrite: 0,
   _scrollSavePending: null,
@@ -386,20 +381,12 @@ SessionStore.prototype = {
         
         
         log("application-background");
-        
-        
         if (this._loadState == STATE_RUNNING) {
-          this._interval = 0;
-          this._minSaveDelay = MINIMUM_SAVE_DELAY_BACKGROUND; 
           this.flushPendingState();
         }
         break;
       case "application-foreground":
-        
         log("application-foreground");
-        this._interval = Services.prefs.getIntPref("browser.sessionstore.interval");
-        this._minSaveDelay = MINIMUM_SAVE_DELAY;
-
         
         
         let window = Services.wm.getMostRecentWindow("navigator:browser");
@@ -982,7 +969,7 @@ SessionStore.prototype = {
       let currentDelay = this._lastSaveTime + this._interval - Date.now();
 
       
-      let delay = Math.max(currentDelay, this._minSaveDelay);
+      let delay = Math.max(currentDelay, MINIMUM_SAVE_DELAY);
       if (delay > 0) {
         this._pendingWrite++;
         this._saveTimer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
