@@ -3211,10 +3211,11 @@ Assembler::PatchWrite_Imm32(CodeLocationLabel label, Imm32 imm) {
 uint8_t*
 Assembler::NextInstruction(uint8_t* inst_, uint32_t* count)
 {
-    Instruction* inst = reinterpret_cast<Instruction*>(inst_);
     if (count != nullptr)
         *count += sizeof(Instruction);
-    return reinterpret_cast<uint8_t*>(inst->next());
+
+    InstructionIterator iter(reinterpret_cast<Instruction*>(inst_));
+    return reinterpret_cast<uint8_t*>(iter.next());
 }
 
 static bool
@@ -3244,49 +3245,46 @@ InstIsGuard(BufferInstructionIterator& iter, const PoolHeader** ph)
     return *ph != nullptr;
 }
 
+template <class T>
 static bool
-InstIsBNop(Instruction* inst)
+InstIsBNop(const T& iter)
 {
     
     
     
     
     
-    Assembler::Condition c = inst->extractCond();
+    const Instruction* cur = iter.cur();
+    Assembler::Condition c = cur->extractCond();
     if (c != Assembler::Always)
         return false;
-    if (!inst->is<InstBImm>())
+    if (!cur->is<InstBImm>())
         return false;
-    InstBImm* b = inst->as<InstBImm>();
+    InstBImm* b = cur->as<InstBImm>();
     BOffImm offset;
     b->extractImm(&offset);
     return offset.decode() == 4;
 }
 
-static bool
-InstIsArtificialGuard(Instruction* inst, const PoolHeader** ph)
-{
-    if (!InstIsGuard(inst, ph))
-        return false;
-    return !(*ph)->isNatural();
-}
-
-
 Instruction*
-Instruction::maybeSkipAutomaticInstructions()
+InstructionIterator::maybeSkipAutomaticInstructions()
 {
+    
     const PoolHeader* ph;
+
     
-    
-    if (InstIsGuard(this, &ph)) {
-        
-        if (ph->isNatural())
-            return this;
-        return (this + 1 + ph->size())->maybeSkipAutomaticInstructions();
+    while (true) {
+        if (InstIsGuard(cur(), &ph)) {
+            
+            if (ph->isNatural())
+                return cur();
+            advanceRaw(1 + ph->size());
+        } else if (InstIsBNop<InstructionIterator>(*this)) {
+            advanceRaw(1);
+        } else {
+            return cur();
+        }
     }
-    if (InstIsBNop(this))
-        return (this + 1)->maybeSkipAutomaticInstructions();
-    return this;
 }
 
 Instruction*
@@ -3301,7 +3299,7 @@ BufferInstructionIterator::maybeSkipAutomaticInstructions()
             return cur();
         return next();
     }
-    if (InstIsBNop(cur()))
+    if (InstIsBNop<BufferInstructionIterator>(*this))
         return next();
     return cur();
 }
@@ -3338,17 +3336,20 @@ BufferInstructionIterator::maybeSkipAutomaticInstructions()
 
 
 Instruction*
-Instruction::next()
+InstructionIterator::next()
 {
-    Instruction* ret = this+1;
     const PoolHeader* ph;
+
     
     
-    if (InstIsGuard(this, &ph))
-        return (ret + ph->size())->maybeSkipAutomaticInstructions();
-    if (InstIsArtificialGuard(ret, &ph))
-        return (ret + 1 + ph->size())->maybeSkipAutomaticInstructions();
-    return ret->maybeSkipAutomaticInstructions();
+    if (InstIsGuard(cur(), &ph)) {
+        advanceRaw(1 + ph->size());
+        return maybeSkipAutomaticInstructions();
+    }
+
+    
+    advanceRaw(1);
+    return maybeSkipAutomaticInstructions();
 }
 
 void
@@ -3391,24 +3392,25 @@ Assembler::ToggleToCmp(CodeLocationLabel inst_)
 void
 Assembler::ToggleCall(CodeLocationLabel inst_, bool enabled)
 {
-    Instruction* inst = (Instruction*)inst_.raw();
-    inst = inst->maybeSkipAutomaticInstructions();
-    MOZ_ASSERT(inst->is<InstMovW>() || inst->is<InstLDR>());
+    InstructionIterator iter(reinterpret_cast<Instruction*>(inst_.raw()));
+    MOZ_ASSERT(iter.cur()->is<InstMovW>() || iter.cur()->is<InstLDR>());
 
-    if (inst->is<InstMovW>()) {
+    if (iter.cur()->is<InstMovW>()) {
         
         
-        inst = inst->next();
-        MOZ_ASSERT(inst->is<InstMovT>());
+        iter.next();
+        MOZ_ASSERT(iter.cur()->is<InstMovT>());
     }
 
-    inst = inst->next();
-    MOZ_ASSERT(inst->is<InstNOP>() || inst->is<InstBLXReg>());
+    iter.next();
+    MOZ_ASSERT(iter.cur()->is<InstNOP>() || iter.cur()->is<InstBLXReg>());
 
-    if (enabled == inst->is<InstBLXReg>()) {
+    if (enabled == iter.cur()->is<InstBLXReg>()) {
         
         return;
     }
+
+    Instruction* inst = iter.cur();
 
     if (enabled)
         *inst = InstBLXReg(ScratchRegister, Always);
@@ -3421,30 +3423,28 @@ Assembler::ToggleCall(CodeLocationLabel inst_, bool enabled)
 size_t
 Assembler::ToggledCallSize(uint8_t* code)
 {
-    Instruction* inst = (Instruction*)code;
-    inst = inst->maybeSkipAutomaticInstructions();
-    MOZ_ASSERT(inst->is<InstMovW>() || inst->is<InstLDR>());
+    InstructionIterator iter(reinterpret_cast<Instruction*>(code));
+    MOZ_ASSERT(iter.cur()->is<InstMovW>() || iter.cur()->is<InstLDR>());
 
-    if (inst->is<InstMovW>()) {
+    if (iter.cur()->is<InstMovW>()) {
         
         
-        inst = inst->next();
-        MOZ_ASSERT(inst->is<InstMovT>());
+        iter.next();
+        MOZ_ASSERT(iter.cur()->is<InstMovT>());
     }
 
-    inst = inst->next();
-    MOZ_ASSERT(inst->is<InstNOP>() || inst->is<InstBLXReg>());
-    return uintptr_t(inst) + 4 - uintptr_t(code);
+    iter.next();
+    MOZ_ASSERT(iter.cur()->is<InstNOP>() || iter.cur()->is<InstBLXReg>());
+    return uintptr_t(iter.cur()) + 4 - uintptr_t(code);
 }
 
 uint8_t*
 Assembler::BailoutTableStart(uint8_t* code)
 {
-    Instruction* inst = (Instruction*)code;
     
-    inst = inst->maybeSkipAutomaticInstructions();
-    MOZ_ASSERT(inst->is<InstBLImm>());
-    return (uint8_t*) inst;
+    InstructionIterator iter(reinterpret_cast<Instruction*>(code));
+    MOZ_ASSERT(iter.cur()->is<InstBLImm>());
+    return reinterpret_cast<uint8_t*>(iter.cur());
 }
 
 uint32_t Assembler::NopFill = 0;

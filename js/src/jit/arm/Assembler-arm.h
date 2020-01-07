@@ -2001,18 +2001,10 @@ class Instruction
     }
     
     
-    Assembler::Condition extractCond() {
+    Assembler::Condition extractCond() const {
         MOZ_ASSERT(data >> 28 != 0xf, "The instruction does not have condition code");
         return (Assembler::Condition)(data & 0xf0000000);
     }
-
-    
-    
-    Instruction* next();
-
-    
-    
-    Instruction* maybeSkipAutomaticInstructions();
 
     
     
@@ -2275,17 +2267,26 @@ class InstructionIterator
         maybeSkipAutomaticInstructions();
     }
 
-    void maybeSkipAutomaticInstructions() {
-        inst_ = inst_->maybeSkipAutomaticInstructions();
-    }
+    
+    Instruction* next();
 
-    Instruction* next() {
-        inst_ = inst_->next();
-        return inst_;
-    }
+    
+    Instruction* maybeSkipAutomaticInstructions();
 
     Instruction* cur() const {
         return inst_;
+    }
+
+  protected:
+    
+    void advanceRaw(ptrdiff_t instructions = 1) {
+        inst_ = inst_ + instructions;
+    }
+
+    
+    
+    Instruction* peekRaw(ptrdiff_t instructions = 1) const {
+        return inst_ + instructions;
     }
 };
 
