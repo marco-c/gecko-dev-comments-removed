@@ -1770,8 +1770,12 @@ pref("network.http.focused_window_transaction_ratio", "0.9");
 
 
 
-pref("network.http.active_tab_priority", true);
+#ifdef ANDROID
 
+pref("network.http.active_tab_priority", false);
+#else
+pref("network.http.active_tab_priority", true);
+#endif
 
 
 
@@ -2123,7 +2127,12 @@ pref("network.auth.private-browsing-sso", false);
 
 
 
+#ifdef ANDROID
+
+pref("network.http.throttle.enable", false);
+#else
 pref("network.http.throttle.enable", true);
+#endif
 pref("network.http.throttle.version", 2);
 
 
