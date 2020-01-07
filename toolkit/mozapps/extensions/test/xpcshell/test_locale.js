@@ -2,38 +2,36 @@
 
 
 
-async function run_test() {
-  do_test_pending();
-
+add_task(async function setup() {
   
   createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "1.9.2");
   Services.locale.setRequestedLocales(["fr-FR"]);
 
   await promiseStartupManager();
-
-  run_test_1();
-}
+});
 
 
-async function run_test_1() {
+add_task(async function test_1() {
   let install = await AddonManager.getInstallForFile(do_get_addon("test_locale"));
   Assert.equal(install.addon.name, "fr-FR Name");
   Assert.equal(install.addon.description, "fr-FR Description");
 
-  prepare_test({
-    "addon1@tests.mozilla.org": [
-      ["onInstalling", false],
-      ["onInstalled", false],
-    ]
-  }, [
-    "onInstallStarted",
-    "onInstallEnded",
-  ], callback_soon(run_test_2));
-  install.install();
-}
+  await new Promise(resolve => {
+    prepare_test({
+      "addon1@tests.mozilla.org": [
+        ["onInstalling", false],
+        ["onInstalled", false],
+      ]
+    }, [
+      "onInstallStarted",
+      "onInstallEnded",
+    ], resolve);
+    install.install();
+  });
+});
 
 
-async function run_test_2() {
+add_task(async function test_2() {
   await promiseRestartManager();
 
   let addon = await AddonManager.getAddonByID("addon1@tests.mozilla.org");
@@ -43,25 +41,18 @@ async function run_test_2() {
   Assert.equal(addon.description, "fr-FR Description");
 
   await addon.disable();
-  executeSoon(run_test_3);
-}
+});
 
 
-async function run_test_3() {
+add_task(async function test_3() {
   await promiseRestartManager();
 
   let addon = await AddonManager.getAddonByID("addon1@tests.mozilla.org");
   Assert.notEqual(addon, null);
   Assert.equal(addon.name, "fr-FR Name");
+});
 
-  executeSoon(run_test_4);
-}
-
-
-async function run_test_4() {
-  Services.prefs.setCharPref("extensions.addon1@tests.mozilla.org.name", "Name from prefs");
-  Services.prefs.setCharPref("extensions.addon1@tests.mozilla.org.contributor.1", "Contributor 1");
-  Services.prefs.setCharPref("extensions.addon1@tests.mozilla.org.contributor.2", "Contributor 2");
+add_task(async function test_4() {
   await promiseRestartManager();
 
   let addon = await AddonManager.getAddonByID("addon1@tests.mozilla.org");
@@ -72,12 +63,10 @@ async function run_test_4() {
   Assert.equal(contributors[0], "Fr Contributor 1");
   Assert.equal(contributors[1], "Fr Contributor 2");
   Assert.equal(contributors[2], "Fr Contributor 3");
-
-  executeSoon(run_test_5);
-}
+});
 
 
-async function run_test_5() {
+add_task(async function test_5() {
   Services.locale.setRequestedLocales(["de-DE"]);
   await promiseRestartManager();
 
@@ -86,12 +75,10 @@ async function run_test_5() {
 
   Assert.equal(addon.name, "de-DE Name");
   Assert.equal(addon.description, null);
-
-  executeSoon(run_test_6);
-}
+});
 
 
-async function run_test_6() {
+add_task(async function test_6() {
   Services.locale.setRequestedLocales(["nl-NL"]);
   await promiseRestartManager();
 
@@ -102,34 +89,4 @@ async function run_test_6() {
   Assert.equal(addon.description, "Fallback Description");
 
   await addon.enable();
-  executeSoon(run_test_7);
-}
-
-
-async function run_test_7() {
-  await promiseRestartManager();
-
-  let addon = await AddonManager.getAddonByID("addon1@tests.mozilla.org");
-  Assert.notEqual(addon, null);
-
-  Assert.equal(addon.name, "Name from prefs");
-
-  executeSoon(run_test_8);
-}
-
-
-async function run_test_8() {
-  Services.locale.setRequestedLocales(["fr-FR"]);
-  await promiseRestartManager();
-
-  let addon = await AddonManager.getAddonByID("addon1@tests.mozilla.org");
-  Assert.notEqual(addon, null);
-
-  Assert.equal(addon.name, "Name from prefs");
-  let contributors = addon.contributors;
-  Assert.equal(contributors.length, 2);
-  Assert.equal(contributors[0], "Contributor 1");
-  Assert.equal(contributors[1], "Contributor 2");
-
-  executeSoon(do_test_finished);
-}
+});
