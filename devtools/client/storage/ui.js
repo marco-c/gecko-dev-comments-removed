@@ -10,6 +10,7 @@ const {LocalizationHelper, ELLIPSIS} = require("devtools/shared/l10n");
 const KeyShortcuts = require("devtools/client/shared/key-shortcuts");
 const JSOL = require("devtools/client/shared/vendor/jsol");
 const {KeyCodes} = require("devtools/client/shared/keycodes");
+const { getUnicodeHostname } = require("devtools/client/shared/unicode-url");
 
 
 
@@ -455,7 +456,8 @@ class StorageUI {
   async handleAddedItems(added) {
     for (let type in added) {
       for (let host in added[type]) {
-        this.tree.add([type, {id: host, type: "url"}]);
+        const label = this.getReadableLabelFromHostname(host);
+        this.tree.add([type, {id: host, label: label, type: "url"}]);
         for (let name of added[type][host]) {
           try {
             name = JSON.parse(name);
@@ -672,7 +674,8 @@ class StorageUI {
       }
       this.storageTypes[type] = storageTypes[type];
       for (let host in storageTypes[type].hosts) {
-        this.tree.add([type, {id: host, type: "url"}]);
+        const label = this.getReadableLabelFromHostname(host);
+        this.tree.add([type, {id: host, label: label, type: "url"}]);
         for (let name of storageTypes[type].hosts[host]) {
           try {
             let names = JSON.parse(name);
@@ -782,6 +785,35 @@ class StorageUI {
 
 
 
+
+
+  getReadableLabelFromHostname(host) {
+    try {
+      const { hostname } = new URL(host);
+      const unicodeHostname = getUnicodeHostname(hostname);
+      if (hostname !== unicodeHostname) {
+        
+        
+        
+        return host.replace(hostname, unicodeHostname) + " [ " + host + " ]";
+      }
+    } catch (_) {
+      
+      
+    }
+    return host;
+  }
+
+  
+
+
+
+
+
+
+
+
+
   parseItemValue(name, originalValue) {
     
     let decodedValue = "";
@@ -878,8 +910,6 @@ class StorageUI {
   }
 
   
-
-
 
 
 
